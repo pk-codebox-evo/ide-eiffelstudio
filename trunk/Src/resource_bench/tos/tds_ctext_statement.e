@@ -1,11 +1,11 @@
 indexing
-	description: "Groupbox statement representation in the tds"
+	description: "Ctext statement representation in the tds"
 	product: "Resource Bench"
 	date: "$Date$"
 	revision: "$Revision$"
 
 class
-	TDS_GROUPBOX_STATEMENT
+	TDS_CTEXT_STATEMENT
 
 inherit
 	TDS_CONTROL_STATEMENT
@@ -18,16 +18,17 @@ inherit
 creation
 	make
 
-feature
+feature -- Initialization
 
 	finish_control_setup is
 		do
-			set_variable_name ("group_box")
-			set_wel_class_name ("WEL_GROUP_BOX")
-			set_type (C_groupbox)
+			set_wel_code (true)
+			set_variable_name ("center_text")
+			set_wel_class_name ("WEL_STATIC")
+			set_type (C_ctext)
 		end
 
-feature
+feature -- Code Generation
 
 	display is
 		do
@@ -37,7 +38,7 @@ feature
 				after
 
 			loop
-				io.putstring ("%NGROUPBOX ")
+				io.putstring ("%NCTEXT ")
 
 				io.putstring (item.text)
 
@@ -77,7 +78,7 @@ feature
 				after
 
 			loop
-				a_resource_file.putstring ("%N%TGROUPBOX ")
+				a_resource_file.putstring ("%N%TCTEXT ")
 
 				a_resource_file.putstring (item.text)
 
@@ -110,7 +111,7 @@ feature
 			end
 		end
 
-end -- class TDS_GROUPBOX_STATEMENT
+end -- class TDS_CTEXT_STATEMENT
 
 --|---------------------------------------------------------------
 --|   Copyright (C) Interactive Software Engineering, Inc.      --

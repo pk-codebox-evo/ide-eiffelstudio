@@ -1,128 +1,64 @@
 indexing
-	description: "Cursor representation in the tds"
-	product: "Resource Bench"
+	description: "Objects that ..."
+	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
 class
-	TDS_CURSOR
+	TDS_AUTORADIOBUTTON_STATEMENT
 
+	-- Replace ANY below by the name of parent class if any (adding more parents
+	-- if necessary); otherwise you can remove inheritance clause altogether.
 inherit
-	TDS_RESOURCE
+	ANY
 		rename
-			make as list_make
+		export
+		undefine
+		redefine
+		select
 		end
 
-creation
-	make
+-- The following Creation_clause can be removed if you need no other
+-- procedure than `default_create':
 
-feature	-- Initialization
+create
+	default_create
 
-	make is
-		do
-			list_make
-			set_type (R_cursor)
-        	end
+feature -- Initialization
 
-feature -- Code generation
+feature -- Access
 
-	display is
-			-- Display the tds.
-		local
-			the_cursor: TDS_CURSOR
-		do
-			from 
-				start
-			until 
-				after
-			loop
-				the_cursor ?= item
+feature -- Measurement
 
-				io.putstring ("%N------------------------------------")
-				io.putstring ("%NCursor ID: ")
-				the_cursor.id.display
+feature -- Status report
 
-				if (the_cursor.load_and_mem_attributes /= Void) then
-					the_cursor.load_and_mem_attributes.display
-				end                
+feature -- Status setting
 
-				io.putstring ("%Nfilename = ")
-				io.putstring (the_cursor.filename)
+feature -- Cursor movement
 
-				io.new_line
-				forth
-			end
-		end
+feature -- Element change
 
-	generate_resource_file (a_resource_file: PLAIN_TEXT_FILE) is
-			-- Generate `a_resource_file' from the tds memory structure.
-		local
-			the_cursor: TDS_CURSOR
-		do
-			a_resource_file.putstring ("%N////////////////////////////////////////////////////////////////%N")
-			a_resource_file.putstring ("//%N")
-			a_resource_file.putstring ("// CURSOR%N")
-			a_resource_file.putstring ("//%N%N")
-			
-			from 
-				start
-			until 
-				after
-			loop
-				the_cursor ?= item
+feature -- Removal
 
-				the_cursor.id.generate_resource_file (a_resource_file)
-				a_resource_file.putstring (" CURSOR ")
+feature -- Resizing
 
-				if (the_cursor.load_and_mem_attributes /= Void) then
-					the_cursor.load_and_mem_attributes.generate_resource_file (a_resource_file)
-				end                
+feature -- Transformation
 
-				a_resource_file.putstring (the_cursor.filename)
-				forth
-			end
+feature -- Conversion
 
-			a_resource_file.new_line
-		end
+feature -- Duplication
 
-	generate_tree_view (a_tree_view: WEL_TREE_VIEW; a_parent: INTEGER) is
-			-- Generate `a_tree_view' control from the tds memory structure.
-		local
-			tvis: WEL_TREE_VIEW_INSERT_STRUCT
-			tv_item: WEL_TREE_VIEW_ITEM
-			parent: INTEGER
-		do
-			!! tvis.make
-			tvis.set_sort
-			tvis.set_parent (a_parent)
-			!! tv_item.make
-			tv_item.set_text ("Cursor")
-			tvis.set_tree_view_item (tv_item)
-			a_tree_view.insert_item (tvis)
+feature -- Miscellaneous
 
-			from
-				parent := a_tree_view.last_item
-				set_tree_view_item (parent)
-				start
-			until
-				after
-			loop
-				item.id.generate_tree_view (a_tree_view, parent)
-				item.set_tree_view_item (a_tree_view.last_item)
-				forth
-			end 
-		end
+feature -- Basic operations
 
-	generate_wel_code is
-			-- Generate the eiffel code.
-		do
-		end
+feature -- Obsolete
 
-end -- class TDS_CURSOR
+feature -- Inapplicable
 
---|---------------------------------------------------------------
---|   Copyright (C) Interactive Software Engineering, Inc.      --
---|    270 Storke Road, Suite 7 Goleta, California 93117        --
---|                   (805) 685-1006                            --
---| All rights reserved. Duplication or distribution prohibited --
---|---------------------------------------------------------------
+feature {NONE} -- Implementation
+
+invariant
+	invariant_clause: -- Your invariant here
+
+end -- class TDS_AUTORADIOBUTTON_STATEMENT
