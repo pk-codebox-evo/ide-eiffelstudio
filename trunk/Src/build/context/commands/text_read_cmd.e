@@ -1,41 +1,51 @@
+indexing
+	description: "Change the horizontal resizement policy."
+	id: "$Id$"
+	date: "$Date$"
+	revision: "$Revision$"
 
 class TEXT_READ_CMD 
 
 inherit
-
 	CONTEXT_CMD
 		redefine
-			context
+			context, undo
 		end
-	
-feature {NONE}
+
+feature {NONE} -- Implementation
 
 	associated_form: INTEGER is
 		do
-			Result := Context_const.text_att_form_nbr
-		end;
+			if context.is_field then
+				Result := Context_const.text_field_att_form_nbr
+			else
+				Result := Context_const.text_att_form_nbr
+			end
+		end
 
-	c_name: STRING is
+	name: STRING is
 		do
 			Result := Command_names.cont_text_read_cmd_name
-		end;
+		end
 
-	context: TEXT_C;
+	context: TEXT_COMPONENT_C
 
-	old_is_read_only: BOOLEAN;
+	old_is_editable: BOOLEAN
 
-	context_work is
+	work is
 		do
-			old_is_read_only := context.is_read_only;
-		end;
+			old_is_editable := context.is_editable
+		end
 
-	context_undo is
+	undo is
 		local
-			new_is_read_only: BOOLEAN;
+			new_is_editable: BOOLEAN
 		do
-			new_is_read_only := context.is_read_only;
-			context.set_read_only (old_is_read_only);
-			old_is_read_only := new_is_read_only;
-		end;
+			new_is_editable := context.is_editable
+			context.set_editable (old_is_editable)
+			old_is_editable := new_is_editable
+			{CONTEXT_CMD} Precursor
+		end
 
-end
+end -- class TEXT_READ_CMD
+

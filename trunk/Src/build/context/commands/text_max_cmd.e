@@ -1,41 +1,47 @@
+indexing
+	description: "Change the maximum length of the text."
+	id: "$Id$"
+	date: "$Date$"
+	revision: "$Revision$"
 
-class TEXT_MAX_CMD 
+class TEXT_MAX_CMD
 
 inherit
-
 	CONTEXT_CMD
 		redefine
-			context
+			context, undo
 		end
 
-feature {NONE}
+feature {NONE} -- Implementation
 
 	associated_form: INTEGER is
 		do
-			Result := Context_const.text_att_form_nbr
-		end;
+			Result := Context_const.text_field_att_form_nbr
+		end
 
-	c_name: STRING is
+	name: STRING is
 		do
 			Result := Command_names.cont_text_max_cmd_name
-		end;
+		end
 
-	context: TEXT_C;
+	context: TEXT_FIELD_C
 
-	old_maximum_size: INTEGER;
+	old_maximum_size: INTEGER
 
-	context_work is
+	work is
 		do
-			old_maximum_size := context.maximum_size;
-		end;
+--			old_maximum_size := context.maximum_text_length
+		end
 
-	context_undo is
+	undo is
 		local
-			new_maximum_size: INTEGER;
+			new_maximum_size: INTEGER
 		do
-			new_maximum_size := context.maximum_size;
-			context.set_maximum_size (old_maximum_size);
-			old_maximum_size := new_maximum_size;
-		end;
+--			new_maximum_size := context.maximum_text_length
+--			context.set_maximum_text_length (old_maximum_size)
+			old_maximum_size := new_maximum_size
+			{CONTEXT_CMD} Precursor
+		end
 
-end
+end -- class TEXT_MAX_CMD
+
