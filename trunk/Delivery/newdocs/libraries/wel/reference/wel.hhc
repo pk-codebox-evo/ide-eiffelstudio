@@ -1,15 +1,9 @@
 	<LI><OBJECT type="text/sitemap"><param name="Name" value="reference"><param name="Local" value="libraries\wel\reference\index.html"></OBJECT>
 	<UL>
-		<LI><OBJECT type="text/sitemap"><param name="Name" value="clib"><param name="Local" value="libraries\wel\reference\clib\index.html"></OBJECT>
-		<UL>
-			<LI><OBJECT type="text/sitemap"><param name="Name" value="CVS"><param name="Local" value="libraries\wel\reference\clib\CVS\index.html"></OBJECT>
-		</UL>
 		<LI><OBJECT type="text/sitemap"><param name="Name" value="consts"><param name="Local" value="libraries\wel\reference\consts\index.html"></OBJECT>
 		<UL>
-			<LI><OBJECT type="text/sitemap"><param name="Name" value="CVS"><param name="Local" value="libraries\wel\reference\consts\CVS\index.html"></OBJECT>
 			<LI><OBJECT type="text/sitemap"><param name="Name" value="new_consts"><param name="Local" value="libraries\wel\reference\consts\new_consts\index.html"></OBJECT>
 			<UL>
-				<LI><OBJECT type="text/sitemap"><param name="Name" value="CVS"><param name="Local" value="libraries\wel\reference\consts\new_consts\CVS\index.html"></OBJECT>
 <LI><OBJECT type="text/sitemap"><param name="Name" value="WEL_COMBO_BOX_CONSTANTS"><param name="Local" value="libraries\wel\reference\consts\new_consts\wel_combo_box_constants_chart.html"></OBJECT>
 				<UL>
 				<LI><OBJECT type="text/sitemap"><param name="Name" value="cbem_deleteitem"><param name="Local" value="libraries\wel\reference\consts\new_consts\wel_combo_box_constants.html#f_cbem_deleteitem"></OBJECT>
@@ -3769,7 +3763,6 @@
 		</UL>
 		<LI><OBJECT type="text/sitemap"><param name="Name" value="controls"><param name="Local" value="libraries\wel\reference\controls\index.html"></OBJECT>
 		<UL>
-			<LI><OBJECT type="text/sitemap"><param name="Name" value="CVS"><param name="Local" value="libraries\wel\reference\controls\CVS\index.html"></OBJECT>
 <LI><OBJECT type="text/sitemap"><param name="Name" value="WEL_BAR"><param name="Local" value="libraries\wel\reference\controls\wel_bar_chart.html"></OBJECT>
 			<UL>
 			<LI><OBJECT type="text/sitemap"><param name="Name" value="commands"><param name="Local" value="libraries\wel\reference\controls\wel_bar.html#f_commands"></OBJECT>
@@ -11674,7 +11667,6 @@
 			<LI><OBJECT type="text/sitemap"><param name="Name" value="register_current_window"><param name="Local" value="libraries\wel\reference\controls\wel_up_down_control.html#f_register_current_window"></OBJECT>
 			</UL>
 		</UL>
-		<LI><OBJECT type="text/sitemap"><param name="Name" value="CVS"><param name="Local" value="libraries\wel\reference\CVS\index.html"></OBJECT>
 		<LI><OBJECT type="text/sitemap"><param name="Name" value="extra"><param name="Local" value="libraries\wel\reference\extra\index.html"></OBJECT>
 		<UL>
 <LI><OBJECT type="text/sitemap"><param name="Name" value="CONVERTER"><param name="Local" value="libraries\wel\reference\extra\converter_chart.html"></OBJECT>
@@ -11686,7 +11678,6 @@
 			<LI><OBJECT type="text/sitemap"><param name="Name" value="close_file"><param name="Local" value="libraries\wel\reference\extra\converter.html#f_close_file"></OBJECT>
 			<LI><OBJECT type="text/sitemap"><param name="Name" value="convert"><param name="Local" value="libraries\wel\reference\extra\converter.html#f_convert"></OBJECT>
 			</UL>
-			<LI><OBJECT type="text/sitemap"><param name="Name" value="CVS"><param name="Local" value="libraries\wel\reference\extra\CVS\index.html"></OBJECT>
 <LI><OBJECT type="text/sitemap"><param name="Name" value="H2E_DIALOG"><param name="Local" value="libraries\wel\reference\extra\h2e_dialog_chart.html"></OBJECT>
 			<UL>
 			<LI><OBJECT type="text/sitemap"><param name="Name" value="children"><param name="Local" value="libraries\wel\reference\extra\h2e_dialog.html#f_children"></OBJECT>
@@ -11924,7 +11915,6 @@
 		</UL>
 		<LI><OBJECT type="text/sitemap"><param name="Name" value="gdi"><param name="Local" value="libraries\wel\reference\gdi\index.html"></OBJECT>
 		<UL>
-			<LI><OBJECT type="text/sitemap"><param name="Name" value="CVS"><param name="Local" value="libraries\wel\reference\gdi\CVS\index.html"></OBJECT>
 <LI><OBJECT type="text/sitemap"><param name="Name" value="WEL_BITMAP"><param name="Local" value="libraries\wel\reference\gdi\wel_bitmap_chart.html"></OBJECT>
 			<UL>
 			<LI><OBJECT type="text/sitemap"><param name="Name" value="gdi_objects_count"><param name="Local" value="libraries\wel\reference\gdi\wel_bitmap.html#f_gdi_objects_count"></OBJECT>
@@ -13881,7 +13871,6 @@
 		</UL>
 		<LI><OBJECT type="text/sitemap"><param name="Name" value="gdistock"><param name="Local" value="libraries\wel\reference\gdistock\index.html"></OBJECT>
 		<UL>
-			<LI><OBJECT type="text/sitemap"><param name="Name" value="CVS"><param name="Local" value="libraries\wel\reference\gdistock\CVS\index.html"></OBJECT>
 <LI><OBJECT type="text/sitemap"><param name="Name" value="WEL_ANSI_FIXED_FONT"><param name="Local" value="libraries\wel\reference\gdistock\wel_ansi_fixed_font_chart.html"></OBJECT>
 			<UL>
 			<LI><OBJECT type="text/sitemap"><param name="Name" value="gdi_objects_count"><param name="Local" value="libraries\wel\reference\gdistock\wel_ansi_fixed_font.html#f_gdi_objects_count"></OBJECT>
@@ -14391,7 +14380,6 @@
 		</UL>
 		<LI><OBJECT type="text/sitemap"><param name="Name" value="messages"><param name="Local" value="libraries\wel\reference\messages\index.html"></OBJECT>
 		<UL>
-			<LI><OBJECT type="text/sitemap"><param name="Name" value="CVS"><param name="Local" value="libraries\wel\reference\messages\CVS\index.html"></OBJECT>
 <LI><OBJECT type="text/sitemap"><param name="Name" value="WEL_COMMAND_MESSAGE"><param name="Local" value="libraries\wel\reference\messages\wel_command_message_chart.html"></OBJECT>
 			<UL>
 			<LI><OBJECT type="text/sitemap"><param name="Name" value="make"><param name="Local" value="libraries\wel\reference\messages\wel_command_message.html#f_make"></OBJECT>
@@ -14557,7 +14545,6 @@
 		</UL>
 		<LI><OBJECT type="text/sitemap"><param name="Name" value="shared"><param name="Local" value="libraries\wel\reference\shared\index.html"></OBJECT>
 		<UL>
-			<LI><OBJECT type="text/sitemap"><param name="Name" value="CVS"><param name="Local" value="libraries\wel\reference\shared\CVS\index.html"></OBJECT>
 <LI><OBJECT type="text/sitemap"><param name="Name" value="WEL_SHARED_FONTS"><param name="Local" value="libraries\wel\reference\shared\wel_shared_fonts_chart.html"></OBJECT>
 			<UL>
 			<LI><OBJECT type="text/sitemap"><param name="Name" value="caption_font"><param name="Local" value="libraries\wel\reference\shared\wel_shared_fonts.html#f_caption_font"></OBJECT>
@@ -14570,20 +14557,8 @@
 			</UL>
 		</UL>
 		<LI><OBJECT type="text/sitemap"><param name="Name" value="spec"><param name="Local" value="libraries\wel\reference\spec\index.html"></OBJECT>
-		<UL>
-			<LI><OBJECT type="text/sitemap"><param name="Name" value="CVS"><param name="Local" value="libraries\wel\reference\spec\CVS\index.html"></OBJECT>
-			<LI><OBJECT type="text/sitemap"><param name="Name" value="windows"><param name="Local" value="libraries\wel\reference\spec\windows\index.html"></OBJECT>
-			<UL>
-				<LI><OBJECT type="text/sitemap"><param name="Name" value="CVS"><param name="Local" value="libraries\wel\reference\spec\windows\CVS\index.html"></OBJECT>
-				<LI><OBJECT type="text/sitemap"><param name="Name" value="include"><param name="Local" value="libraries\wel\reference\spec\windows\include\index.html"></OBJECT>
-				<UL>
-					<LI><OBJECT type="text/sitemap"><param name="Name" value="CVS"><param name="Local" value="libraries\wel\reference\spec\windows\include\CVS\index.html"></OBJECT>
-				</UL>
-			</UL>
-		</UL>
 		<LI><OBJECT type="text/sitemap"><param name="Name" value="stddlgs"><param name="Local" value="libraries\wel\reference\stddlgs\index.html"></OBJECT>
 		<UL>
-			<LI><OBJECT type="text/sitemap"><param name="Name" value="CVS"><param name="Local" value="libraries\wel\reference\stddlgs\CVS\index.html"></OBJECT>
 <LI><OBJECT type="text/sitemap"><param name="Name" value="WEL_CHOOSE_COLOR_DIALOG"><param name="Local" value="libraries\wel\reference\stddlgs\wel_choose_color_dialog_chart.html"></OBJECT>
 			<UL>
 			<LI><OBJECT type="text/sitemap"><param name="Name" value="custom_colors"><param name="Local" value="libraries\wel\reference\stddlgs\wel_choose_color_dialog.html#f_custom_colors"></OBJECT>
@@ -14892,7 +14867,6 @@
 		</UL>
 		<LI><OBJECT type="text/sitemap"><param name="Name" value="structs"><param name="Local" value="libraries\wel\reference\structs\index.html"></OBJECT>
 		<UL>
-			<LI><OBJECT type="text/sitemap"><param name="Name" value="CVS"><param name="Local" value="libraries\wel\reference\structs\CVS\index.html"></OBJECT>
 <LI><OBJECT type="text/sitemap"><param name="Name" value="WEL_ACCELERATOR"><param name="Local" value="libraries\wel\reference\structs\wel_accelerator_chart.html"></OBJECT>
 			<UL>
 			<LI><OBJECT type="text/sitemap"><param name="Name" value="command_id"><param name="Local" value="libraries\wel\reference\structs\wel_accelerator.html#f_command_id"></OBJECT>
@@ -17017,7 +16991,6 @@
 		</UL>
 		<LI><OBJECT type="text/sitemap"><param name="Name" value="support"><param name="Local" value="libraries\wel\reference\support\index.html"></OBJECT>
 		<UL>
-			<LI><OBJECT type="text/sitemap"><param name="Name" value="CVS"><param name="Local" value="libraries\wel\reference\support\CVS\index.html"></OBJECT>
 <LI><OBJECT type="text/sitemap"><param name="Name" value="WEL_ACCELERATORS"><param name="Local" value="libraries\wel\reference\support\wel_accelerators_chart.html"></OBJECT>
 			<UL>
 			<LI><OBJECT type="text/sitemap"><param name="Name" value="item"><param name="Local" value="libraries\wel\reference\support\wel_accelerators.html#f_item"></OBJECT>
@@ -21157,7 +21130,6 @@
 		</UL>
 		<LI><OBJECT type="text/sitemap"><param name="Name" value="windows"><param name="Local" value="libraries\wel\reference\windows\index.html"></OBJECT>
 		<UL>
-			<LI><OBJECT type="text/sitemap"><param name="Name" value="CVS"><param name="Local" value="libraries\wel\reference\windows\CVS\index.html"></OBJECT>
 <LI><OBJECT type="text/sitemap"><param name="Name" value="WEL_COMPOSITE_WINDOW"><param name="Local" value="libraries\wel\reference\windows\wel_composite_window_chart.html"></OBJECT>
 			<UL>
 			<LI><OBJECT type="text/sitemap"><param name="Name" value="children"><param name="Local" value="libraries\wel\reference\windows\wel_composite_window.html#f_children"></OBJECT>
