@@ -13,7 +13,7 @@ inherit
 		
 feature -- Access
 
-	typedesc: EOLE_TYPE_DESC is
+	type_desc: EOLE_TYPE_DESC is
 			-- Info about parameter
 		require
 			valid_c_structure: ole_ptr /= default_pointer
@@ -22,7 +22,7 @@ feature -- Access
 			Result.attach (ole2_get_elemdesc_typedesc (ole_ptr))
 		end
 
-	idldesc: EOLE_IDL_DESC is
+	idl_desc: EOLE_IDL_DESC is
 			-- Info for remoting element
 		require
 			valid_c_structure: ole_ptr /= default_pointer
