@@ -32,7 +32,7 @@ A:hover {
 }
 
 blockquote {
-	color:navy;
+	color:c90000;
 	font-size: 70%;
 }
 
@@ -88,21 +88,6 @@ H1.aa-sec3, H2.aa-sec3, H3.aa-sec3, H4.aa-sec3, H5.aa-sec3, H6.aa-sec3 {
 	vertical-align: baseline;
 	text-transform: none;
 }
-LI.aa-secapp {
-	display: block;
-	text-align: left;
-	text-indent: -32.4pt;
-	margin-top: 14pt;
-	margin-bottom: 14pt;
-	margin-right: 0pt;
-	margin-left: 32.4pt;
-	font-weight: Bold;
-	font-style: Regular;
-	color: #000000;
-	text-decoration: none;
-	vertical-align: baseline;
-	text-transform: none;
-}
 H1.bb-chapnonum, P.bb-chapnonum {
 	display: block;
 	text-align: left;
@@ -115,6 +100,23 @@ H1.bb-chapnonum, P.bb-chapnonum {
 	font-weight: Bold;
 	font-style: Regular;
 	color: #008200;
+	text-decoration: none;
+	vertical-align: baseline;
+	text-transform: none;
+}
+
+H2.index {
+	display: block;
+	text-align: left;
+	text-indent: 0pt;
+	margin-top: 12pt;
+	margin-bottom: 6pt;
+	margin-right: 0pt;
+	margin-left: 0pt;
+	font-size: 110%;
+	font-weight: Bold;
+	font-style: Regular;
+	color: navy;
 	text-decoration: none;
 	vertical-align: baseline;
 	text-transform: none;
@@ -313,7 +315,7 @@ LI.ll-bullnum {
 	margin-bottom: 5pt;
 	margin-right: 56.5t;
 	margin-left: 17pt;
-	font-size: 70%;
+	/* font-size: 70%; */
 	font-weight: Regular;
 	font-style: Regular;
 	color: #000000;
@@ -328,7 +330,7 @@ LI.mm-bull {
 	margin-bottom: 5pt;
 	margin-right: 5.7pt;
 	margin-left: 28.3pt;
-	font-size: 70%;
+	/* font-size: 70%; */
 	font-weight: Regular;
 	font-style: Regular;
 	color: #000000;
@@ -344,7 +346,7 @@ LI.mm-bullnum {
 	margin-bottom: 4pt;
 	margin-right: 5.7pt;
 	margin-left: 28.3pt;
-	font-size: 70%;
+	/* font-size: 70%; */
 	font-weight: Regular;
 	font-style: Regular;
 	color: #000000;
@@ -754,5 +756,5 @@ SPAN.ww-locref {
 }
 
 UL {
-	font-size: 70%;
+	font-size: 100%;
 }
