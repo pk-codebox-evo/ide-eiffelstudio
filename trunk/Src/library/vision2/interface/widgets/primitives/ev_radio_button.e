@@ -1,7 +1,7 @@
 indexing
 	description:
-		"Eiffel Vision radio button. A labels check box that may be grouped%N%
-		%for mutualy exclusive selection."
+		"Eiffel Vision radio button. Select state is mutualy exlusive%N%
+		%with respect to other radio buttons in a container."
 	status: "See notice at end of class"
 	keywords: "toggle, radio, button"
 	date: "$Date$"
@@ -11,7 +11,7 @@ class
 	EV_RADIO_BUTTON
 
 inherit
-	EV_CHECK_BUTTON
+	EV_SELECT_BUTTON
 		redefine
 			implementation,
 			create_implementation
@@ -56,6 +56,12 @@ end -- class EV_RADIO_BUTTON
 --|-----------------------------------------------------------------------------
 --|
 --| $Log$
+--| Revision 1.14  2000/02/24 18:16:24  oconnor
+--| New inheritance structure for buttons with state.
+--| New class EV_SELECT_BUTTON provides `is_selected' and `enable_select'.
+--| RADIO_BUTTON inherits this, as does TOGGLE_BUTTON which adds
+--| `disable_select' and `toggle'.
+--|
 --| Revision 1.13  2000/02/22 18:39:52  oconnor
 --| updated copyright date and formatting
 --|
