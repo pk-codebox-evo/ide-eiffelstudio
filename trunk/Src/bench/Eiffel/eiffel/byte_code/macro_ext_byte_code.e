@@ -1,17 +1,40 @@
 indexing
-
 	description:
-		"Encapsulation of a macro extension.";
+		"Encapsulation of a macro extension in C or C++ mode.";
 	date: "$Date$";
 	revision: "$Revision$"
 
 class MACRO_EXT_BYTE_CODE
 
 inherit
-	C_EXT_BYTE_CODE
+	EXT_EXT_BYTE_CODE
 		redefine
 			is_special, generate, generate_body, generate_signature,
 			generate_arguments_with_cast
+		end
+
+feature -- Properties
+
+	special_file_name: STRING
+			-- Special file name (dll or macro)
+
+	is_cpp_code: BOOLEAN
+			-- Is current macro to be generated in a CPP context?
+
+feature -- Initialization
+
+	set_special_file_name (f: STRING) is
+			-- Assign `f' to `special_file_name'.
+		do
+			special_file_name := f
+		end
+
+	set_is_cpp_code (v: BOOLEAN) is
+			-- Assign `v' to `is_cpp_code'.
+		do
+			is_cpp_code := v
+		ensure
+			is_cpp_code_set: is_cpp_code = v
 		end
 
 feature -- Code generation
@@ -36,6 +59,9 @@ feature -- Code generation
 	generate_body is
 			-- Generate the body for an external of type macro
 		do
+			if is_cpp_code then
+				context.set_has_cpp_externals_calls (True)
+			end
 			generate_basic_body
 		end
 
