@@ -9,7 +9,7 @@ default
 	precompiled ("$EIFFEL4\precomp\spec\$PLATFORM\wel")
 
 cluster
-	root_cluster:	"."
+	root_cluster:	"$EIFFEL4/examples/vision/test_all_widgets"
 
 		-- EiffelVision
     all vision:        	"$EIFFEL4\library\vision"
@@ -18,4 +18,12 @@ cluster
 			"x"
 			"gtk"
 		end
+
+external
+	include_path:
+		"$(EIFFEL4)\library\wel\spec\windows\include";
+
+	object:
+ 		"$(EIFFEL4)\library\wel\spec\$(COMPILER)\lib\wel.lib";
+
 end

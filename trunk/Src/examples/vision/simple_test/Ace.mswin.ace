@@ -1,0 +1,36 @@
+system
+	example
+
+root
+
+	example (ROOT_CLUSTER): "make"
+
+system
+	test_all_widgets
+
+root
+	DEMO (root_cluster): "make"
+
+default
+	assertion (no)
+	precompiled ("$EIFFEL4\precomp\spec\$PLATFORM\wel")
+
+cluster
+	root_cluster:	"$EIFFEL4/examples/vision/simple_test"
+
+		-- EiffelVision
+    all vision:        	"$EIFFEL4\library\vision"
+		exclude
+			"motif"
+			"x"
+			"gtk"
+		end
+
+external
+	include_path:
+		"$(EIFFEL4)\library\wel\spec\windows\include";
+
+	object:
+		"$(EIFFEL4)\library\wel\spec\$(COMPILER)\lib\wel.lib";
+
+end
