@@ -38,6 +38,7 @@ concurrent_prefix='c'
 eiflib='finalized'
 wkeiflib='wkbench'
 suffix='.a'
+command_makefile='make'
 
 optimize='-O3'
 large=''
