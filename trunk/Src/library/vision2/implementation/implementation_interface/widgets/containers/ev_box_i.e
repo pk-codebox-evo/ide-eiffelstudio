@@ -20,19 +20,7 @@ feature -- Constants
 	Default_expand: BOOLEAN is True
 	Default_fill: BOOLEAN is True
 	Default_padding: INTEGER is 0
-	
-feature {EV_BOX} -- Implementation
-	
-	add_child (child_i: EV_WIDGET_I) is
-			-- Add child into composite. Several children
-			-- possible.
-		require else 
-			-- Don't use the parent's precondition,
-			-- because several children are allowed
-			exists: not destroyed
-			valid_child: child_i /= Void and then not child_i.destroyed
-		deferred
-		end
+
 		
 feature -- Element change (box specific)
 	
