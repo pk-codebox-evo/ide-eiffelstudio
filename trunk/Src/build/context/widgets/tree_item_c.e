@@ -8,7 +8,7 @@ class
 	TREE_ITEM_C
 
 inherit
-	ITEM_C
+	SIMPLE_ITEM_C
 		redefine
 			gui_object,
 			create_context

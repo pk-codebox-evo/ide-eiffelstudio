@@ -8,7 +8,7 @@ class
 	LIST_ITEM_C
 
 inherit
-	ITEM_C
+	SIMPLE_ITEM_C
 		redefine
 			gui_object,
 			create_context
@@ -31,7 +31,7 @@ feature -- Context creation
 	create_context (a_parent: LIST_C): like Current is
 			-- Create a context of the same type.
 		do
-			Result ?= {ITEM_C} Precursor (a_parent)
+			Result ?= {SIMPLE_ITEM_C} Precursor (a_parent)
 			a_parent.append (Result)
 		end
 
@@ -39,7 +39,7 @@ feature -- GUI object creation
 
 	create_gui_object (a_parent: EV_LIST) is
 		do
-			create gui_object.make (a_parent)
+			create gui_object.make_with_text (a_parent, label)
 		end
 
 feature -- Status report
