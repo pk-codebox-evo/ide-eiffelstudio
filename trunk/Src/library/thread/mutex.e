@@ -10,7 +10,9 @@ class
 	MUTEX
 
 inherit
-	OBJECT_CONTROL
+	OBJECT_OWNER
+	MEMORY
+		redefine dispose end
 
 creation
 	make
@@ -20,34 +22,73 @@ feature -- Initialization
 	make is
 			-- Create mutex.
 		do
-			freeze (Current)
+			record_owner
 			mutex_pointer := eif_thr_mutex_create
+		ensure
+			valid_mutex: mutex_pointer /= default_pointer
+		end
+
+feature -- Access
+
+	is_set: BOOLEAN is
+			-- Is mutex initialized?
+		do
+			Result := (mutex_pointer /= default_pointer)
 		end
 
 feature -- Status setting
 
-	has_locked: BOOLEAN is
+	trylock, has_locked: BOOLEAN is
 			-- Has client been successful in locking mutex without waiting?
+		require
+			valid_mutex: is_set
 		do
 			Result := eif_thr_mutex_trylock (mutex_pointer)
 		end
 
 	lock is
 			-- Lock mutex, waiting if necessary until that becomes possible.
+		require
+			valid_mutex: is_set
 		do
 			eif_thr_mutex_lock (mutex_pointer)
 		end
 
 	unlock is
 			-- Unlock mutex.
+		require
+			valid_mutex: is_set
 		do
 			eif_thr_mutex_unlock (mutex_pointer)
 		end
 
-feature {NONE} -- Implementation
+	destroy is
+			-- Destroy mutex.
+		require
+			valid_mutex: is_set
+		do
+			eif_thr_mutex_destroy (mutex_pointer)
+			mutex_pointer := default_pointer
+		end
+
+
+feature {CONDITION_VARIABLE} -- Implementation
 
 	mutex_pointer: POINTER
 			-- C reference to the mutex.
+
+
+feature {NONE} -- Removal
+
+	dispose is
+			-- Called by the garbage collector when the mutex is
+			-- collected.
+		do
+			if thread_is_owner and is_set then
+				eif_thr_mutex_destroy (mutex_pointer)
+			end
+		end
+
 
 feature {NONE} -- Externals
 
@@ -71,20 +112,24 @@ feature {NONE} -- Externals
 			"C | %"eif_threads.h%""
 		end
 
-invariant
-
-	valid_mutex: mutex_pointer /= default_pointer
+	eif_thr_mutex_destroy (a_mutex_pointer: POINTER) is
+		external
+			"C | %"eif_threads.h%""
+		end
 
 end -- class MUTEX
 
---|--------------------------------------------------------------
---| EiffelThread: library of reusable components for ISE Eiffel
---| Copyright (C) 1995, Interactive Software Engineering, Inc.
+--|----------------------------------------------------------------
+--| EiffelThread: library of reusable components for ISE Eiffel.
+--| Copyright (C) 1986-1997 Interactive Software Engineering Inc.
 --| All rights reserved. Duplication and distribution prohibited.
+--| May be used only with ISE Eiffel, under terms of user license. 
+--| Contact ISE for any other use.
 --|
+--| Interactive Software Engineering Inc.
 --| 270 Storke Road, Suite 7, Goleta, CA 93117 USA
---| Telephone 805-685-1006
---| Fax 805-685-6869
---| Information e-mail <info@eiffel.com>
+--| Telephone 805-685-1006, Fax 805-685-6869
+--| Electronic mail <info@eiffel.com>
 --| Customer support e-mail <support@eiffel.com>
---|--------------------------------------------------------------
+--| For latest info see award-winning pages: http://www.eiffel.com
+--|----------------------------------------------------------------
