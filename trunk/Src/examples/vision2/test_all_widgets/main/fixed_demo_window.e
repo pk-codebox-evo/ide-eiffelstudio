@@ -37,8 +37,6 @@ feature -- Status setting
 		do
 			!!button1.make (main_widget)
 			!!button2.make (main_widget)
-			set_values
---			set_commands
 		end
 	
 feature -- Status setting
