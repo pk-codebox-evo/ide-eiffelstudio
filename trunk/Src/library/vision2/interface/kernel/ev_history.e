@@ -7,10 +7,38 @@ indexing
 deferred class
 	EV_HISTORY
 
+feature -- Access
+
+	can_undo: BOOLEAN is
+			-- Is there any command recorded that may be undone?
+		deferred
+		end
+		
+	can_redo: BOOLEAN is
+			-- Is there any undone command that may be redone?
+		deferred
+		end
+
 feature -- Basic operations
 
 	record (cmd: EV_UNDOABLE_COMMAND) is
 			-- Record `cmd' in Current history.
+		require
+			cmd_not_void: cmd /= Void
+		deferred
+		end
+
+	undo is
+			-- Undo the last recorded command
+		require
+			can_undo: can_undo
+		deferred
+		end
+
+	redo is
+			-- Redo the last undone command
+		require
+			can_undo: can_redo
 		deferred
 		end
 
