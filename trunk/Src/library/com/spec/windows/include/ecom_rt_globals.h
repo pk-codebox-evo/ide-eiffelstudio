@@ -16,7 +16,6 @@
 #include "ecom_runtime_c_e.h"
 #include "ecom_runtime_e_c.h"
 
-
 extern Formatter  f;
 extern ecom_runtime_ce rt_ce;
 extern ecom_runtime_ec rt_ec;
