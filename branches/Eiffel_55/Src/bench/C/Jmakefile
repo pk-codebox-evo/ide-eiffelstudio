@@ -1,0 +1,14 @@
+/*
+ * Jmakefile for compiler building.
+ */
+
+SUB = idrs ipc run-time platform
+
+all::
+
+SetSubdirs($(SUB))
+DependSubdirs()
+LintSubdirs()
+
+/* This should be automatically taken care of by jmake */
+AddedByConfigure(mkdep cppstdin)
