@@ -1,5 +1,5 @@
 indexing
-	description: "Set of static routines belonging to System.Byte"
+	description: "Set of static routines belonging to System.SByte"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -13,7 +13,7 @@ feature -- Statics
 	frozen from_string (s: SYSTEM_STRING): INTEGER_8 is
 			-- (Static)
 			-- Converts the string representation of a number to its
-			-- System.Byte equivalent.
+			-- System.SByte equivalent.
 			--
 			-- Parameters:
 			--   s: A string containing a number to convert. The
@@ -21,17 +21,17 @@ feature -- Statics
 			--     System.Globalization.NumberStyles.Integer style.
 			--
 			-- Returns:
-			--   The System.Byte value equivalent to the number
+			--   The System.SByte value equivalent to the number
 			--   contained in s.
 			--
 			-- Exceptions:
 			--   System.ArgumentNullException: s is null.
 			--   System.FormatException: s is not of the correct format.
 			--   System.OverflowException: s represents a number less
-			--     than System.Byte.MinValue or greater than
-			--     System.Byte.MaxValue.
+			--     than System.SByte.MinValue or greater than
+			--     System.SByte.MaxValue.
 		external
-			"IL static signature (System.String): System.Byte use System.Byte"
+			"IL static signature (System.String): System.SByte use System.SByte"
 		alias
 			"Parse"
 		end
@@ -39,7 +39,7 @@ feature -- Statics
 	frozen from_string_with_style (s: SYSTEM_STRING; style: NUMBER_STYLES): INTEGER_8 is
 			-- (Static)
 			-- Converts the string representation of a number in a
-			-- specified style to its System.Byte equivalent.
+			-- specified style to its System.SByte equivalent.
 			--
 			-- Parameters:
 			--   s: A string containing a number to convert. The string
@@ -51,18 +51,18 @@ feature -- Statics
 			--     System.Globalization.NumberStyles.Integer style.
 			--
 			-- Returns:
-			--   The System.Byte value equivalent to the number contained in s.
+			--   The System.SByte value equivalent to the number contained in s.
 			--
 			-- Exceptions:
 			--   System.ArgumentNullException: s is null.
 			--   System.FormatException: s is not of the correct format.
 			--   System.OverflowException: s represents a number less than
-			--     System.Byte.MinValue or greater than System.Byte.MaxValue.
+			--     System.SByte.MinValue or greater than System.SByte.MaxValue.
 			--   System.ArgumentException: style is not a valid bitwise
 			--     combination of System.Globalization.NumberStyles values.
 
 		external
-			"IL static signature (System.String, System.Globalization.NumberStyles): System.Byte use System.Byte"
+			"IL static signature (System.String, System.Globalization.NumberStyles): System.SByte use System.SByte"
 		alias
 			"Parse"
 		end
@@ -70,7 +70,7 @@ feature -- Statics
 	frozen from_string_with_format (s: SYSTEM_STRING; provider: IFORMAT_PROVIDER): INTEGER_8 is
 			-- (Static)
 			-- Converts the string representation of a number in a specified
-			-- culture-specific format to its System.Byte equivalent.
+			-- culture-specific format to its System.SByte equivalent.
 			--
 			-- Parameters:
 			--   s: A string containing a number to convert. The string is
@@ -81,15 +81,15 @@ feature -- Statics
 			--     is null, the current system culture is used.
 			--
 			-- Returns:
-			--   The System.Byte value equivalent to the number contained in s.
+			--   The System.SByte value equivalent to the number contained in s.
 			--
 			-- Exceptions:
 			--   System.ArgumentNullException: s is null.
 			--   System.FormatException: s is not of the correct format.
 			--   System.OverflowException: s represents a number less than
-			--     System.Byte.MinValue or greater than System.Byte.MaxValue.
+			--     System.SByte.MinValue or greater than System.SByte.MaxValue.
 		external
-			"IL static signature (System.String, System.IFormatProvider): System.Byte use System.Byte"
+			"IL static signature (System.String, System.IFormatProvider): System.SByte use System.SByte"
 		alias
 			"Parse"
 		end
@@ -97,7 +97,7 @@ feature -- Statics
 	frozen from_string_with_style_and_format (s: SYSTEM_STRING; style: NUMBER_STYLES; provider: IFORMAT_PROVIDER): INTEGER_8 is
 			-- (Static)
 			-- Converts the string representation of a number in a specified
-			-- style and culture-specific format to its System.Byte equivalent.  
+			-- style and culture-specific format to its System.SByte equivalent.  
 			--
 			-- Parameters:
 			--   s: A string containinga number to convert. The string is
@@ -111,17 +111,17 @@ feature -- Statics
 			--     system culture is used.
 			--
 			-- Returns:
-			--   The System.Byte value equivalent to the number contained in s.  
+			--   The System.SByte value equivalent to the number contained in s.  
 			--
 			-- Exceptions:
 			--   System.ArgumentNullException: s is null.
 			--   System.FormatException: s is not of the correct format.
 			--   System.OverflowException: s represents a number less than
-			--     System.Byte.MinValue or greater than System.Byte.MaxValue.
+			--     System.SByte.MinValue or greater than System.SByte.MaxValue.
 			--   System.ArgumentException: style is not a valid bitwise combination 
 			--     of System.Globalization.NumberStyles values.
 		external
-			"IL static signature (System.String, System.Globalization.NumberStyles, System.IFormatProvider): System.Byte use System.Byte"
+			"IL static signature (System.String, System.Globalization.NumberStyles, System.IFormatProvider): System.SByte use System.SByte"
 		alias
 			"Parse"
 		end
