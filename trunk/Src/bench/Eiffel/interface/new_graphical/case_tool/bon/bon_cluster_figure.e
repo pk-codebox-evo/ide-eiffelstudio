@@ -1,5 +1,6 @@
 indexing
-	description: "Graphical representations of clusters in BON notation."
+	description: "Objects that is a BON view for an EIFFEL_CLUSTER."
+	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -7,1256 +8,794 @@ class
 	BON_CLUSTER_FIGURE
 
 inherit
-	CLUSTER_FIGURE
-		rename
-			world as cluster_diagram
-		undefine
-			snap_to_grid,
-			out
+	EIFFEL_CLUSTER_FIGURE
 		redefine
-			position_on_figure,
-			arrange_clusters,
-			real_pebble
-		end
-
-	EV_MOVE_HANDLE
-		rename
-			initialize as initialize_mover,
-			world as cluster_diagram
-		undefine
 			default_create,
-			wipe_out,
-			position_on_figure,
-			set_origin,
-			real_pebble,
-			is_equal,
-			cluster_diagram
+			update,
+			recursive_transform,
+			set_name_label_text,
+			minimum_size,
+			set_is_selected,
+			xml_node_name,
+			xml_element,
+			set_with_xml_element,
+			recycle
+		select
+			default_create,
+			set_with_xml_element,
+			xml_element
 		end
-
+		
+	EG_POLYLINE_LABEL
+		rename
+			default_create as default_create_label,
+			update as update_label,
+			xml_element as polyline_label_xml_element,
+			set_with_xml_element as polyline_label_set_with_xml_element,
+			recycle as polyline_label_recycle
+		redefine
+			on_label_move
+		end
+		
+	BON_FIGURE
+		undefine
+			default_create
+		end
+		
 create
-	make_with_cluster
-
-create {BON_CLUSTER_FIGURE}
-	make_filled
-
-feature -- Initialization
-
-	initialize is 
-			-- Initialize figures.
-		do
-			initialize_mover
-			create broken_name.make (10)
-
-			create body
-			body.point_a.set_origin (point)
-			body.point_b.set_origin (body.point_a)
-			body.set_foreground_color (bon_cluster_line_color)
-			body.set_background_color (bon_cluster_fill_color)
-			body.enable_dashed_line_style
-
-			create center_point.make_with_origin (body.point_a)
-
-			create resizer_bottom_right
-			create resize_area_bottom_right
-			resize_area_bottom_right.point_a.set_origin (resizer_bottom_right.point)
-			resize_area_bottom_right.point_b.set_origin (resize_area_bottom_right.point_a)
-			resize_area_bottom_right.set_pointer_style (Default_pixmaps.Sizenwse_cursor)
-
-			resizer_bottom_right.hide
-			resizer_bottom_right.disable_snapping
-			resizer_bottom_right.point.set_origin (point)
-			resizer_bottom_right.extend (resize_area_bottom_right)
-			resizer_bottom_right.move_actions.extend (agent on_resizer_bottom_right_move)
-			resizer_bottom_right.move_actions.force_extend (agent update_scrollable_area_size)
-			resizer_bottom_right.set_pointer_style (Default_pixmaps.Sizenwse_cursor)
-			resizer_bottom_right.start_actions.extend (agent start_capture)
-			resizer_bottom_right.end_actions.extend (agent stop_capture)
-			resizer_bottom_right.end_actions.extend (agent on_resizer_end)
-
-			create resizer_top_left
-			create resize_area_top_left
-			resizer_top_left.hide
-			resizer_top_left.disable_snapping
-			resizer_top_left.point.set_origin (point)
-			resizer_top_left.extend (resize_area_top_left)
-			resizer_top_left.start_actions.extend (agent on_resizer_start)
-			resizer_top_left.move_actions.extend (agent on_resizer_top_left_move)
-			resizer_top_left.end_actions.extend (agent on_resizer_end)
-			resizer_top_left.set_pointer_style (Default_pixmaps.Sizenwse_cursor)
-			resizer_top_left.move_actions.force_extend (agent update_scrollable_area_size)
-			resizer_top_left.enable_snapping
-			resizer_top_left.start_actions.extend (agent start_capture)
-			resizer_top_left.end_actions.extend (agent stop_capture)
-
-			resize_area_top_left.point_a.set_origin (resizer_top_left.point)
-			resize_area_top_left.point_b.set_origin (resize_area_top_left.point_a)
-			resize_area_top_left.set_pointer_style (Default_pixmaps.Sizenwse_cursor)
-
-			create resizer_top_right
-			create resize_area_top_right
-			resizer_top_right.hide
-			resizer_top_right.disable_snapping
-			resizer_top_right.point.set_origin (point)
-			resizer_top_right.extend (resize_area_top_right)
-			resizer_top_right.start_actions.extend (agent on_resizer_start)
-			resizer_top_right.move_actions.extend (agent on_resizer_top_right_move)
-			resizer_top_right.end_actions.extend (agent on_resizer_end)
-			resizer_top_right.set_pointer_style (Default_pixmaps.Sizenesw_cursor)
-			resizer_top_right.move_actions.force_extend (agent update_scrollable_area_size)
-			resizer_top_right.enable_snapping
-			resizer_top_right.start_actions.extend (agent start_capture)
-			resizer_top_right.end_actions.extend (agent stop_capture)
-			
-			resize_area_top_right.point_a.set_origin (resizer_top_right.point)
-			resize_area_top_right.point_b.set_origin (resize_area_top_right.point_a)
-			resize_area_top_right.set_pointer_style (Default_pixmaps.Sizenesw_cursor)
-
-			create resizer_bottom_left
-			create resize_area_bottom_left
-			resizer_bottom_left.hide
-			resizer_bottom_left.disable_snapping
-			resizer_bottom_left.point.set_origin (point)
-			resizer_bottom_left.extend (resize_area_bottom_left)
-			resizer_bottom_left.start_actions.extend (agent on_resizer_start)
-			resizer_bottom_left.move_actions.extend (agent on_resizer_bottom_left_move)
-			resizer_bottom_left.end_actions.extend (agent on_resizer_end)
-			resizer_bottom_left.set_pointer_style (Default_pixmaps.Sizenesw_cursor)
-			resizer_bottom_left.move_actions.force_extend (agent update_scrollable_area_size)
-			resizer_bottom_left.enable_snapping
-			resizer_bottom_left.start_actions.extend (agent start_capture)
-			resizer_bottom_left.end_actions.extend (agent stop_capture)
-			
-			resize_area_bottom_left.point_a.set_origin (resizer_bottom_left.point)
-			resize_area_bottom_left.point_b.set_origin (resize_area_bottom_left.point_a)
-			resize_area_bottom_left.set_pointer_style (Default_pixmaps.Sizenesw_cursor)
-						
-			create name_mover
-			create name_area
-			name_area.point_a.set_origin (center_point)
-			name_area.point_b.set_origin (name_area.point_a)
-			name_area.set_foreground_color (bon_cluster_line_color)
-			name_area.set_background_color (bon_cluster_name_area_color)
-			name_area.enable_dashed_line_style
-			
-			create name_moving_area
-			name_moving_area.point_a.set_origin (name_area.point_a)
-			name_moving_area.point_b.set_origin (name_moving_area.point_a)
-			name_moving_area.set_pointer_style (Default_pixmaps.Sizeall_cursor)
-			name_moving_area.pointer_double_press_actions.extend (agent on_name_double_click)
+	make_with_model
 		
-			name_mover.hide
-			name_mover.disable_snapping
-			name_mover.point.set_origin (center_point)
-			name_mover.extend (name_moving_area)
-			name_mover.set_real_position_agent (agent reset_mover_coordinates)
-			name_mover.start_actions.extend (agent start_capture)
-			name_mover.end_actions.extend (agent stop_capture)
+feature {NONE} -- Initialization
 
-			create name_figures.make
-
-			pointer_button_press_actions.extend (agent button_press)
-			move_actions.force_extend (agent update)
-			move_actions.force_extend (agent update_scrollable_area_size)
-			start_actions.extend (agent save_position)
-			start_actions.extend (agent set_pointer_style (Default_pixmaps.Sizeall_cursor))
-			start_actions.extend (agent start_capture)
-			end_actions.extend (agent stop_capture)
-			end_actions.extend (agent set_pointer_style (Default_pixmaps.Standard_cursor))
-			end_actions.extend (agent update_cluster_size)
-			end_actions.extend (agent extend_history)
-			end_actions.extend (agent update_area_bounds)
+	default_create is
+			-- Create a BON_CLUSTER_FIGURE.
+		do
+			Precursor {EIFFEL_CLUSTER_FIGURE}
+			
+			-- Set properties to default values
+			foreground_color := bon_cluster_line_color
+			background_color := bon_cluster_fill_color
+			line_width := bon_cluster_line_width
+			cluster_name_background_color := bon_cluster_name_area_color
+			id_cluster_name_font := bon_cluster_name_font
+			cluster_name_color := bon_cluster_name_color
+			iconified_background_color := bon_cluster_iconified_fill_color
+		
+			-- set name_label properties
+			name_label.set_identified_font (id_cluster_name_font)
+			name_label.set_foreground_color (cluster_name_color)
+			
+			-- create the cluster rectangle
+			create rectangle
+			rectangle.set_foreground_color (foreground_color)
+			if background_color /= Void then
+				rectangle.set_background_color (background_color)
+			end
+			rectangle.set_line_width (line_width)
+			real_rectangle_radius := 20.0
+			rectangle.set_radius (rectangle_radius)
+			rectangle.enable_dashed_line_style
+			set_pointer_style (default_pixmaps.sizeall_cursor)
+			extend (rectangle)
+			send_to_back (rectangle)
+			
+			-- create the label rectangle
+			create label_rectangle
+			label_rectangle.set_foreground_color (foreground_color)
+			if cluster_name_background_color /= Void then
+				label_rectangle.set_background_color (cluster_name_background_color)
+			end
+			label_rectangle.set_line_width (line_width)
+			label_rectangle.enable_dashed_line_style
+			label_rectangle.set_radius (3)
+			
+			-- create the label 
+			default_create_label
+			label_line_start_point := polyline_points.item (2)
+			label_line_end_point := polyline_points.item (3)
+			position_on_line := 0.5
+			label_group.extend (label_rectangle)
+			label_group.extend (name_label)
+			label_move_handle.set_pointer_style (default_pixmaps.sizeall_cursor)
+			label_move_handle.pointer_double_press_actions.extend (agent on_label_double_press)
+			extend (label_move_handle)
+			label_move_handle.disable_scaling
+			label_move_handle.disable_rotating
+			set_left (True)
+			
+			number_of_figures := 6
+			is_high_quality := True
+			real_rectangle_border := 5.0
+			real_label_rectangle_border := 5.0
+			is_shown := True
 		end
 		
+	make_with_model (a_model: like model) is
+			-- Create a BON_CLUSTER_FIGURE with `a_model'.
+		require
+			a_model_not_void: a_model /= Void
+		do
+			default_create
+			model := a_model
+			initialize
+			
+			disable_rotating
+			disable_scaling
+			
+			request_update
+		end
+
 feature -- Access
 
-	width: INTEGER is
-			-- Horizontal size.
-		do
-			Result := right - left
-		end
-
-	height: INTEGER is
-			-- Vertical size.
-		do
-			Result := bottom - top
-		end
-
 	left: INTEGER is
-			-- Absolute left position.
+			-- Left most position.
 		do
-			Result := (body.point_a.x_abs).min (name_area.point_a.x_abs)
+			Result := rectangle.point_a_x
 		end
-
+		
 	top: INTEGER is
-			-- Absolute top position.
+			-- Top most position
 		do
-			Result := (body.point_a.y_abs).min (name_area.point_a.y_abs)
+			Result := rectangle.point_a_y
 		end
-
+		
 	right: INTEGER is
-			-- Absolute right position.
+			-- Right most position.
 		do
-			Result := (body.point_b.x_abs).max (name_area.point_b.x_abs)
+			Result := rectangle.point_b_x
 		end
 
 	bottom: INTEGER is
-			-- Absolute bottom position.
+			-- Bottom most position.
 		do
-			Result := (body.point_b.y_abs).max (name_area.point_b.y_abs)
-		end
-
-	x_position: INTEGER is
-			-- Absolute center x coordinate.
-		do
-			Result := point.x_abs
-		end
-
-	y_position: INTEGER is
-			-- Absolute center y coordinate.
-		do
-			Result := point.y_abs
-		end
-
-	real_pebble: ANY is
-			-- Calculated `pebble'.
-			-- Void if key ctrl pressed.
-		do
-			if not ctrl_pressed then
-				Result := Precursor
-			end
-		end
-
-feature -- Status report
-
-	name_is_top: BOOLEAN
-			-- Is `name_area' on top of `body'?
-
-	name_is_bottom: BOOLEAN
-			-- Is `name_area' on bottom of `body'?
-
-	name_is_left: BOOLEAN
-			-- Is `name_area' on left side of `body'?
-
-	name_is_right: BOOLEAN
-			-- Is `name_area' on right side of `body'?
-
-feature -- Figures
-
-	body: BON_CLUSTER_RECTANGLE_FIGURE
-			-- Body of `Current', containing class figures.
-
-	name_area: BON_CLUSTER_RECTANGLE_FIGURE
-			-- Figure containing `name'.
-
-	name_mover: EV_MOVE_HANDLE
-			-- Handle that allows the user to move the name area.
-
-	name_figures: LINKED_LIST [EV_FIGURE_TEXT]
-			-- Figures for `name'.
-
-	resizer_bottom_right: EV_MOVE_HANDLE
-			-- Handle that allows the user to resize the body.
-			
-	resizer_top_left: EV_MOVE_HANDLE
-			-- Handle that allows the user to resize the body upwards and/or to the left.
-
-	resizer_top_right: EV_MOVE_HANDLE
-			-- Handle that allows the user to resize the body upwards and/or to the right.
-
-	resizer_bottom_left: EV_MOVE_HANDLE
-			-- Handle that allows the user to resize the body downwards and/or to the left.
-
-	resize_area_bottom_right: EV_FIGURE_RECTANGLE
-			-- Invisible rectangle where mouse cursor changes.
-			
-	resize_area_top_left: EV_FIGURE_RECTANGLE
-			-- Area where top/left resizing starts.	
-
-	resize_area_top_right: EV_FIGURE_RECTANGLE
-			-- Area where top/right resizing starts.	
-
-	resize_area_bottom_left: EV_FIGURE_RECTANGLE
-			-- Area where bottom/left resizing starts.	
-
-	name_moving_area: EV_FIGURE_RECTANGLE
-			-- Invisible rectangle where mouse cursor changes.
-
-	center_point: EV_RELATIVE_POINT
-			-- Point at the center of `body', origin of `name_mover'.
-
-feature -- Status setting
-
-	set_size (a_width, a_height: INTEGER) is
-			-- Resize `Current' to `a_width', `a_height'.
-		local
-			name_shift_x, name_shift_y: INTEGER
-			new_width, new_height: INTEGER
-			half_height, half_width: INTEGER
-			name_area_top, name_area_bottom, name_area_left, name_area_right: INTEGER
-		do
-			name_area_top := name_area.point_a.y
-			name_area_bottom := name_area.point_b.y
-			name_area_left := name_area.point_a.x
-			name_area_right := name_area.point_b.x
-			new_width := a_width.max (name_area_right)
-			new_height := a_height.max (name_area_bottom)
-			body.point_b.set_position (new_width, new_height)
-			center_point.set_position (new_width // 2, new_height // 2)
-
-			resizer_bottom_right.point.set_position (body.point_b.x, body.point_b.y)
-			resize_area_bottom_right.point_a.set_position (- 20, - 20)
-			resize_area_bottom_right.point_b.set_position (20, 20)
-
-			resizer_top_left.point.set_position (0, 0)
-			resize_area_top_left.point_b.set_position (20, 20)
-
-			resizer_top_right.point.set_position (body.point_b.x, 0)
-			resize_area_top_right.point_a.set_position (- 20, 0)			
-			resize_area_top_right.point_b.set_position (20, 20)
-
-			resizer_bottom_left.point.set_position (0, body.point_b.y)
-			resize_area_bottom_left.point_a.set_position (0, - 20)			
-			resize_area_bottom_left.point_b.set_position (20, 20)
-
-			half_height := body.point_b.y // 2
-			half_width := body.point_b.x // 2
-			if name_is_top then
-				name_mover.point.set_y (- half_height - name_area_bottom)
-				name_area.point_a.set_y (- half_height - name_area_bottom)
-			elseif name_is_bottom then
-				name_mover.point.set_y (half_height)
-				name_area.point_a.set_y (half_height)
-			elseif name_is_left then
-				name_mover.point.set_x (- half_width - name_area_right)
-				name_area.point_a.set_x (- half_width - name_area_right)
-			elseif name_is_right then
-				name_mover.point.set_x (half_width)
-				name_area.point_a.set_x (half_width)
-			end
-
-			if name_is_top or name_is_bottom then
-				name_shift_x := center_point.x + name_area_left + name_area_right - a_width
-				if name_shift_x > 0 then
-					name_mover.point.set_x ((name_area_left - name_shift_x).max (- half_width))
-					name_area.point_a.set_x ((name_area_left - name_shift_x).max (- half_width))
-				else
-					name_mover.point.set_x (name_area_left.max (- half_width))
-					name_area.point_a.set_x (name_area_left.max (- half_width))
-				end
-			end
-			if name_is_right or name_is_left then
-				name_shift_y := center_point.y + name_area_top + name_area_bottom - a_height
-				if name_shift_y > 0 then
-					name_mover.point.set_y ((name_area_top - name_shift_y).max (- half_height))
-					name_area.point_a.set_y ((name_area_top - name_shift_y).max (- half_height))
-				else
-					name_mover.point.set_y (name_area_top.max (- half_height))
-					name_area.point_a.set_y (name_area_top.max (- half_height))
-				end
-			end
-
-				-- Move other clusters to make room for resized `Current'.
-			--parent.arrange_clusters
-		end
-	
-	set_active (b: BOOLEAN) is
-			-- Highlight `Current' if `b' `True'.
-		do
-		end
-
-	update_edge_point (p: EV_RELATIVE_POINT; angle: REAL) is
-			-- Move `p', which is relative to `Current', to a point on the
-			-- edge where the outline intersects a line from the center point
-			-- in direction `angle'.
-		local
-			new_x, new_y: REAL
-		do
-				-- FIXME: Manu 09/12/2003: This code is not used, if you use it
-				-- makes sur it works properly.
-			p.change_origin (center_point)
-			new_x := body_width.max (body_height) * cosine (angle)
-			new_y := body_width.max (body_height) * sine (angle)
-			if new_x <= body_width // 2 and new_x >= - body_width // 2 then
-				if new_y >= 0 then
-					p.set_position (new_x.truncated_to_integer, body_height // 2)
-				else
-					p.set_position (new_x.truncated_to_integer, - body_height // 2)	
-				end
-			elseif new_y <= body_height // 2 and new_y >= - body_height // 2 then
-				if new_x >= 0 then
-					p.set_position (body_width // 2, new_y.truncated_to_integer)
-				else
-					p.set_position (- body_width // 2, new_y.truncated_to_integer)	
-				end
-			end
-		end
-
-	reset_name_position is
-			-- Set all `name_is_xxxx' attributes to False.
-		do
-			name_is_top := False
-			name_is_bottom := False
-			name_is_left := False
-			name_is_right := False
+			Result := rectangle.point_b_y
 		end
 		
-	set_minimum_bounds (a_left, a_top, a_right, a_bottom: INTEGER) is
-			-- Assign minimum bounds.
-		local
-			max_left, max_top, name_w, name_h: INTEGER
-			w_scale_x, w_scale_y: DOUBLE
+	port_x: INTEGER is
+			-- x position where links are starting.
 		do
-			name_w := name_area.point_b.x
-			name_h := name_area.point_b.y
-			w_scale_x := cluster_diagram.point.scale_x
-			w_scale_y := cluster_diagram.point.scale_y
-			max_left := a_left - left -- EA: - right + a_right
-			max_top := a_top - top --EA: - bottom + a_bottom
-
-			resizer_bottom_right.set_minimum_x (((a_right - left) / w_scale_x).rounded.max (name_w))
-			resizer_bottom_right.set_minimum_y (((a_bottom - top) / w_scale_y).rounded.max (name_h))
-			resizer_top_left.set_maximum_x (max_left)
-			resizer_top_left.set_maximum_y (max_top)
-			resizer_top_right.set_minimum_x (((a_right - left) / w_scale_x).rounded.max (name_w))
-			resizer_top_right.set_maximum_y (max_top)
-			resizer_bottom_left.set_maximum_x (max_left)
-			resizer_bottom_left.set_minimum_y (((a_bottom - top) / w_scale_y).rounded.max (name_h))
+			Result := rectangle.x
+		end
+		
+	port_y: INTEGER is
+			-- y position where links are starting.
+		do
+			Result := rectangle.y
 		end
 
-	set_bounds (a_left, a_top, a_right, a_bottom: INTEGER) is
-			-- Assign bounds.
-		require else
-			is_not_iconified: not iconified
-		local
-			new_x, new_y, p_x, p_y: INTEGER
-			scx, scy: DOUBLE
-			tmp, l_point: EV_RELATIVE_POINT
-			parent_fig, clf: CLUSTER_FIGURE
-			cf: CLASS_FIGURE
+	size: EV_RECTANGLE is
+			-- Size of `Current'.
 		do
-			parent_fig ?= parent
-			new_x := a_left
-			new_y := a_top
-			scx := cluster_diagram.scale_x
-			scy := cluster_diagram.scale_y
+			Result := rectangle.bounding_box
+		end
+		
+	height: INTEGER is
+			-- Height in pixels.
+		do
+			Result := rectangle.height
+		end
+		
+	width: INTEGER is
+			-- Width in pixels.
+		do
+			Result := rectangle.width
+		end
 
-			create tmp.make_with_position (new_x, new_y)
-			if parent_fig /= Void then
-				tmp.change_origin (parent_fig.point)
+	minimum_size: EV_RECTANGLE is
+			-- `Current' has to be of `Result' size
+			-- to include all visible elements starting from `number_of_figures' + 1.
+		local
+			l_area: like area
+			i, nb: INTEGER
+			l_bbox: like bounding_box
+			e_item: ES_ITEM
+			l_item: EG_FIGURE
+			l_border: INTEGER
+		do
+			if is_iconified then
+				l_border := (real_rectangle_border * 2).truncated_to_integer
+				create Result.make (port_x - 2 * l_border, port_y - l_border, 4 * l_border, 2 * l_border)
 			else
-				tmp.change_origin (cluster_diagram.point)
-			end
-
-			from
-				subclusters.start
-			until
-				subclusters.after
-			loop
-				clf := subclusters.item
-				clf.change_origin (tmp)
-				l_point := clf.point
-				l_point.set_position (
-					(l_point.x / scx).rounded,
-					(l_point.y / scy).rounded)
-				subclusters.forth
-			end
-
-			from
-				classes.start
-			until
-				classes.after
-			loop
-				cf := classes.item
-				cf.change_origin (tmp)
-				l_point := cf.point
-				l_point.set_position (
-					(l_point.x / scx).rounded,
-					(l_point.y / scy).rounded)
-				classes.forth
-			end
-
---			if parent_fig /= Void then
---				point.set_position (
---					((new_x - parent_fig.left) / scx).rounded,
---					((new_y - parent_fig.top) / scy).rounded)
---			else
---				point.set_position (
---					((new_x - cluster_diagram.point.x) / scx).rounded,
---					((new_y - cluster_diagram.point.y) / scy).rounded)
---			end
-			point.set_position (((new_x - body.point_a.x_abs) / scx).rounded + point.x,
-			((new_y - body.point_a.y_abs) / scx).rounded + point.y)
-			
-			p_x := point.x
-			p_y := point.y
-			
-			snap_to_default_grid
-			
-			p_x := p_x - point.x
-			p_y := p_y - point.y
-			
-			from
-				subclusters.start
-			until
-				subclusters.after
-			loop
-				clf := subclusters.item
-				clf.change_origin (point)
-				l_point := clf.point
-				l_point.set_position (
-					(l_point.x / scx).rounded,
-					(l_point.y / scy).rounded)
-				clf.snap_to_default_grid
-				subclusters.forth
-			end
-
-			from
-				classes.start
-			until
-				classes.after
-			loop
-				cf := classes.item
-				cf.change_origin_current_cluster (point)
-				l_point := cf.point
-				l_point.set_position (
-					(l_point.x / scx).rounded,
-					(l_point.y / scy).rounded)
-				cf.snap_to_default_grid
-				classes.forth
-			end
-			set_size (
-				((a_right - a_left) / scx).rounded + p_x,
-				((a_bottom - a_top) / scy).rounded + p_y)
-			update
-		end
-
-	update_minimum_size is
-			-- Figures have been added/removed in `Current',
-			-- minimum size should change.
-		local
-			rec: EV_RECTANGLE
-			l, t, r, b: INTEGER
-			new_left, new_top, new_right, new_bottom: INTEGER
-			d: DOUBLE
-			resize_needed: BOOLEAN
-			clf: CLUSTER_FIGURE
-			l_world: like cluster_diagram
-		do
-			l_world := cluster_diagram
-			if l_world /= Void then
-    			rec := bounds
-    			if rec.width /= 0 and then rec.height /= 0 then
-	    			resize_needed := False
-	    			new_left := body_left
-	    			new_top := body_top
-	    			new_right := body_left + body_width
-	    			new_bottom := body_top + body_height
-	    			l := rec.x - 1
-	    			t := rec.y - 1
-	    			r := rec.width + l + 2
-	    			b := rec.height + t + 2
-	    			if r > new_right  then
-	    				d := l_world.grid_x
-	    				d := (r - new_right) / d
-	    				new_right := new_right + d.ceiling * l_world.grid_x
-	    				resize_needed := True
-	    			end
-	    			if b > new_bottom then
-	    				d := l_world.grid_y
-	    				d := (b - new_bottom) / d
-	    				new_bottom := new_bottom + d.ceiling * l_world.grid_y
-	    				resize_needed := True
-	    			end
-	    			if l < new_left then
-	    				d := l_world.grid_x
-	    				d := (new_left - l) / d
-	    				new_left := new_left - d.ceiling * l_world.grid_x
-	    				resize_needed := True
-	    			end
-	    			if t < new_top then
-	    				d := l_world.grid_y
-	    				d := (new_top - t) / d
-	    				new_top := new_top - d.ceiling * l_world.grid_y
-	    				resize_needed := True
-	    			end
-	    			if resize_needed then
-	    				set_bounds (new_left, new_top, new_right, new_bottom)	
-	    			end
-	    			set_minimum_bounds (l, t, r, b)
-	    		else
-	    			set_minimum_bounds (right - minimum_width - 20, bottom - 20, left + minimum_width + 20, top + 20)
-    			end
-    			
-    			clf ?= parent
-    			if clf /= Void then
-    				clf.update_minimum_size
-    			else
-    				if l_world.context_editor /= Void then
-	    				l_world.context_editor.update_bounds (l_world)
-    				end
-    			end
-			end
-		end
-
-	set_relative_position_and_size (a_x, a_y, a_width, a_height: INTEGER) is
-			-- Assign bounds.
-		do
-			point.set_x (a_x)
-			point.set_y (a_y)
-			if iconified then
-				old_width := a_width
-				old_height := a_height
-			else
-				set_size (a_width, a_height)
-			end
-			update
-		end
-
-	iconify is
-			-- Iconify `Current'.
-		do
-			if not iconified then
-				old_width := body_width
-				old_height := body_height
-				body.set_background_color (bon_cluster_iconified_fill_color)
-				resizer_bottom_right.disable_sensitive
-				resizer_top_left.disable_sensitive
-				resizer_top_right.disable_sensitive
-				resizer_bottom_left.disable_sensitive
-				iconified := True
-				from
-					subclusters.start
-				until
-					subclusters.after
-				loop
-					subclusters.item.mask
-					subclusters.forth
+				if count <= number_of_figures then
+					l_border := (real_rectangle_border * 5).truncated_to_integer
+					create Result.make (port_x - 2 * l_border, port_y - l_border, 4 * l_border, 2 * l_border)
+				else
+					from
+						l_area := area
+						i := number_of_figures
+						nb := count - 1
+						l_item ?= l_area.item (i)
+						e_item ?= l_item.model
+					until
+						i > nb or else (e_item = Void or else e_item.is_needed_on_diagram)--l_area.item (i).is_show_requested
+					loop
+						i := i + 1
+						if i <= nb then
+							l_item ?= l_area.item (i)
+							e_item ?= l_item.model
+						end
+					end
+					if i <= nb then
+						Result := l_area.item (i).bounding_box
+						from
+							i := i + 1
+						until
+							i > nb
+						loop
+							l_item ?= l_area.item (i)
+							e_item ?= l_item.model
+							if e_item = Void or else e_item.is_needed_on_diagram then --l_area.item (i).is_show_requested then
+								l_bbox := l_area.item (i).bounding_box
+								if l_bbox.height > 0 or else l_bbox.width > 0 then
+									Result.merge (l_bbox)
+								end
+							end
+							i := i + 1
+						end
+					else
+						l_border := (real_rectangle_border * 5).truncated_to_integer
+						create Result.make (port_x - 2 * l_border, port_y - l_border, 4 * l_border, 2 * l_border)
+					end
 				end
-				from
-					classes.start
-				until
-					classes.after
-				loop
-					classes.item.mask
-					classes.forth
+			end
+		end
+
+	foreground_color: EV_COLOR
+			-- Color for the cluster border.
+			
+	background_color: EV_COLOR
+			-- Color for the cluster background.
+			
+	line_width: INTEGER
+			-- Cluster border line width.
+			
+	cluster_name_font: EV_FONT is
+			-- Font for the cluster name.
+		do
+			Result := id_cluster_name_font.font
+		end
+			
+	cluster_name_color: EV_COLOR
+			-- Color for the cluster name.
+			
+	cluster_name_background_color: EV_COLOR
+			-- Background color for the cluster name label.
+	
+	iconified_background_color: EV_COLOR
+			-- Background color when `is_iconified'.
+			
+	xml_node_name: STRING is
+			-- Name of the xml node returned by `xml_element'.
+		do
+			Result := "BON_CLUSTER_FIGURE"
+		end
+		
+	xml_element (node: XM_ELEMENT): XM_ELEMENT is
+			-- Xml element representing `Current's state.
+		do
+			Result := Precursor {EIFFEL_CLUSTER_FIGURE} (node)
+			Result.put_last (Xml_routines.xml_node (Result, "IS_ICONIFIED", is_iconified.out))
+			Result.put_last (Xml_routines.xml_node (Result, "IS_NEEDED_ON_DIAGRAM", model.is_needed_on_diagram.out))
+			
+			Result := polyline_label_xml_element (node)
+		end
+	
+	set_with_xml_element (node: XM_ELEMENT) is
+			-- Retrive state from `node'.
+		do
+			Precursor {EIFFEL_CLUSTER_FIGURE} (node)
+			if xml_routines.xml_boolean (node, "IS_ICONIFIED") then
+				if not is_iconified then
+					collapse
+					is_iconified := True
+				end
+			else
+				if is_iconified then
+					expand
+					is_iconified := False
+				end
+			end
+			if xml_routines.xml_boolean (node, "IS_NEEDED_ON_DIAGRAM") then
+				model.enable_needed_on_diagram
+			else
+				model.disable_needed_on_diagram
+			end
+			
+			polyline_label_set_with_xml_element (node)
+		end
+
+feature -- Element change
+
+	recycle is
+			-- Free `Current's resources.
+		do
+			Precursor {EIFFEL_CLUSTER_FIGURE}
+			label_move_handle.pointer_double_press_actions.prune_all (agent on_label_double_press)
+			polyline_label_recycle
+		end
+		
+
+-- If you uncomment it you have to save the colors to xml.
+--
+--
+--	set_iconified_background_color (an_iconified_background_color: like iconified_background_color) is
+--			-- Set `iconified_background_color' to `an_iconified_background_color'.
+--		do
+--			iconified_background_color := an_iconified_background_color
+--			if is_iconified then
+--				if an_iconified_background_color /= Void then
+--					rectangle.set_background_color (an_iconified_background_color)
+--				else
+--					rectangle.remove_background_color
+--				end
+--			end
+--		ensure
+--			iconified_background_color_assigned: iconified_background_color = an_iconified_background_color
+--		end
+--
+--	set_cluster_name_background_color (a_cluster_name_background_color: like cluster_name_background_color) is
+--			-- Set `cluster_name_background_color' to `a_cluster_name_background_color'.
+--		do
+--			cluster_name_background_color := a_cluster_name_background_color
+--			if cluster_name_background_color /= Void then
+--				label_rectangle.set_background_color (cluster_name_background_color)
+--			else
+--				label_rectangle.remove_background_color
+--			end
+--		ensure
+--			cluster_name_background_color_assigned: cluster_name_background_color = a_cluster_name_background_color
+--		end
+--
+--	set_cluster_name_color (a_cluster_name_color: like cluster_name_color) is
+--			-- Set `cluster_name_color' to `a_cluster_name_color'.
+--		require
+--			a_cluster_name_color_not_void: a_cluster_name_color /= Void
+--		do
+--			cluster_name_color := a_cluster_name_color
+--			name_label.set_foreground_color (cluster_name_color)
+--		ensure
+--			cluster_name_color_assigned: cluster_name_color = a_cluster_name_color
+--		end
+--
+--	set_cluster_name_font (a_cluster_name_font: like cluster_name_font) is
+--			-- Set `cluster_name_font' to `a_cluster_name_font'.
+--		require
+--			a_cluster_name_font_not_void: a_cluster_name_font /= Void
+--		do
+--			cluster_name_font := a_cluster_name_font
+--			name_label.set_font (a_cluster_name_font)
+--			request_update
+--		ensure
+--			cluster_name_font_assigned: cluster_name_font = a_cluster_name_font
+--		end
+--
+--	set_line_width (a_line_width: like line_width) is
+--			-- Set `line_width' to `a_line_width'.
+--		require
+--			a_line_width_non_negative: a_line_width >= 0
+--		do
+--			line_width := a_line_width
+--			rectangle.set_line_width (line_width)
+--			label_rectangle.set_line_width (line_width)
+--		ensure
+--			line_width_assigned: line_width = a_line_width
+--		end
+--
+--	set_background_color (a_background_color: like background_color) is
+--			-- Set `background_color' to `a_background_color'.
+--		do
+--			background_color := a_background_color
+--			if not is_iconified then
+--				if background_color /= Void then
+--					rectangle.set_background_color (background_color)
+--				else
+--					rectangle.remove_background_color
+--				end
+--			end
+--		ensure
+--			background_color_assigned: background_color = a_background_color
+--		end
+--
+--	set_foreground_color (a_foreground_color: like foreground_color) is
+--			-- Set `foreground_color' to `a_foreground_color'.
+--		require
+--			a_foreground_color_not_void: a_foreground_color /= Void
+--		do
+--			foreground_color := a_foreground_color
+--			rectangle.set_foreground_color (foreground_color)
+--		ensure
+--			foreground_color_assigned: foreground_color = a_foreground_color
+--		end
+
+	update_edge_point (p: EV_COORDINATE; an_angle: DOUBLE) is
+			-- Set `p' position such that it is on a point on the edge of `Current'.
+		local
+			m: DOUBLE
+			new_x, new_y: DOUBLE
+			w2: DOUBLE
+			mod_angle: DOUBLE
+			l_pi, l_pi2: DOUBLE
+		do
+			l_pi := pi
+			l_pi2 := l_pi / 2
+			mod_angle := modulo (an_angle, 2 * l_pi)
+			if mod_angle = 0 then
+				new_x := right
+				new_y := port_y
+			elseif mod_angle = l_pi2 then
+				new_x := port_x
+				new_y := bottom
+			elseif mod_angle = l_pi then
+				new_x := left
+				new_y := port_y
+			elseif mod_angle = 3 * l_pi2 then
+				new_x := port_x
+				new_y := top
+			else
+				m := tangent (mod_angle)
+				check
+					m_never_zero: m /= 0.0
+				end
+				new_x := (bottom + m * port_x - port_y) / m
+				w2 := (right - left) / 2
+				if new_x > left and new_x < right then
+					if mod_angle > 0 and mod_angle < l_pi then
+						-- intersect with bottom line
+						new_y := bottom
+					else
+						-- intersect with top line
+						new_y := top
+						new_x := 2 * port_x - new_x
+					end
+				else
+					new_y := m * right - m * port_x + port_y
+					if mod_angle > l_pi2 and mod_angle < 3 * l_pi2 then
+						-- intersect with left line
+						new_x := left
+						new_y := 2 * port_y - new_y
+					else
+						-- intersect with right line
+						new_x := right
+					end
+				end
+			end
+			p.set_precise (new_x, new_y)
+		end
+
+feature {EG_FIGURE, EG_FIGURE_WORLD} -- Update
+		
+	update is
+			-- Some properties of current may have changed.
+		local
+			l_min_size: like minimum_size
+		do
+			
+			if is_shown then
+				l_min_size := minimum_size
+				if user_size /= Void and then not is_iconified then
+					rectangle.set_point_a_position ((l_min_size.left - rectangle_border).min (user_size.left), (l_min_size.top - rectangle_border).min (user_size.top))
+					rectangle.set_point_b_position ((l_min_size.right + rectangle_border).max (user_size.right), (l_min_size.bottom + rectangle_border).max (user_size.bottom))		
+				else
+					rectangle.set_point_a_position ((l_min_size.left - rectangle_border), (l_min_size.top - rectangle_border))
+					rectangle.set_point_b_position ((l_min_size.right + rectangle_border), (l_min_size.bottom + rectangle_border))		
 				end
 				
-				set_size (0, 0)
-			end
-		end
-
-	deiconify is
-			-- Deiconify `Current'.
-		do
-			if iconified then
-				body.set_background_color (bon_cluster_fill_color)
-				resizer_bottom_right.enable_sensitive
-				resizer_top_left.enable_sensitive
-				resizer_top_right.enable_sensitive
-				resizer_bottom_left.enable_sensitive
-				iconified := False
-				from
-					subclusters.start
-				until
-					subclusters.after
-				loop
-					subclusters.item.unmask
-					subclusters.forth
+				if is_label_shown then
+					label_rectangle.set_point_a_position (name_label.point_x - label_rectangle_border, name_label.point_y - label_rectangle_border)
+					label_rectangle.set_point_b_position (name_label.point_x + name_label.width + label_rectangle_border,
+														  name_label.point_y + name_label.height + label_rectangle_border)
+														  
+					if is_high_quality then
+						update_label
+					else
+						name_label.set_point_position (rectangle.point_a_x, rectangle.point_a_y - name_label.height)
+					end
 				end
-				from
-					classes.start
-				until
-					classes.after
-				loop
-					classes.item.unmask
-					classes.forth
-				end
-				set_size (old_width, old_height)
+				Precursor {EIFFEL_CLUSTER_FIGURE}
 			end
-		end
-
-	mask is
-			-- `Current' no longer needs to be displayed.
-		do
-			hide
-			disable_sensitive
-			from
-				subclusters.start
-			until
-				subclusters.after
-			loop
-				subclusters.item.mask
-				subclusters.forth
-			end
-			from
-				classes.start
-			until
-				classes.after
-			loop
-				classes.item.mask
-				classes.forth
-			end
-		end
-
-	unmask is
-			-- `Current' needs to be displayed again.
-		do
-			show
-			enable_sensitive
-			from
-				subclusters.start
-			until
-				subclusters.after
-			loop
-				subclusters.item.unmask
-				subclusters.forth
-			end
-			from
-				classes.start
-			until
-				classes.after
-			loop
-				classes.item.unmask
-				classes.forth
-			end
-		end
-
-feature {BON_DIAGRAM_FACTORY} -- Drawing
-
-	draw is
-			-- Do a quick draw on `drawable'.
-		local
-			fig_txt: EV_FIGURE_TEXT
-			name_font: EV_FONT
-			d: like drawable
-		do
-			d := drawable
-			d.enable_dashed_line_style
-			d.set_foreground_color (bon_cluster_line_color)
-			d.set_line_width (1)
-			d.draw_polyline (offset_coordinates (body.polygon_array), True)
-		
-			d.draw_polyline (offset_coordinates (name_area.polygon_array), True)
-			d.disable_dashed_line_style			
-
-			d.set_foreground_color (bon_cluster_name_color)
-			from
-				name_figures.start
-			until
-				name_figures.after
-			loop
-				fig_txt := name_figures.item
-				create name_font.make_with_values (
-					fig_txt.font.family,
-					fig_txt.font.weight,
-					fig_txt.font.shape,
-					fig_txt.font.height)
-				name_font.set_height ((name_font.height * cluster_diagram.point.scale_y).rounded)
-				d.set_font (name_font)
-				d.draw_text_top_left (
-					fig_txt.point.x_abs - drawable_position.x,
-					fig_txt.point.y_abs - drawable_position.y,
-					fig_txt.text
-				)
-				name_figures.forth
-			end
-
-		end
-
-feature {LINKABLE_FIGURE_GROUP} -- XML
-
-	xml_element (a_parent: XM_ELEMENT): XM_ELEMENT is
-			-- XML representation.
-		local
-			l_namespace: XM_NAMESPACE
-		do
-			create l_namespace.make_default
-			create Result.make (a_parent, "CLUSTER_FIGURE", l_namespace)
-			Xml_routines.add_attribute ("NAME", l_namespace, cluster_i.cluster_name, Result)
-			Result.put_last (Xml_routines.xml_node (Result, "ICONIFIED", iconified.out))
-			Result.put_last (Xml_routines.xml_node (Result, "X_POS", point.x.out))
-			Result.put_last (Xml_routines.xml_node (Result, "Y_POS", point.y.out))
-			if iconified then
-				Result.put_last (Xml_routines.xml_node (Result, "WIDTH", old_width.out))
-				Result.put_last (Xml_routines.xml_node (Result, "HEIGHT", old_height.out))
-			else
-				Result.put_last (Xml_routines.xml_node (Result, "WIDTH", body_width.out))
-				Result.put_last (Xml_routines.xml_node (Result, "HEIGHT", body_height.out))
-			end
-		end
-
-	set_with_xml_element (an_element: XM_ELEMENT) is
-			-- Set attributes from XML element.
-		require else
-			an_element_is_cluster_figure: an_element.name.is_equal ("CLUSTER_FIGURE")
-			an_element_has_name_attribute: an_element.has_attribute_by_name ("NAME")
-			an_element_name_is_cluster_name: an_element.attribute_by_name ("NAME").value.is_equal (cluster_i.cluster_name)
-		local
-			x_pos, y_pos, w, h: INTEGER
-			was_iconified: BOOLEAN
-		do
-			Xml_routines.reset_valid_tags 
-			was_iconified := Xml_routines.xml_boolean (an_element, "ICONIFIED")
-			if was_iconified then
-				iconify
-			else
-				deiconify
-			end
-			x_pos := Xml_routines.xml_integer (an_element, "X_POS")
-			y_pos := Xml_routines.xml_integer (an_element, "Y_POS")
-			w := Xml_routines.xml_integer (an_element, "WIDTH")
-			h := Xml_routines.xml_integer (an_element, "HEIGHT")
-			set_relative_position_and_size (x_pos, y_pos, w, h)
-		end
-
-feature {NONE} -- Implementation
-
-	arrange_clusters is
-			-- Items of `subclusters' need to be moved.
-		do
-			layout.arrange_clusters (Current)
-			parent.arrange_clusters
-		end
-
-	position_strictly_on_figure (x, y: INTEGER): BOOLEAN is
-   			-- Is the point on (`x', `y') on this figure?
-			-- (excluding its subclusters).
-		do
-			Result := body.position_on_figure (x, y)
-			from
-				subclusters.start
-			until
-				subclusters.after or not Result
-			loop
-				if subclusters.item.position_on_figure (x, y) then
-					Result := False
-				end
-				subclusters.forth
-			end
-		end
-
-	position_on_figure (x, y: INTEGER): BOOLEAN is
-   			-- Is the point on (`x', `y') on this figure?
-		do
-			Result := body.position_on_figure (x, y)
-		end
-
-	saved_x: INTEGER
-			-- Backup of `Current' X-coordinate.
-
-	saved_y: INTEGER
-			-- Backup of `Current' Y-coordinate.
-
-feature {NONE} -- Implementation
-
-	old_top: INTEGER
-			-- Backup of `top' for resizing.
-
-	old_left: INTEGER
-			-- Backup of `left' for resizing.
-
-	old_bottom: INTEGER
-			-- Backup of `bottom' for resizing.
-
-	old_right: INTEGER
-			-- Backup of `right' for resizing.
-
-	old_width: INTEGER
-			-- Backup of `width' for iconifying.
-
-	old_height: INTEGER
- 			-- Backup of `height' for iconifying.
-
-	body_width: INTEGER is
-			-- width of `body'.
-		do
-			Result := body.point_b.x
+			is_update_required := False
 		end
 		
-	body_height: INTEGER is
-			-- height of `body'.
+feature {EV_MODEL_GROUP} -- Transformation
+		
+	recursive_transform (a_transformation: EV_MODEL_TRANSFORMATION) is
+			-- Same as transform but without precondition
+			-- is_transformable and without invalidating
+			-- groups center
+		local
+			p0, p1: EV_COORDINATE
 		do
-			Result := body.point_b.y
+			Precursor {EIFFEL_CLUSTER_FIGURE} (a_transformation)
+			real_rectangle_radius := real_rectangle_radius * a_transformation.item (1, 1)
+			if rectangle_radius.max (1) /= rectangle.radius then
+				rectangle.set_radius (rectangle_radius)	
+			end
+			real_rectangle_border := real_rectangle_border * a_transformation.item (1, 1)
+			real_label_rectangle_border := real_label_rectangle_border * a_transformation.item (1, 1)
+			if user_size /= Void then
+				create p0.make (user_size.left, user_size.top)
+				create p1.make (user_size.right, user_size.bottom)
+				a_transformation.project (p0)
+				a_transformation.project (p1)
+				create user_size.make (p0.x, p0.y, p1.x - p0.x, p1.y - p0.y)
+			end
+			request_update
 		end
+		
+feature {EG_LAYOUT} -- Layouting
 
-	body_top: INTEGER is
-			-- top of `body'.
+	set_to_minimum_size is
+			-- Set `rectangle' to `minimum_size'.
+		local
+			l_min_size: like minimum_size
 		do
-			Result := body.point_a.y_abs
+			update_links
+			l_min_size := minimum_size
+			rectangle.set_point_a_position (l_min_size.left - rectangle_border, l_min_size.top - rectangle_border)
+			rectangle.set_point_b_position (l_min_size.right + rectangle_border, l_min_size.bottom + rectangle_border)
+			request_update
 		end
+		
+feature {EIFFEL_WORLD} -- Show/Hide
 
-	body_left: INTEGER is
-			-- left of `body'.
+	disable_shown is
+			-- Hide `Current'.
 		do
-			Result := body.point_a.x_abs
+			rectangle.hide
+			rectangle.disable_sensitive
+			label_rectangle.hide
+			label_rectangle.disable_sensitive
+			name_label.hide
+			resizer_bottom_left.disable_sensitive
+			resizer_bottom_right.disable_sensitive
+			resizer_top_left.disable_sensitive
+			resizer_top_right.disable_sensitive
+			request_update
+			is_shown := False
 		end
-
-
-	Max_backup: INTEGER is 7
-			-- Break at underscores, but do not search further than this index.
-
-	build_figure is 
-			-- Build graphical representation from recently updated structure.
+		
+	enable_shown is
+			-- Show `Current'.
 		do
-			extend (body)
-			extend (name_area)
-			add_name_figure (name)
-			layout_figures
+			rectangle.show
+			rectangle.enable_sensitive
+			label_rectangle.show
+			label_rectangle.enable_sensitive
+			name_label.show
+			resizer_bottom_left.enable_sensitive
+			resizer_bottom_right.enable_sensitive
+			resizer_top_left.enable_sensitive
+			resizer_top_right.enable_sensitive
+			request_update
+			is_shown := True
+		end
 	
-			iconified := False
+feature {NONE} -- Implementation
 
-			name_mover.point.set_position (- body.point_b.x // 2, - body.point_b.y // 2 - name_area.point_b.y)
-			name_moving_area.point_b.set_position (name_area.point_b.x, name_area.point_b.y)
-			name_area.point_a.set_position (- body.point_b.x // 2, - body.point_b.x // 2 - name_area.point_b.y)
+	id_cluster_name_font: EV_IDENTIFIED_FONT
 
-			resizer_bottom_right.set_minimum_x (name_area.point_b.x)
-			resizer_bottom_right.set_minimum_y (name_area.point_b.y)
-			resizer_bottom_right.point.set_position (body.point_b.x, body.point_b.y)
-			
-			resizer_top_left.set_maximum_x (0)
-			resizer_top_left.set_maximum_y (0)
-			resizer_top_left.point.set_position (0, 0)		
-
-			resizer_top_right.set_minimum_x (name_area.point_b.x)
-			resizer_top_right.set_maximum_y (0)
-			resizer_top_right.point.set_position (body.point_b.x, 0)		
-
-			resizer_bottom_left.set_maximum_x (0)
-			resizer_bottom_left.set_minimum_y (name_area.point_b.y)
-			resizer_bottom_left.point.set_position (0, body.point_b.y)		
-		end
-
-	layout_figures is 
-			-- Set all figures to a nice position relative to `point'.
-		local
-			name_y : INTEGER
-			max_token_length: INTEGER
-			nf: EV_FIGURE_TEXT
+	set_is_selected (an_is_selected: like is_selected) is
+			-- Set `is_selected' to `an_is_selected'.
 		do
-			name_y := 1
-			from
-				name_figures.start
-			until
-				name_figures.after
-			loop
-				nf := name_figures.item
-				if nf.width > max_token_length then
-					max_token_length := nf.width
+			if is_selected /= an_is_selected then
+				is_selected := an_is_selected
+				if is_selected = True then
+					rectangle.set_line_width (line_width * 2)
+					label_rectangle.set_line_width (line_width * 2)
+				else
+					rectangle.set_line_width (line_width)
+					label_rectangle.set_line_width (line_width)
 				end
-				nf.point.set_position (nf.width // 4, name_y)
-				name_y := name_y + nf.height
-				name_figures.forth
 			end
-			name_mover.point.set_position (- body.point_b.x // 2, - body.point_b.y // 2 - (name_y + 2))
-			name_area.point_a.set_position (- body.point_b.x // 2, - body.point_b.y // 2 - (name_y + 2))
-			name_area.point_b.set_position (max_token_length * 3 // 2, name_y + 2) 
-			reset_name_position
-			name_is_top := True
 		end
 
-	add_name_figure (n: STRING) is
-			-- Add first characters as name figure, then call recursively.
+	label_rectangle_border: INTEGER is
+			-- The border between the rectangle and the label.
+		do
+			Result := real_label_rectangle_border.truncated_to_integer
+		end
+			
+	real_label_rectangle_border: REAL
+			-- Real value for `label_rectangle_border'.
+			
+	rectangle_border: INTEGER is
+			-- Minimum border between elements and `rectangle' border.
+		do
+			Result := real_rectangle_border.truncated_to_integer
+		end
+			
+	real_rectangle_border: REAL
+			-- Real value for `rectangle_border'.
+			
+	rectangle_radius: INTEGER is
+			-- Radius for `rectangle'
+		do
+			Result := real_rectangle_radius.truncated_to_integer
+		end
+		
+	real_rectangle_radius: REAL
+			-- Real value for `rectangle_radius'.
+
+	number_of_figures: INTEGER
+			-- Number of figures to visualize `Current'.
+			-- high_quality: (`rectangle', `label_move_handle', `resizer_top_left', `resizer_top_right', `resizer_bottom_right', `resizer_bottom_left').
+			-- low_quality: (`rectangle', `name_label')
+
+	set_top_left_position (ax, ay: INTEGER) is
+			-- Set position of top left corner to (`ax', `ay').
+		do
+			rectangle.set_point_a_position (ax, ay)
+		end
+		
+	set_bottom_right_position (ax, ay: INTEGER) is
+			-- Set position of bottom right corner to (`ax', `ay').
+		do
+			rectangle.set_point_b_position (ax, ay)
+		end
+
+	rectangle: BON_CLUSTER_RECTANGLE
+			-- The rectangle.
+			
+	label_rectangle: EV_MODEL_ROUNDED_RECTANGLE
+			-- The rectangle for the label.
+
+	polyline_points: SPECIAL [EV_COORDINATE] is
+			-- Points needed for EG_POLYLINE_LABEL.
+		do
+			Result := rectangle.polyline_points
+		end
+		
+	on_label_move (ax, ay: INTEGER; x_tilt, y_tilt, pressure: DOUBLE; screen_x, screen_y: INTEGER) is
+			-- `label_move_handler' was moved for `ax' `ay'.
+			-- | Redefined because `is_left' must stay True.
+		do
+			set_label_line_start_and_end
+			set_label_position_on_line (label_line_start_point, label_line_end_point)
+			request_update
+		end
+		
+	set_name_label_text (a_text: STRING) is
+			-- Set `name_label'.`text' to `a_text'.
 		local
-			name_figure: EV_FIGURE_TEXT
 			s, rest: STRING
 			i: INTEGER
 		do
-			if n.count > max_cluster_name_length then
-				i := n.last_index_of ('_', max_cluster_name_length)
-				if i < Max_backup then
-					i := max_cluster_name_length
+			if a_text.count > max_cluster_name_length then
+				from
+					s := ""
+					rest := a_text
+					i := a_text.last_index_of ('_', max_cluster_name_length)
+					if i = 0 then
+						i := max_cluster_name_length
+					end
+				until
+					i = 0 or else rest.count <= max_cluster_name_length
+				loop
+					s := s + rest.substring (1, i) + "%N"
+					rest := rest.substring (i + 1, rest.count)
+					if rest.count > max_cluster_name_length then
+						i := rest.last_index_of ('_', max_cluster_name_length)
+						if i = 0 then
+							i := max_cluster_name_length
+						end
+					end
 				end
-				s := n.substring (1, i)
-				rest := n.substring (i + 1, n.count)
+				s := s + rest			
+				name_label.set_text (s)
 			else
-				s := n.twin
+				name_label.set_text (a_text)
 			end
-
-			create name_figure
-			name_figure.set_foreground_color (bon_cluster_name_color)
-			name_figure.set_text (s)
-			name_figure.point.set_origin (name_area.point_a)
-			name_figures.extend (name_figure)
-			extend (name_figure)
-
-			broken_name.append (s)
-			if rest /= Void then
-				broken_name.extend ('%N')
-				add_name_figure (rest)
-			end
-		end
-
-feature {CLUSTER_DIAGRAM} -- Events
-
-	on_origin_moved (x_delta, y_delta: INTEGER) is
-			-- Diagram origin has moved.
-		do
-			old_top := old_top + y_delta
-			old_left := old_left + x_delta
-			old_right := right
-			old_bottom := bottom
-		end
-
-feature {CLUSTER_FIGURE} -- Events
-
-	move_to_front is
-			-- Make `Current' appear in front of its peers.
-		local
-			w: CLUSTER_DIAGRAM
-			g: EV_FIGURE_GROUP
-		do
-			if subclusters.is_empty then
-				w := cluster_diagram
-				if w /= Void then
-					g := w.cluster_layer
-					g.prune_all (Current)
-					g.extend (Current)
-					w.full_redraw_performed
-				end
-			end
-		end
-
-	save_position is
-			-- Make a backup of current coordinates.
-		do
-			saved_x := point.x
-			saved_y := point.y
-		end 
-
-	extend_history is
-			-- Register beginning move in the history.
-		local
-			new_cluster_figure: CLUSTER_FIGURE
---			saved_x_abs, saved_y_abs: INTEGER
-		do
-			new_cluster_figure := cluster_diagram.smallest_cluster_containing_point (x_position, y_position)
-			if new_cluster_figure = cluster_figure then
-					-- Current has been moved inside its parent if it has one
-				cluster_diagram.context_editor.history.do_named_undoable (
-					"Move cluster",
-					[<<agent point.set_position (point.x, point.y),
-						agent update_and_project>>],
-					[<<agent point.set_position (saved_x, saved_y),
-						agent update_and_project>>])
-			else
-					point.set_position (saved_x, saved_y)
-					update_and_project
-			end
---			if new_cluster_figure = Void and cluster_figure /= Void then
---					-- Current has a parent but has been moved out of any cluster
---					-- It should be put back in its parent.
---				cluster_diagram.context_editor.history.do_named_undoable (
---					Interface_names.t_Diagram_move_class_cmd,
---					[<<	point~set_position (
---							((point.x_abs - cluster_diagram.point.x) / cluster_diagram.scale_x).rounded,
---							((point.y_abs - cluster_diagram.point.y) / cluster_diagram.scale_y).rounded),
---						cluster_diagram~on_move_cluster_end (Current, new_cluster_figure),
---						~update_and_project>>],
---					[<<cluster_diagram~on_move_cluster_end (Current, cluster_figure),
---						point~set_position (saved_x, saved_y),
---						~update_and_project>>])
---			elseif cluster_figure = Void and new_cluster_figure /= Void then
---					-- Current does not have a parent but has been moved into another cluster
---
---				cluster_diagram.context_editor.history.do_named_undoable (
---					Interface_names.t_Diagram_move_class_cmd,
---					[<<cluster_diagram~on_move_cluster_end (Current, new_cluster_figure),
---						point~set_position (
---							((point.x_abs - new_cluster_figure.point.x_abs) /
---								new_cluster_figure.point.scale_x_abs).rounded,
---							((point.y_abs - new_cluster_figure.point.y_abs) /
---								new_cluster_figure.point.scale_y_abs).rounded),
---						~update_and_project>>],
---					[<<cluster_diagram~on_move_cluster_end (Current, cluster_figure),
---						point~set_position (saved_x, saved_y),
---						~update_and_project>>])
---			elseif new_cluster_figure /= cluster_figure then
---					-- Current has a parent and has been moved in another cluster
---				saved_x_abs := (saved_x * cluster_figure.point.scale_x_abs).rounded + cluster_figure.point.x_abs
---				saved_y_abs := (saved_y * cluster_figure.point.scale_y_abs).rounded + cluster_figure.point.y_abs
---				cluster_diagram.context_editor.history.do_named_undoable (
---				Interface_names.t_Diagram_move_class_cmd,
---					[<<cluster_diagram~on_move_cluster_end (Current, new_cluster_figure),
---						point~set_position (
---							((point.x_abs - new_cluster_figure.point.x_abs) /
---								new_cluster_figure.point.scale_x_abs).rounded,
---							((point.y_abs - new_cluster_figure.point.y_abs) /
---								new_cluster_figure.point.scale_y_abs).rounded),
---						~update_and_project>>],
---					[<<cluster_diagram~on_move_cluster_end (Current, cluster_figure),
---						point~set_position (saved_x, saved_y),
---						~update_and_project>>])	
---			else
---					-- Current has been moved inside its parent if it has one
---				cluster_diagram.context_editor.history.do_named_undoable (
---					"Move cluster",
---					[<<point~set_position (point.x, point.y),
---						~update_and_project>>],
---					[<<point~set_position (saved_x, saved_y),
---						~update_and_project>>])	
---			end
-		end
-
-feature {NONE} -- Events
-
-	button_press (x, y, b: INTEGER; xt, yt, p: DOUBLE; sx, sy: INTEGER) is
-			-- User pressed pointer button on `Current'.
-		local
-			pebble_as_stone: STONE
-		do
-			if b = 3 and then ctrl_pressed then
-				pebble_as_stone ?= pebble
-				if pebble_as_stone /= Void and then pebble_as_stone.is_valid then
-					(create {EB_CONTROL_PICK_HANDLER}).launch_stone (pebble_as_stone)
-				end
-			end
-		end
-
-	on_resizer_bottom_right_move (x, y: INTEGER) is
-			-- Resizer moved relatively to `x', `y'.
-		do
-			set_size (x, y)
-			update
-		end
-
-	on_resizer_start is
-			-- User started resizing.
-		do
-			old_top := body_top
-			old_left := body_left
-			old_right := body_left + body_width
-			old_bottom := body_top + body_height
 		end
 		
-	on_resizer_top_left_move (x, y: INTEGER) is
-			-- Resizer moved relatively to `x', `y'.
-		do
-			set_bounds (
-				old_left + (x * point.origin.scale_x_abs).rounded,
-				old_top + (y * point.origin.scale_y_abs).rounded,
-				old_right,
-				old_bottom)
-		end
-
-	on_resizer_end is
-			-- User ended resizing.
-		do
-			update_minimum_size
-			update_cluster_size
-			update_area_bounds
-		end
-
-	on_resizer_top_right_move (x, y: INTEGER) is
-			-- Resizer moved relatively to `x', `y'.
-		do
-			set_bounds (
-				old_left,
-				old_top + (y * point.origin.scale_y_abs).rounded,
-				old_left + (x * point.origin.scale_x_abs).rounded,
-				old_bottom)
-		end
-
-	on_resizer_bottom_left_move (x, y: INTEGER) is
-			-- Resizer moved relatively to `x', `y'.
-		do
-			set_bounds (
-				old_left + (x * point.origin.scale_x_abs).rounded,
-				old_top,
-				old_right,
-				old_top + (y * point.origin.scale_y_abs).rounded)
-		end
-
-	on_name_double_click (a_x: INTEGER; a_y: INTEGER; a_button: INTEGER; a_x_tilt: DOUBLE; a_y_tilt: DOUBLE; a_pressure: DOUBLE; a_screen_x: INTEGER; a_screen_y: INTEGER) is
-			-- Switch between iconified/deiconified representation.
-		do
-			if iconified then
-				deiconify
-			else
-				iconify
-			end
-		end
-
-	update_cluster_size is
-			-- Minimum size of `parent' needs to be updated
-			-- according to `Current' last move.
-		do
-			if cluster_figure /= Void then
-				if cluster_figure.position_on_figure (left, top) or else
-					cluster_figure.position_on_figure (right, bottom) or else
-					cluster_figure.position_on_figure (right, top) or else
-					cluster_figure.position_on_figure (left, bottom) then
-						cluster_figure.update_minimum_size
-				end
-			end
-		end
-
-	update_area_bounds is
-			-- Bounds of drawable area may need to be updated because of
-			-- `Current' last move.
-		do
-			cluster_diagram.context_editor.update_bounds (cluster_diagram)
-		end
-
-	update_scrollable_area_size is
-			-- Minimum size of the scrollable area needs to be updated
-			-- according to `Current' last move.
-		do
-			cluster_diagram.context_editor.on_figure_moved
-		end
-
-	reset_mover_coordinates (x, y: INTEGER): TUPLE [INTEGER, INTEGER] is
-			-- Restore the right coordinates of `name_mover',
-			-- and move `name_area'.
+	on_label_double_press (ax, ay, button: INTEGER; x_tilt, y_tilt, pressure: DOUBLE; screen_x, screen_y: INTEGER) is
+			-- Iconify or deiconify `Current'.
 		local
-			adjust_x, adjust_y: REAL
-			name_area_width, name_area_height: INTEGER
+			ew: EIFFEL_WORLD
 		do
-			name_area_width := name_area.point_b.x
-			name_area_height := name_area.point_b.y
-			adjust_x := x / body_width
-			adjust_y := y / body_height
-			if adjust_y.abs > adjust_x.abs then
-				if adjust_y >= 0 then
-					Result := [x.min (body_width // 2 - name_area_width).max (- body_width // 2), body_height // 2]
-					name_area.point_a.set_position (x.min (body_width // 2 - name_area_width).max (- body_width // 2), body_height // 2)
-					reset_name_position
-					name_is_bottom := True
-				else
-					Result := [x.min (body_width // 2 - name_area_width).max (- body_width // 2), - body_height // 2 - name_area_height]
-					name_area.point_a.set_position (x.min (body_width // 2 - name_area_width).max (- body_width // 2), - body_height // 2 - name_area_height)
-					reset_name_position
-					name_is_top := True
+			ew ?= world
+			if is_iconified then
+				expand
+				if ew /= Void then
+					ew.context_editor.history.register_named_undoable (
+						interface_names.t_diagram_cluster_expand,
+						[<<agent expand, agent toggle_is_iconified, agent request_update>>],
+						[<<agent collapse, agent toggle_is_iconified, agent request_update>>])
 				end
 			else
-				if adjust_x >= 0 then
-					Result := [body_width // 2, y.max (- body_height // 2).min (body_height // 2)]
-					name_area.point_a.set_position (body_width // 2, y.max (- body_height // 2).min ( body_height // 2 - name_area_height))
-					reset_name_position
-					name_is_right := True
-				else
-					Result := [- body_width // 2 - name_area_width, y.max (- body_height // 2).min (body_height // 2)]
-					name_area.point_a.set_position (- body_width // 2 - name_area_width, y.max (- body_height // 2).min ( body_height // 2 - name_area_height))
-					reset_name_position
-					name_is_left := True
+				collapse
+				if ew /= Void then
+					ew.context_editor.history.register_named_undoable (
+						interface_names.t_diagram_cluster_collapse,
+						[<<agent collapse, agent toggle_is_iconified, agent request_update>>],
+						[<<agent expand, agent toggle_is_iconified, agent request_update>>])
 				end
 			end
+			toggle_is_iconified
+			request_update
 		end
-
-feature {NONE} -- Implementation
-
-	minimum_width: INTEGER is
-			-- 
+		
+	toggle_is_iconified is
+			-- Toggle value of `is_iconified'.
 		do
-			if name_figures /= Void then
-				from
-					name_figures.start
-				until
-					name_figures.after
-				loop
-					Result := (name_figures.item.width).max (Result)
-					name_figures.forth
+			is_iconified := not is_iconified
+			if is_iconified then
+				if iconified_background_color /= Void then
+					rectangle.set_background_color (iconified_background_color)
+				else
+					rectangle.remove_background_color
+				end
+			else
+				if background_color /= Void then
+					rectangle.set_background_color (background_color)
+				else
+					rectangle.remove_background_color
 				end
 			end
 		end
+		
+	set_is_high_quality (an_is_high_quality: like is_high_quality) is
+			-- Set `is_high_quality' to `an_is_high_quality'.
+		do
+			if an_is_high_quality /= is_high_quality then
+				is_high_quality := an_is_high_quality
+				if is_high_quality then
+					prune_all (name_label)
+					name_label.set_point_position (label_group.point_x, label_group.point_y)
+					name_label.pointer_double_press_actions.prune_all (agent on_label_double_press)
+					label_group.extend (name_label)
+					put_front (label_move_handle)
+					label_move_handle.enable_sensitive
+					put_front (resizer_bottom_left)
+					resizer_top_left.enable_sensitive
+					put_front (resizer_bottom_right)
+					resizer_bottom_right.enable_sensitive
+					put_front (resizer_top_right)
+					resizer_top_right.enable_sensitive
+					put_front (resizer_top_left)
+					resizer_top_left.enable_sensitive
+					send_to_back (rectangle)
+					rectangle.enable_dashed_line_style
+					if not is_iconified then
+						if background_color /= Void then
+							rectangle.set_background_color (background_color)
+						else
+							rectangle.remove_background_color
+						end
+					else
+						if iconified_background_color /= Void then
+							rectangle.set_background_color (iconified_background_color)
+						else
+							rectangle.remove_background_color
+						end
+					end
+					
+					number_of_figures := 6
+				else
+					prune_all (resizer_top_left)
+					resizer_top_left.disable_sensitive
+					prune_all (resizer_top_right)
+					resizer_top_right.disable_sensitive
+					prune_all (resizer_bottom_right)
+					resizer_bottom_right.disable_sensitive
+					prune_all (resizer_bottom_left)
+					resizer_top_left.disable_sensitive
+					prune_all (label_move_handle)
+					label_move_handle.disable_sensitive
+					put_front (name_label)
+					name_label.pointer_double_press_actions.extend (agent on_label_double_press)
+					send_to_back (rectangle)
+					rectangle.disable_dashed_line_style
+					rectangle.remove_background_color
+					number_of_figures := 2
+				end
+				request_update
+			end
+		end
+
+invariant
+	foreground_color_not_void: foreground_color /= Void
+	line_width_non_negative: line_width >= 0
+	cluster_name_font_not_void: cluster_name_font /= Void
+	cluster_name_color_not_void: cluster_name_color /= Void
 
 end -- class BON_CLUSTER_FIGURE
