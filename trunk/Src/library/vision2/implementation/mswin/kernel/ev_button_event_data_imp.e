@@ -7,37 +7,38 @@ indexing
 class
 	EV_BUTTON_EVENT_DATA_IMP
 
-
 inherit
 	EV_BUTTON_EVENT_DATA_I
-		select
-			interface
-		end
 
 	EV_EVENT_DATA_IMP
-		rename
-			interface as parent_interface
-		redefine
-			fill
+		undefine
+			print_contents
+		end	
+
+feature -- Access	
+
+	absolute_x: INTEGER is
+			-- absolute x of the mouse pointer
+		local
+			ww: WEL_WINDOW
+			pt: WEL_POINT
+		do
+			ww ?= widget.implementation
+			!! pt.make (x, y)
+			pt.client_to_screen (ww)
+			Result := pt.x
 		end
 
-creation
-	make
-
-
-feature {NONE} -- Implementation
-
-	fill (mi: WEL_MESSAGE_INFORMATION) is
-			-- Set the attributes of this data.
+	absolute_y: INTEGER is
+			-- absolute y of the mouse pointer
 		local
-			mouse_msg: WEL_MOUSE_MESSAGE
+			ww: WEL_WINDOW
+			pt: WEL_POINT
 		do
-			mouse_msg ?= mi
-			check
-				valid_msg: mouse_msg /= Void
-			end
-			interface.set_x (mouse_msg.x)
-			interface.set_y (mouse_msg.y)
+			ww ?= widget.implementation
+			!! pt.make (x, y)
+			pt.client_to_screen (ww)
+			Result := pt.y
 		end
 
 end -- class EV_BUTTON_EVENT_DATA_IMP
