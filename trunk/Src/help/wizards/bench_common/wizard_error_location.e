@@ -17,7 +17,7 @@ inherit
 
 create
 	make
-
+	
 feature -- basic Operations
 
 	display_state_text is
