@@ -23,7 +23,6 @@ feature -- Properties
 
 feature -- Output
 
-
 	build_explain (st: STRUCTURED_TEXT) is
 		do
 			print_name (st);
