@@ -1,4 +1,4 @@
-	<LI><OBJECT type="text/sitemap"><param name="Name" value="reference"><param name="Local" value="libraries\wel\reference\index.html"></OBJECT>
+	<LI><OBJECT type="text/sitemap"><param name="Name" value="WEL Reference"><param name="Local" value="libraries\wel\reference\index.html"></OBJECT>
 	<UL>
 		<LI><OBJECT type="text/sitemap"><param name="Name" value="consts"><param name="Local" value="libraries\wel\reference\consts\index.html"></OBJECT>
 		<UL>
