@@ -1,5 +1,6 @@
 indexing
-	description: ""
+	description: "COM LARGE_INTEGER 64-bit integer"
+	status: "See notice at end of class"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -11,63 +12,40 @@ inherit
 	ECOM_STRUCTURE
 
 creation
-	make_from_integer,
-	make_from_pointer
+	make, make_by_pointer,
+	make_from_integer
 
 feature {NONE} -- Initialization
 
 	make_from_integer (integer:INTEGER) is
 			-- Creation routine
 		do
-			initializer := ccom_create_c_large_integer;
-			ccom_set_from_integer(initializer, integer);
-			item := ccom_large_integer (initializer)
-		ensure
-			initializer /= Default_pointer
+			make
+			ccom_set_large_integer (item, integer)
+		ensure	
 			item /= Default_pointer
 		end
 
-feature -- Access
+feature -- Measurement
 
+	structure_size: INTEGER is
+			-- Size of LARGE_INTEGER structure
+		do
+			Result := c_size_of_large_integer 
+		end
 	
-feature {NONE} -- Implementation
-
-	create_wrapper (a_pointer: POINTER): POINTER is
-		do
-			Result := ccom_create_from_large_integer (a_pointer)
-		end
-
-	free_structure is
-			-- Delete C++ object
-		do
-			ccom_delete_c_large_integer (initializer)
-		end
-
 feature {NONE} -- Externals 
 
-	ccom_create_c_large_integer: POINTER is
-		external
-			"C++ [new E_Large_Integer %"E_Large_Integer.h%"]()"
+	c_size_of_large_integer: INTEGER is
+		external 
+			"C [macro <objbase.h>]"
+		alias
+			"sizeof(LARGE_INTEGER)"
 		end
 
-	ccom_delete_c_large_integer (cpp_obj: POINTER) is
+	ccom_set_large_integer (ptr: POINTER; i: INTEGER) is
 		external
-			"C++ [delete E_Large_Integer %"E_Large_Integer.h%"]()"
-		end
-
-	ccom_set_from_integer (cpp_obj: POINTER; i: INTEGER) is
-		external
-			"C++ [E_Large_Integer %"E_Large_Integer.h%"] (EIF_INTEGER)"
-		end
-
-	ccom_create_from_large_integer (i: POINTER): POINTER is
-		external
-			"C++ [new E_Large_Integer %"E_Large_Integer.h%"] (LARGE_INTEGER *)"
-		end
-
-	ccom_large_integer (cpp_obj: POINTER): POINTER is
-		external
-			"C++ [E_Large_Integer %"E_Large_Integer.h%"](): EIF_POINTER"
+			"C [macro %"E_Large_Integer.h%"](EIF_POINTER, EIF_INTEGER)"
 		end
 
 end -- class ECOM_LARGE_INTEGER
