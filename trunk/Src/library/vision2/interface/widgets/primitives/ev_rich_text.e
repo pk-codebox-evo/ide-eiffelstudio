@@ -1,5 +1,7 @@
 indexing 
-	description: "EiffelVision text."
+	description:
+		" EiffelVision text. A text area that contains%
+		% a rich text."
 	status: "See notice at end of class"
 	date: "$Date$"
 	revision: "$Revision$"
@@ -7,8 +9,29 @@ indexing
 class
 	EV_TEXT
 
---inherit
---	TEXT_AREA
+inherit
+	EV_TEXT_AREA
+		redefine
+			implementation,
+			make
+		end
+
+creation
+	make
+
+feature {NONE} -- Initialization
+
+	make (par: EV_CONTAINER) is
+			-- Create an empty text area with `par' as
+			-- parent.
+		do
+			!EV_TEXT_IMP!implementation.make
+			widget_make (par)
+		end
+
+feature -- Implementation
+
+	implementation: EV_TEXT_I
 
 end -- class EV_TEXT
 
