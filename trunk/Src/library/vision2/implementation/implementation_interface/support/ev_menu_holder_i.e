@@ -16,7 +16,7 @@ feature {EV_MENU} -- Implementation
 			-- Add `a_menu' into container.
 		require
 			exists: not destroyed
-			valid_menu: menu.is_valid
+			valid_menu: is_valid (menu)
 		deferred
 		end
 
