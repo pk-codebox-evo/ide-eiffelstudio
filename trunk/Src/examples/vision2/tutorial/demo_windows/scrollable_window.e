@@ -12,6 +12,7 @@ inherit
 		redefine
 			make
 		end
+	DEMO_WINDOW
 
 	PIXMAP_PATH
 
@@ -28,11 +29,17 @@ feature {NONE} -- Initialization
 			{EV_SCROLLABLE_AREA} Precursor (par)
 			create pix.make_from_file (pixmap_path ("SevenFalls.bmp"))
 			create ta.make_with_pixmap (Current, pix)
+
+				-- Sets the tabs for the action window
+			set_container_tabs
+			tab_list.extend(scrollable_area_tab)
+			create action_window.make(Current,tab_list)
 		end
 
 feature -- Access
 
 	ta: EV_DRAWING_AREA
+	--scrollable_area_tab:SCROLLABLE_AREA_TAB
 		-- A drawing_area for the demo
 
 end -- class SCROLLABLE_WINDOW
