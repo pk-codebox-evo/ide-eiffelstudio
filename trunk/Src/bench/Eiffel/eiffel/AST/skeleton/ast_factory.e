@@ -11,1213 +11,831 @@ feature -- Access
 
 	new_access_assert_as (f: ID_AS; p: EIFFEL_LIST [EXPR_AS]): ACCESS_ASSERT_AS is
 			-- New ACCESS_ASSERT AST node
-		require
-			f_not_void: f /= Void
 		do
-			create Result
-			Result.initialize (f, p)
-		ensure
-			access_assert_as_not_void: Result /= Void
-			feature_name_set: Result.feature_name = f
-			parameters_set: Result.parameters = p
+			if f /= Void then
+				create Result.initialize (f, p)
+			end
 		end
 
 	new_access_feat_as (f: ID_AS; p: EIFFEL_LIST [EXPR_AS]): ACCESS_FEAT_AS is
 			-- New ACCESS_FEAT AST node
-		require
-			f_not_void: f /= Void
 		do
-			create Result
-			Result.initialize (f, p)
-		ensure
-			access_feat_as_not_void: Result /= Void
-			feature_name_set: Result.feature_name = f
-			parameters_set: Result.parameters = p
+			if f /= Void then
+				create Result.initialize (f, p)
+			end
 		end
 
 	new_access_id_as (f: ID_AS; p: EIFFEL_LIST [EXPR_AS]): ACCESS_ID_AS is
 			-- New ACCESS_ID AST node
-		require
-			f_not_void: f /= Void
 		do
-			create Result
-			Result.initialize (f, p)
-		ensure
-			access_id_as_not_void: Result /= Void
-			feature_name_set: Result.feature_name = f
-			parameters_set: Result.parameters = p
+			if f /= Void then
+				create Result.initialize (f, p)
+			end
 		end
 
 	new_access_inv_as (f: ID_AS; p: EIFFEL_LIST [EXPR_AS]): ACCESS_INV_AS is
 			-- New ACCESS_INV AST node
-		require
-			f_not_void: f /= Void
 		do
-			create Result
-			Result.initialize (f, p)
-		ensure
-			access_inv_as_not_void: Result /= Void
-			feature_name_set: Result.feature_name = f
-			parameters_set: Result.parameters = p
+			if f /= Void then
+				create Result.initialize (f, p)
+			end
 		end
 
 	new_address_as (f: FEATURE_NAME): ADDRESS_AS is
 			-- New ADDRESS AST node
-		require
-			f_not_void: f /= Void
 		do
-			create Result
-			Result.initialize (f)
-		ensure
-			address_as_not_void: Result /= Void
-			feature_name_set: Result.feature_name = f
+			if f /= Void then
+				create Result.initialize (f)
+			end
 		end
 
-	new_address_current_as: ADDRESS_CURRENT_AS is
+	new_address_current_as (other: CURRENT_AS): ADDRESS_CURRENT_AS is
 			-- New ADDRESS_CURRENT AST node
 		do
-			create Result
-			Result.initialize
-		ensure
-			address_current_as_not_void: Result /= Void
+			if other /= Void then
+				create Result.make_from_other (other)
+			end
 		end
 
-	new_address_result_as: ADDRESS_RESULT_AS is
+	new_address_result_as (other: RESULT_AS): ADDRESS_RESULT_AS is
 			-- New ADDRESS_RESULT AST node
 		do
-			create Result
-			Result.initialize
-		ensure
-			address_result_as_not_void: Result /= Void
+			if other /= Void then
+				create Result.make_from_other (other)
+			end
 		end
 
 	new_all_as: ALL_AS is
 			-- New ALL AST node
 		do
-			create Result
-			Result.initialize
-		ensure
-			all_as_not_void: Result /= Void
+			create Result.initialize
 		end
 
 	new_array_as (exp: EIFFEL_LIST [EXPR_AS]): ARRAY_AS is
 			-- New Manifest ARRAY AST node
-		require
-			exp_not_void: exp /= Void
 		do
-			create Result
-			Result.initialize (exp)
-		ensure
-			array_as_not_void: Result /= Void
-			expressions_set: Result.expressions = exp
+			if exp /= Void then
+				create Result.initialize (exp)
+			end
 		end
 
-	new_assign_as (t: ACCESS_AS; s: EXPR_AS; l: TOKEN_LOCATION): ASSIGN_AS is
+	new_assign_as (t: ACCESS_AS; s: EXPR_AS): ASSIGN_AS is
 			-- New ASSIGN AST node
-		require
-			t_not_void: t /= Void
-			s_not_void: s /= Void
-			l_not_void: l /= Void
 		do
-			create Result
-			Result.initialize (t, s, l)
-		ensure
-			assign_as_not_void: Result /= Void
-			target_set: Result.target = t
-			source_set: Result.source = s
-			location_set: Result.location.is_equal (l)
+			if t /= Void and s /= Void then
+				create Result.initialize (t, s)
+			end
 		end
 
 	new_bin_and_as (l, r: EXPR_AS): BIN_AND_AS is
 			-- New binary and AST node
-		require
-			l_not_void: l /= Void
-			r_not_void: r /= Void
 		do
-			create Result
-			Result.initialize (l, r)
-		ensure
-			bin_and_as_not_void: Result /= Void
-			left_set: Result.left = l
-			right_set: Result.right = r
+			if l /= Void and r /= Void then
+				create Result.initialize (l, r)
+			end
 		end
 
 	new_bin_and_then_as (l, r: EXPR_AS): BIN_AND_THEN_AS is
 			-- New binary and then AST node
-		require
-			l_not_void: l /= Void
-			r_not_void: r /= Void
 		do
-			create Result
-			Result.initialize (l, r)
-		ensure
-			bin_and_then_as_not_void: Result /= Void
-			left_set: Result.left = l
-			right_set: Result.right = r
+			if l /= Void and r /= Void then
+				create Result.initialize (l, r)
+			end
 		end
 
 	new_bin_div_as (l, r: EXPR_AS): BIN_DIV_AS is
 			-- New binary // AST node
-		require
-			l_not_void: l /= Void
-			r_not_void: r /= Void
 		do
-			create Result
-			Result.initialize (l, r)
-		ensure
-			bin_div_as_not_void: Result /= Void
-			left_set: Result.left = l
-			right_set: Result.right = r
+			if l /= Void and r /= Void then
+				create Result.initialize (l, r)
+			end
 		end
 
 	new_bin_eq_as (l, r: EXPR_AS): BIN_EQ_AS is
 			-- New binary = AST node
-		require
-			l_not_void: l /= Void
-			r_not_void: r /= Void
 		do
-			create Result
-			Result.initialize (l, r)
-		ensure
-			bin_eq_as_not_void: Result /= Void
-			left_set: Result.left = l
-			right_set: Result.right = r
+			if l /= Void and r /= Void then
+				create Result.initialize (l, r)
+			end
 		end
 
 	new_bin_free_as (l: EXPR_AS; op: ID_AS; r: EXPR_AS): BIN_FREE_AS is
 			-- New BIN_FREE AST node
-		require
-			l_not_void: l /= Void
-			op_not_void: op /= Void
-			r_not_void: r /= Void
 		do
-			create Result
-			Result.initialize (l, op, r)
-		ensure
-			bin_free_as_not_void: Result /= Void
-			left_set: Result.left = l
-			op_name_set: Result.op_name = op
-			right_set: Result.right = r
+			if l /= Void and r /= Void and op /= Void then
+				create Result.initialize (l, op, r)
+			end
 		end
 
 	new_bin_ge_as (l, r: EXPR_AS): BIN_GE_AS is
 			-- New binary >= AST node
-		require
-			l_not_void: l /= Void
-			r_not_void: r /= Void
 		do
-			create Result
-			Result.initialize (l, r)
-		ensure
-			bin_ge_as_not_void: Result /= Void
-			left_set: Result.left = l
-			right_set: Result.right = r
+			if l /= Void and r /= Void then
+				create Result.initialize (l, r)
+			end
 		end
 
 	new_bin_gt_as (l, r: EXPR_AS): BIN_GT_AS is
 			-- New binary > AST node
-		require
-			l_not_void: l /= Void
-			r_not_void: r /= Void
 		do
-			create Result
-			Result.initialize (l, r)
-		ensure
-			bin_gt_as_not_void: Result /= Void
-			left_set: Result.left = l
-			right_set: Result.right = r
+			if l /= Void and r /= Void then
+				create Result.initialize (l, r)
+			end
 		end
 
 	new_bin_implies_as (l, r: EXPR_AS): BIN_IMPLIES_AS is
 			-- New binary implies AST node
-		require
-			l_not_void: l /= Void
-			r_not_void: r /= Void
 		do
-			create Result
-			Result.initialize (l, r)
-		ensure
-			bin_implies_as_not_void: Result /= Void
-			left_set: Result.left = l
-			right_set: Result.right = r
+			if l /= Void and r /= Void then
+				create Result.initialize (l, r)
+			end
 		end
 
 	new_bin_le_as (l, r: EXPR_AS): BIN_LE_AS is
 			-- New binary <= AST node
-		require
-			l_not_void: l /= Void
-			r_not_void: r /= Void
 		do
-			create Result
-			Result.initialize (l, r)
-		ensure
-			bin_le_as_not_void: Result /= Void
-			left_set: Result.left = l
-			right_set: Result.right = r
+			if l /= Void and r /= Void then
+				create Result.initialize (l, r)
+			end
 		end
 
 	new_bin_lt_as (l, r: EXPR_AS): BIN_LT_AS is
 			-- New binary < AST node
-		require
-			l_not_void: l /= Void
-			r_not_void: r /= Void
 		do
-			create Result
-			Result.initialize (l, r)
-		ensure
-			bin_lt_as_not_void: Result /= Void
-			left_set: Result.left = l
-			right_set: Result.right = r
+			if l /= Void and r /= Void then
+				create Result.initialize (l, r)
+			end
 		end
 
 	new_bin_minus_as (l, r: EXPR_AS): BIN_MINUS_AS is
 			-- New binary - AST node
-		require
-			l_not_void: l /= Void
-			r_not_void: r /= Void
 		do
-			create Result
-			Result.initialize (l, r)
-		ensure
-			bin_minus_as_not_void: Result /= Void
-			left_set: Result.left = l
-			right_set: Result.right = r
+			if l /= Void and r /= Void then
+				create Result.initialize (l, r)
+			end
 		end
 
 	new_bin_mod_as (l, r: EXPR_AS): BIN_MOD_AS is
 			-- New binary \\ AST node
-		require
-			l_not_void: l /= Void
-			r_not_void: r /= Void
 		do
-			create Result
-			Result.initialize (l, r)
-		ensure
-			bin_mod_as_not_void: Result /= Void
-			left_set: Result.left = l
-			right_set: Result.right = r
+			if l /= Void and r /= Void then
+				create Result.initialize (l, r)
+			end
 		end
 
 	new_bin_ne_as (l, r: EXPR_AS): BIN_NE_AS is
 			-- New binary /= AST node
-		require
-			l_not_void: l /= Void
-			r_not_void: r /= Void
 		do
-			create Result
-			Result.initialize (l, r)
-		ensure
-			bin_ne_as_not_void: Result /= Void
-			left_set: Result.left = l
-			right_set: Result.right = r
+			if l /= Void and r /= Void then
+				create Result.initialize (l, r)
+			end
 		end
 
 	new_bin_or_as (l, r: EXPR_AS): BIN_OR_AS is
 			-- New binary or AST node
-		require
-			l_not_void: l /= Void
-			r_not_void: r /= Void
 		do
-			create Result
-			Result.initialize (l, r)
-		ensure
-			bin_or_as_not_void: Result /= Void
-			left_set: Result.left = l
-			right_set: Result.right = r
+			if l /= Void and r /= Void then
+				create Result.initialize (l, r)
+			end
 		end
 
 	new_bin_or_else_as (l, r: EXPR_AS): BIN_OR_ELSE_AS is
 			-- New binary or else AST node
-		require
-			l_not_void: l /= Void
-			r_not_void: r /= Void
 		do
-			create Result
-			Result.initialize (l, r)
-		ensure
-			bin_or_else_as_not_void: Result /= Void
-			left_set: Result.left = l
-			right_set: Result.right = r
+			if l /= Void and r /= Void then
+				create Result.initialize (l, r)
+			end
 		end
 
 	new_bin_plus_as (l, r: EXPR_AS): BIN_PLUS_AS is
 			-- New binary + AST node
-		require
-			l_not_void: l /= Void
-			r_not_void: r /= Void
 		do
-			create Result
-			Result.initialize (l, r)
-		ensure
-			bin_plus_as_not_void: Result /= Void
-			left_set: Result.left = l
-			right_set: Result.right = r
+			if l /= Void and r /= Void then
+				create Result.initialize (l, r)
+			end
 		end
 
 	new_bin_power_as (l, r: EXPR_AS): BIN_POWER_AS is
 			-- New binary ^ AST node
-		require
-			l_not_void: l /= Void
-			r_not_void: r /= Void
 		do
-			create Result
-			Result.initialize (l, r)
-		ensure
-			bin_power_as_not_void: Result /= Void
-			left_set: Result.left = l
-			right_set: Result.right = r
+			if l /= Void and r /= Void then
+				create Result.initialize (l, r)
+			end
 		end
 
 	new_bin_slash_as (l, r: EXPR_AS): BIN_SLASH_AS is
 			-- New binary / AST node
-		require
-			l_not_void: l /= Void
-			r_not_void: r /= Void
 		do
-			create Result
-			Result.initialize (l, r)
-		ensure
-			bin_slash_as_not_void: Result /= Void
-			left_set: Result.left = l
-			right_set: Result.right = r
+			if l /= Void and r /= Void then
+				create Result.initialize (l, r)
+			end
 		end
 
 	new_bin_star_as (l, r: EXPR_AS): BIN_STAR_AS is
 			-- New binary * AST node
-		require
-			l_not_void: l /= Void
-			r_not_void: r /= Void
 		do
-			create Result
-			Result.initialize (l, r)
-		ensure
-			bin_star_as_not_void: Result /= Void
-			left_set: Result.left = l
-			right_set: Result.right = r
+			if l /= Void and r /= Void then
+				create Result.initialize (l, r)
+			end
 		end
 
 	new_bin_xor_as (l, r: EXPR_AS): BIN_XOR_AS is
 			-- New binary xor AST node
-		require
-			l_not_void: l /= Void
-			r_not_void: r /= Void
 		do
-			create Result
-			Result.initialize (l, r)
-		ensure
-			bin_xor_as_not_void: Result /= Void
-			left_set: Result.left = l
-			right_set: Result.right = r
+			if l /= Void and r /= Void then
+				create Result.initialize (l, r)
+			end
 		end
 
 	new_bit_const_as (b: ID_AS): BIT_CONST_AS is
 			-- New BIT_CONSTANT AST node with
 			-- with bit sequence contained in `b'
-		require
-			b_not_void: b /= Void
 		do
-			create Result
-			Result.initialize (b)
-		ensure
-			bit_const_as_not_void: Result /= Void
-			value_set: Result.value = b
+			if b /= Void then
+				create Result.initialize (b)
+			end
 		end
 
 	new_bits_as (v: INTEGER_CONSTANT): BITS_AS is
 			-- New BITS AST node
-		require
-			v_not_void: v /= Void
 		do
-			create Result
-			Result.initialize (v)
-		ensure
-			bits_as_not_void: Result /= Void
-			bits_value_set: Result.bits_value = v
+			if v /= Void then
+				create Result.initialize (v)
+			end
 		end
 
 	new_bits_symbol_as (s: ID_AS): BITS_SYMBOL_AS is
 			-- New BITS_SYMBOL AST node
-		require
-			s_not_void: s /= Void
 		do
-			create Result
-			Result.initialize (s)
-		ensure
-			bits_symbol_as_not_void: Result /= Void
-			bits_symbol_set: Result.bits_symbol = s
+			if s /= Void then
+				create Result.initialize (s)
+			end
 		end
 
 	new_body_as (a: EIFFEL_LIST [TYPE_DEC_AS]; t: TYPE_AS; c: CONTENT_AS): BODY_AS is
 			-- New BODY AST node
 		do
-			create Result
-			Result.initialize (a, t, c)
-		ensure
-			body_as_not_void: Result /= Void
-			arguments_set: Result.arguments = a
-			type_set: Result.type = t
-			content_set: Result.content = c
+			create Result.initialize (a, t, c)
 		end
 
-	new_boolean_as (b: BOOLEAN): BOOL_AS is
+	new_boolean_as (b: BOOLEAN; l, c, p, s: INTEGER): BOOL_AS is
 			-- New BOOLEAN AST node
+		require
+			l_non_negative: l >= 0
+			c_non_negative: c >= 0
+			p_non_negative: p >= 0
+			s_non_negative: s >= 0
 		do
-			create Result
-			Result.initialize (b)
-		ensure
-			boolean_as_not_void: Result /= Void
-			value_set: Result.value = b
+			create Result.initialize (b, l, c, p, s)
 		end
 
-	new_case_as (i: EIFFEL_LIST [INTERVAL_AS];
-		c: EIFFEL_LIST [INSTRUCTION_AS]; l: TOKEN_LOCATION): CASE_AS is
+	new_case_as (i: EIFFEL_LIST [INTERVAL_AS]; c: EIFFEL_LIST [INSTRUCTION_AS]): CASE_AS is
 			-- New WHEN AST node
-		require
-			i_not_void: i /= Void
-			l_not_void: l /= Void
 		do
-			create Result
-			Result.initialize (i, c, l)
-		ensure
-			case_as_not_void: Result /= Void
-			interval_set: Result.interval = i
-			compound_set: Result.compound = c
-			location_set: Result.location.is_equal (l)
+			if i /= Void then
+				create Result.initialize (i, c)
+			end
 		end
 
-	new_character_as (c: CHARACTER): CHAR_AS is
+	new_character_as (c: CHARACTER; l, co, p: INTEGER): CHAR_AS is
 			-- New CHARACTER AST node
+		require
+			l_non_negative: l >= 0
+			co_non_negative: co >= 0
+			p_non_negative: p >= 0
 		do
-			create Result
-			Result.initialize (c)
-		ensure
-			character_as_not_void: Result /= Void
-			value_set: Result.value = c
+			create Result.initialize (c, l, co, p)
 		end
 
-	new_check_as (c: EIFFEL_LIST [TAGGED_AS]; l, e: TOKEN_LOCATION): CHECK_AS is
+	new_check_as (c: EIFFEL_LIST [TAGGED_AS]; e: LOCATION_AS): CHECK_AS is
 			-- New CHECK AST node
-		require
-			l_not_void: l /= Void
-			e_not_void: e /= Void
 		do
-			create Result
-			Result.initialize (c, l, e)
-		ensure
-			check_as_not_void: Result /= Void
-			check_list_set: Result.check_list = c
-			location_set: Result.location.is_equal (l)
-			end_location_set: Result.end_location.is_equal (e)
+			if e /= Void then
+				create Result.initialize (c, e)
+			end
 		end
 
 	new_class_as (n: ID_AS; ext_name: STRING;
-		is_d, is_e, is_s, is_fc, is_ex: BOOLEAN;
-		top_ind, bottom_ind: INDEXING_CLAUSE_AS;
-		g: EIFFEL_LIST [FORMAL_DEC_AS];
-		p: EIFFEL_LIST [PARENT_AS];
-		c: EIFFEL_LIST [CREATE_AS];
-		co: EIFFEL_LIST [CONVERT_FEAT_AS];
-		f: EIFFEL_LIST [FEATURE_CLAUSE_AS];
-		inv: INVARIANT_AS;
-		s: SUPPLIERS_AS;
-		o: STRING_AS;
-		cl: CLICK_LIST;
-		he: BOOLEAN): CLASS_AS is
+			is_d, is_e, is_s, is_fc, is_ex: BOOLEAN;
+			top_ind, bottom_ind: INDEXING_CLAUSE_AS;
+			g: EIFFEL_LIST [FORMAL_DEC_AS];
+			p: EIFFEL_LIST [PARENT_AS];
+			c: EIFFEL_LIST [CREATE_AS];
+			co: EIFFEL_LIST [CONVERT_FEAT_AS];
+			f: EIFFEL_LIST [FEATURE_CLAUSE_AS];
+			inv: INVARIANT_AS;
+			s: SUPPLIERS_AS;
+			o: STRING_AS;
+			he: BOOLEAN; ed: LOCATION_AS): CLASS_AS
+		is
 			-- New CLASS AST node
-		require
-			n_not_void: n /= Void
-			s_not_void: s /= Void
-			cl_not_void: cl /= Void
-			co_valid: co /= Void implies not co.is_empty
 		do
-			create Result
-			Result.initialize (n, ext_name, is_d, is_e, is_s, is_fc, is_ex, top_ind, bottom_ind,
-				g, p, c, co, f, inv, s, o, cl, he)
-		ensure
-			class_as_not_void: Result /= Void
-			class_name_set: Result.class_name = n
-			external_class_name_set: Result.external_class_name = ext_name
-			is_deferred_set: Result.is_deferred = is_d
-			is_expanded_set: Result.is_expanded = is_e
-			is_separate_set: Result.is_separate = is_s
-			is_frozen_set: Result.is_frozen = is_fc
-			is_external_set: Result.is_external = is_ex
-			first_indexes_set: Result.top_indexes = top_ind
-			last_indexes_set: Result.bottom_indexes = bottom_ind
-			generics_set: Result.generics = g
-			parents_set: Result.parents = p
-			creators_set: Result.creators = c
-			convertors_set: Result.convertors = co
-			features_set: Result.features = f
-			empty_invariant_part: Result.invariant_part = Void implies inv = Void or else inv.assertion_list = Void
-			invariant_part_set: Result.invariant_part /= Void implies Result.invariant_part = inv
-
-			suppliers_set: Result.suppliers = s
-			obsolete_message_set: Result.obsolete_message = o
-			click_list_set: Result.click_list = cl
-			has_externals_set: Result.has_externals = he
+			if n /= Void and s /= Void and (co = Void or else not co.is_empty) and ed /= Void then
+				create Result.initialize (n, ext_name, is_d, is_e, is_s, is_fc, is_ex, top_ind,
+				bottom_ind, g, p, c, co, f, inv, s, o, he, ed)
+			end
 		end
 
 	new_class_type_as (n: ID_AS; g: EIFFEL_LIST [TYPE_AS]; is_exp, is_sep: BOOLEAN): CLASS_TYPE_AS is
 			-- New CLASS_TYPE AST node
-		require
-			n_not_void: n /= Void
 		do
-			create Result
-			Result.initialize (n, g, is_exp, is_sep)
-		ensure
-			class_type_as_not_void: Result /= Void
-			class_name_set: Result.class_name = n
-			generics_set: Result.generics = g
-			is_expanded_set: Result.is_expanded = is_exp
-			is_separate_set: Result.is_separate = is_sep
-		end
-
-	new_click_ast (n: CLICKABLE_AST; l, s, e: INTEGER): CLICK_AST is
-			-- New clickable element for `n'
-		require
-			n_not_void: n /= Void
-		do
-			create Result.initialize (n, l, s, e)
-		ensure
-			click_ast_not_void: Result /= Void
-			node_set: Result.node = n
-			start_line_number_set: Result.start_line_number = l
-			start_position_set: Result.start_position = s
-			end_position_set: Result.end_position = e
+			if n /= Void then
+				create Result.initialize (n, g, is_exp, is_sep)
+			end
 		end
 
 	new_client_as (c: EIFFEL_LIST [ID_AS]): CLIENT_AS is
 			-- New CLIENT AST node
-		require
-			c_not_void: c /= Void
-			c_not_empty: not c.is_empty
 		do
-			create Result
-			Result.initialize (c)
-		ensure
-			client_as_not_void: Result /= Void
-			clients_set: Result.clients = c
+			if c /= Void and not c.is_empty then
+				create Result.initialize (c)
+			end
+		end
+		
+	new_constant_as (a: ATOMIC_AS): CONSTANT_AS is
+			-- New CONSTANT_AS node
+		do
+			if a /= Void then
+				create Result.initialize (a)
+			end
 		end
 
 	new_convert_feat_as (cr: BOOLEAN; fn: FEATURE_NAME; t: EIFFEL_LIST [TYPE_AS]): CONVERT_FEAT_AS is
 			-- New convert feature entry AST node.
-		require
-			fn_not_void: fn /= Void
-			t_not_void: t /= Void
-			t_not_empty: not t.is_empty
 		do
-			create Result.initialize (cr, fn, t)
-		ensure
-			convert_feat_as_not_void: Result /= Void
-			is_creation_procedure_set: Result.is_creation_procedure = cr
-			feature_name_set: Result.feature_name = fn
-			conversion_types_set: Result.conversion_types = t
+			if fn /= Void and (t /= Void and then not t.is_empty) then
+				create Result.initialize (cr, fn, t)
+			end
 		end
 
 	new_create_as (c: CLIENT_AS; f: EIFFEL_LIST [FEATURE_NAME]): CREATE_AS is
 			-- New creation clause AST node
 		do
-			create Result
-			Result.initialize (c, f)
-		ensure
-			create_as_not_void: Result /= Void
-			clients_set: Result.clients = c
-			feature_list_set: Result.feature_list = f
+			create Result.initialize (c, f)
 		end
 
-	new_creation_as (tp: TYPE_AS; tg: ACCESS_AS; c: ACCESS_INV_AS; l: TOKEN_LOCATION): CREATION_AS is
+	new_creation_as (tp: TYPE_AS; tg: ACCESS_AS; c: ACCESS_INV_AS): CREATION_AS is
 			-- New creation instruction AST node
-		require
-			tg_not_void: tg /= Void
-			l_not_void: l /= Void
 		do
-			create Result
-			Result.initialize (tp, tg, c, l)
-		ensure
-			creation_as_not_void: Result /= Void
-			type_set: Result.type = tp
-			target_set: Result.target = tg
-			call_set: Result.call = c
-			location_set: Result.location.is_equal (l)
+			if tg /= Void then
+				create Result.initialize (tp, tg, c)
+			end
 		end
 
-	new_creation_expr_as (t: TYPE_AS; c: ACCESS_INV_AS; l: TOKEN_LOCATION): CREATION_EXPR_AS is
+	new_creation_expr_as (t: TYPE_AS; c: ACCESS_INV_AS): CREATION_EXPR_AS is
 			-- New creation expression AST node
-		require
-			t_not_void: t /= Void
-			l_not_void: l /= Void
 		do
-			create Result.initialize (t, c, l)
-		ensure
-			creation_expr_as_not_void: Result /= Void
-			type_set: Result.type = t
-			call_set: Result.call = c
-			location_set: Result.location.is_equal (l)
+			if t /= Void then
+				create Result.initialize (t, c)
+			end
 		end
 
-	new_current_as: CURRENT_AS is
+	new_current_as (l, c, p, s: INTEGER): CURRENT_AS is
 			-- New CURRENT AST node
-		do
-			create Result
-			Result.initialize
-		ensure
-			current_as_not_void: Result /= Void
-		end
-
-	new_debug_as (k: EIFFEL_LIST [STRING_AS]; c: EIFFEL_LIST [INSTRUCTION_AS]; l, e: TOKEN_LOCATION): DEBUG_AS is
-			-- New DEBUG AST node
 		require
-			l_not_void: l /= Void
-			e_not_void: e /= Void
+			l_non_negative: l >= 0
+			c_non_negative: c >= 0
+			p_non_negative: p >= 0
+			s_non_negative: s >= 0
 		do
-			create Result
-			Result.initialize (k, c, l, e)
-		ensure
-			debug_as_not_void: Result /= Void
-			keys_set: Result.keys = k
-			compound_set: Result.compound = c
-			location_set: Result.location.is_equal (l)
-			end_location_set: Result.end_location.is_equal (e)
+			create Result.make_with_location (l, c, p, s)
 		end
 
-	new_deferred_as: DEFERRED_AS is
-			-- New DEFERRED AST node
+	new_custom_attribute_as (c: CREATION_EXPR_AS; t: TUPLE_AS): CUSTOM_ATTRIBUTE_AS is
+			-- Create a new UNIQUE AST node.
 		do
-			create Result
-			Result.initialize
-		ensure
-			deferred_as_not_void: Result /= Void
+			if c /= Void then
+				create Result.initialize (c, t)
+			end
+		end
+
+	new_debug_as (k: EIFFEL_LIST [STRING_AS]; c: EIFFEL_LIST [INSTRUCTION_AS]; e: LOCATION_AS): DEBUG_AS is
+			-- New DEBUG AST node
+		do
+			if e /= Void then
+				create Result.initialize (k, c, e)
+			end
+		end
+
+	new_deferred_as (l, c, p, s: INTEGER): DEFERRED_AS is
+			-- New DEFERRED AST node
+		require
+			l_non_negative: l >= 0
+			c_non_negative: c >= 0
+			p_non_negative: p >= 0
+			s_non_negative: s >= 0
+		do
+			create Result.make_with_location (l, c, p, s)
 		end
 
 	new_do_as (c: EIFFEL_LIST [INSTRUCTION_AS]): DO_AS is
 			-- New DO AST node
 		do
-			create Result
-			Result.initialize (c)
-		ensure
-			do_as_not_void: Result /= Void
-			compound_set: Result.compound = c
+			create Result.initialize (c)
 		end
 
 	new_eiffel_list_atomic_as (n: INTEGER): EIFFEL_LIST [ATOMIC_AS] is
 			-- New empty list of ATOMIC_AS
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
 	new_eiffel_list_case_as (n: INTEGER): EIFFEL_LIST [CASE_AS] is
 			-- New empty list of CASE_AS
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
 	new_eiffel_list_convert (n: INTEGER): EIFFEL_LIST [CONVERT_FEAT_AS] is
 			-- New empty list of CONVERT_FEAT_AS
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
 	new_eiffel_list_create_as (n: INTEGER): EIFFEL_LIST [CREATE_AS] is
 			-- New empty list of CREATE_AS
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
 	new_eiffel_list_elseif_as (n: INTEGER): EIFFEL_LIST [ELSIF_AS] is
 			-- New empty list of ELSIF_AS
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
 	new_eiffel_list_export_item_as (n: INTEGER): EIFFEL_LIST [EXPORT_ITEM_AS] is
 			-- New empty list of EXPORT_ITEM_AS
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
 	new_eiffel_list_expr_as (n: INTEGER): EIFFEL_LIST [EXPR_AS] is
 			-- New empty list of EXPR_AS
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
 	new_eiffel_list_feature_as (n: INTEGER): EIFFEL_LIST [FEATURE_AS] is
 			-- New empty list of FEATURE_AS
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
 	new_eiffel_list_feature_clause_as (n: INTEGER): EIFFEL_LIST [FEATURE_CLAUSE_AS] is
 			-- New empty list of FEATURE_CLAUSE_AS
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
 	new_eiffel_list_feature_name (n: INTEGER): EIFFEL_LIST [FEATURE_NAME] is
 			-- New empty list of FEATURE_NAME
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
 	new_eiffel_list_formal_dec_as (n: INTEGER): EIFFEL_LIST [FORMAL_DEC_AS] is
 			-- New empty list of FORMAL_DEC_AS
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
 	new_eiffel_list_id_as (n: INTEGER): EIFFEL_LIST [ID_AS] is
 			-- New empty list of ID_AS
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
-	new_eiffel_list_index_as (n: INTEGER): INDEXING_CLAUSE_AS is
+	new_indexing_clause_as (n: INTEGER): INDEXING_CLAUSE_AS is
 			-- New empty list of INDEX_AS
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
 	new_eiffel_list_instruction_as (n: INTEGER): EIFFEL_LIST [INSTRUCTION_AS] is
 			-- New empty list of INSTRUCTION_AS
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
 	new_eiffel_list_interval_as (n: INTEGER): EIFFEL_LIST [INTERVAL_AS] is
 			-- New empty list of INTERVAL_AS
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
 	new_eiffel_list_operand_as (n: INTEGER): EIFFEL_LIST [OPERAND_AS] is
 			-- New empty list of OPERAND_AS
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
 	new_eiffel_list_parent_as (n: INTEGER): EIFFEL_LIST [PARENT_AS] is
 			-- New empty list of PARENT_AS
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
 	new_eiffel_list_rename_as (n: INTEGER): EIFFEL_LIST [RENAME_AS] is
 			-- New empty list of RENAME_AS
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
 	new_eiffel_list_string_as (n: INTEGER): EIFFEL_LIST [STRING_AS] is
 			-- New empty list of STRING_AS
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
 	new_eiffel_list_tagged_as (n: INTEGER): EIFFEL_LIST [TAGGED_AS] is
 			-- New empty list of TAGGED_AS
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
 	new_eiffel_list_type (n: INTEGER): EIFFEL_LIST [TYPE_AS] is
 			-- New empty list of TYPE
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
 	new_eiffel_list_type_dec_as (n: INTEGER): EIFFEL_LIST [TYPE_DEC_AS] is
 			-- New empty list of TYPE_DEC_AS
 		require
-			n_positive: n >= 0
+			n_non_negative: n >= 0
 		do
 			create Result.make (n)
 		ensure
-			list_not_void: Result /= Void
-			list_empty: Result.is_empty
+			list_full: Result /= Void implies Result.capacity = n and Result.all_default
 		end
 
-	new_elseif_as (e: EXPR_AS; c: EIFFEL_LIST [INSTRUCTION_AS]; l: TOKEN_LOCATION): ELSIF_AS is
+	new_elseif_as (e: EXPR_AS; c: EIFFEL_LIST [INSTRUCTION_AS]): ELSIF_AS is
 			-- New ELSIF AST node
-		require
-			e_not_void: e /= Void
-			l_not_void: l /= Void
 		do
-			create Result
-			Result.initialize (e, c, l)
-		ensure
-			elseif_as_not_void: Result /= Void
-			expr_set: Result.expr = e
-			compound_set: Result.compound = c
-			location_set: Result.location.is_equal (l)
+			if e /= Void then
+				create Result.initialize (e, c)
+			end
 		end
 
 	new_ensure_as (a: EIFFEL_LIST [TAGGED_AS]): ENSURE_AS is
 			-- New ENSURE AST node
 		do
-			create Result
-			Result.initialize (a)
-		ensure
-			ensure_as_not_void: Result /= Void
-			assertions_set: Result.assertions = a
+			create Result.initialize (a)
 		end
 
 	new_ensure_then_as (a: EIFFEL_LIST [TAGGED_AS]): ENSURE_THEN_AS is
 			-- New ENSURE THEN AST node
 		do
-			create Result
-			Result.initialize (a)
-		ensure
-			ensure_then_as_not_void: Result /= Void
-			assertions_set: Result.assertions = a
+			create Result.initialize (a)
 		end
 
 	new_export_item_as (c: CLIENT_AS; f: FEATURE_SET_AS): EXPORT_ITEM_AS is
 			-- New EXPORT_ITEM AST node
-		require
-			c_not_void: c /= Void
-			f_not_void: f /= Void
 		do
-			create Result
-			Result.initialize (c, f)
-		ensure
-			export_item_as_not_void: Result /= Void
-			clients_set: Result.clients = c
-			features_set: Result.features = f
+			if c /= Void and f /= Void then
+				create Result.initialize (c, f)
+			end
 		end
 
 	new_expr_address_as (e: EXPR_AS): EXPR_ADDRESS_AS is
 			-- New EXPR_ADDRESS AST node
-		require
-			e_not_void: e /= Void
 		do
-			create Result
-			Result.initialize (e)
-		ensure
-			expr_address_as_not_void: Result /= Void
-			expr_set: Result.expr = e
+			if e /= Void then
+				create Result.initialize (e)
+			end
 		end
 
 	new_expr_call_as (c: CALL_AS): EXPR_CALL_AS is
 			-- New EXPR_CALL AST node
-		require
-			c_not_void: c /= Void
 		do
-			create Result
-			Result.initialize (c)
-		ensure
-			expr_call_as_not_void: Result /= Void
-			call_set: Result.call = c
+			if c /= Void then
+				create Result.initialize (c)
+			end
 		end
 
 	new_external_as (l: EXTERNAL_LANG_AS; a: STRING_AS): EXTERNAL_AS is
 			-- New EXTERNAL AST node
-		require
-			l_not_void: l /= Void
 		do
-			create Result
-			Result.initialize (l, a)
-		ensure
-			external_as_not_void: Result /= Void
-			language_name_set: Result.language_name = l
-			alias_name_set: a /= Void implies Result.alias_name_id > 0
+			if l /= Void then
+				create Result.initialize (l, a)
+			end
 		end
 
-	new_external_lang_as (l: STRING_AS; s: TOKEN_LOCATION): EXTERNAL_LANG_AS is
+	new_external_lang_as (l: STRING_AS): EXTERNAL_LANG_AS is
 			-- New EXTERNAL_LANGUAGE AST node
-		require
-			l_not_void: l /= Void
-			s_not_void: s /= Void
 		do
-			create Result.initialize (l, s)
-		ensure
-			external_lang_as_not_void: Result /= Void
-			language_name_set: Result.language_name = l
-			location_set: Result.location.is_equal (s)
+			if l /= Void then
+				create Result.initialize (l)
+			end
 		end
 
-	new_feature_as (f: EIFFEL_LIST [FEATURE_NAME]; b: BODY_AS; i: INDEXING_CLAUSE_AS; l, s, e: INTEGER): FEATURE_AS is
+	new_feature_as (f: EIFFEL_LIST [FEATURE_NAME]; b: BODY_AS; i: INDEXING_CLAUSE_AS): FEATURE_AS is
 			-- New FEATURE AST node
-		require
-			f_not_void: f /= Void
-			f_not_empty: not f.is_empty
-			b_not_void: b /= Void
-			can_have_indexing_clause: i /= Void implies f.count = 1
 		do
-			create Result
-			Result.initialize (f, b, i, l, s, e)
-		ensure
-			feature_as_not_void: Result /= Void
-			feature_names_set: Result.feature_names = f
-			body_set: Result.body = b
-			indexes_set: Result.indexes = i
+			if
+				(f /= Void and then not f.is_empty) and b /= Void and
+				(i = Void or else f.count = 1)
+			then
+				create Result.initialize (f, b, i)
+			end
 		end
 
-	new_feature_clause_as (c: CLIENT_AS; f: EIFFEL_LIST [FEATURE_AS]; l: TOKEN_LOCATION): FEATURE_CLAUSE_AS is
+	new_feature_clause_as (c: CLIENT_AS; f: EIFFEL_LIST [FEATURE_AS]; l: LOCATION_AS): FEATURE_CLAUSE_AS is
 			-- New FEATURE_CLAUSE AST node
-		require
-			f_not_void: f /= Void
-			l_not_void: l /= Void
 		do
-			create Result
-			Result.initialize (c, f, l)
-		ensure
-			feature_clause_as_not_void: Result /= Void
-			clients_set: Result.clients = c
-			features_set: Result.features = f
-			location_set: Result.location.is_equal (l)
+			if f /= Void and l /= Void then
+				create Result.initialize (c, f, l)
+			end
 		end
 
 	new_feature_list_as (f: EIFFEL_LIST [FEATURE_NAME]): FEATURE_LIST_AS is
 			-- New FEATURE_LIST AST node
-		require
-			f_not_void: f /= Void
 		do
-			create Result
-			Result.initialize (f)
-		ensure
-			feature_list_not_void: Result /= Void
-			features_set: Result.features = f
+			if f /= Void then
+				create Result.initialize (f)
+			end
 		end
 
 	new_feature_name_id_as (f: ID_AS; b: BOOLEAN): FEAT_NAME_ID_AS is
 			-- New FEAT_NAME_ID AST node
-		require
-			f_not_void: f /= Void
 		do
-			create Result
-			Result.initialize (f, b)
-		ensure
-			feature_name_id_as_not_void: Result /= Void
-			feature_name_set: Result.feature_name = f
-			is_frozen_set: Result.is_frozen = b
+			if f /= Void then
+				create Result.initialize (f, b)
+			end
 		end
 
 	new_formal_as (n: ID_AS; is_ref, is_exp: BOOLEAN): FORMAL_AS is
 			-- New FORMAL AST node
 		do
-			create Result
-			Result.initialize (n, is_ref, is_exp)
-		ensure
-			formal_as_not_void: Result /= Void
-			formal_name_set: Result.name = n
-			is_reference_set: Result.is_reference = is_ref
-			is_expanded_set: Result.is_expanded = is_exp
+			if n /= Void then
+				create Result.initialize (n, is_ref, is_exp)
+			end
 		end
 
 	new_formal_dec_as (f: FORMAL_AS; c: TYPE_AS; cf: EIFFEL_LIST [FEATURE_NAME]): FORMAL_DEC_AS is
 			-- New FORMAL_DECLARATION AST node
-		require
-			f_not_void: f /= Void
 		do
-			create Result
-			Result.initialize (f, c, cf)
-		ensure
-			formal_dec_as_not_void: Result /= Void
-			formal_name_set: Result.name = f.name
-			constraint_set: Result.constraint = c
-			creation_feature_list_set: Result.creation_feature_list = cf
-			position_set: Result.position = f.position
-			is_reference_set: Result.is_reference = f.is_reference
-			is_expanded_set: Result.is_expanded = f.is_expanded
+			if f /= Void then
+				create Result.initialize (f, c, cf)
+			end
 		end
 
+	new_filled_id_as (l, c, p, s: INTEGER): ID_AS is
+			-- New empty ID AST node.
+		require
+			l_non_negative: l >= 0
+			c_non_negative: c >= 0
+			p_non_negative: p >= 0
+			s_non_negative: s >= 0
+		do
+			create Result.make (s)
+			Result.set_position (l, c, p, s)
+		end
+
+	new_identifier_list (n: INTEGER): CONSTRUCT_LIST [INTEGER] is
+			-- New ARRAYED_LIST [INTEGER]
+		require
+			n_non_negative: n >= 0
+		do
+			create Result.make (n)
+		end
+		
 	new_if_as (cnd: EXPR_AS; cmp: EIFFEL_LIST [INSTRUCTION_AS];
-		ei: EIFFEL_LIST [ELSIF_AS]; e: EIFFEL_LIST [INSTRUCTION_AS];
-		l, end_location: TOKEN_LOCATION): IF_AS is
+			ei: EIFFEL_LIST [ELSIF_AS]; e: EIFFEL_LIST [INSTRUCTION_AS];
+			end_location: LOCATION_AS): IF_AS
+		is
 			-- New IF AST node
-		require
-			cnd_not_void: cnd /= Void
-			l_not_void: l /= Void
-			end_location_not_void: end_location /= Void
 		do
-			create Result
-			Result.initialize (cnd, cmp, ei, e, l, end_location)
-		ensure
-			if_as_not_void: Result /= Void
-			condition_set: Result.condition = cnd
-			compound_set: Result.compound = cmp
-			elsif_list_set: Result.elsif_list = ei
-			else_part_set: Result.else_part = e
-			location_set: Result.location.is_equal (l)
-			end_location_set: Result.end_location.is_equal (end_location)
+			if cnd /= Void and end_location /= Void then
+				create Result.initialize (cnd, cmp, ei, e, end_location)
+			end
 		end
 
-	new_index_as (t: ID_AS; i: EIFFEL_LIST [ATOMIC_AS]; l: TOKEN_LOCATION): INDEX_AS is
+	new_index_as (t: ID_AS; i: EIFFEL_LIST [ATOMIC_AS]): INDEX_AS is
 			-- Create a new INDEX AST node.
-		require
-			i_not_void: i /= Void
-			l_not_void: l /= Void
 		do
-			create Result.initialize (t, i, l)
-		ensure
-			index_as_not_void: Result /= Void
-			tag_set: Result.tag = t
-			index_list_set: Result.index_list = i
-			location_set: equal (Result.location, l)
+			if i /= Void then
+				create Result.initialize (t, i)
+			end
 		end
 
 	new_infix_as (op: STRING_AS; b: BOOLEAN): INFIX_PREFIX_AS is
 			-- New INFIX AST node
-		require
-			op_not_void: op /= Void
 		do
-			create Result.initialize (op, b, True)
-		ensure
-			infix_as_not_void: Result /= Void
-			operator_set: Result.visual_name = op.value
-			operator_is_infix: Result.is_infix
-			is_frozen_set: Result.is_frozen = b
+			if op /= Void then
+				create Result.initialize (op, b, True)
+			end
 		end
 
 	new_inspect_as (s: EXPR_AS; c: EIFFEL_LIST [CASE_AS];
-		e: EIFFEL_LIST [INSTRUCTION_AS]; l, end_location: TOKEN_LOCATION): INSPECT_AS is
+			e: EIFFEL_LIST [INSTRUCTION_AS]; end_location: LOCATION_AS): INSPECT_AS
+		is
 			-- New INSPECT AST node
-		require
-			s_not_void: s /= Void
-			l_not_void: l /= Void
-			end_location_not_void: end_location /= Void
 		do
-			create Result
-			Result.initialize (s, c, e, l, end_location)
-		ensure
-			inspect_as_not_void: Result /= Void
-			switch_set: Result.switch = s
-			case_list_set: Result.case_list = c
-			else_part_set: Result.else_part = e
-			location_set: Result.location.is_equal (l)
-			end_location_set: Result.end_location.is_equal (end_location)
+			if s /= Void and end_location /= Void then
+				create Result.initialize (s, c, e, end_location)
+			end
 		end
 
-	new_instr_call_as (c: CALL_AS; l: TOKEN_LOCATION): INSTR_CALL_AS is
+	new_instr_call_as (c: CALL_AS): INSTR_CALL_AS is
 			-- New INSTR_CALL AST node
-		require
-			c_not_void: c /= Void
-			l_not_void: l /= Void
 		do
-			create Result.initialize (c, l)
-		ensure
-			instr_call_as_not_void: Result /= Void
-			call_set: Result.call = c
-			location_set: Result.location.is_equal (l)
+			if c /= Void then
+				create Result.initialize (c)
+			end
 		end
 
 	new_interval_as (l, u: ATOMIC_AS): INTERVAL_AS is
 			-- New INTERVAL AST node
-		require
-			l_not_void: l /= Void
 		do
-			create Result
-			Result.initialize (l, u)
-		ensure
-			interval_as_not_void: Result /= Void
-			lower_set: Result.lower = l
-			upper_set: Result.upper = u
+			if l /= Void then
+				create Result.initialize (l, u)
+			end
 		end
 
 	new_invariant_as (a: EIFFEL_LIST [TAGGED_AS]; once_manifest_string_count: INTEGER): INVARIANT_AS is
@@ -1225,494 +843,338 @@ feature -- Access
 		require
 			valid_once_manifest_string_count: once_manifest_string_count >= 0
 		do
-			create Result
-			Result.initialize (a, once_manifest_string_count)
-		ensure
-			invariant_as_not_void: Result /= Void
-			assertion_list_set: Result.assertion_list = a
-			once_manifest_string_count_set: Result.once_manifest_string_count = once_manifest_string_count
+			create Result.initialize (a, once_manifest_string_count)
 		end
 
 	new_like_id_as (a: ID_AS): LIKE_ID_AS is
 			-- New LIKE_ID AST node
-		require
-			a_not_void: a /= Void
 		do
-			create Result
-			Result.initialize (a)
-		ensure
-			like_id_as_not_void: Result /= Void
-			anchor_set: Result.anchor = a
+			if a /= Void then
+				create Result.initialize (a)
+			end
 		end
 
-	new_like_current_as: LIKE_CUR_AS is
+	new_like_current_as (other: CURRENT_AS): LIKE_CUR_AS is
 			-- New LIKE_CURRENT AST node
 		do
-			create Result
-			Result.initialize
-		ensure
-			like_current_as_not_void: Result /= Void
+			create Result.make_from_other (other)
+		end
+
+	new_location_as (l, c, p, s: INTEGER): LOCATION_AS is
+			-- New LOCATION_AS
+		require
+			l_non_negative: l >= 0
+			c_non_negative: c >= 0
+			p_non_negative: p >= 0
+			s_non_negative: s >= 0
+		do
+			create Result.make (l, c, p, s)
 		end
 
 	new_loop_as (f: EIFFEL_LIST [INSTRUCTION_AS]; i: EIFFEL_LIST [TAGGED_AS];
-		v: VARIANT_AS; s: EXPR_AS; c: EIFFEL_LIST [INSTRUCTION_AS];
-		l, e: TOKEN_LOCATION): LOOP_AS is
+			v: VARIANT_AS; s: EXPR_AS; c: EIFFEL_LIST [INSTRUCTION_AS];
+			e: LOCATION_AS): LOOP_AS
+		is
 			-- New LOOP AST node
-		require
-			s_not_void: s /= Void
-			l_not_void: l /= Void
-			e_not_void: e /= Void
 		do
-			create Result
-			Result.initialize (f, i, v, s, c, l, e)
-		ensure
-			loop_as_not_void: Result /= Void
-			from_part_set: Result.from_part = f
-			invariant_part_set: Result.invariant_part = i
-			variant_part_set: Result.variant_part = v
-			stop_set: Result.stop = s
-			compound_set: Result.compound = c
-			location_set: Result.location.is_equal (l)
-			end_location_set: Result.end_location.is_equal (e)
+			if s /= Void and e /= Void then
+				create Result.initialize (f, i, v, s, c, e)
+			end
 		end
 
 	new_nested_as (t: ACCESS_AS; m: CALL_AS): NESTED_AS is
 			-- New NESTED CALL AST node
-		require
-			t_not_void: t /= Void
-			m_not_void: m /= Void
 		do
-			create Result
-			Result.initialize (t, m)
-		ensure
-			nested_as_not_void: Result /= Void
-			target_set: Result.target = t
-			message_set: Result.message = m
+			if t /= Void and m /= Void then
+				create Result.initialize (t, m)
+			end
 		end
 
 	new_nested_expr_as (t: EXPR_AS; m: CALL_AS): NESTED_EXPR_AS is
 			-- New NESTED_EXPR CALL AST node
-		require
-			t_not_void: t /= Void
-			m_not_void: m /= Void
 		do
-			create Result
-			Result.initialize (t, m)
-		ensure
-			nested_expr_as_not_void: Result /= Void
-			target_set: Result.target = t
-			message_set: Result.message = m
+			if t /= Void and m /= Void then
+				create Result.initialize (t, m)
+			end
 		end
 
 	new_none_type_as: NONE_TYPE_AS is
 			-- New type AST node for "NONE"
 		do
-			create Result
-			Result.initialize
-		ensure
-			type_as_not_void: Result /= Void
+			create Result.initialize
 		end
 
 	new_once_as (c: EIFFEL_LIST [INSTRUCTION_AS]): ONCE_AS is
 			-- New ONCE AST node
 		do
-			create Result
-			Result.initialize (c)
-		ensure
-			once_as_not_void: Result /= Void
-			compound_set: Result.compound = c
+			create Result.initialize (c)
 		end
 
-	new_result_operand_as: OPERAND_AS is
+	new_operand_as (c: TYPE_AS; t: ACCESS_AS; e: EXPR_AS): OPERAND_AS is
 			-- New OPERAND AST node
 		do
-			create Result
-			Result.initialize_result
-		ensure
-			operand_as_not_void: Result /= Void
-			is_result_set: Result.is_result
-			class_type_set: Result.class_type = Void
-			target_set: Result.target = Void
-			expression_set: Result.expression = Void
-		end
-
-	new_operand_as (c: TYPE_AS; t: ID_AS; e: EXPR_AS): OPERAND_AS is
-			-- New OPERAND AST node
-		do
-			create Result
-			Result.initialize (c, t, e)
-		ensure
-			operand_as_not_void: Result /= Void
-			class_type_set: Result.class_type = c
-			target_set: Result.target = t
-			expression_set: Result.expression = e
+			create Result.initialize (c, t, e)
 		end
 
 	new_paran_as (e: EXPR_AS): PARAN_AS is
 			-- New PARAN AST node
-		require
-			e_not_void: e /= Void
 		do
-			create Result
-			Result.initialize (e)
-		ensure
-			paran_as_not_void: Result /= Void
-			expr_set: Result.expr = e
+			if e /= Void then
+				create Result.initialize (e)
+			end
 		end
 
 	new_parent_as (t: CLASS_TYPE_AS; rn: EIFFEL_LIST [RENAME_AS];
-		e: EIFFEL_LIST [EXPORT_ITEM_AS]; u: EIFFEL_LIST [FEATURE_NAME];
-		rd: EIFFEL_LIST [FEATURE_NAME]; s: EIFFEL_LIST [FEATURE_NAME]): PARENT_AS is
+			e: EIFFEL_LIST [EXPORT_ITEM_AS]; u: EIFFEL_LIST [FEATURE_NAME];
+			rd: EIFFEL_LIST [FEATURE_NAME]; s: EIFFEL_LIST [FEATURE_NAME]; ed: LOCATION_AS): PARENT_AS
+		is
 			-- New PARENT AST node
-		require
-			t_not_void: t /= Void
 		do
-			create Result
-			Result.initialize (t, rn, e, u, rd, s)
-		ensure
-			parent_as_not_void: Result /= Void
-			type_set: Result.type = t
-			renaming_set: Result.renaming = rn
-			exports_set: Result.exports = e
-			undefining_set: Result.undefining = u
-			redefininig_set: Result.redefining = rd
-			selecting_set: Result.selecting = s
+			if t /= Void then
+				create Result.initialize (t, rn, e, u, rd, s, ed)
+			end
 		end
 
-	new_precursor_as (n: ID_AS; p: EIFFEL_LIST [EXPR_AS]): PRECURSOR_AS is
+	new_precursor_as (pk: LOCATION_AS; n: CLASS_TYPE_AS; p: EIFFEL_LIST [EXPR_AS]): PRECURSOR_AS is
 			-- New PRECURSOR AST node
 		do
-			create Result
-			Result.initialize (n, p)
-		ensure
-			precursor_as_not_void: Result /= Void
-			parent_name_set: Result.parent_name = n
-			parameters_set: Result.parameters = p
+			if pk /= Void and (n /= Void implies n.generics = Void) then
+				create Result.initialize (pk, n, p)
+			end
+		end
+
+	new_prefix_as (op: STRING_AS; b: BOOLEAN): INFIX_PREFIX_AS is
+			-- New PREFIX AST node
+		do
+			if op /= Void then
+				create Result.initialize (op, b, False)
+			end
+		end
+
+	new_rename_as (o, n: FEATURE_NAME): RENAME_AS is
+			-- New RENAME_PAIR AST node
+		do
+			if o /= Void and n /= Void then
+				create Result.initialize (o, n)
+			end
+		end
+
+	new_require_as (a: EIFFEL_LIST [TAGGED_AS]): REQUIRE_AS is
+			-- New REQUIRE AST node
+		do
+			create Result.initialize (a)
+		end
+
+	new_require_else_as (a: EIFFEL_LIST [TAGGED_AS]): REQUIRE_ELSE_AS is
+			-- New REQUIRE ELSE AST node
+		do
+			create Result.initialize (a)
+		end
+
+	new_result_as (l, c, p, s: INTEGER): RESULT_AS is
+			-- New RESULT AST node
+		require
+			l_non_negative: l >= 0
+			c_non_negative: c >= 0
+			p_non_negative: p >= 0
+			s_non_negative: s >= 0
+		do
+			create Result.make_with_location (l, c, p, s)
+		end
+
+	new_retry_as (l, c, p, s: INTEGER): RETRY_AS is
+			-- New RETRY AST node
+		require
+			l_non_negative: l >= 0
+			c_non_negative: c >= 0
+			p_non_negative: p >= 0
+			s_non_negative: s >= 0
+		do
+			create Result.make_with_location (l, c, p, s)
+		end
+
+	new_reverse_as (t: ACCESS_AS; s: EXPR_AS): REVERSE_AS is
+			-- New assignment attempt AST node
+		do
+			if t /= Void and s /= Void then
+				create Result.initialize (t, s)
+			end
+		end
+
+	new_routine_as (o: STRING_AS; pr: REQUIRE_AS;
+			l: EIFFEL_LIST [TYPE_DEC_AS]; b: ROUT_BODY_AS; po: ENSURE_AS;
+			r: EIFFEL_LIST [INSTRUCTION_AS]; p: INTEGER; end_loc: LOCATION_AS;
+			oms_count: INTEGER): ROUTINE_AS
+		is
+			-- New ROUTINE AST node
+		require
+			valid_oms_count: oms_count >= 0
+		do
+			if b /= Void and end_loc /= Void then
+				create Result.initialize (o, pr, l, b, po, r, p, end_loc, oms_count)
+			end
+		end
+
+	new_routine_creation_as (t: OPERAND_AS; f: ID_AS; o: EIFFEL_LIST [OPERAND_AS]; is_qualified: BOOLEAN): ROUTINE_CREATION_AS is
+			-- New ROUTINE_CREATION AST node
+		do
+			if f /= Void then
+				create Result.initialize (t, f, o, is_qualified)
+			end
+		end
+
+	new_old_routine_creation_as (
+			l: AST_EIFFEL; t: OPERAND_AS; f: ID_AS; o: EIFFEL_LIST [OPERAND_AS];
+			is_qualified: BOOLEAN): PAIR [ROUTINE_CREATION_AS, LOCATION_AS]
+		is
+			-- New ROUTINE_CREATION AST node for obsolete use of `~'.
+		local
+			l_routine: ROUTINE_CREATION_AS
+		do
+			if l /= Void and f /= Void then
+				create l_routine.initialize (t, f, o, is_qualified)
+				create Result.make (l_routine, l.start_location)
+			end
 		end
 
 	new_static_access_as (c: TYPE_AS; f: ID_AS; p: EIFFEL_LIST [EXPR_AS]): STATIC_ACCESS_AS is
 			-- New STATIC_ACCESS AST node
 		do
 			create Result.initialize (c, f, p)
-		ensure
-			static_access_as_not_void: Result /= Void
-			class_type_set: Result.class_type = c
-			feature_name_set: Result.feature_name = f
-			parameters_set: Result.parameters = p
 		end
 
-
-	new_prefix_as (op: STRING_AS; b: BOOLEAN): INFIX_PREFIX_AS is
-			-- New PREFIX AST node
-		require
-			op_not_void: op /= Void
-		do
-			create Result.initialize (op, b, False)
-		ensure
-			prefix_as_not_void: Result /= Void
-			operator_set: Result.visual_name = op.value
-			operator_is_prefix: Result.is_prefix
-			is_frozen_set: Result.is_frozen = b
-		end
-
-	new_rename_as (o, n: FEATURE_NAME): RENAME_AS is
-			-- New RENAME_PAIR AST node
-		require
-			o_not_void: o /= Void
-			n_not_void: n /= Void
-		do
-			create Result
-			Result.initialize (o, n)
-		ensure
-			rename_as_not_void: Result /= Void
-			old_name_set: Result.old_name = o
-			new_name_set: Result.new_name = n
-		end
-
-	new_require_as (a: EIFFEL_LIST [TAGGED_AS]): REQUIRE_AS is
-			-- New REQUIRE AST node
-		do
-			create Result
-			Result.initialize (a)
-		ensure
-			require_as_not_void: Result /= Void
-			assertions_set: Result.assertions = a
-		end
-
-	new_require_else_as (a: EIFFEL_LIST [TAGGED_AS]): REQUIRE_ELSE_AS is
-			-- New REQUIRE ELSE AST node
-		do
-			create Result
-			Result.initialize (a)
-		ensure
-			require_else_as_not_void: Result /= Void
-			assertions_set: Result.assertions = a
-		end
-
-	new_result_as: RESULT_AS is
-			-- New RESULT AST node
-		do
-			create Result
-			Result.initialize
-		ensure
-			result_as_not_void: Result /= Void
-		end
-
-	new_retry_as (l: TOKEN_LOCATION): RETRY_AS is
-			-- New RETRY AST node
-		require
-			l_not_void: l /= Void
-		do
-			create Result
-			Result.initialize (l)
-		ensure
-			retry_as_not_void: Result /= Void
-			location_set: Result.location.is_equal (l)
-		end
-
-	new_reverse_as (t: ACCESS_AS; s: EXPR_AS; l: TOKEN_LOCATION): REVERSE_AS is
-			-- New assignment attempt AST node
-		require
-			t_not_void: t /= Void
-			s_not_void: s /= Void
-			l_not_void: l /= Void
-		do
-			create Result
-			Result.initialize (t, s, l)
-		ensure
-			reverse_as_not_void: Result /= Void
-			target_set: Result.target = t
-			source_set: Result.source = s
-			location_set: Result.location.is_equal (l)
-		end
-
-	new_routine_as (o: STRING_AS; pr: REQUIRE_AS;
-		l: EIFFEL_LIST [TYPE_DEC_AS]; b: ROUT_BODY_AS; po: ENSURE_AS;
-		r: EIFFEL_LIST [INSTRUCTION_AS]; p: INTEGER; end_loc: TOKEN_LOCATION;
-		once_manifest_string_count: INTEGER): ROUTINE_AS is
-			-- New ROUTINE AST node
-		require
-			b_not_void: b /= Void
-			end_loc_not_void: end_loc /= Void
-			valid_once_manifest_string_count: once_manifest_string_count >= 0
-		do
-			create Result
-			Result.initialize (o, pr, l, b, po, r, p, end_loc, once_manifest_string_count)
-		ensure
-			routine_as_not_void: Result /= Void
-			obsolete_message_set: Result.obsolete_message = o
-			precondition_set: Result.precondition = pr
-			locals_set: Result.locals = l
-			routine_body_set: Result.routine_body = b
-			postcondition_set: Result.postcondition = po
-			rescue_clause_set: Result.rescue_clause = r
-			body_start_position_set: Result.body_start_position = p
-			body_end_line_number_set: Result.end_location.is_equal (end_loc)
-			once_manifest_string_count_set: Result.once_manifest_string_count = once_manifest_string_count
-		end
-
-	new_routine_creation_as (t: OPERAND_AS; f: ID_AS; o: EIFFEL_LIST [OPERAND_AS]; is_qualified: BOOLEAN): ROUTINE_CREATION_AS is
-			-- New ROUTINE_CREATION AST node
-		require
-			f_not_void: f /= Void
-		do
-			create Result
-			Result.initialize (t, f, o, is_qualified)
-		ensure
-			routine_creation_as_not_void: Result /= Void
-			target_set: Result.target = t
-			feature_name_set: Result.feature_name = f
-			operands_set: Result.operands = o
-		end
-
-	new_old_routine_creation_as (
-			l: TOKEN_LOCATION; t: OPERAND_AS; f: ID_AS; o: EIFFEL_LIST [OPERAND_AS];
-			is_qualified: BOOLEAN): PAIR [ROUTINE_CREATION_AS, TOKEN_LOCATION]
-		is
-			-- New ROUTINE_CREATION AST node for obsolete use of `~'.
-		require
-			l_not_void: l /= Void
-			f_not_void: f /= Void
-		local
-			l_routine: ROUTINE_CREATION_AS
-		do
-			create l_routine
-			l_routine.initialize (t, f, o, is_qualified)
-			create Result.make (l_routine, l)
-		ensure
-			routine_creation_as_not_void: Result /= Void
-			target_set: Result.first.target = t
-			feature_name_set: Result.first.feature_name = f
-			operands_set: Result.first.operands = o
-			location_set: Result.second = l
-		end
-
-	new_string_as (s: STRING): STRING_AS is
+	new_string_as (s: STRING; l, c, p: INTEGER): STRING_AS is
 			-- New STRING AST node
 		require
-			s_not_void: s /= Void
+			l_non_negative: l >= 0
+			c_non_negative: c >= 0
+			p_non_negative: p >= 0
 		do
-			create Result
-			Result.initialize (s)
-		ensure
-			string_as_not_void: Result /= Void
-			value_set: Result.value = s
+			if s /= Void then
+				create Result.initialize (s, l, c, p)
+			end
 		end
 
-	new_verbatim_string_as (s, marker: STRING; is_indentable: BOOLEAN): VERBATIM_STRING_AS is
-			-- New VERBATIM_STRING AST node
-		require
-			s_not_void: s /= Void
-			marker_not_void: marker /= Void
-		do
-			create Result
-			Result.initialize (s, marker, is_indentable)
-		ensure
-			verbatim_string_as_not_void: Result /= Void
-			value_set: Result.value = s
-			marker_set: Result.verbatim_marker = marker
-			is_indentable_set: Result.is_indentable = is_indentable
-		end
-
-	new_tagged_as (t: ID_AS; e: EXPR_AS; l: TOKEN_LOCATION): TAGGED_AS is
+	new_tagged_as (t: ID_AS; e: EXPR_AS): TAGGED_AS is
 			-- New TAGGED AST node
-		require
-			e_not_void: e /= Void
-			l_not_void: l /= Void
 		do
-			create Result
-			Result.initialize (t, e, l)
-		ensure
-			tagged_as_not_void: Result /= Void
-			tag_set: Result.tag = t
-			expr_set: Result.expr = e
-			location_set: Result.location.is_equal (l)
+			if e /= Void then
+				create Result.initialize (t, e)
+			end
 		end
 
 	new_tuple_as (exp: EIFFEL_LIST [EXPR_AS]): TUPLE_AS is
 			-- New Manifest TUPLE AST node
-		require
-			exp_not_void: exp /= Void
 		do
-			create Result
-			Result.initialize (exp)
-		ensure
-			tuple_as_not_void: Result /= Void
-			expressions_set: Result.expressions = exp
+			if exp /= Void then
+				create Result.initialize (exp)
+			end
 		end
 
-	new_type_dec_as (i: ARRAYED_LIST [INTEGER]; t: TYPE_AS; l: TOKEN_LOCATION): TYPE_DEC_AS is
+	new_type_dec_as (i: CONSTRUCT_LIST [INTEGER]; t: TYPE_AS): TYPE_DEC_AS is
 			-- New TYPE_DEC AST node
-		require
-			i_not_void: i /= Void
-			t_not_void: t /= Void
-			l_not_void: l /= Void
 		do
-			create Result
-			Result.initialize (i, t, l)
-		ensure
-			type_dec_as_not_void: Result /= Void
-			id_list_set: Result.id_list = i
-			type_set: Result.type = t
-			location_set: equal (Result.location, l)
+			if i /= Void and t /= Void then
+				create Result.initialize (i, t)
+			end
+		end
+		
+	new_type_expr_as (t: TYPE_AS): TYPE_EXPR_AS is
+			-- New TYPE_EXPR AST node
+		do
+			if t /= Void then
+				create Result.initialize (t)
+			end
 		end
 
 	new_un_free_as (op: ID_AS; e: EXPR_AS): UN_FREE_AS is
 			-- New UN_FREE AST node
-		require
-			op_not_void: op /= Void
-			e_not_void: e /= Void
 		do
-			create Result
-			Result.initialize (op, e)
-		ensure
-			un_free_as_not_void: Result /= Void
-			op_name_set: Result.op_name = op
-			expr_set: Result.expr = e
+			if op /= Void and e /= Void then
+				create Result.initialize (op, e)
+			end
 		end
 
 	new_un_minus_as (e: EXPR_AS): UN_MINUS_AS is
 			-- New unary - AST node
-		require
-			e_not_void: e /= Void
 		do
-			create Result
-			Result.initialize (e)
-		ensure
-			un_minus_as_not_void: Result /= Void
-			expr_set: Result.expr = e
+			if e /= Void then
+				create Result.initialize (e)
+			end
 		end
 
 	new_un_not_as (e: EXPR_AS): UN_NOT_AS is
 			-- New unary not AST node
-		require
-			e_not_void: e /= Void
 		do
-			create Result
-			Result.initialize (e)
-		ensure
-			un_not_as_not_void: Result /= Void
-			expr_set: Result.expr = e
+			if e /= Void then
+				create Result.initialize (e)
+			end
 		end
 
 	new_un_old_as (e: EXPR_AS): UN_OLD_AS is
 			-- New unary old AST node
-		require
-			e_not_void: e /= Void
 		do
-			create Result
-			Result.initialize (e)
-		ensure
-			un_old_as_not_void: Result /= Void
-			expr_set: Result.expr = e
+			if e /= Void then
+				create Result.initialize (e)
+			end
 		end
 
 	new_un_plus_as (e: EXPR_AS): UN_PLUS_AS is
 			-- New unary + AST node
-		require
-			e_not_void: e /= Void
 		do
-			create Result
-			Result.initialize (e)
-		ensure
-			un_plus_as_not_void: Result /= Void
-			expr_set: Result.expr = e
+			if e /= Void then
+				create Result.initialize (e)
+			end
 		end
 
-	new_un_strip_as (i: ARRAYED_LIST [INTEGER]): UN_STRIP_AS is
+	new_un_strip_as (i: CONSTRUCT_LIST [INTEGER]): UN_STRIP_AS is
 			-- New UN_STRIP AST node
-		require
-			i_not_void: i /= Void
 		do
-			create Result
-			Result.initialize (i)
-		ensure
-			un_strip_as_not_void: Result /= Void
-			id_list_set: Result.id_list = i
+			if i /= Void then
+				create Result.initialize (i)
+			end
 		end
 
-	new_unique_as: UNIQUE_AS is
+	new_unique_as (l, c, p, s: INTEGER): UNIQUE_AS is
 			-- New UNIQUE AST node
+		require
+			l_non_negative: l >= 0
+			c_non_negative: c >= 0
+			p_non_negative: p >= 0
+			s_non_negative: s >= 0
 		do
-			create Result
-			Result.initialize
-		ensure
-			unique_as_not_void: Result /= Void
+			create Result.make_with_location (l, c, p, s)
 		end
 
-	new_variant_as (t: ID_AS; e: EXPR_AS; l: TOKEN_LOCATION): VARIANT_AS is
+	new_variant_as (t: ID_AS; e: EXPR_AS): VARIANT_AS is
 			-- New VARIANT AST node
-		require
-			e_not_void: e /= Void
-			l_not_void: l /= Void
 		do
-			create Result
-			Result.initialize (t, e, l)
-		ensure
-			variant_as_not_void: Result /= Void
-			tag_set: Result.tag = t
-			expr_set: Result.expr = e
-			location_set: Result.location.is_equal (l)
+			if e /= Void then
+				create Result.initialize (t, e)
+			end
+		end
+
+	new_verbatim_string_as (s, marker: STRING; is_indentable: BOOLEAN; l, c, p: INTEGER): VERBATIM_STRING_AS is
+			-- New VERBATIM_STRING AST node
+		require
+			l_non_negative: l >= 0
+			c_non_negative: c >= 0
+			p_non_negative: p >= 0
+		do
+			if s /= Void and marker /= Void then
+				create Result.initialize (s, marker, is_indentable, l, c, p)
+			end
+		end
+
+	new_void_as (l, c, p, s: INTEGER): VOID_AS is
+			-- New VOID AST node
+		require
+			l_non_negative: l >= 0
+			c_non_negative: c >= 0
+			p_non_negative: p >= 0
+			s_non_negative: s >= 0
+		do
+			create Result.make_with_location (l, c, p, s)
 		end
 
 end -- class AST_FACTORY
