@@ -29,6 +29,9 @@ feature
 			tmp_string: STRING
 		do
 			io.putstring ("Database user authentication:%N")
+			io.putstring ("Database name: ")
+			io.readline
+			set_data_source (io.laststring)
 			io.putstring ("Name: ")
 			io.readline
 			tmp_string := clone (io.laststring)
@@ -66,24 +69,22 @@ feature {NONE}
 		local
 			author: STRING
 			price: REAL
-			pub_date: ABSOLUTE_DATE
+			pub_date: DATE_TIME
 		do
 			!! author.make (10)
 			price := 51
-			!! pub_date.make
-			pub_date.change_date (01, 01, 1984)
-			pub_date.change_time (00, 00, 00)
+			!! pub_date.make_now 
 
 			!! proc.make (Proc_name)
 			proc.load
+				proc.set_arguments (<<"author", "price", "pub_date">>,
+							<<author, price, pub_date >>)
 
 			if proc.exists then
 				io.putstring ("Stored procedure text: ")
 				io.putstring (proc.text)
 				io.new_line
 			else
-				proc.set_arguments (<<"author", "price", "pub_date">>,
-							<<author, price, pub_date >>)
 				proc.store (Select_text)
 				io.putstring ("Procedure created.%N")
 				proc.load
@@ -101,9 +102,9 @@ feature {NONE}
 				io.new_line
 				io.new_line
 
-				base_change.set_map_name (author, "author")
-				base_change.set_map_name (price, "price")
 				base_change.set_map_name (pub_date, "pub_date")
+				base_change.set_map_name (price, "price")
+				base_change.set_map_name (author, "author")
 
 				proc.execute (base_change)
 
@@ -120,15 +121,11 @@ feature {NONE}
 feature {NONE}
 
 	Select_text: STRING is
-		" update                                    db_book                                     set %
-         %quantity =                                 quantity + 10 ,       author =     author    , %
-         %price   =                price,            year                          =          year, %
-		 %                                                                                          %
-         %title           =          title                                   where author = :author %
-		 %or price = :price or year = :pub_date"
+		"update db_book set %
+		%author = author, price = :price, year = :pub_date where author = :author"
 
 	Table_name: STRING is
-		"DB_BOOK"
+		"db_book"
 
 	Proc_name: STRING is "db_book_proc"
 
