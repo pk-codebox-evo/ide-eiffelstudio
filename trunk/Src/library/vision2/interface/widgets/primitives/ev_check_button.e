@@ -12,7 +12,7 @@ class
 inherit
 	EV_TOGGLE_BUTTON
 		redefine
-			make_with_text, 
+			make, make_with_text, 
 			implementation
 		end
 
@@ -21,6 +21,13 @@ creation
 
 feature {NONE} -- Initialization
 
+	make (par: EV_CONTAINER) is
+		-- Empty check button
+		do
+			!EV_CHECK_BUTTON_IMP!implementation.make (par)
+			initialize (par)
+		end	
+	
 	make_with_text (par: EV_CONTAINER; txt: STRING) is
 			-- Check button with `par' as parent and `txt' as
 			-- text label
