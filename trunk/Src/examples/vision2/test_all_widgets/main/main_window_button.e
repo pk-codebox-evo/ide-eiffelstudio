@@ -20,7 +20,7 @@ creation
 	
 feature {NONE} --Initialization
 	
-	make_button (main_w: MAIN_WINDOW; button_name: STRING; cmd: EV_COMMAND) is
+	make_button (main_w: MAIN_WINDOW; button_name: STRING; cmd: DEMO_WINDOW) is
 		local
 
 			e: EV_EVENT
