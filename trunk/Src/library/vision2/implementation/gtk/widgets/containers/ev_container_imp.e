@@ -7,12 +7,12 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 	
---XX deferred class
-class
+deferred class
 	
 	EV_CONTAINER_IMP
 	
 inherit
+	EV_CONTAINER_I
 	
 	EV_WIDGET_IMP
 	
@@ -42,10 +42,6 @@ feature -- Access
                                 not_yet_implemented: False
                         end		
 		end
-
-
-
-
 end
 
 --|----------------------------------------------------------------
