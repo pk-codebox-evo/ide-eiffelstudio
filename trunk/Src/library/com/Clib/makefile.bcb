@@ -34,7 +34,9 @@ com.lib: $(OBJ)
 	if not exist ..\spec\bcb mkdir ..\spec\bcb
 	if not exist ..\spec\bcb\lib mkdir ..\spec\bcb\lib
 	copy $@ ..\spec\bcb\lib
+	del $@
 	del *.obj
+	del *.BAK
 
 .cpp.obj:
 	$(CC) $(CFLAGS) $<
