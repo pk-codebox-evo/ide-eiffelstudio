@@ -44,3 +44,4 @@ end -- Class SHARED_XML_ROUTINES
 --| For latest info on our award winning products, visit:
 --|	http://www.eiffel.com
 --|----------------------------------------------------------------
+
