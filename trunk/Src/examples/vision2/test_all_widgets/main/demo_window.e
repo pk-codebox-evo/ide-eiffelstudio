@@ -25,7 +25,11 @@ feature --Access
 		deferred
 		end
 	
-
+	actions_window: ACTIONS_WINDOW is
+		once
+			!ACTIONS_WINDOW!Result.make (main_widget)
+		end
+	
 feature -- Initialization
 	
 	make is
@@ -53,6 +57,7 @@ feature -- Command executing
 	execute (argument: EV_ARGUMENT1[STRING]) is
 		do
 			show
+			actions_window.show
 		end
 end
 --|----------------------------------------------------------------
