@@ -1,0 +1,27 @@
+: This file was created by running packinit on Fri Aug 12 13:48:34 PDT 1994.
+: Do not hand edit; run packinit again if changes are to be made.
+packver='3.0160000000000000142'
+: Basic variables
+package=Eiffel4
+baserev=4
+patchbranch=1
+copyright=' '
+mydiff='diff -c'
+maintname=''
+maintloc='compiler@eiffel.com'
+ftpsite=''
+orgname='ISE'
+newsgroups=''
+recipients=''
+ftpdir=''
+mailagent='false'
+: Mailing list variables
+list_users='false'
+list_name=''
+list_addr=''
+list_request=''
+list_manager=''
+list_sub=''
+list_unsub=''
+: Derivative variables -- do not change
+revbranch="$baserev.$patchbranch"

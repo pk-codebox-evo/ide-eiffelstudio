@@ -1,0 +1,93 @@
+system
+	"ado"
+
+root
+	ADO : make
+
+default
+	assertion (no)
+	msil_generation (yes)
+	arguments (" ")
+	disabled_debug (yes)
+	debug (no)
+	line_generation (yes)
+	il_verifiable (yes)
+	msil_generation_type ("exe")
+	msil_clr_version ("v1.0.3705")
+	check_vape (yes)
+	console_application (yes)
+	dotnet_naming_convention (yes)
+
+
+cluster
+	root_cluster:		"$ISE_EIFFEL\examples\dotnet\ado\ado3"
+
+	all base:		"$ISE_EIFFEL\library\base"
+		exclude
+			"table_eiffel3"; "desc"; "classic"; 
+		end
+
+	all base_net:		"$ISE_EIFFEL\library.net\base"
+
+
+assembly
+	mscorlib:   "mscorlib",   "1.0.3300.0", "neutral", "b77a5c561934e089"
+
+	system_:    "System",     "1.0.3300.0", "neutral", "b77a5c561934e089"
+				prefix
+							"SYSTEM_DLL_"
+				end
+
+	system_xml: "System.Xml", "1.0.3300.0", "neutral", "b77a5c561934e089"
+				prefix
+						   "XML_"
+				end
+
+	system_drawing: "System.Drawing","1.0.3300.0","neutral","b03f5f7f11d50a3a"
+				prefix
+							"DRAWING_"
+				end
+
+	accessibility:     "Accessibility","1.0.3300.0","neutral","b03f5f7f11d50a3a"
+
+	system_runtime_serialization_formatters_soap:            "System.Runtime.Serialization.Formatters.Soap","1.0.3300.0","neutral","b03f5f7f11d50a3a"
+
+	system_windows_forms: "System.Windows.Forms", "1.0.3300.0", "neutral", "b77a5c561934e089"
+				prefix
+							"WINFORMS_"
+				end
+
+	data:		"System.Data", "1.0.3300.0", "neutral", "b77a5c561934e089"
+				prefix
+							"DATA_"
+				end
+
+	system_EnterpriseServices:	"System.EnterpriseServices",	"1.0.3300.0",	"neutral",	"b03f5f7f11d50a3a"
+
+	system_Web:	"System.Web",	"1.0.3300.0",	"neutral",	"b03f5f7f11d50a3a"
+				prefix
+							"WEB_"
+				end
+
+	system_Web_RegularExpressions:	"System.Web.RegularExpressions",	"1.0.3300.0",	"neutral",	"b03f5f7f11d50a3a"
+				prefix
+							"WEB_"
+				end
+
+	Microsoft_visualC:	"Microsoft.VisualC",	"7.0.3300.0",	"neutral",	"b03f5f7f11d50a3a"
+	system_DirectoryServices:	"System.DirectoryServices",	"1.0.3300.0",	"neutral",	"b03f5f7f11d50a3a"
+	system_Runtime_Remoting:	"System.Runtime.Remoting",	"1.0.3300.0",	"neutral",	"b77a5c561934e089"
+	cscompmgd:	"cscompmgd",	"7.0.3300.0",	"neutral",	"b03f5f7f11d50a3a"
+
+external
+	include_path:	
+		"$(ISE_EIFFEL)\library\vision2\spec\include",
+		"$(ISE_EIFFEL)\library\wel\spec\windows\include"
+
+	object:
+		"$(ISE_EIFFEL)\library\vision2\spec\$(ISE_C_COMPILER)\lib\ilvision2.lib",
+		"$(ISE_EIFFEL)\library\wel\spec\$(ISE_C_COMPILER)\lib\ilwel.lib",
+		"$(ISE_EIFFEL)\library\vision2\spec\$(ISE_C_COMPILER)\lib\libpng.lib",
+		"$(ISE_EIFFEL)\library\vision2\spec\$(ISE_C_COMPILER)\lib\zlib.lib"
+
+end

@@ -1,0 +1,2 @@
+run moving.bat that is located in com_compiler.
+It will regenerate files and move them into correct location.

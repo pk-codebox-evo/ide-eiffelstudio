@@ -1,0 +1,38 @@
+system
+	rb
+
+root 
+	APPLICATION (interface): "make"
+
+default
+	assertion (no);
+
+cluster
+		-- EiffelBase:
+	all base:				"$EIFFEL_SRC\library\base"
+		exclude
+			"table_eiffel3"
+		end
+
+		-- Lex and Parse
+	lex:			"$EIFFEL_SRC\library\lex"
+	parse:		"$EIFFEL_SRC\library\parse"
+
+		-- Resource bench
+	interface:			".\interface"
+	lexical:			".\lexical"
+	Sem_expression: 		".\semantic\expression"
+	Sem_resource:		".\semantic\resource"
+	Synt_resource:		".\syntactic\resource"
+	Synt_expression:		".\syntactic\expression"
+	table_of_symbols:	".\tos"
+
+		-- Wel:
+	all wel:					"$EIFFEL_SRC\library\wel"
+
+
+external
+	include_path:	"$(EIFFEL_SRC)\library\wel\spec\windows\include";
+	object: 	"$(EIFFEL_SRC)\library\wel\spec\$(COMPILER)\lib\wel.lib"
+
+end -- system rb

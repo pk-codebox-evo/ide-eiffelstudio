@@ -1,0 +1,62 @@
+indexing
+	description: "Actual type for real type."
+	date: "$Date$"
+	revision: "$Revision $"
+
+class DOUBLE_A
+
+inherit
+	BASIC_A
+		redefine
+			is_double, associated_class, same_as,
+			is_numeric, heaviest, internal_conform_to
+		end
+
+feature -- Property
+
+	is_double: BOOLEAN is True
+			-- Is the current type a double type ?
+
+feature -- Access
+
+	same_as (other: TYPE_A): BOOLEAN is
+			-- Is the current type the same as `other' ?
+		do
+			Result := other.is_double
+		end
+
+	associated_class: CLASS_C is
+			-- Class DOUBLE
+		once
+			Result := System.double_class.compiled_class
+		end
+
+feature {COMPILER_EXPORTER}
+
+	internal_conform_to (other: TYPE_A; in_generics: BOOLEAN): BOOLEAN is
+			-- Does `other' conform to Current ?
+		do
+			if in_generics then
+				Result := other.is_double
+			else
+				Result := Precursor {BASIC_A} (other, False) 
+					or else other.actual_type.is_real
+			end
+		end
+
+	is_numeric: BOOLEAN is True
+			-- Is the current type a numeric type ?
+
+	heaviest (t: TYPE_A): TYPE_A is
+			-- Heaviest numeric type for balancing rule.
+		do
+			Result := Current
+		end
+
+	type_i: DOUBLE_I is
+			-- C type
+		do
+			create Result
+		end
+
+end -- class DOUBLE_A

@@ -1,0 +1,76 @@
+system
+	"emitter"
+
+root
+	emitter: make
+
+default
+	arguments (" ")
+	assertion (no)
+	msil_generation (yes)
+	disabled_debug (yes)
+	debug (no)
+	line_generation (no)
+	il_verifiable (yes)
+	cls_compliant (yes)
+	dotnet_naming_convention (no)
+	use_cluster_name_as_namespace (no)
+	use_all_cluster_name_as_namespace (no)
+	msil_generation_type ("exe")
+	namespace ("ISE.Cache")
+	version ("5.4.808.0")
+	msil_key_file_name ("$EIFFEL_SRC\dotnet\helpers\isekey.snk")
+	msil_assembly_compatibility ("None")
+	msil_clr_version ("v1.0.3705")
+	check_vape (yes)
+	console_application (yes)
+
+
+cluster
+	all base:		"$EIFFEL_SRC\library\base"
+		exclude
+			"table_eiffel3"; "desc"; "classic"; "CVS"; 
+		end
+
+	all base_net:		"$EIFFEL_SRC\library.net\base"
+		exclude
+			"CVS"; 
+		end
+
+	all emitter:		"$EIFFEL_SRC\dotnet\consumer"
+		exclude
+			"CVS"; "EIFGEN"; 
+		visible
+			local_cache_reader
+				end
+			com_ise_cache_manager
+				end
+			com_assembly_information
+				end
+		end
+
+	all helpers:		"$EIFFEL_SRC\dotnet\helpers"
+		exclude
+			"CVS"; 
+		end
+
+	all wel:		"$EIFFEL_SRC\library\wel"
+		exclude
+			"CVS"; 
+		end
+
+assembly
+	"mscorlib":	"mscorlib","1.0.3300.0","neutral","b77a5c561934e089"
+
+	"system_":	"System","1.0.3300.0","neutral","b77a5c561934e089"
+		prefix
+			system_dll_
+		end
+
+	"system_xml":	"System.Xml","1.0.3300.0","neutral","b77a5c561934e089"
+		prefix
+			xml_
+		end
+
+
+end
