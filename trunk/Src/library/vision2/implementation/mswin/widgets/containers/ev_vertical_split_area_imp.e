@@ -17,7 +17,7 @@ inherit
 		redefine
 			child_minwidth_changed,
 			child_minheight_changed,
-			child_has_resized,
+			child_height_changed,
 			wel_window
 		end
 	
@@ -70,22 +70,42 @@ feature {EV_WEL_SPLIT_WINDOW} -- Access
 
 feature -- Implementation
 
-	child_has_resized (new_width, new_height: INTEGER; a_child: EV_WIDGET_IMP) is
+	child_height_changed (new_height: INTEGER; the_child: EV_WIDGET_IMP) is
 			-- Resize the window and redraw the split according to
 			-- the resize of a child.
 		local
 			local_height: INTEGER
 		do
-			if a_child = child1 and new_height >0 and new_height <= height then
-						wel_window.refresh
+			if the_child = child1 then
+				wel_window.refresh
 			else
-				if child1 /= Void then
-					local_height := local_height + child1.height
-				end
+				local_height := wel_window.size + child1.height
 				if child2 /= Void then
+					child2.set_y (local_height)
 					local_height := local_height + child2.height
+					wel_window.set_height (local_height)
 				end
-				wel_window.resize (new_width, local_height + wel_window.size)
+				parent_imp. child_height_changed (height, Current)
+			end
+		end
+
+	set_local_width (new_width: INTEGER) is
+			-- Make `new_width' the new `width' of the 
+			-- container and both children.
+		do
+			if new_width > minimum_width then
+				wel_window.set_width (new_width)
+				resize_children (level)
+			end
+		end
+
+	set_local_height (new_height: INTEGER) is
+			-- Make `new_height' the new `height' of the 
+			-- container and both children.
+		do
+			if new_height > minimum_height then
+				wel_window.set_height (new_height)
+				child2.parent_ask_resize (child2.width, new_height - child1.height - wel_window.size)
 			end
 		end
 
