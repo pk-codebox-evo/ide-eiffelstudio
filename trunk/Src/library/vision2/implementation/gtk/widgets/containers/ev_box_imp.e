@@ -7,7 +7,7 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 	
-class
+deferred class
 	
 	EV_BOX_IMP
 	
@@ -20,17 +20,11 @@ inherit
 			add_child
 		end
 	
-creation
-	
-	make
-
 feature {NONE} -- Initialization
 	
         make (parent: EV_CONTAINER) is
                         -- Create a fixed widget. 
-		do
-			widget := gtk_hbox_new (Default_homogenous, 
-						Default_spacing)
+		deferred
 		end	
 	
 feature {EV_BOX} -- Implementation
