@@ -4,15 +4,11 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 
-class
+deferred class
 	WIZARD_COCLASS_INTERFACE_EIFFEL_PROCESSOR 
-		[COMPONENT_INTERFACE_GENERATOR -> WIZARD_COMPONENT_INTERFACE_EIFFEL_GENERATOR create make end]
 
 inherit
 	WIZARD_COCLASS_INTERFACE_PROCESSOR
-
-create
-	make
 
 feature {NONE} -- Initialization
 
@@ -54,11 +50,6 @@ feature -- Basic operations
 			eiffel_writer.add_inherit_clause (inherit_clause)
 		end
 
-	generate_source_interface_features (an_interface: WIZARD_INTERFACE_DESCRIPTOR) is
-			-- Generate source interface features.
-		do
-		end
-
 feature {NONE} -- Implementation
 
 	generate_functions_and_properties (an_interface: WIZARD_INTERFACE_DESCRIPTOR;
@@ -67,11 +58,7 @@ feature {NONE} -- Implementation
 		require
 			non_void_interface: an_interface /= Void
 			non_void_inherit_clause: an_inherit_clause /= Void
-		local
-			interface_generator: COMPONENT_INTERFACE_GENERATOR
-		do
-			create interface_generator.make (coclass, an_interface, eiffel_writer, an_inherit_clause)
-			interface_generator.generate_functions_and_properties (an_interface)
+		deferred
 		end
 
 	clean_up is
