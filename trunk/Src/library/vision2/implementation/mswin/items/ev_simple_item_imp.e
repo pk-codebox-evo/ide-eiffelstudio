@@ -10,19 +10,14 @@ indexing
 	revision: "$Revision$"
 
 deferred class 
-	EV_ITEM_IMP
+	EV_SIMPLE_ITEM_IMP
 
 inherit
-	EV_ITEM_I
+	EV_SIMPLE_ITEM_I
+
+	EV_ITEM_IMP
 
 	EV_PIXMAPABLE_IMP
-
-	EV_EVENT_HANDLER_IMP
-		export
-			{EV_ITEM_HOLDER_IMP} execute_command
-		end
-
-	EV_ITEM_EVENTS_CONSTANTS_IMP
 
 feature {NONE} -- Initialization
 
@@ -39,61 +34,23 @@ feature -- Access
 	text: STRING
 			-- Current label of the item
 
-feature -- Event : command association
+feature -- Element change
 
-	add_activate_command (cmd: EV_COMMAND; arg: EV_ARGUMENT) is
-			-- Add `cmd' to the list of commands to be executed
-			-- when the item is activated.
+	set_text (txt: STRING) is
+			-- Make `txt' the new label of the item.
 		do
-			add_command (Cmd_item_activate, cmd, arg)			
-		end	
-
-	add_deactivate_command (cmd: EV_COMMAND; arg: EV_ARGUMENT) is
-			-- Add `cmd' to the list of commands to be executed
-			-- when the item is unactivated.
-		do
-			add_command (Cmd_item_deactivate, cmd, arg)		
+			text := txt
 		end
 
-feature -- Event -- removing command association
-
-	remove_activate_commands is
-			-- Empty the list of commands to be executed when
-			-- the item is activated.
-		do
-			remove_command (Cmd_item_activate)			
-		end	
-
-	remove_deactivate_commands is
-			-- Empty the list of commands to be executed when
-			-- the item is deactivated.
-		do
-			remove_command (Cmd_item_deactivate)		
-		end
-
-feature -- Implementation
+feature {NONE} -- Implementation
 
 	parent_imp: EV_ITEM_HOLDER_IMP is
-			-- The current container of the item
+			-- The parent of the Current widget
+			-- Can be void.
 		deferred
 		end
 
-	parent_widget: EV_WIDGET is
-			-- Parent widget of the current item
-		do
-			Result := parent_imp.current_widget
-		end
-
-	wel_window: WEL_WINDOW is
-			-- Window used to create the related pixmap. It has
-			-- to be a wel_control.
-			-- It correspond to the implementation of the
-			-- parent_widget.
-		do
-			Result ?= parent_widget.implementation
-		end
-
-end -- class EV_ITEM_IMP
+end -- class EV_SIMPLE_ITEM_IMP
 
 --|----------------------------------------------------------------
 --| Windows Eiffel Library: library of reusable components for ISE Eiffel.

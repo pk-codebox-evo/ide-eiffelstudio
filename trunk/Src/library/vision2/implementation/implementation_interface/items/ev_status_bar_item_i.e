@@ -8,7 +8,7 @@ deferred class
 	EV_STATUS_BAR_ITEM_I
 
 inherit
-	EV_ITEM_I
+	EV_SIMPLE_ITEM_I
 
 feature -- Access
 
