@@ -7,7 +7,6 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 	
---XX deferred class
 deferred class
 	
 	EV_INVISIBLE_CONTAINER_IMP

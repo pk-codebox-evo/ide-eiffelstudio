@@ -22,7 +22,7 @@ inherit
 
 feature {EV_WIDGET}
 	
-		add_child (c: EV_WIDGET) is
+	add_child (c: EV_WIDGET) is
 			-- Add child into composite. Several children
 			-- possible.
 		require else 
