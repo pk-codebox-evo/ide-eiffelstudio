@@ -65,6 +65,14 @@ feature -- Access
 			"EN_VSCROLL"
 		end
 
+
+	En_msgfilter: INTEGER is
+		external
+			"C [macro %"richedit.h%"]"
+		alias
+			"EN_MSGFILTER"
+		end
+	
 end -- class WEL_EN_CONSTANTS
 
 --|----------------------------------------------------------------
