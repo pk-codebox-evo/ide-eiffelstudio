@@ -21,25 +21,20 @@ class LINKED_PRIORITY_QUEUE [G -> COMPARABLE] inherit
 
 	SORTED_TWO_WAY_LIST [G]
 		rename
-			make as sl_make,
 			remove as sl_remove,
 			put as sl_put,
 			item as sl_item
 		export
-			{NONE}
-				all
+			{NONE} all
+			{LINKED_PRIORITY_QUEUE} cursor, start, forth, go_to, index, after,
+				first_element, last_element, valid_cursor
 		end
 
 create
 	make
-
-feature -- Initialization
-
-	make is
-			-- Allocate heap space.
-		do
-			sl_make 
-		end
+	
+create {LINKED_PRIORITY_QUEUE}
+	make_sublist
 
 feature -- Access
 

@@ -14,7 +14,6 @@ class HASH_TABLE_CURSOR inherit
 	CURSOR
 
 create
-
 	make
 
 feature {NONE} -- Initialization
