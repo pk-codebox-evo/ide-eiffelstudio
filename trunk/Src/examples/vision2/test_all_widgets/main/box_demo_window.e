@@ -23,7 +23,7 @@ feature -- Access
 
 	main_widget: EV_HORIZONTAL_BOX is
 		once
-			!EV_HORIZONTAL_BOX!Result.make (Current)
+			!!Result.make (Current)
 		end
 	
 feature -- Access
