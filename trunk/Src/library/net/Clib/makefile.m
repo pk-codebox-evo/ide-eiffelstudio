@@ -1,7 +1,6 @@
 AR = lib 
 CC = cl
-CFLAGS = -Ox -I$(EIFFEL4)\bench\spec\$(PLATFORM)\include
-NET_LIBRARY = net.lib
+CFLAGS = -nologo -Ox -I$(EIFFEL4)\bench\spec\$(PLATFORM)\include
 LN = copy
 MAKE = make
 RANLIB = echo
@@ -10,7 +9,7 @@ RM = del
 SOURCES =  $(LSRCS)
 OBJECTS =  $(OBJS) $(WOBJS)
 
-all:: $(NET_LIBRARY)
+all:: clean net.lib
 
 .c.obj:
 	$(CC) -o $@ -c $(CFLAGS) $<
@@ -22,18 +21,14 @@ LSRCS = $(SMODE)
 OBJS = \
 	network.obj network_r.obj hostname.obj syncpoll.obj storable.obj
 
-local_clean:: remove
+clean:
+	del *.obj
 
-all:: $(NET_LIBRARY)
-
-local_realclean::
-	$(RM) $(NET_LIBRARY)
-
-$(NET_LIBRARY): $(OBJS)
+net.lib: $(OBJS)
 	$(RM) $@
-	$(AR) -OUT:$@ $(OBJS) wsock32.lib
+	$(AR) -OUT:$@ $(OBJS) wsock32.lib user32.lib
 	$(RANLIB) $@
 	if not exist ..\spec mkdir ..\spec
 	if not exist ..\spec\msc mkdir ..\spec\msc
 	if not exist ..\spec\msc\lib mkdir ..\spec\msc\lib
-	copy $(NET_LIBRARY) ..\spec\msc\lib\$(NET_LIBRARY)
+	copy $@ ..\spec\msc\lib\$@
