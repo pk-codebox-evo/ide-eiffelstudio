@@ -37,10 +37,9 @@ feature {NONE} -- Initialization
 
 	file_names: ARRAYED_LIST [STRING] is
 			-- List of filenames selected by user
-
 		do
-			create Result
-			Result.extend (filename)
+			create Result.make (1)
+			Result.extend (file_name)
 		end
 
 	enable_multiple_selection is
