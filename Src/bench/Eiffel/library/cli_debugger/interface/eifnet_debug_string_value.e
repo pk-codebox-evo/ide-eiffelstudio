@@ -139,14 +139,8 @@ feature -- Output
 
 	expandable: BOOLEAN is
 			-- Does `Current' have sub-items? (Is it a non void reference, a special object, ...)
-		local
-			l_icdov: ICOR_DEBUG_OBJECT_VALUE
 		do
-			l_icdov := icd_value_info.new_interface_debug_object_value
-			if l_icdov /= Void then
-				Result := True
-				l_icdov.clean_on_dispose
-			end
+			Result :=(icd_value_info.interface_debug_object_value /= Void)
 		end
 
 	children: DS_LIST [ABSTRACT_DEBUG_VALUE] is

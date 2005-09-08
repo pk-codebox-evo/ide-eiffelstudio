@@ -14,11 +14,6 @@ inherit
 		export
 			{NONE} all
 		end
-		
-	EB_CONSTANTS
-		export
-			{NONE} all
-		end
 
 create
 	make
@@ -97,7 +92,6 @@ feature -- Dialogs
 		do
 			create import_metrics_dialog
 			import_metrics_dialog.set_title ("Select metrics")
-			import_metrics_dialog.set_icon_pixmap (pixmaps.icon_dialog_window)
 			create vb1
 			vb1.set_border_width (5)
 

@@ -29,12 +29,7 @@ inherit
 		export
 			{NONE} all
 		end
-		
-	E_PROFILER_CONSTANTS
-		export
-			{NONE} all
-		end
-		
+
 create
 	make
 
@@ -121,9 +116,9 @@ feature -- Basic operations
 					profiler_options.set_language_names (language_names.twin)
 	
 					create st.make
-					create executer.make_simple (profiler_query, profiler_options)
+					create executer.make (st, profiler_query, profiler_options)
 					executer.execute
-					show_new_window (profiler_query, profiler_options, executer.last_output)
+					show_new_window (st, profiler_query, profiler_options, executer.last_output)
 					last_operation_successful := True
 				end
 			end
@@ -193,31 +188,30 @@ feature {NONE} -- Implementation
 			i: INTEGER
 		do
 			i := shared_values.output_names.lower
-			
-			if information.name_switch then
-				shared_values.output_names.force (profiler_feature_name, i)
-				i := i + 1
-			end
 
 				--| Copy the output column switches
 			if information.number_of_calls_switch then
-				shared_values.output_names.force (profiler_calls, i)
+				shared_values.output_names.force ("calls", i)
 				i := i + 1
 			end
 			if information.time_switch then
-				shared_values.output_names.force (profiler_self, i)
+				shared_values.output_names.force ("self", i)
 				i := i + 1
 			end
 			if information.descendant_switch then
-				shared_values.output_names.force (profiler_descendants, i)
+				shared_values.output_names.force ("descendants", i)
 				i := i + 1
 			end
 			if information.total_time_switch then
-				shared_values.output_names.force (profiler_total, i)
+				shared_values.output_names.force ("total", i)
 				i := i + 1
 			end
 			if information.percentage_switch then
-				shared_values.output_names.force (profiler_percentage, i)
+				shared_values.output_names.force ("percentage", i)
+				i := i + 1
+			end
+			if information.name_switch then
+				shared_values.output_names.force ("featurename", i)
 				i := i + 1
 			end
 
@@ -262,7 +256,7 @@ feature {NONE} -- Implementation
 		end
 
 		
-	show_new_window (pq: PROFILER_QUERY;
+	show_new_window (st: STRUCTURED_TEXT; pq: PROFILER_QUERY;
 				po: PROFILER_OPTIONS; profinfo: PROFILE_INFORMATION) is
 			-- Create and show a new EB_PROFILE_QUERY_WINDOW.
 			-- This window will be associated with `pq', will
@@ -271,7 +265,7 @@ feature {NONE} -- Implementation
 			new_window: EB_PROFILE_QUERY_WINDOW
 		do
 			create new_window.make_default
-			new_window.update_window (pq, po, profinfo)
+			new_window.update_window (st, pq, po, profinfo)
 			new_window.show
 			new_window.raise
 		end

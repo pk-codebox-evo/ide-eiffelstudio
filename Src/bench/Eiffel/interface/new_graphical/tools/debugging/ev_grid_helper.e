@@ -166,12 +166,19 @@ feature -- Access
 		require
 			a_row /= Void
 		local
+			r: EV_GRID_ROW
 			g: EV_GRID
 		do
 			g := a_row.parent
 			if g /= Void then
-				if a_row.subrow_count > 0 then
-					g.remove_rows (a_row.index + 1, a_row.index + a_row.subrow_count_recursive)
+				from
+				until
+					a_row.subrow_count = 0
+				loop
+					r := a_row.subrow (a_row.subrow_count)
+					grid_remove_and_clear_subrows_from (r)
+					grid_clear_row (r)
+					g.remove_row (r.index)
 				end
 			end
 		ensure
@@ -182,10 +189,22 @@ feature -- Access
 	grid_remove_and_clear_all_rows (g: EV_GRID) is
 		require
 			g /= Void
+		local
+			rc: INTEGER
 		do
-			if g.row_count > 0 then
-				g.remove_rows (1, g.row_count)
+				-- To speed up removal of all rows we ensure that the grid
+				-- is displayed with cell of coordinate (1, 1) at the top.
+			g.set_virtual_position (0, 0)
+			from
+				rc := g.row_count
+			until
+				rc = 0
+			loop
+				grid_clear_row (g.row (rc))
+				g.remove_row (rc)
+				rc := g.row_count				
 			end
+			g.clear
 		ensure
 			g.row_count = 0
 			g.selected_rows.count = 0

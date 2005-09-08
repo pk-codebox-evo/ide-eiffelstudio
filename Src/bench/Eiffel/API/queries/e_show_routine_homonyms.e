@@ -16,7 +16,8 @@ inherit
 	SHARED_EIFFEL_PROJECT
 
 create
-	make, default_create
+
+	make, do_nothing
 
 feature -- Access
 

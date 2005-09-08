@@ -113,10 +113,6 @@ feature
 
 	Routines_abb: CHARACTER is 'r'
 
-	invariants_abb: CHARACTER is 'k'
-
-	creators_abb: CHARACTER is 'n'
-
 	Run_abb: CHARACTER is 'r'
 
 	Self_sec_abb: CHARACTER is 's'

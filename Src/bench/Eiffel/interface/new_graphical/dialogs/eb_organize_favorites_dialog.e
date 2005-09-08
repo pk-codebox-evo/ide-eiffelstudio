@@ -86,15 +86,6 @@ feature {NONE} -- Initialization
 			extend (hb)
 			set_default_cancel_button (close_button)
 			show_actions.extend (agent button.set_focus)
-			set_icon_pixmap (pixmaps.icon_dialog_window)
-		end
-		
-feature {EB_FAVORITES_MANAGER} -- Status Setting
-
-	refresh is
-			-- Update `Current's display.
-		do
-			favorites_tree.refresh
 		end
 
 feature {NONE} -- Implementation
@@ -102,7 +93,8 @@ feature {NONE} -- Implementation
 	close is
 			-- Terminate the dialog
 		do
-			hide
+			favorites_tree.recycle
+			destroy
 		end
 
 	remove is

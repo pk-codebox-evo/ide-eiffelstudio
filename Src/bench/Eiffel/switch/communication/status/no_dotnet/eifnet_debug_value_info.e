@@ -30,7 +30,7 @@ feature -- Interface Access
 
 	has_object_interface: BOOLEAN is False
 
-	new_interface_debug_object_value: ICOR_DEBUG_OBJECT_VALUE is
+	interface_debug_object_value: ICOR_DEBUG_OBJECT_VALUE is
 		do
 		end
 

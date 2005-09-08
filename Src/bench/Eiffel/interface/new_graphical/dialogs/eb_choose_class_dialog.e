@@ -40,7 +40,6 @@ feature {NONE} -- Initialization
 		do
 			default_create
 			set_title (Interface_names.t_Choose_class)
-			set_icon_pixmap (pixmaps.icon_dialog_window)
 			prepare
 		end
 

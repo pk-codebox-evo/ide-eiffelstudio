@@ -7,7 +7,7 @@ class
 	EB_COMPLETION_CHOICE_WINDOW
 
 inherit
-	EV_POPUP_WINDOW
+	EV_WINDOW
 		redefine
 			show
 		end
@@ -158,7 +158,7 @@ feature -- Status Setting
 				show_needed: show_needed
 			end
 			enable_user_resize
-			Precursor {EV_POPUP_WINDOW}
+			Precursor {EV_WINDOW}
 			choice_list.set_focus
 			resize_column_to_window_width
 			select_closest_match
@@ -791,7 +791,7 @@ feature {NONE} -- String matching
 		ensure
 			result_greater_than_zero: Result >= 0
 			result_too_big: Result <= sorted_names.count
-		end		
+		end	
 
 	select_closest_match is
 			-- Select the closest match in the list

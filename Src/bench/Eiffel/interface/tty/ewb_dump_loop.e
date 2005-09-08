@@ -18,7 +18,8 @@ inherit
 	SHARED_WORKBENCH
 
 create
-	default_create
+
+	do_nothing
 
 feature
 

@@ -409,8 +409,8 @@ feature {EIFFEL_CALL_STACK_DOTNET,
 			class_type_not_void: a_class_type /= Void
 			feat_not_void: a_feat /= Void
 		local
-			l_il_offset_list: ARRAYED_LIST [TUPLE [INTEGER, IL_OFFSET_SET]]
-			l_offsets_info: IL_OFFSET_SET
+			l_il_offset_list: ARRAYED_LIST [TUPLE [INTEGER, LIST [INTEGER]]]
+			l_offsets_info: LIST [INTEGER]
 		do
 			l_il_offset_list := feature_breakable_il_offsets (a_class_type, a_feat)
 			if l_il_offset_list /= Void then
@@ -432,12 +432,11 @@ feature {EIFFEL_CALL_STACK_DOTNET,
 			class_type_not_void: a_class_type /= Void
 			feat_not_void: a_feat /= Void
 		local
-			l_il_offset_list: ARRAYED_LIST [TUPLE [INTEGER, IL_OFFSET_SET]]
-			l_offsets_info: IL_OFFSET_SET
+			l_il_offset_list: ARRAYED_LIST [TUPLE [INTEGER, LIST [INTEGER]]]
+			l_offsets_info: LIST [INTEGER]
 			l_offset_before: INTEGER
 			l_breakable_line: INTEGER
 			o: INTEGER
-			i, upper: INTEGER
 		do
 			l_il_offset_list := feature_breakable_il_offsets (a_class_type, a_feat)
 			if l_il_offset_list /= Void then
@@ -449,20 +448,17 @@ feature {EIFFEL_CALL_STACK_DOTNET,
 					l_il_offset_list.after
 				loop
 					l_offsets_info ?= l_il_offset_list.item.item (2)
-					if not l_offsets_info.is_empty then
-						from
-							i := l_offsets_info.lower
-							upper := i + l_offsets_info.count
-						until
-							i >= upper
-						loop
-							o := l_offsets_info.item (i)
-							if o <= a_il_offset and o > l_offset_before then
-								l_offset_before := o
-								l_breakable_line := l_il_offset_list.index - 1 --| LIST.first.index = 1
-							end
-							i := i + 1
+					from
+						l_offsets_info.start
+					until
+						l_offsets_info.after
+					loop
+						o := l_offsets_info.item
+						if o <= a_il_offset and o > l_offset_before then
+							l_offset_before := o
+							l_breakable_line := l_il_offset_list.index - 1 --| LIST.first.index = 1
 						end
+						l_offsets_info.forth
 					end
 					l_il_offset_list.forth
 				end
@@ -496,7 +492,7 @@ feature {EIFFEL_CALL_STACK_DOTNET,
 feature {APPLICATION_EXECUTION_DOTNET} -- Queries : IL Offset data
 
 	feature_breakable_il_line_for (a_class_type: CLASS_TYPE; a_feat: FEATURE_I; 
-				a_breakable_line_number: INTEGER): IL_OFFSET_SET is
+				a_breakable_line_number: INTEGER): LIST [INTEGER] is
 			-- IL offset for the bp slot index `a_breakable_line_number'
 			-- Return Void if index out of range
 		require
@@ -504,7 +500,7 @@ feature {APPLICATION_EXECUTION_DOTNET} -- Queries : IL Offset data
 			feat_not_void: a_feat /= Void
 		local
 			l_index: INTEGER
-			l_list: ARRAYED_LIST [TUPLE [INTEGER, IL_OFFSET_SET]]
+			l_list: ARRAYED_LIST [TUPLE [INTEGER, LIST [INTEGER]]]
 		do
 			l_index := a_breakable_line_number + 1
 			l_list := feature_breakable_il_offsets (a_class_type, a_feat)
@@ -574,9 +570,8 @@ feature {NONE} -- line debug exploitation
 			class_type_not_void: a_class_type /= Void
 			feat_not_void: a_feat /= Void
 		local
-			l_il_offset_list: ARRAYED_LIST [ TUPLE [INTEGER, IL_OFFSET_SET]]
-			l_offsets_info: IL_OFFSET_SET
-			i, upper: INTEGER
+			l_il_offset_list: ARRAYED_LIST [ TUPLE [INTEGER, LIST [INTEGER]]]
+			l_offsets_info: LIST [INTEGER]
 		do
 			l_il_offset_list := feature_breakable_il_offsets (a_class_type, a_feat)
 			if l_il_offset_list /= Void then
@@ -588,23 +583,13 @@ feature {NONE} -- line debug exploitation
 					l_il_offset_list.after
 				loop
 					l_offsets_info ?= l_il_offset_list.item.item (2)
-					if not l_offsets_info.is_empty then
-						from
-							i := l_offsets_info.lower
-							upper := i + l_offsets_info.count
-						until
-							i >= upper
-						loop
-							Result.force (l_offsets_info.item (i))
-							i := i + 1
-						end
-					end
+					Result.append (l_offsets_info)
 					l_il_offset_list.forth
 				end
 			end
 		end
 
-	feature_breakable_il_offsets (a_class_type: CLASS_TYPE; a_feat: FEATURE_I): ARRAYED_LIST [TUPLE [INTEGER, IL_OFFSET_SET]] is
+	feature_breakable_il_offsets (a_class_type: CLASS_TYPE; a_feat: FEATURE_I): ARRAYED_LIST [TUPLE [INTEGER, LIST [INTEGER]]] is
 			-- List of breakable IL Offset for `a_feat'
 		require
 			class_type_not_void: a_class_type /= Void

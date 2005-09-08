@@ -92,7 +92,6 @@ cluster
 			"table"; "CVS"; 
 		end
 
-	table_eiffel_3:		"$EIFFEL_SRC/library/obsolete/base/table_eiffel3"
 
 	events:		"$EIFFEL_SRC/library/event"
 		exclude
@@ -155,6 +154,11 @@ cluster
 	all compiler_api:		"$EIFFEL_SRC/Eiffel/API"
 		exclude
 			"CVS"; 
+		end
+
+	encryption:		"$EIFFEL_SRC/library/encryption"
+		exclude
+			"des_encoder.e"; 
 		end
 
 	switch:		"$EIFFEL_SRC/Eiffel/switch"

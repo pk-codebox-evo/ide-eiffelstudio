@@ -231,18 +231,13 @@ feature -- Queries
 	value_icd_class: ICOR_DEBUG_CLASS is
 			-- ICOR_DEBUG_CLASS related to this Current value
 		require
-			has_object_interface: has_object_interface
-		local
-			l_icdov: like new_interface_debug_object_value
+			has_object_interface: has_object_interface	
 		do
 			Result := once_value_icd_class
 			if Result = Void then
-				l_icdov := new_interface_debug_object_value
-				if l_icdov /= Void then
-					Result := l_icdov.get_class
-					once_value_icd_class := Result
-					l_icdov.clean_on_dispose
-				end
+				Result := interface_debug_object_value.get_class
+				once_value_icd_class := Result
+				interface_debug_object_value.clean_on_dispose
 			end
 		end
 
@@ -365,15 +360,10 @@ feature -- Queries on ICOR_DEBUG_OBJECT_VALUE
 			-- ICorDebugModule for this ICorDebugObjectValue value
 		require
 			has_object_interface
-		local
-			l_icd_class: like value_icd_class
 		do
 			Result := once_value_icd_module
 			if Result = Void then
-				l_icd_class := value_icd_class
-				if l_icd_class /= Void then
-					Result := l_icd_class.get_module
-				end
+				Result := value_icd_class.get_module
 				once_value_icd_module := Result
 			end
 		end
@@ -429,7 +419,7 @@ feature {NONE} -- Interface Access : Impl
 			end
 		end
 
-	new_interface_debug_object_value_from (a_icd: ICOR_DEBUG_VALUE): ICOR_DEBUG_OBJECT_VALUE is
+	interface_debug_object_value_from (a_icd: ICOR_DEBUG_VALUE): ICOR_DEBUG_OBJECT_VALUE is
 		require
 			a_icd /= Void
 		local
@@ -443,18 +433,16 @@ feature {NONE} -- Interface Access : Impl
 					l_icdv.clean_on_dispose
 				end
 			end
-		ensure
-			result_not_equal_to_input: Result /= a_icd
 		end
 
 feature -- IUnknown Interfaces
 
-	new_interface_debug_object_value: ICOR_DEBUG_OBJECT_VALUE is
+	interface_debug_object_value: ICOR_DEBUG_OBJECT_VALUE is
 			-- ICorDebugObjectValue interface
 		require
 			valid_object_type: is_reference_type or else is_class or else is_object or else is_valuetype
 		do
-			Result := new_interface_debug_object_value_from (icd_prepared_value)
+			Result := interface_debug_object_value_from (icd_prepared_value)
 		end
 		
 	interface_debug_array_value: ICOR_DEBUG_ARRAY_VALUE is

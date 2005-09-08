@@ -423,8 +423,6 @@ feature {DBG_EXPRESSION_EVALUATOR_B} -- Restricted dotnet
 				params: LIST [DUMP_VALUE]) is
 		require
 			is_dotnet_system
-			a_feature_name_not_void: a_feature_name /= Void
-			a_external_name_not_void: a_external_name /= Void			
 		local
 			l_params: ARRAY [DUMP_VALUE]
 		do

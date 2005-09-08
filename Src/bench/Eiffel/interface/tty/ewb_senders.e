@@ -20,7 +20,8 @@ inherit
 	EB_SHARED_PREFERENCES
 
 create
-	make, default_create
+
+	make, do_nothing
 
 feature -- Setting
 
@@ -77,7 +78,7 @@ feature {NONE} -- Implementation
 			-- Associated feature command to be executed
 			-- after successfully retrieving the feature_i
 		do
-			create Result
+			create Result.do_nothing
 			if to_show_all_callers then
 				Result.set_all_callers
 			end

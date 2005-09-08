@@ -135,8 +135,6 @@ cluster
 			assertion (require)
 		end
 
-	table_eiffel_3:		"$EIFFEL_SRC\library\obsolete\base\table_eiffel3"
-
 	all wel:		"$EIFFEL_SRC\library\wel"
 		exclude
 			"CVS"; 
@@ -214,6 +212,8 @@ cluster
 			"CVS"; "xml_implementation"; 
 		end
 
+	encryption:		"$EIFFEL_SRC\library\encryption"
+
 	switch:		"$EIFFEL_SRC\Eiffel\switch"
 
 	interface_switch (switch):		"$\interface\new_graphical"
@@ -280,6 +280,7 @@ cluster
 external
 
 	include_path:
+		"$(EIFFEL_SRC)\library\encryption\Clib",
 		"$(EIFFEL_SRC)\library\wel\spec\windows\include",
 		"$(EIFFEL_SRC)\library\vision2\spec\include",
 		"$(EIFFEL_SRC)\C\bench",
@@ -296,6 +297,7 @@ external
 		"$(EIFFEL_SRC)\C\ipc\shared\ipc.lib",
 		"$(EIFFEL_SRC)\C\bench\compiler.lib",
 		"$(EIFFEL_SRC)\C\platform\platform.lib",
+		"$(EIFFEL_SRC)\library\encryption\spec\$(ISE_C_COMPILER)\lib\des.lib",
 		"htmlhelp.lib",
 		"$(EIFFEL_SRC)\library\net\spec\$(ISE_C_COMPILER)\lib\net.lib",
 		"$(EIFFEL_SRC)\Eiffel\library\cli_writer\spec\msc\lib\cli_writer.lib",

@@ -20,8 +20,7 @@ inherit
 			load_file,
 			load_text,
 			initialize_editor_context,
-			reference_window,
-			recycle
+			reference_window
 		end
 
 	EB_SHARED_MANAGERS
@@ -152,15 +151,6 @@ feature -- Text Loading
 			set_current_document_class (get_class_from_type (once "e"))
 			Precursor {EDITABLE_TEXT_PANEL} (s)
 		end		
-
-feature {NONE} -- Memory Management
-
-	recycle is
-			-- Destroy `Current'.
-		do
-			Precursor {EDITABLE_TEXT_PANEL}
-			dev_window := Void
-		end
 
 feature {NONE} -- Handle keystokes
 

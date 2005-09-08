@@ -17,7 +17,8 @@ inherit
 		end
 
 create
-	make, default_create
+
+	make, do_nothing
 
 feature {NONE} -- Properties
 
@@ -26,7 +27,7 @@ feature {NONE} -- Properties
 	        -- after successfully retrieving the compiled
 	        -- class
 	    do
-			create Result
+			create Result.do_nothing
 	    end;
 
 end -- class EWB_ONCE

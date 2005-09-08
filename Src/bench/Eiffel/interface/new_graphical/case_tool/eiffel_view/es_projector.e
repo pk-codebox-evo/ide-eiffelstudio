@@ -28,7 +28,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make_with_buffer (a_world: like world; a_drawing_area: EV_DRAWING_AREA) is
+  	make_with_buffer (a_world: like world; a_drawing_area: EV_DRAWING_AREA) is
 			-- Create an EIFFEL_PROJECTOR projecting `a_world' to `a_drawing_area'.
 		local
 			l_figure: EG_FIGURE

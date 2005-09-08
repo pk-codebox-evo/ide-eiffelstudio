@@ -134,10 +134,6 @@ feature {NONE}
 
 	routines_cmd_name: STRING is "routines"
 
-	invariants_cmd_name: STRING is "invariants"
-
-	creators_cmd_name: STRING is "creators"
-
 	run_cmd_name: STRING is "run"
 
 	Self_sec_cmd_name: STRING is "self"

@@ -435,7 +435,7 @@ feature {EIFNET_DEBUGGER} -- Callback notification about synchro
 						end
 					else
 						s.set_current_thread_id (eifnet_debugger_info.last_icd_thread_id)
-						s.set_thread_ids (eifnet_debugger_info.loaded_managed_threads_ids)
+						s.set_thread_ids (eifnet_debugger_info.loaded_managed_threads.current_keys)
 					end
 					debug ("debugger_trace_callback")
 						print (" - Info : Debuggee is STOPPED %N")
@@ -776,15 +776,14 @@ feature {NONE} -- Callback actions
 				else
 					execution_stopped := execution_stopped_on_end_of_step_complete_callback
 				end
-			elseif managed_callback_is_exception (cb_id) then 
-				if is_inside_function_evaluation then
-					if icor_debug_controller /= Void then
-						call_do_continue_on_cb
-					end					
-					execution_stopped := False
-				else
-					execution_stopped := execution_stopped_on_exception_callback
-				end
+			elseif 
+				managed_callback_is_exception (cb_id) and then
+				is_inside_function_evaluation
+			then
+				if icor_debug_controller /= Void then
+					call_do_continue_on_cb
+				end					
+				execution_stopped := False
 			else
 					--| Then we stop the execution ;)
 					--| do nothing for now
@@ -982,41 +981,6 @@ feature {NONE} -- Callback actions
 				end	
 				Result := execution_stopped
 			end			
-		end
-
-	execution_stopped_on_exception_callback: BOOLEAN is
-		require
-			exception_occurred: exception_occurred
-		local
-			cln: STRING
-			l_icd_exception: ICOR_DEBUG_VALUE
-			l_exception_info: EIFNET_DEBUG_VALUE_INFO			
-		do
-			if 
-				application.exceptions_handler.exception_handling_enabled 
-			then
-				l_icd_exception := new_active_exception_value_from_thread
---| Check if we should not use directly the `exception_class_name' feature
---				cln := exception_class_name
-				if l_icd_exception /= Void and then l_icd_exception.item /= default_pointer then
-					l_icd_exception.add_ref
-					create l_exception_info.make (l_icd_exception)
-					cln := l_exception_info.value_class_name
-					l_exception_info.icd_prepared_value.clean_on_dispose
-					l_exception_info.clean
-					l_icd_exception.clean_on_dispose
-				end				
-				if cln /= Void then
-					Result := application.exceptions_handler.exception_catched (cln)
-				else
-					Result := True
-				end
-			else				
-				Result := True
-			end
-			if not Result then
-				call_do_continue_on_cb
-			end
 		end
 
 feature -- Various continuing mode from callback
@@ -1446,7 +1410,7 @@ feature -- Exception
 					exception_info_class_name := l_exception_info.value_class_name
 					exception_info_module_name := l_exception_info.value_module_file_name
 
-					l_icdov := l_exception_info.new_interface_debug_object_value
+					l_icdov := l_exception_info.interface_debug_object_value
 					if l_icdov /= Void then
 						l_icdov.add_ref
 						exception_info_to_string := to_string_value_from_exception_object_value (Void, 
@@ -1499,7 +1463,7 @@ feature -- Exception
 					l_class_name := l_exception_info.value_class_name
 					l_module_name := l_exception_info.value_module_file_name
 
-					l_icdov := l_exception_info.new_interface_debug_object_value
+					l_icdov := l_exception_info.interface_debug_object_value
 					if l_icdov /= Void then
 						l_to_string := to_string_value_from_exception_object_value (Void, 
 							icdv,
@@ -1650,7 +1614,7 @@ feature -- Function Evaluation
 			if icdv /= Void and ct.is_external then
 				create l_info.make (icdv)
 				if l_info.has_object_interface then
-					l_icd_obj_val := l_info.new_interface_debug_object_value
+					l_icd_obj_val := l_info.interface_debug_object_value
 					if l_icd_obj_val /= Void then
 						l_icd_class := l_icd_obj_val.get_class
 						if l_icd_class /= Void then
@@ -1938,11 +1902,9 @@ feature -- Specific function evaluation
 				end
 				if l_icd /= Void then
 					create l_value_info.make (l_icd)
-					l_icdov := l_value_info.new_interface_debug_object_value
-					if l_icdov /= Void then
-						Result := string_value_from_string_class_value (l_icd, l_icdov, 0, -1)
-						l_icdov.clean_on_dispose
-					end
+					l_icdov := l_value_info.interface_debug_object_value
+					Result := string_value_from_string_class_value (l_icd, l_icdov, 0, -1)
+					l_icdov.clean_on_dispose
 					l_value_info.icd_prepared_value.clean_on_dispose
 					l_value_info.clean
 					l_icd.clean_on_dispose
@@ -2025,11 +1987,8 @@ feature -- Specific function evaluation
 				end
 				if l_icd /= Void then
 					create l_value_info.make (l_icd)
-					l_icdov := l_value_info.new_interface_debug_object_value
-					if l_icdov /= Void then
-						Result := string_value_from_string_class_value (l_icd, l_icdov, min, max)
-						l_icdov.clean_on_dispose
-					end
+					l_icdov := l_value_info.interface_debug_object_value
+					Result := string_value_from_string_class_value (l_icd, l_icdov, min, max)
 					l_value_info.icd_prepared_value.clean_on_dispose
 					l_value_info.clean
 					l_icd.clean_on_dispose
@@ -2085,11 +2044,9 @@ feature -- Specific function evaluation
 					if l_icd /= Void then
 							--| We should get a System.String
 						create l_debug_info.make (l_icd)
-						l_icdov := l_debug_info.new_interface_debug_object_value
-						if l_icdov /= Void then
-							Result := Edv_external_formatter.system_string_value_to_string (l_icdov)
-							l_icdov.clean_on_dispose
-						end
+						l_icdov := l_debug_info.interface_debug_object_value
+						Result := Edv_external_formatter.system_string_value_to_string (l_icdov)
+						l_icdov.clean_on_dispose
 						l_debug_info.icd_prepared_value.clean_on_dispose
 						l_debug_info.clean
 						l_icd.clean_on_dispose
@@ -2132,11 +2089,9 @@ feature -- Specific function evaluation
 				if l_icd /= Void then
 						--| We should get a System.String
 					create l_debug_info.make (l_icd)
-					l_icdov := l_debug_info.new_interface_debug_object_value
-					if l_icdov /= Void then
-						Result := Edv_external_formatter.system_string_value_to_string (l_icdov)
-						l_icdov.clean_on_dispose
-					end
+					l_icdov := l_debug_info.interface_debug_object_value
+					Result := Edv_external_formatter.system_string_value_to_string (l_icdov)
+					l_icdov.clean_on_dispose
 					l_debug_info.icd_prepared_value.clean_on_dispose					
 					l_debug_info.clean
 					l_icd.clean_on_dispose

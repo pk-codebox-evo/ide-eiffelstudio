@@ -73,16 +73,6 @@ feature -- Show
 		
 feature -- Details
 
-	set_title_and_label (t,l: STRING) is
-			-- Set the title and the label of the window
-		require
-			t /= Void
-			l /= Void
-		do
-			window.set_title (t)
-			label.set_text (l)
-		end
-
 	set_exception_tag (t: STRING) is
 			-- Set tag and refresh display
 		do
@@ -141,17 +131,11 @@ feature {NONE} -- Initialization
 			-- can be added here.
 		do
 			window.set_size (400, 400)
-			set_title_and_label (
-					"Debugger :: Exception message",
-					"Exception message from debugger"
-					)
-
 			details_box.hide
 			message_text.enable_word_wrapping
 			message_text.disable_edit
 			message_text.set_background_color ((create {EV_STOCK_COLORS}).white)
 			window.set_default_cancel_button (close_button)
-			window.set_icon_pixmap (pixmaps.icon_dialog_window)
 		end
 
 feature {NONE} -- Implementation

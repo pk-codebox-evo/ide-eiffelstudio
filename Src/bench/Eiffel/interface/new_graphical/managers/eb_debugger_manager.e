@@ -67,9 +67,6 @@ feature -- Access
 	call_stack_tool: EB_CALL_STACK_TOOL
 			-- A tool that represents the call stack in a graphical display.
 
-	threads_tool: ES_DBG_THREADS_TOOL
-			-- A tool that represents the threads list in a graphical display
-
 	debugging_tools: ES_DOCKABLE_NOTEBOOK
 			-- A tool that represents the call stack in a graphical display.
 
@@ -149,6 +146,7 @@ feature -- Access
 --			b := exec_cmd.new_toolbar_item (False)
 --			tb.extend (b)
 --			b.select_actions.extend (window_manager~quick_refresh_all_margins)
+
 		end
 
 	new_debug_menu: EV_MENU is
@@ -194,11 +192,6 @@ feature -- Access
 
 			Result.extend (set_critical_stack_depth_cmd.new_menu_item)
 
-				-- Separator.
-			create sep
-			Result.extend (sep)
-			Result.extend (exception_handler_cmd.new_menu_item)
-
 			debug ("DEBUGGER_INTERFACE")
 					-- Separator.
 				create sep
@@ -213,108 +206,6 @@ feature -- Access
 
 --| FIXME XR: TODO: Add:
 --| 3) edit feature, feature evaluation
-		end
-
-	menuable_debugging_tools: ARRAY [EB_TOOL] is
-			-- List of all debugging tools to be listed under the debug->tools menu.
-		do
-			Result := <<threads_tool>>
-		end
-
-	new_debugging_tools_menu: EV_MENU is
-			-- New debugging tools menu.
-		do
-			create Result.make_with_text (Interface_names.m_Tools)
-			Result.disable_sensitive
-		ensure
-			Result /= Void
-		end
-		
-	update_debugging_tools_menu_from (w: EB_DEVELOPMENT_WINDOW) is
-			-- Update the debugging_tools_menu related to `w'	
-		require
-			w /= Void
-		local
-			m: EV_MENU
-			mit: EV_MENU_ITEM
-			l_tools: ARRAY [EB_TOOL]
-			l_tool: EB_TOOL
-			i: INTEGER
-		do
-			m := w.debugging_tools_menu
-			m.wipe_out
-			if raised then
-				l_tools := menuable_debugging_tools
-				if not l_tools.is_empty then
-					create mit.make_with_text ("Show/Hide tools")
-					mit.disable_sensitive
-					m.extend (mit)
-		
-					create {EV_MENU_SEPARATOR} mit
-					mit.disable_sensitive
-					m.extend (mit)
-					
-					from
-						i := l_tools.lower
-					until
-						i > l_tools.upper
-					loop
-						l_tool := l_tools [i]
-						if l_tool /= Void then
-							create mit.make_with_text (l_tool.menu_name)
-							if l_tool.pixmap /= Void and then not l_tool.pixmap.is_empty then
-								mit.set_pixmap (l_tool.pixmap [l_tool.pixmap.lower] )
-							end
-							mit.select_actions.extend (agent show_hide_debugging_tools (mit))
-							m.extend (mit)
-						end
-						i := i + 1
-					end
-					m.enable_sensitive
-				end
-			else				
-				m.disable_sensitive
-			end
-		end
-	
-	update_all_debugging_tools_menu is
-			-- Update all debugging_tools_menu in all development windows
-		do
-			window_manager.for_all_development_windows (agent {EB_DEVELOPMENT_WINDOW}.update_debug_menu)
-		end
-		
-	show_hide_debugging_tools (mit: EV_MENU_ITEM) is
-			-- Toggle display status of Tool related to `mit'
-		require
-			mit /= Void
-		local
-			l_tool: EB_TOOL
-			l_tools: ARRAY [EB_TOOL]
-			i: INTEGER
-			s: STRING
-		do
-			if raised then
-				l_tools := menuable_debugging_tools
-				from
-					s := mit.text
-					i := l_tools.lower
-				until
-					i > l_tools.upper
-				loop
-					l_tool := l_tools [i]
-					if l_tool /= Void and then s.is_equal (l_tool.menu_name) then
-						if l_tool.shown then
-							l_tool.close
-						else
-							l_tool.show
-							if l_tool.widget.is_displayed then
-								l_tool.widget.set_focus
-							end
-						end
-					end
-					i := i + 1
-				end
-			end
 		end
 
 	create_new_watch_tool_inside_notebook (manager: EB_TOOL_MANAGER; nb: ES_NOTEBOOK) is
@@ -508,7 +399,7 @@ feature -- Status setting
 				objects_tool.change_attach_notebook (debugging_tools)
 			end
 			objects_tool.set_debugger_manager (Current)
-			objects_tool.set_cleaning_delay (Preferences.Debug_tool_data.delay_before_cleaning_objects_grid)
+			objects_tool.set_cleaning_timer_delay (Preferences.Debug_tool_data.delay_before_cleaning_objects_grid)
 			objects_tool.update
 
 				--| Watches tool
@@ -535,15 +426,6 @@ feature -- Status setting
 			end
 			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.prepare_for_debug)
 			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.update)
-
-				--| Threads Tool
-			if threads_tool = Void then
-				create threads_tool.make (debugging_window)
-				threads_tool.attach_to_explorer_bar (debugging_window.left_panel)
-			else
-				threads_tool.change_manager_and_explorer_bar (debugging_window, debugging_window.left_panel)
-			end
-			threads_tool.update
 
 				--| Call Stack Tool
 			if call_stack_tool = Void then
@@ -598,7 +480,7 @@ feature -- Status setting
 			end
 
 			raised := True
-			update_all_debugging_tools_menu
+
 			debugging_window.window.unlock_update
 		ensure
 			raised
@@ -684,7 +566,6 @@ feature -- Status setting
 				io.put_string ("editor height after debug: " + debugging_window.editor_tool.explorer_bar_item.widget.height.out + "%N")
 			end
 
-			update_all_debugging_tools_menu
 			debugging_window.window.unlock_update
 		ensure
 			not raised
@@ -693,7 +574,6 @@ feature -- Status setting
 	recycle_tools is
 			-- Recycle tools to free unused data
 		do
-			threads_tool.recycle
 			call_stack_tool.recycle
 			objects_tool.recycle
 			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.recycle)				
@@ -714,15 +594,6 @@ feature -- Status setting
 				call_stack_tool.set_stone (st)
 				objects_tool.set_stone (st)
 				watch_tool_list.do_all (agent {ES_WATCH_TOOL}.set_stone (st))
-			end
-		end
-		
-	set_current_thread_id (tid: INTEGER) is
-			-- Set Current thread id to `tid'
-		do
-			if raised then
-				call_stack_tool.update
-				threads_tool.update
 			end
 		end
 
@@ -835,6 +706,7 @@ feature -- Debugging events
 				io.put_string ("Application Stopped (dixit EB_DEBUGGER_MANAGER)%N")
 			end
 
+			objects_tool.enable_grid_redraw
 			objects_tool.disable_refresh
 			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.disable_refresh)
 			if not Application.current_call_stack_is_empty then
@@ -848,8 +720,6 @@ feature -- Debugging events
 
 			window_manager.quick_refresh_all_margins
 
-				-- Fill in the threads tool.
-			threads_tool.update
 				-- Fill in the stack tool.
 			call_stack_tool.update
 				-- Fill in the objects tool.
@@ -906,12 +776,11 @@ feature -- Debugging events
 				-- Reset
 			Application.on_resumed
 
-				-- Fill in the threads tool.
-			threads_tool.update
 				-- Fill in the stack tool.
 			call_stack_tool.update
 				-- Fill in the objects tool.
 			objects_tool.update
+			objects_tool.disable_grid_redraw
 			
 				-- Update Watch tool
 			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.update)
@@ -1088,8 +957,6 @@ feature {NONE} -- Implementation
 
 	set_critical_stack_depth_cmd: EB_STANDARD_CMD
 			-- Command that changes the depth at which we warn the user against a stack overflow.
-			
-	exception_handler_cmd: EB_EXCEPTION_HANDLER_CMD
 
 	stop_cmd: EB_EXEC_STOP_CMD
 			-- Command that can interrupt the execution.
@@ -1157,11 +1024,6 @@ feature {NONE} -- Implementation
 
 			create display_error_help_cmd.make
 			toolbarable_commands.extend (display_error_help_cmd)
-
-
-			create exception_handler_cmd.make
-			exception_handler_cmd.enable_sensitive
-			toolbarable_commands.extend (exception_handler_cmd)
 
 			create step_cmd.make (Current)
 			toolbarable_commands.extend (step_cmd)
@@ -1364,7 +1226,6 @@ feature {NONE} -- Implementation
 
 				-- Set widget properties.
 			dialog.set_title (Interface_names.t_Set_critical_stack_depth)
-			dialog.set_icon_pixmap (pixmaps.icon_dialog_window)
 			dialog.disable_user_resize
 			rb2.enable_select
 			Layout_constants.set_default_size_for_button (okb)

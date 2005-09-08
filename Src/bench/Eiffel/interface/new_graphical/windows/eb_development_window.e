@@ -2,7 +2,6 @@ indexing
 	description	: "Window holding a project tool"
 	date		: "$Date$"
 	revision	: "$Revision$"
-	author		: "$Author$"
 
 class
 	EB_DEVELOPMENT_WINDOW
@@ -345,10 +344,6 @@ feature {NONE} -- Initialization
 	set_up_accelerators is
 			-- Fill the accelerator of `window' with the accelerators of the `toolbarable_commands'.
 		do
-				--| Enable shortcuts to create and show special debug menu for estudio
-			window.accelerators.extend ((create {ESTUDIO_DEBUG_CMD}.make (window)).accelerator)
-
-				--| Accelerators related to toolbarable_commands
 			from
 				toolbarable_commands.start
 			until
@@ -360,7 +355,6 @@ feature {NONE} -- Initialization
 				toolbarable_commands.forth
 			end
 
-				--| Accelerators related to debugging toolbarable_commands
 			from
 				debugger_manager.toolbarable_commands.start
 			until
@@ -394,8 +388,6 @@ feature {NONE} -- Initialization
 			managed_class_formatters.extend (Void)
 			managed_class_formatters.extend (create {EB_ATTRIBUTES_FORMATTER}.make (Current))
 			managed_class_formatters.extend (create {EB_ROUTINES_FORMATTER}.make (Current))
-			managed_class_formatters.extend (create {EB_INVARIANTS_FORMATTER}.make (Current))
-			managed_class_formatters.extend (create {EB_CREATORS_FORMATTER}.make (Current))
 			managed_class_formatters.extend (create {EB_DEFERREDS_FORMATTER}.make (Current))
 			managed_class_formatters.extend (create {EB_ONCES_FORMATTER}.make (Current))
 			managed_class_formatters.extend (create {EB_EXTERNALS_FORMATTER}.make (Current))
@@ -541,15 +533,6 @@ feature {NONE} -- Initialization
 			show_tool_commands.extend (show_cmd)
 			toolbarable_commands.extend (show_cmd)
 			add_recyclable (features_tool)
-
-				-- Build the breakpoints tool
-			create breakpoints_tool.make (Current)
-			breakpoints_tool.attach_to_explorer_bar (left_panel)
-			left_tools.extend (breakpoints_tool.explorer_bar_item)
-			create show_cmd.make (Current, breakpoints_tool.explorer_bar_item)
-			show_tool_commands.extend (show_cmd)
-			toolbarable_commands.extend (show_cmd)
-			add_recyclable (breakpoints_tool)
 
 				-- Build the cluster tool
 			create cluster_tool.make (Current, Current)
@@ -747,9 +730,6 @@ feature -- Pulldown Menus
 
 	debug_menu: EV_MENU
 			-- Debug ID menu.
-			
-	debugging_tools_menu: EV_MENU
-			-- Debugging tools menu item
 
 	active_menus (erase: BOOLEAN) is
 			-- Enable all the menus and if `erase' clean
@@ -765,12 +745,6 @@ feature -- Pulldown Menus
 			-- Disable all the menus.
 		do
 			compile_menu.disable_sensitive
-		end
-		
-	update_debug_menu is
-			-- Update debug menu
-		do
-			debugger_manager.update_debugging_tools_menu_from (Current)
 		end
 
 feature -- Modifiable menus
@@ -797,7 +771,6 @@ feature -- Update
 			cluster_tool.synchronize
 			history_manager.synchronize
 			features_tool.synchronize
-			breakpoints_tool.synchronize
 				-- Update main views
 			managed_main_formatters.i_th (2).invalidate
 			managed_main_formatters.i_th (3).invalidate
@@ -812,7 +785,7 @@ feature -- Update
 			address_manager.refresh
 			during_synchronization := False
 		end
-		
+
 	synchronize_routine_tool_to_default is
 			-- Synchronize the editor tool to the debug format.
 		do
@@ -859,11 +832,6 @@ feature -- Update
 				end
 				debug_menu.forth
 			end
-				--| Debugging tools menu
-			debugging_tools_menu := debugger_manager.new_debugging_tools_menu
-			debug_menu.extend (create {EV_MENU_SEPARATOR})
-			debug_menu.extend (debugging_tools_menu)
-			update_debug_menu
 		end
 
 	build_menu_bar is
@@ -2056,17 +2024,16 @@ feature -- Resource Update
 	on_project_loaded is
 			-- Inform tools that the current project has been loaded or re-loaded.
 		do
---			cluster_manager.on_project_loaded
+	--			cluster_manager.on_project_loaded
 			enable_commands_on_project_loaded
 			cluster_tool.on_project_loaded
 			context_tool.on_project_loaded
-			breakpoints_tool.on_project_loaded
 		end
 
 	on_project_unloaded is
 			-- Inform tools that the current project will soon been unloaded.
 		do
---			cluster_manager.on_project_unloaded
+	--			cluster_manager.on_project_unloaded
 			disable_commands_on_project_unloaded
 			cluster_tool.on_project_unloaded
 			context_tool.on_project_unloaded
@@ -2241,8 +2208,6 @@ feature -- Tools & Controls
 	search_tool: EB_SEARCH_TOOL
 
 	features_tool: EB_FEATURES_TOOL
-	
-	breakpoints_tool: ES_BREAKPOINTS_TOOL	
 
 	windows_tool: EB_WINDOWS_TOOL
 
@@ -2441,6 +2406,7 @@ feature {NONE} -- Implementation
 			f: FILE
 
 			l_format_context: FORMAT_CONTEXT
+			l_indexes: INDEXING_CLAUSE_AS
 			conv_errst: ERROR_STONE
 			cl_syntax_stone: CL_SYNTAX_STONE
 			error_line: INTEGER
@@ -2479,7 +2445,7 @@ feature {NONE} -- Implementation
 					Application.set_breakpoint (conv_brkstone.routine, conv_brkstone.index)
 				end
 				output_manager.display_stop_points
-				window_manager.synchronize_all_about_breakpoints
+				window_manager.quick_refresh_all_margins
 			elseif conv_errst /= Void then
 				display_error_help_cmd.execute_with_stone (conv_errst)
 			elseif conv_ace /= Void then
@@ -2672,7 +2638,26 @@ feature {NONE} -- Implementation
 					end
 					if cluster_st /= Void then
 	--| FIXME XR: Really manage cluster display in the main editor
-						l_format_context := formatted_context_for_cluster (cluster_st.cluster_i)
+						create l_format_context.make_for_case
+						l_format_context.put_text_item (ti_indexing_keyword)
+						l_format_context.put_new_line
+						l_format_context.indent
+						l_format_context.put_text_item (create {INDEXING_TAG_TEXT}.make ("cluster"))
+						l_format_context.put_text_item_without_tabs (ti_colon)
+						l_format_context.put_space
+						l_format_context.put_manifest_string ("%"" + cluster_st.cluster_i.cluster_name + "%"")
+						l_format_context.put_new_line
+						l_format_context.put_text_item (create {INDEXING_TAG_TEXT}.make ("cluster_path"))
+						l_format_context.put_text_item_without_tabs (ti_colon)
+						l_format_context.put_space
+						l_format_context.put_manifest_string ("%"" + cluster_st.cluster_i.path + "%"")
+						l_format_context.put_new_line
+						l_indexes := cluster_st.cluster_i.indexes
+						if l_indexes /= Void then
+							l_format_context.format_indexing_with_no_keyword (l_indexes)
+						end
+						l_format_context.exdent
+						l_format_context.put_new_line
 						editor_tool.text_area.process_text (l_format_context.text)
 	--| END FIXME
 					end
@@ -2740,198 +2725,6 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	formatted_context_for_cluster (a_cluster: CLUSTER_I): FORMAT_CONTEXT is
-			-- Formatted context representing the list of classes inside `a_cluster'.
-		require
-			a_cluster_not_void: a_cluster /= Void
-		local
-			l_assembly: ASSEMBLY_I
-			l_sorted_cluster: EB_SORTED_CLUSTER
-			l_format_context: FORMAT_CONTEXT
-			l_indexes: INDEXING_CLAUSE_AS
-			l_classes: LIST [CLASS_I]
-			l_subclu: LIST [EB_SORTED_CLUSTER]			
-			l_cl_i: CLASS_I
-			l_list_cl_i: LIST [CLASS_I]
-			l_cluster: CLUSTER_I
-			l_assert_level: ASSERTION_I
-		do
-			create l_format_context.make_for_case
-			
-			l_format_context.put_text_item (ti_indexing_keyword)
-			l_format_context.put_new_line
-			l_format_context.indent
-			if a_cluster.is_assembly then
-				l_assembly ?= a_cluster
-				check l_assembly /= Void end
-				l_format_context.put_text_item (create {INDEXING_TAG_TEXT}.make ("assembly_name"))
-				l_format_context.put_text_item_without_tabs (ti_colon)
-				l_format_context.put_space
-				l_format_context.put_quoted_string_item (l_assembly.assembly_name)
-				l_format_context.put_new_line
-				l_format_context.put_text_item (create {INDEXING_TAG_TEXT}.make ("assembly_path"))
-				l_format_context.put_text_item_without_tabs (ti_colon)
-				l_format_context.put_space
-				l_format_context.put_quoted_string_item (l_assembly.assembly_path)
-				l_format_context.put_new_line
-				
-			end
-			l_format_context.put_text_item (create {INDEXING_TAG_TEXT}.make ("cluster"))
-			l_format_context.put_text_item_without_tabs (ti_colon)
-			l_format_context.put_space
-			l_format_context.put_quoted_string_item (a_cluster.cluster_name)
-
-			l_format_context.put_new_line
-			l_format_context.put_text_item (create {INDEXING_TAG_TEXT}.make ("cluster_path"))
-			l_format_context.put_text_item_without_tabs (ti_colon)
-			l_format_context.put_space
-			l_format_context.put_quoted_string_item (a_cluster.path)
-			l_format_context.put_new_line
-			l_indexes := a_cluster.indexes
-			if l_indexes /= Void then
-				l_format_context.format_indexing_with_no_keyword (l_indexes)
-				l_format_context.put_new_line							
-			end
-			
-			if a_cluster.parent_cluster /= Void then
-				l_format_context.put_text_item (create {INDEXING_TAG_TEXT}.make ("parent cluster"))
-				l_format_context.put_text_item_without_tabs (ti_colon)
-				l_format_context.put_new_line
-				l_format_context.indent
-				l_format_context.put_manifest_string (" - ")
-				
-				l_format_context.put_clusteri (a_cluster.parent_cluster)
-				l_format_context.put_new_line
-				l_format_context.exdent
-			end
-
-			create l_sorted_cluster.make (a_cluster)
-
-			if not l_sorted_cluster.clusters.is_empty then
-				l_format_context.put_text_item (create {INDEXING_TAG_TEXT}.make ("sub cluster(s)"))
-				l_format_context.put_text_item_without_tabs (ti_colon)
-				l_format_context.put_new_line
-				l_format_context.indent
-				from
-					l_subclu := l_sorted_cluster.clusters
-					l_subclu.start
-				until
-					l_subclu.after
-				loop
-					l_cluster := l_subclu.item.actual_cluster
-					l_format_context.put_manifest_string (" - ")
-					l_format_context.put_clusteri (l_cluster)
-					l_format_context.put_space
-					l_format_context.put_text_item_without_tabs (ti_L_parenthesis)
-					l_format_context.put_comment_text (l_cluster.classes.count.out)
-					l_format_context.put_text_item_without_tabs (ti_R_parenthesis)					
-					l_format_context.put_new_line
-					l_subclu.forth
-				end
-				l_format_context.exdent
-			end
-
-			if not l_sorted_cluster.classes.is_empty then
-				l_format_context.put_text_item (create {INDEXING_TAG_TEXT}.make ("class(es)"))
-				l_format_context.put_text_item_without_tabs (ti_colon)
-				l_format_context.put_new_line
-				l_format_context.indent
-				from
-					l_classes := l_sorted_cluster.classes
-					l_classes.start
-				until
-					l_classes.after
-				loop
-					l_cl_i := l_classes.item
-					l_assert_level := l_cl_i.assertion_level
-					l_format_context.put_manifest_string (" - ")
-					l_format_context.put_classi (l_cl_i)
-					l_format_context.put_text_item_without_tabs (ti_colon)
-					if l_cl_i.compiled then
-						if l_assert_level.check_all then
-							l_format_context.put_space
-							l_format_context.put_text_item_without_tabs (ti_All_keyword)
-						elseif l_assert_level.level = 0  then
-							l_format_context.put_space
-							l_format_context.put_comment_text (once "None")
-						else
-							if l_assert_level.check_precond then
-								l_format_context.put_space
-								l_format_context.put_text_item_without_tabs (ti_Require_keyword)
-							end
-							if l_assert_level.check_postcond then
-								l_format_context.put_space
-								l_format_context.put_text_item_without_tabs (ti_Ensure_keyword)
-							end
-							if l_assert_level.check_check then
-								l_format_context.put_space
-								l_format_context.put_text_item_without_tabs (ti_Check_keyword)
-							end
-							if l_assert_level.check_loop then
-								l_format_context.put_space
-								l_format_context.put_text_item_without_tabs (ti_Loop_keyword)
-							end
-							if l_assert_level.check_invariant then
-								l_format_context.put_space
-								l_format_context.put_text_item_without_tabs (ti_Invariant_keyword)
-							end
-						end
-					else
-						l_format_context.put_comment_text (" Not in system.")
-					end
-					l_format_context.put_new_line
-					l_classes.forth
-				end
-				l_format_context.exdent
-			end
-
-			if not a_cluster.overriden_classes.is_empty then
-				l_format_context.put_text_item (create {INDEXING_TAG_TEXT}.make ("overriden class(es)"))
-				l_format_context.put_text_item_without_tabs (ti_colon)
-				l_format_context.put_new_line
-				l_format_context.indent
-				from
-					l_classes := a_cluster.overriden_classes.linear_representation
-					l_classes.start
-				until
-					l_classes.after
-				loop
-					l_cl_i := l_classes.item
-					l_format_context.put_manifest_string (" - ")
-					l_format_context.put_classi (l_cl_i)
-					l_list_cl_i := eiffel_universe.classes_with_name (l_cl_i.name)
-					if l_list_cl_i /= Void and then not l_list_cl_i.is_empty then
-						l_format_context.put_text_item_without_tabs (ti_colon)
-						l_format_context.put_comment_text (" overriden by")
-						from
-							l_list_cl_i.start
-						until
-							l_list_cl_i.after
-						loop
-							l_cluster := l_list_cl_i.item.cluster
-							if l_cluster /= a_cluster then
-								l_format_context.put_space
-								l_format_context.put_text_item_without_tabs (ti_double_quote)
-								l_format_context.put_clusteri (l_list_cl_i.item.cluster)
-								l_format_context.put_text_item_without_tabs (ti_double_quote)
-							end
-							l_list_cl_i.forth
-						end
-					end
-					l_format_context.put_new_line
-					l_classes.forth
-				end
-				l_format_context.exdent
-				l_format_context.put_new_line
-			end
-
-			l_format_context.exdent
-			l_format_context.put_new_line
-			Result := l_format_context
-		ensure
-			result_not_void: Result /= Void
-		end
-		
 	scroll_to_feature (feat_as: E_FEATURE; displayed_class: CLASS_I) is
 			-- highlight the feature correspnding to `feat_as' in the class represented by `displayed_class'
 		require
@@ -3228,7 +3021,7 @@ feature {NONE} -- Implementation
 	destroy is
 			-- check if current text has been saved and destroy
 		local
-			dialog_w: EV_WARNING_DIALOG
+			dialog_w: EB_WARNING_DIALOG
 		do
 			if editor_tool /= Void and then editor_tool.text_area /= Void and then changed and then not confirmed then
 				if Window_manager.development_windows_count > 1 then

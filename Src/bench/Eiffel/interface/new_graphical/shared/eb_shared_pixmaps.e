@@ -117,16 +117,6 @@ feature -- Icons
 			Result := pixmap_file_content ("icon_format_creators_color")
 		end
 
-	icon_format_creator_callers: EV_PIXMAP is
-		once
-			Result := pixmap_file_content ("icon_format_creator_callers_color")
-		end
-
-	Icon_format_invariants: EV_PIXMAP is
-		once
-			Result := pixmap_file_content ("icon_format_invariants_color")
-		end
-
 	Icon_format_ancestors: EV_PIXMAP is
 		once
 			Result := pixmap_file_content ("icon_format_ancestors_color")
@@ -225,6 +215,11 @@ feature -- Icons
 	Icon_external_symbol: EV_PIXMAP is
 		once
 			Result := pixmap_file_content ("icon_external_symbol")
+		end
+		
+	Icon_dbg_error: EV_PIXMAP is
+		once
+			Result := pixmap_file_content ("icon_dbg_error")
 		end
 
 	Icon_static_external_symbol: EV_PIXMAP is
@@ -1354,13 +1349,11 @@ feature {NONE} -- Implementation
 			Result.put ([12, 4], "icon_obsolete_feature")
 			Result.put ([12, 5], "icon_frozen_feature")
 			Result.put ([12,6], "icon_format_assigners_color")
-			Result.put ([12,7], "icon_format_creator_callers_color")
+			Result.put ([12,7], "icon_format_creators_color")
 			Result.put ([12,8], "icon_preference_root")
 			Result.put ([12,9], "icon_preference_folder")
 			Result.put ([12,10], "icon_other_feature")
 			Result.put ([12,11], "icon_reset_view_color")
-			Result.put ([12,12], "icon_format_creators_color")
-			Result.put ([12,13], "icon_format_invariants_color")
 			Result.compare_objects
 		end
 

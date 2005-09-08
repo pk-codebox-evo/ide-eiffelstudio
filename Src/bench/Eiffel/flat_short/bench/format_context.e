@@ -679,15 +679,6 @@ feature -- Element change
 			text.add_classi (c, c.name)
 		end
 
-	put_clusteri (c: CLUSTER_I) is		
-			-- Append cluster name to 'text', treated as a stone.
-		do
-			if not tabs_emitted then
-				emit_tabs
-			end
-			text.add_cluster (c, c.cluster_name)
-		end
-
 	prepare_class_text is
 			-- Append standard text before class.
 		do
@@ -869,11 +860,11 @@ feature -- Element change
 
 feature -- Output
 
-	register_invariants is
+	register_ancestors_invariants is
 			-- Register the invariants for target class.
 		do
 			create format_registration.make (class_c, client)
-			format_registration.register_invariants
+			format_registration.register_ancestors_invariants
 		end
 
 	format_categories is

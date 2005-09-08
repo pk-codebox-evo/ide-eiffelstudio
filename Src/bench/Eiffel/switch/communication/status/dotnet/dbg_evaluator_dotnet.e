@@ -207,16 +207,15 @@ feature -- Access
 			l_icd_value: ICOR_DEBUG_VALUE
 			l_adv: ABSTRACT_DEBUG_VALUE
 		do
+				--| Reset error status
+			reset_error
+
 			fixme ("JFIAT: maybe we should call with the parameters ...")
 			debug ("debugger_trace_eval")
 				print (generating_type + ".dotnet_evaluate_once_function : ")
 				print (f.written_class.name_in_upper + "." + f.name)
 				print ("%N")
 			end
-
-				--| Reset error status
-			reset_error
-
 			l_class_c := f.written_class
 				--| FIXME: JFIAT: 2004-01-05 : Does not support once evalution on generic
 				--| this is related to dialog and issue to provide derivation selection
@@ -328,28 +327,14 @@ feature -- Access
 	dotnet_evaluate_function_with_name (addr: STRING; dvalue: DUMP_VALUE;
 				a_feature_name, a_external_name: STRING; 
 				a_params: ARRAY [DUMP_VALUE]): DUMP_VALUE is
-		require
-			a_feature_name_not_void: a_feature_name /= Void
-			a_external_name_not_void: a_external_name /= Void				
 		local
 			l_icdv_obj: ICOR_DEBUG_VALUE
 			l_icd_function: ICOR_DEBUG_FUNCTION
 			edvi: EIFNET_DEBUG_VALUE_INFO
 		do
-			debug ("debugger_trace_eval")
-				print (generating_type + ".dotnet_evaluate_function_with_name : ")
-				print (a_feature_name + ", " + a_external_name )
-				if addr /= Void then
-					print (" on 0x" + addr)
-				elseif dvalue.address /= Void then
-					
-					print (" on 0x" + dvalue.address )
-				end
-				print ("%N")
-			end
 				--| Reset error status
 			reset_error
-			
+
 				--| Get the target object : `l_icdv_obj'
 			l_icdv_obj := target_icor_debug_value (addr, dvalue)
 			if l_icdv_obj = Void then
@@ -670,7 +655,7 @@ feature {NONE} -- Debug purpose only
 			debug ("debugger_trace_eval_data")
 				if not retried then
 					create l_edvi.make (icdv)
-					if l_edvi.has_object_interface and then l_edvi.value_class_name /= Void then
+					if l_edvi.has_object_interface then
 						print (generating_type + " : ClassName = " + l_edvi.value_class_name + "%N")
 					else
 						if l_edvi.is_reference_type then

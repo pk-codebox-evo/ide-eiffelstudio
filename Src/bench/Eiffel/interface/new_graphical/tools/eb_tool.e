@@ -10,8 +10,6 @@ deferred class
 	EB_TOOL 
 
 inherit
-	
-	REFACTORING_HELPER	
 
 	EB_EXPLORER_BAR_ATTACHABLE
 

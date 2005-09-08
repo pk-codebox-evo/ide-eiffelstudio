@@ -41,7 +41,6 @@ feature {NONE} -- Initialization
 		do
 			Precursor
 			set_title (Interface_names.t_Diagram_class_header)
-			set_icon_pixmap (pixmaps.icon_dialog_window)
 		
 			create vb
 			vb.set_padding (Layout_constants.small_padding_size)

@@ -211,17 +211,9 @@ feature -- Bridge to Debugger
 		do
 			Result := Eifnet_debugger.last_exception_is_handled
 		end
-		
-	exception_class_name: STRING is
-			-- Exception class name
-		require
-			exception_occurred: exception_occurred
-		do
-			Result := Eifnet_debugger.exception_class_name
-		end		
 
 	exception_module_name: STRING is
-			-- Exception module name
+			-- Exception "GetMessage" output
 		require
 			exception_occurred: exception_occurred
 		do
@@ -650,17 +642,16 @@ feature -- Breakpoints controller
 
 feature -- BreakPoints
 
-	set_dotnet_breakpoint (bp: BREAKPOINT; a_state: BOOLEAN) is
-			-- enable the `i'-th breakpoint of `f' if `a_state' is `True'
-			-- otherwise disable it
+	add_dotnet_breakpoint (bp: BREAKPOINT) is
+			-- enable the `i'-th breakpoint of `f'
 			-- if no breakpoint already exists for 'f' at 'i', a breakpoint is created
 		require
 			bp_valid: bp.is_valid
 		local
 			f: E_FEATURE
-			ln: INTEGER
+			i: INTEGER
 			l_feature_token: INTEGER
-			l_il_offset_set: IL_OFFSET_SET
+			l_il_offset_list: LIST [INTEGER]
 			l_il_offset: INTEGER
 			l_module_name: STRING
 			l_class_c: CLASS_C
@@ -668,12 +659,11 @@ feature -- BreakPoints
 			
 			l_class_type_list: TYPE_LIST
 			l_class_type: CLASS_TYPE
-			i, upper: INTEGER
 		do
 			f := bp.routine
-			ln := bp.breakable_line_number
+			i := bp.breakable_line_number
 			debug ("debugger_trace_breakpoint")
-				print ("setBreakpoint (" + a_state.out + ") " + f.name + " index=" + ln.out + "%N")
+				print ("AddBreakpoint " + f.name + " index=" + i.out + "%N")
 				display_feature_info (f)
 			end
 			
@@ -695,21 +685,16 @@ feature -- BreakPoints
 				end
 				l_feature_token := Il_debug_info_recorder.feature_token_for_feat_and_class_type (f.associated_feature_i, l_class_type)
 
-				l_il_offset_set := Il_debug_info_recorder.feature_breakable_il_line_for (l_class_type, f.associated_feature_i, ln)
-				if l_il_offset_set /= Void and then not l_il_offset_set.is_empty then
+				l_il_offset_list := Il_debug_info_recorder.feature_breakable_il_line_for (l_class_type, f.associated_feature_i, i)
+				if l_il_offset_list /= Void then
 					from
-						i := l_il_offset_set.lower
-						upper := i + l_il_offset_set.count
+						l_il_offset_list.start
 					until
-						i >= upper
+						l_il_offset_list.after
 					loop
-						l_il_offset := l_il_offset_set.item (i)
-						if a_state then
-							Eifnet_debugger.request_breakpoint_add (bp, l_module_name, l_class_token, l_feature_token, l_il_offset)
-						else
-							Eifnet_debugger.request_breakpoint_remove (bp, l_module_name, l_class_token, l_feature_token, l_il_offset)
-						end
-						i := i + 1
+						l_il_offset := l_il_offset_list.item
+						Eifnet_debugger.request_breakpoint_add (bp, l_module_name, l_class_token, l_feature_token, l_il_offset)
+						l_il_offset_list.forth
 					end		
 				else
 					check False end -- Should not occurs, unless data are corrupted
@@ -717,19 +702,59 @@ feature -- BreakPoints
 				l_class_type_list.forth
 			end
 		end
-
-	add_dotnet_breakpoint (bp: BREAKPOINT) is
-			-- enable the `i'-th breakpoint of `f'
-			-- if no breakpoint already exists for 'f' at 'i', a breakpoint is created
-		do
-			set_dotnet_breakpoint (bp, True)
-		end
 		
 	remove_dotnet_breakpoint (bp: BREAKPOINT) is
 			-- remove the `i'-th breakpoint of `f'
 			-- if no breakpoint already exists for 'f' at 'i', a breakpoint is created
+		local
+			f: E_FEATURE
+			i: INTEGER
+			l_feature_token: INTEGER
+			l_il_offset_list: LIST [INTEGER]
+			l_il_offset: INTEGER
+			l_module_name: STRING
+			l_class_c: CLASS_C
+			l_class_token: INTEGER
+			l_class_type_list: TYPE_LIST
+			l_class_type: CLASS_TYPE
 		do
-			set_dotnet_breakpoint (bp, False)
+			f := bp.routine
+			i := bp.breakable_line_number
+			debug ("debugger_trace_breakpoint")
+				print ("RemoveBreakpoint " + f.name + " index=" + i.out + "%N")
+				display_feature_info (f)
+			end
+			
+			l_class_c := f.written_class			
+
+			--| loop on the different derivation of a generic class	
+			l_class_type_list := l_class_c.types
+			from
+				l_class_type_list.start
+			until
+				l_class_type_list.after
+			loop
+				l_class_type := l_class_type_list.item
+				l_module_name := Il_debug_info_recorder.module_file_name_for_class (l_class_type)
+				l_class_token := Il_debug_info_recorder.class_token (l_module_name, l_class_type)
+				l_feature_token := Il_debug_info_recorder.feature_token_for_feat_and_class_type (f.associated_feature_i, l_class_type)
+
+				l_il_offset_list := Il_debug_info_recorder.feature_breakable_il_line_for (l_class_type, f.associated_feature_i, i)
+				if l_il_offset_list /= Void then
+					from
+						l_il_offset_list.start
+					until
+						l_il_offset_list.after
+					loop
+						l_il_offset := l_il_offset_list.item
+						Eifnet_debugger.request_breakpoint_remove (bp, l_module_name, l_class_token, l_feature_token, l_il_offset)
+						l_il_offset_list.forth
+					end
+				else
+					check False end -- Should not occurs, unless data are corrupted
+				end
+				l_class_type_list.forth
+			end
 		end		
 
 feature {NONE} -- Implementation

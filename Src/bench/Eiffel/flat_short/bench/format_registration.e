@@ -322,21 +322,12 @@ end;
 			inv_adapter.register (invariant_part, Current);	
 		end;
 
-	register_invariants is
-			-- Register the invariants defined in `target_class'.
+	register_ancestors_invariants is
+			-- Register the invarians defined in `ancestors'.
+			-- (class ANY is skipped)
 		local
-			l_inv: INVARIANT_AS
+			inv_as: INVARIANT_AS
 		do
-				-- Properly initialize `current_class'.
-			current_class := target_class
-			
-				-- Register invariant for `target_class' first.
-			l_inv := target_class.invariant_ast
-			if l_inv /= Void then
-				register_invariant (l_inv)
-			end
-
-				-- Then the inherited invariants.
 			from 
 				record_ancestors_of_class (target_class)
 				ancestors.start
@@ -344,9 +335,11 @@ end;
 				ancestors.after
 			loop
 				current_class := ancestors.item
-				l_inv := current_class.invariant_ast
-				if l_inv /= Void then
-					register_invariant (l_inv)
+				if current_class /= System.any_class.compiled_class then
+					inv_as := current_class.invariant_ast
+					if inv_as /= Void then
+						register_invariant (inv_as)
+					end
 				end
 				ancestors.forth
 			end
