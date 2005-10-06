@@ -85,7 +85,7 @@ feature{PROCESS_TIMER}  -- Status checking
 
 	check_exit is
 			-- Check whether process has exited.
-		do
+		do		
 			if (launched and then has_process_exited) 
 			then
 				if out_thread /= Void then
@@ -99,6 +99,7 @@ feature{PROCESS_TIMER}  -- Status checking
 				if timer /= Void then
 					timer.destroy				
 				end	
+
 				on_exit		
 			end
 		end
