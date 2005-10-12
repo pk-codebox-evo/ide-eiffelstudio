@@ -10,7 +10,7 @@ class
 inherit
 	ABSTRACT_DEBUG_VALUE
 
-create {RECV_VALUE, ATTR_REQUEST, CALL_STACK_ELEMENT, DEBUG_VALUE_EXPORTER}
+create {RECV_VALUE, ATTR_REQUEST, CALL_STACK_ELEMENT, DEBUG_VALUE_EXPORTER, ES_OBJECTS_GRID_LINE}
 	make_with_name
 	
 feature {NONE} -- Initialization
@@ -19,6 +19,7 @@ feature {NONE} -- Initialization
 			-- Create current
 		do
 			name := a_name
+			display_kind := kind
 		end
 
 feature -- change
@@ -26,6 +27,11 @@ feature -- change
 	set_message (a_msg: STRING) is
 		do
 			message := a_msg
+		end
+		
+	set_display_kind (a_kind: like display_kind) is
+		do
+			display_kind := a_kind
 		end
 
 feature -- Access
@@ -84,9 +90,6 @@ feature {NONE} -- Output
 		
 feature -- Output
 
-	is_dummy_value: BOOLEAN is True
-			-- Does `Current' represent a object value or for instance an error message
-		
 	expandable: BOOLEAN is False
 			-- Does `Current' have sub-items? (Is it a non void reference, a special object, ...)
 
@@ -99,10 +102,12 @@ feature -- Output
 			Result := Void
 		end
 		
+	display_kind: like kind
+		
 	kind: INTEGER is
 			-- Actual type of `Current'. cf possible codes underneath.
 			-- Used to display the corresponding icon.
-		do
+		once
 			Result := Error_message_value
 		end
 
