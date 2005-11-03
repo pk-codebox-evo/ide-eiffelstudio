@@ -41,11 +41,6 @@ inherit
 		export
 			{NONE} all
 		end
-		
-	EB_SHARED_PREFERENCES
-		export
-			{NONE} all
-		end
 
 create
 	make
@@ -113,11 +108,11 @@ feature {NONE} -- Implementation
 
 	process is
 		local
-			fod: EB_FILE_OPEN_DIALOG
+			fod: EV_FILE_OPEN_DIALOG
 			l_env: EXECUTION_ENVIRONMENT
 			l_dir: STRING
 		do
-			create fod.make_with_preference (preferences.dialog_data.last_opened_file_directory_preference)
+			create fod
 			set_dialog_filters_and_add_all (fod, <<eiffel_class_files_filter>>)
 			fod.open_actions.extend (agent execute_callback (fod))
 			create l_env
@@ -126,7 +121,7 @@ feature {NONE} -- Implementation
 			l_env.change_working_directory (l_dir)
 		end
 	
-	execute_callback (dialog: EB_FILE_OPEN_DIALOG) is
+	execute_callback (dialog: EV_FILE_OPEN_DIALOG) is
 			-- Open a file.
 		local
 			fn: FILE_NAME
@@ -221,7 +216,6 @@ feature {NONE} -- Implementation
 			maincont.extend (butcont)
 			maincont.disable_item_expand (butcont)
 			dial.set_title ("Backup found")
-			dial.set_icon_pixmap (pixmaps.icon_dialog_window)
 			dial.extend (maincont)
 			dial.set_size (dial.minimum_width, dial.minimum_height)
 			dial.disable_user_resize

@@ -94,22 +94,18 @@ feature -- Basic operations
 
 	on_project_loaded is
 			-- `project' has been loaded or re-loaded.
-		local
-			l_load_agents: like load_agents
 		do
 				-- Load application context (command line and breakpoints)
 			Application.load_debug_info
 			is_project_loaded := True
 
 			from
-					-- We need to twin the list as items may be removed as a result or iteration.
-				l_load_agents := load_agents.twin
-				l_load_agents.start
+				load_agents.start
 			until
-				l_load_agents.after
+				load_agents.after
 			loop
-				l_load_agents.item.call (Void)
-				l_load_agents.forth
+				load_agents.item.call (Void)
+				load_agents.forth
 			end
 		end
 
@@ -117,19 +113,15 @@ feature -- Basic operations
 			-- `project' has been created.
 		require
 			project_unloaded: not is_created
-		local
-			l_create_agents: like create_agents
 		do
 			is_created := True
 			from
-					-- We need to twin the list as items may be removed as a result or iteration.
-				l_create_agents := create_agents.twin
-				l_create_agents.start
+				create_agents.start
 			until
-				l_create_agents.after
+				create_agents.after
 			loop
-				l_create_agents.item.call (Void)
-				l_create_agents.forth
+				create_agents.item.call (Void)
+				create_agents.forth
 			end
 		end
 
@@ -137,8 +129,6 @@ feature -- Basic operations
 			-- `project' has been closed.
 		require
 			project_loaded: is_created
-		local
-			l_close_agents: like close_agents
 		do
 			is_project_loaded := False
 			is_created := False
@@ -146,14 +136,12 @@ feature -- Basic operations
 			Application.save_debug_info
 
 			from
-					-- We need to twin the list as items may be removed as a result or iteration.
-				l_close_agents := close_agents.twin
-				l_close_agents.start
+				close_agents.start
 			until
-				l_close_agents.after
+				close_agents.after
 			loop
-				l_close_agents.item.call (Void)
-				l_close_agents.forth
+				close_agents.item.call (Void)
+				close_agents.forth
 			end
 		end
 

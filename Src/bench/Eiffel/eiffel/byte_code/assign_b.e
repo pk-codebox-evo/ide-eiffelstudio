@@ -11,14 +11,6 @@ inherit
 			calls_special_features, size, inlined_byte_code,
 			pre_inlined_code, generate_il
 		end;
-
-feature -- Visitor
-
-	process (v: BYTE_NODE_VISITOR) is
-			-- Process current element.
-		do
-			v.process_assign_b (Current)
-		end
 	
 feature 
 
@@ -63,16 +55,11 @@ feature -- IL code generation
 			target.generate_il_start_assignment
 
 				-- Generate expression byte code
-			source.generate_il_value
+			source.generate_il
 			
 				-- Generate assignment header depending of the type
 				-- of the target (local, attribute or result).
-			source_type ?= context.real_type (source.type)
-
-				-- Convert expanded type to reference if required
-			if source_type.is_expanded and then target.type.is_reference then
-				il_generator.generate_metamorphose (source_type)
-			end
+			source_type ?= context.real_type (source.type);
 
 				-- Generate assignment
 			target.generate_il_assignment (source_type)

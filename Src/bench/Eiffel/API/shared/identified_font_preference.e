@@ -111,10 +111,10 @@ feature {NONE} -- Implementation
 						end
 					end
 				end				
-				internal_value := font_factory.registered_font (create {EV_FONT}.make_with_values (family, weight, shape, height))
-				internal_value.font.set_height_in_points (height)
-				internal_value.font.preferred_families.extend (face)
-				set_value (internal_value)
+				value := font_factory.registered_font (create {EV_FONT}.make_with_values (family, weight, shape, height))
+				value.font.set_height_in_points (height)
+				value.font.preferred_families.extend (face)
+				set_value (value)
 			end			
 		end
 
@@ -124,20 +124,18 @@ feature {NONE} -- Implementation
 			has_value: value /= Void
 		local
 			v: STRING
-			l_value: like value
 		do
 			create v.make (50)
 			v.append (face)
 			v.append ("-")
-			l_value := value
-			inspect l_value.font.shape
+			inspect value.font.shape
 			when shape_italic then
 				v.append ("i")
 			when shape_regular then
 				v.append ("r")
 			end
 			v.append ("-")
-			inspect l_value.font.weight
+			inspect value.font.weight
 			when weight_black then
 				v.append ("black")
 			when weight_thin then
@@ -150,7 +148,7 @@ feature {NONE} -- Implementation
 			v.append ("-")
 			v.append (height.out)
 			v.append ("-")
-			inspect l_value.font.family
+			inspect value.font.family
 			when family_roman then
 				v.append ("roman")
 			when family_screen then
@@ -231,12 +229,6 @@ feature {NONE} -- Implementation
 			if s.is_integer then
 				height := s.to_integer
 			end
-		end
-
-	auto_default_value: EV_IDENTIFIED_FONT is
-			-- Value to use when Current is using auto by default (until real auto is set)
-		once
-			Result := font_factory.registered_font (create {EV_FONT})
 		end
 
 end -- class IDENTIFIED_FONT_PREFERENCE

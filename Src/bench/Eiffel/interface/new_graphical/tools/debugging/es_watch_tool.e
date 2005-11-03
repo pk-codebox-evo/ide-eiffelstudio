@@ -78,7 +78,7 @@ feature {NONE} -- Initialization
 		do
 			create watched_items.make (10)
 
-			create esgrid.make_with_name ("Watches")
+			create esgrid.make ("Watches")
 			esgrid.enable_multiple_row_selection
 			esgrid.set_column_count_to (5)
 			esgrid.column (col_name_index).set_title (col_titles @ col_name_index)
@@ -110,8 +110,7 @@ feature {NONE} -- Initialization
 			esgrid.key_press_string_actions.extend (agent string_key_pressed)
 
 			watches_grid := esgrid
-			initialize_watches_grid_layout (preferences.debug_tool_data.is_watches_grids_layout_managed_preference)
-			
+
 			create_update_on_idle_agent
 		end
 
@@ -460,7 +459,7 @@ feature {NONE} -- add new expression from the grid
 				glab.pointer_double_press_actions.force_extend (agent glab.activate)
 				glab.apply_actions.extend (agent add_new_expression_for_context)
 			elseif new_expression_row.index < watches_grid.row_count then
-				grid_move_to_end_of_grid (new_expression_row)
+				watches_grid.move_row (new_expression_row.index, watches_grid.row_count)
 			end
 			watches_grid_empty := False
 		ensure
@@ -618,13 +617,12 @@ feature {NONE} -- Event handling
 		
 	move_processing: BOOLEAN
 
-	move_selected (grid: ES_OBJECTS_GRID; offset: INTEGER) is
+	move_selected (grid: ES_OBJECTS_GRID ;offset: INTEGER) is
 		local
 			sel_rows: LIST [EV_GRID_ROW]
 			sel: EV_GRID_ROW
 			sel_index: INTEGER
-			new_index, to_index: INTEGER
-			line: ES_OBJECTS_GRID_EXPRESSION_LINE
+			to_index: INTEGER
 		do
 			if not move_processing then
 				move_processing := True --| To avoid concurrent move
@@ -633,21 +631,6 @@ feature {NONE} -- Event handling
 					sel := sel_rows.first
 					if sel.parent_row = Void then
 						sel_index := sel.index
-						line ?= sel.data
-						if line /= Void then
-							watched_items.start
-							watched_items.search (line)
-							if not watched_items.exhausted then
-								check watched_items.item = line end
-								new_index := watched_items.index + offset
-								if new_index < 1 then
-									new_index := 1
-								elseif new_index > watched_items.count then
-									new_index := watched_items.count
-								end
-								watched_items.swap (new_index)
-							end
-						end
 						to_index := grid.grid_move_top_row_node_by (grid, sel_index, offset)
 						grid.remove_selection
 						sel.enable_select
@@ -716,31 +699,21 @@ feature {NONE} -- Event handling
 		local
 			cst: CLASSC_STONE
 			ost: OBJECT_STONE
-			fost: FEATURED_OBJECT_STONE			
 			dlg: EB_EXPRESSION_DEFINITION_DIALOG
 			oname: STRING
 		do
-			fost ?= s
-			if fost /= Void then
-				oname := fost.feature_name
+			ost ?= s
+			if ost /= Void then
+				oname := ost.name + ": " + ost.object_address
 				if ev_application.ctrl_pressed then
+					add_object (ost, oname)
 				else
-					create dlg.make_with_expression_on_object (fost.object_address, fost.feature_name)
+					create dlg.make_with_named_object (ost.object_address, oname)
 				end
 			else
-				ost ?= s
-				if ost /= Void then
-					oname := ost.name + ": " + ost.object_address
-					if ev_application.ctrl_pressed then
-						add_object (ost, oname)
-					else
-						create dlg.make_with_named_object (ost.object_address, oname)
-					end
-				else
-					cst ?= s
-					if cst /= Void then
-						create dlg.make_with_class (cst.e_class)
-					end
+				cst ?= s
+				if cst /= Void then
+					create dlg.make_with_class (cst.e_class)
 				end
 			end
 			if dlg /= Void then
@@ -933,11 +906,10 @@ feature {NONE} -- Event handling
 		require
 			ost_ot_void: ost /= Void
 			oname /= Void
-			application_is_running: Application.is_running
 		local
 			expr: EB_EXPRESSION
 		do
-			Application.status.keep_object (ost.object_address)
+			debugger_manager.keep_object (ost.object_address)
 			create expr.make_as_object (ost.dynamic_class , ost.object_address)
 			expr.set_name (oname)
 			add_expression (expr)
@@ -1020,42 +992,14 @@ feature -- Grid management
 
 	watches_grid_empty: BOOLEAN
 	
-	clean_watched_grid is
+	clean_watched_grid is	
 		do
 			if not watches_grid_empty then
-				if record_layout_on_next_clean then
-					watches_grid.record_layout
-					record_layout_on_next_clean := False
-				end
 				watches_grid.remove_and_clear_all_rows
 				watches_grid_empty := True
 			end
 		end
 		
-feature {NONE} -- Grid layout Implementation
-
-	initialize_watches_grid_layout (pv: BOOLEAN_PREFERENCE) is
-		require
-			not is_grid_layout_initialized
-			watches_grid.layout_manager = Void
-		local
-			l_grid: ES_OBJECTS_GRID
-		do
-			l_grid := watches_grid
-			l_grid.initialize_layout_management (pv)
-			check
-				l_grid.layout_manager /= Void
-			end
-			l_grid.layout_manager.set_identification_agent (agent grid_objects_id_name_from_row)
-			l_grid.layout_manager.set_value_agent (agent grid_objects_id_value_from_row)
-			l_grid.layout_manager.set_on_difference_callback (agent grid_objects_on_difference_cb)
-			is_grid_layout_initialized := True
-		end
-
-	is_grid_layout_initialized: BOOLEAN
-
-	record_layout_on_next_clean: BOOLEAN
-
 feature -- Access
 
 	refresh_watched_item (a_item: like watched_item_from) is
@@ -1110,15 +1054,9 @@ feature {NONE} -- Implementation
 				eval := True
 			end
 			watches_grid.remove_selection
-			if 
-				watches_grid.row_count > 0 
-				and not eval
-				and record_layout_on_next_clean
-			then
-				record_layout_on_next_clean := False
-				watches_grid.record_layout
+			if watched_items.is_empty and watches_grid.row_count > 0 then
+				clean_watched_grid
 			end
-
 			from
 				watched_items.start
 			until
@@ -1148,10 +1086,6 @@ feature {NONE} -- Implementation
 			end
 			ensure_last_row_is_new_expression_row
 			on_row_deselected (Void) -- Reset toolbar buttons
-			if eval then
-				watches_grid.restore_layout
-			end
-			record_layout_on_next_clean := eval
 		end
 
 	standard_grid_label (s: STRING): EV_GRID_LABEL_ITEM is

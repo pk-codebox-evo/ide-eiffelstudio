@@ -1,1 +1,0 @@
-CALL make.bat Eiffel_for_aspnet_56 Eiffel_56_new_consumer C:\Eiffel56

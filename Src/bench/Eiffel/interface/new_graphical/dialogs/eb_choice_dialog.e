@@ -8,7 +8,7 @@ class
 	EB_CHOICE_DIALOG
 
 inherit
-	EV_POPUP_WINDOW
+	EV_WINDOW
 		redefine
 			show
 		end
@@ -45,6 +45,8 @@ feature -- Initialization
 			vb.extend (list)
 
 			default_create
+			set_title ("Choice Window")
+
 			extend (vb)
 
 			show_actions.extend (agent on_shown)
@@ -55,7 +57,7 @@ feature --
 	show is
 		do
 			enable_user_resize
-			Precursor {EV_POPUP_WINDOW}
+			Precursor {EV_WINDOW}
 		end
 
 feature
@@ -140,6 +142,8 @@ feature
 			focus_out_actions.wipe_out
 			focus_out_actions.extend (agent one_lost_focus)
 		end
+
+feature {NONE} -- Properties
 
 feature {NONE} -- Properties
 

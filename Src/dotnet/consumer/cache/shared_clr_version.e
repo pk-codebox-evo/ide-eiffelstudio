@@ -10,18 +10,24 @@ class
 feature -- Access
 
 	clr_version: STRING is
-			-- Executing version of CLR, for use with consumer folder.
+			-- Executing version of CLR
 		local
-			l_ver: VERSION
-		once	
-			l_ver := {ENVIRONMENT}.version
-			create Result.make (10)
-			Result.append_character ('v')
-			Result.append_integer (l_ver.major)
-			Result.append_character ('.')
-			Result.append_integer (l_ver.minor)
-			Result.append_character ('.')
-			Result.append_integer (l_ver.build)
+			l_type: SYSTEM_TYPE
+			l_loc: STRING
+			l_sep: INTEGER
+		once
+			l_type := {SYSTEM_OBJECT}
+			check
+				("mscorlib").is_equal (l_type.assembly.get_name.name)
+			end
+			
+				-- Get framework folder name
+			l_loc := l_type.assembly.location
+			l_loc.keep_head (l_loc.count - 13)
+			l_sep := l_loc.last_index_of ((create {OPERATING_ENVIRONMENT}).directory_separator, l_loc.count)
+			l_loc.keep_tail (l_loc.count - l_sep)
+			
+			Result := l_loc
 		ensure
 			result_not_void: Result /= Void
 			not_reuslt_is_empty: not Result.is_empty

@@ -10,8 +10,8 @@ using EiffelSoftware.Runtime.Enums;
 
 namespace EiffelSoftware.Runtime.CA
 {
-[CLSCompliant(false)]
-[EIFFEL_CONSUMABLE_ATTRIBUTE (false)]
+
+[CLSCompliantAttribute (false)]
 [AttributeUsage (AttributeTargets.Class | AttributeTargets.Enum |
 	AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
 [Serializable]

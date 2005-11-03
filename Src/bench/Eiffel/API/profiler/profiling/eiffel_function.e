@@ -36,52 +36,17 @@ feature -- Creation
 		do
 			class_id := a_class_id
 		end;
-		
-feature -- Output
 
-	class_c: CLASS_C is
-			-- CLASS_C associated with `Current'.
-		do
-			Result := Eiffel_system.class_of_id (class_id);
-		end
-		
-	e_feature: E_FEATURE is
-			-- E_FEATURE associated with `Current'.
-			-- May be Void if feature was renamed or profile
-			-- information is out of synch with the compiled project.
-		local
-			feature_i: FEATURE_I
-		do
-			feature_i := class_c.feature_table.item (feature_name)
-			if feature_i /= Void then
-				Result := feature_i.api_feature (class_id)
-			else
-					--| FIXME: It means that this feature has been renamed and
-					--| its definition is not in `feature_table' from `class_c'.
-					--| The only solution is to explicitely declare this feature
-					--| as a renamed one in the profile tool
-			end			
-		end
-				
-	displayed_feature_name: STRING is
-			-- Representation of `feature_name' to be displayed
-			-- as part of profiler output.
-		do
-			if e_feature /= Void then
-				Result := feature_name
-			else
-				Result := once "Renamed feature `" + feature_name + once "'"
-			end
-		end
+feature -- Output
 
 	append_to (st: STRUCTURED_TEXT) is
 			-- Append Current function to `st'.
 		local
 			cluster: CLUSTER_I	
 			class_i: CLASS_I
-			l_class_c: CLASS_C
+			class_c: CLASS_C
 			feature_i: FEATURE_I
-			l_e_feature: E_FEATURE
+			e_feature: E_FEATURE
 		do
 			if class_id = 0 then
 				if int_cluster_name /= Void then
@@ -99,16 +64,16 @@ feature -- Output
 				st.add_string (feature_name);
 			else
 				if Eiffel_system.valid_class_id (class_id) then
-					l_class_c := class_c
+					class_c := Eiffel_system.class_of_id (class_id);
 					st.add_string ("<");
-					st.add_cluster (l_class_c.cluster, l_class_c.cluster.cluster_name);
+					st.add_cluster (class_c.cluster, class_c.cluster.cluster_name);
 					st.add_string (">");
-					st.add_classi (l_class_c.lace_class, int_class_name);
+					st.add_classi (class_c.lace_class, int_class_name);
 					st.add_string (".");
-					feature_i := l_class_c.feature_table.item (feature_name)
+					feature_i := class_c.feature_table.item (feature_name)
 					if feature_i /= Void then
-						l_e_feature := feature_i.api_feature (class_id)
-						st.add_feature (l_e_feature, feature_name);
+						e_feature := feature_i.api_feature (class_id)
+						st.add_feature (e_feature, feature_name);
 					else
 							--| FIXME: It means that this feature has been renamed and
 							--| its definition is not in `feature_table' from `class_c'.
@@ -139,7 +104,7 @@ feature -- Output
 			Result.append_string (feature_name);
 		end;
 
-feature --{NONE} -- Access
+feature {NONE} -- Access
 
 	class_id: INTEGER
 			-- Eiffel class

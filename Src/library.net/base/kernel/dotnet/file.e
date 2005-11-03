@@ -307,9 +307,7 @@ feature -- Measurement
 			if exists then
 				if not is_open_write then
 					internal_file.refresh
-					if not is_directory then
-						Result := internal_file.length.to_integer
-					end
+					Result := internal_file.length.to_integer
 				else
 					Result := internal_stream.length.to_integer
 				end
@@ -347,15 +345,9 @@ feature -- Status report
 	exists: BOOLEAN is
 			-- Does physical file exist?
 			-- (Uses effective UID.)
-		local
-			l_directory: DIRECTORY
 		do
 			internal_file.refresh
 			Result := internal_file.exists
-			if not Result then -- May return `False' on directories
-				create l_directory.make (name)
-				Result := l_directory.exists
-			end
 		ensure then
 			unchanged_mode: mode = old mode
 		end
@@ -1075,23 +1067,9 @@ feature -- Element change
 
 	put_string, putstring (s: STRING) is
 			-- Write `s' at current position.
-		local
-			i: INTEGER
-			l_count: INTEGER
-			str_area: NATIVE_ARRAY [NATURAL_8]
 		do
-			l_count := s.count
-			if l_count /= 0 then
-				create str_area.make (l_count)
-				from
-					i := 1
-				until
-					i > l_count					
-				loop
-					str_area.put (i-1, s.item (i).code.to_natural_8)
-					i := i + 1
-				end
-				internal_stream.write (str_area, 0, l_count)
+			if s.count /= 0 then
+				writer.write_string (s.to_cil)
 			end
 		end
 
@@ -1099,15 +1077,14 @@ feature -- Element change
 			-- Put data of length `nb_bytes' pointed by `start_pos' index in `p' at
 			-- current position.
 		local
-			i, nb: INTEGER
-			l_stream: like internal_stream
+			i: INTEGER
+			l_stream: SYSTEM_STREAM
 		do
 			from
 				i := start_pos
-				nb := i + nb_bytes
-				l_stream := internal_stream
+				l_stream := writer.base_stream
 			until
-				i = nb
+				i = nb_bytes
 			loop
 				l_stream.write_byte (p.read_natural_8 (i))
 				i := i + 1
@@ -1116,26 +1093,14 @@ feature -- Element change
 
 	put_character, putchar (c: CHARACTER) is
 			-- Write `c' at current position.
-			
 		do
-			internal_stream.write_byte (c.code.to_natural_8)
+			writer.write (c)
 		end
 
 	put_new_line, new_line is
 			-- Write a new line character at current position.
-		local
-			i: INTEGER
-			l_cnt: INTEGER
 		do
-			from 
-				i := 1
-				l_cnt := eiffel_newline.count
-			until
-				i > l_cnt
-			loop
-				internal_stream.write_byte (eiffel_newline.item (i).code.to_natural_8)				
-				i := i + 1
-			end
+			writer.write_line
 		end
 
 	stamp (time: INTEGER) is
@@ -1370,7 +1335,7 @@ feature -- Input
 		local
 		  	a_code: INTEGER
 		do
-		  	a_code := internal_stream.read_byte
+		  	a_code := reader.read
 		  	if a_code = - 1 then
 				internal_end_of_file := True
 		  	else
@@ -1393,40 +1358,18 @@ feature -- Input
 		require else
 			is_readable: file_readable
 		local
-			i, c: INTEGER
-			str_cap: INTEGER
-			done: BOOLEAN
+			l_str: SYSTEM_STRING
 		do
-			from
-				if last_string = Void then
-					create_last_string (1024)
-				else	
-					last_string.clear_all
-				end
-				done := False
-				i := 0
-				str_cap := last_string.capacity
-			until
-				done
-			loop
-				c := internal_stream.read_byte
-				if c = -1 or c = 10 then
-					internal_end_of_file := (c = -1)
-					done := True
-				else
-					i := i + 1
-					if i > str_cap then
-						if str_cap < 2048 then
-							last_string.grow (str_cap + 1024)
-							str_cap := str_cap + 1024
-						else	
-							last_string.automatic_grow
-							str_cap := last_string.capacity
-						end
-					end						
-					last_string.append_character (c.to_character)				
-				end
+			l_str := reader.read_line
+			if last_string = Void then
+				create_last_string (0)
+			else
+				last_string.clear_all
 			end
+			if l_str /= Void then
+				last_string.append (l_str)
+			end
+			internal_end_of_file := reader.peek = -1
 		end
 
 	read_stream, readstream (nb_char: INTEGER) is
@@ -1437,7 +1380,7 @@ feature -- Input
 			is_readable: file_readable
 		local
 			new_count: INTEGER
-			str_area: NATIVE_ARRAY [NATURAL_8]
+			str_area: NATIVE_ARRAY [CHARACTER]
 		do
 			if last_string = Void then
 				create_last_string (nb_char)
@@ -1445,16 +1388,10 @@ feature -- Input
 				last_string.clear_all
 				last_string.grow (nb_char)
 			end
-			create str_area.make (nb_char)
-			new_count := internal_stream.read (str_area, 0, nb_char)
-			if new_count = -1  then
-				last_string.set_count (0)
-				internal_end_of_file := True
-			else
-				set_string (str_area, 0, new_count, last_string)
-				last_string.set_count (new_count)
-				internal_end_of_file := peek = -1
-			end
+			str_area := last_string.area.native_array
+			new_count := reader.read_character_array (str_area, 0, nb_char)
+			last_string.set_count (new_count)
+			internal_end_of_file := reader.peek = -1
 		end
 
 	read_to_managed_pointer (p: MANAGED_POINTER; start_pos, nb_bytes: INTEGER) is
@@ -1465,20 +1402,19 @@ feature -- Input
 			p_large_enough: p.count >= nb_bytes + start_pos
 			is_readable: file_readable
 		local
-			i, nb, l_byte: INTEGER
-			l_stream: like internal_stream
+			i, l_byte: INTEGER
+			l_stream: SYSTEM_STREAM
 		do
 			from
 				i := start_pos
-				nb := nb_bytes + i
-				l_stream := internal_stream
+				l_stream := reader.base_stream
 			until
-				i = nb
+				i = nb_bytes
 			loop
 			   	l_byte := l_stream.read_byte
 				if l_byte = -1 then
 					internal_end_of_file := True
-					i := nb - 1 -- Jump out of loop
+					i := nb_bytes - 1 -- Jump out of loop
 				else
 					p.put_natural_8 (l_byte.as_natural_8, i)
 				end
@@ -1602,6 +1538,26 @@ feature {FILE} -- Implementation
 
 	internal_end_of_file: BOOLEAN
 			-- Did last call to `reader.read' reach end of file?
+
+	reader: STREAM_READER is
+			-- Stream reader used to read in `Current' (if possible).
+		do
+			if internal_sread = Void and internal_stream.can_read then
+				create {STREAM_READER} internal_sread.make_from_stream_and_encoding (
+					internal_stream, {ENCODING}.default)
+			end
+			Result := internal_sread
+		end
+
+	writer: STREAM_WRITER is
+			-- Stream writer used to write in `Current' (if possible).
+		do
+			if internal_swrite = Void and internal_stream.can_write then
+				create {STREAM_WRITER} internal_swrite.make_from_stream_and_encoding (
+					internal_stream, {ENCODING}.default)
+			end
+			Result := internal_swrite
+		end
 
 feature {NONE} -- Implementation
 
@@ -1780,54 +1736,6 @@ feature {FILE} -- Implementation
 		end
 
 feature {NONE} -- Implementation
-		
-	peek: INTEGER is
-			-- Peek next character in file, but don't use it, e.g. don't move `position'.
-			-- Return -1 if end of file has been reached, otherwise next character.
-		require
-			is_readable: file_readable			
-		do
-			Result := internal_stream.read_byte
-			if Result /= -1 then
-				back
-			end
-		end	
-		
-	set_string (buf: NATIVE_ARRAY [NATURAL_8]; offset, nb: INTEGER; str: STRING) is
-			-- Set `nb' bytes of data stored in `buf' starting from `offset'
-			-- to `str'.
-		require
-			buf_not_void: buf /= Void
-			offset_not_nagetive: offset >= 0
-			nb_positive: nb > 0
-			buf_count_large_enought: offset + nb <= buf.count
-			str_not_void: str /= Void
-			str_large_enough: str.capacity >= nb
-		local
-			i: INTEGER
-			j: INTEGER
-			l: INTEGER
-			should_append: BOOLEAN
-		do
-			from
-				j := offset
-				i := 1
-				l := str.count
-			until
-				i > nb
-			loop
-				if (not should_append) and then (i>l) then
-					should_append := True
-				end
-				if should_append then
-					str.append_character (buf.item (j).to_character)
-				else
-					str.put (buf.item (j).to_character, i)
-				end				
-				i := i + 1
-				j := j + 1
-			end
-		end
 
 	get_fd (hdl: INTEGER; omode: INTEGER): INTEGER is
 			-- Return the file descriptor corresponding to the handle `hdl' (Windows only).
@@ -1836,12 +1744,6 @@ feature {NONE} -- Implementation
 		alias
 			"_open_osfhandle"
 		end
-		
-	eiffel_newline: STRING is "%N"
-			-- Representation of Eiffel `%N' character as a SYSTEM_STRING.
-			
-	dotnet_newline: STRING is "%R%N"
-			-- Representation of a .NET newline as a SYSTEM_STRING.
 
 	c_append: INTEGER is 8
 	c_readwrite: INTEGER is 2
@@ -1852,13 +1754,7 @@ feature {NONE} -- Implementation
 
 	internal_separators: STRING is " %N%R%T%U"
 			-- Characters that are considered as separators.
-			
-	platform_indicator: PLATFORM is
-			-- Platform indicator
-		once
-			create Result
-		end
-	
+
 invariant
 
 	valid_mode: Closed_file <= mode and mode <= Append_read_file

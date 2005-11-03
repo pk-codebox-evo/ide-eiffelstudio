@@ -49,14 +49,6 @@ feature -- Access
 				end
 			end
 		end
-		
-	grid_move_to_end_of_grid (a_row: EV_GRID_ROW) is
-		require
-			a_row /= Void
-			a_row.parent /= Void
-		do
-			a_row.parent.move_rows (a_row.index, a_row.parent.row_count + 1, 1 + a_row.subrow_count_recursive)
-		end
 
 	grid_move_top_row_node_by (grid: EV_GRID; row_index: INTEGER; offset: INTEGER): INTEGER is
 		require
@@ -68,9 +60,6 @@ feature -- Access
 		do
 			to_index := grid_next_top_row (grid, row_index, offset)
 			if to_index /= row_index then
-				if offset > 0 then
-					to_index := to_index + 1
-				end
 				grid.move_rows (row_index, to_index, 1 + grid.row (row_index).subrow_count_recursive)
 			end
 			Result := to_index
@@ -112,33 +101,6 @@ feature -- Access
 			else
 				Result := row_index
 			end
-		end
-
-	grid_top_row (a_grid: EV_GRID; a_index: INTEGER): EV_GRID_ROW is
-			-- Return the `a_index' i_th top row of `a_grid'.
-		require
-			a_grid /= Void
-			a_index >= 1
-		local
-			tr, r: INTEGER
-		do
-			if a_grid.row_count > 0 then
-				from
-					tr := 1
-					r := 1
-					Result := a_grid.row (r)
-				until
-					(Result /= Void) or (r > a_grid.row_count)
-				loop
-					if tr = a_index then
-						Result := a_grid.row (r)
-					end
-					r := r + a_grid.row (r).subrow_count_recursive + 1
-					tr := tr + 1
-				end
-			end
-		ensure
-			Result /= Void implies Result.parent_row = Void
 		end
 
 	grid_selected_top_rows (a_grid: EV_GRID): ARRAYED_LIST [EV_GRID_ROW] is
@@ -204,12 +166,19 @@ feature -- Access
 		require
 			a_row /= Void
 		local
+			r: EV_GRID_ROW
 			g: EV_GRID
 		do
 			g := a_row.parent
 			if g /= Void then
-				if a_row.subrow_count > 0 then
-					g.remove_rows (a_row.index + 1, a_row.index + a_row.subrow_count_recursive)
+				from
+				until
+					a_row.subrow_count = 0
+				loop
+					r := a_row.subrow (a_row.subrow_count)
+					grid_remove_and_clear_subrows_from (r)
+					grid_clear_row (r)
+					g.remove_row (r.index)
 				end
 			end
 		ensure
@@ -220,10 +189,22 @@ feature -- Access
 	grid_remove_and_clear_all_rows (g: EV_GRID) is
 		require
 			g /= Void
+		local
+			rc: INTEGER
 		do
-			if g.row_count > 0 then
-				g.remove_rows (1, g.row_count)
+				-- To speed up removal of all rows we ensure that the grid
+				-- is displayed with cell of coordinate (1, 1) at the top.
+			g.set_virtual_position (0, 0)
+			from
+				rc := g.row_count
+			until
+				rc = 0
+			loop
+				grid_clear_row (g.row (rc))
+				g.remove_row (rc)
+				rc := g.row_count				
 			end
+			g.clear
 		ensure
 			g.row_count = 0
 			g.selected_rows.count = 0

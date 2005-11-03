@@ -18,7 +18,8 @@ inherit
 	EB_SHARED_PREFERENCES
 
 create
-	make, default_create
+
+	make, do_nothing
 
 feature -- Initialization
 
@@ -56,7 +57,7 @@ feature {NONE} -- Execution
 
 	associated_cmd: E_SHOW_FS is
 		do
-			create Result
+			create Result.do_nothing;
 			Result.set_feature_clause_order (preferences.flat_short_data.feature_clause_order)
 		end;
 

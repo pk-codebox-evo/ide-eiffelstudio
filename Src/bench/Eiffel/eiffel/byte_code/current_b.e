@@ -1,25 +1,17 @@
 -- Access to Current
 
-class CURRENT_B
+class CURRENT_B 
 
 inherit
 
 	ACCESS_B
 		redefine
 			enlarged, is_current, make_byte_code, generate_il_call_access,
-			register_name, pre_inlined_code, print_register, generate_il_address, generate_il_value,
+			register_name, pre_inlined_code, print_register, generate_il_address,
 			is_fast_as_local
 		end
-
-feature -- Visitor
-
-	process (v: BYTE_NODE_VISITOR) is
-			-- Process current element.
-		do
-			v.process_current_b (Current)
-		end
-
-feature
+	
+feature 
 
 	type: TYPE_I is
 			-- Current type
@@ -70,30 +62,17 @@ feature -- IL code generation
 	generate_il_call_access (is_target_of_call: BOOLEAN) is
 			-- Generate IL code for an access to Current
 		do
-			if is_target_of_call then
-				il_generator.generate_current
+			if need_address (is_target_of_call) then
+				il_generator.generate_current_address
 			else
-				generate_il_value
+				il_generator.generate_current
 			end
 		end
-
+		
 	generate_il_address is
 			-- Generate address of Current.
 		do
 			il_generator.generate_current_address
-		end
-
-	generate_il_value is
-			-- Generate code that evaluates expression and puts its value
-			-- (rather than a pointer to it) to the evaluation stack.
-		local
-			type_i: TYPE_I
-		do
-			il_generator.generate_current
-			type_i := real_type (type)
-			if type_i.is_expanded then
-				il_generator.generate_load_from_address (type_i)
-			end
 		end
 
 feature -- Byte code generation

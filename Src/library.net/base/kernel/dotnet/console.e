@@ -23,23 +23,14 @@ class CONSOLE inherit
 				last_real, last_string, last_double, file_readable,
 				lastchar, lastint, lastreal, laststring, lastdouble,
 				read_character, readchar, read_real, 
-				last_integer_32, last_integer_8, last_integer_16, last_integer_64,
-				last_natural_8, last_natural_16, last_natural, last_natural_32,
-				last_natural_64,
-				read_line, read_stream, read_word, 
+				read_line, read_stream, read_word, put_integer,
 				put_boolean, put_real, put_double, put_string, put_character,
 				put_new_line, new_line, readint, readreal, readline, readstream,
-				readword,  putbool, putreal, putdouble, putstring, putchar,
-				read_integer_8, read_integer_16, read_integer, read_integer_32, read_integer_64,
-				read_natural_8, read_natural_16, read_natural, read_natural_32, read_natural_64,
-				put_integer_8, put_integer_16, putint, put_integer, put_integer_32, put_integer_64,
-				put_natural_8, put_natural_16, put_natural, put_natural_32, put_natural_64,
-				dispose
+				readword, putint, putbool, putreal, putdouble, putstring, putchar,
+			dispose
 		redefine
 			make_open_stdin, make_open_stdout, count, is_empty, exists,
-			close, dispose, end_of_file, next_line,
-			read_integer_with_no_type, read_double, readdouble,
-			read_character, readchar, back
+			close, dispose, end_of_file, back, writer, next_line
 		end
 
 create {STD_FILES}
@@ -76,7 +67,7 @@ feature -- Cursor movement
 	next_line is
 			-- Move to next input line.
 		do
-			if peek /= -1 then
+			if reader.peek /= -1 then
 				Precursor {PLAIN_TEXT_FILE}
 			end
 		end
@@ -111,67 +102,6 @@ feature -- Removal
 			-- This is closed by the operating system at completion.
 		do
 		end
-		
-feature -- Input
-
-	read_character, readchar is
-			-- Read a new character.
-			-- Make result available in `last_character'.
-		local
-			a_code: INTEGER
-		do
-			a_code := internal_stream.read_byte
-			if a_code = - 1 then
-				internal_end_of_file := True
-			else
-					-- FIXME: If %R is not followed by %N,
-					--        we will lost the following character.
-					--        we always assume that %R is followed by %N.
-				if a_code = 13 then
-						a_code := internal_stream.read_byte
-						if a_code = -1 then
-							internal_end_of_file := True
-						end
-						a_code := 10	
-				end
-				last_character := a_code.to_character
-			end
-		end
-
-	read_double, readdouble is
-			-- Read the ASCII representation of a new double
-			-- from file. Make result available in `last_double'.
-		do
-			read_number_sequence (ctor_convertor, {NUMERIC_INFORMATION}.type_double)
-			last_double := ctor_convertor.parsed_double			
-				-- Consume all left characters until we meet a new-line character.
-			consume_characters
-		end
-		
-feature {NONE} -- Implementation	
-		
-	read_integer_with_no_type is
-			-- Read a ASCII representation of number of `type'
-			-- at current position.
-		do
-			read_number_sequence (ctoi_convertor, {NUMERIC_INFORMATION}.type_no_limitation)
-				-- Consume all left characters until we meet a new-line character.
-			consume_characters
-		end
-		
-	consume_characters is
-			-- Consume all characters from current position 
-			-- until we meet a new-line character.
-		do
-			from
-				
-			until
-				end_of_file or last_character = '%N' 
-			loop
-				read_character
-			end			
-		end
-		
 
 feature {NONE} -- Inapplicable
 
@@ -182,6 +112,20 @@ feature {NONE} -- Inapplicable
 	is_empty: BOOLEAN is False;
 			-- Useless for CONSOLE class.
 			--| `empty' is false not to invalidate invariant clauses.
+
+	writer: STREAM_WRITER is
+			-- Stream writer used to write in `Current' (if possible).
+		local
+			l_stream: STREAM_WRITER
+		do
+			if internal_swrite = Void and internal_stream.can_write then
+				create l_stream.make_from_stream_and_encoding (
+					internal_stream, {ENCODING}.default)
+				l_stream.set_auto_flush (True)
+				internal_swrite := l_stream
+			end
+			Result := internal_swrite
+		end
 
 indexing
 

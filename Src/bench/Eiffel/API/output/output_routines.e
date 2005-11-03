@@ -53,7 +53,8 @@ feature -- Miscellaneous
 				if root_cluster /= Void then
 					text.add_space
 					text.add (ti_L_parenthesis)
-					text.add_cluster (root_cluster, root_cluster.cluster_name)
+					text.add (create {CLUSTER_NAME_TEXT}.make (
+						root_cluster.cluster_name, root_cluster))
 					text.add (ti_R_parenthesis)
 				end
 

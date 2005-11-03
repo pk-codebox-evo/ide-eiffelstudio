@@ -4,7 +4,7 @@ indexing
 	date		: "$Date$"
 	revision	: "$Revision$"
 
-deferred class BYTE_NODE 
+class BYTE_NODE 
 
 inherit
 	BYTE_CONST
@@ -30,15 +30,6 @@ inherit
 
 	SHARED_IL_CODE_GENERATOR
 
-feature -- Visitor
-
-	process (v: BYTE_NODE_VISITOR) is
-			-- Visitor feature.
-		require
-			v_not_void: v /= Void
-		deferred
-		end
-		
 feature -- Eiffel source line information
 
 	line_number: INTEGER is     
@@ -248,7 +239,7 @@ feature
 		do
 			Result := context.real_type (typ)
 		ensure
-			Result_not_void: Result /= Void
+			Result_not_void: 
 		end
 
 	enlarge_tree is

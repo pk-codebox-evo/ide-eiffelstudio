@@ -23,14 +23,13 @@ inherit
 		rename
 			real_type as byte_real_type,
 			generate as byte_generate,
-			size as byte_size,
-			process as process_byte_node
+			size as byte_size
 		export
 			{NONE} byte_real_type, byte_generate, byte_size
 		redefine
 			print_register, make_byte_code,
 			is_simple_expr, is_predefined, generate_il,
-			is_fast_as_local, is_constant_expression,
+			is_fast_as_local,
 			evaluate
 		end;
 	
@@ -60,14 +59,6 @@ feature {NONE} -- Initialization
 			integer_32_value_set: integer_32_value = v
 		end
 
-feature -- Visitor
-
-	process_byte_node (v: BYTE_NODE_VISITOR) is
-			-- Process current element.
-		do
-			v.process_integer_constant (Current)
-		end
-	
 feature -- Properties
 
 	is_integer: BOOLEAN is True
@@ -84,9 +75,6 @@ feature -- Properties
 
 	is_predefined: BOOLEAN is True
 			-- A constant is a predefined structure.
-
-	is_constant_expression: BOOLEAN is True
-			-- A constant is a constant.
 
 feature -- Access
 

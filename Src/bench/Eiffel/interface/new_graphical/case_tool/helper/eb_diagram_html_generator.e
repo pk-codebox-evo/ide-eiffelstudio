@@ -131,7 +131,7 @@ feature {DOCUMENTATION} -- Basic operations
 			str: STRING
 			ptf: PLAIN_TEXT_FILE
 			minimum_pixmap: EV_PIXMAP
-			wd: EV_WARNING_DIALOG
+			wd: EB_WARNING_DIALOG
 			layout: EIFFEL_INHERITANCE_LAYOUT
 		do
 			check
@@ -306,8 +306,8 @@ feature {NONE} -- Implementation
 						item_file.append (path)
 					end
 					item_file.append_character ('/')
-					item_file.append (cf.model.class_i.name.as_lower)
-					item_file.append ("_chart.html")
+					item_file.append (cf.model.class_i.name+ "_chart")
+					item_file.append (".html")
 					bbox := cf.bounding_box
 					Result.append ("<area shape=rect coords=%""
 						+ (bbox.left - bounds.x).out + ","

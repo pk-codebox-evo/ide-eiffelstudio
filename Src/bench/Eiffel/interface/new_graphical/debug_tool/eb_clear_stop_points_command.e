@@ -11,8 +11,6 @@ inherit
 			new_toolbar_item,
 			tooltext
 		end
-		
-	EB_SHARED_DEBUG_TOOLS
 
 	SHARED_APPLICATION_EXECUTION
 
@@ -93,7 +91,8 @@ feature -- Events
 					id.show_modal_to_window (window_manager.last_focused_development_window.window)
 				end
 					-- Update output tools
-				debugger_manager.notify_breakpoints_changes
+				output_manager.display_stop_points
+				Window_manager.quick_refresh_all_margins
 			end
 		end
 
@@ -112,7 +111,8 @@ feature -- Events
 					id.show_modal_to_window (window_manager.last_focused_development_window.window)
 				end
 					-- Update output tools
-				debugger_manager.notify_breakpoints_changes
+				output_manager.display_stop_points
+				Window_manager.quick_refresh_all_margins
 			end
 		end
 
@@ -131,7 +131,8 @@ feature -- Events
 					id.show_modal_to_window (window_manager.last_focused_development_window.window)
 				end
 					-- Update output tools
-				debugger_manager.notify_breakpoints_changes
+				output_manager.display_stop_points
+				Window_manager.quick_refresh_all_margins
 			end
 		end
 
@@ -152,7 +153,8 @@ feature -- Execution
 				cd.show_modal_to_window (window_manager.last_focused_development_window.window)
 				
 					-- Update output tools
-				debugger_manager.notify_breakpoints_changes
+				output_manager.display_stop_points
+				Window_manager.quick_refresh_all_margins
 			end
 		end
 
@@ -161,13 +163,13 @@ feature {NONE} -- Implementation
 	quick_refresh_on_class_drop (unused: CLASSC_STONE) is
 			-- Quick refresh all windows.
 		do
-			Window_manager.synchronize_all_about_breakpoints
+			window_manager.quick_refresh_all_margins
 		end
 
 	quick_refresh_on_brk_drop (unused: BREAKABLE_STONE) is
 			-- Quick refresh all windows.
 		do
-			Window_manager.synchronize_all_about_breakpoints
+			window_manager.quick_refresh_all_margins
 		end
 
 	can_drop (st: ANY): BOOLEAN is
@@ -198,7 +200,8 @@ feature {NONE} -- Implementation
 				id.show_modal_to_window (window_manager.last_focused_development_window.window)
 			end
 				-- Update output tools
-			debugger_manager.notify_breakpoints_changes
+			output_manager.display_stop_points
+			Window_manager.quick_refresh_all_margins
 		end
 
 end -- class EB_CLEAR_STOP_POINTS_COMMAND

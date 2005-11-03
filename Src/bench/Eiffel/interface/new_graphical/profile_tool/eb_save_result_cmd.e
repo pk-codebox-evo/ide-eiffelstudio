@@ -7,11 +7,6 @@ class EB_SAVE_RESULT_CMD
 
 inherit
 	EB_FILE_OPENER_CALLBACK
-	
-	EB_SHARED_PREFERENCES
-		export
-			{NONE} all
-		end
 
 create
 	make
@@ -33,11 +28,11 @@ feature {EB_PROFILE_QUERY_WINDOW} -- Command Execution
 	execute is
 			-- Execute Current
 		local
-			fsd: EB_FILE_SAVE_DIALOG
+			fsd: EV_FILE_SAVE_DIALOG
 			l_dir: STRING
 			l_env: EXECUTION_ENVIRONMENT
 		do
-			create fsd.make_with_preference (preferences.dialog_data.last_saved_profile_result_directory_preference)
+			create fsd
 			fsd.save_actions.extend (agent save_in (fsd))
 			create l_env
 			l_dir := l_env.current_working_directory
@@ -47,7 +42,7 @@ feature {EB_PROFILE_QUERY_WINDOW} -- Command Execution
 
 feature -- Access
 
-	save_in (dialog: EB_FILE_SAVE_DIALOG) is
+	save_in (dialog: EV_FILE_SAVE_DIALOG) is
 			-- Save options, result, and query
 			-- to file chosen in `dialog'.
 		require

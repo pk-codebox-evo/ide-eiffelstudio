@@ -1,8 +1,5 @@
 indexing
-	description : "[
-			Objects that control a few EV_GRID_ROW behavior (at the ROW level).
-			to be linked with ES_OBJECT_GRID.
-		]"
+	description : "Objects that ..."
 	author      : "$Author$"
 	date        : "$Date$"
 	revision    : "$Revision$"

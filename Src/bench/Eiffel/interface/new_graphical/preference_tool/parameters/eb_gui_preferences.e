@@ -43,7 +43,7 @@ feature -- Access
 	debugger_data: EB_DEBUGGER_DATA
 		-- Preference data for debugger.		
 		
-	development_window_data: EB_DEVELOPMENT_WINDOW_PREFERENCES
+	development_window_data: EB_DEVELOPMENT_WINDOW_DATA
 		-- Preference data for the EiffelStudio main development window.
 		
 	recent_projects_data: EB_RECENT_PROJECTS
@@ -51,7 +51,7 @@ feature -- Access
 
 	editor_data: EB_EDITOR_DATA
 		-- Preference data for EiffelStudio editor		
-	
+
 invariant
 	dialog_data_not_void: dialog_data /= Void	
 	context_tool_data_not_void: context_tool_data /= Void

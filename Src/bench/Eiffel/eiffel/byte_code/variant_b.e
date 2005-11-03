@@ -8,17 +8,9 @@ class VARIANT_B
 inherit
 	ASSERT_B
 		redefine
-			enlarged, byte_for_end, process
+			enlarged, byte_for_end
 		end
 
-feature -- Visitor
-
-	process (v: BYTE_NODE_VISITOR) is
-			-- Process current element.
-		do
-			v.process_variant_b (Current)
-		end
-	
 feature -- Access
 
 	enlarged: VARIANT_BL is

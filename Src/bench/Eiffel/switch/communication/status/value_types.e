@@ -17,7 +17,6 @@ feature -- Shared constants
 	External_reference_value: INTEGER is 6 -- used for dotnet
 	Static_external_reference_value: INTEGER is 7 -- Used for static external reference value
 	Static_reference_value: INTEGER is 8 -- Used for static external reference value (known in ec)
-	Exception_message_value: INTEGER is 9 -- used to display error on value retrieving
-	Error_message_value: INTEGER is 10 -- used to display error on value retrieving
+	Error_message_value: INTEGER is 9 -- used to display error on value retrieving
 
 end -- class VALUE_TYPES

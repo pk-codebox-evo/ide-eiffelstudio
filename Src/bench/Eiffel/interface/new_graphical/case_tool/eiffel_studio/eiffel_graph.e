@@ -202,47 +202,61 @@ feature {EB_CONTEXT_EDITOR} -- Synchronization
 			-- Contexts need to be updated because of recompilation
 			-- or similar action that needs resynchronization.
 		local
-			l_progress_bar: EB_PERCENT_PROGRESS_BAR
-			l_status_bar: EB_DEVELOPMENT_WINDOW_STATUS_BAR
+			l_progress_dialog: EB_PROGRESS_DIALOG
 			nr_of_items: INTEGER
 			is_cancelled: BOOLEAN
 		do
 			context_editor.development_window.window.set_pointer_style (wait_cursor)
 			if not is_cancelled then
-				l_status_bar := context_editor.development_window.status_bar
-				
-				nr_of_items := 1 + nodes.count + clusters.count + links.count + 1 + 1
-				l_status_bar.reset_progress_bar_with_range (0 |..| nr_of_items)
-				l_status_bar.display_progress_value (0)
-				l_status_bar.display_message ("Synchronizing diagram tool: Removing unneeded items")
+				l_progress_dialog := context_editor.progress_dialog
+				if l_progress_dialog /= Void then
+					l_progress_dialog.set_title ("Synchronizing diagram tool")
+					l_progress_dialog.enable_cancel
+					nr_of_items := 1 + nodes.count + clusters.count + links.count + 1 + 1
+					l_progress_dialog.start (nr_of_items)
+					l_progress_dialog.set_value (0)
+					l_progress_dialog.show
+					l_progress_dialog.set_message ("Removing unneeded items")
+				end
 				remove_unneeded_items
+				if l_progress_dialog /= Void then
+					l_progress_dialog.set_value (1)
+					l_progress_dialog.set_message ("Synchronizing clusters")
+				end
+				synchronize_clusters (l_progress_dialog)
 				
-				l_status_bar.display_progress_value (1)
-				l_status_bar.display_message ("Synchronizing diagram tool: Synchronizing clusters")	
-				synchronize_clusters (l_progress_bar)
-
-				l_status_bar.display_message ("Synchronizing diagram tool: Synchronizing classes")
-				synchronize_classes (l_progress_bar)
-
-				l_status_bar.display_message ("Synchronizing diagram tool: Synchronizing links")			
-				synchronize_links (l_progress_bar)
-
-				l_status_bar.display_progress_value (nr_of_items - 1)
-				l_status_bar.display_message ("Synchronizing diagram tool: Synchronizing class relations")
+				if l_progress_dialog /= Void then
+					l_progress_dialog.set_message ("Synchronizing classes")
+				end
+				synchronize_classes (l_progress_dialog)
+				
+				if l_progress_dialog /= Void then
+					l_progress_dialog.set_message ("Synchronizing links")
+				end
+				synchronize_links (l_progress_dialog)
+				
+				if l_progress_dialog /= Void then
+					l_progress_dialog.set_value (nr_of_items - 1)
+					l_progress_dialog.set_message ("Synchronizing class relations")
+				end
 				add_classes_relations
-
-				l_status_bar.display_progress_value (nr_of_items)
-				l_status_bar.display_message ("Synchronizing diagram tool: Synchronizing cluster relations")
+				
+				if l_progress_dialog /= Void then
+					l_progress_dialog.set_value (nr_of_items)
+					l_progress_dialog.set_message ("Synchronizing cluster relations")
+				end
 				add_clusters_relations
-
-				l_status_bar.reset
+				
+				if l_progress_dialog /= Void then
+					l_progress_dialog.hide
+				end
 			end
 			context_editor.development_window.window.set_pointer_style (standard_cursor)
 		rescue
 			context_editor.clear_area
 			is_cancelled := True
 			error_handler.error_list.wipe_out
-			l_status_bar.reset
+			l_progress_dialog.hide
 			retry
 		end
 
@@ -539,7 +553,7 @@ feature {NONE} -- Implementation
 			end
 		end
 		
-	synchronize_clusters (a_progress_bar: EB_PERCENT_PROGRESS_BAR) is
+	synchronize_clusters (a_progress_dialog: EB_PROGRESS_DIALOG) is
 			-- Synchronize all clusters in `Current'.
 		local
 			l_clusters: like flat_clusters
@@ -556,13 +570,13 @@ feature {NONE} -- Implementation
 					es_cluster.synchronize
 				end
 				l_clusters.forth
-				if a_progress_bar /= Void then
-					a_progress_bar.set_value (a_progress_bar.value + 1)
+				if a_progress_dialog /= Void then
+					a_progress_dialog.set_value (a_progress_dialog.value + 1)
 				end
 			end	
 		end
 		
-	synchronize_classes (a_progress_bar: EB_PERCENT_PROGRESS_BAR) is
+	synchronize_classes (a_progress_dialog: EB_PROGRESS_DIALOG) is
 			-- Synchronize all classes in `Current'.
 		local
 			l_classes: like flat_nodes
@@ -579,13 +593,13 @@ feature {NONE} -- Implementation
 					es_class.synchronize
 				end
 				l_classes.forth
-				if a_progress_bar /= Void then
-					a_progress_bar.set_value (a_progress_bar.value + 1)
+				if a_progress_dialog /= Void then
+					a_progress_dialog.set_value (a_progress_dialog.value + 1)
 				end
 			end
 		end
 		
-	synchronize_links (a_progress_bar: EB_PERCENT_PROGRESS_BAR) is
+	synchronize_links (a_progress_dialog: EB_PROGRESS_DIALOG) is
 			-- Synchronize all links in `Current'.
 		local
 			l_links: like flat_links
@@ -602,8 +616,8 @@ feature {NONE} -- Implementation
 					es_item.synchronize
 				end
 				l_links.forth
-				if a_progress_bar /= Void then
-					a_progress_bar.set_value (a_progress_bar.value + 1)
+				if a_progress_dialog /= Void then
+					a_progress_dialog.set_value (a_progress_dialog.value + 1)
 				end
 			end
 		end

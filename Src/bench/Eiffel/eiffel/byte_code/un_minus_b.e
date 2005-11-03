@@ -10,14 +10,6 @@ inherit
 			generate_operator, is_built_in
 		end
 	
-feature -- Visitor
-
-	process (v: BYTE_NODE_VISITOR) is
-			-- Process current element.
-		do
-			v.process_un_minus_b (Current)
-		end
-	
 feature
 
 	generate_operator is

@@ -46,8 +46,7 @@ feature -- $EiffelGraphicalCompiler$ specific calls
 				prelink_cmd_name.to_c, driver_name.to_c)
 		end
 
-	-- Jason Wei modified the following feature on Aug 29 2005
-	invoke_finish_freezing (c_code_dir, freeze_command: STRING; asynchronous: BOOLEAN; workbench_mode: BOOLEAN) is
+	invoke_finish_freezing (c_code_dir, freeze_command: STRING; asynchronous: BOOLEAN) is
 			-- Invoke the `finish_freezing' script.
 		local
 			cwd: STRING
@@ -63,7 +62,6 @@ feature -- $EiffelGraphicalCompiler$ specific calls
 			end
 			Execution_environment.change_working_directory (cwd)
 		end
-	-- Jason Wei modified the above feature on Aug 29 2005		
 
 feature {NONE} -- Externals
 

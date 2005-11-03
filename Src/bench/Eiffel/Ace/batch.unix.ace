@@ -16,7 +16,6 @@ default
 	inlining (yes)
 	inlining_size ("0")
 	override_cluster ("override")
-	multithreaded(yes)
 
 cluster
 	override:		"$EIFFEL_SRC/Eiffel/override"
@@ -25,8 +24,6 @@ cluster
 		exclude
 			"table"; "CVS"; 
 		end
-
-	table_eiffel_3:		"$EIFFEL_SRC/library/obsolete/base/table_eiffel3"
 
 	all time:		"$EIFFEL_SRC/library/time"
 		exclude
@@ -136,7 +133,7 @@ external
 		"\$(EIFFEL_SRC)/C/platform"
 
 	object:
-		"$(EIFFEL_SRC)/C/bench/libmtcompiler.a",
+		"$(EIFFEL_SRC)/C/bench/libcompiler.a",
         "$(EIFFEL_SRC)/C/platform/libplatform.a"
 
 end

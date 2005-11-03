@@ -15,19 +15,11 @@ inherit
 		redefine
 			reverse_code, expanded_assign_code, assign_code,
 			make_end_assignment, make_end_reverse_assignment,
-			enlarged, is_creatable, is_attribute, read_only,
+			creation_access, enlarged, is_creatable, is_attribute, read_only,
 			assigns_to, pre_inlined_code, generate_il_call_access,
 			need_target, generate_il_address
 		end
 
-feature -- Visitor
-
-	process (v: BYTE_NODE_VISITOR) is
-			-- Process current element.
-		do
-			v.process_attribute_b (Current)
-		end
-	
 feature 
 
 	type: TYPE_I
@@ -76,6 +68,13 @@ feature
 
 	is_creatable: BOOLEAN is True
 			-- Can an access to an attribute be a target for a creation ?
+
+	creation_access (t: TYPE_I): ATTRIBUTE_B is
+			-- Creation access
+		do
+			Result := twin
+			Result.set_type (t)
+		end
 
 	same (other: ACCESS_B): BOOLEAN is
 			-- Is `other' the same access as Current ?
@@ -142,7 +141,6 @@ feature -- IL code generation
 			r_type: TYPE_I
 			cl_type: CL_TYPE_I
 			target_type: TYPE_I
-			target_attribute_id: INTEGER
 			l_feature_call: FEATURE_B
 			l_cancel_attribute_generation: BOOLEAN
 		do
@@ -155,14 +153,7 @@ feature -- IL code generation
 			else
 					-- Type of class which defines current attribute.
 				cl_type ?= context_type
-				if cl_type.is_expanded then
-						-- Access attribute directly.
-					target_type := cl_type
-					target_attribute_id := cl_type.base_class.feature_of_rout_id (routine_id).feature_id
-				else
-					target_type := il_generator.implemented_type (written_in, cl_type)
-					target_attribute_id := attribute_id
-				end
+				target_type := il_generator.implemented_type (written_in, cl_type)
 
 				check
 					valid_type: cl_type /= Void
@@ -175,9 +166,25 @@ feature -- IL code generation
 							-- NESTED_B.generate_il to assign back the new value of the attribute.
 						il_generator.generate_current
 					end
-					il_generator.generate_current
-				elseif cl_type.is_basic then
-						-- A metamorphose is required to perform call.
+					if cl_type.is_reference then
+							-- Normal access we simply push current
+						il_generator.generate_current
+					else
+							-- It is declared in an expanded class, we need to
+							-- load the address of current register.
+						if need_real_metamorphose (cl_type) then
+								-- Current attribute is written in a non-expanded class
+								-- we need to box current register to be able to
+								-- access Current attribute.
+							il_generator.generate_metamorphose (cl_type)
+						end
+					end
+				elseif not cl_type.is_reference then
+						-- Current attribute coming from an expanded class need a special
+						-- transformation of the `parent' if we want to access it.
+						-- If `need_real_metamorphose (cl_type)' a box operation will
+						-- occur meaning that current attribute was written in a
+						-- non-expanded class.
 					generate_il_metamorphose (cl_type, target_type, need_real_metamorphose (cl_type))
 				end
 
@@ -206,13 +213,13 @@ feature -- IL code generation
 						-- We push code to access Current attribute.
 					if address_required then
 						il_generator.generate_attribute_address (target_type,
-							r_type, target_attribute_id)
+							r_type, attribute_id)
 					else
 						if target_type.is_generated_as_single_type then
-							il_generator.generate_attribute (need_target, target_type, target_attribute_id)
+							il_generator.generate_attribute (need_target, target_type, attribute_id)
 						else
 							il_generator.generate_feature_access (target_type,
-								target_attribute_id, 0, True, True)
+								attribute_id, 0, True, True)
 						end
 
 							-- Generate cast if we have to generate verifiable code

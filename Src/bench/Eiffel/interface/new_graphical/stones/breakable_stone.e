@@ -113,7 +113,8 @@ feature -- Basic operations
 				-- "Enable"
 			create item.make_with_text (Interface_names.m_Enable_this_bkpt)
 			item.select_actions.extend (agent Application.enable_breakpoint (routine, index))
-			item.select_actions.extend (agent debugger_manager.notify_breakpoints_changes)
+			item.select_actions.extend (agent Output_manager.display_stop_points)
+			item.select_actions.extend (agent window_manager.quick_refresh_all_margins)
 			if Application.is_breakpoint_enabled (routine, index) then
 				item.disable_sensitive
 			end
@@ -121,7 +122,8 @@ feature -- Basic operations
 				-- "Disable"
 			create item.make_with_text (Interface_names.m_Disable_this_bkpt)
 			item.select_actions.extend (agent Application.disable_breakpoint (routine, index))
-			item.select_actions.extend (agent debugger_manager.notify_breakpoints_changes)
+			item.select_actions.extend (agent Output_manager.display_stop_points)
+			item.select_actions.extend (agent window_manager.quick_refresh_all_margins)
 			if Application.is_breakpoint_disabled (routine, index) then
 				item.disable_sensitive
 			end
@@ -129,7 +131,8 @@ feature -- Basic operations
 				-- "Remove"
 			create item.make_with_text (Interface_names.m_Remove_this_bkpt)
 			item.select_actions.extend (agent Application.remove_breakpoint (routine, index))
-			item.select_actions.extend (agent debugger_manager.notify_breakpoints_changes)
+			item.select_actions.extend (agent Output_manager.display_stop_points)
+			item.select_actions.extend (agent window_manager.quick_refresh_all_margins)
 			if not Application.is_breakpoint_set (routine, index) then
 				item.disable_sensitive
 			end
@@ -158,13 +161,12 @@ feature -- Basic operations
 					menu.extend (item)
 				end
 			end
+			create item.make_with_text (Interface_names.m_Run_to_this_point)
 			conv_dev ?= window_manager.last_focused_window
 			if conv_dev /= Void then
 					-- `conv_dev = Void' should never happen.
 				menu.extend (create {EV_MENU_SEPARATOR})
-
 					-- "Run to breakpoint"
-				create item.make_with_text (Interface_names.m_Run_to_this_point)
 				item.select_actions.extend (agent debugger_manager.set_debugging_window (conv_dev))
 				item.select_actions.extend (agent (debugger_manager.debug_run_cmd).process_breakable (Current))
 				menu.extend (item)
@@ -187,7 +189,6 @@ feature -- Basic operations
 				-- Create all widgets.
 			create d
 			d.set_title (Interface_names.t_Enter_condition)
-			d.set_icon_pixmap (pixmaps.icon_dialog_window)
 			create fr.make_with_text (Interface_names.l_Condition)
 			create vb
 			vb.set_padding (Layout_constants.Default_padding_size)
@@ -238,7 +239,6 @@ feature -- Basic operations
 				-- Create all widgets.
 			create d
 			d.set_title (Interface_names.t_Enter_condition)
-			d.set_icon_pixmap (pixmaps.icon_dialog_window)
 			create fr.make_with_text (Interface_names.l_Condition)
 			create vb
 			vb.set_padding (Layout_constants.Default_padding_size)
@@ -289,7 +289,8 @@ feature -- Basic operations
 	remove_condition_from_breakpoint (f: E_FEATURE; pos: INTEGER) is
 		do
 			Application.remove_condition (f, pos)
-			Debugger_manager.notify_breakpoints_changes
+			Output_manager.display_stop_points
+			window_manager.quick_refresh_all_margins
 		end
 
 	create_conditional_breakpoint (f: E_FEATURE; pos: INTEGER; d: EV_DIALOG; a_input, a_output: EV_TEXTABLE) is
@@ -304,7 +305,8 @@ feature -- Basic operations
 						Application.enable_breakpoint (f, pos)
 					end
 					Application.set_condition (f, pos, expr)
-					Debugger_manager.notify_breakpoints_changes
+					Output_manager.display_stop_points
+					window_manager.quick_refresh_all_margins
 					d.destroy
 				else
 					a_output.set_text (Warning_messages.w_not_a_condition (a_input.text))
@@ -323,7 +325,8 @@ feature -- Basic operations
 			else
 				Application.enable_breakpoint (routine, index)
 			end
-			Debugger_manager.notify_breakpoints_changes
+			Output_manager.display_stop_points
+			window_manager.quick_refresh_all_margins
 		end
 
 end -- class BREAKABLE_STONE

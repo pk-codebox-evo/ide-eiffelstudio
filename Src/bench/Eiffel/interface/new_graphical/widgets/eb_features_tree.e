@@ -85,6 +85,12 @@ feature -- Status report
 			
 feature -- Access
 
+	disable_signature_status is
+			-- Disable display of signature
+		do
+			signature_enabled := False
+		end	
+
 	toggle_signatures is
 			-- Toggle signature on/off
 		do

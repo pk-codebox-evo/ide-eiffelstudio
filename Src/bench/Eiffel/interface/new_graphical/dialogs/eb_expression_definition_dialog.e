@@ -43,7 +43,6 @@ create
 	make_with_named_object,
 	make_as_named_object,
 	make_for_context,
-	make_with_expression_on_object,
 	make_with_expression
 
 feature {NONE} -- Initialization
@@ -114,16 +113,6 @@ feature {NONE} -- Initialization
 			set_object_name_mode
 			disable_all_but_object_radios
 		end
-		
-	make_with_expression_on_object	(oa: STRING; a_exp: STRING) is
-		require
-			application_stopped: Application.is_running and Application.is_stopped
-			valid_address: oa /= Void and then Application.is_valid_object_address (oa)
-			valid_expression: a_exp /= Void and then not a_exp.is_empty
-		do
-			make_with_object (oa)
-			expression_field.set_text (a_exp)
-		end
 
 	make_with_named_object (oa: STRING; on: STRING) is
 			-- Initialize `Current' and force the creation of an object-related expression.
@@ -192,7 +181,6 @@ feature {NONE} -- Graphical initialization and changes
 				--| Create and set up the dialog.
 			create dialog
 			dialog.set_title (Interface_names.t_New_expression)
-			dialog.set_icon_pixmap (pixmaps.icon_dialog_window)
 
 				--| Create and set up the radio buttons.
 			create class_radio.make_with_text (Interface_names.t_Class)
@@ -544,7 +532,7 @@ feature {NONE} -- Event handling
 							create wd.make_with_text (Warning_messages.w_Syntax_error_in_expression (expression_field.text))
 							wd.show_modal_to_window (dialog)
 						else
-							Application.status.keep_object (t)
+							Debugger_manager.keep_object (t)
 						end
 					else
 						set_focus (address_field)

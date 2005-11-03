@@ -15,8 +15,6 @@ inherit
 		end
 
 	SHARED_APPLICATION_EXECUTION
-	
-	EB_SHARED_DEBUG_TOOLS
 
 	SHARED_EIFFEL_PROJECT
 
@@ -86,7 +84,9 @@ feature -- Execution
 					create wd.make_with_text (Warning_messages.w_Feature_is_not_compiled)
 					wd.show_modal_to_window (window_manager.last_focused_development_window.window)
 				end
-				Debugger_manager.notify_breakpoints_changes
+					-- Update output tools
+				output_manager.display_stop_points
+				Window_manager.quick_refresh_all_margins
 			end
 		end
 
@@ -110,7 +110,9 @@ feature -- Update
 					create wd.make_with_text (Warning_messages.w_Feature_is_not_compiled)
 					wd.show_modal_to_window (window_manager.last_focused_development_window.window)
 				end
-				Debugger_manager.notify_breakpoints_changes
+					-- Update output tools
+				output_manager.display_stop_points
+				Window_manager.quick_refresh_all_margins
 			end
 		end
 
@@ -128,20 +130,22 @@ feature -- Update
 					create wd.make_with_text (Warning_messages.w_Feature_is_not_compiled)
 					wd.show_modal_to_window (window_manager.last_focused_development_window.window)
 				end
-				Debugger_manager.notify_breakpoints_changes
+					-- Update output tools
+				output_manager.display_stop_points
+				Window_manager.quick_refresh_all_margins
 			end
 		end
 
 	quick_refresh_on_class_drop (unused: CLASSC_STONE) is
 			-- Quick refresh all windows.
 		do
-			window_manager.synchronize_all_about_breakpoints
+			window_manager.quick_refresh_all_margins
 		end
 
 	quick_refresh_on_brk_drop (unused: BREAKABLE_STONE) is
 			-- Quick refresh all windows.
 		do
-			window_manager.synchronize_all_about_breakpoints
+			window_manager.quick_refresh_all_margins
 		end
 
 	drop_class (cs: CLASSC_STONE) is
@@ -158,7 +162,9 @@ feature -- Update
 					create wd.make_with_text (Warning_messages.w_Feature_is_not_compiled)
 					wd.show_modal_to_window (window_manager.last_focused_development_window.window)
 				end
-				Debugger_manager.notify_breakpoints_changes
+					-- Update output tools
+				output_manager.display_stop_points
+				Window_manager.quick_refresh_all_margins
 			end
 		end
 

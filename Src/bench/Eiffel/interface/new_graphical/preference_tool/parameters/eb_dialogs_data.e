@@ -167,11 +167,8 @@ feature {EB_SHARED_PREFERENCES} -- Preference
 
 	confirm_convert_project_preference: BOOLEAN_PREFERENCE
 			-- Should we display a dialog before converting an old project?
-			
-	confirm_replace_all_preference: BOOLEAN_PREFERENCE
-			-- Should we display a dialog before replacing all?
 
-	acknowledge_not_loaded_preference: BOOLEAN_PREFERENCE 
+	acknowledge_not_loaded_preference: BOOLEAN_PREFERENCE
 			-- Should we display a dialog warning that text is not editable
 			-- before it is completely loaded?
 			
@@ -182,28 +179,6 @@ feature {EB_SHARED_PREFERENCES} -- Preference
 	confirm_kill_preference: BOOLEAN_PREFERENCE
 	already_editing_class_preference: BOOLEAN_PREFERENCE
 	executing_command_preference: BOOLEAN_PREFERENCE
-	
-	last_opened_project_directory_preference: STRING_PREFERENCE
-	last_opened_ace_directory_preference: STRING_PREFERENCE
-	last_opened_dynamic_lib_directory_preference: STRING_PREFERENCE
-	last_opened_metric_directory_preference: STRING_PREFERENCE
-	last_opened_file_directory_preference: STRING_PREFERENCE
-	last_opened_system_ace_directory_preference: STRING_PREFERENCE
-	last_opened_import_metric_directory_preference: STRING_PREFERENCE
-	last_opened_local_assembly_directory_preference: STRING_PREFERENCE
-	last_opened_metric_browse_archive_directory_preference: STRING_PREFERENCE
-	last_opened_metric_update_archive_directory_preference: STRING_PREFERENCE
-	
-	last_saved_dynamic_lib_directory_preference: STRING_PREFERENCE
-	last_saved_call_stack_directory_preference: STRING_PREFERENCE
-	last_saved_debugger_exception_directory_preference: STRING_PREFERENCE
-	last_saved_diagram_postscript_directory_preference: STRING_PREFERENCE
-	last_saved_exception_directory_preference: STRING_PREFERENCE
-	last_saved_metric_new_archive_directory_preference: STRING_PREFERENCE
-	last_saved_save_file_as_directory_preference: STRING_PREFERENCE
-	last_saved_profile_result_directory_preference: STRING_PREFERENCE
-	last_saved_system_generate_key_directory_preference: STRING_PREFERENCE
-	file_open_and_save_dialogs_remember_last_directory: BOOLEAN_PREFERENCE
 		
 feature -- Preference strings
 
@@ -215,7 +190,6 @@ feature -- Preference strings
 	confirm_clear_breakpoints_string: STRING is "interface.dialogs.confirm_clear_breakpoints"
 	confirm_ignore_all_breakpoints_string: STRING is "interface.dialogs.confirm_ignore_all_breakpoints"
 	confirm_convert_project_string: STRING is "interface.dialogs.confirm_convert_project"
-	confirm_replace_all_string: STRING is "interface.dialogs.confirm_replace_all"
 	acknowledge_not_loaded_string: STRING is "interface.dialogs.acknowledge_not_loaded"
 	confirm_finalize_precompile_string: STRING is "interface.dialogs.confirm_finalize_precompile"	
 	show_starting_dialog_string: STRING is "interface.dialogs.show_starting_dialog"
@@ -225,28 +199,6 @@ feature -- Preference strings
 	confirm_kill_string: STRING is "interface.dialogs.confirm_kill"
 	already_editing_class_string: STRING is "interface.dialogs.already_editing_class"
 	executing_command_string: STRING is "interface.dialogs.executing_command"
-	file_open_and_save_dialogs_remember_last_directory_string: STRING is "interface.dialogs.file_open_and_save_dialogs_remember_last_directory"
-	
-	last_opened_project_directory_string: STRING is "interface.dialogs.last_opened_project_directory"
-	last_opened_ace_directory_string: STRING is "interface.dialogs.last_opened_ace_directory"
-	last_opened_dynamic_lib_directory_string: STRING is "interface.dialogs.last_opened_dynamic_lib_directory"
-	last_opened_metric_directory_preference_string: STRING is "interface.dialogs.last_opened_metric_directory"
-	last_opened_file_directory_preference_string: STRING is "interface.dialogs.last_opened_file_directory"
-	last_opened_system_ace_directory_preference_string: STRING is "interface.dialogs.last_opened_system_ace_directory"
-	last_opened_import_metric_directory_preference_string: STRING is "interface.dialogs.last_opened_import_metric_directory"
-	last_opened_local_assembly_directory_preference_string: STRING is "interface.dialogs.last_opened_local_assembly_directory"
-	last_opened_metric_browse_archive_directory_preference_string: STRING is "interface.dialogs.last_opened_metric_browse_archive_directory"
-	last_opened_metric_update_archive_directory_preference_string: STRING is "interface.dialogs.last_opened_metric_update_archive_directory"
-	
-	last_saved_dynamic_lib_directory_preference_string: STRING is "interface.dialogs.last_saved_dynamic_lib_directory"
-	last_saved_call_stack_directory_preference_string: STRING is "interface.dialogs.last_saved_call_stack_directory"
-	last_saved_debugger_exception_directory_preference_string: STRING is "interface.dialogs.last_saved_debugger_exception_directory"
-	last_saved_diagram_postscript_directory_preference_string: STRING is "interface.dialogs.last_saved_diagram_postscript_directory"
-	last_saved_exception_directory_preference_string: STRING is "interface.dialogs.last_saved_exception_directory"
-	last_saved_metric_new_archive_directory_preference_string: STRING is "interface.dialogs.last_saved_metric_new_archive_directory"
-	last_saved_save_file_as_directory_preference_string: STRING is "interface.dialogs.last_saved_save_file_as_directory"
-	last_saved_profile_result_directory_preference_string: STRING is "interface.dialogs.last_saved_profile_result_directory"
-	last_saved_system_generate_key_directory_preference_string: STRING is "interface.dialogs.last_saved_system_generate_key_directory"
 
 feature {NONE} -- Implementation
 
@@ -274,27 +226,6 @@ feature {NONE} -- Implementation
 			confirm_kill_preference := l_manager.new_boolean_resource_value (l_manager, confirm_kill_string, True)
 			already_editing_class_preference := l_manager.new_boolean_resource_value (l_manager, already_editing_class_string, True)
 			executing_command_preference := l_manager.new_boolean_resource_value (l_manager, executing_command_string, True)
-			confirm_replace_all_preference := l_manager.new_boolean_resource_value (l_manager, confirm_replace_all_string, True)
-			file_open_and_save_dialogs_remember_last_directory := l_manager.new_boolean_resource_value (l_manager, file_open_and_save_dialogs_remember_last_directory_string, True)
-			last_opened_project_directory_preference := l_manager.new_string_resource_value (l_manager, last_opened_project_directory_string, "")
-			last_opened_ace_directory_preference := l_manager.new_string_resource_value (l_manager, last_opened_ace_directory_string, "")
-			last_opened_dynamic_lib_directory_preference := l_manager.new_string_resource_value (l_manager, last_opened_dynamic_lib_directory_string, "")
-			last_opened_metric_directory_preference := l_manager.new_string_resource_value (l_manager, last_opened_metric_directory_preference_string, "")
-			last_opened_file_directory_preference := l_manager.new_string_resource_value (l_manager, last_opened_file_directory_preference_string, "")
-			last_opened_system_ace_directory_preference := l_manager.new_string_resource_value (l_manager, last_opened_system_ace_directory_preference_string, "")
-			last_opened_import_metric_directory_preference := l_manager.new_string_resource_value (l_manager, last_opened_import_metric_directory_preference_string, "")
-			last_opened_local_assembly_directory_preference := l_manager.new_string_resource_value (l_manager, last_opened_local_assembly_directory_preference_string, "")
-			last_opened_metric_browse_archive_directory_preference := l_manager.new_string_resource_value (l_manager, last_opened_metric_browse_archive_directory_preference_string, "")
-			last_opened_metric_update_archive_directory_preference := l_manager.new_string_resource_value (l_manager, last_opened_metric_update_archive_directory_preference_string, "")
-			last_saved_dynamic_lib_directory_preference := l_manager.new_string_resource_value (l_manager, last_saved_dynamic_lib_directory_preference_string, "")
-			last_saved_call_stack_directory_preference := l_manager.new_string_resource_value (l_manager, last_saved_call_stack_directory_preference_string, "")
-			last_saved_debugger_exception_directory_preference := l_manager.new_string_resource_value (l_manager, last_saved_debugger_exception_directory_preference_string, "")
-			last_saved_diagram_postscript_directory_preference := l_manager.new_string_resource_value (l_manager, last_saved_diagram_postscript_directory_preference_string, "")
-			last_saved_exception_directory_preference := l_manager.new_string_resource_value (l_manager, last_saved_exception_directory_preference_string, "")
-			last_saved_metric_new_archive_directory_preference := l_manager.new_string_resource_value (l_manager, last_saved_metric_new_archive_directory_preference_string, "")
-			last_saved_save_file_as_directory_preference := l_manager.new_string_resource_value (l_manager, last_saved_save_file_as_directory_preference_string, "")
-			last_saved_profile_result_directory_preference := l_manager.new_string_resource_value (l_manager, last_saved_profile_result_directory_preference_string, "")
-			last_saved_system_generate_key_directory_preference := l_manager.new_string_resource_value (l_manager, last_saved_system_generate_key_directory_preference_string, "")
 		end
 	
 	preferences: PREFERENCES

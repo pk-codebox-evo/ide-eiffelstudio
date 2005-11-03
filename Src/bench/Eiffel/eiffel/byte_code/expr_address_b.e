@@ -25,14 +25,6 @@ feature {NONE} -- Initialization
 			expr_set: expr = e
 		end
 
-feature -- Visitor
-
-	process (v: BYTE_NODE_VISITOR) is
-			-- Process current element.
-		do
-			v.process_expr_address_b (Current)
-		end
-	
 feature -- Attributes
 
 	expr: EXPR_B;

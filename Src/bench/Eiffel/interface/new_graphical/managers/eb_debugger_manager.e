@@ -27,7 +27,7 @@ inherit
 		end
 		
 	EB_SHARED_PREFERENCES
-	
+
 create
 	make
 
@@ -36,6 +36,11 @@ feature {NONE} -- Initialization
 	make is
 			-- Initialize `Current'.
 		do
+			Application_notification_controller.on_launched_actions.extend (agent on_application_launched)
+			Application_notification_controller.on_before_stopped_actions.extend (agent on_application_before_stopped)
+			Application_notification_controller.on_after_stopped_actions.extend (agent on_application_just_stopped)
+			Application_notification_controller.on_terminated_actions.extend (agent on_application_quit)
+
 			create debug_run_cmd.make
 			can_debug := True
 			maximum_stack_depth := preferences.debugger_data.default_maximum_stack_depth
@@ -47,6 +52,8 @@ feature {NONE} -- Initialization
 			create watch_tool_list.make
 
 			create observers.make (10)
+			create kept_objects.make
+			kept_objects.compare_objects
 		end
 
 feature -- Access
@@ -60,9 +67,6 @@ feature -- Access
 	call_stack_tool: EB_CALL_STACK_TOOL
 			-- A tool that represents the call stack in a graphical display.
 
-	threads_tool: ES_DBG_THREADS_TOOL
-			-- A tool that represents the threads list in a graphical display
-
 	debugging_tools: ES_DOCKABLE_NOTEBOOK
 			-- A tool that represents the call stack in a graphical display.
 
@@ -70,12 +74,80 @@ feature -- Access
 
 	watch_tool_list: LINKED_SET [ES_WATCH_TOOL]
 
+	kept_objects: LINKED_SET [STRING]
+			-- Objects represented by their address that should be kept during the execution.
+			
+	keep_object (add: STRING) is
+			-- Add object identified by `add' to `kept_objects'
+		require
+			address_not_empty: add /= Void and then not add.is_empty
+		do
+			kept_objects.extend (add)
+		end		
+
 	new_toolbar: EB_TOOLBAR is
 			-- Toolbar containing all debugging commands.
 		do
 			Result := preferences.debugger_data.retrieve_project_toolbar (toolbarable_commands)
 		end
 
+	new_project_toolbar: EV_VERTICAL_BOX is
+			-- Create a new project toolbar.
+			-- Obsolete. Use `new_toolbar' instead.
+		local
+			hsep: EV_HORIZONTAL_SEPARATOR
+			a_toolbar: EV_HORIZONTAL_BOX
+			tb: EV_TOOL_BAR
+			b: EV_TOOL_BAR_BUTTON
+		do
+			create Result
+
+			create a_toolbar
+			create tb
+			create hsep
+			Result.set_padding (2)
+			Result.extend (hsep)
+			Result.disable_item_expand (hsep)
+			Result.extend (tb)
+
+					-- Stop points
+			b := clear_bkpt.new_toolbar_item (False, False)
+			tb.extend (b)
+
+			b := disable_bkpt.new_toolbar_item (False, False)
+			tb.extend (b)
+
+			b := enable_bkpt.new_toolbar_item (False, False)
+			tb.extend (b)
+
+--| FIXME XR: TODO: Add:
+--| 1) step into, step/step, step out, run through,
+--| 2) interruption request, kill appli,
+--| 3) edit feature, feature evaluation
+
+			tb.extend (create {EV_TOOL_BAR_SEPARATOR})
+
+			tb.extend (step_cmd.new_toolbar_item (False, False))
+			tb.extend (into_cmd.new_toolbar_item (False, False))
+			tb.extend (out_cmd.new_toolbar_item (False, False))
+
+			tb.extend (create {EV_TOOL_BAR_SEPARATOR})
+
+			tb.extend (debug_cmd.new_toolbar_item (False, False))
+			tb.extend (no_stop_cmd.new_toolbar_item (False, False))
+
+			tb.extend (create {EV_TOOL_BAR_SEPARATOR})
+
+			tb.extend (stop_cmd.new_toolbar_item (False, False))
+			tb.extend (quit_cmd.new_toolbar_item (False, False))
+
+--			create {EB_EXEC_STEP_CMD} exec_cmd.make (Current)
+--| FIXME XR: Preferences  should be used and updated
+--			b := exec_cmd.new_toolbar_item (False)
+--			tb.extend (b)
+--			b.select_actions.extend (window_manager~quick_refresh_all_margins)
+
+		end
 
 	new_debug_menu: EV_MENU is
 			-- Generate a menu that can be displayed in development windows.
@@ -120,11 +192,6 @@ feature -- Access
 
 			Result.extend (set_critical_stack_depth_cmd.new_menu_item)
 
-				-- Separator.
-			create sep
-			Result.extend (sep)
-			Result.extend (exception_handler_cmd.new_menu_item)
-				
 			debug ("DEBUGGER_INTERFACE")
 					-- Separator.
 				create sep
@@ -139,108 +206,6 @@ feature -- Access
 
 --| FIXME XR: TODO: Add:
 --| 3) edit feature, feature evaluation
-		end
-
-	menuable_debugging_tools: ARRAY [EB_TOOL] is
-			-- List of all debugging tools to be listed under the debug->tools menu.
-		do
-			Result := <<threads_tool>>
-		end
-
-	new_debugging_tools_menu: EV_MENU is
-			-- New debugging tools menu.
-		do
-			create Result.make_with_text (Interface_names.m_Tools)
-			Result.disable_sensitive
-		ensure
-			Result /= Void
-		end
-		
-	update_debugging_tools_menu_from (w: EB_DEVELOPMENT_WINDOW) is
-			-- Update the debugging_tools_menu related to `w'	
-		require
-			w /= Void
-		local
-			m: EV_MENU
-			mit: EV_MENU_ITEM
-			l_tools: ARRAY [EB_TOOL]
-			l_tool: EB_TOOL
-			i: INTEGER
-		do
-			m := w.debugging_tools_menu
-			m.wipe_out
-			if raised then
-				l_tools := menuable_debugging_tools
-				if not l_tools.is_empty then
-					create mit.make_with_text ("Show/Hide tools")
-					mit.disable_sensitive
-					m.extend (mit)
-		
-					create {EV_MENU_SEPARATOR} mit
-					mit.disable_sensitive
-					m.extend (mit)
-					
-					from
-						i := l_tools.lower
-					until
-						i > l_tools.upper
-					loop
-						l_tool := l_tools [i]
-						if l_tool /= Void then
-							create mit.make_with_text (l_tool.menu_name)
-							if l_tool.pixmap /= Void and then not l_tool.pixmap.is_empty then
-								mit.set_pixmap (l_tool.pixmap [l_tool.pixmap.lower] )
-							end
-							mit.select_actions.extend (agent show_hide_debugging_tools (mit))
-							m.extend (mit)
-						end
-						i := i + 1
-					end
-					m.enable_sensitive
-				end
-			else				
-				m.disable_sensitive
-			end
-		end
-	
-	update_all_debugging_tools_menu is
-			-- Update all debugging_tools_menu in all development windows
-		do
-			window_manager.for_all_development_windows (agent {EB_DEVELOPMENT_WINDOW}.update_debug_menu)
-		end
-		
-	show_hide_debugging_tools (mit: EV_MENU_ITEM) is
-			-- Toggle display status of Tool related to `mit'
-		require
-			mit /= Void
-		local
-			l_tool: EB_TOOL
-			l_tools: ARRAY [EB_TOOL]
-			i: INTEGER
-			s: STRING
-		do
-			if raised then
-				l_tools := menuable_debugging_tools
-				from
-					s := mit.text
-					i := l_tools.lower
-				until
-					i > l_tools.upper
-				loop
-					l_tool := l_tools [i]
-					if l_tool /= Void and then s.is_equal (l_tool.menu_name) then
-						if l_tool.shown then
-							l_tool.close
-						else
-							l_tool.show
-							if l_tool.widget.is_displayed then
-								l_tool.widget.set_focus
-							end
-						end
-					end
-					i := i + 1
-				end
-			end
 		end
 
 	create_new_watch_tool_inside_notebook (manager: EB_TOOL_MANAGER; nb: ES_NOTEBOOK) is
@@ -286,53 +251,6 @@ feature -- Status report
 	maximum_stack_depth: INTEGER
 			-- Maximum number of call stack elements displayed.
 			-- -1 means display all elements.
-			
-feature -- Access
-
-	toggle_display_breakpoints is
-			-- Show or hide the breakpoint tool
-		local
-			bp_tool: ES_BREAKPOINTS_TOOL
-			conv_dev: EB_DEVELOPMENT_WINDOW
-		do
-			conv_dev ?= window_manager.last_focused_window
-			if conv_dev /= Void then
-				bp_tool := conv_dev.breakpoints_tool
-				if bp_tool /= Void then
-					if bp_tool.shown then
-						bp_tool.close
-					else
-						bp_tool.show
-						bp_tool.refresh
-					end
-				end
-			end			
-		end
-
-	display_breakpoints (show_tool_if_closed: BOOLEAN) is
-			-- Show the list of breakpoints (set and disabled) in the output manager.
-		local
-			bp_tool: ES_BREAKPOINTS_TOOL
-			conv_dev: EB_DEVELOPMENT_WINDOW
-		do
-			conv_dev ?= window_manager.last_focused_window
-			if conv_dev /= Void then
-				bp_tool := conv_dev.breakpoints_tool
-				if bp_tool /= Void then
-					if bp_tool.shown then
-						bp_tool.refresh
-					elseif show_tool_if_closed then
-						bp_tool.show
-					end
-				end
-			end
-		end
-		
-	notify_breakpoints_changes is
-		do
-			display_breakpoints (False)
-			window_manager.synchronize_all_about_breakpoints
-		end
 
 feature -- Status setting
 
@@ -402,47 +320,19 @@ feature -- Status setting
 			into_cmd.disable_sensitive
 		end
 
-	-- Jason Wei modified the following feature on Aug 30 2005
 	on_compile_stop is
 			-- A compilation is over. Make all run* commands sensitive.
 		do
-			if
-				((not freezing_launcher.launched) or (freezing_launcher.launched and freezing_launcher.has_exited))
-				and
-				((not finalizing_launcher.launched) or (finalizing_launcher.launched and finalizing_launcher.has_exited))
-					-- If eight `freezing_launcher' or `finalizing_launcher' is working,
-					-- do not enable relative widgets.
-			then
-				if is_msil_dll_system then
-					disable_debugging_commands (True)
-				else
-					step_cmd.enable_sensitive
-	
-					into_cmd.enable_sensitive
-					no_stop_cmd.enable_sensitive			
-					debug_cmd.enable_sensitive
-					enable_debug
-				end					
+			if is_msil_dll_system then
+				disable_debugging_commands (True)
+			else
+				step_cmd.enable_sensitive
+				into_cmd.enable_sensitive
+				no_stop_cmd.enable_sensitive
+				debug_cmd.enable_sensitive
+				enable_debug
 			end
 		end
-
------- This is the original version		
---	on_compile_stop is
---			-- A compilation is over. Make all run* commands sensitive.
---		do
---			if is_msil_dll_system then
---				disable_debugging_commands (True)
---			else
---				step_cmd.enable_sensitive
---				into_cmd.enable_sensitive
---				no_stop_cmd.enable_sensitive
---				debug_cmd.enable_sensitive
---				enable_debug
---			end
---		end
-		
-	-- Jason Wei modified the above feature on Aug 30 2005
-
 
 	raise is
 			-- Make the debug tools appear in `debugging_window'.
@@ -509,7 +399,7 @@ feature -- Status setting
 				objects_tool.change_attach_notebook (debugging_tools)
 			end
 			objects_tool.set_debugger_manager (Current)
-			objects_tool.set_cleaning_delay (Preferences.Debug_tool_data.delay_before_cleaning_objects_grid)
+			objects_tool.set_cleaning_timer_delay (Preferences.Debug_tool_data.delay_before_cleaning_objects_grid)
 			objects_tool.update
 
 				--| Watches tool
@@ -536,15 +426,6 @@ feature -- Status setting
 			end
 			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.prepare_for_debug)
 			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.update)
-
-				--| Threads Tool
-			if threads_tool = Void then
-				create threads_tool.make (debugging_window)
-				threads_tool.attach_to_explorer_bar (debugging_window.left_panel)
-			else
-				threads_tool.change_manager_and_explorer_bar (debugging_window, debugging_window.left_panel)
-			end
-			threads_tool.update
 
 				--| Call Stack Tool
 			if call_stack_tool = Void then
@@ -599,7 +480,7 @@ feature -- Status setting
 			end
 
 			raised := True
-			update_all_debugging_tools_menu
+
 			debugging_window.window.unlock_update
 		ensure
 			raised
@@ -685,7 +566,6 @@ feature -- Status setting
 				io.put_string ("editor height after debug: " + debugging_window.editor_tool.explorer_bar_item.widget.height.out + "%N")
 			end
 
-			update_all_debugging_tools_menu
 			debugging_window.window.unlock_update
 		ensure
 			not raised
@@ -694,7 +574,6 @@ feature -- Status setting
 	recycle_tools is
 			-- Recycle tools to free unused data
 		do
-			threads_tool.recycle
 			call_stack_tool.recycle
 			objects_tool.recycle
 			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.recycle)				
@@ -715,15 +594,6 @@ feature -- Status setting
 				call_stack_tool.set_stone (st)
 				objects_tool.set_stone (st)
 				watch_tool_list.do_all (agent {ES_WATCH_TOOL}.set_stone (st))
-			end
-		end
-		
-	set_current_thread_id (tid: INTEGER) is
-			-- Set Current thread id to `tid'
-		do
-			if raised then
-				call_stack_tool.update
-				threads_tool.update
 			end
 		end
 
@@ -836,6 +706,7 @@ feature -- Debugging events
 				io.put_string ("Application Stopped (dixit EB_DEBUGGER_MANAGER)%N")
 			end
 
+			objects_tool.enable_grid_redraw
 			objects_tool.disable_refresh
 			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.disable_refresh)
 			if not Application.current_call_stack_is_empty then
@@ -849,8 +720,6 @@ feature -- Debugging events
 
 			window_manager.quick_refresh_all_margins
 
-				-- Fill in the threads tool.
-			threads_tool.update
 				-- Fill in the stack tool.
 			call_stack_tool.update
 				-- Fill in the objects tool.
@@ -907,12 +776,11 @@ feature -- Debugging events
 				-- Reset
 			Application.on_resumed
 
-				-- Fill in the threads tool.
-			threads_tool.update
 				-- Fill in the stack tool.
 			call_stack_tool.update
 				-- Fill in the objects tool.
 			objects_tool.update
+			objects_tool.disable_grid_redraw
 			
 				-- Update Watch tool
 			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.update)
@@ -952,10 +820,7 @@ feature -- Debugging events
 				window_manager.quick_refresh_all_margins
 				debugging_window := Void
 				output_manager.display_system_info
-				
-				if application.is_running then
-					Application.status.kept_objects.wipe_out
-				end
+				kept_objects.wipe_out
 				
 				from
 					observers.start
@@ -1092,8 +957,6 @@ feature {NONE} -- Implementation
 
 	set_critical_stack_depth_cmd: EB_STANDARD_CMD
 			-- Command that changes the depth at which we warn the user against a stack overflow.
-			
-	exception_handler_cmd: EB_EXCEPTION_HANDLER_CMD
 
 	stop_cmd: EB_EXEC_STOP_CMD
 			-- Command that can interrupt the execution.
@@ -1115,9 +978,7 @@ feature {NONE} -- Implementation
 
 	no_stop_cmd: EB_EXEC_NO_STOP_CMD
 			-- Run without stop points command.
-			
 
-	
 	init_commands is
 			-- Create a new project toolbar.
 		do
@@ -1143,7 +1004,7 @@ feature {NONE} -- Implementation
 			bkpt_info_cmd.set_menu_name (Interface_names.m_Bkpt_info)
 			bkpt_info_cmd.set_tooltext (Interface_names.b_Bkpt_info)
 			bkpt_info_cmd.set_name ("Bkpt_info")
-			bkpt_info_cmd.add_agent (agent toggle_display_breakpoints)
+			bkpt_info_cmd.add_agent (agent display_breakpoints)
 			bkpt_info_cmd.enable_sensitive
 			toolbarable_commands.extend (bkpt_info_cmd)
 
@@ -1164,11 +1025,6 @@ feature {NONE} -- Implementation
 			create display_error_help_cmd.make
 			toolbarable_commands.extend (display_error_help_cmd)
 
-
-			create exception_handler_cmd.make
-			exception_handler_cmd.enable_sensitive
-			toolbarable_commands.extend (exception_handler_cmd)
-
 			create step_cmd.make (Current)
 			toolbarable_commands.extend (step_cmd)
 			create into_cmd.make (Current)
@@ -1183,7 +1039,7 @@ feature {NONE} -- Implementation
 			toolbarable_commands.extend (stop_cmd)
 			create quit_cmd.make
 			toolbarable_commands.extend (quit_cmd)
-			
+
 			step_cmd.enable_sensitive
 			into_cmd.enable_sensitive
 			out_cmd.enable_sensitive
@@ -1193,6 +1049,7 @@ feature {NONE} -- Implementation
 			quit_cmd.disable_sensitive
 
 			toolbarable_commands.extend (system_cmd)
+
 			toolbarable_commands.extend (Melt_project_cmd)
 			toolbarable_commands.extend (Quick_melt_project_cmd)
 			toolbarable_commands.extend (Freeze_project_cmd)
@@ -1277,11 +1134,19 @@ feature {NONE} -- Implementation
 			out_cmd.disable_sensitive
 		end		
 
+	display_breakpoints is
+			-- Show the list of breakpoints (set and disabled) in the output manager.
+		do
+			output_manager.display_stop_points
+			output_manager.force_display
+		end
+
 	force_raise is
 			-- Debug feature.
 		do
 			if not raised then
 					-- Update `Current'.
+				create kept_objects.make
 				if debugging_window = Void then
 					debugging_window ?= Window_manager.last_focused_window
 				end
@@ -1294,6 +1159,7 @@ feature {NONE} -- Implementation
 		do
 			if raised then
 				unraise
+				kept_objects := Void
 			end
 		end
 
@@ -1360,7 +1226,6 @@ feature {NONE} -- Implementation
 
 				-- Set widget properties.
 			dialog.set_title (Interface_names.t_Set_critical_stack_depth)
-			dialog.set_icon_pixmap (pixmaps.icon_dialog_window)
 			dialog.disable_user_resize
 			rb2.enable_select
 			Layout_constants.set_default_size_for_button (okb)

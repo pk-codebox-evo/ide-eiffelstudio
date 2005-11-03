@@ -34,9 +34,12 @@ inherit
 		export
 			{NONE} all
 		end
-		
+
+create
+	default_create
+
 feature -- Basic Operations / Generic purpose
-		
+
 	force_display is
 			-- Make the output tools visible (to ensure the user sees what we print).
 		do
@@ -88,28 +91,6 @@ feature -- Basic Operations / Generic purpose
 				managed_output_tools.forth
 			end
 		end
-		
--- Jason Wei
-	text_is_fully_loaded: BOOLEAN is
-		local 
-			done: BOOLEAN
-		do
-			from
-				managed_output_tools.start
-				done := False
-				Result := True
-			until
-				managed_output_tools.after
-			loop
-				if not managed_output_tools.item.text_is_fully_loaded then
-					done := True
-					Result := False
-				end
-				managed_output_tools.forth
-			end			
-		end
-		
--- Jason Wei
 
 	clear_and_process_text (st: STRUCTURED_TEXT) is
 			-- Clear window and print `st' on all output tools.
@@ -181,7 +162,7 @@ feature -- Basic Operations / Information message
 			clear_and_process_text (st)
 		end
 
-	display_breakpoints is
+	display_stop_points is
 			-- Print information about the current project.
 		local
 			st: STRUCTURED_TEXT
@@ -201,7 +182,7 @@ feature -- Basic Operations / Information message
 					st.add_string ("Enabled breakpoints:")
 					st.add_new_line
 					st.add_new_line
-					display_filtered_breakpoints (st, Application.features_with_breakpoint_set, True)
+					display_breakpoints (st, Application.features_with_breakpoint_set, True)
 					if disabled_bps then
 						st.add_new_line
 						st.add_string ("-------------")
@@ -213,7 +194,7 @@ feature -- Basic Operations / Information message
 					st.add_string ("Disabled breakpoints:")
 					st.add_new_line
 					st.add_new_line
-					display_filtered_breakpoints (st, Application.features_with_breakpoint_set, False)
+					display_breakpoints (st, Application.features_with_breakpoint_set, False)
 				end
 			end
 			st.add_new_line
@@ -389,7 +370,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	display_filtered_breakpoints (st: STRUCTURED_TEXT; routine_list: LIST [E_FEATURE]; display_enabled:BOOLEAN) is
+	display_breakpoints (st: STRUCTURED_TEXT; routine_list: LIST [E_FEATURE]; display_enabled:BOOLEAN) is
 			-- Display either the list of routines whose stop points are
 			-- activated, or the list of routines whose stop points have been
 			-- deactivated.
@@ -490,8 +471,6 @@ feature {NONE} -- Implementation / Private attributes
 
 	managed_output_tools: ARRAYED_LIST [EB_OUTPUT_TOOL] is
 			-- Managed output tools
-		indexing
-			once_status: global		
 		once
 			create Result.make (10)
 		end

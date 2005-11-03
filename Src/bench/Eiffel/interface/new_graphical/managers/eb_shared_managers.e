@@ -12,37 +12,6 @@ inherit
 
 feature -- Status report
 
-	external_launcher: EB_EXTERNAL_LAUNCHER is	
-			-- 
-		once
-			create Result.make
-		end
-		
-	freezing_launcher: EB_FREEZING_LAUNCHER is
-			-- 
-		once
-			create Result.make
-		end
-		
-	finalizing_launcher: EB_FINALIZING_LAUNCHER is
-			-- 
-		once
-			create Result.make
-		end
-		
-	idle_printing_manager: EB_IDLE_PRINTING_MANAGER is
-			-- 
-		once
-			create Result.make
-		end
-
-	external_output_manager: EB_EXTERNAL_OUTPUT_MANAGER is
-			-- 
-		do
-			Result := external_output_manager_cell.item
-		end	
-
-
 	output_manager: EB_OUTPUT_MANAGER is
 			-- Output manager for all output messages.
 		do
@@ -77,15 +46,9 @@ feature {NONE} -- Implementation
 		end
 
 	Output_manager_cell: CELL [EB_OUTPUT_MANAGER] is
-			-- Output manager for development windows	
+			-- Output manager for development windows
 		once
 			create Result.put (Void)
 		end
-			
-	External_output_manager_cell: CELL [EB_EXTERNAL_OUTPUT_MANAGER] is
-			-- 
-		once
-			create Result.put (Void)
-		end	
 
 end -- class EB_SHARED_MANAGERS

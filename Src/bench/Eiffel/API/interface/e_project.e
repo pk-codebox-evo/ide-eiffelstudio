@@ -606,16 +606,13 @@ feature -- Update
 			-- depending on the value `workbench_mode'
 		local
 			path: STRING
-			l_cmd: STRING			
 		do
 			if workbench_mode then
 				path := Workbench_generation_path
 			else
 				path := Final_generation_path
 			end
-			create l_cmd.make_from_string (Freeze_command_name)
-			l_cmd.append (" -silent")			
-			invoke_finish_freezing (path, l_cmd, True, workbench_mode)
+			invoke_finish_freezing (path, freeze_command_name, True)
 		end
 
 	call_finish_freezing_and_wait (workbench_mode: BOOLEAN) is
@@ -634,7 +631,7 @@ feature -- Update
 			end
 			create l_cmd.make_from_string (Freeze_command_name)
 			l_cmd.append (" -silent")
-			invoke_finish_freezing (path, l_cmd, False, workbench_mode)
+			invoke_finish_freezing (path, l_cmd, False)
 		end
 
 	precompile (licensed: BOOLEAN) is

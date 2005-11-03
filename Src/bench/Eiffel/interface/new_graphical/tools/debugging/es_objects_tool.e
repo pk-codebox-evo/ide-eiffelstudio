@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that represents the display of stack and debugged objects"
-	author: "$Author$"
+	description: "Objects that ..."
+	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -65,7 +65,7 @@ inherit
 			real_update
 		end
 
-create
+create 
 	make
 
 feature {NONE} -- Initialization
@@ -82,7 +82,7 @@ feature {NONE} -- Initialization
 			display_first := True
 			debugged_objects_grid_empty := True
 			stack_objects_grid_empty := True
-			cleaning_delay := Preferences.debug_tool_data.delay_before_cleaning_objects_grid
+			cleaning_timer_delay := Preferences.debug_tool_data.delay_before_cleaning_objects_grid
 		end
 
 	build_interface is
@@ -91,11 +91,9 @@ feature {NONE} -- Initialization
 			esgrid: ES_OBJECTS_GRID
 			l_box: EV_HORIZONTAL_BOX
 		do
-				--| Build interface
-				
 			create displayed_objects.make
 				--| Stack obj grid
-			create esgrid.make_with_name ("Stack objects")
+			create esgrid.make ("Stack objects")
 			esgrid.set_column_count_to (4)
 			esgrid.column (col_name_index).set_title (col_titles @ col_name_index)
 			esgrid.column (col_name_index).set_width (150)
@@ -126,7 +124,7 @@ feature {NONE} -- Initialization
 			stack_objects_grid := esgrid
 
 				--| Debugged obj grid
-			create esgrid.make_with_name ("Debugged objects")
+			create esgrid.make ("Debugged objects")
 			esgrid.set_column_count_to (4)
 			esgrid.column (col_name_index).set_title (col_titles @ col_name_index)
 			esgrid.column (col_name_index).set_width (150)
@@ -179,15 +177,6 @@ feature {NONE} -- Initialization
 			expand_args := True
 			expand_locals := True
 			widget := split
-			
-				--| Stack objects grid layout
-			initialize_stack_objects_grid_layout (preferences.debug_tool_data.is_stack_grid_layout_managed_preference)
-
-				--| Debugged objects grid layout
-			initialize_debugged_objects_grid_layout (preferences.debug_tool_data.is_debugged_grid_layout_managed_preference)
-			
-				--| Initialize various agent and special mecanisms
-			init_delayed_cleaning_mecanism
 			create_update_on_idle_agent
 		end
 
@@ -473,10 +462,9 @@ feature -- Change
 				conv_stack ?= a_stone
 				if conv_stack /= Void then
 					if application.status.is_stopped then
-						stack_objects_grid.call_delayed_clean
+						clean_stack_objects_grid
 						build_stack_objects_grid
-						
-						debugged_objects_grid.call_delayed_clean
+						clean_debugged_objects_grid
 						build_debugged_objects_grid
 					end
 				end
@@ -553,6 +541,7 @@ feature -- Memory management
 		do
 			preferences.debug_tool_data.min_slice_preference.set_value (min_slice_ref.item)
 			preferences.debug_tool_data.max_slice_preference.set_value (max_slice_ref.item)
+			debugger_manager.kept_objects.wipe_out
 			displayed_objects.wipe_out
 			pretty_print_cmd.end_debug
 			if explorer_bar_item /= Void then
@@ -565,70 +554,139 @@ feature -- Memory management
 				current_object.recycle
 				current_object := Void
 			end
-			stack_objects_grid.call_delayed_clean
-			debugged_objects_grid.call_delayed_clean
-
-			debugged_objects_grid.reset_layout_recorded_values
-			stack_objects_grid.reset_layout_recorded_values
+			clean_stack_objects_grid
+			clean_debugged_objects_grid
 			clean_header_box
 		end
 	
 feature {EB_DEBUGGER_MANAGER} -- Cleaning timer change
 
-	set_cleaning_delay (ms: INTEGER) is
+	set_cleaning_timer_delay (ms: INTEGER) is
 		require
-			delay_positive_or_null: ms >= 0
+			timer_delay_positive_or_null: ms >= 0
 		do
-			cleaning_delay := ms
-			if stack_objects_grid.delayed_cleaning_exists then
-				stack_objects_grid.set_cleaning_delay (cleaning_delay)
-			end
-			if debugged_objects_grid.delayed_cleaning_exists then
-				debugged_objects_grid.set_cleaning_delay (cleaning_delay)
-			end		
+			cleaning_timer_delay := ms
 		ensure
-			cleaning_delay = ms
+			cleaning_timer_delay = ms
 		end
 
-	init_delayed_cleaning_mecanism is
+feature -- Disable refresh grid
+
+	disable_grid_redraw is
 		do
-			if not stack_objects_grid.delayed_cleaning_exists then
-				stack_objects_grid.build_delayed_cleaning
-				stack_objects_grid.set_cleaning_delay (cleaning_delay)
-				stack_objects_grid.set_delayed_cleaning_action (agent action_clean_stack_objects_grid)
-			end
-			if not debugged_objects_grid.delayed_cleaning_exists then
-				debugged_objects_grid.build_delayed_cleaning
-				debugged_objects_grid.set_cleaning_delay (cleaning_delay)
-				debugged_objects_grid.set_delayed_cleaning_action (agent action_clean_debugged_objects_grid)
-			end			
+			stack_objects_grid.disable_grid_redraw
+			debugged_objects_grid.disable_grid_redraw
 		end
 
-feature {NONE} -- grid Layout Implementation
+	enable_grid_redraw is
+		do
+			stack_objects_grid.enable_grid_redraw
+			debugged_objects_grid.enable_grid_redraw
+		end
 
-	cleaning_delay: INTEGER
+feature {NONE} -- Layout Implementation
+
+	cleaning_timer_delay: INTEGER
 		-- Number of milliseconds waited before clearing debug output.
 		-- By waiting for a short period of time, the flicker is removed
 		-- for normal debug usage as it is only cleared immediately before
 		-- being rebuilt, unless the timer period has been exceeded.
-
-feature {NONE} -- Stack grid Layout Implementation
-
+		
 	stack_objects_grid_empty: BOOLEAN
 
-	action_clean_stack_objects_grid is
+	clean_stack_objects_grid is
 		do
+			cancel_delayed_clean_stack_objects_grid
+
 			record_stack_layout
 			internal_locals_row := Void
 			internal_arguments_row := Void
 			internal_result_row := Void
 			
+			stack_objects_grid.enable_grid_redraw
 			if not stack_objects_grid_empty then
-				stack_objects_grid.default_clean
+				stack_objects_grid.remove_and_clear_all_rows
 				stack_objects_grid_empty := True
 			end
 		ensure
 			stack_objects_grid_cleaned: stack_objects_grid_empty
+			stack_objects_grid_clear_timer_destroyed: stack_objects_grid_clear_timer = Void			
+		end
+
+	stack_objects_grid_clear_timer: EV_TIMEOUT
+
+	cancel_delayed_clean_stack_objects_grid is
+		do
+			if stack_objects_grid_clear_timer /= Void then
+				stack_objects_grid.enable_sensitive
+				stack_objects_grid_clear_timer.actions.wipe_out
+				stack_objects_grid_clear_timer.destroy
+				stack_objects_grid_clear_timer := Void
+			end
+		ensure
+			stack_objects_grid_clear_timer_destroyed: stack_objects_grid_clear_timer = Void			
+		end
+		
+	request_delayed_clean_stack_objects_grid is
+		do
+			if cleaning_timer_delay = 0 then
+				clean_stack_objects_grid
+			elseif stack_objects_grid_clear_timer = Void then
+				stack_objects_grid.disable_sensitive
+				create stack_objects_grid_clear_timer.make_with_interval (cleaning_timer_delay)
+				stack_objects_grid_clear_timer.actions.extend (agent clean_stack_objects_grid)
+			end
+		ensure
+			stack_objects_grid_clear_timer_created: cleaning_timer_delay >0 implies stack_objects_grid_clear_timer /= Void
+		end
+
+	debugged_objects_grid_empty: BOOLEAN
+	clean_debugged_objects_grid is
+		do
+			cancel_delayed_clean_debugged_objects_grid
+			record_objects_layout
+			debugged_objects_grid.enable_grid_redraw
+			if not debugged_objects_grid_empty then
+				debugged_objects_grid.remove_and_clear_all_rows
+				debugged_objects_grid_empty := True
+			end
+		ensure
+			debugged_objects_grid_cleaned: debugged_objects_grid_empty	
+			debugged_objects_grid_clear_timer_destroyed: debugged_objects_grid_clear_timer = Void
+		end
+
+	debugged_objects_grid_clear_timer: EV_TIMEOUT
+
+	cancel_delayed_clean_debugged_objects_grid is
+		do
+			if debugged_objects_grid_clear_timer /= Void then
+				debugged_objects_grid.enable_sensitive				
+				debugged_objects_grid_clear_timer.actions.wipe_out
+				debugged_objects_grid_clear_timer.destroy
+				debugged_objects_grid_clear_timer := Void
+			end
+		ensure
+			debugged_objects_grid_clear_timer_destroyed: debugged_objects_grid_clear_timer = Void
+		end
+
+	request_delayed_clean_debugged_objects_grid is
+		do
+			if cleaning_timer_delay = 0 then
+				clean_debugged_objects_grid
+			elseif debugged_objects_grid_clear_timer = Void then
+				debugged_objects_grid.disable_sensitive
+				create debugged_objects_grid_clear_timer.make_with_interval (cleaning_timer_delay)
+				debugged_objects_grid_clear_timer.actions.extend (agent clean_debugged_objects_grid)
+			end
+		ensure
+			debugged_objects_grid_clear_timer_created: cleaning_timer_delay >0 implies debugged_objects_grid_clear_timer /= Void
+		end
+
+	record_objects_layout is
+		do
+			if current_object /= Void then
+				current_object.record_layout
+			end
 		end
 
 	record_stack_layout is
@@ -643,7 +701,6 @@ feature {NONE} -- Stack grid Layout Implementation
 				if internal_result_row /= Void and then internal_result_row.parent /= Void then
 					expand_result := internal_result_row.is_expanded
 				end
-				stack_objects_grid.record_layout
 			end
 		end
 
@@ -655,73 +712,6 @@ feature {NONE} -- Stack grid Layout Implementation
 
 	expand_locals: BOOLEAN
 			-- Should the "Locals" tree item be expanded?
-
-feature {NONE} -- Grid layout Implementation
-
-	initialize_stack_objects_grid_layout (pv: BOOLEAN_PREFERENCE) is
-		require
-			not is_stack_objects_grid_layout_initialized
-			stack_objects_grid.layout_manager = Void
-		local
-			l_grid: ES_OBJECTS_GRID
-		do
-			l_grid := stack_objects_grid
-			l_grid.initialize_layout_management (pv)
-			check
-				l_grid.layout_manager /= Void
-			end
-			l_grid.layout_manager.set_identification_agent (agent grid_objects_id_name_from_row)
-			l_grid.layout_manager.set_value_agent (agent grid_objects_id_value_from_row)
-			l_grid.layout_manager.set_on_difference_callback (agent grid_objects_on_difference_cb)
-			is_stack_objects_grid_layout_initialized := True
-		end
-
-	is_stack_objects_grid_layout_initialized: BOOLEAN
-
-feature {NONE} -- debugged grid Layout Implementation
-
-	initialize_debugged_objects_grid_layout (pv: BOOLEAN_PREFERENCE) is
-		require
-			not is_debugged_objects_grid_layout_initialized
-			debugged_objects_grid.layout_manager = Void
-		local
-			l_grid: ES_OBJECTS_GRID
-		do
-			l_grid := debugged_objects_grid
-			l_grid.initialize_layout_management (pv)
-			check
-				l_grid.layout_manager /= Void
-			end
-			l_grid.layout_manager.set_identification_agent (agent grid_objects_id_name_from_row)
-			l_grid.layout_manager.set_value_agent (agent grid_objects_id_value_from_row)
-			l_grid.layout_manager.set_on_difference_callback (agent grid_objects_on_difference_cb)
-			is_debugged_objects_grid_layout_initialized := True
-		end
-
-	is_debugged_objects_grid_layout_initialized: BOOLEAN
-
-	debugged_objects_grid_empty: BOOLEAN
-	
-	action_clean_debugged_objects_grid is
-		do
-			record_objects_layout
-			if not debugged_objects_grid_empty then
-				debugged_objects_grid.default_clean
-				debugged_objects_grid_empty := True
-			end
-		ensure
-			debugged_objects_grid_cleaned: debugged_objects_grid_empty	
-		end
-
-	record_objects_layout is
-		do
-			if current_object /= Void then
-				current_object.record_layout
-			end
-			if debugged_objects_grid.row_count > 0 then
-				debugged_objects_grid.record_layout
-			end
-		end
 
 feature {NONE} -- Commands Implementation
 
@@ -745,20 +735,19 @@ feature {NONE} -- Implementation
 		local
 			l_status: APPLICATION_STATUS
 		do
-			stack_objects_grid.request_delayed_clean
-			debugged_objects_grid.request_delayed_clean
-
 			l_status := application.status
 			if l_status /= Void then
 				pretty_print_cmd.refresh
+				request_delayed_clean_stack_objects_grid
+				request_delayed_clean_debugged_objects_grid
 				if l_status.is_stopped and dbg_was_stopped then
 					if l_status.has_valid_call_stack and then l_status.has_valid_current_eiffel_call_stack_element then
-						debugged_objects_grid.cancel_delayed_clean
+						cancel_delayed_clean_debugged_objects_grid
 
-						stack_objects_grid.call_delayed_clean
+						clean_stack_objects_grid
 						build_stack_objects_grid
 
-						debugged_objects_grid.call_delayed_clean
+						clean_debugged_objects_grid
 						build_debugged_objects_grid
 					end
 				else
@@ -837,7 +826,6 @@ feature {NONE} -- Current objects grid Implementation
 				debugged_objects_grid.row (1).ensure_visible
 				debugged_objects_grid.row (1).redraw
 			end
-			debugged_objects_grid.restore_layout
 		end
 
 	add_displayed_objects_to_grid (a_target_grid: ES_OBJECTS_GRID) is
@@ -888,8 +876,6 @@ feature {NONE} -- Impl : Debugged objects grid specifics
 
 	add_debugged_object (a_stone: OBJECT_STONE) is
 			-- Add the object represented by `a_stone' to the managed objects.
-		require
-			application_is_running: Application.is_running
 		local
 			n_obj: ES_OBJECTS_GRID_LINE
 			conv_spec: SPECIAL_VALUE
@@ -915,26 +901,27 @@ feature {NONE} -- Impl : Debugged objects grid specifics
 			n_obj := Void
 			if not exists then
 				l_item := a_stone.ev_item
-				if l_item /= Void then
-					if application.is_dotnet then
-						abstract_value ?= grid_data_from_widget (l_item)
-							--| FIXME jfiat : check if it is safe to use a Value ?
-						if abstract_value /= Void then
-							create {ES_OBJECTS_GRID_VALUE_LINE} n_obj.make_with_value (abstract_value, Current)
-						end
-					else
+				if application.is_dotnet then
+					abstract_value ?= grid_data_from_widget (l_item)
+--| FIXME jfiat : check if it is safe to use a Value ?
+--					if abstract_value /= Void then
+--						create {ES_OBJECTS_GRID_VALUE_LINE} n_obj.make_with_value (abstract_value, Current)
+--					else
+						create {ES_OBJECTS_GRID_ADDRESS_LINE} n_obj.make_with_address (a_stone.object_address, a_stone.dynamic_class, Current)
+--					end
+				else
+					if l_item /= Void then
 						conv_spec ?= grid_data_from_widget (l_item)
 						if conv_spec /= Void then
 							create {ES_OBJECTS_GRID_VALUE_LINE} n_obj.make_with_value (conv_spec, Current)
 						end
 					end
+					if n_obj = Void then
+						create {ES_OBJECTS_GRID_ADDRESS_LINE} n_obj.make_with_address (a_stone.object_address, a_stone.dynamic_class, Current)
+					end
 				end
-				if n_obj = Void then
-					create {ES_OBJECTS_GRID_ADDRESS_LINE} n_obj.make_with_address (a_stone.object_address, a_stone.dynamic_class, Current)
-				end
-				
 				n_obj.set_title (a_stone.name + Left_address_delim + a_stone.object_address + Right_address_delim)
-				Application.status.keep_object (a_stone.object_address)
+				debugger_manager.keep_object (a_stone.object_address)
 				displayed_objects.extend (n_obj)
 				debugged_objects_grid.insert_new_row (debugged_objects_grid.row_count + 1)
 				n_obj.attach_to_row (debugged_objects_grid.row (debugged_objects_grid.row_count))
@@ -1106,7 +1093,6 @@ feature {NONE} -- Impl : Stack objects grid
 						internal_result_row.expand
 					end
 				end
-				stack_objects_grid.restore_layout
 			end
 		end
 
@@ -1126,56 +1112,39 @@ feature {NONE} -- Impl : Stack objects grid
 			exception_row: EV_GRID_ROW
 			glab: EV_GRID_LABEL_ITEM
 			es_glab: ES_OBJECTS_GRID_CELL
-			l_exception_class_detail: STRING
 			l_exception_module_detail: STRING
 			l_exception_tag, l_exception_message: STRING
-			dotnet_status: APPLICATION_STATUS_DOTNET
-			exc_dv: ABSTRACT_DEBUG_VALUE
 		do
-			if application.is_dotnet and then application.status.exception_occurred then
-				dotnet_status ?= application.status
-				check dotnet_status /= Void end
-				
-					--| Details
-				exception_row := a_target_grid.extended_new_row
-				glab := folder_label_item (Cst_exception_raised_text)
-				a_target_grid.grid_cell_set_pixmap (glab, Pixmaps.icon_debugger_exception)
-				exception_row.set_item (1, glab)
-				create glab
-				if dotnet_status.exception_handled then
-					a_target_grid.grid_cell_set_text (glab, Cst_exception_first_chance_text)
-				else
-					a_target_grid.grid_cell_set_text (glab, Cst_exception_unhandled_text)
-				end
-				exception_row.set_item (2, glab)
-
-					--| Tag
-				l_exception_tag := dotnet_status.exception_message
-				if l_exception_tag /= Void then
-					row := a_target_grid.extended_new_subrow (exception_row)
-					glab := name_label_item ("Tag")
-					a_target_grid.grid_cell_set_pixmap (glab, pixmaps.small_pixmaps.icon_dbg_error)
-					row.set_item (1, glab)
-					create es_glab
-					es_glab.set_data (l_exception_tag)
-					a_target_grid.grid_cell_set_text (es_glab, l_exception_tag)
-					row.set_item (2, es_glab)
-				end
-					--| Class
-				l_exception_class_detail := dotnet_status.exception_class_name
-				if l_exception_class_detail /= Void then
-					row := a_target_grid.extended_new_subrow (exception_row)
-					glab := name_label_item ("Class")
-					a_target_grid.grid_cell_set_pixmap (glab, pixmaps.small_pixmaps.icon_dbg_error)
-					row.set_item (1, glab)
-					create es_glab
-					es_glab.set_data (l_exception_class_detail)
-					a_target_grid.grid_cell_set_text (es_glab, l_exception_class_detail)
-					row.set_item (2, es_glab)						
-				end
-					--| Module
-				l_exception_module_detail := dotnet_status.exception_module_name
+			if application.is_dotnet and then application.imp_dotnet.exception_occurred then
+				l_exception_module_detail := application.imp_dotnet.exception_module_name
 				if l_exception_module_detail /= Void then
+						--| Details
+					exception_row := a_target_grid.extended_new_row
+					glab := folder_label_item (Cst_exception_raised_text)
+					a_target_grid.grid_cell_set_pixmap (glab, Pixmaps.icon_debugger_exception)
+					exception_row.set_item (1, glab)
+					create glab
+					if application.imp_dotnet.exception_handled then
+						a_target_grid.grid_cell_set_text (glab, Cst_exception_first_chance_text)
+					else
+						a_target_grid.grid_cell_set_text (glab, Cst_exception_unhandled_text)
+					end
+					exception_row.set_item (2, glab)
+
+						--| Tag
+					l_exception_tag := application.imp_dotnet.exception_message
+					if l_exception_tag /= Void then
+						row := a_target_grid.extended_new_subrow (exception_row)
+						glab := name_label_item ("Tag")
+						a_target_grid.grid_cell_set_pixmap (glab, pixmaps.small_pixmaps.icon_dbg_error)
+						row.set_item (1, glab)
+						create es_glab
+						es_glab.set_data (l_exception_tag)
+						a_target_grid.grid_cell_set_text (es_glab, l_exception_tag)
+						row.set_item (2, es_glab)
+					end
+
+						--| Module
 					row := a_target_grid.extended_new_subrow (exception_row)
 					glab := name_label_item ("Module")
 					a_target_grid.grid_cell_set_pixmap (glab, pixmaps.small_pixmaps.icon_dbg_error)
@@ -1184,27 +1153,21 @@ feature {NONE} -- Impl : Stack objects grid
 					es_glab.set_data (l_exception_module_detail)
 					a_target_grid.grid_cell_set_text (es_glab, l_exception_module_detail)
 					row.set_item (2, es_glab)
-				end
 
-					--| Nota/Message
-				l_exception_message := dotnet_status.exception_to_string
-				if l_exception_message /= Void and then not l_exception_message.is_empty then
-					row := a_target_grid.extended_new_subrow (exception_row)
-					glab := name_label_item ("Nota")
-					a_target_grid.grid_cell_set_pixmap (glab, pixmaps.small_pixmaps.icon_dbg_error)
-					row.set_item (1, glab)
-					create es_glab
-					es_glab.set_data (l_exception_message)
-					a_target_grid.grid_cell_set_text (es_glab, cst_exception_double_click_text)
-					a_target_grid.grid_cell_set_tooltip (es_glab, l_exception_message)
-					es_glab.pointer_double_press_actions.force_extend (agent show_exception_dialog (l_exception_tag, l_exception_message))
-					row.set_item (2, es_glab)
-				end
-
-				exc_dv := dotnet_status.exception_debug_value
-				if exc_dv /= Void then
-					row := a_target_grid.extended_new_subrow (exception_row)
-					attach_debug_value_to_grid_row (row, exc_dv)
+						--| Nota/Message
+					l_exception_message := application.imp_dotnet.exception_to_string
+					if l_exception_message /= Void and then not l_exception_message.is_empty then
+						row := a_target_grid.extended_new_subrow (exception_row)
+						glab := name_label_item ("Nota")
+						a_target_grid.grid_cell_set_pixmap (glab, pixmaps.small_pixmaps.icon_dbg_error)
+						row.set_item (1, glab)
+						create es_glab
+						es_glab.set_data (l_exception_message)
+						a_target_grid.grid_cell_set_text (es_glab, cst_exception_double_click_text)
+						a_target_grid.grid_cell_set_tooltip (es_glab, l_exception_message)
+						es_glab.pointer_double_press_actions.force_extend (agent show_exception_dialog (l_exception_tag, l_exception_message))
+						row.set_item (2, es_glab)
+					end
 				end
 			end
 		end
@@ -1224,7 +1187,6 @@ feature {NONE} -- Impl : Stack objects grid
 		local
 			dv: ABSTRACT_DEBUG_VALUE
 			glab: EV_GRID_LABEL_ITEM
-			r: INTEGER			
 		do
 			if cse.has_result then
 				internal_result_row := a_target_grid.extended_new_row
@@ -1233,9 +1195,7 @@ feature {NONE} -- Impl : Stack objects grid
 				internal_result_row.set_item (1, glab)
 				dv := cse.result_value
 				if dv /= Void then
-					internal_result_row.insert_subrows (1, 1)
-					r := internal_result_row.index + 1
-					attach_debug_value_to_grid_row (a_target_grid.row (r), dv)
+					add_debug_value_to_grid_row (internal_result_row, dv)
 				end
 			else
 				internal_result_row := Void
@@ -1249,7 +1209,6 @@ feature {NONE} -- Impl : Stack objects grid
 		local
 			glab: EV_GRID_LABEL_ITEM
 			list: LIST [ABSTRACT_DEBUG_VALUE]
-			r: INTEGER
 		do
 			list := cse.arguments
 			if list /= Void and then not list.is_empty then
@@ -1258,14 +1217,11 @@ feature {NONE} -- Impl : Stack objects grid
 				a_target_grid.grid_cell_set_pixmap (glab, Pixmaps.Icon_feature_clause_any)
 				internal_arguments_row.set_item (1, glab)
 				from
-					internal_arguments_row.insert_subrows (list.count, 1)
-					r := internal_arguments_row.index + 1
 					list.start
 				until
 					list.after
 				loop
-					attach_debug_value_to_grid_row (a_target_grid.row (r), list.item)
-					r := r + 1
+					add_debug_value_to_grid_row (internal_arguments_row, list.item)
 					list.forth
 				end
 			else
@@ -1283,7 +1239,6 @@ feature {NONE} -- Impl : Stack objects grid
 			list: LIST [ABSTRACT_DEBUG_VALUE]
 			tmp: SORTABLE_ARRAY [ABSTRACT_DEBUG_VALUE]
 			dbg_nb: INTEGER
-			r: INTEGER			
 		do
 			list := cse.locals
 			if list /= Void and then not list.is_empty then
@@ -1305,14 +1260,11 @@ feature {NONE} -- Impl : Stack objects grid
 				end
 				tmp.sort
 				from
-					internal_locals_row.insert_subrows (dbg_nb, 1)
-					r := internal_locals_row.index + 1
 					i := 1
 				until
 					i > dbg_nb
 				loop
-					attach_debug_value_to_grid_row (a_target_grid.row (r), tmp @ i)
-					r := r + 1
+					add_debug_value_to_grid_row (internal_locals_row, tmp @ i)
 					i := i + 1
 				end
 			else

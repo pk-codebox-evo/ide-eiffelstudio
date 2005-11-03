@@ -117,16 +117,6 @@ feature -- Icons
 			Result := pixmap_file_content ("icon_format_creators_color")
 		end
 
-	icon_format_creator_callers: EV_PIXMAP is
-		once
-			Result := pixmap_file_content ("icon_format_creator_callers_color")
-		end
-
-	Icon_format_invariants: EV_PIXMAP is
-		once
-			Result := pixmap_file_content ("icon_format_invariants_color")
-		end
-
 	Icon_format_ancestors: EV_PIXMAP is
 		once
 			Result := pixmap_file_content ("icon_format_ancestors_color")
@@ -225,6 +215,11 @@ feature -- Icons
 	Icon_external_symbol: EV_PIXMAP is
 		once
 			Result := pixmap_file_content ("icon_external_symbol")
+		end
+		
+	Icon_dbg_error: EV_PIXMAP is
+		once
+			Result := pixmap_file_content ("icon_dbg_error")
 		end
 
 	Icon_static_external_symbol: EV_PIXMAP is
@@ -520,14 +515,6 @@ feature -- Icons
 			-- Color with explaining text is at index 3, gray with explaining text at index 4
 		once
 			Result := build_classic_pixmap ("search")
-		end
-	
-	Icon_editor: ARRAY [EV_PIXMAP] is
-			-- Array containing both the color & the gray pixmap
-			-- Color is at index 1, gray at index 2
-			-- Color with explaining text is at index 3, gray with explaining text at index 4
-		once
-			Result := build_classic_pixmap ("editor")
 		end
 
 	Icon_windows: ARRAY [EV_PIXMAP] is
@@ -1139,21 +1126,6 @@ feature -- Icons
 			Result := build_classic_pixmap ("auto_slice_limits")
 		end
 		
-	Icon_input_to_process: EV_PIXMAP is
-			-- 
-		once
-			Result := pixmap_file_content ("icon_input_to_process")
-		end
-		
-	Icon_add_new_external_cmd: EV_PIXMAP is
-			-- 
-		once
-			Result := pixmap_file_content ("icon_add_new_external_cmd")
-		end
-		
-	
-		
-		
 feature -- Reading
 
 	build_classic_pixmap (pixmap_name: STRING): ARRAY [EV_PIXMAP] is
@@ -1236,7 +1208,6 @@ feature {NONE} -- Implementation
 			Result.put ([3, 7], "icon_dynamiclib_window")
 			Result.put ([3, 8], "icon_edit_exported_feature_color")
 			Result.put ([3, 9], "icon_editing")
-			Result.put ([6, 1], "icon_editor_color")
 			Result.put ([3, 10], "icon_enable_bkpt_color")
 			Result.put ([3, 11], "icon_exec_quit_color")
 			Result.put ([3, 12], "icon_exec_quit_color")
@@ -1378,15 +1349,11 @@ feature {NONE} -- Implementation
 			Result.put ([12, 4], "icon_obsolete_feature")
 			Result.put ([12, 5], "icon_frozen_feature")
 			Result.put ([12,6], "icon_format_assigners_color")
-			Result.put ([12,7], "icon_format_creator_callers_color")
+			Result.put ([12,7], "icon_format_creators_color")
 			Result.put ([12,8], "icon_preference_root")
 			Result.put ([12,9], "icon_preference_folder")
 			Result.put ([12,10], "icon_other_feature")
 			Result.put ([12,11], "icon_reset_view_color")
-			Result.put ([12,12], "icon_format_creators_color")
-			Result.put ([12,13], "icon_format_invariants_color")
-			Result.put ([12,14], "icon_input_to_process")
-			Result.put ([12,15], "icon_add_new_external_cmd")
 			Result.compare_objects
 		end
 

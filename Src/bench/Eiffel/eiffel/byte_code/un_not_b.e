@@ -10,14 +10,6 @@ inherit
 			enlarged
 		end;
 	
-feature -- Visitor
-
-	process (v: BYTE_NODE_VISITOR) is
-			-- Process current element.
-		do
-			v.process_un_not_b (Current)
-		end
-	
 feature
 
 	print_register is

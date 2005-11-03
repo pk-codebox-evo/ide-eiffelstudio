@@ -1,13 +1,8 @@
-indexing
-	description: "[
-		Object which manage breakpoints (addition,.. loading, saving)
-	]"
-	date: "$Date$"
-	revision: "$Revision$"
-
 class DEBUG_INFO
 
 inherit
+	ANY
+
 	SHARED_EIFFEL_PROJECT
 		export
 			{NONE} all

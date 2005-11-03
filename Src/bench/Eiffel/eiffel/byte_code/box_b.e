@@ -31,14 +31,6 @@ feature {NONE} -- Initialization
 			type_set: type = a_target_type
 		end
 		
-feature -- Visitor
-
-	process (v: BYTE_NODE_VISITOR) is
-			-- Process current element.
-		do
-			v.process_box_b (Current)
-		end
-	
 feature -- Access
 
 	expr: EXPR_B
@@ -62,8 +54,8 @@ feature -- IL code generation
 	generate_il is
 			-- Generate IL code for Void value.
 		do
-			expr.generate_il_value
-			il_generator.generate_metamorphose (expr.type)
+			expr.generate_il
+			il_generator.generate_metamorphose (type)
 		end
 
 invariant

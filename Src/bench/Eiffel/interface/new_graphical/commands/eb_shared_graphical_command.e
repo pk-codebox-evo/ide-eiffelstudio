@@ -95,13 +95,6 @@ feature -- Commands
 			Result.disable_sensitive
 		end
 
-	Project_cancel_cmd: EB_PROJECT_CANCEL_COMMAND is
-			-- Command to cancel any ongoing project computation such as compilation and diagram rebuilding.
-		once
-			create Result
-			Result.disable_sensitive
-		end
-
 	Document_cmd: DOCUMENT_CMD is
 			-- Command to generate the HTML documentation
 		once
@@ -128,19 +121,6 @@ feature -- Commands
 		once
 			create Result.make
 			Result.enable_sensitive
-		end
-
-	Terminate_c_compilation_cmd: EB_TERMINATE_C_COMPILATION_CMD is
-			-- 
-		once
-			create Result.make
-			Result.disable_sensitive
-		end
-		
-	Estudio_debug_cmd: ESTUDIO_DEBUG_CMD is
-			-- Show/Hide EiffelStudio self debug menu.
-		once
-			create Result
 		end
 
 end -- class EB_SHARED_GRAPHICAL_COMMANDS

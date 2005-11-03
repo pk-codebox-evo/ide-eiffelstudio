@@ -29,7 +29,6 @@ inherit
 feature -- Button texts
 
 	b_Abort: STRING is							"Abort"
-	b_Add: STRING is 							"Add"
 	b_Add_text: STRING is 						"Add ->"
 	b_And: STRING is							"And"
 	b_Apply: STRING is							"Apply"
@@ -65,11 +64,9 @@ feature -- Button texts
 	b_Or: STRING is								"Or"
 	b_Percentage: STRING is						"Percentage"
 	b_Replace: STRING is						"Replace"
-	b_Replace_all: STRING is					"Replace all"
 	b_Recursive_functions: STRING is			"Recursive Functions"
 	b_Reload: STRING is							"Reload"
 	b_Remove: STRING is							"Remove"
-	b_Remove_all: STRING is						"Remove all"
 	b_Remove_text: STRING is 					"<- Remove"
 	b_Retry: STRING is							"Retry"
 	b_Search: STRING is							"Search"
@@ -119,9 +116,7 @@ feature -- Button texts
 	b_Raise_all: STRING is						"Raise Windows"
 	b_Remove_class_cluster: STRING is			"Remove Class/CLuster"
 	b_Minimize_all: STRING is					"Minimize All"
-	-- Jason Wei added the following line on Aug 31 2005
-	b_Terminate_c_compilation: STRING is 		"Terminate C Compilation"
-	-- Jason Wei added the above line on Aug 31 2005
+	
 	
 feature -- Graphical degree output
 
@@ -158,7 +153,6 @@ feature -- Accelerator, focus label and menu name
 	m_Add_to_favorites: STRING is		"&Add to Favorites"
 	m_Address_toolbar: STRING is		"&Address Bar"
 	m_Apply: STRING is					"&Apply"
-	m_Breakpoints_tool: STRING is		"Breakpoints"
 	f_Clear_breakpoints: STRING is		"Remove all breakpoints"
 	m_Clear_breakpoints: STRING is		"Re&move All Breakpoints"
 	m_Comment: STRING is				"&Comment%TCtrl+K"
@@ -334,9 +328,8 @@ feature -- Accelerator, focus label and menu name
 	m_Showancestors: STRING is			"&Ancestors"
 	m_Showattributes: STRING is			"A&ttributes"
 	m_Showcallers: STRING is			"&Callers"
-	m_Showclick: STRING is				"C&lickable"
+	m_Showclick: STRING is				"&Clickable"
 	m_Showclients: STRING is			"Cli&ents"
-	m_showcreators: STRING is			"&Creators"
 	m_Showdeferreds: STRING is			"&Deferred"
 	m_Showdescendants: STRING is		"De&scendants"
 	m_Showexported: STRING is			"Ex&ported"
@@ -346,7 +339,6 @@ feature -- Accelerator, focus label and menu name
 	m_Showfuture: STRING is				"&Descendant Versions"
 	m_Showhistory: STRING is			"&Implementers"
 	m_Showindexing: STRING is			"&Indexing clauses"
-	m_show_invariants: STRING is		"In&variants"
 	m_Showonces: STRING is				"O&nce/Constants"
 	m_Showpast: STRING is				"&Ancestor Versions"
 	m_Showroutines: STRING is			"&Routines"
@@ -465,7 +457,6 @@ feature -- Label texts
 	l_Command_error_output: STRING is	"Command error output:%N"
 	l_Command_line: STRING is			"Command line:"
 	l_Command_normal_output: STRING is	"Command output:%N"
-	l_Compiled_class: STRING is			"Only compiled class"
 	l_Compile_first: STRING is			"Compile to have information"
 	l_Compile_generated_project: STRING is "Compile the generated project"
 	l_Condition: STRING is				"Condition"
@@ -474,7 +465,6 @@ feature -- Label texts
 	l_Creation: STRING is				"Creation procedure:"
 	l_creators: STRING is				"creators"
 	l_Current_context: STRING is		"Current feature"
-	l_Current_editor: STRING is			"Current editor"
 	l_Current_object: STRING is			"Current object"
 	l_Deferred: STRING is				"deferred"
 	l_Deferreds: STRING is				"deferred features"
@@ -488,7 +478,6 @@ feature -- Label texts
 	l_Discard_freeze_dialog: STRING is	"Do not ask again, and always compile C code"
 	l_Discard_save_before_compile_dialog: STRING is	"Do not ask again, and always save files before compiling"
 	l_Discard_starting_dialog: STRING is "Don't show this dialog at startup"
-	l_Discard_replace_all_warning_dialog: STRING is "Dont ask me again and always replace all"
 	l_Display_call_stack_warning: STRING is	"Display a warning when the call stack depth reaches:"
 	l_Displayed_buttons_text: STRING is "Displayed buttons"
 	l_Dont_ask_me_again: STRING is		"Do not ask me again"
@@ -526,7 +515,6 @@ feature -- Label texts
 	l_Implementers: STRING is			"implementers"
 	l_Inactive_subqueries: STRING is	"Inactive subqueries"
 	l_Index: STRING is					"Index:"
-	l_invariants: STRING is				"invariants"
 	l_Language_type: STRING is			"Language type"
 	l_Library: STRING is				"library"
 	l_Literal_value: STRING is			"Literal Value"
@@ -581,13 +569,10 @@ feature -- Label texts
 	l_Routines: STRING is				"routines"
 	l_Runtime_information_record: STRING is "Run-time information record"
 	l_Same_class_name: STRING is		"---"
-	l_Scope: STRING is 					"Scope"
 	l_Search_backward: STRING is		"Search backwards"
 	l_Search_for: STRING is				"Search for:"
 	l_Search_options_show: STRING is	"Options >>"
-	l_Search_options_hide: STRING is	"Options <<"
-	l_Search_report_show: STRING is		"Report >>"
-	l_Search_report_hide: STRING is 	"Report <<"
+	l_Search_options_hide: STRING is	"Options <<"	
 	l_Set_as_default: STRING is			"Set as default"
 	l_Set_slice_limits: STRING is		"Slice limits"
 	l_Set_slice_limits_desc: STRING is	"Set which values are shown in special objects"
@@ -603,8 +588,7 @@ feature -- Label texts
 	l_Specify_arguments: STRING is		"Specify arguments"
 	l_Stepped: STRING is				"Step completed"
 	l_Stop_point_reached: STRING is		"Breakpoint reached"
-	l_Sub_cluster: STRING is			"Subcluster"
-	l_Sub_clusters: STRING is			"Subclusters"
+	l_Sub_cluster: STRING is			"Sub-cluster"
 	l_Subquery: STRING is				"Define new subquery"
 	l_Suppliers: STRING is				"suppliers"
 	l_Switch_num_format: STRING is 		"Switch numerical formating"
@@ -634,18 +618,14 @@ feature -- Label texts
 	l_Unknown_class_name: STRING is		"Unknown class name"
 	l_Use_existing_ace: STRING is		"Open existing Ace (control file)"
 	l_Use_existing_profile: STRING is	"Use existing profile: "
-	l_Use_regular_expression: STRING is "Use regular expression"
 	l_Use_wildcards: STRING is			"Use wildcards"
 	l_Use_wizard: STRING is 			"Create a new project"
 	l_Value: STRING is					"Value"
-	l_Whole_project: STRING is			"Whole project"
 	l_Whole_word: STRING is				"Whole word"
 	l_Windows_only: STRING is			"(Windows only)"
 	l_Workbench_mode: STRING is 		"Workbench mode"
 	l_Working_formatter: STRING is		"Extracting "
-	-- Jason Wei
-	l_Tab_external_output: STRING is    "External output"
-	-- Jason Wei
+
 feature -- Stone names
 
 	s_Class_stone: STRING is			"Class "
@@ -658,9 +638,7 @@ feature -- Title part
 		once
 			Result := "About " + Workbench_name
 		end
-	t_Add_search_scope: STRING is				"Add Search Scope"
 	t_Alias: STRING is							"Alias"
-	t_Breakpoints_tool: STRING is				"Breakpoints"
 	t_Call_stack_tool: STRING is				"Call Stack"
 	t_Calling_convention: STRING is				"Calling Convention"
 	t_Choose_ace_file: STRING is 				"Choose an Ace File"
@@ -715,6 +693,7 @@ feature -- Title part
 	t_Select_class: STRING is					"Select Class"
 	t_Select_cluster: STRING is					"Select Cluster"
 	t_Select_feature: STRING is					"Select Feature"
+	t_Select_location: STRING is				"Select Location"
 	t_Search_tool: STRING is					"Search"
 	t_Select_a_file: STRING is					"Select a File"
 	t_Select_a_directory: STRING is				"Select a Directory"
@@ -862,7 +841,7 @@ feature -- Title part
 feature -- Description texts
 
 	e_Add_exported_feature: STRING is	"Add a new feature to this dynamic library definition"
-	e_Bkpt_info: STRING is				"Show/Hide information about breakpoints"
+	e_Bkpt_info: STRING is				"Display information about breakpoints"
 	e_Check_exports: STRING is			"Check the validity of the library definition"
 	e_Compilation_failed: STRING is		"Compilation failed"
 	e_Compilation_succeeded: STRING is	"Compilation succeeded"
@@ -936,7 +915,6 @@ feature -- Description texts
 	e_Undo: STRING is					"Undo"
 	e_Up_to_date: STRING is				"Executable is up-to-date"
 	e_Unify_stone: STRING is			"Link the context tool to the other components"
-	e_Terminate_c_compilation: STRING is "Terminate running C compilation"
 
 feature -- Wizard texts
 

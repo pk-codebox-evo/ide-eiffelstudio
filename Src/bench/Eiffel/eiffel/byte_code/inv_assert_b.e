@@ -8,15 +8,7 @@ class INV_ASSERT_B
 inherit
 	ASSERT_B
 		redefine
-			generate, process
-		end
-	
-feature -- Visitor
-
-	process (v: BYTE_NODE_VISITOR) is
-			-- Process current element.
-		do
-			v.process_inv_assert_b (Current)
+			generate
 		end
 	
 feature 

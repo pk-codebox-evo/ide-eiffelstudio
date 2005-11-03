@@ -47,16 +47,6 @@ inherit
 		undefine
 			is_equal, copy, default_create
 		end
-	
-	SHARED_EIFNET_DEBUGGER
-		undefine
-			is_equal, copy, default_create
-		end
-
-	SHARED_EIFNET_DEBUG_VALUE_FACTORY		
-		undefine
-			default_create, copy, is_equal
-		end	
 
 	EB_VISION2_FACILITIES
 		undefine
@@ -72,11 +62,6 @@ inherit
 		undefine
 			default_create, copy, is_equal
 		end
-		
-	DEBUG_VALUE_EXPORTER		
-		undefine
-			default_create, copy, is_equal
-		end
 
 feature {NONE} -- Initialization
 
@@ -89,8 +74,6 @@ feature {NONE} -- Initialization
 			display_onces := False
 
 			set_object_spec_slices (min_slice_ref.item, max_slice_ref.item)
-			
-			create compute_grid_row_completed_action
 
 			tool := ot
 		end
@@ -136,6 +119,21 @@ feature -- Recycling
 		end
 
 feature {ES_OBJECTS_GRID_MANAGER} -- Row attachement
+
+	attach_as_subrow (a_parent_row: EV_GRID_ROW) is
+		require
+			a_parent_row /= Void
+		local
+			i: INTEGER
+			g: EV_GRID
+		do
+			g := a_parent_row.parent
+			i := a_parent_row.index + a_parent_row.subrow_count_recursive + 1
+			g.insert_new_row_parented (i, a_parent_row)
+			attach_to_row (g.row (i))
+		ensure
+			row.parent_row = a_parent_row
+		end
 		
 	attach_to_row (a_row: EV_GRID_ROW) is
 		require
@@ -148,10 +146,7 @@ feature {ES_OBJECTS_GRID_MANAGER} -- Row attachement
 			row_items_filled := False
 			row_attributes_filled := False
 			row_onces_filled := False
-			if row.parent /= Void then
-				row.clear
-				row.set_background_color (Void)
-			end
+
 			compute_grid_display_done := False
 		ensure
 			attached_to_row: row /= Void
@@ -181,7 +176,6 @@ feature {ES_OBJECTS_GRID_MANAGER} -- Row attachement
 				grid_remove_and_clear_subrows_from (row)
 				row.ensure_non_expandable
 				row.clear
-				row.set_background_color (Void)
 			end
 
 			expand_actions.wipe_out
@@ -247,15 +241,15 @@ feature -- Query
 
 	text_data_for_clipboard: STRING is
 		local
-			dv: DUMP_VALUE
+			dv: ABSTRACT_DEBUG_VALUE
 		do
 			create Result.make (10)
 			if object_name /= Void then
 				Result.append_string (object_name + ": ")
 			end
-			dv := associated_dump_value
+			dv := associated_debug_value
 			if dv /= Void then
-				Result.append_string (dv.full_output)
+				Result.append_string (dv.dump_value.full_output)
 			end
 		end
 
@@ -283,7 +277,7 @@ feature -- Query
 		deferred
 		end
 
-	associated_dump_value: DUMP_VALUE is
+	associated_debug_value: ABSTRACT_DEBUG_VALUE is
 		deferred
 		end
 
@@ -329,7 +323,7 @@ feature -- Pick and Drop
 			end
 		end
 
-	object_stone: STONE is
+	object_stone: OBJECT_STONE is
 		do
 			if not object_stone_properties_computed then
 				get_object_stone_properties
@@ -398,12 +392,7 @@ feature -- Properties change
 
 	refresh_spec_items (vl, vu: INTEGER) is
 			-- Refresh special items with new slices range [vl:vu]
-		local
-			g: EV_GRID
-			old_r: INTEGER
 		do
-			g := row.parent
-			old_r := g.first_visible_row.index
 			set_object_spec_slices (vl, vu)
 			if row /= Void then
 				row_attributes_filled := False
@@ -411,9 +400,6 @@ feature -- Properties change
 				if attributes_row /= Void then
 					fill_attributes (attributes_row)
 				end
-			end
-			if old_r <= g.row_count then
-				g.set_first_visible_row (old_r)
 			end
 		end
 
@@ -433,7 +419,7 @@ feature -- Graphical changes
 		do
 			if not compute_grid_display_done then
 				if application.is_running and then application.is_stopped then
-					compute_grid_row
+					compute_grid_display
 				else
 --					set_name (object_name)
 --					ev_application.idle_actions.extend_kamikaze (agent parent_grid.remove_and_clear_all_rows)
@@ -445,14 +431,6 @@ feature -- Graphical changes
 		ensure
 			result_not_void_if_stopped: (application.is_running and then application.is_stopped) implies Result /= Void
 		end
-
-	compute_grid_row is					
-		do
-			compute_grid_display
-			compute_grid_row_completed_action.call (Void) -- call ([Current])
-		end
-		
-	compute_grid_row_completed_action: EV_NOTIFY_ACTION_SEQUENCE -- [TUPLE [ES_OBJECTS_GRID_LINE]]
 
 	compute_grid_display is
 			-- Compute the grid display related to current Line
@@ -679,7 +657,6 @@ feature {NONE} -- Implementation
 			Result.put (Pixmaps.Icon_external_symbol, External_reference_value)
 			Result.put (Pixmaps.Icon_static_external_symbol, Static_external_reference_value)
 			Result.put (Pixmaps.Icon_static_object_symbol, Static_reference_value)
-			Result.put (pixmaps.small_pixmaps.icon_dbg_error, Exception_message_value)
 			Result.put (pixmaps.small_pixmaps.icon_dbg_error, Error_message_value)
 		end
 
@@ -735,14 +712,9 @@ feature {NONE} -- Filling
 		
 	on_slice_double_click is
 			-- Action triggered by double clicking on the slice limit row
-		local
-			os: OBJECT_STONE
 		do
 			if tool.slices_cmd /= Void then
-				os ?= object_stone
-				if os /= Void then
-					tool.slices_cmd.drop_object_stone (os)
-				end
+				tool.slices_cmd.drop_object_stone (object_stone)
 			end
 		end
 
@@ -830,7 +802,6 @@ feature {NONE} -- Filling
 			es_glab: EV_GRID_LABEL_ITEM
 
 			vlist: DS_LIST [ABSTRACT_DEBUG_VALUE]
-			l_row_index: INTEGER
 		do
 			row_attributes_filled := True
 				-- We remove the dummy item.
@@ -841,21 +812,17 @@ feature {NONE} -- Filling
 				check
 					vlist /= Void
 				end
-				grid := attributes_row.parent
-				
 				from
-					l_row_index := a_row.index
-					a_row.insert_subrows (vlist.count, 1)
 					list_cursor := vlist.new_cursor
 					list_cursor.start
 				until
 					list_cursor.after
 				loop
-					l_row_index := l_row_index + 1
-					attach_debug_value_from_line_to_grid_row (grid.row (l_row_index), list_cursor.item, Current)
+					add_debug_value_to_grid_row (a_row, list_cursor.item)
 					list_cursor.forth
 				end
 				if object_is_special_value then
+					grid := attributes_row.parent
 					if object_spec_lower > 0 then
 						es_glab := slice_label_item (Interface_names.l_More_items)
 						if object_spec_lower > object_spec_capacity then
@@ -890,7 +857,6 @@ feature {NONE} -- Filling
 			onces_not_filled_yet: not row_onces_filled
 		local
 			flist: LIST [E_FEATURE]
-			l_once_values: ARRAY [ABSTRACT_DEBUG_VALUE]
 		do
 			row_onces_filled := True
 
@@ -901,210 +867,164 @@ feature {NONE} -- Filling
 				flist /= Void and then not flist.is_empty
 			end
 
-			if not flist.is_empty then
-				if Application.is_dotnet then
-					l_once_values := dotnet_onces_values (flist)
-				else
-					l_once_values := classic_onces_values (flist)
-				end
-				fill_onces_with_values (a_row, l_once_values)
+			if Application.is_dotnet then
+				dotnet_fill_onces_with_list (a_row, flist, associated_debug_value)
+			else
+				classic_fill_onces_with_list (a_row, flist, associated_debug_value)
 			end
-
 			if a_row.is_expandable and then not a_row.is_expanded then
 				a_row.expand
 			end			
 		end
 
-	classic_onces_values (flist: LIST [E_FEATURE]): ARRAY [ABSTRACT_DEBUG_VALUE] is
-		require
-			flist_not_empty: flist /= Void and then not flist.is_empty
+	classic_fill_onces_with_list (a_row: EV_GRID_ROW; a_once_list: LIST [E_FEATURE]; dv: ABSTRACT_DEBUG_VALUE) is
+			-- Fill `a_row' with the once functions `a_once_list'.
 		local
-			l_dump: DUMP_VALUE
-			i: INTEGER
-			err_dv: DUMMY_MESSAGE_DEBUG_VALUE
+			r: INTEGER
+			glab: EV_GRID_LABEL_ITEM
+			grid: EV_GRID
+
 			once_r: ONCE_REQUEST
+			flist: LIST [E_FEATURE]
 			odv: ABSTRACT_DEBUG_VALUE
 			l_feat: E_FEATURE
-			l_addr: STRING
-			l_class: CLASS_C
 		do
-			l_dump := associated_dump_value
-			check associated_dump_value /= Void end
+			grid := a_row.parent
+			r := a_row.index + a_row.subrow_count + 1
 
-			if l_dump /= Void then
-				l_addr := l_dump.address
-				l_class := l_dump.dynamic_class
-			else
-				l_addr := object_address
-				l_class := object_dynamic_class
-			end
+			once_r := Application.debug_info.Once_request
+			flist := a_once_list
 			from
-				once_r := Application.debug_info.Once_request
-				i := 1
-				create Result.make (i, i + flist.count - 1)
 				flist.start
 			until
 				flist.after
 			loop
 				l_feat := flist.item
 				if once_r.already_called (l_feat) then
-					fixme ("[
-								JFIAT: update the runtime to avoid evaluate the once
-								For now, we evaluate the once function as any expression
-								which is not very smart/efficient
-							]")
 --					odv := once_r.once_result (l_feat)
 --					l_item := debug_value_to_tree_item (odv)
+
+					fixme ("JFIAT: update the runtime to avoid evaluate the once")
+					
 					if l_feat.argument_count > 0 then
-						create err_dv.make_with_name  (l_feat.name)
-						err_dv.set_message ("Could not evaluate once with arguments...")
-						odv := err_dv
+						grid.insert_new_row_parented (r, a_row)
+
+						glab := name_label_item (l_feat.name)
+						grid.set_item (Col_name_index, r, glab)
+
+						glab := type_label_item ("could not evaluate once with arguments...")
+						grid.set_item (Col_type_index, r, glab)
+
+						grid_cell_set_pixmap (grid.item (Col_pixmap_index, r), Pixmaps.icon_dbg_error)
 					else
-						odv := once_r.once_eval_result (l_addr, l_feat, l_class)
-						if odv /= Void then
-							odv.set_name (l_feat.name)
+						if dv /= Void then
+							odv := once_r.once_eval_result (dv.address, l_feat, dv.dynamic_class)
 						else
-							create err_dv.make_with_name  (l_feat.name)
-							err_dv.set_message ("Could not retrieve information (once is being called or once failed)")
+							odv := once_r.once_eval_result (object_address, l_feat, object_dynamic_class)
+						end
+						if odv /= Void then
+							add_debug_value_to_grid_row (a_row, odv)
+						else
+							grid.insert_new_row_parented (r, a_row)
+
+							glab := name_label_item (l_feat.name)
+							grid.set_item (Col_name_index, r, glab)
+
+							glab := type_label_item ("unable to get value !")
+							grid.set_item (Col_type_index, r, glab)
+
+							grid_cell_set_pixmap (grid.item (Col_pixmap_index, r), Pixmaps.icon_dbg_error)
 						end
 					end						
 				else
-					create err_dv.make_with_name  (l_feat.name)
-					err_dv.set_message (Interface_names.l_Not_yet_called)
-					err_dv.set_display_kind (Void_value)
-					odv := err_dv
+					grid.insert_new_row_parented (r, a_row)
+
+					glab := name_label_item (l_feat.name)
+					grid.set_item (Col_name_index, r, glab)
+
+					glab := type_label_item (Interface_names.l_Not_yet_called)
+					grid.set_item (Col_type_index, r, glab)
+
+					grid_cell_set_pixmap (grid.item (Col_pixmap_index, r), Pixmaps.Icon_void_object)
 				end
-				Result.put (odv, i)
-				i := i + 1
+				r := r + 1
 				flist.forth
 			end
 		end
-		
-	dotnet_onces_values (flist: LIST [E_FEATURE]): ARRAY [ABSTRACT_DEBUG_VALUE] is
-		require
-			flist_not_empty: flist /= Void and then not flist.is_empty
-		local
-			l_class: CLASS_C
-			l_feat: E_FEATURE
-			i: INTEGER
-			err_dv: DUMMY_MESSAGE_DEBUG_VALUE
-			exc_dv: EXCEPTION_DEBUG_VALUE
-			odv: ABSTRACT_DEBUG_VALUE
-			icdv: ICOR_DEBUG_VALUE
-			l_icdframe: ICOR_DEBUG_FRAME
-			l_eifnet_debugger: like eifnet_debugger
-		do
-			l_eifnet_debugger := Eifnet_debugger
-			l_icdframe := l_eifnet_debugger.current_stack_icor_debug_frame
-			from
-				i := 1
-				create Result.make (i, i + flist.count - 1)
-				flist.start
-			until
-				flist.after
-			loop
-					--| Get the once's value
-				l_feat := flist.item
-				check l_feat.type /= Void end
-				if l_feat.argument_count > 0 then
-					create err_dv.make_with_name  (l_feat.name)
-					err_dv.set_message ("Could not evaluate once with arguments...")
-					odv := err_dv
-				else
-					l_class := l_feat.written_class
-					icdv := l_eifnet_debugger.once_function_value (l_icdframe, l_class, l_feat)
-					if l_eifnet_debugger.last_once_available then
-						if not l_eifnet_debugger.last_once_already_called then
-							create err_dv.make_with_name  (l_feat.name)
-							err_dv.set_message (Interface_names.l_Not_yet_called)
-							err_dv.set_display_kind (Void_value)
-							odv := err_dv
-						elseif l_eifnet_debugger.last_once_failed then
-							create exc_dv.make_with_name (l_feat.name)
-							exc_dv.set_tag ("An exception occurred during the once execution")
-							exc_dv.set_exception_value (debug_value_from_icdv (icdv, Void))
---							err_dv.set_display_kind (Exception_message_value)
-							odv := exc_dv
-						elseif icdv /= Void then
-							odv := debug_value_from_icdv (icdv, l_feat.type.associated_class)
-							odv.set_name (l_feat.name)
-						else
-								--| This case occurs when we enter into the once's code
-								--| then the once is Called
-								--| but the once's data are not yet initialized and set
-								--| then the once' value is not yet available
-							create err_dv.make_with_name  (l_feat.name)
-							err_dv.set_message ("Could not retrieve information (once is being called)")
-							err_dv.set_display_kind (Void_value)
-							odv := err_dv
-						end
-					else
-						create err_dv.make_with_name  (l_feat.name)
-						err_dv.set_message (Interface_names.l_Not_yet_called)
-						err_dv.set_display_kind (Void_value)
-						odv := err_dv
-					end
-				end
-				Result.put (odv, i)
-				i := i + 1
-				flist.forth
-			end			
-		end
 
-	dotnet_fill_onces_with_list (a_row: EV_GRID_ROW; a_once_list: LIST [E_FEATURE]) is
+	dotnet_fill_onces_with_list (a_row: EV_GRID_ROW; a_once_list: LIST [E_FEATURE]; dv: ABSTRACT_DEBUG_VALUE) is
 			-- Fill `a_parent' with the once functions `a_once_list'.
 		local
-			flist: LIST [E_FEATURE]
-			l_objs: ARRAY [ABSTRACT_DEBUG_VALUE]
-		do
-			flist := a_once_list
-			if not flist.is_empty then
-				l_objs := dotnet_onces_values (flist)
-				fill_onces_with_values (a_row, l_objs)
-			end
-		end
-
-	fill_onces_with_values (a_row: EV_GRID_ROW; a_once_values: ARRAY [ABSTRACT_DEBUG_VALUE]) is
-		local
-			i, r: INTEGER
+			r: INTEGER
+			glab: EV_GRID_LABEL_ITEM
 			grid: EV_GRID
+
+			flist: LIST [E_FEATURE]
 			odv: ABSTRACT_DEBUG_VALUE
+			l_abs_value: ABSTRACT_DEBUG_VALUE
+
+			l_dotnet_ref_value: EIFNET_DEBUG_REFERENCE_VALUE
+			l_feat: E_FEATURE
 		do
-			if a_once_values /= Void and then not a_once_values.is_empty then
-				grid := a_row.parent
-				from
-					r := a_row.subrow_count + 1
-					a_row.insert_subrows (a_once_values.count, r)
-					r := a_row.index + r
-					i := a_once_values.lower
-				until
-					i > a_once_values.upper
-				loop
-					odv := a_once_values [i]
-						--| Add the once's value to the grid.
-					check odv /= Void end
-					attach_debug_value_from_line_to_grid_row (grid.row (r), odv, Current)
-					i := i + 1
-					r := r + 1
+
+			grid := a_row.parent
+			r := a_row.index + a_row.subrow_count + 1
+
+			flist := a_once_list
+			if dv /= Void then
+				l_abs_value := dv
+			else
+				l_abs_value := associated_debug_value
+			end
+			check
+				l_abs_value /= Void
+			end
+			l_dotnet_ref_value ?= l_abs_value
+
+-- FIXME jfiat 2004-07-06: Maybe we should have EIFNET_DEBUG_STRING_VALUE conform to EIFNET_DEBUG_REFERENCE_VALUE
+-- in the futur, we should make this available
+
+			if l_dotnet_ref_value /= Void and not flist.is_empty then
+					--| Eiffel dotnet |--
+				l_dotnet_ref_value.get_object_value
+				if l_dotnet_ref_value.has_object_value then
+					from
+						flist.start
+					until
+						flist.after
+					loop
+						l_feat := flist.item
+						if dv /= Void then
+							odv := l_dotnet_ref_value.once_function_value (l_feat)
+						end
+						if odv /= Void then
+							add_debug_value_to_grid_row (a_row, odv)
+						else
+							grid.insert_new_row_parented (r, a_row)
+	
+							glab := name_label_item (l_feat.name)
+							grid.set_item (Col_name_index, r, glab)
+	
+							glab := type_label_item (Interface_names.l_Not_yet_called)
+							grid.set_item (Col_type_index, r, glab)
+	
+							grid_cell_set_pixmap (grid.item (Col_pixmap_index, r), Pixmaps.Icon_void_object)
+						end
+						r := r + 1
+						flist.forth
+					end
+					l_dotnet_ref_value.release_object_value				
 				end
 			end
 		end
 
-	attach_debug_value_from_line_to_grid_row (a_row: EV_GRID_ROW; dv: ABSTRACT_DEBUG_VALUE; a_line: ES_OBJECTS_GRID_LINE) is
-			-- attach `dv' to row `a_row'
+	add_debug_value_to_grid_row (a_parent_row: EV_GRID_ROW; dv: ABSTRACT_DEBUG_VALUE) is
+			-- Create a row for `dv' and insert it in the Grid with `a_parent_row' as parent
 		require
-			debug_value_not_void: dv /= Void
+			dv /= Void
 		do
-			tool.attach_debug_value_from_line_to_grid_row (a_row, dv, a_line)
+			tool.add_debug_value_to_grid_row (a_parent_row, dv)
 		end
-
-	attach_debug_value_to_grid_row (a_row: EV_GRID_ROW; dv: ABSTRACT_DEBUG_VALUE) is
-			-- attach `dv' to row `a_row'
-		require
-			debug_value_not_void: dv /= Void
-		do
-			tool.attach_debug_value_to_grid_row (a_row, dv)
-		end		
 
 feature {NONE} -- Implementation
 		

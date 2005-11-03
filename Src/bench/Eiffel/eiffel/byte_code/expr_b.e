@@ -1,7 +1,4 @@
-indexing
-	description: "An Eiffel expression."
-	date: "$Date$"
-	revision: "$Revision$"
+-- An Eiffel expression.
 
 deferred class EXPR_B
 
@@ -56,13 +53,6 @@ feature -- Il code generation
 			-- (In the latter case it's better to avoid creating a temporary
 			-- variable to reduce stack memory footprint and register pressure.)
 		do
-		end
-
-	generate_il_value is
-			-- Generate code that evaluates expression and puts its value
-			-- (rather than a pointer to it) to the evaluation stack.
-		do
-			generate_il
 		end
 
 	generate_il_metamorphose (a_type, target_type: TYPE_I; real_metamorphose: BOOLEAN) is
@@ -148,16 +138,6 @@ feature -- Il code generation
 			end
 		end
 
-feature -- Status report
-
-	is_constant_expression: BOOLEAN is
-			-- Does current represent a node which is constant?
-			-- Case of manifest constants, and tuples/arrays with
-			-- constant expressions.
-		do
-			-- Default: False
-		end
-		
 feature -- C generation
 
 	get_register is

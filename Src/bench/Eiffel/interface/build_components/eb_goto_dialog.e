@@ -9,14 +9,8 @@ class
 
 inherit
 	EB_GOTO_DIALOG_IMP
-	
-	EB_CONSTANTS
-		export
-			{NONE} all
-		undefine
-			default_create, copy, is_equal
-		end
-	
+
+
 create
 	make
 
@@ -49,7 +43,6 @@ feature {NONE} -- Initialization
 			go_button.select_actions.extend (agent goto_line)
 			line_number_text.key_press_actions.extend (agent on_key_pressed)
 			line_number_text.change_actions.extend (agent on_value_changed (?))
-			set_icon_pixmap (pixmaps.icon_dialog_window)
 		end
 
 	initialize_line_number_label_text is

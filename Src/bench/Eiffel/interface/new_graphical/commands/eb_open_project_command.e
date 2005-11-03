@@ -120,14 +120,14 @@ feature -- Execution
 	execute is
 			-- Popup a dialog for the user to choose the project he wants to open,
 		local
-			fod: EB_FILE_OPEN_DIALOG
+			fod: EV_FILE_OPEN_DIALOG
 			environment_variable: EXECUTION_ENVIRONMENT
 			last_directory_opened: STRING
 		do
 				-- User just asked for an open file dialog,
 				-- and we set it on the last opened directory.
 			create environment_variable
-			create fod.make_with_preference (preferences.dialog_data.last_opened_project_directory_preference)
+			create fod
 			last_directory_opened := environment_variable.get (Studio_Directory_List)
 			if last_directory_opened /= Void then
 				fod.set_start_directory (last_directory_opened.substring (1,last_directory_opened.index_of(';',1) -1 ))
@@ -140,7 +140,7 @@ feature -- Execution
 
 feature {NONE} -- Callbacks
 
-	file_choice_callback (argument: EB_FILE_OPEN_DIALOG) is
+	file_choice_callback (argument: EV_FILE_OPEN_DIALOG) is
 			-- This is a callback from the name chooser.
 			-- We get the project name and then open the project, if possible
 		local
@@ -269,7 +269,6 @@ feature {NONE} -- Project Initialization
 				window_manager.display_message (title)
 				Recent_projects_manager.save_environment
 	
-				--| IEK With project session handling this code is no longer needed, remove when fully integrated.
 				if l_display_system_info then
 						-- We print text in the project_tool text concerning the system
 						-- because we were successful retrieving the project without

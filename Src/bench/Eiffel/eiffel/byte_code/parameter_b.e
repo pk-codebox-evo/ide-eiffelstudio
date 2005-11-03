@@ -14,14 +14,6 @@ inherit
 			allocates_memory, generate_il
 		end;
 	
-feature -- Visitor
-
-	process (v: BYTE_NODE_VISITOR) is
-			-- Process current element.
-		do
-			v.process_parameter_b (Current)
-		end
-	
 feature 
 
 	expression: EXPR_B;
@@ -100,20 +92,8 @@ feature -- IL code generation
 
 	generate_il is
 			-- Generate IL code for `expression'
-		local
-			source_type: TYPE_I
-			target_type: TYPE_I
-			box_b: BOX_B
 		do
-			expression.generate_il_value
-			target_type := context.real_type (attachment_type)
-			source_type := context.real_type (expression.type)
-			if target_type.is_reference and then source_type.is_expanded then
-				box_b ?= expression
-				if box_b = Void then
-					il_generator.generate_metamorphose (source_type)
-				end
-			end
+			expression.generate_il
 		end
 
 feature -- Byte code generation

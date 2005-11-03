@@ -12,16 +12,27 @@ inherit
 		redefine
 			current_call_stack
 		end
+		
+create {APPLICATION_STATUS_EXPORTER}
 
-create {APPLICATION_EXECUTION}
 	make
+	
+feature {NONE} -- Initialization
 
-feature {APPLICATION_STATUS_EXPORTER} -- Initialization
+	make is
+			-- Create Current
+		do
+			initialize
+		end		
+
+feature {STOPPED_HDLR} -- Initialization
 
 	set (n: STRING; obj: STRING; ot, dt, offs, reas: INTEGER) is
 			-- Set the various attributes identifying current 
 			-- position in source code.
 		local
+--			stack_num: INTEGER
+			cont_request: EWB_REQUEST
 			ccs: EIFFEL_CALL_STACK_CLASSIC
 		do
 			object_address := obj
@@ -54,7 +65,10 @@ feature {APPLICATION_STATUS_EXPORTER} -- Initialization
 				-- application has stopped to take into account the
 				-- new breakpoints. So let's send the new breakpoints
 				-- to the application and resume it.
-				Application.continue_ignoring_kept_objects
+				cont_request := Application.imp_classic.cont_request
+				cont_request.send_breakpoints
+				set_is_stopped (False)
+				cont_request.send_rqst_3_integer (Rqst_resume, Resume_cont, Application.interrupt_number, application.critical_stack_depth)
 			end
 		ensure
 			valid_break_index: (break_index = 0 implies (reason = Pg_new_breakpoint or reason = Pg_raise)) or (break_index > 0)
@@ -71,17 +85,6 @@ feature {NONE} -- CallStack Impl
 
 feature -- Values
 
-	exception_occurred: BOOLEAN is
-		do
-			Result := exception_code /= 0 or exception_tag /= Void
-		end
-
-	exception_message: STRING is
-			-- For now, the exception message for classic system is the exception tag.
-		do
-			Result := exception_tag
-		end
-		
 	current_call_stack: EIFFEL_CALL_STACK_CLASSIC
 
 	refresh_current_thread_id is

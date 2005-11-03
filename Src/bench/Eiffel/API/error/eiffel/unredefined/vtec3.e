@@ -1,18 +1,14 @@
 indexing
 
-	description: "Error for expanded type based on a class with external ancestor(s).";
+	description: 
+		"Error for invalid expanded local type.";
 	date: "$Date$";
-	revision: "$Revision$"
+	revision: "$Revision $"
 
 class VTEC3 
 
 inherit
 
-	VTEC
+	VTEC2
 
-feature -- Properties
-
-	subcode: INTEGER is 3
-			-- Error subcode
-
-end
+end -- class VTEC3

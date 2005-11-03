@@ -15,8 +15,6 @@ inherit
 	EB_CONSTANTS
 
 	SHARED_APPLICATION_EXECUTION
-	
-	EB_SHARED_DEBUG_TOOLS
 
 create
 	make
@@ -132,15 +130,6 @@ feature -- Status setting
 			text_area.set_focus
 		end
 
--- Jason Wei
-feature -- Status reporting
-	text_is_fully_loaded: BOOLEAN is
-			-- Has text loading finished?
-		do
-			Result := text_area.text_is_fully_loaded
-		end		
--- Jason Wei
-
 feature -- Access
 
 	widget: EV_WIDGET
@@ -221,7 +210,7 @@ feature {NONE} -- Implementation
 			else
 				Application.set_breakpoint (st.routine, st.index)
 			end
-			debugger_manager.notify_breakpoints_changes
+			output_manager.display_stop_points
 		end
 		
 	drop_class (st: CLASSI_STONE) is

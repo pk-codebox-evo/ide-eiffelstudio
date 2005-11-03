@@ -78,7 +78,7 @@ inherit
 create
 	make
 
-feature -- Initialization	
+feature -- Initialization
 
 	make is
 			-- Initialize the command, create a couple of requests and windows.
@@ -197,7 +197,7 @@ feature -- Execution
 	c_compile is
 			-- Freeze system.
 		do
-			if Eiffel_project.initialized then				
+			if Eiffel_project.initialized then
 				Eiffel_project.call_finish_freezing (True)
 --				Application.set_execution_mode (User_stop_points)
 --				launch_application
@@ -370,6 +370,7 @@ feature -- Execution
 			-- Continue the execution of the program (stepping ...)
 		local
 			status: APPLICATION_STATUS
+			kept_objects: LINKED_SET [STRING]
 		do
 			check debugger_running_and_stopped: Application.is_running and then Application.is_stopped end
 			status := Application.status
@@ -379,7 +380,17 @@ debug("DEBUGGER")
 io.error.put_string (generator)
 io.error.put_string (": Continue execution%N")
 end
-				Application.continue
+					-- Ask the application to wean objects the
+					-- debugger doesn't need anymore.
+--| FIXME ARNAUD
+--					kept_objects := window_manager.object_tool_mgr.objects_kept
+--					kept_objects.merge (debug_target.kept_objects)
+				if debugger_manager /= Void then
+					kept_objects := debugger_manager.kept_objects
+				else
+					create kept_objects.make
+				end
+				Application.continue (kept_objects)
 --					window_manager.object_tool_mgr.hang_on
 --					if status.e_feature /= Void then
 --						window_manager.feature_tool_mgr.show_stoppoint 
@@ -439,7 +450,7 @@ end
 				if Application.is_running then
 					output_text.add_string ("System is running")
 					output_text.add_new_line
-					Application.on_application_launched
+					debugger_manager.on_application_launched
 				else
 						-- Something went wrong
 					if Eiffel_system.system.il_generation then						

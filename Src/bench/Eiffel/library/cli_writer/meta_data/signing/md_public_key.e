@@ -8,26 +8,43 @@ class
 
 create
 	make_from_file
-
+	
 feature {NONE} -- Initialization
 
-	make_from_file (a_file_name: STRING; a_signing: MD_STRONG_NAME) is
+	make_from_file (a_file_name: STRING) is
 			-- Create a public key from private key stored in `a_file_name'.
 		require
 			a_file_name_not_void: a_file_name /= Void
 			a_file_name_not_empty: not a_file_name.is_empty
-			a_signing_not_void: a_signing /= Void
-			a_signing_exists: a_signing.exists
+			key_signing_facility_available: (create {MD_STRONG_NAME}.make).exists
+		local
+			l_key_size: INTEGER
+			l_result: INTEGER
+			l_ptr: POINTER
 		do
 				-- Read key pair data from `a_file_name'
 			key_pair := read_key_pair_from_file (a_file_name)
-
+			
 			if is_valid then
 					-- Read public key from `l_orig_key' key pair.
-				item := a_signing.public_key (key_pair)
+				l_result := {MD_STRONG_NAME}.strong_name_get_public_key (default_pointer,
+					key_pair.item, key_pair.count, $l_ptr, $l_key_size)
+	
+					-- Initializes `item' with retrieved data.		
+				create item.make (l_key_size)
+				item.item.memory_copy (l_ptr, l_key_size)
+
+					-- Free allocated data from call to `strong_name_get_public_key'.
+				{MD_STRONG_NAME}.strong_name_free_buffer (l_ptr)
 
 					-- Get public key token.
-				public_key_token := a_signing.public_key_token (item)
+				l_result := {MD_STRONG_NAME}.strong_name_token_from_public_key (item.item,
+					item.count, $l_ptr, $l_key_size)
+				create public_key_token.make (l_key_size)
+				public_key_token.item.memory_copy (l_ptr, l_key_size)
+
+					-- Free allocated data from call to `strong_name_token_from_public_key'.
+				{MD_STRONG_NAME}.strong_name_free_buffer (l_ptr)
 			else
 					-- Dummy empty key.
 				create item.make (0)
@@ -38,10 +55,10 @@ feature -- Access
 
 	item: MANAGED_POINTER
 			-- Store public key data.
-
+			
 	key_pair: MANAGED_POINTER
 			-- Key pair that generated Current.
-
+			
 	public_key_token: MANAGED_POINTER
 			-- Public key token of Current.
 
@@ -69,7 +86,7 @@ feature -- Access
 			end
 			Result.to_lower
 		end
-
+		
 feature {NONE} -- Implementation
 
 	read_key_pair_from_file (a_file_name: STRING): MANAGED_POINTER is
@@ -93,7 +110,7 @@ feature {NONE} -- Implementation
 			else
 					-- We could not read key pair.
 				is_valid := False
-
+				
 					--| FIXME: Manu 05/21/2002: we need to generate an error.
 				check
 					not_yet_implemented: False
@@ -103,7 +120,7 @@ feature {NONE} -- Implementation
 			retried := True
 			retry
 		end
-
+		
 invariant
 	item_not_void: item /= Void
 	key_pair_not_void: key_pair /= Void

@@ -72,14 +72,6 @@ feature {NONE} -- Initialization
 			end
 		end
 
-feature -- Visitor
-
-	process (v: BYTE_NODE_VISITOR) is
-			-- Process current element.
-		do
-			v.process_feature_b (Current)
-		end
-	
 feature -- Access
 
 	type: TYPE_I
@@ -193,11 +185,11 @@ feature -- IL code generation
 			is_special_handled: BOOLEAN
 			invariant_checked: BOOLEAN
 			class_c: CLASS_C
+			local_number: INTEGER
 			real_metamorphose: BOOLEAN
 			need_generation: BOOLEAN
 			target_type: CL_TYPE_I
 			l_count: INTEGER
-			is_call_on_any: BOOLEAN
 		do
 				-- Get type on which call will be performed.
 			cl_type ?= context_type
@@ -240,22 +232,30 @@ feature -- IL code generation
 				if is_first then
 						-- First call in dot expression, we need to generate Current
 						-- only when we do not call a static feature.
-					il_generator.generate_current
-				elseif cl_type.is_basic then
+					if cl_type.is_reference then
+							-- Normal call, we simply push current object.
+						il_generator.generate_current
+					else
+						if real_metamorphose then
+								-- Feature is written in an inherited class of current
+								-- expanded class. We need to box.
+							generate_il_metamorphose (cl_type, target_type, real_metamorphose)
+						end
+					end
+				elseif cl_type.is_expanded then
 						-- A metamorphose is required to perform call.
 					generate_il_metamorphose (cl_type, target_type, real_metamorphose)
 				end
 
 				if invariant_checked then
-					generate_il_call_invariant_leading (cl_type, inv_checked)
-				end
-				
-					-- Box value type if the call is made to the predefined feature from ANY
-					-- This has to be done before calculating feature arguments
-				is_call_on_any := is_any_feature and precursor_type = Void
-				if is_call_on_any and then cl_type.is_true_expanded then
-					il_generator.generate_load_from_address (cl_type)
-					il_generator.generate_metamorphose (cl_type)
+						-- Need two copies of current object in stack
+						-- to perform invariant check before and after
+						-- feature call.
+					il_generator.duplicate_top
+					if inv_checked then
+						il_generator.duplicate_top
+						il_generator.generate_invariant_checking (cl_type)
+					end
 				end
 
 				if class_c.is_special then
@@ -286,23 +286,10 @@ feature -- IL code generation
 							parameters_count_is_two: parameters.count = 2
 						end
 						parameters.i_th (1).generate_il
-						if real_type (parameters.i_th (2).type).is_true_expanded then
+						if parameters.i_th (2).type.is_true_expanded then
 							native_array_class_type.generate_il_put_preparation (cl_type)
 						end
 						parameters.i_th (2).generate_il
-					elseif is_call_on_any then
-							-- Run-time features work on arguments of reference type only
-						from
-							parameters.start
-						until
-							parameters.after
-						loop
-							parameters.item.generate_il
-							if real_type (parameters.item.attachment_type).is_expanded then
-								il_generator.generate_metamorphose (real_type (parameters.item.attachment_type))
-							end
-							parameters.forth
-						end
 					else
 						parameters.generate_il
 					end
@@ -341,27 +328,34 @@ feature -- IL code generation
 				
 				if need_generation then
 						-- Perform call to feature
-					if is_call_on_any then
+					if is_any_feature and precursor_type = Void then
 						generate_il_any_call (target_type, cl_type,
 							cl_type.is_reference or else real_metamorphose)
 					else
-						if cl_type.is_true_expanded then
-							generate_il_normal_call (cl_type, False)
-						else
-							generate_il_normal_call (target_type,
-								cl_type.is_reference or else real_metamorphose) 
-						end
+						generate_il_normal_call (target_type,
+							cl_type.is_reference or else real_metamorphose) 
 					end
 				end
 				if invariant_checked then
-					generate_il_call_invariant_trailing (cl_type, return_type)
+					if type.is_void then
+						il_generator.generate_invariant_checking (cl_type)
+					else
+							-- It is a function and we need to save the result onto
+							-- a local variable.
+						context.add_local (return_type)
+						local_number := context.local_list.count
+						il_generator.put_dummy_local_info (return_type, local_number)
+						il_generator.generate_local_assignment (local_number)
+						il_generator.generate_invariant_checking (cl_type)
+						il_generator.generate_local (local_number)
+					end
 				end
 			end
 		end
 
 feature {NONE} -- IL code generation
 
-	generate_il_any_call (written_type, target_type: CL_TYPE_I; is_virtual: BOOLEAN) is
+	generate_il_any_call (written_type, target_type: TYPE_I; is_virtual: BOOLEAN) is
 			-- Generate call to routine of ANY that works for both ANY and SYSTEM_OBJECT
 		require
 			il_generation: System.il_generation
@@ -372,14 +366,13 @@ feature {NONE} -- IL code generation
 		do
 		end
 
-	generate_il_normal_call (target_type: CL_TYPE_I; is_virtual: BOOLEAN) is
+	generate_il_normal_call (target_type: TYPE_I; is_virtual: BOOLEAN) is
 			-- Normal feature call.
 		require
 			target_type_not_void: target_type /= Void
 		local
 			l_count: INTEGER
 			l_return_type: TYPE_I
-			target_feature_id: like feature_id
 		do
 			if parameters /= Void then
 				l_count := parameters.count
@@ -387,22 +380,15 @@ feature {NONE} -- IL code generation
 
 			l_return_type := context.real_type (type)
 
-			if target_type.is_expanded then
-					-- Generate direct call.
-				target_feature_id := target_type.base_class.feature_of_rout_id (routine_id).feature_id
-			else
-				target_feature_id := feature_id
-			end
-
 			if precursor_type /= Void then
 					-- In IL, if you can call Precursor, it means that parent is
 					-- not expanded and therefore we can safely generate a static
 					-- call to Precursor feature.
 				il_generator.generate_precursor_feature_access (
-					target_type, target_feature_id, l_count, not l_return_type.is_void)
+					target_type, feature_id, l_count, not l_return_type.is_void)
 			else
 				il_generator.generate_feature_access (
-					target_type, target_feature_id, l_count, not l_return_type.is_void,
+					target_type, feature_id, l_count, not l_return_type.is_void,
 					is_virtual)
 			end
 			if System.il_verifiable then

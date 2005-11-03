@@ -435,16 +435,11 @@ feature -- Status report
 
 		result = interface_type_mapping [a_type] as Type;
 		if (result == null) {
-			l_attributes = a_type.GetCustomAttributes (typeof (RT_INTERFACE_TYPE_ATTRIBUTE), false);
+			l_attributes = a_type.GetCustomAttributes (typeof (INTERFACE_TYPE_ATTRIBUTE), false);
 			if (l_attributes != null && l_attributes.Length > 0) {
-				result = ((RT_INTERFACE_TYPE_ATTRIBUTE) l_attributes [0]).class_type;
+				result = ((INTERFACE_TYPE_ATTRIBUTE) l_attributes [0]).class_type;
 			} else {
-				l_attributes = a_type.GetCustomAttributes (typeof (INTERFACE_TYPE_ATTRIBUTE), false);
-				if (l_attributes != null && l_attributes.Length > 0) {
-					result = ((INTERFACE_TYPE_ATTRIBUTE) l_attributes [0]).class_type;
-				} else {
-					result = a_type;
-				}
+				result = a_type;
 			}
 			interface_type_mapping [a_type] = result;
 		}
@@ -563,6 +558,9 @@ feature -- Status report
 		// System.String representation of `o' if it is an Eiffel STRING instance.
 	{
 		String Result = null;
+		Type eiffel_string_type;
+		FieldInfo string_builder_info;
+		StringBuilder builder;
 
 		if (is_eiffel_string (o)) {
 			Result = "\"" + o.ToString () + "\"";

@@ -11,7 +11,7 @@ inherit
 			propagate, print_register, free_register,
 			unanalyze, analyze, analyze_on, generate, generate_on,
 			make_byte_code, allocates_memory, generate_il, need_target,
-			evaluate, is_constant_expression
+			evaluate
 		end
 
 create
@@ -28,14 +28,6 @@ feature {NONE} -- Initialization
 		ensure
 			value_set: value = v
 		end	
-	
-feature -- Visitor
-
-	process (v: BYTE_NODE_VISITOR) is
-			-- Process current element.
-		do
-			v.process_constant_b (Current)
-		end
 	
 feature -- Evaluation
 
@@ -67,7 +59,7 @@ feature -- Access
 
 feature -- Status
 
-	is_constant_expression, is_constant: BOOLEAN is True
+	is_constant: BOOLEAN is True
 			-- Current is constant
 
 	need_target: BOOLEAN is False

@@ -77,8 +77,8 @@ feature {NONE} -- Initialization
 			accelerator.actions.extend (agent execute)
 		end
 
-feature -- Properties		
-		
+feature -- Properties
+
 	is_precompiling: BOOLEAN is
 			-- Is this compilation a precompilation?
 		do
@@ -133,33 +133,32 @@ feature {NONE} -- Compilation implementation
 						end
 					end
 				end
+
+				tool_resynchronization
 				Degree_output.finish_degree_output
-				tool_resynchronization				
 			end
 		end
 
 	tool_resynchronization is
 			-- Resynchronize class, feature and system tools.
 			-- Clear the format_context buffers.
-		local
-			output_text: STRUCTURED_TEXT
 		do
 				-- Clear the format_context buffers.
 			clear_format_tables
-			window_manager.display_message (Interface_names.d_Resynchronizing_tools)
-			window_manager.display_percentage (0)
+
+				-- Resynchronize windows
+			if progress_dialog /= Void then
+					-- FIXME: maybe this call should be encapsulated in DEGREE_OUTPUT, so
+					-- that we don't need to test against Void.
+				progress_dialog.disable_cancel
+			end
+			Degree_output.put_string (Interface_names.d_Resynchronizing_tools)
 			window_manager.synchronize_all
-			create output_text.make
 			if Workbench.successful then
 				window_manager.display_message (Interface_names.E_compilation_succeeded)
-				if not eiffel_project.freezing_occurred then
-					output_text.add_string (Interface_names.E_compilation_succeeded)
-				end
 			else
 				window_manager.display_message (Interface_names.E_compilation_failed)
-				output_text.add_string (Interface_names.e_compilation_failed)
 			end
-			output_manager.process_text (output_text)
 			Debugger_manager.on_compile_stop
 
 			if dynamic_lib_window_is_valid and then dynamic_lib_window.is_visible then
@@ -167,7 +166,6 @@ feature {NONE} -- Compilation implementation
 			end
 		end
 
-	-- Jason Wei modified the following feature on Aug 29 2005
 	launch_c_compilation is
 			-- Launch the C compilation.
 		local
@@ -182,41 +180,14 @@ feature {NONE} -- Compilation implementation
 			output_text.add_new_line
 	
 			if start_c_compilation and then Eiffel_project.freezing_occurred then
-				output_text.add_string ("Background C compilation launched.")
-				output_text.add_new_line
-					-- Display message.
-				output_manager.process_text (output_text)					
-					
-				Eiffel_project.call_finish_freezing (True)
+					output_text.add_string ("Background C compilation launched.")
+					output_text.add_new_line
+					Eiffel_project.call_finish_freezing (True)
 			end
+
+				-- Display message.
+			output_manager.process_text (output_text)
 		end
-
--------- This is the original version---------------------------------
---	launch_c_compilation is
---			-- Launch the C compilation.
---		local
---			output_text: STRUCTURED_TEXT
---		do
---			create output_text.make
---			if Eiffel_project.freezing_occurred then
---				output_text.add_string ("System had to be frozen to include new externals and/or new agents.")
---				output_text.add_new_line
---			end
---			output_text.add_string ("Eiffel system recompiled")
---			output_text.add_new_line
---	
---			if start_c_compilation and then Eiffel_project.freezing_occurred then
---					output_text.add_string ("Background C compilation launched.")
---					output_text.add_new_line
---					Eiffel_project.call_finish_freezing (True)
---			end
---
---				-- Display message.
---			output_manager.process_text (output_text)
---		end
-
-	-- Jason Wei modified the above feature on Aug 29 2005		
-
 
 	perform_compilation is
 			-- The real compilation. (This is melting.)

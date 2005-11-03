@@ -6,7 +6,7 @@ indexing
 
 class
 	EB_PROFILER_WIZARD_GENERATOR
-
+	
 inherit
 	ANY
 
@@ -14,28 +14,18 @@ inherit
 		export
 			{NONE} all
 		end
-
+		
 	EB_SHARED_ARGUMENTS
 		export
 			{NONE} all
 		end
-
+		
 	SHARED_QUERY_VALUES
 		export
 			{NONE} all
 		end
-
+		
 	EB_CONSTANTS
-		export
-			{NONE} all
-		end
-
-	E_PROFILER_CONSTANTS
-		export
-			{NONE} all
-		end
-
-	SYSTEM_CONSTANTS
 		export
 			{NONE} all
 		end
@@ -53,7 +43,7 @@ feature -- Initialization
 		end
 
 feature -- Access
-
+	
 	last_operation_successful: BOOLEAN
 
 feature -- Basic operations
@@ -65,7 +55,7 @@ feature -- Basic operations
 		local
 			profinfo: STRING
 			compile: STRING
-			l_profiler: STRING
+			profiler: STRING
 			prof_converter: CONVERTER_CALLER
 			conf_load: CONFIGURATION_LOADER
 			prof_invoker: PROFILER_INVOKER
@@ -78,13 +68,13 @@ feature -- Basic operations
 			else
 				compile := "final"
 			end
-			l_profiler := information.runtime_information_type
-			create conf_load.make_and_load (l_profiler)
+			profiler := information.runtime_information_type
+			create conf_load.make_and_load (profiler)
 			if conf_load.error_occurred then
 				add_error_message (Warning_messages.w_Load_configuration)
 				last_operation_successful := False
 			else
-				create prof_invoker.make (l_profiler, current_cmd_line_argument, profinfo, compile)
+				create prof_invoker.make (profiler, current_cmd_line_argument, profinfo, compile)
 				if prof_invoker.must_invoke_profiler then
 					prof_invoker.invoke_profiler
 				end
@@ -111,7 +101,7 @@ feature -- Basic operations
 			retried: BOOLEAN
 		do
 			last_operation_successful := False
-
+			
 			if not retried then
 					--| Run the query
 				clear_values
@@ -119,20 +109,20 @@ feature -- Basic operations
 					create profiler_query
 					profiler_query.set_subqueries (subqueries)
 					profiler_query.set_subquery_operators (subquery_operators)
-
+	
 					create profiler_options
 					profiler_options.set_output_names (output_names.twin)
 					profiler_options.set_filenames (filenames.twin)
 					profiler_options.set_language_names (language_names.twin)
-
+	
 					create st.make
-					create executer.make_simple (profiler_query, profiler_options)
+					create executer.make (st, profiler_query, profiler_options)
 					executer.execute
-					show_new_window (profiler_query, profiler_options, executer.last_output)
+					show_new_window (st, profiler_query, profiler_options, executer.last_output)
 					last_operation_successful := True
 				end
 			end
-
+			
 				-- Add default error message if there are no error message
 			if not last_operation_successful and then error_messages.is_empty then
 				add_error_message (Warning_messages.w_Profiler_bad_query)
@@ -141,7 +131,7 @@ feature -- Basic operations
 			retried := True
 			retry
 		end
-
+		
 feature {NONE} -- Implementation
 
 	fill_values (shared_values: SHARED_QUERY_VALUES): BOOLEAN is
@@ -149,7 +139,7 @@ feature {NONE} -- Implementation
 			-- by the user.
 		require
 			shared_values_valid:
-				shared_values /= Void and then
+				shared_values /= Void and then 
 				shared_values.output_names /= Void and then
 				shared_values.language_names /= Void and then
 				shared_values.filenames /= Void
@@ -163,12 +153,12 @@ feature {NONE} -- Implementation
 			result_language := fill_language_values (shared_values)
 			result_output_switches := fill_output_switches_values (shared_values)
 			Result := result_language and result_output_switches
-
+			
 			if Result then
 					--| Copy the filename
 				if information.generate_execution_profile then
-					create file_name.make_from_string (information.runtime_information_record)
-					file_name.add_extension (Dot_profile_information)
+					create file_name.make_from_string (information.generation_path)
+					file_name.set_file_name ("profinfo.pfi")
 					filename := file_name
 				else
 					filename := information.existing_profile
@@ -177,7 +167,7 @@ feature {NONE} -- Implementation
 					end
 				end
 				shared_values.filenames.force (filename, shared_values.filenames.lower)
-
+	
 					--| Copy the subqueries
 				if information.query /= Void and then not information.query.is_empty then
 					create parser
@@ -188,7 +178,7 @@ feature {NONE} -- Implementation
 				end
 			end
 		end
-
+		
 	fill_output_switches_values (shared_values: SHARED_QUERY_VALUES): BOOLEAN is
 			-- Fill `shared_values' with value specified by the user concerning
 			-- the output switches
@@ -199,30 +189,29 @@ feature {NONE} -- Implementation
 		do
 			i := shared_values.output_names.lower
 
-			if information.name_switch then
-				shared_values.output_names.force (profiler_feature_name, i)
-				i := i + 1
-			end
-
 				--| Copy the output column switches
 			if information.number_of_calls_switch then
-				shared_values.output_names.force (profiler_calls, i)
+				shared_values.output_names.force ("calls", i)
 				i := i + 1
 			end
 			if information.time_switch then
-				shared_values.output_names.force (profiler_self, i)
+				shared_values.output_names.force ("self", i)
 				i := i + 1
 			end
 			if information.descendant_switch then
-				shared_values.output_names.force (profiler_descendants, i)
+				shared_values.output_names.force ("descendants", i)
 				i := i + 1
 			end
 			if information.total_time_switch then
-				shared_values.output_names.force (profiler_total, i)
+				shared_values.output_names.force ("total", i)
 				i := i + 1
 			end
 			if information.percentage_switch then
-				shared_values.output_names.force (profiler_percentage, i)
+				shared_values.output_names.force ("percentage", i)
+				i := i + 1
+			end
+			if information.name_switch then
+				shared_values.output_names.force ("featurename", i)
 				i := i + 1
 			end
 
@@ -266,8 +255,8 @@ feature {NONE} -- Implementation
 			end
 		end
 
-
-	show_new_window (pq: PROFILER_QUERY;
+		
+	show_new_window (st: STRUCTURED_TEXT; pq: PROFILER_QUERY;
 				po: PROFILER_OPTIONS; profinfo: PROFILE_INFORMATION) is
 			-- Create and show a new EB_PROFILE_QUERY_WINDOW.
 			-- This window will be associated with `pq', will
@@ -276,11 +265,11 @@ feature {NONE} -- Implementation
 			new_window: EB_PROFILE_QUERY_WINDOW
 		do
 			create new_window.make_default
-			new_window.update_window (pq, po, profinfo)
+			new_window.update_window (st, pq, po, profinfo)
 			new_window.show
 			new_window.raise
 		end
-
+		
 	strip_path (a_full_pathname: STRING): STRING is
 			-- Return the base filename of a full qualified pathname
 			-- Ex: strip_path ("c:\temp\test.pfi") = "test.pfi"
@@ -301,5 +290,5 @@ feature {NONE} -- Implementation / Attributes
 
 	information: EB_PROFILER_WIZARD_INFORMATION
 			-- Options for generation
-
+			
 end -- class EB_PROFILER_WIZARD_GENERATOR

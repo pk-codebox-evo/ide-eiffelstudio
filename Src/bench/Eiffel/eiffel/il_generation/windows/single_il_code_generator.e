@@ -52,12 +52,7 @@ feature {NONE} -- Access
 
 feature -- IL Generation
 
-	generate_il_features (class_c: CLASS_C; class_type: CLASS_TYPE;
-			implemented_feature_processor: PROCEDURE [ANY, TUPLE [FEATURE_I, CLASS_TYPE, FEATURE_I]];
-			local_feature_processor: PROCEDURE [ANY, TUPLE [FEATURE_I, FEATURE_I, CLASS_TYPE, BOOLEAN]];
-			inherited_feature_processor: PROCEDURE [ANY, TUPLE [FEATURE_I, FEATURE_I, CLASS_TYPE]];
-			type_feature_processor: PROCEDURE [ANY, TUPLE [TYPE_FEATURE_I]])
-		is
+	generate_il_implementation (class_c: CLASS_C; class_type: CLASS_TYPE) is
 			-- Generate IL code for feature in `class_c'.
 		local
 			class_interface: CLASS_INTERFACE
@@ -66,10 +61,18 @@ feature -- IL Generation
 			rout_ids_tbl.wipe_out
 			processed_tbl.wipe_out
 		
+				-- Initialization of context.
+			class_interface := class_type.class_interface
+			current_class_type := class_type
+			current_select_tbl := class_c.feature_table.origin_table
+			Inst_context.set_cluster (class_c.cluster)
+			is_single_class := class_type.is_generated_as_single_type
+
 				-- Initialize implementation.
+			set_current_class (class_c)
+			set_current_class_type (class_type)
 			set_current_type_id (class_type.implementation_id)
 			current_class_token := actual_class_type_token (current_type_id)
-			current_select_tbl := class_c.feature_table.origin_table
 
 				-- Clean IL recorded information
 			clean_debug_information (class_type)
@@ -80,37 +83,18 @@ feature -- IL Generation
 			generate_il_type_features (class_c, class_type, class_c.generic_features)
 			generate_il_type_features (class_c, class_type, class_c.anchored_features)
 			
-			class_interface := class_type.class_interface
 			generate_il_implementation_local (class_interface, class_c, class_type)
 			generate_il_main_parent (class_type)
 			generate_il_implementation_parents (class_interface)
 
-				-- Reset global variable for collection.
-			current_select_tbl := Void
-			rout_ids_tbl.wipe_out
-			processed_tbl.wipe_out
-		end
-
-	generate_il_implementation (class_c: CLASS_C; class_type: CLASS_TYPE) is
-			-- Generate IL code for feature in `class_c'.
-		do
-				-- Initialize context.
-			set_current_class (class_c)
-			set_current_class_type (class_type)
-			Inst_context.set_cluster (class_c.cluster)
-			is_single_class := class_type.is_generated_as_single_type
-
-				-- Generate features.
-			generate_il_features (class_c, class_type,
-				agent generate_method_impl, 
-				agent generate_local_feature,
-				agent generate_inherited_feature,
-				agent generate_type_feature)
-				-- Generate class invariant and internal run-time features.
+				-- Generate class invariant and internal run-time features
 			generate_class_features (class_c, class_type)
 
 				-- Reset global variable for collection.
 			current_class_type := Void
+			current_select_tbl := Void
+			rout_ids_tbl.wipe_out
+			processed_tbl.wipe_out
 		end
 
 feature {NONE} -- Implementation
@@ -411,7 +395,7 @@ feature {NONE} -- Implementation
 			dup_feat: FEATURE_I
 			proc: PROCEDURE_I
 		do
-			if feat.body_index = standard_twin_body_index then
+			if feat.rout_id_set.has (standard_twin_rout_id) then
 				generate_feature (feat, False, False, False)
 				generate_feature_standard_twin (feat)
 			else
@@ -419,7 +403,7 @@ feature {NONE} -- Implementation
 					if not is_replicated then
 							-- Generate static definition of `feat'.
 						generate_feature (feat, False, True, False)
-						generate_feature_code (feat, True)
+						generate_feature_code (feat)
 					end
 	
 						-- Generate local definition of `feat' which
@@ -475,7 +459,7 @@ feature {NONE} -- Implementation
 							end
 						end
  					end
-					generate_feature_code (feat, True)
+					generate_feature_code (feat)
 				end
 
 				if l_is_method_impl_generated then
@@ -539,7 +523,7 @@ feature {NONE} -- Implementation
 					generate_feature (feat, False, False, False)
 				end
 
-				if feat.body_index = standard_twin_body_index then
+				if feat.rout_id_set.has (standard_twin_rout_id) then
 					generate_feature_standard_twin (feat)
 				else
 					generate_feature_il (feat,

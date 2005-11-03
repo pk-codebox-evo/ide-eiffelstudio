@@ -1,10 +1,5 @@
-indexing
-	description: "[
-		External routines for debugging
-		run-time counterpart: /C/ipc/ewb/eif_out.c
-	]"
-	date: "$Date$"
-	revision: "$Revision$"
+-- External routines for debugging
+-- run-time counterpart: /C/ipc/ewb/eif_out.c
 
 class DEBUG_EXT
 

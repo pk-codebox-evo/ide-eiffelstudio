@@ -13,14 +13,6 @@ inherit
 			generate_il
 		end;
 	
-feature -- Visitor
-
-	process (v: BYTE_NODE_VISITOR) is
-			-- Process current element.
-		do
-			v.process_un_old_b (Current)
-		end
-	
 feature 
 
 	position: INTEGER;

@@ -17,7 +17,8 @@ inherit
 		end
 
 create
-	make, default_create
+
+	make, do_nothing
 
 feature {NONE} -- Implementation
 
@@ -25,7 +26,7 @@ feature {NONE} -- Implementation
 			-- Associated feature command to be executed
 			-- after successfully retrieving the feature_i
 		do
-			create Result
+			create Result.do_nothing
 		end;
 
 end -- class EWB_R_FLAT

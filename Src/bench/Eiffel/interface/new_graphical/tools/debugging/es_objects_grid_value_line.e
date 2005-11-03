@@ -16,8 +16,7 @@ inherit
 		redefine
 			object,
 			reset_special_attributes_values,
-			recycle,
-			get_object_stone_properties
+			recycle
 		end
 
 create
@@ -56,7 +55,6 @@ feature -- Recycling
 			-- in order to free special data (for instance dotnet references)
 		do
 			Precursor
-			internal_associated_dump_value := Void
 			object := Void
 		end
 		
@@ -77,53 +75,6 @@ feature -- Properties
 		end
 
 	object_spec_capacity: INTEGER
-	
-feature -- Object stone
-
-	get_object_stone_properties is
-
-		local
-			cl: CLASS_C
-			fost: FEATURED_OBJECT_STONE
-			fst: FEATURE_STONE
-			ostn: STRING
-			addr: STRING
-			feat: E_FEATURE
-		do
-			Precursor
-			if internal_object_stone = Void and then related_line /= Void then
-				ostn := object_name
-				if ostn /= Void then
-					cl := related_line.object_dynamic_class
-					if cl /= Void then
-						feat := cl.feature_with_name (ostn)
-						if feat /= Void then
-							addr := related_line.object_address
-							if addr /= Void then
-								create fost.make (addr, feat)
-								internal_object_stone_accept_cursor := fost.stone_cursor
-								internal_object_stone_deny_cursor := fost.X_stone_cursor
-								internal_object_stone := fost
-							else								
-								create fst.make (feat)
-								internal_object_stone_accept_cursor := fst.stone_cursor
-								internal_object_stone_deny_cursor := fst.X_stone_cursor
-								internal_object_stone := fst
-							end
-						end						
-					end
-				end
-			end
-		end
-	
-feature -- Related line if precised
-
-	set_related_line (v: like related_line) is
-		do
-			related_line := v
-		end
-	
-	related_line: ES_OBJECTS_GRID_LINE
 
 feature -- Query
 
@@ -162,16 +113,10 @@ feature -- Query
 			end
 		end
 
-	associated_dump_value: DUMP_VALUE is
+	associated_debug_value: ABSTRACT_DEBUG_VALUE is
 		do
-			Result := internal_associated_dump_value
-			if Result = Void then
-				Result := object.dump_value
-				internal_associated_dump_value := Result
-			end
+			Result := object
 		end
-		
-	internal_associated_dump_value: like associated_dump_value
 
 feature -- Graphical changes
 
@@ -179,7 +124,6 @@ feature -- Graphical changes
 		local
 			dv: ABSTRACT_DEBUG_VALUE
 			dmdv: DUMMY_MESSAGE_DEBUG_VALUE
-			excdv: EXCEPTION_DEBUG_VALUE
 		do
 			if row /= Void and not compute_grid_display_done then
 				compute_grid_display_done := True
@@ -191,37 +135,28 @@ feature -- Graphical changes
 					set_type (Void)
 					set_address (Void)
 					set_pixmap (Icons @ (Void_value))
-				else --| dv /= Void |--
-					set_name (dv.name)
-					set_address (dv.address)
-					
+				elseif dv.is_dummy_value then
 					last_dump_value := Void
-					if dv.kind = Error_message_value then
-						dmdv ?= dv
-						set_value (dmdv.display_message)
-						set_type (once "Invalid data")
-						set_pixmap (Icons @ (dmdv.display_kind))
-					elseif dv.kind = Exception_message_value then
-						excdv ?= dv
-						set_value (excdv.display_tag)
-						set_type (once "Exception data")
-						set_pixmap (Icons @ (dv.kind))
-						if excdv.debug_value /= Void then
-							attach_debug_value_to_grid_row (grid_extended_new_subrow (row), excdv.debug_value)
-						end
-					else
-						last_dump_value := dv.dump_value
-						set_value (last_dump_value.output_for_debugger)
-						set_type (last_dump_value.generating_type_representation)
+					dmdv ?= dv
+					set_name (dv.name)
+					set_value (dmdv.display_message)
+					set_type (once "invalid data")
+					set_address (Void)
+					set_pixmap (Icons @ (dv.kind))
+				else
+					last_dump_value := dv.dump_value
+					set_name (dv.name)
+					set_value (last_dump_value.output_for_debugger)
+					set_type (last_dump_value.generating_type_representation)
+					set_address (dv.address)
+					set_pixmap (Icons @ (dv.kind))
 
-						set_pixmap (Icons @ (dv.kind))
-						if dv.expandable then
-							row.ensure_expandable
-							expand_actions.extend (agent on_row_expand)
-							collapse_actions.extend (agent on_row_collapse)
-							if display then
-								row.expand
-							end
+					if dv.expandable then
+						row.ensure_expandable
+						expand_actions.extend (agent on_row_expand)
+						collapse_actions.extend (agent on_row_collapse)
+						if display then
+							row.expand
 						end
 					end
 				end

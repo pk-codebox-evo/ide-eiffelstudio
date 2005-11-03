@@ -128,22 +128,13 @@ feature -- Search
 	find_feature_named (a_name: STRING) is
 			-- Look for a feature named `a_name' in the text and 
 			-- scroll to the corresponding line.
-		local
-			click_tool_status: BOOLEAN
+		require
+			text_is_fully_loaded
 		do
-			if text_is_fully_loaded then
-				click_tool_status := text_displayed.click_tool_enabled
-				text_displayed.enable_click_tool
-				text_displayed.find_feature_named (a_name)
-				if not click_tool_status then
-					text_displayed.disable_click_tool	
-				end
-				if text_displayed.found_feature then
-					set_first_line_displayed (text_displayed.current_line_number.min (maximum_top_line_index), True)				
-					refresh_now
-				end
-			else
-				after_reading_text_actions.extend (agent find_feature_named (a_name))
+			text_displayed.find_feature_named (a_name)
+			if text_displayed.found_feature then
+				set_first_line_displayed (text_displayed.current_line_number.min (maximum_top_line_index), True)				
+				refresh_now
 			end
 		end	
 
@@ -1052,6 +1043,7 @@ feature -- Memory management
 			-- so that we know whether we're still referenced or not.
 		do
 			Precursor {EB_CLICKABLE_EDITOR}
+			dev_window := Void
 			if completion_timeout /= Void and then not completion_timeout.is_destroyed then
 				completion_timeout.destroy
 			end

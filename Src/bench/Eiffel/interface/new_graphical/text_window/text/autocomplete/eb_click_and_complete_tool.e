@@ -163,15 +163,6 @@ feature -- Status
 		do
 			file_standard_is_windows := value
 		end
-		
-	feature_containing_cursor (a_cursor: TEXT_CURSOR): FEATURE_AS is
-			-- Feature containing current cursor if exits.
-			-- If not void returns.
-		do
-			if features_position /= Void and features_ast /= Void then
-				Result := feature_containing (a_cursor.token, a_cursor.line)
-			end
-		end
 
 feature {NONE} -- Retrieve information from text
 
@@ -1284,7 +1275,7 @@ feature {EB_ADDRESS_MANAGER}-- Implementation
 			tfs ?= current_token
 			if tfs /= Void then
 				index := tfs.feature_index_in_table
-				if features_ast.valid_cursor_index (index) and index > 0 then
+				if features_ast.valid_cursor_index (index) then
 					Result := features_ast @ index
 				end
 			end			

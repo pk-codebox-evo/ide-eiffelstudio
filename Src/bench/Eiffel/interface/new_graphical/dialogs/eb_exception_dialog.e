@@ -56,7 +56,6 @@ feature {NONE} -- Initialization
 			
 			default_create
 			set_title ("Internal Error")
-			set_icon_pixmap (pixmaps.icon_dialog_window)
 			set_size (600, 440)
 
 			create error_label.make_with_text (Warning_messages.w_internal_error)
@@ -143,14 +142,14 @@ feature {NONE} -- Implementation
 	save_exeption_trace is
 			-- Save exception trace into a file
 		local
-			sfd: EB_FILE_SAVE_DIALOG
+			sfd: EV_FILE_SAVE_DIALOG
 			text_file: PLAIN_TEXT_FILE
 			retried: BOOLEAN
 			l_env: EXECUTION_ENVIRONMENT
 			l_dir: STRING
 		do
 			if not retried then
-				create sfd.make_with_preference (preferences.dialog_data.last_saved_exception_directory_preference)
+				create sfd
 				set_dialog_filters_and_add_all (sfd, <<text_files_filter>>)
 				create l_env
 				l_dir := l_env.current_working_directory

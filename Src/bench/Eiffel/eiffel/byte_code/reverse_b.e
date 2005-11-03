@@ -1,19 +1,11 @@
 -- Byte code for reverse assignment
 
-class REVERSE_B
+class REVERSE_B 
 
 inherit
 	ASSIGN_B
 		redefine
-			enlarged, make_byte_code, generate_il, process
-		end
-
-feature -- Visitor
-
-	process (v: BYTE_NODE_VISITOR) is
-			-- Process current element.
-		do
-			v.process_reverse_b (Current)
+			enlarged, make_byte_code, generate_il
 		end
 
 feature -- Access
@@ -68,11 +60,11 @@ feature -- IL code generation
 				-- find out the real type of the generic
 				-- parameter, so we cheat.
 			if target_type.has_formal then
-				target_type := real_type (target_type)
+				target_type ?= real_type (target_type)
 			end
 
 				-- Generate expression byte code
-			source.generate_il_value
+			source.generate_il
 
 			if source_type.is_expanded then
 				if target_type.is_expanded then
@@ -84,14 +76,14 @@ feature -- IL code generation
 
 				-- Generate Test on type
 			il_generator.generate_is_instance_of (target_type)
-
+			
 			if target_type.is_expanded then
 				il_generator.duplicate_top
-
+	
 				success_label := il_label_factory.new_label
 				il_generator.branch_on_true (success_label)
 
-					-- Assignment attempt failed.
+					-- Assignment attempt faild.
 					-- Remove duplicate obtained from call to `isinst'.
 				il_generator.pop
 					-- Assignment attempt failed, we simply load previous
@@ -101,9 +93,9 @@ feature -- IL code generation
 
 				failure_label := il_label_factory.new_label
 				il_generator.branch_to (failure_label)
-
+	
 				il_generator.mark_label (success_label)
-
+	
 				il_generator.generate_unmetamorphose (target_type)
 
 				il_generator.mark_label (failure_label)

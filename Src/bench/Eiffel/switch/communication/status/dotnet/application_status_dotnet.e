@@ -14,16 +14,22 @@ inherit
 			current_call_stack_element,
 			current_call_stack,
 			update_on_stopped_state,
-			set_current_thread_id,
-			thread_name, thread_priority
+			set_current_thread_id
 		end
 		
 	SHARED_EIFNET_DEBUGGER
-	
-	SHARED_EIFNET_DEBUG_VALUE_FACTORY	
 
-create {APPLICATION_EXECUTION}
+create {APPLICATION_STATUS_EXPORTER}
+
 	make
+	
+feature {NONE} -- Initialization
+
+	make is
+			-- Create Current
+		do
+			initialize
+		end	
 	
 feature {APPLICATION_STATUS_EXPORTER} -- Initialization
 
@@ -68,74 +74,11 @@ feature {APPLICATION_STATUS_EXPORTER} -- Initialization
 	
 feature -- Update
 
-	exception_debug_value: ABSTRACT_DEBUG_VALUE is
-		require else
-			exception_occurred: exception_occurred
-			eifnet_debugger_exists: Eifnet_debugger /= Void
-		local
-			icdv: ICOR_DEBUG_VALUE
-		do
-			icdv := eifnet_debugger.new_active_exception_value_from_thread
-			if icdv /= Void then
-				Result := debug_value_from_icdv (icdv, Void)
-				Result.set_name ("Exception object")
-			end
-		end
-
-	exception_occurred: BOOLEAN is
-		require else
-			eifnet_debugger_exists: Eifnet_debugger /= Void
-		do
-			Result := Eifnet_debugger.exception_occurred
-		end
-
-	exception_handled: BOOLEAN is
-			-- Last Exception is handled ?
-			-- if True => first chance
-			-- if False => The execution will terminate after.
-		require
-			eifnet_debugger_exists: Eifnet_debugger /= Void
-		do
-			Result := Eifnet_debugger.last_exception_is_handled
-		end
-		
-	exception_class_name: STRING is
-			-- Exception class name
-		require
-			exception_occurred: exception_occurred
-		do
-			Result := Eifnet_debugger.exception_class_name
-		end		
-
-	exception_module_name: STRING is
-			-- Exception module name
-		require
-			exception_occurred: exception_occurred
-		do
-			Result := Eifnet_debugger.exception_module_name
-		end
-
-	exception_to_string: STRING is
-			-- Exception "ToString" output
-		require
-			exception_occurred: exception_occurred
-		do
-			Result := Eifnet_debugger.exception_to_string
-		end
-		
-	exception_message: STRING is
-			-- Exception "GetMessage" output
-		require else
-			exception_occurred: exception_occurred
-		do
-			Result := Eifnet_debugger.exception_message
-		end
-
 	update_on_stopped_state is
 			-- Update data once the application is really stopped
 		do
-			if exception_occurred and is_stopped then
-				exception_tag := exception_message
+			if application.imp_dotnet.exception_occurred and is_stopped then
+				exception_tag := application.imp_dotnet.exception_message
 			else
 				exception_tag := Void
 			end
@@ -198,32 +141,6 @@ feature -- Thread info
 				end
 			end
 		end
-
-	thread_name	(a_id: like current_thread_id): STRING is
-		local
-			dbg_info: EIFNET_DEBUGGER_INFO
-		do
-			dbg_info := Eifnet_debugger.info
-			if dbg_info.is_valid_managed_thread_id (a_id) then
-				dbg_info.managed_thread (a_id).get_thread_name
-				Result := dbg_info.managed_thread (a_id).thread_name
-			else
-				Result := Precursor (a_id)
-			end
-		end
-		
-	thread_priority	(a_id: like current_thread_id): INTEGER is
-		local
-			dbg_info: EIFNET_DEBUGGER_INFO
-		do
-			dbg_info := Eifnet_debugger.info
-			if dbg_info.is_valid_managed_thread_id (a_id) then
-				dbg_info.managed_thread (a_id).get_thread_priority
-				Result := dbg_info.managed_thread (a_id).thread_priority
-			else
-				Result := Precursor (a_id)
-			end
-		end		
 		
 feature -- Call stack related
 

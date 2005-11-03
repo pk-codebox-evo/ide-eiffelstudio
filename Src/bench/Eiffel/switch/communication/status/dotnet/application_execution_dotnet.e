@@ -14,7 +14,7 @@ inherit
 	
 	APPLICATION_EXECUTION_IMP
 		redefine
-			make, recycle, load_system_dependent_debug_info
+			make, recycle
 		end
 
 	APPLICATION_STATUS_EXPORTER
@@ -47,6 +47,11 @@ inherit
 			{NONE} all
 		end
 
+	SHARED_DEBUG_VALUE_KEEPER
+		export 
+			{NONE} all
+		end
+
 	EV_SHARED_APPLICATION
 		export 
 			{NONE} all
@@ -70,7 +75,7 @@ feature -- recycling data
 	recycle is
 		do
 			Precursor
-			Eifnet_debugger.recycle_debug_value_keeper
+			Debug_value_keeper.recycle
 		end
 
 feature {EIFNET_DEBUGGER, EIFNET_EXPORTER} -- Trigger eStudio done
@@ -163,6 +168,12 @@ feature -- Properties
 		do
 			Result ?= Application.status
 		end
+		
+	set_status (a_status: like status) is
+			-- Set the value of Application status to `a_status'
+		do
+			Application.set_status (a_status)
+		end
 
 feature {APPLICATION_EXECUTION} -- Properties
 
@@ -170,7 +181,7 @@ feature {APPLICATION_EXECUTION} -- Properties
 			-- Is object address `addr' valid?
 			-- (i.e Does bench know about it)
 		do
-			Result := Eifnet_debugger.know_about_kept_object (addr)
+			Result := know_about_kept_object (addr)
 		end
 		
 feature -- Bridge to Debugger
@@ -185,10 +196,45 @@ feature -- Bridge to Debugger
 
 	exception_occurred: BOOLEAN is
 			-- Last callback is about exception ?
+		require
+			eifnet_debugger_exists: Eifnet_debugger /= Void
 		do
-			Result := status.exception_occurred
+			Result := Eifnet_debugger.last_managed_callback_is_exception
 		end
 
+	exception_handled: BOOLEAN is
+			-- Last Exception is handled ?
+			-- if True => first chance
+			-- if False => The execution will terminate after.
+		require
+			eifnet_debugger_exists: Eifnet_debugger /= Void
+		do
+			Result := Eifnet_debugger.last_exception_is_handled
+		end
+
+	exception_module_name: STRING is
+			-- Exception "GetMessage" output
+		require
+			exception_occurred: exception_occurred
+		do
+			Result := Eifnet_debugger.exception_module_name
+		end
+
+	exception_to_string: STRING is
+			-- Exception "ToString" output
+		require
+			exception_occurred: exception_occurred
+		do
+			Result := Eifnet_debugger.exception_to_string
+		end
+		
+	exception_message: STRING is
+			-- Exception "GetMessage" output
+		require
+			exception_occurred: exception_occurred
+		do
+			Result := Eifnet_debugger.exception_message
+		end		
 	
 feature -- Execution
 
@@ -202,6 +248,7 @@ feature -- Execution
 			-- to see if the debugged information is up to date.
 		local
 			app: STRING
+			l_status: APPLICATION_STATUS_DOTNET
 		do
 			Eifnet_debugger.initialize_debugger_session (debugger_manager.debugging_window)
 			if Eifnet_debugger.is_debugging then
@@ -212,26 +259,36 @@ feature -- Execution
 				Eifnet_debugger.set_debug_param_arguments (args)
 
 				process_before_running
-				Application.build_status
+				create l_status.make
+				set_status (l_status)
 				
 				Eifnet_debugger.do_run
 				
 				if not Eifnet_debugger.last_dbg_call_succeed then
 						-- This means we had issue creating process
-					Application.destroy_status
+					set_status (Void)
 					Eifnet_debugger.terminate_debugger_session
 					Eifnet_debugger.destroy_monitoring_of_process_termination_on_exit
 				end
 				
-				if Application.is_running then
+				if l_status /= Void then
 						-- Application was able to be started
-					Application.status.set_is_stopped (False)
+					l_status.set_is_stopped (False)
 				end
 			end
 		end
 		
-	continue_ignoring_kept_objects is
+	continue (kept_objects: LINKED_SET [STRING]) is
+			-- Continue the running of the application and keep the 
+			-- objects addresses in `kept_objects'. Objects that are not in 
+			-- `kept_objects' will be removed and will be not under the 
+			-- control of bench. Therefore, these addresses cannot be
+			-- referenced the next time we stop the application.
 		do
+--| This is not require for dotnet system, but we may adapt it for others uses
+--			keep_objects (kept_objects)
+			keep_only_objects (kept_objects)
+--			cont_request.send_breakpoints
 			inspect application.execution_mode
 			when {EXEC_MODES}.step_into then 
 				step_into
@@ -309,35 +366,7 @@ feature -- Execution
 --			Eifnet_debugger.terminate_debugger_session
 -- this is now called directly from EIFNET_DEBUGGER.on_exit_process
 		end
-
-	load_system_dependent_debug_info is
-		do
-			if 
-				Eiffel_system.workbench.system_defined
-			then
-				load_dotnet_debug_info
-			end
-		end
-
-feature -- Query
-
-	dump_value_at_address_with_class (a_addr: STRING; a_cl: CLASS_C): DUMP_VALUE is
-		local
-			l_dv: ABSTRACT_DEBUG_VALUE
-		do
-			l_dv := debug_value_at_address_with_class (a_addr, a_cl)
-			if l_dv /= Void then
-				Result := l_dv.dump_value
-			end
-		end
-
-	debug_value_at_address_with_class (a_addr: STRING; a_cl: CLASS_C): ABSTRACT_DEBUG_VALUE is
-		do
-			if know_about_kept_object (a_addr) then
-				Result := kept_object_item (a_addr)
-			end
-		end
-
+		
 feature -- Controle execution
 
 	process_before_running is
@@ -613,17 +642,16 @@ feature -- Breakpoints controller
 
 feature -- BreakPoints
 
-	set_dotnet_breakpoint (bp: BREAKPOINT; a_state: BOOLEAN) is
-			-- enable the `i'-th breakpoint of `f' if `a_state' is `True'
-			-- otherwise disable it
+	add_dotnet_breakpoint (bp: BREAKPOINT) is
+			-- enable the `i'-th breakpoint of `f'
 			-- if no breakpoint already exists for 'f' at 'i', a breakpoint is created
 		require
 			bp_valid: bp.is_valid
 		local
 			f: E_FEATURE
-			ln: INTEGER
+			i: INTEGER
 			l_feature_token: INTEGER
-			l_il_offset_set: IL_OFFSET_SET
+			l_il_offset_list: LIST [INTEGER]
 			l_il_offset: INTEGER
 			l_module_name: STRING
 			l_class_c: CLASS_C
@@ -631,12 +659,11 @@ feature -- BreakPoints
 			
 			l_class_type_list: TYPE_LIST
 			l_class_type: CLASS_TYPE
-			i, upper: INTEGER
 		do
 			f := bp.routine
-			ln := bp.breakable_line_number
+			i := bp.breakable_line_number
 			debug ("debugger_trace_breakpoint")
-				print ("setBreakpoint (" + a_state.out + ") " + f.name + " index=" + ln.out + "%N")
+				print ("AddBreakpoint " + f.name + " index=" + i.out + "%N")
 				display_feature_info (f)
 			end
 			
@@ -650,8 +677,7 @@ feature -- BreakPoints
 				l_class_type_list.after
 			loop
 				l_class_type := l_class_type_list.item
-				l_module_name := Il_debug_info_recorder.module_file_name_for_class_type (l_class_type)
-
+				l_module_name := Il_debug_info_recorder.module_file_name_for_class (l_class_type)			
 				l_class_token := Il_debug_info_recorder.class_token (l_module_name, l_class_type)
 				if l_class_token = 0 then
 						--| Try to find the token, using the Meta Data
@@ -659,21 +685,16 @@ feature -- BreakPoints
 				end
 				l_feature_token := Il_debug_info_recorder.feature_token_for_feat_and_class_type (f.associated_feature_i, l_class_type)
 
-				l_il_offset_set := Il_debug_info_recorder.feature_breakable_il_line_for (l_class_type, f.associated_feature_i, ln)
-				if l_il_offset_set /= Void and then not l_il_offset_set.is_empty then
+				l_il_offset_list := Il_debug_info_recorder.feature_breakable_il_line_for (l_class_type, f.associated_feature_i, i)
+				if l_il_offset_list /= Void then
 					from
-						i := l_il_offset_set.lower
-						upper := i + l_il_offset_set.count
+						l_il_offset_list.start
 					until
-						i >= upper
+						l_il_offset_list.after
 					loop
-						l_il_offset := l_il_offset_set.item (i)
-						if a_state then
-							Eifnet_debugger.request_breakpoint_add (bp, l_module_name, l_class_token, l_feature_token, l_il_offset)
-						else
-							Eifnet_debugger.request_breakpoint_remove (bp, l_module_name, l_class_token, l_feature_token, l_il_offset)
-						end
-						i := i + 1
+						l_il_offset := l_il_offset_list.item
+						Eifnet_debugger.request_breakpoint_add (bp, l_module_name, l_class_token, l_feature_token, l_il_offset)
+						l_il_offset_list.forth
 					end		
 				else
 					check False end -- Should not occurs, unless data are corrupted
@@ -681,19 +702,59 @@ feature -- BreakPoints
 				l_class_type_list.forth
 			end
 		end
-
-	add_dotnet_breakpoint (bp: BREAKPOINT) is
-			-- enable the `i'-th breakpoint of `f'
-			-- if no breakpoint already exists for 'f' at 'i', a breakpoint is created
-		do
-			set_dotnet_breakpoint (bp, True)
-		end
 		
 	remove_dotnet_breakpoint (bp: BREAKPOINT) is
 			-- remove the `i'-th breakpoint of `f'
 			-- if no breakpoint already exists for 'f' at 'i', a breakpoint is created
+		local
+			f: E_FEATURE
+			i: INTEGER
+			l_feature_token: INTEGER
+			l_il_offset_list: LIST [INTEGER]
+			l_il_offset: INTEGER
+			l_module_name: STRING
+			l_class_c: CLASS_C
+			l_class_token: INTEGER
+			l_class_type_list: TYPE_LIST
+			l_class_type: CLASS_TYPE
 		do
-			set_dotnet_breakpoint (bp, False)
+			f := bp.routine
+			i := bp.breakable_line_number
+			debug ("debugger_trace_breakpoint")
+				print ("RemoveBreakpoint " + f.name + " index=" + i.out + "%N")
+				display_feature_info (f)
+			end
+			
+			l_class_c := f.written_class			
+
+			--| loop on the different derivation of a generic class	
+			l_class_type_list := l_class_c.types
+			from
+				l_class_type_list.start
+			until
+				l_class_type_list.after
+			loop
+				l_class_type := l_class_type_list.item
+				l_module_name := Il_debug_info_recorder.module_file_name_for_class (l_class_type)
+				l_class_token := Il_debug_info_recorder.class_token (l_module_name, l_class_type)
+				l_feature_token := Il_debug_info_recorder.feature_token_for_feat_and_class_type (f.associated_feature_i, l_class_type)
+
+				l_il_offset_list := Il_debug_info_recorder.feature_breakable_il_line_for (l_class_type, f.associated_feature_i, i)
+				if l_il_offset_list /= Void then
+					from
+						l_il_offset_list.start
+					until
+						l_il_offset_list.after
+					loop
+						l_il_offset := l_il_offset_list.item
+						Eifnet_debugger.request_breakpoint_remove (bp, l_module_name, l_class_token, l_feature_token, l_il_offset)
+						l_il_offset_list.forth
+					end
+				else
+					check False end -- Should not occurs, unless data are corrupted
+				end
+				l_class_type_list.forth
+			end
 		end		
 
 feature {NONE} -- Implementation
@@ -733,8 +794,7 @@ feature {NONE} -- Implementation
 						l_types.after
 					loop
 						l_class_type := l_types.item
-						l_module_name := Il_debug_info_recorder.module_file_name_for_class_type (l_class_type)
-						
+						l_module_name := Il_debug_info_recorder.module_file_name_for_class (l_class_type)
 						l_class_token := Il_debug_info_recorder.class_token (l_module_name, l_class_type)
 						l_str.append_string ("%T" + l_class_token.out)
 						l_str.append_string (" ~ 0x" + l_class_token.to_hex_string)
@@ -743,7 +803,7 @@ feature {NONE} -- Implementation
 				else
 					l_types := l_class_c.types
 					l_class_type := l_types.first
-					l_module_name := Il_debug_info_recorder.module_file_name_for_class_type (l_class_type)
+					l_module_name := Il_debug_info_recorder.module_file_name_for_class (l_class_type)
 					l_class_token := Il_debug_info_recorder.class_token (l_module_name, l_class_type)
 
 					l_str.append_string (":" + l_class_token.out)
@@ -752,8 +812,8 @@ feature {NONE} -- Implementation
 				l_str.append_string ("]")
 				l_str.append_string ("%N")
 
-				l_str.append_string ("%T module_name="+Il_debug_info_recorder.module_file_name_for_class (l_class_c) )
 			end
+			l_str.append_string ("%T module_name="+Il_debug_info_recorder.module_file_name_for_class (l_class_type) )
 			
 			print (l_str)
 			print ("%N")
@@ -823,7 +883,7 @@ feature {NONE} -- Events on notification
 			dbg_info := Eifnet_debugger.info
 			
 --| Useless, but we may need it one day
---			Application.on_application_before_stopped
+--			Application_notification_controller.notify_on_before_stopped	
 
 				--| on top of the stack = current stack/feature
 			application.set_current_execution_stack_number (1)
@@ -874,16 +934,16 @@ feature {NONE} -- Events on notification
 			Application.set_current_execution_stack_number (Application.number_of_stack_elements)
 
 			if need_to_continue then
+				l_status.set_is_stopped (False)
 				debug ("debugger_trace_callstack")
 					print ("Nota: Continue on stopped status (need_to_continue = True)%N")				
 					print ("Nota: last managed callback = " + Eifnet_debugger.managed_callback_name (cb_id) + "%N")
 				end
-				Application.release_all_but_kept_object
-				l_status.set_is_stopped (False)
+				keep_only_objects (debugger_manager.kept_objects)
 				Eifnet_debugger.do_continue
 			else
 				update_notify_on_after_stopped
-			end
+			end			
 		end
 		
 	do_stop_on_breakpoint: BOOLEAN is
@@ -969,7 +1029,7 @@ feature -- update processing
 					debug ("debugger_trace")
 						io.error.put_string (generator + ".real_update_notify_on_after_stopped : call real notification%N")
 					end
-					Application.on_application_just_stopped
+					Application_notification_controller.notify_on_after_stopped
 				else
 					debug ("debugger_trace")
 						io.error.put_string (generator + ".real_update_notify_on_after_stopped : postpone real notification%N")
@@ -1145,10 +1205,10 @@ feature -- Call stack related
 
 feature -- Object Keeper
 
-	keep_only_objects (a_addresses: SET [STRING]) is
+	keep_only_objects (a_addresses: LIST [STRING]) is
 			-- Remove all ref kept, and keep only the ones contained in `a_addresses'
 		do
-			Eifnet_debugger.keep_only_objects (a_addresses)
+			Debug_value_keeper.keep_only (a_addresses)
 		end
 
 	kept_object_item (a_address: STRING): ABSTRACT_DEBUG_VALUE is
@@ -1156,13 +1216,13 @@ feature -- Object Keeper
 		require
 			know_about_object: know_about_kept_object (a_address)
 		do
-			Result := Eifnet_debugger.kept_object_item (a_address)
+			Result := Debug_value_keeper.item (a_address)
 		end
 
 	know_about_kept_object (a_address: STRING): BOOLEAN is
 			-- Do we have a reference for the object addressed by `a_address' ?
 		do
-			Result := Eifnet_debugger.know_about_kept_object (a_address)
+			Result := Debug_value_keeper.know_about (a_address)
 		end
 
-end
+end -- class APPLICATION_EXECUTION_DOTNET

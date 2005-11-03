@@ -85,8 +85,6 @@ feature -- Access
 
 	dump_value: DUMP_VALUE is
 			-- Dump_value corresponding to `Current'.
-		local
-			l_cl: CLASS_C
 		do
 			debug ("debug_recv")
 				print ("Dumping value ")
@@ -98,12 +96,7 @@ feature -- Access
 				end
 				print ("%N")
 			end
-			if dynamic_class /= Void then
-				l_cl := dynamic_class
-			else
-				l_cl := static_class
-			end
-			create Result.make_object (address, l_cl)
+			create Result.make_object (address, dynamic_class)
 		end
 
 feature {NONE} -- Output value
@@ -173,7 +166,7 @@ feature {NONE} -- Implementation
 			-- If referenced object is a STRING, get its value.
 		do
 			if address /= Void then
-				address := keep_object_as_hector_address (address);
+				address := hector_addr (address);
 			end
 			is_null := (address = Void)
 		end;

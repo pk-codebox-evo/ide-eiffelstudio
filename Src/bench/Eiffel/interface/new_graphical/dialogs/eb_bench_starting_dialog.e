@@ -143,7 +143,6 @@ feature {NONE} -- Initialization
 			if show_open_project_frame then
 				create open_epr_project_rb.make_with_text (Interface_names.l_Open_an_existing_project)
 				create browse_button.make_with_text_and_action (Interface_names.b_Browse, agent open_existing_project_not_listed)
-				open_epr_project_rb.pointer_double_press_actions.force_extend (agent open_existing_project_not_listed)
 				add_option_box_and_button (pixmaps.large_pixmaps.icon_open_project.twin, open_epr_project_rb, browse_button, open_project_vb)
 				create_and_fill_compiled_projects_list
 				open_project_vb.extend (compiled_projects_list)
@@ -269,7 +268,7 @@ feature {NONE} -- Initialization
 		local
 			hb: EV_HORIZONTAL_BOX
 			vb: EV_VERTICAL_BOX
-		do	
+		do
 			Layout_constants.set_default_size_for_button (a_button)
 			create vb
 			vb.extend (create {EV_CELL})
@@ -375,11 +374,11 @@ feature {NONE} -- Execution
 	create_new_project_using_ace_file is
 			-- Create a new project using an existing ace file.
 		local
-			file_dialog: EB_FILE_OPEN_DIALOG
+			file_dialog: EV_FILE_OPEN_DIALOG
 			success: BOOLEAN
 			create_project_dialog: EB_CREATE_PROJECT_DIALOG
 		do
-			create file_dialog.make_with_preference (preferences.dialog_data.last_opened_ace_directory_preference)
+			create file_dialog
 			file_dialog.set_title (Interface_names.t_Choose_ace_file)
 			set_dialog_filters_and_add_all (file_dialog, <<ace_files_filter>>)
 			file_dialog.show_modal_to_window (Current)

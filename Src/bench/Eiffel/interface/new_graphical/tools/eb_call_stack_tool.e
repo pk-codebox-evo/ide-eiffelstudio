@@ -76,17 +76,11 @@ feature {NONE} -- Initialization
 			special_label_col: EV_COLOR
 		do
 			development_window ?= manager
-			
-				--| UI look
-			row_highlight_bg_color := Preferences.debug_tool_data.row_highlight_background_color
-			Preferences.debug_tool_data.row_highlight_background_color_preference.change_actions.extend (agent set_row_highlight_bg_color) 
-
-			row_unsensitive_fg_color := Preferences.debug_tool_data.row_unsensitive_foreground_color
-			Preferences.debug_tool_data.row_unsensitive_foreground_color_preference.change_actions.extend (agent set_row_unsensitive_fg_color) 
-			
-				--| UI structure			
+			create stack_list
+			stack_list.disable_multiple_selection
 			create box
 			create box2
+
 			
 			box2.set_padding (3)
 			
@@ -141,7 +135,7 @@ feature {NONE} -- Initialization
 			create tb_exception
 			create tb_but_exception
 			tb_but_exception.set_pixmap (pixmaps.Icon_open_exception_dialog)
-			tb_but_exception.set_tooltip ("Open exception dialog for more details")
+			tb_but_exception.set_tooltip ("Open exception dialog for more details")			
 			tb_but_exception.pointer_button_press_actions.extend (agent show_call_stack_message)
 			tb_exception.extend (tb_but_exception)
 			box_exception.extend (tb_exception)
@@ -167,54 +161,18 @@ feature {NONE} -- Initialization
 			exception.set_minimum_width (40)
 			exception.set_foreground_color (create {EV_COLOR}.make_with_8_bit_rgb (255, 0, 0))
 			exception.disable_edit
-
-				--| Stack grid
-			create stack_grid
-			stack_grid.enable_single_row_selection
-			stack_grid.enable_border
-----| FIXME XR: Use preferences to store/restore column widths			
-			stack_grid.set_column_count_to (3)
-			stack_grid.column (1).set_title (Interface_names.t_Feature)
-			stack_grid.column (1).set_width (120)
-			stack_grid.column (2).set_title (Interface_names.t_Dynamic_type)
-			stack_grid.column (2).set_width (100)
-			stack_grid.column (3).set_title (Interface_names.t_Static_type)
-			stack_grid.column (3).set_width (100)
-			
-				--| Action/event on call stack grid
-			stack_grid.drop_actions.extend (agent on_element_drop)
-			stack_grid.key_press_actions.extend (agent key_pressed)
-			stack_grid.set_item_pebble_function (agent on_grid_item_pebble_function)
-			stack_grid.set_item_accept_cursor_function (agent on_grid_item_accept_cursor_function)
-				--| Call stack level selection mode
-			if preferences.debug_tool_data.select_call_stack_level_on_double_click then
-				stack_grid.pointer_double_press_item_actions.extend (agent on_grid_item_pointer_pressed)
-			else
-				stack_grid.pointer_button_press_item_actions.extend (agent on_grid_item_pointer_pressed)
-			end
-			preferences.debug_tool_data.select_call_stack_level_on_double_click_preference.change_actions.extend (agent update_call_stack_level_selection_mode)
-			
-			
-			box.extend (stack_grid)			
-			
-			stack_grid.build_delayed_cleaning
+			box.extend (stack_list)
+			stack_list.set_column_titles (
+				  << "", -- Icon's column
+				  	Interface_names.t_Feature,
+					Interface_names.t_Dynamic_type,
+					Interface_names.t_Static_type>>)
+--| FIXME XR: Use preferences to store/restore column widths
+			stack_list.set_column_widths (<<20, 100, 100, 100>>)
+			stack_list.drop_actions.extend (agent on_element_drop)
+			stack_list.key_press_actions.extend (agent key_pressed)
 			create_update_on_idle_agent
 			widget := box
-		end
-		
-	update_call_stack_level_selection_mode (dbl_click_bpref: BOOLEAN_PREFERENCE) is
-			-- Update call stack level selection mode when preference select_call_stack_level_on_double_click_preference
-			-- changes.
-			-- if true then use double click
-			-- otherwise use single click
-		do
-			stack_grid.pointer_double_press_item_actions.wipe_out				
-			stack_grid.pointer_button_press_item_actions.wipe_out				
-			if dbl_click_bpref.value then
-				stack_grid.pointer_double_press_item_actions.extend (agent on_grid_item_pointer_pressed)				
-			else
-				stack_grid.pointer_button_press_item_actions.extend (agent on_grid_item_pointer_pressed)
-			end
 		end
 
 	build_mini_toolbar is
@@ -288,7 +246,7 @@ feature -- Access
 			Result := Interface_names.t_Call_stack_tool
 		end
 
-	stack_grid: ES_GRID
+	stack_list: EV_MULTI_COLUMN_LIST
 			-- Graphical representation of the execution stack.
 
 	menu_name: STRING is
@@ -322,23 +280,22 @@ feature -- Status setting
 			st: CALL_STACK_STONE
 			new_level: INTEGER
 			count: INTEGER
-			l_row: EV_GRID_ROW
-			old_current_level: INTEGER
+			li: EV_MULTI_COLUMN_LIST_ROW
 		do
 			st ?= a_stone
 			if st /= Void then
-				old_current_level := arrowed_level
 				new_level := st.level_number
-			
-					-- Stack grid
-				count := stack_grid.row_count
-				if old_current_level >= 1 and then count >= old_current_level then
-					l_row := stack_grid.row (old_current_level)
-					refresh_stack_grid_row (l_row, new_level)
+				count := stack_list.count  
+				if arrowed_level >= 1 and then count >= arrowed_level then
+					li := stack_list @ arrowed_level
+					if st.dynamic_class = Void then
+						li.remove_pixmap
+					else
+						li.set_pixmap (Pixmaps.Icon_arrow_empty)
+					end
 				end
 				if new_level >= 1 and then count >= new_level then
-					l_row := stack_grid.row (new_level)
-					refresh_stack_grid_row (l_row, new_level)					
+					(stack_list @ (new_level)).set_pixmap (Pixmaps.Icon_green_arrow)
 					arrowed_level := new_level
 				end
 			end
@@ -355,7 +312,7 @@ feature -- Status setting
 			l_status: APPLICATION_STATUS			
 		do
 			cancel_process_real_update_on_idle
-			request_clean_stack_grid
+			stack_list.wipe_out
 			l_status := application.status
 			if l_status /= Void then
 				display_stop_cause (l_status.is_stopped)
@@ -395,68 +352,6 @@ feature -- Memory management
 			exception.remove_tooltip
 		end
 
-feature {NONE} -- Grid Implementation
-
-	level_from_row (a_row: EV_GRID_ROW): INTEGER is
-			-- Call stack level related to `a_row'.
-		require
-			a_row /= Void
-		local
-			level_r: INTEGER_REF
-		do
-			level_r ?= a_row.data
-			if level_r /= Void then
-				Result := level_r.item
-			end
-		end
-
-	on_grid_item_pointer_pressed (a_x, a_y, a_button: INTEGER; a_item: EV_GRID_ITEM) is
-			-- Action when mouse click on `stack_grid'
-		local
-			l_row: EV_GRID_ROW
-			level: INTEGER		
-		do
-			if a_button = 1 and a_item /= Void then
-				l_row := a_item.row
-				if l_row /= Void then
-					level := level_from_row (l_row)
-					if level > 0 then
-						select_element_by_level (level)
-					end
-				end
-			end
-		end
-		
-	on_grid_item_pebble_function (a_item: EV_GRID_ITEM): CALL_STACK_STONE is
-			-- Returns the call_stack_stone of row related to a_item
-		local
-			l_row: EV_GRID_ROW
-			level: INTEGER
-			elem: EIFFEL_CALL_STACK_ELEMENT
-		do
-			if a_item /= Void then
-				l_row := a_item.row
-				if l_row /= Void then
-					level := level_from_row (l_row)
-					if level > 0 then
-						elem ?= application.status.current_call_stack.i_th (level)
-						if
-							elem /= Void and then
-							elem.dynamic_class /= Void and then
-							elem.dynamic_class.has_feature_table
-						then
-							create Result.make (level)
-						end
-					end
-				end
-			end
-		end
-		
-	on_grid_item_accept_cursor_function	(a_item: EV_GRID_ITEM): EV_CURSOR is
-		do
-			Result := Cursors.cur_Setstop
-		end
-		
 feature {NONE} -- Implementation
 
 	arrowed_level: INTEGER
@@ -468,31 +363,16 @@ feature {NONE} -- Implementation
 	set_stack_depth_cmd: EB_STANDARD_CMD
 			-- Command that alters the displayed depth of the call stack.
 
-	clean_stack_grid is
-			-- Clean the stack_grid
-		do
-			stack_grid.call_delayed_clean
-		ensure
-			stack_grid_cleaned: stack_grid.row_count = 0
-		end			
-
-	request_clean_stack_grid is
-			-- Clean the stack_grid
-		do
-			stack_grid.request_delayed_clean
-		end
-
 	real_update (dbg_was_stopped: BOOLEAN) is
 			-- Display current execution status.
 			-- dbg_was_stopped is ignore if Application/Debugger is not running			
 		local
 			i: INTEGER
 			stack: EIFFEL_CALL_STACK
-			l_tooltipable_grid_row: EV_GRID_ROW
-			glab: EV_GRID_LABEL_ITEM
+			l_row: EV_MULTI_COLUMN_LIST_ROW
+			l_tooltipable_row: EB_MULTI_COLUMN_LIST_ROW
 			l_status: APPLICATION_STATUS
 		do
-			request_clean_stack_grid
 			if Application.is_running then
 				l_status := application.status
 				if dbg_was_stopped then
@@ -500,36 +380,35 @@ feature {NONE} -- Implementation
 				end
 				display_stop_cause (dbg_was_stopped)
 				refresh_threads_info
+				stack_list.wipe_out
 				if
 					dbg_was_stopped and l_status.is_stopped
 				then
-					clean_stack_grid
-					stack := l_status.current_call_stack
+					stack := l_status.current_call_stack					
 					if stack /= Void then
 						save_call_stack_cmd.enable_sensitive
 						from
 							stack.start
-							stack_grid.insert_new_rows (stack.count, 1)
 							i := 1
 						until
 							stack.after
 						loop
-							attach_element_to_row (stack.item, i, stack_grid.row (i))
+							l_row := element_to_row (stack.item, i)
+							stack_list.extend (l_row)
 							if not stack.item.is_eiffel_call_stack_element then
-								stack_grid.row (i).disable_select
+								l_row.disable_select
 							end
 							i := i + 1
 							stack.forth
 						end
 					else
-						l_tooltipable_grid_row := stack_grid.grid_extended_new_row (stack_grid)
-						create glab.make_with_text ("Unable to get call stack data")
-						glab.set_tooltip ("Double click to refresh call stack")
-						glab.set_pixmap (Pixmaps.small_pixmaps.icon_dbg_error)
-						glab.pointer_double_press_actions.force_extend (agent update)
-						l_tooltipable_grid_row.set_item (1, glab)
+						create l_tooltipable_row
+						l_tooltipable_row.extend ("Unable to get call stack data")
+						l_tooltipable_row.set_tooltip ("Double click to refresh call stack")
+						l_tooltipable_row.set_pixmap (Pixmaps.warning_pixmap)
+						l_tooltipable_row.pointer_double_press_actions.force_extend (update_on_idle_agent)
+						stack_list.extend (l_tooltipable_row)
 					end
-					stack_grid.request_columns_auto_resizing					
 				else
 					save_call_stack_cmd.disable_sensitive
 				end
@@ -622,7 +501,7 @@ feature {NONE} -- Implementation
 				thread_id.set_data (ctid)
 				display_box_thread (True)
 			else
-				display_box_thread (False)
+				display_box_thread (False)				
 			end
 		end
 		
@@ -681,13 +560,10 @@ feature {NONE} -- Implementation
 		
 	exception_message_text: STRING is
 			-- Text corresponding to the current exception.
-		local
-			dotnet_status: APPLICATION_STATUS_DOTNET
 		do
 			if application.is_dotnet then
-				dotnet_status ?= application.status
-				if dotnet_status.exception_occurred then
-					Result := dotnet_status.exception_to_string
+				if application.imp_dotnet.exception_occurred then
+					Result := application.imp_dotnet.exception_to_string
 				else
 					Result := "No exception occurred"
 				end
@@ -703,10 +579,8 @@ feature {NONE} -- Implementation
 			debugger_manager.launch_stone (st)
 		end
 
-	attach_element_to_row (elem: CALL_STACK_ELEMENT; level: INTEGER; a_row: EV_GRID_ROW) is
-			-- Display information about associated routine on `a_row'.
-		require
-			a_row_not_void: a_row /= Void
+	element_to_row (elem: CALL_STACK_ELEMENT; level: INTEGER): EB_MULTI_COLUMN_LIST_ROW is
+			-- Display information about associated routine.
 		local
 			dc, oc: CLASS_C
 			l_tooltip: STRING
@@ -720,8 +594,8 @@ feature {NONE} -- Implementation
 			l_breakindex_info: STRING
 			l_obj_address_info: STRING
 			l_extra_info: STRING
-			glab: EV_GRID_LABEL_ITEM
 		do
+			create Result
 			create l_tooltip.make (10)
 			
 			e_cse ?= elem
@@ -761,14 +635,18 @@ feature {NONE} -- Implementation
 					l_tooltip.append_string ("%N   + Module = " + dotnet_cse.dotnet_module_name)
 				end	
 			
-				a_row.set_data (level)
+					--| Specific GUI behavior
+				Result.set_pebble_function (agent pebble_from_x_y (?, ?, level))
+				Result.set_accept_cursor (Cursors.cur_Setstop)
+				Result.pointer_button_press_actions.extend (agent select_element(?,?,?,?,?,?,?,?,level))
+
 			else --| It means, this is an EXTERNAL_CALL_STACK_ELEMENT
 				l_orig_class_info := ""
 				ext_cse ?= elem
 				if ext_cse /= Void then
 					l_extra_info := ext_cse.info					
 				end
-				a_row.set_data (-1) -- This is not a valid Eiffel call stack element.
+--				Result.disable_select
 			end
 
 				--| Tooltip addition
@@ -779,57 +657,29 @@ feature {NONE} -- Implementation
 			if l_extra_info /= Void then
 				l_tooltip.append_string ("%N    + " + l_extra_info)
 			end
+			Result.set_tooltip (l_tooltip)
 			
 				--| Fill columns
-			create glab.make_with_text (l_feature_info)
-			glab.set_tooltip (l_tooltip)
-			a_row.set_item (1, glab)
-			
-			create glab.make_with_text (l_class_info)
-			glab.set_tooltip (l_class_info)
-			a_row.set_item (2, glab)
-			
-			create glab.make_with_text (l_orig_class_info)
-			glab.set_tooltip (l_orig_class_info)
-			a_row.set_item (3, glab)			
+				
+			Result.extend ("") -- Icon column
+			Result.extend (l_feature_info)
+			Result.extend (l_class_info)
+			Result.extend (l_orig_class_info)
 
-				--| Set GUI behavior
-			refresh_stack_grid_row (a_row, Application.current_execution_stack_number)
+				--| Set GUI behavior			
+			Result.set_data (level)
 			if level = Application.current_execution_stack_number then
+				Result.set_pixmap (Pixmaps.Icon_green_arrow)
 				arrowed_level := level
+			elseif e_cse /= Void then
+				Result.set_pixmap (Pixmaps.Icon_arrow_empty)
 			end
 		end
 
-	refresh_stack_grid_row (a_row: EV_GRID_ROW; current_level: INTEGER) is
-			-- Refresh row of stack_grid regarding the current_level information
-		require
-			a_row /= Void
-		local
-			glab: EV_GRID_LABEL_ITEM
-			level: INTEGER
-		do
-			level := level_from_row (a_row)
-			a_row.set_foreground_color (Void)
-			a_row.set_background_color (Void)
-			
-				--| Set GUI behavior
-			glab ?= a_row.item (1)
-			if level = current_level then
-				glab.set_pixmap (Pixmaps.Icon_green_arrow)
-				a_row.set_background_color (row_highlight_bg_color)
-			elseif level >= 0 then
-				glab.set_pixmap (Pixmaps.Icon_arrow_empty)
-			else
-				glab.remove_pixmap
-				glab.set_left_border (glab.left_border + glab.spacing + pixmaps.icon_arrow_empty.width)
-				a_row.set_foreground_color (row_unsensitive_fg_color)
-			end
-		end
-		
 	select_element_by_level (level: INTEGER) is
 			-- Set stone in the  develpment window.
 		require
-			valid_level: level > 0 and level <= stack_grid.row_count
+			valid_level: level > 0 and level <= stack_list.count
 		local
 			st: CALL_STACK_STONE
 		do
@@ -851,24 +701,36 @@ feature {NONE} -- Implementation
 			-- If `a_key' is enter, set the selected stack element as the new stone.
 		local
 			level: INTEGER_REF
-			l_row: EV_GRID_ROW
 		do
 			if a_key.code = Key_enter then
-				l_row := stack_grid.single_selected_row
-				if l_row /= Void then
-					level ?= l_row.data
-					if level > 0 then
-						select_element_by_level (level.item)
-						stack_grid.set_focus
-					end
+				if stack_list.selected_item /= Void then
+					level ?= stack_list.selected_item.data
+					select_element_by_level (level.item)
 				end
 			end
 		end
 		
+	pebble_from_x_y (x, y, line: INTEGER): CALL_STACK_STONE is
+			-- Returns the call_stack_stone of line `line'.
+		require
+			valid_line: line > 0 and line <= stack_list.count
+		local
+			elem: EIFFEL_CALL_STACK_ELEMENT
+		do
+			elem ?= application.status.current_call_stack.i_th (line)
+			if
+				elem /= Void and then
+				elem.dynamic_class /= Void and then
+				elem.dynamic_class.has_feature_table
+			then
+				create Result.make (line)
+			end
+		end
+
 	save_call_stack is
 			-- Saves the current call stack representation in a file.
 		local
-			fd: EB_FILE_SAVE_DIALOG
+			fd: EV_FILE_SAVE_DIALOG
 			standard_path: DIRECTORY_NAME
 			f: RAW_FILE
 			fn: FILE_NAME
@@ -887,7 +749,7 @@ feature {NONE} -- Implementation
 				create standard_path.make
 				standard_path.extend (last_path)
 			end
-			create fd.make_with_preference (preferences.dialog_data.last_saved_call_stack_directory_preference)
+			create fd
 			set_dialog_filters_and_add_all (fd, <<Text_files_filter>>)
 			fd.set_start_directory (standard_path)
 				--| We try to find a file_name that does not exist.
@@ -949,17 +811,6 @@ feature {NONE} -- Implementation
 			retry
 		end
 		
-	show_thread_panel is
-		local
-			th_tools: ES_DBG_THREADS_TOOL
-		do
-			th_tools := debugger_manager.threads_tool
-			if not th_tools.shown then
-				th_tools.show
-				th_tools.widget.set_focus
-			end
-		end
-		
 	select_call_stack_thread (lab: EV_LABEL; x, y, button: INTEGER; x_tilt, y_tilt, pressure: DOUBLE; screen_x, screen_y: INTEGER) is
 		local
 			m: EV_MENU
@@ -968,7 +819,7 @@ feature {NONE} -- Implementation
 			i: INTEGER
 			arr: ARRAY [INTEGER]
 			wd: EV_WARNING_DIALOG
-			l_item_text, s: STRING
+			l_item_text: STRING
 			l_status: APPLICATION_STATUS
 		do
 			l_status := Application.status
@@ -976,11 +827,6 @@ feature {NONE} -- Implementation
 				arr := l_status.all_thread_ids
 				if arr /= Void and then not arr.is_empty then
 					create m
-
-					create mi.make_with_text_and_action ("Show threads panel", agent show_thread_panel)
-					m.extend (mi)
-					m.extend (create {EV_MENU_SEPARATOR})
-										
 					from
 						i := arr.lower
 					until
@@ -988,11 +834,6 @@ feature {NONE} -- Implementation
 					loop
 						tid := arr @ i
 						l_item_text := "0x" + tid.to_hex_string
-						s := l_status.thread_name (tid)
-						if s /= Void then
-							l_item_text.append_string (" - " + s)
-						end
-						
 						create mi
 						if tid = l_status.current_thread_id then
 							mi.set_pixmap (pixmaps.icon_green_arrow)
@@ -1037,7 +878,6 @@ feature {NONE} -- Implementation: set stack depth command
 			
 				-- Set widget properties.
 			dialog.set_title (Interface_names.t_Set_stack_depth)
-			dialog.set_icon_pixmap (pixmaps.icon_dialog_window)
 			dialog.disable_user_resize
 			Layout_constants.set_default_size_for_button (okb)
 			Layout_constants.set_default_size_for_button (cancelb)
@@ -1147,19 +987,5 @@ feature {NONE} -- Implementation, cosmetic
 			end
 			lab.set_font (f)
 		end
-		
-	set_row_highlight_bg_color (v: COLOR_PREFERENCE) is
-		do
-			row_highlight_bg_color := v.value
-		end
-		
-	set_row_unsensitive_fg_color (v: COLOR_PREFERENCE) is
-		do
-			row_unsensitive_fg_color := v.value
-		end		
 
-	row_highlight_bg_color: EV_COLOR
-	
-	row_unsensitive_fg_color: EV_COLOR
-		
 end -- class EB_CALL_STACK_TOOL

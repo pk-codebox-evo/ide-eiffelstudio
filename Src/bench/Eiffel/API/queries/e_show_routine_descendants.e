@@ -12,7 +12,8 @@ inherit
 	E_FEATURE_CMD
 
 create
-	make, default_create
+
+	make, do_nothing
 
 feature -- Execution
 

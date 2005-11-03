@@ -13,14 +13,6 @@ inherit
 			is_commutative, generate_standard_il
 		end;
 	
-feature -- Visitor
-
-	process (v: BYTE_NODE_VISITOR) is
-			-- Process current element.
-		do
-			v.process_bin_or_else_b (Current)
-		end
-	
 feature -- Status report
 
 	is_or: BOOLEAN is

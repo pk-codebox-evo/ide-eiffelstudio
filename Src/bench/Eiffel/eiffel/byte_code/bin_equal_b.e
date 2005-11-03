@@ -215,8 +215,6 @@ feature -- IL code generation
 		local
 			left_type: TYPE_I
 			right_type: TYPE_I
-			continue_label: IL_LABEL
-			end_label: IL_LABEL
 		do
 			left_type := context.real_type (left.type)
 			right_type := context.real_type (right.type)
@@ -234,56 +232,23 @@ feature -- IL code generation
 				il_generator.pop
 				generate_il_boolean_constant
 			else
-				if left_type.is_expanded or else right_type.is_expanded then
-						-- Object (value) equality.
-
-						-- Generate left operand.
-					left.generate_il_value
-					if left_type.is_expanded then
-							-- Convert it to reference.
-						il_generator.generate_metamorphose (left_type)
-					else
-							-- Check for voidness.
-						continue_label := il_generator.create_label
-						end_label := il_generator.create_label
-						il_generator.duplicate_top
-						il_generator.branch_on_true (continue_label)
-						il_generator.pop
-						il_generator.put_boolean_constant (false)
-						il_generator.branch_to (end_label)
-						il_generator.mark_label (continue_label)
+				if
+					(left_type.is_basic and right_type.is_reference) or else
+					(left_type.is_reference and right_type.is_basic)
+				then
+					left.generate_il	
+					if left_type.is_basic and right_type.is_reference then
+						left.generate_il_eiffel_metamorphose (left_type)
 					end
 
-						-- Generate right operand.
-					right.generate_il_value
-					if right_type.is_expanded then
-							-- Convert it to reference.
-						il_generator.generate_metamorphose (right_type)
-					else
-							-- Check for voidness.
-						continue_label := il_generator.create_label
-						end_label := il_generator.create_label
-						il_generator.duplicate_top
-						il_generator.branch_on_true (continue_label)
-							-- Remove left operand as well.
-						il_generator.pop
-						il_generator.pop
-						il_generator.put_boolean_constant (false)
-						il_generator.branch_to (end_label)
-						il_generator.mark_label (continue_label)
+					right.generate_il
+					if left_type.is_reference and right_type.is_basic then
+						right.generate_il_eiffel_metamorphose (right_type)
 					end
 
-						-- Call "is_equal".
 					il_generator.generate_object_equality_test
-						-- Negate result if required.
 					generate_il_modifier_opcode
-
-						-- Mark end of equality expression (if required).
-					if end_label /= Void then
-						il_generator.mark_label (end_label)
-					end
 				else
-						-- Reference equality.
 					generate_converted_standard_il
 				end
 			end

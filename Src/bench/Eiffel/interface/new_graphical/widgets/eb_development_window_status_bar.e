@@ -43,8 +43,6 @@ inherit
 			on_application_stopped
 		end
 
-	EV_SHARED_APPLICATION
-
 create
 	make
 
@@ -107,7 +105,6 @@ feature {NONE} -- Initialization
 				-- Create all widgets.
 			create widget
 			create label
-			create progress_bar
 			create project_label
 			create coordinate_label
 			create compilation_icon.make_with_size (16, 16)
@@ -134,14 +131,6 @@ feature {NONE} -- Initialization
 			f.set_style ({EV_FRAME_CONSTANTS}.Ev_frame_lowered)
 			f.extend (vp)
 			widget.extend (f)
-			
-			create f
-			f.set_minimum_width (100)
-			f.set_style ({EV_FRAME_CONSTANTS}.Ev_frame_lowered)
-			f.extend (progress_bar)
-			widget.extend (f)
-			widget.disable_item_expand (f)
-			
 			create f
 			f.set_style ({EV_FRAME_CONSTANTS}.Ev_frame_lowered)
 			f.extend (project_label)
@@ -190,42 +179,20 @@ feature {NONE} -- Initialization
 
 feature -- Status setting
 
-	reset is
-			-- Reset status bar.
-		do
-			display_message ("")
-			display_progress_value (0)
-		end
-
 	display_message (mess: STRING) is
 			-- Display `mess'.
 		do
 			label.set_text (mess)
-			label.refresh_now
-		end
-
-	reset_progress_bar_with_range (a_range: INTEGER_INTERVAL) is
-			-- Reset `progress_bar' to use range `a_range'.
-		require
-			a_range_not_void: a_range /= Void
-		do
-			progress_bar.reset_with_range (a_range)
-		end
-
-	display_progress_value (a_value: INTEGER) is
-			-- Display `a_value' in `progress_bar'.
-		do
-			progress_bar.set_value (a_value)
 		end
 
 	remove_cursor_position is
 			-- Do not display any position for the editor cursor.
 		do
-			set_cursor_position (0, 0, 0)
+			set_cursor_position (0, 0)
 			coordinate_label.disable_sensitive
 		end
 
-	set_cursor_position (l, c, v: INTEGER) is
+	set_cursor_position (l, c: INTEGER) is
 			-- Display a new editor coordinate.
 		require
 			valid_pos: l >= 0 and c >= 0
@@ -236,12 +203,6 @@ feature -- Status setting
 			s.append (l.out)
 			s.append_character (':')
 			s.append (c.out)
-			--| FIXME IEK Uncomment when {TEXT_CURSOR}.x_in_visible_characters
-			--| is fixed to update with keyboard navigation.
---			if v > c then
---				s.append_character ('-')
---				s.append (v.out)
---			end
 			coordinate_label.set_text (s)
 			coordinate_label.enable_sensitive
 		end
@@ -257,9 +218,7 @@ feature {EB_RECYCLER} -- Status setting
 			
 			mg := Eiffel_project.manager
 			mg.create_agents.prune_all (create_agent)
-
 			mg.load_agents.prune_all (load_agent)
-			
 			mg.close_agents.prune_all (close_agent)
 			mg.edition_agents.prune_all (edition_agent)
 			mg.compile_start_agents.prune_all (compile_start_agent)
@@ -279,22 +238,9 @@ feature -- Access
 	widget: EV_STATUS_BAR
 			-- Widget representing `Current'.
 
-feature -- Access
-
-	current_progress_value: INTEGER is
-			-- Current value display by `progress_bar'.
-		do
-			Result := progress_bar.value
-		end
-
-feature {EIFFEL_WORLD, EB_WINDOW_MANAGER, EB_DEVELOPMENT_WINDOW} -- Access
-
 	label: EV_LABEL
 			-- Label where messages are displayed.
 			-- Directly accessible.
-
-	progress_bar: EB_PERCENT_PROGRESS_BAR
-			-- Progress bar where completion status is displayed
 
 feature {NONE} -- Implementation: widgets
 

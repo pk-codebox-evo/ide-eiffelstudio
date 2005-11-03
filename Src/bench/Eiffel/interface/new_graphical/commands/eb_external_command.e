@@ -34,16 +34,10 @@ inherit
 		export
 			{NONE} all
 		end
-		
-	EB_SHARED_MANAGERS
-	
-	EB_SHARED_PIXMAPS
 
 create
 	make,
-	make_from_string,
-	make_from_new_command_line,
-	make_and_run_only
+	make_from_string
 
 feature {NONE} -- Initialization
 
@@ -57,7 +51,6 @@ feature {NONE} -- Initialization
 			create_dialog
 
 				-- Find first available index for new command.
-
 			from
 				index := 0
 			until
@@ -73,39 +66,7 @@ feature {NONE} -- Initialization
 				commands.put (Current, index)
 			end
 			enable_sensitive
-			external_output_manager.synchronize_command_list (Current)			
 		end
-		
-	make_from_new_command_line (w:EV_WINDOW; cmd_line: STRING) is
-			-- Use command line indicated by `cmd_line' to make a new
-			-- external command object.
-		require
-			w_not_null: w /= Void
-			cmd_line_not_null: cmd_line /= Void
-		do
-			old_index := -1
-			create_dialog
-
-				-- Find first available index for new command.
-			from
-				index := 0
-			until
-				index > 9 or commands.item (index) = Void
-			loop
-				index := index + 1
-			end
-			index_field.set_value (index)
-			command_field.set_text (cmd_line)
-			dialog.show_modal_to_window (w)
-			
-			if is_valid then
-					-- Automatically add `Current' to the list of commands.
-				commands.put (Current, index)
-			end
-			enable_sensitive
-			write_to_preference
-			external_output_manager.synchronize_command_list (Current)						
-		end	
 
 	make_from_string (a_command: STRING) is
 			-- Create with `a_command'
@@ -113,7 +74,7 @@ feature {NONE} -- Initialization
 			command_not_void: a_command /= Void
 		local
 			tok: STRING
-			i, i1 ,i2: INTEGER
+			i, i1: INTEGER
 		do
 			i := a_command.index_of (separator, 1)
 			name := a_command.substring (1, i - 1)
@@ -124,14 +85,8 @@ feature {NONE} -- Initialization
 			else
 				index := -1
 			end
-			i2 := a_command.index_of (separator, i1 + 1)
+			external_command := a_command.substring (i1 + 1, a_command.count)
 			
-			external_command := a_command.substring (i1 + 1, i2 - 1)--a_command.count)
-			if i2 = a_command.count then
-				working_directory := ""
-			else
-				working_directory := a_command.substring (i2 + 1, a_command.count)
-			end
 				-- Check validity before inserting.
 				-- This is a bit redundant with the precondition, but
 				-- you never know what a David Hollenberg is capable of ^.^;;
@@ -142,135 +97,53 @@ feature {NONE} -- Initialization
 				enable_sensitive
 			end
 		end
-		
-	make_and_run_only (cmd: STRING; dir: STRING) is
-			-- Create for running `cmd' in directory `dir'.
-			-- Do not save external command and its working directory to preference.
-		require
-			cmd_not_void: cmd /= Void
-			cmd_not_empty: not cmd.is_empty			
-		do
-			set_command (cmd)
-			set_working_directory (dir)
-			execute
-		end
-		
 
 feature -- Basic operations
-	
-	write_to_preference is
-			-- Write `Current' external command to preference.
-		local 
-			i: INTEGER
-		do
-			from
-			until
-				i > 9
-			loop
-				if commands @ i = Current then
-					preferences.misc_data.i_th_external_preference (i).set_value ((commands @ i).resource)
---				else
---						-- We use an empty string as value, because this is how the
---						-- preferences are initialized. That way, the entry is actually
---						-- removed from the preferences.
---					preferences.misc_data.i_th_external_preference (i).set_value ("")
-				end
-				i := i + 1
-			end
-		end
 
 	execute is
 			-- Launch the external command that is linked to `Current', if possible.
 		local
 			cl: STRING
-			wdlg: EV_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 			cn: STRING
 			dev: EB_DEVELOPMENT_WINDOW
 			ok: BOOLEAN
 			cv_cst: CLASSI_STONE
 			od: STRING
 			exec: EXECUTION_ENVIRONMENT
-			dlg: EV_WARNING_DIALOG
-			cmdexe: STRING
-			wd: STRING
-			args: LIST [STRING]
-			use_argument: BOOLEAN
 		do
+			create exec
+			od := exec.current_working_directory
+			create cl.make (external_command.count + 20)
+			cl.append (external_command)
 			dev := Window_manager.last_focused_development_window
-			if external_launcher.launched and then not external_launcher.has_exited then
-				create dlg.make_with_text ("An external command is running now. %NPlease wait until it aaexits.")
-				dlg.show_modal_to_window (dev.window)
-			else	
-			
-				create exec
-				od := exec.current_working_directory
-				create cl.make (external_command.count + 20)
-				if working_directory /= Void then
-					create wd.make (working_directory.count + 20)
-					wd.append (working_directory)
+			cv_cst ?= dev.stone
+			ok := True
+			if ok and cl.has_substring ("$class_name") then
+				cn := dev.class_name
+				if cn = Void or else cn.is_empty then
+					create wd.make_with_text (Warning_messages.w_Command_needs_class)
+					ok := False
+					wd.show_modal_to_window (dev.window)
 				else
-					wd := ""
+					cl.replace_substring_all ("$class_name", cn)
 				end
-				cl.append (external_command)
-				external_launcher.set_original_command_name (cl)								
-				cv_cst ?= dev.stone
-				ok := True
-				if ok and (cl.has_substring ("$class_name") or wd.has_substring("$class_name")) then
-					cn := dev.class_name
-					if cn = Void or else cn.is_empty then
-						ok := False					
-						create wdlg.make_with_text (Warning_messages.w_Command_needs_class)
-						wdlg.show_modal_to_window (dev.window)
-					else
-						cl.replace_substring_all ("$class_name", cn)
-						wd.replace_substring_all ("$class_name", cn)
-					end
-				end
-				if 
-					ok and 
-					(
-						cl.has_substring ("$file_name") or 
-						cl.has_substring ("$directory_name") or
-						wd.has_substring ("$file_name") or
-						wd.has_substring ("$directory_name")
-					) 
-				then
-					if cv_cst = Void then
-						ok := False
-						create wdlg.make_with_text (Warning_messages.w_Command_needs_file)
-						wdlg.show_modal_to_window (dev.window)
-					else
-						cl.replace_substring_all ("$file_name", cv_cst.class_i.file_name)
-						cl.replace_substring_all ("$directory_name", cv_cst.class_i.cluster.path)
-						wd.replace_substring_all ("$file_name", cv_cst.class_i.file_name)
-						wd.replace_substring_all ("$directory_name", cv_cst.class_i.cluster.path)					
-					end
-				end
-				if ok then
-					if platform_constants.is_windows then
-						cmdexe := Execution_environment.get ("COMSPEC")
-						if cmdexe /= Void then
-								-- This allows the use of `dir' etc.
-							create {ARRAYED_LIST [STRING]}args.make (1)
-							args.extend ("/c%""+cl+"%"")
-							external_launcher.prepare_command_line (cmdexe, args, wd)
-							use_argument := True
-						else
-							external_launcher.prepare_command_line (cl, Void, wd)
-							use_argument := False
-						end
-					else
-						create {ARRAYED_LIST [STRING]}args.make (2)
-						args.extend ("-c")
-						args.extend ("%'"+cl+"%'")
-						external_launcher.prepare_command_line ("/bin/sh", args, wd)
-						use_argument := True
-					end	
-					external_launcher.set_hidden (False)
-					external_launcher.launch (True, use_argument)				
-				end			
-				exec.change_working_directory (od)
 			end
+			if ok and (cl.has_substring ("$file_name") or cl.has_substring ("$directory_name")) then
+				if cv_cst = Void then
+					ok := False
+					create wd.make_with_text (Warning_messages.w_Command_needs_file)
+					wd.show_modal_to_window (dev.window)
+				else
+					cl.replace_substring_all ("$file_name", cv_cst.class_i.file_name)
+					cl.replace_substring_all ("$directory_name", cv_cst.class_i.cluster.path)
+					exec.change_working_directory (cv_cst.class_i.cluster.path)
+				end
+			end
+			if ok then
+				launch_command (cl)
+			end
+			exec.change_working_directory (od)
 		end
 
 feature -- Properties
@@ -293,9 +166,6 @@ feature -- Properties
 
 	external_command: STRING
 			-- Command line that is invoked when `Current' is executed.
-	
-	working_directory: STRING
-			-- Working director where the corresponding external command is invoked.
 
 	last_call_output: STRING
 			-- Output of the last invocation of command.
@@ -316,9 +186,6 @@ feature -- Status setting
 			if external_command /= Void then
 				command_field.set_text (external_command)
 			end
-			if working_directory /= Void then
-				working_directory_field.set_text (working_directory)
-			end
 			old_index := index
 			dialog.show_modal_to_window (w)
 			if is_valid then
@@ -328,35 +195,6 @@ feature -- Status setting
 				end
 			end
 			old_index := -1
-			write_to_preference
-			external_output_manager.synchronize_command_list (Current)			
-		end	
-		
-feature{EB_EXTERNAL_OUTPUT_TOOL} -- Status setting
-
-	set_command (cmd: STRING) is
-			-- Set `external_command' with `cmd'.
-		require
-			cmd_not_void: cmd /= Void
-			cmd_not_empty: not cmd.is_empty
-		do
-			create external_command.make_from_string (cmd)
-		ensure
-			external_command_set: external_command.is_equal (cmd)
-		end
-	
-	set_working_directory (dir: STRING) is
-			-- Set `working_directory' with `dir'.
-		do
-			if dir /= Void then
-				create working_directory.make_from_string (dir)
-			else
-				working_directory := Void
-			end
-		ensure
-			working_directory_set:
-				((dir /= Void) implies working_directory.is_equal (dir)) and
-				((dir = Void) implies working_directory = Void)
 		end
 
 feature -- Status report
@@ -370,13 +208,6 @@ feature -- Status report
 			Result.append (index.out)
 			Result.append_character (separator)
 			Result.append (external_command)
-				-- Store `working_directory' to preference.
-			Result.append_character (separator)
-			if working_directory /= Void then
-				Result.append (working_directory)
-			else	
-				Result.append ("")
-			end
 		ensure
 			not_void: Result /= Void
 			valid: valid_resource (Result)
@@ -387,7 +218,7 @@ feature -- Status report
 		require
 			not_void_resource: r /= Void
 		do
-			Result := r.occurrences (separator) = 3
+			Result := r.occurrences (separator) = 2
 		end
 
 	is_valid: BOOLEAN is
@@ -413,10 +244,7 @@ feature {NONE} -- Widgets
 
 	command_field: EV_TEXT_FIELD
 			-- Text field where the user can enter `external_command'.
-			
-	working_directory_field: EV_TEXT_FIELD
-			-- Text field where the user can enter `working_directory'
-			
+
 feature {NONE} -- Implementation
 
 	separator: CHARACTER is '['
@@ -428,37 +256,15 @@ feature {NONE} -- Implementation
 			Result := (create {EB_EXTERNAL_COMMANDS_EDITOR}.make).commands
 		end
 
-	dir_dlg: EV_DIRECTORY_DIALOG
-	
-	create_directory_dialog is
-			-- 
-		do
-			create dir_dlg.make_with_title ("Select working directory")
-			dir_dlg.ok_actions.extend (agent on_directory_dialog_ok)	
-			dir_dlg.show_modal_to_window (dialog)	
-		end
-	
-	on_directory_dialog_ok is
-			-- 
-		do
-			if dir_dlg /= Void then
-				working_directory := dir_dlg.directory
-				working_directory_field.set_text (working_directory)
-				dir_dlg.destroy
-			end
-			
-		end
-		
 	create_dialog is
 			-- Initialize `dialog' and all widgets.
 		local
-			hb, hb1: EV_HORIZONTAL_BOX
+			hb: EV_HORIZONTAL_BOX
 			vb: EV_VERTICAL_BOX
 			f: EV_FRAME
 			okb, cb: EV_BUTTON
-			nl, il, cl, wd: EV_LABEL
+			nl, il, cl: EV_LABEL
 			sz: INTEGER
-			dir_btn: EV_BUTTON
 		do
 				-- Create widgets.
 			create dialog
@@ -470,17 +276,6 @@ feature {NONE} -- Implementation
 			create name_field
 			create index_field.make_with_value_range (0 |..| 9)
 			create command_field
-			
-			create hb1.default_create
-			create working_directory_field
-			create wd.make_with_text ("Working directory:")
-			wd.align_text_left
-			create dir_btn.default_create
-			dir_btn.set_pixmap (Icon_open_file.item (1))
-			dir_btn.select_actions.extend (agent create_directory_dialog)
-			hb1.extend (working_directory_field)
-			hb1.extend (dir_btn)
-			hb1.disable_item_expand (dir_btn)
 			
 				-- Organize widgets.
 			sz := nl.minimum_width.max (il.minimum_width)
@@ -503,11 +298,6 @@ feature {NONE} -- Implementation
 			vb.extend (hb)
 			vb.extend (cl)
 			vb.extend (command_field)
-			
-			vb.extend (wd)
-			vb.extend (hb1)
---			vb.extend (working_directory_field)
---			vb.extend (dir_btn)
 			
 			create f
 			f.set_style ({EV_FRAME_CONSTANTS}.Ev_frame_etched_in)
@@ -536,7 +326,6 @@ feature {NONE} -- Implementation
 			Layout_constants.set_default_size_for_button (okb)
 			Layout_constants.set_default_size_for_button (cb)
 			dialog.set_title (Interface_names.t_External_command)
-			dialog.set_icon_pixmap (pixmaps.icon_dialog_window)
 			dialog.set_maximum_height (dialog.minimum_height)
 			dialog.set_default_push_button (okb)
 			dialog.set_default_cancel_button (cb)
@@ -567,7 +356,6 @@ feature {NONE} -- Implementation
 				else
 					name := name_field.text
 					external_command := command_field.text
-					working_directory := working_directory_field.text
 					index := index_field.value
 					destroy_dialog
 				end
@@ -589,6 +377,148 @@ feature {NONE} -- Implementation
 			index_field := Void
 			command_field := Void
 		end
+
+	launch_command (cl: STRING) is
+			-- Execute command line `cl',
+			-- wait for it to complete,
+			-- display the output in the output tools.
+		require
+			valid_cl: cl /= Void
+		local
+			timer: EV_TIMEOUT
+			cmdexe: STRING
+		do
+			Window_manager.for_all_development_windows (agent {EB_DEVELOPMENT_WINDOW}.disable_sensitive)
+			create output_file_name.make_temporary_name
+			create error_output_file_name.make_temporary_name
+			if platform_constants.is_windows then
+				cmdexe := Execution_environment.get ("COMSPEC")
+				if cmdexe /= Void then
+						-- This allows the use of `dir' etc.
+					cl.prepend (cmdexe + " /c")
+				end
+				cl.append (" 2> ")
+				cl.append (error_output_file_name)
+				cl.append (" >> ")
+				cl.append (output_file_name)
+			else
+				create finished_file_name.make_temporary_name
+				cl.prepend ("sh -c ")
+				cl.append (" > ")
+				cl.append (output_file_name)
+				cl.append (" 2> ")
+				cl.append (error_output_file_name)
+				cl.append (" ; echo finished > ")
+				cl.append (finished_file_name)
+			end
+			create timer.make_with_interval (500)
+			timer.actions.extend (agent check_not_finished)
+			execution_environment.launch (cl)
+			create running_dialog.make_initialized (1, preferences.dialog_data.executing_command_string, Interface_names.l_Executing_command, Interface_names.L_do_not_show_again, preferences.preferences)
+			running_dialog.show_modal_to_window (Window_manager.last_focused_development_window.window)
+			timer.destroy
+			Window_manager.for_all_development_windows (agent {EB_DEVELOPMENT_WINDOW}.enable_sensitive)
+		end
+
+	running_dialog: STANDARD_DISCARDABLE_CONFIRMATION_DIALOG
+			-- Dialog that is displayed while we wait for the output of the command.
+
+	check_not_finished is
+			-- Check that the current command is not finished, by checking
+			-- for the presence of an output file.
+		local
+			f: PLAIN_TEXT_FILE
+			retried: INTEGER
+		do
+			if Platform_constants.is_windows then
+				if retried = 0 then
+						--| We open in read/write mode to make sure the application
+						--| has finished writing in it.
+					create f.make_open_read_write (output_file_name)
+					output_manager.clear
+					running_dialog.destroy
+					display_file_contents (f, Interface_names.l_Command_normal_output)
+					retried := 2
+					create f.make_open_read_write (error_output_file_name)
+					display_file_contents (f, Interface_names.l_Command_error_output)
+				elseif retried = 1 then
+					create f.make_open_read_write (error_output_file_name)
+					output_manager.clear
+					running_dialog.destroy
+					display_file_contents (f, Interface_names.l_Command_error_output)
+				end
+			else
+				if retried = 0 then
+					create f.make (finished_file_name)
+					if f.exists then
+						output_manager.clear
+						running_dialog.destroy
+						create f.make_open_read (output_file_name)
+						display_file_contents (f, Interface_names.l_Command_normal_output)
+						create f.make_open_read (error_output_file_name)
+						display_file_contents (f, Interface_names.l_Command_error_output)
+					end
+				end
+			end
+		rescue
+			retried := retried + 1
+			retry
+		end
+		
+	display_file_contents (f: PLAIN_TEXT_FILE; pref: STRING) is
+			-- Read and display the contents of file `f' in the output tools.
+			-- Prepend `pref' to the contents of the file.
+		require
+			f_readable: f /= Void and then f.is_open_read
+		local
+			retried: BOOLEAN
+			st: STRUCTURED_TEXT
+			i1, i2: INTEGER
+			output: STRING
+		do
+			if not retried then
+				if f.count > 0 then
+					create output.make (pref.count + f.count)
+					output.append (pref)
+					f.read_stream (f.count)
+					create st.make
+					output.append (f.last_string)
+					output.prune_all ('%R')
+					from
+						i2 := output.index_of ('%N', i1 + 1)
+					until
+						i2 = 0
+					loop
+						if i2 > i1 then
+							st.extend (create {BASIC_TEXT}.make (output.substring (i1 + 1, i2 - 1)))
+						end
+						st.extend (create {NEW_LINE_ITEM}.make)
+						i1 := i2
+						i2 := output.index_of ('%N', i1 + 1)
+					end
+						-- Don't forget the last line...
+					if i1 + 1 < output.count then
+						st.extend (create {BASIC_TEXT}.make (output.substring (i1 + 1, output.count)))
+					end
+					output_manager.force_display
+					output_manager.process_text (st)
+				end
+				f.close
+				f.delete
+			end
+		rescue
+			retried := True
+			retry
+		end
+
+	output_file_name: FILE_NAME
+			-- Name of the file where we expect to find an output.
+
+	error_output_file_name: FILE_NAME
+			-- Name of the file where we expect to find an error output.
+
+	finished_file_name: FILE_NAME
+			-- Name of the file that tells that execution completed (non Windows platforms).
 
 	old_index: INTEGER
 			-- Index of `Current' before we edited its properties.

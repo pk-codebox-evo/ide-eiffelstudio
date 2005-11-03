@@ -31,13 +31,6 @@ inherit
 		undefine
 			default_create, is_equal, copy
 		end
-		
-	EB_SHARED_PREFERENCES
-		export
-			{NONE} all
-		undefine
-			default_create, is_equal, copy
-		end
 
 create
 	make
@@ -242,7 +235,7 @@ feature -- Actions
 	add_local_assembly_reference is
 			-- Open the browse dialog for adding of local assembly reference
 		local
-			fd: EB_FILE_OPEN_DIALOG
+			fd: EV_FILE_OPEN_DIALOG
 			l_dir: STRING
 			list_row: EV_MULTI_COLUMN_LIST_ROW
 			l_ass_path: STRING
@@ -254,7 +247,7 @@ feature -- Actions
 		do
 			create l_exec
 			l_dir := l_exec.current_working_directory
-			create fd.make_with_preference (preferences.dialog_data.last_opened_local_assembly_directory_preference)
+			create fd
 			set_dialog_filters (fd, <<dll_files_filter, exe_files_filter, all_assemblies_filter>>)
 			fd.set_title ("Select an assembly")
 			fd.show_modal_to_window (system_window.window)

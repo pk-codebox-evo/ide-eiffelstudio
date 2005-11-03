@@ -17,11 +17,6 @@ inherit
 		export
 			{NONE} all
 		end
-		
-	EB_SHARED_PREFERENCES
-		export
-			{NONE} all
-		end
 
 create
 	make
@@ -45,16 +40,16 @@ feature -- Basic operations
 			png_file: FILE_NAME
 			png_format: EV_PNG_FORMAT
 			p: EV_PIXMAP
-			dial: EB_FILE_SAVE_DIALOG
+			dial: EV_FILE_SAVE_DIALOG
 			test_file: RAW_FILE
 			error: INTEGER
-			wd: EV_WARNING_DIALOG
+			wd: EB_WARNING_DIALOG
 			env: EXECUTION_ENVIRONMENT
 			current_directory: STRING
 		do
 			if is_sensitive then
 				if error = 0 then
-					create dial.make_with_preference (preferences.dialog_data.last_saved_diagram_postscript_directory_preference)
+					create dial
 					set_dialog_filters_and_add_all (dial, <<Png_files_filter>>)
 					
 					if tool.class_graph /= Void then

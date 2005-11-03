@@ -40,11 +40,6 @@ inherit
 		end
 		
 	REFACTORING_HELPER
-	
-	TEXT_OBSERVER
-		rename
-			set_manager as set_text_observer_manager
-		end
 
 create
 	make

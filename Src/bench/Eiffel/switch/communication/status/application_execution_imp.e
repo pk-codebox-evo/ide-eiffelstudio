@@ -24,10 +24,6 @@ inherit
 			{NONE} all
 		end
 
-	SHARED_EIFFEL_PROJECT
-	
-	REFACTORING_HELPER
-
 feature {NONE} -- Initialization
 
 	make is
@@ -90,19 +86,16 @@ feature {APPLICATION_EXECUTION} -- Execution
 			successful_app_is_not_stopped: Application.is_running implies not Application.is_stopped
 		end
 
-	keep_only_objects (kept_objects: SET [STRING]) is
-		require
-			kept_objects_not_void: kept_objects /= Void
-		deferred
-		end
-		
-	continue_ignoring_kept_objects is
-			-- Continue the running of the application
-			-- before any debugger's operation occurred
-			-- so basically, we are sure we have the same `kept_objects'
+	continue (kept_objects: LINKED_SET [STRING]) is
+			-- Continue the running of the application and keep the 
+			-- objects addresses in `kept_objects'. Objects that are not in 
+			-- `kept_objects' will be removed and will be not under the 
+			-- control of bench. Therefore, these addresses cannot be
+			-- referenced the next time we stop the application.
 		require
 			is_running: Application.is_running
 			is_stopped: Application.is_stopped
+			non_void_keep_objects: kept_objects /= Void
 			non_negative_interrupt: Application.interrupt_number >= 0
 		deferred
 		end
@@ -134,22 +127,4 @@ feature {APPLICATION_EXECUTION} -- Execution
 		deferred
 		end
 
-	load_system_dependent_debug_info is
-		do
-		end
-
-feature -- Query
-
-	dump_value_at_address_with_class (a_addr: STRING; a_cl: CLASS_C): DUMP_VALUE is
-		require
-			a_addr /= Void
-		deferred
-		end
-
-	debug_value_at_address_with_class (a_addr: STRING; a_cl: CLASS_C): ABSTRACT_DEBUG_VALUE is
-		require
-			a_addr /= Void
-		deferred
-		end
-
-end
+end -- class APPLICATION_EXECUTION_IMP

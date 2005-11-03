@@ -5,9 +5,6 @@ indexing
 
 deferred class
 	EB_STONABLE
-	
-inherit
-	EB_POSITIONABLE
 
 feature -- Access
 

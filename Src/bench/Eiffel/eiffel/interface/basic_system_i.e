@@ -156,17 +156,6 @@ feature -- Access
 			valid_result: Result > 0
 		end
 
-	native_array_id: INTEGER is
-			-- Id of class STRING
-		require
-			native_array_class_exists: native_array_class /= Void
-			compiled: native_array_class.is_compiled
-		do
-			Result := native_array_class.compiled_class.class_id
-		ensure
-			valid_result: Result > 0
-		end
-
 	system_string_id: INTEGER is
 			-- Id of class STRING
 		require

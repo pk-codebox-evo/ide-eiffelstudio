@@ -9,8 +9,7 @@ class
 inherit
 	EXPR_B
 		redefine
-			enlarged, make_byte_code, generate_il, is_simple_expr, allocates_memory,
-			is_constant_expression
+			enlarged, make_byte_code, generate_il, is_simple_expr, allocates_memory
 		end
 
 create
@@ -26,14 +25,6 @@ feature {NONE} -- Initialization
 			value_set: value = v
 		end
 
-feature -- Visitor
-
-	process (v: BYTE_NODE_VISITOR) is
-			-- Process current element.
-		do
-			v.process_bit_const_b (Current)
-		end
-	
 feature -- Access
 
 	value: STRING;
@@ -46,8 +37,6 @@ feature -- Status report
 
 	allocates_memory: BOOLEAN is True
 
-	is_constant_expression: BOOLEAN is True
-			-- A bit constant is constant
 
 	type: BIT_I is
 			-- Integer type

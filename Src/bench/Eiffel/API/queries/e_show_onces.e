@@ -15,7 +15,8 @@ inherit
 		end
 
 create
-	make, default_create
+
+	make, do_nothing
 
 feature -- Access
 

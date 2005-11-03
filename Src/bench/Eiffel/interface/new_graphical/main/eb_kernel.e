@@ -47,15 +47,12 @@ inherit
 		end
 
 	EB_SHARED_PREFERENCES
-	
-	EB_SHARED_FLAGS
-	
+
 create
 	make
 
 feature {NONE} -- Initialization
 
-	-- Jason Wei on Sep 6
 	make is
 			-- Create and map the first window: the system window.
 		local
@@ -63,9 +60,9 @@ feature {NONE} -- Initialization
 			eifgen_init: INIT_SERVERS
 			new_resources: TTY_RESOURCES
 			pref_strs: PREFERENCE_CONSTANTS
-			l_app: EV_APPLICATION
 			fn: FILE_NAME	
 			preference_access: PREFERENCES
+			l_app: EV_APPLICATION
 			l_is_gui: BOOLEAN
 			--| uncomment the following line when profiling 
 			--prof_setting: PROFILING_SETTING
@@ -93,10 +90,10 @@ feature {NONE} -- Initialization
 			fn.extend ("png")
 			pref_strs.Pixmaps_path_cell.put (fn)
 
+
 			l_is_gui := argument_count > 0 and then
 				(argument (1).is_equal ("-bench") or else argument (1).is_equal ("-from_bench"))			
-			
-			set_gui (l_is_gui)		
+					
 			if l_is_gui then
 					-- Create EV_APPLICATION object even if running in batch mode as it is required
 					-- for preference initialization

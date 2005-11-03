@@ -37,12 +37,8 @@ inherit
 	SHARED_DEBUGGED_OBJECT_MANAGER
 		export
 			{NONE} all
-		end
-
-	EB_SHARED_DEBUG_TOOLS
-	
-	REFACTORING_HELPER
-
+		end	
+		
 create {SHARED_APPLICATION_EXECUTION}
 	make
 
@@ -59,7 +55,6 @@ feature {NONE} -- Initialization
 			end
 			current_execution_stack_number := 1
 			critical_stack_depth := -1
-			create exceptions_handler
 		ensure
 			displayed_string_size: displayed_string_size = preferences.misc_data.default_displayed_string_size
 			max_evaluation_duration_set: preferences.debug_tool_data /= Void implies
@@ -78,8 +73,8 @@ feature -- Recylcing
 	recycle is
 			-- Clean debugging session data
 		do
-			implementation.recycle
-			destroy_status
+			imp_application.recycle
+			set_status (Void)
 		end
 
 feature -- execution mode
@@ -117,7 +112,12 @@ feature -- load and save
 			end
 			debug_info.load (load_filename)
 
-			implementation.load_system_dependent_debug_info
+			if 
+				Eiffel_system.workbench.system_defined
+				and then is_dotnet 
+			then
+				imp_dotnet.load_dotnet_debug_info
+			end
 
 			resynchronize_breakpoints
 		end
@@ -139,28 +139,6 @@ feature -- load and save
 		rescue
 			set_error_message ("Unable to save project properties%N%
 					%Cause: Unable to open " + save_filename + " for writing")
-		end
-
-feature -- Execution event callbacks
-
-	on_application_launched is
-		do
-			Debugger_manager.on_application_launched
-		end
-		
-	on_application_before_stopped is
-		do
-			Debugger_manager.on_application_before_stopped
-		end
-
-	on_application_just_stopped is
-		do
-			Debugger_manager.on_application_just_stopped
-		end
-
-	on_application_quit is
-		do
-			Debugger_manager.on_application_quit
 		end
 
 feature -- Properties
@@ -247,7 +225,7 @@ feature -- Properties
 			is_running: is_running
 			is_stopped: is_stopped
 		do
-			Result := addr /= Void and then implementation.is_valid_object_address (addr)
+			Result := addr /= Void and then imp_application.is_valid_object_address (addr)
 		end
 
 	error_in_bkpts: BOOLEAN is
@@ -279,11 +257,6 @@ feature -- Query
 	max_evaluation_duration: INTEGER
 			-- Maximum number of seconds to wait before cancelling an evaluation.
 			-- A negative value means no cancellation will be done.
-			
-feature -- Exception handling
-
-	exceptions_handler: DBG_EXCEPTION_HANDLER
-
 
 feature -- Access
 
@@ -330,10 +303,9 @@ feature {DEAD_HDLR, STOPPED_HDLR, EDIT_ITEM, DEBUG_DYNAMIC_EVAL_HOLE, SHARED_APP
 			is_running: is_running
 		do
 			debug_info.restore
-			implementation.process_termination
+			imp_application.process_termination  --			addr_table.clear_all
 			
-			on_application_quit
-			
+			Application_notification_controller.notify_on_terminated
 			status := Void --| then is_running = False  (status /= Void)
 			current_execution_stack_number := 1
 debug ("DEBUGGER_TRACE")
@@ -707,24 +679,12 @@ feature -- Execution
 			application_exists: exists
 			non_negative_interrupt: interrupt_number >= 0
 		do
-			implementation.run (args, cwd)
+			imp_application.run (args, cwd)
 		ensure
 			successful_app_is_not_stopped: is_running implies not is_stopped
 		end
 
-	release_all_but_kept_object is
-			-- keep the objects addresses in `kept_objects'.
-			-- Objects that are not in `kept_objects' will be removed
-			-- and will be not under the control of bench.
-			-- Therefore, these addresses cannot be
-			-- referenced the next time we stop the application.
-		require
-			is_running: is_running
-		do
-			implementation.keep_only_objects (status.kept_objects)
-		end
-
-	continue is
+	continue (kept_objects: LINKED_SET [STRING]) is
 			-- Continue the running of the application and keep the 
 			-- objects addresses in `kept_objects'. Objects that are not in 
 			-- `kept_objects' will be removed and will be not under the 
@@ -733,23 +693,10 @@ feature -- Execution
 		require
 			is_running: is_running
 			is_stopped: is_stopped
-			non_void_keep_objects: status.kept_objects /= Void
+			non_void_keep_objects: kept_objects /= Void
 			non_negative_interrupt: interrupt_number >= 0
 		do
-			release_all_but_kept_object
-			continue_ignoring_kept_objects
-		end
-		
-	continue_ignoring_kept_objects is
-			-- Continue the running of the application
-			-- before any debugger's operation occurred
-			-- so basically, we are sure we have the same `kept_objects'
-		require
-			is_running: is_running
-			is_stopped: is_stopped
-			non_negative_interrupt: interrupt_number >= 0
-		do
-			implementation.continue_ignoring_kept_objects
+			imp_application.continue (kept_objects)
 		end
 
 	interrupt is
@@ -759,7 +706,7 @@ feature -- Execution
 			app_is_running: is_running
 			not_stopped: not is_stopped
 		do	
-			implementation.interrupt
+			imp_application.interrupt
 		end
 
 	notify_newbreakpoint is
@@ -771,7 +718,7 @@ feature -- Execution
 			app_is_running: is_running
 			not_stopped: not is_stopped
 		do	
-			implementation.notify_newbreakpoint
+			imp_application.notify_newbreakpoint
 		end
 		
 	kill is
@@ -779,23 +726,7 @@ feature -- Execution
 		require
 			app_is_running: is_running
 		do
-			implementation.kill
-		end
-
-feature -- Query
-
-	dump_value_at_address_with_class (a_addr: STRING; a_cl: CLASS_C): DUMP_VALUE is
-		require
-			a_addr /= Void
-		do
-			Result := implementation.dump_value_at_address_with_class (a_addr, a_cl)
-		end
-
-	debug_value_at_address_with_class (a_addr: STRING; a_cl: CLASS_C): ABSTRACT_DEBUG_VALUE is
-		require
-			a_addr /= Void
-		do
-			Result := implementation.debug_value_at_address_with_class (a_addr, a_cl)
+			imp_application.kill
 		end
 
 feature -- Setting
@@ -866,26 +797,12 @@ feature -- Implementation
 
 feature {DEAD_HDLR, RUN_REQUEST, APPLICATION_EXECUTION_IMP} -- Setting
 
-	build_status is
-		require
-			is_not_running: not is_running
+	set_status (s: like status) is
+			-- Set `status' to `s'.
 		do
-			if is_classic then
-				create {APPLICATION_STATUS_CLASSIC} status.make
-			elseif is_dotnet then
-				create {APPLICATION_STATUS_DOTNET} status.make				
-			end
+			status := s
 		ensure
-			is_running: is_running
-		end
-		
-	destroy_status is
-		require
-			is_running: is_running
-		do
-			status := Void
-		ensure
-			is_not_running: not is_running
+			set: status = s
 		end
 
 feature {SHARED_DEBUG, STOPPOINTS_STATUS, OPEN_PROJECT, QUIT_PROJECT, SHARED_APPLICATION_EXECUTION}
@@ -894,7 +811,8 @@ feature {SHARED_DEBUG, STOPPOINTS_STATUS, OPEN_PROJECT, QUIT_PROJECT, SHARED_APP
 	
 feature -- Implementation
 
-	implementation: APPLICATION_EXECUTION_IMP is
+	imp_application: APPLICATION_EXECUTION_IMP is
+			-- 
 		once
 			if is_dotnet then -- Eiffel_system.System.il_generation then
 				create {APPLICATION_EXECUTION_DOTNET} Result.make
@@ -907,15 +825,18 @@ feature -- Implementation
 		require
 			is_dotnet
 		once
-			Result ?= implementation
-			fixme ("[
-						JFIAT: try to get rid of this feature
-						 we should not have to know if this is dotnet or no
-					]")
+			Result ?= Imp_application
+		end
+
+	imp_classic: APPLICATION_EXECUTION_CLASSIC is
+		require
+			not is_dotnet
+		once
+			Result ?= Imp_application
 		end
 
 invariant
 
 	non_void_debug_info: debug_info /= Void
 
-end
+end -- class APPLICATION_EXECUTION

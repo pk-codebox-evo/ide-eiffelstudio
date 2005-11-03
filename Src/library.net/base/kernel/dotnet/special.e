@@ -21,7 +21,7 @@ create
 	make,
 	make_from_native_array
 
-feature {INTERNAL} -- Initialization
+feature {NONE} -- Initialization
 
 	frozen make (n: INTEGER) is
 			-- Creates a special object for `n' entries.
@@ -32,8 +32,6 @@ feature {INTERNAL} -- Initialization
 		ensure
 			area_allocated: count = n
 		end
-
-feature {NONE} -- Initializaiton
 
 	frozen make_from_native_array (an_array: like native_array) is
 			-- Creates a special object from `an_array'.
@@ -197,16 +195,9 @@ feature -- Comparison
 	is_equal (other: like Current): BOOLEAN is
 			-- Is `other' attached to an object considered
 			-- equal to current object?
-		local
-			l_other_count: INTEGER
 		do
-			if other /= Current then
-				l_other_count := other.count
-				if count = l_other_count then
-					Result := same_items (other, l_other_count - 1)
-				end
-			else
-				Result := True
+			if count = other.count then
+				Result := same_items (other, other.count - 1)
 			end
 		end
 

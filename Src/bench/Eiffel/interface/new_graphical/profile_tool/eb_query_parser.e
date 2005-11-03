@@ -6,12 +6,6 @@ indexing
 
 class
 	EB_QUERY_PARSER
-	
-inherit
-	E_PROFILER_CONSTANTS
-		export
-			{NONE} all
-		end
 
 feature -- Parsing
 
@@ -50,7 +44,7 @@ feature {NONE} -- Implementation
 				col_name := column_name (str, index)
 				if col_name = Void then
 					error := True
-				elseif col_name.is_equal (profiler_end_of_query) then
+				elseif col_name.is_equal ("EOQ") then
 					if index = 1 then
 							-- This is an error to find "EOQ" the first time the loop is executed.
 							-- It means the query is not valid.
@@ -67,7 +61,7 @@ feature {NONE} -- Implementation
 						index := index + operator.count
 						index := index + white_space_length (str, index)
 						if index <= str.count then
-							end_index := stricly_positive_min (str.substring_index (profiler_spaced_and, index), str.substring_index (profiler_spaced_or, index), str.count) 
+							end_index := stricly_positive_min (str.substring_index (" and ", index), str.substring_index (" or ", index), str.count) 
 							value := value_str (str, index, end_index)
 							index := end_index
 						else
@@ -84,7 +78,7 @@ feature {NONE} -- Implementation
 								boolean_op := boolean_operator (str, index)
 								if boolean_op = void then
 									error := True
-								elseif boolean_op.is_equal (profiler_end_of_query) then
+								elseif boolean_op.is_equal ("EOQ") then
 									end_of_query := True
 								else
 									index := index + boolean_op.count
@@ -119,31 +113,31 @@ feature {NONE} -- Implementation
 			-- Get the column name in `str' at position `idx'
 		do
 			if idx < str.count then
-				if str.substring (idx, idx + (profiler_feature_name).count - 1).is_equal (profiler_feature_name) then
-					Result := profiler_feature_name
+				if str.substring (idx, idx + ("featurename").count - 1).is_equal ("featurename") then
+					Result := "featurename"
 					expects_real := False
 					expects_int := False
 					expects_bounded := False --| Guillaume - 09/18/97
-				elseif str.substring (idx, idx + (profiler_calls).count - 1).is_equal (profiler_calls) then
-					Result := profiler_calls
+				elseif str.substring (idx, idx + ("calls").count - 1).is_equal ("calls") then
+					Result := "calls"
 					expects_string := False --| Guillaume - 09/18/97
-				elseif str.substring (idx, idx + (profiler_total).count - 1).is_equal (profiler_total) then
-					Result := profiler_total
+				elseif str.substring (idx, idx + ("total").count - 1).is_equal ("total") then
+					Result := "total"
 					expects_string := False --| Guillaume - 09/18/97
-				elseif str.substring (idx, idx + (profiler_self).count - 1).is_equal (profiler_self) then
-					Result := profiler_self
+				elseif str.substring (idx, idx + ("self").count - 1).is_equal ("self") then
+					Result := "self"
 					expects_string := False --| Guillaume - 09/18/97
-				elseif str.substring (idx, idx + (profiler_percentage).count - 1).is_equal (profiler_percentage) then
-					Result := profiler_percentage
+				elseif str.substring (idx, idx + ("percentage").count - 1).is_equal ("percentage") then
+					Result := "percentage"
 					expects_string := False --| Guillaume - 09/18/97
-				elseif str.substring (idx, idx + (profiler_descendants).count - 1).is_equal (profiler_descendants) then
-					Result := profiler_descendants
+				elseif str.substring (idx, idx + ("descendants").count - 1).is_equal ("descendants") then
+					Result := "descendants"
 					expects_string := False --| Guillaume - 09/18/97
 				else
 					Result := Void
 				end
 			else
-				Result := profiler_end_of_query
+				Result := "EOQ"
 			end
 		end
 
@@ -156,9 +150,9 @@ feature {NONE} -- Implementation
 			create Result.make (0)
 			operator := str.substring (idx, idx + 1)
 			
-			if operator.is_equal (profiler_less_than_or_equal) 
-			   or else operator.is_equal (profiler_greater_than_or_equal) 
-			   or else operator.is_equal (profiler_not_equal) 
+			if operator.is_equal ("<=") 
+			   or else operator.is_equal (">=") 
+			   or else operator.is_equal ("/=") 
 			then
 				Result := operator
 				expects_bounded := false
@@ -169,7 +163,7 @@ feature {NONE} -- Implementation
 				Result.extend (operator.item (1))
 				expects_bounded := false
 
-			elseif operator.is_equal (profiler_in) then
+			elseif operator.is_equal ("in") then
 				Result := operator
 				expects_real := false
 				expects_int := false
@@ -203,7 +197,7 @@ feature {NONE} -- Implementation
 			
 	is_computed_value (value: STRING) : BOOLEAN is
 		do
-			if value.is_equal (profiler_max) or else value.is_equal (profiler_min) or else value.is_equal (profiler_avg) then
+			if value.is_equal ("max") or else value.is_equal ("min") or else value.is_equal ("avg") then
 				Result := true
 			else
 				Result := false
@@ -241,18 +235,18 @@ feature {NONE} -- Implementation
 			if
 				idx > str.count
 			then
-			 	Result := profiler_end_of_query
+			 	Result := "EOQ"
 			elseif
 				str @ idx = 'o' and then
 				str @ (idx + 1) = 'r'
 			then
-				Result := profiler_or
+				Result := "or"
 			elseif
 				str @ idx = 'a' and then
 				str @ (idx + 1) = 'n' and then
 				str @ (idx + 2) = 'd'
 			then
-				Result := profiler_and
+				Result := "and"
 			else
 				Result := Void
 			end

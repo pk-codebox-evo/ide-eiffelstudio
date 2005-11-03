@@ -11,15 +11,8 @@ inherit
 	SHARED_INSTANTIATOR
 
 create
-	make
-	
-feature -- Visitor
 
-	process (v: BYTE_NODE_VISITOR) is
-			-- Process current element.
-		do
-			v.process_strip_b (Current)
-		end
+	make
 	
 feature 
 

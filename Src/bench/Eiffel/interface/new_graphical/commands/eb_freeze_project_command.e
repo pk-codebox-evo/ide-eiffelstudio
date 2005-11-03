@@ -53,7 +53,6 @@ feature {NONE} -- Implementation
 			confirm_execution_halt
 		end
 
-	-- Jason Wei modified the following feature on Aug 29 2005
 	launch_c_compilation is
 			-- Launch the C compilation.
 		local
@@ -66,35 +65,12 @@ feature {NONE} -- Implementation
 			if start_c_compilation then
 				output_text.add_string ("Background C compilation launched.")
 				output_text.add_new_line
-					-- Display message.
-				output_manager.clear
-				output_manager.process_text (output_text)				
-				
 				Eiffel_project.call_finish_freezing (True)
 			end
-		end
 
--------- This is the original version		
---	launch_c_compilation is
---			-- Launch the C compilation.
---		local
---			output_text: STRUCTURED_TEXT
---		do
---			create output_text.make
---			output_text.add_string ("Eiffel system recompiled")
---			output_text.add_new_line
---	
---			if start_c_compilation then
---				output_text.add_string ("Background C compilation launched.")
---				output_text.add_new_line
---				Eiffel_project.call_finish_freezing (True)
---			end
---
---				-- Display message.
---			output_manager.process_text (output_text)
---		end
-		
-		-- Jason Wei modified the above feature on Aug 29 2005
+				-- Display message.
+			output_manager.process_text (output_text)
+		end
 
 	perform_compilation is
 			-- The actual compilation process.

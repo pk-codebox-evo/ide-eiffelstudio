@@ -100,7 +100,6 @@ feature {NONE} -- Initialization
 
 			lower_slice_field.set_text (slice_min.out)
 			upper_slice_field.set_text (slice_max.out)
-			dialog.set_icon_pixmap (pixmaps.icon_dialog_window)
 		end
 
 	Text_format: EV_CHARACTER_FORMAT is
@@ -193,7 +192,6 @@ feature -- Status setting
 			-- Give a new object to `Current' and refresh the display.
 		require
 			stone_valid: is_stone_valid (st)
-			is_running: Application.is_running
 		local
 			l_item: EV_ANY
 			l_dv: ABSTRACT_DEBUG_VALUE
@@ -209,7 +207,7 @@ feature -- Status setting
 				end
 			end
 			
-			Application.status.keep_object (st.object_address)
+			parent.debugger_manager.keep_object (st.object_address)
 			retrieve_dump_value
 			refresh
 		end
@@ -218,9 +216,22 @@ feature -- Status setting
 			-- Retrieve `current_dump_value' from `current_object'.
 		require
 			has_current_object: has_object
+		local
+			l_dv: ABSTRACT_DEBUG_VALUE			
+			l_addr: STRING
 		do
 			if current_dump_value = Void then
-				current_dump_value := Application.dump_value_at_address_with_class (current_object.object_address, current_object.dynamic_class)
+				l_addr := current_object.object_address
+				if application.is_dotnet then
+					if application.imp_dotnet.know_about_kept_object (l_addr) then
+						l_dv := Application.imp_dotnet.kept_object_item (l_addr)					
+					end
+					if l_dv /= Void then
+						current_dump_value := l_dv.dump_value
+					end
+				else
+					create current_dump_value.make_object (l_addr, current_object.dynamic_class)				
+				end
 			end
 		end
 

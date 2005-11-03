@@ -124,7 +124,7 @@ feature {NONE} -- Initialization
 				output_line.align_text_right
 				vb.extend (output_line)
 				create address_dialog
-				address_dialog.enable_border
+				address_dialog.set_title (Interface_names.t_Select_location)
 				address_dialog.close_request_actions.extend (agent address_dialog.hide)
 				address_dialog.extend (vb)
 				generate_header_info
@@ -164,30 +164,6 @@ feature -- Access
 
 	header_info: EV_VIEWPORT
 			-- Box containing labels representing the history status.
-
-	cluster_label_text: STRING is
-			-- Name of the class as it appears in the cluster label.
-		do
-			if cluster_label /= Void and then not cluster_label.text.is_equal (default_cluster_name) then
-				Result := cluster_label.text
-			end
-		end
-
-	class_label_text: STRING is
-			-- Name of the class as it appears in the class label.
-		do
-			if class_label /= Void and then not class_label.text.is_equal (default_class_name) then
-				Result := class_label.text
-			end
-		end
-
-	feature_label_text: STRING is
-			-- Name of the class as it appears in the feature label.
-		do
-			if feature_label /= Void and then not feature_label.text.is_equal (default_feature_name) then
-				Result := feature_label.text
-			end
-		end
 
 	class_name: STRING
 			-- Name of the class as it appears in the combo box.
@@ -328,16 +304,6 @@ feature -- Element change
 		do
 			output_line := t
 		end
-		
-	set_feature_text_simply (s: STRING) is
-			-- Set feature combo text with `s'.
-		require
-			s_attached: s /= Void
-		do
-			feature_address.change_actions.block
-			feature_address.set_text (s)
-			feature_address.change_actions.resume
-		end		
 
 feature -- Observer management
 
@@ -486,7 +452,7 @@ feature -- Memory management
 			parent := Void
 		end
 
-feature {EB_DEVELOPMENT_WINDOW} -- Vision2 Controls
+feature {NONE} -- Vision2 Controls
 
 	cluster_address: EV_COMBO_BOX
 			-- Cluster part of the address.
@@ -548,7 +514,7 @@ feature -- Updating
 			feature_address.disable_sensitive
 		end
 
-feature {EB_DEVELOPMENT_WINDOW} -- Execution
+feature {NONE} -- Execution
 
 	execute_with_cluster is
 			-- The user just entered a new cluster name, process it.
@@ -569,8 +535,6 @@ feature {EB_DEVELOPMENT_WINDOW} -- Execution
 			choosing_class := False
 			process_user_entry
 		end
-
-feature {NONE} -- Execution
 
 	process_cluster_callback (pos: INTEGER) is
 			-- The choice `pos' has been selected, process the choice.
@@ -1629,7 +1593,7 @@ feature {NONE} -- open new class
 					str.to_upper
 					class_address.set_text (str)
 					if not truncated then
-						class_address.set_caret_position (last_caret_position.min (str.count + 1))
+						class_address.set_caret_position (last_caret_position)
 					else
 						class_address.set_caret_position (nb + 1)
 					end
@@ -1925,7 +1889,7 @@ feature {NONE} -- Implementation of the clickable labels for `header_info'
 			-- Textable in which warnings are displayed.
 			-- May be Void, warnings are then not displayed.
 
-	address_dialog: EV_POPUP_WINDOW
+	address_dialog: EV_WINDOW
 			-- Window that pops up in the context tool to change the stone centering.
 
 	key_csts: EV_KEY_CONSTANTS is

@@ -19,14 +19,6 @@ inherit
 			{NONE} all
 		end
 	
-feature -- Visitor
-
-	process (v: BYTE_NODE_VISITOR) is
-			-- Process current element.
-		do
-			v.process_inspect_b (Current)
-		end
-	
 feature -- Access
 
 	switch: EXPR_B

@@ -1,7 +1,6 @@
 indexing
-	description: "Visitor to traverse an AST."
-	date: "$date: $"
-	revision: "$revision: $"
+	description: 
+		"Generic class to parse the AST tree."
 
 deferred class
 	AST_VISITOR
