@@ -144,29 +144,6 @@ feature -- Basic Operations
 				managed_output_tools.forth
 			end			
 		end
-		
-	all_text_fully_loaded: BOOLEAN is
-			-- Has text in simulated console been loaded?
-			-- Only then, we can display new output in simulated console.
-		local
-			done: BOOLEAN
-			et: EB_EXTERNAL_OUTPUT_TOOL
-		do
-			from
-				managed_output_tools.start
-				done := False
-				Result :=True
-			until
-				managed_output_tools.after or done
-			loop
-				et ?= managed_output_tools.item
-				if et /= Void and then not et.text_fully_loaded then
-					done := True
-					Result := False
-				end
-				managed_output_tools.forth
-			end	
-		end
 				
 	process_block_text (text: EB_PROCESS_IO_DATA_BLOCK) is
 			-- Print `text' on `target_development_window'.
@@ -222,13 +199,7 @@ feature -- Basic Operations
 feature -- Status reporting
 
 	target_development_window: EB_DEVELOPMENT_WINDOW
-			-- Development windows where current external command is launched
-			
-	text_is_fully_loaded: BOOLEAN is
-			-- Has text been fully loaded?
-		do
-			Result := True
-		end			
+			-- Development windows where current external command is launcheds		
 
 feature -- Basic Operations / Information message
 	
@@ -314,4 +285,4 @@ feature  -- Implementation / Private attributes
 			create Result.make (10)
 		end
 
-end -- class EB_OUTPUT_MANAGER
+end -- class EB_EXTERNAL_OUTPUT_MANAGER
