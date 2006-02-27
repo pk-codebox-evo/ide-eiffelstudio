@@ -24,7 +24,7 @@ create
 
 feature {NONE} -- Initialization
 
-	initialize (n: like class_name; g: like generics; a_is_exp, a_is_sep: BOOLEAN; e_as, s_as: KEYWORD_AS) is
+	initialize (n: like class_name; g: like generics) is
 			-- Create a new CLASS_TYPE AST node.
 		require
 			n_not_void: n /= Void
@@ -32,17 +32,9 @@ feature {NONE} -- Initialization
 			class_name := n
 			class_name.to_upper
 			internal_generics := g
-			is_expanded := a_is_exp
-			is_separate := a_is_sep
-			expanded_keyword := e_as
-			separate_keyword := s_as
 		ensure
 			class_name_set: class_name.is_equal (n.as_upper)
 			generics_set: generics = g
-			is_expanded_set: is_expanded = a_is_exp
-			is_separate_st: is_separate = a_is_sep
-			expanded_keyword_set: expanded_keyword = e_as
-			separate_keyword_set: separate_keyword = s_as
 		end
 
 feature -- Visitor
@@ -196,7 +188,27 @@ feature -- Access
 			end
 		end
 
-feature {COMPILER_EXPORTER} -- Conveniences
+feature {AST_FACTORY, COMPILER_EXPORTER} -- Conveniences
+
+	set_is_expanded (i: like is_expanded; s_as: like expanded_keyword) is
+			-- Set `is_separate' to `i'.
+		do
+			is_expanded := i
+			expanded_keyword := s_as
+		ensure
+			is_expanded_set: is_expanded = i
+			expanded_keyword_set: expanded_keyword = s_as
+		end
+
+	set_is_separate (i: like is_separate; s_as: like separate_keyword) is
+			-- Set `is_separate' to `i'.
+		do
+			is_separate := i
+			separate_keyword := s_as
+		ensure
+			is_separate_set: is_separate = i
+			separate_keyword_set: separate_keyword = s_as
+		end
 
 	set_class_name (s: like class_name) is
 			-- Assign `s' to `class_name'.
