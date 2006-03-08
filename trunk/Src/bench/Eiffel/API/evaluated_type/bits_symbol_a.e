@@ -12,7 +12,7 @@ inherit
 		rename
 			make as make_with_count
 		redefine
-			solved_type, dump, ext_append_to,
+			dump, ext_append_to,
 			is_equivalent, is_full_named_type, process
 		end
 
@@ -46,6 +46,12 @@ feature -- Properties
 
 	feature_name_id: INTEGER
 
+	feature_name: STRING is
+			-- Anchor name
+		do
+			Result := names_heap.item (feature_name_id)
+		end
+
 	rout_id: INTEGER
 
 	current_class_id: INTEGER
@@ -65,6 +71,18 @@ feature -- Comparison
 				current_class_id = other.current_class_id
 		end
 
+feature -- Setting
+
+	set_rout_id (a_routine_id: like rout_id) is
+			-- Set `rout_id' with `a_routine_id'.
+		require
+			a_routine_id_positive: a_routine_id > 0
+		do
+			rout_id := a_routine_id
+		ensure
+			rout_id_set: rout_id = a_routine_id
+		end
+
 feature -- Output
 
 	dump: STRING is
@@ -80,61 +98,6 @@ feature -- Output
 			st.add (ti_Bit_class)
 			st.add_space
 			st.add_string (names_heap.item (feature_name_id))
-		end
-
-feature {COMPILER_EXPORTER}
-
-	solved_type (feat_table: FEATURE_TABLE; f: FEATURE_I): BITS_SYMBOL_A is
-			-- Calculated type in function of the feauure `f' which has
-			-- the type Current and the feautre table `feat_table
-		local
-			anchor_feature: FEATURE_I
-			vtbt: VTBT
-			veen: VEEN
-			constant: CONSTANT_I
-			bits_value: INTEGER
-			error: BOOLEAN
-			int_value: INTEGER_CONSTANT
-		do
-			if not (System.current_class.class_id = current_class_id) then
-				anchor_feature := System.class_of_id (current_class_id).feature_table
-								.item_id (feature_name_id)
-			else
-				anchor_feature := feat_table.item_id (feature_name_id)
-			end
-			if anchor_feature = Void then
-				create veen
-				veen.set_class (System.current_class)
-				veen.set_feature (f)
-				veen.set_identifier (names_heap.item (feature_name_id))
-				Error_handler.insert_error (veen)
-				Error_handler.raise_error
-			else
-				constant ?= anchor_feature
-				error := constant = Void
-				if not error then
-					int_value ?= constant.value
-					error := int_value = Void
-					if not error then
-						bits_value := int_value.integer_32_value
-						error :=
-							bits_value <= 0 or else
-							bits_value > {EIFFEL_SCANNER_SKELETON}.Maximum_bit_constant
-					end
-				end
-				if error then
-					create vtbt
-					vtbt.set_class (feat_table.associated_class)
-					vtbt.set_feature (f)
-					vtbt.set_value (bits_value)
-					Error_handler.insert_error (vtbt)
-						-- Cannot go on here
-					Error_handler.raise_error
-				end
-				bit_count := bits_value
-			end
-			rout_id := anchor_feature.rout_id_set.first
-			Result := twin
 		end
 
 indexing
