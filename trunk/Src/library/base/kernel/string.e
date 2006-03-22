@@ -12,6 +12,11 @@ class
 	STRING
 
 inherit
+	STRING_GENERAL
+		redefine
+			copy, is_equal, out
+		end
+
 	INDEXABLE [CHARACTER, INTEGER]
 		rename
 			item as item
@@ -26,27 +31,12 @@ inherit
 			changeable_comparison_criterion
 		end
 
-	HASHABLE
-		redefine
-			copy, is_equal, out
-		end
-
-	COMPARABLE
-		redefine
-			copy, is_equal, out
-		end
-
 	TO_SPECIAL [CHARACTER]
 		rename
 			item as item
 		redefine
 			copy, is_equal, out,
 			item, infix "@", put, valid_index
-		end
-
-	STRING_HANDLER
-		redefine
-			copy, is_equal, out
 		end
 
 	MISMATCH_CORRECTOR
@@ -64,6 +54,7 @@ create
 
 convert
 	to_cil: {SYSTEM_STRING},
+	as_string_32: {STRING_32},
 	make_from_cil ({SYSTEM_STRING})
 
 feature -- Initialization
@@ -152,7 +143,7 @@ feature -- Initialization
 				make_area (l_count + 1)
 				count := l_count
 				internal_hash_code := 0
-				a_system_string.copy_to (0, area.native_array, 0, l_count)
+				dotnet_convertor.read_system_string_into (a_system_string, Current)
 			else
 				make (0)
 			end
@@ -234,6 +225,13 @@ feature -- Access
 			-- Character at position `i'
 		do
 			Result := area.item (i - 1)
+		end
+
+
+	code (i: INTEGER): NATURAL_32 is
+			-- Numeric code of character at position `i'
+		do
+			Result := area.item (i - 1).code.to_natural_32
 		end
 
 	item_code (i: INTEGER): INTEGER is
@@ -575,6 +573,15 @@ feature -- Comparison
 
 feature -- Status report
 
+	is_string_8: BOOLEAN is True
+			-- Current is not a STRING_8 instance
+
+	is_string_32: BOOLEAN is False
+			-- Current is a STRING_32 instance
+
+	is_valid_as_string_8: BOOLEAN is True
+			-- Is `Current' convertible to STRING_8 without information loss?
+
 	has (c: CHARACTER): BOOLEAN is
 			-- Does string include `c'?
 		local
@@ -631,6 +638,12 @@ feature -- Status report
 			-- Is `i' within the bounds of the string?
 		do
 			Result := (i > 0) and (i <= count)
+		end
+
+	valid_code (v: NATURAL_32): BOOLEAN is
+			-- Is `v' a valid code for a CHARACTER_32?
+		do
+			Result := v <= {CHARACTER}.max_value.to_natural_32
 		end
 
 	changeable_comparison_criterion: BOOLEAN is False
@@ -1208,6 +1221,13 @@ feature -- Element change
 			stable_after_i: elks_checking implies substring (i + 1, count).is_equal (old substring (i + 1, count))
 		end
 
+	put_code (v: NATURAL_32; i: INTEGER) is
+			-- Replace character at position `i' by character of code `v'.
+		do
+			area.put (v.to_character, i - 1)
+			internal_hash_code := 0
+		end
+
 	precede, prepend_character (c: CHARACTER) is
 			-- Add `c' at front.
 		local
@@ -1495,9 +1515,6 @@ feature -- Removal
 
 	remove (i: INTEGER) is
 			-- Remove `i'-th character.
-		require
-			index_small_enough: i <= count
-			index_large_enough: i > 0
 		local
 			l_count: INTEGER
 		do
@@ -1507,9 +1524,6 @@ feature -- Removal
 				-- Update content.
 			count := l_count - 1
 			internal_hash_code := 0
-		ensure
-			new_count: count = old count - 1
-			removed: elks_checking implies is_equal (old substring (1, i - 1) + old substring (i + 1, count))
 		end
 
 	remove_head (n: INTEGER) is
@@ -1673,8 +1687,6 @@ feature -- Resizing
 			-- Rearrange string so that it can accommodate
 			-- at least `newsize' characters.
 			-- Do not lose any previously entered character.
-		require
-			new_size_non_negative: newsize >= 0
 		local
 			area_count: INTEGER
 		do
@@ -2110,7 +2122,7 @@ feature -- Conversion
 		require
 			is_dotnet: {PLATFORM}.is_dotnet
 		do
-			create Result.make (area.native_array, 0, count)
+			Result := dotnet_convertor.from_string_to_system_string (Current)
 		ensure
 			to_cil_not_void: Result /= Void
 		end
@@ -2169,9 +2181,7 @@ feature -- Duplication
 			else
 				Result := new_string (0)
 			end
-		ensure
-			substring_not_void: Result /= Void
-			substring_count: Result.count = end_index - start_index + 1 or Result.count = 0
+		ensure then
 			first_item: Result.count > 0 implies Result.item (1) = item (start_index)
 			recurse: Result.count > 0 implies
 				Result.substring (2, Result.count).is_equal (substring (start_index + 1, end_index))
@@ -2214,19 +2224,12 @@ feature {STRING_HANDLER} -- Implementation
 
 	frozen set_count (number: INTEGER) is
 			-- Set `count' to `number' of characters.
-		require
-			valid_count: 0 <= number and number <= capacity
 		do
 			count := number
 			internal_hash_code := 0
-		ensure
-			new_count: count = number
 		end
 
 feature {NONE} -- Empty string implementation
-
-	elks_checking: BOOLEAN is False
-			-- Are ELKS checkings verified? Must be True when changing implementation of STRING or descendant.
 
 	internal_hash_code: INTEGER
 			-- Computed hash-code.
@@ -2301,22 +2304,6 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	string_searcher: STRING_SEARCHER is
-			-- Facilities to search string in another string.
-		once
-			create Result.make
-		ensure
-			string_searcher_not_void: Result /= Void
-		end
-
-	c_string_provider: C_STRING is
-			-- To create Eiffel strings from C string.
-		once
-			create Result.make_empty (0)
-		ensure
-			c_string_provider_not_void: Result /= Void
-		end
-
 	empty_area: SPECIAL [CHARACTER] is
 			-- Empty `area' to avoid useless creation of empty areas when wiping out a STRING.
 		obsolete
@@ -2325,26 +2312,6 @@ feature {NONE} -- Implementation
 			create Result.make (1)
 		ensure
 			empty_area_not_void: Result /= Void
-		end
-
-	ctoi_convertor: STRING_TO_INTEGER_CONVERTOR is
-			-- Convertor used to convert string to integer or natural
-		once
-			create Result.make
-			Result.set_leading_separators (" ")
-			Result.set_trailing_separators (" ")
-			Result.set_leading_separators_acceptable (True)
-			Result.set_trailing_separators_acceptable (True)
-		end
-
-	ctor_convertor: STRING_TO_REAL_CONVERTOR is
-			-- Convertor used to convert string to real or double
-		once
-			create Result.make
-			Result.set_leading_separators (" ")
-			Result.set_trailing_separators (" ")
-			Result.set_leading_separators_acceptable (True)
-			Result.set_trailing_separators_acceptable (True)
 		end
 
 invariant
@@ -2364,11 +2331,5 @@ indexing
 			 Website http://www.eiffel.com
 			 Customer support http://support.eiffel.com
 		]"
-
-
-
-
-
-
 
 end
