@@ -28,6 +28,7 @@ feature {NONE} -- Initialization
 			Precursor (a_platform, a_build)
 			create found_classes.make
 			create targets_done.make (5)
+			create assemblies_done.make (5)
 		end
 
 feature -- Access
@@ -54,7 +55,10 @@ feature -- Visit nodes
 	process_assembly (an_assembly: CONF_ASSEMBLY) is
 			-- Visit `an_assembly'.
 		do
-			retrieve_from_group (an_assembly)
+			if not assemblies_done.has (an_assembly.guid) then
+				assemblies_done.force (an_assembly.guid)
+				retrieve_from_group (an_assembly)
+			end
 		end
 
 	process_library (a_library: CONF_LIBRARY) is
@@ -81,10 +85,36 @@ feature -- Visit nodes
 			retrieve_from_group (an_override)
 		end
 
+feature {CONF_FIND_CLASS_VISITOR}
+
+	set_targets_done (a_targets: like targets_done) is
+			-- Set `targets_done' to `a_targets'.
+		require
+			a_targets_not_void: a_targets /= Void
+		do
+			targets_done := a_targets
+		ensure
+			targets_done_set: targets_done = a_targets
+		end
+
+	set_assemblies_done (an_assemblies: like assemblies_done) is
+			-- Set `assemblies_done' to `a_assemblies'.
+		require
+			an_assemblies_done_not_void: an_assemblies /= Void
+		do
+			assemblies_done := an_assemblies
+		ensure
+			assemblies_done_set: assemblies_done = an_assemblies
+		end
+
+
 feature {NONE} -- Implementation
 
 	targets_done: SEARCH_TABLE [UUID]
 			-- Lookup for libraries where we already searched.
+
+	assemblies_done: SEARCH_TABLE [STRING]
+			-- Lookup for assemblies where we already searched.
 
 	retrieve_from_group (a_group: CONF_GROUP) is
 			-- Retrieve classes with `name' from `a_group'.
@@ -112,12 +142,12 @@ feature {NONE} -- Implementation
 				targets_done.force (l_uuid)
 				create l_vis.make (platform, build)
 				l_vis.set_name (name)
+				l_vis.set_targets_done (targets_done)
+				l_vis.set_assemblies_done (assemblies_done)
 				a_target.process (l_vis)
 				found_classes.append (l_vis.found_classes)
 			end
 		end
-
-
 
 invariant
 	name_set_upper: name /= Void implies name.is_equal (name.as_upper)
