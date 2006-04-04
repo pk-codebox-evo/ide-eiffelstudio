@@ -12,27 +12,18 @@
 		<file_rule>
 			<exclude>/\.svn</exclude>
 		</file_rule>
-		<library name="base" location="$ISE_LIBRARY\base\base.acex" readonly="true">
-		<cluster name="independent" location="$ISE_LIBRARY\vision2_extension\independent" recursive="true">
+		<library name="base" location="$ISE_LIBRARY\library\base\base.acex" readonly="true"/>
+		<cluster name="independent_gtk" location="independent" recursive="true">
 			<ifnot platform="windows"/>
 			<file_rule>
 				<exclude>/mswin$</exclude>
 			</file_rule>
 		</cluster>
-		<cluster name="independent" location="$ISE_LIBRARY\vision2_extension\independent" recursive="true">
-			<ifnot platform="windows"/>
+		<cluster name="independent_mswin" location="independent" recursive="true">
+			<if platform="windows"/>
 			<file_rule>
 				<exclude>/gtk$</exclude>
 			</file_rule>
-		</cluster>
-		<cluster name="windows" location="$ISE_LIBRARY\vision2_extension\windows" recursive="true">
-			<if platform="windows"/>
-			<file_rule>
-				<exclude>/dotnet$</exclude>
-			</file_rule>
-		</cluster>
-		<cluster name="windows" location="$ISE_LIBRARY\vision2_extension\windows" recursive="true">
-			<if platform="dotnet"/>
 		</cluster>
 	</target>
 </system>
