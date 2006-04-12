@@ -81,16 +81,12 @@ feature {NONE} -- Implementation
 		require
 			a_target_not_void: a_target /= Void
 		local
-			l_vis: like Current
 			l_uuid: UUID
 		do
 			l_uuid := a_target.system.uuid
 			if not targets_done.has (l_uuid) then
 				targets_done.force (l_uuid)
-				create l_vis.make
-				l_vis.set_name (name)
-				a_target.process (l_vis)
-				found_assemblies.append (l_vis.found_assemblies)
+				a_target.process (Current)
 			end
 		end
 
