@@ -16,7 +16,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_location: CONF_LOCATION) is
+	make (a_location: like location) is
 			-- Create with `a_location'.
 		require
 			a_location_not_void: a_location /= Void
@@ -29,7 +29,7 @@ feature {NONE} -- Initialization
 
 feature -- Access, stored in configuration file
 
-	location: CONF_LOCATION
+	location: STRING
 			-- The file location.
 
 	description: STRING
