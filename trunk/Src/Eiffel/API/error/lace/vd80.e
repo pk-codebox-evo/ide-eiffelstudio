@@ -29,7 +29,7 @@ feature -- Output
 			st.add_new_line;
 		end;
 
-feature {SYSTEM_I} -- Setting
+feature {SYSTEM_I, LACE_I} -- Setting
 
 	set_warning (s: like warning) is
 			-- Assign `s' to `warning'
