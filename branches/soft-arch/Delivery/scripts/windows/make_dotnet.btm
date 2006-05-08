@@ -1,0 +1,26 @@
+remtrace Compiling .NET components
+REM Should be called by `make_exes.btm'
+cdd %EIFFEL_SRC
+
+mkdir %INSTALL_DIR\dotnet_binaries
+
+remtrace Compiling .NET runtime
+cd %EIFFEL_SRC\Eiffel\eiffel\com_il_generation\core\run-time
+call nmake
+copy EiffelSoftware.Runtime.dll %INSTALL_DIR\dotnet_binaries
+
+remtrace Compiling Eiffel Assembly Cache
+cdd %EIFFEL_SRC\dotnet\consumer\ace
+iff not defined WIN64 then
+	sed -e "s/^.*setting name=\"msil_generation\".*$/<setting name=\"msil_generation\" value=\"True\"\/><setting name=\"msil_clr_version\" value=\"v1.0.3705\"\/>/" eiffelsoftware.metadataconsumer.acex >> new
+	move new eiffelsoftware.metadataconsumer.acex
+endiff
+finalize eiffelsoftware.metadataconsumer.acex
+iff not exist EIFGENs\eiffelsoftware.metadataconsumer\F_code\EiffelSoftware.MetadataConsumer.dll then
+	remtrace Could not compile EiffelSoftware.MetadataConsumer.dll
+	CANCEL
+endiff
+copy EIFGENs\eiffelsoftware.metadataconsumer\F_code\EiffelSoftware.MetadataConsumer.dll %INSTALL_DIR\dotnet_binaries
+copy EIFGENs\eiffelsoftware.metadataconsumer\F_code\libEiffelSoftware.MetadataConsumer.dll %INSTALL_DIR\dotnet_binaries
+
+cdd %EIFFEL_SRC
