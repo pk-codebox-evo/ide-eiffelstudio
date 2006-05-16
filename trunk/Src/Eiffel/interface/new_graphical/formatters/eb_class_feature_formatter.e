@@ -20,7 +20,6 @@ feature -- Status report
 	is_class_feature_formatter: BOOLEAN is True
 			-- Is current a class feature formatter?
 
-
 feature{NONE} -- Implementation
 
 	generate_result is
