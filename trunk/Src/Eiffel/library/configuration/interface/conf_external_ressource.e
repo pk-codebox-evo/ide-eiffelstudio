@@ -10,9 +10,20 @@ class
 
 inherit
 	CONF_EXTERNAL
+		redefine
+			is_ressource
+		end
 
 create
 	make
+
+feature -- Status
+
+	is_ressource: BOOLEAN is
+			-- Is `Current' an external ressource?
+		once
+			Result := True
+		end
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
