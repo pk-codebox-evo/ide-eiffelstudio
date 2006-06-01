@@ -10,17 +10,9 @@ class
 	EB_GRID_COMPILED_CLASS_ITEM
 
 inherit
-	EB_GRID_COMPILER_ITEM
+	EB_GRID_CLASS_ITEM
 		redefine
-			general_tooltip,
 			style
-		end
-
-	EB_CONSTANTS
-		undefine
-			copy,
-			is_equal,
-			default_create
 		end
 
 create
@@ -45,36 +37,21 @@ feature{NONE} -- Initialization
 
 feature -- Access
 
+	associated_class_i: CLASS_I is
+			-- CLASS_I associated with current item
+		do
+			Result := associated_class.lace_class
+		end
+
 	associated_class: CLASS_C
 			-- Compiled class associated with current item
-
-	general_tooltip: EB_EDITOR_TOKEN_TOOLTIP
-			-- General tooltip used to display information
-			-- Use this tooltip if normal tooltip provided can not satisfy,
-			-- for example, you want to be able to pick and drop from/to tooltip.	
 
 	style: EB_GRID_CLASS_ITEM_STYLE
 			-- Style of current item
 
-feature{NONE} -- Pixmap
-
-	item_pixmap: EV_PIXMAP is
-			-- Pixmap associated to current compiler item
-		do
-			if not is_invisible_pixmap_enabled then
-				Result := pixmap_from_class_i (associated_class.lace_class)
-			else
-				Result := pixmaps.icon_invisible_icon
-			end
-		end
-
-	internal_replace (original, new: STRING) is
-			-- Replace every occurrence of `original' with `new' in `image'.
-		do
-		end
-
 invariant
 	associated_class_not_void: associated_class /= Void
+	style_attached: style /= Void
 
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"
