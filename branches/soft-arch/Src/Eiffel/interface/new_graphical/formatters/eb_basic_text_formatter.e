@@ -156,7 +156,7 @@ feature -- Status setting
 			end
 		end
 
-feature {NONE} -- Properties
+feature {EB_TEACHMODE_FORMATTER} -- Properties
 
 	class_cmd: E_SHOW_FLAT
 			-- Just needed for compatibility, do not use.
@@ -173,7 +173,7 @@ feature {NONE} -- Properties
 	post_fix: STRING is "txt"
 			-- String symbol of the command, used as an extension when saving.
 
-feature {NONE} -- Implementation
+feature {EB_TEACHMODE_FORMATTER} -- Implementation
 
 	generate_text is
 			-- Create `formatted_text'.
