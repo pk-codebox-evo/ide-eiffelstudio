@@ -6,26 +6,21 @@ indexing
 	revision: "$Revision$"
 
 class
-	SPLASH_DISPLAYER
+	NATIVE_SPLASH_DISPLAYER
+
+inherit
+	SPLASH_DISPLAYER_I
 
 create
 	make_with_text
 
 feature
 
-	make_with_text (s: STRING_GENERAL) is
-		do
-		end
-
 	show is
 		do
 			--| no splash on unix
 		end
 	
-	set_debug_text (s: STRING_GENERAL) is
-		do
-		end
-
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
