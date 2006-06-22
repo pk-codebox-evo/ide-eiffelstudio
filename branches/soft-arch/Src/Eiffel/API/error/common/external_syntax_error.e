@@ -28,12 +28,12 @@ feature -- Property
 
 feature {EXTERNAL_LANG_AS, EXTERNAL_EXTENSION_AS} -- Setting
 
-	set_external_error_message (message: STRING) is
+	set_external_error_message (msg: STRING) is
 			-- Assign `external_error_message' with `message'.
 		require
-			message_not_void: message /= Void
+			message_not_void: msg /= Void
 		do
-			external_error_message := message.twin
+			external_error_message := msg.twin
 		end
 
 	set_file_name (new_filename: FILE_NAME) is

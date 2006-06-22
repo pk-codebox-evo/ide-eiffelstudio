@@ -7,19 +7,35 @@ indexing
 class
 	SYNTAX_WARNING
 
+inherit
+	SYNTAX_MESSAGE
+		rename
+			make as make_syntax_message
+		end
+
 create
 	make
 
-feature {NONE} -- Initialization
+feature -- Initialization
 
-	make (s, e: INTEGER; f: STRING; m: STRING) is
-			-- Create a new SYNTAX_WARNING instance.
+	make (a_line, a_column: INTEGER; a_file_name: like file_name; a_message: STRING) is
+			-- create a new SYNTAX_WARNING instance.
 		do
+			make_syntax_message(a_line,a_column, a_file_name, a_message, false)
+		end
+
+
+feature -- Access
+
+	code: STRING is
+			-- Error code
+		once
+			Result := "Warning"
 		end
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
-	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
+	license:	"GPL version 2 see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[
 			This file is part of Eiffel Software's Eiffel Development Environment.
