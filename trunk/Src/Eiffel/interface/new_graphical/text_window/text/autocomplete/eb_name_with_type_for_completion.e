@@ -22,7 +22,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_name: STRING; a_type: TYPE_A) is
+	make (a_name: STRING; a_type: TYPE_A; a_feature: FEATURE_I) is
 			-- Init
 		require
 			a_name_not_void: a_name /= Void
@@ -30,6 +30,7 @@ feature {NONE} -- Initialization
 		do
 			old_make (a_name)
 			return_type := a_type
+			feature_i := a_feature
 			if show_type then
 				append (completion_type)
 			end
@@ -43,16 +44,21 @@ feature -- Access
 			l_style: EB_GRID_LOCAL_ITEM_STYLE
 		do
 			if show_type then
-					-- We don't yet have a way to print colorized dumy.
-				create {EB_GRID_LOCAL_ITEM_NAME_STYLE}l_style
+				create {EB_GRID_LOCAL_ITEM_NAME_TYPE_STYLE}l_style
 			else
 				create {EB_GRID_LOCAL_ITEM_NAME_STYLE}l_style
 			end
-			create Result.make_with_type (name, return_type, l_style)
+			create Result.make_with_type (name, return_type, feature_i, l_style)
 			Result.set_tooltip_display_function (agent display_colorized_tooltip)
 			Result.enable_pixmap
+			if has_child then
+				Result.set_pixmap (pixmaps.icon_pixmaps.feature_group_icon)
+			end
 			Result.set_overriden_fonts (label_font_table)
 		end
+
+	feature_i: FEATURE_I;
+			-- Feature used to print types
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
