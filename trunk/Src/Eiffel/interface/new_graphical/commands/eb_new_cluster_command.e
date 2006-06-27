@@ -1,5 +1,5 @@
 indexing
-	description	: "Command to create a new feature."
+	description	: "Command to create a new cluster."
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
 	date		: "$Date$"
