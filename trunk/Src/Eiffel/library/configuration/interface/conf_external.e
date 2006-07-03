@@ -38,6 +38,11 @@ feature -- Status
 		once
 		end
 
+	is_library: BOOLEAN is
+			-- Is `Current' a library external?
+		once
+		end
+
 	is_make: BOOLEAN is
 			-- Is `Current' a make external?
 		once
