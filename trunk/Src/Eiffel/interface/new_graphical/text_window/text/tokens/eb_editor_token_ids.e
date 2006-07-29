@@ -60,9 +60,13 @@ feature -- Color ids
 
 	object_background_color_id: INTEGER is 50
 
+	target_text_color_id: INTEGER is 51
+
+	target_background_color_id: INTEGER is 52
+
 	max_color_id: INTEGER is
 		do
-			Result := object_background_color_id
+			Result := target_background_color_id
 		end
 
 feature {NONE} -- Implementation
