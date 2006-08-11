@@ -406,6 +406,8 @@ feature -- Memory management
 
 			exception.remove_text
 			exception.remove_tooltip
+
+			clean_stack_grid
 		end
 
 feature {NONE} -- Grid Implementation
@@ -1116,8 +1118,8 @@ feature {NONE} -- Implementation: set stack depth command
 			dialog.set_title (Interface_names.t_Set_stack_depth)
 			dialog.set_icon_pixmap (pixmaps.icon_pixmaps.general_dialog_icon)
 			dialog.disable_user_resize
-			Layout_constants.set_default_size_for_button (okb)
-			Layout_constants.set_default_size_for_button (cancelb)
+			Layout_constants.set_default_width_for_button (okb)
+			Layout_constants.set_default_width_for_button (cancelb)
 
 				-- Organize widgets.
 			create vb

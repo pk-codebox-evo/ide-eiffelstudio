@@ -186,9 +186,9 @@ feature {NONE} -- Initialization
 
 				-- Build the buttons
 			create create_button.make_with_text_and_action (Interface_names.b_create, agent create_new_class)
-			Layout_constants.set_default_size_for_button (create_button)
+			Layout_constants.set_default_width_for_button (create_button)
 			create cancel_b.make_with_text_and_action (Interface_names.b_cancel, agent cancel)
-			Layout_constants.set_default_size_for_button (cancel_b)
+			Layout_constants.set_default_width_for_button (cancel_b)
 
 				-- Build the button box
 			create buttons_box
@@ -357,8 +357,10 @@ feature {NONE} -- Implementation
 					str @ (str.count) /= 'e' or else
 					str @ (str.count - 1) /= '.'
 				then
-					dotpos := str.index_of ('.', 1) - 1
-					str.keep_head (dotpos.max (0))
+					dotpos := str.last_index_of ('.', str.count) - 1
+					if dotpos > 0 then
+						str.keep_head (dotpos)
+					end
 					create Result.make_from_string (str)
 					Result.add_extension ("e")
 				else

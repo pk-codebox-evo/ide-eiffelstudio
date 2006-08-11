@@ -60,6 +60,7 @@ feature {NONE} -- Initialization
 			--| uncomment the following line when profiling
 			--prof_setting: PROFILING_SETTING
 		do
+			Execution_environment.put ("/home/fivaa/estudio/Eiffel57_testing", "ISE_EIFFEL")
 			--| uncomment the following lines when profiling
 			--create prof_setting.make
 			--prof_setting.stop_profiling

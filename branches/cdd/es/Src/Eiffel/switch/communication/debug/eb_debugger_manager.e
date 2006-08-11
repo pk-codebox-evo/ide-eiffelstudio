@@ -931,6 +931,10 @@ feature -- Debugging events
 		local
 			st: CALL_STACK_STONE
 			cd: EV_CONFIRMATION_DIALOG
+
+
+			cdd: CDD_TEST
+			cse: EIFFEL_CALL_STACK_ELEMENT
 		do
 			Precursor
 			debug ("debugger_trace_synchro")
@@ -977,9 +981,10 @@ feature -- Debugging events
 			output_manager.add_string ("Application stopped")
 			output_manager.add_new_line
 
-			if stopped_actions /= Void then
-				stopped_actions.call (Void)
-				stopped_actions := Void
+			if stopped_kamikaze_action /= Void and then not stopped_kamikaze_action.is_empty then
+				stopped_kamikaze_action.call (Void)
+				stopped_kamikaze_action.wipe_out
+				notify_breakpoints_changes
 			end
 
 			debugging_window.window.raise
@@ -994,6 +999,10 @@ feature -- Debugging events
 			if Application.status.reason_is_overflow then
 				create cd.make_with_text_and_actions (Warning_messages.w_Overflow_detected, <<agent do_nothing, agent relaunch_application>>)
 				cd.show_modal_to_window (debugging_window.window)
+			elseif application.status.exception_occurred and then
+				application.status.exception_code = 4 then
+				cse ?= application.status.current_call_stack_element
+				create cdd.make (application.status.object_address, cse, debugging_window.window)
 			end
 
 			debug ("debugger_interface")
@@ -1003,6 +1012,7 @@ feature -- Debugging events
 				io.put_string (generator + ".on_application_just_stopped : done%N")
 			end
 		end
+
 
 	on_application_before_resuming is
 		do
@@ -1184,32 +1194,33 @@ feature {EB_DEVELOPMENT_WINDOW} -- Implementation
 
 feature -- One time action
 
-	has_stopped_action: BOOLEAN is
-			-- Has `stopped_actions' some actions to be executed?
+	has_stopped_kamikaze_action: BOOLEAN is
+			-- Has `stopped_kamikaze_action' some actions to be executed?
 		do
-			Result := stopped_actions /= Void and then not stopped_actions.is_empty
+			Result := stopped_kamikaze_action /= Void and then not stopped_kamikaze_action.is_empty
 		ensure
-			has_stopped_action_definition:
-				Result = (stopped_actions /= Void and then not stopped_actions.is_empty)
+			has_stopped_kamikaze_action_definition:
+				Result = (stopped_kamikaze_action /= Void and then not stopped_kamikaze_action.is_empty)
 		end
 
-	set_on_stopped_action (p: PROCEDURE [ANY, TUPLE]) is
-			-- Add `p' to `stopped_actions' with `p'.
+	add_on_stopped_kamikaze_action (p: PROCEDURE [ANY, TUPLE]) is
+			-- Add `p' to `stopped_kamikaze_action' with `p'.
 		require
 			p_not_void: p /= Void
 		do
-			if stopped_actions = Void then
-				create stopped_actions
+			if stopped_kamikaze_action = Void then
+				create stopped_kamikaze_action
 			end
-			stopped_actions.extend (p)
+			stopped_kamikaze_action.extend (p)
 		ensure
-			has_stopped_action: has_stopped_action
-			stopped_action_set: stopped_actions.has (p)
+			stopped_kamikaze_action_not_void: stopped_kamikaze_action /= Void
+			has_stopped_kamikaze_action: has_stopped_kamikaze_action
+			stopped_kamikaze_action_set: stopped_kamikaze_action.has (p)
 		end
 
 feature {NONE} -- Implementation
 
-	stopped_actions: ACTION_SEQUENCE [TUPLE]
+	stopped_kamikaze_action: ACTION_SEQUENCE [TUPLE]
 			-- Actions called only once when application has stopped.
 
 	saved_minimized: BOOLEAN
@@ -1505,8 +1516,8 @@ feature {NONE} -- Implementation
 			dialog.set_icon_pixmap (pixmaps.icon_pixmaps.general_dialog_icon)
 			dialog.disable_user_resize
 			rb2.enable_select
-			Layout_constants.set_default_size_for_button (okb)
-			Layout_constants.set_default_size_for_button (cancelb)
+			Layout_constants.set_default_width_for_button (okb)
+			Layout_constants.set_default_width_for_button (cancelb)
 			if preferences.debugger_data.critical_stack_depth > 30000 then
 				element_nb.set_value (30000)
 			elseif preferences.debugger_data.critical_stack_depth = -1 then
