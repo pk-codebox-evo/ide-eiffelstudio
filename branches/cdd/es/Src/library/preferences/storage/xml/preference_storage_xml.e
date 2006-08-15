@@ -20,6 +20,11 @@ inherit
 			{NONE} all
 		end
 
+	XM_MARKUP_CONSTANTS
+		export
+			{NONE} all
+		end
+
 	REFACTORING_HELPER
 
 create
@@ -102,7 +107,8 @@ feature {PREFERENCES} -- Resource Management
 			pref_string1 := "%N%T<PREFERENCE NAME=%""
 			pref_string2 := "%" VALUE=%""
 			pref_string3 := "%"/>"
-			create l_file.make_open_write (location)
+			create l_file.make (location)
+			safe_open_write (l_file)
 			if l_file.is_open_write then
 				l_file.put_string ("<EIFFEL_DOCUMENT>")
 				from
@@ -113,9 +119,9 @@ feature {PREFERENCES} -- Resource Management
 					l_preference := a_preferences.item
 					if not a_save_modified_values_only or else not l_preference.is_default_value then
 						l_file.put_string (pref_string1)
-						l_file.put_string (l_preference.name)
+						l_file.put_string (escape_xml (l_preference.name))
 						l_file.put_string (pref_string2)
-						l_file.put_string (l_preference.string_value)
+						l_file.put_string (escape_xml (l_preference.string_value))
 						l_file.put_string (pref_string3)
 					else
 						-- nothing to do to remove them from file.
@@ -193,6 +199,60 @@ feature {NONE} -- Implementation
 			else
 				fixme ("Add code to let callers that we could not open preference file")
 			end
+		end
+
+	escape_xml (a_string: STRING): STRING is
+			-- Escape xml entities in `a_string'.
+		do
+			if a_string /= Void then
+				Result := a_string.twin
+				Result.replace_substring_all (Amp_string, amp_entity)
+				Result.replace_substring_all (Lt_string, Lt_entity)
+				Result.replace_substring_all (Gt_string, Gt_entity)
+				Result.replace_substring_all (Quot_string, quot_entity)
+			end
+		ensure
+			result_void_iff_a_string_void: (Result = Void) = (a_string = Void)
+		end
+
+	Lt_string: STRING is
+		once
+			create Result.make (1)
+			Result.append_character (lt_char)
+		end
+
+	Gt_string: STRING is
+		once
+			create Result.make (1)
+			Result.append_character (gt_char)
+		end
+
+	Amp_string: STRING is
+		once
+			create Result.make (1)
+			Result.append_character (amp_char)
+		end
+
+	Quot_string: STRING is
+		once
+			create Result.make (1)
+			Result.append_character (quot_char)
+		end
+
+	safe_open_write (a_file: FILE) is
+			-- Safely open `a_file'.
+		require
+			a_file_not_void: a_file /= Void
+			a_file_closed: a_file.is_closed
+		local
+			retried: BOOLEAN
+		do
+			if not retried then
+				a_file.open_write
+			end
+		rescue
+			retried := True
+			retry
 		end
 
 invariant

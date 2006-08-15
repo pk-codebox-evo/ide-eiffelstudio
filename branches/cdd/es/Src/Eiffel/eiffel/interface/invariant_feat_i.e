@@ -11,7 +11,7 @@ class INVARIANT_FEAT_I
 inherit
 	DYN_PROC_I
 		redefine
-			melt, generate_il
+			melt, generate_il, is_invariant
 		end
 
 	SHARED_BN_STATELESS_VISITOR
@@ -72,6 +72,11 @@ feature -- Byte Code generation
 
 			Execution_table.mark_melted (exec)
 		end
+
+feature
+
+	is_invariant: BOOLEAN is True ;
+			-- This is the invariant feature of its class
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
