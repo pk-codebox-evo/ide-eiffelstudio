@@ -208,7 +208,7 @@ feature {NONE} -- Implementation
 			Result :=
 			"indexing%N%N%
 			%class%N%
-			%	TEST_" + class_name + "%N%N%
+			%	" + class_name + "%N%N%
 			%feature -- Testing%N%N%
 			%	test_" + feature_name + " is%N%
 			%		local%N"

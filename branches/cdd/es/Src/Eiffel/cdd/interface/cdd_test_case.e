@@ -14,6 +14,9 @@ feature {NONE} -- Initialization
 
 	make (a_dclass: EIFFEL_CLASS_C; a_feature: E_FEATURE; a_class_name: STRING; a_file_name: STRING) is
 			--
+		require
+			dclass_valid: a_dclass /= Void
+			feature_valid: a_feature /= Void and a_feature.associated_class = a_dclass
 		do
 			dclass := a_dclass
 			e_feature := a_feature

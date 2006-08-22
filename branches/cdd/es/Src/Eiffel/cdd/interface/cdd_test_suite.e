@@ -26,7 +26,7 @@ feature {NONE} -- Initialization
 			--
 		do
 			test_case_created := False
-			create {DS_LINKED_LIST [CDD_TEST_CASE]} test_cases.make
+			create test_case_hash.make (20) -- better value?
 			create new_test_case_subscribers.make
 		end
 
@@ -75,7 +75,11 @@ feature {EB_DEBUGGER_MANAGER} -- Test Case Generation
 				file.open_write
 				printer.print_test_case (obj, class_name, app_status.e_feature, file)
 				create tc.make (dclass, app_status.e_feature, class_name, file_path)
-				test_cases.put_last (tc)
+
+				if not test_case_hash.has (dclass) then
+					test_case_hash.put_new (create {DS_LINKED_LIST [CDD_TEST_CASE]}.make, dclass)
+				end
+				test_case_hash.item (dclass).put_last (tc)
 				test_case_created := True
 				notify_new_test_case (tc)
 			else
@@ -90,6 +94,27 @@ feature -- Access
 
 	count: INTEGER
 			-- Number of test cases in the system
+
+	classes: DS_LIST [EIFFEL_CLASS_C] is
+			--
+		do
+			Result := create {DS_ARRAYED_LIST [EIFFEL_CLASS_C]}.make (test_case_hash.count)
+			from
+				test_case_hash.start
+			until
+				test_case_hash.after
+			loop
+				Result.put_last (test_case_hash.key_for_iteration)
+				test_case_hash.forth
+			end
+		end
+
+
+	test_cases (a_class: EIFFEL_CLASS_C): DS_LIST [CDD_TEST_CASE] is
+			--
+		do
+			Result := test_case_hash.item (a_class)
+		end
 
 
 feature -- Event handling
@@ -136,7 +161,7 @@ feature {NONE} -- Event Handling
 
 feature {NONE} -- Implementation
 
-	test_cases: DS_LIST [CDD_TEST_CASE]
+	test_case_hash: DS_HASH_TABLE [DS_LIST [CDD_TEST_CASE], EIFFEL_CLASS_C]
 
 	printer: CDD_TEST_CASE_PRINTER is
 			--
