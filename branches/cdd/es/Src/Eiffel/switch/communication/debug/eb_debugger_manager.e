@@ -30,8 +30,9 @@ inherit
 
 	EB_SHARED_GRAPHICAL_COMMANDS
 
-
 	EB_SHARED_PREFERENCES
+
+	CDD_SHARED_TEST_SUITE
 
 create
 	make
@@ -933,7 +934,7 @@ feature -- Debugging events
 			cd: EV_CONFIRMATION_DIALOG
 
 
-			cdd: CDD_TEST
+			cdd: CDD_TEST_SUITE
 			cse: EIFFEL_CALL_STACK_ELEMENT
 		do
 			Precursor
@@ -1001,8 +1002,7 @@ feature -- Debugging events
 				cd.show_modal_to_window (debugging_window.window)
 			elseif application.status.exception_occurred and then
 				application.status.exception_code = 4 then
-				cse ?= application.status.current_call_stack_element
-				create cdd.make (application.status.object_address, cse, debugging_window.window)
+				test_suite.report_postcondition_violation (application.status)
 			end
 
 			debug ("debugger_interface")
