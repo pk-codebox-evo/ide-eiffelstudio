@@ -12,7 +12,7 @@ feature -- Access
 	test_suite: CDD_TEST_SUITE is
 			--
 		once
-			create Result
+			create Result.make
 		end
 
 

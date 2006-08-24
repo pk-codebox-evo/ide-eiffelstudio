@@ -9,7 +9,7 @@ class
 
 feature -- Access
 
-	print_test_case (cdd_tc_manager: CDD_REFLECTED_OBJECT; class_name: STRING; e_feature: E_FEATURE; a_file: FILE) is
+	print_test_case (reflection: CDD_REFLECTED_OBJECT; test_class_name: STRING; feature_name: STRING; a_file: FILE) is
 		require
 			a_file_writeable: a_file /= Void and then a_file.is_writable
 		local
@@ -17,9 +17,9 @@ feature -- Access
 			root_object: CDD_COMPOSITE_OBJECT
 		do
 			output_file := a_file
-			root_object := cdd_tc_manager.root_object
-			append_text (class_header (class_name, e_feature.name))
-			rlist := cdd_tc_manager.composite_objects
+			root_object := reflection.root_object
+			append_text (class_header (test_class_name, feature_name))
+			rlist := reflection.composite_objects
 			from
 				rlist.start
 			until
@@ -48,17 +48,17 @@ feature -- Access
 				rlist.forth
 			end
 			append_text ("%N%N" + indent)
-			append_text (root_object.identifier + "." + e_feature.name)
-			if e_feature.has_arguments then
+			append_text (root_object.identifier + "." + feature_name)
+			if reflection.arguments.count > 0 then
 				append_text (" (")
 				from
-					cdd_tc_manager.arguments.start
+					reflection.arguments.start
 				until
-					cdd_tc_manager.arguments.after
+					reflection.arguments.after
 				loop
-					append_text (cdd_tc_manager.arguments.item_for_iteration.identifier)
-					cdd_tc_manager.arguments.forth
-					if not cdd_tc_manager.arguments.after then
+					append_text (reflection.arguments.item_for_iteration.identifier)
+					reflection.arguments.forth
+					if not reflection.arguments.after then
 						append_text (", ")
 					end
 				end

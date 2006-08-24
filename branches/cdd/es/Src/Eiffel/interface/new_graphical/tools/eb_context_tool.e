@@ -62,7 +62,7 @@ feature {NONE} -- Initialization
 			end
 			create class_view.make_with_tool (development_window, Current)
 			create feature_view.make_with_tool (development_window, Current)
-			create cdd_test_suite_displayer.make_with_tool (development_window, Current)
+			create cdd_test_suite_view.make_with_tool (development_window, Current)
 			create external_output_view.make (development_window, Current)
 			create c_compilation_output_view.make (development_window, Current)
 			create error_output_view.make (development_window, Current)
@@ -92,7 +92,7 @@ feature {NONE} -- Initialization
 			end
 			notebook.extend (class_view.widget)
 			notebook.extend (feature_view.widget)
-			notebook.extend (cdd_test_suite_displayer)
+			notebook.extend (cdd_test_suite_view.widget)
 			if has_metrics then
 				notebook.extend (metrics.widget)
 				if has_case then
@@ -112,7 +112,7 @@ feature {NONE} -- Initialization
 			notebook.item_tab (editor.widget).set_pixmap (icon_pixmaps.view_editor_icon)
 			notebook.item_tab (class_view.widget).set_pixmap (icon_pixmaps.tool_class_icon)
 			notebook.item_tab (feature_view.widget).set_pixmap (icon_pixmaps.tool_feature_icon)
-			notebook.item_tab (cdd_test_suite_displayer).set_pixmap (icon_pixmaps.tool_feature_icon)
+			notebook.item_tab (cdd_test_suite_view.widget).set_pixmap (icon_pixmaps.tool_feature_icon)
 			notebook.item_tab (metrics.widget).set_pixmap (pixmaps.icon_pixmaps.tool_metric_icon)
 			notebook.item_tab (external_output_view.widget).set_pixmap (icon_pixmaps.tool_external_output_icon)
 			notebook.item_tab (c_compilation_output_view.widget).set_pixmap (icon_pixmaps.tool_c_output_icon)
@@ -130,7 +130,7 @@ feature {NONE} -- Initialization
 			end
 			notebook.set_item_text (class_view.widget, interface_names.l_Tab_class_info)
 			notebook.set_item_text (feature_view.widget, interface_names.l_Tab_feature_info)
-			notebook.set_item_text (cdd_test_suite_displayer, "CCD")
+			notebook.set_item_text (cdd_test_suite_view.widget, "CCD")
 			if has_metrics then
 				notebook.set_item_text (metrics.widget, interface_names.l_Tab_metrics)
 			end
@@ -202,7 +202,7 @@ feature -- Access
 	feature_view: EB_FEATURES_VIEW
 			-- Feature information display.
 
-	cdd_test_suite_displayer: CDD_TEST_SUITE_DISPLAYER
+	cdd_test_suite_view: CDD_TEST_SUITE_TOOL
 			-- Testing status display.
 
 	output_view: EB_OUTPUT_TOOL

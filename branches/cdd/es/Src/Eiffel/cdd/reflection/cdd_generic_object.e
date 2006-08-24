@@ -19,7 +19,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make_generic (dtype: CLASS_C; attribute_count: INTEGER; gtype: STRING) is
+	make_generic (dtype: like dynamic_class; attribute_count: INTEGER; gtype: STRING) is
 			-- Initialize with generic type gtype
 		do
 			make_with_count (dtype, attribute_count)

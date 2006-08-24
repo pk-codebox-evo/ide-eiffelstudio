@@ -20,7 +20,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make_with_string (a_class: CLASS_C; a_string: STRING) is
+	make_with_string (a_class: like dynamic_class; a_string: STRING) is
 			-- Initialize `Current'.
 		require else
 			class_ot_type_string: a_class.name.is_equal ("STRING_8") or

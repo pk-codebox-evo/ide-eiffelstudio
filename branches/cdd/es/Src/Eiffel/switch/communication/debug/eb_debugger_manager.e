@@ -934,7 +934,7 @@ feature -- Debugging events
 			cd: EV_CONFIRMATION_DIALOG
 
 
-			cdd: CDD_TEST_SUITE
+			cdd_fct: CDD_TEST_CASE_FACTORY
 			cse: EIFFEL_CALL_STACK_ELEMENT
 		do
 			Precursor
@@ -1001,8 +1001,10 @@ feature -- Debugging events
 				create cd.make_with_text_and_actions (Warning_messages.w_Overflow_detected, <<agent do_nothing, agent relaunch_application>>)
 				cd.show_modal_to_window (debugging_window.window)
 			elseif application.status.exception_occurred and then
-				application.status.exception_code = 4 then
-				test_suite.report_postcondition_violation (application.status)
+				application.status.exception_code = 4 and
+				test_suite.is_testing_enabled then
+				create cdd_fct
+				cdd_fct.report_postcondition_violation (application.status, debugging_window)
 			end
 
 			debug ("debugger_interface")

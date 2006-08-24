@@ -19,10 +19,10 @@ inherit
 			{NONE} all
 		end
 
-	SHARED_APPLICATION_EXECUTION
-		export
-			{NONE} all
-		end
+	--SHARED_APPLICATION_EXECUTION
+	--	export
+	--		{NONE} all
+	--	end
 
 create
 	make
@@ -32,15 +32,27 @@ feature {NONE} -- Initialization
 	object_count: INTEGER is 20
 			-- approx number of composite objects that will be stored
 
-	make (addr: STRING; dclass: CLASS_C; cse: EIFFEL_CALL_STACK_ELEMENT) is
+	make (cse: EIFFEL_CALL_STACK_ELEMENT) is
 			-- Initialize `Current'.
 		local
 			alist: LIST [ABSTRACT_DEBUG_VALUE]
 			i: INTEGER
 		do
 			create instantiated_nodes.make (object_count)
-			root_object := create_composite_object (application.status.object_address, dclass)
-			if root_object /= Void then
+			root_object := create_composite_object (cse.object_address, cse.dynamic_class)
+
+			if reflection_succeded /= Void then
+				create {DS_ARRAYED_LIST [CDD_COMPOSITE_OBJECT]} composite_objects.make (instantiated_nodes.count)
+				from
+					instantiated_nodes.start
+				until
+					instantiated_nodes.after
+				loop
+					composite_objects.put_right (instantiated_nodes.item_for_iteration)
+					instantiated_nodes.forth
+				end
+
+				-- retrieve feature arguments
 				alist := cse.arguments
 				create {DS_ARRAYED_LIST [CDD_OBJECT]} arguments.make (alist.count)
 				from
@@ -56,22 +68,18 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	root_object: CDD_COMPOSITE_OBJECT
-			-- object beeing reflected
-
-	composite_objects: DS_LIST [CDD_COMPOSITE_OBJECT] is
-			-- non basic objects needed by root_object
+	reflection_succeded: BOOLEAN is
+			-- were we able to reflect the current
 		do
-			Result := create {DS_ARRAYED_LIST [CDD_COMPOSITE_OBJECT]}.make (instantiated_nodes.count)
-			from
-				instantiated_nodes.start
-			until
-				instantiated_nodes.after
-			loop
-				Result.put_right (instantiated_nodes.item_for_iteration)
-				instantiated_nodes.forth
-			end
+			Result := root_object /= Void
 		end
+
+
+	root_object: CDD_COMPOSITE_OBJECT
+			-- root object in the reflection tree
+
+	composite_objects: DS_LIST [CDD_COMPOSITE_OBJECT]
+			-- non basic objects needed by root_object
 
 	arguments: DS_LIST [CDD_OBJECT]
 

@@ -16,7 +16,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make_with_count (dtype: CLASS_C; attribute_count: INTEGER) is
+	make_with_count (dtype: like dynamic_class; attribute_count: INTEGER) is
 			--
 		do
 			make (dtype)

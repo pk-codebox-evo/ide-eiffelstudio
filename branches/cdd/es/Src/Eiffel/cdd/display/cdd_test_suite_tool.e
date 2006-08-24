@@ -5,27 +5,26 @@ indexing
 	revision: "$Revision$"
 
 class
-	CDD_TEST_SUITE_DISPLAYER
+	CDD_TEST_SUITE_TOOL
 
 inherit
 
-	EV_VERTICAL_BOX
-		redefine
-			initialize
-		end
-
-	CDD_SHARED_TEST_SUITE
+	CDD_TEST_SUITE_OBSERVER
 		export
 			{NONE} all
-		undefine
-			is_equal, default_create, copy
+		redefine
+			on_add_test_case,
+			on_enable_testing
+		end
+
+	SHARED_EIFFEL_PROJECT
+		export
+			{NONE} all
 		end
 
 	EB_CONSTANTS
 		export
 			{NONE} all
-		undefine
-			is_equal, default_create, copy
 		end
 
 create
@@ -36,23 +35,23 @@ feature {NONE} -- Initialization
 	make_with_tool (a_window: EB_DEVELOPMENT_WINDOW; a_tool: EB_CONTEXT_TOOL) is
 			-- Initialize
 		do
-			default_create
-
-			window := a_window
-
-			test_suite.subscribe_new_test_case (agent add_test_case)
-
+			development_window := a_window
+			initialize
+			subscribe
 			create {DS_LINKED_LIST [CDD_GRID_CLASS_LINE]} displayed_classes.make
 		end
 
 	initialize is
 			--
 		do
-			Precursor
+			create widget
 
 			build_tool_bar
 			create grid
-			extend (grid)
+			if not test_suite.is_testing_enabled then
+				grid.disable_sensitive
+			end
+			widget.extend (grid)
 		end
 
 
@@ -60,7 +59,9 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	window: EB_DEVELOPMENT_WINDOW
+	development_window: EB_DEVELOPMENT_WINDOW
+
+	widget: EV_VERTICAL_BOX
 
 feature -- Measurement
 
@@ -69,10 +70,8 @@ feature -- Status report
 
 feature -- Status setting
 
-	add_test_case (a_test_case: CDD_TEST_CASE) is
+	on_add_test_case (a_test_case: CDD_TEST_CASE) is
 			-- Add Test Case
-		require
-			valid_test_case: a_test_case /= Void
 		local
 			rc: INTEGER
 			row: EV_GRID_ROW
@@ -80,22 +79,23 @@ feature -- Status setting
 			class_line: CDD_GRID_CLASS_LINE
 			test_case_line: CDD_GRID_TEST_CASE_LINE
 		do
-			from
-				displayed_classes.start
-			until
-				displayed_classes.after or class_line /= Void
-			loop
-				if displayed_classes.item_for_iteration.dclass = a_test_case.dclass then
-					class_line := displayed_classes.item_for_iteration
-				end
-				displayed_classes.forth
-			end
-			if class_line = Void then
-				create class_line.make_with_class (a_test_case.dclass, grid)
-				displayed_classes.put_last (class_line)
-			end
-			create test_case_line.make_with_test_case (a_test_case, class_line, grid)
 		end
+
+	on_enable_testing is
+			--
+		do
+			enable_testing_btn.disable_sensitive
+		end
+
+
+	on_button_enable_testing (x, y, button: INTEGER; x_tilt, y_tilt, pressure: DOUBLE; screen_x, screen_y: INTEGER) is
+			--
+		do
+			if test_suite.can_enable_testing then
+				test_suite.enable_testing
+			end
+		end
+
 
 
 feature -- Cursor movement
@@ -126,6 +126,8 @@ feature {NONE} -- Implementation
 
 	tool_bar: EV_TOOL_BAR
 
+	enable_testing_btn: EV_TOOL_BAR_BUTTON
+
 	run_tc_button: EV_TOOL_BAR_BUTTON
 
 	run_all_tc_button: EV_TOOL_BAR_BUTTON
@@ -136,17 +138,29 @@ feature {NONE} -- Implementation
 			--
 		do
 			create tool_bar
+			create enable_testing_btn.make_with_text ("Enable Testing")
+			enable_testing_btn.set_pixmap (pixmaps.icon_pixmaps.breakpoints_enable_icon)
+			enable_testing_btn.pointer_button_press_actions.extend (agent on_button_enable_testing)
 			create run_all_tc_button.make_with_text ("Run all test cases")
 			run_all_tc_button.set_pixmap (pixmaps.icon_pixmaps.debug_run_icon)
 			create run_tc_button.make_with_text ("Run test tase")
 			run_tc_button.set_pixmap (pixmaps.icon_pixmaps.debug_run_icon)
 			create del_tc_button.make_with_text ("Remove test case")
 			del_tc_button.set_pixmap (pixmaps.icon_pixmaps.general_delete_icon)
+			if test_suite.is_testing_enabled then
+				enable_testing_btn.disable_sensitive
+			else
+				run_all_tc_button.disable_sensitive
+				run_tc_button.disable_sensitive
+				del_tc_button.disable_sensitive
+			end
 			tool_bar.extend (run_all_tc_button)
 			tool_bar.extend (run_tc_button)
 			tool_bar.extend (del_tc_button)
-			extend (tool_bar)
-			disable_item_expand (tool_bar)
+			tool_bar.extend (create {EV_TOOL_BAR_SEPARATOR})
+			tool_bar.extend (enable_testing_btn)
+			widget.extend (tool_bar)
+			widget.disable_item_expand (tool_bar)
 		end
 
 	grid: CDD_GRID

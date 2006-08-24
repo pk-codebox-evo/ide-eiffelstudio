@@ -9,7 +9,7 @@ deferred class
 
 feature -- Initialization
 
-	make (a_class: CLASS_C) is
+	make (a_class: like dynamic_class) is
 			-- create new runtime node assoziated to a_class
 		do
 			dynamic_class := a_class

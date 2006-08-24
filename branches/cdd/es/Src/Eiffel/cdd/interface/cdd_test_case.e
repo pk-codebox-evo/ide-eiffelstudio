@@ -7,33 +7,51 @@ indexing
 class
 	CDD_TEST_CASE
 
+inherit
+	COMPARABLE
+
+
 create
 	make
 
 feature {NONE} -- Initialization
 
-	make (a_dclass: EIFFEL_CLASS_C; a_feature: E_FEATURE; a_class_name: STRING; a_file_name: STRING) is
+	make (a_target_class: like target_class; a_feature: like e_feature; a_test_class: like test_class) is
 			--
 		require
-			dclass_valid: a_dclass /= Void
-			feature_valid: a_feature /= Void and a_feature.associated_class = a_dclass
+			valid_target_class: a_target_class /= Void
+			valid_feature: a_feature /= Void and a_feature.associated_class = a_target_class
 		do
-			dclass := a_dclass
-			e_feature := a_feature
-			test_case_class_name := a_class_name
-			file_name := a_file_name
+
 		end
 
 
 feature -- Access
 
-	dclass: EIFFEL_CLASS_C
+	target_class: CLASS_C
 
 	e_feature: E_FEATURE
 
-	test_case_class_name: STRING
+	test_class: CLASS_I
 
-	file_name: STRING
+feature -- Compare
+
+	infix "<" (other: like Current): BOOLEAN is
+			--
+		do
+			if target_class.name < other.target_class.name then
+				Result := True
+			elseif target_class = other.target_class then
+				if e_feature.name < other.e_feature.name then
+					Result := True
+				elseif e_feature = other.e_feature then
+					if test_class.name < other.test_class.name then
+						Result := True
+					end
+				end
+			end
+		end
+
 
 feature -- Measurement
 

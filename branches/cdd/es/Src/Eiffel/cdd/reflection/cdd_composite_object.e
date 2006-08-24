@@ -22,7 +22,7 @@ inherit
 
 feature {NONE} -- Initialization
 
-	make (a_class: CLASS_C) is
+	make (a_class: like dynamic_class) is
 			--
 		do
 			Precursor (a_class)
