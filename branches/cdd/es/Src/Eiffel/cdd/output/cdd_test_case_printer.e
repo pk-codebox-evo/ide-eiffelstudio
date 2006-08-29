@@ -9,17 +9,26 @@ class
 
 feature -- Access
 
-	print_test_case (reflection: CDD_REFLECTED_OBJECT; test_class_name: STRING; feature_name: STRING; a_file: FILE) is
+	print_test_case (reflection: CDD_REFLECTED_OBJECT; test_class_name: STRING; a_file: FILE) is
 		require
 			a_file_writeable: a_file /= Void and then a_file.is_writable
 		local
 			rlist: DS_LIST [CDD_COMPOSITE_OBJECT]
 			root_object: CDD_COMPOSITE_OBJECT
+			l_feature: E_FEATURE
 		do
 			output_file := a_file
 			root_object := reflection.root_object
-			append_text (class_header (test_class_name, feature_name))
+			l_feature := reflection.called_routine
 			rlist := reflection.composite_objects
+
+			append_indexing (root_object.dynamic_class.group.name, root_object.dynamic_class.name, l_feature.name)
+			append_class_header (test_class_name)
+
+			append_text ("%N%Ttest_feature is%N")
+			append_comment ("run tests")
+			append_text ("%T%Tlocal%N")
+
 			from
 				rlist.start
 			until
@@ -28,8 +37,12 @@ feature -- Access
 				append_object_declaration (rlist.item_for_iteration)
 				rlist.forth
 			end
-			append_text ("		do%N")
-			append_text ("			-- Create objects%N")
+			if l_feature.is_function then
+				append_instruction ("l_result: ANY")
+			end
+
+			append_text ("%T%Tdo%N")
+			append_comment ("Create objects")
 			from
 				rlist.start
 			until
@@ -38,7 +51,8 @@ feature -- Access
 				rlist.item_for_iteration.append_creation (Current)
 				rlist.forth
 			end
-			append_text ("			-- Assign attributes%N")
+
+			append_comment ("Assign attributes")
 			from
 				rlist.start
 			until
@@ -47,8 +61,12 @@ feature -- Access
 				rlist.item_for_iteration.append_assignment (Current)
 				rlist.forth
 			end
+
 			append_text ("%N%N" + indent)
-			append_text (root_object.identifier + "." + feature_name)
+			if l_feature.is_function then
+				append_text ("l_result ?= ")
+			end
+			append_text (root_object.identifier + "." + l_feature.name)
 			if reflection.arguments.count > 0 then
 				append_text (" (")
 				from
@@ -64,10 +82,9 @@ feature -- Access
 				end
 				append_text (")")
 			end
-			append_text ("%N%N		end%N%N%N")
-			append_text (implementation_features)
+			append_text ("%N%N%T%Tend%N%N")
+			append_class_footer (test_class_name)
 			output_file.flush
-			output_file.close
 		end
 
 
@@ -147,6 +164,12 @@ feature {CDD_OBJECT} -- Testcase generation
 		end
 
 	append_tuple_creation (a_tuple: CDD_TUPLE_OBJECT) is
+			-- text for creating tuple objects
+		do
+			append_instruction ("create " + a_tuple.identifier)
+		end
+
+	append_tuple_assignment (a_tuple: CDD_TUPLE_OBJECT) is
 			--
 		local
 			i: INTEGER
@@ -154,24 +177,15 @@ feature {CDD_OBJECT} -- Testcase generation
 		do
 			from
 				i := 1
-				instr := a_tuple.identifier + " := ["
 			until
 				i > a_tuple.attributes.count
 			loop
-				instr.append (a_tuple.attributes.item (i.out).identifier)
-				if i < a_tuple.attributes.count then
-					instr.append (", ")
-				end
+				instr := a_tuple.identifier + ".put ("
+				instr.append (a_tuple.attributes.item (i.out).identifier + ", " + i.out)
+				instr.append (")")
+				append_instruction (instr)
 				i := i + 1
 			end
-			instr.append ("]")
-			append_instruction (instr)
-		end
-
-	append_tuple_assignment (a_tuple: CDD_TUPLE_OBJECT) is
-			--
-		do
-			-- nothing to do since tuple gets fully assigned at creation
 		end
 
 
@@ -196,129 +210,38 @@ feature {NONE} -- Implementation
 		require
 			file_writable: output_file /= Void and then output_file.is_writable
 		do
-			append_text (indent + "%T" + c + "%N")
+			append_text (indent + "%T-- " + c + "%N")
 		end
 
 	output_file: FILE
 
 	indent: STRING is "%T%T%T"
 
-	class_header (class_name: STRING; feature_name: STRING): STRING is
+	append_indexing (cluster_name, class_name, feature_name: STRING) is
 		do
-			Result :=
-			"indexing%N%N%
-			%class%N%
-			%	" + class_name + "%N%N%
-			%feature -- Testing%N%N%
-			%	test_" + feature_name + " is%N%
-			%		local%N"
+			append_text ("indexing%N")
+			append_text ("description: %"Objects used for running tests%"%N")
+			append_text ("cluster: %"" + cluster_name + "%"%N")
+			append_text ("class: %"" + class_name + "%"%N")
+			append_text ("feature: %"" + feature_name + "%"%N")
+			append_text ("author: %"CDD_TEST_CASE_PRINTER%"%N")
+			append_text ("date: %"$Date$%"%N")
+			append_text ("revision: %"$Revision$%"%N%N")
 		end
 
 
-	implementation_features: STRING is
-		once
-			Result :=
-				"feature {NONE} -- Implementation%N%N" +
-				internal_attributes +
-				build_object_feature +
-				assign_values_feature
+	append_class_header (test_class_name: STRING) is
+		do
+			append_text ("class%N%T" + test_class_name + "%N%N")
+			append_text ("inherit%N%TCDD_SHARED_TESTING%N%N")
+			append_text ("feature -- Testing%N%N")
 		end
 
-	internal_attributes: STRING is
-		"	internal: INTERNAL is%N%
-		%		once%N%
-		%			create Result%N%
-		%		end%N%N%
-		%	attributes: HASH_TABLE [ANY, STRING]%N%N"
+	append_class_footer (test_class_name: STRING) is
+		do
+			append_text ("%N%Nend -- " + test_class_name + "%N%N")
+		end
 
-	build_object_feature: STRING is
-		"	build_object (class_name: STRING): ANY is%N%
-		%		require%N%
-		%			valid_class: class_exists_in_system (class_name)%N%
-		%		local%N%
-		%			type: INTEGER%N%
-		%		do%N%
-		%			type := internal.dynamic_type_from_string (class_name)%N%
-		%			Result := internal.new_instance_of (type)%N%
-		%		end%N%N"
-
-
-	assign_values_feature: STRING is
-		"	assign_values (obj: ANY) is%N%
-		%			-- Give object a state%N%
-		%		local%N%
-		%			i: INTEGER%N%
-		%			name: STRING%N%N%
-		%			b: BOOLEAN%N%
-		%			c: CHARACTER%N%
-		%			i8: INTEGER_8%N%
-		%			i16: INTEGER_16%N%
-		%			i32: INTEGER_32%N%
-		%			i64: INTEGER_64%N%
-		%			n8: NATURAL_8%N%
-		%			n16: NATURAL_16%N%
-		%			n32: NATURAL_32%N%
-		%			n64: NATURAL_64%N%
-		%			r32: REAL_32%N%
-		%			r64: REAL_64%N%
-		%		do%N%
-		%			from%N%
-		%				i := 1%N%
-		%			until%N%
-		%				i > internal.field_count (obj)%N%
-		%			loop%N%
-		%				name := internal.field_name (i, obj)%N%
-		%				if values.has (name) then%N%
-		%					inspect internal.field_type (i, obj)%N%
-		%					when {INTERNAL}.reference_type then%N%
-		%						internal.set_reference_field (i, obj, attributes.item (name))%N%
-		%					when {INTERNAL}.boolean_type then%N%
-		%						b ?= attributes.item (name)%N%
-		%						internal.set_boolean_field (i, obj, b)%N%
-		%					when {INTERNAL}.character_type then%N%
-		%						c ?= attributes.item (name)%N%
-		%						internal.set_character_field (i, obj, c)%N%
-		%					when {INTERNAL}.integer_8_type then%N%
-		%						i8 ?= attributes.item (name)%N%
-		%						internal.set_integer_8_field (i, obj, i8)%N%
-		%					when {INTERNAL}.integer_16_type then%N%
-		%						i16 ?= attributes.item (name)%N%
-		%						internal.set_integer_16_field (i, obj, i16)%N%
-		%					when {INTERNAL}.integer_32_type then%N%
-		%						i32 ?= attributes.item (name)%N%
-		%						internal.set_integer_32_field (i, obj, i32)%N%
-		%					when {INTERNAL}.integer_64_type then%N%
-		%						i64 ?= attributes.item (name)%N%
-		%						internal.set_integer_64_field (i, obj, i64)%N%
-		%					when {INTERNAL}.natural_8_type then%N%
-		%						n8 ?= attributes.item (name)%N%
-		%						internal.set_natural_8_field (i, obj, n8)%N%
-		%					when {INTERNAL}.natural_16_type then%N%
-		%						n16 ?= attributes.item (name)%N%
-		%						internal.set_natural_16_field (i, obj, n16)%N%
-		%					when {INTERNAL}.natural_32_type then%N%
-		%						n32 ?= attributes.item (name)%N%
-		%						internal.set_natural_32_field (i, obj, n32)%N%
-		%					when {INTERNAL}.natural_64_type then%N%
-		%						n64 ?= attributes.item (name)%N%
-		%						internal.set_natural_64_field (i, obj, n64)%N%
-		%					when {INTERNAL}.real_32_type then%N%
-		%						r32 ?= attributes.item (name)%N%
-		%						internal.set_real_32_field (i, obj, r32)%N%
-		%					when {INTERNAL}.real_64_type then%N%
-		%						r64 ?= attributes.item (name)%N%
-		%						internal.set_real_64_field (i, obj, r64)%N%
-		%					else%N%
-		%						debug (%"wrong type%") end%N%
-		%						check false end%N%
-		%					end%N%
-		%				else%N%
-		%					debug (%"attribute not defined%") end%N%
-		%					check false end%N%
-		%				end%N%
-		%				i := i + 1%N%
-		%			end%N%
-		%		end"
 
 invariant
 	invariant_clause: True -- Your invariant here

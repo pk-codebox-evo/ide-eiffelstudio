@@ -32,8 +32,6 @@ inherit
 
 	EB_SHARED_PREFERENCES
 
-	CDD_SHARED_TEST_SUITE
-
 create
 	make
 
@@ -933,9 +931,7 @@ feature -- Debugging events
 			st: CALL_STACK_STONE
 			cd: EV_CONFIRMATION_DIALOG
 
-
-			cdd_fct: CDD_TEST_CASE_FACTORY
-			cse: EIFFEL_CALL_STACK_ELEMENT
+			l_tc_fct: CDD_TEST_CASE_FACTORY
 		do
 			Precursor
 			debug ("debugger_trace_synchro")
@@ -1001,10 +997,9 @@ feature -- Debugging events
 				create cd.make_with_text_and_actions (Warning_messages.w_Overflow_detected, <<agent do_nothing, agent relaunch_application>>)
 				cd.show_modal_to_window (debugging_window.window)
 			elseif application.status.exception_occurred and then
-				application.status.exception_code = 4 and
-				test_suite.is_testing_enabled then
-				create cdd_fct
-				cdd_fct.report_postcondition_violation (application.status, debugging_window)
+				application.status.exception_code = 4 then
+				create l_tc_fct
+				l_tc_fct.report_postcondition_violation (application.status, debugging_window)
 			end
 
 			debug ("debugger_interface")

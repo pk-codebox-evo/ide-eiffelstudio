@@ -9,14 +9,6 @@ class
 
 inherit
 
-	CDD_TEST_SUITE_OBSERVER
-		export
-			{NONE} all
-		redefine
-			on_add_test_case,
-			on_enable_testing
-		end
-
 	SHARED_EIFFEL_PROJECT
 		export
 			{NONE} all
@@ -37,8 +29,25 @@ feature {NONE} -- Initialization
 		do
 			development_window := a_window
 			initialize
-			subscribe
-			create {DS_LINKED_LIST [CDD_GRID_CLASS_LINE]} displayed_classes.make
+
+			test_suite.on_add_test_case.extend (agent on_add_test_case)
+			test_suite.on_remove_test_case.extend (agent on_remove_test_case)
+			test_suite.on_enable_testing.extend (agent on_enable_testing)
+			test_suite.on_disable_testing.extend (agent on_disable_testing)
+
+			if test_suite.is_testing_enabled then
+				on_enable_testing
+				from
+					test_suite.test_cases.start
+				until
+					test_suite.test_cases.after
+				loop
+					on_add_test_case (test_suite.test_cases.item_for_iteration)
+					test_suite.test_cases.forth
+				end
+			else
+				on_disable_testing
+			end
 		end
 
 	initialize is
@@ -48,9 +57,6 @@ feature {NONE} -- Initialization
 
 			build_tool_bar
 			create grid
-			if not test_suite.is_testing_enabled then
-				grid.disable_sensitive
-			end
 			widget.extend (grid)
 		end
 
@@ -63,6 +69,13 @@ feature -- Access
 
 	widget: EV_VERTICAL_BOX
 
+	test_suite: CDD_TEST_SUITE is
+			--
+		do
+			Result := test_suite_singleton
+		end
+
+
 feature -- Measurement
 
 feature -- Status report
@@ -73,26 +86,107 @@ feature -- Status setting
 	on_add_test_case (a_test_case: CDD_TEST_CASE) is
 			-- Add Test Case
 		local
-			rc: INTEGER
-			row: EV_GRID_ROW
-			a_item: EV_GRID_LABEL_ITEM
-			class_line: CDD_GRID_CLASS_LINE
-			test_case_line: CDD_GRID_TEST_CASE_LINE
+			i: INTEGER
+			l_cluster: CONF_CLUSTER
+			l_class: EIFFEL_CLASS_I
+			l_cluster_line: CDD_GRID_CLUSTER_LINE
+			l_class_line: CDD_GRID_CLASS_LINE
+			l_tc_line: CDD_GRID_TEST_CASE_LINE
+			l_done: BOOLEAN
 		do
+			l_cluster := a_test_case.target_cluster
+			l_class := a_test_case.target_class
+			from
+				i := 1
+				l_done := False
+			until
+				i > grid.row_count or l_done
+			loop
+				l_cluster_line ?= grid.row (i).data
+				check l_cluster /= Void end
+				if l_cluster < l_cluster_line.target_cluster then
+					l_cluster_line := Void
+					l_done := True
+				elseif l_cluster /= l_cluster_line.target_cluster then
+					l_cluster_line := Void
+					i := i + grid.row (i).subrow_count_recursive
+				end
+			end
+			if l_cluster_line = Void then
+				grid.insert_new_row (i)
+				create l_cluster_line.make_with_cluster (l_cluster, grid, grid.row (i))
+			end
+			from
+				i := l_cluster_line.row.index + 1
+				l_done := False
+			until
+				i > l_cluster_line.row.index + l_cluster_line.row.subrow_count_recursive or l_done
+			loop
+				l_class_line ?= grid.row (i).data
+				check l_class_line /= Void end
+				if l_class < l_class_line.target_class then
+					l_class_line := Void
+					l_done := True
+				elseif l_class /= l_class_line.target_class then
+					l_class_line := Void
+					i := i + grid.row (i).subrow_count_recursive
+				end
+			end
+			if l_class_line = Void then
+				grid.insert_new_row_parented (i, l_cluster_line.row)
+				create l_class_line.make_with_class (l_class, grid, grid.row (i))
+			end
+			from
+				i := l_class_line.row.index + 1
+				l_done := False
+			until
+				i > l_class_line.row.index + l_class_line.row.subrow_count_recursive or l_done
+			loop
+				l_tc_line ?= grid.row (i).data
+				check l_tc_line /= Void end
+				if a_test_case < l_tc_line.test_case then
+					l_done := True
+				else
+					i := i + 1
+				end
+			end
+			grid.insert_new_row_parented (i, l_class_line.row)
+			create l_tc_line.make_with_test_case (a_test_case, grid, grid.row (i))
 		end
+
+	on_remove_test_case (a_tc: CDD_TEST_CASE) is
+			--
+		do
+
+		end
+
 
 	on_enable_testing is
 			--
 		do
-			enable_testing_btn.disable_sensitive
+
 		end
+
+	on_disable_testing is
+			--
+		do
+
+		end
+
 
 
 	on_button_enable_testing (x, y, button: INTEGER; x_tilt, y_tilt, pressure: DOUBLE; screen_x, screen_y: INTEGER) is
 			--
+		local
+			wd: EV_WARNING_DIALOG
 		do
-			if test_suite.can_enable_testing then
-				test_suite.enable_testing
+			if not test_suite.is_testing_enabled then
+				if test_suite.can_enable_testing then
+					test_suite.enable_testing
+				else
+					create wd.make_with_text ("Can not add cdd_testing cluster because compiled configuration is not up to date, please recompile.")
+					wd.show_modal_to_window (development_window.window)
+				end
 			end
 		end
 
@@ -116,13 +210,18 @@ feature -- Miscellaneous
 
 feature -- Basic operations
 
-feature -- Obsolete
+feature {NONE} -- Test Suite
 
-feature -- Inapplicable
+	test_suite_singleton: CDD_TEST_SUITE is
+			-- temporary solution for creating a shared test suite
+			-- in future test suites will be project-related
+		once
+			create Result.make
+		end
 
-feature {NONE} -- Implementation
 
-	displayed_classes: DS_LIST [CDD_GRID_CLASS_LINE]
+
+feature {NONE} -- EV widget mplementation
 
 	tool_bar: EV_TOOL_BAR
 
@@ -147,13 +246,6 @@ feature {NONE} -- Implementation
 			run_tc_button.set_pixmap (pixmaps.icon_pixmaps.debug_run_icon)
 			create del_tc_button.make_with_text ("Remove test case")
 			del_tc_button.set_pixmap (pixmaps.icon_pixmaps.general_delete_icon)
-			if test_suite.is_testing_enabled then
-				enable_testing_btn.disable_sensitive
-			else
-				run_all_tc_button.disable_sensitive
-				run_tc_button.disable_sensitive
-				del_tc_button.disable_sensitive
-			end
 			tool_bar.extend (run_all_tc_button)
 			tool_bar.extend (run_tc_button)
 			tool_bar.extend (del_tc_button)

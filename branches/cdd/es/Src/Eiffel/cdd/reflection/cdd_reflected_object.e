@@ -40,7 +40,7 @@ feature {NONE} -- Initialization
 		do
 			create instantiated_nodes.make (object_count)
 			root_object := create_composite_object (cse.object_address, cse.dynamic_class)
-
+			called_routine := cse.routine
 			if reflection_succeded /= Void then
 				create {DS_ARRAYED_LIST [CDD_COMPOSITE_OBJECT]} composite_objects.make (instantiated_nodes.count)
 				from
@@ -78,37 +78,14 @@ feature -- Access
 	root_object: CDD_COMPOSITE_OBJECT
 			-- root object in the reflection tree
 
+	called_routine: E_FEATURE
+			-- feature which was called before reflection
+
+
 	composite_objects: DS_LIST [CDD_COMPOSITE_OBJECT]
 			-- non basic objects needed by root_object
 
 	arguments: DS_LIST [CDD_OBJECT]
-
-
-feature -- Measurement
-
-feature -- Status report
-
-feature -- Status setting
-
-feature -- Cursor movement
-
-feature -- Element change
-
-feature -- Removal
-
-feature -- Resizing
-
-feature -- Transformation
-
-feature -- Conversion
-
-feature -- Duplication
-
-feature -- Miscellaneous
-
-feature -- Basic operations
-
-feature -- Obsolete
 
 
 feature {NONE} -- Implementation
@@ -176,9 +153,9 @@ feature {NONE} -- Implementation
 				dbg_obj := debugged_object_manager.classic_debugged_object_with_class (addr, dtype)
 			end
 			alist := dbg_obj.attributes
-			if dtype.is_generic then
+			if dtype.is_generic or dtype.is_tuple then
 				create dv.make_object (addr, dtype)
-				gtype := extract_generic_type(dv.generating_type_representation)
+				gtype := extract_generic_type (dv.generating_type_representation)
 				if dtype.is_tuple then
 					create {CDD_TUPLE_OBJECT} Result.make_tuple (dtype, alist.count, gtype)
 				elseif dtype.is_special then
