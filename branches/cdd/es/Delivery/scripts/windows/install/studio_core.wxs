@@ -270,7 +270,6 @@
 						<Directory Id="windows4" Name="$(env.ISE_PLATFORM)">
 							<Directory Id="bcb" Name="bcb">
 								<Component Id="bcb" Guid="DBA2CF11-BC3A-45B2-AD9D-FBBDECE62BF3">
-									<File Id="version.eif" Name="version.eif" KeyPath="yes" />
 									<File Id="config.eif" Name="config.eif" />
 									<File Id="appl.ico" Name="appl.ico" />
 									<File Id="eiffel.rc10" Name="eiffel.rc" />
@@ -289,7 +288,6 @@
 							<Directory Id="msc" Name="msc">
 								<Component Id="msc" Guid="98D070ED-51E0-439B-854A-8C56FE79E506">
 									<File Id="config.eif2" Name="config.eif" KeyPath="yes" />
-									<File Id="version.eif6" Name="version.eif" />
 									<File Id="eiffel.rc7" Name="eiffel.rc" />
 									<File Id="appl.ico9" Name="appl.ico" />
 								</Component>
@@ -298,7 +296,6 @@
 								<Component Id="gnu" Guid="3C075247-1010-48E5-9F85-8500F97077D7">
 									<File Id="gnu.ico" Name="gnu.ico" KeyPath="yes" />
 									<File Id="config.eif3" Name="config.eif" />
-									<File Id="version.eif4" Name="version.eif" />
 									<File Id="eiffel.rc" Name="eiffel.rc" />
 								</Component>
 							</Directory>
@@ -495,7 +492,6 @@
 									<File Id="VD69" Name="VD69" />
 									<File Id="VD70" Name="VD70" />
 									<File Id="VD71" Name="VD71" />
-									<File Id="VD72" Name="VD72" />
 									<File Id="VD73" Name="VD73" />
 									<File Id="VD74" Name="VD74" />
 									<File Id="VD75" Name="VD75" />
@@ -698,12 +694,15 @@
 							<Directory Id="bin8" Name="bin">
 								<Component Id="estudio.exe" Guid="80B6C77B-41F5-4346-B02F-E00153176E46">
 									<File Id="estudio.exe" Name="estudio.exe" KeyPath="yes">
-										<Shortcut Id="estudio.exe" Directory="EiffelStudio" Name="EIFFEL~1.2" LongName="EiffelStudio 5.7" Description="EiffelStudio development environment" Hotkey="0"	Show="normal" />
+										<Shortcut Id="estudio.exe" Directory="EiffelStudio" Name="EIFFEL~1.2" LongName="EiffelStudio 5.7" Description="EiffelStudio development environment" Hotkey="0"	Show="normal">
+											<Icon Id="ecf_icon" src="$(env.INSTALL_DIR)\studio\spec\$(env.ISE_PLATFORM)\bin\ecdbgd.exe" />
+										</Shortcut>
 										<Shortcut Id="estudio.exe1" Directory="DesktopFolder" Name="ISEEIF~1.2" LongName="EiffelStudio 5.7" Description="EiffelStudio development environment" Hotkey="0" Show="normal" />
 									</File>
-									<ProgId Id="estudio.project" Description="EiffelStudio project">
-										<Extension Id="epr">
-											<Verb Id="epr" Argument="&quot;%1&quot;" Command="open" Target="&quot;[Application]studio\spec\$(env.ISE_PLATFORM)\bin\estudio.exe&quot;" />
+									<ProgId Id="estudio_ecf.project" Description="EiffelStudio project" Icon="ecf_icon" IconIndex="1" >
+										<Extension Id="ecf">
+											<Verb Id="open" Argument="&quot;%1&quot;" Command="open" Target="&quot;[Application]studio\spec\$(env.ISE_PLATFORM)\bin\estudio.exe&quot;" />
+											<Verb Id="compile" Argument="-config &quot;%1&quot; -melt" Command="compile" Target="&quot;[Application]studio\spec\$(env.ISE_PLATFORM)\bin\estudio.exe&quot;" />
 										</Extension>
 									</ProgId>
 								</Component>

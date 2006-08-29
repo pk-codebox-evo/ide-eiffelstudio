@@ -385,6 +385,14 @@ feature -- Status Setting
 		local
 			selectable_command: EB_SELECTABLE
 		do
+			if mini_toolbar /= Void then
+				mini_toolbar_holder.wipe_out
+			end
+			if header_addon /= Void then
+				if header_addon.parent /= Void then
+					header_addon.parent.prune_all (header_addon)
+				end
+			end
 			if parent /= Void then
 					-- `parent' = `Void' if we are already recycled.
 				is_visible := False
@@ -403,6 +411,8 @@ feature -- Status Setting
 					parent.remove (widget)
 				end
 				associated_command := Void
+				show_actions.wipe_out
+				show_actions := Void
 				parent.prune_item (Current)
 				parent := Void
 			end

@@ -176,6 +176,15 @@ feature {NONE} -- Error reporting
 		do
 		end
 
+	report_precompilation_error is
+			-- Report that precompilation did not work.
+		do
+			io.put_string (warning_messages.w_project_build_precompile_error)
+			io.put_new_line
+			set_has_error
+		end
+
+
 feature {NONE} -- User interaction
 
 	ask_for_config_name (a_dir_name, a_file_name: STRING; a_action: PROCEDURE [ANY, TUPLE [STRING]]) is
@@ -228,16 +237,35 @@ feature {NONE} -- User interaction
 			end
 		end
 
-	ask_for_target_name (a_targets: DS_ARRAYED_LIST [STRING]) is
+	ask_for_target_name (a_target: STRING; a_targets: DS_ARRAYED_LIST [STRING]) is
 			-- Ask user to choose one target among `a_targets'.
+			-- If not Void, `a_target' is the one selected by user.
 		local
 			l_answered: BOOLEAN
+			l_need_choice: BOOLEAN
 		do
+			l_need_choice := True
 			if a_targets.count = 1 then
 				a_targets.start
-				target_name := a_targets.item_for_iteration.twin
-			else
-				io.put_string ("This project has more than one target: ")
+				if a_target = Void or else a_target.is_equal (a_targets.item_for_iteration) then
+					target_name := a_targets.item_for_iteration.twin
+					l_need_choice := False
+				end
+			end
+			if l_need_choice then
+				if a_targets.is_empty then
+					io.put_string ("This project contains no compilable target.")
+					io.put_new_line
+					set_has_error
+					l_need_choice := False
+				end
+			end
+			if l_need_choice then
+				if a_target = Void then
+					io.put_string ("This project has more than one target or : ")
+				else
+					io.put_string ("Target `" + a_target + "' does not exist or is not a compilable target.%NChoose among the following target(s): ")
+				end
 				io.put_new_line
 				from
 					a_targets.start
@@ -310,6 +338,34 @@ feature {NONE} -- User interaction
 								l_answered := True
 							end
 						end
+					end
+				end
+			end
+		end
+
+	ask_compile_precompile is
+			-- Should a needed precompile be automatically built?
+		local
+			l_answered: BOOLEAN
+		do
+			if should_stop_on_prompt then
+				io.put_string ("You cannot choose if a needed precompile should be generated")
+				io.put_new_line
+				io.put_string ("because of the -stop/-batch option.")
+				io.put_new_line
+				set_has_error
+			else
+				from
+				until
+					l_answered
+				loop
+					io.put_string (warning_messages.w_project_build_precompile + " [y|n] ")
+					io.read_line
+					if io.last_string.item (1).as_lower = 'y' then
+						is_user_wants_precompile := True
+						l_answered := True
+					elseif io.last_string.item (1).as_lower = 'n' then
+						l_answered := True
 					end
 				end
 			end

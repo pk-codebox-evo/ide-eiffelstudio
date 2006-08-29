@@ -61,6 +61,20 @@ inherit
 			default_create
 		end
 
+	EB_RECYCLABLE
+		undefine
+			is_equal,
+			copy,
+			default_create
+		end
+
+	EB_METRIC_PANEL
+		undefine
+			is_equal,
+			copy,
+			default_create
+		end
+
 create
 	make
 
@@ -87,8 +101,8 @@ feature {NONE} -- Initialization
 		local
 			l_text: EV_TEXT
 		do
-			create metric_result.make (metric_tool)
-			create archive_result.make (metric_tool)
+			create metric_result.make (metric_tool, Current)
+			create archive_result.make (metric_tool, Current)
 			metric_result_area.extend (metric_result)
 			archive_result_area.extend (archive_result)
 			metric_result_area.hide
@@ -96,12 +110,12 @@ feature {NONE} -- Initialization
 			create l_text
 			dummy_text.set_background_color (l_text.background_color)
 			dummy_area.show
+			dummy_text.drop_actions.extend (agent drop_cluster)
+			dummy_text.drop_actions.extend (agent drop_class)
+			dummy_text.drop_actions.extend (agent drop_feature)
 		end
 
 feature -- Access
-
-	metric_tool: EB_METRIC_TOOL
-			-- Metric tool
 
 	metric_result: EB_METRIC_CALCULATION_RESULT_AREA
 			-- Area to display metric result
@@ -134,17 +148,17 @@ feature -- Status report
 	should_metric_result_be_displayed: BOOLEAN
 			-- Should metric result be displayed instead of archive result?
 
-	is_last_requrest_displayed: BOOLEAN
+	is_last_request_displayed: BOOLEAN
 			-- Is last display request fullfilled?
 
 feature -- Setting
 
 	set_is_last_request_displayed (b: BOOLEAN) is
-			-- Set `is_last_requrest_displayed' with `b'.
+			-- Set `is_last_request_displayed' with `b'.
 		do
-			is_last_requrest_displayed := b
+			is_last_request_displayed := b
 		ensure
-			is_last_requrest_displayed_set: is_last_requrest_displayed = b
+			is_last_request_displayed_set: is_last_request_displayed = b
 		end
 
 	enable_metric_result_display is
@@ -177,8 +191,6 @@ feature -- Setting
 
 	set_last_value (a_value: like last_value) is
 			-- Set `last_value' with `a_value'.
-		require
-			a_value_attached: a_value /= 0
 		do
 			last_value := a_value
 		ensure
@@ -219,12 +231,27 @@ feature -- Setting
 			last_current_archive_set: last_current_archive = a_current_archive
 		end
 
+feature -- Synchronization
+
+	synchronize_when_compile_start is
+			-- Synchronize when Eiffel compilation starts.
+		do
+		end
+
+	synchronize_when_compile_stop is
+			-- Synchronize when Eiffel compilation stops.
+		do
+			if metric_result.is_displayed then
+				metric_result.refresh_grid
+			end
+		end
+
 feature -- Actions
 
 	on_select is
 			-- Action to be performed when current is selected
 		do
-			if not is_last_requrest_displayed then
+			if not is_last_request_displayed then
 				if should_metric_result_be_displayed then
 					metric_result_area.show
 					dummy_area.hide
@@ -235,6 +262,34 @@ feature -- Actions
 					dummy_area.hide
 					archive_result_area.show
 					archive_result.load_archives (last_reference_archive, last_current_archive)
+				end
+				set_is_last_request_displayed (True)
+			end
+		ensure then
+			last_request_displayed: is_last_request_displayed
+		end
+
+feature -- Recycle
+
+	recycle is
+			-- To be called when the button has became useless.
+		do
+			metric_result.recycle
+		end
+
+feature -- Update
+
+	update (a_observable: QL_OBSERVABLE; a_data: ANY) is
+			-- Notification from `a_observable' indicating that `a_data' changed.
+		local
+			l_start: BOOLEAN_REF
+		do
+			l_start ?= a_data
+			if l_start /= Void then
+				if l_start.item then
+					synchronize_when_compile_start
+				else
+					synchronize_when_compile_stop
 				end
 			end
 		end

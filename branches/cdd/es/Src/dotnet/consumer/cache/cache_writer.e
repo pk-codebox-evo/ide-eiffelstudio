@@ -23,10 +23,7 @@ inherit
 			{NONE} all
 		end
 
-	SAFE_ASSEMBLY_LOADER
-		export
-			{ANY} all
-		end
+	SHARED_ASSEMBLY_LOADER
 
 	KEY_ENCODER
 		export
@@ -88,6 +85,7 @@ feature -- Basic Operations
 			l_assembly_folder: STRING
 			l_ca: CONSUMED_ASSEMBLY
 			l_assembly: ASSEMBLY
+			l_old_assembly: ASSEMBLY
 			l_name: ASSEMBLY_NAME
 			l_consumer: ASSEMBLY_CONSUMER
 			l_dir: DIRECTORY
@@ -98,6 +96,7 @@ feature -- Basic Operations
 			l_lower_path: like a_path
 			l_reader: like cache_reader
 			l_reason: SYSTEM_STRING
+			l_result: SYSTEM_OBJECT
 			retried: BOOLEAN
 			i: INTEGER
 		do
@@ -118,8 +117,7 @@ feature -- Basic Operations
 					l_lower_path := l_ca.location
 				end
 
-				l_assembly := load_from_gac_or_path (l_lower_path)
-
+				l_assembly := assembly_loader.load_from_gac_or_path (l_lower_path)
 				create l_consumer.make (Current)
 				if l_assembly /= Void then
 					l_assembly_path := l_assembly.location.to_lower
@@ -173,7 +171,7 @@ feature -- Basic Operations
 					-- only consume `assembly' if assembly has not already been consumed,
 					-- corresponding assembly has been modified or if consumer tool has been
 					-- modified.
-				if l_ca /= Void and then l_ca.is_consumed and then is_assembly_stale (l_lower_path) then
+				if l_ca /= Void and then l_ca.is_consumed and then cache_reader.is_assembly_stale (l_lower_path) then
 						-- unconsume stale assembly
 					unconsume_assembly (l_lower_path)
 					l_name := l_assembly.get_name
@@ -216,7 +214,16 @@ feature -- Basic Operations
 					l_consumer.set_destination_path (l_dir.name)
 
 					notifier.notify_consume (create {NOTIFY_MESSAGE}.make (l_ca, a_path, l_reason, cache_reader.eiffel_assembly_cache_path))
-					l_consumer.consume (l_assembly)
+
+						-- Load assembly from path, so path assembly is consumed.
+						-- MS resort to a load performance trick where they provide assemblies with no implementation
+						-- in a local path and the implementation in the GAC.
+					l_old_assembly := l_assembly
+					l_assembly := assembly_loader.load_from (l_lower_path)
+					if l_assembly = Void then
+						l_assembly := l_old_assembly
+					end
+					l_consumer.consume (l_assembly, assembly_loader)
 					notifier.clear_notification
 
 					if not l_consumer.successful then
@@ -240,8 +247,8 @@ feature -- Basic Operations
 						i = l_names.count
 					loop
 						l_name := l_names.item (i)
-						l_assembly := load_assembly_by_name (l_name)
-						if l_assembly /= Void and then not l_reader.is_assembly_in_cache (l_assembly.location, True) or else is_assembly_stale (l_assembly.location) then
+						l_assembly := assembly_loader.load (l_name)
+						if l_assembly /= Void and then not (l_reader.is_assembly_in_cache (l_assembly.location, True) or else cache_reader.is_assembly_stale (l_assembly.location)) then
 							add_assembly (l_assembly.location)
 							l_assembly_info_updated := True
 						end
@@ -475,7 +482,7 @@ feature -- Basic Operations
 		require
 			non_void_path: a_path /= Void
 			valid_path: not a_path.is_empty
-			valid_assembly_path: load_assembly_from_path (a_path) /= Void
+			valid_assembly_path: assembly_loader.load_from_gac_or_path (a_path) /= Void
 		local
 			l_id: STRING
 			l_info: CACHE_INFO
@@ -541,61 +548,6 @@ feature -- Basic Operations
 
 feature {NONE} -- Implementation
 
-	is_assembly_stale (a_path: STRING): BOOLEAN is
-			-- Is assembly `a_path' out of date
-			-- Returns false if assembly has not already been consumed.
-		require
-			non_void_path: a_path /= Void
-			valid_path: not a_path.is_empty
-		local
-			l_ca: CONSUMED_ASSEMBLY
-			l_consume_path: STRING
-			l_file_info: FILE_INFO
-			l_dir_info: DIRECTORY_INFO
-			l_so: SYSTEM_OBJECT
-			l_new_ca: CONSUMED_ASSEMBLY
-			l_reason: STRING
-		do
-			l_ca := cache_reader.consumed_assembly_from_path (a_path)
-			if l_ca /= Void and then l_ca.is_consumed then
-				l_consume_path := cache_reader.absolute_assembly_path_from_consumed_assembly (l_ca)
-
-				create l_dir_info.make (l_consume_path)
-				create l_file_info.make (l_ca.location)
-				Result := not l_dir_info.exists or {SYSTEM_DATE_TIME}.compare (l_file_info.last_write_time, l_dir_info.creation_time) > 0
-				if not Result then
-						-- User could have swaped file to an older version
-					l_new_ca := create_consumed_assembly_from_path ("dummy", a_path)
-					Result := not l_new_ca.is_assembly_info_equal (l_ca)
-				else
-					l_reason := "The assembly has been modified."
-				end
-				if not Result then
-						-- now check in consumer is newer
-					l_so := Current
-					create l_file_info.make (l_so.get_type.assembly.location)
-					Result := {SYSTEM_DATE_TIME}.compare (l_file_info.last_write_time, l_dir_info.creation_time) > 0
-					if Result then
-						l_reason := "The consumer is newer than the generate contents."
-					end
-				else
-					l_reason := "The contents of the assembly manifest has changed."
-				end
-			end
-
-			debug ("assemblies_are_never_stale")
-				Result := False
-			end
-
-			if Result then
-				check
-					l_reason_not_void: l_reason /= Void
-				end
-				{SYSTEM_DLL_TRACE}.write_line_string ({SYSTEM_STRING}.format ("Assembly '{0}' is considered stale.", a_path))
-				{SYSTEM_DLL_TRACE}.write_line_string ({SYSTEM_STRING}.format ("%TReason: {0}.", l_reason))
-			end
-		end
-
 	remove_assembly_internal (a_path: STRING) is
 			-- Remove assembly identified by `a_path' and its clients from cache.
 		require
@@ -643,7 +595,7 @@ feature {NONE} -- Implementation
 			valid_id: not a_id.is_empty
 			non_void_path: a_path /= Void
 			valid_path: not a_path.is_empty
-			valid_assembly_path: load_assembly_from_path (a_path) /= Void
+			valid_assembly_path: assembly_loader.load_from_gac_or_path (a_path) /= Void
 		local
 			l_assembly: ASSEMBLY
 			l_name: ASSEMBLY_NAME
@@ -652,7 +604,7 @@ feature {NONE} -- Implementation
 			l_is_in_gac: BOOLEAN
 			folder_name: STRING
 		do
-			l_assembly := load_from_gac_or_path (a_path)
+			l_assembly := assembly_loader.load_from_gac_or_path (a_path)
 			if l_assembly /= Void then
 				l_name := l_assembly.get_name
 				l_key := public_key_token_from_array (l_name.get_public_key_token)

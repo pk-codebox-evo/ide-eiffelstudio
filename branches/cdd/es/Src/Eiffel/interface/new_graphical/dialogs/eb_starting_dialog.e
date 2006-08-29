@@ -165,13 +165,13 @@ feature {NONE} -- Initialization
 				main_container.extend (l_frame)
 
 					--| Option buttons
-				create vb
+				create hb
 				create do_not_display_dialog_button.make_with_text (Interface_names.l_Discard_starting_dialog)
-				vb.extend (do_not_display_dialog_button)
-				vb.disable_item_expand (do_not_display_dialog_button)
-				vb.extend (create {EV_CELL})
-				main_container.extend (vb)
-				main_container.disable_item_expand (vb)
+				hb.extend (do_not_display_dialog_button)
+				hb.disable_item_expand (do_not_display_dialog_button)
+				hb.extend (create {EV_CELL})
+				main_container.extend (hb)
+				main_container.disable_item_expand (hb)
 
 				set_icon_pixmap (pixmaps.icon_pixmaps.general_dialog_icon)
 			end
@@ -401,6 +401,7 @@ feature {NONE} -- Implementation
 				-- Add the "blank project" item
 			create basic_application_item.make_with_text (Interface_names.l_basic_application)
 			basic_application_item.set_pixmap (pixmaps.icon_pixmaps.new_eiffel_project_icon)
+			basic_application_item.pointer_double_press_actions.extend (agent on_double_click)
 			wizards_list.set_item (1, 1, basic_application_item)
 
 

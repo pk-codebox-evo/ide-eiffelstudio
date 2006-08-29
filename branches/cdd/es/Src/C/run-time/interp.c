@@ -1780,7 +1780,7 @@ rt_private void interpret(int flag, int where)
 			}
 			stagval = tagval;
 				/* Create new object */
-			new_obj = RTLNR2((int16)type, 0, 0, 0, class_id, feature_id, open_map, is_precompiled, 
+			new_obj = RTLNRW((int16)type, 0, 0, 0, class_id, feature_id, open_map, is_precompiled, 
 							 is_basic, is_target_closed, is_inline_agent, closed_operands, open_count);
 			
 			last = iget();				/* Push a new value onto the stack */
@@ -1987,6 +1987,32 @@ rt_private void interpret(int flag, int where)
 		dprintf(2)("BC_METAMORPHOSE\n");
 #endif 	
 		metamorphose_top(scur, stop);
+		break;
+
+	/*
+	 * Object reattachment.
+	 */
+	case BC_BOX:
+#ifdef DEBUG
+		dprintf(2)("BC_BOX\n");
+#endif 	
+		type = get_int16(&IC);
+			/* GENERIC CONFORMANCE */
+		type = get_compound_id(MTC icurrent->it_ref,(short)type);
+		/* Creation of a new object. */
+		{
+			EIF_REFERENCE new_obj;		/* New object */
+			unsigned long stagval;
+
+			last = opop();
+			stagval = tagval;
+			new_obj = RTLNSMART(type);	/* Create new object */
+			last = iget();			/* Push a new value onto the stack */
+			last->type = SK_REF | SK_EXP;
+			last->it_ref = new_obj;		/* Now it's safe for GC to see it */
+			if (tagval != stagval)		/* If GC calls melted dispose */
+				sync_registers(scur, stop);
+		}
 		break;
 
 	/*

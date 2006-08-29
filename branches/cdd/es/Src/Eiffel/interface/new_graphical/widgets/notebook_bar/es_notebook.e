@@ -11,9 +11,6 @@ deferred class
 
 inherit
 	EB_EXPLORER_BAR_ATTACHABLE
-		redefine
-			change_attach_explorer
-		end
 
 feature {NONE} -- Initialization
 
@@ -45,7 +42,9 @@ feature {NONE} -- Initialization
 			-- Build the associated explorer bar item and
 			-- Add it to `explorer_bar'
 		do
-			create header_box
+			if header_box = Void then
+				create header_box
+			end
 			create {EB_EXPLORER_BAR_ITEM} explorer_bar_item.make_with_info (
 				explorer_bar, widget, title, False, header_box, Void
 			)
@@ -224,16 +223,18 @@ feature -- Change
 			hbox: EV_HORIZONTAL_BOX
 		do
 			header_box.wipe_out
-			hbox := selected_item.header_box
-			if explorer_bar_item /= Void and then hbox /= Void then
-				par := hbox.parent
-				if par /= Void then
-					par.prune_all (hbox)
+			if explorer_bar_item /= Void then
+				hbox := selected_item.header_box
+				if hbox /= Void then
+					par := hbox.parent
+					if par /= Void then
+						par.prune_all (hbox)
+					end
+					check
+						hbox.parent = Void
+					end
+					header_box.extend (hbox)
 				end
-				check
-					hbox.parent = Void
-				end
-				header_box.extend (hbox)
 			end
 		end
 
@@ -244,28 +245,19 @@ feature -- Change
 			par: EV_CONTAINER
 			mtb: EV_TOOL_BAR
 		do
-			mtb := selected_item.mini_toolbar
-			if explorer_bar_item /= Void and then mtb /= Void then
-				par := mtb.parent
-				if par /= Void then
-					par.prune_all (mtb)
+			if explorer_bar_item /= Void then
+				mtb := selected_item.mini_toolbar
+				if mtb /= Void then
+					par := mtb.parent
+					if par /= Void then
+						par.prune_all (mtb)
+					end
+					check
+						mtb.parent = Void
+					end
+					explorer_bar_item.update_mini_toolbar (mtb)
 				end
-				check
-					mtb.parent = Void
-				end
-				explorer_bar_item.update_mini_toolbar (mtb)
 			end
-		end
-
-	change_attach_explorer (an_explorer_bar: EB_EXPLORER_BAR) is
-			-- Change the window and explorer bar `Current' is in.
-		do
-			if explorer_bar_item.is_visible then
-				explorer_bar_item.close
-			end
-			explorer_bar_item.recycle
-				-- Link with the manager and the explorer.
-			set_explorer_bar (an_explorer_bar)
 		end
 
 feature {NONE} -- tab selection

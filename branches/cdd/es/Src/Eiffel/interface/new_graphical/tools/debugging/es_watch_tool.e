@@ -375,12 +375,8 @@ feature -- Status setting
 			a_manager_exists: a_manager /= Void
 			an_explorer_bar_exists: an_explorer_bar /= Void
 		do
-			if explorer_bar_item.is_visible then
-				explorer_bar_item.close
-			end
-			explorer_bar_item.recycle
-			manager := a_manager
-			set_explorer_bar (an_explorer_bar)
+			set_manager (a_manager)
+			change_attach_explorer (an_explorer_bar)
 		end
 
 feature -- Memory management
@@ -389,11 +385,17 @@ feature -- Memory management
 			-- Recycle `Current', but leave `Current' in an unstable state,
 			-- so that we know whether we're still referenced or not.
 		do
+			if explorer_bar_item /= Void then
+				unattach_from_explorer_bar
+			end
+			reset_tool
+		end
+
+	reset_tool is
+		do
 			reset_update_on_idle
 			pretty_print_cmd.end_debug
-			if explorer_bar_item /= Void then
-				explorer_bar_item.recycle
-			end
+
 			recycle_expressions
 			watches_grid.reset_layout_manager
 			clean_watched_grid
@@ -825,7 +827,7 @@ feature {NONE} -- Event handling
 							pretty_print_cmd.set_stone (ost)
 						end
 					end
-				when {EV_KEY_CONSTANTS}.key_page_up then
+				when {EV_KEY_CONSTANTS}.key_numpad_subtract then
 					if
 						ev_application.ctrl_pressed
 						and not ev_application.alt_pressed
@@ -833,7 +835,7 @@ feature {NONE} -- Event handling
 					then
 						move_selected (watches_grid, -1)
 					end
-				when {EV_KEY_CONSTANTS}.key_page_down then
+				when {EV_KEY_CONSTANTS}.key_numpad_add then
 					if
 						ev_application.ctrl_pressed
 						and not ev_application.alt_pressed

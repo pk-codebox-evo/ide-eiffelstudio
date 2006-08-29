@@ -18,8 +18,7 @@ inherit
 			process_library,
 			process_precompile,
 			process_cluster,
-			process_override,
-			process_group
+			process_override
 		end
 
 	CONF_SCAN_DIRECTORY
@@ -43,7 +42,6 @@ feature {NONE} -- Initialization
 			create processed_assemblies.make (100)
 		end
 
-
 feature -- Visit nodes
 
 	process_assembly (an_assembly: CONF_ASSEMBLY) is
@@ -55,7 +53,8 @@ feature -- Visit nodes
 	process_library (a_library: CONF_LIBRARY) is
 			-- Process `a_library'.
 		do
-			if not processed_libraries.has (a_library.uuid) then
+			if not is_override_only and then not processed_libraries.has (a_library.uuid) then
+				on_process_group (a_library)
 				processed_libraries.force (a_library.uuid)
 				a_library.library_target.process (Current)
 			end
@@ -64,33 +63,46 @@ feature -- Visit nodes
 	process_precompile (a_precompile: CONF_PRECOMPILE) is
 			-- Process `a_precompile'.
 		do
-			process_library (a_precompile)
+			if not is_override_only then
+				process_library (a_precompile)
+			end
 		end
 
 	process_cluster (a_cluster: CONF_CLUSTER) is
 			-- Process `a_cluster'.
 		do
-			find_modified (a_cluster)
+			if not is_override_only then
+				on_process_group (a_cluster)
+				find_modified (a_cluster)
+			end
 		end
 
 	process_override (an_override: CONF_OVERRIDE) is
 			-- Process `an_override'.
 		do
+			on_process_group (an_override)
 				-- check if any classes have been added and force a rebuild if this is the case
 			process_cluster_recursive ("", an_override, an_override.active_file_rule (state))
-			process_cluster (an_override)
-		end
-
-	process_group (a_group: CONF_GROUP) is
-			-- Visit `a_group'.
-		do
-			on_process_group (a_group)
+			find_modified (an_override)
 		end
 
 feature -- Status
 
+	is_override_only: BOOLEAN
+			-- Should we only check the override clusters?
+
 	is_force_rebuild: BOOLEAN
 			-- Do we need to do a full rebuild of the configuration?
+
+feature -- Status update
+
+	enable_override_only is
+			-- Only scan override clusters.
+		do
+			is_override_only := True
+		ensure
+			is_override_only: is_override_only
+		end
 
 feature -- Access
 
@@ -143,6 +155,7 @@ feature {NONE} -- Implementation
 			l_class: CONF_CLASS
 			l_new_classes, l_classes: HASH_TABLE [CONF_CLASS, STRING]
 			l_name: STRING
+			l_err: CONF_ERROR
 		do
 			l_classes := a_group.classes
 			if l_classes /= Void then
@@ -161,7 +174,9 @@ feature {NONE} -- Implementation
 						if l_class.is_compiled then
 								-- Invariant of CONF_CLASS tell us that it cannot be an override class.
 							if l_class.is_error then
-								add_and_raise_error (l_class.last_error)
+								l_err := l_class.last_error
+								l_class.reset_error
+								add_and_raise_error (l_err)
 							end
 							if l_class.is_overriden then
 								l_class.actual_class.check_changed
@@ -190,7 +205,7 @@ feature {NONE} -- Implementation
 	handle_class (a_file, a_path: STRING_8; a_cluster: CONF_CLUSTER) is
 			-- Handle class in `a_file' with `a_path' in `a_cluster'
 		do
-			is_force_rebuild := is_force_rebuild or else not a_cluster.classes_by_filename.has (a_path + "/" + a_file)
+			is_force_rebuild := is_force_rebuild or else (valid_eiffel_extension (a_file) and then not a_cluster.classes_by_filename.has (a_path + "/" + a_file))
 		end
 
 invariant

@@ -83,6 +83,10 @@ feature -- Access
 	removed_classes: DS_HASH_SET [CONF_CLASS]
 			-- The list of removed classes.
 
+	partly_removed_classes: ARRAYED_LIST [TUPLE [conf_class: CONF_CLASS; system: CONF_SYSTEM]]
+			-- The list of classes that have been removed from a certain system only.
+			-- (if a library that is still used somewhere else has been removed)
+
 	new_assemblies: DS_HASH_SET [CONF_ASSEMBLY]
 			-- List of assemblies in the current configuration.
 
@@ -119,6 +123,7 @@ feature -- Update
 			create added_classes.make (added_classes_per_system)
 			create removed_classes.make (removed_classes_per_system)
 			create new_assemblies.make (15)
+			create partly_removed_classes.make (removed_classes_per_system)
 		end
 
 feature -- Observers
@@ -161,6 +166,8 @@ feature -- Visit nodes
 			l_retried: BOOLEAN
 		do
 			if not l_retried then
+				current_system := a_target.system
+
 				if old_target /= Void then
 					a_target.set_environ_variables (old_target.environ_variables)
 					l_libraries := old_target.libraries
@@ -197,7 +204,7 @@ feature -- Visit nodes
 				a_target.assemblies.linear_representation.do_if (agent {CONF_ASSEMBLY}.process (Current), agent {CONF_ASSEMBLY}.is_enabled (state))
 
 					-- do libraries after clusters so that the clusters have already been processed
-				process_with_old (a_target.libraries, Void)
+				process_with_old (a_target.libraries, l_libraries)
 
 					-- must be done one time per system after everything is processed
 				if a_target = application_target then
@@ -258,9 +265,18 @@ feature -- Visit nodes
 
 	process_assembly (an_assembly: CONF_ASSEMBLY) is
 			-- Visit `an_assembly'.
+		local
+			l_file: RAW_FILE
 		do
 			if not state.is_dotnet then
 				add_and_raise_error (create {CONF_ERROR_DOTNET}.make (an_assembly.target.system.file_name))
+			end
+				-- if it is a local assembly, check that the file exists
+			if not an_assembly.is_non_local_assembly then
+				create l_file.make (an_assembly.location.evaluated_path)
+				if not l_file.exists or else not l_file.is_readable then
+					add_and_raise_error (create {CONF_ERROR_FILE}.make_with_config (an_assembly.location.evaluated_path, current_system.file_name))
+				end
 			end
 			new_assemblies.force (an_assembly)
 		end
@@ -298,7 +314,6 @@ feature -- Visit nodes
 				end
 			end
 
-			handled_groups.force (a_library)
 			create current_classes.make (Classes_per_cluster)
 			l_target.clusters.linear_representation.do_if (agent merge_classes ({CONF_CLUSTER} ?), agent {CONF_CLUSTER}.classes_set)
 				-- do renaming prefixing if necessary
@@ -698,12 +713,24 @@ feature {NONE} -- Implementation
 
 							-- check if it's a library that still is used and therefore is alredy done
 							-- (needed if the same library is used multiple times)
-						if l_group.is_library then
+						if not l_done and then l_group.is_library then
 							l_library ?= l_group
 							check
 								library: l_library /= Void
 							end
-							l_done := l_library.uuid /= Void and then all_libraries.has (l_library.uuid)
+								-- although the classes are still there, we have to recheck all clients
+								-- of this class in `current_system' because they no longer
+								-- have access to those classes.
+							if l_library.uuid /= Void and then all_libraries.has (l_library.uuid) then
+								l_done := True
+								if l_library.classes_set then
+									l_library.classes.linear_representation.do_if (agent (a_class: CONF_CLASS)
+										do
+											partly_removed_classes.force ([a_class, current_system])
+										end
+									, agent {CONF_CLASS}.is_compiled)
+								end
+							end
 						end
 
 						if not l_done and then l_group.classes_set then

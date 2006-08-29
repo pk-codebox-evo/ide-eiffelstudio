@@ -241,6 +241,69 @@ feature -- Setting
 			assertion_type := a
 		end
 
+feature -- Code generation
+
+	generate_gen_type_conversion (gtype : GEN_TYPE_I) is
+			-- Generate code for converting type id arrays
+			-- into single id's.
+		require
+			valid_type : gtype /= Void
+		local
+			use_init : BOOLEAN
+			idx_cnt : COUNTER
+			l_buffer: like buffer
+		do
+			l_buffer := buffer
+			use_init := not gtype.is_explicit
+
+				-- Optimize: Use static array only when `typarr' is
+				-- not modified by generated code in multithreaded mode only.
+				-- It is safe in monothreaded code as we are guaranteed that
+				-- only one thread of execution will use the modified `typarr'.
+			if not System.has_multithreaded or else not use_init then
+				l_buffer.put_string ("static ")
+			end
+			l_buffer.put_string ("int16 typarr [] = {")
+
+			l_buffer.put_integer (current_type.generated_id (final_mode))
+			l_buffer.put_character (',')
+
+			if use_init then
+				create idx_cnt
+				idx_cnt.set_value (1)
+				gtype.generate_cid_array (l_buffer, final_mode, True, idx_cnt)
+			else
+				gtype.generate_cid (l_buffer, final_mode, True)
+			end
+			l_buffer.put_string ("-1};")
+			l_buffer.put_new_line
+			l_buffer.put_string ("int16 typres;")
+			l_buffer.put_new_line
+			if not use_init then
+				l_buffer.put_string ("static int16 typcache = -1;")
+				l_buffer.put_new_line
+			end
+			l_buffer.put_new_line
+
+			if use_init then
+				-- Reset counter
+				idx_cnt.set_value (1)
+				gtype.generate_cid_init (l_buffer, final_mode, True, idx_cnt)
+			end
+
+			if not use_init then
+				l_buffer.put_string ("typres = RTCID2(&typcache, ")
+			else
+				l_buffer.put_string ("typres = RTCID2(NULL, ")
+			end
+			generate_current_dftype
+			l_buffer.put_string (", ")
+			l_buffer.put_integer (gtype.generated_id (final_mode))
+			l_buffer.put_string (", typarr);")
+			l_buffer.put_new_line
+			l_buffer.put_new_line
+		end
+
 feature {NONE} -- Once features: implementation
 
 	onces: HASH_TABLE [PAIR [TYPE_C, like thread_relative_once_index], INTEGER]
@@ -879,8 +942,8 @@ feature -- Access
 	creation_type (type: TYPE_I): TYPE_I is
 			-- Convenience
 		require
-			good_argument: type /= Void
-			valid_class_type: class_type /= Void
+			type_not_void: type /= Void
+			class_type_not_void: class_type /= Void
 		do
 			Result := type.complete_instantiation_in (class_type)
 		end
@@ -1274,13 +1337,13 @@ feature -- Access
 						if l_assign.expand_return then
 								-- Assignment in Result is expanded in a return instruction
 							tmp := False
-						else
+						elseif not l_assign.source.allocates_memory_for_type (real_type (l_assign.target.type)) then
 							reverse_b ?= l_assign
 								-- FIXME: Manu 05/31/2002: we should try to optimize
 								-- so that not all reverse assignment prevent the optimization
 								-- to be made.
 							call ?= l_assign.source
-							if call /= Void and then call.is_single and reverse_b = Void then
+							if call /= Void and then call.is_single and then reverse_b = Void then
 									-- Simple assignment of a single call
 								creation_expr ?= call
 								if creation_expr /= Void or has_invariant then
@@ -1316,7 +1379,7 @@ feature -- Access
 								end
 							else
 								expr_b ?= l_assign.source
-								tmp := expr_b.has_call or expr_b.allocates_memory
+								tmp := expr_b.has_call or expr_b.allocates_memory or else expr_b.allocates_memory_for_type (real_type (l_assign.target.type))
 							end
 						end
 					else

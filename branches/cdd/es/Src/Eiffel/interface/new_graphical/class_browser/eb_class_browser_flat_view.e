@@ -40,7 +40,7 @@ feature -- Actions
 			check l_row /= Void end
 			l_row.set_is_expanded (True)
 			l_row.refresh
-			l_height := line_height
+			l_height := default_row_height
 			from
 				l_row_index := a_row.index + 2
 			until
@@ -495,7 +495,7 @@ feature{NONE} -- Update
 			grid.row_expand_actions.wipe_out
 			grid.row_collapse_actions.wipe_out
 			l_color := l_odd_line_color
-			l_height := line_height
+			l_height := default_row_height
 			from
 				l_rows := rows
 				l_rows.start
@@ -580,8 +580,6 @@ feature{NONE} -- Initialization
 			grid.header.i_th (2).set_text (interface_names.l_class_browser_features)
 			grid.enable_tree
 			grid.disable_row_height_fixed
-			grid.pick_ended_actions.force_extend (agent on_pick_ended)
-			grid.set_item_pebble_function (agent on_pick)
 			grid.enable_multiple_item_selection
 			grid.row_expand_actions.force_extend (agent on_row_expanded)
 			grid.row_collapse_actions.force_extend (agent on_row_collapsed)
@@ -600,6 +598,7 @@ feature{NONE} -- Initialization
 			on_show_feature_from_any_changed_from_outside_agent := agent on_show_feature_from_any_changed_from_outside
 			preferences.class_browser_data.show_tooltip_preference.change_actions.extend (on_show_tooltip_changed_from_outside_agent)
 			preferences.class_browser_data.show_feature_from_any_preference.change_actions.extend (on_show_feature_from_any_changed_from_outside_agent)
+			enable_editor_token_pnd
 		end
 
 	build_sortable_and_searchable is
@@ -632,57 +631,6 @@ feature{NONE} -- Implementation/Data
 
 	show_feature_from_any_checkbox_internal: like show_feature_from_any_checkbox
 			-- Implementation of `show_feature_from_any_checkbox'
-
-	selected_text: STRING is
-			-- String representation of selected rows/items
-			-- If no row/item is selected, return an empty string.
-		local
-			l_sorted_items: DS_LIST [EV_GRID_ITEM]
-			l_grid_item: EB_GRID_EDITOR_TOKEN_ITEM
-			l_last_row_index: INTEGER
-			l_last_column_index: INTEGER
-			l_item: EV_GRID_ITEM
-			l_list: LIST [EV_GRID_ITEM]
-		do
-			l_list := grid.selected_items
-			if not l_list.is_empty then
-				create Result.make (512)
-				if l_list.count = 1 then
-						-- If there is only one item selected				
-					l_grid_item ?= l_list.first
-					if l_grid_item /= Void then
-						Result.append (l_grid_item.text)
-					end
-				else
-						-- For multi selected items
-					l_sorted_items := sorted_items (l_list)
-					from
-						l_last_column_index := 1
-						l_sorted_items.start
-					until
-						l_sorted_items.after
-					loop
-						l_item := l_sorted_items.item_for_iteration
-						if l_item.row.index /= l_last_row_index then
-							if l_last_row_index /= 0 then
-								Result.append_character ('%N')
-							end
-							l_last_row_index := l_item.row.index
-							l_last_column_index := 1
-						end
-						Result.append (tabs (l_item.column.index - l_last_column_index))
-						l_last_column_index := l_item.column.index
-						l_grid_item ?= l_item
-						if l_grid_item /= Void then
-							Result.append (l_grid_item.text)
-						end
-						l_sorted_items.forth
-					end
-				end
-			else
-				create Result.make (0)
-			end
-		end
 
 feature{NONE} -- Implementation			
 
@@ -856,16 +804,14 @@ feature{NONE} -- Implementation
 			-- Start `update_matches_timeout' and if no text change in `feature_name_list' in certain
 			-- amount of time, update view.
 		do
-			delayed_timeout.start_timer
+			delayed_timeout.request_call
 		end
 
-	delayed_timeout: DELAYED_TIMEOUT
+	delayed_timeout: ES_DELAYED_ACTION
 			-- Delayed timeout
 		do
 			if delayed_timeout_internal = Void then
-				create delayed_timeout_internal.make (wait_to_update_view_time, 1)
-				delayed_timeout_internal.actions.extend (agent delayed_update_matches)
-				delayed_timeout_internal.enable_kamikazed
+				create delayed_timeout_internal.make (agent delayed_update_matches, wait_to_update_view_time)
 			end
 			Result := delayed_timeout_internal
 		ensure
@@ -877,7 +823,7 @@ feature{NONE} -- Implementation
 
 	cancel_delayed_update_matches is
 		do
-			delayed_timeout.stop_timer
+			delayed_timeout.cancel_request
 		end
 
 	delayed_update_matches is

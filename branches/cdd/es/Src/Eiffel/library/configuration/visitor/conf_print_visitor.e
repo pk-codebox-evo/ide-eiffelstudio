@@ -174,8 +174,8 @@ feature -- Visit nodes
 				l_variables.forth
 			end
 
-			if a_target.precompile /= Void then
-				a_target.precompile.process (Current)
+			if a_target.internal_precompile /= Void then
+				a_target.internal_precompile.process (Current)
 			end
 
 			process_in_alphabetic_order (a_target.internal_libraries)
@@ -239,6 +239,9 @@ feature -- Visit nodes
 			-- Visit `a_precompile'.
 		do
 			append_pre_group ("precompile", a_precompile)
+			if a_precompile.eifgens_location /= Void then
+				append_text (" eifgens_location=%""+a_precompile.eifgens_location.original_directory+"%"")
+			end
 			append_val_group (a_precompile)
 			append_post_group ("precompile")
 		ensure then
@@ -328,9 +331,9 @@ feature {NONE} -- Implementation
 		do
 			if a_string /= Void then
 				Result := a_string.twin
+				Result.replace_substring_all (Amp_string, amp_entity)
 				Result.replace_substring_all (Lt_string, Lt_entity)
 				Result.replace_substring_all (Gt_string, Gt_entity)
-				Result.replace_substring_all (Amp_string, amp_entity)
 				Result.replace_substring_all (Quot_string, quot_entity)
 			end
 		ensure
@@ -707,11 +710,8 @@ feature {NONE} -- Implementation
 					until
 						l_sort_lst.after
 					loop
-							-- only append enabled debugs
-						if l_debugs.item (l_sort_lst.item_for_iteration) then
-							append_text_indent ("<debug name=%""+escape_xml (l_sort_lst.item_for_iteration)+"%"")
-							append_text (" enabled=%""+l_debugs.item (l_sort_lst.item_for_iteration).out.as_lower+"%"/>%N")
-						end
+						append_text_indent ("<debug name=%""+escape_xml (l_sort_lst.item_for_iteration)+"%"")
+						append_text (" enabled=%""+l_debugs.item (l_sort_lst.item_for_iteration).out.as_lower+"%"/>%N")
 						l_sort_lst.forth
 					end
 				end

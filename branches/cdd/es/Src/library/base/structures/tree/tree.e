@@ -285,8 +285,6 @@ feature -- Cursor movement
 
 	child_go_i_th (i: INTEGER) is
 			-- Move cursor to `i'-th child.
-		require else
-			valid_cursor_index: valid_cursor_index (i)
 		deferred
 		ensure then
 			position: child_index = i
@@ -367,14 +365,14 @@ feature -- Removal
 
 	forget_left is
 			-- Forget all left siblings.
-		deferred 
+		deferred
 		end
-		
+
 	forget_right is
 			-- Forget all right siblings.
-		deferred 
+		deferred
 		end
-		
+
 feature -- Conversion
 
 	linear_representation: LINEAR [G] is
@@ -536,16 +534,6 @@ feature {TREE} -- Implementation
 			new_parent: parent = n
 		end
 
-	cut_off_node is
-			-- Cut off all links from current node.
-		deferred
-		ensure
-			is_root: is_root
-			is_leaf: is_leaf
-			no_left_sibling: left_sibling = Void
-			no_right_sibling: right_sibling = Void
-		end
-
 feature {NONE} -- Implementation
 
 	fill_subtree (s: TREE [G]) is
@@ -596,7 +584,7 @@ feature {NONE} -- Implementation
 					p1.child_start
 					p2.child_start
 				invariant
-					same_count: t1_stack.count = t2_stack.count 
+					same_count: t1_stack.count = t2_stack.count
 				until
 					not Result or else
 						p1.child_after and t1_stack.is_empty
@@ -715,7 +703,6 @@ feature {NONE} -- Implementation
 			p1, p2, node: like Current
 			other_stack, tmp_stack: LINKED_STACK [like Current]
 			idx_stack, orgidx_stack: LINKED_STACK [INTEGER]
-			l_fixed_tree: FIXED_TREE [G]
 		do
 			create other_stack.make
 			create tmp_stack.make
@@ -745,21 +732,16 @@ feature {NONE} -- Implementation
 						source_child_not_void: p1.child /= Void
 							-- Because we only get here when the child is
 							-- readable.
-						target_child_void: p2.child = Void
+						target_child_void: p2.readable_child implies p2.child = Void
 							-- Because the target child has not been copied
 							-- yet.
 					end
 					node := clone_node (p1.child)
 						check
-							equal_but_not_the_same: standard_equal (node, p1.child) and node /= p1.child
 								-- Because `node' has been cloned.
+							not_the_same: node /= p1.child
 						end
-					l_fixed_tree ?= p1
-					if l_fixed_tree /= Void then
-						p2.replace_child (node)
-					else
-						p2.put_child (node)
-					end
+					p2.put_child (node)
 						check
 							node_is_child: node = p2.child
 								-- Because we inserted `node' as child.
@@ -794,7 +776,7 @@ feature {NONE} -- Implementation
 						p1.child_go_i_th (orgidx_stack.item)
 						p2.child_go_i_th (orgidx_stack.item)
 							check
-								child_indices_equal: 
+								child_indices_equal:
 									p1.child_index = p2.child_index
 										-- Because we have set them equal before.
 							end
@@ -835,15 +817,25 @@ feature {NONE} -- Implementation
 			-- Clone node `n'.
 		require
 			not_void: n /= Void
-		do
-			Result := n.standard_twin
-			Result.cut_off_node
-			Result.attach_to_parent (Void)
+		deferred
 		ensure
 			result_is_root: Result.is_root
 			result_is_leaf: Result.is_leaf
-			result_has_no_left_sibling: Result.left_sibling = Void
-			result_has_no_right_sibling: Result.right_sibling = Void
+		end
+
+	copy_node (n: like Current) is
+			-- Copy content of `n' except tree data into Current.
+		require
+			is_root: is_root
+			is_leaf: is_leaf
+			not_void: n /= Void
+		deferred
+		ensure
+			object_comparison_copied: object_comparison = n.object_comparison
+			same_arity: arity = old arity
+			same_item: item = old item
+			result_is_root: is_root
+			result_is_leaf: is_leaf
 		end
 
 invariant

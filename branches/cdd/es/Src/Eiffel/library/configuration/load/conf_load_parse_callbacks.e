@@ -383,6 +383,9 @@ feature {NONE} -- Implementation attribute processing
 			l_abstract := current_attributes.item (at_abstract)
 			if l_name /= Void then
 				l_name.to_lower
+				if not is_valid_target_name (l_name) then
+					set_parse_error_message (conf_interface_names.e_parse_incorrect_target_invalid_name (l_name))
+				end
 				if last_system.targets.has (l_name) then
 					set_parse_error_message (conf_interface_names.e_parse_multiple_target_with_name (l_name))
 				end
@@ -397,7 +400,7 @@ feature {NONE} -- Implementation attribute processing
 				last_system.add_target (current_target)
 				if l_extends /= Void then
 					l_target := last_system.targets.item (l_extends)
-					if l_target /= Void then
+					if l_target /= Void and then l_target /= current_target then
 						current_target.set_parent (l_target)
 						group_list := l_target.groups
 					else
@@ -690,6 +693,7 @@ feature {NONE} -- Implementation attribute processing
 			current_target_not_void: current_target /= Void
 		local
 			l_name, l_location, l_readonly, l_prefix, l_target: STRING
+			l_eifgen: STRING
 			l_pre: CONF_PRECOMPILE
 		do
 			l_name := current_attributes.item (at_name)
@@ -697,6 +701,7 @@ feature {NONE} -- Implementation attribute processing
 			l_readonly := current_attributes.item (at_readonly)
 			l_prefix := current_attributes.item (at_prefix)
 			l_target := current_attributes.item (at_target)
+			l_eifgen := current_attributes.item (at_eifgens_location)
 			if l_name /= Void then
 				l_name.to_lower
 			end
@@ -711,6 +716,9 @@ feature {NONE} -- Implementation attribute processing
 				end
 				if l_prefix /= Void then
 					current_library.set_name_prefix (l_prefix)
+				end
+				if l_eifgen /= Void then
+					l_pre.set_eifgens_location (factory.new_location_from_path (l_eifgen, current_target))
 				end
 				group_list.force (current_group, l_name)
 				current_target.set_precompile (l_pre)
@@ -1749,7 +1757,7 @@ feature {NONE} -- Implementation state transitions
 			l_attr.force (at_value, "value")
 			Result.force (l_attr, t_variable)
 
-				-- library/precompile
+				-- library
 				-- * name
 				-- * location
 				-- * readonly
@@ -1760,6 +1768,16 @@ feature {NONE} -- Implementation state transitions
 			l_attr.force (at_readonly, "readonly")
 			l_attr.force (at_prefix, "prefix")
 			Result.force (l_attr, t_library)
+
+				-- precompile
+				-- -everything from library
+				-- * eifgens_location
+			create l_attr.make (5)
+			l_attr.force (at_name, "name")
+			l_attr.force (at_location, "location")
+			l_attr.force (at_readonly, "readonly")
+			l_attr.force (at_prefix, "prefix")
+			l_attr.force (at_eifgens_location, "eifgens_location")
 			Result.force (l_attr, t_precompile)
 
 				-- assembly
@@ -1984,6 +2002,7 @@ feature {NONE} -- Implementation constants
 	at_succeed,
 	at_working_directory,
 	at_type,
+	at_eifgens_location,
 	at_warning: INTEGER is unique
 
 feature -- Assertions

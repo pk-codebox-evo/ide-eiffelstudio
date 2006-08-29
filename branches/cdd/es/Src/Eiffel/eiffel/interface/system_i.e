@@ -676,6 +676,7 @@ end
 								-- But since it is an invalid class, then we need to force
 								-- a compilation again to check for the VTCT error again.
 							workbench.add_class_to_recompile (l_class.original_class)
+							l_class.set_changed (True)
 							l_has_error := True
 						end
 						l_table.forth
@@ -800,6 +801,26 @@ end
 			--valid_index: type_id <= type_id_counter.value
 		do
 			Result := class_types.item (type_id)
+		end
+
+	class_type_of_static_type_id (id: INTEGER): CLASS_TYPE is
+			-- Class type of static type id `id'.
+		local
+			cts: ARRAY [CLASS_TYPE]
+			i: INTEGER
+		do
+			cts := class_types
+			from
+				i := cts.lower
+			until
+				i > cts.upper or Result /= Void
+			loop
+				Result := cts @ i
+				if Result /= Void and then Result.static_type_id /= id then
+					Result := Void
+				end
+				i := i + 1
+			end
 		end
 
 	insert_class_type (class_type: CLASS_TYPE) is
@@ -978,6 +999,9 @@ end
 				l_file.close
 			end
 
+				-- partly removed classes
+			recheck_partly_removed (l_vis_build.partly_removed_classes)
+
 			debug ("Timing")
 				create d2.make_now
 				print ("Degree 6 rebuild duration: ")
@@ -1002,6 +1026,44 @@ end
 			update_root_class
 
 			is_force_rebuild := False
+		end
+
+	recheck_partly_removed (a_classes: ARRAYED_LIST [TUPLE [conf_class: CONF_CLASS; system: CONF_SYSTEM]] ) is
+			-- Recheck clients of classes that have been removed from one place but still exists in another.
+		require
+			a_classes_not_void: a_classes /= Void
+		local
+			l_class_i: CLASS_I
+			l_system: CONF_SYSTEM
+			l_clients: ARRAYED_LIST [CLASS_C]
+			l_client: CLASS_C
+		do
+			from
+				a_classes.start
+			until
+				a_classes.after
+			loop
+				l_system := a_classes.item.system
+				l_class_i ?= a_classes.item.conf_class
+				check
+					correct_class: l_class_i /= Void and then l_class_i.is_compiled
+				end
+				from
+					l_clients := l_class_i.compiled_class.syntactical_clients
+					l_clients.start
+				until
+					l_clients.after
+				loop
+					l_client := l_clients.item
+					if l_client.lace_class.config_class.group.target.system = l_system then
+						workbench.add_class_to_recompile (l_client.original_class)
+						l_client.set_changed (True)
+					end
+					l_clients.forth
+				end
+				a_classes.forth
+			end
+
 		end
 
 	update_root_class is
@@ -1125,6 +1187,9 @@ end
 				else
 						-- Let the configuration system check for compiled classes that have been modified.
 					create l_vis_modified.make (universe.conf_state)
+					if compilation_modes.is_override_scan then
+						l_vis_modified.enable_override_only
+					end
 					l_vis_modified.process_group_observer.extend (agent degree_output.put_process_group)
 					universe.target.process (l_vis_modified)
 
@@ -1429,6 +1494,7 @@ feature -- Recompilation
 						l_cl := l_classes.item_for_iteration
 						if removed_classes = Void or else not removed_classes.has (l_cl) then
 							workbench.add_class_to_recompile (l_cl.original_class)
+							l_cl.set_changed (True)
 						end
 						l_classes.forth
 					end
@@ -2679,7 +2745,7 @@ end
 			degree_message: STRING
 		do
 			create t.make (Current, byte_context)
-			degree_message := "Generation of auxiliary files"
+			degree_message := "Generating Auxiliary Files"
 			deg_output := Degree_output
 
 			deg_output.display_degree_output (degree_message, 10, 10)
@@ -3327,12 +3393,10 @@ feature -- Dead code removal
 			l_class := tuple_class.compiled_class
 			remover.record (l_class.feature_table.item_id ({PREDEFINED_NAMES}.Make_name_id), l_class)
 
-				-- Protection of feature `set_rout_disp' of ROUTINE classes
-			l_class := routine_class.compiled_class
-			remover.record (l_class.feature_table.item_id ({PREDEFINED_NAMES}.set_rout_disp_name_id), l_class)
-
 				-- Protection of ROUTINE class features
 			l_class := routine_class.compiled_class
+			remover.record (l_class.feature_table.item_id ({PREDEFINED_NAMES}.set_rout_disp_name_id), l_class)
+			remover.record (l_class.feature_table.item_id ({PREDEFINED_NAMES}.set_rout_disp_final_name_id), l_class)
 			remover.record (l_class.feature_table.item_id ({PREDEFINED_NAMES}.rout_disp_name_id), l_class)
 			remover.record (l_class.feature_table.item_id ({PREDEFINED_NAMES}.calc_rout_addr_name_id), l_class)
 			remover.record (l_class.feature_table.item_id ({PREDEFINED_NAMES}.closed_operands_name_id), l_class)
@@ -3446,7 +3510,7 @@ feature -- Generation
 			degree_message: STRING
 		do
 			create t.make (Current, byte_context)
-			degree_message := "Generation of auxiliary files"
+			degree_message := "Generating Auxiliary Files"
 			deg_output := Degree_output
 
 				-- Address table
@@ -4695,7 +4759,6 @@ feature --Workbench option file generation
 			class_array: ARRAY [CLASS_C]
 			i, nb: INTEGER
 			a_class: CLASS_C
-			partial_debug: DEBUG_TAG_I
 			class_type: CLASS_TYPE
 			option_file: INDENT_FILE
 			buffer: GENERATION_BUFFER
@@ -4715,10 +4778,7 @@ feature --Workbench option file generation
 			from i := 1 until i > nb loop
 				a_class := class_array.item (i)
 				if a_class /= Void then
-					partial_debug ?= a_class.debug_level
-					if partial_debug /= Void then
-						partial_debug.generate_keys (buffer, a_class.class_id)
-					end
+					a_class.debug_level.generate_keys (buffer, a_class.class_id)
 				end
 				i := i + 1
 			end

@@ -27,26 +27,34 @@ feature -- Access
 			-- Result of last call, if any.
 
 	call (args: OPEN_ARGS) is
+		local
+			l_closed_count: INTEGER
 		do
-			last_result := fast_item (encaps_rout_disp, calc_rout_addr, closed_operands, args, class_id, feature_id, 
-			                          is_precompiled, is_basic, is_inline_agent, closed_operands.count, open_count, open_map)
-
+			l_closed_count :=  closed_operands.count
+			last_result := fast_item (encaps_rout_disp, calc_rout_addr, $closed_operands, $args, class_id, feature_id,
+				is_precompiled, is_basic, is_inline_agent, l_closed_count, open_count, $open_map)
 		end
 
 	item (args: OPEN_ARGS): RESULT_TYPE is
 			-- Result of calling function with `args' as operands.
 		require
 			valid_operands: valid_operands (args)
+		local
+			l_closed_count: INTEGER
 		do
-			Result := fast_item (encaps_rout_disp, calc_rout_addr, closed_operands, args, class_id, feature_id, 
-			                     is_precompiled, is_basic, is_inline_agent, closed_operands.count, open_count, open_map)
+			l_closed_count :=  closed_operands.count
+			Result := fast_item (encaps_rout_disp, calc_rout_addr, $closed_operands, $args, class_id, feature_id,
+				is_precompiled, is_basic, is_inline_agent, l_closed_count, open_count, $open_map)
 		end
 
 	apply is
 			-- Call function with `operands' as last set.
+		local
+			l_closed_count: INTEGER
 		do
-			last_result := fast_item (encaps_rout_disp, calc_rout_addr, closed_operands, operands, class_id, feature_id, 
-								      is_precompiled, is_basic, is_inline_agent, closed_operands.count, closed_count, open_map)
+			l_closed_count :=  closed_operands.count
+			last_result := fast_item (encaps_rout_disp, calc_rout_addr, $closed_operands, $operands, class_id, feature_id,
+				is_precompiled, is_basic, is_inline_agent, l_closed_count, open_count, $open_map)
 		end
 
 feature -- Comparison
@@ -77,8 +85,7 @@ feature -- Obsolete
 		require
 			valid_operands: valid_operands (args)
 		do
-			Result := fast_item (encaps_rout_disp, calc_rout_addr, closed_operands, args, class_id, feature_id, 
-				      			 is_precompiled, is_basic, is_inline_agent, closed_operands.count, open_count, open_map)
+			Result := item (args)
 		end
 
 feature -- Removal
@@ -93,12 +100,10 @@ feature -- Removal
 
 feature {NONE} -- Implementation
 
-	fast_item (a_rout_disp, a_calc_rout_addr: POINTER 
-		       a_closed_operands: like closed_operands; a_operands: like operands
+	fast_item (a_rout_disp, a_calc_rout_addr: POINTER
+		       a_closed_operands: POINTER; a_operands: POINTER
 			   a_class_id, a_feature_id: INTEGER; a_is_precompiled, a_is_basic, a_is_inline_agent: BOOLEAN
-			   a_closed_count, a_open_count: INTEGER; a_open_map: like open_map): RESULT_TYPE 
-		is
-			-- Internall_assert
+			   a_closed_count, a_open_count: INTEGER; a_open_map: POINTER): RESULT_TYPE
 		external
 			"C inline use %"eif_rout_obj.h%""
 		alias

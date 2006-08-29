@@ -54,19 +54,21 @@ feature {NONE} -- Initialization
 		do
 			default_create
 			parent_window := a_parent
+			set_padding (Layout_constants.Default_padding_size)
+			extend (execution_frame)
 			parent_window.show_actions.extend (
 				agent
 					local
 						l_selected_rows: ARRAYED_LIST [EV_GRID_ROW]
 					do
-						l_selected_rows := arguments_grid.selected_rows
-						if not l_selected_rows.is_empty then
-							l_selected_rows.first.ensure_visible
+						if arguments_grid /= Void then
+							l_selected_rows := arguments_grid.selected_rows
+							if not l_selected_rows.is_empty then
+								l_selected_rows.first.ensure_visible
+							end
 						end
 					end
 				)
-			set_padding (Layout_constants.Default_padding_size)
-			extend (execution_frame)
 			update
 		end
 
@@ -218,11 +220,54 @@ feature {NONE} -- GUI
 			l_horizontal_box: EV_HORIZONTAL_BOX
 			l_cell: EV_CELL
 			l_label: EV_LABEL
-			add_button: EV_BUTTON
 		do
 			create arguments_box
 			arguments_box.set_padding (Layout_constants.Small_padding_size)
 			arguments_box.set_border_width (Layout_constants.Small_border_size)
+
+			create l_horizontal_box
+			l_horizontal_box.set_padding (Layout_constants.Default_padding_size)
+
+			create l_label.make_with_text ("Current Arguments")
+			l_label.align_text_left
+			arguments_box.extend (l_label)
+			arguments_box.disable_item_expand (l_label)
+
+			create current_argument
+			current_argument.set_minimum_height (70)
+			current_argument.key_release_actions.extend (agent arg_text_changed)
+			current_argument.set_default_key_processing_handler (
+				agent (v: EV_KEY): BOOLEAN
+					do
+						Result := v.code /= {EV_KEY_CONSTANTS}.key_tab
+					end)
+			current_argument.key_press_actions.extend (
+				agent (v: EV_KEY)
+					do
+						if v.code = {EV_KEY_CONSTANTS}.key_tab then
+							add_button.set_focus
+						end
+					end)
+			arguments_box.extend (current_argument)
+			arguments_box.disable_item_expand (current_argument)
+
+			create l_cell
+			l_horizontal_box.extend (l_cell)
+
+			create add_button.make_with_text_and_action ("Add", agent add_argument)
+			l_horizontal_box.extend (add_button)
+			l_horizontal_box.disable_item_expand (add_button)
+			Layout_constants.set_default_width_for_button (add_button)
+
+			create remove_button.make_with_text_and_action ("Remove", agent remove_argument)
+			l_horizontal_box.extend (remove_button)
+			l_horizontal_box.disable_item_expand (remove_button)
+			Layout_constants.set_default_width_for_button (remove_button)
+
+			create l_cell
+			l_horizontal_box.extend (l_cell)
+
+			arguments_box.extend (l_horizontal_box)
 
 				-- Arguments grid building
 			create arguments_grid
@@ -246,37 +291,6 @@ feature {NONE} -- GUI
 			l_border_box.extend (arguments_grid)
 			arguments_box.extend (l_border_box)
 
-			create l_horizontal_box
-			l_horizontal_box.set_padding (Layout_constants.Default_padding_size)
-
-			create l_label.make_with_text ("Current Argument")
-			l_label.align_text_left
-			arguments_box.extend (l_label)
-			arguments_box.disable_item_expand (l_label)
-
-			create current_argument
-			current_argument.set_minimum_height (70)
-			current_argument.key_release_actions.extend (agent arg_text_changed)
-			arguments_box.extend (current_argument)
-			arguments_box.disable_item_expand (current_argument)
-
-			create l_cell
-			l_horizontal_box.extend (l_cell)
-
-			create add_button.make_with_text_and_action ("Add", agent add_argument)
-			l_horizontal_box.extend (add_button)
-			l_horizontal_box.disable_item_expand (add_button)
-			Layout_constants.set_default_width_for_button (add_button)
-
-			create remove_button.make_with_text_and_action ("Remove", agent remove_argument)
-			l_horizontal_box.extend (remove_button)
-			l_horizontal_box.disable_item_expand (remove_button)
-			Layout_constants.set_default_width_for_button (remove_button)
-
-			create l_cell
-			l_horizontal_box.extend (l_cell)
-
-			arguments_box.extend (l_horizontal_box)
 			arguments_box.disable_item_expand (l_horizontal_box)
 		end
 
@@ -342,7 +356,7 @@ feature {NONE} -- GUI Properties
 	arguments_box: EV_VERTICAL_BOX
 			-- Widget containing argument settings.
 
-	remove_button: EV_BUTTON
+	add_button, remove_button: EV_BUTTON
 
 feature {NONE} -- Actions
 

@@ -88,7 +88,7 @@ feature -- Button texts
 	b_Finalize: STRING is						"Finalize"
 	b_Freeze: STRING is							"Freeze"
 	b_Precompile: STRING is						"Precompile"
-	b_Quickmelt: STRING is						"Quick Compile"
+	b_override_scan: STRING is					"Recompile Overrides"
 	b_Cut: STRING is							"Cut"
 	b_Copy: STRING is							"Copy"
 	b_Paste: STRING is							"Paste"
@@ -127,7 +127,7 @@ feature -- Button texts
 	b_Raise_all: STRING is						"Raise Windows"
 	b_Remove_class_cluster: STRING is			"Remove Class/Cluster"
 	b_Minimize_all: STRING is					"Minimize All"
-	b_Terminate_c_compilation: STRING is 		"Terminate C compilation"
+	b_Terminate_c_compilation: STRING is 		"Terminate C Compilation"
 	b_Expand_all: STRING is 					"Expand All"
 	b_Collapse_all: STRING is 					"Collapse All"
 	b_Dbg_exception_handler: STRING is			"Exceptions"
@@ -301,7 +301,7 @@ feature -- Accelerator, focus label and menu name
 	m_Export_to: STRING is				"Save Cop&y As..."
 	m_Export_XMI: STRING is 			"E&xport XMI..."
 	m_Expression_evaluation: STRING is	"Expression Evaluation"
-	m_External_editor: STRING is		"&External Editor"
+	m_External_editor: STRING is		"External E&ditor"
 	m_Favorites_tool: STRING is			"F&avorites"
 	m_Features_tool: STRING is			"&Features"
 	f_Finalize: STRING is				"Finalize..."
@@ -390,7 +390,7 @@ feature -- Accelerator, focus label and menu name
 	m_Showattributes: STRING is			"A&ttributes"
 	m_Showcallers: STRING is			"&Callers"
 	m_Showcallees: STRING is 		"Call&ees"
-	m_Show_creation: STRING is 		"&Creators"
+	m_Show_creation: STRING is 		"Creat&ions"
 	m_Show_assignees: STRING is 		"&Assignees"
 	m_Showclick: STRING is				"C&lickable"
 	m_Showclients: STRING is			"Cli&ents"
@@ -482,7 +482,7 @@ feature -- Menu mnenomics
 	m_Open_eac_browser: STRING is		"EAC Browser"
 	m_Pretty_print: STRING is			"Expand an Object"
 	m_Project: STRING is				"&Project"
-	m_Quick_compile: STRING is			"&Quick Compile"
+	m_Override_scan: STRING is			"Recompile &Overrides"
 	m_Raise: STRING is					"&Raise"
 	m_Raise_all: STRING is				"&Raise All"
 	m_Raise_all_unsaved: STRING is		"Raise &Unsaved Windows"
@@ -501,6 +501,7 @@ feature -- Menu mnenomics
 	m_Unify_stone: STRING is			"Lin&k Context Tool"
 	m_View: STRING is					"&View"
 	m_Window: STRING is					"&Window"
+	m_Refactoring: STRING is			"&Refactoring"
 
 feature -- Label texts
 
@@ -553,6 +554,7 @@ feature -- Label texts
 	l_Diagram_delete_view_cmd: STRING is	"Do you really want to delete current view?"
 	l_Diagram_reset_view_cmd: STRING is		"Do you really want to reset current view?"
 	l_Discard_convert_project_dialog: STRING is	"Do not ask again, and always convert old projects"
+	l_Discard_build_precompile_dialog: STRING is "Do not ask again, and always build precompile"
 	l_Discard_finalize_assertions: STRING is "Do not ask again, and always discard assertions when finalizing"
 	l_Discard_finalize_precompile_dialog: STRING is "Don't ask me again and always finalize."
 	l_Discard_freeze_dialog: STRING is	"Do not ask again, and always compile C code"
@@ -747,7 +749,7 @@ feature -- Label texts
 	l_manage_external_commands: STRING is "Add, remove or edit external commands"
 	l_callees: STRING is "callees"
 	l_assignees: STRING is "assignees"
-	l_created: STRING is "creators"
+	l_created: STRING is "creations"
 	l_filter: STRING is "Filter: "
 	l_viewpoints: STRING is "Viewpoints: "
 	l_Tab_metrics: STRING is "Metric"
@@ -806,7 +808,7 @@ feature -- Title part
 	t_Find: STRING is							"Find"
 	t_Index: STRING is							"Index"
 	t_New_class: STRING is						"New Class"
-	t_New_cluster: STRING is					"New Cluster"
+	t_New_cluster: STRING is					"Add Cluster"
 	t_New_expression: STRING is					"New Expression"
 	t_New_project: STRING is					"New Project"
 	t_Object_tool: STRING is					"Objects"
@@ -985,24 +987,24 @@ feature -- Description texts
 	e_Add_exported_feature: STRING is	"Add a new feature to this dynamic library definition"
 	e_Bkpt_info: STRING is				"Show/Hide information about breakpoints"
 	e_Check_exports: STRING is			"Check the validity of the library definition"
-	e_Compilation_failed: STRING is		"Eiffel compilation failed"
-	e_Compilation_succeeded: STRING is	"Eiffel compilation succeeded"
-	e_freezing_failed: STRING is 		"Background workbench C compilation failed"
-	e_finalizing_failed: STRING is		"Background finalized C compilation failed"
-	e_freezing_launch_failed: STRING is 		"Background workbench C compilation launch failed"
-	e_finalizing_launch_failed: STRING is		"Background finalized C compilation launch failed"
-	e_freezing_launched: STRING is 		"Background workbench C compilation launched"
-	e_finalizing_launched: STRING is 	"Background finalized C compilation launched"
-	e_freezing_succeeded: STRING is 		"Background workbench C compilation succeeded"
-	e_finalizing_succeeded: STRING is 	"Background finalized C compilation succeeded"
-	e_freezing_terminated: STRING is 		"Background workbench C compilation terminated"
-	e_finalizing_terminated: STRING is 	"Background finalized C compilation terminated"
-	e_C_compilation_failed: STRING is 	"Background C compilation failed"
-	e_C_compilation_launch_failed: STRING is "Background C compilation launch failed"
-	e_C_compilation_terminated: STRING is "Background C compilation terminated"
-	e_C_compilication_launched: STRING is "Background C compilation launched"
-	e_C_compilation_succeeded: STRING is "Background C compilation succeeded"
-	e_C_compilation_running: STRING is  "Background C compilation in progress"
+	e_Compilation_failed: STRING is		"Eiffel Compilation Failed"
+	e_Compilation_succeeded: STRING is	"Eiffel Compilation Succeeded"
+	e_freezing_failed: STRING is 		"Background Workbench C Compilation Failed"
+	e_finalizing_failed: STRING is		"Background Finalized C compilation Failed"
+	e_freezing_launch_failed: STRING is 		"Background Workbench C Compilation Launch Failed"
+	e_finalizing_launch_failed: STRING is		"Background Finalized C Compilation Launch Failed"
+	e_freezing_launched: STRING is 		"Background Workbench C Compilation Launched"
+	e_finalizing_launched: STRING is 	"Background Finalized C Compilation Launched"
+	e_freezing_succeeded: STRING is 		"Background Workbench C Compilation Succeeded"
+	e_finalizing_succeeded: STRING is 	"Background Finalized C Compilation Succeeded"
+	e_freezing_terminated: STRING is 		"Background Workbench C Compilation Terminated"
+	e_finalizing_terminated: STRING is 	"Background Finalized C Compilation Terminated"
+	e_C_compilation_failed: STRING is 	"Background C Compilation Failed"
+	e_C_compilation_launch_failed: STRING is "Background C Compilation Launch Failed"
+	e_C_compilation_terminated: STRING is "Background C Compilation Terminated"
+	e_C_compilication_launched: STRING is "Background C Compilation Launched"
+	e_C_compilation_succeeded: STRING is "Background C Compilation Succeeded"
+	e_C_compilation_running: STRING is  "Background C Compilation in Progress"
 	e_Compiling: STRING is				"System is being compiled"
 	e_Copy_call_stack_to_clipboard: STRING is "Copy call stack to clipboard"
 	e_Cursor_position: STRING is		"Cursor position (line:column)"
@@ -1052,7 +1054,7 @@ feature -- Description texts
 	e_Print: STRING is					"Print the currently edited text"
 	e_Project_name: STRING is			"Name of the current project"
 	e_Project_settings: STRING is		"Change project settings"
-	e_Quick_compile: STRING is			"Recompile current project"
+	e_override_scan: STRING is			"Recompile override clusters"
 	e_Raise_all: STRING is				"Raise all windows"
 	e_Raise_all_unsaved: STRING is		"Raise all unsaved windows"
 	e_Redo: STRING is					"Redo"
@@ -1083,7 +1085,7 @@ feature -- Description texts
 	e_Dbg_assertion_checking: STRING is "Disable or restore Assertion checking handling during debugging"
 
 	e_open_selection_in_editor: STRING is "Open selected file name in specified external editor"
-	e_save_c_compilation_output: STRING is "Save C compilation output to file"
+	e_save_c_compilation_output: STRING is "Save C Compilation output to file"
 	e_go_to_w_code_dir: STRING is "Go to W_code directory of this system, or right click to open W_code in specified file browser"
 	e_go_to_f_code_dir: STRING is "Go to F_code directory of this system, or right click to open F_code in specified file browser"
 	e_f_code: STRING is "F_code"
@@ -1095,6 +1097,8 @@ feature -- Description texts
 	e_external_command_list_full: STRING is "Your external command list is full.%NUse Tools->External Command... to delete one."
 	e_working_directory_invalid: STRING is "Cannot change to directory "
 	e_external_command_not_launched: STRING is "External command not launched."
+	e_refactoring_undo_sure: STRING is "Are you sure you want to undo the refactoring?%N If classes have been modified since the refactoring this can lead to corrupt classes and lost information!"
+	e_refactoring_redo_sure: STRING is "Are you sure you want to redo the refactoring?%N If classes have been modified since the undo of the refactoring this can lead to corrupt classes and lost information!"
 feature -- Wizard texts
 
 	wt_Profiler_welcome: STRING is "Welcome to the Profiler Wizard"
@@ -1163,124 +1167,21 @@ feature -- Wizard texts
 				"The file you have supplied as existring Execution Provide does%N%
 				%not exist or is not valid. Please provide a valid file or generate%N%
 				%a new one.%N%
-				%Click Back and select a valid file or choose the generate option."
+				%Click Back and select a valid file or choose the generate option.";
 
-feature -- Metric constants (tooltips)
+feature -- String escape
 
-	metric_metrics: STRING is			"&Metrics"
-
-	metric_this_archive: STRING is		"Archive..."
-	metric_this_system: STRING is		"System"
-	metric_this_cluster: STRING is		"Cluster"
-	metric_this_class: STRING is		"Class"
-	metric_this_feature: STRING is		"Feature"
-	metric_this_delayed: STRING is "Delayed"
-
-	metric_ignore: STRING is						"Ignore"
-
-	metric_all: STRING is							"All"
-	metric_classes: STRING is						"Classes"
-	metric_deferred_class: STRING is				"Deferred classes"
-	metric_effective_class: STRING is				"Effective"
-	metric_invariant_equipped: STRING is			"Invariant equipped"
-	metric_obsolete: STRING is						"Obsolete"
-	metric_no_invariant: STRING is					"No invariant"
-	metric_no_obsolete: STRING is					"Not obsolete"
-
-	metric_clusters: STRING is						"Clusters"
-
-	metric_compilations: STRING is					"Compilations"
-
-	metric_dependents: STRING is					"Dependents"
-	metric_clients: STRING is						"Clients"
-	metric_indirect_clients: STRING is				"Indirect clients"
-	metric_heirs: STRING is							"Heirs"
-	metric_indirect_heirs: STRING is				"Indirect heirs"
-	metric_parents: STRING is						"Parents"
-	metric_indirect_parents: STRING is				"Indirect parents"
-	metric_suppliers: STRING is						"Suppliers"
-	metric_indirect_suppliers: STRING is			"Indirect suppliers"
-	metric_self: STRING is							"Self"
-
-	metric_features: STRING is						"Features"
-	metric_attributes: STRING is					"Attributes"
-	metric_commands: STRING is						"Commands"
-	metric_deferred_feature: STRING is				"Deferred features"
-	metric_exported: STRING is						"Exported"
-	metric_inherited: STRING is						"Inherited"
-	metric_functions: STRING is						"Functions"
-	metric_postcondition_equipped: STRING is		"Postcondition equipped"
-	metric_precondition_equipped: STRING is			"Precondition equipped"
-	metric_queries: STRING is						"Queries"
-	metric_routines: STRING is						"Routines"
-
-	metric_imm_features: STRING is					"Features: immediate"
-	metric_imm_attributes: STRING is				"Imm. attributes"
-	metric_imm_commands: STRING is					"Imm. commands"
-	metric_imm_deferred_feature: STRING is			"Imm. deferred features"
-	metric_imm_effective_feature: STRING is			"Imm. effective features"
-	metric_imm_exported: STRING is					"Imm. exported"
-	metric_imm_functions: STRING is					"Imm. functions"
-	metric_imm_postcondition_equipped: STRING is	"Imm. post equipped"
-	metric_imm_precondition_equipped: STRING is		"Imm. pre equipped"
-	metric_imm_queries: STRING is					"Imm. queries"
-	metric_imm_routines: STRING is					"Imm. routines"
-
-	metric_all_features: STRING is					"Features: all"
-	metric_all_attributes: STRING is				"All attributes"
-	metric_all_commands: STRING is					"All commands"
-	metric_all_deferred_feature: STRING is			"All deferred features"
-	metric_all_effective_feature: STRING is			"All effective features"
-	metric_all_exported: STRING is					"All exported"
-	metric_all_functions: STRING is					"All functions"
-	metric_all_postcondition_equipped: STRING is	"All post equipped"
-	metric_all_precondition_equipped: STRING is		"All pre equipped"
-	metric_all_queries: STRING is					"All queries"
-	metric_all_routines: STRING is					"All routines"
-
-	metric_imm_feature_assertions: STRING is		"Feature assertions: immediate"
-	metric_imm_precondition_clauses: STRING is		"Imm pre. clauses"
-	metric_imm_postcondition_clauses: STRING is		"Imm. post. clauses"
-
-	metric_all_feature_assertions: STRING is		"Feature assertions: all"
-	metric_all_precondition_clauses: STRING is		"All pre. clauses"
-	metric_all_postcondition_clauses: STRING is		"All post. clauses"
-
-	metric_formal_generics: STRING is				"Formal generics"
-	metric_formal_generics_constrained: STRING is	"Constrained"
-
-	metric_formals: STRING is						"Formals"
-	metric_imm_formals: STRING is					"Imm. formals"
-
-	metric_invariant_clauses: STRING is				"Invariant clauses"
-	metric_imm_invariant_clauses: STRING is			"Imm. invariant clauses"
-
-	metric_lines: STRING is							"Lines"
-
-	metric_locals: STRING is						"Locals"
-	metric_imm_locals: STRING is					"Imm. locals"
-
---	metric_ancestors: STRING is						"Ancestors"
---	metric_descendants: STRING is					"Descendants"
---	metric_comment_lines: STRING is					"Comment lines"
-
-	metric_class_unit: STRING is			"Class"
-	metric_feature_unit: STRING is			"Feature"
-	metric_cluster_unit: STRING is			"Cluster"
-	metric_line_unit: STRING is				"Line"
-	metric_contract_unit: STRING is			"Contract"
-	metric_contract_clause_unit: STRING is	"Contract clause"
-	metric_ratio_unit: STRING is			"Ratio"
-	metric_compilation_unit: STRING is		"Compilation"
-	metric_local_unit: STRING is			"Local"
-
-	metric_calculate: STRING is				"&Calculate"
-	metric_add: STRING is					"&Add"
-	metric_delete: STRING is				"&Delete"
-	metric_details: STRING is				"&Show/hide details"
-	metric_new_metrics: STRING is			"&New metrics"
-	metric_management: STRING is			"&Metric management"
-	metric_archive: STRING is				"A&rchive";
+	escaped_string_for_menu_item (a_str: STRING): STRING is
+			-- Escaped string for menu item.
+			-- "&" is escaped by "&&" because in menu item, "&" is used as accelerator indicator.
+		require
+			a_str_attached: a_str /= Void
+		do
+			Result := a_str.twin
+			Result.replace_substring_all ("&", "&&")
+		ensure
+			result_attached: Result /= Void
+		end
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

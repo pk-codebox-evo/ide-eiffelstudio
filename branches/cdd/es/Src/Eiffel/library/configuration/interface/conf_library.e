@@ -21,7 +21,7 @@ inherit
 
 	CONF_VISIBLE
 
-create
+create {CONF_FACTORY}
 	make
 
 feature {NONE} -- Initialization
@@ -69,6 +69,8 @@ feature -- Access, in compiled only, not stored to configuration file
 		do
 			if library_target /= Void then
 				Result := library_target.mapping
+			else
+				create Result.make (0)
 			end
 		end
 

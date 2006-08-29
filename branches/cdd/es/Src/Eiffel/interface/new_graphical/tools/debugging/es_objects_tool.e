@@ -709,12 +709,8 @@ feature -- Change
 			a_manager_exists: a_manager /= Void
 			an_explorer_bar_exists: an_explorer_bar /= Void
 		do
-			if explorer_bar_item.is_visible then
-				explorer_bar_item.close
-			end
-			explorer_bar_item.recycle
-			manager := a_manager
-			set_explorer_bar (an_explorer_bar)
+			set_manager (a_manager)
+			change_attach_explorer (an_explorer_bar)
 		end
 
 feature -- Status report
@@ -727,6 +723,14 @@ feature -- Memory management
 	recycle is
 			-- Recycle `Current', but leave `Current' in an unstable state,
 			-- so that we know whether we're still referenced or not.
+		do
+			if explorer_bar_item /= Void then
+				unattach_from_explorer_bar
+			end
+			reset_tool
+		end
+
+	reset_tool is
 		local
 			g: like objects_grid
 		do
@@ -735,9 +739,6 @@ feature -- Memory management
 			preferences.debug_tool_data.max_slice_preference.set_value (max_slice_ref.item)
 			displayed_objects.wipe_out
 			pretty_print_cmd.end_debug
-			if explorer_bar_item /= Void then
-				explorer_bar_item.recycle
-			end
 			if current_object /= Void then
 				display_first := current_object.display
 				display_first_attributes := current_object.display_attributes
@@ -1191,7 +1192,10 @@ feature {NONE} -- Impl : Debugged objects grid specifics
 			row ?= ost.ev_item
 			if row /= Void then
 				gline ?= row.data
-				if gline /= Void then
+				if
+					gline /= Void
+					and then gline /= current_object
+				then
 					remove_debugged_object_line (gline)
 				end
 			end
@@ -1420,7 +1424,7 @@ feature {NONE} -- Impl : Stack objects grid
 --				l_exception_message := dotnet_status.exception_to_string
 				if l_exception_message /= Void and then not l_exception_message.is_empty then
 					row := a_target_grid.extended_new_subrow (exception_row)
-					glab := a_target_grid.name_label_item ("Nota")
+					glab := a_target_grid.name_label_item ("Note")
 					a_target_grid.grid_cell_set_pixmap (glab, pixmaps.icon_pixmaps.general_mini_error_icon)
 					row.set_item (1, glab)
 					create es_glab

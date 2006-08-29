@@ -54,6 +54,13 @@ inherit
 			default_create
 		end
 
+	EB_RECYCLABLE
+		undefine
+			copy,
+			is_equal,
+			default_create
+		end
+
 create
 	make
 
@@ -71,6 +78,7 @@ feature {NONE} -- Initialization
 			create open_file_dialog.make_with_preference (preferences.dialog_data.last_opened_metric_browse_archive_directory_preference)
 			open_file_dialog.set_title (metric_names.t_select_archive)
 			open_file_dialog.filters.extend (["*.xml", "XML files"])
+			open_file_dialog.filters.extend (["*.*", "All files"])
 
 				-- Setup timers.
 			create internal_timer.make_with_interval (0)
@@ -131,6 +139,18 @@ feature {NONE} -- Initialization
 			metric_lbl.set_text (metric_names.t_select_metric)
 			reference_archive_lbl.set_text (metric_names.t_select_reference_archive)
 			current_archive_lbl.set_text (metric_names.t_select_current_archive)
+
+			comparison_toolbar_area.drop_actions.extend (agent drop_cluster)
+			comparison_toolbar_area.drop_actions.extend (agent drop_class)
+			comparison_toolbar_area.drop_actions.extend (agent drop_feature)
+
+			comparison_area.drop_actions.extend (agent drop_cluster)
+			comparison_area.drop_actions.extend (agent drop_class)
+			comparison_area.drop_actions.extend (agent drop_feature)
+
+			comparison_empty_cell.drop_actions.extend (agent drop_cluster)
+			comparison_empty_cell.drop_actions.extend (agent drop_class)
+			comparison_empty_cell.drop_actions.extend (agent drop_feature)
 		end
 
 feature -- Access
@@ -866,6 +886,13 @@ feature -- Overwritting
 			if not is_last_load_successful then
 				display_error_message
 			end
+		end
+
+feature -- Recycle
+
+	recycle is
+			-- To be called when the button has became useless.
+		do
 		end
 
 invariant

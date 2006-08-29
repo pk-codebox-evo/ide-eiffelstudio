@@ -11,6 +11,12 @@ deferred class
 inherit
 	EV_DIALOG
 
+	EIFFEL_SYNTAX_CHECKER
+		undefine
+			default_create,
+			copy
+		end
+
 feature {NONE} -- Initialization
 
 	make (a_target: CONF_TARGET; a_factory: CONF_FACTORY) is
@@ -50,7 +56,7 @@ feature {NONE} -- Implementation
 		require
 			a_group_ok: a_group /= Void and then not a_group.is_empty
 		do
-			Result := a_target.groups.has (a_group)
+			Result := a_target.groups.has (a_group) and then a_target.groups.found_item.name.is_equal (a_group)
 			if not Result then
 				Result := a_target.child_targets.there_exists (agent group_exists(a_group, ?))
 			end

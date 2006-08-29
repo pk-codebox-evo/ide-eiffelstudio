@@ -74,7 +74,6 @@ feature {NONE} -- Implementation
 			l_grab_widget: POINTER
 		do
 			if not has_capture then
-				App_implementation.disable_debugger
 					-- On Solaris, if a menu is selected, then `enable_capture' will not close the menu
 					-- as GTK does on other platforms. Note that `gtk_menu_shell_cancel' will only
 					-- work on GTK 2.4 or above, it is a no-op otherwise.
@@ -91,6 +90,7 @@ feature {NONE} -- Implementation
 				app_implementation.set_captured_widget (l_interface)
 				{EV_GTK_EXTERNALS}.gtk_grab_add (event_widget)
 --				top_level_window_imp.grab_keyboard_and_mouse
+				App_implementation.disable_debugger
 				i := {EV_GTK_EXTERNALS}.gdk_pointer_grab (
 					{EV_GTK_EXTERNALS}.gtk_widget_struct_window (event_widget),
 					1,
@@ -113,7 +113,10 @@ feature {NONE} -- Implementation
 		do
 			if has_capture then
 				{EV_GTK_EXTERNALS}.gtk_grab_remove (event_widget)
-				top_level_window_imp.release_keyboard_and_mouse
+				{EV_GTK_EXTERNALS}.gdk_pointer_ungrab (
+					0 -- guint32 time
+				)
+				{EV_GTK_EXTERNALS}.gdk_keyboard_ungrab (0) -- guint32 time
 				App_implementation.enable_debugger
 				App_implementation.set_captured_widget (Void)
 			end
@@ -198,7 +201,7 @@ feature -- Implementation
 			app_imp := app_implementation
 			l_top_level_window_imp := top_level_window_imp
 			if l_top_level_window_imp /= Void and then not l_top_level_window_imp.has_modal_window then
-				if a_type /= {EV_GTK_EXTERNALS}.gdk_button_release_enum and then not app_imp.is_in_transport and then able_to_transport (a_button) then
+				if a_type = {EV_GTK_EXTERNALS}.gdk_button_press_enum and then not app_imp.is_in_transport and then able_to_transport (a_button) then
 						-- Retrieve/calculate pebble
 					call_pebble_function (a_x, a_y, a_screen_x, a_screen_y)
 					if pebble /= Void then
@@ -353,7 +356,7 @@ feature -- Implementation
 	real_pointed_target: EV_PICK_AND_DROPABLE is
 			-- Hole at mouse position
 		local
-			gdkwin, gtkwid: POINTER
+			gdkwin: POINTER
 			a_x, a_y: INTEGER
 			a_wid_imp: EV_PICK_AND_DROPABLE_IMP
 			a_pnd_deferred_item_parent: EV_PND_DEFERRED_ITEM_PARENT
@@ -361,12 +364,17 @@ feature -- Implementation
 			l_app_imp: like app_implementation
 		do
 			l_app_imp := app_implementation
-			gdkwin := {EV_GTK_EXTERNALS}.gdk_window_at_pointer ($a_x, $a_y)
+			if l_app_imp.use_stored_display_data then
+					-- This will avoid a server roundtrip.
+			else
+				l_app_imp.update_display_data
+			end
+			gdkwin := l_app_imp.stored_display_data.window
+			a_x := l_app_imp.stored_display_data.x
+			a_y := l_app_imp.stored_display_data.y
+
 			if gdkwin /= default_pointer then
-				{EV_GTK_EXTERNALS}.gdk_window_get_user_data (gdkwin, $gtkwid)
-				if gtkwid /= default_pointer then
-					a_wid_imp ?= l_app_imp.eif_object_from_gtk_object (gtkwid)
-				end
+				a_wid_imp ?= l_app_imp.gtk_widget_from_gdk_window (gdkwin)
 				if
 					a_wid_imp /= Void and then
 					{EV_GTK_EXTERNALS}.gtk_object_struct_flags (a_wid_imp.c_object) & {EV_GTK_EXTERNALS}.GTK_SENSITIVE_ENUM = {EV_GTK_EXTERNALS}.GTK_SENSITIVE_ENUM and then

@@ -785,6 +785,15 @@ rt_public void eif_rtinit(int argc, char **argv, char **envp)
 	notify_root_thread();
 #endif
 #endif
+#ifdef WORKBENCH
+	if (egc_routdisp_wb == 0) {
+		egc_routdisp_wb = egc_routdisp;
+	}
+#else
+	if (egc_routdisp_fl == 0) {
+		egc_routdisp_fl = (void (*)(EIF_REFERENCE, EIF_POINTER, EIF_POINTER, EIF_POINTER, EIF_REFERENCE, EIF_BOOLEAN, EIF_INTEGER)) egc_routdisp;
+	}
+#endif
 }
 
 rt_public void failure(void)

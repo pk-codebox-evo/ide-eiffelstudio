@@ -588,11 +588,14 @@ feature -- Duplication
 			-- bounds `start_pos' and `end_pos'.
 		require
 			valid_start_pos: valid_index (start_pos)
-			valid_end_pos: valid_index (end_pos)
+			valid_end_pos: end_pos <= upper
 			valid_bounds: (start_pos <= end_pos) or (start_pos = end_pos + 1)
 		do
 			create Result.make (start_pos, end_pos)
-			Result.subcopy (Current, start_pos, end_pos, start_pos)
+			if start_pos <= end_pos then
+					-- Only copy elements if needed.
+				Result.subcopy (Current, start_pos, end_pos, start_pos)
+			end
 		ensure
 			lower: Result.lower = start_pos
 			upper: Result.upper = end_pos

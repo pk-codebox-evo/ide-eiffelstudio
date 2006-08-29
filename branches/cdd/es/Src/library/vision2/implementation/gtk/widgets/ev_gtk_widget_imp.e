@@ -14,7 +14,7 @@ inherit
 
 feature {EV_GTK_DEPENDENT_INTERMEDIARY_ROUTINES} -- Implementation
 
-	on_key_event (a_key: EV_KEY; a_key_string: STRING_32; a_key_press: BOOLEAN) is
+	on_key_event (a_key: EV_KEY; a_key_string: STRING_32; a_key_press: BOOLEAN; call_application_events: BOOLEAN) is
 			-- Used for key event actions sequences, redefined by descendants
 		do
 
@@ -25,29 +25,37 @@ feature {EV_INTERMEDIARY_ROUTINES} -- Implementation
 	Gdk_events_mask: INTEGER is
 			-- Mask of all the gdk events the gdkwindow shall receive.
 		once
-			Result := {EV_GTK_EXTERNALS}.GDK_EXPOSURE_MASK_ENUM |
-			{EV_GTK_EXTERNALS}.GDK_POINTER_MOTION_MASK_ENUM |
-			{EV_GTK_EXTERNALS}.GDK_BUTTON_PRESS_MASK_ENUM |
-			{EV_GTK_EXTERNALS}.GDK_BUTTON_RELEASE_MASK_ENUM |
-			{EV_GTK_EXTERNALS}.GDK_KEY_PRESS_MASK_ENUM |
-			{EV_GTK_EXTERNALS}.GDK_KEY_RELEASE_MASK_ENUM |
-			{EV_GTK_EXTERNALS}.GDK_ENTER_NOTIFY_MASK_ENUM |
-			{EV_GTK_EXTERNALS}.GDK_LEAVE_NOTIFY_MASK_ENUM |
-			{EV_GTK_EXTERNALS}.GDK_FOCUS_CHANGE_MASK_ENUM |
-			{EV_GTK_EXTERNALS}.GDK_VISIBILITY_NOTIFY_MASK_ENUM |
-			{EV_GTK_EXTERNALS}.GDK_POINTER_MOTION_HINT_MASK_ENUM
+			Result :=
+				{EV_GTK_EXTERNALS}.GDK_EXPOSURE_MASK_ENUM
+				| {EV_GTK_EXTERNALS}.GDK_POINTER_MOTION_MASK_ENUM
+				| {EV_GTK_EXTERNALS}.GDK_BUTTON_PRESS_MASK_ENUM
+				| {EV_GTK_EXTERNALS}.GDK_BUTTON_RELEASE_MASK_ENUM
+				| {EV_GTK_EXTERNALS}.GDK_KEY_PRESS_MASK_ENUM
+				| {EV_GTK_EXTERNALS}.GDK_KEY_RELEASE_MASK_ENUM
+				| {EV_GTK_EXTERNALS}.GDK_ENTER_NOTIFY_MASK_ENUM
+				| {EV_GTK_EXTERNALS}.GDK_LEAVE_NOTIFY_MASK_ENUM
+				| {EV_GTK_EXTERNALS}.GDK_FOCUS_CHANGE_MASK_ENUM
+				| {EV_GTK_EXTERNALS}.GDK_VISIBILITY_NOTIFY_MASK_ENUM
+--				| {EV_GTK_EXTERNALS}.GDK_POINTER_MOTION_HINT_MASK_ENUM
 		end
 
 feature {NONE} -- Implementation
 
 	initialize is
-			-- Initialize `c_object'
+			-- Initialize `c_object'.
+		local
+			l_visual_widget, l_c_object: POINTER
 		do
-			{EV_GTK_EXTERNALS}.gtk_widget_add_events (visual_widget, gdk_events_mask)
-			if {EV_GTK_EXTERNALS}.gtk_is_window (c_object) then
-				{EV_GTK_EXTERNALS}.gtk_widget_realize (c_object)
+			l_visual_widget := visual_widget
+			l_c_object := c_object
+			{EV_GTK_EXTERNALS}.gtk_widget_add_events (l_visual_widget, gdk_events_mask)
+			if l_visual_widget /= l_c_object then
+				{EV_GTK_EXTERNALS}.gtk_widget_add_events (l_c_object, gdk_events_mask)
+			end
+			if {EV_GTK_EXTERNALS}.gtk_is_window (l_c_object) then
+				{EV_GTK_EXTERNALS}.gtk_widget_realize (l_c_object)
 			else
-				{EV_GTK_EXTERNALS}.gtk_widget_show (c_object)
+				{EV_GTK_EXTERNALS}.gtk_widget_show (l_c_object)
 			end
 			set_is_initialized (True)
 		end
@@ -210,6 +218,10 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 		local
 			l_window, l_widget: POINTER
 		do
+				-- If any previous widget has the capture then disable it.
+			if app_implementation.captured_widget /= Void then
+				app_implementation.captured_widget.disable_capture
+			end
 			if {EV_GTK_EXTERNALS}.gtk_is_window (c_object) then
 				l_window := c_object
 --					l_widget := default_pointer -- This will unset any previous focused widget.
@@ -246,7 +258,7 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 		do
 			l_minimum_width := real_minimum_width
 			l_allocated_width := {EV_GTK_EXTERNALS}.gtk_allocation_struct_width ({EV_GTK_EXTERNALS}.gtk_widget_struct_allocation (c_object))
-			if is_displayed and then {EV_GTK_EXTERNALS}.gtk_widget_struct_parent (c_object) /= default_pointer then--and then l_allocated_width < l_minimum_width then
+			if is_displayed and then {EV_GTK_EXTERNALS}.gtk_widget_struct_parent (c_object) /= default_pointer and then l_allocated_width < l_minimum_width then
 				{EV_GTK_EXTERNALS}.gtk_container_check_resize ({EV_GTK_EXTERNALS}.gtk_widget_struct_parent (c_object))
 				l_allocated_width := {EV_GTK_EXTERNALS}.gtk_allocation_struct_width ({EV_GTK_EXTERNALS}.gtk_widget_struct_allocation (c_object))
 			end
@@ -261,7 +273,7 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 		do
 			l_minimum_height := real_minimum_height
 			l_allocated_height := {EV_GTK_EXTERNALS}.gtk_allocation_struct_height ({EV_GTK_EXTERNALS}.gtk_widget_struct_allocation (c_object))
-			if is_displayed and then {EV_GTK_EXTERNALS}.gtk_widget_struct_parent (c_object) /= default_pointer then--and then l_allocated_height < l_minimum_height then
+			if is_displayed and then {EV_GTK_EXTERNALS}.gtk_widget_struct_parent (c_object) /= default_pointer and then l_allocated_height < l_minimum_height then
 				{EV_GTK_EXTERNALS}.gtk_container_check_resize ({EV_GTK_EXTERNALS}.gtk_widget_struct_parent (c_object))
 				l_allocated_height := {EV_GTK_EXTERNALS}.gtk_allocation_struct_height ({EV_GTK_EXTERNALS}.gtk_widget_struct_allocation (c_object))
 			end

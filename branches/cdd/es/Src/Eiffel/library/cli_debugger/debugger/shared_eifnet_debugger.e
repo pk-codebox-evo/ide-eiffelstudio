@@ -8,16 +8,29 @@ indexing
 
 class
 	SHARED_EIFNET_DEBUGGER
-	
+
 inherit
 	EIFNET_EXPORTER
 
-feature -- Access
+feature {DBG_EVALUATOR_DOTNET} -- Access
 
 	Eifnet_debugger: EIFNET_DEBUGGER is
 			-- Initialize `Current'.
 		once
 			create Result.make
+			eifnet_debugger_initialized_cell.put (True)
+		end
+
+feature -- Status
+
+	eifnet_debugger_initialized: BOOLEAN is
+		do
+			Result := eifnet_debugger_initialized_cell.item
+		end
+
+	eifnet_debugger_initialized_cell: CELL [BOOLEAN] is
+		once
+			create Result.put (False)
 		end
 
 indexing

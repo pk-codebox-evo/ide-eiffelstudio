@@ -11,7 +11,8 @@ class
 feature -- Properties
 
 	is_freezing, is_finalizing,
-	is_precompiling, is_quick_melt: BOOLEAN
+	is_precompiling, is_quick_melt,
+	is_override_scan: BOOLEAN
 			-- Type of compilation.
 
 feature -- Update
@@ -26,6 +27,12 @@ feature -- Update
 			-- Set `is_quick_melt' to `True'
 		do
 			is_quick_melt := True
+		end
+
+	set_is_override_scan is
+			-- Set `is_override_scan' to `True'
+		do
+			is_override_scan := True
 		end
 
 	set_is_finalizing is
@@ -44,6 +51,7 @@ feature -- Setting
 
 	reset_modes is
 		do
+			is_override_scan := False
 			is_quick_melt := False
 			is_freezing := False
 			is_finalizing := False

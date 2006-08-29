@@ -404,6 +404,17 @@ feature {NONE} -- Error reporting
 			output_manager.display_system_info
 		end
 
+	report_precompilation_error is
+			-- Report that the precompilation of a precompile did not work.
+		local
+			l_ev: EV_ERROR_DIALOG
+		do
+			l_ev := new_error_dialog
+			l_ev.set_text (warning_messages.w_project_build_precompile_error)
+			l_ev.show_modal_to_window (parent_window)
+			set_has_error
+		end
+
 feature {NONE} -- User interaction
 
 	ask_for_config_name (a_dir_name, a_file_name: STRING; a_action: PROCEDURE [ANY, TUPLE [STRING]]) is
@@ -476,21 +487,45 @@ feature {NONE} -- User interaction
 			end
 		end
 
-	ask_for_target_name (a_targets: DS_ARRAYED_LIST [STRING]) is
+	ask_for_target_name (a_target: STRING; a_targets: DS_ARRAYED_LIST [STRING]) is
 			-- Ask user to choose one target among `a_targets'.
+			-- If not Void, `a_target' is the one selected by user.
 		local
 			l_dialog: EV_DIALOG
+			l_error_dialog: EV_WARNING_DIALOG
 			l_list: EV_LIST
 			l_vbox: EV_VERTICAL_BOX
 			l_hbox: EV_HORIZONTAL_BOX
 			l_select_button, l_button: EV_BUTTON
 			l_item: EV_LIST_ITEM
+			l_label: EV_LABEL
+			l_need_choice: BOOLEAN
 		do
+			l_need_choice := True
 			if a_targets.count = 1 then
 				a_targets.start
-				target_name := a_targets.item_for_iteration
-			else
-				create l_dialog.make_with_title ("Select a target")
+				if a_target = Void or else a_target.is_equal (a_targets.item_for_iteration) then
+					target_name := a_targets.item_for_iteration.twin
+					l_need_choice := False
+				end
+			end
+			if l_need_choice then
+				if a_targets.is_empty then
+					create l_error_dialog.make_with_text ("This project contains no compilable target.%NPlease open a different project.")
+					l_error_dialog.show_modal_to_window (parent_window)
+					has_error := True
+					l_need_choice := False
+				end
+			end
+			if l_need_choice then
+				create l_dialog.make_with_title ("Target Selection")
+
+				if a_target = Void then
+					create l_label.make_with_text ("Choose one target among: ")
+				else
+					create l_label.make_with_text ("Target `" + a_target + "' does not exist or is not compilable.%NChoose one target among:")
+				end
+				l_label.align_text_left
 				create l_list
 				from
 					a_targets.start
@@ -509,6 +544,8 @@ feature {NONE} -- User interaction
 				create l_vbox
 				l_vbox.set_border_width (default_border_size)
 				l_vbox.set_padding (small_padding_size)
+
+				l_vbox.extend (l_label)
 				l_vbox.extend (l_list)
 
 				create l_hbox
@@ -551,6 +588,19 @@ feature {NONE} -- User interaction
 				project_location := l_create.project_location
 				is_compilation_requested := l_create.compile_project
 			end
+		end
+
+	ask_compile_precompile is
+			-- Should a needed precompile be automatically built?
+		local
+			l_dial: STANDARD_DISCARDABLE_CONFIRMATION_DIALOG
+		do
+			create l_dial.make_initialized (2, preferences.dialog_data.confirm_build_precompile_string, warning_messages.w_project_build_precompile, interface_names.l_Discard_build_precompile_dialog, preferences.preferences)
+			l_dial.set_ok_action (agent
+				do
+					is_user_wants_precompile := True
+				end)
+			l_dial.show_modal_to_window (parent_window)
 		end
 
 feature {NONE} -- Actions

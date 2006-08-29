@@ -27,7 +27,6 @@ inherit
 			set_background_color
 		redefine
 			interface,
-			default_key_processing_blocked,
 			dispose,
 			destroy,
 			call_button_event_actions,
@@ -237,12 +236,6 @@ feature {NONE} -- Implementation
 	internal_tooltip: STRING_32
 		-- Used for storing `tooltip' of `Current'.
 
-	default_key_processing_blocked (a_key: EV_KEY): BOOLEAN is
-			-- Should default key processing be allowed for `a_key'.
-		do
-			Result := a_key.is_arrow or else (not is_tabable_from and a_key.code = {EV_KEY_CONSTANTS}.key_tab)
-		end
-
 	redraw is
 			-- Redraw the entire area.
 		do
@@ -340,12 +333,12 @@ feature {EV_INTERMEDIARY_ROUTINES} -- Implementation
 
 feature {NONE} -- Implementation
 
-	on_key_event (a_key: EV_KEY; a_key_string: STRING_32; a_key_press: BOOLEAN) is
+	on_key_event (a_key: EV_KEY; a_key_string: STRING_32; a_key_press: BOOLEAN; call_application_events: BOOLEAN) is
 			-- Used for key event actions sequences.
 		do
 				-- Make sure tooltip window is hidden.
 			update_tooltip (False)
-			Precursor {EV_PRIMITIVE_IMP} (a_key, a_key_string, a_key_press)
+			Precursor {EV_PRIMITIVE_IMP} (a_key, a_key_string, a_key_press, call_application_events)
 		end
 
 	call_button_event_actions (a_type: INTEGER; a_x, a_y, a_button: INTEGER; a_x_tilt, a_y_tilt, a_pressure: DOUBLE; a_screen_x, a_screen_y: INTEGER) is

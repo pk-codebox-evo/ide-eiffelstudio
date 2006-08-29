@@ -26,9 +26,6 @@ inherit
 		end
 
 	SHARED_EDITOR_FONT
-		redefine
-			line_height
-		end
 
 	SHARED_EDITOR_DATA
 
@@ -39,6 +36,11 @@ inherit
 	EB_SHARED_PIXMAPS
 
 	EB_SHARED_WRITER
+
+	EB_EDITOR_TOKEN_GRID_SUPPORT
+		undefine
+			grid
+		end
 
 feature{NONE} -- Initialization
 
@@ -56,6 +58,8 @@ feature{NONE} -- Initialization
 			grid.set_collapse_selected_rows_agent (agent on_collapse_one_level)
 			grid.set_collapse_selected_rows_recursive_agent (agent on_collapse_all_level)
 			grid.enable_default_tree_navigation_behavior (True, True, True, True)
+			set_item_text_function (agent text_of_grid_item)
+			enable_copy
 		ensure
 			drop_actions_set: drop_actions = a_drop_actions
 		end
@@ -86,20 +90,9 @@ feature{NONE} -- Initialization
 			if drop_actions /= Void then
 				text.drop_actions.fill (drop_actions)
 			end
-
-			on_color_or_font_changed_agent := agent on_color_or_font_changed
-			editor_preferences.keyword_font_preference.change_actions.extend (on_color_or_font_changed_agent)
-			editor_preferences.keyword_text_color_preference.change_actions.extend (on_color_or_font_changed_agent)
-			editor_preferences.normal_text_color_preference.change_actions.extend (on_color_or_font_changed_agent)
-			editor_preferences.editor_font_preference.change_actions.extend (on_color_or_font_changed_agent)
-			preferences.class_browser_data.odd_row_background_color_preference.change_actions.extend (on_color_or_font_changed_agent)
-			preferences.class_browser_data.even_row_background_color_preference.change_actions.extend (on_color_or_font_changed_agent)
-
-			on_scroll_behavior_changed
-			on_scroll_behavior_changed_agent := agent on_scroll_behavior_changed
-			editor_preferences.mouse_wheel_scroll_full_page_preference.change_actions.extend (on_scroll_behavior_changed_agent)
-			editor_preferences.mouse_wheel_scroll_size_preference.change_actions.extend (on_scroll_behavior_changed_agent)
-			editor_preferences.scrolling_common_line_count_preference.change_actions.extend (on_scroll_behavior_changed_agent)
+			color_or_font_change_actions.extend (agent on_color_or_font_changed)
+			synchronize_color_or_font_change_with_editor
+			synchronize_scroll_behavior_with_editor
 		end
 
 feature -- Setting
@@ -351,6 +344,17 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
+	text_of_grid_item (a_item: EV_GRID_ITEM): STRING is
+			-- String representation of `a_item'
+		local
+			l_token_item: EB_GRID_EDITOR_TOKEN_ITEM
+		do
+			l_token_item ?= a_item
+			if l_token_item /= Void then
+				Result := l_token_item.text
+			end
+		end
+
 feature -- Status report
 
 	is_up_to_date: BOOLEAN
@@ -389,12 +393,6 @@ feature{NONE} -- Implementation
 
 feature{NONE} -- Actions
 
-	on_color_or_font_changed_agent: PROCEDURE [ANY, TUPLE]
-			-- Agent of `on_color_or_font_changed'
-
-	on_scroll_behavior_changed_agent: PROCEDURE [ANY, TUPLE]
-			-- Agent of `on_scroll_behavior_changed'
-
 	on_color_or_font_changed is
 			-- Action to be performed when color or font used to display editor tokens changes
 		do
@@ -406,60 +404,6 @@ feature{NONE} -- Actions
 				text.set_foreground_color (editor_preferences.normal_text_color)
 				text.set_font (font)
 				text.refresh_now
-			end
-		end
-
-	on_scroll_behavior_changed is
-			-- Action to be performed when scroll behevior preferences changes
-		do
-			grid.scrolling_behavior.set_mouse_wheel_scroll_full_page (editor_preferences.mouse_wheel_scroll_full_page)
-			grid.scrolling_behavior.set_mouse_wheel_scroll_size (editor_preferences.mouse_wheel_scroll_size)
-			grid.scrolling_behavior.set_scrolling_common_line_count (editor_preferences.scrolling_common_line_count)
-		end
-
-	on_pick_ended (a_item: EV_ABSTRACT_PICK_AND_DROPABLE) is
-			-- Action performed when pick ends
-		local
-			l_item: EB_GRID_EDITOR_TOKEN_ITEM
-		do
-			l_item ?= last_picked_item
-			if l_item /= Void then
-				l_item.set_last_picked_token (0)
-				if l_item.is_parented and then l_item.is_selectable then
-					l_item.enable_select
-				end
-				if l_item.is_parented then
-					l_item.redraw
-				end
-			end
-			last_picked_item := Void
-		ensure
-			last_picked_item_not_attached: last_picked_item = Void
-		end
-
-	on_pick (a_item: EV_GRID_ITEM): ANY is
-			-- Action performed when pick on `a_item'.
-		local
-			l_item: EB_GRID_EDITOR_TOKEN_ITEM
-			l_stone: STONE
-			l_index: INTEGER
-		do
-			last_picked_item := Void
-			l_item ?= a_item
-			if l_item /= Void then
-				l_index := l_item.token_index_at_current_position
-				if l_index > 0 then
-					Result := l_item.editor_token_pebble (l_index)
-					l_stone ?= Result
-					if l_stone /= Void then
-						grid.remove_selection
-						grid.set_accept_cursor (l_stone.stone_cursor)
-						grid.set_deny_cursor (l_stone.x_stone_cursor)
-						l_item.set_last_picked_token (l_index)
-						l_item.redraw
-						last_picked_item := l_item
-					end
-				end
 			end
 		end
 
@@ -477,10 +421,6 @@ feature{NONE} -- Actions
 			Result := True
 			 if a_key.code = {EV_KEY_CONSTANTS}.key_enter then
 				on_enter_pressed
-			elseif a_key.code = {EV_KEY_CONSTANTS}.key_c and then ev_application.ctrl_pressed then
-				on_ctrl_c_pressed
-			elseif a_key.code = {EV_KEY_CONSTANTS}.key_a and then ev_application.ctrl_pressed then
-				on_ctrl_a_pressed
 			else
 				Result := False
 			end
@@ -489,23 +429,6 @@ feature{NONE} -- Actions
 	on_enter_pressed is
 			-- Action to be performed when enter key is pressed
 		deferred
-		end
-
-	on_ctrl_c_pressed is
-			-- Action to be performed when Ctrl+C is pressed
-		local
-			l_text: STRING
-		do
-			l_text := selected_text
-			if not l_text.is_empty then
-				ev_application.clipboard.set_text (l_text)
-			end
-		end
-
-	on_ctrl_a_pressed is
-			-- Action to be performed when Ctrl+A is pressed
-		do
-			grid.select_all_rows
 		end
 
 	on_expand_all_level is
@@ -567,19 +490,8 @@ feature -- Recycle
 	recycle_agents is
 			-- Recycle agents in preferences.
 		do
-			if on_color_or_font_changed_agent /= Void then
-				editor_preferences.keyword_font_preference.change_actions.prune_all (on_color_or_font_changed_agent)
-				editor_preferences.keyword_text_color_preference.change_actions.prune_all (on_color_or_font_changed_agent)
-				editor_preferences.normal_text_color_preference.change_actions.prune_all (on_color_or_font_changed_agent)
-				editor_preferences.editor_font_preference.change_actions.prune_all (on_color_or_font_changed_agent)
-				preferences.class_browser_data.odd_row_background_color_preference.change_actions.prune_all (on_color_or_font_changed_agent)
-				preferences.class_browser_data.even_row_background_color_preference.change_actions.prune_all (on_color_or_font_changed_agent)
-			end
-			if on_scroll_behavior_changed_agent /= Void then
-				editor_preferences.mouse_wheel_scroll_full_page_preference.change_actions.prune_all (on_scroll_behavior_changed_agent)
-				editor_preferences.mouse_wheel_scroll_size_preference.change_actions.prune_all (on_scroll_behavior_changed_agent)
-				editor_preferences.scrolling_common_line_count_preference.change_actions.prune_all (on_scroll_behavior_changed_agent)
-			end
+			desynchronize_color_or_font_change_with_editor
+			desynchronize_scroll_behavior_with_editor
 		end
 
 	collapse_button_pressed_action: PROCEDURE [ANY, TUPLE] is
@@ -596,59 +508,17 @@ feature -- Recycle
 			result_attached: Result /= Void
 		end
 
-feature{NONE} -- Sorting
-
-	item_tester (a_item, b_item: EV_GRID_ITEM): BOOLEAN is
-			-- Tester to test if index of `a_item' is less than `b_item'
-		require
-			a_item_attached: a_item /= Void
-			a_item_is_parented: a_item.parent /= Void
-			b_item_attached: b_item /= Void
-			b_item_is_parented: b_item.parent /= Void
-		do
-			if a_item.row.index /= b_item.row.index then
-				Result := a_item.row.index < b_item.row.index
-			else
-				Result := a_item.column.index < b_item.column.index
-			end
-		end
-
-	sorted_items (a_item_list: LIST [EV_GRID_ITEM]): DS_LIST [EV_GRID_ITEM] is
-			-- Sorted items of `a_item_list'
-		require
-			a_item_list_attached: a_item_list /= Void
-		local
-			l_tester: AGENT_BASED_EQUALITY_TESTER [EV_GRID_ITEM]
-			l_sorter: DS_QUICK_SORTER [EV_GRID_ITEM]
-		do
-			create {DS_ARRAYED_LIST [EV_GRID_ITEM]}Result.make (a_item_list.count)
-			from
-				a_item_list.start
-			until
-				a_item_list.after
-			loop
-				Result.force_last (a_item_list.item)
-				a_item_list.forth
-			end
-			create l_tester.make (agent item_tester)
-			create l_sorter.make (l_tester)
-			l_sorter.sort (Result)
-		end
-
 feature{NONE} -- Implementation
+
+	default_row_height: INTEGER is
+			-- Default height to set grid rows.
+		do
+			Result := line_height.max (pixmap_height)
+				-- We make sure we give enough space to display the pixmap.
+		end
 
 	quick_search_bar: EB_GRID_QUICK_SEARCH_TOOL
 			-- Search bar used in browser
-
-	last_picked_item: EV_GRID_ITEM
-			-- Last picked item	
-
-	line_height: INTEGER is
-			-- Line height
-		do
-			Result := Precursor
-			Result := Result + Result // 5
-		end
 
 	drop_actions: EV_PND_ACTION_SEQUENCE
 			-- Actions performed when drop occurs on current view	
@@ -690,56 +560,6 @@ feature{NONE} -- Implementation
 	bind_grid is
 			-- Bind data in `rows' into `grid'.
 		deferred
-		end
-
-	row_depth (a_row: EV_GRID_ROW): INTEGER is
-			-- Tree depth of `a_row'.
-			-- Top level row has depth 0.
-		require
-			a_row_attached: a_row /= Void
-		local
-			l_parent_row: EV_GRID_ROW
-		do
-			from
-				l_parent_row := a_row.parent_row
-			until
-				l_parent_row = Void
-			loop
-				Result := Result + 1
-				l_parent_row := l_parent_row.parent_row
-			end
-		ensure
-			result_non_negative: Result >= 0
-		end
-
-	selected_text: STRING is
-			-- String representation of selected rows/items
-			-- If no row/item is selected, return an empty string.
-		deferred
-		ensure
-			result_attached: Result /= Void
-		end
-
-	tabs (n: INTEGER): STRING is
-			-- String representation of `n' tabs
-		require
-			n_non_negative: n >= 0
-		local
-			i: INTEGER
-		do
-			create Result.make (n)
-			if n > 0 then
-				from
-					i := 1
-				until
-					i > n
-				loop
-					Result.append_character ('%T')
-					i := i + 1
-				end
-			end
-		ensure
-			result_attached: Result /= Void
 		end
 
 	do_all_in_rows (a_row_list: LIST [EV_GRID_ROW]; a_agent: PROCEDURE [ANY, TUPLE [EV_GRID_ROW]]) is

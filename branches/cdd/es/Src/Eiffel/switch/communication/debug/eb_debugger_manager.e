@@ -51,6 +51,14 @@ feature {NONE} -- Initialization
 				objects_split_proportion := preferences.debug_tool_data.local_vs_object_proportion
 				debug_splitter_position := preferences.debug_tool_data.main_splitter_position
 
+				display_agent_details := preferences.debug_tool_data.display_agent_details
+				preferences.debug_tool_data.display_agent_details_preference.change_actions.extend (
+						agent (b: BOOLEAN_PREFERENCE)
+							do
+								display_agent_details := b.value
+							end
+					)
+
 				init_commands
 				create watch_tool_list.make
 			end
@@ -599,6 +607,7 @@ feature -- Status setting
 			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.prepare_for_debug)
 			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.request_update)
 
+
 				--| Threads Tool
 			if threads_tool = Void then
 				create threads_tool.make (debugging_window)
@@ -619,6 +628,9 @@ feature -- Status setting
 			debug ("DEBUGGER_INTERFACE")
 				io.put_string ("editor height: " + debugging_window.editor_tool.explorer_bar_item.widget.height.out + "%N")
 			end
+
+				-- Update the debugging tool
+			debugging_tools.update
 
 				-- Show Tools and final visual settings
 			debugging_window.show_tools
@@ -724,8 +736,8 @@ feature -- Status setting
 			debugging_window.left_panel.block
 			debugging_window.right_panel.block
 
-				-- Free and recycle tools
-			recycle_tools
+				-- Free and reset tools
+			reset_tools
 
 			debugging_window.right_panel.unblock
 			debugging_window.left_panel.unblock
@@ -752,6 +764,7 @@ feature -- Status setting
 				io.put_string ("editor height after debug: " + debugging_window.editor_tool.explorer_bar_item.widget.height.out + "%N")
 			end
 
+			assertion_checking_handler_cmd.reset
 			enable_debugging_commands
 
 			update_all_debugging_tools_menu
@@ -767,6 +780,16 @@ feature -- Status setting
 			call_stack_tool.recycle
 			objects_tool.recycle
 			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.recycle)
+			application.recycle
+		end
+
+	reset_tools is
+			-- Reset tools to free unused data
+		do
+			threads_tool.reset_tool
+			call_stack_tool.reset_tool
+			objects_tool.reset_tool
+			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.reset_tool)
 			application.recycle
 		end
 
@@ -1130,6 +1153,7 @@ feature -- Debugging events
 				into_cmd.enable_sensitive
 				out_cmd.disable_sensitive
 				set_critical_stack_depth_cmd.enable_sensitive
+				assertion_checking_handler_cmd.reset
 			end
 			debug ("debugger_trace_synchro")
 				io.put_string (generator + ".on_application_quit : done%N")
@@ -1214,6 +1238,10 @@ feature -- One time action
 			has_stopped_kamikaze_action: has_stopped_kamikaze_action
 			stopped_kamikaze_action_set: stopped_kamikaze_action.has (p)
 		end
+feature -- Options
+
+	display_agent_details: BOOLEAN
+			-- Do we display extra agent information ?
 
 feature {NONE} -- Implementation
 
@@ -1354,6 +1382,7 @@ feature {NONE} -- Implementation
 			toolbarable_commands.extend (Finalize_project_cmd)
 			run_finalized_cmd.enable_sensitive
 			toolbarable_commands.extend (run_finalized_cmd)
+			toolbarable_commands.extend (override_scan_cmd)
 
 				-- Disable commands if no project is loaded
 			if not Eiffel_project.manager.is_project_loaded then

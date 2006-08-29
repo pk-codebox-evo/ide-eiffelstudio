@@ -222,6 +222,8 @@ feature -- Target names and descriptions
 	group_renaming_description: STRING is "Renaming of classes in this group."
 	group_class_option_name: STRING is "Class Options"
 	group_class_option_description: STRING is "Class specific options."
+	group_eifgens_location_name: STRING is "EIFGENs location"
+	group_eifgens_location_description: STRING is "Directory where the EIFGENs folder is."
 	group_add_cluster: STRING is "Add Cluster"
 	group_add_subcluster: STRING is "Add Sub cluster"
 	group_add_override: STRING is "Add Override"
@@ -414,14 +416,14 @@ feature -- Create external dialog
 
 feature -- Create library dialog
 
-	dialog_create_library_title: STRING is "Add library"
+	dialog_create_library_title: STRING is "Add Library"
 	dialog_create_library_defaults: STRING is "Default libraries"
 	dialog_create_library_name: STRING is "Name"
 	dialog_create_library_location: STRING is "Location"
 
 feature -- Create precompile dialog
 
-	dialog_create_precompile_title: STRING is "Add precompile"
+	dialog_create_precompile_title: STRING is "Add Precompile"
 	dialog_create_precompile_defaults: STRING is "Default precompiles"
 	dialog_create_precompile_name: STRING is "Name"
 	dialog_create_precompile_location: STRING is "Location"
@@ -429,7 +431,7 @@ feature -- Create precompile dialog
 feature -- Create assembly dialog
 
 	dialog_create_assembly_found: STRING is "Assemblies"
-	dialog_create_assembly_title: STRING is "Add assembly"
+	dialog_create_assembly_title: STRING is "Add Assembly"
 	dialog_create_assembly_name: STRING is "Name"
 	dialog_create_assembly_location: STRING is "Location"
 	dialog_create_assembly_a_name: STRING is "Assembly Name"
@@ -439,13 +441,13 @@ feature -- Create assembly dialog
 
 feature -- Create cluster dialog
 
-	dialog_create_cluster_title: STRING is "Add cluster"
+	dialog_create_cluster_title: STRING is "Add Cluster"
 	dialog_create_cluster_name: STRING is "Name"
 	dialog_create_cluster_location: STRING is "Location"
 
 feature -- Create override dialog
 
-	dialog_create_override_title: STRING is "Add override cluster"
+	dialog_create_override_title: STRING is "Add Override Cluster"
 
 feature -- Class option dialog
 
@@ -479,6 +481,7 @@ feature -- Validation warnings
 	root_invalid_feature: STRING is "Root feature name is invalid."
 	cluster_dependency_group_not_exist: STRING is "Cannot add dependency. There is no group with this name."
 	override_group_not_exist: STRING is "Cannot add override. There is no group with this name."
+	invalid_group_name: STRING is "The name of the group is invalid."
 	group_already_exists (a_group: STRING): STRING is
 		require
 			a_group_not_void: a_group /= Void
@@ -525,9 +528,13 @@ feature -- Parse errors
 
 	e_parse_incorrect_target_parent (a_parent, a_target: STRING): STRING is
 		do
-			Result := "Missing parent target: "+a_parent+" in target"+a_target
+			Result := "Missing parent target: "+a_parent+" in target "+a_target
 		end
 	e_parse_incorrect_target_no_name: STRING is "Target without a name specified."
+	e_parse_incorrect_target_invalid_name (a_target: STRING): STRING is
+		do
+			Result := "Invalid target name "+a_target+"."
+		end
 
 	e_parse_incorrect_root_all: STRING is "Invalid value for all_classes attribute in root tag."
 	e_parse_incorrect_root: STRING is "Invalid root tag."

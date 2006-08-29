@@ -10,6 +10,16 @@ class
 
 feature
 
+	new_system_generate_uuid (a_name: STRING): CONF_SYSTEM is
+			-- Create a {CONF_SYSTEM} object with an automatically generated UUID.
+		require
+			a_name_ok: a_name /= Void and then not a_name.is_empty
+		do
+			create Result.make_with_uuid (a_name, uuid_generator.generate_uuid)
+		ensure
+			Result_not_void: Result /= Void
+		end
+
 	new_system (a_name: STRING an_uuid: UUID): CONF_SYSTEM is
 			-- Create a `CONF_SYSTEM' object.
 		require
@@ -235,14 +245,14 @@ feature
 			Result_not_void: Result /= Void
 		end
 
-	new_precompile (a_name: STRING; a_directory: STRING; a_target: CONF_TARGET): CONF_PRECOMPILE is
+	new_precompile (a_name: STRING; a_file: STRING; a_target: CONF_TARGET): CONF_PRECOMPILE is
 			-- Create a `CONF_PRECOMPILE' object.
 		require
 			a_name_ok: a_name /= Void and then not a_name.is_empty
-			a_directory_not_void: a_directory /= Void
+			a_file_not_void: a_file /= Void
 			a_target_not_void: a_target /= Void
 		do
-			create Result.make (a_name, new_location_from_full_path (a_directory, a_target), a_target)
+			create Result.make (a_name, new_location_from_full_path (a_file, a_target), a_target)
 		ensure
 			Result_not_void: Result /= Void
 		end
@@ -267,6 +277,14 @@ feature
 			a_target_not_void: a_target /= Void
 		do
 			create Result.make (a_name, a_directory, a_target)
+		ensure
+			Result_not_void: Result /= Void
+		end
+
+	uuid_generator: UUID_GENERATOR is
+			-- UUID generator.
+		once
+			create Result
 		ensure
 			Result_not_void: Result /= Void
 		end

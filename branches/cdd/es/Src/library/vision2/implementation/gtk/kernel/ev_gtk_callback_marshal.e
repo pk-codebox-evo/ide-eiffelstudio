@@ -50,6 +50,7 @@ feature {NONE} -- Initialization
 			-- Initialize callbacks
 		once
 			c_ev_gtk_callback_marshal_init (Current, $marshal)
+			c_ev_gtk_callback_marshal_set_is_enabled (True)
 		end
 
 feature {EV_ANY_IMP} -- Access
@@ -208,7 +209,8 @@ feature {EV_ANY_IMP}
 				a_key_string := a_cs.string
 			end
 			keyval := {EV_GTK_EXTERNALS}.gdk_event_key_struct_keyval (gdkeventkey)
-			if valid_gtk_code (keyval) then
+				-- Value may be zero for special extend keys (Play/Pause etc..)
+			if keyval > 0 and then valid_gtk_code (keyval) then
 				create key.make_with_code (key_code_from_gtk (keyval))
 			end
 			Result := key_tuple (key, a_key_string, a_key_press)
@@ -267,11 +269,13 @@ feature {EV_ANY_IMP} -- Agent implementation routines
 feature {EV_APPLICATION_IMP} -- Destruction
 
 	destroy is
-			-- Disconnect the
+			-- Destroy `Current'.
 		do
 			--c_ev_gtk_callback_marshal_destroy
 			is_destroyed := True
 		end
+
+feature -- Implementation
 
 feature {NONE} -- Implementation
 
@@ -356,6 +360,14 @@ feature {EV_GTK_CALLBACK_MARSHAL} -- Externals
 			-- See ev_gtk_callback_marshal.c
 		external
 			"C | %"ev_gtk_callback_marshal.h%""
+		end
+
+feature -- Implementation
+
+	frozen c_ev_gtk_callback_marshal_set_is_enabled (a_enabled_state: BOOLEAN) is
+			-- See ev_gtk_callback_marshal.c
+		external
+			"C signature (int) use %"ev_gtk_callback_marshal.h%""
 		end
 
 feature {EV_ANY_IMP, EV_GTK_CALLBACK_MARSHAL} -- Externals

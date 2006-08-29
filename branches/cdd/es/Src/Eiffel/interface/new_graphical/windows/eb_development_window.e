@@ -97,6 +97,15 @@ inherit
 			on_text_fully_loaded, on_cursor_moved
 		end
 
+	EB_CLUSTER_MANAGER_OBSERVER
+		rename
+			on_project_loaded as on_project_loaded_cluster,
+			on_project_unloaded as on_project_unloaded_cluster,
+			refresh as refresh_cluster
+		redefine
+			on_class_moved
+		end
+
 	EV_KEY_CONSTANTS
 		export
 			{NONE} All
@@ -249,6 +258,9 @@ feature {NONE} -- Initialization
 			end
 
 			window.move_actions.force_extend (agent window_moved)
+
+				-- Register us in the cluster observer
+			manager.extend (Current)
 
 			initialized := True
 			is_destroying := False
@@ -902,6 +914,9 @@ feature -- Pulldown Menus
 	compile_menu: EV_MENU
 			-- Compile ID menu.
 
+	refactoring_menu: EV_MENU
+			-- Refactoring menu.
+
 	debug_menu: EV_MENU
 			-- Debug ID menu.
 
@@ -999,6 +1014,7 @@ feature -- Update
 			build_project_menu
 			build_debug_menu
 			build_tools_menu
+			build_refactoring_menu
 			build_window_menu
 			build_help_menu
 				-- Build the menu bar.
@@ -1060,6 +1076,7 @@ feature -- Update
 				mb.extend (favorites_menu)
 				mb.extend (project_menu)
 				mb.extend (debug_menu)
+				mb.extend (refactoring_menu)
 			else
 				mb.extend (view_menu)
 			end
@@ -1765,6 +1782,11 @@ feature {NONE} -- Menu Building
 			add_recyclable (command_menu_item)
 			project_menu.extend (command_menu_item)
 
+				-- Override scan
+			command_menu_item := override_scan_cmd.new_menu_item
+			add_recyclable (command_menu_item)
+			project_menu.extend (command_menu_item)
+
 				-- Freeze
 			command_menu_item := Freeze_project_cmd.new_menu_item
 			add_recyclable (command_menu_item)
@@ -2012,6 +2034,40 @@ feature {NONE} -- Menu Building
 
 			rebuild_tools_menu
 		end
+
+	build_refactoring_menu is
+			-- Create and build `refactoring_menu'.
+		local
+			command_menu_item: EB_COMMAND_MENU_ITEM
+		do
+			create refactoring_menu.make_with_text (Interface_names.m_refactoring)
+
+				-- Pull up command.
+			command_menu_item := refactoring_manager.pull_command.new_menu_item
+			add_recyclable (command_menu_item)
+			refactoring_menu.extend (command_menu_item)
+
+				-- Rename command.
+			command_menu_item := refactoring_manager.rename_command.new_menu_item
+			add_recyclable (command_menu_item)
+			refactoring_menu.extend (command_menu_item)
+
+				-- Separator -------------------------------------------------
+			refactoring_menu.extend (create {EV_MENU_SEPARATOR})
+
+				-- Undo command.
+			command_menu_item := refactoring_manager.undo_command.new_menu_item
+			add_recyclable (command_menu_item)
+			refactoring_menu.extend (command_menu_item)
+
+				-- Redo command.
+			command_menu_item := refactoring_manager.redo_command.new_menu_item
+			add_recyclable (command_menu_item)
+			refactoring_menu.extend (command_menu_item)
+		ensure
+			refactoring_menu_created: refactoring_menu /= Void
+		end
+
 
 feature -- Stone process
 
@@ -4061,6 +4117,8 @@ feature -- Recycle
 			cluster_manager := Void
 			search_tool := Void
 			editors.wipe_out
+
+			manager.remove_observer (Current)
 		end
 
 	recycle_command is
@@ -4176,6 +4234,7 @@ feature -- Recycle
 			debugging_tools_menu.destroy
 			favorites_menu.destroy
 			view_menu.destroy
+			refactoring_menu.destroy
 
 			tools_menu := Void
 			window_menu := Void
@@ -4185,6 +4244,7 @@ feature -- Recycle
 			debugging_tools_menu := Void
 			favorites_menu := Void
 			view_menu := Void
+			refactoring_menu := Void
 		end
 
 
@@ -4719,6 +4779,19 @@ feature {NONE} -- Access
 
 	internal_development_window_data: EB_DEVELOPMENT_WINDOW_SESSION_DATA;
 		-- Internal custom meta data for `Current'.
+
+feature {NONE} -- Events
+
+	on_class_moved (a_class: CONF_CLASS; old_group: CONF_GROUP; old_path: STRING) is
+			-- A class was moved, check if we have to update `file_name'.
+		local
+			l_cs: CLASSI_STONE
+		do
+			l_cs ?= stone
+			if l_cs /= Void and then l_cs.class_i = a_class then
+				set_file_name_from_stone (l_cs)
+			end
+		end
 
 feature {NONE} -- Implementation
 

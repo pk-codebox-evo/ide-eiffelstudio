@@ -64,6 +64,12 @@ extern "C" {
 	RT_LNK void (*egc_arrmake)(EIF_REFERENCE, EIF_INTEGER, EIF_INTEGER);/* ARRAY creation feature */
 	RT_LNK void (*egc_routdisp)(EIF_REFERENCE, EIF_POINTER, EIF_POINTER, EIF_POINTER, EIF_INTEGER, EIF_INTEGER,
 							    EIF_REFERENCE, EIF_BOOLEAN, EIF_BOOLEAN, EIF_BOOLEAN, EIF_BOOLEAN, EIF_REFERENCE, EIF_INTEGER); 	/* ROUTINE `set_rout_disp' feature */
+#ifdef WORKBENCH
+	RT_LNK void (*egc_routdisp_wb)(EIF_REFERENCE, EIF_POINTER, EIF_POINTER, EIF_POINTER, EIF_INTEGER, EIF_INTEGER,
+		EIF_REFERENCE, EIF_BOOLEAN, EIF_BOOLEAN, EIF_BOOLEAN, EIF_BOOLEAN, EIF_REFERENCE, EIF_INTEGER); 	/* ROUTINE `set_rout_disp' feature */
+#else
+	RT_LNK void (*egc_routdisp_fl)(EIF_REFERENCE, EIF_POINTER, EIF_POINTER, EIF_POINTER, EIF_REFERENCE, EIF_BOOLEAN, EIF_INTEGER); /* ROUTINE `set_rout_disp_final' feature */
+#endif
 	RT_LNK void (*egc_correct_mismatch)(EIF_REFERENCE);	/* ANY `correct_mismatch' */
 	RT_LNK int egc_str_dtype;				/* Dynamic type for string */
 	RT_LNK int egc_arr_dtype;				/* Dynamic type for ARRAY[ANY] */
@@ -132,7 +138,7 @@ extern "C" {
 	RT_LNK fnptr *egc_frozen;			/* C routine array (frozen routines) */
 	RT_LNK int *egc_fpatidtab;			/* Table of pattern id's indexed by body id's */
 	RT_LNK struct eif_opt *egc_foption;	/* Frozen option table */
-	RT_LNK fnptr **egc_address_table;		/* Table of $ operator encapsulation functions */
+	RT_LNK fnptr *egc_address_table;		/* Table of $ operator encapsulation functions */
 	RT_LNK struct p_interface *egc_fpattern;
 
 	RT_LNK void (*egc_einit)(void);		/* System-dependent initializations, E1/einit.c */

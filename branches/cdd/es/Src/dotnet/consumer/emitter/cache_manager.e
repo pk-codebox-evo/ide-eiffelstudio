@@ -22,11 +22,7 @@ inherit
 			start
 		end
 
-	SAFE_ASSEMBLY_LOADER
-		export
-			{NONE} all
-			{ANY} release_cached_assemblies
-		end
+	SHARED_ASSEMBLY_LOADER
 
 	CACHE_MANAGER_ERRORS
 		export
@@ -70,7 +66,7 @@ feature -- Clean Up
 			-- resources should be able to be resurected.
 		do
 			cache_writer.dispose
-			release_cached_assemblies
+			assembly_loader.release_cached_data
 		end
 
 feature -- Access
@@ -90,18 +86,21 @@ feature -- Basic Oprtations
 			valid_name: not a_name.is_empty
 		local
 			l_assembly: ASSEMBLY
-			l_resolver: AR_RESOLVER
+			l_resolver: CONSUMER_AGUMENTED_RESOLVER
 		do
 			is_successful := True
 			last_error_message := ""
 
 			add_to_eac := True
-			l_assembly := load_assembly_from_full_name (fully_quantified_name (a_name, a_version, a_culture, a_key))
+			l_assembly := assembly_loader.load_from_full_name (fully_quantified_name (a_name, a_version, a_culture, a_key))
 			if l_assembly /= Void then
-				create l_resolver.make
+				create l_resolver.make (create {ARRAYED_LIST [STRING]}.make (0))
+				l_resolver.add_resolve_path ({RUNTIME_ENVIRONMENT}.get_runtime_directory)
 				l_resolver.add_resolve_path_from_file_name (l_assembly.location)
 				resolve_subscriber.subscribe ({APP_DOMAIN}.current_domain, l_resolver)
+				assembly_loader.set_resolver (l_resolver)
 				add_assembly_to_eac (l_assembly.location)
+				assembly_loader.set_resolver (Void)
 				resolve_subscriber.unsubscribe ({APP_DOMAIN}.current_domain, l_resolver)
 			end
 		ensure
@@ -124,6 +123,7 @@ feature -- Basic Oprtations
 
 			l_paths := a_path.split (';')
 			create l_resolver.make (l_paths)
+			l_resolver.add_resolve_path ({RUNTIME_ENVIRONMENT}.get_runtime_directory)
 			resolve_subscriber.subscribe ({APP_DOMAIN}.current_domain, l_resolver)
 
 			from
@@ -132,7 +132,9 @@ feature -- Basic Oprtations
 				l_paths.after
 			loop
 				l_resolver.add_resolve_path_from_file_name (l_paths.item)
+				assembly_loader.set_resolver (l_resolver)
 				add_assembly_to_eac (l_paths.item)
+				assembly_loader.set_resolver (Void)
 				l_resolver.remove_resolve_path_from_file_name (l_paths.item)
 				l_paths.forth
 			end
@@ -165,13 +167,13 @@ feature -- Basic Oprtations
 			l_ca: CONSUMED_ASSEMBLY
 			l_assembly: ASSEMBLY
 		do
-			l_assembly := load_assembly_from_path (a_path)
+			l_assembly := assembly_loader.load_from (a_path)
 			if l_assembly /= Void then
 				l_ca := cache_writer.consumed_assembly_from_path (l_assembly.location)
 			end
 			if l_ca = Void then
 					-- Try load assembly from GAC
-				l_assembly := load_from_gac_or_path (a_path)
+				l_assembly := assembly_loader.load_from_gac_or_path (a_path)
 				if l_assembly /= Void then
 					l_ca := cache_writer.consumed_assembly_from_path (l_assembly.location)
 				end
@@ -209,7 +211,7 @@ feature -- Basic Oprtations
 		local
 			l_assembly: ASSEMBLY
 		do
-			l_assembly := load_assembly_from_full_name (fully_quantified_name (a_name, a_version, a_culture, a_key))
+			l_assembly := assembly_loader.load_from_full_name (fully_quantified_name (a_name, a_version, a_culture, a_key))
 			if l_assembly /= Void then
 				Result := cache_writer.consumed_assembly_from_path (l_assembly.location)
 			end
@@ -222,15 +224,19 @@ feature {NONE} -- Basic Operations
 		require
 			non_void_name: a_name /= Void
 			valid_name: not a_name.is_empty
+		local
+			l_culture: STRING
 		do
 			Result := a_name.twin
 			if a_version /= Void and not a_version.is_empty then
 				Result.append (", Version=" + a_version)
 				if a_culture /= Void and not a_culture.is_empty then
-					Result.append (", Culture=" + a_culture)
-					if a_key /= Void and not a_key.is_empty then
-						Result.append (", PublicKeyToken=" + a_key)
+					if not a_culture.is_case_insensitive_equal (neutral_culture) then
+						Result.append (", Culture=" + a_culture)
 					end
+				end
+				if a_key /= Void and not a_key.is_empty then
+					Result.append (", PublicKeyToken=" + a_key)
 				end
 			end
 		ensure
@@ -245,6 +251,10 @@ feature {NONE} -- Internal Agents
 		do
 			--| no code!
 		end
+
+feature {NONE} -- Constants
+
+	neutral_culture: STRING = "neutral"
 
 invariant
 	cache_writer_not_void: cache_writer /= Void

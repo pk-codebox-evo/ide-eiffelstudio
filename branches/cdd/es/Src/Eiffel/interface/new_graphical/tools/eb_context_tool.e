@@ -136,7 +136,7 @@ feature {NONE} -- Initialization
 			end
 			notebook.set_tab_position (notebook.tab_bottom)
 			notebook.selection_actions.extend (agent on_tab_changed)
-			notebook.set_minimum_size (500, 200)
+			notebook.set_minimum_size (400, 50)
 
 			class_view.set_parent_notebook (notebook)
 			feature_view.set_parent_notebook (notebook)
@@ -409,6 +409,16 @@ feature -- Memory management
 			-- so that we know whether we're still referenced or not.
 		do
 			Precursor {EB_HISTORY_OWNER}
+
+				-- Clear notebook event handling so that no side affects occur
+				-- due to removing items.  Destruction of notebook occurs at the
+				-- end of the recycling phase as it needs to be accessed later on
+				-- for querying.
+			notebook.selection_actions.block
+			notebook.selection_actions.wipe_out
+			notebook.drop_actions.wipe_out
+			notebook.drop_actions.set_veto_pebble_function (Void)
+
 				-- Recycle the views
 			output_view.recycle
 			output_view := Void
@@ -440,10 +450,8 @@ feature -- Memory management
 				explorer_bar_item.recycle
 				explorer_bar_item := Void
 			end
-			notebook.selection_actions.block
-			notebook.selection_actions.wipe_out
-			notebook.drop_actions.wipe_out
-			notebook.drop_actions.set_veto_pebble_function (Void)
+				-- Destruction of notebook has to occur at the end as it needs to be
+				-- accessed during the recycling of previous items of `Current'.
 			notebook.destroy
 			notebook := Void
 			manager := Void
@@ -456,17 +464,19 @@ feature -- Stone management
 		local
 			conv_dev: EB_DEVELOPMENT_WINDOW
 		do
-			conv_dev ?= manager
-			if conv_dev /= Void then
-				if conv_dev.unified_stone then
-					sending_stone := True
-					conv_dev.set_stone (st)
-					sending_stone := False
-				else
-					set_stone (st)
+			if st.is_valid then
+				conv_dev ?= manager
+				if conv_dev /= Void then
+					if conv_dev.unified_stone then
+						sending_stone := True
+						conv_dev.set_stone (st)
+						sending_stone := False
+					else
+						set_stone (st)
+					end
 				end
+				set_focus
 			end
-			set_focus
 		end
 
 	stone: STONE

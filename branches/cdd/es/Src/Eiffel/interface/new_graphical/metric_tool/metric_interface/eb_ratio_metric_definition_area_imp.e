@@ -50,7 +50,7 @@ feature {NONE}-- Initialization
 			create l_ev_cell_3
 			create expression_text
 			
-				-- Build_widget_structure.
+				-- Build widget structure.
 			extend (definition_frame)
 			definition_frame.extend (l_ev_vertical_box_1)
 			l_ev_vertical_box_1.extend (numerator_area)
@@ -88,18 +88,17 @@ feature {NONE}-- Initialization
 			create pixmap_constant_retrieval_functions.make (10)
 			create color_constant_set_procedures.make (10)
 			create color_constant_retrieval_functions.make (10)
-			
-			l_ev_vertical_box_1.set_padding_width (10)
+			l_ev_vertical_box_1.set_padding (10)
 			l_ev_vertical_box_1.set_border_width (5)
 			l_ev_vertical_box_1.disable_item_expand (numerator_area)
 			l_ev_vertical_box_1.disable_item_expand (denominator_area)
-			numerator_area.set_padding_width (3)
+			numerator_area.set_padding (3)
 			numerator_area.disable_item_expand (numerator_lbl)
 			numerator_area.disable_item_expand (l_ev_frame_1)
 			numerator_area.disable_item_expand (l_ev_cell_1)
 			numerator_area.disable_item_expand (numerator_target_pixmap)
 			numerator_lbl.set_text ("Numerator Metric:")
-			numerator_lbl.set_minimum_width (100)
+			numerator_lbl.set_minimum_width (125)
 			numerator_lbl.align_text_left
 			l_ev_frame_1.set_style (1)
 			l_ev_horizontal_box_1.disable_item_expand (numerator_text)
@@ -109,13 +108,13 @@ feature {NONE}-- Initialization
 			l_ev_cell_1.set_minimum_width (5)
 			numerator_target_pixmap.set_minimum_width (16)
 			numerator_target_pixmap.set_minimum_height (16)
-			denominator_area.set_padding_width (3)
+			denominator_area.set_padding (3)
 			denominator_area.disable_item_expand (denominator_lbl)
 			denominator_area.disable_item_expand (l_ev_frame_2)
 			denominator_area.disable_item_expand (l_ev_cell_2)
 			denominator_area.disable_item_expand (denominator_target_pixmap)
 			denominator_lbl.set_text ("Denominator Metric:")
-			denominator_lbl.set_minimum_width (100)
+			denominator_lbl.set_minimum_width (125)
 			denominator_lbl.align_text_left
 			l_ev_frame_2.set_style (1)
 			l_ev_horizontal_box_2.disable_item_expand (denominator_text)
@@ -125,7 +124,7 @@ feature {NONE}-- Initialization
 			l_ev_cell_2.set_minimum_width (5)
 			denominator_target_pixmap.set_minimum_width (16)
 			denominator_target_pixmap.set_minimum_height (16)
-			expression_area.set_padding_width (3)
+			expression_area.set_padding (3)
 			expression_area.disable_item_expand (l_ev_horizontal_box_3)
 			expression_area.disable_item_expand (expression_text)
 			expression_lbl.set_text ("Expression:")
@@ -133,13 +132,13 @@ feature {NONE}-- Initialization
 			expression_text.set_minimum_width (35)
 			expression_text.set_minimum_height (35)
 			expression_text.disable_edit
-			set_padding_width (10)
+			set_padding (10)
 			disable_item_expand (definition_frame)
 			disable_item_expand (expression_area)
 			
 			set_all_attributes_using_constants
 			
-				--Connect events.
+				-- Connect events.
 				-- Close the application when an interface close
 				-- request is recieved on `Current'. i.e. the cross is clicked.
 
@@ -183,7 +182,7 @@ feature {NONE} -- Implementation
 			-- Feature for custom initialization, called at end of `initialize'.
 		deferred
 		end
-		
+	
 feature {NONE} -- Constant setting
 
 	set_attributes_using_string_constants is

@@ -68,17 +68,33 @@ inherit
 			default_create
 		end
 
+	EB_RECYCLABLE
+		undefine
+			is_equal,
+			copy,
+			default_create
+		end
+
+	SHARED_EDITOR_DATA
+		undefine
+			is_equal,
+			copy,
+			default_create
+		end
+
 create
 	make
 
 feature {NONE} -- Initialization
 
-	make (a_tool: like metric_tool) is
+	make (a_tool: like metric_tool; a_panel: like metric_panel) is
 			-- Initialize `metric_tool' with `a_tool'.
 		require
 			a_tool_attached: a_tool /= Void
+			a_panel_attached: a_panel /= Void
 		do
 			metric_tool := a_tool
+			metric_panel := a_panel
 			default_create
 
 			create content.make (2)
@@ -86,6 +102,7 @@ feature {NONE} -- Initialization
 			content.extend (create {HASH_TABLE [EV_GRID_ITEM, INTEGER]}.make (100))
 		ensure
 			metric_tool_attached: metric_tool = a_tool
+			metric_panel_attached: metric_panel /= Void
 			content_attached: content /= Void
 		end
 
@@ -109,16 +126,20 @@ feature {NONE} -- Initialization
 
 				-- Setup sortable `result_grid'.
 			create result_grid
-			result_grid.enable_single_row_selection
+			result_grid.enable_multiple_item_selection
 			result_grid.enable_selection_on_single_button_click
 			result_grid.set_column_count_to (2)
 			result_grid.column (2).set_title (displayed_name (metric_names.t_path))
-			result_grid.pick_ended_actions.force_extend (agent on_pick_ended)
-			result_grid.set_item_pebble_function (agent on_pick)
 			result_grid.set_row_count_to (100)
 			result_grid.enable_partial_dynamic_content
 			result_grid.set_dynamic_content_function (agent item_function)
 
+				-- Setup `editor_token_grid_support'.
+			create editor_token_grid_support.make_with_grid (result_grid)
+			editor_token_grid_support.enable_editor_token_pnd
+			editor_token_grid_support.color_or_font_change_actions.extend (agent on_color_or_font_changed)
+			editor_token_grid_support.synchronize_color_or_font_change_with_editor
+			editor_token_grid_support.synchronize_scroll_behavior_with_editor
 
 			create grid_wrapper.make (result_grid)
 			create l_item_sort_info.make (agent item_order_tester, ascending_order)
@@ -133,14 +154,24 @@ feature {NONE} -- Initialization
 			grid_wrapper.set_ensure_visible_action (agent ensure_visible_action)
 			result_grid_area.extend (grid_wrapper.component_widget)
 			result_lable.set_text (metric_names.t_result)
-			input_lbl.set_text (metric_names.t_input_domain)
+			input_lbl.set_text (metric_names.t_input_domain_title)
 
 				-- Prepare search facilities
 			create quick_search_bar.make (metric_tool.development_window)
 			quick_search_bar.attach_tool (grid_wrapper)
 			grid_wrapper.enable_search
+
+				-- Setup copy & paste function.
+			grid_wrapper.set_item_text_function (agent text_of_grid_item)
+			grid_wrapper.set_select_all_action (agent select_all_action)
+			grid_wrapper.enable_copy
+
+			result_grid.drop_actions.extend (agent metric_panel.drop_cluster)
+			result_grid.drop_actions.extend (agent metric_panel.drop_class)
+			result_grid.drop_actions.extend (agent metric_panel.drop_feature)
 		ensure then
 			input_grid_attached: input_grid /= Void
+			editor_token_grid_support_attached: editor_token_grid_support /= Void
 		end
 
 feature -- Result loading
@@ -161,13 +192,20 @@ feature -- Result loading
 			-- Load basic information of `a_metric'.
 		require
 			a_metric_attached: a_metric /= Void
+		local
+			l_tooltip: STRING
 		do
 			metric_name_text.set_text (a_metric.name)
+			l_tooltip := metric_tooltip (a_metric, True)
+			if not l_tooltip.is_empty then
+				metric_name_text.set_tooltip (l_tooltip)
+			end
+			metric_name_text.pointer_double_press_actions.extend (agent on_pointer_double_click_on_metric_name_text)
 			type_name_text.set_text (displayed_name (name_of_metric_type (metric_type_id (a_metric))))
 			type_pixmap.copy (pixmap_from_metric_type (metric_type_id (a_metric)))
 			unit_name_text.set_text (displayed_name (a_metric.unit.name))
 			unit_pixmap.copy (pixmap_from_unit (a_metric.unit))
-			value_text.set_text (a_value.out)
+			value_text.set_text (metric_value (a_value, False))
 		end
 
 	load_input_information (a_input: EB_METRIC_DOMAIN) is
@@ -197,6 +235,21 @@ feature -- Result loading
 			end
 		end
 
+	refresh_grid is
+			-- Refresh grid.
+		do
+			content.i_th (1).wipe_out
+			content.i_th (2).wipe_out
+			if result_grid.row_count > 0 then
+				result_grid.remove_rows (1, result_grid.row_count)
+			end
+			if domain /= Void then
+				result_grid.set_row_count_to (domain.count)
+			end
+			result_grid.refresh_now
+		end
+
+
 feature{NONE} -- Implementation/Access
 
 	input_grid: ES_GRID
@@ -213,6 +266,9 @@ feature{NONE} -- Implementation/Access
 
 	domain: DS_ARRAYED_LIST [EB_METRIC_RESULT_ROW]
 			-- Domain to be displayed in Current
+
+	metric_panel: EB_METRIC_PANEL
+			-- Metric panel to which current is attached
 
 feature{NONE} -- Implementation/Basic operation
 
@@ -247,26 +303,9 @@ feature{NONE} -- Implementation/Basic operation
 			end
 			result_grid.column (1).set_width (300)
 			refresh_grid
-			if result_grid.item (2, 16) = Void then
-				io.put_string ("Void%N")
-			end
 		end
 
 feature{NONE} -- Implementation/Sorting
-
-	refresh_grid is
-			-- Refresh grid.
-		do
-			content.i_th (1).wipe_out
-			content.i_th (2).wipe_out
-			if result_grid.row_count > 0 then
-				result_grid.remove_rows (1, result_grid.row_count)
-			end
-			if domain /= Void then
-				result_grid.set_row_count_to (domain.count)
-			end
-			result_grid.refresh_now
-		end
 
 	sort_agent (a_column_list: LIST [INTEGER]; a_comparator: AGENT_LIST_COMPARATOR [EB_METRIC_RESULT_ROW]) is
 			-- Action to be performed when sort `a_column_list' using `a_comparator'.
@@ -532,55 +571,83 @@ feature{NONE} -- Implementation
 			end
 		end
 
-feature{NONE} -- Implementation/Pick and drop
+	editor_token_grid_support: EB_EDITOR_TOKEN_GRID_SUPPORT
+			-- Supports editor token grid
 
-	last_picked_item: EV_GRID_ITEM
-			-- Last picked item	
-
-	on_pick_ended (a_item: EV_ABSTRACT_PICK_AND_DROPABLE) is
-			-- Action performed when pick ends
+	text_of_grid_item (a_item: EV_GRID_ITEM): STRING is
+			-- Text of `a_item'		
 		local
-			l_item: EB_GRID_EDITOR_TOKEN_ITEM
+			l_item: EB_METRIC_GRID_RESULT_ITEM
 		do
-			l_item ?= last_picked_item
-			if l_item /= Void then
-				l_item.set_last_picked_token (0)
-				if l_item.is_parented and then l_item.is_selectable then
-					l_item.enable_select
-				end
-				if l_item.is_parented then
-					l_item.redraw
-				end
-			end
-			last_picked_item := Void
-		ensure
-			last_picked_item_not_attached: last_picked_item = Void
-		end
-
-	on_pick (a_item: EV_GRID_ITEM): ANY is
-			-- Action performed when pick on `a_item'.
-		local
-			l_item: EB_GRID_EDITOR_TOKEN_ITEM
-			l_stone: STONE
-			l_index: INTEGER
-		do
-			last_picked_item := Void
 			l_item ?= a_item
 			if l_item /= Void then
-				l_index := l_item.token_index_at_current_position
-				if l_index > 0 then
-					Result := l_item.editor_token_pebble (l_index)
-					l_stone ?= Result
-					if l_stone /= Void then
-						result_grid.remove_selection
-						result_grid.set_accept_cursor (l_stone.stone_cursor)
-						result_grid.set_deny_cursor (l_stone.x_stone_cursor)
-						l_item.set_last_picked_token (l_index)
-						l_item.redraw
-						last_picked_item := l_item
-					end
+				Result := l_item.image
+			end
+		end
+
+	select_all_action is
+			-- Action to be performed to select all items in `result_grid'					
+		local
+			l_row_index: INTEGER
+			l_row_count: INTEGER
+			l_grid: like result_grid
+			l_row: EV_GRID_ROW
+		do
+			l_grid := result_grid
+			from
+				l_row_index := 1
+				l_row_count := l_grid.row_count
+			until
+				l_row_index > l_row_count
+			loop
+				l_row := l_grid.row (l_row_index)
+				if l_row.item (1) = Void then
+					l_row.set_item (1, item_function (1, l_row_index))
+				end
+				if l_row.item (2) = Void then
+					l_row.set_item (2, item_function (2, l_row_index))
+				end
+				l_grid.select_row (l_row_index)
+				l_row_index := l_row_index + 1
+			end
+		end
+
+feature{NONE} -- Implementation
+
+	on_color_or_font_changed is
+			-- Action to be performed when color or font used to display editor tokens changes
+		do
+			if result_grid.is_displayed then
+				refresh_grid
+			end
+		end
+
+	on_pointer_double_click_on_metric_name_text (a_x, a_y, a_button: INTEGER; a_x_tilt, a_y_tilt, a_pressure: DOUBLE; a_screen_x, a_screen_y: INTEGER) is
+			-- Action to be performed when pointer double clicks on `metric_name_text'
+		local
+			l_metric: EB_METRIC
+			l_metric_name: STRING
+		do
+			if a_button = 1 then
+				l_metric_name := metric_name_text.text
+				if metric_manager.has_metric (l_metric_name) then
+					l_metric := metric_manager.metric_with_name (l_metric_name)
+					metric_tool.go_to_definition (l_metric, False)
 				end
 			end
+		end
+
+feature -- Recycle
+
+	recycle is
+			-- To be called when the button has became useless.
+		do
+			if quick_search_bar /= Void then
+				quick_search_bar.recycle
+			end
+			quick_search_bar := Void
+			editor_token_grid_support.desynchronize_color_or_font_change_with_editor
+			editor_token_grid_support.desynchronize_scroll_behavior_with_editor
 		end
 
 invariant
@@ -589,6 +656,8 @@ invariant
 	input_grid_attached: input_grid /= Void
 	result_grid_attached: result_grid /= Void
 	grid_wrapper_attached: grid_wrapper /= Void
+	editor_token_grid_support_attached: editor_token_grid_support /= Void
+	metric_panel_attached: metric_panel /= Void
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

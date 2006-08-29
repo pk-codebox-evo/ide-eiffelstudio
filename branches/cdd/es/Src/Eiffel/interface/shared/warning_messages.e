@@ -118,6 +118,10 @@ feature -- Project file/directory warnings
 			Result.append (".%N")
 		end
 
+	w_project_build_precompile: STRING is "Project needs a precompile, should the precompile be built?"
+
+	w_project_build_precompile_error: STRING is "Could not generated needed precompile."
+
 	w_Project_interrupted (dir_name: STRING): STRING is
 		require
 			dir_name_not_void: dir_name /= Void
@@ -522,9 +526,10 @@ feature -- Cluster tree warnings
 				Result.append (class_name)
 				Result.append ("' is not a valid class name.%N")
 			end
-			Result.append ("Class names should only include%N%
-						%alphanumeric characters or underscores,%N%
-						%and start with an alphabetic character.%N%
+			Result.append ("Class names may only include%N%
+						%alphanumeric characters and underscores,%N%
+						%have to start with an alphabetic character%N%
+						%and cannot be a reserved word.%N%
 						%Please select a different class name.")
 		end
 
@@ -540,9 +545,10 @@ feature -- Cluster tree warnings
 				Result.append (cluster_name)
 				Result.append ("' is not a valid cluster name.%N")
 			end
-			Result.append ("Cluster names should only include %N%
-						%alphanumeric characters or underscores,%N%
-						%and start with an alphabetic character.%N%
+			Result.append ("Cluster names may only include %N%
+						%alphanumeric characters and underscores,%N%
+						%have to start with an alphabetic character%N%
+						%and cannot be a reserved word.%N%
 						%Please select a different cluster name.")
 		end
 
@@ -558,9 +564,10 @@ feature -- Cluster tree warnings
 				Result.append (feature_name)
 				Result.append ("' is not a valid feature name.%N")
 			end
-			Result.append ("Feature names should only include %N%
-						%alphanumeric characters or underscores,%N%
-						%and start with an alphabetic character.%N%
+			Result.append ("Feature names may only include %N%
+						%alphanumeric characters and underscores,%N%
+						%have to start with an alphabetic character%N%
+						%and cannot be a reserved word.%N%
 						%Please select a different feature name.")
 		end
 
@@ -863,8 +870,8 @@ feature -- Project creation, retrieval, ...
 feature -- Refactoring
 
 	w_Feature_not_written_in_class: STRING is "Feature is not written in selected class."
-	w_Select_class_feature_to_rename: STRING is "Select class or feature to rename."
-	w_Select_feature_to_pull: STRING is "Select a feature to pull up."
+	w_Select_class_feature_to_rename: STRING is "Select class or feature to rename.%NEither use pick and drop or target the editor to the feature or class."
+	w_Select_feature_to_pull: STRING is "Select a feature to pull up.%NEither use pick and drop or target the editor to the featur to pull up."
 
 feature -- Warning messages
 

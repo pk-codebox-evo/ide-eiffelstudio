@@ -38,15 +38,18 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_tool: like metric_tool) is
+	make (a_tool: like metric_tool; a_panel: like metric_panel) is
 			-- Initialize `metric_tool' with `a_tool'.
 		require
 			a_tool_attached: a_tool /= Void
+			a_panel_attached: a_panel /= Void
 		do
 			metric_tool := a_tool
+			metric_panel := a_panel
 			default_create
 		ensure
 			metric_tool_attached: metric_tool = a_tool
+			metric_panel_set: metric_panel = a_panel
 		end
 
 	user_initialization is
@@ -72,6 +75,7 @@ feature {NONE} -- Initialization
 			result_grid.column (4).set_title (displayed_name (metric_names.t_value_of_current))
 			result_grid.column (5).set_title (displayed_name (metric_names.t_difference))
 			result_grid.column (6).set_title (displayed_name (metric_names.t_ratio))
+			result_grid.enable_multiple_row_selection
 
 				-- Setup sortable wrapper.
 			create grid_wrapper.make (result_grid)
@@ -89,9 +93,18 @@ feature {NONE} -- Initialization
 			grid_wrapper.set_sort_info (6, l_ratio_sort_info)
 			grid_wrapper.set_sort_action (agent sort_agent)
 			grid_wrapper.enable_auto_sort_order_change
+			grid_wrapper.set_item_text_function (agent text_of_grid_item)
+			grid_wrapper.enable_copy
 			grid_area.extend (grid_wrapper.component_widget)
 			title_lbl.set_text (metric_names.t_archive_comparison_result)
-			result_grid.enable_single_row_selection
+
+			result_grid.drop_actions.extend (agent metric_panel.drop_cluster)
+			result_grid.drop_actions.extend (agent metric_panel.drop_class)
+			result_grid.drop_actions.extend (agent metric_panel.drop_feature)
+
+			drop_actions.extend (agent metric_panel.drop_cluster)
+			drop_actions.extend (agent metric_panel.drop_class)
+			drop_actions.extend (agent metric_panel.drop_feature)
 		end
 
 feature -- Load archive
@@ -299,6 +312,9 @@ feature -- Access
 	metric_tool: EB_METRIC_TOOL
 			-- Metric tool
 
+	metric_panel: EB_METRIC_PANEL
+			-- Metric panel to which current is attached			
+
 feature {NONE} -- Implementation/Sorting
 
 	metric_name_tester (a_item, b_item: EB_METRIC_ARCHIVE_RESULT_ROW; a_order: INTEGER): BOOLEAN is
@@ -456,9 +472,21 @@ feature {NONE} -- Implementation
 			result_attached: Result /= Void
 		end
 
+	text_of_grid_item (a_item: EV_GRID_ITEM): STRING is
+			-- Text of `a_item'		
+		local
+			l_label_item: EV_GRID_LABEL_ITEM
+		do
+			l_label_item ?= a_item
+			if l_label_item /= Void then
+				Result := l_label_item.text
+			end
+		end
+
 invariant
 	result_grid_attached: result_grid /= Void
 	grid_wrapper_attached: grid_wrapper /= Void
+	metric_panel_attached: metric_panel /= Void
 
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"
