@@ -99,7 +99,7 @@ feature {CDD_OBJECT} -- Testcase generation
 	append_regular_creation (an_object: CDD_REGULAR_OBJECT) is
 			--
 		do
-			append_instruction (an_object.identifier + " ?= build (%"" +an_object.type + "%")")
+			append_instruction (an_object.identifier + " ?= build_object (%"" +an_object.type + "%")")
 		end
 
 
@@ -110,6 +110,7 @@ feature {CDD_OBJECT} -- Testcase generation
 			a_key: STRING
 			a_value: CDD_OBJECT
 		do
+			append_instruction ("create attributes.make (" + an_object.attributes.count.out + ")")
 			from
 				an_object.attributes.start
 			until
@@ -117,11 +118,12 @@ feature {CDD_OBJECT} -- Testcase generation
 			loop
 				a_key := an_object.attributes.key_for_iteration
 				a_value := an_object.attributes.item_for_iteration
-				instr := "set_attr (" + an_object.identifier + ", %""
-				instr.append (a_key + "%", " + a_value.identifier + ")")
+				instr := "attributes.put (" + a_value.identifier + ", %""
+				instr.append (a_key + "%")")
 				append_instruction (instr)
 				an_object.attributes.forth
 			end
+			append_instruction ("set_attributes (" + an_object.identifier + ")")
 		end
 
 	append_string_creation (a_string: CDD_STRING_OBJECT) is
@@ -220,13 +222,13 @@ feature {NONE} -- Implementation
 	append_indexing (cluster_name, class_name, feature_name: STRING) is
 		do
 			append_text ("indexing%N")
-			append_text ("description: %"Objects used for running tests%"%N")
-			append_text ("cluster: %"" + cluster_name + "%"%N")
-			append_text ("class: %"" + class_name + "%"%N")
-			append_text ("feature: %"" + feature_name + "%"%N")
-			append_text ("author: %"CDD_TEST_CASE_PRINTER%"%N")
-			append_text ("date: %"$Date$%"%N")
-			append_text ("revision: %"$Revision$%"%N%N")
+			append_text ("%Tdescription: %"Objects used for running tests%"%N")
+			append_text ("%Tcdd_cluster: %"" + cluster_name + "%"%N")
+			append_text ("%Tcdd_class: %"" + class_name + "%"%N")
+			append_text ("%Tcdd_feature: %"" + feature_name + "%"%N")
+			append_text ("%Tauthor: %"CDD_TEST_CASE_PRINTER%"%N")
+			append_text ("%Tdate: %"$Date$%"%N")
+			append_text ("%Trevision: %"$Revision$%"%N%N")
 		end
 
 

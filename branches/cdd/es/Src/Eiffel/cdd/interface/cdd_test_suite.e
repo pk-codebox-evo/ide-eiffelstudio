@@ -118,17 +118,17 @@ feature -- Status change
 			if cluster = Void then
 				manager.add_cluster (cluster_name, Void, cdd_path)
 				cluster := manager.last_added_cluster
+				if not cluster.is_recursive then
+					cluster.set_recursive (True)
+				end
+				eiffel_universe.conf_system.store
+				melt_project_cmd.execute_and_wait
 			end
-			if not cluster.is_recursive then
-				cluster.set_recursive (True)
-			end
-			eiffel_universe.conf_system.store
 
 
 				-- TODO: create target for testing
 
 				-- compile the project
-			melt_project_cmd.execute_and_wait
 
 				-- notify observers
 			on_enable_testing.do_all (agent notify_test_suite_status)
@@ -141,7 +141,6 @@ feature -- Status change
 		do
 			on_disable_testing.do_all (agent notify_test_suite_status)
 		end
-
 
 
 feature -- Element change
@@ -193,7 +192,7 @@ feature {EB_CLUSTERS} -- Project Events
 			 -- check if testing was enabled before
 			l_system := eiffel_universe.conf_system
 			if eiffel_universe.cluster_of_name (cluster_name) /= Void and can_enable_testing then
-				enable_testing
+				-- enable_testing
 				-- parse_test_cases
 			else
 				is_testing_enabled := False

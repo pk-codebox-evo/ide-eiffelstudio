@@ -77,30 +77,30 @@ feature {NONE} -- Test case generation
 		require
 			valid_reflection: reflection /= Void and reflection.reflection_succeded
 		local
-			dclass: CLASS_C
-			part, new_class_name, path: STRING
+			l_class_c: CLASS_C
+			l_file_name: FILE_NAME
+			l_file: PLAIN_TEXT_FILE
+			l_new_class_name: STRING
 			i: INTEGER
-			file: PLAIN_TEXT_FILE
-			l_class_i: CLASS_I
 		do
-			dclass := reflection.root_object.dynamic_class
-			part := "cdd_test_" + dclass.name.as_lower + "_"
+			l_class_c := reflection.root_object.dynamic_class
+			l_new_class_name := "cdd_test_" + l_class_c.name.as_lower + "_"
 			from
 				i := 0
 			until
-				i > 0 and then not file.exists
+				i > 0 and then not l_file.exists
 			loop
 				i := i + 1
-				new_class_name := part + i.out
-				path := a_test_suite.test_cases_path + "/" + new_class_name + ".e"
-				create file.make (path)
+				create l_file_name.make_from_string (a_test_suite.test_cases_path)
+				l_file_name.set_file_name (l_new_class_name + i.out + ".e")
+				create l_file.make (l_file_name)
 			end
 
-			file.open_write
+			l_file.open_write
+			l_new_class_name.append_integer (i)
 
-			new_class_name.to_upper
-			printer.print_test_case (reflection, new_class_name, file)
-			manager.add_class_to_cluster (new_class_name, a_test_suite.cluster, "tests/" + file.name)
+			printer.print_test_case (reflection, l_new_class_name.as_upper, l_file)
+			manager.add_class_to_cluster (l_new_class_name + ".e", a_test_suite.cluster, "tests")
 			test_class := manager.last_added_class
 		end
 
