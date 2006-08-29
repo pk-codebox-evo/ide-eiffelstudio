@@ -19,7 +19,28 @@ inherit
 			default_create
 		end
 
-feature {NONE} -- Initialization
+	EB_METRIC_TOOL_INTERFACE
+		undefine
+			is_equal,
+			copy,
+			default_create
+		end
+
+create
+	make
+
+feature{NONE} -- Initialization
+
+	make (a_tool: like metric_tool) is
+			-- Initialize `metric_tool' with `a_tool'.
+		require
+			a_tool_attached: a_tool /= Void
+		do
+			set_metric_tool (a_tool)
+			default_create
+		ensure
+			metric_tool_set: metric_tool = a_tool
+		end
 
 	user_initialization is
 			-- Called by `initialize'.
@@ -34,6 +55,7 @@ feature {NONE} -- Initialization
 			status_text.disable_edit
 			status_text.set_background_color (l_text.background_color)
 			status_lbl.set_text (metric_names.t_status)
+			attach_non_editable_warning_to_text (metric_names.t_text_not_editable, status_text, metric_tool_window)
 		end
 
 feature {NONE} -- Implementation
