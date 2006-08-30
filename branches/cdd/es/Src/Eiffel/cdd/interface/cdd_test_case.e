@@ -27,6 +27,9 @@ feature {NONE} -- Initialization
 			e_feature := a_feature
 			test_class := a_test_class
 			file_name := test_class.file_name
+			create on_start_testing.make (5)
+			create on_pass.make (5)
+			create on_failure.make (5)
 		end
 
 
@@ -46,6 +49,46 @@ feature -- Access
 	test_class: CLASS_I
 
 	file_name: STRING
+
+	is_testing: BOOLEAN
+		-- is test case running?
+
+	passes: BOOLEAN
+		-- did test case pass last execution?
+
+feature -- Status seeting
+
+	set_start_testing is
+			--
+		require
+			not_testing: not is_testing
+		do
+			from
+				is_testing := True
+				on_start_testing.start
+			until
+				on_start_testing.after
+			loop
+				on_start_testing.item.call ([])
+				on_start_testing.forth
+			end
+		end
+
+	set_test_result (a_result: BOOLEAN) is
+			--
+		do
+			
+		end
+
+
+
+feature -- Event handling
+
+	on_start_testing: ARRAYED_LIST [PROCEDURE [ANY, TUPLE]]
+
+	on_pass: ARRAYED_LIST [PROCEDURE [ANY, TUPLE]]
+
+	on_failure: ARRAYED_LIST [PROCEDURE [ANY, TUPLE]]
 
 
 feature -- Compare

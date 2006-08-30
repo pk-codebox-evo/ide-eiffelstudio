@@ -42,6 +42,7 @@ feature {EB_DEBUGGER_MANAGER} -- Status report
 		do
 			l_test_suite := a_window.context_tool.cdd_test_suite_view.test_suite
 			if l_test_suite.is_testing_enabled then
+				window := a_window
 				make_reflection (an_app_status)
 				if reflection.reflection_succeded then
 					create_test_class (l_test_suite)
@@ -52,6 +53,8 @@ feature {EB_DEBUGGER_MANAGER} -- Status report
 		end
 
 feature {NONE} -- Test case generation
+
+	window: EB_DEVELOPMENT_WINDOW
 
 	reflection: CDD_REFLECTED_OBJECT
 
@@ -100,7 +103,7 @@ feature {NONE} -- Test case generation
 			l_new_class_name.append_integer (i)
 
 			printer.print_test_case (reflection, l_new_class_name.as_upper, l_file)
-			manager.add_class_to_cluster (l_new_class_name + ".e", a_test_suite.cluster, "tests")
+			manager.add_class_to_cluster (l_new_class_name + ".e", a_test_suite.cluster, "/tests")
 			test_class := manager.last_added_class
 		end
 
