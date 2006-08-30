@@ -104,14 +104,14 @@ feature -- Status change
 		do
 				-- create directory structure
 			is_testing_enabled := True
-			create l_dir.make (cdd_path)
-			if not l_dir.exists then
-				l_dir.create_dir
-			end
-			create l_dir.make (test_cases_path)
-			if not l_dir.exists then
-				l_dir.create_dir
-			end
+--			create l_dir.make (cdd_path)
+--			if not l_dir.exists then
+--				l_dir.create_dir
+--			end
+--			create l_dir.make (test_cases_path)
+--			if not l_dir.exists then
+--				l_dir.create_dir
+--			end
 
 				-- create cdd_testing cluster
 			cluster := eiffel_universe.cluster_of_name (cluster_name)
@@ -186,8 +186,6 @@ feature {EB_CLUSTERS} -- Project Events
 		do
 			create cdd_path.make_from_string (eiffel_project.project_directory.path)
 			cdd_path.extend (cluster_name)
-			create test_cases_path.make_from_string (cdd_path)
-			test_cases_path.extend ("tests")
 
 			 -- check if testing was enabled before
 			l_system := eiffel_universe.conf_system
@@ -232,8 +230,6 @@ feature -- Project specific
 	cluster: CLUSTER_I
 
 	cdd_path: DIRECTORY_NAME
-
-	test_cases_path: DIRECTORY_NAME
 
 feature {NONE} -- Implementation
 

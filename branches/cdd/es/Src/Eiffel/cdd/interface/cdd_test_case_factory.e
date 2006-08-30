@@ -9,15 +9,17 @@ class
 
 inherit
 
-	PROJECT_CONTEXT
-		export
-			{NONE} all
-		end
+--	PROJECT_CONTEXT
+--		export
+--			{NONE} all
+--		end
 
-	SHARED_EIFFEL_PROJECT
-		export
-			{NONE} all
-		end
+--	SHARED_EIFFEL_PROJECT
+--		export
+--			{NONE} all
+--		end
+
+	CDD_CONSTANTS
 
 	EB_CLUSTER_MANAGER_OBSERVER
 		export
@@ -30,37 +32,48 @@ feature -- Measurement
 
 feature {EB_DEBUGGER_MANAGER} -- Status report
 
-	report_postcondition_violation (an_app_status: APPLICATION_STATUS; a_window: EB_DEVELOPMENT_WINDOW) is
-			-- Initialize Current.
+	report_postcondition_violation (an_app_status: APPLICATION_STATUS; a_window: EV_WINDOW; a_test_suite: CDD_TEST_SUITE) is
+			-- try to create a new test case
 		require
 			app_status_valid: an_app_status /= Void and an_app_status.is_stopped
 			exception_occurred: an_app_status.exception_occurred
 			valid_exception: an_app_status.exception_code = 4
+			valid_test_suite: a_test_suite /= Void
+			testing_enabled: a_test_suite.is_testing_enabled
 		local
-			l_test_suite: CDD_TEST_SUITE
-			l_tc: CDD_TEST_CASE
+			l_ok_flag: BOOLEAN_REF
+			l_reflection: CDD_REFLECTED_OBJECT
+			l_class_name: STRING
+			l_class: CLASS_I
 		do
-			l_test_suite := a_window.context_tool.cdd_test_suite_view.test_suite
-			if l_test_suite.is_testing_enabled then
-				window := a_window
-				make_reflection (an_app_status)
-				if reflection.reflection_succeded then
-					create_test_class (l_test_suite)
-					create l_tc.make (an_app_status.dynamic_class.eiffel_class_c.original_class, an_app_status.e_feature.name, test_class)
-					l_test_suite.add_test_case (l_tc)
+			create l_ok_flag
+			confirm_creation (a_window, l_ok_flag)
+			if l_ok_flag.item then
+				l_reflection := make_reflection (an_app_status)
+				if not l_reflection.reflection_succeded then
+					notify_bad_object (a_window)
+					set_abort (l_ok_flag)
 				end
+			end
+
+			if l_ok_flag.item then
+				l_class_name := new_test_class_name (a_test_suite, l_reflection.root_object.dynamic_class)
+				if l_class_name = Void then
+					notify_exhausted (a_window)
+					l_ok_flag.set_item (False)
+				end
+			end
+
+			if l_ok_flag.item then
+				create_test_class (l_class_name, l_reflection, a_test_suite)
+				l_class := class_instance (l_class_name, a_test_suite)
+				create_test_case (l_reflection, l_class, a_test_suite)
 			end
 		end
 
 feature {NONE} -- Test case generation
 
-	window: EB_DEVELOPMENT_WINDOW
-
-	reflection: CDD_REFLECTED_OBJECT
-
-	test_class: CLASS_I
-
-	make_reflection (an_app_status: APPLICATION_STATUS) is
+	make_reflection (an_app_status: APPLICATION_STATUS): CDD_REFLECTED_OBJECT is
 			-- try to reflect current object in call stack
 			-- return Void if external objects where found
 		require
@@ -73,41 +86,120 @@ feature {NONE} -- Test case generation
 			-- should be fine since dynamic_class is eiffel class
 			check l_cse /= Void end
 
-			create reflection.make (l_cse)
+			create Result.make (l_cse)
 		end
 
-	create_test_class (a_test_suite: CDD_TEST_SUITE) is
-		require
-			valid_reflection: reflection /= Void and reflection.reflection_succeded
+
+	new_test_class_name (a_test_suite: CDD_TEST_SUITE; a_target_class: CLASS_C): STRING is
+			-- creates a new class unique test class name
+			-- returns void if there are already 99 test cases for a class
 		local
-			l_class_c: CLASS_C
-			l_file_name: FILE_NAME
+			l_prefix: STRING
 			l_file: PLAIN_TEXT_FILE
-			l_new_class_name: STRING
 			i: INTEGER
 		do
-			l_class_c := reflection.root_object.dynamic_class
-			l_new_class_name := "cdd_test_" + l_class_c.name.as_lower + "_"
+			l_prefix := "CDD_TEST_" + a_target_class.name_in_upper + "_"
 			from
-				i := 0
+				i := 1
 			until
-				i > 0 and then not l_file.exists
+				i > 99 or Result /= Void
 			loop
+				Result := l_prefix
+				if i < 10 then
+					Result.append_character ('0')
+				end
+				Result.append (i.out)
+				create l_file.make (a_test_suite.cluster.location.build_path (test_cases_path, Result.as_lower + ".e"))
+				if l_file.exists then
+					Result := Void
+				end
 				i := i + 1
-				create l_file_name.make_from_string (a_test_suite.test_cases_path)
-				l_file_name.set_file_name (l_new_class_name + i.out + ".e")
-				create l_file.make (l_file_name)
 			end
-
-			l_file.open_write
-			l_new_class_name.append_integer (i)
-
-			printer.print_test_case (reflection, l_new_class_name.as_upper, l_file)
-			manager.add_class_to_cluster (l_new_class_name + ".e", a_test_suite.cluster, "/tests")
-			test_class := manager.last_added_class
 		end
 
+
+	create_test_class (a_name: STRING; a_reflection: CDD_REFLECTED_OBJECT; a_test_suite: CDD_TEST_SUITE) is
+		require
+			valid_name: a_name /= Void and then not a_name.is_empty
+			valid_reflection: a_reflection /= Void and a_reflection.reflection_succeded
+		local
+			l_path: STRING
+			l_file: PLAIN_TEXT_FILE
+		do
+			l_path := a_test_suite.cluster.location.build_path (test_cases_path, a_name.as_lower + ".e")
+			create l_file.make_open_write (l_path)
+
+			printer.print_test_case (a_reflection, a_name, l_file)
+		end
+
+	class_instance (class_name: STRING; a_test_suite: CDD_TEST_SUITE): CLASS_I is
+			-- returns the CLASS_I object for class_name
+			-- if not in universe yet, create new
+		do
+			Result := eiffel_universe.class_named (class_name, a_test_suite.cluster)
+			if Result = Void then
+				manager.add_class_to_cluster (class_name.as_lower + ".e", a_test_suite.cluster, test_cases_path)
+				Result := manager.last_added_class
+			end
+		end
+
+	create_test_case (a_reflection: CDD_REFLECTED_OBJECT; test_class: CLASS_I; a_test_suite: CDD_TEST_SUITE) is
+			--
+		local
+			l_class: EIFFEL_CLASS_I
+			l_tc: CDD_TEST_CASE
+		do
+			l_class := a_reflection.root_object.dynamic_class.eiffel_class_c.original_class
+			create l_tc.make (l_class, a_reflection.called_routine.name, test_class)
+			a_test_suite.add_test_case (l_tc)
+		end
+
+
+
 feature {NONE} -- User interaction
+
+	confirm_creation (a_window: EV_WINDOW; a_flag: BOOLEAN_REF) is
+			--
+		local
+			l_conf: EV_CONFIRMATION_DIALOG
+		do
+			create l_conf.make_with_text_and_actions ("Would you like to create a test case?",
+				<< agent set_continue (a_flag), agent set_abort (a_flag) >>)
+			l_conf.show_modal_to_window (a_window)
+		end
+
+	notify_bad_object (a_window: EV_WINDOW) is
+			--
+		local
+			l_warn: EV_WARNING_DIALOG
+		do
+			create l_warn.make_with_text ("not able to reflect current state of the application")
+			l_warn.show_modal_to_window (a_window)
+		end
+
+	notify_exhausted (a_window: EV_WINDOW) is
+			--
+		local
+			l_warn: EV_WARNING_DIALOG
+		do
+			create l_warn.make_with_text ("there are too many test cases for the actual class")
+			l_warn.show_modal_to_window (a_window)
+		end
+
+
+	set_continue (a_flag: BOOLEAN_REF) is
+			--
+		do
+			a_flag.set_item (True)
+		end
+
+	set_abort (a_flag: BOOLEAN_REF) is
+			--
+		do
+			a_flag.set_item (False)
+		end
+
+
 
 
 

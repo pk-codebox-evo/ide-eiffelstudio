@@ -21,9 +21,9 @@ feature -- Project
 
 feature -- Test case creation
 
-	test_class: STRING is "CDD_SHARED_TESTING"
+	test_cases_path: STRING is "/tests"
 
-	object_creation_feature: STRING is "build_object"
+	
 
 
 feature -- Status setting
