@@ -41,6 +41,11 @@ inherit
 			{NONE} all
 		end
 
+	CDD_SHARED_FACTORY
+		export
+			{NONE} all
+		end
+
 create
 	make
 
@@ -126,6 +131,9 @@ feature -- Status change
 			end
 
 
+			test_case_factory.parse_test_cases (Current)
+
+
 				-- TODO: create target for testing
 
 				-- compile the project
@@ -183,18 +191,19 @@ feature {EB_CLUSTERS} -- Project Events
 			--
 		local
 			l_system: CONF_SYSTEM
+			l_cursor: CURSOR
 		do
 			create cdd_path.make_from_string (eiffel_project.project_directory.path)
 			cdd_path.extend (cluster_name)
 
 			 -- check if testing was enabled before
-			l_system := eiffel_universe.conf_system
-			if eiffel_universe.cluster_of_name (cluster_name) /= Void and can_enable_testing then
-				-- enable_testing
-				-- parse_test_cases
-			else
-				is_testing_enabled := False
-			end
+--			l_system := eiffel_universe.conf_system
+--			if eiffel_universe.cluster_of_name (cluster_name) /= Void and can_enable_testing then
+--				enable_testing
+--				test_case_factory.parse_test_cases (Current)
+--			else
+--				is_testing_enabled := False
+--			end
 		end
 
 
@@ -233,73 +242,6 @@ feature -- Project specific
 
 feature {NONE} -- Implementation
 
-	parse_test_cases is
-			--
-		local
-			l_dir: DIRECTORY
-			l_files: ARRAYED_LIST [STRING]
-			l_file_name: STRING
-			l_file: PLAIN_TEXT_FILE
-			l_line: STRING
-			l_cluster: STRING
-			l_conf_group: CONF_GROUP
-			l_class: STRING
-			l_class_i: EIFFEL_CLASS_I
-			l_feature: STRING
-			l_tc: CDD_TEST_CASE
-			i,j: INTEGER
-		do
-			create l_dir.make_open_read (test_cases_path)
-			l_files := l_dir.linear_representation
-			from
-				l_files.start
-			until
-				l_files.after
-			loop
-				l_file_name := l_files.item
-				if l_file_name.has_substring (".e") then
-					create l_file.make (test_cases_path + "/" + l_file_name)
-					if l_file.is_readable then
-						from
-							l_file.open_read
-						until
-							(l_cluster /= Void and
-							l_class /= Void and
-							l_feature /= Void) or
-							l_file.end_of_file
-						loop
-							l_file.read_line
-							l_line := l_file.last_string
-							if l_line.has_substring ("cluster: ") then
-								i := l_line.index_of ('"', 1)
-								j := l_line.index_of ('"', i + 1)
-								l_cluster := l_line.substring (i+1, j-1)
-							elseif l_line.has_substring ("class: ") then
-								i := l_line.index_of ('"', 1)
-								j := l_line.index_of ('"', i + 1)
-								l_class := l_line.substring (i+1, j-1)
-							elseif l_line.has_substring ("feature: ") then
-								i := l_line.index_of ('"', 1)
-								j := l_line.index_of ('"', i + 1)
-								l_feature := l_line.substring (i+1, j-1)
-							end
-						end
-						if (l_cluster /= Void and
-							l_class /= Void and
-							l_feature /= Void) then
-							l_conf_group := eiffel_universe.group_of_name (l_cluster)
-							l_class_i ?= eiffel_universe.class_named (l_class, l_conf_group)
-							l_file_name.prune_all_trailing ('e')
-							l_file_name.prune_all_trailing ('.')
-							create l_tc.make (l_class_i, l_feature, eiffel_universe.class_named (l_file_name.as_upper, cluster))
-							add_test_case (l_tc)
-						end
-						l_file.close
-					end
-				end
-				l_files.forth
-			end
-		end
 
 
 

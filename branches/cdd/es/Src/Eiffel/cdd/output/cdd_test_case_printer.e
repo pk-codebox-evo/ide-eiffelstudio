@@ -158,8 +158,8 @@ feature {CDD_OBJECT} -- Testcase generation
 				i = a_special.attributes.count
 			loop
 				instr := a_special.identifier + ".put ("
-				instr.append (i.out + ", " + a_special.attributes.item (i.out).identifier)
-				instr.append (")")
+				instr.append (a_special.attributes.item (i.out).identifier)
+				instr.append (", " + i.out + ")")
 				append_instruction (instr)
 				i := i + 1
 			end

@@ -9,16 +9,6 @@ class
 
 inherit
 
---	PROJECT_CONTEXT
---		export
---			{NONE} all
---		end
-
---	SHARED_EIFFEL_PROJECT
---		export
---			{NONE} all
---		end
-
 	CDD_CONSTANTS
 
 	EB_CLUSTER_MANAGER_OBSERVER
@@ -29,6 +19,85 @@ inherit
 feature -- Access
 
 feature -- Measurement
+
+feature {CDD_TEST_SUITE} -- Project loading
+
+	parse_test_cases (a_test_suite: CDD_TEST_SUITE) is
+			-- very ugly feature, temporarily solution for parsing existing test cases
+		local
+			l_dir: DIRECTORY
+			l_files: ARRAYED_LIST [STRING]
+			l_file_name: STRING
+			l_file: PLAIN_TEXT_FILE
+			l_line: STRING
+			l_cluster: STRING
+			l_conf_group: CONF_GROUP
+			l_class: STRING
+			l_class_i: EIFFEL_CLASS_I
+			l_test_class: CLASS_I
+			l_feature: STRING
+			l_tc: CDD_TEST_CASE
+			i,j: INTEGER
+		do
+			create l_dir.make_open_read (a_test_suite.cluster.location.build_path (test_cases_path, ""))
+			l_files := l_dir.linear_representation
+			from
+				l_files.start
+			until
+				l_files.after
+			loop
+				l_file_name := l_files.item
+				if l_file_name.has_substring (".e") then
+					create l_file.make (a_test_suite.cluster.location.build_path (test_cases_path, "") + "/" + l_file_name)
+					if l_file.is_readable then
+						from
+							l_file.open_read
+						until
+							(l_cluster /= Void and
+							l_class /= Void and
+							l_feature /= Void) or
+							l_file.end_of_file
+						loop
+							l_file.read_line
+							l_line := l_file.last_string
+							if l_line.has_substring ("cluster: ") then
+								i := l_line.index_of ('"', 1)
+								j := l_line.index_of ('"', i + 1)
+								l_cluster := l_line.substring (i+1, j-1)
+							elseif l_line.has_substring ("class: ") then
+								i := l_line.index_of ('"', 1)
+								j := l_line.index_of ('"', i + 1)
+								l_class := l_line.substring (i+1, j-1)
+							elseif l_line.has_substring ("feature: ") then
+								i := l_line.index_of ('"', 1)
+								j := l_line.index_of ('"', i + 1)
+								l_feature := l_line.substring (i+1, j-1)
+							end
+						end
+						if (l_cluster /= Void and
+							l_class /= Void and
+							l_feature /= Void) then
+							l_conf_group := eiffel_universe.group_of_name (l_cluster)
+							if l_conf_group /= Void then
+								l_class_i ?= eiffel_universe.class_named (l_class, l_conf_group)
+								if l_class_i /= Void then
+									l_file_name.prune_all_trailing ('e')
+									l_file_name.prune_all_trailing ('.')
+									l_test_class := class_instance (l_file_name.as_upper, a_test_suite)
+									create l_tc.make (l_class_i, l_feature, l_test_class)
+									a_test_suite.add_test_case (l_tc)
+								end
+							end
+						end
+						l_file.close
+					end
+				end
+				l_files.forth
+			end
+		end
+
+
+
 
 feature {EB_DEBUGGER_MANAGER} -- Status report
 
