@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Objects that represent reflections of generic objects"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -11,7 +11,7 @@ inherit
 
 	CDD_REGULAR_OBJECT
 		redefine
-			full_type
+			type
 		end
 
 create
@@ -19,29 +19,35 @@ create
 
 feature {NONE} -- Initialization
 
-	make_generic (dtype: like dynamic_class; attribute_count: INTEGER; gtype: STRING) is
-			-- Initialize with generic type gtype
+	make_generic (a_type: like dynamic_type; a_count: INTEGER; a_gen_type: STRING) is
+			-- Create reflection for generic object of type 'a_type' with generic parameter 'a_gen_type'
+			-- 'a_count' is number of attributes 'a_type' has defined
+		require
+			a_type_not_void: a_type /= Void
+			a_gen_type_not_empty: a_gen_type /= Void and then not a_gen_type.is_empty
 		do
-			make_with_count (dtype, attribute_count)
-			generic_type := gtype
+			make_with_count (a_type, a_count)
+			generic_type := a_gen_type
+		ensure
+			generic_type_set: generic_type = a_gen_type
 		end
 
 
 feature -- Access
 
-	generic_type: STRING
-
-	full_type: STRING is
-			-- with generics
+	type: STRING is
+			-- full type of the reflected object
 		do
-			Result := type + " [" + generic_type + "]"
+			Result := Precursor
+			Result.append ("[" + generic_type + "]")
 		end
 
 
+	generic_type: STRING
+			-- generic parameter of the objects type
 
-feature {NONE} -- Implementation
 
 invariant
-	invariant_clause: True -- Your invariant here
+	generic_type_not_empty: generic_type /= Void and then not generic_type.is_empty
 
 end

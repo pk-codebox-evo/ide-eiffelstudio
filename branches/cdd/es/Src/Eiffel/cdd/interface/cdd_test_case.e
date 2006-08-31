@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Objects that represent test cases"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -8,58 +8,63 @@ class
 	CDD_TEST_CASE
 
 inherit
-	COMPARABLE
 
+	COMPARABLE
 
 create
 	make
 
 feature {NONE} -- Initialization
 
-	make (a_target_class: like target_class; a_feature: like e_feature; a_test_class: like test_class) is
-			--
+	make (a_target_class: like target_class; a_feature: like feature_name; a_test_class: like test_class) is
+			-- Initialize new test case for testing 'a_feature' of class 'a_target_class' where
+			-- 'a_test_class' is the classed used for testing
 		require
 			valid_target_class: a_target_class /= Void
 			valid_feature: a_feature /= Void and then not a_feature.is_empty
 			valid_test_class: a_test_class /= Void
 		do
 			target_class := a_target_class
-			e_feature := a_feature
+			feature_name := a_feature
 			test_class := a_test_class
-			file_name := test_class.file_name
 			create on_start_testing.make (5)
-			create on_pass.make (5)
-			create on_failure.make (5)
+			create on_finish_testing.make (5)
+		ensure
+			target_class_set: target_class = a_target_class
+			e_feature_set: feature_name = a_feature
+			test_class_set: test_class = a_test_class
 		end
 
 
 feature -- Access
 
 	target_cluster: CLUSTER_I is
-			--
+			-- cluster which class being tested belongs to
 		do
 			Result := target_class.cluster
+		ensure
+			correct_result: Result = target_class.cluster
 		end
 
-
 	target_class: EIFFEL_CLASS_I
+			-- class under tested
 
-	e_feature: STRING
+	feature_name: STRING
+			-- name of feature under tested
 
 	test_class: CLASS_I
-
-	file_name: STRING
+			-- class used for testing
 
 	is_testing: BOOLEAN
-		-- is test case running?
+			-- is test case beeing executed?
 
 	passes: BOOLEAN
-		-- did test case pass last execution?
+			-- does test case pass?
 
 feature -- Status seeting
 
-	set_start_testing is
-			--
+	start_testing is
+			-- Set 'is_testing' to true an notify agents
 		require
 			not_testing: not is_testing
 		do
@@ -69,32 +74,48 @@ feature -- Status seeting
 			until
 				on_start_testing.after
 			loop
-				on_start_testing.item.call ([])
+				on_start_testing.item.call ([Current])
 				on_start_testing.forth
 			end
+		ensure
+			started_testing: is_testing
 		end
 
-	set_test_result (a_result: BOOLEAN) is
-			--
+	set_passes (a_result: BOOLEAN) is
+			-- Set 'passes' to 'a_result' and notify agents
 		do
-			
+			from
+				is_testing := False
+				passes := a_result
+				on_finish_testing.start
+			until
+				on_finish_testing.after
+			loop
+				on_finish_testing.item.call ([Current, a_result])
+				on_finish_testing.forth
+			end
+		ensure
+			testing_stopped: not is_testing
+			passed_set: passes = a_result
 		end
 
 
 
 feature -- Event handling
 
-	on_start_testing: ARRAYED_LIST [PROCEDURE [ANY, TUPLE]]
+	on_start_testing: ARRAYED_LIST [PROCEDURE [ANY, TUPLE [CDD_TEST_CASE]]]
+			-- agents called when test case is beeing executed
 
-	on_pass: ARRAYED_LIST [PROCEDURE [ANY, TUPLE]]
-
-	on_failure: ARRAYED_LIST [PROCEDURE [ANY, TUPLE]]
+	on_finish_testing: ARRAYED_LIST [PROCEDURE [ANY, TUPLE [CDD_TEST_CASE, BOOLEAN]]]
+			-- agents called when execution of test case is over
 
 
 feature -- Compare
 
 	infix "<" (other: like Current): BOOLEAN is
-			--
+			-- is 'Current' less than 'other'?
+		require else
+			other_not_void: other /= Void
 		do
 			if target_cluster < other.target_cluster then
 				Result := True
@@ -102,9 +123,9 @@ feature -- Compare
 				if target_class < other.target_class then
 					Result := True
 				elseif target_class = other.target_class then
-					if e_feature < other.e_feature then
+					if feature_name < other.feature_name then
 						Result := True
-					elseif e_feature = other.e_feature then
+					elseif feature_name = other.feature_name then
 						if test_class < other.test_class then
 							Result := True
 						end
@@ -115,6 +136,11 @@ feature -- Compare
 
 
 invariant
-	invariant_clause: True -- Your invariant here
+	target_cluster_not_void: target_class /= Void
+	target_class_not_void: target_class /= Void
+	e_feature_not_empty: feature_name /= Void and then not feature_name.is_empty
+	test_class_not_void: test_class /= Void
+	on_start_testing_not_void: on_start_testing /= Void
+	on_finish_testing_not_void: on_finish_testing /= Void
 
 end

@@ -19,10 +19,10 @@ feature -- Access
 		do
 			output_file := a_file
 			root_object := reflection.root_object
-			l_feature := reflection.called_routine
+			l_feature := reflection.called_feature
 			rlist := reflection.composite_objects
 
-			append_indexing (root_object.dynamic_class.group.name, root_object.dynamic_class.name, l_feature.name)
+			append_indexing (root_object.dynamic_type.cluster.cluster_name, root_object.dynamic_type.name, l_feature.name)
 			append_class_header (test_class_name)
 
 			append_text ("%N%Ttest_feature is%N")
@@ -93,7 +93,7 @@ feature {CDD_OBJECT} -- Testcase generation
 	append_object_declaration (an_object:CDD_COMPOSITE_OBJECT) is
 			--
 		do
-			append_instruction (an_object.identifier + ": " + an_object.full_type)
+			append_instruction (an_object.identifier + ": " + an_object.type)
 		end
 
 	append_regular_creation (an_object: CDD_REGULAR_OBJECT) is

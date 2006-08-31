@@ -1,5 +1,5 @@
 indexing
-	description: "Objects that ..."
+	description: "Objects that represent rows of CDD_GRID"
 	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
@@ -42,49 +42,36 @@ feature {NONE} -- Row value setting
 				create Result
 				row.set_item (i, Result)
 			end
+		ensure
+			not_void: Result /= Void
 		end
 
 
-	set_cell_text (i: INTEGER; s: STRING) is
+	set_text (a_col: INTEGER; a_string: STRING) is
 			--
+		require
+			valid_col: a_col > 0 and a_col <= grid.column_count
+			a_string_not_void: a_string /= Void
 		local
 			an_item: EV_GRID_LABEL_ITEM
 		do
-			an_item := item (i)
-			an_item.set_text (s)
-			an_item.set_tooltip (s)
+			an_item := item (a_col)
+			an_item.set_text (a_string)
+			an_item.set_tooltip (a_string)
+		ensure
+			text_set: item (a_col).text.is_equal(a_string)
+			tooltip_set: item (a_col).tooltip.is_equal(a_string)
 		end
 
-	set_cell_pixmap (i: INTEGER; p: EV_PIXMAP) is
+	set_pixmap (a_col: INTEGER; a_pix: EV_PIXMAP) is
 			--
+		require
+			valid_col: a_col > 0 and a_col <= grid.column_count
+			a_string_not_void: a_pix /= Void
 		do
-			item (i).set_pixmap (p)
-		end
-
-	set_feature (a_name: STRING; a_pixmap: EV_PIXMAP) is
-			--
-		do
-			set_cell_text (grid.feature_column_index, a_name)
-			set_cell_pixmap (grid.feature_column_index, a_pixmap)
-		end
-
-	set_status (a_name: STRING; a_pixmap: EV_PIXMAP) is
-			--
-		do
-			set_cell_text (grid.status_column_index, a_name)
-			set_cell_pixmap (grid.status_column_index, a_pixmap)
-		end
-
-	set_test_class (a_name: STRING) is
-			--
-		do
-			set_cell_text (grid.test_class_column_index, a_name)
-		end
-
-	set_file (a_name: STRING) is
-			--
-		do
-			set_cell_text (grid.file_column_index, a_name)
+			item (a_col).set_pixmap (a_pix)
+		ensure
+			pixmap_set: item (a_col).pixmap = a_pix
 		end
 
 feature -- Cursor movement

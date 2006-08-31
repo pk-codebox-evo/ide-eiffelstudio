@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Singleton for creating test cases"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -15,10 +15,6 @@ inherit
 		export
 			{NONE} all
 		end
-
-feature -- Access
-
-feature -- Measurement
 
 feature {CDD_TEST_SUITE} -- Project loading
 
@@ -105,11 +101,13 @@ feature {CDD_TEST_SUITE} -- Project loading
 feature {EB_DEBUGGER_MANAGER} -- Status report
 
 	report_postcondition_violation (an_app_status: APPLICATION_STATUS; a_window: EV_WINDOW; a_test_suite: CDD_TEST_SUITE) is
-			-- Try to create a new test case.
+			-- Try to create a new test case from 'an_app_status' and add it to 'a_test_suite'.
+			-- 'a_window' is the window in which the application was launched.
 		require
 			app_status_valid: an_app_status /= Void and an_app_status.is_stopped
 			exception_occurred: an_app_status.exception_occurred
 			valid_exception: an_app_status.exception_code = 4
+			a_window_not_void: a_window /= Void
 			valid_test_suite: a_test_suite /= Void
 			testing_enabled: a_test_suite.is_testing_enabled
 		local
@@ -129,7 +127,7 @@ feature {EB_DEBUGGER_MANAGER} -- Status report
 			end
 
 			if l_ok_flag.item then
-				l_class_name := new_test_class_name (a_test_suite, l_reflection.root_object.dynamic_class)
+				l_class_name := new_test_class_name (a_test_suite, l_reflection.root_object.dynamic_type)
 				if l_class_name = Void then
 					notify_exhausted (a_window)
 					l_ok_flag.set_item (False)
@@ -146,9 +144,9 @@ feature {EB_DEBUGGER_MANAGER} -- Status report
 feature {NONE} -- Test case generation
 
 	make_reflection (an_app_status: APPLICATION_STATUS): CDD_REFLECTED_OBJECT is
-			-- try to reflect current object in call stack
-			-- return Void if external objects where found
+			-- Try to reflect current object in call stack.
 		require
+			an_app_status_not_void: an_app_status /= Void
 			is_eiffel_class: an_app_status.dynamic_class.is_eiffel_class_c
 		local
 			l_cse: EIFFEL_CALL_STACK_ELEMENT
@@ -159,12 +157,17 @@ feature {NONE} -- Test case generation
 			check l_cse /= Void end
 
 			create Result.make (l_cse)
+		ensure
+			not_void: Result /= Void
 		end
 
 
 	new_test_class_name (a_test_suite: CDD_TEST_SUITE; a_target_class: CLASS_C): STRING is
-			-- creates a new class unique test class name
-			-- returns void if there are already 99 test cases for a class
+			-- Create a new unique tes class name where 'a_target_class' is the class beeing tested.
+			-- (returns void if there are too many test cases for 'a_target_class')
+		require
+			a_test_suite_not_void: a_test_suite /= Void
+			a_target_class_not_void: a_target_class /= Void
 		local
 			l_prefix: STRING
 			l_file: PLAIN_TEXT_FILE
@@ -191,9 +194,12 @@ feature {NONE} -- Test case generation
 
 
 	create_test_class (a_name: STRING; a_reflection: CDD_REFLECTED_OBJECT; a_test_suite: CDD_TEST_SUITE) is
+			-- Create new test class in 'a_test_suite' with name 'a_name', which uses
+			-- 'a_reflection' to restore the the state of the object
 		require
 			valid_name: a_name /= Void and then not a_name.is_empty
 			valid_reflection: a_reflection /= Void and a_reflection.reflection_succeded
+			a_test_suite_not_void: a_test_suite /= Void
 		local
 			l_path: STRING
 			l_file: PLAIN_TEXT_FILE
@@ -209,24 +215,30 @@ feature {NONE} -- Test case generation
 		end
 
 	class_instance (class_name: STRING; a_test_suite: CDD_TEST_SUITE): CLASS_I is
-			-- returns the CLASS_I object for class_name
-			-- if not in universe yet, create new
+			-- CLASS_I object for class named 'class_name'. Add to universe in case
+			-- not class is not found.
+		require
+			class_name_not_empty: class_name /= Void and then not class_name.is_empty
+			a_test_suite_not_void: a_test_suite /= Void
 		do
 			Result := eiffel_universe.class_named (class_name, a_test_suite.cluster)
 			if Result = Void then
 				manager.add_class_to_cluster (class_name.as_lower + ".e", a_test_suite.cluster, "")
 				Result := manager.last_added_class
 			end
+		ensure
+			not_void: Result /= Void
 		end
 
-	create_test_case (a_reflection: CDD_REFLECTED_OBJECT; test_class: CLASS_I; a_test_suite: CDD_TEST_SUITE) is
-			--
+	create_test_case (a_reflection: CDD_REFLECTED_OBJECT; a_test_class: CLASS_I; a_test_suite: CDD_TEST_SUITE) is
+			-- Creates a new test case for object reflected in 'a_reflection' with test
+			-- class 'a_test_class' and adds it to a_test_suite.
 		local
 			l_class: EIFFEL_CLASS_I
 			l_tc: CDD_TEST_CASE
 		do
-			l_class := a_reflection.root_object.dynamic_class.eiffel_class_c.original_class
-			create l_tc.make (l_class, a_reflection.called_routine.name, test_class)
+			l_class := a_reflection.root_object.dynamic_type.original_class
+			create l_tc.make (l_class, a_reflection.called_feature.name, a_test_class)
 			a_test_suite.add_test_case (l_tc)
 		end
 
@@ -240,14 +252,6 @@ feature {NONE} -- User interaction
 			create l_conf.make_with_text_and_actions ("Would you like to create a test case?",
 				<< agent set_continue (a_flag), agent set_abort (a_flag) >>)
 			l_conf.show_modal_to_window (a_window)
-		end
-
-
-		do
-			confirm_dialog.show (window)
-			if confirm_dialog.should_create_test_case then
-			else
-			end
 		end
 
 	notify_bad_object (a_window: EV_WINDOW) is
@@ -282,33 +286,6 @@ feature {NONE} -- User interaction
 		end
 
 
-
-
-
-feature -- Status setting
-
-feature -- Cursor movement
-
-feature -- Element change
-
-feature -- Removal
-
-feature -- Resizing
-
-feature -- Transformation
-
-feature -- Conversion
-
-feature -- Duplication
-
-feature -- Miscellaneous
-
-feature -- Basic operations
-
-feature -- Obsolete
-
-feature -- Inapplicable
-
 feature {NONE} -- Implementation
 
 	printer: CDD_TEST_CASE_PRINTER is
@@ -316,8 +293,5 @@ feature {NONE} -- Implementation
 		once
 			create Result
 		end
-
-invariant
-	invariant_clause: True -- Your invariant here
 
 end

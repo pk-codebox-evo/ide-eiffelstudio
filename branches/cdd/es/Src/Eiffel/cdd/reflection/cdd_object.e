@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Objects that represent the state of objects during execution"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -9,34 +9,40 @@ deferred class
 
 feature -- Initialization
 
-	make (a_class: like dynamic_class) is
-			-- create new runtime node assoziated to a_class
+	make (a_type: like dynamic_type) is
+			-- create new reflection with object of type 'a_class'
+		require
+			a_type_not_void: a_type /= Void
 		do
-			dynamic_class := a_class
+			dynamic_type := a_type
+		ensure
+			correct_dynamic_type: dynamic_type = a_type
 		end
 
 
 feature -- Access
 
 
-	dynamic_class: CLASS_C
+	dynamic_type: EIFFEL_CLASS_C
+			-- reflected objects type
 
 	type: STRING is
-			-- object type
+			-- full type of the reflected object
 		do
-			Result := dynamic_class.name
+			Result := dynamic_type.name
+		ensure
+			result_not_empty: Result /= Void and then not Result.is_empty
 		end
 
 	identifier: STRING is
-			-- identifier used by other nodes
+			-- identifier used for output
 		deferred
+		ensure
+			result_not_empty: Result /= Void and then not Result.is_empty
 		end
 
 
-
-feature {NONE} -- Implementation
-
 invariant
-	dynamic_class_not_void: dynamic_class /= Void
+	dynamic_class_not_void: dynamic_type /= Void
 
 end

@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Objects that represent reflection of basic values"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -10,56 +10,34 @@ class
 inherit
 
 	CDD_OBJECT
-
-	rename
-		identifier as value
-	end
-
+		rename
+			identifier as value
+		end
 
 create
-	make
+	make_with_value
+
+feature -- Initialization
+
+	make_with_value (a_type: like dynamic_type; a_value: like value) is
+			-- Create reflection for basic object of type 'a_type' and value 'a_value'
+		require
+			a_type_not_void: dynamic_type /= Void
+			a_value_not_empty: a_value /= Void and then not a_value.is_empty
+		do
+			make (a_type)
+			value := a_value
+		ensure
+			correct_value: value = a_value
+		end
+
 
 feature -- Access
 
 	value: STRING
-
-feature -- Measurement
-
-feature -- Status report
-
-feature -- Status setting
-
-feature -- Cursor movement
-
-feature -- Element change
-
-	set_value (a_value: like value) is
-		do
-			value := a_value
-		end
-
-
-feature -- Removal
-
-feature -- Resizing
-
-feature -- Transformation
-
-feature -- Conversion
-
-feature -- Duplication
-
-feature -- Miscellaneous
-
-feature -- Basic operations
-
-feature -- Obsolete
-
-feature -- Inapplicable
-
-feature {NONE} -- Implementation
+		-- value of the object during execution
 
 invariant
-	invariant_clause: True -- Your invariant here
+	value_not_empty: value /= Void and then not value.is_empty
 
 end

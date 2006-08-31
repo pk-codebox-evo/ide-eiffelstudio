@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Objects that represent the reflection of an object of type SPECIAL"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -23,24 +23,23 @@ create
 
 feature -- Access
 
-	append_creation (a_generator: CDD_TEST_CASE_PRINTER) is
-			-- Eiffel code used to instantate a new
-			-- object of type dynamic_class
+	append_creation (a_printer: CDD_TEST_CASE_PRINTER) is
+			-- tells 'a_printer' to print a creation instruction for Current
 		do
-			a_generator.append_special_creation (Current)
+			a_printer.append_special_creation (Current)
 		end
 
-	append_assignment (a_generator: CDD_TEST_CASE_PRINTER) is
-			-- Eiffel code for assigning values of object
+	append_assignment (a_printer: CDD_TEST_CASE_PRINTER) is
+			-- tells 'a_printer' to print a creation instruction for Current
 		do
-			a_generator.append_special_assignment (Current)
+			a_printer.append_special_assignment (Current)
 		end
 
 
-feature
+feature -- Element change
 
 	add_attribute (a_name: STRING; a_value: CDD_OBJECT) is
-			--
+			-- Add attribute with name 'a_name' and value 'a_value'
 		require else
 			a_name_numeric: a_name.is_integer
 			a_name_valid_value: a_name.to_integer >= 0 and

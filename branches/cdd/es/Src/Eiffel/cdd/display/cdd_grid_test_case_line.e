@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Objects that represent grid rows for displaying test cases"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -22,49 +22,23 @@ create
 feature {NONE} -- Initialization
 
 	make_with_test_case (a_test_case: like test_case; a_grid: like grid; a_row: like row) is
-			-- Initialize `Current'.
+			-- Set 'test_case' to 'a_test_case' and define items of 'a_row'
+			-- to display the test case properties in 'a_grid'.
 		do
 			test_case := a_test_case
 			make (a_grid, a_row)
-			set_feature (test_case.e_feature, pixmaps.icon_pixmaps.tool_feature_icon)
-			set_status ("Fail", pixmaps.icon_pixmaps.general_delete_icon)
-			set_test_class (test_case.test_class.name)
-			set_file (test_case.file_name)
+			set_text (grid.feature_column_index, test_case.feature_name)
+			set_pixmap (grid.feature_column_index, pixmaps.icon_pixmaps.tool_feature_icon)
+			set_text (grid.status_column_index, "Fails")
+			set_pixmap (grid.status_column_index, pixmaps.icon_pixmaps.general_delete_icon)
+			set_text (grid.test_class_column_index, test_case.test_class.name)
+			set_text (grid.file_column_index, test_case.test_class.path)
 		end
-
-feature -- Resizing
 
 feature -- Access
 
 	test_case: CDD_TEST_CASE
-
-feature -- Measurement
-
-feature -- Status report
-
-feature -- Status setting
-
-feature -- Cursor movement
-
-feature -- Element change
-
-feature -- Removal
-
-feature -- Resizing
-
-feature -- Transformation
-
-feature -- Conversion
-
-feature -- Duplication
-
-feature -- Miscellaneous
-
-feature -- Basic operations
-
-feature -- Obsolete
-
-feature -- Inapplicable
+			-- test case displayed on 'row'
 
 feature {NONE} -- Implementation
 

@@ -89,8 +89,8 @@ feature -- Status setting
 			i: INTEGER
 			l_cluster: CONF_CLUSTER
 			l_class: EIFFEL_CLASS_I
-			l_cluster_line: CDD_GRID_CLUSTER_LINE
-			l_class_line: CDD_GRID_CLASS_LINE
+			l_cluster_line: CDD_GRID_CLUSTER_FOLDER
+			l_class_line: CDD_GRID_CLASS_FOLDER
 			l_tc_line: CDD_GRID_TEST_CASE_LINE
 			l_done: BOOLEAN
 		do

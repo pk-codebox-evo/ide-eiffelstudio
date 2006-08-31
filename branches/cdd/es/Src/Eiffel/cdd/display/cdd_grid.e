@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Objects that list clusters, classes test cases in a tree-like grid"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -10,14 +10,14 @@ class
 inherit
 
 	EV_GRID
-	redefine
-		initialize
-	end
+		redefine
+			initialize
+		end
 
 feature {NONE} -- Initialization
 
 	initialize is
-			--
+			-- Initialize grid with columns for displaying test case
 		local
 			col: EV_GRID_COLUMN
 			i: INTEGER
@@ -44,55 +44,30 @@ feature {NONE} -- Initialization
 feature -- Access
 
 	feature_column_index: INTEGER is 1
+			-- Index of the feature column
 
 	status_column_index: INTEGER is 2
+			-- Index of the status column
 
 	test_class_column_index: INTEGER is 3
+			-- Index of the test class column
 
 	file_column_index: INTEGER is 4
+			-- Index of the file column
 
-
-feature -- Measurement
-
-feature -- Status report
-
-feature -- Status setting
-
-feature -- Cursor movement
-
-feature -- Element change
-
-feature -- Removal
-
-feature -- Resizing
-
-feature -- Transformation
-
-feature -- Conversion
-
-feature -- Duplication
-
-feature -- Miscellaneous
-
-feature -- Basic operations
-
-feature -- Obsolete
-
-feature -- Inapplicable
 
 feature {NONE} -- Implementation
 
 	column_titles: ARRAY [STRING] is
+			-- Titles for each column
 		once
 			Result := << "Feature", "Status", "Test Class Name", "File" >>
 		end
 
 	column_widths: ARRAY [INTEGER] is
+			-- Widths for each column
 		once
-			Result := << 300, 250, 250, 200 >>
+			Result := << 300, 150, 250, 300 >>
 		end
-
-invariant
-	invariant_clause: True -- Your invariant here
 
 end

@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Objects that represent reflected STRING objects"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -20,66 +20,40 @@ create
 
 feature {NONE} -- Initialization
 
-	make_with_string (a_class: like dynamic_class; a_string: STRING) is
-			-- Initialize `Current'.
+	make_with_string (a_type: like dynamic_type; a_string: like representation) is
+			-- Create reflection of an object of type 'a_type' with value 'a_string'.
 		require else
-			class_ot_type_string: a_class.name.is_equal ("STRING_8") or
-				a_class.name.is_equal ("STRING_32")
+			class_of_type_string: a_type.name.is_equal ("STRING_8") or
+				a_type.name.is_equal ("STRING_32")
 		do
-			make (a_class)
+			make (a_type)
 			representation := a_string
+		ensure
+			representation_set: representation = a_string
 		end
 
 
 feature -- Access
 
 	representation: STRING
+			-- textual representation of reflected STRING object
 
 
-feature -- Regeneration
+feature -- Output
 
 	append_creation (a_generator: CDD_TEST_CASE_PRINTER) is
-			--
+			-- tells 'a_printer' to print a creation instruction for Current
 		do
 			a_generator.append_string_creation (Current)
 		end
 
 	append_assignment (a_generator: CDD_TEST_CASE_PRINTER) is
-			--
+			-- tells 'a_printer' to print assignment instructions for Current
 		do
 			a_generator.append_string_assignment (Current)
 		end
 
-
-feature -- Measurement
-
-feature -- Status report
-
-feature -- Status setting
-
-feature -- Cursor movement
-
-feature -- Element change
-
-feature -- Removal
-
-feature -- Resizing
-
-feature -- Transformation
-
-feature -- Conversion
-
-feature -- Duplication
-
-feature -- Miscellaneous
-
-feature -- Basic operations
-
-feature -- Obsolete
-
-feature {NONE} -- Implementation
-
 invariant
-	invariant_clause: True -- Your invariant here
+	representation_not_void: representation /= Void
 
 end

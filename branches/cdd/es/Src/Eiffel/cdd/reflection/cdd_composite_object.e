@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Objects that represent reflections of other composite objects"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -8,6 +8,7 @@ deferred class
 	CDD_COMPOSITE_OBJECT
 
 inherit
+
 	CDD_OBJECT
 		redefine
 			make
@@ -22,82 +23,60 @@ inherit
 
 feature {NONE} -- Initialization
 
-	make (a_class: like dynamic_class) is
-			--
+	make (a_type: like dynamic_type) is
+			-- Create reflection for object of type 'a_type'.
+		require else
+			a_type_not_void: a_type /= Void
+			not_basic_type: not a_type.is_basic
 		do
-			Precursor (a_class)
+			Precursor (a_type)
 			create identifier.make_from_string (type)
 			identifier.to_lower
-			identifier.append ("_ID" + counter.item.out)
+			identifier.append ("_id" + counter.item.out)
 			counter.set_item (counter.item + 1)
 		end
 
 feature -- Access
 
 	identifier: STRING
+			-- identifier used for output
 
-	full_type: STRING is
-			-- in case generic
-		do
-			Result := type
-		end
+feature -- Output
 
-feature -- Regeneration
-
-	append_creation (a_generator: CDD_TEST_CASE_PRINTER) is
-			-- Eiffel code used to instantate a new
-			-- object of type dynamic_class
+	append_creation (a_printer: CDD_TEST_CASE_PRINTER) is
+			-- tells 'a_printer' to print a creation instruction for Current
+		require
+			a_printer_not_void: a_printer /= Void
 		deferred
 		end
 
-	append_assignment (a_generator: CDD_TEST_CASE_PRINTER) is
-			-- Eiffel code for assigning values of object
+	append_assignment (a_printer: CDD_TEST_CASE_PRINTER) is
+			-- tells 'a_printer' to print assignment instructions for Current
+		require
+			a_printer_not_void: a_printer /= Void
 		deferred
 		end
 
 feature -- Comparision
 
 	infix "<" (other: like Current): BOOLEAN is
-			--
+			-- is Current less than 'other'
+		require else
+			other_not_void: other /= Void
 		do
 			Result := identifier < other.identifier
 		end
 
 
-feature -- Measurement
-
-feature -- Status report
-
-feature -- Status setting
-
-feature -- Cursor movement
-
-feature -- Element change
-
-feature -- Removal
-
-feature -- Resizing
-
-feature -- Transformation
-
-feature -- Conversion
-
-feature -- Duplication
-
-feature -- Miscellaneous
-
-feature -- Basic operations
-
-feature -- Obsolete
-
-feature -- Inapplicable
-
 feature {NONE} -- Implementation
 
 	counter: INTEGER_REF is
+			-- counter for generating unique identifiers
 		once
 			create Result
 			Result.set_item (1)
+		ensure
+			not_void: Result /= Void
 		end
 
 invariant

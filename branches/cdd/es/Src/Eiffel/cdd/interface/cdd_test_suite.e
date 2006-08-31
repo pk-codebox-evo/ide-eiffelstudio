@@ -1,5 +1,5 @@
 indexing
-	description: "Objects that ..."
+	description: "Objects that represent a test suite containing test cases"
 	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
@@ -52,37 +52,33 @@ create
 feature {NONE} -- Initialization
 
 	make is
-			--
+			-- Initialize 'Current'
 		do
-
-			-- test suite event handling
 			create on_add_test_case.make (5)
 			create on_remove_test_case.make (5)
 			create on_enable_testing.make (5)
 			create on_disable_testing.make (5)
 
-			-- Create List for storing test cases
+				-- Create List for storing test cases
 			test_cases := create {DS_LINKED_LIST [CDD_TEST_CASE]}.make
 
-			-- register as observer when project status changes
+				-- register as observer when project status changes
 			manager.add_observer (Current)
 		end
 
 feature -- Access
 
-	is_project_loaded: BOOLEAN
-
 	is_testing_enabled: BOOLEAN
-			-- Is testing activated?
+			-- Is testing enabled?
 
 	can_enable_testing: BOOLEAN is
-			-- Are we able to activate cdd testing?
+			-- Does the current state of the project allow us to enable testing?
 		require
 			testing_not_enabled: not is_testing_enabled
 		local
 			l_cdd_dir, l_project_dir: DIRECTORY
 		do
-			create l_cdd_dir.make (cdd_path)
+			create l_cdd_dir.make (path)
 			create l_project_dir.make (eiffel_project.project_directory.path)
 			if (l_cdd_dir.exists and l_cdd_dir.is_writable) or l_project_dir.is_writable then
 				if not eiffel_universe.target.system.date_has_changed then
@@ -91,21 +87,20 @@ feature -- Access
 			end
 		end
 
-	has_changed: BOOLEAN
-		-- has the test suite changed since last compilation?
+	changed: BOOLEAN
+		-- Has the test suite changed since last compilation?
 
 	test_cases: DS_LIST [CDD_TEST_CASE]
-			-- Available test cases
-			-- Do not modify directly!
+			-- Sorted list of all test cases in 'Current'
+			-- Note: Do not modify directly!
 
 feature -- Status change
 
 	enable_testing is
-			-- modify project so tests can be generated and executed
+			-- Set 'is_testing_enabled' to True. If necessary, add new
+			-- cluster, target and library for testing support to the project.
 		require
 			can_enable_testing: can_enable_testing
-		local
-			l_dir: DIRECTORY
 		do
 				-- create directory structure
 			is_testing_enabled := True
@@ -121,7 +116,7 @@ feature -- Status change
 				-- create cdd_testing cluster
 			cluster := eiffel_universe.cluster_of_name (cluster_name)
 			if cluster = Void then
-				manager.add_cluster (cluster_name, Void, cdd_path)
+				manager.add_cluster (cluster_name, Void, path)
 				cluster := manager.last_added_cluster
 				if not cluster.is_recursive then
 					cluster.set_recursive (True)
@@ -140,47 +135,56 @@ feature -- Status change
 
 				-- notify observers
 			on_enable_testing.do_all (agent notify_test_suite_status)
+		ensure
+			testing_is_enabled: is_testing_enabled
+			target_set: target /= Void
+			cluster_set: cluster /= Void
 		end
 
-	disable_testing is
-			--
-		require
-			testing_enabled: not is_testing_enabled
-		do
-			on_disable_testing.do_all (agent notify_test_suite_status)
-		end
+--	disable_testing is
+--			--
+--		require
+--			testing_enabled: not is_testing_enabled
+--		do
+--			on_disable_testing.do_all (agent notify_test_suite_status)
+--		end
 
 
 feature -- Element change
 
 	add_test_case (a_tc: CDD_TEST_CASE) is
-			--
+			-- Add 'a_tc' to 'test_cases' and notify agents
 		require
+			valid_test_case: a_tc /= Void
 			not_added_yet: not test_cases.has (a_tc)
 		local
-			done: BOOLEAN
+			l_done: BOOLEAN
 		do
 			from
-				done := False
+				l_done := False
 				test_cases.start
 			until
-				test_cases.after or done
+				test_cases.after or l_done
 			loop
 				if test_cases.item_for_iteration < a_tc or test_cases.is_last then
 					test_cases.put_right (a_tc)
-					done := True
+					l_done := True
 				end
 				test_cases.forth
 			end
 			on_add_test_case.do_all (agent notify_test_case_change (a_tc, ?))
+		ensure
+			test_case_added: test_cases.has (a_tc)
 		end
 
 	remove_test_case (a_tc: CDD_TEST_CASE) is
-			--
+			-- Remove 'a_tc' from 'test_cases' and notify agents
 		require
-			True
+			valid_test_case: a_tc /= Void and then test_cases.has (a_tc)
 		do
 			on_remove_test_case.do_all (agent notify_test_case_change (a_tc, ?))
+		ensure
+			test_case_removed: not test_cases.has (a_tc)
 		end
 
 
@@ -188,13 +192,11 @@ feature -- Element change
 feature {EB_CLUSTERS} -- Project Events
 
 	on_project_loaded is
-			--
-		local
-			l_system: CONF_SYSTEM
-			l_cursor: CURSOR
+			-- Initialize all project specific attributes and
+			-- fill 'Current' with existing test cases
 		do
-			create cdd_path.make_from_string (eiffel_project.project_directory.path)
-			cdd_path.extend (cluster_name)
+			create path.make_from_string (eiffel_project.project_directory.path)
+			path.extend (cluster_name)
 
 			 -- check if testing was enabled before
 --			l_system := eiffel_universe.conf_system
@@ -204,48 +206,50 @@ feature {EB_CLUSTERS} -- Project Events
 --			else
 --				is_testing_enabled := False
 --			end
+		ensure then
+			valid_path: path /= Void and then not path.is_empty
 		end
 
 
-feature -- Event handling
+feature -- Events
 
 	on_add_test_case: ARRAYED_LIST [PROCEDURE [ANY, TUPLE [CDD_TEST_CASE]]]
+			-- agents called when test case wass added to 'Current'
 
 	on_remove_test_case: ARRAYED_LIST [PROCEDURE [ANY, TUPLE [CDD_TEST_CASE]]]
+			-- agents called when test case was removed from 'Current'
 
 	on_enable_testing: ARRAYED_LIST [PROCEDURE [ANY, TUPLE]]
+			-- agents called when testing is enabled
 
 	on_disable_testing: ARRAYED_LIST [PROCEDURE [ANY, TUPLE]]
+			-- agents called when testing is disabled
 
 
 feature {NONE} -- Event Handling
 
-	notify_test_case_change (a_tc: CDD_TEST_CASE; proc: PROCEDURE [ANY, TUPLE [CDD_TEST_CASE]]) is
-			--
+	notify_test_case_change (a_tc: CDD_TEST_CASE; a_proc: PROCEDURE [ANY, TUPLE [CDD_TEST_CASE]]) is
+			-- Call 'a_proc' with argument 'a_tc'
 		do
-			proc.call ([a_tc])
+			a_proc.call ([a_tc])
 		end
 
-	notify_test_suite_status (proc: PROCEDURE [ANY, TUPLE]) is
-			--
+	notify_test_suite_status (a_proc: PROCEDURE [ANY, TUPLE]) is
+			-- Call 'a_proc'
 		do
-			proc.call ([])
+			a_proc.call ([])
 		end
 
 feature -- Project specific
 
 	target: CONF_TARGET
+			-- target for executing test cases
 
 	cluster: CLUSTER_I
+			-- cluster where all generated classes for testing are stored
 
-	cdd_path: DIRECTORY_NAME
-
-feature {NONE} -- Implementation
-
-
-
-
-
+	path: DIRECTORY_NAME
+			-- path of 'cluster'
 
 
 end -- class CDD_TEST
