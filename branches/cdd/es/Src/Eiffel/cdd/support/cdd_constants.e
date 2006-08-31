@@ -21,10 +21,6 @@ feature -- Project
 
 feature -- Test case creation
 
-	test_cases_path: STRING is "/tests"
-
-	
-
 
 feature -- Status setting
 

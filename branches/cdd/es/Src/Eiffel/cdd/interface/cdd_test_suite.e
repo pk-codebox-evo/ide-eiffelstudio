@@ -245,5 +245,8 @@ feature {NONE} -- Implementation
 
 
 
+
+
+
 end -- class CDD_TEST
 

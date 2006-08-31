@@ -39,7 +39,7 @@ feature {CDD_TEST_SUITE} -- Project loading
 			l_tc: CDD_TEST_CASE
 			i,j: INTEGER
 		do
-			create l_dir.make_open_read (a_test_suite.cluster.location.build_path (test_cases_path, ""))
+			create l_dir.make_open_read (a_test_suite.cluster.path)
 			l_files := l_dir.linear_representation
 			from
 				l_files.start
@@ -48,7 +48,7 @@ feature {CDD_TEST_SUITE} -- Project loading
 			loop
 				l_file_name := l_files.item
 				if l_file_name.has_substring (".e") then
-					create l_file.make (a_test_suite.cluster.location.build_path (test_cases_path, "") + "/" + l_file_name)
+					create l_file.make (a_test_suite.cluster.location.build_path ("", l_file_name))
 					if l_file.is_readable then
 						from
 							l_file.open_read
@@ -178,7 +178,7 @@ feature {NONE} -- Test case generation
 					Result.append_character ('0')
 				end
 				Result.append (i.out)
-				create l_file.make (a_test_suite.cluster.location.build_path (test_cases_path, Result.as_lower + ".e"))
+				create l_file.make (a_test_suite.cluster.location.build_path ("", Result.as_lower + ".e"))
 				if l_file.exists then
 					Result := Void
 				end
@@ -195,10 +195,14 @@ feature {NONE} -- Test case generation
 			l_path: STRING
 			l_file: PLAIN_TEXT_FILE
 		do
-			l_path := a_test_suite.cluster.location.build_path (test_cases_path, a_name.as_lower + ".e")
+			l_path := a_test_suite.cluster.location.build_path ("", a_name.as_lower + ".e")
 			create l_file.make_open_write (l_path)
 
 			printer.print_test_case (a_reflection, a_name, l_file)
+
+			if l_file.is_closed  then
+				l_file.close
+			end
 		end
 
 	class_instance (class_name: STRING; a_test_suite: CDD_TEST_SUITE): CLASS_I is
@@ -207,7 +211,7 @@ feature {NONE} -- Test case generation
 		do
 			Result := eiffel_universe.class_named (class_name, a_test_suite.cluster)
 			if Result = Void then
-				manager.add_class_to_cluster (class_name.as_lower + ".e", a_test_suite.cluster, test_cases_path)
+				manager.add_class_to_cluster (class_name.as_lower + ".e", a_test_suite.cluster, "")
 				Result := manager.last_added_class
 			end
 		end
