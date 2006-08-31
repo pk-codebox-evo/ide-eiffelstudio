@@ -23,7 +23,10 @@ feature -- Measurement
 feature {CDD_TEST_SUITE} -- Project loading
 
 	parse_test_cases (a_test_suite: CDD_TEST_SUITE) is
-			-- very ugly feature, temporarily solution for parsing existing test cases
+			-- Fill `a_test_suite' with test cases found in universe.
+			-- Note: very ugly feature, temporarily solution for parsing existing test cases
+		require
+			a_test_suite_not_void: a_test_suite /= Void
 		local
 			l_dir: DIRECTORY
 			l_files: ARRAYED_LIST [STRING]
@@ -102,7 +105,7 @@ feature {CDD_TEST_SUITE} -- Project loading
 feature {EB_DEBUGGER_MANAGER} -- Status report
 
 	report_postcondition_violation (an_app_status: APPLICATION_STATUS; a_window: EV_WINDOW; a_test_suite: CDD_TEST_SUITE) is
-			-- try to create a new test case
+			-- Try to create a new test case.
 		require
 			app_status_valid: an_app_status /= Void and an_app_status.is_stopped
 			exception_occurred: an_app_status.exception_occurred
@@ -227,8 +230,6 @@ feature {NONE} -- Test case generation
 			a_test_suite.add_test_case (l_tc)
 		end
 
-
-
 feature {NONE} -- User interaction
 
 	confirm_creation (a_window: EV_WINDOW; a_flag: BOOLEAN_REF) is
@@ -239,6 +240,14 @@ feature {NONE} -- User interaction
 			create l_conf.make_with_text_and_actions ("Would you like to create a test case?",
 				<< agent set_continue (a_flag), agent set_abort (a_flag) >>)
 			l_conf.show_modal_to_window (a_window)
+		end
+
+
+		do
+			confirm_dialog.show (window)
+			if confirm_dialog.should_create_test_case then
+			else
+			end
 		end
 
 	notify_bad_object (a_window: EV_WINDOW) is
