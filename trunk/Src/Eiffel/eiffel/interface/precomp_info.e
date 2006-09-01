@@ -20,13 +20,6 @@ inherit
 			copy, is_equal
 		end
 
-	EIFFEL_ENV
-		export
-			{NONE} all
-		undefine
-			copy, is_equal
-		end
-
 create
 	make
 
