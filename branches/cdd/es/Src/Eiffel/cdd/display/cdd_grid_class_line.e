@@ -5,7 +5,7 @@ indexing
 	revision: "$Revision$"
 
 class
-	CDD_GRID_CLASS_FOLDER
+	CDD_GRID_CLASS_LINE
 
 inherit
 
@@ -29,8 +29,7 @@ feature {NONE} -- Initialization
 			valid_grid: a_grid /= Void
 			valid_row: a_row /= Void and then a_row.parent = a_grid
 		do
-			target_class := a_class
-			make (a_grid, a_row)
+			make (a_grid, a_row, a_class)
 			set_text (grid.feature_column_index, target_class.name)
 			set_pixmap (grid.feature_column_index, pixmaps.icon_pixmaps.tool_class_icon)
 			row.ensure_expandable
@@ -41,8 +40,13 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	target_class: EIFFEL_CLASS_I
-			-- class displayed on 'row'
+	target_class: EIFFEL_CLASS_I is
+			-- class displayed in 'row'
+		do
+			Result ?= row.data
+		ensure
+			not_void: Result /= Void
+		end
 
 invariant
 	target_class_not_void: target_class /= Void

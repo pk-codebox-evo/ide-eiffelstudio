@@ -55,6 +55,8 @@ feature -- Access
 	file_column_index: INTEGER is 4
 			-- Index of the file column
 
+feature -- Row manipulation
+
 
 feature {NONE} -- Implementation
 

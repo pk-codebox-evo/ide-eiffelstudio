@@ -25,8 +25,7 @@ feature {NONE} -- Initialization
 			-- Set 'test_case' to 'a_test_case' and define items of 'a_row'
 			-- to display the test case properties in 'a_grid'.
 		do
-			test_case := a_test_case
-			make (a_grid, a_row)
+			make (a_grid, a_row, a_test_case)
 			set_text (grid.feature_column_index, test_case.feature_name)
 			set_pixmap (grid.feature_column_index, pixmaps.icon_pixmaps.tool_feature_icon)
 			set_text (grid.status_column_index, "Fails")
@@ -37,12 +36,16 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	test_case: CDD_TEST_CASE
+	test_case: CDD_TEST_CASE is
 			-- test case displayed on 'row'
+		do
+			Result ?= row.data
+		ensure
+			not_void: Result /= Void
+		end
 
-feature {NONE} -- Implementation
 
 invariant
-	invariant_clause: True -- Your invariant here
+	test_case_not_void: test_case /= Void
 
 end

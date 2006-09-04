@@ -5,7 +5,7 @@ indexing
 	revision: "$Revision$"
 
 class
-	CDD_GRID_CLUSTER_FOLDER
+	CDD_GRID_CLUSTER_LINE
 
 inherit
 	CDD_GRID_LINE
@@ -28,8 +28,7 @@ feature {NONE} -- Initialization
 			valid_grid: a_grid /= Void
 			valid_row: a_row /= Void and then a_row.parent = a_grid
 		do
-			target_cluster := a_cluster
-			make (a_grid, a_row)
+			make (a_grid, a_row, a_cluster)
 			set_text (grid.feature_column_index, target_cluster.name)
 			set_pixmap (grid.feature_column_index, pixmaps.icon_pixmaps.tool_clusters_icon)
 			row.ensure_expandable
@@ -40,10 +39,16 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	target_cluster: CONF_CLUSTER
-			-- cluster displayed on 'row'
+	target_cluster: CONF_CLUSTER is
+			-- cluster displayed in 'row'
+		do
+			Result ?= row.data
+		ensure
+			not_void: Result /= Void
+		end
 
 
-feature {NONE} -- Implementation
+invariant
+	target_cluster_not_void: target_cluster /= Void
 
 end

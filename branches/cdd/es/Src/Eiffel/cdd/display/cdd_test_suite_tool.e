@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Objects that visualize a test suite in a grid"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -8,7 +8,6 @@ class
 	CDD_TEST_SUITE_TOOL
 
 inherit
-
 	SHARED_EIFFEL_PROJECT
 		export
 			{NONE} all
@@ -25,7 +24,10 @@ create
 feature {NONE} -- Initialization
 
 	make_with_tool (a_window: EB_DEVELOPMENT_WINDOW; a_tool: EB_CONTEXT_TOOL) is
-			-- Initialize
+			-- Set 'development_window' to 'a_window' list all available
+			-- test cases in the test suite if testing is enabled.
+		require
+			a_window_not_void: a_window /= Void
 		do
 			development_window := a_window
 			initialize
@@ -51,7 +53,7 @@ feature {NONE} -- Initialization
 		end
 
 	initialize is
-			--
+			-- Initialize all widgets used in 'Current'
 		do
 			create widget
 
@@ -60,123 +62,73 @@ feature {NONE} -- Initialization
 			widget.extend (grid)
 		end
 
-
-
-
 feature -- Access
 
 	development_window: EB_DEVELOPMENT_WINDOW
+			-- Development window in which widget is displayed
 
 	widget: EV_VERTICAL_BOX
+			-- Widget for displaying 'Current'
 
 	test_suite: CDD_TEST_SUITE is
-			--
+			-- Test suite beeing displayed
 		do
 			Result := test_suite_singleton
 		end
 
-
-feature -- Measurement
-
-feature -- Status report
-
-
 feature -- Status setting
 
 	on_add_test_case (a_test_case: CDD_TEST_CASE) is
-			-- Add Test Case
+			-- Add test case to grid
+		require
+			a_test_case_not_void: a_test_case /= Void
 		local
-			i: INTEGER
-			l_cluster: CONF_CLUSTER
-			l_class: EIFFEL_CLASS_I
-			l_cluster_line: CDD_GRID_CLUSTER_FOLDER
-			l_class_line: CDD_GRID_CLASS_FOLDER
+			l_cluster_line: CDD_GRID_CLUSTER_LINE
+			l_class_line: CDD_GRID_CLASS_LINE
 			l_tc_line: CDD_GRID_TEST_CASE_LINE
-			l_done: BOOLEAN
 		do
-			l_cluster := a_test_case.target_cluster
-			l_class := a_test_case.target_class
-			from
-				i := 1
-				l_done := False
-			until
-				i > grid.row_count or l_done
-			loop
-				l_cluster_line ?= grid.row (i).data
-				check l_cluster /= Void end
-				if l_cluster < l_cluster_line.target_cluster then
-					l_cluster_line := Void
-					l_done := True
-				elseif l_cluster /= l_cluster_line.target_cluster then
-					l_cluster_line := Void
-					i := i + grid.row (i).subrow_count_recursive
-				end
+			locate_row (a_test_case.target_cluster, 0)
+			if last_row.data = Void then
+				create l_cluster_line.make_with_cluster (a_test_case.target_cluster, grid, last_row)
 			end
-			if l_cluster_line = Void then
-				grid.insert_new_row (i)
-				create l_cluster_line.make_with_cluster (l_cluster, grid, grid.row (i))
+			locate_row (a_test_case.target_class, last_row.index)
+			if last_row.data = Void then
+				create l_class_line.make_with_class (a_test_case.target_class, grid, last_row)
 			end
-			from
-				i := l_cluster_line.row.index + 1
-				l_done := False
-			until
-				i > l_cluster_line.row.index + l_cluster_line.row.subrow_count_recursive or l_done
-			loop
-				l_class_line ?= grid.row (i).data
-				check l_class_line /= Void end
-				if l_class < l_class_line.target_class then
-					l_class_line := Void
-					l_done := True
-				elseif l_class /= l_class_line.target_class then
-					l_class_line := Void
-					i := i + grid.row (i).subrow_count_recursive
-				end
-			end
-			if l_class_line = Void then
-				grid.insert_new_row_parented (i, l_cluster_line.row)
-				create l_class_line.make_with_class (l_class, grid, grid.row (i))
-			end
-			from
-				i := l_class_line.row.index + 1
-				l_done := False
-			until
-				i > l_class_line.row.index + l_class_line.row.subrow_count_recursive or l_done
-			loop
-				l_tc_line ?= grid.row (i).data
-				check l_tc_line /= Void end
-				if a_test_case < l_tc_line.test_case then
-					l_done := True
-				else
-					i := i + 1
-				end
-			end
-			grid.insert_new_row_parented (i, l_class_line.row)
-			create l_tc_line.make_with_test_case (a_test_case, grid, grid.row (i))
+			locate_row (a_test_case, last_row.index)
+			create l_tc_line.make_with_test_case (a_test_case, grid, last_row)
 		end
 
 	on_remove_test_case (a_tc: CDD_TEST_CASE) is
-			--
+			-- Remove test from grid
+		require
+			a_tc_not_void: a_tc /= Void
 		do
 
 		end
 
-
 	on_enable_testing is
-			--
+			-- Enable widgets for handling test cases
 		do
-
+			enable_testing_button.disable_sensitive
+			grid.enable_sensitive
+			run_button.enable_sensitive
+			delete_button.enable_sensitive
 		end
 
 	on_disable_testing is
-			--
+			-- Disable widgets for handling test cases
 		do
-
+			enable_testing_button.enable_sensitive
+			grid.disable_sensitive
+			run_button.disable_sensitive
+			delete_button.disable_sensitive
 		end
 
-
+feature {NONE} -- Button events
 
 	on_button_enable_testing (x, y, button: INTEGER; x_tilt, y_tilt, pressure: DOUBLE; screen_x, screen_y: INTEGER) is
-			--
+			-- Enable testing
 		local
 			wd: EV_WARNING_DIALOG
 		do
@@ -191,74 +143,116 @@ feature -- Status setting
 		end
 
 
+feature {NONE} -- Grid manipulation
 
-feature -- Cursor movement
+	last_row: EV_GRID_ROW
+			-- last row located by'locate_row'
 
-feature -- Element change
+	locate_row (a_comp: COMPARABLE; a_parent_index: INTEGER) is
+			-- Set 'last_row' to row where data referes to 'a_comp'.
+			-- If row does not exists, add it to Current.
+		require
+			a_comp_not_void: a_comp /= Void
+			a_parent_index_not_negative: a_parent_index >= 0
+		local
+			a_row: EV_GRID_ROW
+			l_data: COMPARABLE
+			i, l_count: INTEGER
+			found: BOOLEAN
+		do
+			last_row := Void
+			if a_parent_index > 0 then
+				l_count := a_parent_index + grid.row (a_parent_index).subrow_count_recursive
+			else
+				l_count := grid.row_count
+			end
+			from
+				i := a_parent_index + 1
+				found := False
+			until
+				i > l_count or found
+			loop
+				a_row := grid.row (i)
+				l_data ?= a_row.data
+				check row_data_not_void: l_data /= Void end
+				if a_comp = l_data then
+					last_row := a_row
+					found := True
+				elseif a_comp < l_data then
+					found := True
+				end
+				i := i + grid.row (i).subrow_count_recursive + 1
+			end
+			if last_row = Void then
+				if a_parent_index > 0 then
+					grid.insert_new_row_parented (i, grid.row (a_parent_index))
+				else
+					grid.insert_new_row (i)
+				end
+				a_row := grid.row (i)
+				last_row := a_row
+			end
+		ensure
+			last_row_not_void: last_row /= Void
+		end
 
-feature -- Removal
 
-feature -- Resizing
-
-feature -- Transformation
-
-feature -- Conversion
-
-feature -- Duplication
-
-feature -- Miscellaneous
-
-feature -- Basic operations
-
-feature {NONE} -- Test Suite
+feature {NONE} -- Test suite
 
 	test_suite_singleton: CDD_TEST_SUITE is
-			-- temporary solution for creating a shared test suite
-			-- in future test suites will be project-related
+			-- NOTE: Temporary solution for creating a shared test suite.
+			-- In future test suites will be project-related.
 		once
 			create Result.make
 		end
 
 
 
-feature {NONE} -- EV widget mplementation
+feature {NONE} -- Implementation
 
 	tool_bar: EV_TOOL_BAR
+			-- Tool bar for test case manipulation
 
-	enable_testing_btn: EV_TOOL_BAR_BUTTON
+	enable_testing_button: EV_TOOL_BAR_BUTTON
+			-- Button for enabling testing
 
-	run_tc_button: EV_TOOL_BAR_BUTTON
+	run_button: EV_TOOL_BAR_BUTTON
+			-- Button for running all test cases
 
-	run_all_tc_button: EV_TOOL_BAR_BUTTON
-
-	del_tc_button: EV_TOOL_BAR_BUTTON
+	delete_button: EV_TOOL_BAR_BUTTON
+			-- Button for deleting a single test case
 
 	build_tool_bar is
-			--
+			-- Create widgets for displaying a tool bar
 		do
 			create tool_bar
-			create enable_testing_btn.make_with_text ("Enable Testing")
-			enable_testing_btn.set_pixmap (pixmaps.icon_pixmaps.breakpoints_enable_icon)
-			enable_testing_btn.pointer_button_press_actions.extend (agent on_button_enable_testing)
-			create run_all_tc_button.make_with_text ("Run all test cases")
-			run_all_tc_button.set_pixmap (pixmaps.icon_pixmaps.debug_run_icon)
-			create run_tc_button.make_with_text ("Run test tase")
-			run_tc_button.set_pixmap (pixmaps.icon_pixmaps.debug_run_icon)
-			create del_tc_button.make_with_text ("Remove test case")
-			del_tc_button.set_pixmap (pixmaps.icon_pixmaps.general_delete_icon)
-			tool_bar.extend (run_all_tc_button)
-			tool_bar.extend (run_tc_button)
-			tool_bar.extend (del_tc_button)
+			create enable_testing_button.make_with_text ("Enable Testing")
+			enable_testing_button.set_pixmap (pixmaps.icon_pixmaps.breakpoints_enable_icon)
+			enable_testing_button.pointer_button_press_actions.extend (agent on_button_enable_testing)
+			create run_button.make_with_text ("Run all test cases")
+			run_button.set_pixmap (pixmaps.icon_pixmaps.debug_run_icon)
+			create delete_button.make_with_text ("Remove test case")
+			delete_button.set_pixmap (pixmaps.icon_pixmaps.general_delete_icon)
+			tool_bar.extend (run_button)
+			tool_bar.extend (delete_button)
 			tool_bar.extend (create {EV_TOOL_BAR_SEPARATOR})
-			tool_bar.extend (enable_testing_btn)
+			tool_bar.extend (enable_testing_button)
 			widget.extend (tool_bar)
 			widget.disable_item_expand (tool_bar)
 		end
 
 	grid: CDD_GRID
+			-- Grid in which test cases are listed
 
 
 invariant
-	invariant_clause: True -- Your invariant here
+	development_window_not_void: development_window /= Void
+	widget_not_void: widget /= Void
+	test_suite_not_void: test_suite /= Void
+	tool_bar_valid: tool_bar /= Void and then tool_bar.parent = widget
+	enable_testing_button_valid: enable_testing_button /= Void and then enable_testing_button.parent = tool_bar
+	run_button_valid: run_button /= Void and then run_button.parent = tool_bar
+	delete_button_valid: delete_button /= Void and then delete_button.parent = tool_bar
+	grid_valid: grid /= Void and then grid.parent = widget
 
 end
