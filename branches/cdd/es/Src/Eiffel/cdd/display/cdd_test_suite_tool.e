@@ -180,8 +180,9 @@ feature {NONE} -- Grid manipulation
 					found := True
 				elseif a_comp < l_data then
 					found := True
+				else
+					i := i + grid.row (i).subrow_count_recursive + 1
 				end
-				i := i + grid.row (i).subrow_count_recursive + 1
 			end
 			if last_row = Void then
 				if a_parent_index > 0 then

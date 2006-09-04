@@ -91,6 +91,9 @@ feature {CDD_TEST_SUITE} -- Project loading
 						l_file.close
 					end
 				end
+				l_cluster := Void
+				l_class := Void
+				l_feature := Void
 				l_files.forth
 			end
 		end
@@ -179,7 +182,7 @@ feature {NONE} -- Test case generation
 			until
 				i > 99 or Result /= Void
 			loop
-				Result := l_prefix
+				create Result.make_from_string (l_prefix)
 				if i < 10 then
 					Result.append_character ('0')
 				end

@@ -36,17 +36,7 @@ feature {NONE} -- Initialization
 			create addressed_objects.make (object_count)
 			root_object := create_composite_object (a_cse.object_address, a_cse.dynamic_class.eiffel_class_c)
 			called_feature := a_cse.routine
-			if reflection_succeded /= Void then
-				create {DS_ARRAYED_LIST [CDD_COMPOSITE_OBJECT]} composite_objects.make (addressed_objects.count)
-				from
-					addressed_objects.start
-				until
-					addressed_objects.after
-				loop
-					composite_objects.put_right (addressed_objects.item_for_iteration)
-					addressed_objects.forth
-				end
-
+			if reflection_succeded then
 				-- retrieve feature arguments
 				l_alist := a_cse.arguments
 				if l_alist = Void then
@@ -61,6 +51,16 @@ feature {NONE} -- Initialization
 						arguments.put (create_object (l_alist.i_th (i)), i)
 						i := i + 1
 					end
+				end
+
+				create {DS_ARRAYED_LIST [CDD_COMPOSITE_OBJECT]} composite_objects.make (addressed_objects.count)
+				from
+					addressed_objects.start
+				until
+					addressed_objects.after
+				loop
+					composite_objects.put_right (addressed_objects.item_for_iteration)
+					addressed_objects.forth
 				end
 			end
 			addressed_objects := Void

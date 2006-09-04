@@ -125,7 +125,7 @@ feature -- Compare
 				elseif target_class = other.target_class then
 					if feature_name < other.feature_name then
 						Result := True
-					elseif feature_name = other.feature_name then
+					elseif feature_name.is_equal (other.feature_name) then
 						if test_class < other.test_class then
 							Result := True
 						end
