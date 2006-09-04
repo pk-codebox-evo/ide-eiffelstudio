@@ -15,8 +15,10 @@ feature -- Initialization
 			a_type_not_void: a_type /= Void
 		do
 			dynamic_type := a_type
+			type := dynamic_type.name
 		ensure
 			correct_dynamic_type: dynamic_type = a_type
+			type_set: type = dynamic_type.name
 		end
 
 
@@ -26,13 +28,8 @@ feature -- Access
 	dynamic_type: EIFFEL_CLASS_C
 			-- reflected objects type
 
-	type: STRING is
+	type: STRING
 			-- full type of the reflected object
-		do
-			Result := dynamic_type.name
-		ensure
-			result_not_empty: Result /= Void and then not Result.is_empty
-		end
 
 	identifier: STRING is
 			-- identifier used for output
@@ -44,5 +41,6 @@ feature -- Access
 
 invariant
 	dynamic_class_not_void: dynamic_type /= Void
+	type_not_empty: type /= Void and then not type.is_empty
 
 end

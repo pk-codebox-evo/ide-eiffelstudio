@@ -10,9 +10,6 @@ class
 inherit
 
 	CDD_REGULAR_OBJECT
-		redefine
-			type
-		end
 
 create
 	make_generic
@@ -28,20 +25,14 @@ feature {NONE} -- Initialization
 		do
 			make_with_count (a_type, a_count)
 			generic_type := a_gen_type
+			type.append (" [" + generic_type + "]")
 		ensure
 			generic_type_set: generic_type = a_gen_type
+			type_modified: type.has_substring (" [" + generic_type + "]")
 		end
 
 
 feature -- Access
-
-	type: STRING is
-			-- full type of the reflected object
-		do
-			Result := Precursor
-			Result.append ("[" + generic_type + "]")
-		end
-
 
 	generic_type: STRING
 			-- generic parameter of the objects type
