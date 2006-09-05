@@ -49,18 +49,7 @@ feature -- Access
 	test_case: CDD_TEST_CASE
 			-- Test case displayed in item
 
-feature -- Element change
-
-	new_item (some_data: like data_type): CDD_TREE_ITEM is
-			-- Create new item.
-			-- Note: Do nothing since a test case does
-			-- not have any sub items.
-		require else
-			has_no_items: False
-		do
-		end
-
 invariant
-	invariant_clause: True -- Your invariant here
+	test_case_not_void: test_case /= Void
 
 end

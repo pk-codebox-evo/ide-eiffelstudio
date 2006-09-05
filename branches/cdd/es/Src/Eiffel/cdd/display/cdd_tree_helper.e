@@ -10,21 +10,17 @@ deferred class
 
 feature -- Access
 
-	i_th alias "[]" (i: INTEGER): EV_TREE_NODE is
-			-- Item at 'i'-th position
-		require
-			within_bounds: i > 0 and i <= count
+	item: EV_TREE_NODE is
+			-- Item at current position
 		deferred
 		ensure
 			not_void: Result /= Void
 		end
 
-	i_th_cdd_item (i: INTEGER): CDD_TREE_ITEM is
-			-- CDD_TREE_ITEM at 'i'-th position
-		require
-			within_bounds: i > 0 and i <= count
+	cdd_item: CDD_TREE_ITEM is
+			-- CDD_TREE_ITEM at current position
 		do
-			Result ?= i_th (i)
+			Result ?= item
 		ensure
 			not_void: Result /= Void
 		end
@@ -48,15 +44,21 @@ feature -- Status report
 
 feature -- Cursor movement
 
-	go_i_th (an_index: INTEGER) is
-			-- Move to 'i'-th position.
+	start is
+			-- Move curser to first position.
+		deferred
+		end
+
+
+	forth is
+			-- Move cursor to next position.
 		deferred
 		end
 
 
 feature -- Element change
 
-	put_right (an_item: EV_TREE_NODE) is
+	put_left (an_item: EV_TREE_NODE) is
 			-- Add `an_item' to the right of cursor position. Do not move cursor.
 		deferred
 		ensure
@@ -70,29 +72,25 @@ feature -- Transformation
 			-- found, add it at the correct position. Let last_located_item
 			-- point to appropriate item.
 		local
-			i: INTEGER
 			l_found: BOOLEAN
-			l_item: CDD_TREE_ITEM
 		do
 			from
 				last_located_item := Void
-				i := 1
+				start
 			until
-				i > count or l_found or last_located_item /= Void
+				after or l_found or last_located_item /= Void
 			loop
-				l_item := i_th_cdd_item (i)
-				if l_item.data.is_equal (some_data) then
-					last_located_item := l_item
-				elseif some_data < l_item.data then
+				if cdd_item.data.is_equal (some_data) then
+					last_located_item := cdd_item
+				elseif some_data < cdd_item.data then
 					l_found := True
 				else
-					i := i + 1
+					forth
 				end
 			end
 			if last_located_item = Void then
 				last_located_item := new_item (some_data)
-				go_i_th (i-1)
-				put_right (last_located_item)
+				put_left (last_located_item)
 			end
 		ensure
 			last_located_item_not_void: last_located_item /= Void

@@ -13,13 +13,6 @@ inherit
 			data
 		end
 
-	CDD_TREE_HELPER
-		undefine
-			default_create,
-			is_equal,
-			copy
-		end
-
 feature {NONE} -- Initialization
 
 	make (some_data: like data) is

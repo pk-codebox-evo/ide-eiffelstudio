@@ -13,7 +13,15 @@ inherit
 			data as target_cluster
 		redefine
 			make,
-			target_cluster,
+			target_cluster
+		end
+
+	CDD_TREE_HELPER
+		undefine
+			default_create,
+			is_equal,
+			copy
+		redefine
 			data_type,
 			item_type
 		end
