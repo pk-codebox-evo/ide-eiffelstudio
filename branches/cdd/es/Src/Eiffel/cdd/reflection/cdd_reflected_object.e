@@ -33,39 +33,39 @@ feature {NONE} -- Initialization
 			l_alist: LIST [ABSTRACT_DEBUG_VALUE]
 			i: INTEGER
 		do
+			called_feature := a_cse.routine
 			create addressed_objects.make (object_count)
 			root_object := create_composite_object (a_cse.object_address, a_cse.dynamic_class.eiffel_class_c)
-			called_feature := a_cse.routine
-			if reflection_succeded then
-				-- retrieve feature arguments
+			if reflection_succeded and called_feature.has_arguments then
 				l_alist := a_cse.arguments
-				if l_alist = Void then
-					create {DS_ARRAYED_LIST [CDD_OBJECT]} arguments.make (0)
-				else
-					create {DS_ARRAYED_LIST [CDD_OBJECT]} arguments.make (l_alist.count)
-					from
-						i := 1
-					until
-						i > l_alist.count
-					loop
-						arguments.put (create_object (l_alist.i_th (i)), i)
-						i := i + 1
-					end
+				create arguments.make (l_alist.count)
+				from
+					i := 1
+				until
+					i > l_alist.count
+				loop
+					arguments.put (create_object (l_alist.i_th (i)), i)
+					i := i + 1
 				end
-
-				create {DS_ARRAYED_LIST [CDD_COMPOSITE_OBJECT]} composite_objects.make (addressed_objects.count)
+			else
+				create arguments.make (0)
+			end
+			if reflection_succeded then
+				create composite_objects.make (addressed_objects.count)
 				from
 					addressed_objects.start
 				until
 					addressed_objects.after
 				loop
-					composite_objects.put_right (addressed_objects.item_for_iteration)
+					composite_objects.put_last (addressed_objects.item_for_iteration)
 					addressed_objects.forth
 				end
+			else
+				create composite_objects.make (0)
 			end
 			addressed_objects := Void
 		ensure
-			called_feature_not_void: called_feature /= Void
+			called_feature_set: called_feature = a_cse.routine
 		end
 
 
@@ -84,10 +84,10 @@ feature -- Access
 	called_feature: E_FEATURE
 			-- feature which was called before reflection
 
-	composite_objects: DS_LIST [CDD_COMPOSITE_OBJECT]
+	composite_objects: DS_ARRAYED_LIST [CDD_COMPOSITE_OBJECT]
 			-- objects referenced to directly or indirectly by 'root_robject' 
 
-	arguments: DS_LIST [CDD_OBJECT]
+	arguments: DS_ARRAYED_LIST [CDD_OBJECT]
 			-- reflected arguments of 'called_feature'
 
 
@@ -240,6 +240,6 @@ feature {NONE} -- Implementation
 invariant
 	correct_reflection_outcome: reflection_succeded = root_object /= Void
 	arguments_not_void: arguments /= Void
-	valid_argument_count: arguments.is_empty = called_feature.has_arguments
+	valid_argument_count: arguments.is_empty = not called_feature.has_arguments
 
 end

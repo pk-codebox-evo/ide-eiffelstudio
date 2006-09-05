@@ -28,7 +28,8 @@ inherit
 		export
 			{NONE} all
 		redefine
-			on_project_loaded
+			on_project_loaded,
+			on_class_removed
 		end
 
 	EB_SHARED_GRAPHICAL_COMMANDS
@@ -60,7 +61,7 @@ feature {NONE} -- Initialization
 			create on_disable_testing.make (5)
 
 				-- Create List for storing test cases
-			test_cases := create {DS_LINKED_LIST [CDD_TEST_CASE]}.make
+			create test_cases.make
 
 				-- register as observer when project status changes
 			manager.add_observer (Current)
@@ -90,7 +91,7 @@ feature -- Access
 	changed: BOOLEAN
 		-- Has the test suite changed since last compilation?
 
-	test_cases: DS_LIST [CDD_TEST_CASE]
+	test_cases: DS_LINKED_LIST [CDD_TEST_CASE]
 			-- Sorted list of all test cases in 'Current'
 			-- Note: Do not modify directly!
 
@@ -137,7 +138,8 @@ feature -- Status change
 			on_enable_testing.do_all (agent notify_test_suite_status)
 		ensure
 			testing_is_enabled: is_testing_enabled
-			target_set: target /= Void
+			-- TODO: create target
+			--target_set: target /= Void
 			cluster_set: cluster /= Void
 		end
 
@@ -158,31 +160,48 @@ feature -- Element change
 			valid_test_case: a_tc /= Void
 			not_added_yet: not test_cases.has (a_tc)
 		local
-			l_done: BOOLEAN
+			l_found: BOOLEAN
 		do
 			from
-				l_done := False
 				test_cases.start
 			until
-				test_cases.after or l_done
+				test_cases.after or l_found
 			loop
-				if test_cases.item_for_iteration < a_tc or test_cases.is_last then
-					test_cases.put_right (a_tc)
-					l_done := True
+				if a_tc < test_cases.item_for_iteration then
+					l_found := True
 				end
 				test_cases.forth
 			end
+			test_cases.put_left (a_tc)
 			on_add_test_case.do_all (agent notify_test_case_change (a_tc, ?))
 		ensure
-			test_case_added: test_cases.has (a_tc)
+			test_case_added: test_cases.count = old test_cases.count + 1 and test_cases.has (a_tc)
 		end
 
 	remove_test_case (a_tc: CDD_TEST_CASE) is
 			-- Remove 'a_tc' from 'test_cases' and notify agents
 		require
 			valid_test_case: a_tc /= Void and then test_cases.has (a_tc)
+		local
+			i: INTEGER
+			l_removed: BOOLEAN
+			l_file: PLAIN_TEXT_FILE
 		do
-			on_remove_test_case.do_all (agent notify_test_case_change (a_tc, ?))
+			from
+				i := 1
+			until
+				i > test_cases.count or l_removed
+			loop
+				if test_cases.item (i) = a_tc then
+					create l_file.make (a_tc.test_class.file_name)
+					l_file.delete
+					manager.remove_class (a_tc.test_class)
+					test_cases.remove (i)
+					on_remove_test_case.do_all (agent notify_test_case_change (a_tc, ?))
+					l_removed := True
+				end
+				i := i + 1
+			end
 		ensure
 			test_case_removed: not test_cases.has (a_tc)
 		end
@@ -209,6 +228,28 @@ feature {EB_CLUSTERS} -- Project Events
 		ensure then
 			valid_path: path /= Void and then not path.is_empty
 		end
+
+	on_class_removed (a_class: CLASS_I) is
+			-- If class was test class, remove corresponding test case.
+		local
+			l_done: BOOLEAN
+		do
+			if a_class.group = cluster or True then
+				from
+					test_cases.start
+				until
+					test_cases.after
+				loop
+					if test_cases.item_for_iteration.test_class = a_class then
+						on_remove_test_case.do_all (agent notify_test_case_change (test_cases.item_for_iteration, ?))
+						test_cases.remove_at
+						l_done := True
+					end
+					test_cases.forth
+				end
+			end
+		end
+
 
 
 feature -- Events

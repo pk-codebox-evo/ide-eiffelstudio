@@ -42,6 +42,8 @@ feature -- Status report
 		deferred
 		end
 
+
+
 feature -- Cursor movement
 
 	start is
@@ -64,6 +66,7 @@ feature -- Element change
 		ensure
 			count_increased: count = old count + 1
 		end
+
 
 feature -- Transformation
 

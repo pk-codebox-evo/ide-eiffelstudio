@@ -37,6 +37,7 @@ feature {NONE} -- Initialization
 			test_suite.on_enable_testing.extend (agent on_enable_testing)
 			test_suite.on_disable_testing.extend (agent on_disable_testing)
 
+
 			if test_suite.is_testing_enabled then
 				on_enable_testing
 				from
@@ -95,11 +96,26 @@ feature -- Status setting
 		end
 
 	on_remove_test_case (a_tc: CDD_TEST_CASE) is
-			-- Remove test from grid
+			-- Remove test from tree
 		require
 			a_tc_not_void: a_tc /= Void
+		local
+			l_cluster_item: CDD_TREE_CLUSTER_ITEM
+			l_class_item: CDD_TREE_CLASS_ITEM
+			l_win: EV_INFORMATION_DIALOG
 		do
-
+			tree.locate_item (a_tc.target_cluster)
+			l_cluster_item := tree.last_located_item
+			l_cluster_item.locate_item (a_tc.target_class)
+			l_class_item := l_cluster_item.last_located_item
+			l_class_item.locate_item (a_tc)
+			l_class_item.prune (l_class_item.last_located_item)
+			if l_class_item.is_empty then
+				l_cluster_item.prune (l_class_item)
+				if l_cluster_item.is_empty then
+					tree.prune (l_cluster_item)
+				end
+			end
 		end
 
 	on_enable_testing is

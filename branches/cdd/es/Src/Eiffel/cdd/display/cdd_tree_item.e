@@ -9,7 +9,7 @@ deferred class
 
 inherit
 	EV_TREE_ITEM
-		-- Note: redefine clause produced error.
+		-- Note: redefine clause produces error.
 --		redefine
 --			data
 		rename
@@ -32,7 +32,7 @@ feature {NONE} -- Initialization
 feature -- Access
 
 	data: G
-			-- Sortable user data.
+			-- Comparable user data.
 
 invariant
 	data_not_void: data /= Void

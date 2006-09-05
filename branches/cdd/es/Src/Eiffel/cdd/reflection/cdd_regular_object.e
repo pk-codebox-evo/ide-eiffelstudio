@@ -22,7 +22,7 @@ feature {NONE} -- Initialization
 			make (a_type)
 			create attributes.make (a_count)
 		ensure
-			correct_size: attributes.count = a_count
+			correct_size: attributes.capacity >= a_count
 		end
 
 feature -- Access
