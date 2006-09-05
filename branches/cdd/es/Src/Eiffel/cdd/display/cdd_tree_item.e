@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Objects that represent sorted items of CDD_TREE"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -14,8 +14,6 @@ inherit
 		end
 
 	CDD_TREE_HELPER
-		export
-			{NONE} all
 		undefine
 			default_create,
 			is_equal,
@@ -25,47 +23,22 @@ inherit
 feature {NONE} -- Initialization
 
 	make (some_data: like data) is
-			-- Initialize `Current'.
+			-- Set 'data' to 'some_data'
+		require
+			some_data_not_void: some_data /= Void
 		do
 			default_create
 			set_data (some_data)
+		ensure
+			data_set: data = some_data
 		end
 
 feature -- Access
 
 	data: COMPARABLE
-
-feature -- Measurement
-
-feature -- Status report
-
-feature -- Status setting
-
-feature -- Cursor movement
-
-feature -- Element change
-
-feature -- Removal
-
-feature -- Resizing
-
-feature -- Transformation
-
-feature -- Conversion
-
-feature -- Duplication
-
-feature -- Miscellaneous
-
-feature -- Basic operations
-
-feature -- Obsolete
-
-feature -- Inapplicable
-
-feature {NONE} -- Implementation
+			-- Sortable user data.
 
 invariant
-	invariant_clause: True -- Your invariant here
+	data_not_void: data /= Void
 
 end

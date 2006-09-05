@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Objects that represent a test case within a tree structure"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -30,53 +30,35 @@ create
 feature {NONE} -- Initialization
 
 	make (a_test_case: like test_case) is
-			--
+			-- Set 'text', 'tooltip' and 'pixmap' of item.
+		require else
+			a_test_case_not_void: a_test_case /= Void
 		do
 			Precursor (a_test_case)
 			set_text (test_case.test_class.name)
 			set_pixmap (pixmaps.icon_pixmaps.general_delete_icon)
+		ensure then
+			text_set: text /= Void
+			tooltip_set: tooltip /= Void
+			pixmap_set: pixmap /= Void
 		end
 
 
 feature -- Access
 
 	test_case: CDD_TEST_CASE
-
-feature -- Measurement
-
-feature -- Status report
-
-feature -- Status setting
-
-feature -- Cursor movement
+			-- Test case displayed in item
 
 feature -- Element change
 
 	new_item (some_data: like data_type): CDD_TREE_ITEM is
-			--
+			-- Create new item.
+			-- Note: Do nothing since a test case does
+			-- not have any sub items.
+		require else
+			has_no_items: False
 		do
 		end
-
-
-feature -- Removal
-
-feature -- Resizing
-
-feature -- Transformation
-
-feature -- Conversion
-
-feature -- Duplication
-
-feature -- Miscellaneous
-
-feature -- Basic operations
-
-feature -- Obsolete
-
-feature -- Inapplicable
-
-feature {NONE} -- Implementation
 
 invariant
 	invariant_clause: True -- Your invariant here

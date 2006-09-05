@@ -1,6 +1,6 @@
 indexing
 	description: "Objects that support displaying test cases in tree structures"
-	author: ""
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -10,28 +10,34 @@ deferred class
 
 feature -- Access
 
-	i_th alias "[]" (an_index: INTEGER): EV_TREE_NODE is
-			--
+	i_th alias "[]" (i: INTEGER): EV_TREE_NODE is
+			-- Item at 'i'-th position
+		require
+			within_bounds: i > 0 and i <= count
 		deferred
+		ensure
+			not_void: Result /= Void
 		end
 
-
-	i_th_cdd_item (an_index: INTEGER): CDD_TREE_ITEM is
-			--
+	i_th_cdd_item (i: INTEGER): CDD_TREE_ITEM is
+			-- CDD_TREE_ITEM at 'i'-th position
+		require
+			within_bounds: i > 0 and i <= count
 		do
-			Result ?= i_th (an_index)
+			Result ?= i_th (i)
+		ensure
+			not_void: Result /= Void
 		end
 
-	last_located_item: CDD_TREE_ITEM
-
+	last_located_item: like item_type
+			-- last item set by 'locate_item'
 
 feature -- Measurement
 
 	count: INTEGER is
-			--
+			-- Number of items
 		deferred
 		end
-
 
 feature -- Status report
 
@@ -40,11 +46,7 @@ feature -- Status report
 		deferred
 		end
 
-
-feature -- Status setting
-
 feature -- Cursor movement
-
 
 	go_i_th (an_index: INTEGER) is
 			-- Move to 'i'-th position.
@@ -55,19 +57,18 @@ feature -- Cursor movement
 feature -- Element change
 
 	put_right (an_item: EV_TREE_NODE) is
-			--
+			-- Add `an_item' to the right of cursor position. Do not move cursor.
 		deferred
+		ensure
+			count_increased: count = old count + 1
 		end
-
-
-feature -- Removal
-
-feature -- Resizing
 
 feature -- Transformation
 
 	locate_item (some_data: like data_type) is
-			--
+			-- Find item where data is equal to 'some_data'. If item is not
+			-- found, add it at the correct position. Let last_located_item
+			-- point to appropriate item.
 		local
 			i: INTEGER
 			l_found: BOOLEAN
@@ -99,23 +100,19 @@ feature -- Transformation
 		end
 
 	new_item (some_data: like data_type): CDD_TREE_ITEM is
-			--
+			-- Create new item with data set to 'some_data'.
+		require
+			some_data_not_void: some_data /= Void
 		deferred
+		ensure
+			not_void: Result /= Void
+			data_set: Result.data = some_data
 		end
 
-feature -- Conversion
-
-feature -- Duplication
-
-feature -- Miscellaneous
-
-feature -- Basic operations
-
-feature -- Obsolete
-
-feature -- Inapplicable
-
 feature {NONE} -- Implementation
+
+	item_type: CDD_TREE_ITEM
+			-- Type anchor
 
 	data_type: COMPARABLE
 			-- Type anchor

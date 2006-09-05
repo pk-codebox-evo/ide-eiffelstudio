@@ -95,7 +95,8 @@ feature -- Status setting
 			l_cluster_line: CDD_GRID_CLUSTER_LINE
 			l_class_line: CDD_GRID_CLASS_LINE
 			l_tc_line: CDD_GRID_TEST_CASE_LINE
-			l_item: CDD_TREE_ITEM
+			l_cluster_item: CDD_TREE_CLUSTER_ITEM
+			l_class_item: CDD_TREE_CLASS_ITEM
 		do
 			locate_row (a_test_case.target_cluster, 0)
 			if last_row.data = Void then
@@ -108,23 +109,12 @@ feature -- Status setting
 			locate_row (a_test_case, last_row.index)
 			create l_tc_line.make_with_test_case (a_test_case, grid, last_row)
 
-			locate_item (a_test_case.target_cluster, tree)
-			if last_located_item = Void then
-				last_located_item := create {CDD_TREE_CLUSTER_ITEM}.make (a_test_case.target_cluster)
-				tree.extend (last_located_item)
-			end
-			l_item := last_located_item
-			locate_item (a_test_case.target_class, last_located_item)
-			if last_located_item = Void then
-				last_located_item := create {CDD_TREE_CLASS_ITEM}.make (a_test_case.target_class)
-				l_item.extend (last_located_item)
-			end
-			l_item := last_located_item
-			locate_item (a_test_case, last_located_item)
-			if last_located_item = Void then
-				last_located_item := create {CDD_TREE_TEST_CASE_ITEM}.make (a_test_case)
-				l_item.extend (last_located_item)
-			end
+
+			tree.locate_item (a_test_case.target_cluster)
+			l_cluster_item := tree.last_located_item
+			l_cluster_item.locate_item (a_test_case.target_class)
+			l_class_item := l_cluster_item.last_located_item
+			l_class_item.locate_item (a_test_case)
 		end
 
 	on_remove_test_case (a_tc: CDD_TEST_CASE) is
@@ -223,35 +213,6 @@ feature {NONE} -- Grid manipulation
 			end
 		ensure
 			last_row_not_void: last_row /= Void
-		end
-
-	last_located_item: CDD_TREE_ITEM
-
-	locate_item (some_data: COMPARABLE; a_list: EV_TREE_NODE_LIST) is
-			--
-		local
-			l_item: CDD_TREE_ITEM
-			l_cluster: CONF_CLUSTER
-			l_class: EIFFEL_CLASS_I
-			l_tc: CDD_TEST_CASE
-			found: BOOLEAN
-		do
-			from
-				a_list.start
-				last_located_item := Void
-			until
-				a_list.after or found
-			loop
-				l_item ?= a_list.item
-				if some_data = l_item.data then
-					last_located_item := l_item
-					found := True
-				elseif some_data < l_item.data then
-					found := True
-				else
-					a_list.forth
-				end
-			end
 		end
 
 

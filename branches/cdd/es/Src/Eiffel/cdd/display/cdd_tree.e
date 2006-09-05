@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Objects that display test cases in a tree like structure"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -11,58 +11,30 @@ inherit
 	EV_TREE
 
 	CDD_TREE_HELPER
-		export
-			{NONE} all
 		undefine
 			default_create,
 			is_equal,
 			copy
 		redefine
-			data_type
+			data_type,
+			item_type
 		end
-
-feature -- Access
-
-feature -- Measurement
-
-feature -- Status report
-
-feature -- Status setting
-
-feature -- Cursor movement
-
-feature -- Element change
-
-feature -- Removal
-
-feature -- Resizing
 
 feature -- Transformation
 
 	new_item (a_cluster: like data_type): CDD_TREE_CLUSTER_ITEM is
-			--
+			-- Create new tree item for displaying 'a_cluster'.
 		do
 			create Result.make (a_cluster)
 		end
 
-
-feature -- Conversion
-
-feature -- Duplication
-
-feature -- Miscellaneous
-
-feature -- Basic operations
-
-feature -- Obsolete
-
-feature -- Inapplicable
-
 feature {NONE} -- Implementation
 
 	data_type: CONF_CLUSTER
+			-- Type anchor
 
-invariant
-	invariant_clause: True -- Your invariant here
+	item_type: CDD_TREE_CLUSTER_ITEM
+			-- Type anchor
+
 
 end

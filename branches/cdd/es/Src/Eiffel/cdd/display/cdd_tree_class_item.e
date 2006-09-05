@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Objects that represent a class within a tree structure"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -12,7 +12,10 @@ inherit
 		rename
 			data as target_class
 		redefine
-			make, target_class, data_type
+			make,
+			target_class,
+			data_type,
+			item_type
 		end
 
 	EB_CONSTANTS
@@ -30,58 +33,45 @@ create
 feature {NONE} -- Initialization
 
 	make (a_class: like target_class) is
-			--
+			-- Set 'text', 'tooltip' and 'pixmap' of item.
+		require else
+			a_class_not_void: a_class /= Void
 		do
 			Precursor (a_class)
 			set_text (target_class.name)
+			set_tooltip (target_class.name)
 			set_pixmap (pixmaps.icon_pixmaps.tool_class_icon)
+		ensure then
+			text_set: text /= Void
+			tooltip_set: tooltip /= Void
+			pixmap_set: pixmap /= Void
 		end
 
 
 feature -- Access
 
 	target_class: EIFFEL_CLASS_I
-
-feature -- Measurement
-
-feature -- Status report
-
-feature -- Status setting
-
-feature -- Cursor movement
+			-- Class displayed in the item
 
 feature -- Element change
 
 	new_item (a_tc: CDD_TEST_CASE): CDD_TREE_TEST_CASE_ITEM is
-			--
+			-- Create new tree item for displaying 'a_tc'.
+		require else
+			correct_class: a_tc.target_class = target_class
 		do
-
+			create Result.make (a_tc)
 		end
-
-
-feature -- Removal
-
-feature -- Resizing
-
-feature -- Transformation
-
-feature -- Conversion
-
-feature -- Duplication
-
-feature -- Miscellaneous
-
-feature -- Basic operations
-
-feature -- Obsolete
-
-feature -- Inapplicable
 
 feature {NONE} -- Implementation
 
 	data_type: CDD_TEST_CASE
+			-- Type anchor
+
+	item_type: CDD_TREE_TEST_CASE_ITEM
+			-- Type anchor
 
 invariant
-	invariant_clause: True -- Your invariant here
+	target_class_not_void: target_class /= Void
 
 end
