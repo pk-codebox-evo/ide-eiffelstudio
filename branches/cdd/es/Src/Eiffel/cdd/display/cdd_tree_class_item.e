@@ -12,7 +12,7 @@ inherit
 		rename
 			data as target_class
 		redefine
-			make, target_class
+			make, target_class, data_type
 		end
 
 	EB_CONSTANTS
@@ -52,6 +52,13 @@ feature -- Cursor movement
 
 feature -- Element change
 
+	new_item (a_tc: CDD_TEST_CASE): CDD_TREE_TEST_CASE_ITEM is
+			--
+		do
+
+		end
+
+
 feature -- Removal
 
 feature -- Resizing
@@ -71,6 +78,8 @@ feature -- Obsolete
 feature -- Inapplicable
 
 feature {NONE} -- Implementation
+
+	data_type: CDD_TEST_CASE
 
 invariant
 	invariant_clause: True -- Your invariant here

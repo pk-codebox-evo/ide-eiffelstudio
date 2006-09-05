@@ -303,7 +303,7 @@ feature {NONE} -- Implementation
 			-- Grid in which test cases are listed
 
 
-	tree: EV_TREE
+	tree: CDD_TREE
 
 
 invariant

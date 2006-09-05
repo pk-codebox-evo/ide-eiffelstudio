@@ -52,6 +52,12 @@ feature -- Cursor movement
 
 feature -- Element change
 
+	new_item (some_data: like data_type): CDD_TREE_ITEM is
+			--
+		do
+		end
+
+
 feature -- Removal
 
 feature -- Resizing

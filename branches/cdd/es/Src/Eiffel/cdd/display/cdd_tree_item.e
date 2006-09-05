@@ -13,6 +13,15 @@ inherit
 			data
 		end
 
+	CDD_TREE_HELPER
+		export
+			{NONE} all
+		undefine
+			default_create,
+			is_equal,
+			copy
+		end
+
 feature {NONE} -- Initialization
 
 	make (some_data: like data) is
@@ -25,6 +34,13 @@ feature {NONE} -- Initialization
 feature -- Access
 
 	data: COMPARABLE
+
+	i_th_cdd_item (an_index: INTEGER): CDD_TREE_ITEM is
+			--
+		do
+			Result ?= i_th (an_index)
+		end
+
 
 feature -- Measurement
 

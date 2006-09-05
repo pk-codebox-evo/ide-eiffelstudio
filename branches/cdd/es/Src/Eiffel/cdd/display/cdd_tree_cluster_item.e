@@ -12,7 +12,7 @@ inherit
 		rename
 			data as target_cluster
 		redefine
-			make, target_cluster
+			make, target_cluster, data_type
 		end
 
 	EB_CONSTANTS
@@ -52,6 +52,13 @@ feature -- Cursor movement
 
 feature -- Element change
 
+	new_item (a_class: like data_type): CDD_TREE_CLASS_ITEM is
+			--
+		do
+
+		end
+
+
 feature -- Removal
 
 feature -- Resizing
@@ -71,6 +78,8 @@ feature -- Obsolete
 feature -- Inapplicable
 
 feature {NONE} -- Implementation
+
+	data_type: EIFFEL_CLASS_I
 
 invariant
 	invariant_clause: True -- Your invariant here
