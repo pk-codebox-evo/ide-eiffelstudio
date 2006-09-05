@@ -35,13 +35,6 @@ feature -- Access
 
 	data: COMPARABLE
 
-	i_th_cdd_item (an_index: INTEGER): CDD_TREE_ITEM is
-			--
-		do
-			Result ?= i_th (an_index)
-		end
-
-
 feature -- Measurement
 
 feature -- Status report
