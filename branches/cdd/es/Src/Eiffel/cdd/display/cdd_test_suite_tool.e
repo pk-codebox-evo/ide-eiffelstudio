@@ -54,21 +54,13 @@ feature {NONE} -- Initialization
 
 	initialize is
 			-- Initialize all widgets used in 'Current'
-		local
-			l_hbox: EV_HORIZONTAL_BOX
 		do
 			create widget
 
 			build_tool_bar
-			create l_hbox
-
-			create grid
-			l_hbox.extend (grid)
 
 			create tree
-			l_hbox.extend (tree)
-
-			widget.extend (l_hbox)
+			widget.extend (tree)
 		end
 
 feature -- Access
@@ -92,24 +84,9 @@ feature -- Status setting
 		require
 			a_test_case_not_void: a_test_case /= Void
 		local
-			l_cluster_line: CDD_GRID_CLUSTER_LINE
-			l_class_line: CDD_GRID_CLASS_LINE
-			l_tc_line: CDD_GRID_TEST_CASE_LINE
 			l_cluster_item: CDD_TREE_CLUSTER_ITEM
 			l_class_item: CDD_TREE_CLASS_ITEM
 		do
-			locate_row (a_test_case.target_cluster, 0)
-			if last_row.data = Void then
-				create l_cluster_line.make_with_cluster (a_test_case.target_cluster, grid, last_row)
-			end
-			locate_row (a_test_case.target_class, last_row.index)
-			if last_row.data = Void then
-				create l_class_line.make_with_class (a_test_case.target_class, grid, last_row)
-			end
-			locate_row (a_test_case, last_row.index)
-			create l_tc_line.make_with_test_case (a_test_case, grid, last_row)
-
-
 			tree.locate_item (a_test_case.target_cluster)
 			l_cluster_item := tree.last_located_item
 			l_cluster_item.locate_item (a_test_case.target_class)
@@ -129,7 +106,6 @@ feature -- Status setting
 			-- Enable widgets for handling test cases
 		do
 			enable_testing_button.disable_sensitive
-			grid.enable_sensitive
 			run_button.enable_sensitive
 			delete_button.enable_sensitive
 		end
@@ -138,7 +114,6 @@ feature -- Status setting
 			-- Disable widgets for handling test cases
 		do
 			enable_testing_button.enable_sensitive
-			grid.disable_sensitive
 			run_button.disable_sensitive
 			delete_button.disable_sensitive
 		end
@@ -158,61 +133,6 @@ feature {NONE} -- Button events
 					wd.show_modal_to_window (development_window.window)
 				end
 			end
-		end
-
-
-feature {NONE} -- Grid manipulation
-
-	last_row: EV_GRID_ROW
-			-- last row located by'locate_row'
-
-	locate_row (a_comp: COMPARABLE; a_parent_index: INTEGER) is
-			-- Set 'last_row' to row where data referes to 'a_comp'.
-			-- If row does not exists, add it to Current.
-		require
-			a_comp_not_void: a_comp /= Void
-			a_parent_index_not_negative: a_parent_index >= 0
-		local
-			a_row: EV_GRID_ROW
-			l_data: COMPARABLE
-			i, l_count: INTEGER
-			found: BOOLEAN
-		do
-			last_row := Void
-			if a_parent_index > 0 then
-				l_count := a_parent_index + grid.row (a_parent_index).subrow_count_recursive
-			else
-				l_count := grid.row_count
-			end
-			from
-				i := a_parent_index + 1
-				found := False
-			until
-				i > l_count or found
-			loop
-				a_row := grid.row (i)
-				l_data ?= a_row.data
-				check row_data_not_void: l_data /= Void end
-				if a_comp = l_data then
-					last_row := a_row
-					found := True
-				elseif a_comp < l_data then
-					found := True
-				else
-					i := i + grid.row (i).subrow_count_recursive + 1
-				end
-			end
-			if last_row = Void then
-				if a_parent_index > 0 then
-					grid.insert_new_row_parented (i, grid.row (a_parent_index))
-				else
-					grid.insert_new_row (i)
-				end
-				a_row := grid.row (i)
-				last_row := a_row
-			end
-		ensure
-			last_row_not_void: last_row /= Void
 		end
 
 
@@ -260,11 +180,8 @@ feature {NONE} -- Implementation
 			widget.disable_item_expand (tool_bar)
 		end
 
-	grid: CDD_GRID
-			-- Grid in which test cases are listed
-
-
 	tree: CDD_TREE
+			-- Tree for hierarchically displaying test cases
 
 
 invariant
@@ -275,6 +192,6 @@ invariant
 	enable_testing_button_valid: enable_testing_button /= Void and then enable_testing_button.parent = tool_bar
 	run_button_valid: run_button /= Void and then run_button.parent = tool_bar
 	delete_button_valid: delete_button /= Void and then delete_button.parent = tool_bar
-	grid_valid: grid /= Void and then grid.parent = widget
+	tree_not_void: tree /= Void
 
 end
