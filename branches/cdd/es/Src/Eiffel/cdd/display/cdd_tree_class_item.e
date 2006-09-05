@@ -8,22 +8,18 @@ class
 	CDD_TREE_CLASS_ITEM
 
 inherit
-	CDD_TREE_ITEM
+	CDD_TREE_ITEM [EIFFEL_CLASS_I]
 		rename
 			data as target_class
 		redefine
-			make,
-			target_class
+			make
 		end
 
-	CDD_TREE_HELPER
+	CDD_TREE_HELPER [CDD_TEST_CASE, CDD_TREE_TEST_CASE_ITEM]
 		undefine
 			default_create,
 			is_equal,
 			copy
-		redefine
-			data_type,
-			item_type
 		end
 
 	EB_CONSTANTS
@@ -55,12 +51,6 @@ feature {NONE} -- Initialization
 			pixmap_set: pixmap /= Void
 		end
 
-
-feature -- Access
-
-	target_class: EIFFEL_CLASS_I
-			-- Class displayed in the item
-
 feature -- Element change
 
 	new_item (a_tc: CDD_TEST_CASE): CDD_TREE_TEST_CASE_ITEM is
@@ -70,14 +60,6 @@ feature -- Element change
 		do
 			create Result.make (a_tc)
 		end
-
-feature {NONE} -- Implementation
-
-	data_type: CDD_TEST_CASE
-			-- Type anchor
-
-	item_type: CDD_TREE_TEST_CASE_ITEM
-			-- Type anchor
 
 invariant
 	target_class_not_void: target_class /= Void

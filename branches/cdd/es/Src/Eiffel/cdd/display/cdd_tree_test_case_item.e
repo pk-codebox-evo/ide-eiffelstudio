@@ -8,11 +8,11 @@ class
 	CDD_TREE_TEST_CASE_ITEM
 
 inherit
-	CDD_TREE_ITEM
+	CDD_TREE_ITEM [CDD_TEST_CASE]
 		rename
 			data as test_case
 		redefine
-			make, test_case
+			make
 		end
 
 	EB_CONSTANTS
@@ -42,12 +42,6 @@ feature {NONE} -- Initialization
 			tooltip_set: tooltip /= Void
 			pixmap_set: pixmap /= Void
 		end
-
-
-feature -- Access
-
-	test_case: CDD_TEST_CASE
-			-- Test case displayed in item
 
 invariant
 	test_case_not_void: test_case /= Void

@@ -5,7 +5,7 @@ indexing
 	revision: "$Revision$"
 
 deferred class
-	CDD_TREE_HELPER
+	CDD_TREE_HELPER [G -> COMPARABLE, H -> CDD_TREE_ITEM [G]]
 
 
 feature -- Access
@@ -17,7 +17,7 @@ feature -- Access
 			not_void: Result /= Void
 		end
 
-	cdd_item: CDD_TREE_ITEM is
+	cdd_item: H is
 			-- CDD_TREE_ITEM at current position
 		do
 			Result ?= item
@@ -25,7 +25,7 @@ feature -- Access
 			not_void: Result /= Void
 		end
 
-	last_located_item: like item_type
+	last_located_item: H
 			-- last item set by 'locate_item'
 
 feature -- Measurement
@@ -67,7 +67,7 @@ feature -- Element change
 
 feature -- Transformation
 
-	locate_item (some_data: like data_type) is
+	locate_item (some_data: G) is
 			-- Find item where data is equal to 'some_data'. If item is not
 			-- found, add it at the correct position. Let last_located_item
 			-- point to appropriate item.
@@ -97,7 +97,7 @@ feature -- Transformation
 			last_located_item_valid: last_located_item.data = some_data
 		end
 
-	new_item (some_data: like data_type): CDD_TREE_ITEM is
+	new_item (some_data: G): H is
 			-- Create new item with data set to 'some_data'.
 		require
 			some_data_not_void: some_data /= Void
@@ -106,14 +106,6 @@ feature -- Transformation
 			not_void: Result /= Void
 			data_set: Result.data = some_data
 		end
-
-feature {NONE} -- Implementation
-
-	item_type: CDD_TREE_ITEM
-			-- Type anchor
-
-	data_type: COMPARABLE
-			-- Type anchor
 
 invariant
 	invariant_clause: True -- Your invariant here

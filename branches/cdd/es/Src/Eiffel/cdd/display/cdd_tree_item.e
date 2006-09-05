@@ -5,12 +5,15 @@ indexing
 	revision: "$Revision$"
 
 deferred class
-	CDD_TREE_ITEM
+	CDD_TREE_ITEM [G -> COMPARABLE]
 
 inherit
 	EV_TREE_ITEM
-		redefine
-			data
+		-- Note: redefine clause produced error.
+--		redefine
+--			data
+		rename
+			data as ev_data
 		end
 
 feature {NONE} -- Initialization
@@ -21,14 +24,14 @@ feature {NONE} -- Initialization
 			some_data_not_void: some_data /= Void
 		do
 			default_create
-			set_data (some_data)
+			data := some_data
 		ensure
 			data_set: data = some_data
 		end
 
 feature -- Access
 
-	data: COMPARABLE
+	data: G
 			-- Sortable user data.
 
 invariant

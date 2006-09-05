@@ -10,31 +10,21 @@ class
 inherit
 	EV_TREE
 
-	CDD_TREE_HELPER
+	CDD_TREE_HELPER [CONF_CLUSTER, CDD_TREE_CLUSTER_ITEM]
 		undefine
 			default_create,
 			is_equal,
 			copy
-		redefine
-			data_type,
-			item_type
 		end
 
 feature -- Transformation
 
-	new_item (a_cluster: like data_type): CDD_TREE_CLUSTER_ITEM is
+	new_item (a_cluster: CONF_CLUSTER): CDD_TREE_CLUSTER_ITEM is
 			-- Create new tree item for displaying 'a_cluster'.
 		do
 			create Result.make (a_cluster)
 		end
 
-feature {NONE} -- Implementation
-
-	data_type: CONF_CLUSTER
-			-- Type anchor
-
-	item_type: CDD_TREE_CLUSTER_ITEM
-			-- Type anchor
 
 
 end

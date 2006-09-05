@@ -8,22 +8,18 @@ class
 	CDD_TREE_CLUSTER_ITEM
 
 inherit
-	CDD_TREE_ITEM
+	CDD_TREE_ITEM [CONF_CLUSTER]
 		rename
 			data as target_cluster
 		redefine
-			make,
-			target_cluster
+			make
 		end
 
-	CDD_TREE_HELPER
+	CDD_TREE_HELPER [EIFFEL_CLASS_I, CDD_TREE_CLASS_ITEM]
 		undefine
 			default_create,
 			is_equal,
 			copy
-		redefine
-			data_type,
-			item_type
 		end
 
 	EB_CONSTANTS
@@ -56,14 +52,9 @@ feature {NONE} -- Initialization
 		end
 
 
-feature -- Access
-
-	target_cluster: CONF_CLUSTER
-			-- Cluster displayed in the item
-
 feature -- Element change
 
-	new_item (a_class: like data_type): CDD_TREE_CLASS_ITEM is
+	new_item (a_class: EIFFEL_CLASS_I): CDD_TREE_CLASS_ITEM is
 			-- Create new tree item for displaying 'a_class'.
 		require else
 			correct_cluster: a_class.cluster = target_cluster
@@ -71,13 +62,6 @@ feature -- Element change
 			create Result.make (a_class)
 		end
 
-feature {NONE} -- Implementation
-
-	data_type: EIFFEL_CLASS_I
-			-- Type anchor
-
-	item_type: CDD_TREE_CLASS_ITEM
-			-- Type anchor
 
 invariant
 	target_cluster_not_void: target_cluster /= Void
