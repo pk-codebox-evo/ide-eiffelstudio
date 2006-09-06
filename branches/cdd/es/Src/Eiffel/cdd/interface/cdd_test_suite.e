@@ -55,10 +55,10 @@ feature {NONE} -- Initialization
 	make is
 			-- Initialize 'Current'
 		do
-			create on_add_test_case.make (5)
-			create on_remove_test_case.make (5)
-			create on_enable_testing.make (5)
-			create on_disable_testing.make (5)
+			create add_test_case_actions.make (5)
+			create remove_test_case_actions.make (5)
+			create enable_testing_actions.make (5)
+			create disable_testing_actions.make (5)
 
 				-- Create List for storing test cases
 			create test_cases.make
@@ -135,7 +135,7 @@ feature -- Status change
 				-- compile the project
 
 				-- notify observers
-			on_enable_testing.do_all (agent notify_test_suite_status)
+			enable_testing_actions.do_all (agent notify_test_suite_status)
 		ensure
 			testing_is_enabled: is_testing_enabled
 			-- TODO: create target
@@ -173,35 +173,20 @@ feature -- Element change
 				test_cases.forth
 			end
 			test_cases.put_left (a_tc)
-			on_add_test_case.do_all (agent notify_test_case_change (a_tc, ?))
+			add_test_case_actions.do_all (agent notify_test_case_change (a_tc, ?))
 		ensure
 			test_case_added: test_cases.count = old test_cases.count + 1 and test_cases.has (a_tc)
 		end
 
 	remove_test_case (a_tc: CDD_TEST_CASE) is
-			-- Remove 'a_tc' from 'test_cases' and notify agents
+			-- Remove test class for 'a_tc' and notify class manager.
 		require
-			valid_test_case: a_tc /= Void and then test_cases.has (a_tc)
+			valid_test_case: a_tc /= Void
+			contains_test_case: test_cases.has (a_tc)
 		local
-			i: INTEGER
-			l_removed: BOOLEAN
 			l_file: PLAIN_TEXT_FILE
 		do
-			from
-				i := 1
-			until
-				i > test_cases.count or l_removed
-			loop
-				if test_cases.item (i) = a_tc then
-					create l_file.make (a_tc.test_class.file_name)
-					l_file.delete
-					manager.remove_class (a_tc.test_class)
-					test_cases.remove (i)
-					on_remove_test_case.do_all (agent notify_test_case_change (a_tc, ?))
-					l_removed := True
-				end
-				i := i + 1
-			end
+			test_case_factory.remove_test_case (a_tc)
 		ensure
 			test_case_removed: not test_cases.has (a_tc)
 		end
@@ -232,20 +217,22 @@ feature {EB_CLUSTERS} -- Project Events
 	on_class_removed (a_class: CLASS_I) is
 			-- If class was test class, remove corresponding test case.
 		local
-			l_done: BOOLEAN
+			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_CASE]
 		do
 			if a_class.group = cluster or True then
 				from
-					test_cases.start
+					l_cursor := test_cases.new_cursor
+					l_cursor.start
 				until
-					test_cases.after
+					l_cursor.after
 				loop
-					if test_cases.item_for_iteration.test_class = a_class then
-						on_remove_test_case.do_all (agent notify_test_case_change (test_cases.item_for_iteration, ?))
-						test_cases.remove_at
-						l_done := True
+					if l_cursor.item.test_class = a_class then
+						l_cursor.remove
+						remove_test_case_actions.do_all (agent notify_test_case_change (l_cursor.item, ?))
+						l_cursor.go_after
+					else
+						l_cursor.forth
 					end
-					test_cases.forth
 				end
 			end
 		end
@@ -254,16 +241,16 @@ feature {EB_CLUSTERS} -- Project Events
 
 feature -- Events
 
-	on_add_test_case: ARRAYED_LIST [PROCEDURE [ANY, TUPLE [CDD_TEST_CASE]]]
+	add_test_case_actions: ARRAYED_LIST [PROCEDURE [ANY, TUPLE [CDD_TEST_CASE]]]
 			-- agents called when test case wass added to 'Current'
 
-	on_remove_test_case: ARRAYED_LIST [PROCEDURE [ANY, TUPLE [CDD_TEST_CASE]]]
+	remove_test_case_actions: ARRAYED_LIST [PROCEDURE [ANY, TUPLE [CDD_TEST_CASE]]]
 			-- agents called when test case was removed from 'Current'
 
-	on_enable_testing: ARRAYED_LIST [PROCEDURE [ANY, TUPLE]]
+	enable_testing_actions: ARRAYED_LIST [PROCEDURE [ANY, TUPLE]]
 			-- agents called when testing is enabled
 
-	on_disable_testing: ARRAYED_LIST [PROCEDURE [ANY, TUPLE]]
+	disable_testing_actions: ARRAYED_LIST [PROCEDURE [ANY, TUPLE]]
 			-- agents called when testing is disabled
 
 
@@ -291,6 +278,7 @@ feature -- Project specific
 
 	path: DIRECTORY_NAME
 			-- path of 'cluster'
+
 
 
 end -- class CDD_TEST

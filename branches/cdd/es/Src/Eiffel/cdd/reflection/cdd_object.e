@@ -15,10 +15,10 @@ feature -- Initialization
 			a_type_not_void: a_type /= Void
 		do
 			dynamic_type := a_type
-			type := dynamic_type.name
+			create type.make_from_string (dynamic_type.name)
 		ensure
 			correct_dynamic_type: dynamic_type = a_type
-			type_set: type = dynamic_type.name
+			type_set: type.is_equal (dynamic_type.name)
 		end
 
 

@@ -16,6 +16,11 @@ inherit
 			{NONE} all
 		end
 
+	EB_SHARED_WINDOW_MANAGER
+		export
+			{NONE} all
+		end
+
 feature {CDD_TEST_SUITE} -- Project loading
 
 	parse_test_cases (a_test_suite: CDD_TEST_SUITE) is
@@ -98,6 +103,21 @@ feature {CDD_TEST_SUITE} -- Project loading
 			end
 		end
 
+feature {CDD_TEST_SUITE} -- Removal
+
+	remove_test_case (a_tc: CDD_TEST_CASE) is
+			-- Remove test class in 'a_tc' from file system and notify
+			-- EB_CLUSTERS and EB_WINDOW_MANAGER.
+		local
+			l_file: PLAIN_TEXT_FILE
+		do
+			create l_file.make (a_tc.test_class.file_name)
+			if l_file.exists and l_file.is_writable then
+				l_file.delete
+			end
+			manager.remove_class (a_tc.test_class)
+			window_manager.synchronize_all
+		end
 
 
 

@@ -30,7 +30,7 @@ feature {NONE} -- Initialization
 			not_basic_type: not a_type.is_basic
 		do
 			Precursor (a_type)
-			create identifier.make_from_string (type)
+			create identifier.make_from_string (a_type.name)
 			identifier.to_lower
 			identifier.append ("_id" + counter.item.out)
 			counter.set_item (counter.item + 1)

@@ -5,15 +5,12 @@ indexing
 	revision: "$Revision$"
 
 deferred class
-	CDD_TREE_ITEM [G -> COMPARABLE]
+	CDD_TREE_ITEM [reference G -> COMPARABLE]
 
 inherit
 	EV_TREE_ITEM
-		-- Note: redefine clause produces error.
---		redefine
---			data
-		rename
-			data as ev_data
+		redefine
+			data
 		end
 
 feature {NONE} -- Initialization
@@ -30,6 +27,7 @@ feature {NONE} -- Initialization
 		end
 
 feature -- Access
+
 
 	data: G
 			-- Comparable user data.

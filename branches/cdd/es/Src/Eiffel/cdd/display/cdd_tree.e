@@ -9,6 +9,9 @@ class
 
 inherit
 	EV_TREE
+		redefine
+			selected_item
+		end
 
 	CDD_TREE_HELPER [CONF_CLUSTER, CDD_TREE_CLUSTER_ITEM]
 		undefine
@@ -16,6 +19,19 @@ inherit
 			is_equal,
 			copy
 		end
+
+feature -- Access
+
+	selected_item: CDD_TREE_ITEM [COMPARABLE] is
+			--Currently selected item at any level
+			-- within tree hierarchy.
+		do
+			Result ?= Precursor
+		ensure then
+			not_void: Result /= Void
+		end
+
+
 
 feature -- Transformation
 
