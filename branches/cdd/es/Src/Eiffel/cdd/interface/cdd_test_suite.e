@@ -95,6 +95,30 @@ feature -- Access
 			-- Sorted list of all test cases in 'Current'
 			-- Note: Do not modify directly!
 
+feature -- Status report
+
+	test_class_exists (a_class: CLASS_I): BOOLEAN is
+			-- Does 'Current' have a test case for test class 'a_class'
+		require
+			a_class_not_void: a_class /= Void
+			a_class_is_test_class: a_class.group = cluster
+		local
+			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_CASE]
+		do
+			from
+				l_cursor := test_cases.new_cursor
+				l_cursor.start
+			until
+				l_cursor.after or Result
+			loop
+				if l_cursor.item.test_class = a_class then
+					Result := True
+				end
+				l_cursor.forth
+			end
+		end
+
+
 feature -- Status change
 
 	enable_testing is
@@ -127,7 +151,7 @@ feature -- Status change
 			end
 
 
-			test_case_factory.parse_test_cases (Current)
+			test_case_factory.parse_cluster (cluster, Current)
 
 
 				-- TODO: create target for testing

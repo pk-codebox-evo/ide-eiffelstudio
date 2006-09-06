@@ -21,87 +21,118 @@ inherit
 			{NONE} all
 		end
 
+	SHARED_EIFFEL_PARSER
+		export
+			{NONE} all
+		end
+
 feature {CDD_TEST_SUITE} -- Project loading
 
-	parse_test_cases (a_test_suite: CDD_TEST_SUITE) is
-			-- Fill `a_test_suite' with test cases found in universe.
-			-- Note: very ugly feature, temporarily solution for parsing existing test cases
-		require
-			a_test_suite_not_void: a_test_suite /= Void
+	parse_cluster (a_cluster: CLUSTER_I; a_test_suite: CDD_TEST_SUITE) is
+			--
 		local
-			l_dir: DIRECTORY
-			l_files: ARRAYED_LIST [STRING]
-			l_file_name: STRING
-			l_file: PLAIN_TEXT_FILE
-			l_line: STRING
-			l_cluster: STRING
-			l_conf_group: CONF_GROUP
-			l_class: STRING
-			l_class_i: EIFFEL_CLASS_I
-			l_test_class: CLASS_I
-			l_feature: STRING
-			l_tc: CDD_TEST_CASE
-			i,j: INTEGER
+			l_classes: HASH_TABLE [EIFFEL_CLASS_I, STRING]
+			l_class: EIFFEL_CLASS_I
 		do
-			create l_dir.make_open_read (a_test_suite.cluster.path)
-			l_files := l_dir.linear_representation
+			l_classes := a_cluster.classes
 			from
-				l_files.start
+				l_classes.start
 			until
-				l_files.after
+				l_classes.after
 			loop
-				l_file_name := l_files.item
-				if l_file_name.has_substring (".e") then
-					create l_file.make (a_test_suite.cluster.location.build_path ("", l_file_name))
-					if l_file.is_readable then
-						from
-							l_file.open_read
-						until
-							(l_cluster /= Void and
-							l_class /= Void and
-							l_feature /= Void) or
-							l_file.end_of_file
-						loop
-							l_file.read_line
-							l_line := l_file.last_string
-							if l_line.has_substring ("cluster: ") then
-								i := l_line.index_of ('"', 1)
-								j := l_line.index_of ('"', i + 1)
-								l_cluster := l_line.substring (i+1, j-1)
-							elseif l_line.has_substring ("class: ") then
-								i := l_line.index_of ('"', 1)
-								j := l_line.index_of ('"', i + 1)
-								l_class := l_line.substring (i+1, j-1)
-							elseif l_line.has_substring ("feature: ") then
-								i := l_line.index_of ('"', 1)
-								j := l_line.index_of ('"', i + 1)
-								l_feature := l_line.substring (i+1, j-1)
-							end
-						end
-						if (l_cluster /= Void and
-							l_class /= Void and
-							l_feature /= Void) then
-							l_conf_group := eiffel_universe.group_of_name (l_cluster)
-							if l_conf_group /= Void then
-								l_class_i ?= eiffel_universe.class_named (l_class, l_conf_group)
-								if l_class_i /= Void then
-									l_file_name.prune_all_trailing ('e')
-									l_file_name.prune_all_trailing ('.')
-									l_test_class := class_instance (l_file_name.as_upper, a_test_suite)
-									create l_tc.make (l_class_i, l_feature, l_test_class)
-									a_test_suite.add_test_case (l_tc)
-								end
-							end
-						end
-						l_file.close
-					end
+				l_class := l_classes.item_for_iteration
+				if not a_test_suite.test_class_exists (l_class) then
+					parse_class (l_class, a_test_suite)
 				end
-				l_cluster := Void
-				l_class := Void
-				l_feature := Void
-				l_files.forth
+				l_classes.forth
 			end
 		end
+
+	parse_class (a_class: EIFFEL_CLASS_I; a_test_suite: CDD_TEST_SUITE) is
+			--
+		local
+			l_file: KL_BINARY_INPUT_FILE
+			l_ast: CLASS_AS
+			l_ilist: INDEXING_CLAUSE_AS
+			l_item: INDEX_AS
+
+			l_itag, l_icluster, l_iclass, l_ifeature: STRING
+			l_class: EIFFEL_CLASS_I
+			l_tc: CDD_TEST_CASE
+		do
+			if not a_class.is_compiled then
+				create l_file.make (a_class.file_name)
+				if l_file.exists and then l_file.is_readable then
+					l_file.open_read
+					eiffel_parser.parse (l_file)
+					l_file.close
+					l_ast := eiffel_parser.root_node
+				end
+			else
+				l_ast := a_class.compiled_class.ast
+			end
+			if l_ast /= Void then
+				l_ilist := l_ast.top_indexes
+				from
+					l_ilist.start
+				until
+					l_ilist.after
+				loop
+					l_item := l_ilist.item
+					l_itag := l_item.tag
+					if l_itag.is_equal ("cdd_cluster") then
+						l_icluster := parse_indexing_item (l_item)
+					elseif l_itag.is_equal ("cdd_class") then
+						l_iclass := parse_indexing_item (l_item)
+					elseif l_itag.is_equal ("cdd_feature") then
+						l_ifeature := parse_indexing_item (l_item)
+					end
+					l_ilist.forth
+				end
+				if l_icluster /= Void and l_iclass /= Void and l_ifeature /= Void then
+					l_class := class_of_group (l_iclass, l_icluster)
+					if l_class /= Void then
+						create l_tc.make (l_class, l_ifeature, a_class)
+						a_test_suite.add_test_case (l_tc)
+					end
+				end
+			end
+		end
+
+	parse_indexing_item (an_item: INDEX_AS): STRING is
+			--
+		require
+			an_item_not_void: an_item /= Void
+		local
+			l_list: EIFFEL_LIST [ATOMIC_AS]
+			l_item: STRING_AS
+		do
+			l_list := an_item.index_list
+			if not l_list.is_empty then
+				create Result.make_empty
+				from
+					l_list.start
+				until
+					l_list.after
+				loop
+					l_item ?= l_list.item
+					Result.append (l_item.value)
+					l_list.forth
+				end
+			end
+		end
+
+	class_of_group (a_class, a_group: STRING): EIFFEL_CLASS_I is
+			--
+		local
+			l_group: CONF_GROUP
+		do
+			l_group := eiffel_universe.group_of_name (a_group)
+			if l_group /= Void then
+				Result ?= eiffel_universe.class_named (a_class, l_group)
+			end
+		end
+
 
 feature {CDD_TEST_SUITE} -- Removal
 
