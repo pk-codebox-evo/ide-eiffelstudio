@@ -22,7 +22,7 @@ feature -- Access
 			l_feature := reflection.called_feature
 			rlist := reflection.composite_objects
 
-			append_indexing (root_object.dynamic_type.cluster.cluster_name, root_object.dynamic_type.name, l_feature.name)
+			append_indexing (root_object.dynamic_type.cluster.cluster_name, root_object.dynamic_type.name, l_feature.name, reflection.exception_tag)
 			append_class_header (test_class_name)
 
 			append_text ("%N%Ttest_feature is%N")
@@ -219,13 +219,14 @@ feature {NONE} -- Implementation
 
 	indent: STRING is "%T%T%T"
 
-	append_indexing (cluster_name, class_name, feature_name: STRING) is
+	append_indexing (cluster_name, class_name, feature_name, a_tag: STRING) is
 		do
 			append_text ("indexing%N")
 			append_text ("%Tdescription: %"Objects used for running tests%"%N")
 			append_text ("%Tcdd_cluster: %"" + cluster_name + "%"%N")
 			append_text ("%Tcdd_class: %"" + class_name + "%"%N")
 			append_text ("%Tcdd_feature: %"" + feature_name + "%"%N")
+			append_text ("%Tcdd_tag: %"" + a_tag + "%"%N")
 			append_text ("%Tauthor: %"CDD_TEST_CASE_PRINTER%"%N")
 			append_text ("%Tdate: %"$Date$%"%N")
 			append_text ("%Trevision: %"$Revision$%"%N%N")

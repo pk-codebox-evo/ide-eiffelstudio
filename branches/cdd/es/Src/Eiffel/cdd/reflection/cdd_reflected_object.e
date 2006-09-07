@@ -24,16 +24,18 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_cse: EIFFEL_CALL_STACK_ELEMENT) is
+	make (a_cse: EIFFEL_CALL_STACK_ELEMENT; a_tag: STRING) is
 			-- Reflect the object associated to 'a_cse'
 		require
 			valid_call_stack_element: a_cse /= Void
 			eiffel_type: a_cse.dynamic_class.is_eiffel_class_c
+			a_tag_not_empty: a_tag /= Void and then not a_tag.is_empty
 		local
 			l_alist: LIST [ABSTRACT_DEBUG_VALUE]
 			i: INTEGER
 		do
 			called_feature := a_cse.routine
+			exception_tag := a_tag
 			create addressed_objects.make (object_count)
 			root_object := create_composite_object (a_cse.object_address, a_cse.dynamic_class.eiffel_class_c)
 			if reflection_succeded and called_feature.has_arguments then
@@ -83,6 +85,9 @@ feature -- Access
 
 	called_feature: E_FEATURE
 			-- feature which was called before reflection
+
+	exception_tag: STRING
+			-- description of what caused the exception
 
 	composite_objects: DS_ARRAYED_LIST [CDD_COMPOSITE_OBJECT]
 			-- objects referenced to directly or indirectly by 'root_robject' 

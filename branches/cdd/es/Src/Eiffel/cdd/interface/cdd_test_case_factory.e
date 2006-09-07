@@ -203,16 +203,22 @@ feature {NONE} -- Test case generation
 			-- Try to reflect current object in call stack.
 		require
 			an_app_status_not_void: an_app_status /= Void
+			exception_occured: an_app_status.exception_occurred
 			is_eiffel_class: an_app_status.dynamic_class.is_eiffel_class_c
 		local
 			l_cse: EIFFEL_CALL_STACK_ELEMENT
+			l_tag: STRING
 		do
 			l_cse ?= an_app_status.current_call_stack_element
 
 			-- should be fine since dynamic_class is eiffel class
 			check l_cse /= Void end
 
-			create Result.make (l_cse)
+			l_tag := an_app_status.exception_tag
+			if l_tag = Void or else l_tag.is_empty then
+				l_tag := "postcondition violation"
+			end
+			create Result.make (l_cse, an_app_status.exception_tag)
 		ensure
 			not_void: Result /= Void
 		end
