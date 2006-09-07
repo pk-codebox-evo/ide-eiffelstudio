@@ -30,6 +30,7 @@ feature {CDD_TEST_SUITE} -- Project loading
 
 	parse_cluster (a_cluster: CLUSTER_I; a_test_suite: CDD_TEST_SUITE) is
 			--
+
 		local
 			l_classes: HASH_TABLE [EIFFEL_CLASS_I, STRING]
 			l_class: EIFFEL_CLASS_I
@@ -56,7 +57,7 @@ feature {CDD_TEST_SUITE} -- Project loading
 			l_ilist: INDEXING_CLAUSE_AS
 			l_item: INDEX_AS
 
-			l_itag, l_icluster, l_iclass, l_ifeature: STRING
+			l_name, l_icluster, l_iclass, l_ifeature, l_itag, l_iid: STRING
 			l_class: EIFFEL_CLASS_I
 			l_tc: CDD_TEST_CASE
 		do
@@ -80,20 +81,24 @@ feature {CDD_TEST_SUITE} -- Project loading
 						l_ilist.after
 					loop
 						l_item := l_ilist.item
-						l_itag := l_item.tag
-						if l_itag.is_equal ("cdd_cluster") then
+						l_name := l_item.tag
+						if l_name.is_equal ("cdd_cluster") then
 							l_icluster := parse_indexing_item (l_item)
-						elseif l_itag.is_equal ("cdd_class") then
+						elseif l_name.is_equal ("cdd_class") then
 							l_iclass := parse_indexing_item (l_item)
-						elseif l_itag.is_equal ("cdd_feature") then
+						elseif l_name.is_equal ("cdd_feature") then
 							l_ifeature := parse_indexing_item (l_item)
+						elseif l_name.is_equal ("cdd_tag") then
+							l_itag := parse_indexing_item (l_item)
+						elseif l_name.is_equal ("cdd_id") then
+							l_iid := parse_indexing_item (l_item)
 						end
 						l_ilist.forth
 					end
-					if l_icluster /= Void and l_iclass /= Void and l_ifeature /= Void then
+					if l_icluster /= Void and l_iclass /= Void and l_ifeature /= Void and l_itag /= Void and l_iid /= Void then
 						l_class := class_of_group (l_iclass, l_icluster)
 						if l_class /= Void then
-							create l_tc.make (l_class, l_ifeature, a_class)
+							create l_tc.make (l_class, l_ifeature, a_class, l_itag, l_iid)
 							a_test_suite.add_test_case (l_tc)
 						end
 					end
@@ -246,7 +251,7 @@ feature {NONE} -- Test case generation
 					Result.append_character ('0')
 				end
 				Result.append (i.out)
-				create l_file.make (a_test_suite.cluster.location.build_path ("", Result.as_lower + ".e"))
+				create l_file.make (a_test_suite.tests_cluster.location.build_path ("", Result.as_lower + ".e"))
 				if l_file.exists then
 					Result := Void
 				end
@@ -266,7 +271,7 @@ feature {NONE} -- Test case generation
 			l_path: STRING
 			l_file: PLAIN_TEXT_FILE
 		do
-			l_path := a_test_suite.cluster.location.build_path ("", a_name.as_lower + ".e")
+			l_path := a_test_suite.tests_cluster.location.build_path ("", a_name.as_lower + ".e")
 			create l_file.make_open_write (l_path)
 
 			printer.print_test_case (a_reflection, a_name, l_file)
@@ -283,9 +288,9 @@ feature {NONE} -- Test case generation
 			class_name_not_empty: class_name /= Void and then not class_name.is_empty
 			a_test_suite_not_void: a_test_suite /= Void
 		do
-			Result := eiffel_universe.class_named (class_name, a_test_suite.cluster)
+			Result := eiffel_universe.class_named (class_name, a_test_suite.tests_cluster)
 			if Result = Void then
-				manager.add_class_to_cluster (class_name.as_lower + ".e", a_test_suite.cluster, "")
+				manager.add_class_to_cluster (class_name.as_lower + ".e", a_test_suite.tests_cluster, "")
 				Result := manager.last_added_class
 			end
 		ensure
@@ -300,7 +305,7 @@ feature {NONE} -- Test case generation
 			l_tc: CDD_TEST_CASE
 		do
 			l_class := a_reflection.root_object.dynamic_type.original_class
-			create l_tc.make (l_class, a_reflection.called_feature.name, a_test_class)
+			create l_tc.make (l_class, a_reflection.called_feature.name, a_test_class, a_reflection.exception_tag, a_reflection.id)
 			a_test_suite.add_test_case (l_tc)
 		end
 

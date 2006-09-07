@@ -89,6 +89,9 @@ feature -- Access
 	exception_tag: STRING
 			-- description of what caused the exception
 
+	id: STRING is "not implemented"
+			-- identifier for this reflection
+
 	composite_objects: DS_ARRAYED_LIST [CDD_COMPOSITE_OBJECT]
 			-- objects referenced to directly or indirectly by 'root_robject' 
 

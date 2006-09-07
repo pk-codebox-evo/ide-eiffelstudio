@@ -15,9 +15,11 @@ inherit
 
 feature -- Project
 
-	cluster_name: STRING is "cdd_testing"
+	tests_cluster_name: STRING is "cdd_tests"
 
-	target_name: STRING is "cdd_tester"
+	tester_cluster_name: STRING is "cdd_tester"
+
+	tester_target_name: STRING is "cdd_tester"
 
 feature -- Test case creation
 

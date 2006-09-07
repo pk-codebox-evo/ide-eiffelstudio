@@ -16,17 +16,25 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_target_class: like target_class; a_feature: like feature_name; a_test_class: like test_class) is
+	make (a_target_class: like target_class;
+		a_feature: like feature_name;
+		a_test_class: like test_class;
+		a_tag: like exception_tag;
+		an_id: like id) is
 			-- Initialize new test case for testing 'a_feature' of class 'a_target_class' where
 			-- 'a_test_class' is the classed used for testing
 		require
 			valid_target_class: a_target_class /= Void
-			valid_feature: a_feature /= Void and then not a_feature.is_empty
+			feature_not_empty: a_feature /= Void and then not a_feature.is_empty
 			valid_test_class: a_test_class /= Void
+			a_tag_not_empty: a_tag /= Void and then not a_tag.is_empty
+			an_id_not_empty: an_id /= Void and then not an_id.is_empty
 		do
 			target_class := a_target_class
 			feature_name := a_feature
 			test_class := a_test_class
+			exception_tag := a_tag
+			id := an_id
 			create on_start_testing.make (5)
 			create on_finish_testing.make (5)
 		ensure
@@ -54,6 +62,12 @@ feature -- Access
 
 	test_class: CLASS_I
 			-- class used for testing
+
+	exception_tag: STRING
+			-- name of postcondition which is violated
+
+	id: STRING
+			-- identifier for state which is reproduced at test case execution
 
 	is_testing: BOOLEAN
 			-- is test case beeing executed?
