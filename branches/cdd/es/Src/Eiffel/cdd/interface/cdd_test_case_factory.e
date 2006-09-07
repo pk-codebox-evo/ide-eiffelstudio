@@ -1,5 +1,5 @@
 indexing
-	description: "Singleton for creating test cases"
+	description: "Singleton for creating and removing test cases"
 	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
@@ -60,40 +60,42 @@ feature {CDD_TEST_SUITE} -- Project loading
 			l_class: EIFFEL_CLASS_I
 			l_tc: CDD_TEST_CASE
 		do
-			if not a_class.is_compiled then
-				create l_file.make (a_class.file_name)
-				if l_file.exists and then l_file.is_readable then
-					l_file.open_read
-					eiffel_parser.parse (l_file)
-					l_file.close
-					l_ast := eiffel_parser.root_node
-				end
-			else
-				l_ast := a_class.compiled_class.ast
-			end
-			if l_ast /= Void then
-				l_ilist := l_ast.top_indexes
-				from
-					l_ilist.start
-				until
-					l_ilist.after
-				loop
-					l_item := l_ilist.item
-					l_itag := l_item.tag
-					if l_itag.is_equal ("cdd_cluster") then
-						l_icluster := parse_indexing_item (l_item)
-					elseif l_itag.is_equal ("cdd_class") then
-						l_iclass := parse_indexing_item (l_item)
-					elseif l_itag.is_equal ("cdd_feature") then
-						l_ifeature := parse_indexing_item (l_item)
+			create l_file.make (a_class.file_name)
+			if l_file.exists then
+				if not a_class.is_compiled then
+					if l_file.is_readable then
+						l_file.open_read
+						eiffel_parser.parse (l_file)
+						l_file.close
+						l_ast := eiffel_parser.root_node
 					end
-					l_ilist.forth
+				else
+					l_ast := a_class.compiled_class.ast
 				end
-				if l_icluster /= Void and l_iclass /= Void and l_ifeature /= Void then
-					l_class := class_of_group (l_iclass, l_icluster)
-					if l_class /= Void then
-						create l_tc.make (l_class, l_ifeature, a_class)
-						a_test_suite.add_test_case (l_tc)
+				if l_ast /= Void then
+					l_ilist := l_ast.top_indexes
+					from
+						l_ilist.start
+					until
+						l_ilist.after
+					loop
+						l_item := l_ilist.item
+						l_itag := l_item.tag
+						if l_itag.is_equal ("cdd_cluster") then
+							l_icluster := parse_indexing_item (l_item)
+						elseif l_itag.is_equal ("cdd_class") then
+							l_iclass := parse_indexing_item (l_item)
+						elseif l_itag.is_equal ("cdd_feature") then
+							l_ifeature := parse_indexing_item (l_item)
+						end
+						l_ilist.forth
+					end
+					if l_icluster /= Void and l_iclass /= Void and l_ifeature /= Void then
+						l_class := class_of_group (l_iclass, l_icluster)
+						if l_class /= Void then
+							create l_tc.make (l_class, l_ifeature, a_class)
+							a_test_suite.add_test_case (l_tc)
+						end
 					end
 				end
 			end
@@ -105,7 +107,6 @@ feature {CDD_TEST_SUITE} -- Project loading
 			an_item_not_void: an_item /= Void
 		local
 			l_list: EIFFEL_LIST [ATOMIC_AS]
-			l_item: STRING_AS
 		do
 			l_list := an_item.index_list
 			if not l_list.is_empty then
@@ -115,10 +116,11 @@ feature {CDD_TEST_SUITE} -- Project loading
 				until
 					l_list.after
 				loop
-					l_item ?= l_list.item
-					Result.append (l_item.value)
+					Result.append (l_list.item.string_value)
 					l_list.forth
 				end
+				Result.prune_all_leading ('"')
+				Result.prune_all_trailing ('"')
 			end
 		end
 

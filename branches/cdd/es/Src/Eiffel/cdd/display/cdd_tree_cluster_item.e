@@ -51,6 +51,28 @@ feature {NONE} -- Initialization
 			pixmap_set: pixmap /= Void
 		end
 
+feature -- Element change
+
+	add_test_case (a_tc: CDD_TEST_CASE) is
+			-- Add 'a_tc' to tree structure
+		require
+			a_tc_not_void: a_tc /= Void
+		do
+			locate_item (a_tc.target_class)
+			last_located_item.add_test_case (a_tc)
+		end
+
+	remove_test_case (a_tc: CDD_TEST_CASE) is
+			-- Remove 'a_tc' from tree structure
+		require
+			a_tc_not_void: a_tc /= Void
+		do
+			locate_item (a_tc.target_class)
+			last_located_item.remove_test_case (a_tc)
+			if last_located_item.is_empty then
+				prune (last_located_item)
+			end
+		end
 
 feature -- Element change
 

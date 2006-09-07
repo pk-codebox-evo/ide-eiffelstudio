@@ -60,7 +60,7 @@ feature {NONE} -- Initialization
 
 			build_tool_bar
 
-			create tree
+			create tree.make_with_tool (Current)
 			tree.deselect_actions.extend (agent on_deselect_item)
 			widget.extend (tree)
 		end
@@ -85,41 +85,21 @@ feature -- Status setting
 			-- Add test case to grid
 		require
 			a_test_case_not_void: a_test_case /= Void
-		local
-			l_cluster_item: CDD_TREE_CLUSTER_ITEM
-			l_class_item: CDD_TREE_CLASS_ITEM
-			l_tc_item: CDD_TREE_TEST_CASE_ITEM
 		do
-			tree.locate_item (a_test_case.target_cluster)
-			l_cluster_item := tree.last_located_item
-			l_cluster_item.locate_item (a_test_case.target_class)
-			l_class_item := l_cluster_item.last_located_item
-			l_class_item.locate_item (a_test_case)
-			l_tc_item := l_class_item.last_located_item
-			l_tc_item.select_actions.extend (agent on_select_test_case (l_tc_item))
+			tree.add_test_case (a_test_case)
 			run_button.enable_sensitive
 		end
 
-	on_remove_test_case (a_tc: CDD_TEST_CASE) is
+	on_remove_test_case (a_test_case: CDD_TEST_CASE) is
 			-- Remove test from tree
 		require
-			a_tc_not_void: a_tc /= Void
+			a_tc_not_void: a_test_case /= Void
 		local
 			l_cluster_item: CDD_TREE_CLUSTER_ITEM
 			l_class_item: CDD_TREE_CLASS_ITEM
+			l_feature_item: CDD_TREE_FEATURE_ITEM
 		do
-			tree.locate_item (a_tc.target_cluster)
-			l_cluster_item := tree.last_located_item
-			l_cluster_item.locate_item (a_tc.target_class)
-			l_class_item := l_cluster_item.last_located_item
-			l_class_item.locate_item (a_tc)
-			l_class_item.prune (l_class_item.last_located_item)
-			if l_class_item.is_empty then
-				l_cluster_item.prune (l_class_item)
-				if l_cluster_item.is_empty then
-					tree.prune (l_cluster_item)
-				end
-			end
+			tree.remove_test_case (a_test_case)
 			if tree.is_empty then
 				run_button.disable_sensitive
 			end
@@ -137,7 +117,7 @@ feature -- Status setting
 			enable_testing_button.enable_sensitive
 		end
 
-feature {NONE} -- Selection events
+feature {CDD_TREE, CDD_TREE_ITEM} -- Selection events
 
 	selected_test_case_item: CDD_TREE_TEST_CASE_ITEM
 			-- Currently selected test case in tree, Void if no test case is selected
@@ -259,6 +239,8 @@ feature {NONE} -- Implementation
 			widget.disable_item_expand (tool_bar)
 		end
 
+feature {CDD_TREE, CDD_TREE_ITEM} -- Tree Implementation
+
 	tree: CDD_TREE
 			-- Tree for hierarchically displaying test cases
 
@@ -276,6 +258,6 @@ invariant
 	correct_run_button_status: run_button.is_sensitive = not tree.is_empty
 
 	delete_button_valid: delete_button /= Void and then delete_button.parent = tool_bar
-	correct_delete_button_status: delete_button.is_sensitive = selected_test_case_item /= Void
+	correct_delete_button_status: delete_button.is_sensitive = (selected_test_case_item /= Void)
 
 end

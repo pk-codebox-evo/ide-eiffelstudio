@@ -15,7 +15,7 @@ inherit
 			make
 		end
 
-	CDD_TREE_HELPER [CDD_TEST_CASE, CDD_TREE_TEST_CASE_ITEM]
+	CDD_TREE_HELPER [STRING, CDD_TREE_FEATURE_ITEM]
 		undefine
 			default_create,
 			is_equal,
@@ -53,12 +53,35 @@ feature {NONE} -- Initialization
 
 feature -- Element change
 
-	new_item (a_tc: CDD_TEST_CASE): CDD_TREE_TEST_CASE_ITEM is
+	add_test_case (a_tc: CDD_TEST_CASE) is
+			-- Add 'a_tc' to tree structure
+		require
+			a_tc_not_void: a_tc /= Void
+		do
+			locate_item (a_tc.feature_name)
+			last_located_item.add_test_case (a_tc)
+		end
+
+	remove_test_case (a_tc: CDD_TEST_CASE) is
+			-- Remove 'a_tc' from tree structure
+		require
+			a_tc_not_void: a_tc /= Void
+		do
+			locate_item (a_tc.feature_name)
+			last_located_item.remove_test_case (a_tc)
+			if last_located_item.is_empty then
+				prune (last_located_item)
+			end
+		end
+
+feature -- Element change
+
+	new_item (a_name: STRING): CDD_TREE_FEATURE_ITEM is
 			-- Create new tree item for displaying 'a_tc'.
 		require else
-			correct_class: a_tc.target_class = target_class
+			a_name_not_empty: not a_name.is_empty
 		do
-			create Result.make (a_tc)
+			create Result.make (a_name)
 		end
 
 invariant

@@ -10,6 +10,7 @@ deferred class
 inherit
 	EV_TREE_ITEM
 		redefine
+			parent_tree,
 			data
 		end
 
@@ -27,6 +28,14 @@ feature {NONE} -- Initialization
 		end
 
 feature -- Access
+
+	parent_tree: CDD_TREE is
+			-- CDD_TREE instance of parent_tree
+		do
+			Result ?= Precursor
+		ensure then
+			not_void: Result /= Void
+		end
 
 
 	data: G

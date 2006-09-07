@@ -5,7 +5,7 @@ indexing
 	revision: "$Revision$"
 
 deferred class
-	CDD_TREE_HELPER [G -> COMPARABLE, H -> CDD_TREE_ITEM [G]]
+	CDD_TREE_HELPER [reference G -> COMPARABLE, H -> CDD_TREE_ITEM [G]]
 
 
 feature -- Access
@@ -60,6 +60,7 @@ feature -- Cursor movement
 
 feature -- Element change
 
+
 	put_left (an_item: EV_TREE_NODE) is
 			-- Add `an_item' to the right of cursor position. Do not move cursor.
 		deferred
@@ -97,7 +98,7 @@ feature -- Transformation
 			end
 		ensure
 			last_located_item_not_void: last_located_item /= Void
-			last_located_item_valid: last_located_item.data = some_data
+			last_located_item_valid: last_located_item.data.is_equal (some_data)
 		end
 
 	new_item (some_data: G): H is
@@ -109,6 +110,7 @@ feature -- Transformation
 			not_void: Result /= Void
 			data_set: Result.data = some_data
 		end
+
 
 invariant
 	invariant_clause: True -- Your invariant here

@@ -25,11 +25,14 @@ inherit
 		end
 
 	EB_CLUSTER_MANAGER_OBSERVER
+		rename
+			refresh as on_refresh
 		export
 			{NONE} all
 		redefine
 			on_project_loaded,
-			on_class_removed
+			on_class_removed,
+			on_refresh
 		end
 
 	EB_SHARED_GRAPHICAL_COMMANDS
@@ -207,10 +210,13 @@ feature -- Element change
 		require
 			valid_test_case: a_tc /= Void
 			contains_test_case: test_cases.has (a_tc)
-		local
-			l_file: PLAIN_TEXT_FILE
 		do
+			remove_test_case_only (a_tc)
+			-- remove Current from observer list since there is no need
+			-- to be notified that a class has been removed.
+			manager.remove_observer (Current)
 			test_case_factory.remove_test_case (a_tc)
+			manager.add_observer (Current)
 		ensure
 			test_case_removed: not test_cases.has (a_tc)
 		end
@@ -238,12 +244,22 @@ feature {EB_CLUSTERS} -- Project Events
 			valid_path: path /= Void and then not path.is_empty
 		end
 
+	on_refresh is
+			--
+		do
+			if is_testing_enabled then
+				test_case_factory.parse_cluster (cluster, Current)
+			end
+		end
+
+
 	on_class_removed (a_class: CLASS_I) is
 			-- If class was test class, remove corresponding test case.
 		local
 			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_CASE]
+			l_item: CDD_TEST_CASE
 		do
-			if a_class.group = cluster or True then
+			if a_class.group = cluster then
 				from
 					l_cursor := test_cases.new_cursor
 					l_cursor.start
@@ -251,8 +267,7 @@ feature {EB_CLUSTERS} -- Project Events
 					l_cursor.after
 				loop
 					if l_cursor.item.test_class = a_class then
-						l_cursor.remove
-						remove_test_case_actions.do_all (agent notify_test_case_change (l_cursor.item, ?))
+						remove_test_case_only (l_cursor.item)
 						l_cursor.go_after
 					else
 						l_cursor.forth
@@ -303,6 +318,25 @@ feature -- Project specific
 	path: DIRECTORY_NAME
 			-- path of 'cluster'
 
+
+feature {} -- Implementation
+
+	remove_test_case_only (a_tc: CDD_TEST_CASE) is
+			-- Remove 'a_tc' from 'test_cases' and notify all agents.
+		require
+			a_tc_not_void: a_tc /= Void
+			contains_test_case: test_cases.has (a_tc)
+		local
+			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_CASE]
+		do
+			l_cursor := test_cases.new_cursor
+			l_cursor.start
+			l_cursor.search_forth (a_tc)
+			l_cursor.remove
+			remove_test_case_actions.do_all (agent notify_test_case_change (a_tc, ?))
+		ensure
+			removed: not test_cases.has (a_tc)
+		end
 
 
 end -- class CDD_TEST
