@@ -113,6 +113,19 @@ feature -- Status setting
 			refresh
 		end
 
+	run_tests is
+			--
+		require
+			can_run_tests: test_suite.can_be_tested
+		local
+			l_tester: CDD_TEST_SUITE_TESTER
+		do
+			create l_tester
+			l_tester.set_test_suite (test_suite)
+			l_tester.execute
+		end
+
+
 
 feature -- Cursor movement
 
@@ -213,9 +226,23 @@ feature {EB_CLUSTERS} -- Project Events
 			-- If class was test class, remove corresponding test case.
 		local
 			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_CASE]
-			l_item: CDD_TEST_CASE
 		do
-
+			if test_suite.has_test_case_for_class (a_class) then
+				from
+					l_cursor := test_suite.test_cases.new_cursor
+					l_cursor.start
+				until
+					l_cursor.after
+				loop
+					if l_cursor.item.test_class = a_class then
+						notify_tools (agent notify_remove_test_case (?, l_cursor.item))
+						test_suite.remove_test_case (l_cursor.item)
+						l_cursor.go_after
+					else
+						l_cursor.forth
+					end
+				end
+			end
 		end
 
 
@@ -283,8 +310,6 @@ feature {NONE} -- Implementation
 			a_window_not_void: a_window /= Void
 		local
 			l_reflection: CDD_REFLECTED_OBJECT
-			l_class_name: STRING
-			l_class: CLASS_I
 			l_warn: EV_WARNING_DIALOG
 		do
 			if an_app_status.is_stopped and
