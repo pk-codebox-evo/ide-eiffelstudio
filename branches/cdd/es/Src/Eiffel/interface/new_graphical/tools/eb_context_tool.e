@@ -430,6 +430,8 @@ feature -- Memory management
 			class_view := Void
 			feature_view.recycle
 			feature_view := Void
+			cdd_test_suite_view.recycle
+			cdd_test_suite_view := Void
 			error_output_view.recycle
 			error_output_view := Void
 			warning_output_view.recycle

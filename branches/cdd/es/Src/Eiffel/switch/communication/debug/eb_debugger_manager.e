@@ -956,7 +956,7 @@ feature -- Debugging events
 			st: CALL_STACK_STONE
 			cd: EV_CONFIRMATION_DIALOG
 
-			l_test_suite: CDD_TEST_SUITE
+			l_manager: CDD_TEST_SUITE_MANAGER
 		do
 			Precursor
 			debug ("debugger_trace_synchro")
@@ -1023,10 +1023,8 @@ feature -- Debugging events
 				cd.show_modal_to_window (debugging_window.window)
 			elseif application.status.exception_occurred and then application.status.exception_code = 4 then
 					-- Notify test case factory that an postcondition violation occured.
-				l_test_suite := debugging_window.context_tool.cdd_test_suite_view.test_suite
-				if l_test_suite.is_testing_enabled then
-					test_case_factory.report_postcondition_violation (application.status, debugging_window.window, l_test_suite)
-				end
+				l_manager := debugging_window.context_tool.cdd_test_suite_view.manager
+				l_manager.report_postcondition_violation (application.status, debugging_window)
 			end
 
 			debug ("debugger_interface")
