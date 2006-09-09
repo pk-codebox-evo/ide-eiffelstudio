@@ -13,6 +13,15 @@ inherit
 			selected_item
 		end
 
+	EV_LAYOUT_CONSTANTS
+		export
+			{NONE} all
+		undefine
+			default_create,
+			is_equal,
+			copy
+		end
+
 	CDD_TREE_HELPER [CONF_CLUSTER, CDD_TREE_CLUSTER_ITEM]
 		undefine
 			default_create,
@@ -32,6 +41,7 @@ feature -- Initialization
 		do
 			tool := a_tool
 			default_create
+			set_minimum_width (dialog_unit_to_pixels (500))
 		ensure
 			tool_set: tool = a_tool
 			initialized: is_initialized

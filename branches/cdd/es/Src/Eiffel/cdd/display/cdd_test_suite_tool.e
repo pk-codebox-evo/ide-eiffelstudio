@@ -33,6 +33,7 @@ feature {NONE} -- Initialization
 			initialize
 
 			manager.extend (Current)
+			tester.extend (Current)
 
 			if manager.test_suite.is_initialized then
 				enable_testing
@@ -44,14 +45,52 @@ feature {NONE} -- Initialization
 
 	initialize is
 			-- Initialize all widgets used in 'Current'
+		local
+			l_overview_area, l_label_area: EV_HORIZONTAL_BOX
+			l_seperator_area, l_status_area: EV_VERTICAL_BOX
+			l_label: EV_LABEL
+			l_frame: EV_FRAME
 		do
 			create widget
-
 			build_tool_bar
+			widget.extend (tool_bar)
+			widget.disable_item_expand (tool_bar)
+
+			create l_overview_area
 
 			create tree.make_with_tool (Current)
 			tree.deselect_actions.extend (agent on_deselect_item)
-			widget.extend (tree)
+			l_overview_area.extend (tree)
+			l_overview_area.disable_item_expand (tree)
+
+			create l_seperator_area
+			l_seperator_area.set_minimum_width (20)
+			l_overview_area.extend (l_seperator_area)
+			l_overview_area.disable_item_expand (l_seperator_area)
+
+			create l_status_area
+
+			create l_label.make_with_text ("Tester Output")
+			l_label.align_text_left
+			l_status_area.extend (l_label)
+			l_status_area.disable_item_expand (l_label)
+
+			create output
+			l_status_area.extend (output)
+
+			create status_bar
+			status_bar.set_padding_width (10)
+			create l_label.make_with_text ("Testing...")
+			l_label.align_text_left
+			create l_frame
+			l_frame.extend (l_label)
+			status_bar.extend (l_frame)
+			l_status_area.extend (status_bar)
+			l_status_area.disable_item_expand (status_bar)
+
+			l_overview_area.extend (l_status_area)
+
+			widget.extend (l_overview_area)
 		end
 
 feature -- Access
@@ -67,6 +106,13 @@ feature -- Access
 		do
 			Result := manager_singleton
 		end
+
+	tester: CDD_TEST_SUITE_TESTER is
+			-- Tester for executing test cases
+		do
+			Result := tester_singleton
+		end
+
 
 
 feature -- Status setting
@@ -128,6 +174,26 @@ feature -- Status setting
 			enable_testing_button.enable_sensitive
 		end
 
+	start_testing is
+			-- Wipe out output text
+		do
+			output.remove_text
+			run_button.disable_sensitive
+		end
+
+	finish_testing is
+			-- Notify user that testing is finished
+		do
+			run_button.enable_sensitive
+		end
+
+
+	append_output (an_output: STRING) is
+			-- Show output
+		do
+			output.append_text (an_output)
+			output.scroll_to_line (output.line_count)
+		end
 
 	recycle is
 			-- Prune from manager and test suite
@@ -186,7 +252,7 @@ feature {NONE} -- Button events
 		require
 			has_test_cases: not tree.is_empty
 		do
-
+			tester.launch
 		end
 
 
@@ -207,10 +273,18 @@ feature {NONE} -- Manager
 
 	manager_singleton: CDD_TEST_SUITE_MANAGER is
 			-- NOTE: Temporary solution for creating a shared manager.
-			-- In future managers will be project-related.
+			-- In future manager will be project-related.
 		once
 			create Result.make
 		end
+
+	tester_singleton: CDD_TEST_SUITE_TESTER is
+			-- NOTE: Temporary solution for creating a shared tester.
+			-- In future tester will be project-related.
+		once
+			create Result.make_with_test_suite (manager.test_suite)
+		end
+
 
 feature {NONE} -- Implementation
 
@@ -263,9 +337,14 @@ feature {NONE} -- Implementation
 			tool_bar.extend (delete_button)
 			tool_bar.extend (create {EV_TOOL_BAR_SEPARATOR})
 			tool_bar.extend (enable_testing_button)
-			widget.extend (tool_bar)
-			widget.disable_item_expand (tool_bar)
 		end
+
+	output: EV_TEXT
+			-- Output from external processes.
+
+	status_bar: EV_STATUS_BAR
+
+
 
 feature {CDD_TREE, CDD_TREE_ITEM} -- Tree Implementation
 
@@ -283,7 +362,6 @@ invariant
 	enable_testing_button_valid: enable_testing_button /= Void and then enable_testing_button.parent = tool_bar
 
 	run_button_valid: run_button /= Void and then run_button.parent = tool_bar
-	correct_run_button_status: run_button.is_sensitive = not tree.is_empty
 
 	delete_button_valid: delete_button /= Void and then delete_button.parent = tool_bar
 	correct_delete_button_status: delete_button.is_sensitive = (selected_test_case_item /= Void)

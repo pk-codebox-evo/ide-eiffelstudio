@@ -43,6 +43,9 @@ feature -- Access
 			-- Can test cases in 'Current' be executed?
 		do
 			Result := tester_target /= Void and tester_cluster /= Void
+		ensure
+			correct_target: Result implies tester_target /= Void
+			correct_cluster: Result implies tester_cluster /= Void
 		end
 
 	is_being_tested: BOOLEAN
@@ -75,6 +78,8 @@ feature -- Element change
 			a_cluster_not_void: a_cluster /= Void
 		do
 			tests_cluster := a_cluster
+			create config_file.make_from_string (eiffel_ace.file_name)
+			create project_directory.make_from_string (eiffel_project.name)
 		ensure
 			tests_cluster_set: tests_cluster = a_cluster
 			initialized: is_initialized
@@ -171,6 +176,12 @@ feature -- Element change
 		ensure
 			test_case_removed: not test_cases.has (a_tc)
 		end
+
+feature -- Paths
+
+	config_file: STRING
+
+	project_directory: STRING
 
 invariant
 

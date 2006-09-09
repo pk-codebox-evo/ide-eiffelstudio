@@ -96,6 +96,9 @@ feature -- Transformation
 				last_located_item := new_item (some_data)
 				put_left (last_located_item)
 			end
+			if last_located_item.is_expandable then
+				last_located_item.expand
+			end
 		ensure
 			last_located_item_not_void: last_located_item /= Void
 			last_located_item_valid: last_located_item.data.is_equal (some_data)

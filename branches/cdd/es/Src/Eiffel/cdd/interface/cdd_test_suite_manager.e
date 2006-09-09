@@ -60,7 +60,7 @@ feature -- Access
 		end
 
 	can_enable_testing: BOOLEAN is
-			--
+			-- Can testing mode be enabled?
 		require
 			not_enabled_yet: not test_suite.is_initialized
 		do
@@ -109,20 +109,8 @@ feature -- Status setting
 				-- TODO: create cluster
 			end
 			test_suite.set_tests_cluster (l_cluster)
-			notify_tools (agent notify_enable_testing)
+			notify_all_tools (agent notify_enable_testing)
 			refresh
-		end
-
-	run_tests is
-			--
-		require
-			can_run_tests: test_suite.can_be_tested
-		local
-			l_tester: CDD_TEST_SUITE_TESTER
-		do
-			create l_tester
-			l_tester.set_test_suite (test_suite)
-			l_tester.execute
 		end
 
 
@@ -170,7 +158,7 @@ feature -- Test suite manipulation
 			test_case_factory.remove (a_tc)
 			manager.remove_class (a_tc.test_class)
 			window_manager.synchronize_all
-			notify_tools (agent notify_remove_test_case (?, a_tc))
+			notify_all_tools (agent notify_remove_test_case (?, a_tc))
 			manager.add_observer (Current)
 		end
 
@@ -187,15 +175,25 @@ feature {EB_CLUSTERS} -- Project Events
 
 	on_project_loaded is
 			-- Initialize all project specific attributes and
-			-- fill 'Current' with existing test cases
+			-- fill 'test_suite' with existing test cases
 		local
 			l_cluster: CLUSTER_I
+			l_ttarget: CONF_TARGET
+			l_tcluster: CONF_CLUSTER
 		do
 			l_cluster := eiffel_universe.cluster_of_name (tests_cluster_name)
 			if l_cluster /= Void then
 				test_suite.set_tests_cluster (l_cluster)
-				notify_tools (agent notify_enable_testing)
+				notify_all_tools (agent notify_enable_testing)
 				refresh
+			end
+			if eiffel_universe.conf_system.targets.has (tester_target_name) then
+				l_ttarget := eiffel_universe.conf_system.targets.item (tester_target_name)
+				test_suite.set_tester_target (l_ttarget)
+				if l_ttarget.clusters.has (tester_cluster_name) then
+					l_tcluster := l_ttarget.clusters.item (tester_cluster_name)
+					test_suite.set_tester_cluster (l_tcluster)
+				end
 			end
 		end
 
@@ -214,7 +212,7 @@ feature {EB_CLUSTERS} -- Project Events
 					if not test_suite.has_test_case_for_class (l_classes.item_for_iteration) then
 						test_case_factory.create_from_class (l_classes.item_for_iteration, eiffel_universe)
 						test_suite.add_test_case (test_case_factory.last_created_test_case)
-						notify_tools (agent notify_add_test_case (?, test_case_factory.last_created_test_case))
+						notify_all_tools (agent notify_add_test_case (?, test_case_factory.last_created_test_case))
 					end
 					l_classes.forth
 				end
@@ -235,7 +233,7 @@ feature {EB_CLUSTERS} -- Project Events
 					l_cursor.after
 				loop
 					if l_cursor.item.test_class = a_class then
-						notify_tools (agent notify_remove_test_case (?, l_cursor.item))
+						notify_all_tools (agent notify_remove_test_case (?, l_cursor.item))
 						test_suite.remove_test_case (l_cursor.item)
 						l_cursor.go_after
 					else
@@ -254,7 +252,7 @@ feature {NONE} -- Implementation tools
 
 	test_suite_tools: DS_LINKED_LIST [CDD_TEST_SUITE_TOOL]
 
-	notify_tools (a_proc: PROCEDURE [ANY, TUPLE [CDD_TEST_SUITE_TOOL]]) is
+	notify_all_tools (a_proc: PROCEDURE [ANY, TUPLE [CDD_TEST_SUITE_TOOL]]) is
 			--
 		local
 			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_SUITE_TOOL]
@@ -326,7 +324,7 @@ feature {NONE} -- Implementation
 				else
 					test_case_factory.create_with_reflection (l_reflection, test_suite.tests_cluster)
 					test_suite.add_test_case (test_case_factory.last_created_test_case)
-					notify_tools (agent notify_add_test_case (?, test_case_factory.last_created_test_case))
+					notify_all_tools (agent notify_add_test_case (?, test_case_factory.last_created_test_case))
 				end
 			end
 		end
