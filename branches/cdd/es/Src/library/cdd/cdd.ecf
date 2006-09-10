@@ -8,6 +8,6 @@
 			<assertions precondition="true" postcondition="false" check="false" invariant="false" loop="false"/>
 		</option>
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf" readonly="true"/>
-		<cluster name="process" location=".\"/>
+		<cluster name="cdd" location=".\"/>
 	</target>
 </system>
