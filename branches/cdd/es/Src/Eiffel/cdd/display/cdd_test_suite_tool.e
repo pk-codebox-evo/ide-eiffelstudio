@@ -46,52 +46,127 @@ feature {NONE} -- Initialization
 	initialize is
 			-- Initialize all widgets used in 'Current'
 		local
-			l_overview_area, l_label_area: EV_HORIZONTAL_BOX
-			l_seperator_area, l_status_area: EV_VERTICAL_BOX
-			l_label: EV_LABEL
-			l_frame: EV_FRAME
+			l_hbox: EV_HORIZONTAL_BOX
 		do
 			create widget
+			create l_hbox
+			widget.set_padding (5)
+			l_hbox.set_padding (5)
+
 			build_tool_bar
-			widget.extend (tool_bar)
-			widget.disable_item_expand (tool_bar)
 
-			create l_overview_area
+			build_tree (l_hbox)
+			build_output (l_hbox)
 
-			create tree.make_with_tool (Current)
-			tree.deselect_actions.extend (agent on_deselect_item)
-			l_overview_area.extend (tree)
-			l_overview_area.disable_item_expand (tree)
+			widget.extend (l_hbox)
 
-			create l_seperator_area
-			l_seperator_area.set_minimum_width (20)
-			l_overview_area.extend (l_seperator_area)
-			l_overview_area.disable_item_expand (l_seperator_area)
-
-			create l_status_area
-
-			create l_label.make_with_text ("Tester Output")
-			l_label.align_text_left
-			l_status_area.extend (l_label)
-			l_status_area.disable_item_expand (l_label)
-
-			create output
-			l_status_area.extend (output)
-
-			create status_bar
-			status_bar.set_padding_width (10)
-			create l_label.make_with_text ("Testing...")
-			l_label.align_text_left
-			create l_frame
-			l_frame.extend (l_label)
-			status_bar.extend (l_frame)
-			l_status_area.extend (status_bar)
-			l_status_area.disable_item_expand (status_bar)
-
-			l_overview_area.extend (l_status_area)
-
-			widget.extend (l_overview_area)
+			build_status_bar
 		end
+
+	build_tool_bar is
+			-- Create widgets for displaying a tool bar
+		local
+			l_vbox: EV_VERTICAL_BOX
+		do
+			create l_vbox
+			create tool_bar
+
+			create run_button
+			run_button.set_tooltip ("Run all test cases")
+			run_button.set_pixmap (pixmaps.icon_pixmaps.debug_run_icon)
+			run_button.select_actions.extend (agent on_run_button)
+			run_button.disable_sensitive
+
+			create stop_button
+			stop_button.set_tooltip ("Stop testing")
+			stop_button.set_pixmap (pixmaps.icon_pixmaps.debug_stop_icon)
+			stop_button.select_actions.extend (agent on_stop_button)
+			stop_button.disable_sensitive
+
+			create enable_testing_button
+			enable_testing_button.set_tooltip ("Enable Testing")
+			enable_testing_button.set_pixmap (pixmaps.icon_pixmaps.breakpoints_enable_icon)
+			enable_testing_button.select_actions.extend (agent on_enable_testing_button)
+			enable_testing_button.disable_sensitive
+
+			create delete_button
+			delete_button.set_tooltip ("Remove test case")
+			delete_button.set_pixmap (pixmaps.icon_pixmaps.general_delete_icon)
+			delete_button.select_actions.extend (agent on_delete_button)
+			delete_button.disable_sensitive
+
+			tool_bar.extend (run_button)
+			tool_bar.extend (stop_button)
+			tool_bar.extend (create {EV_TOOL_BAR_SEPARATOR})
+			tool_bar.extend (enable_testing_button)
+			tool_bar.extend (delete_button)
+
+			l_vbox.extend (tool_bar)
+			l_vbox.extend (create {EV_HORIZONTAL_SEPARATOR})
+			widget.extend (l_vbox)
+			widget.disable_item_expand (l_vbox)
+		end
+
+	build_tree (a_list: EV_BOX) is
+			--
+		require
+			valid_list: a_list /= Void and then a_list.extendible
+			list_not_destroyed: not a_list.is_destroyed
+		local
+			l_frame: EV_FRAME
+			l_cell: EV_CELL
+		do
+			create l_frame.make_with_text ("Test cases")
+			create l_cell
+			create tree.make_with_tool (Current)
+			l_frame.extend (tree)
+			tree.deselect_actions.extend (agent on_deselect_item)
+			a_list.extend (l_frame)
+			a_list.disable_item_expand (l_frame)
+		end
+
+	build_output (a_list: EV_BOX) is
+			--
+		require
+			valid_list: a_list /= Void and then a_list.extendible
+			list_not_destroyed: not a_list.is_destroyed
+		local
+			l_frame: EV_FRAME
+		do
+			create l_frame.make_with_text ("Ouput")
+			create output
+			l_frame.extend (output)
+			a_list.extend (l_frame)
+		end
+
+
+	build_status_bar is
+			-- Create 'status_bar' and extend
+		local
+			l_frame: EV_FRAME
+		do
+			create status_bar
+
+			create l_frame
+			create status_label.make_with_text ("Testing...")
+			status_label.align_text_left
+			l_frame.extend (status_label)
+			status_bar.extend (l_frame)
+
+			create l_frame
+			create progress_bar
+			l_frame.set_minimum_width (200)
+			l_frame.extend (progress_bar)
+			progress_bar.leap_forward
+			status_bar.extend (l_frame)
+			status_bar.disable_item_expand (l_frame)
+
+			widget.extend (status_bar)
+			widget.disable_item_expand (status_bar)
+		end
+
+
+
 
 feature -- Access
 
@@ -178,12 +253,14 @@ feature -- Status setting
 			-- Wipe out output text
 		do
 			output.remove_text
+			stop_button.enable_sensitive
 			run_button.disable_sensitive
 		end
 
 	finish_testing is
 			-- Notify user that testing is finished
 		do
+			stop_button.disable_sensitive
 			run_button.enable_sensitive
 		end
 
@@ -255,6 +332,15 @@ feature {NONE} -- Button events
 			tester.launch
 		end
 
+	on_stop_button is
+			--
+		require
+			running: tester.is_running
+		do
+			
+		end
+
+
 
 	on_delete_button is
 			-- Actions permformed when delete button is pressed
@@ -310,39 +396,20 @@ feature {NONE} -- Implementation
 	run_button: EV_TOOL_BAR_BUTTON
 			-- Button for running all test cases
 
+	stop_button: EV_TOOL_BAR_BUTTON
+			-- Button for stopping test case execution
+
 	delete_button: EV_TOOL_BAR_BUTTON
 			-- Button for deleting a single test case
-
-	build_tool_bar is
-			-- Create widgets for displaying a tool bar
-		do
-			create tool_bar
-
-			create enable_testing_button.make_with_text ("Enable Testing")
-			enable_testing_button.set_pixmap (pixmaps.icon_pixmaps.breakpoints_enable_icon)
-			enable_testing_button.select_actions.extend (agent on_enable_testing_button)
-			enable_testing_button.disable_sensitive
-
-			create run_button.make_with_text ("Run all test cases")
-			run_button.set_pixmap (pixmaps.icon_pixmaps.debug_run_icon)
-			run_button.select_actions.extend (agent on_run_button)
-			run_button.disable_sensitive
-
-			create delete_button.make_with_text ("Remove test case")
-			delete_button.set_pixmap (pixmaps.icon_pixmaps.general_delete_icon)
-			delete_button.select_actions.extend (agent on_delete_button)
-			delete_button.disable_sensitive
-
-			tool_bar.extend (run_button)
-			tool_bar.extend (delete_button)
-			tool_bar.extend (create {EV_TOOL_BAR_SEPARATOR})
-			tool_bar.extend (enable_testing_button)
-		end
 
 	output: EV_TEXT
 			-- Output from external processes.
 
 	status_bar: EV_STATUS_BAR
+
+	status_label: EV_LABEL
+
+	progress_bar: EV_HORIZONTAL_PROGRESS_BAR
 
 
 
@@ -357,13 +424,13 @@ invariant
 	development_window_not_void: development_window /= Void
 	widget_not_void: widget /= Void
 	manager_not_void: manager /= Void
-	tool_bar_valid: tool_bar /= Void and then tool_bar.parent = widget
+	tool_bar_valid: tool_bar /= Void
 
-	enable_testing_button_valid: enable_testing_button /= Void and then enable_testing_button.parent = tool_bar
+	enable_testing_button_valid: enable_testing_button /= Void
 
-	run_button_valid: run_button /= Void and then run_button.parent = tool_bar
+	run_button_valid: run_button /= Void
 
-	delete_button_valid: delete_button /= Void and then delete_button.parent = tool_bar
-	correct_delete_button_status: delete_button.is_sensitive = (selected_test_case_item /= Void)
+	delete_button_valid: delete_button /= Void
+	--correct_delete_button_status: delete_button.is_sensitive = (selected_test_case_item /= Void)
 
 end
