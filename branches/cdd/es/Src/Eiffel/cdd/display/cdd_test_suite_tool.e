@@ -269,7 +269,6 @@ feature -- Status setting
 			-- Show output
 		do
 			output.append_text (an_output)
-			output.scroll_to_line (output.line_count)
 		end
 
 	recycle is
@@ -337,7 +336,7 @@ feature {NONE} -- Button events
 		require
 			running: tester.is_running
 		do
-			
+
 		end
 
 

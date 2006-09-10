@@ -37,6 +37,9 @@ feature -- Access
 	is_running: BOOLEAN
 			-- Are we currently running tests?
 
+	current_test_case: CDD_TEST_CASE
+			-- test case currently under test
+
 feature -- Execution
 
 	execute is
@@ -51,6 +54,8 @@ feature -- Execution
 		do
 			is_running := True
 			notify_all_tools (agent notify_start_testing)
+
+			printer.print_test_case (test_suite)
 
 			create l_cmd.make_empty
 			l_cmd.append ("ec -config ")
@@ -68,12 +73,15 @@ feature -- Execution
 			until
 				l_cursor.after
 			loop
+				current_test_case := l_cursor.item
+				current_test_case.start_testing
 				create l_cmd.make_empty
 				l_cmd.append ("./test_system ")
 				l_cmd.append (l_cursor.item.test_class.name)
 				execute_command (l_cmd,test_suite.project_directory + "/EIFGENs/" + test_suite.tester_target.name + "/W_code")
 				l_cursor.forth
 			end
+			current_test_case := Void
 
 			is_running := False
 			notify_all_tools (agent notify_finish_testing)
@@ -129,6 +137,13 @@ feature -- Miscellaneous
 	output_handler (an_output: STRING) is
 			--
 		do
+			if current_test_case /= Void then
+				if an_output.is_equal ("PASSED") then
+					current_test_case.set_passes (True)
+				else
+					current_test_case.set_passes (False)
+				end
+			end
 			from
 				test_suite_tools.start
 			until
@@ -211,6 +226,13 @@ feature {NONE} -- Implementation
 			a_tool.finish_testing
 		end
 
+feature -- Implementation
+
+	printer: CDD_TESTER_PRINTER is
+			--
+		once
+			create Result
+		end
 
 
 invariant
