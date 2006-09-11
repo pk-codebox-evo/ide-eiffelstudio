@@ -185,6 +185,7 @@ feature {EB_CLUSTERS} -- Project Events
 			if l_cluster /= Void then
 				test_suite.set_tests_cluster (l_cluster)
 				notify_all_tools (agent notify_enable_testing)
+				--eiffel_system.system.force_rebuild
 				refresh
 			end
 			if eiffel_universe.conf_system.targets.has (tester_target_name) then
@@ -211,8 +212,10 @@ feature {EB_CLUSTERS} -- Project Events
 				loop
 					if not test_suite.has_test_case_for_class (l_classes.item_for_iteration) then
 						test_case_factory.create_from_class (l_classes.item_for_iteration, eiffel_universe)
-						test_suite.add_test_case (test_case_factory.last_created_test_case)
-						notify_all_tools (agent notify_add_test_case (?, test_case_factory.last_created_test_case))
+						if test_case_factory.last_created_test_case /= Void then
+							test_suite.add_test_case (test_case_factory.last_created_test_case)
+							notify_all_tools (agent notify_add_test_case (?, test_case_factory.last_created_test_case))
+						end
 					end
 					l_classes.forth
 				end

@@ -77,6 +77,7 @@ feature -- Execution control
 			l_cmd: STRING
 			l_prc: PROCESS
 		do
+			printer.print_test_case (test_suite)
 			create l_cmd.make_empty
 			l_cmd.append ("ec -config ")
 			l_cmd.append (test_suite.config_file)

@@ -42,6 +42,7 @@ feature {CDD_TEST_SUITE_MANAGER} -- Element change
 			l_tc: CDD_TEST_CASE
 			l_group: CONF_GROUP
 		do
+			last_created_test_case := Void
 			create l_file.make (a_class.file_name)
 			if l_file.exists then
 				if not a_class.is_compiled then
