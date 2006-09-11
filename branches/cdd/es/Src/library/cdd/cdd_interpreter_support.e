@@ -7,16 +7,22 @@ class
 inherit
 	EXECUTION_ENVIRONMENT
 
+	EXCEPTIONS
+
 feature
 
 	run_test (a_test: CDD_SHARED_TESTING) is
 			-- run 'a_test'
 		do
 			if not retried then
+				io.put_string ("Testing ")
+				io.put_string (a_test.generator)
+				io.put_string ("...%N%T%T%T")
 				a_test.test_feature
-				io.put_string ("PASSED")
+				io.put_string ("[PASSED]%N")
 			else
-				io.put_string ("FAILED")
+				io.put_string ("[FAILED]%N")
+				die (1)
 			end
 		rescue
 			retried := True
