@@ -77,6 +77,12 @@ feature {NONE} -- Initialization
 			run_button.select_actions.extend (agent on_run_button)
 			run_button.disable_sensitive
 
+			create pause_button
+			pause_button.set_tooltip ("Pause testing")
+			pause_button.set_pixmap (pixmaps.icon_pixmaps.debug_pause_icon)
+			pause_button.select_actions.extend (agent on_pause_button)
+			pause_button.disable_sensitive
+
 			create stop_button
 			stop_button.set_tooltip ("Stop testing")
 			stop_button.set_pixmap (pixmaps.icon_pixmaps.debug_stop_icon)
@@ -96,6 +102,7 @@ feature {NONE} -- Initialization
 			delete_button.disable_sensitive
 
 			tool_bar.extend (run_button)
+			tool_bar.extend (pause_button)
 			tool_bar.extend (stop_button)
 			tool_bar.extend (create {EV_TOOL_BAR_SEPARATOR})
 			tool_bar.extend (enable_testing_button)
@@ -254,13 +261,38 @@ feature -- Status setting
 		do
 			output.remove_text
 			stop_button.enable_sensitive
+			pause_button.enable_sensitive
 			run_button.disable_sensitive
 		end
+
+	stop_testing is
+			-- Show test results
+		do
+			stop_button.disable_sensitive
+			run_button.enable_sensitive
+			pause_button.disable_sensitive
+		end
+
+	pause_testing is
+			-- Pause testing
+		do
+			run_button.enable_sensitive
+			pause_button.disable_sensitive
+		end
+
+	resume_testing is
+			--
+		do
+			run_button.disable_sensitive
+			pause_button.enable_sensitive
+		end
+
 
 	finish_testing is
 			-- Notify user that testing is finished
 		do
 			stop_button.disable_sensitive
+			pause_button.disable_sensitive
 			run_button.enable_sensitive
 		end
 
@@ -328,7 +360,11 @@ feature {NONE} -- Button events
 		require
 			has_test_cases: not tree.is_empty
 		do
-			tester.launch
+			if tester.is_running then
+				tester.resume
+			else
+				tester.start
+			end
 		end
 
 	on_stop_button is
@@ -336,9 +372,16 @@ feature {NONE} -- Button events
 		require
 			running: tester.is_running
 		do
-
+			tester.stop
 		end
 
+	on_pause_button is
+			--
+		require
+			running: tester.is_running
+		do
+			tester.pause
+		end
 
 
 	on_delete_button is
@@ -392,11 +435,8 @@ feature {NONE} -- Implementation
 	enable_testing_button: EV_TOOL_BAR_BUTTON
 			-- Button for enabling testing
 
-	run_button: EV_TOOL_BAR_BUTTON
-			-- Button for running all test cases
-
-	stop_button: EV_TOOL_BAR_BUTTON
-			-- Button for stopping test case execution
+	run_button, stop_button, pause_button: EV_TOOL_BAR_BUTTON
+			-- buttons for controlling test execution
 
 	delete_button: EV_TOOL_BAR_BUTTON
 			-- Button for deleting a single test case
