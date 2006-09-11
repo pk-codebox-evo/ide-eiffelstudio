@@ -64,22 +64,42 @@ feature -- Clean Up
 	dispose is
 			-- Clean up used resources.
 		do
-			if notifier /= Void then
-				notifier.dispose
-				notifier := Void
-			end
-		ensure then
-			notifier_unattached: notifier = Void
 		end
 
 feature -- Basic Operations
 
-	add_assembly (a_path: STRING) is
+	add_assembly (a_path: STRING; a_info_only: BOOLEAN) is
 			-- Add assembly at `a_path' and its dependencies into cache.
 		require
 			non_void_path: a_path /= Void
 			valid_path: not a_path.is_empty
 			path_exists: (create {RAW_FILE}.make (a_path)).exists
+		local
+			l_processed: ARRAYED_LIST [STRING]
+		do
+			create l_processed.make (0)
+			l_processed.compare_objects
+			add_assembly_ex (a_path, a_info_only, Void, l_processed)
+		end
+
+	add_assembly_ex (a_path: STRING; a_info_only: BOOLEAN; a_other_assemblies: LIST [STRING]; a_processed: ARRAYED_LIST [STRING]) is
+			-- Add assembly at `a_path' and its dependencies into cache.
+		require
+			non_void_path: a_path /= Void
+			valid_path: not a_path.is_empty
+			path_exists: (create {RAW_FILE}.make (a_path)).exists
+			a_other_assemblies_contains_valid_items: a_other_assemblies /= Void implies a_other_assemblies.is_empty or else
+				a_other_assemblies.for_all (agent (a_item: STRING): BOOLEAN
+					do
+						Result := a_item /= Void and then a_item.as_lower.is_equal (a_item)
+					end)
+			a_other_assemblies_compares_objects: a_other_assemblies /= Void implies a_other_assemblies.object_comparison
+			a_processed_attached: a_processed /= Void
+			a_processed_compares_objects: a_processed.object_comparison
+			a_processed_contains_valid_items: a_processed.is_empty or else a_processed.for_all (agent (a_item: STRING): BOOLEAN
+					do
+						Result := a_item /= Void and then a_item.as_lower.is_equal (a_item)
+					end)
 		local
 			l_string_tuple: TUPLE [STRING]
 			l_assembly_folder: STRING
@@ -102,12 +122,9 @@ feature -- Basic Operations
 		do
 			if not retried then
 				guard.lock
-				if notifier = Void then
-					create notifier.make
-				end
 
 				{SYSTEM_DLL_TRACE}.write_line_string ({SYSTEM_STRING}.format ("Adding assembly (does not mean consuming) '{0}'.", a_path))
-				l_reason := "New Entry"
+				l_reason := "New entry"
 
 				l_reader := cache_reader
 				l_ca := l_reader.consumed_assembly_from_path (a_path)
@@ -115,11 +132,16 @@ feature -- Basic Operations
 					l_lower_path := {PATH}.get_full_path (a_path.as_lower)
 				else
 					l_lower_path := l_ca.location
+					if l_ca.has_info_only and not a_info_only then
+						l_reason := "Consuming extra information"
+					end
 				end
 
 				l_assembly := assembly_loader.load_from_gac_or_path (l_lower_path)
 				create l_consumer.make (Current)
 				if l_assembly /= Void then
+					a_processed.extend (l_lower_path)
+
 					l_assembly_path := l_assembly.location.to_lower
 
 					if l_ca = Void then
@@ -127,6 +149,10 @@ feature -- Basic Operations
 							-- or when an assembly has been consumed as a referenced assembly, which means
 							-- it, at present, only has a GAC path.
 						l_ca := l_reader.consumed_assembly_from_path (l_assembly_path)
+						if l_ca /= Void then
+							l_ca.set_location (l_lower_path)
+							l_assembly_info_updated := True
+						end
 					end
 
 					if l_ca /= Void and then l_ca.is_consumed then
@@ -171,7 +197,7 @@ feature -- Basic Operations
 					-- only consume `assembly' if assembly has not already been consumed,
 					-- corresponding assembly has been modified or if consumer tool has been
 					-- modified.
-				if l_ca /= Void and then l_ca.is_consumed and then cache_reader.is_assembly_stale (l_lower_path) then
+				if l_ca /= Void and then l_ca.is_consumed and then ((not a_info_only and l_ca.has_info_only) or else cache_reader.is_assembly_stale (l_lower_path)) then
 						-- unconsume stale assembly
 					unconsume_assembly (l_lower_path)
 					l_name := l_assembly.get_name
@@ -213,7 +239,9 @@ feature -- Basic Operations
 					end
 					l_consumer.set_destination_path (l_dir.name)
 
-					notifier.notify_consume (create {NOTIFY_MESSAGE}.make (l_ca, a_path, l_reason, cache_reader.eiffel_assembly_cache_path))
+					if notifier /= Void then
+						notifier.notify_consume (create {NOTIFY_MESSAGE}.make (l_ca, a_path, l_reason, cache_reader.eiffel_assembly_cache_path))
+					end
 
 						-- Load assembly from path, so path assembly is consumed.
 						-- MS resort to a load performance trick where they provide assemblies with no implementation
@@ -223,22 +251,25 @@ feature -- Basic Operations
 					if l_assembly = Void then
 						l_assembly := l_old_assembly
 					end
-					l_consumer.consume (l_assembly, assembly_loader)
-					notifier.clear_notification
+					l_consumer.consume (l_assembly, assembly_loader, a_info_only)
 
 					if not l_consumer.successful then
 						set_error (Consume_error, a_path)
 					else
 						l_assembly_info_updated := True
 						l_info := l_reader.info
-						l_ca.set_is_consumed (True)
+						l_ca.set_is_consumed (True, a_info_only)
 		 				l_info.update_assembly (l_ca)
+
 						update_info (l_info)
 					end
 				end
 
 				if l_consumer.successful then
-					{SYSTEM_DLL_TRACE}.write_line_string ("Processing assembly dependencies.")
+					{SYSTEM_DLL_TRACE}.write_line_string ({SYSTEM_STRING}.format ("Processing assembly dependencies...%N%NAssembly: {0}.", a_path))
+					if notifier /= Void then
+						notifier.notify_info ("Synchronizing cache...")
+					end
 
 					l_names := l_assembly.get_referenced_assemblies
 					from
@@ -248,16 +279,24 @@ feature -- Basic Operations
 					loop
 						l_name := l_names.item (i)
 						l_assembly := assembly_loader.load (l_name)
-						if l_assembly /= Void and then not (l_reader.is_assembly_in_cache (l_assembly.location, True) or else cache_reader.is_assembly_stale (l_assembly.location)) then
-							add_assembly (l_assembly.location)
+						if l_assembly /= Void and then not a_processed.has (l_assembly.location) and then not (l_reader.is_assembly_in_cache (l_assembly.location, True) or else cache_reader.is_assembly_stale (l_assembly.location)) then
+								-- Adds only lookup info
+							add_assembly_ex (l_assembly.location, a_other_assemblies = Void or else not a_other_assemblies.has (l_assembly.location.to_lower), a_other_assemblies, a_processed)
 							l_assembly_info_updated := True
 						end
 						i := i + 1
 					end
 					if l_assembly_info_updated then
+						if notifier /= Void then
+							notifier.notify_info ({SYSTEM_STRING}.format ("Synchronizing cache...%N%NLocation: {0}", cache_reader.eiffel_assembly_cache_path))
+						end
 						update_assembly_mappings (l_ca)
+						update_client_assembly_mappings (l_ca)
 					end
+				end
 
+				if notifier /= Void then
+					notifier.clear_notification
 				end
 			else
 				{SYSTEM_DLL_TRACE}.write_line_string ({SYSTEM_STRING}.format ("Failed to consume assembly '{0}'.", a_path))
@@ -319,8 +358,9 @@ feature -- Basic Operations
 					if l_dir.exists then
 						l_dir.recursive_delete
 					end
-					l_ca.set_is_consumed (False)
+					l_ca.set_is_consumed (False, True)
 					l_info.update_assembly (l_ca)
+					update_client_assembly_mappings (l_ca)
 					update_info (l_info)
 				end
 			else
@@ -546,7 +586,7 @@ feature -- Basic Operations
 			end
 		end
 
-feature {NONE} -- Implementation
+feature {NONE} -- Implementation	
 
 	remove_assembly_internal (a_path: STRING) is
 			-- Remove assembly identified by `a_path' and its clients from cache.
@@ -659,7 +699,7 @@ feature {NONE} -- Implementation
 						if l_ref_ca /= Void then
 							l_mappings.assemblies.put (l_ref_ca, i)
 						else
-							l_mappings.assemblies.item (i).set_is_consumed (False)
+							l_mappings.assemblies.item (i).set_is_consumed (False, True)
 						end
 					end
 					i := i + 1
@@ -752,8 +792,13 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Notification
 
-	notifier: NOTIFIER
+	notifier: NOTIFIER is
 			-- Windows ballon tip notifier
+		do
+			Result := guard.notifier
+		ensure
+			result_attached: Result /= Void
+		end
 
 invariant
 	non_void_cache_reader: cache_reader /= Void

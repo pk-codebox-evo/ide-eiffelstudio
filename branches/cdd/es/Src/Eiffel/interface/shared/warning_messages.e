@@ -871,7 +871,7 @@ feature -- Refactoring
 
 	w_Feature_not_written_in_class: STRING is "Feature is not written in selected class."
 	w_Select_class_feature_to_rename: STRING is "Select class or feature to rename.%NEither use pick and drop or target the editor to the feature or class."
-	w_Select_feature_to_pull: STRING is "Select a feature to pull up.%NEither use pick and drop or target the editor to the featur to pull up."
+	w_Select_feature_to_pull: STRING is "Select a feature to pull up.%NEither use pick and drop or target the editor to the feature to pull up."
 
 feature -- Warning messages
 
@@ -937,12 +937,8 @@ feature -- Warning messages
 	w_No_url_to_replace: STRING is "There is no $url part in the browser preference.%N%
 									%Please fix your preferences."
 
-	w_No_ise_eiffel: STRING is "Environment variable ISE_EIFFEL is not defined."
-
 	w_Page_not_exist: STRING is "The requested page does not exist.%N%
 								%Please check your ISE Eiffel installation."
-
-	w_Environment_not_initialized: STRING is "$ISE_EIFFEL is not initialized. Execution impossible%N"
 
 	w_Freeze_warning: STRING is
 		"Freezing implies some C compilation and linking.%N%

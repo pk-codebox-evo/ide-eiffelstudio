@@ -40,7 +40,6 @@ feature
 			-- Is the table polymorphic from entry indexed by `type_id' to
 			-- the maximum entry id ?
 		local
-			current_type_id: INTEGER;
 			entry: ATTR_ENTRY;
 			cl_type: CLASS_TYPE;
 			first_type: CLASS_TYPE
@@ -53,43 +52,20 @@ feature
 			if nb > 1 then
 				old_position := position
 				system_i := System
-
-					-- If it is not a poofter finalization
-					-- we have a quicker algorithm handy.
-				if not system_i.poofter_finalization then	
-					goto_used (type_id);
-					i := position
-					if i <= nb then
-						from
-							first_type := system_i.class_type_of_id (type_id);
-							offset := first_type.skeleton.offset (array_item (i).feature_id)
-							i := i + 1
-						until
-							Result or else i > nb
-						loop
-							entry := array_item (i)
-							cl_type := system_i.class_type_of_id (entry.type_id);
-							Result := cl_type.conform_to (first_type)
-									and then not (cl_type.skeleton.offset (entry.feature_id) = offset)
-							i := i + 1
-						end;
-					end
-				else
+				goto_used (type_id);
+				i := position
+				if i <= nb then
 					from
-						goto_used (type_id)
-						i := lower
 						first_type := system_i.class_type_of_id (type_id);
-						offset := first_type.skeleton.offset (array_item (position).feature_id)
+						offset := first_type.skeleton.offset (array_item (i).feature_id)
+						i := i + 1
 					until
 						Result or else i > nb
 					loop
 						entry := array_item (i)
-						current_type_id := entry.type_id;
-						if current_type_id /= type_id then
-							cl_type := system_i.class_type_of_id (current_type_id);
-							Result := cl_type.conform_to (first_type)
-									and then not (cl_type.skeleton.offset (entry.feature_id) = offset) 
-						end;
+						cl_type := system_i.class_type_of_id (entry.type_id);
+						Result := cl_type.conform_to (first_type)
+								and then not (cl_type.skeleton.offset (entry.feature_id) = offset)
 						i := i + 1
 					end;
 				end
@@ -137,7 +113,7 @@ feature
 				if i = entry.type_id then
 					l_class_type := System.class_type_of_id (entry.type_id)
 					if l_attr_offset = Void then
-						l_buf.clear_all 
+						l_buf.clear_all
 							--| In this instruction, we put `True' as second arguments.
 							--| This means we will generate something if there is nothing to
 							--| generate (ie `0'). Remember that `False' is used in all other case

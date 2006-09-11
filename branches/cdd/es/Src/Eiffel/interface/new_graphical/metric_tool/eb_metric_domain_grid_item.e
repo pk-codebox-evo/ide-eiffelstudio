@@ -37,6 +37,13 @@ inherit
 			is_equal
 		end
 
+	SHARED_TEXT_ITEMS
+		undefine
+			default_create,
+			copy,
+			is_equal
+		end
+
 create
 	make
 
@@ -73,54 +80,6 @@ feature{NONE} -- Initialization
 			dialog_cancel_actions_attached: dialog_cancel_actions /= Void
 			show_dialog_actions_attached: show_dialog_actions /= Void
 			hide_dialog_actions: hide_dialog_actions /= Void
-		end
-
-	show_dialog is
-			-- Show text editor.
-		require
-			parent_window: parent_window /= Void
-			popup_window: popup_window /= Void
-			activated: is_activated
-		local
-			l_version: BOOLEAN_REF
-		do
-			if dialog.value = Void then
-				dialog.set_value ([domain, False])
-			else
-				l_version ?= dialog.value.item (2)
-				check l_version /= Void end
-				dialog.set_value ([domain, l_version.item])
-			end
-			dialog.show_relative_to_window (parent_window)
-		end
-
-	on_ok is
-			-- Action to be performed when "OK" button is pressed in `dialog'
-		local
-			l_domain: EB_METRIC_DOMAIN
-		do
-			l_domain ?= dialog.value.item (1)
-			check l_domain /= Void end
-			set_domain (l_domain)
-			dialog_ok_actions.call ([])
-		end
-
-	on_cancel is
-			-- Action to be performed when "Cancel" button is pressed in `dialog'
-		do
-			dialog_cancel_actions.call ([])
-		end
-
-	on_show is
-			-- Action to be performed when `dialog' is shown.
-		do
-			show_dialog_actions.call ([])
-		end
-
-	on_hide is
-			-- Action to be performed when `dialog' is hidden.		
-		do
-			hide_dialog_actions.call ([])
 		end
 
 feature -- Access
@@ -182,6 +141,21 @@ feature -- Access
 			-- Popup window used on activate.
 			-- Void when `Current' isn't beeing activated.					
 
+	parent_window: EV_WINDOW is
+			-- Return the parent window (if any), where the property has been put.
+		local
+			l_parent: EV_CONTAINER
+		do
+			from
+				l_parent := parent
+			until
+				Result /= Void or l_parent = Void
+			loop
+				Result ?= l_parent
+				l_parent := l_parent.parent
+			end
+		end
+
 feature -- Setting
 
 	set_domain (a_domain: like domain) is
@@ -239,6 +213,26 @@ feature -- Setting
 			try_call_setting_change_actions
 		ensure
 			font_assigned: font = a_font
+		end
+
+	show_dialog is
+			-- Show text editor.
+		require
+			parent_window: parent_window /= Void
+			popup_window: popup_window /= Void
+			activated: is_activated
+		local
+			l_version: BOOLEAN_REF
+		do
+			if dialog.value = Void then
+				dialog.set_value ([domain, False])
+			else
+				l_version ?= dialog.value.item (2)
+				check l_version /= Void end
+				dialog.set_value ([domain, l_version.item])
+			end
+			dialog.show_relative_to_window (parent_window)
+			dialog.set_focus
 		end
 
 feature{NONE} -- Implementation
@@ -308,15 +302,28 @@ feature{NONE} -- Implementation
 				l_x := l_x + spacing
 				if l_item.is_feature_item and then l_item.is_valid then
 					l_feature ?= domain.item
+
+					l_text := ti_l_curly
+					a_drawable.set_foreground_color (color_of_domain_item (Void))
+					a_drawable.draw_text_top_left (l_x, l_y, l_text)
+					l_x := l_x + l_font.string_width (l_text)
+
 					l_class := l_feature.class_domain_item
 					l_text := l_class.string_representation
 					a_drawable.set_foreground_color (color_of_domain_item (l_class))
 					a_drawable.draw_text_top_left (l_x, l_y, l_text)
 					l_x := l_x + l_font.string_width (l_text)
-					l_text := "."
+
+					l_text := ti_r_curly
 					a_drawable.set_foreground_color (color_of_domain_item (Void))
 					a_drawable.draw_text_top_left (l_x, l_y, l_text)
 					l_x := l_x + l_font.string_width (l_text)
+
+					l_text := ti_dot
+					a_drawable.set_foreground_color (color_of_domain_item (Void))
+					a_drawable.draw_text_top_left (l_x, l_y, l_text)
+					l_x := l_x + l_font.string_width (l_text)
+
 				end
 				l_text := l_item.string_representation
 				a_drawable.set_foreground_color (color_of_domain_item (domain.item))
@@ -384,6 +391,7 @@ feature{NONE} -- Implementation
 		local
 			l_class: EDITOR_TOKEN_CLASS
 			l_feature: EDITOR_TOKEN_FEATURE
+			l_symbol: EDITOR_TOKEN_OPERATOR
 		do
 			if not is_selected then
 				if a_domain_item /= Void then
@@ -406,7 +414,8 @@ feature{NONE} -- Implementation
 						end
 					end
 				else
-					Result := colors.black
+					create l_symbol.make ("")
+					Result := l_symbol.text_color
 				end
 			else
 				if parent.has_focus then
@@ -475,6 +484,36 @@ feature{NONE} -- Actions
 			end
 		end
 
+	on_cancel is
+			-- Action to be performed when "Cancel" button is pressed in `dialog'
+		do
+			dialog_cancel_actions.call ([])
+		end
+
+	on_show is
+			-- Action to be performed when `dialog' is shown.
+		do
+			show_dialog_actions.call ([])
+		end
+
+	on_hide is
+			-- Action to be performed when `dialog' is hidden.		
+		do
+			hide_dialog_actions.call ([])
+			deactivate
+		end
+
+	on_ok is
+			-- Action to be performed when "OK" button is pressed in `dialog'
+		local
+			l_domain: EB_METRIC_DOMAIN
+		do
+			l_domain ?= dialog.value.item (1)
+			check l_domain /= Void end
+			set_domain (l_domain)
+			dialog_ok_actions.call ([])
+		end
+
 feature -- Events
 
 	ellipsis_actions: EV_NOTIFY_ACTION_SEQUENCE
@@ -509,21 +548,6 @@ feature {NONE} -- Implementation
 			Result.set_mask (l_mask)
 		ensure
 			Result_set: Result /= Void
-		end
-
-	parent_window: EV_WINDOW is
-			-- Return the parent window (if any), where the property has been put.
-		local
-			l_parent: EV_CONTAINER
-		do
-			from
-				l_parent := parent
-			until
-				Result /= Void or l_parent = Void
-			loop
-				Result ?= l_parent
-				l_parent := l_parent.parent
-			end
 		end
 
 	initialize_actions is

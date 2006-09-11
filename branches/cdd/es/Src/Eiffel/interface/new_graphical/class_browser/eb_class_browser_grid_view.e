@@ -258,33 +258,21 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
-	grid_item_at_position (a_x, a_y: INTEGER): EV_GRID_ITEM is
-			-- Item at position (`a_x', `a_y') which is related to the top-left coordinate of `grid'
-			-- Void if no item is found.
-		local
-			l_header_height: INTEGER
-		do
-			if grid.is_header_displayed then
-				l_header_height := grid.header.height
-			end
-			Result := grid.item_at_virtual_position (grid.virtual_x_position + a_x, grid.virtual_y_position + a_y - l_header_height)
-		end
-
-	editor_token_at_position (a_x, a_y: INTEGER): EDITOR_TOKEN is
-			-- Editor token at position (`a_x', `a_y') which is related to the top-left coordinate of `grid'
-			-- Void if no item is found.
-		local
-			l_editor_token_item: EB_GRID_EDITOR_TOKEN_ITEM
-			l_index: INTEGER
-		do
-			l_editor_token_item ?= grid_item_at_position (a_x, a_y)
-			if l_editor_token_item /= Void then
-				l_index := l_editor_token_item.token_index_at_current_position
-				if l_index > 0 then
-					Result := l_editor_token_item.token_at_position (l_index)
-				end
-			end
-		end
+--	editor_token_at_position (a_x, a_y: INTEGER): EDITOR_TOKEN is
+--			-- Editor token at position (`a_x', `a_y') which is related to the top-left coordinate of `grid'
+--			-- Void if no item is found.
+--		local
+--			l_editor_token_item: EB_GRID_EDITOR_TOKEN_ITEM
+--			l_index: INTEGER
+--		do
+--			l_editor_token_item ?= grid_item_at_position (a_x, a_y)
+--			if l_editor_token_item /= Void then
+--				l_index := l_editor_token_item.token_index_at_current_position
+--				if l_index > 0 then
+--					Result := l_editor_token_item.token_at_position (l_index)
+--				end
+--			end
+--		end
 
 	grid: ES_GRID
 			-- Grid used to display information
@@ -469,6 +457,24 @@ feature{NONE} -- Actions
 				elseif a_key.code = {EV_KEY_CONSTANTS}.key_c then
 					if text.has_selection then
 						ev_application.clipboard.set_text (text.selected_text)
+					end
+				end
+			end
+		end
+
+	on_pointer_right_click (a_x, a_y, a_button: INTEGER; a_x_tilt, a_y_tilt, a_pressure: DOUBLE; a_screen_x, a_screen_y: INTEGER) is
+			-- Action to be performed when pointer right click on `grid'
+		local
+			l_editor_token: EDITOR_TOKEN
+			l_stone: STONE
+		do
+			-- Uncomment the following code
+			if a_button = 3 and then ev_application.ctrl_pressed then
+				l_editor_token := editor_token_at_position (a_x, a_y)
+				if l_editor_token /= Void then
+					l_stone ?= l_editor_token.pebble
+					if l_stone /= Void and then l_stone.is_valid then
+						(create {EB_CONTROL_PICK_HANDLER}).launch_stone (l_stone)
 					end
 				end
 			end

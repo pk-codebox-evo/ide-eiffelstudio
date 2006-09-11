@@ -12,7 +12,12 @@ class
 inherit
 	EB_ERROR_MANAGER
 
-	EIFFEL_ENV
+	SYSTEM_CONSTANTS
+		export
+			{NONE} all
+		end
+
+	EIFFEL_LAYOUT
 		export
 			{NONE} all
 		end
@@ -124,14 +129,14 @@ feature {NONE} -- Implementation
 		local
 			a_file: RAW_FILE
 		do
-			create a_file.make (Default_config_name)
+			create a_file.make (eiffel_layout.Default_config_name)
 			a_file.open_read
 			a_file.read_stream (a_file.count)
 			a_file.close
 			Result := a_file.last_string
 		rescue
 			add_error_message (
-				"Unable to read the template ace file '"+Default_config_name+"'%N%
+				"Unable to read the template ace file '"+eiffel_layout.Default_config_name+"'%N%
 				%Check that the file exists and that you are allowed to read it.")
 		end
 

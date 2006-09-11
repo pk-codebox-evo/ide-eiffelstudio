@@ -152,29 +152,22 @@ feature {NONE} -- Implementation
 			l_vs_setup: VS_SETUP
 			l_path, l_platform: STRING
 		do
-			if Eiffel_installation_dir_name = Void or else Eiffel_installation_dir_name.is_empty then
-				environment.set_abort (No_ise_eiffel)
-			else
-				l_platform := env.get ("ISE_PLATFORM")
-				env.put (l_platform, "ISE_PLATFORM")
+			l_path := env.get ("PATH")
+			l_path.append (";")
+			l_path.append (eiffel_layout.bin_path)
+			env.put (l_path, "PATH")
+			if eiffel_layout.has_borland then
 				l_path := env.get ("PATH")
 				l_path.append (";")
-				l_path.append (Eiffel_installation_dir_name)
-				l_path.append ("\studio\spec\windows\bin")
+				l_path.append (eiffel_layout.Eiffel_installation_dir_name)
+				l_path.append ("\BCC55\Bin")
 				env.put (l_path, "PATH")
-				if use_bcb then
-					l_path := env.get ("PATH")
-					l_path.append (";")
-					l_path.append (Eiffel_installation_dir_name)
-					l_path.append ("\BCC55\Bin")
-					env.put (l_path, "PATH")
-				end
-				if not use_bcb then
-					if smart_checking then
-						create l_vs_setup.make (False)
-						if not l_vs_setup.valid_vcvars then
-							Environment.set_abort (No_c_compiler)
-						end
+			end
+			if not eiffel_layout.has_borland then
+				if smart_checking then
+					create l_vs_setup.make (False)
+					if not l_vs_setup.valid_vcvars then
+						Environment.set_abort (No_c_compiler)
 					end
 				end
 			end
@@ -188,7 +181,7 @@ feature {NONE} -- Implementation
 			l_index, l_index2: INTEGER
 		do
 			Result := True
-			create l_file.make (Eiffel_installation_dir_name + "\studio\config\windows\msc\config.eif")
+			create l_file.make (eiffel_layout.config_eif)
 			if l_file.exists then
 				l_file.open_read
 				l_file.read_stream (l_file.count)

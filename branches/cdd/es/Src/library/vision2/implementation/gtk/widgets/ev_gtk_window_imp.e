@@ -186,7 +186,7 @@ feature {NONE} -- Implementation
 			-- Request that `Current' be displayed when its parent is.
 		do
 			{EV_GTK_EXTERNALS}.gtk_window_set_position (c_object, window_position_enum)
-			{EV_GTK_EXTERNALS}.gtk_window_present (c_object)
+			{EV_GTK_EXTERNALS}.gtk_widget_show (c_object)
 		end
 
 	show_modal_to_window (a_window: EV_WINDOW) is
@@ -239,7 +239,7 @@ feature {NONE} -- Implementation
 			end
 			{EV_GTK_EXTERNALS}.gtk_grab_remove (c_object)
 			set_modal_window_group (default_pointer)
-			
+
 			if l_window_already_modal then
 				{EV_GTK_EXTERNALS}.gtk_grab_add (l_window_imp.c_object)
 			end
@@ -305,6 +305,13 @@ feature -- Basic operations
 			-- Condition when blocking ceases if enabled.
 		do
 			Result := is_destroyed or else not is_show_requested
+		end
+
+feature {EV_INTERMEDIARY_ROUTINES}
+
+	call_close_request_actions is
+			-- Call the close request actions.
+		deferred
 		end
 
 feature {EV_ANY_I} -- Implementation

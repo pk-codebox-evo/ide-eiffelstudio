@@ -15,23 +15,23 @@ feature -- Access
 
 	Idl_compiler: STRING is "midl"
 			-- IDL compiler command name.
-	
+
 	C_compiler: STRING is "Cl"
 			-- C compiler command name.
-			
+
 	Linker: STRING is "link"
 			-- Linker command name.
-	
+
 	Common_linker_options:STRING is " /DLL /RELEASE %"/INCREMENTAL:NO%""
 			-- Linker options.
 
-	Common_c_compiler_options: STRING is 
+	Common_c_compiler_options: STRING is
 			-- C compiler options to compile Proxy/Stub.
 		once
 			Result := "/MT /W0 /Ox /D %"REGISTER_PROXY_DLL%" /D %"WIN32%" /D %"_WIN32_DCOM%" /D %"_WIN32_WINNT=0x0500%" /YX /c /I..\include /I..\..\common\include /I"
-			Result.append (Eiffel_installation_dir_name)
+			Result.append (eiffel_layout.Eiffel_installation_dir_name)
 			Result.append ("\studio\spec\windows\include /I")
-			Result.append (Eiffel_installation_dir_name)
+			Result.append (eiffel_layout.Eiffel_installation_dir_name)
 			Result.append ("\library\com\spec\windows\include ")
 		end
 

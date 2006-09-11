@@ -71,6 +71,7 @@ feature{NONE} -- Initialization
 			item_drop_actions.extend (agent on_item_drop)
 			set_selected_rows_function (agent selected_rows_internal)
 			enable_default_tree_navigation_behavior (True, True, True, True)
+			key_press_string_actions.extend (agent on_key_string_pressed)
 		ensure then
 			tree_enabled: is_tree_enabled
 			change_actions_attached: change_actions /= Void
@@ -122,6 +123,12 @@ feature -- Basic operation
 			criterion_loaded: is_criterion_loaded
 			scope_set: scope = a_scope
 			is_read_only_set: is_read_only = a_read_only
+		end
+
+	load_undefinable_criteria is
+			-- Load undefinable criteria such as compliation basic metric.
+		do
+			is_criterion_loaded := True
 		end
 
 	clear_criterion is
@@ -272,6 +279,7 @@ feature -- Basic operation
 			l_nary_cri: EB_METRIC_NARY_CRITERION
 			l_criterion: EB_METRIC_CRITERION
 			l_new_row: EB_METRIC_CRITERION_ROW
+			l_item: EV_GRID_ITEM
 		do
 			change_actions.block
 			l_data ?= a_row.data
@@ -294,7 +302,10 @@ feature -- Basic operation
 					l_parent_row.register_subrow (l_new_row)
 				end
 				remove_selection
-				l_new_row.grid_row.subrow (l_new_row.grid_row.subrow_count).enable_select
+				l_item := l_new_row.grid_row.subrow (l_new_row.grid_row.subrow_count).item (1)
+				if l_item /= Void then
+					l_item.enable_select
+				end
 			end
 			change_actions.resume
 			change_actions.call ([])
@@ -331,17 +342,7 @@ feature -- Access
 			end
 		end
 
-feature{NONE} -- Implementation/Actions
-
-	on_pointer_button_release (x, y, button: INTEGER; a_item: EV_GRID_ITEM) is
-			-- Action to be performed when pointer released
-		do
-			if button = 3 and then row_to_be_selected /= Void and then row_to_be_selected.parent = Current then
-				remove_selection
-				row_to_be_selected.enable_select
-				row_to_be_selected := Void
-			end
-		end
+feature -- Actions
 
 	on_item_drop (a_item: EV_GRID_ITEM; a_pebble: ANY) is
 			-- Action to be performed when `a_pebble' is dropped on `a_item'
@@ -398,7 +399,7 @@ feature{NONE} -- Implementation/Actions
 					if l_source_row /= Void then
 						l_source_data ?= l_source_row.data
 					end
-					if l_source_data /= Void and then l_dest_data /= Void then
+					if l_source_data /= Void and then l_dest_data /= Void and then l_source_row.index /= l_dest_row.index then
 						if l_dest_data.is_empty_row then
 								-- Item is dropped on an empty row, it will replace the empty row.
 							l_criterion := l_source_data.criterion
@@ -461,16 +462,62 @@ feature{NONE} -- Implementation/Actions
 			end
 		end
 
+feature{NONE} -- Implementation/Actions
+
+	on_pointer_button_release (x, y, button: INTEGER; a_item: EV_GRID_ITEM) is
+			-- Action to be performed when pointer released
+		do
+			if button = 3 and then row_to_be_selected /= Void and then row_to_be_selected.parent = Current then
+				remove_selection
+				row_to_be_selected.enable_select
+				row_to_be_selected := Void
+			end
+		end
+
 	on_key_pressed (a_key: EV_KEY) is
 			-- Action to be performed when `a_key' is pressed on Current
 		local
 			l_selected_items: LIST [EV_GRID_ITEM]
+			l_domain_criterion_item: EB_METRIC_DOMAIN_GRID_ITEM
+			l_grid_item: EV_GRID_ITEM
+			l_key_code: INTEGER
 		do
 			Precursor (a_key)
-			if a_key.code = {EV_KEY_CONSTANTS}.key_f2 or a_key.code = {EV_KEY_CONSTANTS}.key_enter then
+			l_key_code := a_key.code
+			if l_key_code /= {EV_KEY_CONSTANTS}.key_tab then
+				if l_key_code = {EV_KEY_CONSTANTS}.key_f2 or l_key_code = {EV_KEY_CONSTANTS}.key_enter then
+					l_selected_items := selected_items
+					if not l_selected_items.is_empty then
+						l_grid_item := l_selected_items.first
+						l_grid_item.activate
+						l_domain_criterion_item ?= l_grid_item
+						if l_domain_criterion_item /= Void then
+							l_domain_criterion_item.show_dialog
+						end
+					end
+				end
+			end
+		end
+
+	on_key_string_pressed (a_string: STRING_32) is
+			-- Action to be performed when `a_string' is pressed on Current
+		require
+			a_string_attached: a_string /= Void
+		local
+			l_selected_items: LIST [EV_GRID_ITEM]
+			l_grid_editable_item: EV_GRID_EDITABLE_ITEM
+		do
+			if not (a_string.is_equal (once "%N") or a_string.is_equal (once "%T")) then
 				l_selected_items := selected_items
 				if not l_selected_items.is_empty then
 					l_selected_items.first.activate
+					l_grid_editable_item ?= l_selected_items.first
+					if l_grid_editable_item /= Void then
+						l_grid_editable_item.text_field.set_text (a_string)
+						if not a_string.is_empty then
+							l_grid_editable_item.text_field.set_caret_position (a_string.count + 1)
+						end
+					end
 				end
 			end
 		end
@@ -548,7 +595,7 @@ feature{NONE} -- Implementation
 					if l_source_row /= Void then
 						l_source_data ?= l_source_row.data
 					end
-					if l_source_data /= Void and then l_dest_data /= Void then
+					if l_source_data /= Void and then l_dest_data /= Void and then l_source_row.index /= l_dest_row.index then
 						if not l_source_data.is_empty_row then
 							Result := not is_parent_row (l_dest_row, l_source_row)
 						end

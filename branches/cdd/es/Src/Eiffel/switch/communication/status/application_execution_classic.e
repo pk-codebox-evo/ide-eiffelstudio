@@ -155,8 +155,6 @@ feature -- Execution
 	kill is
 			-- Ask the application to terminate itself.
 		do
-			Application.process_termination
-
 			quit_request.make (Rqst_kill)
 			quit_request.send
 
@@ -172,7 +170,10 @@ feature -- Execution
 					print (generator + ".kill -> quit_request.recv_dead ? %N")
 				end
 			end
-			ipc_engine.end_of_debugging
+
+			Application.process_termination
+
+			Ipc_engine.end_of_debugging
 		ensure then
 			app_is_not_running: not Application.is_running
 		end
@@ -273,11 +274,7 @@ feature {APPLICATION_EXECUTION} -- Launching status
 			end
 
 			Result := "Could not launch system.%N"
-			if ipc_engine.ise_eiffel = Void or else ipc_engine.ise_platform = Void then
-				Result.append ("The following " + env_var_str + "s are not set%N")
-				Result.append ("%T- " + ipc_engine.ise_eiffel_varname + "%N")
-				Result.append ("%T- " + ipc_engine.ise_platform_varname + "%N")
-			elseif not ipc_engine.valid_ise_ecdbgd_executable then
+			if not ipc_engine.valid_ise_ecdbgd_executable then
 				Result.append ("The Eiffel debugger is not found or not executable%N")
 				Result.append ("  current path = "+ ipc_engine.ise_ecdbgd_path + " %N")
 				Result.append ("%NYou can change this value in the preferences%N")

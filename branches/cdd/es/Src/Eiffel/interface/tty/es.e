@@ -23,7 +23,7 @@ inherit
 
 	SHARED_EWB_CMD_NAMES
 
-	EIFFEL_ENV
+	EIFFEL_LAYOUT
 
 	SHARED_OVERRIDDEN_METADATA_CACHE_PATH
 
@@ -47,42 +47,59 @@ inherit
 			{NONE} all
 		end
 
+	SYSTEM_CONSTANTS
+
+	EIFFEL_LAYOUT
+
 create
 	make
 
 feature -- Initialization
 
 	make is
+			-- Initialization
+		local
+			l_layout: EC_EIFFEL_LAYOUT
+			l_eifgen_init: INIT_SERVERS
+			l_preference_access: PREFERENCES
+		do
+				-- Check that environment variables
+				-- are properly set.
+			if not is_eiffel_layout_defined then
+				create l_layout
+				l_layout.check_environment_variable
+				set_eiffel_layout (l_layout)
+			end
+
+				--| Initialization of the run-time, so that at the end of a store/retrieve
+				--| operation (like retrieving or storing the project, creating the CASEGEN
+				--| directory, generating the profile information, ...) the run-time is initialized
+				--| back to the values which permits the compiler to access correctly the EIFGEN
+				--| directory
+			create l_eifgen_init.make
+
+				-- Initialization of compiler resources.
+			create l_preference_access.make_with_defaults_and_location (
+				<<eiffel_layout.general_preferences, eiffel_layout.platform_preferences>>, eiffel_layout.eiffel_preferences)
+			initialize_preferences (l_preference_access, False)
+
+			execute
+		end
+
+
+	execute is
 			-- Analyze the command line options and
 			-- execute the appropriate command.
 		local
 			temp: STRING
-			eifgen_init: INIT_SERVERS
 			new_resources: TTY_RESOURCES
 			file_degree_output: FILE_DEGREE_OUTPUT
 			compilation: EWB_COMP
 			ewb_loop: EWB_LOOP
 			e_displayer: DEFAULT_ERROR_DISPLAYER
 			l_loader: EC_PROJECT_LOADER
-			preference_access: PREFERENCES
 		do
 			if not retried then
-					-- Check that environment variables
-					-- are properly set.
-				check_environment_variable
-
-					--| Initialization of the run-time, so that at the end of a store/retrieve
-					--| operation (like retrieving or storing the project, creating the CASEGEN
-					--| directory, generating the profile information, ...) the run-time is initialized
-					--| back to the values which permits the compiler to access correctly the EIFGEN
-					--| directory
-				create eifgen_init.make
-
-					-- Initialization of compiler resources.
-				create preference_access.make_with_defaults_and_location (
-					<<general_preferences, platform_preferences>>, eiffel_preferences)
-				initialize_preferences (preference_access, False)
-
 						-- Read the resource files
 				create new_resources.initialize
 
@@ -118,6 +135,7 @@ feature -- Initialization
 						create l_loader
 						l_loader.set_should_stop_on_prompt (stop_on_error)
 						l_loader.set_ignore_user_configuration_file (not is_user_settings_requested)
+						l_loader.set_has_library_conversion (not has_no_library_conversion)
 						if old_project_file /= Void then
 							l_loader.open_project_file (old_project_file, Void, project_path, is_clean_requested)
 						elseif old_ace_file /= Void then
@@ -237,6 +255,9 @@ feature -- Properties
 	is_user_settings_requested: BOOLEAN
 			-- Should we compile without using the configuration file?
 
+	has_no_library_conversion: BOOLEAN
+			-- Should we not convert clusters into libraries?
+
 	help_messages: HASH_TABLE [STRING, STRING] is
 			-- Help message table
 		once
@@ -267,6 +288,7 @@ feature -- Properties
 			Result.put (suppliers_help, suppliers_cmd_name)
 			Result.put (target_help, target_cmd_name)
 			Result.put (use_settings_help, use_settings_cmd_name)
+			Result.put (no_library_help, no_library_cmd_name)
 			Result.put (version_help, version_cmd_name)
 			Result.put (batch_help, batch_cmd_name)
 			Result.put (clean_help, clean_cmd_name)
@@ -332,7 +354,7 @@ feature -- Output
 			io.put_string (" [-help | -version | -batch | -clean | -use_settings | ")
 			add_usage_special_cmds
 			io.put_string ("-loop | -quick_melt | -melt | ")
-			if Has_documentation_generation then
+			if eiffel_layout.Has_documentation_generation then
 				io.put_string ("-clients [-filter filtername] class |%N%
 					%%T-suppliers [-filter filtername] class |%N%
 					%%T-flatshort [-filter filtername] [-all | -all_and_parents | class] |%N%
@@ -351,7 +373,7 @@ feature -- Output
 			io.put_string ("%
 				%%T-config config.ecf | -target target |%N%
 				%%T(obsolete) -ace Ace | (obsolete) -project Project_file_name |%N%
-				%%T-stop |%N%
+				%%T-stop | -no_library |%N%
 				%%T-project_path Project_directory_path | -file File]%N")
 		end
 
@@ -478,7 +500,7 @@ feature -- Update
 				else
 					option_error := True
 				end
-			elseif has_documentation_generation and then option.is_equal ("-implementers") then
+			elseif eiffel_layout.has_documentation_generation and then option.is_equal ("-implementers") then
 				if current_option < argument_count then
 					if command /= Void then
 						option_error := True
@@ -507,7 +529,7 @@ feature -- Update
 				else
 					option_error := True
 				end
-			elseif has_documentation_generation and then option.is_equal ("-aversions") then
+			elseif eiffel_layout.has_documentation_generation and then option.is_equal ("-aversions") then
 				if current_option < argument_count then
 					if command /= Void then
 						option_error := True
@@ -536,7 +558,7 @@ feature -- Update
 				else
 					option_error := True
 				end
-			elseif has_documentation_generation and then option.is_equal ("-dversions") then
+			elseif eiffel_layout.has_documentation_generation and then option.is_equal ("-dversions") then
 				if current_option < argument_count then
 					if command /= Void then
 						option_error := True
@@ -565,7 +587,7 @@ feature -- Update
 				else
 					option_error := True
 				end
-			elseif has_documentation_generation and then option.is_equal ("-callers") then
+			elseif eiffel_layout.has_documentation_generation and then option.is_equal ("-callers") then
 				if current_option < argument_count then
 					if command /= Void then
 						option_error := True
@@ -614,7 +636,7 @@ feature -- Update
 				else
 					option_error := True
 				end
-			elseif has_documentation_generation and then option.is_equal ("-callees") then
+			elseif eiffel_layout.has_documentation_generation and then option.is_equal ("-callees") then
 				if current_option < argument_count then
 					if command /= Void then
 						option_error := True
@@ -680,7 +702,7 @@ feature -- Update
 			elseif option.is_equal ("-c_compile") then
 				is_finish_freezing_called := True
 			elseif
-				has_documentation_generation and then
+				eiffel_layout.has_documentation_generation and then
 				(option.is_equal ("-short") or else
 				option.is_equal ("-flatshort"))
 			then
@@ -720,7 +742,7 @@ feature -- Update
 				else
 					option_error := True
 				end
-			elseif has_documentation_generation and then option.is_equal ("-flat") then
+			elseif eiffel_layout.has_documentation_generation and then option.is_equal ("-flat") then
 				if current_option < argument_count then
 					if command /= Void then
 						option_error := True
@@ -749,7 +771,7 @@ feature -- Update
 				else
 					option_error := True
 				end
-			elseif has_documentation_generation and then option.is_equal ("-filter") then
+			elseif eiffel_layout.has_documentation_generation and then option.is_equal ("-filter") then
 				if current_option + 1 < argument_count then
 					if command /= Void then
 						option_error := True
@@ -767,7 +789,7 @@ feature -- Update
 				else
 					option_error := True
 				end
-			elseif has_documentation_generation and then option.is_equal ("-ancestors") then
+			elseif eiffel_layout.has_documentation_generation and then option.is_equal ("-ancestors") then
 				if current_option < argument_count then
 					if command /= Void then
 						option_error := True
@@ -790,7 +812,7 @@ feature -- Update
 				else
 					option_error := True
 				end
-			elseif has_documentation_generation and then option.is_equal ("-clients") then
+			elseif eiffel_layout.has_documentation_generation and then option.is_equal ("-clients") then
 				if current_option < argument_count then
 					if command /= Void then
 						option_error := True
@@ -813,7 +835,7 @@ feature -- Update
 				else
 					option_error := True
 				end
-			elseif has_documentation_generation and then option.is_equal ("-suppliers") then
+			elseif eiffel_layout.has_documentation_generation and then option.is_equal ("-suppliers") then
 				if current_option < argument_count then
 					if command /= Void then
 						option_error := True
@@ -836,7 +858,7 @@ feature -- Update
 				else
 					option_error := True
 				end
-			elseif has_documentation_generation and then option.is_equal ("-descendants") then
+			elseif eiffel_layout.has_documentation_generation and then option.is_equal ("-descendants") then
 				if current_option < argument_count then
 					if command /= Void then
 						option_error := True
@@ -943,6 +965,10 @@ feature -- Update
 			elseif option.is_equal ("-use_settings") then
 					-- Compiler will read user configuration file for that project
 				is_user_settings_requested := True
+
+			elseif option.is_equal ("-no_library") then
+					-- Compiler will read user configuration file for that project
+				has_no_library_conversion := True
 
 			elseif option.is_equal ("-file") then
 				if current_option < argument_count then

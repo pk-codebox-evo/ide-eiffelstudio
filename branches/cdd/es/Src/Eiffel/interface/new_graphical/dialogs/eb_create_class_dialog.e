@@ -32,13 +32,6 @@ inherit
 			default_create, copy
 		end
 
-	EIFFEL_ENV
-		export
-			{NONE} all
-		undefine
-			default_create, copy
-		end
-
 	EB_VISION2_FACILITIES
 		export
 			{NONE} all
@@ -81,7 +74,9 @@ inherit
 			default_create, copy
 		end
 
-	CONF_REFACTORING
+	EIFFEL_LAYOUT
+		export
+			{NONE} all
 		undefine
 			default_create, copy
 		end
@@ -203,7 +198,9 @@ feature {NONE} -- Initialization
 			vb.set_border_width (Layout_constants.Small_border_size)
 			vb.extend (identification_frame)
 			vb.extend (properties_frame)
+			vb.disable_item_expand (properties_frame)
 			vb.extend (parents_frame)
+			vb.disable_item_expand (parents_frame)
 			extend_no_expand (vb, buttons_box)
 
 				-- Add the main container to the dialog.
@@ -456,7 +453,7 @@ feature {NONE} -- Implementation
 			tmp: STRING
 		do
 			if not retried then
-				clf := Templates_path.twin
+				create clf.make_from_string (eiffel_layout.Templates_path)
 				if not empty_check.is_selected then
 					clf.set_file_name ("empty")
 				else

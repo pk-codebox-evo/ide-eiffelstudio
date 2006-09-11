@@ -130,7 +130,6 @@ feature {NONE} -- Initialization
 				address_dialog.close_request_actions.extend (agent address_dialog.hide)
 				address_dialog.extend (vb)
 				generate_header_info
-				address_dialog.set_height (header_info.height)
 
 				cluster_address.key_release_actions.extend (agent cluster_key_up)
 				cluster_address.key_press_actions.extend (agent cluster_key_down)
@@ -607,7 +606,6 @@ feature -- Updating
 				address_dialog.hide
 			end
 			address_dialog.set_width (header_info.width)
-			address_dialog.set_height (header_info.height)
 			create l_screen
 			if a_x + address_dialog.width > l_screen.virtual_width then
 				l_x := l_screen.virtual_width - address_dialog.width
@@ -1085,7 +1083,7 @@ feature {NONE} -- open new class
 						current_group := Universe.cluster_of_name (fname)
 					end
 					process_cluster
-				else
+				elseif Universe.target /= Void then
 					from
 						if is_general_group_acceptable then
 							cl := Universe.groups
@@ -1674,7 +1672,7 @@ feature {NONE} -- open new class
 			cluster_address.change_actions.block
 			last_caret_position := cluster_address.caret_position
 			str := cluster_address.text
-			if universe /= Void and then not str.is_empty and then (str @ (str.count) /= ' ') then
+			if workbench.universe_defined and then universe.target /= Void and then not str.is_empty and then (str @ (str.count) /= ' ') then
 				str.left_adjust
 				str.right_adjust
 				str.to_lower

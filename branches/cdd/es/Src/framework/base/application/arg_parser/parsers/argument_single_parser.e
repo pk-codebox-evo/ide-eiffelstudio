@@ -13,7 +13,7 @@ inherit
 		export
 			{NONE} values
 		redefine
-			command_option_configuration,
+			command_option_group_configuration,
 			validate_arguments
 		end
 
@@ -23,9 +23,10 @@ inherit
 		export
 			{NONE} values
 		undefine
-			extended_usage
+			extended_usage,
+			validate_loose_arguments
 		redefine
-			command_option_configuration,
+			command_option_group_configuration,
 			validate_arguments
 		end
 
@@ -44,24 +45,26 @@ feature -- Access
 
 feature {NONE} -- Usage
 
-	command_option_configuration: STRING is
+	command_option_group_configuration (a_group: LIST [ARGUMENT_SWITCH]; a_show_loose: BOOLEAN; a_add_appurtenances: BOOLEAN; a_src_group: LIST [ARGUMENT_SWITCH]): STRING is
 			-- Command line option configuration string (to display in usage)
 		local
 			l_suffix: STRING
 			l_arg: STRING
-		once
-			l_arg := loose_argument_name_arg
-			l_suffix := Precursor {ARGUMENT_BASE_PARSER}
-			if l_suffix /= Void then
-				create Result.make (l_arg.count + l_suffix.count + 1)
-				Result.append (l_arg)
-				Result.append_character (' ')
-				Result.append (l_suffix)
+		do
+			if not a_show_loose or not a_add_appurtenances then
+				Result := Precursor {ARGUMENT_BASE_PARSER} (a_group, a_show_loose, a_add_appurtenances, a_src_group)
 			else
-				Result := l_arg
+				l_arg := loose_argument_name_arg
+				l_suffix := Precursor {ARGUMENT_BASE_PARSER} (a_group, a_show_loose, a_add_appurtenances, a_src_group)
+				if l_suffix /= Void then
+					create Result.make (l_arg.count + l_suffix.count + 1)
+					Result.append (l_arg)
+					Result.append_character (' ')
+					Result.append (l_suffix)
+				else
+					Result := l_arg
+				end
 			end
-		ensure then
-			result_attached: Result /= Void
 		end
 
 feature {NONE} -- Validation

@@ -86,8 +86,9 @@ feature {NONE} -- Initialization
 			a_tool_attached: a_tool /= Void
 		do
 			metric_tool := a_tool
+			on_unit_order_change_agent := agent on_unit_order_change
 			default_create
-			set_is_last_request_displayed (True)
+			set_is_up_to_date (True)
 		ensure
 			metric_tool_attached: metric_tool = a_tool
 		end
@@ -110,6 +111,8 @@ feature {NONE} -- Initialization
 			create l_text
 			dummy_text.set_background_color (l_text.background_color)
 			dummy_area.show
+
+				-- Delete following in docking EiffelStudio.			
 			dummy_text.drop_actions.extend (agent drop_cluster)
 			dummy_text.drop_actions.extend (agent drop_class)
 			dummy_text.drop_actions.extend (agent drop_feature)
@@ -148,18 +151,7 @@ feature -- Status report
 	should_metric_result_be_displayed: BOOLEAN
 			-- Should metric result be displayed instead of archive result?
 
-	is_last_request_displayed: BOOLEAN
-			-- Is last display request fullfilled?
-
 feature -- Setting
-
-	set_is_last_request_displayed (b: BOOLEAN) is
-			-- Set `is_last_request_displayed' with `b'.
-		do
-			is_last_request_displayed := b
-		ensure
-			is_last_request_displayed_set: is_last_request_displayed = b
-		end
 
 	enable_metric_result_display is
 			-- Enable metric result display.
@@ -231,6 +223,11 @@ feature -- Setting
 			last_current_archive_set: last_current_archive = a_current_archive
 		end
 
+	set_stone (a_stone: STONE) is
+			-- Notify that `a_stone' has been dropped on Current.
+		do
+		end
+
 feature -- Synchronization
 
 	synchronize_when_compile_start is
@@ -243,6 +240,7 @@ feature -- Synchronization
 		do
 			if metric_result.is_displayed then
 				metric_result.refresh_grid
+				metric_result.update_warning_area.show
 			end
 		end
 
@@ -251,11 +249,15 @@ feature -- Actions
 	on_select is
 			-- Action to be performed when current is selected
 		do
-			if not is_last_request_displayed then
+			if not is_selected then
+				set_is_selected (True)
+			end
+			if not is_up_to_date then
 				if should_metric_result_be_displayed then
 					metric_result_area.show
 					dummy_area.hide
 					archive_result_area.hide
+					metric_result.update_warning_area.hide
 					metric_result.load_metric_result (last_metric, last_source_domain, last_value, last_result_domain)
 				else
 					metric_result_area.hide
@@ -263,10 +265,8 @@ feature -- Actions
 					archive_result_area.show
 					archive_result.load_archives (last_reference_archive, last_current_archive)
 				end
-				set_is_last_request_displayed (True)
+				set_is_up_to_date (True)
 			end
-		ensure then
-			last_request_displayed: is_last_request_displayed
 		end
 
 feature -- Recycle

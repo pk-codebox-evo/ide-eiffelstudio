@@ -84,51 +84,28 @@ feature -- Access
 	toolbarable_commands: ARRAYED_LIST [EB_TOOLBARABLE_AND_MENUABLE_COMMAND]
 			-- All commands that can be put in a toolbar.
 
+feature -- tools
+
 	call_stack_tool: EB_CALL_STACK_TOOL
 			-- A tool that represents the call stack in a graphical display.
 
 	threads_tool: ES_DBG_THREADS_TOOL
-			-- A tool that represents the threads list in a graphical display
-
-	debugging_tools: ES_DOCKABLE_NOTEBOOK
-			-- A tool that represents the call stack in a graphical display.
+			-- A tool that represents the threads list in a graphical display.
 
 	objects_tool: ES_OBJECTS_TOOL
 
 	watch_tool_list: LINKED_SET [ES_WATCH_TOOL]
 
-	debugging_feature_as: FEATURE_AS is
-			-- Debugging feature.
-		local
-			l_feature_stone : FEATURE_STONE
-		do
-			if application.is_running and then application.is_stopped and not application.current_call_stack_is_empty then
-				l_feature_stone ?= first_valid_call_stack_stone
-				if l_feature_stone /= Void and then l_feature_stone.e_feature /= Void then
-					Result := l_feature_stone.e_feature.ast
-				end
-			end
-		end
+	debugging_tools: ES_DOCKABLE_NOTEBOOK
+			-- A tool that contains various debugging tools.
 
-	debugging_class_c: CLASS_C is
-			-- Debugging feature.
-		local
-			l_class_stone : CLASSC_STONE
-		do
-			if application.is_running and then application.is_stopped and not application.current_call_stack_is_empty then
-				l_class_stone ?= first_valid_call_stack_stone
-				if l_class_stone /= Void then
-					Result := l_class_stone.e_class
-				end
-			end
-		end
+feature -- tools management
 
 	new_toolbar: EB_TOOLBAR is
 			-- Toolbar containing all debugging commands.
 		do
 			Result := preferences.debugger_data.retrieve_project_toolbar (toolbarable_commands)
 		end
-
 
 	new_debug_menu: EV_MENU is
 			-- Generate a menu that can be displayed in development windows.
@@ -208,7 +185,7 @@ feature -- Access
 	menuable_debugging_tools: ARRAY [EB_TOOL] is
 			-- List of all debugging tools to be listed under the debug->tools menu.
 		do
-			Result := <<threads_tool>>
+			Result := <<call_stack_tool, threads_tool>>
 		end
 
 	new_debugging_tools_menu: EV_MENU is
@@ -236,14 +213,6 @@ feature -- Access
 			if raised then
 				l_tools := menuable_debugging_tools
 				if not l_tools.is_empty then
-					create mit.make_with_text ("Show/Hide tools")
-					mit.disable_sensitive
-					m.extend (mit)
-
-					create {EV_MENU_SEPARATOR} mit
-					mit.disable_sensitive
-					m.extend (mit)
-
 					from
 						i := l_tools.lower
 					until
@@ -325,6 +294,35 @@ feature -- Access
 			wt.close
 			watch_tool_list.prune_all (wt)
 		end
+
+feature -- Helpers
+
+	debugging_feature_as: FEATURE_AS is
+			-- Debugging feature.
+		local
+			l_feature_stone : FEATURE_STONE
+		do
+			if application.is_running and then application.is_stopped and not application.current_call_stack_is_empty then
+				l_feature_stone ?= first_valid_call_stack_stone
+				if l_feature_stone /= Void and then l_feature_stone.e_feature /= Void then
+					Result := l_feature_stone.e_feature.ast
+				end
+			end
+		end
+
+	debugging_class_c: CLASS_C is
+			-- Debugging feature.
+		local
+			l_class_stone : CLASSC_STONE
+		do
+			if application.is_running and then application.is_stopped and not application.current_call_stack_is_empty then
+				l_class_stone ?= first_valid_call_stack_stone
+				if l_class_stone /= Void then
+					Result := l_class_stone.e_class
+				end
+			end
+		end
+
 
 feature -- GUI Access
 
@@ -608,7 +606,6 @@ feature -- Status setting
 			end
 			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.prepare_for_debug)
 			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.request_update)
-
 
 				--| Threads Tool
 			if threads_tool = Void then
@@ -1129,6 +1126,12 @@ feature -- Debugging events
 				debugging_window := Void
 				output_manager.display_system_info
 
+				if stopped_kamikaze_action /= Void and then not stopped_kamikaze_action.is_empty then
+					stopped_kamikaze_action.call (Void)
+					stopped_kamikaze_action.wipe_out
+					notify_breakpoints_changes
+				end
+
 				save_debug_info
 
 				if application.is_running then
@@ -1195,9 +1198,6 @@ feature {EB_DEVELOPMENT_WINDOW} -- Implementation
 
 	display_error_help_cmd: EB_ERROR_INFORMATION_CMD
 			-- Command to pop up a dialog giving help on compilation errors.
-
-	eac_browser_cmd: EB_OPEN_EAC_BROWSER_CMD
-			-- Command that displays the EAC browser tool.
 
 feature {EB_DEBUGGER_OBSERVER} -- Manager implementation
 

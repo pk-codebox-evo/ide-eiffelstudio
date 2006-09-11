@@ -20,6 +20,11 @@ inherit
 
 	SYSTEM_CONSTANTS
 
+	EIFFEL_LAYOUT
+		export
+			{NONE} all
+		end
+
 create
 	make
 
@@ -194,9 +199,9 @@ feature -- Access
 				create Result.make_from_string (project_location.final_path)
 			end
 			Result.set_file_name (name)
-			tmp := Platform_constants.Executable_suffix
+			tmp := eiffel_layout.Executable_suffix
 			if not tmp.is_empty then
-				Result.add_extension (Platform_constants.Executable_suffix)
+				Result.add_extension (eiffel_layout.Executable_suffix)
 			end
 		end;
 
@@ -206,7 +211,7 @@ feature -- Access
 			Result := workbench.system /= Void and then workbench.System.is_precompiled
 		end;
 
-feature {COMPILER_EXPORTER, CALL_STACK_ELEMENT, RUN_INFO, ABSTRACT_REFERENCE_VALUE, EXPANDED_VALUE, ATTR_REQUEST, APPLICATION_STATUS}
+feature {COMPILER_EXPORTER, CALL_STACK_ELEMENT, ABSTRACT_REFERENCE_VALUE, EXPANDED_VALUE, ATTR_REQUEST, APPLICATION_STATUS}
 
 	valid_dynamic_id (i: INTEGER): BOOLEAN is
 			-- Is the class_type dynamic id `i' valid?

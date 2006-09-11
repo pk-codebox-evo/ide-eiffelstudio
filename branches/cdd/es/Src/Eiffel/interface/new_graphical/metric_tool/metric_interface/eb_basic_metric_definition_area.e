@@ -63,7 +63,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_tool: like metric_tool) is
+	make (a_tool: like metric_tool; a_panel: like metric_panel) is
 			-- Initialize `metric' with `a_metric' mode with `a_mode' and `unit' with `a_unit'.
 		require
 			a_tool_attached: a_tool /= Void
@@ -72,11 +72,13 @@ feature {NONE} -- Initialization
 			create change_actions_internal
 			create change_actions
 			set_metric_tool (a_tool)
+			set_metric_panel (a_panel)
 			default_create
 			setup_editor
 		ensure
 			change_actions_attached: change_actions_internal /= Void
 			metric_tool_set: metric_tool = a_tool
+			metric_panel_set: metric_panel = a_panel
 		end
 
 	user_initialization is
@@ -125,8 +127,8 @@ feature {NONE} -- Initialization
 			create del_key_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_delete), False, False, False)
 			create move_row_up_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_numpad_subtract), True, False, False)
 			create move_row_down_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_numpad_add), True, False, False)
-			create and_indent_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_numpad_6), False, False, False)
-			create or_indent_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_numpad_6), True, False, False)
+			create and_indent_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_numpad_6), True, False, False)
+			create or_indent_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_numpad_3), True, False, False)
 			combination_grid.add_key_shortcut (del_key_index, del_key_shortcut)
 			combination_grid.add_key_shortcut (move_up_key_index, move_row_up_shortcut)
 			combination_grid.add_key_shortcut (move_down_key_index, move_row_down_shortcut)
@@ -137,6 +139,21 @@ feature {NONE} -- Initialization
 			remove_criterion_btn.set_tooltip (metric_names.f_del_row + " (" + del_key_shortcut.out + ")")
 			indent_and_btn.set_tooltip (metric_names.f_indent_with_and_criterion + " (" + and_indent_shortcut.out + ")")
 			indent_or_btn.set_tooltip (metric_names.f_indent_with_or_criterion + " (" + or_indent_shortcut.out + ")")
+
+			criterion_lbl.set_text (metric_names.t_metric_criterion_definition)
+			attach_non_editable_warning_to_text (metric_names.t_text_not_editable, expression_text, metric_tool_window)
+
+				-- Delete following in docking EiffelStudio.
+			criterion_definition_empty_area.drop_actions.extend (agent metric_panel.drop_cluster)
+			criterion_definition_empty_area.drop_actions.extend (agent metric_panel.drop_class)
+			criterion_definition_empty_area.drop_actions.extend (agent metric_panel.drop_feature)
+			lbl_empty_area.drop_actions.extend (agent metric_panel.drop_cluster)
+			lbl_empty_area.drop_actions.extend (agent metric_panel.drop_class)
+			lbl_empty_area.drop_actions.extend (agent metric_panel.drop_feature)
+			expression_lbl_empty_area.drop_actions.extend (agent metric_panel.drop_cluster)
+			expression_lbl_empty_area.drop_actions.extend (agent metric_panel.drop_class)
+			expression_lbl_empty_area.drop_actions.extend (agent metric_panel.drop_feature)
+
 		ensure then
 			del_key_shortcut_attached: del_key_shortcut /= Void
 			ctrl_up_shortcut_attached: move_row_up_shortcut /= Void
@@ -157,11 +174,9 @@ feature -- Setting
 		do
 			mode := a_mode
 			if mode = readonly_mode then
---				add_criterion_btn.disable_sensitive
 				remove_criterion_btn.disable_sensitive
 				remove_all_criterion_btn.disable_sensitive
 			else
---				add_criterion_btn.enable_sensitive
 				remove_criterion_btn.enable_sensitive
 				remove_all_criterion_btn.enable_sensitive
 			end
@@ -176,23 +191,21 @@ feature -- Setting
 			load_metric_name_and_description (a_metric, mode = readonly_mode)
 			if a_metric = Void then
 					-- For new metric
-				if is_criterion_definable then
-					load_criterion (Void)
-				end
+				load_criterion (Void)
 			else
-				if is_criterion_definable then
-					load_criterion (a_metric.criteria)
-				end
+				load_criterion (a_metric.criteria)
 			end
 		end
 
 	load_criterion (a_criterion: EB_METRIC_CRITERION) is
 			-- Load criterion of `a_metric' into `combination_grid'.
-		require
-			criterion_definable: is_criterion_definable
 		do
 			combination_grid.clear_criterion
-			combination_grid.load_criterion (a_criterion, unit.scope, mode = readonly_mode)
+			if is_criterion_definable then
+				combination_grid.load_criterion (a_criterion, unit.scope, mode = readonly_mode)
+			else
+				combination_grid.load_undefinable_criteria
+			end
 			on_change
 		end
 
@@ -221,12 +234,37 @@ feature -- Setting
 			combination_toolbar_area.disable_sensitive
 		end
 
+	attach_metric_selector (a_metric_selector: like metric_selector) is
+			-- Set `metric_selector' with `a_metric_selector'.
+		do
+			metric_selector := a_metric_selector
+		end
+
+	detach_metric_selector is
+			-- Detach `metric_selector'.
+		do
+			metric_selector := Void
+		end
+
+	set_stone (a_stone: STONE) is
+			-- Notify that `a_stone' is dropped on Current.
+		local
+			l_selected_items: LIST [EV_GRID_ITEM]
+		do
+			if mode /= readonly_mode then
+				l_selected_items := combination_grid.selected_items
+				if not l_selected_items.is_empty then
+					combination_grid.on_item_drop (l_selected_items.first, a_stone)
+				end
+			end
+		end
+
 feature -- Access
 
 	metric: EB_METRIC_BASIC is
 			-- Metric in current editor
 		do
-			create Result.make (name_area.name, unit)
+			create Result.make (name_area.name, unit, uuid)
 			Result.set_description (name_area.description)
 			Result.set_criteria (combination_grid.criterion)
 		end

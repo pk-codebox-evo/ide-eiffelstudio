@@ -32,11 +32,6 @@ inherit
 			{NONE} all
 		end
 
-	EIFFEL_ENV
-		export
-			{NONE} all
-		end
-
 	EB_SHARED_MANAGERS
 		export
 			{NONE} all
@@ -63,6 +58,11 @@ inherit
 		end
 
 	EB_SHARED_PREFERENCES
+		export
+			{NONE} all
+		end
+
+	SYSTEM_CONSTANTS
 		export
 			{NONE} all
 		end
@@ -123,7 +123,7 @@ feature -- Execution
 				if not app_exec.is_running then
 						-- ask to compile if we changed some classes inside eiffel studio
 					l_wb := eiffel_project.workbench
-					if l_wb.is_changed then
+					if l_wb.is_changed or window_manager.has_modified_windows then
 						create l_dial.make_initialized (2, preferences.debug_tool_data.always_compile_before_debug_string, warning_messages.w_Compile_before_debug, interface_names.l_dont_ask_me_again, preferences.preferences)
 						l_dial.set_ok_action (agent melt_project_cmd.execute_and_wait)
 						l_dial.show_modal_to_window (window_manager.last_focused_development_window.window)
@@ -479,9 +479,9 @@ feature -- Execution
 				wd.show_modal_to_window (window_manager.last_focused_development_window.window)
 				output_manager.add_string (Warning_messages.w_Invalid_working_directory (working_dir))
 			else
-				Eb_debugger_manager.raise
+					-- Raise debugger before launching.
+				Eb_debugger_manager.raise;
 				app_exec := eb_debugger_manager.application
-
 				app_exec.run (l_cmd_line_arg, working_dir)
 				if app_exec.is_running then
 					output_manager.add_string ("System is running")

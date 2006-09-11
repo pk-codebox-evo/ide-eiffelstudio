@@ -39,7 +39,8 @@ feature -- Cleanup
 				end
 				if internal_gac_loader /= Void then
 					l_dom := internal_gac_loader.my_domain
-					if not l_dom.is_finalizing_for_unload then
+					if not my_domain.equals (l_dom) and then not l_dom.is_finalizing_for_unload then
+							-- Only unload app domain if called from another.
 						{APP_DOMAIN}.unload (l_dom)
 					end
 				end
@@ -145,14 +146,16 @@ feature -- Basic operations
 					Result ?= l_asms.item (a_name)
 				else
 					l_resolver := resolver
-					if not retried and l_resolver /= Void then
+					retried := l_resolver = Void
+					if not retried then
 							-- Use resolver to find best path possible	
-						l_fn := resolver.resolve_by_assembly_name ({APP_DOMAIN}.current_domain, a_name)
+						l_fn := l_resolver.resolve_by_assembly_name ({APP_DOMAIN}.current_domain, a_name)
 						if l_fn /= Void then
 							Result := load_from (l_fn)
 						end
+						retried := True
 					end
-					if Result = Void and (retried or l_fn = Void) then
+					if Result = Void and retried then
 							-- Fail safe.
 						Result := dotnet_load (a_name.to_string)
 					end
@@ -214,7 +217,7 @@ feature -- Domain
 				internal_gac_loader := Result
 
 					-- Add event handler for parent domain unloads
-				l_new_dom.add_domain_unload (create {EVENT_HANDLER}.make (Current, $on_gac_domain_unloaded))
+				l_new_dom.add_domain_unload (Result.new_gac_domain_unload_delelgate)
 			end
 		ensure
 			result_attached: Result /= Void
@@ -259,9 +262,6 @@ feature {NONE} -- Lifetime service sponsorship
 
 feature {NONE} -- Implementation
 
-	gac_domain_name: SYSTEM_STRING = "ASSEMBLY_LOADER (GAC)"
-			-- Friendly name given to GAC domain.
-
 	loaded_assemblies: HASHTABLE is
 			-- Table of loaded assemblies
 		do
@@ -278,6 +278,21 @@ feature {NONE} -- Implementation
 	internal_loaded_assemblies: like loaded_assemblies;
 			-- Cached version of `loaded_assemblies'
 			-- Note: Do not use directly!
+
+feature {ASSEMBLY_LOADER} -- Implementation
+
+	gac_domain_name: SYSTEM_STRING = "ASSEMBLY_LOADER (GAC)"
+			-- Friendly name given to GAC domain.
+
+	new_gac_domain_unload_delelgate: EVENT_HANDLER is
+			-- Creates a new event handler to ensure generated code is verifiable.
+		require
+			requested_in_gac_domain: {APP_DOMAIN}.current_domain.friendly_name.equals (gac_domain_name)
+		do
+			create Result.make (Current, $on_gac_domain_unloaded)
+		ensure
+			result_attached: Result /= Void
+		end
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

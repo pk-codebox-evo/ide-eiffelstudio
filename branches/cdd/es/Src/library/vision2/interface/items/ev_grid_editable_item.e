@@ -145,8 +145,10 @@ feature {NONE} -- Implementation
 					set_text (text_field.text)
 				end
 				Precursor {EV_GRID_LABEL_ITEM}
-				text_field.destroy
-				text_field := Void
+				if text_field /= Void then
+					text_field.destroy
+					text_field := Void
+				end
 			end
 		end
 

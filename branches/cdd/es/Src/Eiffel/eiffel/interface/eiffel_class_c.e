@@ -471,6 +471,7 @@ feature -- Third pass: byte code production and type check
 			byte_code_generated: BOOLEAN
 			inline_agent_byte_code: LINKED_LIST [BYTE_CODE]
 			old_inline_agents: HASH_TABLE [FEATURE_I, INTEGER]
+			old_inline_agent_table: like inline_agent_table
 
 				-- Invariant
 			invar_clause: INVARIANT_AS
@@ -514,6 +515,8 @@ feature -- Third pass: byte code production and type check
 
 				feature_checker.init (ast_context)
 				feat_table.start
+
+				old_inline_agent_table := inline_agent_table.twin
 			until
 				feat_table.after
 			loop
@@ -919,6 +922,8 @@ feature -- Third pass: byte code production and type check
 					--| The other servers are READ_SERVERs.
 
 				Tmp_ast_server.cache.wipe_out
+
+				inline_agent_table := old_inline_agent_table
 			end
 		end
 
@@ -1173,7 +1178,12 @@ feature -- Melting
 				tbl.after
 			loop
 				feature_i := tbl.item_for_iteration
+					-- External feature and inherited one don't need to be melted.
 				if feature_i.to_generate_in (Current) then
+					if feature_i.is_external then
+							-- Feature is external, we need to trigger a freeze
+						system.set_freeze
+					end
 					add_feature_to_melted_set (feature_i)
 				end
 				tbl.forth
@@ -1459,7 +1469,6 @@ feature {NONE} -- Class initialization
 			else
 				is_external := ast_b.is_external
 			end
-			has_externals := ast_b.has_externals
 			old_is_frozen := is_frozen
 			is_frozen := ast_b.is_frozen
 
@@ -2118,6 +2127,9 @@ feature {NONE} -- Backup implementation
 				l_system.store
 			end
 		end
+
+invariant
+	inline_agent_table_not_void: inline_agent_table /= Void
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

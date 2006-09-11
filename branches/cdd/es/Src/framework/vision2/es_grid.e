@@ -527,7 +527,7 @@ feature {NONE} -- column resizing impl
 			if delayed_last_column_auto_resizing = Void then
 				create delayed_last_column_auto_resizing.make (
 									agent ensure_last_column_use_all_width,
-									50
+									100
 							)
 			end
 		end
@@ -541,18 +541,23 @@ feature {NONE} -- column resizing impl
 			col: EV_GRID_COLUMN
 			c: INTEGER
 			w: INTEGER
+			l_column_text_width: INTEGER
+			l_font: EV_FONT
 		do
 			if row_count > 0 then
 				from
+					create l_font
 					auto_resized_columns.start
 				until
 					auto_resized_columns.after
 				loop
-					c:= auto_resized_columns.item
+					c := auto_resized_columns.item
 					if c > 0 and c <= column_count then
 						col := column (c)
 						if col /= Void then
 							w := col.required_width_of_item_span (1, row_count) + Additional_pixels_for_column_width
+							l_column_text_width := l_font.string_width (col.header_item.text) + 20
+							w := w.max (l_column_text_width)
 							if w > 5 then
 								if w < col.width and col.index = column_count then
 									--| Do not resize smaller if it is last column

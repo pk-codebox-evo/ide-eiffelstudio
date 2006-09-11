@@ -31,7 +31,7 @@ CS		([^ \t\r\n\.\{\}\[\]`\'])
 S		(\{[A-Z]([A-Z]|_|{D})*\})
 EMAIL	{A}{CM}*{H}@{H}{CM}*(\.{CM}+)*
 URL		((www\.)|(https{0,1}:\/\/)|(ftp:\/\/)|(file:\/\/)){C}*
-FEATURE	`{C}+\'
+FEATURE	(`[^`']+?\')
 CLASS	\{[A-Z]([A-Z]|{D}|_)*\}
 CLUSTER \[{C}+\]
 
@@ -68,12 +68,18 @@ CLUSTER \[{C}+\]
 				add_quote_feature
 			}
 
+-- Braced class with feature followed
+{CLASS}\.{CS}		{
+				append_buffer
+				add_class (True)
+				last_condition := NOT_BREAK_TOKEN
+				set_start_condition (DOT_FEATURE)
+				less (text_count - 2)
+			}
 -- Braced class
 {CLASS}		{
 				append_buffer
-				add_class
-				last_condition := NOT_BREAK_TOKEN
-				set_start_condition (DOT_FEATURE)
+				add_class (False)
 			}
 
 -- Cluster
@@ -108,11 +114,17 @@ CLUSTER \[{C}+\]
 				add_quote_feature
 			}
 
--- Braced class
-{CLASS}	{
-				add_class
+-- Braced class with feature followed.
+{CLASS}\.{CS}	{
+				add_class (True)
 				last_condition := BREAK_TOKEN
 				set_start_condition (DOT_FEATURE)
+				less (text_count - 2)
+			}
+
+-- Braced class
+{CLASS}		{
+				add_class (False)
 			}
 
 -- Cluster

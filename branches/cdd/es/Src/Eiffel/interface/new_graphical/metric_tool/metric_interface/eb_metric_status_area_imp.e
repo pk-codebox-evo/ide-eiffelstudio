@@ -29,15 +29,17 @@ feature {NONE}-- Initialization
 			create l_ev_horizontal_box_1
 			create status_pixmap
 			create status_lbl
-			create l_ev_frame_1
 			create status_text
+			create show_to_do_message_toolbar
+			create show_to_do_message_btn
 			
 				-- Build widget structure.
 			extend (l_ev_horizontal_box_1)
 			l_ev_horizontal_box_1.extend (status_pixmap)
 			l_ev_horizontal_box_1.extend (status_lbl)
-			l_ev_horizontal_box_1.extend (l_ev_frame_1)
-			l_ev_frame_1.extend (status_text)
+			l_ev_horizontal_box_1.extend (status_text)
+			l_ev_horizontal_box_1.extend (show_to_do_message_toolbar)
+			show_to_do_message_toolbar.extend (show_to_do_message_btn)
 			
 			create string_constant_set_procedures.make (10)
 			create string_constant_retrieval_functions.make (10)
@@ -55,12 +57,13 @@ feature {NONE}-- Initialization
 			l_ev_horizontal_box_1.set_padding (5)
 			l_ev_horizontal_box_1.disable_item_expand (status_pixmap)
 			l_ev_horizontal_box_1.disable_item_expand (status_lbl)
+			l_ev_horizontal_box_1.disable_item_expand (show_to_do_message_toolbar)
 			status_pixmap.set_minimum_width (16)
 			status_pixmap.set_minimum_height (16)
 			status_lbl.set_text ("Status:")
 			status_lbl.align_text_left
-			l_ev_frame_1.set_style (1)
 			status_text.disable_edit
+			show_to_do_message_toolbar.disable_vertical_button_style
 			set_padding (3)
 			
 			set_all_attributes_using_constants
@@ -76,6 +79,8 @@ feature {NONE}-- Initialization
 
 feature -- Access
 
+	show_to_do_message_toolbar: EV_TOOL_BAR
+	show_to_do_message_btn: EV_TOOL_BAR_BUTTON
 	status_pixmap: EV_PIXMAP
 	status_lbl: EV_LABEL
 	status_text: EV_TEXT_FIELD
@@ -83,7 +88,6 @@ feature -- Access
 feature {NONE} -- Implementation
 
 	l_ev_horizontal_box_1: EV_HORIZONTAL_BOX
-	l_ev_frame_1: EV_FRAME
 
 feature {NONE} -- Implementation
 

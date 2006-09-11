@@ -14,22 +14,22 @@ inherit
 
 feature -- Node creation
 
-	new_basic_metric (a_name: STRING; a_unit: QL_METRIC_UNIT): EB_METRIC_BASIC is
+	new_basic_metric (a_name: STRING; a_unit: QL_METRIC_UNIT; a_uuid: UUID): EB_METRIC_BASIC is
 			-- New basic metric
 		do
-			create Result.make (a_name, a_unit)
+			create Result.make (a_name, a_unit, a_uuid)
 		end
 
-	new_linear_metric (a_name: STRING; a_unit: QL_METRIC_UNIT): EB_METRIC_LINEAR is
+	new_linear_metric (a_name: STRING; a_unit: QL_METRIC_UNIT; a_uuid: UUID): EB_METRIC_LINEAR is
 			-- New linear metric
 		do
-			create Result.make (a_name, a_unit)
+			create Result.make (a_name, a_unit, a_uuid)
 		end
 
-	new_ratio_metric (a_name: STRING; a_unit: QL_METRIC_UNIT; a_num_name: STRING; a_den_name: STRING): EB_METRIC_RATIO is
+	new_ratio_metric (a_name: STRING; a_unit: QL_METRIC_UNIT; a_uuid: UUID; a_num_name: STRING; a_num_uuid: UUID; a_den_name: STRING; a_den_uuid: UUID): EB_METRIC_RATIO is
 			-- New ratio metric
 		do
-			create Result.make_with_numerator_and_denominator (a_name, a_unit, a_num_name, a_den_name)
+			create Result.make_with_numerator_and_denominator (a_name, a_unit, a_uuid, a_num_name, a_num_uuid, a_den_name, a_den_uuid)
 		end
 
 feature -- Criterion creation
@@ -116,11 +116,11 @@ feature -- Domain item creation
 
 feature -- Archive node creation
 
-	new_metric_arichive_node (a_metric_name: STRING; a_metric_type: INTEGER; a_time: DATE_TIME; a_value: DOUBLE; a_input: EB_METRIC_DOMAIN): EB_METRIC_ARCHIVE_NODE is
+	new_metric_arichive_node (a_metric_name: STRING; a_metric_type: INTEGER; a_time: DATE_TIME; a_value: DOUBLE; a_input: EB_METRIC_DOMAIN; a_uuid: STRING): EB_METRIC_ARCHIVE_NODE is
 			-- New metric archive node and initialize `metric_name' with `a_metric_name', `metric_type' with `a_metric_type', `calculated_time' with `a_time',
 			-- `value' with `a_value' and `input_domain' with `a_input'.
 		do
-			create Result.make (a_metric_name, a_metric_type, a_time, a_value, a_input)
+			create Result.make (a_metric_name, a_metric_type, a_time, a_value, a_input, a_uuid)
 		end
 
 indexing

@@ -7,14 +7,14 @@ class SHARED_WORKBENCH
 inherit
 	SHARED_COMPILATION_MODES
 
-	CONF_REFACTORING
-
 feature -- Access
 
 	Workbench: WORKBENCH_I is
 			-- Shared access to the workbench
 		once
 			create Result
+		ensure
+			workbench_not_void: Result /= Void
 		end
 
 	System: SYSTEM_I is
@@ -23,6 +23,8 @@ feature -- Access
 			system_defined: Workbench.system_defined
 		once
 			Result := Workbench.system
+		ensure
+			system_not_void: Result /= Void
 		end
 
 	Universe: UNIVERSE_I is
@@ -31,6 +33,8 @@ feature -- Access
 			universe_defined: workbench.universe_defined
 		once
 			Result := Workbench.universe
+		ensure
+			universe_not_void: Result /= Void
 		end
 
 	Lace: LACE_I is

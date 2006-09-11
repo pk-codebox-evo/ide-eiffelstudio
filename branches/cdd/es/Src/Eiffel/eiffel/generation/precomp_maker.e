@@ -11,7 +11,7 @@ inherit
 			system_name, add_eiffel_objects,
 			generate_additional_rules
 		end
-		
+
 create
 	make
 
@@ -20,7 +20,7 @@ feature
 	system_name: STRING is
 			-- Name of executable
 		do
-			Result := Platform_constants.Driver
+			Result := Driver
 		end;
 
 	generate_additional_rules is

@@ -11,15 +11,11 @@ class
 inherit
 	EMITTER
 		rename
-			make as make_emitter,
-			error_category as error_category_emitter,
-			error_message_table as error_message_table_emitter
+			make as make_emitter
 		export
 			{NONE} all
 			{CACHE_MANAGER} clr_version
-			{ANY} compact_and_clean_cache, cache_reader, cache_writer
-		undefine
-			start
+			{ANY} cache_reader, cache_writer
 		end
 
 	SHARED_ASSEMBLY_LOADER
@@ -27,9 +23,11 @@ inherit
 	CACHE_MANAGER_ERRORS
 		export
 			{NONE} all
-		select
-			error_category,
-			error_message_table
+		end
+
+	SHARED_CACHE_MUTEX_GUARD
+		export
+			{NONE} all
 		end
 
 create
@@ -41,6 +39,11 @@ feature {NONE}-- Initialization
 	make is
 			-- create an instance of CACHE_MANAGER
 		do
+			if notifier = Void then
+				create notifier.make
+			end
+			guard.set_notifier (notifier)
+
 			is_successful := True
 			last_error_message := ""
 			create cache_writer.make
@@ -64,7 +67,12 @@ feature -- Clean Up
 			-- Unloads all loaded assemblies and releases any
 			-- resources. This is not a dispose so and cleaned up
 			-- resources should be able to be resurected.
+
 		do
+			if notifier /= Void then
+				notifier.dispose
+				notifier := Void
+			end
 			cache_writer.dispose
 			assembly_loader.release_cached_data
 		end
@@ -91,7 +99,6 @@ feature -- Basic Oprtations
 			is_successful := True
 			last_error_message := ""
 
-			add_to_eac := True
 			l_assembly := assembly_loader.load_from_full_name (fully_quantified_name (a_name, a_version, a_culture, a_key))
 			if l_assembly /= Void then
 				create l_resolver.make (create {ARRAYED_LIST [STRING]}.make (0))
@@ -115,16 +122,19 @@ feature -- Basic Oprtations
 		local
 			l_paths: LIST [STRING]
 			l_resolver: CONSUMER_AGUMENTED_RESOLVER
+			l_processed: ARRAYED_LIST [STRING]
 		do
 			is_successful := True
 			last_error_message := ""
 
-			add_to_eac := True
-
 			l_paths := a_path.split (';')
+			l_paths.compare_objects
 			create l_resolver.make (l_paths)
 			l_resolver.add_resolve_path ({RUNTIME_ENVIRONMENT}.get_runtime_directory)
 			resolve_subscriber.subscribe ({APP_DOMAIN}.current_domain, l_resolver)
+
+			create l_processed.make (l_paths.count * 3)
+			l_processed.compare_objects
 
 			from
 				l_paths.start
@@ -133,7 +143,7 @@ feature -- Basic Oprtations
 			loop
 				l_resolver.add_resolve_path_from_file_name (l_paths.item)
 				assembly_loader.set_resolver (l_resolver)
-				add_assembly_to_eac (l_paths.item)
+				cache_writer.add_assembly_ex (l_paths.item, False, l_paths, l_processed)
 				assembly_loader.set_resolver (Void)
 				l_resolver.remove_resolve_path_from_file_name (l_paths.item)
 				l_paths.forth
@@ -244,17 +254,14 @@ feature {NONE} -- Basic Operations
 			valid_result: not Result.is_empty
 		end
 
-feature {NONE} -- Internal Agents
-
-	start is
-			-- dummy routine
-		do
-			--| no code!
-		end
-
 feature {NONE} -- Constants
 
 	neutral_culture: STRING = "neutral"
+
+feature {NONE} -- Implementation
+
+	notifier: NOTIFIER
+			-- Notifier used to notifer user of cache operations.
 
 invariant
 	cache_writer_not_void: cache_writer /= Void

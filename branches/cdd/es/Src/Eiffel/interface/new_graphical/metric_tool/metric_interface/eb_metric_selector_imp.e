@@ -28,24 +28,34 @@ feature {NONE}-- Initialization
 				-- Create all widgets.
 			create metric_grid_area
 			create l_ev_horizontal_box_1
+			create cached_key_field
 			create l_ev_cell_1
 			create metric_selection_toolbar
 			create select_predefined_btn
 			create select_userdefined_btn
 			create l_ev_tool_bar_separator_1
-			create l_ev_tool_bar_2
+			create move_unit_toolbar
+			create move_unit_up_btn
+			create move_unit_down_btn
+			create l_ev_tool_bar_separator_2
+			create l_ev_tool_bar_3
 			create tree_view_checkbox
 			
 				-- Build widget structure.
 			extend (metric_grid_area)
 			extend (l_ev_horizontal_box_1)
+			l_ev_horizontal_box_1.extend (cached_key_field)
 			l_ev_horizontal_box_1.extend (l_ev_cell_1)
 			l_ev_horizontal_box_1.extend (metric_selection_toolbar)
 			metric_selection_toolbar.extend (select_predefined_btn)
 			metric_selection_toolbar.extend (select_userdefined_btn)
 			metric_selection_toolbar.extend (l_ev_tool_bar_separator_1)
-			l_ev_horizontal_box_1.extend (l_ev_tool_bar_2)
-			l_ev_tool_bar_2.extend (tree_view_checkbox)
+			l_ev_horizontal_box_1.extend (move_unit_toolbar)
+			move_unit_toolbar.extend (move_unit_up_btn)
+			move_unit_toolbar.extend (move_unit_down_btn)
+			move_unit_toolbar.extend (l_ev_tool_bar_separator_2)
+			l_ev_horizontal_box_1.extend (l_ev_tool_bar_3)
+			l_ev_tool_bar_3.extend (tree_view_checkbox)
 			
 			create string_constant_set_procedures.make (10)
 			create string_constant_retrieval_functions.make (10)
@@ -62,9 +72,13 @@ feature {NONE}-- Initialization
 			create color_constant_retrieval_functions.make (10)
 			metric_grid_area.set_background_color (create {EV_COLOR}.make_with_8_bit_rgb (0, 0, 0))
 			metric_grid_area.set_border_width (1)
+			l_ev_horizontal_box_1.disable_item_expand (cached_key_field)
 			l_ev_horizontal_box_1.disable_item_expand (metric_selection_toolbar)
-			l_ev_horizontal_box_1.disable_item_expand (l_ev_tool_bar_2)
-			l_ev_tool_bar_2.disable_vertical_button_style
+			l_ev_horizontal_box_1.disable_item_expand (move_unit_toolbar)
+			l_ev_horizontal_box_1.disable_item_expand (l_ev_tool_bar_3)
+			cached_key_field.set_minimum_width (80)
+			move_unit_toolbar.disable_vertical_button_style
+			l_ev_tool_bar_3.disable_vertical_button_style
 			disable_item_expand (l_ev_horizontal_box_1)
 			
 			set_all_attributes_using_constants
@@ -80,15 +94,18 @@ feature {NONE}-- Initialization
 
 feature -- Access
 
-	metric_selection_toolbar: EV_TOOL_BAR
-	select_predefined_btn, select_userdefined_btn, tree_view_checkbox: EV_TOOL_BAR_TOGGLE_BUTTON
+	metric_selection_toolbar, move_unit_toolbar: EV_TOOL_BAR
+	select_predefined_btn, select_userdefined_btn,
+	tree_view_checkbox: EV_TOOL_BAR_TOGGLE_BUTTON
+	move_unit_up_btn, move_unit_down_btn: EV_TOOL_BAR_BUTTON
 	metric_grid_area: EV_VERTICAL_BOX
+	cached_key_field: EV_TEXT_FIELD
 
 feature {NONE} -- Implementation
 
-	l_ev_tool_bar_separator_1: EV_TOOL_BAR_SEPARATOR
+	l_ev_tool_bar_separator_1, l_ev_tool_bar_separator_2: EV_TOOL_BAR_SEPARATOR
 	l_ev_cell_1: EV_CELL
-	l_ev_tool_bar_2: EV_TOOL_BAR
+	l_ev_tool_bar_3: EV_TOOL_BAR
 	l_ev_horizontal_box_1: EV_HORIZONTAL_BOX
 
 feature {NONE} -- Implementation

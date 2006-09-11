@@ -36,12 +36,12 @@ inherit
 			{NONE} all
 		end
 
-	EIFFEL_ENV
+	EB_SHARED_PIXMAPS
+
+	EIFFEL_LAYOUT
 		export
 			{NONE} all
 		end
-
-	EB_SHARED_PIXMAPS
 
 create
 	make
@@ -57,7 +57,7 @@ feature {NONE} -- Initialization
 
 				-- Create notebook & pages.
 			create notebook
-			if has_case then
+			if eiffel_layout.has_case then
 				create editor.make_with_tool (Current)
 			end
 			create class_view.make_with_tool (development_window, Current)
@@ -69,7 +69,7 @@ feature {NONE} -- Initialization
 			create warning_output_view.make (development_window, Current)
 			create output_view.make (development_window, Current)
 
-			if has_metrics then
+			if eiffel_layout.has_metrics then
 				create metrics.make (development_window, Current)
 			end
 
@@ -84,7 +84,7 @@ feature {NONE} -- Initialization
 				-- Set pages of the notebook.
 			notebook.extend (output_view.widget)
 
-			if has_case then
+			if eiffel_layout.has_case then
 				notebook.extend (editor.widget)
 				diagram_index := 2
 			else
@@ -93,9 +93,9 @@ feature {NONE} -- Initialization
 			notebook.extend (class_view.widget)
 			notebook.extend (feature_view.widget)
 			notebook.extend (cdd_test_suite_view.widget)
-			if has_metrics then
+			if eiffel_layout.has_metrics then
 				notebook.extend (metrics.widget)
-				if has_case then
+				if eiffel_layout.has_case then
 					metric_index := 5
 				else
 					metric_index := 4
@@ -125,13 +125,13 @@ feature {NONE} -- Initialization
 			notebook.set_item_text (error_output_view.widget,	interface_names.l_Tab_error_output)
 			notebook.set_item_text (warning_output_view.widget,	interface_names.l_Tab_warning_output)
 
-			if has_case then
+			if eiffel_layout.has_case then
 				notebook.set_item_text (editor.widget, interface_names.l_Tab_diagram)
 			end
 			notebook.set_item_text (class_view.widget, interface_names.l_Tab_class_info)
 			notebook.set_item_text (feature_view.widget, interface_names.l_Tab_feature_info)
 			notebook.set_item_text (cdd_test_suite_view.widget, "CCD")
-			if has_metrics then
+			if eiffel_layout.has_metrics then
 				notebook.set_item_text (metrics.widget, interface_names.l_Tab_metrics)
 			end
 			notebook.set_tab_position (notebook.tab_bottom)
@@ -221,7 +221,7 @@ feature -- Access
 			-- Compilation warning output display.
 
 	metrics: EB_METRIC_TOOL
-			--
+			-- Metric tool
 
 	address_manager: EB_ADDRESS_MANAGER
 			-- Manager for the header info.
@@ -272,7 +272,7 @@ feature -- Status setting
 			conv_dev: EB_DEVELOPMENT_WINDOW
 		do
 			history_manager.synchronize
-			if has_metrics then
+			if eiffel_layout.has_metrics then
 					-- Inform metric of classes recompilation.
 				metrics.set_recompiled (True)
 			end
@@ -285,7 +285,7 @@ feature -- Status setting
 					class_view.invalidate
 					feature_view.invalidate
 					set_stone (stone)
-					if has_case then
+					if eiffel_layout.has_case then
 						editor.synchronize
 					end
 				end
@@ -301,7 +301,7 @@ feature -- Status setting
 	refresh is
 			-- Class has changed in `development_window'.
 		do
-			if has_case then
+			if eiffel_layout.has_case then
 				editor.synchronize
 			end
 			class_view.refresh
@@ -378,7 +378,7 @@ feature -- Status setting
 
 			if sit = output_view.widget and then output_view.widget.is_displayed then
 				output_view.set_focus
-			elseif has_case and then sit = editor.widget and then editor.widget.is_displayed then
+			elseif eiffel_layout.has_case and then sit = editor.widget and then editor.widget.is_displayed then
 				editor.set_focus
 			elseif sit = class_view.widget and then class_view.widget.is_displayed then
 				class_view.set_focus
@@ -392,7 +392,7 @@ feature -- Status setting
 				error_output_view.set_focus
 			elseif sit = warning_output_view.widget and then warning_output_view.widget.is_displayed then
 				warning_output_view.set_focus
-			elseif has_metrics and then sit = metrics.widget and then metrics.widget.is_displayed then
+			elseif eiffel_layout.has_metrics and then sit = metrics.widget and then metrics.widget.is_displayed then
 				metrics.set_focus
 			end
 		end
@@ -438,13 +438,13 @@ feature -- Memory management
 			warning_output_view := Void
 			address_manager.recycle
 			address_manager := Void
-			if has_case then
+			if eiffel_layout.has_case then
 					-- Save the diagram
 				editor.store
 				editor.recycle
 				editor := Void
 			end
-			if has_metrics then
+			if eiffel_layout.has_metrics then
 				metrics.recycle
 				metrics := Void
 			end
@@ -491,11 +491,11 @@ feature -- Stone management
 			Eb_debugger_manager.set_stone (a_stone)
 			feature_view.set_stone (a_stone)
 			class_view.set_stone (a_stone)
-			if has_case then
+			if eiffel_layout.has_case then
 				editor.set_stone (a_stone)
 			end
 			stone := a_stone
-			if has_metrics then
+			if eiffel_layout.has_metrics then
 				metrics.set_stone (a_stone)
 			end
 		end
@@ -599,7 +599,7 @@ feature {NONE} -- Implementation
 	on_tab_changed is
 			-- User selected a different tab.
 		do
-			if has_case and then notebook.selected_item = editor.widget then
+			if eiffel_layout.has_case and then notebook.selected_item = editor.widget then
 				output_view.on_deselect
 				external_output_view.on_deselect
 				c_compilation_output_view.on_deselect
@@ -607,7 +607,7 @@ feature {NONE} -- Implementation
 				editor.on_select
 				class_view.on_deselect
 				feature_view.on_deselect
-				if has_metrics then
+				if eiffel_layout.has_metrics then
 					metrics.on_deselect
 				end
 			elseif notebook.selected_item = class_view.widget then
@@ -617,7 +617,7 @@ feature {NONE} -- Implementation
 				is_diagram_selected := False
 				class_view.on_select
 				feature_view.on_deselect
-				if has_metrics then
+				if eiffel_layout.has_metrics then
 					metrics.on_deselect
 				end
 			elseif notebook.selected_item = feature_view.widget then
@@ -627,10 +627,10 @@ feature {NONE} -- Implementation
 				is_diagram_selected := False
 				feature_view.on_select
 				class_view.on_deselect
-				if has_metrics then
+				if eiffel_layout.has_metrics then
 					metrics.on_deselect
 				end
-			elseif has_metrics and then notebook.selected_item = metrics.widget then
+			elseif eiffel_layout.has_metrics and then notebook.selected_item = metrics.widget then
 				output_view.on_deselect
 				external_output_view.on_deselect
 				c_compilation_output_view.on_deselect
@@ -645,7 +645,7 @@ feature {NONE} -- Implementation
 				is_diagram_selected := False
 				class_view.on_deselect
 				feature_view.on_deselect
-				if has_metrics then
+				if eiffel_layout.has_metrics then
 					metrics.on_deselect
 				end
 			elseif notebook.selected_item = external_output_view.widget then
@@ -655,7 +655,7 @@ feature {NONE} -- Implementation
 				is_diagram_selected := False
 				class_view.on_deselect
 				feature_view.on_deselect
-				if has_metrics then
+				if eiffel_layout.has_metrics then
 					metrics.on_deselect
 				end
 			elseif notebook.selected_item = c_compilation_output_view.widget then
@@ -665,7 +665,7 @@ feature {NONE} -- Implementation
 				is_diagram_selected := False
 				class_view.on_deselect
 				feature_view.on_deselect
-				if has_metrics then
+				if eiffel_layout.has_metrics then
 					metrics.on_deselect
 				end
 			elseif notebook.selected_item = error_output_view.widget then
@@ -675,7 +675,7 @@ feature {NONE} -- Implementation
 				is_diagram_selected := False
 				class_view.on_deselect
 				feature_view.on_deselect
-				if has_metrics then
+				if eiffel_layout.has_metrics then
 					metrics.on_deselect
 				end
 			elseif notebook.selected_item = warning_output_view.widget then
@@ -685,7 +685,7 @@ feature {NONE} -- Implementation
 				is_diagram_selected := False
 				class_view.on_deselect
 				feature_view.on_deselect
-				if has_metrics then
+				if eiffel_layout.has_metrics then
 					metrics.on_deselect
 				end
 			else
@@ -695,7 +695,7 @@ feature {NONE} -- Implementation
 				is_diagram_selected := False
 				class_view.on_deselect
 				feature_view.on_deselect
-				if has_metrics then
+				if eiffel_layout.has_metrics then
 					metrics.on_deselect
 				end
 			end

@@ -132,7 +132,6 @@ feature -- Basic operation
 				end
 				current_options.set_warning (True)
 					-- disable some warnings by default
-				current_options.add_warning (w_vweq, False)
 				current_options.add_warning (w_vjrv, False)
 				current_options.add_warning (w_export_class_missing, False)
 				if current_options.warnings /= Void and then not current_options.warnings.has (w_old_verbatim_strings) then
@@ -198,10 +197,14 @@ feature {NONE} -- Implementation of data retrieval
 				end
 
 				if l_assembly = Void then
+					l_name := an_assembly.assembly_name
+					l_name.replace_substring_all ("$ISE_LIBRARY", "$ISE_EIFFEL")
 					l_assembly := factory.new_assembly (mask_special_characters_config (l_name), an_assembly.assembly_name, current_target)
 				end
 			end
-			l_assembly.set_name_prefix (mask_special_characters_config (an_assembly.prefix_name))
+			if an_assembly.prefix_name /= Void and then not an_assembly.prefix_name.is_empty then
+				l_assembly.set_name_prefix (mask_special_characters_config (an_assembly.prefix_name))
+			end
 			current_target.add_assembly (l_assembly)
 		end
 
@@ -214,7 +217,7 @@ feature {NONE} -- Implementation of data retrieval
 			a_cluster_not_void: a_cluster /= Void
 		local
 			l_over: CONF_OVERRIDE
-			l_name, l_parent: STRING
+			l_name, l_parent, l_str: STRING
 			l_location: CONF_DIRECTORY_LOCATION
 			l_file_loc: CONF_FILE_LOCATION
 			l_lib, l_lib_pre: CONF_LIBRARY
@@ -283,7 +286,9 @@ feature {NONE} -- Implementation of data retrieval
 
 				-- convert normal clusters
 			if l_normal_cluster then
-				l_location := factory.new_location_from_path (a_cluster.directory_name, current_target)
+				l_str := a_cluster.directory_name
+				l_str.replace_substring_all ("$ISE_LIBRARY", "$ISE_EIFFEL")
+				l_location := factory.new_location_from_path (l_str, current_target)
 				if current_overrides.has (l_name) then
 					l_over := factory.new_override (l_name, l_location, current_target)
 					current_cluster := l_over

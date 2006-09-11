@@ -12,7 +12,12 @@ class
 inherit
 	PATH_CONVERTER
 
-create 
+	EIFFEL_LAYOUT
+		export
+			{NONE} all
+		end
+
+create
 	make
 
 feature -- Initialization
@@ -30,7 +35,7 @@ feature -- Initialization
 			l_arg_string: STRING
 			l_file_name: FILE_NAME
 		do
-			eiffel_dir := (create {EXECUTION_ENVIRONMENT}).get ("ISE_EIFFEL")
+			eiffel_dir := eiffel_layout.eiffel_installation_dir_name
 			create l_file_name.make_from_string (eiffel_dir)
 			l_file_name.extend ("BCC55")
 			l_file_name.extend ("BIN")
@@ -48,9 +53,9 @@ feature -- Initialization
 					l_config_file.put_string (l_arg_string)
 					l_config_file.close
 				end
-				
+
 			end
-		end		
+		end
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

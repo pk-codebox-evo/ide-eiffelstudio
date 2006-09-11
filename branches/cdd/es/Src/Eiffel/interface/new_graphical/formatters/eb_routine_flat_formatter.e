@@ -79,11 +79,12 @@ feature -- Formatting
 					if
 						eb_debugger_manager.application_is_executing
 						and then eb_debugger_manager.application_is_stopped
+						and then eb_debugger_manager.application.status.current_call_stack /= Void
 					then
 						stel  ?= eb_debugger_manager.application.status.current_call_stack_element
 						if
 							stel /= Void and then stel.routine /= Void
-							and then stel.routine.body_index = associated_feature.body_index
+							and then stel.routine.body_id_for_ast = associated_feature.body_index
 						then
 							l_line := stel.break_index
 							if l_line > 0 then

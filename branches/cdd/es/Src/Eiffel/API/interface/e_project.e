@@ -8,8 +8,6 @@ indexing
 class E_PROJECT
 
 inherit
-	EIFFEL_ENV
-
 	COMMAND_EXECUTOR
 
 	PROJECT_CONTEXT
@@ -27,10 +25,17 @@ inherit
 
 	SHARED_EIFFEL_PARSER
 
+	SYSTEM_CONSTANTS
+		export
+			{NONE} all
+		end
+
 	SHARED_ENV
 		export
 			{NONE} all
 		end
+
+	COMPILER_EXPORTER
 
 feature -- Initialization
 
@@ -246,14 +251,6 @@ feature -- Access
 				Comp_system.freezing_occurred
 		end
 
-	is_final_code_optimal: BOOLEAN is
-			-- Will the final code generate be optimal?
-			-- (if not, more optimal code is generated from
-			-- a new project and do not use precompilation).
-		do
-			Result := not Comp_system.poofter_finalization or else Comp_system.il_generation
-		end
-
 	is_new: BOOLEAN is
 			-- Is the Current Project new?
 		local
@@ -432,8 +429,8 @@ feature -- Status setting
 		require
 			valid_arg: f_path /= Void
 		do
-			if not f_path.is_equal (filter_path) then
-				filter_path.make_from_string (
+			if not f_path.is_equal (eiffel_layout.filter_path) then
+				eiffel_layout.filter_path.make_from_string (
 					environ.interpreted_string (f_path).twin)
 			end
 		end
@@ -443,8 +440,8 @@ feature -- Status setting
 		require
 			valid_arg: p_path /= Void
 		do
-			if not p_path.is_equal (profile_path) then
-				profile_path.make_from_string (
+			if not p_path.is_equal (eiffel_layout.profile_path) then
+				eiffel_layout.profile_path.make_from_string (
 					environ.interpreted_string (p_path).twin)
 			end
 		end
@@ -454,9 +451,9 @@ feature -- Status setting
 		require
 			valid_args: t_path /= Void
 		do
-			if not t_path.is_equal (tmp_directory) then
-				tmp_directory.wipe_out
-				tmp_directory.make_from_string (environ.interpreted_string (t_path))
+			if not t_path.is_equal (eiffel_layout.tmp_directory) then
+				eiffel_layout.tmp_directory.wipe_out
+				eiffel_layout.tmp_directory.make_from_string (environ.interpreted_string (t_path))
 			end
 		end
 
@@ -571,7 +568,9 @@ feature -- Update
 			able_to_compile: able_to_compile
 		do
 			is_finalizing := True
+
 			melt
+				-- Add warning for non-optimal finalization.
 			if successful then
 				Compilation_modes.set_is_finalizing
 				set_error_status (Ok_status)
@@ -582,6 +581,7 @@ feature -- Update
 				is_compiling_ref.set_item (False)
 				Compilation_modes.reset_modes
 			end
+			error_handler.trace_warnings
 			Workbench.stop_compilation
 			is_finalizing := False
 		ensure
@@ -605,9 +605,9 @@ feature -- Update
 			else
 				path := project_directory.final_path
 			end
-			create l_cmd.make_from_string (Freeze_command_name)
+			create l_cmd.make_from_string (eiffel_layout.Freeze_command_name)
 			l_cmd.append (" -silent")
-			if comp_system.il_generation and (not platform_constants.is_windows_64_bits or Comp_system.force_32bits) then
+			if comp_system.il_generation and (not eiffel_layout.platform.is_windows_64_bits or Comp_system.force_32bits) then
 					-- Force 32bit compilation
 				l_cmd.append (" -x86")
 			end
@@ -628,9 +628,9 @@ feature -- Update
 			else
 				path := project_directory.final_path
 			end
-			create l_cmd.make_from_string (Freeze_command_name)
+			create l_cmd.make_from_string (eiffel_layout.Freeze_command_name)
 			l_cmd.append (" -silent")
-			if comp_system.il_generation and (not platform_constants.is_windows_64_bits or Comp_system.force_32bits) then
+			if comp_system.il_generation and (not eiffel_layout.platform.is_windows_64_bits or Comp_system.force_32bits) then
 					-- Force 32bit compilation
 				l_cmd.append (" -x86")
 			end
@@ -1058,7 +1058,7 @@ feature {NONE} -- Implementation
 					-- Target
 				create file_name.make_from_string (project_directory.workbench_path)
 				file_name.set_file_name (System.name)
-				app_name := Platform_constants.Executable_suffix
+				app_name := eiffel_layout.Executable_suffix
 				if not app_name.is_empty then
 					file_name.add_extension (app_name)
 				end
@@ -1069,7 +1069,7 @@ feature {NONE} -- Implementation
 					if uf.exists and then uf.is_readable then
 						link_eiffel_driver (project_directory.workbench_path,
 							system.name,
-							Prelink_command_name,
+							eiffel_layout.Prelink_command_name,
 							Precompilation_driver)
 					end
 				end

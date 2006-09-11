@@ -30,21 +30,19 @@ feature -- Status setting
 				a_x_tilt, a_y_tilt, a_pressure: DOUBLE;
 				a_screen_x, a_screen_y: INTEGER)
 			is
-				-- Filter out double click events.
+				-- Filter out duplicate events.
 			do
-				if a_type = {EV_GTK_EXTERNALS}.gdk_button_press_enum then
-					if a_button = 1 and not dawaiting_movement and widget_imp_at_pointer_position = Current then
-							orig_cursor := pointer_style
-							original_x_offset := a_x.to_integer_16
-							original_y_offset := a_y.to_integer_16
-							original_screen_x := a_screen_x.to_integer_16
-							original_screen_y := a_screen_y.to_integer_16
-							dawaiting_movement := True
-					end
+				if not awaiting_movement then
+					orig_cursor := pointer_style
+					original_x_offset := a_x.to_integer_16
+					original_y_offset := a_y.to_integer_16
+					original_screen_x := a_screen_x.to_integer_16
+					original_screen_y := a_screen_y.to_integer_16
+					awaiting_movement := True
 				end
 			end
 
-	dawaiting_movement: BOOLEAN
+	awaiting_movement: BOOLEAN
 	original_screen_x, original_screen_y: INTEGER_16
 
 	dragable_motion (a_x, a_y: INTEGER; a_x_tilt, a_y_tilt, a_pressure: DOUBLE; a_screen_x, a_screen_y: INTEGER) is
@@ -52,11 +50,11 @@ feature -- Status setting
 			--| This is executed every time the pointer is moved over
 			--| `Current' while pick/drag and drop is in process.
 		do
-			if dawaiting_movement then
+			if awaiting_movement then
 				if (original_screen_x - a_screen_x).abs > drag_and_drop_starting_movement or
 					(original_screen_y - a_screen_y).abs > drag_and_drop_starting_movement
 					then
-						dawaiting_movement := False
+						awaiting_movement := False
 						start_dragable (
 								a_x,
 								a_y,
@@ -78,7 +76,7 @@ feature -- Status setting
 			end
 		end
 
-feature {NONE} -- Implementation
+feature {EV_PICK_AND_DROPABLE_IMP} -- Implementation
 
 	internal_enable_dockable is
 			-- Activate drag mechanism.
@@ -98,10 +96,9 @@ feature {NONE} -- Implementation
 		a_pressure: DOUBLE; a_screen_x, a_screen_y: INTEGER) is
 			-- Initialize the pick/drag and drop mechanism.
 		do
-			--call_press_actions (interface, a_x, a_y, a_button, a_x_tilt, a_y_tilt, a_pressure, a_screen_x, a_screen_y)
 			enable_capture
+			App_implementation.docking_source := Current
 			initialize_transport (a_screen_x, a_screen_y, interface)
---			App_implementation.enable_is_in_transport
 		end
 
 	real_start_dragging (a_x, a_y, a_button: INTEGER; a_x_tilt, a_y_tilt,
@@ -117,20 +114,23 @@ feature {NONE} -- Implementation
 		a_pressure: DOUBLE; a_screen_x, a_screen_y: INTEGER) is
 			-- Terminate the pick and drop mechanism.
 		do
-			disable_capture
-			if not dawaiting_movement then
+			awaiting_movement := False
+			if is_dock_executing then
+
 				if orig_cursor /= Void then
 						-- Restore the cursor style of `Current' if necessary.
-					set_pointer_style (orig_cursor)
+					internal_set_pointer_style (orig_cursor)
 					orig_cursor := Void
+				else
+					internal_set_pointer_style (default_pixmaps.standard_cursor)
 				end
+				disable_capture
+				App_implementation.docking_source := Void
 				complete_dock
 				original_x_offset := -1
 				original_y_offset := -1
-				dawaiting_movement := False
---				App_implementation.disable_is_in_transport
-			elseif dawaiting_movement then
-				dawaiting_movement := False
+				original_screen_x := -1
+				original_screen_y := -1
 			end
 		end
 
@@ -149,19 +149,17 @@ feature {NONE} -- Implementation
 		deferred
 		end
 
+	internal_set_pointer_style (a_cursor: EV_POINTER_STYLE) is
+			-- Assign `a_cursor' to `pointer_style'
+		deferred
+		end
+
 	update_buttons (a_parent: EV_TOOL_BAR; start_index, end_index: INTEGER) is
 			-- Ensure that buttons from `start_index' to `end_index' in `a_parent' are
 			-- refreshed. This is called at the end of  a dockable transport from a tool bar button
 			-- as on some platforms, they end up in an invalid state, and need refreshing.
 		do
 			-- For now do nothing until further investigation has taken place.
-		end
-
-feature {NONE} -- Implementation
-
-	event_widget: POINTER is
-			-- Pointer to the GtkWidget to which the events are hooked up to
-		deferred
 		end
 
 feature {EV_ANY_I} -- Implementation

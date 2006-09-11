@@ -54,6 +54,11 @@ inherit
 			{NONE} all
 		end
 
+	EIFFEL_LAYOUT
+		export
+			{NONE} all
+		end
+
 feature -- Loading
 
 	open_project_file (a_file_name: STRING; a_target_name: STRING; a_project_path: STRING; from_scratch: BOOLEAN) is
@@ -86,6 +91,9 @@ feature -- Loading
 					if is_file_readable (l_default_file_name) then
 							-- Special case where `Ace' can mean either the old or new format.
 						create l_load_ace.make (l_factory, config_extension)
+						if not has_library_conversion then
+							l_load_ace.disable_library_conversions
+						end
 						l_load_ace.retrieve_configuration (l_default_file_name)
 						if l_load_ace.is_error then
 								-- Most likely it is not an Ace file, so it must be in the new format.
@@ -261,6 +269,9 @@ feature -- Access
 	converted_file_name: STRING
 			-- Name of new format config file chosen by user.
 
+	has_library_conversion: BOOLEAN
+			-- Should cluster be transformed into libraries whenever possible?
+
 feature -- Settings
 
 	set_is_compilation_requested (v: like is_compilation_requested) is
@@ -289,6 +300,15 @@ feature -- Settings
 		ensure
 			ignore_user_configuration_file_set: ignore_user_configuration_file = v
 		end
+
+	set_has_library_conversion (v: like has_library_conversion) is
+			-- Set `has_library_conversion' with `v'.
+		do
+			has_library_conversion := v
+		ensure
+			has_library_conversion_set: has_library_conversion = v
+		end
+
 
 feature {NONE} -- Settings
 
@@ -428,6 +448,9 @@ feature {NONE} -- Settings
 				-- load config from ace
 			create l_factory
 			create l_load.make (l_factory, config_extension)
+			if not has_library_conversion then
+				l_load.disable_library_conversions
+			end
 			l_load.retrieve_configuration (a_file_name)
 			if l_load.is_error then
 				report_cannot_read_ace_file (a_file_name, l_load.last_error)
@@ -520,12 +543,14 @@ feature {NONE} -- Settings
 						-- Project was somehow incompatible, and user may have selected to
 						-- override the existing project and recompile from scratch.
 					if should_override_project then
+						is_recompile_from_scrach := True
 						create_project (lace.project_path, False)
 						post_create_project
 					end
 				end
 			else
 					-- Project file did not exist.
+				is_recompile_from_scrach := True
 				create_project (lace.project_path, is_project_location_requested)
 				post_create_project
 			end
@@ -593,9 +618,13 @@ feature {NONE} -- Settings
 			l_cmd: STRING
 		do
 			create l_cmd.make (50)
-			l_cmd.append ("ec -config ")
+			l_cmd.append (eiffel_layout.ec_command_name)
+			l_cmd.append (" -config ")
 			l_cmd.append (a_precompile.location.evaluated_path)
 			l_cmd.append (" -precompile -clean -c_compile -batch")
+			if a_precompile.eifgens_location /= Void then
+				l_cmd.append (" -project_path "+a_precompile.eifgens_location.evaluated_path)
+			end
 
 			create l_prc_factory
 			l_prc_launcher := l_prc_factory.process_launcher_with_command_line (l_cmd, Void)

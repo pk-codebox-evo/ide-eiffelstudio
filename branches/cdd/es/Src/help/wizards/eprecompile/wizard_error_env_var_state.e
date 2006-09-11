@@ -23,10 +23,10 @@ feature -- Access
 		do
 			create Result.make (100)
 			Result.append ("The following environment variables are not set:%N")
-			if Eiffel_installation_dir_name = Void then
+			if eiffel_layout.Eiffel_installation_dir_name = Void then
 				Result.append (" - ISE_EIFFEL%N")
 			end
-			if Eiffel_platform = Void then
+			if eiffel_layout.Eiffel_platform = Void then
 				Result.append (" - ISE_PLATFORM%N")
 			end
 			Result.append ("%N%N")

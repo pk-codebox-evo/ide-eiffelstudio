@@ -258,12 +258,13 @@ feature {AST_FEATURE_CHECKER_GENERATOR} -- Internal type checking
 		local
 			l_routine_as: ROUTINE_AS
 			l_vpir: VPIR3
+			l_written_class: CLASS_C
 		do
 			break_point_slot_count := 0
 			l_routine_as ?= a_body.content
 			if not is_inherited then
 				if l_routine_as /= Void then
-					if l_routine_as.is_deferred or l_routine_as.is_external then
+					if l_routine_as.is_deferred or l_routine_as.is_external or l_routine_as.is_once then
 						create l_vpir
 						l_vpir.set_class (context.current_class)
 						l_vpir.set_feature (context.current_feature)
@@ -285,7 +286,9 @@ feature {AST_FEATURE_CHECKER_GENERATOR} -- Internal type checking
 			reset
 			is_byte_node_enabled := a_is_byte_node_enabled
 			is_inherited := a_is_inherited
+			l_written_class := context.written_class
 			a_feature.check_types (context.current_feature_table)
+			context.set_written_class (l_written_class)
 			error_handler.checksum
 			if not is_inherited then
 				if a_feature.has_arguments then
@@ -2028,64 +2031,72 @@ feature -- Implementation
 			l_instatiation_type: LIKE_CURRENT
 		do
 			if not is_inherited then
-				l_feat_ast := context.current_class.feature_with_name (current_feature.feature_name).ast
-
-					-- Check that feature has a unique name (vupr1)
-					-- Check that we're in the body of a routine (l_vupr1).
-				if
-					l_feat_ast.feature_names.count > 1 or
-					is_checking_precondition or is_checking_postcondition or is_checking_invariant
-				then
+				if current_feature.is_invariant or else current_feature.is_inline_agent  then
 					create l_vupr1
 					context.init_error (l_vupr1)
 					error_handler.insert_error (l_vupr1)
 						-- Cannot go on here.
 					error_handler.raise_error
-				end
+				else
+					l_feat_ast := context.current_class.feature_with_name (current_feature.feature_name).ast
 
-					-- Create table of routine ids of all parents which have
-					-- an effective precursor of the current feature.
-				l_pre_table := precursor_table (l_as)
-
-					-- Check that current feature is a redefinition.
-				if l_pre_table.count = 0 then
-					if l_as.parent_base_class /= Void then
-							-- The specified parent does not have
-							-- an effective precursor.
-						create l_vupr2
-						context.init_error (l_vupr2)
-						error_handler.insert_error (l_vupr2)
+						-- Check that feature has a unique name (vupr1)
+						-- Check that we're in the body of a routine (l_vupr1).
+					if
+						l_feat_ast.feature_names.count > 1 or
+						is_checking_precondition or is_checking_postcondition or is_checking_invariant
+					then
+						create l_vupr1
+						context.init_error (l_vupr1)
+						error_handler.insert_error (l_vupr1)
 							-- Cannot go on here.
 						error_handler.raise_error
-					else
-							-- No parent has an effective precursor
-							-- (not a redefinition)
+					end
+
+						-- Create table of routine ids of all parents which have
+						-- an effective precursor of the current feature.
+					l_pre_table := precursor_table (l_as)
+
+						-- Check that current feature is a redefinition.
+					if l_pre_table.count = 0 then
+						if l_as.parent_base_class /= Void then
+								-- The specified parent does not have
+								-- an effective precursor.
+							create l_vupr2
+							context.init_error (l_vupr2)
+							error_handler.insert_error (l_vupr2)
+								-- Cannot go on here.
+							error_handler.raise_error
+						else
+								-- No parent has an effective precursor
+								-- (not a redefinition)
+							create l_vupr3
+							context.init_error (l_vupr3)
+							error_handler.insert_error (l_vupr3)
+								-- Cannot go on here.
+							error_handler.raise_error
+						end
+					end
+
+						-- Check that an unqualified precursor construct
+						-- is not ambiguous.
+					if l_pre_table.count > 1 then
+							-- Ambiguous construct
 						create l_vupr3
 						context.init_error (l_vupr3)
 						error_handler.insert_error (l_vupr3)
 							-- Cannot go on here.
 						error_handler.raise_error
 					end
-				end
 
-					-- Check that an unqualified precursor construct
-					-- is not ambiguous.
-				if l_pre_table.count > 1 then
-						-- Ambiguous construct
-					create l_vupr3
-					context.init_error (l_vupr3)
-					error_handler.insert_error (l_vupr3)
-						-- Cannot go on here.
-					error_handler.raise_error
+						-- Table has exactly one entry.
+					l_pre_table.start
+					l_parent_type := l_pre_table.item.first
+					l_parent_class := l_parent_type.associated_class
+					l_feature_i := l_parent_class.feature_table.feature_of_rout_id (l_pre_table.item.second)
+					l_as.set_class_id (l_parent_class.class_id)
+					l_as.set_routine_ids (l_feature_i.rout_id_set)
 				end
-
-					-- Table has exactly one entry.
-				l_pre_table.start
-				l_parent_type := l_pre_table.item.first
-				l_parent_class := l_parent_type.associated_class
-				l_feature_i := l_parent_class.feature_table.feature_of_rout_id (l_pre_table.item.second)
-				l_as.set_class_id (l_parent_class.class_id)
-				l_as.set_routine_ids (l_feature_i.rout_id_set)
 			else
 				l_parent_class := system.class_of_id (l_as.class_id)
 				l_parent_type := l_parent_class.actual_type
@@ -2795,7 +2806,7 @@ feature -- Implementation
 					end
 				end
 				l_access ?= last_byte_node
-				if l_is_named_tuple or else l_feature.is_attribute then
+				if l_is_named_tuple or else l_feature.is_attribute or else l_feature.is_constant then
 					is_byte_node_enabled := False
 
 					compute_routine (l_table, l_feature, True, False, l_class.class_id, l_target_type, last_type,
@@ -2807,8 +2818,8 @@ feature -- Implementation
 							compute_named_tuple_fake_inline_agent (
 								l_as, l_named_tuple, l_label_pos, l_target_node, l_target_type, last_type)
 						else
-							compute_attribute_fake_inline_agent (
-								l_as,l_feature, l_target_node, l_target_type, last_type)
+							compute_feature_fake_inline_agent (
+								l_as, l_feature, l_target_node, l_target_type, last_type)
 						end
 					end
 				else
@@ -3921,8 +3932,6 @@ feature -- Implementation
 			l_check: CHECK_B
 			l_list: BYTE_LIST [BYTE_NODE]
 		do
-			break_point_slot_count := break_point_slot_count + 1
-
 			if l_as.check_list /= Void then
 				set_is_checking_check (True)
 				l_as.check_list.process (Current)
@@ -4558,6 +4567,8 @@ feature -- Implementation
 				l_expr ?= last_byte_node
 				l_loop.set_stop (l_expr)
 			end
+
+			break_point_slot_count := break_point_slot_count + 1
 
 			if l_as.compound /= Void then
 					-- Type check the loop compound
@@ -6324,21 +6335,15 @@ feature {NONE} -- Agents
 			create Result.make (System.array_id, generics)
 		end
 
-	compute_attribute_fake_inline_agent (a_rc: ROUTINE_CREATION_AS; a_feature: FEATURE_I; a_target: BYTE_NODE;
+	compute_feature_fake_inline_agent (a_rc: ROUTINE_CREATION_AS; a_feature: FEATURE_I; a_target: BYTE_NODE;
 								   		a_target_type: TYPE_A; a_agent_type: TYPE_A)
-		is
-		local
-			l_attribute: ATTRIBUTE_B
 		do
-			create l_attribute
-			l_attribute.init (a_feature)
-			l_attribute.set_type (a_feature.type.type_i)
-			compute_fake_inline_agent (a_rc, l_attribute, a_feature.type, a_target, a_target_type, a_agent_type)
+			compute_fake_inline_agent (a_rc, a_feature.access (a_feature.type.type_i), a_feature.type, a_target,
+									   a_target_type, a_agent_type)
 		end
 
 	compute_named_tuple_fake_inline_agent (a_rc: ROUTINE_CREATION_AS; a_named_tuple: NAMED_TUPLE_TYPE_A; a_label_pos: INTEGER;
 										   a_target: BYTE_NODE; a_target_type: TYPE_A; a_agent_type: TYPE_A)
-		is
 		local
 			l_tuple_access: TUPLE_ACCESS_B
 		do

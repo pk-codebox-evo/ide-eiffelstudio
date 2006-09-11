@@ -62,17 +62,19 @@ feature -- Callbacks
 			l_trans: HASH_TABLE [INTEGER, STRING]
 			l_tag: INTEGER
 		do
-			if current_tag.is_empty then
-				current_tag.extend (t_none)
-			end
-			l_trans := state_transitions_tag.item (current_tag.item)
-			if l_trans /= Void then
-				l_tag := l_trans.item (a_local_part)
-			end
-			if l_tag = 0 then
-				set_parse_error_message ("Invalid tag/tag position '"+a_local_part+"'")
-			else
-				current_tag.extend (l_tag)
+			if not has_error then
+				if current_tag.is_empty then
+					current_tag.extend (t_none)
+				end
+				l_trans := state_transitions_tag.item (current_tag.item)
+				if l_trans /= Void then
+					l_tag := l_trans.item (a_local_part)
+				end
+				if l_tag = 0 then
+					set_parse_error_message ("Invalid tag/tag position '"+a_local_part+"'")
+				else
+					current_tag.extend (l_tag)
+				end
 			end
 		end
 
@@ -155,6 +157,48 @@ feature{NONE} -- Implementation
 			Result.put (agent factory.new_class_item, "class")
 			Result.put (agent factory.new_feature_item, "feature")
 			Result.put (agent factory.new_delayed_item, "delayed")
+		ensure
+			result_attached: Result /= Void
+		end
+
+	check_uuid_vadility (a_uuid_str: STRING; a_msg: STRING): UUID is
+			-- Check vadility of `a_uuid_str'.
+			-- If valid, return an UUID object representing `a_uuid_str', otherwise, return Void.
+		require
+			a_msg_attached: a_msg /= Void
+		local
+			l_uuid: UUID
+		do
+			if a_uuid_str = Void then
+				set_parse_error_message ("Uuid is missing " + a_msg)
+			else
+				create l_uuid
+				if not l_uuid.is_valid_uuid (a_uuid_str) then
+					set_parse_error_message  ("UUID %"" + a_uuid_str +"%" is invalid " + a_msg)
+				else
+					create Result.make_from_string (a_uuid_str)
+				end
+			end
+		end
+
+	quoted_name (a_name: STRING; a_prefix: STRING): STRING is
+			-- Quoted name of `a_name'.
+			-- If `a_prefix' is attached, add `a_prefix' before `a_name'.
+			-- For example, when `a_name' is "Classes", and `a_prefix' is "metric",
+			-- result will be: metric "Classes".
+		require
+			a_name_attached: a_name /= Void
+		do
+			if a_prefix /= Void then
+				create Result.make (a_name.count + a_prefix.count + 3)
+				Result.append (a_prefix)
+				Result.append_character (' ')
+			else
+				create Result.make (a_name.count + 2)
+			end
+			Result.append_character ('%"')
+			Result.append (a_name)
+			Result.append_character ('%"')
 		ensure
 			result_attached: Result /= Void
 		end

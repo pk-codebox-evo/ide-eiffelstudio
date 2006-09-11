@@ -19,11 +19,6 @@ inherit
 			default_create, copy
 		end
 
-	EIFFEL_ENV
-		undefine
-			default_create, copy
-		end
-
 	CLASS_FORMAT_CONSTANTS
 		undefine
 			default_create, copy
@@ -61,6 +56,13 @@ inherit
 		end
 
 	EB_SHARED_ID_SOLUTION
+		export
+			{NONE} all
+		undefine
+			default_create, copy
+		end
+
+	EIFFEL_LAYOUT
 		export
 			{NONE} all
 		undefine
@@ -119,6 +121,22 @@ feature {NONE} -- Implementation
 		do
 			create list_area
 			create filter_combo_box
+			filter_combo_box.select_actions.extend (
+				agent
+					do
+						if filter_combo_box.selected_item /= Void then
+							next_button.enable_sensitive
+						end
+					end
+			)
+			filter_combo_box.deselect_actions.extend (
+				agent
+					do
+						if filter_combo_box.selected_item = Void then
+							next_button.disable_sensitive
+						end
+					end
+			)
 			list_area.extend (filter_combo_box)
 			create cluster_include
 			create indexing_include
@@ -151,7 +169,7 @@ feature -- Access
 		local
 			si: DYNAMIC_LIST [EV_LIST_ITEM]
 		do
-		--	Result := filter_combo_box.text
+--			Result := filter_combo_box.text
 			si := filter_combo_box.selected_items
 			if not si.is_empty then
 				Result := si.first.text
@@ -514,7 +532,7 @@ feature {NONE} -- Implementation
 			str_element: EV_LIST_ITEM
 			selected: INTEGER
 		do
-			create filter_dir.make (filter_path)
+			create filter_dir.make (eiffel_layout.filter_path)
 			if not filter_dir.exists then
 				list.wipe_out
 				create str_element

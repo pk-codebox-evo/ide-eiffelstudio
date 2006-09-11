@@ -7,13 +7,9 @@
 			<assertions precondition="true" postcondition="false" check="false" invariant="false" loop="false"/>
 			<warning name="old_verbatim_strings" enabled="false"/>
 		</option>
-		<setting name="check_vape" value="true"/>
 		<setting name="console_application" value="true"/>
-		<setting name="dead_code_removal" value="true"/>
 		<setting name="exception_trace" value="true"/>
-		<setting name="inlining" value="true"/>
 		<setting name="inlining_size" value="0"/>
-		<setting name="line_generation" value="false"/>
 		<setting name="multithreaded" value="true"/>
 		<external_include location="$(EIFFEL_SRC)/C/bench">
 			<condition>
@@ -83,6 +79,7 @@
 		<library name="base_extension" location="$ISE_LIBRARY\library\base_extension\base_extension.ecf" readonly="false"/>
 		<library name="consumer" location="$EIFFEL_SRC\dotnet\consumer\consumer.ecf" readonly="false"/>
 		<library name="dotnet_helper" location="$EIFFEL_SRC\dotnet\helpers\support\dotnet_helper.ecf" readonly="false"/>
+		<library name="environment" location="$EIFFEL_SRC\framework\environment\environment.ecf" readonly="false"/>
 		<library name="framework" location="$EIFFEL_SRC\framework\framework.ecf" readonly="false">
 			<class_option class="ELLIPSIS_PROPERTY">
 				<warning name="once_in_generic" enabled="false"/>
@@ -132,12 +129,6 @@
 				<platform value="windows"/>
 			</condition>
 		</cluster>
-		<cluster name="common_structured_text" location="$EIFFEL_SRC\library\editor\text_window\text\structure\structured_text\common\" recursive="true">
-			<file_rule>
-				<exclude>/text_formatter.e$</exclude>
-				<exclude>/structured_text.e$</exclude>
-			</file_rule>
-		</cluster>
 		<cluster name="compiler_api_unix" location="$EIFFEL_SRC\Eiffel\API\" recursive="true">
 			<condition>
 				<platform excluded_value="windows"/>
@@ -186,16 +177,9 @@
 			</file_rule>
 		</cluster>
 		<cluster name="documentation" location="$EIFFEL_SRC\Eiffel\case\documentation\" recursive="true"/>
-		<cluster name="eiffel_structured_text" location="$EIFFEL_SRC\Eiffel\API\structured_text\" recursive="true">
-			<file_rule>
-				<exclude>/common$</exclude>
-			</file_rule>
-		</cluster>
 		<cluster name="flat_short_b" location="$EIFFEL_SRC\Eiffel\flat_short\bench\"/>
 		<cluster name="interface" location="$EIFFEL_SRC\Eiffel\interface\">
 			<cluster name="interface_shared" location="$|shared\"/>
-			<cluster name="preference_tool" location="$|graphical\preference_tool\"/>
-			<cluster name="profile_tool" location="$|graphical\profile_tool\"/>
 			<cluster name="tty" location="$|tty\" recursive="true"/>
 		</cluster>
 		<cluster name="merger" location="$EIFFEL_SRC\tools\partial_classes_merger\src\" recursive="true">
@@ -215,7 +199,6 @@
 				<cluster name="status" location="$|status\"/>
 			</cluster>
 			<cluster name="interface_switch" location="$|interface\batch_only\"/>
-			<cluster name="license_switch" location="$|license\no_license\"/>
 		</cluster>
 		<override name="table_eiffel_3" location="$ISE_LIBRARY\library\obsolete\base\table_eiffel3\"/>
 	</target>
@@ -432,7 +415,6 @@
 				</cluster>
 			</cluster>
 			<cluster name="interface_switch" location="$|interface\new_graphical\"/>
-			<cluster name="time_lock" location="$|license\time_lock\"/>
 		</cluster>
 		<cluster name="tty" location="$EIFFEL_SRC\Eiffel\interface\tty\" recursive="true">
 			<file_rule>

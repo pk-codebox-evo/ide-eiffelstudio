@@ -45,7 +45,7 @@ feature {NONE} -- Actions
 			a_file_ok: a_file /= Void and then not a_file.is_empty
 		do
 			name.set_text (a_name+"_pre")
-			location.set_text ("$ISE_EIFFEL\precomp\spec\$ISE_PLATFORM\"+a_file)
+			location.set_text ("$ISE_PRECOMP\"+a_file)
 		end
 
 	on_ok is
@@ -75,7 +75,7 @@ feature {NONE} -- Implementation
 	fill_default_libraries is
 			-- Fill in default precompiles.
 		do
-			add_configs_in_dir (Default_precompiled_location, Void)
+			add_configs_in_dir (eiffel_layout.eiffel_precomp_mode (target.setting_msil_generation), Void)
 		end
 
 indexing

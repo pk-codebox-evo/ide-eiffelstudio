@@ -527,7 +527,7 @@ feature {EV_INTERMEDIARY_ROUTINES} -- Implementation
 			end
 		end
 
-feature {EV_GTK_WINDOW_IMP, EV_PICK_AND_DROPABLE_IMP} -- Implementation
+feature {EV_GTK_WINDOW_IMP, EV_PICK_AND_DROPABLE_IMP, EV_APPLICATION_IMP} -- Implementation
 
 	has_modal_window: BOOLEAN
 			-- Does `Current' have a transient window that is modal to `Current'.
@@ -557,10 +557,6 @@ feature {EV_GTK_WINDOW_IMP, EV_PICK_AND_DROPABLE_IMP} -- Implementation
 		local
 			i: INTEGER
 		do
-			if not has_focus then
-				internal_set_focus
-			end
-			{EV_GTK_EXTERNALS}.gtk_grab_add (c_object)
 			i := {EV_GTK_EXTERNALS}.gdk_pointer_grab (
 				{EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object),
 				1,
@@ -579,7 +575,6 @@ feature {EV_GTK_WINDOW_IMP, EV_PICK_AND_DROPABLE_IMP} -- Implementation
 	release_keyboard_and_mouse is
 			-- Release mouse and keyboard grab.
 		do
-			{EV_GTK_EXTERNALS}.gtk_grab_remove (c_object)
 			{EV_GTK_EXTERNALS}.gdk_pointer_ungrab (
 				0 -- guint32 time
 			)

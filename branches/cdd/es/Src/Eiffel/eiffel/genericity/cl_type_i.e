@@ -32,9 +32,10 @@ inherit
 			is_generated_as_single_type,
 			is_reference,
 			is_separate,
-			is_valid,
+			is_consistent,
 			make_gen_type_byte_code,
-			same_as
+			same_as,
+			static_type_id
 		end
 
 	SHARED_IL_CASING
@@ -230,6 +231,14 @@ feature -- Access
 			Result := associated_class_type.type_id
 		end
 
+	static_type_id: INTEGER is
+			-- Type id of the correponding class type
+		require else
+			ok: True
+		do
+			Result := associated_class_type.static_type_id
+		end
+
 	sk_value: INTEGER is
 			-- Generate SK value associated to the current type.
 		do
@@ -364,7 +373,7 @@ feature -- Status
 			end
 		end
 
-	is_valid: BOOLEAN is
+	is_consistent: BOOLEAN is
 			-- Is the base class still in the system and matches its specification?
 		local
 			l_base_class: like base_class

@@ -695,21 +695,6 @@ feature -- Output
 		local
 			l_name: STRING
 		do
-			l_name := name.as_lower
-			if is_once or else is_constant then
-				l_name.put ((l_name @ 1).upper, 1)
-			end
-			a_text_formatter.add_feature (Current, l_name)
-		end
-
-	append_full_name (a_text_formatter: TEXT_FORMATTER) is
-			-- Append name of the feature in `a_text_formatter' in its complete form
-			-- (with infix and prefix keywords and alias names if any).
-		require
-			valid_st: a_text_formatter /= Void
-		local
-			a: like alias_name
-		do
 			if is_infix then
 				a_text_formatter.process_keyword_text (Ti_infix_keyword, Void)
 				a_text_formatter.add_space
@@ -723,7 +708,24 @@ feature -- Output
 				a_text_formatter.process_operator_text (extract_symbol_from_prefix (name), Current)
 				a_text_formatter.process_symbol_text (Ti_double_quote)
 			else
-				append_name (a_text_formatter)
+				l_name := name.as_lower
+				if is_once or else is_constant then
+					l_name.put ((l_name @ 1).upper, 1)
+				end
+				a_text_formatter.add_feature (Current, l_name)
+			end
+		end
+
+	append_full_name (a_text_formatter: TEXT_FORMATTER) is
+			-- Append name of the feature in `a_text_formatter' in its complete form
+			-- (with infix and prefix keywords and alias names if any).
+		require
+			valid_st: a_text_formatter /= Void
+		local
+			a: like alias_name
+		do
+			append_name (a_text_formatter)
+			if not is_infix and then not is_prefix then
 				a := alias_name
 				if a /= Void then
 					a_text_formatter.add_space
@@ -841,13 +843,13 @@ feature -- Implementation
 			Result := associated_class.feature_named (name)
 		end;
 
-feature {FEATURE_I} -- Setting
-
 	body_id_for_ast: INTEGER
 			-- Body id that should be used for retrieving the ast (by feature ast)
 		do
 			Result := body_index
 		end
+
+feature {FEATURE_I} -- Setting
 
 	set_written_in (i: INTEGER) is
 			-- Set `written_in' to `i'.

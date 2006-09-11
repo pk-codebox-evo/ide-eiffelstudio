@@ -19,6 +19,10 @@ inherit
 
 	EB_SHARED_PREFERENCES
 
+	EVS_GRID_UTILITY
+
+	EV_SHARED_APPLICATION
+
 create
 	make_with_grid
 
@@ -142,6 +146,22 @@ feature -- Setting
 			preferences.class_browser_data.even_row_background_color_preference.change_actions.prune_all (l_change_agent)
 		end
 
+	editor_token_at_position (a_x, a_y: INTEGER): EDITOR_TOKEN is
+			-- Editor token at position (`a_x', `a_y') which is related to the top-left coordinate of `grid'
+			-- Void if no item is found.
+		local
+			l_editor_token_item: EB_GRID_EDITOR_TOKEN_ITEM
+			l_index: INTEGER
+		do
+			l_editor_token_item ?= grid_item_at_position (grid, a_x, a_y)
+			if l_editor_token_item /= Void then
+				l_index := l_editor_token_item.token_index_at_current_position
+				if l_index > 0 then
+					Result := l_editor_token_item.token_at_position (l_index)
+				end
+			end
+		end
+
 feature{NONE} -- Actions
 
 	on_pick_ended_action: PROCEDURE [ANY, TUPLE [a_item: EV_ABSTRACT_PICK_AND_DROPABLE]] is
@@ -231,20 +251,22 @@ feature{NONE} -- Pick and drop
 			l_stone: STONE
 			l_index: INTEGER
 		do
-			last_picked_item := Void
-			l_item ?= a_item
-			if l_item /= Void then
-				l_index := l_item.token_index_at_current_position
-				if l_index > 0 then
-					Result := l_item.editor_token_pebble (l_index)
-					l_stone ?= Result
-					if l_stone /= Void then
-						grid.remove_selection
-						grid.set_accept_cursor (l_stone.stone_cursor)
-						grid.set_deny_cursor (l_stone.x_stone_cursor)
-						l_item.set_last_picked_token (l_index)
-						l_item.redraw
-						last_picked_item := l_item
+			if not ev_application.ctrl_pressed then
+				last_picked_item := Void
+				l_item ?= a_item
+				if l_item /= Void then
+					l_index := l_item.token_index_at_current_position
+					if l_index > 0 then
+						Result := l_item.editor_token_pebble (l_index)
+						l_stone ?= Result
+						if l_stone /= Void then
+							grid.remove_selection
+							grid.set_accept_cursor (l_stone.stone_cursor)
+							grid.set_deny_cursor (l_stone.x_stone_cursor)
+							l_item.set_last_picked_token (l_index)
+							l_item.redraw
+							last_picked_item := l_item
+						end
 					end
 				end
 			end

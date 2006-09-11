@@ -111,17 +111,17 @@ inherit
 			{NONE} All
 		end
 
-	EIFFEL_ENV
-		export
-			{NONE} All
-		end
-
 	SHARED_TEXT_ITEMS
 		export
 			{NONE} All
 		end
 
 	REFACTORING_HELPER
+		export
+			{NONE} all
+		end
+
+	EIFFEL_LAYOUT
 		export
 			{NONE} all
 		end
@@ -171,25 +171,10 @@ feature {NONE} -- Initialization
 	make_with_session_data (a_session_data: EB_DEVELOPMENT_WINDOW_SESSION_DATA) is
 			-- Recreate a previously existing development window using `a_session_data'.
 		local
-			l_class_i: CLASS_I
-			l_class_c_stone: CLASSC_STONE
 			l_cluster_string, l_class_string, l_feature_string: STRING
 		do
 			internal_development_window_data := a_session_data
 			make
-				-- Attempt to reload last edited class of `Current'.
-			if a_session_data.file_name /= Void then
-				conf_todo
---				l_class_i := eiffel_universe.class_with_file_name (a_session_data.file_name)
-				if l_class_i /= Void and then l_class_i.compiled then
-						-- Create compiled class stone and target `Current' to it.
-					create l_class_c_stone.make (l_class_i.compiled_class)
-					set_stone_after_check (l_class_c_stone)
-					if a_session_data.editor_position > 0 then
-						editor_tool.text_area.display_line_when_ready (a_session_data.editor_position, False)
-					end
-				end
-			end
 			if context_tool /= Void then
 					-- Presumption is made that if the strings are not void then they represent
 					-- valid entities in the project.
@@ -314,9 +299,6 @@ feature {NONE} -- Initialization
 
 			toolbarable_commands.extend (new_context_tool_cmd)
 
-			create open_cmd.make (Current)
-			toolbarable_commands.extend (open_cmd)
-
 			create save_cmd.make (Current)
 			toolbarable_commands.extend (save_cmd)
 
@@ -341,12 +323,12 @@ feature {NONE} -- Initialization
 				-- Compilation
 			create c_workbench_compilation_cmd.make_workbench (Current)
 			create c_finalized_compilation_cmd.make_finalized (Current)
-			if has_dll_generation then
+			if eiffel_layout.has_dll_generation then
 				create show_dynamic_lib_tool.make
 				show_dynamic_lib_tool.set_menu_name (Interface_names.m_new_dynamic_lib)
 				show_dynamic_lib_tool.add_agent (agent show_dynamic_library_dialog)
 			end
-			if has_profiler then
+			if eiffel_layout.has_profiler then
 				create show_profiler
 			end
 
@@ -773,12 +755,12 @@ feature {NONE} -- Initialization
 				-- Initialize undo / redo accelerators
 			create undo_accelerator.make_with_key_combination (
 				create {EV_KEY}.make_with_code (Key_z), True, False, False)
-			if has_case then
+			if eiffel_layout.has_case then
 				undo_accelerator.actions.extend (agent (context_tool.editor.undo_cmd).on_ctrl_z)
 			end
 			create redo_accelerator.make_with_key_combination (
 				create {EV_KEY}.make_with_code (Key_y), True, False, False)
-			if has_case then
+			if eiffel_layout.has_case then
 				redo_accelerator.actions.extend (agent (context_tool.editor.redo_cmd).on_ctrl_y)
 			end
 			window.accelerators.extend (undo_accelerator)
@@ -830,7 +812,7 @@ feature -- Access
 			class_stone: CLASSI_STONE
 		do
 			class_stone ?= stone
-			if class_stone /= Void then
+			if class_stone /= Void and then class_stone.is_valid then
 				Result := class_stone.class_name
 			end
 		end
@@ -1308,11 +1290,6 @@ feature {NONE} -- Menu Building
 
 				-- New context tool
 			command_menu_item := New_context_tool_cmd.new_menu_item
-			add_recyclable (command_menu_item)
-			file_menu.extend (command_menu_item)
-
-				-- Open
-			command_menu_item := open_cmd.new_menu_item
 			add_recyclable (command_menu_item)
 			file_menu.extend (command_menu_item)
 
@@ -1850,19 +1827,19 @@ feature {NONE} -- Menu Building
 			add_recyclable (command_menu_item)
 			project_menu.extend (command_menu_item)
 
-			if has_documentation_generation or has_xmi_generation then
+			if eiffel_layout.has_documentation_generation or eiffel_layout.has_xmi_generation then
 					-- Separator -------------------------------------------------
 				project_menu.extend (create {EV_MENU_SEPARATOR})
 			end
 
-			if has_documentation_generation then
+			if eiffel_layout.has_documentation_generation then
 					-- Generate Documentation
 				command_menu_item := document_cmd.new_menu_item
 				add_recyclable (command_menu_item)
 				project_menu.extend (command_menu_item)
 			end
 
-			if has_xmi_generation then
+			if eiffel_layout.has_xmi_generation then
 					-- Export XMI
 				command_menu_item := export_cmd.new_menu_item
 				add_recyclable (command_menu_item)
@@ -2000,7 +1977,7 @@ feature {NONE} -- Menu Building
 				-- Separator --------------------------------------
 			tools_menu.extend (create {EV_MENU_SEPARATOR})
 
-			if has_profiler then
+			if eiffel_layout.has_profiler then
 					-- Profiler Window
 				command_menu_item := show_profiler.new_menu_item
 				add_recyclable (command_menu_item)
@@ -2012,7 +1989,7 @@ feature {NONE} -- Menu Building
 			add_recyclable (command_menu_item)
 			tools_menu.extend (command_menu_item)
 
-			if has_dll_generation then
+			if eiffel_layout.has_dll_generation then
 					-- Dynamic Library Window
 				command_menu_item := show_dynamic_lib_tool.new_menu_item
 				add_recyclable (command_menu_item)
@@ -2452,10 +2429,10 @@ feature -- Resource Update
 			enable_commands_on_project_created
 			context_tool.on_project_created
 			address_manager.on_project_created
-			if has_dll_generation then
+			if eiffel_layout.has_dll_generation then
 				show_dynamic_lib_tool.enable_sensitive
 			end
-			if has_profiler then
+			if eiffel_layout.has_profiler then
 				show_profiler.enable_sensitive
 			end
 		end
@@ -2479,10 +2456,10 @@ feature -- Resource Update
 			context_tool.on_project_unloaded
 			address_manager.on_project_unloaded
 			build_menu_bar
-			if has_dll_generation then
+			if eiffel_layout.has_dll_generation then
 				show_dynamic_lib_tool.disable_sensitive
 			end
-			if has_profiler then
+			if eiffel_layout.has_profiler then
 				show_profiler.disable_sensitive
 			end
 		end
@@ -3703,9 +3680,12 @@ feature {NONE} -- Implementation
 				else
 					if feat_as.ast /= Void then
 						begin_index := feat_as.ast.start_position
-						tmp_text := displayed_class.text.substring (1, begin_index)
-						offset := tmp_text.occurrences('%R')
-						editor_tool.text_area.scroll_to_when_ready (begin_index.item - offset)
+						tmp_text := displayed_class.text
+						if tmp_text /= Void then
+							tmp_text := tmp_text.substring (1, begin_index)
+							offset := tmp_text.occurrences('%R')
+							editor_tool.text_area.scroll_to_when_ready (begin_index.item - offset)
+						end
 					end
 				end
 			else
@@ -4097,10 +4077,8 @@ feature -- Recycle
 			recycle_menu
 			Precursor {EB_TOOL_MANAGER}
 			save_as_cmd.recycle
-			open_cmd.recycle
 			save_cmd.recycle
 			save_as_cmd := Void
-			open_cmd := Void
 			save_cmd := Void
 			command_controller.recycle
 			if refactoring_manager /= Void then
@@ -4562,12 +4540,6 @@ feature{EB_TOOL}
 	print_cmd: EB_PRINT_COMMAND
 			-- Command to print the content of editor with focus
 
-	eac_browser_cmd: EB_OPEN_EAC_BROWSER_CMD is
-			-- Command to display the eac browser
-		do
-			Result := Eb_debugger_manager.eac_browser_cmd
-		end
-
 	show_favorites_menu_item: EV_MENU_ITEM
 			-- Show/Hide favorites menu item.
 
@@ -4703,13 +4675,12 @@ feature {NONE} -- Execution
 	enable_commands_on_project_loaded is
 			-- Enable commands when a new project has been created and compiled
 		do
-			if has_profiler then
+			if eiffel_layout.has_profiler then
 				show_profiler.enable_sensitive
 			end
-			if has_dll_generation then
+			if eiffel_layout.has_dll_generation then
 				show_dynamic_lib_tool.enable_sensitive
 			end
-			open_cmd.enable_sensitive
 			new_class_cmd.enable_sensitive
 			new_cluster_cmd.enable_sensitive
 			new_library_cmd.enable_sensitive
@@ -4731,13 +4702,12 @@ feature {NONE} -- Execution
 	disable_commands_on_project_unloaded is
 			-- Enable commands when a project has been closed.
 		do
-			if has_dll_generation then
+			if eiffel_layout.has_dll_generation then
 				show_dynamic_lib_tool.disable_sensitive
 			end
-			if has_profiler then
+			if eiffel_layout.has_profiler then
 				show_profiler.disable_sensitive
 			end
-			open_cmd.disable_sensitive
 			new_class_cmd.disable_sensitive
 			new_cluster_cmd.disable_sensitive
 			new_library_cmd.disable_sensitive
@@ -4788,7 +4758,7 @@ feature {NONE} -- Events
 			l_cs: CLASSI_STONE
 		do
 			l_cs ?= stone
-			if l_cs /= Void and then l_cs.class_i = a_class then
+			if l_cs /= Void and then l_cs.class_i.config_class = a_class then
 				set_file_name_from_stone (l_cs)
 			end
 		end

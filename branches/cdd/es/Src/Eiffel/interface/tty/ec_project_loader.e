@@ -262,7 +262,7 @@ feature {NONE} -- User interaction
 			end
 			if l_need_choice then
 				if a_target = Void then
-					io.put_string ("This project has more than one target or : ")
+					io.put_string ("This project has more than one target: ")
 				else
 					io.put_string ("Target `" + a_target + "' does not exist or is not a compilable target.%NChoose among the following target(s): ")
 				end
@@ -285,7 +285,7 @@ feature {NONE} -- User interaction
 				else
 					from
 						io.put_new_line
-						io.put_string ("Select the target you want : ")
+						io.put_string ("Select the target you want: ")
 					until
 						l_answered
 					loop
@@ -349,11 +349,11 @@ feature {NONE} -- User interaction
 			l_answered: BOOLEAN
 		do
 			if should_stop_on_prompt then
-				io.put_string ("You cannot choose if a needed precompile should be generated")
+				io.put_string ("Precompile will automatically be built")
 				io.put_new_line
 				io.put_string ("because of the -stop/-batch option.")
 				io.put_new_line
-				set_has_error
+				is_user_wants_precompile := True
 			else
 				from
 				until

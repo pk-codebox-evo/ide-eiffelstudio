@@ -12,21 +12,18 @@ inherit
 
 	PRODUCT_NAMES
 
-feature {NONE}
+	EIFFEL_LAYOUT
+		export
+			{NONE} all
+		end
 
-	Additional_args: STRING is "arguments.wb"
+feature {NONE}
 
 	Backup: STRING is "BACKUP"
 
 	Backup_info: STRING is "compilation_info.txt"
 
 	Studio_directory_list: STRING is "DIRECTORYLIST"
-
-	Studio_recent_files: STRING is "STUDIO_RECENT_FILES"
-
-	Casegen: STRING is "CASEGEN"
-
-	Case_storage: STRING is "Storage"
 
 	C_prefix: CHARACTER is 'C'
 			-- Prefix for C generated directories and object files
@@ -37,15 +34,9 @@ feature {NONE}
 
 	Comp: STRING is "COMP"
 
-	Default_config_file: STRING is "default.ecf"
-
-	Default_class_filename: STRING is "default.cls"
-
 	Descriptor_file_suffix: CHARACTER is 'd'
 
 	Documentation: STRING is "Documentation"
-
-	Dot: CHARACTER is '.'
 
 	Dot_c: STRING is ".c"
 
@@ -59,7 +50,19 @@ feature {NONE}
 
 	Dot_profile_information: STRING is "pfi"
 
-	Eac_browser_file: STRING is "eac_browser.exe"
+	Driver: STRING is
+			-- Name of `driver' executable used to execute melted code.
+		once
+			if {PLATFORM_CONSTANTS}.is_windows then
+				create Result.make (15)
+				Result.append (eiffel_layout.Eiffel_c_compiler)
+				Result.append ("\driver.exe")
+			elseif {PLATFORM_CONSTANTS}.is_vms then
+				Result := "driver.exe"
+			else
+				Result := "driver"
+			end
+		end
 
 	Epoly: STRING is "epoly"
 
@@ -67,23 +70,11 @@ feature {NONE}
 
 	Ececil: STRING is "ececil"
 
-	Econform: STRING is "econform"
-
-	Edescriptor: STRING is "edesc"
-
-	Edispatch: STRING is "edisptch"
-
-	Edle: STRING is "edle"
-
 	Efrozen: STRING is "efrozen"
-
-	Ehisto: STRING is "ehisto"
 
 	Eiffelgens: STRING is "EIFGENs"
 
 	Einit: STRING is "einit"
-
-	Emain: STRING is "emain"
 
 	Eoption: STRING is "eoption"
 
@@ -109,13 +100,21 @@ feature {NONE}
 
 	Makefile_sh: STRING is "Makefile.SH"
 
-	updt_dle: STRING is "melted.dle";
-
 	Partials: STRING is "Partials"
 
 	Precomp_eif: STRING is "precomp.eif"
 
-	Prelink_script: STRING is "prelink"
+	Preobj: STRING is
+			-- Name of C library used in precompiled library.
+		once
+			if {PLATFORM_CONSTANTS}.is_windows then
+				Result := "precomp.lib"
+			elseif {PLATFORM_CONSTANTS}.is_unix then
+				Result := "preobj.o"
+			else
+				Result := "preobj.olb"
+			end
+		end
 
 	Profiler: STRING is "Profiler"
 
@@ -123,11 +122,7 @@ feature {NONE}
 
 	Removed_log_file_name: STRING is "REMOVED";
 
-	Static_log_file_name: STRING is "STATIC";
-
 	Translation_log_file_name: STRING is "TRANSLAT";
-
-	Updt: STRING is "melted.eif"
 
 	Finished_file_for_make: STRING is "finished"
 
@@ -157,22 +152,15 @@ feature {NONE}
 			-- Eiffel Debug Info file (core name)
 			-- Used for IL code generation
 
-	info_flag_begin: STRING is "-- System name is "
-
 	info_flag_end: STRING is "-- end of info"
 
-feature {NONE, AUXILIARY_FILES} -- Versioning
-
-	Precompilation_id_tag: STRING is "precompilation_id"
-	Version_number_tag: STRING is "version_number"
-	Ace_file_path_tag: STRING is "ace_file_path"
-			-- Tags used in project file header.
+feature {AUXILIARY_FILES} -- Versioning
 
 	Compiler_version_number: CONF_VERSION is
 			-- Version of the compiler
 		once
 				-- 0000 because it will be replace by the svn version number by the build script
-			create Result.make_version (5, 7, 0000, 0)
+			create Result.make_version (eiffel_layout.major_version, eiffel_layout.minor_version, 0000, 0)
 		end
 
 	Major_version_number: INTEGER is
@@ -215,6 +203,9 @@ feature {NONE, AUXILIARY_FILES} -- Versioning
 			-- This can be used by developper to add specific information
 			-- displayed on About dialog
 
+	Ace_file_path_tag: STRING is "ace_file_path";
+			-- Tags used in project file header.
+
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
@@ -247,4 +238,4 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end -- class SYSTEM_CONSTANTS
+end
