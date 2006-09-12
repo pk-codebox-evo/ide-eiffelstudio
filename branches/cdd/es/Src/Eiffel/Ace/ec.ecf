@@ -280,6 +280,7 @@
 			<option>
 				<assertions precondition="true" postcondition="true" check="true" invariant="true" loop="false"/>
 			</option>
+			<cluster name="library" location="$EIFFEL_SRC\library\cdd\"/>
 		</cluster>
 		<cluster name="cli_debugger" location="$EIFFEL_SRC\Eiffel\library\cli_debugger\" recursive="true">
 			<condition>
