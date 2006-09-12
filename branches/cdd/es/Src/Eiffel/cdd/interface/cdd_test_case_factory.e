@@ -29,9 +29,15 @@ feature -- Access
 feature {CDD_TEST_SUITE_MANAGER} -- Element change
 
 	create_from_class (a_class: EIFFEL_CLASS_I; a_universe: UNIVERSE_I) is
-			-- Create a new test case instance for class 'a_class'.
+			-- Create a new test case instance for test class 'a_class' and assign
+			-- 'last_created_test_case' to created instance.
+			-- Retrieve the class and cluster under test from 'a_universe'.
 			-- NOTE: a_class must be a test class in the cdd tests cluster.
-				local
+			-- If creation failed, 'last_created_test_case' is Void.
+		require
+			a_class_not_void: a_class /= Void
+			a_universe_not_void: a_universe /= Void
+		local
 			l_file: KL_BINARY_INPUT_FILE
 			l_ast: CLASS_AS
 			l_ilist: INDEXING_CLAUSE_AS
@@ -93,6 +99,7 @@ feature {CDD_TEST_SUITE_MANAGER} -- Element change
 
 	create_with_reflection (a_reflection: CDD_REFLECTED_OBJECT; a_cluster: CLUSTER_I) is
 			-- Create a new test case from 'a_reflection'. Write test class into 'a_cluster'.
+			-- Assign 'last_created_test_case' with created test case.
 		require
 			valid_reflection: a_reflection /= Void and then a_reflection.reflection_succeded
 			a_cluster_not_void: a_cluster /= Void
@@ -111,10 +118,14 @@ feature {CDD_TEST_SUITE_MANAGER} -- Element change
 			l_cud := a_reflection.root_object.dynamic_type.original_class
 			create l_tc.make (l_cud, a_reflection.called_feature.name, l_test_class, a_reflection.exception_tag, a_reflection.id)
 			last_created_test_case := l_tc
+		ensure
+			created: last_created_test_case /= Void
 		end
 
 	remove (a_tc: CDD_TEST_CASE) is
 			-- Remove test class for 'a_tc' and notify cluster and window manager.
+		require
+			a_tc /= Void
 		local
 			l_file: PLAIN_TEXT_FILE
 		do
@@ -128,7 +139,7 @@ feature {CDD_TEST_SUITE_MANAGER} -- Element change
 feature {NONE} -- Implementation
 
 	parse_indexing_item (an_item: INDEX_AS): STRING is
-			--
+			-- Joined string values stored in 'an_item'
 		require
 			an_item_not_void: an_item /= Void
 		local
@@ -151,7 +162,7 @@ feature {NONE} -- Implementation
 		end
 
 	new_file_name (a_cud: EIFFEL_CLASS_C; a_cluster: CLUSTER_I): STRING is
-			-- Create a new unique file name for a new test class where 'a_cud' is the class under test.
+			-- New unique file name for a new test class where 'a_cud' is the class under test.
 		require
 			a_cud_not_void: a_cud /= Void
 			a_cluster_not_void: a_cluster /= Void
@@ -177,6 +188,8 @@ feature {NONE} -- Implementation
 				end
 				i := i + 1
 			end
+		ensure
+			valid_result: Result /= Void and then not Result.is_empty
 		end
 
 	create_test_class (a_file_name, a_class_name: STRING; a_reflection: CDD_REFLECTED_OBJECT; a_cluster: CLUSTER_I) is

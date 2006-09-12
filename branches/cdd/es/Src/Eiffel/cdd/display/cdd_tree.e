@@ -47,7 +47,6 @@ feature -- Initialization
 			initialized: is_initialized
 		end
 
-
 feature -- Access
 
 	tool: CDD_TEST_SUITE_TOOL
@@ -86,8 +85,6 @@ feature -- Element change
 				prune (last_located_item)
 			end
 		end
-
-
 
 feature -- Transformation
 

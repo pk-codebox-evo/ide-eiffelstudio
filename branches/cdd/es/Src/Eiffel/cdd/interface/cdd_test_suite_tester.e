@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Objects that execute test runs on test cases stored in a suite"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -33,7 +33,7 @@ create
 feature {NONE} -- Initialization
 
 	make_with_test_suite (a_test_suite: CDD_TEST_SUITE) is
-			--
+			-- Set 'test_suite' to 'a_test_suite' and initialize attributes.
 		require
 			a_test_suite_not_void: a_test_suite /= Void
 		do
@@ -41,8 +41,9 @@ feature {NONE} -- Initialization
 			create test_suite_tools.make
 			idle_action_agent := agent idle_action
 			create output.make
+		ensure
+			test_suite_set: test_suite = a_test_suite
 		end
-
 
 feature -- Access
 
@@ -59,12 +60,21 @@ feature -- Access
 			-- Is 'Current' running test cases?
 
 	current_test_case: CDD_TEST_CASE is
-			-- test case currently under test
+			-- Test case currently under test
 		require
 			testing: is_testing
 		do
 			Result := cursor.item
 		end
+
+	manages_tool (a_tool: CDD_TEST_SUITE_TOOL): BOOLEAN is
+			-- Does 'Current' manage 'a_tool'?
+		require
+			a_tool_not_void: a_tool /= Void
+		do
+			Result := test_suite_tools.has (a_tool)
+		end
+
 
 feature -- Execution control
 
@@ -80,11 +90,11 @@ feature -- Execution control
 			printer.print_test_case (test_suite)
 			create l_cmd.make_empty
 			l_cmd.append ("ec -config ")
-			l_cmd.append (test_suite.config_file)
+			l_cmd.append (test_suite.tests_cluster.target.system.file_name)
 			l_cmd.append (" -target ")
 			l_cmd.append (test_suite.tester_target.name)
 			l_cmd.append (" -c_compile -batch -stop")
-			create_process (l_cmd, test_suite.project_directory)
+			create_process (l_cmd, test_suite.tests_cluster.target.system.directory)
 			is_running := True
 			process.launch
 			ev_application.add_idle_action (idle_action_agent)
@@ -131,12 +141,10 @@ feature -- Execution control
 			notify_all_tools (agent notify_stop_testing)
 		end
 
-feature {NONE} -- Status report
-
-
 feature {NONE} -- Status setting
 
 	idle_action_agent: PROCEDURE [ANY, TUPLE]
+			-- Agent for 'idle_action'
 
 	idle_action is
 			-- Check status of the process and its output
@@ -180,7 +188,7 @@ feature {NONE} -- Status setting
 			end
 		end
 
-feature {NONE} -- Testing implementation
+feature {NONE} -- Implementation
 
 	test_current_test_case is
 			-- Initialize process for testing 'current_test_case' and launch process.
@@ -194,7 +202,7 @@ feature {NONE} -- Testing implementation
 			create l_cmd.make_empty
 			l_cmd.append ("./test_system ")
 			l_cmd.append (current_test_case.test_class.name)
-			create_process (l_cmd, test_suite.project_directory + "/EIFGENs/" + test_suite.tester_target.name + "/W_code")
+			create_process (l_cmd, test_suite.tests_cluster.target.system.directory + "/EIFGENs/" + test_suite.tester_target.name + "/W_code")
 			process.launch
 		ensure
 			testing: is_testing
@@ -203,20 +211,22 @@ feature {NONE} -- Testing implementation
 
 feature -- Element change
 
-	extend (a_tool: CDD_TEST_SUITE_TOOL) is
-			--
+	add_tool (a_tool: CDD_TEST_SUITE_TOOL) is
+			-- Extend 'test_suite_tools' with 'a_tool'
 		require
 			a_tool_not_void: a_tool /= Void
+			not_added_yet: not manages_tool (a_tool)
 		do
 			test_suite_tools.put_last (a_tool)
 		ensure
-			inserted: test_suite_tools.has (a_tool)
+			added: manages_tool (a_tool)
 		end
 
-	prune (a_tool: CDD_TEST_SUITE_TOOL) is
-			--
+	remove_tool (a_tool: CDD_TEST_SUITE_TOOL) is
+			-- Remove 'a_tool' from 'test_suite_tools'
 		require
 			a_tool_not_void: a_tool /= Void
+			added: manages_tool (a_tool)
 		local
 			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_SUITE_TOOL]
 		do
@@ -225,23 +235,15 @@ feature -- Element change
 			l_cursor.search_forth (a_tool)
 			l_cursor.remove
 		ensure
-			removed: not test_suite_tools.has (a_tool)
+			removed: not manages_tool (a_tool)
 		end
-
-feature -- Removal
-
-feature -- Resizing
-
-feature -- Transformation
-
-feature -- Conversion
-
-feature -- Duplication
 
 feature -- Process handlers
 
 	output_handler (an_output: STRING) is
-			--
+			-- Append 'an_output' to output.
+		require
+			an_output_not_void: an_output /= Void
 		local
 			l_storage: EB_PROCESS_IO_STRING_BLOCK
 		do
@@ -249,14 +251,10 @@ feature -- Process handlers
 			output.extend_block (l_storage)
 		end
 
-feature -- Basic operations
-
-feature -- Obsolete
-
 feature {NONE} -- Implementation
 
 	process_factory: PROCESS_FACTORY is
-			--
+			-- Factory for creating platform independent process instances
 		once
 			create Result
 		end
@@ -300,9 +298,12 @@ feature {NONE} -- Implementation
 		end
 
 	test_suite_tools: DS_LINKED_LIST [CDD_TEST_SUITE_TOOL]
+			-- Managed tools
 
 	notify_all_tools (a_proc: PROCEDURE [ANY, TUPLE [CDD_TEST_SUITE_TOOL]]) is
-			--
+			-- Call 'a_proc' with each tool in 'test_suite_tools'.
+		require
+			a_proc_not_void: a_proc /= Void
 		local
 			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_SUITE_TOOL]
 		do
@@ -318,37 +319,50 @@ feature {NONE} -- Implementation
 		end
 
 	notify_start_testing (a_tool: CDD_TEST_SUITE_TOOL) is
-			--
+			-- Tell 'a_tool' that testing has started.
+		require
+			a_tool_not_void: a_tool /= Void
 		do
 			a_tool.start_testing
 		end
 
 	notify_stop_testing (a_tool: CDD_TEST_SUITE_TOOL) is
-			--
+			-- Tell 'a_tool' that testing has stopped.
+		require
+			a_tool_not_void: a_tool /= Void
 		do
 			a_tool.stop_testing
 		end
 
 	notify_pause_testing (a_tool: CDD_TEST_SUITE_TOOL) is
-			--
+			-- Tell 'a_tool' that testing has paused.
+		require
+			a_tool_not_void: a_tool /= Void
 		do
 			a_tool.pause_testing
 		end
 
 	notify_resume_testing (a_tool: CDD_TEST_SUITE_TOOL) is
-			--
+			-- Tell 'a_tool' that testing has resumed.
+		require
+			a_tool_not_void: a_tool /= Void
 		do
 			a_tool.resume_testing
 		end
 
 	notify_finish_testing (a_tool: CDD_TEST_SUITE_TOOL) is
-			--
+			-- Tell 'a_tool' that testing is finished.
+		require
+			a_tool_not_void: a_tool /= Void
 		do
 			a_tool.finish_testing
 		end
 
 	notify_append_output (a_tool: CDD_TEST_SUITE_TOOL; an_output: STRING) is
-			--
+			-- Tell 'a_tool' to append 'an_output'.
+		require
+			a_tool_not_void: a_tool /= Void
+			an_output_not_void: an_output /= Void
 		do
 			a_tool.append_output (an_output)
 		end
@@ -374,6 +388,8 @@ feature -- Implementation
 
 invariant
 	test_suite_not_void: test_suite /= Void
+	test_suite_tools_not_void: test_suite_tools /= Void
+	idle_action_agent_not_void: idle_action_agent /= Void
 	is_paused_implies_is_running: is_paused implies is_running
 	is_testing_implies_is_running: is_testing implies is_running
 	is_testing_implies_correct_cursor: is_testing implies (cursor /= Void and then not cursor.off)

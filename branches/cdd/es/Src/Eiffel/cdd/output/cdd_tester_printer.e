@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Objects that print a root class for the cdd interpreter"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -10,6 +10,7 @@ class
 feature -- Access
 
 	print_test_case (a_test_suite: CDD_TEST_SUITE) is
+			-- Print root class for testing 'a_test_suite'.
 		require
 			a_test_suite_not_void: a_test_suite /= Void
 		local
@@ -46,32 +47,43 @@ feature -- Access
 
 feature {NONE} -- Implementation
 
-	append_text (s: STRING) is
+	append_text (a_text: STRING) is
+			-- Append 'a_text' to 'output_file'.
 		require
 			file_writable: output_file /= Void and then output_file.is_writable
+			a_text_not_void: a_text /= Void
 		do
-			output_file.put_string (s)
+			output_file.put_string (a_text)
 		end
 
-	append_instruction (l: STRING) is
+	append_instruction (a_text: STRING) is
+			-- Append 'a_text' to 'output_file' with correct indentation.
 		require
 			file_writable: output_file /= Void and then output_file.is_writable
+			a_text_not_void: a_text /= Void
 		do
-			append_text (indent + l + "%N")
+			append_text (indent + a_text + "%N")
 		end
 
-	append_comment (c: STRING) is
+	append_comment (a_text: STRING) is
+			-- Append 'a_text' to 'output_file' as comment with correct indentation.
 		require
 			file_writable: output_file /= Void and then output_file.is_writable
+			a_text_not_void: a_text /= Void
 		do
-			append_text (indent + "%T-- " + c + "%N")
+			append_text (indent + "%T-- " + a_text + "%N")
 		end
 
 	output_file: PLAIN_TEXT_FILE
+			-- File class text is written
 
 	indent: STRING is "%T%T%T"
+			-- Indentation for instruction text
 
 	append_class_header is
+			-- Append class header to output file
+		require
+			file_writable: output_file /= Void and then output_file.is_writable
 		do
 			append_text ("indexing%N")
 			append_text ("%Tdescription: %"Automatic generated root class for cdd tester%"%N")
@@ -85,12 +97,12 @@ feature {NONE} -- Implementation
 		end
 
 	append_class_footer is
+			-- Append class footer to output file
+		require
+			file_writable: output_file /= Void and then output_file.is_writable
 		do
 			append_text ("%N%Nend -- CDD_TESTER_INTERPRETER%N%N")
 		end
 
-
-invariant
-	invariant_clause: True -- Your invariant here
 
 end

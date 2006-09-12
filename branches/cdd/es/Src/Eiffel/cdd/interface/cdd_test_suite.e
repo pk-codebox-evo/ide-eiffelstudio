@@ -9,82 +9,49 @@ class
 
 inherit
 
-	CDD_CONSTANTS
-		export
-			{NONE} all
-		end
-
 	SHARED_EIFFEL_PROJECT
 		export
 			{NONE} all
 		end
 
 create
-	make
+	make_with_cluster
 
 feature {NONE} -- Initialization
 
-	make is
-			-- Create list for test cases
+	make_with_cluster (a_cluster: like tests_cluster) is
+			-- Set 'tests_cluster' to 'a_cluster' and create test case list.
+		require
+			a_cluster /= Void
 		do
+			tests_cluster := a_cluster
 			create test_cases.make
+		ensure
+			tests_cluster_set: tests_cluster = a_cluster
 		end
 
 feature -- Access
-
-	is_initialized: BOOLEAN is
-			-- Is 'current' initilalized?
-		do
-			Result := tests_cluster /= Void
-		end
-
-
-	can_be_tested: BOOLEAN is
-			-- Can test cases in 'Current' be executed?
-		do
-			Result := tester_target /= Void and tester_cluster /= Void
-		ensure
-			correct_target: Result implies tester_target /= Void
-			correct_cluster: Result implies tester_cluster /= Void
-		end
-
-	is_being_tested: BOOLEAN
-			-- Are test cases in 'Current' beeing executed?
 
 	test_cases: DS_LINKED_LIST [CDD_TEST_CASE]
 			-- Sorted list of all test cases in 'Current'
 			-- Note: Do not modify directly!
 
 	target_under_test: CONF_TARGET is
-			--
+			-- Currently opened target
 		do
 			Result := eiffel_universe.target
 		end
 
 	tests_cluster: CLUSTER_I
-			-- cluster where all generated classes for testing are stored
+			-- Cluster where all generated classes for testing are stored
 
 	tester_target: CONF_TARGET
-			-- target for executing test cases
+			-- Target for executing test cases
 
 	tester_cluster: CONF_CLUSTER
-			-- cluster where tester class is stored
+			-- Cluster where tester class is stored
 
 feature -- Element change
-
-	set_tests_cluster (a_cluster: like tests_cluster) is
-			-- Set 'tests_cluster' to 'a_cluster'
-		require
-			a_cluster_not_void: a_cluster /= Void
-		do
-			tests_cluster := a_cluster
-			create config_file.make_from_string (eiffel_ace.file_name)
-			create project_directory.make_from_string (eiffel_project.name)
-		ensure
-			tests_cluster_set: tests_cluster = a_cluster
-			initialized: is_initialized
-		end
-
 
 	set_tester_target (a_target: like tester_target) is
 			-- Set 'tester_target' to 'a_target'
@@ -115,7 +82,6 @@ feature -- Status report
 	has_test_case_for_class (a_class: CLASS_I): BOOLEAN is
 			-- Does 'Current' have a test case for test class 'a_class'
 		require
-			initialized: is_initialized
 			a_class_not_void: a_class /= Void
 			tests_cluster_not_void: tests_cluster /= Void
 		local
@@ -177,14 +143,9 @@ feature -- Element change
 			test_case_removed: not test_cases.has (a_tc)
 		end
 
-feature -- Paths
-
-	config_file: STRING
-
-	project_directory: STRING
-
 invariant
 
-	is_implies_can_be_tested: is_being_tested implies can_be_tested
+	test_cases_not_void: test_cases /= Void
+	tests_cluster_not_void: tests_cluster /= Void
 
 end -- class CDD_TEST_SUITE

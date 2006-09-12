@@ -32,10 +32,9 @@ feature {NONE} -- Initialization
 			development_window := a_window
 			initialize
 
-			manager.extend (Current)
-			tester.extend (Current)
+			manager.add_tool (Current)
 
-			if manager.test_suite.is_initialized then
+			if manager.is_testing_enabled then
 				enable_testing
 				refresh
 			else
@@ -65,6 +64,8 @@ feature {NONE} -- Initialization
 
 	build_tool_bar is
 			-- Create widgets for displaying a tool bar
+		require
+			widget_not_void: widget /= Void
 		local
 			l_vbox: EV_VERTICAL_BOX
 		do
@@ -115,7 +116,8 @@ feature {NONE} -- Initialization
 		end
 
 	build_tree (a_list: EV_BOX) is
-			--
+			-- Initialize tree widget for hierarchically listing test cases
+			-- and extend 'a_list' with tree widget.
 		require
 			valid_list: a_list /= Void and then a_list.extendible
 			list_not_destroyed: not a_list.is_destroyed
@@ -133,7 +135,8 @@ feature {NONE} -- Initialization
 		end
 
 	build_output (a_list: EV_BOX) is
-			--
+			-- Initialize output box for displaying messages from
+			-- the tester.
 		require
 			valid_list: a_list /= Void and then a_list.extendible
 			list_not_destroyed: not a_list.is_destroyed
@@ -149,13 +152,15 @@ feature {NONE} -- Initialization
 
 	build_status_bar is
 			-- Create 'status_bar' and extend
+		require
+			widget_not_void: widget /= Void
 		local
 			l_frame: EV_FRAME
 		do
 			create status_bar
 
 			create l_frame
-			create status_label.make_with_text ("Testing...")
+			create status_label.make_with_text ("")
 			status_label.align_text_left
 			l_frame.extend (status_label)
 			status_bar.extend (l_frame)
@@ -200,7 +205,7 @@ feature -- Access
 feature -- Status setting
 
 	refresh is
-			--
+			-- Refresh widget elements with current test suite status.
 		local
 			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_CASE]
 		do
@@ -226,7 +231,9 @@ feature -- Status setting
 		end
 
 	add_test_case (a_tc: CDD_TEST_CASE) is
-			-- Display 'a_tc' in tree.
+			-- Display 'a_tc' at proper position in tree.
+		require
+			a_tc_not_void: a_tc /= Void
 		do
 			tree.add_test_case (a_tc)
 			if not run_button.is_sensitive then
@@ -236,6 +243,8 @@ feature -- Status setting
 
 	remove_test_case (a_tc: CDD_TEST_CASE) is
 			-- Remove 'a_tc' from tree.
+		require
+			a_tc_not_void: a_tc /= Void
 		do
 			tree.remove_test_case (a_tc)
 			if tree.is_empty then
@@ -243,70 +252,88 @@ feature -- Status setting
 			end
 		end
 
-
 	enable_testing is
-			-- Enable widgets for handling test cases
+			-- Enable widgets for handling test cases.
 		do
+			tester.add_tool (Current)
 			enable_testing_button.disable_sensitive
+			tree.enable_sensitive
+			output.enable_sensitive
+			status_label.set_text ("Testing enabled")
 		end
 
 	disable_testing is
-			-- Disable widgets for handling test cases
+			-- Disable widgets for handling test cases.
 		do
 			enable_testing_button.enable_sensitive
+			tree.disable_sensitive
+			output.disable_sensitive
+			status_label.set_text ("Testing is disabled")
 		end
 
 	start_testing is
-			-- Wipe out output text
+			-- Adjust widget elements for testing mode.
+		require
+			coreect_tester_status: tester.is_running and not tester.is_paused
 		do
 			output.remove_text
 			stop_button.enable_sensitive
 			pause_button.enable_sensitive
 			run_button.disable_sensitive
+			status_label.set_text ("Testing")
 		end
 
 	stop_testing is
-			-- Show test results
+			-- Adjust widgets elements.
 		do
 			stop_button.disable_sensitive
 			run_button.enable_sensitive
 			pause_button.disable_sensitive
+			status_label.set_text ("Aborted")
 		end
 
 	pause_testing is
-			-- Pause testing
+			-- Adjust widget elements.
 		do
 			run_button.enable_sensitive
 			pause_button.disable_sensitive
+			status_label.set_text ("Paused")
 		end
 
 	resume_testing is
-			--
+			-- Adjust widget elements.
 		do
 			run_button.disable_sensitive
 			pause_button.enable_sensitive
+			status_label.set_text ("Tesing")
 		end
 
 
 	finish_testing is
-			-- Notify user that testing is finished
+			-- Adjust widget elements and show test results.
 		do
 			stop_button.disable_sensitive
 			pause_button.disable_sensitive
 			run_button.enable_sensitive
+			status_label.set_text ("Finished testing execution")
 		end
 
 
 	append_output (an_output: STRING) is
-			-- Show output
+			-- Append 'an_output' to output box and scroll to bottom.
+		require
+			an_output_not_void: an_output /= Void
 		do
 			output.append_text (an_output)
+			output.scroll_to_line (output.line_count)
 		end
 
 	recycle is
-			-- Prune from manager and test suite
+			-- Prune 'Current' from manager and tester and remove widgets.
 		do
-			manager.prune (Current)
+			manager.remove_tool (Current)
+			tester.remove_tool (Current)
+			tree.wipe_out
 		end
 
 
@@ -343,7 +370,7 @@ feature {NONE} -- Button events
 	on_enable_testing_button is
 			-- Actions performed when enable testing button is pressed.
 		require
-			testing_not_enabled: not manager.test_suite.is_initialized
+			testing_not_enabled: not manager.is_testing_enabled
 		local
 			l_wd: EV_WARNING_DIALOG
 		do
@@ -356,7 +383,7 @@ feature {NONE} -- Button events
 		end
 
 	on_run_button is
-			-- Actions performed when run button is pressed.
+			-- Start testing execution if not started yet, otherwise resume execution.
 		require
 			has_test_cases: not tree.is_empty
 		do
@@ -368,7 +395,7 @@ feature {NONE} -- Button events
 		end
 
 	on_stop_button is
-			--
+			-- Stop testing execution.
 		require
 			running: tester.is_running
 		do
@@ -376,28 +403,33 @@ feature {NONE} -- Button events
 		end
 
 	on_pause_button is
-			--
+			-- Pause testing execution.
 		require
 			running: tester.is_running
 		do
 			tester.pause
 		end
 
-
 	on_delete_button is
-			-- Actions permformed when delete button is pressed
+			-- Delete single test case from test suite.
 		require
 			test_case_selected: selected_test_case_item /= Void
 		local
-			l_cd: EV_CONFIRMATION_DIALOG
+			l_msg: STRING
+			l_cd: CDD_CONFIRMATION_DIALOG
+			a_tc: CDD_TEST_CASE
 		do
-			create l_cd.make_with_text_and_actions ("Are you sure?", << agent manager_remove_test_case (selected_test_case_item.test_case) >>)
+			a_tc := selected_test_case_item.test_case
+			l_msg := "The selected test case will be permanently removed from the system and from the disc.%N%N%
+					%Are you sure this is what you want?"
+			create l_cd.make_with_text (l_msg)
 			l_cd.show_modal_to_window (development_window.window)
+			if l_cd.confirmed and manager.test_suite.test_cases.has (a_tc) then
+				manager.remove_test_case (a_tc)
+			end
 		end
 
-
-
-feature {NONE} -- Manager
+feature {NONE} -- Singleton instances
 
 	manager_singleton: CDD_TEST_SUITE_MANAGER is
 			-- NOTE: Temporary solution for creating a shared manager.
@@ -409,23 +441,11 @@ feature {NONE} -- Manager
 	tester_singleton: CDD_TEST_SUITE_TESTER is
 			-- NOTE: Temporary solution for creating a shared tester.
 			-- In future tester will be project-related.
+		require
+			testing_enabled: manager.is_testing_enabled
 		once
 			create Result.make_with_test_suite (manager.test_suite)
 		end
-
-
-feature {NONE} -- Implementation
-
-	manager_remove_test_case (a_tc: CDD_TEST_CASE) is
-			--
-		require
-			a_tc_not_void: a_tc /= Void
-		do
-			if manager.test_suite.test_cases.has (a_tc) then
-				manager.remove_test_case (a_tc)
-			end
-		end
-
 
 feature {NONE} -- Implementation
 
@@ -442,15 +462,16 @@ feature {NONE} -- Implementation
 			-- Button for deleting a single test case
 
 	output: EV_TEXT
-			-- Output from external processes.
+			-- Output from external processes
 
 	status_bar: EV_STATUS_BAR
+			-- Status bar showing the current tester status
 
 	status_label: EV_LABEL
+			-- Label describing current tester status
 
 	progress_bar: EV_HORIZONTAL_PROGRESS_BAR
-
-
+			-- Progress bar showing current tester status
 
 feature {CDD_TREE, CDD_TREE_ITEM} -- Tree Implementation
 
@@ -459,17 +480,19 @@ feature {CDD_TREE, CDD_TREE_ITEM} -- Tree Implementation
 
 
 invariant
-	tree_not_void: tree /= Void
 	development_window_not_void: development_window /= Void
-	widget_not_void: widget /= Void
 	manager_not_void: manager /= Void
+	widget_not_void: widget /= Void
+	tree_valid: tree /= Void
 	tool_bar_valid: tool_bar /= Void
-
+	output_valid: output /= Void
 	enable_testing_button_valid: enable_testing_button /= Void
-
 	run_button_valid: run_button /= Void
-
+	stop_button_valid: stop_button /= Void
+	pause_button_valid: pause_button /= Void
 	delete_button_valid: delete_button /= Void
-	--correct_delete_button_status: delete_button.is_sensitive = (selected_test_case_item /= Void)
+	status_bar_valid: status_bar /= Void
+	status_label_valid: status_label /= Void
+	progress_bar_valid: progress_bar /= Void
 
 end

@@ -47,7 +47,7 @@ feature {NONE} -- Initialization
 feature -- Access
 
 	target_cluster: CLUSTER_I is
-			-- cluster which class being tested belongs to
+			-- Cluster which class being tested belongs to
 		do
 			Result := target_class.cluster
 		ensure
@@ -55,61 +55,66 @@ feature -- Access
 		end
 
 	target_class: EIFFEL_CLASS_I
-			-- class under tested
+			-- Class under tested
 
 	feature_name: STRING
-			-- name of feature under tested
+			-- Name of feature under tested
 
 	test_class: CLASS_I
-			-- class used for testing
+			-- Class used for testing
 
 	exception_tag: STRING
-			-- name of postcondition which is violated
+			-- Name of postcondition which is violated
 
 	id: STRING
-			-- identifier for state which is reproduced at test case execution
+			-- Identifier for state which is reproduced at test case execution
 
-	is_testing: BOOLEAN
-			-- is test case beeing executed?
+	was_tested: BOOLEAN
+			-- Has 'Current' been tested yet?
+
+	is_tested: BOOLEAN
+			-- Is 'Current' beeing tested now?
 
 	passes: BOOLEAN
-			-- does test case pass?
+			-- Does test case pass?
 
 feature -- Status seeting
 
 	start_testing is
 			-- Set 'is_testing' to true an notify agents
 		require
-			not_testing: not is_testing
+			not_testing: not is_tested
 		do
 			from
-				is_testing := True
+				is_tested := True
 				on_start_testing.start
 			until
 				on_start_testing.after
 			loop
-				on_start_testing.item.call ([Current])
+				on_start_testing.item.call ([])
 				on_start_testing.forth
 			end
 		ensure
-			started_testing: is_testing
+			started_testing: is_tested
 		end
 
 	set_passes (a_result: BOOLEAN) is
 			-- Set 'passes' to 'a_result' and notify agents
 		do
 			from
-				is_testing := False
+				was_tested := True
+				is_tested := False
 				passes := a_result
 				on_finish_testing.start
 			until
 				on_finish_testing.after
 			loop
-				on_finish_testing.item.call ([Current, a_result])
+				on_finish_testing.item.call ([])
 				on_finish_testing.forth
 			end
 		ensure
-			testing_stopped: not is_testing
+			testing_stopped: not is_tested
+			was_tested: was_tested
 			passed_set: passes = a_result
 		end
 
@@ -117,12 +122,11 @@ feature -- Status seeting
 
 feature -- Event handling
 
-	on_start_testing: ARRAYED_LIST [PROCEDURE [ANY, TUPLE [CDD_TEST_CASE]]]
+	on_start_testing: ARRAYED_LIST [PROCEDURE [ANY, TUPLE]]
 			-- agents called when test case is beeing executed
 
-	on_finish_testing: ARRAYED_LIST [PROCEDURE [ANY, TUPLE [CDD_TEST_CASE, BOOLEAN]]]
+	on_finish_testing: ARRAYED_LIST [PROCEDURE [ANY, TUPLE]]
 			-- agents called when execution of test case is over
-
 
 feature -- Compare
 

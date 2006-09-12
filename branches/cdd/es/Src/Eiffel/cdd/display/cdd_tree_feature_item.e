@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Objects that represent a feature name within a tree structure"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -88,7 +88,7 @@ feature -- Element change
 feature {NONE} -- Implementation
 
 	update_text is
-			--
+			-- Update 'text' with new item count.
 		do
 			set_text (feature_name + " (" + count.out + ")")
 		end

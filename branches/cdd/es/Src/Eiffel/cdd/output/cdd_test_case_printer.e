@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Objects that print class text for a test case"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -10,7 +10,10 @@ class
 feature -- Access
 
 	print_test_case (reflection: CDD_REFLECTED_OBJECT; test_class_name: STRING; a_file: FILE) is
+			-- Print class text for a new cdd test case.
 		require
+			valid_reflection: reflection /= Void and then reflection.reflection_succeded
+			valid_test_class_name: test_class_name /= Void and then not test_class_name.is_empty
 			a_file_writeable: a_file /= Void and then a_file.is_writable
 		local
 			rlist: DS_LIST [CDD_COMPOSITE_OBJECT]
@@ -90,21 +93,27 @@ feature -- Access
 
 feature {CDD_OBJECT} -- Testcase generation
 
-	append_object_declaration (an_object:CDD_COMPOSITE_OBJECT) is
-			--
+	append_object_declaration (an_object: CDD_COMPOSITE_OBJECT) is
+			-- Append declaration text for 'an_object'
+		require
+			an_object_not_void: an_object /= Void
 		do
 			append_instruction (an_object.identifier + ": " + an_object.type)
 		end
 
 	append_regular_creation (an_object: CDD_REGULAR_OBJECT) is
-			--
+			-- Append creation text for 'an_object'
+		require
+			an_object_not_void: an_object /= Void
 		do
 			append_instruction (an_object.identifier + " ?= build_object (%"" +an_object.type + "%")")
 		end
 
 
 	append_regular_assignment (an_object: CDD_REGULAR_OBJECT) is
-			--
+			-- Append assignment text for 'an_object'.
+		require
+			an_object_not_void: an_object /= Void
 		local
 			instr: STRING
 			a_key: STRING
@@ -127,27 +136,35 @@ feature {CDD_OBJECT} -- Testcase generation
 		end
 
 	append_string_creation (a_string: CDD_STRING_OBJECT) is
-			--
+			-- Append creation text for 'a_string'
+		require
+			a_string_not_void: a_string /= Void
 		do
 			append_instruction (a_string.identifier + " := " + a_string.representation)
 		end
 
 	append_string_assignment (a_string: CDD_STRING_OBJECT) is
-			--
+			-- Append assignment text for 'a_string'
+		require
+			a_string_not_void: a_string /= Void
 		do
-			-- do nothing since strings get fully assigned at creation
+			-- NOTE: do nothing since strings get fully assigned at creation
 		end
 
 
 	append_special_creation (a_special: CDD_SPECIAL_OBJECT) is
-			--
+			-- Append creation text for 'a_special'
+		require
+			a_special_not_void: a_special /= Void
 		do
 			append_instruction ("create " + a_special.identifier + ".make(" + a_special.attributes.count.out + ")")
 		end
 
 
 	append_special_assignment (a_special: CDD_SPECIAL_OBJECT) is
-			--
+			-- Append assignment text for 'a_special'.
+		require
+			a_special_not_void: a_special /= Void
 		local
 			i: INTEGER
 			instr: STRING
@@ -166,13 +183,17 @@ feature {CDD_OBJECT} -- Testcase generation
 		end
 
 	append_tuple_creation (a_tuple: CDD_TUPLE_OBJECT) is
-			-- text for creating tuple objects
+			-- Append creation text for 'a_tuple'.
+		require
+			a_tuple_not_void: a_tuple /= Void
 		do
 			append_instruction ("create " + a_tuple.identifier)
 		end
 
 	append_tuple_assignment (a_tuple: CDD_TUPLE_OBJECT) is
-			--
+			-- Append assignment text for 'a_tuple'.
+		require
+			a_tuple_not_void: a_tuple /= Void
 		local
 			i: INTEGER
 			instr: STRING
@@ -190,36 +211,45 @@ feature {CDD_OBJECT} -- Testcase generation
 			end
 		end
 
-
-
 feature {NONE} -- Implementation
 
-	append_text (s: STRING) is
+	append_text (a_text: STRING) is
+			-- Append 'a_text' to 'output_file'.
 		require
 			file_writable: output_file /= Void and then output_file.is_writable
+			a_text_not_void: a_text /= Void
 		do
-			output_file.put_string (s)
+			output_file.put_string (a_text)
 		end
 
-	append_instruction (l: STRING) is
+	append_instruction (a_text: STRING) is
+			-- Append 'a_text' to 'output_file' with correct indentation.
 		require
 			file_writable: output_file /= Void and then output_file.is_writable
+			a_text_not_void: a_text /= Void
 		do
-			append_text (indent + l + "%N")
+			append_text (indent + a_text + "%N")
 		end
 
-	append_comment (c: STRING) is
+	append_comment (a_text: STRING) is
+			-- Append 'a_text' to 'output_file' as comment with correct indentation.
 		require
 			file_writable: output_file /= Void and then output_file.is_writable
+			a_text_not_void: a_text /= Void
 		do
-			append_text (indent + "%T-- " + c + "%N")
+			append_text (indent + "%T-- " + a_text + "%N")
 		end
 
 	output_file: FILE
+			-- File class text is written
 
 	indent: STRING is "%T%T%T"
+			-- Indentation for instruction text
 
 	append_indexing (a_reflection: CDD_REFLECTED_OBJECT) is
+			-- Append indexing clause for 'a_reflection'
+		require
+			a_reflection_not_void: a_reflection /= Void
 		local
 			l_class: EIFFEL_CLASS_C
 		do
@@ -238,6 +268,9 @@ feature {NONE} -- Implementation
 
 
 	append_class_header (test_class_name: STRING) is
+			-- Append class header text for 'test_class_name'
+		require
+			test_class_name_not_void: test_class_name /= Void
 		do
 			append_text ("class%N%T" + test_class_name + "%N%N")
 			append_text ("inherit%N%TCDD_SHARED_TESTING%N%N")
@@ -245,12 +278,11 @@ feature {NONE} -- Implementation
 		end
 
 	append_class_footer (test_class_name: STRING) is
+			-- Append class footer for test_class_name.
+		require
+			test_class_name_not_void: test_class_name /= Void
 		do
 			append_text ("%N%Nend -- " + test_class_name + "%N%N")
 		end
-
-
-invariant
-	invariant_clause: True -- Your invariant here
 
 end

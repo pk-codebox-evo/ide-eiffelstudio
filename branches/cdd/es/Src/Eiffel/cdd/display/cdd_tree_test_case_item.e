@@ -37,9 +37,9 @@ feature {NONE} -- Initialization
 			l_tooltip: STRING
 		do
 			Precursor (a_test_case)
-			test_case.on_start_testing.extend (agent on_start_testing)
-			test_case.on_finish_testing.extend (agent assign_text)
-			assign_text (test_case, False)
+			test_case.on_start_testing.extend (agent update_status)
+			test_case.on_finish_testing.extend (agent update_status)
+			update_status
 			create l_tooltip.make_empty
 			l_tooltip.append ("Class: " + a_test_case.target_class.name + "%N")
 			l_tooltip.append ("Feature: " + a_test_case.feature_name + "%N")
@@ -52,19 +52,22 @@ feature {NONE} -- Initialization
 			tooltip_set: tooltip /= Void and not tooltip.is_empty
 		end
 
-	assign_text (a_tc: CDD_TEST_CASE; b: BOOLEAN) is
+	update_status is
 			--
 		local
 			l_text: STRING
 		do
 			create l_text.make_from_string (test_case.exception_tag)
-			l_text.append (": ")
-			if test_case.passes then
-				set_pixmap (pixmaps.icon_pixmaps.tool_feature_icon)
-				l_text.append ("passes")
+			if test_case.is_tested or not test_case.was_tested then
+				set_pixmap (pixmaps.icon_pixmaps.tool_warning_icon)
 			else
-				set_pixmap (pixmaps.icon_pixmaps.tool_error_icon)
-				l_text.append ("fails")
+				if test_case.passes then
+					set_pixmap (pixmaps.icon_pixmaps.tool_feature_icon)
+					l_text.append (": passes")
+				else
+					set_pixmap (pixmaps.icon_pixmaps.tool_error_icon)
+					l_text.append (": fails")
+				end
 			end
 			set_text (l_text)
 		end
@@ -81,14 +84,6 @@ feature -- Element change
 		do
 			l_tool := parent_tree.tool
 			select_actions.extend (agent l_tool.on_select_test_case (Current))
-		end
-
-feature -- Status change
-
-	on_start_testing (a_tc: CDD_TEST_CASE) is
-			--
-		do
-			--set_text ("being tested")
 		end
 
 invariant
