@@ -110,7 +110,7 @@ feature {CDD_TEST_SUITE_MANAGER} -- Element change
 			l_tc: CDD_TEST_CASE
 		do
 			l_file_name := new_file_name (a_reflection.root_object.dynamic_type, a_cluster)
-			l_class_name := l_file_name.as_lower
+			l_class_name := l_file_name.as_upper
 			l_class_name.remove_tail (2)
 			create_test_class (l_file_name, l_class_name, a_reflection, a_cluster)
 			manager.add_class_to_cluster (l_file_name, a_cluster, "")

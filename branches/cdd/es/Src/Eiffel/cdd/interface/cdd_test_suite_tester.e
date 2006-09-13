@@ -27,28 +27,36 @@ inherit
 		end
 
 create
-	make_with_test_suite
+	make_with_manager
 
 
 feature {NONE} -- Initialization
 
-	make_with_test_suite (a_test_suite: CDD_TEST_SUITE) is
+	make_with_manager (a_manager: like manager) is
 			-- Set 'test_suite' to 'a_test_suite' and initialize attributes.
 		require
-			a_test_suite_not_void: a_test_suite /= Void
+			a_manager_not_void: a_manager /= Void
 		do
-			test_suite := a_test_suite
+			manager := a_manager
 			create test_suite_tools.make
 			idle_action_agent := agent idle_action
 			create output.make
 		ensure
-			test_suite_set: test_suite = a_test_suite
+			manager_set: manager = a_manager
 		end
 
 feature -- Access
 
-	test_suite: CDD_TEST_SUITE
-			-- test suite containing test cases
+	manager: CDD_TEST_SUITE_MANAGER
+			-- Manager for retrieving test suite
+
+	test_suite: CDD_TEST_SUITE is
+			-- Test suite containing test cases
+		require
+
+		do
+			Result := manager.test_suite
+		end
 
 	is_running: BOOLEAN
 			-- Is 'Current' running?
@@ -387,7 +395,7 @@ feature -- Implementation
 
 
 invariant
-	test_suite_not_void: test_suite /= Void
+	manager_not_void: manager /= Void
 	test_suite_tools_not_void: test_suite_tools /= Void
 	idle_action_agent_not_void: idle_action_agent /= Void
 	is_paused_implies_is_running: is_paused implies is_running

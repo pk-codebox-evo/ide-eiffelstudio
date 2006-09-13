@@ -213,43 +213,24 @@ feature -- Status setting
 			run_button.disable_sensitive
 			tree.wipe_out
 
-			from
-				l_cursor := manager.test_suite.test_cases.new_cursor
-				l_cursor.start
-			until
-				l_cursor.after
-			loop
-				tree.add_test_case (l_cursor.item)
-				l_cursor.forth
-			end
+			if manager.is_testing_enabled then
 
-			if tree.count > 0 then
-				run_button.enable_sensitive
+				from
+					l_cursor := manager.test_suite.test_cases.new_cursor
+					l_cursor.start
+				until
+					l_cursor.after
+				loop
+					tree.add_test_case (l_cursor.item)
+					l_cursor.forth
+				end
+
+				if tree.count > 0 then
+					run_button.enable_sensitive
+				end
 			end
 
 			development_window.unlock_update
-		end
-
-	add_test_case (a_tc: CDD_TEST_CASE) is
-			-- Display 'a_tc' at proper position in tree.
-		require
-			a_tc_not_void: a_tc /= Void
-		do
-			tree.add_test_case (a_tc)
-			if not run_button.is_sensitive then
-				run_button.enable_sensitive
-			end
-		end
-
-	remove_test_case (a_tc: CDD_TEST_CASE) is
-			-- Remove 'a_tc' from tree.
-		require
-			a_tc_not_void: a_tc /= Void
-		do
-			tree.remove_test_case (a_tc)
-			if tree.is_empty then
-				run_button.disable_sensitive
-			end
 		end
 
 	enable_testing is
@@ -305,7 +286,7 @@ feature -- Status setting
 		do
 			run_button.disable_sensitive
 			pause_button.enable_sensitive
-			status_label.set_text ("Tesing")
+			status_label.set_text ("Testing")
 		end
 
 
@@ -416,18 +397,16 @@ feature {NONE} -- Button events
 			test_case_selected: selected_test_case_item /= Void
 		local
 			l_msg: STRING
-			l_cd: CDD_CONFIRMATION_DIALOG
+			l_cd: EV_CONFIRMATION_DIALOG
 			a_tc: CDD_TEST_CASE
 		do
 			a_tc := selected_test_case_item.test_case
 			l_msg := "The selected test case will be permanently removed from the system and from the disc.%N%N%
 					%Are you sure this is what you want?"
-			create l_cd.make_with_text (l_msg)
+			create l_cd.make_with_text_and_actions (l_msg, << agent manager.remove_test_case (a_tc) >>)
 			l_cd.show_modal_to_window (development_window.window)
-			if l_cd.confirmed and manager.test_suite.test_cases.has (a_tc) then
-				manager.remove_test_case (a_tc)
-			end
 		end
+
 
 feature {NONE} -- Singleton instances
 
@@ -441,10 +420,8 @@ feature {NONE} -- Singleton instances
 	tester_singleton: CDD_TEST_SUITE_TESTER is
 			-- NOTE: Temporary solution for creating a shared tester.
 			-- In future tester will be project-related.
-		require
-			testing_enabled: manager.is_testing_enabled
 		once
-			create Result.make_with_test_suite (manager.test_suite)
+			create Result.make_with_manager (manager)
 		end
 
 feature {NONE} -- Implementation
@@ -477,6 +454,19 @@ feature {CDD_TREE, CDD_TREE_ITEM} -- Tree Implementation
 
 	tree: CDD_TREE
 			-- Tree for hierarchically displaying test cases
+
+feature {NONE} -- Tree manipulation
+
+	add_test_case (a_tc: CDD_TEST_CASE) is
+			-- Display 'a_tc' at proper position in tree.
+		require
+			a_tc_not_void: a_tc /= Void
+		do
+			tree.add_test_case (a_tc)
+			if not run_button.is_sensitive then
+				run_button.enable_sensitive
+			end
+		end
 
 
 invariant

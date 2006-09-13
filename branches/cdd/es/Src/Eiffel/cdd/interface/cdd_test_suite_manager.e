@@ -10,6 +10,8 @@ class
 inherit
 
 	EB_CLUSTER_MANAGER_OBSERVER
+		rename
+			manager as eb_cluster_manager
 		export
 			{NONE} all
 		redefine
@@ -47,7 +49,7 @@ feature {NONE} -- Initialization
 			-- Create list for tools and subscribe as observer for project changes
 		do
 			create test_suite_tools.make
-			manager.add_observer (Current)
+			eb_cluster_manager.add_observer (Current)
 		end
 
 
@@ -83,40 +85,36 @@ feature -- Access
 			Result := test_suite_tools.has (a_tool)
 		end
 
+	valid_status (an_app_status: APPLICATION_STATUS): BOOLEAN is
+			-- Id 'an_app_status' valid for creating a ccd test case?
+		require
+			an_app_status /= Void
+		do
+			Result := an_app_status.is_stopped and
+				an_app_status.exception_occurred and
+				(an_app_status.exception_code = {EXCEP_CONST}.void_call_target or
+				an_app_status.exception_code = {EXCEP_CONST}.postcondition or
+				an_app_status.exception_code = {EXCEP_CONST}.class_invariant)
+		end
+
+
 feature -- Status setting
 
 	report_postcondition_violation (an_app_status: APPLICATION_STATUS; a_window: EB_DEVELOPMENT_WINDOW) is
 			-- Try to create a new test case from 'an_app_status' and add it to 'a_test_suite'.
 			-- 'a_window' is the window in which the application was launched.
 		require
-			app_status_valid: an_app_status /= Void and an_app_status.is_stopped
-			exception_occurred: an_app_status.exception_occurred
-			valid_exception: an_app_status.exception_code = 4
+			app_status_valid: an_app_status /= Void and then valid_status (an_app_status)
 			a_window_not_void: a_window /= Void
 		local
 			l_msg: STRING
-			l_cd: CDD_CONFIRMATION_DIALOG
-			l_reflection: CDD_REFLECTED_OBJECT
-			l_warn: EV_WARNING_DIALOG
+			l_cd: EV_CONFIRMATION_DIALOG
 		do
 			if an_app_status.dynamic_class.is_eiffel_class_c then
 				l_msg := "EiffelStudio has detected a bug in one of your classes. Would you like to %
 						%create a test case with the current state of the application for further testing?"
-				create l_cd.make_with_text (l_msg)
+				create l_cd.make_with_text_and_actions (l_msg, << agent generate_test_case (an_app_status, a_window) >>)
 				l_cd.show_modal_to_window (a_window.window)
-				if l_cd.confirmed then
-					l_reflection := make_reflection (an_app_status)
-					if not l_reflection.reflection_succeded then
-						create l_warn.make_with_text ("Was not able to reflect current state of the application.")
-						l_warn.show_modal_to_window (a_window.window)
-					elseif False then
-						-- TODO: Check with md5 hash if test case already exists...
-					else
-						test_case_factory.create_with_reflection (l_reflection, test_suite.tests_cluster)
-						test_suite.add_test_case (test_case_factory.last_created_test_case)
-						notify_all_tools (agent notify_add_test_case (?, test_case_factory.last_created_test_case))
-					end
-				end
 			end
 		end
 
@@ -173,50 +171,48 @@ feature -- Test suite manipulation
 			-- Remove 'a_tc' from 'test_suite' and delete test class from disc.
 		require
 			a_tc_not_void: a_tc /= Void
-			test_suite_initialized: is_testing_enabled
+			testing_enabled: is_testing_enabled
 			a_tc_valid: test_suite.test_cases.has (a_tc)
 		do
-			manager.remove_observer (Current)
+			-- Remove 'Current' from cluster manager so we do not get notified of the removed class
+			eb_cluster_manager.remove_observer (Current)
+
+			test_suite.remove_test_case (a_tc)
 			test_case_factory.remove (a_tc)
-			manager.remove_class (a_tc.test_class)
+			eb_cluster_manager.remove_class (a_tc.test_class)
+
 			window_manager.synchronize_all
-			notify_all_tools (agent notify_remove_test_case (?, a_tc))
-			manager.add_observer (Current)
+			notify_all_tools (agent notify_refresh)
+
+			eb_cluster_manager.add_observer (Current)
 		end
 
 feature {EB_CLUSTERS} -- Project Events
 
 	on_project_loaded is
-			-- Initialize all project specific attributes and
-			-- fill 'test_suite' with existing test cases
-		local
-			l_cluster: CLUSTER_I
-			l_ttarget: CONF_TARGET
-			l_tcluster: CONF_CLUSTER
+			--
 		do
-			l_cluster := eiffel_universe.cluster_of_name (tests_cluster_name)
-			if l_cluster /= Void then
-				create test_suite.make_with_cluster (l_cluster)
-				notify_all_tools (agent notify_enable_testing)
-				eiffel_system.system.force_rebuild
-				refresh
-			end
-			if eiffel_universe.conf_system.targets.has (tester_target_name) then
-				l_ttarget := eiffel_universe.conf_system.targets.item (tester_target_name)
-				test_suite.set_tester_target (l_ttarget)
-				if l_ttarget.clusters.has (tester_cluster_name) then
-					l_tcluster := l_ttarget.clusters.item (tester_cluster_name)
-					test_suite.set_tester_cluster (l_tcluster)
-				end
-			end
+			eiffel_system.system.force_rebuild
+			refresh
 		end
+
 
 	refresh is
 			-- Refresh test suite.
 		local
+			l_tests_cluster: CLUSTER_I
+			l_ttarget: CONF_TARGET
+			l_tcluster: CONF_CLUSTER
 			l_classes: HASH_TABLE [EIFFEL_CLASS_I, STRING]
+			l_was_enabled: BOOLEAN
 		do
-			if is_testing_enabled then
+			l_was_enabled := is_testing_enabled
+			l_tests_cluster := eiffel_universe.cluster_of_name (tests_cluster_name)
+			if l_tests_cluster /= Void then
+				if not is_testing_enabled then
+					notify_all_tools (agent notify_enable_testing)
+				end
+				create test_suite.make_with_cluster (l_tests_cluster)
 				l_classes := test_suite.tests_cluster.classes
 				from
 					l_classes.start
@@ -227,12 +223,22 @@ feature {EB_CLUSTERS} -- Project Events
 						test_case_factory.create_from_class (l_classes.item_for_iteration, eiffel_universe)
 						if test_case_factory.last_created_test_case /= Void then
 							test_suite.add_test_case (test_case_factory.last_created_test_case)
-							notify_all_tools (agent notify_add_test_case (?, test_case_factory.last_created_test_case))
 						end
 					end
 					l_classes.forth
 				end
+				if eiffel_universe.conf_system.targets.has (tester_target_name) then
+					l_ttarget := eiffel_universe.conf_system.targets.item (tester_target_name)
+					test_suite.set_tester_target (l_ttarget)
+					if l_ttarget.clusters.has (tester_cluster_name) then
+						l_tcluster := l_ttarget.clusters.item (tester_cluster_name)
+						test_suite.set_tester_cluster (l_tcluster)
+					end
+				end
+			elseif is_testing_enabled then
+				notify_all_tools (agent notify_disable_testing)
 			end
+			notify_all_tools (agent notify_refresh)
 		end
 
 
@@ -249,13 +255,13 @@ feature {EB_CLUSTERS} -- Project Events
 					l_cursor.after
 				loop
 					if l_cursor.item.test_class = a_class then
-						notify_all_tools (agent notify_remove_test_case (?, l_cursor.item))
 						test_suite.remove_test_case (l_cursor.item)
 						l_cursor.go_after
 					else
 						l_cursor.forth
 					end
 				end
+				notify_all_tools (agent notify_refresh)
 			end
 		end
 
@@ -290,26 +296,6 @@ feature {NONE} -- Implementation tools
 			a_tool.refresh
 		end
 
-	notify_add_test_case (a_tool: CDD_TEST_SUITE_TOOL; a_tc: CDD_TEST_CASE) is
-			-- Tell 'a_tool' that 'a_tc' was added to 'test_suite'.
-		require
-			testing_enabled: is_testing_enabled
-			a_tool_not_void: a_tool /= Void
-			a_tc_not_void: a_tc /= Void
-		do
-			a_tool.add_test_case (a_tc)
-		end
-
-	notify_remove_test_case (a_tool: CDD_TEST_SUITE_TOOL; a_tc: CDD_TEST_CASE) is
-			-- Tell 'a_tool' that 'a_tc' has been removed from 'test_suite'.
-		require
-			testing_enabled: is_testing_enabled
-			a_tool_not_void: a_tool /= Void
-			a_tc_not_void: a_tc /= Void
-		do
-			a_tool.remove_test_case (a_tc)
-		end
-
 	notify_enable_testing (a_tool: CDD_TEST_SUITE_TOOL) is
 			-- Tell 'a_tool' that testing has been enabled.
 		require
@@ -318,7 +304,39 @@ feature {NONE} -- Implementation tools
 			a_tool.enable_testing
 		end
 
+	notify_disable_testing (a_tool: CDD_TEST_SUITE_TOOL) is
+			-- Tell 'a_tool' that testing has been disabled.
+		require
+			a_tool_not_void: a_tool /= Void
+		do
+			a_tool.disable_testing
+		end
+
 feature {NONE} -- Implementation
+
+	generate_test_case (an_app_status: APPLICATION_STATUS; a_window: EB_DEVELOPMENT_WINDOW) is
+			-- Create test case from 'an_app_status' and notify user with in case of failure in 'a_window'.
+		require
+			an_app_status_not_void: an_app_status /= Void
+			a_window_not_void: a_window /= Void
+		local
+			l_reflection: CDD_REFLECTED_OBJECT
+			l_warn: EV_WARNING_DIALOG
+		do
+			if valid_status (an_app_status) then
+				l_reflection := make_reflection (an_app_status)
+				if not l_reflection.reflection_succeded then
+					create l_warn.make_with_text ("Was not able to reflect current state of the application.")
+					l_warn.show_modal_to_window (a_window.window)
+				elseif False then
+					-- TODO: Check with md5 hash if test case already exists...
+				else
+					test_case_factory.create_with_reflection (l_reflection, test_suite.tests_cluster)
+					test_suite.add_test_case (test_case_factory.last_created_test_case)
+					notify_all_tools (agent notify_refresh)
+				end
+			end
+		end
 
 	make_reflection (an_app_status: APPLICATION_STATUS): CDD_REFLECTED_OBJECT is
 			-- Try to reflect current object in call stack.

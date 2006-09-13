@@ -47,9 +47,11 @@ feature -- Access
 
 	tester_target: CONF_TARGET
 			-- Target for executing test cases
+			-- NOTE: will be removed
 
 	tester_cluster: CONF_CLUSTER
 			-- Cluster where tester class is stored
+			-- NOTE: will be removed
 
 feature -- Element change
 
