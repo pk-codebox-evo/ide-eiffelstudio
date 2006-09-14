@@ -52,7 +52,6 @@ feature {NONE} -- Initialization
 			eb_cluster_manager.add_observer (Current)
 		end
 
-
 feature -- Access
 
 	is_testing_enabled: BOOLEAN is
@@ -60,7 +59,6 @@ feature -- Access
 		do
 			Result := test_suite /= Void
 		end
-
 
 	test_suite: CDD_TEST_SUITE
 			-- Test suite which is managed by 'Current'
@@ -96,7 +94,6 @@ feature -- Access
 				an_app_status.exception_code = {EXCEP_CONST}.postcondition or
 				an_app_status.exception_code = {EXCEP_CONST}.class_invariant)
 		end
-
 
 feature -- Status setting
 

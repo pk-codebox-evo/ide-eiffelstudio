@@ -10,7 +10,7 @@ deferred class
 feature -- Initialization
 
 	make (a_type: like dynamic_type) is
-			-- create new reflection with object of type 'a_class'
+			-- Create new reflection with object of type 'a_type'.
 		require
 			a_type_not_void: a_type /= Void
 		do
@@ -21,23 +21,20 @@ feature -- Initialization
 			type_set: type.is_equal (dynamic_type.name)
 		end
 
-
 feature -- Access
 
-
 	dynamic_type: EIFFEL_CLASS_C
-			-- reflected objects type
+			-- Reflected objects type
 
 	type: STRING
-			-- full type of the reflected object
+			-- Full type of the reflected object
 
 	identifier: STRING is
-			-- identifier used for output
+			-- Identifier used for output
 		deferred
 		ensure
 			result_not_empty: Result /= Void and then not Result.is_empty
 		end
-
 
 invariant
 	dynamic_class_not_void: dynamic_type /= Void

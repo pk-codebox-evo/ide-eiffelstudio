@@ -65,15 +65,17 @@ feature -- Access
 
 	exception_tag: STRING
 			-- Name of postcondition which is violated
+			-- TODO: Does this really just store tags from postconditions?
+			-- What about tags of preconditions, invariants, etc...
 
 	id: STRING
 			-- Identifier for state which is reproduced at test case execution
 
 	was_tested: BOOLEAN
-			-- Has 'Current' been tested yet?
+			-- Has this test case excuted yet?
 
 	is_tested: BOOLEAN
-			-- Is 'Current' beeing tested now?
+			-- Is this test case currently being executed?
 
 	passes: BOOLEAN
 			-- Does test case pass?
@@ -81,7 +83,7 @@ feature -- Access
 feature -- Status seeting
 
 	start_testing is
-			-- Set 'is_testing' to true an notify agents
+			-- Set `is_testing' to true an notify agents.
 		require
 			not_testing: not is_tested
 		do
@@ -99,7 +101,7 @@ feature -- Status seeting
 		end
 
 	set_passes (a_result: BOOLEAN) is
-			-- Set 'passes' to 'a_result' and notify agents
+			-- Set 'passes' to 'a_result' and notify agents.
 		do
 			from
 				was_tested := True

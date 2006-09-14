@@ -25,7 +25,6 @@ feature -- Access
 
 	last_created_test_case: CDD_TEST_CASE
 
-
 feature {CDD_TEST_SUITE_MANAGER} -- Element change
 
 	create_from_class (a_class: EIFFEL_CLASS_I; a_universe: UNIVERSE_I) is
