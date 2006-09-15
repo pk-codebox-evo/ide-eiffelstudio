@@ -84,7 +84,7 @@ feature -- Access
 		end
 
 	valid_status (an_app_status: APPLICATION_STATUS): BOOLEAN is
-			-- Id 'an_app_status' valid for creating a ccd test case?
+			-- Is 'an_app_status' valid for creating a ccd test case?
 		require
 			an_app_status /= Void
 		do
@@ -326,7 +326,7 @@ feature {NONE} -- Implementation
 					create l_warn.make_with_text ("Was not able to reflect current state of the application.")
 					l_warn.show_modal_to_window (a_window.window)
 				elseif False then
-					-- TODO: Check with md5 hash if test case already exists...
+					-- TODO: Check if test case already exists...
 				else
 					test_case_factory.create_with_reflection (l_reflection, test_suite.tests_cluster)
 					test_suite.add_test_case (test_case_factory.last_created_test_case)

@@ -93,7 +93,6 @@ feature -- Execution control
 			test_suite_not_empty: not test_suite.test_cases.is_empty
 		local
 			l_cmd: STRING
-			l_prc: PROCESS
 		do
 			printer.print_test_case (test_suite)
 			create l_cmd.make_empty
@@ -204,7 +203,6 @@ feature {NONE} -- Implementation
 			testing: is_testing
 		local
 			l_cmd: STRING
-			l_prc: PROCESS
 		do
 			current_test_case.start_testing
 			create l_cmd.make_empty
@@ -402,6 +400,6 @@ invariant
 	is_testing_implies_is_running: is_testing implies is_running
 	is_testing_implies_correct_cursor: is_testing implies (cursor /= Void and then not cursor.off)
 
-	valid_process_status: is_running = process /= Void
+	valid_process_status: is_running = (process /= Void)
 
 end

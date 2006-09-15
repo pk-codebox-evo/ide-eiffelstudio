@@ -121,8 +121,9 @@ feature -- Element change
 			loop
 				if a_tc < test_cases.item_for_iteration then
 					l_found := True
+				else
+					test_cases.forth
 				end
-				test_cases.forth
 			end
 			test_cases.put_left (a_tc)
 		ensure

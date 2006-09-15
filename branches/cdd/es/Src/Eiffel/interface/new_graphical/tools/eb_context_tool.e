@@ -130,7 +130,7 @@ feature {NONE} -- Initialization
 			end
 			notebook.set_item_text (class_view.widget, interface_names.l_Tab_class_info)
 			notebook.set_item_text (feature_view.widget, interface_names.l_Tab_feature_info)
-			notebook.set_item_text (cdd_test_suite_view.widget, "CCD")
+			notebook.set_item_text (cdd_test_suite_view.widget, "Testing")
 			if eiffel_layout.has_metrics then
 				notebook.set_item_text (metrics.widget, interface_names.l_Tab_metrics)
 			end

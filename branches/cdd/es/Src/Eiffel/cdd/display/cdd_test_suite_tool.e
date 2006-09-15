@@ -13,6 +13,11 @@ inherit
 			{NONE} all
 		end
 
+	EB_EDITOR_TOKEN_GRID_SUPPORT
+		redefine
+			grid
+		end
+
 	EB_CONSTANTS
 		export
 			{NONE} all
@@ -45,19 +50,18 @@ feature {NONE} -- Initialization
 	initialize is
 			-- Initialize all widgets used in 'Current'
 		local
-			l_hbox: EV_HORIZONTAL_BOX
+			l_split: EV_HORIZONTAL_SPLIT_AREA
 		do
 			create widget
-			create l_hbox
-			widget.set_padding (5)
-			l_hbox.set_padding (5)
+			create l_split
 
 			build_tool_bar
 
-			build_tree (l_hbox)
-			build_output (l_hbox)
+			build_grid (l_split)
+			build_output (l_split)
+			l_split.set_split_position (400)
 
-			widget.extend (l_hbox)
+			widget.extend (l_split)
 
 			build_status_bar
 		end
@@ -115,26 +119,19 @@ feature {NONE} -- Initialization
 			widget.disable_item_expand (l_vbox)
 		end
 
-	build_tree (a_list: EV_BOX) is
-			-- Initialize tree widget for hierarchically listing test cases
-			-- and extend 'a_list' with tree widget.
+	build_grid (a_list: EV_CONTAINER) is
+			-- Initialize grid widget for hierarchically listing test cases
+			-- and extend 'a_list' with grid widget.
 		require
 			valid_list: a_list /= Void and then a_list.extendible
 			list_not_destroyed: not a_list.is_destroyed
-		local
-			l_frame: EV_FRAME
-			l_cell: EV_CELL
 		do
-			create l_frame.make_with_text ("Test cases")
-			create l_cell
-			create tree.make_with_tool (Current)
-			l_frame.extend (tree)
-			tree.deselect_actions.extend (agent on_deselect_item)
-			a_list.extend (l_frame)
-			a_list.disable_item_expand (l_frame)
+			create grid.make
+			enable_editor_token_pnd
+			a_list.extend (grid)
 		end
 
-	build_output (a_list: EV_BOX) is
+	build_output (a_list: EV_CONTAINER) is
 			-- Initialize output box for displaying messages from
 			-- the tester.
 		require
@@ -211,7 +208,9 @@ feature -- Status setting
 		do
 			development_window.lock_update
 			run_button.disable_sensitive
-			tree.wipe_out
+			if grid.row_count > 0 then
+				grid.remove_rows (1, grid.row_count)
+			end
 
 			if manager.is_testing_enabled then
 
@@ -221,15 +220,14 @@ feature -- Status setting
 				until
 					l_cursor.after
 				loop
-					tree.add_test_case (l_cursor.item)
+					grid.add_test_case (l_cursor.item)
 					l_cursor.forth
 				end
 
-				if tree.count > 0 then
+				if grid.row_count > 0 then
 					run_button.enable_sensitive
 				end
 			end
-
 			development_window.unlock_update
 		end
 
@@ -238,7 +236,7 @@ feature -- Status setting
 		do
 			tester.add_tool (Current)
 			enable_testing_button.disable_sensitive
-			tree.enable_sensitive
+			grid.enable_sensitive
 			output.enable_sensitive
 			status_label.set_text ("Testing enabled")
 		end
@@ -247,7 +245,7 @@ feature -- Status setting
 			-- Disable widgets for handling test cases.
 		do
 			enable_testing_button.enable_sensitive
-			tree.disable_sensitive
+			grid.disable_sensitive
 			output.disable_sensitive
 			status_label.set_text ("Testing is disabled")
 		end
@@ -314,19 +312,19 @@ feature -- Status setting
 		do
 			manager.remove_tool (Current)
 			tester.remove_tool (Current)
-			tree.wipe_out
+			grid.wipe_out
 		end
 
 
-feature {CDD_TREE, CDD_TREE_ITEM} -- Selection events
+feature -- Selection events
 
-	selected_test_case_item: CDD_TREE_TEST_CASE_ITEM
+	selected_test_case_item: CDD_TEST_CASE
 			-- Currently selected test case in tree, Void if no test case is selected
 
-	on_select_test_case (a_tc_item: CDD_TREE_TEST_CASE_ITEM) is
+	on_select_test_case (a_tc_item: like selected_test_case_item) is
 			-- Actions performed when test case item in tree is selected.
 		require
-			valid_item: a_tc_item /= Void and then tree.selected_item = a_tc_item
+			valid_item: a_tc_item /= Void
 		do
 			selected_test_case_item := a_tc_item
 			delete_button.enable_sensitive
@@ -366,7 +364,7 @@ feature {NONE} -- Button events
 	on_run_button is
 			-- Start testing execution if not started yet, otherwise resume execution.
 		require
-			has_test_cases: not tree.is_empty
+			has_test_cases: manager.test_suite.test_cases.count > 0
 		do
 			if tester.is_running then
 				tester.resume
@@ -400,7 +398,6 @@ feature {NONE} -- Button events
 			l_cd: EV_CONFIRMATION_DIALOG
 			a_tc: CDD_TEST_CASE
 		do
-			a_tc := selected_test_case_item.test_case
 			l_msg := "The selected test case will be permanently removed from the system and from the disc.%N%N%
 					%Are you sure this is what you want?"
 			create l_cd.make_with_text_and_actions (l_msg, << agent manager.remove_test_case (a_tc) >>)
@@ -450,30 +447,17 @@ feature {NONE} -- Implementation
 	progress_bar: EV_HORIZONTAL_PROGRESS_BAR
 			-- Progress bar showing current tester status
 
-feature {CDD_TREE, CDD_TREE_ITEM} -- Tree Implementation
+feature  -- Tree Implementation
 
-	tree: CDD_TREE
-			-- Tree for hierarchically displaying test cases
-
-feature {NONE} -- Tree manipulation
-
-	add_test_case (a_tc: CDD_TEST_CASE) is
-			-- Display 'a_tc' at proper position in tree.
-		require
-			a_tc_not_void: a_tc /= Void
-		do
-			tree.add_test_case (a_tc)
-			if not run_button.is_sensitive then
-				run_button.enable_sensitive
-			end
-		end
+	grid: CDD_GRID
+			-- Grid for hierarchically displaying test cases
 
 
 invariant
 	development_window_not_void: development_window /= Void
 	manager_not_void: manager /= Void
 	widget_not_void: widget /= Void
-	tree_valid: tree /= Void
+	grid_valid: grid /= Void
 	tool_bar_valid: tool_bar /= Void
 	output_valid: output /= Void
 	enable_testing_button_valid: enable_testing_button /= Void

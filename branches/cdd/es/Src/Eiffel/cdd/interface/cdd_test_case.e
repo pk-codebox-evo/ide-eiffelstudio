@@ -21,11 +21,11 @@ feature {NONE} -- Initialization
 		a_test_class: like test_class;
 		a_tag: like exception_tag;
 		an_id: like id) is
-			-- Initialize new test case for testing 'a_feature' of class 'a_target_class' where
-			-- 'a_test_class' is the classed used for testing
+			-- Initialize new test case for testing `a_feature' of class `a_target_class' where
+			-- `a_test_class' is the classed used for testing.
 		require
 			valid_target_class: a_target_class /= Void
-			feature_not_empty: a_feature /= Void and then not a_feature.is_empty
+			feature_not_empty: a_feature /= Void
 			valid_test_class: a_test_class /= Void
 			a_tag_not_empty: a_tag /= Void and then not a_tag.is_empty
 			an_id_not_empty: an_id /= Void and then not an_id.is_empty
@@ -57,7 +57,7 @@ feature -- Access
 	target_class: EIFFEL_CLASS_I
 			-- Class under tested
 
-	feature_name: STRING
+	feature_name: E_FEATURE
 			-- Name of feature under tested
 
 	test_class: CLASS_I
@@ -158,7 +158,7 @@ feature -- Compare
 invariant
 	target_cluster_not_void: target_class /= Void
 	target_class_not_void: target_class /= Void
-	e_feature_not_empty: feature_name /= Void and then not feature_name.is_empty
+	e_feature_not_void: feature_name /= Void
 	test_class_not_void: test_class /= Void
 	on_start_testing_not_void: on_start_testing /= Void
 	on_finish_testing_not_void: on_finish_testing /= Void
