@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Objects that display a eiffel feature within a grid structure"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -12,7 +12,7 @@ inherit
 		rename
 			row_data as eiffel_feature
 		redefine
-			make
+			make_with_row
 		end
 
 	CDD_GRID_HELPER [CDD_TEST_CASE, CDD_GRID_TEST_CASE_LINE]
@@ -23,70 +23,42 @@ inherit
 		end
 
 create
-	make
+	make_with_row
 
 feature {NONE} -- Initialization
 
-	make (a_row: like grid_row; a_feature: like eiffel_feature) is
-			--
+	make_with_row (a_row: like grid_row; a_feature: like eiffel_feature) is
+			-- Set `grid_row' to `a_row' and `eiffel_feature' to `a_feature'.
+			-- Define first item of `grid_row' for displaying `eiffel_feature'.
 		do
 			Precursor (a_row, a_feature)
 			update_tokens
+
+			grid_row.select_actions.extend (agent do grid_row.disable_select end)
 		end
-
-feature -- Access
-
-feature -- Measurement
-
-feature -- Status report
-
-feature -- Status setting
-
-feature -- Cursor movement
 
 feature -- Access
 
 	data_from_test_case (a_tc: CDD_TEST_CASE): CDD_TEST_CASE is
-			--
+			-- Attribute of `a_tc' displayed in sublines of `Current'.
+			-- NOTE: Returns `a_tc' since sublines are leaves of the tree structure
 		do
 			Result := a_tc
 		end
 
-feature -- Element change
+feature {NONE} -- Element change
 
-	add_row (a_tc: CDD_TEST_CASE) is
-			--
-		local
-			i: INTEGER
+	create_new_line (a_row_index: INTEGER; a_test_case: CDD_TEST_CASE) is
+			-- Create a subline for displaying `a_test_case' with row at position `a_row_index'.
 		do
-			i := grid.row_count + 1
-			grid.insert_new_row_parented (i, grid_row)
-			create last_added_row.make (grid.row (i), a_tc)
+			create last_created_line.make_with_row (grid.row (a_row_index), a_test_case)
 			update_tokens
 		end
-
-feature -- Removal
-
-feature -- Resizing
-
-feature -- Transformation
-
-feature -- Conversion
-
-feature -- Duplication
-
-feature -- Miscellaneous
-
-feature -- Basic operations
-
-feature -- Obsolete
-
-feature -- Inapplicable
 
 feature {NONE} -- Implementation
 
 	update_tokens is
-			-- Update 'text' with new item count.
+			-- Update `text' with new item count.
 		local
 			l_token_item: EB_GRID_EDITOR_TOKEN_ITEM
 			l_writer: EB_EDITOR_TOKEN_GENERATOR
@@ -106,7 +78,4 @@ feature {NONE} -- Implementation
 			l_token_item.set_text_with_tokens (l_writer.last_line.content)
 		end
 
-invariant
-	invariant_clause: True -- Your invariant here
-
-end
+end -- Class CDD_GRID_FEATURE_LINE

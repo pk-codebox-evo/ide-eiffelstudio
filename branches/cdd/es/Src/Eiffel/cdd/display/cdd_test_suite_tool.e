@@ -126,7 +126,7 @@ feature {NONE} -- Initialization
 			valid_list: a_list /= Void and then a_list.extendible
 			list_not_destroyed: not a_list.is_destroyed
 		do
-			create grid.make
+			create grid.make_with_tool (Current)
 			enable_editor_token_pnd
 			a_list.extend (grid)
 		end
@@ -201,6 +201,36 @@ feature -- Access
 
 feature -- Status setting
 
+	add_test_case (a_tc: CDD_TEST_CASE) is
+			-- Add `a_tc' to `grid'.
+		require
+			a_tc_not_void: a_tc /= Void
+		do
+			grid.add_test_case (a_tc)
+		end
+
+	remove_test_case (a_tc: CDD_TEST_CASE) is
+			-- Remove `a_tc' from `grid'.
+		require
+			a_tc_not_void: a_tc /= Void
+		local
+			l_rows: ARRAYED_LIST [EV_GRID_ROW]
+		do
+			if selected_test_case = a_tc then
+				from
+					l_rows := grid.selected_rows
+					l_rows.start
+				until
+					l_rows.after
+				loop
+					l_rows.item.disable_select
+					l_rows.forth
+				end
+			end
+			grid.remove_test_case (a_tc)
+		end
+
+
 	refresh is
 			-- Refresh widget elements with current test suite status.
 		local
@@ -208,12 +238,8 @@ feature -- Status setting
 		do
 			development_window.lock_update
 			run_button.disable_sensitive
-			if grid.row_count > 0 then
-				grid.remove_rows (1, grid.row_count)
-			end
-
+			grid.remove_and_clear_all_rows
 			if manager.is_testing_enabled then
-
 				from
 					l_cursor := manager.test_suite.test_cases.new_cursor
 					l_cursor.start
@@ -315,31 +341,30 @@ feature -- Status setting
 			grid.wipe_out
 		end
 
+feature {CDD_GRID_TEST_CASE_LINE} -- Selection
 
-feature -- Selection events
-
-	selected_test_case_item: CDD_TEST_CASE
+	selected_test_case: CDD_TEST_CASE
 			-- Currently selected test case in tree, Void if no test case is selected
 
-	on_select_test_case (a_tc_item: like selected_test_case_item) is
+	on_select_test_case (a_tc: like selected_test_case) is
 			-- Actions performed when test case item in tree is selected.
 		require
-			valid_item: a_tc_item /= Void
+			valid_item: a_tc /= Void
 		do
-			selected_test_case_item := a_tc_item
+			selected_test_case := a_tc
 			delete_button.enable_sensitive
 		ensure
-			test_case_selected: selected_test_case_item /= Void
+			selected_test_case_set: selected_test_case = a_tc
 			delete_button_sensitive: delete_button.is_sensitive
 		end
 
-	on_deselect_item is
+	on_deselect is
 			-- Actions performed when item in tree is deselected.
 		do
-			selected_test_case_item := Void
+			selected_test_case := Void
 			delete_button.disable_sensitive
 		ensure
-			nothing_selected: selected_test_case_item = Void
+			nothing_selected: selected_test_case = Void
 			delete_button_not_sensitive: not delete_button.is_sensitive
 		end
 
@@ -392,17 +417,27 @@ feature {NONE} -- Button events
 	on_delete_button is
 			-- Delete single test case from test suite.
 		require
-			test_case_selected: selected_test_case_item /= Void
+			test_case_selected: selected_test_case /= Void
 		local
 			l_msg: STRING
 			l_cd: EV_CONFIRMATION_DIALOG
-			a_tc: CDD_TEST_CASE
 		do
 			l_msg := "The selected test case will be permanently removed from the system and from the disc.%N%N%
 					%Are you sure this is what you want?"
-			create l_cd.make_with_text_and_actions (l_msg, << agent manager.remove_test_case (a_tc) >>)
+			create l_cd.make_with_text_and_actions (l_msg, << agent try_remove_test_case >>)
 			l_cd.show_modal_to_window (development_window.window)
 		end
+
+	try_remove_test_case is
+			-- If test suite still contains `selected_test_case' remove it.
+		require
+			test_case_selected: selected_test_case /= Void
+		do
+			if manager.test_suite.test_cases.has (selected_test_case) then
+				manager.remove_test_case (selected_test_case)
+			end
+		end
+
 
 
 feature {NONE} -- Singleton instances
@@ -469,4 +504,4 @@ invariant
 	status_label_valid: status_label /= Void
 	progress_bar_valid: progress_bar /= Void
 
-end
+end -- Class CDD_TEST_SUITE_TOOL

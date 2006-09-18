@@ -1,6 +1,6 @@
 indexing
-	description: "Objects that ..."
-	author: ""
+	description: "Objects that represent a grid for displaying test cases in a tree like structure"
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -10,7 +10,10 @@ class
 inherit
 	ES_GRID
 		redefine
-			initialize
+			row_type,
+			-- NOTE: redefined because of typing conflicts
+			row,
+			remove_and_clear_all_rows
 		end
 
 	CDD_GRID_HELPER [CONF_CLUSTER, CDD_GRID_CLUSTER_LINE]
@@ -30,15 +33,20 @@ inherit
 		end
 
 create
-	make
+	make_with_tool
 
 feature {NONE} -- Initialization
 
-	make is
+	make_with_tool (a_tool: CDD_TEST_SUITE_TOOL) is
+			-- Set `tool' to `a_tool' and initialize grid layout.
+		require
+			a_tool_not_void: a_tool /= Void
 		local
 			l_col: EV_GRID_COLUMN
 		do
 			default_create
+
+			tool := a_tool
 
 			set_column_count_to (2)
 			l_col := column (1)
@@ -47,85 +55,92 @@ feature {NONE} -- Initialization
 			set_auto_resizing_column (1, True)
 			l_col := column (2)
 			l_col.set_title ("Status")
-
-			enable_single_row_selection
-			enable_default_tree_navigation_behavior (True, False, True, True)
-		end
-
-	initialize is
-			--
-		do
-			Precursor {ES_GRID}
+			set_auto_resizing_column (2, True)
 
 			enable_tree
 			enable_row_height_fixed
+			enable_single_row_selection
+			enable_default_tree_navigation_behavior (True, False, True, True)
+		ensure
+			tool_set: tool = a_tool
 		end
 
 feature -- Access
 
+	row (a_row: INTEGER): like row_type is
+			-- Row at index `a_row'.
+		do
+			Result ?= Precursor (a_row)
+		end
+
 	data_from_test_case (a_tc: CDD_TEST_CASE): CONF_CLUSTER is
-			--
+			-- `target_cluster' of `a_tc'
 		do
 			Result := a_tc.target_cluster
 		end
 
+	first_subrow: like row_type is
+			-- If `Current' contains any rows, return row at index 1,
+			-- otherwise return Void
+		do
+			if row_count > 0 then
+				Result := row (1)
+			end
+		end
 
-feature -- Measurement
+	max_row_index: INTEGER is
+			-- Maximum row index for inserting a new row
+		do
+			Result := row_count + 1
+		end
 
-feature -- Status report
+	tool: CDD_TEST_SUITE_TOOL
+			-- Tool which manages `Current'
 
-feature -- Status setting
+feature {NONE} -- GRID Customization
 
-
-
-feature -- Cursor movement
+	row_type: CDD_GRID_ROW is do end
+		-- Type used for row objects.
+		-- May be redefined by EV_GRID descendents.	
 
 feature -- Element change
 
-	add_row (a_cluster: CONF_CLUSTER) is
-			--
+	remove_and_clear_all_rows is
+			-- Wipe out grid and all lines.
 		local
 			i: INTEGER
 		do
-			i := row_count + 1
-			insert_new_row (i)
-			create last_added_row.make (row (i), a_cluster)
+			from
+				i := 1
+			until
+				i > row_count
+			loop
+				row (i).grid_line.unattach
+				i := i + 1
+			end
+			Precursor
 		end
 
-feature -- Removal
+feature {NONE} -- Element change
 
-feature -- Resizing
-
-feature -- Transformation
-
-feature -- Conversion
-
-feature -- Duplication
-
-feature -- Miscellaneous
-
-feature -- Basic operations
-
-feature {NONE} -- Implementation
-
-	last_row: CDD_GRID_CLUSTER_LINE
-			-- last row which was appended to 'Current'
-
+	create_new_line (a_row_index: INTEGER; a_cluster: CONF_CLUSTER) is
+			-- Create a new cluster line for displaying `a_cluster' with row at position `a_row_index'.
+		do
+			create last_created_line.make_with_row (row (a_row_index), a_cluster)
+		end
 
 feature {CDD_GRID_LINE} -- Status report
 
 	expanded_clusters: DS_LINKED_LIST [STRING]
-			-- Names of clusters which were expanded before last store
+			-- Names of clusters which were expanded before last refresh
 
 	expanded_classes: DS_LINKED_LIST [STRING]
-			-- Names of classes which were expanded before last store
+			-- Names of classes which were expanded before last refresh
 
 	expanded_features: DS_LINKED_LIST [STRING]
-			-- Names of features which were expanded before last store
-
-
+			-- Names of features which were expanded before last refresh
 
 invariant
-	invariant_clause: True -- Your invariant here
+	tool_not_void: tool /= Void
 
-end
+end -- Class CDD_GRID

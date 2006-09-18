@@ -101,6 +101,7 @@ feature -- Status setting
 			-- Try to create a new test case from 'an_app_status' and add it to 'a_test_suite'.
 			-- 'a_window' is the window in which the application was launched.
 		require
+			testing_enabled: is_testing_enabled
 			app_status_valid: an_app_status /= Void and then valid_status (an_app_status)
 			a_window_not_void: a_window /= Void
 		local
@@ -179,7 +180,7 @@ feature -- Test suite manipulation
 			eb_cluster_manager.remove_class (a_tc.test_class)
 
 			window_manager.synchronize_all
-			notify_all_tools (agent notify_refresh)
+			notify_all_tools (agent notify_remove_test_case (?, a_tc))
 
 			eb_cluster_manager.add_observer (Current)
 		end
@@ -293,6 +294,27 @@ feature {NONE} -- Implementation tools
 			a_tool.refresh
 		end
 
+	notify_add_test_case (a_tool: CDD_TEST_SUITE_TOOL; a_test_case: CDD_TEST_CASE) is
+			-- Tell `a_tool' to add `a_test_case'.
+		require
+			a_tool_not_void: a_tool /= Void
+			a_test_case_not_void: a_test_case /= Void
+			a_test_case_valid: not test_suite.test_cases.has (a_test_case)
+		do
+			a_tool.add_test_case (a_test_case)
+		end
+
+	notify_remove_test_case (a_tool: CDD_TEST_SUITE_TOOL; a_test_case: CDD_TEST_CASE) is
+			-- Tell `a_tool' to remove `a_test_case'.
+		require
+			a_tool_not_void: a_tool /= Void
+			a_test_case_not_void: a_test_case /= Void
+			a_test_case_valid: not test_suite.test_cases.has (a_test_case)
+		do
+			a_tool.remove_test_case (a_test_case)
+		end
+
+
 	notify_enable_testing (a_tool: CDD_TEST_SUITE_TOOL) is
 			-- Tell 'a_tool' that testing has been enabled.
 		require
@@ -326,11 +348,11 @@ feature {NONE} -- Implementation
 					create l_warn.make_with_text ("Was not able to reflect current state of the application.")
 					l_warn.show_modal_to_window (a_window.window)
 				elseif False then
-					-- TODO: Check if test case already exists...
+					-- TODO: Check if test case for same application state already exists...
 				else
 					test_case_factory.create_with_reflection (l_reflection, test_suite.tests_cluster)
 					test_suite.add_test_case (test_case_factory.last_created_test_case)
-					notify_all_tools (agent notify_refresh)
+					notify_all_tools (agent notify_add_test_case (?, test_case_factory.last_created_test_case))
 				end
 			end
 		end
