@@ -23,6 +23,15 @@ inherit
 			{NONE} all
 		end
 
+	EV_LAYOUT_CONSTANTS
+		export
+			{NONE} all
+		undefine
+			default_create,
+			is_equal,
+			copy
+		end
+
 create
 	make_with_tool
 
@@ -35,16 +44,18 @@ feature {NONE} -- Initialization
 			a_window_not_void: a_window /= Void
 		do
 			development_window := a_window
+			internal_add_test_case_agent := agent add_test_case
+			internal_remove_test_case_agent := agent remove_test_case
+			internal_refresh_agent := agent refresh
+			internal_testing_status_agent := agent update_testing_status
+			internal_output_agent := agent append_output
 			initialize
 
-			manager.add_tool (Current)
+			manager.add_test_case_actions.extend (internal_add_test_case_agent)
+			manager.remove_test_case_actions.extend (internal_remove_test_case_agent)
+			manager.refresh_actions.extend (internal_refresh_agent)
 
-			if manager.is_testing_enabled then
-				enable_testing
-				refresh
-			else
-				disable_testing
-			end
+			refresh
 		end
 
 	initialize is
@@ -166,7 +177,6 @@ feature {NONE} -- Initialization
 			create progress_bar
 			l_frame.set_minimum_width (200)
 			l_frame.extend (progress_bar)
-			progress_bar.leap_forward
 			status_bar.extend (l_frame)
 			status_bar.disable_item_expand (l_frame)
 
@@ -207,6 +217,10 @@ feature -- Status setting
 			a_tc_not_void: a_tc /= Void
 		do
 			grid.add_test_case (a_tc)
+			if not run_button.is_sensitive then
+				run_button.enable_sensitive
+			end
+			grid.refresh_now
 		end
 
 	remove_test_case (a_tc: CDD_TEST_CASE) is
@@ -216,20 +230,15 @@ feature -- Status setting
 		local
 			l_rows: ARRAYED_LIST [EV_GRID_ROW]
 		do
-			if selected_test_case = a_tc then
-				from
-					l_rows := grid.selected_rows
-					l_rows.start
-				until
-					l_rows.after
-				loop
-					l_rows.item.disable_select
-					l_rows.forth
-				end
+			if selected_test_case_line /= Void then
+				selected_test_case_line.grid_row.disable_select
 			end
 			grid.remove_test_case (a_tc)
+			if manager.test_suite.test_cases.count = 0 then
+				run_button.disable_sensitive
+			end
+			grid.refresh_now
 		end
-
 
 	refresh is
 			-- Refresh widget elements with current test suite status.
@@ -240,6 +249,12 @@ feature -- Status setting
 			run_button.disable_sensitive
 			grid.remove_and_clear_all_rows
 			if manager.is_testing_enabled then
+				tester.update_status_actions.extend (internal_testing_status_agent)
+				tester.output_actions.extend (internal_output_agent)
+				enable_testing_button.disable_sensitive
+				grid.enable_sensitive
+				output.enable_sensitive
+				status_label.set_text ("Testing enabled")
 				from
 					l_cursor := manager.test_suite.test_cases.new_cursor
 					l_cursor.start
@@ -253,76 +268,47 @@ feature -- Status setting
 				if grid.row_count > 0 then
 					run_button.enable_sensitive
 				end
+			else
+				enable_testing_button.enable_sensitive
+				grid.disable_sensitive
+				output.disable_sensitive
+				status_label.set_text ("Testing is disabled")
 			end
 			development_window.unlock_update
 		end
 
-	enable_testing is
-			-- Enable widgets for handling test cases.
-		do
-			tester.add_tool (Current)
-			enable_testing_button.disable_sensitive
-			grid.enable_sensitive
-			output.enable_sensitive
-			status_label.set_text ("Testing enabled")
-		end
-
-	disable_testing is
-			-- Disable widgets for handling test cases.
-		do
-			enable_testing_button.enable_sensitive
-			grid.disable_sensitive
-			output.disable_sensitive
-			status_label.set_text ("Testing is disabled")
-		end
-
-	start_testing is
-			-- Adjust widget elements for testing mode.
+	update_testing_status is
+			-- Adapt widgets to current testing status.
 		require
-			coreect_tester_status: tester.is_running and not tester.is_paused
+			manager.is_testing_enabled
 		do
-			output.remove_text
-			stop_button.enable_sensitive
-			pause_button.enable_sensitive
-			run_button.disable_sensitive
-			status_label.set_text ("Testing")
+			if tester.is_running then
+				if tester.is_paused then
+					run_button.enable_sensitive
+					pause_button.disable_sensitive
+					status_label.set_text ("Testing paused")
+				else
+					if not stop_button.is_sensitive then
+						output.remove_text
+						stop_button.enable_sensitive
+					end
+					pause_button.enable_sensitive
+					if tester.is_testing then
+						status_label.set_text ("Running test cases")
+						progress_bar.set_value (tester.current_index*100//tester.test_cases.count)
+					else
+						status_label.set_text ("Compiling interpreter")
+					end
+				end
+				stop_button.enable_sensitive
+			else
+				progress_bar.set_value (0)
+				stop_button.disable_sensitive
+				pause_button.disable_sensitive
+				run_button.enable_sensitive
+				status_label.set_text ("Not testing, press `play' to start test execution")
+			end
 		end
-
-	stop_testing is
-			-- Adjust widgets elements.
-		do
-			stop_button.disable_sensitive
-			run_button.enable_sensitive
-			pause_button.disable_sensitive
-			status_label.set_text ("Aborted")
-		end
-
-	pause_testing is
-			-- Adjust widget elements.
-		do
-			run_button.enable_sensitive
-			pause_button.disable_sensitive
-			status_label.set_text ("Paused")
-		end
-
-	resume_testing is
-			-- Adjust widget elements.
-		do
-			run_button.disable_sensitive
-			pause_button.enable_sensitive
-			status_label.set_text ("Testing")
-		end
-
-
-	finish_testing is
-			-- Adjust widget elements and show test results.
-		do
-			stop_button.disable_sensitive
-			pause_button.disable_sensitive
-			run_button.enable_sensitive
-			status_label.set_text ("Finished testing execution")
-		end
-
 
 	append_output (an_output: STRING) is
 			-- Append 'an_output' to output box and scroll to bottom.
@@ -336,35 +322,38 @@ feature -- Status setting
 	recycle is
 			-- Prune 'Current' from manager and tester and remove widgets.
 		do
-			manager.remove_tool (Current)
-			tester.remove_tool (Current)
+			manager.add_test_case_actions.prune (internal_add_test_case_agent)
+			manager.remove_test_case_actions.prune (internal_remove_test_case_agent)
+			manager.refresh_actions.prune (internal_refresh_agent)
+			tester.update_status_actions.prune (internal_testing_status_agent)
+			tester.output_actions.prune (internal_output_agent)
 			grid.wipe_out
 		end
 
 feature {CDD_GRID_TEST_CASE_LINE} -- Selection
 
-	selected_test_case: CDD_TEST_CASE
+	selected_test_case_line: CDD_GRID_TEST_CASE_LINE
 			-- Currently selected test case in tree, Void if no test case is selected
 
-	on_select_test_case (a_tc: like selected_test_case) is
+	on_select_test_case (a_tc_line: like selected_test_case_line) is
 			-- Actions performed when test case item in tree is selected.
 		require
-			valid_item: a_tc /= Void
+			valid_item: a_tc_line /= Void
 		do
-			selected_test_case := a_tc
+			selected_test_case_line := a_tc_line
 			delete_button.enable_sensitive
 		ensure
-			selected_test_case_set: selected_test_case = a_tc
+			selected_test_case_line_set: selected_test_case_line = a_tc_line
 			delete_button_sensitive: delete_button.is_sensitive
 		end
 
 	on_deselect is
 			-- Actions performed when item in tree is deselected.
 		do
-			selected_test_case := Void
+			selected_test_case_line := Void
 			delete_button.disable_sensitive
 		ensure
-			nothing_selected: selected_test_case = Void
+			nothing_selected: selected_test_case_line = Void
 			delete_button_not_sensitive: not delete_button.is_sensitive
 		end
 
@@ -417,7 +406,7 @@ feature {NONE} -- Button events
 	on_delete_button is
 			-- Delete single test case from test suite.
 		require
-			test_case_selected: selected_test_case /= Void
+			test_case_selected: selected_test_case_line /= Void
 		local
 			l_msg: STRING
 			l_cd: EV_CONFIRMATION_DIALOG
@@ -431,10 +420,10 @@ feature {NONE} -- Button events
 	try_remove_test_case is
 			-- If test suite still contains `selected_test_case' remove it.
 		require
-			test_case_selected: selected_test_case /= Void
+			test_case_selected: selected_test_case_line /= Void
 		do
-			if manager.test_suite.test_cases.has (selected_test_case) then
-				manager.remove_test_case (selected_test_case)
+			if manager.test_suite.test_cases.has (selected_test_case_line.test_case) then
+				manager.remove_test_case (selected_test_case_line.test_case)
 			end
 		end
 
@@ -455,6 +444,27 @@ feature {NONE} -- Singleton instances
 		once
 			create Result.make_with_manager (manager)
 		end
+
+feature {NONE} -- Action implementation
+
+	internal_status_agent: PROCEDURE [like Current, TUPLE]
+			-- Agent called when testing is enabled/disabled
+
+	internal_add_test_case_agent: PROCEDURE [like Current, TUPLE [CDD_TEST_CASE]]
+			-- Agent called when test case is added
+
+	internal_remove_test_case_agent: PROCEDURE [like Current, TUPLE [CDD_TEST_CASE]]
+			-- Agent called when test case is removed
+
+	internal_refresh_agent: PROCEDURE [like Current, TUPLE]
+			-- Agent called when test suite is refreshed
+
+	internal_testing_status_agent: PROCEDURE [like Current, TUPLE]
+			-- Agent called when testing status changes
+
+	internal_output_agent: PROCEDURE [like Current, TUPLE [STRING]]
+			-- Agent called when output is read from tester
+
 
 feature {NONE} -- Implementation
 
@@ -503,5 +513,7 @@ invariant
 	status_bar_valid: status_bar /= Void
 	status_label_valid: status_label /= Void
 	progress_bar_valid: progress_bar /= Void
+	internal_testing_status_agent_not_void: internal_testing_status_agent /= Void
+	internal_output_agent_not_void: internal_output_agent /= Void
 
 end -- Class CDD_TEST_SUITE_TOOL

@@ -31,18 +31,15 @@ feature {NONE} -- Initialization
 			-- Set `grid_row' to `a_row' and `target_cluster' to `a_cluster'.
 			-- Define first item of `grid_row' for displaying `target_cluster'.
 		local
-			l_cluster_item: EB_GRID_EDITOR_TOKEN_ITEM
 			l_cluster: CLUSTER_I
 		do
 			Precursor (a_row, a_cluster)
 
-			create l_cluster_item.make_with_text (target_cluster.name)
-			l_cluster_item.set_pixmap (pixmaps.icon_pixmaps.tool_clusters_icon)
-			l_cluster_item.token_writer.new_line
+			name_item.set_pixmap (pixmaps.icon_pixmaps.tool_clusters_icon)
+			name_item.token_writer.new_line
 			l_cluster ?= target_cluster
-			l_cluster_item.token_writer.process_cluster_name_text (target_cluster.name, l_cluster, False)
-			l_cluster_item.set_text_with_tokens (l_cluster_item.token_writer.last_line.content)
-			grid_row.set_item (1, l_cluster_item)
+			name_item.token_writer.process_cluster_name_text (target_cluster.name, l_cluster, False)
+			name_item.set_text_with_tokens (name_item.token_writer.last_line.content)
 
 			grid_row.select_actions.extend (agent do grid_row.disable_select end)
 		end

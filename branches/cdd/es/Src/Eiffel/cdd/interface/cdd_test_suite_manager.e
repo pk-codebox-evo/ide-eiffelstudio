@@ -46,9 +46,11 @@ create
 feature {NONE} -- Initialization
 
 	make is
-			-- Create list for tools and subscribe as observer for project changes
+			-- Add `Current' to cluster observer list.
 		do
-			create test_suite_tools.make
+			create refresh_actions
+			create add_test_case_actions
+			create remove_test_case_actions
 			eb_cluster_manager.add_observer (Current)
 		end
 
@@ -57,7 +59,7 @@ feature -- Access
 	is_testing_enabled: BOOLEAN is
 			-- Is testing currently enabled?
 		do
-			Result := test_suite /= Void
+			Result := (test_suite /= Void)
 		end
 
 	test_suite: CDD_TEST_SUITE
@@ -73,14 +75,6 @@ feature -- Access
 					Result := True
 				end
 			end
-		end
-
-	manages_tool (a_tool: CDD_TEST_SUITE_TOOL): BOOLEAN is
-			-- Does 'Current' manage 'a_tool'?
-		require
-			a_tool_not_void: a_tool /= Void
-		do
-			Result := test_suite_tools.has (a_tool)
 		end
 
 	valid_status (an_app_status: APPLICATION_STATUS): BOOLEAN is
@@ -129,39 +123,8 @@ feature -- Status setting
 				-- TODO: create cluster
 			end
 			create test_suite.make_with_cluster (l_cluster)
-			notify_all_tools (agent notify_enable_testing)
 			refresh
 		end
-
-feature -- Element change
-
-	add_tool (a_tool: CDD_TEST_SUITE_TOOL) is
-			-- Extend 'test_suite_tools' with 'a_tool'
-		require
-			a_tool_not_void: a_tool /= Void
-			not_added_yet: not manages_tool (a_tool)
-		do
-			test_suite_tools.put_last (a_tool)
-		ensure
-			inserted: manages_tool (a_tool)
-		end
-
-	remove_tool (a_tool: CDD_TEST_SUITE_TOOL) is
-			-- Remove 'a_tool' from 'test_suite_tools'
-		require
-			a_tool_not_void: a_tool /= Void
-			added: manages_tool (a_tool)
-		local
-			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_SUITE_TOOL]
-		do
-			l_cursor := test_suite_tools.new_cursor
-			l_cursor.start
-			l_cursor.search_forth (a_tool)
-			l_cursor.remove
-		ensure
-			removed: not manages_tool (a_tool)
-		end
-
 
 feature -- Test suite manipulation
 
@@ -180,8 +143,7 @@ feature -- Test suite manipulation
 			eb_cluster_manager.remove_class (a_tc.test_class)
 
 			window_manager.synchronize_all
-			notify_all_tools (agent notify_remove_test_case (?, a_tc))
-
+			remove_test_case_actions.call ([a_tc])
 			eb_cluster_manager.add_observer (Current)
 		end
 
@@ -207,9 +169,6 @@ feature {EB_CLUSTERS} -- Project Events
 			l_was_enabled := is_testing_enabled
 			l_tests_cluster := eiffel_universe.cluster_of_name (tests_cluster_name)
 			if l_tests_cluster /= Void then
-				if not is_testing_enabled then
-					notify_all_tools (agent notify_enable_testing)
-				end
 				create test_suite.make_with_cluster (l_tests_cluster)
 				l_classes := test_suite.tests_cluster.classes
 				from
@@ -233,10 +192,10 @@ feature {EB_CLUSTERS} -- Project Events
 						test_suite.set_tester_cluster (l_tcluster)
 					end
 				end
-			elseif is_testing_enabled then
-				notify_all_tools (agent notify_disable_testing)
+			else
+				test_suite := Void
 			end
-			notify_all_tools (agent notify_refresh)
+			refresh_actions.call ([])
 		end
 
 
@@ -244,6 +203,7 @@ feature {EB_CLUSTERS} -- Project Events
 			-- If class was test class, remove corresponding test case.
 		local
 			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_CASE]
+			l_item: CDD_TEST_CASE
 		do
 			if test_suite.has_test_case_for_class (a_class) then
 				from
@@ -253,83 +213,27 @@ feature {EB_CLUSTERS} -- Project Events
 					l_cursor.after
 				loop
 					if l_cursor.item.test_class = a_class then
+						l_item := l_cursor.item
 						test_suite.remove_test_case (l_cursor.item)
+						remove_test_case_actions.call ([l_item])
 						l_cursor.go_after
 					else
 						l_cursor.forth
 					end
 				end
-				notify_all_tools (agent notify_refresh)
 			end
 		end
 
-feature {NONE} -- Implementation tools
+feature -- Actions
 
-	test_suite_tools: DS_LINKED_LIST [CDD_TEST_SUITE_TOOL]
-			-- Managed tools
+	refresh_actions: ACTION_SEQUENCE [TUPLE]
+			-- Actions performed after `Current' has refreshed the test suite
 
-	notify_all_tools (a_proc: PROCEDURE [ANY, TUPLE [CDD_TEST_SUITE_TOOL]]) is
-			-- Call 'a_proc' with each tool in 'test_suite_tools'.
-		require
-			a_proc_not_void: a_proc /= Void
-		local
-			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_SUITE_TOOL]
-		do
-			from
-				l_cursor := test_suite_tools.new_cursor
-				l_cursor.start
-			until
-				l_cursor.after
-			loop
-				a_proc.call ([l_cursor.item])
-				l_cursor.forth
-			end
-		end
+	add_test_case_actions: ACTION_SEQUENCE [TUPLE [CDD_TEST_CASE]]
+			-- Actions performed when a test case is added to the test suite
 
-	notify_refresh (a_tool: CDD_TEST_SUITE_TOOL) is
-			-- Tell 'a_tool' to refresh.
-		require
-			a_tool_not_void: a_tool /= Void
-		do
-			a_tool.refresh
-		end
-
-	notify_add_test_case (a_tool: CDD_TEST_SUITE_TOOL; a_test_case: CDD_TEST_CASE) is
-			-- Tell `a_tool' to add `a_test_case'.
-		require
-			a_tool_not_void: a_tool /= Void
-			a_test_case_not_void: a_test_case /= Void
-			a_test_case_valid: not test_suite.test_cases.has (a_test_case)
-		do
-			a_tool.add_test_case (a_test_case)
-		end
-
-	notify_remove_test_case (a_tool: CDD_TEST_SUITE_TOOL; a_test_case: CDD_TEST_CASE) is
-			-- Tell `a_tool' to remove `a_test_case'.
-		require
-			a_tool_not_void: a_tool /= Void
-			a_test_case_not_void: a_test_case /= Void
-			a_test_case_valid: not test_suite.test_cases.has (a_test_case)
-		do
-			a_tool.remove_test_case (a_test_case)
-		end
-
-
-	notify_enable_testing (a_tool: CDD_TEST_SUITE_TOOL) is
-			-- Tell 'a_tool' that testing has been enabled.
-		require
-			a_tool_not_void: a_tool /= Void
-		do
-			a_tool.enable_testing
-		end
-
-	notify_disable_testing (a_tool: CDD_TEST_SUITE_TOOL) is
-			-- Tell 'a_tool' that testing has been disabled.
-		require
-			a_tool_not_void: a_tool /= Void
-		do
-			a_tool.disable_testing
-		end
+	remove_test_case_actions: ACTION_SEQUENCE [TUPLE [CDD_TEST_CASE]]
+			-- ACtions performed when a test case is removed from the test suite
 
 feature {NONE} -- Implementation
 
@@ -341,6 +245,7 @@ feature {NONE} -- Implementation
 		local
 			l_reflection: CDD_REFLECTED_OBJECT
 			l_warn: EV_WARNING_DIALOG
+			l_tc: CDD_TEST_CASE
 		do
 			if valid_status (an_app_status) then
 				l_reflection := make_reflection (an_app_status)
@@ -351,8 +256,9 @@ feature {NONE} -- Implementation
 					-- TODO: Check if test case for same application state already exists...
 				else
 					test_case_factory.create_with_reflection (l_reflection, test_suite.tests_cluster)
-					test_suite.add_test_case (test_case_factory.last_created_test_case)
-					notify_all_tools (agent notify_add_test_case (?, test_case_factory.last_created_test_case))
+					l_tc := test_case_factory.last_created_test_case
+					test_suite.add_test_case (l_tc)
+					add_test_case_actions.call ([l_tc])
 				end
 			end
 		end
@@ -382,8 +288,9 @@ feature {NONE} -- Implementation
 		end
 
 invariant
-
 	correct_testing_status: is_testing_enabled = (test_suite /= Void)
-	test_suite_tools_not_void: test_suite_tools /= Void
+	refresh_actions_not_void: refresh_actions /= Void
+	add_test_case_actions_not_void: add_test_case_actions /= Void
+	remove_test_case_actions_not_void: remove_test_case_actions /= Void
 
 end

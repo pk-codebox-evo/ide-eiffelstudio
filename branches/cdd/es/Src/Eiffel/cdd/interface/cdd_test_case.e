@@ -35,8 +35,7 @@ feature {NONE} -- Initialization
 			test_class := a_test_class
 			exception_tag := a_tag
 			id := an_id
-			create on_start_testing.make (5)
-			create on_finish_testing.make (5)
+			create update_status_actions
 		ensure
 			target_class_set: target_class = a_target_class
 			e_feature_set: feature_name = a_feature
@@ -87,15 +86,8 @@ feature -- Status seeting
 		require
 			not_testing: not is_tested
 		do
-			from
-				is_tested := True
-				on_start_testing.start
-			until
-				on_start_testing.after
-			loop
-				on_start_testing.item.call ([])
-				on_start_testing.forth
-			end
+			is_tested := True
+			update_status_actions.call ([])
 		ensure
 			started_testing: is_tested
 		end
@@ -103,17 +95,10 @@ feature -- Status seeting
 	set_passes (a_result: BOOLEAN) is
 			-- Set 'passes' to 'a_result' and notify agents.
 		do
-			from
-				was_tested := True
-				is_tested := False
-				passes := a_result
-				on_finish_testing.start
-			until
-				on_finish_testing.after
-			loop
-				on_finish_testing.item.call ([])
-				on_finish_testing.forth
-			end
+			was_tested := True
+			is_tested := False
+			passes := a_result
+			update_status_actions.call ([])
 		ensure
 			testing_stopped: not is_tested
 			was_tested: was_tested
@@ -122,12 +107,9 @@ feature -- Status seeting
 
 
 
-feature -- Event handling
+feature -- Actions
 
-	on_start_testing: ARRAYED_LIST [PROCEDURE [ANY, TUPLE]]
-			-- agents called when test case is beeing executed
-
-	on_finish_testing: ARRAYED_LIST [PROCEDURE [ANY, TUPLE]]
+	update_status_actions: ACTION_SEQUENCE [TUPLE]
 			-- agents called when execution of test case is over
 
 feature -- Compare
@@ -160,7 +142,6 @@ invariant
 	target_class_not_void: target_class /= Void
 	e_feature_not_void: feature_name /= Void
 	test_class_not_void: test_class /= Void
-	on_start_testing_not_void: on_start_testing /= Void
-	on_finish_testing_not_void: on_finish_testing /= Void
+	update_status_actions_not_void: update_status_actions /= Void
 
 end

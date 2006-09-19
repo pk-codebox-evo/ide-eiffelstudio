@@ -38,9 +38,11 @@ feature {NONE} -- Initialization
 			a_manager_not_void: a_manager /= Void
 		do
 			manager := a_manager
-			create test_suite_tools.make
 			idle_action_agent := agent idle_action
 			create output.make
+
+			create update_status_actions
+			create output_actions
 		ensure
 			manager_set: manager = a_manager
 		end
@@ -53,7 +55,7 @@ feature -- Access
 	test_suite: CDD_TEST_SUITE is
 			-- Test suite containing test cases
 		require
-
+			testing_enabled: manager.is_testing_enabled
 		do
 			Result := manager.test_suite
 		end
@@ -67,6 +69,14 @@ feature -- Access
 	is_testing: BOOLEAN
 			-- Is 'Current' running test cases?
 
+	test_cases: DS_LIST [CDD_TEST_CASE] is
+			-- Test cases currently beeing tested
+		require
+			running: is_running
+		do
+			Result := cursor.container
+		end
+
 	current_test_case: CDD_TEST_CASE is
 			-- Test case currently under test
 		require
@@ -75,13 +85,14 @@ feature -- Access
 			Result := cursor.item
 		end
 
-	manages_tool (a_tool: CDD_TEST_SUITE_TOOL): BOOLEAN is
-			-- Does 'Current' manage 'a_tool'?
+	current_index: INTEGER is
+			-- Index of `current_test_case' in `test_cases'
 		require
-			a_tool_not_void: a_tool /= Void
+			testing: is_testing
 		do
-			Result := test_suite_tools.has (a_tool)
+			Result := cursor.index
 		end
+
 
 
 feature -- Execution control
@@ -94,6 +105,7 @@ feature -- Execution control
 		local
 			l_cmd: STRING
 		do
+			cursor := test_suite.test_cases.new_cursor
 			printer.print_test_case (test_suite)
 			create l_cmd.make_empty
 			l_cmd.append ("ec -config ")
@@ -105,7 +117,7 @@ feature -- Execution control
 			is_running := True
 			process.launch
 			ev_application.add_idle_action (idle_action_agent)
-			notify_all_tools (agent notify_start_testing)
+			update_status_actions.call ([])
 		end
 
 	pause is
@@ -117,7 +129,7 @@ feature -- Execution control
 			ev_application.remove_idle_action (idle_action_agent)
 			process.terminate
 			is_paused := True
-			notify_all_tools (agent notify_pause_testing)
+			update_status_actions.call ([])
 		end
 
 	resume is
@@ -128,7 +140,7 @@ feature -- Execution control
 			is_paused := False
 			process.launch
 			ev_application.add_idle_action (idle_action_agent)
-			notify_all_tools (agent notify_resume_testing)
+			update_status_actions.call ([])
 		end
 
 	stop is
@@ -145,8 +157,16 @@ feature -- Execution control
 				current_test_case.set_passes (False)
 			end
 			is_testing := False
-			notify_all_tools (agent notify_stop_testing)
+			update_status_actions.call ([])
 		end
+
+feature -- Actions
+
+	update_status_actions: ACTION_SEQUENCE [TUPLE]
+			-- Actions performed when `Current' changes its status
+
+	output_actions: ACTION_SEQUENCE [TUPLE [STRING]]
+			-- Actions performed when reading an output from `process'	
 
 feature {NONE} -- Status setting
 
@@ -174,7 +194,6 @@ feature {NONE} -- Status setting
 					end
 				else
 					if process.exit_code = 0 then
-						cursor := test_suite.test_cases.new_cursor
 						cursor.start
 						is_testing := True
 						test_current_test_case
@@ -185,13 +204,11 @@ feature {NONE} -- Status setting
 						ev_application.remove_idle_action (idle_action_agent)
 					end
 				end
+				update_status_actions.call ([])
 			end
 			if output.has_new_block then
 				l_output := output.all_blocks (True).string_representation
-				notify_all_tools (agent notify_append_output (?, l_output))
-			end
-			if process = Void then
-				notify_all_tools (agent notify_finish_testing)
+				output_actions.call ([l_output])
 			end
 		end
 
@@ -212,36 +229,6 @@ feature {NONE} -- Implementation
 			process.launch
 		ensure
 			testing: is_testing
-		end
-
-
-feature -- Element change
-
-	add_tool (a_tool: CDD_TEST_SUITE_TOOL) is
-			-- Extend 'test_suite_tools' with 'a_tool'
-		require
-			a_tool_not_void: a_tool /= Void
-			not_added_yet: not manages_tool (a_tool)
-		do
-			test_suite_tools.put_last (a_tool)
-		ensure
-			added: manages_tool (a_tool)
-		end
-
-	remove_tool (a_tool: CDD_TEST_SUITE_TOOL) is
-			-- Remove 'a_tool' from 'test_suite_tools'
-		require
-			a_tool_not_void: a_tool /= Void
-			added: manages_tool (a_tool)
-		local
-			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_SUITE_TOOL]
-		do
-			l_cursor := test_suite_tools.new_cursor
-			l_cursor.start
-			l_cursor.search_forth (a_tool)
-			l_cursor.remove
-		ensure
-			removed: not manages_tool (a_tool)
 		end
 
 feature -- Process handlers
@@ -303,77 +290,6 @@ feature {NONE} -- Implementation
 			process_not_void: process /= Void
 		end
 
-	test_suite_tools: DS_LINKED_LIST [CDD_TEST_SUITE_TOOL]
-			-- Managed tools
-
-	notify_all_tools (a_proc: PROCEDURE [ANY, TUPLE [CDD_TEST_SUITE_TOOL]]) is
-			-- Call 'a_proc' with each tool in 'test_suite_tools'.
-		require
-			a_proc_not_void: a_proc /= Void
-		local
-			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_SUITE_TOOL]
-		do
-			from
-				l_cursor := test_suite_tools.new_cursor
-				l_cursor.start
-			until
-				l_cursor.after
-			loop
-				a_proc.call ([l_cursor.item])
-				l_cursor.forth
-			end
-		end
-
-	notify_start_testing (a_tool: CDD_TEST_SUITE_TOOL) is
-			-- Tell 'a_tool' that testing has started.
-		require
-			a_tool_not_void: a_tool /= Void
-		do
-			a_tool.start_testing
-		end
-
-	notify_stop_testing (a_tool: CDD_TEST_SUITE_TOOL) is
-			-- Tell 'a_tool' that testing has stopped.
-		require
-			a_tool_not_void: a_tool /= Void
-		do
-			a_tool.stop_testing
-		end
-
-	notify_pause_testing (a_tool: CDD_TEST_SUITE_TOOL) is
-			-- Tell 'a_tool' that testing has paused.
-		require
-			a_tool_not_void: a_tool /= Void
-		do
-			a_tool.pause_testing
-		end
-
-	notify_resume_testing (a_tool: CDD_TEST_SUITE_TOOL) is
-			-- Tell 'a_tool' that testing has resumed.
-		require
-			a_tool_not_void: a_tool /= Void
-		do
-			a_tool.resume_testing
-		end
-
-	notify_finish_testing (a_tool: CDD_TEST_SUITE_TOOL) is
-			-- Tell 'a_tool' that testing is finished.
-		require
-			a_tool_not_void: a_tool /= Void
-		do
-			a_tool.finish_testing
-		end
-
-	notify_append_output (a_tool: CDD_TEST_SUITE_TOOL; an_output: STRING) is
-			-- Tell 'a_tool' to append 'an_output'.
-		require
-			a_tool_not_void: a_tool /= Void
-			an_output_not_void: an_output /= Void
-		do
-			a_tool.append_output (an_output)
-		end
-
-
 feature -- Implementation
 
 	process: PROCESS
@@ -394,12 +310,12 @@ feature -- Implementation
 
 invariant
 	manager_not_void: manager /= Void
-	test_suite_tools_not_void: test_suite_tools /= Void
 	idle_action_agent_not_void: idle_action_agent /= Void
 	is_paused_implies_is_running: is_paused implies is_running
 	is_testing_implies_is_running: is_testing implies is_running
 	is_testing_implies_correct_cursor: is_testing implies (cursor /= Void and then not cursor.off)
-
 	valid_process_status: is_running = (process /= Void)
+	update_status_actions_not_void: update_status_actions /= Void
+	output_actions_not_void: output_actions /= Void
 
 end

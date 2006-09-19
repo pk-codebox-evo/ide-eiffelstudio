@@ -23,7 +23,7 @@ inherit
 			copy
 		end
 
-	EV_LAYOUT_CONSTANTS
+	EB_SHARED_PREFERENCES
 		export
 			{NONE} all
 		undefine
@@ -41,29 +41,42 @@ feature {NONE} -- Initialization
 			-- Set `tool' to `a_tool' and initialize grid layout.
 		require
 			a_tool_not_void: a_tool /= Void
-		local
-			l_col: EV_GRID_COLUMN
 		do
 			default_create
 
 			tool := a_tool
-
-			set_column_count_to (2)
-			l_col := column (1)
-			l_col.set_title ("Test Case")
-			l_col.set_width (300)
-			set_auto_resizing_column (1, True)
-			l_col := column (2)
-			l_col.set_title ("Status")
-			set_auto_resizing_column (2, True)
-
 			enable_tree
 			enable_row_height_fixed
 			enable_single_row_selection
 			enable_default_tree_navigation_behavior (True, False, True, True)
+			hide_tree_node_connectors
+			focus_in_actions.extend (agent update_selection)
+			focus_out_actions.extend (agent update_selection)
+			row_select_actions.extend (agent set_selection_color)
+			row_deselect_actions.extend (agent set_selection_color)
+			set_focused_selection_color (preferences.editor_data.selection_background_color)
+			build_columns
 		ensure
 			tool_set: tool = a_tool
 		end
+
+	build_columns is
+			-- Set up the grid colum layout.
+		local
+			l_col: EV_GRID_COLUMN
+		do
+			set_column_count_to (2)
+
+			l_col := column (1)
+			l_col.set_title ("Test Case")
+			l_col.set_width (230)
+			set_auto_resizing_column (1, True)
+
+			l_col := column (2)
+			l_col.set_title ("Status")
+			set_auto_resizing_column (2, True)
+		end
+
 
 feature -- Access
 
@@ -102,6 +115,39 @@ feature {NONE} -- GRID Customization
 	row_type: CDD_GRID_ROW is do end
 		-- Type used for row objects.
 		-- May be redefined by EV_GRID descendents.	
+
+feature -- Actions
+
+	update_selection is
+			-- Update selection color for all selected rows.
+		local
+			l_rows: ARRAYED_LIST [EV_GRID_ROW]
+		do
+			from
+				l_rows := selected_rows
+				l_rows.start
+			until
+				l_rows.after
+			loop
+				set_selection_color (l_rows.item)
+				l_rows.forth
+			end
+		end
+
+
+	set_selection_color (a_row: EV_GRID_ROW) is
+			-- Set selection color for `a_row' according to preferences.
+		do
+			if a_row.is_selected then
+				if has_focus then
+					a_row.set_background_color (preferences.editor_data.selection_background_color)
+				else
+					a_row.set_background_color (preferences.editor_data.focus_out_selection_background_color)
+				end
+			else
+				a_row.set_background_color (preferences.editor_data.class_background_color)
+			end
+		end
 
 feature -- Element change
 

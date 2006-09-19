@@ -102,10 +102,10 @@ feature -- Element change
 			else
 				l_line ?= l_row.grid_line
 			end
+			l_line.add_test_case (a_tc)
 			if l_line.grid_row.is_expandable then
 				l_line.grid_row.expand
 			end
-			l_line.add_test_case (a_tc)
 		end
 
 	remove_test_case (a_tc: CDD_TEST_CASE) is

@@ -32,6 +32,7 @@ feature {NONE} -- Initialization
 			-- Define first item of `grid_row' for displaying `eiffel_feature'.
 		do
 			Precursor (a_row, a_feature)
+			name_item.set_pixmap (pixmaps.icon_pixmaps.tool_feature_icon)
 			update_tokens
 
 			grid_row.select_actions.extend (agent do grid_row.disable_select end)
@@ -60,22 +61,15 @@ feature {NONE} -- Implementation
 	update_tokens is
 			-- Update `text' with new item count.
 		local
-			l_token_item: EB_GRID_EDITOR_TOKEN_ITEM
 			l_writer: EB_EDITOR_TOKEN_GENERATOR
 			l_text: STRING
 		do
-			l_token_item ?= grid_row.item (1)
-			if l_token_item = Void then
-				create l_token_item
-				l_token_item.set_pixmap (pixmaps.icon_pixmaps.tool_feature_icon)
-				grid_row.set_item (1, l_token_item)
-			end
-			l_writer := l_token_item.token_writer
+			l_writer := name_item.token_writer
 			l_writer.new_line
 			l_writer.process_feature_text (eiffel_feature.name, eiffel_feature, False)
 			l_text := " (" + grid_row.subrow_count_recursive.out + ")"
 			l_writer.process_basic_text (l_text)
-			l_token_item.set_text_with_tokens (l_writer.last_line.content)
+			name_item.set_text_with_tokens (l_writer.last_line.content)
 		end
 
 end -- Class CDD_GRID_FEATURE_LINE

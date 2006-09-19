@@ -52,7 +52,7 @@ feature -- Access
 			i: INTEGER
 		do
 			i := index + subrow_count_recursive + 1
-			if i <= parent.row_count then
+			if i <= parent.row_count and then parent.row (i).parent_row = parent_row then
 				Result := parent.row (i)
 			end
 		end

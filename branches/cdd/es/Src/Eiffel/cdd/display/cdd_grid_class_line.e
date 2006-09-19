@@ -12,7 +12,8 @@ inherit
 		rename
 			row_data as target_class
 		redefine
-			make_with_row
+			make_with_row,
+			name_item
 		end
 
 	CDD_GRID_HELPER [E_FEATURE, CDD_GRID_FEATURE_LINE]
@@ -30,22 +31,28 @@ feature {NONE} -- Initialization
 	make_with_row (a_row: like grid_row; a_class: like target_class) is
 			-- Set `grid_row' to `a_row' and `target_class' to `a_class'.
 			-- Define first item of `grid_row' for displaying `target_class'.
-		local
-			l_item: EB_GRID_CLASS_ITEM
 		do
 			Precursor (a_row, a_class)
-			if target_class.is_compiled then
-				create {EB_GRID_COMPILED_CLASS_ITEM} l_item.make (target_class.compiled_class, create {EB_GRID_FULL_CLASS_STYLE})
-			else
-				create {EB_GRID_NONCOMPILED_CLASS_ITEM} l_item.make (target_class, create {EB_GRID_JUST_NAME_NONCOMPILED_CLASS_STYLE})
-			end
-			l_item.enable_pixmap
-			grid_row.set_item (1, l_item)
+			name_item.enable_pixmap
 
 			grid_row.select_actions.extend (agent do grid_row.disable_select end)
 		end
 
 feature -- Access
+
+	name_item: EB_GRID_CLASS_ITEM is
+			-- Item for displaying class editor token
+		do
+			Result ?= grid_row.item (1)
+			if Result = Void then
+				if target_class.is_compiled then
+					create {EB_GRID_COMPILED_CLASS_ITEM} Result.make (target_class.compiled_class, create {EB_GRID_FULL_CLASS_STYLE})
+				else
+					create {EB_GRID_NONCOMPILED_CLASS_ITEM} Result.make (target_class, create {EB_GRID_JUST_NAME_NONCOMPILED_CLASS_STYLE})
+				end
+				grid_row.set_item (1, Result)
+			end
+		end
 
 	data_from_test_case (a_tc: CDD_TEST_CASE): E_FEATURE is
 			-- Attribute of `a_tc' displayed in sublines of `Current'.

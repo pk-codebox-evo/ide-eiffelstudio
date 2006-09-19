@@ -34,6 +34,7 @@ feature {NONE} -- Initialization
 		do
 			set_grid_row (a_row)
 			row_data := some_data
+
 		ensure
 			data_set: row_data = some_data
 		end
@@ -58,13 +59,23 @@ feature -- Access
 			-- CDD_GRID_ROW row associated with current
 
 	row_data: G
-			-- Comparable user data.
+			-- Comparable user data
 
 	first_subrow: like grid_row is
-			--
+			-- First subrow of `grid_row', Void if `grid_row' has no subrows
 		do
 			if grid_row.subrow_count > 0 then
 				Result := grid.row (grid_row.index + 1)
+			end
+		end
+
+	name_item: EB_GRID_EDITOR_TOKEN_ITEM is
+			-- Item which displayes the name of `grid_row'.
+		do
+			Result ?= grid_row.item (1)
+			if Result = Void then
+				create Result
+				grid_row.set_item (1, Result)
 			end
 		end
 
@@ -99,10 +110,13 @@ feature -- Element change
 			not_attached: grid_row.grid_line = Void
 		end
 
+feature {NONE} -- Implementation
+
 
 invariant
 	data_not_void: row_data /= Void
 	grid_row_has_parent: grid_row.parent /= Void
 	grid_is_cdd_grid: grid /= Void
+	valid_name_item: name_item /= Void and then grid_row.item (1) = name_item
 
 end -- Class CDD_GRID_LINE
