@@ -16,6 +16,11 @@ inherit
 			unattach
 		end
 
+	EV_STOCK_COLORS
+		export
+			{NONE}
+		end
+
 create
 	make_with_row
 
@@ -62,7 +67,7 @@ feature -- Element change
 			Precursor
 		end
 
-	status_item: EB_GRID_EDITOR_TOKEN_ITEM is
+	status_item: EV_GRID_LABEL_ITEM is --EB_GRID_EDITOR_TOKEN_ITEM is
 			-- Item of `grid_row' showing the test case status
 		do
 			Result ?= grid_row.item (2)
@@ -81,13 +86,16 @@ feature {NONE} -- Implementation
 			-- Update status item of `grid_row'.
 		do
 			if test_case.is_tested then
+				status_item.set_foreground_color (black)
 				status_item.set_text ("Testing...")
 			elseif not test_case.was_tested then
 				status_item.set_text ("Not tested yet")
 			else
 				if test_case.passes then
+					status_item.set_foreground_color (green)
 					status_item.set_text ("Ok")
 				else
+					status_item.set_foreground_color (red)
 					status_item.set_text ("Fails")
 				end
 			end
