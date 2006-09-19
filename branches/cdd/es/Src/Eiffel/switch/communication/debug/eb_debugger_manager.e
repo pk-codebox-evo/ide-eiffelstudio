@@ -1019,7 +1019,7 @@ feature -- Debugging events
 			if Application.status.reason_is_overflow then
 				create cd.make_with_text_and_actions (Warning_messages.w_Overflow_detected, <<agent do_nothing, agent relaunch_application>>)
 				cd.show_modal_to_window (debugging_window.window)
-			elseif l_manager.valid_status (application.status) then
+			elseif l_manager.is_testing_enabled and l_manager.valid_status (application.status) then
 					-- Notify test case factory that an postcondition violation occured.
 				l_manager.report_postcondition_violation (application.status, debugging_window)
 			end
