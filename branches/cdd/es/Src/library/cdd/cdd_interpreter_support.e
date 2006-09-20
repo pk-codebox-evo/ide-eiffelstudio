@@ -21,7 +21,7 @@ feature
 				a_test.test_feature
 				io.put_string ("[PASSED]%N")
 			else
-				io.put_string ("[FAILED]%N")
+				io.put_string ("[FAILED (" + exception.out + ")]%N")
 				die (1)
 			end
 		rescue

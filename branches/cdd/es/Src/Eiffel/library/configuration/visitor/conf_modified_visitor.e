@@ -53,7 +53,7 @@ feature -- Visit nodes
 	process_library (a_library: CONF_LIBRARY) is
 			-- Process `a_library'.
 		do
-			if not is_override_only and then not processed_libraries.has (a_library.uuid) then
+			if not is_override_only and then not a_library.is_readonly and then not processed_libraries.has (a_library.uuid) then
 				on_process_group (a_library)
 				processed_libraries.force (a_library.uuid)
 				a_library.library_target.process (Current)
@@ -63,7 +63,7 @@ feature -- Visit nodes
 	process_precompile (a_precompile: CONF_PRECOMPILE) is
 			-- Process `a_precompile'.
 		do
-			if not is_override_only then
+			if not is_override_only and then not a_precompile.is_readonly then
 				process_library (a_precompile)
 			end
 		end
@@ -71,7 +71,7 @@ feature -- Visit nodes
 	process_cluster (a_cluster: CONF_CLUSTER) is
 			-- Process `a_cluster'.
 		do
-			if not is_override_only then
+			if not is_override_only and then not a_cluster.is_readonly then
 				on_process_group (a_cluster)
 				find_modified (a_cluster)
 			end
@@ -80,10 +80,12 @@ feature -- Visit nodes
 	process_override (an_override: CONF_OVERRIDE) is
 			-- Process `an_override'.
 		do
-			on_process_group (an_override)
-				-- check if any classes have been added and force a rebuild if this is the case
-			process_cluster_recursive ("", an_override, an_override.active_file_rule (state))
-			find_modified (an_override)
+			if not an_override.is_readonly then
+				on_process_group (an_override)
+					-- check if any classes have been added and force a rebuild if this is the case
+				process_cluster_recursive ("", an_override, an_override.active_file_rule (state))
+				find_modified (an_override)
+			end
 		end
 
 feature -- Status
@@ -196,7 +198,7 @@ feature {NONE} -- Implementation
 					end
 					l_classes.forth
 				end
-				if not is_force_rebuild then
+				if not is_error and then not is_force_rebuild then
 					a_group.set_classes (l_new_classes)
 				end
 			end

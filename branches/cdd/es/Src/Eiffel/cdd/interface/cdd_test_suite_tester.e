@@ -120,6 +120,15 @@ feature -- Execution control
 			update_status_actions.call ([])
 		end
 
+	start_in_debugger (a_tc: CDD_TEST_CASE) is
+			--
+		require
+			a_tc_not_void: a_tc /= Void
+		do
+
+		end
+
+
 	pause is
 			-- Pause testing execution.
 		require

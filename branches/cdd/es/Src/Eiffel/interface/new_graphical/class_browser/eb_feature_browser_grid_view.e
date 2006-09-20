@@ -383,7 +383,7 @@ feature{NONE} -- Initialization
 			if drop_actions /= Void then
 				grid.drop_actions.fill (drop_actions)
 			end
-			grid.pointer_button_press_actions.extend (agent on_pointer_right_click)
+			enable_ctrl_right_click_to_open_new_window
 			show_tooltip_checkbox.select_actions.extend (agent on_show_tooltip_changed)
 			on_show_tooltip_changed_from_outside_agent := agent on_show_tooltip_changed_from_outside
 			preferences.class_browser_data.show_tooltip_preference.change_actions.extend (on_show_tooltip_changed_from_outside_agent)
@@ -445,7 +445,7 @@ feature -- Notification
 				else
 					component_widget.hide
 					text.show
-					l_msg := Warning_messages.w_Formatter_failed
+					l_msg := Warning_messages.w_Formatter_failed.twin
 					if trace /= Void then
 						l_msg.append ("%N")
 						l_msg.append (trace)

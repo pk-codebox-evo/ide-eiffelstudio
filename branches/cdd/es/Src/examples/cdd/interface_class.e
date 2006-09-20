@@ -14,6 +14,7 @@ feature -- TDD features
 			--
 		do
 			Result := a * b
+			-- TODO: Implemenent
 		ensure
 			correct_result: Result = a * b
 		end

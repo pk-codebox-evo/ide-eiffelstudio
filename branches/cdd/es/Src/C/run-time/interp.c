@@ -28,7 +28,7 @@
 	source: "[
 			 Eiffel Software
 			 356 Storke Road, Goleta, CA 93117 USA
-			 Telephone 805-685-1006, Fax 805-685-6869
+			 Telephone /R805-685-1006, Fax 805-685-6869
 			 Website http://www.eiffel.com
 			 Customer support http://support.eiffel.com
 		]"
@@ -1932,6 +1932,7 @@ rt_private void interpret(int flag, int where)
 			case SK_INT32: if (lower->it_int32 <= last->it_int32 && last->it_int32 <= upper->it_int32) { IC += offset; } break;
 			case SK_INT64: if (lower->it_int64 <= last->it_int64 && last->it_int64 <= upper->it_int64) { IC += offset; } break;
 			case SK_CHAR: if (lower->it_char <= last->it_char && last->it_char <= upper->it_char) { IC += offset; } break;
+			case SK_WCHAR: if (lower->it_wchar <= last->it_wchar && last->it_wchar <= upper->it_wchar) { IC += offset; } break;
 			default:
 				eif_panic(MTC "invalid inspect type");
 				/* NOTREACHED */
@@ -4315,7 +4316,6 @@ rt_public void dynamic_eval(int fid, int stype, int is_precompiled, int is_basic
 	RTLXD;
 
 	RTLXL;
-	dstart();
 	SAVE(db_stack, dcur, dtop);
 	SAVE(op_stack, scur, stop);
 	db_cstack = d_data.db_callstack_depth;
@@ -4343,7 +4343,6 @@ rt_public void dynamic_eval(int fid, int stype, int is_precompiled, int is_basic
 	if (setjmp(exenv)) {
 		RESTORE(op_stack,scur,stop);
 		RESTORE(db_stack,dcur,dtop);
-		dpop();
 		RTLXE;
 		d_data.db_callstack_depth = db_cstack;
 		RTXSC;
@@ -4367,7 +4366,6 @@ rt_public void dynamic_eval(int fid, int stype, int is_precompiled, int is_basic
 	}
 	IC = OLD_IC;					/* Restore IC back-up */
 	expop(&eif_stack);
-	dpop();	
 	/* restore operational stack if needed */
 	if (sync_needed==1 && previous_scur!=NULL && previous_stop!=NULL)
 		sync_registers(previous_scur, previous_stop); 

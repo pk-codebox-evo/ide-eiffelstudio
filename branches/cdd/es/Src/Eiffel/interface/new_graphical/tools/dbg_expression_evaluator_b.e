@@ -304,16 +304,33 @@ feature {NONE} -- EXPR_B evaluation
 			l_char: CHAR_VALUE_I
 			l_real: REAL_VALUE_I
 			l_string: STRING_VALUE_I
+			l_type: TYPE_I
+			l_cl: CLASS_C
 			-- ...
 		do
 			if a_value_i.is_integer then
 				l_integer ?= a_value_i
-				if l_integer.has_integer (32) then
-					create tmp_result_value.make_integer_32 (l_integer.integer_32_value,
-						system.integer_32_class.compiled_class)
+				l_type := l_integer.type
+				if l_type.type_a /= Void and then l_type.type_a.has_associated_class then
+					l_cl := l_type.type_a.associated_class
+					if l_type.is_natural then
+						if l_integer.has_natural (64) then
+							create tmp_result_value.make_natural_64 (l_integer.natural_64_value, l_cl)
+						else
+							create tmp_result_value.make_natural_32 (l_integer.natural_32_value, l_cl)
+						end
+					else
+						if l_integer.has_integer (64) then
+							create tmp_result_value.make_integer_64 (l_integer.integer_64_value, l_cl)
+						else
+							create tmp_result_value.make_integer_32 (l_integer.integer_32_value, l_cl)
+						end
+					end
 				else
+						--| This should not occur, but in case it does
+						--| let's display it as INTEGER_64
 					create tmp_result_value.make_integer_64 (l_integer.integer_64_value,
-						system.integer_64_class.compiled_class)
+							System.integer_64_class.compiled_class)
 				end
 			elseif a_value_i.is_string then
 				l_string ?= a_value_i
@@ -324,12 +341,12 @@ feature {NONE} -- EXPR_B evaluation
 					system.boolean_class.compiled_class)
 			elseif a_value_i.is_character then
 				l_char ?= a_value_i
-				if l_char.is_character_8 then
-					create tmp_result_value.make_character (l_char.character_value.to_character_8,
-						system.character_8_class.compiled_class)
-				else
+				if l_char.is_character_32 then
 					create tmp_result_value.make_wide_character (l_char.character_value,
-						system.character_32_class.compiled_class)
+						System.Character_32_class.compiled_class)
+				else
+					create tmp_result_value.make_character (l_char.character_value.to_character_8,
+						System.Character_8_class.compiled_class)
 				end
 			elseif a_value_i.is_real then
 				l_real ?= a_value_i
@@ -1217,7 +1234,7 @@ feature {NONE} -- Implementation
 			retried: BOOLEAN
 
 			l_ct_locals: HASH_TABLE [LOCAL_INFO, STRING]
-			f_as: FEATURE_AS
+			f_as: BODY_AS
 			l_byte_code: BYTE_CODE
 			l_ta: CL_TYPE_A
 			bak_byte_code: BYTE_CODE
@@ -1263,22 +1280,23 @@ feature {NONE} -- Implementation
 						bak_byte_code := Byte_context.byte_code
 
 						if on_context and then context_feature /= Void then
-								--| Locals
-							f_as := context_feature.body
-
 							Ast_context.set_current_feature (context_feature)
 
 							fixme ("jfiat [2004/10/16] : Seems pretty heavy computing ..")
 							l_byte_code := context_feature.byte_server.item (context_feature.body_index)
 							Byte_context.set_byte_code (l_byte_code)
 
-							l_ct_locals := locals_builder.local_table (context_class, context_feature, f_as)
-							if l_ct_locals /= Void then
-									--| if it failed .. let's continue anyway for now
+								--| Locals
+							f_as := context_feature.real_body
+							if f_as /= Void or True then
+								l_ct_locals := locals_builder.local_table (context_class, context_feature, f_as)
+								if l_ct_locals /= Void then
+										--| if it failed .. let's continue anyway for now
 
-									--| Last local return a new object
-									--| so there is no need to "twin" it
-								Ast_context.set_locals (l_ct_locals)
+										--| Last local return a new object
+										--| so there is no need to "twin" it
+									Ast_context.set_locals (l_ct_locals)
+								end
 							end
 						end
 							--| Compute and get `expression_byte_node'

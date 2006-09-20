@@ -21,9 +21,6 @@ inherit
 		end
 
 	SHARED_EIFFEL_PROJECT
-		export
-			{NONE} all
-		end
 
 	EB_SHARED_WINDOW_MANAGER
 		export

@@ -89,7 +89,7 @@ feature {NONE} -- Initialization
 
 			create run_button
 			run_button.set_tooltip ("Run all test cases")
-			run_button.set_pixmap (pixmaps.icon_pixmaps.debug_run_icon)
+			run_button.set_pixmap (pixmaps.icon_pixmaps.debug_run_without_breakpoint_icon)
 			run_button.select_actions.extend (agent on_run_button)
 			run_button.disable_sensitive
 
@@ -105,24 +105,31 @@ feature {NONE} -- Initialization
 			stop_button.select_actions.extend (agent on_stop_button)
 			stop_button.disable_sensitive
 
-			create enable_testing_button
-			enable_testing_button.set_tooltip ("Enable Testing")
-			enable_testing_button.set_pixmap (pixmaps.icon_pixmaps.breakpoints_enable_icon)
-			enable_testing_button.select_actions.extend (agent on_enable_testing_button)
-			enable_testing_button.disable_sensitive
-
 			create delete_button
 			delete_button.set_tooltip ("Remove test case")
 			delete_button.set_pixmap (pixmaps.icon_pixmaps.general_delete_icon)
 			delete_button.select_actions.extend (agent on_delete_button)
 			delete_button.disable_sensitive
 
+			create debug_button
+			debug_button.set_tooltip ("Run test case in debugger")
+			debug_button.set_pixmap (pixmaps.icon_pixmaps.debug_run_icon)
+			debug_button.select_actions.extend (agent on_debug_button)
+			debug_button.disable_sensitive
+
+			create enable_testing_button
+			enable_testing_button.set_tooltip ("Enable Testing")
+			enable_testing_button.set_pixmap (pixmaps.icon_pixmaps.breakpoints_enable_icon)
+			enable_testing_button.select_actions.extend (agent on_enable_testing_button)
+			enable_testing_button.disable_sensitive
+
 			tool_bar.extend (run_button)
 			tool_bar.extend (pause_button)
 			tool_bar.extend (stop_button)
 			tool_bar.extend (create {EV_TOOL_BAR_SEPARATOR})
-			tool_bar.extend (enable_testing_button)
 			tool_bar.extend (delete_button)
+			tool_bar.extend (create {EV_TOOL_BAR_SEPARATOR})
+			tool_bar.extend (enable_testing_button)
 
 			l_vbox.extend (tool_bar)
 			l_vbox.extend (create {EV_HORIZONTAL_SEPARATOR})
@@ -342,6 +349,7 @@ feature {CDD_GRID_TEST_CASE_LINE} -- Selection
 		do
 			selected_test_case_line := a_tc_line
 			delete_button.enable_sensitive
+			debug_button.enable_sensitive
 		ensure
 			selected_test_case_line_set: selected_test_case_line = a_tc_line
 			delete_button_sensitive: delete_button.is_sensitive
@@ -352,6 +360,7 @@ feature {CDD_GRID_TEST_CASE_LINE} -- Selection
 		do
 			selected_test_case_line := Void
 			delete_button.disable_sensitive
+			debug_button.disable_sensitive
 		ensure
 			nothing_selected: selected_test_case_line = Void
 			delete_button_not_sensitive: not delete_button.is_sensitive
@@ -386,6 +395,15 @@ feature {NONE} -- Button events
 				tester.start
 			end
 		end
+
+	on_debug_button is
+			-- Run selected test case in the debugger.
+		require
+			test_case_selected: selected_test_case_line /= Void
+		do
+
+		end
+
 
 	on_stop_button is
 			-- Stop testing execution.
@@ -475,7 +493,10 @@ feature {NONE} -- Implementation
 			-- Button for enabling testing
 
 	run_button, stop_button, pause_button: EV_TOOL_BAR_BUTTON
-			-- buttons for controlling test execution
+			-- Buttons for controlling test execution
+
+	debug_button: EV_TOOL_BAR_BUTTON
+			-- Button for running selected test cases in the debugger
 
 	delete_button: EV_TOOL_BAR_BUTTON
 			-- Button for deleting a single test case
