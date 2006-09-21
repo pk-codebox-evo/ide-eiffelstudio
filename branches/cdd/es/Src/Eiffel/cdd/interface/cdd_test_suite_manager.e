@@ -40,6 +40,16 @@ inherit
 			{NONE} all
 		end
 
+	CONF_ACCESS
+		export
+			{NONE} all
+		end
+
+	EB_SHARED_GRAPHICAL_COMMANDS
+		export
+			{NONE} all
+		end
+
 create
 	make
 
@@ -74,11 +84,9 @@ feature -- Access
 		require
 			not_enabled_yet: not is_testing_enabled
 		do
-			if eiffel_project.initialized then
-				if False then -- can create cdd cluster??
-					Result := True
-				end
-			end
+			Result := ise_project.initialized and
+				not ise_project.is_read_only and
+				not ise_target.system.date_has_changed
 		end
 
 	valid_status (an_app_status: APPLICATION_STATUS): BOOLEAN is
@@ -134,14 +142,25 @@ feature -- Status setting
 			not_enabled_yet: not is_testing_enabled
 			can_enable: can_enable_testing
 		local
-			l_cluster: CLUSTER_I
+			l_dirname: DIRECTORY_NAME
+			l_dir: KL_DIRECTORY
+			l_loc: CONF_FILE_LOCATION
+			l_lib: CONF_LIBRARY
 		do
-			l_cluster := eiffel_universe.cluster_of_name (tests_cluster_name)
-			if l_cluster = Void then
-				-- TODO: create cluster
+			l_dirname := ise_project.name
+			l_dirname.extend ("cdd_tests")
+			create l_dir.make (l_dirname)
+			l_dir.create_directory
+			if l_dir.exists then
+				eb_cluster_manager.remove_observer (Current)
+				l_loc := conf_factory.new_location_from_full_path ("$ISE_LIBRARY\library\cdd\cdd.ecf", ise_target)
+				l_lib := conf_factory.new_library ("cdd", l_loc, ise_target)
+				ise_target.add_library (l_lib)
+				eb_cluster_manager.add_cluster (tests_cluster_name, Void, l_dir.name)
+				create test_suite.make_with_cluster (eb_cluster_manager.last_added_cluster)
+				eb_cluster_manager.add_observer (Current)
+				melt_project_cmd.execute
 			end
-			create test_suite.make_with_cluster (l_cluster)
-			refresh
 		end
 
 feature -- Test suite manipulation
@@ -168,7 +187,7 @@ feature -- Test suite manipulation
 feature {EB_CLUSTERS} -- Project Events
 
 	on_project_loaded is
-			--
+			--Check if testing was enabled for this project before.
 		do
 			eiffel_system.system.force_rebuild
 			refresh
@@ -179,8 +198,6 @@ feature {EB_CLUSTERS} -- Project Events
 			-- Refresh test suite.
 		local
 			l_tests_cluster: CLUSTER_I
-			l_ttarget: CONF_TARGET
-			l_tcluster: CONF_CLUSTER
 			l_classes: HASH_TABLE [EIFFEL_CLASS_I, STRING]
 			l_was_enabled: BOOLEAN
 		do
@@ -296,6 +313,13 @@ feature {NONE} -- Implementation
 		ensure
 			not_void: Result /= Void
 		end
+
+	conf_factory: CONF_FACTORY is
+			-- Factory for creating cdd library
+		once
+			create Result
+		end
+
 
 invariant
 	correct_testing_status: is_testing_enabled = (test_suite /= Void)

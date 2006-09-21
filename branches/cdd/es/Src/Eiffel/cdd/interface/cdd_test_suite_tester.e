@@ -76,13 +76,16 @@ feature -- Access
 	can_start_background_testing: BOOLEAN is
 			-- Can background testing be launched?
 		do
-			Result := True
+			Result := not is_running and
+				not manager.ise_project.is_compiling and
+				not manager.ise_project.is_read_only
 		end
 
 	can_start_debugged_testing: BOOLEAN is
 			-- Can testing be launched in the debugger?
 		do
-			Result := can_start_background_testing and True
+			Result := can_start_background_testing and
+				not run_project_cmd.debugger_manager.application.is_running
 		end
 
 	is_running: BOOLEAN
@@ -203,9 +206,16 @@ feature -- Execution control
 		require
 			running: is_running
 			not_paused: not is_paused
+		local
+			l_app: APPLICATION_EXECUTION
 		do
-			ev_application.remove_idle_action (idle_action_agent)
-			process.terminate
+			if is_debugging then
+				l_app := run_project_cmd.debugger_manager.application
+				l_app.interrupt
+			else
+				ev_application.remove_idle_action (idle_action_agent)
+				process.terminate
+			end
 			is_paused := True
 			update_status_actions.call ([])
 		end
@@ -214,10 +224,17 @@ feature -- Execution control
 			-- Resume testing execution.
 		require
 			paused: is_paused
+		local
+			l_app: APPLICATION_EXECUTION
 		do
+			if is_debugging then
+				l_app := run_project_cmd.debugger_manager.application
+				l_app.continue
+			else
+				process.launch
+				ev_application.add_idle_action (idle_action_agent)
+			end
 			is_paused := False
-			process.launch
-			ev_application.add_idle_action (idle_action_agent)
 			update_status_actions.call ([])
 		end
 
@@ -225,16 +242,33 @@ feature -- Execution control
 			-- Stop testing.
 		require
 			running: is_running
+		local
+			l_app: APPLICATION_EXECUTION
 		do
 			ev_application.remove_idle_action (idle_action_agent)
-			process.terminate
-			process := Void
-			cursor := Void
-			is_running := False
-			if is_testing then
+			if is_debugging then
+				is_debugging := False
+				l_app := run_project_cmd.debugger_manager.application
+				if l_app.is_running then
+					l_app.kill
+				end
+				manager.ise_target.set_root (old_root)
+				manager.ise_target.system.store
+				melt_project_cmd.execute_and_wait
+				status_text := "Done"
+			else
+				process.terminate
+				process := Void
+				manager.ise_target.system.remove_target (tester_target_name)
+				manager.ise_target.system.store
+				status_text := "Done"
+			end
+			if is_testing and current_test_case.is_tested then
 				current_test_case.set_passes (False)
 			end
+			cursor := Void
 			is_testing := False
+			is_running := False
 			update_status_actions.call ([])
 		end
 
@@ -255,8 +289,6 @@ feature {NONE} -- Status setting
 			-- Check status of the process and its output
 		require
 			running: is_running
-		local
-			l_output: STRING
 		do
 			if is_debugging then
 				check_on_debugger
@@ -276,18 +308,12 @@ feature {NONE} -- Status setting
 			if process.has_exited then
 				if is_testing then
 					current_test_case.set_passes (process.exit_code = 0)
-					cursor.forth
-					if not cursor.after then
+					if cursor.is_last then
+						stop
+					else
+						cursor.forth
 						test_current_test_case
 						status_text := "Testing " + current_test_case.test_class.name
-					else
-						is_running := False
-						is_testing := False
-						process := Void
-						ev_application.remove_idle_action (idle_action_agent)
-						manager.ise_target.system.remove_target (tester_target_name)
-						manager.ise_target.system.store
-						status_text := "Done"
 					end
 				else
 					if process.exit_code = 0 then
@@ -320,13 +346,7 @@ feature {NONE} -- Status setting
 		do
 			l_app := run_project_cmd.debugger_manager.application
 			if not l_app.is_running then
-				is_debugging := False
-				is_running := False
-				is_testing := False
-				ev_application.remove_idle_action (idle_action_agent)
-				manager.ise_target.set_root (old_root)
-				manager.ise_target.system.store
-				melt_project_cmd.execute
+				stop
 			end
 		end
 

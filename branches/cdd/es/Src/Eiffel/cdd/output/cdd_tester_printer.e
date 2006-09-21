@@ -35,6 +35,8 @@ feature -- Access
 			append_text ("%T%Tdo%N")
 			if with_argument then
 				append_instruction ("l_arg := command_line.argument (1)")
+			else
+				append_instruction ("l_old_root_class := Void")
 			end
 			if with_argument then
 				append_instruction ("if False then")

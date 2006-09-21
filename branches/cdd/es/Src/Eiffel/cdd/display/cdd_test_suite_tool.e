@@ -91,7 +91,7 @@ feature {NONE} -- Initialization
 			create tool_bar
 
 			create run_button
-			run_button.set_tooltip ("Run all test cases")
+			run_button.set_tooltip ("Run test cases in background")
 			run_button.set_pixmap (pixmaps.icon_pixmaps.debug_run_without_breakpoint_icon)
 			run_button.select_actions.extend (agent on_run_button)
 			run_button.disable_sensitive
@@ -127,10 +127,10 @@ feature {NONE} -- Initialization
 			enable_testing_button.disable_sensitive
 
 			tool_bar.extend (run_button)
+			tool_bar.extend (debug_button)
 			tool_bar.extend (pause_button)
 			tool_bar.extend (stop_button)
 			tool_bar.extend (create {EV_TOOL_BAR_SEPARATOR})
-			tool_bar.extend (debug_button)
 			tool_bar.extend (delete_button)
 			tool_bar.extend (create {EV_TOOL_BAR_SEPARATOR})
 			tool_bar.extend (enable_testing_button)
@@ -195,9 +195,6 @@ feature {NONE} -- Initialization
 			widget.disable_item_expand (status_bar)
 		end
 
-
-
-
 feature -- Access
 
 	development_window: EB_DEVELOPMENT_WINDOW
@@ -218,8 +215,6 @@ feature -- Access
 			Result := manager.tester
 		end
 
-
-
 feature -- Status setting
 
 	add_test_case (a_tc: CDD_TEST_CASE) is
@@ -231,15 +226,12 @@ feature -- Status setting
 			if not run_button.is_sensitive then
 				run_button.enable_sensitive
 			end
-			grid.refresh_now
 		end
 
 	remove_test_case (a_tc: CDD_TEST_CASE) is
 			-- Remove `a_tc' from `grid'.
 		require
 			a_tc_not_void: a_tc /= Void
-		local
-			l_rows: ARRAYED_LIST [EV_GRID_ROW]
 		do
 			if selected_test_case_line /= Void then
 				selected_test_case_line.grid_row.disable_select
@@ -248,7 +240,6 @@ feature -- Status setting
 			if manager.test_suite.test_cases.count = 0 then
 				run_button.disable_sensitive
 			end
-			grid.refresh_now
 		end
 
 	refresh is
@@ -291,15 +282,15 @@ feature -- Status setting
 		do
 			if tester.is_running then
 				if tester.is_paused then
-					run_button.enable_sensitive
+					if tester.is_debugging then
+						debug_button.enable_sensitive
+					else
+						run_button.enable_sensitive
+					end
 					pause_button.disable_sensitive
 				else
-					if not stop_button.is_sensitive then
-						output.remove_text
-						stop_button.enable_sensitive
-					end
 					pause_button.enable_sensitive
-					if tester.is_testing then
+					if tester.is_testing and not tester.is_debugging then
 						progress_bar.set_value (tester.current_index*100//tester.test_cases.count)
 					end
 				end
@@ -309,6 +300,7 @@ feature -- Status setting
 				stop_button.disable_sensitive
 				pause_button.disable_sensitive
 				run_button.enable_sensitive
+				debug_button.enable_sensitive
 			end
 			status_label.set_text (tester.status_text)
 		end
@@ -319,6 +311,10 @@ feature -- Status setting
 			an_output_not_void: an_output /= Void
 		do
 			output.append_text (an_output)
+			if output.line_count > 100 then
+				output.select_lines (1, output.line_count - 100)
+				output.delete_selection
+			end
 			output.scroll_to_line (output.line_count)
 		end
 
@@ -385,8 +381,12 @@ feature {NONE} -- Button events
 		require
 			has_test_cases: manager.test_suite.test_cases.count > 0
 		do
-			if tester.can_start_background_testing then
+			if tester.is_paused then
+				tester.resume
+			elseif tester.can_start_background_testing then
 				tester.start_background_testing
+			else
+				-- TODO: Notify user that background testing is not possible
 			end
 		end
 
@@ -395,7 +395,9 @@ feature {NONE} -- Button events
 		require
 			test_case_selected: selected_test_case_line /= Void
 		do
-			if tester.can_start_debugged_testing then
+			if tester.is_paused then
+				tester.resume
+			elseif tester.can_start_debugged_testing then
 				tester.start_debugged_testing (selected_test_case_line.test_case)
 			end
 		end
@@ -413,6 +415,7 @@ feature {NONE} -- Button events
 			-- Pause testing execution.
 		require
 			running: tester.is_running
+			not_paused: not tester.is_paused
 		do
 			tester.pause
 		end
