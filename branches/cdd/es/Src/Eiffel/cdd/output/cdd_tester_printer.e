@@ -29,6 +29,7 @@ feature -- Access
 			append_text ("%Tmake is%N%T%Tlocal%N")
 			if with_argument then
 				append_instruction ("l_arg: STRING")
+			else
 				append_instruction ("l_old_root_class: " + an_old_root_class)
 			end
 			append_text ("%T%Tdo%N")

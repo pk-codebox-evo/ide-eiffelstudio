@@ -323,10 +323,10 @@ feature {NONE} -- Status setting
 				is_debugging := False
 				is_running := False
 				is_testing := False
+				ev_application.remove_idle_action (idle_action_agent)
 				manager.ise_target.set_root (old_root)
 				manager.ise_target.system.store
 				melt_project_cmd.execute
-				ev_application.remove_idle_action (idle_action_agent)
 			end
 		end
 
