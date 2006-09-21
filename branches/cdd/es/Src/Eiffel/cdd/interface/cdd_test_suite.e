@@ -45,40 +45,6 @@ feature -- Access
 	tests_cluster: CLUSTER_I
 			-- Cluster where all generated classes for testing are stored
 
-	tester_target: CONF_TARGET
-			-- Target for executing test cases
-			-- NOTE: will be removed
-
-	tester_cluster: CONF_CLUSTER
-			-- Cluster where tester class is stored
-			-- NOTE: will be removed
-
-feature -- Element change
-
-	set_tester_target (a_target: like tester_target) is
-			-- Set 'tester_target' to 'a_target'
-		require
-			a_target_not_void: a_target /= Void
-			a_target_valid: a_target.extends = target_under_test
-		do
-			tester_target := a_target
-		ensure
-			tester_target_set: tester_target = a_target
-		end
-
-	set_tester_cluster (a_cluster: like tester_cluster) is
-			-- Set 'tester_cluster' to 'a_cluster'
-		require
-			a_cluster_not_void: a_cluster /= Void
-			tester_target_set: tester_target /= Void
-			a_cluster_valid: a_cluster.target = tester_target
-		do
-			tester_cluster := a_cluster
-		ensure
-			tester_cluster_set: tester_cluster = a_cluster
-		end
-
-
 feature -- Status report
 
 	has_test_case_for_class (a_class: CLASS_I): BOOLEAN is

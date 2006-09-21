@@ -21,6 +21,9 @@ inherit
 		end
 
 	SHARED_EIFFEL_PROJECT
+		export
+			{NONE} all
+		end
 
 	EB_SHARED_WINDOW_MANAGER
 		export
@@ -49,6 +52,7 @@ feature {NONE} -- Initialization
 			create add_test_case_actions
 			create remove_test_case_actions
 			eb_cluster_manager.add_observer (Current)
+			create tester.make_with_manager (Current)
 		end
 
 feature -- Access
@@ -61,6 +65,9 @@ feature -- Access
 
 	test_suite: CDD_TEST_SUITE
 			-- Test suite which is managed by 'Current'
+
+	tester: CDD_TEST_SUITE_TESTER
+			-- Tester for executing test cases
 
 	can_enable_testing: BOOLEAN is
 			-- Can testing mode be enabled?
@@ -86,9 +93,23 @@ feature -- Access
 				an_app_status.exception_code = {EXCEP_CONST}.class_invariant)
 		end
 
+	ise_project: E_PROJECT is
+			-- Currently opened project
+		do
+			Result := eiffel_project
+		end
+
+	ise_target: CONF_TARGET is
+			-- Currently opened target
+		require
+			project_initialized: ise_project.initialized
+		do
+			Result := eiffel_universe.target
+		end
+
 feature -- Status setting
 
-	report_postcondition_violation (an_app_status: APPLICATION_STATUS; a_window: EB_DEVELOPMENT_WINDOW) is
+	report_exception (an_app_status: APPLICATION_STATUS; a_window: EB_DEVELOPMENT_WINDOW) is
 			-- Try to create a new test case from 'an_app_status' and add it to 'a_test_suite'.
 			-- 'a_window' is the window in which the application was launched.
 		require
@@ -99,7 +120,7 @@ feature -- Status setting
 			l_msg: STRING
 			l_cd: EV_CONFIRMATION_DIALOG
 		do
-			if an_app_status.dynamic_class.is_eiffel_class_c then
+			if not tester.is_debugging and an_app_status.dynamic_class.is_eiffel_class_c then
 				l_msg := "EiffelStudio has detected a bug in one of your classes. Would you like to %
 						%create a test case with the current state of the application for further testing?"
 				create l_cd.make_with_text_and_actions (l_msg, << agent generate_test_case (an_app_status, a_window) >>)
@@ -180,14 +201,6 @@ feature {EB_CLUSTERS} -- Project Events
 						end
 					end
 					l_classes.forth
-				end
-				if eiffel_universe.conf_system.targets.has (tester_target_name) then
-					l_ttarget := eiffel_universe.conf_system.targets.item (tester_target_name)
-					test_suite.set_tester_target (l_ttarget)
-					if l_ttarget.clusters.has (tester_cluster_name) then
-						l_tcluster := l_ttarget.clusters.item (tester_cluster_name)
-						test_suite.set_tester_cluster (l_tcluster)
-					end
 				end
 			else
 				test_suite := Void
@@ -289,5 +302,6 @@ invariant
 	refresh_actions_not_void: refresh_actions /= Void
 	add_test_case_actions_not_void: add_test_case_actions /= Void
 	remove_test_case_actions_not_void: remove_test_case_actions /= Void
+	tester_not_void: tester /= Void
 
 end

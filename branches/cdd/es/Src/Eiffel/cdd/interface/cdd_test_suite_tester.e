@@ -10,6 +10,9 @@ class
 inherit
 
 	CDD_CONSTANTS
+		export
+			{NONE} all
+		end
 
 	SHARED_PLATFORM_CONSTANTS
 		export
@@ -22,6 +25,16 @@ inherit
 		end
 
 	SHARED_EXEC_ENVIRONMENT
+		export
+			{NONE} all
+		end
+
+	CONF_ACCESS
+		export
+			{NONE} all
+		end
+
+	EB_SHARED_GRAPHICAL_COMMANDS
 		export
 			{NONE} all
 		end
@@ -40,9 +53,9 @@ feature {NONE} -- Initialization
 			manager := a_manager
 			idle_action_agent := agent idle_action
 			create output.make
-
 			create update_status_actions
 			create output_actions
+			status_text := ""
 		ensure
 			manager_set: manager = a_manager
 		end
@@ -60,8 +73,24 @@ feature -- Access
 			Result := manager.test_suite
 		end
 
+	can_start_background_testing: BOOLEAN is
+			-- Can background testing be launched?
+		do
+			Result := True
+		end
+
+	can_start_debugged_testing: BOOLEAN is
+			-- Can testing be launched in the debugger?
+		do
+			Result := can_start_background_testing and True
+		end
+
 	is_running: BOOLEAN
-			-- Is 'Current' running?
+			-- Is `Current' executing a test case?
+			-- (In debugger or in background)
+
+	is_debugging: BOOLEAN
+			-- Is `Current' executing test cases in the debugger?
 
 	is_paused: BOOLEAN
 			-- Is current test execution paused?
@@ -93,41 +122,81 @@ feature -- Access
 			Result := cursor.index
 		end
 
-
+	status_text: STRING
+			-- Description of current operation
 
 feature -- Execution control
 
-	start is
-			-- Start testing execution.
+	start_background_testing is
+			-- Run all marked test cases in background
 		require
-			not_running: not is_running
-			test_suite_not_empty: not test_suite.test_cases.is_empty
+			can_start_background_testing: True -- Note: to implement
 		local
+			l_target: CONF_TARGET
 			l_cmd: STRING
+			l_new_root: CONF_ROOT
 		do
+			is_running := True
 			cursor := test_suite.test_cases.new_cursor
-			printer.print_test_case (test_suite)
+			create_root_class (True)
+			l_target := conf_factory.new_target (tester_target_name, manager.ise_target.system)
+			manager.ise_target.system.add_target (l_target)
+			l_target.set_parent (manager.ise_target)
+			create l_new_root.make (test_suite.tests_cluster.cluster_name, root_class_name, root_class_feature_name, False)
+			l_target.set_root (l_new_root)
+			manager.ise_target.system.store
 			create l_cmd.make_empty
 			l_cmd.append ("ec -config ")
-			l_cmd.append (test_suite.tests_cluster.target.system.file_name)
+			l_cmd.append (manager.ise_target.system.file_name)
 			l_cmd.append (" -target ")
-			l_cmd.append (test_suite.tester_target.name)
+			l_cmd.append (tester_target_name)
 			l_cmd.append (" -c_compile -batch -stop")
 			create_process (l_cmd, test_suite.tests_cluster.target.system.directory)
-			is_running := True
 			process.launch
-			ev_application.add_idle_action (idle_action_agent)
+			status_text := "Compiling Interpreter"
 			update_status_actions.call ([])
+			ev_application.add_idle_action (idle_action_agent)
+		ensure
+			running: is_running
 		end
 
-	start_in_debugger (a_tc: CDD_TEST_CASE) is
-			--
+	start_debugged_testing (a_tc: CDD_TEST_CASE)
+			-- Run `a_tc' in the debugger
 		require
-			a_tc_not_void: a_tc /= Void
+			can_start_debugged_testing: True -- NOTE: to implement...
+		local
+			l_list: DS_ARRAYED_LIST [CDD_TEST_CASE]
+			l_new_root: CONF_ROOT
 		do
-
+			is_running := True
+			is_debugging := True
+			create l_list.make (1)
+			l_list.put (a_tc, 1)
+			cursor := l_list.new_cursor
+			cursor.start
+			create_root_class (False)
+			old_root := manager.ise_target.root
+			create l_new_root.make (test_suite.tests_cluster.cluster_name, root_class_name, root_class_feature_name, False)
+			manager.ise_target.set_root (l_new_root)
+			manager.ise_target.system.store
+			status_text := "Recompiling project"
+			update_status_actions.call ([])
+			melt_project_cmd.execute_and_wait
+			if manager.ise_project.successful then
+				is_testing := True
+				run_project_cmd.execute
+				status_text := "Running " + current_test_case.test_class.name + " in debugger"
+				update_status_actions.call ([])
+				ev_application.add_idle_action (idle_action_agent)
+			else
+				status_text := "Compilation failed"
+				update_status_actions.call ([])
+				is_running := False
+				is_debugging := False
+			end
+		ensure
+			debugging: is_debugging
 		end
-
 
 	pause is
 			-- Pause testing execution.
@@ -189,28 +258,49 @@ feature {NONE} -- Status setting
 		local
 			l_output: STRING
 		do
+			if is_debugging then
+				check_on_debugger
+			else
+				check_on_process
+			end
+		end
+
+	check_on_process is
+			-- Check if process status has changed.
+		require
+			running: is_running
+			not_debugging: not is_debugging
+		local
+			l_output: STRING
+		do
 			if process.has_exited then
 				if is_testing then
 					current_test_case.set_passes (process.exit_code = 0)
 					cursor.forth
 					if not cursor.after then
 						test_current_test_case
+						status_text := "Testing " + current_test_case.test_class.name
 					else
 						is_running := False
 						is_testing := False
 						process := Void
 						ev_application.remove_idle_action (idle_action_agent)
+						manager.ise_target.system.remove_target (tester_target_name)
+						manager.ise_target.system.store
+						status_text := "Done"
 					end
 				else
 					if process.exit_code = 0 then
 						cursor.start
 						is_testing := True
 						test_current_test_case
+						status_text := "Testing " + current_test_case.test_class.name
 					else
 						-- TODO: notify tools that compilation has failed
 						is_running := False
 						process := Void
 						ev_application.remove_idle_action (idle_action_agent)
+						status_text := "Compilation failed"
 					end
 				end
 				update_status_actions.call ([])
@@ -218,6 +308,25 @@ feature {NONE} -- Status setting
 			if output.has_new_block then
 				l_output := output.all_blocks (True).string_representation
 				output_actions.call ([l_output])
+			end
+		end
+
+	check_on_debugger is
+			-- Check if application status in the debugger has changed.
+		require
+			debugging: is_debugging
+		local
+			l_app: APPLICATION_EXECUTION
+		do
+			l_app := run_project_cmd.debugger_manager.application
+			if not l_app.is_running then
+				is_debugging := False
+				is_running := False
+				is_testing := False
+				manager.ise_target.set_root (old_root)
+				manager.ise_target.system.store
+				melt_project_cmd.execute
+				ev_application.remove_idle_action (idle_action_agent)
 			end
 		end
 
@@ -232,9 +341,9 @@ feature {NONE} -- Implementation
 		do
 			current_test_case.start_testing
 			create l_cmd.make_empty
-			l_cmd.append ("./test_system ")
+			l_cmd.append ("./" + manager.ise_project.system.name + " ")
 			l_cmd.append (current_test_case.test_class.name)
-			create_process (l_cmd, test_suite.tests_cluster.target.system.directory + "/EIFGENs/" + test_suite.tester_target.name + "/W_code")
+			create_process (l_cmd, manager.ise_target.system.directory + "/EIFGENs/" + tester_target_name + "/W_code")
 			process.launch
 		ensure
 			testing: is_testing
@@ -299,7 +408,43 @@ feature {NONE} -- Implementation
 			process_not_void: process /= Void
 		end
 
-feature -- Implementation
+	create_root_class (with_argument: BOOLEAN) is
+			-- Write root class for interpreter to disc.
+			-- When `with_argument' is True, the compiled executable will expect an argument.
+		require
+			can_start_background_testing: True
+		local
+			l_file: KL_OUTPUT_FILE
+		do
+			l_file := root_class_file
+			l_file.open_write
+			printer.print_root_class (test_cases, manager.ise_target.root.class_name, l_file, with_argument)
+			l_file.close
+		end
+
+feature {NONE} -- Implementation
+
+	old_root: CONF_ROOT
+			-- Old root configuration before `Current' started test run in debugger
+
+	root_class_file_name: STRING is
+			-- File name for interpreter root class
+		do
+			Result := test_suite.tests_cluster.location.build_path ("", root_class_name.as_lower + ".e")
+		ensure
+			not_empty: Result /= Void and then not Result.is_empty
+		end
+
+	root_class_file: KL_OUTPUT_FILE is
+			-- File where root class is written to
+		do
+			create {KL_TEXT_OUTPUT_FILE} Result.make (root_class_file_name)
+		ensure
+			not_void: Result /= Void
+			valid: Result.name.is_equal (root_class_file_name)
+		end
+
+feature {NONE} -- Implementation
 
 	process: PROCESS
 			-- Currently executed process
@@ -307,7 +452,7 @@ feature -- Implementation
 	output: EB_PROCESS_IO_STORAGE
 			-- stored output from the process
 
-	cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_CASE]
+	cursor: DS_LIST_CURSOR [CDD_TEST_CASE]
 			-- cursor pointing to current test case
 
 	printer: CDD_TESTER_PRINTER is
@@ -316,15 +461,24 @@ feature -- Implementation
 			create Result
 		end
 
+	conf_factory: CONF_FACTORY is
+			-- Factory for creating new targets
+		once
+			create Result
+		end
+
+
 
 invariant
 	manager_not_void: manager /= Void
 	idle_action_agent_not_void: idle_action_agent /= Void
+	is_debugging_implies_is_running: is_debugging implies is_running
 	is_paused_implies_is_running: is_paused implies is_running
 	is_testing_implies_is_running: is_testing implies is_running
 	is_testing_implies_correct_cursor: is_testing implies (cursor /= Void and then not cursor.off)
-	valid_process_status: is_running = (process /= Void)
+	--valid_process_status: is_running = (process /= Void)
 	update_status_actions_not_void: update_status_actions /= Void
 	output_actions_not_void: output_actions /= Void
+	correct_old_root: is_debugging implies old_root /= Void
 
 end

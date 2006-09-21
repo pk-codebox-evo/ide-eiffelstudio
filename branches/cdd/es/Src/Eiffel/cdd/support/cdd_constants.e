@@ -17,8 +17,10 @@ feature -- Project
 
 	tests_cluster_name: STRING is "cdd_tests"
 
-	tester_cluster_name: STRING is "cdd_tester"
-
 	tester_target_name: STRING is "cdd_tester"
+
+	root_class_name: STRING is "CDD_INTERPRETER"
+
+	root_class_feature_name: STRING is "make"
 
 end

@@ -55,6 +55,9 @@ feature {NONE} -- Initialization
 			manager.remove_test_case_actions.extend (internal_remove_test_case_agent)
 			manager.refresh_actions.extend (internal_refresh_agent)
 
+			tester.update_status_actions.extend (internal_testing_status_agent)
+			tester.output_actions.extend (internal_output_agent)
+
 			refresh
 		end
 
@@ -127,6 +130,7 @@ feature {NONE} -- Initialization
 			tool_bar.extend (pause_button)
 			tool_bar.extend (stop_button)
 			tool_bar.extend (create {EV_TOOL_BAR_SEPARATOR})
+			tool_bar.extend (debug_button)
 			tool_bar.extend (delete_button)
 			tool_bar.extend (create {EV_TOOL_BAR_SEPARATOR})
 			tool_bar.extend (enable_testing_button)
@@ -175,7 +179,7 @@ feature {NONE} -- Initialization
 			create status_bar
 
 			create l_frame
-			create status_label.make_with_text ("")
+			create status_label.make_with_text (tester.status_text)
 			status_label.align_text_left
 			l_frame.extend (status_label)
 			status_bar.extend (l_frame)
@@ -211,7 +215,7 @@ feature -- Access
 	tester: CDD_TEST_SUITE_TESTER is
 			-- Tester for executing test cases
 		do
-			Result := tester_singleton
+			Result := manager.tester
 		end
 
 
@@ -256,12 +260,9 @@ feature -- Status setting
 			run_button.disable_sensitive
 			grid.remove_and_clear_all_rows
 			if manager.is_testing_enabled then
-				tester.update_status_actions.extend (internal_testing_status_agent)
-				tester.output_actions.extend (internal_output_agent)
 				enable_testing_button.disable_sensitive
 				grid.enable_sensitive
 				output.enable_sensitive
-				status_label.set_text ("Testing enabled")
 				from
 					l_cursor := manager.test_suite.test_cases.new_cursor
 					l_cursor.start
@@ -279,7 +280,6 @@ feature -- Status setting
 				enable_testing_button.enable_sensitive
 				grid.disable_sensitive
 				output.disable_sensitive
-				status_label.set_text ("Testing is disabled")
 			end
 			development_window.unlock_update
 		end
@@ -293,7 +293,6 @@ feature -- Status setting
 				if tester.is_paused then
 					run_button.enable_sensitive
 					pause_button.disable_sensitive
-					status_label.set_text ("Testing paused")
 				else
 					if not stop_button.is_sensitive then
 						output.remove_text
@@ -301,10 +300,7 @@ feature -- Status setting
 					end
 					pause_button.enable_sensitive
 					if tester.is_testing then
-						status_label.set_text ("Running test cases")
 						progress_bar.set_value (tester.current_index*100//tester.test_cases.count)
-					else
-						status_label.set_text ("Compiling interpreter")
 					end
 				end
 				stop_button.enable_sensitive
@@ -313,8 +309,8 @@ feature -- Status setting
 				stop_button.disable_sensitive
 				pause_button.disable_sensitive
 				run_button.enable_sensitive
-				status_label.set_text ("Not testing, press `play' to start test execution")
 			end
+			status_label.set_text (tester.status_text)
 		end
 
 	append_output (an_output: STRING) is
@@ -389,10 +385,8 @@ feature {NONE} -- Button events
 		require
 			has_test_cases: manager.test_suite.test_cases.count > 0
 		do
-			if tester.is_running then
-				tester.resume
-			else
-				tester.start
+			if tester.can_start_background_testing then
+				tester.start_background_testing
 			end
 		end
 
@@ -401,7 +395,9 @@ feature {NONE} -- Button events
 		require
 			test_case_selected: selected_test_case_line /= Void
 		do
-
+			if tester.can_start_debugged_testing then
+				tester.start_debugged_testing (selected_test_case_line.test_case)
+			end
 		end
 
 
@@ -454,13 +450,6 @@ feature {NONE} -- Singleton instances
 			-- In future manager will be project-related.
 		once
 			create Result.make
-		end
-
-	tester_singleton: CDD_TEST_SUITE_TESTER is
-			-- NOTE: Temporary solution for creating a shared tester.
-			-- In future tester will be project-related.
-		once
-			create Result.make_with_manager (manager)
 		end
 
 feature {NONE} -- Action implementation

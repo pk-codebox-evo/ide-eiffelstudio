@@ -1021,7 +1021,7 @@ feature -- Debugging events
 				cd.show_modal_to_window (debugging_window.window)
 			elseif l_manager.is_testing_enabled and l_manager.valid_status (application.status) then
 					-- Notify test case factory that an postcondition violation occured.
-				l_manager.report_postcondition_violation (application.status, debugging_window)
+				l_manager.report_exception (application.status, debugging_window)
 			end
 
 			debug ("debugger_interface")
