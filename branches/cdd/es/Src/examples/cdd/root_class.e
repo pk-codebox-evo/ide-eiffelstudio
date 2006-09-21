@@ -13,6 +13,7 @@ feature -- Initialization
 
 	make is
 		local
+			l_internal: INTERNAL
 			tc: BUGGY_CLASS
 			i: INTERFACE_CLASS
 		do

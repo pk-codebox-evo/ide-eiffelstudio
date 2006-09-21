@@ -13,7 +13,7 @@ feature -- TDD features
 	my_mult (a, b: INTEGER): INTEGER is
 			--
 		do
-			Result := a * b
+			--Result := a * b
 			-- TODO: Implemenent
 		ensure
 			correct_result: Result = a * b
