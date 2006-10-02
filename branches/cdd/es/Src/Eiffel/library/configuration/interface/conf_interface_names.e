@@ -339,11 +339,7 @@ feature -- Misc
 
 	target_remove_group (a_group: STRING): STRING is
 		do
-			Result := "Are you sure you want to remove "+a_group+"?"
-		end
-	target_remove_group_children (a_group: STRING): STRING is
-		do
-			Result := a_group+" cannot be removed because it has sub clusters."
+			Result := "Are you sure you want to remove "+a_group+" and any children of it?"
 		end
 	target_remove_external (a_external: STRING): STRING is
 		do
@@ -501,7 +497,7 @@ feature -- Parse errors
 		end
 	e_parse_invalid_value (an_attribute: STRING): STRING is
 		do
-			Result := "Invalid (empty) value for '"+an_attribute+"'"
+			Result := "Invalid or empty value for '"+an_attribute+"'"
 		end
 	e_parse_invalid_attribute (an_attribute: STRING): STRING is
 		do
@@ -548,6 +544,10 @@ feature -- Parse errors
 	e_parse_incorrect_setting (a_setting: STRING): STRING is
 		do
 			Result := "Invalid setting tag "+a_setting
+		end
+	e_parse_incorrect_setting_value	(a_setting: STRING): STRING is
+		do
+			Result := "Invalid value for setting "+a_setting
 		end
 
 	e_parse_incorrect_file_rule: STRING is "Invalid file_rule tag."

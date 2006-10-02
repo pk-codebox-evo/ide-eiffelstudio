@@ -584,28 +584,13 @@ feature -- Actions on all windows
 			terminate_c_compilation_cmd.disable_sensitive
 			refactoring_manager.enable_sensitive
 			override_scan_cmd.enable_sensitive
+			discover_melt_cmd.enable_sensitive
 
 			project_cancel_cmd.disable_sensitive
 			if process_manager.is_c_compilation_running then
 				on_c_compilation_start
 			else
 				for_all (agent for_all (agent c_compilation_stop_action))
-			end
-
-			if
-				a_development_window.editor_tool.stone = Void and then
-			   	eiffel_system.workbench.system_defined and then
-			   	eiffel_system.system.root_class /= Void
-			then
-				a_development_window.editor_tool.set_stone (
-					create {CLASSI_STONE}.make (eiffel_system.system.root_class))
-				if
-					eiffel_system.workbench.universe_defined and then
-					eiffel_system.universe.target /= Void and then
-					eiffel_system.universe.target.clusters.count = 1
-				then
-					a_development_window.cluster_tool.show_current_class_cluster_cmd.execute
-				end
 			end
 
 			for_all (agent synchronize_action)
@@ -987,6 +972,7 @@ feature -- Events
 			Precompilation_cmd.disable_sensitive
 			Project_cancel_cmd.enable_sensitive
 			override_scan_cmd.disable_sensitive
+			discover_melt_cmd.disable_sensitive
 			refactoring_manager.disable_sensitive
 			for_all (agent c_compilation_start_action)
 			compile_start_actions.call ([])
@@ -1000,6 +986,7 @@ feature -- Events
 			Finalize_project_cmd.disable_sensitive
 			Precompilation_cmd.disable_sensitive
 			override_scan_cmd.disable_sensitive
+			discover_melt_cmd.disable_sensitive
 			for_all (agent c_compilation_start_action)
 		end
 
@@ -1011,6 +998,7 @@ feature -- Events
 			Finalize_project_cmd.enable_sensitive
 			Precompilation_cmd.enable_sensitive
 			override_scan_cmd.enable_sensitive
+			discover_melt_cmd.enable_sensitive
 			for_all (agent c_compilation_stop_action)
 		end
 
@@ -1049,6 +1037,7 @@ feature -- Events
 			Precompilation_cmd.enable_sensitive
 			System_cmd.enable_sensitive
 			override_scan_cmd.enable_sensitive
+			discover_melt_cmd.enable_sensitive
 			for_all (agent create_project_action)
 		end
 
@@ -1064,6 +1053,7 @@ feature -- Events
 					Run_project_cmd.disable_sensitive
 					Run_finalized_cmd.disable_sensitive
 					override_scan_cmd.disable_sensitive
+					discover_melt_cmd.disable_sensitive
 				else
 					Melt_project_cmd.enable_sensitive
 					Freeze_project_cmd.enable_sensitive
@@ -1072,6 +1062,7 @@ feature -- Events
 					Run_project_cmd.enable_sensitive
 					Run_finalized_cmd.enable_sensitive
 					override_scan_cmd.enable_sensitive
+					discover_melt_cmd.enable_sensitive
 				end
 				System_cmd.enable_sensitive
 				Export_cmd.enable_sensitive
@@ -1086,6 +1077,7 @@ feature -- Events
 				Document_cmd.disable_sensitive
 				Run_project_cmd.disable_sensitive
 				override_scan_cmd.disable_sensitive
+				discover_melt_cmd.disable_sensitive
 			end
 			load_favorites
 				-- Recreate window configuration from last session of project if any.
@@ -1112,6 +1104,7 @@ feature -- Events
 			Run_project_cmd.disable_sensitive
 			Run_finalized_cmd.disable_sensitive
 			override_scan_cmd.disable_sensitive
+			discover_melt_cmd.disable_sensitive
 		end
 
 feature {NONE} -- Implementation

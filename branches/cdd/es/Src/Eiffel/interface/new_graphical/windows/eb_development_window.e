@@ -905,22 +905,6 @@ feature -- Pulldown Menus
 	debugging_tools_menu: EV_MENU
 			-- Debugging tools menu item
 
-	active_menus (erase: BOOLEAN) is
-			-- Enable all the menus and if `erase' clean
-			-- the content of the Project tool.
-		do
-			compile_menu.enable_sensitive
-			if erase then
-				output_manager.clear
-			end
-		end
-
-	disable_menus is
-			-- Disable all the menus.
-		do
-			compile_menu.disable_sensitive
-		end
-
 	update_debug_menu is
 			-- Update debug menu
 		do
@@ -947,6 +931,26 @@ feature -- Update
 			l_text_area: EB_SMART_EDITOR
 		do
 			during_synchronization := True
+			if
+				stone = Void and then
+				eiffel_project.system_defined and then
+				eiffel_project.initialized and then
+				eiffel_system.workbench.is_already_compiled and then
+				eiffel_system.workbench.last_reached_degree <= 5 and then
+				eiffel_system.root_cluster /= Void and then
+				eiffel_system.root_class_name /= Void
+			then
+				if eiffel_system.root_class.is_compiled then
+					stone := create {CLASSC_STONE}.make (eiffel_system.system.root_class.compiled_class)
+				else
+					stone := create {CLASSI_STONE}.make (eiffel_system.system.root_class)
+				end
+				if
+					eiffel_system.universe.target.clusters.count = 1
+				then
+					cluster_tool.show_current_class_cluster_cmd.execute
+				end
+			end
 			favorites_manager.refresh
 			context_tool.synchronize
 			cluster_tool.synchronize
@@ -1759,6 +1763,11 @@ feature {NONE} -- Menu Building
 			add_recyclable (command_menu_item)
 			project_menu.extend (command_menu_item)
 
+				-- Discover melt
+			command_menu_item := discover_melt_cmd.new_menu_item
+			add_recyclable (command_menu_item)
+			project_menu.extend (command_menu_item)
+
 				-- Override scan
 			command_menu_item := override_scan_cmd.new_menu_item
 			add_recyclable (command_menu_item)
@@ -1957,7 +1966,9 @@ feature {NONE} -- Menu Building
 				-- New Assembly command.
 			command_menu_item := new_assembly_cmd.new_menu_item
 			add_recyclable (command_menu_item)
-			tools_menu.extend (command_menu_item)
+			if eiffel_layout.default_il_environment.is_dotnet_installed then
+				tools_menu.extend (command_menu_item)
+			end
 
 				-- New Class command.
 			command_menu_item := new_class_cmd.new_menu_item
@@ -2156,7 +2167,7 @@ feature -- Stone process
 						-- we attempt to scroll to the feature without asking to save the file
 						-- except if it is during a resynchronization, in which case we do not scroll at all.
 					if editor_tool.text_area.text_is_fully_loaded then
-						if not during_synchronization then
+						if not during_synchronization and then feature_stone.e_feature /= Void then
 							scroll_to_feature (feature_stone.e_feature, new_class_stone.class_i)
 							feature_stone_already_processed := True
 						else
@@ -3258,7 +3269,7 @@ feature {NONE} -- Implementation
 						else
 								-- if a feature_stone has been dropped
 								-- scroll to the corresponding feature in the basic text format
-							if not during_synchronization then
+							if not during_synchronization and then feature_stone.e_feature /= Void then
 								scroll_to_feature (feature_stone.e_feature, new_class_stone.class_i)
 							end
 						end
@@ -3672,6 +3683,7 @@ feature {NONE} -- Implementation
 			begin_index, offset: INTEGER
 			tmp_text: STRING
 			l_feat_as: FEATURE_AS
+			l_feature: E_FEATURE
 			l_names: EIFFEL_LIST [FEATURE_NAME]
 		do
 			if not feat_as.is_il_external then
@@ -3680,17 +3692,37 @@ feature {NONE} -- Implementation
 						editor_tool.text_area.find_feature_named (feat_as.name)
 					end
 				else
-					l_feat_as := feat_as.ast
+					if displayed_class.is_compiled then
+							-- We need to adapt E_FEATURE to the current displayed class
+							-- since we could manipulate the E_FEATURE of a descendant class
+							-- whose name is different from its definition in the displayed_class.
+							-- Fixes bug#11330.
+						l_feature := feat_as.ancestor_version (displayed_class.compiled_class)
+						if l_feature = Void then
+								-- It should not happen, but maybe the system is in a very unstable state.
+							l_feature := feat_as
+						end
+					else
+						l_feature := feat_as
+					end
+					l_feat_as := l_feature.ast
 					if l_feat_as /= Void then
 						from
 							l_names := l_feat_as.feature_names
 							l_names.start
 						until
-							l_names.after or feat_as.name.is_case_insensitive_equal (l_names.item.internal_name)
+							l_names.after or else
+							l_feature.name.is_case_insensitive_equal (l_names.item.internal_name)
 						loop
 							l_names.forth
 						end
-						begin_index := l_names.item.start_position
+						if not l_names.after then
+							begin_index := l_names.item.start_position
+						else
+								-- Something wrong happened, the feature does not exist anymore.
+								-- We simply take the position of the first one.
+							begin_index := l_names.start_position
+						end
 						tmp_text := displayed_class.text
 						if tmp_text /= Void then
 							tmp_text := tmp_text.substring (1, begin_index)
