@@ -99,6 +99,12 @@ feature -- tools
 	debugging_tools: ES_DOCKABLE_NOTEBOOK
 			-- A tool that contains various debugging tools.
 
+	cdd_manager: CDD_TEST_SUITE_MANAGER is
+			-- Manager for generating test cases
+		once
+			create Result.make
+		end
+
 feature -- tools management
 
 	new_toolbar: EB_TOOLBAR is
@@ -952,8 +958,6 @@ feature -- Debugging events
 		local
 			st: CALL_STACK_STONE
 			cd: EV_CONFIRMATION_DIALOG
-
-			l_manager: CDD_TEST_SUITE_MANAGER
 		do
 			Precursor
 			debug ("debugger_trace_synchro")
@@ -1015,13 +1019,12 @@ feature -- Debugging events
 				observers.item.on_application_stopped
 				observers.forth
 			end
-			l_manager := debugging_window.context_tool.cdd_test_suite_view.manager
 			if Application.status.reason_is_overflow then
 				create cd.make_with_text_and_actions (Warning_messages.w_Overflow_detected, <<agent do_nothing, agent relaunch_application>>)
 				cd.show_modal_to_window (debugging_window.window)
-			elseif l_manager.is_testing_enabled and l_manager.valid_status (application.status) then
+			elseif cdd_manager.is_testing_enabled and cdd_manager.valid_status (application.status) then
 					-- Notify test case factory that an postcondition violation occured.
-				l_manager.report_exception (application.status, debugging_window)
+				cdd_manager.report_exception (application.status, debugging_window)
 			end
 
 			debug ("debugger_interface")

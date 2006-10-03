@@ -31,7 +31,6 @@ feature {NONE} -- Initialization
 			-- Define first item of `grid_row' for displaying `test_case'.
 		local
 			l_stone: CLASSI_STONE
-			l_tool: CDD_TEST_SUITE_TOOL
 		do
 			Precursor (a_row, a_test_case)
 			internal_update_agent := agent update_status
@@ -41,9 +40,6 @@ feature {NONE} -- Initialization
 			create l_stone.make (test_case.test_class)
 			name_item.token_at_position (1).set_pebble (l_stone)
 			update_status
-			l_tool := grid_row.parent.tool
-			grid_row.select_actions.extend (agent l_tool.on_select_test_case (Current))
-			grid_row.deselect_actions.extend (agent l_tool.on_deselect)
 		end
 
 feature -- Element change

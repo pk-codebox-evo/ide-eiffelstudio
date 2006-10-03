@@ -44,6 +44,7 @@ feature {NONE} -- Initialization
 			a_window_not_void: a_window /= Void
 		do
 			development_window := a_window
+			manager := development_window.eb_debugger_manager.cdd_manager
 			internal_add_test_case_agent := agent add_test_case
 			internal_remove_test_case_agent := agent remove_test_case
 			internal_refresh_agent := agent refresh
@@ -148,7 +149,7 @@ feature {NONE} -- Initialization
 			valid_list: a_list /= Void and then a_list.extendible
 			list_not_destroyed: not a_list.is_destroyed
 		do
-			create grid.make_with_tool (Current)
+			create grid.make
 			enable_editor_token_pnd
 			a_list.extend (grid)
 		end
@@ -203,11 +204,8 @@ feature -- Access
 	widget: EV_VERTICAL_BOX
 			-- Widget for displaying 'Current'
 
-	manager: CDD_TEST_SUITE_MANAGER is
+	manager: CDD_TEST_SUITE_MANAGER
 			-- Manager for test suite operations
-		do
-			Result := manager_singleton
-		end
 
 	tester: CDD_TEST_SUITE_TESTER is
 			-- Tester for executing test cases
@@ -442,17 +440,6 @@ feature {NONE} -- Button events
 			if manager.test_suite.test_cases.has (selected_test_case_line.test_case) then
 				manager.remove_test_case (selected_test_case_line.test_case)
 			end
-		end
-
-
-
-feature {NONE} -- Singleton instances
-
-	manager_singleton: CDD_TEST_SUITE_MANAGER is
-			-- NOTE: Temporary solution for creating a shared manager.
-			-- In future manager will be project-related.
-		once
-			create Result.make
 		end
 
 feature {NONE} -- Action implementation

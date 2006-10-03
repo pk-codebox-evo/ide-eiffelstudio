@@ -665,6 +665,18 @@ feature {NONE} -- Initialization
 			toolbarable_commands.extend (show_cmd)
 			add_recyclable (cluster_tool)
 
+				-- Build CDD testing tool
+			create cdd_tool.make (Current)
+			cdd_tool.attach_to_explorer_bar (left_panel)
+			left_tools.extend (cdd_tool.explorer_bar_item)
+			create show_cmd.make (Current, cdd_tool.explorer_bar_item)
+			create l_accel.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_c), True, True, True)
+			l_accel.actions.extend (agent show_cmd.execute)
+			show_cmd.set_accelerator (l_accel)
+			show_tool_commands.extend (show_cmd)
+			toolbarable_commands.extend (show_cmd)
+			add_recyclable (cdd_tool)
+
 				-- Build the favorites tool
 			create favorites_tool.make (Current, favorites_manager)
 			favorites_tool.attach_to_explorer_bar (left_panel)
@@ -2754,6 +2766,8 @@ feature -- Tools & Controls
 	search_tool: EB_MULTI_SEARCH_TOOL
 
 	features_tool: EB_FEATURES_TOOL
+
+	cdd_tool: CDD_TOOL
 
 	breakpoints_tool: ES_BREAKPOINTS_TOOL
 

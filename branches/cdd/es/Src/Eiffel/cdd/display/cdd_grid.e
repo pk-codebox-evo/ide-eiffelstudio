@@ -33,18 +33,14 @@ inherit
 		end
 
 create
-	make_with_tool
+	make
 
 feature {NONE} -- Initialization
 
-	make_with_tool (a_tool: CDD_TEST_SUITE_TOOL) is
-			-- Set `tool' to `a_tool' and initialize grid layout.
-		require
-			a_tool_not_void: a_tool /= Void
+	make is
+			-- Call `default_create' and initialize grid layout.
 		do
 			default_create
-
-			tool := a_tool
 			enable_tree
 			enable_row_height_fixed
 			enable_single_row_selection
@@ -56,8 +52,6 @@ feature {NONE} -- Initialization
 			row_deselect_actions.extend (agent set_selection_color)
 			set_focused_selection_color (preferences.editor_data.selection_background_color)
 			build_columns
-		ensure
-			tool_set: tool = a_tool
 		end
 
 	build_columns is
@@ -106,9 +100,6 @@ feature -- Access
 		do
 			Result := row_count + 1
 		end
-
-	tool: CDD_TEST_SUITE_TOOL
-			-- Tool which manages `Current'
 
 feature {NONE} -- GRID Customization
 
@@ -185,8 +176,5 @@ feature {CDD_GRID_LINE} -- Status report
 
 	expanded_features: DS_LINKED_LIST [STRING]
 			-- Names of features which were expanded before last refresh
-
-invariant
-	tool_not_void: tool /= Void
 
 end -- Class CDD_GRID

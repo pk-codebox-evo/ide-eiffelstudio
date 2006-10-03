@@ -133,7 +133,7 @@ feature -- Execution control
 	start_background_testing is
 			-- Run all marked test cases in background
 		require
-			can_start_background_testing: True -- Note: to implement
+			can_start_background_testing: can_start_background_testing
 		local
 			l_target: CONF_TARGET
 			l_cmd: STRING
@@ -166,7 +166,7 @@ feature -- Execution control
 	start_debugged_testing (a_tc: CDD_TEST_CASE)
 			-- Run `a_tc' in the debugger
 		require
-			can_start_debugged_testing: True -- NOTE: to implement...
+			can_start_debugged_testing: can_start_debugged_testing
 		local
 			l_list: DS_ARRAYED_LIST [CDD_TEST_CASE]
 			l_new_root: CONF_ROOT
