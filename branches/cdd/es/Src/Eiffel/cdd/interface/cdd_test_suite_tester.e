@@ -257,7 +257,9 @@ feature -- Execution control
 				melt_project_cmd.execute_and_wait
 				status_text := "Done"
 			else
-				process.terminate
+				if process.is_running then
+					process.terminate
+				end
 				process := Void
 				manager.ise_target.system.remove_target (tester_target_name)
 				manager.ise_target.system.store
