@@ -15,9 +15,7 @@ inherit
 		export
 			{NONE} all
 		redefine
-			on_project_loaded,
-			on_class_removed,
-			refresh
+			on_class_removed
 		end
 
 	SHARED_EIFFEL_PROJECT
@@ -57,10 +55,16 @@ feature {NONE} -- Initialization
 
 	make is
 			-- Add `Current' to cluster observer list.
+		local
+			l_prj_manager: EB_PROJECT_MANAGER
 		do
 			create refresh_actions
 			create add_test_case_actions
 			create remove_test_case_actions
+			l_prj_manager := eiffel_project.manager
+			l_prj_manager.load_agents.extend (agent on_project_load)
+			l_prj_manager.compile_start_agents.extend (agent on_compile_start)
+			l_prj_manager.compile_stop_agents.extend (agent on_compile_stop)
 			eb_cluster_manager.add_observer (Current)
 			create tester.make_with_manager (Current)
 		end
@@ -186,15 +190,22 @@ feature -- Test suite manipulation
 
 feature {EB_CLUSTERS} -- Project Events
 
-	on_project_loaded is
+	on_project_load is
 			--Check if testing was enabled for this project before.
 		do
 			eiffel_system.system.force_rebuild
-			refresh
+			on_compile_stop
 		end
 
+	on_compile_start is
+			-- Quit test execution if `tester' is still running background tests.
+		do
+			if tester.is_running and not tester.is_debugging then
+				tester.stop
+			end
+		end
 
-	refresh is
+	on_compile_stop is
 			-- Refresh test suite.
 		local
 			l_tests_cluster: CLUSTER_I
@@ -202,29 +213,35 @@ feature {EB_CLUSTERS} -- Project Events
 			l_was_enabled: BOOLEAN
 		do
 			l_was_enabled := is_testing_enabled
-			l_tests_cluster := eiffel_universe.cluster_of_name (tests_cluster_name)
-			if l_tests_cluster /= Void then
-				create test_suite.make_with_cluster (l_tests_cluster)
-				l_classes := test_suite.tests_cluster.classes
-				from
-					l_classes.start
-				until
-					l_classes.after
-				loop
-					if not test_suite.has_test_case_for_class (l_classes.item_for_iteration) then
-						test_case_factory.create_from_class (l_classes.item_for_iteration, eiffel_universe)
-						if test_case_factory.last_created_test_case /= Void then
-							test_suite.add_test_case (test_case_factory.last_created_test_case)
+			if not l_was_enabled or else not tester.is_debugging then
+				l_tests_cluster := eiffel_universe.cluster_of_name (tests_cluster_name)
+				if l_tests_cluster /= Void then
+					create test_suite.make_with_cluster (l_tests_cluster)
+					l_classes := test_suite.tests_cluster.classes
+					from
+						l_classes.start
+					until
+						l_classes.after
+					loop
+						if not test_suite.has_test_case_for_class (l_classes.item_for_iteration) then
+							test_case_factory.create_from_class (l_classes.item_for_iteration, eiffel_universe)
+							if test_case_factory.last_created_test_case /= Void then
+								test_suite.add_test_case (test_case_factory.last_created_test_case)
+							end
 						end
+						l_classes.forth
 					end
-					l_classes.forth
+				else
+					test_suite := Void
 				end
-			else
-				test_suite := Void
+				refresh_actions.call ([])
+				if is_testing_enabled and then test_suite.test_cases.count > 0 then
+					if eiffel_project.successful and tester.can_start_background_testing then
+						tester.start_background_testing
+					end
+				end
 			end
-			refresh_actions.call ([])
 		end
-
 
 	on_class_removed (a_class: CLASS_I) is
 			-- If class was test class, remove corresponding test case.
@@ -284,6 +301,7 @@ feature {NONE} -- Implementation
 				else
 					test_case_factory.create_with_reflection (l_reflection, test_suite.tests_cluster)
 					l_tc := test_case_factory.last_created_test_case
+					l_tc.set_passes (False)
 					test_suite.add_test_case (l_tc)
 					add_test_case_actions.call ([l_tc])
 				end

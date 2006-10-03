@@ -77,7 +77,6 @@ feature -- Access
 			-- Can background testing be launched?
 		do
 			Result := not is_running and
-				not manager.ise_project.is_compiling and
 				not manager.ise_project.is_read_only
 		end
 
@@ -85,6 +84,7 @@ feature -- Access
 			-- Can testing be launched in the debugger?
 		do
 			Result := can_start_background_testing and
+				not manager.ise_project.is_compiling and
 				not run_project_cmd.debugger_manager.application.is_running
 		end
 
@@ -142,6 +142,9 @@ feature -- Execution control
 			is_running := True
 			cursor := test_suite.test_cases.new_cursor
 			create_root_class (True)
+			if manager.ise_target.system.targets.has (tester_target_name) then
+				remove_tester_target
+			end
 			l_target := conf_factory.new_target (tester_target_name, manager.ise_target.system)
 			manager.ise_target.system.add_target (l_target)
 			l_target.set_parent (manager.ise_target)
@@ -244,6 +247,7 @@ feature -- Execution control
 			running: is_running
 		local
 			l_app: APPLICATION_EXECUTION
+			l_need_melt: BOOLEAN
 		do
 			ev_application.remove_idle_action (idle_action_agent)
 			if is_debugging then
@@ -254,15 +258,14 @@ feature -- Execution control
 				end
 				manager.ise_target.set_root (old_root)
 				manager.ise_target.system.store
-				melt_project_cmd.execute_and_wait
 				status_text := "Done"
+				l_need_melt := True
 			else
 				if process.is_running then
 					process.terminate
 				end
 				process := Void
-				manager.ise_target.system.remove_target (tester_target_name)
-				manager.ise_target.system.store
+				remove_tester_target
 				status_text := "Done"
 			end
 			if is_testing and current_test_case.is_tested then
@@ -271,6 +274,9 @@ feature -- Execution control
 			cursor := Void
 			is_testing := False
 			is_running := False
+			if l_need_melt then
+				melt_project_cmd.execute_and_wait
+			end
 			update_status_actions.call ([])
 		end
 
@@ -443,6 +449,14 @@ feature {NONE} -- Implementation
 			printer.print_root_class (test_cases, manager.ise_target.root.class_name, l_file, with_argument)
 			l_file.close
 		end
+
+	remove_tester_target is
+			-- Remove target with name `tester_target_name' from system.
+		do
+			manager.ise_target.system.remove_target (tester_target_name)
+			manager.ise_target.system.store
+		end
+
 
 feature {NONE} -- Implementation
 

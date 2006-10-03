@@ -434,7 +434,6 @@ invariant
 	pause_button_valid: pause_button /= Void
 	delete_button_valid: delete_button /= Void
 	valid_debug_button: debug_button /= Void
-	correct_debug_button_status: debug_button.is_sensitive = (selected_test_case /= Void and not tester.is_running)
 	status_bar_valid: status_bar /= Void
 	status_label_valid: status_label /= Void
 	progress_bar_valid: progress_bar /= Void

@@ -68,7 +68,7 @@ feature {NONE} -- Initialization
 
 			l_col := column (2)
 			l_col.set_title ("Status")
-			set_auto_resizing_column (2, False)
+			set_auto_resizing_column (2, True)
 		end
 
 
