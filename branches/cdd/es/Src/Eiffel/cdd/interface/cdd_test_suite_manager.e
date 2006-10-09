@@ -57,6 +57,8 @@ feature {NONE} -- Initialization
 			-- Add `Current' to cluster observer list.
 		local
 			l_prj_manager: EB_PROJECT_MANAGER
+			l_1: CDD_INTERPRETER_SUPPORT
+			l_2: CDD_SHARED_TESTING
 		do
 			create refresh_actions
 			create add_test_case_actions
@@ -102,7 +104,8 @@ feature -- Access
 				an_app_status.exception_occurred and
 				(an_app_status.exception_code = {EXCEP_CONST}.void_call_target or
 				an_app_status.exception_code = {EXCEP_CONST}.postcondition or
-				an_app_status.exception_code = {EXCEP_CONST}.class_invariant)
+				an_app_status.exception_code = {EXCEP_CONST}.class_invariant or
+				an_app_status.exception_code = {EXCEP_CONST}.precondition)
 		end
 
 	ise_project: E_PROJECT is
@@ -287,17 +290,15 @@ feature {NONE} -- Implementation
 			an_app_status_not_void: an_app_status /= Void
 			a_window_not_void: a_window /= Void
 		local
-			l_reflection: CDD_REFLECTED_OBJECT
+			l_reflection: CDD_REFLECTION
 			l_warn: EV_WARNING_DIALOG
 			l_tc: CDD_TEST_CASE
 		do
 			if valid_status (an_app_status) then
 				l_reflection := make_reflection (an_app_status)
-				if not l_reflection.reflection_succeded then
+				if l_reflection = Void or else not l_reflection.reflection_succeded then
 					create l_warn.make_with_text ("Was not able to reflect current state of the application.")
 					l_warn.show_modal_to_window (a_window.window)
-				elseif False then
-					-- TODO: Check if test case for same application state already exists...
 				else
 					test_case_factory.create_with_reflection (l_reflection, test_suite.tests_cluster)
 					l_tc := test_case_factory.last_created_test_case
@@ -308,29 +309,65 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	make_reflection (an_app_status: APPLICATION_STATUS): CDD_REFLECTED_OBJECT is
+	make_reflection (an_app_status: APPLICATION_STATUS): CDD_REFLECTION is
 			-- Try to reflect current object in call stack.
+			-- NOTE: Can be void if call stack contains external calls.
 		require
-			an_app_status_not_void: an_app_status /= Void
+			an_app_status_valid: an_app_status /= Void and then an_app_status /= Void
 			exception_occured: an_app_status.exception_occurred
-			is_eiffel_class: an_app_status.dynamic_class.is_eiffel_class_c
 		local
-			l_cse: EIFFEL_CALL_STACK_ELEMENT
+			l_cse, l_prev_cse: EIFFEL_CALL_STACK_ELEMENT
 			l_tag: STRING
+			l_feature: E_FEATURE
+			l_class, l_prev_class: EIFFEL_CLASS_C
+			l_is_creation_call: BOOLEAN
+			l_abort: BOOLEAN
 		do
 			l_cse ?= an_app_status.current_call_stack_element
-
-			-- should be fine since dynamic_class is eiffel class
-			check l_cse /= Void end
-
-			l_tag := an_app_status.exception_tag
-			if l_tag = Void or else l_tag.is_empty then
-				l_tag := "postcondition violation"
+			if l_cse /= Void then
+				if an_app_status.exception_code = {EXCEP_CONST}.precondition and l_cse.level_in_stack < an_app_status.current_call_stack.count then
+					l_cse := caller (l_cse, an_app_status.current_call_stack)
+				end
 			end
-			create Result.make (l_cse, an_app_status.exception_tag)
-		ensure
-			not_void: Result /= Void
+			if l_cse /= Void then
+				l_feature := l_cse.routine
+				-- Make a heuristic to check if the called feature could be a creation feature.
+				if l_feature.export_status.is_none then
+					l_prev_cse := caller (l_cse, an_app_status.current_call_stack)
+					if l_prev_cse /= Void then
+						l_class ?= l_cse.dynamic_class
+						l_prev_class ?= l_prev_cse.dynamic_class
+						if l_class /= Void and l_prev_class /= Void then
+							if not l_class.descendants.has (l_prev_class) then
+								l_is_creation_call := True
+							end
+						end
+					end
+				elseif l_cse.dynamic_class.creation_feature = l_feature then
+					l_abort := True
+				elseif l_cse.dynamic_class.creators /= Void and then l_cse.dynamic_class.creators.has (l_feature.name) then
+					l_abort := True
+				end
+
+				if not l_abort then
+					create Result.make (an_app_status, l_cse, l_is_creation_call)
+				end
+			end
 		end
+
+	caller (a_element: EIFFEL_CALL_STACK_ELEMENT; a_call_stack: EIFFEL_CALL_STACK): EIFFEL_CALL_STACK_ELEMENT is
+			-- Call stack element which called the routine in `a_element' in `a_call_stack'.
+			-- NOTE: Void if `a_element' is first element in `a_call_stack' or caller is not a eiffel call stack element.
+		require
+			a_element_not_void: a_element /= Void
+			a_call_stack_not_void: a_call_stack /= Void
+			a_element_valid: a_call_stack.i_th (a_element.level_in_stack) = a_element
+		do
+			if a_element.level_in_stack < a_call_stack.count then
+				Result ?= a_call_stack.i_th (a_element.level_in_stack + 1)
+			end
+		end
+
 
 	conf_factory: CONF_FACTORY is
 			-- Factory for creating cdd library

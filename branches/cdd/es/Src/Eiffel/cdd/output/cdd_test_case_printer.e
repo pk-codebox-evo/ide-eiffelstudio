@@ -9,7 +9,7 @@ class
 
 feature -- Access
 
-	print_test_case (reflection: CDD_REFLECTED_OBJECT; test_class_name: STRING; a_file: FILE) is
+	print_test_case (reflection: CDD_REFLECTION; test_class_name: STRING; a_file: FILE) is
 			-- Print class text for a new cdd test case.
 		require
 			valid_reflection: reflection /= Void and then reflection.reflection_succeded
@@ -31,6 +31,10 @@ feature -- Access
 			append_text ("%N%Ttest_feature is%N")
 			append_comment ("run tests")
 			append_text ("%T%Tlocal%N")
+
+			if reflection.is_creation_feature then
+				append_object_declaration (reflection.root_object)
+			end
 
 			from
 				rlist.start
@@ -66,10 +70,15 @@ feature -- Access
 			end
 
 			append_text ("%N%N" + indent)
-			if l_feature.is_function then
+			if reflection.is_creation_feature then
+				append_text ("create ")
+			elseif l_feature.is_function then
 				append_text ("l_result ?= ")
 			end
-			append_text (root_object.identifier + "." + l_feature.name)
+			append_text (root_object.identifier)
+			if not reflection.is_creation_feature or not l_feature.name.is_equal ("default_create") then
+				append_text ("." + l_feature.name)
+			end
 			if reflection.arguments.count > 0 then
 				append_text (" (")
 				from
@@ -86,6 +95,12 @@ feature -- Access
 				append_text (")")
 			end
 			append_text ("%N%N%T%Tend%N%N")
+			append_text ("%Ttested_class_name: STRING is %"" + root_object.dynamic_type.name + "%"%N")
+			append_text ("%T%T%T-- Name of the class under test.%N")
+			append_text ("%T%T%T-- NOTE: Do not modify this attribute!%N%N")
+			append_text ("%Ttested_feature_name: STRING is %"" + l_feature.name + "%"%N%N")
+			append_text ("%T%T%T-- Name of the feature under test.%N")
+			append_text ("%T%T%T-- NOTE: Do not modify this attribute!%N%N")
 			append_class_footer (test_class_name)
 			output_file.flush
 		end
@@ -246,7 +261,7 @@ feature {NONE} -- Implementation
 	indent: STRING is "%T%T%T"
 			-- Indentation for instruction text
 
-	append_indexing (a_reflection: CDD_REFLECTED_OBJECT) is
+	append_indexing (a_reflection: CDD_REFLECTION) is
 			-- Append indexing clause for 'a_reflection'
 		require
 			a_reflection_not_void: a_reflection /= Void

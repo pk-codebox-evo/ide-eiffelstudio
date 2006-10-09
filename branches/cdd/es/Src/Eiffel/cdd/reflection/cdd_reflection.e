@@ -5,7 +5,7 @@ indexing
 	revision: "$Revision$"
 
 class
-	CDD_REFLECTED_OBJECT
+	CDD_REFLECTION
 
 inherit
 
@@ -24,20 +24,32 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_cse: EIFFEL_CALL_STACK_ELEMENT; a_tag: STRING) is
-			-- Reflect the object associated to 'a_cse'
+	make (an_app_status: APPLICATION_STATUS; a_cse: EIFFEL_CALL_STACK_ELEMENT; a_is_creation_call: BOOLEAN) is
+			-- Reflect the object associated to `a_cse'
 		require
-			valid_call_stack_element: a_cse /= Void
-			eiffel_type: a_cse.dynamic_class.is_eiffel_class_c
-			a_tag_not_empty: a_tag /= Void and then not a_tag.is_empty
+			an_app_status_not_void: an_app_status /= Void
+			an_app_status_valid: an_app_status.is_stopped and an_app_status.exception_occurred
+			a_cse_not_void: a_cse /= Void
+			a_cse_valid: an_app_status.current_call_stack.i_th (a_cse.level_in_stack) = a_cse
+			is_eiffel_cse: an_app_status.current_call_stack_element.is_eiffel_call_stack_element
 		local
 			l_alist: LIST [ABSTRACT_DEBUG_VALUE]
 			i: INTEGER
 		do
 			called_feature := a_cse.routine
-			exception_tag := a_tag
+			is_creation_feature := a_is_creation_call
+			exception_code := an_app_status.exception_code
+			if an_app_status.exception_tag /= Void then
+				exception_tag := an_app_status.exception_tag
+			else
+				exception_tag := "unknown"
+			end
 			create addressed_objects.make (object_count)
-			root_object := create_composite_object (a_cse.object_address, a_cse.dynamic_class.eiffel_class_c)
+			if is_creation_feature then
+				root_object := create {CDD_REGULAR_OBJECT}.make_with_count (a_cse.dynamic_class.eiffel_class_c, 0)
+			else
+				root_object := create_composite_object (a_cse.object_address, a_cse.dynamic_class.eiffel_class_c)
+			end
 			if reflection_succeded and called_feature.has_arguments then
 				l_alist := a_cse.arguments
 				create arguments.make (l_alist.count)
@@ -67,50 +79,56 @@ feature {NONE} -- Initialization
 			end
 			addressed_objects := Void
 		ensure
-			called_feature_set: called_feature = a_cse.routine
+
 		end
 
 
 feature -- Access
 
 	reflection_succeded: BOOLEAN is
-			-- were we able to reflect the state?
+			-- Were we able to reflect the state?
 		do
 			Result := root_object /= Void
 		end
 
-
 	root_object: CDD_COMPOSITE_OBJECT
-			-- actual object beeing reflected
+			-- Actual object beeing reflected
 
 	called_feature: E_FEATURE
-			-- feature which was called before reflection
+			-- Feature which was called before reflection
+
+	is_creation_feature: BOOLEAN
+			-- Is `called_feature' a creation feature?
+
+	exception_code: INTEGER
+			-- Code of the exception ocurred
 
 	exception_tag: STRING
-			-- description of what caused the exception
+			-- Description of what caused the exception
 
 	id: STRING is "not implemented"
-			-- identifier for this reflection
+			-- Identifier for this reflection
 
 	composite_objects: DS_ARRAYED_LIST [CDD_COMPOSITE_OBJECT]
-			-- objects referenced to directly or indirectly by 'root_robject' 
+			-- Objects referenced to directly or indirectly by `root_object'.
+			-- NOTE: if `called_feature' is not a creation feature `composite_objects' contains `root_object'.
 
 	arguments: DS_ARRAYED_LIST [CDD_OBJECT]
-			-- reflected arguments of 'called_feature'
+			-- Reflected arguments of `called_feature'
 
 
 feature {NONE} -- Implementation
 
 	object_count: INTEGER is 20
-			-- approx number of composite objects that will be stored
+			-- Approx number of composite objects that will be stored
 
 	addressed_objects: DS_HASH_TABLE [CDD_COMPOSITE_OBJECT, STRING]
-			-- all composite objects stored by the reflected objects address,
+			-- All composite objects stored by the reflected objects address,
 			-- (used to determine cycles in the reference graph, void after creation
 			-- since addresses or no longer valid)
 
 	create_object (a_dv: ABSTRACT_DEBUG_VALUE): CDD_OBJECT is
-			-- reflection of an basic or composite object with the values from 'a_dv'
+			-- Reflection of an basic or composite object with the values from 'a_dv'
 			-- (Void if non eiffel object in reference graph)
 		require
 			a_dv_not_void: a_dv /= Void
@@ -131,7 +149,7 @@ feature {NONE} -- Implementation
 		end
 
 	create_composite_object (an_addr: STRING; a_type: EIFFEL_CLASS_C): CDD_COMPOSITE_OBJECT is
-			-- object reflection of type 'a_type' at address 'a_addr'
+			-- Object reflection of type 'a_type' at address 'a_addr'
 			-- (Void if non eiffel object in reference graph)
 		require
 			valid_address: an_addr /= Void and then not an_addr.is_empty
@@ -151,7 +169,7 @@ feature {NONE} -- Implementation
 		end
 
 	create_string_object (an_addr: STRING; a_type: EIFFEL_CLASS_C): CDD_STRING_OBJECT is
-			-- reflection of a string object at address 'an_addr'
+			-- Reflection of a string object at address `an_addr'
 		require
 			addr_valid: an_addr /= Void and then not an_addr.is_empty
 			correct_type: a_type /= Void and then (a_type.name.is_equal ("STRING_8")
@@ -166,7 +184,7 @@ feature {NONE} -- Implementation
 		end
 
 	create_regular_object (an_addr: STRING; a_type: EIFFEL_CLASS_C): CDD_REGULAR_OBJECT is
-			-- object reflection of type 'a_type' at address 'a_addr'
+			-- Object reflection of type `a_type' at address `a_addr'
 			-- (Void if non eiffel object in reference graph)
 		require
 			an_addr_valid: an_addr /= Void and then not an_addr.is_empty
@@ -215,7 +233,7 @@ feature {NONE} -- Implementation
 
 
 	create_basic_object (a_dv: ABSTRACT_DEBUG_VALUE): CDD_BASIC_OBJECT is
-			-- value of 'a_dv' for an basic object
+			-- Value of `a_dv' for an basic object
 		require
 			a_dv_not_void: a_dv /= Void
 			not_addressed: a_dv.address = Void
@@ -227,7 +245,7 @@ feature {NONE} -- Implementation
 		end
 
 	extract_generic_type (a_type: STRING): STRING is
-			-- generic substring of some class type
+			-- Generic substring of some class type
 		require
 			a_type_valid: a_type /= Void and then not a_type.is_empty
 			a_type_has_generics: a_type.has ('[') and a_type.has (']')
@@ -246,7 +264,11 @@ feature {NONE} -- Implementation
 
 
 invariant
-	correct_reflection_outcome: reflection_succeded = root_object /= Void
+	correct_reflection_status: reflection_succeded = (
+									root_object /= Void and
+									called_feature /= Void and
+									exception_tag /= Void)
+	composite_objects_not_void: composite_objects /= Void
 	arguments_not_void: arguments /= Void
 	valid_argument_count: arguments.is_empty = not called_feature.has_arguments
 

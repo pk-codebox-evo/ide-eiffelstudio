@@ -100,7 +100,7 @@ feature {CDD_TEST_SUITE_MANAGER} -- Element change
 			end
 		end
 
-	create_with_reflection (a_reflection: CDD_REFLECTED_OBJECT; a_cluster: CLUSTER_I) is
+	create_with_reflection (a_reflection: CDD_REFLECTION; a_cluster: CLUSTER_I) is
 			-- Create a new test case from 'a_reflection'. Write test class into 'a_cluster'.
 			-- Assign 'last_created_test_case' with created test case.
 		require
@@ -195,7 +195,7 @@ feature {NONE} -- Implementation
 			valid_result: Result /= Void and then not Result.is_empty
 		end
 
-	create_test_class (a_file_name, a_class_name: STRING; a_reflection: CDD_REFLECTED_OBJECT; a_cluster: CLUSTER_I) is
+	create_test_class (a_file_name, a_class_name: STRING; a_reflection: CDD_REFLECTION; a_cluster: CLUSTER_I) is
 			-- Create new test class in 'a_test_suite' with name 'a_name', which uses
 			-- 'a_reflection' to restore the the state of the object
 		require
