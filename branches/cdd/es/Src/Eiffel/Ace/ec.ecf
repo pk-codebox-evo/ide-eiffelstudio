@@ -276,7 +276,7 @@
 		<library name="vision2" location="$ISE_LIBRARY\library\vision2\vision2.ecf" readonly="false"/>
 		<library name="vision2_extension" location="$ISE_LIBRARY\library\vision2_extension\vision2_extension.ecf" readonly="false"/>
 		<cluster name="beurk" location="$EIFFEL_SRC\Eiffel\beurk\" recursive="true"/>
-		<cluster name="cdd" location="$EIFFEL_SRC\Eiffel\cdd\" recursive="true">
+		<cluster name="cdd_cluster" location="$EIFFEL_SRC\Eiffel\cdd\" recursive="true">
 			<option>
 				<assertions precondition="true" postcondition="true" check="true" invariant="true" loop="false"/>
 			</option>
