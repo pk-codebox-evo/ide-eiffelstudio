@@ -1162,6 +1162,10 @@ feature -- Debugging events
 				out_cmd.disable_sensitive
 				set_critical_stack_depth_cmd.enable_sensitive
 				assertion_checking_handler_cmd.reset
+
+				if cdd_manager.tester.is_running then
+					cdd_manager.tester.stop
+				end
 			end
 			debug ("debugger_trace_synchro")
 				io.put_string (generator + ".on_application_quit : done%N")

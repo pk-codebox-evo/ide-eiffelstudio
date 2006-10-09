@@ -169,6 +169,7 @@ feature -- Execution control
 	start_debugged_testing (a_tc: CDD_TEST_CASE)
 			-- Run `a_tc' in the debugger
 		require
+			a_tc_not_void: a_tc /= Void
 			can_start_debugged_testing: can_start_debugged_testing
 		local
 			l_list: DS_ARRAYED_LIST [CDD_TEST_CASE]
@@ -193,7 +194,6 @@ feature -- Execution control
 				run_project_cmd.execute
 				status_text := "Running " + current_test_case.test_class.name + " in debugger"
 				update_status_actions.call ([])
-				ev_application.add_idle_action (idle_action_agent)
 			else
 				status_text := "Compilation failed"
 				update_status_actions.call ([])
@@ -249,7 +249,6 @@ feature -- Execution control
 			l_app: APPLICATION_EXECUTION
 			l_need_melt: BOOLEAN
 		do
-			ev_application.remove_idle_action (idle_action_agent)
 			if is_debugging then
 				is_debugging := False
 				l_app := run_project_cmd.debugger_manager.application
@@ -261,6 +260,7 @@ feature -- Execution control
 				status_text := "Done"
 				l_need_melt := True
 			else
+				ev_application.remove_idle_action (idle_action_agent)
 				if process.is_running then
 					process.terminate
 				end
@@ -297,18 +297,6 @@ feature {NONE} -- Status setting
 			-- Check status of the process and its output
 		require
 			running: is_running
-		do
-			if is_debugging then
-				check_on_debugger
-			else
-				check_on_process
-			end
-		end
-
-	check_on_process is
-			-- Check if process status has changed.
-		require
-			running: is_running
 			not_debugging: not is_debugging
 		local
 			l_output: STRING
@@ -342,19 +330,6 @@ feature {NONE} -- Status setting
 			if output.has_new_block then
 				l_output := output.all_blocks (True).string_representation
 				output_actions.call ([l_output])
-			end
-		end
-
-	check_on_debugger is
-			-- Check if application status in the debugger has changed.
-		require
-			debugging: is_debugging
-		local
-			l_app: APPLICATION_EXECUTION
-		do
-			l_app := run_project_cmd.debugger_manager.application
-			if not l_app.is_running then
-				stop
 			end
 		end
 
