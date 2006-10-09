@@ -10,9 +10,6 @@ deferred class
 inherit
 
 	CDD_OBJECT
-		redefine
-			make
-		end
 
 	COMPARABLE
 		export
@@ -29,7 +26,8 @@ feature {NONE} -- Initialization
 			a_type_not_void: a_type /= Void
 			not_basic_type: not a_type.is_basic
 		do
-			Precursor (a_type)
+			dynamic_type := a_type
+			create type.make_from_string (dynamic_type.name)
 			create identifier.make_from_string (a_type.name)
 			identifier.to_lower
 			identifier.append ("_id" + counter.item.out)
@@ -39,19 +37,25 @@ feature {NONE} -- Initialization
 feature -- Access
 
 	identifier: STRING
-			-- identifier used for output
+			-- Identifier used for output
+
+	dynamic_type: EIFFEL_CLASS_C
+			-- Class of the reflected object
+
+	type: STRING
+			-- Full type of the reflected object
 
 feature -- Output
 
 	append_creation (a_printer: CDD_TEST_CASE_PRINTER) is
-			-- tells 'a_printer' to print a creation instruction for Current
+			-- Tells 'a_printer' to print a creation instruction for Current
 		require
 			a_printer_not_void: a_printer /= Void
 		deferred
 		end
 
 	append_assignment (a_printer: CDD_TEST_CASE_PRINTER) is
-			-- tells 'a_printer' to print assignment instructions for Current
+			-- Tells 'a_printer' to print assignment instructions for Current
 		require
 			a_printer_not_void: a_printer /= Void
 		deferred
@@ -60,18 +64,17 @@ feature -- Output
 feature -- Comparision
 
 	infix "<" (other: like Current): BOOLEAN is
-			-- is Current less than 'other'
+			-- Is Current less than 'other'
 		require else
 			other_not_void: other /= Void
 		do
 			Result := identifier < other.identifier
 		end
 
-
 feature {NONE} -- Implementation
 
 	counter: INTEGER_REF is
-			-- counter for generating unique identifiers
+			-- Counter for generating unique identifiers
 		once
 			create Result
 			Result.set_item (1)
@@ -80,6 +83,7 @@ feature {NONE} -- Implementation
 		end
 
 invariant
-	invariant_clause: True -- Your invariant here
+	dynamic_class_not_void: dynamic_type /= Void
+	type_not_empty: type /= Void and then not type.is_empty
 
 end

@@ -1163,7 +1163,7 @@ feature -- Debugging events
 				set_critical_stack_depth_cmd.enable_sensitive
 				assertion_checking_handler_cmd.reset
 
-				if cdd_manager.tester.is_running then
+				if cdd_manager.tester.is_debugging then
 					cdd_manager.tester.stop
 				end
 			end

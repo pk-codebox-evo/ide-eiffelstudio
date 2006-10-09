@@ -16,25 +16,17 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_target_class: like target_class;
-		a_feature: like feature_name;
-		a_test_class: like test_class;
-		a_tag: like exception_tag;
-		an_id: like id) is
+	make (a_target_class: like target_class; a_feature: like feature_name; a_test_class: like test_class) is
 			-- Initialize new test case for testing `a_feature' of class `a_target_class' where
 			-- `a_test_class' is the classed used for testing.
 		require
 			valid_target_class: a_target_class /= Void
 			feature_not_empty: a_feature /= Void
 			valid_test_class: a_test_class /= Void
-			a_tag_not_empty: a_tag /= Void and then not a_tag.is_empty
-			an_id_not_empty: an_id /= Void and then not an_id.is_empty
 		do
 			target_class := a_target_class
 			feature_name := a_feature
 			test_class := a_test_class
-			exception_tag := a_tag
-			id := an_id
 			create update_status_actions
 		ensure
 			target_class_set: target_class = a_target_class
@@ -62,13 +54,8 @@ feature -- Access
 	test_class: CLASS_I
 			-- Class used for testing
 
-	exception_tag: STRING
-			-- Name of postcondition which is violated
-			-- TODO: Does this really just store tags from postconditions?
-			-- What about tags of preconditions, invariants, etc...
-
-	id: STRING
-			-- Identifier for state which is reproduced at test case execution
+	last_exception_tag: STRING
+			-- Name of the last violation thrown by the test case
 
 	was_tested: BOOLEAN
 			-- Has this test case excuted yet?
@@ -79,7 +66,7 @@ feature -- Access
 	passes: BOOLEAN
 			-- Does test case pass?
 
-feature -- Status seeting
+feature -- Status setting
 
 	start_testing is
 			-- Set `is_testing' to true an notify agents.
@@ -87,6 +74,7 @@ feature -- Status seeting
 			not_testing: not is_tested
 		do
 			is_tested := True
+			last_exception_tag := Void
 			update_status_actions.call ([])
 		ensure
 			started_testing: is_tested
@@ -105,7 +93,15 @@ feature -- Status seeting
 			passed_set: passes = a_result
 		end
 
+feature -- Element change
 
+	set_last_exception_tag (a_tag: STRING) is
+			-- Assign `a_tag' to `exception_tag'.
+		do
+			last_exception_tag := a_tag
+		ensure
+			exception_tag_set: last_exception_tag = a_tag
+		end
 
 feature -- Actions
 

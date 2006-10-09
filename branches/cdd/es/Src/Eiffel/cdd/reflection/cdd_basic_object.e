@@ -19,23 +19,20 @@ create
 
 feature -- Initialization
 
-	make_with_value (a_type: like dynamic_type; a_value: like value) is
+	make_with_value (a_value: like value) is
 			-- Create reflection for basic object of type 'a_type' and value 'a_value'
 		require
-			a_type_not_void: a_type /= Void
 			a_value_not_empty: a_value /= Void and then not a_value.is_empty
 		do
-			make (a_type)
 			value := a_value
 		ensure
 			correct_value: value = a_value
 		end
 
-
 feature -- Access
 
 	value: STRING
-		-- value of the object during execution
+		-- Value of the object during execution
 
 invariant
 	value_not_empty: value /= Void and then not value.is_empty

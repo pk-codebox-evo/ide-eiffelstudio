@@ -42,7 +42,7 @@ feature {CDD_TEST_SUITE_MANAGER} -- Element change
 			l_ilist: INDEXING_CLAUSE_AS
 			l_item: INDEX_AS
 
-			l_name, l_icluster, l_iclass, l_ifeature, l_itag, l_iid: STRING
+			l_name, l_icluster, l_iclass, l_ifeature: STRING
 			l_class: EIFFEL_CLASS_C
 			l_feature: E_FEATURE
 			l_tc: CDD_TEST_CASE
@@ -76,14 +76,10 @@ feature {CDD_TEST_SUITE_MANAGER} -- Element change
 							l_iclass := parse_indexing_item (l_item)
 						elseif l_name.is_equal ("cdd_feature") then
 							l_ifeature := parse_indexing_item (l_item)
-						elseif l_name.is_equal ("cdd_tag") then
-							l_itag := parse_indexing_item (l_item)
-						elseif l_name.is_equal ("cdd_id") then
-							l_iid := parse_indexing_item (l_item)
 						end
 						l_ilist.forth
 					end
-					if l_icluster /= Void and l_iclass /= Void and l_ifeature /= Void and l_itag /= Void and l_iid /= Void then
+					if l_icluster /= Void and l_iclass /= Void and l_ifeature /= Void then
 						l_group := eiffel_universe.group_of_name (l_icluster)
 						if l_group /= Void then
 							l_class ?= a_universe.class_named (l_iclass, l_group).compiled_class
@@ -91,7 +87,7 @@ feature {CDD_TEST_SUITE_MANAGER} -- Element change
 						if l_class /= Void then
 							l_feature := l_class.feature_with_name (l_ifeature)
 							if l_feature /= Void then
-								create l_tc.make (l_class.original_class, l_feature, a_class, l_itag, l_iid)
+								create l_tc.make (l_class.original_class, l_feature, a_class)
 								last_created_test_case := l_tc
 							end
 						end
@@ -119,7 +115,8 @@ feature {CDD_TEST_SUITE_MANAGER} -- Element change
 			manager.add_class_to_cluster (l_file_name, a_cluster, "")
 			l_test_class := manager.last_added_class
 			l_cud := a_reflection.root_object.dynamic_type.original_class
-			create l_tc.make (l_cud, a_reflection.called_feature, l_test_class, a_reflection.exception_tag, a_reflection.id)
+			create l_tc.make (l_cud, a_reflection.called_feature, l_test_class)
+			l_tc.set_last_exception_tag (a_reflection.exception_tag)
 			last_created_test_case := l_tc
 		ensure
 			created: last_created_test_case /= Void

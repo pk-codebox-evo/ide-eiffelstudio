@@ -23,13 +23,13 @@ create
 feature -- Access
 
 	append_creation (a_printer: CDD_TEST_CASE_PRINTER) is
-			-- tells 'a_printer' to print a creation instruction for Current
+			-- Tells `a_printer' to print a creation instruction for `Current'.
 		do
 			a_printer.append_tuple_creation (Current)
 		end
 
 	append_assignment (a_printer: CDD_TEST_CASE_PRINTER) is
-			-- tells 'a_printer' to print assignment instructions for Current
+			-- Tells `a_printer' to print assignment instructions for `Current'.
 		do
 			a_printer.append_tuple_assignment (Current)
 		end
@@ -37,7 +37,7 @@ feature -- Access
 feature -- Element change
 
 	add_attribute (a_name: STRING; a_value: CDD_OBJECT) is
-			-- Add attribute with name 'a_name' and value 'a_value'
+			-- Add attribute with name `a_name' and value `a_value'.
 		require else
 			a_name_numeric: a_name.is_integer
 			a_name_valid_value: a_name.to_integer >= 0 and

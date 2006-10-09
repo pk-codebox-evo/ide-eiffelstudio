@@ -125,21 +125,25 @@ feature -- Access
 feature -- Status setting
 
 	report_exception (an_app_status: APPLICATION_STATUS; a_window: EB_DEVELOPMENT_WINDOW) is
-			-- Try to create a new test case from 'an_app_status' and add it to 'a_test_suite'.
-			-- 'a_window' is the window in which the application was launched.
+			-- Try to create a new test case from `an_app_status' and add it to `test_suite'.
+			-- `a_window' is the window in which the application was launched.
 		require
 			testing_enabled: is_testing_enabled
 			app_status_valid: an_app_status /= Void and then valid_status (an_app_status)
 			a_window_not_void: a_window /= Void
 		local
-			l_msg: STRING
-			l_cd: EV_CONFIRMATION_DIALOG
+			l_reflection: CDD_REFLECTION
+			l_tc: CDD_TEST_CASE
 		do
-			if not tester.is_debugging and an_app_status.dynamic_class.is_eiffel_class_c then
-				l_msg := "EiffelStudio has detected a bug in one of your classes. Would you like to %
-						%create a test case with the current state of the application for further testing?"
-				create l_cd.make_with_text_and_actions (l_msg, << agent generate_test_case (an_app_status, a_window) >>)
-				l_cd.show_modal_to_window (a_window.window)
+			if not tester.is_debugging then
+				l_reflection := make_reflection (an_app_status)
+				if l_reflection /= Void and then l_reflection.reflection_succeded then
+					test_case_factory.create_with_reflection (l_reflection, test_suite.tests_cluster)
+					l_tc := test_case_factory.last_created_test_case
+					l_tc.set_passes (False)
+					test_suite.add_test_case (l_tc)
+					add_test_case_actions.call ([l_tc])
+				end
 			end
 		end
 
@@ -284,31 +288,6 @@ feature -- Actions
 
 feature {NONE} -- Implementation
 
-	generate_test_case (an_app_status: APPLICATION_STATUS; a_window: EB_DEVELOPMENT_WINDOW) is
-			-- Create test case from 'an_app_status' and notify user with in case of failure in 'a_window'.
-		require
-			an_app_status_not_void: an_app_status /= Void
-			a_window_not_void: a_window /= Void
-		local
-			l_reflection: CDD_REFLECTION
-			l_warn: EV_WARNING_DIALOG
-			l_tc: CDD_TEST_CASE
-		do
-			if valid_status (an_app_status) then
-				l_reflection := make_reflection (an_app_status)
-				if l_reflection = Void or else not l_reflection.reflection_succeded then
-					create l_warn.make_with_text ("Was not able to reflect current state of the application.")
-					l_warn.show_modal_to_window (a_window.window)
-				else
-					test_case_factory.create_with_reflection (l_reflection, test_suite.tests_cluster)
-					l_tc := test_case_factory.last_created_test_case
-					l_tc.set_passes (False)
-					test_suite.add_test_case (l_tc)
-					add_test_case_actions.call ([l_tc])
-				end
-			end
-		end
-
 	make_reflection (an_app_status: APPLICATION_STATUS): CDD_REFLECTION is
 			-- Try to reflect current object in call stack.
 			-- NOTE: Can be void if call stack contains external calls.
@@ -342,6 +321,11 @@ feature {NONE} -- Implementation
 								l_is_creation_call := True
 							end
 						end
+					elseif ise_target.root.class_name.is_equal (l_cse.dynamic_class.name) and
+							ise_target.root.feature_name.is_equal (l_feature.name) then
+						l_is_creation_call := True
+					else
+						l_abort := True
 					end
 				elseif l_cse.dynamic_class.creation_feature = l_feature then
 					l_abort := True

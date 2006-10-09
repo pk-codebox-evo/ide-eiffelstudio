@@ -247,8 +247,13 @@ feature -- Execution control
 			running: is_running
 		local
 			l_app: APPLICATION_EXECUTION
-			l_need_melt: BOOLEAN
 		do
+			if is_testing and current_test_case.is_tested then
+				current_test_case.set_passes (False)
+			end
+			cursor := Void
+			is_testing := False
+			is_running := False
 			if is_debugging then
 				is_debugging := False
 				l_app := run_project_cmd.debugger_manager.application
@@ -258,7 +263,7 @@ feature -- Execution control
 				manager.ise_target.set_root (old_root)
 				manager.ise_target.system.store
 				status_text := "Done"
-				l_need_melt := True
+				melt_project_cmd.execute_and_wait
 			else
 				ev_application.remove_idle_action (idle_action_agent)
 				if process.is_running then
@@ -267,15 +272,6 @@ feature -- Execution control
 				process := Void
 				remove_tester_target
 				status_text := "Done"
-			end
-			if is_testing and current_test_case.is_tested then
-				current_test_case.set_passes (False)
-			end
-			cursor := Void
-			is_testing := False
-			is_running := False
-			if l_need_melt then
-				melt_project_cmd.execute_and_wait
 			end
 			update_status_actions.call ([])
 		end
@@ -477,8 +473,6 @@ feature {NONE} -- Implementation
 		once
 			create Result
 		end
-
-
 
 invariant
 	manager_not_void: manager /= Void

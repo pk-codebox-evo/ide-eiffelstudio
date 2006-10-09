@@ -36,7 +36,7 @@ feature {NONE} -- Initialization
 			internal_update_agent := agent update_status
 			test_case.update_status_actions.extend (internal_update_agent)
 
-			name_item.set_text (test_case.exception_tag)
+			name_item.set_text (test_case.test_class.name)
 			create l_stone.make (test_case.test_class)
 			name_item.token_at_position (1).set_pebble (l_stone)
 			update_status

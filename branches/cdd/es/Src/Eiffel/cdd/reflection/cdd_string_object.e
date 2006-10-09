@@ -14,14 +14,13 @@ inherit
 			append_assignment
 		end
 
-
 create
 	make_with_string
 
 feature {NONE} -- Initialization
 
 	make_with_string (a_type: like dynamic_type; a_string: like representation) is
-			-- Create reflection of an object of type 'a_type' with value 'a_string'.
+			-- Create reflection of an object of type `a_type' with value `a_string'.
 		require else
 			class_of_type_string: a_type.name.is_equal ("STRING_8") or
 				a_type.name.is_equal ("STRING_32")
@@ -37,7 +36,6 @@ feature -- Access
 
 	representation: STRING
 			-- textual representation of reflected STRING object
-
 
 feature -- Output
 

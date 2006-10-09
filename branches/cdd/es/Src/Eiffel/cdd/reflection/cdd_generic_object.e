@@ -17,8 +17,8 @@ create
 feature {NONE} -- Initialization
 
 	make_generic (a_type: like dynamic_type; a_count: INTEGER; a_gen_type: STRING) is
-			-- Create reflection for generic object of type 'a_type' with generic parameter 'a_gen_type'
-			-- 'a_count' is number of attributes 'a_type' has defined
+			-- Create reflection for generic object of type `a_type' with generic parameter `a_gen_type'
+			-- `a_count' is number of attributes 'a_type' has defined.
 		require
 			a_type_not_void: a_type /= Void
 			a_gen_type_not_empty: a_gen_type /= Void and then not a_gen_type.is_empty
@@ -31,12 +31,10 @@ feature {NONE} -- Initialization
 			type_modified: type.has_substring (" [" + generic_type + "]")
 		end
 
-
 feature -- Access
 
 	generic_type: STRING
-			-- generic parameter of the objects type
-
+			-- Generic parameter of the objects type
 
 invariant
 	generic_type_not_empty: generic_type /= Void and then not generic_type.is_empty

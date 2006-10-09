@@ -38,7 +38,6 @@ feature {NONE} -- Initialization
 		do
 			called_feature := a_cse.routine
 			is_creation_feature := a_is_creation_call
-			exception_code := an_app_status.exception_code
 			if an_app_status.exception_tag /= Void then
 				exception_tag := an_app_status.exception_tag
 			else
@@ -82,7 +81,6 @@ feature {NONE} -- Initialization
 
 		end
 
-
 feature -- Access
 
 	reflection_succeded: BOOLEAN is
@@ -100,9 +98,6 @@ feature -- Access
 	is_creation_feature: BOOLEAN
 			-- Is `called_feature' a creation feature?
 
-	exception_code: INTEGER
-			-- Code of the exception ocurred
-
 	exception_tag: STRING
 			-- Description of what caused the exception
 
@@ -115,7 +110,6 @@ feature -- Access
 
 	arguments: DS_ARRAYED_LIST [CDD_OBJECT]
 			-- Reflected arguments of `called_feature'
-
 
 feature {NONE} -- Implementation
 
@@ -133,19 +127,21 @@ feature {NONE} -- Implementation
 		require
 			a_dv_not_void: a_dv /= Void
 		do
-			if a_dv.dynamic_class.is_eiffel_class_c then
-				if a_dv.address /= Void then
-					if addressed_objects.has (a_dv.address) then
-						Result := addressed_objects.item (a_dv.address)
+			if a_dv.dynamic_class /= Void then
+				if a_dv.dynamic_class.is_eiffel_class_c then
+					if a_dv.address /= Void then
+						if addressed_objects.has (a_dv.address) then
+							Result := addressed_objects.item (a_dv.address)
+						else
+							Result := create_composite_object (a_dv.address, a_dv.dynamic_class.eiffel_class_c)
+						end
 					else
-						Result := create_composite_object (a_dv.address, a_dv.dynamic_class.eiffel_class_c)
+						Result := create_basic_object (a_dv)
 					end
-				else
-					Result := create_basic_object (a_dv)
 				end
+			else
+				Result := create {CDD_VOID_OBJECT}
 			end
-		ensure
-			correct_result: a_dv.dynamic_class.is_eiffel_class_c implies Result /= Void
 		end
 
 	create_composite_object (an_addr: STRING; a_type: EIFFEL_CLASS_C): CDD_COMPOSITE_OBJECT is
@@ -231,7 +227,6 @@ feature {NONE} -- Implementation
 			end
 		end
 
-
 	create_basic_object (a_dv: ABSTRACT_DEBUG_VALUE): CDD_BASIC_OBJECT is
 			-- Value of `a_dv' for an basic object
 		require
@@ -239,7 +234,7 @@ feature {NONE} -- Implementation
 			not_addressed: a_dv.address = Void
 			eiffel_type: a_dv.dynamic_class.is_eiffel_class_c
 		do
-			create Result.make_with_value (a_dv.dynamic_class.eiffel_class_c, a_dv.dump_value.output_value)
+			create Result.make_with_value (a_dv.dump_value.output_value)
 		ensure
 			result_not_void: Result /= Void
 		end
@@ -261,7 +256,6 @@ feature {NONE} -- Implementation
 			valid_result: Result /= Void and then not Result.is_empty
 			substring_of_a_type: a_type.has_substring (Result)
 		end
-
 
 invariant
 	correct_reflection_status: reflection_succeded = (

@@ -17,7 +17,7 @@ create
 feature {NONE} -- Initialization
 
 	make_with_count (a_type: like dynamic_type; a_count: INTEGER) is
-			-- Create reflection for object of type 'a_type' with 'a_count' attributes
+			-- Create reflection for object of type `a_type' with `a_count' attributes.
 		do
 			make (a_type)
 			create attributes.make (a_count)
@@ -28,18 +28,18 @@ feature {NONE} -- Initialization
 feature -- Access
 
 	attributes: HASH_TABLE [CDD_OBJECT, STRING]
-			-- reflected attributes of class 'dynamic_type'
+			-- Reflected attributes of class `dynamic_type'
 
 feature -- Output
 
 	append_creation (a_printer: CDD_TEST_CASE_PRINTER) is
-			-- tells 'a_printer' to print a creation instruction for Current
+			-- Tells `a_printer' to print a creation instruction for Current.
 		do
 			a_printer.append_regular_creation (Current)
 		end
 
 	append_assignment (a_printer: CDD_TEST_CASE_PRINTER) is
-			-- tells 'a_printer' to print assignment instructions for Current
+			-- Tells `a_printer' to print assignment instructions for Current.
 		do
 			a_printer.append_regular_assignment (Current)
 		end
@@ -47,7 +47,7 @@ feature -- Output
 feature -- Element change
 
 	add_attribute (a_name: STRING; a_value: CDD_OBJECT) is
-			-- Add attribute with name 'a_name' and value 'a_value'
+			-- Add attribute with name `a_name' and value `a_value'.
 		require
 			a_name_not_empty: a_name /= Void and then not a_name.is_empty
 			a_value_not_void: a_value /= Void
@@ -56,7 +56,6 @@ feature -- Element change
 		ensure
 			attributes_set: attributes.item (a_name) = a_value
 		end
-
 
 invariant
 	attributes_not_void: attributes /= Void
