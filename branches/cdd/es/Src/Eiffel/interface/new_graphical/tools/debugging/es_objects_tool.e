@@ -245,8 +245,6 @@ feature {NONE} -- Interface
 				-- Select/Unselect behavior
 			g.row_select_actions.extend (agent on_objects_row_selected)
 			g.row_deselect_actions.extend (agent on_objects_row_deselected)
-
-			g.set_pre_activation_action (agent pre_activate_cell)
 		end
 
 	build_mini_toolbar is
@@ -809,7 +807,7 @@ feature {NONE} -- grid Layout Implementation
 	keep_object_reference_fixed (addr: STRING) is
 		do
 			if debugger_manager.application_is_executing then
-				application.status.keep_object (addr)
+				application.status.keep_object_for_gui (addr)
 			end
 		end
 
@@ -820,13 +818,8 @@ feature {NONE} -- grid Layout Implementation
 			-- being rebuilt, unless the timer period has been exceeded.
 
 	current_stack_class_feature_identification: STRING is
-		local
-			cse: CALL_STACK_ELEMENT
 		do
-			cse := current_stack_element
-			if cse /= Void then
-				Result := cse.class_name + "." + cse.routine_name
-			end
+			Result := current_stack_element.class_name + "." + current_stack_element.routine_name
 		end
 
 feature {NONE} -- Stack grid Layout Implementation
@@ -1609,7 +1602,7 @@ feature {NONE} -- Impl : Stack objects grid
 					and then not ev_application.shift_pressed
 				then
 					if grid.selected_rows.count > 0 then
-						ost ?= grid.grid_pebble_from_row_and_column (grid.selected_rows.first, Void)
+						ost ?= grid.grid_pebble_from_row (grid.selected_rows.first)
 						pretty_print_cmd.set_stone (ost)
 					end
 				end

@@ -164,6 +164,7 @@ feature {NONE} -- Implementation
 					is_error := True
 					last_error := create {CONF_ERROR_PARTIAL}.make (epc_merger.error_message)
 					name := ""
+					renamed_name := ""
 					path := ""
 					file_name := ""
 				else
@@ -181,7 +182,7 @@ feature {NONE} -- Implementation
 					set_name
 
 					check
-						name_set: name /= Void
+						name_set: name /= Void and then renamed_name /= Void
 					end
 
 						-- rename file to class name
@@ -190,7 +191,7 @@ feature {NONE} -- Implementation
 				end
 			end
 		ensure
-			name: not is_error implies (not name.is_empty)
+			name: not is_error implies (not name.is_empty and not renamed_name.is_empty)
 			location: not is_error implies (not path.is_empty and not file_name.is_empty)
 		rescue
 			is_error := True

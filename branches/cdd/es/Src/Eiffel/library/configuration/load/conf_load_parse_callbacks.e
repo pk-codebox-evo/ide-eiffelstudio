@@ -816,15 +816,15 @@ feature {NONE} -- Implementation attribute processing
 		require
 			target: current_target /= Void
 		local
-			l_name, l_location, l_readonly, l_recursive, l_hidden: STRING
+			l_name, l_location, l_readonly, l_prefix, l_recursive: STRING
 			l_parent: CONF_CLUSTER
 			l_loc: CONF_DIRECTORY_LOCATION
 		do
 			l_name := current_attributes.item (at_name)
 			l_location := current_attributes.item (at_location)
 			l_readonly := current_attributes.item (at_readonly)
+			l_prefix := current_attributes.item (at_prefix)
 			l_recursive := current_attributes.item (at_recursive)
-			l_hidden := current_attributes.item (at_hidden)
 			if l_name /= Void then
 				l_name.to_lower
 			end
@@ -840,12 +840,8 @@ feature {NONE} -- Implementation attribute processing
 						set_parse_error_message (conf_interface_names.e_parse_invalid_value ("readonly"))
 					end
 				end
-				if l_hidden /= Void then
-					if l_hidden.is_boolean then
-						current_cluster.set_hidden (l_hidden.to_boolean)
-					else
-						set_parse_error_message (conf_interface_names.e_parse_invalid_value ("hidden"))
-					end
+				if l_prefix /= Void then
+					current_cluster.set_name_prefix (l_prefix)
 				end
 				if l_recursive /= Void then
 					if l_recursive.is_boolean then
@@ -880,7 +876,7 @@ feature {NONE} -- Implementation attribute processing
 		require
 			target: current_target /= Void
 		local
-			l_name, l_location, l_readonly, l_prefix, l_recursive, l_hidden: STRING
+			l_name, l_location, l_readonly, l_prefix, l_recursive: STRING
 			l_parent: CONF_CLUSTER
 		do
 			l_name := current_attributes.item (at_name)
@@ -888,7 +884,6 @@ feature {NONE} -- Implementation attribute processing
 			l_readonly := current_attributes.item (at_readonly)
 			l_prefix := current_attributes.item (at_prefix)
 			l_recursive := current_attributes.item (at_recursive)
-			l_hidden := current_attributes.item (at_hidden)
 			if l_name /= Void then
 				l_name.to_lower
 			end
@@ -904,12 +899,8 @@ feature {NONE} -- Implementation attribute processing
 						set_parse_error_message (conf_interface_names.e_parse_invalid_value ("readonly"))
 					end
 				end
-				if l_hidden /= Void then
-					if l_hidden.is_boolean then
-						current_cluster.set_hidden (l_hidden.to_boolean)
-					else
-						set_parse_error_message (conf_interface_names.e_parse_invalid_value ("hidden"))
-					end
+				if l_prefix /= Void then
+					current_cluster.set_name_prefix (l_prefix)
 				end
 				if l_recursive /= Void then
 					if l_recursive.is_boolean then
@@ -1048,16 +1039,11 @@ feature {NONE} -- Implementation attribute processing
 			group: current_group /= Void
 		local
 			l_old_name, l_new_name: STRING
-			l_virtual_group: CONF_VIRTUAL_GROUP
 		do
-			l_virtual_group ?= current_group
-			check
-				virtual_group: l_virtual_group /= Void
-			end
 			l_old_name := current_attributes.item (at_old_name)
 			l_new_name := current_attributes.item (at_new_name)
 			if l_old_name /= Void and l_new_name /= Void then
-				l_virtual_group.add_renaming (l_old_name.as_upper, l_new_name.as_upper)
+				current_group.add_renaming (l_old_name.as_upper, l_new_name.as_upper)
 			elseif l_old_name /= Void then
 				set_parse_error_message (conf_interface_names.e_parse_incorrect_renaming_no_new (l_old_name))
 			elseif l_new_name /= Void then
@@ -1073,14 +1059,13 @@ feature {NONE} -- Implementation attribute processing
 			group: a_class_option implies current_group /= Void
 			target: current_target /= Void
 		local
-			l_trace, l_profile, l_optimize, l_debug, l_namespace, l_class, l_warning, l_msil_application_optimize: STRING
+			l_trace, l_profile, l_optimize, l_debug, l_namespace, l_class, l_warning: STRING
 		do
 			l_trace := current_attributes.item (at_trace)
 			l_profile := current_attributes.item (at_profile)
 			l_optimize := current_attributes.item (at_optimize)
 			l_debug := current_attributes.item (at_debug)
 			l_warning := current_attributes.item (at_warning)
-			l_msil_application_optimize := current_attributes.item (at_msil_application_optimize)
 			l_namespace := current_attributes.item (at_namespace)
 			l_class := current_attributes.item (at_class)
 
@@ -1119,9 +1104,6 @@ feature {NONE} -- Implementation attribute processing
 				else
 					set_parse_error_message (conf_interface_names.e_parse_invalid_value ("warning"))
 				end
-			end
-			if l_msil_application_optimize /= Void and then l_msil_application_optimize.is_boolean then
-				current_option.set_msil_application_optimize (l_msil_application_optimize.to_boolean)
 			end
 			if l_namespace /= Void then
 				current_option.set_namespace (l_namespace)
@@ -1701,12 +1683,11 @@ feature {NONE} -- Implementation state transitions
 			Result.force (l_trans, t_precompile)
 
 				-- cluster
-				-- -everything from library/precompile except renaming
+				-- -everything from library/precompile
 				-- => file_rule
 				-- => mapping
 				-- => uses
 				-- => cluster
-			l_trans.remove ("renaming")
 			l_trans.force (t_file_rule, "file_rule")
 			l_trans.force (t_mapping, "mapping")
 			l_trans.force (t_uses, "uses")
@@ -1823,7 +1804,6 @@ feature {NONE} -- Implementation state transitions
 			l_attr.force (at_optimize, "optimize")
 			l_attr.force (at_debug, "debug")
 			l_attr.force (at_warning, "warning")
-			l_attr.force (at_msil_application_optimize, "msil_application_optimize")
 			l_attr.force (at_namespace, "namespace")
 			Result.force (l_attr, t_option)
 
@@ -1898,15 +1878,14 @@ feature {NONE} -- Implementation state transitions
 			Result.force (l_attr, t_assembly)
 
 				-- cluster/override
-				-- -everything from library except prefix
+				-- -everything from library
 				-- * recursive
-				-- * hidden
-			create l_attr.make (6)
+			create l_attr.make (5)
 			l_attr.force (at_name, "name")
 			l_attr.force (at_location, "location")
 			l_attr.force (at_readonly, "readonly")
+			l_attr.force (at_prefix, "prefix")
 			l_attr.force (at_recursive, "recursive")
-			l_attr.force (at_hidden, "hidden")
 			Result.force (l_attr, t_cluster)
 			Result.force (l_attr, t_override)
 
@@ -2109,9 +2088,7 @@ feature {NONE} -- Implementation constants
 	at_working_directory,
 	at_type,
 	at_eifgens_location,
-	at_warning,
-	at_hidden,
-	at_msil_application_optimize: INTEGER is unique
+	at_warning: INTEGER is unique
 
 feature -- Assertions
 

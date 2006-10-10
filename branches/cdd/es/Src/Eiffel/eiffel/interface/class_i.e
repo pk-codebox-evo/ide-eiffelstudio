@@ -41,7 +41,7 @@ inherit
 feature -- Access
 
 	name: STRING is
-			-- Class name
+			-- Final class name, after all renaming, prefix.
 		deferred
 		end
 
@@ -231,6 +231,14 @@ feature -- Access
 	is_valid: BOOLEAN is
 			-- Is class still reachable from the configuration system?
 		deferred
+		end
+
+	exists: BOOLEAN is
+		local
+			file: RAW_FILE
+		do
+			create file.make (file_name)
+			Result := file.exists
 		end
 
 	is_external_class: BOOLEAN is

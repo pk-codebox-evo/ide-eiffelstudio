@@ -35,14 +35,14 @@ feature {NONE} -- Settings
 			-- Nothing to be done, as it is handled later in batch mode.
 		end
 
-	launch_precompile_process (a_arguments: LIST [STRING]) is
+	launch_precompile_process (a_command: STRING) is
 			-- Launch precompile process `a_command'.
 		local
 			l_prc_factory: PROCESS_FACTORY
 			l_prc_launcher: PROCESS
 		do
 			create l_prc_factory
-			l_prc_launcher := l_prc_factory.process_launcher (eiffel_layout.ec_command_name, a_arguments, Void)
+			l_prc_launcher := l_prc_factory.process_launcher_with_command_line (a_command, Void)
 			l_prc_launcher.set_separate_console (False)
 			l_prc_launcher.launch
 			if l_prc_launcher.launched then
@@ -381,36 +381,6 @@ feature {NONE} -- User interaction
 						is_user_wants_precompile := True
 						l_answered := True
 					elseif io.last_string.item (1).as_lower = 'n' then
-						l_answered := True
-					end
-				end
-			end
-		end
-
-	ask_environment_update (a_key, a_old_val, a_new_val: STRING) is
-			-- Should new environment values be accepted?
-		local
-			l_answered: BOOLEAN
-		do
-			if should_stop_on_prompt then
-				io.put_string ("New environment value for "+a_key+" will be used")
-				io.put_new_line
-				io.put_string ("because of the -stop/-batch option.")
-				io.put_new_line
-				is_update_environment := True
-			else
-				from
-				until
-					l_answered
-				loop
-					io.put_string (warning_messages.w_environment_changed (a_key, a_old_val, a_new_val))
-					io.put_string (" [y|n] ")
-					io.read_line
-					if io.last_string.item (1).as_lower = 'y' then
-						is_update_environment := True
-						l_answered := True
-					elseif io.last_string.item (1).as_lower = 'n' then
-						is_update_environment := False
 						l_answered := True
 					end
 				end

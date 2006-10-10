@@ -317,12 +317,6 @@ feature -- Status report
 			Result := lace_class.options.is_warning_enabled (a_warning)
 		end
 
-	apply_msil_application_optimizations: BOOLEAN is
-			-- Should MSIL application optimizations be applied?
-		do
-			Result := False
-		end
-
 	has_external_ancestor_class: BOOLEAN is
 			-- Does current class have an external ancestor which is a class (not interface)?
 		local
@@ -2444,11 +2438,8 @@ feature -- Properties
 	has_external_main_parent: BOOLEAN
 			-- Is one non-external parent class generated as a single IL type?
 
-	is_frozen: BOOLEAN is
+	is_frozen: BOOLEAN
 			-- Is class frozen, ie we cannot inherit from it?
-		do
-			Result := internal_is_frozen or apply_msil_application_optimizations
-		end
 
 	is_external: BOOLEAN
 			-- Is class an external one?
@@ -3731,9 +3722,6 @@ feature -- output
 		end
 
 feature {NONE} -- Implementation
-
-	internal_is_frozen: BOOLEAN
-			-- Mutable version of `is_frozen'.
 
 	internal_feature_table_file_id: INTEGER
 			-- Number added at end of C file corresponding to generated

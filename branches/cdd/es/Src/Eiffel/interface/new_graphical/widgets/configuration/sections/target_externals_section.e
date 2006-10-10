@@ -93,10 +93,11 @@ feature -- Element update
 		do
 			if objects = Void then
 				create internal_objects.make (target, configuration_window)
-				order_headers
 				extend (internal_objects)
 			end
 			internal_objects.add_external
+
+			order_headers
 		end
 
 	add_library is
@@ -104,10 +105,11 @@ feature -- Element update
 		do
 			if libraries = Void then
 				create internal_libraries.make (target, configuration_window)
-				order_headers
 				extend (internal_libraries)
 			end
 			internal_libraries.add_external
+
+			order_headers
 		end
 
 	add_make is
@@ -115,10 +117,11 @@ feature -- Element update
 		do
 			if makefiles = Void then
 				create internal_makefiles.make (target, configuration_window)
-				order_headers
 				extend (internal_makefiles)
 			end
 			internal_makefiles.add_external
+
+			order_headers
 		end
 
 	add_resource is
@@ -126,10 +129,11 @@ feature -- Element update
 		do
 			if resources = Void then
 				create internal_resources.make (target, configuration_window)
-				order_headers
 				extend (internal_resources)
 			end
 			internal_resources.add_external
+
+			order_headers
 		end
 
 	set_includes (a_externals: ARRAYED_LIST [CONF_EXTERNAL_INCLUDE]) is

@@ -695,9 +695,6 @@ feature {NONE} -- Implementation
 				if an_options.is_warning_configured then
 					append_text (" warning=%""+an_options.is_warning.out.as_lower+"%"")
 				end
-				if an_options.is_msil_application_optimize_configured then
-					append_text (" msil_application_optimize=%""+an_options.is_msil_application_optimize.out.as_lower+"%"")
-				end
 				l_str := an_options.namespace
 				if l_str /= Void and then not l_str.is_empty then
 					append_text (" namespace=%""+escape_xml (l_str)+"%"")
@@ -826,7 +823,6 @@ feature {NONE} -- Implementation
 			a_tag_ok: a_tag /= Void and then not a_tag.is_empty
 		local
 			l_str: STRING
-			l_vg: CONF_VIRTUAL_GROUP
 		do
 			l_str := a_group.location.original_path
 			if l_str.is_empty then
@@ -839,13 +835,9 @@ feature {NONE} -- Implementation
 			elseif a_group.is_library and a_group.is_readonly_set then
 				append_text (" readonly=%""+a_group.is_readonly.out.as_lower+"%"")
 			end
-
-			l_vg ?= a_group
-			if l_vg /= Void then
-				l_str := l_vg.name_prefix
-				if l_str /= Void and then not l_str.is_empty then
-					append_text (" prefix=%""+escape_xml (l_str)+"%"")
-				end
+			l_str := a_group.name_prefix
+			if l_str /= Void and then not l_str.is_empty then
+				append_text (" prefix=%""+escape_xml (l_str)+"%"")
 			end
 		end
 
@@ -856,7 +848,6 @@ feature {NONE} -- Implementation
 		local
 			l_renaming: HASH_TABLE [STRING, STRING]
 			l_c_opt: HASH_TABLE [CONF_OPTION, STRING]
-			l_vg: CONF_VIRTUAL_GROUP
 		do
 			append_text (">%N")
 			indent := indent + 1
@@ -864,18 +855,15 @@ feature {NONE} -- Implementation
 			append_description_tag (a_group.description)
 			append_conditionals (a_group.internal_conditions, a_group.is_assembly)
 			append_options (a_group.internal_options, Void)
-			l_vg ?= a_group
-			if l_vg /= Void then
-				l_renaming := l_vg.renaming
-				if l_renaming /= Void then
-					from
-						l_renaming.start
-					until
-						l_renaming.after
-					loop
-						append_text_indent ("<renaming old_name=%""+escape_xml (l_renaming.key_for_iteration)+"%" new_name=%""+escape_xml (l_renaming.item_for_iteration)+"%"/>%N")
-						l_renaming.forth
-					end
+			l_renaming := a_group.renaming
+			if l_renaming /= Void then
+				from
+					l_renaming.start
+				until
+					l_renaming.after
+				loop
+					append_text_indent ("<renaming old_name=%""+escape_xml (l_renaming.key_for_iteration)+"%" new_name=%""+escape_xml (l_renaming.item_for_iteration)+"%"/>%N")
+					l_renaming.forth
 				end
 			end
 			l_c_opt := a_group.internal_class_options
@@ -912,9 +900,6 @@ feature {NONE} -- Implementation
 		do
 			if a_cluster.is_recursive then
 				append_text (" recursive=%"true%"")
-			end
-			if a_cluster.is_hidden then
-				append_text (" hidden=%"true%"")
 			end
 		end
 

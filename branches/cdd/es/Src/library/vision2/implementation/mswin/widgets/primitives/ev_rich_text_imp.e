@@ -61,8 +61,7 @@ inherit
 			on_en_change,
 			text_length,
 			wel_text_length,
-			set_background_color,
-			scroll_to_end
+			set_background_color
 		select
 			wel_line_index,
 			wel_current_line_number,
@@ -638,7 +637,7 @@ feature -- Status report
 	index_from_position (an_x_position, a_y_position: INTEGER): INTEGER is
 			-- Index of character closest to position `x_position', `y_position'.
 		do
-			Result := (character_index_from_position (an_x_position, a_y_position) + 1).min (text_length)
+			Result := character_index_from_position (an_x_position, a_y_position) + 1
 		end
 
 	position_from_index (an_index: INTEGER): EV_COORDINATE is
@@ -1375,20 +1374,6 @@ feature -- Status setting
 			if is_displayed then
 				-- If the widget is not hidden then invalidate.
 				invalidate
-			end
-		end
-
-	scroll_to_end is
-			-- Scroll to end.
-		local
-			l_line: INTEGER
-			l_line1, l_line2: INTEGER
-		do
-			l_line1 := line_number_from_position (index_from_position (0, 0))
-			l_line2 := line_number_from_position (index_from_position (0, height))
-			l_line := l_line1 + (line_count - l_line2) + 1
-			if valid_line_index (l_line) then
-				scroll_to_line (l_line)
 			end
 		end
 

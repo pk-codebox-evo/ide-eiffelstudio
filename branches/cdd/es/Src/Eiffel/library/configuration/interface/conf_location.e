@@ -250,12 +250,14 @@ feature {NONE} -- Implementation
 				if l_key /= Void then
 					l_value := target.variables.item (l_key.as_lower)
 					if l_value = Void then
-						l_value := execution_environment.variable_value (l_key)
+						l_value := target.environ_variables.item (l_key.as_lower)
 						if l_value = Void then
-							l_value := ""
+							l_value := execution_environment.variable_value (l_key)
+							if l_value = Void then
+								l_value := ""
+							end
+							target.environ_variables.force (l_value, l_key.as_lower)
 						end
-							-- we don't want to update stored values, this is done when the project is loaded
-						target.environ_variables.put (l_value, l_key)
 					end
 					Result.replace_substring (to_internal (l_value), i, j)
 				end

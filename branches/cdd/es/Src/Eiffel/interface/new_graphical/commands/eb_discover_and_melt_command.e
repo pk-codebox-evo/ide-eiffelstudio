@@ -36,7 +36,7 @@ feature {NONE} -- Implementation
 	perform_compilation is
 			-- The actual compilation process.
 		do
-			eiffel_project.discover_melt
+			eiffel_project.melt
 		end
 
 feature {NONE} -- Attributes

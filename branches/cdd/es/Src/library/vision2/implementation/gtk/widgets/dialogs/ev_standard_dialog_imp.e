@@ -154,6 +154,7 @@ feature {EV_INTERMEDIARY_ROUTINES} -- Implementation
 			user_clicked_ok := True
 			selected_button := internal_accept
 			hide
+			{EV_GTK_EXTERNALS}.gtk_widget_hide (c_object)
 		end
 
 	on_cancel is
@@ -161,6 +162,7 @@ feature {EV_INTERMEDIARY_ROUTINES} -- Implementation
 		do
 			selected_button := ev_cancel
 			hide
+			{EV_GTK_EXTERNALS}.gtk_widget_hide (c_object)
 		end
 
 indexing

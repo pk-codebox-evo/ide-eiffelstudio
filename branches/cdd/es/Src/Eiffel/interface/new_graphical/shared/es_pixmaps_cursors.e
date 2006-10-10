@@ -49,7 +49,7 @@ feature {NONE} -- Initialization
 			retried := True
 			retry
 		end
-		
+
 feature -- Access
 
 	pixel_width: INTEGER is 32
@@ -267,7 +267,6 @@ feature -- Access
 		once
 			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (17, 1))
 		end
-
 	frozen context_disabled_cluster_cursor: EV_PIXMAP is
 			-- Access to 'cluster' pixmap.
 		once
@@ -471,7 +470,6 @@ feature -- Access
 		once
 			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (17, 2))
 		end
-
 	frozen cursor_hand_open_cursor: EV_PIXMAP is
 			-- Access to 'hand open' pixmap.
 		once
@@ -519,7 +517,6 @@ feature -- Access
 		once
 			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (4, 3))
 		end
-
 	frozen docking_up_cursor: EV_PIXMAP is
 			-- Access to 'up' pixmap.
 		once
@@ -592,7 +589,6 @@ feature -- Access
 			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (10, 3))
 		end
 
-		
 feature {NONE} -- Query
 
 	frozen pixel_rectangle (a_x: INTEGER; a_y: INTEGER): EV_RECTANGLE is

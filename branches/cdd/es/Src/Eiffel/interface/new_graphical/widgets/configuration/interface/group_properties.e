@@ -53,7 +53,6 @@ feature {NONE} -- Implementation
 			l_vis_dial: VISIBLE_DIALOG
 			l_visible: CONF_VISIBLE
 			l_precompile: CONF_PRECOMPILE
-			l_virtual_group: CONF_VIRTUAL_GROUP
 		do
 			properties.reset
 
@@ -80,7 +79,7 @@ feature {NONE} -- Implementation
 				l_text_prop.set_value (conf_interface_names.group_library)
 				l_library ?= a_group
 				l_visible := l_library
-			elseif a_group.is_assembly or a_group.is_physical_assembly then
+			elseif a_group.is_assembly then
 				l_text_prop.set_value (conf_interface_names.group_assembly)
 				l_assembly ?= a_group
 			else
@@ -123,13 +122,6 @@ feature {NONE} -- Implementation
 				l_bool_prop.change_value_actions.extend (agent l_cluster.set_recursive)
 				l_bool_prop.change_value_actions.extend (agent change_no_argument_boolean_wrapper (?, agent handle_value_changes (True)))
 				properties.add_property (l_bool_prop)
-
-					-- hidden
-				create l_bool_prop.make_with_value (conf_interface_names.cluster_hidden_name, l_cluster.is_hidden)
-				l_bool_prop.set_description (conf_interface_names.cluster_hidden_description)
-				l_bool_prop.change_value_actions.extend (agent l_cluster.set_hidden)
-				l_bool_prop.change_value_actions.extend (agent change_no_argument_boolean_wrapper (?, agent handle_value_changes (True)))
-				properties.add_property (l_bool_prop)
 			end
 
 				-- location
@@ -162,8 +154,7 @@ feature {NONE} -- Implementation
 
 				-- options
 			if not a_group.is_assembly then
-				add_misc_option_properties (a_group.changeable_internal_options, a_group.options, True)
-				add_dotnet_option_properties (a_group.changeable_internal_options, a_group.options, True, a_group.target.setting_msil_generation)
+				add_misc_option_properties (a_group.changeable_internal_options, a_group.options, True, a_group.target.setting_msil_generation)
 				add_assertion_option_properties (a_group.changeable_internal_options, a_group.options, True)
 				add_warning_option_properties (a_group.changeable_internal_options, a_group.options, True)
 				add_debug_option_properties (a_group.changeable_internal_options, a_group.options, True)
@@ -181,17 +172,16 @@ feature {NONE} -- Implementation
 			l_dial.change_value_actions.extend (agent change_no_argument_wrapper ({CONF_CONDITION_LIST}?, agent handle_value_changes (True)))
 			properties.add_property (l_dial)
 
-			l_virtual_group ?= a_group
-			if l_virtual_group /= Void then
+			if not a_group.is_cluster then
 					-- prefix
 				create l_text_prop.make (conf_interface_names.group_prefix_name)
 				l_text_prop.set_description (conf_interface_names.group_prefix_description)
-				l_text_prop.set_value (l_virtual_group.name_prefix)
+				l_text_prop.set_value (a_group.name_prefix)
 				l_text_prop.validate_value_actions.extend (agent (a_name: STRING): BOOLEAN
 					do
 						Result := a_name = Void or a_name.is_empty or (create {EIFFEL_SYNTAX_CHECKER}).is_valid_class_name (a_name)
 					end)
-				l_text_prop.change_value_actions.extend (agent l_virtual_group.set_name_prefix)
+				l_text_prop.change_value_actions.extend (agent a_group.set_name_prefix)
 				l_text_prop.change_value_actions.extend (agent change_no_argument_wrapper ({STRING}?, agent handle_value_changes (True)))
 				properties.add_property (l_text_prop)
 
@@ -199,10 +189,10 @@ feature {NONE} -- Implementation
 				create l_rename_prop.make_with_dialog (conf_interface_names.group_renaming_name, create {RENAMING_DIALOG})
 				l_rename_prop.set_description (conf_interface_names.group_renaming_description)
 				l_rename_prop.set_display_agent (agent output_renaming)
-				if l_virtual_group.renaming /= Void then
-					l_rename_prop.set_value (l_virtual_group.renaming)
+				if a_group.renaming /= Void then
+					l_rename_prop.set_value (a_group.renaming)
 				end
-				l_rename_prop.change_value_actions.extend (agent l_virtual_group.set_renaming)
+				l_rename_prop.change_value_actions.extend (agent a_group.set_renaming)
 				l_rename_prop.change_value_actions.extend (agent change_no_argument_wrapper ({EQUALITY_HASH_TABLE [STRING, STRING]}?, agent handle_value_changes (True)))
 				properties.add_property (l_rename_prop)
 			end

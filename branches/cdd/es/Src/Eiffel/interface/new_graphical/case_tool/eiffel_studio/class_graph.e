@@ -296,9 +296,7 @@ feature {EB_CONTEXT_DIAGRAM_COMMAND} -- Implementation
 					l.after
 				loop
 					ci := l.item.lace_class
-					if not l.item.group.is_physical_assembly then
-						Result := Result + number_of_descendants (ci, depth - 1) + 1
-					end
+					Result := Result + number_of_descendants (ci, depth - 1) + 1
 					l.forth
 				end
 			end
@@ -326,15 +324,13 @@ feature {EB_CONTEXT_DIAGRAM_COMMAND} -- Implementation
 					i > nb
 				loop
 					ci := l.i_th (i).lace_class
-					if not ci.group.is_physical_assembly then
-						add_class (ci)
-						explore_descendants (ci, depth - 1, progress_bar)
+					add_class (ci)
+					explore_descendants (ci, depth - 1, progress_bar)
 						if progress_bar then
 							l_status_bar.display_progress_value (
 								l_status_bar.current_progress_value + 1
 							)
 						end
-					end
 					i := i + 1
 				end
 			end

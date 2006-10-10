@@ -13,10 +13,13 @@ inherit
 
 	ES_GRID_ROW_CONTROLLER
 		rename
-			item_pebble as item_stone,
-			item_pebble_details as item_stone_details
+			pebble as object_stone,
+			pnd_accept_cursor as object_stone_accept_cursor,
+			pnd_deny_cursor as object_stone_deny_cursor
 		redefine
-			item_stone_details
+			object_stone,
+			object_stone_accept_cursor,
+			object_stone_deny_cursor
 		end
 
 	VALUE_TYPES
@@ -90,6 +93,7 @@ feature {NONE} -- Initialization
 			set_object_spec_slices (min_slice_ref.item, max_slice_ref.item)
 
 			create compute_grid_row_completed_action
+
 			parent_grid := g
 		end
 
@@ -128,10 +132,11 @@ feature -- Recycling
 			row_attributes_filled := False
 			row_onces_filled := False
 
-			internal_items_stone_data := Void
+			internal_object_stone := Void
+			internal_object_stone_accept_cursor := Void
+			internal_object_stone_deny_cursor := Void
+			object_stone_properties_computed := False
 			last_dump_value := Void
-		ensure
-			item_stone_properties_not_computed : not items_stone_properties_computed
 		end
 
 feature {ES_OBJECTS_GRID, ES_OBJECTS_GRID_MANAGER} -- Grid and row attachement
@@ -204,7 +209,7 @@ feature {ES_OBJECTS_GRID, ES_OBJECTS_GRID_MANAGER} -- Grid and row attachement
 			attributes_row := Void
 			onces_row := Void
 
-			internal_items_stone_data := Void
+			object_stone_properties_computed := False
 			compute_grid_display_done := False
 			compute_grid_display
 		ensure
@@ -219,6 +224,8 @@ feature -- Status
 		end
 
 feature -- Properties
+
+--	tool: ES_OBJECTS_GRID_MANAGER
 
 	row: EV_GRID_ROW
 
@@ -305,32 +312,21 @@ feature -- Status
 
 feature -- Pick and Drop
 
-	item_stone_details (i: INTEGER): like internal_item_stone_data_i_th is
-		do
-			if not items_stone_properties_computed then
-				get_items_stone_properties
-			end
-			Result := internal_item_stone_data_i_th (i)
-		end
+	object_stone_properties_computed: BOOLEAN
 
-feature {NONE} -- Pick and Drop implementation
-
-	items_stone_properties_computed: BOOLEAN is
-		do
-			Result := internal_items_stone_data /= Void
-		end
-
-	get_items_stone_properties is
+	get_object_stone_properties is
 		require
-			not items_stone_properties_computed
+			not object_stone_properties_computed
 		local
-			clst: CLASSC_STONE
 			ost: OBJECT_STONE
 			ostn: STRING_32
-			ocl: CLASS_C
-			t: like internal_item_stone_data_i_th
 		do
-			create internal_items_stone_data.make (row.count + 1) -- FIXME: upper value ?
+			object_stone_properties_computed := True
+
+			internal_object_stone := Void
+			internal_object_stone_accept_cursor := Void
+			internal_object_stone_deny_cursor := Void
+
 			if object_address /= Void then
 					--| For now we don't support this for external type
 				ostn := object_name
@@ -339,52 +335,41 @@ feature {NONE} -- Pick and Drop implementation
 				end
 				create ost.make (object_address, ostn, object_dynamic_class)
 				ost.set_associated_ev_item (row)
-				create t
-				t.stone := ost
-				t.accept_cursor := ost.stone_cursor
-				t.deny_cursor := ost.X_stone_cursor
-				--When compiler is fixed use: t := [ost, ost.stone_cursor, ost.X_stone_cursor]
-				internal_items_stone_data[col_value_index] := t
-				internal_items_stone_data[col_type_index] := t
-			else
-				ocl := object_dynamic_class
-				if ocl /= Void then
-					create {CLASSC_STONE} clst.make (ocl)
-					create t
-					t.stone := clst
-					t.accept_cursor := clst.stone_cursor
-					t.deny_cursor := clst.X_stone_cursor
-					--When compiler is fixed use: t := [clst, clst.stone_cursor, clst.X_stone_cursor]
-					internal_items_stone_data[col_type_index] := t
-				end
+				internal_object_stone_accept_cursor := ost.stone_cursor
+				internal_object_stone_deny_cursor := ost.X_stone_cursor
+				internal_object_stone := ost
 			end
-
-			check internal_items_stone_data[0] = Void end
-			if internal_items_stone_data[col_value_index] /= Void then
-				internal_items_stone_data[0] := internal_items_stone_data[col_value_index]
-			elseif internal_items_stone_data[col_type_index] /= Void then
-				internal_items_stone_data[0] := internal_items_stone_data[col_type_index]
-			end
-		ensure
-			item_stone_properties_computed: items_stone_properties_computed
 		end
 
-	internal_item_stone_data_i_th (i: INTEGER): TUPLE [stone: STONE; accept_cursor: EV_POINTER_STYLE; deny_cursor: EV_POINTER_STYLE] is
-			-- Internal data related to `i_th' cell of current row.
+	object_stone: STONE is
 		do
-			if internal_items_stone_data /= Void then
-				if internal_items_stone_data.count >= i then
-					Result := internal_items_stone_data[i]
-				end
-				if Result = Void then
-					Result := internal_items_stone_data[0]
-				end
+			if not object_stone_properties_computed then
+				get_object_stone_properties
 			end
+			Result := internal_object_stone
 		end
 
-	internal_items_stone_data: SPECIAL [like internal_item_stone_data_i_th]
-			-- Internal data about pebble value of current row's item
-			-- index 0 is used for default pebble value
+	object_stone_accept_cursor: EV_POINTER_STYLE is
+		do
+			if not object_stone_properties_computed then
+				get_object_stone_properties
+			end
+			Result := internal_object_stone_accept_cursor
+		end
+
+	object_stone_deny_cursor: EV_POINTER_STYLE is
+		do
+			if not object_stone_properties_computed then
+				get_object_stone_properties
+			end
+			Result := internal_object_stone_deny_cursor
+		end
+
+	internal_object_stone_accept_cursor: like object_stone_accept_cursor
+
+	internal_object_stone_deny_cursor: like object_stone_deny_cursor
+
+	internal_object_stone: like object_stone
 
 feature -- Record layout
 
@@ -452,7 +437,7 @@ feature -- Graphical changes
 	reset_compute_grid_display_done is
 			-- Reset value of `compute_grid_display_done'
 		do
-			internal_items_stone_data := Void
+			object_stone_properties_computed := False
 			compute_grid_display_done := False
 		end
 
@@ -786,7 +771,7 @@ feature {NONE} -- Filling
 		do
 			cmd := parent_grid.slices_cmd
 			if cmd /= Void then
-				os ?= item_stone (col_value_index)
+				os ?= object_stone
 				if os /= Void then
 					cmd.drop_object_stone (os)
 				end

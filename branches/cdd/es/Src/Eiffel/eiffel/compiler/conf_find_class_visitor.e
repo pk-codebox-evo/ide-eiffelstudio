@@ -13,7 +13,6 @@ inherit
 		redefine
 			make,
 			process_assembly,
-			process_physical_assembly,
 			process_library,
 			process_precompile,
 			process_cluster,
@@ -58,17 +57,9 @@ feature -- Visit nodes
 	process_assembly (an_assembly: CONF_ASSEMBLY) is
 			-- Visit `an_assembly'.
 		do
-			if an_assembly.classes_set then
-				an_assembly.physical_assembly.process (Current)
-			end
-		end
-
-	process_physical_assembly (a_assembly: CONF_PHYSICAL_ASSEMBLY) is
-			-- Visist `a_assembly'.
-		do
-			if not assemblies_done.has (a_assembly.guid) then
-				assemblies_done.put (a_assembly.guid)
-				retrieve_from_group (a_assembly)
+			if not assemblies_done.has (an_assembly.guid) then
+				assemblies_done.force (an_assembly.guid)
+				retrieve_from_group (an_assembly)
 			end
 		end
 

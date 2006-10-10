@@ -13,11 +13,6 @@ inherit
 
 	DOCUMENTATION_FACILITIES
 
-	REFACTORING_HELPER
-		export
-			{NONE} all
-		end
-
 feature -- Access
 
 	context_group: CONF_GROUP is
@@ -30,12 +25,10 @@ feature -- Element change
 
 	set_context_group (a_group: like context_group) is
 			-- Set `context_group' with `a_group'.
-		local
-			l_as: CONF_ASSEMBLY
 		do
 			internal_context_group := a_group
 		ensure
-			context_group_set: internal_context_group = a_group
+			internal_context_group_set: internal_context_group = a_group
 		end
 
 feature -- Operation

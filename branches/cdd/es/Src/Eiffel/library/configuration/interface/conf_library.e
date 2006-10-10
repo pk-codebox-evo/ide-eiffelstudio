@@ -9,9 +9,7 @@ class
 	CONF_LIBRARY
 
 inherit
-	CONF_VISIBLE
-
-	CONF_VIRTUAL_GROUP
+	CONF_GROUP
 		redefine
 			make,
 			process,
@@ -21,6 +19,8 @@ inherit
 			class_by_name
 		end
 
+	CONF_VISIBLE
+
 create {CONF_FACTORY}
 	make
 
@@ -29,7 +29,7 @@ feature {NONE} -- Initialization
 	make (a_name: like name; a_location: like location; a_target: CONF_TARGET) is
 			-- Create associated to `a_target'.
 		do
-			Precursor {CONF_VIRTUAL_GROUP}(a_name, a_location, a_target)
+			Precursor {CONF_GROUP}(a_name, a_location, a_target)
 			internal_read_only := True
 		ensure then
 			readonly: is_readonly
@@ -200,8 +200,7 @@ feature -- Equality
 	is_group_equivalent (other: like Current): BOOLEAN is
 			-- Is `other' and `Current' the same with respect to the group layout?
 		do
-			Result := Precursor (other) and then equal (visible, other.visible) and then
-				equal (name_prefix, other.name_prefix) and then equal (renaming, other.renaming)
+			Result := Precursor (other) and then equal (visible, other.visible)
 		end
 
 feature {NONE} -- Implementation

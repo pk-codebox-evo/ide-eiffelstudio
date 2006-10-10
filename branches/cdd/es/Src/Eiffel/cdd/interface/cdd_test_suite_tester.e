@@ -85,7 +85,7 @@ feature -- Access
 		do
 			Result := can_start_background_testing and
 				not manager.ise_project.is_compiling and
-				not run_project_cmd.eb_debugger_manager.application.is_running
+				not run_project_cmd.debugger_manager.application.is_running
 		end
 
 	is_running: BOOLEAN
@@ -213,7 +213,7 @@ feature -- Execution control
 			l_app: APPLICATION_EXECUTION
 		do
 			if is_debugging then
-				l_app := run_project_cmd.eb_debugger_manager.application
+				l_app := run_project_cmd.debugger_manager.application
 				l_app.interrupt
 			else
 				ev_application.remove_idle_action (idle_action_agent)
@@ -231,7 +231,7 @@ feature -- Execution control
 			l_app: APPLICATION_EXECUTION
 		do
 			if is_debugging then
-				l_app := run_project_cmd.eb_debugger_manager.application
+				l_app := run_project_cmd.debugger_manager.application
 				l_app.continue
 			else
 				process.launch
@@ -256,7 +256,7 @@ feature -- Execution control
 			is_running := False
 			if is_debugging then
 				is_debugging := False
-				l_app := run_project_cmd.eb_debugger_manager.application
+				l_app := run_project_cmd.debugger_manager.application
 				if l_app.is_running then
 					l_app.kill
 				end

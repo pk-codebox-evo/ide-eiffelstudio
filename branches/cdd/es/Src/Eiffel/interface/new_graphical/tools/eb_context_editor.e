@@ -315,9 +315,9 @@ feature {NONE} -- Initialization
 			draw_commands.extend (force_settings_cmd)
 			draw_commands.extend (Void)
 
-			draw_commands.extend (zoom_out_cmd)
-			draw_commands.extend (fit_to_screen_cmd)
 			draw_commands.extend (zoom_in_cmd)
+			draw_commands.extend (fit_to_screen_cmd)
+			draw_commands.extend (zoom_out_cmd)
 
 			from
 				create drawing_toolbar
@@ -1344,7 +1344,7 @@ feature {EB_CONTEXT_TOOL} -- Context tool
 							is_synchronization_needed := False
 						end
 					else
-						if cluster_stone /= Void then
+						if cluster_stone /= Void and then not cluster_stone.group.is_assembly then
 							-- create a cluster view
 							if
 								is_rebuild_world_needed or else

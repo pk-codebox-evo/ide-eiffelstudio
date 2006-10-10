@@ -10,6 +10,10 @@ indexing
 class
 	LIST_CREATION_DYNAMIC_LIB
 
+inherit
+	WINDOWS
+	SHARED_EIFFEL_PROJECT
+
 create
 	make
 
@@ -25,6 +29,23 @@ feature -- Initialization
 		end
 
 feature -- Properties
+
+	name: STRING is
+			-- Name of the command
+		do
+			Result := "Creation procedure ?"
+		end
+
+	menu_name: STRING is
+			-- Name used in menu entry
+		do
+			Result := "Creation procedure"
+		end
+
+	accelerator: STRING is
+			-- Accelerator action for menu entry
+		do
+		end
 
 	d_class: CLASS_C
 	d_routine: E_FEATURE
@@ -47,7 +68,7 @@ feature {NONE} -- Execution
 				selected := Void
 			end
 		end
-
+	
 feature {NONE} -- Implementation
 
 	valid_creation (cl:CLASS_C): LINKED_LIST[E_FEATURE] is

@@ -20,6 +20,7 @@ inherit
 			is_cluster,
 			is_readonly,
 			accessible_groups,
+			accessible_classes,
 			location
 		end
 
@@ -35,7 +36,6 @@ feature {NONE} -- Initialization
 		do
 			Precursor (a_name, a_location, a_target)
 			create internal_file_rule.make (0)
-			internal_file_rule.compare_objects
 			create class_by_name_cache.make (20)
 			create name_by_class_cache.make (20)
 		end
@@ -56,9 +56,6 @@ feature -- Access, stored in configuration file
 
 	is_recursive: BOOLEAN
 			-- Are subdirectories included recursively?
-
-	is_hidden: BOOLEAN
-			-- Is this a hidden cluster that can not be used if the cluster is used in a library.
 
 	parent: CONF_CLUSTER
 			-- An optional parent cluster.
@@ -353,6 +350,29 @@ feature -- Access queries
 			Result := accessible_groups_cache
 		end
 
+	accessible_classes: like classes is
+			-- Classes that are accessible within `Current'.
+		local
+			l_groups: like accessible_groups
+			l_grp: CONF_GROUP
+		do
+			Result :=  Precursor
+			l_groups := accessible_groups
+			if l_groups /= Void then
+				from
+					l_groups.start
+				until
+					l_groups.after
+				loop
+					l_grp := l_groups.item_for_iteration
+					if l_grp.classes_set then
+						Result.merge (l_grp.classes)
+					end
+					l_groups.forth
+				end
+			end
+		end
+
 	sub_group_by_name (a_name: STRING): CONF_GROUP is
 			-- Return sub cluster with `a_name' if there is any.
 		do
@@ -427,14 +447,6 @@ feature {CONF_ACCESS} -- Update, stored in configuration file
 			is_recursive := a_enabled
 		ensure
 			is_recursive_set: is_recursive = a_enabled
-		end
-
-	set_hidden (a_enabled: BOOLEAN) is
-			-- Set `is_hidden' to `a_enabled'.
-		do
-			is_hidden := a_enabled
-		ensure
-			is_hidden_set: is_hidden = a_enabled
 		end
 
 	set_dependencies (a_dependencies: like internal_dependencies) is
@@ -516,8 +528,7 @@ feature -- Equality
 		do
 			Result := Precursor (other) and then equal (dependencies, other.dependencies) and then
 						file_rule.is_equal (other.file_rule) and then equal (visible, other.visible) and then
-						is_recursive = other.is_recursive and then is_hidden = other.is_hidden and then
-						equal (mapping, other.mapping)
+						is_recursive = other.is_recursive and then equal (mapping, other.mapping)
 		end
 
 feature -- Visit
@@ -574,6 +585,8 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Cached informations
 
+	accessible_groups_cache: like accessible_groups
+			-- Cached version of `accessible_groups'.
 	class_by_name_cache: HASH_TABLE [like class_by_name, STRING]
 			-- Cached version of `class_by_name' lookup.
 	name_by_class_cache: HASH_TABLE [like name_by_class, CONF_CLASS]

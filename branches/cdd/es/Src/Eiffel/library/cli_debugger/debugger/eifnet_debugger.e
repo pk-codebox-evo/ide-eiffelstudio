@@ -1597,7 +1597,7 @@ feature -- Exception
 		do
 			Result := active_exception_value
 			if Result /= Void then
-				Result := edv_formatter.prepared_debug_value (Result)
+				Result := Result.duplicated_object
 			end
 			if Result = Void or else Result.item = Default_pointer then
 				l_last_thread := icor_debug_thread

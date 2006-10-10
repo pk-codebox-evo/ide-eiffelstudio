@@ -124,9 +124,7 @@ feature -- Details
 				s.append_string ("%N%N")
 			end
 			if message /= Void then
-				if tag = Void or else not message.is_equal (tag) then
-					s.append_string (message)
-				end
+				s.append_string (message)
 			end
 			if s.occurrences ('%R') > 0 then
 				s.prune_all ('%R')

@@ -68,7 +68,7 @@ feature -- Initialization
 				is_deferred := external_class.is_deferred
 				is_expanded := external_class.is_expanded
 				is_enum := external_class.is_enum
-				internal_is_frozen := external_class.is_frozen
+				is_frozen := external_class.is_frozen
 
 					-- Initializes inheritance structure
 				process_parents
@@ -653,7 +653,6 @@ feature {NONE} -- Initialization
 			l_enum_ext: IL_ENUM_EXTENSION_I
 			l_all_export: EXPORT_ALL_I
 			l_none_export: EXPORT_NONE_I
-			l_family_export: EXPORT_SET_I
 			l_feat_arg: FEAT_ARG
 			l_names_heap: like Names_heap
 			l_list: ARRAYED_LIST [INTEGER]
@@ -744,8 +743,28 @@ feature {NONE} -- Initialization
 					end
 				end
 
-					-- Check if this is a constructor
+					-- Add creation routine to `creators' if any.
 				l_constructor ?= l_member
+				if l_constructor /= Void then
+						-- Special case for value type where creation routines
+						-- are simply generated as normal feature and cannot be used
+						-- as creation procedure because usually there are more
+						-- than one possible creation routine and this is forbidden
+						-- by Eiffel specification on expanded.
+					l_creators.put (l_all_export, l_member.eiffel_name)
+					if external_class.is_expanded then
+						l_feat.set_export_status (l_all_export)
+					else
+						l_feat.set_export_status (l_none_export)
+					end
+				else
+					if l_member.is_public then
+						l_feat.set_export_status (l_all_export)
+					else
+						l_feat.set_export_status (l_none_export)
+					end
+				end
+
 
 				if l_member.is_static then
 					if l_member.is_attribute then
@@ -924,29 +943,6 @@ feature {NONE} -- Initialization
 
 				l_written_type := internal_type_from_consumed_type (True, l_member.declared_type)
 				l_feat.set_written_in (l_written_type.class_id)
-
-					-- Add creation routine to `creators' if any.
-				if l_constructor /= Void then
-						-- Special case for value type where creation routines
-						-- are simply generated as normal feature and cannot be used
-						-- as creation procedure because usually there are more
-						-- than one possible creation routine and this is forbidden
-						-- by Eiffel specification on expanded.
-					l_creators.put (l_all_export, l_member.eiffel_name)
-					if external_class.is_expanded then
-						l_feat.set_export_status (l_all_export)
-					else
-						l_feat.set_export_status (l_none_export)
-					end
-				else
-					if l_member.is_public then
-						l_feat.set_export_status (l_all_export)
-					else
-							-- It is not exported but consumed, it means it is only
-							-- available to descendants in unqualified and qualified calls.
-						l_feat.set_export_status (new_family_export (l_written_type.class_id))
-					end
-				end
 
 					-- Let's update `l_feat' with info from parent classes.
 				update_feature_with_parents (a_feat_tbl, l_feat, l_member)
@@ -1496,8 +1492,8 @@ feature {NONE} -- Implementation
 		local
 			l_emitter: IL_EMITTER
 			l_man: CONF_CONSUMER_MANAGER
-			l_assemblies: HASH_TABLE [CONF_PHYSICAL_ASSEMBLY, STRING_8]
-			l_assembly: CONF_PHYSICAL_ASSEMBLY
+			l_assemblies: HASH_TABLE [CONF_ASSEMBLY, STRING_8]
+			l_assembly: CONF_ASSEMBLY
 			l_path: STRING
 			l_asm: STRING
 			l_key: STRING
@@ -1518,6 +1514,7 @@ feature {NONE} -- Implementation
 			end
 			degree_output.put_string ("   Consuming required assembly '" + l_asm + "'...")
 
+
 			create l_path.make (256)
 
 			l_assemblies := universe.target.all_assemblies
@@ -1528,36 +1525,21 @@ feature {NONE} -- Implementation
 					l_assembly := l_assemblies.item_for_iteration
 					if not l_assembly.is_dependency then
 						l_path.append_character (';')
-						l_path.append (l_assembly.consumed_assembly.location)
+						l_path.append (l_assembly.location.evaluated_path)
 					end
 					l_assemblies.forth
 				end
 				if not l_path.is_empty then
-					create l_man.make (create {CONF_COMP_FACTORY}, system.metadata_cache_path, system.clr_runtime_version, assembly.target,  create {DS_HASH_SET [CONF_CLASS]}.make_default, create {DS_HASH_SET [CONF_CLASS]}.make_default, create {DS_HASH_SET [CONF_CLASS]}.make_default)
-					l_emitter := l_man.il_emitter
-					if l_emitter.exists and then l_emitter.is_initialized then
-						l_emitter.consume_assembly_from_path (assembly.consumed_assembly.location, False, l_path)
-						l_man.rebuild_assembly (assembly)
-						l_emitter.unload
-					end
+					create l_emitter.make (system.metadata_cache_path, system.clr_runtime_version)
+					l_emitter.consume_assembly_from_path (assembly.location.evaluated_path, False, l_path)
+					create l_man.make (create {CONF_COMP_FACTORY}, system.metadata_cache_path, system.clr_runtime_version, create {DS_HASH_SET [CONF_CLASS]}.make_default, create {DS_HASH_SET [CONF_CLASS]}.make_default, create {DS_HASH_SET [CONF_CLASS]}.make_default)
+					l_man.rebuild_classes (assembly, assembly.dotnet_classes)
+					assembly.set_is_partially_consumed (False)
+					l_emitter.unload
 				end
 			end
 		ensure
 			not_assembly_is_partially_consumed: not assembly.is_partially_consumed
-		end
-
-	new_family_export (written_in: INTEGER): EXPORT_SET_I is
-			-- New export clause to
-		local
-			l_clients: ARRAYED_LIST [STRING]
-		do
-			create Result.make
-			Result.compare_objects
-			create l_clients.make (1)
-			l_clients.extend (system.class_of_id (written_in).name)
-			Result.put (create {CLIENT_I}.make (l_clients, written_in))
-		ensure
-			Result_not_void: Result /= Void
 		end
 
 invariant

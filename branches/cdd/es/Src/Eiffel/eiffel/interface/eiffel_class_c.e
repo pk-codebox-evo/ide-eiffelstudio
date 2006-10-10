@@ -13,7 +13,6 @@ inherit
 		rename
 			group as cluster, make as init_class_c
 		redefine
-			apply_msil_application_optimizations,
 			cluster, original_class,
 			is_eiffel_class_c,
 			eiffel_class_c,
@@ -121,19 +120,6 @@ feature -- Access
 					Result := feat.api_feature (class_id)
 				end
 			end
-		end
-
-feature -- Status report
-
-	apply_msil_application_optimizations: BOOLEAN is
-			-- Should MSIL application optimizations be applied?
-		do
-				-- Optimizations will take place on non-deferfed classes that are tag with having optimizations
-				-- applied. Optimizations will be performed on finalize or precompile (because wb precompiles can be uses
-				-- as a single binary) and only when there are no descendants.
-			Result := (not is_deferred and not is_expanded and is_eiffel_class_c) and then lace_class.options.is_msil_application_optimize and then system.il_generation and then
-				(system.byte_context.final_mode or universe.compilation_modes.is_precompiling) and then
-				((descendants = Void or else descendants.is_empty) or internal_is_frozen)
 		end
 
 feature -- Action
@@ -1414,8 +1400,6 @@ feature {NONE} -- Class initialization
 				elseif ast_b.bottom_indexes /= Void then
 					private_external_name := ast_b.bottom_indexes.external_name
 					set_is_enum (ast_b.bottom_indexes.enum_type /= Void)
-				else
-					private_external_name := Void
 				end
 				if private_external_name = Void then
 					if ast_b.external_class_name /= Void then
@@ -1485,10 +1469,10 @@ feature {NONE} -- Class initialization
 			else
 				is_external := ast_b.is_external
 			end
-			old_is_frozen := internal_is_frozen
-			internal_is_frozen := ast_b.is_frozen
+			old_is_frozen := is_frozen
+			is_frozen := ast_b.is_frozen
 
-			if (old_parents /= Void and then old_is_frozen /= internal_is_frozen) then
+			if (old_parents /= Void and then old_is_frozen /= is_frozen) then
 				changed_status := True
 				changed_frozen := True
 			end

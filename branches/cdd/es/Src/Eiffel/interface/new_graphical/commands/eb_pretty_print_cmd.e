@@ -86,7 +86,7 @@ feature -- Status report
 			Result := Eb_debugger_manager.debugging_window.window
 		end
 
-feature -- Status report
+feature {EB_PRETTY_PRINT_DIALOG} -- Status report
 
 	accepts_stone (st: OBJECT_STONE): BOOLEAN is
 			-- Can the user drop `st'?
