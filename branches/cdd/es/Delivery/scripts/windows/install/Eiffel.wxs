@@ -21,7 +21,7 @@
 		<Property Id="SELECTEDCCOMPILER">bcb<RegistrySearch Id="AppReg" Root="HKLM" Key="SOFTWARE\ISE\Eiffel57\ec" Name="ISE_C_COMPILER" Type="raw" Win64="$(var.IsWin64)" /></Property>
 		<Condition Message="This installation can only run in full UI mode.">Installed OR UILevel = 5</Condition>
 
-		<Media Id='1' Cabinet='Sample.cab' EmbedCab='yes' DiskPrompt="CD-ROM #1" />
+		<Media Id='1' Cabinet='Sample.cab' EmbedCab='yes' DiskPrompt="CD-ROM #1" CompressionLevel="high" />
 		<Property Id='DiskPrompt' Value="EiffelStudio 5.7 Installation [1]" />
 
 		<Directory Id="TARGETDIR" Name="SourceDir">
@@ -118,7 +118,7 @@
 		<CustomAction Id="is_cd_key_valid" BinaryKey="setup_dll" DllEntry="is_cd_key_valid" />
 		<CustomAction Id="retrieve_cd_key" BinaryKey="setup_dll" DllEntry="retrieve_cd_key" />
 		<CustomAction Id="prepare_finalize_setup" BinaryKey="setup_dll" DllEntry="prepare_finalize_setup" />
-		<CustomAction Id="finalize_setup" BinaryKey="setup_dll" DllEntry="finalize_setup" Execute="deferred" />
+		<CustomAction Id="finalize_setup" BinaryKey="setup_dll" DllEntry="finalize_setup" Impersonate="no" Execute="deferred" />
 
 		<UI>
 			<Property Id="DefaultUIFont">DlgFont8</Property>

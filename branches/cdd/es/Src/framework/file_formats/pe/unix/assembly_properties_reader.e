@@ -1,36 +1,60 @@
 indexing
-	description: "Shared output signs"
+	description: "[
+		Used to read assemblies and extract basic metadata information.
+	]"
+	date:        "$Date$"
+	revision:    "$Revision$"
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
-	date: "$Date$"
-	revision: "$Revision$"
 
 class
-	EB_SHARED_OUTPUT_TOOLS
-		-- This class was created to improve the separation between text and graphic classes
-		-- actually, it still needs some improvements, because its operation is not understandable enough. 
-		-- maybe an error_window_cell should be created.
+	ASSEMBLY_PROPERTIES_READER
 
-feature
+inherit
+	DISPOSABLE
 
-	error_window: OUTPUT_WINDOW is
-			-- Error window that displays error message
-		once
-			Result := init_error_window
-		end
+create
+	make
 
-feature {NONE} -- Implementation
+feature {NONE} -- Initialize
 
-	init_error_window: OUTPUT_WINDOW is
-			-- error window. this function is redefined for graphic mode
+	make (a_runtime_version: STRING) is
+			-- Initialize Current. Initialize `exists' accordingly.
+		require
+			a_runtime_version_not_void: a_runtime_version /= Void
+			not_a_runtime_version_is_empty: not a_runtime_version.is_empty
 		do
-			Result := term_window
 		end
 
-	term_window: TERM_WINDOW is
-			-- terminal output. Used in text mode
+feature -- Clean up
+
+	dispose is
+			-- Cleans up any allocated resources
+		do
+		ensure then
+			not_exists: not exists
+		end
+
+feature -- Basic operations
+
+	retrieve_assembly_properties (a_file_name: STRING): ASSEMBLY_PROPERTIES is
+			-- Retrieves assembly properties for `a_file_name'
+		require
+			a_file_name_attached: a_file_name /= Void
+			not_a_file_name_is_empty: not a_file_name.is_empty
+			a_file_name_exists: (create {RAW_FILE}.make (a_file_name)).exists
+			a_file_name_is_pe_file: (create {PE_FILE_INFO}).is_com2_pe_file (a_file_name)
+			exists: exists
+		do
+			check False end
+		end
+
+feature -- Status report
+
+	exists: BOOLEAN is
+			-- Indicates if reader was successfully initialized and is read for use.
 		once
-			create Result
+			Result := False
 		end
 
 indexing
@@ -65,4 +89,4 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end -- class EB_SHARED_OUTPUT_TOOLS
+end -- class ASSEMBLY_PROPERTIES_READER

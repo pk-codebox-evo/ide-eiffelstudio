@@ -116,8 +116,8 @@ feature -- Status report
 
 feature -- Version
 
-	Major_version: NATURAL_16 is 5
-	Minor_version: NATURAL_16 is 7
+	Major_version: NATURAL_16 is 6
+	Minor_version: NATURAL_16 is 0
 
 feature -- Access
 
@@ -707,6 +707,20 @@ feature -- Environment access
 		do
 			Result := environment.get_from_application (a_var, application_name)
 		end
+
+feature -- Environment update
+
+	set_environment (a_value, a_var: STRING) is
+			-- Update environment variable `a_key' to be `a_value'.
+		require
+			a_var_ok: a_var /= Void and then not a_var.is_empty and then not a_var.has ('%U')
+			a_value_ok: a_value /= Void and then not a_value.has ('%U')
+		do
+			environment.put (a_value, a_var)
+		ensure
+			value_updated: get_environment (a_var).is_equal (a_value)
+		end
+
 
 feature -- IL environment
 

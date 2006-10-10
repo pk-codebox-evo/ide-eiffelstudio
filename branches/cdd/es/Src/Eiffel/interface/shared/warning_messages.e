@@ -120,7 +120,7 @@ feature -- Project file/directory warnings
 
 	w_project_build_precompile: STRING is "Project needs a precompile, should the precompile be built?"
 
-	w_project_build_precompile_error: STRING is "Could not generated needed precompile."
+	w_project_build_precompile_error: STRING is "Could not generate needed precompile."
 
 	w_Project_interrupted (dir_name: STRING): STRING is
 		require
@@ -862,6 +862,20 @@ feature -- Project creation, retrieval, ...
 		do
 			Result := "'" + a_directory_name + "' is not a valid directory and/or cannot be created%N%
 				%Please choose a valid and writable directory."
+		end
+
+	w_Environment_changed (a_key, a_old_val, a_new_val: STRING): STRING is
+		local
+			l_new: STRING
+		do
+			if a_new_val = Void then
+				l_new := "<unset>"
+			else
+				l_new := a_new_val
+			end
+			Result := "Environment variable '"+a_key+"' has changed%N%N%
+				%Old value: "+a_old_val+"%NNew value: "+l_new+"%N%N%
+				%Should the new value be used?"
 		end
 
 feature -- Refactoring

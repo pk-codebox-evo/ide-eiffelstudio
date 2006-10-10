@@ -408,6 +408,9 @@ feature -- Status report
 	is_precompilation_error: BOOLEAN
 			-- Was there an error during the generation of a needed precompile?
 
+	is_update_environment: BOOLEAN
+			-- Should changed environment variables be used?
+
 feature {NONE} -- Status report
 
 	is_config_file_name_valid: BOOLEAN is
@@ -516,7 +519,7 @@ feature {NONE} -- Settings
 				Eiffel_project.make (compiler_project_location)
 
 				if not eiffel_project.error_occurred then
-						-- Nothing to be done here
+					check_used_environemnt
 					report_project_loaded_successfully
 				else
 					if Eiffel_project.retrieval_error then
@@ -559,6 +562,44 @@ feature {NONE} -- Settings
 				is_recompile_from_scrach := True
 				create_project (lace.project_path, is_project_location_requested)
 				post_create_project
+			end
+		end
+
+	check_used_environemnt is
+			-- Check if the current environment values still have the same values as the ones stored in the project settings.
+		local
+			l_envs: HASH_TABLE [STRING, STRING]
+			l_key, l_old_val, l_new_val: STRING
+		do
+			if
+				eiffel_project.system_defined and then eiffel_project.initialized and then
+				eiffel_system.workbench.is_already_compiled and then
+				eiffel_system.workbench.last_reached_degree <= 5
+			then
+				from
+					l_envs := eiffel_system.workbench.universe.target.environ_variables
+					l_envs.start
+				until
+					l_envs.after
+				loop
+					l_key := l_envs.key_for_iteration
+					l_old_val := l_envs.item_for_iteration
+					l_new_val := eiffel_layout.get_environment (l_key)
+					if not l_key.is_case_insensitive_equal (eiffel_layout.default_il_environment.ise_dotnet_framework_env) and then not equal (l_new_val, l_old_val) then
+						ask_environment_update (l_key, l_old_val, l_new_val)
+						if is_update_environment then
+							if l_new_val /= Void then
+								l_envs.force (l_new_val, l_key)
+							else
+								l_envs.remove (l_key)
+							end
+							system.force_rebuild
+						else
+							eiffel_layout.set_environment (l_old_val, l_key)
+						end
+					end
+					l_envs.forth
+				end
 			end
 		end
 
@@ -619,40 +660,42 @@ feature {NONE} -- Settings
 		require
 			a_precompile_not_void: a_precompile /= Void
 		local
-			l_cmd: STRING
 			l_mdcp: STRING
 			l_target: CONF_TARGET
+			l_args: ARRAYED_LIST [STRING]
 		do
 			l_target := a_precompile.target
-			create l_cmd.make (50)
-			l_cmd.append (eiffel_layout.ec_command_name)
-			l_cmd.append (" -config %"")
-			l_cmd.append (a_precompile.location.evaluated_path)
-			l_cmd.append ("%" -precompile -clean -c_compile -batch")
+			create l_args.make (10)
+			l_args.extend ("-config")
+			l_args.extend (a_precompile.location.evaluated_path)
+			l_args.extend ("-precompile")
+			l_args.extend ("-clean")
+			l_args.extend ("-c_compile")
+			l_args.extend ("-batch")
 			if l_target.setting_msil_generation then
 				if l_target.setting_msil_use_optimized_precompile then
-					l_cmd.append (" -finalize")
+					l_args.extend ("-finalize")
 				end
 				l_mdcp := overridden_metadata_cache_path
 				if l_mdcp = Void then
 					l_mdcp := l_target.setting_metadata_cache_path
 				end
 				if l_mdcp /= Void and then not l_mdcp.is_empty then
-					l_cmd.append (" -metadata_cache_path %"")
-					l_cmd.append (l_mdcp)
-					l_cmd.append ("%"")
+					l_args.extend ("-metadata_cache_path")
+					l_args.extend (l_mdcp)
 				end
 			end
 			if a_precompile.eifgens_location /= Void then
-				l_cmd.append (" -project_path "+a_precompile.eifgens_location.evaluated_path)
+				l_args.extend ("-project_path")
+				l_args.extend (a_precompile.eifgens_location.evaluated_path)
 			end
-			launch_precompile_process (l_cmd)
+			launch_precompile_process (l_args)
 		end
 
-	launch_precompile_process (a_command: STRING) is
+	launch_precompile_process (a_arguments: LIST [STRING]) is
 			-- Launch precompile process `a_command'.
 		require
-			a_command_ok: a_command /= Void and then not a_command.is_empty
+			a_arguments_ok: a_arguments /= Void
 		deferred
 		end
 
@@ -861,6 +904,14 @@ feature {NONE} -- User interaction
 
 	ask_compile_precompile is
 			-- Should a needed precompile be automatically built?
+		deferred
+		end
+
+	ask_environment_update (a_key, a_old_val, a_new_val: STRING) is
+			-- Should new environment values be accepted?
+		require
+			a_key_ok: a_key /= Void and then not a_key.is_empty and then not a_key.has ('%U')
+			a_old_val_ok: a_old_val /= Void and then not a_old_val.has ('%U')
 		deferred
 		end
 

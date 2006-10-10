@@ -118,6 +118,7 @@
 		<xs:attribute name="debug" type="xs:boolean" use="optional"/>
 		<xs:attribute name="warning" type="xs:boolean" use="optional"/>
 		<xs:attribute name="namespace" type="xs:string" use="optional"/>
+		<xs:attribute name="msil_application_optimize" type="xs:boolean" use="optional" />
 	</xs:complexType>
 
 	<xs:complexType name="setting">
@@ -376,6 +377,7 @@
 					<xs:element name="mapping" type="mapping" minOccurs="0" maxOccurs="unbounded"/>
 				</xs:sequence>
 				<xs:attribute name="recursive" type="xs:boolean" use="optional"/>
+				<xs:attribute name="hidden" type="xs:boolean" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>

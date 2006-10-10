@@ -1,44 +1,90 @@
 indexing
+	description: "[
+		A C/C++ interop structure corresponding to ASSEMBYMETADATA in cor.h
+	]"
+	date:        "$Date$"
+	revision:    "$Revision$"
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
--- General request from workbench to ised.
 
-class EWB_REQUEST 
+class
+	ASSEMBLY_METADATA
 
-create
+inherit
+	DISPOSABLE
+
+create {ASSEMBLY_PROPERTIES_READER}
 	make
 
-feature -- Initialization
+convert
+	to_pointer: {POINTER}
 
-	make (code: INTEGER) is
+feature {NONE} -- Initialization
+
+	make is
+			-- Initializes a default instance
 		do
-		end;
-
-feature -- Update
-
-	send_byte_code: BOOLEAN is
-		do
-		end;
-
-	send_breakpoints is
-		do
+		ensure then
+			not_item_is_null: item /= default_pointer
 		end
 
-	send is
-		do
-		end;
+feature -- Clean up
 
-	request_code: INTEGER is
+	dispose is
+			-- Cleans up allocated resources
 		do
+		ensure then
+			item_is_null: item = default_pointer
 		end
 
-	recv_ack: BOOLEAN is
+feature -- Access
+
+	major_version: NATURAL_8 is
+			-- The major version number of the referenced assembly
 		do
+			check False end
 		end
 
-	recv_dead: BOOLEAN is
+	minor_version: NATURAL_8 is
+			-- The minor version number of the referenced assembly
 		do
+			check False end
 		end
+
+	build_number: NATURAL_8 is
+			-- The build number of the referenced assembly
+		do
+			check False end
+		end
+
+	revision_number: NATURAL_8 is
+			-- The revision number of the referenced assembly
+		do
+			check False end
+		end
+
+	locales: LIST [STRING_8] is
+			-- A list of locale names conforming to the RFC1766 specification specifying the locales.
+		do
+			check False end
+		ensure
+			not_result_is_empty: Result /= Void implies not Result.is_empty
+		end
+
+feature {ASSEMBLY_PROPERTIES_READER} -- Conversion
+
+	to_pointer: POINTER is
+		do
+			check False end
+		ensure
+			not_result_is_null: Result /= default_pointer
+		end
+
+feature {NONE} -- Implementation
+
+	item: POINTER;
+			-- Pointer to allocated ASSEMBLYMETADATA struct
+
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
@@ -71,4 +117,4 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+end -- class {ASSEMBLY_METADATA}

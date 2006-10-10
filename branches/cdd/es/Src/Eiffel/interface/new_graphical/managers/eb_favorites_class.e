@@ -93,9 +93,12 @@ feature -- Element change
 		local
 			l_stone: like associated_class_stone
 		do
-			l_stone := associated_class_stone.synchronized_stone
+			l_stone := associated_class_stone
 			if l_stone /= Void then
-				make_from_class_stone (l_stone, parent)
+				l_stone := l_stone.synchronized_stone
+				if l_stone /= Void then
+					make_from_class_stone (l_stone, parent)
+				end
 			end
 		end
 
@@ -162,10 +165,12 @@ feature {NONE} -- Implementation
 		local
 			loc_list: LIST [CLASS_I]
 		do
-			loc_list := Eiffel_universe.classes_with_name (name)
+			if eiffel_universe.target /= Void then
+				loc_list := Eiffel_universe.classes_with_name (name)
+			end
 
 				-- Return the first element of the list.
-			if not loc_list.is_empty then
+			if loc_list /= Void and then not loc_list.is_empty then
 				associated_class_i := loc_list.first
 			end
 		end

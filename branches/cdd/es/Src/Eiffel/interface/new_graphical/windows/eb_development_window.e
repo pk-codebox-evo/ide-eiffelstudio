@@ -2856,16 +2856,24 @@ feature -- Multiple editor management
 	update_paste_cmd is
 			-- Update `editor_paste_cmd'. To be performed when an editor grabs the focus.
 		do
-			if
-				not current_editor.is_empty and then
-				current_editor.is_editable and then
-				current_editor.clipboard.has_text
-			then
-				editor_paste_cmd.enable_sensitive
-			else
-				editor_paste_cmd.disable_sensitive
+			if update_paste_cmd_agent = Void then
+				update_paste_cmd_agent := agent do
+					if
+						not current_editor.is_empty and then
+						current_editor.is_editable and then
+						current_editor.clipboard.has_text
+					then
+						editor_paste_cmd.enable_sensitive
+					else
+						editor_paste_cmd.disable_sensitive
+					end
+				end
 			end
+			ev_application.do_once_on_idle (update_paste_cmd_agent)
 		end
+
+	update_paste_cmd_agent: PROCEDURE [ANY, TUPLE]
+		-- Agent used for updating the paste command.
 
 feature {NONE} -- Multiple editor management
 
@@ -3357,6 +3365,7 @@ feature {NONE} -- Implementation
 			a_path_not_void: a_path /= Void
 		local
 			l_assembly: CONF_ASSEMBLY
+			l_phys_as: CONF_PHYSICAL_ASSEMBLY
 			l_cluster: CONF_CLUSTER
 			l_sorted_cluster: EB_SORTED_CLUSTER
 			l_subclu: DS_LIST [EB_SORTED_CLUSTER]
@@ -3382,15 +3391,27 @@ feature {NONE} -- Implementation
 				check
 					assembly: l_assembly /= Void
 				end
+				if l_assembly.physical_assembly /= Void then
+					l_format_context.process_indexing_tag_text ("assembly_name")
+					l_format_context.set_without_tabs
+					l_format_context.process_symbol_text (ti_colon)
+					l_format_context.put_space
+					l_format_context.put_quoted_string_item (l_assembly.physical_assembly.assembly_name)
+					l_format_context.put_new_line
+				end
 
+				l_format_context.process_indexing_tag_text ("assembly")
+			elseif a_group.is_physical_assembly then
+				l_phys_as ?= a_group
+				check
+					assembly: l_phys_as /= Void
+				end
 				l_format_context.process_indexing_tag_text ("assembly_name")
 				l_format_context.set_without_tabs
 				l_format_context.process_symbol_text (ti_colon)
 				l_format_context.put_space
-				l_format_context.put_quoted_string_item (l_assembly.assembly_name)
+				l_format_context.put_quoted_string_item (l_phys_as.assembly_name)
 				l_format_context.put_new_line
-
-				l_format_context.process_indexing_tag_text ("assembly")
 			elseif a_group.is_override then
 				l_format_context.process_indexing_tag_text ("override")
 				l_cluster ?= a_group
@@ -4332,13 +4353,15 @@ feature {NONE} -- Implementation: Editor commands
 		do
 			if a_feature_name /= Void then
 				address_manager.set_feature_text_simply (a_feature_name.internal_name)
-				l_class_i := eiffel_universe.safe_class_named (class_name, group)
-				if l_class_i /= Void and then l_class_i.is_compiled then
-					l_classc := l_class_i.compiled_class
-					if l_classc.has_feature_table then
-						l_efeature := l_classc.feature_with_name (a_feature_name.internal_name)
-						if l_efeature /= Void and then l_efeature.written_in /= l_classc.class_id then
-							l_efeature := Void
+				if class_name /= Void and group /= Void then
+					l_class_i := eiffel_universe.safe_class_named (class_name, group)
+					if l_class_i /= Void and then l_class_i.is_compiled then
+						l_classc := l_class_i.compiled_class
+						if l_classc.has_feature_table then
+							l_efeature := l_classc.feature_with_name (a_feature_name.internal_name)
+							if l_efeature /= Void and then l_efeature.written_in /= l_classc.class_id then
+								l_efeature := Void
+							end
 						end
 					end
 				end
