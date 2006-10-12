@@ -31,12 +31,15 @@ feature {NONE} -- Initialization
 			-- Define first item of `grid_row' for displaying `test_case'.
 		local
 			l_stone: CLASSI_STONE
+			l_cname, l_num: STRING
 		do
 			Precursor (a_row, a_test_case)
 			internal_update_agent := agent update_status
 			test_case.update_status_actions.extend (internal_update_agent)
 
-			name_item.set_text (test_case.test_class.name)
+			l_cname := test_case.test_class.name
+			l_num := l_cname.substring (l_cname.count - 1, l_cname.count)
+			name_item.set_text ("Test case #" + l_num)
 			create l_stone.make (test_case.test_class)
 			name_item.token_at_position (1).set_pebble (l_stone)
 			update_status
@@ -63,7 +66,12 @@ feature -- Element change
 			Precursor
 		end
 
-	status_item: EV_GRID_LABEL_ITEM is --EB_GRID_EDITOR_TOKEN_ITEM is
+feature {NONE} -- Implementation
+
+	internal_update_agent: PROCEDURE [ANY, TUPLE]
+			-- Procedure instancs used for extending and removing.
+
+	status_item: EV_GRID_LABEL_ITEM is
 			-- Item of `grid_row' showing the test case status
 		do
 			Result ?= grid_row.item (2)
@@ -73,28 +81,29 @@ feature -- Element change
 			end
 		end
 
-feature {NONE} -- Implementation
-
-	internal_update_agent: PROCEDURE [ANY, TUPLE]
-			-- Procedure instancs used for extending and removing.
-
 	update_status is
 			-- Update status item of `grid_row'.
+		local
+			l_status, l_tooltip: STRING
 		do
-			if test_case.is_tested then
+			create l_status.make_empty
+			create l_tooltip.make_empty
+			if test_case.is_tested or not test_case.was_tested then
 				status_item.set_foreground_color (black)
-				status_item.set_text ("Testing...")
-			elseif not test_case.was_tested then
-				status_item.set_text ("Not tested yet")
+				l_status.append ("?")
 			else
 				if test_case.passes then
 					status_item.set_foreground_color (green)
-					status_item.set_text ("Ok")
+					l_status.append ("OK")
 				else
 					status_item.set_foreground_color (red)
-					status_item.set_text ("Fails")
+					l_status.append ("F")
+					l_tooltip.append ("Exception: " + test_case.last_exception_tag)
 				end
 			end
+			status_item.set_text (l_status)
+			name_item.set_tooltip (l_tooltip)
+			status_item.set_tooltip (l_tooltip)
 		end
 
 invariant

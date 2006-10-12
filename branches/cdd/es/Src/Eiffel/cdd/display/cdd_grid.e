@@ -63,12 +63,12 @@ feature {NONE} -- Initialization
 
 			l_col := column (1)
 			l_col.set_title ("Test Cases")
-			l_col.set_width (230)
-			set_auto_resizing_column (1, True)
+			l_col.set_width (200)
+			set_auto_resizing_column (1, False)
 
 			l_col := column (2)
-			l_col.set_title ("Status")
-			set_auto_resizing_column (2, True)
+			l_col.set_title ("")
+			set_auto_resizing_column (2, False)
 		end
 
 

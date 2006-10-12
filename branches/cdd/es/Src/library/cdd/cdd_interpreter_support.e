@@ -11,25 +11,27 @@ inherit
 
 feature
 
-	run_test (a_test: CDD_SHARED_TESTING) is
-			-- run 'a_test'
+	run_test (a_test_case: CDD_SHARED_TESTING) is
+			-- Run `a_test' and print results to console
+		require
+			a_test_case_not_void: a_test_case /= Void
 		do
-			if not retried then
-				io.put_string ("Testing ")
-				io.put_string (a_test.generator)
-				io.put_string ("...%N%T%T%T")
-				a_test.test_feature
-				io.put_string ("[PASSED]%N")
-			else
-				io.put_string ("[FAILED (" + exception.out + ")]%N")
-				die (1)
-			end
+			io.put_string ("%N%NTesting ")
+			io.put_string (a_test_case.generator)
+			io.put_string ("%N")
+
+			a_test_case.test_feature
+
+			io.put_string ("%N[PASSED]")
 		rescue
-			retried := True
-			retry
+			io.put_string ("%N[FAILED]%N" + original_class_name)
+			io.put_string ("." + original_recipient_name + ".")
+			if tag_name = Void then
+				io.put_string ("unknown")
+			else
+				io.put_string (tag_name)
+			end
+			die (exception)
 		end
-
-	retried: BOOLEAN
-
 
 end -- Class CDD_INTERPRETER_SUPPORT

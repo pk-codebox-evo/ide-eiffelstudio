@@ -116,7 +116,6 @@ feature {CDD_TEST_SUITE_MANAGER} -- Element change
 			l_test_class := manager.last_added_class
 			l_cud := a_reflection.root_object.dynamic_type.original_class
 			create l_tc.make (l_cud, a_reflection.called_feature, l_test_class)
-			l_tc.set_last_exception_tag (a_reflection.exception_tag)
 			last_created_test_case := l_tc
 		ensure
 			created: last_created_test_case /= Void

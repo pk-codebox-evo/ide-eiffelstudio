@@ -95,20 +95,12 @@ feature -- Object creation
 					when real_64_type then
 						r64 ?= attributes.item (name)
 						set_real_64_field (i, obj, r64)
-					else
-						debug ("wrong type") end
-						check false end
 					end
 				else
-					debug ("attribute not defined") end
-					check false end
+					check test_case_corrupt: False end
 				end
 				i := i + 1
 			end
 		end
-
-
-invariant
-	invariant_clause: True -- Your invariant here
 
 end

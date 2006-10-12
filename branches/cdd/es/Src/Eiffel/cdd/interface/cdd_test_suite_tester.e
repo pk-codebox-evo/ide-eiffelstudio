@@ -55,7 +55,8 @@ feature {NONE} -- Initialization
 			create output.make
 			create update_status_actions
 			create output_actions
-			status_text := ""
+			create status_text.make_empty
+			create testing_output_buffer.make_empty
 		ensure
 			manager_set: manager = a_manager
 		end
@@ -249,7 +250,7 @@ feature -- Execution control
 			l_app: APPLICATION_EXECUTION
 		do
 			if is_testing and current_test_case.is_tested then
-				current_test_case.set_passes (False)
+				current_test_case.set_passes (False, "Aborted before testing was finish")
 			end
 			cursor := Void
 			is_testing := False
@@ -284,7 +285,7 @@ feature -- Actions
 	output_actions: ACTION_SEQUENCE [TUPLE [STRING]]
 			-- Actions performed when reading an output from `process'	
 
-feature {NONE} -- Status setting
+feature {NONE} -- Status checking
 
 	idle_action_agent: PROCEDURE [ANY, TUPLE]
 			-- Agent for 'idle_action'
@@ -296,10 +297,21 @@ feature {NONE} -- Status setting
 			not_debugging: not is_debugging
 		local
 			l_output: STRING
+			l_pos: INTEGER
 		do
+			if output.has_new_block then
+				l_output := output.all_blocks (True).string_representation
+				if is_testing then
+					testing_output_buffer.append (l_output)
+					l_pos := testing_output_buffer.last_index_of ('%N', testing_output_buffer.count)
+					if l_pos > 0 then
+						testing_output_buffer := testing_output_buffer.substring (l_pos + 1, testing_output_buffer.count)
+					end
+				end
+			end
 			if process.has_exited then
 				if is_testing then
-					current_test_case.set_passes (process.exit_code = 0)
+					retrieve_test_case_status
 					if cursor.is_last then
 						stop
 					else
@@ -322,11 +334,43 @@ feature {NONE} -- Status setting
 					end
 				end
 				update_status_actions.call ([])
+			elseif is_testing then
+				-- TODO: Kill if process is running to long...
 			end
-			if output.has_new_block then
-				l_output := output.all_blocks (True).string_representation
+			if l_output /= Void then
 				output_actions.call ([l_output])
 			end
+		end
+
+	retrieve_test_case_status is
+			-- Parse testing results for `current_test_case' from `testing_output_buffer'.
+		require
+			testing: is_testing
+			not_debugging: not is_debugging
+			process.has_exited
+		local
+			l_list: LIST [STRING]
+			l_succeed: BOOLEAN
+			l_exception: STRING
+		do
+			if process.exit_code = 0 then
+				l_succeed := True
+			else
+				l_list := testing_output_buffer.split ('.')
+				if l_list.count = 3 then
+					l_exception := l_list.i_th (3)
+					if process.exit_code = {EXCEP_CONST}.precondition then
+						if l_list.i_th (1).is_equal (current_test_case.test_class.name) then
+							l_succeed := True
+							l_exception := Void
+						end
+					end
+				else
+					l_exception := "unknown"
+				end
+				current_test_case.set_passes (False, l_exception)
+			end
+			current_test_case.set_passes (l_succeed, l_exception)
 		end
 
 feature {NONE} -- Implementation
@@ -343,6 +387,7 @@ feature {NONE} -- Implementation
 			l_cmd.append ("./" + manager.ise_project.system.name + " ")
 			l_cmd.append (current_test_case.test_class.name)
 			create_process (l_cmd, manager.ise_target.system.directory + "/EIFGENs/" + tester_target_name + "/W_code")
+			create testing_output_buffer.make_empty
 			process.launch
 		ensure
 			testing: is_testing
@@ -457,7 +502,10 @@ feature {NONE} -- Implementation
 			-- Currently executed process
 
 	output: EB_PROCESS_IO_STORAGE
-			-- stored output from the process
+			-- Stored output from the process
+
+	testing_output_buffer: STRING
+			-- Output from testing process
 
 	cursor: DS_LIST_CURSOR [CDD_TEST_CASE]
 			-- cursor pointing to current test case
@@ -485,5 +533,6 @@ invariant
 	update_status_actions_not_void: update_status_actions /= Void
 	output_actions_not_void: output_actions /= Void
 	correct_old_root: is_debugging implies old_root /= Void
+	testing_output_buffer_not_void: testing_output_buffer /= Void
 
 end

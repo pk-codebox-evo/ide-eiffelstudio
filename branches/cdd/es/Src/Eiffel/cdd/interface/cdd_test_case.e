@@ -80,17 +80,21 @@ feature -- Status setting
 			started_testing: is_tested
 		end
 
-	set_passes (a_result: BOOLEAN) is
+	set_passes (a_result: BOOLEAN; an_exception_tag: STRING) is
 			-- Set 'passes' to 'a_result' and notify agents.
+		require
+			correct_args: (not a_result) = (an_exception_tag /= Void and then not an_exception_tag.is_empty)
 		do
 			was_tested := True
 			is_tested := False
 			passes := a_result
+			last_exception_tag := an_exception_tag
 			update_status_actions.call ([])
 		ensure
 			testing_stopped: not is_tested
 			was_tested: was_tested
 			passed_set: passes = a_result
+			last_exception_tag_set: last_exception_tag = an_exception_tag
 		end
 
 feature -- Element change
@@ -106,7 +110,7 @@ feature -- Element change
 feature -- Actions
 
 	update_status_actions: ACTION_SEQUENCE [TUPLE]
-			-- agents called when execution of test case is over
+			-- Agents called when execution of test case is over
 
 feature -- Compare
 

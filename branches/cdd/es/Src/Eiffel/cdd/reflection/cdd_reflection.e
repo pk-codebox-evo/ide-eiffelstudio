@@ -114,7 +114,10 @@ feature -- Access
 feature {NONE} -- Implementation
 
 	object_count: INTEGER is 20
-			-- Approx number of composite objects that will be stored
+			-- Approx avarage number of addressed objects that will be reflected
+
+	max_object_count: INTEGER is 100
+			-- Maximum number of addressed objects that will be reflected
 
 	addressed_objects: DS_HASH_TABLE [CDD_COMPOSITE_OBJECT, STRING]
 			-- All composite objects stored by the reflected objects address,
@@ -132,7 +135,7 @@ feature {NONE} -- Implementation
 					if a_dv.address /= Void then
 						if addressed_objects.has (a_dv.address) then
 							Result := addressed_objects.item (a_dv.address)
-						else
+						elseif addressed_objects.count < max_object_count then
 							Result := create_composite_object (a_dv.address, a_dv.dynamic_class.eiffel_class_c)
 						end
 					else

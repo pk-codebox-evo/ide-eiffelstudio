@@ -134,13 +134,36 @@ feature -- Status setting
 		local
 			l_reflection: CDD_REFLECTION
 			l_tc: CDD_TEST_CASE
+			l_create: BOOLEAN
+			l_name, l_dname: STRING
 		do
-			if not tester.is_debugging then
+			if tester.is_debugging then
+				l_name := tester.current_test_case.test_class.name
+				l_dname := an_app_status.dynamic_class.name
+				if not l_name.is_equal (l_dname) then
+					-- The failing class is not the test class
+					l_name := tester.current_test_case.target_class.name
+					if not l_name.is_equal (l_dname) then
+						-- The failing class is not the class under test -> create a new test case
+						l_create := True
+					else
+						l_name := tester.current_test_case.feature_name.name
+						l_dname := an_app_status.current_call_stack_element.routine_name
+						if not l_name.is_equal (l_dname) then
+							-- The failing feature is not the feature under test -> create a new test case
+							l_create := True
+						end
+					end
+				end
+			else
+				l_create := True
+			end
+			if l_create then
 				l_reflection := make_reflection (an_app_status)
 				if l_reflection /= Void and then l_reflection.reflection_succeded then
 					test_case_factory.create_with_reflection (l_reflection, test_suite.tests_cluster)
 					l_tc := test_case_factory.last_created_test_case
-					l_tc.set_passes (False)
+					l_tc.set_passes (False, l_reflection.exception_tag)
 					test_suite.add_test_case (l_tc)
 					add_test_case_actions.call ([l_tc])
 				end
@@ -193,6 +216,8 @@ feature -- Test suite manipulation
 			window_manager.synchronize_all
 			remove_test_case_actions.call ([a_tc])
 			eb_cluster_manager.add_observer (Current)
+		ensure
+			removed: not test_suite.test_cases.has (a_tc)
 		end
 
 feature {EB_CLUSTERS} -- Project Events

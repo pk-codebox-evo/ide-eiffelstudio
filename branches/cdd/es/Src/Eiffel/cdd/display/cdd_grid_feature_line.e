@@ -30,10 +30,17 @@ feature {NONE} -- Initialization
 	make_with_row (a_row: like grid_row; a_feature: like eiffel_feature) is
 			-- Set `grid_row' to `a_row' and `eiffel_feature' to `a_feature'.
 			-- Define first item of `grid_row' for displaying `eiffel_feature'.
+		local
+			l_writer: EB_EDITOR_TOKEN_GENERATOR
+			l_text: STRING
 		do
 			Precursor (a_row, a_feature)
 			name_item.set_pixmap (pixmaps.icon_pixmaps.tool_feature_icon)
-			update_tokens
+
+			l_writer := name_item.token_writer
+			l_writer.new_line
+			l_writer.process_feature_text (eiffel_feature.name, eiffel_feature, False)
+			name_item.set_text_with_tokens (l_writer.last_line.content)
 
 			grid_row.select_actions.extend (agent do grid_row.disable_select end)
 		end
@@ -53,23 +60,6 @@ feature {NONE} -- Element change
 			-- Create a subline for displaying `a_test_case' with row at position `a_row_index'.
 		do
 			create last_created_line.make_with_row (grid.row (a_row_index), a_test_case)
-			update_tokens
-		end
-
-feature {NONE} -- Implementation
-
-	update_tokens is
-			-- Update `text' with new item count.
-		local
-			l_writer: EB_EDITOR_TOKEN_GENERATOR
-			l_text: STRING
-		do
-			l_writer := name_item.token_writer
-			l_writer.new_line
-			l_writer.process_feature_text (eiffel_feature.name, eiffel_feature, False)
-			l_text := " (" + grid_row.subrow_count_recursive.out + ")"
-			l_writer.process_basic_text (l_text)
-			name_item.set_text_with_tokens (l_writer.last_line.content)
 		end
 
 end -- Class CDD_GRID_FEATURE_LINE
