@@ -360,7 +360,7 @@ feature {NONE} -- Status checking
 				if l_list.count = 3 then
 					l_exception := l_list.i_th (3)
 					if process.exit_code = {EXCEP_CONST}.precondition then
-						if l_list.i_th (1).is_equal (current_test_case.test_class.name) then
+						if l_list.i_th (1).is_equal (current_test_case.target_class.name) then
 							l_succeed := True
 							l_exception := Void
 						end

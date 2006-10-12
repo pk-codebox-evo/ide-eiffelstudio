@@ -171,7 +171,7 @@ feature -- Status setting
 		end
 
 	enable_testing is
-			-- Create test suite and notify tools
+			-- Create test suite and notify tools.
 		require
 			not_enabled_yet: not is_testing_enabled
 			can_enable: can_enable_testing
