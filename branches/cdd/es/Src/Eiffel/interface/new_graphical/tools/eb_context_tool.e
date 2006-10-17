@@ -201,7 +201,7 @@ feature -- Access
 	feature_view: EB_FEATURES_VIEW
 			-- Feature information display.
 
-	cdd_test_suite_view: CDD_TEST_SUITE_TOOL
+	cdd_test_suite_view: CDD_CONTEXT_TOOL
 			-- Testing status display.
 
 	output_view: EB_OUTPUT_TOOL
