@@ -25,7 +25,7 @@ feature -- Access
 
 	last_created_test_case: CDD_TEST_CASE
 
-feature {CDD_TEST_SUITE_MANAGER} -- Element change
+feature {CDD_MANAGER} -- Element change
 
 	create_from_class (a_class: EIFFEL_CLASS_I; a_universe: UNIVERSE_I) is
 			-- Create a new test case instance for test class 'a_class' and assign
@@ -108,15 +108,18 @@ feature {CDD_TEST_SUITE_MANAGER} -- Element change
 			l_test_class: CLASS_I
 			l_tc: CDD_TEST_CASE
 		do
+			last_created_test_case := Void
 			l_file_name := new_file_name (a_reflection.root_object.dynamic_type, a_cluster)
 			l_class_name := l_file_name.as_upper
 			l_class_name.remove_tail (2)
 			create_test_class (l_file_name, l_class_name, a_reflection, a_cluster)
-			manager.add_class_to_cluster (l_file_name, a_cluster, "")
-			l_test_class := manager.last_added_class
-			l_cud := a_reflection.root_object.dynamic_type.original_class
-			create l_tc.make (l_cud, a_reflection.called_feature, l_test_class)
-			last_created_test_case := l_tc
+			if was_last_create_successful then
+				manager.add_class_to_cluster (l_file_name, a_cluster, "")
+				l_test_class := manager.last_added_class
+				l_cud := a_reflection.root_object.dynamic_type.original_class
+				create l_tc.make (l_cud, a_reflection.called_feature, l_test_class)
+				last_created_test_case := l_tc
+			end
 		ensure
 			created: last_created_test_case /= Void
 		end
@@ -201,17 +204,23 @@ feature {NONE} -- Implementation
 			a_cluster_not_void: a_cluster /= Void
 		local
 			l_path: STRING
-			l_file: PLAIN_TEXT_FILE
+			l_file: KL_TEXT_OUTPUT_FILE
 		do
 			l_path := a_cluster.location.build_path ("", a_file_name)
-			create l_file.make_open_write (l_path)
-
-			printer.print_test_case (a_reflection, a_class_name, l_file)
-
-			if not l_file.is_closed  then
-				l_file.close
+			create l_file.make (l_path)
+			l_file.open_write
+			was_last_create_successful := False
+			if l_file.is_open_write then
+				was_last_create_successful := True
+				printer.print_test_case (a_reflection, a_class_name, l_file)
+				if not l_file.is_closed  then
+					l_file.close
+				end
 			end
 		end
+
+	was_last_create_successful: BOOLEAN
+			-- Were we able to write last test case to file?
 
 feature {NONE} -- Implementation
 

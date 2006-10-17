@@ -99,7 +99,7 @@ feature -- tools
 	debugging_tools: ES_DOCKABLE_NOTEBOOK
 			-- A tool that contains various debugging tools.
 
-	cdd_manager: CDD_TEST_SUITE_MANAGER is
+	cdd_manager: CDD_MANAGER is
 			-- Manager for generating test cases
 		once
 			create Result.make
@@ -1022,10 +1022,10 @@ feature -- Debugging events
 			if Application.status.reason_is_overflow then
 				create cd.make_with_text_and_actions (Warning_messages.w_Overflow_detected, <<agent do_nothing, agent relaunch_application>>)
 				cd.show_modal_to_window (debugging_window.window)
-			elseif cdd_manager.is_testing_enabled and cdd_manager.valid_status (application.status) then
-					-- Notify test case factory that an postcondition violation occured.
-				cdd_manager.report_exception (application.status, debugging_window)
 			end
+
+			-- Notify cdd manager that the application stopped
+			cdd_manager.on_application_stopped (Application.status, debugging_window)
 
 			debug ("debugger_interface")
 				io.put_string ("Application Stopped End (dixit EB_DEBUGGER_MANAGER)%N")
@@ -1034,7 +1034,6 @@ feature -- Debugging events
 				io.put_string (generator + ".on_application_just_stopped : done%N")
 			end
 		end
-
 
 	on_application_before_resuming is
 		do
@@ -1163,9 +1162,7 @@ feature -- Debugging events
 				set_critical_stack_depth_cmd.enable_sensitive
 				assertion_checking_handler_cmd.reset
 
-				if cdd_manager.tester.is_debugging then
-					cdd_manager.tester.stop
-				end
+				cdd_manager.on_application_quit
 			end
 			debug ("debugger_trace_synchro")
 				io.put_string (generator + ".on_application_quit : done%N")

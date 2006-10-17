@@ -19,7 +19,9 @@ feature -- Project
 
 	tester_target_name: STRING is "cdd_tester"
 
-	root_class_name: STRING is "CDD_INTERPRETER"
+	debugger_root_class_name: STRING is "CDD_DEBUGGER_ROOT"
+
+	executor_root_class_name: STRING is "CDD_EXECUTOR_ROOT"
 
 	root_class_feature_name: STRING is "make"
 

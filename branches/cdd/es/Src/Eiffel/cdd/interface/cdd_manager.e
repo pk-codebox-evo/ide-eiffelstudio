@@ -5,7 +5,7 @@ indexing
 	revision: "$Revision$"
 
 class
-	CDD_TEST_SUITE_MANAGER
+	CDD_MANAGER
 
 inherit
 
@@ -57,18 +57,19 @@ feature {NONE} -- Initialization
 			-- Add `Current' to cluster observer list.
 		local
 			l_prj_manager: EB_PROJECT_MANAGER
-			l_1: CDD_INTERPRETER_SUPPORT
-			l_2: CDD_SHARED_TESTING
 		do
 			create refresh_actions
 			create add_test_case_actions
 			create remove_test_case_actions
+			create update_state_actions
+			create log_actions
 			l_prj_manager := eiffel_project.manager
 			l_prj_manager.load_agents.extend (agent on_project_load)
 			l_prj_manager.compile_start_agents.extend (agent on_compile_start)
 			l_prj_manager.compile_stop_agents.extend (agent on_compile_stop)
 			eb_cluster_manager.add_observer (Current)
-			create tester.make_with_manager (Current)
+			create test_debugger.make_with_manager (Current)
+			create test_executor.make_with_manager (Current)
 		end
 
 feature -- Access
@@ -82,8 +83,23 @@ feature -- Access
 	test_suite: CDD_TEST_SUITE
 			-- Test suite which is managed by 'Current'
 
-	tester: CDD_TEST_SUITE_TESTER
-			-- Tester for executing test cases
+	is_running: BOOLEAN is
+			-- Are we currently running or preparing any test cases?
+		do
+			Result := is_debugging or is_executing
+		end
+
+	is_debugging: BOOLEAN is
+			-- Are we running a test case in the debugger?
+		do
+			Result := test_debugger.is_running
+		end
+
+	is_executing: BOOLEAN is
+			-- Are we testing any test case externally?
+		do
+			Result := test_executor.is_running
+		end
 
 	can_enable_testing: BOOLEAN is
 			-- Can testing mode be enabled?
@@ -94,6 +110,19 @@ feature -- Access
 				not ise_project.is_read_only and
 				not ise_target.system.date_has_changed
 		end
+
+	can_start_debugging: BOOLEAN is
+			-- Can we run a test case in the debugger?
+		do
+			Result := not is_running and test_debugger.can_start_debugged_testing
+		end
+
+	can_start_executing: BOOLEAN is
+			-- Can we execute all test cases in background?
+		do
+			Result := not is_running and test_executor.can_start_background_testing
+		end
+
 
 	valid_status (an_app_status: APPLICATION_STATUS): BOOLEAN is
 			-- Is 'an_app_status' valid for creating a ccd test case?
@@ -124,7 +153,7 @@ feature -- Access
 
 feature -- Status setting
 
-	report_exception (an_app_status: APPLICATION_STATUS; a_window: EB_DEVELOPMENT_WINDOW) is
+	on_application_stopped (an_app_status: APPLICATION_STATUS; a_window: EB_DEVELOPMENT_WINDOW) is
 			-- Try to create a new test case from `an_app_status' and add it to `test_suite'.
 			-- `a_window' is the window in which the application was launched.
 		require
@@ -137,36 +166,48 @@ feature -- Status setting
 			l_create: BOOLEAN
 			l_name, l_dname: STRING
 		do
-			if tester.is_debugging then
-				l_name := tester.current_test_case.test_class.name
-				l_dname := an_app_status.dynamic_class.name
-				if not l_name.is_equal (l_dname) then
-					-- The failing class is not the test class
-					l_name := tester.current_test_case.target_class.name
+			if is_testing_enabled and valid_status (an_app_status) then
+				if is_debugging then
+					l_name := test_debugger.test_case.test_class.name
+					l_dname := an_app_status.dynamic_class.name
 					if not l_name.is_equal (l_dname) then
-						-- The failing class is not the class under test -> create a new test case
-						l_create := True
-					else
-						l_name := tester.current_test_case.feature_name.name
-						l_dname := an_app_status.current_call_stack_element.routine_name
+						-- The failing class is not the test class
+						l_name := test_debugger.test_case.target_class.name
 						if not l_name.is_equal (l_dname) then
-							-- The failing feature is not the feature under test -> create a new test case
+							-- The failing class is not the class under test -> create a new test case
 							l_create := True
+						else
+							l_name := test_debugger.test_case.feature_name.name
+							l_dname := an_app_status.current_call_stack_element.routine_name
+							if not l_name.is_equal (l_dname) then
+								-- The failing feature is not the feature under test -> create a new test case
+								l_create := True
+							end
+						end
+					end
+				else
+					l_create := True
+				end
+				if l_create then
+					l_reflection := make_reflection (an_app_status)
+					if l_reflection /= Void and then l_reflection.reflection_succeded then
+						test_case_factory.create_with_reflection (l_reflection, test_suite.tests_cluster)
+						if test_case_factory.last_created_test_case /= Void then
+							l_tc := test_case_factory.last_created_test_case
+							l_tc.set_passes (False, l_reflection.exception_tag)
+							test_suite.add_test_case (l_tc)
+							add_test_case_actions.call ([l_tc])
 						end
 					end
 				end
-			else
-				l_create := True
 			end
-			if l_create then
-				l_reflection := make_reflection (an_app_status)
-				if l_reflection /= Void and then l_reflection.reflection_succeded then
-					test_case_factory.create_with_reflection (l_reflection, test_suite.tests_cluster)
-					l_tc := test_case_factory.last_created_test_case
-					l_tc.set_passes (False, l_reflection.exception_tag)
-					test_suite.add_test_case (l_tc)
-					add_test_case_actions.call ([l_tc])
-				end
+		end
+
+	on_application_quit is
+			-- If `is_debugging' is true, notify test debugger that application is quit.
+		do
+			if is_debugging then
+				test_debugger.stop
 			end
 		end
 
@@ -195,6 +236,32 @@ feature -- Status setting
 				eb_cluster_manager.add_observer (Current)
 				melt_project_cmd.execute
 			end
+		end
+
+	start_debugging (a_tc: CDD_TEST_CASE) is
+			-- Run `a_tc' in debugger.
+		require
+			a_tc_valid: a_tc /= Void
+			can_start_debugging: can_start_debugging
+		do
+			test_debugger.start_debugged_testing (a_tc)
+		end
+
+	start_executing is
+			-- Test all test cases in background.
+		require
+			can_start_executing: can_start_executing
+		do
+			test_executor.start_background_testing
+		end
+
+
+feature {CDD_ABSTRACT_TESTER} -- Testing status setting
+
+	update_testing_status (a_message: STRING) is
+			-- Call update status actions.
+		do
+			update_state_actions.call ([a_message])
 		end
 
 feature -- Test suite manipulation
@@ -230,10 +297,10 @@ feature {EB_CLUSTERS} -- Project Events
 		end
 
 	on_compile_start is
-			-- Quit test execution if `tester' is still running background tests.
+			-- Quit test execution if `test_executor' is still running background tests.
 		do
-			if tester.is_running and not tester.is_debugging then
-				tester.stop
+			if is_executing then
+				-- stop_testing
 			end
 		end
 
@@ -245,7 +312,7 @@ feature {EB_CLUSTERS} -- Project Events
 			l_was_enabled: BOOLEAN
 		do
 			l_was_enabled := is_testing_enabled
-			if not l_was_enabled or else not tester.is_debugging then
+			if not l_was_enabled or else not is_debugging then
 				l_tests_cluster := eiffel_universe.cluster_of_name (tests_cluster_name)
 				if l_tests_cluster /= Void then
 					create test_suite.make_with_cluster (l_tests_cluster)
@@ -268,8 +335,8 @@ feature {EB_CLUSTERS} -- Project Events
 				end
 				refresh_actions.call ([])
 				if is_testing_enabled and then test_suite.test_cases.count > 0 then
-					if eiffel_project.successful and tester.can_start_background_testing then
-						tester.start_background_testing
+					if ise_project.successful and can_start_executing then
+						start_executing
 					end
 				end
 			end
@@ -309,7 +376,13 @@ feature -- Actions
 			-- Actions performed when a test case is added to the test suite
 
 	remove_test_case_actions: ACTION_SEQUENCE [TUPLE [CDD_TEST_CASE]]
-			-- ACtions performed when a test case is removed from the test suite
+			-- Actions performed when a test case is removed from the test suite
+
+	update_state_actions: ACTION_SEQUENCE [TUPLE [STRING]]
+			-- Actions perfomred when testing status changes
+
+	log_actions: ACTION_SEQUENCE [TUPLE [STRING]]
+			-- Agents for redirecting all output from external processes
 
 feature {NONE} -- Implementation
 
@@ -348,6 +421,7 @@ feature {NONE} -- Implementation
 						end
 					elseif ise_target.root.class_name.is_equal (l_cse.dynamic_class.name) and
 							ise_target.root.feature_name.is_equal (l_feature.name) then
+						-- Feature is root creation feature
 						l_is_creation_call := True
 					else
 						l_abort := True
@@ -377,19 +451,41 @@ feature {NONE} -- Implementation
 			end
 		end
 
-
 	conf_factory: CONF_FACTORY is
 			-- Factory for creating cdd library
 		once
 			create Result
 		end
 
+feature {NONE} -- Implementation
+
+	current_tester: CDD_ABSTRACT_TESTER is
+			-- Currently used tester
+		do
+			if test_debugger.is_running then
+				Result := test_debugger
+			elseif test_executor.is_running then
+				Result := test_executor
+			end
+		ensure
+			correct_result: is_running = Result /= Void
+		end
+
+	test_debugger: CDD_TEST_DEBUGGER
+			-- Tester debugging test case in EiffelStudio
+
+	test_executor: CDD_TEST_EXECUTOR
+			-- Tester for executing test cases external
 
 invariant
 	correct_testing_status: is_testing_enabled = (test_suite /= Void)
 	refresh_actions_not_void: refresh_actions /= Void
 	add_test_case_actions_not_void: add_test_case_actions /= Void
 	remove_test_case_actions_not_void: remove_test_case_actions /= Void
-	tester_not_void: tester /= Void
+	update_state_actions_not_void: update_state_actions /= Void
+	log_actions_not_void: log_actions /= Void
+	test_debugger_not_void: test_debugger /= Void
+	test_executor_not_void: test_executor /= Void
+	only_one_at_a_time: not (is_debugging and is_executing)
 
 end
