@@ -85,7 +85,7 @@ feature {NONE} -- Initialization
 			create mini_tool_bar
 
 			create run_button
-			run_button.set_tooltip ("Run test cases in background")
+			run_button.set_tooltip ("Run test case in debugger")
 			run_button.set_pixmap (pixmaps.mini_pixmaps.general_next_icon)
 			run_button.select_actions.extend (agent on_run_button)
 			run_button.disable_sensitive
@@ -94,7 +94,8 @@ feature {NONE} -- Initialization
 			delete_button.set_tooltip ("Remove test case")
 			delete_button.set_pixmap (pixmaps.mini_pixmaps.general_delete_icon)
 			delete_button.select_actions.extend (agent on_delete_button)
-			delete_button.disable_sensitive
+			delete_button.drop_actions.extend (agent on_drop_class)
+			delete_button.enable_sensitive
 
 			create enable_testing_button
 			enable_testing_button.set_tooltip ("Enable Testing")
@@ -103,9 +104,7 @@ feature {NONE} -- Initialization
 			enable_testing_button.disable_sensitive
 
 			mini_tool_bar.extend (run_button)
-			mini_tool_bar.extend (create {EV_TOOL_BAR_SEPARATOR})
 			mini_tool_bar.extend (delete_button)
-			mini_tool_bar.extend (create {EV_TOOL_BAR_SEPARATOR})
 			mini_tool_bar.extend (enable_testing_button)
 		end
 
@@ -135,9 +134,6 @@ feature -- Status setting
 			a_tc_not_void: a_tc /= Void
 		do
 			grid.add_test_case (a_tc)
-			if not run_button.is_sensitive then
-				run_button.enable_sensitive
-			end
 		end
 
 	remove_test_case (a_tc: CDD_TEST_CASE) is
@@ -155,7 +151,6 @@ feature -- Status setting
 			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_CASE]
 		do
 			window.lock_update
-			run_button.disable_sensitive
 			grid.remove_and_clear_all_rows
 			if manager.is_testing_enabled then
 				enable_testing_button.disable_sensitive
@@ -183,14 +178,10 @@ feature -- Status setting
 			a_message_not_void: a_message /= Void
 		do
 			status_label.set_text (a_message)
-			if manager.is_running then
+			if manager.is_running or selected_test_case = Void then
 				run_button.disable_sensitive
 			else
-				if selected_test_case /= Void then
-					run_button.enable_sensitive
-				else
-					run_button.disable_dockable
-				end
+				run_button.enable_sensitive
 			end
 		end
 
@@ -219,7 +210,6 @@ feature {CDD_GRID_TEST_CASE_LINE} -- Selection
 			l_tc_line ?= a_row.grid_line
 			if l_tc_line /= Void then
 				selected_test_case := l_tc_line.test_case
-				delete_button.enable_sensitive
 				run_button.enable_sensitive
 			else
 				deselect_test_case (a_row)
@@ -230,7 +220,6 @@ feature {CDD_GRID_TEST_CASE_LINE} -- Selection
 			-- Actions performed when item in tree is deselected.
 		do
 			selected_test_case := Void
-			delete_button.disable_sensitive
 			run_button.disable_sensitive
 		ensure
 			nothing_selected: selected_test_case = Void
@@ -268,27 +257,51 @@ feature {NONE} -- Button events
 		end
 
 	on_delete_button is
-			-- Delete single test case from test suite.
-		require
-			test_case_selected: selected_test_case /= Void
+			-- If test case is selected, ask user if he wants to delete it.
 		local
 			l_msg: STRING
 			l_cd: EV_CONFIRMATION_DIALOG
 		do
-			l_msg := "The selected test case will be permanently removed from the system and from the disc.%N%N%
+			if selected_test_case /= Void then
+				confirm_delete (selected_test_case)
+			end
+		end
+
+	on_drop_class (a_stone: CLASSI_STONE) is
+			-- Remove associated class of `a_stone' from test suite.
+		local
+			l_tc: CDD_TEST_CASE
+		do
+			l_tc := manager.test_suite.test_case_for_class (a_stone.class_i)
+			if l_tc /= Void then
+				confirm_delete (l_tc)
+			end
+		end
+
+	confirm_delete (a_tc: CDD_TEST_CASE) is
+			-- Ask user if he really wants to delete `a_tc'?
+		require
+			a_tc_not_void: a_tc /= Void
+		local
+			l_msg: STRING
+			l_cd: EV_CONFIRMATION_DIALOG
+		do
+			l_msg := "Test case " + a_tc.test_class.name + " will be permanently%N removed from the system and from the disc.%N%N%
 					%Are you sure this is what you want?"
-			create l_cd.make_with_text_and_actions (l_msg, << agent try_remove_test_case >>)
+			create l_cd.make_with_text_and_actions (l_msg, << agent try_remove_test_case (a_tc) >>)
 			l_cd.show_modal_to_window (window.window)
 		end
 
-	try_remove_test_case is
-			-- If test suite still contains `selected_test_case' remove it.
+	try_remove_test_case (a_tc: CDD_TEST_CASE) is
+			-- If test suite still contains `a_tc' remove it.
 		require
-			test_case_selected: selected_test_case /= Void
+			a_tc_not_void: a_tc /= Void
 		do
-			if manager.test_suite.test_cases.has (selected_test_case) then
-				manager.remove_test_case (selected_test_case)
+			if manager.test_suite.test_cases.has (a_tc) then
+				manager.remove_test_case (a_tc)
 			end
+		ensure
+			removed: not manager.test_suite.test_cases.has (a_tc)
 		end
 
 feature {NONE} -- Action implementation

@@ -45,13 +45,32 @@ feature -- Access
 	tests_cluster: CLUSTER_I
 			-- Cluster where all generated classes for testing are stored
 
+	test_case_for_class (a_class: CLASS_I): CDD_TEST_CASE is
+			-- Associated test case for test class `a_class' if exists, otherwise Void
+		require
+			a_class_not_void: a_class /= Void
+		local
+			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_CASE]
+		do
+			from
+				l_cursor := test_cases.new_cursor
+				l_cursor.start
+			until
+				l_cursor.after or Result /= Void
+			loop
+				if l_cursor.item.test_class = a_class then
+					Result := l_cursor.item
+				end
+				l_cursor.forth
+			end
+		end
+
 feature -- Status report
 
 	has_test_case_for_class (a_class: CLASS_I): BOOLEAN is
 			-- Does 'Current' have a test case for test class 'a_class'
 		require
 			a_class_not_void: a_class /= Void
-			tests_cluster_not_void: tests_cluster /= Void
 		local
 			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_CASE]
 		do
@@ -75,7 +94,6 @@ feature -- Element change
 		require
 			valid_test_case: a_tc /= Void
 			not_added_yet: not test_cases.has (a_tc)
-			tests_cluster_not_void: tests_cluster /= Void
 			valid_test_case: a_tc.test_class.group = tests_cluster
 		local
 			l_found: BOOLEAN
