@@ -5,7 +5,7 @@ indexing
 	revision: "$Revision$"
 
 class
-	CDD_TEST_SUITE_TOOL
+	CDD_CONTEXT_TOOL
 
 inherit
 
@@ -37,22 +37,8 @@ feature {NONE} -- Initialization
 			-- Initialize all widgets used in 'Current'
 		do
 			create widget
-			build_output (widget)
-		end
-
-	build_output (a_list: EV_CONTAINER) is
-			-- Initialize output box for displaying messages from
-			-- the tester.
-		require
-			valid_list: a_list /= Void and then a_list.extendible
-			list_not_destroyed: not a_list.is_destroyed
-		local
-			l_frame: EV_FRAME
-		do
-			create l_frame.make_with_text ("Ouput")
 			create output
-			l_frame.extend (output)
-			a_list.extend (l_frame)
+			widget.extend (output)
 		end
 
 feature -- Access
