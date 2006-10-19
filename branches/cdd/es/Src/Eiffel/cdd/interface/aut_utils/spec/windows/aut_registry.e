@@ -5,15 +5,15 @@ indexing
 	revision: "$Revision$"
 
 class AUT_REGISTRY
-	
+
 inherit
-	
+
 	AUT_ABSTRACT_REGISTRY
-	
+
 	WEL_REGISTRY_ACCESS_MODE
 		export
 			{NONE} all
-		end	
+		end
 
 feature -- Access
 
@@ -33,8 +33,8 @@ feature -- Access
 				check
 					count_positive: subkey_count >= 0
 				end
-				
-				from 
+
+				from
 					i := 0
 					create result_list.make
 				until
@@ -43,7 +43,7 @@ feature -- Access
 				loop
 					subkey := registry.enumerate_key (key, i)
 					if subkey /= Void then
-						result_list.force_last (subkey.name)
+						result_list.force_last (subkey.name.as_string_8)
 					else
 						result_list := Void
 					end
@@ -53,7 +53,7 @@ feature -- Access
 				Result := result_list
 			end
 		end
-		
+
 	string_value (key_name: STRING): STRING is
 		local
 			registry: WEL_REGISTRY
@@ -63,9 +63,9 @@ feature -- Access
 		do
 			create registry
 			last_index_of_slash := key_name.last_index_of ('\', key_name.count)
-			if 
-				last_index_of_slash > 1 and 
-				key_name.count > last_index_of_slash 
+			if
+				last_index_of_slash > 1 and
+				key_name.count > last_index_of_slash
 			then
 				key_path := key_name.substring (1, last_index_of_slash - 1)
 				key_value_name := key_name.substring (last_index_of_slash + 1, key_name.count)
