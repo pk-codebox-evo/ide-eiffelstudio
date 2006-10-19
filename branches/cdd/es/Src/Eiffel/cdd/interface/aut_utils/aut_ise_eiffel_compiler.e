@@ -198,13 +198,9 @@ feature -- Constants
 		require
 			ise_eiffel_installed: is_ise_eiffel_installed
 		once
-			if operating_system.is_windows then
-				check
-					registry_available: registry.is_available
-				end
-				Result := registry.string_value (latest_ise_eiffel_key + "\ec\ISE_EIFFEL")
-			else
-				Result := ise_eiffel_variable
+			Result := ise_eiffel_variable
+			if Result = Void and registry.is_available then
+				Result := registry.string_value (latest_ise_eiffel_key + "\ISE_EIFFEL")
 			end
 		ensure
 			path_not_void: Result /= Void
