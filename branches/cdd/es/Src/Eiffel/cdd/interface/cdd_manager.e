@@ -120,7 +120,7 @@ feature -- Access
 	can_start_executing: BOOLEAN is
 			-- Can we execute all test cases in background?
 		do
-			Result := not is_running and test_executor.can_start_background_testing
+			Result := not is_running and test_executor.can_start
 		end
 
 
@@ -252,7 +252,7 @@ feature -- Status setting
 		require
 			can_start_executing: can_start_executing
 		do
-			test_executor.start_background_testing
+			test_executor.start
 		end
 
 

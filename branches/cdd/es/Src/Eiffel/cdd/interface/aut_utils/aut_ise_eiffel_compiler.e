@@ -44,7 +44,7 @@ feature -- Status
 	is_running: BOOLEAN
 			-- Is compilation currently running?
 
-	was_successfull: BOOLEAN is
+	was_successful: BOOLEAN is
 			-- Was the last compilation successfull?
 		require
 			not is_running

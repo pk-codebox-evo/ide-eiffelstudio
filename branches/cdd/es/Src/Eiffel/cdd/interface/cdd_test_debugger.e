@@ -75,6 +75,7 @@ feature {CDD_MANAGER} -- Status setting
 			end
 			manager.update_testing_status ("")
 			reset_root_class_and_recompile
+			is_running := False
 		end
 
 feature {NONE} -- Implementation

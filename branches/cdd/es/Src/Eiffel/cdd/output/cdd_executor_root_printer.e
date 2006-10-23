@@ -27,6 +27,12 @@ feature -- Access
 			append_text ("%Tmake is%N%T%Tlocal%N")
 			append_instruction ("l_arg: STRING")
 			append_text ("%T%Tdo%N")
+			append_instruction ("if command_line.argument_count /= 1 then")
+			append_instruction ("%Tio.put_string (%"error: exactly 1 argument required.%")")
+			append_instruction ("%Tio.put_new_line")
+			append_instruction ("%Tdie (-1)")
+			append_instruction ("end")
+
 			append_instruction ("l_arg := command_line.argument (1)")
 			append_instruction ("if False then")
 			from
@@ -39,6 +45,9 @@ feature -- Access
 				append_instruction ("%Trun_test (create {" + l_cursor.item.test_class.name + "})")
 				l_cursor.forth
 			end
+			append_instruction ("else")
+			append_instruction ("%Tio.put_string (%"error: unkown test case class '%" + l_arg + %"'.%")")
+			append_instruction ("%Tio.put_new_line")
 			append_instruction ("end")
 			append_text ("%T%Tend%N%N")
 			append_class_footer (executor_root_class_name)

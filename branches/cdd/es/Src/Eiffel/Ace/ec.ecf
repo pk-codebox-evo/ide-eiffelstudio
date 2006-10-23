@@ -283,20 +283,20 @@
 			<class_option class="CDD_GRID">
 				<assertions precondition="true" postcondition="true" check="true" invariant="false" loop="false"/>
 			</class_option>
+			<file_rule>
+				<exclude>/spec$</exclude>
+			</file_rule>
 			<cluster name="cdd_library" location="$EIFFEL_SRC\library\cdd\"/>
-			<cluster name="windows" location="$EIFFEL_SRC\Eiffel\cdd\interface\aut_utils\spec\windows">
-				<condition>
-					<platform value="windows"/>
-				</condition>
-			</cluster>
-			<cluster name="unix" location="$EIFFEL_SRC\Eiffel\cdd\interface\aut_utils\spec\unix">
+			<cluster name="unix" location="$EIFFEL_SRC\Eiffel\cdd\interface\aut_utils\spec\unix\">
 				<condition>
 					<platform excluded_value="windows"/>
 				</condition>
 			</cluster>
-			<file_rule>
-				<exclude>/spec$</exclude>
-			</file_rule>
+			<cluster name="windows" location="$EIFFEL_SRC\Eiffel\cdd\interface\aut_utils\spec\windows\">
+				<condition>
+					<platform value="windows"/>
+				</condition>
+			</cluster>
 		</cluster>
 		<cluster name="cli_debugger" location="$EIFFEL_SRC\Eiffel\library\cli_debugger\" recursive="true">
 			<condition>
