@@ -47,6 +47,28 @@ create
 
 feature {NONE} -- Initialization
 
+
+	frozen is_workbench: BOOLEAN is
+			-- Are we running the workbench version of the compiler?
+		external
+			"C inline use %"eif_eiffel.h%""
+		alias
+			"EIF_IS_WORKBENCH"
+		end
+
+	init_wb_precompile_dir is
+			-- Initialize workbench precompile dir if we are running in wb mode.
+		local
+			e: ENVIRONMENT_ACCESS
+			ise_eiffel_wb_dir: STRING
+		do
+			if is_workbench then
+				create e
+				ise_eiffel_wb_dir := e.get ("ISE_EIFFEL_WB")
+				e.put (ise_eiffel_wb_dir, "ISE_EIFFEL")
+			end
+		end
+
 	make is
 			-- Create and map the first window: the system window.
 		local
@@ -61,6 +83,7 @@ feature {NONE} -- Initialization
 			--| uncomment the following line when profiling
 			--prof_setting: PROFILING_SETTING
 		do
+			init_wb_precompile_dir
 			--| uncomment the following lines when profiling
 			--create prof_setting.make
 			--prof_setting.stop_profiling
