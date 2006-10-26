@@ -276,6 +276,7 @@ feature {NONE} -- Implementation
 			create env_vars.make (1)
 			env_vars.put (test_suite_dirname, "MELT_PATH")
 			test_suite_process.set_environment_variable_table (env_vars)
+			test_suite_process.set_hidden (True)
 			test_suite_process.launch
 		ensure
 			testing: is_executing

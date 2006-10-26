@@ -141,6 +141,7 @@ feature -- Execution
 				is_running := True
 				ec_process.set_on_exit_handler (agent unset_running)
 				ec_process.set_on_fail_launch_handler (agent unset_running)
+				ec_process.set_hidden (True)
 				ec_process.launch
 			end
 		end
