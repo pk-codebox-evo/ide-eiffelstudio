@@ -93,7 +93,6 @@ feature {CDD_MANAGER} -- Basic operations
 			cursor := test_suite.test_cases.new_cursor
 			cursor.start
 			create_root_class
-				-- TODO: why do we need to remove it first? (question from Andreas to Arno)
 			remove_tester_target
 			add_tester_target
 			manager.update_testing_status ("Compiling Testcases")
@@ -316,6 +315,7 @@ feature {NONE} -- Implementation
 			l_target.set_parent (manager.ise_target)
 			l_new_root := conf_factory.new_root (test_suite.tests_cluster.cluster_name, executor_root_class_name, root_class_feature_name, False)
 			l_target.set_root (l_new_root)
+			l_target.add_setting (l_target.s_console_application, "true")
 			manager.ise_target.system.store
 		end
 
