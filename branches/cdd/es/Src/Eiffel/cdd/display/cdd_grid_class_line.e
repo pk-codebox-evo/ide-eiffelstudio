@@ -29,8 +29,8 @@ create
 feature {NONE} -- Initialization
 
 	make_with_row (a_row: like grid_row; a_class: like target_class) is
-			-- Set `grid_row' to `a_row' and `target_class' to `a_class'.
-			-- Define first item of `grid_row' for displaying `target_class'.
+			-- Set `grid_row' to `a_row' and `class_under_test' to `a_class'.
+			-- Define first item of `grid_row' for displaying `class_under_test'.
 		do
 			Precursor (a_row, a_class)
 			name_item.enable_pixmap
@@ -57,7 +57,7 @@ feature -- Access
 	data_from_test_case (a_tc: CDD_TEST_CASE): E_FEATURE is
 			-- Attribute of `a_tc' displayed in sublines of `Current'.
 		do
-			Result := a_tc.feature_name
+			Result := a_tc.feature_under_test
 		end
 
 feature {NONE} -- Element change

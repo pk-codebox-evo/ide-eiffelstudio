@@ -124,6 +124,21 @@ feature {NONE} -- Implementation
 			-- (used to determine cycles in the reference graph, void after creation
 			-- since addresses or no longer valid)
 
+	add_addressed_object (an_object: CDD_COMPOSITE_OBJECT; an_address: STRING) is
+			-- Add `an_object' with `an_address' to `addressed_objects'.
+		require
+			an_object_not_void: an_object /= Void
+			an_address_not_void: an_address /= Void
+			not_added_yet: not addressed_objects.has (an_address)
+		do
+			if addressed_objects.is_full then
+				addressed_objects.resize (addressed_objects.count * 2)
+			end
+			addressed_objects.put (an_object, an_address)
+		ensure
+			added: addressed_objects.has (an_address)
+		end
+
 	create_object (a_dv: ABSTRACT_DEBUG_VALUE): CDD_OBJECT is
 			-- Reflection of an basic or composite object with the values from 'a_dv'
 			-- (Void if non eiffel object in reference graph)
@@ -159,16 +174,10 @@ feature {NONE} -- Implementation
 			else
 				Result := create_regular_object (an_addr, a_type)
 			end
-			if Result /= Void then
-				if addressed_objects.is_full then
-					addressed_objects.resize (addressed_objects.count * 2)
-				end
-				addressed_objects.put (Result, an_addr)
-			end
 		end
 
 	create_string_object (an_addr: STRING; a_type: EIFFEL_CLASS_C): CDD_STRING_OBJECT is
-			-- Reflection of a string object at address `an_addr'
+			-- Reflection of a string object at address `an_addr' and add it to `addressed_objects'.
 		require
 			addr_valid: an_addr /= Void and then not an_addr.is_empty
 			correct_type: a_type /= Void and then (a_type.name.is_equal ("STRING_8")
@@ -178,6 +187,7 @@ feature {NONE} -- Implementation
 		do
 			create l_dv.make_object (an_addr, a_type)
 			create Result.make_with_string (a_type, l_dv.formatted_output)
+			add_addressed_object (Result, an_addr)
 		ensure
 			result_not_void: Result /= Void
 		end
@@ -215,6 +225,7 @@ feature {NONE} -- Implementation
 			else
 				create Result.make_with_count (a_type, l_dv_list.count)
 			end
+			add_addressed_object (Result, an_addr)
 			from
 				l_dv_list.start
 			until

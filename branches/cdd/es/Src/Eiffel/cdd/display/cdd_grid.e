@@ -81,9 +81,9 @@ feature -- Access
 		end
 
 	data_from_test_case (a_tc: CDD_TEST_CASE): CONF_CLUSTER is
-			-- `target_cluster' of `a_tc'
+			-- `cluster_under_test' of `a_tc'
 		do
-			Result := a_tc.target_cluster
+			Result := a_tc.cluster_under_test
 		end
 
 	first_subrow: like row_type is

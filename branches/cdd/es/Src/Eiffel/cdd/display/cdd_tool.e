@@ -286,7 +286,7 @@ feature {NONE} -- Button events
 			l_msg: STRING
 			l_cd: EV_CONFIRMATION_DIALOG
 		do
-			l_msg := "Test case " + a_tc.test_class.name + " will be permanently%N removed from the system and from the disc.%N%N%
+			l_msg := "Test case " + a_tc.tester_class.name + " will be permanently%N removed from the system and from the disc.%N%N%
 					%Are you sure this is what you want?"
 			create l_cd.make_with_text_and_actions (l_msg, << agent try_remove_test_case (a_tc) >>)
 			l_cd.show_modal_to_window (window.window)

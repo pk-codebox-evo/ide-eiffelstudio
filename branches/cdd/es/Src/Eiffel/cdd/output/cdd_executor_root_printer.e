@@ -41,8 +41,8 @@ feature -- Access
 			until
 				l_cursor.after
 			loop
-				append_instruction ("elseif l_arg.is_equal (%"" + l_cursor.item.test_class.name + "%") then")
-				append_instruction ("%Trun_test (create {" + l_cursor.item.test_class.name + "})")
+				append_instruction ("elseif l_arg.is_equal (%"" + l_cursor.item.tester_class.name + "%") then")
+				append_instruction ("%Trun_test (create {" + l_cursor.item.tester_class.name + "})")
 				l_cursor.forth
 			end
 			append_instruction ("else")

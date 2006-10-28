@@ -16,7 +16,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_target_class: like target_class; a_feature: like feature_name; a_test_class: like test_class) is
+	make (a_target_class: like class_under_test; a_feature: like feature_under_test; a_test_class: like tester_class) is
 			-- Initialize new test case for testing `a_feature' of class `a_target_class' where
 			-- `a_test_class' is the classed used for testing.
 		require
@@ -24,87 +24,77 @@ feature {NONE} -- Initialization
 			feature_not_empty: a_feature /= Void
 			valid_test_class: a_test_class /= Void
 		do
-			target_class := a_target_class
-			feature_name := a_feature
-			test_class := a_test_class
+			class_under_test := a_target_class
+			feature_under_test := a_feature
+			tester_class := a_test_class
 			create update_status_actions
 		ensure
-			target_class_set: target_class = a_target_class
-			e_feature_set: feature_name = a_feature
-			test_class_set: test_class = a_test_class
+			target_class_set: class_under_test = a_target_class
+			e_feature_set: feature_under_test = a_feature
+			test_class_set: tester_class = a_test_class
 		end
 
 
 feature -- Access
 
-	target_cluster: CLUSTER_I is
-			-- Cluster which class being tested belongs to
+	cluster_under_test: CLUSTER_I is
+			-- Cluster of `class_under_test'
 		do
-			Result := target_class.cluster
+			Result := class_under_test.cluster
 		ensure
-			correct_result: Result = target_class.cluster
+			correct_result: Result = class_under_test.cluster
 		end
 
-	target_class: EIFFEL_CLASS_I
+	class_under_test: EIFFEL_CLASS_I
 			-- Class under tested
 
-	feature_name: E_FEATURE
+	feature_under_test: E_FEATURE
 			-- Name of feature under tested
 
-	test_class: CLASS_I
+	tester_class: CLASS_I
 			-- Class used for testing
 
 	last_exception_tag: STRING
 			-- Name of the last violation thrown by the test case
 
-	was_tested: BOOLEAN
-			-- Has this test case excuted yet?
+	status: INTEGER
+			-- Status of `Current'
 
-	is_tested: BOOLEAN
-			-- Is this test case currently being executed?
+	pass_code, fail_code,
+	invalid_code, not_verified_code: INTEGER is unique
+			-- Test case status codes
 
-	passes: BOOLEAN
-			-- Does test case pass?
+	correct_status (a_status: INTEGER): BOOLEAN is
+			-- Is `a_status' a correct status
+		do
+			Result := a_status = fail_code or a_status = pass_code or a_status = invalid_code or a_status = not_verified_code
+		end
 
 feature -- Status setting
 
-	start_testing is
-			-- Set `is_testing' to true an notify agents.
-		require
-			not_testing: not is_tested
+	is_verified: BOOLEAN is
+			-- Has `Current' been verified yet?
 		do
-			is_tested := True
-			last_exception_tag := Void
-			update_status_actions.call ([])
-		ensure
-			started_testing: is_tested
+			Result := status /= not_verified_code
 		end
 
-	set_passes (a_result: BOOLEAN; an_exception_tag: STRING) is
-			-- Set 'passes' to 'a_result' and notify agents.
-		require
-			correct_args: (not a_result) = (an_exception_tag /= Void and then not an_exception_tag.is_empty)
+	passes: BOOLEAN is
+			-- Did `Current' pass last test execution?
 		do
-			was_tested := True
-			is_tested := False
-			passes := a_result
+			Result := status = pass_code
+		end
+
+	set_status (a_status: like status; an_exception_tag: like last_exception_tag) is
+			-- Set `status' to `a_status' and `last_exception_tag' to `an_exception' and notify agents.
+		require
+			correct_status: correct_status (a_status)
+		do
 			last_exception_tag := an_exception_tag
+			status := a_status
 			update_status_actions.call ([])
 		ensure
-			testing_stopped: not is_tested
-			was_tested: was_tested
-			passed_set: passes = a_result
 			last_exception_tag_set: last_exception_tag = an_exception_tag
-		end
-
-feature -- Element change
-
-	set_last_exception_tag (a_tag: STRING) is
-			-- Assign `a_tag' to `exception_tag'.
-		do
-			last_exception_tag := a_tag
-		ensure
-			exception_tag_set: last_exception_tag = a_tag
+			status_set: status = a_status
 		end
 
 feature -- Actions
@@ -119,16 +109,16 @@ feature -- Compare
 		require else
 			other_not_void: other /= Void
 		do
-			if target_cluster < other.target_cluster then
+			if cluster_under_test < other.cluster_under_test then
 				Result := True
-			elseif target_cluster = other.target_cluster then
-				if target_class < other.target_class then
+			elseif cluster_under_test = other.cluster_under_test then
+				if class_under_test < other.class_under_test then
 					Result := True
-				elseif target_class = other.target_class then
-					if feature_name < other.feature_name then
+				elseif class_under_test = other.class_under_test then
+					if feature_under_test < other.feature_under_test then
 						Result := True
-					elseif feature_name.is_equal (other.feature_name) then
-						if test_class < other.test_class then
+					elseif feature_under_test.is_equal (other.feature_under_test) then
+						if tester_class < other.tester_class then
 							Result := True
 						end
 					end
@@ -138,10 +128,10 @@ feature -- Compare
 
 
 invariant
-	target_cluster_not_void: target_class /= Void
-	target_class_not_void: target_class /= Void
-	e_feature_not_void: feature_name /= Void
-	test_class_not_void: test_class /= Void
+	target_cluster_not_void: class_under_test /= Void
+	target_class_not_void: class_under_test /= Void
+	e_feature_not_void: feature_under_test /= Void
+	test_class_not_void: tester_class /= Void
 	update_status_actions_not_void: update_status_actions /= Void
 
 end

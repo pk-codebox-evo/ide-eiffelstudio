@@ -57,7 +57,7 @@ feature -- Basic operations
 			melt_project_cmd.execute_and_wait
 			if manager.ise_project.successful then
 				is_running := True
-				manager.update_testing_status ("Running " + test_case.test_class.name + " in debugger")
+				manager.update_testing_status ("Running " + test_case.tester_class.name + " in debugger")
 				run_project_cmd.execute
 			else
 				manager.update_testing_status ("An error ocurred compiling the project")

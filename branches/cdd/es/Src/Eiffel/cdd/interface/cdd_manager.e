@@ -157,8 +157,7 @@ feature -- Status setting
 			-- Try to create a new test case from `an_app_status' and add it to `test_suite'.
 			-- `a_window' is the window in which the application was launched.
 		require
-			testing_enabled: is_testing_enabled
-			app_status_valid: an_app_status /= Void and then valid_status (an_app_status)
+			app_status_not_void: an_app_status /= Void
 			a_window_not_void: a_window /= Void
 		local
 			l_reflection: CDD_REFLECTION
@@ -168,16 +167,16 @@ feature -- Status setting
 		do
 			if is_testing_enabled and valid_status (an_app_status) then
 				if is_debugging then
-					l_name := test_debugger.test_case.test_class.name
+					l_name := test_debugger.test_case.tester_class.name
 					l_dname := an_app_status.dynamic_class.name
 					if not l_name.is_equal (l_dname) then
 						-- The failing class is not the test class
-						l_name := test_debugger.test_case.target_class.name
+						l_name := test_debugger.test_case.class_under_test.name
 						if not l_name.is_equal (l_dname) then
 							-- The failing class is not the class under test -> create a new test case
 							l_create := True
 						else
-							l_name := test_debugger.test_case.feature_name.name
+							l_name := test_debugger.test_case.feature_under_test.name
 							l_dname := an_app_status.current_call_stack_element.routine_name
 							if not l_name.is_equal (l_dname) then
 								-- The failing feature is not the feature under test -> create a new test case
@@ -194,7 +193,7 @@ feature -- Status setting
 						test_case_factory.create_with_reflection (l_reflection, test_suite.tests_cluster)
 						if test_case_factory.last_created_test_case /= Void then
 							l_tc := test_case_factory.last_created_test_case
-							l_tc.set_passes (False, l_reflection.exception_tag)
+							l_tc.set_status ({CDD_TEST_CASE}.fail_code, l_reflection.exception_tag)
 							test_suite.add_test_case (l_tc)
 							add_test_case_actions.call ([l_tc])
 						end
@@ -278,7 +277,7 @@ feature -- Test suite manipulation
 
 			test_suite.remove_test_case (a_tc)
 			test_case_factory.remove (a_tc)
-			eb_cluster_manager.remove_class (a_tc.test_class)
+			eb_cluster_manager.remove_class (a_tc.tester_class)
 
 			window_manager.synchronize_all
 			remove_test_case_actions.call ([a_tc])
@@ -355,7 +354,7 @@ feature {EB_CLUSTERS} -- Project Events
 				until
 					l_cursor.after
 				loop
-					if l_cursor.item.test_class = a_class then
+					if l_cursor.item.tester_class = a_class then
 						l_item := l_cursor.item
 						test_suite.remove_test_case (l_cursor.item)
 						remove_test_case_actions.call ([l_item])

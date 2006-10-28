@@ -37,10 +37,10 @@ feature {NONE} -- Initialization
 			internal_update_agent := agent update_status
 			test_case.update_status_actions.extend (internal_update_agent)
 
-			l_cname := test_case.test_class.name
+			l_cname := test_case.tester_class.name
 			l_num := l_cname.substring (l_cname.count - 1, l_cname.count)
 			name_item.set_text ("Test case #" + l_num)
-			create l_stone.make (test_case.test_class)
+			create l_stone.make (test_case.tester_class)
 			name_item.token_at_position (1).set_pebble (l_stone)
 			update_status
 		end
@@ -88,13 +88,16 @@ feature {NONE} -- Implementation
 		do
 			create l_status.make_empty
 			create l_tooltip.make_empty
-			if test_case.is_tested or not test_case.was_tested then
+			if not test_case.is_verified then
 				status_item.set_foreground_color (black)
 				l_status.append ("?")
 			else
 				if test_case.passes then
 					status_item.set_foreground_color (green)
 					l_status.append ("OK")
+				elseif test_case.status = test_case.invalid_code then
+					status_item.set_foreground_color (gray)
+					l_status.append ("INV")
 				else
 					status_item.set_foreground_color (red)
 					l_status.append ("F")

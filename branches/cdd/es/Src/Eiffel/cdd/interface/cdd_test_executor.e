@@ -199,28 +199,28 @@ feature {NONE} -- Idle action
 			process_exited: test_suite_process.has_exited
 		local
 			l_list: LIST [STRING]
-			l_succeed: BOOLEAN
+			l_status: INTEGER
 			l_exception: STRING
 		do
+			l_status := {CDD_TEST_CASE}.fail_code
 			if test_suite_process.exit_code = 0 then
-				l_succeed := True
+				l_status := {CDD_TEST_CASE}.pass_code
 			else
 				l_list := testing_output_buffer.split ('.')
 				if l_list.count = 3 then
 					l_exception := l_list.i_th (3)
 					if test_suite_process.exit_code = {EXCEP_CONST}.precondition then
-						if l_list.i_th (1).is_equal (test_case.target_class.name) and
-							l_list.i_th (2).is_equal (test_case.feature_name.name) then
-							l_succeed := True
+						if l_list.i_th (1).is_equal (test_case.class_under_test.name) and
+							l_list.i_th (2).is_equal (test_case.feature_under_test.name) then
+							l_status := {CDD_TEST_CASE}.invalid_code
 							l_exception := Void
 						end
 					end
 				else
 					l_exception := "unknown"
 				end
-				test_case.set_passes (False, l_exception)
 			end
-			test_case.set_passes (l_succeed, l_exception)
+			test_case.set_status (l_status, l_exception)
 		end
 
 feature {NONE} -- Implementation
@@ -262,12 +262,11 @@ feature {NONE} -- Implementation
 			env_vars: HASH_TABLE [STRING, STRING_8]
 		do
 			compiler := Void
-			a_test_case.start_testing
 			create arguments.make (1)
-			arguments.force (a_test_case.test_class.name)
+			arguments.force (a_test_case.tester_class.name)
 			test_suite_process := process_launcher (test_suite_exe_filename, arguments, test_suite_dirname)
 			create testing_output_buffer.make_empty
-			manager.update_state_actions.call (["Testing " + test_case.test_class.name])
+			manager.update_state_actions.call (["Testing " + test_case.tester_class.name])
 			test_suite_process.redirect_output_to_agent (agent output_handler)
 			test_suite_process.redirect_error_to_same_as_output
 			test_suite_process.set_buffer_size (512)

@@ -131,11 +131,11 @@ feature {CDD_MANAGER} -- Element change
 		local
 			l_file: PLAIN_TEXT_FILE
 		do
-			create l_file.make (a_tc.test_class.file_name)
+			create l_file.make (a_tc.tester_class.file_name)
 			if l_file.exists and l_file.is_writable then
 				l_file.delete
 			end
-			manager.remove_class (a_tc.test_class)
+			manager.remove_class (a_tc.tester_class)
 		end
 
 feature {NONE} -- Implementation

@@ -28,8 +28,8 @@ create
 feature {NONE} -- Initialization
 
 	make_with_row (a_row: like grid_row; a_cluster: like target_cluster) is
-			-- Set `grid_row' to `a_row' and `target_cluster' to `a_cluster'.
-			-- Define first item of `grid_row' for displaying `target_cluster'.
+			-- Set `grid_row' to `a_row' and `cluster_under_test' to `a_cluster'.
+			-- Define first item of `grid_row' for displaying `cluster_under_test'.
 		local
 			l_cluster: CLUSTER_I
 		do
@@ -49,7 +49,7 @@ feature -- Access
 	data_from_test_case (a_tc: CDD_TEST_CASE): EIFFEL_CLASS_I is
 			-- Attribute of `a_tc' displayed in sublines of `Current'.
 		do
-			Result := a_tc.target_class
+			Result := a_tc.class_under_test
 		end
 
 feature {NONE} -- Element change

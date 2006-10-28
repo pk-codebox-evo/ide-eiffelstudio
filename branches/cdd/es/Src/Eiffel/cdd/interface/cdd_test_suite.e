@@ -58,7 +58,7 @@ feature -- Access
 			until
 				l_cursor.after or Result /= Void
 			loop
-				if l_cursor.item.test_class = a_class then
+				if l_cursor.item.tester_class = a_class then
 					Result := l_cursor.item
 				end
 				l_cursor.forth
@@ -80,7 +80,7 @@ feature -- Status report
 			until
 				l_cursor.after or Result
 			loop
-				if l_cursor.item.test_class = a_class then
+				if l_cursor.item.tester_class = a_class then
 					Result := True
 				end
 				l_cursor.forth
@@ -94,7 +94,7 @@ feature -- Element change
 		require
 			valid_test_case: a_tc /= Void
 			not_added_yet: not test_cases.has (a_tc)
-			valid_test_case: a_tc.test_class.group = tests_cluster
+			valid_test_case: a_tc.tester_class.group = tests_cluster
 		local
 			l_found: BOOLEAN
 		do

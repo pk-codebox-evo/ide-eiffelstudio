@@ -26,7 +26,7 @@ feature -- Access
 			append_instruction ("l_old_root_class: " + an_old_root_class)
 			append_text ("%T%Tdo%N")
 			append_instruction ("l_old_root_class := Void")
-			append_instruction ("%Trun_test (create {" + a_tc.test_class.name + "})")
+			append_instruction ("%Trun_test (create {" + a_tc.tester_class.name + "})")
 			append_text ("%T%Tend%N%N")
 			append_class_footer (debugger_root_class_name)
 			output_file.flush
