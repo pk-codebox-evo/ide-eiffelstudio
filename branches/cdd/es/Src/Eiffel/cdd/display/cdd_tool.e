@@ -381,7 +381,7 @@ feature {NONE} -- Implementation
 				l_cursor.after
 			loop
 				l_tc := l_cursor.item
-				if (l_select = 2 and not l_tc.passes) or l_select = 1 then
+				if (l_select = 2 and l_tc.status = l_tc.fail_code) or l_select = 1 then
 					grid.add_test_case (l_tc)
 				end
 				l_cursor.forth

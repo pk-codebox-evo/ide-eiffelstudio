@@ -255,6 +255,7 @@
 			</condition>
 		</external_object>
 		<variable name="batch_framework" value="false"/>
+		<library name="cdd" location="$ISE_LIBRARY\library\cdd\cdd.ecf"/>
 		<library name="diff" location="$ISE_LIBRARY\library\diff\diff.ecf" readonly="false"/>
 		<library name="editor" location="$ISE_LIBRARY\library\editor\editor.ecf" readonly="false"/>
 		<library name="graph" location="$ISE_LIBRARY\library\graph\graph.ecf" readonly="false"/>
@@ -298,6 +299,7 @@
 				</condition>
 			</cluster>
 		</cluster>
+		<cluster name="cdd_tests" location="\home\fivaa\Projects\cdd\es\compile\cdd_tests\"/>
 		<cluster name="cli_debugger" location="$EIFFEL_SRC\Eiffel\library\cli_debugger\" recursive="true">
 			<condition>
 				<platform value="windows"/>
