@@ -90,7 +90,7 @@ feature -- Status report
 feature -- Element change
 
 	add_test_case (a_tc: CDD_TEST_CASE) is
-			-- Add 'a_tc' to 'test_cases'
+			-- Add `a_tc' to 'test_cases'
 		require
 			valid_test_case: a_tc /= Void
 			not_added_yet: not test_cases.has (a_tc)

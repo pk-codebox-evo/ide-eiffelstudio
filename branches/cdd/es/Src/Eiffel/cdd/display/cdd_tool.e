@@ -32,33 +32,54 @@ feature {NONE} -- Initialization
 			manager := a_window.eb_debugger_manager.cdd_manager
 			Precursor {EB_TOOL} (a_window)
 
-			internal_add_test_case_agent := agent add_test_case
-			internal_remove_test_case_agent := agent remove_test_case
 			internal_refresh_agent := agent refresh
 			internal_testing_status_agent := agent update_testing_status
-
-			manager.add_test_case_actions.extend (internal_add_test_case_agent)
-			manager.remove_test_case_actions.extend (internal_remove_test_case_agent)
 			manager.refresh_actions.extend (internal_refresh_agent)
 			manager.update_state_actions.extend (internal_testing_status_agent)
 
 			refresh
 		end
 
-
 	build_interface is
 			-- Build `widget' for displaying and controlling testing.
 		do
 			create widget
-			create grid.make
-			enable_editor_token_pnd
-			enable_ctrl_right_click_to_open_new_window
-			grid.row_select_actions.extend (agent select_test_case)
-			grid.row_deselect_actions.extend (agent deselect_test_case)
-			widget.extend (grid)
+			build_notebook
 			build_status_bar
 			build_tool_bar
 		end
+
+	build_notebook is
+			-- Build notebook for view selection containing the grid
+		require
+			widget_not_viod: widget /= Void
+		local
+			l_vbox: EV_VERTICAL_BOX
+			i: INTEGER
+			l_names: ARRAY [STRING]
+		do
+			create notebook
+			create grid.make
+			enable_editor_token_pnd
+			enable_ctrl_right_click_to_open_new_window
+			l_names := << "Hierarchy", "Failures" >>
+			from
+				i := 1
+			until
+				i > 2
+			loop
+				create l_vbox
+				notebook.extend (l_vbox)
+				notebook.set_item_text (l_vbox, l_names.item (i))
+				if i = 1 then
+					l_vbox.extend (grid)
+				end
+				i := i + 1
+			end
+			notebook.selection_actions.extend (agent select_tab)
+			widget.extend (notebook)
+		end
+
 
 	build_status_bar is
 			-- Create 'status_bar' and extend
@@ -146,26 +167,17 @@ feature -- Status setting
 		end
 
 	refresh is
-			-- Refresh widget elements with current test suite status.
-		local
-			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_CASE]
+			-- Redraw all widgets according to new test suite status.
 		do
 			window.lock_update
-			grid.remove_and_clear_all_rows
 			if manager.is_testing_enabled then
 				enable_testing_button.disable_sensitive
+				notebook.enable_sensitive
 				grid.enable_sensitive
-				from
-					l_cursor := manager.test_suite.test_cases.new_cursor
-					l_cursor.start
-				until
-					l_cursor.after
-				loop
-					grid.add_test_case (l_cursor.item)
-					l_cursor.forth
-				end
+				refresh_grid
 			else
 				enable_testing_button.enable_sensitive
+				notebook.disable_sensitive
 				grid.disable_sensitive
 			end
 			window.unlock_update
@@ -183,13 +195,14 @@ feature -- Status setting
 			else
 				run_button.enable_sensitive
 			end
+			if not manager.is_running and notebook.selected_item_index = 2 then
+				refresh_grid
+			end
 		end
 
 	recycle is
 			-- Prune 'Current' from manager and tester and remove widgets.
 		do
-			manager.add_test_case_actions.prune (internal_add_test_case_agent)
-			manager.remove_test_case_actions.prune (internal_remove_test_case_agent)
 			manager.refresh_actions.prune (internal_refresh_agent)
 			manager.update_state_actions.prune (internal_testing_status_agent)
 			grid.wipe_out
@@ -306,15 +319,6 @@ feature {NONE} -- Button events
 
 feature {NONE} -- Action implementation
 
-	internal_status_agent: PROCEDURE [like Current, TUPLE]
-			-- Agent called when testing is enabled/disabled
-
-	internal_add_test_case_agent: PROCEDURE [like Current, TUPLE [CDD_TEST_CASE]]
-			-- Agent called when test case is added
-
-	internal_remove_test_case_agent: PROCEDURE [like Current, TUPLE [CDD_TEST_CASE]]
-			-- Agent called when test case is removed
-
 	internal_refresh_agent: PROCEDURE [like Current, TUPLE]
 			-- Agent called when test suite is refreshed
 
@@ -341,8 +345,48 @@ feature {NONE} -- Implementation
 	status_label: EV_LABEL
 			-- Label describing current tester status
 
+	notebook: EV_NOTEBOOK
+			-- Notebook for different test case listing
+
 	grid: CDD_GRID
 			-- Grid for hierarchically displaying test cases
+
+feature {NONE} -- Implementation
+
+	select_tab is
+			--
+		local
+			l_vbox: EV_VERTICAL_BOX
+		do
+			grid.parent.wipe_out
+			l_vbox ?= notebook.selected_item
+			l_vbox.extend (grid)
+			refresh_grid
+		end
+
+	refresh_grid is
+			-- Remove all rows of `grid' and insert new ones according to
+			-- test suite status and selected notebook tab.
+		local
+			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_CASE]
+			l_tc: CDD_TEST_CASE
+			l_select: INTEGER
+		do
+			grid.remove_and_clear_all_rows
+			l_select := notebook.selected_item_index
+			from
+				l_cursor := manager.test_suite.test_cases.new_cursor
+				l_cursor.start
+			until
+				l_cursor.after
+			loop
+				l_tc := l_cursor.item
+				if (l_select = 2 and not l_tc.passes) or l_select = 1 then
+					grid.add_test_case (l_tc)
+				end
+				l_cursor.forth
+			end
+		end
 
 invariant
 	manager_not_void: manager /= Void

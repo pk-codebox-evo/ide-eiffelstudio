@@ -101,7 +101,9 @@ feature {NONE} -- Implementation
 				else
 					status_item.set_foreground_color (red)
 					l_status.append ("F")
-					l_tooltip.append ("Exception: " + test_case.last_exception_tag)
+					if test_case.last_exception_tag /= Void then
+						l_tooltip.append ("Exception: " + test_case.last_exception_tag)
+					end
 				end
 			end
 			status_item.set_text (l_status)

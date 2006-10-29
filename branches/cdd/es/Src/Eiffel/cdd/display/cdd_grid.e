@@ -166,15 +166,7 @@ feature {NONE} -- Element change
 			create last_created_line.make_with_row (row (a_row_index), a_cluster)
 		end
 
-feature {CDD_GRID_LINE} -- Status report
-
-	expanded_clusters: DS_LINKED_LIST [STRING]
-			-- Names of clusters which were expanded before last refresh
-
-	expanded_classes: DS_LINKED_LIST [STRING]
-			-- Names of classes which were expanded before last refresh
-
-	expanded_features: DS_LINKED_LIST [STRING]
-			-- Names of features which were expanded before last refresh
+invariant
+	column_count_equal_two: column_count = 2
 
 end -- Class CDD_GRID

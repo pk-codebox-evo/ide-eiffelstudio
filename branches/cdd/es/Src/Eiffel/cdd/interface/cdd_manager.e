@@ -59,8 +59,6 @@ feature {NONE} -- Initialization
 			l_prj_manager: EB_PROJECT_MANAGER
 		do
 			create refresh_actions
-			create add_test_case_actions
-			create remove_test_case_actions
 			create update_state_actions
 			create log_actions
 			l_prj_manager := eiffel_project.manager
@@ -193,9 +191,9 @@ feature -- Status setting
 						test_case_factory.create_with_reflection (l_reflection, test_suite.tests_cluster)
 						if test_case_factory.last_created_test_case /= Void then
 							l_tc := test_case_factory.last_created_test_case
-							l_tc.set_status ({CDD_TEST_CASE}.fail_code, l_reflection.exception_tag)
+							l_tc.set_status ({CDD_TEST_CASE}.not_verified_code, l_reflection.exception_tag)
 							test_suite.add_test_case (l_tc)
-							add_test_case_actions.call ([l_tc])
+							refresh_actions.call ([l_tc])
 						end
 					end
 				end
@@ -280,7 +278,7 @@ feature -- Test suite manipulation
 			eb_cluster_manager.remove_class (a_tc.tester_class)
 
 			window_manager.synchronize_all
-			remove_test_case_actions.call ([a_tc])
+			refresh_actions.call ([a_tc])
 			eb_cluster_manager.add_observer (Current)
 		ensure
 			removed: not test_suite.test_cases.has (a_tc)
@@ -308,12 +306,30 @@ feature {EB_CLUSTERS} -- Project Events
 		local
 			l_tests_cluster: CLUSTER_I
 			l_classes: HASH_TABLE [EIFFEL_CLASS_I, STRING]
+			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_CASE]
+			l_old_states: HASH_TABLE [TUPLE [INTEGER, STRING], STRING]
+			l_old: TUPLE [INTEGER, STRING]
+			l_string: STRING
+			l_tc: CDD_TEST_CASE
 			l_was_enabled: BOOLEAN
 		do
 			l_was_enabled := is_testing_enabled
 			if not l_was_enabled or else not is_debugging then
 				l_tests_cluster := eiffel_universe.cluster_of_name (tests_cluster_name)
 				if l_tests_cluster /= Void then
+						-- Save current test cases states
+					if l_was_enabled then
+						from
+							l_cursor := test_suite.test_cases.new_cursor
+							l_cursor.start
+							create l_old_states.make (test_suite.test_cases.count)
+						until
+							l_cursor.after
+						loop
+							l_old_states.put ([l_cursor.item.status, l_cursor.item.last_exception_tag], l_cursor.item.tester_class.name)
+							l_cursor.forth
+						end
+					end
 					create test_suite.make_with_cluster (l_tests_cluster)
 					l_classes := test_suite.tests_cluster.classes
 					from
@@ -324,7 +340,14 @@ feature {EB_CLUSTERS} -- Project Events
 						if not test_suite.has_test_case_for_class (l_classes.item_for_iteration) then
 							test_case_factory.create_from_class (l_classes.item_for_iteration, eiffel_universe)
 							if test_case_factory.last_created_test_case /= Void then
-								test_suite.add_test_case (test_case_factory.last_created_test_case)
+								l_tc := test_case_factory.last_created_test_case
+									-- retrieve old test case state if available
+								if l_was_enabled and then l_old_states.has (l_tc.tester_class.name) then
+									l_old := l_old_states.item (l_tc.tester_class.name)
+									l_string ?= l_old.reference_item (2)
+									l_tc.set_status (l_old.integer_item (1), l_string)
+								end
+								test_suite.add_test_case (l_tc)
 							end
 						end
 						l_classes.forth
@@ -357,7 +380,7 @@ feature {EB_CLUSTERS} -- Project Events
 					if l_cursor.item.tester_class = a_class then
 						l_item := l_cursor.item
 						test_suite.remove_test_case (l_cursor.item)
-						remove_test_case_actions.call ([l_item])
+						refresh_actions.call ([l_item])
 						l_cursor.go_after
 					else
 						l_cursor.forth
@@ -370,12 +393,6 @@ feature -- Actions
 
 	refresh_actions: ACTION_SEQUENCE [TUPLE]
 			-- Actions performed after `Current' has refreshed the test suite
-
-	add_test_case_actions: ACTION_SEQUENCE [TUPLE [CDD_TEST_CASE]]
-			-- Actions performed when a test case is added to the test suite
-
-	remove_test_case_actions: ACTION_SEQUENCE [TUPLE [CDD_TEST_CASE]]
-			-- Actions performed when a test case is removed from the test suite
 
 	update_state_actions: ACTION_SEQUENCE [TUPLE [STRING]]
 			-- Actions perfomred when testing status changes
@@ -479,8 +496,6 @@ feature {NONE} -- Implementation
 invariant
 	correct_testing_status: is_testing_enabled = (test_suite /= Void)
 	refresh_actions_not_void: refresh_actions /= Void
-	add_test_case_actions_not_void: add_test_case_actions /= Void
-	remove_test_case_actions_not_void: remove_test_case_actions /= Void
 	update_state_actions_not_void: update_state_actions /= Void
 	log_actions_not_void: log_actions /= Void
 	test_debugger_not_void: test_debugger /= Void

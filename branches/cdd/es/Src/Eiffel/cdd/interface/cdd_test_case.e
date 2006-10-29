@@ -60,8 +60,10 @@ feature -- Access
 	status: INTEGER
 			-- Status of `Current'
 
-	pass_code, fail_code,
-	invalid_code, not_verified_code: INTEGER is unique
+	pass_code,
+	fail_code,
+	invalid_code,
+	not_verified_code: INTEGER is unique
 			-- Test case status codes
 
 	correct_status (a_status: INTEGER): BOOLEAN is
