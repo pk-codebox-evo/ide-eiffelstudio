@@ -262,9 +262,16 @@ feature {NONE} -- Implementation
 			env_vars: HASH_TABLE [STRING, STRING_8]
 		do
 			compiler := Void
-			create arguments.make (1)
-			arguments.force (a_test_case.tester_class.name)
-			test_suite_process := process_launcher (test_suite_exe_filename, arguments, test_suite_dirname)
+			if operating_system.is_windows then
+				create arguments.make (1)
+				arguments.force (a_test_case.tester_class.name)
+				test_suite_process := process_launcher (test_suite_exe_filename, arguments, test_suite_dirname)
+			else
+				create arguments.make (2)
+				arguments.extend ("-c")
+				arguments.extend ("%'%'"+test_suite_exe_filename+" "+a_test_case.tester_class.name+"%'%'")
+				test_suite_process := process_launcher ("/bin/sh", arguments, test_suite_dirname)
+			end
 			create testing_output_buffer.make_empty
 			manager.update_state_actions.call (["Testing " + test_case.tester_class.name])
 			test_suite_process.redirect_output_to_agent (agent output_handler)
