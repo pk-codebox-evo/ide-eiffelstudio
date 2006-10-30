@@ -33,14 +33,19 @@ inherit
 		end
 
 create
-	make
+	make_with_tool
 
 feature {NONE} -- Initialization
 
-	make is
+	make_with_tool (a_tool: like tool) is
 			-- Call `default_create' and initialize grid layout.
+		require
+			a_tool_not_void: a_tool /= Void
 		do
 			default_create
+			
+			tool := a_tool
+
 			enable_tree
 			enable_row_height_fixed
 			enable_single_row_selection
@@ -52,6 +57,8 @@ feature {NONE} -- Initialization
 			row_deselect_actions.extend (agent set_selection_color)
 			set_focused_selection_color (preferences.editor_data.selection_background_color)
 			build_columns
+		ensure
+			tool_set: tool = a_tool
 		end
 
 	build_columns is
@@ -71,8 +78,10 @@ feature {NONE} -- Initialization
 			set_auto_resizing_column (2, False)
 		end
 
-
 feature -- Access
+
+	tool: CDD_TOOL
+			-- Tool containing `Current'
 
 	row (a_row: INTEGER): like row_type is
 			-- Row at index `a_row'.

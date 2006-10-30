@@ -112,13 +112,13 @@ feature -- Access
 	can_start_debugging: BOOLEAN is
 			-- Can we run a test case in the debugger?
 		do
-			Result := not is_running and test_debugger.can_start_debugged_testing
+			Result := not is_debugging and test_debugger.can_start_debugged_testing
 		end
 
 	can_start_executing: BOOLEAN is
 			-- Can we execute all test cases in background?
 		do
-			Result := not is_running and test_executor.can_start
+			Result := not is_executing and test_executor.can_start
 		end
 
 
@@ -191,9 +191,12 @@ feature -- Status setting
 						test_case_factory.create_with_reflection (l_reflection, test_suite.tests_cluster)
 						if test_case_factory.last_created_test_case /= Void then
 							l_tc := test_case_factory.last_created_test_case
-							l_tc.set_status ({CDD_TEST_CASE}.not_verified_code, l_reflection.exception_tag)
+							l_tc.set_unverified
 							test_suite.add_test_case (l_tc)
 							refresh_actions.call ([l_tc])
+							if can_start_executing then
+								start_executing
+							end
 						end
 					end
 				end
@@ -244,6 +247,17 @@ feature -- Status setting
 			test_debugger.start_debugged_testing (a_tc)
 		end
 
+	examinate_test_case (a_tc: CDD_TEST_CASE) is
+			-- Try to capture a better pre state for `a_tc' by running the application
+			-- and reflect every pre state of the feature under test.
+		require
+			a_tc_not_void: a_tc /= Void
+				-- TODO: remove cases where running the application is not possible
+			can_examinate_test_case: True
+		do
+			eb_debugger_manager.debug_run_cmd.launch_application
+		end
+
 	start_executing is
 			-- Test all test cases in background.
 		require
@@ -251,7 +265,6 @@ feature -- Status setting
 		do
 			test_executor.start
 		end
-
 
 feature {CDD_ABSTRACT_TESTER} -- Testing status setting
 
@@ -425,6 +438,7 @@ feature {NONE} -- Implementation
 			if l_cse /= Void then
 				l_feature := l_cse.routine
 				-- Make a heuristic to check if the called feature could be a creation feature.
+				-- TODO: Bug when feature is exported to {NONE} - thinks it is creation procedure...
 				if l_feature.export_status.is_none then
 					l_prev_cse := caller (l_cse, an_app_status.current_call_stack)
 					if l_prev_cse /= Void then
@@ -475,18 +489,6 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Implementation
 
-	current_tester: CDD_ABSTRACT_TESTER is
-			-- Currently used tester
-		do
-			if test_debugger.is_running then
-				Result := test_debugger
-			elseif test_executor.is_running then
-				Result := test_executor
-			end
-		ensure
-			correct_result: is_running = Result /= Void
-		end
-
 	test_debugger: CDD_TEST_DEBUGGER
 			-- Tester debugging test case in EiffelStudio
 
@@ -500,6 +502,5 @@ invariant
 	log_actions_not_void: log_actions /= Void
 	test_debugger_not_void: test_debugger /= Void
 	test_executor_not_void: test_executor /= Void
-	only_one_at_a_time: not (is_debugging and is_executing)
 
 end

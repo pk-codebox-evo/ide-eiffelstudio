@@ -59,7 +59,7 @@ feature {NONE} -- Initialization
 			l_names: ARRAY [STRING]
 		do
 			create notebook
-			create grid.make
+			create grid.make_with_tool (Current)
 			enable_editor_token_pnd
 			enable_ctrl_right_click_to_open_new_window
 			l_names := << "Hierarchy", "Failures" >>
@@ -79,7 +79,6 @@ feature {NONE} -- Initialization
 			notebook.selection_actions.extend (agent select_tab)
 			widget.extend (notebook)
 		end
-
 
 	build_status_bar is
 			-- Create 'status_bar' and extend
@@ -124,7 +123,14 @@ feature {NONE} -- Initialization
 			enable_testing_button.select_actions.extend (agent on_enable_testing_button)
 			enable_testing_button.disable_sensitive
 
+			create examine_button
+			examine_button.set_tooltip ("Examinate test case")
+			examine_button.set_pixmap (pixmaps.mini_pixmaps.general_search_icon)
+			examine_button.select_actions.extend (agent on_examinate_button)
+			examine_button.disable_sensitive
+
 			mini_tool_bar.extend (run_button)
+			mini_tool_bar.extend (examine_button)
 			mini_tool_bar.extend (delete_button)
 			mini_tool_bar.extend (enable_testing_button)
 		end
@@ -190,7 +196,7 @@ feature -- Status setting
 			a_message_not_void: a_message /= Void
 		do
 			status_label.set_text (a_message)
-			if manager.is_running or selected_test_case = Void then
+			if manager.is_debugging or selected_test_case = Void then
 				run_button.disable_sensitive
 			else
 				run_button.enable_sensitive
@@ -213,31 +219,27 @@ feature {CDD_GRID_TEST_CASE_LINE} -- Selection
 	selected_test_case: CDD_TEST_CASE
 			-- Currently selected test case in tree, Void if no test case is selected
 
-	select_test_case (a_row: CDD_GRID_ROW) is
+	select_test_case (a_tc: CDD_TEST_CASE) is
 			-- Actions performed when test case item in tree is selected.
 		require
-			valid_item: a_row /= Void
-		local
-			l_tc_line: CDD_GRID_TEST_CASE_LINE
+			valid_test_case: a_tc /= Void
 		do
-			l_tc_line ?= a_row.grid_line
-			if l_tc_line /= Void then
-				selected_test_case := l_tc_line.test_case
-				run_button.enable_sensitive
-			else
-				deselect_test_case (a_row)
-			end
+			selected_test_case := a_tc
+			run_button.enable_sensitive
+			examine_button.enable_sensitive
+		ensure
+			test_case_selected: selected_test_case = a_tc
 		end
 
-	deselect_test_case (a_row: CDD_GRID_ROW) is
+	deselect_test_case is
 			-- Actions performed when item in tree is deselected.
 		do
 			selected_test_case := Void
 			run_button.disable_sensitive
+			examine_button.disable_sensitive
 		ensure
 			nothing_selected: selected_test_case = Void
 		end
-
 
 feature {NONE} -- Button events
 
@@ -259,14 +261,24 @@ feature {NONE} -- Button events
 	on_run_button is
 			-- Run selected test case in the debugger.
 		require
-			manager_not_running: not manager.is_running
+			manager_not_debugging: not manager.is_debugging
 			test_case_selected: selected_test_case /= Void
+		local
+			l_id: EV_INFORMATION_DIALOG
 		do
 			if manager.can_start_debugging then
 				manager.start_debugging (selected_test_case)
 			else
-				-- TODO: Notify user that debugged testing is not possible
+				create l_id.make_with_text ("Not able to run the test case in the debugger - sorry")
 			end
+		end
+
+	on_examinate_button is
+			-- Try to examinate selected test case
+		require
+			test_case_selected: selected_test_case /= Void
+		do
+			manager.examinate_test_case (selected_test_case)
 		end
 
 	on_delete_button is
@@ -334,7 +346,10 @@ feature {NONE} -- Implementation
 			-- Button for enabling testing
 
 	run_button: EV_TOOL_BAR_BUTTON
-			-- Buttons for controlling test execution
+			-- Button for debugging test case
+
+	examine_button: EV_TOOL_BAR_BUTTON
+			-- Button for examinating a test case
 
 	delete_button: EV_TOOL_BAR_BUTTON
 			-- Button for deleting a single test case
@@ -398,5 +413,6 @@ invariant
 	delete_button_valid: delete_button /= Void
 	status_bar_valid: status_bar /= Void
 	status_label_valid: status_label /= Void
+	examine_button_not_void: examine_button /= Void
 
 end

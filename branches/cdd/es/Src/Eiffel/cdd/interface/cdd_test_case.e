@@ -14,10 +14,10 @@ inherit
 create
 	make
 
-feature {NONE} -- Initialization
+feature {CDD_TEST_CASE_FACTORY} -- Initialization
 
 	make (a_target_class: like class_under_test; a_feature: like feature_under_test; a_test_class: like tester_class) is
-			-- Initialize new test case for testing `a_feature' of class `a_target_class' where
+			-- Initialize test case for testing `a_feature' of class `a_target_class' where
 			-- `a_test_class' is the classed used for testing.
 		require
 			valid_target_class: a_target_class /= Void
@@ -28,12 +28,14 @@ feature {NONE} -- Initialization
 			feature_under_test := a_feature
 			tester_class := a_test_class
 			create update_status_actions
+			status := not_tested_code
+			is_verified := True
 		ensure
 			target_class_set: class_under_test = a_target_class
 			e_feature_set: feature_under_test = a_feature
 			test_class_set: tester_class = a_test_class
+			verified: is_verified
 		end
-
 
 feature -- Access
 
@@ -63,21 +65,24 @@ feature -- Access
 	pass_code,
 	fail_code,
 	invalid_code,
-	not_verified_code: INTEGER is unique
+	not_tested_code: INTEGER is unique
 			-- Test case status codes
 
 	correct_status (a_status: INTEGER): BOOLEAN is
 			-- Is `a_status' a correct status
 		do
-			Result := a_status = fail_code or a_status = pass_code or a_status = invalid_code or a_status = not_verified_code
+			Result := a_status = fail_code or a_status = pass_code or a_status = invalid_code or a_status = not_tested_code
 		end
+
+	is_verified: BOOLEAN
+			-- Was `Current' verified to be a valid test case?
 
 feature -- Status setting
 
-	is_verified: BOOLEAN is
-			-- Has `Current' been verified yet?
+	is_tested: BOOLEAN is
+			-- Has `Current' been tested yet?
 		do
-			Result := status /= not_verified_code
+			Result := status /= not_tested_code
 		end
 
 	passes: BOOLEAN is
@@ -93,10 +98,26 @@ feature -- Status setting
 		do
 			last_exception_tag := an_exception_tag
 			status := a_status
+			if not is_verified and (a_status = fail_code or a_status = pass_code) then
+				is_verified := True
+			end
 			update_status_actions.call ([])
 		ensure
 			last_exception_tag_set: last_exception_tag = an_exception_tag
 			status_set: status = a_status
+		end
+
+feature {CDD_MANAGER} -- Verification setting
+
+	set_unverified is
+			-- Set `is_verified' to False and call update agents.
+		require
+			not_tested_yet: status = not_tested_code
+		do
+			is_verified := False
+			update_status_actions.call ([])
+		ensure
+			not_verified: not is_verified
 		end
 
 feature -- Actions
@@ -128,12 +149,13 @@ feature -- Compare
 			end
 		end
 
-
 invariant
 	target_cluster_not_void: class_under_test /= Void
 	target_class_not_void: class_under_test /= Void
 	e_feature_not_void: feature_under_test /= Void
 	test_class_not_void: tester_class /= Void
 	update_status_actions_not_void: update_status_actions /= Void
+	valid_status: correct_status (status)
+	correct_verification_status: not is_verified implies (status = not_tested_code or status = invalid_code)
 
 end

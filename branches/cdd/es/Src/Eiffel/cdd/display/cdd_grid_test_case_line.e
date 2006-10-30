@@ -1,6 +1,6 @@
 indexing
 	description: "Objects that display a test case within a grid structure"
-	author: ""
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -32,10 +32,15 @@ feature {NONE} -- Initialization
 		local
 			l_stone: CLASSI_STONE
 			l_cname, l_num: STRING
+			l_tool: CDD_TOOL
 		do
 			Precursor (a_row, a_test_case)
 			internal_update_agent := agent update_status
 			test_case.update_status_actions.extend (internal_update_agent)
+
+			l_tool := grid.tool
+			grid_row.select_actions.extend (agent l_tool.select_test_case (a_test_case))
+			grid_row.deselect_actions.extend (agent l_tool.deselect_test_case)
 
 			l_cname := test_case.tester_class.name
 			l_num := l_cname.substring (l_cname.count - 1, l_cname.count)
@@ -88,7 +93,7 @@ feature {NONE} -- Implementation
 		do
 			create l_status.make_empty
 			create l_tooltip.make_empty
-			if not test_case.is_verified then
+			if not test_case.is_tested then
 				status_item.set_foreground_color (black)
 				l_status.append ("?")
 			else
@@ -105,6 +110,9 @@ feature {NONE} -- Implementation
 						l_tooltip.append ("Exception: " + test_case.last_exception_tag)
 					end
 				end
+			end
+			if not test_case.is_verified then
+				l_status.append_character ('*')
 			end
 			status_item.set_text (l_status)
 			name_item.set_tooltip (l_tooltip)
