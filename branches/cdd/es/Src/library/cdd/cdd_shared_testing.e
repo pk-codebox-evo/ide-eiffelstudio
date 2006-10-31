@@ -10,16 +10,47 @@ deferred class
 inherit
 	INTERNAL
 
-feature
+feature -- Access
 
-	test_feature is
-			--
+	is_set_up: BOOLEAN is
+			-- Is test case set up?
+		do
+			Result := object_under_test /= Void
+		end
+
+	object_under_test: ANY is
+			-- Object  beeing tested
+		deferred
+		end
+
+	class_under_test: STRING is
+			-- Name of the class beeing tested
+		deferred
+		end
+
+	feature_under_test: STRING is
+			-- Name of the feature beeing tested
 		deferred
 		end
 
 
-feature -- Object creation
+feature -- Test execution
 
+	set_up is
+			-- Initialize `object_under_test' so the feature to test can be executed.
+		deferred
+		ensure
+			is_set_up
+		end
+
+	run_feature_under_test is
+			-- Call the feature under test with `object_under_test'.
+		require
+			is_set_up
+		deferred
+		end
+
+feature -- Object creation
 
 	build_object (a_class_name: STRING): ANY is
 		local

@@ -32,8 +32,8 @@ feature -- Access
 			append_indexing (reflection)
 			append_class_header (test_class_name)
 
-			append_text ("%N%Ttest_feature is%N")
-			append_comment ("run tests")
+			append_text ("%N%Tset_up is%N")
+			append_comment ("Set up test case")
 			append_text ("%T%Tlocal%N")
 
 			if reflection.is_creation_feature then
@@ -47,9 +47,6 @@ feature -- Access
 			loop
 				append_object_declaration (rlist.item_for_iteration)
 				rlist.forth
-			end
-			if l_feature.is_function then
-				append_instruction ("l_result: ANY")
 			end
 
 			append_text ("%T%Tdo%N")
@@ -72,14 +69,24 @@ feature -- Access
 				rlist.item_for_iteration.append_assignment (Current)
 				rlist.forth
 			end
+			append_instruction ("object_under_test := " + root_object.identifier)
+			append_text ("%T%Tend%N")
 
-			append_text ("%N%N" + indent)
+
+			append_text ("%N%Trun_feature_under_test is%N")
+			append_comment ("Run feature under test")
+			if l_feature.is_function then
+				append_text ("%T%Tlocal%N")
+				append_instruction ("l_result: ANY")
+			end
+			append_text ("%T%Tdo%N")
+			append_text (indent)
 			if reflection.is_creation_feature then
 				append_text ("create ")
 			elseif l_feature.is_function then
 				append_text ("l_result ?= ")
 			end
-			append_text (root_object.identifier)
+			append_text ("object_under_test")
 			if not reflection.is_creation_feature or not l_feature.name.is_equal ("default_create") then
 				append_text ("." + l_feature.name)
 			end
@@ -98,11 +105,14 @@ feature -- Access
 				end
 				append_text (")")
 			end
-			append_text ("%N%N%T%Tend%N%N")
-			append_text ("%Ttested_class_name: STRING is %"" + root_object.dynamic_type.name + "%"%N")
+			append_text ("%N%T%Tend%N%N")
+			append_text ("%Tobject_under_test: " + root_object.dynamic_type.name + "%N")
 			append_text ("%T%T%T-- Name of the class under test.%N")
 			append_text ("%T%T%T-- NOTE: Do not modify this attribute!%N%N")
-			append_text ("%Ttested_feature_name: STRING is %"" + l_feature.name + "%"%N")
+			append_text ("%Tclass_under_test: STRING is %"" + root_object.dynamic_type.name + "%"%N")
+			append_text ("%T%T%T-- Name of the class under test.%N")
+			append_text ("%T%T%T-- NOTE: Do not modify this attribute!%N%N")
+			append_text ("%Tfeature_under_test: STRING is %"" + l_feature.name + "%"%N")
 			append_text ("%T%T%T-- Name of the feature under test.%N")
 			append_text ("%T%T%T-- NOTE: Do not modify this attribute!%N%N")
 			append_class_footer (test_class_name)

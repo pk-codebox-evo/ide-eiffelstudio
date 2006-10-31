@@ -176,7 +176,7 @@ feature -- Status setting
 						else
 							l_name := test_debugger.test_case.feature_under_test.name
 							l_dname := an_app_status.current_call_stack_element.routine_name
-							if not l_name.is_equal (l_dname) then
+							if not l_name.is_equal (l_dname) and not l_dname.is_equal ("do_nothing") then
 								-- The failing feature is not the feature under test -> create a new test case
 								l_create := True
 							end
@@ -254,8 +254,15 @@ feature -- Status setting
 			a_tc_not_void: a_tc /= Void
 				-- TODO: remove cases where running the application is not possible
 			can_examinate_test_case: True
+		local
+			l_dbg_info: DEBUG_INFO
+			l_bplist: ARRAYED_LIST [INTEGER]
 		do
-			eb_debugger_manager.debug_run_cmd.launch_application
+			l_dbg_info := eb_debugger_manager.application.debug_info
+			create l_bplist.make (2)
+			l_bplist.extend (1)
+			l_dbg_info.add_breakpoints_for_feature (a_tc.feature_under_test, l_bplist)
+			--eb_debugger_manager.debug_run_cmd.launch_application
 		end
 
 	start_executing is

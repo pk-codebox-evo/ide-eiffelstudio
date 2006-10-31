@@ -36,6 +36,9 @@ feature {NONE} -- Initialization
 
 	make_with_manager (a_manager: like manager) is
 			-- Create compiler
+		local
+			-- Added so class gets compiled, to be removed
+			l_tmp: CDD_INTERPRETER_SUPPORT
 		do
 			Precursor {CDD_ABSTRACT_TESTER} (a_manager)
 			create output.make
@@ -205,6 +208,8 @@ feature {NONE} -- Idle action
 			l_status := {CDD_TEST_CASE}.fail_code
 			if test_suite_process.exit_code = 0 then
 				l_status := {CDD_TEST_CASE}.pass_code
+			elseif test_suite_process.exit_code = 30 then
+				l_status := {CDD_TEST_CASE}.invalid_code
 			else
 				l_list := testing_output_buffer.split ('.')
 				if l_list.count = 3 then
