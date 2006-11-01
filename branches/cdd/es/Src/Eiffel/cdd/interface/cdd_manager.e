@@ -68,6 +68,7 @@ feature {NONE} -- Initialization
 			eb_cluster_manager.add_observer (Current)
 			create test_debugger.make_with_manager (Current)
 			create test_executor.make_with_manager (Current)
+			create test_examinator.make (Current, eb_debugger_manager)
 		end
 
 feature -- Access
@@ -79,7 +80,7 @@ feature -- Access
 		end
 
 	test_suite: CDD_TEST_SUITE
-			-- Test suite which is managed by 'Current'
+			-- Test suite which is managed by `Current'
 
 	is_running: BOOLEAN is
 			-- Are we currently running or preparing any test cases?
@@ -97,6 +98,12 @@ feature -- Access
 			-- Are we testing any test case externally?
 		do
 			Result := test_executor.is_running
+		end
+
+	is_examinating: BOOLEAN is
+			-- Are we examinating some test case?
+		do
+			Result := test_examinator.is_running
 		end
 
 	can_enable_testing: BOOLEAN is
@@ -121,6 +128,11 @@ feature -- Access
 			Result := not is_executing and test_executor.can_start
 		end
 
+	can_start_examinating: BOOLEAN is
+			--
+		do
+			Result := not is_examinating
+		end
 
 	valid_status (an_app_status: APPLICATION_STATUS): BOOLEAN is
 			-- Is 'an_app_status' valid for creating a ccd test case?
@@ -156,6 +168,7 @@ feature -- Status setting
 			-- `a_window' is the window in which the application was launched.
 		require
 			app_status_not_void: an_app_status /= Void
+			app_status_valid: an_app_status.is_stopped
 			a_window_not_void: a_window /= Void
 		local
 			l_reflection: CDD_REFLECTION
@@ -163,7 +176,7 @@ feature -- Status setting
 			l_create: BOOLEAN
 			l_name, l_dname: STRING
 		do
-			if is_testing_enabled and valid_status (an_app_status) then
+			if is_testing_enabled and valid_status (an_app_status) and not is_examinating then
 				if is_debugging then
 					l_name := test_debugger.test_case.tester_class.name
 					l_dname := an_app_status.dynamic_class.name
@@ -200,6 +213,8 @@ feature -- Status setting
 						end
 					end
 				end
+			elseif is_examinating and then test_examinator.valid_application_status then
+				test_examinator.on_application_stop
 			end
 		end
 
@@ -208,6 +223,8 @@ feature -- Status setting
 		do
 			if is_debugging then
 				test_debugger.stop
+			elseif is_examinating then
+				test_examinator.stop
 			end
 		end
 
@@ -252,17 +269,9 @@ feature -- Status setting
 			-- and reflect every pre state of the feature under test.
 		require
 			a_tc_not_void: a_tc /= Void
-				-- TODO: remove cases where running the application is not possible
-			can_examinate_test_case: True
-		local
-			l_dbg_info: DEBUG_INFO
-			l_bplist: ARRAYED_LIST [INTEGER]
+			can_examinate_test_case: can_start_examinating
 		do
-			l_dbg_info := eb_debugger_manager.application.debug_info
-			create l_bplist.make (2)
-			l_bplist.extend (1)
-			l_dbg_info.add_breakpoints_for_feature (a_tc.feature_under_test, l_bplist)
-			--eb_debugger_manager.debug_run_cmd.launch_application
+			test_examinator.examinate (a_tc)
 		end
 
 	start_executing is
@@ -502,6 +511,9 @@ feature {NONE} -- Implementation
 	test_executor: CDD_TEST_EXECUTOR
 			-- Tester for executing test cases external
 
+	test_examinator: CDD_TEST_EXAMINATOR
+			-- Executes the application and captures the correct pre-states
+
 invariant
 	correct_testing_status: is_testing_enabled = (test_suite /= Void)
 	refresh_actions_not_void: refresh_actions /= Void
@@ -509,5 +521,7 @@ invariant
 	log_actions_not_void: log_actions /= Void
 	test_debugger_not_void: test_debugger /= Void
 	test_executor_not_void: test_executor /= Void
+	test_examinator_not_void: test_examinator /= Void
+	not_debugging_and_examinating: not (is_examinating and is_debugging)
 
 end

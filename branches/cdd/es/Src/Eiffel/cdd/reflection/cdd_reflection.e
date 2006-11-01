@@ -28,7 +28,7 @@ feature {NONE} -- Initialization
 			-- Reflect the object associated to `a_cse'
 		require
 			an_app_status_not_void: an_app_status /= Void
-			an_app_status_valid: an_app_status.is_stopped and an_app_status.exception_occurred
+			an_app_status_valid: an_app_status.is_stopped
 			a_cse_not_void: a_cse /= Void
 			a_cse_valid: an_app_status.current_call_stack.i_th (a_cse.level_in_stack) = a_cse
 			is_eiffel_cse: an_app_status.current_call_stack_element.is_eiffel_call_stack_element
@@ -38,11 +38,6 @@ feature {NONE} -- Initialization
 		do
 			called_feature := a_cse.routine
 			is_creation_feature := a_is_creation_call
-			if an_app_status.exception_tag /= Void then
-				exception_tag := an_app_status.exception_tag
-			else
-				exception_tag := "unknown"
-			end
 			create addressed_objects.make (object_count)
 			if is_creation_feature then
 				root_object := create {CDD_REGULAR_OBJECT}.make_with_count (a_cse.dynamic_class.eiffel_class_c, 0)
@@ -77,8 +72,6 @@ feature {NONE} -- Initialization
 				create composite_objects.make (0)
 			end
 			addressed_objects := Void
-		ensure
-
 		end
 
 feature -- Access
@@ -97,9 +90,6 @@ feature -- Access
 
 	is_creation_feature: BOOLEAN
 			-- Is `called_feature' a creation feature?
-
-	exception_tag: STRING
-			-- Description of what caused the exception
 
 	id: STRING is "not implemented"
 			-- Identifier for this reflection
@@ -274,8 +264,7 @@ feature {NONE} -- Implementation
 invariant
 	correct_reflection_status: reflection_succeded = (
 									root_object /= Void and
-									called_feature /= Void and
-									exception_tag /= Void)
+									called_feature /= Void)
 	composite_objects_not_void: composite_objects /= Void
 	arguments_not_void: arguments /= Void
 	valid_argument_count: arguments.is_empty = not called_feature.has_arguments
