@@ -15,7 +15,7 @@ inherit
 
 feature -- Project
 
-	tests_cluster_name: STRING is "cdd_tests"
+	tests_cluster_name: STRING is "cdd_test_suite"
 
 	tester_target_name: STRING is "cdd_tester"
 

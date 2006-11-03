@@ -73,7 +73,7 @@ feature -- Status report
 	can_start: BOOLEAN is
 			-- Can background testing be launched?
 		do
-			Result := not is_running and test_suite.test_cases.count > 0 and not manager.ise_project.is_read_only
+			Result := not is_running and test_suite.test_cases.count > 0 and not manager.open_project.is_read_only
 		end
 
 feature -- Access
@@ -99,7 +99,7 @@ feature {CDD_MANAGER} -- Basic operations
 			remove_tester_target
 			add_tester_target
 			manager.update_testing_status ("Compiling Testcases")
-			compiler.run (test_suite.tests_cluster.target.system.directory, manager.ise_target.system.file_name, tester_target_name)
+			compiler.run (test_suite.tests_cluster.target.system.directory, manager.open_target.system.file_name, tester_target_name)
 			add_idle_action
 		ensure
 			running: is_running
@@ -241,7 +241,7 @@ feature {NONE} -- Implementation
 			else
 				exe_postfix := ""
 			end
-			Result.extend (manager.ise_project.system.name + exe_postfix)
+			Result.extend (manager.open_project.system.name + exe_postfix)
 		ensure
 			filename_not_void: Result /= Void
 		end
@@ -310,9 +310,9 @@ feature {NONE} -- Implementation
 	remove_tester_target is
 			-- Remove target with name `tester_target_name' from system.
 		do
-			if manager.ise_target.system.targets.has (tester_target_name) then
-				manager.ise_target.system.remove_target (tester_target_name)
-				manager.ise_target.system.store
+			if manager.open_target.system.targets.has (tester_target_name) then
+				manager.open_target.system.remove_target (tester_target_name)
+				manager.open_target.system.store
 			end
 		end
 
@@ -322,13 +322,13 @@ feature {NONE} -- Implementation
 			l_target: CONF_TARGET
 			l_new_root: CONF_ROOT
 		do
-			l_target := conf_factory.new_target (tester_target_name, manager.ise_target.system)
-			manager.ise_target.system.add_target (l_target)
-			l_target.set_parent (manager.ise_target)
+			l_target := conf_factory.new_target (tester_target_name, manager.open_target.system)
+			manager.open_target.system.add_target (l_target)
+			l_target.set_parent (manager.open_target)
 			l_new_root := conf_factory.new_root (test_suite.tests_cluster.cluster_name, executor_root_class_name, root_class_feature_name, False)
 			l_target.set_root (l_new_root)
 			l_target.add_setting (l_target.s_console_application, "true")
-			manager.ise_target.system.store
+			manager.open_target.system.store
 		end
 
 

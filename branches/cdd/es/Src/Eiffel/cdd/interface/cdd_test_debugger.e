@@ -31,8 +31,8 @@ feature -- Access
 			-- Can testing be launched in the debugger?
 		do
 			Result := not is_running and
-				not manager.ise_project.is_read_only and
-				not manager.ise_project.is_compiling and
+				not manager.open_project.is_read_only and
+				not manager.open_project.is_compiling and
 				not run_project_cmd.debugger_manager.application.is_running
 		end
 
@@ -49,13 +49,13 @@ feature -- Basic operations
 			is_running := True
 			test_case := a_tc
 			create_root_class
-			old_root := manager.ise_target.root
+			old_root := manager.open_target.root
 			l_new_root := conf_factory.new_root (test_suite.tests_cluster.cluster_name, debugger_root_class_name, root_class_feature_name, False)
-			manager.ise_target.set_root (l_new_root)
-			manager.ise_target.system.store
+			manager.open_target.set_root (l_new_root)
+			manager.open_target.system.store
 			manager.update_testing_status ("Preparing")
 			melt_project_cmd.execute_and_wait
-			if manager.ise_project.successful then
+			if manager.open_project.successful then
 				is_running := True
 				manager.update_testing_status ("Running " + test_case.tester_class.name + " in debugger")
 				run_project_cmd.execute
@@ -102,7 +102,7 @@ feature {NONE} -- Implementation
 			l_file := root_class_file
 			l_file.open_write
 			if l_file.is_open_write then
-				printer.print_root_class (test_case, manager.ise_target.root.class_name, l_file)
+				printer.print_root_class (test_case, manager.open_target.root.class_name, l_file)
 				l_file.close
 			end
 		end
@@ -127,8 +127,8 @@ feature {NONE} -- Implementation
 	reset_root_class_and_recompile is
 			-- Set current root to `old_root', store configuration and recompile project
 		do
-			manager.ise_target.set_root (old_root)
-			manager.ise_target.system.store
+			manager.open_target.set_root (old_root)
+			manager.open_target.system.store
 			melt_project_cmd.execute_and_wait
 		end
 

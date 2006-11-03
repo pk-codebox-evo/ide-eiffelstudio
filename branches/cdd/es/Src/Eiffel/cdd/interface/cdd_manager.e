@@ -111,9 +111,9 @@ feature -- Access
 		require
 			not_enabled_yet: not is_testing_enabled
 		do
-			Result := ise_project.initialized and
-				not ise_project.is_read_only and
-				not ise_target.system.date_has_changed
+			Result := open_project.initialized and
+				not open_project.is_read_only and
+				not open_target.system.date_has_changed
 		end
 
 	can_start_debugging: BOOLEAN is
@@ -147,18 +147,50 @@ feature -- Access
 				an_app_status.exception_code = {EXCEP_CONST}.precondition)
 		end
 
-	ise_project: E_PROJECT is
+	open_project: E_PROJECT is
 			-- Currently opened project
 		do
 			Result := eiffel_project
+		ensure
+			open_project_not_void: Result /= Void
 		end
 
-	ise_target: CONF_TARGET is
+	open_target: CONF_TARGET is
 			-- Currently opened target
 		require
-			project_initialized: ise_project.initialized
+			project_initialized: open_project.initialized
 		do
 			Result := eiffel_universe.target
+		ensure
+			open_target_not_void: Result /= Void
+		end
+
+	root_cluster: CONF_CLUSTER is
+			-- 	Cluster of root class of `open_target' if any (root class can also be in a library or similar, in which case this is `Void')
+		require
+			project_initialized: open_project.initialized
+		local
+			table: HASH_TABLE [CONF_GROUP, STRING]
+			group: CONF_GROUP
+			classes: LINKED_SET [CONF_CLASS]
+			found: BOOLEAN
+		do
+			from
+				table := open_target.groups
+				table.start
+			until
+				table.off or found
+			loop
+				group := table.item_for_iteration
+				classes := group.class_by_name (open_target.root.class_name, False)
+				if classes.count > 0 then
+						-- TODO: what happens if there are several classes?
+					Result ?= classes.first.group
+					found := True
+				else
+					table.forth
+				end
+			end
 		end
 
 feature -- Status setting
@@ -238,20 +270,40 @@ feature -- Status setting
 			l_dir: KL_DIRECTORY
 			l_loc: CONF_FILE_LOCATION
 			l_lib: CONF_LIBRARY
+			ed: EV_ERROR_DIALOG
+			rc: CONF_CLUSTER
+			rule: CONF_FILE_RULE
 		do
-			l_dirname := ise_project.name
-			l_dirname.extend ("cdd_tests")
-			create l_dir.make (l_dirname)
-			l_dir.create_directory
-			if l_dir.exists then
-				eb_cluster_manager.remove_observer (Current)
-				l_loc := conf_factory.new_location_from_full_path ("$ISE_LIBRARY\library\cdd\cdd.ecf", ise_target)
-				l_lib := conf_factory.new_library ("cdd", l_loc, ise_target)
-				ise_target.add_library (l_lib)
-				eb_cluster_manager.add_cluster (tests_cluster_name, Void, l_dir.name)
-				create test_suite.make_with_cluster (eb_cluster_manager.last_added_cluster)
-				eb_cluster_manager.add_observer (Current)
-				melt_project_cmd.execute
+			rc := root_cluster
+				-- TODO: Present dialog to user and allow to change location or test suite cluster
+			if rc = Void then
+				create ed.make_with_text ("Unable to enable cdd-testing, because root class is not in a cluster (but library or similar).")
+				ed.show_modal_to_window (Window_manager.last_focused_development_window.window)
+			else
+				create l_dirname.make_from_string (rc.location.evaluated_directory)
+				l_dirname.extend (tests_cluster_name)
+				create l_dir.make (l_dirname)
+				l_dir.create_directory
+				if l_dir.exists then
+					eb_cluster_manager.remove_observer (Current)
+					l_loc := conf_factory.new_location_from_full_path ("$ISE_LIBRARY\library\cdd\cdd.ecf", open_target)
+					l_lib := conf_factory.new_library ("cdd", l_loc, open_target)
+					open_target.add_library (l_lib)
+					if rc.is_recursive then
+						create rule.make
+						rule.add_exclude (tests_cluster_name)
+						rc.add_file_rule (rule)
+					end
+					create l_dirname.make_from_string (rc.location.original_directory)
+					l_dirname.extend (tests_cluster_name)
+					eb_cluster_manager.add_cluster (tests_cluster_name, rc, l_dirname)
+					create test_suite.make_with_cluster (eb_cluster_manager.last_added_cluster)
+					eb_cluster_manager.add_observer (Current)
+					melt_project_cmd.execute
+				else
+					create ed.make_with_text ("Unable to enable cdd-testing, because the test case directory '" + l_dirname +"' could not be created.")
+					ed.show_modal_to_window (Window_manager.last_focused_development_window.window)
+				end
 			end
 		end
 
@@ -386,7 +438,7 @@ feature {EB_CLUSTERS} -- Project Events
 				end
 				refresh_actions.call ([])
 				if is_testing_enabled and then test_suite.test_cases.count > 0 then
-					if ise_project.successful and can_start_executing then
+					if open_project.successful and can_start_executing then
 						start_executing
 					end
 				end
@@ -465,8 +517,8 @@ feature {NONE} -- Implementation
 								l_is_creation_call := True
 							end
 						end
-					elseif ise_target.root.class_name.is_equal (l_cse.dynamic_class.name) and
-							ise_target.root.feature_name.is_equal (l_feature.name) then
+					elseif open_target.root.class_name.is_equal (l_cse.dynamic_class.name) and
+							open_target.root.feature_name.is_equal (l_feature.name) then
 						-- Feature is root creation feature
 						l_is_creation_call := True
 					else
