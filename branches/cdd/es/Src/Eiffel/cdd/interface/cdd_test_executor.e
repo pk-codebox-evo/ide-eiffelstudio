@@ -96,8 +96,6 @@ feature {CDD_MANAGER} -- Basic operations
 			cursor := test_suite.test_cases.new_cursor
 			cursor.start
 			create_root_class
-			remove_tester_target
-			add_tester_target
 			manager.update_testing_status ("Compiling Testcases")
 			compiler.run (test_suite.tests_cluster.target.system.directory, manager.open_target.system.file_name, tester_target_name)
 			add_idle_action
@@ -109,7 +107,6 @@ feature {CDD_MANAGER} -- Basic operations
 			-- Stop all running processes and remove idle action.
 		do
 			remove_idle_action
-			remove_tester_target
 			if is_executing then
 				if test_suite_process.is_running then
 					test_suite_process.terminate
@@ -121,6 +118,43 @@ feature {CDD_MANAGER} -- Basic operations
 				compiler := Void
 			end
 			manager.update_state_actions.call (["Done"])
+		end
+
+
+	has_tester_target: BOOLEAN is
+			-- Is a cdd-tester target in current config present?
+		do
+			Result := manager.open_target.system.targets.has (tester_target_name)
+		end
+
+	add_tester_target is
+			-- Add target with name `tester_target_name' to system.
+		require
+			not_present: not has_tester_target
+		local
+			l_target: CONF_TARGET
+			l_new_root: CONF_ROOT
+		do
+			l_target := conf_factory.new_target (tester_target_name, manager.open_target.system)
+			manager.open_target.system.add_target (l_target)
+			l_target.set_parent (manager.open_target)
+			l_new_root := conf_factory.new_root (test_suite.tests_cluster.cluster_name, executor_root_class_name, root_class_feature_name, False)
+			l_target.set_root (l_new_root)
+			l_target.add_setting (l_target.s_console_application, "true")
+			manager.open_target.system.store
+		ensure
+			added: has_tester_target
+		end
+
+	remove_tester_target is
+			-- Remove target with name `tester_target_name' from system.
+		require
+			present: has_tester_target
+		do
+			manager.open_target.system.remove_target (tester_target_name)
+			manager.open_target.system.store
+		ensure
+			removed: not has_tester_target
 		end
 
 feature {NONE} -- Idle action
@@ -306,31 +340,6 @@ feature {NONE} -- Implementation
 				l_file.close
 			end
 		end
-
-	remove_tester_target is
-			-- Remove target with name `tester_target_name' from system.
-		do
-			if manager.open_target.system.targets.has (tester_target_name) then
-				manager.open_target.system.remove_target (tester_target_name)
-				manager.open_target.system.store
-			end
-		end
-
-	add_tester_target is
-			-- Add target with name `tester_target_name' to system.
-		local
-			l_target: CONF_TARGET
-			l_new_root: CONF_ROOT
-		do
-			l_target := conf_factory.new_target (tester_target_name, manager.open_target.system)
-			manager.open_target.system.add_target (l_target)
-			l_target.set_parent (manager.open_target)
-			l_new_root := conf_factory.new_root (test_suite.tests_cluster.cluster_name, executor_root_class_name, root_class_feature_name, False)
-			l_target.set_root (l_new_root)
-			l_target.add_setting (l_target.s_console_application, "true")
-			manager.open_target.system.store
-		end
-
 
 	output_handler (an_output: STRING) is
 			-- Append 'an_output' to output.

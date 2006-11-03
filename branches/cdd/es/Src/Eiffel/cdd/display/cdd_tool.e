@@ -110,6 +110,12 @@ feature {NONE} -- Initialization
 			run_button.select_actions.extend (agent on_run_button)
 			run_button.disable_sensitive
 
+			create examine_button
+			examine_button.set_tooltip ("Examinate test case")
+			examine_button.set_pixmap (pixmaps.mini_pixmaps.general_search_icon)
+			examine_button.select_actions.extend (agent on_examinate_button)
+			examine_button.disable_sensitive
+
 			create delete_button
 			delete_button.set_tooltip ("Remove test case")
 			delete_button.set_pixmap (pixmaps.mini_pixmaps.general_delete_icon)
@@ -117,22 +123,17 @@ feature {NONE} -- Initialization
 			delete_button.drop_actions.extend (agent on_drop_class)
 			delete_button.enable_sensitive
 
-			create enable_testing_button
-			enable_testing_button.set_tooltip ("Enable Testing")
-			enable_testing_button.set_pixmap (pixmaps.mini_pixmaps.general_toogle_icon)
-			enable_testing_button.select_actions.extend (agent on_enable_testing_button)
-			enable_testing_button.disable_sensitive
+			create toggle_testing_button
+			toggle_testing_button.set_pixmap (pixmaps.mini_pixmaps.general_toogle_icon)
+			toggle_testing_button.select_actions.extend (agent on_toggle_testing_button)
+			toggle_testing_button.enable_sensitive
 
-			create examine_button
-			examine_button.set_tooltip ("Examinate test case")
-			examine_button.set_pixmap (pixmaps.mini_pixmaps.general_search_icon)
-			examine_button.select_actions.extend (agent on_examinate_button)
-			examine_button.disable_sensitive
 
 			mini_tool_bar.extend (run_button)
-			mini_tool_bar.extend (examine_button)
+-- TODO: reenable when ready
+--			mini_tool_bar.extend (examine_button)
 			mini_tool_bar.extend (delete_button)
-			mini_tool_bar.extend (enable_testing_button)
+			mini_tool_bar.extend (toggle_testing_button)
 		end
 
 	build_explorer_bar_item (an_explorer_bar: EB_EXPLORER_BAR) is
@@ -177,14 +178,21 @@ feature -- Status setting
 		do
 			window.lock_update
 			if manager.is_testing_enabled then
-				enable_testing_button.disable_sensitive
+				toggle_testing_button.select_actions.block
+				toggle_testing_button.enable_select
+				toggle_testing_button.set_tooltip ("Disable cdd-testing")
+				toggle_testing_button.select_actions.resume
 				notebook.enable_sensitive
 				grid.enable_sensitive
 				refresh_grid
 			else
-				enable_testing_button.enable_sensitive
+				toggle_testing_button.select_actions.block
+				toggle_testing_button.disable_select
+				toggle_testing_button.set_tooltip ("Enable cdd-testing")
+				toggle_testing_button.select_actions.resume
 				notebook.disable_sensitive
 				grid.disable_sensitive
+				grid.remove_and_clear_all_rows
 			end
 			window.unlock_update
 		end
@@ -243,18 +251,29 @@ feature {CDD_GRID_TEST_CASE_LINE} -- Selection
 
 feature {NONE} -- Button events
 
-	on_enable_testing_button is
-			-- Actions performed when enable testing button is pressed.
-		require
-			testing_not_enabled: not manager.is_testing_enabled
+	on_toggle_testing_button is
+			-- Actions performed when toggle testing button is pressed.
 		local
 			l_wd: EV_WARNING_DIALOG
 		do
-			if manager.can_enable_testing then -- Can initialize
-				manager.enable_testing
+			if manager.is_testing_enabled then
+				-- Disable
+				if manager.is_running then
+					toggle_testing_button.enable_select
+					create l_wd.make_with_text ("Cannot disable cdd-testing at the moment because some cdd activity is currently ongoing. Please try again later.")
+					l_wd.show_modal_to_window (window.window)
+				else
+					manager.disable_testing
+				end
 			else
-				create l_wd.make_with_text ("Can not add cdd_testing cluster because compiled configuration is not up to date, please recompile.")
-				l_wd.show_modal_to_window (window.window)
+				-- Enable
+				if manager.can_enable_testing then
+					manager.enable_testing
+				else
+					toggle_testing_button.disable_select
+					create l_wd.make_with_text ("Can not add cdd_testing cluster because compiled configuration is not up to date, please recompile.")
+					l_wd.show_modal_to_window (window.window)
+				end
 			end
 		end
 
@@ -342,8 +361,8 @@ feature {NONE} -- Implementation
 	mini_tool_bar: EV_TOOL_BAR
 			-- Toolbar
 
-	enable_testing_button: EV_TOOL_BAR_BUTTON
-			-- Button for enabling testing
+	toggle_testing_button: EV_TOOL_BAR_TOGGLE_BUTTON
+			-- Button for enabling/disabling testing
 
 	run_button: EV_TOOL_BAR_BUTTON
 			-- Button for debugging test case
@@ -408,7 +427,7 @@ invariant
 	widget_not_void: widget /= Void
 	valid_grid: grid /= Void
 	valid_mini_tool_bar: mini_tool_bar /= Void
-	enable_testing_button_valid: enable_testing_button /= Void
+	enable_testing_button_valid: toggle_testing_button /= Void
 	run_button_valid: run_button /= Void
 	delete_button_valid: delete_button /= Void
 	status_bar_valid: status_bar /= Void

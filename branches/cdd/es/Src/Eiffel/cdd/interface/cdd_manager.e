@@ -38,6 +38,11 @@ inherit
 			{NONE} all
 		end
 
+	EB_CONSTANTS
+		export
+			{NONE} all
+		end
+
 	CONF_ACCESS
 		export
 			{NONE} all
@@ -85,7 +90,7 @@ feature -- Access
 	is_running: BOOLEAN is
 			-- Are we currently running or preparing any test cases?
 		do
-			Result := is_debugging or is_executing
+			Result := is_debugging or is_executing or is_examinating
 		end
 
 	is_debugging: BOOLEAN is
@@ -298,12 +303,37 @@ feature -- Status setting
 					l_dirname.extend (tests_cluster_name)
 					eb_cluster_manager.add_cluster (tests_cluster_name, rc, l_dirname)
 					create test_suite.make_with_cluster (eb_cluster_manager.last_added_cluster)
+					if not test_executor.has_tester_target then
+						test_executor.add_tester_target
+					end
 					eb_cluster_manager.add_observer (Current)
 					melt_project_cmd.execute
 				else
 					create ed.make_with_text ("Unable to enable cdd-testing, because the test case directory '" + l_dirname +"' could not be created.")
 					ed.show_modal_to_window (Window_manager.last_focused_development_window.window)
 				end
+			end
+		end
+
+	disable_testing is
+			-- Disable testing
+		require
+			testing_enabled: is_testing_enabled
+			not_running: not is_running
+		local
+			wd: EV_WARNING_DIALOG
+		do
+			if test_suite.tests_cluster.target.system.date_has_changed then
+				create wd.make_with_text (Warning_messages.w_cannot_delete_need_recompile)
+				wd.show_modal_to_window (Window_manager.last_focused_development_window.window)
+			else
+				if test_executor.has_tester_target then
+					test_executor.remove_tester_target
+				end
+				test_suite.target_under_test.remove_cluster (tests_cluster_name)
+				open_target.system.store
+				Discover_melt_cmd.execute
+				test_suite := Void
 			end
 		end
 
@@ -436,11 +466,11 @@ feature {EB_CLUSTERS} -- Project Events
 				else
 					test_suite := Void
 				end
-				refresh_actions.call ([])
-				if is_testing_enabled and then test_suite.test_cases.count > 0 then
-					if open_project.successful and can_start_executing then
-						start_executing
-					end
+			end
+			refresh_actions.call ([])
+			if is_testing_enabled and then test_suite.test_cases.count > 0 then
+				if open_project.successful and can_start_executing then
+					start_executing
 				end
 			end
 		end
