@@ -7,9 +7,7 @@
 		</option>
 		<precompile name="vision2_pre" location="$ISE_PRECOMP\vision2.ecf"/>
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
-		<library name="cdd" location="$ISE_LIBRARY\library\cdd\cdd.ecf"/>
 		<library name="vision2" location="$ISE_LIBRARY\library\vision2\vision2.ecf"/>
-		<cluster name="cdd_tests" location=".\cdd_tests\"/>
 		<cluster name="root_cluster" location=".\">
 			<file_rule>
 				<exclude>EIFGENs</exclude>

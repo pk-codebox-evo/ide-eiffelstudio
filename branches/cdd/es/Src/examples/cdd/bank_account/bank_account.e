@@ -37,7 +37,7 @@ feature -- Basic operations
 		do
 		ensure
 			balance_decreased: balance < old balance
-			withdrawn: balance = old balance + an_amount
+			withdrawn: balance = old balance - an_amount
 		end
 
 invariant

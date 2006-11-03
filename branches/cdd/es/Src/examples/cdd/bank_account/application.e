@@ -16,7 +16,7 @@ create
 feature {NONE} -- Initialization
 
 	make_and_launch is
-			-- Initialize and launch application
+			-- Initialize and launch application.
 		do
 			default_create
 			prepare
