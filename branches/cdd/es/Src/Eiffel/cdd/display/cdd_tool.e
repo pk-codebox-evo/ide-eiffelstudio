@@ -130,8 +130,7 @@ feature {NONE} -- Initialization
 
 
 			mini_tool_bar.extend (run_button)
--- TODO: reenable when ready
---			mini_tool_bar.extend (examine_button)
+			mini_tool_bar.extend (examine_button)
 			mini_tool_bar.extend (delete_button)
 			mini_tool_bar.extend (toggle_testing_button)
 		end

@@ -46,30 +46,6 @@ feature -- Access
 	debugger_manager: EB_DEBUGGER_MANAGER
 			-- Debugger manager for running the application
 
-	has_appropriate_reflection (a_cse: EIFFEL_CALL_STACK_ELEMENT): BOOLEAN is
-			--
-		require
-			a_cse_not_void: a_cse /= Void
-		local
-			l_app_status: APPLICATION_STATUS
-		do
-			if reflection_stack.count > 0 then
-				if a_cse.dynamic_class.original_class = test_case.class_under_test and
-					a_cse.routine = test_case.feature_under_test then
-						Result := True
-				end
-			end
-		end
-
-	reflection (a_cse: EIFFEL_CALL_STACK_ELEMENT): CDD_REFLECTION is
-			--
-		require
-			a_cse_not_void: a_cse /= Void
-			has_reflection: has_appropriate_reflection (a_cse)
-		do
-			Result := reflection_stack.item
-		end
-
 	valid_application_status: BOOLEAN is
 			-- Does application in `debugger_manager' have a valid status for break point checking?
 		local
@@ -77,6 +53,28 @@ feature -- Access
 		do
 			l_app := debugger_manager.application
 			Result := l_app.is_running and then (l_app.status.is_stopped and l_app.status.reason = l_app.status.pg_break)
+		end
+
+	has_reflection (a_feature: E_FEATURE): BOOLEAN is
+			-- Do we have a reflection for `a_feature'?
+		require
+			running: is_running
+			a_feature_not_void: a_feature /= Void
+		do
+			if not reflection_stack.is_empty then
+				Result := test_case.feature_under_test.is_equal (a_feature)
+			end
+		end
+
+	current_reflection: CDD_REFLECTION is
+			-- Current pre state of top most `feature_under_test' in `test_case'
+			-- Void of `feature_under_test' was not called yet
+		require
+			is_running
+		do
+			Result := reflection_stack.item
+		ensure
+			correct_result: Result = Void or else Result.called_feature.is_equal (test_case.feature_under_test)
 		end
 
 feature -- Status setting
@@ -93,7 +91,11 @@ feature -- Status setting
 			l_dbg_info := debugger_manager.application.debug_info
 			l_dbg_info.disable_all_breakpoints
 			l_feature := a_test_case.feature_under_test
-			l_dbg_info.enable_breakpoint (l_feature, l_feature.first_breakpoint_slot_index)
+
+				-- NOTE: `first_breakpoint_slot_index' returnes wrong value for empty features
+			l_dbg_info.enable_breakpoint (l_feature, 1)
+			--l_dbg_info.enable_breakpoint (l_feature, l_feature.first_breakpoint_slot_index)
+
 			l_dbg_info.enable_breakpoint (l_feature, l_feature.number_of_breakpoint_slots)
 			is_running := True
 			test_case := a_test_case

@@ -103,7 +103,7 @@ feature {CDD_MANAGER} -- Element change
 			valid_reflection: a_reflection /= Void and then a_reflection.reflection_succeded
 			a_cluster_not_void: a_cluster /= Void
 		local
-			l_file_name,l_class_name: STRING
+			l_file_name,l_class_name, l_path: STRING
 			l_cud: EIFFEL_CLASS_I
 			l_test_class: CLASS_I
 			l_tc: CDD_TEST_CASE
@@ -112,7 +112,8 @@ feature {CDD_MANAGER} -- Element change
 			l_file_name := new_file_name (a_reflection.root_object.dynamic_type, a_cluster)
 			l_class_name := l_file_name.as_upper
 			l_class_name.remove_tail (2)
-			create_test_class (l_file_name, l_class_name, a_reflection, a_cluster)
+			l_path := a_cluster.location.build_path ("", l_file_name)
+			write_reflection_to_file (a_reflection, l_class_name, l_path)
 			if was_last_create_successful then
 				manager.add_class_to_cluster (l_file_name, a_cluster, "")
 				l_test_class := manager.last_added_class
@@ -122,6 +123,27 @@ feature {CDD_MANAGER} -- Element change
 			end
 		ensure
 			created: last_created_test_case /= Void
+		end
+
+	write_reflection_to_file (a_reflection: CDD_REFLECTION; a_class_name: STRING; a_file_path: STRING) is
+			-- Write class text for `a_class_name' in file `a_file_name' using values from `a_reflection'.
+		require
+			valid_reflection: a_reflection /= Void and a_reflection.reflection_succeded
+			valid_class_name: a_class_name /= Void and then not a_class_name.is_empty
+			valid_file_path: a_file_path /= Void and then not a_file_path.is_empty
+		local
+			l_file: KL_TEXT_OUTPUT_FILE
+		do
+			create l_file.make (a_file_path)
+			l_file.open_write
+			was_last_create_successful := False
+			if l_file.is_open_write then
+				was_last_create_successful := True
+				printer.print_test_case (a_reflection, a_class_name, l_file)
+				if not l_file.is_closed  then
+					l_file.close
+				end
+			end
 		end
 
 	remove (a_tc: CDD_TEST_CASE) is

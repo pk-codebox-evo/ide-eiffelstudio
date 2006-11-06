@@ -213,7 +213,7 @@ feature -- Status setting
 			l_create: BOOLEAN
 			l_name, l_dname: STRING
 		do
-			if is_testing_enabled and valid_status (an_app_status) and not is_examinating then
+			if is_testing_enabled and valid_status (an_app_status) then
 				if is_debugging then
 					l_name := test_debugger.test_case.tester_class.name
 					l_dname := an_app_status.dynamic_class.name
@@ -236,18 +236,24 @@ feature -- Status setting
 					l_create := True
 				end
 				if l_create then
-					l_reflection := make_reflection (an_app_status)
-					if l_reflection /= Void and then l_reflection.reflection_succeded then
-						test_case_factory.create_with_reflection (l_reflection, test_suite.tests_cluster)
-						if test_case_factory.last_created_test_case /= Void then
-							l_tc := test_case_factory.last_created_test_case
-							l_tc.set_unverified
-							test_suite.add_test_case (l_tc)
-							refresh_actions.call ([l_tc])
-							if can_start_executing then
-								start_executing
+					if is_examinating and then test_examinator.has_reflection (an_app_status.e_feature) then
+						l_reflection := test_examinator.current_reflection
+						l_tc := test_examinator.test_case
+						test_case_factory.write_reflection_to_file (l_reflection, l_tc.tester_class.name, l_tc.tester_class.path)
+					else
+						l_reflection := make_reflection (an_app_status)
+						if l_reflection /= Void and then l_reflection.reflection_succeded then
+							test_case_factory.create_with_reflection (l_reflection, test_suite.tests_cluster)
+							if test_case_factory.last_created_test_case /= Void then
+								l_tc := test_case_factory.last_created_test_case
+								l_tc.set_unverified
+								test_suite.add_test_case (l_tc)
+								refresh_actions.call ([l_tc])
 							end
 						end
+					end
+					if can_start_executing then
+						start_executing
 					end
 				end
 			elseif is_examinating and then test_examinator.valid_application_status then
