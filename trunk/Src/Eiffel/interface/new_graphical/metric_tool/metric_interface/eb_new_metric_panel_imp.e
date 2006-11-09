@@ -37,6 +37,7 @@ feature {NONE}-- Initialization
 			create l_ev_tool_bar_separator_2
 			create open_metric_file_btn
 			create reload_btn
+			create import_btn
 			create main_area
 			create metric_selector_panel
 			create select_metric_lbl
@@ -62,6 +63,7 @@ feature {NONE}-- Initialization
 			metric_definition_toolbar.extend (l_ev_tool_bar_separator_2)
 			metric_definition_toolbar.extend (open_metric_file_btn)
 			metric_definition_toolbar.extend (reload_btn)
+			metric_definition_toolbar.extend (import_btn)
 			extend (main_area)
 			main_area.extend (metric_selector_panel)
 			metric_selector_panel.extend (select_metric_lbl)
@@ -126,7 +128,7 @@ feature -- Access
 
 	new_metric_toolbar, metric_definition_toolbar: EV_TOOL_BAR
 	new_metric_btn, send_current_to_new_btn,
-	remove_metric_btn, save_metric_btn, open_metric_file_btn, reload_btn: EV_TOOL_BAR_BUTTON
+	remove_metric_btn, save_metric_btn, open_metric_file_btn, reload_btn, import_btn: EV_TOOL_BAR_BUTTON
 	main_area: EV_HORIZONTAL_SPLIT_AREA
 	toolbar_area,
 	metric_definition_area: EV_HORIZONTAL_BOX
