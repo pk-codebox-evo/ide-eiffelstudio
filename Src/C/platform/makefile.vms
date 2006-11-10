@@ -1,6 +1,6 @@
 ########################################################################
 # Makefile generated from Makefile.SH on Fri Nov 18 08:54:49 PST 1994
-#   .../C/plat/makefile.vms
+#   .../C/plat/makefile
 
 SHELL = /bin/sh
 JMAKE = jmake
@@ -51,51 +51,60 @@ all :: .FORCE_DEPEND
 ########################################################################
 # Start of Jmakefile
 
+# define vms specific symbols for compiling, etc.
+include $(TOP)makeinc.vms
+# to compile for debugging, say	    make <target> "DEBUG_CFLAGS=/debug/noopt"
+# to compile for distribution, say  make <target> "DEBUG_CFLAGS="
+#                              or   make <target> "DEBUG_CFLAGS=/opt"
+
 LIBRUN = ../run-time
 
 #DPFLAGS = /prefix=all/incl=([-],[-.run-time])
-CINCLUDES = [C.run-time],[C.run-time.include]
+CINCLUDES = /incl=($(DECC_INCLUDES),[-.run-time],[-.run-time.include])
 # Presumably, these modules are used only by es3
 DPFLAGS = $(CINCLUDES)$(CDEFINES)
-#CFLAGS = $(DECC_FLAGS)$(DPFLAGS)
+CFLAGS = $(DECC_FLAGS)$(DPFLAGS)
 
-# define vms specific symbols for compiling, etc.
-include EIFFEL_SRC:[C]makeinc.vms
+LSRC = names.c sizes.c commands.c
 
+#LOBJ = \
+#	names.obj \
+#	sizes.obj \
+#	commands.obj
 
-LSRC = names.c commands.c
 LOBJ = $(patsubst %.c,%.obj,$(LSRC))
-DEPEND = $(LOCAL_MAKEFILE) # [C]makeinc.vms
-
-$(LOBJ) : $(EXTRA_DEPENDENCIES)		# make objects depend on this makefile 
+#LOBJ_CS = $(patsubst %.c,%.obj_cs,$(LSRC))
+DEPEND = makefile
+$(LOBJ) : $(DEPEND)		# make objects depend on this makefile 
+#$(LOBJ_CS) : $(DEPEND)		# make objects depend on this makefile 
 
 
 THISLIB = platform.olb
-LIBS = $(THISLIB)
+LIBS = $(THISLIB) # $(THISLIB)_cs
 
 all :: $(LIBS)
 complete : FORCE all
 FORCE:
 
-objects : $(LOBJ)
-
-LISTINGS = $(patsubst %.obj,%.lis,$(LOBJ)) 
-$(LISTINGS) : $(DEPEND) [C]eif_config.h [C]eif_portable.h [C]eif_confmagic.h
-listings : $(LISTINGS) $(DEPEND)
+LISTINGS = $(patsubst %.obj,%.lis,$(LOBJ)) $(patsubst %.obj,%.lis,$(LOBJ_CS))
+listings : $(DEPEND) $(LISTINGS)
+#listings : $(patsubst %.obj,%.lis,$(LOBJ)) $(patsubst %.obj,%.lis,$(LOBJ_CS))
 	@write sys$$output "listings = $(LISTINGS)"
-
 
 local_realclean::
 #	$(RM) libplatform.a
 	$(RM) platform.olb;*
 
-
-$(THISLIB) : $(LOBJ)
+#COMMA = ,
+$(THISLIB) :: $(LOBJ) $(DEPEND)
+$(THISLIB) :: $(LOBJ)
 #	libr/create $@ $(LOBJ)
+#	libr/create $@ $(patsubst %.obj,%.obj$(COMMA),$(LOBJ)) nl:
 	libr/create $@ $^
-	@purge/nolog *.*obj*
-	@-if f$$search("*.dia") .nes. "" then purge/nolog *.dia
 
+#$(THISLIB)_cs :: $(LOBJ) $(DEPEND)
+#$(THISLIB)_cs :: $(LOBJ)
+#	libr/create $@ $^
 
 depend:: ../mkdep
 

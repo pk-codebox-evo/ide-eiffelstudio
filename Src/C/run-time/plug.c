@@ -77,7 +77,6 @@ doc:		<synchronization>Per thread data.</synchronization>
 doc:	</attribute>
 */
 rt_public int nstcall = 0;
-rt_public int16 caller_assertion_level = 0;
 #endif /* EIF_THREADS */
 
 rt_private void recursive_chkinv(int dtype, EIF_REFERENCE obj, int where);		/* Internal invariant control loop */
@@ -448,6 +447,7 @@ rt_public void chkinv (EIF_REFERENCE obj, int where)
 	recursive_chkinv(MTC dtype, obj, where);	/* Recurive invariant check */
 }
 
+#ifdef WORKBENCH
 rt_public void chkcinv(EIF_REFERENCE obj)
 {
 	/* Check invariant of `obj' after creation. */
@@ -455,6 +455,7 @@ rt_public void chkcinv(EIF_REFERENCE obj)
 	if (~in_assertion & (WASC(Dtype(obj))) & CK_INVARIANT) {
 		chkinv(MTC obj,1);}
 }
+#endif
 
 rt_private void recursive_chkinv(int dtype, EIF_REFERENCE obj, int where)
 		  

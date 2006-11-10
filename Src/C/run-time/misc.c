@@ -108,24 +108,20 @@ rt_public EIF_INTEGER eif_system (char *s)
 {
 	EIF_INTEGER result;
 
-#ifdef EIF_VMS_V6_ONLY	/* if s contains any VMS filespec delimiters, prepend 'RUN ' command */
+#ifdef EIF_VMS	/* if s contains any VMS filespec delimiters, prepend 'RUN ' command */
 	{ /* if it contains a '[' before a space (ie. no verb), prepend "run " */
 		/* ***VMS FIXME*** revisit this for long filenames - may contain space in filename */
 		char *p = strchr (s, '[');
 		if ( (p) && p < strchr (s, ' ') ) {
 			char * run_cmd = eif_malloc (10 + strlen(s));
 			if ( (run_cmd) ) {
-				strcat (strcpy (run_cmd, "run "), s);
-				result = (EIF_INTEGER) system (run_cmd);
-				eif_free (run_cmd);
-			}
-			else result = -1;
+			strcat (strcpy (run_cmd, "run "), s);
+			result = (EIF_INTEGER) system (run_cmd);
+			eif_free (run_cmd);
+			} else result = -1;
 		}
 		else result = (EIF_INTEGER) system (s);
 	}
-
-#elif defined EIF_VMS
-	result = eifrt_vms_spawn (s, EIFRT_VMS_SPAWN_FLAG_TRANSLATE);	    /* synchronous spawn */
 
 #else /* (not) EIF_VMS */
 	result = (EIF_INTEGER) system (s);
@@ -186,7 +182,7 @@ rt_public void eif_system_asynchronous (char *cmd)
 	chdir(current_dir);
 	free(current_dir);
 
-#else /* (not) EIF_WINDOWS */
+#else
 
 #if !defined(EIF_VMS) && !defined(VXWORKS)	/* VMS needs a higher level abstraction for async system() */
 	switch (fork()) {
@@ -197,7 +193,7 @@ rt_public void eif_system_asynchronous (char *cmd)
 	default:
 		return;				/* Parent returns immediately */
 	}
-#endif /* not VMS/VXWORKS (skips fork/parent code if VMS/VXWORKS) */
+#endif /* not VMS (skip fork/parent code if VMS) */
 
 /* child (except on VMS, where this code runs in the parent) */
 	meltpath = (char *) malloc (strlen(cmd) + 1);
@@ -215,9 +211,9 @@ rt_public void eif_system_asynchronous (char *cmd)
 	{
 	    size_t siz = eifrt_vms_dirname_len (meltpath);
 	    if (siz)
-			meltpath[siz] = '\0';
+		meltpath[siz] = '\0';
 	    else
-			strcpy (meltpath, "[]");
+		strcpy (meltpath, "[]");
 	}
 #else
 	appname = rindex (meltpath, '/');
@@ -233,11 +229,13 @@ rt_public void eif_system_asynchronous (char *cmd)
 	sprintf (envstring, "MELT_PATH=%s", meltpath);
 	putenv (envstring);
 
+#ifndef EIF_VMS
+	status = system(cmd);				/* Run command via /bin/sh */
+#else	/* VMS */
+	status = eifrt_vms_spawn(cmd, 1);
+#endif	/* EIF_VMS */
+
 #ifdef EIF_VMS
-	status = eifrt_vms_spawn (cmd, EIFRT_VMS_SPAWN_FLAG_ASYNC);
-	//??? putenv ("MELT_PATH=");
-	//??? free (meltpath); meltpath = NULL;
-	//??? free (envstring); envstring = NULL;
 	if (status) {	/* command failed */
 		const char *pgmname = eifrt_vms_get_progname (NULL,0);
 		fprintf (stderr, "%s: %s: \n-- error from system() call: %d\n"
@@ -245,9 +243,7 @@ rt_public void eif_system_asynchronous (char *cmd)
 			pgmname, __FILE__, errno, cmd, strerror(errno));
 	}
 	return;		/* skip send ack packet, Fred says not done anymore */
-
-#else	/* (not) VMS */
-	status = system(cmd);				/* Run command via /bin/sh */
+#else /* not VMS */
 
 #ifdef VXWORKS
 	exit(0);
@@ -260,12 +256,73 @@ rt_public void eif_system_asynchronous (char *cmd)
 
 }
 
-/* Obsolete but kept for backward compatibility. To remove in 6.x where x > 1 */
-/* **VMS** Required for Eiffel compiler to run on VMS -- davids. */
 rt_public char * eif_getenv (char * k)
 {
-#if defined EIF_VMS
-	return eifrt_vms_getenv (k);
+#ifdef EIF_WINDOWS
+	char *result = getenv (k);
+
+	if (result)
+		return result;
+	else {
+		char *key, *lower_k; /* %%ss removed *value */
+		size_t appl_len, key_len;
+		HKEY hkey;
+		DWORD bsize = 1024;
+		static unsigned char buf[1024];
+	
+		appl_len = strlen (egc_system_name);
+		key_len = strlen (k);
+		if ((key = (char *) eif_calloc (appl_len + 46 +key_len, 1)) == NULL)
+			return result;
+	
+		if ((lower_k = (char *) eif_calloc (key_len+1, 1)) == NULL) {
+			eif_free (key);
+			return result;
+		}
+	
+		strcpy (lower_k, k);
+		CHECK("Not too big", key_len <= 0xFFFFFFFF);
+		CharLowerBuff (lower_k, (DWORD) key_len);
+	
+		strcpy (key, "Software\\ISE\\Eiffel57\\");
+		strncat (key, egc_system_name, appl_len);
+	
+		if (RegOpenKeyEx (HKEY_CURRENT_USER, key, 0, KEY_READ, &hkey) != ERROR_SUCCESS) {
+			if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, key, 0, KEY_READ, &hkey) != ERROR_SUCCESS) {
+				eif_free (key);
+				eif_free (lower_k);
+				return result;
+			}
+			if (RegQueryValueEx (hkey, lower_k, NULL, NULL, buf, &bsize) != ERROR_SUCCESS) {
+				eif_free (key);
+				eif_free (lower_k);
+				RegCloseKey (hkey);
+				return result;
+			}
+		} else {
+			if (RegQueryValueEx (hkey, lower_k, NULL, NULL, buf, &bsize) != ERROR_SUCCESS) {
+					/* Could not read from HKCU entry, so let's close it before opening
+					 * the one possibly in HKLM */
+				RegCloseKey(hkey);
+				if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, key, 0, KEY_READ, &hkey) != ERROR_SUCCESS) {
+					eif_free (key);
+					eif_free (lower_k);
+					return result;
+				}
+				if (RegQueryValueEx (hkey, lower_k, NULL, NULL, buf, &bsize) != ERROR_SUCCESS) {
+					eif_free (key);
+					eif_free (lower_k);
+					RegCloseKey (hkey);
+					return result;
+				}
+			}
+		}
+
+		eif_free (key);
+		eif_free (lower_k);
+		RegCloseKey (hkey);
+		return (char *) buf;
+	}
 #else
 	return (char *) getenv (k);
 #endif

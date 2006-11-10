@@ -227,7 +227,7 @@ rt_private void icheck_inv(EIF_REFERENCE obj, struct stochunk *scur, struct item
 rt_private void irecursive_chkinv(int dtype, EIF_REFERENCE obj, struct stochunk *scur, struct item *stop, int where);		/* Recursive invariant check */
 
 /* Getting constants */
-rt_shared short get_compound_id(EIF_REFERENCE obj, short dtype);			/* Get a compound type id */
+rt_private short get_compound_id(EIF_REFERENCE obj, short dtype);			/* Get a compound type id */
 rt_private int get_creation_type(void);		/* Get a creation type id */
 
 /* Interpreter interface */
@@ -497,7 +497,6 @@ rt_private void interpret(int flag, int where)
 	unsigned char * volatile string;		/* Strings for assertions tag */
 	int volatile type;						/* Often used to hold type values */
 	int volatile saved_assertion;
-	int16 volatile saved_caller_assertion_level = caller_assertion_level;	/* Saves the assertion level of the caller*/
 	unsigned char * volatile rescue;		/* Location of rescue clause */
 	jmp_buf exenv;							/* In case we have to setjmp() */
 	RTEX;									/* Routine's execution vector and debugger
@@ -567,14 +566,13 @@ rt_private void interpret(int flag, int where)
 		argnum = get_int16(&IC);			/* Get the argument number */
 		locnum = get_int16(&IC);		/* Get the local number */
 		init_registers(MTC);		/* Initialize the registers */
-		caller_assertion_level = WASC(icur_dtype) & CK_SUP_REQUIRE;	/* Set the caller assertion level */
 
 		/* Expanded clone of arguments (if any) */
 		while (*IC++ != BC_NO_CLONE_ARG) {
 			EIF_REFERENCE ref;
 
 			code = get_int16(&IC);		/* Get the argument number to clone */
-			last =  arg(code);
+			last = arg(code);
 			ref = last->it_ref;
 			if (ref == NULL)
 				xraise(EN_VEXP);	/* Void assigned to expanded */
@@ -741,7 +739,7 @@ rt_private void interpret(int flag, int where)
 #endif
 		offset = get_int32(&IC);
 		pre_success = '\01';
-		if (!(~in_assertion & WASC(icur_dtype) & CK_REQUIRE | saved_caller_assertion_level)) {
+		if (!(~in_assertion & WASC(icur_dtype) & CK_REQUIRE)) {
 				/* No precondition check? */
 			IC += offset; /* Skip preconditions */
 			goto enter_body; /* Start execution of a routine body. */
@@ -3214,7 +3212,6 @@ rt_private void interpret(int flag, int where)
 #ifdef DEBUG
 		dprintf(2)("BC_NULL\n");
 #endif
-		caller_assertion_level = saved_caller_assertion_level;
 		if (is_nested)		/* Nested feature call (dot notation) */
 			icheck_inv(MTC icurrent->it_ref, scur, stop, 1);	/* Invariant */
 		pop_registers();	/* Pop registers */
@@ -3249,7 +3246,6 @@ rt_private void interpret(int flag, int where)
 #ifdef DEBUG
 		dprintf(2)("BC_INV_NULL\n");
 #endif
-		caller_assertion_level = saved_caller_assertion_level;
 		pop_registers();	/* Pop registers */
 		return;
 
@@ -4758,7 +4754,7 @@ rt_private void address(int32 aid)
 	last->it_ptr = (EIF_POINTER) RTWPP(aid);
 }
 
-rt_shared short get_compound_id(EIF_REFERENCE Current, short dtype)
+rt_private short get_compound_id(EIF_REFERENCE Current, short dtype)
 {
 	/* Get array of short ints and convert it to a compound id. */
 	RT_GET_CONTEXT
@@ -4783,7 +4779,7 @@ rt_shared short get_compound_id(EIF_REFERENCE Current, short dtype)
 						*(gp - 1) = RTID(RTCA(arg(pos)->it_ref, -10));
 						break;
 			case LIKE_CURRENT_TYPE: /* like Current */
-						*(gp - 1) = RTID(Dftype(Current));
+						*(gp - 1) = RTID((icur_dftype));
 						break;
 			case LIKE_PFEATURE_TYPE: /* like feature - see BC_PCLIKE */
 						{
@@ -4793,7 +4789,7 @@ rt_shared short get_compound_id(EIF_REFERENCE Current, short dtype)
 							stype = get_int16(&IC);			/* Get static type of caller */
 							origin = get_int32(&IC);			/* Get the origin class id */
 							ooffset = get_int32(&IC);			/* Get the offset in origin */
-							*(gp - 1) = RTID(RTWPCT(stype, origin, ooffset, Current));
+							*(gp - 1) = RTID(RTWPCT(stype, origin, ooffset, icurrent->it_ref));
 						}
 						break;
 			case LIKE_FEATURE_TYPE: /* like feature - see BC_CLIKE */
@@ -4803,7 +4799,7 @@ rt_shared short get_compound_id(EIF_REFERENCE Current, short dtype)
 
 							code = get_int16(&IC);		/* Get the static type first */
 							offset = get_int32(&IC);	/* Get the feature id of the anchor */
-							*(gp - 1) = RTID(RTWCT(code, offset, Current));
+							*(gp - 1) = RTID(RTWCT(code, offset, icurrent->it_ref));
 						}
 						break;
 			default:

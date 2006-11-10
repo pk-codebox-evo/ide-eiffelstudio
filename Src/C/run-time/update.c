@@ -51,7 +51,6 @@ doc:<file name="update.c" header="rt_update.h" version="$Id$" summary="Update ru
 #include "eif_except.h"
 #include "rt_update.h"
 #include "rt_interp.h"
-#include "rt_bc_reader.h"
 #include "eif_cecil.h"
 #include "eif_misc.h"
 #include "eif_file.h"
@@ -61,6 +60,7 @@ doc:<file name="update.c" header="rt_update.h" version="$Id$" summary="Update ru
 #include "rt_error.h"					/* for error_tag() */
 #include "rt_malloc.h"
 #include "rt_garcol.h"
+#include "eif_path_name.h"				/* for eifrt_vms_has_path_terminator */
 
 #ifdef DEBUG
 #include "rt_interp.h"					/* For idump() */
@@ -137,7 +137,7 @@ rt_public void update(char ignore_updt, char *argv0)
 #define MELTED_FILE_NEXISTS 0
 	melted_exists = MELTED_FILE_NEXISTS;
 
-	meltpath = getenv ("MELT_PATH");
+	meltpath = eif_getenv ("MELT_PATH");
 
 		/* We add 10 to the length of `filename' which corresponds to the size of
 		 * ".melted" (7) plus an extra 3 characters needed for the different platform
@@ -158,26 +158,31 @@ rt_public void update(char ignore_updt, char *argv0)
 		exit (1);
 	}
 
+#ifdef EIF_VMS
 	if (meltpath) {
-#ifdef EIF_VMS
+		if (!strcasecmp (meltpath, "MELT_PATH")) {
 			strcpy (filename, "MELT_PATH:");
-#else
+		} else {
 			strcpy (filename, meltpath);
-#endif
+		}
 	} else {
-#ifdef EIF_VMS
 		strcpy (filename, "[]");
-#else
-		strcpy (filename, ".");
-#endif
 	}
+#else
+	if (meltpath) {
+		strcpy (filename, meltpath);
+	} else {
+		strcpy (filename, ".");
+	}
+#endif /* EIF_VMS */
+
 
 #ifdef EIF_WINDOWS
 	strcat(filename, "\\");
-#elif defined EIF_VMS	/* append path separator only if necessary */
-	if (!eifrt_vms_has_path_terminator (filename))
-		strcat(filename, "/");
 #else
+#ifdef EIF_VMS	/* append path separator only if necessary */
+	if (!eifrt_vms_has_path_terminator (filename))
+#endif
 	strcat(filename, "/");
 #endif
 
@@ -297,6 +302,9 @@ rt_public void update(char ignore_updt, char *argv0)
 		eif_gen_conf_init (eif_par_table_size);
 		return;
 	}
+
+		/* Update the root class and the creation feature ids */
+	root_class_updt ();
 
 	count = wint32();			/* Read the count of class types */
 	ccount = wint32();			/* Read the count of classes */
@@ -427,29 +435,16 @@ rt_public void update(char ignore_updt, char *argv0)
 	init_desc();
 	desc_updt();
 
-		/* Update the root class and the creation feature ids */
-	root_class_updt ();
-
 /* TEMPORARY */
 	fclose(melted_file);
 }
 
 rt_private void root_class_updt (void)
 {
-	EIF_GET_CONTEXT
-	EIF_REFERENCE l_obj;
-	unsigned char *old_IC = IC;
 	/* Update the root class info */
 
 	egc_rcorigin = wint32();
-
-		/* Create an instance of ANY, to give us a context. */
-	l_obj = RTLNSMART((int16)wint32());
-		/* compute the full dynamic type for `root_obj'. */
-	IC = (unsigned char *) wtype_array(NULL);
-	egc_rcdt = get_compound_id (l_obj, get_int16(&IC));
-	IC = old_IC;
-
+	egc_rcdt = wint32();
 	egc_rcoffset = wint32();
 	egc_rcarg = wint32();
 

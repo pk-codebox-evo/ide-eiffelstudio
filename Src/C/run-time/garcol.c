@@ -4463,23 +4463,9 @@ rt_shared int refers_new_object(register EIF_REFERENCE object)
 			}
 				/* Job is now done */
 			return 0;
-		} else if (flags & EO_COMP) {			/* Composite object = has expandeds */
-			size = RT_SPECIAL_ELEM_SIZE_WITH_INFO(o_ref);
-			object += OVERHEAD;
-				/* Recurse here on each element.
-				 * The loop for normal objects cannot be used
-				 * as it walks through references but there
-				 * are no references to the objects that are
-				 * stored sequentially without any references
-				 * to them.
-				 */
-			for (; refs != 0; refs--, object += size) {
-				if (refers_new_object(object)) {
-					return 1;					/* Object references a young one */
-				}
-			}
-			return 0;		/* Object does not reference any new object */
-		} else
+		} else if (flags & EO_COMP)			/* Composite object = has expandeds */
+			size = RT_SPECIAL_ELEM_SIZE_WITH_INFO(o_ref) + OVERHEAD;
+		else
 			size = REFSIZ;		/* Usual item size */
 	} else
 		refs = References(Deif_bid(flags));	/* Number of references */
