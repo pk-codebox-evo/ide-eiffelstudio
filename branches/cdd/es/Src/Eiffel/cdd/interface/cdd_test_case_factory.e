@@ -115,6 +115,7 @@ feature {CDD_MANAGER} -- Element change
 			l_path := a_cluster.location.build_path ("", l_file_name)
 			write_reflection_to_file (a_reflection, l_class_name, l_path)
 			if was_last_create_successful then
+				initialize_clusters_in_manager
 				manager.add_class_to_cluster (l_file_name, a_cluster, "")
 				l_test_class := manager.last_added_class
 				l_cud := a_reflection.root_object.dynamic_type.original_class
@@ -250,6 +251,28 @@ feature {NONE} -- Implementation
 			-- Printer for writing class text to disc
 		once
 			create Result
+		end
+
+	initialize_clusters_in_manager is
+			-- Initialize the clusters in `manager.clusters'.
+			-- This works around the problem that you can only add a class via
+			-- `manager.add_class_to_cluster' if the parent clusters of the class to add
+			-- are already initialized. Eventually `manager.add_class_to_cluster' should be fixed,
+			-- and this routine removed.
+		local
+			cs: DS_ARRAYED_LIST_CURSOR [EB_SORTED_CLUSTER]
+		do
+			from
+				cs := manager.clusters.new_cursor
+				cs.start
+			until
+				cs.off
+			loop
+				if not cs.item.is_initialized then
+					cs.item.initialize
+				end
+				cs.forth
+			end
 		end
 
 end
