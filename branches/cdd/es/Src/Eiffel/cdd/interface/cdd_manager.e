@@ -148,7 +148,8 @@ feature -- Access
 				an_app_status.exception_occurred and
 				(an_app_status.exception_code = {EXCEP_CONST}.void_call_target or
 				an_app_status.exception_code = {EXCEP_CONST}.postcondition or
-				an_app_status.exception_code = {EXCEP_CONST}.class_invariant or
+					-- NOTE: commented out becuase feature arguments are not available when invariant blows.
+			--	an_app_status.exception_code = {EXCEP_CONST}.class_invariant or
 				an_app_status.exception_code = {EXCEP_CONST}.precondition)
 		end
 
@@ -239,7 +240,7 @@ feature -- Status setting
 					if is_examinating and then test_examinator.has_reflection (an_app_status.e_feature) then
 						l_reflection := test_examinator.current_reflection
 						l_tc := test_examinator.test_case
-						test_case_factory.write_reflection_to_file (l_reflection, l_tc.tester_class.name, l_tc.tester_class.path)
+						test_case_factory.write_reflection_to_file (l_reflection, l_tc.tester_class.name, test_suite.tests_cluster)
 					else
 						l_reflection := make_reflection (an_app_status)
 						if l_reflection /= Void and then l_reflection.reflection_succeded then

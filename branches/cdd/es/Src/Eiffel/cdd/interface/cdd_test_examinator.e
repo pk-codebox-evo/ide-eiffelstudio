@@ -94,7 +94,6 @@ feature -- Status setting
 
 				-- NOTE: `first_breakpoint_slot_index' returnes wrong value for empty features
 			l_dbg_info.enable_breakpoint (l_feature, 1)
-			--l_dbg_info.enable_breakpoint (l_feature, l_feature.first_breakpoint_slot_index)
 
 			l_dbg_info.enable_breakpoint (l_feature, l_feature.number_of_breakpoint_slots)
 			is_running := True
@@ -106,11 +105,23 @@ feature -- Status setting
 		end
 
 	stop is
-			-- Stop examination.
+			-- Remove breakpoints, wipe out reflection stack and set `is_running' to False.
+		require else
+			running: is_running
+		local
+			l_dbg_info: DEBUG_INFO
+			l_feature: E_FEATURE
 		do
+			l_dbg_info := debugger_manager.application.debug_info
+			l_feature := test_case.feature_under_test
+			l_dbg_info.remove_breakpoint (l_feature, 1)
+			l_dbg_info.remove_breakpoint (l_feature, l_feature.number_of_breakpoint_slots)
+
 			reflection_stack.wipe_out
 			is_running := False
 			test_case := Void
+		ensure then
+			not_running: not is_running
 		end
 
 feature -- Application status

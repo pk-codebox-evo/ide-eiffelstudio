@@ -111,7 +111,7 @@ feature {NONE} -- Initialization
 			run_button.disable_sensitive
 
 			create examine_button
-			examine_button.set_tooltip ("Examinate test case")
+			examine_button.set_tooltip ("Fix selected test case")
 			examine_button.set_pixmap (pixmaps.mini_pixmaps.general_search_icon)
 			examine_button.select_actions.extend (agent on_examinate_button)
 			examine_button.disable_sensitive
@@ -233,7 +233,9 @@ feature {CDD_GRID_TEST_CASE_LINE} -- Selection
 		do
 			selected_test_case := a_tc
 			run_button.enable_sensitive
-			examine_button.enable_sensitive
+			if not a_tc.is_verified then
+				examine_button.enable_sensitive
+			end
 		ensure
 			test_case_selected: selected_test_case = a_tc
 		end
@@ -295,8 +297,20 @@ feature {NONE} -- Button events
 			-- Try to examinate selected test case
 		require
 			test_case_selected: selected_test_case /= Void
+		local
+			l_ed: EV_ERROR_DIALOG
+			l_id: EV_INFORMATION_DIALOG
 		do
-			manager.examinate_test_case (selected_test_case)
+			if manager.can_start_examinating then
+				create l_id.make_with_text ("This will fix your test case. Please enter same input as in the last run.")
+				l_id.show_modal_to_window (window.window)
+				if selected_test_case /= Void and manager.can_start_examinating then
+					manager.examinate_test_case (selected_test_case)
+				end
+			else
+				create l_ed.make_with_text ("Can not fix test case. Make sure application is not running!")
+				l_ed.show_modal_to_window (window.window)
+			end
 		end
 
 	on_delete_button is
@@ -387,7 +401,7 @@ feature {NONE} -- Implementation
 feature {NONE} -- Implementation
 
 	select_tab is
-			--
+			-- Change test case listing.
 		local
 			l_vbox: EV_VERTICAL_BOX
 		do
