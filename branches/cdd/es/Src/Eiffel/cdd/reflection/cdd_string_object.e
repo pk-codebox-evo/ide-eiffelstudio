@@ -9,10 +9,6 @@ class
 
 inherit
 	CDD_COMPOSITE_OBJECT
-		redefine
-			append_creation,
-			append_assignment
-		end
 
 create
 	make_with_string

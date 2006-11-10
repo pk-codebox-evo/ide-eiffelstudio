@@ -130,24 +130,25 @@ feature {NONE} -- Implementation
 		end
 
 	create_object (a_dv: ABSTRACT_DEBUG_VALUE): CDD_OBJECT is
-			-- Reflection of an basic or composite object with the values from 'a_dv'
-			-- (Void if non eiffel object in reference graph)
+			-- Object reflection for `a_dv'
 		require
 			a_dv_not_void: a_dv /= Void
 		do
-			if a_dv.dynamic_class /= Void then
-				if a_dv.dynamic_class.is_eiffel_class_c then
-					if a_dv.address /= Void then
-						if addressed_objects.has (a_dv.address) then
-							Result := addressed_objects.item (a_dv.address)
-						elseif addressed_objects.count < max_object_count then
-							Result := create_composite_object (a_dv.address, a_dv.dynamic_class.eiffel_class_c)
-						end
+			if a_dv.dynamic_class /= Void  or else not a_dv.dynamic_class.is_eiffel_class_c then
+				if a_dv.address /= Void then
+					if addressed_objects.has (a_dv.address) then
+						Result := addressed_objects.item (a_dv.address)
+					elseif addressed_objects.count < max_object_count then
+						Result := create_composite_object (a_dv.address, a_dv.dynamic_class.eiffel_class_c)
+					end
+				else
+					if a_dv.dynamic_class.name.is_equal ("POINTER") then
+						Result := create {CDD_POINTER_OBJECT}
 					else
 						Result := create_basic_object (a_dv)
 					end
 				end
-			else
+			elseif a_dv.address /= Void then
 				Result := create {CDD_VOID_OBJECT}
 			end
 		end
@@ -241,6 +242,12 @@ feature {NONE} -- Implementation
 			create Result.make_with_value (a_dv.dump_value.output_value)
 		ensure
 			result_not_void: Result /= Void
+		end
+
+	is_void_or_external_object (a_dv: ABSTRACT_DEBUG_VALUE) is
+			--
+		do
+
 		end
 
 	extract_generic_type (a_type: STRING): STRING is
