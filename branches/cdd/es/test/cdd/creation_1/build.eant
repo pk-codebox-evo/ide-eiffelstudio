@@ -22,7 +22,7 @@
 			Install test case.
 		</description>
 
-		<exec executable="ec -config sut/sut.ecf -target sut -c_compile -project_path ."/>
+		<exec executable="ec -config sut/sut.ecf -target sut -c_compile -project_path ./sut"/>
 	</target>
 
 	<target name="clean">
@@ -30,7 +30,7 @@
 			Remove generated files.
 		</description>
 		
-		<delete directory="EIFGENs"/>
+		<delete directory="sut/EIFGENs"/>
 	</target>
 
 	<target name="clobber" depend="clean">
@@ -38,7 +38,6 @@
 			Remove all generated files.
 		</description>
 		<delete directory="sut/cdd_test_suite"/>
-		<mkdir directory="sut/cdd_test_suite"/>
 	</target>
 
 </project>

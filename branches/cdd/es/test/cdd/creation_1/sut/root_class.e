@@ -9,13 +9,12 @@ class
 create
 	make
 
-feature -- Initialization
+feature
 
 	make is
-		local
-			ap: AP_INTEGER
 		do
-			create ap.make
+		ensure
+			False
 		end
 
 end
