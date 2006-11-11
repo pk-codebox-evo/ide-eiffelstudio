@@ -126,9 +126,11 @@ feature -- Object creation
 					when real_64_type then
 						r64 ?= attributes.item (name)
 						set_real_64_field (i, obj, r64)
+					else
+						-- Type we do not cover yet
 					end
 				else
-					check test_case_corrupt: False end
+					-- Test case does not reflect this attribute
 				end
 				i := i + 1
 			end
