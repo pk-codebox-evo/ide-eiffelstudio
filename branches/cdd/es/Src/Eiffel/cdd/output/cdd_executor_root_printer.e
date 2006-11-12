@@ -48,6 +48,7 @@ feature -- Access
 			append_instruction ("else")
 			append_instruction ("%Tio.put_string (%"error: unkown test case class '%" + l_arg + %"'.%")")
 			append_instruction ("%Tio.put_new_line")
+			append_instruction ("%Tdie (1)")
 			append_instruction ("end")
 			append_text ("%T%Tend%N%N")
 			append_class_footer (executor_root_class_name)

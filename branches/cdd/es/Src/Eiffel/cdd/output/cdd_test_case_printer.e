@@ -34,20 +34,6 @@ feature -- Access
 
 			append_text ("%N%Tset_up is%N")
 			append_comment ("Set up test case")
-			append_text ("%T%Tlocal%N")
-
-			if reflection.is_creation_feature then
-				append_object_declaration (reflection.root_object)
-			end
-
-			from
-				rlist.start
-			until
-				rlist.after
-			loop
-				append_object_declaration (rlist.item_for_iteration)
-				rlist.forth
-			end
 
 			append_text ("%T%Tdo%N")
 			append_comment ("Create objects")
@@ -115,6 +101,22 @@ feature -- Access
 			append_text ("%Tfeature_under_test: STRING is %"" + l_feature.name + "%"%N")
 			append_text ("%T%T%T-- Name of the feature under test.%N")
 			append_text ("%T%T%T-- NOTE: Do not modify this attribute!%N%N")
+
+			append_text ("feature -- Access%N%N")
+			if reflection.is_creation_feature then
+				append_object_declaration (reflection.root_object)
+			end
+			from
+				rlist.start
+			until
+				rlist.after
+			loop
+				append_object_declaration (rlist.item_for_iteration)
+				rlist.forth
+			end
+			append_text ("%T%T%T-- Attributes needed for initialize original object state.%N")
+			append_text ("%T%T%T-- NOTE: Do not modify this attributes!%N%N")
+
 			append_class_footer (test_class_name)
 			output_file.flush
 			output_file := Void
@@ -128,7 +130,7 @@ feature {CDD_OBJECT} -- Testcase generation
 		require
 			an_object_not_void: an_object /= Void
 		do
-			append_instruction (an_object.identifier + ": " + an_object.type)
+			append_text ("%T" + an_object.identifier + ": " + an_object.type + "%N")
 		end
 
 	append_regular_creation (an_object: CDD_REGULAR_OBJECT) is

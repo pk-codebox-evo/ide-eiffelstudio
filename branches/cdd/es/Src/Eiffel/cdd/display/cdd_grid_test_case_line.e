@@ -99,13 +99,13 @@ feature {NONE} -- Implementation
 			else
 				if test_case.passes then
 					status_item.set_foreground_color (green)
-					l_status.append ("OK")
+					l_status.append ("PASS")
 				elseif test_case.status = test_case.invalid_code then
 					status_item.set_foreground_color (gray)
 					l_status.append ("INV")
 				else
 					status_item.set_foreground_color (red)
-					l_status.append ("F")
+					l_status.append ("FAIL")
 					if test_case.last_exception_tag /= Void then
 						l_tooltip.append ("Exception: " + test_case.last_exception_tag)
 					end

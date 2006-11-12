@@ -24,19 +24,9 @@ feature {NONE} -- Initialization
 			a_gen_type_not_empty: a_gen_type /= Void and then not a_gen_type.is_empty
 		do
 			make_with_count (a_type, a_count)
-			generic_type := a_gen_type
-			type.append (" [" + generic_type + "]")
+			type.append (" " + a_gen_type)
 		ensure
-			generic_type_set: generic_type = a_gen_type
-			type_modified: type.has_substring (" [" + generic_type + "]")
+			type_modified: type.has_substring (a_gen_type)
 		end
-
-feature -- Access
-
-	generic_type: STRING
-			-- Generic parameter of the objects type
-
-invariant
-	generic_type_not_empty: generic_type /= Void and then not generic_type.is_empty
 
 end

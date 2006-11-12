@@ -148,8 +148,8 @@ feature -- Access
 				an_app_status.exception_occurred and
 				(an_app_status.exception_code = {EXCEP_CONST}.void_call_target or
 				an_app_status.exception_code = {EXCEP_CONST}.postcondition or
-					-- NOTE: commented out becuase feature arguments are not available when invariant blows.
-			--	an_app_status.exception_code = {EXCEP_CONST}.class_invariant or
+				-- NOTE: commented out becuase feature arguments are not available when invariant blows.
+				an_app_status.exception_code = {EXCEP_CONST}.class_invariant or
 				an_app_status.exception_code = {EXCEP_CONST}.precondition)
 		end
 
@@ -527,12 +527,11 @@ feature {NONE} -- Implementation
 			an_app_status_valid: an_app_status /= Void and then an_app_status /= Void
 			exception_occured: an_app_status.exception_occurred
 		local
-			l_cse, l_prev_cse: EIFFEL_CALL_STACK_ELEMENT
+			l_cse: EIFFEL_CALL_STACK_ELEMENT
 			l_tag: STRING
 			l_feature: E_FEATURE
-			l_class, l_prev_class: EIFFEL_CLASS_C
-			l_is_creation_call: BOOLEAN
-			l_abort: BOOLEAN
+			l_class: EIFFEL_CLASS_C
+			l_abort, l_is_creation_call: BOOLEAN
 		do
 			l_cse ?= an_app_status.current_call_stack_element
 			if l_cse /= Void then
@@ -540,36 +539,36 @@ feature {NONE} -- Implementation
 					l_cse := caller (l_cse, an_app_status.current_call_stack)
 				end
 			end
-			if l_cse /= Void then
-				l_feature := l_cse.routine
-				-- Make a heuristic to check if the called feature could be a creation feature.
-				-- TODO: Bug when feature is exported to {NONE} - thinks it is creation procedure...
-				if l_feature.export_status.is_none then
-					l_prev_cse := caller (l_cse, an_app_status.current_call_stack)
-					if l_prev_cse /= Void then
-						l_class ?= l_cse.dynamic_class
-						l_prev_class ?= l_prev_cse.dynamic_class
-						if l_class /= Void and l_prev_class /= Void then
-							if not l_class.descendants.has (l_prev_class) then
-								l_is_creation_call := True
-							end
+			if l_cse /= Void and then l_cse.dynamic_class /= Void and then l_cse.dynamic_class.is_eiffel_class_c then
+				from
+					l_feature := l_cse.routine
+				until
+					l_abort or else (l_feature.export_status.is_all or l_is_creation_call)
+				loop
+					l_class := l_cse.dynamic_class.eiffel_class_c
+					l_is_creation_call := is_creation_procedure (l_class, l_feature)
+					if not l_is_creation_call then
+						l_cse := caller (l_cse, an_app_status.current_call_stack)
+						if l_cse = Void or else l_cse.dynamic_class = Void or else not l_cse.dynamic_class.is_eiffel_class_c then
+							l_abort := True
 						end
-					elseif open_target.root.class_name.is_equal (l_cse.dynamic_class.name) and
-							open_target.root.feature_name.is_equal (l_feature.name) then
-						-- Feature is root creation feature
-						l_is_creation_call := True
-					else
-						l_abort := True
 					end
-				elseif l_cse.dynamic_class.creation_feature = l_feature then
-					l_abort := True
-				elseif l_cse.dynamic_class.creators /= Void and then l_cse.dynamic_class.creators.has (l_feature.name) then
-					l_abort := True
 				end
-
 				if not l_abort then
 					create Result.make (an_app_status, l_cse, l_is_creation_call)
 				end
+			end
+		end
+
+	is_creation_procedure (a_class: EIFFEL_CLASS_C; a_feature: E_FEATURE): BOOLEAN is
+			-- Is `l_feature' a creation procedure of `a_class'?
+		require
+			a_class_not_void: a_class /= Void
+			a_feature_not_void: a_feature /= Void
+		do
+			Result := a_class.creation_feature = a_feature
+			if not Result then
+				Result := a_class.creators /= Void and then a_class.creators.has (a_feature.name)
 			end
 		end
 

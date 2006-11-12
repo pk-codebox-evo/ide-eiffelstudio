@@ -19,6 +19,11 @@ inherit
 			{NONE} all
 		end
 
+	VALUE_TYPES
+		export
+			{NONE} all
+		end
+
 create
 	make
 
@@ -46,14 +51,30 @@ feature {NONE} -- Initialization
 			end
 			if reflection_succeded and called_feature.has_arguments then
 				l_alist := a_cse.arguments
-				create arguments.make (l_alist.count)
-				from
-					i := 1
-				until
-					i > l_alist.count
-				loop
-					arguments.put (create_object (l_alist.i_th (i)), i)
-					i := i + 1
+				if l_alist.for_all (agent is_no_error_value) then
+					create arguments.make (l_alist.count)
+					from
+						i := 1
+					until
+						i > l_alist.count
+					loop
+						arguments.put (create_object (l_alist.i_th (i)), i)
+						i := i + 1
+					end
+				else
+					create arguments.make (a_cse.routine.argument_count)
+					from
+						i := 1
+					until
+						i > l_alist.count
+					loop
+						if a_cse.routine.arguments.i_th (i).is_basic then
+							arguments.put (create {CDD_BASIC_OBJECT}.make_with_value ("0"), i)
+						else
+							arguments.put (create {CDD_VOID_OBJECT}, i)
+						end
+						i := i + 1
+					end
 				end
 			else
 				create arguments.make (0)
@@ -72,6 +93,14 @@ feature {NONE} -- Initialization
 				create composite_objects.make (0)
 			end
 			addressed_objects := Void
+		end
+
+	is_no_error_value (a_dv: ABSTRACT_DEBUG_VALUE): BOOLEAN is
+			-- Is `a_dv' not of kind `error_message_value'?
+		require
+			a_dv_not_void: a_dv /= Void
+		do
+			Result := a_dv.kind /= error_message_value
 		end
 
 feature -- Access
@@ -134,7 +163,7 @@ feature {NONE} -- Implementation
 		require
 			a_dv_not_void: a_dv /= Void
 		do
-			if a_dv.dynamic_class /= Void  or else not a_dv.dynamic_class.is_eiffel_class_c then
+			if a_dv.dynamic_class /= Void and then a_dv.dynamic_class.is_eiffel_class_c then
 				if a_dv.address /= Void then
 					if addressed_objects.has (a_dv.address) then
 						Result := addressed_objects.item (a_dv.address)
@@ -150,6 +179,9 @@ feature {NONE} -- Implementation
 				end
 			elseif a_dv.address /= Void then
 				Result := create {CDD_VOID_OBJECT}
+			else
+				-- NOTE: seems to be a non eiffel object without address (expanded) which we do not handle yet
+				do_nothing
 			end
 		end
 
@@ -226,7 +258,8 @@ feature {NONE} -- Implementation
 				if l_attr_obj /= Void then
 					Result.add_attribute (l_dv_list.item_for_iteration.name, l_attr_obj)
 				else
-					Result := Void
+					-- NOTE: instead of terminating reflection, we just don't care about this attribute
+					-- Result := Void
 				end
 				l_dv_list.forth
 			end
@@ -244,25 +277,15 @@ feature {NONE} -- Implementation
 			result_not_void: Result /= Void
 		end
 
-	is_void_or_external_object (a_dv: ABSTRACT_DEBUG_VALUE) is
-			--
-		do
-
-		end
-
 	extract_generic_type (a_type: STRING): STRING is
 			-- Generic substring of some class type
 		require
 			a_type_valid: a_type /= Void and then not a_type.is_empty
-			a_type_has_generics: a_type.has ('[') and a_type.has (']')
 		local
-			first, last: INTEGER
+			first: INTEGER
 		do
-			first := a_type.index_of ('[', 1) + 1
-			last := a_type.index_of (']', first) - 1
-			Result := a_type.substring (first, last)
-			Result.prune_all_leading (' ')
-			Result.prune_all_trailing (' ')
+			first := a_type.index_of ('[', 1)
+			Result := a_type.substring (first, a_type.count)
 		ensure
 			valid_result: Result /= Void and then not Result.is_empty
 			substring_of_a_type: a_type.has_substring (Result)
