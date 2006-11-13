@@ -52,6 +52,9 @@
 		<argument name="target"/>
 
 		<geant file="build.eant" target="${target}" dir="creation_1"/>
+		<geant file="build.eant" target="${target}" dir="creation_2"/>
+		<geant file="build.eant" target="${target}" dir="creation_3"/>
+		<geant file="build.eant" target="${target}" dir="export_1"/>
 	</target>
 
 </project>
