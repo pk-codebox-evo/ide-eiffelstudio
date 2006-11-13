@@ -26,6 +26,8 @@ feature {NONE} -- Initialization
 		do
 			tests_cluster := a_cluster
 			create test_cases.make
+			create add_test_case_actions
+			create remove_test_case_actions
 		ensure
 			tests_cluster_set: tests_cluster = a_cluster
 		end
@@ -110,6 +112,7 @@ feature -- Element change
 				end
 			end
 			test_cases.put_left (a_tc)
+			add_test_case_actions.call ([a_tc])
 		ensure
 			test_case_added: test_cases.count = old test_cases.count + 1 and test_cases.has (a_tc)
 		end
@@ -126,13 +129,23 @@ feature -- Element change
 			l_cursor.start
 			l_cursor.search_forth (a_tc)
 			l_cursor.remove
+			remove_test_case_actions.call ([a_tc])
 		ensure
 			test_case_removed: not test_cases.has (a_tc)
 		end
 
-invariant
+feature -- Event handling
 
+	add_test_case_actions: ACTION_SEQUENCE [TUPLE [CDD_TEST_CASE]]
+			-- Agents called when test case is added to `Current'
+
+	remove_test_case_actions: ACTION_SEQUENCE [TUPLE [CDD_TEST_CASE]]
+			-- Agents called when test case is removed from `Current'
+
+invariant
 	test_cases_not_void: test_cases /= Void
 	tests_cluster_not_void: tests_cluster /= Void
+	add_test_case_actions_not_void: add_test_case_actions /= Void
+	remove_test_case_actions_not_void: remove_test_case_actions /= Void
 
 end -- class CDD_TEST_SUITE

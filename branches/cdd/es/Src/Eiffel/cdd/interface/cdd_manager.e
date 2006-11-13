@@ -148,9 +148,9 @@ feature -- Access
 				an_app_status.exception_occurred and
 				(an_app_status.exception_code = {EXCEP_CONST}.void_call_target or
 				an_app_status.exception_code = {EXCEP_CONST}.postcondition or
-				-- NOTE: commented out becuase feature arguments are not available when invariant blows.
 				an_app_status.exception_code = {EXCEP_CONST}.class_invariant or
-				an_app_status.exception_code = {EXCEP_CONST}.precondition)
+				an_app_status.exception_code = {EXCEP_CONST}.precondition or
+				an_app_status.exception_code = {EXCEP_CONST}.check_instruction)
 		end
 
 	open_project: E_PROJECT is
@@ -249,7 +249,6 @@ feature -- Status setting
 								l_tc := test_case_factory.last_created_test_case
 								l_tc.set_unverified
 								test_suite.add_test_case (l_tc)
-								refresh_actions.call ([l_tc])
 							end
 						end
 					end
@@ -396,7 +395,6 @@ feature -- Test suite manipulation
 			eb_cluster_manager.remove_class (a_tc.tester_class)
 
 			window_manager.synchronize_all
-			refresh_actions.call ([a_tc])
 			eb_cluster_manager.add_observer (Current)
 		ensure
 			removed: not test_suite.test_cases.has (a_tc)
@@ -480,6 +478,8 @@ feature {EB_CLUSTERS} -- Project Events
 					start_executing
 				end
 			end
+		ensure
+			new_test_suite_instance: test_suite /= old test_suite
 		end
 
 	on_class_removed (a_class: CLASS_I) is
@@ -498,7 +498,6 @@ feature {EB_CLUSTERS} -- Project Events
 					if l_cursor.item.tester_class = a_class then
 						l_item := l_cursor.item
 						test_suite.remove_test_case (l_cursor.item)
-						refresh_actions.call ([l_item])
 						l_cursor.go_after
 					else
 						l_cursor.forth
@@ -551,6 +550,8 @@ feature {NONE} -- Implementation
 						l_cse := caller (l_cse, an_app_status.current_call_stack)
 						if l_cse = Void or else l_cse.dynamic_class = Void or else not l_cse.dynamic_class.is_eiffel_class_c then
 							l_abort := True
+						else
+							l_feature := l_cse.routine
 						end
 					end
 				end
@@ -566,7 +567,7 @@ feature {NONE} -- Implementation
 			a_class_not_void: a_class /= Void
 			a_feature_not_void: a_feature /= Void
 		do
-			Result := a_class.creation_feature = a_feature
+			Result := a_class.creation_feature = a_feature.associated_feature_i
 			if not Result then
 				Result := a_class.creators /= Void and then a_class.creators.has (a_feature.name)
 			end

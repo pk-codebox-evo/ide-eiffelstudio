@@ -96,7 +96,7 @@ feature {CDD_MANAGER} -- Basic operations
 			cursor := test_suite.test_cases.new_cursor
 			cursor.start
 			create_root_class
-			manager.update_testing_status ("Compiling Testcases")
+			manager.update_testing_status ("Compiling test cases")
 			compiler.run (test_suite.tests_cluster.target.system.directory, manager.open_target.system.file_name, tester_target_name)
 			add_idle_action
 		ensure

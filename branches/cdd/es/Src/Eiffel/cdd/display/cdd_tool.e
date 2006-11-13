@@ -33,6 +33,8 @@ feature {NONE} -- Initialization
 			Precursor {EB_TOOL} (a_window)
 
 			internal_refresh_agent := agent refresh
+			internal_add_test_case_agent := agent add_test_case
+			internal_remove_test_case_agent := agent remove_test_case
 			internal_testing_status_agent := agent update_testing_status
 			manager.refresh_actions.extend (internal_refresh_agent)
 			manager.update_state_actions.extend (internal_testing_status_agent)
@@ -160,7 +162,8 @@ feature -- Status setting
 		require
 			a_tc_not_void: a_tc /= Void
 		do
-			grid.add_test_case (a_tc)
+			refresh_grid
+			status_label.set_text ("Added " + a_tc.tester_class.name)
 		end
 
 	remove_test_case (a_tc: CDD_TEST_CASE) is
@@ -168,15 +171,24 @@ feature -- Status setting
 		require
 			a_tc_not_void: a_tc /= Void
 		do
-			-- NOTE: Full refresh because there is a problem with redrawing the grid when only a single line is removed.
-			refresh
+			refresh_grid
+			status_label.set_text ("Removed " + a_tc.tester_class.name)
 		end
 
 	refresh is
 			-- Redraw all widgets according to new test suite status.
+		local
+			l_ts: CDD_TEST_SUITE
 		do
 			window.lock_update
 			if manager.is_testing_enabled then
+				l_ts := manager.test_suite
+				if not l_ts.add_test_case_actions.has (internal_add_test_case_agent) then
+					l_ts.add_test_case_actions.extend (internal_add_test_case_agent)
+				end
+				if not l_ts.remove_test_case_actions.has (internal_remove_test_case_agent) then
+					l_ts.remove_test_case_actions.extend (internal_remove_test_case_agent)
+				end
 				toggle_testing_button.select_actions.block
 				toggle_testing_button.enable_select
 				toggle_testing_button.set_tooltip ("Disable cdd-testing")
@@ -218,6 +230,8 @@ feature -- Status setting
 		do
 			manager.refresh_actions.prune (internal_refresh_agent)
 			manager.update_state_actions.prune (internal_testing_status_agent)
+			manager.test_suite.add_test_case_actions.prune (internal_add_test_case_agent)
+			manager.test_suite.remove_test_case_actions.prune (internal_remove_test_case_agent)
 			grid.wipe_out
 		end
 
@@ -365,6 +379,12 @@ feature {NONE} -- Action implementation
 
 	internal_refresh_agent: PROCEDURE [like Current, TUPLE]
 			-- Agent called when test suite is refreshed
+
+	internal_add_test_case_agent: PROCEDURE [like Current, TUPLE [CDD_TEST_CASE]]
+			-- Agent called when test case is added
+
+	internal_remove_test_case_agent: PROCEDURE [like Current, TUPLE [CDD_TEST_CASE]]
+			-- Agent called when test case was removed
 
 	internal_testing_status_agent: PROCEDURE [like Current, TUPLE [STRING]]
 			-- Agent called when testing status changes
