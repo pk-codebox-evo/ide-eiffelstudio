@@ -28,28 +28,6 @@ feature -- Access
 	manager: CDD_MANAGER
 			-- Manager containing current test suite
 
-feature -- Measurement
-
-feature -- Status report
-
-feature -- Status setting
-
-feature -- Cursor movement
-
-feature -- Element change
-
-feature -- Removal
-
-feature -- Resizing
-
-feature -- Transformation
-
-feature -- Conversion
-
-feature -- Duplication
-
-feature -- Miscellaneous
-
 feature -- Basic operations
 
 	note_refresh is
@@ -79,7 +57,7 @@ feature -- Basic operations
 			a_tc_not_void: a_tc /= Void
 		do
 			a_tc.update_status_actions.extend (agent note_test_case_status (a_tc))
-			write_log_message ("added " + a_tc.tester_class.name)
+			write_log_message (a_tc, "created")
 		end
 
 	note_test_case_remove (a_tc: CDD_TEST_CASE) is
@@ -88,7 +66,7 @@ feature -- Basic operations
 			testing_enabled: manager.is_testing_enabled
 			a_tc_not_void: a_tc /= Void
 		do
-			write_log_message ("removed " + a_tc.tester_class.name)
+			write_log_message (a_tc, "removed")
 		end
 
 	note_test_case_status (a_tc: CDD_TEST_CASE) is
@@ -99,7 +77,7 @@ feature -- Basic operations
 		local
 			l_msg: STRING
 		do
-			l_msg := a_tc.tester_class.name + " "
+			create l_msg.make_empty
 			inspect a_tc.status
 			when {CDD_TEST_CASE}.fail_code then
 				l_msg.append ("fails")
@@ -108,7 +86,7 @@ feature -- Basic operations
 			else
 				l_msg.append ("invalid")
 			end
-			write_log_message (l_msg)
+			write_log_message (a_tc, l_msg)
 		end
 
 feature -- Obsolete
@@ -117,19 +95,32 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Basic log operations
 
-	write_log_message (a_message: STRING) is
+	write_log_message (a_tc: CDD_TEST_CASE; a_message: STRING) is
 			-- Try to write `a_message' into `file' and add information like time etc.
 		require
 			a_message_not_empty: a_message /= Void and then not a_message.is_empty
+			a_tc_not_empty: a_tc /= Void
 		local
 			l_string: STRING
-			l_time: TIME
+			l_date: DATE_TIME
 		do
 			prepare_file
 			if can_write_to_file then
-				create l_time.make_now
-				create l_string.make_from_string (a_message)
-				l_string.append ("%T" + l_time.default_format_string)
+				create l_date.make_now
+				create l_string.make_empty
+				l_string.append (l_date.out)
+				l_string.append_character (';')
+				l_string.append (a_tc.tester_class.name)
+				l_string.append_character (';')
+				l_string.append (a_tc.class_under_test.name)
+				l_string.append_character (';')
+				l_string.append (a_tc.feature_under_test.name)
+				l_string.append_character (';')
+				if a_tc.last_exception_tag /= Void then
+					l_string.append (a_tc.last_exception_tag)
+				end
+				l_string.append_character (';')
+				l_string.append (a_message)
 				file.put_string (l_string)
 				file.put_new_line
 				close_file

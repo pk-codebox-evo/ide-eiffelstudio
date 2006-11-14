@@ -40,6 +40,7 @@ feature {NONE} -- Initialization
 		local
 			l_alist: LIST [ABSTRACT_DEBUG_VALUE]
 			i: INTEGER
+			l_has_error_value: BOOLEAN
 		do
 			called_feature := a_cse.routine
 			is_creation_feature := a_is_creation_call
@@ -51,7 +52,15 @@ feature {NONE} -- Initialization
 			end
 			if reflection_succeded and called_feature.has_arguments then
 				l_alist := a_cse.arguments
-				if l_alist.for_all (agent is_no_error_value) then
+				from
+					l_alist.start
+				until
+					l_alist.after or l_has_error_value
+				loop
+					l_has_error_value := l_alist.item.kind = error_message_value
+					l_alist.forth
+				end
+				if not l_has_error_value then
 					create arguments.make (l_alist.count)
 					from
 						i := 1
