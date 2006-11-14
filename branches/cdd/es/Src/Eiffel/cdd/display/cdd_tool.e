@@ -230,8 +230,10 @@ feature -- Status setting
 		do
 			manager.refresh_actions.prune (internal_refresh_agent)
 			manager.update_state_actions.prune (internal_testing_status_agent)
-			manager.test_suite.add_test_case_actions.prune (internal_add_test_case_agent)
-			manager.test_suite.remove_test_case_actions.prune (internal_remove_test_case_agent)
+			if manager.is_testing_enabled then
+				manager.test_suite.add_test_case_actions.prune (internal_add_test_case_agent)
+				manager.test_suite.remove_test_case_actions.prune (internal_remove_test_case_agent)
+			end
 			grid.wipe_out
 		end
 
