@@ -237,29 +237,33 @@ feature {NONE} -- Idle action
 		local
 			l_list: LIST [STRING]
 			l_status: INTEGER
+			l_class, l_feature: STRING
 			l_exception: STRING
 		do
 			l_status := {CDD_TEST_CASE}.fail_code
+			if test_suite_process.exit_code /= 0 then
+				l_list := testing_output_buffer.split ('.')
+				if l_list.count > 2 then
+					l_class := l_list.i_th (1)
+					l_feature := l_list.i_th (2)
+					l_exception := l_list.i_th (3)
+				end
+			end
 			if test_suite_process.exit_code = 0 then
 				l_status := {CDD_TEST_CASE}.pass_code
 			elseif test_suite_process.exit_code = 30 then
 				l_status := {CDD_TEST_CASE}.invalid_code
 			else
-				l_list := testing_output_buffer.split ('.')
-				if l_list.count = 3 then
-					l_exception := l_list.i_th (3)
+				if l_exception /= Void then
 					if test_suite_process.exit_code = {EXCEP_CONST}.precondition then
-						if l_list.i_th (1).is_equal (test_case.class_under_test.name) and
-							l_list.i_th (2).is_equal (test_case.feature_under_test.name) then
+						if l_class.is_equal (test_case.class_under_test.name) and
+							l_feature.is_equal (test_case.feature_under_test.name) then
 							l_status := {CDD_TEST_CASE}.invalid_code
-							l_exception := Void
 						end
 					end
-				else
-					l_exception := "unknown"
 				end
 			end
-			test_case.set_status (l_status, l_exception)
+			test_case.set_status (l_status, l_class, l_feature, l_exception)
 		end
 
 feature {NONE} -- Implementation

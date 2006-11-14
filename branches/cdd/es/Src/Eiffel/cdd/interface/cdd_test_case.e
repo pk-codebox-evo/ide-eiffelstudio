@@ -59,6 +59,8 @@ feature -- Access
 	last_exception_tag: STRING
 			-- Name of the last violation thrown by the test case
 
+	last_exception_class_name, last_exception_feature_name: STRING
+
 	status: INTEGER
 			-- Status of `Current'
 
@@ -91,12 +93,15 @@ feature -- Status setting
 			Result := status = pass_code
 		end
 
-	set_status (a_status: like status; an_exception_tag: like last_exception_tag) is
+	set_status (a_status: like status; a_class_name: like last_exception_class_name;
+		a_feature_name: like last_exception_feature_name; an_exception_tag: like last_exception_tag) is
 			-- Set `status' to `a_status' and `last_exception_tag' to `an_exception' and notify agents.
 		require
 			correct_status: correct_status (a_status)
 		do
 			last_exception_tag := an_exception_tag
+			last_exception_feature_name := a_feature_name
+			last_exception_class_name := a_class_name
 			status := a_status
 			if not is_verified and (a_status = fail_code or a_status = pass_code) then
 				is_verified := True
@@ -104,6 +109,8 @@ feature -- Status setting
 			update_status_actions.call ([])
 		ensure
 			last_exception_tag_set: last_exception_tag = an_exception_tag
+			last_exception_feature_name_set: last_exception_feature_name = a_feature_name
+			last_exception_class_name_set: last_exception_class_name = a_class_name
 			status_set: status = a_status
 		end
 

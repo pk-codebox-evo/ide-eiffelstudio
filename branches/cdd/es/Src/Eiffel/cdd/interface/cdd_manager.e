@@ -244,6 +244,7 @@ feature -- Status setting
 						l_reflection := test_examinator.current_reflection
 						l_tc := test_examinator.test_case
 						test_case_factory.write_reflection_to_file (l_reflection, l_tc.tester_class.name, test_suite.tests_cluster)
+						log_printer.note_examintaing_success (l_tc)
 					else
 						l_reflection := make_reflection (an_app_status)
 						if l_reflection /= Void and then l_reflection.reflection_succeded then
@@ -362,6 +363,7 @@ feature -- Status setting
 			a_tc_not_void: a_tc /= Void
 			can_examinate_test_case: can_start_examinating
 		do
+			log_printer.note_start_examinating (a_tc)
 			test_examinator.examinate (a_tc)
 		end
 
@@ -426,9 +428,9 @@ feature {EB_CLUSTERS} -- Project Events
 			l_tests_cluster: CLUSTER_I
 			l_classes: HASH_TABLE [EIFFEL_CLASS_I, STRING]
 			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_CASE]
-			l_old_states: HASH_TABLE [TUPLE [INTEGER, STRING], STRING]
+			l_old_states: HASH_TABLE [TUPLE [INTEGER, STRING, STRING, STRING], STRING]
 			l_old: TUPLE [INTEGER, STRING]
-			l_string: STRING
+			l_lec, l_lef, l_let: STRING
 			l_tc: CDD_TEST_CASE
 			l_was_enabled: BOOLEAN
 		do
@@ -445,7 +447,7 @@ feature {EB_CLUSTERS} -- Project Events
 						until
 							l_cursor.after
 						loop
-							l_old_states.put ([l_cursor.item.status, l_cursor.item.last_exception_tag], l_cursor.item.tester_class.name)
+							l_old_states.put ([l_cursor.item.status, l_cursor.item.last_exception_class_name, l_cursor.item.last_exception_feature_name, l_cursor.item.last_exception_tag], l_cursor.item.tester_class.name)
 							l_cursor.forth
 						end
 					end
@@ -463,8 +465,10 @@ feature {EB_CLUSTERS} -- Project Events
 									-- retrieve old test case state if available
 								if l_was_enabled and then l_old_states.has (l_tc.tester_class.name) then
 									l_old := l_old_states.item (l_tc.tester_class.name)
-									l_string ?= l_old.reference_item (2)
-									l_tc.set_status (l_old.integer_item (1), l_string)
+									l_let ?= l_old.reference_item (4)
+									l_lec ?= l_old.reference_item (2)
+									l_lef ?= l_old.reference_item (3)
+									l_tc.set_status (l_old.integer_item (1), l_lec, l_lef, l_let)
 								end
 								test_suite.add_test_case (l_tc)
 							end

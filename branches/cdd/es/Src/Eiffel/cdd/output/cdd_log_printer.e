@@ -74,19 +74,26 @@ feature -- Basic operations
 		require
 			testing_enabled: manager.is_testing_enabled
 			a_tc_not_void: a_tc /= Void
-		local
-			l_msg: STRING
 		do
-			create l_msg.make_empty
-			inspect a_tc.status
-			when {CDD_TEST_CASE}.fail_code then
-				l_msg.append ("fails")
-			when {CDD_TEST_CASE}.pass_code then
-				l_msg.append ("passes")
-			else
-				l_msg.append ("invalid")
-			end
-			write_log_message (a_tc, l_msg)
+			write_log_message (a_tc, "executed")
+		end
+
+	note_start_examinating (a_tc: CDD_TEST_CASE) is
+			--
+		require
+			testing_enabled: manager.is_testing_enabled
+			a_tc_not_void: a_tc /= Void
+		do
+			write_log_message (a_tc, "start_fix")
+		end
+
+	note_examintaing_success (a_tc: CDD_TEST_CASE) is
+			--
+		require
+			testing_enabled: manager.is_testing_enabled
+			a_tc_not_void: a_tc /= Void
+		do
+			write_log_message (a_tc, "pre_state_captured")
 		end
 
 feature -- Obsolete
@@ -95,10 +102,10 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Basic log operations
 
-	write_log_message (a_tc: CDD_TEST_CASE; a_message: STRING) is
+	write_log_message (a_tc: CDD_TEST_CASE; an_action: STRING) is
 			-- Try to write `a_message' into `file' and add information like time etc.
 		require
-			a_message_not_empty: a_message /= Void and then not a_message.is_empty
+			an_action_not_void: an_action /= Void and then not an_action.is_empty
 			a_tc_not_empty: a_tc /= Void
 		local
 			l_string: STRING
@@ -108,6 +115,8 @@ feature {NONE} -- Basic log operations
 			if can_write_to_file then
 				create l_date.make_now
 				create l_string.make_empty
+				l_string.append (an_action)
+				l_string.append_character (';')
 				l_string.append (l_date.out)
 				l_string.append_character (';')
 				l_string.append (a_tc.tester_class.name)
@@ -116,11 +125,34 @@ feature {NONE} -- Basic log operations
 				l_string.append_character (';')
 				l_string.append (a_tc.feature_under_test.name)
 				l_string.append_character (';')
+				if a_tc.is_verified then
+					l_string.append ("verified")
+				else
+					l_string.append ("unverified")
+				end
+				l_string.append_character (';')
+				inspect a_tc.status
+				when {CDD_TEST_CASE}.fail_code then
+					l_string.append ("fails")
+				when {CDD_TEST_CASE}.pass_code then
+					l_string.append ("passes")
+				when {CDD_TEST_CASE}.invalid_code then
+					l_string.append ("invalid")
+				else
+					l_string.append ("untested")
+				end
+				l_string.append_character (';')
+				if a_tc.last_exception_class_name /= Void then
+					l_string.append (a_tc.last_exception_class_name)
+				end
+				l_string.append_character (';')
+				if a_tc.last_exception_feature_name /= Void then
+					l_string.append (a_tc.last_exception_feature_name)
+				end
+				l_string.append_character (';')
 				if a_tc.last_exception_tag /= Void then
 					l_string.append (a_tc.last_exception_tag)
 				end
-				l_string.append_character (';')
-				l_string.append (a_message)
 				file.put_string (l_string)
 				file.put_new_line
 				close_file
