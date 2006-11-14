@@ -74,6 +74,7 @@ feature {NONE} -- Initialization
 			create test_debugger.make_with_manager (Current)
 			create test_executor.make_with_manager (Current)
 			create test_examinator.make (Current, eb_debugger_manager)
+			create log_printer.make_with_manager (Current)
 		end
 
 feature -- Access
@@ -181,22 +182,24 @@ feature -- Access
 			classes: LINKED_SET [CONF_CLASS]
 			found: BOOLEAN
 		do
-			from
-				table := open_target.groups
-				table.start
-			until
-				table.off or found
-			loop
-				group := table.item_for_iteration
-				classes := group.class_by_name (open_target.root.class_name, False)
-				if classes.count > 0 then
-						-- TODO: what happens if there are several classes?
-					Result ?= classes.first.group
-					found := True
-				else
-					table.forth
-				end
-			end
+			Result ?= eiffel_system.root_cluster
+			-- NOTE: commented because class_by_name threw segmentation fault in some cases
+--			from
+--				table := open_target.groups
+--				table.start
+--			until
+--				table.off or found
+--			loop
+--				group := table.item_for_iteration
+--				classes := group.class_by_name (open_target.root.class_name, False)
+--				if classes.count > 0 then
+--						-- TODO: what happens if there are several classes?
+--					Result ?= classes.first.group
+--					found := True
+--				else
+--					table.forth
+--				end
+--			end
 		end
 
 feature -- Status setting
@@ -479,7 +482,7 @@ feature {EB_CLUSTERS} -- Project Events
 				end
 			end
 		ensure
-			new_test_suite_instance: test_suite /= old test_suite
+			new_test_suite_instance: is_testing_enabled implies test_suite /= old test_suite
 		end
 
 	on_class_removed (a_class: CLASS_I) is
@@ -603,6 +606,9 @@ feature {NONE} -- Implementation
 	test_examinator: CDD_TEST_EXAMINATOR
 			-- Executes the application and captures the correct pre-states
 
+	log_printer: CDD_LOG_PRINTER
+			-- Prints log messages
+
 invariant
 	correct_testing_status: is_testing_enabled = (test_suite /= Void)
 	refresh_actions_not_void: refresh_actions /= Void
@@ -612,5 +618,6 @@ invariant
 	test_executor_not_void: test_executor /= Void
 	test_examinator_not_void: test_examinator /= Void
 	not_debugging_and_examinating: not (is_examinating and is_debugging)
+	log_printer_not_void: log_printer /= Void
 
 end
