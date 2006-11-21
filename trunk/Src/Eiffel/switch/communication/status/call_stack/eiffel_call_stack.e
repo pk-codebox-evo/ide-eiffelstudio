@@ -60,13 +60,6 @@ feature -- Properties
 		deferred
 		end
 
-feature -- Output
-
-	display_stack (st: TEXT_FORMATTER) is
-			-- Display callstack in `st'.
-		deferred
-		end
-
 invariant
 
 	empty_if_error: error_occurred implies is_empty
