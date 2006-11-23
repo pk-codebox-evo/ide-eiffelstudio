@@ -15,9 +15,9 @@
 	<target name="build_c_library" depend="init">
 		<echo message="Compile Net clib" />
 		
-		<exec executable="make_${ISE_C_COMPILER}.bat" dir="${ISE_LIBRARY}/library/net/Clib" if="${is_windows}" 
+		<exec executable="make_${ISE_C_COMPILER}.bat" if="${is_windows}" 
 			accept_errors="true" exit_code_variable="return_code" />
-		<exec executable="finish_freezing -library" dir="${ISE_LIBRARY}/library/net/Clib" unless="${is_windows}" 
+		<exec executable="finish_freezing -library" unless="${is_windows}" 
 			accept_errors="true" exit_code_variable="return_code" />
 		<echo message="done." />
 	</target>
