@@ -21,7 +21,4 @@
 			accept_errors="true" exit_code_variable="return_code" />
 		<echo message="done." />
 	</target>
-	
-	
-	
 </project>
