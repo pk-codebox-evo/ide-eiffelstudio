@@ -1,0 +1,139 @@
+<?xml version="1.0"?>
+<project name="make_library" default="help">
+
+	<description>
+		description: "Clib library compilation and other stuff"
+		author: "Beat Herlig, Jocelyn Fiat and others"
+	</description>
+
+	<!--
+		============
+		== README ==
+		============
+		
+		This script (and those who get called by it) works currently only on windows, 
+		and is under heavy developement.
+		The script doesn't do any checks for env-vars (this will be done by another 
+		script, the "setup-checker"), so be sure to provide everything necessary.
+		
+		
+		USE ON YOUR OWN RISK!
+		
+		
+		start the script like this:
+			cd %EIFFEL_SRC%
+			geant -b make_library.eant build_all
+		
+			(or any other target)
+	-->
+	
+	<target name="help">
+		<echo message="usage:"/>
+		<echo message=" geant build_all" />
+		<echo message=" geant build_library" />
+		<echo message=" geant build_code_from_C_library" />
+	</target>	
+
+	<!--
+	**************************************************************************************
+	***  C code preparation (compilation ...)                   **************************
+	**************************************************************************************
+	-->
+		
+	<target name="build_all" depentd="init">
+		<echo message="let's build library C-stuff"/>
+		
+		<geant target="build_library"/>
+		<geant target="build_code_from_C_library" if="${os}=windows"/>
+	</target>
+	
+	<!-- all Clibs -->
+	<target name="build_library" depend="init">
+		<echo message="----------------------------------------------------"/>
+		<echo message="-- let's build C-stuff (aka net, vision2 and wel) --"/>
+		<echo message="----------------------------------------------------"/>
+		
+		<!-- net Clib -->
+		<set name="target_dir" value="library\net\Clib"/>
+		<geant target="build_c_library"/>
+		
+		<!-- vision2 Clib -->
+		<set name="target_dir" value="library\vision2\Clib"/>
+		<geant target="build_c_library"/>
+
+		<!-- WEL Clib -->
+		<set name="target_dir" value="library\wel\Clib" if="${os}=windows"/>
+		<geant target="build_c_library" if="${os}=windows"/>
+		
+		<echo message=""/>
+	</target>
+	
+	
+	<!-- build zlib/libpng -->
+	<target name="build_code_from_C_library" depend="init">
+		<echo message="---------------------------------------------------------"/>
+		<echo message="-- let's build C-library C-stuff (aka zlib and libpng) --"/>
+		<echo message="---------------------------------------------------------"/>
+		
+		<!-- zlib -->
+		<set name="target_dir" value="C_library\zlib"/>
+		<geant target="build_c_library"/>
+		
+		<!-- libpng -->
+		<set name="target_dir" value="C_library\libpng"/>
+		<geant target="build_c_library"/>
+		<echo message=""/>
+	</target>
+	
+	
+	<!-- generic call to build Clibs -->
+	<target name="build_c_library">
+		<!-- DEBUG
+			<echo message="target_dir: ${target_dir}"/>
+		-->
+		<geant file="build.eant" target="build_c_library" dir="${EIFFEL_SRC}\${target_dir}"/>
+	</target>
+	
+	
+	<!-- Implementation -->
+	
+	<target name="init">
+	    <set name="eiffel" value="ise"/>
+	    <geant target="init_cc"/>
+	    <geant target="init_os"/>
+		
+		<echo message="which c-compiler: ${cc}"/>
+		<echo message="which eiffel: ${eiffel}"/>
+		<echo message="which exe: ${exe}"/>
+		<echo message="which os: ${os}"/>
+		<echo message=""/>
+	</target>
+
+	 <target name="init_cc" if="${GOBO_CC}">
+		<set name="cc" value="${GOBO_CC}"/>
+	</target>
+	
+	<target name="init_os">
+		<geant target="init_windows"/>
+		<geant target="init_unix"/>
+	</target>
+
+	<target name="init_windows" if="${GOBO_OS}=windows">
+		<set name="os" value="windows"/>
+		
+	<!-- not needed yet
+		<set name="exe" value=".exe"/>
+		<set name="esbuild.obj" value=".obj"/>
+		<set name="exbuild.lib" value=".lib"/>
+	-->
+	
+		<set name="cc" value="msc" unless="${cc}"/>
+	</target>
+	
+	<target name="init_unix" unless="${GOBO_OS}=windows">
+		<echo message="this script doesn't run on unix, yet!!"/>
+		<set name="os" value="unix"/>
+		
+		<set name="cc" value="gcc" unless="${cc}"/>
+	</target>
+</project>
