@@ -54,15 +54,15 @@
 		<echo message="----------------------------------------------------"/>
 		
 		<!-- net Clib -->
-		<set name="target_dir" value="library\net\Clib"/>
+		<set name="target_dir" value="library${directory_seperator}net${directory_seperator}Clib"/>
 		<geant target="build_c_library"/>
 		
 		<!-- vision2 Clib -->
-		<set name="target_dir" value="library\vision2\Clib"/>
+		<set name="target_dir" value="library${directory_seperator}vision2${directory_seperator}Clib"/>
 		<geant target="build_c_library"/>
 
 		<!-- WEL Clib -->
-		<set name="target_dir" value="library\wel\Clib" if="${os}=windows"/>
+		<set name="target_dir" value="library${directory_seperator}wel${directory_seperator}Clib" if="${os}=windows"/>
 		<geant target="build_c_library" if="${os}=windows"/>
 		
 		<echo message=""/>
@@ -76,11 +76,11 @@
 		<echo message="---------------------------------------------------------"/>
 		
 		<!-- zlib -->
-		<set name="target_dir" value="C_library\zlib"/>
+		<set name="target_dir" value="C_library${directory_seperator}zlib"/>
 		<geant target="build_c_library"/>
 		
 		<!-- libpng -->
-		<set name="target_dir" value="C_library\libpng"/>
+		<set name="target_dir" value="C_library${directory_seperator}libpng"/>
 		<geant target="build_c_library"/>
 		<echo message=""/>
 	</target>
@@ -91,7 +91,7 @@
 		<!-- DEBUG
 			<echo message="target_dir: ${target_dir}"/>
 		-->
-		<geant file="build.eant" target="build_c_library" dir="${EIFFEL_SRC}\${target_dir}"/>
+		<geant file="build.eant" target="build_c_library" dir="${EIFFEL_SRC}${directory_seperator}${target_dir}"/>
 	</target>
 	
 	
@@ -120,6 +120,8 @@
 
 	<target name="init_windows" if="${GOBO_OS}=windows">
 		<set name="os" value="windows"/>
+		<set name="directory_seperator" value="\"/>
+		
 		
 	<!-- not needed yet
 		<set name="exe" value=".exe"/>
@@ -133,6 +135,7 @@
 	<target name="init_unix" unless="${GOBO_OS}=windows">
 		<echo message="this script doesn't run on unix, yet!!"/>
 		<set name="os" value="unix"/>
+		<set name="directory_seperator" value="/"/>
 		
 		<set name="cc" value="gcc" unless="${cc}"/>
 	</target>
