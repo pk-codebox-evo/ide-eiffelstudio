@@ -11,53 +11,21 @@ deferred class
 
 inherit
 	EB_FORMATTER
-		redefine
-			new_button
-		end
-
-feature -- Access
-
-	new_button: EV_TOOL_BAR_RADIO_BUTTON is
-			-- Create a new toolbar button and associate it with `Current'.
-		do
-			Result := Precursor
-			Result.drop_actions.extend (agent on_feature_drop)
-		end
 
 feature -- Properties
 
 	associated_feature: E_FEATURE
 			-- Feature about which information is displayed.
 
-	is_dotnet_formatter: BOOLEAN is
-			-- Is Current able to format .NET class texts?
-		deferred
-		end
-
-feature -- Formatting
-
-	save_in_file is
-			-- Save output format to a file.
-		require else
-			feature_non_void: associated_feature /= Void
-		do
---|FIXME XR: To be implemented.
-		end
-
 feature {NONE} -- Implementation
 
-	reset_display is
-			-- Clear all graphical output.
-		deferred
-		end
-
-	file_name: FILE_NAME is
-			-- Name of the file in which displayed information may be stored.
-		require else
-			class_non_void: associated_feature /= Void
+	element_name: STRING is
+			-- name of associated element in current formatter.
+			-- For exmaple, if a class stone is associated to current, `element_name' would be the class name.
 		do
-			create Result.make_from_string (associated_feature.name)
-			Result.add_extension (post_fix)
+			if associated_feature /= Void then
+				Result := associated_feature.name.twin
+			end
 		end
 
 	temp_header: STRING is
@@ -84,50 +52,8 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	line_numbers_allowed: BOOLEAN is False
+	line_numbers_allowed: BOOLEAN is False;
 		-- Does it make sense to show line numbers in Current?
-
-feature {NONE} -- Properties	
-
-	empty_widget: EV_WIDGET is
-			-- Widget displayed when no information can be displayed.
-		do
-			if internal_empty_widget = Void then
-				new_empty_widget
-			end
-			Result := internal_empty_widget
-		end
-
-	internal_empty_widget: EV_WIDGET
-			-- Widget displayed when no information can be displayed.	
-
-	on_feature_drop (fs: FEATURE_STONE) is
-			-- Notify `manager' of the dropping of `fs'.
-		do
-			if not selected then
-				execute
-			end
-			if fs.e_feature /= associated_feature then
-				manager.set_stone (fs)
-			end
-		end
-
-	new_empty_widget is
-			-- Initialize a default empty_widget.
-		local
-			def: EV_STOCK_COLORS
-			manag: EB_FEATURES_VIEW
-		do
-			create def
-			create {EV_CELL} internal_empty_widget
-			internal_empty_widget.set_background_color (def.White)
-			manag ?= widget_owner
-			if manag = Void then
-				internal_empty_widget.drop_actions.extend (agent on_feature_drop)
-			else
-				internal_empty_widget.drop_actions.extend (agent manag.drop_stone)
-			end
-		end
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
