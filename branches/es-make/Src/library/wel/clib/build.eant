@@ -2,24 +2,43 @@
 <project name="build_wel_clib" default="help">
 
 	<description>
-		description: "Clib library compilation and other stuff"
+		description: "WEL Clib library compilation"
 		author: "Beat Herlig"
 	</description>
 
 	<inherit>
-		<parent location="${EIFFEL_SRC}/make_library.eant">
-			<redefine target="build_c_library"/>
+		<parent location="${EIFFEL_SRC}/library/build.eant">
+			<redefine target="help"/>
+			<redefine target="clean"/>
+			<redefine target="clobber"/>
 		</parent>
 	</inherit>
 	
-	<target name="build_c_library" depend="init">
+	<target name="help">
+		<echo message="usage:"/>
+		<echo message=" geant compile_library"/>
+		<echo message="       ----------"/>
+
+		<echo message=" geant clean"/>
+		<echo message=" geant clobber"/>
+		<echo message="       ----------"/>
+	</target>
+	
+	<target name="compile_library" depend="init">
 		<echo message="Compile WEL clib" />
 		
-		<exec executable="make_${cc}.bat" if="${is_windows}" 
-			accept_errors="true" exit_code_variable="return_code" />
+		<exec executable="make_${ISE_C_COMPILER}.bat" if="${is_windows}" dir="${ISE_LIBRARY}/library/wel/Clib" accept_errors="true" exit_code_variable="return_code" />
+		<exec executable="finish_freezing -library" unless="${is_windows}" accept_errors="true" exit_code_variable="return_code" />
 		<echo message="done." />
 	</target>
 	
-	
-	
+	<target name="clean" depend="init">
+		<echo message="nothing to clean here."/>
+		<echo message=" "/>
+	</target>
+
+	<target name="clobber" depend="init">
+		<echo message="nothing to clobber here."/>
+		<echo message=" "/>
+	</target>	
 </project>
