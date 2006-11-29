@@ -5,7 +5,6 @@
                 description: "Checks the setup for installing ES"
 		author: "es-make Project Team, ETH Zurich"
         </description>
-
 	<!--
 		============
 		== README ==
@@ -20,7 +19,6 @@
 			cd %EIFFEL_SRC%
 			geant -b check_setup.eant
 	-->
-
 	<target name="help">
 		<description>
 			Display help message
@@ -35,54 +33,93 @@
 	</target>
 	<target name="check_setup_unix" unless="$is_windows">
 		<echo message="Checking environment variables..." />
-		<echo message="  -> EIFFEL_SVN: ${EIFFEL_SVN}, ok" if="${EIFFEL_SVN}" />
-		<echo message="  -> EIFFEL_SVN: not set, ! please check !" unless="${EIFFEL_SVN}" />
-		<echo message="  -> EIFFEL_SRC: ${EIFFEL_SRC}, ok" if="${EIFFEL_SRC}" />
-		<echo message="  -> EIFFEL_SRC: not set, ! please check !" unless="${EIFFEL_SRC}" />
-		<echo message="  -> ISE_PLATFORM: ${ISE_PLATFORM}, ok" if="${ISE_PLATFORM}" />
-		<echo message="  -> ISE_PLATFORM: not set, ! please check !" unless="${ISE_PLATFORM}" />
-		<echo message="  -> ISE_LIBRARY: ${ISE_LIBRARY}, ok" if="${ISE_LIBRARY}" />
-		<echo message="  -> ISE_LIBRARY: not set, ! please check !" unless="${ISE_LIBRARY}" />
-		<echo message="  -> ISE_EIFFEL: ${ISE_EIFFEL}, ok" if="${ISE_EIFFEL}" />
-		<echo message="  -> ISE_EIFFEL: not set, ! please check !" unless="${ISE_EIFFEL}" />
-		
-		<echo message="Checking resources..." />
-		<available resource="$EIFFEL_SVN" variable="conf_eiffel_svn" if="${EIFFEL_SVN}" />
-		<available resource="$EIFFEL_SRC" variable="conf_eiffel_src" if="${EIFFEL_SRC}" />
-		<available resource="$ISE_LIBRARY" variable="conf_ise_library" if="${ISE_LIBRARY}" />
-		<available resource="$ISE_EIFFEL" variable="conf_ise_eiffel" if="${ISE_EIFFEL}" />
-		<echo message="  -> $EIFFEL_SVN: ok" if="${conf_eiffel_svn}" />
-		<echo message="  -> EIFFEL_SVN not set, can't figure out resource: ! please check !" unless="${conf_eiffel_svn}" />
-		<echo message="  -> $EIFFEL_SRC: ok" if="${conf_eiffel_src}" />
-		<echo message="  -> EIFFEL_SRC not set, can't figure out resource: ! please check !" unless="${conf_eiffel_src}" />
-		<echo message="  -> $ISE_LIBRARY: ok" if="${conf_ise_library}" />
-		<echo message="  -> ISE_LIBRARY not set, can't figure out resource: ! please check !" unless="${conf_ise_library}" />
-		<echo message="  -> $ISE_EIFFEL: ok" if="${conf_ise_eiffel}" />
-		<echo message="  -> ISE_EIFFEL not set, can't figure out resource: ! please check !" unless="${conf_ise_eiffel}" />
-		<exec executable="which ec > /dev/null" exit_code_variable="conf_ec" />
-		<echo message="  -> ec in path, exit code: ${conf_ec}, ok" if="${conf_ec}=0" />
-		<echo message="  -> ec not in path, exit code: ${conf_ec}, ! please check !" unless="${conf_ec}=0" />
-		<exec executable="ec -version | grep -q 'version 5.7' > /dev/null" exit_code_variable="conf_ec_version" />
-		<echo message="  -> ec version 5.7, exit code: ${conf_ec_version}, ok" if="${conf_ec_version}=0" />
-		<echo message="  -> ec wrong version, exit code: ${conf_ec_version}, ! please check !" unless="${conf_ec_version}=0" />
+
+		<set name="conf_eiffel_svn" value="" if="${EIFFEL_SVN}" />
+		<set name="conf_eiffel_src" value="" if="${EIFFEL_SRC}" />
+		<set name="conf_ise_platform" value="" if="${ISE_PLATFORM}" />
+		<set name="conf_ise_library" value="" if="${ISE_LIBRARY}" />
+		<set name="conf_ise_eiffel" value="" if="${ISE_EIFFEL}" />
+		<set name="setup_error" value="" unless="$conf_eiffel_svn" />
+		<set name="setup_error" value="" unless="$conf_eiffel_src" />
+		<set name="setup_error" value="" unless="$conf_ise_platform" />
+		<set name="setup_error" value="" unless="$conf_ise_library" />
+		<set name="setup_error" value="" unless="$conf_ise_eiffel" />
+
+		<echo message="  -> EIFFEL_SVN: ${EIFFEL_SVN}, ok" if="$conf_eiffel_svn" />
+		<echo message="  -> EIFFEL_SVN: not set, ! please check !" unless="$conf_eiffel_svn" />
+		<echo message="  -> EIFFEL_SRC: ${EIFFEL_SRC}, ok" if="$conf_eiffel_src" />
+		<echo message="  -> EIFFEL_SRC: not set, ! please check !" unless="$conf_eiffel_src" />
+		<echo message="  -> ISE_PLATFORM: ${ISE_PLATFORM}, ok" if="$conf_ise_platform" />
+		<echo message="  -> ISE_PLATFORM: not set, ! please check !" unless="$conf_ise_platform" />
+		<echo message="  -> ISE_LIBRARY: ${ISE_LIBRARY}, ok" if="$conf_ise_library" />
+		<echo message="  -> ISE_LIBRARY: not set, ! please check !" unless="$conf_ise_library" />
+		<echo message="  -> ISE_EIFFEL: ${ISE_EIFFEL}, ok" if="$conf_ise_eiffel" />
+		<echo message="  -> ISE_EIFFEL: not set, ! please check !" unless="$conf_ise_eiffel" />
+
+		<echo message="You have an error in your setup, please check the configuration!" if="$setup_error" />
+		<exit code="1" if="$setup_error" />
 
 		<echo message="Checking tools..." />
+
 		<exec executable="which which > /dev/null 2> /dev/null" exit_code_variable="conf_which" />
-		<echo message="  -> which found, exit code: ${conf_which}, ok" if="${conf_which}=0" />
-		<echo message="  -> which not in path, exit code: ${conf_which}, ! please check !" unless="${conf_which}=0" />
 		<exec executable="which pkg-config > /dev/null" exit_code_variable="conf_pkgconfig" />
-		<echo message="  -> pkg-config found, exit code: ${conf_pkgconfig}, ok" if="${conf_pkgconfig}=0" />
-		<echo message="  -> pkg-config not in path, exit code: ${conf_pkgconfig}, ! please check !" unless="${conf_pkgconfig}=0" />
+		<set name="setup_error" value="" unless="$conf_which=0" />
+		<set name="setup_error" value="" unless="$conf_pkgconfig=0" />
+		
+		<echo message="  -> which found, exit code: $conf_which, ok" if="$conf_which=0" />
+		<echo message="  -> which not in path, exit code: $conf_which, ! please check !" unless="$conf_which=0" />
+		<echo message="  -> pkg-config found, exit code: $conf_pkgconfig, ok" if="$conf_pkgconfig=0" />
+		<echo message="  -> pkg-config not in path, exit code: $conf_pkgconfig, ! please check !" unless="$conf_pkgconfig=0" />
+
+		<echo message="You have an error in your setup, please check the configuration!" if="$setup_error" />
+		<exit code="1" if="$setup_error" />
+
+		<echo message="Checking resources..." />
+
+		<available resource="$EIFFEL_SVN" variable="res_eiffel_svn" if="$conf_eiffel_svn" />
+		<available resource="$EIFFEL_SRC" variable="res_eiffel_src" if="$conf_eiffel_src" />
+		<available resource="$ISE_LIBRARY" variable="res_ise_library" if="$conf_ise_library" />
+		<available resource="$ISE_EIFFEL" variable="res_ise_eiffel" if="$conf_ise_eiffel" />
+		<exec executable="which ec > /dev/null" exit_code_variable="res_ec" />
+		<exec executable="ec -version | grep -q 'version 5.7' > /dev/null" exit_code_variable="conf_ec_version" />
+		<set name="setup_error" value="" unless="$res_eiffel_svn=true" />
+		<set name="setup_error" value="" unless="$res_eiffel_src=true" />
+		<set name="setup_error" value="" unless="$res_ise_library=true" />
+		<set name="setup_error" value="" unless="$res_ise_eiffel=true" />
+		<set name="setup_error" value="" unless="$res_ec=0" />
+		<set name="setup_error" value="" unless="$conf_ec_version=0" />
+
+		<echo message="  -> $EIFFEL_SVN: ok" if="$res_eiffel_svn=true" />
+		<echo message="  -> $EIFFEL_SVN: not found, ! please check !" unless="$res_eiffel_svn=true" />
+		<echo message="  -> $EIFFEL_SRC: ok" if="$res_eiffel_src=true" />
+		<echo message="  -> $EIFFEL_SRC: not found, ! please check !" unless="$res_eiffel_src=true" />
+		<echo message="  -> $ISE_LIBRARY: ok" if="$res_ise_library=true" />
+		<echo message="  -> $ISE_LIBRARY: not found, ! please check !" unless="$res_ise_library=true" />
+		<echo message="  -> $ISE_EIFFEL: ok" if="$res_ise_eiffel=true" />
+		<echo message="  -> $ISE_EIFFEL: not found, ! please check !" unless="$res_ise_eiffel=true" />
+		<echo message="  -> ec in path, exit code: $res_ec, ok" if="$res_ec=0" />
+		<echo message="  -> ec not in path, exit code: $res_ec, ! please check !" unless="$res_ec=0" />
+		<echo message="  -> ec version 5.7, exit code: $conf_ec_version, ok" if="$conf_ec_version=0" />
+		<echo message="  -> ec wrong version, exit code: $conf_ec_version, ! please check !" unless="$conf_ec_version=0" />
+
+		<echo message="You have an error in your setup, please check the configuration!" if="$setup_error" />
+		<exit code="1" if="$setup_error" />
 
 		<echo message="Checking dependencies..." />
-		<exec executable="which gcc > /dev/null" exit_code_variable="conf_gcc" />
-		<echo message="  -> gcc found, exit code: ${conf_gcc}, ok" if="${conf_gcc}=0" />
-		<echo message="  -> gcc not in path, exit code: ${conf_gcc}, ! please check !" unless="${conf_gcc}=0" />
-		<exec executable="pkg-config --exists gtk+-2.0" exit_code_variable="conf_pkgconfig_gtk" />
-		<echo message="  -> gtk 2.0 found, exit code: ${conf_pkgconfig_gtk}, ok" if="${conf_pkgconfig_gtk}=0" />
-		<echo message="  -> gtk 2.0 not in pkgconfig path, exit code: ${conf_pkgconfig_gtk}, ! please check !" unless="${conf_pkgconfig_gtk}=0" />
 
-		<echo message="Setup check complete. Please verify configuration!" />
+		<exec executable="which gcc > /dev/null" exit_code_variable="res_gcc" />
+		<exec executable="pkg-config --exists gtk+-2.0" exit_code_variable="res_gtk" />
+		<set name="setup_error" value="" unless="$res_gcc=0" />
+		<set name="setup_error" value="" unless="$res_gtk=0" />
+
+		<echo message="  -> gcc found, exit code: $res_gcc, ok" if="$res_gcc=0" />
+		<echo message="  -> gcc not in path, exit code: $res_gcc, ! please check !" unless="$res_gcc=0" />
+		<echo message="  -> gtk 2.0 found, exit code: $res_gtk, ok" if="$res_gtk=0" />
+		<echo message="  -> gtk 2.0 not in pkgconfig path, exit code: $res_gtk, ! please check !" unless="$res_gtk=0" />
+
+		<echo message="You have an error in your setup, please check the configuration!" if="$setup_error" />
+		<exit code="1" if="$setup_error" />
+		<echo message="Setup check complete. Your configuration seems ok!" />
 	</target>
 	<target name="check_setup_win" if="$is_windows">
 		<echo message="This script doesn't run on windows, yet." />
