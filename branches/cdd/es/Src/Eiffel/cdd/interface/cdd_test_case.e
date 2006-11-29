@@ -11,30 +11,36 @@ inherit
 
 	COMPARABLE
 
-create
+create {CDD_TEST_CASE_FACTORY, CDD_MANAGER}
 	make
 
-feature {CDD_TEST_CASE_FACTORY} -- Initialization
+feature -- Initialization
 
-	make (a_target_class: like class_under_test; a_feature: like feature_under_test; a_test_class: like tester_class) is
+	make (a_test_class: like tester_class; a_feature: like feature_under_test) is
 			-- Initialize test case for testing `a_feature' of class `a_target_class' where
 			-- `a_test_class' is the classed used for testing.
 		require
-			valid_target_class: a_target_class /= Void
 			feature_not_empty: a_feature /= Void
 			valid_test_class: a_test_class /= Void
 		do
-			class_under_test := a_target_class
-			feature_under_test := a_feature
-			tester_class := a_test_class
 			create update_status_actions
 			status := not_tested_code
 			is_verified := True
+			set_class_and_feature (a_test_class, a_feature)
 		ensure
-			target_class_set: class_under_test = a_target_class
+			verified: is_verified
 			e_feature_set: feature_under_test = a_feature
 			test_class_set: tester_class = a_test_class
-			verified: is_verified
+		end
+
+	set_unverified is
+			-- Set `is_verified' to False.
+		require
+			not_testes_yet: status = not_tested_code
+		do
+			is_verified := False
+		ensure
+			not_verified: not is_verified
 		end
 
 feature -- Access
@@ -47,13 +53,16 @@ feature -- Access
 			correct_result: Result = class_under_test.cluster
 		end
 
-	class_under_test: EIFFEL_CLASS_I
+	class_under_test: EIFFEL_CLASS_C is
 			-- Class under tested
+		do
+			Result := feature_under_test.associated_class.eiffel_class_c
+		end
 
 	feature_under_test: E_FEATURE
 			-- Name of feature under tested
 
-	tester_class: CLASS_I
+	tester_class: EIFFEL_CLASS_I
 			-- Class used for testing
 
 	last_exception_tag: STRING
@@ -114,17 +123,53 @@ feature -- Status setting
 			status_set: status = a_status
 		end
 
-feature {CDD_MANAGER} -- Verification setting
+	set_class_and_feature (a_test_class: like tester_class; a_feature: like feature_under_test) is
+			-- Initialize test case for testing `a_feature' of class `a_target_class' where
+			-- `a_test_class' is the classed used for testing.
+		require
+			feature_not_void: a_feature /= Void
+			valid_test_class: a_test_class /= Void
+		do
+			tester_class := a_test_class
+			feature_under_test := a_feature
+		ensure
+			e_feature_set: feature_under_test = a_feature
+			test_class_set: tester_class = a_test_class
+		end
 
-	set_unverified is
+feature -- Element change
+
+	set_tester_class (a_class: like tester_class) is
+			-- Set `tester_class' to `a_class'.
+		require
+			a_class_not_void: a_class /= Void
+		do
+			tester_class := a_class
+		ensure
+			tester_class_set: tester_class = a_class
+		end
+
+	set_feature_under_test (a_feature: like feature_under_test) is
+			-- Set `feature_under_test' to `a_feature'.
+		require
+			a_feature_not_void: a_feature /= Void
+		do
+			feature_under_test := a_feature
+		ensure
+			feature_under_test_set: feature_under_test = a_feature
+		end
+
+feature -- Verification setting
+
+	set_verified is
 			-- Set `is_verified' to False and call update agents.
 		require
 			not_tested_yet: status = not_tested_code
 		do
-			is_verified := False
+			is_verified := True
 			update_status_actions.call ([])
 		ensure
-			not_verified: not is_verified
+			verified: is_verified
 		end
 
 feature -- Actions
@@ -157,10 +202,8 @@ feature -- Compare
 		end
 
 invariant
-	target_cluster_not_void: class_under_test /= Void
-	target_class_not_void: class_under_test /= Void
-	e_feature_not_void: feature_under_test /= Void
-	test_class_not_void: tester_class /= Void
+	feature_under_test_not_void: feature_under_test /= Void
+	tester_class_not_void: tester_class /= Void
 	update_status_actions_not_void: update_status_actions /= Void
 	valid_status: correct_status (status)
 	correct_verification_status: not is_verified implies (status = not_tested_code or status = invalid_code)

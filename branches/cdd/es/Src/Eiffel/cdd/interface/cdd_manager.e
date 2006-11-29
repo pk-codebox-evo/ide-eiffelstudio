@@ -251,7 +251,6 @@ feature -- Status setting
 							test_case_factory.create_with_reflection (l_reflection, test_suite.tests_cluster)
 							if test_case_factory.last_created_test_case /= Void then
 								l_tc := test_case_factory.last_created_test_case
-								l_tc.set_unverified
 								test_suite.add_test_case (l_tc)
 							end
 						end
@@ -416,9 +415,26 @@ feature {EB_CLUSTERS} -- Project Events
 
 	on_compile_start is
 			-- Quit test execution if `test_executor' is still running background tests.
+		local
+			l_classes: HASH_TABLE [EIFFEL_CLASS_I, STRING]
 		do
 			if is_executing then
-				-- stop_testing
+				-- TODO: make test executor stop testing
+			end
+			if is_testing_enabled then
+				l_classes := test_suite.tests_cluster.classes
+				from
+					l_classes.start
+				until
+					l_classes.off
+				loop
+					if not l_classes.item_for_iteration.is_compiled then
+						eiffel_system.system.add_unref_class (l_classes.item_for_iteration)
+						-- eiffel_system.workbench.add_class_to_recompile (l_classes.item_for_iteration)
+						eiffel_system.system.force_rebuild
+					end
+					l_classes.forth
+				end
 			end
 		end
 
@@ -427,53 +443,57 @@ feature {EB_CLUSTERS} -- Project Events
 		local
 			l_tests_cluster: CLUSTER_I
 			l_classes: HASH_TABLE [EIFFEL_CLASS_I, STRING]
+			l_tester_class: EIFFEL_CLASS_I
 			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_CASE]
-			l_old_states: HASH_TABLE [TUPLE [INTEGER, STRING, STRING, STRING], STRING]
-			l_old: TUPLE [INTEGER, STRING]
-			l_lec, l_lef, l_let: STRING
+			l_feature: E_FEATURE
 			l_tc: CDD_TEST_CASE
 			l_was_enabled: BOOLEAN
 		do
-			l_was_enabled := is_testing_enabled
-			if not l_was_enabled or else not is_debugging then
+			if not is_debugging then
 				l_tests_cluster := eiffel_universe.cluster_of_name (tests_cluster_name)
 				if l_tests_cluster /= Void then
-						-- Save current test cases states
-					if l_was_enabled then
-						from
-							l_cursor := test_suite.test_cases.new_cursor
-							l_cursor.start
-							create l_old_states.make (test_suite.test_cases.count)
-						until
-							l_cursor.after
-						loop
-							l_old_states.put ([l_cursor.item.status, l_cursor.item.last_exception_class_name, l_cursor.item.last_exception_feature_name, l_cursor.item.last_exception_tag], l_cursor.item.tester_class.name)
-							l_cursor.forth
-						end
+						-- Update test suite, create if necessary
+					if is_testing_enabled then
+							-- Note the testing was enabled before compilation
+						l_was_enabled := True
+						test_suite.set_tests_cluster (l_tests_cluster)
+					else
+						create test_suite.make_with_cluster (l_tests_cluster)
 					end
-					create test_suite.make_with_cluster (l_tests_cluster)
+						-- Parse classes in tests cluster
 					l_classes := test_suite.tests_cluster.classes
 					from
 						l_classes.start
 					until
 						l_classes.after
 					loop
-						if not test_suite.has_test_case_for_class (l_classes.item_for_iteration) then
-							test_case_factory.create_from_class (l_classes.item_for_iteration, eiffel_universe)
-							if test_case_factory.last_created_test_case /= Void then
-								l_tc := test_case_factory.last_created_test_case
-									-- retrieve old test case state if available
-								if l_was_enabled and then l_old_states.has (l_tc.tester_class.name) then
-									l_old := l_old_states.item (l_tc.tester_class.name)
-									l_let ?= l_old.reference_item (4)
-									l_lec ?= l_old.reference_item (2)
-									l_lef ?= l_old.reference_item (3)
-									l_tc.set_status (l_old.integer_item (1), l_lec, l_lef, l_let)
-								end
+						l_tester_class := l_classes.item_for_iteration
+						test_case_factory.parse_class (l_tester_class)
+						if test_case_factory.last_parsed_feature /= Void then
+							l_tc := test_suite.test_case_for_class_name (l_tester_class.name)
+							if l_tc /= Void then
+								l_tc.set_class_and_feature (l_tester_class, test_case_factory.last_parsed_feature)
+							else
+								create l_tc.make (l_tester_class, test_case_factory.last_parsed_feature)
 								test_suite.add_test_case (l_tc)
 							end
 						end
 						l_classes.forth
+					end
+						-- Remove test cases from test suite for which there is no class in tests cluster
+					if l_was_enabled then
+						from
+							l_cursor := test_suite.test_cases.new_cursor
+							l_cursor.start
+						until
+							l_cursor.off
+						loop
+							if not l_classes.has_item (l_cursor.item.tester_class) then
+								test_suite.remove_test_case (l_cursor.item)
+							else
+								l_cursor.forth
+							end
+						end
 					end
 				else
 					test_suite := Void
@@ -485,8 +505,6 @@ feature {EB_CLUSTERS} -- Project Events
 					start_executing
 				end
 			end
-		ensure
-			new_test_suite_instance: is_testing_enabled implies test_suite /= old test_suite
 		end
 
 	on_class_removed (a_class: CLASS_I) is

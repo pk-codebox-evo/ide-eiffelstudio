@@ -15,7 +15,7 @@ inherit
 			make_with_row
 		end
 
-	CDD_GRID_HELPER [EIFFEL_CLASS_I, CDD_GRID_CLASS_LINE]
+	CDD_GRID_HELPER [EIFFEL_CLASS_C, CDD_GRID_CLASS_LINE]
 		undefine
 			default_create,
 			is_equal,
@@ -46,7 +46,7 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	data_from_test_case (a_tc: CDD_TEST_CASE): EIFFEL_CLASS_I is
+	data_from_test_case (a_tc: CDD_TEST_CASE): EIFFEL_CLASS_C is
 			-- Attribute of `a_tc' displayed in sublines of `Current'.
 		do
 			Result := a_tc.class_under_test
@@ -54,7 +54,7 @@ feature -- Access
 
 feature {NONE} -- Element change
 
-	create_new_line (a_row_index: INTEGER; a_class: EIFFEL_CLASS_I) is
+	create_new_line (a_row_index: INTEGER; a_class: EIFFEL_CLASS_C) is
 			-- Create a subline for displaying `a_class' with row at position `a_row_index'.
 		do
 			create last_created_line.make_with_row (grid.row (a_row_index), a_class)

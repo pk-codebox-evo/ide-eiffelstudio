@@ -25,30 +25,28 @@ feature -- Access
 
 	last_created_test_case: CDD_TEST_CASE
 
+	last_parsed_feature: E_FEATURE
+
 feature {CDD_MANAGER} -- Element change
 
-	create_from_class (a_class: EIFFEL_CLASS_I; a_universe: UNIVERSE_I) is
-			-- Create a new test case instance for test class 'a_class' and assign
-			-- 'last_created_test_case' to created instance.
-			-- Retrieve the class and cluster under test from 'a_universe'.
+	parse_class (a_class: EIFFEL_CLASS_I) is
+			-- Parse tester class 'a_class' and set `last_parsed_class' to its CLASS_C instance.
+			-- Also set `last_parsed_feature' to the feature under test in `a_class'.
 			-- NOTE: a_class must be a test class in the cdd tests cluster.
-			-- If creation failed, 'last_created_test_case' is Void.
+			-- If something fails, `last_parsed_class' and `last_parsed_feature' will be Void.
 		require
 			a_class_not_void: a_class /= Void
-			a_universe_not_void: a_universe /= Void
 		local
 			l_file: KL_BINARY_INPUT_FILE
 			l_ast: CLASS_AS
 			l_ilist: INDEXING_CLAUSE_AS
 			l_item: INDEX_AS
-
 			l_name, l_icluster, l_iclass, l_ifeature: STRING
 			l_class: EIFFEL_CLASS_C
 			l_feature: E_FEATURE
-			l_tc: CDD_TEST_CASE
 			l_group: CONF_GROUP
 		do
-			last_created_test_case := Void
+			last_parsed_feature := Void
 			create l_file.make (a_class.file_name)
 			if l_file.exists then
 				if not a_class.is_compiled then
@@ -82,13 +80,12 @@ feature {CDD_MANAGER} -- Element change
 					if l_icluster /= Void and l_iclass /= Void and l_ifeature /= Void then
 						l_group := eiffel_universe.group_of_name (l_icluster)
 						if l_group /= Void then
-							l_class ?= a_universe.class_named (l_iclass, l_group).compiled_class
-						end
-						if l_class /= Void then
-							l_feature := l_class.feature_with_name (l_ifeature)
-							if l_feature /= Void then
-								create l_tc.make (l_class.original_class, l_feature, a_class)
-								last_created_test_case := l_tc
+							l_class ?= eiffel_universe.class_named (l_iclass, l_group).compiled_class
+							if l_class /= Void then
+								l_feature := l_class.feature_with_name (l_ifeature)
+								if l_feature /= Void then
+									last_parsed_feature := l_feature
+								end
 							end
 						end
 					end
@@ -104,8 +101,7 @@ feature {CDD_MANAGER} -- Element change
 			a_cluster_not_void: a_cluster /= Void
 		local
 			l_file_name,l_class_name: STRING
-			l_cud: EIFFEL_CLASS_I
-			l_test_class: CLASS_I
+			l_test_class: EIFFEL_CLASS_I
 			l_tc: CDD_TEST_CASE
 		do
 			last_created_test_case := Void
@@ -116,10 +112,11 @@ feature {CDD_MANAGER} -- Element change
 			if was_last_create_successful then
 				initialize_clusters_in_manager
 				manager.add_class_to_cluster (l_file_name, a_cluster, "")
-				l_test_class := manager.last_added_class
-				l_cud := a_reflection.root_object.dynamic_type.original_class
-				create l_tc.make (l_cud, a_reflection.called_feature, l_test_class)
-				last_created_test_case := l_tc
+				l_test_class ?= manager.last_added_class
+				if l_test_class /= Void then
+					create l_tc.make (l_test_class, a_reflection.called_feature)
+					last_created_test_case := l_tc
+				end
 			end
 		ensure
 			created: last_created_test_case /= Void

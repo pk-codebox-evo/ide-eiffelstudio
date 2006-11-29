@@ -77,6 +77,8 @@ feature -- Access
 				create Result
 				grid_row.set_item (1, Result)
 			end
+		ensure
+			result_not_void: Result /= Void
 		end
 
 feature -- Element change

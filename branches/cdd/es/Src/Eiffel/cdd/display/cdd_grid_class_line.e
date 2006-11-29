@@ -8,9 +8,9 @@ class
 	CDD_GRID_CLASS_LINE
 
 inherit
-	CDD_GRID_LINE [EIFFEL_CLASS_I]
+	CDD_GRID_LINE [EIFFEL_CLASS_C]
 		rename
-			row_data as target_class
+			row_data as class_under_test
 		redefine
 			make_with_row,
 			name_item
@@ -28,7 +28,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make_with_row (a_row: like grid_row; a_class: like target_class) is
+	make_with_row (a_row: like grid_row; a_class: like class_under_test) is
 			-- Set `grid_row' to `a_row' and `class_under_test' to `a_class'.
 			-- Define first item of `grid_row' for displaying `class_under_test'.
 		do
@@ -45,11 +45,7 @@ feature -- Access
 		do
 			Result ?= grid_row.item (1)
 			if Result = Void then
-				if target_class.is_compiled then
-					create {EB_GRID_COMPILED_CLASS_ITEM} Result.make (target_class.compiled_class, create {EB_GRID_FULL_CLASS_STYLE})
-				else
-					create {EB_GRID_NONCOMPILED_CLASS_ITEM} Result.make (target_class, create {EB_GRID_JUST_NAME_NONCOMPILED_CLASS_STYLE})
-				end
+				create {EB_GRID_COMPILED_CLASS_ITEM} Result.make (class_under_test, create {EB_GRID_FULL_CLASS_STYLE})
 				grid_row.set_item (1, Result)
 			end
 		end
