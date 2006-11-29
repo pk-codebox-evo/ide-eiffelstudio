@@ -537,7 +537,7 @@ feature -- Actions
 			-- Actions performed after `Current' has refreshed the test suite
 
 	update_state_actions: ACTION_SEQUENCE [TUPLE [STRING]]
-			-- Actions perfomred when testing status changes
+			-- Actions performed when testing status changes
 
 	log_actions: ACTION_SEQUENCE [TUPLE [STRING]]
 			-- Agents for redirecting all output from external processes

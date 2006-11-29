@@ -41,6 +41,7 @@ feature {NONE} -- Initialization
 			l_tmp: CDD_INTERPRETER_SUPPORT
 		do
 			Precursor {CDD_ABSTRACT_TESTER} (a_manager)
+			manager.refresh_actions.extend (agent refresh)
 			create output.make
 		end
 
@@ -155,6 +156,37 @@ feature {CDD_MANAGER} -- Basic operations
 			manager.open_target.system.store
 		ensure
 			removed: not has_tester_target
+		end
+
+feature {NONE} -- Testing status settings
+
+	was_testing_enabled: BOOLEAN
+			-- Was testing enabled before last refresh?
+
+	refresh is
+			-- Add agents for test suite changes if testing was not enabled.
+		require
+			testing_enabled: manager.is_testing_enabled
+		do
+			if manager.is_testing_enabled and not was_testing_enabled then
+				manager.test_suite.add_test_case_actions.extend (agent add_test_case)
+				manager.test_suite.remove_test_case_actions.extend (agent remove_test_case)
+				was_testing_enabled := True
+			elseif not manager.is_testing_enabled then
+				was_testing_enabled := False
+			end
+		end
+
+	add_test_case (a_tc: CDD_TEST_CASE) is
+			-- Update root class according to test cases in suite.
+		do
+			create_root_class
+		end
+
+	remove_test_case (a_tc: CDD_TEST_CASE) is
+			-- Update root class according to test cases in suite.
+		do
+			create_root_class
 		end
 
 feature {NONE} -- Idle action
