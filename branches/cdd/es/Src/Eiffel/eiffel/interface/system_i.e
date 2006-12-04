@@ -1522,6 +1522,10 @@ feature -- Recompilation
 			root_class_c: CLASS_C
 			d1, d2: DATE_TIME
 			l_il_env: IL_ENVIRONMENT
+
+			l_groups: ARRAYED_LIST [CONF_GROUP]
+			l_cluster: CLUSTER_I
+			l_classes: HASH_TABLE [EIFFEL_CLASS_I, STRING]
 		do
 				-- create new backup subdir
 			if automatic_backup then
@@ -1536,6 +1540,31 @@ feature -- Recompilation
 
 				-- Recompilation initialization
 			init_recompilation
+
+				-- Make sure all classes except library classes are beeing compiled
+			from
+				l_groups := universe.groups
+				l_groups.start
+			until
+				l_groups.after
+			loop
+				if l_groups.item.is_cluster then
+					l_cluster ?= l_groups.item
+					from
+						l_classes := l_cluster.classes
+						l_classes.start
+					until
+						l_classes.after
+					loop
+						if not l_classes.item_for_iteration.is_compiled then
+							add_unref_class (l_classes.item_for_iteration)
+						end
+						l_classes.forth
+					end
+				end
+				l_groups.forth
+			end
+
 			if Compilation_modes.is_precompiling and il_generation then
 					-- For a precompiled library we require a freeze in non-IL
 					-- code generation.

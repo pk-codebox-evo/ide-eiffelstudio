@@ -121,7 +121,6 @@ feature {CDD_MANAGER} -- Basic operations
 			manager.update_state_actions.call (["Done"])
 		end
 
-
 	has_tester_target: BOOLEAN is
 			-- Is a cdd-tester target in current config present?
 		do
@@ -181,12 +180,20 @@ feature {NONE} -- Testing status settings
 			-- Update root class according to test cases in suite.
 		do
 			create_root_class
+			if is_running then
+				stop
+			end
+			start
 		end
 
 	remove_test_case (a_tc: CDD_TEST_CASE) is
 			-- Update root class according to test cases in suite.
 		do
 			create_root_class
+			if is_running then
+				stop
+			end
+			start
 		end
 
 feature {NONE} -- Idle action

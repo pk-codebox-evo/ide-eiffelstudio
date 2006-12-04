@@ -421,21 +421,21 @@ feature {EB_CLUSTERS} -- Project Events
 			if is_executing then
 				-- TODO: make test executor stop testing
 			end
-			if is_testing_enabled then
-				l_classes := test_suite.tests_cluster.classes
-				from
-					l_classes.start
-				until
-					l_classes.off
-				loop
-					if not l_classes.item_for_iteration.is_compiled then
-						eiffel_system.system.add_unref_class (l_classes.item_for_iteration)
-						-- eiffel_system.workbench.add_class_to_recompile (l_classes.item_for_iteration)
-						eiffel_system.system.force_rebuild
-					end
-					l_classes.forth
-				end
-			end
+--			if is_testing_enabled then
+--				l_classes := test_suite.tests_cluster.classes
+--				from
+--					l_classes.start
+--				until
+--					l_classes.off
+--				loop
+--					if not l_classes.item_for_iteration.is_compiled then
+--						eiffel_system.system.add_unref_class (l_classes.item_for_iteration)
+--						-- eiffel_system.workbench.add_class_to_recompile (l_classes.item_for_iteration)
+--						eiffel_system.system.force_rebuild
+--					end
+--					l_classes.forth
+--				end
+--			end
 		end
 
 	on_compile_stop is
