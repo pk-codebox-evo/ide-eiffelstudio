@@ -33,40 +33,6 @@ inherit
 			default_create
 		end
 
-	EVS_GENERAL_TOOLTIP_UTILITY
-		undefine
-			copy,
-			is_equal,
-			default_create
-		end
-
-feature -- Setting
-
-	set_general_tooltip (a_tooltip: like general_tooltip) is
-			-- Set `general_tooltip' with `a_tooltip' and enable it at the same time.
-		require
-			a_tooltip_attached: a_tooltip /= Void
-		do
-			if general_tooltip /= Void then
-				general_tooltip.disable_tooltip
-			end
-			general_tooltip := a_tooltip
-			general_tooltip.enable_tooltip
-		ensure
-			general_tooltip_set: general_tooltip = a_tooltip
-		end
-
-	remove_general_tooltip is
-			-- Remove `general_tooltip'.
-		do
-			if general_tooltip /= Void then
-				general_tooltip.disable_tooltip
-			end
-			general_tooltip := Void
-		ensure
-			general_tooltip_removed: general_tooltip = Void
-		end
-
 feature -- Setting
 
 	set_image (a_image: like image) is
@@ -78,13 +44,6 @@ feature -- Setting
 		ensure
 			image_set: image /= Void and then image.is_equal (a_image)
 		end
-
-feature -- Access
-
-	general_tooltip: EVS_GENERAL_TOOLTIP
-			-- General tooltip used to display information
-			-- Use this tooltip if normal tooltip provided cannot satisfy,
-			-- for example, you want to be able to pick and drop from/to tooltip.
 
 feature -- Searchable
 
