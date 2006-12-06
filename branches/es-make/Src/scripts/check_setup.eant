@@ -39,14 +39,14 @@
 		<set name="conf_ise_platform" value="" if="${ISE_PLATFORM}" />
 		<set name="conf_ise_library" value="" if="${ISE_LIBRARY}" />
 		<set name="conf_ise_eiffel" value="" if="${ISE_EIFFEL}" />
-		<set name="setup_error" value="" unless="$conf_eiffel_svn" />
+<!--	<set name="setup_error" value="" unless="$conf_eiffel_svn" /> -->
 		<set name="setup_error" value="" unless="$conf_eiffel_src" />
 		<set name="setup_error" value="" unless="$conf_ise_platform" />
 		<set name="setup_error" value="" unless="$conf_ise_library" />
 		<set name="setup_error" value="" unless="$conf_ise_eiffel" />
 
 		<echo message="  -> EIFFEL_SVN: ${EIFFEL_SVN}, ok" if="$conf_eiffel_svn" />
-		<echo message="  -> EIFFEL_SVN: not set, ! please check !" unless="$conf_eiffel_svn" />
+		<echo message="warning:  -> EIFFEL_SVN: not set, ! please check !" unless="$conf_eiffel_svn" />
 		<echo message="  -> EIFFEL_SRC: ${EIFFEL_SRC}, ok" if="$conf_eiffel_src" />
 		<echo message="  -> EIFFEL_SRC: not set, ! please check !" unless="$conf_eiffel_src" />
 		<echo message="  -> ISE_PLATFORM: ${ISE_PLATFORM}, ok" if="$conf_ise_platform" />
@@ -82,7 +82,7 @@
 		<available resource="$ISE_EIFFEL" variable="res_ise_eiffel" if="$conf_ise_eiffel" />
 		<exec executable="which ec > /dev/null" exit_code_variable="res_ec" />
 		<exec executable="ec -version | grep -q 'version 5.7' > /dev/null" exit_code_variable="conf_ec_version" />
-		<set name="setup_error" value="" unless="$res_eiffel_svn=true" />
+<!--	<set name="setup_error" value="" unless="$res_eiffel_svn=true" /> -->
 		<set name="setup_error" value="" unless="$res_eiffel_src=true" />
 		<set name="setup_error" value="" unless="$res_ise_library=true" />
 		<set name="setup_error" value="" unless="$res_ise_eiffel=true" />
@@ -90,7 +90,7 @@
 		<set name="setup_error" value="" unless="$conf_ec_version=0" />
 
 		<echo message="  -> $EIFFEL_SVN: ok" if="$res_eiffel_svn=true" />
-		<echo message="  -> $EIFFEL_SVN: not found, ! please check !" unless="$res_eiffel_svn=true" />
+		<echo message="warning:  -> $EIFFEL_SVN: not found, ! please check !" unless="$res_eiffel_svn=true" />
 		<echo message="  -> $EIFFEL_SRC: ok" if="$res_eiffel_src=true" />
 		<echo message="  -> $EIFFEL_SRC: not found, ! please check !" unless="$res_eiffel_src=true" />
 		<echo message="  -> $ISE_LIBRARY: ok" if="$res_ise_library=true" />
