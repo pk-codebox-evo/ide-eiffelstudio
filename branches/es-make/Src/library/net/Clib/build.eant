@@ -66,8 +66,8 @@
 	</target>	
 	
 	<target name="clean" depend="init">
-		<exec executable="del *.obj" accept_errors="true" exit_code_variable="return_code" />
-		<exec executable="del *.lib" accept_errors="true" exit_code_variable="return_code" />
+		<exec executable="del *.obj" accept_errors="true" exit_code_variable="return_code" if="${is_windows}" />
+		<exec executable="del *.lib" accept_errors="true" exit_code_variable="return_code" if="${is_windows}" />
 		<echo message=" "/>
 	</target>
 
