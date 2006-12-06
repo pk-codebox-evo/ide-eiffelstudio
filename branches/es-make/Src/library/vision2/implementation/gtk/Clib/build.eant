@@ -27,7 +27,8 @@
 	<target name="compile_library" depend="init">
 		<echo message="Compile Vision2 clib" />
 		
-
+		<echo message="Fixing bug: copying a new config.sh file..." />
+		<exec executable="cp ${EIFFEL_SRC}/C/CONFIGS/${ISE_PLATFORM} ./config.sh" dir="${ISE_LIBRARY}/vision2/implementation/gtk/Clib" unless="${is_windows}" accept_errors="true" exit_code_variable="return_code" />
 		<exec executable="finish_freezing -library" dir="${ISE_LIBRARY}/vision2/implementation/gtk/Clib" unless="${is_windows}" accept_errors="true" exit_code_variable="return_code" />
 		<echo message="done." />
 	</target>

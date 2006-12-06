@@ -84,6 +84,8 @@
 		<geant target="do_all" arguments="clobber"/>
 	</target>
 	
+	<!-- implementation -->
+	
 	<target name="do_all" depend="init">
 		<description>
 			Call 'geant' with the same target ${target} (first argument)
@@ -96,4 +98,5 @@
 		<geant file="build.eant" target="${target}" dir="wel/clib" if="${is_windows}"/>
 		<geant file="build.eant" target="${target}" dir="vision2/implementation/gtk/Clib" unless="${is_windows}"/>
 	</target>
+	
 </project>
