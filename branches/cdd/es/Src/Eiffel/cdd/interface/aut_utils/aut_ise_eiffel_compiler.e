@@ -142,6 +142,18 @@ feature -- Execution
 				ec_process.set_on_exit_handler (agent unset_running)
 				ec_process.set_on_fail_launch_handler (agent unset_running)
 				ec_process.set_hidden (True)
+
+				output_handler.call (["launching ec:%N"])
+				output_handler.call (["working dir:" + a_working_directory + "%N"])
+				output_handler.call (["exe:" + eiffel_compiler_executable_name + "%N"])
+				from
+					arguments.start
+				until
+					arguments.off
+				loop
+					output_handler.call (["arg:" + arguments.item + "%N"])
+					arguments.forth
+				end
 				ec_process.launch
 			end
 		end
