@@ -106,16 +106,7 @@ feature -- Execution
 			not_running: not is_running
 		local
 			arguments: ARRAYED_LIST [STRING]
-			quoted_config_filename: STRING
 		do
-			if operating_system.is_windows then
-				create quoted_config_filename.make (a_config_filename.count + 2)
-				quoted_config_filename.append_character ('"')
-				quoted_config_filename.append_string (a_config_filename)
-				quoted_config_filename.append_character ('"')
-			else
-				quoted_config_filename := a_config_filename
-			end
 			create arguments.make (8)
 			arguments.force ("-batch")
 			arguments.force ("-c_compile")
@@ -126,10 +117,10 @@ feature -- Execution
 			if a_config_filename.count > 4 then
 				if a_config_filename.substring (a_config_filename.count - 3, a_config_filename.count).is_equal (".ace") then
 					arguments.force ("-ace")
-					arguments.force (quoted_config_filename)
+					arguments.force (a_config_filename)
 				else
 					arguments.force ("-config")
-					arguments.force (quoted_config_filename)
+					arguments.force (a_config_filename)
 					arguments.force ("-target")
 					arguments.force (a_system_name)
 				end
