@@ -164,8 +164,6 @@ feature {NONE} -- Testing status settings
 
 	refresh is
 			-- Add agents for test suite changes if testing was not enabled.
-		require
-			testing_enabled: manager.is_testing_enabled
 		do
 			if manager.is_testing_enabled and not was_testing_enabled then
 				manager.test_suite.add_test_case_actions.extend (agent add_test_case)
