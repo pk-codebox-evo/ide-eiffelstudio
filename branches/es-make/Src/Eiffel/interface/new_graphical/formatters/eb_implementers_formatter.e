@@ -28,7 +28,7 @@ feature -- Properties
 			Result.put (pixmaps.icon_pixmaps.feature_implementers_icon, 2)
 		end
 
-	menu_name: STRING is
+	menu_name: STRING_GENERAL is
 			-- Identifier of `Current' in menus.
 		do
 			Result := Interface_names.m_Showhistory
@@ -36,10 +36,10 @@ feature -- Properties
 
 feature {NONE} -- Properties
 
-	command_name: STRING is
+	command_name: STRING_GENERAL is
 			-- Name of the command.
 		do
-			Result := Interface_names.l_Implementers
+			Result := Interface_names.string_general_to_lower (interface_names.l_Implementers)
 		end
 
 	post_fix: STRING is "imp"

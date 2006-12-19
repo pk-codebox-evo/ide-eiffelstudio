@@ -587,19 +587,19 @@ end;
 			-- Check all the renamings made in the table of
 			-- inherited features
 		local
-			inh_feat: INHERIT_FEAT
+			l: like linear_representation
 		do
 			from
-				start;
+				l := linear_representation
+				l.start
 			until
-				after
+				l.after
 			loop
-				inh_feat := item_for_iteration
 					-- Check the renamings on one name
-				inh_feat.check_renamings;
-				forth
-			end;
-		end;
+				l.item.check_renamings
+				l.forth
+			end
+		end
 
 	analyze is
 			-- Analyze inherited features: the renamings must have
@@ -950,10 +950,10 @@ end;
 			vffd4: VFFD4;
 			external_i: EXTERNAL_I;
 		do
-			feature_name_id := feat.internal_name_id;
+			feature_name_id := feat.internal_name.name_id
 debug ("ACTIVITY")
 	io.error.put_string ("FEATURE_UNIT on ");
-	io.error.put_string (feat.internal_name);
+	io.error.put_string (feat.internal_name.name);
 	io.error.put_new_line;
 end;
 
@@ -972,7 +972,7 @@ end;
 					-- Unique value processing
 				unique_feature ?= Result;
 				create integer_value.make_with_value (
-					Tmp_ast_server.unique_values_item (a_class.class_id).item (Result.feature_name))
+					Tmp_ast_server.unique_values_item (a_class.class_id).item (Result.feature_name.string_representation))
 				if integer_value.valid_type (unique_feature.type) then
 					integer_value.set_real_type (unique_feature.type)
 				else
@@ -997,6 +997,9 @@ end;
 
 						-- Found a feature of same name and written in the
 						-- same class.
+					check
+						has_body: body_server.server_has (body_index)
+					end
 					old_description := Body_server.server_item (body_index)
 					if old_description = Void then
 							-- This should not happen, but if it does.
@@ -1125,7 +1128,9 @@ end;
 			assert_prop_list := Void;
 
 			clear_all
-			extend_tbl_make (default_size)
+			if capacity > 200 then
+				extend_tbl_make (default_size)
+			end
 			create inherited_features.make (default_size)
 		end;
 

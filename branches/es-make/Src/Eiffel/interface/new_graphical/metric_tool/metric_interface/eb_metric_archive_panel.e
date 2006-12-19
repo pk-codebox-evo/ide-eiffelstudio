@@ -54,13 +54,6 @@ inherit
 			default_create
 		end
 
-	EB_RECYCLABLE
-		undefine
-			copy,
-			is_equal,
-			default_create
-		end
-
 	EIFFEL_LAYOUT
 		export
 			{NONE} all
@@ -82,12 +75,19 @@ feature {NONE} -- Initialization
 		local
 			l_pref: STRING_PREFERENCE
 		do
-			on_unit_order_change_agent := agent on_unit_order_change
-			on_stop_metric_evaluation_agent := agent on_stop_metric_evaluation
-			on_process_gui_agent := agent on_process_gui
 			metric_tool := a_tool
-			default_create
+			create calculator
+			calculator.step_actions.extend (agent on_stop_metric_evaluation)
+			calculator.step_actions.extend (agent on_process_gui)
+			install_agents (metric_tool)
 
+				-- Setup timers.
+			create internal_timer.make_with_interval (0)
+			create current_archive_timer.make_with_interval (0)
+			create reference_archive_timer.make_with_interval (0)
+			on_unit_order_change_agent := agent on_unit_order_change
+
+			default_create
 				-- Setup `open_file_dialog'.
 			l_pref := preferences.dialog_data.last_opened_metric_browse_archive_directory_preference
 			if l_pref.value = Void or else l_pref.value.is_empty then
@@ -97,14 +97,7 @@ feature {NONE} -- Initialization
 			open_file_dialog.set_title (metric_names.t_select_archive)
 			open_file_dialog.filters.extend (["*.xml", "XML files"])
 			open_file_dialog.filters.extend (["*.*", "All files"])
-
-				-- Setup timers.
-			create internal_timer.make_with_interval (0)
-			create current_archive_timer.make_with_interval (0)
-			create reference_archive_timer.make_with_interval (0)
-		ensure
-			on_stop_metric_evaluation_agent_attached: on_stop_metric_evaluation_agent /= Void
-			on_process_gui_agent_attached: on_process_gui_agent /= Void
+			set_is_metric_reloaded (True)
 		end
 
 	user_initialization is
@@ -116,10 +109,8 @@ feature {NONE} -- Initialization
 		do
 				-- Setup domain selector.
 			create domain_selector.make (False)
-			--domain_selector.set_minimum_width (210)
 				-- Setup metric selector.
 			create metric_selector.make (True)
---			metric_selector.set_minimum_width (160)
 			metric_selector.double_click_actions.extend (agent on_pointer_double_click_on_metric_item)
 
 				-- Setup toolbar.
@@ -131,7 +122,9 @@ feature {NONE} -- Initialization
 			metric_selection_area.extend (metric_selector)
 
 			new_archive_browse_btn.select_actions.extend (agent on_open_new_archive (agent on_new_archive_file_name_selected))
-			new_archive_file_name_text.change_actions.extend (agent on_new_archive_file_name_changes)
+			new_archive_file_name_text.change_actions.extend (agent on_new_archive_file_name_changes (internal_timer, new_archive_file_name_text, agent on_new_archive_checked))
+			current_metric_archive_text.change_actions.extend (agent on_current_metric_archive_text_change)
+			reference_metric_archive_text.change_actions.extend (agent on_reference_metric_archive_text_change)
 
 			stop_btn.disable_sensitive
 			stop_btn.select_actions.extend (agent on_stop_metric_evaluation_button_pressed)
@@ -151,7 +144,7 @@ feature {NONE} -- Initialization
 			browse_current_archive_btn.set_tooltip (metric_names.f_select_current_archive)
 			browse_reference_archive_btn.set_tooltip (metric_names.f_select_reference_archive)
 			run_btn.disable_sensitive
-			domain_selector.domain_change_actions.extend (agent (a_domain: EB_METRIC_DOMAIN) do synchronize_archive_evaluation_area end)
+			domain_selector.domain_change_actions.extend (agent on_domain_change)
 			new_archive_file_lbl.set_text (metric_names.t_location)
 			clean_btn.set_text (metric_names.t_clean)
 			archive_definition_frame.set_text (metric_names.t_archive_management)
@@ -206,91 +199,46 @@ feature -- Status report
 	is_reference_metric_archive_ok: BOOLEAN
 			-- Is file specified in `reference_metric_archive_text' valid?
 
-	is_archive_running: BOOLEAN
-			-- Is metric archive evaluation running?
-
-	is_compiling: BOOLEAN is
-			-- Is Eiffel compilation under-going?
-		do
-			Result := metric_tool.is_compiling
-		end
-
 	is_new_archive_file_selected: BOOLEAN
 			-- Is new archive file selected?
 
 	is_new_archive_file_exists: BOOLEAN
 			-- Does selected new archive file exist?
 
+	is_new_archive_file_valid: BOOLEAN
+			-- Does selected archive file contain valid metric archive?
+
 	is_last_load_successful: BOOLEAN
 			-- Is last `load_archive' successful?
 
+	is_original_starter: BOOLEAN
+			-- Is this panel the original panel in which metric evaluation starts?
+
 feature -- Basic operations
 
-	synchronize_when_compile_start is
-			-- Synchronize when Eiffel compilation starts.
+	set_is_original_starter (b: BOOLEAN) is
+			-- Set `is_original_starter' with `b'.
 		do
-			archive_definition_frame.disable_sensitive
-			archive_comparison_area.disable_sensitive
+			is_original_starter := b
+		ensure
+			is_original_starter_set: is_original_starter = b
 		end
 
-	synchronize_when_compile_stop is
-			-- Synchronize when Eiffel compilation stops.
+	set_is_cancel_evaluation_requested (b: BOOLEAN) is
+			-- Set `is_cancel_evaluation_requested' with `b'.
 		do
-			archive_definition_frame.enable_sensitive
-			archive_comparison_area.enable_sensitive
+			is_cancel_evaluation_requested := b
+		ensure
+			is_cancel_evaluation_requested_set: is_cancel_evaluation_requested = b
 		end
 
-	synchronize_when_archive_evaluation_start is
-			-- Synchronize when archive evaluation starts.
-		do
-			domain_selector.disable_sensitive
-			metric_selector.disable_sensitive
-			new_archive_file_area.disable_sensitive
-			archive_comparison_area.disable_sensitive
-		end
-
-	synchronize_when_archive_evaluation_stop is
-			-- Synchronize when archive evaluation stops.
-		do
-			domain_selector.enable_sensitive
-			metric_selector.enable_sensitive
-			new_archive_file_area.enable_sensitive
-			archive_comparison_area.enable_sensitive
-		end
-
-	set_stone (a_stone: STONE) is
-			-- Notify that `a_stone' has been dropped on Current.
+	force_drop_stone (a_stone: STONE) is
+			-- Force to drop `a_stone' in `domain_selector'.
 		do
 			domain_selector.on_drop (a_stone)
 		end
 
 feature -- Actions
-
-	on_select is
-			-- Action to be performed when current panel is selected
-		do
-			if not is_selected then
-				set_is_selected (True)
-			end
-			if not is_up_to_date then
-				metric_selector.load_metrics (True)
-				metric_selector.try_to_selected_last_metric
-				if metric_selector.last_selected_metric = Void then
-					metric_selector.select_first_metric
-				end
-				if last_update_request = compilation_start_update_request then
-						-- This is an update when Eiffel compilation starts.
-					if is_archive_running then
-						on_stop_metric_evaluation_button_pressed
-					end
-					synchronize_when_compile_start
-				elseif last_update_request = compilation_stop_update_request then
-						-- This is an update when Eiffel compilation stops.
-					synchronize_when_compile_stop
-				end
-				set_is_up_to_date (True)
-			end
-		end
 
 	on_open_new_archive (a_selection_agent: PROCEDURE [ANY, TUPLE]) is
 			-- Action to be performed to open a dialog to select a file name when create/update a metric archive
@@ -309,102 +257,65 @@ feature -- Actions
 			new_archive_file_name_text.set_text (open_file_dialog.file_name)
 		end
 
-	on_new_archive_file_name_changes is
+	on_new_archive_file_name_changes (a_timer: EV_TIMEOUT; a_text_field: EV_TEXT_FIELD; a_agent: PROCEDURE [ANY, TUPLE [BOOLEAN, BOOLEAN, LIST [EB_METRIC_ARCHIVE_NODE]]]) is
 			-- Action to be performed when text in `new_archive_file_name_text' changes
 		do
-			internal_timer.actions.wipe_out
-			internal_timer.actions.extend_kamikaze (agent check_archive_validity (new_archive_file_name_text, agent on_new_archive_checked, internal_timer))
-			internal_timer.set_interval (500)
+			a_timer.actions.wipe_out
+			a_timer.actions.extend_kamikaze (agent check_archive_validity (a_text_field, a_agent, a_timer))
+			a_timer.set_interval (500)
 		end
 
 	on_new_archive_checked (a_file_exist: BOOLEAN; a_valid: BOOLEAN; a_archive: LIST [EB_METRIC_ARCHIVE_NODE]) is
 			-- Action to be performed when archive file specified in `new_archive_file_name_text' is checked
 			-- If `a_valid' is True, `a_archive' is the archive, otherwise, `a_archive' is Void.
 		do
-			is_new_archive_file_exists := False
+			is_new_archive_file_exists := a_file_exist
+			is_new_archive_file_valid := a_valid
 			if a_file_exist then
 				if a_valid then
-					clean_btn.enable_sensitive
-					clean_btn.disable_select
-					new_archive_file_name_text.set_foreground_color (default_foreground_color)
 					new_archive_file_name_text.set_tooltip (tooltip_from_archive (a_archive))
-					is_new_archive_file_exists := True
 					clean_btn.set_tooltip (metric_names.f_clean_archive)
 				else
-					clean_btn.disable_sensitive
-					clean_btn.enable_select
-					new_archive_file_name_text.set_foreground_color (red_color)
 					new_archive_file_name_text.set_tooltip (metric_names.t_selected_archive_not_valid)
 					clean_btn.set_tooltip (metric_names.t_selected_archive_not_valid)
 				end
 				is_new_archive_file_selected := True
 			else
-				clean_btn.disable_select
-				clean_btn.disable_sensitive
-				clean_btn.set_tooltip ("")
-				new_archive_file_name_text.set_foreground_color (default_foreground_color)
+				clean_btn.remove_tooltip
 				new_archive_file_name_text.remove_tooltip
 				is_new_archive_file_selected := not new_archive_file_name_text.text.is_empty
 			end
-			synchronize_archive_evaluation_area
-		end
-
-	synchronize_archive_evaluation_area is
-			-- Synchronize archive evaluation area.
-		do
-			if is_new_archive_file_selected and then domain_selector.domain.is_valid then
-				run_btn.enable_sensitive
-			else
-				run_btn.disable_sensitive
-			end
+			set_is_up_to_date (False)
+			update_ui
 		end
 
 	on_run_archive is
 			-- Action to be performed to start metric calcuation for generating archive information
 		local
 			l_selected_metrics: LIST [STRING]
-			l_msg: STRING
+			l_msg: STRING_GENERAL
 			l_error_dialog: EV_ERROR_DIALOG
-			l_retried: BOOLEAN
 			l_file_name: STRING
 			l_archive: LIST [EB_METRIC_ARCHIVE_NODE]
-			l_source_domain: EB_METRIC_DOMAIN
-			l_metric: EB_METRIC
-			l_value: DOUBLE
-			l_archive_node: EB_METRIC_ARCHIVE_NODE
-			l_domain_generator: QL_TARGET_DOMAIN_GENERATOR
 			l_archive_tbl: HASH_TABLE [EB_METRIC_ARCHIVE_NODE, STRING]
 		do
-			create l_domain_generator
-			if not l_retried then
-				l_selected_metrics := metric_selector.selected_metrics
-				l_msg := check_selected_metrics (l_selected_metrics)
-				if l_msg /= Void then
-					create l_error_dialog.make_with_text (l_msg)
-					l_error_dialog.set_buttons (<<metric_names.t_ok>>)
-					l_error_dialog.show_modal_to_window (metric_tool_window)
+			set_is_cancel_evaluation_requested (False)
+			l_selected_metrics := metric_selector.selected_metrics
+			l_msg := check_selected_metrics (l_selected_metrics)
+			if l_msg /= Void then
+				create l_error_dialog.make_with_text (l_msg)
+				l_error_dialog.set_buttons (<<metric_names.t_ok>>)
+				l_error_dialog.show_modal_to_window (metric_tool_window)
+			else
+				l_file_name := new_archive_file_name_text.text
+				create {ARRAYED_LIST [EB_METRIC_ARCHIVE_NODE]} l_archive.make (l_selected_metrics.count)
+				metric_manager.on_archive_calculation_starts (Current)
+				calculator.calculate_archive (archive_calculatation_task (l_selected_metrics, domain_selector.domain))
+				metric_manager.on_archive_calculation_stops (Current)
+				if calculator.has_error then
+					display_status_message (calculator.last_error_message)
 				else
-					l_file_name := new_archive_file_name_text.text
-					create {ARRAYED_LIST [EB_METRIC_ARCHIVE_NODE]} l_archive.make (l_selected_metrics.count)
-					l_source_domain := domain_selector.domain
-					setup_metric_evaluation_callback (l_domain_generator)
-					synchronize_when_archive_evaluation_start
-					is_archive_running := True
-					from
-						l_selected_metrics.start
-					until
-						l_selected_metrics.after
-					loop
-						l_metric := metric_manager.metric_with_name (l_selected_metrics.item)
-						l_metric.disable_fill_domain
-						l_value := l_metric.value (l_source_domain).first.value
-						create l_archive_node.make (l_metric.name, metric_type_id (l_metric), create{DATE_TIME}.make_now, l_value, l_source_domain, l_metric.uuid.out)
-						l_archive.extend (l_archive_node)
-						l_selected_metrics.forth
-					end
-					is_archive_running := False
-					synchronize_when_archive_evaluation_stop
-					synchronize_after_metric_evaluation (l_domain_generator)
+					l_archive.append (calculator.calculated_archives)
 					if not clean_btn.is_selected then
 						l_archive_tbl := metric_archive_from_file (l_file_name)
 						if l_archive_tbl /= Void then
@@ -414,24 +325,11 @@ feature -- Actions
 					metric_manager.store_metric_archive (l_file_name, l_archive)
 					display_status_message ("")
 					on_new_archive_checked (True, True, l_archive)
+					on_reference_metric_archive_text_change
+					on_current_metric_archive_text_change
 					display_message (metric_names.t_metric_archive_calculation_finished)
-
 				end
 			end
-		rescue
-			l_retried := True
-			synchronize_after_metric_evaluation (l_domain_generator)
-			synchronize_when_archive_evaluation_stop
-			if not is_cancel_evaluation_requested then
-				display_error_message
-			else
-				if l_domain_generator.error_handler.has_error then
-					display_status_message (l_domain_generator.error_handler.error_list.last.out)
-				else
-					display_status_message (tag_name)
-				end
-			end
-			retry
 		end
 
 	on_stop_metric_evaluation (a_item: QL_ITEM) is
@@ -441,7 +339,7 @@ feature -- Actions
 		do
 			if is_cancel_evaluation_requested then
 				create l_domain_generator
-				if is_compiling then
+				if is_eiffel_compiling then
 					l_domain_generator.error_handler.insert_interrupt_error (metric_names.e_interrupted_by_compile)
 				else
 					l_domain_generator.error_handler.insert_interrupt_error (metric_names.e_interrupted_by_user)
@@ -452,7 +350,7 @@ feature -- Actions
 	on_stop_metric_evaluation_button_pressed is
 			-- Action to be performed when stop button is pressed.
 		do
-			is_cancel_evaluation_requested := True
+			set_is_cancel_evaluation_requested (True)
 		end
 
 	on_comparison_archive_selected (a_text_field: EV_TEXT_FIELD) is
@@ -470,7 +368,6 @@ feature -- Actions
 				reference_metric_archive_text.set_foreground_color (default_foreground_color)
 				reference_metric_archive_text.set_tooltip (tooltip_from_archive (a_archive))
 			else
-				reference_metric_archive_text.set_foreground_color (red_color)
 				if a_file_exist then
 					reference_metric_archive_text.set_tooltip (metric_names.t_selected_archive_not_valid)
 				else
@@ -478,7 +375,8 @@ feature -- Actions
 				end
 			end
 			last_reference_archive := a_archive
-			synchronize_compare_metric_button
+			set_is_up_to_date (False)
+			update_ui
 		end
 
 	on_current_archive_checked (a_file_exist: BOOLEAN; a_valid: BOOLEAN; a_archive: LIST [EB_METRIC_ARCHIVE_NODE]) is
@@ -490,7 +388,6 @@ feature -- Actions
 				current_metric_archive_text.set_foreground_color (default_foreground_color)
 				current_metric_archive_text.set_tooltip (tooltip_from_archive (a_archive))
 			else
-				current_metric_archive_text.set_foreground_color (red_color)
 				if a_file_exist then
 					current_metric_archive_text.set_tooltip (metric_names.t_selected_archive_not_valid)
 				else
@@ -498,7 +395,8 @@ feature -- Actions
 				end
 			end
 			last_current_archive := a_archive
-			synchronize_compare_metric_button
+			set_is_up_to_date (False)
+			update_ui
 		end
 
 	on_compare_archives is
@@ -560,29 +458,33 @@ feature -- Actions
 			end
 		end
 
-feature -- Notification
-
-	update (a_observable: QL_OBSERVABLE; a_data: ANY) is
-			-- Notification from `a_observable' indicating that `a_data' changed.
-		local
-			l_data: BOOLEAN_REF
+	on_domain_change (a_domain: EB_METRIC_DOMAIN) is
+			-- Action to be performed when domain in `domain_selector' changes
 		do
 			set_is_up_to_date (False)
-			if a_data /= Void then
-				l_data ?= a_data
-				if l_data /= Void then
-					if l_data.item then
-							-- This is an update when Eiffel compilation starts.
-						set_last_update_request (compilation_start_update_request)
-					else
-							-- This is an update when Eiffel compilation stops.
-						set_last_update_request (compilation_stop_update_request)
-					end
-				end
-			end
-			if is_selected then
-				on_select
-			end
+			update_ui
+		end
+
+	on_reference_metric_archive_text_change is
+			-- Action to be performed when text in `reference_metric_archive_text' changes
+		do
+			on_new_archive_file_name_changes (reference_archive_timer, reference_metric_archive_text, agent on_reference_archive_checked)
+		end
+
+	on_current_metric_archive_text_change is
+			-- Action to be performed when text in `current_metric_archive_text' changes
+		do
+			on_new_archive_file_name_changes (current_archive_timer, current_metric_archive_text, agent on_current_archive_checked)
+		end
+
+	on_metric_sent_to_history (a_archive: EB_METRIC_ARCHIVE_NODE; a_panel: ANY) is
+			-- Action to be performed when metric calculation information contained in `a_archive' has been sent to history
+		do
+		end
+
+	on_metric_renamed (a_old_name, a_new_name: STRING) is
+			-- Action to be performed when a metric with `a_old_name' has been renamed to `a_new_name'.
+		do
 		end
 
 feature {NONE} -- Implementation
@@ -629,7 +531,7 @@ feature {NONE} -- Implementation
 			a_timer.set_interval (0)
 		end
 
-	check_selected_metrics (a_list: LIST [STRING]): STRING is
+	check_selected_metrics (a_list: LIST [STRING]): STRING_GENERAL is
 			-- Check vadility of metrics whose names are in `a_list'.
 			-- Return message if error occurs, otherwise, return Void.
 		require
@@ -644,7 +546,7 @@ feature {NONE} -- Implementation
 					a_list.after or Result /= Void
 				loop
 					if not metric_manager.is_metric_valid (a_list.item) then
-						Result := metric_names.t_metric + " %"" + a_list.item + "%" " + metric_names.t_metric_is_not_valid + "."
+						Result := metric_names.t_metric.as_string_32 + " %"" + a_list.item + "%" " + metric_names.t_metric_is_not_valid + "."
 					else
 						a_list.forth
 					end
@@ -702,60 +604,6 @@ feature {NONE} -- Implementation
 			end
 		ensure
 			result_attached: Result /= Void
-		end
-
-	setup_metric_evaluation_callback (a_domain_generator: QL_DOMAIN_GENERATOR) is
-			-- Setup metric evaluation callback, because when metric is running, we want to keep GUI alive.
-		require
-			a_domain_generator_attached: a_domain_generator /= Void
-		local
-			l_tick_actions: ACTION_SEQUENCE [TUPLE [QL_ITEM]]
-		do
-			last_domain_generator_tick_interval := a_domain_generator.interval
-			l_tick_actions := a_domain_generator.tick_actions
-			a_domain_generator.set_interval (20)
-			if not l_tick_actions.has (on_stop_metric_evaluation_agent) then
-				l_tick_actions.extend (on_stop_metric_evaluation_agent)
-			end
-			if not l_tick_actions.has (on_process_gui_agent) then
-				l_tick_actions.extend (on_process_gui_agent)
-			end
-			is_cancel_evaluation_requested := False
-			stop_btn.enable_sensitive
-			run_btn.disable_sensitive
-			new_archive_file_name_text.disable_sensitive
-			new_archive_browse_btn.disable_sensitive
-			clean_btn.disable_sensitive
-		end
-
-	synchronize_after_metric_evaluation (a_domain_generator: QL_DOMAIN_GENERATOR) is
-			-- Synchronize domain generator after metric evaluation.
-		require
-			a_domain_generator_attached: a_domain_generator /= Void
-		local
-			l_tick_actions: ACTION_SEQUENCE [TUPLE [QL_ITEM]]
-		do
-			l_tick_actions := a_domain_generator.tick_actions
-			l_tick_actions.prune_all (on_stop_metric_evaluation_agent)
-			l_tick_actions.prune_all (on_process_gui_agent)
-			a_domain_generator.set_interval (last_domain_generator_tick_interval)
-			stop_btn.disable_sensitive
-			run_btn.enable_sensitive
-			new_archive_file_name_text.enable_sensitive
-			new_archive_browse_btn.enable_sensitive
-			if is_new_archive_file_selected and then is_new_archive_file_exists then
-				clean_btn.enable_sensitive
-			end
-		end
-
-	synchronize_compare_metric_button is
-			-- Synchronize `compare_btn'.
-		do
-			if is_reference_metric_archive_ok or is_current_metric_archive_ok then
-				compare_btn.enable_sensitive
-			else
-				compare_btn.disable_sensitive
-			end
 		end
 
 	red_color: EV_COLOR is
@@ -884,18 +732,36 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	on_stop_metric_evaluation_agent: PROCEDURE [ANY, TUPLE [a_item: QL_ITEM]]
-			-- Agent of `on_stop_metric_evalation_agent'.
+	calculator: EB_METRIC_ARCHIVE_CALCULATOR
+			-- Archive calculator	
 
-	on_process_gui_agent: PROCEDURE [ANY, TUPLE [a_item: QL_ITEM]]
-			-- Agent of `on_process_gui'		
+	archive_calculatation_task (a_metric_names: LIST [STRING]; a_input_domain: EB_METRIC_DOMAIN): LIST [TUPLE [EB_METRIC, EB_METRIC_DOMAIN, BOOLEAN]] is
+			-- Archive calculation task from `a_metric_names' and `a_input_domain'
+		require
+			a_metric_names_attached: a_metric_names /= Void
+			not_a_metric_names_is_empty: not a_metric_names.is_empty
+			a_input_domain_attached: a_input_domain /= Void
+			a_input_domain_valid: a_input_domain.is_valid
+		do
+			create {LINKED_LIST [TUPLE [EB_METRIC, EB_METRIC_DOMAIN, BOOLEAN]]} Result.make
+			from
+				a_metric_names.start
+			until
+				a_metric_names.after
+			loop
+				Result.extend ([metric_manager.metric_with_name (a_metric_names.item), a_input_domain, False])
+				a_metric_names.forth
+			end
+		ensure
+			result_attached: Result /= Void
+		end
 
 feature -- Overwritting
 
 	overwrite: BOOLEAN
 		-- Overwrite file?
 
-	confirm_dialog: EV_CONFIRMATION_DIALOG
+	confirm_dialog: EB_CONFIRMATION_DIALOG
 			-- Dialog to confirm file overwritting.
 
 	actions_array: ARRAY [PROCEDURE [ANY, TUPLE]] is
@@ -940,6 +806,187 @@ feature {NONE} -- Recycle
 			-- To be called when the button has became useless.
 		do
 			preferences.metric_tool_data.unit_order_preference.change_actions.prune_all (on_unit_order_change_agent)
+			uninstall_agents (metric_tool)
+		end
+
+feature{NONE} -- Actions
+
+	on_project_loaded is
+			-- Action to be performed when project loaded
+		do
+			set_is_up_to_date (False)
+			update_ui
+		end
+
+	on_project_unloaded is
+			-- Action to be performed when project unloaded
+		do
+			set_is_up_to_date (False)
+			update_ui
+		end
+
+	on_compile_start is
+			-- Action to be performed when Eiffel compilation starts
+		do
+			if is_archive_calculating then
+				on_stop_metric_evaluation_button_pressed
+				metric_manager.on_archive_calculation_stops (Current)
+			end
+			set_is_up_to_date (False)
+			update_ui
+		end
+
+	on_compile_stop is
+			-- Action to be performed when Eiffel compilation stops
+		do
+			set_is_up_to_date (False)
+			set_is_metric_reloaded (True)
+			update_ui
+		end
+
+	on_metric_evaluation_start (a_data: ANY) is
+			-- Action to be performed when metric evaluation starts
+			-- `a_data' can be the metric tool panel from which metric evaluation starts.
+		do
+			set_is_up_to_date (False)
+			update_ui
+		end
+
+	on_metric_evaluation_stop (a_data: ANY) is
+			-- Action to be performed when metric evaluation stops
+			-- `a_data' can be the metric tool panel from which metric evaluation stops.
+		do
+			set_is_up_to_date (False)
+			update_ui
+		end
+
+	on_archive_calculation_start (a_data: ANY) is
+			-- Action to be performed when metric archive calculation starts
+			-- `a_data' can be the metric tool panel from which metric archive calculation starts.
+		local
+			l_panel: like Current
+		do
+			set_is_up_to_date (False)
+			l_panel ?= a_data
+			set_is_original_starter (l_panel /= Void and then (l_panel = Current))
+			update_ui
+		end
+
+	on_archive_calculation_stop (a_data: ANY) is
+			-- Action to be performed when metric archive calculation stops
+			-- `a_data' can be the metric tool panel from which metric archive calculation stops.
+		do
+			set_is_up_to_date (False)
+			update_ui
+		end
+
+	on_metric_loaded is
+			-- Action to be performed when metrics loaded in `metric_manager'
+		do
+			set_is_metric_reloaded (True)
+			set_is_up_to_date (False)
+			update_ui
+		end
+
+	on_history_recalculation_start (a_data: ANY) is
+			-- Action to be performed when archive history recalculation starts
+			-- `a_data' can be the metric tool panel from which metric history recalculation starts.
+		do
+			set_is_up_to_date (False)
+			update_ui
+		end
+
+	on_history_recalculation_stop (a_data: ANY) is
+			-- Action to be performed when archive history recalculation stops
+			-- `a_data' can be the metric tool panel from which metric history recalculation stops.
+		do
+			set_is_up_to_date (False)
+			update_ui
+		end
+
+
+
+feature{NONE} -- UI Update
+
+	update_ui is
+			-- Update interface
+		do
+			if is_selected and then not is_up_to_date then
+				if is_eiffel_compiling or is_metric_evaluating or is_history_recalculationg_running or not is_project_loaded then
+					disable_sensitive
+				else
+					enable_sensitive
+					if is_archive_calculating then
+						archive_comparison_area.disable_sensitive
+						metric_selector.disable_sensitive
+						domain_selector.disable_sensitive
+						run_btn.disable_sensitive
+						new_archive_file_area.disable_sensitive
+						run_btn.disable_sensitive
+						if is_original_starter then
+							stop_btn.enable_sensitive
+						else
+							stop_btn.disable_sensitive
+						end
+					else
+						new_archive_file_area.enable_sensitive
+						archive_comparison_area.enable_sensitive
+						stop_btn.disable_sensitive
+						metric_selector.enable_sensitive
+						metric_tool.load_metrics (False, metric_names.t_loading_metrics)
+						if not metric_tool.is_metric_validation_checked.item then
+							metric_tool.check_metric_validation
+						end
+						if is_metric_reloaded then
+							set_is_metric_reloaded (False)
+							metric_selector.load_metrics (True)
+							metric_selector.try_to_selected_last_metric
+							if metric_selector.last_selected_metric = Void then
+								metric_selector.select_first_metric
+							end
+						end
+						domain_selector.enable_sensitive
+						domain_selector.block_domain_change_actions
+						domain_selector.refresh
+						domain_selector.resume_domain_change_actions
+						if is_new_archive_file_selected and then domain_selector.domain.is_valid then
+							run_btn.enable_sensitive
+						else
+							run_btn.disable_sensitive
+						end
+						if is_new_archive_file_selected and then is_new_archive_file_exists then
+							if is_new_archive_file_valid then
+								clean_btn.enable_sensitive
+								new_archive_file_name_text.set_foreground_color (default_foreground_color)
+							else
+								new_archive_file_name_text.set_foreground_color (red_color)
+								clean_btn.disable_sensitive
+								clean_btn.enable_select
+							end
+						else
+							clean_btn.disable_select
+							clean_btn.disable_sensitive
+							new_archive_file_name_text.set_foreground_color (default_foreground_color)
+						end
+						if is_reference_metric_archive_ok or is_current_metric_archive_ok then
+							compare_btn.enable_sensitive
+						else
+							compare_btn.disable_sensitive
+						end
+						if is_current_metric_archive_ok then
+							current_metric_archive_text.set_foreground_color (default_foreground_color)
+						else
+							current_metric_archive_text.set_foreground_color (red_color)
+						end
+						if is_reference_metric_archive_ok then
+							reference_metric_archive_text.set_foreground_color (default_foreground_color)
+						else
+							reference_metric_archive_text.set_foreground_color (red_color)
+						end
+					end
+				end
+				set_is_up_to_date (True)
+			end
 		end
 
 invariant
@@ -949,8 +996,7 @@ invariant
 	current_archive_timer_attched: current_archive_timer /= Void
 	domain_selector_attached: domain_selector /= Void
 	metric_selector_attached: metric_selector /= Void
-	on_stop_metric_evaluation_agent_attached: on_stop_metric_evaluation_agent /= Void
-	on_process_gui_agent_attached: on_process_gui_agent /= Void
+	calculator_attached: calculator /= Void
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

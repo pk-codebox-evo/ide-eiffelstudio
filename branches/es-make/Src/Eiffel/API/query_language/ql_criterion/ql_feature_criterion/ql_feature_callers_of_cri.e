@@ -25,28 +25,31 @@ inherit
 			intrinsic_domain
 		end
 
+	QL_SHARED_FEATURE_INVOKE_RELATION_TYPES
+
 create
 	make
 
 feature{NONE} -- Initialization
 
-	make (a_feature: like criterion_domain; a_caller_type: like caller_type; only_current_version: BOOLEAN) is
+	make (a_feature: like criterion_domain; a_caller_type: INTEGER_8; only_current_version: BOOLEAN) is
 			-- Initialize `criterion_domain' with `a_feature' and `caller_type' with `a_caller_type'.
 			-- if `only_current_version' is True, only find callers of current version of features in `a_feature'.
 		require
 			a_feature_attached: a_feature /= Void
-			a_caller_type_attached: a_caller_type /= Void
+			a_caller_type_valid: is_caller_type_valid (a_caller_type)
 		do
 			only_find_current_version := only_current_version
 			caller_type := a_caller_type
 			old_make (a_feature)
 		ensure
+			caller_type_set: caller_type = a_caller_type
 			only_find_current_version_set: only_find_current_version = only_current_version
 		end
 
 feature -- Status report
 
-	caller_type: QL_FEATURE_CALLER_TYPE
+	caller_type: INTEGER_8
 			-- Feature caller type
 
 	only_find_current_version: BOOLEAN
@@ -116,7 +119,7 @@ feature{NONE} -- Implementation
 	find_result is
 			-- Find callers to `criterion_domain'.
 		do
-			find_all_callers (caller_type.type)
+			find_all_callers (caller_type)
 			is_intrinsic_domain_cached_in_domain_generator := False
 		end
 
@@ -344,12 +347,11 @@ feature{NONE} -- Evaluate
 		end
 
 invariant
-	caller_type_attached: caller_type /= Void
-	invariant_list_attached: invariant_list /= Void
-	callee_list_for_invariant_attached: callee_list_for_invariant /= Void
-	callee_list_for_invariant_invariant_list_valid: callee_list_for_invariant.count = invariant_list.count
-	callee_list_for_feature_attached: callee_list_for_feature /= Void
-	callee_list_for_feature_invariant_list_valid: callee_list_for_feature.count = feature_list.count
+	caller_type_valid: is_caller_type_valid (caller_type)
+	feature_callee_valid:
+		(callee_list_for_feature /= Void and then feature_list /= Void) implies (callee_list_for_feature.count = feature_list.count)
+	invariant_callee_valid:
+		(callee_list_for_invariant /= Void and then invariant_list /= Void) implies (callee_list_for_invariant.count = invariant_list.count)
 
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"

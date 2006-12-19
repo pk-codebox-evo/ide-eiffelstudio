@@ -31,7 +31,7 @@ feature -- Properties
 			Result.put (pixmaps.icon_pixmaps.feature_homonyms_icon, 2)
 		end
 
-	menu_name: STRING is
+	menu_name: STRING_GENERAL is
 			-- Identifier of `Current' in menus.
 		do
 			Result := Interface_names.m_Showhomonyms
@@ -39,10 +39,10 @@ feature -- Properties
 
 feature {NONE} -- Properties
 
-	command_name: STRING is
+	command_name: STRING_GENERAL is
 			-- Name of the command.
 		do
-			Result := Interface_names.l_Homonyms
+			Result := Interface_names.string_general_to_lower (interface_names.l_Homonyms)
 		end
 
 	post_fix: STRING is "hom"
@@ -59,7 +59,7 @@ feature -- Formatting
 	format is
 			-- Refresh `widget'.
 		local
-			cf: STANDARD_DISCARDABLE_CONFIRMATION_DIALOG
+			cf: EB_DISCARDABLE_CONFIRMATION_DIALOG
 		do
 			if associated_feature /= Void and then selected and then displayed then
 				display_temp_header
@@ -72,6 +72,8 @@ feature -- Formatting
 					last_was_error := False
 					rebuild_browser
 					generate_result
+				else
+					browser.update (Void, Void)
 				end
 				if not widget.is_displayed then
 					widget.show

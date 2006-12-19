@@ -44,7 +44,7 @@ feature -- Properties
 			Result.put (pixmaps.icon_pixmaps.view_editor_feature_icon, 2)
 		end
 
-	menu_name: STRING is
+	menu_name: STRING_GENERAL is
 			-- Identifier of `Current' in menus.
 		do
 			Result := Interface_names.m_Showtext_new
@@ -93,10 +93,10 @@ feature {NONE} -- Properties
 	feature_cmd: E_SHOW_ROUTINE_FLAT
 			-- Just needed for compatibility, do not use.
 
-	command_name: STRING is
+	command_name: STRING_GENERAL is
 			-- Name of the command.
 		do
-			Result := Interface_names.l_Basic_text
+			Result := interface_names.string_general_to_lower (interface_names.l_Basic_text)
 		end
 
 	post_fix: STRING is "txt"

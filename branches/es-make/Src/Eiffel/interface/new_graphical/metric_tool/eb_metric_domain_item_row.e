@@ -10,7 +10,7 @@ class
 	EB_METRIC_DOMAIN_ITEM_ROW
 
 inherit
-	EB_GRID_ROW
+	EVS_GRID_ROW
 
 	EB_PIXMAPABLE_ITEM_PIXMAP_FACTORY
 
@@ -19,6 +19,8 @@ inherit
 	EB_METRIC_INTERFACE_PROVIDER
 
 	EB_SHARED_EDITOR_TOKEN_UTILITY
+
+	EB_DOMAIN_ITEM_UTILITY
 
 create
 	make
@@ -160,7 +162,7 @@ feature -- Access
 	target_stone: TARGET_STONE
 			-- Target stone
 
-	name: STRING is
+	name: STRING_GENERAL is
 			-- Name of current row
 		do
 			Result := domain_item.string_representation
@@ -170,40 +172,8 @@ feature -- Access
 
 	token_name: LIST [EDITOR_TOKEN] is
 			-- Editor token representation of current domain item
-		local
-			l_domain_item: like domain_item
-			l_writer: like token_writer
-			l_item: QL_ITEM
-			l_group: QL_GROUP
 		do
-			l_writer := token_writer
-			l_writer.new_line
-			l_domain_item := domain_item
-			if l_domain_item.is_valid then
-				if l_domain_item.is_delayed_item then
-					l_writer.add_string (metric_names.t_input_domain)
-				else
-					if l_domain_item.is_folder_item then
-						l_group ?= l_domain_item.query_language_item
-						l_writer.new_line
-						if l_group /= Void then
-							l_writer.add_group (l_group.group, l_domain_item.string_representation)
-						else
-							l_writer.add_string (l_item.string_representation)
-						end
-					else
-						l_item := l_domain_item.query_language_item
-						if l_item /= Void then
-							add_editor_token_representation (l_item, False, True, l_writer)
-						else
-							l_writer.add_string (l_domain_item.string_representation)
-						end
-					end
-				end
-			else
-				l_writer.add_error (create{SYNTAX_ERROR}.init, l_domain_item.string_representation)
-			end
-			Result := l_writer.last_line.content
+			Result := token_name_from_domain_item (domain_item)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -214,40 +184,12 @@ feature -- Access
 	pixmap: EV_PIXMAP is
 			-- Pixmap for current stone
 		do
-			if is_valid then
-				if is_cluster_scope then
-					Result := pixmap_from_group (cluster_stone.group)
-				elseif is_subfolder then
-					Result := pixmap_from_group_path (cluster_stone.group, subfolder_path)
-				elseif is_class_scope then
-					Result := pixmap_from_class_i (class_stone.class_i)
-				elseif is_feature_scope then
-					Result := pixmap_from_e_feature (feature_stone.e_feature)
-				elseif is_target then
-					Result := pixmaps.icon_pixmaps.metric_unit_target_icon
-				elseif is_delayed then
-					Result := pixmaps.icon_pixmaps.metric_domain_delayed_icon
-				end
-			else
-				if is_cluster_scope then
-					Result := pixmaps.icon_pixmaps.folder_cluster_icon
-				elseif is_subfolder then
-					Result := pixmaps.icon_pixmaps.folder_cluster_icon
-				elseif is_class_scope then
-					Result := pixmaps.icon_pixmaps.class_normal_icon
-				elseif is_feature_scope then
-					Result := pixmaps.icon_pixmaps.feature_routine_icon
-				elseif is_target then
-					Result := pixmaps.icon_pixmaps.metric_unit_target_icon
-				elseif is_delayed then
-					Result := pixmaps.icon_pixmaps.metric_domain_delayed_icon
-				end
-			end
+			Result := pixmap_from_domain_item (domain_item)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	tooltip: STRING is
+	tooltip: STRING_GENERAL is
 			-- Tooltip of current scope
 			-- Only return non Void value when `is_subfolder' is True
 		do
@@ -257,7 +199,7 @@ feature -- Access
 				if is_subfolder then
 					Result := cluster_stone.group.name + subfolder_path
 				elseif is_feature_scope then
-					Result := interface_names.l_version_in + " " + feature_stone.e_feature.associated_class.name
+					Result := interface_names.l_version_in (feature_stone.e_feature.associated_class.name)
 				end
 			end
 		end
@@ -334,12 +276,11 @@ feature -- Grid binding
 			a_grid_attached: a_grid /= Void
 		local
 			l_grid_row: EV_GRID_ROW
-			l_tooltip: STRING
+			l_tooltip: STRING_GENERAL
 			l_editor_token_item: EB_GRID_EDITOR_TOKEN_ITEM
 		do
 			create l_editor_token_item
 			l_editor_token_item.set_pixmap (pixmap)
-			l_editor_token_item.set_spacing (3)
 			l_editor_token_item.set_text_with_tokens (token_name)
 			l_editor_token_item.set_data (Current)
 			l_editor_token_item.set_overriden_fonts (label_font_table)
@@ -371,6 +312,8 @@ feature{NONE} -- Implementation
 		ensure
 			result_attached: Result /= Void
 		end
+
+
 
 invariant
 	domain_item_attached: domain_item /= Void

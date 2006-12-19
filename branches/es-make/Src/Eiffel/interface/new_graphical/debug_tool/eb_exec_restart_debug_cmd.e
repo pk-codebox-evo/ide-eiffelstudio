@@ -62,14 +62,14 @@ feature {NONE} -- Implementation
 	ask_and_kill is
 			-- Pop up a discardable confirmation dialog before killing the application.
 		local
-			cd: STANDARD_DISCARDABLE_CONFIRMATION_DIALOG
+			cd: EB_DISCARDABLE_CONFIRMATION_DIALOG
 		do
 			create cd.make_initialized (2, preferences.dialog_data.confirm_kill_and_restart_string,
 					Interface_names.l_Confirm_kill_and_restart, Interface_names.l_Do_not_show_again,
 					preferences.preferences)
 			cd.set_ok_action (agent kill)
 			cd.show_modal_to_window (window_manager.last_focused_development_window.window)
-			window_manager.last_focused_window.raise
+			window_manager.last_focused_window.show
 		end
 
 	kill is
@@ -79,7 +79,7 @@ feature {NONE} -- Implementation
 		do
 			if eb_debugger_manager.application_is_executing then
 				kill_requested := True
-				eb_debugger_manager.Application.kill
+				eb_debugger_manager.application.kill
 			end
 		end
 
@@ -96,19 +96,19 @@ feature {NONE} -- Attributes
 	name: STRING is "Exec_restart_debug"
 			-- Name of the command.
 
-	tooltext: STRING is
+	tooltext: STRING_GENERAL is
 			-- Default text displayed in toolbar button
 		do
 			Result := "Restart" --Interface_names.b_launch
 		end
 
-	internal_tooltip: STRING is
+	internal_tooltip: STRING_GENERAL is
 			-- Tooltip displayed on `Current's buttons.
 		do
 			Result := "Restart" --Interface_names.e_Exec_debug
 		end
 
-	menu_name: STRING is
+	menu_name: STRING_GENERAL is
 			-- Name used in menu entry.
 		once
 			Result := "Restart" -- Interface_names.m_Debug_run_new

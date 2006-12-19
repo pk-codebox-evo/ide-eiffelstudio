@@ -50,18 +50,23 @@ feature -- Execution
 		local
 			app_exec: APPLICATION_EXECUTION
 		do
-			app_exec := Debugger_manager.Application
-			if not app_exec.is_running or else not app_exec.is_stopped then
-				disable_sensitive
-			else
-				enable_sensitive
-			end
-			if assertion_checking_changed then
-				assertion_checking_changed := False
-				app_exec.restore_assertion_check
-			else
-				assertion_checking_changed := True
-				app_exec.disable_assertion_check
+			if debugger_manager.application_initialized then
+				app_exec := Debugger_manager.Application
+				if
+					not app_exec.is_running
+					or else not app_exec.is_stopped
+				then
+					disable_sensitive
+				else
+					enable_sensitive
+				end
+				if assertion_checking_changed then
+					assertion_checking_changed := False
+					app_exec.restore_assertion_check
+				else
+					assertion_checking_changed := True
+					app_exec.disable_assertion_check
+				end
 			end
 			update_graphical
 		end
@@ -74,7 +79,7 @@ feature -- Change text
 		local
 			menu_items: like internal_managed_menu_items
 			toolbar_items: like internal_managed_toolbar_items
-			t: STRING
+			t: STRING_GENERAL
 			p: like pixmap
 		do
 			p := pixmap
@@ -110,19 +115,19 @@ feature -- Change text
 
 feature {NONE} -- Attributes
 
-	description: STRING is
+	description: STRING_GENERAL is
 			-- What appears in the customize dialog box.
 		do
 			Result := tooltip
 		end
 
-	tooltip: STRING is
+	tooltip: STRING_GENERAL is
 			-- Tooltip displayed on `Current's buttons.
 		do
 			Result := Interface_names.e_Dbg_assertion_checking
 		end
 
-	tooltext: STRING is
+	tooltext: STRING_GENERAL is
 			-- Text displayed on `Current's buttons.
 		do
 			if assertion_checking_changed then
@@ -135,7 +140,7 @@ feature {NONE} -- Attributes
 	name: STRING is "Assertion_checking_handler"
 			-- Name of the command.
 
-	menu_name: STRING is
+	menu_name: STRING_GENERAL is
 			-- Menu entry corresponding to `Current'.
 		do
 			if assertion_checking_changed then

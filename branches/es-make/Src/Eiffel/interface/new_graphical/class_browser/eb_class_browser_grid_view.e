@@ -97,12 +97,12 @@ feature{NONE} -- Initialization
 
 feature -- Setting
 
-	set_start_class (a_class: like start_class) is
+	set_starting_element (a_class: like starting_element) is
 			-- Set `start_class' with `a_class'.
 		do
-			start_class := a_class
+			starting_element := a_class
 		ensure
-			start_class_set: start_class = a_class
+			start_class_set: starting_element = a_class
 		end
 
 	lock_update_grid is
@@ -160,6 +160,180 @@ feature -- Setting
 			end
 		end
 
+	set_has_grid_been_binded (a_binded: BOOLEAN) is
+			-- Set `has_grid_been_binded' with `a_binded'.
+		do
+			has_grid_been_binded := a_binded
+		ensure
+			has_grid_been_binded_set: has_grid_been_binded = a_binded
+		end
+
+feature -- Navigation
+
+	go_to_parent (a_row: EV_GRID_ROW) is
+			-- Select parent row of `a_row'.
+		require
+			a_row_attached: a_row /= Void
+			a_row_is_parented: a_row.parent /= Void
+		local
+			l_grid_item: EVS_GRID_SEARCHABLE_ITEM
+		do
+			if a_row.is_expandable and then a_row.is_expanded then
+				a_row.collapse
+			else
+				if a_row.parent_row /= Void then
+					l_grid_item ?= a_row.item (1)
+					a_row.disable_select
+					l_grid_item ?= first_non_void_grid_item (a_row.parent_row)
+					if l_grid_item /= Void then
+						ensure_visible (l_grid_item, True)
+					end
+				end
+			end
+		end
+
+	first_non_void_grid_item (a_row: EV_GRID_ROW): EV_GRID_ITEM is
+			-- First non void item in `a_row'.
+			-- Return Void if there is no item in `a_row'.
+		require
+			a_row_attached: a_row /= Void
+			a_row_is_parented: a_row.parent /= Void
+		local
+			l_column_count: INTEGER
+			i: INTEGER
+		do
+			from
+				i := 1
+				l_column_count := a_row.parent.column_count
+			until
+				i > l_column_count or Result /= Void
+			loop
+				Result := a_row.item (i)
+				i := i + 1
+			end
+		end
+
+	go_to_first_child (a_row: EV_GRID_ROW) is
+			-- Select first child (if any) of `a_row'.
+		require
+			a_row_attached: a_row /= Void
+			a_row_is_parented: a_row.parent /= Void
+		local
+			l_grid_item: EVS_GRID_SEARCHABLE_ITEM
+		do
+			if a_row.is_expandable then
+				if not a_row.is_expanded then
+					expand_row (a_row)
+				else
+					if a_row.subrow_count > 0 then
+						a_row.disable_select
+						l_grid_item ?= first_non_void_grid_item (a_row.subrow (1))
+						if l_grid_item /= Void then
+							ensure_visible (l_grid_item, True)
+						end
+					end
+				end
+			end
+		end
+
+	expand_row (a_row: EV_GRID_ROW) is
+			-- Expand `a_row'.
+		require
+			a_row_attached: a_row /= Void
+		do
+			if a_row.is_expandable then
+				a_row.expand
+			end
+		end
+
+	collapse_row_recursively (a_row: EV_GRID_ROW) is
+			-- Collapse `a_row' recursively.
+		require
+			a_row_attached: a_row /= Void
+			a_row_is_parented: a_row.parent /= Void
+		local
+			l_subrow_cnt: INTEGER
+			l_subrow_index: INTEGER
+		do
+			if a_row.is_expandable then
+				a_row.collapse
+			end
+			l_subrow_cnt := a_row.subrow_count
+			if l_subrow_cnt > 0 then
+				from
+					l_subrow_index := 1
+				until
+					l_subrow_index > l_subrow_cnt
+				loop
+					collapse_row_recursively (a_row.subrow (l_subrow_index))
+					l_subrow_index := l_subrow_index + 1
+				end
+			end
+		end
+
+	expand_row_recursively (a_row: EV_GRID_ROW) is
+			-- Expand `a_row' recursively.
+		require
+			a_row_attached: a_row /= Void
+			a_row_is_parented: a_row.parent /= Void
+		local
+			l_subrow_cnt: INTEGER
+			l_subrow_index: INTEGER
+		do
+			if a_row.is_expandable then
+				a_row.expand
+			end
+			l_subrow_cnt := a_row.subrow_count
+			if l_subrow_cnt > 0 then
+				from
+					l_subrow_index := 1
+				until
+					l_subrow_index > l_subrow_cnt
+				loop
+					expand_row_recursively (a_row.subrow (l_subrow_index))
+					l_subrow_index := l_subrow_index + 1
+				end
+			end
+		end
+
+	collapse_row (a_row: EV_GRID_ROW) is
+			-- Collapse subrows of `a_row'.
+			-- But don't collapse `a_row', and make sure direct subrows of `a_row' is visible.
+		require
+			a_row_attached: a_row /= Void
+		local
+			l_subrow_cnt: INTEGER
+			l_subrow_index: INTEGER
+		do
+			l_subrow_cnt := a_row.subrow_count
+			if l_subrow_cnt > 0 then
+				from
+					l_subrow_index := 1
+				until
+					l_subrow_index > l_subrow_cnt
+				loop
+					if a_row.subrow (l_subrow_index).is_expandable then
+						a_row.subrow (l_subrow_index).collapse
+						processed_rows.extend (a_row.subrow (l_subrow_index))
+					end
+					l_subrow_index := l_subrow_index + 1
+				end
+			end
+			if a_row.is_expandable and then not processed_rows.has (a_row) then
+				a_row.expand
+			end
+		end
+
+	collapse_row_normal (a_row: EV_GRID_ROW) is
+			-- Collapse `a_row' normally.
+		require
+			a_row_attached: a_row /= Void
+		do
+			if a_row /= Void and then a_row.is_expandable and then a_row.is_expanded then
+				a_row.collapse
+			end
+		end
+
 feature -- View update
 
 	update (a_observable: QL_OBSERVABLE; a_data: ANY) is
@@ -206,41 +380,15 @@ feature -- Access
 
 	control_bar: EV_WIDGET is
 			-- Widget of a control bar through which, certain control can be performed upon current view
+			-- Every view can provide a customized control bar. Normally a tool bar is placed in this area
+			-- through which behavior (such as tooltip display) of current view can be changed.
 		deferred
 		end
 
-	start_class: QL_CLASS
-			-- Class as root of tree
-			-- This is used when a tree view is to be built. And start class serves as the root of that tree.
-			-- If `start_class' is Void, don't build tree.
-
-	collapse_button: EV_TOOL_BAR_BUTTON is
-			-- Button to collapse one level of tree
-		do
-			if collapse_button_internal = Void then
-				create collapse_button_internal
-				collapse_button_internal.set_pixmap (icon_collapse_all)
-				collapse_button_internal.set_tooltip (tooltip_with_accelerator (interface_names.l_collapse_layer, accelerator_from_preference ("collapse_tree_node")))
-				collapse_button_internal.select_actions.extend (collapse_button_pressed_action)
-			end
-			Result := collapse_button_internal
-		ensure
-			result_attached: Result /= Void
-		end
-
-	expand_button: EV_TOOL_BAR_BUTTON is
-			-- Button to expand one level of tree
-		do
-			if expand_button_internal = Void then
-				create expand_button_internal
-				expand_button_internal.set_pixmap (icon_expand_all)
-				expand_button_internal.set_tooltip (tooltip_with_accelerator (interface_names.l_expand_layer,accelerator_from_preference ("expand_tree_node")))
-				expand_button_internal.select_actions.extend (expand_button_pressed_action)
-			end
-			Result := expand_button_internal
-		ensure
-			result_attached: Result /= Void
-		end
+	starting_element: ANY
+			-- Starting element as root of the tree displayed in current browser.
+			-- This is used when a tree view is to be built. And starting element serves as the root of that tree.
+			-- If `starting_element' is Void, don't build tree.
 
 	show_tooltip_checkbox: EV_TOOL_BAR_TOGGLE_BUTTON is
 			-- Checkbox to indicate whether or not tooltip is displayed
@@ -263,61 +411,6 @@ feature -- Access
 	grid: ES_GRID
 			-- Grid used to display information
 
-	string_representation_of_sorted_columns: STRING is
-			-- String representation of a list of sorted columns from `a_columns'
-		local
-			c: INTEGER
-			l_sorting_snapshot: like sorting_order_snapshort
-			l_tuple: TUPLE [a_column_index: INTEGER; a_sorting_order: INTEGER]
-		do
-			create Result.make (20)
-			l_sorting_snapshot := sorting_order_snapshort
-			from
-				l_sorting_snapshot.start
-				c := l_sorting_snapshot.count
-			until
-				l_sorting_snapshot.after
-			loop
-				l_tuple := l_sorting_snapshot.item
-				if l_tuple /= Void then
-					Result.append (l_tuple.a_column_index.out)
-					Result.append_character (':')
-					Result.append (l_tuple.a_sorting_order.out)
-					if l_sorting_snapshot.index < c then
-						Result.append_character (',')
-					end
-				end
-				l_sorting_snapshot.forth
-			end
-		ensure
-			result_attached: Result /= Void
-		end
-
-	sorted_columns_from_string (a_str: STRING): LINKED_LIST [TUPLE [a_column_index: INTEGER; a_sorting_order: INTEGER]] is
-			-- A list of sorting columns from its string representation
-		require
-			a_str_attached: a_str /= Void
-		local
-			l_list: LIST [STRING]
-			l_list2: LIST [STRING]
-		do
-			create Result.make
-			from
-				l_list := a_str.split (',')
-				l_list.start
-			until
-				l_list.after
-			loop
-				l_list2 := l_list.item.split (':')
-				if l_list2.count = 2 and then l_list2.first.is_integer and then l_list2.last.is_integer then
-					Result.extend ([l_list2.first.to_integer, l_list2.last.to_integer])
-				end
-				l_list.forth
-			end
-		ensure
-			result_attached: Result /= Void
-		end
-
 	text_of_grid_item (a_item: EV_GRID_ITEM): STRING is
 			-- String representation of `a_item'
 		local
@@ -327,6 +420,17 @@ feature -- Access
 			if l_token_item /= Void then
 				Result := l_token_item.text
 			end
+		end
+
+	retrieve_data_actions: ACTION_SEQUENCE [TUPLE] is
+			-- Actions to be performed to get new data which will force current view to be refreshed.
+		do
+			if retrieve_data_actions_internal = Void then
+				create retrieve_data_actions_internal
+			end
+			Result := retrieve_data_actions_internal
+		ensure
+			result_attached: Result /= Void
 		end
 
 feature -- Status report
@@ -344,6 +448,14 @@ feature -- Status report
 		do
 			Result := data = Void
 		end
+
+	should_tooltip_be_displayed: BOOLEAN
+			-- Should tooltip be displayed?
+		deferred
+		end
+
+	has_grid_been_binded: BOOLEAN
+			-- Has `grid' been binded before?
 
 feature{NONE} -- Implementation
 
@@ -448,6 +560,29 @@ feature{NONE} -- Actions
 			end
 		end
 
+	on_show_tooltip_changed is
+			-- Action to be performed when selection status of `show_tooltip_checkbox' changes
+		do
+			if preferences.class_browser_data.is_tooltip_shown /= show_tooltip_checkbox.is_selected then
+				preferences.class_browser_data.show_tooltip_preference.set_value (show_tooltip_checkbox.is_selected)
+			end
+		end
+
+	on_show_tooltip_changed_from_outside is
+			-- Action to be performed when selection status of `show_tooltip_checkbox' changes from outside
+		local
+			l_displayed: BOOLEAN
+		do
+			l_displayed := preferences.class_browser_data.is_tooltip_shown
+			if l_displayed /= show_tooltip_checkbox.is_selected then
+				if l_displayed then
+					show_tooltip_checkbox.enable_select
+				else
+					show_tooltip_checkbox.disable_select
+				end
+			end
+		end
+
 feature {NONE} -- Recycle
 
 	internal_recycle is
@@ -468,20 +603,6 @@ feature {NONE} -- Recycle
 			desynchronize_scroll_behavior_with_editor
 		end
 
-	collapse_button_pressed_action: PROCEDURE [ANY, TUPLE] is
-			-- Action to be performed when `collapse_button' is pressed
-		deferred
-		ensure
-			result_attached: Result /= Void
-		end
-
-	expand_button_pressed_action: PROCEDURE [ANY, TUPLE] is
-			-- Action to be performed when `expand_button' is pressed
-		deferred
-		ensure
-			result_attached: Result /= Void
-		end
-
 feature {NONE} -- Implementation
 
 	default_row_height: INTEGER is
@@ -500,7 +621,7 @@ feature {NONE} -- Implementation
 	internal_text: like text
 			-- Implementation of `text'
 
-	data: QL_DOMAIN
+	data: ANY
 			-- Data to be displayed in current view
 
 	even_line_color: EV_COLOR is
@@ -572,35 +693,167 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	tooltip_with_accelerator (a_text: STRING; a_accelerator: EV_ACCELERATOR): STRING is
+	tooltip_with_accelerator (a_text: STRING_GENERAL; a_accelerator: EV_ACCELERATOR): STRING_GENERAL is
 			-- Tooltip text `a_text' with information of accelerator key `a_accelerator'
 		require
 			a_text_attached: a_text /= Void
 			a_accelerator_attached: a_accelerator /= Void
+		local
+			l_text: STRING_32
 		do
-			create Result.make (a_text.count + 10)
-			Result.append (a_text)
-			Result.append (" (")
-			Result.append (a_accelerator.out)
-			Result.append_character (')')
+			create l_text.make (a_text.count + 10)
+			l_text.append (a_text)
+			l_text.append (" (")
+			l_text.append (a_accelerator.out)
+			l_text.append_character (')')
+			Result := l_text
 		ensure
 			result_attached: Result /= Void
 			not_result_is_empty: not Result.is_empty
 		end
 
+	on_show_tooltip_changed_from_outside_agent: PROCEDURE [ANY, TUPLE]
+			-- Agent kept for recycling
+
 feature{NONE} -- Implementation
-
-	expand_button_internal: like expand_button
-			-- Implementation of `expand_button'
-
-	collapse_button_internal: like collapse_button
-			-- Implementation of `collapse_button'
 
 	show_tooltip_checkbox_internal: like show_tooltip_checkbox
 			-- Implementation of `show_tooltip_checkbox'
 
 	trace: STRING
-			-- Trace message	
+			-- Trace message
+
+feature -- Tree hierarchy highlight
+
+	highlight_tree_on_grid_focus_change is
+			-- Highlight/Dehighlight selected tree hierarchy when focus of `grid' changes.
+		require
+			grid_is_in_tree_mode: grid.is_tree_enabled
+			tree_node_highlight_enabled: is_tree_node_highlight_enabled
+		local
+			l_agent: PROCEDURE [ANY, TUPLE [EV_GRID_ROW]]
+			l_selected_rows: LIST [EV_GRID_ROW]
+			l_row: EV_GRID_ROW
+		do
+			if grid.has_focus then
+				l_agent := agent highlight_row
+			else
+				l_agent := agent dehighlight_row
+			end
+			l_selected_rows := grid.selected_rows
+			if not l_selected_rows.is_empty then
+				processed_rows.wipe_out
+				from
+					l_selected_rows.start
+				until
+					l_selected_rows.after
+				loop
+					l_row := l_selected_rows.item
+					if not processed_rows.has (l_row) then
+						l_agent.call ([l_row])
+						processed_rows.extend (l_row)
+					end
+					l_selected_rows.forth
+				end
+			end
+		end
+
+	highlight_row (a_row: EV_GRID_ROW) is
+			-- Highlight `a_row and all its subrows.
+		require
+			a_row_attached: a_row /= Void
+			grid_is_in_tree_mode: grid.is_tree_enabled
+		local
+			l_row_index: INTEGER
+			l_row_count: INTEGER
+		do
+			if is_tree_node_highlight_enabled then
+				if a_row.is_selected then
+					if grid.has_focus then
+						a_row.set_background_color (preferences.editor_data.selection_background_color)
+					else
+						a_row.set_background_color (preferences.editor_data.focus_out_selection_background_color)
+					end
+				else
+					a_row.set_background_color (odd_line_color)
+				end
+				l_row_count := a_row.subrow_count
+				if l_row_count > 0 then
+					from
+						l_row_index := 1
+					until
+						l_row_index > l_row_count
+					loop
+						highlight_row (a_row.subrow (l_row_index))
+						l_row_index := l_row_index + 1
+					end
+				end
+			end
+		end
+
+	dehighlight_row (a_row: EV_GRID_ROW) is
+			-- Dehighlight `a_row' and all its subrows.
+		require
+			a_row_attached: a_row /= Void
+			grid_is_in_tree_mode: grid.is_tree_enabled
+		local
+			l_row_index: INTEGER
+			l_row_count: INTEGER
+			l_is_parent_selected: BOOLEAN
+			l_parent_row: EV_GRID_ROW
+		do
+			if is_tree_node_highlight_enabled then
+				from
+					l_parent_row := a_row.parent_row
+				until
+					l_parent_row = Void or l_is_parent_selected
+				loop
+					l_is_parent_selected := l_parent_row.is_selected
+					l_parent_row := l_parent_row.parent_row
+				end
+				if a_row.is_selected then
+					if grid.has_focus then
+						a_row.set_background_color (preferences.editor_data.selection_background_color)
+					else
+						a_row.set_background_color (preferences.editor_data.focus_out_selection_background_color)
+					end
+				else
+					if l_is_parent_selected then
+						a_row.set_background_color (odd_line_color)
+					else
+						a_row.set_background_color (even_line_color)
+					end
+				end
+				l_row_count := a_row.subrow_count
+				if l_row_count > 0 then
+					from
+						l_row_index := 1
+					until
+						l_row_index > l_row_count
+					loop
+						dehighlight_row (a_row.subrow (l_row_index))
+						l_row_index := l_row_index + 1
+					end
+				end
+			end
+		end
+
+	processed_rows: LIST [EV_GRID_ROW] is
+			-- Rows that have been processed during some expansion or collapsion
+		do
+			if processed_rows_internal = Void then
+				create {LINKED_LIST [EV_GRID_ROW]}processed_rows_internal.make
+			end
+			Result := processed_rows_internal
+		ensure
+			result_attached: Result /= Void
+		end
+
+	processed_rows_internal: like processed_rows
+			-- Implementation of `processed_Rows'
+
+	retrieve_data_actions_internal: like retrieve_data_actions
+			-- Implementation of `retrieve_data_actions'
 
 invariant
 	development_window_attached: not is_recycled implies development_window /= Void

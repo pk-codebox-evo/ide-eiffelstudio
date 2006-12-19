@@ -22,11 +22,7 @@ inherit
 
 	SHARED_DEBUGGER_MANAGER
 
-	SHARED_DEBUG
-		export
-			{ANY} Application
-			{NONE} all
-		end
+	SHARED_DEBUGGED_OBJECT_MANAGER
 
 	SHARED_WORKBENCH
 		export

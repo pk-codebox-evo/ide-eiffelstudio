@@ -16,8 +16,23 @@ inherit
 			text
 		end
 
+	PREDEFINED_NAMES
+		export
+			{NONE} all
+		undefine
+			is_equal
+		end
+
 create
-	make, initialize
+	make
+
+feature {NONE} -- Initialization
+
+	make is
+			-- Create.
+		do
+			initialize_from_id (none_class_name_id)
+		end
 
 feature -- Visitor
 

@@ -94,7 +94,7 @@ feature -- Access
 			metadata_cache_path_set: metadata_cache_path /= Void
 		do
 			Result := metadata_cache_path.twin
-			Result.extend_from_array (<<short_cache_name, il_version, cache_bit_platform>>)
+			Result.extend_from_array (<<short_cache_name, cache_bit_platform, il_version>>)
 		end
 
 	assemblies: HASH_TABLE [CONF_PHYSICAL_ASSEMBLY, STRING]
@@ -298,7 +298,7 @@ feature {NONE} -- Implementation
 						assembly_class: l_class /= Void
 					end
 					l_name := l_class.name.twin
-					if l_renamings /= Void and then l_renamings.has (l_name) then
+					if l_renamings /= Void and then l_renamings.has_key (l_name) then
 						l_name := l_renamings.found_item
 					end
 					if l_prefix /= Void then
@@ -495,7 +495,11 @@ feature {NONE} -- retrieving information from cache
 				end
 			end
 			if Result = Void or else not Result.is_consumed then
-				add_error (create {CONF_ERROR_ASOP}.make (an_assembly.assembly_name))
+				if an_assembly.is_non_local_assembly then
+					add_error (create {CONF_ERROR_ASOP}.make (an_assembly.name))
+				else
+					add_error (create {CONF_ERROR_ASOP}.make (an_assembly.location.evaluated_path))
+				end
 			end
 		ensure
 			Result_not_void: Result /= Void
@@ -823,7 +827,7 @@ feature {NONE} -- Contract
 				Result := assemblies /= Void and then assemblies.count = linear_assemblies.count and then
 					linear_assemblies.for_all (agent (a_assembly: CONF_PHYSICAL_ASSEMBLY): BOOLEAN
 						do
-							Result := a_assembly.is_valid and a_assembly.classes_set and assemblies.has (a_assembly.guid) and then assemblies.found_item = a_assembly
+							Result := a_assembly.is_valid and a_assembly.classes_set and assemblies.has_key (a_assembly.guid) and then assemblies.found_item = a_assembly
 						end)
 			else
 				Result := assemblies = Void or else assemblies.is_empty

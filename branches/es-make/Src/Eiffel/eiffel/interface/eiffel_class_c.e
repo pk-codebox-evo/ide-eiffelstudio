@@ -92,8 +92,9 @@ feature -- Access
 					end
 					inline_agent_table.remove (inline_agent_table.key_for_iteration)
 					system.execution_table.add_dead_function (l_feat.body_index)
+				else
+					inline_agent_table.forth
 				end
-				inline_agent_table.forth
 			end
 		end
 
@@ -286,7 +287,8 @@ feature -- Action
 						-- check if the directory for the system has been created
 					create l_dir_name.make_from_string (workbench.backup_subdirectory)
 
-						-- if this is the system of the application target, create an empty file with the uuid to make it easier to find the application configuration file.
+						-- if this is the system of the application target, create an empty file with
+						-- the uuid to make it easier to find the application configuration file.
 					l_system := lace_class.cluster.target.system
 					l_uuid := l_system.uuid.out
 					if l_system = l_system.application_target.system then
@@ -484,7 +486,6 @@ feature -- Third pass: byte code production and type check
 			check_local_names_needed: BOOLEAN
 			byte_code_generated: BOOLEAN
 			inline_agent_byte_code: LINKED_LIST [BYTE_CODE]
-			old_inline_agents: HASH_TABLE [FEATURE_I, INTEGER]
 			old_inline_agent_table: like inline_agent_table
 
 				-- Invariant
@@ -601,9 +602,9 @@ feature -- Third pass: byte code production and type check
 						then
 								-- Type check
 							Error_handler.mark
-							create old_inline_agents.make (1)
-							remove_inline_agents_of_feature (feature_i.body_index, old_inline_agents)
-							ast_context.set_old_inline_agents (old_inline_agents)
+							ast_context.old_inline_agents.wipe_out
+							remove_inline_agents_of_feature (feature_i.body_index, ast_context.old_inline_agents)
+
 							feature_checker.type_check_and_code (feature_i)
 							type_checked := True
 							type_check_error := Error_handler.new_error
@@ -712,9 +713,8 @@ feature -- Third pass: byte code production and type check
 								and then propagators.changed_status_empty_intersection (f_suppliers.suppliers)))
 						then
 							error_handler.mark
-							create old_inline_agents.make (1)
-							remove_inline_agents_of_feature (feature_i.body_index, old_inline_agents)
-							ast_context.set_old_inline_agents (old_inline_agents)
+							ast_context.old_inline_agents.wipe_out
+							remove_inline_agents_of_feature (feature_i.body_index, ast_context.old_inline_agents)
 							feature_checker.type_check_and_code (feature_i)
 							type_checked := True
 							type_check_error := error_handler.new_error
@@ -771,7 +771,7 @@ feature -- Third pass: byte code production and type check
 					new_suppliers := suppliers.same_suppliers
 				end
 				if invariant_feature /= Void then
-					ast_context.set_old_inline_agents (Void)
+					ast_context.old_inline_agents.wipe_out
 					remove_inline_agents_of_feature (invariant_feature.body_index, Void)
 				end
 				if f_suppliers /= Void then
@@ -811,9 +811,8 @@ feature -- Third pass: byte code production and type check
 					invar_clause := Inv_ast_server.item (class_id)
 					Error_handler.mark
 
-					create old_inline_agents.make (1)
-					remove_inline_agents_of_feature (invariant_feature.body_index, old_inline_agents)
-					ast_context.set_old_inline_agents (old_inline_agents)
+					ast_context.old_inline_agents.wipe_out
+					remove_inline_agents_of_feature (invariant_feature.body_index, ast_context.old_inline_agents)
 					feature_checker.invariant_type_check (invariant_feature, invar_clause, True)
 
 					if not Error_handler.new_error then
@@ -882,7 +881,7 @@ feature -- Third pass: byte code production and type check
 					body_index := removed_features.item_for_iteration
 
 					remove_inline_agents_of_feature (body_index, Void)
-					ast_context.set_old_inline_agents (Void)
+					ast_context.old_inline_agents.wipe_out
 
 					f_suppliers := dependances.item (body_index)
 					if f_suppliers /= Void then
@@ -1640,10 +1639,10 @@ feature {NONE} -- Class initialization
 
 					-- First, check if the formal generic name is not the
 					-- anme of a class in the surrounding universe.
-				if Universe.class_named (generic_name, cluster) /= Void then
+				if Universe.class_named (generic_name.name, cluster) /= Void then
 					create vcfg1
 					vcfg1.set_class (Current)
-					vcfg1.set_formal_name (generic_name)
+					vcfg1.set_formal_name (generic_name.name)
 					vcfg1.set_location (generic_name)
 					Error_handler.insert_error (Vcfg1)
 					error := True
@@ -1661,7 +1660,7 @@ feature {NONE} -- Class initialization
 						if next_dec.name.is_equal (generic_name) then
 							create vcfg2
 							vcfg2.set_class (Current)
-							vcfg2.set_formal_name (generic_name)
+							vcfg2.set_formal_name (generic_name.name)
 							vcfg2.set_location (generic_name)
 							Error_handler.insert_error (vcfg2)
 							error := True
@@ -1685,14 +1684,14 @@ feature {NONE} -- Class initialization
 					until
 						f_list.after
 					loop
-						if duplicate_name.has (f_list.item.internal_name) then
+						if duplicate_name.has (f_list.item.internal_name.name) then
 							create vgcp3
 							vgcp3.set_class (Current)
-							vgcp3.set_feature_name (f_list.item.internal_name)
+							vgcp3.set_feature_name (f_list.item.internal_name.name)
 							vgcp3.set_location (f_list.item.start_location)
 							Error_handler.insert_error (vgcp3)
 						else
-							duplicate_name.put (f_list.item.internal_name)
+							duplicate_name.put (f_list.item.internal_name.name)
 						end
 						f_list.forth
 					end
@@ -1720,10 +1719,10 @@ feature {NONE} -- Class initialization
 				generic_dec := l_area.item (i)
 				generic_name := generic_dec.name
 
-				if Universe.class_named (generic_name, cluster) /= Void then
+				if Universe.class_named (generic_name.name, cluster) /= Void then
 					create vcfg1
 					vcfg1.set_class (Current)
-					vcfg1.set_formal_name (generic_name)
+					vcfg1.set_formal_name (generic_name.name)
 					vcfg1.set_location (generic_name)
 					Error_handler.insert_error (Vcfg1)
 				end
@@ -1829,7 +1828,7 @@ feature -- Supplier checking
 				supplier_list.after
 			loop
 					-- Check supplier class_name `supplier_list.item_for_iteration' of the class
-				check_one_supplier (supplier_list.item_for_iteration, a_light_suppliers)
+				check_one_supplier (supplier_list.item_for_iteration.name, a_light_suppliers)
 				supplier_list.forth
 			end
 		end
@@ -1849,7 +1848,7 @@ feature -- Supplier checking
 			until
 				i = nb
 			loop
-				check_one_supplier (l_area.item (i).type.class_name, False)
+				check_one_supplier (l_area.item (i).type.class_name.name, False)
 				i := i + 1
 			end
 		end
@@ -1921,7 +1920,7 @@ feature -- Inline agents
 		require
 			valid_feature: a_feature /= Void
 		do
-			inline_agent_table.put (a_feature, a_feature.feature_name_id)
+			inline_agent_table.force (a_feature, a_feature.feature_name_id)
 		ensure
 			agent_added: inline_agent_table.has (a_feature.feature_name_id)
 		end
@@ -2089,9 +2088,12 @@ feature {NONE} -- Backup implementation
 			create l_dir.make (l_dir_name)
 			l_dir.create_directory
 
-				-- copy file
+				-- copy file using as target the eiffel class name, as in a cluster/library there
+				-- cannot be two classes with the same name, but you can have two classes with the same
+				-- file name.
 			create l_fname.make_from_string (l_dir_name)
-			l_fname.extend (a_class.file_name)
+			l_fname.extend (a_class.name.as_lower)
+			l_fname.add_extension ("e")
 			file_system.copy_file (a_class.full_file_name, l_fname)
 
 				-- if the class does override, also copy the overriden classes
@@ -2102,7 +2104,14 @@ feature {NONE} -- Backup implementation
 				until
 					l_over.after
 				loop
-					copy_class (l_over.item, a_location)
+						-- Compute actual location of cluster where overriden class is located.
+					create l_dir_name.make_from_string (workbench.backup_subdirectory)
+					l_dir_name.extend (l_over.item.group.target.system.uuid.out)
+					create l_dir.make (l_dir_name)
+					if not l_dir.exists then
+						l_dir.create_directory
+					end
+					copy_class (l_over.item, l_dir_name)
 					l_over.forth
 				end
 			end

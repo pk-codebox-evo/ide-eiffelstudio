@@ -841,7 +841,8 @@ feature -- Generation Structure
 						if not l_type.is_external then
 							define_assertion_level (l_type)
 						end
-						if l_type.is_generated then
+						l_class := l_type.associated_class
+						if l_type.is_generated and then not l_class.is_typed_pointer then
 							l_module := il_module (l_type)
 
 							file_token.search (l_module)
@@ -865,7 +866,6 @@ feature -- Generation Structure
 									{MD_TYPE_ATTRIBUTES}.Public)
 							end
 
-							l_class := l_type.associated_class
 							if
 								not l_class.is_deferred and
 								(l_class.creators = Void or else not l_class.creators.is_empty)
@@ -1135,12 +1135,11 @@ feature -- Class info
 			class_type_not_void: class_type /= Void
 			class_c_not_void: class_c /= Void
 		local
-			pars: SEARCH_TABLE [CLASS_INTERFACE]
+			pars: ARRAYED_LIST [CLASS_INTERFACE]
 			class_interface: CLASS_INTERFACE
 			parent_type: CL_TYPE_I
 			parents: FIXED_LIST [CL_TYPE_A]
 			l_native_array: NATIVE_ARRAY_CLASS_TYPE
-			l_type: CL_TYPE_I
 		do
 			l_native_array ?= class_type
 			if l_native_array /= Void then
@@ -1151,8 +1150,7 @@ feature -- Class info
 			then
 					-- We do not process TYPED_POINTER as it is not a real class type in .NET so
 					-- TYPED_POINTER doesn't really have a `full_il_type_name'.
-				l_type := class_type.type
-				external_class_mapping.put (l_type, class_type.full_il_type_name)
+				external_class_mapping.put (class_type.type, class_type.full_il_type_name)
 			end
 
 			parents := class_c.parents
@@ -1569,7 +1567,7 @@ feature -- Class info
 			l_class_id := class_type.associated_class.class_id
 
 				-- Process `equals'
-			if l_select_tbl.has (equals_rout_id) then
+			if l_select_tbl.has_key (equals_rout_id) then
 				l_feat := l_select_tbl.found_item
 				if l_feat.written_in /= l_class_id then
 					define_equals_routine (class_type)
@@ -1579,7 +1577,7 @@ feature -- Class info
 			end
 
 				-- Process `finalize'
-			if l_select_tbl.has (finalize_rout_id) then
+			if l_select_tbl.has_key (finalize_rout_id) then
 				l_feat := l_select_tbl.found_item
 				if l_feat.written_in /= l_class_id then
 					define_finalize_routine (class_type)
@@ -1589,7 +1587,7 @@ feature -- Class info
 			end
 
 				-- Process `get_hash_code'
-			if l_select_tbl.has (get_hash_code_rout_id) then
+			if l_select_tbl.has_key (get_hash_code_rout_id) then
 				l_feat := l_select_tbl.found_item
 				if l_feat.written_in /= l_class_id then
 					define_get_hash_code_routine (class_type)
@@ -1599,7 +1597,7 @@ feature -- Class info
 			end
 
 				-- Process `to_string'
-			if l_select_tbl.has (to_string_rout_id) then
+			if l_select_tbl.has_key (to_string_rout_id) then
 				l_feat := l_select_tbl.found_item
 				if l_feat.written_in /= l_class_id then
 					define_to_string_routine (class_type)
@@ -3087,7 +3085,10 @@ feature -- IL Generation
 						nb, False)
 				end
 				fixme ("Generate class invariant check (if enabled).")
-				if current_class_type.is_expanded then
+				if current_class_type.type.is_basic then
+						-- Load basic object value.
+					generate_load_from_address_as_basic (current_class_type.type)
+				elseif current_class_type.is_expanded then
 						-- Load expanded object value.
 					generate_load_from_address (current_class_type.type)
 				end
@@ -3617,6 +3618,8 @@ feature -- IL Generation
 			l_token: like last_non_recorded_feature_token
 			l_args: FEAT_ARG
 			l_type_i: like argument_actual_type
+			cl_type_i: CL_TYPE_I
+			l_parent_arg_type_i: like argument_actual_type
 		do
 			l_parent_type_id := parent_type.static_type_id
 			l_cur_sig := signatures (current_type_id, cur_feat.feature_id)
@@ -3666,8 +3669,12 @@ feature -- IL Generation
 						if l_cur_sig.item (i) /= l_inh_sig.item (i) then
 							l_type_i := argument_actual_type (l_args.item.type_i)
 							if l_type_i.is_basic then
-								generate_load_address (l_type_i)
-								generate_load_from_address_as_basic (l_type_i)
+								l_parent_arg_type_i := argument_actual_type_in (cur_feat.arguments [i].type_i, parent_type)
+									-- Do nothing if a TYPED_POINTER derivation is being reattached to another TYPED_POINTER derivation.
+								if not l_parent_arg_type_i.is_basic then
+									generate_load_address (l_type_i)
+									generate_load_from_address_as_basic (l_type_i)
+								end
 							elseif l_type_i.is_expanded then
 								generate_unmetamorphose (l_type_i)
 							elseif is_verifiable then
@@ -3737,7 +3744,11 @@ feature -- IL Generation
 					start_new_body (l_setter_token)
 					generate_current
 					generate_argument (1)
-					if is_verifiable and l_cur_sig.item (0) /= l_inh_sig.item (0) then
+					cl_type_i ?= result_type_in (cur_feat, current_class_type)
+					if l_return_type.is_reference and then cl_type_i /= Void and then cl_type_i.is_expanded then
+							-- Unbox argument.
+						generate_external_unmetamorphose (cl_type_i)
+					elseif is_verifiable and l_cur_sig.item (0) /= l_inh_sig.item (0) then
 						method_body.put_opcode_mdtoken ({MD_OPCODES}.Castclass,
 							mapped_class_type_token (l_cur_sig.item (0)))
 					end
@@ -7084,7 +7095,7 @@ feature {CIL_CODE_GENERATOR} -- Implementation: convenience
 			f: FEATURE_I
 		once
 			c := System.system_object_class.compiled_class
-			l := c.feature_table.overloaded_items (names_heap.item ({PREDEFINED_NAMES}.equals_name_id))
+			l := c.feature_table.overloaded_items ({PREDEFINED_NAMES}.equals_name_id)
 			check
 				l_attached: l /= Void
 			end

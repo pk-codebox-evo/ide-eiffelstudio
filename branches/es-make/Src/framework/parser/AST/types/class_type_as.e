@@ -28,12 +28,12 @@ feature {NONE} -- Initialization
 			-- Create a new CLASS_TYPE AST node.
 		require
 			n_not_void: n /= Void
+			n_upper: n.name.is_equal (n.name.as_upper)
 		do
 			class_name := n
-			class_name.to_upper
 			internal_generics := g
 		ensure
-			class_name_set: class_name.is_equal (n.as_upper)
+			class_name_set: class_name.name.is_equal (n.name)
 			internal_generics_set: internal_generics = g
 		end
 
@@ -161,8 +161,8 @@ feature {AST_FACTORY, COMPILER_EXPORTER} -- Conveniences
 	dump: STRING is
 			-- Dumped string
 		do
-			create Result.make (class_name.count)
-			Result.append (class_name)
+			create Result.make (class_name.name.count)
+			Result.append (class_name.name)
 			if generics /= Void then
 				from
 					generics.start;

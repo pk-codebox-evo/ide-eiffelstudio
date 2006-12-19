@@ -501,6 +501,9 @@ feature {NONE} -- Initialization
 			managed_feature_formatters.extend (Void)
 			managed_feature_formatters.extend (create {EB_HOMONYMS_FORMATTER}.make (Current))
 
+			create managed_dependency_formatters.make (2)
+			managed_dependency_formatters.extend (create {EB_CLIENT_DEPENDENCY_FORMATTER}.make (Current))
+			managed_dependency_formatters.extend (create {EB_SUPPLIER_DEPENDENCY_FORMATTER}.make (Current))
 
 			create managed_main_formatters.make (6)
 
@@ -594,6 +597,17 @@ feature {NONE} -- Initialization
 				managed_main_formatters.forth
 			end
 
+			from
+				managed_dependency_formatters.start
+			until
+				managed_dependency_formatters.after
+			loop
+				if managed_dependency_formatters.item /= Void then
+					managed_dependency_formatters.item.set_manager (context_tool)
+				end
+				managed_dependency_formatters.forth
+			end
+
 			(managed_main_formatters @ 1).enable_select;
 
 				-- We now select the correct class formatter.
@@ -618,6 +632,12 @@ feature {NONE} -- Initialization
 				f_ind := 2
 			end
 			managed_class_formatters.i_th (f_ind).enable_select
+
+			f_ind := preferences.context_tool_data.default_dependency_formatter_index
+			if f_ind < 1 or f_ind > managed_dependency_formatters.count then
+				f_ind := 1
+			end
+			managed_dependency_formatters.i_th (f_ind).enable_select
 		end
 
 	build_tools is
@@ -1415,6 +1435,7 @@ feature {NONE} -- Menu Building
 			os_cmd: EB_ON_SELECTION_COMMAND
 			editor: EB_SMART_EDITOR
 			ln_cmd: EB_TOGGLE_LINE_NUMBERS_COMMAND
+			l_string: STRING_GENERAL
 		do
 			editor := editor_tool.text_area
 			create command_controller.make
@@ -1497,7 +1518,10 @@ feature {NONE} -- Menu Building
 
 				-- Search
 			create cmd.make
-			cmd.set_menu_name (Interface_names.m_search + "%T" + preferences.editor_data.shortcuts.item ("show_search_panel").display_string)
+			l_string := Interface_names.m_search
+			l_string.append ("%T")
+			l_string.append (preferences.editor_data.shortcuts.item ("show_search_panel").display_string.as_string_32)
+			cmd.set_menu_name (l_string)
 			cmd.add_agent (agent search)
 			command_menu_item := cmd.new_menu_item
 			command_controller.add_edition_command (cmd)
@@ -1516,7 +1540,10 @@ feature {NONE} -- Menu Building
 
 				-- Replace
 			create cmd.make
-			cmd.set_menu_name (Interface_names.m_replace + "%T" + preferences.editor_data.shortcuts.item ("show_search_and_replace_panel").display_string)
+			l_string := Interface_names.m_replace
+			l_string.append ("%T")
+			l_string.append (preferences.editor_data.shortcuts.item ("show_search_and_replace_panel").display_string.as_string_32)
+			cmd.set_menu_name (l_string)
 			cmd.add_agent (agent editor.replace)
 			cmd.set_needs_editable (True)
 			command_menu_item := cmd.new_menu_item
@@ -1530,7 +1557,10 @@ feature {NONE} -- Menu Building
 
 				-- Find next
 			create cmd.make
-			cmd.set_menu_name (Interface_names.m_find_next + "%T" + preferences.editor_data.shortcuts.item ("search_forward").display_string)
+			l_string := Interface_names.m_find_next
+			l_string.append ("%T")
+			l_string.append (preferences.editor_data.shortcuts.item ("search_forward").display_string.as_string_32)
+			cmd.set_menu_name (l_string)
 			cmd.add_agent (agent find_next)
 			command_menu_item := cmd.new_menu_item
 			command_controller.add_edition_command (cmd)
@@ -1539,7 +1569,10 @@ feature {NONE} -- Menu Building
 
 				-- Find previous
 			create cmd.make
-			cmd.set_menu_name (Interface_names.m_find_previous + "%T" + preferences.editor_data.shortcuts.item ("search_backward").display_string)
+			l_string := Interface_names.m_find_previous
+			l_string.append ("%T")
+			l_string.append (preferences.editor_data.shortcuts.item ("search_backward").display_string.as_string_32)
+			cmd.set_menu_name (l_string)
 			cmd.add_agent (agent find_previous)
 			command_menu_item := cmd.new_menu_item
 			command_controller.add_edition_command (cmd)
@@ -1548,7 +1581,10 @@ feature {NONE} -- Menu Building
 
 				-- Find selection forward
 			create os_cmd.make (Current)
-			os_cmd.set_menu_name (Interface_names.m_find_next_selection + "%T" + preferences.editor_data.shortcuts.item ("search_selection_forward").display_string)
+			l_string := Interface_names.m_find_next_selection
+			l_string.append ("%T")
+			l_string.append (preferences.editor_data.shortcuts.item ("search_selection_forward").display_string.as_string_32)
+			os_cmd.set_menu_name (l_string)
 			os_cmd.add_agent (agent find_next_selection)
 			command_menu_item := os_cmd.new_menu_item
 			command_controller.add_selection_command (os_cmd)
@@ -1557,7 +1593,10 @@ feature {NONE} -- Menu Building
 
 				-- Find selection backward
 			create os_cmd.make (Current)
-			os_cmd.set_menu_name (Interface_names.m_find_previous_selection + "%T" + preferences.editor_data.shortcuts.item ("search_selection_backward").display_string)
+			l_string := Interface_names.m_find_previous_selection
+			l_string.append ("%T")
+			l_string.append (preferences.editor_data.shortcuts.item ("search_selection_backward").display_string.as_string_32)
+			os_cmd.set_menu_name (l_string)
 			os_cmd.add_agent (agent find_next_selection)
 			command_menu_item := os_cmd.new_menu_item
 			command_controller.add_selection_command (os_cmd)
@@ -1656,7 +1695,10 @@ feature {NONE} -- Menu Building
 				-- Complete word
 			create cmd.make
 			cmd.set_needs_editable (True)
-			cmd.set_menu_name (Interface_names.m_complete_word + "%T" + preferences.editor_data.shortcuts.item ("autocomplete").display_string)
+			l_string := Interface_names.m_complete_word
+			l_string.append ("%T")
+			l_string.append (preferences.editor_data.shortcuts.item ("autocomplete").display_string.as_string_32)
+			cmd.set_menu_name (l_string)
 			command_menu_item := cmd.new_menu_item
 			command_controller.add_edition_command (cmd)
 			cmd.add_agent (agent editor.complete_feature_name)
@@ -1667,7 +1709,10 @@ feature {NONE} -- Menu Building
 				-- Complete class name
 			create cmd.make
 			cmd.set_needs_editable (True)
-			cmd.set_menu_name (Interface_names.m_complete_class_name + "%T" + preferences.editor_data.shortcuts.item ("class_autocomplete").display_string)
+			l_string := Interface_names.m_complete_class_name
+			l_string.append ("%T")
+			l_string.append (preferences.editor_data.shortcuts.item ("class_autocomplete").display_string.as_string_32)
+			cmd.set_menu_name (l_string)
 			command_menu_item := cmd.new_menu_item
 			command_controller.add_edition_command (cmd)
 			cmd.add_agent (agent editor.complete_class_name)
@@ -2081,7 +2126,7 @@ feature -- Stone process
 	set_stone (a_stone: STONE) is
 			-- Change the currently focused stone.
 		local
-			cd: STANDARD_DISCARDABLE_CONFIRMATION_DIALOG
+			cd: EB_DISCARDABLE_CONFIRMATION_DIALOG
 			cv_cst: CLASSI_STONE
 			ef_stone: EXTERNAL_FILE_STONE
 			l: LIST [EB_DEVELOPMENT_WINDOW]
@@ -2204,7 +2249,7 @@ feature -- Stone process
 				end
 			end
 			if not editor_tool.text_area.has_focus then
-				ev_application.idle_actions.extend_kamikaze (agent editor_tool.set_focus)
+				ev_application.do_once_on_idle (agent editor_tool.set_focus)
 			end
 		end
 
@@ -2499,7 +2544,7 @@ feature -- Resource Update
 	perform_check_before_save is
 			-- Perform any pre-save operations/checks
 		local
-			dial: EV_CONFIRMATION_DIALOG
+			dial: EB_CONFIRMATION_DIALOG
 		do
 				-- Remove trailing blanks.
 			if preferences.editor_data.auto_remove_trailing_blank_when_saving then
@@ -2511,10 +2556,10 @@ feature -- Resource Update
 
 			if editor_tool.text_area.open_backup then
 				create dial.make_with_text(Warning_messages.w_save_backup)
-				dial.set_buttons_and_actions(<<"Continue", "Cancel">>, <<agent continue_save, agent cancel_save>>)
-				dial.set_default_push_button(dial.button("Continue"))
-				dial.set_default_cancel_button(dial.button("Cancel"))
-				dial.set_title ("Save Backup")
+				dial.set_buttons_and_actions(<<interface_names.b_continue, interface_names.b_cancel>>, <<agent continue_save, agent cancel_save>>)
+				dial.set_default_push_button(dial.button(interface_names.b_continue))
+				dial.set_default_cancel_button(dial.button(interface_names.b_cancel))
+				dial.set_title (interface_names.t_save_backup)
 				dial.show_modal_to_window (window)
 			else
 				check_passed := True
@@ -2552,7 +2597,7 @@ feature -- Resource Update
 	on_text_saved is
 			-- Notify the editor that the text has been saved
 		local
-			str: STRING
+			str: STRING_32
 		do
 			Precursor
 			editor_tool.on_text_saved
@@ -2561,7 +2606,7 @@ feature -- Resource Update
 				editor_tool.text_area.update_click_list (True)
 			end
 			save_only := False
-			str := title.twin
+			str := title.twin.as_string_32
 			if str @ 1 = '*' then
 				str.keep_tail (str.count - 2)
 				set_title (str)
@@ -2648,31 +2693,6 @@ feature -- Resource Update
 
 feature -- Window management
 
-	show_window is
-			-- Show the window
-		do
-			show
-		end
-
-	raise_window is
-			-- Show the window and set the focus to it.
-		do
-			show
-			--| FIXME, set the focus.
-		end
-
-	hide_window is
-			-- Hide the window
-		do
-			hide
-		end
-
-	destroy_window is
-			-- Destroy the window.
-		do
-			destroy
-		end
-
 	give_focus is
 			-- Give the focus to the address manager.
 		do
@@ -2727,8 +2747,8 @@ feature -- Window management
 				-- If the debugger is displayed, the previous layout is already saved,
 				-- and this is the one that must be used, as only one debugger is ever displayed.
 			if
-				(Eb_debugger_manager.application_is_executing and Eb_debugger_manager.debugging_window /= Current)
-				or not Eb_debugger_manager.application_is_executing
+				(Debugger_manager.application_is_executing and Eb_debugger_manager.debugging_window /= Current)
+				or not Debugger_manager.application_is_executing
 			then
 				a_window_data.save_left_panel_layout (left_panel.save_to_resource)
 				a_window_data.save_right_panel_layout (right_panel.save_to_resource)
@@ -2796,6 +2816,9 @@ feature -- Tools & Controls
 
 	goto_dialog: EB_GOTO_DIALOG
 			-- The goto dialog for line number access
+
+	managed_dependency_formatters: ARRAYED_LIST [EB_DEPENDENCY_FORMATTER]
+			-- All formatters to display dependency relationship of a target/group/folder/class
 
 feature -- Multiple editor management
 
@@ -2919,7 +2942,7 @@ feature {EB_WINDOW_MANAGER} -- Window management / Implementation
 					Debugger_manager.application_is_executing
 					and then Eb_debugger_manager.debugging_window = Current
 				then
-					Debugger_manager.Application.kill
+					Debugger_manager.application.kill
 				else
 					development_window_data.save_left_panel_layout (left_panel.save_to_resource)
 					development_window_data.save_right_panel_layout (right_panel.save_to_resource)
@@ -2997,12 +3020,12 @@ feature {NONE} -- Implementation
 			test_stone: CLASSI_STONE
 			externali: EXTERNAL_CLASS_I
 			external_cons: CONSUMED_TYPE
-			str: STRING
+			str: STRING_32
 			dotnet_class: BOOLEAN
 			l_short_formatter: EB_SHORT_FORMATTER
 			l_flat_formatter: EB_FLAT_SHORT_FORMATTER
 			l_main_formatter: EB_CLASS_TEXT_FORMATTER
-			app_exec: APPLICATION_EXECUTION
+			bpm: BREAKPOINTS_MANAGER
 		do
 				-- the text does not change if the text was saved with syntax errors
 			cur_wid := window
@@ -3021,11 +3044,11 @@ feature {NONE} -- Implementation
 			ef_stone ?= a_stone
 			target_stone ?= a_stone
 			if conv_brkstone /= Void then
-				app_exec := Debugger_manager.application
-				if app_exec.is_breakpoint_enabled (conv_brkstone.routine, conv_brkstone.index) then
-					app_exec.remove_breakpoint (conv_brkstone.routine, conv_brkstone.index)
+				bpm := Debugger_manager
+				if bpm.is_breakpoint_enabled (conv_brkstone.routine, conv_brkstone.index) then
+					bpm.remove_breakpoint (conv_brkstone.routine, conv_brkstone.index)
 				else
-					app_exec.set_breakpoint (conv_brkstone.routine, conv_brkstone.index)
+					bpm.set_breakpoint (conv_brkstone.routine, conv_brkstone.index)
 				end
 				Debugger_manager.notify_breakpoints_changes
 			elseif conv_errst /= Void then
@@ -3306,7 +3329,7 @@ feature {NONE} -- Implementation
 					-- Update the title of the window
 				if a_stone /= Void then
 					if changed then
-						str := a_stone.header.twin
+						str := a_stone.header.as_string_32
 						str.prepend ("* ")
 						set_title (str)
 					else
@@ -3733,7 +3756,7 @@ feature {NONE} -- Implementation
 							l_names.start
 						until
 							l_names.after or else
-							l_feature.name.is_case_insensitive_equal (l_names.item.internal_name)
+							l_feature.name.is_case_insensitive_equal (l_names.item.internal_name.name)
 						loop
 							l_names.forth
 						end
@@ -3876,9 +3899,9 @@ feature {NONE} -- Implementation
 			-- The main editor has just been wiped out
 			-- before loading a new file.
 		local
-			str: STRING
+			str: STRING_32
 		do
-			str := title.twin
+			str := title.twin.as_string_32
 			if str @ 1 = '*' then
 				str.keep_tail (str.count - 2)
 				set_title (str)
@@ -3922,9 +3945,9 @@ feature {NONE} -- Implementation
 
 	on_text_back_to_its_last_saved_state is
 		local
-			str: STRING
+			str: STRING_32
 		do
-			str := title.twin
+			str := title.twin.as_string_32
 			if str @ 1 = '*' then
 				str.keep_tail (str.count - 2)
 				set_title (str)
@@ -3941,11 +3964,11 @@ feature {NONE} -- Implementation
 			-- The text in the editor is modified, add the '*' in the title.
 			-- Gray out the formatters.
 		local
-			str: STRING
+			str: STRING_32
 			cst: CLASSI_STONE
 		do
 			if not text_edited then
-				str := title.twin
+				str := title.twin.as_string_32
 				if str @ 1 /= '*' then
 					str.prepend ("* ")
 					set_title (str)
@@ -4032,7 +4055,7 @@ feature {NONE} -- Implementation
 	destroy is
 			-- check if current text has been saved and destroy
 		local
-			dialog_w: EV_WARNING_DIALOG
+			dialog_w: EB_WARNING_DIALOG
 		do
 			if Window_manager.development_windows_count > 1 and then process_manager.is_external_command_running and then Current = external_output_manager.target_development_window then
 				process_manager.confirm_external_command_termination (agent terminate_external_command_and_destroy, agent do_nothing, window)
@@ -4040,9 +4063,9 @@ feature {NONE} -- Implementation
 				if editor_tool /= Void and then editor_tool.text_area /= Void and then changed and then not confirmed then
 					if Window_manager.development_windows_count > 1 then
 						create dialog_w.make_with_text (Warning_messages.w_save_before_closing)
-						dialog_w.set_buttons_and_actions (<<"Yes", "No", "Cancel">>, <<agent save_and_destroy, agent force_destroy, agent do_nothing>>)
-						dialog_w.set_default_push_button (dialog_w.button("Yes"))
-						dialog_w.set_default_cancel_button (dialog_w.button("Cancel"))
+						dialog_w.set_buttons_and_actions (<<interface_names.b_yes, interface_names.b_no, interface_names.b_cancel>>, <<agent save_and_destroy, agent force_destroy, agent do_nothing>>)
+						dialog_w.set_default_push_button (dialog_w.button(interface_names.b_yes))
+						dialog_w.set_default_cancel_button (dialog_w.button(interface_names.b_cancel))
 						dialog_w.show_modal_to_window (window)
 					else
 							-- We let the window manager handle the saving, along with other windows
@@ -4339,13 +4362,13 @@ feature {NONE} -- Implementation: Editor commands
 			l_classc: CLASS_C
 		do
 			if a_feature_name /= Void then
-				address_manager.set_feature_text_simply (a_feature_name.internal_name)
+				address_manager.set_feature_text_simply (a_feature_name.internal_name.name)
 				if class_name /= Void and group /= Void then
 					l_class_i := eiffel_universe.safe_class_named (class_name, group)
 					if l_class_i /= Void and then l_class_i.is_compiled then
 						l_classc := l_class_i.compiled_class
 						if l_classc.has_feature_table then
-							l_efeature := l_classc.feature_with_name (a_feature_name.internal_name)
+							l_efeature := l_classc.feature_with_name (a_feature_name.internal_name.name)
 							if l_efeature /= Void and then l_efeature.written_in /= l_classc.class_id then
 								l_efeature := Void
 							end
@@ -4355,7 +4378,7 @@ feature {NONE} -- Implementation: Editor commands
 				if l_efeature /= Void then
 					seek_item_in_feature_tool (l_efeature)
 				else
-					features_tool.seek_ast_item_in_feature_tool (a_feature_name.internal_name)
+					features_tool.seek_ast_item_in_feature_tool (a_feature_name.internal_name.name)
 				end
 			else
 				address_manager.set_feature_text_simply (once "")

@@ -95,7 +95,7 @@ feature {NONE} -- Initialization
 			loop
 				create li.make_with_text (platform_names.item_for_iteration)
 				platforms.extend (li)
-				if data.platform /= Void and then data.platform.value.has (platform_names.key_for_iteration) then
+				if data.platform /= Void and then data.platform.item.value.has (platform_names.key_for_iteration) then
 					platforms.check_item (li)
 				end
 				platform_names.forth
@@ -105,7 +105,7 @@ feature {NONE} -- Initialization
 			create exclude_platforms.make_with_text (conf_interface_names.dial_cond_platforms_exclude)
 			vb.extend (exclude_platforms)
 			vb.disable_item_expand (exclude_platforms)
-			if data.platform /= Void and then data.platform.invert then
+			if data.platform /= Void and then data.platform.item.invert then
 				exclude_platforms.enable_select
 			end
 
@@ -133,14 +133,14 @@ feature {NONE} -- Initialization
 			vb.disable_item_expand (builds)
 			if data.build /= Void then
 				build_enabled.enable_select
-				if data.build.invert then
-					if data.build.value.first = build_workbench then
+				if data.build.item.invert then
+					if data.build.item.value.first = build_workbench then
 						builds.last.enable_select
 					else
 						builds.first.enable_select
 					end
 				else
-					if data.build.value.first = build_workbench then
+					if data.build.item.value.first = build_workbench then
 						builds.first.enable_select
 					else
 						builds.last.enable_select
@@ -465,7 +465,7 @@ feature {NONE} -- Actions
 		local
 			l_ver: STRING
 			l_min, l_max: CONF_VERSION
-			wd: EV_WARNING_DIALOG
+			wd: EB_WARNING_DIALOG
 		do
 			l_ver := version_min_compiler.text
 			if not l_ver.is_empty then
@@ -496,7 +496,7 @@ feature {NONE} -- Actions
 		local
 			l_ver: STRING
 			l_min, l_max: CONF_VERSION
-			wd: EV_WARNING_DIALOG
+			wd: EB_WARNING_DIALOG
 		do
 			l_ver := version_min_msil_clr.text
 			if not l_ver.is_empty then
@@ -522,11 +522,11 @@ feature {NONE} -- Actions
 			end
 		end
 
-	update_variable (a_new_key: STRING; an_old_key: STRING) is
+	update_variable (a_new_key: STRING_GENERAL; an_old_key: STRING_GENERAL) is
 			-- Update variable name from `an_old_key' to `a_new_key'.
 		require
 			an_old_key_ok: an_old_key /= Void and then data.custom /= Void and then data.custom.has (an_old_key)
-			a_new_key_ok: a_new_key /= Void
+			a_new_key_ok: a_new_key /= Void and then (data.custom = Void  or else not data.custom.has (a_new_key))
 		do
 			if not a_new_key.is_empty then
 				data.custom.replace_key (a_new_key, an_old_key)
@@ -534,27 +534,27 @@ feature {NONE} -- Actions
 			fill_custom
 		end
 
-	update_invert (a_value: STRING; a_key: STRING) is
+	update_invert (a_value: STRING_GENERAL; a_key: STRING_GENERAL) is
 			-- Update inversion status of custom condition of `a_key'.
 		require
 			a_key_ok: a_key /= Void and then data.custom /= Void and then data.custom.has (a_key)
 			a_value_ok: a_value /= Void and then (a_value.is_equal ("=") or a_value.is_equal ("/="))
 		do
 			if a_value.is_equal ("=") then
-				data.custom.item (a_key).invert := False
+				data.custom.item (a_key).item.invert := False
 			else
-				data.custom.item (a_key).invert := True
+				data.custom.item (a_key).item.invert := True
 			end
 		end
 
-	update_value (a_value: STRING; a_key: STRING) is
+	update_value (a_value: STRING_GENERAL; a_key: STRING_GENERAL) is
 			-- Update value of custom condition of `a_key'.
 		require
 			a_key_ok: a_key /= Void and then data.custom /= Void and then data.custom.has (a_key)
 			a_value_not_void: a_value /= Void
 		do
 			if not a_value.is_empty then
-				data.custom.item (a_key).value := a_value
+				data.custom.item (a_key).item.value := a_value
 			else
 				fill_custom
 			end
@@ -599,22 +599,22 @@ feature {NONE} -- Implementation
 	fill_compiler_version is
 			-- Fill fields with the constraints for the compiler version.
 		local
-			l_version: TUPLE [min: CONF_VERSION; max: CONF_VERSION]
+			l_version: EQUALITY_TUPLE [TUPLE [min: CONF_VERSION; max: CONF_VERSION]]
 		do
 			l_version := data.version.item (v_compiler)
 			if l_version = Void then
 				version_min_compiler.set_text ("")
 				version_max_compiler.set_text ("")
 			else
-				if l_version.min = Void then
+				if l_version.item.min = Void then
 					version_min_compiler.set_text ("")
 				else
-					version_min_compiler.set_text (l_version.min.version)
+					version_min_compiler.set_text (l_version.item.min.version)
 				end
-				if l_version.max = Void then
+				if l_version.item.max = Void then
 					version_max_compiler.set_text ("")
 				else
-					version_max_compiler.set_text (l_version.max.version)
+					version_max_compiler.set_text (l_version.item.max.version)
 				end
 			end
 		end
@@ -622,22 +622,22 @@ feature {NONE} -- Implementation
 	fill_msil_clr_version is
 			-- Fill fields with the constraints for the msil clr version.
 		local
-			l_version: TUPLE [min: CONF_VERSION; max: CONF_VERSION]
+			l_version: EQUALITY_TUPLE [TUPLE [min: CONF_VERSION; max: CONF_VERSION]]
 		do
 			l_version := data.version.item (v_msil_clr)
 			if l_version = Void then
 				version_min_msil_clr.set_text ("")
 				version_max_msil_clr.set_text ("")
 			else
-				if l_version.min = Void then
+				if l_version.item.min = Void then
 					version_min_msil_clr.set_text ("")
 				else
-					version_min_msil_clr.set_text (l_version.min.version)
+					version_min_msil_clr.set_text (l_version.item.min.version)
 				end
-				if l_version.max = Void then
+				if l_version.item.max = Void then
 					version_max_msil_clr.set_text ("")
 				else
-					version_max_msil_clr.set_text (l_version.max.version)
+					version_max_msil_clr.set_text (l_version.item.max.version)
 				end
 			end
 		end
@@ -645,11 +645,11 @@ feature {NONE} -- Implementation
 	fill_custom is
 			-- Fill custom conditions.
 		local
-			l_cust: HASH_TABLE [TUPLE [value: STRING; invert: BOOLEAN], STRING]
-			l_text: STRING_PROPERTY [STRING]
-			l_choice: STRING_CHOICE_PROPERTY [STRING]
+			l_cust: HASH_TABLE [EQUALITY_TUPLE [TUPLE [value: STRING_GENERAL; invert: BOOLEAN]], STRING_GENERAL]
+			l_text: STRING_PROPERTY [STRING_GENERAL]
+			l_choice: STRING_CHOICE_PROPERTY [STRING_GENERAL]
 			i: INTEGER
-			l_key: STRING
+			l_key: STRING_GENERAL
 		do
 			custom.wipe_out
 			custom.enable_last_column_use_all_width
@@ -674,7 +674,7 @@ feature {NONE} -- Implementation
 					l_text.change_value_actions.extend (agent update_variable (?, l_key))
 					custom.set_item (1, i, l_text)
 					create l_choice.make_with_choices ("", <<"=", "/=">>)
-					if l_cust.item_for_iteration.invert then
+					if l_cust.item_for_iteration.item.invert then
 						l_choice.set_value ("/=")
 					else
 						l_choice.set_value ("=")
@@ -684,7 +684,7 @@ feature {NONE} -- Implementation
 					create l_text.make ("")
 					l_text.pointer_button_press_actions.wipe_out
 					l_text.pointer_double_press_actions.force_extend (agent l_text.activate)
-					l_text.set_value (l_cust.item_for_iteration.value)
+					l_text.set_value (l_cust.item_for_iteration.item.value)
 					l_text.change_value_actions.extend (agent update_value (?, l_key))
 					custom.set_item (3, i, l_text)
 

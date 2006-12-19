@@ -138,11 +138,11 @@ feature {NONE} -- Initialization
 			combination_grid.add_key_shortcut (move_down_key_index, move_row_down_shortcut)
 			combination_grid.add_key_shortcut (and_criterion_key_index, and_indent_shortcut)
 			combination_grid.add_key_shortcut (or_criterion_key_index, or_indent_shortcut)
-			up_btn.set_tooltip (metric_names.f_move_row_up + " (" + move_row_up_shortcut.out + ")")
-			down_btn.set_tooltip (metric_names.f_move_row_down + " (" + move_row_down_shortcut.out + ")")
-			remove_criterion_btn.set_tooltip (metric_names.f_del_row + " (" + del_key_shortcut.out + ")")
-			indent_and_btn.set_tooltip (metric_names.f_indent_with_and_criterion + " (" + and_indent_shortcut.out + ")")
-			indent_or_btn.set_tooltip (metric_names.f_indent_with_or_criterion + " (" + or_indent_shortcut.out + ")")
+			up_btn.set_tooltip (metric_names.f_move_row_up.as_string_32 + " (" + move_row_up_shortcut.out + ")")
+			down_btn.set_tooltip (metric_names.f_move_row_down.as_string_32 + " (" + move_row_down_shortcut.out + ")")
+			remove_criterion_btn.set_tooltip (metric_names.f_del_row.as_string_32 + " (" + del_key_shortcut.out + ")")
+			indent_and_btn.set_tooltip (metric_names.f_indent_with_and_criterion.as_string_32 + " (" + and_indent_shortcut.out + ")")
+			indent_or_btn.set_tooltip (metric_names.f_indent_with_or_criterion.as_string_32 + " (" + or_indent_shortcut.out + ")")
 
 			criterion_lbl.set_text (metric_names.t_metric_criterion_definition)
 			attach_non_editable_warning_to_text (metric_names.t_text_not_editable, expression_text, metric_tool_window)
@@ -236,18 +236,6 @@ feature -- Setting
 			resize_criterion_grid_column (2, 0)
 			combination_grid.disable_sensitive
 			combination_toolbar_area.disable_sensitive
-		end
-
-	attach_metric_selector (a_metric_selector: like metric_selector) is
-			-- Set `metric_selector' with `a_metric_selector'.
-		do
-			metric_selector := a_metric_selector
-		end
-
-	detach_metric_selector is
-			-- Detach `metric_selector'.
-		do
-			metric_selector := Void
 		end
 
 	set_stone (a_stone: STONE) is

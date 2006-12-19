@@ -49,9 +49,7 @@ inherit
 			default_create, is_equal, copy
 		end
 
-	SHARED_APPLICATION_EXECUTION
-		export
-			{NONE} all
+	SHARED_DEBUGGER_MANAGER
 		undefine
 			default_create, is_equal, copy
 		end
@@ -70,19 +68,6 @@ feature {NONE} -- Initialization
 			parent_window := a_parent
 			set_padding (Layout_constants.Default_padding_size)
 			build_interface
-			parent_window.show_actions.extend (
-				agent
-					local
-						l_selected_rows: ARRAYED_LIST [EV_GRID_ROW]
-					do
-						if profiles_grid /= Void then
-							l_selected_rows := profiles_grid.selected_rows
-							if not l_selected_rows.is_empty then
-								l_selected_rows.first.ensure_visible
-							end
-						end
-					end
-				)
 			update
 		end
 
@@ -216,7 +201,7 @@ feature {NONE} -- Display profiles impl
 			display_profiles_box.set_padding_width (Layout_constants.Small_padding_size)
 			display_profiles_box.set_border_width (Layout_constants.Small_border_size)
 
-			create f.make_with_text ("Debugging options")
+			create f.make_with_text (interface_names.t_debugging_options)
 			create vb
 			f.extend (vb)
 
@@ -228,16 +213,19 @@ feature {NONE} -- Display profiles impl
 			vb.extend (hb)
 			vb.disable_item_expand (hb)
 			hb.set_padding_width (layout_constants.small_padding_size)
-			create add_button.make_with_text_and_action ("Add", agent add_new_profile)
+			create add_button.make_with_text_and_action (interface_names.b_add, agent add_new_profile)
+			add_button.set_minimum_width (layout_constants.default_button_width)
 			add_button.disable_sensitive
 
-			create remove_button.make_with_text_and_action ("Remove", agent remove_selected_profile)
+			create remove_button.make_with_text_and_action (interface_names.b_remove, agent remove_selected_profile)
+			remove_button.set_minimum_width (layout_constants.default_button_width)
 			remove_button.disable_sensitive
 
-			create dup_button.make_with_text_and_action ("Duplicate", agent duplicate_selected_profile)
+			create dup_button.make_with_text_and_action (interface_names.b_duplicate, agent duplicate_selected_profile)
+			dup_button.set_minimum_width (layout_constants.default_button_width)
 			dup_button.disable_sensitive
 
-			create enable_profiles_button.make_with_text ("Enable Profiles")
+			create enable_profiles_button.make_with_text (interface_names.b_enable_profiles)
 			enable_profiles_button.select_actions.extend (agent on_enable_profiles_clicked)
 --			enable_profiles_button.set_minimum_width (layout_constants.default_button_width)
 
@@ -439,9 +427,21 @@ feature -- Status Setting
 			end
 		end
 
+	on_show is
+		local
+			l_selected_rows: ARRAYED_LIST [EV_GRID_ROW]
+		do
+			if profiles_grid /= Void then
+				l_selected_rows := profiles_grid.selected_rows
+				if not l_selected_rows.is_empty then
+					l_selected_rows.first.ensure_visible
+				end
+			end
+		end
+
 feature -- Data change
 
-	change_title_on (v: STRING; p: like profile_from_row) is
+	change_title_on (v: STRING_GENERAL; p: like profile_from_row) is
 		require
 			v /= Void
 		do
@@ -523,7 +523,7 @@ feature {NONE} -- Button Actions
 			r: EV_GRID_ROW
 		do
 			profiles_grid.remove_selection
-			r := added_profile_text_row (["profile #" + profiles_count.out, Void, Void, Void], True, True)
+			r := added_profile_text_row ([interface_names.l_profile_no.as_string_32 + profiles_count.out, Void, Void, Void], True, True)
 			if r.is_expandable and then not r.is_expanded then
 				r.expand
 			end
@@ -543,7 +543,7 @@ feature {NONE} -- Button Actions
 					if p.title = Void then
 						p.title := description_from_profile (p)
 					end
-					p.title.prepend_string ("Copy of ")
+					p.title.prepend_string (interface_names.m_copy_of)
 
 					r := added_profile_text_row (p, True, True)
 					if r.is_expandable and then not r.is_expanded then
@@ -642,7 +642,7 @@ feature {NONE} -- Profile actions
 			p: like profile_from_row
 			gi: EV_GRID_LABEL_ITEM
 			srow: EV_GRID_ROW
-			l_title: STRING
+			l_title: STRING_32
 			l_args: STRING
 			l_cwd: STRING
 			l_env: HASH_TABLE [STRING_32, STRING_32]
@@ -669,13 +669,12 @@ feature {NONE} -- Profile actions
 				--| Note
 			a_row.insert_subrow (a_row.subrow_count + 1)
 			srow := a_row.subrow (a_row.subrow_count)
-			create gi.make_with_text ("Note")
+			create gi.make_with_text (interface_names.l_note)
 			srow.set_item (1, gi)
-			s := l_title
-			if s = Void then
-				s := ""
+			if l_title = Void then
+				l_title := ""
 			end
-			create gei.make_with_text (s)
+			create gei.make_with_text (l_title)
 			srow.set_item (2, gei)
 			gei.deactivate_actions.extend (agent
 					(a_prof: like profile_from_row; a_gi: EV_GRID_EDITABLE_ITEM)
@@ -687,7 +686,7 @@ feature {NONE} -- Profile actions
 				--| Working directory						
 			a_row.insert_subrow (a_row.subrow_count + 1)
 			srow := a_row.subrow (a_row.subrow_count)
-			create gi.make_with_text ("Working directory")
+			create gi.make_with_text (interface_names.l_working_directory)
 			srow.set_item (1, gi)
 			s := l_cwd
 			if s = Void then
@@ -706,7 +705,7 @@ feature {NONE} -- Profile actions
 				--| Arguments
 			a_row.insert_subrow (a_row.subrow_count + 1)
 			srow := a_row.subrow (a_row.subrow_count)
-			create gi.make_with_text ("Arguments")
+			create gi.make_with_text (interface_names.l_arguments)
 			srow.set_item (1, gi)
 			s := l_args
 			if s = Void then
@@ -725,17 +724,14 @@ feature {NONE} -- Profile actions
 				--| Environment
 			a_row.insert_subrow (a_row.subrow_count + 1)
 			srow := a_row.subrow (a_row.subrow_count)
-			create gi.make_with_text ("Environment")
+			create gi.make_with_text (interface_names.l_environment)
 			srow.set_item (1, gi)
 			if l_env /= Void then
 				fill_row_with_environment (srow, l_env)
 			end
 
-			create gli.make_with_text ("Add a variable (double click or Enter); Use an existing variable (right click or Ctrl+Enter)")
-			gli.set_tooltip ("[
-					Add a new variable : double click or [enter]
-					Use an existing variable: right click or [Ctrl+enter]
-					]")
+			create gli.make_with_text (interface_names.l_add_a_valuable)
+			gli.set_tooltip (interface_names.f_add_a_new_variable)
 
 			gli.pointer_button_press_actions.force_extend (agent on_environment_variables_row_clicked (srow, ?,?,?))
 			gli.set_font (Operation_font)
@@ -795,18 +791,18 @@ feature {NONE} -- Profile actions
 		local
 			p: like profile_from_row
 			l_item: EV_GRID_SPAN_LABEL_ITEM
-			s: STRING
+			s: STRING_32
 		do
 			p := profile_from_row (a_row)
 			s := p.title
 			if s = Void or else s.is_empty then
-				s := description_from_profile (p)
+				s := description_from_profile (p).as_string_32
 			end
 			l_item ?= a_row.item (1)
 			l_item.set_text (s)
 		end
 
-	profile_from_row (a_row: EV_GRID_ROW): TUPLE [title:STRING; cwd:STRING; args:STRING; env:HASH_TABLE [STRING_32, STRING_32]] is
+	profile_from_row (a_row: EV_GRID_ROW): TUPLE [title:STRING_32; cwd:STRING; args:STRING; env:HASH_TABLE [STRING_32, STRING_32]] is
 			-- Profile related to `a_row'.
 		require
 			a_row_not_void: a_row /= Void
@@ -1010,7 +1006,7 @@ feature {NONE} -- Environment actions
 					end
 
 					gei.set_pixmap (pixmaps.icon_pixmaps.debugger_object_watched_icon)
-					gei.set_tooltip ("Original value is %"" + k + "=" + s + "%"")
+					gei.set_tooltip (interface_names.f_original_value_is (k, s))
 				end
 			end
 		end
@@ -1033,7 +1029,7 @@ feature {NONE} -- Environment actions
 			k: STRING_32
 		do
 			if abut = 3 then
-				create m.make_with_text ("Use current environment variables")
+				create m.make_with_text (interface_names.m_use_current_environment_variables)
 				create mi.make_with_text (m.text)
 				mi.disable_sensitive
 				m.extend (mi)
@@ -1086,7 +1082,7 @@ feature {NONE} -- Environment actions
 			then
 --				a_row.enable_select
 
-				create m.make_with_text ("Environment variables")
+				create m.make_with_text (interface_names.m_environment_variables)
 				gei ?= a_row.item (1)
 				k := gei.text
 				if not k.is_empty then
@@ -1095,10 +1091,10 @@ feature {NONE} -- Environment actions
 					if s /= Void then
 						gti ?= a_row.item (2)
 						check gti /= Void end
-						create mi.make_with_text_and_action ("Use current environment value", agent gti.set_text (s))
+						create mi.make_with_text_and_action (interface_names.m_use_current_environment_value, agent gti.set_text (s))
 						mmi.extend (mi)
 					end
-					create mi.make_with_text ("Delete")
+					create mi.make_with_text (interface_names.b_delete_command)
 					mi.select_actions.extend (agent remove_env_row (a_row))
 					mmi.extend (mi)
 
@@ -1106,7 +1102,7 @@ feature {NONE} -- Environment actions
 				end
 
 				m.extend (create {EV_MENU_SEPARATOR})
-				create mi.make_with_text ("Add new variable")
+				create mi.make_with_text (interface_names.m_add_new_variable)
 				mi.select_actions.extend (agent on_new_environ_event (a_row.parent_row))
 				mi.select_actions.extend (agent change_environment_entry_from_row (a_row))
 				m.extend (mi)
@@ -1193,7 +1189,7 @@ feature {NONE} -- Environment implementation
 		do
 			Result := internal_sorted_environment_variables
 			if Result = Void then
-				Result := application.sorted_keys_from_environment_variables (application.debugger_manager.environment_variables_table)
+				Result := debugger_manager.sorted_comparable_string32_keys_from (Debugger_manager.environment_variables_table)
 				internal_sorted_environment_variables := Result
 			end
 		end

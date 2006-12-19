@@ -25,13 +25,14 @@ inherit
 		rename
 			item as item_id,
 			has as has_id,
+			has_key as has_key_id,
 			search as search_id
 		export
 			{NONE} all
 			{FEATURE_TABLE} keys, content, deleted_marks
 			{ANY}
 				after, conflict, count, cursor, forth, found,
-				found_item, go_to, has_id, item_for_iteration,
+				found_item, go_to, has_id, has_key_id, item_for_iteration,
 				item_id, key_for_iteration, linear_representation,
 				put, remove, replace, search_id, start, valid_key, off,
 				valid_cursor
@@ -143,21 +144,18 @@ feature -- Access: compatibility
 			id: INTEGER
 		do
 			id := Names_heap.id_of (s)
-			if id > 0 then
-				Result := item_id (id)
-			end
+			Result := item_id (id)
 		end
 
-	overloaded_items (s: STRING): LIST [FEATURE_I] is
+	overloaded_items (an_id: INTEGER): LIST [FEATURE_I] is
 			-- List of features matching overloaded name `s'.
 		require
-			s_not_void: s /= Void
-			s_not_empty: not s.is_empty
-			has_overloaded_s: has_overloaded (s)
+			an_id_valid: an_id >= 0
+			has_overloaded_an_id: has_overloaded (an_id)
 		local
 			l_names: ARRAYED_LIST [INTEGER]
 		do
-			l_names := overloaded_names.item (Names_heap.id_of (s))
+			l_names := overloaded_names.item (an_id)
 			create {ARRAYED_LIST [FEATURE_I]} Result.make (l_names.count)
 			from
 				l_names.start
@@ -180,27 +178,7 @@ feature -- Access: compatibility
 			l_id: INTEGER
 		do
 			l_id := Names_heap.id_of (s)
-			Result := l_id > 0 and then has_id (l_id)
-		end
-
-	search (key: STRING) is
-			-- Search for item of key `key'
-			-- If found, set `found' to True, and set
-			-- `found_item' to item associated with `key'.
-			-- (from HASH_TABLE)
-		require
-			key_not_void: key /= Void
-			key_not_empty: not key.is_empty
-		local
-			l_id: INTEGER
-		do
-			l_id := Names_heap.id_of (key)
-			if l_id > 0 then
-				search_id (l_id)
-			else
-				control := Not_found_constant
-				found_item := Void
-			end
+			Result := l_id > 0 and then has_key_id (l_id)
 		end
 
 	alias_item (alias_name: STRING): FEATURE_I is
@@ -214,15 +192,12 @@ feature -- Access: compatibility
 
 feature -- Status report
 
-	has_overloaded (a_feature_name: STRING): BOOLEAN is
+	has_overloaded (a_feature_name_id: INTEGER): BOOLEAN is
 			-- Does Current have `a_feature_name' has being an overloaded routine?
-		local
-			l_id: INTEGER
 		do
 			if associated_class.is_true_external and overloaded_names /= Void then
-				l_id := Names_heap.id_of (a_feature_name)
-				if l_id > 0 then
-					Result := overloaded_names.has (l_id)
+				if a_feature_name_id > 0 then
+					Result := overloaded_names.has (a_feature_name_id)
 				end
 			end
 		end
@@ -464,10 +439,13 @@ end
 						pass_control.remove_external (external_i)
 					end
 					if
-						new_feature_i = Void or else not (new_feature_i.written_in = feat_tbl_id)
+						new_feature_i = Void or else
+						(new_feature_i.written_in /= feat_tbl_id) or else
+						(new_feature_i.body_index /= old_feature_i.body_index)
 					then
-							-- A feature written in the associated class
-							-- disapear
+							-- A feature written in the associated class disapearred,
+							-- or was moved in the inheritance hierarchy,
+							-- or had a different body_index.
 debug ("ACTIVITY")
 	io.error.put_string ("Removed feature: ")
 	io.error.put_string (old_feature_i.feature_name)

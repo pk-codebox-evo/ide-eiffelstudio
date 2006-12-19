@@ -178,7 +178,7 @@ feature -- Access queries
 			-- Options for classes.
 		deferred
 		ensure
-			Result_not_void: Result /= Void
+			Result_not_void: Result /= Void implies not Result.is_empty
 		end
 
 	get_class_options (a_class: STRING): CONF_OPTION is
@@ -186,20 +186,27 @@ feature -- Access queries
 		local
 			l_name: STRING
 			l_map: like mapping
+			l_class_options: like class_options
 		do
 			l_map := mapping
-			if l_map.has (a_class) then
+			if l_map.has_key (a_class) then
 				l_name := l_map.found_item
 			else
 				l_name := a_class
 			end
-			Result := class_options.item (l_name)
-			if Result /= Void then
-				Result := Result.twin
-				Result.merge (options)
+			l_class_options := class_options
+			if l_class_options /= Void then
+				Result := class_options.item (l_name)
+				if Result /= Void then
+					Result := Result.twin
+					Result.merge (options)
+				else
+					Result := options.twin
+				end
 			else
 				Result := options.twin
 			end
+
 		ensure
 			Result_not_void: Result /= Void
 		end
@@ -245,7 +252,7 @@ feature -- Access queries
 				end
 				classes.go_to (l_cursor)
 			end
-			if reverse_classes_cache.has (a_class) then
+			if reverse_classes_cache.has_key (a_class) then
 				Result.force (reverse_classes_cache.found_item)
 			end
 		ensure
@@ -463,8 +470,10 @@ feature {CONF_ACCESS} -- Update, in compiled only, not stored to configuration f
 					if l_ovs /= Void and then l_ovs.count > 0 then
 						l_overridee := l_ovs.first
 						if l_overridee.is_overriden then
-							set_error (create {CONF_ERROR_MULOVER}.make (l_overridee.name, l_overridee.full_file_name,
-									l_overridee.actual_class.full_file_name, l_overrider.full_file_name))
+							set_error (
+								create {CONF_ERROR_MULOVER}.make (l_overridee.name,
+								l_overridee.full_file_name,
+								l_overridee.actual_class.full_file_name, l_overrider.full_file_name))
 						else
 							l_overridee.set_overriden_by (l_overrider)
 							l_overrider.add_does_override (l_overridee)

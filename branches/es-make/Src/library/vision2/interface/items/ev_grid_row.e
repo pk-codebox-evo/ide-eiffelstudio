@@ -226,12 +226,23 @@ feature -- Access
 			Result := implementation.foreground_color
 		end
 
+	is_displayed: BOOLEAN
+			-- Is `Current' visible on the screen?
+			-- `True' when show requested and parent displayed.
+			-- A row that `is_displayed' does not necessarily have to be visible on screen at that particular time.
+			-- For example, its `parent_row' (if any) may not be expanded or visible, or the position of `Current' may not
+			-- be within the visible area of `parent'.
+		require
+			not_destroyed: not is_destroyed
+		do
+			Result := implementation.is_displayed
+		ensure
+			bridge_ok: Result = implementation.is_displayed
+		end
+
 	is_show_requested: BOOLEAN is
 			-- May `Current' be displayed?
 			-- Will return `False' if `hide' has been called on `Current'.
-			-- A row that `is_show_requested' does not necessarily have to be visible on screen at that particular time.
-			-- For example, its `parent_row' (if any) may not be expanded or visible, or the position of `Current' may not
-			-- be within the visible area of `parent'.
 		require
 			not_destroyed: not is_destroyed
 			is_parented: parent /= Void
@@ -343,7 +354,7 @@ feature -- Status setting
 		do
 			implementation.expand
 		ensure
-			is_expanded: is_expanded or subrow_count = 0
+			is_expanded: action_sequence_call_counter = old action_sequence_call_counter implies (is_expanded or subrow_count = 0)
 		end
 
 	collapse is
@@ -354,7 +365,7 @@ feature -- Status setting
 		do
 			implementation.collapse
 		ensure
-			not_is_expanded: not is_expanded
+			not_is_expanded: action_sequence_call_counter = old action_sequence_call_counter implies not is_expanded
 		end
 
 	set_height (a_height: INTEGER) is
@@ -373,6 +384,7 @@ feature -- Status setting
 		require
 			not_destroyed: not is_destroyed
 			parented: parent /= Void
+			is_displayed: is_displayed
 		do
 			implementation.ensure_visible
 		ensure
@@ -667,7 +679,9 @@ feature {NONE} -- Implementation
 		end
 
 invariant
-	no_subrows_implies_not_expanded: subrow_count = 0 implies not is_expanded
+--	We currently cannot hold this invariant during expand/collapse, thus
+--	it is commented until we find a better way to express it:
+--	no_subrows_implies_not_expanded: subrow_count = 0 implies not is_expanded
 	tree_disabled_in_parent_implies_no_subrows: parent /= Void and then not parent.is_tree_enabled implies subrow_count = 0
 	virtual_position_and_virtual_position_unlocked_equal_when_not_locked: not is_locked implies virtual_y_position = virtual_y_position_unlocked
 

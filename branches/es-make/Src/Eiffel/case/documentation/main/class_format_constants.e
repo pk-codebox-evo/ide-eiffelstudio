@@ -8,6 +8,9 @@ indexing
 class
 	CLASS_FORMAT_CONSTANTS
 
+inherit
+	SHARED_NAMES
+
 feature -- Constants
 
 	cf_Chart: INTEGER is unique

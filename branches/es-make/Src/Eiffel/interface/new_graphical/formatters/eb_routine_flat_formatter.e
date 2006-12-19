@@ -77,11 +77,10 @@ feature -- Formatting
 			if displayed and selected then
 				if associated_feature /= Void then
 					if
-						Debugger_manager.application_is_executing
-						and then Debugger_manager.application_is_stopped
-						and then Debugger_manager.application.status.current_call_stack /= Void
+						Debugger_manager.safe_application_is_stopped
+						and then Debugger_manager.application_status.current_call_stack /= Void
 					then
-						stel  ?= Debugger_manager.application.status.current_call_stack_element
+						stel  ?= Debugger_manager.application_status.current_call_stack_element
 						if
 							stel /= Void and then stel.routine /= Void
 							and then stel.routine.body_id_for_ast = associated_feature.body_index
@@ -111,7 +110,7 @@ feature -- Properties
 			Result.put (pixmaps.icon_pixmaps.view_clickable_feature_icon, 2)
 		end
 
-	menu_name: STRING is
+	menu_name: STRING_GENERAL is
 			-- Identifier of `Current' in menus.
 		do
 			Result := Interface_names.m_Showflat
@@ -119,10 +118,10 @@ feature -- Properties
 
 feature {NONE} -- Properties
 
-	command_name: STRING is
+	command_name: STRING_GENERAL is
 			-- Name of the command.
 		do
-			Result := Interface_names.l_Flat
+			Result := Interface_names.string_general_to_lower (interface_names.l_Flat)
 		end
 
 	post_fix: STRING is "rfl"

@@ -60,6 +60,10 @@ feature {NONE} -- Initialization
 		local
 			l_text: EV_TEXT_FIELD
 		do
+			name_lbl.set_text (metric_names.l_name_colon)
+			type_lbl.set_text (metric_names.l_type_colon)
+			unit_lbl.set_text (metric_names.l_unit_colon)
+			description_lbl.set_text (metric_names.l_description_colon)
 			name_text_read_only.hide
 			description_text_read_only.hide
 			create l_text
@@ -148,7 +152,7 @@ feature -- Basic operations
 		require
 			a_unit_attached: a_unit /= Void
 		do
-			unit_text.set_text (displayed_name (a_unit.name))
+			unit_text.set_text (unit_name_table.item (a_unit))
 			unit_pixmap.copy (pixmap_from_unit (a_unit))
 		end
 

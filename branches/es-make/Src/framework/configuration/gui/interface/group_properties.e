@@ -23,7 +23,7 @@ feature {NONE} -- Implementation
 			a_target_not_void: a_target /= Void
 		local
 			l_mls_prop: MULTILINE_STRING_PROPERTY
-			l_text_prop: STRING_PROPERTY [STRING]
+			l_text_prop: STRING_PROPERTY [STRING_GENERAL]
 			l_dial: DIALOG_PROPERTY [CONF_CONDITION_LIST]
 			l_bool_prop: BOOLEAN_PROPERTY
 			l_dir_prop: DIRECTORY_LOCATION_PROPERTY
@@ -40,11 +40,11 @@ feature {NONE} -- Implementation
 			l_over: ARRAYED_LIST [CONF_GROUP]
 			l_over_list: ARRAYED_LIST [STRING_32]
 			l_over_dialog: GROUPS_LIST_DIALOG
-			l_rename_prop: DIALOG_PROPERTY [EQUALITY_HASH_TABLE [STRING, STRING]]
-			l_mapping_prop: DIALOG_PROPERTY [EQUALITY_HASH_TABLE [STRING, STRING]]
+			l_rename_prop: DIALOG_PROPERTY [EQUALITY_HASH_TABLE [STRING_GENERAL, STRING_GENERAL]]
+			l_mapping_prop: DIALOG_PROPERTY [EQUALITY_HASH_TABLE [STRING_GENERAL, STRING_GENERAL]]
 			l_class_opt_prop: DIALOG_PROPERTY [HASH_TABLE [CONF_OPTION, STRING]]
 			l_class_opt_dial: CLASS_OPTION_DIALOG
-			l_vis_prop: DIALOG_PROPERTY [EQUALITY_HASH_TABLE [TUPLE [class_renamed: STRING; features: EQUALITY_HASH_TABLE [STRING, STRING]], STRING]]
+			l_vis_prop: DIALOG_PROPERTY [EQUALITY_HASH_TABLE [EQUALITY_TUPLE [TUPLE [class_renamed: STRING; features: EQUALITY_HASH_TABLE [STRING, STRING]]], STRING]]
 			l_vis_dial: VISIBLE_DIALOG
 			l_visible: CONF_VISIBLE
 			l_precompile: CONF_PRECOMPILE
@@ -352,7 +352,7 @@ feature {NONE} -- Implementation
 				l_vis_prop.set_display_agent (agent output_visible)
 				l_vis_prop.set_value (l_visible.visible)
 				l_vis_prop.change_value_actions.extend (agent l_visible.set_visible)
-				l_vis_prop.change_value_actions.extend (agent change_no_argument_wrapper ({EQUALITY_HASH_TABLE [TUPLE [STRING, EQUALITY_HASH_TABLE [STRING, STRING]], STRING]}?, agent handle_value_changes (False)))
+				l_vis_prop.change_value_actions.extend (agent change_no_argument_wrapper ({EQUALITY_HASH_TABLE [EQUALITY_TUPLE [TUPLE [STRING, EQUALITY_HASH_TABLE [STRING, STRING]]], STRING]}?, agent handle_value_changes (False)))
 				properties.add_property (l_vis_prop)
 			end
 
@@ -497,7 +497,7 @@ feature {NONE} -- Output generation
 			end
 		end
 
-	output_visible (a_visible: EQUALITY_HASH_TABLE [TUPLE [class_renamed: STRING; features: EQUALITY_HASH_TABLE [STRING, STRING]], STRING]): STRING_32 is
+	output_visible (a_visible: EQUALITY_HASH_TABLE [EQUALITY_TUPLE [TUPLE [class_renamed: STRING; features: EQUALITY_HASH_TABLE [STRING, STRING]]], STRING]): STRING_32 is
 			-- Generate a text representation for `a_visible'.
 		do
 			if a_visible /= Void and then not a_visible.is_empty then
@@ -525,7 +525,7 @@ feature {NONE} -- Validation and warning generation
 			a_name_not_void: a_name /= Void
 		local
 			l_groups: HASH_TABLE [CONF_GROUP, STRING]
-			wd: EV_WARNING_DIALOG
+			wd: EB_WARNING_DIALOG
 		do
 			l_groups := a_target.groups
 			l_groups.search (a_name.as_lower)

@@ -22,21 +22,10 @@ inherit
 	EB_TOOL
 		redefine
 			menu_name,
-			pixmap,
-			make
+			pixmap
 		end
 
 	EB_RECYCLABLE
-		export
-			{NONE} all
-		end
-
-	IPC_SHARED
-		export
-			{NONE} all
-		end
-
-	SHARED_DEBUG
 		export
 			{NONE} all
 		end
@@ -46,17 +35,7 @@ inherit
 			{NONE} all
 		end
 
-	EV_SHARED_APPLICATION
-		export
-			{NONE} all
-		end
-
 	EB_SHARED_PREFERENCES
-		export
-			{NONE} all
-		end
-
-	SHARED_APPLICATION_EXECUTION
 		export
 			{NONE} all
 		end
@@ -68,29 +47,31 @@ inherit
 		end
 
 create
-	make
+	make_with_debugger
 
 feature {NONE} -- Initialization
 
-	make (a_manager: EB_TOOL_MANAGER) is
+	make_with_debugger (a_manager: EB_TOOL_MANAGER; a_debugger: like debugger_manager) is
 			-- Initialize `Current'.
+		require
+			a_debugger_not_void: a_debugger /= Void
 		do
-			min_slice_ref.set_item (preferences.debug_tool_data.min_slice)
-			max_slice_ref.set_item (preferences.debug_tool_data.max_slice)
+			set_debugger_manager (a_debugger)
+			debugger_manager.set_slices (preferences.debug_tool_data.min_slice, preferences.debug_tool_data.max_slice)
 
 			display_first_attributes := True
 			display_first_onces := False
 			display_first_special := True
 			display_first := True
 
-			cleaning_delay := Preferences.debug_tool_data.delay_before_cleaning_objects_grid
+			cleaning_delay := preferences.debug_tool_data.delay_before_cleaning_objects_grid
 			create objects_grids.make (2)
 			create objects_grids_layout_initialized.make (2)
 			create objects_grids_empty.make (2)
 
 			create objects_grids_positions.make (Position_current, Position_objects)
 
-			Precursor {EB_TOOL} (a_manager)
+			make (a_manager)
 		end
 
 feature {NONE} -- Internal properties
@@ -159,8 +140,8 @@ feature {NONE} -- Interface
 				--| Build interface
 
 			create displayed_objects.make
-			create_objects_grid ("Objects tool: left", first_grid_id)
-			create_objects_grid ("Objects tool: right", second_grid_id)
+			create_objects_grid (interface_names.l_object_tool_left, first_grid_id)
+			create_objects_grid (interface_names.l_object_tool_right, second_grid_id)
 
 			stack_objects_grid := objects_grid (first_grid_id)
 			debugged_objects_grid := objects_grid (second_grid_id)
@@ -202,7 +183,7 @@ feature {NONE} -- Interface
 			refresh_objects_layout_from_preference (preferences.debug_tool_data.objects_tool_layout_preference)
 		end
 
-	create_objects_grid (a_name, a_id: STRING) is
+	create_objects_grid (a_name: STRING_GENERAL; a_id: STRING) is
 			-- Create an objects grid named `a_name' and identified by `a_id'
 		local
 			spref: STRING_PREFERENCE
@@ -213,16 +194,16 @@ feature {NONE} -- Interface
 
 			g.set_objects_grid_item_function (agent get_object_display_item)
 			spref := preferences.debug_tool_data.grid_column_layout_preference_for (g.id)
-			g.set_columns_layout_from_string_preference (
-					preferences.debug_tool_data.grid_column_layout_preference_for (g.id),
+			g.set_default_columns_layout (
 						<<
-							[1, True, False, 150, "Name"],
-							[2, True, False, 150, "Value"],
-							[3, True, False, 200, "Type"],
-							[4, True, False, 80, "Address"],
-							[5, False, False, 0, "Context ..."]
+							[1, True, False, 150, interface_names.l_name, interface_names.to_name],
+							[2, True, False, 150, interface_names.l_value, interface_names.to_value],
+							[3, True, False, 200, interface_names.l_type, interface_names.to_type],
+							[4, True, False, 80, interface_names.l_address, interface_names.to_address],
+							[5, False, False, 0, interface_names.l_context_dot, interface_names.to_context_dot]
 						>>
 					)
+			g.set_columns_layout_from_string_preference (preferences.debug_tool_data.grid_column_layout_preference_for (g.id))
 
 				-- Set scrolling preferences.
 			g.set_mouse_wheel_scroll_size (preferences.editor_data.mouse_wheel_scroll_size)
@@ -259,7 +240,7 @@ feature {NONE} -- Interface
 
 			create scmd.make
 			scmd.set_mini_pixmap (pixmaps.mini_pixmaps.toolbar_dropdown_icon)
-			scmd.set_tooltip ("Open Objects tool menu")
+			scmd.set_tooltip (interface_names.f_Open_object_tool_menu)
 			scmd.add_agent (agent open_objects_menu (mini_toolbar, 0, 0))
 			scmd.enable_sensitive
 			mini_toolbar.extend (scmd.new_mini_toolbar_item)
@@ -311,7 +292,7 @@ feature {NONE} -- Interface
 			if header_box = Void then
 				build_header_box
 			end
-			create {EB_EXPLORER_BAR_ITEM} explorer_bar_item.make_with_info (explorer_bar, widget, title, False, header_box, mini_toolbar)
+			create {EB_EXPLORER_BAR_ITEM} explorer_bar_item.make_with_info (explorer_bar, widget, title, title_for_pre, False, header_box, mini_toolbar)
 			explorer_bar_item.set_menu_name (menu_name)
 			if pixmap /= Void then
 				explorer_bar_item.set_pixmap (pixmap)
@@ -340,7 +321,7 @@ feature {NONE} -- Interface
 			og: like objects_grid
 			lid: STRING
 			i: INTEGER
-			pos_titles: ARRAY [STRING]
+			pos_titles: ARRAY [STRING_GENERAL]
 		do
 			if not objects_grids.is_empty then
 				create m
@@ -368,11 +349,11 @@ feature {NONE} -- Interface
 					loop
 						create mci
 						if lid.is_case_insensitive_equal (objects_grids_positions[i]) then
-							mci.set_text ("Item [" + pos_titles[i] + "] is attached to %"" + og.name + "%"")
+							mci.set_text (interface_names.l_item_is_attached_to (pos_titles[i], og.name))
 							mci.enable_select
 							mci.disable_sensitive
 						else
-							mci.set_text ("Move [" + pos_titles[i] + "] to %"" + og.name + "%"")
+							mci.set_text (interface_names.l_move_to (pos_titles[i], og.name))
 							mci.disable_select
 							mci.select_actions.extend (agent assign_objects_grids_position (lid, i))
 						end
@@ -392,7 +373,7 @@ feature {NONE} -- Interface
 			apref: ARRAY_PREFERENCE
 			ap: ARRAY [STRING]
 		do
-			apref := Preferences.Debug_tool_data.objects_tool_layout_preference
+			apref := preferences.debug_tool_data.objects_tool_layout_preference
 			ap := apref.value
 			ap[ap.lower + a_pos - objects_grids_positions.lower] := a_gid
 			apref.set_value (ap) --| Should trigger "update"
@@ -479,13 +460,19 @@ feature -- Access
 	widget: EV_WIDGET
 			-- Widget representing Current.
 
-	title: STRING is
+	title: STRING_GENERAL is
 			-- Title of the tool.
 		do
 			Result := interface_names.t_object_tool
 		end
 
-	menu_name: STRING is
+	title_for_pre: STRING is
+			-- Title for prefence, STRING_8
+		do
+			Result := Interface_names.to_object_tool
+		end
+
+	menu_name: STRING_GENERAL is
 			-- Name as it may appear in a menu.
 		do
 			Result := interface_names.m_object_tools
@@ -521,6 +508,7 @@ feature {NONE} -- Notebook item's behavior
 		require
 			header_box /= Void
 		local
+			app: APPLICATION_EXECUTION
 			ecse: EIFFEL_CALL_STACK_ELEMENT
 			lab, flab, clab: EV_LABEL
 			l_fstone: FEATURE_STONE
@@ -535,10 +523,11 @@ feature {NONE} -- Notebook item's behavior
 			hbox.extend (sep)
 			hbox.disable_item_expand (sep)
 			if
-				Application.is_running
+				debugger_manager.application_is_executing
 			then
-				if Application.is_stopped and then dbg_stopped then
-					if not Application.current_call_stack_is_empty then
+				app := debugger_manager.application
+				if app.is_stopped and then dbg_stopped then
+					if not app.current_call_stack_is_empty then
 						ecse ?= current_stack_element
 						if ecse /= Void then
 							create lab.make_with_text ("{")
@@ -683,7 +672,7 @@ feature -- Change
 			l_status: APPLICATION_STATUS
 		do
 			cancel_process_real_update_on_idle
-			l_status := application.status
+			l_status := Debugger_manager.application_status
 			if l_status /= Void then
 				process_real_update_on_idle (l_status.is_stopped)
 			else
@@ -726,8 +715,8 @@ feature -- Status Setting
 			g: like objects_grid
 		do
 			reset_update_on_idle
-			preferences.debug_tool_data.min_slice_preference.set_value (min_slice_ref.item)
-			preferences.debug_tool_data.max_slice_preference.set_value (max_slice_ref.item)
+			preferences.debug_tool_data.min_slice_preference.set_value (debugger_manager.min_slice)
+			preferences.debug_tool_data.max_slice_preference.set_value (debugger_manager.max_slice)
 			displayed_objects.wipe_out
 			pretty_print_cmd.end_debug
 			if current_object /= Void then
@@ -810,7 +799,7 @@ feature {NONE} -- grid Layout Implementation
 	keep_object_reference_fixed (addr: STRING) is
 		do
 			if debugger_manager.application_is_executing then
-				application.status.keep_object (addr)
+				debugger_manager.application_status.keep_object (addr)
 			end
 		end
 
@@ -921,7 +910,7 @@ feature {NONE} -- Implementation
 		local
 			l_status: APPLICATION_STATUS
 		do
-			l_status := application.status
+			l_status := debugger_manager.application_status
 			if l_status.current_call_stack /= Void then
 				Result := l_status.current_call_stack_element
 			end
@@ -934,6 +923,7 @@ feature {NONE} -- Implementation
 			-- Display current execution status.
 			-- dbg_was_stopped is ignore if Application/Debugger is not running
 		local
+			l_app: APPLICATION_EXECUTION
 			l_status: APPLICATION_STATUS
 			g: like objects_grid
 			cse: EIFFEL_CALL_STACK_ELEMENT
@@ -948,7 +938,10 @@ feature {NONE} -- Implementation
 				objects_grids.forth
 			end
 
-			l_status := application.status
+			if debugger_manager.application_is_executing then
+				l_app := debugger_manager.application
+				l_status := l_app.status
+			end
 			if l_status /= Void then
 				pretty_print_cmd.refresh
 				if l_status.is_stopped and dbg_was_stopped then
@@ -961,7 +954,7 @@ feature {NONE} -- Implementation
 							objects_grids.item_for_iteration.cancel_delayed_clean
 							objects_grids.forth
 						end
-						if not Application.current_call_stack_is_empty then
+						if not l_app.current_call_stack_is_empty then
 							cse ?= current_stack_element
 						end
 						from
@@ -1031,11 +1024,15 @@ feature {NONE} -- Current objects grid Implementation
 
 	build_current_object_row (a_target_grid: ES_OBJECTS_GRID; cse: EIFFEL_CALL_STACK_ELEMENT) is
 		require
+			application_is_executing: debugger_manager.application_is_executing
 			target_grid_not_void: a_target_grid /= Void
 			cse_not_void: cse /= Void
 		local
 			value: ABSTRACT_DEBUG_VALUE
 			item: ES_OBJECTS_GRID_LINE
+			l_str: STRING_GENERAL
+			dn_st: APPLICATION_STATUS_DOTNET
+			app: APPLICATION_EXECUTION
 		do
 			if current_object /= Void then
 				display_first 			 := current_object.display
@@ -1043,9 +1040,12 @@ feature {NONE} -- Current objects grid Implementation
 				display_first_onces		 := current_object.display_onces
 			end
 			current_object := Void
-			if Application.is_dotnet then
-				if not Application.current_call_stack_is_empty then
-					value := application.imp_dotnet.status.current_call_stack_element_dotnet.current_object
+			if debugger_manager.is_dotnet_project then
+				app := debugger_manager.application
+				if not app.current_call_stack_is_empty then
+					dn_st ?= app.status
+					check dn_st /= Void end
+					value := dn_st.current_call_stack_element_dotnet.current_object
 					if value /= Void then
 						create {ES_OBJECTS_GRID_VALUE_LINE} current_object.make_with_value (value, a_target_grid)
 					end
@@ -1059,12 +1059,15 @@ feature {NONE} -- Current objects grid Implementation
 				current_object.set_display_onces (display_first_onces)
 				item := current_object
 				if item.title /= Void then
-					item.set_title (Interface_names.l_Current_object + ": " + item.title)
+					l_str := Interface_names.l_Current_object.twin
+					l_str.append (": ")
+					l_str.append (item.title)
+					item.set_title (l_str)
 				else
 					item.set_title (Interface_names.l_Current_object)
 				end
 				item.attach_to_row (a_target_grid.extended_new_row)
-				if application.is_running and then application.is_stopped then
+				if debugger_manager.safe_application_is_stopped then
 					current_object.compute_grid_display
 				end
 			end
@@ -1136,7 +1139,7 @@ feature {NONE} -- Impl : Debugged objects grid specifics
 	add_debugged_object (a_stone: OBJECT_STONE) is
 			-- Add the object represented by `a_stone' to the managed objects.
 		require
-			application_is_running: Application.is_running
+			application_is_running: debugger_manager.application_is_executing
 		local
 			n_obj: ES_OBJECTS_GRID_LINE
 			conv_spec: SPECIAL_VALUE
@@ -1165,7 +1168,7 @@ feature {NONE} -- Impl : Debugged objects grid specifics
 			if not exists then
 				l_item := a_stone.ev_item
 				if l_item /= Void then
-					if application.is_dotnet then
+					if debugger_manager.is_dotnet_project then
 						abstract_value ?= grid_data_from_widget (l_item)
 							--| FIXME jfiat : check if it is safe to use a Value ?
 						if abstract_value /= Void then
@@ -1183,11 +1186,13 @@ feature {NONE} -- Impl : Debugged objects grid specifics
 				end
 
 				n_obj.set_title (a_stone.name + Left_address_delim + a_stone.object_address + Right_address_delim)
-				Application.status.keep_object (a_stone.object_address)
+				debugger_manager.application_status.keep_object (a_stone.object_address)
 				displayed_objects.extend (n_obj)
 				g.insert_new_row (g.row_count + 1)
 				n_obj.attach_to_row (g.row (g.row_count))
-				n_obj.row.ensure_visible
+				if n_obj.row.is_displayed then
+					n_obj.row.ensure_visible
+				end
 				n_obj.row.enable_select
 			end
 		end
@@ -1370,7 +1375,7 @@ feature {NONE} -- Impl : Stack objects grid
 			dotnet_status: APPLICATION_STATUS_DOTNET
 			exc_dv: ABSTRACT_DEBUG_VALUE
 		do
-			appstat := application.status
+			appstat := debugger_manager.application_status
 			if appstat.exception_occurred then
 					--| Details
 				exception_row := a_target_grid.extended_new_row
@@ -1422,7 +1427,7 @@ feature {NONE} -- Impl : Stack objects grid
 					l_exception_module_detail := dotnet_status.exception_module_name
 					if l_exception_module_detail /= Void then
 						row := a_target_grid.extended_new_subrow (exception_row)
-						glab := a_target_grid.name_label_item ("Module")
+						glab := a_target_grid.name_label_item (interface_names.l_module)
 						a_target_grid.grid_cell_set_pixmap (glab, pixmaps.icon_pixmaps.general_mini_error_icon)
 						row.set_item (1, glab)
 						create es_glab
@@ -1437,7 +1442,7 @@ feature {NONE} -- Impl : Stack objects grid
 --				l_exception_message := dotnet_status.exception_to_string
 				if l_exception_message /= Void and then not l_exception_message.is_empty then
 					row := a_target_grid.extended_new_subrow (exception_row)
-					glab := a_target_grid.name_label_item ("Note")
+					glab := a_target_grid.name_label_item (interface_names.l_note)
 					a_target_grid.grid_cell_set_pixmap (glab, pixmaps.icon_pixmaps.general_mini_error_icon)
 					row.set_item (1, glab)
 					create es_glab
@@ -1451,19 +1456,31 @@ feature {NONE} -- Impl : Stack objects grid
 					exc_dv := dotnet_status.exception_debug_value
 					if exc_dv /= Void then
 						row := a_target_grid.extended_new_subrow (exception_row)
-						a_target_grid.attach_debug_value_to_grid_row (row, exc_dv, "Exception object")
+						a_target_grid.attach_debug_value_to_grid_row (row, exc_dv, interface_names.l_exception_object)
 					end
 				end
 			end
 		end
 
-	Cst_exception_double_click_text: STRING is "Double click to see Exception or Ctrl-C to copy to clipboard"
+	Cst_exception_double_click_text: STRING_GENERAL is
+		do
+			Result := interface_names.l_exception_double_click_text
+		end
 
-	Cst_exception_raised_text: STRING is "Exception raised"
+	Cst_exception_raised_text: STRING_GENERAL is
+		do
+			Result := interface_names.l_exception_raised
+		end
 
-	Cst_exception_first_chance_text: STRING is "First chance"
+	Cst_exception_first_chance_text: STRING_GENERAL is
+		do
+			Result := interface_names.l_first_chance
+		end
 
-	Cst_exception_unhandled_text: STRING is "UnHandled"
+	Cst_exception_unhandled_text: STRING_GENERAL is
+		do
+			Result := interface_names.l_unhandled
+		end
 
 	build_result_row (a_target_grid: ES_OBJECTS_GRID; cse: EIFFEL_CALL_STACK_ELEMENT) is
 			-- Create the row containing Result
@@ -1651,6 +1668,8 @@ feature {NONE} -- Constants
 	Right_address_delim: STRING is ">";
 
 invariant
+
+	debugger_manager_not_void: debugger_manager /= Void
 
 	objects_grids_positions_not_void: objects_grids_positions /= void
 	objects_grids_not_void: objects_grids /= Void

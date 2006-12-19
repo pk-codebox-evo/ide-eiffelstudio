@@ -56,16 +56,6 @@ inherit
 
 feature -- Stoning
 
-	internal_name_id: INTEGER is
-			-- `internal_name' ID in NAMES_HEAP.
-		local
-			l_names_heap: like Names_heap
-		do
-			l_names_heap := Names_heap
-			l_names_heap.put (internal_name)
-			Result := l_names_heap.found_item
-		end
-
 	internal_name: ID_AS is
 			-- Internal name used by the compiler.
 		deferred
@@ -112,27 +102,23 @@ feature -- Status report
 	visual_name: STRING is
 			-- Named used in Eiffel code
 		do
-			Result := internal_name
+			Result := internal_name.name
 		ensure
 			result_not_void: Result /= Void
 		end
 
 	internal_alias_name_id: INTEGER is
 			-- `internal_alias_name' ID in NAMES_HEAP
-		local
-			l_names_heap: like Names_heap
 		do
 			if alias_name /= Void then
-				l_names_heap := Names_heap
-				l_names_heap.put (internal_alias_name)
-				Result := l_names_heap.found_item
+				Result := internal_alias_name.name_id
 			end
 		ensure
 			has_alias: alias_name /= Void implies Result > 0
 			has_no_alias: alias_name = Void implies Result = 0
 		end
 
-	internal_alias_name: STRING is
+	internal_alias_name: ID_AS is
 			-- Operator associated with the feature (if any)
 			-- augmented with information about its arity
 		deferred

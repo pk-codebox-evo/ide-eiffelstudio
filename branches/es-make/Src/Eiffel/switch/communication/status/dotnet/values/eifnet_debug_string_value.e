@@ -49,7 +49,7 @@ feature {NONE} -- Initialization
 			end
 
 			is_external_type := True
-			get_truncated_string_value (Application.displayed_string_size)
+			get_truncated_string_value (debugger_manager.displayed_string_size)
 
 			is_null := (length = 0)
 			if not is_null then
@@ -109,7 +109,7 @@ feature -- Access
 	dynamic_class: CLASS_C is
 			-- Find corresponding CLASS_C to type represented by `value'.
 		once
-			Result := Eiffel_system.System.system_string_class.compiled_class
+			Result := debugger_manager.compiler_data.system_string_class_c
 		ensure then
 			non_void_result: Result /= Void
 		end

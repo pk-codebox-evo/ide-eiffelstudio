@@ -83,6 +83,11 @@ inherit
 			{NONE} all
 		end
 
+	PREDEFINED_NAMES
+		export
+			{NONE} all
+		end
+
 feature -- Initialization
 
 	init (a_context: AST_CONTEXT) is
@@ -678,12 +683,12 @@ feature -- Roundtrip
 
 					create l_feature_generator
 					l_feature := l_feature_generator.new_feature (l_feature_as, l_cur_class)
-					l_enclosing_feature := init_inline_agent_feature (l_feature)
+					l_enclosing_feature := init_inline_agent_feature (l_feature, Void)
 					l_cur_feature := context.current_feature
 
 					if is_byte_node_enabled then
 
-						create l_feature_name.initialize (l_feature.feature_name)
+						create l_feature_name.initialize_from_id (l_feature.feature_name_id)
 						l_ak := l_as.agent_keyword
 						l_feature_name.set_position (l_ak.line, l_ak.column, l_ak.position, 0)
 						l_as.set_feature_name (l_feature_name)
@@ -896,7 +901,7 @@ feature -- Implementation
 
 				-- Check validity of type declaration for static access
 			if l_type.is_none then
-				create l_vsta1.make (l_type.dump, l_as.feature_name)
+				create l_vsta1.make (l_type.dump, l_as.feature_name.name)
 				l_vsta1.set_class (context.current_class)
 				l_vsta1.set_location (l_as.class_type.start_location)
 				error_handler.insert_error (l_vsta1)
@@ -999,7 +1004,7 @@ feature -- Implementation
 					-- Cannot go on here
 				error_handler.raise_error
 			elseif l_last_constrained.is_none then
-				create l_vuex.make_for_none (l_feature_name)
+				create l_vuex.make_for_none (l_feature_name.name)
 				context.init_error (l_vuex)
 				l_vuex.set_location (l_feature_name)
 				error_handler.insert_error (l_vuex)
@@ -1021,7 +1026,7 @@ feature -- Implementation
 					-- Look for a feature in the class associated to the
 					-- last actual type onto the context type stack. If it
 					-- is a generic take the associated constraint.
-				if l_last_class.feature_table.has_overloaded (l_feature_name) then
+				if l_last_class.feature_table.has_overloaded (l_feature_name.name_id) then
 						-- Evaluate parameters. This is needed for overloading resolution.
 						-- Note: if one parameter is a manifest array, then its type is resolved
 						-- without context.
@@ -1040,10 +1045,10 @@ feature -- Implementation
 							-- Update `l_feature_name' with appropriate resolved name.
 							-- Otherwise some routine using `l_feature_name' will fail although
 							-- it succeeds here (e.g. CREATION_EXPR_AS and CREATION_AS)
-						create l_feature_name.initialize (l_feature.feature_name)
+						create l_feature_name.initialize_from_id (l_feature.feature_name_id)
 					end
 				else
-					l_feature := l_last_class.feature_table.item (l_feature_name)
+					l_feature := l_last_class.feature_table.item_id (l_feature_name.name_id)
 				end
 			end
 				-- No feature was found, so if the target of the call is a named tuple
@@ -1051,11 +1056,11 @@ feature -- Implementation
 			if l_feature = Void and l_last_type.is_named_tuple then
 				l_named_tuple ?= l_last_type
 				check l_named_tuple_not_void: l_named_tuple /= Void end
-				l_label_pos := l_named_tuple.label_position (l_feature_name)
+				l_label_pos := l_named_tuple.label_position (l_feature_name.name)
 				if l_label_pos > 0 then
 					last_type := l_named_tuple.generics.item (l_label_pos)
 					l_is_last_access_tuple_access := True
-					last_feature_name := l_feature_name
+					last_feature_name := l_feature_name.name
 					if l_needs_byte_node then
 						create {TUPLE_ACCESS_B} last_byte_node.make (l_named_tuple.type_i, l_label_pos)
 						last_byte_node.set_line_number (l_feature_name.line)
@@ -1376,7 +1381,7 @@ feature -- Implementation
 							-- Not a valid feature name.
 						create l_veen
 						context.init_error (l_veen)
-						l_veen.set_identifier (l_feature_name)
+						l_veen.set_identifier (l_feature_name.name)
 						l_veen.set_parameter_count (l_actual_count)
 						l_veen.set_location (l_feature_name)
 						error_handler.insert_error (l_veen)
@@ -1460,9 +1465,9 @@ feature -- Implementation
 
 	process_bit_const_as (l_as: BIT_CONST_AS) is
 		do
-			create {BITS_A} last_type.make (l_as.value.count)
+			create {BITS_A} last_type.make (l_as.value.name.count)
 			if is_byte_node_enabled then
-				create {BIT_CONST_B} last_byte_node.make (l_as.value)
+				create {BIT_CONST_B} last_byte_node.make (l_as.value.name)
 			end
 		end
 
@@ -1848,7 +1853,7 @@ feature -- Implementation
 						l_arg_pos := l_as.argument_position
 					end
 				else
-					l_arg_pos := l_feature.argument_position (l_as.feature_name)
+					l_arg_pos := l_feature.argument_position (l_as.feature_name.name_id)
 				end
 			end
 			if l_arg_pos /= 0 then
@@ -1876,7 +1881,7 @@ feature -- Implementation
 			else
 					-- Look for a local if not in a pre- or postcondition
 				if not is_inherited or else l_as.is_local then
-					l_local_info := context.locals.item (l_as.feature_name)
+					l_local_info := context.locals.item (l_as.feature_name.name_id)
 				end
 				if l_local_info /= Void then
 						-- Local found
@@ -1899,7 +1904,7 @@ feature -- Implementation
 							--|(Fred)
 						create l_veen2b
 						context.init_error (l_veen2b)
-						l_veen2b.set_identifier (l_as.feature_name)
+						l_veen2b.set_identifier (l_as.feature_name.name)
 						l_veen2b.set_location (l_as.feature_name)
 						error_handler.insert_error (l_veen2b)
 					end
@@ -1932,9 +1937,9 @@ feature -- Implementation
 			if l_has_vuar_error then
 				create l_vuar1
 				if l_arg_pos /= 0 then
-					l_vuar1.set_arg_name (l_as.feature_name)
+					l_vuar1.set_arg_name (l_as.feature_name.name)
 				else
-					l_vuar1.set_local_name (l_as.feature_name)
+					l_vuar1.set_local_name (l_as.feature_name.name)
 				end
 				context.init_error (l_vuar1)
 				l_vuar1.set_location (l_as.feature_name)
@@ -1967,7 +1972,7 @@ feature -- Implementation
 			if is_inherited then
 				l_arg_pos := l_as.argument_position
 			else
-				l_arg_pos := l_feature.argument_position (l_as.feature_name)
+				l_arg_pos := l_feature.argument_position (l_as.feature_name.name_id)
 			end
 			if l_arg_pos /= 0 then
 					-- Found argument
@@ -1977,7 +1982,7 @@ feature -- Implementation
 				if l_as.parameters /= Void then
 					create l_vuar1
 					context.init_error (l_vuar1)
-					l_vuar1.set_arg_name (l_as.feature_name)
+					l_vuar1.set_arg_name (l_as.feature_name.name)
 					l_vuar1.set_location (l_as.feature_name)
 					error_handler.insert_error (l_vuar1)
 				end
@@ -2001,13 +2006,13 @@ feature -- Implementation
 			else
 					-- Look for a local if in a pre- or postcondition
 				if not is_inherited then
-					l_local_info := context.locals.item (l_as.feature_name)
+					l_local_info := context.locals.item (l_as.feature_name.name_id)
 				end
 				if l_local_info /= Void then
 						-- Local found
 					create l_veen2b
 					context.init_error (l_veen2b)
-					l_veen2b.set_identifier (l_as.feature_name)
+					l_veen2b.set_identifier (l_as.feature_name.name)
 					l_veen2b.set_location (l_as.feature_name)
 					error_handler.insert_error (l_veen2b)
 				else
@@ -2128,7 +2133,7 @@ feature -- Implementation
 				-- the current class type (e.g. like Current).
 			l_feature_i.instantiate (context.current_class_type)
 
-			create l_precursor_id.initialize ("Precursor")
+			create l_precursor_id.initialize_from_id (precursor_id)
 			l_precursor_id.set_position (l_as.precursor_keyword.line, l_as.precursor_keyword.column,
 				l_as.precursor_keyword.position, l_as.precursor_keyword.location_count)
 			process_call (context.current_class_type, l_parent_type, l_precursor_id, l_feature_i,
@@ -2385,7 +2390,11 @@ feature -- Implementation
 					l_expr_not_void: l_expr /= Void
 				end
 				create l_assert
-				l_assert.set_tag (l_as.tag)
+				if l_as.tag /= Void then
+					l_assert.set_tag (l_as.tag.name)
+				else
+					l_assert.set_tag (Void)
+				end
 				l_assert.set_expr (l_expr)
 				l_assert.set_line_number (l_as.expr.start_location.line)
 				last_byte_node := l_assert
@@ -2416,7 +2425,11 @@ feature -- Implementation
 					l_expr_not_void: l_expr /= Void
 				end
 				create l_assert
-				l_assert.set_tag (l_as.tag)
+				if l_as.tag /= Void then
+					l_assert.set_tag (l_as.tag.name)
+				else
+					l_assert.set_tag (Void)
+				end
 				l_assert.set_expr (l_expr)
 				l_assert.set_line_number (l_as.expr.start_location.line)
 				last_byte_node := l_assert
@@ -2600,7 +2613,7 @@ feature -- Implementation
 						l_arg_pos := l_as.argument_position
 					end
 				else
-					l_arg_pos := l_feature.argument_position (l_as.feature_name.internal_name)
+					l_arg_pos := l_feature.argument_position (l_as.feature_name.internal_name.name_id)
 				end
 			end
 			if l_arg_pos /= 0 then
@@ -2620,7 +2633,7 @@ feature -- Implementation
 			else
 					-- Look for a local if not in a pre- or postcondition
 					if not is_inherited or else l_as.is_local then
-					l_local_info := context.locals.item (l_as.feature_name.internal_name)
+					l_local_info := context.locals.item (l_as.feature_name.internal_name.name_id)
 				end
 				if l_local_info /= Void then
 						-- Local found
@@ -2642,7 +2655,7 @@ feature -- Implementation
 							--|(Fred)
 						create l_veen2b
 						context.init_error (l_veen2b)
-						l_veen2b.set_identifier (l_as.feature_name.internal_name)
+						l_veen2b.set_identifier (l_as.feature_name.internal_name.name)
 						l_veen2b.set_location (l_as.feature_name.start_location)
 						error_handler.insert_error (l_veen2b)
 					end
@@ -2654,19 +2667,19 @@ feature -- Implementation
 					if is_inherited then
 						l_feature := context.current_class.feature_of_rout_id (l_as.routine_ids.first)
 					else
-						l_feature := context.current_class.feature_table.item (l_as.feature_name.internal_name)
+						l_feature := context.current_class.feature_table.item_id (l_as.feature_name.internal_name.name_id)
 					end
 					if l_feature = Void then
 						create l_veen
 						context.init_error (l_veen)
-						l_veen.set_identifier (l_as.feature_name.internal_name)
+						l_veen.set_identifier (l_as.feature_name.internal_name.name)
 						l_veen.set_location (l_as.feature_name.start_location)
 						error_handler.insert_error (l_veen)
 					else
 						if l_feature.is_constant then
 							create l_vzaa1
 							context.init_error (l_vzaa1)
-							l_vzaa1.set_address_name (l_as.feature_name.internal_name)
+							l_vzaa1.set_address_name (l_as.feature_name.internal_name.name)
 							l_vzaa1.set_location (l_as.feature_name.start_location)
 							error_handler.insert_error (l_vzaa1)
 						elseif l_feature.is_external then
@@ -2785,7 +2798,7 @@ feature -- Implementation
 			l_class := l_target_type.associated_class
 			l_table := l_class.feature_table
 			if a_feature = Void then
-				l_feature := l_table.item (l_feature_name)
+				l_feature := l_table.item_id (l_feature_name.name_id)
 			else
 				l_feature := a_feature
 			end
@@ -2793,7 +2806,7 @@ feature -- Implementation
 			if l_feature = Void then
 				l_named_tuple ?= l_target_type
 				if l_named_tuple /= Void then
-					l_label_pos := l_named_tuple.label_position (l_feature_name)
+					l_label_pos := l_named_tuple.label_position (l_feature_name.name)
 					if l_label_pos > 0 then
 						l_is_named_tuple := True
 					end
@@ -2803,7 +2816,7 @@ feature -- Implementation
 			if l_feature = Void and then not l_is_named_tuple then
 				create l_unsupported
 				context.init_error (l_unsupported)
-				l_unsupported.set_message ("Agent creation on `" + l_feature_name + "' is%
+				l_unsupported.set_message ("Agent creation on `" + l_feature_name.name + "' is%
 					% not supported because it is either an attribute, a constant or%
 					% an external feature")
 				l_unsupported.set_location (l_feature_name)
@@ -3496,7 +3509,7 @@ feature -- Implementation
 			end
 
 				-- Process arguments
-			create id_feature_name.initialize (bracket_feature.feature_name)
+			create id_feature_name.initialize_from_id (bracket_feature.feature_name_id)
 			location := l_as.left_bracket_location
 			id_feature_name.set_position (location.line, location.column, location.position, location.location_count)
 				-- Restore assigner call flag
@@ -4053,7 +4066,7 @@ feature -- Implementation
 
 					-- Use default_create
 				create {ACCESS_INV_AS} l_call.make (
-					create {ID_AS}.initialize (l_dcr_feat.feature_name), Void, Void)
+					create {ID_AS}.initialize_from_id (l_dcr_feat.feature_name_id), Void, Void)
 					-- For better error reporting as we insert a dummy call for type checking.
 				l_call.feature_name.set_position (a_location.line, a_location.column,
 					a_location.position, a_location.location_count)
@@ -5691,7 +5704,7 @@ feature {NONE} -- Implementation: overloading
 		require
 			a_type_not_void: a_type /= Void
 			last_class_not_void: last_class /= Void
-			last_class_has_overloaded: last_class.feature_table.has_overloaded (a_feature_name)
+			last_class_has_overloaded: last_class.feature_table.has_overloaded (a_feature_name.name_id)
 		local
 			last_id: INTEGER
 			l_features: LIST [FEATURE_I]
@@ -5702,7 +5715,7 @@ feature {NONE} -- Implementation: overloading
 			last_id := last_class.class_id
 
 				-- At this stage we know this is an overloaded routine.
-			l_features := last_class.feature_table.overloaded_items (a_feature_name)
+			l_features := last_class.feature_table.overloaded_items (a_feature_name.name_id)
 
 				-- Remove all features that are not valid for Current call.
 				-- C# ECMA 14.4.2.1
@@ -5737,7 +5750,7 @@ feature {NONE} -- Implementation: overloading
 						end
 					end
 					create viof.make (context.current_class, current_feature,
-						l_features, a_feature_name, last_id, l_list)
+						l_features, a_feature_name.name, last_id, l_list)
 					viof.set_location (a_feature_name)
 					error_handler.insert_error (viof)
 						-- Cannot go on here
@@ -6366,7 +6379,7 @@ feature {NONE} -- Agents
 								   		a_target_type: TYPE_A; a_agent_type: TYPE_A)
 		do
 			compute_fake_inline_agent (a_rc, a_feature.access (a_feature.type.type_i), a_feature.type, a_target,
-									   a_target_type, a_agent_type)
+									   a_target_type, a_agent_type, a_feature)
 		end
 
 	compute_named_tuple_fake_inline_agent (a_rc: ROUTINE_CREATION_AS; a_named_tuple: NAMED_TUPLE_TYPE_A; a_label_pos: INTEGER;
@@ -6375,14 +6388,24 @@ feature {NONE} -- Agents
 			l_tuple_access: TUPLE_ACCESS_B
 		do
 			create l_tuple_access.make (a_named_tuple.type_i, a_label_pos)
-			compute_fake_inline_agent (a_rc, l_tuple_access, l_tuple_access.type.type_a, a_target, a_target_type, a_agent_type)
+			compute_fake_inline_agent (a_rc, l_tuple_access, l_tuple_access.type.type_a, a_target, a_target_type, a_agent_type, Void)
 		end
 
-	compute_fake_inline_agent (a_rc: ROUTINE_CREATION_AS; a_feature: CALL_B; a_feature_type: TYPE_A; a_target: BYTE_NODE; a_target_type: TYPE_A; a_agent_type: TYPE_A) is
+	compute_fake_inline_agent (
+			a_rc: ROUTINE_CREATION_AS
+			a_feature: CALL_B
+			a_feature_type: TYPE_A
+			a_target: BYTE_NODE
+			a_target_type: TYPE_A
+			a_agent_type: TYPE_A
+			a_for_feature: FEATURE_I)
+		is
 			-- Creates an inline agent bytenode that is semanticaly equivalent to the agent on the target byte node
 			-- It further creates the proper routine creation
 			-- agent T.a becomes:
 			-- agent(t: TYPE_T): TYPE_a do Result := t.a end (T)
+		require
+			a_for_feature /= Void implies a_for_feature.is_attribute
 		local
 			l_func: DYN_FUNC_I
 			l_args: FEAT_ARG
@@ -6406,18 +6429,16 @@ feature {NONE} -- Agents
 			l_target_closed := not (a_rc.target /= Void and then a_rc.target.is_open)
 			l_cur_class := context.current_class.eiffel_class_c
 			create l_func
-			if l_target_closed then
-				create l_args.make (1)
-				l_args.start
-				l_args.put (a_target_type)
-				l_args.put_name (
-					{PREDEFINED_NAMES}.fake_inline_agent_target_name_id, 1)
-				l_func.set_arguments (l_args)
-			end
+			create l_args.make (1)
+			l_args.start
+			l_args.put (a_target_type)
+			l_args.put_name (
+				{PREDEFINED_NAMES}.fake_inline_agent_target_name_id, 1)
+			l_func.set_arguments (l_args)
 			l_func.set_type (a_feature_type, 0)
 
 			l_func.set_is_fake_inline_agent (True)
-			l_enclosing_feature := init_inline_agent_feature (l_func)
+			l_enclosing_feature := init_inline_agent_feature (l_func, a_for_feature)
 
 			create l_byte_list.make (1)
 			l_byte_list.start
@@ -6425,27 +6446,22 @@ feature {NONE} -- Agents
 			create l_assign
 			l_assign.set_target (create {RESULT_B})
 
-			if l_target_closed then
-				create l_argument
-				l_argument.set_position (1)
+			create l_argument
+			l_argument.set_position (1)
 
-				create l_nested
-				l_nested.set_target (l_argument)
-				l_nested.set_message (a_feature)
-				a_feature.set_parent (l_nested)
+			create l_nested
+			l_nested.set_target (l_argument)
+			l_nested.set_message (a_feature)
+			a_feature.set_parent (l_nested)
 
-				l_assign.set_source (l_nested)
-			else
-				l_assign.set_source (a_feature)
-			end
+			l_assign.set_source (l_nested)
 
 			l_byte_list.extend (l_assign)
 			create l_code
 			l_code.set_compound (l_byte_list)
 
-			if l_target_closed then
-				l_code.set_arguments (<<a_target_type.type_i>>)
-			end
+			l_code.set_arguments (<<a_target_type.type_i>>)
+
 			l_code.set_rout_id (l_func.rout_id_set.first)
 			l_code.set_body_index (l_func.body_index)
 			l_code.set_start_line_number (a_rc.start_location.line)
@@ -6474,8 +6490,9 @@ feature {NONE} -- Agents
 				create l_tuple_type.make (system.tuple_id, <<context.current_class_type, a_target_type>>)
 
 			else
-				create l_closed_args.make (0)
-				create l_tuple_type.make (system.tuple_id, create {ARRAY [TYPE_A]}.make (1, 0))
+				create l_closed_args.make (1)
+				l_closed_args.extend (create {CURRENT_B})
+				create l_tuple_type.make (system.tuple_id, <<context.current_class_type>> )
 			end
 
 			create l_tuple_node.make (l_closed_args, l_tuple_type.type_i)
@@ -6516,7 +6533,7 @@ feature {NONE} -- Agents
 	open_target_omap: ARRAYED_LIST [INTEGER_32] is
 		do
 			create Result.make (1)
-			Result.extend (1)
+			Result.extend (2)
 		end
 
 	open_target_omap_bc: ARRAY_CONST_B is
@@ -6524,7 +6541,7 @@ feature {NONE} -- Agents
 			l_byte_list: BYTE_LIST [BYTE_NODE]
 		do
 			create l_byte_list.make (1)
-			l_byte_list.extend (create {INTEGER_CONSTANT}.make_with_value (1))
+			l_byte_list.extend (create {INTEGER_CONSTANT}.make_with_value (2))
 			create Result.make (l_byte_list, integer_array_type.type_i, integer_array_type.create_info)
 		end
 
@@ -6536,7 +6553,11 @@ feature {NONE} -- Agents
 			create Result.make (l_byte_list, integer_array_type.type_i, integer_array_type.create_info)
 		end
 
-	init_inline_agent_feature (a_feat: FEATURE_I): FEATURE_I is
+	init_inline_agent_feature (a_feat, a_real_feat: FEATURE_I): FEATURE_I is
+			-- a_feat may just be a fake wrapper to a_real_feat (for agents on attributes).
+		require
+			a_feat /= Void
+			a_feat.is_attribute implies a_real_feat /= Void
 		local
 			l_new_rout_id_set: ROUT_ID_SET
 			l_cur_class: EIFFEL_CLASS_C
@@ -6557,7 +6578,7 @@ feature {NONE} -- Agents
 			else
 				l_number := context.inline_agent_counter.next
 				l_old_inline_agents := context.old_inline_agents
-				if l_old_inline_agents /= Void and then l_old_inline_agents.has (l_number) then
+				if l_old_inline_agents /= Void and then l_old_inline_agents.has_key (l_number) then
 					l_old_feat := l_old_inline_agents.found_item
 				end
 			end
@@ -6601,6 +6622,13 @@ feature {NONE} -- Agents
 				l_name := "fake inline-agent"
 				l_name.append_character ('#')
 				l_name.append_integer (a_feat.body_index)
+				if a_real_feat /= Void then
+					l_name.append_character ('#')
+					l_name.append_integer (a_real_feat.written_in)
+					l_name.append_character ('#')
+					l_name.append_integer (a_real_feat.feature_id)
+					l_name.append_character ('#')
+				end
 			else
 				l_name := "inline-agent"
 				l_name.append_character ('#')
@@ -6672,7 +6700,7 @@ feature {NONE} -- Precursor handling
 
 			if l_as.parent_base_class /= Void then
 				-- Take class renaming into account
-				r_class_i := Universe.class_named (l_as.parent_base_class.class_name, context.current_class.group)
+				r_class_i := Universe.class_named (l_as.parent_base_class.class_name.name, context.current_class.group)
 
 				if r_class_i /= Void then
 					spec_p_name := r_class_i.name
@@ -6701,7 +6729,7 @@ feature {NONE} -- Precursor handling
 					-- If construct is qualified, check
 					-- specified parent only.
 				if
-					not (p_list.has (p_name) and then
+					not (p_list.has_key (p_name) and then
 					p_list.found_item.is_equivalent (parents.item)) and then
 					(spec_p_name = Void or else spec_p_name.is_equal (p_name))
 				then
@@ -6877,7 +6905,7 @@ feature {NONE} -- Implementation: checking locals
 			l_track_local: BOOLEAN
 			i: INTEGER
 			l_local_info: LOCAL_INFO
-			l_context_locals: HASH_TABLE [LOCAL_INFO, STRING]
+			l_context_locals: HASH_TABLE [LOCAL_INFO, INTEGER]
 			l_vrle1: VRLE1
 			l_vrle2: VRLE2
 			l_vreg: VREG
@@ -6939,7 +6967,7 @@ feature {NONE} -- Implementation: checking locals
 
 						l_local_info.set_type (l_solved_type)
 						l_local_info.set_position (i)
-						if l_context_locals.has (l_local_name) then
+						if l_context_locals.has (l_local_name_id) then
 								-- Error: two locals withe the same name
 							create l_vreg
 							l_vreg.set_entity_name (l_local_name)
@@ -6947,7 +6975,7 @@ feature {NONE} -- Implementation: checking locals
 							l_vreg.set_location (l_as.locals.item.start_location)
 							error_handler.insert_error (l_vreg)
 						else
-							l_context_locals.put (l_local_info, l_local_name)
+							l_context_locals.put (l_local_info, l_local_name_id)
 						end
 							-- We do NOT want to update the type in the instantiator
 							-- if there is an error!!!! (Xavier)
@@ -6970,7 +6998,7 @@ feature {NONE} -- Implementation: checking locals
 			end
 		end
 
-	check_unused_locals (a_locals: HASH_TABLE [LOCAL_INFO, STRING]) is
+	check_unused_locals (a_locals: HASH_TABLE [LOCAL_INFO, INTEGER]) is
 			-- Check that all locals are used in Current. If not raise
 			-- a warning.
 		require
@@ -6989,7 +7017,7 @@ feature {NONE} -- Implementation: checking locals
 					if l_warning = Void then
 						create l_warning.make (context.current_class, current_feature.enclosing_feature)
 					end
-					l_warning.add_unused_local (a_locals.key_for_iteration, l_local.type)
+					l_warning.add_unused_local (names_heap.item (a_locals.key_for_iteration), l_local.type)
 				end
 				a_locals.forth
 			end

@@ -25,11 +25,6 @@ inherit
 			make
 		end
 
-	PREFERENCE_CONSTANTS
-		undefine
-			copy, default_create
-		end
-
 create
 	make, make_with_hidden
 
@@ -296,11 +291,11 @@ feature {NONE} -- Events
 					create l_popup_menu
 					if l_pref.has_default_value then
 							-- The right clicked preference matches the selection in the grid
-						create l_menu_item.make_with_text ("Restore Default")
+						create l_menu_item.make_with_text (l_restore_defaults)
 						l_menu_item.select_actions.extend (agent set_preference_to_default (a_item, a_pref))
 						l_popup_menu.extend (l_menu_item)
 					else
-						create l_menu_item.make_with_text ("No default value")
+						create l_menu_item.make_with_text (l_no_default_value)
 						l_menu_item.disable_sensitive
 						l_popup_menu.extend (l_menu_item)
 					end
@@ -457,7 +452,7 @@ feature {NONE} -- Implementation
 				grid.column (flat_sorting_info.abs).header_item.remove_pixmap
 			end
 
-			status_label.set_text ("Building tree view ...")
+			status_label.set_text (l_building_tree_view)
 			status_label.refresh_now
 
 				-- Alphabetically sort the known preferences
@@ -528,7 +523,7 @@ feature {NONE} -- Implementation
 				l_row := grid.row (grid.row_count)
 			end
 			check l_row /= Void end
-			create l_grid_label.make_with_text (formatted_name (l_short_name))
+			create l_grid_label.make_with_text (try_to_translate (formatted_name (l_short_name)))
 			if folder_icon /= Void then
 				l_grid_label.set_pixmap (folder_icon)
 			end
@@ -555,7 +550,7 @@ feature {NONE} -- Implementation
 				end
 			end
 
-			status_label.set_text ("Building flat view ...")
+			status_label.set_text (l_building_flat_view)
 			status_label.refresh_now
 
 			grid_remove_and_clear_all_rows (grid)
@@ -588,8 +583,8 @@ feature {NONE} -- Implementation
 		local
 			l_prefs_to_sort: LIST [PREFERENCE]
 			l_known_pref_ht: HASH_TABLE [PREFERENCE, STRING]
-			l_sorted_preferences: DS_ARRAYED_LIST [STRING]
-			l_pref_index, l_pref_name: STRING
+			l_sorted_preferences: DS_ARRAYED_LIST [STRING_32]
+			l_pref_index, l_pref_name: STRING_32
 			l_pref: PREFERENCE
 			l_sorting_up: BOOLEAN
 			l_sorting_criteria: INTEGER
@@ -630,7 +625,7 @@ feature {NONE} -- Implementation
 					l_sorted_preferences.force_last (l_pref_index)
 					l_prefs_to_sort.forth
 				end
-				l_sorted_preferences.sort (create {DS_QUICK_SORTER [STRING]}.make (create {KL_COMPARABLE_COMPARATOR [STRING]}.make))
+				l_sorted_preferences.sort (create {DS_QUICK_SORTER [STRING_32]}.make (create {KL_COMPARABLE_COMPARATOR [STRING_32]}.make))
 				l_prefs_to_sort := Void
 
 				create {ARRAYED_LIST [PREFERENCE]} Result.make (l_sorted_preferences.count)
@@ -737,7 +732,7 @@ feature {NONE} -- Implementation
 				if show_full_preference_name then
 					Result.set_text (a_pref.name)
 				else
-					Result.set_text (formatted_name (short_preference_name (a_pref.name)))
+					Result.set_text (short_preference_name (a_pref.name))
 				end
 			else
 				Result.set_text ("")
@@ -791,7 +786,7 @@ feature {NONE} -- Implementation
 		do
 			l_bool ?= a_pref
 			if l_bool /= Void then
-				create l_bool_widget.make_with_preference (l_bool)
+				l_bool_widget := new_boolean_widget (l_bool)
 				l_bool_widget.change_actions.extend (agent on_preference_changed)
 				Result := l_bool_widget.change_item_widget
 				Result.set_data (l_bool_widget)
@@ -804,7 +799,7 @@ feature {NONE} -- Implementation
 				elseif a_pref.generating_preference_type.is_equal ("COMBO") then
 					l_array ?= a_pref
 					if l_array /= Void then
-						create l_choice_widget.make_with_preference (l_array)
+						l_choice_widget := new_choice_widget (l_array)
 						l_choice_widget.change_actions.extend (agent on_preference_changed)
 						Result := l_choice_widget.change_item_widget
 						Result.set_data (l_choice_widget)
@@ -912,8 +907,8 @@ feature {NONE} -- Implementation
 			set_show_full_preference_name (True)
 			build_flat
 			update_status_bar
-			view_toggle_button.set_text (once "Tree View")
-			view_toggle_button.set_tooltip (once "Switch to Tree View")
+			view_toggle_button.set_text (l_tree_view)
+			view_toggle_button.set_tooltip (f_switch_to_tree_view)
 		end
 
 	enable_tree_view is
@@ -926,17 +921,17 @@ feature {NONE} -- Implementation
 			set_show_full_preference_name (False)
 			build_structured
 			update_status_bar
-			view_toggle_button.set_text (once "Flat View")
-			view_toggle_button.set_tooltip (once "Switch to Flat View")
+			view_toggle_button.set_text (l_flat_view)
+			view_toggle_button.set_tooltip (f_switch_to_flat_view)
 		end
 
 	update_status_bar is
 			-- Update status bar
 		do
 			if not grid.is_tree_enabled and matches /= Void then
-				status_label.set_text (matches.count.out + " matches of " + preferences.preferences.count.out + " total preferences")
+				status_label.set_text (l_matches_of_total_preferences (matches.count.out, preferences.preferences.count.out))
 			else
-				status_label.set_text (preferences.preferences.count.out + " preferences")
+				status_label.set_text (l_count_preferences (preferences.preferences.count.out))
 			end
 		end
 
@@ -973,16 +968,18 @@ feature {NONE} -- Implementation
 		require
 			preference_not_void: a_preference /= Void
 		local
-			l_text: STRING
+			l_text: STRING_GENERAL
 		do
 			if a_preference.description /= Void then
-				l_text := a_preference.description
+					-- We know that descriptions of preference have been extacted out
+					-- from the config file.
+				l_text := try_to_translate (a_preference.description)
 			else
 				l_text := no_description_text
 			end
 
 			if a_preference.restart_required then
-				description_text.set_text (l_text + once " (REQUIRES RESTART)")
+				description_text.set_text (l_text.as_string_32 + l_request_restart)
 			else
 				description_text.set_text (l_text)
 			end
@@ -1047,6 +1044,36 @@ feature {NONE} -- Implementation
 			g.selected_rows.count = 0
 		end
 
+	try_to_translate (a_string: STRING_GENERAL): STRING_GENERAL is
+			-- Try to translate `a_string'.
+		require
+			a_string_not_void: a_string /= Void
+		do
+			Result := a_string
+		ensure
+			result_not_void: Result /= Void
+		end
+
+feature {NONE} -- Widgets initialization
+
+	new_boolean_widget (a_pref: BOOLEAN_PREFERENCE): BOOLEAN_PREFERENCE_WIDGET is
+		require
+			a_pref_not_void: a_pref /= Void
+		do
+			create Result.make_with_preference (a_pref)
+		ensure
+			Result_not_void: Result /= Void
+		end
+
+	new_choice_widget (a_pref: ARRAY_PREFERENCE): CHOICE_PREFERENCE_WIDGET is
+		require
+			a_pref_not_void: a_pref /= Void
+		do
+			create Result.make_with_preference (a_pref)
+		ensure
+			Result_not_void: Result /= Void
+		end
+
 feature {NONE} -- Sorting
 
 	flat_sorting_info: INTEGER
@@ -1102,7 +1129,7 @@ feature {NONE} -- Filtering
 			l_preference: PREFERENCE
 			l_prefs: LIST [PREFERENCE]
 		do
-			status_label.set_text ("Updating the view ...")
+			status_label.set_text (l_updating_the_view)
 			status_label.refresh_now
 
 			matches := Void

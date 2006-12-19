@@ -16,8 +16,6 @@ inherit
 
 	EB_CONSTANTS
 
-	SHARED_APPLICATION_EXECUTION
-
 	SHARED_DEBUGGER_MANAGER
 
 	EB_TEXT_OUTPUT_FACTORY
@@ -159,7 +157,7 @@ feature -- Access
 	text_area: EB_CLICKABLE_EDITOR
 			-- Editor to handle the displayed text is displayed.
 
-	menu_name: STRING is
+	menu_name: STRING_GENERAL is
 			-- Name as it may appear in a menu.
 		do
 			Result := Interface_names.m_Output
@@ -229,13 +227,13 @@ feature {NONE} -- Implementation
 	drop_breakable (st: BREAKABLE_STONE) is
 			-- Inform `Current's manager that a stone concerning breakpoints has been dropped.
 		local
-			app_exec: APPLICATION_EXECUTION
+			bpm: BREAKPOINTS_MANAGER
 		do
-			app_exec := Debugger_manager.application
-			if app_exec.is_breakpoint_enabled (st.routine, st.index) then
-				app_exec.remove_breakpoint (st.routine, st.index)
+			bpm := Debugger_manager
+			if bpm.is_breakpoint_enabled (st.routine, st.index) then
+				bpm.remove_breakpoint (st.routine, st.index)
 			else
-				app_exec.set_breakpoint (st.routine, st.index)
+				bpm.set_breakpoint (st.routine, st.index)
 			end
 			Debugger_manager.notify_breakpoints_changes
 		end

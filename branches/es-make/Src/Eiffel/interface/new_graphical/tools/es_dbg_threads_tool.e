@@ -18,11 +18,6 @@ inherit
 
 	EB_RECYCLABLE
 
-	SHARED_APPLICATION_EXECUTION
-		export
-			{NONE} all
-		end
-
 	SHARED_DEBUGGER_MANAGER
 		export
 			{NONE} all
@@ -96,7 +91,7 @@ feature {NONE} -- Initialization
 --			end
 --			create {EB_EXPLORER_BAR_ITEM} explorer_bar_item.make_with_mini_toolbar (explorer_bar, widget, title, False, mini_toolbar)
 
-			create {EB_EXPLORER_BAR_ITEM} explorer_bar_item.make (explorer_bar, widget, title, True)
+			create {EB_EXPLORER_BAR_ITEM} explorer_bar_item.make (explorer_bar, widget, title, title_for_pre, True)
 			explorer_bar_item.set_menu_name (menu_name)
 			if pixmap /= Void then
 				explorer_bar_item.set_pixmap (pixmap)
@@ -116,16 +111,22 @@ feature -- Access
 	widget: EV_WIDGET
 			-- Widget representing Current.
 
-	title: STRING is
+	title: STRING_GENERAL is
 			-- Title of the tool.
 		do
-			Result := "Threads" -- Interface_names.t_Call_stack_tool
+			Result := Interface_names.t_Threads_tool -- Interface_names.t_Call_stack_tool
 		end
 
-	menu_name: STRING is
+	title_for_pre: STRING is
+			-- Title for prefence, STRING_8
+		do
+			Result := Interface_names.to_Threads_tool
+		end
+
+	menu_name: STRING_GENERAL is
 			-- Name as it may appear in a menu.
 		do
-			Result := "Threads" -- Interface_names.m_Call_stack_tool
+			Result := interface_names.m_threads_tool -- Interface_names.m_Call_stack_tool
 		end
 
 	pixmap: EV_PIXMAP is
@@ -195,8 +196,9 @@ feature -- Status setting
 		do
 			cancel_process_real_update_on_idle
 			request_clean_threads_info
-			l_status := application.status
-			if l_status /= Void then
+			if debugger_manager.application_is_executing then
+				l_status := debugger_manager.application_status
+				check l_status /= Void end
 				process_real_update_on_idle (l_status.is_stopped)
 			end
 		end
@@ -243,8 +245,8 @@ feature {NONE} -- Implementation
 			l_status: APPLICATION_STATUS
 		do
 			Precursor {DEBUGGING_UPDATE_ON_IDLE} (dbg_was_stopped)
-			if Application.is_running then
-				l_status := application.status
+			if debugger_manager.application_is_executing then
+				l_status := debugger_manager.application_status
 				if dbg_was_stopped then
 					l_status.update_on_stopped_state
 				end
@@ -264,6 +266,8 @@ feature {NONE} -- Implementation
 
 	refresh_threads_info is
 			-- Refresh thread info according to debugger data
+		require
+			application_is_executing: debugger_manager.application_is_executing
 		local
 			r: INTEGER
 			row: EV_GRID_ROW
@@ -277,7 +281,7 @@ feature {NONE} -- Implementation
 			prio: INTEGER
 		do
 			clean_threads_info
-			l_status := Application.status
+			l_status := debugger_manager.application_status
 			if l_status /= Void and then l_status.is_stopped then
 				arr := l_status.all_thread_ids
 				if arr /= Void and then not arr.is_empty then
@@ -290,9 +294,12 @@ feature {NONE} -- Implementation
 						if not arr.has (tid) then
 							if notes_on_threads.valid_key (tid) then
 								notes_on_threads.remove (tid)
+							else
+								notes_on_threads.forth
 							end
+						else
+							notes_on_threads.forth
 						end
-						notes_on_threads.forth
 					end
 					from
 						grid.insert_new_rows (arr.count, 1)
@@ -313,7 +320,9 @@ feature {NONE} -- Implementation
 
 						if tid = l_status.current_thread_id then
 							row.set_background_color (row_highlight_bg_color)
-							row.ensure_visible
+							if row.is_displayed then
+								row.ensure_visible
+							end
 						end
 
 						s := l_status.thread_name (tid)

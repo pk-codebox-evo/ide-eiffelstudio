@@ -62,7 +62,7 @@ feature -- Basic operations
 		local
 			rescued: BOOLEAN
 			ed: EV_ERROR_DIALOG
-			wd: EV_WARNING_DIALOG
+			wd: EB_WARNING_DIALOG
 			l_debugs: SEARCH_TABLE [STRING]
 			l_sorted_debugs: DS_ARRAYED_LIST [STRING]
 			l_fact: CONF_COMP_FACTORY
@@ -77,14 +77,14 @@ feature -- Basic operations
 					config_windows.search (l_config)
 					if config_windows.found and then config_windows.found_item.is_show_requested then
 						configuration_window := config_windows.found_item
-						configuration_window.bring_to_front
+						configuration_window.raise
 					else
 						create l_fact
 						create l_load.make (l_fact)
 						l_load.retrieve_configuration (l_config)
 						if l_load.is_error then
 							create ed.make_with_text (l_load.last_error.out)
-							ed.set_buttons (<<(create {EV_DIALOG_CONSTANTS}).ev_ok>>)
+							ed.set_buttons (<<interface_names.b_ok>>)
 							ed.show_modal_to_window (window_manager.
 								last_focused_development_window.window)
 						else
@@ -148,7 +148,7 @@ feature {NONE} -- Actions
 		local
 			l_lib: CONF_LIBRARY
 			ed: EV_ERROR_DIALOG
-			wd: EV_WARNING_DIALOG
+			wd: EB_WARNING_DIALOG
 			l_sorted_debugs: DS_ARRAYED_LIST [STRING]
 			l_fact: CONF_COMP_FACTORY
 			l_load: CONF_LOAD
@@ -164,14 +164,14 @@ feature {NONE} -- Actions
 					config_windows.search (l_config)
 					if config_windows.found and then config_windows.found_item.is_show_requested then
 						configuration_window := config_windows.found_item
-						configuration_window.bring_to_front
+						configuration_window.raise
 					else
 						create l_fact
 						create l_load.make (l_fact)
 						l_load.retrieve_configuration (l_config)
 						if l_load.is_error then
 							create ed.make_with_text (l_load.last_error.out)
-							ed.set_buttons (<<(create {EV_DIALOG_CONSTANTS}).ev_ok>>)
+							ed.set_buttons (<<interface_names.b_ok>>)
 							ed.show_modal_to_window (window_manager.
 								last_focused_development_window.window)
 						else
@@ -228,25 +228,25 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.tool_config_icon
 		end
 
-	description: STRING is
+	description: STRING_GENERAL is
 			-- Description for command
 		do
 			Result := Interface_names.e_Project_settings
 		end
 
-	tooltip: STRING is
+	tooltip: STRING_GENERAL is
 			-- Tooltip for toolbar button
 		do
 			Result := Interface_names.e_Project_settings
 		end
 
-	tooltext: STRING is
+	tooltext: STRING_GENERAL is
 			-- Tooltip for toolbar button
 		do
 			Result := Interface_names.b_Project_settings
 		end
 
-	menu_name: STRING is
+	menu_name: STRING_GENERAL is
 		do
 			Result := Interface_names.m_System_new
 		end

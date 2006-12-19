@@ -11,7 +11,7 @@ inherit
 	SK_CONST
 	DEBUG_EXT
 	RECV_VALUE
-	SHARED_DEBUG
+	SHARED_DEBUGGED_OBJECT_MANAGER
 	COMPILER_EXPORTER
 		export
 			{NONE} all
@@ -51,7 +51,7 @@ feature -- Initialization
 			debug ("debugger_ipc")
 				print (generator + ".already_called (" + once_routine.feature_name + ") %N")
 			end
-			if not Application.is_running then
+			if not debugger_manager.application_is_executing then
 				Result := False
 			else
 				l_index := once_index (once_routine)

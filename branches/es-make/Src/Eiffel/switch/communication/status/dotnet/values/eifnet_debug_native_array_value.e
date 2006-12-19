@@ -19,7 +19,8 @@ inherit
 
 	EIFNET_ABSTRACT_DEBUG_VALUE
 		undefine
-			address, append_to, sorted_children
+			address,
+			sorted_children
 		redefine
 			extra_output_details
 		end
@@ -55,7 +56,7 @@ feature {NONE} -- Initialization
 			end
 			register_dotnet_data
 
-			set_sp_bounds (min_slice_ref.item, max_slice_ref.item)
+			set_sp_bounds (debugger_manager.min_slice, debugger_manager.max_slice)
 		ensure
 			value_set: icd_value = a_prepared_value
 		end
@@ -98,7 +99,7 @@ feature -- Access
 	dynamic_class: CLASS_C is
 			-- Find corresponding CLASS_C to type represented by `value'.
 		once
-			Result := Eiffel_system.system.native_array_class.compiled_class
+			Result := debugger_manager.compiler_data.native_array_class_c
 		ensure then
 			non_void_result: Result /= Void
 		end
@@ -124,19 +125,6 @@ feature -- Output
 			Result := " count=" + array_value.get_count.out + " rank=" + array_value.get_rank.out
 			release_array_value
 		end
-
-	append_type_and_value (a_text_formatter: TEXT_FORMATTER) is
-		do
-			a_text_formatter.add_string (type_and_value)
-		end;
-
-feature {ABSTRACT_DEBUG_VALUE} -- Output
-
-	append_value (a_text_formatter: TEXT_FORMATTER) is
-			-- Append only the value of Current to `a_text_formatter'.
-		do
-			a_text_formatter.add_string (output_value)
-		end;
 
 feature -- Output	
 

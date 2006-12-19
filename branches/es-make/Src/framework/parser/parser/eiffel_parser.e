@@ -12,8 +12,6 @@ inherit
 
 	EIFFEL_PARSER_SKELETON
 
-	SHARED_NAMES_HEAP
-	
 create
 	make,
 	make_with_factory
@@ -7678,8 +7676,7 @@ end
 
 				yyval20 := ast_factory.new_identifier_list (counter_value + 1)
 				if yyval20 /= Void and yyvs2.item (yyvsp2) /= Void then
-					Names_heap.put (yyvs2.item (yyvsp2))
-					yyval20.reverse_extend (Names_heap.found_item)
+					yyval20.reverse_extend (yyvs2.item (yyvsp2).name_id)
 					ast_factory.reverse_extend_identifier (yyval20.id_list, yyvs2.item (yyvsp2))
 				end
 			
@@ -7719,8 +7716,7 @@ end
 
 				yyval20 := yyvs20.item (yyvsp20)
 				if yyval20 /= Void and yyvs2.item (yyvsp2) /= Void then
-					Names_heap.put (yyvs2.item (yyvsp2))
-					yyval20.reverse_extend (Names_heap.found_item)
+					yyval20.reverse_extend (yyvs2.item (yyvsp2).name_id)
 					ast_factory.reverse_extend_identifier (yyval20.id_list, yyvs2.item (yyvsp2))
 					ast_factory.reverse_extend_separator (yyval20.id_list, yyvs4.item (yyvsp4))
 				end
@@ -10236,9 +10232,7 @@ end
 
 				yyval112 := yyvs112.item (yyvsp112)
 				if yyval112 /= Void and yyvs2.item (yyvsp2) /= Void then
-					if not case_sensitive then
-						yyvs2.item (yyvsp2).to_upper		
-					end
+					yyvs2.item (yyvsp2).to_upper		
 					yyval112.reverse_extend (new_class_type (yyvs2.item (yyvsp2), Void))
 					ast_factory.reverse_extend_separator (yyval112, yyvs4.item (yyvsp4))
 				end
@@ -10291,11 +10285,8 @@ end
 				last_identifier_list := ast_factory.new_identifier_list (counter_value + 1)
 				
 				if yyval113 /= Void and last_identifier_list /= Void and yyvs2.item (yyvsp2) /= Void then
-					if not case_sensitive then
-						yyvs2.item (yyvsp2).to_lower		
-					end
-					Names_heap.put (yyvs2.item (yyvsp2))
-					last_identifier_list.reverse_extend (Names_heap.found_item)
+					yyvs2.item (yyvsp2).to_lower		
+					last_identifier_list.reverse_extend (yyvs2.item (yyvsp2).name_id)
 					ast_factory.reverse_extend_identifier (last_identifier_list.id_list, yyvs2.item (yyvsp2))
 				end
 				yyval113.reverse_extend (ast_factory.new_type_dec_as (last_identifier_list, yyvs79.item (yyvsp79), yyvs4.item (yyvsp4 - 1)))
@@ -10342,11 +10333,8 @@ end
 				if yyval113 /= Void then
 					last_identifier_list := yyval113.reversed_first.id_list
 					if last_identifier_list /= Void then
-						if not case_sensitive then
-							yyvs2.item (yyvsp2).to_lower		
-						end
-						Names_heap.put (yyvs2.item (yyvsp2))
-						last_identifier_list.reverse_extend (Names_heap.found_item)
+						yyvs2.item (yyvsp2).to_lower		
+						last_identifier_list.reverse_extend (yyvs2.item (yyvsp2).name_id)
 						ast_factory.reverse_extend_identifier (last_identifier_list.id_list, yyvs2.item (yyvsp2))
 						ast_factory.reverse_extend_separator (last_identifier_list.id_list, yyvs4.item (yyvsp4))
 					end
@@ -10377,11 +10365,8 @@ end
 				last_identifier_list := ast_factory.new_identifier_list (counter_value + 1)
 				
 				if yyval113 /= Void and yyvs2.item (yyvsp2) /= Void and yyvs79.item (yyvsp79) /= Void and last_identifier_list /= Void then
-					if not case_sensitive then
-						yyvs2.item (yyvsp2).to_lower		
-					end
-					Names_heap.put (yyvs2.item (yyvsp2))
-					last_identifier_list.reverse_extend (Names_heap.found_item)
+					yyvs2.item (yyvsp2).to_lower		
+					last_identifier_list.reverse_extend (yyvs2.item (yyvsp2).name_id)
 					ast_factory.reverse_extend_identifier (last_identifier_list.id_list, yyvs2.item (yyvsp2))
 					
 					yyval113.reverse_extend (ast_factory.new_type_dec_as (last_identifier_list, yyvs79.item (yyvsp79), yyvs4.item (yyvsp4 - 1)))
@@ -10573,7 +10558,7 @@ debug ("GEYACC")
 	std.error.put_line ("Executing parser user-code from file 'eiffel.y' at line <not available>")
 end
 
-				if equal (None_classname, yyvs2.item (yyvsp2)) then
+				if yyvs2.item (yyvsp2) /= Void and then none_class_name_id = yyvs2.item (yyvsp2).name_id then
 						-- Trigger an error when constraint is NONE.
 						-- Needs to be done manually since current test for
 						-- checking that `$2' is not a class name
@@ -10620,7 +10605,7 @@ debug ("GEYACC")
 	std.error.put_line ("Executing parser user-code from file 'eiffel.y' at line <not available>")
 end
 
-				if equal (None_classname, yyvs2.item (yyvsp2)) then
+				if yyvs2.item (yyvsp2) /= Void and then none_class_name_id = yyvs2.item (yyvsp2).name_id then
 						-- Trigger an error when constraint is NONE.
 						-- Needs to be done manually since current test for
 						-- checking that `$2' is not a class name
@@ -10667,7 +10652,7 @@ debug ("GEYACC")
 	std.error.put_line ("Executing parser user-code from file 'eiffel.y' at line <not available>")
 end
 
-				if equal (None_classname, yyvs2.item (yyvsp2)) then
+				if yyvs2.item (yyvsp2) /= Void and then none_class_name_id = yyvs2.item (yyvsp2).name_id then
 						-- Trigger an error when constraint is NONE.
 						-- Needs to be done manually since current test for
 						-- checking that `$1' is not a class name
@@ -16506,7 +16491,7 @@ debug ("GEYACC")
 	std.error.put_line ("Executing parser user-code from file 'eiffel.y' at line <not available>")
 end
 
-				if not case_sensitive and yyvs2.item (yyvsp2) /= Void then
+				if yyvs2.item (yyvsp2) /= Void then
 					yyvs2.item (yyvsp2).to_lower
 				end
 				yyval2 := yyvs2.item (yyvsp2)
@@ -17560,7 +17545,7 @@ debug ("GEYACC")
 	std.error.put_line ("Executing parser user-code from file 'eiffel.y' at line <not available>")
 end
 
-				if not case_sensitive and yyvs2.item (yyvsp2) /= Void then
+				if yyvs2.item (yyvsp2) /= Void then
 					yyvs2.item (yyvsp2).to_upper
 				end
 				yyval2 := yyvs2.item (yyvsp2)
@@ -17599,7 +17584,7 @@ debug ("GEYACC")
 	std.error.put_line ("Executing parser user-code from file 'eiffel.y' at line <not available>")
 end
 
-				if not case_sensitive and yyvs2.item (yyvsp2) /= Void then
+				if yyvs2.item (yyvsp2) /= Void then
 					yyvs2.item (yyvsp2).to_upper		
 				end
 				yyval2 := yyvs2.item (yyvsp2)
@@ -17628,7 +17613,7 @@ end
 							once "Use of `assign', possibly a new keyword in future definition of `Eiffel'."))
 				end
 
-				if not case_sensitive and last_id_as_value /= Void then
+				if last_id_as_value /= Void then
 					last_id_as_value.to_upper
 				end
 				yyval2 := last_id_as_value
@@ -17667,7 +17652,7 @@ debug ("GEYACC")
 	std.error.put_line ("Executing parser user-code from file 'eiffel.y' at line <not available>")
 end
 
-				if not case_sensitive and yyvs2.item (yyvsp2) /= Void then
+				if yyvs2.item (yyvsp2) /= Void then
 					yyvs2.item (yyvsp2).to_lower
 				end
 				yyval2 := yyvs2.item (yyvsp2)
@@ -17688,7 +17673,7 @@ debug ("GEYACC")
 	std.error.put_line ("Executing parser user-code from file 'eiffel.y' at line <not available>")
 end
 
-				if not case_sensitive and yyvs2.item (yyvsp2) /= Void then
+				if yyvs2.item (yyvsp2) /= Void then
 					yyvs2.item (yyvsp2).to_lower
 				end
 				yyval2 := yyvs2.item (yyvsp2)
@@ -17716,7 +17701,7 @@ end
 						create {SYNTAX_WARNING}.make (line, column, filename,
 							once "Use of `assign', possibly a new keyword in future definition of `Eiffel'."))
 				end
-				if not case_sensitive and last_id_as_value /= Void then
+				if last_id_as_value /= Void then
 					last_id_as_value.to_lower
 				end
 				yyval2 := last_id_as_value

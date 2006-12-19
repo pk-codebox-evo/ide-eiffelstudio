@@ -59,6 +59,7 @@ feature -- Access
 		require
 			home_directory_supported: Operating_environment.home_directory_supported
 		do
+			Result := {ENVIRONMENT}.get_folder_path ({SPECIAL_FOLDER_IN_ENVIRONMENT}.local_application_data)
 		end
 
 	root_directory_name: STRING is
@@ -89,7 +90,6 @@ feature -- Access
 				not l_enumerator.move_next
 			loop
 				l_entry ?= l_enumerator.current_
-				check l_entry /= Void end
 				l_key ?= l_entry.key
 				l_value ?= l_entry.value
 				check

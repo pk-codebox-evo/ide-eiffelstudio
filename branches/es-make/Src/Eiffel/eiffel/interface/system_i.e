@@ -984,7 +984,7 @@ end
 			if automatic_backup then
 				create l_file_name.make_from_string (workbench.backup_subdirectory)
 				l_file_name.set_file_name (backup_info)
-				create l_file.make_open_write (l_file_name)
+				create l_file.make_open_append (l_file_name)
 			end
 			l_classes := l_vis_build.removed_classes
 			from
@@ -999,13 +999,31 @@ end
 				end
 				l_class_i.compiled_class.recompile_syntactical_clients
 				if automatic_backup then
-					l_file.put_string (l_class_i.name+": "+l_class_i.group.name+": "+l_class_i.file_name+"%N")
+					l_file.put_string ("REMOVED: " +
+						l_class_i.name + " " +
+						l_class_i.group.target.system.uuid.out + " " +
+						l_class_i.group.name + "%N")
 				end
 				remove_class (l_class_i.compiled_class)
 				real_removed_classes.force (l_class_i)
 				l_classes.forth
 			end
+
 			if automatic_backup then
+					-- Process classes that are not in the override.
+				l_classes := l_vis_build.removed_classes_from_override
+				from
+					l_classes.start
+				until
+					l_classes.after
+				loop
+					l_class_i ?= l_classes.item_for_iteration
+					l_file.put_string ("OVERRIDE_REMOVED: " +
+						l_class_i.name + " " +
+						l_class_i.group.target.system.uuid.out + " " +
+						l_class_i.group.name + "%N")
+					l_classes.forth
+				end
 				l_file.close
 			end
 
@@ -1062,7 +1080,7 @@ end
 				l_class := l_classes.item_for_iteration
 				l_name := l_class.name
 				if not l_class.config_class.does_override then
-					if not l_table.has (l_name) then
+					if not l_table.has_key (l_name) then
 						l_table.force (l_class, l_name)
 					else
 						is_force_rebuild := True
@@ -1075,7 +1093,7 @@ end
 			end
 		end
 
-	recheck_partly_removed (a_classes: ARRAYED_LIST [TUPLE [conf_class: CONF_CLASS; system: CONF_SYSTEM]] ) is
+	recheck_partly_removed (a_classes: ARRAYED_LIST [EQUALITY_TUPLE [TUPLE [conf_class: CONF_CLASS; system: CONF_SYSTEM]]] ) is
 			-- Recheck clients of classes that have been removed from one place but still exists in another.
 		require
 			a_classes_not_void: a_classes /= Void
@@ -1090,8 +1108,8 @@ end
 			until
 				a_classes.after
 			loop
-				l_system := a_classes.item.system
-				l_class_i ?= a_classes.item.conf_class
+				l_system := a_classes.item.item.system
+				l_class_i ?= a_classes.item.item.conf_class
 				check
 					correct_class: l_class_i /= Void and then l_class_i.is_compiled
 				end
@@ -1148,7 +1166,7 @@ end
 
 				if l_root.cluster_name = Void then
 
-					l_classes_i := universe.classes_with_name (root_class_type_as.class_name.as_upper.string)
+					l_classes_i := universe.classes_with_name (root_class_type_as.class_name.name.as_upper)
 						-- remove overriding classes
 					from
 						l_classes_i.start
@@ -1185,8 +1203,8 @@ end
 						Error_handler.raise_error
 					else
 							-- do a class_named because this checks for VSCN errors
-						l_class := universe.class_named (root_class_type_as.class_name.as_upper.string, l_group)
-						if l_class = Void or else l_group.classes.item (root_class_type_as.class_name.as_upper.string) /= l_class.config_class then
+						l_class := universe.class_named (root_class_type_as.class_name.name.as_upper, l_group)
+						if l_class = Void or else l_group.classes.item (root_class_type_as.class_name.name.as_upper) /= l_class.config_class then
 							create vd20
 							vd20.set_class_name (l_root.class_type_name.as_upper)
 							Error_handler.insert_error (vd20)
@@ -1198,12 +1216,16 @@ end
 				system.set_root_cluster (l_group)
 				system.set_creation_name (l_root.feature_name)
 
-				root_class ?= root_cluster.classes.item (root_class_type_as.class_name.as_upper.string)
+				root_class ?= root_cluster.classes.item (root_class_type_as.class_name.name.as_upper)
 				if root_class = Void then
 					create vd20
 					vd20.set_class_name (l_root.class_type_name.as_upper)
 					Error_handler.insert_error (vd20)
 					Error_handler.raise_error
+				else
+					if not root_class.is_compiled then
+						Workbench.change_class (root_class)
+					end
 				end
 			end
 		ensure
@@ -1218,8 +1240,16 @@ end
 		local
 			l_vsrt1: VSRT1
 			l_vsrt2: VSRT2
+			l_vd20: VD20
 		do
-			root_type ?= type_a_generator.evaluate_type_if_possible (root_class_type_as, root_class.compiled_class)
+			if root_class.is_compiled then
+				root_type ?= type_a_generator.evaluate_type_if_possible (root_class_type_as, root_class.compiled_class)
+			else
+						create l_vd20
+						l_vd20.set_class_name (root_class.name.as_upper)
+						Error_handler.insert_error (l_vd20)
+						Error_handler.raise_error
+			end
 
 
 			if 	root_type = Void or else
@@ -1332,7 +1362,7 @@ end
 				then
 					mark_only_used_precompiled_classes
 				end
-				if root_class.compiled_class = Void then
+				if not root_class.is_compiled then
 						-- If root_class is not compiled (i.e. root class has
 						-- changed since last compilaton), insert it in the
 						-- changed_classes.
@@ -1689,7 +1719,7 @@ end
 					not Compilation_modes.is_precompiling and
 					not Lace.compile_all_classes
 				then
-						-- The root class is not generic
+						-- The root class is not deferred
 					root_class_c := root_class.compiled_class
 					current_class := root_class_c
 					root_class_c.check_that_root_class_is_not_deferred
@@ -1740,6 +1770,7 @@ end
 
 					-- Compute the root type
 				compute_root_type
+
 
 					-- Inheritance analysis: `Degree_4' is sorted by class
 					-- topological ids so the parent come first the heirs after.
@@ -3233,8 +3264,8 @@ feature {NONE} -- Implementation
 					-- and remove classes recursively if needed.
 				from
 					related_classes.start
-					if root_type /= Void then
-						compiled_root_class := root_type.associated_class
+					if root_class /= Void then
+						compiled_root_class := root_class.compiled_class
 					end
 				until
 					related_classes.after

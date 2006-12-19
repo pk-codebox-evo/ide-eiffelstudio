@@ -287,7 +287,7 @@ feature -- Access queries
 			a_class_ok: a_class /= Void and then not a_class.is_empty
 			classes_set: classes_set
 		do
-			if dependencies /= Void and then dependencies.has (a_dependency_index) then
+			if dependencies /= Void and then dependencies.has_key (a_dependency_index) then
 				check not_void: dependencies.found_item /= Void end
 				Result := dependencies.found_item.dotnet_classes.item (a_class)
 			else
@@ -304,9 +304,8 @@ feature -- Access queries
 
 	class_options: HASH_TABLE [CONF_OPTION, STRING]
 			-- Options of classes in the assembly.
-		once
+		do
 				-- classes in assemblies have no options
-			create Result.make (0)
 		end
 
 	sub_group_by_name (a_name: STRING): CONF_GROUP is

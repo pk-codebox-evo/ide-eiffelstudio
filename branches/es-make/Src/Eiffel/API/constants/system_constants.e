@@ -38,6 +38,8 @@ feature {NONE}
 
 	Documentation: STRING is "Documentation"
 
+	dot_e: STRING is ".e"
+
 	Dot_c: STRING is ".c"
 
 	Dot_cpp: STRING is ".cpp"
@@ -161,34 +163,29 @@ feature {AUXILIARY_FILES} -- Versioning
 	Compiler_version_number: CONF_VERSION is
 			-- Version of the compiler
 		once
-				-- 0000 because it will be replace by the svn version number by the build script
-			create Result.make_version (eiffel_layout.major_version, eiffel_layout.minor_version, 0000, 0)
+				-- We put (9999 + 1) because if we were to put 10000 the 4 zeros
+				-- will get replaced by the delivery scripts (see comments for `snv_revision'.
+			create Result.make_version (
+				eiffel_layout.major_version,
+				eiffel_layout.minor_version,
+				(svn_revision // (9999 + 1).as_natural_32).as_natural_16,
+				(svn_revision \\ (9999 + 1).as_natural_32).as_natural_16)
 		end
 
-	Major_version_number: INTEGER is
-		once
-			Result := compiler_version_number.major
+	svn_revision: NATURAL_32 is
+			-- SVN revision that build the compiler.
+			-- We use `0000' because it is replaced by the actual svn revision number
+			-- when doing a delivery.
+		do
+			Result := 0000
 		end
-	Minor_version_number: INTEGER is
-		once
-			Result := compiler_version_number.minor
-		end
-	Build_version_number: INTEGER is
-		once
-			Result := compiler_version_number.release
-		end
-			-- Version number
 
 	Version_number: STRING is
 			-- Version number composed of
-			-- `Major_version_number' . `Minor_version_number' . `Build_version_number'.
+			-- `Major' . `Minor' . `Release' . `Build'.
 		once
 			create Result.make (30)
-			Result.append_integer (Major_version_number)
-			Result.append_character ('.')
-			Result.append_integer (Minor_version_number)
-			Result.append_character ('.')
-			Result.append_integer (Build_version_number)
+			Result.append (compiler_version_number.version)
 			Result.append_character (' ')
 			Result.append_string (version_type_name)
 		end

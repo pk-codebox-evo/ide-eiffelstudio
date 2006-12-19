@@ -260,11 +260,11 @@ feature -- Special checking
 				a_error_handler.insert_error (l_vcfg3)
 			elseif l_class_type /= Void then
 				l_cluster := a_context_class.group
-				l_class_i := universe.class_named (l_class_type.class_name, l_cluster)
+				l_class_i := universe.class_named (l_class_type.class_name.name, l_cluster)
 				if l_class_i = Void then
 					create l_vtct
 					l_vtct.set_class (a_context_class)
-					l_vtct.set_class_name (l_class_type.class_name)
+					l_vtct.set_class_name (l_class_type.class_name.name)
 					l_vtct.set_location (l_class_type.start_location)
 					a_error_handler.insert_error (l_vtct)
 					a_error_handler.raise_error
@@ -700,7 +700,7 @@ feature {TYPE_A} -- Visitors
 				create l_like_feature.make (l_anchor_feature, current_class.class_id)
 				update_like_feature (l_anchor_feature, l_like_feature)
 			else
-				l_argument_position := current_feature.argument_position (a_type.anchor)
+				l_argument_position := current_feature.argument_position (a_type.anchor_name_id)
 				if l_argument_position /= 0 then
 					create l_like_argument
 					l_like_argument.set_position (l_argument_position)

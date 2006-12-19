@@ -785,9 +785,14 @@ feature -- Status setting
 	is_show_requested: BOOLEAN
 			-- May `Current' be displayed?
 			-- Will return `False' if `hide' has been called on `Current'.
-			-- A row that `is_show_requested' does not necessarily have to be visible on screen at that particular time.
-			-- For example, its `parent_row' (if any) may not be expanded or visible, or the position of `Current' may not
-			-- be within the visible area of `parent'.
+
+	is_displayed: BOOLEAN
+			-- Is `Current' visible on the screen?
+			-- `True' when show requested and parent displayed.
+			-- A row that is_displayed does not necessarily have to be visible on screen at that particular time.
+		do
+			Result := is_show_requested and then parent_i /= Void and then parent_i.is_displayed
+		end
 
 feature {EV_GRID_ROW, EV_ANY_I}-- Element change
 
@@ -1378,7 +1383,9 @@ feature {EV_ANY_I, EV_GRID_ROW, EV_GRID_DRAWER_I} -- Implementation
 			-- functionality implemented by `Current'.
 
 invariant
-	no_subrows_implies_not_expanded: parent /= Void and then subrow_count = 0 implies not is_expanded
+--	We currently cannot hold this invariant during expand/collapse, thus
+--	it is commented until we find a better way to express it:
+--	no_subrows_implies_not_expanded: parent /= Void and then subrow_count = 0 implies not is_expanded
 	subrows_not_void: is_initialized implies subrows /= Void
 	hash_code_valid: is_initialized implies ((parent = Void and then hash_code = -1) or else (parent /= Void and then hash_code > 0))
 

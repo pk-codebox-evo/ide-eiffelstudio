@@ -81,7 +81,7 @@ feature {NONE} -- Visitor implementation
 				if
 					l_as.routine_ids /= Void and then
 					l_as.routine_ids.has (feature_i.rout_id_set.first) and then
-					old_feature_name.is_case_insensitive_equal (l_as.feature_name)
+					old_feature_name.is_case_insensitive_equal (l_as.feature_name.name)
 				then
 					l_as.feature_name.replace_text (new_feature_name, match_list)
 					has_modified := True
@@ -153,7 +153,7 @@ feature {NONE} -- Visitor implementation
 						loop
 							l_rename := l_renamings.item
 								-- if the feature we change was renamed
-							if l_rename.old_name.internal_name_id = feature_i.feature_name_id then
+							if l_rename.old_name.internal_name.name_id = feature_i.feature_name_id then
 								is_renaming := True
 									-- did we rename into the new name?
 								if l_rename.new_name.visual_name.is_case_insensitive_equal (new_feature_name) then
@@ -205,7 +205,7 @@ feature {NONE} -- Visitor implementation
 							loop
 								l_rename := l_renamings.item
 									-- if there is already a renaming, update it
-								l_name_id := l_rename.old_name.internal_name_id
+								l_name_id := l_rename.old_name.internal_name.name_id
 								if l_parent_features.has (l_name_id) then
 									l_rename.new_name.replace_text (new_feature_name, match_list)
 									l_parent_features.remove (l_name_id)
@@ -249,7 +249,7 @@ feature {NONE} -- Visitor implementation
 			-- Process like statements.
 		do
 			if is_descendant and then not is_renaming then
-				if old_feature_name.is_case_insensitive_equal (l_as.anchor) then
+				if old_feature_name.is_case_insensitive_equal (l_as.anchor.name) then
 					l_as.anchor.replace_text (new_feature_name, match_list)
 					has_modified := True
 				end
@@ -259,7 +259,7 @@ feature {NONE} -- Visitor implementation
 	process_feat_name_id_as (l_as: FEAT_NAME_ID_AS) is
 			-- Process feature name.
 		do
-			if old_feature_name.is_case_insensitive_equal (l_as.feature_name) then
+			if old_feature_name.is_case_insensitive_equal (l_as.feature_name.name) then
 				l_as.feature_name.replace_text (new_feature_name, match_list)
 				has_modified := True
 			end
@@ -289,7 +289,7 @@ feature {NONE} -- Visitor implementation
 			if
 				is_descendant and not is_renaming
 				and l_as.assigner /= Void
-				and old_feature_name.is_case_insensitive_equal (l_as.assigner)
+				and old_feature_name.is_case_insensitive_equal (l_as.assigner.name)
 			then
 				l_as.assigner.replace_text (new_feature_name, match_list)
 				has_modified := True
@@ -314,7 +314,7 @@ feature {NONE} -- Visitor implementation
 				if
 					l_as.routine_ids /= Void and then
 					l_as.routine_ids.has (feature_i.rout_id_set.first) and then
-					old_feature_name.is_case_insensitive_equal (l_as.feature_name)
+					old_feature_name.is_case_insensitive_equal (l_as.feature_name.name)
 				then
 					l_as.feature_name.replace_text (new_feature_name, match_list)
 					has_modified := True

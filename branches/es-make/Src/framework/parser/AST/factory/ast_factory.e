@@ -42,6 +42,9 @@ feature -- Roundtrip: Match list maintaining
 	match_list_count: INTEGER
 			-- Number of elements in `internal_match_list'
 
+	match_list_count_backup: INTEGER
+			-- Backup value of `match_list_count' as it was when the last time `backup_match_list_count' is called.
+
 	create_match_list (l_size: INTEGER) is
 			-- Create a new `match_list' with initial `l_size'.
 		require
@@ -59,6 +62,41 @@ feature -- Roundtrip: Match list maintaining
 			-- and set index in `a_match'.
 		do
 		end
+
+	backup_match_list_count is
+			-- Backup value of `match_list_count' into `match_list_count_backup'.
+		do
+		end
+
+	resume_match_list_count is
+			-- Resume the value of `match_list_count_backup' and set `match_list_count' with it.
+		do
+		end
+
+	enable_match_list_extension is
+			-- Enable extension of `match_list'.
+		do
+			is_match_list_extension_disabled := False
+		ensure
+			match_list_extension_enabled: is_match_list_extension_enabled
+		end
+
+	disable_match_list_extension is
+			-- Disable extension of `match_list'.
+		do
+			is_match_list_extension_disabled := True
+		ensure
+			match_list_extension_disabled: not is_match_list_extension_enabled
+		end
+
+	is_match_list_extension_enabled: BOOLEAN is
+			-- Is match list extension enabled?
+		do
+			Result := not is_match_list_extension_disabled
+		end
+
+	is_match_list_extension_disabled: BOOLEAN
+			-- Is match list extension disabled?
 
 feature -- Roundtrip
 
@@ -134,7 +172,7 @@ feature -- Access
 			p_non_negative: p >= 0
 			s_non_negative: s >= 0
 		do
-			create Result.make (s)
+			create Result.make
 			Result.set_position (l, c, p, s)
 		end
 
@@ -207,7 +245,11 @@ feature -- Value AST creation
 				end
 			else
 				l_code := buffer.substring (4, buffer.count - 1)
+				backup_match_list_count
+				disable_match_list_extension
 				l_integer := new_integer_value (a_psr, '+', Void, l_code, Void)
+				enable_match_list_extension
+				resume_match_list_count
 				if l_integer.natural_64_value <= {NATURAL_8}.Max_value then
 					if a_type = Void then
 						Result := new_character_as (l_integer.natural_8_value.to_character_8, a_psr.line, a_psr.column, a_psr.position, a_text.count, a_text)
@@ -1222,11 +1264,14 @@ feature -- Access
 		require
 			a_scn_not_void: a_scn /= Void
 		local
-			l_count: INTEGER
+			l_cnt: INTEGER
+			l_str: STRING
 		do
-			l_count := a_scn.text_count
-			create Result.make (l_count)
-			Result.set_position (a_scn.line, a_scn.column, a_scn.position, l_count)
+			l_cnt := a_scn.text_count
+			create l_str.make (l_cnt)
+			a_scn.append_text_to_string (l_str)
+			create Result.initialize (l_str)
+			Result.set_position (a_scn.line, a_scn.column, a_scn.position, l_cnt)
 		end
 
 	new_filled_id_as_with_existing_stub (a_scn: EIFFEL_SCANNER_SKELETON; a_index: INTEGER): ID_AS is
@@ -1243,11 +1288,13 @@ feature -- Access
 			a_scn_not_void: a_scn /= Void
 		local
 			l_cnt: INTEGER
+			l_str: STRING
 		do
 			l_cnt := a_scn.text_count - 1
-			create Result.make (l_cnt)
+			create l_str.make (l_cnt)
+			a_scn.append_text_substring_to_string (1, l_cnt, l_str)
+			create Result.initialize (l_str)
 			Result.set_position (a_scn.line, a_scn.column, a_scn.position, l_cnt)
-			a_scn.append_text_substring_to_string (1, l_cnt, Result)
 		end
 
 	new_identifier_list (n: INTEGER): IDENTIFIER_LIST is

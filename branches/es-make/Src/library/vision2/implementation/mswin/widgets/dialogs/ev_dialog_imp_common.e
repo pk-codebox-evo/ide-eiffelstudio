@@ -78,8 +78,7 @@ inherit
 			is_displayed
 		redefine
 			setup_dialog,
-			process_message,
-			wel_move_and_resize
+			process_message
 		end
 
 	WEL_ID_CONSTANTS
@@ -237,7 +236,7 @@ feature {NONE} -- Implementation
 			awaiting_movement := other_imp.awaiting_movement
 			background_color_imp := other_imp.background_color_imp
 			background_pixmap_imp := other_imp.background_pixmap_imp
-			set_base_make_called (other_imp.base_make_called)
+			set_state_flag (base_make_called_flag, other_imp.base_make_called)
 			child_cell := other_imp.child_cell
 			close_request_actions_internal := other_imp.close_request_actions_internal
 			commands := other_imp.commands
@@ -323,7 +322,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	post_creation_update_actions: ACTION_SEQUENCE [TUPLE []]
+	post_creation_update_actions: EV_LITE_ACTION_SEQUENCE [TUPLE []]
 		-- Action sequence to be fired after dialog is created and during initialization from
 		-- within `setup_dialog'. When we create a dialog, Windows calls us back with the
 		-- handle to the new dialog and upon receiving this, we call `setup_dialog'.
@@ -533,20 +532,6 @@ feature {NONE} -- Implementation
 			--| doesn't seem to make much difference to GDI count, is it necessary?
 			--| If it is determined that it is required, uncomment.
 			---background_brush.delete
-		end
-
-	wel_move_and_resize (a_x, a_y, a_width, a_height: INTEGER; repaint: BOOLEAN) is
-			-- Move the window to `a_x', `a_y' position and
-			-- resize it with `a_width', `a_height'.
-		do
-			move_absolute (a_x, a_y)
-			wel_resize (a_width, a_height)
-			if repaint then
-					-- We don't want the background to be erased (it's done by
-					-- the dialog box)
-				cwin_invalidate_rect (wel_item, default_pointer, False)
-				cwin_update_window (wel_item)
-			end
 		end
 
 	on_wm_ncdestroy is

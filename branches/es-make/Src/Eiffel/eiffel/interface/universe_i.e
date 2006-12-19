@@ -155,26 +155,26 @@ feature -- Properties
 
 feature -- Access
 
-	classes_with_name (class_name: STRING): LIST [CLASS_I] is
+	classes_with_name (a_class_name: STRING): LIST [CLASS_I] is
 			-- Classes with a lokal name of `class_name' found in the Universe.
 			-- That means renamings on the cluster of the class itself are taken into
 			-- account, but not renamings because of the use as a library.
 			-- We also look at classes in libraries of libraries.
 		require
-			class_name_not_void: class_name /= Void and then not class_name.is_empty
-			class_name_upper: class_name.is_equal (class_name.as_upper)
+			class_name_not_void: a_class_name /= Void and then not a_class_name.is_empty
+			class_name_upper: a_class_name.is_equal (a_class_name.as_upper)
 			target_not_void: target /= Void
 		local
 			l_vis: CONF_FIND_CLASS_VISITOR
 		do
-			buffered_classes.search (class_name)
+			buffered_classes.search (a_class_name)
 			if not buffered_classes.found then
 				create l_vis.make (conf_state)
-				l_vis.set_name (class_name)
+				l_vis.set_name (a_class_name)
 				target.process (l_vis)
 				Result := l_vis.found_classes
 				if Result.count = 1 then
-					buffered_classes.put (Result.first, class_name)
+					buffered_classes.put (Result.first, a_class_name)
 				end
 			else
 				Result := create {ARRAYED_LIST [CLASS_I]}.make (1)
@@ -204,16 +204,16 @@ feature -- Access
 			end
 		end
 
-	class_named (class_name: STRING; a_group: CONF_GROUP): CLASS_I is
-			-- Class named `class_name' in cluster `a_cluster'
+	class_named (a_class_name: STRING; a_group: CONF_GROUP): CLASS_I is
+			-- Class named `a_class_name' in cluster `a_cluster'
 		require
-			good_argument: class_name /= Void
+			good_argument: a_class_name /= Void
 			good_group: a_group /= Void
 		local
 			l_cl: LINKED_SET [CONF_CLASS]
 			vscn: VSCN
 		do
-			l_cl := a_group.class_by_name (class_name, True)
+			l_cl := a_group.class_by_name (a_class_name, True)
 
 			if l_cl /= Void then
 				if l_cl.count = 1 then
@@ -232,15 +232,15 @@ feature -- Access
 			end
 		end
 
-	safe_class_named (class_name: STRING; a_group: CONF_GROUP): CLASS_I is
-			-- Class named `class_name' in cluster `a_cluster' which doesn't generate {VSCN} errors.
+	safe_class_named (a_class_name: STRING; a_group: CONF_GROUP): CLASS_I is
+			-- Class named `a_class_name' in cluster `a_cluster' which doesn't generate {VSCN} errors.
 		require
-			good_argument: class_name /= Void
+			good_argument: a_class_name /= Void
 			good_group: a_group /= Void
 		local
 			l_cl: LINKED_SET [CONF_CLASS]
 		do
-			l_cl := a_group.class_by_name (class_name, True)
+			l_cl := a_group.class_by_name (a_class_name, True)
 
 			if l_cl /= Void then
 				if l_cl.count = 1 then
@@ -344,8 +344,24 @@ feature -- Update
 			a_target_not_void: a_target /= Void
 		do
 			new_target := a_target
+			conf_system := a_target.system
 		ensure
 			new_target_set: new_target = a_target
+			conf_system_set: conf_system = a_target.system
+		end
+
+	set_old_target (a_target: like target) is
+			-- Set `target' to `a_target' and reset `new_target'.
+		require
+			a_target_not_void: a_target /= Void
+		do
+			target := a_target
+			new_target := Void
+			conf_system := Void
+		ensure
+			target_set: target = a_target
+			new_target_void: new_target = Void
+			conf_system_void: conf_system = Void
 		end
 
 	new_target_to_target is
@@ -358,16 +374,6 @@ feature -- Update
 		ensure
 			target_set: target /= Void and target = old new_target
 			new_target_void: new_target = Void
-		end
-
-	set_conf_system (a_system: like conf_system) is
-			-- Set `conf_system' to `a_system'.
-		require
-			a_system_not_void: a_system /= Void
-		do
-			conf_system := a_system
-		ensure
-			conf_system_set: conf_system = a_system
 		end
 
 	reset_internals is
@@ -516,6 +522,8 @@ feature {COMPILER_EXPORTER} -- Implementation
 								l_classes.forth
 							end
 						end
+							-- Reflect possible changes to the number of classes.
+						l_count := l_classes.count
 					end
 				end
 				if l_count = 0 then

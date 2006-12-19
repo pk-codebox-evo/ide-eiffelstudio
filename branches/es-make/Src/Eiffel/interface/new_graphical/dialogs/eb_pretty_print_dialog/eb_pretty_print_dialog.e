@@ -216,8 +216,7 @@ feature -- Status setting
 					current_dump_value := l_dv.dump_value
 				end
 			end
-
-			Debugger_manager.Application.status.keep_object (st.object_address)
+			Debugger_manager.application_status.keep_object (st.object_address)
 			retrieve_dump_value
 			refresh
 		end
@@ -226,16 +225,17 @@ feature -- Status setting
 			-- Retrieve `current_dump_value' from `current_object'.
 		require
 			has_current_object: has_object
+			application_is_executing: debugger_manager.application_is_executing
 		do
 			if current_dump_value = Void then
-				current_dump_value := Debugger_manager.Application.dump_value_at_address_with_class (current_object.object_address, current_object.dynamic_class)
+				current_dump_value := Debugger_manager.application.dump_value_at_address_with_class (current_object.object_address, current_object.dynamic_class)
 			end
 		end
 
 	refresh is
 			-- Recompute the displayed text.
 		local
-			l_dlg: EV_WARNING_DIALOG
+			l_dlg: EB_WARNING_DIALOG
 			l_trunc_str: STRING_32
 			l_real_str_length: INTEGER
 			l_length_str: STRING_32
@@ -334,7 +334,7 @@ feature {NONE} -- Event handling
 		local
 			lower, upper: INTEGER
 			valid: BOOLEAN
-			error_dialog: EV_WARNING_DIALOG
+			error_dialog: EB_WARNING_DIALOG
 		do
 			valid := True
 			if lower_slice_field.text.is_integer then

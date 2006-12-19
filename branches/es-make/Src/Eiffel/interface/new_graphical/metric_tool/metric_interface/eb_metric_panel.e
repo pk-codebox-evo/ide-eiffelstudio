@@ -12,67 +12,145 @@ deferred class
 inherit
 	EB_METRIC_SHARED
 
-	QL_OBSERVER
-
 	EV_SHARED_APPLICATION
 
 	EB_METRIC_INTERFACE_PROVIDER
 
 	EB_METRIC_TOOL_INTERFACE
 
+	EB_RECYCLABLE
+
+	EB_METRIC_ACTIONS
+
+feature -- Actions
+
+	on_project_loaded is
+			-- Action to be performed when project loaded
+		deferred
+		end
+
+	on_project_unloaded is
+			-- Action to be performed when project unloaded
+		deferred
+		end
+
+	on_compile_start is
+			-- Action to be performed when Eiffel compilation starts
+		deferred
+		end
+
+	on_compile_stop is
+			-- Action to be performed when Eiffel compilation stops
+		deferred
+		end
+
+	on_metric_evaluation_start (a_data: ANY) is
+			-- Action to be performed when metric evaluation starts
+			-- `a_data' can be the metric tool panel from which metric evaluation starts.
+		deferred
+		end
+
+	on_metric_evaluation_stop (a_data: ANY) is
+			-- Action to be performed when metric evaluation stops
+			-- `a_data' can be the metric tool panel from which metric evaluation stops.
+		deferred
+		end
+
+	on_archive_calculation_start (a_data: ANY) is
+			-- Action to be performed when metric archive calculation starts
+			-- `a_data' can be the metric tool panel from which metric archive calculation starts.
+		deferred
+		end
+
+	on_archive_calculation_stop (a_data: ANY) is
+			-- Action to be performed when metric archive calculation stops
+			-- `a_data' can be the metric tool panel from which metric archive calculation stops.
+		deferred
+		end
+
+	on_metric_loaded is
+			-- Action to be performed when metrics loaded in `metric_manager'
+		deferred
+		end
+
+	on_history_recalculation_start (a_data: ANY) is
+			-- Action to be performed when archive history recalculation starts
+			-- `a_data' can be the metric tool panel from which metric history recalculation starts.
+		deferred
+		end
+
+	on_history_recalculation_stop (a_data: ANY) is
+			-- Action to be performed when archive history recalculation stops
+			-- `a_data' can be the metric tool panel from which metric history recalculation stops.
+		deferred
+		end
+
+	on_metric_sent_to_history (a_archive: EB_METRIC_ARCHIVE_NODE; a_panel: ANY) is
+			-- Action to be performed when metric calculation information contained in `a_archive' has been sent to history
+		require
+			a_archive_attached: a_archive /= Void
+		deferred
+		end
+
+	on_metric_sent_to_history_agent: PROCEDURE [ANY, TUPLE [EB_METRIC_ARCHIVE_NODE, ANY]] is
+			-- Agent of `on_metric_sent_to_history'		
+		do
+			if on_metric_sent_to_history_agent_internal = Void then
+				on_metric_sent_to_history_agent_internal := agent on_metric_sent_to_history
+			end
+			Result := on_metric_sent_to_history_agent_internal
+		end
+
+feature -- Status report
+
+	is_eiffel_compiling: BOOLEAN is
+			-- Is eiffel compiling?
+		do
+			Result := metric_tool.is_eiffel_compiling
+		end
+
+	is_metric_evaluating: BOOLEAN is
+			-- Is metric being evaluated?
+		do
+			Result := metric_tool.is_metric_evaluating
+		end
+
+	is_metric_reloaded: BOOLEAN
+			-- Is metric reloaded, and current panel hasn't updated?
+
+	is_archive_calculating: BOOLEAN is
+			-- Is metric archive being calculated?
+		do
+			Result := metric_tool.is_archive_calculating
+		end
+
+	is_project_loaded: BOOLEAN is
+			-- Is a project loaded?
+		do
+			Result := metric_tool.is_project_loaded
+		end
+
+	is_history_recalculationg_running: BOOLEAN is
+			-- Is history recalculation running?
+		do
+			Result := metric_tool.is_history_recalculation_running
+		end
+
+	last_metric_value_historyed: BOOLEAN is
+			-- Has last calculated metric been sent to history?
+		do
+			Result := metric_tool.last_metric_value_historied
+		end
+
 feature -- Status report
 
 	is_up_to_date: BOOLEAN
 			-- Is current panel up-to-date?
 
-	is_valid_update_request (a_request: INTEGER): BOOLEAN is
-			-- Is `a_request' a valid update request?
-		do
-			Result :=
-				a_request = compilation_start_update_request or
-				a_request = compilation_stop_update_request or
-				a_request = load_metric_update_request
-		end
-
 	is_selected: BOOLEAN
 			-- Is current panel selected?
 
-feature -- Access
-
-	last_update_request: INTEGER
-			-- Type of last update request
-			-- See `compilation_start_update_request' and `compilation_stop_update_request' for more information.
-
-	compilation_start_update_request: INTEGER is 1
-			-- Update request when Eiffel compilation starts
-
-	compilation_stop_update_request: INTEGER is 2
-			-- Update request when Eiffel compilation stops
-
-	load_metric_update_request: INTEGER is 3
-			-- Update request when metric definition is loaded
-
 feature -- Basic operations
-
-	synchronize_when_compile_start is
-			-- Synchronize when Eiffel compilation starts.
-		deferred
-		end
-
-	synchronize_when_compile_stop is
-			-- Synchronize when Eiffel compilation stops.
-		deferred
-		end
-
-	set_last_update_request (a_request: INTEGER) is
-			-- Set `last_update_request' with with `a_request'.
-		require
-			a_request_valid: is_valid_update_request (a_request)
-		do
-			last_update_request := a_request
-		ensure
-			last_update_request_set: last_update_request = a_request
-		end
 
 	set_is_up_to_date (b: BOOLEAN) is
 			-- Set `is_up_to_date' with `b'.
@@ -90,16 +168,49 @@ feature -- Basic operations
 			is_selected_set: is_selected = b
 		end
 
-	set_stone (a_stone: STONE) is
-			-- Notify that `a_stone' has been dropped on Current.
+	set_is_metric_reloaded (b: BOOLEAN) is
+			-- Set `is_metric_loaded' with `b'.
+		do
+			is_metric_reloaded := b
+		ensure
+			is_metric_reloaded_set: is_metric_reloaded = b
+		end
+
+	force_drop_stone (a_stone: STONE) is
+			-- Force to drop `a_stone' in Current panel.
+		require
+			a_stone_attached: a_stone /= Void
 		deferred
+		end
+
+	install_metric_history_agent is
+			-- Install actions related to metric history manipulation.
+		local
+			l_tool: like metric_tool
+		do
+			l_tool := metric_tool
+			if not metric_tool.send_metric_value_in_history_actions.has (on_metric_sent_to_history_agent) then
+				l_tool.send_metric_value_in_history_actions.extend (on_metric_sent_to_history_agent)
+			end
+		end
+
+	uninstall_metric_history_agent is
+			-- Uninstall actions related to metric history manipulation.
+		local
+			l_tool: like metric_tool
+		do
+			l_tool := metric_tool
+			if not l_tool.send_metric_value_in_history_actions.has (on_metric_sent_to_history_agent) then
+				l_tool.send_metric_value_in_history_actions.extend (on_metric_sent_to_history_agent)
+			end
 		end
 
 feature -- Actions
 
 	on_select is
 			-- Action to be performed when current panel is selected
-		deferred
+		do
+			update_ui
 		ensure
 			is_up_to_date: is_up_to_date
 		end
@@ -107,16 +218,22 @@ feature -- Actions
 	on_process_gui (a_item: QL_ITEM) is
 			-- Action to be performed to process gui events
 		do
-			process_events_and_idle
-			if a_item /= Void then
-				display_status_message (metric_names.e_evaluating + a_item.path)
+			ev_application.process_events
+			if not metric_manager.is_exit_requested then
+				if a_item /= Void then
+					display_status_message (metric_names.e_evaluating.as_string_32 + a_item.path)
+				end
+			else
+				metric_manager.terminate_evaluation
 			end
 		end
 
 	on_unit_order_change is
 			-- Action to ber performed when unit order changes
 		do
-			update (Void, Void)
+			set_is_metric_reloaded (True)
+			set_is_up_to_date (False)
+			update_ui
 		end
 
 	on_unit_order_change_agent: PROCEDURE [ANY, TUPLE]
@@ -165,7 +282,9 @@ feature{NONE} -- Implementation
 		require
 			a_msg_attached: a_msg /= Void
 		do
-			metric_tool.development_window.status_bar.display_message (a_msg)
+			if metric_tool /= Void and then metric_tool.development_window /= Void and then metric_tool.development_window.status_bar /= Void then
+				metric_tool.development_window.status_bar.display_message (a_msg)
+			end
 		end
 
 	display_error_message is
@@ -174,7 +293,7 @@ feature{NONE} -- Implementation
 			metric_tool.display_error_message
 		end
 
-	display_message (a_message: STRING) is
+	display_message (a_message: STRING_GENERAL) is
 			-- Display `a_message' in a prompt-out information dialog.
 		require
 			a_message_attached: a_message /= Void
@@ -185,6 +304,16 @@ feature{NONE} -- Implementation
 			l_dialog.set_buttons_and_actions (<<metric_names.t_ok>>, <<agent l_dialog.destroy>>)
 			l_dialog.show_relative_to_window (metric_tool_window)
 		end
+
+	update_ui is
+			-- Update interface
+		deferred
+		ensure
+			ui_updated: is_selected implies is_up_to_date
+		end
+
+	on_metric_sent_to_history_agent_internal: like on_metric_sent_to_history_agent;
+			-- Implementation of `on_metric_sent_to_history_agent'
 
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"

@@ -15,7 +15,8 @@ inherit
 			grid_selected_items,
 			data,
 			recycle_agents,
-			default_ensure_visible_action
+			default_ensure_visible_action,
+			starting_element
 		end
 
 	EVS_GRID_TWO_WAY_SORTING_ORDER
@@ -95,29 +96,6 @@ feature -- Actions
 			end
 		end
 
-	on_show_tooltip_changed is
-			-- Action to be performed when selection status of `show_tooltip_checkbox' changes
-		do
-			if preferences.class_browser_data.is_tooltip_shown /= show_tooltip_checkbox.is_selected then
-				preferences.class_browser_data.show_tooltip_preference.set_value (show_tooltip_checkbox.is_selected)
-			end
-		end
-
-	on_show_tooltip_changed_from_outside is
-			-- Action to be performed when selection status of `show_tooltip_checkbox' changes from outside
-		local
-			l_displayed: BOOLEAN
-		do
-			l_displayed := preferences.class_browser_data.is_tooltip_shown
-			if l_displayed /= show_tooltip_checkbox.is_selected then
-				if l_displayed then
-					show_tooltip_checkbox.enable_select
-				else
-					show_tooltip_checkbox.disable_select
-				end
-			end
-		end
-
 	on_show_feature_from_any_changed_from_outside is
 			-- Action to be performed when selection status of `show_feature_from_any' changes from outside
 		local
@@ -156,18 +134,6 @@ feature -- Actions
 			-- Action to be performed when enter key is pressed
 		do
 			on_expand_all_level
-		end
-
-	collapse_button_pressed_action: PROCEDURE [ANY, TUPLE] is
-			-- Action to be performed when `collapse_button' is pressed
-		do
-			Result := agent on_collapse_one_level
-		end
-
-	expand_button_pressed_action: PROCEDURE [ANY, TUPLE] is
-			-- Action to be performed when `expand_button' is pressed
-		do
-			Result := agent on_expand_one_level
 		end
 
 	on_key_pressed_in_feature_name_list (a_key: EV_KEY) is
@@ -316,14 +282,14 @@ feature -- Status report
 			-- Should tooltip display be vetoed?
 		do
 			Result := show_tooltip_checkbox.is_selected
-		ensure
+		ensure then
 			good_result: Result = show_tooltip_checkbox.is_selected
 		end
 
 	is_displaying_class_any: BOOLEAN is
 			-- Is class any been displayed currently?
 		do
-			Result := start_class /= Void and then start_class.is_compiled and then start_class.class_c.class_id = system.any_id
+			Result := starting_element /= Void and then starting_element.is_compiled and then starting_element.class_c.class_id = system.any_id
 		end
 
 feature -- Access
@@ -428,6 +394,11 @@ feature -- Access
 	rows: DS_ARRAYED_LIST [EB_CLASS_BROWSER_FLAT_ROW]
 			-- Rows for features that are to be displayed
 
+	starting_element: QL_CLASS
+			-- Starting element as root of the tree displayed in current browser.
+			-- This is used when a tree view is to be built. And starting element serves as the root of that tree.
+			-- If `starting_element' is Void, don't build tree.			
+
 feature{NONE} -- Update
 
 	update_view is
@@ -460,6 +431,10 @@ feature{NONE} -- Update
 					disable_force_multi_column_sorting
 					bind_grid
 					enable_auto_sort_order_change
+					if not has_grid_been_binded then
+						set_has_grid_been_binded (True)
+						auto_resize
+					end
 				else
 					component_widget.hide
 					text.show
@@ -470,7 +445,6 @@ feature{NONE} -- Update
 					end
 					text.set_text (l_msg)
 				end
-				auto_resize
 				is_up_to_date := True
 			end
 		end
@@ -833,9 +807,6 @@ feature{NONE} -- Implementation
 			is_up_to_date := False
 			update_view
 		end
-
-	on_show_tooltip_changed_from_outside_agent: PROCEDURE [ANY, TUPLE]
-			-- Agent kept for recycling
 
 	on_show_feature_from_any_changed_from_outside_agent: PROCEDURE [ANY, TUPLE]
 			-- Agent kept for recycling

@@ -17,6 +17,8 @@ inherit
 
 	EB_SHARED_GRAPHICAL_COMMANDS
 
+	EB_SHARED_DEBUGGER_MANAGER
+
 	EB_SHARED_MANAGERS
 
 	SHARED_PLATFORM_CONSTANTS
@@ -108,7 +110,7 @@ feature{NONE}  -- Actions
 		do
 			data_storage.reset_output_byte_count
 			data_storage.reset_error_byte_count
-			eb_debugger_manager.on_compile_start
+			Eb_debugger_manager.on_compile_start
 			window_manager.on_c_compilation_start
 			c_compilation_output_manager.clear
 			if preferences.development_window_data.c_output_panel_prompted then
@@ -258,7 +260,7 @@ feature{NONE} -- Implementation
 		local
 			str: STRING
 
-			dlg: EV_CONFIRMATION_DIALOG
+			dlg: EB_CONFIRMATION_DIALOG
 			actions: ARRAY [PROCEDURE [ANY, TUPLE]]
 			maps: EV_STOCK_PIXMAPS
 		do
@@ -290,7 +292,7 @@ feature{NONE} -- Implementation
 		local
 			str: STRING
 
-			dlg: EV_WARNING_DIALOG
+			dlg: EB_WARNING_DIALOG
 			--actions: ARRAY [PROCEDURE [ANY, TUPLE]]
 			maps: EV_STOCK_PIXMAPS
 		do

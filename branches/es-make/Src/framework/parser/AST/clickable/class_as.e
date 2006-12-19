@@ -422,10 +422,8 @@ feature {EIFFEL_PARSER} -- Element change
 
 feature -- Access
 
-	feature_with_name (n: STRING): FEATURE_AS is
+	feature_with_name (n: INTEGER): FEATURE_AS is
 			-- Feature AST with internal name `n'.
-		require
-			n_not_void: n /= Void
 		local
 			cur: CURSOR
 		do
@@ -458,7 +456,7 @@ feature -- Access
 				until
 					parents.after or else Result /= Void
 				loop
-					pn := parents.item.type.class_name
+					pn := parents.item.type.class_name.name
 					if pn.is_equal (n) then
 						Result := parents.item
 					end

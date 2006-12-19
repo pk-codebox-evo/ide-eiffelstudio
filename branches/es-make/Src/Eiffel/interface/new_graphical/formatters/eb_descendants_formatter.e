@@ -11,7 +11,8 @@ class
 inherit
 	EB_CLASS_HIERARCHY_FORMATTER
 		redefine
-			is_tree_node_highlight_enabled
+			is_tree_node_highlight_enabled,
+			is_inheritance_formatter
 		end
 
 create
@@ -30,7 +31,7 @@ feature -- Properties
 	class_cmd: E_SHOW_DESCENDANTS
 			-- Class command that can generate the information.
 
-	menu_name: STRING is
+	menu_name: STRING_GENERAL is
 			-- Identifier of `Current' in menus.
 		do
 			Result := Interface_names.m_Showdescendants
@@ -39,12 +40,15 @@ feature -- Properties
 	is_tree_node_highlight_enabled: BOOLEAN is True
 			-- Is tree node highlight enabled?
 
+	is_inheritance_formatter: BOOLEAN is True
+			-- Is current a class inheritance (ancestor/descendant) formatter?
+
 feature {NONE} -- Properties
 
-	command_name: STRING is
+	command_name: STRING_GENERAL is
 			-- Name of the command.
 		do
-			Result := Interface_names.l_Descendants
+			Result := Interface_names.string_general_to_lower (interface_names.l_Descendants)
 		end
 
 	post_fix: STRING is "des"
@@ -68,7 +72,7 @@ feature {NONE} -- Implementation
 		do
 			check associated_class /= Void end
 			l_class := query_class_item_from_class_c (associated_class)
-			create {QL_CLASS_DESCENDANT_RELATION_CRI}Result.make (l_class.wrapped_domain, class_descendant_relation)
+			create {QL_CLASS_DESCENDANT_RELATION_CRI}Result.make (l_class.wrapped_domain, {QL_CLASS_DESCENDANT_RELATION_CRI}.descendant_type)
 		end
 
 indexing

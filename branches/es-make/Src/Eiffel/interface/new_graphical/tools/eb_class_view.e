@@ -31,7 +31,8 @@ feature {NONE} -- Initialization
 			formatters: like managed_formatters
 			conv_ct: EB_CLASS_TEXT_FORMATTER
 			l_flat_browser: EB_CLASS_BROWSER_FLAT_VIEW
-			l_tree_browser: EB_CLASS_BROWSER_TREE_VIEW
+			l_inheritance_browser: EB_CLASS_BROWSER_TREE_VIEW
+			l_reference_browser: EB_CLASS_BROWSER_TREE_VIEW
 			l_class_formatter: EB_CLASS_CONTENT_FORMATTER
 			l_drop_actions: EV_PND_ACTION_SEQUENCE
 		do
@@ -39,12 +40,17 @@ feature {NONE} -- Initialization
 			formatters := a_tool.managed_class_formatters
 			create managed_formatters.make (10)
 			create shared_editor.make (a_tool)
+			shared_editor.widget.set_border_width (1)
+			shared_editor.widget.set_background_color ((create {EV_STOCK_COLORS}).gray)
 			create l_drop_actions
 			l_drop_actions.extend (agent drop_stone)
 			create l_flat_browser.make (a_tool, l_drop_actions)
 			l_flat_browser.set_sorting_status (l_flat_browser.sorted_columns_from_string (preferences.class_browser_data.class_flat_view_sorting_order))
-			create l_tree_browser.make (a_tool, l_drop_actions)
-			l_tree_browser.set_sorting_status (l_tree_browser.sorted_columns_from_string (preferences.class_browser_data.class_tree_view_sorting_order))
+			create l_inheritance_browser.make_with_flag (a_tool, l_drop_actions, True)
+			l_inheritance_browser.set_sorting_status (l_inheritance_browser.sorted_columns_from_string (preferences.class_browser_data.class_tree_view_sorting_order))
+			create l_reference_browser.make_with_flag (a_tool, l_drop_actions, False)
+			l_reference_browser.set_sorting_status (l_reference_browser.sorted_columns_from_string (preferences.class_browser_data.class_tree_view_sorting_order))
+			l_reference_browser.retrieve_data_actions.extend (agent refresh)
 			shared_editor.disable_line_numbers
 			shared_editor.drop_actions.extend (agent drop_stone)
 			from
@@ -62,7 +68,11 @@ feature {NONE} -- Initialization
 					if l_class_formatter.is_class_feature_formatter then
 						l_class_formatter.set_browser (l_flat_browser)
 					else
-						l_class_formatter.set_browser (l_tree_browser)
+						if l_class_formatter.is_reference_formatter then
+							l_class_formatter.set_browser (l_reference_browser)
+						elseif l_class_formatter.is_inheritance_formatter then
+							l_class_formatter.set_browser (l_inheritance_browser)
+						end
 					end
 				end
 				managed_formatters.extend (formatters.item)
@@ -264,7 +274,6 @@ feature -- Status setting
 			done: BOOLEAN
 		do
 			if not formatter_container.has (new_widget) then
-
 				l_formatters := managed_formatters
 				l_cursor := l_formatters.cursor
 				from
@@ -282,16 +291,8 @@ feature -- Status setting
 								formatter_tool_bar_area.disable_item_expand (l_class_feature_formatter.browser.control_bar)
 							end
 						end
-						if l_formatters.item.is_editor_formatter then
-							editor_frame.wipe_out
-							outer_container.wipe_out
-							editor_frame.extend (formatter_container)
-							outer_container.extend (editor_frame)
-						else
-							editor_frame.wipe_out
-							outer_container.wipe_out
-							outer_container.extend (formatter_container)
-						end
+						outer_container.wipe_out
+						outer_container.extend (formatter_container)
 						done := True
 					end
 					l_formatters.forth
@@ -393,7 +394,6 @@ feature {NONE} -- Implementation
 		do
 			create widget
 			create outer_container
-			create editor_frame
 			create formatter_container
 			create output_line
 			output_line.align_text_left
@@ -405,7 +405,6 @@ feature {NONE} -- Implementation
 			widget.disable_item_expand (sep)
 			widget.extend (output_line)
 			widget.disable_item_expand (output_line)
-			editor_frame.set_style ({EV_FRAME_CONSTANTS}.Ev_frame_lowered)
 			outer_container.extend (formatter_container)
 			widget.extend (outer_container)
 			output_line.set_text (Interface_names.l_Not_in_system_no_info)
@@ -524,8 +523,6 @@ feature {NONE} -- Implementation
 
 	drop_stone (st: CLASSI_STONE) is
 			-- Set `st' in the stone manager and pop up the feature view if it is a feature stone.
-		require
-			valid_stone: st /= Void
 		local
 			fst: FEATURE_STONE
 		do
@@ -539,11 +536,8 @@ feature {NONE} -- Implementation
 	explorer_parent: EB_EXPLORER_BAR_ITEM
 			-- Explorer bar item that contains `Current'.
 
-	outer_container: EV_CELL
+	outer_container: EV_CELL;
 			-- Container to hold `formatter_container' and `editor_frame' (if current formatter is an editor formatter)
-
-	editor_frame: EV_FRAME;
-			-- Frame as borer of an editor if current formatter is and editor formatter
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

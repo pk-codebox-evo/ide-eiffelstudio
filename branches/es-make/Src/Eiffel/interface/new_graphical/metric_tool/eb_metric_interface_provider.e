@@ -22,9 +22,9 @@ inherit
 
 	SHARED_TEXT_ITEMS
 
-	EB_METRIC_SERVICE
-
 	EB_SHARED_ID_SOLUTION
+
+	EB_DOMAIN_ITEM_UTILITY
 
 feature -- Metric menu
 
@@ -47,7 +47,7 @@ feature -- Metric menu
 			loop
 				l_metric_list := l_metric_table.item (l_unit_list.item.unit)
 				if not l_metric_list.is_empty then
-					create l_submenu.make_with_text (displayed_name (l_unit_list.item.unit.name))
+					create l_submenu.make_with_text (unit_name_table.item (l_unit_list.item.unit))
 					l_submenu.set_pixmap (l_unit_list.item.pixmap)
 					Result.extend (l_submenu)
 					from
@@ -93,14 +93,6 @@ feature -- Metric menu
 		end
 
 feature -- Names
-
-	metric_names: EB_METRIC_NAMES is
-			-- Names used in metric interface
-		once
-			create Result
-		ensure
-			result_attached: Result /= Void
-		end
 
 	unit_list (a_all: BOOLEAN): LIST [TUPLE [unit: QL_METRIC_UNIT; pixmap: EV_PIXMAP]] is
 			-- List of units
@@ -149,17 +141,14 @@ feature -- Names
 			result_attached: Result /= Void
 		end
 
-	displayed_name (a_name: STRING): STRING is
+	displayed_name (a_name: STRING_GENERAL): STRING_GENERAL is
 			-- Displayed name for `a_name'
 		require
 			a_name_attached: a_name /= Void
-		local
-			l_char: CHARACTER
 		do
-			Result := a_name.as_lower
+			Result := string_general_to_lower (a_name)
 			if not a_name.is_empty then
-				l_char := Result.item (1)
-				Result.put (l_char.as_upper, 1)
+				Result := first_character_to_upper_case (Result)
 			end
 		ensure
 			result_attached: Result /= Void
@@ -207,7 +196,7 @@ feature -- Names
 			result_attached: Result /= Void
 		end
 
-	name_of_metric_type (a_type: INTEGER): STRING is
+	name_of_metric_type (a_type: INTEGER): STRING_GENERAL is
 			-- Name of metric type `a_type'
 		require
 			a_type_valid: is_metric_type_valid (a_type)
@@ -282,7 +271,7 @@ feature -- Names
 			end
 		end
 
-	metric_tooltip (a_metric: EB_METRIC; a_go_to_definition: BOOLEAN): STRING is
+	metric_tooltip (a_metric: EB_METRIC; a_go_to_definition: BOOLEAN): STRING_32 is
 			-- Tooltip for `a_metric'.
 			-- If `a_go_to_definition' is True, Add "Go to definition" message.
 		require
@@ -300,7 +289,7 @@ feature -- Names
 					end
 				end
 			else
-				Result.append(l_vadility.out)
+				Result.append (l_vadility.message_with_location)
 			end
 			if a_go_to_definition then
 				if not Result.is_empty then
@@ -312,15 +301,35 @@ feature -- Names
 			result_attached: Result /= Void
 		end
 
+	unit_name_table: HASH_TABLE [STRING_GENERAL, QL_METRIC_UNIT] is
+			-- Interface names for metric unit
+		once
+			create Result.make (12)
+			Result.put (metric_names.l_target_unit, target_unit)
+			Result.put (metric_names.l_group_unit, group_unit)
+			Result.put (metric_names.l_class_unit, class_unit)
+			Result.put (metric_names.l_feature_unit, feature_unit)
+			Result.put (metric_names.l_generic_unit, generic_unit)
+			Result.put (metric_names.l_assertion_unit, assertion_unit)
+			Result.put (metric_names.l_local_unit, local_unit)
+			Result.put (metric_names.l_line_unit, line_unit)
+			Result.put (metric_names.l_compilation_unit, compilation_unit)
+			Result.put (metric_names.l_ratio_unit, ratio_unit)
+			Result.put (metric_names.l_argument_unit, argument_unit)
+			Result.put ("", no_unit)
+	ensure
+			result_attached: Result /= Void
+		end
+
 feature -- Dialog
 
-	show_warning_dialog (a_msg: STRING; a_window: EV_WINDOW) is
+	show_warning_dialog (a_msg: STRING_GENERAL; a_window: EV_WINDOW) is
 			-- Show warning dialog to display `a_msg'.
 		require
 			a_msg_attached: a_msg /= Void
 			a_window_attached: a_window /= Void
 		local
-			l_dialog: EV_WARNING_DIALOG
+			l_dialog: EB_WARNING_DIALOG
 		do
 			create l_dialog.make_with_text (a_msg)
 			l_dialog.show_modal_to_window (a_window)
@@ -328,7 +337,7 @@ feature -- Dialog
 
 feature -- Actions binding
 
-	attach_non_editable_warning_to_text (a_msg: STRING; a_text: EV_TEXT_COMPONENT; a_window: EV_WINDOW) is
+	attach_non_editable_warning_to_text (a_msg: STRING_GENERAL; a_text: EV_TEXT_COMPONENT; a_window: EV_WINDOW) is
 			-- Attach actions to display `a_msg' to `a_text'.
 			-- A warning dialog will be displayed when a key is pressed on `a_text'.
 		require
@@ -341,7 +350,7 @@ feature -- Actions binding
 
 feature -- Feedback dialog
 
-	show_feedback_dialog (a_msg: STRING; a_agent: PROCEDURE [ANY, TUPLE]; a_dialog: EV_INFORMATION_DIALOG; a_window: EV_WINDOW) is
+	show_feedback_dialog (a_msg: STRING_GENERAL; a_agent: PROCEDURE [ANY, TUPLE]; a_dialog: EV_INFORMATION_DIALOG; a_window: EV_WINDOW) is
 			-- Show a feedback information `a_dialog' modal to `a_window' to display information `a_msg'.
 			-- `a_agent' will be added into `on_show_actions' of that dialog.
 		require
@@ -360,65 +369,69 @@ feature -- Feedback dialog
 
 feature -- Domain item
 
-	domain_item_from_stone (a_stone: STONE): EB_METRIC_DOMAIN_ITEM is
-			-- Domain item from `a_stone'
+	metric_domain_item_from_stone (a_stone: STONE): EB_METRIC_DOMAIN_ITEM is
+			-- Metric domain item from `a_stone'
 		require
 			a_stone_attached: a_stone /= Void
 		local
-			l_classi_stone: CLASSI_STONE
-			l_cluster_stone: CLUSTER_STONE
-			l_feature_stone: FEATURE_STONE
-			l_target_stone: TARGET_STONE
-			l_folder: EB_FOLDER
-			done: BOOLEAN
-			l_library: CONF_LIBRARY
-			l_target: CONF_TARGET
+			l_domain_item: EB_DOMAIN_ITEM
 		do
-			l_feature_stone ?= a_stone
-			if l_feature_stone/= Void then
-				create {EB_METRIC_FEATURE_DOMAIN_ITEM} Result.make (id_of_feature (l_feature_stone.e_feature))
-				done := True
-			end
-			if not done then
-				l_classi_stone ?= a_stone
-				if l_classi_stone /= Void then
-					create {EB_METRIC_CLASS_DOMAIN_ITEM} Result.make (id_of_class (l_classi_stone.class_i.config_class))
-					done := True
+			l_domain_item := domain_item_from_stone (a_stone)
+			if l_domain_item /= Void then
+				if l_domain_item.is_feature_item then
+					create {EB_METRIC_FEATURE_DOMAIN_ITEM} Result.make (l_domain_item.id)
+				elseif l_domain_item.is_class_item then
+					create {EB_METRIC_CLASS_DOMAIN_ITEM} Result.make (l_domain_item.id)
+				elseif l_domain_item.is_folder_item then
+					create {EB_METRIC_FOLDER_DOMAIN_ITEM} Result.make (l_domain_item.id)
+				elseif l_domain_item.is_group_item then
+					create {EB_METRIC_GROUP_DOMAIN_ITEM} Result.make (l_domain_item.id)
+				elseif l_domain_item.is_target_item then
+					create {EB_METRIC_TARGET_DOMAIN_ITEM} Result.make (l_domain_item.id)
 				end
 			end
-			if not done then
-				l_cluster_stone ?= a_stone
-				if l_cluster_stone /= Void then
-					if not l_cluster_stone.path.is_empty then
-							-- For a folder
-						create l_folder.make_with_name (l_cluster_stone.cluster_i, l_cluster_stone.path, l_cluster_stone.folder_name)
-						create {EB_METRIC_FOLDER_DOMAIN_ITEM} Result.make (id_of_folder (l_folder))
-					else
-							-- For a group
-						create {EB_METRIC_GROUP_DOMAIN_ITEM} Result.make (id_of_group (l_cluster_stone.group))
-						if l_cluster_stone.group.is_library then
-							l_library ?= l_cluster_stone.group
-							l_target := target_of_id (Result.id)
-							if l_target.system.uuid.is_equal (universe.target.system.uuid) then
-								Result.set_library_target_uuid (l_library.library_target.system.uuid.out)
-							end
-						end
-					end
-				end
-			end
-			if not done then
-				l_target_stone ?= a_stone
-				if l_target_stone /= Void then
-					create {EB_METRIC_TARGET_DOMAIN_ITEM} Result.make (id_of_target (l_target_stone.target))
-				end
-			end
+		end
+
+feature -- Metric editor mode
+
+	readonly_mode: INTEGER is 1
+			-- Read only mode
+			-- This is used for browsing predefined metrics
+
+	new_mode: INTEGER is 2
+			-- New mode
+			-- This is used for define new metrics
+
+	edit_mode: INTEGER is 3
+			-- Edit mode
+			-- This is used for editing existing metrics
+
+	is_mode_valid (a_mode: INTEGER): BOOLEAN is
+			-- Is `a_mode' valid?
+		do
+			Result := a_mode = readonly_mode or a_mode = new_mode or a_mode = edit_mode
 		ensure
-			result_attached: Result /= Void
+			good_result: Result implies (a_mode = readonly_mode or a_mode = new_mode or a_mode = edit_mode)
+		end
+
+feature -- Layout
+
+	center_pixmap_layout (a_item: EV_GRID_LABEL_ITEM; a_layout: EV_GRID_LABEL_ITEM_LAYOUT) is
+			-- Layout to align pixmap of `a_item' in center
+		require
+			a_item_attached: a_item /= Void
+			a_layout_attached: a_layout /= Void
+		local
+			l_pixmap: EV_PIXMAP
+		do
+			l_pixmap := pixmaps.icon_pixmaps.general_tick_icon
+			a_layout.set_pixmap_x ((a_item.width - l_pixmap.width) // 2)
+			a_layout.set_pixmap_y ((a_item.height - l_pixmap.height) // 2)
 		end
 
 feature{NONE} -- Implementation
 
-	on_key_pressed_on_non_editable_text_field (a_key: EV_KEY; a_text: EV_TEXT_COMPONENT; a_msg: STRING; a_window: EV_WINDOW) is
+	on_key_pressed_on_non_editable_text_field (a_key: EV_KEY; a_text: EV_TEXT_COMPONENT; a_msg: STRING_GENERAL; a_window: EV_WINDOW) is
 			-- Action to be performed when `a_key' is pressed
 		require
 			a_key_attached: a_key /= Void
@@ -497,3 +510,4 @@ indexing
 
 
 end
+

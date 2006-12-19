@@ -201,6 +201,22 @@ feature -- Setting
 			related_window_set: tooltip_window.related_window_agent = a_agent
 		end
 
+	force_enter is
+			-- Force `pointer_enter_agent' to be called.
+		do
+			if is_tooltip_enabled then
+				pointer_enter_agent.call ([])
+			end
+		end
+
+	force_leave is
+			-- Force `pointer_leave_agent' to be called.
+		do
+			if is_tooltip_enabled then
+				pointer_leave_agent.call ([])
+			end
+		end
+
 feature{EVS_GENERAL_TOOLTIP_WINDOW} -- Setting
 
 	set_is_pointer_on_tooltip (b: BOOLEAN) is
@@ -268,7 +284,9 @@ feature -- Access
 	veto_tooltip_display_functions: LINKED_LIST [FUNCTION [ANY, TUPLE, BOOLEAN]] is
 			-- Functions used to determine whether or not to display tooltip when other condition
 			-- such as `is_tooltip_enabled', pointer on owner are all satisfied.
-			-- If any function in the list returns True, tooltip display is vetoed.
+			-- A True value returned by a function indicates that tooltip should be displayed,
+			-- a False value indicates that tooltip should not be displayed.
+			-- So if any function in the list returns False, tooltip display is vetoed.
 			-- This is useful for example when you want tooltip to display only when certain keys
 			-- are pressed.
 		do
@@ -300,6 +318,17 @@ feature -- Access
 			Result := tooltip_window.related_window_agent
 		ensure
 			result_set: Result = tooltip_window.related_window_agent
+		end
+
+	before_display_actions: ACTION_SEQUENCE [TUPLE] is
+			-- Actions to be performed just before current tooltip is displayed
+		do
+			if before_display_actions_internal = Void then
+				create before_display_actions_internal
+			end
+			Result := before_display_actions_internal
+		ensure
+			result_attached: Result /= Void
 		end
 
 feature -- Measure
@@ -412,39 +441,34 @@ feature{NONE} -- Tooltip show/hide
 		local
 			l_window: like tooltip_window
 			l_show: BOOLEAN
+			l_need_change_owner: BOOLEAN
 		do
 			l_window := tooltip_window
-			if not is_tooltip_display_vetoed then
-				if not is_my_tooltip then
-					if l_window.has_owner then
-							-- We only display tooltip of current if other's tooltip is not pined.
-						if not l_window.owner.is_tooltip_pined then
-							l_window.detach_owner
-							l_show := True
-						end
-					else
-						l_show := True
+			if not is_my_tooltip then
+				l_need_change_owner := True
+					-- We only display tooltip of current if other's tooltip is not pined.					
+				l_show := l_window.has_owner implies (not l_window.owner.is_tooltip_pined)
+			elseif not is_my_tooltip_displayed then
+				l_show := True
+			end
+			if l_show then
+				if not before_display_actions.is_empty then
+					before_display_actions.call ([])
+				end
+				if not is_tooltip_display_vetoed then
+					if is_tooltip_displayed then
+						l_window.hide_tooltip
 					end
-					if l_show then
-						if is_tooltip_displayed then
-							l_window.hide_tooltip
+					if l_need_change_owner then
+						if l_window.has_owner then
+							l_window.detach_owner
 						end
 						l_window.attach_owner (Current)
 					end
-				elseif not is_my_tooltip_displayed then
-					l_show := True
-				end
-				if l_show then
-						-- Use `veto_tooltip_display_funcitons' to do final tooltip display decision.
 					l_window.show_tooltip (screen.pointer_position.x, screen.pointer_position.y)
 					setup_timer (tooltip_status_check_time, agent hide_tooltip)
 				end
 			end
-		ensure
-			my_tooltip_displayed:
-				-- If not other's pined tooltip is displayed and not vertoed by `veto_tooltip_display_function'
-				-- tooltip should be displayed.
-				-- (not (is_others_tooltip_displayed and then tooltip_window.owner.is_tooltip_pined)) implies is_my_tooltip_displayed
 		end
 
 	hide_tooltip is
@@ -625,6 +649,9 @@ feature{NONE} -- Implementation
 	pointer_leave_agent_internal: like pointer_leave_agent
 			-- Implementation of once per object  `pointer_leave_agent'
 
+	before_display_actions_internal: like before_display_actions
+			-- Implementation of `before_display_actions'
+
 	actual_tooltip_background_color: EV_COLOR is
 			-- Actual border line color used to draw border line
 		do
@@ -670,7 +697,7 @@ feature{NONE} -- Implementation
 				until
 					l_func.after or Result
 				loop
-					Result := l_func.item.item ([])
+					Result := not l_func.item.item ([])
 					l_func.forth
 				end
 				if l_cursor /= Void then

@@ -618,6 +618,20 @@ feature -- Access: file name
 			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
+	language_path: DIRECTORY_NAME is
+			-- Location of the .mo files
+		require
+			is_valid_environment: is_valid_environment
+		once
+			if is_unix_layout then
+				Result := unix_layout_share_path.twin
+				Result.extend_from_array (<< unix_layout_locale_dir, product_version_name >>)
+			else
+				Result := shared_application_path.twin
+				Result.extend_from_array (<<"lang", "mo_files">>)
+			end
+		end
+
 	predefined_metrics_file: FILE_NAME is
 			-- File to store predefined metrics
 		require
@@ -910,7 +924,7 @@ feature -- Environment update
 		do
 			environment.put (a_value, a_var)
 		ensure
-			value_updated: get_environment (a_var).is_equal (a_value)
+			value_updated: get_environment (a_var) /= Void implies get_environment (a_var).is_equal (a_value)
 		end
 
 
@@ -1047,10 +1061,26 @@ feature {NONE} -- Configuration of layout
 			Result_not_void: Result /= Void
 		end
 
+	unix_layout_share_path: DIRECTORY_NAME
+			-- share for the unix layout. e.g. "/usr/share"
+		once
+			create Result.make_from_string ("/usr/share") -- Comment to finde line for replacement UNIX_BASE_PATH
+		ensure
+			Result_not_void: Result /= Void
+		end
+
 	unix_layout_lib_dir: STRING is
 			-- Directory name for lib. e.g. "lib" or "lib64"
 		once
 			create Result.make_from_string ("lib") -- Comment to finde line for replacement UNIX_LIB_NAME
+		ensure
+			Result_not_void: Result /= Void
+		end
+
+	unix_layout_locale_dir: STRING is
+			-- Directory name for lib. e.g. "locale"
+		once
+			create Result.make_from_string ("locale") -- Comment to finde line for replacement UNIX_LIB_NAME
 		ensure
 			Result_not_void: Result /= Void
 		end

@@ -41,6 +41,11 @@ inherit
 
 	EB_SHARED_WINDOW_MANAGER
 
+	EB_CONSTANTS
+		export
+			{NONE} all
+		end
+
 create
 	make
 
@@ -64,9 +69,9 @@ feature {NONE} -- Initialization
 			grid.enable_border
 
 			grid.set_column_count_to (3)
-			grid.column (1).set_title ("Data")
-			grid.column (2).set_title ("Details")
-			grid.column (3).set_title ("Condition")
+			grid.column (1).set_title (interface_names.l_data)
+			grid.column (2).set_title (interface_names.l_details)
+			grid.column (3).set_title (interface_names.l_condition)
 
 			grid.pointer_double_press_actions.force_extend (agent on_row_double_clicked)
 			grid.set_auto_resizing_column (1, True)
@@ -96,7 +101,7 @@ feature {NONE} -- Initialization
 
 			create scmd.make
 			scmd.set_mini_pixmap (pixmaps.mini_pixmaps.general_toogle_icon)
-			scmd.set_tooltip ("Display breakpoints separated by status")
+			scmd.set_tooltip (interface_names.f_display_breakpoints)
 			scmd.enable_sensitive
 			tb := scmd.new_mini_toolbar_item
 			scmd.add_agent (agent toggle_breakpoint_layout_mode (tb))
@@ -126,7 +131,7 @@ feature {NONE} -- Initialization
 			if mini_toolbar = Void then
 				build_mini_toolbar
 			end
-			create {EB_EXPLORER_BAR_ITEM} explorer_bar_item.make_with_mini_toolbar (explorer_bar, widget, title, True, mini_toolbar)
+			create {EB_EXPLORER_BAR_ITEM} explorer_bar_item.make_with_mini_toolbar (explorer_bar, widget, title, title_for_pre, True, mini_toolbar)
 
 			explorer_bar_item.set_menu_name (menu_name)
 			if pixmap /= Void then
@@ -149,13 +154,19 @@ feature -- Access
 	widget: EV_WIDGET
 			-- Widget representing Current.
 
-	title: STRING is
+	title: STRING_GENERAL is
 			-- Title of the tool.
 		do
 			Result := Interface_names.t_Breakpoints_tool
 		end
 
-	menu_name: STRING is
+	title_for_pre: STRING is
+			-- Title for prefence, STRING_8
+		do
+			Result := Interface_names.to_Breakpoints_tool
+		end
+
+	menu_name: STRING_GENERAL is
 			-- Name as it may appear in a menu.
 		do
 			Result := Interface_names.m_Breakpoints_tool
@@ -233,10 +244,8 @@ feature -- Events
 	update is
 			-- Refresh `Current's display.
 		do
-			if Debugger_manager.application_initialized then
-				grid.request_delayed_clean
-				refresh_breakpoints_info
-			end
+			grid.request_delayed_clean
+			refresh_breakpoints_info
 		end
 
 	change_manager_and_explorer_bar (a_manager: EB_TOOL_MANAGER; an_explorer_bar: EB_EXPLORER_BAR) is
@@ -306,9 +315,9 @@ feature {NONE} -- Implementation
 		do
 			breakpoints_separated_by_status := not breakpoints_separated_by_status
 			if breakpoints_separated_by_status then
-				tt.set_tooltip ("Display breakpoints separated by status")
+				tt.set_tooltip (interface_names.f_display_breakpoints_sep_by_status)
 			else
-				tt.set_tooltip ("All breakpoints together")
+				tt.set_tooltip (interface_names.f_all_breakpoint_together)
 			end
 			refresh_breakpoints_info
 		end
@@ -331,7 +340,7 @@ feature {NONE} -- Implementation
 			lab: EV_GRID_LABEL_ITEM
 			f_list: LIST[E_FEATURE]
 			col: EV_COLOR
-			app_exec: APPLICATION_EXECUTION
+			bpm: BREAKPOINTS_MANAGER
 		do
 			if shown then
 				class_color := preferences.editor_data.class_text_color
@@ -339,43 +348,43 @@ feature {NONE} -- Implementation
 				condition_color := preferences.editor_data.string_text_color
 
 				col := preferences.editor_data.comments_text_color
-				app_exec := Debugger_manager.application
+				bpm := Debugger_manager
 				grid.call_delayed_clean
-				if not app_exec.has_breakpoints then
+				if not bpm.has_breakpoints then
 					grid.insert_new_row (1)
-					create lab.make_with_text ("No breakpoints")
+					create lab.make_with_text (interface_names.l_no_break_point)
 					lab.set_foreground_color (col)
 					grid.set_item (1, 1, lab)
 				else
 					if not breakpoints_separated_by_status then
-						if app_exec.has_breakpoints then
-							f_list := app_exec.features_with_breakpoint_set
+						if bpm.has_breakpoints then
+							f_list := bpm.features_with_breakpoint_set
 							insert_bp_features_list (f_list, Void, True, True)
 						end
 					else
-						if app_exec.has_enabled_breakpoints then
+						if bpm.has_enabled_breakpoints then
 							row := grid.extended_new_row
 							row.set_background_color (bg_separator_color)
-							create lab.make_with_text ("Enabled")
+							create lab.make_with_text (interface_names.l_enabled)
 							lab.set_foreground_color (col)
 							row.set_item (1, lab)
 							row.set_item (2, create {EV_GRID_ITEM})
 							row.set_item (3, create {EV_GRID_ITEM})
 
-							f_list := app_exec.features_with_breakpoint_set
+							f_list := bpm.features_with_breakpoint_set
 							insert_bp_features_list (f_list, row, True, False)
 							row.expand
 						end
-						if app_exec.has_disabled_breakpoints then
+						if bpm.has_disabled_breakpoints then
 							row := grid.extended_new_row
 							row.set_background_color (bg_separator_color)
-							create lab.make_with_text ("Disabled")
+							create lab.make_with_text (interface_names.l_disabled)
 							lab.set_foreground_color (col)
 							row.set_item (1, lab)
 							row.set_item (2, create {EV_GRID_ITEM})
 							row.set_item (3, create {EV_GRID_ITEM})
 
-							f_list := app_exec.features_with_breakpoint_set
+							f_list := bpm.features_with_breakpoint_set
 							insert_bp_features_list (f_list, row, False, True)
 							row.expand
 						end
@@ -404,7 +413,7 @@ feature {NONE} -- Impl bp
 			bp_list: LIST [INTEGER]
 			has_bp: BOOLEAN
 			cs: CLASSC_STONE
-			app_exec: APPLICATION_EXECUTION
+			bpm: BREAKPOINTS_MANAGER
 		do
 				--| Prepare data .. mainly sorting
 			from
@@ -425,7 +434,7 @@ feature {NONE} -- Impl bp
 			end
 
 				--| Process insertion
-			app_exec := debugger_manager.application
+			bpm := Debugger_manager
 			from
 				table.start
 				r := 1
@@ -443,11 +452,11 @@ feature {NONE} -- Impl bp
 				loop
 					f := stwl.item
 					if display_enabled and display_disabled then
-						bp_list := app_exec.breakpoints_set_for (f)
+						bp_list := bpm.breakpoints_set_for (f)
 					elseif display_enabled then
-						bp_list := app_exec.breakpoints_enabled_for (f)
+						bp_list := bpm.breakpoints_enabled_for (f)
 					else
-						bp_list := app_exec.breakpoints_disabled_for (f)
+						bp_list := bpm.breakpoints_disabled_for (f)
 					end
 					has_bp := not bp_list.is_empty
 					stwl.forth
@@ -472,7 +481,7 @@ feature {NONE} -- Impl bp
 					sr := 1
 					subrow.set_item (1, lab)
 					subrow.set_item (2, create {EV_GRID_ITEM})
-					subrow.item (2).pointer_button_press_actions.force_extend (agent on_class_item_right_clicked (c, subrow, ?,?,?))
+					subrow.item (2).pointer_button_release_actions.force_extend (agent on_class_item_right_clicked (c, subrow, ?,?,?))
 					subrow.set_item (3, create {EV_GRID_ITEM})
 
 					from
@@ -507,15 +516,15 @@ feature {NONE} -- Impl bp
 			i: INTEGER
 			fs: FEATURE_STONE
 			bp: BREAKPOINT
-			app_exec: APPLICATION_EXECUTION
+			bpm: BREAKPOINTS_MANAGER
 		do
-			app_exec := Debugger_manager.application
+			bpm := Debugger_manager
 			if display_enabled and display_disabled then
-				bp_list := app_exec.breakpoints_set_for (f)
+				bp_list := bpm.breakpoints_set_for (f)
 			elseif display_enabled then
-				bp_list := app_exec.breakpoints_enabled_for (f)
+				bp_list := bpm.breakpoints_enabled_for (f)
 			elseif display_disabled then
-				bp_list := app_exec.breakpoints_disabled_for (f)
+				bp_list := bpm.breakpoints_disabled_for (f)
 			end
 			if not bp_list.is_empty then
 				sr := a_row.subrow_count + 1
@@ -542,35 +551,35 @@ feature {NONE} -- Impl bp
 				loop
 					i := bp_list.item
 
-					if app_exec.is_breakpoint_set (f, i) then
-						bp := app_exec.debug_info.breakpoint (f, i)
+					if bpm.is_breakpoint_set (f, i) then
+						bp := bpm.breakpoint (f, i)
 						if not first_bp then
 							s.append_string (", ")
 						else
 							first_bp := False
 						end
-						create lab.make_with_text ("offset " + i.out)
+						create lab.make_with_text (interface_names.l_offset_is (i.out))
 						create fs.make (f)
 						lab.set_data (fs)
 						subrow.subrow (ir).set_item (1, lab)
 						if bp.is_enabled then
-							create lab.make_with_text (" enabled")
+							create lab.make_with_text (interface_names.l_space_enabled)
 							if bp.has_condition then
 								lab.set_pixmap (breakable_icons.bp_enabled_conditional_icon)
 							else
 								lab.set_pixmap (breakable_icons.bp_enabled_icon)
 							end
 						elseif bp.is_disabled then
-							create lab.make_with_text (" disabled")
+							create lab.make_with_text (interface_names.l_space_disabled)
 							if bp.has_condition then
 								lab.set_pixmap (breakable_icons.bp_disabled_conditional_icon)
 							else
 								lab.set_pixmap (breakable_icons.bp_disabled_icon)
 							end
 						else
-							create lab.make_with_text (" error")
+							create lab.make_with_text (interface_names.l_space_error)
 						end
-						lab.pointer_button_press_actions.force_extend (agent on_line_cell_right_clicked (f, i, lab, ?, ?, ?))
+						lab.pointer_button_release_actions.force_extend (agent on_line_cell_right_clicked (f, i, lab, ?, ?, ?))
 						subrow.subrow (ir).set_item (2, lab)
 
 						s.append_string (i.out)
@@ -592,7 +601,7 @@ feature {NONE} -- Impl bp
 							end
 						end
 					else
-						create lab.make_with_text ("Error with " + f.name + " line " + i.out)
+						create lab.make_with_text (interface_names.l_error_with_line (f.name, i.out))
 						subrow.subrow (ir).set_item (2, lab)
 					end
 					ir := ir + 1
@@ -600,7 +609,7 @@ feature {NONE} -- Impl bp
 				end
 				create lab.make_with_text (s)
 				subrow.set_item (2, lab)
-				lab.pointer_button_press_actions.force_extend (agent on_feature_item_right_clicked (f, subrow, ?,?,?))
+				lab.pointer_button_release_actions.force_extend (agent on_feature_item_right_clicked (f, subrow, ?,?,?))
 				subrow.set_item (3, create {EV_GRID_ITEM})
 				subrow.ensure_expandable
 			end
@@ -629,27 +638,27 @@ feature {NONE} -- Impl bp
 		local
 			m: EV_MENU
 			mi: EV_MENU_ITEM
-			app: APPLICATION_EXECUTION
+			bpm: BREAKPOINTS_MANAGER
 		do
 			grid.remove_selection
 			r.enable_select
 			if button = 3 then
-				app := Debugger_manager.application
+				bpm := Debugger_manager
 				create m
-				create mi.make_with_text ("Add first breakpoints in class" )
-				mi.select_actions.extend (agent app.enable_first_breakpoints_in_class (c))
+				create mi.make_with_text (interface_names.m_add_first_breakpoints_in_class)
+				mi.select_actions.extend (agent bpm.enable_first_breakpoints_in_class (c))
 				mi.select_actions.extend (agent window_manager.synchronize_all_about_breakpoints)
 				m.extend (mi)
 				create mi.make_with_text (Interface_names.m_enable_stop_points)
-				mi.select_actions.extend (agent app.enable_breakpoints_in_class (c))
+				mi.select_actions.extend (agent bpm.enable_breakpoints_in_class (c))
 				mi.select_actions.extend (agent window_manager.synchronize_all_about_breakpoints)
 				m.extend (mi)
 				create mi.make_with_text (Interface_names.m_disable_stop_points)
-				mi.select_actions.extend (agent app.disable_breakpoints_in_class (c))
+				mi.select_actions.extend (agent bpm.disable_breakpoints_in_class (c))
 				mi.select_actions.extend (agent window_manager.synchronize_all_about_breakpoints)
 				m.extend (mi)
 				create mi.make_with_text (Interface_names.m_clear_breakpoints)
-				mi.select_actions.extend (agent app.remove_breakpoints_in_class (c))
+				mi.select_actions.extend (agent bpm.remove_breakpoints_in_class (c))
 				mi.select_actions.extend (agent window_manager.synchronize_all_about_breakpoints)
 				m.extend (mi)
 				m.show
@@ -663,27 +672,27 @@ feature {NONE} -- Impl bp
 		local
 			m: EV_MENU
 			mi: EV_MENU_ITEM
-			app: APPLICATION_EXECUTION
+			bpm: BREAKPOINTS_MANAGER
 		do
 			grid.remove_selection
 			r.enable_select
 			if button = 3 then
-				app := Debugger_manager.application
+				bpm := Debugger_manager
 				create m
-				create mi.make_with_text ("Add first breakpoint in feature" )
-				mi.select_actions.extend (agent app.enable_first_breakpoint_of_feature (f))
+				create mi.make_with_text (interface_names.m_add_first_breakpoints_in_feature)
+				mi.select_actions.extend (agent bpm.enable_first_breakpoint_of_feature (f))
 				mi.select_actions.extend (agent window_manager.synchronize_all_about_breakpoints)
 				m.extend (mi)
 				create mi.make_with_text (Interface_names.m_enable_stop_points)
-				mi.select_actions.extend (agent app.enable_breakpoints_in_feature (f))
+				mi.select_actions.extend (agent bpm.enable_breakpoints_in_feature (f))
 				mi.select_actions.extend (agent window_manager.synchronize_all_about_breakpoints)
 				m.extend (mi)
 				create mi.make_with_text (Interface_names.m_disable_stop_points)
-				mi.select_actions.extend (agent app.disable_breakpoints_in_feature (f))
+				mi.select_actions.extend (agent bpm.disable_breakpoints_in_feature (f))
 				mi.select_actions.extend (agent window_manager.synchronize_all_about_breakpoints)
 				m.extend (mi)
 				create mi.make_with_text (Interface_names.m_clear_breakpoints)
-				mi.select_actions.extend (agent app.remove_breakpoints_in_feature (f))
+				mi.select_actions.extend (agent bpm.remove_breakpoints_in_feature (f))
 				mi.select_actions.extend (agent window_manager.synchronize_all_about_breakpoints)
 
 				m.extend (mi)

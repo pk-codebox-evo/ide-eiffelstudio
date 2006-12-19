@@ -21,6 +21,8 @@ inherit
 
 	EXCEPTIONS
 
+	MEMORY
+
 feature {EV_APPLICATION} -- Initialization
 
 	initialize is
@@ -31,34 +33,122 @@ feature {EV_APPLICATION} -- Initialization
 			f1_key: EV_KEY
 			environment_imp: EV_ENVIRONMENT_IMP
 		do
-				-- We now set the application in EV_ENVIRONMENT.
+				-- Set the application in EV_ENVIRONMENT.
 			environment_imp ?= (create {EV_ENVIRONMENT}).implementation
-			check
-				environment_imp_not_void: environment_imp /= Void
-			end
 			environment_imp.set_application (interface)
+
+				-- Initialize contextual help.
 			create f1_key.make_with_code ({EV_KEY_CONSTANTS}.Key_f1)
 			set_help_accelerator (create {EV_ACCELERATOR}.make_with_key_combination (f1_key, False, False, False))
 			set_contextual_help_accelerator (create {EV_ACCELERATOR}.make_with_key_combination (f1_key, False, False, True))
 			create {EV_SIMPLE_HELP_ENGINE} help_engine
+
+				-- Create and initialize action sequences.
 			create pnd_targets.make (8)
 			create dockable_targets.make (8)
-			create internal_idle_actions
-			create once_idle_actions
-			do_once_idle_actions_agent := agent do_once_idle_actions
+
+				-- Create idle actions as this is called in the event loop.
+			idle_actions.call (Void)
+
+			idle_iteration_count := 1
+				-- Enable `invoke_garbage_collection_when_inactive'.
+			set_invoke_garbage_collection_when_inactive (True)
 			set_is_initialized (True)
 		end
 
-	launch is
-			-- Start the event loop.
+	 launch is
+			-- Call the `post_launch_actions' and start the event loop.
+		do
+			from
+				call_post_launch_actions
+			until
+				is_destroyed
+			loop
+				process_event_queue (True)
+			end
+		end
+
+feature {EV_ANY_I} -- Implementation
+
+	cpu_relinquishment_time: INTEGER is 10
+		-- Number of milliseconds to relinquish CPU when idling.
+
+	idle_iteration_count: NATURAL_32
+		-- Number of iterations that the application has been idle.
+
+	idle_iteration_boundary: NATURAL_32 is 3000
+		-- Number of iterations before forcing Garbage Collector to kick in.
+		-- 30 Seconds = 30 * 1000 / sleep time
+
+	process_event_queue (a_relinquish_cpu: BOOLEAN)
+			-- Process all posted events on the event queue.
+			-- CPU will be relinquished if `a_relinquish_cpu' and idle actions are successfully executed.
+		local
+			l_retry_count: INTEGER
+			l_locked: BOOLEAN
+		do
+			if l_retry_count = 0 then
+				process_underlying_toolkit_event_queue
+					-- There are no more events left so call idle actions if read lock can be attained.
+				if user_events_processed_from_underlying_toolkit then
+						-- If any user events have been processed then we reset the `idle_iteration_count'
+					idle_iteration_count := 1
+				elseif a_relinquish_cpu then
+						-- We only want to increase the count if the event loop is not forced.
+					idle_iteration_count := idle_iteration_count + 1
+					if idle_iteration_count = idle_iteration_boundary then
+							-- We have reached a fully idle/inactive state.
+						if invoke_garbage_collection_when_inactive then
+							full_collect
+							full_coalesce
+						end
+						idle_iteration_count := 1
+					end
+				end
+				if try_lock then
+					l_locked := True
+					idle_actions_internal.call (Void)
+					unlock
+					l_locked := False
+					if a_relinquish_cpu then
+							-- We only relinquish CPU if requested and a lock for the idle actions has been attained.
+						sleep (cpu_relinquishment_time)
+					end
+				end
+			elseif l_retry_count = 1 then
+				on_exception_action (new_exception)
+			else
+				-- We have an exception from the exception handler so are in an unstable state and should exit cleanly.
+			end
+		rescue
+			if l_locked then
+					-- If a crash occurred whilst calling the idle actions then we must unlock the mutex.
+				unlock
+				l_locked := False
+			end
+			l_retry_count := l_retry_count + 1
+			retry
+		end
+
+feature {NONE} -- Implementation
+
+	process_underlying_toolkit_event_queue is
+			-- Process event queue from underlying toolkit.
+			-- `events_process_from_toolkit
 		deferred
 		end
+
+	user_events_processed_from_underlying_toolkit: BOOLEAN
+		-- Were user generated events processed in previous call to `process_underlying_toolkit_event_queue'.
 
 feature {EV_DOCKABLE_SOURCE_I, EV_DOCKABLE_TARGET_I, EV_SHARED_TRANSPORT_I} -- Access
 
 	dockable_targets: ARRAYED_LIST [INTEGER]
 
 feature -- Access
+
+	invoke_garbage_collection_when_inactive: BOOLEAN
+		-- Should garbage collection be invoked when application is inactive.
 
 	pnd_targets: HASH_TABLE [INTEGER, INTEGER]
 			-- Global list of pick and drop target object ids.
@@ -117,6 +207,12 @@ feature -- Access
 
 feature -- Element Change
 
+	set_invoke_garbage_collection_when_inactive (a_enabled: BOOLEAN)
+			-- Set `invoke_garbage_collection_when_inactive' to `a_enabled'.
+		do
+			invoke_garbage_collection_when_inactive := a_enabled
+		end
+
 	set_captured_widget (a_captured_widget: EV_WIDGET) is
 			-- Set `captured_widget' to the widget that has the current capture 'a_capture_widget'.
 		do
@@ -173,17 +269,12 @@ feature -- Element Change
 
 feature -- Basic operation
 
-	relinquish_cpu_slice is
-			-- Give timeslice back to kernel so as to not take all CPU.
-		do
-			sleep (10)
-		end
-
 	process_events is
 			-- Process any pending events.
-			-- Pass control to the GUI toolkit so that it can
-			-- handle any events that may be in its queue.
-		deferred
+			--| Pass control to the GUI toolkit so that it can
+			--| handle any events that may be in its queue.
+		do
+			process_event_queue (False)
 		end
 
 	process_graphical_events is
@@ -195,12 +286,20 @@ feature -- Basic operation
 
 	process_events_until_stopped is
 			-- Process all events until 'stop_processing' is called.
-		deferred
+		do
+			from
+				stop_processing_requested := False
+			until
+				stop_processing_requested or else is_destroyed
+			loop
+				process_event_queue (True)
+			end
 		end
 
 	stop_processing is
 			--  Exit `process_events_until_stopped'.
-		deferred
+		do
+			stop_processing_requested := True
 		end
 
 	sleep (msec: INTEGER) is
@@ -247,8 +346,8 @@ feature -- Basic operation
 			a_idle_action_not_void: a_idle_action /= Void
 		do
 			lock
-			if not idle_actions.has (a_idle_action) then
-				idle_actions.extend (a_idle_action)
+			if not idle_actions_internal.has (a_idle_action) then
+				idle_actions_internal.extend (a_idle_action)
 			end
 			unlock
 		end
@@ -258,9 +357,17 @@ feature -- Basic operation
 			-- Thread safe
 		require
 			a_idle_action_not_void: a_idle_action /= Void
+		local
+			l_cursor: CURSOR
+			l_idle_actions: like idle_actions
 		do
 			lock
-			idle_actions.prune_all (a_idle_action)
+			l_idle_actions := idle_actions_internal
+			l_cursor := l_idle_actions.cursor
+			l_idle_actions.prune_all (a_idle_action)
+			if l_idle_actions.valid_cursor (l_cursor) then
+				l_idle_actions.go_to (l_cursor)
+			end
 			unlock
 		end
 
@@ -281,38 +388,15 @@ feature -- Basic operation
 
 feature -- Events
 
-	internal_idle_actions: EV_NOTIFY_ACTION_SEQUENCE
-			-- Actions to be performed when no events are in queue.
-
-	once_idle_actions: EV_NOTIFY_ACTION_SEQUENCE
-			-- Actions to be preformed once when no events are in queue.
-			-- Wiped out after being called.
-
 	do_once_on_idle (an_action: PROCEDURE [ANY, TUPLE]) is
 			-- Perform `an_action' one time only on idle.
 		do
 			lock
-			once_idle_actions.extend (an_action)
-			if not internal_idle_actions.has (do_once_idle_actions_agent) then
-				internal_idle_actions.extend (do_once_idle_actions_agent)
+			if not idle_actions_internal.has (an_action) then
+				idle_actions_internal.extend_kamikaze (an_action)
 			end
 			unlock
 		end
-
-	do_once_idle_actions is
-			-- Call `once_idle_actions' then wipe it out.
-			-- Remove `do_once_idle_actions_agent' from `internal_idle_actions'.
-		local
-			snapshot: like once_idle_actions
-		do
-			snapshot := once_idle_actions.twin
-			once_idle_actions.wipe_out
-			internal_idle_actions.prune_all (do_once_idle_actions_agent)
-			snapshot.call (Void)
-		end
-
-	do_once_idle_actions_agent: PROCEDURE [EV_APPLICATION_I, TUPLE]
-			-- Agent for `do_once_idle_actions'.
 
 feature -- Event handling
 
@@ -375,16 +459,24 @@ feature -- Implementation
 
 feature {EV_PICK_AND_DROPABLE_IMP} -- Pick and drop
 
-	target_menu (a_pebble: ANY): EV_MENU is
+	target_menu (a_pebble: ANY; a_configure_agent: PROCEDURE [ANY, TUPLE]): EV_MENU is
 			-- Menu of targets that accept `a_pebble'.
 		local
 			cur: CURSOR
 			trg: EV_ABSTRACT_PICK_AND_DROPABLE
-			i: EV_MENU_ITEM
+			l_item: EV_MENU_ITEM
 			targets: like pnd_targets
 			identified: IDENTIFIED
 			sensitive: EV_SENSITIVE
 			l_item_name: STRING_GENERAL
+			l_item_pixmap: EV_PIXMAP
+			l_item_data: EV_PND_TARGET_DATA
+			l_search_tree: BINARY_SEARCH_TREE [PROXY_COMPARABLE [EV_MENU_ITEM]]
+			l_object_comparable: PROXY_COMPARABLE [EV_MENU_ITEM]
+			l_comparator_agent: PREDICATE [ANY, TUPLE [EV_MENU_ITEM, EV_MENU_ITEM]]
+			l_arrayed_list: ARRAYED_LIST [EV_MENU_ITEM]
+			l_alphabetical_sort_agent: PROCEDURE [ANY, TUPLE [PROCEDURE [ANY, TUPLE], BINARY_SEARCH_TREE [PROXY_COMPARABLE [EV_MENU_ITEM]],  ARRAYED_LIST [EV_MENU_ITEM]]]
+			l_configurable_item_added: BOOLEAN
 		do
 			targets := pnd_targets
 			create Result
@@ -392,6 +484,12 @@ feature {EV_PICK_AND_DROPABLE_IMP} -- Pick and drop
 			cur := targets.cursor
 			from
 				targets.start
+					-- Create agent for comparing menu item texts used for alphabetical sorting with PROXY_COMPARABLE.
+				l_comparator_agent :=
+					agent (first_item, second_item: EV_MENU_ITEM): BOOLEAN
+						do
+							Result := first_item.text < second_item.text
+						end
 			until
 				targets.after
 			loop
@@ -402,26 +500,58 @@ feature {EV_PICK_AND_DROPABLE_IMP} -- Pick and drop
 					then
 						sensitive ?= trg
 						if not (sensitive /= Void and not sensitive.is_sensitive) then
-							if trg.target_name_function /= Void then
-								l_item_name := trg.target_name_function.item ([a_pebble])
+							if trg.target_data_function /= Void then
+								l_item_data := trg.target_data_function.item ([a_pebble])
+								if l_item_data /= Void then
+									l_item_name := l_item_data.name
+									l_item_pixmap := l_item_data.pixmap
+								end
 							elseif trg.target_name /= Void then
 								l_item_name := trg.target_name
+								l_item_pixmap := Void
 							else
 								l_item_name := Void
+								l_item_pixmap := Void
 							end
 							if l_item_name /= Void then
-								create i.make_with_text (
-									l_item_name
-								)
-								Result.extend (i)
-								i.select_actions.extend (agent
-									(trg.drop_actions).call ([a_pebble])
-								)
+								if not l_configurable_item_added and then a_configure_agent /= Void then
+									create l_item.make_with_text_and_action ("Revert to Pick", a_configure_agent)
+									Result.extend (l_item)
+									Result.extend (create {EV_MENU_SEPARATOR})
+									l_configurable_item_added := True
+								end
+									-- Add items to a binary search tree for alphabetical sorting.
+								create l_item.make_with_text_and_action (l_item_name, agent (trg.drop_actions).call ([a_pebble]))
+								if l_item_pixmap /= Void then
+									l_item.set_pixmap (l_item_pixmap)
+								end
+								create l_object_comparable.make (l_item, l_comparator_agent)
+								if l_search_tree = Void then
+									create l_search_tree.make (l_object_comparable)
+								else
+									l_search_tree.put (l_object_comparable)
+								end
 							end
 						end
 					end
 				end
 				targets.forth
+			end
+
+			if l_search_tree /= Void then
+					-- Sort items alphabetically using recursive inline agent
+				create l_arrayed_list.make (0)
+				l_alphabetical_sort_agent := agent (l_sort_agent: PROCEDURE [ANY, TUPLE]; a_node: BINARY_SEARCH_TREE [PROXY_COMPARABLE [EV_MENU_ITEM]]; a_list: ARRAYED_LIST [EV_MENU_ITEM])
+					do
+						if a_node /= Void then
+							l_sort_agent.call ([l_sort_agent, a_node.left_child, a_list])
+							a_list.extend (a_node.item.item)
+							l_sort_agent.call ([l_sort_agent, a_node.right_child, a_list])
+						end
+					end
+					-- Call the recursive agent by passing itself in as the first parameter.
+				l_alphabetical_sort_agent.call ([l_alphabetical_sort_agent, l_search_tree, l_arrayed_list])
+				Result.fill (l_arrayed_list)
 			end
 			targets.go_to (cur)
 		end
@@ -464,36 +594,6 @@ feature -- Implementation
 				on_exception_action (new_exception)
 			end
 		rescue
-			retried := True
-			retry
-		end
-
-	call_idle_actions is
-			-- Call idle actions.
-		local
-			retried: BOOLEAN
-			l_locked: BOOLEAN
-		do
-			if not retried then
-					-- Call the opo idle actions only if there are actions available.
-				if try_lock then
-					l_locked := True
-					if not internal_idle_actions.is_empty then
-						internal_idle_actions.call (Void)
-					elseif idle_actions_internal /= Void then
-						idle_actions_internal.call (Void)
-					end
-					unlock
-					l_locked := False
-				end
-			else
-				on_exception_action (new_exception)
-			end
-		rescue
-			if l_locked then
-				unlock
-				l_locked := False
-			end
 			retried := True
 			retry
 		end
@@ -575,7 +675,7 @@ feature -- Implementation
 					l_hbox.disable_item_expand (l_ignore)
 					create l_quit.make_with_text ("Quit")
 					l_quit.set_minimum_width (l_ignore.minimum_width)
-					l_quit.select_actions.extend (agent die (0))
+					l_quit.select_actions.extend (agent destroy)
 					l_hbox.extend (l_quit)
 					l_hbox.disable_item_expand (l_quit)
 					l_hbox.set_border_width (5)
@@ -583,7 +683,6 @@ feature -- Implementation
 					exception_dialog.set_title ("Uncaught Exception: " + an_exception.tag)
 					exception_dialog.set_minimum_height (350)
 					exception_dialog.set_size (500, 300)
-					exception_dialog.show
 					exception_dialog.raise
 						--| FIXME Behavior would be better if dialog has full application modality.
 
@@ -743,12 +842,6 @@ invariant
 	dockable_targets_not_void: is_usable implies dockable_targets /= Void
 	pnd_targets_not_void: is_usable implies pnd_targets /= void
 	windows_not_void: is_usable implies windows /= void
-	internal_idle_actions_not_void: is_usable implies
-		internal_idle_actions /= Void
-	once_idle_actions_not_void: is_usable implies
-		once_idle_actions /= Void
-	do_once_idle_actions_agent: is_usable implies
-		do_once_idle_actions_agent /= Void
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"

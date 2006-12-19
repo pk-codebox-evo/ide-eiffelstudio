@@ -61,13 +61,6 @@ inherit
 			default_create
 		end
 
-	EB_RECYCLABLE
-		undefine
-			is_equal,
-			copy,
-			default_create
-		end
-
 	SHARED_WORKBENCH
 		undefine
 			is_equal,
@@ -87,13 +80,17 @@ feature{NONE} -- Initialization
 		do
 			metric_tool := a_tool
 			on_stop_metric_evaluation_agent := agent on_stop_metric_evaluation
-			on_process_gui_agent := agent on_process_gui
-			create {QL_TARGET_DOMAIN_GENERATOR} domain_generator_internal
 			on_show_percentage_btn_change_from_outside_agent := agent on_show_percentage_btn_change_from_outside
 			on_filter_result_change_from_outside_agent := agent on_filter_result_change_from_outside
 			on_auto_go_to_result_change_from_outside_agent := agent on_auto_go_to_result_change_from_outside
 			on_unit_order_change_agent := agent on_unit_order_change
+			install_agents (metric_tool)
+			install_metric_history_agent
+			on_process_gui_agent := agent on_process_gui
+			create {QL_TARGET_DOMAIN_GENERATOR} domain_generator_internal
 			default_create
+			set_is_metric_reloaded (True)
+			set_is_send_to_history_status_up_to_date (False)
 		ensure
 			metric_tool_set: metric_tool = a_tool
 			domain_generator_internal_attached: domain_generator_internal /= Void
@@ -111,7 +108,10 @@ feature {NONE} -- Initialization
 			-- can be added here.
 		local
 			l_text: EV_TEXT
+			l_font: EV_FONT
 		do
+			unit_lbl.set_text (metric_names.l_unit_colon)
+
 				-- Setup basic metric definition area.
 			create metric_definer.make (metric_tool, Current, new_mode, class_unit)
 			metric_definer.change_actions_internal.extend (agent on_definition_change)
@@ -143,12 +143,8 @@ feature {NONE} -- Initialization
 				-- Setup run tool bar
 			run_metric_btn.set_pixmap (pixmaps.icon_pixmaps.debug_run_icon)
 			run_metric_btn.set_tooltip (metric_names.f_run)
-			run_metric_btn.select_actions.extend (agent on_run_metric (False))
+			run_metric_btn.select_actions.extend (agent on_run_metric)
 			run_metric_btn.disable_sensitive
-
-			run_with_detail_metric_btn.set_pixmap (pixmaps.icon_pixmaps.metric_run_and_show_details_icon)
-			run_with_detail_metric_btn.select_actions.extend (agent on_run_metric (True))
-			run_with_detail_metric_btn.set_tooltip (metric_names.f_show_detailed_result)
 
 			stop_metric_btn.set_pixmap (pixmaps.icon_pixmaps.debug_stop_icon)
 			stop_metric_btn.disable_sensitive
@@ -160,15 +156,17 @@ feature {NONE} -- Initialization
 			go_to_definition_btn.remove_text
 			go_to_definition_btn.set_pixmap (pixmaps.icon_pixmaps.command_go_to_definition_icon)
 			go_to_definition_btn.set_tooltip (metric_names.f_go_to_definition)
-			go_to_definition_btn.disable_sensitive
+			go_to_definition_btn.enable_sensitive
 
 			quick_metric_btn.set_pixmap (pixmaps.icon_pixmaps.metric_quick_icon)
-			on_metric_selected (Void)
-			display_metric
 
 			quick_metric_btn.select_actions.extend (agent on_quick_metric_button_pressed)
 			quick_metric_btn.disable_select
 			quick_metric_btn.set_tooltip (metric_names.f_quick_metric_definition)
+
+			send_to_history_btn.set_pixmap (pixmaps.icon_pixmaps.metric_send_to_archive_icon)
+			send_to_history_btn.set_tooltip (metric_names.f_send_to_history)
+			send_to_history_btn.select_actions.extend (agent on_send_metric_to_history)
 
 			choose_input_domain_lbl.set_text (metric_names.l_select_input_domain)
 			choose_metric_lbl.set_text (metric_names.l_select_metric)
@@ -199,6 +197,10 @@ feature {NONE} -- Initialization
 			metric_definition_empty_area.drop_actions.extend (agent drop_class)
 			metric_definition_empty_area.drop_actions.extend (agent drop_feature)
 
+			create l_font
+			l_font.set_weight ({EV_FONT_CONSTANTS}.weight_bold)
+			metric_value_text.set_font (l_font)
+
 			preferences.metric_tool_data.display_percentage_for_ratio_preference.change_actions.extend (on_show_percentage_btn_change_from_outside_agent)
 			preferences.metric_tool_data.filter_invisible_result_preference.change_actions.extend (on_filter_result_change_from_outside_agent)
 			preferences.metric_tool_data.automatic_go_to_result_panel_preference.change_actions.extend (on_auto_go_to_result_change_from_outside_agent)
@@ -207,17 +209,11 @@ feature {NONE} -- Initialization
 			on_filter_result_change_from_outside
 			on_auto_go_to_result_change_from_outside
 			on_quick_metric_button_pressed
+			percentage_tool_bar.wipe_out
+			send_to_history_btn.disable_sensitive
 		end
 
-feature -- Access
-
-	current_metric: EB_METRIC
-			-- Current selected metric
-
 feature -- Status report
-
-	is_metric_running: BOOLEAN
-			-- Is metric running?
 
 	is_cancel_evaluation_requested: BOOLEAN
 			-- Is cancel metric evaluation requested?
@@ -228,106 +224,114 @@ feature -- Status report
 			Result := quick_metric_btn.is_selected
 		end
 
-	is_current_metric_valid: BOOLEAN is
-			-- Is `current_metric' valid?
-		do
-			if current_metric /= Void then
-				if is_using_quick_metric then
-					metric_vadility_checker.process_metric (current_metric)
-					Result := not metric_vadility_checker.has_error
-				else
-					Result := metric_manager.is_metric_valid (current_metric.name)
-				end
-			end
-		end
-
-	is_compiling: BOOLEAN is
-			-- Is Eiffel compilation under-going?
-		do
-			Result := metric_tool.is_compiling
-		end
-
 	is_stopped_by_eiffel_compilation: BOOLEAN
 			-- Is metric evaluation stopped by Eiffel compilation?
 
 	is_quick_metric_initialized: BOOLEAN
 			-- Is quick metric initialized?
 
+	is_original_starter: BOOLEAN
+			-- Is this panel the original panel in which metric evaluation starts?
+
+	is_last_evaluation_successful: BOOLEAN
+			-- Is last metric evaluation successful?
+			-- Successful means metric evaluation finished, i.e., no termination (either by user or by Eiffel compilation),
+			-- no error occurred.	
+
+	is_send_to_history_status_up_to_date: BOOLEAN
+			-- Is status of `send_to_history_btn' up-to-date?
+
+feature -- Access
+
+	last_input_domain: EB_METRIC_DOMAIN
+			-- Input domain when last metric is evaluated
+
+	last_value: DOUBLE
+			-- Value of last calculated metric
+
+	last_metric: EB_METRIC
+			-- Last calculated metric.
+			-- This exists even if the original metric has been removed from metric definition panel.
+
+	last_calculation_time: DATE_TIME
+			-- Time when last metric calculation started
+
 feature -- Basic operations
 
-	synchronize_when_compile_start is
-			-- Synchronize when Eiffel compilation starts.
+	set_is_original_starter (b: BOOLEAN) is
+			-- Set `is_original_starter' with `b'.
 		do
-			run_metric_btn.disable_sensitive
-			run_with_detail_metric_btn.disable_sensitive
-			stop_metric_btn.disable_sensitive
-			domain_selector.disable_sensitive
-			go_to_definition_btn.disable_sensitive
-			metric_selector.disable_sensitive
-			metric_definer.disable_sensitive
-			unit_combo.disable_sensitive
-			quick_metric_btn.disable_sensitive
-			filter_result_btn.disable_sensitive
+			is_original_starter := b
+		ensure
+			is_original_starter_set: is_original_starter = b
 		end
 
-	synchronize_when_compile_stop is
-			-- Synchronize when Eiffel compilation stops.
+	set_is_stopped_by_eiffel_compilation (b: BOOLEAN) is
+			-- Set `is_stopped_by_eiffel_compilation' with `b'.
 		do
-			quick_metric_btn.enable_sensitive
-			domain_selector.enable_sensitive
-			metric_selector.enable_sensitive
-			filter_result_btn.enable_sensitive
-			if current_metric /= Void then
-				go_to_definition_btn.disable_sensitive
-			else
-				go_to_definition_btn.enable_sensitive
-			end
-			unit_combo.enable_sensitive
-			metric_definer.enable_sensitive
-			stop_metric_btn.disable_sensitive
-			display_metric
+			is_stopped_by_eiffel_compilation := b
+		ensure
+			is_stopped_by_eiffel_compilation_set: is_stopped_by_eiffel_compilation = b
 		end
 
-	synchronize_when_metric_evaluation_start is
-			-- Synchronize when metric evaluation starts.
+	set_is_cancel_evaluation_requested (b: BOOLEAN) is
+			-- Set `is_cancel_evaluation_requested' with `b'.
 		do
-			run_metric_btn.disable_sensitive
-			run_with_detail_metric_btn.disable_sensitive
-			stop_metric_btn.enable_sensitive
-			domain_selector.disable_sensitive
-			go_to_definition_btn.disable_sensitive
-			quick_metric_btn.disable_sensitive
-			metric_value_text.set_text (metric_names.e_evaluating_value)
-			metric_value_text.set_data (Void)
-			unit_combo.disable_sensitive
-			metric_definer.disable_sensitive
-			metric_selector.disable_sensitive
-			filter_result_btn.disable_sensitive
-			metric_tool.disable_tab ({EB_METRIC_TOOL_PANEL}.metric_definition_tab_index)
+			is_cancel_evaluation_requested := b
+		ensure
+			is_cancel_evaluation_requested_set: is_cancel_evaluation_requested = b
 		end
 
-	synchronize_when_metric_evaluation_stop is
-			-- Synchronize when metric evaluation stops.
-		require
-			current_metric_attached: current_metric /= Void
+	set_is_last_evaluation_successful (b: BOOLEAN) is
+			-- Set `is_last_evaluation_successful' with `b'.
 		do
-			domain_selector.enable_sensitive
-			go_to_definition_btn.enable_sensitive
-			run_metric_btn.enable_sensitive
-			stop_metric_btn.disable_sensitive
-			quick_metric_btn.enable_sensitive
-			if current_metric.is_result_domain_available then
-				run_with_detail_metric_btn.enable_sensitive
-			end
-			unit_combo.enable_sensitive
-			metric_definer.enable_sensitive
-			metric_selector.enable_sensitive
-			filter_result_btn.enable_sensitive
-			metric_tool.enable_tab ({EB_METRIC_TOOL_PANEL}.metric_definition_tab_index)
+			is_last_evaluation_successful := b
+		ensure
+			is_last_evaluation_successful_set: is_last_evaluation_successful = b
 		end
 
-	set_stone (a_stone: STONE) is
-			-- Notify that `a_stone' has been dropped on Current.
+	set_last_input_domain (a_domain: like last_input_domain) is
+			-- Set `last_input_domain' with `a_domain'.
+		do
+			last_input_domain := a_domain
+		ensure
+			last_input_domain_set: last_input_domain = a_domain
+		end
+
+	set_last_metric (a_metric: like last_metric) is
+			-- Set `last_metric' with `a_metric'.
+		do
+			last_metric := a_metric
+		ensure
+			last_metric_set: last_metric = a_metric
+		end
+
+	set_last_value (a_value: like last_value) is
+			-- Set `last_value' with `a_value'.
+		do
+			last_value := a_value
+		ensure
+			last_value_set: last_value = a_value
+		end
+
+	set_last_calculation_time (a_time: like last_calculation_time) is
+			-- Set `last_calculation_time' with `a_time'.
+		do
+			last_calculation_time := a_time
+		ensure
+			last_calculation_time_set: last_calculation_time = a_time
+		end
+
+	set_is_send_to_history_status_up_to_date (b: BOOLEAN) is
+			-- Set `is_send_to_history_status_up_to_date' with `b'.
+		do
+			is_send_to_history_status_up_to_date := b
+		ensure
+			is_send_to_history_status_up_to_date_set: is_send_to_history_status_up_to_date = b
+		end
+
+	force_drop_stone (a_stone: STONE) is
+			-- Force to drop `a_stone' in `domain_selector'.
 		do
 			domain_selector.on_drop (a_stone)
 		end
@@ -337,50 +341,40 @@ feature -- Actions
 	on_metric_selected (a_metric: EB_METRIC) is
 			-- Action to be performed when a metric is selected in `metric_selector'
 		do
-			current_metric := a_metric
-			display_metric
-			if a_metric /= Void and then a_metric.is_ratio then
-				if show_percent_btn.data = Void then
-					if not show_percent_btn.is_selected then
-						show_percent_btn.enable_select
-					end
-					show_percent_btn.set_data (True)
-				end
-				show_percent_btn.enable_sensitive
-			else
-				show_percent_btn.disable_sensitive
-			end
+			set_is_up_to_date (False)
+			update_ui
 		end
 
-	on_run_metric (a_detailed: BOOLEAN) is
+	on_run_metric is
 			-- Action to be performed when run a metric			
 			-- If `a_detailed' is True, record detailed result when calculating `current_metric'.
 		require
-			current_metric_attached: current_metric /= Void
-			current_metric_is_valid: is_current_metric_valid
+			is_runnable: is_metric_runnable
 		local
 			l_retried: BOOLEAN
 			l_value: DOUBLE
 			l_value_text: STRING
 			l_metric_basic: EB_METRIC_BASIC
-			l_metric: like current_metric
+			l_metric: like current_selected_metric
+			l_input_domain: EB_METRIC_DOMAIN
 		do
 			if not l_retried then
-				synchronize_when_metric_evaluation_start
+				set_is_last_evaluation_successful (False)
+				l_metric := current_selected_metric
+				l_input_domain := domain_selector.domain
+				set_last_input_domain (l_input_domain)
+				set_last_metric (l_metric)
+				set_last_calculation_time (create {DATE_TIME}.make_now)
+				metric_manager.on_metric_evaluation_starts (Current)
 				setup_evaluation_environment (True)
-
-				is_cancel_evaluation_requested := False
-				is_metric_running := True
-				is_stopped_by_eiffel_compilation := False
-
-				l_metric := current_metric.twin
 				if filter_result_btn.is_selected then
 					l_metric.enable_filter_result
 				else
 					l_metric.disable_filter_result
 				end
+
 					-- Setup metric evaluator.
-				if a_detailed then
+				if l_metric.is_basic then
 					l_metric.enable_fill_domain
 						-- Special setting for metric of line unit.
 					if l_metric.is_basic and then l_metric.unit = line_unit then
@@ -393,33 +387,30 @@ feature -- Actions
 					l_metric.disable_fill_domain
 				end
 
-				l_value := l_metric.value (domain_selector.domain).first.value
+				l_value := l_metric.value (l_input_domain).first.value
+				set_last_value (l_value)
+				set_is_last_evaluation_successful (True)
 				display_status_message ("")
-				is_metric_running := False
 				metric_value_text.set_data (l_value)
 				l_value_text := metric_value (l_value, show_percent_btn.is_sensitive and then show_percent_btn.is_selected)
 				metric_value_text.set_text (l_value_text)
 				if l_metric.is_fill_domain_enabled then
-					metric_tool.register_metric_result_for_display (l_metric, domain_selector.domain, l_value, l_metric.last_result_domain)
+					metric_tool.register_metric_result_for_display (l_metric, l_input_domain, l_value, l_metric.last_result_domain, last_calculation_time, False)
 				else
-					metric_tool.register_metric_result_for_display (l_metric, domain_selector.domain, l_value, Void)
-				end
-				if auto_go_to_result_btn.is_selected then
-					metric_tool.go_to_result
+					metric_tool.register_metric_result_for_display (l_metric, l_input_domain, l_value, Void, last_calculation_time, False)
 				end
 			end
 			setup_evaluation_environment (False)
-			if is_compiling then
-				synchronize_when_compile_start
-			else
-				synchronize_when_metric_evaluation_stop
+			metric_manager.on_metric_evaluation_stops (Current)
+			if is_last_evaluation_successful and then auto_go_to_result_btn.is_selected then
+				metric_tool.go_to_result
 			end
 		rescue
 			l_retried := True
 			display_status
 			metric_value_text.set_text (metric_names.e_undefined_value)
 			setup_evaluation_environment (False)
-			is_metric_running := False
+			metric_manager.on_metric_evaluation_stops (Current)
 			retry
 		end
 
@@ -441,49 +432,15 @@ feature -- Actions
 			is_cancel_evaluation_requested := True
 		end
 
-	on_select is
-			-- Action to be performed when current is selected
-		do
-			if not is_selected then
-				set_is_selected (True)
-			end
-			if not is_up_to_date then
-					-- Synchronize metric selector.
-				metric_selector.load_metrics (True)
-				metric_selector.try_to_selected_last_metric
-				if metric_selector.last_selected_metric = Void then
-					metric_selector.select_first_metric
-				end
-				if is_using_quick_metric then
-					on_metric_selected (quick_metric (Void, False))
-				else
-					current_metric := metric_selector.selected_metric
-				end
-					-- Synchronize domain selector.
-				domain_selector.refresh
-
-				if last_update_request = compilation_start_update_request then
-					synchronize_when_compile_start
-						-- This is an update when Eiffel compilation starts.
-						-- Terminate metric evaluation.					
-					if is_metric_running then
-						is_stopped_by_eiffel_compilation := True
-						on_stop_metric_evaluation_button_pressed
-					end
-				elseif last_update_request = compilation_stop_update_request then
-						-- This is an update when Eiffel compilation stops.
-					synchronize_when_compile_stop
-				end
-				set_is_up_to_date (True)
-			end
-		end
-
 	on_go_to_definition_button_pressed is
 			-- Action to be performed when "Go to definition" button is pressed
+		local
+			l_current_metric: like current_selected_metric
 		do
+			l_current_metric := current_selected_metric
 			if is_using_quick_metric then
-				if current_metric /= Void then
-					metric_tool.go_to_definition (current_metric, True)
+				if l_current_metric /= Void then
+					metric_tool.go_to_definition (l_current_metric, True)
 					uuid_internal := Void
 				end
 			else
@@ -534,9 +491,6 @@ feature -- Actions
 				metric_selection_area.hide
 			else
 				metric_selector.try_to_selected_last_metric
-				if metric_selector.last_selected_metric /= Void then
-					on_metric_selected (metric_manager.metric_with_name (metric_selector.last_selected_metric))
-				end
 				metric_definition_area.hide
 				metric_selection_area.show
 			end
@@ -553,7 +507,8 @@ feature -- Actions
 	on_domain_change (a_domain: EB_METRIC_DOMAIN) is
 			-- Action to be performed when domain in `domain_selector' changes
 		do
-			display_metric
+			set_is_up_to_date (False)
+			update_ui
 		end
 
 	on_show_percentage_btn_change is
@@ -598,7 +553,7 @@ feature -- Actions
 	on_filter_result_change_from_outside is
 			-- Action to be performed when selection status of `filter_result_btn' changes from preferences setting window
 		local
-			l_btn: like show_percent_btn
+			l_btn: like filter_result_btn
 		do
 			l_btn := filter_result_btn
 			if preferences.metric_tool_data.is_invisible_result_filtered then
@@ -632,9 +587,30 @@ feature -- Actions
 			end
 		end
 
+	on_send_metric_to_history is
+			-- Action to be performed to send last calculated metric to history
+		local
+
+		do
+			check
+				last_metric /= Void
+				last_input_domain /= Void
+				last_calculation_time /= Void
+			end
+			metric_tool.on_send_metric_value_in_history (
+				create {EB_METRIC_ARCHIVE_NODE}.make (last_metric.name, metric_type_id (last_metric), last_calculation_time, last_value, last_input_domain, uuid_gen.generate_uuid.out),
+				Current
+			)
+		end
+
+	on_metric_renamed (a_old_name, a_new_name: STRING) is
+			-- Action to be performed when a metric with `a_old_name' has been renamed to `a_new_name'.
+		do
+		end
+
 feature {NONE} -- Implementation
 
-	quick_metric (a_criterion: EB_METRIC_CRITERION; a_appliable: BOOLEAN): like current_metric is
+	quick_metric (a_criterion: EB_METRIC_CRITERION; a_appliable: BOOLEAN): like current_selected_metric is
 			-- Metric defined in quick metric panel
 			-- If `a_appliable' is True, use `a_criterion' as default criterion for the metric,
 			-- otherwise, read criterion directly from `metric_definer'.
@@ -703,42 +679,6 @@ feature {NONE} -- Implementation
 	on_process_gui_agent: PROCEDURE [ANY, TUPLE [a_item: QL_ITEM]]
 			-- Agent of `process_gui'
 
-feature -- Metric management
-
-	display_metric is
-			-- Display information of `a_metric' in panel.
-		local
-			l_is_valid: BOOLEAN
-			l_metric: like current_metric
-		do
-			l_metric := current_metric
-			if l_metric /= Void then
-				if is_using_quick_metric then
-					metric_vadility_checker.process_metric (l_metric)
-					l_is_valid := not metric_vadility_checker.has_error
-				else
-					l_is_valid := metric_manager.is_metric_valid (l_metric.name)
-				end
-				l_is_valid := l_is_valid and domain_selector.domain.is_valid
-				if l_is_valid then
-					run_metric_btn.enable_sensitive
-					if l_metric.is_result_domain_available then
-						run_with_detail_metric_btn.enable_sensitive
-					else
-						run_with_detail_metric_btn.disable_sensitive
-					end
-				else
-					run_metric_btn.disable_sensitive
-					run_with_detail_metric_btn.disable_sensitive
-				end
-				go_to_definition_btn.enable_sensitive
-			else
-				run_metric_btn.disable_sensitive
-				run_with_detail_metric_btn.disable_sensitive
-				go_to_definition_btn.disable_sensitive
-			end
-		end
-
 	refresh_metric_text (a_percentage: BOOLEAN) is
 			-- Refresh text displayed in metric value text field.
 			-- If `a_percentage' is True, display text in percentage.
@@ -750,8 +690,6 @@ feature -- Metric management
 				metric_value_text.set_text (metric_value (l_double, a_percentage))
 			end
 		end
-
-feature{NONE} -- Implementation
 
 	initialize_unit is
 			-- Initialize `unit_combo'.
@@ -765,7 +703,7 @@ feature{NONE} -- Implementation
 			until
 				l_unit_list.after
 			loop
-				create l_list_item.make_with_text (displayed_name (l_unit_list.item.unit.name))
+				create l_list_item.make_with_text (unit_name_table.item (l_unit_list.item.unit))
 				l_list_item.set_data (l_unit_list.item.unit)
 				l_list_item.set_pixmap (l_unit_list.item.pixmap)
 				unit_combo.extend (l_list_item)
@@ -777,7 +715,7 @@ feature{NONE} -- Implementation
 	domain_generator_internal: QL_DOMAIN_GENERATOR
 			-- Domain generator used to setup metric evaluation
 
-	stop_metric_evaluation (a_msg: STRING) is
+	stop_metric_evaluation (a_msg: STRING_GENERAL) is
 			-- Stop metric evaluation.
 			-- `a_msg' contains reason for the stoppage.
 		require
@@ -786,7 +724,6 @@ feature{NONE} -- Implementation
 			l_domain_generator: like domain_generator_internal
 		do
 			domain_generator_internal.error_handler.insert_interrupt_error (a_msg)
-			is_metric_running := False
 			is_cancel_evaluation_requested := False
 		rescue
 			l_domain_generator := domain_generator_internal
@@ -834,29 +771,12 @@ feature{NONE} -- Implementation
 	on_auto_go_to_result_change_from_outside_agent: PROCEDURE [ANY, TUPLE]
 			-- Agent of `on_auto_to_result_change_from_outside'
 
-feature{NONE} -- Notification
-
-	update (a_observable: QL_OBSERVABLE; a_data: ANY) is
-			-- Notification from `a_observable' indicating that `a_data' changed.
-			-- In case that `a_data' is a BOOLEAN object, it is True indicates Eiffel compilation starts,
-			-- otherwise indicates Eiffel compilation stops.
-		local
-			l_data: BOOLEAN_REF
+	on_metric_sent_to_history (a_archive: EB_METRIC_ARCHIVE_NODE; a_panel: ANY) is
+			-- Action to be performed when metric calculation information contained in `a_archive' has been sent to history
 		do
 			set_is_up_to_date (False)
-			if a_data /= Void then
-				l_data ?= a_data
-				check l_data /= Void end
-				if l_data.item then
-					set_last_update_request (compilation_start_update_request)
-				else
-						-- This is an update when Eiffel compilation stops.
-					set_last_update_request (compilation_stop_update_request)
-				end
-			end
-			if is_selected then
-				on_select
-			end
+			set_is_send_to_history_status_up_to_date (False)
+			update_ui
 		end
 
 feature {NONE} -- Recycle
@@ -871,12 +791,248 @@ feature {NONE} -- Recycle
 			on_show_percentage_btn_change_from_outside
 			on_filter_result_change_from_outside
 			on_auto_go_to_result_change_from_outside
+			uninstall_agents (metric_tool)
+			uninstall_metric_history_agent
+		end
+
+feature{NONE} -- Actions
+
+	on_project_loaded is
+			-- Action to be performed when project loaded
+		do
+			set_is_up_to_date (False)
+			update_ui
+		end
+
+	on_project_unloaded is
+			-- Action to be performed when project unloaded
+		do
+			set_is_up_to_date (False)
+			update_ui
+		end
+
+	on_compile_start is
+			-- Action to be performed when Eiffel compilation starts
+		do
+			if is_metric_evaluating then
+				set_is_stopped_by_eiffel_compilation (True)
+				on_stop_metric_evaluation_button_pressed
+				metric_manager.on_metric_evaluation_stops (Current)
+			end
+			set_is_up_to_date (False)
+			update_ui
+		end
+
+	on_compile_stop is
+			-- Action to be performed when Eiffel compilation stops
+		do
+			set_is_up_to_date (False)
+			set_is_metric_reloaded (True)
+			update_ui
+		end
+
+	on_metric_evaluation_start (a_data: ANY) is
+			-- Action to be performed when metric evaluation starts
+			-- `a_data' can be the metric tool panel from which metric evaluation starts.
+		local
+			l_panel: like Current
+		do
+			l_panel ?= a_data
+			set_is_original_starter (l_panel /= Void and then (l_panel = Current))
+			set_is_stopped_by_eiffel_compilation (False)
+			set_is_cancel_evaluation_requested (False)
+			set_is_up_to_date (False)
+			update_ui
+		end
+
+	on_metric_evaluation_stop (a_data: ANY) is
+			-- Action to be performed when metric evaluation stops
+			-- `a_data' can be the metric tool panel from which metric evaluation stops.
+		local
+			l_panel: like Current
+		do
+			set_is_up_to_date (False)
+			l_panel ?= a_data
+			set_is_send_to_history_status_up_to_date (not (l_panel /= Void and then l_panel = Current))
+			update_ui
+		end
+
+	on_archive_calculation_start (a_data: ANY) is
+			-- Action to be performed when metric archive calculation starts
+			-- `a_data' can be the metric tool panel from which metric archive calculation starts.
+		do
+			set_is_up_to_date (False)
+			update_ui
+		end
+
+	on_archive_calculation_stop (a_data: ANY) is
+			-- Action to be performed when metric archive calculation stops
+			-- `a_data' can be the metric tool panel from which metric archive calculation stops.
+		do
+			set_is_up_to_date (False)
+			update_ui
+		end
+
+	on_metric_loaded is
+			-- Action to be performed when metrics loaded in `metric_manager'
+		do
+			set_is_metric_reloaded (True)
+			set_is_up_to_date (False)
+			update_ui
+		end
+
+	on_history_recalculation_start (a_data: ANY) is
+			-- Action to be performed when archive history recalculation starts
+			-- `a_data' can be the metric tool panel from which metric history recalculation starts.
+		do
+			set_is_up_to_date (False)
+			update_ui
+		end
+
+	on_history_recalculation_stop (a_data: ANY) is
+			-- Action to be performed when archive history recalculation stops
+			-- `a_data' can be the metric tool panel from which metric history recalculation stops.
+		do
+			set_is_up_to_date (False)
+			update_ui
+		end
+
+feature-- UI Update
+
+	current_selected_metric: EB_METRIC is
+			-- Current selected metric
+			-- Either a selected metric in `metric_selector' or current quick metric.
+			-- Void if no selected metric is available.
+		do
+			if is_using_quick_metric then
+				Result := quick_metric (Void, False)
+			else
+				Result := metric_selector.selected_metric
+			end
+		end
+
+	is_selected_metric_valid: BOOLEAN is
+			-- Is current selected metric valid?
+		local
+			l_metric: like current_selected_metric
+		do
+			l_metric := current_selected_metric
+			if l_metric /= Void then
+				if is_using_quick_metric then
+					metric_vadility_checker.process_metric (l_metric)
+					Result := not metric_vadility_checker.has_error
+				else
+					Result := metric_manager.is_metric_valid (l_metric.name)
+				end
+			end
+		end
+
+	is_selected_input_domain_valid: BOOLEAN is
+			-- Is currently selected input domain in `domain_selector' is valid?
+		do
+			Result := domain_selector.domain.is_valid
+		end
+
+	is_metric_runnable: BOOLEAN is
+			-- Is metric runnable?
+		do
+			Result := is_selected_metric_valid and then is_selected_input_domain_valid
+		end
+
+	update_ui is
+			-- Update interface
+		local
+			l_metric: like current_selected_metric
+		do
+			if is_selected and then not is_up_to_date then
+				if is_eiffel_compiling or is_archive_calculating or is_history_recalculationg_running or not is_project_loaded then
+						-- If no project loaded or eiffel compilation or archive calculation is undergoing, disable current panel
+					disable_sensitive
+				else
+					enable_sensitive
+					if is_metric_evaluating then
+							-- When metric evaluation is undergoing.
+						quick_metric_btn.disable_sensitive
+						filter_result_btn.disable_sensitive
+						run_metric_btn.disable_sensitive
+						auto_go_to_result_btn.disable_sensitive
+						metric_definition_area.disable_sensitive
+						metric_selection_area.disable_sensitive
+						domain_selector.disable_sensitive
+						if is_original_starter then
+							stop_metric_btn.enable_sensitive
+							metric_value_text.set_text (metric_names.e_evaluating_value)
+						else
+							stop_metric_btn.disable_sensitive
+						end
+					else
+						metric_tool.load_metrics (False, metric_names.t_loading_metrics)
+						if not metric_tool.is_metric_validation_checked.item then
+							metric_tool.check_metric_validation
+						end
+						if is_metric_reloaded then
+							set_is_metric_reloaded (False)
+							metric_selector.load_metrics (True)
+							metric_selector.try_to_selected_last_metric
+							if metric_selector.last_selected_metric = Void then
+								metric_selector.select_first_metric
+							end
+						end
+						quick_metric_btn.enable_sensitive
+						filter_result_btn.enable_sensitive
+						auto_go_to_result_btn.enable_sensitive
+						domain_selector.enable_sensitive
+						domain_selector.block_domain_change_actions
+						domain_selector.refresh
+						domain_selector.resume_domain_change_actions
+						metric_selection_area.enable_sensitive
+						metric_definition_area.enable_sensitive
+						stop_metric_btn.disable_sensitive
+
+						l_metric := current_selected_metric
+						if l_metric /= Void and then l_metric.is_ratio then
+							if show_percent_btn.data = Void then
+								if not show_percent_btn.is_selected then
+									show_percent_btn.enable_select
+								end
+								show_percent_btn.set_data (True)
+							end
+							if percentage_tool_bar.is_empty then
+								percentage_tool_bar.extend (show_percent_btn)
+							end
+							show_percent_btn.enable_sensitive
+						else
+							show_percent_btn.disable_sensitive
+							percentage_tool_bar.wipe_out
+						end
+
+						if is_metric_runnable then
+							run_metric_btn.enable_sensitive
+						else
+							run_metric_btn.disable_sensitive
+						end
+						if not is_send_to_history_status_up_to_date then
+							if is_original_starter and then (is_last_evaluation_successful and then not last_metric_value_historyed) then
+								send_to_history_btn.enable_sensitive
+							else
+								send_to_history_btn.disable_sensitive
+							end
+							set_is_send_to_history_status_up_to_date (True)
+						end
+					end
+				end
+				set_is_up_to_date (True)
+			end
 		end
 
 invariant
 	metric_tool_attached: metric_tool /= Void
 	domain_generator_internal_attached: domain_generator_internal /= Void
 	on_stop_metric_evaluation_agent_attached: on_stop_metric_evaluation_agent /= Void
+	on_filter_result_change_from_outside_agent_attached: on_filter_result_change_from_outside_agent /= Void
+	on_auto_go_to_result_change_from_outside_agent_attached: on_auto_go_to_result_change_from_outside_agent /= Void
+	on_unit_order_change_agent_attached: on_unit_order_change_agent /= Void
+	on_show_percentage_btn_change_from_outside_agent_attached: on_show_percentage_btn_change_from_outside_agent /= Void
 	on_process_gui_agent_attached: on_process_gui_agent /= Void
 
 indexing

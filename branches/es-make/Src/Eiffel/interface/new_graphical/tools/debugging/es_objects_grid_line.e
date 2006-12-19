@@ -33,14 +33,7 @@ inherit
 			is_equal, copy, default_create
 		end
 
-	SHARED_DEBUG
-		export
-			{NONE} all
-		undefine
-			is_equal, copy, default_create
-		end
-
-	SHARED_APPLICATION_EXECUTION
+	SHARED_DEBUGGED_OBJECT_MANAGER
 		export
 			{NONE} all
 		undefine
@@ -77,6 +70,16 @@ inherit
 			default_create, copy, is_equal
 		end
 
+	EB_PIXMAPABLE_ITEM_PIXMAP_FACTORY
+		undefine
+			default_create, copy, is_equal
+		end
+
+	EB_SHARED_WRITER
+		undefine
+			default_create, copy, is_equal
+		end
+
 feature {NONE} -- Initialization
 
 	make_with_grid (g: like parent_grid) is
@@ -87,7 +90,7 @@ feature {NONE} -- Initialization
 			display_attributes := True
 			display_onces := False
 
-			set_object_spec_slices (min_slice_ref.item, max_slice_ref.item)
+			set_object_spec_slices (debugger_manager.min_slice, debugger_manager.max_slice)
 
 			create compute_grid_row_completed_action
 			parent_grid := g
@@ -218,6 +221,15 @@ feature -- Status
 			Result := row /= Void
 		end
 
+feature {NONE} -- Helpers
+
+	is_valid_object_address (addr: STRING): BOOLEAN is
+		require
+			application_is_executing: debugger_manager.application_is_executing
+		do
+			Result := debugger_manager.application.is_valid_object_address (addr)
+		end
+
 feature -- Properties
 
 	row: EV_GRID_ROW
@@ -298,6 +310,8 @@ feature -- Query
 		end
 
 	associated_dump_value: DUMP_VALUE is
+		require
+			application_is_executing: debugger_manager.application_is_executing
 		deferred
 		end
 
@@ -468,7 +482,7 @@ feature -- Graphical changes
 	computed_grid_item (c: INTEGER): EV_GRID_ITEM is
 		do
 			if not compute_grid_display_done then
-				if application.is_running and then application.is_stopped then
+				if debugger_manager.safe_application_is_stopped then
 					compute_grid_row
 				else
 --					set_name (object_name)
@@ -482,7 +496,7 @@ feature -- Graphical changes
 				end
 			end
 		ensure
-			result_not_void_if_stopped: (application.is_running and then application.is_stopped) implies Result /= Void
+			result_not_void_if_stopped: (debugger_manager.safe_application_is_stopped ) implies Result /= Void
 		end
 
 	compute_grid_row is
@@ -546,7 +560,7 @@ feature -- Graphical changes
 			grid_cell_set_text (glab, v)
 		end
 
-	set_type (v: STRING) is
+	set_type (v: STRING_GENERAL) is
 		require
 			is_attached_to_row: is_attached_to_row
 		local
@@ -588,7 +602,7 @@ feature -- Graphical changes
 			grid_cell_set_text (glab, v)
 		end
 
-	set_context (v: STRING) is
+	set_context (v: STRING_GENERAL) is
 		local
 			glab: EV_GRID_LABEL_ITEM
 		do
@@ -932,7 +946,7 @@ feature {NONE} -- Filling
 				if
 					dcl /= Void
 					and then Eb_debugger_manager.display_agent_details
-					and then dcl.conform_to (Application.Eiffel_system.System.routine_class.compiled_class)
+					and then dcl.conform_to (debugger_manager.compiler_data.routine_class_c)
 				then
 					fill_extra_attributes_for_agent (a_row, list_cursor)
 				end
@@ -947,6 +961,7 @@ feature {NONE} -- Filling
 		require
 			a_row = onces_row
 			onces_not_filled_yet: not row_onces_filled
+			application_is_executing: debugger_manager.application_is_executing
 		local
 			flist: LIST [E_FEATURE]
 			l_once_values: ARRAY [ABSTRACT_DEBUG_VALUE]
@@ -964,7 +979,7 @@ feature {NONE} -- Filling
 					--| Nota: address and class are used only for classic implementation
 					--| maybe optimize this call by testing if we are on classic or dotnet
 					--| but the benefit would be small compared to the gain of lisibility
-				l_once_values := application.onces_values (flist, object_address, object_dynamic_class)
+				l_once_values := debugger_manager.application.onces_values (flist, object_address, object_dynamic_class)
 				fill_onces_with_values (a_row, l_once_values)
 			end
 
@@ -1018,9 +1033,18 @@ feature {NONE} -- Filling
 
 feature {NONE} -- Agent filling
 
-	Grid_feature_style: EB_NAME_SIGNATURE_FEATURE_STYLE is
+	Grid_feature_style: EB_FEATURE_EDITOR_TOKEN_STYLE is
+			-- Feature style to generate editor token informaton of feature
 		once
 			create Result
+			Result.enable_argument
+			Result.disable_comment
+			Result.disable_class
+			Result.disable_return_type
+			Result.disable_value_for_constant
+			Result.disable_use_overload_name
+		ensure
+			result_attached: Result /= Void
 		end
 
 	fill_extra_attributes_for_agent (a_row: EV_GRID_ROW; list_cursor: DS_LINEAR_CURSOR [ABSTRACT_DEBUG_VALUE]) is
@@ -1039,13 +1063,13 @@ feature {NONE} -- Agent filling
 			ag_fi: FEATURE_I
 			r: INTEGER
 			glab: EV_GRID_LABEL_ITEM
-			gf: EB_GRID_FEATURE_ITEM
+			gf: EB_GRID_COMPILER_ITEM
 		do
 			grid := a_row.parent
 			from
 				list_cursor.start
 			until
-				list_cursor.after or ag_fe /= Void
+				list_cursor.after or (ag_ct_id > 0 and ag_fe_id > 0) -- ag_fe /= Void
 			loop
 				vitem ?= list_cursor.item
 				if
@@ -1054,26 +1078,30 @@ feature {NONE} -- Agent filling
 				then
 					if ag_ct_id = 0 and then vitem.name.is_equal ("class_id") then
 						ag_ct_id := vitem.value + 1
-						ag_ct := application.eiffel_system.system.class_type_of_static_type_id (ag_ct_id)
 					elseif ag_fe_id = 0 and then vitem.name.is_equal ("feature_id") then
 						ag_fe_id := vitem.value
-						if ag_ct /= Void and then ag_fe_id /= 0 then
-							ag_fe := ag_ct.associated_class.feature_with_feature_id (ag_fe_id)
-							if ag_fe = Void then
-								ag_ecc ?= ag_ct.associated_class
-								if ag_ecc /= Void then
-									ag_fi := ag_ecc.inline_agent_of_id (ag_fe_id)
-									if ag_fi /= Void then
-										ag_fe := ag_fi.api_feature (ag_ecc.class_id)
-									end
-								end
-							end
-						end
 					end
 				end
 				list_cursor.forth
 			end
+			if ag_ct_id > 0 and ag_fe_id > 0 then
+				ag_ct := debugger_manager.eiffel_system.system.class_type_of_static_type_id (ag_ct_id)
+				if ag_ct /= Void and then ag_fe_id /= 0 then
+					ag_ecc ?= ag_ct.associated_class
+					if ag_ecc /= Void then
+						ag_fe := ag_ecc.feature_with_feature_id (ag_fe_id)
+						if ag_fe = Void then
+							ag_fi := ag_ecc.inline_agent_of_id (ag_fe_id)
+							if ag_fi /= Void then
+									--| Test ag_fi.is_fake_inline_agent to deal with agent on attribute
+								ag_fe := ag_fi.api_feature (ag_ecc.class_id)
+							end
+						end
+					end
+				end
+			end
 			if ag_fe /= Void then
+				ag_fe := real_feature (ag_fe)
 				r := 1
 				a_row.insert_subrow (r)
 				lrow := a_row.subrow (r)
@@ -1082,7 +1110,11 @@ feature {NONE} -- Agent filling
 				glab.set_pixmap (pixmaps.mini_pixmaps.general_search_icon)
 				lrow.set_item (Col_name_index, glab)
 
-				create gf.make (create {QL_REAL_FEATURE}.make (ag_fe), Grid_feature_style)
+				Grid_feature_style.set_e_feature (ag_fe)
+				create gf
+				gf.set_pixmap (pixmap_from_e_feature (ag_fe))
+				gf.set_overriden_fonts (label_font_table)
+				gf.set_text_with_tokens (Grid_feature_style.text)
 				lrow.set_item (Col_value_index, gf)
 			end
 		end
@@ -1094,12 +1126,12 @@ feature {NONE} -- Implementation
 			Result := parent_grid.Title_font
 		end
 
-	folder_label_item (s: STRING): EV_GRID_LABEL_ITEM is
+	folder_label_item (s: STRING_GENERAL): EV_GRID_LABEL_ITEM is
 		do
 			Result := parent_grid.folder_label_item (s)
 		end
 
-	slice_label_item (s: STRING): EV_GRID_LABEL_ITEM is
+	slice_label_item (s: STRING_GENERAL): EV_GRID_LABEL_ITEM is
 		do
 			create Result
 			grid_cell_set_text (Result, s)
@@ -1132,6 +1164,37 @@ feature {NONE} -- Implementation
 		do
 			row.set_item (c, v)
 		end
+
+	real_feature (a_feat: E_FEATURE): E_FEATURE is
+		require
+			a_feat /= Void
+		local
+			l_tokens: LIST [STRING]
+			l_class_id, l_feature_id: INTEGER
+			l_class: CLASS_C
+		do
+			l_tokens := a_feat.name.split ('#')
+			if l_tokens.count /= 5 or else not equal ("fake inline-agent", l_tokens.i_th (1)) then
+				Result := a_feat
+			elseif not l_tokens.i_th (3).is_integer_32 or not l_tokens.i_th (4).is_integer_32 then
+				Result := a_feat
+			else
+				l_class_id := l_tokens.i_th (3).to_integer
+				l_feature_id := l_tokens.i_th (4).to_integer
+				l_class := debugger_manager.eiffel_system.class_of_id (l_class_id)
+				if l_class /= Void then
+					Result := l_class.feature_with_feature_id (l_feature_id)
+					if Result = Void then
+						Result := a_feat
+					end
+				else
+					Result := a_feat
+				end
+			end
+		ensure
+			Result /= Void
+		end
+
 
 invariant
 	parent_grid_not_void: parent_grid /= Void

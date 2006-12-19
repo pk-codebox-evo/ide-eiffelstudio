@@ -586,7 +586,6 @@ feature {NONE} -- Implementation
 
 			if has_group_changed then
 				parse_target (l_new_target)
-				universe.set_conf_system (conf_system)
 			end
 
 			successful := True
@@ -1270,9 +1269,7 @@ feature {NONE} -- Implementation
 			l_old_target.system.set_all_libraries (l_target.system.all_libraries)
 			l_old_target.system.set_all_assemblies (l_target.system.all_assemblies)
 			l_old_target.system.set_application_target (l_old_target)
-			universe.set_new_target (l_old_target)
-
-			universe.new_target_to_target
+			universe.set_old_target (l_old_target)
 
 				-- Force a rebuild for the first compilation of a system using
 				-- a precompiled library.

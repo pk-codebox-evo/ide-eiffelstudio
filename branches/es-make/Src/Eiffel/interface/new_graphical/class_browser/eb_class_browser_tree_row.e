@@ -10,16 +10,14 @@ class
 	EB_CLASS_BROWSER_TREE_ROW
 
 inherit
-	EB_GRID_ROW
-
-	EB_CONSTANTS
+	EB_CLASS_BROWSER_GRID_ROW
 
 create
 	make
 
 feature{NONE} -- Initialization
 
-	make (a_class: like class_item; collapsed: BOOLEAN) is
+	make (a_browser: like browser; a_class: like class_item; collapsed: BOOLEAN) is
 			-- Initialize `class_item' with `a_class'.
 		require
 			a_class_attached: a_class /= Void
@@ -27,6 +25,7 @@ feature{NONE} -- Initialization
 		do
 			class_item := a_class
 			is_collapsed := collapsed
+			set_browser (a_browser)
 		ensure
 			class_item_set: class_item = a_class
 			is_collapsed_set: is_collapsed = collapsed
@@ -77,26 +76,6 @@ feature -- Grid binding
 			end
 		end
 
-	expand_row is
-			-- Expand Current and its parent recursively.
-		local
-			l_row: like Current
-			l_grid_row: EV_GRID_ROW
-		do
-			from
-				l_row := Current
-			until
-				l_row = Void
-			loop
-				l_grid_row := l_row.grid_row
-				check l_grid_row /= Void end
-				if l_grid_row.is_expandable then
-					l_grid_row.expand
-				end
-				l_row := l_row.parent
-			end
-		end
-
 feature -- Element change
 
 	add_child (a_child: like Current) is
@@ -125,39 +104,66 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
-	class_grid_item: EB_GRID_COMPILED_CLASS_ITEM is
+	class_grid_item: EB_GRID_COMPILER_ITEM is
 			-- Class item
 		local
-			l_style: EB_GRID_CLASS_ITEM_STYLE
+			l_complete_generic_class_style: like complete_generic_class_no_star_style
+			l_text_style: like plain_text_style
+			l_class_item_internal: like class_item_internal
 		do
 			if class_item_internal = Void then
+				l_complete_generic_class_style := complete_generic_class_no_star_style
+				create l_class_item_internal
+				l_class_item_internal.set_pixmap (pixmap_for_query_lanaguage_item (class_item))
+				l_complete_generic_class_style.set_ql_class (class_item)
 				if is_collapsed then
-					create {EB_GRID_PROCESSED_CLASS_STYLE}l_style
+					l_text_style := plain_text_style
+					l_text_style.set_source_text (interface_names.l_ellipsis)
+					l_class_item_internal.set_text_with_tokens ((l_complete_generic_class_style + l_text_style).text)
+					l_class_item_internal.set_tooltip (interface_names.f_go_to_first_occurrence)
 				else
-					create {EB_GRID_FULL_CLASS_STYLE}l_style
+					l_class_item_internal.set_text_with_tokens (l_complete_generic_class_style.text)
 				end
-				create class_item_internal.make (class_item.class_c, l_style)
-				if is_collapsed then
-					class_item_internal.set_tooltip (interface_names.f_go_to_first_occurrence)
-				else
-					class_item_internal.set_tooltip ("")
-				end
-				class_item_internal.enable_pixmap
+				class_item_internal := l_class_item_internal
+				class_item_internal.set_image (class_item_internal.text)
 			end
 			Result := class_item_internal
 		ensure
 			result_attached: Result /= Void
 		end
 
-	path_grid_item: EB_GRID_QUERY_LANGUAGE_ITEM is
+	path_grid_item: EB_GRID_COMPILER_ITEM is
 			-- Path item
 		local
-			l_style: EB_GRID_QUERY_LANGUAGE_ITEM_STYLE
+			l_path_style: like path_item_style
+			l_plain_text_style: like plain_text_style
+			l_path: STRING
+			l_style: EB_EDITOR_TOKEN_STYLE
 		do
 			if path_grid_item_internal = Void then
-				create l_style.make (True, False)
-				create path_grid_item_internal.make (class_item, l_style)
-				path_grid_item_internal.enable_pixmap
+				create path_grid_item_internal
+
+					-- Setup group information.
+				l_path_style := path_item_style
+				l_path_style.set_item (conf_group_as_parent (class_item.class_c.group, False))
+				l_style := l_path_style
+
+					-- Setup folder information.
+				l_path := class_item.class_i.path.twin
+				if not l_path.is_empty then
+					l_path.replace_substring_all ("/", path_separator.out)
+					l_plain_text_style := plain_text_style
+					l_plain_text_style.set_source_text (l_path)
+					l_style := l_style + l_plain_text_style
+				end
+
+				path_grid_item_internal.set_text_with_tokens (l_style.text)
+				path_grid_item_internal.set_image (path_grid_item_internal.text)
+				if class_item.parent /= Void then
+					path_grid_item_internal.set_pixmap (pixmap_for_query_lanaguage_item (class_item.parent))
+				else
+					path_grid_item_internal.set_pixmap (pixmaps.icon_pixmaps.general_blank_icon)
+				end
 			end
 			Result := path_grid_item_internal
 		ensure
@@ -179,11 +185,23 @@ feature{NONE} -- Implementation
 			-- Internal `class_grid_item'
 
 	path_grid_item_internal: like path_grid_item
-			-- Implementation of `path_grid_item'			
+			-- Implementation of `path_grid_item'
+
+	complete_generic_class_no_star_style: EB_CLASS_EDITOR_TOKEN_STYLE is
+			-- Editor token style to generate class information in complete generic form without star.
+			-- e.g., HASH_TABLE [G, H -> HASHABLE].
+		once
+			create Result
+			Result.enable_complete_generic_form
+			Result.disable_processed
+			Result.disable_star
+		ensure
+			result_attached: Result /= Void
+		end
 
 feature -- Setting
 
-	set_parent(a_parent: like parent) is
+	set_parent (a_parent: like parent) is
 			-- Set `parent' with `a_parent'.
 		require
 			a_parent_attached: a_parent /= Void
@@ -194,6 +212,17 @@ feature -- Setting
 			parent_set: parent = a_parent
 		end
 
+	path_item_style: EB_PATH_EDITOR_TOKEN_STYLE is
+			-- Editor token style to generate path information for a query language item.		
+		once
+			create Result
+			Result.enable_self
+			Result.enable_parent
+			Result.disable_target
+			Result.enable_indirect_parent
+		ensure
+			result_attached: Result /= Void
+		end
 
 invariant
 	class_item_attached: class_item /= Void

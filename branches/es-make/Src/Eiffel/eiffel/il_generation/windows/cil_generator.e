@@ -32,6 +32,11 @@ inherit
 			{NONE} all
 		end
 
+	SHARED_TYPE_I
+		export
+			{NONE} all
+		end
+
 	PROJECT_CONTEXT
 		export
 			{NONE} all
@@ -448,6 +453,7 @@ feature {NONE} -- Type description
 			i, nb: INTEGER
 			types: TYPE_LIST
 			cl_type: CLASS_TYPE
+			gen_type: GEN_TYPE_I
 			l_class_counted: BOOLEAN
 		do
 			from
@@ -487,6 +493,32 @@ feature {NONE} -- Type description
 							end
 
 							types.forth
+						end
+						if class_c.is_generic and then not class_c.is_external then
+								-- Add all possible generic derivations of the same class
+								-- where expanded parameters are replaced with reference ones
+								-- to the list of interfaces a type conforms to.
+							from
+								types.start
+							until
+								types.after
+							loop
+								cl_type := types.item
+								gen_type ?= cl_type.type
+								gen_type.enumerate_interfaces (
+									agent (c: CLASS_TYPE; p: ARRAYED_LIST [CLASS_INTERFACE])
+										local
+											ci: CLASS_INTERFACE
+										do
+											ci := c.class_interface
+											if not p.has (ci) then
+												p.extend (ci)
+											end
+										end
+									(?, cl_type.class_interface.parents)
+								)
+								types.forth
+							end
 						end
 					else
 							-- Step is needed as namespace of a precompiled class should be set.
@@ -1118,7 +1150,7 @@ feature {NONE} -- Progression
 		do
 				-- We force generation of basic classes even if only the reference version
 				-- will be generated.
-			Result := (a_class /= Void and then (a_class.is_basic or not a_class.is_external))
+			Result := (a_class /= Void and then (a_class.is_basic and then not a_class.is_typed_pointer or not a_class.is_external))
 				and then (is_finalizing or else a_class.degree_minus_1_needed)
 		end
 

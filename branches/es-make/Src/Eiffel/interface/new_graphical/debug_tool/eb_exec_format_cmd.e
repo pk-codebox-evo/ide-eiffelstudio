@@ -58,7 +58,7 @@ feature -- Properties
 	eb_debugger_manager: EB_DEBUGGER_MANAGER
 			-- Manager in charge of all debugging operations.
 
-	tooltip: STRING is
+	tooltip: STRING_GENERAL is
 			-- Tooltip for `Current'.
 		do
 			Result := internal_tooltip
@@ -81,7 +81,7 @@ feature -- Access
 
 feature {NONE} -- Attributes
 
-	description: STRING is
+	description: STRING_GENERAL is
 			-- What appears in the customize dialog box.
 		do
 			Result := tooltip
@@ -180,7 +180,7 @@ feature {NONE} -- Implementation
 			-- Was the command launched through a menu or a toolbar button
 			-- (by opposition to an accelerator)?
 
-	internal_tooltip: STRING is
+	internal_tooltip: STRING_GENERAL is
 			-- Basic tooltip (without the key shortcut).
 		deferred
 		end
@@ -201,12 +201,6 @@ feature {NONE} -- Implementation
 						set_argument_dialog (args_dialog)
 					else
 						argument_dialog.update
-					end
-					if not argument_dialog.is_displayed then
-						argument_dialog.show
-					end
-					if argument_dialog.is_minimized then
-						argument_dialog.restore
 					end
 					argument_dialog.raise
 				end

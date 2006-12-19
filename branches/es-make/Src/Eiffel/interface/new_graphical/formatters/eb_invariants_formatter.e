@@ -31,7 +31,7 @@ feature -- Properties
 	class_cmd: E_SHOW_INVARIANTS
 			-- Class command that can generate the information.
 
-	menu_name: STRING is
+	menu_name: STRING_GENERAL is
 			-- Identifier of `Current' in menus.
 		do
 			Result := Interface_names.m_show_invariants
@@ -39,10 +39,10 @@ feature -- Properties
 
 feature {NONE} -- Properties
 
-	command_name: STRING is
+	command_name: STRING_GENERAL is
 			-- Name of the command.
 		do
-			Result := Interface_names.l_invariants
+			Result := Interface_names.string_general_to_lower (interface_names.l_invariants)
 		end
 
 	post_fix: STRING is "anc"

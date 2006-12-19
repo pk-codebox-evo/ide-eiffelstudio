@@ -18,8 +18,6 @@ inherit
 
 	EB_SHARED_PREFERENCES
 
-	SHARED_DEBUG
-
 	EB_SHARED_WINDOW_MANAGER
 		export
 			{NONE} all
@@ -35,6 +33,8 @@ inherit
 			{NONE} all
 		end
 
+	SHARED_DEBUGGER_MANAGER
+
 create
 	make
 
@@ -49,10 +49,10 @@ feature -- Initialization
 
 feature -- Access
 
-	menu_name: STRING is
+	menu_name: STRING_GENERAL is
 			-- Menu name for `Current'.
 		once
-			Result := Interface_names.m_Set_slice_size + "New"
+			Result := Interface_names.m_Set_slice_size
 		end
 
 	pixmap: EV_PIXMAP is
@@ -67,7 +67,7 @@ feature -- Access
 			Result := pixmaps.mini_pixmaps.debugger_set_sizes_icon
 		end
 
-	tooltip: STRING is
+	tooltip: STRING_GENERAL is
 			-- Tooltip for the toolbar button.
 		do
 			Result := description
@@ -92,7 +92,7 @@ feature -- Status report
 			Result := Interface_names.l_Set_slice_limits + "New"
 		end
 
-	description: STRING is
+	description: STRING_GENERAL is
 			-- Description of the command.
 		once
 			Result := Interface_names.l_Set_slice_limits_desc
@@ -105,8 +105,7 @@ feature -- Execution
 		do
 			if for_tool then
 				get_slice_limits_on_global
-				min_slice_ref.set_item (slice_min)
-				max_slice_ref.set_item (slice_max)
+				debugger_manager.set_slices (slice_min, slice_max)
 				debug ("debugger_interface")
 					io.put_string ("Messages are displayed%N")
 				end
@@ -131,6 +130,7 @@ feature -- Basic operations
 			nat_dv: EIFNET_DEBUG_NATIVE_ARRAY_VALUE
 			l_item: EV_ANY
 			l_addr: STRING
+			app_impl: APPLICATION_EXECUTION_DOTNET
 		do
 			if for_tool then
 				conv_obj ?= st
@@ -154,10 +154,12 @@ feature -- Basic operations
 				end
 			else
 				l_addr := pretty_dlg.current_object.object_address
-				if Application.is_dotnet then
+				if debugger_manager.is_dotnet_project then
 						--| not working in case of not registered object
-					if application.imp_dotnet.know_about_kept_object (l_addr) then
-						nat_dv ?= Application.imp_dotnet.kept_object_item (l_addr)
+					app_impl ?= debugger_manager.application
+					check app_impl /= Void end
+					if app_impl.know_about_kept_object (l_addr) then
+						nat_dv ?= app_impl.kept_object_item (l_addr)
 					end
 					Result := nat_dv /= Void
 				else
@@ -270,19 +272,19 @@ feature {NONE} -- Implementation
 				maincont.extend (create {EV_HORIZONTAL_SEPARATOR})
 
 					--| Set Value
-				if application.displayed_string_size = -1 then
+				if debugger_manager.displayed_string_size = -1 then
 					tf_disp_str_size.set_text (preferences.misc_data.default_displayed_string_size.out)
 					tf_disp_str_size.disable_sensitive
 					cb_disp_str_limit.enable_select
 				else
-					tf_disp_str_size.set_text (application.displayed_string_size.out)
+					tf_disp_str_size.set_text (debugger_manager.displayed_string_size.out)
 					tf_disp_str_size.enable_sensitive
 					cb_disp_str_limit.disable_select
 				end
 				cb_disp_str_limit.select_actions.extend (agent on_cb_disp_str_limit_cb (cb_disp_str_limit, tf_disp_str_size))
 
-				slice_min := min_slice_ref.item
-				slice_max := max_slice_ref.item
+				slice_min := debugger_manager.min_slice
+				slice_max := debugger_manager.max_slice
 			else
 				if obj /= Void then
 						-- A special value is available, that's an easy one!
@@ -460,7 +462,7 @@ feature {NONE} -- Implementation
 			str1, str2, str3: STRING
 			i: INTEGER
 			disp_size: INTEGER
-			errd: EV_WARNING_DIALOG
+			errd: EB_WARNING_DIALOG
 			ok: BOOLEAN
 		do
 			ok := True
@@ -501,7 +503,7 @@ feature {NONE} -- Implementation
 			end
 			if ok then
 				if disp_size = -1 or disp_size > 0 then
-					application.set_displayed_string_size (disp_size) --str1.to_integer)
+					debugger_manager.set_displayed_string_size (disp_size) --str1.to_integer)
 				end
 				internal_set_limits (str2.to_integer, str3.to_integer)
 				dial.destroy

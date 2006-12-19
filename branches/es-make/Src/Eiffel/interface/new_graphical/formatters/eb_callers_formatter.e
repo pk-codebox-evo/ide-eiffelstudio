@@ -65,7 +65,7 @@ feature -- Properties
 	feature_cmd: E_SHOW_CALLERS
 			-- Feature command that can generate the information.
 
-	menu_name: STRING is
+	menu_name: STRING_GENERAL is
 			-- Identifier of `Current' in menus.
 		do
 			inspect flag
@@ -86,7 +86,7 @@ feature {NONE} -- Properties
 	internal_symbol: like symbol
 			-- Once per object storage for `symbol.
 
-	command_name: STRING is
+	command_name: STRING_GENERAL is
 			-- Name of the command.
 		do
 			inspect flag
@@ -97,6 +97,7 @@ feature {NONE} -- Properties
 			else
 				Result := Interface_names.l_callers
 			end
+			Result := interface_names.string_general_to_lower (Result)
 		end
 
 	post_fix: STRING is

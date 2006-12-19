@@ -11,7 +11,9 @@ class
 inherit
 	EB_CLASS_HIERARCHY_FORMATTER
 		redefine
-			is_tree_node_highlight_enabled
+			is_tree_node_highlight_enabled,
+			is_reference_formatter,
+			browser
 		end
 
 create
@@ -27,21 +29,27 @@ feature -- Properties
 			Result.put (pixmaps.icon_pixmaps.class_supliers_icon, 2)
 		end
 
-	menu_name: STRING is
+	menu_name: STRING_GENERAL is
 			-- Identifier of `Current' in menus.
 		do
 			Result := Interface_names.m_Showsuppliers
 		end
 
+	browser: EB_CLASS_BROWSER_TREE_VIEW
+			-- Browser where information gets displayed
+
 	is_tree_node_highlight_enabled: BOOLEAN is False
 			-- Is tree node highlight enabled?
 
+	is_reference_formatter: BOOLEAN is True
+			-- Is current a class reference (supplier/client) formatter
+
 feature {NONE} -- Properties
 
-	command_name: STRING is
+	command_name: STRING_GENERAL is
 			-- Name of the command.
 		do
-			Result := Interface_names.l_Suppliers
+			Result := Interface_names.string_general_to_lower (interface_names.l_Suppliers)
 		end
 
 	post_fix: STRING is "sup"
@@ -59,9 +67,13 @@ feature {NONE} -- Implementation
 		local
 			l_class: QL_CLASS
 		do
-			check associated_class /= Void end
+			check
+				associated_class /= Void
+				browser /= Void
+			end
+
 			l_class := query_class_item_from_class_c (associated_class)
-			create {QL_CLASS_SUPPLIER_RELATION_CRI}Result.make (l_class.wrapped_domain, class_supplier_relation)
+			create {QL_CLASS_SUPPLIER_RELATION_CRI}Result.make (l_class.wrapped_domain, browser.syntactical_button.is_selected, False)
 		end
 
 indexing

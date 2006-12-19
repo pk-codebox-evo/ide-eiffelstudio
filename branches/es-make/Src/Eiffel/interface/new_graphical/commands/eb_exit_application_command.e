@@ -41,7 +41,7 @@ feature -- Basic operations
 			-- Exit application. Ask the user to save unsaved files and ask for
 			-- confirmation on exit.
 		local
-			wd: EV_WARNING_DIALOG
+			wd: EB_WARNING_DIALOG
 		do
 			already_confirmed := False
 			if Workbench.is_compiling then
@@ -70,7 +70,7 @@ feature {EB_WINDOW_MANAGER} -- Exit methods.
 	ask_confirmation is
 			-- Display a confirmation dialog box
 		local
-			exit_confirmation_dialog: STANDARD_DISCARDABLE_CONFIRMATION_DIALOG
+			exit_confirmation_dialog: EB_DISCARDABLE_CONFIRMATION_DIALOG
 		do
 			if not already_confirmed then
 				already_confirmed := True
@@ -90,6 +90,8 @@ feature {NONE} -- Callbacks
 
 	exit_application is
 			-- Exit the application
+		local
+			l_err_dlg: EV_ERROR_DIALOG
 		do
 				-- If an application was being debugged, kill it.
 			if Debugger_manager.application_is_executing then
@@ -104,6 +106,17 @@ feature {NONE} -- Callbacks
 				-- We will save all the preferences for next time we are opened
 			preferences.preferences.save_preferences
 
+				-- Store metric archive history.
+			metric_manager.set_is_exit_requested (True)
+			if metric_manager.has_archive_been_loaded then
+				metric_manager.store_archive_history
+			end
+			if metric_manager.has_error then
+				create l_err_dlg.make_with_text (metric_manager.last_error.message)
+				l_err_dlg.set_buttons (<<interface_names.b_ok>>)
+				l_err_dlg.show_modal_to_window (window_manager.last_focused_development_window.window)
+			end
+
 				-- Destroy all development windows.
 			window_manager.close_all
 
@@ -114,7 +127,7 @@ feature {NONE} -- Callbacks
 	confirm_stop_debug is
 			-- Exit application. Ask the user to kill the debugger if it is running
 		local
-			cd: EV_CONFIRMATION_DIALOG
+			cd: EB_CONFIRMATION_DIALOG
 		do
 			if process_manager.is_process_running then
 				process_manager.terminate_process
@@ -122,7 +135,7 @@ feature {NONE} -- Callbacks
 			if Debugger_manager.application_is_executing then
 				already_confirmed := True
 				create cd.make_with_text (Warning_messages.w_Exiting_stops_debugger)
-				cd.button ("OK").select_actions.extend (agent confirm_and_exit)
+				cd.button (cd.OK).select_actions.extend (agent confirm_and_exit)
 				cd.show_modal_to_window (window_manager.last_focused_window.window)
 			else
 				confirm_and_exit
@@ -132,13 +145,13 @@ feature {NONE} -- Callbacks
 	confirm_and_exit is
 			-- Ask to save files, to confirm if necessary and exit.
 		local
-			qd: EV_QUESTION_DIALOG
+			qd: EB_QUESTION_DIALOG
 		do
 			if window_manager.has_modified_windows then
 				already_confirmed := True
 				create qd.make_with_text (Interface_names.l_Exit_warning)
-				qd.button ("Yes").select_actions.extend (agent save_and_exit)
-				qd.button ("No").select_actions.extend (agent ask_confirmation)
+				qd.button (interface_names.b_yes).select_actions.extend (agent save_and_exit)
+				qd.button (interface_names.b_no).select_actions.extend (agent ask_confirmation)
 				qd.show_modal_to_window (window_manager.last_focused_development_window.window)
 			else
 				ask_confirmation
@@ -148,7 +161,7 @@ feature {NONE} -- Callbacks
 	save_and_exit is
 			-- Save all windows and exit.
 		local
-			wd: EV_WARNING_DIALOG
+			wd: EB_WARNING_DIALOG
 		do
 			window_manager.save_all
 			if not Window_manager.has_modified_windows then
@@ -169,7 +182,7 @@ feature {NONE} -- Callbacks
 
 feature {NONE} -- Attributes
 
-	menu_name: STRING is
+	menu_name: STRING_GENERAL is
 			-- Name used in menu entry
 		do
 			Result := Interface_names.m_Exit_project
