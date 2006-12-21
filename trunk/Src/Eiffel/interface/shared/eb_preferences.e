@@ -19,12 +19,17 @@ inherit
 			make as make_gui
 		end
 
+	DBG_PREFERENCES
+		rename
+			make as make_dbg
+		end
+
 create
 	make
 
 feature {NONE} -- Initialization
 
-	make (a_preferences: PREFERENCES; gui_mode: BOOLEAN) is
+	make (a_preferences: PREFERENCES; gui_mode: BOOLEAN; dbg_mode: BOOLEAN) is
 			-- Create `Current' using `a_preferences'
 		require
 			a_preferences_not_void: a_preferences /= Void
@@ -32,6 +37,9 @@ feature {NONE} -- Initialization
 			make_batch (a_preferences)
 			if gui_mode then
 				make_gui (a_preferences)
+			end
+			if dbg_mode then
+				make_dbg (a_preferences)
 			end
 			preferences := a_preferences
 		end
