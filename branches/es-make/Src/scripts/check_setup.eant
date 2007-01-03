@@ -2,16 +2,15 @@
 
 <project name="setup_checker" default="check_setup">
 	<description>
-                description: "Checks the setup for installing ES"
-		author: "es-make Project Team, ETH Zurich"
-        </description>
+		description: "Checks the current machine's setup for installing EiffelStudio"
+		author: "trosim, bherlig, es-make Project Team, ETH Zurich"
+	</description>
 	<!--
 		============
 		== README ==
 		============
 		
-		This script (and those who get called by it) works currently only on UNIX, 
-		and is under heavy developement.
+		This script is under heavy developement.
 		
 		USE ON YOUR OWN RISK!
 		
@@ -19,27 +18,36 @@
 			cd %EIFFEL_SRC%
 			geant -b check_setup.eant
 	-->
+	
 	<target name="help">
 		<description>
-			Display help message
+			description: Displays the help message
+			author: "trosim, es-make Project Team, ETH Zurich"
 		</description>
                 <echo message="Usage: geant check_setup" />
         </target>
 
 	<target name="check_setup" depend="check_setup_unix,check_setup_win">
 		<description>
-			Check setup
+			description: main entry point for all target platforms
+			author: "trosim, es-make Project Team, ETH Zurich"
 		</description>
 	</target>
-	<target name="check_setup_unix" unless="$is_windows">
+	
+	<target name="check_environment_variables">
+		<description>
+			description: "checks for proper environment-variables, common script for all platforms."
+			author: "trosim, es-make Project Team, ETH Zurich"
+		</description>
+		
 		<echo message="Checking environment variables..." />
-
+		<echo message="" />
+		
 		<set name="conf_eiffel_svn" value="" if="${EIFFEL_SVN}" />
 		<set name="conf_eiffel_src" value="" if="${EIFFEL_SRC}" />
 		<set name="conf_ise_platform" value="" if="${ISE_PLATFORM}" />
 		<set name="conf_ise_library" value="" if="${ISE_LIBRARY}" />
 		<set name="conf_ise_eiffel" value="" if="${ISE_EIFFEL}" />
-<!--	<set name="setup_error" value="" unless="$conf_eiffel_svn" /> -->
 		<set name="setup_error" value="" unless="$conf_eiffel_src" />
 		<set name="setup_error" value="" unless="$conf_ise_platform" />
 		<set name="setup_error" value="" unless="$conf_ise_library" />
@@ -58,7 +66,26 @@
 
 		<echo message="You have an error in your setup, please check the configuration!" if="$setup_error" />
 		<exit code="1" if="$setup_error" />
-
+	</target>
+	
+	<target name="check_setup_unix" unless="$is_windows">
+		<description>
+			description: "root script for the setup checker on unix machines"
+			author: "bherlig, es-make Project Team, ETH Zurich"
+		</description>
+		
+		<geant target="check_environment_variables" />
+		<geant target="check_unix_tools" />
+		<geant target="check_unix_resources" />
+		<geant target="check_unix_dependencies" />
+	</target>
+	
+	<target name="check_unix_tools" unless="$is_windows">
+		<description>
+			description: "checks for available tools for running further checks"
+			author: "trosim, es-make Project Team, ETH Zurich"
+		</description>
+		
 		<echo message="Checking tools..." />
 
 		<exec executable="which which > /dev/null 2> /dev/null" exit_code_variable="conf_which" />
@@ -73,7 +100,14 @@
 
 		<echo message="You have an error in your setup, please check the configuration!" if="$setup_error" />
 		<exit code="1" if="$setup_error" />
-
+	</target>
+	
+	<target name="check_unix_resources" unless="$is_windows">
+		<description>
+			description: "checks all resources: availables directories, eiffel compiler and version"
+			author: "trosim, es-make Project Team, ETH Zurich"
+		</description>
+		
 		<echo message="Checking resources..." />
 
 		<available resource="$EIFFEL_SVN" variable="res_eiffel_svn" if="$conf_eiffel_svn" />
@@ -82,7 +116,6 @@
 		<available resource="$ISE_EIFFEL" variable="res_ise_eiffel" if="$conf_ise_eiffel" />
 		<exec executable="which ec > /dev/null" exit_code_variable="res_ec" />
 		<exec executable="ec -version | grep -q 'version 5.7' > /dev/null" exit_code_variable="conf_ec_version" />
-<!--	<set name="setup_error" value="" unless="$res_eiffel_svn=true" /> -->
 		<set name="setup_error" value="" unless="$res_eiffel_src=true" />
 		<set name="setup_error" value="" unless="$res_ise_library=true" />
 		<set name="setup_error" value="" unless="$res_ise_eiffel=true" />
@@ -104,7 +137,14 @@
 
 		<echo message="You have an error in your setup, please check the configuration!" if="$setup_error" />
 		<exit code="1" if="$setup_error" />
-
+	</target>
+	
+	<target name="check_unix_dependencies" unless="$is_windows">
+		<description>
+			description: description: "checks dependencies on unix machines: gcc, gtk"
+			author: "trosim, es-make Project Team, ETH Zurich"
+		</description>
+		
 		<echo message="Checking dependencies..." />
 
 		<exec executable="which gcc > /dev/null" exit_code_variable="res_gcc" />
@@ -121,7 +161,140 @@
 		<exit code="1" if="$setup_error" />
 		<echo message="Setup check complete. Your configuration seems ok!" />
 	</target>
+	
+	
+<!-- 
+	=======================
+	======== BEWARE =======
+	=======================
+	===== WINDOWS LAND ====
+	=======================
+							-->
+	
 	<target name="check_setup_win" if="$is_windows">
-		<echo message="This script doesn't run on windows, yet." />
+		<description>
+			description: "root script for the setup checker on windows machines"
+			author: "bherlig, es-make Project Team, ETH Zurich"
+		</description>
+		
+		<echo message="" />
+		<echo message="" />
+		<echo message="--------------------------------------------------------------------" />
+		<echo message="WARNING: this script does not check dependencies under windows, yet!" />
+		<echo message="--------------------------------------------------------------------" />
+		<echo message="" />
+		
+		<!-- Which version of ISE Eiffel Compiler do we check for? -->
+		<set name="ec_version_string" value="version 6.0" />
+
+		<geant target="check_environment_variables" />
+		<geant target="check_win_tools" />
+		<geant target="check_win_ressources" />
+		<geant target="check_win_dependency" />
+		
+		<echo message="" />
+		<echo message="" />
+		<echo message="--------------------------------------------------------------------" />
+		<echo message="			Setup check complete. Your configuration seems ok!" />
+		<echo message="--------------------------------------------------------------------" />
+	</target>
+	
+	<target name="check_win_tools" if="$is_windows">
+		<description>
+			description: "checks for available tools for running further checks, 
+				i.e. find.exe"
+			author: "bherlig, es-make Project Team, ETH Zurich"
+		</description>
+		
+		<echo message="" />
+		<echo message="--------------------------------------------------------------------" />
+		<echo message="Checking Windows tools." />
+		<echo message="" />
+		
+		<available resource="${SYSTEMROOT}/system32/find${exe}" variable="res_find"/>
+
+		<set name="setup_error" value="" unless="$res_find=true" />
+		
+		<echo message="  -> find.exe in path, exit code: $res_find, ok" if="$res_find=true" />
+		<echo message="  -> find.exe not in path, exit code: $res_find, ! please check !" unless="$res_find=true" />
+		
+		<echo message="You have an error in your setup, please check the configuration!" if="$setup_error" />
+		<exit code="1" if="$setup_error" />
+	</target>
+	
+	
+	<target name="check_win_ressources" if="$is_windows">
+		<description>
+			description: "checks all resources: availables directories, eiffel compiler and version"
+			author: "bherlig, es-make Project Team, ETH Zurich"
+		</description>
+		
+		<echo message="" />
+		<echo message="--------------------------------------------------------------------" />
+		<echo message="Checking Windows resources." />
+		<echo message="" />
+		
+		<available resource="$EIFFEL_SVN" variable="res_eiffel_svn" if="$conf_eiffel_svn" />
+		<available resource="$EIFFEL_SRC" variable="res_eiffel_src" if="$conf_eiffel_src" />
+		<available resource="$ISE_LIBRARY" variable="res_ise_library" if="$conf_ise_library" />
+		<available resource="$ISE_EIFFEL" variable="res_ise_eiffel" if="$conf_ise_eiffel" />
+		<available resource="${ISE_EIFFEL}/studio/spec/${ISE_PLATFORM}/bin/ec${exe}" variable="res_ec"/>
+		
+		<exec executable="cd %TMP%" if="$res_ec=true" />
+		<exec executable="(ec -version >> es_setup_check)" if="$res_ec=true" />
+		<exec executable="find /C &quot;${ec_version_string}&quot; es_setup_check" exit_code_variable="conf_ec_version" if="$res_ec=true" />
+		<exec executable="del es_setup_check" if="$res_ec=true" />
+		
+		<set name="setup_error" value="" unless="$res_eiffel_src=true" />
+		<set name="setup_error" value="" unless="$res_ise_library=true" />
+		<set name="setup_error" value="" unless="$res_ise_eiffel=true" />
+		<set name="setup_error" value="" unless="$res_ec=true" />
+		<set name="setup_error" value="" unless="$conf_ec_version=0" />
+
+		<echo message="  -> $EIFFEL_SVN: ok" if="$res_eiffel_svn=true" />
+		<echo message="warning:  -> $EIFFEL_SVN: not found, ! please check !" unless="$res_eiffel_svn=true" />
+		<echo message="  -> $EIFFEL_SRC: ok" if="$res_eiffel_src=true" />
+		<echo message="  -> $EIFFEL_SRC: not found, ! please check !" unless="$res_eiffel_src=true" />
+		<echo message="  -> $ISE_LIBRARY: ok" if="$res_ise_library=true" />
+		<echo message="  -> $ISE_LIBRARY: not found, ! please check !" unless="$res_ise_library=true" />
+		<echo message="  -> $ISE_EIFFEL: ok" if="$res_ise_eiffel=true" />
+		<echo message="  -> $ISE_EIFFEL: not found, ! please check !" unless="$res_ise_eiffel=true" />
+		<echo message="  -> ec in path, exit code: $res_ec, ok" if="$res_ec=true" />
+		<echo message="  -> ec not in path, exit code: $res_ec, ! please check !" unless="$res_ec=true" />
+		<echo message="  -> ec version 6.0, exit code: $conf_ec_version, ok" if="$conf_ec_version=0" />
+		<echo message="  -> ec wrong version, exit code: $conf_ec_version, ! please check !" unless="$conf_ec_version=0" />
+
+		<echo message="You have an error in your setup, please check the configuration!" if="$setup_error" />
+		<exit code="1" if="$setup_error" />
+	</target>
+	
+	<target name="check_win_dependency" if="$is_windows">
+		<description>
+			description: "checks dependencies on windows machines.
+				NOTE: currently, we only check for microsoft's compiler.
+				
+				TODO: add more dependencies"
+			author: "bherlig, es-make Project Team, ETH Zurich"
+		</description>
+		
+		<echo message="--------------------------------------------------------------------" />
+		<echo message="Checking Windows dependencies." />
+		<echo message="" />
+		<!-- NOTE:
+			ATM, we depend on micro$ofts compiler.
+		-->
+		
+		<exec executable="cd %TMP%" />
+		<exec executable="(cl >> es_setup_check)" accept_errors="true" exit_code_variable="conf_msc_cl_version" />
+		<exec executable="find /C &quot;usage: cl&quot; es_setup_check" exit_code_variable="conf_msc_cl_version" if="${conf_msc_cl_version}=0"/>
+		<exec executable="del es_setup_check"/>
+		
+		<set name="setup_error" value="" unless="$conf_msc_cl_version=0" />
+				
+		<echo message="  -> cl found, exit code: $conf_msc_cl_version, ok" if="${conf_msc_cl_version}=0" />
+		<echo message="  -> cl not in path, exit code: $conf_msc_cl_version, ! please check !" unless="${conf_msc_cl_version}=0" />
+
+		<echo message="You have an error in your setup, please check the configuration!" if="$setup_error" />
+		<exit code="1" if="$setup_error" />
 	</target>
 </project>
