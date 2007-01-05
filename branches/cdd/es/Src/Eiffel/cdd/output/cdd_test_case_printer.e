@@ -23,13 +23,23 @@ feature -- Access
 			rlist: DS_LIST [CDD_COMPOSITE_OBJECT]
 			root_object: CDD_COMPOSITE_OBJECT
 			l_feature: E_FEATURE
+			l_feature_name: STRING
 		do
 			output_file := a_file
 			root_object := reflection.root_object
 			l_feature := reflection.called_feature
 			rlist := reflection.composite_objects
 
-			append_indexing (reflection)
+			-- Extract correct feature name
+			if l_feature.is_infix then
+				l_feature_name := l_feature.infix_symbol
+			elseif l_feature.is_prefix then
+				l_feature_name := l_feature.prefix_symbol
+			else
+				l_feature_name := l_feature.name
+			end
+
+			append_indexing (reflection, l_feature_name)
 			append_class_header (test_class_name)
 
 			append_text ("%N%Tset_up is%N")
@@ -68,28 +78,32 @@ feature -- Access
 			append_text ("%T%Tdo%N")
 			append_text (indent)
 			if reflection.is_creation_feature then
-				append_text ("create ")
+				append_text ("create object_under_test")
 			elseif l_feature.is_function then
 				append_text ("l_result ?= ")
 			end
-			append_text ("object_under_test")
-			if not reflection.is_creation_feature or not l_feature.name.is_equal ("default_create") then
-				append_text ("." + l_feature.name)
-			end
-			if reflection.arguments.count > 0 then
-				append_text (" (")
-				from
-					reflection.arguments.start
-				until
-					reflection.arguments.after
-				loop
-					append_text (reflection.arguments.item_for_iteration.identifier)
-					reflection.arguments.forth
-					if not reflection.arguments.after then
-						append_text (", ")
+			if l_feature.is_infix then
+				append_text ("object_under_test " + l_feature.infix_symbol + " ")
+				append_text (reflection.arguments.first.identifier)
+			elseif l_feature.is_prefix then
+				append_text (l_feature.prefix_symbol + " object_under_test")
+			elseif not reflection.is_creation_feature or not l_feature.name.is_equal ("default_create") then
+				append_text ("object_under_test." + l_feature.name)
+				if reflection.arguments.count > 0 then
+					append_text (" (")
+					from
+						reflection.arguments.start
+					until
+						reflection.arguments.after
+					loop
+						append_text (reflection.arguments.item_for_iteration.identifier)
+						reflection.arguments.forth
+						if not reflection.arguments.after then
+							append_text (", ")
+						end
 					end
+					append_text (")")
 				end
-				append_text (")")
 			end
 			append_text ("%N%T%Tend%N%N")
 			append_text ("%Tobject_under_test: " + root_object.dynamic_type.name + "%N")
@@ -98,7 +112,7 @@ feature -- Access
 			append_text ("%Tclass_under_test: STRING is %"" + root_object.dynamic_type.name + "%"%N")
 			append_text ("%T%T%T-- Name of the class under test.%N")
 			append_text ("%T%T%T-- NOTE: Do not modify this attribute!%N%N")
-			append_text ("%Tfeature_under_test: STRING is %"" + l_feature.name + "%"%N")
+			append_text ("%Tfeature_under_test: STRING is %"" + l_feature_name + "%"%N")
 			append_text ("%T%T%T-- Name of the feature under test.%N")
 			append_text ("%T%T%T-- NOTE: Do not modify this attribute!%N%N")
 
@@ -243,10 +257,11 @@ feature {CDD_OBJECT} -- Testcase generation
 
 feature {NONE} -- Implementation
 
-	append_indexing (a_reflection: CDD_REFLECTION) is
+	append_indexing (a_reflection: CDD_REFLECTION; a_name: STRING) is
 			-- Append indexing clause for 'a_reflection'
 		require
 			a_reflection_not_void: a_reflection /= Void
+			a_name_not_empty: a_name /= Void and then not a_name.is_empty
 		local
 			l_class: EIFFEL_CLASS_C
 		do
@@ -255,7 +270,7 @@ feature {NONE} -- Implementation
 			append_text ("%Tdescription: %"Objects used for running tests%"%N")
 			append_text ("%Tcdd_cluster: %"" + l_class.cluster.cluster_name + "%"%N")
 			append_text ("%Tcdd_class: %"" + l_class.name_in_upper + "%"%N")
-			append_text ("%Tcdd_feature: %"" + a_reflection.called_feature.name + "%"%N")
+			append_text ("%Tcdd_feature: %"" + a_name + "%"%N")
 			append_text ("%Tauthor: %"CDD_TEST_CASE_PRINTER%"%N")
 			append_text ("%Tdate: %"$Date$%"%N")
 			append_text ("%Trevision: %"$Revision$%"%N%N")

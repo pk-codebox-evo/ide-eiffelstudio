@@ -21,6 +21,11 @@ inherit
 			{NONE} all
 		end
 
+	PREFIX_INFIX_NAMES
+		export
+			{NONE} all
+		end
+
 feature -- Access
 
 	last_created_test_case: CDD_TEST_CASE
@@ -83,6 +88,12 @@ feature {CDD_MANAGER} -- Element change
 							l_class ?= eiffel_universe.class_named (l_iclass, l_group).compiled_class
 							if l_class /= Void then
 								l_feature := l_class.feature_with_name (l_ifeature)
+								if l_feature = Void then
+									l_feature := l_class.feature_with_name (infix_feature_name_with_symbol (l_ifeature))
+								end
+								if l_feature = Void then
+									l_feature := l_class.feature_with_name (prefix_feature_name_with_symbol (l_ifeature))
+								end
 								if l_feature /= Void then
 									last_parsed_feature := l_feature
 								end
