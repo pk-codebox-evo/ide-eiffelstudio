@@ -109,13 +109,16 @@
 		</description>
 		
 		<echo message="Checking resources..." />
+		
+		<!-- Which version of ISE Eiffel Compiler do we check for? -->
+		<set name="ec_version_string" value="version 6.0" />
 
 		<available resource="$EIFFEL_SVN" variable="res_eiffel_svn" if="$conf_eiffel_svn" />
 		<available resource="$EIFFEL_SRC" variable="res_eiffel_src" if="$conf_eiffel_src" />
 		<available resource="$ISE_LIBRARY" variable="res_ise_library" if="$conf_ise_library" />
 		<available resource="$ISE_EIFFEL" variable="res_ise_eiffel" if="$conf_ise_eiffel" />
 		<exec executable="which ec > /dev/null" exit_code_variable="res_ec" />
-		<exec executable="ec -version | grep -q 'version 5.7' > /dev/null" exit_code_variable="conf_ec_version" />
+		<exec executable="ec -version | grep -q '${ec_version_string}' > /dev/null" exit_code_variable="conf_ec_version" />
 		<set name="setup_error" value="" unless="$res_eiffel_src=true" />
 		<set name="setup_error" value="" unless="$res_ise_library=true" />
 		<set name="setup_error" value="" unless="$res_ise_eiffel=true" />
