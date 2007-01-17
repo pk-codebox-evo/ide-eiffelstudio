@@ -29,10 +29,17 @@
 		<geant target="compile_library" />
 		<geant target="compile_eiffel_framework" />
 
-		<available resource="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}library" variable="gobo_available"/>
-		<echo message="GOBO is already installed ${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}library" if="${gobo_available}=true" />
-		<geant target="extract_gobo" if="${gobo_available}=false" />
-		<unset name="gobo_available" />
+		
+		<available resource="${GOBO}${path_separator}library" variable="gobo_available_native"/>
+		<echo message="GOBO is already installed ${GOBO}${path_separator}library" if="${gobo_available_native}=true" />
+		<replace file="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf" token="ISE_LIBRARY" replace="GOBO" flags="g" if="${gobo_available_native}" />
+		
+		<available resource="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}library" variable="gobo_available_patched"/>		
+		<echo message="GOBO is already installed ${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}library" if="${gobo_available_patched}=true" unless="${gobo_available_native}"/>
+		
+		<geant target="extract_gobo" if="${gobo_available_patched}=false" unless="${gobo_available_native}"/>
+		<unset name="gobo_available_patched" />
+		<unset name="gobo_available_native" />
 	</target>
 
 		<!-- C_library -->
@@ -77,7 +84,7 @@
 
 	<target name="extract_gobo" depend="init">
 		<echo message="Extracting Gobo"/>
-		<copy file="${EIFFEL_SRC}\..\free_add_ons\gobo\gobo_34_win.tgz" to_file="${ISE_LIBRARY}${path_separator}library${path_separator}gobo.tgz" if="${is_windows}" />
+		<copy file="${EIFFEL_SRC}\..\free_add_ons\gobo\gobo_win_01112007.tgz" to_file="${ISE_LIBRARY}${path_separator}library${path_separator}gobo.tgz" if="${is_windows}" />
 		<copy file="${EIFFEL_SRC}/../free_add_ons/gobo/gobo_34_unix.tgz" to_file="${ISE_LIBRARY}${path_separator}library${path_separator}gobo.tgz" unless="${is_windows}" />
 
 		<available resource="${ISE_LIBRARY}${path_separator}library${path_separator}gobo.tgz" variable="tmp_available"/>
