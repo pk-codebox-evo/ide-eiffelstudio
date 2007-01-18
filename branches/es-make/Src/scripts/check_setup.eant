@@ -34,7 +34,7 @@
 		</description>
 	</target>
 	
-	<target name="check_environment_variables">
+	<target name="check_environment_variables" depend="check_environment_variables_windows">
 		<description>
 			description: "checks for proper environment-variables, common script for all platforms."
 			author: "trosim, es-make Project Team, ETH Zurich"
@@ -63,9 +63,21 @@
 		<echo message="  -> ISE_LIBRARY: not set, ! please check !" unless="$conf_ise_library" />
 		<echo message="  -> ISE_EIFFEL: ${ISE_EIFFEL}, ok" if="$conf_ise_eiffel" />
 		<echo message="  -> ISE_EIFFEL: not set, ! please check !" unless="$conf_ise_eiffel" />
+		<echo message="  -> ISE_C_COMPILER: ${ISE_C_COMPILER}, ok" if="$conf_ise_c_compiler=yes" />
+		<echo message="  -> ISE_C_COMPILER: not set, ! please check !" if="$conf_ise_c_compiler=no" />
 
 		<echo message="You have an error in your setup, please check the configuration!" if="$setup_error" />
 		<exit code="1" if="$setup_error" />
+	</target>
+
+	<target name="check_environment_variables_windows" if="$is_windows">
+		<description>
+			description: "checks for proper environment-variables, windows specific."
+			author: "trosim, es-make Project Team, ETH Zurich"
+		</description>
+		<set name="conf_ise_c_compiler" value="yes" if="${ISE_C_COMPILER}"/>
+		<set name="conf_ise_c_compiler" value="no" unless="${ISE_C_COMPILER}"/>
+		<set name="setup_error" value="" unless="$conf_ise_c_compiler=yes" />
 	</target>
 	
 	<target name="check_setup_unix" unless="$is_windows">
@@ -192,7 +204,7 @@
 
 		<geant target="check_environment_variables" />
 		<geant target="check_win_tools" />
-		<geant target="check_win_ressources" />
+		<geant target="check_win_resources" />
 		<geant target="check_win_dependency" />
 		
 		<echo message="" />
@@ -226,7 +238,7 @@
 	</target>
 	
 	
-	<target name="check_win_ressources" if="$is_windows">
+	<target name="check_win_resources" if="$is_windows">
 		<description>
 			description: "checks all resources: availables directories, eiffel compiler and version"
 			author: "bherlig, es-make Project Team, ETH Zurich"
