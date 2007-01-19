@@ -14,9 +14,7 @@ inherit
 		redefine
 			process,
 			is_domain_criterion,
-			make,
-			has_delayed_input_domain,
-			replace_delayed_input_domain
+			make
 		end
 
 	QL_SHARED
@@ -44,17 +42,19 @@ feature -- Access
 			-- QL_CRITERION representing current criterion
 		local
 			l_criterion_factory: QL_CRITERION_FACTORY
+			l_domain: like domain
 		do
 			l_criterion_factory := criterion_factory_table.item (a_scope)
+			l_domain := domain.actual_domain
 			from
-				domain.start
-				Result := l_criterion_factory.criterion_with_name (name, [domain.item.domain (scope)])
-				domain.forth
+				l_domain.start
+				Result := l_criterion_factory.criterion_with_name (name, [l_domain.item.domain (scope)])
+				l_domain.forth
 			until
-				domain.after
+				l_domain.after
 			loop
-				Result := Result or l_criterion_factory.criterion_with_name (name, [domain.item.domain (scope)])
-				domain.forth
+				Result := Result or l_criterion_factory.criterion_with_name (name, [l_domain.item.domain (scope)])
+				l_domain.forth
 			end
 			if is_negation_used then
 				Result := not Result
@@ -73,13 +73,6 @@ feature -- Status report
 	is_domain_criterion: BOOLEAN is True
 			-- Is current a domain criterion?
 
-	has_delayed_input_domain: BOOLEAN is
-			-- Does current domain contain reference to a delayed domain which represents an delayed input domain?
-			-- An delayed input domain should be replaced by actual input domain before metric calculation.
-		do
-			Result := domain.has_delayed_input_domain_item
-		end
-
 feature -- Setting
 
 	set_domain (a_domain: like domain) is
@@ -88,12 +81,6 @@ feature -- Setting
 			a_domain_attached: a_domain /= Void
 		do
 			domain := a_domain.twin
-		end
-
-	replace_delayed_input_domain (a_domain: EB_METRIC_DOMAIN) is
-			-- Replace delayed input domain contained in Current by `a_domain'.
-		do
-			set_domain (a_domain)
 		end
 
 feature -- Process
