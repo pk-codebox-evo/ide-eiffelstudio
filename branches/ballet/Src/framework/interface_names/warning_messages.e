@@ -1046,6 +1046,8 @@ feature -- Warning messages
 	w_cannot_save_when_c_compilation_running: STRING_GENERAL is do Result := locale.translate ("Please save output after c compilation has exited.") end
 	w_cannot_save_when_external_running: STRING_GENERAL is do Result := locale.translate ("Please save output after external command has exited.") end
 	w_external_command_running_in_development_window: STRING_GENERAL is do Result := locale.translate ("An external command is running, closing this window will terminate it.%NContinue?") end;
+	w_help_topic_could_not_be_displayed: STRING is "Help topic could not be displayed, please check your Eiffel installation";
+
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

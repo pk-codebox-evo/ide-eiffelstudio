@@ -821,7 +821,7 @@ feature -- Syntax Completion Customization
 	feature_completed_keywords: ARRAYED_LIST [STRING] is
 			-- list of completed keywords
 		once
-			create Result.make_from_array (<<"is", "require", "require else", "local", "do", "once", "deferred", "external", "rescue", "ensure", "ensure then", "alias">>)
+			create Result.make_from_array (<<"is", "require", "use", "use only", "modify", "modify only", "require else", "local", "do", "once", "deferred", "external", "rescue", "ensure", "ensure then", "alias">>)
 			Result.compare_objects
 		end
 
