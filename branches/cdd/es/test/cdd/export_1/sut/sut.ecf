@@ -6,11 +6,18 @@
 		</option>
 		<precompile name="base_pre" location="$ISE_PRECOMP\base.ecf"/>
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
+		<library name="cdd" location="$ISE_LIBRARY\library\cdd\cdd.ecf"/>
 		<cluster name="root_cluster" location=".\" recursive="true">
 			<file_rule>
 				<exclude>EIFGENs</exclude>
 				<exclude>.svn</exclude>
 				<exclude>CVS</exclude>
+			</file_rule>
+			<file_rule>
+				<exclude>cdd_test_suite</exclude>
+			</file_rule>
+			<file_rule>
+				<exclude>cdd_test_suite</exclude>
 			</file_rule>
 		</cluster>
 	</target>
