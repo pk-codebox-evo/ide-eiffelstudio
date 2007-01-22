@@ -58,6 +58,7 @@
 		<geant file="build.eant" target="${target}" dir="void_call_1"/>
 		<geant file="build.eant" target="${target}" dir="false_precondition_1"/>
 		<geant file="build.eant" target="${target}" dir="infix_1"/>
+		<geant file="build.eant" target="${target}" dir="agent_1"/>
 	</target>
 
 </project>
