@@ -106,7 +106,7 @@ feature -- Access
 				end
 			end
 			append_text ("%N%T%Tend%N%N")
-			append_text ("%Tobject_under_test: " + root_object.dynamic_type.name + "%N")
+			append_text ("%Tobject_under_test: " + root_object.type + "%N")
 			append_text ("%T%T%T-- Name of the class under test.%N")
 			append_text ("%T%T%T-- NOTE: Do not modify this attribute!%N%N")
 			append_text ("%Tclass_under_test: STRING is %"" + root_object.dynamic_type.name + "%"%N")

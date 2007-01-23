@@ -21,7 +21,8 @@ feature {NONE} -- Initialization
 			-- `a_count' is number of attributes 'a_type' has defined.
 		require
 			a_type_not_void: a_type /= Void
-			a_gen_type_not_empty: a_gen_type /= Void and then not a_gen_type.is_empty
+			-- NOTE: Produced error with empty generic clause (e.g. TUPLE objects)
+			a_gen_type_not_empty: a_gen_type /= Void -- and then not a_gen_type.is_empty
 		do
 			make_with_count (a_type, a_count)
 			type.append (" " + a_gen_type)

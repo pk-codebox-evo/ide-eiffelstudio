@@ -296,7 +296,8 @@ feature {NONE} -- Implementation
 			first := a_type.index_of ('[', 1)
 			Result := a_type.substring (first, a_type.count)
 		ensure
-			valid_result: Result /= Void and then not Result.is_empty
+			-- NOTE: Produced error with objects of type TUPLE []
+			valid_result: Result /= Void -- and then not Result.is_empty
 			substring_of_a_type: a_type.has_substring (Result)
 		end
 
