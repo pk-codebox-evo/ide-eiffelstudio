@@ -10,6 +10,9 @@ class
 
 inherit
 	AST_VISITOR
+		redefine
+			process_use_as, process_modify_as
+		end
 
 feature -- Roundtrip
 
@@ -239,6 +242,8 @@ feature {NONE} -- Implementation
 	process_routine_as (l_as: ROUTINE_AS) is
 		do
 			safe_process (l_as.precondition)
+			safe_process (l_as.use_frame)
+			safe_process (l_as.modify_frame)
 			safe_process (l_as.locals)
 			l_as.routine_body.process (Current)
 			safe_process (l_as.postcondition)
@@ -737,6 +742,16 @@ feature {NONE} -- Implementation
 		end
 
 	process_require_as (l_as: REQUIRE_AS) is
+		do
+			safe_process (l_as.assertions)
+		end
+
+	process_use_as (l_as: USE_AS) is
+		do
+			safe_process (l_as.assertions)
+		end
+
+	process_modify_as (l_as: MODIFY_AS) is
 		do
 			safe_process (l_as.assertions)
 		end

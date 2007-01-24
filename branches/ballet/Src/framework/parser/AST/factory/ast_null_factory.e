@@ -36,7 +36,7 @@ inherit
 			new_instr_call_as, new_integer_as, new_integer_hexa_as, new_interval_as, new_invariant_as,
 			new_like_id_as, new_like_current_as, new_location_as, new_loop_as, new_nested_as,
 			new_nested_expr_as, new_none_type_as, new_once_as, new_operand_as, new_paran_as, new_parent_as,
-			new_precursor_as, new_prefix_as, new_real_as, new_rename_as, new_require_as, new_require_else_as,
+			new_precursor_as, new_prefix_as, new_real_as, new_rename_as, new_require_as, new_use_as, new_modify_as, new_require_else_as,
 			new_result_as, new_retry_as, new_reverse_as, new_routine_as, new_routine_creation_as,
 			new_old_routine_creation_as, new_static_access_as, new_string_as, new_tagged_as,
 			new_tuple_as, new_type_dec_as, new_type_expr_as, new_un_free_as, new_un_minus_as,
@@ -925,6 +925,16 @@ feature -- Access
 		do
 		end
 
+	new_use_as (a: EIFFEL_LIST [TAGGED_AS]; k_as: KEYWORD_AS): USE_AS is
+			-- New USE AST node
+		do
+		end
+
+	new_modify_as (a: EIFFEL_LIST [TAGGED_AS]; k_as: KEYWORD_AS): MODIFY_AS is
+			-- New MODIFY AST node
+		do
+		end
+
 	new_require_else_as (a: EIFFEL_LIST [TAGGED_AS]; k_as, l_as: KEYWORD_AS): REQUIRE_ELSE_AS is
 			-- New REQUIRE ELSE AST node
 		do
@@ -945,7 +955,7 @@ feature -- Access
 		do
 		end
 
-	new_routine_as (o: STRING_AS; pr: REQUIRE_AS;
+	new_routine_as (o: STRING_AS; pr: REQUIRE_AS; uf: USE_AS; mf: MODIFY_AS;
 			l: LOCAL_DEC_LIST_AS; b: ROUT_BODY_AS; po: ENSURE_AS;
 			r: EIFFEL_LIST [INSTRUCTION_AS]; end_loc: KEYWORD_AS;
 			oms_count, a_pos: INTEGER; k_as, r_as: KEYWORD_AS): ROUTINE_AS
