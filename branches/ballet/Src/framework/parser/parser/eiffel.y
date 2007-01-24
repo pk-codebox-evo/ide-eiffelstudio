@@ -206,8 +206,8 @@ create
 %type <FORMAL_ARGU_DEC_LIST_AS> Formal_arguments Optional_formal_arguments
 %type <CONSTRAINT_TRIPLE>	Constraint
 
-%type <REQUIRE_AS> Use
-%type <REQUIRE_AS> Modify
+%type <USE_AS> Use
+%type <MODIFY_AS> Modify
 
 %expect 125
 
@@ -1219,9 +1219,9 @@ Routine:
 					temp_keyword_as := Void
 				end
 				if $9 /= Void then
-					$$ := ast_factory.new_routine_as (temp_string_as1, $3, $6, $7, $8, $9.second, $10, once_manifest_string_count, fbody_pos, temp_keyword_as, $9.first)
+					$$ := ast_factory.new_routine_as (temp_string_as1, $3, $4, $5, $6, $7, $8, $9.second, $10, once_manifest_string_count, fbody_pos, temp_keyword_as, $9.first)
 				else
-					$$ := ast_factory.new_routine_as (temp_string_as1, $3, $6, $7, $8, Void, $10, once_manifest_string_count, fbody_pos, temp_keyword_as, Void)					
+					$$ := ast_factory.new_routine_as (temp_string_as1, $3, $4, $5, $6, $7, $8, Void, $10, once_manifest_string_count, fbody_pos, temp_keyword_as, Void)					
 				end
 				once_manifest_string_count := 0
 			}
@@ -1372,7 +1372,7 @@ Use: -- Empty
 		Assertion
 			{
 				set_id_level (Normal_level)
-				$$ := ast_factory.new_require_as ($3, $1)
+				$$ := ast_factory.new_use_as ($3, $1)
 			}
 	;
 
@@ -1383,7 +1383,7 @@ Modify: -- Empty
 		Assertion
 			{
 				set_id_level (Normal_level)
-				$$ := ast_factory.new_require_as ($3, $1)
+				$$ := ast_factory.new_modify_as ($3, $1)
 			}
 	;
 
