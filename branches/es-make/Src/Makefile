@@ -27,8 +27,7 @@ clean: check_geant
 	geant -b ${EIFFEL_SRC}/scripts/build.eant clean_ec
 
 build_delivery: check_geant
-	@echo "TODO"
-	exit 1
+	geant -b ${EIFFEL_SRC}/scripts/build.eant make_delivery
 
 # ----------------------------------------------------------------------
 # Supporting targets
