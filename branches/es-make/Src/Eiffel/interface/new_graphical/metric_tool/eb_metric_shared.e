@@ -10,16 +10,22 @@ class
 	EB_METRIC_SHARED
 
 inherit
-	EB_CONSTANTS
+	SHARED_NAMES
 
-	EB_SHARED_METRIC_NAMES
-
-	EB_SHARED_MANAGERS
+	EB_SHARED_METRIC_MANAGER
 
 feature -- Access
 
-	metric_vadility_checker: EB_METRIC_VADILITY_VISITOR is
-			-- Metric vadility checker
+	metric_validity_checker: EB_METRIC_VALIDITY_VISITOR is
+			-- Metric validity checker
+		once
+			create Result.make (metric_manager)
+		ensure
+			result_attached: Result /= Void
+		end
+
+	archive_validity_checker: EB_METRIC_ARCHIVE_VALIDITY_CHECKER is
+			-- Metric archiv evalidity checker
 		once
 			create Result.make (metric_manager)
 		ensure
@@ -102,6 +108,54 @@ feature -- UUID
 			-- UUID
 		once
 			create Result
+		ensure
+			result_attached: Result /= Void
+		end
+
+feature -- Value test operator type index
+
+	equal_to_type: INTEGER is 1
+	not_equal_to_type: INTEGER is 2
+	less_than_type: INTEGER is 3
+	less_than_equal_to_type: INTEGER is 4
+	greater_than_type: INTEGER is 5
+	greater_than_equal_to_type: INTEGER is 6
+
+	equal_to_operator: STRING is "="
+	not_equal_to_operator: STRING is "/="
+	less_than_operator: STRING is "<"
+	less_than_equal_to_operator: STRING is "<="
+	greater_than_operator: STRING is ">"
+	greater_than_equal_to_operator: STRING is ">="
+
+feature -- Access/Criterion type
+
+	operator_table: HASH_TABLE [STRING, INTEGER] is
+			-- Table for "=", "/=", ">", ">=", "<", "<=" operators
+			-- Key is operator type index, value is name of that operator
+		once
+			create Result.make (6)
+			Result.put (equal_to_operator, equal_to_type)
+			Result.put (not_equal_to_operator, not_equal_to_type)
+			Result.put (less_than_operator, less_than_type)
+			Result.put (less_than_equal_to_operator, less_than_equal_to_type)
+			Result.put (greater_than_operator, greater_than_type)
+			Result.put (greater_than_equal_to_operator, greater_than_equal_to_type)
+		ensure
+			result_attached: Result /= Void
+		end
+
+	operator_name_table: HASH_TABLE [INTEGER, STRING] is
+			-- Table for "=", "/=", ">", ">=", "<", "<=" operators
+			-- Key is the operator name, value is operator type index of that operator
+		once
+			create Result.make (6)
+			Result.put (equal_to_type, equal_to_operator)
+			Result.put (not_equal_to_type, not_equal_to_operator)
+			Result.put (less_than_type, less_than_operator)
+			Result.put (less_than_equal_to_type, less_than_equal_to_operator)
+			Result.put (greater_than_type, greater_than_operator)
+			Result.put (greater_than_equal_to_type, greater_than_equal_to_operator)
 		ensure
 			result_attached: Result /= Void
 		end

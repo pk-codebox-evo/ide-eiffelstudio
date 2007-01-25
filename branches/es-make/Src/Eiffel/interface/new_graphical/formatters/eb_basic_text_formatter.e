@@ -48,6 +48,12 @@ feature -- Properties
 			Result.put (pixmaps.icon_pixmaps.view_editor_icon, 2)
 		end
 
+	pixel_buffer: EV_PIXEL_BUFFER is
+			-- Graphical representation of the command.
+		once
+			Result := pixmaps.icon_pixmaps.view_editor_icon_buffer
+		end
+
 	menu_name: STRING_GENERAL is
 			-- Identifier of `Current' in menus.
 		do
@@ -82,7 +88,7 @@ feature -- Formatting
 						if f_name = Void or else f_name.is_empty then
 							f_name := classi.file_name
 						end
-						editor.display_message (Warning_messages.w_Cannot_read_file (f_name))
+						editor.display_message (Warning_messages.w_Cannot_read_file (f_name).out)
 					end
 				else
 					editor.clear_window
@@ -96,6 +102,7 @@ feature -- Formatting
 					editor.disable_has_breakable_slots
 				end
 				display_header
+				stone.set_pos_container (Current)
 			end
 		end
 
@@ -168,7 +175,7 @@ feature {NONE} -- Properties
 	command_name: STRING_GENERAL is
 			-- Name of the command.
 		do
-			Result := Interface_names.string_general_to_lower (interface_names.l_Basic_text)
+			Result := Interface_names.string_general_as_lower (interface_names.l_Basic_text)
 		end
 
 	post_fix: STRING is "txt"

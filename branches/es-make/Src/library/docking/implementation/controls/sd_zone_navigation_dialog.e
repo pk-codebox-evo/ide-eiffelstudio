@@ -11,6 +11,16 @@ class
 
 inherit
 	SD_ZONE_NAVIGATION_DIALOG_IMP
+		redefine
+			show
+		end
+
+	EV_SHARED_APPLICATION
+		export
+			{NONE} all
+		undefine
+			default_create, copy
+		end
 
 create
 	make
@@ -100,7 +110,7 @@ feature {NONE} -- Initialization
 			l_contents: ARRAYED_LIST [SD_CONTENT]
 			l_label: SD_TOOL_BAR_RADIO_BUTTON
 			l_pass_first_editor, l_pass_second_editor: BOOLEAN
-			l_first_label, l_last_label: SD_TOOL_BAR_RADIO_BUTTON
+			l_first_label, l_last_label, l_first_tool_label, l_last_tool_label: SD_TOOL_BAR_RADIO_BUTTON
 			l_tools_count, l_files_count: INTEGER
 		do
 			l_contents := internal_docking_manager.property.contents_by_click_order
@@ -125,6 +135,10 @@ feature {NONE} -- Initialization
 					end
 					tools_column.extend (l_label)
 					l_tools_count := l_tools_count + 1
+					if l_first_tool_label = Void then
+						l_first_tool_label := l_label
+					end
+					l_last_tool_label := l_label
 				elseif l_contents.item.type = {SD_ENUMERATION}.editor and l_contents.item.is_visible then
 					if l_files_count > {SD_SHARED}.zone_navigation_column_count then
 						l_files_count := 1
@@ -147,13 +161,27 @@ feature {NONE} -- Initialization
 
 				l_contents.forth
 			end
-			if not is_shift_pressed then
-				if l_pass_first_editor and then not l_pass_second_editor then
-					on_label_enable_focus_color (l_first_label)
+
+			if l_first_label = Void then
+				-- There is no editor label
+				if l_last_tool_label /= Void and then is_shift_pressed then
+					focus_label (l_last_tool_label)
+				elseif l_first_tool_label /= Void then
+					focus_label (l_first_tool_label)
+				end
+				if l_first_tool_label = Void then
+					-- There is no label at all.
+					disable_sensitive
 				end
 			else
-				on_label_enable_focus_color (l_last_label)
+				if l_pass_first_editor and then not l_pass_second_editor then
+					focus_label (l_first_label)
+				elseif is_shift_pressed then
+					focus_label (l_last_label)
+				end
 			end
+
+			init_focued_lable := selected_label
 
 			set_all_items_wrap
 
@@ -165,16 +193,21 @@ feature {NONE} -- Initialization
 		local
 			l_maximum, l_temp: INTEGER
 		do
-			l_maximum := compute_all_sizes_imp (all_files_column)
-			l_temp := compute_all_sizes_imp (all_tools_column)
-			if l_maximum < l_temp then
-				l_maximum := l_temp
-			end
-			set_columns_minimum_width (all_files_column, l_maximum)
-			set_columns_minimum_width (all_tools_column, l_maximum)
+			if is_sensitive then
+				l_maximum := compute_all_sizes_imp (all_files_column)
+				l_temp := compute_all_sizes_imp (all_tools_column)
+				if l_maximum < l_temp then
+					l_maximum := l_temp
+				end
+				set_columns_minimum_width (all_files_column, l_maximum)
+				set_columns_minimum_width (all_tools_column, l_maximum)
 
-			set_scroll_area_item_size (internal_files_box, scroll_area_files)
-			set_scroll_area_item_size (internal_tools_box, scroll_area_tools)
+				set_scroll_area_item_size (internal_files_box, scroll_area_files)
+				set_scroll_area_item_size (internal_tools_box, scroll_area_tools)
+			else
+				-- There is no label to show at all.
+
+			end
 		end
 
 	set_scroll_area_item_size (a_box: EV_BOX; a_scroll_area: EV_SCROLLABLE_AREA) is
@@ -321,15 +354,16 @@ feature {NONE} -- Initialization
 			Result := l_a_column.width
 		end
 
-feature {NONE} -- Agents
+feature -- Command
 
-	on_label_enable_focus_color (a_label: SD_TOOL_BAR_RADIO_BUTTON) is
-			-- Handle a_label focus color enabled.
-		require
-			a_label_not_void: a_label /= Void
+	show is
+			-- Redefine
 		do
-			a_label.enable_select
+			Precursor {SD_ZONE_NAVIGATION_DIALOG_IMP}
+			focus_label (init_focued_lable)
 		end
+
+feature {NONE} -- Agents
 
 	on_key_release (a_key: EV_KEY) is
 			-- Handle key release.
@@ -337,7 +371,12 @@ feature {NONE} -- Agents
 			inspect
 				a_key.code
 			when {EV_KEY_CONSTANTS}.key_ctrl then
-				select_label_and_destroy (selected_label)
+				if is_sensitive then
+					select_label_and_destroy (selected_label)
+				else
+					destroy
+					ev_application.do_once_on_idle (agent (internal_docking_manager.main_window).set_focus)
+				end
 			when {EV_KEY_CONSTANTS}.key_shift then
 				is_shift_pressed := False
 			else
@@ -396,6 +435,9 @@ feature {NONE} -- Implementation query
 
 feature {NONE} -- Implementation command
 
+	init_focued_lable: SD_TOOL_BAR_TOGGLE_BUTTON
+			-- The first focused label setted by `add_all_content_label'
+
 	focus_label (a_label: SD_TOOL_BAR_TOGGLE_BUTTON) is
 			-- Enable a_label's focus color.
 		require
@@ -407,7 +449,24 @@ feature {NONE} -- Implementation command
 			l_left_in, l_right_in: BOOLEAN
 			l_is_selected_label_in_files: BOOLEAN
 			l_maximum_scroll_position: REAL
+			l_all_items: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
+			l_toggle: SD_TOOL_BAR_TOGGLE_BUTTON
 		do
+			from
+				-- Although toggle button will disable other buttons in the same tool bar,
+				-- but it can't diable buttoons in other tool bars.
+				l_all_items := all_items
+				l_all_items.start
+			until
+				l_all_items.after
+			loop
+				l_toggle ?= l_all_items.item
+				if l_toggle /= Void then
+					l_toggle.disable_select
+				end
+				l_all_items.forth
+			end
+
 			a_label.enable_select
 			set_text_info (a_label)
 
@@ -506,10 +565,15 @@ feature {NONE} -- Implementation command
 				-- In the last column, we should go to other part
 				l_result_index := l_selected_index \\ {SD_SHARED}.zone_navigation_column_count
 				l_side_list := all_items_in_part (not l_selected_item_in_files)
-				if l_result_index > l_side_list.count then
-					l_result_index := l_side_list.count
+				if l_side_list.count > 0 then
+					if l_result_index > l_side_list.count then
+						l_result_index := l_side_list.count
+					end
+					Result ?= l_side_list.i_th (l_result_index)
+				else
+					Result ?= l_current_list.i_th (l_result_index)
 				end
-				Result ?= l_side_list.i_th (l_result_index)
+
 			end
 		ensure
 			not_void: Result /= Void
@@ -541,14 +605,26 @@ feature {NONE} -- Implementation command
 			else
 				-- In the first column, we should go to other part
 				l_side_list := all_items_in_part (not l_selected_item_in_files)
-				-- Go to the right side of the other list
-				l_balance := l_side_list.count \\ {SD_SHARED}.zone_navigation_column_count
-				l_result_index := l_side_list.count - {SD_SHARED}.zone_navigation_column_count + ({SD_SHARED}.zone_navigation_column_count - l_balance) + l_selected_index
-				if l_result_index > l_side_list.count then
-					l_result_index := l_side_list.count
+
+				if l_side_list.count > 0 then
+					-- Go to the right side of the other list
+					l_balance := l_side_list.count \\ {SD_SHARED}.zone_navigation_column_count
+					l_result_index := l_side_list.count - {SD_SHARED}.zone_navigation_column_count + ({SD_SHARED}.zone_navigation_column_count - l_balance) + l_selected_index
+					if l_result_index > l_side_list.count then
+						l_result_index := l_side_list.count
+					end
+
+					Result ?= l_side_list.i_th (l_result_index)
+				else
+					l_balance := l_current_list.count \\ {SD_SHARED}.zone_navigation_column_count
+					l_result_index := l_current_list.count - {SD_SHARED}.zone_navigation_column_count + ({SD_SHARED}.zone_navigation_column_count - l_balance) + l_selected_index
+					if l_result_index > l_current_list.count then
+						l_result_index := l_current_list.count
+					end
+
+					Result ?= l_current_list.i_th (l_result_index)
 				end
 
-				Result ?= l_side_list.i_th (l_result_index)
 			end
 		ensure
 			not_void: Result /= Void
@@ -634,7 +710,12 @@ feature {NONE} -- Implementation command
 						Result ?= l_items.i_th (l_items.index - 1)
 					else
 						l_list := all_items_in_part (not is_seleted_label_in_files)
-						Result ?= l_list.last
+						if not l_list.is_empty then
+							Result ?= l_list.last
+						else
+							Result ?= l_items.last
+						end
+
 					end
 				end
 				l_items.back
@@ -665,7 +746,12 @@ feature {NONE} -- Implementation command
 						Result ?= l_items.i_th (l_items.index + 1)
 					else
 						l_list := all_items_in_part (not is_seleted_label_in_files)
-						Result ?= l_list.first
+						if not l_list.is_empty then
+							Result ?= l_list.first
+						else
+							Result ?= l_items.first
+						end
+
 					end
 				end
 				l_items.forth
@@ -711,6 +797,8 @@ feature {NONE} -- Implementation command
 
 	selected_label: SD_TOOL_BAR_RADIO_BUTTON is
 			-- Current selected label
+		require
+			has_label: is_sensitive
 		local
 			l_items: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
 			l_item: SD_TOOL_BAR_RADIO_BUTTON

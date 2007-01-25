@@ -577,21 +577,28 @@ feature -- Access
 			-- Ensure column `a_column' is unlocked.
 		local
 			l_locked_column: EV_GRID_LOCKED_COLUMN_I
+			l_locked_indexes: like locked_indexes
+			l_cursor: CURSOR
 		do
 			l_locked_column ?= a_column.locked_column
 			static_fixed.prune (l_locked_column.widget)
-			locked_indexes.go_i_th (l_locked_column.locked_index)
-			locked_indexes.remove
-			if not locked_indexes.off then
+			l_locked_indexes := locked_indexes
+			l_cursor := l_locked_indexes.cursor
+			l_locked_indexes.go_i_th (l_locked_column.locked_index)
+			l_locked_indexes.remove
+			if not l_locked_indexes.off then
 				from
 				until
-					locked_indexes.off
+					l_locked_indexes.off
 				loop
-					locked_indexes.item.set_locked_index (locked_indexes.item.locked_index - 1)
-					locked_indexes.forth
+					l_locked_indexes.item.set_locked_index (l_locked_indexes.item.locked_index - 1)
+					l_locked_indexes.forth
 				end
 			end
 			redraw_column (a_column)
+			if l_locked_indexes.valid_cursor (l_cursor) then
+				l_locked_indexes.go_to (l_cursor)
+			end
 		ensure
 			column_not_locked: not a_column.is_locked
 		end
@@ -600,21 +607,28 @@ feature -- Access
 			-- Ensure row `a_row' is unlocked.
 		local
 			l_locked_row: EV_GRID_LOCKED_ROW_I
+			l_locked_indexes: like locked_indexes
+			l_cursor: CURSOR
 		do
 			l_locked_row ?= a_row.locked_row
 			static_fixed.prune (l_locked_row.widget)
-			locked_indexes.go_i_th (l_locked_row.locked_index)
-			locked_indexes.remove
-			if not locked_indexes.off then
+			l_locked_indexes := locked_indexes
+			l_cursor := l_locked_indexes.cursor
+			l_locked_indexes.go_i_th (l_locked_row.locked_index)
+			l_locked_indexes.remove
+			if not l_locked_indexes.off then
 				from
 				until
-					locked_indexes.off
+					l_locked_indexes.off
 				loop
-					locked_indexes.item.set_locked_index (locked_indexes.item.locked_index - 1)
-					locked_indexes.forth
+					l_locked_indexes.item.set_locked_index (l_locked_indexes.item.locked_index - 1)
+					l_locked_indexes.forth
 				end
 			end
 			redraw_row (a_row)
+			if l_locked_indexes.valid_cursor (l_cursor) then
+				l_locked_indexes.go_to (l_cursor)
+			end
 		ensure
 			a_row_not_locked: not a_row.is_locked
 		end
@@ -1081,6 +1095,9 @@ feature -- Status setting
 		do
 			a_col_i := columns @ (a_column)
 			if not a_col_i.is_show_requested then
+				if a_col_i.is_locked then
+					a_col_i.locked_column.widget.show
+				end
 				a_col_i.set_is_show_requested (True)
 				displayed_column_count := displayed_column_count + 1
 
@@ -1104,6 +1121,9 @@ feature -- Status setting
 		do
 			a_col_i := columns @ (a_column)
 			if a_col_i.is_show_requested then
+				if a_col_i.is_locked then
+   					a_col_i.locked_column.widget.hide
+				end
 				a_col_i.set_is_show_requested (False)
 				displayed_column_count := displayed_column_count - 1
 
@@ -2640,6 +2660,7 @@ feature -- Removal
 				end
 				i := i + 1
 			end
+			locked_indexes.wipe_out
 			from
 				i := 1
 			until
@@ -3369,12 +3390,14 @@ feature {EV_GRID_COLUMN_I, EV_GRID_I, EV_GRID_DRAWER_I, EV_GRID_ROW_I, EV_GRID_I
 			l_virtual_x_position: INTEGER
 			l_locked_indexes: ARRAYED_LIST [EV_GRID_LOCKED_I]
 			l_locked_row: EV_GRID_LOCKED_ROW_I
+			l_cursor: CURSOR
 		do
 			if not is_locked then
 				l_virtual_x_position := a_column.virtual_x_position
 				drawable.redraw_rectangle (l_virtual_x_position - (internal_client_x - viewport_x_offset), viewport_y_offset, viewable_width + internal_client_x - l_virtual_x_position, viewable_height)
 				from
 					l_locked_indexes := locked_indexes
+					l_cursor := l_locked_indexes.cursor
 					l_locked_indexes.start
 				until
 					l_locked_indexes.off
@@ -3385,6 +3408,7 @@ feature {EV_GRID_COLUMN_I, EV_GRID_I, EV_GRID_DRAWER_I, EV_GRID_ROW_I, EV_GRID_I
 					end
 					l_locked_indexes.forth
 				end
+				l_locked_indexes.go_to (l_cursor)
 			end
 		end
 
@@ -3412,16 +3436,22 @@ feature {EV_GRID_COLUMN_I, EV_GRID_I, EV_GRID_DRAWER_I, EV_GRID_ROW_I, EV_GRID_I
 			-- This is brute force, and all callers should be checked
 			-- to prevent large amounts of overdraw in cases where the entire area
 			-- does not need to be refreshed.
+		local
+			l_locked_indexes: like locked_indexes
+			l_cursor: CURSOR
 		do
-			if locked_indexes /= Void then
+			l_locked_indexes := locked_indexes
+			if l_locked_indexes /= Void then
 				from
-					locked_indexes.start
+					l_cursor := l_locked_indexes.cursor
+					l_locked_indexes.start
 				until
-					locked_indexes.off
+					l_locked_indexes.off
 				loop
-					locked_indexes.item.redraw_client_area
-					locked_indexes.forth
+					l_locked_indexes.item.redraw_client_area
+					l_locked_indexes.forth
 				end
+				l_locked_indexes.go_to (l_cursor)
 			end
 		end
 
@@ -3590,21 +3620,23 @@ feature {EV_GRID_ITEM_I, EV_GRID, EV_GRID_DRAWER_I, EV_GRID_LOCKED_I} -- Impleme
 		local
 			l_cursor: CURSOR
 			l_locked_row: EV_GRID_LOCKED_ROW_I
+			l_locked_indexes: like locked_indexes
 		do
 			create Result.make (4)
 			from
-				l_cursor := locked_indexes.cursor
-				locked_indexes.start
+				l_locked_indexes := locked_indexes
+				l_cursor := l_locked_indexes.cursor
+				l_locked_indexes.start
 			until
-				locked_indexes.off
+				l_locked_indexes.off
 			loop
-				l_locked_row ?= locked_indexes.item
+				l_locked_row ?= l_locked_indexes.item
 				if l_locked_row /= Void then
 					Result.extend (l_locked_row.row_i.interface)
 				end
-				locked_indexes.forth
+				l_locked_indexes.forth
 			end
-			locked_indexes.go_to (l_cursor)
+			l_locked_indexes.go_to (l_cursor)
 		ensure
 			Result_not_void: Result /= Void
 		end
@@ -3614,21 +3646,23 @@ feature {EV_GRID_ITEM_I, EV_GRID, EV_GRID_DRAWER_I, EV_GRID_LOCKED_I} -- Impleme
 		local
 			l_cursor: CURSOR
 			l_locked_column: EV_GRID_LOCKED_COLUMN_I
+			l_locked_indexes: like locked_indexes
 		do
 			create Result.make (4)
 			from
-				l_cursor := locked_indexes.cursor
-				locked_indexes.start
+				l_locked_indexes := locked_indexes
+				l_cursor := l_locked_indexes.cursor
+				l_locked_indexes.start
 			until
-				locked_indexes.off
+				l_locked_indexes.off
 			loop
-				l_locked_column ?= locked_indexes.item
+				l_locked_column ?= l_locked_indexes.item
 				if l_locked_column /= Void then
 					Result.extend (l_locked_column.column_i.interface)
 				end
-				locked_indexes.forth
+				l_locked_indexes.forth
 			end
-			locked_indexes.go_to (l_cursor)
+			l_locked_indexes.go_to (l_cursor)
 		ensure
 			Result_not_void: Result /= Void
 		end
@@ -3933,6 +3967,9 @@ feature {EV_GRID_LOCKED_I} -- Drawing implementation
 			vertical_box, l_vertical_box: EV_VERTICAL_BOX
 			horizontal_box: EV_HORIZONTAL_BOX
 		do
+				-- We need to set interface.is_initialized to True to satisfy invariants
+				-- when calling back through the interface, it needs to be unset at the end.
+			set_state_flag (interface_is_initialized_flag, True)
 			set_minimum_size (default_minimum_size, default_minimum_size)
 			is_horizontal_offset_set_to_zero_when_items_smaller_than_viewable_width := True
 			is_horizontal_scrolling_per_item := False
@@ -4099,6 +4136,7 @@ feature {EV_GRID_LOCKED_I} -- Drawing implementation
 			set_separator_color (black.twin)
 			set_node_pixmaps (initial_expand_node_pixmap, initial_collapse_node_pixmap)
 			create locked_indexes.make (1)
+			set_state_flag (interface_is_initialized_flag, False)
 		end
 
 	resize_viewport_in_static_fixed (an_x, a_y, a_width, a_height: INTEGER) is
@@ -4316,6 +4354,8 @@ feature {EV_GRID_LOCKED_I} -- Drawing implementation
 			buffer_space: INTEGER
 			current_buffer_position: INTEGER
 			locked_column: EV_GRID_LOCKED_COLUMN_I
+			l_locked_indexes: like locked_indexes
+			l_cursor: CURSOR
 		do
 			if is_full_redraw_on_virtual_position_change_enabled then
 				redraw_client_area
@@ -4346,16 +4386,19 @@ feature {EV_GRID_LOCKED_I} -- Drawing implementation
 
 				-- Now propagate to all locked columns.
 			from
-				locked_indexes.start
+				l_locked_indexes := locked_indexes
+				l_cursor := l_locked_indexes.cursor
+				l_locked_indexes.start
 			until
-				locked_indexes.off
+				l_locked_indexes.off
 			loop
-				locked_column ?= locked_indexes.item
+				locked_column ?= l_locked_indexes.item
 				if locked_column /= Void then
 					locked_column.internal_set_virtual_y_position (a_y_position)
 				end
-				locked_indexes.forth
+				l_locked_indexes.forth
 			end
+			l_locked_indexes.go_to (l_cursor)
 		ensure
 			internal_position_set: internal_client_y = a_y_position
 		end
@@ -4368,6 +4411,8 @@ feature {EV_GRID_LOCKED_I} -- Drawing implementation
 			buffer_space: INTEGER
 			current_buffer_position: INTEGER
 			locked_row: EV_GRID_LOCKED_ROW_I
+			l_locked_indexes: like locked_indexes
+			l_cursor: CURSOR
 		do
 			if is_full_redraw_on_virtual_position_change_enabled then
 				redraw_client_area
@@ -4399,16 +4444,19 @@ feature {EV_GRID_LOCKED_I} -- Drawing implementation
 
 				-- Now update all locked rows.
 			from
-				locked_indexes.start
+				l_locked_indexes := locked_indexes
+				l_cursor := l_locked_indexes.cursor
+				l_locked_indexes.start
 			until
-				locked_indexes.off
+				l_locked_indexes.off
 			loop
-				locked_row ?= locked_indexes.item
+				locked_row ?= l_locked_indexes.item
 				if locked_row /= Void then
 					locked_row.internal_set_virtual_x_position (a_x_position)
 				end
-				locked_indexes.forth
+				l_locked_indexes.forth
 			end
+			l_locked_indexes.go_to (l_cursor)
 		ensure
 			internal_position_set: internal_client_x = a_x_position
 		end
@@ -4481,21 +4529,23 @@ feature {EV_GRID_LOCKED_I} -- Drawing implementation
 			cursor: CURSOR
 			locked_row: EV_GRID_LOCKED_ROW_I
 			locked_column: EV_GRID_LOCKED_COLUMN_I
+			l_locked_indexes: like locked_indexes
 		do
 			from
-				cursor := locked_indexes.cursor
-				locked_indexes.start
+				l_locked_indexes := locked_indexes
+				cursor := l_locked_indexes.cursor
+				l_locked_indexes.start
 			until
-				locked_indexes.off
+				l_locked_indexes.off
 			loop
-				locked_column ?= locked_indexes.item
+				locked_column ?= l_locked_indexes.item
 				if locked_column /= Void then
 					reposition_locked_column (locked_column.column_i)
 				else
-					locked_row ?= locked_indexes.item
+					locked_row ?= l_locked_indexes.item
 					reposition_locked_row (locked_row.row_i)
 				end
-				locked_indexes.forth
+				l_locked_indexes.forth
 			end
 			locked_indexes.go_to (cursor)
 		end
@@ -4638,7 +4688,7 @@ feature {EV_GRID_LOCKED_I} -- Event handling
 			if item_coordinates /= Void then
 				pointed_row_i := row_internal (item_coordinates.y)
 				current_subrow_indent := item_cell_indent (item_coordinates.x, item_coordinates.y) --item_indent (pointed_item)
-				current_item_x_position := (column_offsets @ (item_coordinates.x)) - (internal_client_x - viewport_x_offset)
+				current_item_x_position := column (item_coordinates.x).virtual_x_position - (internal_client_x - viewport_x_offset)
 				node_x_position_click_edge := current_subrow_indent + current_item_x_position
 				if pointed_row_i.subrow_count /= 0 or pointed_row_i.is_ensured_expandable then
 						-- We only include the dimensions of the node pixmap for our calculations if

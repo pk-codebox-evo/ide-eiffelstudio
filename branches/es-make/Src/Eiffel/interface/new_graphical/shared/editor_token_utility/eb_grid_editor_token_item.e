@@ -45,6 +45,13 @@ inherit
 			default_create
 		end
 
+	EVS_GRID_ITEM_HELPER
+		undefine
+			copy,
+			is_equal,
+			default_create
+		end
+
 create
 	default_create,
 	make_with_text
@@ -79,6 +86,94 @@ feature{NONE} -- Initialization
 			on_pointer_leave_agent := agent on_pointer_leave
 			Precursor
 		end
+
+feature -- Access
+
+	pixmap: EV_PIXMAP
+			-- Image displayed to left of `tokens'.
+
+	spacing: INTEGER
+			-- Spacing between `text' and `pixmap' in pixels.
+			-- If both are not visible, this value does not affect appearance of `Current'.
+
+	text: STRING is
+			-- Text of current item.
+		do
+			Result := editor_token_text.string_representation
+		ensure
+			result_attached: Result /= Void
+		end
+
+	trailer_spacing: INTEGER_32
+			-- Space in pixel between text and the first trailer
+
+	trailer_padding: INTEGER_32
+			-- Space in pixel between two trailers
+
+	trailer_count: INTEGER_32
+			-- Number of trailers attached to Current
+		do
+			Result := trailers.count
+		ensure
+			good_result: Result = trailers.count
+		end
+
+	trailer (a_index: INTEGER_32): EB_GRID_EDITOR_TOKEN_ITEM_TRAILER
+			-- Trailer in `trailers' at position indexed by 1-based `a_index'
+		require
+			a_index_valid: a_index >= 1 and a_index <= trailer_count
+		do
+			Result := trailers.i_th (a_index)
+		ensure
+			result_attached: Result /= Void
+		end
+
+	general_tooltip: EVS_GENERAL_TOOLTIP
+			-- General tooltip used to display information
+			-- Use this tooltip if normal tooltip provided cannot satisfy,
+			-- for example, you want to be able to pick and drop from/to tooltip.
+
+feature -- Status report
+
+	is_trailer_adhesive_enabled: BOOLEAN
+			-- Is trailer adhesive?
+			-- Trailer is adhesive means trailer appears right after text.
+			-- For example, following is a grid item with non-adhesive trailer:
+			-- +--------------------------------+
+			-- | Text                    Trailer|
+			-- +--------------------------------+
+			-- And following is a grid item with adhesive trailer:
+			-- +--------------------------------+
+			-- | Text Trailer                   |
+			-- +--------------------------------+
+
+	is_trailer_display_ensured: BOOLEAN
+			-- Is display of `trailers' ensured?
+			-- A True value  means that text wil be truncated first to ensure that all (or most) part of `trailers'
+			-- can be displayed. A False value means that we first ensure that text is displayed mostly.
+
+	is_text_display_ensured: BOOLEAN is
+			-- Is display of `editor_token_text' ensured?
+			-- A True value means that all or most part of text in `editor_token_text' will be display first, and then `trailers'.
+			-- A False value means we try to display `trailers' first.
+		do
+			Result := not is_trailer_display_ensured
+		ensure
+			good_result: Result = not is_trailer_display_ensured
+		end
+
+	is_text_truncated: BOOLEAN is
+			-- Was text of current truncated because of lack of space the last time when it is displayed?
+		do
+			Result := editor_token_text.is_text_truncated
+		end
+
+	is_pointer_in_trailer: BOOLEAN
+			-- Is pointer in trailer for the moment?
+			-- This query can be used to distinguish event source. For example,
+			-- When both `pointer_double_press_actions' of Current grid item and
+			-- `pointer_double_press_actions' of some trailer are invoked, this query will
+			-- return True if the pointer is actually clicked on some trailer.
 
 feature -- Setting
 
@@ -305,97 +400,6 @@ feature -- Setting
 			general_tooltip_removed: general_tooltip = Void
 		end
 
-feature -- Access
-
-	pixmap: EV_PIXMAP
-			-- Image displayed to left of `tokens'.
-
-	spacing: INTEGER
-			-- Spacing between `text' and `pixmap' in pixels.
-			-- If both are not visible, this value does not affect appearance of `Current'.
-
-	text: STRING is
-			-- Text of current item.
-		do
-			Result := editor_token_text.string_representation
-		ensure
-			result_attached: Result /= Void
-		end
-
-	token_at_position (a_pos: INTEGER): EDITOR_TOKEN is
-			-- Token at `a_pos' in `editor_token_text'
-		require
-			a_pos_positive: a_pos > 0
-		do
-			if a_pos <= editor_token_text.tokens.count then
-				Result := editor_token_text.tokens.i_th (a_pos)
-			end
-		end
-
-	trailer_spacing: INTEGER_32
-			-- Space in pixel between text and the first trailer
-
-	trailer_padding: INTEGER_32
-			-- Space in pixel between two trailers
-
-	trailer_count: INTEGER_32
-			-- Number of trailers attached to Current
-		do
-			Result := trailers.count
-		ensure
-			good_result: Result = trailers.count
-		end
-
-	trailer (a_index: INTEGER_32): EB_GRID_EDITOR_TOKEN_ITEM_TRAILER
-			-- Trailer in `trailers' at position indexed by 1-based `a_index'
-		require
-			a_index_valid: a_index >= 1 and a_index <= trailer_count
-		do
-			Result := trailers.i_th (a_index)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	general_tooltip: EVS_GENERAL_TOOLTIP
-			-- General tooltip used to display information
-			-- Use this tooltip if normal tooltip provided cannot satisfy,
-			-- for example, you want to be able to pick and drop from/to tooltip.
-
-feature -- Status report
-
-	is_trailer_adhesive_enabled: BOOLEAN
-			-- Is trailer adhesive?
-			-- Trailer is adhesive means trailer appears right after text.
-			-- For example, following is a grid item with non-adhesive trailer:
-			-- +--------------------------------+
-			-- | Text                    Trailer|
-			-- +--------------------------------+
-			-- And following is a grid item with adhesive trailer:
-			-- +--------------------------------+
-			-- | Text Trailer                   |
-			-- +--------------------------------+
-
-	is_trailer_display_ensured: BOOLEAN
-			-- Is display of `trailers' ensured?
-			-- A True value  means that text wil be truncated first to ensure that all (or most) part of `trailers'
-			-- can be displayed. A False value means that we first ensure that text is displayed mostly.
-
-	is_text_display_ensured: BOOLEAN is
-			-- Is display of `editor_token_text' ensured?
-			-- A True value means that all or most part of text in `editor_token_text' will be display first, and then `trailers'.
-			-- A False value means we try to display `trailers' first.
-		do
-			Result := not is_trailer_display_ensured
-		ensure
-			good_result: Result = not is_trailer_display_ensured
-		end
-
-	is_text_truncated: BOOLEAN is
-			-- Was text of current truncated because of lack of space the last time when it is displayed?
-		do
-			Result := editor_token_text.is_text_truncated
-		end
-
 feature{NONE} -- Redraw
 
 	perform_redraw (a_drawable: EV_DRAWABLE)
@@ -488,14 +492,6 @@ feature{NONE} -- Redraw
 			l_parent: EV_GRID
 		do
 			l_parent := parent
-			if background_color /= Void then
-				a_drawable.set_foreground_color (background_color)
-			elseif row.background_color /= Void then
-				a_drawable.set_foreground_color (row.background_color)
-			else
-				a_drawable.set_foreground_color (parent.background_color)
-			end
-			a_drawable.fill_rectangle (0, 0, width, height)
 			if is_selected then
 				l_editor_data := preferences.editor_data
 				if l_parent.has_focus then
@@ -503,8 +499,16 @@ feature{NONE} -- Redraw
 				else
 					a_drawable.set_foreground_color (l_editor_data.focus_out_selection_background_color)
 				end
-				a_drawable.fill_rectangle (0, 0, width, height)
+			else
+				if background_color /= Void then
+					a_drawable.set_foreground_color (background_color)
+				elseif row.background_color /= Void then
+					a_drawable.set_foreground_color (row.background_color)
+				else
+					a_drawable.set_foreground_color (parent.background_color)
+				end
 			end
+			a_drawable.fill_rectangle (0, 0, width, height)
 		end
 
 feature{NONE} -- Owner actions
@@ -593,52 +597,16 @@ feature -- Pick and drop
 		do
 			l_editor_token_text := editor_token_text
 			if not l_editor_token_text.tokens.is_empty then
-				l_relative_position := relative_pointer_position
+				l_relative_position := relative_pointer_position (Current)
 				Result := l_editor_token_text.token_index_at_position (l_relative_position.x, l_relative_position.y)
 			end
-		end
-
-	relative_position (a_x, a_y: INTEGER): EV_COORDINATE is
-			-- Position relative to top-left corner of current grid item from (`a_x', `a_y')
-		local
-			l_x: INTEGER
-			l_y: INTEGER
-			l_header_height: INTEGER
-		do
-			l_x := a_x - (virtual_x_position - parent.virtual_x_position )
-			if parent.is_header_displayed then
-				l_header_height := parent.header.height
-			end
-			l_y := a_y - (virtual_y_position - parent.virtual_y_position ) - l_header_height
-			create Result.make (l_x, l_y)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	relative_pointer_position: EV_COORDINATE is
-			-- Pointer position relative to top-left corner of current grid item
-		local
-			l_parent_pointer_position: EV_COORDINATE
-		do
-			l_parent_pointer_position := parent.pointer_position
-			Result := relative_position (l_parent_pointer_position.x, l_parent_pointer_position.y)
-		ensure
-			result_attached: Result /= Void
 		end
 
 	editor_token_pebble (a_index: INTEGER): ANY is
 			-- Pebble of token item indicated by `a_index'
 			-- Void if no pebble available.
-		local
-			l_editor_token_text: like editor_token_text
 		do
-			l_editor_token_text := editor_token_text
-			if a_index > 0 and then a_index <= l_editor_token_text.tokens.count then
-				Result := l_editor_token_text.tokens.i_th (a_index).pebble
-			end
-		ensure
-			good_result: a_index > 0 and then a_index <= editor_token_text.tokens.count implies
-				Result = editor_token_text.tokens.i_th (a_index).pebble
+			Result := editor_token_text.pebble (a_index)
 		end
 
 feature{NONE} -- Implementation
@@ -870,9 +838,6 @@ feature{NONE} -- Implementation
 		do
 			Result := a_rec.has_x_y (a_x, a_y)
 		end
-
-	is_pointer_in_trailer: BOOLEAN
-			-- Is pointer in trailer for the moment?
 
 	is_ponter_out_of_trailer: BOOLEAN is
 			-- Is pointer out of trailer area?

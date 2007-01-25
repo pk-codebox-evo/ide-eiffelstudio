@@ -56,7 +56,8 @@ inherit
 			l_restore_default,
 			l_no_default_value,
 			l_building_flat_view,
-			l_building_tree_view
+			l_building_tree_view,
+			build_preference_name_to_display
 		end
 
 	EB_SHARED_PIXMAPS
@@ -114,15 +115,7 @@ feature -- Access
 			l_scp: SHORTCUT_PREFERENCE
 		do
 			create Result
-			if a_pref.name /= Void then
-				if show_full_preference_name then
-					Result.set_text (build_full_name_to_display (a_pref))
-				else
-					Result.set_text (try_to_translate (formatted_name (short_preference_name (a_pref.name))))
-				end
-			else
-				Result.set_text ("")
-			end
+			Result.set_text (build_preference_name_to_display (a_pref))
 			if Result /= Void then
 				l_bp ?= a_pref
 				if l_bp = Void then
@@ -280,7 +273,7 @@ feature {NONE} -- Implementation
 			icon_down := icon_pixmaps.sort_descending_icon
 		end
 
-	build_full_name_to_display (a_pref: PREFERENCE): STRING_32 is
+	build_full_name_to_display (a_pref: STRING): STRING_32 is
 			-- Build a translated full name of a preference.
 		require
 			a_pref_not_void: a_pref /= Void
@@ -289,7 +282,7 @@ feature {NONE} -- Implementation
 			l_string: STRING
 			l_list: LIST [STRING]
 		do
-			l_string := a_pref.name
+			l_string := a_pref
 			create l_str_32.make (l_string.count)
 			l_list := l_string.split ('.')
 			if not l_list.is_empty then
@@ -330,6 +323,34 @@ feature {NONE} -- Implementation
 				if grid.is_displayed and grid.is_sensitive then
 					grid.set_focus
 				end
+			end
+		end
+
+	build_preference_name_to_display (a_pref: PREFERENCE): STRING_32 is
+		local
+			l_sp: STRING_PREFERENCE
+			l_short_name: STRING_GENERAL
+		do
+			if a_pref.name /= Void then
+				l_sp ?= a_pref
+				if l_sp /= Void and then preferences.debug_tool_data.grid_column_layout_preferences.has_item (l_sp) then
+						-- Try to translate dynamically built preference "debugger.grid_column_layout_".
+					l_short_name := names.l_grid_column_layout
+					l_short_name := l_short_name.as_string_32 + a_pref.name.substring (a_pref.name.last_index_of ('_', a_pref.name.count) + 1, a_pref.name.count)
+					if show_full_preference_name then
+						Result := try_to_translate (build_full_name_to_display (parent_preference_name (a_pref.name))).as_string_32 + "." + l_short_name
+					else
+						Result := l_short_name
+					end
+				else
+					if show_full_preference_name then
+						Result := build_full_name_to_display (a_pref.name)
+					else
+						Result := try_to_translate (formatted_name (short_preference_name (a_pref.name)))
+					end
+				end
+			else
+				create {STRING_32}Result.make_empty
 			end
 		end
 

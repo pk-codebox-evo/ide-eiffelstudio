@@ -270,7 +270,7 @@ feature {NONE} -- Implementation
 			old_center: EG_LINKABLE_FIGURE
 			old_es_center: ES_CLASS
 			fdl: EG_FORCE_DIRECTED_LAYOUT
-			ce: EB_CONTEXT_EDITOR
+			ce: EB_DIAGRAM_TOOL
 			new_classes: LIST [ES_CLASS]
 			layout: EIFFEL_INHERITANCE_LAYOUT
 		do
@@ -319,9 +319,9 @@ feature {NONE} -- Implementation
 					else
 						create layout.make_with_world (world)
 						if world.is_uml then
-							layout.set_spacing ({EB_CONTEXT_EDITOR}.default_uml_horizontal_spacing, {EB_CONTEXT_EDITOR}.default_uml_vertical_spacing)
+							layout.set_spacing ({EB_DIAGRAM_TOOL}.default_uml_horizontal_spacing, {EB_DIAGRAM_TOOL}.default_uml_vertical_spacing)
 						else
-							layout.set_spacing ({EB_CONTEXT_EDITOR}.default_bon_horizontal_spacing, {EB_CONTEXT_EDITOR}.default_bon_vertical_spacing)
+							layout.set_spacing ({EB_DIAGRAM_TOOL}.default_bon_horizontal_spacing, {EB_DIAGRAM_TOOL}.default_bon_vertical_spacing)
 						end
 						layout.layout
 						if not world.context_editor.history.undo_list.is_empty then
@@ -341,7 +341,7 @@ feature {NONE} -- Implementation
 						>>])
 					end
 					world.update_cluster_legend
-					world.context_editor.tool.set_stone (create {CLASSI_STONE}.make (model.class_i))
+					world.context_editor.develop_window.tools.set_stone (create {CLASSI_STONE}.make (model.class_i))
 				end
 			end
 		end
@@ -381,19 +381,18 @@ feature {NONE} -- Implementation (adding relations)
 		do
 			create class_file.make (a_stone.class_i.file_name)
 			if not class_file.exists then
-				create l_error_window.make_with_text ("Class is not editable.%N" +
+				create l_error_window.make_with_text (interface_names.l_class_is_not_editable.as_string_32 +
 					 warning_messages.w_file_not_exist (a_stone.class_i.file_name))
-				l_error_window.show_modal_to_window (world.context_editor.development_window.window)
+				l_error_window.show_modal_to_window (world.context_editor.develop_window.window)
 			elseif class_file.is_writable and then not a_stone.class_i.group.is_readonly then
 				if world.context_editor.is_link_inheritance then
 					if drop_allowed (a_stone) then
 						add_inheritance_relation (a_stone.source)
 					else
 						create dial.make_with_text_and_actions (
-							"An inheritance cycle was created.%N%
-								%Do you still want to add this link?",
+							interface_names.l_inheritance_cycle_was_created,
 								<<agent add_inheritance_relation (a_stone.source)>>)
-						dial.show_modal_to_window (world.context_editor.development_window.window)
+						dial.show_modal_to_window (world.context_editor.develop_window.window)
 					end
 				elseif world.context_editor.is_link_client then
 					add_client_relation (a_stone.source, False)
@@ -401,8 +400,8 @@ feature {NONE} -- Implementation (adding relations)
 					add_client_relation (a_stone.source, True)
 				end
 			else
-				create l_error_window.make_with_text ("Class is not editable")
-				l_error_window.show_modal_to_window (world.context_editor.development_window.window)
+				create l_error_window.make_with_text (interface_names.l_class_is_not_editable)
+				l_error_window.show_modal_to_window (world.context_editor.develop_window.window)
 			end
 		end
 

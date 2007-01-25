@@ -68,7 +68,7 @@ feature -- Titles
 	t_no_archive_selected: STRING_GENERAL is do Result := locale.translate ("No metric archive is selected.") end
 	t_archive_management: STRING_GENERAL is do Result := locale.translate ("Archive Management") end
 	t_archive_comparison: STRING_GENERAL is do Result := locale.translate ("Archive Comparison") end
-	t_location: STRING_GENERAL is do Result := locale.translate ("Location:") end
+	t_location: STRING_GENERAL is do Result := locale.translate ("Location") end
 	t_select_source_domain: STRING_GENERAL is do Result := locale.translate ("Select input domain:") end
 	t_select_metric: STRING_GENERAL is do Result := locale.translate ("Select metric:") end
 	t_select_reference_archive: STRING_GENERAL is do Result := locale.translate ("Select reference archive (URL acceptable):") end
@@ -132,7 +132,8 @@ feature -- Titles
 	f_send_to_history: STRING_GENERAL is do Result := locale.translate ("Send last calculated metric value to history") end
 	t_hide_old_archive: STRING_GENERAL is do Result := locale.translate ("Hide archives more than ") end
 	t_days: STRING_GENERAL is do Result := locale.translate (" days old.") end
-	f_keep_detailed_result: STRING_GENERAL is do Result := locale.translate ("Keep detailed result when recalculating archive?") end
+	f_keep_archive_detailed_result: STRING_GENERAL is do Result := locale.translate ("Keep detailed result when recalculating archive?") end
+	f_keep_metric_detailed_result: STRING_GENERAL is do Result := locale.translate ("Keep detailed result when evaluating metric?") end
 	f_remove_detailed_result: STRING_GENERAL is do Result := locale.translate ("Remove detailed result?") end
 	t_detailed_result: STRING_GENERAL is do Result := locale.translate ("Result") end
 	f_double_click_to_go_to_result_panel: STRING_GENERAL  is do Result := locale.translate ("Double click to go to result panel") end
@@ -144,11 +145,28 @@ feature -- Titles
 	t_deselect_all_history: STRING_GENERAL is do Result := locale.translate ("Deselect All") end
 	t_select_recalculatable_history: STRING_GENERAL is do Result := locale.translate ("Select Recalculatable") end
 	t_deselect_recalculatable_history: STRING_GENERAL is do Result := locale.translate ("Deselect Recalculatable") end
-
+	t_filter: STRING_GENERAL is do Result := locale.translate ("Filter") end
+	t_setup_feature_domain: STRING_GENERAL is do Result := locale.translate ("Setup feature domain") end
+	l_to_do_dialog: STRING_GENERAL is do Result := locale.translate ("To do information") end
+	t_add_new_value_evaluator: STRING_GENERAL is do Result := locale.translate ("Add new value evaluator") end
+	t_add_new_constant_value_retriever: STRING is do Result := locale.translate ("Add new constant value retriever") end
+	t_remove_value_retriever: STRING_GENERAL is do Result := locale.translate ("Remove selected value retriever") end
+	t_remove_all_value_retriever: STRING_GENERAL is do Result := locale.translate ("Remove all value retriever") end
+	t_setup_value_criterion: STRING_GENERAL is do Result := locale.translate ("Setup value criterion") end
+	t_match_all_of_the_following: STRING_GENERAL is do Result := locale.translate ("Match all") end
+	t_match_any_of_the_following: STRING_GENERAL is do Result := locale.translate ("Match any") end
+	t_select_tester: STRING_GENERAL is do Result := locale.translate ("Select metric value testers:") end
+	l_domain: STRING_GENERAL is do Result := locale.translate ("domain") end
+	l_error_message: STRING_GENERAL is do Result := locale.translate ("error message") end
+	l_setup_metric_value_retriever: STRING_GENERAL is do Result := locale.translate ("Setup metric value retriever") end
+	t_add_new_metric_value_retriever: STRING_GENERAL is do Result := locale.translate ("Add new metric value retriever") end
+	t_use_external_delayed: STRING_GENERAL is do Result := locale.translate ("Use external delayed domain") end
+	t_warning: STRING_GENERAL is do Result := locale.translate ("Warning") end
 
 feature -- Titles for editor token
 
 	te_input_domain: STRING is "Input domain"
+	te_no_metric: STRING is "No metric"
 
 feature -- Labels
 
@@ -161,7 +179,6 @@ feature -- Labels
 	l_denominator_metric: STRING_GENERAL is do Result := locale.translate ("denominator metric") end
 	l_numerator_metric: STRING_GENERAL is do Result := locale.translate ("numerator metric") end
 	l_variable_metric: STRING_GENERAL is do Result := locale.translate ("variable metric") end
-	l_metric: STRING_GENERAL is do Result := locale.translate ("metric") end
 	l_metric_archive_node: STRING_GENERAL is do Result := locale.translate ("metric archive node") end
 	l_criterion: STRING_GENERAL is do Result := locale.translate ("criterion") end
 	l_name_colon: STRING_GENERAL is do Result := locale.translate ("Name:") end
@@ -170,10 +187,15 @@ feature -- Labels
 	l_description_colon: STRING_GENERAL is do Result := locale.translate ("Description:") end
 	l_no_result_available: STRING_GENERAL is do Result := locale.translate ("No result available.") end
 	l_metric_definition_file: STRING_GENERAL is do Result := locale.translate ("Metrics definition file:") end
+	l_use_case_sensitive: STRING_GENERAL is do Result := locale.translate ("Case sensitive") end
+	l_use_regular_expression: STRING_GENERAL is do Result := locale.translate ("Use regular expression") end
+	l_constant_value: STRING_GENERAL is do Result := locale.translate ("constant value") end
+	l_metric_value: STRING_GENERAL is do Result := locale.translate ("metric value") end
+	l_value_tester: STRING_GENERAL is do Result := locale.translate ("value tester") end
 
 feature -- Tooltip
 
-	f_quick_metric_definition: STRING_GENERAL is do Result := locale.translate ("Define quick metric") end
+	f_quick_metric_definition: STRING_GENERAL is do Result := locale.translate ("Define quick metric (or drop a basic metric here as a template)") end
 	f_run: STRING_GENERAL is do Result := locale.translate ("Run selected metric") end
 	f_go_to_definition: STRING_GENERAL is do Result := locale.translate ("Go to definition") end
 	f_stop: STRING_GENERAL is do Result := locale.translate ("Stop metric evaluation") end
@@ -202,7 +224,7 @@ feature -- Tooltip
 	f_remove_scope: STRING_GENERAL is do Result := locale.translate ("Remove selected scope(s)") end
 	f_remove_all_scopes: STRING_GENERAL is do Result := locale.translate ("Remove all scopes") end
 	f_delayed_scope: STRING_GENERAL is do Result := locale.translate ("Use input domain as criterion domain.") end
-
+	f_use_delayed_scope: STRING_GENERAL is do Result := locale.translate ("Use delayed domain") end
 	f_save: STRING_GENERAL is do Result := locale.translate ("Save") end
 	f_new: STRING_GENERAL is do Result := locale.translate ("New metric") end
 	f_remove: STRING_GENERAL is do Result := locale.translate ("Remove current selected metric") end
@@ -211,6 +233,7 @@ feature -- Tooltip
 	f_search_for_class: STRING_GENERAL is do Result := locale.translate ("Search for group/class/feature") end
 	f_filter_result: STRING_GENERAL is do Result := locale.translate ("Filter result which is not visible from input domain") end
 	f_pick_and_drop_items: STRING_GENERAL is do Result := locale.translate ("Pick and drop items like group/class/feature here") end
+	f_pick_and_drop_metric_and_items: STRING_GENERAL is do Result := locale.translate ("Pick and drop metrics or items like group/class/feature here") end
 	f_insert_text_here: STRING_GENERAL is do Result := locale.translate ("Insert text here") end
 	f_get_criterion_list: STRING_GENERAL is do Result := locale.translate ("Available criterion list") end;
 	f_get_negation: STRING_GENERAL is do Result := locale.translate ("You can put %"not%" before a criterion name to negate it") end
@@ -229,6 +252,8 @@ feature -- Tooltip
 	f_rearrange_unit: STRING_GENERAL is do Result := locale.translate ("Or you can pick a metric unit and drop it on another metric to rearrange their order.") end
 	f_show_to_do_message: STRING_GENERAL is do Result := locale.translate ("Display a message about how to deal with the metric definition error") end
 	f_import_metrics: STRING_GENERAL is do Result := locale.translate ("Import metrics from file") end
+	f_clear_defined_domain: STRING_GENERAL is do Result := locale.translate ("Clear defined domain") end
+	f_check_warning: STRING_GENERAL is do Result := locale.translate ("Check defined warnings when archive is recalculated?") end
 
 	l_target_unit: STRING_GENERAL is do Result := locale.translate("Target") end
 	l_group_unit: STRING_GENERAL is do Result := locale.translate("Group") end
@@ -241,6 +266,56 @@ feature -- Tooltip
 	l_compilation_unit: STRING_GENERAL is do Result := locale.translate("Compilation") end
 	l_local_unit: STRING_GENERAL is do Result := locale.translate("Local") end
 	l_ratio_unit: STRING_GENERAL is do Result := locale.translate("Ratio") end
+
+	l_retrieve_indirect_referenced_class (a_for_supplier: BOOLEAN): STRING_GENERAL is
+		do
+			if a_for_supplier then
+				Result := locale.translate ("Retrieve indirect supplier classes")
+			else
+				Result := locale.translate ("Retrieve indirect client classes")
+			end
+		end
+
+	l_retrieve_referenced_class (a_for_supplier: BOOLEAN): STRING_GENERAL is
+		do
+			if a_for_supplier then
+				Result := locale.translate ("Retrieve supplier classes")
+			else
+				Result := locale.translate ("Retrieve client classes")
+			end
+		end
+
+	l_retrieve_normally_referenced_class (a_for_supplier: BOOLEAN): STRING_GENERAL is
+		do
+			if a_for_supplier then
+				Result := locale.translate ("Retrieve normally referenced supplier classes")
+			else
+				Result := locale.translate ("Retrieve normally referenced client classes")
+			end
+		end
+
+	l_retrieve_only_syntacticall_referenced_class (a_for_supplier: BOOLEAN): STRING_GENERAL is
+		do
+			if a_for_supplier then
+				Result := locale.translate ("Retrieve only syntactially referenced supplier classes")
+			else
+				Result := locale.translate ("Retrieve only syntactially referenced client classes")
+			end
+		end
+
+	l_setup_referenced_class_dialog (a_for_supplier: BOOLEAN): STRING_GENERAL is
+		do
+			if a_for_supplier then
+				Result := locale.translate ("Setup supplier classes")
+			else
+				Result := locale.translate ("Setup client classes")
+			end
+		end
+
+	l_setup_domain_dialog: STRING_GENERAL is do Result := locale.translate ("Setup domain") end
+
+	l_base_value: STRING_GENERAL is do Result := locale.translate ("Base value") end
+	l_operator: STRING_GENERAL is do Result := locale.translate ("Operator") end
 
 feature -- Error/warning message
 
@@ -829,6 +904,140 @@ feature -- Error/warning message
 			result_attached: Result /= Void
 		end
 
+	err_filter_invalid (a_filter: STRING_GENERAL): STRING_GENERAL is
+			-- Filter value invalid error
+		require
+			a_filter_attached: a_filter /= Void
+		do
+			Result := locale.format_string (locale.translate ("Filter value %"$1%" is invalid."), [a_filter])
+		ensure
+			result_attached: Result /= Void
+		end
+
+	err_numerator_coefficient_invalid (a_value: STRING_GENERAL): STRING_GENERAL is
+			-- Numerator metric coefficient invalid error
+		require
+			a_value_attached: a_value /= Void
+		do
+			Result := locale.format_string (locale.translate ("Coefficient %"$1%" for numerator metric is invalid. A real number is expected."), [a_value])
+		ensure
+			result_attached: Result /= Void
+		end
+
+	err_denominator_coefficient_invalid (a_value: STRING_GENERAL): STRING_GENERAL is
+			-- Numerator metric coefficient invalid error
+		require
+			a_value_attached: a_value /= Void
+		do
+			Result := locale.format_string (locale.translate ("Coefficient %"$1%" for denominator metric is invalid. A real number is expected."), [a_value])
+		ensure
+			result_attached: Result /= Void
+		end
+
+	err_denominator_coefficient_is_zero: STRING_GENERAL is do Result := locale.translate ("Coefficient for denominator metric is zero. A non-zero real numer is expected.") end
+
+	err_normal_referenced_class_attr_invalid (a_value: STRING_GENERAL): STRING_GENERAL is
+		require
+			a_value_attached: a_value /= Void
+		do
+			Result := locale.format_string (locale.translate ("Value %"$1%" of %"normal%" attribute is invalid. A boolean value is expected."), [a_value])
+		ensure
+			result_attached: Result /= Void
+		end
+
+	err_only_syntactically_referenced_class_attr_invalid (a_value: STRING_GENERAL): STRING_GENERAL is
+		require
+			a_value_attached: a_value /= Void
+		do
+			Result := locale.format_string (locale.translate ("Only syntactically referenced supplier/client class attribute %"$1%" is invalid. A boolean value is expected."), [a_value])
+		ensure
+			result_attached: Result /= Void
+		end
+
+	err_indirect_referenced_class_attr_invalid (a_value: STRING_GENERAL): STRING_GENERAL is
+		require
+			a_value_attached: a_value /= Void
+		do
+			Result := locale.format_string (locale.translate ("Value %"$1%" of attribute %"indirect%" is invalid. A boolean value is expected."), [a_value])
+		ensure
+			result_attached: Result /= Void
+		end
+
+	err_metric_name_missing: STRING_GENERAL is
+			-- Metric name missing error
+		do
+			Result := locale.translate ("Metric name is missing.")
+		ensure
+			result_attached: Result /= Void
+		end
+
+	err_too_many_tester: STRING_GENERAL is
+			-- Too many tester sections error
+		do
+			Result := locale.translate ("Too many %"value_tester%" sections. Only one is expected.")
+		ensure
+			result_attached: Result /= Void
+		end
+
+	err_operator_missing: STRING_GENERAL is do Result := locale.translate ("Operator in value criterion is missing.") end
+
+	err_operator_invalid (a_operator: STRING_GENERAL): STRING_GENERAL is
+			-- Operator invalid error
+		require
+			a_operator_attached: a_operator /= Void
+		do
+			Result := locale.format_string (locale.translate ("Operator %"$1%" is invalid. One of the following operators is expected: %"=%", %"/=%", %"<%", %"<=%", %">%", %">=%""), [a_operator])
+		ensure
+			result_attached: Result /= Void
+		end
+
+	err_tester_relation_missing: STRING_GENERAL is do Result := locale.translate ("Relation for value tester is missing.") end
+
+	err_tester_relation_invalid (a_relation: STRING_GENERAL): STRING_GENERAL is
+			-- Tester relation invalid error
+		require
+			a_relation_attached: a_relation /= Void
+		do
+			Result := locale.format_string ("Value tester relation %"$1%" is invalid. An %"and%" or %"or%" relation is expected.", [a_relation])
+		ensure
+			result_attached: Result /= Void
+		end
+
+	err_no_value_tester_specified: STRING_GENERAL is do Result := locale.translate ("No value tester is specified.") end
+
+	err_base_value_missing: STRING_GENERAL is do Result := locale.translate ("Base value of a value tester is missing.") end
+
+	err_base_value_invalid (a_value: STRING_GENERAL): STRING_GENERAL is
+		require
+			a_value_attached: a_value /= Void
+		do
+			Result := locale.translate ("Base value %"$1%" of a value tester is invalid. A real number is expected.")
+		ensure
+			result_attached: Result /= Void
+		end
+
+	err_too_many_value_retriever: STRING_GENERAL is
+		do
+			Result := locale.translate ("Too many value retrievers nodes. Only one is expected.")
+		ensure
+			result_attached: Result /= Void
+		end
+
+	err_domain_missing: STRING_GENERAL is do Result := locale.translate ("Domain is missing.") end
+	err_value_tester_missing: STRING_GENERAL is do Result := locale.translate ("Value tester is missing.") end
+	err_value_retriever_missing: STRING_GENERAL is do Result := locale.translate ("Value retriever is missing.") end
+	err_use_external_delayed_invalid (a_value: STRING_GENERAL; a_attribute_name: STRING_GENERAL): STRING_GENERAL is
+		require
+			a_value_attached: a_value /= Void
+		do
+			Result := locale.format_string ("Value %"$1%" of attribute %"$2%" is invalid. A boolean is expected.", [a_value, a_attribute_name])
+		ensure
+			result_attached: Result /= Void
+		end
+
+	err_delayed_domain_item_appear: STRING_GENERAL is do Result := locale.translate ("Delayed domain item appears.") end
+	err_input_domain_item_appear: STRING_GENERAL is do Result := locale.translate ("Input domain item appears.") end
+
 feature -- To do messages
 
 	variable_metric_missing_to_do: STRING_GENERAL is
@@ -871,7 +1080,10 @@ feature -- To do messages
 			result_attached: Result /= Void
 		end
 
-	recursive_definition_to_do: STRING_GENERAL is do Result := locale.translate ("In linear metric, make sure that every variable metric doesn't involve %Nrecursive metric.%NIn ratio metric, make sure that numerator metric or denominator metric %Ndoesn't involve recursive metric.") end
+	recursive_definition_to_do: STRING_GENERAL is do Result := locale.translate ("In linear metric, make sure that every variable metric doesn't involve recursive metric.%NIn ratio metric, make sure that numerator metric or denominator metric doesn't involve recursive metric.") end
+	make_sure_denominator_coefficient_non_zero_to_do: STRING_GENERAL is do Result := locale.translate ("Make sure coefficient for denominator metric is a non-zero real number.") end
+
+	no_value_tester_specified_to_do: STRING_GENERAL is do Result := locale.translate ("Make sure that at least one value tester is specified.") end
 
 	metric_name_info: STRING_GENERAL is
 			-- Information of metric name
@@ -892,7 +1104,7 @@ feature -- To do messages
 	ratio_metric_info: STRING_GENERAL is
 			-- Information of ratio metric
 		do
-			Result := locale.translate ("Ratio metric is of the form:%N%N%TNumerator metric / Denominator metric%N%NNumerator metric and denominator metric can be of any valid unit.%N%N")
+			Result := locale.translate ("Ratio metric is of the form:%N%N%T (coefficient * Numerator metric) / (coefficient * Denominator metric)%N%NNumerator metric and denominator metric can be of any valid unit.%N%N")
 		ensure
 			result_attached: Result /= Void
 		end
@@ -904,6 +1116,15 @@ feature -- To do messages
 		ensure
 			result_attached: Result /= Void
 		end
+
+	metric_invalid_to_do: STRING_GENERAL is
+			-- Invalid metric to-do message
+		do
+			Result := locale.translate ("Make sure that referenced metric exists and is valid.")
+		end
+
+	delayed_domain_item_appear_to_do: STRING_GENERAL is do Result := locale.translate ("Remove delayed domain item.") end
+	input_domain_item_appear_to_do: STRING_GENERAL is do Result := locale.translate ("Remove input domain item.") end
 
 feature -- Separator
 
@@ -931,38 +1152,51 @@ feature -- Separator
 			result_attached: Result /= Void
 		end
 
-	location_separator: STRING_GENERAL is
-			-- Space separator
+	colon: STRING_GENERAL is
+			-- Colon
 		do
-			Result := " : "
+			Result := ":"
+		ensure
+			result_attached: Result /= Void
+		end
+
+	location_connector: STRING_GENERAL is
+			-- Location connector
+		do
+			Result := " -> "
+		ensure
+			result_attached: Result /= Void
+		end
+
+	left_parenthesis: STRING_GENERAL is
+		do
+			Result := "("
+		ensure
+			result_attached: Result /= Void
+		end
+
+	right_parenthesis: STRING_GENERAL is
+		do
+			Result := ")"
+		ensure
+			result_attached: Result /= Void
+		end
+
+	left_arrow: STRING_GENERAL is
+		do
+			Result := "<"
+		ensure
+			result_attached: Result /= Void
+		end
+
+	right_arrow: STRING_GENERAL is
+		do
+			Result := ">"
 		ensure
 			result_attached: Result /= Void
 		end
 
 feature -- Utilities
-
-	quoted_name (a_name: STRING_GENERAL; a_prefix: STRING_GENERAL): STRING_GENERAL is
-			-- Quoted name of `a_name'.
-			-- If `a_prefix' is attached, add `a_prefix' before `a_name'.
-			-- For example, when `a_name' is "Classes", and `a_prefix' is "metric",
-			-- result will be: metric "Classes".
-		require
-			a_name_attached: a_name /= Void
-		local
-			l_temp_str: STRING_32
-		do
-			create l_temp_str.make (128)
-			if a_prefix /= Void then
-				l_temp_str.append (a_prefix)
-				l_temp_str.append_character (' ')
-			end
-			l_temp_str.append ("%"")
-			l_temp_str.append (a_name)
-			l_temp_str.append ("%"")
-			Result := l_temp_str
-		ensure
-			result_attached: Result /= Void
-		end
 
 	concatenated_string (a_str_list: LINEAR [STRING_GENERAL]; a_separator: STRING_GENERAL): STRING_GENERAL is
 			-- Concatenated string of all strings from `a_str_list' with `a_separactor' separated in between			
@@ -1004,125 +1238,10 @@ feature -- Utilities
 			a_section_name_attached: a_section_name /= Void
 			a_section_type_attached: a_section_Type /= Void
 		do
-			Result := quoted_name (a_section_name, a_section_type)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	location (a_location_section_array: ARRAY [STRING_GENERAL]): STRING_GENERAL is
-			-- Location which is comprised of several location sections specified in `a_location_section_array'
-			-- For example, if a_location_section_array' is <<basic metric "Classes", "criterion "is_effective">>,
-			-- the result will be: in location basic metric "Classes" : criterion "is_effective".
-		require
-			a_location_section_array_valid:
-				a_location_section_array /= Void and then not a_location_section_array.is_empty
-		do
-			Result := concatenated_string (a_location_section_array.linear_representation, location_separator)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	metric_location_section (a_metric_name, a_metric_type_name: STRING_GENERAL): STRING_GENERAL is
-			-- Location section of `a_metric_name' whose metric type is `a_metric_type_name'
-		require
-			a_metric_name_attached: a_metric_name /= Void
-			a_metric_type_name_attached: a_metric_type_name /= Void
-		do
-			Result := location_section (a_metric_name, a_metric_type_name)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	linear_metric_location_section (a_metric_name: STRING_GENERAL): STRING_GENERAL is
-			-- Linear metric location section
-		require
-			a_metric_name_attached: a_metric_name /= Void
-		do
-			Result := metric_location_section (a_metric_name, l_linear_metric)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	basic_metric_location_section (a_metric_name: STRING_GENERAL): STRING_GENERAL is
-			-- Basic metric location section
-		require
-			a_metric_name_attached: a_metric_name /= Void
-		do
-			Result := metric_location_section (a_metric_name, l_basic_metric)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	ratio_metric_location_section (a_metric_name: STRING_GENERAL): STRING_GENERAL is
-			-- Ratio metric location section
-		require
-			a_metric_name_attached: a_metric_name /= Void
-		do
-			Result := metric_location_section (a_metric_name, l_ratio_metric)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	criterion_location_section (a_criterion_name: STRING_GENERAL): STRING_GENERAL is
-			-- Criterion location section
-		require
-			a_criterion_name_attached: a_criterion_name /= Void
-		do
-			Result := location_section (a_criterion_name, l_criterion)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	variable_metric_location (a_linear_metric_name, a_variable_metric_name: STRING_GENERAL): STRING_GENERAL is
-			-- Variable metric location
-		require
-			a_variable_metric_name_attached: a_variable_metric_name /= Void
-			a_linear_metric_name_attached: a_linear_metric_name /= Void
-		do
-			Result := location (<<location_section (a_linear_metric_name, l_linear_metric), location_section (a_variable_metric_name, l_variable_metric)>>)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	criterion_location (a_basic_metric_name, a_criterion_name: STRING_GENERAL): STRING_GENERAL is
-			-- Criterion location
-		require
-			a_basic_metric_name_attached: a_basic_metric_name /= Void
-			a_criterion_name_attached: a_criterion_name /= Void
-		do
-			Result := location (<<basic_metric_location_section (a_basic_metric_name), criterion_location_section (a_criterion_name)>>)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	numerator_location (a_ratio_metric_name, a_numerator_name: STRING_GENERAL): STRING_GENERAL is
-			-- Numerator metric local
-		require
-			a_numerator_name_attached: a_numerator_name /= Void
-			a_ratio_metric_name_attached: a_ratio_metric_name /= Void
-		do
-			Result := location (<<ratio_metric_location_section (a_ratio_metric_name), location_section (a_numerator_name, l_numerator_metric)>>)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	denominator_location (a_ratio_metric_name, a_denominator_name: STRING_GENERAL): STRING_GENERAL is
-			-- Denominator metric local
-		require
-			a_denominator_name_attached: a_denominator_name /= Void
-			a_ratio_metric_name_attached: a_ratio_metric_name /= Void
-		do
-			Result := location (<<ratio_metric_location_section (a_ratio_metric_name), location_section (a_denominator_name, l_denominator_metric)>>)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	archive_location (a_archive_metric_name: STRING_GENERAL): STRING_GENERAL is
-			-- Metric archive location
-		require
-			a_archive_metric_name_attached: a_archive_metric_name /= Void
-		do
-			Result := location_section (a_archive_metric_name, l_metric_archive_node)
+			Result := a_section_type.twin
+			Result.append ("(")
+			Result.append (a_section_name)
+			Result.append (")")
 		ensure
 			result_attached: Result /= Void
 		end
@@ -1132,7 +1251,61 @@ feature -- Utilities
 		require
 			a_location_attached: a_location /= Void
 		do
-			Result := locale.format_string (locale.translate (" Location: $1"), [a_location])
+			Result := coloned_string (t_location, True)
+			Result.append (space_separator)
+			Result.append (a_location)
+		ensure
+			result_attached: Result /= Void
+		end
+
+	visitable_name (a_visitable_type: STRING_GENERAL; a_visitable_name: STRING_GENERAL): STRING_GENERAL is
+			-- Visitable name for a visitable whose type is `a_visitable_type' and name is `a_visitable_name'
+			-- For example, type is "basic metric" and name is "Classes", we will get "basic metric (Classes)".
+		require
+			a_visitable_type_attached: a_visitable_type /= Void
+			a_visitable_name_attached: a_visitable_name /= Void
+		do
+			Result := a_visitable_type.twin
+			Result.append (left_parenthesis)
+			Result.append (a_visitable_name)
+			Result.append (right_parenthesis)
+		ensure
+			result_attached: Result /= Void
+		end
+
+
+	coloned_string (a_string: STRING_GENERAL; a_first_letter_upper: BOOLEAN): STRING_GENERAL is
+			-- String which is `a_string' suffixed with a colon
+			-- If `a_first_letter_upper' is True, make sure the first letter of returned string is in upper case (if current locale permits).
+		require
+			a_string_attached: a_string /= Void
+		do
+			if a_first_letter_upper then
+				Result := first_character_as_upper (a_string)
+			else
+				Result := a_string.twin
+			end
+			Result.append (colon)
+		ensure
+			result_attached: Result /= Void
+		end
+
+	xml_location (a_element_type: STRING_GENERAL; a_element_name: STRING_GENERAL): STRING_GENERAL is
+			-- Xml location. `a_element_type' is the element name type. `a_element_name' is for better information.
+			-- For example, if `a_element_type' is "basic_metric" and `a_element_name' is Void, Result would be "<basic_metric>",
+			-- if `a_element_name' is "Classes", result would be "<basic_metric(Classes)>"
+		require
+			a_element_type_attached: a_element_type /= Void
+			not_a_element_is_empty: not a_element_type.is_empty
+		do
+			Result := left_arrow.twin
+			Result.append (a_element_type)
+			if a_element_name /= Void then
+				Result.append (left_parenthesis)
+				Result.append (a_element_name)
+				Result.append (right_parenthesis)
+			end
+			Result.append (right_arrow)
 		ensure
 			result_attached: Result /= Void
 		end

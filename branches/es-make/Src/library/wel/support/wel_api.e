@@ -38,6 +38,39 @@ feature -- Windows
 			"SetForegroundWindow ((HWND)$hwnd)"
 		end
 
+	frozen set_window_text (hwnd, str: POINTER)
+			-- SDK SetWindowText
+		external
+			"C inline use <windows.h>"
+		alias
+			"SetWindowText ((HWND)$hwnd, (LPCTSTR)$str)"
+		end
+
+	frozen set_parent (hwnd_child, hwnd_parent: POINTER): POINTER is
+			-- Change the parent of the given child and return handle to
+			-- previous parent, or NULL otherwise.
+		external
+			"C inline use <windows.h>"
+		alias
+			"return (EIF_POINTER) SetParent ((HWND) $hwnd_child, (HWND) $hwnd_parent);"
+		end
+
+	frozen move_window (hwnd: POINTER; a_x, a_y, a_w, a_h: INTEGER; repaint: BOOLEAN): BOOLEAN is
+			-- SDK MoveWindow
+		external
+			"C inline use <windows.h>"
+		alias
+			"return EIF_TEST(MoveWindow((HWND) $hwnd, (int) $a_x, (int) $a_y, (int) $a_w, (int) $a_h, (BOOL) $repaint));"
+		end
+
+	frozen set_window_pos (hwnd, hwnd_after: POINTER; a_x, a_y, a_w, a_h, flags: INTEGER): BOOLEAN is
+			-- SDK SetWindowPos
+		external
+			"C inline use <windows.h>"
+		alias
+			"return EIF_TEST(SetWindowPos((HWND) $hwnd, (HWND) $hwnd_after, (int) $a_x, (int) $a_y, (int) $a_w, (int) $a_h, (UINT) $flags));"
+		end
+
 feature -- Menus
 
 	frozen set_menu (hwnd, hmenu: POINTER): INTEGER is
@@ -145,6 +178,16 @@ feature -- Messages
 			"C inline use <windows.h>"
 		alias
 			"SendMessage ((HWND) $hwnd, (UINT) $msg, (WPARAM) $wparam, (LPARAM) $lparam)"
+		end
+
+feature -- File Drop Handling
+
+	frozen drag_query_file (hdrop: POINTER; ifile: INTEGER; buffer_pointer: POINTER; buffer_size: INTEGER): INTEGER is
+			-- SDK DragQueryFile
+		external
+			"C inline use %"wel.h%""
+		alias
+			"DragQueryFile ((HDROP) $hdrop, (UINT) $ifile, (LPTSTR) $buffer_pointer, (UINT) $buffer_size)"
 		end
 
 feature -- Scrolling

@@ -51,7 +51,7 @@ feature -- Redefine.
 		do
 		end
 
-	restore (titles: ARRAYED_LIST [STRING]; a_container: EV_CONTAINER; a_direction: INTEGER) is
+	restore (a_data: SD_INNER_CONTAINER_DATA; a_container: EV_CONTAINER) is
 			-- Redefine.
 		do
 			content.set_visible (False)
@@ -113,7 +113,7 @@ feature -- Redefine.
 		do
 			content.set_visible (True)
 			internal_docking_manager.command.lock_update (Void, True)
-			create l_floating_state.make (a_x, a_y, internal_docking_manager)
+			create l_floating_state.make (a_x, a_y, internal_docking_manager, True)
 			create l_docking_state.make (internal_content, direction, 0)
 			l_docking_state.dock_at_top_level (l_floating_state.inner_container)
 			change_state (l_docking_state)
@@ -182,11 +182,13 @@ feature -- Redefine.
 					change_state (l_new_state)
 				end
 			else
-				float (0, 0)
+				float (internal_shared.default_screen_x, internal_shared.default_screen_y)
 			end
 		rescue
-			l_restired := True
-			retry
+			if not l_restired then
+				l_restired := True
+				retry
+			end
 		end
 
 	close is

@@ -185,6 +185,9 @@ feature -- Initialization
 			end
 				-- Add features from ANY
 			add_features_of_any (l_feat_tbl)
+			if is_enum then
+				add_enum_conversion (l_feat_tbl)
+			end
 
 				-- Clean `overloaded_names' to remove non-overloaded routines.
 			clean_overloaded_names (l_feat_tbl)
@@ -988,42 +991,59 @@ feature {NONE} -- Initialization
 		require
 			a_feat_tbl_attached: a_feat_tbl /= Void
 		local
+			l_class: like external_class
 			l_properties: ARRAYED_LIST [CONSUMED_PROPERTY]
 			l_property: CONSUMED_PROPERTY
 			l_fields: ARRAYED_LIST [CONSUMED_FIELD]
 			l_getter, l_setter: CONSUMED_ENTITY
+			l_feat: FEATURE_I
 			l_extrn_func_i: EXTERNAL_FUNC_I
 			l_def_func_i: DEF_FUNC_I
 			l_feat_i: FEATURE_I
 			l_attr_i: ATTRIBUTE_I
+			l_inherited: ARRAYED_LIST [CONSUMED_ENTITY]
+			l_setter_name: STRING
 		do
-			l_properties := external_class.properties
+			l_class := external_class
+			l_inherited := l_class.inherited_entities
+			l_properties := l_class.properties
 			from
 				l_properties.start
 			until
 				l_properties.after
 			loop
 				l_property := l_properties.item
-				l_setter := l_property.setter
-					-- Only setters with one argument can be used as assigner commands
-					-- because order of arguments in setters and assigner commands is
-					-- opposite.
-				if l_setter /= Void and then l_setter.arguments.count = 1 then
-					l_getter := l_property.getter
-					if l_getter /= Void then
-						l_feat_i := a_feat_tbl.item (l_getter.eiffel_name)
-						l_extrn_func_i ?= l_feat_i
-						if l_extrn_func_i = Void then
-							l_def_func_i ?= l_feat_i
-						end
-						check func_attached: l_extrn_func_i /= Void or l_def_func_i /= Void end
-						l_feat_i := a_feat_tbl.item (l_setter.eiffel_name)
-						check l_feat_i_attached: l_feat_i /= Void end
-						if l_feat_i /= Void then
-							if l_extrn_func_i /= Void then
-								l_extrn_func_i.set_type (l_extrn_func_i.type, l_feat_i.feature_name_id)
-							elseif l_def_func_i /= Void then
-								l_def_func_i.set_type (l_def_func_i.type, l_feat_i.feature_name_id)
+				if l_property /= Void  then
+					l_setter := l_property.setter
+						-- Only setters with one argument can be used as assigner commands
+						-- because order of arguments in setters and assigner commands is
+						-- opposite.
+					if l_setter /= Void and then l_setter.arguments.count = 1 then
+						l_getter := l_property.getter
+						if l_getter /= Void then
+							l_feat_i := a_feat_tbl.item (l_getter.eiffel_name)
+							l_extrn_func_i ?= l_feat_i
+							if l_extrn_func_i = Void then
+								l_def_func_i ?= l_feat_i
+							end
+							check func_attached: l_extrn_func_i /= Void or l_def_func_i /= Void end
+							l_setter_name := l_setter.eiffel_name
+							if l_inherited /= Void and then l_inherited.has (l_property) then
+									-- property is inherited so use inherit setter name (fixes test#dotnet043)
+								l_feat := l_feat_i.written_class.feature_named (l_getter.eiffel_name)
+								if l_feat /= Void and then l_feat.assigner_name /= Void then
+									l_setter_name := l_feat.assigner_name
+								end
+							end
+							check l_setter_name_attached: l_setter_name /= Void end
+							l_feat_i := a_feat_tbl.item (l_setter_name)
+							check l_feat_i_attached: l_feat_i /= Void end
+							if l_feat_i /= Void then
+								if l_extrn_func_i /= Void then
+									l_extrn_func_i.set_type (l_extrn_func_i.type, l_feat_i.feature_name_id)
+								elseif l_def_func_i /= Void then
+									l_def_func_i.set_type (l_def_func_i.type, l_feat_i.feature_name_id)
+								end
 							end
 						end
 					end
@@ -1031,7 +1051,7 @@ feature {NONE} -- Initialization
 				l_properties.forth
 			end
 
-			l_fields := external_class.fields
+			l_fields := l_class.fields
 			if l_fields.count > 0 then
 				from
 					l_fields.start
@@ -1039,18 +1059,48 @@ feature {NONE} -- Initialization
 					l_fields.after
 				loop
 					l_getter := l_fields.item
-					l_setter := l_fields.item.setter
-					if l_setter /= Void then
-						l_attr_i ?= a_feat_tbl.item (l_getter.eiffel_name)
-						check l_attr_i_attached: l_attr_i /= Void end
+					if l_getter /= Void and then not l_inherited.has (l_getter) then
+						l_setter := l_fields.item.setter
+						if l_setter /= Void then
+							l_attr_i ?= a_feat_tbl.item (l_getter.eiffel_name)
+							check l_attr_i_attached: l_attr_i /= Void end
 
-						l_feat_i := a_feat_tbl.item (l_setter.eiffel_name)
-						check l_feat_i_attached: l_feat_i /= Void end
-						if l_feat_i /= Void and l_attr_i /= Void then
-							l_attr_i.set_type (l_attr_i.type, l_feat_i.feature_name_id)
+							l_feat_i := a_feat_tbl.item (l_setter.eiffel_name)
+							check l_feat_i_attached: l_feat_i /= Void end
+							if l_feat_i /= Void and l_attr_i /= Void then
+								l_attr_i.set_type (l_attr_i.type, l_feat_i.feature_name_id)
+							end
 						end
 					end
 					l_fields.forth
+				end
+			end
+		end
+
+	add_enum_conversion (a_feat_tbl: like feature_table) is
+			-- Binds a conversion routine to an Enum type for artifical `to_integer' feature.
+		require
+			is_enum: is_enum
+			a_feat_tbl_attached: a_feat_tbl /= Void
+			convert_to_unattached: convert_to = Void
+		local
+			l_feat: FEATURE_I
+			l_type: NAMED_TYPE_A
+		do
+			l_feat := a_feat_tbl.item_id ({NAMES_HEAP}.to_integer_name_id)
+			check
+				l_feat_attached: l_feat /= Void
+			end
+			if l_feat /= Void then
+				l_type ?= l_feat.type
+				check
+					l_type_attached: l_type /= Void
+					l_type_is_integer: l_type.is_integer
+				end
+				if l_type /= Void then
+					create convert_to.make (1)
+					convert_to.set_key_equality_tester (create {CONVERTIBILITY_CHECKER})
+					convert_to.force ({NAMES_HEAP}.to_integer_name_id, l_type)
 				end
 			end
 		end

@@ -17,7 +17,7 @@ create
 
 feature {NONE} -- Initlization
 
-	make_with_items (a_title: STRING; a_items: like items) is
+	make_with_items (a_title: STRING_GENERAL; a_items: like items) is
 			-- Creation method.
 		require
 			a_title_not_void: a_title /= Void
@@ -48,7 +48,7 @@ feature {NONE} -- Initlization
 			set: items = a_items
 		end
 
-	make_with_tool_bar (a_title: STRING; a_tool_bar: EV_TOOL_BAR) is
+	make_with_tool_bar (a_title: STRING_GENERAL; a_tool_bar: EV_TOOL_BAR) is
 			-- Creation method. A helper function, actually SD_TOOL_BAR_ZONE only appcept EV_TOOL_BAR_ITEMs.
 		require
 			a_title_not_void: a_title /= Void
@@ -77,7 +77,7 @@ feature {NONE} -- Initlization
 			set: a_tool_bar.count = items.count
 		end
 
-	convert_to_sd_item (a_ev_item: EV_TOOL_BAR_ITEM; a_name: STRING): SD_TOOL_BAR_ITEM is
+	convert_to_sd_item (a_ev_item: EV_TOOL_BAR_ITEM; a_name: STRING_GENERAL): SD_TOOL_BAR_ITEM is
 			-- Convert a EV_TOOL_BAR_ITEM to SD_TOOL_BAR_ITEM.
 		obsolete
 			"Warning: use this method to convert pixmap in `a_ev_item' will lose alpha data, which will show nothing when use AlphaBlend functions!"
@@ -167,11 +167,10 @@ feature -- Command
 	close is
 			-- Close Current
 		do
-			if zone /= Void then
-				zone.destroy
-				if zone.is_floating then
-					zone.floating_tool_bar.destroy
-				end
+			destroy_container
+			if manager /= Void then
+				manager.contents.start
+				manager.contents.prune (Current)
 			end
 		end
 
@@ -181,12 +180,18 @@ feature -- Command
 			valid: a_direction = {SD_ENUMERATION}.top or a_direction = {SD_ENUMERATION}.bottom
 			added: is_added
 		do
+			if zone /= Void then
+				-- Use this function to set all SD_TOOL_BAR_ITEM wrap states.
+				zone.change_direction (True)
+			end
+			destroy_container
+
 			manager.set_top (Current, a_direction)
 		end
 
 feature -- Query
 
-	title: STRING
+	title: STRING_GENERAL
 			-- Tool bar title.
 
 	items: ARRAYED_SET [SD_TOOL_BAR_ITEM]
@@ -239,6 +244,7 @@ feature -- Query
 			-- Group count, group is buttons before one separatpr.
 		local
 			l_separator: SD_TOOL_BAR_SEPARATOR
+			l_last_is_separator: BOOLEAN -- Maybe two separator together.
 		do
 			Result := 1
 			from
@@ -247,8 +253,11 @@ feature -- Query
 				items.after
 			loop
 				l_separator ?= items.item
-				if l_separator /= Void then
+				if l_separator /= Void and not l_last_is_separator then
 					Result := Result + 1
+					l_last_is_separator := True
+				elseif l_separator = Void then
+					l_last_is_separator := False
 				end
 				items.forth
 			end
@@ -340,6 +349,27 @@ feature -- Query
 	is_visible: BOOLEAN
 			-- If Current visible?
 
+	is_menu_bar: BOOLEAN is
+			-- If Current is a menu bar whihch only contain SD_TOOL_BAR_MENU_ITEM.
+		local
+			l_menu_item: SD_TOOL_BAR_MENU_ITEM
+		do
+			if not items.is_empty then
+				from
+					items.start
+					Result := True
+				until
+					items.after or not Result
+				loop
+					l_menu_item ?= items.item
+					if l_menu_item = Void then
+						Result := False
+					end
+					items.forth
+				end
+			end
+		end
+
 	hash_code: INTEGER is
 			-- Hash code
 		do
@@ -401,7 +431,7 @@ feature {SD_TOOL_BAR_ZONE, SD_FLOATING_TOOL_BAR_ZONE, SD_TOOL_BAR_ZONE_ASSISTANT
 			valid: Result /= 0
 		end
 
-	seperator_after_item (a_item: SD_TOOL_BAR_ITEM): SD_TOOL_BAR_SEPARATOR is
+	separator_after_item (a_item: SD_TOOL_BAR_ITEM): SD_TOOL_BAR_SEPARATOR is
 			-- Separator after `a_item' if exist.
 		require
 			has: items.has (a_item)
@@ -415,7 +445,7 @@ feature {SD_TOOL_BAR_ZONE, SD_FLOATING_TOOL_BAR_ZONE, SD_TOOL_BAR_ZONE_ASSISTANT
 			end
 		end
 
-	seperator_before_item (a_item: SD_TOOL_BAR_ITEM): SD_TOOL_BAR_SEPARATOR is
+	separator_before_item (a_item: SD_TOOL_BAR_ITEM): SD_TOOL_BAR_SEPARATOR is
 			-- Separator before `a_item' if exist.
 		require
 			has: items.has (a_item)
@@ -424,7 +454,7 @@ feature {SD_TOOL_BAR_ZONE, SD_FLOATING_TOOL_BAR_ZONE, SD_TOOL_BAR_ZONE_ASSISTANT
 		do
 			l_index := index_of (a_item)
 			debug ("docking")
-				print ("%N SD_TOOL_BAR_CONTENT: seperator_before_item: index_of `a_item' is: " + l_index.out)
+				print ("%N SD_TOOL_BAR_CONTENT: separator_before_item: index_of `a_item' is: " + l_index.out)
 			end
 			items.go_i_th (l_index)
 			if not items.before then
@@ -435,7 +465,7 @@ feature {SD_TOOL_BAR_ZONE, SD_FLOATING_TOOL_BAR_ZONE, SD_TOOL_BAR_ZONE_ASSISTANT
 			end
 		end
 
-	tool_bar_items_texts: ARRAYED_LIST [STRING];
+	tool_bar_items_texts: ARRAYED_LIST [STRING_GENERAL];
 			-- All strings on `items'.
 
 	button_count_except_separator: INTEGER is
@@ -506,6 +536,8 @@ feature {SD_TOOL_BAR_ZONE, SD_FLOATING_TOOL_BAR_ZONE, SD_TOOL_BAR_ZONE_ASSISTANT
 			not_void: a_zone /= Void
 		do
 			zone := a_zone
+-- For on_customize issue, we disable it here
+-- But does it work for open_configs?			
 			is_visible := True
 		ensure
 			set: zone = a_zone
@@ -531,6 +563,18 @@ feature {SD_TOOL_BAR_ZONE, SD_FLOATING_TOOL_BAR_ZONE, SD_TOOL_BAR_ZONE_ASSISTANT
 		end
 
 feature {NONE} -- Implementation
+
+	destroy_container is
+			-- Destroy related containers.
+		do
+			if zone /= Void then
+				zone.destroy_parent_containers
+				if zone.is_floating then
+					zone.floating_tool_bar.destroy
+				end
+				zone.destroy
+			end
+		end
 
 	internal_close_request_actions: EV_NOTIFY_ACTION_SEQUENCE;
 			-- Actions to perfrom when close requested.

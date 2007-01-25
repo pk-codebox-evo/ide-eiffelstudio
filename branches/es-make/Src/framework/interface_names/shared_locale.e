@@ -11,15 +11,21 @@ indexing
 class
 	SHARED_LOCALE
 
+inherit
+	PLATFORM
+
 feature -- Access
 
 	locale: I18N_LOCALE is
 			-- Current locale
         do
-			if locale_internal.item = Void then
-				locale_internal.put (locale_manager.get_system_locale)
-			end
 			Result := locale_internal.item
+			if Result = Void then
+				Result := system_locale
+				locale_internal.put (Result)
+			end
+		ensure
+			locale_not_void: Result /= Void
 		end
 
 	locale_manager: I18N_LOCALE_MANAGER is
@@ -46,7 +52,57 @@ feature -- Status change
 			if locale_manager.has_locale (l_id) then
 				locale_internal.put (locale_manager.get_locale (l_id))
 			else
-				locale_internal.put (locale_manager.get_system_locale)
+				locale_internal.put (system_locale)
+			end
+		end
+
+	set_system_locale is
+			-- Set `locale' `system_locale'
+		do
+			locale_internal.put (system_locale)
+		end
+
+feature -- Output
+
+	localized_print (a_str: STRING_GENERAL) is
+			-- Print `a_str' as localized encoding.
+			-- `a_str' is taken as a UTF-16 string.
+		local
+			l_string: STRING_GENERAL
+		do
+			if is_windows then
+				l_string := encoding_utf16.convert_to (system_encoding, a_str)
+			else
+				l_string := encoding_utf16.convert_to (encoding_utf8, a_str)
+			end
+			if l_string /= Void then
+				check
+					l_string_is_valid_as_string_8: l_string.is_valid_as_string_8
+				end
+				io.put_string (l_string.as_string_8)
+			else
+				io.put_string (a_str.as_string_8)
+			end
+		end
+
+	localized_print_error (a_str: STRING_GENERAL) is
+			-- Print an error, `a_str', as localized encoding.
+			-- `a_str' is taken as a UTF-16 string.
+		local
+			l_string: STRING_GENERAL
+		do
+			if is_windows then
+				l_string := encoding_utf16.convert_to (system_encoding, a_str)
+			else
+				l_string := encoding_utf16.convert_to (encoding_utf8, a_str)
+			end
+			if l_string /= Void then
+				check
+					l_string_is_valid_as_string_8: l_string.is_valid_as_string_8
+				end
+				io.error.put_string (l_string.as_string_8)
+			else
+				io.error.put_string (a_str.as_string_8)
 			end
 		end
 
@@ -57,29 +113,78 @@ feature {NONE} -- Implementation
 			create Result
 		end
 
+	system_locale: I18N_LOCALE
+		once
+			Result := locale_manager.get_system_locale
+		end
+
+	system_encoding: ENCODING is
+			-- System encoding.
+		once
+			create Result.make (system_locale.info.code_page)
+		end
+
+	encoding_utf16: ENCODING is
+			-- UTF-16 encoding.
+		once
+			create Result.make ((create {CODE_PAGE_CONSTANTS}).utf16)
+		end
+
+	encoding_utf8: ENCODING is
+			-- UTF-8 encoding.
+		once
+			create Result.make ((create {CODE_PAGE_CONSTANTS}).utf8)
+		end
+
+feature -- File saving
+
+	save_string_32_in_file (a_file: FILE; a_str: STRING_32) is
+			-- Save `a_str' in `a_file', according to current locale.
+			-- `a_str' should be UTF-16 string.
+		require
+			a_file_open: a_file.is_open_write
+			a_file_exist: a_file.exists
+			a_str_not_void: a_str /= Void
+		local
+			l_string: STRING_GENERAL
+		do
+			if is_windows then
+				l_string := encoding_utf16.convert_to (system_encoding, a_str)
+			else
+				l_string := encoding_utf16.convert_to (encoding_utf8, a_str)
+			end
+			if l_string /= Void then
+				check
+					l_string_is_valid_as_string_8: l_string.is_valid_as_string_8
+				end
+				a_file.put_string (l_string.as_string_8)
+			else
+				a_file.put_string (a_str.as_string_8)
+			end
+		end
+
 feature -- String
 
-	first_character_to_upper_case (a_s: STRING_GENERAL): STRING_GENERAL is
+	first_character_as_upper (a_s: STRING_GENERAL): STRING_GENERAL is
 			-- First character to upper case if possible
 		require
 			a_s_not_void: a_s /= Void
 		local
-			l_str: STRING
+			c: NATURAL_32
 		do
-			if not a_s.is_empty and then a_s.is_valid_as_string_8 then
-				l_str := a_s.as_string_8
-				l_str.left_adjust
-					-- Set the first character to upper case.
-				l_str.put (l_str.item (1).as_upper, 1)
-				Result := l_str
-			else
-				Result := a_s
+			Result := a_s.twin
+			if not Result.is_empty then
+				c := Result.code (1)
+				if c <= {CHARACTER_8}.max_value.to_natural_32 then
+					Result.put_code (c.to_character_8.as_upper.natural_32_code, 1)
+				end
 			end
 		ensure
 			Result_not_void: Result /= Void
+			Identity: Result /= a_s
 		end
 
-	string_general_to_lower (a_s: STRING_GENERAL): STRING_GENERAL is
+	string_general_as_lower (a_s: STRING_GENERAL): STRING_GENERAL is
 		require
 			a_s_not_void: a_s /= Void
 		local
@@ -89,14 +194,15 @@ feature -- String
 				l_str := a_s.as_string_8
 				Result := l_str.as_lower
 			else
-				Result := a_s
+				Result := a_s.twin
 			end
 		ensure
 			Result_not_void: Result /= Void
 			Result_is_lower: is_string_general_lower (Result)
+			Identity: Result /= a_s
 		end
 
-	string_general_to_upper (a_s: STRING_GENERAL): STRING_GENERAL is
+	string_general_as_upper (a_s: STRING_GENERAL): STRING_GENERAL is
 		require
 			a_s_not_void: a_s /= Void
 		local
@@ -106,14 +212,15 @@ feature -- String
 				l_str := a_s.as_string_8
 				Result := l_str.as_upper
 			else
-				Result := a_s
+				Result := a_s.twin
 			end
 		ensure
 			Result_not_void: Result /= Void
 			Result_is_upper: is_string_general_upper (Result)
+			Identity: Result /= a_s
 		end
 
-	string_general_left_adjust (a_s: STRING_GENERAL): STRING_GENERAL is
+	string_general_as_left_adjusted (a_s: STRING_GENERAL): STRING_GENERAL is
 		require
 			a_s_not_void: a_s /= Void
 		local
@@ -124,10 +231,11 @@ feature -- String
 				l_str.left_adjust
 				Result := l_str
 			else
-				Result := a_s
+				Result := a_s.twin
 			end
 		ensure
 			Result_not_void: Result /= Void
+			Identity: Result /= a_s
 		end
 
 	is_string_general_lower (a_str: STRING_GENERAL): BOOLEAN is

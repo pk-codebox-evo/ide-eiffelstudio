@@ -9,6 +9,25 @@ inherit
 
 feature
 
+	frozen set_gtk_allocation_struct_width (a_c_struct: POINTER; a_width: INTEGER)
+		external
+			"C [struct <gtk/gtk.h>] (GtkAllocation, gint)"
+		alias
+			"width"
+		end
+
+	frozen set_gtk_allocation_struct_height (a_c_struct: POINTER; a_height: INTEGER)
+		external
+			"C [struct <gtk/gtk.h>] (GtkAllocation, gint)"
+		alias
+			"height"
+		end
+
+	frozen gtk_widget_size_allocate (a_widget: POINTER; a_allocation: POINTER)
+		external
+			"C (GtkWidget*, GtkAllocation*) | <gtk/gtk.h>"
+		end
+
 	frozen g_module_supported: BOOLEAN
 		external
 			"C signature (): gboolean use <gmodule.h>"
@@ -332,13 +351,19 @@ feature
 			"GTK_WIDGET_UNSET_FLAGS"
 		end
 
+	frozen gtk_widget_is_sensitive (a_widget: POINTER): BOOLEAN is
+		external
+			"C [macro <gtk/gtk.h>]"
+		alias
+			"GTK_WIDGET_IS_SENSITIVE"
+		end
+
 	frozen gtk_widget_no_window (a_wid: POINTER): BOOLEAN is
 		external
 			"C [macro <gtk/gtk.h>]"
 		alias
 			"GTK_WIDGET_NO_WINDOW"
 		end
-
 
 	frozen c_gdk_color_struct_size: INTEGER is
 		external
@@ -7948,6 +7973,11 @@ feature
 			"C (GtkWindow*, gint, gint) | <gtk/gtk.h>"
 		end
 
+	frozen gtk_window_get_default_size (a_window: POINTER; a_width: POINTER; a_height: POINTER) is
+		external
+			"C (GtkWindow*, EIF_INTEGER_32*, EIF_INTEGER_32*) | <gtk/gtk.h>"
+		end
+
 	frozen gtk_window_set_focus (a_window: POINTER; a_focus: POINTER) is
 		external
 			"C (GtkWindow*, GtkWidget*) | <gtk/gtk.h>"
@@ -7987,7 +8017,6 @@ feature
 		external
 			"C (GtkWindow*, gchar*, gchar*) | <gtk/gtk.h>"
 		end
-
 
 	frozen gdk_color_struct_blue (a_c_struct: POINTER): INTEGER is
 		external
@@ -8029,6 +8058,13 @@ feature
 			"C [struct <gtk/gtk.h>] (GdkColormap): EIF_INTEGER"
 		alias
 			"size"
+		end
+
+	frozen gdk_event_focus_struct_in (a_c_struct: POINTER): INTEGER
+		external
+			"C [struct <gtk/gtk.h>] (GdkEventFocus): EIF_INTEGER"
+		alias
+			"in"
 		end
 
 	frozen gdk_event_any_struct_send_event (a_c_struct: POINTER): INTEGER is

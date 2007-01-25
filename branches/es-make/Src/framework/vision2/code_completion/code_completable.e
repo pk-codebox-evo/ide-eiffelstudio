@@ -9,6 +9,14 @@ indexing
 deferred class
 	CODE_COMPLETABLE
 
+inherit
+	ANY
+
+	EV_SHARED_APPLICATION
+		export
+			{NONE} all
+		end
+
 feature {NONE} -- Initialization
 
 	initialize_code_complete is
@@ -470,15 +478,6 @@ feature {NONE} -- Timer
 
 	completion_timeout: EV_TIMEOUT
 			-- Timeout for showing completion list
-
-	ev_application: EV_APPLICATION is
-			-- The application
-		local
-			l_env: EV_ENVIRONMENT
-		once
-			create l_env
-			Result := l_env.application
-		end
 
 	default_timer_interval: INTEGER is 1500
 

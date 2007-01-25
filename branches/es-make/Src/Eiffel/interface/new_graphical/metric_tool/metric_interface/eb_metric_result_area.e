@@ -10,7 +10,11 @@ class
 	EB_METRIC_RESULT_AREA
 
 inherit
-	EB_METRIC_RESULT_AREA_IMP
+	EV_VERTICAL_BOX
+		redefine
+			initialize,
+			is_in_default_state
+		end
 
 	EB_CONSTANTS
 		undefine
@@ -89,16 +93,25 @@ feature {NONE} -- Initialization
 			metric_tool_attached: metric_tool = a_tool
 		end
 
-	user_initialization is
-			-- Called by `initialize'.
-			-- Any custom user initialization that
-			-- could not be performed in `initialize',
-			-- (due to regeneration of implementation class)
-			-- can be added here.
+	initialize is
+			-- Initialize `Current'.
 		local
 			l_text: EV_TEXT
 		do
+			Precursor {EV_VERTICAL_BOX}
+				-- Create all widgets.
+			create metric_result_area
+			create archive_result_area
+			create dummy_area
+			create dummy_text
+
+				-- Build widget structure.
+			extend (metric_result_area)
+			extend (archive_result_area)
+			extend (dummy_area)
+			dummy_text.disable_edit
 			dummy_text.set_text (metric_names.l_no_result_available)
+			dummy_area.extend (dummy_text)
 			create metric_result.make (metric_tool, Current)
 			create archive_result.make (metric_tool, Current)
 			metric_result_area.extend (metric_result)
@@ -147,6 +160,9 @@ feature -- Access
 	is_last_metric_result_from_history: BOOLEAN
 			-- Is last metric result from history panel?
 
+	is_last_result_filtered: BOOLEAN
+			-- Is result filtered when last metric is calculated?
+
 feature -- Status report
 
 	has_last_result_been_displayed: BOOLEAN
@@ -182,11 +198,12 @@ feature -- Status report
 
 feature -- Actions
 
-	on_display_metric_value (a_metric: like last_metric; a_value: like last_value; a_source_domain: like last_source_domain; a_domain: like last_result_domain; a_time: like last_metric_calculation_time; a_from_history: BOOLEAN) is
+	on_display_metric_value (a_metric: like last_metric; a_value: like last_value; a_source_domain: like last_source_domain; a_domain: like last_result_domain; a_time: like last_metric_calculation_time; a_from_history: BOOLEAN; a_filtered: BOOLEAN) is
 			-- Switch current panel to display metric evaluation `a_value' for `a_metric' calculated against `a_source_domain'.
 			-- `a_domain' is the detailed metric result. `a_domain' can be Void.
 			-- `a_time' is when `a_metric' was calculated.
-			-- `a_from_history' mean if current result is from history panel
+			-- `a_from_history' mean if current result is from history panel.
+			-- `a_filtered' indicates if result was filtered.
 		require
 			a_metric_attached: a_metric /= Void
 			a_source_domain_attached: a_source_domain /= Void
@@ -203,6 +220,7 @@ feature -- Actions
 			set_has_last_result_been_displayed (False)
 			set_is_up_to_date (False)
 			is_last_metric_result_from_history := a_from_history
+			is_last_result_filtered := a_filtered
 			update_ui
 		end
 
@@ -230,7 +248,7 @@ feature -- Actions
 			last_source_domain_attached: last_source_domain /= Void
 		do
 			metric_tool.on_send_metric_value_in_history (
-				create{EB_METRIC_ARCHIVE_NODE}.make (last_metric.name, metric_type_id (last_metric), last_metric_calculation_time, last_value, last_source_domain, uuid_gen.generate_uuid.out),
+				create{EB_METRIC_ARCHIVE_NODE}.make (last_metric.name, metric_type_id (last_metric), last_metric_calculation_time, last_value, last_source_domain, uuid_gen.generate_uuid.out, is_last_result_filtered),
 				Current
 			)
 		end
@@ -377,6 +395,17 @@ feature{NONE} -- UI Update
 			end
 		end
 
+feature{NONE} -- Implementation
+
+	dummy_text: EV_TEXT
+	metric_result_area, archive_result_area, dummy_area: EV_VERTICAL_BOX
+
+	is_in_default_state: BOOLEAN is
+			-- Is `Current' in its default state.
+		do
+			Result := True
+		end
+
 invariant
 	metric_result_attached: metric_result /= Void
 	archive_result_attached: archive_result /= Void
@@ -415,4 +444,5 @@ indexing
 
 
 end -- class EB_METRIC_RESULT_AREA
+
 

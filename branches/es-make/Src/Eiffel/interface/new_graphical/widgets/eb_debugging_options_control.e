@@ -54,6 +54,11 @@ inherit
 			default_create, is_equal, copy
 		end
 
+	KL_SHARED_FILE_SYSTEM
+		undefine
+			default_create, is_equal, copy
+		end
+
 create
 	make
 
@@ -699,7 +704,7 @@ feature {NONE} -- Profile actions
 								change_cwd_on (a_gi.text, a_prof)
 							end (p, gdi)
 				)
-			gdi.set_start_directory (eiffel_system.project_location.location)
+			gdi.set_start_directory (default_working_directory)
 			srow.set_item (2, gdi)
 
 				--| Arguments
@@ -1195,6 +1200,16 @@ feature {NONE} -- Environment implementation
 		end
 
 feature {NONE} -- Implementation
+
+	default_working_directory: STRING is
+		do
+			Result := Eiffel_system.lace.directory_name
+			if not file_system.directory_exists (Result) then
+					--| If lace.directory_name does not exist,
+					--| let's use the project's location
+				Result := eiffel_system.project_location.location
+			end
+		end
 
 	stock_colors: EV_STOCK_COLORS is
 		once

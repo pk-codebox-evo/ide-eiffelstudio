@@ -100,9 +100,9 @@ feature {NONE} -- Initialization
 			a_tool_attached: a_tool /= Void
 			a_panel_attached: a_panel /= Void
 		do
+			create show_percentage_btn.make (preferences.metric_tool_data.display_percentage_for_ratio_preference)
 			set_metric_tool (a_tool)
 			metric_panel := a_panel
-			on_show_percentage_change_from_outside_agent := agent on_show_percentage_change_from_outside
 			create content.make (2)
 			content.extend (create {HASH_TABLE [EV_GRID_ITEM, INTEGER]}.make (100))
 			content.extend (create {HASH_TABLE [EV_GRID_ITEM, INTEGER]}.make (100))
@@ -127,14 +127,19 @@ feature {NONE} -- Initialization
 			l_path_sort_info: EVS_GRID_TWO_WAY_SORTING_INFO [EB_METRIC_RESULT_ROW]
 			l_text: EV_TEXT_FIELD
 			l_font: EV_FONT
+			l_grid_support: like new_grid_support
 		do
-				-- Setup `input_grid'.
+				-- Setup `input_grid'.			
 			create input_grid
 			input_grid.hide_header
 			input_grid.set_column_count_to (1)
 			input_grid.set_row_count_to (1)
 			input_grid.set_minimum_height (40)
+			input_grid.set_focused_selection_color (editor_preferences.selection_background_color)
 			input_grid_area.extend (input_grid)
+			input_grid.enable_selection_on_single_button_click
+			l_grid_support := new_grid_support (input_grid)
+			l_grid_support.enable_grid_item_pnd_support
 
 				-- Setup sortable `result_grid'.
 			create result_grid
@@ -148,7 +153,7 @@ feature {NONE} -- Initialization
 
 				-- Setup `editor_token_grid_support'.
 			create editor_token_grid_support.make_with_grid (result_grid)
-			editor_token_grid_support.enable_editor_token_pnd
+			editor_token_grid_support.enable_grid_item_pnd_support
 			editor_token_grid_support.color_or_font_change_actions.extend (agent on_color_or_font_changed)
 			editor_token_grid_support.synchronize_color_or_font_change_with_editor
 			editor_token_grid_support.synchronize_scroll_behavior_with_editor
@@ -171,7 +176,7 @@ feature {NONE} -- Initialization
 			input_lbl.set_text (metric_names.t_input_domain_title)
 
 				-- Prepare search facilities
-			create quick_search_bar.make (metric_tool.development_window)
+			create quick_search_bar.make (metric_tool.develop_window)
 			quick_search_bar.attach_tool (grid_wrapper)
 			grid_wrapper.enable_search
 
@@ -215,8 +220,7 @@ feature {NONE} -- Initialization
 			show_percentage_btn.set_text ("%%")
 			show_percentage_btn.set_tooltip (metric_names.f_display_in_percentage)
 			show_percentage_btn.select_actions.extend (agent on_show_percentage_changes)
-			preferences.metric_tool_data.display_percentage_for_ratio_preference.change_actions.extend (on_show_percentage_change_from_outside_agent)
-			on_show_percentage_change_from_outside
+			ratio_btn_toolbar.extend (show_percentage_btn)
 			create l_font
 			l_font.set_weight ({EV_FONT_CONSTANTS}.weight_bold)
 			value_text.set_font (l_font)
@@ -284,12 +288,9 @@ feature -- Result loading
 		require
 			a_input_attached: a_input /= Void
 		local
-			l_item: EB_METRIC_DOMAIN_GRID_ITEM
+			l_item: EB_METRIC_GRID_DOMAIN_ITEM [ANY]
 		do
 			create l_item.make (a_input)
-			l_item.set_spacing (2)
-			l_item.set_padding (5)
-			l_item.set_left_border (3)
 			input_grid.set_item (1, 1, l_item)
 			input_grid.column (1).resize_to_content
 		end
@@ -749,26 +750,6 @@ feature{NONE} -- Implementation
 			end
 		end
 
-	on_show_percentage_change_from_outside is
-			-- Action to be performed when show percentage for ratio metric value is changed in preference setting window			
-		local
-			l_btn: like show_percentage_btn
-			l_double: DOUBLE_REF
-		do
-			l_btn := show_percentage_btn
-			if preferences.metric_tool_data.is_percentage_for_ratio_displayed then
-				l_btn.enable_select
-			else
-				l_btn.disable_select
-			end
-			if l_btn.is_sensitive then
-				l_double ?= value_text.data
-				if l_double /= Void then
-					value_text.set_text (metric_value (l_double.item, show_percentage_btn.is_selected))
-				end
-			end
-		end
-
 	invisible_items: DS_LINKED_LIST [EB_METRIC_RESULT_ROW]
 			-- List of invisible result rows
 
@@ -816,14 +797,13 @@ feature{NONE} -- Implementation
 	last_comparator: AGENT_LIST_COMPARATOR [EB_METRIC_RESULT_ROW]
 			-- Last comparator
 
-	on_show_percentage_change_from_outside_agent: PROCEDURE [ANY, TUPLE]
-			-- Agent of `on_show_precentage_change_from_outside'
-
 	on_send_metric_to_history is
 			-- Action to be performed to send last calculated metric value in history
 		do
 			metric_panel.on_send_metric_to_history
 		end
+
+	show_percentage_btn: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON
 
 feature {NONE} -- Recycle
 
@@ -836,7 +816,7 @@ feature {NONE} -- Recycle
 			quick_search_bar := Void
 			editor_token_grid_support.desynchronize_color_or_font_change_with_editor
 			editor_token_grid_support.desynchronize_scroll_behavior_with_editor
-			preferences.metric_tool_data.display_percentage_for_ratio_preference.change_actions.prune_all (on_show_percentage_change_from_outside_agent)
+			show_percentage_btn.recycle
 		end
 
 invariant
@@ -847,6 +827,7 @@ invariant
 	editor_token_grid_support_attached: editor_token_grid_support /= Void
 	metric_panel_attached: metric_panel /= Void
 	invisible_items_attached: invisible_items /= Void
+	show_percentage_btn_attached: show_percentage_btn /= Void
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

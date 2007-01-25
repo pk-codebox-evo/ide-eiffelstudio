@@ -20,7 +20,6 @@ inherit
 		redefine
 			make,
 			reset, on_text_loaded,
-			gain_focus,
 			on_mouse_button_down,
 			on_click_in_text, handle_extended_key,
 			handle_extended_ctrled_key,
@@ -34,6 +33,8 @@ inherit
 		end
 
 	EB_FORMATTED_TEXT
+		rename
+			text as text_from_formatted_text
 		export
 			{NONE} All
 		undefine
@@ -57,9 +58,8 @@ feature {NONE}-- Initialization
 		do
 			Precursor {EB_CUSTOM_WIDGETTED_EDITOR} (a_dev_window)
 			if dev_window /= Void then
-				dev_window.add_editor_to_list (Current)
 					-- Register the dev_window as an observer of `Current'
-				text_displayed.add_selection_observer (dev_window)
+				text_displayed.add_selection_observer (dev_window.agents)
 			end
 			create after_reading_text_actions.make
 
@@ -508,7 +508,8 @@ feature {EB_CLICKABLE_MARGIN} -- Pick and drop
 	pick_n_drop_status: INTEGER
 			-- Step of the pick n drop where the editor is.
 
-	pnd_pick, no_pnd: INTEGER is unique
+	pnd_pick: INTEGER is 1
+	no_pnd: INTEGER is 2
 
 feature {NONE} -- Text Loading
 
@@ -645,21 +646,18 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	gain_focus is
-			-- Update the editor as it has just gained the focus.
-		do
-			Precursor {EB_CUSTOM_WIDGETTED_EDITOR}
-			if dev_window /= Void then
-				dev_window.set_current_editor (Current)
-			end
-		end
-
 	in_feature_click: BOOLEAN
 
 	resume_cursor_for_drop (a: ANY) is
 			-- Resumes cursor on drop from pick and drop
 		do
 			resume_cursor_blinking
+		end
+
+	text_from_formatted_text: STRING_32 is
+			-- Temperary implementation
+		do
+			Result := text
 		end
 
 feature {NONE} -- Memory management

@@ -10,6 +10,11 @@ class
 
 feature -- Externals
 
+	frozen gdk_window_get_state (a_window: POINTER): INTEGER
+		external
+			"C signature (GdkWindow*): GdkWindowState use <gtk/gtk.h>"
+		end
+
 	frozen gdk_region_intersect (a_region1, a_region2: POINTER) is
 		external
 			"C signature (GdkRegion*, GdkRegion*) use <gtk/gtk.h>"
@@ -539,6 +544,20 @@ feature -- Externals
 			"C [macro <gtk/gtk.h>]"
 		alias
 			"calloc (sizeof(GtkStockItem), 1)"
+		end
+
+	frozen c_gtk_allocation_struct_allocate: POINTER is
+		external
+			"C [macro <gtk/gtk.h>]"
+		alias
+			"calloc (sizeof(GtkAllocation), 1)"
+		end
+
+	frozen c_gtk_requisition_struct_allocate: POINTER is
+		external
+			"C [macro <gtk/gtk.h>]"
+		alias
+			"calloc (sizeof(GtkRequisition), 1)"
 		end
 
 	frozen g_signal_handler_disconnect (a_instance: POINTER; handler_id: INTEGER) is

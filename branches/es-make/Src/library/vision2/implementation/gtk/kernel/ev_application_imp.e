@@ -72,7 +72,7 @@ feature {NONE} -- Initialization
 				{EV_GTK_EXTERNALS}.gtk_object_sink (tooltips)
 				set_tooltip_delay (500)
 
-				stored_display_data := [default_pointer, 0, 0, 0, 0, 0]
+				create stored_display_data
 					-- Initialize display retrieval storage for use by motion actions.
 
 					-- Initialize the marshal object.
@@ -106,25 +106,28 @@ feature {NONE} -- Event loop
 			--{EV_GTK_EXTERNALS}.g_mem_profile
 		end
 
-feature {EV_ANY_IMP} -- Implementation
+feature {EV_ANY_I} -- Implementation
 
 	process_underlying_toolkit_event_queue is
 			-- Process all pending GDK events and then dispatch GTK iteration until no more
 			-- events are pending.
 		local
 			gdk_event: POINTER
-			event_widget, grab_widget: POINTER
+			event_widget, l_grab_widget: POINTER
 			l_call_event, l_propagate_event, l_event_handled: BOOLEAN
 			l_pnd_imp: EV_PICK_AND_DROPABLE_IMP
 			l_widget_imp: EV_WIDGET_IMP
 			l_top_level_window_imp: EV_WINDOW_IMP
 			l_gtk_widget_imp: EV_GTK_WIDGET_IMP
-			l_motion_tuple: TUPLE [INTEGER, INTEGER, DOUBLE, DOUBLE, DOUBLE, INTEGER, INTEGER]
+			l_gtk_window_imp: EV_GTK_WINDOW_IMP
+			l_motion_tuple: like motion_tuple
+			l_app_motion_tuple: like app_motion_tuple
 			l_no_more_events: BOOLEAN
 			i, l_widget_x, l_widget_y, l_screen_x, l_screen_y: INTEGER
 		do
 			from
 				l_motion_tuple := motion_tuple
+				l_app_motion_tuple := app_motion_tuple
 				user_events_processed_from_underlying_toolkit := False
 			until
 				l_no_more_events or else is_destroyed
@@ -133,297 +136,291 @@ feature {EV_ANY_IMP} -- Implementation
 				if gdk_event /= default_pointer then
 						-- GDK events are always handled before gtk events.
 					event_widget := {EV_GTK_EXTERNALS}.gtk_get_event_widget (gdk_event)
-					if event_widget /= default_pointer then
-						l_call_event := True
-						l_propagate_event := False
-						grab_widget := {EV_GTK_EXTERNALS}.gtk_grab_get_current
-						if grab_widget = default_pointer then
-							grab_widget := event_widget
+						-- event_widget may be null.
+					l_call_event := True
+					l_propagate_event := False
+					l_grab_widget := {EV_GTK_EXTERNALS}.gtk_grab_get_current
+					if l_grab_widget = default_pointer then
+						l_grab_widget := event_widget
+					end
+					inspect
+						{EV_GTK_EXTERNALS}.gdk_event_any_struct_type (gdk_event)
+					when GDK_MOTION_NOTIFY then
+						debug ("GDK_EVENT")
+							print ("GDK_MOTION_NOTIFY%N")
 						end
-						inspect
-							{EV_GTK_EXTERNALS}.gdk_event_any_struct_type (gdk_event)
-						when GDK_MOTION_NOTIFY then
-							debug ("GDK_EVENT")
-								print ("GDK_MOTION_NOTIFY")
-							end
-							user_events_processed_from_underlying_toolkit := True
-								-- Set up storage to avoid server roundtrips.
-							use_stored_display_data := True
-							l_screen_x := {EV_GTK_EXTERNALS}.gdk_event_motion_struct_x_root (gdk_event).truncated_to_integer
-							l_screen_y := {EV_GTK_EXTERNALS}.gdk_event_motion_struct_y_root (gdk_event).truncated_to_integer
-							l_widget_x := {EV_GTK_EXTERNALS}.gdk_event_motion_struct_x (gdk_event).truncated_to_integer
-							l_widget_y := {EV_GTK_EXTERNALS}.gdk_event_motion_struct_Y (gdk_event).truncated_to_integer
-							stored_display_data.put_pointer ({EV_GTK_EXTERNALS}.gdk_event_motion_struct_window (gdk_event), 1)
-							stored_display_data.put_integer (l_screen_x, 2)
-							stored_display_data.put_integer (l_screen_y, 3)
-							stored_display_data.put_integer ({EV_GTK_EXTERNALS}.gdk_event_motion_struct_state (gdk_event), 4)
-							stored_display_data.put_integer (l_widget_x, 5)
-							stored_display_data.put_integer (l_widget_y, 6)
+						user_events_processed_from_underlying_toolkit := True
+							-- Set up storage to avoid server roundtrips.
+						use_stored_display_data := True
+						l_screen_x := {EV_GTK_EXTERNALS}.gdk_event_motion_struct_x_root (gdk_event).truncated_to_integer
+						l_screen_y := {EV_GTK_EXTERNALS}.gdk_event_motion_struct_y_root (gdk_event).truncated_to_integer
+						l_widget_x := {EV_GTK_EXTERNALS}.gdk_event_motion_struct_x (gdk_event).truncated_to_integer
+						l_widget_y := {EV_GTK_EXTERNALS}.gdk_event_motion_struct_y (gdk_event).truncated_to_integer
+						stored_display_data.window := {EV_GTK_EXTERNALS}.gdk_event_motion_struct_window (gdk_event)
+						stored_display_data.x := l_screen_x
+						stored_display_data.y := l_screen_y
+						stored_display_data.mask := {EV_GTK_EXTERNALS}.gdk_event_motion_struct_state (gdk_event)
+						stored_display_data.originating_x := l_widget_x
+						stored_display_data.originating_y := l_widget_y
 
-							l_call_event := False
+						l_call_event := False
 
-							if
-								captured_widget /= Void
-							then
-								l_pnd_imp ?= captured_widget.implementation
-							else
-								l_pnd_imp ?= gtk_widget_from_gdk_window (stored_display_data.window)
-							end
+						if
+							captured_widget /= Void
+						then
+							l_pnd_imp ?= captured_widget.implementation
+						else
+							l_pnd_imp ?= gtk_widget_from_gdk_window (stored_display_data.window)
+						end
 
-							if l_pnd_imp /= Void then
-								l_top_level_window_imp := l_pnd_imp.top_level_window_imp
-								if l_top_level_window_imp /= Void then
-									if not l_top_level_window_imp.has_modal_window then
-										{EV_GTK_EXTERNALS}.gtk_main_do_event (gdk_event)
-										if pointer_motion_actions_internal /= Void then
-											l_widget_imp ?= l_pnd_imp
-											if l_widget_imp /= Void then
-													pointer_motion_actions_internal.call (
-													[
-														l_widget_imp.interface,
-														l_screen_x,
-														l_screen_y
-													]
-												)
-											end
-										end
-										if {EV_GTK_EXTERNALS}.gtk_object_struct_flags (l_pnd_imp.c_object) & {EV_GTK_EXTERNALS}.GTK_SENSITIVE_ENUM = {EV_GTK_EXTERNALS}.GTK_SENSITIVE_ENUM then
-											if {EV_GTK_EXTERNALS}.gtk_widget_struct_window (l_pnd_imp.visual_widget) /= {EV_GTK_EXTERNALS}.gdk_event_motion_struct_window (gdk_event) then
-													-- If the event we received is not from the associating widget window then we remap its correct x and y values.
-												i := {EV_GTK_EXTERNALS}.gdk_window_get_origin ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (l_pnd_imp.visual_widget), $l_widget_x, $l_widget_y)
-												l_widget_x := l_screen_x - l_widget_x
-												l_widget_y := l_screen_y - l_widget_y
-											end
-											l_motion_tuple.put_integer (l_widget_x, 1)
-											l_motion_tuple.put_integer (l_widget_y, 2)
-											l_motion_tuple.put_double (0.5, 3)
-											l_motion_tuple.put_double (0.5, 4)
-											l_motion_tuple.put_double (0.5, 5)
-											l_motion_tuple.put_integer (l_screen_x, 6)
-											l_motion_tuple.put_integer (l_screen_y, 7)
-											l_pnd_imp.on_pointer_motion (l_motion_tuple)
+						if l_pnd_imp /= Void then
+							l_top_level_window_imp := l_pnd_imp.top_level_window_imp
+							if l_top_level_window_imp /= Void then
+								if not l_top_level_window_imp.has_modal_window then
+									{EV_GTK_EXTERNALS}.gtk_main_do_event (gdk_event)
+									if pointer_motion_actions_internal /= Void then
+										l_widget_imp ?= l_pnd_imp
+										if l_widget_imp /= Void then
+												l_app_motion_tuple.widget := l_widget_imp.interface
+												l_app_motion_tuple.x := l_screen_x
+												l_app_motion_tuple.y := l_screen_y
+												pointer_motion_actions_internal.call (l_app_motion_tuple)
+													-- Void out reference so that it gets GC'd
+												l_app_motion_tuple.widget := Void
 										end
 									end
-								else
-									{EV_GTK_EXTERNALS}.gtk_main_do_event (gdk_event)
+									if {EV_GTK_EXTERNALS}.gtk_object_struct_flags (l_pnd_imp.c_object) & {EV_GTK_EXTERNALS}.GTK_SENSITIVE_ENUM = {EV_GTK_EXTERNALS}.GTK_SENSITIVE_ENUM then
+										if {EV_GTK_EXTERNALS}.gtk_widget_struct_window (l_pnd_imp.visual_widget) /= {EV_GTK_EXTERNALS}.gdk_event_motion_struct_window (gdk_event) then
+												-- If the event we received is not from the associating widget window then we remap its correct x and y values.
+											i := {EV_GTK_EXTERNALS}.gdk_window_get_origin ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (l_pnd_imp.visual_widget), $l_widget_x, $l_widget_y)
+											l_widget_x := l_screen_x - l_widget_x
+											l_widget_y := l_screen_y - l_widget_y
+										end
+										l_motion_tuple.x := l_widget_x
+										l_motion_tuple.y := l_widget_y
+										l_motion_tuple.x_tilt := 0.5
+										l_motion_tuple.y_tilt := 0.5
+										l_motion_tuple.pressure := 0.5
+										l_motion_tuple.screen_x := l_screen_x
+										l_motion_tuple.screen_y := l_screen_y
+										l_pnd_imp.on_pointer_motion (l_motion_tuple)
+									end
 								end
 							else
 								{EV_GTK_EXTERNALS}.gtk_main_do_event (gdk_event)
 							end
-							l_widget_imp := Void
-							l_pnd_imp := Void
-								-- Reset display data.
-							use_stored_display_data := False
-							update_display_data
-						when GDK_BUTTON_PRESS then
-							debug ("GDK_EVENT")
-								print ("GDK_BUTTON_PRESS%N")
-							end
-							user_events_processed_from_underlying_toolkit := True
-							l_call_event := False
-							process_button_event (gdk_event)
-						when GDK_2BUTTON_PRESS then
-							debug ("GDK_EVENT")
-								print ("GDK_2BUTTON_PRESS%N")
-							end
-							user_events_processed_from_underlying_toolkit := True
-							l_call_event := False
-							process_button_event (gdk_event)
-						when GDK_3BUTTON_PRESS then
-							debug ("GDK_EVENT")
-								print ("GDK_3BUTTON_PRESS%N")
-							end
-							user_events_processed_from_underlying_toolkit := True
-							l_call_event := False
-							process_button_event (gdk_event)
-						when GDK_BUTTON_RELEASE then
-							debug ("GDK_EVENT")
-								print ("GDK_BUTTON_RELEASE%N")
-							end
-							user_events_processed_from_underlying_toolkit := True
-							l_call_event := False
-							process_button_event (gdk_event)
-						when GDK_SCROLL then
-							debug ("GDK_EVENT")
-								print ("GDK_SCROLL%N")
-							end
-							l_propagate_event := True
-						when GDK_PROXIMITY_IN then
-							debug ("GDK_EVENT")
-								print ("GDK_PROXIMITY_IN%N")
-							end
---							l_propagate_event := True
-						when GDK_PROXIMITY_OUT then
-							debug ("GDK_EVENT")
-								print ("GDK_PROXIMITY_OUT%N")
-							end
---							l_propagate_event := True
-						when GDK_PROPERTY_NOTIFY then
-							debug ("GDK_EVENT")
-								print ("GDK_PROPERTY_NOTIFY%N")
-							end
-							l_propagate_event := True
-						when GDK_EXPOSE then
-								-- This is only called on gtk 1.2 as expose compression is
-								-- performed in gdk with 2.x and above.
-							debug ("GDK_EVENT")
-								print ("GDK_EXPOSE%N")
-							end
-						when GDK_NO_EXPOSE then
-							debug ("GDK_EVENT")
-								print ("GDK_NO_EXPOSE%N")
-							end
-						when GDK_FOCUS_CHANGE then
-							debug ("GDK_EVENT")
-								print ("GDK_FOCUS_CHANGE%N")
-							end
-						when GDK_CONFIGURE then
-							debug ("GDK_EVENT")
-								print ("GDK_CONFIGURE%N")
-							end
-						when GDK_MAP then
-							debug ("GDK_EVENT")
-								print ("GDK_MAP%N")
-							end
-						when GDK_UNMAP then
-							debug ("GDK_EVENT")
-								print ("GDK_UNMAP%N")
-							end
-						when GDK_SELECTION_CLEAR then
-							debug ("GDK_EVENT")
-								print ("GDK_SELECTION_CLEAR%N")
-							end
-						when GDK_SELECTION_REQUEST then
-							debug ("GDK_EVENT")
-								print ("GDK_SELECTION_REQUEST%N")
-							end
-						when GDK_SELECTION_NOTIFY then
-							debug ("GDK_EVENT")
-								print ("GDK_SELECTION_NOTIFY%N")
-							end
-						when GDK_CLIENT_EVENT then
-							debug ("GDK_EVENT")
-								print ("GDK_CLIENT_EVENT%N")
-							end
-						when GDK_VISIBILITY_NOTIFY then
-							debug ("GDK_EVENT")
-								print ("GDK_VISIBILITY_NOTIFY%N")
-							end
-						when GDK_WINDOW_STATE then
-							debug ("GDK_EVENT")
-								print ("GDK_WINDOW_STATE%N")
-							end
-						when GDK_ENTER_NOTIFY then
-							debug ("GDK_EVENT")
-								print ("GDK_ENTER_NOTIFY%N")
-							end
-							l_call_event := False
-							l_gtk_widget_imp ?= eif_object_from_gtk_object (event_widget)
-							if l_gtk_widget_imp /= Void then
-								l_top_level_window_imp := l_gtk_widget_imp.top_level_window_imp
-								if l_top_level_window_imp = Void or else not l_top_level_window_imp.has_modal_window then
-									{EV_GTK_EXTERNALS}.gtk_main_do_event (gdk_event)
-								end
-								l_gtk_widget_imp := Void
-								l_top_level_window_imp := Void
-							end
-						when GDK_LEAVE_NOTIFY then
-							debug ("GDK_EVENT")
-								print ("GDK_LEAVE_NOTIFY%N")
-							end
-							l_call_event := False
-							l_gtk_widget_imp ?= eif_object_from_gtk_object (event_widget)
-							if l_gtk_widget_imp /= Void then
-								l_top_level_window_imp := l_gtk_widget_imp.top_level_window_imp
-								if l_top_level_window_imp = Void or else not l_top_level_window_imp.has_modal_window then
-									{EV_GTK_EXTERNALS}.gtk_main_do_event (gdk_event)
-								end
-								l_gtk_widget_imp := Void
-								l_top_level_window_imp := Void
-							end
-						when GDK_KEY_PRESS then
-							debug ("GDK_EVENT")
-								print ("GDK_KEY_PRESS%N")
-							end
-							user_events_processed_from_underlying_toolkit := True
-							l_call_event := False
-							l_gtk_widget_imp ?= eif_object_from_gtk_object (event_widget)
-							if l_gtk_widget_imp /= Void then
-								l_top_level_window_imp := l_gtk_widget_imp.top_level_window_imp
-								if l_top_level_window_imp = Void or else not l_top_level_window_imp.has_modal_window then
-									process_key_event (gdk_event)
-								end
-								l_gtk_widget_imp := Void
-								l_top_level_window_imp := Void
-							end
-						when GDK_KEY_RELEASE then
-							debug ("GDK_EVENT")
-								print ("GDK_KEY_RELEASE%N")
-							end
-							user_events_processed_from_underlying_toolkit := True
-							l_call_event := False
-							l_gtk_widget_imp ?= eif_object_from_gtk_object (event_widget)
-							if l_gtk_widget_imp /= Void then
-								l_top_level_window_imp := l_gtk_widget_imp.top_level_window_imp
-								if l_top_level_window_imp = Void or else not l_top_level_window_imp.has_modal_window then
-									process_key_event (gdk_event)
-								end
-								l_gtk_widget_imp := Void
-								l_top_level_window_imp := Void
-							end
-						when GDK_DELETE then
-							debug ("GDK_EVENT")
-								print ("GDK_DELETE%N")
-							end
-						when GDK_DESTROY then
-							debug ("GDK_EVENT")
-								print ("GDK_DESTROY%N")
-							end
-						when GDK_DRAG_ENTER then
-							debug ("GDK_EVENT")
-								print ("GDK_DRAG_ENTER")
-							end
-						when GDK_DRAG_LEAVE then
-							debug ("GDK_EVENT")
-								print ("GDK_DRAG_LEAVE")
-							end
-						when GDK_DRAG_MOTION then
-							debug ("GDK_EVENT")
-								print ("GDK_DRAG_MOTION")
-							end
-						when GDK_DRAG_STATUS then
-							debug ("GDK_EVENT")
-								print ("GDK_DRAG_STATUS")
-							end
-						when GDK_DROP_START then
-							debug ("GDK_EVENT")
-								print ("GDK_DROP_START")
-							end
-								-- Some text has been drag dropped on a widget.
-							handle_dnd (gdk_event)
-						when GDK_DROP_FINISHED then
-							debug ("GDK_EVENT")
-								print ("GDK_DROP_FINISHED")
-							end
-						when GDK_SETTING then
-							debug ("GDK_SETTING")
-								print ("GDK_SETTING")
-						 	end
+						else
+							{EV_GTK_EXTERNALS}.gtk_main_do_event (gdk_event)
+						end
+						l_widget_imp := Void
+						l_pnd_imp := Void
+							-- Reset display data.
+						use_stored_display_data := False
+						update_display_data
+					when GDK_BUTTON_PRESS, GDK_2BUTTON_PRESS, GDK_3BUTTON_PRESS, GDK_BUTTON_RELEASE then
+						debug ("GDK_EVENT")
+							print ("GDK_BUTTON_EVENT%N")
+						end
+						user_events_processed_from_underlying_toolkit := True
+						l_call_event := False
+						process_button_event (gdk_event)
+					when GDK_SCROLL then
+						debug ("GDK_EVENT")
+							print ("GDK_SCROLL%N")
+						end
+						user_events_processed_from_underlying_toolkit := True
+						l_propagate_event := True
+					when GDK_PROXIMITY_IN, GDK_PROXIMITY_OUT then
+						debug ("GDK_EVENT")
+							print ("GDK_PROXIMITY_IN%N")
+						end
+					when GDK_PROPERTY_NOTIFY then
+						debug ("GDK_EVENT")
+							print ("GDK_PROPERTY_NOTIFY%N")
+						end
+						l_propagate_event := True
+					when GDK_EXPOSE then
+							-- This is only called on gtk 1.2 as expose compression is
+							-- performed in gdk with 2.x and above.
+						debug ("GDK_EVENT")
+							print ("GDK_EXPOSE%N")
+						end
+					when GDK_NO_EXPOSE then
+						debug ("GDK_EVENT")
+							print ("GDK_NO_EXPOSE%N")
+						end
+					when GDK_FOCUS_CHANGE then
+						debug ("GDK_EVENT")
+							print ("GDK_FOCUS_CHANGE%N")
+						end
+						l_top_level_window_imp ?= eif_object_from_gtk_object (event_widget)
+						if l_top_level_window_imp /= Void then
 							l_call_event := False
 							{EV_GTK_EXTERNALS}.gtk_main_do_event (gdk_event)
-						else
-							l_call_event := False
+							l_top_level_window_imp.on_focus_changed ({EV_GTK_EXTERNALS}.gdk_event_focus_struct_in (gdk_event).to_boolean)
+							l_top_level_window_imp := Void
 						end
-						if l_call_event then
-							if l_propagate_event then
-								{EV_GTK_EXTERNALS}.gtk_propagate_event (grab_widget, gdk_event)
-							else
-								l_event_handled := {EV_GTK_EXTERNALS}.gtk_widget_event (event_widget, gdk_event)
+					when GDK_CONFIGURE then
+						debug ("GDK_EVENT")
+							print ("GDK_CONFIGURE%N")
+						end
+						l_top_level_window_imp ?= eif_object_from_gtk_object (event_widget)
+						if l_top_level_window_imp /= Void then
+							l_call_event := False
+								-- Make sure internal gtk structures are updated before firing resize event(s)
+							{EV_GTK_EXTERNALS}.gtk_main_do_event (gdk_event)
+							l_top_level_window_imp.on_size_allocate (
+								{EV_GTK_EXTERNALS}.gdk_event_configure_struct_x (gdk_event),
+								{EV_GTK_EXTERNALS}.gdk_event_configure_struct_y (gdk_event),
+								{EV_GTK_EXTERNALS}.gdk_event_configure_struct_width (gdk_event),
+								{EV_GTK_EXTERNALS}.gdk_event_configure_struct_height (gdk_event)
+							)
+							l_top_level_window_imp := Void
+						end
+					when GDK_MAP then
+						debug ("GDK_EVENT")
+							print ("GDK_MAP%N")
+						end
+						if {EV_GTK_EXTERNALS}.gtk_widget_toplevel (event_widget) then
+							l_top_level_window_imp ?= eif_object_from_gtk_object (event_widget)
+							if l_top_level_window_imp /= Void then
+								l_top_level_window_imp.on_widget_mapped
 							end
 						end
-					else
-							--| Handle events not associated with a gtk widget.
+					when GDK_UNMAP then
+						debug ("GDK_EVENT")
+							print ("GDK_UNMAP%N")
+						end
+					when GDK_SELECTION_CLEAR then
+						debug ("GDK_EVENT")
+							print ("GDK_SELECTION_CLEAR%N")
+						end
+					when GDK_SELECTION_REQUEST then
+						debug ("GDK_EVENT")
+							print ("GDK_SELECTION_REQUEST%N")
+						end
+					when GDK_SELECTION_NOTIFY then
+						debug ("GDK_EVENT")
+							print ("GDK_SELECTION_NOTIFY%N")
+						end
+					when GDK_CLIENT_EVENT then
+						debug ("GDK_EVENT")
+							print ("GDK_CLIENT_EVENT%N")
+						end
+					when GDK_VISIBILITY_NOTIFY then
+						debug ("GDK_EVENT")
+							print ("GDK_VISIBILITY_NOTIFY%N")
+						end
+					when GDK_WINDOW_STATE then
+						debug ("GDK_EVENT")
+							print ("GDK_WINDOW_STATE%N")
+						end
+						l_top_level_window_imp ?= eif_object_from_gtk_object (event_widget)
+						if l_top_level_window_imp /= Void then
+							l_top_level_window_imp.call_window_state_event (
+								{EV_GTK_EXTERNALS}.gdk_event_window_state_struct_changed_mask (gdk_event),
+								{EV_GTK_EXTERNALS}.gdk_event_window_state_struct_new_window_state (gdk_event)
+							)
+							l_top_level_window_imp := Void
+						end
+					when GDK_ENTER_NOTIFY, GDK_LEAVE_NOTIFY then
+						debug ("GDK_EVENT")
+							print ("GDK_ENTER_LEAVE_NOTIFY%N")
+						end
+						l_call_event := False
+						l_gtk_widget_imp ?= eif_object_from_gtk_object (event_widget)
+						if l_gtk_widget_imp /= Void then
+							l_top_level_window_imp := l_gtk_widget_imp.top_level_window_imp
+							if l_top_level_window_imp = Void or else not l_top_level_window_imp.has_modal_window then
+								{EV_GTK_EXTERNALS}.gtk_main_do_event (gdk_event)
+							end
+							l_gtk_widget_imp := Void
+							l_top_level_window_imp := Void
+						end
+					when GDK_KEY_PRESS, GDK_KEY_RELEASE then
+						debug ("GDK_EVENT")
+							print ("GDK_KEY_EVENT%N")
+						end
+						user_events_processed_from_underlying_toolkit := True
+						l_call_event := False
+						l_gtk_window_imp ?= eif_object_from_gtk_object (l_grab_widget)
+						if l_gtk_window_imp = Void then
+							l_gtk_window_imp ?= eif_object_from_gtk_object (event_widget)
+								-- GTK has an implicit grab
+						end
+						if l_gtk_window_imp /= Void then
+							l_top_level_window_imp ?= l_gtk_window_imp
+							if l_top_level_window_imp = Void or else not l_top_level_window_imp.has_modal_window then
+								use_stored_display_data_for_keys := True
+								stored_display_data.mask := {EV_GTK_EXTERNALS}.gdk_event_key_struct_state (gdk_event)
+								l_gtk_window_imp.process_key_event (gdk_event)
+								use_stored_display_data_for_keys := False
+							end
+							l_gtk_window_imp := Void
+							l_top_level_window_imp := Void
+						else
+							l_gtk_window_imp ?= eif_object_from_gtk_object (event_widget)
+						end
+					when GDK_DELETE then
+						debug ("GDK_EVENT")
+							print ("GDK_DELETE%N")
+						end
+						user_events_processed_from_underlying_toolkit := True
+						l_call_event := False
+						l_gtk_window_imp ?= eif_object_from_gtk_object (event_widget)
+						if l_gtk_window_imp /= Void then
+							l_gtk_window_imp.call_close_request_actions
+							l_gtk_window_imp := Void
+						end
+					when GDK_DESTROY then
+						debug ("GDK_EVENT")
+							print ("GDK_DESTROY%N")
+						end
+					when GDK_DRAG_ENTER then
+						debug ("GDK_EVENT")
+							print ("GDK_DRAG_ENTER")
+						end
+					when GDK_DRAG_LEAVE then
+						debug ("GDK_EVENT")
+							print ("GDK_DRAG_LEAVE")
+						end
+					when GDK_DRAG_MOTION then
+						debug ("GDK_EVENT")
+							print ("GDK_DRAG_MOTION")
+						end
+					when GDK_DRAG_STATUS then
+						debug ("GDK_EVENT")
+							print ("GDK_DRAG_STATUS")
+						end
+					when GDK_DROP_START then
+						debug ("GDK_EVENT")
+							print ("GDK_DROP_START")
+						end
+							-- Some text has been drag dropped on a widget.
+						handle_dnd (gdk_event)
+					when GDK_DROP_FINISHED then
+						debug ("GDK_EVENT")
+							print ("GDK_DROP_FINISHED")
+						end
+					when GDK_SETTING then
+						debug ("GDK_SETTING")
+							print ("GDK_SETTING")
+					 	end
+						l_call_event := False
 						{EV_GTK_EXTERNALS}.gtk_main_do_event (gdk_event)
+					else
+						l_call_event := False
+					end
+					if l_call_event then
+						if l_propagate_event then
+							{EV_GTK_EXTERNALS}.gtk_propagate_event (l_grab_widget, gdk_event)
+						else
+							if event_widget /= default_pointer then
+								l_event_handled := {EV_GTK_EXTERNALS}.gtk_widget_event (event_widget, gdk_event)
+							else
+								{EV_GTK_EXTERNALS}.gtk_main_do_event (gdk_event)
+							end
+						end
 					end
 					{EV_GTK_EXTERNALS}.gdk_event_free (gdk_event)
 				else
@@ -432,6 +429,8 @@ feature {EV_ANY_IMP} -- Implementation
 				end
 			end
 		end
+
+feature -- Implementation
 
 	gtk_marshal: EV_GTK_CALLBACK_MARSHAL
 		-- Marshal object for all gtk signal emission event handling.
@@ -529,26 +528,15 @@ feature -- Basic operation
 		end
 
 	motion_tuple: TUPLE [x: INTEGER; y: INTEGER; x_tilt: DOUBLE; y_tilt: DOUBLE; pressure: DOUBLE; screen_x: INTEGER; screen_y: INTEGER; originating_x: INTEGER; originating_y: INTEGER] is
-			-- Tuple optimizations
+			-- Tuple optimization
 		once
-			Result := [0, 0, 0.0, 0.0, 0.0, 0, 0, 0, 0]
+			create Result
 		end
 
-	process_key_event (a_gdk_event: POINTER) is
-			-- Process key event `a_gdk_event'.
-		require
-			a_gdk_event_not_null: a_gdk_event /= default_pointer
-		local
-			l_stored_display_data: like stored_display_data
-		do
-			use_stored_display_data_for_keys := True
-				-- Update the stored display data to avoid round trips for display key access.
-			l_stored_display_data := stored_display_data
-			l_stored_display_data.put_integer ({EV_GTK_EXTERNALS}.gdk_event_key_struct_state (a_gdk_event), 4)
-
-			{EV_GTK_EXTERNALS}.gtk_main_do_event (a_gdk_event)
-
-			use_stored_display_data_for_keys := False
+	app_motion_tuple: TUPLE [widget: EV_WIDGET; x: INTEGER; y: INTEGER]
+			-- Tuple optimization
+		once
+			create Result
 		end
 
 	process_button_event (a_gdk_event: POINTER) is
@@ -604,7 +592,7 @@ feature -- Basic operation
 					-- or if the widget is insensitive or the top level window has a modal child.
 				l_ignore_event :=
 					l_popup_parent /= Void and then {EV_GTK_EXTERNALS}.gdk_event_button_struct_button (a_gdk_event) = 3 and then (l_pnd_item.pebble = Void and l_pnd_item.pebble_function = Void) or else
-					not ({EV_GTK_EXTERNALS}.gtk_object_struct_flags (l_pnd_item.c_object) & {EV_GTK_EXTERNALS}.GTK_SENSITIVE_ENUM = {EV_GTK_EXTERNALS}.GTK_SENSITIVE_ENUM) or else
+					not {EV_GTK_EXTERNALS}.gtk_widget_is_sensitive (l_pnd_item.c_object) or else
 					l_top_level_window_imp /= Void and then l_top_level_window_imp.has_modal_window
 			end
 
@@ -759,7 +747,7 @@ feature -- Basic operation
 				{EV_GTK_EXTERNALS}.object_unref (tooltips)
 				set_is_destroyed (True)
 					-- This will exit our main loop
-				interface.destroy_actions.call (Void)
+				destroy_actions.call (Void)
 			end
 		end
 
@@ -800,7 +788,7 @@ feature {EV_PICK_AND_DROPABLE_IMP} -- Pick and drop
 			internal_pick_and_drop_source := Void
 		end
 
-feature {EV_ANY_IMP} -- Implementation
+feature {EV_ANY_I} -- Implementation
 
 	tooltips: POINTER
 			-- Reference to GtkTooltips object.
@@ -952,6 +940,9 @@ feature {EV_ANY_I, EV_FONT_IMP, EV_STOCK_PIXMAPS_IMP, EV_INTERMEDIARY_ROUTINES} 
 			-- The current gtk style has changed.
 		do
 			-- This is called when the user externally changes the gtk style.
+			if theme_changed_actions_internal /= Void then
+				theme_changed_actions_internal.call (Void)
+			end
 		end
 
 	default_gdk_window: POINTER is
@@ -1000,39 +991,6 @@ feature {EV_ANY_I, EV_FONT_IMP, EV_STOCK_PIXMAPS_IMP, EV_INTERMEDIARY_ROUTINES} 
 			Result := {EV_GTK_EXTERNALS}.gdk_font_struct_descent ({EV_GTK_EXTERNALS}.gtk_style_get_font (temp_style))
 		end
 
-	default_translate: FUNCTION [ANY, TUPLE [INTEGER, POINTER], TUPLE] is
-			-- Default Gdk event marshaller.
-		once
-			Result := agent gtk_marshal.gdk_event_to_tuple
-		end
-
-	fg_color: POINTER is
-			-- Default allocated background color.
-		local
-			a_success: BOOLEAN
-		once
-			Result := {EV_GTK_EXTERNALS}.c_gdk_color_struct_allocate
-			a_success := {EV_GTK_EXTERNALS}.gdk_colormap_alloc_color ({EV_GTK_EXTERNALS}.gdk_rgb_get_cmap, Result, False, True)
-		end
-
-	bg_color: POINTER is
-			-- Default allocate foreground color.
-		local
-			a_success: BOOLEAN
-		once
-			Result := {EV_GTK_EXTERNALS}.c_gdk_color_struct_allocate
-			{EV_GTK_EXTERNALS}.set_gdk_color_struct_red (Result, 65535)
-			{EV_GTK_EXTERNALS}.set_gdk_color_struct_green (Result, 65535)
-			{EV_GTK_EXTERNALS}.set_gdk_color_struct_blue (Result, 65535)
-			a_success := {EV_GTK_EXTERNALS}.gdk_colormap_alloc_color ({EV_GTK_EXTERNALS}.gdk_rgb_get_cmap, Result, False, True)
-		end
-
-	reusable_color_struct: POINTER is
-			-- Persistent GdkColorStruct
-		once
-			Result := {EV_GTK_EXTERNALS}.c_gdk_color_struct_allocate
-		end
-
 	reusable_rectangle_struct: POINTER is
 			-- Persistent GdkColorStruct
 		once
@@ -1059,6 +1017,12 @@ feature {EV_ANY_I, EV_FONT_IMP, EV_STOCK_PIXMAPS_IMP, EV_INTERMEDIARY_ROUTINES} 
 			-- Persistent EV_GTK_C_STRING.
 		once
 			create Result.set_with_eiffel_string ("")
+		end
+
+	reusable_color_struct: POINTER is
+			-- Persistent GdkColorStruct
+		once
+			Result := {EV_GTK_EXTERNALS}.c_gdk_color_struct_allocate
 		end
 
 feature {EV_PICK_AND_DROPABLE_IMP} -- Pnd Handling

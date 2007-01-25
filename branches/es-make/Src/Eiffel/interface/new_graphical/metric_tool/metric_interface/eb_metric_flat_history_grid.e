@@ -11,49 +11,12 @@ class
 
 inherit
 	EB_METRIC_HISTORY_GRID
-		rename
-			make as old_make
+		redefine
+			initialize_grid
 		end
 
 create
 	make
-
-feature{NONE} -- Initialization
-
-	make (a_panel: like metric_history_panel) is
-			-- Initialize Current.
-		require
-			a_panel_attached: a_panel /= Void
-		do
-			metric_history_panel := a_panel
-			create row_archive_table.make (20)
-			old_make (create {ES_GRID})
-			grid.set_column_count_to (8)
-			grid.column (1).header_item.set_text (metric_names.t_metric_name)
-			grid.column (3).header_item.set_text (metric_names.t_value_of_current)
-			grid.column (4).header_item.set_text (metric_names.t_previous_value)
-			grid.column (5).header_item.set_text (metric_names.t_difference)
-			grid.column (6).header_item.set_text (metric_names.t_detailed_result)
-			grid.column (7).header_item.set_text (metric_names.t_calculated_time)
-			grid.column (8).header_item.set_text (metric_names.t_input_domain)
-			set_sort_info (1, create {EVS_GRID_THREE_WAY_SORTING_INFO [EB_METRIC_ARCHIVE_NODE]}.make (agent metric_name_tester, ascending_order))
-			set_sort_info (2, create {EVS_GRID_TWO_WAY_SORTING_INFO [EB_METRIC_ARCHIVE_NODE]}.make (agent archive_status_tester, ascending_order))
-			set_sort_info (3, create {EVS_GRID_TWO_WAY_SORTING_INFO [EB_METRIC_ARCHIVE_NODE]}.make (agent archive_value_tester, ascending_order))
-			set_sort_info (4, create {EVS_GRID_TWO_WAY_SORTING_INFO [EB_METRIC_ARCHIVE_NODE]}.make (agent archive_previous_value_tester, ascending_order))
-			set_sort_info (5, create {EVS_GRID_TWO_WAY_SORTING_INFO [EB_METRIC_ARCHIVE_NODE]}.make (agent archive_difference_tester, ascending_order))
-			set_sort_info (7, create {EVS_GRID_TWO_WAY_SORTING_INFO [EB_METRIC_ARCHIVE_NODE]}.make (agent archive_time_tester, ascending_order))
-			grid.enable_single_row_selection
-			grid.enable_row_separators
-			grid.enable_column_separators
-			grid.set_separator_color ((create {EV_STOCK_COLORS}).grey)
-			enable_auto_sort_order_change
-			set_sort_action (agent sort_agent (?, ?))
-			post_sort_actions.extend (agent on_post_sort)
-			set_sorting_status (sorted_columns_from_string (sorting_order_preference.value))
-			grid.item_drop_actions.extend (agent on_drop_on_item)
-			grid.set_item_veto_pebble_function (agent is_item_droppable)
-			grid.key_press_actions.extend (agent on_key_pressed)
-		end
 
 feature -- Access
 
@@ -76,15 +39,17 @@ feature{NONE} -- Implementation
 		local
 			l_column_tbl: HASH_TABLE [TUPLE [INTEGER, INTEGER], INTEGER]
 		do
-			create l_column_tbl.make (8)
+			create l_column_tbl.make (10)
 			l_column_tbl.put ([250, 300], 1)
 			l_column_tbl.put ([40, 40], 2)
 			l_column_tbl.put ([100, 200], 3)
 			l_column_tbl.put ([100, 200], 4)
 			l_column_tbl.put ([100, 200], 5)
-			l_column_tbl.put ([60, 60], 6)
-			l_column_tbl.put ([160, 200], 7)
-			l_column_tbl.put (Void, 8)
+			l_column_tbl.put ([40, 40], 6)
+			l_column_tbl.put ([60, 60], 7)
+			l_column_tbl.put ([160, 200], 8)
+			l_column_tbl.put ([160, 200], 9)
+			l_column_tbl.put (Void, 10)
 			auto_resize_columns (grid, l_column_tbl)
 		end
 
@@ -126,11 +91,7 @@ feature{NONE} -- Implementation
 				l_checked := l_selected_archives.has (l_archive_node)
 				l_grid.insert_new_row (l_row_count)
 				l_grid_row := l_grid.row (l_row_count)
-				if l_newly_changed_archives.has (l_archive_node) then
-					l_grid_row.set_background_color (newly_changed_row_background_color)
-				else
-					l_grid_row.set_background_color (normal_row_background_color)
-				end
+				set_row_background_color (l_grid_row, l_archive_node)
 				bind_row (l_grid_row, l_archive_node, l_checked)
 				l_row_count := l_row_count + 1
 				l_cursor.forth
@@ -155,9 +116,12 @@ feature{NONE} -- Implementation
 			a_row.set_item (3, value_item (a_archive))
 			a_row.set_item (4, previous_value_item (a_archive))
 			a_row.set_item (5, value_difference_item (a_archive))
-			a_row.set_item (6, detailed_result_item (a_archive, agent go_to_result_panel))
-			a_row.set_item (7, time_item (a_archive))
-			a_row.set_item (8, input_domain_item (a_archive))
+			a_row.set_item (6, filter_result_item (a_archive))
+			a_row.set_item (7, detailed_result_item (a_archive, agent go_to_result_panel))
+			a_row.set_item (8, time_item (a_archive))
+			a_row.set_item (9, input_domain_item (a_archive))
+			a_row.set_item (10, value_tester_item (a_archive))
+			a_row.set_data (a_archive)
 		end
 
 	update_row (a_archive_node: EB_METRIC_ARCHIVE_NODE) is
@@ -172,32 +136,65 @@ feature{NONE} -- Implementation
 			l_detailed_result_item: like detailed_result_item
 			l_time_item: like time_item
 			l_input_domain_item: like input_domain_item
+			l_filter_item: like filter_result_item
+			l_value_tester_item: like value_tester_item
 		do
 			l_grid_row := row_archive_table.item (a_archive_node)
 			if l_grid_row /= Void then
 					-- Setup background color.
-				if newly_changed_archives.has (a_archive_node) then
-					l_grid_row.set_background_color (newly_changed_row_background_color)
-				else
-					l_grid_row.set_background_color (normal_row_background_color)
-				end
+				set_row_background_color (l_grid_row, a_archive_node)
 				l_checkbox_item ?= l_grid_row.item (1)
 				update_metric_name_item (l_checkbox_item, a_archive_node, True)
+
 				l_status_item ?= l_grid_row.item (2)
 				update_status_item (l_status_item, a_archive_node)
+
 				l_value_item ?= l_grid_row.item (3)
 				update_value_item (l_value_item, a_archive_node)
+
 				l_previous_value_item ?= l_grid_row.item (4)
 				update_previous_value_item (l_previous_value_item, a_archive_node)
+
 				l_value_difference_item ?= l_grid_row.item (5)
 				update_value_difference_item (l_value_difference_item, a_archive_node)
-				l_detailed_result_item ?= l_grid_row.item (6)
+
+				l_filter_item ?= l_grid_row.item (6)
+				update_filter_result_item (l_filter_item, a_archive_node)
+
+				l_detailed_result_item ?= l_grid_row.item (7)
 				update_detailed_result_item (l_detailed_result_item, a_archive_node, agent go_to_result_panel)
-				l_time_item ?= l_grid_row.item (7)
+
+				l_time_item ?= l_grid_row.item (8)
 				update_time_item (l_time_item, a_archive_node)
-				l_input_domain_item ?= l_grid_row.item (8)
+
+				l_input_domain_item ?= l_grid_row.item (9)
 				update_input_domain_item (l_input_domain_item, a_archive_node)
+
+				l_value_tester_item ?= l_grid_row.item (10)
+				update_value_tester_item (l_value_tester_item, a_archive_node)
 			end
+		end
+
+	initialize_grid is
+			-- Initialize `grid'.
+		do
+			grid.set_column_count_to (10)
+			grid.column (1).header_item.set_text (metric_names.t_metric_name)
+			grid.column (3).header_item.set_text (metric_names.t_value_of_current)
+			grid.column (4).header_item.set_text (metric_names.t_previous_value)
+			grid.column (5).header_item.set_text (metric_names.t_difference)
+			grid.column (6).header_item.set_text (metric_names.t_filter)
+			grid.column (7).header_item.set_text (metric_names.t_detailed_result)
+			grid.column (8).header_item.set_text (metric_names.t_calculated_time)
+			grid.column (9).header_item.set_text (metric_names.t_input_domain)
+			grid.column (10).header_item.set_text (metric_names.t_warning)
+			set_sort_info (1, create {EVS_GRID_TWO_WAY_SORTING_INFO [EB_METRIC_ARCHIVE_NODE]}.make (agent metric_name_tester, ascending_order))
+			set_sort_info (2, create {EVS_GRID_TWO_WAY_SORTING_INFO [EB_METRIC_ARCHIVE_NODE]}.make (agent archive_status_tester, ascending_order))
+			set_sort_info (3, create {EVS_GRID_TWO_WAY_SORTING_INFO [EB_METRIC_ARCHIVE_NODE]}.make (agent archive_value_tester, ascending_order))
+			set_sort_info (4, create {EVS_GRID_TWO_WAY_SORTING_INFO [EB_METRIC_ARCHIVE_NODE]}.make (agent archive_previous_value_tester, ascending_order))
+			set_sort_info (5, create {EVS_GRID_TWO_WAY_SORTING_INFO [EB_METRIC_ARCHIVE_NODE]}.make (agent archive_difference_tester, ascending_order))
+			set_sort_info (8, create {EVS_GRID_TWO_WAY_SORTING_INFO [EB_METRIC_ARCHIVE_NODE]}.make (agent archive_time_tester, ascending_order))
+			Precursor
 		end
 
 indexing

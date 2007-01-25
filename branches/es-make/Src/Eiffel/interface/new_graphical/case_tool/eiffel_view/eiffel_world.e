@@ -104,7 +104,7 @@ feature -- Status report
 
 feature -- Access
 
-	context_editor: EB_CONTEXT_EDITOR
+	context_editor: EB_DIAGRAM_TOOL
 			-- Context showing `Current'.
 
 	model: ES_GRAPH
@@ -466,7 +466,7 @@ feature -- Element change.
 			end
 		end
 
-feature {EB_CONTEXT_EDITOR} -- Status settings
+feature {EB_DIAGRAM_TOOL} -- Status settings
 
 	show_anchors is
 			-- Show all anchors of fixed linkable figures.
@@ -491,7 +491,7 @@ feature {EB_CHANGE_COLOR_COMMAND, EB_DELETE_FIGURE_COMMAND, EG_FIGURE} -- Cluste
 			end
 		end
 
-feature {EB_CONTEXT_EDITOR} -- Legend
+feature {EB_DIAGRAM_TOOL} -- Legend
 
 	cluster_legend: EIFFEL_CLUSTER_LEGEND
 			-- Legend of clusters and colors.
@@ -712,7 +712,7 @@ feature -- Store/Retrive
 						--context_editor.development_window.status_bar.progress_bar.reset_with_range (0 |..| 0)
 						nb_of_tags := xml_routines.number_of_tags (view_input)
 						--context_editor.progress_dialog.start (nb_of_tags)
-						context_editor.development_window.status_bar.reset_progress_bar_with_range (0 |..| nb_of_tags)
+						context_editor.develop_window.status_bar.reset_progress_bar_with_range (0 |..| nb_of_tags)
 						--context_editor.progress_dialog.set_degree ("Loading:")
 						xml_routines.valid_tag_read_actions.extend (agent on_valid_tag_read)
 					end
@@ -798,7 +798,7 @@ feature -- Store/Retrive
 			Precursor {EG_FIGURE_WORLD} (node)
 		end
 
-feature {EB_CONTEXT_EDITOR} -- Statistic
+feature {EB_DIAGRAM_TOOL} -- Statistic
 
 	set_last_draw_time (ms: INTEGER) is
 			-- Set time needed for draw.
@@ -848,15 +848,17 @@ feature {NONE} -- Statistic
 			nr_of_client_supplier_links: INTEGER
 			nr_of_inheritance_links: INTEGER
 			rec: EV_MODEL_RECTANGLE
-			l_speed: STRING
+			l_physics, l_draw: STRING
 		do
 			if statistic_box = Void then
 				create statistic_box
-				create txt.make_with_text (	"Classes:  " + nr_of_classes.out + "%N" +
-											"CS_Links: " + nr_of_client_supplier_links.out + "%N" +
-											"I_Links:  " + nr_of_inheritance_links.out + "%N" +
-											"Clusters: " + nr_of_clusters.out + "%N" +
-											"Physics ms: %NDraw ms: 0%NDraws: ")
+				create txt.make_with_text (interface_names.l_diagram_statistic (nr_of_classes.out,
+																				nr_of_client_supplier_links.out,
+																				nr_of_inheritance_links.out,
+																				nr_of_clusters.out,
+																				"",
+																				"0",
+																				""))
 				txt.set_point_position (10, 10)
 				create rec.make_with_positions (0, 0, txt.width + 60, txt.height + 20)
 				rec.set_background_color (default_colors.white)
@@ -912,20 +914,23 @@ feature {NONE} -- Statistic
 				l_links.forth
 			end
 			if physics_count = 0 then
-				l_speed := "Physics ms: 0%N"
+				l_physics := "0"
 			else
-				l_speed := "Physics ms: " + (physics_sum // physics_count).out + "%N"
+				l_physics := (physics_sum // physics_count).out
 			end
 			if draw_count = 0 then
-				l_speed := l_speed + "Draw ms: ?"
+				l_draw := "?"
 			else
-				l_speed := l_speed + "Draw ms: " + (draw_sum // draw_count).out
+				l_draw := (draw_sum // draw_count).out
 			end
-			txt.set_text (	"Classes:  " + nr_of_classes.out + "%N" +
-							"CS_Links: " + nr_of_client_supplier_links.out + "%N" +
-							"I_Links:  " + nr_of_inheritance_links.out + "%N" +
-							"Clusters: " + nr_of_clusters.out + "%N" +
-							l_speed + "%NDraws: " +  nbOfDraws.out)
+			txt.set_text (interface_names.l_diagram_statistic (
+										nr_of_classes.out,
+										nr_of_client_supplier_links.out,
+										nr_of_inheritance_links.out,
+										nr_of_clusters.out,
+										l_physics,
+										l_draw,
+										nbOfDraws.out))
 			bring_to_front (statistic_box)
 		end
 
@@ -1428,7 +1433,7 @@ feature {NONE} -- Implementation
 		local
 			lpd: EB_PERCENT_PROGRESS_BAR
 		do
-			lpd := context_editor.development_window.status_bar.progress_bar
+			lpd := context_editor.develop_window.status_bar.progress_bar
 			if lpd /= Void then
 				if lpd.value < lpd.range.upper then
 					lpd.set_value (lpd.value + 1)

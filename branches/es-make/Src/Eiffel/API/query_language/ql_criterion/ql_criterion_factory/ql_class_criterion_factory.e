@@ -12,7 +12,9 @@ class
 inherit
 	QL_CRITERION_FACTORY
 		redefine
-			criterion_type
+			criterion_type,
+			item_type,
+			simple_criterion_type
 		end
 
 create
@@ -60,9 +62,7 @@ feature{NONE} -- Initialization
 			agent_table.put (agent new_heir_is_criterion, c_parent_is)
 			agent_table.put (agent new_indirect_heir_is_criterion, c_indirect_parent_is)
 			agent_table.put (agent new_supplier_criterion, c_client_is)
-			agent_table.put (agent new_indirect_supplier_criterion, c_indirect_client_is)
 			agent_table.put (agent new_client_criterion, c_supplier_is)
-			agent_table.put (agent new_indirect_client_criterion, c_indirect_supplier_is)
 
 			agent_table.put (agent new_name_is_criterion, c_name_is)
 			agent_table.put (agent new_text_contain_criterion, c_text_contain)
@@ -73,6 +73,7 @@ feature{NONE} -- Initialization
 			agent_table.put (agent new_bottom_indexing_has_tag_criterion, c_bottom_indexing_has_tag)
 			agent_table.put (agent new_indexing_has_tag_criterion, c_indexing_has_tag)
 			agent_table.put (agent new_contain_ast_criterion, c_contain_ast)
+			agent_table.put (agent new_value_criterion, c_value_of_metric_is)
 
 			create name_table.make (45)
 			name_table.put (c_false, query_language_names.ql_cri_false)
@@ -111,9 +112,7 @@ feature{NONE} -- Initialization
 			name_table.put (c_heir_is, query_language_names.ql_cri_heir_is)
 			name_table.put (c_indirect_heir_is, query_language_names.ql_cri_indirect_heir_is)
 			name_table.put (c_supplier_is, query_language_names.ql_cri_supplier_is)
-			name_table.put (c_indirect_supplier_is, query_language_names.ql_cri_indirect_supplier_is)
 			name_table.put (c_client_is, query_language_names.ql_cri_client_is)
-			name_table.put (c_indirect_client_is, query_language_names.ql_cri_indirect_client_is)
 
 			name_table.put (c_name_is, query_language_names.ql_cri_name_is)
 			name_table.put (c_text_contain, query_language_names.ql_cri_text_contain)
@@ -125,6 +124,7 @@ feature{NONE} -- Initialization
 			name_table.put (c_indexing_has_tag, query_language_names.ql_cri_indexing_has_tag)
 
 			name_table.put (c_contain_ast, query_language_names.ql_cri_contain_ast)
+			name_table.put (c_value_of_metric_is, query_language_names.ql_cri_value_of_metric_is)
 		end
 
 
@@ -132,6 +132,12 @@ feature{NONE} -- Implementation
 
 	criterion_type: QL_CLASS_CRITERION
 			-- Criterion anchor type
+
+	item_type: QL_CLASS
+			-- Item anchor type
+
+	simple_criterion_type: QL_SIMPLE_CLASS_CRITERION
+			-- Simple criterion type
 
 feature{NONE} -- New criterion
 
@@ -399,12 +405,12 @@ feature{NONE} -- New criterion
 			result_attached: Result /= Void
 		end
 
-	new_path_is_criterion (a_path: STRING): QL_CLASS_PATH_IS_CRI is
+	new_path_is_criterion (a_path: STRING): QL_CLASS_PATH_IN_CRI is
 			-- New {QL_CLASS_PATH_IS_CRI} criterion.
 		require
 			a_path_attached: a_path /= Void
 		do
-			create Result.make (a_path)
+			create Result.make_with_flag (a_path, False)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -499,42 +505,22 @@ feature{NONE} -- New criterion
 			result_attached: Result /= Void
 		end
 
-	new_supplier_criterion (a_domain: QL_DOMAIN): QL_CLASS_SUPPLIER_RELATION_CRI is
+	new_supplier_criterion (a_domain: QL_DOMAIN; a_indirect: BOOLEAN; a_normal: BOOLEAN; a_syntactical: BOOLEAN): QL_CLASS_SUPPLIER_RELATION_CRI is
 			-- New {QL_CLASS_SUPPLIER_RELATION_CRI} criterion.
 		require
 			a_domain_attached: a_domain /= Void
 		do
-			create Result.make (a_domain, False, False)
+			create Result.make (a_domain, a_normal, a_syntactical, a_indirect)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_indirect_supplier_criterion (a_domain: QL_DOMAIN): QL_CLASS_SUPPLIER_RELATION_CRI is
-			-- New {QL_CLASS_SUPPLIER_RELATION_CRI} criterion.
-		require
-			a_domain_attached: a_domain /= Void
-		do
-			create Result.make (a_domain, False, True)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	new_client_criterion (a_domain: QL_DOMAIN): QL_CLASS_CLIENT_RELATION_CRI is
+	new_client_criterion (a_domain: QL_DOMAIN; a_indirect: BOOLEAN; a_normal: BOOLEAN; a_syntactical: BOOLEAN): QL_CLASS_CLIENT_RELATION_CRI is
 			-- New {QL_CLASS_CLIENT_RELATION_CRI} criterion.
 		require
 			a_domain_attached: a_domain /= Void
 		do
-			create Result.make (a_domain, False, False)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	new_indirect_client_criterion (a_domain: QL_DOMAIN): QL_CLASS_CLIENT_RELATION_CRI is
-			-- New {QL_CLASS_CLIENT_RELATION_CRI} criterion.
-		require
-			a_domain_attached: a_domain /= Void
-		do
-			create Result.make (a_domain, False, True)
+			create Result.make (a_domain, a_normal, a_syntactical, a_indirect)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -552,54 +538,61 @@ feature{NONE} -- New criterion
 			result_attached: Result /= Void
 		end
 
+	new_value_criterion (a_evaluate_value_func: FUNCTION [ANY, TUPLE [QL_ITEM], BOOLEAN]): like simple_criterion_type is
+			-- New value criterion
+		require
+			a_evaluate_value_func_attached: a_evaluate_value_func /= Void
+		do
+			create Result.make (agent value_criterion_evalaute_agent ({QL_CLASS}?, a_evaluate_value_func), False)
+		end
+
 feature -- Criterion index
 
-	c_false,
-	c_has_bottom_indexing,
-	c_has_indexing,
-	c_has_invariant,
-	c_has_top_indexing,
-	c_is_compiled,
-	c_is_deferred,
-	c_is_effective,
-	c_is_enum,
-	c_is_expanded,
-	c_is_external,
-	c_is_frozen,
-	c_is_generic,
-	c_is_obsolete,
-	c_is_precompiled,
-	c_true,
-	c_name_is,
-	c_top_indexing_has_tag,
-	c_bottom_indexing_has_tag,
-	c_indexing_has_tag,
-	c_top_indexing_contain,
-	c_bottom_indexing_contain,
-	c_indexing_contain,
-	c_path_in,
-	c_path_is,
-	c_text_contain,
-	c_ancestor_is,
-	c_proper_ancestor_is,
-	c_parent_is,
-	c_indirect_parent_is,
-	c_descendant_is,
-	c_proper_descendant_is,
-	c_heir_is,
-	c_indirect_heir_is,
-	c_supplier_is,
-	c_indirect_supplier_is,
-	c_client_is,
-	c_indirect_client_is,
-	c_is_valid,
-	c_is_always_compiled,
-	c_is_partial,
-	c_is_read_only,
-	c_is_overriden,
-	c_is_overrider,
-	c_is_visible,
-	c_contain_ast: INTEGER is unique;
+	c_false: INTEGER is 1
+	c_has_bottom_indexing: INTEGER is 2
+	c_has_indexing: INTEGER is 3
+	c_has_invariant: INTEGER is 4
+	c_has_top_indexing: INTEGER is 5
+	c_is_compiled: INTEGER is 6
+	c_is_deferred: INTEGER is 7
+	c_is_effective: INTEGER is 8
+	c_is_enum: INTEGER is 9
+	c_is_expanded: INTEGER is 10
+	c_is_external: INTEGER is 11
+	c_is_frozen: INTEGER is 12
+	c_is_generic: INTEGER is 13
+	c_is_obsolete: INTEGER is 14
+	c_is_precompiled: INTEGER is 15
+	c_true: INTEGER is 16
+	c_name_is: INTEGER is 17
+	c_top_indexing_has_tag: INTEGER is 18
+	c_bottom_indexing_has_tag: INTEGER is 19
+	c_indexing_has_tag: INTEGER is 20
+	c_top_indexing_contain: INTEGER is 21
+	c_bottom_indexing_contain: INTEGER is 22
+	c_indexing_contain: INTEGER is 23
+	c_path_in: INTEGER is 24
+	c_path_is: INTEGER is 25
+	c_text_contain: INTEGER is 26
+	c_ancestor_is: INTEGER is 27
+	c_proper_ancestor_is: INTEGER is 28
+	c_parent_is: INTEGER is 29
+	c_indirect_parent_is: INTEGER is 30
+	c_descendant_is: INTEGER is 31
+	c_proper_descendant_is: INTEGER is 32
+	c_heir_is: INTEGER is 33
+	c_indirect_heir_is: INTEGER is 34
+	c_supplier_is: INTEGER is 35
+	c_client_is: INTEGER is 36
+	c_is_valid: INTEGER is 37
+	c_is_always_compiled: INTEGER is 38
+	c_is_partial: INTEGER is 39
+	c_is_read_only: INTEGER is 40
+	c_is_overriden: INTEGER is 41
+	c_is_overrider: INTEGER is 42
+	c_is_visible: INTEGER is 43
+	c_contain_ast: INTEGER is 44
+	c_value_of_metric_is: INTEGER is 45
 
 feature{NONE} -- Implementation/Evaluate agent
 

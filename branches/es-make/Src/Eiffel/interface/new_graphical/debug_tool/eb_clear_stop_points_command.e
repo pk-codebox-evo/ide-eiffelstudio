@@ -5,12 +5,13 @@ indexing
 	date		: "$Date$"
 	revision	: "$Revision$"
 
-class EB_CLEAR_STOP_POINTS_COMMAND
+class
+	EB_CLEAR_STOP_POINTS_COMMAND
 
 inherit
 	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 		redefine
-			new_toolbar_item, new_mini_toolbar_item, mini_pixmap,
+			new_toolbar_item, new_sd_toolbar_item, new_mini_toolbar_item, mini_pixmap,
 			tooltext
 		end
 
@@ -56,6 +57,16 @@ feature -- Access
 			Result.drop_actions.set_veto_pebble_function (agent can_drop_debuggable_feature_or_class)
 		end
 
+	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_BUTTON is
+			-- Create a new docking toolbar button for `Current'.
+		do
+			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND} (display_text)
+			Result.drop_actions.extend (agent drop_breakable (?))
+			Result.drop_actions.extend (agent drop_feature (?))
+			Result.drop_actions.extend (agent drop_class (?))
+			Result.drop_actions.set_veto_pebble_function (agent can_drop_debuggable_feature_or_class)
+		end
+
 	new_mini_toolbar_item: EB_COMMAND_TOOL_BAR_BUTTON is
 			-- Create a new toolbar button for `Current'.
 		do
@@ -76,6 +87,12 @@ feature -- Access
 			-- Icon for `Current'.
 		do
 			Result := pixmaps.icon_pixmaps.breakpoints_delete_icon
+		end
+
+	pixel_buffer: EV_PIXEL_BUFFER is
+			-- Pixel buffer representing the command.
+		do
+			Result := pixmaps.icon_pixmaps.breakpoints_delete_icon_buffer
 		end
 
 	mini_pixmap: EV_PIXMAP is

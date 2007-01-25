@@ -28,6 +28,8 @@ inherit
 			extend_widget as extend_cell,
 			has_widget as has_cell,
 			prune_widget as prune
+		redefine
+			show_notebook_contents
 		end
 
 create
@@ -80,7 +82,7 @@ feature -- Redefine
 			internal_notebook.set_focus_color (False)
 		end
 
-	set_title (a_title: STRING) is
+	set_title (a_title: STRING_GENERAL) is
 			-- Redefine
 		do
 			internal_notebook.set_item_text (internal_content, a_title)
@@ -121,7 +123,7 @@ feature -- Redefine
 			Result := internal_notebook.is_maximized
 		end
 
-	title: STRING is
+	title: STRING_GENERAL is
 			-- Redefine
 		do
 			Result := internal_notebook.item_text (internal_content)
@@ -147,6 +149,17 @@ feature -- Redefine
 			-- Set title bar non-focuse color.
 		do
 			internal_notebook.set_focus_color (False)
+		end
+
+	show_notebook_contents (a_is_show: BOOLEAN) is
+			-- Redefine
+		do
+			Precursor {SD_UPPER_ZONE}(a_is_show)
+			if a_is_show then
+				internal_notebook.enable_widget_expand
+			else
+				internal_notebook.disable_widget_expand
+			end
 		end
 
 feature -- Command

@@ -1036,10 +1036,10 @@ feature -- Conveniences
 						 -- Static access only if it is a C external (l_ext = Void)
 						 -- or if IL external does not need an object.
 					Result :=
-						(l_ext = Void and (is_external and is_frozen and not has_assertion)) or
+						(l_ext = Void and (is_external and not has_assertion)) or
 						(l_ext /= Void and then not l_ext.need_current (l_ext.type))
 				else
-					Result := is_external and is_frozen and not has_assertion
+					Result := is_external and not has_assertion
 				end
 			end
 		end
@@ -1346,6 +1346,32 @@ feature -- IL code generation
 				if Byte_server.has (body_index) then
 					byte_code := Byte_server.item (body_index)
 					Result := byte_code.custom_attributes
+				end
+			end
+		end
+
+	class_custom_attributes: BYTE_LIST [BYTE_NODE] is
+			-- Class custom attributes of Current if any.
+		local
+			byte_code: BYTE_CODE
+		do
+			if not is_attribute and then not is_external then
+				if Byte_server.has (body_index) then
+					byte_code := Byte_server.item (body_index)
+					Result := byte_code.class_custom_attributes
+				end
+			end
+		end
+
+	interface_custom_attributes: BYTE_LIST [BYTE_NODE] is
+			-- Interface custom attributes of Current if any.
+		local
+			byte_code: BYTE_CODE
+		do
+			if not is_attribute and then not is_external then
+				if Byte_server.has (body_index) then
+					byte_code := Byte_server.item (body_index)
+					Result := byte_code.interface_custom_attributes
 				end
 			end
 		end
@@ -2023,12 +2049,18 @@ end
 			-- Find an associated property setter in `class_type'.
 		require
 			class_type_attached: class_type /= Void
+		local
+			f: FEATURE_I
 		do
 			if type.is_void then
-				Result := class_type.associated_class.feature_of_rout_id (rout_id_set.first)
+				f := Current
 			elseif assigner_name_id /= 0 then
-				Result := class_type.associated_class.feature_of_rout_id
-					(written_class.feature_table.item_id (assigner_name_id).rout_id_set.first)
+				f := written_class.feature_table.item_id (assigner_name_id)
+			else
+				f := ancestor_property_setter_in (class_type.associated_class)
+			end
+			if f /= Void then
+				Result := class_type.associated_class.feature_of_rout_id (f.rout_id_set.first)
 			end
 		ensure
 			result_attached: (type.is_void or else assigner_name_id /= 0) implies Result /= Void

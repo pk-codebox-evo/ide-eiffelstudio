@@ -389,6 +389,36 @@ feature -- Access: file name
 			Result_ok: Result /= Void and then not Result.is_empty
 		end
 
+	docking_data_name: STRING is
+			-- Docking config data folder name
+		once
+			if not is_workbench then
+				Result := "docking"
+			else
+				Result := "docking_wb"
+			end
+		end
+
+	Standard_tools_layout_name: STRING is
+			-- Standard tools layout name
+		once
+			if not is_workbench then
+				Result := "standard_layout.wb"
+			else
+				Result := "standard_layout_wb.wb"
+			end
+		end
+
+	Standard_tools_debug_layout_name: STRING is
+			-- Standard tools debug layout name
+		once
+			if not is_workbench then
+				Result := "standard_debug_layout.wb"
+			else
+				Result := "standard_debug_layout_wb.wb"
+			end
+		end
+
 	Runtime_lib_path: DIRECTORY_NAME is
 			-- Library path for the runtime.
 		require
@@ -627,7 +657,8 @@ feature -- Access: file name
 				Result := unix_layout_share_path.twin
 				Result.extend_from_array (<< unix_layout_locale_dir, product_version_name >>)
 			else
-				Result := shared_application_path.twin
+				Result := shared_path.twin
+				Result.extend (short_studio_name)
 				Result.extend_from_array (<<"lang", "mo_files">>)
 			end
 		end
@@ -743,6 +774,24 @@ feature -- Access: command name
 			Result.set_file_name (Finish_freezing_script)
 		ensure
 			result_not_void_or_empty: Result /= Void and not Result.is_empty
+		end
+
+	docking_standard_layout_path: FILE_NAME is
+			-- Path of standard docking layout.
+		local
+			l_dir: DIRECTORY
+		do
+			create Result.make_from_string (eiffel_home)
+			Result.extend_from_array (<<docking_data_name>>)
+			create l_dir.make (Result)
+			if not l_dir.exists then
+				l_dir.create_dir
+				if not l_dir.is_closed then
+					l_dir.close
+				end
+			end
+		ensure
+			folder_exist: (create {DIRECTORY}.make (Result)).exists
 		end
 
 	Prelink_command_name: FILE_NAME is
@@ -1056,7 +1105,9 @@ feature {NONE} -- Configuration of layout
 	unix_layout_base_path: DIRECTORY_NAME
 			-- Base for the unix layout. e.g. "/usr" or "/usr/local"
 		once
-			create Result.make_from_string ("/usr/local") -- Comment to finde line for replacement UNIX_BASE_PATH
+			create Result.make
+			Result.set_directory ("usr")
+			Result.extend ("local")
 		ensure
 			Result_not_void: Result /= Void
 		end

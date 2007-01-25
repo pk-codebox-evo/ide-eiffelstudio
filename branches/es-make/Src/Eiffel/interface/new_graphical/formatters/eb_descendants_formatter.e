@@ -28,6 +28,12 @@ feature -- Properties
 			Result.put (pixmaps.icon_pixmaps.class_descendents_icon, 2)
 		end
 
+	pixel_buffer: EV_PIXEL_BUFFER is
+			-- Graphical representation of the command.
+		once
+			Result := pixmaps.icon_pixmaps.class_descendents_icon_buffer
+		end
+
 	class_cmd: E_SHOW_DESCENDANTS
 			-- Class command that can generate the information.
 
@@ -48,7 +54,7 @@ feature {NONE} -- Properties
 	command_name: STRING_GENERAL is
 			-- Name of the command.
 		do
-			Result := Interface_names.string_general_to_lower (interface_names.l_Descendants)
+			Result := Interface_names.string_general_as_lower (interface_names.l_Descendants)
 		end
 
 	post_fix: STRING is "des"

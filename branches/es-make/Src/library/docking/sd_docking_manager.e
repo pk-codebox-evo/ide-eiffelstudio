@@ -46,7 +46,10 @@ feature {NONE} -- Initialization
 			contents.extend (zones.place_holder_content)
 			zones.place_holder_content.set_top ({SD_ENUMERATION}.top)
 			internal_shared.set_show_all_feedback_indicator (True)
-			set_main_area_background_color ((create {EV_STOCK_COLORS}).grey)
+
+			if {PLATFORM}.is_windows then
+				set_main_area_background_color ((create {EV_STOCK_COLORS}).grey)
+			end
 
 			create {SD_DEPENDENCY_CHECKER_IMP} l_checker
 			l_checker.check_dependency (main_window)
@@ -130,7 +133,7 @@ feature -- Query
 			Result := property.last_focus_content
 		end
 
-	is_title_unique (a_title: STRING): BOOLEAN is
+	is_title_unique (a_title: STRING_GENERAL): BOOLEAN is
 			-- If `a_title' unique in all contents `unique_title's ?
 		require
 			a_title: a_title /= Void
@@ -140,7 +143,7 @@ feature -- Query
 
 feature -- Command
 
-	save_config (a_file: STRING) is
+	save_config (a_file: STRING_GENERAL) is
 			-- Save current docking config.
 		require
 			a_file_not_void: a_file /= Void
@@ -151,7 +154,7 @@ feature -- Command
 			l_config.save_config (a_file)
 		end
 
-	save_editors_config (a_file: STRING) is
+	save_editors_config (a_file: STRING_GENERAL) is
 			-- Save main window editor config.
 		require
 			not_void: a_file /= Void
@@ -162,7 +165,7 @@ feature -- Command
 			l_config.save_editors_config (a_file)
 		end
 
-	save_tools_config (a_file: STRING) is
+	save_tools_config (a_file: STRING_GENERAL) is
 			-- Save tools config
 		require
 			not_void: a_file /= Void
@@ -173,7 +176,18 @@ feature -- Command
 			l_config.save_tools_config (a_file)
 		end
 
-	open_config (a_file: STRING): BOOLEAN is
+	save_tools_config_with_name (a_file: STRING_GENERAL; a_name: STRING_GENERAL) is
+			-- Save tools config
+		require
+			not_void: a_file /= Void
+		local
+			l_config: SD_CONFIG_MEDIATOR
+		do
+			create l_config.make (Current)
+			l_config.save_tools_config_with_name (a_file, a_name)
+		end
+
+	open_config (a_file: STRING_GENERAL): BOOLEAN is
 			-- Open a docking config from a_named_file.
 		require
 			a_file_not_void: a_file /= Void
@@ -185,7 +199,7 @@ feature -- Command
 			Result := l_config.open_config (a_file)
 		end
 
-	open_editors_config (a_file: STRING) is
+	open_editors_config (a_file: STRING_GENERAL) is
 			-- Open main window editor config.
 		local
 			l_config: SD_CONFIG_MEDIATOR
@@ -194,7 +208,7 @@ feature -- Command
 			l_config.open_editors_config (a_file)
 		end
 
-	open_tools_config (a_file: STRING): BOOLEAN is
+	open_tools_config (a_file: STRING_GENERAL): BOOLEAN is
 			-- Save tools contents config.
 		local
 			l_config: SD_CONFIG_MEDIATOR
@@ -214,25 +228,27 @@ feature -- Command
 			set: query.inner_container_main.background_color.is_equal (a_color)
 		end
 
-	destory is
-			-- Destory all underline objects.
+	destroy is
+			-- Destroy all underline objects.
 		do
 			agents.destroy
+			tool_bar_manager.destroy
+			contents.wipe_out
 		end
 
 feature -- Contract support
 
-	file_exist (a_file_name: STRING): BOOLEAN is
-			-- If `a_file_name' exist?
+	file_exist (a_file_name: STRING_GENERAL): BOOLEAN is
+			-- Does `a_file_name' exist?
 		local
 			l_file: RAW_FILE
 		do
-			create l_file.make_open_read (a_file_name)
+			create l_file.make_open_read (a_file_name.as_string_8)
 			Result := l_file.exists
 		end
 
 	window_valid (a_window: EV_WINDOW): BOOLEAN is
-			-- If `a_widnow' already managed?
+			-- Is `a_window' already managed?
 		local
 			l_list: ARRAYED_LIST [SD_DOCKING_MANAGER]
 		do
@@ -253,7 +269,7 @@ feature -- Contract support
 		end
 
 	container_valid (a_container: EV_CONTAINER; a_window: EV_WINDOW): BOOLEAN is
-			-- If `a_container' is `a_window' or `a_container' in `a_window'?
+			-- Is `a_container' in `a_window' or `a_container' in `a_window'?
 		do
 			Result := a_window.has_recursive (a_container) or a_container = a_window
 		end
@@ -287,7 +303,9 @@ feature {SD_TOOL_BAR_HOT_ZONE, SD_CONTENT, SD_STATE, SD_DOCKER_MEDIATOR,
 	 SD_TOOL_BAR_MANAGER, SD_AUTO_HIDE_PANEL, SD_DOCKING_MANAGER, SD_DOCKING_MANAGER_AGENTS,
 	 SD_DOCKING_MANAGER_QUERY, SD_DOCKING_MANAGER_COMMAND, SD_TOOL_BAR_ZONE_ASSISTANT,
 	 SD_DOCKING_MANAGER_ZONES, SD_NOTEBOOK_TAB_AREA, SD_NOTEBOOK_TAB, SD_AUTO_HIDE_ANIMATION,
-	 SD_FLOATING_TOOL_BAR_ZONE, SD_TOOL_BAR_HIDDEN_ITEM_DIALOG} -- Library internal attributes.
+	 SD_FLOATING_TOOL_BAR_ZONE, SD_TOOL_BAR_HIDDEN_ITEM_DIALOG, SD_DOCKING_MANAGER_PROPERTY,
+	 SD_ZONE_NAVIGATION_DIALOG}
+	 	 -- Library internal attributes.
 
 	tool_bar_container: SD_TOOL_BAR_CONTAINER
 			-- Container for tool bars on four sides.

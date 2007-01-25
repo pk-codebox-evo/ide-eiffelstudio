@@ -35,6 +35,9 @@ inherit
 	EB_SHARED_PREFERENCES
 		export {NONE} all end
 
+	SHARED_FLAGS
+		export {NONE} all end
+
 feature -- Basic operations
 
 	execute is
@@ -107,7 +110,7 @@ feature {NONE} -- Callbacks
 			preferences.preferences.save_preferences
 
 				-- Store metric archive history.
-			metric_manager.set_is_exit_requested (True)
+			set_is_exit_requested (True)
 			if metric_manager.has_archive_been_loaded then
 				metric_manager.store_archive_history
 			end
@@ -116,6 +119,8 @@ feature {NONE} -- Callbacks
 				l_err_dlg.set_buttons (<<interface_names.b_ok>>)
 				l_err_dlg.show_modal_to_window (window_manager.last_focused_development_window.window)
 			end
+
+			window_manager.a_development_window.save_tools_docking_layout
 
 				-- Destroy all development windows.
 			window_manager.close_all

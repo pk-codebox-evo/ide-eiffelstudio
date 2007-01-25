@@ -12,6 +12,18 @@ class
 inherit
 	LINKED_LIST [EB_METRIC_DOMAIN_ITEM]
 
+	EB_METRIC_VISITABLE
+		undefine
+			copy,
+			is_equal
+		end
+
+	EB_METRIC_SHARED
+		undefine
+			copy,
+			is_equal
+		end
+
 create
 	make
 
@@ -27,26 +39,34 @@ feature -- Access
 			Result := item.domain (a_scope)
 		end
 
+	visitable_name: STRING_GENERAL is
+			-- Name of current visitable item
+		do
+			Result := metric_names.l_domain
+		end
+
+	actual_domain: like Current is
+			-- Actual domain
+		do
+			if has_delayed_input_domain_item and then external_domain /= Void then
+				Result := external_domain
+			else
+				Result := Current
+			end
+		ensure
+			result_attached: Result /= Void
+		end
+
+	external_domain: like Current
+			-- External domain
+
 feature -- Status report
 
 	is_valid: BOOLEAN is
 			-- Is current domain valid?
-		local
-			l_cursor: CURSOR
 		do
-			if not is_empty then
-				Result := True
-				l_cursor := cursor
-				from
-					start
-				until
-					after or not Result
-				loop
-					Result := item /= Void and then item.is_valid
-					forth
-				end
-				go_to (l_cursor)
-			end
+			metric_validity_checker.check_validity (Current)
+			Result := not metric_validity_checker.has_error
 		end
 
 	has_delayed_domain_item: BOOLEAN is
@@ -55,6 +75,16 @@ feature -- Status report
 			Result := there_exists (
 						agent (a_domain_item: EB_METRIC_DOMAIN_ITEM): BOOLEAN
 							do Result := a_domain_item /= Void and then a_domain_item.is_delayed_item
+						end
+                      )
+		end
+
+	has_delayed_input_domain_item: BOOLEAN is
+			-- Does current domain has delayed input domain item?
+		do
+			Result := there_exists (
+						agent (a_domain_item: EB_METRIC_DOMAIN_ITEM): BOOLEAN
+							do Result := a_domain_item /= Void and then a_domain_item.is_input_domain_item
 						end
                       )
 		end
@@ -85,6 +115,24 @@ feature -- Status report
 			else
 				Result := b_domain_item /= Void and then a_domain_item.is_equal (b_domain_item)
 			end
+		end
+
+feature -- Setting
+
+	set_external_domain (a_domain: like external_domain) is
+			-- Set `external_domain' with `a_domain'.
+		do
+			external_domain := a_domain
+		ensure
+			external_domain_set: external_domain = a_domain
+		end
+
+feature -- Process
+
+	process (a_visitor: EB_METRIC_VISITOR) is
+			-- Process current using `a_visitor'.
+		do
+			a_visitor.process_domain (Current)
 		end
 
 indexing

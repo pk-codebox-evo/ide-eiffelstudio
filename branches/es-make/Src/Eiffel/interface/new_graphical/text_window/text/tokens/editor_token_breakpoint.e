@@ -99,6 +99,9 @@ feature -- Miscellaneous
  			if pebble /= Void then
 					-- The breakable marks are always displayed on the beginning of the line.
 				device.draw_pixmap (1, d_y, pixmap)
+				debug ("breakpoint")
+					device.draw_text_top_left (2, d_y, pebble.index.out)
+				end
 			end
 		end
 
@@ -144,15 +147,16 @@ feature -- Miscellaneous
 			end
 
 			inspect Debugger_manager.breakpoint_status (pebble_routine, pebble_index)
-			when 0 then
+
+			when {DEBUG_INFO}.breakpoint_not_set then
 				pixmaps := icon_group_bp_slot
-			when 1 then
+			when {DEBUG_INFO}.breakpoint_set then
 				pixmaps := icon_group_bp_enabled
-			when -1 then
+			when {DEBUG_INFO}.breakpoint_disabled then
 				pixmaps := icon_group_bp_disabled
-			when 2 then
+			when {DEBUG_INFO}.breakpoint_condition_set then
 				pixmaps := icon_group_bp_enabled_condition
-			when -2 then
+			when {DEBUG_INFO}.breakpoint_condition_disabled then
 				pixmaps := icon_group_bp_disabled_condition
 			end
 

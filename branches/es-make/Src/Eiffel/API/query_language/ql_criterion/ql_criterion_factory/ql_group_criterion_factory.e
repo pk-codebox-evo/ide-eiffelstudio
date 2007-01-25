@@ -12,7 +12,9 @@ class
 inherit
 	QL_CRITERION_FACTORY
 		redefine
-			criterion_type
+			criterion_type,
+			item_type,
+			simple_criterion_type
 		end
 create
 	make
@@ -34,6 +36,7 @@ feature{NONE} -- Initialization
 			agent_table.put (agent new_is_valid_criterion, c_is_class_set)
 			agent_table.put (agent new_true_criterion, c_true)
 			agent_table.put (agent new_name_is_criterion, c_name_is)
+			agent_table.put (agent new_value_criterion, c_value_of_metric_is)
 
 			create name_table.make (20)
 			name_table.put (c_false, query_language_names.ql_cri_false)
@@ -47,12 +50,19 @@ feature{NONE} -- Initialization
 			name_table.put (c_is_class_set, query_language_names.ql_cri_is_class_set)
 			name_table.put (c_true, query_language_names.ql_cri_true)
 			name_table.put (c_name_is, query_language_names.ql_cri_name_is)
+			name_table.put (c_value_of_metric_is, query_language_names.ql_cri_value_of_metric_is)
 		end
 
 feature{NONE} -- Implementation
 
 	criterion_type: QL_GROUP_CRITERION
 			-- Criterion anchor type
+
+	item_type: QL_GROUP
+			-- Item anchor type
+
+	simple_criterion_type: QL_SIMPLE_GROUP_CRITERION
+			-- Simple criterion type
 
 feature{NONE} -- New criterion
 
@@ -146,19 +156,28 @@ feature{NONE} -- New criterion
 			result_attached: Result /= Void
 		end
 
+	new_value_criterion (a_evaluate_value_func: FUNCTION [ANY, TUPLE [QL_ITEM], BOOLEAN]): like simple_criterion_type is
+			-- New value criterion
+		require
+			a_evaluate_value_func_attached: a_evaluate_value_func /= Void
+		do
+			create Result.make (agent value_criterion_evalaute_agent ({QL_GROUP}?, a_evaluate_value_func), False)
+		end
+
 feature -- Criterion index
 
-	c_false,
-	c_is_assembly,
-	c_is_cluster,
-	c_is_compiled,
-	c_is_library,
-	c_is_override,
-	c_true,
-	c_name_is,
-	c_is_class_set,
-	c_is_valid,
-	c_is_used_in_library: INTEGER is unique
+	c_false: INTEGER is 1
+	c_is_assembly: INTEGER is 2
+	c_is_cluster: INTEGER is 3
+	c_is_compiled: INTEGER is 4
+	c_is_library: INTEGER is 5
+	c_is_override: INTEGER is 6
+	c_true: INTEGER is 7
+	c_name_is: INTEGER is 8
+	c_is_class_set: INTEGER is 9
+	c_is_valid: INTEGER is 10
+	c_is_used_in_library: INTEGER is 11
+	c_value_of_metric_is: INTEGER is 12
 
 feature{NONE} -- Implementation
 

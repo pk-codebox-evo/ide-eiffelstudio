@@ -12,6 +12,8 @@ class
 inherit
 	SHARED_LOCALE
 
+	SHARED_FLAGS
+
 create
 	make
 
@@ -87,14 +89,6 @@ feature {EB_SHARED_PREFERENCES} -- Value
 			Result := show_hidden_preferences_preference.value
 		end
 
-	default_displayed_string_size: INTEGER is
-			-- Default size of string to be retrieved from the application
-			-- when debugging (for instance size of `string_value' in ABSTRACT_REFERENCE_VALUE)
-			-- (Default value is 50)
-		do
-			Result := default_displayed_string_size_preference.value
-		end
-
 	console_shell_command: STRING is
 			-- Shell to open a console
 		do
@@ -124,7 +118,6 @@ feature {EB_SHARED_PREFERENCES} -- Preference
 	preference_window_width_preference: INTEGER_PREFERENCE
 	preference_window_height_preference: INTEGER_PREFERENCE
 	editor_left_side_preference: BOOLEAN_PREFERENCE
-	default_displayed_string_size_preference: INTEGER_PREFERENCE
 	show_hidden_preferences_preference: BOOLEAN_PREFERENCE
 	console_shell_command_preference: STRING_PREFERENCE
 	file_browser_command_preference: STRING_PREFERENCE
@@ -141,7 +134,6 @@ feature {NONE} -- Preference Strings
 	dyn_lib_window_height_string: STRING is "general.dynamic_library_window_height"
 	preference_window_width_string: STRING is "general.preference_window_width"
 	preference_window_height_string: STRING is "general.preference_window_height"
-	default_displayed_string_size_string: STRING is "debugger.default_displayed_string_size"
 	show_hidden_preferences_string: STRING is "general.show_hidden_preferences"
 	console_shell_command_string: STRING is "general.console_shell_command"
 	file_browser_command_string: STRING is "general.file_browser_command"
@@ -166,7 +158,6 @@ feature {NONE} -- Implementation
 			dyn_lib_window_width_preference := l_manager.new_integer_preference_value (l_manager, dyn_lib_window_width_string, 400)
 			preference_window_height_preference := l_manager.new_integer_preference_value (l_manager, preference_window_height_string, 200)
 			preference_window_width_preference := l_manager.new_integer_preference_value (l_manager, preference_window_width_string, 400)
-			default_displayed_string_size_preference := l_manager.new_integer_preference_value (l_manager, default_displayed_string_size_string, 50)
 			show_hidden_preferences_preference := l_manager.new_boolean_preference_value (l_manager, show_hidden_preferences_string, False)
 			if l_platform.is_windows then
 				console_shell_command_preference := l_manager.new_string_preference_value (l_manager, console_shell_command_string, "cmd")
@@ -194,50 +185,55 @@ feature {NONE} -- Implementation
 		local
 			l_select_lang: STRING
 			l_id: I18N_LOCALE_ID
-			l_b: BOOLEAN
 			l_available_lang: STRING
 			l_available_locales: LIST [I18N_LOCALE_ID]
 			l_str: STRING
 			l_added_pre: HASH_TABLE [STRING, STRING]
 		do
-			l_select_lang := locale_id_preference.selected_value
-			if l_select_lang = Void then
-				l_select_lang := "en"
-			end
-			l_available_locales := locale_manager.available_locales
-			create l_id.make_from_string (l_select_lang)
-			l_b := locale_manager.has_translations (l_id)
-			create l_added_pre.make (100)
-			create l_available_lang.make (20)
-			from
-				l_available_locales.start
-			until
-				l_available_locales.after
-			loop
-				if locale_manager.has_translations (l_available_locales.item) then
-					check
-						name_of_locale_id_is_string_8: l_available_locales.item.name.is_valid_as_string_8
-					end
-					l_str := l_available_locales.item.name.as_string_8
-					if not l_added_pre.has (l_str) then
-						if not l_added_pre.is_empty then
-							l_available_lang.extend (';')
-						end
-						l_added_pre.force (l_str, l_str)
-						if l_b and then l_available_locales.item.is_equal (l_id) then
-								-- Set this item selected.
-							set_locale_with_id (l_str)
-							l_str := "[" + l_str + "]"
-						end
-						l_available_lang.append (l_str)
-					end
+			if is_gui then
+				l_select_lang := locale_id_preference.selected_value
+				if l_select_lang = Void then
+					l_select_lang := "en_US"
 				end
-				l_available_locales.forth
+				l_available_locales := locale_manager.available_locales
+				create l_id.make_from_string (l_select_lang)
+				if not locale_manager.has_translations (l_id) then
+					create l_id.make_from_string ("en_US")
+				end
+				create l_added_pre.make (100)
+				create l_available_lang.make (20)
+				from
+					l_available_locales.start
+				until
+					l_available_locales.after
+				loop
+					if locale_manager.has_translations (l_available_locales.item) then
+						check
+							name_of_locale_id_is_string_8: l_available_locales.item.name.is_valid_as_string_8
+						end
+						l_str := l_available_locales.item.name.as_string_8
+						if not l_added_pre.has (l_str) then
+							if not l_added_pre.is_empty then
+								l_available_lang.extend (';')
+							end
+							l_added_pre.force (l_str, l_str)
+							if l_available_locales.item.is_equal (l_id) then
+									-- Set this item selected.
+								set_locale_with_id (l_str)
+								l_str := "[" + l_str + "]"
+							end
+							l_available_lang.append (l_str)
+						end
+					end
+					l_available_locales.forth
+				end
+				if l_available_lang.is_empty then
+					l_available_lang := "en_US"
+				end
+				locale_id_preference.set_value_from_string (l_available_lang)
+			else
+				set_system_locale
 			end
-			if l_available_lang.is_empty then
-				l_available_lang := "en"
-			end
-			locale_id_preference.set_value_from_string (l_available_lang)
 		end
 
 invariant
@@ -250,7 +246,6 @@ invariant
 	preference_window_width_preference_not_void: preference_window_width_preference /= Void
 	preference_window_height_preference_not_void: preference_window_height_preference /= Void
 	editor_left_side_preference_not_void: editor_left_side_preference /= Void
-	default_displayed_string_size_preference_not_void: default_displayed_string_size_preference /= Void
 	console_shell_command_preference_not_void: console_shell_command_preference /= Void
 	locale_id_preference_not_void: locale_id_preference /= Void
 

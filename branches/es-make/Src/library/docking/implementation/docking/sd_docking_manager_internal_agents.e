@@ -8,6 +8,14 @@ indexing
 class
 	SD_DOCKING_MANAGER_AGENTS
 
+inherit
+	ANY
+
+	EV_SHARED_APPLICATION
+		export
+			{NONE} all
+		end
+
 create
 	make
 
@@ -17,8 +25,6 @@ feature {NONE}  -- Initlization
 			-- Creation method.
 		require
 			a_docking_manager_not_void: a_docking_manager /= Void
-		local
-			l_env: EV_ENVIRONMENT
 		do
 			internal_docking_manager := a_docking_manager
 			internal_docking_manager.main_window.focus_out_actions.extend (agent on_main_window_focus_out)
@@ -27,11 +33,10 @@ feature {NONE}  -- Initlization
 			pick_actions_handler := agent on_pick_actions
 			drop_actions_handler := agent on_drop_actions
 			theme_changed_handler := agent on_theme_changed
-			create l_env
-			l_env.application.pnd_motion_actions.extend (pnd_motion_actions_handler)
-			l_env.application.pick_actions.extend (pick_actions_handler)
-			l_env.application.drop_actions.extend (drop_actions_handler)
-			l_env.application.theme_changed_actions.extend (theme_changed_handler)
+			ev_application.pnd_motion_actions.extend (pnd_motion_actions_handler)
+			ev_application.pick_actions.extend (pick_actions_handler)
+			ev_application.drop_actions.extend (drop_actions_handler)
+			ev_application.theme_changed_actions.extend (theme_changed_handler)
 		ensure
 			set: internal_docking_manager = a_docking_manager
 		end
@@ -40,18 +45,15 @@ feature -- Command
 
 	init_actions is
 			-- Initlialize actions.
-		local
-			l_app: EV_ENVIRONMENT
 		do
 			internal_docking_manager.contents.add_actions.extend (agent on_added_content)
 			internal_docking_manager.zones.zones.add_actions.extend (agent on_added_zone)
 			internal_docking_manager.zones.zones.remove_actions.extend (agent on_pruned_zone)
 			internal_docking_manager.internal_viewport.resize_actions.extend (agent on_resize (?, ?, ?, ?, False))
-			create l_app
 			widget_pointer_press_handler := agent on_widget_pointer_press
 			widget_pointer_press_for_upper_zone_handler := agent on_widget_pointer_press_for_upper_zone
-			l_app.application.pointer_button_press_actions.extend (widget_pointer_press_handler)
-			l_app.application.pointer_button_press_actions.extend (widget_pointer_press_for_upper_zone_handler)
+			ev_application.pointer_button_press_actions.extend (widget_pointer_press_handler)
+			ev_application.pointer_button_press_actions.extend (widget_pointer_press_for_upper_zone_handler)
 			internal_docking_manager.main_window.focus_out_actions.extend (agent on_top_level_window_focus_out)
 			internal_docking_manager.main_window.focus_in_actions.extend (agent on_top_level_window_focus_in)
 
@@ -72,7 +74,7 @@ feature  -- Agents
 			until
 				l_zones.after
 			loop
-				if not l_zones.item.is_destroyed and then (l_zones.item.has_recursive (a_widget) and not ignore_additional_click) then
+				if not l_zones.item.is_destroyed and then (l_zones.item.has_recursive (a_widget) and not ignore_additional_click) and l_zones.item.content /= internal_docking_manager.zones.place_holder_content then
 					if internal_docking_manager.property.last_focus_content /= l_zones.item.content then
 						internal_docking_manager.property.set_last_focus_content (l_zones.item.content)
 						l_zones.item.on_focus_in (Void)
@@ -128,16 +130,19 @@ feature  -- Agents
 				io.put_string ("%N SD_DOCKING_MANAGER on_resize ~~~~~~~~~~~~~~~~~~~~")
 			end
 			internal_docking_manager.command.remove_auto_hide_zones (False)
+
+			-- This is to make sure item in `fixed_area' is resized, otherwise zone's size is incorrect when maximize a zone.
 			internal_docking_manager.fixed_area.set_minimum_size (0, 0)
+
 			if a_width > 0 then
-				internal_docking_manager.internal_viewport.set_item_width (a_width)
+				internal_docking_manager.internal_viewport.set_item_width (internal_docking_manager.internal_viewport.width)
 				internal_docking_manager.fixed_area.set_item_width (internal_docking_manager.query.inner_container_main , internal_docking_manager.fixed_area.width)
 			end
 			if a_height > 0 then
-				internal_docking_manager.internal_viewport.set_item_height (a_height)
+				internal_docking_manager.internal_viewport.set_item_height (internal_docking_manager.internal_viewport.height)
 				internal_docking_manager.fixed_area.set_item_height (internal_docking_manager.query.inner_container_main, internal_docking_manager.fixed_area.height)
 			end
-			internal_docking_manager.tool_bar_manager.on_resize (a_x, a_y, a_width, a_height, a_force)
+			internal_docking_manager.tool_bar_manager.on_resize (a_x, a_y, internal_docking_manager.internal_viewport.width, internal_docking_manager.internal_viewport.height, a_force)
 		end
 
 	on_added_zone (a_zone: SD_ZONE) is
@@ -201,24 +206,27 @@ feature  -- Agents
 			l_floating_zones: ARRAYED_LIST [SD_FLOATING_ZONE]
 			l_has_focus: BOOLEAN
 		do
-			l_floating_zones := internal_docking_manager.query.floating_zones
-			l_has_focus := internal_docking_manager.main_window.has_focus
-			if not l_has_focus then
-				from
-					l_floating_zones.start
-				until
-					l_floating_zones.after or l_has_focus
-				loop
-					l_has_focus := l_floating_zones.item.has_focus
-					l_floating_zones.forth
+			if not internal_docking_manager.main_window.is_destroyed then
+				l_floating_zones := internal_docking_manager.query.floating_zones
+				l_has_focus := internal_docking_manager.main_window.has_focus
+				if not l_has_focus then
+					from
+						l_floating_zones.start
+					until
+						l_floating_zones.after or l_has_focus
+					loop
+						l_has_focus := l_floating_zones.item.has_focus
+						l_floating_zones.forth
+					end
+				end
+				if not l_has_focus then
+					--FIXIT: Currently we disable this feature.
+					-- Because when show a dialog, it'll get focus, make main window lost focus.
+					-- We should make a window can never get focus first.
+	--				internal_docking_manager.tool_bar_manager.hide_all_floating
 				end
 			end
-			if not l_has_focus then
-				--FIXIT: Currently we disable this feature.
-				-- Because when show a dialog, it'll get focus, make main window lost focus.
-				-- We should make a window can never get focus first.
---				internal_docking_manager.tool_bar_manager.hide_all_floating
-			end
+
 		end
 
 	on_top_level_window_focus_in is
@@ -255,11 +263,9 @@ feature  -- Agents
 		local
 			l_widget: EV_WIDGET
 			l_screen_x, l_screen_y: INTEGER
-			l_env: EV_ENVIRONMENT
 			l_focused: EV_WIDGET
 		do
-			create l_env
-			l_focused := l_env.application.focused_widget
+			l_focused := ev_application.focused_widget
 			if l_focused /= Void then
 				l_screen_x := a_x + l_focused.screen_x
 				l_screen_y := a_y + l_focused.screen_y
@@ -336,16 +342,13 @@ feature -- Destory
 
 	destroy is
 			-- Destory all underline objects
-		local
-			l_env: EV_ENVIRONMENT
 		do
-			create l_env
-			l_env.application.pnd_motion_actions.prune_all (pnd_motion_actions_handler)
-			l_env.application.pick_actions.prune_all (pick_actions_handler)
-			l_env.application.drop_actions.prune_all (drop_actions_handler)
-			l_env.application.theme_changed_actions.prune_all (theme_changed_handler)
-			l_env.application.pointer_button_press_actions.prune_all (widget_pointer_press_handler)
-			l_env.application.pointer_button_press_actions.prune_all (widget_pointer_press_for_upper_zone_handler)
+			ev_application.pnd_motion_actions.prune_all (pnd_motion_actions_handler)
+			ev_application.pick_actions.prune_all (pick_actions_handler)
+			ev_application.drop_actions.prune_all (drop_actions_handler)
+			ev_application.theme_changed_actions.prune_all (theme_changed_handler)
+			ev_application.pointer_button_press_actions.prune_all (widget_pointer_press_handler)
+			ev_application.pointer_button_press_actions.prune_all (widget_pointer_press_for_upper_zone_handler)
 			focused_tab_stub := Void
 		end
 
@@ -400,7 +403,7 @@ feature -- Contract support
 			until
 				l_contents.after or not Result
 			loop
-				Result := not l_contents.item.unique_title.is_equal (a_content.unique_title)
+				Result := not l_contents.item.unique_title.as_string_32.is_equal (a_content.unique_title.as_string_32)
 				l_contents.forth
 			end
 		end
@@ -415,7 +418,7 @@ feature {SD_DEBUG_ACCESS} -- For debug.
 			show_inner_container_structure_imp (internal_docking_manager.inner_containers.item.item, " ")
 		end
 
-	show_inner_container_structure_imp (a_container: EV_WIDGET; a_indent: STRING) is
+	show_inner_container_structure_imp (a_container: EV_WIDGET; a_indent: STRING_GENERAL) is
 			-- For debug.
 		local
 			l_split_area: EV_SPLIT_AREA
@@ -423,18 +426,18 @@ feature {SD_DEBUG_ACCESS} -- For debug.
 		do
 			l_docking_zone ?= a_container
 			if l_docking_zone /= Void then
-				io.put_string ("%N " + a_indent + a_container.generating_type + " " + l_docking_zone.content.unique_title)
+				io.put_string ("%N " + a_indent.as_string_8 + a_container.generating_type + " " + l_docking_zone.content.unique_title.as_string_8)
 			else
 				if a_container /= Void then
-					io.put_string ("%N " + a_indent + a_container.generating_type)
+					io.put_string ("%N " + a_indent.as_string_8 + a_container.generating_type)
 				else
-					io.put_string ("%N " + a_indent + "Void")
+					io.put_string ("%N " + a_indent.as_string_8 + "Void")
 				end
 			end
 			l_split_area ?= a_container
 			if l_split_area /= Void then
-				show_inner_container_structure_imp (l_split_area.first, a_indent + " ")
-				show_inner_container_structure_imp (l_split_area.second, a_indent + " ")
+				show_inner_container_structure_imp (l_split_area.first, a_indent.as_string_8 + " ")
+				show_inner_container_structure_imp (l_split_area.second, a_indent.as_string_8 + " ")
 			end
 		end
 
@@ -483,10 +486,5 @@ indexing
 			 Website http://www.eiffel.com
 			 Customer support http://support.eiffel.com
 		]"
-
-
-
-
-
 
 end

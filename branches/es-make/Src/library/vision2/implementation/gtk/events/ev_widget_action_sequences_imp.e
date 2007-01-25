@@ -12,8 +12,16 @@ deferred class
 
 inherit
 	EV_WIDGET_ACTION_SEQUENCES_I
-
-EV_ANY_IMP undefine dispose, destroy end
+		export
+			{EV_INTERMEDIARY_ROUTINES}
+				focus_in_actions_internal,
+				focus_out_actions_internal,
+				pointer_motion_actions_internal,
+				pointer_button_release_actions,
+				pointer_leave_actions,
+				pointer_leave_actions_internal,
+				pointer_enter_actions_internal
+		end
 
 feature -- Event handling
 
@@ -51,11 +59,11 @@ feature -- Event handling
 		do
 			app_imp := app_implementation
 			create Result
-			signal_connect (
+			app_imp.gtk_marshal.signal_connect (
 				event_widget,
 				App_imp.enter_notify_event_string,
 				agent (App_imp.gtk_marshal).pointer_enter_leave_action_intermediary (c_object, True),
-				App_imp.default_translate,
+				Void,
 				False
 			)
 		end
@@ -68,11 +76,11 @@ feature -- Event handling
 		do
 			app_imp := app_implementation
 			create Result
-			signal_connect (
+			app_imp.gtk_marshal.signal_connect (
 				event_widget,
 				App_imp.leave_notify_event_string,
 				agent (App_imp.gtk_marshal).pointer_enter_leave_action_intermediary (c_object, False),
-				App_imp.default_translate,
+				Void,
 				False
 			)
 		end
@@ -111,40 +119,55 @@ feature -- Event handling
 
 	create_resize_actions: EV_GEOMETRY_ACTION_SEQUENCE is
 			-- Create a resize action sequence.
+		local
+			l_app_imp: like app_implementation
 		do
 			create Result
 			if not {EV_GTK_EXTERNALS}.gtk_is_window (c_object) then
 					-- Window resize events are connected separately
-				signal_connect (c_object, App_implementation.size_allocate_event_string, agent (App_implementation.gtk_marshal).on_size_allocate_intermediate (internal_id, ?, ?, ?, ?), size_allocate_translate_agent, False)
+				l_app_imp := app_implementation
+				l_app_imp.gtk_marshal.signal_connect (c_object, l_app_imp.size_allocate_event_string, agent (l_app_imp.gtk_marshal).on_size_allocate_intermediate (internal_id, ?, ?, ?, ?), l_app_imp.gtk_marshal.size_allocate_translate_agent, False)
 			end
 		end
 
 	create_mouse_wheel_actions: EV_INTEGER_ACTION_SEQUENCE is
 			-- Create a mouse_wheel action sequence.
+		local
+			l_app_imp: like app_implementation
 		do
 			create Result
-			signal_connect (event_widget, once "scroll-event", agent (App_implementation.gtk_marshal).button_press_switch_intermediary (c_object, ?, ?, ?, ?, ?, ?, ?, ?, ?), agent (App_implementation.gtk_marshal).scroll_wheel_translate, False)
+			l_app_imp := app_implementation
+			l_app_imp.gtk_marshal.signal_connect (event_widget, once "scroll-event", agent (App_implementation.gtk_marshal).button_press_switch_intermediary (c_object, ?, ?, ?, ?, ?, ?, ?, ?, ?), agent (App_implementation.gtk_marshal).scroll_wheel_translate, False)
+		end
+
+	create_file_drop_actions: like file_drop_actions_internal
+			-- Create a file_drop action sequence.
+		do
+			create Result
 		end
 
 feature {EV_ANY_I} -- Implementation
 
-	configure_translate_agent: FUNCTION [EV_GTK_CALLBACK_MARSHAL, TUPLE [INTEGER, POINTER], TUPLE] is
-			-- Translation agent used for size allocation events
-		once
-			Result := agent (App_implementation.gtk_marshal).configure_translate
+	internal_id: INTEGER
+		deferred
 		end
 
-	size_allocate_translate_agent: FUNCTION [EV_GTK_CALLBACK_MARSHAL, TUPLE [INTEGER, POINTER], TUPLE] is
-			-- Translation agent used for size allocation events
-		once
-			Result := agent (App_implementation.gtk_marshal).size_allocate_translate
+	app_implementation: EV_APPLICATION_IMP
+		deferred
+		end
+
+	visual_widget: POINTER
+		deferred
+		end
+
+	c_object: POINTER
+		deferred
 		end
 
 	event_widget: POINTER is
 			-- Pointer to the gtk event widget
 		deferred
 		end
-
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"

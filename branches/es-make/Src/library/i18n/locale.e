@@ -11,10 +11,13 @@ class
 create
 	make
 
-feature -- Basic Operations
+feature {NONE} -- Initialization
 
 	make (a_dictionary: I18N_DICTIONARY; a_locale_info: I18N_LOCALE_INFO) is
 			--assign info and dictionary with input values
+		require
+			a_dictionary_not_void: a_dictionary /= Void
+			a_locale_info_not_void: a_locale_info /= Void
 		do
 			info:=a_locale_info
 			dictionary:=a_dictionary
@@ -24,6 +27,12 @@ feature -- Basic Operations
 			create currency_formatter.make (a_locale_info)
 		end
 
+feature -- Access
+
+	info : I18N_LOCALE_INFO
+			-- specific information about the locale
+
+feature -- Basic Operations
 
 	translate (original: STRING_GENERAL): STRING_32 is
 			-- translate `original' if it exists
@@ -78,13 +87,14 @@ feature -- Formatters
 	value_formatter:	I18N_VALUE_FORMATTER
 	currency_formatter: I18N_CURRENCY_FORMATTER
 
-feature -- Implementation
+feature {NONE} -- Implementation
 
-	info : I18N_LOCALE_INFO
-		-- specific information about the locale
+	host_locale: I18N_HOST_LOCALE is
+		once
+			create {I18N_HOST_LOCALE_IMP}Result
+		end
 
 	dictionary:		I18N_DICTIONARY
-
 	string_formatter:	I18N_STRING_FORMATTER;
 
 indexing

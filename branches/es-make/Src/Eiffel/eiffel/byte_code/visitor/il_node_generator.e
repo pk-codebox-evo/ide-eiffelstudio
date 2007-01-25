@@ -2472,7 +2472,7 @@ feature {NONE} -- Visitors
 				il_generator.put_integer_32_constant (a_node.position)
 
 					-- Find `fast_item' from TUPLE
-				l_item_feat := l_feat_tbl.item_id (fast_item_id)
+				l_item_feat := l_feat_tbl.item_id (fast_item_name_id)
 				l_decl_type := il_generator.implemented_type (l_item_feat.origin_class_id, l_real_ty)
 					-- Call `fast_item' from TUPLE
 				il_generator.generate_feature_access (l_decl_type, l_item_feat.origin_feature_id, l_item_feat.argument_count, l_item_feat.has_return_value, True)
@@ -3208,15 +3208,15 @@ feature {NONE} -- Implementation: Inspect
 			an_interval.il_load_value
 			if an_interval.is_signed then
 				if is_included then
-					il_generator.branch_on_condition ({MD_OPCODES}.bgt_un, label)
-				else
-					il_generator.branch_on_condition ({MD_OPCODES}.bge_un, label)
-				end
-			else
-				if is_included then
 					il_generator.branch_on_condition ({MD_OPCODES}.bgt, label)
 				else
 					il_generator.branch_on_condition ({MD_OPCODES}.bge, label)
+				end
+			else
+				if is_included then
+					il_generator.branch_on_condition ({MD_OPCODES}.bgt_un, label)
+				else
+					il_generator.branch_on_condition ({MD_OPCODES}.bge_un, label)
 				end
 			end
 		end

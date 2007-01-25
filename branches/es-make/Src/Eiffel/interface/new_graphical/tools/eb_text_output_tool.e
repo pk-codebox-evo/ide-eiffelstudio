@@ -9,6 +9,14 @@ indexing
 class
 	EB_TEXT_OUTPUT_TOOL
 
+inherit
+	ANY
+
+	EV_SHARED_APPLICATION
+		export
+			{NONE} all
+		end
+
 feature -- Accelerator
 
 	is_accelerator_matched (a_key: EV_KEY; a_accelerator: EV_ACCELERATOR): BOOLEAN is
@@ -40,12 +48,6 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
-	ev_application: EV_APPLICATION is
-			-- Current application.
-		once
-			Result := (create {EV_ENVIRONMENT}).application
-		end
-
 feature -- Actions
 
 	on_key_presses_in_output (a_key: EV_KEY) is
@@ -66,7 +68,7 @@ feature -- Actions
 feature{NONE} -- Implementation
 
 	ctrl_c: EV_ACCELERATOR is
-			-- Ctrl+C accelerator
+			-- Ctrl + C accelerator
 		once
 			create Result.make_with_key_combination (create{EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_c), True, False, False)
 		ensure
@@ -74,7 +76,7 @@ feature{NONE} -- Implementation
 		end
 
 	ctrl_a: EV_ACCELERATOR is
-			-- Ctrl+A accelerator
+			-- Ctrl + A accelerator
 		once
 			create Result.make_with_key_combination (create{EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_a), True, False, False)
 		ensure

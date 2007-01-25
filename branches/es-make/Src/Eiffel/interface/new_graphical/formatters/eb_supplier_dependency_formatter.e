@@ -25,6 +25,12 @@ feature -- Access
 			Result.put (pixmaps.icon_pixmaps.class_supliers_icon, 2)
 		end
 
+	pixel_buffer: EV_PIXEL_BUFFER is
+			-- Graphical representation of the command.
+		once
+			Result := pixmaps.icon_pixmaps.class_supliers_icon_buffer
+		end
+
 	menu_name: STRING_GENERAL is
 			-- Identifier of `Current' in menus.
 		do
@@ -34,7 +40,7 @@ feature -- Access
 	command_name: STRING_GENERAL is
 			-- Name of the command.
 		do
-			Result := Interface_names.string_general_to_lower (interface_names.l_suppliers)
+			Result := Interface_names.string_general_as_lower (interface_names.l_suppliers)
 		end
 
 	post_fix: STRING is "sup"
@@ -46,7 +52,7 @@ feature -- Formatting
 	format is
 			-- Refresh `widget' if `must_format' and `selected'.
 		do
-			if associated_stone /= Void and then selected and then displayed then
+			if associated_stone /= Void and then selected then
 				display_temp_header
 				if not widget.is_displayed then
 					widget.show
@@ -63,7 +69,7 @@ feature{NONE} -- Implementation
 	dependency_criterion (a_domain: QL_DOMAIN): QL_CLASS_CRITERION is
 			-- Criterion to filter dependency classes		
 		do
-			create {QL_CLASS_SUPPLIER_RELATION_CRI} Result.make (a_domain, browser.syntactical_button.is_selected, False)
+			create {QL_CLASS_SUPPLIER_RELATION_CRI} Result.make (a_domain, browser.normal_referenced_button.is_selected, browser.syntactical_button.is_selected, False)
 			if browser.inheritance_button.is_selected then
 				Result := Result or (create {QL_CLASS_ANCESTOR_RELATION_CRI}.make (a_domain, {QL_CLASS_ANCESTOR_RELATION_CRI}.proper_ancestor_type))
 			end

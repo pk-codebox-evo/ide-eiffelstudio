@@ -398,41 +398,41 @@
 	<basic_metric name="Clients" unit="class" uuid="A4272F1A-54C9-4ED4-AEFC-595C0DB87349">
 		<description>Number of clients</description>
 		<criterion>
-			<domain_criterion negation="False" name="supplier_is" unit="class">
+			<client_criterion negation="False" name="supplier_is" unit="class" normal="true" only_syntactical="false" indirect="false">
 				<domain>
 					<domain_item type="delayed" id=""></domain_item>
 				</domain>
-			</domain_criterion>
+			</client_criterion>
 		</criterion>
 	</basic_metric>
 	<basic_metric name="Indirect clients" unit="class" uuid="940EEA00-2B7E-4456-90CB-6B1A7C998913">
 		<description>Number of indirect clients</description>
 		<criterion>
-			<domain_criterion negation="False" name="indirect_supplier_is" unit="class">
+			<client_criterion negation="False" name="supplier_is" unit="class" normal="true" only_syntactical="false" indirect="true">
 				<domain>
 					<domain_item type="delayed" id=""></domain_item>
 				</domain>
-			</domain_criterion>
+			</client_criterion>
 		</criterion>
 	</basic_metric>
 	<basic_metric name="Suppliers" unit="class" uuid="EA607F1D-A90A-4141-A39F-FCFC71962D05">
 		<description>Number of suppliers</description>
 		<criterion>
-			<domain_criterion negation="False" name="client_is" unit="class">
+			<client_criterion negation="False" name="client_is" unit="class" normal="true" only_syntactical="false" indirect="false">
 				<domain>
 					<domain_item type="delayed" id=""></domain_item>
 				</domain>
-			</domain_criterion>
+			</client_criterion>
 		</criterion>
 	</basic_metric>
 	<basic_metric name="Indirect suppliers" unit="class" uuid="E1CD0F6F-CCA1-4122-B418-1A4A9056B56D">
 		<description>Number of indirect suppliers</description>
 		<criterion>
-			<domain_criterion negation="False" name="indirect_client_is" unit="class">
+			<client_criterion negation="False" name="client_is" unit="class" normal="true" only_syntactical="false" indirect="true">
 				<domain>
 					<domain_item type="delayed" id=""></domain_item>
 				</domain>
-			</domain_criterion>
+			</client_criterion>
 		</criterion>
 	</basic_metric>
 	<basic_metric name="Parents" unit="class" uuid="40575DA0-2114-4110-A23C-63B253FAA6FF">
@@ -502,6 +502,35 @@
 			</or_criterion>
 		</criterion>
 	</basic_metric>		
+	<basic_metric name="callee_is" unit="feature" uuid="1C29E8E0-71A2-40D5-8B21-CFD40C341302">
+		<description></description>
+		<criterion>
+			<caller_criterion name="callee_is" unit="feature" negation="False" only_current_version="False">
+				<domain>
+					<domain_item type="delayed" id="delayed"></domain_item>
+				</domain>
+			</caller_criterion>
+		</criterion>
+	</basic_metric>
+	<basic_metric name="Unused features" unit="feature" uuid="F378B9EA-B8BE-421E-8882-2DC3C75D3724">
+		<description>Number of unused features</description>
+		<criterion>
+			<and_criterion name="and" unit="feature" negation="False">				
+				<normal_criterion name="is_origin" unit="feature" negation="False"></normal_criterion>
+				<value_criterion name="value_of_metric_is" unit="feature" metric_name="callee_is" negation="False" use_external_delayed="True">
+					<domain>
+						<domain_item type="target" id=""></domain_item>
+					</domain>
+					<tester relation="or">
+						<tester_item name="=">
+							<constant_value value="0"></constant_value>
+						</tester_item>
+					</tester>
+				</value_criterion>
+			</and_criterion>
+		</criterion>
+	</basic_metric>
+	
 </metric>
 
 

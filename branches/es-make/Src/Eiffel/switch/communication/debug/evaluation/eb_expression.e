@@ -13,11 +13,10 @@ class
 	EB_EXPRESSION
 
 inherit
-	ANY
 
-	EB_CONSTANTS
-		export
-			{NONE} all
+	SHARED_NAMES
+		rename
+			names as interface_names
 		end
 
 	COMPILER_EXPORTER
@@ -90,7 +89,7 @@ feature {NONE} -- Initialization
 
 feature -- Recycling
 
-	recycle is
+	reset is
 			-- Recycle data
 			-- in order to free special data (for instance dotnet references)
 		do
@@ -168,14 +167,14 @@ feature -- Status
 
 feature -- Status report
 
-	is_condition (f: E_FEATURE): BOOLEAN is
-			-- Is `Current' a condition (boolean query) in the context of `f'?
+	is_boolean_expression (f: E_FEATURE): BOOLEAN is
+			-- Is `Current' a boolean in the context of `f'?
 		require
 			valid_f: f /= Void
 			no_error: not syntax_error_occurred
 			good_state: f.written_class /= Void and then f.written_class.has_feature_table
 		do
-			Result := expression_evaluator.is_condition (f.associated_feature_i )
+			Result := expression_evaluator.is_boolean_expression (f.associated_feature_i )
 		end
 
 	is_still_valid: BOOLEAN is

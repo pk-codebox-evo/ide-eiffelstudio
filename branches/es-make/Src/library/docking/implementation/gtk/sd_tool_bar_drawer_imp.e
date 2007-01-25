@@ -55,7 +55,6 @@ feature -- Redefine
 			l_tool_bar_imp: EV_DRAWING_AREA_IMP
 			l_rect: EV_RECTANGLE
 			l_button: SD_TOOL_BAR_BUTTON
-			l_temp_widget, l_style: POINTER
 			l_c_string: EV_GTK_C_STRING
 		do
 			l_tool_bar_imp ?= a_arguments.tool_bar.implementation
@@ -63,13 +62,9 @@ feature -- Redefine
 			l_rect := a_arguments.item.rectangle
 			l_button ?= a_arguments.item
 			if l_button /= Void then
-
 				-- Paint background
-				l_temp_widget := {EV_GTK_EXTERNALS}.gtk_button_new
-				l_style := {EV_GTK_EXTERNALS}.gtk_rc_get_style (l_temp_widget)
-
 				if a_arguments.item.state /= {SD_TOOL_BAR_ITEM_STATE}.normal then
-					c_gtk_paint_box (l_style, l_tool_bar_imp.c_object, to_gtk_state (a_arguments.item.state), gtk_shadow_type (a_arguments.item.state), l_rect.x, l_rect.y, l_rect.width, l_rect.height)
+					c_gtk_paint_box (style_of (l_tool_bar_imp.c_object) , l_tool_bar_imp.c_object, to_gtk_state (a_arguments.item.state), gtk_shadow_type (a_arguments.item.state), l_rect.x, l_rect.y, l_rect.width, l_rect.height)
 				end
 
 				-- Paint pixmap
@@ -88,15 +83,12 @@ feature -- Redefine
 
 	on_theme_changed is
 			-- Redefine
-		local
 		do
-			-- FIXIT: how to receive theme change actions?
 		end
 
 	desatuation (a_pixmap: EV_PIXMAP; a_k: REAL) is
 			-- Redefine
 		do
-
 		end
 
 	set_tool_bar (a_tool_bar: SD_TOOL_BAR) is
@@ -105,7 +97,38 @@ feature -- Redefine
 			tool_bar := a_tool_bar
 		end
 
+feature {SD_NOTEBOOK_TAB_DRAWER_IMP} -- Command
+
+	draw_button_background (a_gtk_widget: POINTER; a_rect: EV_RECTANGLE; a_state: INTEGER) is
+			-- Draw button background.
+		require
+			exist: a_gtk_widget /= default_pointer
+			not_void: a_rect /= Void
+			vaild: (create {SD_TOOL_BAR_ITEM_STATE}).is_valid (a_state)
+		do
+			c_gtk_paint_box (style_of (a_gtk_widget), a_gtk_widget, to_gtk_state (a_state), gtk_shadow_type (a_state), a_rect.x, a_rect.y, a_rect.width, a_rect.height)
+		end
+
 feature {NONE} -- Implementation
+
+	style_of (a_gtk_widget: POINTER): POINTER is
+			-- Style of a c gtk widget.
+		require
+			exist: a_gtk_widget /= default_pointer
+		external
+			"C inline use <gtk/gtk.h>"
+		alias
+			"[
+			{
+				GtkWidget *l_gtk_widget;
+				l_gtk_widget = GTK_WIDGET ($a_gtk_widget);
+				
+				return l_gtk_widget->style;
+			}
+			]"
+		ensure
+			exist: Result /= default_pointer
+		end
 
 	gtk_shadow_type (a_state: INTEGER): INTEGER is
 			-- Get correspond shadow type base on `a_state'
@@ -213,9 +236,8 @@ feature {NONE} -- Implementation
 			-- Tool bar which to draw.
 
 	desaturation (a_pixmap: EV_PIXMAP; a_k: REAL) is
-			--
+			-- Do nothing on Linux.
 		do
-
 		end
 
 feature {NONE} -- Externals
@@ -254,7 +276,7 @@ feature {NONE} -- Externals
 
 				gtk_paint_box ($a_style, l_widget->window,
 					$a_gtk_state_type, $a_gtk_shadow_type,
-					NULL, l_widget, "toolbar",
+					NULL, l_widget, "button",				
 					$a_x, $a_y, $a_width, $a_height);
 			}
 			]"

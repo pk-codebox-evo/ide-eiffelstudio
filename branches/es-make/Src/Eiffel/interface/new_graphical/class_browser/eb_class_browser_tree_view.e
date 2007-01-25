@@ -36,8 +36,10 @@ feature{NONE} -- Initialization
 		do
 			make (a_dev_window, a_drop_actions)
 			is_tree_view_enabled := a_tree_view_enabled
+			setup_sorting_for_location
 		ensure
 			is_tree_view_enabled_set: is_tree_view_enabled = a_tree_view_enabled
+			grid_sorting_setting_correct: is_sorting_setting_valid
 		end
 
 feature -- Status report
@@ -61,6 +63,7 @@ feature -- Access
 				control_tool_bar.extend (create{EV_TOOL_BAR_SEPARATOR})
 				control_tool_bar.extend (display_path_button)
 				if is_flat_view_enabled then
+					control_tool_bar.extend (normal_referenced_button)
 					control_tool_bar.extend (syntactical_button)
 				end
 				control_tool_internal.set_padding (2)
@@ -88,15 +91,30 @@ feature -- Access
 			-- This is used when a tree view is to be built. And starting element serves as the root of that tree.
 			-- If `starting_element' is Void, don't build tree.
 
-	syntactical_button: EV_TOOL_BAR_TOGGLE_BUTTON is
+	syntactical_button: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON is
 			-- Toggle button to indicate if syntactical supplier/clients are displayed
 		do
 			if syntactical_button_internal = Void then
-				create syntactical_button_internal
+				create syntactical_button_internal.make (preferences.class_browser_data.syntactical_class_preference)
 				syntactical_button_internal.set_pixmap (pixmaps.icon_pixmaps.class_overriden_normal_icon)
 				syntactical_button_internal.set_tooltip (interface_names.h_show_syntactical_classes)
+				syntactical_button_internal.select_actions.extend (agent on_refresh_for_flat_view)
 			end
 			Result := syntactical_button_internal
+		ensure
+			result_attached: Result /= Void
+		end
+
+	normal_referenced_button: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON is
+			-- Toggle button to indicate if normal referenced supplier/clients are displayed
+		do
+			if normal_referenced_button_internal = Void then
+				create normal_referenced_button_internal.make (preferences.class_browser_data.normal_referenced_class_preference)
+				normal_referenced_button_internal.set_pixmap (pixmaps.icon_pixmaps.diagram_supplier_link_icon)
+				normal_referenced_button_internal.set_tooltip (interface_names.h_show_normal_referenced_classes)
+				normal_referenced_button_internal.select_actions.extend (agent on_refresh_for_flat_view)
+			end
+			Result := normal_referenced_button_internal
 		ensure
 			result_attached: Result /= Void
 		end
@@ -231,49 +249,20 @@ feature -- Actions
 			-- Action to be performed when selection status of `display_path_button' changes
 		do
 			is_up_to_date := False
+			setup_sorting_for_location
 			if data /= Void then
 				bind_grid
 			end
-			preferences.class_browser_data.show_item_path_preference.set_value (display_path_button.is_selected)
+		ensure
+			grid_sorting_setting_correct: is_sorting_setting_valid
 		end
 
-	on_show_path_changed_from_outside is
-			-- Action to be performed when selection status of `display_path_button' changes from outside
-		local
-			l_displayed: BOOLEAN
-		do
-			l_displayed := preferences.class_browser_data.is_item_path_shown
-			if l_displayed /= display_path_button.is_selected then
-				if l_displayed then
-					display_path_button.enable_select
-				else
-					display_path_button.disable_select
-				end
-			end
-		end
-
-	on_show_syntactical_class_changed is
-			-- Action to be performed when selection status of `syntactical_button' changes
+	on_refresh_for_flat_view is
+			-- Refresh data for flat view.
 		do
 			is_up_to_date := False
 			if data /= Void and then is_flat_view_enabled then
 				retrieve_data_actions.call ([])
-			end
-			preferences.class_browser_data.syntactical_class_preference.set_value (syntactical_button.is_selected)
-		end
-
-	on_show_syntactical_class_changed_from_outside is
-			-- Action to be performed when selection status of `syntactical_button' changes from outside
-		local
-			l_displayed: BOOLEAN
-		do
-			l_displayed := preferences.class_browser_data.is_syntactical_class_shown
-			if l_displayed /= syntactical_button.is_selected then
-				if l_displayed then
-					syntactical_button.enable_select
-				else
-					syntactical_button.disable_select
-				end
 			end
 		end
 
@@ -289,20 +278,15 @@ feature -- Notification
 	update_view is
 			-- Update current view according to change in `model'.
 		local
-			l_msg: STRING
+			l_msg: STRING_32
 		do
 			if not is_up_to_date then
 				if data /= Void then
-					if is_flat_view_enabled and then display_path_button.is_selected then
-						set_sort_info (2, create {EVS_GRID_TWO_WAY_SORTING_INFO [EB_CLASS_BROWSER_TREE_ROW]}.make (agent path_name_tester, ascending_order))
-					else
-						remove_sort_info (2)
-					end
 					text.hide
 					component_widget.show
 					fill_rows
 					if last_sorted_column_internal = 0 then
-						last_sorted_column_internal := 1
+						last_sorted_column_internal := class_name_column_index
 					end
 					disable_auto_sort_order_change
 					enable_force_multi_column_sorting
@@ -687,18 +671,15 @@ feature{NONE} -- Implementation
 	control_tool_internal: EV_HORIZONTAL_BOX
 			-- Implementation of `control_bar'
 
-	display_path_button: EV_TOOL_BAR_TOGGLE_BUTTON
+	display_path_button: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON is
 			-- Toggle button to turn on/off item path display
 		do
 			if display_path_button_internal = Void then
-				create display_path_button_internal
+				create display_path_button_internal.make (preferences.class_browser_data.show_item_path_preference)
 				display_path_button_internal.set_pixmap (pixmaps.icon_pixmaps.metric_unit_group_icon)
 				display_path_button_internal.set_tooltip (interface_names.h_show_item_location)
-				if preferences.class_browser_data.is_item_path_shown then
-					display_path_button_internal.enable_select
-				else
-					display_path_button_internal.disable_select
-				end
+				display_path_button_internal.select_actions.extend (agent on_show_path_changed)
+				on_show_path_changed
 			end
 			Result := display_path_button_internal
 		ensure
@@ -711,22 +692,45 @@ feature{NONE} -- Implementation
 	display_path_button_internal: like display_path_button
 			-- Implementation of `display_path_button'
 
-	on_show_path_changed_from_outside_agent: PROCEDURE [ANY, TUPLE]
-			-- Agent for `on_show_path_changed_from_outside'
-
-	on_show_syntactical_class_changed_from_outside_agent: PROCEDURE [ANY, TUPLE]
-			-- Agent for `on_show_syntactical_class_changed_from_outside'
+	normal_referenced_button_internal: like normal_referenced_button
+			-- Implementation of `normal_referenced_button'
 
 	recycle_agents is
 			-- Recycle agents
 		do
+			display_path_button.recycle
+			syntactical_button.recycle
+			normal_referenced_button.recycle
 			Precursor {EB_CLASS_BROWSER_GRID_VIEW}
-			if on_show_path_changed_from_outside_agent /= Void then
-				preferences.class_browser_data.show_item_path_preference.change_actions.prune_all (on_show_path_changed_from_outside_agent)
+		end
+
+	is_sorting_setting_valid: BOOLEAN is
+			-- Is setting for grid sorting valid?
+			-- The criterion is: the class name column is sortable, and if the location column is displayed
+			-- and then current view is in flat mode, the location column is sortable
+		do
+			Result := is_column_sortable (class_name_column_index)
+			if Result then
+				if is_flat_view_enabled and then display_path_button.is_selected then
+					Result := is_column_sortable (location_column_index)
+				else
+					Result := not is_column_sortable (location_column_index)
+				end
 			end
-			if on_show_syntactical_class_changed_from_outside_agent /= Void then
-				preferences.class_browser_data.syntactical_class_preference.change_actions.prune_all (on_show_syntactical_class_changed_from_outside_agent)
+		end
+
+	setup_sorting_for_location is
+			-- Set sorting information for location column.
+		do
+			if is_flat_view_enabled and then display_path_button.is_selected then
+				if not is_column_sortable (location_column_index) then
+					set_sort_info (location_column_index, create {EVS_GRID_TWO_WAY_SORTING_INFO [EB_CLASS_BROWSER_TREE_ROW]}.make (agent path_name_tester, ascending_order))
+				end
+			elseif is_column_sortable (location_column_index) then
+				remove_sort_info (location_column_index)
 			end
+		ensure
+			sorting_setting_correct: is_sorting_setting_valid
 		end
 
 feature{NONE} -- Initialization
@@ -737,8 +741,8 @@ feature{NONE} -- Initialization
 			create grid
 			grid.set_column_count_to (2)
 			grid.enable_selection_on_single_button_click
-			grid.header.i_th (1).set_text (interface_names.l_class_browser_classes)
-			grid.header.i_th (2).set_text (interface_names.l_location)
+			grid.header.i_th (class_name_column_index).set_text (interface_names.l_class_browser_classes)
+			grid.header.i_th (location_column_index).set_text (interface_names.l_location)
 			grid.enable_single_row_selection
 			grid.enable_tree
 			grid.set_row_height (default_row_height)
@@ -753,15 +757,8 @@ feature{NONE} -- Initialization
 			grid.row_deselect_actions.extend (agent dehighlight_row)
 			grid.key_press_actions.extend (agent on_key_pressed)
 			grid.enable_multiple_row_selection
-			enable_editor_token_pnd
+			enable_grid_item_pnd_support
 			set_select_all_action (agent do  end)
-
-			display_path_button.select_actions.extend (agent on_show_path_changed)
-			on_show_path_changed_from_outside_agent := agent on_show_path_changed_from_outside
-			on_show_syntactical_class_changed_from_outside_agent := agent on_show_syntactical_class_changed_from_outside
-			syntactical_button.select_actions.extend (agent on_show_syntactical_class_changed)
-			preferences.class_browser_data.show_item_path_preference.change_actions.extend (on_show_path_changed_from_outside_agent)
-			preferences.class_browser_data.syntactical_class_preference.change_actions.extend (on_show_syntactical_class_changed_from_outside_agent)
 		end
 
 	build_sortable_and_searchable is
@@ -775,21 +772,26 @@ feature{NONE} -- Initialization
 			create l_class_sort_info.make (agent class_name_tester, ascending_order)
 			set_sort_action (agent sort_agent)
 			l_class_sort_info.enable_auto_indicator
-			set_sort_info (1, l_class_sort_info)
+			set_sort_info (class_name_column_index, l_class_sort_info)
 
 				-- Prepare search facilities
 			create quick_search_bar.make (development_window)
 			quick_search_bar.attach_tool (Current)
 			enable_search
-			grid.add_key_action (agent on_collapse_one_level_partly, collapse_one_level_partly_index)
-			grid.add_key_shortcut (collapse_one_level_partly_index, create{ES_KEY_SHORTCUT}.make_with_key_combination (create{EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_left), True, False, False))
+			grid.register_shortcut (
+				create{ES_KEY_SHORTCUT}.make_with_key_combination (create{EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_left), True, False, False),
+				agent on_collapse_one_level_partly
+			)
 		end
-
-	collapse_one_level_partly_index: INTEGER is 65530
-			-- Key shortcut index for collapse one level partly
 
 	control_tool_bar_internal: like control_tool_bar;
 			-- Implementation of `control_tool_bar'
+
+	class_name_column_index: INTEGER is 1
+			-- Index of class name column
+
+	location_column_index: INTEGER is 2;
+			-- Index of location column
 
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"

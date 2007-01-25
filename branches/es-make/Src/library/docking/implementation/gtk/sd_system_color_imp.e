@@ -69,7 +69,7 @@ feature -- Access
 	active_border_color: EV_COLOR is
 			-- Active border color
 		do
-			Result := prelight_color
+			Result := active_color--dark_color
 		end
 
 	focused_title_text_color: EV_COLOR is
@@ -84,12 +84,21 @@ feature -- Access
 	button_text_color: EV_COLOR is
 			-- Button text color
 		local
---			l_grid: EV_GRID
+			l_grid: EV_GRID
 		do
---			create l_grid
---			Result := l_grid.non_focused_selection_text_color
-			-- FIXIT: non_focused_selection_text_color and focused_selection_text_color are the same?
-			Result := (create {EV_STOCK_COLORS}).black
+			create l_grid
+			Result := l_grid.foreground_color
+		end
+
+feature -- Font
+
+	tool_bar_font: EV_FONT is
+			-- Redefine.
+		local
+			l_drawing_area: EV_DRAWING_AREA
+		once
+			create l_drawing_area
+			Result := l_drawing_area.font
 		end
 
 feature -- HoT zone factory
@@ -123,6 +132,20 @@ feature {NONE} -- GTK text_aa colors.
 			color: POINTER
 		do
 			color := active_bg_color({EV_GTK_EXTERNALS}.gtk_style_struct_bg ({EV_GTK_EXTERNALS}.gtk_rc_get_style (tree_view)))
+			r := {EV_GTK_EXTERNALS}.gdk_color_struct_red (color)
+			g := {EV_GTK_EXTERNALS}.gdk_color_struct_green (color)
+			b := {EV_GTK_EXTERNALS}.gdk_color_struct_blue (color)
+			create Result
+			Result.set_rgb_with_16_bit (r, g, b)
+		end
+
+	dark_color: EV_COLOR is
+			-- Dark color of a widget.
+		local
+			r, g, b: INTEGER
+			color: POINTER
+		do
+			color := normal_bg_color({EV_GTK_EXTERNALS}.gtk_style_struct_dark ({EV_GTK_EXTERNALS}.gtk_rc_get_style (tree_view)))
 			r := {EV_GTK_EXTERNALS}.gdk_color_struct_red (color)
 			g := {EV_GTK_EXTERNALS}.gdk_color_struct_green (color)
 			b := {EV_GTK_EXTERNALS}.gdk_color_struct_blue (color)

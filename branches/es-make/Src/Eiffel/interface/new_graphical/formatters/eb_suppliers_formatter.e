@@ -29,6 +29,12 @@ feature -- Properties
 			Result.put (pixmaps.icon_pixmaps.class_supliers_icon, 2)
 		end
 
+	pixel_buffer: EV_PIXEL_BUFFER is
+			-- Graphical representation of the command.
+		once
+			Result := pixmaps.icon_pixmaps.class_supliers_icon_buffer
+		end
+
 	menu_name: STRING_GENERAL is
 			-- Identifier of `Current' in menus.
 		do
@@ -49,7 +55,7 @@ feature {NONE} -- Properties
 	command_name: STRING_GENERAL is
 			-- Name of the command.
 		do
-			Result := Interface_names.string_general_to_lower (interface_names.l_Suppliers)
+			Result := Interface_names.string_general_as_lower (interface_names.l_Suppliers)
 		end
 
 	post_fix: STRING is "sup"
@@ -73,7 +79,7 @@ feature {NONE} -- Implementation
 			end
 
 			l_class := query_class_item_from_class_c (associated_class)
-			create {QL_CLASS_SUPPLIER_RELATION_CRI}Result.make (l_class.wrapped_domain, browser.syntactical_button.is_selected, False)
+			create {QL_CLASS_SUPPLIER_RELATION_CRI}Result.make (l_class.wrapped_domain, browser.normal_referenced_button.is_selected, browser.syntactical_button.is_selected, False)
 		end
 
 indexing

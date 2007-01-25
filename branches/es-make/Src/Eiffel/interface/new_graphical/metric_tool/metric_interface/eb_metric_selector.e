@@ -121,10 +121,8 @@ feature {NONE} -- Initialization
 			metric_grid.set_item_pebble_function (agent item_pebble_function)
 			metric_grid.enable_single_row_selection
 			metric_grid.row_select_actions.extend (agent on_row_selected)
-			metric_grid.add_key_action (agent on_move_unit (True, False), move_unit_up_key_index)
-			metric_grid.add_key_action (agent on_move_unit (False, True), move_unit_down_key_index)
-			metric_grid.add_key_shortcut (move_unit_up_key_index, move_unit_up_key_shortcut)
-			metric_grid.add_key_shortcut (move_unit_down_key_index, move_unit_down_key_shortcut)
+			metric_grid.register_shortcut (move_unit_up_key_shortcut, agent on_move_unit (True, False))
+			metric_grid.register_shortcut (move_unit_down_key_shortcut, agent on_move_unit (False, True))
 			metric_grid.item_drop_actions.extend (agent on_drop_unit)
 			metric_grid.set_item_veto_pebble_function (agent item_veto_pebble_function)
 
@@ -258,10 +256,6 @@ feature -- Status report
 	should_tooltip_contain_go_to_definition_message: BOOLEAN
 			-- Should tooltip of metric contain "go to definition" message?
 			-- Default: True
-
-	is_key_from_metric_grid: BOOLEAN;
-			-- Is key stroke from `metrc_grid'?
-			-- False indicates that key stroke is from `cached_key_field'.
 
 feature{NONE} -- Actions
 
@@ -575,7 +569,9 @@ feature -- Basic operations
 								l_row.parent_row.expand
 							end
 							l_row.enable_select
-							l_row.ensure_visible
+							if l_row.is_displayed then
+								l_row.ensure_visible
+							end
 							done := True
 						end
 					end
@@ -732,7 +728,7 @@ feature -- Metric management
 			l_grid_row: EV_GRID_ROW
 			l_font: EV_FONT
 			l_tooltip: STRING_GENERAL
-			l_vadility: EB_METRIC_ERROR
+			l_validity: EB_METRIC_ERROR
 			l_red: EV_COLOR
 			l_check_item: EV_GRID_CHECKABLE_LABEL_ITEM
 		do
@@ -741,8 +737,8 @@ feature -- Metric management
 			create l_font
 			l_red := (create {EV_STOCK_COLORS}).red
 			l_grid_item.set_font (l_font)
-			l_vadility := metric_manager.metric_vadility (a_metric.name)
-			if l_vadility /= Void then
+			l_validity := metric_manager.metric_validity (a_metric.name)
+			if l_validity /= Void then
 				l_grid_item.set_foreground_color (l_red)
 			end
 			l_tooltip := metric_tooltip (a_metric, should_tooltip_contain_go_to_definition_message)
@@ -1088,12 +1084,6 @@ feature {NONE} -- Implementation
 		end
 
 feature{NONE} -- Key shortcuts
-
-	move_unit_up_key_index: INTEGER is 128
-			-- Key shortcut index for moving unit up
-
-	move_unit_down_key_index: INTEGER is 129
-			-- Key shortcut index for moving unit down
 
 	move_unit_up_key_shortcut: ES_KEY_SHORTCUT
 			-- Key shortcut for moving unit up

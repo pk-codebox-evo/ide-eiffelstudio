@@ -17,11 +17,6 @@ inherit
 			is_equal
 		end
 
-	EV_GTK_KEY_CONVERSION
-		undefine
-			default_create
-		end
-
 	EV_INTERMEDIARY_ROUTINES
 		undefine
 			default_create
@@ -67,96 +62,26 @@ feature {EV_ANY_IMP} -- Access
 			an_agent.call (translate.item (integer_pointer_tuple))
 		end
 
-	dimension_tuple (a_1, a_2, a_3, a_4: INTEGER): like internal_dimension_tuple is
+	dimension_tuple (a_x, a_y, a_width, a_height: INTEGER): like internal_dimension_tuple is
 			-- Return a dimension tuple from given arguments.
 		do
 			Result := internal_dimension_tuple
-			Result.put_integer (a_1, 1)
-			Result.put_integer (a_2, 2)
-			Result.put_integer (a_3, 3)
-			Result.put_integer (a_4, 4)
+			Result.x := a_x
+			Result.y := a_y
+			Result.width := a_width
+			Result.height := a_height
 		end
 
 	key_tuple (a_key: EV_KEY; a_key_string: STRING_32; a_key_press: BOOLEAN): like internal_key_tuple is
 			-- Return a key tuple from given arguments.
 		do
 			Result := internal_key_tuple
-			Result.put_reference (a_key, 1)
-			Result.put_reference (a_key_string, 2)
-			Result.put_boolean (a_key_press, 3)
+			Result.key := a_key
+			Result.string := a_key_string
+			Result.key_press := a_key_press
 		end
 
-feature {EV_ANY_IMP, EV_APPLICATION_IMP}
-
-	gdk_event_to_tuple (n_args: INTEGER; args: POINTER): TUPLE is
-			-- A TUPLE containing `args' data from a GdkEvent.
-			-- `n_args' is ignored.
-		local
-			gdk_event: POINTER
-			p: POINTER
-			event_type: INTEGER
-			keyval: NATURAL_32
-			key: EV_KEY
-		do
-			if n_args > 0 then
-					-- If no arguments are available then a Void tuple is returned
-				gdk_event := {EV_GTK_DEPENDENT_EXTERNALS}.gtk_value_pointer (args)
-				event_type := {EV_GTK_EXTERNALS}.gdk_event_any_struct_type (gdk_event)
-				if event_type = {EV_GTK_ENUMS}.Gdk_configure_enum then
-					Result := dimension_tuple	 (
-						{EV_GTK_EXTERNALS}.gdk_event_configure_struct_x (gdk_event),
-						{EV_GTK_EXTERNALS}.gdk_event_configure_struct_y (gdk_event),
-						{EV_GTK_EXTERNALS}.gdk_event_configure_struct_width (gdk_event),
-						{EV_GTK_EXTERNALS}.gdk_event_configure_struct_height (gdk_event)
-					)
-				elseif event_type = {EV_GTK_ENUMS}.Gdk_expose_enum
-				then
-					p := {EV_GTK_EXTERNALS}.gdk_event_expose_struct_area (gdk_event)
-					Result := dimension_tuple (
-						{EV_GTK_EXTERNALS}.gdk_rectangle_struct_x (p),
-						{EV_GTK_EXTERNALS}.gdk_rectangle_struct_y (p),
-						{EV_GTK_EXTERNALS}.gdk_rectangle_struct_width (p),
-						{EV_GTK_EXTERNALS}.gdk_rectangle_struct_height (p)
-					)
-				elseif (event_type = {EV_GTK_ENUMS}.Gdk_button_press_enum or else event_type = {EV_GTK_ENUMS}.Gdk_2button_press_enum or else event_type = {EV_GTK_ENUMS}.Gdk_3button_press_enum)
-				then
-					Result := [
-						{EV_GTK_EXTERNALS}.gdk_event_button_struct_type (gdk_event),
-						{EV_GTK_EXTERNALS}.gdk_event_button_struct_x (gdk_event).truncated_to_integer,
-						{EV_GTK_EXTERNALS}.gdk_event_button_struct_y (gdk_event).truncated_to_integer,
-						{EV_GTK_EXTERNALS}.gdk_event_button_struct_button (gdk_event),
-						0.5,
-						0.5,
-						0.5,
-						{EV_GTK_EXTERNALS}.gdk_event_motion_struct_x_root (gdk_event).truncated_to_integer,
-						{EV_GTK_EXTERNALS}.gdk_event_motion_struct_y_root (gdk_event).truncated_to_integer
-					]
-
-				elseif event_type = {EV_GTK_ENUMS}.Gdk_button_release_enum
-				then
-						-- gdk_event type GdkEventButton
-					Result := [
-						{EV_GTK_EXTERNALS}.gdk_event_button_struct_x (gdk_event).truncated_to_integer,
-						{EV_GTK_EXTERNALS}.gdk_event_button_struct_y (gdk_event).truncated_to_integer,
-						{EV_GTK_EXTERNALS}.gdk_event_button_struct_button (gdk_event),
-						0.5,
-						0.5,
-						0.5,
-						{EV_GTK_EXTERNALS}.gdk_event_motion_struct_x_root (gdk_event).truncated_to_integer,
-						{EV_GTK_EXTERNALS}.gdk_event_motion_struct_y_root (gdk_event).truncated_to_integer
-					]
-				elseif (event_type = {EV_GTK_ENUMS}.Gdk_key_press_enum or else event_type = {EV_GTK_ENUMS}.Gdk_key_release_enum)
-				then
-					keyval := {EV_GTK_EXTERNALS}.gdk_event_key_struct_keyval (gdk_event)
-					if valid_gtk_code (keyval) then
-						create key.make_with_code (key_code_from_gtk (keyval))
-					end
-					Result := [key]
-				end
-			end
-		end
-
-feature {EV_ANY_IMP}
+feature -- Implementation
 
 	signal_connect (
 		a_c_object: POINTER;
@@ -186,62 +111,101 @@ feature {EV_ANY_IMP}
 	last_signal_connection_id: INTEGER
 		-- Last signal connection id.
 
-	set_focus_event_translate (n: INTEGER; p: POINTER): TUPLE is
-			-- Converted GtkWidget* to tuple.
-		do
-			Result := [{EV_GTK_DEPENDENT_EXTERNALS}.gtk_value_pointer (p)]
+feature -- Agent functions.
+
+	key_event_translate_agent: FUNCTION [EV_GTK_CALLBACK_MARSHAL, TUPLE [INTEGER, POINTER], TUPLE] is
+			-- Translation agent used for key events
+		once
+			Result :=
+			agent (n: INTEGER; p: POINTER): TUPLE
+				local
+					keyval: NATURAL_32
+					gdkeventkey: POINTER
+					a_key_string: STRING_32
+					key: EV_KEY
+					a_key_press: BOOLEAN
+					a_cs: EV_GTK_C_STRING
+				do
+					gdkeventkey := {EV_GTK_DEPENDENT_EXTERNALS}.gtk_value_pointer (p)
+					if {EV_GTK_EXTERNALS}.gdk_event_key_struct_type (gdkeventkey) = {EV_GTK_EXTERNALS}.gdk_key_press_enum then
+						a_key_press := True
+						create a_cs.share_from_pointer ({EV_GTK_EXTERNALS}.gdk_event_key_struct_string (gdkeventkey))
+						a_key_string := a_cs.string
+					end
+					keyval := {EV_GTK_EXTERNALS}.gdk_event_key_struct_keyval (gdkeventkey)
+						-- Value may be zero for special extend keys (Play/Pause etc..)
+					if keyval > 0 and then valid_gtk_code (keyval) then
+						create key.make_with_code (key_code_from_gtk (keyval))
+					end
+					Result := key_tuple (key, a_key_string, a_key_press)
+				end
 		end
 
-	key_event_translate (n: INTEGER; p: POINTER): TUPLE is
-			-- Convert GdkEventKey to tuple.
-		local
-			keyval: NATURAL_32
-			gdkeventkey: POINTER
-			a_key_string: STRING_32
-			key: EV_KEY
-			a_key_press: BOOLEAN
-			a_cs: EV_GTK_C_STRING
-		do
-			gdkeventkey := {EV_GTK_DEPENDENT_EXTERNALS}.gtk_value_pointer (p)
-			if {EV_GTK_EXTERNALS}.gdk_event_key_struct_type (gdkeventkey) = {EV_GTK_EXTERNALS}.gdk_key_press_enum then
-				a_key_press := True
-				create a_cs.share_from_pointer ({EV_GTK_EXTERNALS}.gdk_event_key_struct_string (gdkeventkey))
-				a_key_string := a_cs.string
+	set_focus_event_translate_agent: FUNCTION [EV_GTK_CALLBACK_MARSHAL, TUPLE [INTEGER, POINTER], TUPLE] is
+			-- Translation agent used for set-focus events
+		once
+			Result :=
+			agent (n: INTEGER; p: POINTER): TUPLE
+					-- Converted GtkWidget* to tuple.
+				do
+					Result := [{EV_GTK_DEPENDENT_EXTERNALS}.gtk_value_pointer (p)]
+				end
+		end
+
+	configure_translate_agent: FUNCTION [EV_GTK_CALLBACK_MARSHAL, TUPLE [INTEGER, POINTER], TUPLE] is
+			-- Translation agent used for size allocation events
+		once
+			Result :=
+			agent (n: INTEGER; p: POINTER): TUPLE
+				local
+					gdk_configure: POINTER
+				do
+					gdk_configure := {EV_GTK_DEPENDENT_EXTERNALS}.gtk_value_pointer (p)
+					Result := dimension_tuple (
+						{EV_GTK_EXTERNALS}.gdk_event_configure_struct_x (gdk_configure),
+						{EV_GTK_EXTERNALS}.gdk_event_configure_struct_y (gdk_configure),
+						{EV_GTK_EXTERNALS}.gdk_event_configure_struct_width (gdk_configure),
+						{EV_GTK_EXTERNALS}.gdk_event_configure_struct_height (gdk_configure)
+					)
 			end
-			keyval := {EV_GTK_EXTERNALS}.gdk_event_key_struct_keyval (gdkeventkey)
-				-- Value may be zero for special extend keys (Play/Pause etc..)
-			if keyval > 0 and then valid_gtk_code (keyval) then
-				create key.make_with_code (key_code_from_gtk (keyval))
-			end
-			Result := key_tuple (key, a_key_string, a_key_press)
 		end
 
-	size_allocate_translate (n: INTEGER; p: POINTER): TUPLE is
-			-- Convert GtkAllocation to tuple.
-		local
-			gtk_alloc: POINTER
-		do
-			gtk_alloc := {EV_GTK_DEPENDENT_EXTERNALS}.gtk_value_pointer (p)
-			Result := dimension_tuple (
-				{EV_GTK_EXTERNALS}.gtk_allocation_struct_x (gtk_alloc),
-				{EV_GTK_EXTERNALS}.gtk_allocation_struct_y (gtk_alloc),
-				{EV_GTK_EXTERNALS}.gtk_allocation_struct_width (gtk_alloc),
-				{EV_GTK_EXTERNALS}.gtk_allocation_struct_height (gtk_alloc)
-			)
+	size_allocate_translate_agent: FUNCTION [EV_GTK_CALLBACK_MARSHAL, TUPLE [INTEGER, POINTER], TUPLE] is
+			-- Translation agent used for size allocation events
+		once
+			Result :=
+			agent (n: INTEGER; p: POINTER): TUPLE
+				local
+					gtk_alloc: POINTER
+				do
+					gtk_alloc := {EV_GTK_DEPENDENT_EXTERNALS}.gtk_value_pointer (p)
+					Result := dimension_tuple (
+						{EV_GTK_EXTERNALS}.gtk_allocation_struct_x (gtk_alloc),
+						{EV_GTK_EXTERNALS}.gtk_allocation_struct_y (gtk_alloc),
+						{EV_GTK_EXTERNALS}.gtk_allocation_struct_width (gtk_alloc),
+						{EV_GTK_EXTERNALS}.gtk_allocation_struct_height (gtk_alloc)
+					)
+				end
 		end
 
-	configure_translate (n: INTEGER; p: POINTER): TUPLE is
-			-- Convert GtkEventConfigure to tuple.
-		local
-			gdk_configure: POINTER
-		do
-			gdk_configure := {EV_GTK_DEPENDENT_EXTERNALS}.gtk_value_pointer (p)
-			Result := dimension_tuple (
-				{EV_GTK_EXTERNALS}.gdk_event_configure_struct_x (gdk_configure),
-				{EV_GTK_EXTERNALS}.gdk_event_configure_struct_y (gdk_configure),
-				{EV_GTK_EXTERNALS}.gdk_event_configure_struct_width (gdk_configure),
-				{EV_GTK_EXTERNALS}.gdk_event_configure_struct_height (gdk_configure)
-			)
+	expose_translate_agent: FUNCTION [EV_GTK_CALLBACK_MARSHAL, TUPLE [INTEGER, POINTER], TUPLE] is
+			-- Translation agent used for size allocation events
+		once
+			Result :=
+			agent (n: INTEGER; p: POINTER): TUPLE
+				local
+					gdk_expose_event: POINTER
+					l_rect: POINTER
+				do
+					gdk_expose_event := {EV_GTK_DEPENDENT_EXTERNALS}.gtk_value_pointer (p)
+					l_rect := {EV_GTK_EXTERNALS}.gdk_event_expose_struct_area (gdk_expose_event)
+					Result := dimension_tuple (
+						{EV_GTK_EXTERNALS}.gdk_rectangle_struct_x (l_rect),
+						{EV_GTK_EXTERNALS}.gdk_rectangle_struct_y (l_rect),
+						{EV_GTK_EXTERNALS}.gdk_rectangle_struct_width (l_rect),
+						{EV_GTK_EXTERNALS}.gdk_rectangle_struct_height (l_rect)
+					)
+				end
 		end
 
 feature {EV_ANY_IMP} -- Agent implementation routines
@@ -293,9 +257,11 @@ feature {NONE} -- Implementation
 			app_imp: EV_APPLICATION_IMP
 		do
 			if l_retry_count = 0 then
-				l_integer_pointer_tuple := integer_pointer_tuple
-				l_integer_pointer_tuple.put_integer (n_args, 1)
-				l_integer_pointer_tuple.put_pointer (args, 2)
+				if n_args > 0 then
+					l_integer_pointer_tuple := integer_pointer_tuple
+					l_integer_pointer_tuple.integer := n_args
+					l_integer_pointer_tuple.pointer := args
+				end
 				action.call (l_integer_pointer_tuple)
 			elseif l_retry_count = 1 then
 				app_imp ?= (create {EV_ENVIRONMENT}).application.implementation
@@ -311,41 +277,38 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Tuple optimizations.
 
-	internal_dimension_tuple: TUPLE [INTEGER, INTEGER, INTEGER, INTEGER] is
+	internal_dimension_tuple: TUPLE [x: INTEGER; y: INTEGER; width: INTEGER; height: INTEGER] is
 			-- Once function used for global access of dimension tuple.
 		once
-			Result := [0, 0, 0, 0]
+			create Result
 		end
 
-	internal_key_tuple: TUPLE [EV_KEY, STRING_32, BOOLEAN] is
+	internal_key_tuple: TUPLE [key: EV_KEY; string: STRING_32; key_press: BOOLEAN] is
 			-- Once function used for global access of key tuple.
 		once
-			Result := [Void, Void, False]
+			create Result
 		end
 
-feature {EV_ANY_IMP} -- Tuple optimizations
-
-	pointer_tuple: TUPLE [POINTER] is
-			--
+	pointer_tuple: TUPLE [pointer: POINTER] is
 		once
-			Result := [Default_pointer]
+			create Result
 		end
 
-	integer_tuple: TUPLE [INTEGER] is
+	integer_tuple: TUPLE [integer: INTEGER] is
 		once
-			Result := [0]
+			create Result
 		end
 
-	integer_pointer_tuple: TUPLE [INTEGER, POINTER] is
+	integer_pointer_tuple: TUPLE [integer: INTEGER; pointer: POINTER] is
 		once
-			Result := [0, default_pointer]
+			create Result
 		end
 
-	gtk_value_pointer_to_tuple (n_args: INTEGER; args: POINTER): TUPLE [POINTER] is
+	gtk_value_pointer_to_tuple (n_args: INTEGER; args: POINTER): TUPLE [pointer: POINTER] is
 			-- Tuple containing integer value from first of `args'.
 		do
-			pointer_tuple.put_pointer ({EV_GTK_DEPENDENT_EXTERNALS}.gtk_value_pointer (args), 1)
 			Result := pointer_tuple
+			Result.pointer := {EV_GTK_DEPENDENT_EXTERNALS}.gtk_value_pointer (args)
 		end
 
 feature {EV_GTK_CALLBACK_MARSHAL} -- Externals

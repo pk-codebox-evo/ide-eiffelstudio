@@ -8,6 +8,14 @@ indexing
 class
 	SD_DOCKING_MANAGER_COMMAND
 
+inherit
+	ANY
+
+	EV_SHARED_APPLICATION
+		export
+			{NONE} all
+		end
+
 create
 	make
 
@@ -21,19 +29,29 @@ feature {NONE}  -- Initlization
 			l_key: EV_KEY
 			l_acc: EV_ACCELERATOR
 			l_window: EV_TITLED_WINDOW
+			l_plat: PLATFORM
 		do
 			internal_docking_manager := a_docking_manager
 			create locked_windows.make_default
 
+			create internal_shared
 			-- Initialize zone navigation accelerator key.
-			create l_key.make_with_code ({EV_KEY_CONSTANTS}.key_tab)
-			create l_acc.make_with_key_combination (l_key, True, False, False)
+			create l_key.make_with_code (internal_shared.zone_navigation_accelerator_key)
+
+			-- This is tempory fix for "Ctrl + Tab" accelerator not work not Linux
+			create l_plat
+			if l_plat.is_unix then
+				create l_key.make_with_code ({EV_KEY_CONSTANTS}.key_8)
+			end
+
+			create l_acc.make_with_key_combination (l_key, internal_shared.zone_navigation_accelerator_ctrl, internal_shared.zone_navigation_accelerator_alt, internal_shared.zone_navigation_accelerator_shift)
 			l_acc.actions.extend (agent on_zone_navigation (False))
 			l_window ?= internal_docking_manager.main_window
 			if l_window /= Void then
 				l_window.accelerators.extend (l_acc)
 			end
 
+			-- We must set another accelerator, otherwise shift+ctrl+tab will not invoke actions.
 			create l_acc.make_with_key_combination (l_key, True, False, True)
 			l_acc.actions.extend (agent on_zone_navigation (True))
 			if l_window /= Void then
@@ -59,21 +77,16 @@ feature -- Commands
 			-- Lock window update.
 		require
 			a_zone_not_void_when_not_main_window: not a_main_window implies a_zone /= Void
-		local
-			l_env: EV_ENVIRONMENT
 		do
 			if lock_call_time = 0 then
-				create l_env
-				if l_env.application.locked_window /= Void then
-					-- We should ignore these lock window update calls.
+				if ev_application.locked_window /= Void then
+						-- We should ignore these lock window update calls.
 					ignore_update := True
 				else
 					lock_update_internal (a_zone, a_main_window)
 				end
 			else
-				if not ignore_update then
-					lock_update_internal (a_zone, a_main_window)
-				end
+				-- Nothing to be done, since we have already locked it, or it was already locked.
 			end
 			lock_call_time := lock_call_time + 1
 
@@ -88,10 +101,6 @@ feature -- Commands
 					unlock_update_internal
 				end
 				ignore_update := False
-			else
-				if not ignore_update then
-					unlock_update_internal
-				end
 			end
 		end
 
@@ -168,12 +177,14 @@ feature -- Commands
 			l_zones: ARRAYED_LIST [SD_ZONE]
 		do
 			from
-				l_zones := internal_docking_manager.zones.zones
+				l_zones := internal_docking_manager.zones.zones.twin
 				l_zones.start
 			until
 				l_zones.after
 			loop
-				l_zones.item.recover_to_normal_state
+				if l_zones.item /= Void then
+					l_zones.item.recover_to_normal_state
+				end
 				l_zones.forth
 			end
 		end
@@ -197,13 +208,13 @@ feature -- Commands
 			end
 		end
 
-	on_zone_navigation (is_shift_pressed: BOOLEAN) is
+	on_zone_navigation (a_shift_pressed: BOOLEAN) is
 			-- User request to show zone navigation.
 		local
 			l_dialog: SD_ZONE_NAVIGATION_DIALOG
 			l_x, l_y: INTEGER
 		do
-			create l_dialog.make (is_shift_pressed, internal_docking_manager)
+			create l_dialog.make (a_shift_pressed, internal_docking_manager)
 			l_x := internal_docking_manager.main_window.screen_x + internal_docking_manager.main_window.width // 2 - l_dialog.width // 2
 			l_y := internal_docking_manager.main_window.screen_y + internal_docking_manager.main_window.height // 2 - l_dialog.height // 2
 			l_dialog.set_position (l_x, l_y)
@@ -230,6 +241,9 @@ feature -- Contract Support
 		end
 
 feature {NONE}  -- Implementation
+
+	internal_shared: SD_SHARED
+			-- All Singletons.
 
 	ignore_update: BOOLEAN
 			-- If ignore update?

@@ -25,6 +25,11 @@ inherit
 			on_wm_theme_changed
 		end
 
+	EV_SHARED_APPLICATION
+		export
+			{NONE} all
+		end
+
 create
 	make
 
@@ -32,24 +37,21 @@ feature{NONE} -- Initlization
 
 	make is
 			-- Creation method
-		local
-			l_env: EV_ENVIRONMENT
 		do
 			init_theme
-			create l_env
-			l_env.application.theme_changed_actions.extend (agent init_theme)
+			ev_application.theme_changed_actions.extend (agent init_theme)
+
+			create internal_shared
 		end
 
 	init_theme is
 			-- Initialize theme drawer.
 		local
-			l_env: EV_ENVIRONMENT
 			l_app_imp: EV_APPLICATION_IMP
 			l_tool_bar: EV_TOOL_BAR
 			l_wel_tool_bar: WEL_TOOL_BAR
 		do
-			create l_env
-			l_app_imp ?= l_env.application.implementation
+			l_app_imp ?= ev_application.implementation
 			check not_void: l_app_imp /= Void end
 			l_app_imp.update_theme_drawer
 			theme_drawer := l_app_imp.theme_drawer
@@ -95,7 +97,7 @@ feature -- Redefine
 			-- Redefine
 		local
 			l_imp: WEL_WINDOW
-			l_shared_font: WEL_SHARED_FONTS
+			l_font_imp: EV_FONT_IMP
 			l_wel_bitmap: WEL_BITMAP
 			l_color_imp: EV_COLOR_IMP
 			l_brush: WEL_BRUSH
@@ -109,11 +111,6 @@ feature -- Redefine
 
 			create {WEL_MEMORY_DC} internal_buffered_dc.make_by_dc (internal_client_dc)
 
-			-- We must select font to draw.
-			-- See MSDN "Using Windows XP Visual Styles" section about drawThemeText.
-			create l_shared_font
-			internal_buffered_dc.select_font (l_shared_font.menu_font)
-
 			create l_wel_bitmap.make_compatible (internal_client_dc, tool_bar.width, tool_bar.height)
 			internal_buffered_dc.select_bitmap (l_wel_bitmap)
 			l_wel_bitmap.dispose
@@ -121,7 +118,6 @@ feature -- Redefine
 			l_color_imp ?= tool_bar.background_color.implementation
 			check not_void: l_color_imp /= Void end
 			internal_buffered_dc.set_background_color (l_color_imp)
-
 
 			-- If we draw background like this, when non-32bits color depth, color will broken.
 --			create l_background_pixmap.make_with_size (tool_bar.width, tool_bar.height)
@@ -172,7 +168,6 @@ feature -- Redefine
 			draw_button_background (internal_buffered_dc, l_rect, a_arguments.item.state, part_constants_by_type (a_arguments.item))
 			draw_pixmap (internal_buffered_dc, a_arguments)
 			draw_text (internal_buffered_dc, a_arguments)
-
 		end
 
 	draw_button_background (a_dc: WEL_DC; a_rect: WEL_RECT; a_state: INTEGER; a_part_constant: INTEGER) is
@@ -186,14 +181,14 @@ feature -- Redefine
 		do
 			if a_state /= {SD_TOOL_BAR_ITEM_STATE}.normal and theme_data = default_pointer then
 				if a_state = {SD_TOOL_BAR_ITEM_STATE}.pressed then
-					-- We reuse the code here, button check adge is looks same as pressed toggle button.
-					theme_drawer.draw_button_edge (a_dc, {WEL_THEME_TS_CONSTANTS}.ts_checked, a_rect)
+					draw_flat_button_edge_pressed (a_dc, a_rect)
 				elseif a_state = {SD_TOOL_BAR_ITEM_STATE}.checked then
 					a_dc.draw_frame_control (a_rect, Wel_drawing_constants.dfcs_button3state, Wel_drawing_constants.dfcs_checked)
+					draw_flat_button_edge_hot_pressed (a_dc, a_rect)
 				elseif a_state = {SD_TOOL_BAR_ITEM_STATE}.hot_checked then
-					a_dc.draw_frame_control (a_rect, Wel_drawing_constants.dfcs_button3state, Wel_drawing_constants.dfcs_pushed)
+					draw_flat_button_edge_pressed (a_dc, a_rect)
 				else
-					theme_drawer.draw_button_edge (a_dc, to_mswin_state (a_state), a_rect)
+					draw_flat_button_edge_hot (a_dc, a_rect)
 				end
 			end
 			create l_brush.make_solid (a_dc.background_color)
@@ -205,11 +200,9 @@ feature -- Redefine
 	on_wm_theme_changed is
 			-- Redefine
 		local
-			l_env: EV_ENVIRONMENT
 			l_app_imp: EV_APPLICATION_IMP
 		do
-			create l_env
-			l_app_imp ?= l_env.application.implementation
+			l_app_imp ?= ev_application.implementation
 			l_app_imp.theme_drawer.close_theme_data (theme_data)
 			debug ("docking")
 				print ("%N SD_TOOL_BAR_DRAWER_IMP on_wm_theme_change")
@@ -217,6 +210,9 @@ feature -- Redefine
 		end
 
 feature {NONE} -- Implementation
+
+	internal_shared: SD_SHARED
+			-- All singletons.
 
 	theme_data: POINTER
 			-- Theme data.
@@ -251,6 +247,63 @@ feature {NONE} -- Implementation
 			exist: a_dc_to_draw.exists
 			not_void: a_arguments /= Void
 		local
+			l_button: SD_TOOL_BAR_BUTTON
+		do
+			l_button ?= a_arguments.item
+			if l_button /= Void and then (l_button.pixmap /= Void or l_button.pixel_buffer /= Void) and l_button.tool_bar /= Void then
+				if is_use_gdip (a_arguments) then
+					draw_pixel_buffer (a_dc_to_draw, a_arguments)
+				else
+					draw_pixmap_real (a_dc_to_draw, a_arguments)
+				end
+			end
+		end
+
+	is_use_gdip (a_arguments: SD_TOOL_BAR_DRAWER_ARGUMENTS): BOOLEAN is
+			-- If using gdi+ to draw icons?
+		local
+			l_button: SD_TOOL_BAR_BUTTON
+		do
+			l_button ?= a_arguments.item
+			if l_button /= Void then
+				Result := l_button.pixel_buffer /= Void and (create {WEL_GDIP_STARTER}).is_gdi_plus_installed
+			end
+		end
+
+	draw_pixel_buffer (a_dc_to_draw: WEL_DC; a_arguments: SD_TOOL_BAR_DRAWER_ARGUMENTS) is
+			-- Draw icons when using gdi+.
+		require
+			use_gdip: is_use_gdip (a_arguments)
+		local
+			l_coordinate: EV_COORDINATE
+			l_button: SD_TOOL_BAR_BUTTON
+
+			l_graphics: WEL_GDIP_GRAPHICS
+			l_buffer_imp: EV_PIXEL_BUFFER_IMP
+			l_dest_rect, l_src_rect: WEL_RECT
+		do
+			l_button ?= a_arguments.item
+			if l_button /= Void and then l_button.pixel_buffer /= Void and l_button.tool_bar /= Void then
+				if not a_arguments.item.is_sensitive then
+					arguments := a_arguments
+					dc_to_draw := a_dc_to_draw
+					pixmap_coordinate := l_button.pixmap_position
+					desaturation_pixel_buffer (l_button.pixel_buffer)
+				else
+					create l_graphics.make_from_dc (a_dc_to_draw)
+					l_buffer_imp ?= l_button.pixel_buffer.implementation
+					l_coordinate := l_button.pixmap_position
+					create l_dest_rect.make (l_coordinate.x, l_coordinate.y, l_coordinate.x + l_buffer_imp.width, l_coordinate.y + l_buffer_imp.height)
+					create l_src_rect.make (0, 0, l_buffer_imp.width, l_buffer_imp.height)
+					l_graphics.draw_image_with_src_rect_dest_rect (l_buffer_imp.gdip_bitmap, l_dest_rect, l_src_rect)
+					l_graphics.dispose
+				end
+			end
+		end
+
+	draw_pixmap_real (a_dc_to_draw: WEL_DC; a_arguments: SD_TOOL_BAR_DRAWER_ARGUMENTS) is
+			-- Draw icons when using gdi.
+		local
 			l_pixmap_state: EV_PIXMAP_IMP_STATE
 			l_wel_bitmap, l_mask_bitmap: WEL_BITMAP
 			l_coordinate: EV_COORDINATE
@@ -260,7 +313,7 @@ feature {NONE} -- Implementation
 			l_imp: EV_PIXMAP_IMP
 		do
 			l_button ?= a_arguments.item
-			if l_button /= Void and then l_button.pixmap /= Void then
+			if l_button /= Void and then l_button.pixmap /= Void and l_button.tool_bar /= Void then
 				if not a_arguments.item.is_sensitive then
 					l_orignal_pixmap := a_arguments.item.pixmap
 					l_grey_pixmap := l_orignal_pixmap.sub_pixmap (create {EV_RECTANGLE}.make (0, 0, l_orignal_pixmap.width, l_orignal_pixmap.height))
@@ -271,11 +324,7 @@ feature {NONE} -- Implementation
 					arguments := a_arguments
 					dc_to_draw := a_dc_to_draw
 					pixmap_coordinate := l_button.pixmap_position
-					if l_button.pixel_buffer /= Void and (create {WEL_GDIP_STARTER}).is_gdi_plus_installed then
-						desaturation_pixel_buffer (l_button.pixel_buffer)
-					else
-						desaturation (l_grey_pixmap, 1)
-					end
+					desaturation (l_grey_pixmap, 1)
 
 					l_pixmap_state ?= l_grey_pixmap.implementation
 				else
@@ -292,8 +341,6 @@ feature {NONE} -- Implementation
 
 				if a_arguments.item.is_sensitive then
 					theme_drawer.draw_bitmap_on_dc (a_dc_to_draw, l_wel_bitmap, l_mask_bitmap, l_coordinate.x, l_coordinate.y, True)
-				else
-					-- It already drawn by GDI+.
 				end
 
 				l_wel_bitmap.decrement_reference
@@ -324,15 +371,29 @@ feature {NONE} -- Implementation
 			l_text_flags: INTEGER
 			l_forground_color: EV_COLOR_IMP
 			l_button: SD_TOOL_BAR_BUTTON
+			l_font_button: SD_TOOL_BAR_FONT_BUTTON
+			l_font_imp: EV_FONT_IMP
 		do
 			l_button ?= a_arguments.item
-			if l_button /= Void and then l_button.text /= Void then
+			l_font_button ?= a_arguments.item
+
+			if l_button /= Void and then l_button.text /= Void and l_button.tool_bar /= Void then
 				l_text_flags := {WEL_DT_CONSTANTS}.dt_left | {WEL_DT_CONSTANTS}.dt_vcenter | {WEL_DT_CONSTANTS}.dt_singleline
-
 				l_text_vision_rect := l_button.text_rectangle
-
 				create l_text_rect.make (l_text_vision_rect.x, l_text_vision_rect.y, l_text_vision_rect.right, l_text_vision_rect.bottom)
 
+				if l_font_button /= Void and then l_font_button.font /= Void then
+					l_font_imp ?= l_font_button.font.implementation
+					check not_void: l_font_imp /= Void end
+					internal_buffered_dc.select_font (l_font_imp.wel_font)
+				else
+					-- We must select font to draw.
+					-- See MSDN "Using Windows XP Visual Styles" section about drawThemeText.
+					l_font_imp ?= internal_shared.tool_bar_font.implementation
+					check not_void: l_font_imp /= Void end
+					internal_buffered_dc.select_font (l_font_imp.wel_font)
+
+				end
 				l_forground_color ?= (create {EV_STOCK_COLORS}).default_foreground_color.implementation
 				check not_void: l_forground_color /= Void end
 				theme_drawer.draw_text (theme_data, a_dc_to_draw, part_constants_by_type (a_arguments.item), to_mswin_state (a_arguments.item.state), l_button.text, l_text_flags, a_arguments.item.is_sensitive, l_text_rect, l_forground_color)
@@ -522,8 +583,76 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	draw_flat_button_edge_hot (a_dc: WEL_DC; a_rect: WEL_RECT) is
+			-- Draw flat style button edge when is hot.
+		require
+			not_void: a_dc /= Void
+			not_void: a_rect /= Void
+		local
+			l_color: WEL_COLOR_REF
+			l_drawer: SD_CLASSIC_THEME_DRAWER
+		do
+			create l_drawer
+			-- Draw | at left
+			l_color := l_drawer.rhighlight
+			l_drawer.draw_line (a_dc, a_rect.left, a_rect.top, a_rect.left, a_rect.bottom, l_color)
+			-- Draw - at top
+			l_drawer.draw_line (a_dc, a_rect.left, a_rect.top, a_rect.right, a_rect.top, l_color)
+
+			-- Draw | at right
+			l_color := l_drawer.rshadow
+			l_drawer.draw_line (a_dc, a_rect.right - 1, a_rect.top, a_rect.right - 1, a_rect.bottom, l_color)
+			-- Draw _ at bottom	
+			l_drawer.draw_line (a_dc, a_rect.left, a_rect.bottom - 1, a_rect.right, a_rect.bottom - 1, l_color)
+		end
+
+	draw_flat_button_edge_hot_pressed (a_dc: WEL_DC; a_rect: WEL_RECT) is
+			-- Draw flat style button edge when is hot and checked.
+		require
+			not_void: a_dc /= Void
+			not_void: a_rect /= Void
+		local
+			l_color: WEL_COLOR_REF
+			l_drawer: SD_CLASSIC_THEME_DRAWER
+		do
+			draw_flat_button_edge_pressed (a_dc, a_rect)
+
+			create l_drawer
+			-- Clear extra line drawn by native call
+			create l_color.make_system ({WEL_COLOR_CONSTANTS}.color_btnface)
+			-- clear top -
+			l_drawer.draw_line (a_dc, a_rect.left + 1, a_rect.top + 1, a_rect.right - 1, a_rect.top + 1, l_color)
+			-- clear left |
+			l_drawer.draw_line (a_dc, a_rect.left + 1, a_rect.top + 1, a_rect.left + 1, a_rect.bottom - 1, l_color)
+		end
+
+	draw_flat_button_edge_pressed (a_dc: WEL_DC; a_rect: WEL_RECT) is
+			-- Draw flat style button edge when is pressed.
+		require
+			not_void: a_dc /= Void
+			not_void: a_rect /= Void
+		local
+			l_color: WEL_COLOR_REF
+			l_drawer: SD_CLASSIC_THEME_DRAWER
+		do
+			create l_drawer
+
+			-- Draw | at left
+			l_color := l_drawer.rshadow
+			l_drawer.draw_line (a_dc, a_rect.left, a_rect.top, a_rect.left, a_rect.bottom, l_color)
+			-- Draw - at top
+			l_drawer.draw_line (a_dc, a_rect.left, a_rect.top, a_rect.right, a_rect.top, l_color)
+
+			-- Draw | at right
+			l_color := l_drawer.rhighlight
+			l_drawer.draw_line (a_dc, a_rect.right - 1, a_rect.top, a_rect.right - 1, a_rect.bottom, l_color)
+			-- Draw _ at bottom	
+			l_drawer.draw_line (a_dc, a_rect.left, a_rect.bottom - 1, a_rect.right, a_rect.bottom - 1, l_color)
+		end
+
 invariant
 	not_void: theme_drawer /= Void
+	not_void: internal_shared /= Void
 
 indexing
 	library:	"SmartDocking: Library of reusable components for Eiffel."

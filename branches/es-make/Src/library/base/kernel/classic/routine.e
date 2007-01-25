@@ -117,27 +117,29 @@ feature -- Status report
 			int: INTERNAL
 			open_type_codes: STRING
 		do
-			create int
 			if args = Void then
 					-- Void operands are only allowed
 					-- if object has no open operands.
 				Result := (open_count = 0)
-			elseif int.generic_count (args) >= open_count then
-				from
-					Result := True
-					open_type_codes := eif_gen_typecode_str ($Current)
-					i := 1
-				until
-					i > open_count or not Result
-				loop
-					arg_type_code := args.item_code (i)
-					Result := arg_type_code = open_type_codes.item (i + 1).code
-					if Result and then arg_type_code = {TUPLE}.reference_code then
-						arg := args.item (i)
-						Result := arg = Void or else
-							int.type_conforms_to (int.dynamic_type (arg), open_operand_type (i))
+			else
+				create int
+				if int.generic_count (args) >= open_count then
+					from
+						Result := True
+						open_type_codes := eif_gen_typecode_str ($Current)
+						i := 1
+					until
+						i > open_count or not Result
+					loop
+						arg_type_code := args.item_code (i)
+						Result := arg_type_code = open_type_codes.item (i + 1).code
+						if Result and then arg_type_code = {TUPLE}.reference_code then
+							arg := args.item (i)
+							Result := arg = Void or else
+								int.type_conforms_to (int.dynamic_type (arg), open_operand_type (i))
+						end
+						i := i + 1
 					end
-					i := i + 1
 				end
 			end
 			if Result and then not is_target_closed then
@@ -199,13 +201,14 @@ feature -- Duplication
 feature -- Basic operations
 
 	call (args: OPEN_ARGS) is
+			-- Call routine with `args'.
 		require
 			valid_operands: valid_operands (args)
 		deferred
 		end
 
 	apply is
-			-- Call routine with `args' as last set.
+			-- Call routine with `operands' as last set.
 		require
 			valid_operands: valid_operands (operands)
 		deferred
@@ -241,7 +244,7 @@ feature {ROUTINE} -- Implementation
 			-- Routine dispatcher
 
 	frozen calc_rout_addr: POINTER
-			-- Address of the final routinei
+			-- Address of the final routine
 
 	frozen open_map: SPECIAL [INTEGER]
 			-- Index map for open arguments
@@ -253,13 +256,13 @@ feature {ROUTINE} -- Implementation
 
 	frozen feature_id: INTEGER
 
-	frozen is_precompiled: BOOLEAN 
+	frozen is_precompiled: BOOLEAN
 
-	frozen is_basic: BOOLEAN 
+	frozen is_basic: BOOLEAN
 
 	frozen is_target_closed: BOOLEAN
 
-	frozen is_inline_agent: BOOLEAN 
+	frozen is_inline_agent: BOOLEAN
 
 	frozen set_rout_disp (a_rout_disp, a_encaps_rout_disp, a_calc_rout_addr: POINTER
 						  a_class_id, a_feature_id: INTEGER; a_open_map: SPECIAL [INTEGER]
@@ -270,7 +273,7 @@ feature {ROUTINE} -- Implementation
 			target_valid: a_is_target_closed implies valid_target (a_closed_operands)
 		do
 			set_rout_disp_int (a_rout_disp, a_encaps_rout_disp, a_calc_rout_addr, a_class_id, a_feature_id,
-							   a_open_map, a_is_precompiled, a_is_basic, a_is_target_closed, 
+							   a_open_map, a_is_precompiled, a_is_basic, a_is_target_closed,
 							   a_is_inline_agent, a_closed_operands, a_open_count)
 		end
 
@@ -285,7 +288,7 @@ feature {ROUTINE} -- Implementation
 			is_target_closed := a_is_target_closed
 			open_count := a_open_count
 		end
-		
+
 	frozen set_rout_disp_int (a_rout_disp, a_encaps_rout_disp, a_calc_rout_addr: POINTER
 						  	  a_class_id, a_feature_id: INTEGER; a_open_map: SPECIAL [INTEGER]
 	 						  a_is_precompiled, a_is_basic, a_is_target_closed, a_is_inline_agent: BOOLEAN

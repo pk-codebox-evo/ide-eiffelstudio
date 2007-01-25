@@ -12,6 +12,8 @@ deferred class
 inherit
 	EB_METRIC_VISITABLE
 
+	EB_METRIC_SHARED
+
 feature{NONE} -- Initialization
 
 	make (a_name: STRING; a_unit: like unit; a_uuid: like uuid) is
@@ -94,9 +96,20 @@ feature -- Access
 
 	direct_referenced_metrics: LIST [STRING] is
 			-- Name of metrics which are directly referenced by Current
-		deferred
+		local
+			l_reference_visitor: EB_METRIC_REFERENCED_METRIC_VISITOR
+		do
+			create l_reference_visitor.make
+			l_reference_visitor.search_referenced_metric (Current)
+			Result := l_reference_visitor.referenced_metric_name.twin
 		ensure
 			result_attached: Result /= Void
+		end
+
+	visitable_name: STRING_GENERAL is
+			-- Name of current visitable item
+		do
+			Result := metric_names.visitable_name (metric_names.t_metric, name)
 		end
 
 feature -- Setting
@@ -120,13 +133,21 @@ feature -- Setting
 feature -- Metric calculation
 
 	value (a_scope: EB_METRIC_DOMAIN): QL_QUANTITY_DOMAIN is
-			-- Calcualte current domain using `a_scope'.
+			-- Value of current metric calculated over `a_scope'
 		require
 			a_scope_attached: a_scope /= Void
 		deferred
 		ensure
 			result_attached: Result /= Void
 			result_valid: Result.count = 1
+		end
+
+	value_item (a_scope: EB_METRIC_DOMAIN): DOUBLE is
+			-- Value of current metric calculated over `a_scope'.
+		require
+			a_scope_attached: a_scope /= Void
+		do
+			Result := value (a_scope).first.value
 		end
 
 feature -- Setting
@@ -214,6 +235,8 @@ feature -- Setting
 		ensure
 			uuid_set: uuid = a_uuid
 		end
+
+feature{NONE} -- Referenced metric 
 
 invariant
 	name_attached: name /= Void

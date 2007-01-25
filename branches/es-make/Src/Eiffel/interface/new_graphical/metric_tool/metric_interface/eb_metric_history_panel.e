@@ -25,26 +25,28 @@ create
 feature {NONE} -- Initialization
 
 	make (a_tool: like metric_tool) is
-			-- Initialize `metric_tool' with `a_too'.
+			-- Initialize `metric_tool' with `a_tool'.
+		local
+			l_grid: ES_GRID
 		do
+			create l_grid
 			create tree_grid.make (Current)
 			create flat_grid.make (Current)
 			create archive_change_actions
 			create calculator
-			create grid_support.make_with_grid (tree_grid.grid)
+			create keep_result_btn.make (preferences.metric_tool_data.keep_archive_detailed_result_preference)
+			create group_btn.make (preferences.metric_tool_data.tree_view_for_history_preference)
+			create check_warning_btn.make (preferences.metric_tool_data.check_warning_preference)
+
+			grid_support := new_grid_support (l_grid)
 			grid_support.synchronize_color_or_font_change_with_editor
 			grid_support.color_or_font_change_actions.extend (agent on_background_color_preference_change)
+
 			set_grid_refresh_level (grid_rebind_level)
 			on_hide_old_item_change_from_outside_agent := agent on_hide_old_item_change_from_outside
 			on_item_age_change_from_outside_agent := agent on_item_age_change_from_outside
-			on_keep_result_selection_change_from_outside_agent := agent on_keep_result_selection_change_from_outside
-			on_display_tree_view_changed_from_outside_agent := agent on_display_tree_view_changed_from_outside
-
 			preferences.metric_tool_data.hide_old_item_preference.change_actions.extend (on_hide_old_item_change_from_outside_agent)
 			preferences.metric_tool_data.old_item_day_preference.change_actions.extend (on_item_age_change_from_outside_agent)
-			preferences.metric_tool_data.tree_view_for_history_preference.change_actions.extend (on_display_tree_view_changed_from_outside_agent)
-			preferences.metric_tool_data.keep_detailed_result_preference.change_actions.extend (on_keep_result_selection_change_from_outside_agent)
-
 			set_metric_tool (a_tool)
 			tree_grid.selection_change_actions.extend (agent on_selection_changes)
 			flat_grid.selection_change_actions.extend (agent on_selection_changes)
@@ -60,7 +62,6 @@ feature {NONE} -- Initialization
 			default_create
 			tree_grid_area.extend (tree_grid.widget)
 			flat_grid_area.extend (flat_grid.widget)
-			switch_grid
 			age_text.set_text (preferences.metric_tool_data.old_archive_item_age.out)
 			age_text.change_actions.extend (agent on_item_age_change)
 			hide_old_btn.select_actions.extend (agent on_hide_old_item_change)
@@ -98,13 +99,7 @@ feature {NONE} -- Initialization
 			day_lbl.set_text (metric_names.t_days)
 
 			keep_result_btn.set_pixmap (pixmaps.icon_pixmaps.metric_run_and_show_details_icon)
-			keep_result_btn.set_tooltip (metric_names.f_keep_detailed_result)
-			if preferences.metric_tool_data.is_detailed_result_kept then
-				keep_result_btn.enable_select
-			else
-				keep_result_btn.disable_select
-			end
-			keep_result_btn.select_actions.extend (agent on_keep_result_selection_change)
+			keep_result_btn.set_tooltip (metric_names.f_keep_archive_detailed_result)
 
 			remove_detailed_result_btn.set_pixmap (pixmaps.icon_pixmaps.general_reset_icon)
 			remove_detailed_result_btn.set_tooltip (metric_names.f_remove_detailed_result)
@@ -125,6 +120,22 @@ feature {NONE} -- Initialization
 			deselect_recalculatable_btn.set_text (metric_names.t_deselect_recalculatable_history)
 			deselect_recalculatable_btn.set_tooltip (metric_names.f_deselect_recalculatable_history)
 			deselect_recalculatable_btn.select_actions.extend (agent on_deselect_all_recalculatable_history_items)
+
+			check_warning_btn.set_pixmap (pixmaps.icon_pixmaps.metric_unit_assertion_icon)
+			check_warning_btn.set_tooltip (metric_names.f_check_warning)
+
+			keep_detailed_result_tool_bar.extend (keep_result_btn)
+			group_tool_bar.extend (group_btn)
+			warning_tool_bar.extend (check_warning_btn)
+
+--			if group_btn.is_selected then
+--				flat_grid_area.hide
+--				tree_grid_area.show
+--			else
+--				flat_grid_area.show
+--				tree_grid_area.hide
+--			end
+			switch_grid
 		end
 
 feature -- Access
@@ -170,19 +181,6 @@ feature{NONE} -- Status report
 	is_original_starter: BOOLEAN
 			-- Is this panel the original panel in which metric hitory recalculation starts?
 
---	is_selection_changed: BOOLEAN
---			-- Is selection status changed?
-
-	should_archive_be_shown (a_archive_node: EB_METRIC_ARCHIVE_NODE; a_time: DATE_TIME): BOOLEAN is
-			-- Should `a_archive_node' be displayed?
-			-- If `a_time' is Void, return True, other if calculated time of `a_archive_node' is more recent than `a_time', return True.
-		require
-			a_archive_node_attached: a_archive_node /= Void
-			a_time_attached: a_time /= Void
-		do
-			Result := a_archive_node.calculated_time > a_time
-		end
-
 	is_archive_node_recalculatable (a_archive_node: EB_METRIC_ARCHIVE_NODE): BOOLEAN is
 			-- Is `a_archive_node' recalculatable?
 		require
@@ -193,6 +191,16 @@ feature{NONE} -- Status report
 
 	is_cancel_evaluation_requested: BOOLEAN
 			-- Is cancel archive recalculation requested?
+
+	should_archive_be_shown (a_archive_node: EB_METRIC_ARCHIVE_NODE; a_time: DATE_TIME): BOOLEAN is
+			-- Should `a_archive_node' be displayed?
+			-- If `a_time' is Void, return True, other if calculated time of `a_archive_node' is more recent than `a_time', return True.
+		require
+			a_archive_node_attached: a_archive_node /= Void
+			a_time_attached: a_time /= Void
+		do
+			Result := a_archive_node.calculated_time > a_time
+		end
 
 feature -- Basic operations
 
@@ -472,27 +480,6 @@ feature -- Actions
 			end
 		end
 
-	on_keep_result_selection_change is
-			-- Action to be performed when selection status of `keep_result_btn' changes
-		do
-			preferences.metric_tool_data.keep_detailed_result_preference.set_value (keep_result_btn.is_selected)
-		end
-
-	on_keep_result_selection_change_from_outside is
-			-- Action to be performed when selection status of `keep_result_btn' changes from outside
-		local
-			l_selected: BOOLEAN
-		do
-			l_selected := preferences.metric_tool_data.is_detailed_result_kept
-			if l_selected /= keep_result_btn.is_selected then
-				if l_selected then
-					keep_result_btn.enable_select
-				else
-					keep_result_btn.disable_select
-				end
-			end
-		end
-
 	on_remove_detailed_result is
 			-- Action to be performed to remove detailed result
 		do
@@ -579,6 +566,7 @@ feature{NONE} -- UI Update
 						remove_detailed_result_btn.disable_sensitive
 						keep_result_btn.disable_sensitive
 						selector_toolbar.disable_sensitive
+						check_warning_btn.disable_sensitive
 					else
 						metric_tool.load_metrics (False, metric_names.t_loading_metrics)
 						if not metric_tool.is_metric_validation_checked.item then
@@ -625,6 +613,7 @@ feature{NONE} -- UI Update
 						end
 						group_btn.enable_sensitive
 						stop_btn.disable_sensitive
+						check_warning_btn.enable_sensitive
 						remove_detailed_result_btn.enable_sensitive
 						keep_result_btn.enable_sensitive
 						if hide_old_btn.is_selected then
@@ -645,23 +634,15 @@ feature{NONE} -- Recycle
 			-- To be called when the button has became useless.
 		do
 			grid_support.desynchronize_color_or_font_change_with_editor
-			preferences.metric_tool_data.tree_view_for_history_preference.change_actions.prune_all (on_display_tree_view_changed_from_outside_agent)
 			preferences.metric_tool_data.hide_old_item_preference.change_actions.prune_all (on_hide_old_item_change_from_outside_agent)
 			preferences.metric_tool_data.old_item_day_preference.change_actions.prune_all (on_item_age_change_from_outside_agent)
-			preferences.metric_tool_data.keep_detailed_result_preference.change_actions.prune_all (on_keep_result_selection_change_from_outside_agent)
 			uninstall_agents (metric_tool)
 			uninstall_metric_history_agent
+			group_btn.recycle
+			keep_result_btn.recycle
 		end
 
-feature{NONE} -- Implementation
-
-	set_is_original_starter (b: BOOLEAN) is
-			-- Set `is_original_starter' with `b'.
-		do
-			is_original_starter := b
-		ensure
-			is_original_starter_set: is_original_starter = b
-		end
+feature{NONE} -- Implementation/Data
 
 	tree_grid: EB_METRIC_TREE_HISTORY_GRID
 			-- Tree grid to display archive
@@ -671,66 +652,6 @@ feature{NONE} -- Implementation
 
 	newly_changed_archives_internal: like newly_changed_archives
 			-- Implementation of `newly_changed_archives'
-
-	switch_grid is
-			-- Switch grid according selection status of `group_btn'.
-		local
-			l_grid: like grid
-			l_old_container: EV_CONTAINER
-			l_container: EV_CONTAINER
-		do
-			l_old_container := grid.widget.parent
-			if group_btn.is_selected then
-				l_grid := tree_grid
-			else
-				l_grid := flat_grid
-			end
-			l_container := l_grid.widget.parent
-			if grid /= l_grid then
-				l_old_container.hide
-				grid := l_grid
-				l_container.show
-			end
-		end
-
-	merge_archive (a_source_archive_node, a_new_archive_node: EB_METRIC_ARCHIVE_NODE) is
-			-- Merge `a_new_archive_node' into `a_source_archive_node'.
-		require
-			a_source_archive_node_attached: a_source_archive_node /= Void
-			a_new_archive_node_attached: a_new_archive_node /= Void
-			mergable: a_source_archive_node.is_mergable (a_new_archive_node)
-		do
-			a_source_archive_node.merge (a_new_archive_node)
-			a_source_archive_node.set_is_up_to_date (True)
-			a_source_archive_node.set_is_value_valid (True)
-		end
-
-	recalculation_task (a_selected_archives: LINEAR [EB_METRIC_ARCHIVE_NODE]): LINKED_LIST [TUPLE [EB_METRIC, EB_METRIC_DOMAIN, BOOLEAN]] is
-			-- Task for history recalculation
-		require
-			a_selected_archives_attached: a_selected_archives /= Void
-		do
-			create Result.make
-			from
-				a_selected_archives.start
-			until
-				a_selected_archives.after
-			loop
-				Result.extend ([a_selected_archives.item.metric, a_selected_archives.item.input_domain, keep_result_btn.is_selected])
-				a_selected_archives.forth
-			end
-		ensure
-			result_attached: Result /= Void
-		end
-
-	remove_archive_node (a_archive_node: EB_METRIC_ARCHIVE_NODE) is
-			-- Remove archive node `a_archive_node' from `archive'.
-		require
-			archive_node_attached: a_archive_node /= Void
-			archive_node_exists: archive.has_archive_by_uuid (a_archive_node.uuid)
-		do
-			archive.remove_archive_node (a_archive_node.uuid)
-		end
 
 	delayed_timeout: ES_DELAYED_ACTION
 			-- Delayed timeout
@@ -746,18 +667,106 @@ feature{NONE} -- Implementation
 	delayed_timeout_internal: like delayed_timeout
 			-- Implementation of `delayed_timeout'
 
+	grid_refresh_level: INTEGER
+			-- Grid refresh level
+
+	grid_rebind_level: INTEGER is 1
+	grid_update_level: INTEGER is 2
+	grid_up_to_date_level: INTEGER is 3
+	grid_switch_level: INTEGER is 4
+
+	grid_support: like new_grid_support
+			-- Grid support (used in odd/even row background preference change synchronization)
+
+	keep_result_btn: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON
+			-- Keep result button
+
+	group_btn: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON
+			-- Show tree view button
+
+	check_warning_btn: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON
+			-- Check warning button
+
+feature{NONE} -- Implementation
+
+	set_is_original_starter (b: BOOLEAN) is
+			-- Set `is_original_starter' with `b'.
+		do
+			is_original_starter := b
+		ensure
+			is_original_starter_set: is_original_starter = b
+		end
+
+	switch_grid is
+			-- Switch grid according selection status of `group_btn'.
+		do
+			if group_btn.is_selected then
+				tree_grid_area.show
+				flat_grid_area.hide
+				grid := tree_grid
+				clear_grid (flat_grid)
+			else
+				flat_grid_area.show
+				tree_grid_area.hide
+				grid := flat_grid
+				clear_grid (tree_grid)
+			end
+		end
+
+	merge_archive (a_source_archive_node, a_new_archive_node: EB_METRIC_ARCHIVE_NODE) is
+			-- Merge `a_new_archive_node' into `a_source_archive_node'.
+		require
+			a_source_archive_node_attached: a_source_archive_node /= Void
+			a_new_archive_node_attached: a_new_archive_node /= Void
+			mergable: a_source_archive_node.is_mergable (a_new_archive_node)
+		do
+			a_source_archive_node.merge (a_new_archive_node)
+			a_source_archive_node.set_is_up_to_date (True)
+			a_source_archive_node.set_is_value_valid (True)
+			a_source_archive_node.set_is_result_filtered (a_new_archive_node.is_result_filtered)
+			a_source_archive_node.set_is_last_warning_check_successful (a_new_archive_node.is_last_warning_check_successful)
+		end
+
+	recalculation_task (a_selected_archives: LINEAR [EB_METRIC_ARCHIVE_NODE]): LINKED_LIST [TUPLE [EB_METRIC, EB_METRIC_DOMAIN, BOOLEAN, BOOLEAN, EB_METRIC_VALUE_TESTER]] is
+			-- Task for history recalculation
+		require
+			a_selected_archives_attached: a_selected_archives /= Void
+		local
+			l_check_warning: BOOLEAN
+			l_tester: EB_METRIC_VALUE_TESTER
+		do
+			create Result.make
+			l_check_warning := check_warning_btn.is_selected
+			from
+				a_selected_archives.start
+			until
+				a_selected_archives.after
+			loop
+				if l_check_warning then
+					l_tester := a_selected_archives.item.value_tester
+				end
+				Result.extend ([a_selected_archives.item.metric, a_selected_archives.item.input_domain, keep_result_btn.is_selected, a_selected_archives.item.is_result_filtered, l_tester])
+				a_selected_archives.forth
+			end
+		ensure
+			result_attached: Result /= Void
+		end
+
+	remove_archive_node (a_archive_node: EB_METRIC_ARCHIVE_NODE) is
+			-- Remove archive node `a_archive_node' from `archive'.
+		require
+			archive_node_attached: a_archive_node /= Void
+			archive_node_exists: archive.has_archive_by_uuid (a_archive_node.uuid)
+		do
+			archive.remove_archive_node (a_archive_node.uuid)
+		end
+
 	delayed_update is
 			-- Delayed update.
 		do
 			set_is_up_to_date (False)
 			set_grid_refresh_level (grid_rebind_level)
 			update_ui
-		end
-
-	cancel_delayed_update is
-			-- Cancel delayed update.
-		do
-			delayed_timeout.cancel_request
 		end
 
 	remove_detailed_result (a_archive_node: EB_METRIC_ARCHIVE_NODE) is
@@ -767,26 +776,6 @@ feature{NONE} -- Implementation
 		do
 			a_archive_node.set_detailed_result (Void)
 		end
-
-	on_hide_old_item_change_from_outside_agent: PROCEDURE [ANY, TUPLE]
-			-- Agent of `on_hide_old_item_change_from_outside'
-
-	on_item_age_change_from_outside_agent: PROCEDURE [ANY, TUPLE]
-			-- Agent of `on_item_age_change_from_outside'
-
-	on_keep_result_selection_change_from_outside_agent: PROCEDURE [ANY, TUPLE]
-			-- Agent of `on_keep_result_selection_change_from_outside'		
-
-	on_display_tree_view_changed_from_outside_agent: PROCEDURE [ANY, TUPLE]
-			-- Agent of `on_display_tree_view_changed_from_outside'
-
-	grid_refresh_level: INTEGER
-			-- Grid refresh level
-
-	grid_rebind_level: INTEGER is 1
-	grid_update_level: INTEGER is 2
-	grid_up_to_date_level: INTEGER is 3
-	grid_switch_level: INTEGER is 4
 
 	set_grid_refresh_level (a_level: INTEGER) is
 			-- Set `grid_refresh_level' with `a_level'.
@@ -807,36 +796,32 @@ feature{NONE} -- Implementation
 					  a_level = grid_switch_level
 		end
 
-	grid_support: EB_EDITOR_TOKEN_GRID_SUPPORT
-			-- Grid support (used in odd/even row background preference change synchronization)
+	clear_grid (a_grid: EB_METRIC_HISTORY_GRID) is
+			-- Clear content of `a_grid'.
+		require
+			a_grid_attached: a_grid /= Void
+		do
+			if a_grid.grid.row_count > 0 then
+				a_grid.grid.remove_rows (1, a_grid.grid.row_count)
+			end
+		end
 
-feature{NONE} -- Actions
+feature{NONE} -- Implementation/Actions
 
 	on_display_tree_view_changed is
 			-- Action to be performed when selection status of `group_btn' changes
 			-- When `group_btn' is selected, tree view is displayed, otherwise, flat view is displayed.
 		do
-			preferences.metric_tool_data.tree_view_for_history_preference.set_value (group_btn.is_selected)
 			set_grid_refresh_level (grid_switch_level)
 			set_is_up_to_date (False)
 			update_ui
 		end
 
-	on_display_tree_view_changed_from_outside is
-			-- Action to be performed when selection status of `group_btn' changes from outside (i.e. preference changes from preference window)
-			-- When `group_btn' is selected, tree view is displayed, otherwise, flat view is displayed.
-		local
-			l_selected: BOOLEAN
-		do
-			l_selected := preferences.metric_tool_data.is_tree_view_for_history
-			if l_selected /= group_btn.is_selected then
-				if l_selected then
-					group_btn.enable_select
-				else
-					group_btn.disable_select
-				end
-			end
-		end
+	on_hide_old_item_change_from_outside_agent: PROCEDURE [ANY, TUPLE]
+			-- Agent of `on_hide_old_item_change_from_outside'
+
+	on_item_age_change_from_outside_agent: PROCEDURE [ANY, TUPLE]
+			-- Agent of `on_item_age_change_from_outside'
 
 invariant
 	grid_attached: grid /= Void
@@ -844,11 +829,12 @@ invariant
 	flat_grid_attached: flat_grid /= Void
 	calculator_attached: calculator /= Void
 	grid_support_attached: grid_support /= Void
+	keep_result_btn_attached: keep_result_btn /= Void
+	group_btn_attached: group_btn /= Void
+	check_warning_btn_attached: check_warning_btn /= Void
 	archive_change_actions_attached: archive_change_actions /= Void
 	on_item_age_change_from_outside_agent_attached: on_item_age_change_from_outside_agent /= Void
 	on_hide_old_item_change_from_outside_agent_attached: on_hide_old_item_change_from_outside_agent /= Void
-	on_display_tree_view_changed_from_outside_agent_attached: on_display_tree_view_changed_from_outside_agent /= Void
-	on_keep_result_selection_change_from_outside_agent_attached: on_keep_result_selection_change_from_outside_agent /= Void
 
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"

@@ -8,6 +8,14 @@ indexing
 class
 	SD_TOOL_BAR_DOCKER_MEDIATOR
 
+inherit
+	ANY
+	
+	EV_SHARED_APPLICATION
+		export
+			{NONE} all
+		end
+
 create
 	make
 
@@ -44,15 +52,12 @@ feature {NONE} -- Initialization
 
 	init_key_actions is
 			-- Initialize key actions.
-		local
-			l_env: EV_ENVIRONMENT
 		do
 			internal_key_press_actions := agent on_key_press
 			internal_key_release_actions := agent on_key_release
 
-			create l_env
-			l_env.application.key_press_actions.extend (internal_key_press_actions)
-			l_env.application.key_release_actions.extend (internal_key_release_actions)
+			ev_application.key_press_actions.extend (internal_key_press_actions)
+			ev_application.key_release_actions.extend (internal_key_release_actions)
 		end
 
 feature -- Command
@@ -171,10 +176,10 @@ feature {NONE} -- Implementation functions
 			elseif internal_right_hot_zone.area_managed.has_x_y (a_screen_x, a_screen_y)	then
 				l_changed := internal_right_hot_zone.on_pointer_motion (a_screen_x, a_screen_y)
 				Result := True
-			elseif internal_top_hot_zone.area_managed.has_x_y (a_screen_x - a_offset_x, a_screen_y - a_offset_y)  then
+			elseif internal_top_hot_zone.area_managed.has_x_y (a_screen_x, a_screen_y - a_offset_y) then
 				l_changed := internal_top_hot_zone.on_pointer_motion (a_screen_x, a_screen_y)
 				Result := True
-			elseif internal_bottom_hot_zone.area_managed.has_x_y (a_screen_x - a_offset_x, a_screen_y - a_offset_y) then
+			elseif internal_bottom_hot_zone.area_managed.has_x_y (a_screen_x, a_screen_y - a_offset_y) then
 				l_changed := internal_bottom_hot_zone.on_pointer_motion (a_screen_x, a_screen_y)
 				Result := True
 			end
@@ -236,12 +241,9 @@ feature {NONE} -- Implementation functions
 
 	clean is
 			-- Clean global key press/release actions.
-		local
-			l_env: EV_ENVIRONMENT
 		do
-			create l_env
-			l_env.application.key_press_actions.prune_all (internal_key_press_actions)
-			l_env.application.key_release_actions.prune_all (internal_key_release_actions)
+			ev_application.key_press_actions.prune_all (internal_key_press_actions)
+			ev_application.key_release_actions.prune_all (internal_key_release_actions)
 		end
 
 	cancel_tracing_pointer is
@@ -296,7 +298,7 @@ feature {NONE} -- Implementation functions
 				-- But on Gtk, we need first disable_capture then enable capture,
 				-- because it's off-screen widget, it'll not have capture when it show again.
 				caller.tool_bar.disable_capture
-				caller.float (a_screen_x - offset_x, a_screen_y - offset_y)
+				caller.float (a_screen_x - offset_x, a_screen_y - offset_y, True)
 				caller.tool_bar.enable_capture
 
 				docking_manager.command.unlock_update
@@ -373,11 +375,8 @@ feature {NONE} -- Implementation attributes.
 
 	internal_dockable: BOOLEAN is
 			-- If `caller' dockable?
-		local
-			l_env: EV_ENVIRONMENT
 		do
-			create l_env
-			Result := not l_env.application.ctrl_pressed
+			Result := not ev_application.ctrl_pressed
 		end
 
 	internal_key_press_actions, internal_key_release_actions: PROCEDURE [SD_TOOL_BAR_DOCKER_MEDIATOR, TUPLE [EV_WIDGET, EV_KEY]]

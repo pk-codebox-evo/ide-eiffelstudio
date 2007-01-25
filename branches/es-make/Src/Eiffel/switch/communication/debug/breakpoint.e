@@ -1,11 +1,13 @@
 indexing
-	description	: "Describes a breakpoint. A breakpoint is represented by its `body_index' %
-				  %and its `breakable_line_number' (line number in stop points view). We %
-				  %also keep the 'real_body_id` because the run-time handles breakpoints %
-				  %through `real_body_id' and `breakable_line_number'."
+	description	: "[
+					Describes a breakpoint. A breakpoint is represented by its `body_index' 
+				  	and its `breakable_line_number' (line number in stop points view). 
+					The run-time handles breakpoints through `real_body_id' 
+					and `breakable_line_number'.
+				]"
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
-	author		: "Arnaud PICHERY [ aranud@mail.dotcom.fr ]"
+	author		: "$Author$"
 	date		: "$Date$"
 	revision	: "$Revision$"
 
@@ -13,49 +15,39 @@ class BREAKPOINT
 
 inherit
 
-	DEBUG_OUTPUT
+	BREAKPOINT_KEY
 		redefine
-			is_equal
+			make
 		end
 
-	HASHABLE
-		redefine
+	DEBUG_OUTPUT
+		undefine
 			is_equal
 		end
 
 	E_FEATURE_COMPARER
-		redefine
+		undefine
 			is_equal
 		end
 
 	COMPILER_EXPORTER
-		redefine
+		undefine
 			is_equal
 		end
-
 create
 	make
 
-feature -- Creation
+feature {DEBUG_INFO, BREAK_LIST} -- Creation
 
-	make (given_feature: E_FEATURE; given_breakable_line_number: INTEGER) is
-			-- Create a breakpoint in the feature `given_feature'
-			-- at the line `given_breakable_line_number'.
-		require
-			valid_breakpoint: 	given_feature /= Void and then
-								given_breakable_line_number > 0 and then
-								given_feature.body_index /= 0
+	make (a_feature: E_FEATURE; a_breakable_index: INTEGER) is
+			-- Create a breakpoint in the feature `a_feature'
+			-- at the line `a_breakable_index'.
 		do
+			Precursor {BREAKPOINT_KEY} (a_feature, a_breakable_index)
 			if not is_corrupted then
-				breakable_line_number := given_breakable_line_number
-				routine := given_feature
 				application_status := Application_breakpoint_not_set
 				bench_status := Bench_breakpoint_set
-				body_index := routine.body_index
 			end
-		rescue
-			is_corrupted := True
-			retry
 		end
 
 feature -- debug output
@@ -88,8 +80,11 @@ feature -- Output
 				Result.append_string ("???")
 			end
 			Result.append_string (" [" + breakable_line_number.out + "] ")
-			if condition /= Void then
-				Result.append_string (" (*) ")
+			if has_condition then
+				Result.append_string ("(C)")
+			end
+			if has_message then
+				Result.append_string ("(M)")
 			end
 			if wih_details then
 				if is_corrupted then
@@ -113,14 +108,76 @@ feature -- Output
 
 feature -- Properties
 
-	breakable_line_number: INTEGER
-			-- Line number of the breakpoint in the stoppoint view under $EiffelGraphicalCompiler$.
+	hits_count_condition: TUPLE [mode:INTEGER; value:INTEGER]
+			--| mode: 0x0 always
+			--| mode: 0x2 equal
+			--| mode: 0x4 multiple of
+			--| mode: 0x8 greater or equal
 
-	routine: E_FEATURE
-			-- Feature where this breakpoint is situated.
+	condition: EB_EXPRESSION
+			-- Condition to stop.
 
-	body_index: INTEGER
-			-- `body_index' of the feature where this breakpoint is situated
+	condition_as_is_true: BOOLEAN is
+			-- Condition is a "Is True" condition.
+		do
+			Result := condition_type = Condition_is_type_is_true
+		end
+
+	condition_as_has_changed: BOOLEAN is
+			-- Condition is a "Has Changed" condition.
+		do
+			Result := condition_type = Condition_is_type_has_changed
+		end
+
+	message: STRING
+			-- Message to be print when Current is reached.
+			-- If Void, no message is printed.
+			--| You can include value of expression in the message
+			--| by placing it in curly braces , such as "value of x is {x}."
+			--| to insert a curly braces, use "\{" to insert a backslash use "\\"
+			--| Special keywords:
+			--|   $ADDRESS
+			--|   $CALLSTACK - Current call stack
+			--|	  $FEATURE - Current feature name
+			--|	  $THEADID - Current thread id
+
+	continue_execution: BOOLEAN
+			-- Continue execution when Current is reached ?
+			-- Default: stop.
+
+feature -- Access
+
+	condition_respected: BOOLEAN is
+			-- Is condition respected ?
+		require
+			condition.expression_evaluator /= Void
+		local
+			eval: DBG_EXPRESSION_EVALUATOR
+			ncv: like last_condition_value
+		do
+			Result := True
+			eval := condition.expression_evaluator
+			if not eval.error_occurred then
+				inspect condition_type
+				when Condition_is_type_is_true then
+					Result := eval.final_result_is_true_boolean_value
+				when Condition_is_type_has_changed then
+					ncv := eval.final_result_value
+					Result := last_condition_value = Void or ncv = Void
+						or else (not ncv.same_as (last_condition_value))
+					last_condition_value:= ncv
+				else
+				end
+			end
+		end
+
+feature {NONE} -- Internal properties
+
+	condition_type: INTEGER
+			-- Type of condition
+			--| default: condition_is_true_type
+
+feature -- Status and live properties
 
 	bench_status: INTEGER
 			-- Current status within $EiffelGraphicalCompiler$.
@@ -135,8 +192,86 @@ feature -- Properties
 			-- See the private constants at the end of the class to see the
 			-- different possible values taken.
 
-	condition: EB_EXPRESSION
-			-- Condition to stop.
+	hits_count: INTEGER
+			-- Number of times Current is reached (and satisfied condition if any).
+
+feature {NONE} -- Internal value
+
+	last_condition_value: DUMP_VALUE
+			-- Last condition's value			
+
+feature -- Change
+
+	set_continue_execution (b: BOOLEAN) is
+			-- Set `continue_execution' to `b'
+		do
+			continue_execution := b
+		end
+
+	set_message (s: STRING) is
+			-- Set `message' to `s'
+		do
+			message := s
+		end
+
+	increase_hits_count is
+			-- Increase hits_count by one
+		do
+			hits_count := hits_count + 1
+		end
+
+	reset_hits_count is
+		do
+			hits_count := 0
+		end
+
+	set_hits_count_condition (m,v: INTEGER) is
+			-- Set `hits_count_condition'
+		do
+			if m = 0 then
+				hits_count_condition := Void
+			else
+				hits_count_condition := [m, v]
+			end
+		end
+
+	set_condition_as_is_true is
+			-- Set `condition_type' as `Condition_is_type_is_true'
+		do
+			condition_type := Condition_is_type_is_true
+		end
+
+	set_condition_as_has_changed is
+			-- Set `condition_type' as `Condition_is_type_has_changed'
+		do
+			condition_type := Condition_is_type_has_changed
+		end
+
+	reset_session_data is
+		do
+			reset_hits_count
+			last_condition_value := Void
+		end
+
+feature -- Status
+
+	has_condition: BOOLEAN is
+			-- Is `Current' a conditional breakpoint?
+		do
+			Result := condition /= Void
+		end
+
+	has_message: BOOLEAN is
+			-- Is `Current' a tracepoint?
+		do
+			Result := message /= Void
+		end
+
+	has_hit_count_condition: BOOLEAN is
+			-- Is `Current' has a condition on `hit_count' ?
+		do
+			Result := hits_count_condition /= Void and then hits_count_condition.mode /= hits_count_condition_always
+		end
 
 feature -- Query
 
@@ -146,49 +281,33 @@ feature -- Query
 			fi: FEATURE_I
 			lcurs: CURSOR
 		do
-			l_class_type_list := class_type_list
-			if l_class_type_list /= Void then
-				check routine_not_void: routine /= Void end
-				if routine.associated_class /= Void then
-					fi := routine.associated_feature_i
-					if fi /= Void then
-						create {ARRAYED_LIST [INTEGER]} Result.make (l_class_type_list.count)
-						lcurs := l_class_type_list.cursor
-						from
-							l_class_type_list.start
-						until
-							l_class_type_list.after
-						loop
-							Result.extend (fi.real_body_id (l_class_type_list.item))
-							l_class_type_list.forth
-						end
-						if l_class_type_list.valid_cursor (lcurs) then
-							l_class_type_list.go_to (lcurs)
+			if routine /= Void and then routine.written_class /= Void then
+				l_class_type_list := routine.written_class.types
+				if l_class_type_list /= Void then
+					check routine_not_void: routine /= Void end
+					if routine.associated_class /= Void then
+						fi := routine.associated_feature_i
+						if fi /= Void then
+							create {ARRAYED_LIST [INTEGER]} Result.make (l_class_type_list.count)
+							lcurs := l_class_type_list.cursor
+							from
+								l_class_type_list.start
+							until
+								l_class_type_list.after
+							loop
+								Result.extend (fi.real_body_id (l_class_type_list.item))
+								l_class_type_list.forth
+							end
+							if l_class_type_list.valid_cursor (lcurs) then
+								l_class_type_list.go_to (lcurs)
+							end
 						end
 					end
 				end
 			end
 		end
 
-	class_type_list: LIST [CLASS_TYPE] is
-		do
-			if routine /= Void and then routine.written_class /= Void then
-				Result := routine.written_class.types
-			end
-		end
-
 feature -- Access
-
-	hash_code: INTEGER is
-			-- Hash code for breakpoint.
-		do
-			Result := body_index * 100 + breakable_line_number
-				-- here we take the absolute value of the
-				-- result if  an overflow occurred
-			if Result < 0 then
-				Result := - Result
-			end
-		end
 
 	is_not_useful: BOOLEAN is
 			-- Is the structure still useful?
@@ -202,29 +321,28 @@ feature -- Access
 			is_not_usefull: Result implies bench_status = Bench_breakpoint_not_set and application_status = Application_breakpoint_not_set
 		end
 
-	is_corrupted: BOOLEAN
-			-- False unless there was a problem at initialization (no feature).
-
 	is_valid: BOOLEAN is
 				-- Is using `Current' safe?
 		local
 			l_feat_i: FEATURE_I
 			l_feat: E_FEATURE
+			cl: CLASS_C
+			first_rout_id: INTEGER
 		do
-			Result := not is_corrupted and routine /= Void
-				and then routine.associated_class /= Void
-				and then routine.is_debuggable
-				and then same_feature (routine, routine.associated_class.feature_with_rout_id (routine.rout_id_set.first))
-			if Result then
-				if routine.is_inline_agent then
-					l_feat_i := routine.associated_class.eiffel_class_c.inline_agent_of_rout_id (routine.rout_id_set.first)
-					if l_feat_i /= Void then
-						l_feat := l_feat_i.api_feature (routine.written_in)
+			if not is_corrupted and routine /= Void then
+				cl := routine.associated_class
+				if cl /= Void and then routine.is_debuggable then
+					first_rout_id := routine.rout_id_set.first
+					if routine.is_inline_agent then
+						l_feat_i := cl.eiffel_class_c.inline_agent_of_rout_id (first_rout_id)
+						if l_feat_i /= Void then
+							l_feat := l_feat_i.api_feature (routine.written_in)
+						end
+					else
+						l_feat := cl.feature_with_rout_id (first_rout_id)
 					end
-				else
-					l_feat := routine.associated_class.feature_with_rout_id (routine.rout_id_set.first)
+					Result := l_feat /= Void and then same_feature (routine, l_feat)
 				end
-				Result := same_feature (routine, l_feat)
 			end
 		end
 
@@ -244,12 +362,6 @@ feature -- Access
 			-- Is the breakpoint set and enabled?
 		do
 			Result := (bench_status = Bench_breakpoint_set)
-		end
-
-	has_condition: BOOLEAN is
-			-- Is `Current' a conditional breakpoint?
-		do
-			Result := condition /= Void
 		end
 
 	trace is
@@ -287,6 +399,14 @@ feature -- Access
 			end
 		end
 
+feature -- application status access
+
+	is_set_for_application: BOOLEAN is
+			-- Is the breakpoint set for the application?
+		do
+			Result := (application_status = Application_breakpoint_set)
+		end
+
 feature -- Setting
 
 	discard is
@@ -294,6 +414,7 @@ feature -- Setting
 		do
 			bench_status := Bench_breakpoint_not_set
 			condition := Void
+			reset_session_data
 		ensure
 			breakpoint_is_removed: bench_status = Bench_breakpoint_not_set
 		end
@@ -388,8 +509,8 @@ feature -- Setting
 							-- we update it as well in case of)
 						body_index := routine.body_index -- update the body_index as well
 						if condition /= Void then
-							condition.recycle
-							if not condition.is_condition (routine) then
+							condition.reset
+							if condition_as_is_true and not condition.is_boolean_expression (routine) then
 								condition := Void
 							end
 						end
@@ -418,10 +539,15 @@ feature -- Setting
 			retry
 		end
 
+feature -- Condition change
+
 	set_condition (expr: EB_EXPRESSION) is
 			-- Set `Current's condition.
 		require
-			valid_expression: expr /= Void and then not expr.syntax_error_occurred and then expr.is_condition (routine)
+			valid_breakable_line_number: breakable_line_number > 0
+							and breakable_line_number <= routine.number_of_breakpoint_slots
+			valid_expression: expr /= Void and then not expr.syntax_error_occurred
+				and then (condition_as_is_true implies expr.is_boolean_expression (routine))
 		do
 			condition := expr
 		end
@@ -437,12 +563,14 @@ feature {DEBUG_INFO} -- Saving protocol.
 	prepare_for_save is
 			-- To be used before storing breakpoints: we store the condition as the string only.
 		do
+			reset_session_data
 			if condition /= Void then
 				expression := condition.expression
 				condition := Void
 			else
 				expression := Void
 			end
+			last_condition_value := Void
 		end
 
 	reload is
@@ -450,32 +578,14 @@ feature {DEBUG_INFO} -- Saving protocol.
 		do
 			if expression /= Void then
 				create condition.make_for_context (expression)
-				if condition.syntax_error_occurred or else not condition.is_condition (routine) then
+				if
+					condition.syntax_error_occurred
+					or else (condition_as_is_true and not condition.is_boolean_expression (routine) )
+				then
 					condition := Void
 				end
 				expression := Void
 			end
-		end
-
-feature {EWB_REQUEST, APPLICATION_EXECUTION} -- application status access
-
-	is_set_for_application: BOOLEAN is
-			-- Is the breakpoint set for the application?
-		do
-			Result := (application_status = Application_breakpoint_set)
-		end
-
-feature -- Comparison
-
-	is_equal (other: like Current): BOOLEAN is
-			-- Is `other' equal to `Current'?
-			-- `other' equals to `Current' if they represent
-			-- the same physical breakpoint, in other words they
-			-- have the same `body_index' and `offset'.
-			-- We use 'body_index' because it does not change after
-			-- a recompilation
-		do
-			Result := (other.breakable_line_number = breakable_line_number) and (other.body_index = body_index)
 		end
 
 feature {NONE} -- Implementation
@@ -484,11 +594,20 @@ feature {NONE} -- Implementation
 			-- String representation of the condition, if any, during save and load operations.
 
 feature -- Public constants
-	Breakpoint_do_nothing: INTEGER is 0 -- default value
+	Breakpoint_do_nothing: INTEGER is 0 --| Default
 	Breakpoint_to_remove: INTEGER is 1
 	Breakpoint_to_add: INTEGER is 2
 
+	Hits_count_condition_always: INTEGER is 0 --| Default
+	Hits_count_condition_equal: INTEGER is 1
+	Hits_count_condition_multiple: INTEGER is 2
+	Hits_count_condition_greater: INTEGER is 3
+
 feature {NONE} -- Private constants
+
+	Condition_is_type_is_true: INTEGER is 0 --| Default
+	Condition_is_type_has_changed: INTEGER is 1
+
 	Bench_breakpoint_set, Application_breakpoint_set 			: INTEGER is 0
 	Bench_breakpoint_not_set, Application_breakpoint_not_set	: INTEGER is 1
 	Bench_breakpoint_disabled									: INTEGER is 2;

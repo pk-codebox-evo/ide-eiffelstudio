@@ -1,5 +1,5 @@
 indexing
-	description: "Objects that ..."
+	description: "Object that represents domain property manager used in metric criterion definition grid"
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
 	author: ""
@@ -21,21 +21,16 @@ create
 
 feature -- Access
 
-	property_item: EB_METRIC_DOMAIN_GRID_ITEM is
+	property_item: EB_METRIC_GRID_DOMAIN_ITEM [ANY] is
 			-- Grid item used to display properties
 		do
 			if property_item_internal = Void then
 				create property_item_internal.make (create {EB_METRIC_DOMAIN}.make)
-				property_item_internal.set_padding (8)
-				property_item_internal.set_spacing (2)
-				property_item_internal.set_left_border (3)
-				property_item_internal.set_right_border (3)
-				property_item_internal.pointer_button_press_actions.force_extend (agent property_item_internal.activate)
+				property_item_internal.pointer_button_press_actions.force_extend (agent activate_grid_item (?, ?, ?, ?, ?, ?, ?, ?, property_item_internal))
 				property_item_internal.dialog_ok_actions.extend (agent grid.resize_column (2, 0))
 				property_item_internal.dialog_ok_actions.extend (agent change_actions.call ([]))
 				property_item_internal.set_tooltip (metric_names.f_pick_and_drop_items)
-				property_item_internal.dialog.set_grid (grid)
-				property_item_internal.dialog.property_area.feature_vertion_area.hide
+				property_item_internal.set_dialog_function (agent plain_domain_setup_dialog)
 			end
 			Result := property_item_internal
 		end

@@ -24,6 +24,12 @@ feature -- Properties
 			Result.put (pixmaps.icon_pixmaps.class_features_attribute_icon, 2)
 		end
 
+	pixel_buffer: EV_PIXEL_BUFFER is
+			-- Graphical representation of the command.
+		once
+			Result := pixmaps.icon_pixmaps.class_features_attribute_icon_buffer
+		end
+
 	menu_name: STRING_GENERAL is
 			-- Identifier of `Current' in menus.
 		do
@@ -35,7 +41,7 @@ feature {NONE} -- Properties
 	command_name: STRING_GENERAL is
 			-- Name of the command.
 		do
-			Result := Interface_names.string_general_to_lower (interface_names.l_Attributes)
+			Result := Interface_names.string_general_as_lower (interface_names.l_Attributes)
 		end
 
 	post_fix: STRING is "att"

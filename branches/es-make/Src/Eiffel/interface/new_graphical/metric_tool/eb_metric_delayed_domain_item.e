@@ -13,13 +13,17 @@ inherit
 	EB_DELAYED_DOMAIN_ITEM
 		undefine
 			string_representation
+		redefine
+			domain
 		end
 
 	EB_METRIC_DOMAIN_ITEM
 		undefine
 			is_valid,
 			is_equal,
-			is_delayed_item
+			is_delayed_item,
+			is_real_delayed_item,
+			is_input_domain_item
 		redefine
 			string_representation
 		end
@@ -37,11 +41,45 @@ feature -- Access
 	string_representation: STRING is
 			-- Text of current item
 		do
-			if not is_valid then
+			if not is_valid or else not id.is_empty then
 				Result := Precursor
 			else
 				Result := metric_names.te_input_domain
 			end
+		end
+
+	domain (a_scope: QL_SCOPE): QL_DOMAIN is
+			-- New query lanaguage domain representing current item
+		do
+			if is_external_ql_domain_enabled then
+				Result := external_ql_domain
+			else
+				Result := a_scope.delayed_domain
+			end
+		end
+
+feature{EB_METRIC_VALUE_CRITERION, EB_METRIC_METRIC_VALUE_RETRIEVER, EB_METRIC_COMPONENT_HELPER} -- Access
+
+	external_ql_domain: QL_DOMAIN
+			-- QL domain used instead a delayed domain
+
+feature{EB_METRIC_VALUE_CRITERION, EB_METRIC_METRIC_VALUE_RETRIEVER, EB_METRIC_COMPONENT_HELPER} -- Status report
+
+	is_external_ql_domain_enabled: BOOLEAN is
+			-- Should `domain' return `external_ql_domain'?
+			-- Note: This is used to calculate value criterion.
+		do
+			Result := external_ql_domain /= Void
+		end
+
+feature{EB_METRIC_VALUE_CRITERION, EB_METRIC_METRIC_VALUE_RETRIEVER, EB_METRIC_COMPONENT_HELPER} -- Setting
+
+	set_external_ql_domain (a_domain: like external_ql_domain) is
+			-- Set `external_ql_domain' with `a_domain'.
+		do
+			external_ql_domain := a_domain
+		ensure
+			external_ql_domain_set: external_ql_domain = a_domain
 		end
 
 feature -- Process

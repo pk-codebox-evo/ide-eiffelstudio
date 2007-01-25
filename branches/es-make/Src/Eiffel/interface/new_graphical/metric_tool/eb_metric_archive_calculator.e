@@ -56,6 +56,15 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
+	calculated_archive: EB_METRIC_ARCHIVE is
+			-- Archive generated from `calculated_archives'
+		do
+			create Result.make
+			calculated_archives.do_all (agent Result.insert_archive_node)
+		ensure
+			result_attached: Result /= Void
+		end
+
 feature -- Status report
 
 	has_error: BOOLEAN is
@@ -78,9 +87,12 @@ feature -- Setting
 
 feature -- Calculation
 
-	calculate_archive (a_task: LINEAR [TUPLE [a_metric: EB_METRIC; a_input_domain: EB_METRIC_DOMAIN; a_keep_result: BOOLEAN]]) is
+	calculate_archive (a_task: LINEAR [TUPLE [a_metric: EB_METRIC; a_input_domain: EB_METRIC_DOMAIN; a_keep_result: BOOLEAN; a_filter_result: BOOLEAN; a_tester: EB_METRIC_VALUE_TESTER]]) is
 			-- Calculate metric archive in `a_task' and store `calculated_archives'.
 			-- `a_task' is a list of metrics with there input domain.
+			-- `a_keep_result' indicates if detailed result should be kept.
+			-- `a_filter_result' indicates if result should be filtered out if they are invisible.
+			-- `a_tester' attached means that we should check warnings.
 		require
 			a_task_attached: a_task /= Void
 		local
@@ -93,10 +105,12 @@ feature -- Calculation
 			l_archive_node: EB_METRIC_ARCHIVE_NODE
 			l_archive_calculated_actions: like archive_calculated_actions
 			l_archives: like calculated_archives
+			l_archive_validity_checker: like archive_validity_checker
 		do
 			create l_domain_generator
 			l_archives := calculated_archives
 			l_archives.wipe_out
+			l_archive_validity_checker := archive_validity_checker
 			if not l_retried then
 				set_last_error_message (Void)
 				setup_calculation_context (l_domain_generator)
@@ -119,15 +133,25 @@ feature -- Calculation
 					else
 						l_metric.disable_fill_domain
 					end
-						-- Fixme: For the moment, only calculate with filter disabled.
-						-- Add the option to calculate with filter enabled or disabled in the future. (Jason)
-					l_metric.disable_filter_result
-					l_value := l_metric.value (l_input_domain).first.value
-					create l_archive_node.make (l_metric.name, metric_type_id (l_metric), l_time, l_value, l_input_domain, uuid_gen.generate_uuid.out)
+					if a_task.item.a_filter_result then
+						l_metric.enable_filter_result
+					else
+						l_metric.disable_filter_result
+					end
+					l_value := l_metric.value_item (l_input_domain)
+					create l_archive_node.make (l_metric.name, metric_type_id (l_metric), l_time, l_value, l_input_domain, uuid_gen.generate_uuid.out, a_task.item.a_filter_result)
 					l_archives.extend (l_archive_node)
 					l_archive_calculated_actions.call ([l_archive_node])
 					if l_metric.last_result_domain /= Void then
 						l_archive_node.set_detailed_result (l_metric.last_result_domain)
+					end
+					if a_task.item.a_tester /= Void and then not a_task.item.a_tester.criteria.is_empty then
+						l_archive_validity_checker.check_validity (a_task.item.a_tester)
+						if not l_archive_validity_checker.has_error then
+							l_archive_node.set_is_last_warning_check_successful (a_task.item.a_tester.is_satisfied_by_domain (l_value, l_input_domain))
+						end
+					else
+						l_archive_node.set_is_last_warning_check_successful (True)
 					end
 					a_task.forth
 				end

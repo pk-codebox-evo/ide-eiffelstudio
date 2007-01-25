@@ -131,6 +131,7 @@ feature -- Dotnet creation
 	set_string_for_dotnet_value  (a_eifnet_dsv: EIFNET_DEBUG_STRING_VALUE) is
 			-- make a object ICorDebugStringValue item initialized to `value'
 		require
+			is_dotnet_system
 			arg_not_void: a_eifnet_dsv /= Void
 		do
 			is_dotnet_value := True
@@ -154,6 +155,7 @@ feature -- Dotnet creation
 	set_object_for_dotnet_value  (a_eifnet_drv: EIFNET_DEBUG_REFERENCE_VALUE) is
 			-- make a object ICorDebugObjectValue item initialized to `value'
 		require
+			is_dotnet_system
 			arg_not_void: a_eifnet_drv /= Void
 		do
 			is_dotnet_value := True
@@ -186,6 +188,7 @@ feature -- Dotnet creation
 	set_native_array_object_for_dotnet_value  (a_eifnet_dnav: EIFNET_DEBUG_NATIVE_ARRAY_VALUE) is
 			-- make a object ICorDebugObjectValue item initialized to `value'
 		require
+			is_dotnet_system
 			arg_not_void: a_eifnet_dnav /= Void
 		do
 			is_dotnet_value := True
@@ -217,7 +220,7 @@ feature -- Dotnet access
 
 	is_classic_system: BOOLEAN is
 		do
-			Result := not is_dotnet_value
+			Result := not is_dotnet_system
 		end
 
 	is_dotnet_value: BOOLEAN
@@ -499,12 +502,8 @@ feature {DUMP_VALUE} -- string_representation Implementation
 		require
 			object_with_debug_output: address /= Void and has_formatted_output
 		do
-			debug ("debugger_trace")
-				print (generating_type + ".raw_string_representation (" + min.out + ", " + max.out + ")%N")
-			end
-
-			debug ("debug_recv")
-				print ("DUMP_VALUE.raw_string_representation of " + dynamic_class.name_in_upper + "%N")
+			debug ("debugger_trace", "debug_recv")
+				print (generating_type + ".raw_string_representation (" + min.out + ", " + max.out + ") from " + dynamic_class.name_in_upper +" %N")
 			end
 			last_string_representation_length := 0
 			if is_dotnet_value then
@@ -599,22 +598,25 @@ feature {DUMP_VALUE} -- string_representation Implementation
 					end
 					if count_attribute /= Void then
 						l_count := count_attribute.value
-
-						if area_attribute /= Void then
-								--| Now we have the real count, we'll get the l_slice_max items
-								--| and not all the capacity
-							if max < 0 then
-								l_slice_max := l_count - 1
-							else
-								l_slice_max := max.min (l_count - 1)
+						if l_count = 0 then
+							Result := ""
+						else
+							if area_attribute /= Void then
+									--| Now we have the real count, we'll get the l_slice_max items
+									--| and not all the capacity
+								if max < 0 then
+									l_slice_max := l_count - 1
+								else
+									l_slice_max := max.min (l_count - 1)
+								end
+								area_attribute.reset_items
+								area_attribute.get_items (min, l_slice_max)
+								Result := area_attribute.truncated_raw_string_value (l_count)
 							end
-							area_attribute.reset_items
-							area_attribute.get_items (min, l_slice_max)
-							Result := area_attribute.truncated_raw_string_value (l_count)
 						end
 					end
 				end
-				if Result /= Void then
+				if Result /= Void and then Result.count > l_count then
 						--| We now have retrieved the full `area' of STRING object. Let's check
 						--| if we need to display the complete area, or just part of it.
 					Result.keep_head (l_count.min (Result.count))
@@ -738,7 +740,7 @@ feature {DUMP_VALUE} -- string_representation Implementation
 		do
 			if debugger_manager.safe_application_is_stopped then
 				l_feat := generating_type_feature_i (dynamic_class)
-				if is_dotnet then
+				if is_dotnet_value then
 					if dynamic_class_type /= Void then
 						l_icdov := new_value_object_dotnet
 						if l_icdov /= Void then

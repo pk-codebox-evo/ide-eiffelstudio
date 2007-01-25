@@ -92,7 +92,7 @@ feature -- Basic operations
 					end
 				else
 					create explain_dialog.make_with_text (Interface_names.e_Diagram_add_class_figure_relations)
-					explain_dialog.show_modal_to_window (tool.development_window.window)
+					explain_dialog.show_modal_to_window (tool.develop_window.window)
 				end
 			end
 		end
@@ -391,6 +391,22 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	pixel_buffer: EV_PIXEL_BUFFER is
+			-- Pixel buffer representing the command.
+		do
+			inspect
+				selected_implementation
+			when adds_suppliers then
+				Result := pixmaps.icon_pixmaps.class_supliers_icon_buffer
+			when adds_clients then
+				Result := pixmaps.icon_pixmaps.class_clients_icon_buffer
+			when adds_descendents then
+				Result := pixmaps.icon_pixmaps.class_descendents_icon_buffer
+			when adds_ancestors then
+				Result := pixmaps.icon_pixmaps.class_ancestors_icon_buffer
+			end
+		end
+
 	description: STRING_GENERAL is
 			-- Description for this command.
 		do
@@ -411,12 +427,15 @@ feature {NONE} -- Implementation
 			-- Name of the command. Used to store the command in the
 			-- preferences.
 
-feature {EB_CONTEXT_EDITOR} -- Implementation
+feature {EB_DIAGRAM_TOOL} -- Implementation
 
 	selected_implementation: INTEGER
 		-- Implementation used for `Current', set in creation procedure.
 
-	adds_clients, adds_suppliers, adds_descendents, adds_ancestors: INTEGER is unique;
+	adds_clients: INTEGER is 1
+	adds_suppliers: INTEGER is 2
+	adds_descendents: INTEGER is 3
+	adds_ancestors: INTEGER is 4;
 		-- Constants used to define the behavior of `Current'.
 
 indexing

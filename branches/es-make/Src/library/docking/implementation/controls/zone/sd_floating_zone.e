@@ -12,7 +12,7 @@ inherit
 	SD_ZONE
 		rename
 			internal_shared as internal_shared_zone,
-			extend_widget as extend_dialog,
+			extend_widget as extend_sizeable_popup_window,
 			has_widget as has_untitled_dialog,
 			is_maximized as is_maximized_zone
 		export
@@ -33,16 +33,14 @@ inherit
 			default_create, copy
 		end
 
-	EV_UNTITLED_DIALOG
--- FIXIT:	EV_UNTITLED_DIALOG can't use accelerator.
---			We should use EV_POPUP_WINDOW, but it can't have a border now, so user can't resize. Implement it later.
+	SD_SIZABLE_POPUP_WINDOW
 		rename
-			extend as extend_dialog,
+			extend as real_extend_dialog,
 			show as show_allow_to_back,
 			has as has_untitled_dialog
 		export
 			{NONE} all
-			{ANY} set_position, set_size
+			{ANY} set_position, set_size, screen_x, screen_y
 		select
 			implementation,
 			show_allow_to_back
@@ -57,9 +55,6 @@ feature {NONE} -- Initlization
 			-- Creation method.
 		require
 			a_floating_state_not_void: a_floating_state /= Void
-		local
-			l_acceler_test: EV_ACCELERATOR
-			l_test_key: EV_KEY
 		do
 			internal_floating_state := a_floating_state
 			internal_docking_manager := a_floating_state.docking_manager
@@ -67,9 +62,8 @@ feature {NONE} -- Initlization
 			create internal_shared_zone
 			default_create
 			create internal_vertical_box
-			extend_dialog (internal_vertical_box)
+			real_extend_dialog (internal_vertical_box)
 
-			enable_user_resize
 			create internal_title_bar.make
 			internal_title_bar.drag_actions.extend (agent on_title_bar_drag)
 			internal_title_bar.close_request_actions.extend (agent on_close)
@@ -82,8 +76,8 @@ feature {NONE} -- Initlization
 			internal_inner_container.set_parent_floating_zone (Current)
 			if internal_floating_state.docking_manager.query.golbal_accelerators /= Void then
 				accelerators.append (internal_floating_state.docking_manager.query.golbal_accelerators)
-				set_title ("")
 			end
+			set_title ("")
 			focus_in_actions.extend (agent on_dialog_focus_in)
 			focus_out_actions.extend (agent on_dialog_focus_out)
 			focus_in_actions.extend (agent (internal_docking_manager.agents).on_top_level_window_focus_in)

@@ -12,14 +12,23 @@ class
 inherit
 	EB_METRIC_DOMAIN_CRITERION
 		redefine
+			make,
 			new_criterion,
 			process,
-			is_caller_criterion
+			is_caller_callee_criterion
 		end
 
 create
-	make,
-	make_with_setting
+	make
+
+feature{NONE}	-- Initialization
+
+	make (a_scope: like scope; a_name: STRING) is
+			-- Initialize `scope' with `a_scope' and `name' with `a_name'.
+		do
+			Precursor (a_scope, a_name)
+			enable_only_current_version
+		end
 
 feature -- Access
 
@@ -27,17 +36,19 @@ feature -- Access
 			-- QL_CRITERION representing current criterion
 		local
 			l_criterion_factory: QL_CRITERION_FACTORY
+			l_domain: like domain
 		do
 			l_criterion_factory := criterion_factory_table.item (a_scope)
 			from
-				domain.start
-				Result := l_criterion_factory.criterion_with_name (name, [domain.item.domain (a_scope), only_current_version])
-				domain.forth
+				l_domain := domain.actual_domain
+				l_domain.start
+				Result := l_criterion_factory.criterion_with_name (name, [l_domain.item.domain (a_scope), only_current_version])
+				l_domain.forth
 			until
-				domain.after
+				l_domain.after
 			loop
-				Result := Result or l_criterion_factory.criterion_with_name (name, [domain.item.domain (a_scope), only_current_version])
-				domain.forth
+				Result := Result or l_criterion_factory.criterion_with_name (name, [l_domain.item.domain (a_scope), only_current_version])
+				l_domain.forth
 			end
 			if is_negation_used then
 				Result := not Result
@@ -49,7 +60,7 @@ feature -- Status report
 	only_current_version: BOOLEAN
 			-- Only current version?
 
-	is_caller_criterion: BOOLEAN is True
+	is_caller_callee_criterion: BOOLEAN is True
 			-- Is current a caller criterion?
 
 feature -- Setting
@@ -75,7 +86,7 @@ feature -- Process
 	process (a_visitor: EB_METRIC_VISITOR) is
 			-- Process current using `a_visitor'.
 		do
-			a_visitor.process_caller_criterion (Current)
+			a_visitor.process_caller_callee_criterion (Current)
 		end
 
 indexing

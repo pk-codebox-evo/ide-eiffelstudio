@@ -11,7 +11,9 @@ class
 inherit
 	SD_NOTEBOOK_TAB_DRAWER_I
 		redefine
-			make
+			make,
+			draw_pixmap_text_selected,
+			draw_pixmap_text_unselected
 		end
 
 	EV_BUTTON_IMP
@@ -29,6 +31,11 @@ inherit
 			{NONE} all
 		end
 
+	EV_SHARED_APPLICATION
+		export
+			{NONE} all
+		end
+
 create
 	make
 
@@ -36,25 +43,20 @@ feature{NONE} -- Initlization
 
 	make is
 			-- Creation method
-		local
-			l_env: EV_ENVIRONMENT
 		do
 			Precursor {SD_NOTEBOOK_TAB_DRAWER_I}
 			init_theme
-			create l_env
-			l_env.application.theme_changed_actions.extend (agent init_theme)
+			ev_application.theme_changed_actions.extend (agent init_theme)
 		end
 
 	init_theme is
 			-- Initialize theme drawer.
 		local
-			l_env: EV_ENVIRONMENT
 			l_app_imp: EV_APPLICATION_IMP
 			l_tool_bar: EV_TOOL_BAR
 			l_wel_tool_bar: WEL_TOOL_BAR
 		do
-			create l_env
-			l_app_imp ?= l_env.application.implementation
+			l_app_imp ?= ev_application.implementation
 			check not_void: l_app_imp /= Void end
 			l_app_imp.update_theme_drawer
 			theme_drawer := l_app_imp.theme_drawer
@@ -94,7 +96,7 @@ feature -- Commands
 			l_bitmap := l_bitmap_dc.bitmap
 
 			l_brush := internal_background_brush
-			create l_wel_rect.make (0, 0, a_width, buffer_pixmap.height)
+			create l_wel_rect.make (0, 0, a_width, buffer_pixmap.height + 1)
 
 			if theme_data /= default_pointer then
 				draw_xp_selected_tab (l_bitmap_dc, l_bitmap, a_tab_info, l_wel_rect, l_brush)
@@ -459,8 +461,73 @@ feature{NONE} -- Implementation
 				end
 			end
 		end
+	draw_pixmap_text_unselected (a_pixmap: EV_DRAWABLE; a_start_x, a_width: INTEGER) is
+			-- Redefine
+		local
+			l_font: EV_FONT
+		do
+			a_pixmap.set_foreground_color (internal_shared.tab_text_color)
+			l_font := a_pixmap.font
+			l_font.set_weight ({EV_FONT_CONSTANTS}.weight_regular)
+			a_pixmap.set_font (l_font)
+			if is_top_side_tab then
+				-- Draw pixmap
+				a_pixmap.draw_pixmap (a_start_x + start_x_pixmap_internal, start_y_position + gap_height + 1, pixmap)
+				a_pixmap.draw_text_top_left (a_start_x + start_x_text_internal, gap_height + start_y_position_text, text)
+			else
+				-- Draw pixmap
+				a_pixmap.draw_pixmap (a_start_x + start_x_pixmap_internal, start_y_position, pixmap)
+				-- Draw text
+				a_pixmap.draw_text_top_left (a_start_x + start_x_text_internal, start_y_position_bottom, text)
+			end
+
+			draw_close_button (a_pixmap, internal_shared.icons.close)
+		end
+
+	draw_pixmap_text_selected (a_pixmap: EV_DRAWABLE; a_start_x, a_width: INTEGER) is
+			-- Redefine
+		local
+			l_font: EV_FONT
+		do
+			if a_pixmap.height > 0 then
+				-- Draw text
+				a_pixmap.set_foreground_color (internal_shared.tab_text_color)
+				if a_width - start_x_text_internal >= 0 then
+					l_font := a_pixmap.font
+					l_font.set_weight ({EV_FONT_CONSTANTS}.weight_bold)
+					a_pixmap.set_font (l_font)
+					if is_top_side_tab then
+						a_pixmap.draw_ellipsed_text_top_left (a_start_x + start_x_text_internal, start_y_position_text + gap_height - 1, text, a_width - start_x_text_internal)
+					else
+						a_pixmap.draw_ellipsed_text_top_left (a_start_x + start_x_text_internal, 1 + start_y_position_bottom, text, a_width - start_x_text_internal)
+					end
+				end
+				-- Draw pixmap
+				if is_draw_pixmap then
+					if is_top_side_tab then
+						a_pixmap.draw_pixmap (a_start_x + start_x_pixmap_internal, start_y_position + gap_height, pixmap)
+					else
+						a_pixmap.draw_pixmap (a_start_x + start_x_pixmap_internal, start_y_position + 1, pixmap)
+					end
+				end
+
+				draw_close_button (a_pixmap, internal_shared.icons.close)
+			end
+		end
 
 feature {NONE} -- Attributes
+
+	gap_height: INTEGER is 2
+	 		-- Redefine
+
+	start_y_position: INTEGER is 0
+	 		-- Redefine
+
+	start_y_position_bottom: INTEGER is 2
+			-- Start y drawing bottom text position.
+
+	start_y_position_text: INTEGER is 3
+			-- Redefine
 
 	theme_drawer: EV_THEME_DRAWER_IMP
 			-- Theme drawer

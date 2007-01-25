@@ -28,24 +28,24 @@ feature {NONE}-- Initialization
 				-- Create all widgets.
 			create l_ev_vertical_box_1
 			create toolbar_area
-			create quick_metric_toolbar
-			create quick_metric_btn
-			create l_ev_tool_bar_1
-			create l_ev_tool_bar_separator_1
 			create control_toolbar
-			create filter_result_btn
 			create run_metric_btn
 			create stop_metric_btn
+			create option_tool_bar
+			create l_ev_tool_bar_1
+			create l_ev_tool_bar_separator_1
+			create quick_metric_toolbar
+			create quick_metric_btn
+			create l_ev_tool_bar_3
 			create l_ev_tool_bar_separator_2
 			create value_area
 			create metric_value_lbl
 			create metric_value_text
-			create l_ev_tool_bar_4
+			create l_ev_tool_bar_5
 			create l_ev_tool_bar_separator_3
 			create percentage_tool_bar
-			create show_percent_btn
-			create l_ev_tool_bar_6
-			create auto_go_to_result_btn
+			create synchronize_tool_bar
+			create l_ev_tool_bar_7
 			create send_to_history_btn
 			create toolbar_empty_area
 			create l_ev_horizontal_split_area_1
@@ -66,7 +66,7 @@ feature {NONE}-- Initialization
 			create unit_area
 			create unit_lbl
 			create unit_combo
-			create l_ev_tool_bar_7
+			create l_ev_tool_bar_8
 			create go_to_definition_btn
 			create metric_definition_empty_area
 			create criterion_area
@@ -75,25 +75,25 @@ feature {NONE}-- Initialization
 				-- Build widget structure.
 			extend (l_ev_vertical_box_1)
 			l_ev_vertical_box_1.extend (toolbar_area)
-			toolbar_area.extend (quick_metric_toolbar)
-			quick_metric_toolbar.extend (quick_metric_btn)
-			toolbar_area.extend (l_ev_tool_bar_1)
-			l_ev_tool_bar_1.extend (l_ev_tool_bar_separator_1)
 			toolbar_area.extend (control_toolbar)
-			control_toolbar.extend (filter_result_btn)
 			control_toolbar.extend (run_metric_btn)
 			control_toolbar.extend (stop_metric_btn)
-			control_toolbar.extend (l_ev_tool_bar_separator_2)
+			toolbar_area.extend (option_tool_bar)
+			toolbar_area.extend (l_ev_tool_bar_1)
+			l_ev_tool_bar_1.extend (l_ev_tool_bar_separator_1)
+			toolbar_area.extend (quick_metric_toolbar)
+			quick_metric_toolbar.extend (quick_metric_btn)
+			toolbar_area.extend (l_ev_tool_bar_3)
+			l_ev_tool_bar_3.extend (l_ev_tool_bar_separator_2)
 			toolbar_area.extend (value_area)
 			value_area.extend (metric_value_lbl)
 			value_area.extend (metric_value_text)
-			toolbar_area.extend (l_ev_tool_bar_4)
-			l_ev_tool_bar_4.extend (l_ev_tool_bar_separator_3)
+			toolbar_area.extend (l_ev_tool_bar_5)
+			l_ev_tool_bar_5.extend (l_ev_tool_bar_separator_3)
 			toolbar_area.extend (percentage_tool_bar)
-			percentage_tool_bar.extend (show_percent_btn)
-			toolbar_area.extend (l_ev_tool_bar_6)
-			l_ev_tool_bar_6.extend (auto_go_to_result_btn)
-			l_ev_tool_bar_6.extend (send_to_history_btn)
+			toolbar_area.extend (synchronize_tool_bar)
+			toolbar_area.extend (l_ev_tool_bar_7)
+			l_ev_tool_bar_7.extend (send_to_history_btn)
 			toolbar_area.extend (toolbar_empty_area)
 			l_ev_vertical_box_1.extend (l_ev_horizontal_split_area_1)
 			l_ev_horizontal_split_area_1.extend (metric_source_domain_area)
@@ -113,8 +113,8 @@ feature {NONE}-- Initialization
 			metric_definition_area.extend (unit_area)
 			unit_area.extend (unit_lbl)
 			unit_area.extend (unit_combo)
-			unit_area.extend (l_ev_tool_bar_7)
-			l_ev_tool_bar_7.extend (go_to_definition_btn)
+			unit_area.extend (l_ev_tool_bar_8)
+			l_ev_tool_bar_8.extend (go_to_definition_btn)
 			unit_area.extend (metric_definition_empty_area)
 			metric_definition_area.extend (criterion_area)
 			metric_definition_area.extend (l_ev_horizontal_box_2)
@@ -134,22 +134,25 @@ feature {NONE}-- Initialization
 			create color_constant_retrieval_functions.make (10)
 			l_ev_vertical_box_1.set_padding (3)
 			l_ev_vertical_box_1.disable_item_expand (toolbar_area)
-			toolbar_area.disable_item_expand (quick_metric_toolbar)
-			toolbar_area.disable_item_expand (l_ev_tool_bar_1)
 			toolbar_area.disable_item_expand (control_toolbar)
+			toolbar_area.disable_item_expand (option_tool_bar)
+			toolbar_area.disable_item_expand (l_ev_tool_bar_1)
+			toolbar_area.disable_item_expand (quick_metric_toolbar)
+			toolbar_area.disable_item_expand (l_ev_tool_bar_3)
 			toolbar_area.disable_item_expand (value_area)
-			toolbar_area.disable_item_expand (l_ev_tool_bar_4)
+			toolbar_area.disable_item_expand (l_ev_tool_bar_5)
 			toolbar_area.disable_item_expand (percentage_tool_bar)
-			toolbar_area.disable_item_expand (l_ev_tool_bar_6)
-			l_ev_tool_bar_1.disable_vertical_button_style
+			toolbar_area.disable_item_expand (synchronize_tool_bar)
+			toolbar_area.disable_item_expand (l_ev_tool_bar_7)
 			control_toolbar.disable_vertical_button_style
+			l_ev_tool_bar_3.disable_vertical_button_style
 			value_area.set_padding (3)
 			metric_value_lbl.set_text ("Value:")
 			metric_value_lbl.align_text_left
 			metric_value_text.set_minimum_width (100)
 			metric_value_text.set_minimum_height (18)
 			percentage_tool_bar.disable_vertical_button_style
-			l_ev_tool_bar_6.disable_vertical_button_style
+			synchronize_tool_bar.disable_vertical_button_style
 			l_ev_horizontal_split_area_1.disable_item_expand (metric_source_domain_area)
 			l_ev_horizontal_split_area_1.enable_item_expand (main_area)
 			metric_source_domain_area.set_minimum_width (200)
@@ -180,7 +183,7 @@ feature {NONE}-- Initialization
 			unit_area.set_padding (3)
 			unit_area.disable_item_expand (unit_lbl)
 			unit_area.disable_item_expand (unit_combo)
-			unit_area.disable_item_expand (l_ev_tool_bar_7)
+			unit_area.disable_item_expand (l_ev_tool_bar_8)
 			unit_lbl.set_text ("Unit:")
 			unit_lbl.align_text_left
 			unit_combo.set_minimum_width (120)
@@ -206,13 +209,13 @@ feature -- Access
 
 	unit_combo: EV_COMBO_BOX
 	toolbar_empty_area, grid_wrapper_empty_area, metric_definition_empty_area: EV_CELL
-	quick_metric_toolbar,
-	control_toolbar, percentage_tool_bar: EV_TOOL_BAR
-	quick_metric_btn, filter_result_btn, show_percent_btn,
-	auto_go_to_result_btn: EV_TOOL_BAR_TOGGLE_BUTTON
-	run_metric_btn, stop_metric_btn, send_to_history_btn, go_to_definition_btn: EV_TOOL_BAR_BUTTON
-	toolbar_area,
-	value_area, main_area, grid_wrapper, quick_metric_empty_area, unit_area: EV_HORIZONTAL_BOX
+	control_toolbar,
+	option_tool_bar, quick_metric_toolbar, percentage_tool_bar, synchronize_tool_bar: EV_TOOL_BAR
+	quick_metric_btn: EV_TOOL_BAR_TOGGLE_BUTTON
+	run_metric_btn,
+	stop_metric_btn, send_to_history_btn, go_to_definition_btn: EV_TOOL_BAR_BUTTON
+	toolbar_area, value_area,
+	main_area, grid_wrapper, quick_metric_empty_area, unit_area: EV_HORIZONTAL_BOX
 	metric_source_domain_area,
 	metric_domain_selector_area, metric_selection_area, metric_definition_area, criterion_area: EV_VERTICAL_BOX
 	metric_value_lbl,
@@ -224,10 +227,11 @@ feature {NONE} -- Implementation
 	l_ev_tool_bar_separator_1, l_ev_tool_bar_separator_2, l_ev_tool_bar_separator_3: EV_TOOL_BAR_SEPARATOR
 	l_ev_cell_1,
 	l_ev_cell_2: EV_CELL
-	l_ev_tool_bar_1, l_ev_tool_bar_4, l_ev_tool_bar_6, l_ev_tool_bar_7: EV_TOOL_BAR
-	l_ev_horizontal_split_area_1,
-	l_ev_horizontal_split_area_2: EV_HORIZONTAL_SPLIT_AREA
-	l_ev_horizontal_box_1, l_ev_horizontal_box_2: EV_HORIZONTAL_BOX
+	l_ev_tool_bar_1, l_ev_tool_bar_3, l_ev_tool_bar_5, l_ev_tool_bar_7,
+	l_ev_tool_bar_8: EV_TOOL_BAR
+	l_ev_horizontal_split_area_1, l_ev_horizontal_split_area_2: EV_HORIZONTAL_SPLIT_AREA
+	l_ev_horizontal_box_1,
+	l_ev_horizontal_box_2: EV_HORIZONTAL_BOX
 	l_ev_vertical_box_1: EV_VERTICAL_BOX
 
 feature {NONE} -- Implementation

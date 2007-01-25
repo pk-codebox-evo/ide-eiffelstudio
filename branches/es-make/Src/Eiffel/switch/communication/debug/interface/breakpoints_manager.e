@@ -1,9 +1,10 @@
-
 indexing
-	description : "Objects that ..."
-	author      : "$Author$"
-	date        : "$Date$"
-	revision    : "$Revision$"
+	description: "Objects that manage breakpoints"
+	legal: "See notice at end of class."
+	status: "See notice at end of class."
+	author: "$Author$"
+	date: "$Date$"
+	revision: "$Revision$"
 
 deferred class
 	BREAKPOINTS_MANAGER
@@ -237,7 +238,7 @@ feature -- Breakpoints change
 			valid_f: f /= Void and then f.is_debuggable
 			valid_i: i > 0 and i <= f.number_of_breakpoint_slots
 			valid_expr: expr /= Void and then not expr.syntax_error_occurred
-			good_semantics: expr.is_condition (f)
+			good_semantics: expr.is_boolean_expression (f)
 		do
 			debug_info.set_condition (f, i, expr)
 		end
@@ -343,5 +344,37 @@ feature -- Breakpoints change
 			debug_info.remove_all_breakpoints
 			notify_newbreakpoint
 		end
+
+indexing
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
+	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
+	licensing_options:	"http://www.eiffel.com/licensing"
+	copying: "[
+			This file is part of Eiffel Software's Eiffel Development Environment.
+			
+			Eiffel Software's Eiffel Development Environment is free
+			software; you can redistribute it and/or modify it under
+			the terms of the GNU General Public License as published
+			by the Free Software Foundation, version 2 of the License
+			(available at the URL listed under "license" above).
+			
+			Eiffel Software's Eiffel Development Environment is
+			distributed in the hope that it will be useful,	but
+			WITHOUT ANY WARRANTY; without even the implied warranty
+			of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+			See the	GNU General Public License for more details.
+			
+			You should have received a copy of the GNU General Public
+			License along with Eiffel Software's Eiffel Development
+			Environment; if not, write to the Free Software Foundation,
+			Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
+		]"
+	source: "[
+			 Eiffel Software
+			 356 Storke Road, Goleta, CA 93117 USA
+			 Telephone 805-685-1006, Fax 805-685-6869
+			 Website http://www.eiffel.com
+			 Customer support http://support.eiffel.com
+		]"
 
 end

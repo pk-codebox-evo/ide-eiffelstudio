@@ -12,8 +12,8 @@ class
 inherit
 	EB_METRIC_DOMAIN_PROPERTY_MANAGER
 		redefine
-			criterion_type,
 			property_item,
+			criterion_type,
 			load_properties,
 			store_properties
 		end
@@ -23,12 +23,18 @@ create
 
 feature -- Access
 
-	property_item: EB_METRIC_DOMAIN_GRID_ITEM is
+	property_item: EB_METRIC_GRID_DOMAIN_ITEM [BOOLEAN] is
 			-- Grid item used to display properties
 		do
-			Result := Precursor
-			Result.dialog.property_area.feature_vertion_area.show
-			Result.dialog.set_grid (grid)
+			if property_item_internal = Void then
+				create property_item_internal.make (create {EB_METRIC_DOMAIN}.make)
+				property_item_internal.pointer_button_press_actions.force_extend (agent activate_grid_item (?, ?, ?, ?, ?, ?, ?, ?, property_item_internal))
+				property_item_internal.dialog_ok_actions.extend (agent grid.resize_column (2, 0))
+				property_item_internal.dialog_ok_actions.extend (agent change_actions.call ([]))
+				property_item_internal.set_tooltip (metric_names.f_pick_and_drop_items)
+				property_item_internal.set_dialog_function (agent caller_callee_domain_setup_dialog)
+			end
+			Result := property_item_internal
 		end
 
 feature -- Properties management
@@ -37,18 +43,14 @@ feature -- Properties management
 			-- Load porperties from `a_criterion' into current manager
 		do
 			Precursor (a_criterion)
-			if a_criterion.only_current_version then
-				property_item.dialog.property_area.only_current_version_checkbox.enable_select
-			else
-				property_item.dialog.property_area.descendant_version_checkbox.enable_select
-			end
+			property_item.set_value (a_criterion.only_current_version)
 		end
 
 	store_properties (a_criterion: like criterion_type) is
 			-- Store properties in current manager into `a_criterion'.
 		do
 			Precursor (a_criterion)
-			if property_item.dialog.property_area.only_current_version_checkbox.is_selected then
+			if property_item.value then
 				a_criterion.enable_only_current_version
 			else
 				a_criterion.disable_only_current_version

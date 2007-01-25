@@ -26,10 +26,10 @@ feature -- Node creation
 			create Result.make (a_name, a_unit, a_uuid)
 		end
 
-	new_ratio_metric (a_name: STRING; a_unit: QL_METRIC_UNIT; a_uuid: UUID; a_num_name: STRING; a_num_uuid: UUID; a_den_name: STRING; a_den_uuid: UUID): EB_METRIC_RATIO is
+	new_ratio_metric (a_name: STRING; a_unit: QL_METRIC_UNIT; a_uuid: UUID; a_num_name: STRING; a_num_uuid: UUID; a_den_name: STRING; a_den_uuid: UUID; a_num_coefficient: DOUBLE; a_den_coefficient: DOUBLE): EB_METRIC_RATIO is
 			-- New ratio metric
 		do
-			create Result.make_with_numerator_and_denominator (a_name, a_unit, a_uuid, a_num_name, a_num_uuid, a_den_name, a_den_uuid)
+			create Result.make_with_numerator_and_denominator (a_name, a_unit, a_uuid, a_num_name, a_num_uuid, a_den_name, a_den_uuid, a_num_coefficient, a_den_coefficient)
 		end
 
 feature -- Criterion creation
@@ -58,8 +58,14 @@ feature -- Criterion creation
 			create Result.make (a_scope, a_name)
 		end
 
-	new_caller_criterion (a_name: STRING; a_scope: QL_SCOPE): EB_METRIC_CALLER_CALLEE_CRITERION is
+	new_caller_callee_criterion (a_name: STRING; a_scope: QL_SCOPE): EB_METRIC_CALLER_CALLEE_CRITERION is
 			-- New caller/callee criterion
+		do
+			create Result.make (a_scope, a_name)
+		end
+
+	new_supplier_client_criterion (a_name: STRING; a_scope: QL_SCOPE): EB_METRIC_SUPPLIER_CLIENT_CRITERION is
+			-- New supplier/client criterion
 		do
 			create Result.make (a_scope, a_name)
 		end
@@ -72,6 +78,12 @@ feature -- Criterion creation
 
 	new_or_criterion (a_name: STRING; a_scope: QL_SCOPE): EB_METRIC_OR_CRITERION is
 			-- New or criterion
+		do
+			create Result.make (a_scope, a_name)
+		end
+
+	new_value_criterion (a_name: STRING; a_scope: QL_SCOPE): EB_METRIC_VALUE_CRITERION is
+			-- New value criterion
 		do
 			create Result.make (a_scope, a_name)
 		end
@@ -116,11 +128,11 @@ feature -- Domain item creation
 
 feature -- Archive node creation
 
-	new_metric_arichive_node (a_metric_name: STRING; a_metric_type: INTEGER; a_time: DATE_TIME; a_value: DOUBLE; a_input: EB_METRIC_DOMAIN; a_uuid: STRING): EB_METRIC_ARCHIVE_NODE is
+	new_metric_arichive_node (a_metric_name: STRING; a_metric_type: INTEGER; a_time: DATE_TIME; a_value: DOUBLE; a_input: EB_METRIC_DOMAIN; a_uuid: STRING; a_filtered: BOOLEAN): EB_METRIC_ARCHIVE_NODE is
 			-- New metric archive node and initialize `metric_name' with `a_metric_name', `metric_type' with `a_metric_type', `calculated_time' with `a_time',
 			-- `value' with `a_value' and `input_domain' with `a_input'.
 		do
-			create Result.make (a_metric_name, a_metric_type, a_time, a_value, a_input, a_uuid)
+			create Result.make (a_metric_name, a_metric_type, a_time, a_value, a_input, a_uuid, a_filtered)
 		end
 
 indexing

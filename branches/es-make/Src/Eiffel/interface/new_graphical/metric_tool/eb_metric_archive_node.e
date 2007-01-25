@@ -21,7 +21,7 @@ create
 
 feature{NONE} -- Initialization
 
-	make (a_metric_name: STRING; a_metric_type: INTEGER; a_time: DATE_TIME; a_value: DOUBLE; a_input: like input_domain; a_uuid: STRING) is
+	make (a_metric_name: STRING; a_metric_type: INTEGER; a_time: DATE_TIME; a_value: DOUBLE; a_input: like input_domain; a_uuid: STRING; a_filtered: BOOLEAN) is
 			-- Initialize `metric_name' with `a_metric_name', `metric_type' with `a_metric_type', `calculated_time' with `a_time',
 			-- `value' with `a_value', `input_domain' with `a_input' and `uuid' with `a_uuid'.
 		require
@@ -40,6 +40,9 @@ feature{NONE} -- Initialization
 			set_uuid (create {UUID}.make_from_string (a_uuid))
 			set_is_up_to_date (True)
 			set_is_value_valid (True)
+			set_is_result_filtered (a_filtered)
+			set_value_tester (create {EB_METRIC_VALUE_TESTER}.make)
+			set_is_last_warning_check_successful (True)
 		end
 
 feature -- Access
@@ -92,6 +95,15 @@ feature -- Access
 
 	detailed_result: QL_DOMAIN
 			-- Last detailed result
+
+	visitable_name: STRING_GENERAL is
+			-- Name of current visitable item
+		do
+			Result := metric_names.visitable_name (metric_names.l_metric_archive_node, metric_name)
+		end
+
+	value_tester: EB_METRIC_VALUE_TESTER
+			-- Value tester used to support archive value warning
 
 feature -- Status report
 
@@ -148,6 +160,13 @@ feature -- Status report
 
 	is_value_valid: BOOLEAN
 			-- Is `value' valid?
+			-- Default: True
+
+	is_result_filtered: BOOLEAN
+			-- Should result be filtered if they are not visible?
+
+	is_last_warning_check_successful: BOOLEAN
+			-- Is last warning check successful?
 			-- Default: True
 
 feature -- Setting
@@ -248,6 +267,30 @@ feature -- Setting
 			is_value_valid_set: is_value_valid = b
 		end
 
+	set_is_result_filtered (b: BOOLEAN) is
+			-- Set `is_result_filtered' with `b'.
+		do
+			is_result_filtered := b
+		ensure
+			is_result_filtered_set: is_result_filtered = b
+		end
+
+	set_value_tester (a_value_tester: like value_tester) is
+			-- Set `value_tester' with `a_value_tester'.
+		do
+			value_tester := a_value_tester
+		ensure
+			value_tester_set: value_tester = a_value_tester
+		end
+
+	set_is_last_warning_check_successful (b: BOOLEAN) is
+			-- Set `is_last_warning_check_successful' with `b'.
+		do
+			is_last_warning_check_successful := b
+		ensure
+			is_last_warning_check_successful_set: is_last_warning_check_successful = b
+		end
+
 	merge (a_archive: like Current) is
 			-- Update Current with information from `a_archive'.
 		require
@@ -285,6 +328,7 @@ invariant
 	calculated_time_attached: calculated_time /= Void
 	input_domain_attached: input_domain /= Void
 	uuid_attached: uuid /= Void
+	value_tester_attached: value_tester /= Void
 
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"

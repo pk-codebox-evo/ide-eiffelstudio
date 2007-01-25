@@ -18,13 +18,6 @@ inherit
 			set_default_colors
 		end
 
-	EV_ANY_IMP
-		undefine
-			destroy
-		redefine
-			interface
-		end
-
 feature -- Access
 
 	background_color: EV_COLOR is
@@ -207,6 +200,18 @@ feature -- Status setting
 
 feature {NONE} -- Implementation
 
+	visual_widget: POINTER
+		deferred
+		end
+
+	c_object: POINTER
+		deferred
+		end
+
+	needs_event_box: BOOLEAN
+		deferred
+		end
+
 	background_color_imp: EV_COLOR_IMP
 		-- Color used for the background of `Current'
 
@@ -216,8 +221,8 @@ feature {NONE} -- Implementation
 	background_color_pointer: POINTER is
 			-- Pointer to bg color for `a_widget'.
 		do
-			Result := {EV_GTK_EXTERNALS}.gtk_style_struct_bg (
-				{EV_GTK_EXTERNALS}.gtk_widget_struct_style (visual_widget)
+			Result := {EV_GTK_EXTERNALS}.gtk_style_struct_base (
+				{EV_GTK_EXTERNALS}.gtk_rc_get_style (visual_widget)
 			)
 		end
 
@@ -225,7 +230,7 @@ feature {NONE} -- Implementation
 			-- Pointer to fg color for `a_widget'.
 		do
 			Result := {EV_GTK_EXTERNALS}.gtk_style_struct_fg (
-				{EV_GTK_EXTERNALS}.gtk_widget_struct_style (visual_widget)
+				{EV_GTK_EXTERNALS}.gtk_rc_get_style (visual_widget)
 			)
 		end
 

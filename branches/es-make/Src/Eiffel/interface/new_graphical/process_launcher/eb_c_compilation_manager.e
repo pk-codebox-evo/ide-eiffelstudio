@@ -139,13 +139,13 @@ feature{NONE}  -- Actions
 	start_pixmap_animation_timer (a_dev_window: EB_DEVELOPMENT_WINDOW) is
 			-- Start pixmap animation on `a_dev_window'.
 		do
-			a_dev_window.start_c_output_pixmap_timer
+			a_dev_window.tools.c_output_tool.start_c_output_pixmap_timer
 		end
 
 	stop_pixmap_animation_timer (a_dev_window: EB_DEVELOPMENT_WINDOW) is
 			-- Stop pixmap animation on `a_dev_window'.
 		do
-			a_dev_window.stop_c_output_pixmap_timer
+			a_dev_window.tools.c_output_tool.stop_c_output_pixmap_timer
 		end
 
 	on_start is
@@ -157,15 +157,20 @@ feature{NONE}  -- Actions
 	on_exit is
 			-- Handler called when c compiler exits
 		do
-			synchronize_on_c_compilation_exit
 			if launched then
 				if exit_code /= 0 then
 					c_compilation_successful_cell.put (False)
+				else
+					c_compilation_successful_cell.put (True)
+				end
+			end
+			synchronize_on_c_compilation_exit
+			if launched then
+				if exit_code /= 0 then
 					window_manager.display_message (Interface_names.e_c_compilation_failed)
 					display_message_on_main_output (c_compilation_failed_msg, True)
 					show_compilation_error_dialog
 				else
-					c_compilation_successful_cell.put (True)
 					window_manager.display_message (Interface_names.e_c_compilation_succeeded)
 					display_message_on_main_output (c_compilation_succeeded_msg, True)
 				end
@@ -180,8 +185,8 @@ feature{NONE}  -- Actions
 	on_launch_failed is
 			-- Handler called when c compiler launch failed
 		do
-			synchronize_on_c_compilation_exit
 			c_compilation_successful_cell.put (False)
+			synchronize_on_c_compilation_exit
 			window_manager.display_message (Interface_names.e_C_compilation_launch_failed)
 			display_message_on_main_output (c_compilation_launch_failed_msg, True)
 			show_compiler_launch_fail_dialog (window_manager.last_created_window.window)
@@ -258,8 +263,6 @@ feature{NONE} -- Implementation
 	show_compilation_error_dialog is
 			-- Dialog box showed when c compilation generates any error
 		local
-			str: STRING
-
 			dlg: EB_CONFIRMATION_DIALOG
 			actions: ARRAY [PROCEDURE [ANY, TUPLE]]
 			maps: EV_STOCK_PIXMAPS
@@ -269,18 +272,8 @@ feature{NONE} -- Implementation
 			create actions.make (1, 2)
 			actions.put (agent do_not_open_console, 1)
 			actions.put (agent open_console, 2)
-			str := "C-compilation produced errors.%N"
-
-			str.append ("Run your Makefile utility program from the directory `")
-			str.append (working_directory)
-			str.append ("`%Nto see what went wrong.%N%NClick OK to terminate.")
-			if platform_constants.is_windows then
-				str.append ("%NClick Cancel to open a command line console.%N")
-			else
-				str.append ("%NClick Cancel to open a command line console.%N")
-			end
-			create dlg.make_with_text_and_actions (str, actions)
-			dlg.set_title ("Finish Freezing Status")
+			create dlg.make_with_text_and_actions (interface_names.l_c_compilation_produced_errors (working_directory), actions)
+			dlg.set_title (interface_names.t_finish_freezing_status)
 			create maps
 			dlg.set_icon_pixmap (maps.warning_pixmap)
 			dlg.set_pixmap (maps.warning_pixmap)
@@ -290,23 +283,13 @@ feature{NONE} -- Implementation
 	show_compiler_launch_fail_dialog (win: EV_WINDOW) is
 			-- Dialog box showed when c compiler launch failed
 		local
-			str: STRING
-
 			dlg: EB_WARNING_DIALOG
 			--actions: ARRAY [PROCEDURE [ANY, TUPLE]]
 			maps: EV_STOCK_PIXMAPS
 		do
 				-- C compilation launch failed.
-			str := "C-compilation manager launch failed.%NCheck if finish_freezing"
-			if platform_constants.is_windows then
-				str.append (".exe")
-			else
-					-- No action				
-			end
-			str.append (" exists and works correctly.")
-
-			create dlg.make_with_text (str)
-			dlg.set_title ("finish_freezing Launch Error")
+			create dlg.make_with_text (interface_names.l_c_compilation_manager_launch_failed (platform_constants.is_windows))
+			dlg.set_title (interface_names.t_finish_freezing_launch_error)
 			create maps
 			dlg.set_icon_pixmap (maps.warning_pixmap)
 			dlg.set_pixmap (maps.warning_pixmap)

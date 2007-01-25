@@ -19,7 +19,6 @@ inherit
 			default_create
 		redefine
 			metric,
-			expression_generator,
 			is_basic_metric_editor
 		end
 
@@ -70,7 +69,6 @@ feature {NONE} -- Initialization
 			a_mode_valid: is_mode_valid (a_mode)
 			a_unit_attached: a_unit /= Void
 		do
-			create expression_generator.make
 			create change_actions_internal
 			create change_actions
 			set_metric_tool (a_tool)
@@ -123,21 +121,19 @@ feature {NONE} -- Initialization
 			expression_lbl.set_text (metric_names.t_expression)
 			create l_text
 			expression_text.set_background_color (l_text.background_color)
-			combination_grid.add_key_action (agent on_move (True), move_up_key_index)
-			combination_grid.add_key_action (agent on_move (False), move_down_key_index)
-			combination_grid.add_key_action (agent on_remove_criterion, del_key_index)
-			combination_grid.add_key_action (agent on_indent (True), and_criterion_key_index)
-			combination_grid.add_key_action (agent on_indent (False), or_criterion_key_index)
+
+				-- Register key shortcuts.
 			create del_key_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_delete), False, False, False)
 			create move_row_up_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_numpad_subtract), True, False, False)
 			create move_row_down_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_numpad_add), True, False, False)
 			create and_indent_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_numpad_6), True, False, False)
 			create or_indent_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_numpad_3), True, False, False)
-			combination_grid.add_key_shortcut (del_key_index, del_key_shortcut)
-			combination_grid.add_key_shortcut (move_up_key_index, move_row_up_shortcut)
-			combination_grid.add_key_shortcut (move_down_key_index, move_row_down_shortcut)
-			combination_grid.add_key_shortcut (and_criterion_key_index, and_indent_shortcut)
-			combination_grid.add_key_shortcut (or_criterion_key_index, or_indent_shortcut)
+			combination_grid.register_shortcut (move_row_up_shortcut, agent on_move (True))
+			combination_grid.register_shortcut (move_row_down_shortcut, agent on_move (False))
+			combination_grid.register_shortcut (del_key_shortcut, agent on_remove_criterion)
+			combination_grid.register_shortcut (and_indent_shortcut, agent on_indent (True))
+			combination_grid.register_shortcut (or_indent_shortcut, agent on_indent (False))
+
 			up_btn.set_tooltip (metric_names.f_move_row_up.as_string_32 + " (" + move_row_up_shortcut.out + ")")
 			down_btn.set_tooltip (metric_names.f_move_row_down.as_string_32 + " (" + move_row_down_shortcut.out + ")")
 			remove_criterion_btn.set_tooltip (metric_names.f_del_row.as_string_32 + " (" + del_key_shortcut.out + ")")
@@ -158,6 +154,24 @@ feature {NONE} -- Initialization
 			expression_lbl_empty_area.drop_actions.extend (agent metric_panel.drop_class)
 			expression_lbl_empty_area.drop_actions.extend (agent metric_panel.drop_feature)
 
+			add_current_target_item_btn.set_pixmap (pixmaps.icon_pixmaps.metric_domain_application_icon)
+			add_current_target_item_btn.set_tooltip (metric_names.f_application_scope)
+			add_current_target_item_btn.select_actions.extend (agent on_add_domain_item (agent new_current_application_target_domain_item))
+
+			add_input_domain_item_btn.set_pixmap (pixmaps.icon_pixmaps.metric_domain_delayed_icon)
+			add_input_domain_item_btn.set_tooltip (metric_names.f_delayed_scope)
+			add_input_domain_item_btn.select_actions.extend (agent on_add_domain_item (agent new_input_domain_item))
+
+			add_delayed_domain_item_btn.set_pixmap (pixmaps.icon_pixmaps.metric_domain_delayed_icon)
+			add_delayed_domain_item_btn.set_tooltip (metric_names.f_use_delayed_scope)
+			add_delayed_domain_item_btn.select_actions.extend (agent on_add_domain_item (agent new_delayed_domain_item))
+
+			clear_domain_btn.set_pixmap (pixmaps.icon_pixmaps.general_remove_icon)
+			clear_domain_btn.set_tooltip (metric_names.f_clear_defined_domain)
+			clear_domain_btn.select_actions.extend (agent on_clear_defined_domain)
+
+			combination_grid.item_select_actions.extend (agent on_grid_item_selected)
+			quick_domain_item_tool_bar.disable_sensitive
 		ensure then
 			del_key_shortcut_attached: del_key_shortcut /= Void
 			ctrl_up_shortcut_attached: move_row_up_shortcut /= Void
@@ -236,19 +250,6 @@ feature -- Setting
 			resize_criterion_grid_column (2, 0)
 			combination_grid.disable_sensitive
 			combination_toolbar_area.disable_sensitive
-		end
-
-	set_stone (a_stone: STONE) is
-			-- Notify that `a_stone' is dropped on Current.
-		local
-			l_selected_items: LIST [EV_GRID_ITEM]
-		do
-			if mode /= readonly_mode then
-				l_selected_items := combination_grid.selected_items
-				if not l_selected_items.is_empty then
-					combination_grid.on_item_drop (l_selected_items.first, a_stone)
-				end
-			end
 		end
 
 feature -- Access
@@ -356,11 +357,52 @@ feature{NONE} -- Actions
 			l_criterion: EB_METRIC_CRITERION
 		do
 			l_criterion := combination_grid.criterion
-			expression_generator.set_criterion (l_criterion)
-			expression_generator.generate_expression
-			expression_generator.load_expression (expression_text)
+			rich_text_output.wipe_out
+			if l_criterion /= Void then
+				expression_generator.generate_output (l_criterion)
+			end
+			rich_text_output.load_expression (expression_text)
 			change_actions_internal.call ([l_criterion])
 			on_definition_change
+		end
+
+	on_grid_item_selected (a_item: EV_GRID_ITEM) is
+			-- Agent to be performed when `a_item' in `combination_grid' is selected
+		do
+			current_selected_grid_domain_item ?= a_item
+			if current_selected_grid_domain_item /= Void then
+				quick_domain_item_tool_bar.enable_sensitive
+			else
+				quick_domain_item_tool_bar.disable_sensitive
+			end
+		end
+
+	on_add_domain_item (a_domain_item_retrieval_agent: FUNCTION [ANY, TUPLE, EB_METRIC_DOMAIN_ITEM]) is
+			-- Action to be performed to add domain item retrieved from `a_domain_item_retrieval_agent'
+			-- into current selected domain grid item
+		require
+			a_domain_item_retrieval_agent_attached: a_domain_item_retrieval_agent /= Void
+		local
+			l_domain: EB_METRIC_DOMAIN
+		do
+			if current_selected_grid_domain_item /= Void and then current_selected_grid_domain_item.is_parented then
+				create l_domain.make
+				l_domain.extend (a_domain_item_retrieval_agent.item ([]))
+				current_selected_grid_domain_item.set_domain (l_domain)
+				on_change
+			end
+		end
+
+	on_clear_defined_domain is
+			-- Action to be performed to clear currently defined domain in `current_selected_grid_domain_item'.
+		local
+			l_domain: EB_METRIC_DOMAIN
+		do
+			if current_selected_grid_domain_item /= Void and then current_selected_grid_domain_item.is_parented then
+				create l_domain.make
+				current_selected_grid_domain_item.set_domain (l_domain)
+				on_change
+			end
 		end
 
 feature{NONE} -- Implementation/Access
@@ -368,25 +410,10 @@ feature{NONE} -- Implementation/Access
 	combination_grid: EB_METRIC_CRITERION_GRID
 			-- Criterion combination grid
 
-	expression_generator: EB_METRIC_CRITERION_EXPRESSION_GENERATOR
-			-- Criterion expression generator
+	current_selected_grid_domain_item: EB_METRIC_GRID_DOMAIN_ITEM [ANY]
+			-- Current selected grid domain item
 
 feature -- Key shortcuts
-
-	del_key_index: INTEGER is 1
-			-- Key index to delete a criterion
-
-	move_up_key_index: INTEGER is 2
-			-- Key index for move a criterion up
-
-	move_down_key_index: INTEGER is 3
-			-- Key index for move a criterion down
-
-	and_criterion_key_index: INTEGER is 4
-			-- Key index for and criterion
-
-	or_criterion_key_index: INTEGER is 5
-			-- Key index for or criterion
 
 	del_key_shortcut: ES_KEY_SHORTCUT
 			-- Del key

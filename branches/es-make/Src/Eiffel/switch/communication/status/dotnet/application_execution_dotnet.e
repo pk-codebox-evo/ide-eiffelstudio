@@ -17,7 +17,7 @@ inherit
 			recycle,
 			make_with_debugger,
 			is_classic_system,
-			is_dotnet
+			is_dotnet_system
 		end
 
 	SHARED_EIFNET_DEBUGGER
@@ -65,7 +65,7 @@ create {DEBUGGER_MANAGER}
 
 feature
 	is_classic_system: BOOLEAN is False
-	is_dotnet: BOOLEAN is True
+	is_dotnet_system: BOOLEAN is True
 
 feature {APPLICATION_EXECUTION} -- Initialization
 
@@ -248,7 +248,6 @@ feature -- Bridge to Debugger
 		do
 			Result := status.exception_occurred
 		end
-
 
 feature -- Execution
 
@@ -1044,8 +1043,6 @@ feature {NONE} -- Events on notification
 			-- In case of conditional breakpoint, do we really stop on it ?
 		local
 			l_bp: BREAKPOINT
-			expr: EB_EXPRESSION
-			evaluator: DBG_EXPRESSION_EVALUATOR
 		do
 			if Eifnet_debugger.last_control_mode_is_stepping then
 				debug ("debugger_trace")
@@ -1054,25 +1051,7 @@ feature {NONE} -- Events on notification
 				Result := True
 			else
 				l_bp := Eifnet_debugger.current_breakpoint
-				if l_bp /= Void and then l_bp.has_condition then
-					debug ("debugger_trace")
-						print ("CONDITIONAL BP %N")
-					end
-					expr := l_bp.condition
-					if expr /= Void then
-						expr.evaluate
-						evaluator := expr.expression_evaluator
-						if evaluator.error_occurred then
-							Result := True
-						else
-							Result := evaluator.final_result_is_true_boolean_value
-						end
-					else
-						Result := True
-					end
-				else
-					Result := True
-				end
+				Result := debugger_manager.process_breakpoint (l_bp)
 			end
 		end
 
@@ -1104,8 +1083,8 @@ feature -- update processing
 			-- but in the studio graphical loop
 		do
 				--FIXME jfiat: may be we should move this EV_... to another class
-			ev_application.remove_idle_action (agent_update_notify_on_after_stopped)
-			ev_application.add_idle_action (agent_update_notify_on_after_stopped)
+			debugger_manager.remove_idle_action (agent_update_notify_on_after_stopped)
+			debugger_manager.add_idle_action (agent_update_notify_on_after_stopped)
 		end
 
 	real_update_notify_on_after_stopped is
@@ -1118,7 +1097,7 @@ feature -- update processing
 				debug ("debugger_trace")
 					io.error.put_string (generator + ".real_update_notify_on_after_stopped %N")
 				end
-				ev_application.remove_idle_action (agent_update_notify_on_after_stopped)
+				debugger_manager.remove_idle_action (agent_update_notify_on_after_stopped)
 				if not callback_notification_processing then
 					debug ("debugger_trace")
 						io.error.put_string (generator + ".real_update_notify_on_after_stopped : call real notification%N")
@@ -1128,7 +1107,7 @@ feature -- update processing
 					debug ("debugger_trace")
 						io.error.put_string (generator + ".real_update_notify_on_after_stopped : postpone real notification%N")
 					end
-					ev_application.add_idle_action (agent_update_notify_on_after_stopped)
+					debugger_manager.add_idle_action (agent_update_notify_on_after_stopped)
 				end
 			else
 				debug ("debugger_trace")

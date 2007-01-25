@@ -36,7 +36,7 @@ feature -- metric creation
 			result_attached: Result /= Void
 		end
 
-	new_ratio_metric (a_name: STRING; a_unit: QL_METRIC_UNIT; a_uuid: UUID; a_num_name: STRING; a_num_uuid: UUID; a_den_name: STRING; a_den_uuid: UUID): EB_METRIC_RATIO is
+	new_ratio_metric (a_name: STRING; a_unit: QL_METRIC_UNIT; a_uuid: UUID; a_num_name: STRING; a_num_uuid: UUID; a_den_name: STRING; a_den_uuid: UUID; a_num_coefficient: DOUBLE; a_den_coefficient: DOUBLE): EB_METRIC_RATIO is
 			-- New ratio metric
 		require
 			a_name_attached: a_name /= Void
@@ -91,8 +91,18 @@ feature -- Criterion creation
 			result_attached: Result /= Void
 		end
 
-	new_caller_criterion (a_name: STRING; a_scope: QL_SCOPE): EB_METRIC_CALLER_CALLEE_CRITERION is
+	new_caller_callee_criterion (a_name: STRING; a_scope: QL_SCOPE): EB_METRIC_CALLER_CALLEE_CRITERION is
 			-- New caller/callee criterion
+		require
+			a_name_attached: a_name /= Void
+			a_scope_attached: a_scope /= Void
+		deferred
+		ensure
+			result_attached: Result /= Void
+		end
+
+	new_supplier_client_criterion (a_name: STRING; a_scope: QL_SCOPE): EB_METRIC_SUPPLIER_CLIENT_CRITERION is
+			-- New supplier/client criterion
 		require
 			a_name_attached: a_name /= Void
 			a_scope_attached: a_scope /= Void
@@ -112,6 +122,16 @@ feature -- Criterion creation
 		end
 
 	new_or_criterion (a_name: STRING; a_scope: QL_SCOPE): EB_METRIC_OR_CRITERION is
+			-- New or criterion
+		require
+			a_name_attached: a_name /= Void
+			a_scope_attached: a_scope /= Void
+		deferred
+		ensure
+			result_attached: Result /= Void
+		end
+
+	new_value_criterion (a_name: STRING; a_scope: QL_SCOPE): EB_METRIC_VALUE_CRITERION is
 			-- New or criterion
 		require
 			a_name_attached: a_name /= Void
@@ -169,7 +189,7 @@ feature -- Domain item creation
 
 feature -- Archive node creation
 
-	new_metric_arichive_node (a_metric_name: STRING; a_metric_type: INTEGER; a_time: DATE_TIME; a_value: DOUBLE; a_input: EB_METRIC_DOMAIN; a_uuid: STRING): EB_METRIC_ARCHIVE_NODE is
+	new_metric_arichive_node (a_metric_name: STRING; a_metric_type: INTEGER; a_time: DATE_TIME; a_value: DOUBLE; a_input: EB_METRIC_DOMAIN; a_uuid: STRING; a_filtered: BOOLEAN): EB_METRIC_ARCHIVE_NODE is
 			-- New metric archive node and initialize `metric_name' with `a_metric_name', `metric_type' with `a_metric_type', `calculated_time' with `a_time',
 			-- `value' with `a_value', `input_domain' with `a_input and `uuid' with `a_uuid'.
 		require

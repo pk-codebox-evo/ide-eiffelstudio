@@ -62,7 +62,9 @@ feature -- Status report
 	selected_type: INTEGER
 			-- Currently selected type of new links
 
-	inheritance, supplier, aggregate: INTEGER is unique
+	inheritance: INTEGER is 1
+	supplier: INTEGER is 2
+	aggregate: INTEGER is 3
 			-- Possible values for `selected_type'.
 
 feature -- Status setting
@@ -114,6 +116,12 @@ feature {NONE} -- Implementation
 			else
 				Result := pixmaps.icon_pixmaps.new_aggregate_supplier_link_icon
 			end
+		end
+
+	pixel_buffer: EV_PIXEL_BUFFER is
+			-- Pixel buffer representing the command.
+		do
+			-- Currently there is no pixel buffer for this command.
 		end
 
 	tooltip: STRING_GENERAL is
@@ -169,7 +177,7 @@ feature {NONE} -- Implementation
 			menu.show_at (current_button.parent, current_button.parent.pointer_position.x, current_button.parent.height)
 		end
 
-feature {EB_CONTEXT_EDITOR} -- Implementation
+feature {EB_DIAGRAM_TOOL} -- Implementation
 
 	current_button: EB_COMMAND_TOOL_BAR_BUTTON;
 			-- Current toggle button.

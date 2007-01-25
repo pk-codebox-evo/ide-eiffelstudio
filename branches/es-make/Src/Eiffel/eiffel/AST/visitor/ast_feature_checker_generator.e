@@ -136,6 +136,8 @@ feature -- Type checking
 			-- Type check `a_feature'.
 		require
 			a_feature_not_void: a_feature /= Void
+		local
+			rout_as: ROUTINE_AS
 		do
 			type_a_checker.init_for_checking (a_feature, context.current_class, context.supplier_ids, error_handler)
 			a_feature.record_suppliers (context.supplier_ids)
@@ -148,6 +150,13 @@ feature -- Type checking
 			a_feature.body.process (Current)
 			is_byte_node_enabled := False
 			process_inherited_assertions (a_feature, False)
+
+			if a_feature.real_body /= Void then
+				rout_as ?= a_feature.real_body.content
+				if rout_as /= Void then
+					rout_as.set_number_of_breakpoint_slots (break_point_slot_count)
+				end
+			end
 		end
 
 
@@ -2133,7 +2142,7 @@ feature -- Implementation
 				-- the current class type (e.g. like Current).
 			l_feature_i.instantiate (context.current_class_type)
 
-			create l_precursor_id.initialize_from_id (precursor_id)
+			create l_precursor_id.initialize_from_id (precursor_name_id)
 			l_precursor_id.set_position (l_as.precursor_keyword.line, l_as.precursor_keyword.column,
 				l_as.precursor_keyword.position, l_as.precursor_keyword.location_count)
 			process_call (context.current_class_type, l_parent_type, l_precursor_id, l_feature_i,
@@ -2294,8 +2303,6 @@ feature -- Implementation
 				l_byte_code.set_once_manifest_string_count (l_as.once_manifest_string_count)
 				last_byte_node := l_byte_code
 			end
-
-			l_as.set_number_of_breakpoint_slots (break_point_slot_count)
 		end
 
 	process_constant_as (l_as: CONSTANT_AS) is
@@ -3559,14 +3566,32 @@ feature -- Implementation
 				l_byte_code.set_start_line_number (l_as.start_location.line)
 				l_byte_code.set_has_loop (has_loop)
 			end
-			l_custom_attributes := l_as.custom_attributes
 				-- For the moment, there is no point in checking custom attributes in non-dotnet mode.
 				-- This fixes eweasel test#incr207.
-			if l_custom_attributes /= Void and system.il_generation then
-				l_custom_attributes.process (Current)
-				if is_byte_node_enabled then
-					l_list ?= last_byte_node
-					l_byte_code.set_custom_attributes (l_list)
+			if system.il_generation then
+				l_custom_attributes := l_as.custom_attributes
+				if l_custom_attributes /= Void then
+					l_custom_attributes.process (Current)
+					if is_byte_node_enabled then
+						l_list ?= last_byte_node
+						l_byte_code.set_custom_attributes (l_list)
+					end
+				end
+				l_custom_attributes := l_as.class_custom_attributes
+				if l_custom_attributes /= Void then
+					l_custom_attributes.process (Current)
+					if is_byte_node_enabled then
+						l_list ?= last_byte_node
+						l_byte_code.set_class_custom_attributes (l_list)
+					end
+				end
+				l_custom_attributes := l_as.interface_custom_attributes
+				if l_custom_attributes /= Void then
+					l_custom_attributes.process (Current)
+					if is_byte_node_enabled then
+						l_list ?= last_byte_node
+						l_byte_code.set_interface_custom_attributes (l_list)
+					end
 				end
 			end
 			l_property_name := l_as.property_name

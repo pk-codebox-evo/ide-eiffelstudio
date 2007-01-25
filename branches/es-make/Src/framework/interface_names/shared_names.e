@@ -1,5 +1,5 @@
 indexing
-	description: "Temprary class for interface names used in framework."
+	description: "Temporary class for interface names used in framework."
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
 	author: ""
@@ -40,6 +40,12 @@ feature -- Names
 
 	locale_names: LOCALE_NAMES
 			-- Names for locales.
+		once
+			create Result
+		end
+
+	ewb_names: EWB_NAMES
+			-- Names used in tty.
 		once
 			create Result
 		end

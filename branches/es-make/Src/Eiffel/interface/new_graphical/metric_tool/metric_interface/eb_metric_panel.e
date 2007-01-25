@@ -217,11 +217,15 @@ feature -- Actions
 
 	on_process_gui (a_item: QL_ITEM) is
 			-- Action to be performed to process gui events
+		local
+			l_message: STRING_GENERAL
 		do
 			ev_application.process_events
 			if not metric_manager.is_exit_requested then
 				if a_item /= Void then
-					display_status_message (metric_names.e_evaluating.as_string_32 + a_item.path)
+					l_message := metric_names.e_evaluating.twin
+					l_message.append (a_item.path.as_string_32)
+					display_status_message (l_message)
 				end
 			else
 				metric_manager.terminate_evaluation
@@ -250,8 +254,8 @@ feature -- Pick and drop
 		do
 			conv_fst ?= st
 			if conv_fst = Void then
-				metric_tool.context_tool.launch_stone (st)
-				metric_tool.context_tool.class_view.pop_default_formatter
+				metric_tool.develop_window.tools.launch_stone (st)
+				metric_tool.develop_window.tools.class_tool.pop_default_formatter
 			else
 				-- The stone is already dropped through `drop_feature'.
 			end
@@ -262,8 +266,8 @@ feature -- Pick and drop
 		require
 			st_valid: st /= Void
 		do
-			metric_tool.context_tool.launch_stone (st)
-			metric_tool.context_tool.feature_view.pop_default_formatter
+			metric_tool.develop_window.tools.launch_stone (st)
+			metric_tool.develop_window.tools.features_relation_tool.pop_default_formatter
 		end
 
 	drop_cluster (st: CLUSTER_STONE) is
@@ -271,19 +275,18 @@ feature -- Pick and drop
 		require
 			st_valid: st /= Void
 		do
-			metric_tool.context_tool.launch_stone (st)
+			metric_tool.develop_window.tools.launch_stone (st)
 		end
-
 
 feature{NONE} -- Implementation
 
-	display_status_message (a_msg: STRING) is
+	display_status_message (a_msg: STRING_GENERAL) is
 			-- Display `a_msg' in message bar.
 		require
 			a_msg_attached: a_msg /= Void
 		do
-			if metric_tool /= Void and then metric_tool.development_window /= Void and then metric_tool.development_window.status_bar /= Void then
-				metric_tool.development_window.status_bar.display_message (a_msg)
+			if metric_tool /= Void and then metric_tool.develop_window /= Void and then metric_tool.develop_window.status_bar /= Void then
+				metric_tool.develop_window.status_bar.display_message (a_msg)
 			end
 		end
 

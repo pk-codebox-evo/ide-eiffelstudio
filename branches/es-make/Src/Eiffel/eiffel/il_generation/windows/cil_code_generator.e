@@ -118,6 +118,16 @@ feature -- Status report
 	is_debug_info_enabled: BOOLEAN
 			-- Are we generating debug information?
 
+	is_implementation_generated: BOOLEAN
+			-- Is implementation of a class type being generated rather than interface?
+		require
+			not_current_class_type_is_single: not current_class_type.is_generated_as_single_type
+		do
+			Result := current_class_type.implementation_id = current_type_id
+		ensure
+			definition: Result = (current_class_type.implementation_id = current_type_id)
+		end
+
 feature {IL_MODULE} -- Access
 
 	is_single_inheritance_implementation: BOOLEAN is
@@ -2139,8 +2149,11 @@ feature -- Features info
 						end
 						if l_feat.has_property and then l_is_single_class and then not is_override then
 								-- Use a field name different from the property name.
-							l_name := "$$" + il_casing.camel_casing (l_naming_convention, l_feat.feature_name)
+							if l_is_attribute_generated_as_field then
+								l_name := "$$" + il_casing.camel_casing (l_naming_convention, l_feat.feature_name)
+							end
 						end
+						check l_name_attached: l_name /= Void end
 					end
 				end
 			end
@@ -3587,6 +3600,11 @@ feature -- IL Generation
 	 				end
 	 			end
 			end
+			if Result and then class_type.is_external then
+					-- Ensure the feature is declared in `class_type'
+					-- to avoid generating a MethodImpl twice.
+				Result := inh_feat.written_in = class_type.associated_class.class_id
+			end
 			if not Result then
 					-- When we handle an attribute defined in an inherited Eiffel class in a class now
 					-- generated as `is_single_class' we have to generate a MethodImpl, because
@@ -4991,9 +5009,9 @@ feature -- Conversion
 			when {MD_SIGNATURE_CONSTANTS}.Element_type_i4 then convert_to_integer_32
 			when {MD_SIGNATURE_CONSTANTS}.Element_type_i8 then convert_to_integer_64
 			else
-				check
-					False
-				end
+				--check
+				--	False
+				--end
 			end
 		end
 

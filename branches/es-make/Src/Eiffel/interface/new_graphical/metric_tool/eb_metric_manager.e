@@ -21,17 +21,13 @@ inherit
 			{NONE} all
 		end
 
-	EB_SHARED_METRIC_NAMES
-
-	EB_CLUSTER_MANAGER_OBSERVER
-		redefine
-			on_project_loaded,
-			on_project_unloaded
-		end
+	SHARED_NAMES
 
 	EB_METRIC_ACTION_SEQUENCES
 
 	EB_METRIC_FILE_LOADER
+
+	SHARED_FLAGS
 
 create
 	make
@@ -42,8 +38,7 @@ feature{NONE} -- Initialization
 			-- Initialize.
 		do
 			create {LINKED_LIST [EB_METRIC]} metrics.make
-			create metrics_vadility.make (100)
-			manager.add_observer (Current)
+			create metrics_validity.make (100)
 		end
 
 feature -- Setting
@@ -64,13 +59,16 @@ feature -- Validation
 		local
 			l_cursor: CURSOR
 		do
+			if a_force then
+				metrics_validity.wipe_out
+			end
 			l_cursor := metrics.cursor
 			from
 				metrics.start
 			until
 				metrics.after
 			loop
-				if a_force or not is_metric_vadility_checked (metrics.item.name) then
+				if not is_metric_validity_checked (metrics.item.name) then
 					check_validation_for_metric (metrics.item.name)
 				end
 				metrics.forth
@@ -85,11 +83,35 @@ feature -- Validation
 			a_name_attached: a_name /= Void
 			metric_exists: has_metric (a_name)
 		local
-			l_validator: EB_METRIC_VADILITY_VISITOR
+			l_validator: EB_METRIC_VALIDITY_VISITOR
+			l_error_table: HASH_TABLE [EB_METRIC_ERROR, STRING]
+			l_validity_table: like metrics_validity
 		do
 			create l_validator.make (Current)
-			l_validator.process_metric (metric_with_name (a_name))
-			metrics_vadility.force (l_validator.last_error, a_name)
+			l_validator.check_metric_validity (metric_with_name_internal (a_name), False)
+			l_error_table := l_validator.error_table
+			l_validity_table := metrics_validity
+			from
+				l_error_table.start
+			until
+				l_error_table.after
+			loop
+				set_metric_validity (l_error_table.key_for_iteration, l_error_table.item_for_iteration)
+				l_error_table.forth
+			end
+		end
+
+feature{EB_METRIC_VALIDITY_VISITOR} -- Validity setting
+
+	set_metric_validity (a_metric_name: STRING; a_validity: EB_METRIC_ERROR) is
+			-- Set validity of metric named `a_metric_name' with `a_validity'.
+		require
+			a_metric_name_attached: a_metric_name /= Void
+			metric_exists: has_metric (a_metric_name)
+		do
+			metrics_validity.force (a_validity, a_metric_name)
+		ensure
+			metrc_validity_set: metric_validity (a_metric_name) = a_validity
 		end
 
 feature -- Status report
@@ -127,10 +149,18 @@ feature -- Status report
 			a_name_attached: a_name /= Void
 			metric_exists: has_metric (a_name)
 		do
-			if not is_metric_vadility_checked (a_name) then
+			if not is_metric_validity_checked (a_name) then
 				check_validation_for_metric (a_name)
 			end
-			Result := metric_vadility (a_name) = Void
+			Result := metric_validity (a_name) = Void
+		end
+
+	is_metric_calculatable (a_name: STRING): BOOLEAN is
+			-- Is metric named `a_name' calculatable (i.e., metric exists and is valid)?
+		require
+			a_name_attached: a_name /= Void
+		do
+			Result := has_metric (a_name) and then is_metric_valid (a_name)
 		end
 
 	is_valid_order (a_order: INTEGER): BOOLEAN is
@@ -152,17 +182,17 @@ feature -- Status report
 			Result := l_file.exists
 		end
 
-	is_last_predefined_metric_load_successful: BOOLEAN is
-			-- Is last predefined metric loading successful?
-		do
-			Result := last_predefined_metric_load_error = Void
-		end
+--	is_last_predefined_metric_load_successful: BOOLEAN is
+--			-- Is last predefined metric loading successful?
+--		do
+--			Result := last_predefined_metric_load_error = Void
+--		end
 
-	is_last_userdefined_metric_load_successful: BOOLEAN is
-			-- Is last userdefined metric loading successful?
-		do
-			Result := last_userdefined_metric_load_error = Void
-		end
+--	is_last_userdefined_metric_load_successful: BOOLEAN is
+--			-- Is last userdefined metric loading successful?
+--		do
+--			Result := last_userdefined_metric_load_error = Void
+--		end
 
 	is_metric_name_equal (a_metric_name, b_metric_name: STRING): BOOLEAN is
 			-- Are `a_metric_name' and `b_metric_name' equal?
@@ -208,8 +238,14 @@ feature -- Status report
 	has_archive_been_loaded: BOOLEAN
 			-- Has archive history been loaded from `archive_history_file' into `archvie_history'?
 
-	is_exit_requested: BOOLEAN
-			-- Is exiting EiffelStudio requrested?
+	is_metric_validity_checked (a_name: STRING): BOOLEAN is
+			-- Is validity of metric named `a_name' checked?
+		require
+			a_name_attached: a_name /= Void
+			metric_exists: has_metric (a_name)
+		do
+			Result := metrics_validity.has (a_name)
+		end
 
 feature -- Access
 
@@ -261,30 +297,6 @@ feature -- Access
 	metrics: LIST [EB_METRIC]
 			-- List of registered metrics
 
-	metrics_with_unit (a_unit: QL_METRIC_UNIT): LIST [EB_METRIC] is
-			-- List of registered metrics whose unit is `a_unit'
-		local
-			l_metrics: like metrics
-			l_cursor: CURSOR
-		do
-			l_metrics := metrics.twin
-			l_cursor := l_metrics.cursor
-			from
-				l_metrics.start
-			until
-				l_metrics.after
-			loop
-				if l_metrics.item.unit /= a_unit then
-					l_metrics.remove
-				else
-					l_metrics.forth
-				end
-			end
-			l_metrics.go_to (l_cursor)
-		ensure
-			result_attached: Result /= Void
-		end
-
 	metric_with_name (a_name: STRING): EB_METRIC is
 			-- Metric whose name is `a_name'
 			-- Void if no metric whose name is `a_name' in `metrics'.
@@ -308,6 +320,21 @@ feature -- Access
 				end
 			end
 			l_metrics.go_to (l_cursor)
+		end
+
+	new_metric_with_name (a_name: STRING): EB_METRIC is
+			-- New instance of the metric whose name is `a_name'
+		require
+			a_name_attached: a_name /= Void
+			metric_exists: has_metric (a_name)
+		local
+			l_factory: EB_LOAD_METRIC_DEFINITION_FACTORY
+			l_callback: EB_METRIC_LOAD_DEFINITION_CALLBACKS
+		do
+			create l_factory
+			create l_callback.make_with_factory (l_factory)
+			l_callback.set_is_for_whole_file (False)
+			Result := metric_with_name_internal (a_name).new_instance (l_callback)
 		end
 
 	ordered_metrics (a_order: INTEGER; a_flat: BOOLEAN): HASH_TABLE [LIST [EB_METRIC], QL_METRIC_UNIT] is
@@ -381,16 +408,16 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
-	metric_vadility (a_name: STRING): EB_METRIC_ERROR is
-			-- Vadility status of metric named `a_name'
+	metric_validity (a_name: STRING): EB_METRIC_ERROR is
+			-- Validity status of metric named `a_name'
 		require
 			a_name_attached: a_name /= Void
 			metric_exists: has_metric (a_name)
 		do
-			if not is_metric_vadility_checked (a_name) then
+			if not is_metric_validity_checked (a_name) then
 				check_validation_for_metric (a_name)
 			end
-			Result := metrics_vadility.item (a_name)
+			Result := metrics_validity.item (a_name)
 		end
 
 	units: LIST [QL_METRIC_UNIT] is
@@ -434,13 +461,13 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
-	last_predefined_metric_load_error: EB_METRIC_ERROR
-			-- Error information when load predefined metric definition the last time
-			-- Void if no error occurred.
+--	last_predefined_metric_load_error: EB_METRIC_ERROR
+--			-- Error information when load predefined metric definition the last time
+--			-- Void if no error occurred.
 
-	last_userdefined_metric_load_error: EB_METRIC_ERROR
-			-- Error information when load userdefined metric definition the last time
-			-- Void if no error occurred.			
+--	last_userdefined_metric_load_error: EB_METRIC_ERROR
+--			-- Error information when load userdefined metric definition the last time
+--			-- Void if no error occurred.			
 
 	metrics_from_file (a_file_name: STRING): LIST [EB_METRIC] is
 			-- Metrics defined in file named `a_file_name'
@@ -479,62 +506,39 @@ feature -- Metric management
 	load_metrics is
 			-- Load predefined and user-defined metrics.
 		local
-			l_file: RAW_FILE
-			l_error: like last_error
 			l_final_error: STRING_GENERAL
+			l_err_loading_predefined: EB_METRIC_ERROR
+			l_err_loading_userdefined: EB_METRIC_ERROR
 		do
 			if workbench.system_defined and then workbench.is_already_compiled then
 				clear_last_error
 				metrics.wipe_out
-				metrics_vadility.wipe_out
+				metrics_validity.wipe_out
 					-- Load predefined metrics.
-				create l_file.make (eiffel_layout.predefined_metrics_file)
-				if not l_file.exists then
-					create l_error.make (metric_names.err_file_not_readable (eiffel_layout.predefined_metrics_file))
-				else
-					load_metric_definitions (eiffel_layout.predefined_metrics_file, True)
-					if last_error /= Void then
-						l_error := last_error
-					end
-				end
-				if last_error /= Void then
-					last_predefined_metric_load_error := last_error
-				else
-					last_predefined_metric_load_error := Void
-				end
+				load_metric_definitions (eiffel_layout.predefined_metrics_file, True)
+				l_err_loading_predefined := last_error
 
 					-- Load user-defined metrics.
-				create l_file.make (userdefined_metrics_file)
-				if l_file.exists then
-					if l_file.is_readable  then
-						load_metric_definitions (userdefined_metrics_file, False)
+				clear_last_error
+				load_metric_definitions (userdefined_metrics_file, False)
+				l_err_loading_userdefined := last_error
+
+					-- Setup final error message.
+				if l_err_loading_predefined /= Void then
+					l_final_error :=  metric_names.err_loading_predefined_metrics (l_err_loading_predefined.message_with_location.twin).twin
+				end
+				if l_err_loading_userdefined /= Void then
+					if l_final_error /= Void then
+						l_final_error.append ("%N")
+						l_final_error.append (metric_names.err_loading_userdefined_metrics (l_err_loading_userdefined.message_with_location.twin))
 					else
-						create l_error.make (metric_names.err_file_not_readable (userdefined_metrics_file))
+						l_final_error := metric_names.err_loading_userdefined_metrics (l_err_loading_userdefined.message_with_location.twin)
 					end
-				else
-					last_userdefined_metric_load_error := Void
 				end
-				if not has_error and then l_error /= Void then
-					last_error := l_error
-				end
-				if last_error /= Void then
-					last_userdefined_metric_load_error := last_error
-				else
-					last_userdefined_metric_load_error := Void
-				end
-				if not is_last_predefined_metric_load_successful or not is_last_userdefined_metric_load_successful then
-					if not is_last_predefined_metric_load_successful then
-						l_final_error := metric_names.err_loading_predefined_metrics (last_predefined_metric_load_error.message_with_location)
-					end
-					if not is_last_userdefined_metric_load_successful then
-						if l_final_error = Void then
-							l_final_error := metric_names.err_loading_userdefined_metrics (last_userdefined_metric_load_error.message_with_location)
-						else
-							l_final_error.append (metric_names.err_loading_userdefined_metrics (last_userdefined_metric_load_error.message_with_location))
-						end
-					end
+				if l_final_error /= Void then
 					create last_error.make (l_final_error)
 				end
+
 				is_metric_loaded := True
 				metric_loaded_actions.call ([])
 			end
@@ -549,17 +553,25 @@ feature -- Metric management
 			not_a_file_name_is_empty: not a_file_name.is_empty
 		local
 			l_loaded_metrics: like metrics
+			l_file: RAW_FILE
 		do
-			l_loaded_metrics := metrics_from_file (a_file_name)
-			if not has_error then
-					-- Check metric name crash.
-					-- If some metric in `loaded_metrics' has the same name as a metric in `metrics',
-					-- no metric will be registered in `metrics'. All metrics in `l_loaded_metrics' will be ignored.
-				check_name_crash (l_loaded_metrics)
+			create l_file.make (a_file_name)
+			if l_file.exists then
+				if l_file.is_readable then
+					l_loaded_metrics := metrics_from_file (a_file_name)
+					if not has_error then
+							-- Check metric name crash.
+							-- If some metric in `loaded_metrics' has the same name as a metric in `metrics',
+							-- no metric will be registered in `metrics'. All metrics in `l_loaded_metrics' will be ignored.
+						check_name_crash (l_loaded_metrics)
 
-					-- Registered metrics in `l_loaded_metrics' into `metrics'
-				if not has_error then
-					l_loaded_metrics.do_all (agent register_metric (?, a_predefined))
+							-- Registered metrics in `l_loaded_metrics' into `metrics'
+						if not has_error then
+							l_loaded_metrics.do_all (agent register_metric (?, a_predefined))
+						end
+					end
+				else
+					create last_error.make (metric_names.err_file_not_readable (a_file_name))
 				end
 			end
 		end
@@ -588,7 +600,7 @@ feature -- Metric management
 					if not metrics.item.is_predefined then
 						l_xml_generator.set_indent (1)
 						l_xml_generator.clear_text
-						l_xml_generator.process_metric (metrics.item)
+						l_xml_generator.append_text (metrics.item)
 						l_file.put_string (l_xml_generator.text)
 					end
 					metrics.forth
@@ -637,11 +649,13 @@ feature -- Metric management
 		require
 			a_name_attached: a_name /= Void
 			metric_exists:has_metric (a_name)
-			metric_not_predefined: not metric_with_name (a_name).is_predefined
 		local
 			l_metrics: like metrics
 			done: BOOLEAN
 		do
+			check
+				metric_not_predefined: not metric_with_name_internal (a_name).is_predefined
+			end
 			l_metrics := metrics
 			from
 				l_metrics.start
@@ -667,12 +681,14 @@ feature -- Metric management
 			a_name_attached: a_name /= Void
 			metric_exists:has_metric (a_name)
 			a_metric_attached: a_metric /= Void
-			metric_not_predefined: not metric_with_name (a_name).is_predefined
 			no_name_crash: not is_metric_name_equal (a_name, a_metric.name) implies not has_metric (a_metric.name)
 		local
 			l_renamer: EB_METRIC_RENAME_VISITOR
 			l_should_rename: BOOLEAN
 		do
+			check
+				metric_not_predefined: not metric_with_name_internal (a_name).is_predefined
+			end
 			remove_metric (a_name)
 				-- Metric name changes.			
 			l_should_rename := not is_metric_name_equal (a_name, a_metric.name)
@@ -742,15 +758,17 @@ feature -- Metric management
 			l_folder: DIRECTORY
 		do
 			if not l_retried then
-				create l_folder.make (userdefined_metrics_path)
-				if not l_folder.exists then
-					l_folder.create_dir
-				end
-				clear_last_error
-				archive_history.clear_last_error
-				archive_history.store_archive (archive_history_file)
-				if archive_history.has_error then
-					last_error := archive_history.last_error
+				if archive_history.count > 0 then
+					create l_folder.make (userdefined_metrics_path)
+					if not l_folder.exists then
+						l_folder.create_dir
+					end
+					clear_last_error
+					archive_history.clear_last_error
+					archive_history.store_archive (archive_history_file)
+					if archive_history.has_error then
+						last_error := archive_history.last_error
+					end
 				end
 			end
 		rescue
@@ -859,14 +877,6 @@ feature -- Setting
 			has_archive_been_loaded_set: has_archive_been_loaded = b
 		end
 
-	set_is_exit_requested (b: BOOLEAN) is
-			-- Set `is_exit_requested' with `b'.
-		do
-			is_exit_requested := b
-		ensure
-			is_exit_requested_set: is_exit_requested = b
-		end
-
 feature -- Actions
 
 	on_project_loaded is
@@ -961,19 +971,10 @@ feature{NONE} -- Implementation
 			metric_registered: has_metric (a_metric.name) and a_metric.manager = Current and (a_predefined implies a_metric.is_predefined)
 		end
 
-	is_metric_vadility_checked (a_name: STRING): BOOLEAN is
-			-- Is vadility of metric named `a_name' checked?
-		require
-			a_name_attached: a_name /= Void
-			metric_exists: has_metric (a_name)
-		do
-			Result := metrics_vadility.has (a_name)
-		end
-
 feature{NONE} -- Implementation
 
-	metrics_vadility: HASH_TABLE [EB_METRIC_ERROR, STRING]
-			-- Table of metric vadility.
+	metrics_validity: HASH_TABLE [EB_METRIC_ERROR, STRING]
+			-- Table of metric validity.
 			-- Key is name of metric, value is the error message.
 			-- Value is Void indicates that the metric is valid.
 
@@ -1073,9 +1074,34 @@ feature{NONE} -- Implementation
 			result_attached: Result /= Void
 		end
 
+	metric_with_name_internal (a_name: STRING): EB_METRIC is
+			-- Metric whose name is `a_name'
+			-- Void if no metric whose name is `a_name' in `metrics'.
+		require
+			a_name_attached: a_name /= Void
+		local
+			l_metrics: like metrics
+			l_cursor: CURSOR
+		do
+			l_metrics := metrics
+			l_cursor := l_metrics.cursor
+			from
+				l_metrics.start
+			until
+				l_metrics.after or Result /= Void
+			loop
+				if is_metric_name_equal (l_metrics.item.name, a_name) then
+					Result := l_metrics.item
+				else
+					l_metrics.forth
+				end
+			end
+			l_metrics.go_to (l_cursor)
+		end
+
 invariant
 	metrics_attached: metrics /= Void
-	metrics_vadility_attached: metrics_vadility /= Void
+	metrics_validity_attached: metrics_validity /= Void
 
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"

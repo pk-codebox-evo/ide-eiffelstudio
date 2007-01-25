@@ -98,7 +98,8 @@ inherit
 			on_sys_key_down,
 			on_sys_key_up,
 			on_notify,
-			default_process_message
+			default_process_message,
+			on_wm_dropfiles
 		redefine
 			has_focus,
 			default_ex_style,
@@ -1260,9 +1261,11 @@ feature {EV_ANY_I} -- Implementation
 
 	move_to_foreground is
 			-- Move `Current' to foreground.
+		local
+			l_result: BOOLEAN
 		do
 			override_movement := False
-			cwin_set_window_pos (wel_item, Hwnd_top, 0, 0, 0, 0,
+			l_result := {WEL_API}.set_window_pos (wel_item, Hwnd_top, 0, 0, 0, 0,
 				Swp_nosize + Swp_nomove)
 		end
 

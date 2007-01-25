@@ -19,7 +19,6 @@ inherit
 			default_create
 		redefine
 			metric,
-			expression_generator,
 			is_linear_metric_editor
 		end
 
@@ -58,7 +57,6 @@ feature {NONE} -- Initialization
 		do
 			set_metric_tool (a_tool)
 			set_metric_panel (a_panel)
-			create expression_generator.make
 			create change_actions
 			default_create
 			set_mode (a_mode)
@@ -94,12 +92,9 @@ feature {NONE} -- Initialization
 			metric_grid.key_press_string_actions.extend (agent on_key_string_pressed)
 			metric_grid.set_item_veto_pebble_function (agent item_veto_pebble_function)
 			metric_grid.item_drop_actions.extend (agent on_item_drop)
-			metric_grid.add_key_action (agent on_up, move_up_key_index)
-			metric_grid.add_key_action (agent on_down, move_down_key_index)
-			metric_grid.add_key_action (agent on_remove_metric, del_key_index)
-			metric_grid.add_key_shortcut (del_key_index, del_key_shortcut)
-			metric_grid.add_key_shortcut (move_up_key_index, move_up_shortcut)
-			metric_grid.add_key_shortcut (move_down_key_index, move_down_shortcut)
+			metric_grid.register_shortcut (move_up_shortcut, agent on_up)
+			metric_grid.register_shortcut (move_down_shortcut, agent on_down)
+			metric_grid.register_shortcut (del_key_shortcut, agent on_remove_metric)
 			grid_area.extend (metric_grid)
 
 			up_btn.remove_text
@@ -184,11 +179,6 @@ feature -- Setting
 			toolbar_area.disable_sensitive
 		end
 
-	set_stone (a_stone: STONE) is
-			-- Notify that `a_stone' is dropped on Current.
-		do
-		end
-
 feature -- Access
 
 	data_in_row (a_row: EV_GRID_ROW): TUPLE [criterion_name: STRING; coefficient: STRING; uuid: UUID] is
@@ -261,9 +251,6 @@ feature -- Access
 
 	metric_grid: ES_GRID
 			-- Grid to display current metric
-
-	expression_generator: EB_METRIC_LINEAR_EXPRESSION_GENERATOR
-			-- Expression generator
 
 feature{NONE} -- Implementation/Actions
 
@@ -448,9 +435,9 @@ feature{NONE} -- Implementation/Actions
 	on_change is
 			-- Action to be performed when definition of current linear metric changes
 		do
-			expression_generator.set_metric (metric)
-			expression_generator.generate_expression
-			expression_generator.load_expression (expression_text)
+			rich_text_output.wipe_out
+			expression_generator.generate_output (metric)
+			rich_text_output.load_expression (expression_text)
 			on_definition_change
 		end
 
@@ -653,7 +640,7 @@ feature{NONE} -- Implementation
 			l_manager: like metric_manager
 		do
 			l_manager := metric_manager
-			if l_manager.has_metric (a_name) and then l_manager.is_metric_valid (a_name) and then l_manager.metric_with_name (a_name).unit = unit then
+			if l_manager.is_metric_calculatable (a_name) and then l_manager.metric_with_name (a_name).unit = unit then
 				Result := (black_color)
 			else
 				Result := (red_color)
@@ -663,15 +650,6 @@ feature{NONE} -- Implementation
 		end
 
 feature -- Key shortcuts
-
-	del_key_index: INTEGER is 1
-			-- Key index to delete a criterion
-
-	move_up_key_index: INTEGER is 2
-			-- Key index for move a criterion up
-
-	move_down_key_index: INTEGER is 3
-			-- Key index for move a criterion down
 
 	del_key_shortcut: ES_KEY_SHORTCUT
 			-- Del key

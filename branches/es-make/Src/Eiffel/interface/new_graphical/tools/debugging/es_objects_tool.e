@@ -17,12 +17,16 @@ inherit
 			objects_grid_item as get_object_display_item
 		end
 
-	ES_NOTEBOOK_ATTACHABLE
-
 	EB_TOOL
+		rename
+			make as make_tool
 		redefine
 			menu_name,
-			pixmap
+			pixmap,
+			mini_toolbar,
+			build_mini_toolbar,
+			build_docking_content,
+			show
 		end
 
 	EB_RECYCLABLE
@@ -51,13 +55,12 @@ create
 
 feature {NONE} -- Initialization
 
-	make_with_debugger (a_manager: EB_TOOL_MANAGER; a_debugger: like debugger_manager) is
-			-- Initialize `Current'.
+	make_with_debugger (a_manager: EB_DEVELOPMENT_WINDOW; a_debugger: EB_DEBUGGER_MANAGER) is
+			-- Initialize with `a_debugger'.
 		require
 			a_debugger_not_void: a_debugger /= Void
 		do
 			set_debugger_manager (a_debugger)
-			debugger_manager.set_slices (preferences.debug_tool_data.min_slice, preferences.debug_tool_data.max_slice)
 
 			display_first_attributes := True
 			display_first_onces := False
@@ -71,7 +74,7 @@ feature {NONE} -- Initialization
 
 			create objects_grids_positions.make (Position_current, Position_objects)
 
-			make (a_manager)
+			make_tool (a_manager)
 		end
 
 feature {NONE} -- Internal properties
@@ -278,40 +281,17 @@ feature {NONE} -- Interface
 				objects_grids.item_for_iteration.set_slices_cmd (slices_cmd)
 				objects_grids.forth
 			end
-		ensure
+
+		ensure then
 			mini_toolbar_exists: mini_toolbar /= Void
 		end
 
-	build_explorer_bar_item (explorer_bar: EB_EXPLORER_BAR) is
-			-- Build the associated explorer bar item and
-			-- Add it to `explorer_bar'
+	build_docking_content (a_docking_manager: SD_DOCKING_MANAGER) is
+			-- Build docking content
 		do
-			if mini_toolbar = Void then
-				build_mini_toolbar
-			end
-			if header_box = Void then
-				build_header_box
-			end
-			create {EB_EXPLORER_BAR_ITEM} explorer_bar_item.make_with_info (explorer_bar, widget, title, title_for_pre, False, header_box, mini_toolbar)
-			explorer_bar_item.set_menu_name (menu_name)
-			if pixmap /= Void then
-				explorer_bar_item.set_pixmap (pixmap)
-			end
-			explorer_bar.add (explorer_bar_item)
-		end
-
-	build_notebook_item (nb: ES_NOTEBOOK) is
-		do
-			if mini_toolbar = Void then
-				build_mini_toolbar
-			end
-			if header_box = Void then
-				build_header_box
-			end
-			create notebook_item.make_with_info (nb, widget, title, header_box, mini_toolbar)
-			nb.extend (notebook_item)
-			notebook_item.drop_actions.extend (agent add_debugged_object)
-			notebook_item.drop_actions.extend (agent drop_stack_element)
+			Precursor {EB_TOOL} (a_docking_manager)
+			content.drop_actions.extend (agent add_debugged_object)
+			content.drop_actions.extend (agent drop_stack_element)
 		end
 
 	open_objects_menu (w: EV_WIDGET; ax, ay: INTEGER) is
@@ -348,12 +328,11 @@ feature {NONE} -- Interface
 						i > objects_grids_positions.upper
 					loop
 						create mci
+						mci.set_text (pos_titles[i])
 						if lid.is_case_insensitive_equal (objects_grids_positions[i]) then
-							mci.set_text (interface_names.l_item_is_attached_to (pos_titles[i], og.name))
 							mci.enable_select
 							mci.disable_sensitive
 						else
-							mci.set_text (interface_names.l_move_to (pos_titles[i], og.name))
 							mci.disable_select
 							mci.select_actions.extend (agent assign_objects_grids_position (lid, i))
 						end
@@ -481,12 +460,22 @@ feature -- Access
 	pixmap: EV_PIXMAP is
 			-- Pixmap as it may appear in toolbars and menus.
 		do
+			Result := pixmaps.icon_pixmaps.tool_objects_icon
 		end
 
 	debugger_manager: EB_DEBUGGER_MANAGER
 			-- Manager in charge of all debugging operations.
 
 feature {NONE} -- Notebook item's behavior
+
+	header_class_label: EV_LABEL
+			-- Label to display class information in `header_box'.
+
+	header_text_label: EV_LABEL
+			-- Label to display information in `header_box'.
+
+	header_feature_label: EV_LABEL
+			-- Label to display feature information in `header_box'.
 
 	clean_header_box is
 		do
@@ -510,18 +499,41 @@ feature {NONE} -- Notebook item's behavior
 		local
 			app: APPLICATION_EXECUTION
 			ecse: EIFFEL_CALL_STACK_ELEMENT
-			lab, flab, clab: EV_LABEL
 			l_fstone: FEATURE_STONE
 			l_cstone: CLASSC_STONE
 			hbox: EV_BOX
 			sep: EV_CELL
 		do
-			clean_header_box
 			hbox := header_box
-			create sep
-			sep.set_minimum_width (30)
-			hbox.extend (sep)
-			hbox.disable_item_expand (sep)
+			if header_text_label = Void or else header_text_label.parent /= hbox then
+				clean_header_box
+				create sep
+				sep.set_minimum_width (30)
+				hbox.extend (sep)
+				hbox.disable_item_expand (sep)
+
+				create header_class_label
+				header_class_label.set_foreground_color (preferences.editor_data.class_text_color)
+				hbox.extend (header_class_label)
+				hbox.disable_item_expand (header_class_label)
+
+				create header_text_label
+				hbox.extend (header_text_label)
+				hbox.disable_item_expand (header_text_label)
+
+				create header_feature_label
+				header_feature_label.set_foreground_color (preferences.editor_data.feature_text_color)
+				hbox.extend (header_feature_label)
+				hbox.disable_item_expand (header_feature_label)
+
+				hbox.extend (create {EV_CELL})
+			end
+			check
+				header_class_label /= Void
+				header_text_label /= Void
+				header_feature_label /= Void
+				header_text_label.parent = header_box
+			end
 			if
 				debugger_manager.application_is_executing
 			then
@@ -530,49 +542,36 @@ feature {NONE} -- Notebook item's behavior
 					if not app.current_call_stack_is_empty then
 						ecse ?= current_stack_element
 						if ecse /= Void then
-							create lab.make_with_text ("{")
-							hbox.extend (lab)
-							hbox.disable_item_expand (lab)
-
-							create clab.make_with_text (ecse.dynamic_class.name_in_upper)
+							header_class_label.set_text ("{" + ecse.dynamic_class.name_in_upper.twin + "}")
 							create l_cstone.make (ecse.dynamic_class)
-							clab.set_pebble (l_cstone)
-							clab.set_accept_cursor (l_cstone.stone_cursor)
-							clab.set_deny_cursor (l_cstone.x_stone_cursor)
-							clab.set_foreground_color (preferences.editor_data.class_text_color)
-							hbox.extend (clab)
-							hbox.disable_item_expand (clab)
+							header_class_label.set_pebble (l_cstone)
+							header_class_label.set_accept_cursor (l_cstone.stone_cursor)
+							header_class_label.set_deny_cursor (l_cstone.x_stone_cursor)
 
-							create lab.make_with_text ("}.")
-							hbox.extend (lab)
-							hbox.disable_item_expand (lab)
+							header_text_label.set_text (".")
 
-							create flab.make_with_text (ecse.routine_name)
+							header_feature_label.set_text (ecse.routine_name)
 							create l_fstone.make (ecse.routine)
-							flab.set_pebble (l_fstone)
-							flab.set_accept_cursor (l_fstone.stone_cursor)
-							flab.set_deny_cursor (l_fstone.x_stone_cursor)
-							flab.set_foreground_color (preferences.editor_data.feature_text_color)
-							hbox.extend (flab)
-							hbox.disable_item_expand (flab)
+							header_feature_label.set_pebble (l_fstone)
+							header_feature_label.set_accept_cursor (l_fstone.stone_cursor)
+							header_feature_label.set_deny_cursor (l_fstone.x_stone_cursor)
 						end
 					else
-						create lab
-						hbox.extend (lab)
-						hbox.disable_item_expand (lab)
+						header_class_label.remove_text
+						header_text_label.set_text (Interface_names.l_unknown_status)
+						header_feature_label.remove_text
 					end
 				else
-					create lab.make_with_text (Interface_names.l_System_running)
-					hbox.extend (lab)
-					hbox.disable_item_expand (lab)
+					header_class_label.remove_text
+					header_text_label.set_text (Interface_names.l_System_running)
+					header_feature_label.remove_text
 				end
 			else
-				create lab.make_with_text (Interface_names.l_System_not_running)
-				hbox.extend (lab)
-				hbox.disable_item_expand (lab)
-			end
+				header_class_label.remove_text
+				header_text_label.set_text (Interface_names.l_System_not_running)
+				header_feature_label.remove_text
 
-			hbox.extend (create {EV_CELL})
+			end
 		end
 
 feature {ES_OBJECTS_GRID_SLICES_CMD} -- Query
@@ -666,6 +665,14 @@ feature -- Change
 			can_refresh := False
 		end
 
+	refresh is
+			-- Refresh current grid
+			--| Could be optimized to refresh only grid's content display ..
+		do
+			record_grids_layout
+			update
+		end
+
 	update is
 			-- Display current execution status.
 		local
@@ -693,14 +700,16 @@ feature -- Change
 			debugger_manager := a_manager
 		end
 
-	change_manager_and_explorer_bar (a_manager: EB_TOOL_MANAGER; an_explorer_bar: EB_EXPLORER_BAR) is
-			-- Change the window and explorer bar `Current' is in.
-		require
-			a_manager_exists: a_manager /= Void
-			an_explorer_bar_exists: an_explorer_bar /= Void
+	show is
+			-- Show tool.
+		local
+			l_grid: like objects_grid
 		do
-			set_manager (a_manager)
-			change_attach_explorer (an_explorer_bar)
+			Precursor {EB_TOOL}
+			l_grid := objects_grid (first_grid_id)
+			if not l_grid.is_destroyed and then l_grid.is_displayed and then l_grid.is_sensitive then
+				l_grid.set_focus
+			end
 		end
 
 feature -- Status report
@@ -715,15 +724,13 @@ feature -- Status Setting
 			g: like objects_grid
 		do
 			reset_update_on_idle
-			preferences.debug_tool_data.min_slice_preference.set_value (debugger_manager.min_slice)
-			preferences.debug_tool_data.max_slice_preference.set_value (debugger_manager.max_slice)
 			displayed_objects.wipe_out
 			pretty_print_cmd.end_debug
 			if current_object /= Void then
 				display_first := current_object.display
 				display_first_attributes := current_object.display_attributes
 				display_first_onces := current_object.display_onces
-				current_object.recycle
+				current_object.reset
 				current_object := Void
 			end
 			from
@@ -745,9 +752,6 @@ feature {NONE} -- Memory management
 			-- Recycle `Current', but leave `Current' in an unstable state,
 			-- so that we know whether we're still referenced or not.
 		do
-			if explorer_bar_item /= Void then
-				unattach_from_explorer_bar
-			end
 			reset_tool
 		end
 

@@ -161,15 +161,11 @@ feature {NONE} -- Initialization
 			toolbar_area.drop_actions.extend (agent drop_cluster)
 			toolbar_area.drop_actions.extend (agent drop_class)
 			toolbar_area.drop_actions.extend (agent drop_feature)
-			empty_lbl.drop_actions.extend (agent drop_cluster)
-			empty_lbl.drop_actions.extend (agent drop_class)
-			empty_lbl.drop_actions.extend (agent drop_feature)
 			metric_definition_area.drop_actions.extend (agent drop_cluster)
 			metric_definition_area.drop_actions.extend (agent drop_class)
 			metric_definition_area.drop_actions.extend (agent drop_feature)
 
 			select_metric_lbl.set_text (metric_names.t_select_metric)
-			empty_lbl.set_text ("   ")
 			preferences.metric_tool_data.unit_order_preference.change_actions.extend (on_unit_order_change_agent)
 		end
 
@@ -314,7 +310,6 @@ feature -- Actions
 				set_is_metric_changed (False)
 				original_metric := l_new_metric
 				current_metric_editor.initialize_editor (l_new_metric, {EB_METRIC_EDITOR}.edit_mode, l_new_metric.unit, l_new_metric.uuid)
-				metric_tool.load_metrics (True, metric_names.t_saving_metrics)
 				set_is_up_to_date (False)
 				update_ui
 			else
@@ -492,7 +487,7 @@ feature{NONE} -- Implementation
 			current_metric_editor := Void
 			original_metric := Void
 			metric_tool.store_metrics
-			metric_tool.load_metrics (True, metric_names.t_removing_metrics)
+--			metric_tool.load_metrics (True, metric_names.t_removing_metrics)
 			metric_selector.select_first_metric
 		end
 

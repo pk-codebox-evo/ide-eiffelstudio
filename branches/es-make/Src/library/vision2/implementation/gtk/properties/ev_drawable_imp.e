@@ -851,7 +851,6 @@ feature {NONE} -- Implemention
 			pts_exists: pts /= Void
 		local
 			i, j, array_count: INTEGER
-			a_coord: EV_COORDINATE
 			l_area: SPECIAL [INTEGER]
 			l_coord_area: SPECIAL [EV_COORDINATE]
 		do
@@ -860,15 +859,17 @@ feature {NONE} -- Implemention
 				create Result.make (1, array_count * 2)
 				l_coord_area := pts.area
 				l_area := Result.area
-				i := 0
+				i := array_count - 1
+				j := array_count * 2 - 1
+					-- Iterate backwards as comparing against zero generates faster C code.
 			until
-				i = array_count
+				i < 0
 			loop
-				a_coord := l_coord_area @ i
-				j := i * 2
-				l_area.put (a_coord.x, j)
-				l_area.put (a_coord.y, j + 1)
-				i := i + 1
+				l_area @ j := (l_coord_area @ i).y
+				j := j - 1
+				l_area @ j := (l_coord_area @ i).x
+				i := i - 1
+				j := j - 1
 			end
 		ensure
 			Result_exists: Result /= Void
@@ -932,6 +933,27 @@ feature {EV_GTK_DEPENDENT_APPLICATION_IMP, EV_ANY_I} -- Implementation
 		end
 
 feature {NONE} -- Implementation
+
+	fg_color: POINTER is
+			-- Default allocated background color.
+		local
+			a_success: BOOLEAN
+		once
+			Result := {EV_GTK_EXTERNALS}.c_gdk_color_struct_allocate
+			a_success := {EV_GTK_EXTERNALS}.gdk_colormap_alloc_color ({EV_GTK_EXTERNALS}.gdk_rgb_get_cmap, Result, False, True)
+		end
+
+	bg_color: POINTER is
+			-- Default allocate foreground color.
+		local
+			a_success: BOOLEAN
+		once
+			Result := {EV_GTK_EXTERNALS}.c_gdk_color_struct_allocate
+			{EV_GTK_EXTERNALS}.set_gdk_color_struct_red (Result, 65535)
+			{EV_GTK_EXTERNALS}.set_gdk_color_struct_green (Result, 65535)
+			{EV_GTK_EXTERNALS}.set_gdk_color_struct_blue (Result, 65535)
+			a_success := {EV_GTK_EXTERNALS}.gdk_colormap_alloc_color ({EV_GTK_EXTERNALS}.gdk_rgb_get_cmap, Result, False, True)
+		end
 
 	draw_mask_on_pixbuf (a_pixbuf_ptr, a_mask_ptr: POINTER) is
 		external

@@ -16,18 +16,7 @@ inherit
 			is_just_line_counting
 		end
 
-	QL_METRIC_FACTORY
-		rename
-			metric as ql_metric
-		end
-
-	QL_CRITERION_ITERATOR
-		export
-			{NONE} all
-		redefine
-			process_intrinsic_domain_criterion,
-			process_domain_criterion
-		end
+	QL_SHARED
 
 create
 	make
@@ -50,54 +39,48 @@ feature -- Status report
 			Result := criteria = Void
 		end
 
-feature -- Access
-
-	direct_referenced_metrics: LIST [STRING] is
-			-- Name of metrics which are directly referenced by Current
-		do
-			create {LINKED_LIST [STRING]} Result.make
-		end
-
 feature -- Metric calculation
 
 	value (a_scope: EB_METRIC_DOMAIN): QL_QUANTITY_DOMAIN is
-			-- Calcualte current domain using `a_scope'.
+			-- Value of current metric calculated over `a_scope'
 		local
-			l_cri: like evaluated_criteria
 			l_dummy_domain: QL_DOMAIN
 			l_metric: QL_METRIC
-			l_has_delayed_domain: BOOLEAN
+			l_has_delayed_input_domain: BOOLEAN
+			l_helper: EB_METRIC_COMPONENT_HELPER
+			l_cri: QL_CRITERION
 		do
 			create {QL_TARGET_DOMAIN} l_dummy_domain.make
 			last_result_domain := Void
 			internal_value := 0.0
 
+			create l_helper
+			l_helper.prepare_for_calculation (Current)
+			l_has_delayed_input_domain := l_helper.component_has_delayed_input_domain_item (Current)
+
 			l_metric := metric
-			evaluated_criteria_internal := Void
-			l_cri := evaluated_criteria
-			if l_cri /= Void then
-				l_metric.set_criterion (l_cri)
-			end
-			l_has_delayed_domain := l_metric.has_delayed_domain
-			from
-				a_scope.start
-			until
-				a_scope.after
-			loop
-				if unit.scope /= Void then
-					calculate_domain (l_metric, a_scope.item_domain (unit.scope))
-				else
-					calculate_domain (l_metric, l_dummy_domain)
+			if not l_has_delayed_input_domain or else criteria = Void then
+				l_cri := evaluated_criteria (criteria)
+				if l_cri /= Void then
+					l_metric.set_criterion (l_cri)
 				end
-				if l_has_delayed_domain then
-					l_metric := metric
-					evaluated_criteria_internal := Void
-					l_cri := evaluated_criteria
-					if l_cri /= Void then
-						l_metric.set_criterion (l_cri)
+				from
+					a_scope.start
+				until
+					a_scope.after
+				loop
+					if unit.scope /= Void then
+						calculate_domain (l_metric, a_scope.item_domain (unit.scope))
+					else
+						calculate_domain (l_metric, l_dummy_domain)
 					end
+					a_scope.forth
 				end
-				a_scope.forth
+			else
+				l_helper.replace_delayed_input_domain (Current, a_scope)
+				l_metric.set_criterion (evaluated_criteria (criteria))
+				calculate_domain (l_metric, current_application_target_domain)
+				l_helper.replace_delayed_input_domain (Current, Void)
 			end
 			create Result.make
 			Result.extend (create{QL_QUANTITY}.make_with_value (internal_value))
@@ -112,10 +95,8 @@ feature -- Setting
 			-- Set `criteria' with `a_criteria'.
 		do
 			criteria := a_criteria
-			evaluated_criteria_internal := Void
 		ensure
 			criteria_set: criteria = a_criteria
-			evaluated_criteria_internal_set: evaluated_criteria_internal = Void
 		end
 
 feature -- Process
@@ -131,7 +112,7 @@ feature{NONE} -- Implementation
 	metric: QL_METRIC is
 			-- Query language metric used to calculation result
 		do
-			Result := ql_metric (unit)
+			Result := metric_factory.metric (unit)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -152,12 +133,7 @@ feature{NONE} -- Implementation
 			else
 				a_metric.disable_fill_domain
 			end
-			if a_metric.has_delayed_domain then
-				a_metric.replace_delayed_domain_by (a_domain)
-				internal_value := internal_value + a_metric.value (current_application_target_domain).first.value
-			else
-				internal_value := internal_value + a_metric.value (a_domain).first.value
-			end
+			internal_value := internal_value + a_metric.value (a_domain).first.value
 			if is_fill_domain_enabled then
 				check
 					a_metric.last_domain /= Void
@@ -170,48 +146,23 @@ feature{NONE} -- Implementation
 			end
 		end
 
-	evaluated_criteria: QL_CRITERION is
+	evaluated_criteria (a_criteria: like criteria): QL_CRITERION is
 			-- Evaluated query language criterion from `criteria'
 		local
 			l_scope: QL_SCOPE
 			l_cri: QL_CRITERION
 		do
-			if evaluated_criteria_internal = Void then
-				if criteria /= Void then
-					evaluated_criteria_internal := criteria.new_criterion (unit.scope)
-					if evaluated_criteria_internal /= Void then
-						l_scope := evaluated_criteria_internal.scope
-						if should_result_be_filtered and then l_scope.is_code_structure_scope then
-							l_cri := criterion_factory_table.item (l_scope).criterion_with_name ("is_visible", [])
-							if l_cri /= Void then
-								evaluated_criteria_internal := evaluated_criteria_internal and l_cri
-							end
+			if a_criteria /= Void then
+				Result := a_criteria.new_criterion (unit.scope)
+				if Result /= Void then
+					l_scope := Result.scope
+					if should_result_be_filtered and then l_scope.is_code_structure_scope then
+						l_cri := criterion_factory_table.item (l_scope).criterion_with_name ("is_visible", [])
+						if l_cri /= Void then
+							Result := Result and l_cri
 						end
 					end
 				end
-			end
-			Result := evaluated_criteria_internal
-		end
-
-	evaluated_criteria_internal: like evaluated_criteria
-			-- Implementation of `evaluate_criteria'
-
-feature{NONE} -- Visitor
-
-	real_domain: QL_DOMAIN
-			-- Real domain which will replace those delayed domain in given criterion
-
-	process_intrinsic_domain_criterion (a_cri: QL_INTRINSIC_DOMAIN_CRITERION) is
-			-- Process `a_cri'.
-		do
-			process_domain_criterion (a_cri)
-		end
-
-	process_domain_criterion (a_cri: QL_DOMAIN_CRITERION) is
-			-- Process `a_cri'.
-		do
-			if a_cri.criterion_domain /= Void and then real_domain /= Void then
-				a_cri.set_criterion_domain (real_domain)
 			end
 		end
 

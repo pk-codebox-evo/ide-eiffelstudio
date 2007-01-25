@@ -25,6 +25,13 @@ inherit
 			make
 		end
 
+	EV_SHARED_APPLICATION
+		export
+			{NONE} all
+		undefine
+			copy, default_create
+		end
+
 create
 	make, make_with_hidden
 
@@ -362,7 +369,7 @@ feature {NONE} -- Events
 			-- Description text area was key pressed
 		do
 			if a_key.code = {EV_KEY_CONSTANTS}.key_tab then
-				if application.shift_pressed then
+				if ev_application.shift_pressed then
 					grid.set_focus
 				else
 					restore_button.set_focus
@@ -436,6 +443,11 @@ feature {NONE} -- Events
 		end
 
 feature {NONE} -- Implementation
+
+	build_preference_name_to_display (a_pref: PREFERENCE): STRING_32 is
+		do
+			Result := a_pref.name
+		end
 
 	build_structured is
 			-- Fill with preferences structured hierarchically.
@@ -1124,7 +1136,7 @@ feature {NONE} -- Filtering
 		require
 			in_flat_mode: not grid.is_tree_enabled
 		local
-			l_match_text: STRING
+			l_match_text: STRING_32
 
 			l_preference: PREFERENCE
 			l_prefs: LIST [PREFERENCE]
@@ -1147,7 +1159,7 @@ feature {NONE} -- Filtering
 						l_prefs.after
 					loop
 						l_preference := l_prefs.item
-						if l_match_text = Void or else l_preference.name.has_substring (l_match_text) then
+						if l_match_text = Void or else build_preference_name_to_display (l_preference).has_substring (l_match_text) then
 							matches.extend (l_preference)
 						end
 						l_prefs.forth
@@ -1311,12 +1323,6 @@ feature {NONE} -- Private attributes
 			-- List of booleans for each column indicating if it has been user resizedat all.
 		once
 			Result := <<False, False, False, False>>
-		end
-
-	application: EV_APPLICATION is
-			-- Application
-		once
-			Result := (create {EV_ENVIRONMENT}).application
 		end
 
 invariant

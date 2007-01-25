@@ -42,6 +42,7 @@ feature {NONE} -- Initialization
 		end
 
 	set_default_parameters is
+			-- Set hard coded default parameters values
 		do
 			set_slices (0, 50)
 			set_displayed_string_size (60)
@@ -89,7 +90,7 @@ feature -- Application execution
 
 feature -- Output helpers
 
-	debugger_message (m: STRING) is
+	debugger_message (m: STRING_GENERAL) is
 		require
 			m /= Void
 		do
@@ -97,13 +98,13 @@ feature -- Output helpers
 			debugger_status_message (m)
 		end
 
-	debugger_output_message (msg: STRING) is
+	debugger_output_message (msg: STRING_GENERAL) is
 		require
 			msg /= Void
 		do
 		end
 
-	debugger_warning_message (msg: STRING) is
+	debugger_warning_message (msg: STRING_GENERAL) is
 		require
 			msg /= Void
 		do
@@ -176,7 +177,157 @@ feature -- Debug info access
 					%Cause: Unable to open " + debug_info_filename + " for writing")
 		end
 
-feature -- Breakpoints change
+feature -- Breakpoints management
+
+	process_breakpoint (bp: BREAKPOINT): BOOLEAN is
+			-- Process `bp'
+			-- and return True in `a_stopped_execution' if application has to stop.
+		local
+			expr: EB_EXPRESSION
+			evaluator: DBG_EXPRESSION_EVALUATOR
+			bp_reached: BOOLEAN
+		do
+			bp_reached := True
+			if bp.has_condition then
+				expr := bp.condition
+				check expr /= Void end
+				expr.evaluate
+				evaluator := expr.expression_evaluator
+				if evaluator.error_occurred then
+					bp_reached := True
+					debugger_message ("Conditional breakpoint failed to evaluate %"" + expr.expression + "%".")
+				else
+					bp_reached := bp.condition_respected --| evaluator.final_result_is_true_boolean_value
+				end
+			end
+
+			if bp_reached then
+				bp.increase_hits_count
+
+				if bp_reached and bp.hits_count_condition /= Void then
+					inspect bp.hits_count_condition.mode
+					when {BREAKPOINT}.hits_count_condition_always then
+					when {BREAKPOINT}.hits_count_condition_equal then
+						bp_reached := bp.hits_count = bp.hits_count_condition.value
+					when {BREAKPOINT}.hits_count_condition_multiple then
+						bp_reached := bp.hits_count \\ bp.hits_count_condition.value = 0
+					when {BREAKPOINT}.hits_count_condition_greater then
+						bp_reached := bp.hits_count >= bp.hits_count_condition.value
+					else
+					end
+				end
+
+				if bp_reached and bp.has_message then
+					debugger_message (computed_breakpoint_message (bp))
+				end
+			end
+			Result := bp_reached and not bp.continue_execution
+		end
+
+	computed_breakpoint_message (bp: BREAKPOINT): STRING is
+			-- Computed message from breakpoint message `bp.message'.
+		require
+			bp_not_void: bp /= Void
+			bp_message_not_void: bp.message /= Void
+		local
+			m: STRING
+			cse: CALL_STACK_ELEMENT
+			expr: EB_EXPRESSION
+			i: INTEGER
+			c: CHARACTER
+			s: STRING
+			v: STRING
+			is_escaped,
+			in_expression,
+			in_keyword: BOOLEAN
+			retried: BOOLEAN
+		do
+			if not retried then
+				m := bp.message
+				from
+					i := 1
+					create s.make (m.count)
+					create v.make_empty
+				until
+					i > m.count
+				loop
+					is_escaped := False
+					c := m.item (i)
+					if c = '\' and i < m.count then
+						inspect m.item (i + 1)
+						when '{', '$', '\' then
+							i := i + 1
+							c := m.item (i)
+							is_escaped := True
+						else
+							-- keep c as '\'
+						end
+					end
+					if in_keyword then
+						if not c.is_alpha or i = m.count then
+							in_keyword := False
+							if cse = Void then
+								cse := application_status.current_call_stack_element
+							end
+							if cse /= Void then
+								if v.is_case_insensitive_equal ("THREADID") then
+									s.append (cse.thread_id.out)
+								elseif v.is_case_insensitive_equal ("CALLSTACK") then
+									s.append (cse.to_string)
+								elseif v.is_case_insensitive_equal ("CLASS") and then cse.class_name /= Void then
+									s.append (cse.class_name)
+								elseif v.is_case_insensitive_equal ("FEATURE") and then cse.routine_name /= Void then
+									s.append (cse.routine_name)
+								elseif v.is_case_insensitive_equal ("ADDRESS") and then cse.object_address /= Void then
+									s.append (cse.object_address)
+								elseif v.is_case_insensitive_equal ("HITCOUNT") then
+									s.append_integer (bp.hits_count)
+								else
+									s.append ("$" + v.as_upper)
+								end
+							end
+							s.append_character (c)
+						else
+							v.append_character (c)
+						end
+					elseif in_expression then
+						if c = '}' then
+							in_expression := False
+							create expr.make_for_context (v)
+							expr.evaluate
+							if not expr.error_occurred then
+								s.append (expr.expression_evaluator.final_result_value.output_for_debugger)
+							end
+						else
+							v.append_character (c)
+						end
+					else
+						if c = '$' and not is_escaped then
+							if i > 1 and then m.item (i - 1) /= '\' then
+								in_keyword := True
+								v.wipe_out
+							end
+						elseif c = '{'  and not is_escaped then
+							if i > 1 and then m.item (i - 1) /= '\' then
+								in_expression := True
+								v.wipe_out
+							end
+						else
+							s.append_character (c)
+						end
+					end
+					i := i + 1
+				end
+				Result := s
+			else
+				Result := m
+			end
+		ensure
+			Result_not_void: Result /= Void
+		rescue
+			retried := True
+			retry
+		end
 
 	clear_debugging_information	is
 		do
@@ -226,11 +377,41 @@ feature -- Properties
 			Result := Eiffel_project.workbench.system.il_generation
 		end
 
+feature -- Parameters context
+
+--| This code may be used later to enhance display of string ...
+--	previous_parameters: ARRAY [INTEGER]
+--
+--	push_parameters (a_slice_min, a_slice_max, a_disp_str_size: INTEGER) is
+--		require
+--			previous_parameters = Void
+--				or else (previous_parameters[1] = 0 and previous_parameters[2] = 0 and previous_parameters[3] = 0)
+--		do
+--			if previous_parameters = Void then
+--				create previous_parameters.make (1,3)
+--			end
+--			previous_parameters[1] := min_slice
+--			previous_parameters[2] := max_slice
+--			previous_parameters[3] := displayed_string_size
+--		end
+--
+--	restore_parameters is
+--		require
+--			previous_parameters /= Void
+--				and then (previous_parameters[1] > 0 and previous_parameters[2] > 0 and previous_parameters[3] /= 0)
+--		do
+--			min_slice := previous_parameters[1]
+--			max_slice := previous_parameters[2]
+--			displayed_string_size := previous_parameters[3]
+--			previous_parameters[1] := 0
+--			previous_parameters[2] := 0
+--			previous_parameters[3] := 0
+--		end
+
 feature -- Parameters
 
 	min_slice: INTEGER
 			-- Minimum bound asked for special objects.			
-
 
 	max_slice: INTEGER
 			-- Maximum bound asked for special objects.			
@@ -255,8 +436,33 @@ feature -- Parameters
 			-- Maximum number of seconds to wait before cancelling an evaluation.
 			-- A negative value means no cancellation will be done.
 
-
 feature -- Exception handling
+
+	process_exception: BOOLEAN is
+			-- Exception catched ?
+		require
+			application_is_executing and then application_status.exception_occurred
+		local
+			l_code: INTEGER
+			l_name: STRING
+		do
+			Result := True
+			if exceptions_handler.enabled then
+				if exceptions_handler.handling_mode_is_by_code then
+					l_code := application_status.exception_code
+					Result := exceptions_handler.exception_catched_by_code (l_code)
+					if not Result then
+						debugger_message ("Ignoring exception code: " + l_code.out)
+					end
+				elseif exceptions_handler.handling_mode_is_by_name then
+					l_name := application_status.exception_class_name
+					Result := exceptions_handler.exception_catched_by_name (l_name)
+					if not Result then
+						debugger_message ("Ignoring exception class name: " + l_name.out)
+					end
+				end
+			end
+		end
 
 	exceptions_handler: DBG_EXCEPTION_HANDLER is
 			-- Exception handler used during debugging.
@@ -275,6 +481,27 @@ feature -- Exception handling
 		end
 
 	internal_exceptions_handler: like exceptions_handler
+
+feature -- Events helpers
+
+	new_timer: DEBUGGER_TIMER is
+		do
+			check to_be_implemented: False end
+		end
+
+	add_idle_action (v: PROCEDURE [ANY, TUPLE]) is
+		require
+			v_not_void: v /= Void
+		do
+			check to_be_implemented: False end
+		end
+
+	remove_idle_action (v: PROCEDURE [ANY, TUPLE]) is
+		require
+			v_not_void: v /= Void
+		do
+			check to_be_implemented: False end
+		end
 
 feature {DEBUGGER_OBSERVER} -- Observer implementation
 
@@ -504,6 +731,16 @@ feature -- Change
 			max_slice := j
 		end
 
+	set_displayed_string_size (i: like displayed_string_size) is
+			-- Set `displayed_string_size' to `i'.
+		require
+			positive_i_or_all_string: i > 0 or i = -1
+		do
+			displayed_string_size := i
+		ensure
+			set: displayed_string_size = i
+		end
+
 	set_interrupt_number (a_nbr: like interrupt_number) is
 			-- Set `interrupt_number' to `a_nbr'.
 		require
@@ -524,16 +761,6 @@ feature -- Change
 			if application_is_executing then
 				application.update_critical_stack_depth (d)
 			end
-		end
-
-	set_displayed_string_size (i: like displayed_string_size) is
-			-- Set `displayed_string_size' to `i'.
-		require
-			positive_i_or_all_string: i > 0 or i = -1
-		do
-			displayed_string_size := i
-		ensure
-			set: displayed_string_size = i
 		end
 
 	set_maximum_stack_depth (nb: INTEGER) is
@@ -584,9 +811,20 @@ feature -- Debugging events
 		end
 
 	on_application_before_launching is
+		local
+			bl: BREAK_LIST
 		do
 			debugging_operation_id := 0
 			compute_class_c_data
+			from
+				bl := debug_info.breakpoints
+				bl.start
+			until
+				bl.after
+			loop
+				bl.item_for_iteration.reset_session_data
+				bl.forth
+			end
 		end
 
 	on_application_launched is
@@ -627,9 +865,15 @@ feature -- Debugging events
 			app_is_executing: safe_application_is_stopped
 		do
 			incremente_debugging_operation_id
+			debugger_status_message (debugger_names.t_Paused)
+			debugger_output_message (debugger_names.t_Paused)
+
 			if has_stopped_action then
 				stopped_actions.call (Void)
 			end
+				--| Reset current stack number to 1 (top level)
+			application.set_current_execution_stack_number (1)
+
 				--| Observers
 			observers.do_all (agent {DEBUGGER_OBSERVER}.on_application_stopped)
 		end
@@ -646,21 +890,11 @@ feature -- Debugging events
 		do
 			incremente_debugging_operation_id
 			if application.execution_mode = {EXEC_MODES}.No_stop_points then
---<<<<<<< .mine
---				debugger_status_message (Interface_names.e_Running_no_stop_points)
---				debugger_output_message (Interface_names.ee_Running_no_stop_points)
---=======
 				debugger_status_message (debugger_names.t_Running_no_stop_points)
 				debugger_output_message (debugger_names.t_Running_no_stop_points)
--->>>>>>> .r65512
 			else
---<<<<<<< .mine
---				debugger_status_message (Interface_names.e_Running)
---				debugger_output_message (Interface_names.ee_Running)
---=======
 				debugger_status_message (debugger_names.t_Running)
 				debugger_output_message (debugger_names.t_Running)
--->>>>>>> .r65512
 			end
 
 				--| Observers
@@ -677,7 +911,6 @@ feature -- Debugging events
 
 			if application_is_executing then
 				debugger_status_message (debugger_names.t_not_running)
-				display_system_info
 
 					--| Observers
 				observers.do_all (agent {DEBUGGER_OBSERVER}.on_application_quit)

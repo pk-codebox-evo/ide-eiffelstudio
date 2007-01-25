@@ -70,10 +70,10 @@ feature -- Key setting
 
 feature -- Properties
 
-	text: STRING
+	text: STRING_GENERAL
 			-- Text
 
-	set_text (a_text: STRING) is
+	set_text (a_text: STRING_GENERAL) is
 			-- Set `text'
 		require
 			not_void: a_text /= Void
@@ -109,8 +109,10 @@ feature -- Properties
 			set: padding_width = a_width
 		end
 
-	gap_height: INTEGER is 2
+	gap_height: INTEGER is
 			-- Gap height
+		deferred
+		end
 
 	width: INTEGER is
 			-- Width of Current will draw.
@@ -180,7 +182,7 @@ feature -- Properties
 feature -- Size issues
 
 	start_x_separator_before_internal: INTEGER is
-			-- Start x position where should draw seperator before.
+			-- Start x position where should draw separator before.
 		do
 			Result := 0
 		end
@@ -244,7 +246,7 @@ feature -- Size issues
 		end
 
 	start_x_separator_after_internal: INTEGER is
-			-- Start x position where should draw seperator after.
+			-- Start x position where should draw separator after.
 		do
 			if is_selected then
 				if is_enough_space then
@@ -257,8 +259,15 @@ feature -- Size issues
 			end
 		end
 
-	start_y_position: INTEGER is 0
+	start_y_position: INTEGER is
 			-- Start y position of drawing a pixmap.
+		deferred
+		end
+
+	start_y_position_text: INTEGER is
+			-- Start y position of drawing a pixmap.
+		deferred
+		end
 
 	start_y_close: INTEGER is
 			-- Start y position of drawing a close button
@@ -320,50 +329,16 @@ feature {NONE} -- Implementation
 			-- Draw pixmap and text when unselected.
 		require
 			not_void: a_pixmap /= Void
-		do
-			a_pixmap.set_foreground_color (internal_shared.tab_text_color)
-			if is_top_side_tab then
-				-- Draw pixmap
-				a_pixmap.draw_pixmap (a_start_x + start_x_pixmap_internal, start_y_position + gap_height + 1, pixmap)
-				a_pixmap.draw_text_top_left (a_start_x + start_x_text_internal, gap_height, text)
-			else
-				-- Draw pixmap
-				a_pixmap.draw_pixmap (a_start_x + start_x_pixmap_internal, 0, pixmap)
-				-- Draw text
-				a_pixmap.draw_text_top_left (a_start_x + start_x_text_internal, 0, text)
-			end
-
-			draw_close_button (a_pixmap, internal_shared.icons.close)
+		deferred
 		end
 
 	draw_pixmap_text_selected (a_pixmap: EV_DRAWABLE; a_start_x, a_width: INTEGER) is
 			-- Draw pixmap and text when selected.
 		require
 			not_void: a_pixmap /= Void
-		do
-			if a_pixmap.height > 0 then
-				-- Draw text
-				a_pixmap.set_foreground_color (internal_shared.tab_text_color)
-				if a_width - start_x_text_internal >= 0 then
-					if is_top_side_tab then
-						a_pixmap.draw_ellipsed_text_top_left (a_start_x + start_x_text_internal, start_y_position + gap_height, text, a_width - start_x_text_internal)
-					else
-						a_pixmap.draw_ellipsed_text_top_left (a_start_x + start_x_text_internal, start_y_position + gap_height, text, a_width - start_x_text_internal)
-					end
-				end
-				-- Draw pixmap
-				if is_draw_pixmap then
-					if is_top_side_tab then
-						a_pixmap.draw_pixmap (a_start_x + start_x_pixmap_internal, start_y_position + gap_height, pixmap)
-					else
-						a_pixmap.draw_pixmap (a_start_x + start_x_pixmap_internal, start_y_position, pixmap)
-					end
-				end
-
-				draw_close_button (a_pixmap, internal_shared.icons.close)
-			end
+		deferred
 		end
-
+		
 	draw_close_button (a_drawable: EV_DRAWABLE; a_close_pixmap: EV_PIXMAP)
 			-- Draw close button if possible
 		require

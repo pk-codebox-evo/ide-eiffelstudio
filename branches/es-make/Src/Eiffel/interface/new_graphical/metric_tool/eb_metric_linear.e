@@ -40,7 +40,7 @@ feature -- Status report
 feature -- Metric calculation
 
 	value (a_scope: EB_METRIC_DOMAIN): QL_QUANTITY_DOMAIN is
-			-- Calcualte current domain using `a_scope'.
+			-- Value of current metric calculated over `a_scope'
 		local
 			l_value: DOUBLE
 		do
@@ -94,20 +94,6 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
-	direct_referenced_metrics: LIST [STRING] is
-			-- Name of metrics which are directly referenced by Current
-		do
-			create {LINKED_LIST [STRING]} Result.make
-			from
-				variable_metric.start
-			until
-				variable_metric.after
-			loop
-				Result.extend (variable_metric.item)
-				variable_metric.forth
-			end
-		end
-
 feature -- Process
 
 	process (a_visitor: EB_METRIC_VISITOR) is
@@ -137,7 +123,7 @@ feature{NONE} -- Implementation
 			else
 				a_metric.disable_filter_result
 			end
-			Result := a_metric.value (a_scope).first.value * a_coefficient
+			Result := a_metric.value_item (a_scope) * a_coefficient
 		end
 
 	variable_metric_uuid_internal: like variable_metric_uuid

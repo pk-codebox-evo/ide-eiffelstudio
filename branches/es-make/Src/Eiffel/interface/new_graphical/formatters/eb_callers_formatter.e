@@ -62,6 +62,20 @@ feature -- Properties
 			end
 		end
 
+	pixel_buffer: EV_PIXEL_BUFFER is
+			-- Pixel buffer representation of the command.
+		once
+			inspect
+				flag
+			when {DEPEND_UNIT}.is_in_assignment_flag then
+				Result := pixmaps.icon_pixmaps.feature_assigners_icon_buffer
+			when {DEPEND_UNIT}.is_in_creation_flag then
+				Result := pixmaps.icon_pixmaps.feature_creators_icon_buffer
+			else
+				Result := pixmaps.icon_pixmaps.feature_callers_icon_buffer
+			end
+		end
+
 	feature_cmd: E_SHOW_CALLERS
 			-- Feature command that can generate the information.
 
@@ -97,7 +111,7 @@ feature {NONE} -- Properties
 			else
 				Result := Interface_names.l_callers
 			end
-			Result := interface_names.string_general_to_lower (Result)
+			Result := interface_names.string_general_as_lower (Result)
 		end
 
 	post_fix: STRING is

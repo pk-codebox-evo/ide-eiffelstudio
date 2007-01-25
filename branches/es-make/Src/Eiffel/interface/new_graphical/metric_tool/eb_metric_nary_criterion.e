@@ -14,7 +14,8 @@ inherit
 		rename
 			make as old_make
 		redefine
-			is_parameter_valid
+			is_parameter_valid,
+			is_nary_criterion
 		end
 
 feature{NONE} -- Initialization
@@ -61,6 +62,9 @@ feature -- Status report
 				operands.go_to (l_cursor)
 			end
 		end
+
+	is_nary_criterion: BOOLEAN is True
+			-- Is current a nary criterion?
 
 invariant
 	operands_attached: operands /= Void

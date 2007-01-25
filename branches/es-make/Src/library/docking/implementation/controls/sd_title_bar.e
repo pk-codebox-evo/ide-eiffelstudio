@@ -78,7 +78,7 @@ feature {NONE} -- Initlization
 
 feature -- Command
 
-	set_title (a_title: STRING) is
+	set_title (a_title: STRING_GENERAL) is
 			-- Set the title on the title bar.
 		require
 			a_title_not_void: a_title /= Void
@@ -137,6 +137,10 @@ feature -- Command
 					internal_tool_bar.prune (normal_max)
 				end
 			end
+			-- We restoring docking layout, `fixed' maybe destroyed.
+			if not fixed.is_destroyed then
+				on_fixed_resize (0, 0, fixed.width, fixed.height)
+			end
 		ensure
 			set: a_show = internal_tool_bar.has (normal_max)
 		end
@@ -154,6 +158,10 @@ feature -- Command
 					internal_tool_bar.start
 					internal_tool_bar.prune (stick)
 				end
+			end
+			-- We restoring docking layout, `fixed' maybe destroyed.
+			if not fixed.is_destroyed then
+				on_fixed_resize (0, 0, fixed.width, fixed.height)
 			end
 		ensure
 			set: a_show = internal_tool_bar.has (stick)
@@ -232,7 +240,7 @@ feature -- Command
 
 feature -- Query
 
-	title: STRING is
+	title: STRING_GENERAL is
 			-- Title
 		do
 			Result := internal_title.title

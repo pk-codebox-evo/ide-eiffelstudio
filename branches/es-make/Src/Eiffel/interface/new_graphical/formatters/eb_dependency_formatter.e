@@ -114,30 +114,30 @@ feature -- Properties
 			l_target_stone ?= a_stone
 			create Result.make (64)
 			if l_feature_stone /= Void then
-				Result.append (interface_names.string_general_to_lower (interface_names.s_feature_stone))
+				Result.append (interface_names.string_general_as_lower (interface_names.s_feature_stone))
 				Result.append (l_feature_stone.e_feature.name)
 			elseif l_class_stone /= Void then
-				Result.append (interface_names.string_general_to_lower (interface_names.s_class_stone))
+				Result.append (interface_names.string_general_as_lower (interface_names.s_class_stone))
 				Result.append (l_class_stone.class_name)
 			elseif l_cluster_stone /= Void then
 				if not l_cluster_stone.path.is_empty then
 						-- For a folder
-					Result.append (interface_names.string_general_to_lower (interface_names.s_folder_stone))
+					Result.append (interface_names.string_general_as_lower (interface_names.s_folder_stone))
 					Result.append (l_cluster_stone.folder_name)
 				else
 						-- For a group
 					l_group := l_cluster_stone.group
 					if l_group.is_library then
-						Result.append (interface_names.string_general_to_lower (interface_names.s_library_stone))
+						Result.append (interface_names.string_general_as_lower (interface_names.s_library_stone))
 					elseif l_group.is_cluster then
-						Result.append (interface_names.string_general_to_lower (interface_names.s_cluster_stone))
+						Result.append (interface_names.string_general_as_lower (interface_names.s_cluster_stone))
 					elseif l_group.is_assembly then
-						Result.append (interface_names.string_general_to_lower (interface_names.s_assembly_stone))
+						Result.append (interface_names.string_general_as_lower (interface_names.s_assembly_stone))
 					end
 					Result.append (l_group.name)
 				end
 			elseif l_target_stone /= Void then
-				Result.append (interface_names.string_general_to_lower (interface_names.s_target_stone))
+				Result.append (interface_names.string_general_as_lower (interface_names.s_target_stone))
 				Result.append (l_target_stone.target.name)
 			end
 		ensure
@@ -274,11 +274,28 @@ feature {NONE} -- Implementation
 			associated_stone_valid: is_stone_valid (associated_stone)
 		local
 			l_domain_generator: QL_CLASS_DOMAIN_GENERATOR
+			l_domain_item: EB_DOMAIN_ITEM
+			l_folder_item: EB_FOLDER_DOMAIN_ITEM
+			l_criterion: QL_CLASS_CRITERION
 		do
-			create l_domain_generator.make (class_criterion_factory.criterion_with_name (query_language_names.ql_cri_is_compiled, []), True)
+			l_criterion := class_criterion_factory.criterion_with_name (query_language_names.ql_cri_is_compiled, [])
+			l_domain_item := domain_item_from_stone (final_stone_from_stone (associated_stone))
+			if l_domain_item.is_folder_item then
+				l_folder_item ?= l_domain_item
+				if browser.recursive_button.is_selected then
+					l_folder_item.enable_search_for_class_recursive
+				else
+					l_folder_item.disable_search_for_class_recursive
+				end
+			elseif l_domain_item.is_group_item then
+				if not browser.recursive_button.is_selected then
+					l_criterion := l_criterion and create {QL_CLASS_PATH_IN_CRI}.make_with_flag ("", False)
+				end
+			end
+			create l_domain_generator.make (l_criterion, True)
 			l_domain_generator.enable_optimization
 			l_domain_generator.disable_distinct_item
-			Result ?= domain_item_from_stone (final_stone_from_stone (associated_stone)).domain_without_scope.new_domain (l_domain_generator)
+			Result ?= l_domain_item.domain_without_scope.new_domain (l_domain_generator)
 		ensure
 			result_attached: Result /= Void
 		end

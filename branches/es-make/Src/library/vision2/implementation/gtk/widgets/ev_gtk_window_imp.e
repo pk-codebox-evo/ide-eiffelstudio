@@ -12,28 +12,16 @@ deferred class
 inherit
 	EV_GTK_WIDGET_IMP
 		redefine
-			width,
-			height,
 			show,
 			screen_x,
 			screen_y,
 			x_position,
-			y_position
+			y_position,
+			width,
+			height
 		end
 
-feature {NONE} -- Agent functions.
-
-	key_event_translate_agent: FUNCTION [EV_GTK_CALLBACK_MARSHAL, TUPLE [INTEGER, POINTER], TUPLE] is
-			-- Translation agent used for key events
-		once
-			Result := agent (App_implementation.gtk_marshal).key_event_translate
-		end
-
-	set_focus_event_translate_agent: FUNCTION [EV_GTK_CALLBACK_MARSHAL, TUPLE [INTEGER, POINTER], TUPLE] is
-			-- Translation agent used for set-focus events
-		once
-			Result := agent (App_implementation.gtk_marshal).set_focus_event_translate
-		end
+	EV_GTK_KEY_CONVERSION
 
 feature {NONE} -- Implementation
 
@@ -41,26 +29,6 @@ feature {NONE} -- Implementation
 			-- Parent of `Current', always Void as windows cannot be parented
 		do
 			-- Return Void
-		end
-
-	width: INTEGER is
-			-- Horizontal size measured in pixels.
-		do
-			if default_width /= -1 then
-				Result := default_width
-			else
-				Result := Precursor
-			end
-		end
-
-	height: INTEGER is
-			-- Vertical size measured in pixels.
-		do
-			if default_height /= -1 then
-				Result := default_height
-			else
-				Result := Precursor
-			end
 		end
 
 	set_blocking_window (a_window: EV_WINDOW) is
@@ -121,34 +89,31 @@ feature {NONE} -- Implementation
 	set_size (a_width, a_height: INTEGER) is
 			-- Set the horizontal size to `a_width'.
 			-- Set the vertical size to `a_height'.
+		do
+			{EV_GTK_EXTERNALS}.gtk_window_resize (c_object, a_width, a_height)
+			{EV_GTK_EXTERNALS}.gtk_window_set_default_size (c_object, a_width, a_height)
+		end
+
+	width: INTEGER
+			-- Width of `Current'.
 		local
-			l_width, l_height: INTEGER
+			l_result: INTEGER_32
 		do
-			default_width := a_width
-			default_height := a_height
-				-- Both resizes are needed otherwise the original position gets reset on show.
-
-			l_width := minimum_width.max (a_width)
-			l_height := minimum_height.max (a_height)
-
-			{EV_GTK_EXTERNALS}.gdk_window_resize ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object), l_width, l_height)
-			{EV_GTK_EXTERNALS}.gtk_window_set_default_size (c_object, l_width, l_height)
+			if configure_event_pending then
+				{EV_GTK_EXTERNALS}.gtk_window_get_default_size (c_object, $l_result, default_pointer)
+			end
+			Result := l_result.max (Precursor)
 		end
 
-	default_width, default_height: INTEGER
-			-- Default width and height for the window if set, -1 otherwise.
-			-- (see. `gtk_window_set_default_size' for more information)
-
-	x_position: INTEGER is
-			-- X coordinate of `Current'
+	height: INTEGER
+			-- Height of `Current'.
+		local
+			l_result: INTEGER_32
 		do
-			Result := screen_x
-		end
-
-	y_position: INTEGER is
-			-- Y coordinate of `Current'
-		do
-			Result := screen_y
+			if configure_event_pending then
+				{EV_GTK_EXTERNALS}.gtk_window_get_default_size (c_object, default_pointer, $l_result)
+			end
+			Result := l_result.max (Precursor)
 		end
 
 	set_x_position (a_x: INTEGER) is
@@ -168,13 +133,13 @@ feature {NONE} -- Implementation
 			-- Set vertical offset to parent to `a_y'.
 		do
 			{EV_GTK_EXTERNALS}.gtk_window_move (c_object, a_x, a_y)
-			positioned_by_user := True
+			configure_event_pending := True
 		end
 
-	positioned_by_user: BOOLEAN
-		-- Has `Current' been positioned by the user?
+	configure_event_pending: BOOLEAN
+		-- Has `Current' experienced a configure event?
 
-	screen_x: INTEGER is
+	x_position, screen_x: INTEGER is
 			-- Horizontal position of the window on screen,
 		local
 			temp_y: INTEGER
@@ -182,7 +147,7 @@ feature {NONE} -- Implementation
 			{EV_GTK_EXTERNALS}.gtk_window_get_position (c_object, $Result, $temp_y)
 		end
 
-	screen_y: INTEGER is
+	y_position, screen_y: INTEGER is
 			-- Vertical position of the window on screen,
 		local
 			temp_x: INTEGER
@@ -246,8 +211,8 @@ feature {NONE} -- Implementation
 						-- This is a hack in case parent window was minimized and restored
 						-- by the modal dialog, when closed the window managed would restore the
 						-- focus to the previously focused window which may or may not be `l_window_imp',
-						-- this leads to odd behavior when closing the modal dialog so we always present the window.
-					{EV_GTK_EXTERNALS}.gtk_window_present (l_window_imp.c_object)
+						-- this leads to odd behavior when closing the modal dialog so we always raise the window.
+					{EV_GTK_EXTERNALS}.gdk_window_raise ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (l_window_imp.c_object))
 				end
 			end
 		end
@@ -283,7 +248,139 @@ feature -- Basic operations
 			Result := is_destroyed or else not is_show_requested or else app_implementation.is_destroyed
 		end
 
-feature {EV_INTERMEDIARY_ROUTINES}
+feature {EV_INTERMEDIARY_ROUTINES, EV_APPLICATION_IMP}
+
+	on_key_event (a_key: EV_KEY; a_key_string: STRING_32; a_key_press: BOOLEAN) is
+			-- `a_key' has either been pressed or released
+		deferred
+		end
+
+	process_key_event (a_key_event: POINTER)
+			-- Translation routine used for key events
+		local
+			keyval: NATURAL_32
+			a_key_string: STRING_32
+			a_key: EV_KEY
+			a_key_press: BOOLEAN
+			a_cs: EV_GTK_C_STRING
+			l_app_imp: like app_implementation
+			l_accel_list: EV_ACCELERATOR_LIST
+			l_window_imp: EV_WINDOW_IMP
+			a_focus_widget: EV_WIDGET_IMP
+			l_block_events: BOOLEAN
+			l_tab_controlable: EV_TAB_CONTROLABLE_I
+			l_char: CHARACTER_32
+			l_any: ANY
+			l_accel: EV_ACCELERATOR
+			l_accel_imp: EV_ACCELERATOR_IMP
+			i: INTEGER
+			l_exit: BOOLEAN
+		do
+			l_app_imp := app_implementation
+				-- Perform translation on key values from gdk.
+			keyval := {EV_GTK_EXTERNALS}.gdk_event_key_struct_keyval (a_key_event)
+			if keyval > 0 and then valid_gtk_code (keyval) then
+				create a_key.make_with_code (key_code_from_gtk (keyval))
+			end
+			if {EV_GTK_EXTERNALS}.gdk_event_key_struct_type (a_key_event) = {EV_GTK_EXTERNALS}.gdk_key_press_enum then
+				l_window_imp ?= Current
+					-- Call accelerators if present.
+				if a_key /= Void and then l_window_imp /= Void then
+					l_accel_list := l_window_imp.accelerators_internal
+					if l_accel_list /= Void then
+						from
+							i := 1
+							l_exit := False
+						until
+							i > l_accel_list.count or else l_exit
+						loop
+							l_accel := l_accel_list @ i
+							if l_accel /= Void then
+								l_accel_imp ?= l_accel.implementation
+								if
+									l_accel_imp.modifier_mask & l_app_imp.keyboard_modifier_mask = l_accel_imp.modifier_mask and then
+									l_accel_imp.key.code = a_key.code
+								then
+									l_app_imp.do_once_on_idle (agent (l_accel.actions).call (Void))
+									l_exit := True
+								end
+							end
+							i := i + 1
+						end
+					end
+				end
+				a_key_press := True
+				create a_cs.share_from_pointer ({EV_GTK_EXTERNALS}.gdk_event_key_struct_string (a_key_event))
+				a_key_string := a_cs.string
+				if a_key_string /= Void and then a_key_string.valid_index (1) then
+					l_char := a_key_string @ 1
+					if l_char.is_character_8 then
+						if not l_char.to_character_8.is_printable and then l_char.code <= 127 then
+							a_key_string := Void
+								-- Non displayable characters
+						end
+					end
+				end
+				if a_key /= Void and then a_key.out.count /= 1 and then not a_key.is_numpad then
+					inspect a_key.code
+					when {EV_KEY_CONSTANTS}.key_space then
+						a_key_string := once " "
+					when {EV_KEY_CONSTANTS}.key_enter then
+						a_key_string := once "%N"
+					when {EV_KEY_CONSTANTS}.key_tab then
+						a_key_string := once "%T"
+					else
+						a_key_string := Void
+					end
+				end
+			end
+
+			a_focus_widget ?= l_app_imp.eif_object_from_gtk_object ({EV_GTK_EXTERNALS}.gtk_window_struct_focus_widget (c_object))
+			l_any := Current
+			if a_focus_widget = Void then
+					-- If the focus widget is not available then set it to the current window.
+				a_focus_widget ?= l_any
+			end
+			if a_focus_widget /= Void and then a_focus_widget.is_sensitive and then a_focus_widget.has_focus then
+				if a_key /= Void then
+					if a_focus_widget.default_key_processing_handler /= Void then
+						l_block_events := not a_focus_widget.default_key_processing_handler.item ([a_key])
+					end
+					if not l_block_events then
+						l_tab_controlable ?= a_focus_widget
+						if l_tab_controlable /= Void and then not l_tab_controlable.is_tabable_from then
+							l_block_events := a_key.is_arrow or else a_key.code = {EV_KEY_CONSTANTS}.key_tab
+						end
+					end
+					if not l_block_events then
+						{EV_GTK_EXTERNALS}.gtk_main_do_event (a_key_event)
+					end
+				end
+				if l_app_imp.pick_and_drop_source /= Void and then a_key_press and then a_key /= Void and then (a_key.code = {EV_KEY_CONSTANTS}.key_escape or a_key.code = {EV_KEY_CONSTANTS}.key_alt) then
+					l_app_imp.pick_and_drop_source.end_transport (0, 0, 0, 0, 0, 0, 0, 0)
+				else
+					if a_key_press then
+						if a_key /= Void and then l_app_imp.key_press_actions_internal /= Void then
+							l_app_imp.key_press_actions_internal.call ([a_focus_widget.interface, a_key])
+						end
+						if a_key_string /= Void and then l_app_imp.key_press_string_actions_internal /= Void then
+							l_app_imp.key_press_string_actions_internal.call ([a_focus_widget.interface, a_key_string])
+						end
+					else
+						if a_key /= Void and then l_app_imp.key_release_actions_internal /= Void then
+							l_app_imp.key_release_actions_internal.call ([a_focus_widget.interface, a_key])
+						end
+					end
+					if a_focus_widget /= l_any then
+						on_key_event (a_key, a_key_string, a_key_press)
+					end
+					a_focus_widget.on_key_event (a_key, a_key_string, a_key_press)
+				end
+			else
+					-- Execute the gdk event as normal.
+				{EV_GTK_EXTERNALS}.gtk_main_do_event (a_key_event)
+			end
+		end
 
 	call_close_request_actions is
 			-- Call the close request actions.

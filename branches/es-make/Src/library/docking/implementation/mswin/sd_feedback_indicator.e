@@ -242,7 +242,9 @@ feature {NONE} -- Implementation
 		do
 			Precursor {SD_DIALOG}
 			if should_destroy_bitmap then
-				wel_bitmap.delete
+				wel_bitmap := Void
+				-- `wel_bitmap' will be destroyed by garbage collector
+				-- We can't call wel_bitmap.delete directly, because it'll be called by garbage collector, otherwise it will cause segmentation violation.
 			end
 		end
 
@@ -316,7 +318,7 @@ feature {NONE} -- Externals
 feature {NONE} -- Features inherit from EV_ANY.
 
 	create_implementation is
-			-- Fack.
+			-- Fake.
 		do
 		end
 

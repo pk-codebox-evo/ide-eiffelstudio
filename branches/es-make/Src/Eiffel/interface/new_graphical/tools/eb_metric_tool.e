@@ -10,6 +10,15 @@ class
 	EB_METRIC_TOOL
 
 inherit
+	EB_TOOL
+		redefine
+			make,
+			pixmap,
+			pixel_buffer,
+			show,
+			close
+		end
+
 	SHARED_WORKBENCH
 
 	EB_RECYCLABLE
@@ -22,27 +31,33 @@ inherit
 
 	EB_METRIC_ACTION_SEQUENCES
 
+	SHARED_EIFFEL_PROJECT
+
 create
 	make
 
 feature -- Initialization
 
-	make (dw: EB_DEVELOPMENT_WINDOW; ctxt_tl: EB_CONTEXT_TOOL) is
+	make (dw: EB_DEVELOPMENT_WINDOW) is
 			-- Initialize `Current'.
 		do
-			development_window := dw
-			context_tool := ctxt_tl
+			develop_window := dw
 			create widget
 			create metric_notebook
 
 			create feedback_dialog
 			feedback_dialog.set_buttons (<<>>)
 
+			notify_project_loaded_agent := agent notify_project_loaded
+			notify_project_unloaded_agent := agent notify_project_unloaded
+
 			create metric_evaluation_panel.make (Current)
 			create new_metric_panel.make (Current)
 			create metric_archive_panel.make (Current)
 			create detail_result_panel.make (Current)
 			create metric_history_panel.make (Current)
+			eiffel_project.manager.load_agents.extend (notify_project_loaded_agent)
+			eiffel_project.manager.close_agents.extend (notify_project_unloaded_agent)
 
 			metric_notebook.extend (metric_evaluation_panel)
 			metric_notebook.extend (new_metric_panel)
@@ -65,16 +80,47 @@ feature -- Initialization
 			install_agents (metric_manager)
 		end
 
+	build_interface is
+			-- Redefine
+		do
+		end
+
+	title: STRING_GENERAL is
+			-- Redefine
+		do
+			Result := interface_names.t_metric_tool
+		end
+
+	title_for_pre: STRING is
+			-- Redefine
+		do
+			Result := interface_names.to_metric_tool
+		end
+
+	pixmap: EV_PIXMAP is
+			-- Pixmap
+		do
+			Result := pixmaps.icon_pixmaps.tool_metric_icon
+		end
+
+	pixel_buffer: EV_PIXEL_BUFFER is
+			-- Pixel buffer
+		do
+			Result := pixmaps.icon_pixmaps.tool_metric_icon_buffer
+		end
+
 feature -- Actions
 
 	on_select is
 			-- Metric tool has been selected, synchronize.
 		do
-			if workbench.system_defined and then workbench.is_already_compiled then
-				load_metrics (False, metric_names.t_loading_metrics)
+			if content.is_visible then
+				if workbench.system_defined and then workbench.is_already_compiled then
+					load_metrics (False, metric_names.t_loading_metrics)
+				end
+				set_is_shown (True)
+				on_tab_change
 			end
-			set_is_shown (True)
-			on_tab_change
 		end
 
 	on_deselect is
@@ -92,6 +138,20 @@ feature -- Actions
 		do
 			set_last_metric_value_historied (True)
 			send_metric_value_in_history_actions.call ([a_archive, a_panel])
+		end
+
+	show is
+			-- Redefine
+		do
+			Precursor {EB_TOOL}
+			on_select
+		end
+
+	close is
+			-- Redefine
+		do
+			Precursor {EB_TOOL}
+			on_deselect
 		end
 
 feature -- Basic operations
@@ -133,7 +193,7 @@ feature -- Basic operations
 		do
 			if workbench.system_defined and then workbench.is_already_compiled then
 				if a_force or else not metric_manager.is_metric_loaded then
-					show_feedback_dialog (a_msg, agent metric_manager.load_metrics, feedback_dialog, development_window.window)
+					show_feedback_dialog (a_msg, agent metric_manager.load_metrics, feedback_dialog, develop_window.window)
 					display_error_message
 					check_metric_validation
 				end
@@ -143,20 +203,20 @@ feature -- Basic operations
 	check_metric_validation is
 			-- Check metric validation.
 		do
-			development_window.window_manager.display_message (metric_names.t_checking_metric_vadility)
+			develop_window.window_manager.display_message (metric_names.t_checking_metric_vadility)
 			metric_manager.check_validation (True)
 			is_metric_validation_checked.put (True)
-			development_window.window_manager.display_message ("")
+			develop_window.window_manager.display_message ("")
 		end
 
-	register_metric_result_for_display (a_metric: EB_METRIC; a_input: EB_METRIC_DOMAIN; a_value: DOUBLE; a_result: QL_DOMAIN; a_time: DATE_TIME; a_from_history: BOOLEAN) is
+	register_metric_result_for_display (a_metric: EB_METRIC; a_input: EB_METRIC_DOMAIN; a_value: DOUBLE; a_result: QL_DOMAIN; a_time: DATE_TIME; a_from_history: BOOLEAN; a_filtered: BOOLEAN) is
 			-- Register metric result for display.
 		require
 			a_metric_attached: a_metric /= Void
 			a_input_attached: a_input /= Void
 			a_time_attached: a_time /= Void
 		do
-			detail_result_panel.on_display_metric_value (a_metric, a_value, a_input, a_result, a_time, a_from_history)
+			detail_result_panel.on_display_metric_value (a_metric, a_value, a_input, a_result, a_time, a_from_history, a_filtered)
 		end
 
 	register_archive_result_for_display (ref_archive, cur_archive: LIST [EB_METRIC_ARCHIVE_NODE]) is
@@ -172,6 +232,8 @@ feature -- Basic operations
 		do
 			metric_manager.store_userdefined_metrics
 			display_error_message
+			check_metric_validation
+			metric_loaded_actions.call ([])
 		end
 
 	display_error_message is
@@ -186,7 +248,7 @@ feature -- Basic operations
 					end
 					create l_dlg.make_with_text (metric_manager.last_error.message_with_location)
 					l_dlg.set_buttons_and_actions (<<metric_names.t_ok>>, <<agent do_nothing>>)
-					l_dlg.show_relative_to_window (development_window.window)
+					l_dlg.show_relative_to_window (develop_window.window)
 					metric_manager.clear_last_error
 				end
 			end
@@ -214,12 +276,6 @@ feature -- Basic operations
 		end
 
 feature -- Access
-
-	development_window: EB_DEVELOPMENT_WINDOW
-			-- Application main window.
-
-	context_tool: EB_CONTEXT_TOOL
-			-- Container of `Current'.
 
 	widget: EV_VERTICAL_BOX
 			-- Graphical object of `Current'
@@ -272,9 +328,10 @@ feature {NONE} -- Memory management
 			new_metric_panel := Void
 			metric_archive_panel := Void
 			detail_result_panel := Void
-			development_window := Void
-			context_tool := Void
+			develop_window := Void
 			uninstall_agents (metric_manager)
+			eiffel_project.manager.load_agents.prune_all (notify_project_loaded_agent)
+			eiffel_project.manager.close_agents.prune_all (notify_project_unloaded_agent)
 		end
 
 feature -- Status report
@@ -340,23 +397,26 @@ feature{NONE} -- Actions
 			l_selected_index: INTEGER
 			l_notebook: EV_NOTEBOOK
 			l_panel: EB_METRIC_PANEL
+			i: INTEGER
+			l_notebook_count: INTEGER
 		do
 			from
 				l_notebook := metric_notebook
 				l_selected_index := l_notebook.selected_item_index
-				l_notebook.start
+				i := 1
+				l_notebook_count := l_notebook.count
 			until
-				l_notebook.after
+				i > l_notebook_count
 			loop
-				l_panel ?= l_notebook.item
+				l_panel ?= l_notebook @ i
 				check l_panel /= Void end
-				if is_shown and then l_notebook.index = l_selected_index then
+				if is_shown and then i = l_selected_index then
 					l_panel.set_is_selected (True)
 					l_panel.on_select
 				else
 					l_panel.set_is_selected (False)
 				end
-				l_notebook.forth
+				i := i + 1
 			end
 		end
 
@@ -483,9 +543,34 @@ feature{NONE} -- Implementation
 		send_metric_value_in_history_actions_internal: like send_metric_value_in_history_actions;
 			-- Implementation of `send_metric_value_in_history_actions'
 
+		notify_project_loaded is
+				-- Notify `metric_manager' that project has been loaded.
+			do
+				if not metric_manager.is_project_loaded then
+					metric_manager.on_project_loaded
+				end
+			end
+
+		notify_project_unloaded is
+				-- Notify `metric_manager' that project has been unloaded.
+			do
+				if metric_manager.is_project_loaded then
+					metric_manager.on_project_unloaded
+				end
+			end
+
+		notify_project_loaded_agent: PROCEDURE [ANY, TUPLE]
+				-- Agent of `notify_project_loaded'
+
+		notify_project_unloaded_agent: PROCEDURE [ANY, TUPLE]
+				-- Agent of `notify_project_unloaded'
+
 invariant
 	feedback_dialog_attached: feedback_dialog /= Void
 	not_feedback_dialog_is_destroyed: not feedback_dialog.is_destroyed
+	notify_project_loaded_agent_attached: notify_project_loaded_agent /= Void
+	notify_project_unloaded_agent_attached: notify_project_unloaded_agent /= Void
+
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

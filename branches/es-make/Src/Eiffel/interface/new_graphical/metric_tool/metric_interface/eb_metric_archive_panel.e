@@ -108,7 +108,8 @@ feature {NONE} -- Initialization
 			-- can be added here.
 		do
 				-- Setup domain selector.
-			create domain_selector.make (False)
+			create domain_selector
+			domain_selector.setup_delayed_domain_item_buttons (True, False, False)
 				-- Setup metric selector.
 			create metric_selector.make (True)
 			metric_selector.double_click_actions.extend (agent on_pointer_double_click_on_metric_item)
@@ -145,7 +146,7 @@ feature {NONE} -- Initialization
 			browse_reference_archive_btn.set_tooltip (metric_names.f_select_reference_archive)
 			run_btn.disable_sensitive
 			domain_selector.domain_change_actions.extend (agent on_domain_change)
-			new_archive_file_lbl.set_text (metric_names.t_location)
+			new_archive_file_lbl.set_text (metric_names.coloned_string (metric_names.t_location, True))
 			clean_btn.set_text (metric_names.t_clean)
 			archive_definition_frame.set_text (metric_names.t_archive_management)
 			archive_comparison_area.set_text (metric_names.t_archive_comparison)
@@ -153,23 +154,6 @@ feature {NONE} -- Initialization
 			metric_lbl.set_text (metric_names.t_select_metric)
 			reference_archive_lbl.set_text (metric_names.t_select_reference_archive)
 			current_archive_lbl.set_text (metric_names.t_select_current_archive)
-
-				-- Delete following in docking EiffelStudio.
-			comparison_toolbar_area.drop_actions.extend (agent drop_cluster)
-			comparison_toolbar_area.drop_actions.extend (agent drop_class)
-			comparison_toolbar_area.drop_actions.extend (agent drop_feature)
-			comparison_area.drop_actions.extend (agent drop_cluster)
-			comparison_area.drop_actions.extend (agent drop_class)
-			comparison_area.drop_actions.extend (agent drop_feature)
-			comparison_empty_cell.drop_actions.extend (agent drop_cluster)
-			comparison_empty_cell.drop_actions.extend (agent drop_class)
-			comparison_empty_cell.drop_actions.extend (agent drop_feature)
-			reference_empty_area.drop_actions.extend (agent drop_cluster)
-			reference_empty_area.drop_actions.extend (agent drop_class)
-			reference_empty_area.drop_actions.extend (agent drop_feature)
-			current_archive_empty_area.drop_actions.extend (agent drop_cluster)
-			current_archive_empty_area.drop_actions.extend (agent drop_class)
-			current_archive_empty_area.drop_actions.extend (agent drop_feature)
 
 			preferences.metric_tool_data.unit_order_preference.change_actions.extend (on_unit_order_change_agent)
 		end
@@ -311,6 +295,7 @@ feature -- Actions
 				create {ARRAYED_LIST [EB_METRIC_ARCHIVE_NODE]} l_archive.make (l_selected_metrics.count)
 				metric_manager.on_archive_calculation_starts (Current)
 				calculator.calculate_archive (archive_calculatation_task (l_selected_metrics, domain_selector.domain))
+
 				metric_manager.on_archive_calculation_stops (Current)
 				if calculator.has_error then
 					display_status_message (calculator.last_error_message)
@@ -505,7 +490,7 @@ feature {NONE} -- Implementation
 			-- Timer used in `current_metric_archive_text'
 
 	check_archive_validity (a_text_field: EV_TEXT_FIELD; a_action: PROCEDURE [ANY, TUPLE [a_file_exist: BOOLEAN; a_archive_valid: BOOLEAN; a_archive: LIST [EB_METRIC_ARCHIVE_NODE]]]; a_timer: EV_TIMEOUT) is
-			-- Check vadility of archive defined in `a_text_field' and invoke `a_action' after checking.
+			-- Check validity of archive defined in `a_text_field' and invoke `a_action' after checking.
 			-- If the specified archive file doesn't exist, the first boolean argument (a_file_exist) of `a_action' will be False, otherwise True.
 			-- If the archive file exists, the second will be set to True if the archive is valid, otherwise False.
 			-- If `a_archive_valid' is True, `a_archive' is the archive, otherwise, `a_archive' is Void.
@@ -514,25 +499,27 @@ feature {NONE} -- Implementation
 			a_action_attached: a_action /= Void
 			a_timer_attached: a_timer /= Void
 		local
+			l_dir: DIRECTORY
 			l_file: RAW_FILE
 			l_file_name: STRING
 			l_archive: LIST [EB_METRIC_ARCHIVE_NODE]
 		do
 			l_file_name := a_text_field.text
 			create l_file.make (l_file_name)
+			create l_dir.make (l_file_name)
 			if l_file.exists and then not l_file.is_directory then
 				show_feedback_dialog (metric_names.t_analysing_archive, agent metric_manager.load_metric_archive (l_file_name), metric_tool.feedback_dialog, metric_tool_window)
 				l_archive := metric_manager.last_loaded_metric_archive
 				a_action.call ([True, not metric_manager.has_error, l_archive])
 				metric_manager.clear_last_error
-			else
+			elseif not l_dir.exists then
 				a_action.call ([False, False, Void])
 			end
 			a_timer.set_interval (0)
 		end
 
 	check_selected_metrics (a_list: LIST [STRING]): STRING_GENERAL is
-			-- Check vadility of metrics whose names are in `a_list'.
+			-- Check validity of metrics whose names are in `a_list'.
 			-- Return message if error occurs, otherwise, return Void.
 		require
 			a_list_attached: a_list /= Void
@@ -602,14 +589,6 @@ feature {NONE} -- Implementation
 				Result.extend (a_tbl.item_for_iteration)
 				a_tbl.forth
 			end
-		ensure
-			result_attached: Result /= Void
-		end
-
-	red_color: EV_COLOR is
-			-- Red color
-		do
-			Result := (create {EV_STOCK_COLORS}).red
 		ensure
 			result_attached: Result /= Void
 		end
@@ -718,9 +697,9 @@ feature {NONE} -- Implementation
 					error_dialog.show_modal_to_window (metric_tool_window)
 				else
 					transfer_manager_builder.build_manager
-					metric_tool_window.set_pointer_style (metric_tool.development_window.Wait_cursor)
+					metric_tool_window.set_pointer_style (metric_tool.develop_window.Wait_cursor)
 					transfer_manager_builder.transfer
-					metric_tool_window.set_pointer_style (metric_tool.development_window.Standard_cursor)
+					metric_tool_window.set_pointer_style (metric_tool.develop_window.Standard_cursor)
 					if transfer_manager_builder.transfer_succeeded then
 						Result := file_name
 					else
@@ -735,7 +714,7 @@ feature {NONE} -- Implementation
 	calculator: EB_METRIC_ARCHIVE_CALCULATOR
 			-- Archive calculator	
 
-	archive_calculatation_task (a_metric_names: LIST [STRING]; a_input_domain: EB_METRIC_DOMAIN): LIST [TUPLE [EB_METRIC, EB_METRIC_DOMAIN, BOOLEAN]] is
+	archive_calculatation_task (a_metric_names: LIST [STRING]; a_input_domain: EB_METRIC_DOMAIN): LIST [TUPLE [EB_METRIC, EB_METRIC_DOMAIN, BOOLEAN, BOOLEAN, EB_METRIC_VALUE_TESTER]] is
 			-- Archive calculation task from `a_metric_names' and `a_input_domain'
 		require
 			a_metric_names_attached: a_metric_names /= Void
@@ -743,13 +722,13 @@ feature {NONE} -- Implementation
 			a_input_domain_attached: a_input_domain /= Void
 			a_input_domain_valid: a_input_domain.is_valid
 		do
-			create {LINKED_LIST [TUPLE [EB_METRIC, EB_METRIC_DOMAIN, BOOLEAN]]} Result.make
+			create {LINKED_LIST [TUPLE [EB_METRIC, EB_METRIC_DOMAIN, BOOLEAN, BOOLEAN, EB_METRIC_VALUE_TESTER]]} Result.make
 			from
 				a_metric_names.start
 			until
 				a_metric_names.after
 			loop
-				Result.extend ([metric_manager.metric_with_name (a_metric_names.item), a_input_domain, False])
+				Result.extend ([metric_manager.metric_with_name (a_metric_names.item), a_input_domain, False, False, Void])
 				a_metric_names.forth
 			end
 		ensure
