@@ -63,7 +63,7 @@
 		<echo message=" geant ${opt} clean_compile_all"/>
 		<echo message=" geant ${opt} finalize_compile_all"/>
 		<echo message="       ----------"/>
-		<echo message=" geant ${opt} build_es"/>
+		<echo message=" geant ${opt} make_delivery"/>
 	</target>
 	<target name="clean">
 		<set name="opt" value=" -Dforce_clean=true " />
@@ -286,8 +286,8 @@
 		<geant file="${misc_dir}/set_version.eant" target="set_version" reuse_variables="true"  fork="false"/>
 	</target>
 
-	<target name="build_es" depend="init">
-		<geant file="${scripts_dir}/deliv.eant" target="build_es" reuse_variables="true"  fork="false"/>
+	<target name="make_delivery" depend="init">
+		<geant file="${scripts_dir}/make_delivery.eant" target="build_delivery" reuse_variables="true"  fork="false"/>
 	</target>
 
 </project>
