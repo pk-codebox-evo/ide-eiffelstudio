@@ -234,14 +234,14 @@
 	</target>
 
 	<target name="make_delivery_common" depend="init_delivery" >
-		<echo message="${cwd}" />
 		<!-- platform independant -->
-		<set name="SVNURL" value="https://eiffelsoftware.origo.ethz.ch/svn/es/branches/es-make" />
-		<exec executable="svn checkout $SVNURL/Delivery . " />
-		<!-- don't download a new library
-		<exec executable="svn checkout $SVNURL/Src/library library" />
-		<exec executable="svn checkout $SVNURL/Src/C_library C_library" />
-		-->
+		<available resource="${EIFFEL_SRC}/../Delivery/" variable="delivery_dir_available" />
+		<copy to_directory="${INSTALL_DIR}/" dir="${EIFFEL_SRC}/../Delivery/" if="$delivery_dir_available">
+			<fileset 
+				include="@(**/*)" 
+				exclude="@(**/.svn/**/*)"
+			/>
+		</copy>
 		<mkdir directory="library" />
 		<mkdir directory="C_library" />
 		<copy to_directory="${INSTALL_DIR}/library" dir="${EIFFEL_SRC}/library">
