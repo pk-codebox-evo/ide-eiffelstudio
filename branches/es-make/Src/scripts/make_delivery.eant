@@ -235,38 +235,54 @@
 
 	<target name="make_delivery_common" depend="init_delivery" >
 		<!-- platform independant -->
-		<available resource="${EIFFEL_SRC}/../Delivery/" variable="delivery_dir_available" />
-		<copy to_directory="${INSTALL_DIR}/" dir="${EIFFEL_SRC}/../Delivery/" if="$delivery_dir_available">
+		<available resource="${EIFFEL_SRC}${path_separator}..${path_separator}Delivery" variable="delivery_dir_available" />
+		<copy to_directory="${INSTALL_DIR}" dir="${EIFFEL_SRC}${path_separator}..${path_separator}Delivery" if="$delivery_dir_available">
 			<fileset 
 				include="@(**/*)" 
 				exclude="@(**/.svn/**/*)"
 			/>
 		</copy>
 		<mkdir directory="library" />
+		<copy to_directory="${INSTALL_DIR}${path_separator}library" dir="${EIFFEL_SRC}${path_separator}library">
+			<fileset 
+				include="@(**/*)" 
+				exclude="@(**/.svn/**/*)"
+			/>
+		</copy>
+
+		<!-- Process Gobo -->
+		<replace file="${INSTALL_DIR}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf.in" 
+to_file="${INSTALL_DIR}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf" token="##GOBO##library" replace="library" flags="g" />	
+		<available resource="${GOBO}${path_separator}library" variable="gobo_available" true_value="${GOBO}" />
+		<available resource="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}library" variable="gobo_available" true_value="${ISE_LIBRARY}${path_separator}library${path_separator}gobo" if="${gobo_available}=false" />
+		<available resource="${ISE_EIFFEL}${path_separator}library${path_separator}gobo${path_separator}library" variable="gobo_available" true_value="${ISE_EIFFEL}${path_separator}library${path_separator}gobo" if="${gobo_available}=false" />
+		<mkdir directory="${INSTALL_DIR}${path_separator}library${path_separator}gobo${path_separator}library" />
+		<copy to_directory="${INSTALL_DIR}${path_separator}library${path_separator}gobo${path_separator}library" dir="${gobo_available}${path_separator}library">
+			<fileset 
+				include="@(**/*)" 
+				exclude="@(**/.svn/**/*)"
+			/>
+		</copy>
+		<unset name="gobo_available" />
+
 		<mkdir directory="C_library" />
-		<copy to_directory="${INSTALL_DIR}/library" dir="${EIFFEL_SRC}/library">
+		<copy to_directory="${INSTALL_DIR}${path_separator}C_library" dir="${EIFFEL_SRC}${path_separator}C_library">
 			<fileset 
 				include="@(**/*)" 
 				exclude="@(**/.svn/**/*)"
 			/>
 		</copy>
-		<copy to_directory="${INSTALL_DIR}/C_library" dir="${EIFFEL_SRC}/C_library">
-			<fileset 
-				include="@(**/*)" 
-				exclude="@(**/.svn/**/*)"
-			/>
-		</copy>
-		<mkdir directory="studio/spec/$ISE_PLATFORM"/>
-		<mkdir directory="studio/spec/$ISE_PLATFORM/bin"/>
-		<echo message="make dir : studio/spec/$ISE_PLATFORM/include" />
-		<mkdir directory="studio/spec/$ISE_PLATFORM/include"/>
-		<mkdir directory="studio/spec/$ISE_PLATFORM/lib"/>
-		<copy to_directory="${INSTALL_DIR}/studio/spec/${ISE_PLATFORM}/include" dir="${EIFFEL_SRC}/C/run-time" >
+		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM"/>
+		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM/bin"/>
+		<echo message="make dir : studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}include" />
+		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}include"/>
+		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}lib"/>
+		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}include" dir="${EIFFEL_SRC}${path_separator}C${path_separator}run-time" >
 			<fileset include="@(*.h)" />
 		</copy>
-		<copy file="${EIFFEL_SRC}/C/eif_confmagic.h" to_file="${INSTALL_DIR}/studio/spec/${ISE_PLATFORM}/include/eif_confmagic.h" />
-		<copy file="${EIFFEL_SRC}/C/run-time/x2c${exe}" to_file="${INSTALL_DIR}/studio/spec/${ISE_PLATFORM}/bin/x2c${exe}" />
-		<copy file="${EIFFEL_SRC}/C/ipc/daemon/ecdbgd${exe}" to_file="${INSTALL_DIR}/studio/spec/${ISE_PLATFORM}/bin/ecdbgd${exe}" />
+		<copy file="${EIFFEL_SRC}${path_separator}C${path_separator}eif_confmagic.h" to_file="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}include${path_separator}eif_confmagic.h" />
+		<copy file="${EIFFEL_SRC}${path_separator}C${path_separator}run-time${path_separator}x2c${exe}" to_file="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}x2c${exe}" />
+		<copy file="${EIFFEL_SRC}${path_separator}C${path_separator}ipc${path_separator}daemon${path_separator}ecdbgd${exe}" to_file="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}ecdbgd${exe}" />
 
 		<copy to_directory="${INSTALL_DIR}${path_separator}precomp${path_separator}spec${path_separator}${ISE_PLATFORM}" dir="precomp${path_separator}spec${path_separator}platform" >
 			<fileset 
