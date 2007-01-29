@@ -108,6 +108,13 @@ feature -- Commands
 			Result.disable_sensitive
 		end
 
+	Verify_cmd: EB_VERIFY_COMMAND is
+			-- Command to verify the current source text.
+		once
+			create Result
+			Result.disable_sensitive
+		end
+
 	Document_cmd: DOCUMENT_CMD is
 			-- Command to generate the HTML documentation
 		once

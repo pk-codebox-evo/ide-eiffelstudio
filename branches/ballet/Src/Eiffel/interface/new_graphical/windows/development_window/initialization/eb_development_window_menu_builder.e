@@ -731,6 +731,15 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 				-- Separator -------------------------------------------------
 			l_project_menu.extend (create {EV_MENU_SEPARATOR})
 
+				-- Verify
+			l_command_menu_item := develop_window.verify_cmd.new_menu_item
+			l_command_menu_item.enable_sensitive
+			develop_window.add_recyclable (l_command_menu_item)
+			l_project_menu.extend (l_command_menu_item)
+
+				-- Separator -------------------------------------------------
+			l_project_menu.extend (create {EV_MENU_SEPARATOR})
+
 				-- Compile Workbench C code
 			l_command_menu_item := develop_window.commands.c_workbench_compilation_cmd.new_menu_item
 			develop_window.add_recyclable (l_command_menu_item)

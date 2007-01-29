@@ -362,6 +362,7 @@
 				<exclude>/ewb_case_storage\.e$</exclude>
 			</file_rule>
 		</cluster>
+		<cluster name="ballet" location="\home\schoelle\code\es\ballet\Src\Eiffel\ballet\" recursive="true"/>
 		<override name="eiffel_override" location="$EIFFEL_SRC\Eiffel\override\" recursive="true"/>
 		<override name="parser_override" location="$EIFFEL_SRC\Eiffel\eiffel\AST\parser_override\"/>
 	</target>

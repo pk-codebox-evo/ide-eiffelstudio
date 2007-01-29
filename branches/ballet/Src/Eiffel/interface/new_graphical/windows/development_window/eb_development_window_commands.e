@@ -115,6 +115,9 @@ feature -- Query
 	show_address_toolbar_command: EB_SHOW_TOOLBAR_COMMAND
 			-- Command to show/hide the address toolbar.
 
+	verify_cmd: EB_VERIFY_COMMAND
+			-- Command to call the verifier.
+
 	Edit_external_commands_cmd: EB_EXTERNAL_COMMANDS_EDITOR is
 			-- Command that lets the user add new external commands to the tools menu.
 		once

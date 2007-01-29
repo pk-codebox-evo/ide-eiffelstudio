@@ -28,6 +28,10 @@ class
 
 inherit
 	AST_VISITOR
+		redefine
+			process_modify_as,
+			process_use_as
+		end
 
 feature -- AST process
 
@@ -469,6 +473,8 @@ feature
 			safe_process (l_as.obsolete_keyword)
 			safe_process (l_as.obsolete_message)
 			safe_process (l_as.precondition)
+			safe_process (l_as.use_frame)
+			safe_process (l_as.modify_frame)
 			safe_process (l_as.internal_locals)
 			safe_process (l_as.routine_body)
 			safe_process (l_as.postcondition)
@@ -1095,6 +1101,18 @@ feature
 	process_require_as (l_as: REQUIRE_AS) is
 		do
 			safe_process (l_as.require_keyword)
+			safe_process (l_as.full_assertion_list)
+		end
+
+	process_modify_as (l_as: MODIFY_AS) is
+		do
+			safe_process (l_as.modify_keyword)
+			safe_process (l_as.full_assertion_list)
+		end
+
+	process_use_as (l_as: USE_AS) is
+		do
+			safe_process (l_as.use_keyword)
 			safe_process (l_as.full_assertion_list)
 		end
 

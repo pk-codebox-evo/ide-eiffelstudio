@@ -2,10 +2,23 @@
 
 <project name="delivery" default="help">
 	<description>
-		description: "delivery building"
-		author: "Jocelyn Fiat and others"
-		note: "This script could be split into severals scripts, one for each product"
+		description: "Builds an EiffelStudio delivery, from the current tree."
+		author: "trosim, es-make Project Team, ETH Zurich"
 	</description>
+	<!--
+		============
+		== README ==
+		============
+		
+		This script is under heavy developement.
+		
+		USE ON YOUR OWN RISK!
+		
+		start the script like this:
+			cd %EIFFEL_SRC%
+			geant -b make_delivery.eant
+	-->
+
 	<inherit>
 		<parent location="${EIFFEL_SRC}/scripts/misc/compile_executables.eant">
 			<redefine target="help"/>
@@ -15,26 +28,25 @@
 	<target name="help">
 		<precursor />
 		<echo message="       ----------"/>
-		<echo message=" geant ${opt} build_es"/>
+		<echo message=" geant ${opt} build_delivery"/>
 	</target>
 
-	<target name="init_deliv" depend="init_system" >
+	<target name="init_delivery" depend="init_system" >
 		<set name="INSTALL_DIR" value="${cwd}${path_separator}EiffelXX" unless="${INSTALL_DIR}" />
 		<set name="OUTPUT_DIR" value="${cwd}${path_separator}bin" unless="${OUTPUT_DIR}"/>
 		<set name="build_es_logfile" value="${cwd}${path_separator}build_es.log" unless="$build_es_logfile" />
 	</target>
 
-	<target name="build_es" depend="init_deliv" >
-		<set name="build_es_logfile" value="${cwd}${path_separator}build_es.log" />
+	<target name="build_delivery" depend="init_delivery" >
 		<echo message="Build EiffelStudio ..." to_file="$build_es_logfile" append="true" />
 
-		<geant target="set_version"			fork="false" reuse_variables="true" />
-		<geant target="compile_es" 			fork="false" reuse_variables="true" />
+		<geant target="set_version"		fork="false" reuse_variables="true" />
+		<geant target="compile_es" 		fork="false" reuse_variables="true" />
 		<geant target="create_es_delivery" 	fork="false" reuse_variables="true" />
-		<geant target="install_es" 			fork="false" reuse_variables="true" />
+		<geant target="install_es" 		fork="false" reuse_variables="true" />
 	</target>
 
-	<target name="create_es_delivery" depend="init_deliv" >
+	<target name="create_es_delivery" depend="init_delivery" >
 		<echo message="Building delivery for ES into ${INSTALL_DIR}" to_file="$build_es_logfile" append="true" />
 		<!-- Delivery -->
 		<available resource="${INSTALL_DIR}" variable="installdir_available"/>
@@ -51,18 +63,28 @@
 
 		<set name="return_code" value="0" />
 
-		<echo message="Make delivery in ${INSTALL_DIR} ..." to_file="$build_es_logfile" append="true" if="${installdir_available}=false" />
-		<geant target="make_delivery" reuse_variables="true" fork="false" dir="${INSTALL_DIR}" if="${installdir_available}=false" />
-		<echo message="Error occurred during 'make_delivery' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
-		<exit code="${return_code}" unless="${return_code}=0" />
-
-		<echo message="Update delivery in ${INSTALL_DIR} ..." to_file="$build_es_logfile" append="true" if="${installdir_available}=true" />
-		<geant target="update_delivery" reuse_variables="true" fork="false" dir="${INSTALL_DIR}" if="${installdir_available}=true" />
-		<echo message="Error occurred during 'make_delivery' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
-		<exit code="${return_code}" unless="${return_code}=0" />
+		<!-- Make delivery (until task end) -->
+		<echo message="Task: make_delivery"/>
+		<echo message="Task: make_delivery" to_file="$build_es_logfile" append="true" />
+		<!-- cwd -> INSTALL_DIR
+		<set name="NEW_ISE_EIFFEL" value="${cwd}" unless="${NEW_ISE_EIFFEL}" />
+		-->
+		<set name="NEW_ISE_EIFFEL" value="${INSTALL_DIR}" unless="${NEW_ISE_EIFFEL}" />
+		<geant target="make_delivery_common" reuse_variables="true" fork="false" dir="${NEW_ISE_EIFFEL}" />
+		<geant target="make_delivery_windows" reuse_variables="true" fork="false" if="${is_windows}" dir="${NEW_ISE_EIFFEL}" />
+		<geant target="make_delivery_unix" reuse_variables="true" fork="false" unless="${is_windows}" dir="${NEW_ISE_EIFFEL}" />
+		
+		<!-- compile NEW_ISE_EIFFEL library -->
+		<set name="old_ISE_LIBRARY" value="${ISE_LIBRARY}" />
+		<setenv name="ISE_LIBRARY" value="${NEW_ISE_EIFFEL}" />
+		<geant target="compile_library" reuse_variables="true" />
+		<echo message="Error occurred during 'compile_library' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
+		<setenv name="ISE_LIBRARY" value="${old_ISE_LIBRARY}" />
+		<unset name="old_ISE_LIBRARY" />
+		<set name="return_code" value="0" />
 	</target>
 
-	<target name="compile_es" depend="init_deliv" >
+	<target name="compile_es" depend="init_delivery" >
 		<echo message="Compiling ES into ${OUTPUT_DIR}" to_file="$build_es_logfile" append="true" />
 
 		<mkdir directory="${OUTPUT_DIR}" />
@@ -106,7 +128,7 @@
 
 	</target>
 
-	<target name="compile_es_windows" depend="init_deliv" if="${is_windows}" >
+	<target name="compile_es_windows" depend="init_delivery" if="${is_windows}" >
 		<!-- finish_freezing -->
 		<echo message="Finalize finish_freezing ..." to_file="$build_es_logfile" append="true" />
 		<geant target="finalize_finish_freezing" />
@@ -134,7 +156,7 @@
 		</copy>
 	</target>
 
-	<target name="install_es" depend="init_deliv" >
+	<target name="install_es" depend="init_delivery" >
 		<echo message="Installing ES into ${INSTALL_DIR}" to_file="$build_es_logfile" append="true" />
 
 		<!-- install binaries -->
@@ -164,11 +186,11 @@
 	</target>
 
 
-	<target name="install_es_unix" depend="init_deliv" unless="${is_windows}" >
+	<target name="install_es_unix" depend="init_delivery" unless="${is_windows}" >
 		<exec executable="chmod a+x ${tmp_install_dir}/bin/* " accept_errors="true" exit_code_variable="return_code" />
 	</target>
 
-	<target name="install_es_windows" depend="init_deliv" if="${is_windows}" >
+	<target name="install_es_windows" depend="init_delivery" if="${is_windows}" >
 		<available dir="${OUTPUT_DIR}" resource="wel_hook.dll" variable="tmp_available"/>
 		<copy dir="${OUTPUT_DIR}" file="wel_hook.dll" to_directory="${tmp_install_dir}${path_separator}bin" 
 			if="${tmp_available}=true" />
@@ -196,51 +218,44 @@
 			if="${tmp_available}=true"/>
 	</target>
 
-	<target name="clean_es" depend="init_deliv" >
+	<target name="clean_es" depend="init_delivery" >
 		<exec executable="rmdir /q/s ${EIFGENs}" if="${is_windows}" />
 		<exec executable="\rm -rf ${EIFGENs}" unless="${is_windows}" />
 		<available resource="${INSTALL_DIR}" variable="installdir_available"/>
 		<geant target="clean_delivery" reuse_variables="true" fork="false" if="${installdir_available}=true" />
 	</target>
 
-	<target name="clean_delivery" depend="init_deliv" >
+	<target name="clean_delivery" depend="init_delivery" >
 		<!--
 		<delete directory="${INSTALL_DIR}" if="${installdir_available}=true" />
 		-->
 		<exec executable="rmdir /q/s ${INSTALL_DIR}" if="${is_windows}" accept_errors="true" exit_code_variable="return_code" />
 		<exec executable="\rm -rf ${INSTALL_DIR}" unless="${is_windows}" accept_errors="true" exit_code_variable="return_code" />
 	</target>
-	<target name="make_delivery" depend="init_deliv" >
-		<echo message="Task: make_delivery"/>
-		<echo message="Task: make_delivery" to_file="$build_es_logfile" append="true" />
-		<set name="NEW_ISE_EIFFEL" value="${cwd}" unless="${NEW_ISE_EIFFEL}" />
-		<geant target="make_delivery_common" reuse_variables="true" fork="false" dir="${NEW_ISE_EIFFEL}" />
-		<geant target="make_delivery_windows" reuse_variables="true" fork="false" if="${is_windows}" dir="${NEW_ISE_EIFFEL}" />
-		<geant target="make_delivery_unix" reuse_variables="true" fork="false" unless="${is_windows}" dir="${NEW_ISE_EIFFEL}" />
 
-		<!-- compile NEW_ISE_EIFFEL library -->
-		<set name="old_ISE_LIBRARY" value="${ISE_LIBRARY}" />
-		<setenv name="ISE_LIBRARY" value="${NEW_ISE_EIFFEL}" />
-		<geant target="compile_library" reuse_variables="true" />
-		<echo message="Error occurred during 'compile_library' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
-		<setenv name="ISE_LIBRARY" value="${old_ISE_LIBRARY}" />
-		<unset name="old_ISE_LIBRARY" />
-		<set name="return_code" value="0" />
-	</target>
-
-	<target name="update_delivery" depend="init_deliv" >
-		<echo message="Task: update_delivery"/>
-		<echo message="Task: update_delivery" to_file="$build_es_logfile" append="true" />
-		<set name="NEW_ISE_EIFFEL" value="${cwd}" />
-		<geant target="make_delivery" reuse_variables="true" fork="false" />
-	</target>
-
-	<target name="make_delivery_common" depend="init_deliv" >
+	<target name="make_delivery_common" depend="init_delivery" >
+		<echo message="${cwd}" />
 		<!-- platform independant -->
-		<set name="SVNURL" value="https://eiffelsoftware.origo.ethz.ch/svn/es/trunk" />
+		<set name="SVNURL" value="https://eiffelsoftware.origo.ethz.ch/svn/es/branches/es-make" />
 		<exec executable="svn checkout $SVNURL/Delivery . " />
+		<!-- don't download a new library
 		<exec executable="svn checkout $SVNURL/Src/library library" />
 		<exec executable="svn checkout $SVNURL/Src/C_library C_library" />
+		-->
+		<mkdir directory="library" />
+		<mkdir directory="C_library" />
+		<copy to_directory="${INSTALL_DIR}/library" dir="${EIFFEL_SRC}/library">
+			<fileset 
+				include="@(**/*)" 
+				exclude="@(**/.svn/**/*)"
+			/>
+		</copy>
+		<copy to_directory="${INSTALL_DIR}/C_library" dir="${EIFFEL_SRC}/C_library">
+			<fileset 
+				include="@(**/*)" 
+				exclude="@(**/.svn/**/*)"
+			/>
+		</copy>
 		<mkdir directory="studio/spec/$ISE_PLATFORM"/>
 		<mkdir directory="studio/spec/$ISE_PLATFORM/bin"/>
 		<echo message="make dir : studio/spec/$ISE_PLATFORM/include" />
@@ -261,7 +276,7 @@
 		</copy>
 	</target>
 
-	<target name="make_delivery_windows" depend="init_deliv" >
+	<target name="make_delivery_windows" depend="init_delivery" >
 		<!-- Windows -->
 		<mkdir directory="studio\spec\$ISE_PLATFORM\lib\$ISE_C_COMPILER"/>
 		<copy to_directory="${INSTALL_DIR}\studio\spec\${ISE_PLATFORM}\lib\$ISE_C_COMPILER" dir="${EIFFEL_SRC}\C\run-time\LIB" >
@@ -275,7 +290,7 @@
 		</copy>
 	</target>
 
-	<target name="make_delivery_unix" depend="init_deliv" >
+	<target name="make_delivery_unix" depend="init_delivery" >
 		<copy file="${EIFFEL_SRC}/C/config.sh" to_directory="studio/spec/${ISE_PLATFORM}/include" />
 		<copy to_directory="${INSTALL_DIR}/studio/spec/${ISE_PLATFORM}/lib" dir="${EIFFEL_SRC}/C/run-time" >
 			<fileset include="@(lib*.*)" />
