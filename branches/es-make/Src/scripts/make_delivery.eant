@@ -194,12 +194,16 @@
 		<unset name="tmp_install_dir" />
 		<!-- end of install -->
 
+		<exec executable="rmdir /q/s ${OUTPUT_DIR}" if="${is_windows}" accept_errors="true" />
+		<exec executable="\rm -rf ${OUTPUT_DIR}" unless="${is_windows}" accept_errors="true" />
+
 		<echo message="Installing ES is completed ..." to_file="$build_es_logfile" append="true" />
 	</target>
 
 
 	<target name="install_es_unix" depend="init_delivery" unless="${is_windows}" >
-		<exec executable="chmod a+x ${tmp_install_dir}/bin/* " accept_errors="true" exit_code_variable="return_code" />
+		<exec executable="chmod a+x ${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}* " accept_errors="true" exit_code_variable="return_code" />
+		<exec executable="chmod a+x ${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}* " accept_errors="true" exit_code_variable="return_code" />
 	</target>
 
 	<target name="install_es_windows" depend="init_delivery" if="${is_windows}" >
