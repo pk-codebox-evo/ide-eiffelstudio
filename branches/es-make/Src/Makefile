@@ -16,16 +16,17 @@ help:
 # Official targets
 
 check_setup: check_geant
-	cd scripts ; geant check_setup
+	cd scripts ; geant check_setup ;
 
 build_dev: check_geant
-	geant -b ${EIFFEL_SRC}/scripts/build.eant build_dev
+	
+	geant -b scripts/build.eant build_dev
 
 clean: check_geant
-	geant -b ${EIFFEL_SRC}/scripts/build.eant clean_all
+	geant -b scripts/build.eant clean_all
 
 build_delivery: check_geant
-	geant -b ${EIFFEL_SRC}/scripts/build.eant make_delivery
+	geant -b scripts/build.eant make_delivery
 
 # ----------------------------------------------------------------------
 # Supporting targets
