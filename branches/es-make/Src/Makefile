@@ -19,12 +19,10 @@ check_setup: check_geant
 	cd scripts ; geant check_setup
 
 build_dev: check_geant
-	geant -b ${EIFFEL_SRC}/scripts/build.eant compile_runtime
-	geant -b ${EIFFEL_SRC}/scripts/build.eant compile_library
-	geant -b ${EIFFEL_SRC}/scripts/build.eant compile_ec
+	geant -b ${EIFFEL_SRC}/scripts/build.eant build_dev
 
 clean: check_geant
-	geant -b ${EIFFEL_SRC}/scripts/build.eant clean_ec
+	geant -b ${EIFFEL_SRC}/scripts/build.eant clean_all
 
 build_delivery: check_geant
 	geant -b ${EIFFEL_SRC}/scripts/build.eant make_delivery

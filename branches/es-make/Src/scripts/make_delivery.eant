@@ -32,12 +32,17 @@
 	</target>
 
 	<target name="init_delivery" depend="init_system" >
-		<set name="INSTALL_DIR" value="${cwd}${path_separator}EiffelXX" unless="${INSTALL_DIR}" />
-		<set name="OUTPUT_DIR" value="${cwd}${path_separator}bin" unless="${OUTPUT_DIR}"/>
-		<set name="build_es_logfile" value="${cwd}${path_separator}build_es.log" unless="$build_es_logfile" />
+		<set name="ec_major_version" value="6" />
+		<set name="ec_minor_version" value="0" />
+		<set name="INSTALL_DIR" value="${cwd}${path_separator}Eiffel${ec_major_version}${ec_minor_version}" unless="${INSTALL_DIR}" />
+		<set name="OUTPUT_DIR" value="${INSTALL_DIR}${path_separator}temporary_bin" unless="${OUTPUT_DIR}"/>
+		<set name="build_es_logfile" value="${INSTALL_DIR}${path_separator}build_es.log" unless="$build_es_logfile" />
 	</target>
 
 	<target name="build_delivery" depend="init_delivery" >
+		<available resource="${INSTALL_DIR}" variable="installdir_available"/>
+		<mkdir directory="${INSTALL_DIR}"  if="${installdir_available}=false" />
+
 		<echo message="Build EiffelStudio ..." to_file="$build_es_logfile" append="true" />
 
 		<geant target="set_version"		fork="false" reuse_variables="true" />
@@ -48,8 +53,6 @@
 
 	<target name="create_es_delivery" depend="init_delivery" >
 		<echo message="Building delivery for ES into ${INSTALL_DIR}" to_file="$build_es_logfile" append="true" />
-		<!-- Delivery -->
-		<available resource="${INSTALL_DIR}" variable="installdir_available"/>
 		<!--
 		<echo message="Clean delivery ..." to_file="$build_es_logfile" append="true" if="${installdir_available}=true"  />
 		<geant target="clean_delivery" reuse_variables="true" fork="false" if="${installdir_available}=true" />
@@ -59,7 +62,6 @@
 
 		<available resource="${INSTALL_DIR}" variable="installdir_available"/>
 		-->
-		<mkdir directory="${INSTALL_DIR}"  if="${installdir_available}=false" />
 
 		<set name="return_code" value="0" />
 
@@ -170,8 +172,6 @@
 		<copy dir="${OUTPUT_DIR}" file="estudio${exe}" to_directory="${tmp_install_dir}${path_separator}bin" 
 			if="${tmp_available}=true"/>
 
-
-
 		<copy dir="${OUTPUT_DIR}" to_directory="${tmp_install_dir}${path_separator}bin" >
 			<fileset include="@(*.dll)" />
 		</copy>
@@ -181,6 +181,8 @@
 
 		<unset name="tmp_install_dir" />
 		<!-- end of install -->
+
+		<delete dir="${OUTPUT_DIR}" />
 
 		<echo message="Installing ES is completed ..." to_file="$build_es_logfile" append="true" />
 	</target>

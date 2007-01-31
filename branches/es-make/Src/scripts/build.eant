@@ -11,16 +11,23 @@
 			<redefine target="help"/>
 		</parent>
 	</inherit>
-	
+
 	<target name="help">
+		<echo message="usage:" />
+		<echo message=" geant check_setup" />
+		<echo message=" geant build_dev" />
+		<echo message=" geant make_delivery" />
+		<echo message=" geant clean_all" />
+		<echo message="       ----------" />
+		<echo message=" geant help_extended" />
+	</target>
+	<target name="help_extended">
 		<echo message="usage:"/>
 		<echo message=" options : -Dforce_clean=true " unless="${opt}" />
 		<echo message="       ----------" unless="${opt}" />
 		<echo message=" geant clean          : display help with -Dforce_clean=true " unless="${opt}"/>
 		<echo message="       ----------" unless="${opt}" />
 		<set name="opt" value="" unless="${opt}" />
-		<echo message=" geant check_setup" />
-		<echo message="       ----------"/>
 		<echo message=" geant compile_runtime" />
 		<echo message=" geant compile_library" />
 		<echo message="       ----------"/>
@@ -56,23 +63,46 @@
 		<echo message=" geant ${opt} clean_emdc"/>
 		<echo message=" geant ${opt} finalize_emdc"/>
 		<echo message="       ----------"/>
-		<echo message=" geant ${opt} clean_ebuild"/>
-		<echo message=" geant ${opt} compile_ebuild"/>
-		<echo message=" geant ${opt} finalize_ebuild"/>
+		<echo message=" geant ${opt} clean_esbuilder"/>
+		<echo message=" geant ${opt} compile_esbuilder"/>
+		<echo message=" geant ${opt} finalize_esbuilder"/>
 		<echo message="       ----------"/>
 		<echo message=" geant ${opt} clean_compile_all"/>
 		<echo message=" geant ${opt} finalize_compile_all"/>
-		<echo message="       ----------"/>
-		<echo message=" geant ${opt} make_delivery"/>
 	</target>
+
 	<target name="clean">
 		<set name="opt" value=" -Dforce_clean=true " />
 		<geant target="help" reuse_variables="true" />
 	</target>
 
-	<!-- check setup -->
-	<target name="check_setup" depent="init">
-		<geant file="check_setup.eant" target="check_setup" reuse_variables="true" fork="false" />
+	<!--
+	**************************************************************************************
+	***  Wrapper target                       ********************************************
+	**************************************************************************************
+	-->
+
+	<target name="check_setup" depend="init">
+		<geant file="${scripts_dir}${path_separator}check_setup.eant" target="check_setup" reuse_variables="true" fork="false" />
+	</target>
+	<target name="build_dev">
+		<geant target="compile_runtime" reuse_variables="true" fork="false" />
+                <geant target="compile_library" reuse_variables="true" fork="false" />
+                <geant target="compile_es" reuse_variables="true" fork="false" />
+	</target>
+	<target name="make_delivery" depend="init">
+		<geant file="${scripts_dir}${path_separator}make_delivery.eant" target="build_delivery" reuse_variables="true"  fork="false"/>
+	</target>
+	<target name="clean_all">
+		<geant target="clean_ec" reuse_variables="true" fork="false" />
+		<geant target="clean_ec_batch" reuse_variables="true" fork="false" />
+		<geant target="clean_estudio" reuse_variables="true" fork="false" />
+		<geant target="clean_finish_freezing" reuse_variables="true" fork="false" />
+		<geant target="clean_quick_finalize" reuse_variables="true" fork="false" />
+		<geant target="clean_emake" reuse_variables="true" fork="false" />
+		<geant target="clean_mdconsumer" reuse_variables="true" fork="false" />
+		<geant target="clean_emdc" reuse_variables="true" fork="false" />
+		<geant target="clean_esbuilder" reuse_variables="true" fork="false" />
 	</target>
 
 	<!--
@@ -267,27 +297,23 @@
 	-->
 
 	<target name="compile_runtime" depend="init">
-		<geant file="${misc_dir}/compile_runtime.eant" target="compile_runtime" reuse_variables="true"  fork="false"/>
+		<geant file="${misc_dir}${path_separator}compile_runtime.eant" target="compile_runtime" reuse_variables="true"  fork="false"/>
 	</target>
 	<target name="clean_runtime" depend="init">
-		<geant file="${misc_dir}/compile_runtime.eant" target="clean_runtime" reuse_variables="true"  fork="false"/>
+		<geant file="${misc_dir}${path_separator}compile_runtime.eant" target="clean_runtime" reuse_variables="true"  fork="false"/>
 	</target>
 	<target name="compile_runtime_dll" depend="init">
-		<geant file="${misc_dir}/compile_runtime.eant" target="compile_runtime_dll" reuse_variables="true"  fork="false"/>
+		<geant file="${misc_dir}${path_separator}compile_runtime.eant" target="compile_runtime_dll" reuse_variables="true"  fork="false"/>
 	</target>
 	<target name="compile_library" depend="init">
-		<geant file="${misc_dir}/compile_library.eant" target="compile_all" reuse_variables="true"  fork="false"/>
+		<geant file="${misc_dir}${path_separator}compile_library.eant" target="compile_all" reuse_variables="true"  fork="false"/>
 	</target>
 
 	<!--
 	Helper scripts
 	-->
 	<target name="set_version" depend="init">
-		<geant file="${misc_dir}/set_version.eant" target="set_version" reuse_variables="true"  fork="false"/>
-	</target>
-
-	<target name="make_delivery" depend="init">
-		<geant file="${scripts_dir}/make_delivery.eant" target="build_delivery" reuse_variables="true"  fork="false"/>
+		<geant file="${misc_dir}${path_separator}set_version.eant" target="set_version" reuse_variables="true"  fork="false"/>
 	</target>
 
 </project>
