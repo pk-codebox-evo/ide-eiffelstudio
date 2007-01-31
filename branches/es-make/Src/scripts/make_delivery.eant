@@ -178,9 +178,9 @@
 			if="${tmp_available}=true"/>
 
 		<available dir="${OUTPUT_DIR}" resource="esbuilder${exe}" variable="tmp_available" />
-		<mkdir dir="${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec" if="${tmp_available}=true" />
-		<mkdir dir="${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec${path_separator}${ISE_PLATFORM}" if="${tmp_available}=true" />
-		<mkdir dir="${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin" if="${tmp_available}=true" />
+		<mkdir directory="${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec" if="${tmp_available}=true" />
+		<mkdir directory="${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec${path_separator}${ISE_PLATFORM}" if="${tmp_available}=true" />
+		<mkdir directory="${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin" if="${tmp_available}=true" />
 		<copy dir="${OUTPUT_DIR}" file="esbuilder${exe}" to_directory="${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin" if="${tmp_available}=true" />
 
 		<copy dir="${OUTPUT_DIR}" to_directory="${tmp_install_dir}${path_separator}bin" >

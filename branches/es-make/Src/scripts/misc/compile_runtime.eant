@@ -38,7 +38,7 @@
 		<exec executable="configure win64 ${runtime_c_compiler}" dir="${EIFFEL_SRC}/C" if="${ISE_PLATFORM}=win64" />
 		<unset name="runtime_c_compiler" />
 		<!-- unices -->
-		<exec executable="./quick_configure" dir="${EIFFEL_SRC}/C" unless="${is_windows}" /><!-- need user action ... -->
+		<exec executable="echo 'y\n' | ./quick_configure" dir="${EIFFEL_SRC}/C" unless="${is_windows}" />
 	</target>
 
 	<target name="compile_runtime_dll" depend="init">
@@ -50,7 +50,7 @@
 		<exec executable="configure win64 ${runtime_c_compiler} dll" dir="${EIFFEL_SRC}/C" if="${ISE_PLATFORM}=win64" />
 		<unset name="runtime_c_compiler" />
 		<!-- unices -->
-		<exec executable="./quick_configure" dir="${EIFFEL_SRC}/C" unless="${is_windows}" /><!-- need user action ... -->
+		<exec executable="echo 'y\n' | ./quick_configure" dir="${EIFFEL_SRC}/C" unless="${is_windows}" />
 	</target>
 
 </project>
