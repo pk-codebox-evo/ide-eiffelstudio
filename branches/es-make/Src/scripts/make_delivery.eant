@@ -128,6 +128,11 @@
 		<echo message="Error occurred during 'finalize_quick_finalize' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
 		<copy file="${compile_dir}${path_separator}EIFGENs${path_separator}quick_finalize${path_separator}F_code${path_separator}quick_finalize${exe}" to_file="${OUTPUT_DIR}${path_separator}quick_finalize${exe}" if="${return_code}=0" />
 
+		<!-- esbuilder -->
+		<echo message="Finalize esbuilder ..." to_file="$build_es_logfile" append="true" />
+		<geant target="finalize_esbuilder" />
+		<echo message="Error occurred during 'finalize_esbuilder' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
+		<copy file="${compile_dir}${path_separator}EIFGENs${path_separator}esbuilder${path_separator}F_code${path_separator}esbuilder${exe}" to_file="${OUTPUT_DIR}${path_separator}esbuilder${exe}" if="${return_code}=0" />
 	</target>
 
 	<target name="compile_es_windows" depend="init_delivery" if="${is_windows}" >
@@ -172,6 +177,12 @@
 		<copy dir="${OUTPUT_DIR}" file="estudio${exe}" to_directory="${tmp_install_dir}${path_separator}bin" 
 			if="${tmp_available}=true"/>
 
+		<available dir="${OUTPUT_DIR}" resource="esbuilder${exe}" variable="tmp_available" />
+		<mkdir dir="${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec" if="${tmp_available}=true" />
+		<mkdir dir="${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec${path_separator}${ISE_PLATFORM}" if="${tmp_available}=true" />
+		<mkdir dir="${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin" if="${tmp_available}=true" />
+		<copy dir="${OUTPUT_DIR}" file="esbuilder${exe}" to_directory="${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin" if="${tmp_available}=true" />
+
 		<copy dir="${OUTPUT_DIR}" to_directory="${tmp_install_dir}${path_separator}bin" >
 			<fileset include="@(*.dll)" />
 		</copy>
@@ -179,10 +190,9 @@
 		<geant target="install_es_windows" fork="false" reuse_variables="true" if="${is_windows}" />
 		<geant target="install_es_unix" fork="false" reuse_variables="true" unless="${is_windows}" />
 
+		<unset name="tmp_available" />
 		<unset name="tmp_install_dir" />
 		<!-- end of install -->
-
-		<delete dir="${OUTPUT_DIR}" />
 
 		<echo message="Installing ES is completed ..." to_file="$build_es_logfile" append="true" />
 	</target>
