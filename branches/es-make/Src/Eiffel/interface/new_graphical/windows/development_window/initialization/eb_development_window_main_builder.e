@@ -42,6 +42,31 @@ feature -- Command
 			develop_window.window.set_position (l_x, l_y)
 		end
 
+	safe_restore is
+			-- Ensure that when restoring a window it appears on screen.
+		local
+			l_screen: EB_STUDIO_SCREEN
+			l_x, l_y: INTEGER
+			l_modified: BOOLEAN
+		do
+			create l_screen
+			l_x := develop_window.development_window_data.x_position
+			if l_x < l_screen.virtual_left or l_x > l_screen.virtual_right then
+					-- Somehow screens have changed, reset it to 0
+				l_x := 0
+				l_modified := True
+			end
+			l_y := develop_window.development_window_data.y_position
+			if l_y < l_screen.virtual_top or l_y > l_screen.virtual_bottom then
+					-- Somehow screens have changed, reset it to 0
+				l_y := 0
+				l_modified := True
+			end
+			if l_modified then
+				develop_window.window.set_position (l_x, l_y)
+			end
+		end
+
 	window_displayed is
 			-- `Current' has been displayed on screen.
 		do
@@ -327,6 +352,7 @@ feature -- Command
 
 			setup_focus_editor_accelerators
 			build_close_content_accelerator
+			setup_class_address_accelerators
 		end
 
 	build_formatters is
@@ -650,6 +676,7 @@ feature -- Command
 			create l_window
 			develop_window.set_window (l_window)
 			l_window.show_actions.extend (agent window_displayed)
+			l_window.restore_actions.extend (agent safe_restore)
 			init_size_and_position
 			l_window.close_request_actions.wipe_out
 			l_window.close_request_actions.put_front (agent develop_window.destroy)
@@ -891,7 +918,7 @@ feature{NONE} -- Implementation
 	build_dependency_tool is
 			-- Build dependency tool.
 		local
-			l_dependency_tool: EB_DEPENDENCY_VIEW
+			l_dependency_tool: EB_DEPENDENCY_TOOL
 			l_show_cmd: EB_SHOW_TOOL_COMMAND
 			l_accel: EV_ACCELERATOR
 		do
@@ -1227,6 +1254,16 @@ feature{NONE} -- Implementation
 		do
 			create l_acc.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_escape), False, False, False)
 			l_acc.actions.extend (agent develop_window.set_focus_to_main_editor)
+			develop_window.window.accelerators.extend (l_acc)
+		end
+
+	setup_class_address_accelerators is
+			-- Setup accelerators for focus class combo box.
+		local
+			l_acc: EV_ACCELERATOR
+		do
+			create l_acc.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_f6), False, False, False)
+			l_acc.actions.extend (agent ((develop_window.address_manager).class_address).set_focus)
 			develop_window.window.accelerators.extend (l_acc)
 		end
 

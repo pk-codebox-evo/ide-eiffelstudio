@@ -24,6 +24,8 @@ inherit
 			clear_debugging_information
 		end
 
+	SHARED_BENCH_NAMES
+
 create
 	make
 
@@ -313,6 +315,18 @@ feature -- Breakpoints management
 								v.wipe_out
 							end
 						else
+							if c = '%%' and not is_escaped and i < m.count then
+								inspect m.item (i + 1)
+								when 'N' then
+									i := i + 1
+									c := '%N'
+								when 'T' then
+									i := i + 1
+									c := '%T'
+								else
+									-- keep c as '\'
+								end
+							end
 							s.append_character (c)
 						end
 					end
@@ -828,16 +842,19 @@ feature -- Debugging events
 		end
 
 	on_application_launched is
+		local
+			s: STRING_GENERAL
 		do
 			incremente_debugging_operation_id
 			application_status.set_max_depth (maximum_stack_depth)
 
 			check application_initialized end
+			s := debugger_names.t_Application_launched.twin
 			if application.execution_mode = {EXEC_MODES}.No_stop_points then
-				debugger_status_message (debugger_names.t_Running_no_stop_points)
-			else
-				debugger_status_message (debugger_names.t_Running)
+				s.append (debugger_names.t_space_application_ignoring_breakpoints)
 			end
+			debugger_status_message (s)
+			debugger_output_message (s)
 
 				--| Observers
 			observers.do_all (agent {DEBUGGER_OBSERVER}.on_application_launched)
@@ -866,7 +883,6 @@ feature -- Debugging events
 		do
 			incremente_debugging_operation_id
 			debugger_status_message (debugger_names.t_Paused)
-			debugger_output_message (debugger_names.t_Paused)
 
 			if has_stopped_action then
 				stopped_actions.call (Void)
@@ -889,12 +905,9 @@ feature -- Debugging events
 			app_is_executing: application_is_executing and then not application_is_stopped
 		do
 			incremente_debugging_operation_id
+				--| Display running mode, only if ignoring bp
 			if application.execution_mode = {EXEC_MODES}.No_stop_points then
 				debugger_status_message (debugger_names.t_Running_no_stop_points)
-				debugger_output_message (debugger_names.t_Running_no_stop_points)
-			else
-				debugger_status_message (debugger_names.t_Running)
-				debugger_output_message (debugger_names.t_Running)
 			end
 
 				--| Observers
@@ -910,7 +923,8 @@ feature -- Debugging events
 			incremente_debugging_operation_id
 
 			if application_is_executing then
-				debugger_status_message (debugger_names.t_not_running)
+				debugger_output_message (debugger_names.t_Application_exited)
+				debugger_status_message (debugger_names.t_Application_exited)
 
 					--| Observers
 				observers.do_all (agent {DEBUGGER_OBSERVER}.on_application_quit)
@@ -993,11 +1007,6 @@ feature -- Debuggee Objects management
 		end
 
 feature {APPLICATION_EXECUTION} -- specific implementation
-
-	debugger_names: DEBUGGER_NAMES is
-		once
-			create Result
-		end
 
 	implementation: DEBUGGER_MANAGER_IMP;
 

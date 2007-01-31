@@ -68,6 +68,7 @@ feature -- Access
 	only_assigners: STRING_GENERAL is							do Result := locale.translate ("Only assigners") end
 	all_subqueries: STRING_GENERAL is							do Result := locale.translate ("All subqueries:%N") end
 	the_total_active_query: STRING_GENERAL is					do Result := locale.translate ("%NThe total active query:%N") end
+	entry_disabled: STRING_GENERAL is							do Result := locale.translate ("  -> Entry disabled %N") end
 
 	no_value_entered: STRING_GENERAL is
 			do Result := locale.translate ("No value entered. Do you want to: %N%
@@ -155,6 +156,15 @@ feature -- Access
 				Result := locale.format_string (locale.translate ("$1 $2 $3 is inactive"), [a_column, a_operator, a_value])
 			end
 		end
+
+feature -- Documentation
+
+	l_Flat: STRING_GENERAL is					do Result := locale.translate("flat view")	end
+	l_chart: STRING_GENERAL is					do Result := locale.translate("Chart") end
+	l_relations: STRING_GENERAL is				do Result := locale.translate("Relations")	end
+	l_text: STRING_GENERAL is					do Result := locale.translate("Text")	end
+	l_contract: STRING_GENERAL is				do Result := locale.translate("Contract")	end
+	l_Flatshort: STRING_GENERAL is				do Result := locale.translate("interface view")	end
 
 feature -- Errors
 

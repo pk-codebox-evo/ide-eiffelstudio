@@ -1,57 +1,27 @@
 indexing
-	description: "Temporary class for interface names used in framework."
+	description: "[
+		Restoration error indicating that the Windows registry preferences could not be written to.
+	]"
 	legal: "See notice at end of class."
-	status: "See notice at end of class."
-	author: ""
-	date: "$Date$"
-	revision: "$Revision$"
+	status: "See notice at end of class.";
+	date: "$date$";
+	revision: "$revision$"
 
 class
-	SHARED_NAMES
+	ESC_R02
 
 inherit
-	SHARED_LOCALE
+	ERROR_ERROR_INFO
 
-feature -- Names
+create
+	make_with_context
 
-	names: INTERFACE_NAMES is
-			-- Names used in interface
-		once
-			create Result
-		end
+feature {NONE} -- Implementation
 
-	metric_names: EB_METRIC_NAMES is
-			-- Names used in metric tools
-		once
-			create Result
-		end
+	dollar_description: STRING = "Unable to write Windows registry preferences to key '{1}'."
 
-	external_output_names: EB_EXTERNAL_OUTPUT_NAMES
-			-- Names for external output tools.
-		once
-			create Result
-		end
-
-	warnings: WARNING_MESSAGES
-			-- Warning messages.
-		once
-			create Result
-		end
-
-	locale_names: LOCALE_NAMES
-			-- Names for locales.
-		once
-			create Result
-		end
-
-	ewb_names: EWB_NAMES
-			-- Names used in tty.
-		once
-			create Result
-		end
-
-indexing
-	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
+;indexing
+	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

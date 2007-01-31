@@ -1,30 +1,27 @@
 indexing
-	description: "Names used in debugger"
+	description: "[
+		Back error indicating a file could not be backed up to a particual file path.
+	]"
 	legal: "See notice at end of class."
-	status: "See notice at end of class."
-	author: "$Author$"
-	date: "$Date$"
-	revision: "$Revision$"
+	status: "See notice at end of class.";
+	date: "$date$";
+	revision: "$revision$"
 
 class
-	DEBUGGER_NAMES
+	ESC_B03
 
 inherit
-	SHARED_LOCALE
+	ERROR_ERROR_INFO
 
-feature -- Names
+create
+	make_with_context
 
-	t_Not_running: STRING_GENERAL is
-			once Result := locale.translate ("Application is not running") end
-	t_Running: STRING_GENERAL is
-			once Result := locale.translate ("Application is running") end
-	t_Running_no_stop_points: STRING_GENERAL is
-			once Result := locale.translate ("Application is running (ignoring breakpoints)") end
-	t_Paused: STRING_GENERAL is
-			once Result := locale.translate ("Application is paused") end
+feature {NONE} -- Implementation
 
-indexing
-	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
+	dollar_description: STRING = "Could not backup configuration data to a backup file '{1}'."
+
+;indexing
+	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[
