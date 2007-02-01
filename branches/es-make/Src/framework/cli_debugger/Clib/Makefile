@@ -9,7 +9,7 @@ OPT_CFLAGS = -Ox -W4 -nologo
 OUTPUT_CMD = -Fo
 INPUT_CMD = -Fd$(CLIBOBJ)\\
 JCFLAGS = $(CFLAGS) -MT $(OPT_CFLAGS) $(INPUT_CMD) $(OUTPUT_CMD)$@ -c
-CFLAGS = -I$(ISE_EIFFEL)\studio\spec\$(ISE_PLATFORM)\include -D_UNICODE -DUNICODE 
+CFLAGS = "-I$(ISE_EIFFEL)\studio\spec\$(ISE_PLATFORM)\include" -D_UNICODE -DUNICODE 
 
 #CFLAGS = -nologo -Ox -MT -W4 \ # -Zi \
 #		 -I$(EIFFEL_SRC)\C \
