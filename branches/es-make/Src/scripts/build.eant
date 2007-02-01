@@ -88,7 +88,7 @@
 	<target name="build_dev">
 		<geant target="compile_runtime" reuse_variables="true" fork="false" />
                 <geant target="compile_library" reuse_variables="true" fork="false" />
-                <geant target="compile_es" reuse_variables="true" fork="false" />
+                <geant target="compile_ec" reuse_variables="true" fork="false" />
 	</target>
 	<target name="make_delivery" depend="init">
 		<geant file="${scripts_dir}${path_separator}make_delivery.eant" target="build_delivery" reuse_variables="true"  fork="false"/>
