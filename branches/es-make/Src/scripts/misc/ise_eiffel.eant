@@ -96,7 +96,7 @@
 
 
 		<echo message="ecdir=${ecdir}" />
-		<set name="eccmd" value="ec${exe} " />
+		<set name="eccmd" value="ec${exe}" />
 		<set name="eccmd" value="${eccmd} -config $ecconfig" />
 		<set name="eccmd" value="${eccmd} -target $ectarget" />
 		<set name="eccmd" value="${eccmd} -project_path $ecprojectpath" />
@@ -123,7 +123,7 @@
 		-->
 		<echo message="CMD=${eccmd}" />
 		<echo message="DIR=${ecdir}" />
-		<exec executable="${eccmd}" dir="${ecdir}"  accept_errors="true" exit_code_variable="return_code" />
+		<exec executable="${eccmd}" dir="${ecdir}" accept_errors="true" exit_code_variable="return_code" />
 		<unset name="eccmd" />
 	</target>
 

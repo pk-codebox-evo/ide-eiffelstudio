@@ -151,7 +151,6 @@
 	</target>
 
 	<!-- final estudio -->
-
 	<target name="init_estudio" depend="init_system">
 		<set name="system" value="estudio"/>
 		<set name="system_target" value="estudio" />
@@ -166,7 +165,6 @@
 		<echo message="Compilation : $system in $system_dir"/>
 		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${misc_dir}"  fork="false"/>
 	</target>
-
 
 	<!-- finish_freezing -->
 	<target name="init_finish_freezing" depend="init_system">

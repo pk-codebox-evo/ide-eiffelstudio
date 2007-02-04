@@ -30,8 +30,10 @@
 		<echo message=" geant build_delivery" />
 		<echo message="     ----------" />
 		<echo message=" geant finalize_executables" />
+		<echo message=" geant create_delivery" />
 		<echo message=" geant install_executables" />
 		<echo message=" geant generate_documentation" />
+		<echo message=" geant build_wizards" />
 		<echo message=" geant cleanup" />
 	</target>
 
@@ -52,14 +54,15 @@
 
 		<geant target="set_version"		fork="false" reuse_variables="true" />
 		<geant target="finalize_executables"	fork="false" reuse_variables="true" />
-		<geant target="create_es_delivery" 	fork="false" reuse_variables="true" />
+		<geant target="create_delivery" 	fork="false" reuse_variables="true" />
 		<geant target="install_executables"	fork="false" reuse_variables="true" />
 		<geant target="generate_documentation"	fork="false" reuse_variables="true" />
+		<geant target="build_wizards"		fork="false" reuse_variables="true" />
 		<geant target="cleanup"			fork="false" reuse_variables="true" />
 	</target>
 
-	<target name="create_es_delivery" depend="init_delivery" >
-		<echo message="Building delivery for ES into ${INSTALL_DIR}" to_file="$build_es_logfile" append="true" />
+	<target name="create_delivery" depend="init_delivery" >
+		<echo message="Creating delivery into ${INSTALL_DIR}" to_file="$build_es_logfile" append="true" />
 		<!--
 		<echo message="Clean delivery ..." to_file="$build_es_logfile" append="true" if="${installdir_available}=true"  />
 		<geant target="clean_delivery" reuse_variables="true" fork="false" if="${installdir_available}=true" />
@@ -341,9 +344,11 @@
 
 	<target name="cleanup" depend="init_delivery">
 		<exec executable="rmdir /q/s ${OUTPUT_DIR}" if="${is_windows}" accept_errors="true" />
-		<exec executable="\rm -rf ${OUTPUT_DIR}" unless="${is_windows}" accept_errors="true" />
+		<exec executable="rm -rf ${OUTPUT_DIR}" unless="${is_windows}" accept_errors="true" />
 		<exec executable="rmdir /q/s ${INSTALL_DIR}${path_separator}scripts" if="${is_windows}" accept_errors="true" />
-		<exec executable="\rm -rf ${INSTALL_DIR}${path_separator}scripts" unless="${is_windows}" accept_errors="true" />
+		<exec executable="rm -rf ${INSTALL_DIR}${path_separator}scripts" unless="${is_windows}" accept_errors="true" />
+		<exec executable="rmdir /q/s ${INSTALL_DIR}${path_separator}wizards" if="${is_windows}" accept_errors="true" />
+		<exec executable="rm -rf ${INSTALL_DIR}${path_separator}wizards" unless="${is_windows}" accept_errors="true" />
 	</target>
 
 	<target name="generate_documentation" depend="init_delivery">
@@ -373,6 +378,93 @@
 		<exec executable="\rm -rf ${INSTALL_DIR}${path_separator}temporary_documentation" unless="${is_windows}" accept_errors="true" />
 		<unset name="tmp_docbuilder_avail" />
 		<unset name="tmp_documentation_avail" />
+	</target>
+
+	<target name="build_wizards" depend="init_delivery">
+		<echo message="Building wizards into ${INSTALL_DIR}" to_file="$build_es_logfile" append="true" />
+
+                <set name="system" value="wizard"/>
+                <set name="system_target" value="wizard" />
+		
+		<!-- vision2 wizard -->
+		<exec executable="rmdir /q/s ${cwd}${path_separator}EIFGENs${path_separator}${system_target}" if="${is_windows}" />
+		<exec executable="rm -rf ${cwd}${path_separator}EIFGENs${path_separator}${system_target}" unless="${is_windows}" />
+
+		<echo message="Vision2 wizard ..." to_file="$build_es_logfile" append="true" />
+		<set name="wizard_dir" value="${INSTALL_DIR}${path_separator}studio${path_separator}wizards${path_separator}new_projects${path_separator}vision2" />
+                <set name="system_ecf" value="${EIFFEL_SRC}${path_separator}help${path_separator}wizards${path_separator}vision2_wizard.ecf" />
+                <set name="system_dir" value="${compile_dir}" />
+                <geant file="ise_eiffel.eant" target="finalize" dir="${misc_dir}" reuse_variables="true" fork="false"/>
+		<mkdir directory="${wizard_dir}${path_separator}spec" />
+		<mkdir directory="${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}" />
+		<copy file="${compile_dir}${path_separator}EIFGENs${path_separator}${system_target}${path_separator}F_code${path_separator}wizard${exe}" to_file="${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}wizard${exe}" if="${return_code}=0"/>
+		<exec executable="chmod a+x ${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}wizard${exe}" accept_errors="true" exit_code_variable="return_code" />
+
+		<!-- wizard wizard -->
+		<exec executable="rmdir /q/s ${cwd}${path_separator}EIFGENs${path_separator}${system_target}" if="${is_windows}" />
+		<exec executable="rm -rf ${cwd}${path_separator}EIFGENs${path_separator}${system_target}" unless="${is_windows}" />
+
+		<echo message="Wizard wizard ..." to_file="$build_es_logfile" append="true" />
+		<set name="wizard_dir" value="${INSTALL_DIR}${path_separator}studio${path_separator}wizards${path_separator}new_projects${path_separator}wizard" />
+                <set name="system_ecf" value="${EIFFEL_SRC}${path_separator}help${path_separator}wizards${path_separator}vision2_wizard.ecf" />
+                <set name="system_dir" value="${compile_dir}" />
+                <geant file="ise_eiffel.eant" target="finalize" dir="${misc_dir}" reuse_variables="true" fork="false"/>
+		<mkdir directory="${wizard_dir}${path_separator}spec" />
+		<mkdir directory="${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}" />
+		<copy file="${compile_dir}${path_separator}EIFGENs${path_separator}${system_target}${path_separator}F_code${path_separator}wizard${exe}" to_file="${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}wizard${exe}" if="${return_code}=0"/>
+		<exec executable="chmod a+x ${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}wizard${exe}" accept_errors="true" exit_code_variable="return_code" />
+
+		<!-- precompile wizard -->
+		<exec executable="rmdir /q/s ${cwd}${path_separator}EIFGENs${path_separator}${system_target}" if="${is_windows}" />
+		<exec executable="rm -rf ${cwd}${path_separator}EIFGENs${path_separator}${system_target}" unless="${is_windows}" />
+
+		<echo message="Precompile wizard ..." to_file="$build_es_logfile" append="true" />
+		<set name="wizard_dir" value="${INSTALL_DIR}${path_separator}studio${path_separator}wizards${path_separator}others${path_separator}precompile" />
+                <set name="system_ecf" value="${EIFFEL_SRC}${path_separator}help${path_separator}wizards${path_separator}precompile_wizard.ecf" />
+                <set name="system_dir" value="${compile_dir}" />
+                <geant file="ise_eiffel.eant" target="finalize" dir="${misc_dir}" reuse_variables="true" fork="false"/>
+		<mkdir directory="${wizard_dir}${path_separator}spec" />
+		<mkdir directory="${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}" />
+		<copy file="${compile_dir}${path_separator}EIFGENs${path_separator}${system_target}${path_separator}F_code${path_separator}wizard${exe}" to_file="${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}wizard${exe}" if="${return_code}=0"/>
+		<exec executable="chmod a+x ${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}wizard${exe}" accept_errors="true" exit_code_variable="return_code" />
+
+		<geant target="build_wizards_unix" reuse_variables="true" fork="false" />
+		<geant target="build_wizards_windows" reuse_variables="true" fork="false" />
+
+		<echo message="Finished building wizards into ${INSTALL_DIR}" to_file="$build_es_logfile" append="true" />
+	</target>
+	<target name="build_wizards_unix" depend="init_delivery" unless="${is_windows}">
+		<exec executable="rm -rf ${INSTALL_DIR}${path_separator}studio${path_separator}wizards${path_separator}new_projects${path_separator}wel*" />
+		<exec executable="rm -rf ${INSTALL_DIR}${path_separator}studio${path_separator}wizards${path_separator}new_projects${path_separator}dotnet*" />
+	</target>
+	<target name="build_wizards_windows" depend="init_delivery" if="${is_windows}">
+		<!-- wel wizard -->
+		<exec executable="rmdir /q/s ${cwd}${path_separator}EIFGENs${path_separator}${system_target}" if="${is_windows}" />
+		<exec executable="rm -rf ${cwd}${path_separator}EIFGENs${path_separator}${system_target}" unless="${is_windows}" />
+
+		<echo message="Wel wizard ..." to_file="$build_es_logfile" append="true" />
+		<set name="wizard_dir" value="${INSTALL_DIR}${path_separator}studio${path_separator}wizards${path_separator}new_projects${path_separator}wel" />
+                <set name="system_ecf" value="${EIFFEL_SRC}${path_separator}help${path_separator}wizards${path_separator}wel_wizard.ecf" />
+                <set name="system_dir" value="${compile_dir}" />
+                <geant file="ise_eiffel.eant" target="finalize" dir="${misc_dir}" reuse_variables="true" fork="false"/>
+		<mkdir directory="${wizard_dir}${path_separator}spec" />
+		<mkdir directory="${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}" />
+		<copy file="${compile_dir}${path_separator}EIFGENs${path_separator}${system_target}${path_separator}F_code${path_separator}wizard${exe}" to_file="${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}wizard${exe}" if="${return_code}=0"/>
+		<exec executable="chmod a+x ${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}wizard${exe}" accept_errors="true" exit_code_variable="return_code" />
+
+		<!-- .NET wizard -->
+		<exec executable="rmdir /q/s ${cwd}${path_separator}EIFGENs${path_separator}${system_target}" if="${is_windows}" />
+		<exec executable="rm -rf ${cwd}${path_separator}EIFGENs${path_separator}${system_target}" unless="${is_windows}" />
+
+		<echo message=".NET wizard ..." to_file="$build_es_logfile" append="true" />
+		<set name="wizard_dir" value="${INSTALL_DIR}${path_separator}studio${path_separator}wizards${path_separator}new_projects${path_separator}dotnet" />
+                <set name="system_ecf" value="${EIFFEL_SRC}${path_separator}help${path_separator}wizards${path_separator}dotnet_wizard.ecf" />
+                <set name="system_dir" value="${compile_dir}" />
+                <geant file="ise_eiffel.eant" target="finalize" dir="${misc_dir}" reuse_variables="true" fork="false"/>
+		<mkdir directory="${wizard_dir}${path_separator}spec" />
+		<mkdir directory="${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}" />
+		<copy file="${compile_dir}${path_separator}EIFGENs${path_separator}${system_target}${path_separator}F_code${path_separator}wizard${exe}" to_file="${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}wizard${exe}" if="${return_code}=0"/>
+		<exec executable="chmod a+x ${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}wizard${exe}" accept_errors="true" exit_code_variable="return_code" />
 	</target>
 
 </project>
