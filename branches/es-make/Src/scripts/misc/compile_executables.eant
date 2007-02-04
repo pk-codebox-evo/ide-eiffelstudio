@@ -96,12 +96,8 @@
 		<!-- compilation related -->
 		<set name="compile_dir" value="${cwd}"/>
 
-		<!-- source related -->
-		<set name="delivery_dir" value="${EIFFEL_SRC}${path_separator}..${path_separator}Delivery" />
-
 		<!-- environment related -->
 		<setenv name="ISE_LIBRARY" value="${EIFFEL_SRC}" />
-		<setenv name="EIFFEL_DELIVERY" value="${delivery_dir}" />
 	</target>
 
 	<!--

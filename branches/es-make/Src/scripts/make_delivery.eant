@@ -61,41 +61,6 @@
 		<geant target="cleanup"			fork="false" reuse_variables="true" />
 	</target>
 
-	<target name="create_delivery" depend="init_delivery" >
-		<echo message="Creating delivery into ${INSTALL_DIR}" to_file="$build_es_logfile" append="true" />
-		<!--
-		<echo message="Clean delivery ..." to_file="$build_es_logfile" append="true" if="${installdir_available}=true"  />
-		<geant target="clean_delivery" reuse_variables="true" fork="false" if="${installdir_available}=true" />
-		<echo message="Error occurred during 'clean_delivery' (${return_code})" unless="${return_code}=0" />
-		<echo message="Error occurred during 'clean_delivery' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
-		<exit code="${return_code}" unless="${return_code}=0" />
-
-		<available resource="${INSTALL_DIR}" variable="installdir_available"/>
-		-->
-
-		<set name="return_code" value="0" />
-
-		<!-- Make delivery (until task end) -->
-		<echo message="Task: make_delivery"/>
-		<echo message="Task: make_delivery" to_file="$build_es_logfile" append="true" />
-		<!-- cwd -> INSTALL_DIR
-		<set name="NEW_ISE_EIFFEL" value="${cwd}" unless="${NEW_ISE_EIFFEL}" />
-		-->
-		<set name="NEW_ISE_EIFFEL" value="${INSTALL_DIR}" unless="${NEW_ISE_EIFFEL}" />
-		<geant target="make_delivery_common" reuse_variables="true" fork="false" dir="${NEW_ISE_EIFFEL}" />
-		<geant target="make_delivery_windows" reuse_variables="true" fork="false" if="${is_windows}" dir="${NEW_ISE_EIFFEL}" />
-		<geant target="make_delivery_unix" reuse_variables="true" fork="false" unless="${is_windows}" dir="${NEW_ISE_EIFFEL}" />
-		
-		<!-- compile NEW_ISE_EIFFEL library -->
-		<set name="old_ISE_LIBRARY" value="${ISE_LIBRARY}" />
-		<setenv name="ISE_LIBRARY" value="${NEW_ISE_EIFFEL}" />
-		<geant target="compile_library" reuse_variables="true" />
-		<echo message="Error occurred during 'compile_library' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
-		<setenv name="ISE_LIBRARY" value="${old_ISE_LIBRARY}" />
-		<unset name="old_ISE_LIBRARY" />
-		<set name="return_code" value="0" />
-	</target>
-
 	<target name="finalize_executables" depend="init_delivery" >
 		<echo message="Finalizing executables into ${OUTPUT_DIR}" to_file="$build_es_logfile" append="true" />
 
@@ -150,7 +115,6 @@
 
 		<echo message="Finalizing executables completed." to_file="$build_es_logfile" append="true" />
 	</target>
-
 	<target name="finalize_executables_windows" depend="init_delivery" if="${is_windows}" >
 		<!-- finish_freezing -->
 		<echo message="Finalize finish_freezing ..." to_file="$build_es_logfile" append="true" />
@@ -179,7 +143,111 @@
 		</copy>
 	</target>
 
-	<target name="install_executables" depend="init_delivery" >
+	<target name="create_delivery" depend="init_delivery" >
+		<echo message="Creating delivery into ${INSTALL_DIR}" to_file="$build_es_logfile" append="true" />
+		<!--
+		<echo message="Clean delivery ..." to_file="$build_es_logfile" append="true" if="${installdir_available}=true"  />
+		<geant target="clean_delivery" reuse_variables="true" fork="false" if="${installdir_available}=true" />
+		<echo message="Error occurred during 'clean_delivery' (${return_code})" unless="${return_code}=0" />
+		<echo message="Error occurred during 'clean_delivery' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
+		<exit code="${return_code}" unless="${return_code}=0" />
+
+		<available resource="${INSTALL_DIR}" variable="installdir_available"/>
+		-->
+
+		<set name="return_code" value="0" />
+
+		<!-- Make delivery (until task end) -->
+		<echo message="Task: make_delivery" to_file="$build_es_logfile" append="true" />
+		<!-- cwd -> INSTALL_DIR
+		<set name="NEW_ISE_EIFFEL" value="${cwd}" unless="${NEW_ISE_EIFFEL}" />
+		-->
+		<set name="NEW_ISE_EIFFEL" value="${INSTALL_DIR}" unless="${NEW_ISE_EIFFEL}" />
+
+		<!-- skeleton -->
+		<set name="conf_delivery_directory" value="${EIFFEL_SRC}${path_separator}..${path_separator}Delivery" />
+		<available resource="${conf_delivery_directory}" variable="delivery_dir_available" />
+		<copy to_directory="${INSTALL_DIR}" dir="${conf_delivery_directory}" if="$delivery_dir_available">
+			<fileset include="@(**/*)" exclude="@(**/.svn/**/*)" />
+		</copy>
+
+		<!-- library -->
+		<mkdir directory="library" />
+		<copy to_directory="${INSTALL_DIR}${path_separator}library" dir="${EIFFEL_SRC}${path_separator}library">
+			<fileset include="@(**/*)" exclude="@(**/.svn/**/*)" />
+		</copy>
+
+		<!-- Process Gobo -->
+		<replace file="${INSTALL_DIR}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf.in" to_file="${INSTALL_DIR}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf" token="##GOBO##library" replace="library" flags="g" />	
+		<available resource="${GOBO}${path_separator}library" variable="gobo_available" true_value="${GOBO}" />
+		<available resource="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}library" variable="gobo_available" true_value="${ISE_LIBRARY}${path_separator}library${path_separator}gobo" if="${gobo_available}=false" />
+		<available resource="${ISE_EIFFEL}${path_separator}library${path_separator}gobo${path_separator}library" variable="gobo_available" true_value="${ISE_EIFFEL}${path_separator}library${path_separator}gobo" if="${gobo_available}=false" />
+		<mkdir directory="${INSTALL_DIR}${path_separator}library${path_separator}gobo${path_separator}library" />
+		<copy to_directory="${INSTALL_DIR}${path_separator}library${path_separator}gobo${path_separator}library" dir="${gobo_available}${path_separator}library">
+			<fileset include="@(**/*)" exclude="@(**/.svn/**/*)" />
+		</copy>
+		<unset name="gobo_available" />
+
+		<!-- C_library -->
+		<mkdir directory="C_library" />
+		<copy to_directory="${INSTALL_DIR}${path_separator}C_library" dir="${EIFFEL_SRC}${path_separator}C_library">
+			<fileset include="@(**/*)" exclude="@(**/.svn/**/*)" />
+		</copy>
+
+		<!-- headers -->
+		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM"/>
+		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}bin"/>
+		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}include"/>
+		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}lib"/>
+		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}include" dir="${EIFFEL_SRC}${path_separator}C${path_separator}run-time" >
+			<fileset include="@(*.h)" />
+		</copy>
+
+		<!-- runtime -->
+		<copy file="${EIFFEL_SRC}${path_separator}C${path_separator}eif_confmagic.h" to_file="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}include${path_separator}eif_confmagic.h" />
+		<copy file="${EIFFEL_SRC}${path_separator}C${path_separator}run-time${path_separator}x2c${exe}" to_file="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}x2c${exe}" />
+		<copy file="${EIFFEL_SRC}${path_separator}C${path_separator}ipc${path_separator}daemon${path_separator}ecdbgd${exe}" to_file="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}ecdbgd${exe}" />
+		<copy to_directory="${INSTALL_DIR}${path_separator}precomp${path_separator}spec${path_separator}${ISE_PLATFORM}" dir="precomp${path_separator}spec${path_separator}platform">
+			<fileset include="@(**/*)" exclude="@(**/.svn/**/*)" />
+		</copy>
+
+		<geant target="create_delivery_unix" reuse_variables="true" fork="false" dir="${NEW_ISE_EIFFEL}" />
+		<geant target="create_delivery_windows" reuse_variables="true" fork="false" dir="${NEW_ISE_EIFFEL}" />
+		
+		<!-- compile NEW_ISE_EIFFEL library -->
+		<set name="old_ISE_LIBRARY" value="${ISE_LIBRARY}" />
+		<setenv name="ISE_LIBRARY" value="${NEW_ISE_EIFFEL}" />
+		<geant target="compile_library" reuse_variables="true" />
+		<echo message="Error occurred during 'compile_library' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
+		<setenv name="ISE_LIBRARY" value="${old_ISE_LIBRARY}" />
+		<unset name="old_ISE_LIBRARY" />
+		<set name="return_code" value="0" />
+	</target>
+	<target name="create_delivery_windows" depend="init_delivery" if="${is_windows}">
+		<!-- Windows -->
+		<mkdir directory="studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}lib${path_separator}${ISE_C_COMPILER}" />
+		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}lib${path_separator}${ISE_C_COMPILER}" dir="${EIFFEL_SRC}${path_separator}C${path_separator}run-time${path_separator}LIB" >
+			<fileset include="@(*.lib|*.dll)" />
+		</copy>
+		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}config${path_separator}${ISE_PLATFORM}" dir="studio${path_separator}config${path_separator}windows" unless="${ISE_PLATFORM}=windows">
+			<fileset include="@(**/*)" exclude="@(**/.svn/**/*)" />
+		</copy>
+	</target>
+	<target name="create_delivery_unix" depend="init_delivery" unless="${is_windows}">
+		<exec executable="chmod a+x ${INSTALL_DIR}${path_separator}make_install" accept_errors="true" />
+
+		<copy file="${EIFFEL_SRC}${path_separator}C${path_separator}config.sh" to_directory="studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}include" />
+		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}lib" dir="${EIFFEL_SRC}${path_separator}C${path_separator}run-time" >
+			<fileset include="@(lib*.*)" />
+		</copy>
+		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}config${path_separator}${ISE_PLATFORM}" dir="studio${path_separator}config${path_separator}unix">
+			<fileset include="@(**/*)" exclude="@(**/.svn/**/*)" />
+		</copy>
+		<exec executable="ln -s -f ..${path_separator}..${path_separator}unix${path_separator}finish_freezing finish_freezing" dir="studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}bin" />
+		<exec executable="ln -s -f ..${path_separator}..${path_separator}unix${path_separator}prelink prelink" dir="studio${path_separator}spec${path_separator}$ISE_PLATFORM/bin" />
+	</target>
+
+	<target name="install_executables" depend="init_delivery">
 		<echo message="Installing executables into ${INSTALL_DIR}" to_file="$build_es_logfile" append="true" />
 
 		<!-- install binaries -->
@@ -201,8 +269,8 @@
 			<fileset include="@(*.dll)" />
 		</copy>
 
-		<geant target="install_executables_windows" fork="false" reuse_variables="true" if="${is_windows}" />
-		<geant target="install_executables_unix" fork="false" reuse_variables="true" unless="${is_windows}" />
+		<geant target="install_executables_windows" fork="false" reuse_variables="true" />
+		<geant target="install_executables_unix" fork="false" reuse_variables="true" />
 
 		<unset name="tmp_available" />
 		<unset name="tmp_install_dir" />
@@ -210,14 +278,11 @@
 
 		<echo message="Installing executables is completed." to_file="$build_es_logfile" append="true" />
 	</target>
-
-
 	<target name="install_executables_unix" depend="init_delivery" unless="${is_windows}" >
 		<exec executable="chmod a+x ${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}* " accept_errors="true" exit_code_variable="return_code" />
 		<exec executable="chmod a+x ${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}* " accept_errors="true" exit_code_variable="return_code" />
 		<exec executable="chmod a+x ${OUTPUT_DIR}${path_separator}* " accept_errors="true" exit_code_variable="return_code" />
 	</target>
-
 	<target name="install_executables_windows" depend="init_delivery" if="${is_windows}" >
 		<available dir="${OUTPUT_DIR}" resource="wel_hook.dll" variable="tmp_available"/>
 		<copy dir="${OUTPUT_DIR}" file="wel_hook.dll" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true" />
@@ -241,7 +306,7 @@
 
 	<target name="clean_es" depend="init_delivery" >
 		<exec executable="rmdir /q/s ${EIFGENs}" if="${is_windows}" />
-		<exec executable="\rm -rf ${EIFGENs}" unless="${is_windows}" />
+		<exec executable="rm -rf ${EIFGENs}" unless="${is_windows}" />
 		<available resource="${INSTALL_DIR}" variable="installdir_available"/>
 		<geant target="clean_delivery" reuse_variables="true" fork="false" if="${installdir_available}=true" />
 	</target>
@@ -251,104 +316,22 @@
 		<delete directory="${INSTALL_DIR}" if="${installdir_available}=true" />
 		-->
 		<exec executable="rmdir /q/s ${INSTALL_DIR}" if="${is_windows}" accept_errors="true" exit_code_variable="return_code" />
-		<exec executable="\rm -rf ${INSTALL_DIR}" unless="${is_windows}" accept_errors="true" exit_code_variable="return_code" />
-	</target>
-
-	<target name="make_delivery_common" depend="init_delivery" >
-		<!-- platform independant -->
-		<set name="conf_delivery_directory" value="${EIFFEL_SRC}${path_separator}..${path_separator}Delivery" />
-		<available resource="${conf_delivery_directory}" variable="delivery_dir_available" />
-		<copy to_directory="${INSTALL_DIR}" dir="${conf_delivery_directory}" if="$delivery_dir_available">
-			<fileset 
-				include="@(**/*)" 
-				exclude="@(**/.svn/**/*)"
-			/>
-		</copy>
-		<mkdir directory="library" />
-		<copy to_directory="${INSTALL_DIR}${path_separator}library" dir="${EIFFEL_SRC}${path_separator}library">
-			<fileset 
-				include="@(**/*)" 
-				exclude="@(**/.svn/**/*)"
-			/>
-		</copy>
-
-		<!-- Process Gobo -->
-		<replace file="${INSTALL_DIR}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf.in" to_file="${INSTALL_DIR}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf" token="##GOBO##library" replace="library" flags="g" />	
-		<available resource="${GOBO}${path_separator}library" variable="gobo_available" true_value="${GOBO}" />
-		<available resource="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}library" variable="gobo_available" true_value="${ISE_LIBRARY}${path_separator}library${path_separator}gobo" if="${gobo_available}=false" />
-		<available resource="${ISE_EIFFEL}${path_separator}library${path_separator}gobo${path_separator}library" variable="gobo_available" true_value="${ISE_EIFFEL}${path_separator}library${path_separator}gobo" if="${gobo_available}=false" />
-		<mkdir directory="${INSTALL_DIR}${path_separator}library${path_separator}gobo${path_separator}library" />
-		<copy to_directory="${INSTALL_DIR}${path_separator}library${path_separator}gobo${path_separator}library" dir="${gobo_available}${path_separator}library">
-			<fileset 
-				include="@(**/*)" 
-				exclude="@(**/.svn/**/*)"
-			/>
-		</copy>
-		<unset name="gobo_available" />
-
-		<mkdir directory="C_library" />
-		<copy to_directory="${INSTALL_DIR}${path_separator}C_library" dir="${EIFFEL_SRC}${path_separator}C_library">
-			<fileset 
-				include="@(**/*)" 
-				exclude="@(**/.svn/**/*)"
-			/>
-		</copy>
-		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM"/>
-		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}bin"/>
-		<echo message="make dir : studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}include" />
-		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}include"/>
-		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}lib"/>
-		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}include" dir="${EIFFEL_SRC}${path_separator}C${path_separator}run-time" >
-			<fileset include="@(*.h)" />
-		</copy>
-		<copy file="${EIFFEL_SRC}${path_separator}C${path_separator}eif_confmagic.h" to_file="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}include${path_separator}eif_confmagic.h" />
-		<copy file="${EIFFEL_SRC}${path_separator}C${path_separator}run-time${path_separator}x2c${exe}" to_file="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}x2c${exe}" />
-		<copy file="${EIFFEL_SRC}${path_separator}C${path_separator}ipc${path_separator}daemon${path_separator}ecdbgd${exe}" to_file="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}ecdbgd${exe}" />
-
-		<copy to_directory="${INSTALL_DIR}${path_separator}precomp${path_separator}spec${path_separator}${ISE_PLATFORM}" dir="precomp${path_separator}spec${path_separator}platform" >
-			<fileset 
-				include="@(**/*)" 
-				exclude="@(**/.svn/**/*)"
-			/>
-		</copy>
-	</target>
-
-	<target name="make_delivery_windows" depend="init_delivery" >
-		<!-- Windows -->
-		<mkdir directory="studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}lib${path_separator}${ISE_C_COMPILER}" />
-		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}lib${path_separator}${ISE_C_COMPILER}" dir="${EIFFEL_SRC}${path_separator}C${path_separator}run-time${path_separator}LIB" >
-			<fileset include="@(*.lib|*.dll)" />
-		</copy>
-		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}config${path_separator}${ISE_PLATFORM}" dir="studio${path_separator}config${path_separator}windows" unless="${ISE_PLATFORM}=windows">
-			<fileset 
-				include="@(**/*)" 
-				exclude="@(**/.svn/**/*)"
-			/>
-		</copy>
-	</target>
-
-	<target name="make_delivery_unix" depend="init_delivery" >
-		<copy file="${EIFFEL_SRC}${path_separator}C${path_separator}config.sh" to_directory="studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}include" />
-		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}lib" dir="${EIFFEL_SRC}${path_separator}C${path_separator}run-time" >
-			<fileset include="@(lib*.*)" />
-		</copy>
-		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}config${path_separator}${ISE_PLATFORM}" dir="studio${path_separator}config${path_separator}unix">
-			<fileset 
-				include="@(**/*)" 
-				exclude="@(**/.svn/**/*)"
-			/>
-		</copy>
-		<exec executable="ln -s -f ..${path_separator}..${path_separator}unix${path_separator}finish_freezing finish_freezing" dir="studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}bin" />
-		<exec executable="ln -s -f ..${path_separator}..${path_separator}unix${path_separator}prelink prelink" dir="studio${path_separator}spec${path_separator}$ISE_PLATFORM/bin" />
+		<exec executable="rm -rf ${INSTALL_DIR}" unless="${is_windows}" accept_errors="true" exit_code_variable="return_code" />
 	</target>
 
 	<target name="cleanup" depend="init_delivery">
+		<!-- remove temporary output dir -->
 		<exec executable="rmdir /q/s ${OUTPUT_DIR}" if="${is_windows}" accept_errors="true" />
 		<exec executable="rm -rf ${OUTPUT_DIR}" unless="${is_windows}" accept_errors="true" />
+
+		<!-- remove unused directories -->
 		<exec executable="rmdir /q/s ${INSTALL_DIR}${path_separator}scripts" if="${is_windows}" accept_errors="true" />
 		<exec executable="rm -rf ${INSTALL_DIR}${path_separator}scripts" unless="${is_windows}" accept_errors="true" />
 		<exec executable="rmdir /q/s ${INSTALL_DIR}${path_separator}wizards" if="${is_windows}" accept_errors="true" />
 		<exec executable="rm -rf ${INSTALL_DIR}${path_separator}wizards" unless="${is_windows}" accept_errors="true" />
+
+		<!-- remove codedom_provider on unix -->
+		<exec executable="rm -rf ${INSTALL_DIR}${path_separator}codedom_provider" unless="${is_windows}" accept_errors="true" />
 	</target>
 
 	<target name="generate_documentation" depend="init_delivery">
@@ -368,14 +351,12 @@
 		<!-- move documentation -->
 		<mkdir directory="${INSTALL_DIR}${path_separator}docs" />
 		<copy dir="${INSTALL_DIR}${path_separator}temporary_documentation${path_separator}Help" to_directory="${INSTALL_DIR}${path_separator}docs">
-			<fileset 
-				include="@(**/*)" 
-			/>
+			<fileset include="@(**/*)" />
 		</copy>
 
 		<!-- cleanup temporary files -->
 		<exec executable="rmdir /q/s ${INSTALL_DIR}${path_separator}temporary_documentation" if="${is_windows}" accept_errors="true" />
-		<exec executable="\rm -rf ${INSTALL_DIR}${path_separator}temporary_documentation" unless="${is_windows}" accept_errors="true" />
+		<exec executable="rm -rf ${INSTALL_DIR}${path_separator}temporary_documentation" unless="${is_windows}" accept_errors="true" />
 		<unset name="tmp_docbuilder_avail" />
 		<unset name="tmp_documentation_avail" />
 	</target>
@@ -383,88 +364,29 @@
 	<target name="build_wizards" depend="init_delivery">
 		<echo message="Building wizards into ${INSTALL_DIR}" to_file="$build_es_logfile" append="true" />
 
-                <set name="system" value="wizard"/>
-                <set name="system_target" value="wizard" />
-		
-		<!-- vision2 wizard -->
-		<exec executable="rmdir /q/s ${cwd}${path_separator}EIFGENs${path_separator}${system_target}" if="${is_windows}" />
-		<exec executable="rm -rf ${cwd}${path_separator}EIFGENs${path_separator}${system_target}" unless="${is_windows}" />
+		<geant file="${misc_dir}${path_separator}compile_wizards.eant" target="finalize_vision2_wizard" reuse_variables="true" fork="false" />
+		<geant file="${misc_dir}${path_separator}compile_wizards.eant" target="delivery_wizard" reuse_variables="true" fork="false" />
 
-		<echo message="Vision2 wizard ..." to_file="$build_es_logfile" append="true" />
-		<set name="wizard_dir" value="${INSTALL_DIR}${path_separator}studio${path_separator}wizards${path_separator}new_projects${path_separator}vision2" />
-                <set name="system_ecf" value="${EIFFEL_SRC}${path_separator}help${path_separator}wizards${path_separator}vision2_wizard.ecf" />
-                <set name="system_dir" value="${compile_dir}" />
-                <geant file="ise_eiffel.eant" target="finalize" dir="${misc_dir}" reuse_variables="true" fork="false"/>
-		<mkdir directory="${wizard_dir}${path_separator}spec" />
-		<mkdir directory="${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}" />
-		<copy file="${compile_dir}${path_separator}EIFGENs${path_separator}${system_target}${path_separator}F_code${path_separator}wizard${exe}" to_file="${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}wizard${exe}" if="${return_code}=0"/>
-		<exec executable="chmod a+x ${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}wizard${exe}" accept_errors="true" exit_code_variable="return_code" />
+		<geant file="${misc_dir}${path_separator}compile_wizards.eant" target="finalize_wizard_wizard" reuse_variables="true" fork="false" />
+		<geant file="${misc_dir}${path_separator}compile_wizards.eant" target="delivery_wizard" reuse_variables="true" fork="false" />
 
-		<!-- wizard wizard -->
-		<exec executable="rmdir /q/s ${cwd}${path_separator}EIFGENs${path_separator}${system_target}" if="${is_windows}" />
-		<exec executable="rm -rf ${cwd}${path_separator}EIFGENs${path_separator}${system_target}" unless="${is_windows}" />
-
-		<echo message="Wizard wizard ..." to_file="$build_es_logfile" append="true" />
-		<set name="wizard_dir" value="${INSTALL_DIR}${path_separator}studio${path_separator}wizards${path_separator}new_projects${path_separator}wizard" />
-                <set name="system_ecf" value="${EIFFEL_SRC}${path_separator}help${path_separator}wizards${path_separator}vision2_wizard.ecf" />
-                <set name="system_dir" value="${compile_dir}" />
-                <geant file="ise_eiffel.eant" target="finalize" dir="${misc_dir}" reuse_variables="true" fork="false"/>
-		<mkdir directory="${wizard_dir}${path_separator}spec" />
-		<mkdir directory="${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}" />
-		<copy file="${compile_dir}${path_separator}EIFGENs${path_separator}${system_target}${path_separator}F_code${path_separator}wizard${exe}" to_file="${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}wizard${exe}" if="${return_code}=0"/>
-		<exec executable="chmod a+x ${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}wizard${exe}" accept_errors="true" exit_code_variable="return_code" />
-
-		<!-- precompile wizard -->
-		<exec executable="rmdir /q/s ${cwd}${path_separator}EIFGENs${path_separator}${system_target}" if="${is_windows}" />
-		<exec executable="rm -rf ${cwd}${path_separator}EIFGENs${path_separator}${system_target}" unless="${is_windows}" />
-
-		<echo message="Precompile wizard ..." to_file="$build_es_logfile" append="true" />
-		<set name="wizard_dir" value="${INSTALL_DIR}${path_separator}studio${path_separator}wizards${path_separator}others${path_separator}precompile" />
-                <set name="system_ecf" value="${EIFFEL_SRC}${path_separator}help${path_separator}wizards${path_separator}precompile_wizard.ecf" />
-                <set name="system_dir" value="${compile_dir}" />
-                <geant file="ise_eiffel.eant" target="finalize" dir="${misc_dir}" reuse_variables="true" fork="false"/>
-		<mkdir directory="${wizard_dir}${path_separator}spec" />
-		<mkdir directory="${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}" />
-		<copy file="${compile_dir}${path_separator}EIFGENs${path_separator}${system_target}${path_separator}F_code${path_separator}wizard${exe}" to_file="${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}wizard${exe}" if="${return_code}=0"/>
-		<exec executable="chmod a+x ${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}wizard${exe}" accept_errors="true" exit_code_variable="return_code" />
+		<geant file="${misc_dir}${path_separator}compile_wizards.eant" target="finalize_precompile_wizard" reuse_variables="true" fork="false" />
+		<geant file="${misc_dir}${path_separator}compile_wizards.eant" target="delivery_wizard" reuse_variables="true" fork="false" />
 
 		<geant target="build_wizards_unix" reuse_variables="true" fork="false" />
 		<geant target="build_wizards_windows" reuse_variables="true" fork="false" />
 
-		<echo message="Finished building wizards into ${INSTALL_DIR}" to_file="$build_es_logfile" append="true" />
+		<echo message="Finished building wizards." to_file="$build_es_logfile" append="true" />
 	</target>
 	<target name="build_wizards_unix" depend="init_delivery" unless="${is_windows}">
 		<exec executable="rm -rf ${INSTALL_DIR}${path_separator}studio${path_separator}wizards${path_separator}new_projects${path_separator}wel*" />
 		<exec executable="rm -rf ${INSTALL_DIR}${path_separator}studio${path_separator}wizards${path_separator}new_projects${path_separator}dotnet*" />
 	</target>
 	<target name="build_wizards_windows" depend="init_delivery" if="${is_windows}">
-		<!-- wel wizard -->
-		<exec executable="rmdir /q/s ${cwd}${path_separator}EIFGENs${path_separator}${system_target}" if="${is_windows}" />
-		<exec executable="rm -rf ${cwd}${path_separator}EIFGENs${path_separator}${system_target}" unless="${is_windows}" />
+		<geant file="${misc_dir}${path_separator}compile_wizards.eant" target="finalize_wel_wizard" reuse_variables="true" fork="false" />
+		<geant file="${misc_dir}${path_separator}compile_wizards.eant" target="delivery_wizard" reuse_variables="true" fork="false" />
 
-		<echo message="Wel wizard ..." to_file="$build_es_logfile" append="true" />
-		<set name="wizard_dir" value="${INSTALL_DIR}${path_separator}studio${path_separator}wizards${path_separator}new_projects${path_separator}wel" />
-                <set name="system_ecf" value="${EIFFEL_SRC}${path_separator}help${path_separator}wizards${path_separator}wel_wizard.ecf" />
-                <set name="system_dir" value="${compile_dir}" />
-                <geant file="ise_eiffel.eant" target="finalize" dir="${misc_dir}" reuse_variables="true" fork="false"/>
-		<mkdir directory="${wizard_dir}${path_separator}spec" />
-		<mkdir directory="${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}" />
-		<copy file="${compile_dir}${path_separator}EIFGENs${path_separator}${system_target}${path_separator}F_code${path_separator}wizard${exe}" to_file="${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}wizard${exe}" if="${return_code}=0"/>
-		<exec executable="chmod a+x ${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}wizard${exe}" accept_errors="true" exit_code_variable="return_code" />
-
-		<!-- .NET wizard -->
-		<exec executable="rmdir /q/s ${cwd}${path_separator}EIFGENs${path_separator}${system_target}" if="${is_windows}" />
-		<exec executable="rm -rf ${cwd}${path_separator}EIFGENs${path_separator}${system_target}" unless="${is_windows}" />
-
-		<echo message=".NET wizard ..." to_file="$build_es_logfile" append="true" />
-		<set name="wizard_dir" value="${INSTALL_DIR}${path_separator}studio${path_separator}wizards${path_separator}new_projects${path_separator}dotnet" />
-                <set name="system_ecf" value="${EIFFEL_SRC}${path_separator}help${path_separator}wizards${path_separator}dotnet_wizard.ecf" />
-                <set name="system_dir" value="${compile_dir}" />
-                <geant file="ise_eiffel.eant" target="finalize" dir="${misc_dir}" reuse_variables="true" fork="false"/>
-		<mkdir directory="${wizard_dir}${path_separator}spec" />
-		<mkdir directory="${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}" />
-		<copy file="${compile_dir}${path_separator}EIFGENs${path_separator}${system_target}${path_separator}F_code${path_separator}wizard${exe}" to_file="${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}wizard${exe}" if="${return_code}=0"/>
-		<exec executable="chmod a+x ${wizard_dir}${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}wizard${exe}" accept_errors="true" exit_code_variable="return_code" />
+		<geant file="${misc_dir}${path_separator}compile_wizards.eant" target="finalize_dotnet_wizard" reuse_variables="true" fork="false" />
+		<geant file="${misc_dir}${path_separator}compile_wizards.eant" target="delivery_wizard" reuse_variables="true" fork="false" />
 	</target>
-
 </project>
