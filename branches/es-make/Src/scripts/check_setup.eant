@@ -54,25 +54,25 @@
 		<set name="setup_error" value="" unless="$conf_ise_eiffel" />
 
 		<echo message="  -> EIFFEL_SVN: ${EIFFEL_SVN}, ok" if="$conf_eiffel_svn" />
-		<echo message="" unless="$conf_eiffel_svn" />
+		<echo message="===============================================================================" unless="$conf_eiffel_svn" />
 		<echo message="  -> WARNING:  -> EIFFEL_SVN: not set, please set EIFFEL_SVN to the Eiffel Subversion URL (i.e. https://eiffelsoftware.origo.ethz.ch/svn/es)" unless="$conf_eiffel_svn" />
-		<echo message="" unless="$conf_eiffel_svn" />
+		<echo message="===============================================================================" unless="$conf_eiffel_svn" />
 		<echo message="  -> EIFFEL_SRC: ${EIFFEL_SRC}, ok" if="$conf_eiffel_src" />
-		<echo message="" unless="$conf_eiffel_src" />
-		<echo message="  -> ERROR: EIFFEL_SRC: not set, please point EIFFEL_SRC to the Eiffel Src directory (i.e. /home/foo/eiffel/trunk/Src or C:\Eiffel\trunk\Src)" unless="$conf_eiffel_src" />
-		<echo message="" unless="$conf_eiffel_src" />
+		<echo message="===============================================================================" unless="$conf_eiffel_src" />
+		<echo message="ERROR: EIFFEL_SRC: not set, please point EIFFEL_SRC to the Eiffel Src directory (i.e. /home/user/eiffel/trunk/Src or C:\eiffel\trunk\Src)" unless="$conf_eiffel_src" />
+		<echo message="===============================================================================" unless="$conf_eiffel_src" />
 		<echo message="  -> ISE_PLATFORM: ${ISE_PLATFORM}, ok" if="$conf_ise_platform" />
-		<echo message="" unless="$conf_ise_platform" />
-		<echo message="  -> ERROR: ISE_PLATFORM: not set, please set ISE_PLATFORM to the Platform you use (i.e. linux-x86 or windows-bcb-x86" unless="$conf_ise_platform" />
-		<echo message="" unless="$conf_ise_platform" />
+		<echo message="===============================================================================" unless="$conf_ise_platform" />
+		<echo message="ERROR: ISE_PLATFORM: not set, please set ISE_PLATFORM to the Platform you use (i.e. linux-x86 or windows-bcb-x86" unless="$conf_ise_platform" />
+		<echo message="===============================================================================" unless="$conf_ise_platform" />
 		<echo message="  -> ISE_LIBRARY: ${ISE_LIBRARY}, ok" if="$conf_ise_library" />
-		<echo message="" unless="$conf_ise_library" />
-		<echo message="  -> ERROR: ISE_LIBRARY: not set, please point ISE_LIBRARY to ${EIFFEL_SRC}" unless="$conf_ise_library" />
-		<echo message="" unless="$conf_ise_library" />
+		<echo message="===============================================================================" unless="$conf_ise_library" />
+		<echo message="ERROR: ISE_LIBRARY: not set, please point ISE_LIBRARY to ${EIFFEL_SRC}" unless="$conf_ise_library" />
+		<echo message="===============================================================================" unless="$conf_ise_library" />
 		<echo message="  -> ISE_EIFFEL: ${ISE_EIFFEL}, ok" if="$conf_ise_eiffel" />
-		<echo message="" unless="$conf_ise_eiffel" />
-		<echo message="  -> ERROR: ISE_EIFFEL: not set, please point ISE_EIFFEL to the install directory of EiffelStudio" unless="$conf_ise_eiffel" />
-		<echo message="" unless="$conf_ise_eiffel" />
+		<echo message="===============================================================================" unless="$conf_ise_eiffel" />
+		<echo message="ERROR: ISE_EIFFEL: not set, please point ISE_EIFFEL to the install directory of EiffelStudio" unless="$conf_ise_eiffel" />
+		<echo message="===============================================================================" unless="$conf_ise_eiffel" />
 		<echo message="  -> ISE_C_COMPILER: ${ISE_C_COMPILER}, ok" if="$conf_ise_c_compiler=yes" />
 		<echo message="  -> ISE_C_COMPILER: not set, ! please check !" if="$conf_ise_c_compiler=no" />
 
@@ -117,10 +117,16 @@
 		<set name="setup_error" value="" unless="$conf_pkgconfig=0" />
 		
 		<echo message="  -> which found, ok" if="$conf_which=0" />
-		<echo message="  -> which not in path, exit code: $conf_which, please install 'which'" unless="$conf_which=0" />
+		<echo message="===============================================================================" unless="$conf_which=0" />
+		<echo message="ERROR: which not in path, please install 'which' or update your PATH!" unless="$conf_which=0" />
+		<echo message="===============================================================================" unless="$conf_which=0" />
 		<echo message="  -> pkg-config found, ok" if="$conf_pkgconfig=0" />
-		<echo message="  -> pkg-config not in path, exit code: $conf_pkgconfig, please install 'pkg-config'" unless="$conf_pkgconfig=0" />
+		<echo message="===============================================================================" unless="$conf_pkgconfig=0" />
+		<echo message="ERROR:  pkg-config not in path, please install 'pkg-config' or update your PATH!" unless="$conf_pkgconfig=0" />
+		<echo message="===============================================================================" unless="$conf_pkgconfig=0" />
 
+		<echo message="" if="$setup_error"
+		<echo message="" if="$setup_error"
 		<echo message="You have an error in your setup, please check the configuration!" if="$setup_error" />
 		<exit code="1" if="$setup_error" />
 	</target>
@@ -149,18 +155,30 @@
 		<set name="setup_error" value="" unless="$conf_ec_version=0" />
 
 		<echo message="  -> $EIFFEL_SVN: ok" if="$res_eiffel_svn=true" />
-		<echo message="warning:  -> $EIFFEL_SVN: not found, ! please check !" unless="$res_eiffel_svn=true" /> 
+		<echo message="warning:  -> $EIFFEL_SVN not found, please point it to the svn url if you want to use this variable!" unless="$res_eiffel_svn=true" /> 
 		<echo message="  -> $EIFFEL_SRC: ok" if="$res_eiffel_src=true" />
-		<echo message="  -> $EIFFEL_SRC: not found, ! please check !" unless="$res_eiffel_src=true" />
+		<echo message="===============================================================================" unless="$res_eiffel_src=true" />
+		<echo message="ERROR: $EIFFEL_SRC not found, please point $EIFFEL_SRC to your Eiffel Source directory! (i.e. /home/user/eiffel/trunk/Src)" unless="$res_eiffel_src=true" />
+		<echo message="===============================================================================" unless="$res_eiffel_src=true" />
 		<echo message="  -> $ISE_LIBRARY: ok" if="$res_ise_library=true" />
-		<echo message="  -> $ISE_LIBRARY: not found, ! please check !" unless="$res_ise_library=true" />
+		<echo message="===============================================================================" unless="$res_ise_library=true" />
+		<echo message="ERROR: $ISE_LIBRARY not found, please point $ISE_LIBRARY to $EIFFEL_SRC!" unless="$res_ise_library=true" />
+		<echo message="===============================================================================" unless="$res_ise_library=true" />
 		<echo message="  -> $ISE_EIFFEL: ok" if="$res_ise_eiffel=true" />
-		<echo message="  -> $ISE_EIFFEL: not found, ! please check !" unless="$res_ise_eiffel=true" />
+		<echo message="===============================================================================" unless="$res_ise_eiffel=true" />
+		<echo message="ERROR: $ISE_EIFFEL not found, please point $ISE_EIFFEL to the EiffelStudio installation! (i.e. /home/user/eiffel/Eiffel60)" unless="$res_ise_eiffel=true" />
+		<echo message="===============================================================================" unless="$res_ise_eiffel=true" />
 		<echo message="  -> ec in path, ok" if="$res_ec=0" />
-		<echo message="  -> ec not in path, exit code: $res_ec, ! please check !" unless="$res_ec=0" />
+		<echo message="===============================================================================" unless="$res_ec=0" />
+		<echo message="ERROR: ec not in path, please install a precompiled version of EiffelStudio or update your PATH!" unless="$res_ec=0" />
+		<echo message="===============================================================================" unless="$res_ec=0" />
 		<echo message="  -> ec ${ec_version_string}, ok" if="$conf_ec_version=0" />
-		<echo message="  -> ec wrong version, exit code: $conf_ec_version,! please install ${ec_version_string}!" unless="$conf_ec_version=0" />
-		<echo message="You have an error in your setup, please check the configuration!" if="$setup_error" />
+		<echo message="===============================================================================" unless="$conf_ec_version=0" />
+		<echo message="ERROR: ec wrong version, exit code: $conf_ec_version,! please install ${ec_version_string}!" unless="$conf_ec_version=0" />
+		<echo message="===============================================================================" unless="$conf_ec_version=0" />
+		<echo message="" if="$setup_error" />
+		<echo message="" if="$setup_error" />
+		<echo message="ERROR: You have an error in your setup, please check the configuration!" if="$setup_error" />
 		<exit code="1" if="$setup_error" />
 	</target>
 	
@@ -174,15 +192,27 @@
 
 		<exec executable="which gcc > /dev/null" exit_code_variable="res_gcc" />
 		<exec executable="pkg-config --exists gtk+-2.0" exit_code_variable="res_gtk" />
+		<exec executable="pkg-config --exists xtst" exit_code_variable="res_xtst" />
 		<set name="setup_error" value="" unless="$res_gcc=0" />
 		<set name="setup_error" value="" unless="$res_gtk=0" />
+		<set name="setup_error" value="" unless="$res_xtst=0" />
 
 		<echo message="  -> gcc found, ok" if="$res_gcc=0" />
-		<echo message="  -> gcc not in path, exit code: $res_gcc, please install gcc or update PATH!" unless="$res_gcc=0" />
+		<echo message="===============================================================================" unless="$res_gcc=0" />
+		<echo message="ERROR: gcc not in path, please install gcc or update PATH!" unless="$res_gcc=0" />
+		<echo message="===============================================================================" unless="$res_gcc=0" />
 		<echo message="  -> gtk 2.0 found, ok" if="$res_gtk=0" />
-		<echo message="  -> gtk 2.0 not in pkgconfig path, please install gtk 2.0 or update pkgconfig path" unless="$res_gtk=0" />
+		<echo message="===============================================================================" unless="$res_gtk=0" />
+		<echo message= "ERROR: gtk 2.0 not in pkgconfig path, please install gtk 2.0 or update pkgconfig path" unless="$res_gtk=0" />
+		<echo message="===============================================================================" unless="$res_gtk=0" />
+		<echo message="  -> xtst found, ok" if="$res_xtst=0" />
+		<echo message="===============================================================================" unless="$res_xtst=0" />
+		<echo message="ERROR: xtst not found, please install xtst or update pkgconfig path!" unless="$res_xtst=0" />
+		<echo message="===============================================================================" unless="$res_xtst=0" />
 
-		<echo message="You have an error in your setup, please check the configuration!" if="$setup_error" />
+		<echo message="" if="$setup_error"/>
+		<echo message="" if="$setup_error"/>
+		<echo message="ERROR: You have an error in your setup, please check the above error messages!" if="$setup_error" />
 		<exit code="1" if="$setup_error" />
 		<echo message="Setup check complete. Your configuration seems ok!" />
 	</target>
