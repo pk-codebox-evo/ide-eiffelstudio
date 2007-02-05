@@ -190,7 +190,7 @@ feature -- Debug Operation
 						end
 					elseif make_f.exists then
 							-- There is no application.
-						warning (Warning_messages.w_No_system_generated)
+						warning (Warning_messages.w_No_system_generated (uf.name))
 					elseif Eiffel_project.Lace.compile_all_classes then
 						warning (Warning_messages.w_None_system)
 					else
@@ -455,6 +455,7 @@ feature {NONE} -- debugging
 				activate_debugger_environment (True)
 				app_exec := manager.application
 				app_exec.set_execution_mode (a_execution_mode)
+				app_exec.on_application_before_launching
 				app_exec.run (l_cmd_line_arg, working_dir, environment_vars)
 				if manager.application_is_executing then
 					if app_exec.execution_mode = {EXEC_MODES}.No_stop_points then

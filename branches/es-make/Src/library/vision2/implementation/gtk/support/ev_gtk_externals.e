@@ -8074,6 +8074,13 @@ feature
 			"send_event"
 		end
 
+	frozen gdk_event_any_struct_window (a_c_struct: POINTER): POINTER is
+		external
+			"C [struct <gtk/gtk.h>] (GdkEventAny): EIF_POINTER"
+		alias
+			"window"
+		end
+
 	frozen gdk_event_any_struct_type (a_c_struct: POINTER): INTEGER is
 		external
 			"C [struct <gtk/gtk.h>] (GdkEventAny): EIF_INTEGER"
@@ -8091,6 +8098,13 @@ feature
 	frozen gdk_event_button_struct_window (a_c_struct: POINTER): POINTER is
 		external
 			"C [struct <gtk/gtk.h>] (GdkEventButton): EIF_REFERENCE"
+		alias
+			"window"
+		end
+
+	frozen gdk_event_scroll_struct_window (a_c_struct: POINTER): POINTER is
+		external
+			"C [struct <gtk/gtk.h>] (GdkEventScroll): EIF_REFERENCE"
 		alias
 			"window"
 		end
@@ -8123,6 +8137,13 @@ feature
 			"type"
 		end
 
+	frozen gdk_event_scroll_struct_type (a_c_struct: POINTER): INTEGER is
+		external
+			"C [struct <gtk/gtk.h>] (GdkEventScroll): EIF_INTEGER"
+		alias
+			"type"
+		end
+
 	frozen gdk_event_button_struct_x (a_c_struct: POINTER): DOUBLE is
 		external
 			"C [struct <gtk/gtk.h>] (GdkEventButton): EIF_DOUBLE"
@@ -8137,6 +8158,13 @@ feature
 			"x_root"
 		end
 
+	frozen gdk_event_scroll_struct_x_root (a_c_struct: POINTER): DOUBLE is
+		external
+			"C [struct <gtk/gtk.h>] (GdkEventScroll): EIF_DOUBLE"
+		alias
+			"x_root"
+		end
+
 	frozen gdk_event_button_struct_y (a_c_struct: POINTER): DOUBLE is
 		external
 			"C [struct <gtk/gtk.h>] (GdkEventButton): EIF_DOUBLE"
@@ -8147,6 +8175,13 @@ feature
 	frozen gdk_event_button_struct_y_root (a_c_struct: POINTER): DOUBLE is
 		external
 			"C [struct <gtk/gtk.h>] (GdkEventButton): EIF_DOUBLE"
+		alias
+			"y_root"
+		end
+
+	frozen gdk_event_scroll_struct_y_root (a_c_struct: POINTER): DOUBLE is
+		external
+			"C [struct <gtk/gtk.h>] (GdkEventScroll): EIF_DOUBLE"
 		alias
 			"y_root"
 		end

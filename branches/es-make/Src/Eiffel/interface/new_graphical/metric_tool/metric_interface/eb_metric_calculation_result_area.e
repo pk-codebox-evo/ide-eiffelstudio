@@ -190,7 +190,7 @@ feature {NONE} -- Initialization
 			grid_wrapper.enable_copy
 
 				-- Delete following in docking EiffelStudio.
-			metric_panel.append_drop_actions (
+			append_drop_actions (
 				<<
 					result_grid,
 					information_bar_empty_area,
@@ -198,7 +198,8 @@ feature {NONE} -- Initialization
 					input_cell,
 					empty_cell,
 					result_cell
-				>>
+				>>,
+				metric_tool
 				)
 			create l_text
 			metric_name_text.set_background_color (l_text.background_color)
@@ -265,6 +266,7 @@ feature -- Result loading
 			a_metric_attached: a_metric /= Void
 		local
 			l_tooltip: STRING
+			l_value_str: STRING
 		do
 			metric_name_text.set_text (a_metric.name)
 			if metric_manager.has_metric (a_metric.name) then
@@ -277,8 +279,11 @@ feature -- Result loading
 			type_pixmap.copy (pixmap_from_metric_type (metric_type_id (a_metric)))
 			unit_name_text.set_text (unit_name_table.item (a_metric.unit))
 			unit_pixmap.copy (pixmap_from_unit (a_metric.unit))
-			value_text.set_text (metric_value (a_value, a_metric.is_ratio and then show_percentage_btn.is_selected))
+			l_value_str := metric_value (a_value, a_metric.is_ratio and then show_percentage_btn.is_selected)
+			value_text.set_text (l_value_str)
+			result_lbl.set_text (l_value_str)
 			value_text.set_data (a_value)
+
 			if a_metric.is_ratio then
 				show_percentage_btn.enable_sensitive
 				if is_first_display then
@@ -840,10 +845,12 @@ feature{NONE} -- Implementation
 					maximize_result_btn.set_pixmap (pixmaps.mini_pixmaps.toolbar_restore_icon)
 					metric_area.hide
 					input_area.hide
+					result_lbl.show
 				else
 					maximize_result_btn.set_pixmap (pixmaps.mini_pixmaps.toolbar_maximize_icon)
 					metric_area.show
 					input_area.show
+					result_lbl.hide
 				end
 				if preferences.metric_tool_data.metric_information_in_result_panel_preference.value /= is_maximize_set then
 					preferences.metric_tool_data.metric_information_in_result_panel_preference.set_value (is_maximize_set)

@@ -66,10 +66,8 @@ feature {NONE} -- Initialization
 			l_drop_actions.extend (agent drop_stone)
 			create l_flat_browser.make (a_tool, l_drop_actions)
 			l_flat_browser.set_sorting_status (l_flat_browser.sorted_columns_from_string (preferences.class_browser_data.class_flat_view_sorting_order))
-			create l_inheritance_browser.make_with_flag (a_tool, l_drop_actions, True)
-			l_inheritance_browser.set_sorting_status (l_inheritance_browser.sorted_columns_from_string (preferences.class_browser_data.class_tree_view_sorting_order))
-			create l_reference_browser.make_with_flag (a_tool, l_drop_actions, False)
-			l_reference_browser.set_sorting_status (l_reference_browser.sorted_columns_from_string (preferences.class_browser_data.class_tree_view_sorting_order))
+			create l_inheritance_browser.make_with_flag (a_tool, l_drop_actions, True, preferences.class_browser_data.class_tree_view_sorting_order_preference)
+			create l_reference_browser.make_with_flag (a_tool, l_drop_actions, False, preferences.class_browser_data.class_client_view_sorting_order_preference)
 			l_reference_browser.retrieve_data_actions.extend (agent refresh)
 			shared_editor.disable_line_numbers
 			shared_editor.drop_actions.extend (agent drop_stone)
@@ -164,6 +162,7 @@ feature -- EB_TOOL issues
 			create mini_toolbar
 			mini_toolbar.extend (address_manager.header_info)
 			mini_toolbar.extend (history_toolbar)
+			address_manager.label_changed_actions.extend (agent (develop_window.docking_manager).update_mini_tool_bar_size (content))
 		end
 
 	build_interface is
@@ -239,50 +238,52 @@ feature -- Status setting
 		do
 			if not is_last_stone_processed then
 				new_stone := last_stone
-				fst ?= new_stone
-					-- If `new_stone' is a feature stone, take the associated class.
-				if fst /= Void and then fst.e_feature /= Void then
-					create cst.make (fst.e_feature.associated_class)
-				else
-					cst ?= new_stone
-					ist ?= new_stone
-				end
-
-				if cst /= Void then
-					type_changed := (cst.e_class.is_true_external and not is_stone_external) or
-						(not cst.e_class.is_true_external and is_stone_external)
-				elseif ist /= Void then
-					type_changed := (ist.class_i.is_external_class and not is_stone_external) or
-						(not ist.class_i.is_external_class and is_stone_external)
-				end
-
-				if type_changed then
-					-- Toggle stone flag.
-	            	is_stone_external := not is_stone_external
-	            end
-
-	            	-- Update formatters.
-	            if is_stone_external and cst /= Void then
-					enable_dotnet_formatters (True)
-				else
-					enable_dotnet_formatters (False)
-				end
-				if cst /= Void then
-					update_viewpoints (cst.e_class)
-				end
-				if cst = Void or else stone = Void or else not stone.same_as (cst) then
-						-- Set the stones.
-					from
-						managed_formatters.start
-					until
-						managed_formatters.after
-					loop
-						managed_formatters.item.set_stone (cst)
-						managed_formatters.forth
+				if new_stone /= Void then
+					fst ?= new_stone
+						-- If `new_stone' is a feature stone, take the associated class.
+					if fst /= Void and then fst.e_feature /= Void then
+						create cst.make (fst.e_feature.associated_class)
+					else
+						cst ?= new_stone
+						ist ?= new_stone
 					end
+
+					if cst /= Void then
+						type_changed := (cst.e_class.is_true_external and not is_stone_external) or
+							(not cst.e_class.is_true_external and is_stone_external)
+					elseif ist /= Void then
+						type_changed := (ist.class_i.is_external_class and not is_stone_external) or
+							(not ist.class_i.is_external_class and is_stone_external)
+					end
+
+					if type_changed then
+						-- Toggle stone flag.
+		            	is_stone_external := not is_stone_external
+		            end
+
+		            	-- Update formatters.
+		            if is_stone_external and cst /= Void then
+						enable_dotnet_formatters (True)
+					else
+						enable_dotnet_formatters (False)
+					end
+					if cst /= Void then
+						update_viewpoints (cst.e_class)
+					end
+					if cst = Void or else stone = Void or else not stone.same_as (cst) then
+							-- Set the stones.
+						from
+							managed_formatters.start
+						until
+							managed_formatters.after
+						loop
+							managed_formatters.item.set_stone (cst)
+							managed_formatters.forth
+						end
+					end
+					stone := cst
+					history_manager.extend (stone)
 				end
-				stone := cst
-				history_manager.extend (stone)
 				Precursor
 			end
 		end

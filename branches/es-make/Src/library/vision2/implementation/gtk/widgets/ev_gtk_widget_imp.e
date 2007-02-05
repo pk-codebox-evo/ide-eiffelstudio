@@ -156,11 +156,9 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 			-- Minimum width that the widget may occupy.
 		local
 			gr: POINTER
-			a_cs: EV_GTK_C_STRING
 		do
 			if not is_destroyed then
-				a_cs := width_request_string
-				{EV_GTK_EXTERNALS}.g_object_get_integer (c_object, a_cs.item, $Result)
+				{EV_GTK_EXTERNALS}.g_object_get_integer (c_object, width_request_string.item, $Result)
 				if Result = -1 then
 					gr := reusable_requisition_struct.item
 					{EV_GTK_EXTERNALS}.gtk_widget_size_request (c_object, gr)
@@ -179,11 +177,9 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 			-- Minimum width that the widget may occupy.
 		local
 			gr: POINTER
-			a_cs: EV_GTK_C_STRING
 		do
 			if not is_destroyed then
-				a_cs := height_request_string
-				{EV_GTK_EXTERNALS}.g_object_get_integer (c_object, a_cs.item, $Result)
+				{EV_GTK_EXTERNALS}.g_object_get_integer (c_object, height_request_string.item, $Result)
 				if Result = -1 then
 					gr := reusable_requisition_struct.item
 					{EV_GTK_EXTERNALS}.gtk_widget_size_request (c_object, gr)
@@ -225,7 +221,13 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 				a_cursor_imp ?= a_cursor.implementation
 				a_cursor_ptr := a_cursor_imp.gdk_cursor_from_pointer_style
 			end
-			a_window := {EV_GTK_EXTERNALS}.gtk_widget_struct_window (visual_widget)
+			a_window := {EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object)
+			if a_window = default_pointer then
+					-- The widget hasn't been realized so we do the realization
+					-- to have a GdkWindow to set the pointer to.
+				{EV_GTK_EXTERNALS}.gtk_widget_realize (c_object)
+				a_window := {EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object)
+			end
 			if a_window /= default_pointer then
 				{EV_GTK_EXTERNALS}.gdk_window_set_cursor (a_window, a_cursor_ptr)
 			end
@@ -364,7 +366,7 @@ feature -- Status report
 
 feature {EV_ANY_I} -- Implementation
 
-	top_level_window_imp: EV_WINDOW_IMP is
+	top_level_gtk_window_imp: EV_GTK_WINDOW_IMP is
 			-- Window implementation that `Current' is contained within (if any)
 		local
 			wind_ptr: POINTER
@@ -375,12 +377,18 @@ feature {EV_ANY_I} -- Implementation
 			end
 		end
 
+	top_level_window_imp: EV_WINDOW_IMP is
+			-- Window implementation that `Current' is contained within (if any)
+		do
+			Result ?= top_level_gtk_window_imp
+		end
+
 	top_level_window: EV_WINDOW is
 			-- Window the current is contained within (if any)
 		local
 			a_window_imp: EV_WINDOW_IMP
 		do
-			a_window_imp := top_level_window_imp
+			a_window_imp ?= top_level_gtk_window_imp
 			if a_window_imp /= Void then
 				Result := a_window_imp.interface
 			end

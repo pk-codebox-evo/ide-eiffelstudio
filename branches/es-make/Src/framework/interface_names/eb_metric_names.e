@@ -69,7 +69,7 @@ feature -- Titles
 	t_archive_management: STRING_GENERAL is do Result := locale.translate ("Archive Management") end
 	t_archive_comparison: STRING_GENERAL is do Result := locale.translate ("Archive Comparison") end
 	t_location: STRING_GENERAL is do Result := locale.translate ("Location") end
-	t_select_source_domain: STRING_GENERAL is do Result := locale.translate ("Select input domain:") end
+	t_select_source_domain: STRING_GENERAL is do Result := locale.translate ("Setup input domain:") end
 	t_select_metric: STRING_GENERAL is do Result := locale.translate ("Select metric:") end
 	t_select_reference_archive: STRING_GENERAL is do Result := locale.translate ("Select reference archive (URL acceptable):") end
 	t_select_current_archive: STRING_GENERAL is do Result := locale.translate ("Select current archive (URL acceptable):") end
@@ -162,6 +162,8 @@ feature -- Titles
 	t_add_new_metric_value_retriever: STRING_GENERAL is do Result := locale.translate ("Add new metric value retriever") end
 	t_use_external_delayed: STRING_GENERAL is do Result := locale.translate ("Use external delayed domain") end
 	t_warning: STRING_GENERAL is do Result := locale.translate ("Warning") end
+	t_row: STRING_GENERAL is do Result := locale.translate ("row") end
+	t_column: STRING_GENERAL is do Result := locale.translate ("column") end
 
 feature -- Titles for editor token
 
@@ -196,7 +198,7 @@ feature -- Labels
 feature -- Tooltip
 
 	f_quick_metric_definition: STRING_GENERAL is do Result := locale.translate ("Define quick metric (or drop a basic metric here as a template)") end
-	f_run: STRING_GENERAL is do Result := locale.translate ("Run selected metric") end
+	f_run: STRING_GENERAL is do Result := locale.translate ("Run selected metric%NRunnable when a metric is selected and input domain is set.") end
 	f_go_to_definition: STRING_GENERAL is do Result := locale.translate ("Go to definition") end
 	f_stop: STRING_GENERAL is do Result := locale.translate ("Stop metric evaluation") end
 	f_move_row_up: STRING_GENERAL is do Result := locale.translate ("Move selected row up") end
@@ -316,6 +318,7 @@ feature -- Tooltip
 
 	l_base_value: STRING_GENERAL is do Result := locale.translate ("Base value") end
 	l_operator: STRING_GENERAL is do Result := locale.translate ("Operator") end
+	t_drop_program_elements: STRING_GENERAL is do Result := locale.translate ("Drop target/group/class/feature here") end
 
 feature -- Error/warning message
 
@@ -1286,6 +1289,18 @@ feature -- Utilities
 				Result := a_string.twin
 			end
 			Result.append (colon)
+		ensure
+			result_attached: Result /= Void
+		end
+
+	xml_position (a_column: INTEGER; a_row: INTEGER): STRING_GENERAL is
+			-- Xml position: Column: `a_column', row: `a_row'
+		do
+			Result := coloned_string (t_column, True)
+			Result.append (a_column.out)
+			Result.append (comma_separator)
+			Result.append (coloned_string (t_row, False))
+			Result.append (a_row.out)
 		ensure
 			result_attached: Result /= Void
 		end

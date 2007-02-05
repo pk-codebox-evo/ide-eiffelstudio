@@ -12,6 +12,8 @@ class
 inherit
 	EB_METRIC_SHARED
 
+	SHARED_BENCH_NAMES
+
 create
 	make
 
@@ -36,6 +38,9 @@ feature -- Access
 	location: STRING_GENERAL
 			-- Location where current error occurs
 
+	file_location: STRING_GENERAL
+			-- File location if Current error occurs in a file
+
 	message_with_location: STRING_GENERAL is
 			-- `message' with `location' (if any)
 		local
@@ -44,12 +49,58 @@ feature -- Access
 			create l_str.make (message.count + 64)
 			l_str.append (message)
 			if location /= Void then
-				l_str.append (metric_names.space_separator)
+				l_str.append (metric_names.new_line_separator)
 				l_str.append (metric_names.location_string (location))
+			end
+			if is_xml_location_set then
+				l_str.append (metric_names.new_line_separator)
+				l_str.append (metric_names.xml_position (xml_column, xml_row))
+			end
+			if file_location /= Void then
+				l_str.append (metric_names.new_line_separator)
+				l_str.append (metric_names.coloned_string (names.l_file_location, True))
+				l_str.append (metric_names.space_separator)
+				l_str.append (file_location)
 			end
 			Result := l_str
 		ensure
 			result_attached: Result /= Void
+		end
+
+	xml_location: TUPLE [column: INTEGER; row: INTEGER]
+			-- Location in xml file where Current error happened
+
+	xml_row: INTEGER is
+			-- 	Row in `xml_location'.
+		require
+			xml_location_set: is_xml_location_set
+		do
+			Result := xml_location.row
+		end
+
+	xml_column: INTEGER is
+			-- 	Row in `xml_location'.
+		require
+			xml_location_set: is_xml_location_set
+		do
+			Result := xml_location.column
+		end
+
+feature -- Status report
+
+	is_xml_location_set: BOOLEAN is
+			-- Is `xml_location' set?
+			-- Not set if Current error is not related to xml file.
+		do
+			Result := xml_location /= Void
+		ensure
+			good_result: Result implies xml_location /= Void and then (not Result implies xml_location = Void)
+		end
+
+	is_file_location_set: BOOLEAN is
+			-- Is `file_location' set?
+		do
+			Result := file_location /= Void
 		end
 
 feature -- Setting
@@ -87,6 +138,28 @@ feature -- Setting
 			end
 		ensure
 			to_do_set: (a_to_do = Void implies to_do = Void) and (a_to_do /= Void implies to_do /= Void)
+		end
+
+	set_file_location (a_file_location: like file_location) is
+			-- Set `file_location' with `a_file_location'.
+		do
+			if a_file_location = Void then
+				file_location := Void
+			else
+				file_location := a_file_location.twin
+			end
+		ensure
+			file_location_set:
+				(a_file_location = Void implies file_location = Void) and then
+				(a_file_location /= Void implies (file_location /= Void and then file_location.is_equal (a_file_location)))
+		end
+
+	set_xml_location (a_location: like xml_location) is
+			-- Set `xml_location' with `a_location'.
+		do
+			xml_location := a_location
+		ensure
+			xml_location_set: xml_location = a_location
 		end
 
 invariant

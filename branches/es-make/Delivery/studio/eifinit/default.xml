@@ -24,7 +24,7 @@
 	<PREF NAME="debugger.max_slice" HIDDEN="true" DESCRIPTION="Largest number of items displayed in list data."><INTEGER>50</INTEGER></PREF>
 	<PREF NAME="debugger.min_slice" HIDDEN="true" DESCRIPTION="Smallest number of items displayed in list data."><INTEGER>0</INTEGER></PREF>
 	<PREF NAME="debugger.number_of_watch_tools" HIDDEN="true" DESCRIPTION="Default number of watch tools."><INTEGER>1</INTEGER></PREF>
-	<PREF NAME="debugger.project_toolbar_layout" HIDDEN="true" DESCRIPTION="Debug toolbar items and layout information."><LIST>System_tool__visible;Melt_project__visible;Open_help_tool__visible;System_info__visible;Separator;Enable_bkpt__visible;Disable_bkpt__visible;Clear_bkpt__visible;Bkpt_info__visible;Separator;Exec_step__visible;Exec_into__visible;Exec_out__visible;Exec_no_stop__visible;Exec_debug__visible;Separator;Exec_restart_debug__visible;Exec_stop__visible;Exec_quit__visible;Run_final__hidden;Freeze_project__hidden;Finalize_project__hidden;Override_scan__hidden;Discover_melt__hidden</LIST></PREF>
+	<PREF NAME="debugger.project_toolbar_layout" HIDDEN="true" DESCRIPTION="Debug toolbar items and layout information."><LIST>System_tool__visible;Melt_project__visible;Open_help_tool__visible;System_info__visible;Separator;Enable_bkpt__visible;Disable_bkpt__visible;Clear_bkpt__visible;Bkpt_info__visible;Separator;Assertion_checking_handler__hidden;Force_debug_mode__visible;Exec_step__visible;Exec_into__visible;Exec_out__visible;Exec_no_stop__visible;Exec_debug__visible;Separator;Exec_restart_debug__visible;Exec_stop__visible;Exec_quit__visible;Run_final__hidden;Freeze_project__hidden;Finalize_project__hidden;Override_scan__hidden;Discover_melt__hidden</LIST></PREF>
 	<PREF NAME="debugger.proportion" HIDDEN="true"  DESCRIPTION="Proportion of the local/arguments part of the `Objects' tab in the Debugging tool."><INTEGER>0.5</INTEGER></PREF>
 	<PREF NAME="debugger.right_debug_layout" HIDDEN="true" DESCRIPTION="Items/tools shown on editor side when in debug mode."><LIST>Search;closed;0;0;0;0;Editor;minimized;0;0;0;0;Context;visible;0;0;0;171;Debugging;visible;0;0;0;218</LIST></PREF>
 	<PREF NAME="debugger.row_highlight_background_color" DESCRIPTION="Highlight background color"><COLOR>255;255;170</COLOR></PREF>
@@ -111,17 +111,21 @@
 	<PREF NAME="tools.metric_tool.unit_order" DESCRIPTION="List of metric units in order"><STRING></STRING></PREF>
 	<PREF NAME="tools.metric_tool.keep_metric_detailed_result" DESCRIPTION="Keep metric detailed result?"><BOOLEAN>True</BOOLEAN></PREF>
 	<PREF NAME="tools.metric_tool.check_defined_warning" DESCRIPTION="Check defined value warning when metric archive is recalculated?"><BOOLEAN>False</BOOLEAN></PREF>	
+	<PREF NAME="tools.metric_tool.maximize_metric_result_area" DESCRIPTION="Maximize metric result area?"><BOOLEAN>False</BOOLEAN></PREF>	
+	<PREF NAME="tools.metric_tool.warning_background_color" DESCRIPTION="Background color for archive items whose recent calculated value violates pre-defined value criterion."><COLOR>253;209;199</COLOR></PREF>	
+	<PREF NAME="tools.metric_tool.highlight_background_color" DESCRIPTION="Highlight background color"><COLOR>255;255;170</COLOR></PREF>	
 
 	<PREF NAME="tools.class_browser.classes_categorized_folder" HIDDEN="false" DESCRIPTION="Should classes be categorized in physical folders where they locates?"><BOOLEAN>False</BOOLEAN></PREF>
 	<PREF NAME="tools.class_browser.expand_referenced_class" HIDDEN="false" DESCRIPTION="Should referenced classes in dependency view be expanded by default?"><BOOLEAN>False</BOOLEAN></PREF>
 	<PREF NAME="tools.class_browser.expand_referencer_class" HIDDEN="false" DESCRIPTION="Should referencer classes in dependency view be expanded by default?"><BOOLEAN>False</BOOLEAN></PREF>
+	<PREF NAME="tools.class_browser.expand_categorized_folder_level" HIDDEN="false" DESCRIPTION="Should categorized folder level in dependency view be expanded by default?"><BOOLEAN>False</BOOLEAN></PREF>	
 	<PREF NAME="tools.class_browser.inheritance_classes" HIDDEN="false" DESCRIPTION="Should inheritance classes be displayed?"><BOOLEAN>False</BOOLEAN></PREF>
 	<PREF NAME="tools.class_browser.show_item_path" HIDDEN="false" DESCRIPTION="Is item path shown?"><BOOLEAN>False</BOOLEAN></PREF>
 	<PREF NAME="tools.class_browser.show_self_dependency" HIDDEN="false" DESCRIPTION="Is dependency on self shown?"><BOOLEAN>False</BOOLEAN></PREF>
 	<PREF NAME="tools.class_browser.syntactical_classes" HIDDEN="false" DESCRIPTION="Should syntactical referenced classes be displayed?"><BOOLEAN>False</BOOLEAN></PREF>
 	<PREF NAME="tools.class_browser.normal_referenced_classes" HIDDEN="false" DESCRIPTION="Will normal referenced supplier/client classes be shown"><BOOLEAN>True</BOOLEAN></PREF>
-	<PREF NAME="tools.class_browser.folder_search_recursive" HIDDEN="true" DESCRIPTION="Search a folder for classes recursively"><BOOLEAN>True</BOOLEAN></PREF>
-	
+	<PREF NAME="tools.class_browser.folder_search_recursive" HIDDEN="false" DESCRIPTION="Search a folder for classes recursively"><BOOLEAN>True</BOOLEAN></PREF>
+
 	<PREF NAME="interface.dialogs.confirm_on_exit" DESCRIPTION="Display confirmation dialog on exit."><BOOLEAN>True</BOOLEAN></PREF>
 	<PREF NAME="interface.dialogs.confirm_replace_all" DESCRIPTION="Display confirmation dialog on replacing all."><BOOLEAN>True</BOOLEAN></PREF>
 	<PREF NAME="interface.dialogs.confirm_finalize" DESCRIPTION="Display confirmation dialog for C compilation on finalize operation."><BOOLEAN>True</BOOLEAN></PREF>
@@ -175,9 +179,10 @@
 
 	<PREF NAME="interface.development_window.auto_hide_animation_speed" DESCRIPTION="The speed, in milliseconds, in which the auto-hide tools will reveal or hide themselves completely. Use '0' to disable animation effect."><BOOLEAN>1</BOOLEAN></PREF>
 	<PREF NAME="interface.development_window.show_all_applicable_docking_indicators" DESCRIPTION="Should all applicable docking feedback indicators be shown when dragging a tool or a editor tab?"><BOOLEAN>True</BOOLEAN></PREF>
+	<PREF NAME="interface.development_window.output_tool_prompted" DESCRIPTION="Should the output tool be shown when a compilation is launched?"><BOOLEAN>False</BOOLEAN></PREF>
 
 	<PREF NAME="interface.development_window.class_completion" DESCRIPTION="Allow class name completion in the address combo boxes?"><BOOLEAN>True</BOOLEAN></PREF>
-	<PREF NAME="interface.development_window.ctrl_right_click_receiver" DESCRIPTION="Receivers of control-right-click."><LIST>[new_window];editor;context;new_editor;new_context;external</LIST></PREF>
+	<PREF NAME="interface.development_window.ctrl_right_click_receiver" DESCRIPTION="Receivers of control-right-click."><LIST>[new_tab_editor];new_window;current_editor;context;external</LIST></PREF>
 	<PREF NAME="interface.development_window.dock_tracking" DESCRIPTION="Docked tools track main window?"><BOOLEAN>True</BOOLEAN></PREF>
 	<PREF NAME="interface.development_window.editor_left_side" DESCRIPTION="Display editor on left?" RESTART="True"><BOOLEAN>False</BOOLEAN></PREF>
 	<PREF NAME="interface.development_window.estudio_dbg_menu_allowed" DESCRIPTION="Is EiffelStudio Debug menu allowed?" HIDDEN="True"><BOOLEAN>True</BOOLEAN></PREF>

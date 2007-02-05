@@ -461,14 +461,6 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
---	last_predefined_metric_load_error: EB_METRIC_ERROR
---			-- Error information when load predefined metric definition the last time
---			-- Void if no error occurred.
-
---	last_userdefined_metric_load_error: EB_METRIC_ERROR
---			-- Error information when load userdefined metric definition the last time
---			-- Void if no error occurred.			
-
 	metrics_from_file (a_file_name: STRING): LIST [EB_METRIC] is
 			-- Metrics defined in file named `a_file_name'
 			-- If error occurs when opening the file or loading metric definitions,
@@ -484,6 +476,8 @@ feature -- Access
 			last_error := parse_file (a_file_name, l_callback)
 			if not has_error then
 				Result := l_callback.metrics.linear_representation
+			else
+				backup_file (a_file_name)
 			end
 		end
 
