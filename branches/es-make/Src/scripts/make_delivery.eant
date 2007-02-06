@@ -21,7 +21,7 @@
 
 	<inherit>
 		<parent location="${EIFFEL_SRC}${path_separator}scripts${path_separator}misc${path_separator}compile_executables.eant">
-			<redefine target="help"/>
+			<redefine target="help" />
 		</parent>
 	</inherit>
 	
@@ -41,12 +41,12 @@
 		<set name="ec_major_version" value="6" />
 		<set name="ec_minor_version" value="0" />
 		<set name="INSTALL_DIR" value="${cwd}${path_separator}Eiffel${ec_major_version}${ec_minor_version}" unless="${INSTALL_DIR}" />
-		<set name="OUTPUT_DIR" value="${INSTALL_DIR}${path_separator}temporary_bin" unless="${OUTPUT_DIR}"/>
+		<set name="OUTPUT_DIR" value="${INSTALL_DIR}${path_separator}temporary_bin" unless="${OUTPUT_DIR}" />
 		<set name="build_es_logfile" value="${INSTALL_DIR}${path_separator}build_es.log" unless="$build_es_logfile" />
 	</target>
 
-	<target name="build_delivery" depend="init_delivery" >
-		<available resource="${INSTALL_DIR}" variable="installdir_available"/>
+	<target name="build_delivery" depend="init_delivery">
+		<available resource="${INSTALL_DIR}" variable="installdir_available" />
 		<mkdir directory="${INSTALL_DIR}"  if="${installdir_available}=false" />
 		<mkdir directory="${OUTPUT_DIR}" />
 
@@ -61,7 +61,7 @@
 		<geant target="cleanup"			fork="false" reuse_variables="true" />
 	</target>
 
-	<target name="finalize_executables" depend="init_delivery" >
+	<target name="finalize_executables" depend="init_delivery">
 		<echo message="Finalizing executables into ${OUTPUT_DIR}" to_file="$build_es_logfile" append="true" />
 
 		<!-- run-time -->
@@ -73,11 +73,12 @@
 		<echo message="Compile library ..." to_file="$build_es_logfile" append="true" />
 		<geant target="compile_library" reuse_variables="true" />
 		<echo message="Error occurred during 'compile_library' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
-		<available resource="${EIFFEL_SRC}${path_separator}library${path_separator}wel${path_separator}spec${path_separator}msc${path_separator}dll${path_separator}wel_hook.dll" variable="tmp_available"/>
+		<available resource="${EIFFEL_SRC}${path_separator}library${path_separator}wel${path_separator}spec${path_separator}msc${path_separator}dll${path_separator}wel_hook.dll" 
+variable="tmp_available" />
 		<copy file="${EIFFEL_SRC}${path_separator}library${path_separator}wel${path_separator}spec${path_separator}msc${path_separator}dll${path_separator}wel_hook.dll" to_file="${OUTPUT_DIR}${path_separator}wel_hook.dll" if="${tmp_available}=true" />
 
 		<!-- IL runtime -->
-		<available resource="${EIFFEL_SRC}${path_separator}Eiffel${path_separator}eiffel${path_separator}com_il_generation${path_separator}Core${path_separator}run-time${path_separator}EiffelSoftware.Runtime.dll" variable="tmp_available"/>
+		<available resource="${EIFFEL_SRC}${path_separator}Eiffel${path_separator}eiffel${path_separator}com_il_generation${path_separator}Core${path_separator}run-time${path_separator}EiffelSoftware.Runtime.dll" variable="tmp_available" />
 		<copy file="${EIFFEL_SRC}${path_separator}Eiffel${path_separator}eiffel${path_separator}com_il_generation${path_separator}Core${path_separator}run-time${path_separator}EiffelSoftware.Runtime.dll" to_file="${OUTPUT_DIR}${path_separator}EiffelSoftware.Runtime.dll" if="${tmp_available}=true" />
 		
 		<!-- ec -->
@@ -90,7 +91,7 @@
 		<echo message="Finalize estudio ..." to_file="$build_es_logfile" append="true" />
 		<geant target="finalize_estudio" />
 		<echo message="Error occurred during 'finalize_estudio' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
-		<copy file="${compile_dir}${path_separator}EIFGENs${path_separator}estudio${path_separator}F_code${path_separator}estudio${exe}" to_file="${OUTPUT_DIR}${path_separator}estudio${exe}" if="${return_code}=0"/>
+		<copy file="${compile_dir}${path_separator}EIFGENs${path_separator}estudio${path_separator}F_code${path_separator}estudio${exe}" to_file="${OUTPUT_DIR}${path_separator}estudio${exe}" if="${return_code}=0" />
 
 		<!-- quick_finalize -->
 		<echo message="Finalize quick_finalize ..." to_file="$build_es_logfile" append="true" />
@@ -115,7 +116,7 @@
 
 		<echo message="Finalizing executables completed." to_file="$build_es_logfile" append="true" />
 	</target>
-	<target name="finalize_executables_windows" depend="init_delivery" if="${is_windows}" >
+	<target name="finalize_executables_windows" depend="init_delivery" if="${is_windows}">
 		<!-- finish_freezing -->
 		<echo message="Finalize finish_freezing ..." to_file="$build_es_logfile" append="true" />
 		<geant target="finalize_finish_freezing" />
@@ -130,29 +131,29 @@
 
 		<!-- emake -->
 		<echo message="Finalize emake ..." to_file="$build_es_logfile" append="true" />
-		<geant target="finalize_emake"  />
+		<geant target="finalize_emake" />
 		<echo message="Error occurred during 'finalize_emake' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
-		<copy file="${compile_dir}${path_separator}EIFGENs${path_separator}emake${path_separator}F_code${path_separator}emake${exe}" to_file="${OUTPUT_DIR}${path_separator}emake${exe}" if="${return_code}=0"/>
+		<copy file="${compile_dir}${path_separator}EIFGENs${path_separator}emake${path_separator}F_code${path_separator}emake${exe}" to_file="${OUTPUT_DIR}${path_separator}emake${exe}" if="${return_code}=0" />
 
 		<!-- dotnet consumer -->
 		<echo message="Finalize mdconsumer ..." to_file="$build_es_logfile" append="true" />
 		<geant target="finalize_mdconsumer" fork="false" />
 		<echo message="Error occurred during 'finalize_mdconsumer' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
-		<copy to_directory="${OUTPUT_DIR}" dir="${compile_dir}${path_separator}EIFGENs${path_separator}consumer_20${path_separator}F_code" if="${return_code}=0" >
+		<copy to_directory="${OUTPUT_DIR}" dir="${compile_dir}${path_separator}EIFGENs${path_separator}consumer_20${path_separator}F_code" if="${return_code}=0">
 			<fileset include="@(*.dll)" />
 		</copy>
 	</target>
 
-	<target name="create_delivery" depend="init_delivery" >
+	<target name="create_delivery" depend="init_delivery">
 		<echo message="Creating delivery into ${INSTALL_DIR}" to_file="$build_es_logfile" append="true" />
 		<!--
-		<echo message="Clean delivery ..." to_file="$build_es_logfile" append="true" if="${installdir_available}=true"  />
+		<echo message="Clean delivery ..." to_file="$build_es_logfile" append="true" if="${installdir_available}=true" />
 		<geant target="clean_delivery" reuse_variables="true" fork="false" if="${installdir_available}=true" />
 		<echo message="Error occurred during 'clean_delivery' (${return_code})" unless="${return_code}=0" />
 		<echo message="Error occurred during 'clean_delivery' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
 		<exit code="${return_code}" unless="${return_code}=0" />
 
-		<available resource="${INSTALL_DIR}" variable="installdir_available"/>
+		<available resource="${INSTALL_DIR}" variable="installdir_available" />
 		-->
 
 		<set name="return_code" value="0" />
@@ -178,7 +179,7 @@
 		</copy>
 
 		<!-- Process Gobo -->
-		<replace file="${INSTALL_DIR}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf.in" to_file="${INSTALL_DIR}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf" token="##GOBO##library" replace="library" flags="g" />	
+		<replace file="${INSTALL_DIR}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf.in" to_file="${INSTALL_DIR}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf" token="##GOBO##library" replace="library" flags="g" />
 		<available resource="${GOBO}${path_separator}library" variable="gobo_available" true_value="${GOBO}" />
 		<available resource="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}library" variable="gobo_available" true_value="${ISE_LIBRARY}${path_separator}library${path_separator}gobo" if="${gobo_available}=false" />
 		<available resource="${ISE_EIFFEL}${path_separator}library${path_separator}gobo${path_separator}library" variable="gobo_available" true_value="${ISE_EIFFEL}${path_separator}library${path_separator}gobo" if="${gobo_available}=false" />
@@ -195,11 +196,11 @@
 		</copy>
 
 		<!-- headers -->
-		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM"/>
-		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}bin"/>
-		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}include"/>
-		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}lib"/>
-		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}include" dir="${EIFFEL_SRC}${path_separator}C${path_separator}run-time" >
+		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM" />
+		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}bin" />
+		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}include" />
+		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}lib" />
+		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}include" dir="${EIFFEL_SRC}${path_separator}C${path_separator}run-time">
 			<fileset include="@(*.h)" />
 		</copy>
 
@@ -226,7 +227,7 @@
 	<target name="create_delivery_windows" depend="init_delivery" if="${is_windows}">
 		<!-- Windows -->
 		<mkdir directory="studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}lib${path_separator}${ISE_C_COMPILER}" />
-		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}lib${path_separator}${ISE_C_COMPILER}" dir="${EIFFEL_SRC}${path_separator}C${path_separator}run-time${path_separator}LIB" >
+		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}lib${path_separator}${ISE_C_COMPILER}" dir="${EIFFEL_SRC}${path_separator}C${path_separator}run-time${path_separator}LIB">
 			<fileset include="@(*.lib|*.dll)" />
 		</copy>
 		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}config${path_separator}${ISE_PLATFORM}" dir="studio${path_separator}config${path_separator}windows" unless="${ISE_PLATFORM}=windows">
@@ -237,7 +238,7 @@
 		<exec executable="chmod a+x ${INSTALL_DIR}${path_separator}make_install" accept_errors="true" />
 
 		<copy file="${EIFFEL_SRC}${path_separator}C${path_separator}config.sh" to_directory="studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}include" />
-		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}lib" dir="${EIFFEL_SRC}${path_separator}C${path_separator}run-time" >
+		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}lib" dir="${EIFFEL_SRC}${path_separator}C${path_separator}run-time">
 			<fileset include="@(lib*.*)" />
 		</copy>
 		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}config${path_separator}${ISE_PLATFORM}" dir="studio${path_separator}config${path_separator}unix">
@@ -253,11 +254,11 @@
 		<!-- install binaries -->
 		<set name="tmp_install_dir" value="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}" />
 
-		<available dir="${OUTPUT_DIR}" resource="ec${exe}" variable="tmp_available"/>
+		<available dir="${OUTPUT_DIR}" resource="ec${exe}" variable="tmp_available" />
 		<copy dir="${OUTPUT_DIR}" file="ec${exe}" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true" />
 
-		<available dir="${OUTPUT_DIR}" resource="estudio${exe}" variable="tmp_available"/>
-		<copy dir="${OUTPUT_DIR}" file="estudio${exe}" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true"/>
+		<available dir="${OUTPUT_DIR}" resource="estudio${exe}" variable="tmp_available" />
+		<copy dir="${OUTPUT_DIR}" file="estudio${exe}" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true" />
 
 		<available dir="${OUTPUT_DIR}" resource="esbuilder${exe}" variable="tmp_available" />
 		<mkdir directory="${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec" if="${tmp_available}=true" />
@@ -265,7 +266,7 @@
 		<mkdir directory="${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin" if="${tmp_available}=true" />
 		<copy dir="${OUTPUT_DIR}" file="esbuilder${exe}" to_directory="${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin" if="${tmp_available}=true" />
 
-		<copy dir="${OUTPUT_DIR}" to_directory="${tmp_install_dir}${path_separator}bin" >
+		<copy dir="${OUTPUT_DIR}" to_directory="${tmp_install_dir}${path_separator}bin">
 			<fileset include="@(*.dll)" />
 		</copy>
 
@@ -278,40 +279,40 @@
 
 		<echo message="Installing executables is completed." to_file="$build_es_logfile" append="true" />
 	</target>
-	<target name="install_executables_unix" depend="init_delivery" unless="${is_windows}" >
+	<target name="install_executables_unix" depend="init_delivery" unless="${is_windows}">
 		<exec executable="chmod a+x ${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}* " accept_errors="true" exit_code_variable="return_code" />
 		<exec executable="chmod a+x ${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}* " accept_errors="true" exit_code_variable="return_code" />
 		<exec executable="chmod a+x ${OUTPUT_DIR}${path_separator}* " accept_errors="true" exit_code_variable="return_code" />
 	</target>
-	<target name="install_executables_windows" depend="init_delivery" if="${is_windows}" >
-		<available dir="${OUTPUT_DIR}" resource="wel_hook.dll" variable="tmp_available"/>
+	<target name="install_executables_windows" depend="init_delivery" if="${is_windows}">
+		<available dir="${OUTPUT_DIR}" resource="wel_hook.dll" variable="tmp_available" />
 		<copy dir="${OUTPUT_DIR}" file="wel_hook.dll" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true" />
 
-		<available dir="${OUTPUT_DIR}" resource="EiffelSoftware.Runtime.dll" variable="tmp_available"/>
+		<available dir="${OUTPUT_DIR}" resource="EiffelSoftware.Runtime.dll" variable="tmp_available" />
 		<copy dir="${OUTPUT_DIR}" file="EiffelSoftware.Runtime.dll" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true" />
 		<copy dir="${OUTPUT_DIR}" file="EiffelSoftware.Runtime.dll" to_directory="${tmp_install_dir}${path_separator}lib" if="${tmp_available}=true" />
 
-		<available dir="${OUTPUT_DIR}" resource="finish_freezing${exe}" variable="tmp_available"/>
-		<copy dir="${OUTPUT_DIR}" file="finish_freezing${exe}" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true"/>
+		<available dir="${OUTPUT_DIR}" resource="finish_freezing${exe}" variable="tmp_available" />
+		<copy dir="${OUTPUT_DIR}" file="finish_freezing${exe}" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true" />
 
-		<available dir="${OUTPUT_DIR}" resource="quick_finalize${exe}" variable="tmp_available"/>
-		<copy dir="${OUTPUT_DIR}" file="quick_finalize${exe}" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true"/>
+		<available dir="${OUTPUT_DIR}" resource="quick_finalize${exe}" variable="tmp_available" />
+		<copy dir="${OUTPUT_DIR}" file="quick_finalize${exe}" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true" />
 
-		<available dir="${OUTPUT_DIR}" resource="h2e${exe}" variable="tmp_available"/>
-		<copy dir="${OUTPUT_DIR}" file="h2e${exe}" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true"/>
+		<available dir="${OUTPUT_DIR}" resource="h2e${exe}" variable="tmp_available" />
+		<copy dir="${OUTPUT_DIR}" file="h2e${exe}" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true" />
 
-		<available dir="${OUTPUT_DIR}" resource="emake${exe}" variable="tmp_available"/>
-		<copy dir="${OUTPUT_DIR}" file="emake${exe}" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true"/>
+		<available dir="${OUTPUT_DIR}" resource="emake${exe}" variable="tmp_available" />
+		<copy dir="${OUTPUT_DIR}" file="emake${exe}" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true" />
 	</target>
 
-	<target name="clean_es" depend="init_delivery" >
+	<target name="clean_es" depend="init_delivery">
 		<exec executable="rmdir /q/s ${EIFGENs}" if="${is_windows}" />
 		<exec executable="rm -rf ${EIFGENs}" unless="${is_windows}" />
-		<available resource="${INSTALL_DIR}" variable="installdir_available"/>
+		<available resource="${INSTALL_DIR}" variable="installdir_available" />
 		<geant target="clean_delivery" reuse_variables="true" fork="false" if="${installdir_available}=true" />
 	</target>
 
-	<target name="clean_delivery" depend="init_delivery" >
+	<target name="clean_delivery" depend="init_delivery">
 		<!--
 		<delete directory="${INSTALL_DIR}" if="${installdir_available}=true" />
 		-->
