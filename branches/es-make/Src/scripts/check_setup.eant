@@ -363,7 +363,6 @@
 		<exec executable="cd %TMP%" />
 		<exec executable="(link >> es_setup_check)" accept_errors="true" exit_code_variable="conf_msc_link_available" />
 		<exec executable="${find_bin} /C &quot;usage: LINK&quot; es_setup_check" exit_code_variable="conf_msc_link_available" if="${conf_msc_link_available}=1100"/>
-		<exec executable="${find_bin} /C &quot;usage: LINK&quot; es_setup_check" exit_code_variable="conf_msc_link_available" if="${conf_msc_link_available}=1100"/>
 		<exec executable="del es_setup_check"/>
 		<set name="setup_error" value="" unless="$conf_msc_link_available=0" />
 		<echo message="  -> link.exe found, exit code: $conf_msc_link_available, ok" if="${conf_msc_link_available}=0" />
@@ -381,9 +380,7 @@
 		<!-- check for csc -->
 		<exec executable="cd %TMP%" />
 		<exec executable="(csc >> es_setup_check)" accept_errors="true" exit_code_variable="conf_csc_available" />
-		<echo message="msc-link: ${conf_csc_available}" />
 		<exec executable="${find_bin} /C &quot;fatal error CS2008: No inputs specified&quot; es_setup_check" exit_code_variable="conf_csc_available" if="${conf_csc_available}=1"/>
-		<echo message="msc-link: ${conf_csc_available}" />
 		<exec executable="del es_setup_check"/>
 		<set name="setup_error" value="" unless="$conf_csc_available=0" />
 		<echo message="  -> csc.exe found, exit code: $conf_csc_available, ok" if="${conf_csc_available}=0" />
