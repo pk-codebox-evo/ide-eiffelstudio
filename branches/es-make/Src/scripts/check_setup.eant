@@ -125,8 +125,8 @@
 		<echo message="ERROR:  pkg-config not in path, please install 'pkg-config' or update your PATH!" unless="$conf_pkgconfig=0" />
 		<echo message="===============================================================================" unless="$conf_pkgconfig=0" />
 
-		<echo message="" if="$setup_error"
-		<echo message="" if="$setup_error"
+		<echo message="" if="$setup_error" />
+		<echo message="" if="$setup_error" />
 		<echo message="You have an error in your setup, please check the configuration!" if="$setup_error" />
 		<exit code="1" if="$setup_error" />
 	</target>
