@@ -73,8 +73,7 @@
 		<echo message="Compile library ..." to_file="$build_es_logfile" append="true" />
 		<geant target="compile_library" reuse_variables="true" />
 		<echo message="Error occurred during 'compile_library' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
-		<available resource="${EIFFEL_SRC}${path_separator}library${path_separator}wel${path_separator}spec${path_separator}msc${path_separator}dll${path_separator}wel_hook.dll" 
-variable="tmp_available" />
+		<available resource="${EIFFEL_SRC}${path_separator}library${path_separator}wel${path_separator}spec${path_separator}msc${path_separator}dll${path_separator}wel_hook.dll" variable="tmp_available" />
 		<copy file="${EIFFEL_SRC}${path_separator}library${path_separator}wel${path_separator}spec${path_separator}msc${path_separator}dll${path_separator}wel_hook.dll" to_file="${OUTPUT_DIR}${path_separator}wel_hook.dll" if="${tmp_available}=true" />
 
 		<!-- IL runtime -->
@@ -110,6 +109,18 @@ variable="tmp_available" />
 		<geant target="finalize_docbuilder" />
 		<echo message="Error occurred during 'finalize_docbuilder' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
 		<copy file="${compile_dir}${path_separator}EIFGENs${path_separator}doc_builder${path_separator}F_code${path_separator}doc_builder${exe}" to_file="${OUTPUT_DIR}${path_separator}doc_builder${exe}" if="${return_code}=0" />
+
+		<!-- es_cleaner -->
+		<echo message="Finalize es_cleaner ..." to_file="$build_es_logfile" append="true" />
+		<geant target="finalize_es_cleaner" />
+		<echo message="Error occurred during 'finalize_es_cleaner' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
+		<copy file="${compile_dir}${path_separator}EIFGENs${path_separator}escln_graphical${path_separator}F_code${path_separator}escln${exe}" to_file="${OUTPUT_DIR}${path_separator}escln${exe}" if="${return_code}=0" />
+
+		<!-- compile_all -->
+		<echo message="Finalize compile_all ..." to_file="$build_es_logfile" append="true" />
+		<geant target="finalize_compile_all" />
+		<echo message="Error occurred during 'finalize_compile_all' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
+		<copy file="${compile_dir}${path_separator}EIFGENs${path_separator}compile_all${path_separator}F_code${path_separator}compile_all${exe}" to_file="${OUTPUT_DIR}${path_separator}compile_all${exe}" if="${return_code}=0" />
 
 		<!-- specific to windows -->
 		<geant target="finalize_executables_windows" fork="false" reuse_variables="true" if="${is_windows}" />

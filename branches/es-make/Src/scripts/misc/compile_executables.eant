@@ -59,8 +59,9 @@
 		<echo message="       ----------"/>
 		<echo message=" geant clean_compile_all"/>
 		<echo message=" geant finalize_compile_all"/>
-		<echo message=" geant ${opt} clean_es_cleaner"/>
-		<echo message=" geant ${opt} finalize_es_cleaner"/>
+		<echo message="       ----------"/>
+		<echo message=" geant clean_es_cleaner"/>
+		<echo message=" geant finalize_es_cleaner"/>
 	</target>
 
 	<!-- 
