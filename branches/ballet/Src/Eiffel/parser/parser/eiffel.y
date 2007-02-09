@@ -81,7 +81,7 @@ create
 %token <KEYWORD_AS> TE_ENSURE TE_EXPANDED TE_EXPORT TE_EXTERNAL TE_FEATURE
 %token <KEYWORD_AS> TE_FROM TE_IF TE_IMPLIES TE_INDEXING TE_INHERIT
 %token <KEYWORD_AS> TE_INSPECT TE_INVARIANT TE_LIKE TE_LOCAL
-%token <KEYWORD_AS> TE_LOOP TE_NOT TE_OBSOLETE TE_OLD TE_ONCE
+%token <KEYWORD_AS> TE_LOOP TE_NOT TE_OBSOLETE TE_OLD TE_ONCE TE_USE TE_MODIFY
 %token <KEYWORD_AS> TE_ONCE_STRING TE_OR TE_REDEFINE TE_REFERENCE TE_RENAME
 %token <KEYWORD_AS> TE_REQUIRE TE_RESCUE TE_SELECT TE_SEPARATE TE_STRIP
 %token <KEYWORD_AS> TE_THEN TE_UNDEFINE	TE_UNTIL TE_VARIANT TE_WHEN	
@@ -207,6 +207,8 @@ create
 %type <LOCAL_DEC_LIST_AS>	Local_declarations
 %type <FORMAL_ARGU_DEC_LIST_AS> Formal_arguments Optional_formal_arguments
 %type <CONSTRAINT_TRIPLE>	Constraint
+%type <USE_AS> Use
+%type <MODIFY_AS> Modify
 
 %expect 125
 
@@ -1198,6 +1200,8 @@ Routine:
 		Obsolete
 			{	set_fbody_pos (position) }
 		Precondition
+		Use
+		Modify
 		Local_declarations
 		Routine_body
 		Postcondition
@@ -1211,10 +1215,10 @@ Routine:
 					temp_string_as1 := Void
 					temp_keyword_as := Void
 				end
-				if $7 /= Void then
-					$$ := ast_factory.new_routine_as (temp_string_as1, $3, $4, $5, $6, $7.second, $8, once_manifest_string_count, fbody_pos, temp_keyword_as, $7.first)
+				if $9 /= Void then
+					$$ := ast_factory.new_routine_as (temp_string_as1, $3, $4, $5, $6, $7, $8, $9.second, $10, once_manifest_string_count, fbody_pos, temp_keyword_as, $9.first)
 				else
-					$$ := ast_factory.new_routine_as (temp_string_as1, $3, $4, $5, $6, Void, $8, once_manifest_string_count, fbody_pos, temp_keyword_as, Void)					
+					$$ := ast_factory.new_routine_as (temp_string_as1, $3, $4, $5, $6, $7, $8, Void, $10, once_manifest_string_count, fbody_pos, temp_keyword_as, Void)					
 				end
 				once_manifest_string_count := 0
 			}
@@ -1355,6 +1359,28 @@ Precondition: -- Empty
 			{
 				set_id_level (Normal_level)
 				$$ := ast_factory.new_require_else_as ($4, $1, $2)
+			}
+	;
+
+Use: -- Empty
+			-- { $$ := Void }
+	|	TE_USE
+			{ set_id_level (Assert_level) }
+		Assertion
+			{
+				set_id_level (Normal_level)
+				$$ := ast_factory.new_use_as ($3, $1)
+			}
+	;
+
+Modify: -- Empty
+			-- { $$ := Void }
+	|	TE_MODIFY
+			{ set_id_level (Assert_level) }
+		Assertion
+			{
+				set_id_level (Normal_level)
+				$$ := ast_factory.new_modify_as ($3, $1)
 			}
 	;
 

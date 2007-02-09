@@ -8,6 +8,10 @@ class
 
 inherit
 	AST_VISITOR
+		redefine
+			process_use_as,
+			process_modify_as
+		end
 
 feature -- Roundtrip
 
@@ -544,6 +548,14 @@ feature -- Implementation
 		end
 
 	process_require_as (l_as: REQUIRE_AS) is
+		do
+		end
+
+	process_modify_as (l_as: MODIFY_AS) is
+		do
+		end
+
+	process_use_as (l_as: USE_AS) is
 		do
 		end
 

@@ -43,8 +43,14 @@ feature {NONE} -- Implementation
 	yy_execute_action (yy_act: INTEGER) is
 			-- Execute semantic action.
 		do
-			inspect yy_act
-when 1 then
+if yy_act <= 104 then
+if yy_act <= 52 then
+if yy_act <= 26 then
+if yy_act <= 13 then
+if yy_act <= 7 then
+if yy_act <= 4 then
+if yy_act <= 2 then
+if yy_act = 1 then
 yy_set_line_column
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
 --|#line 39 "eiffel.l"
@@ -52,7 +58,7 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 39")
 end
  ast_factory.create_break_as (Current)  
-when 2 then
+else
 	yy_end := yy_end - 2
 yy_set_line_column
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
@@ -67,7 +73,9 @@ end
 				ast_factory.set_buffer (token_buffer2, Current)
 				set_start_condition (PRAGMA)					
 		
-when 3 then
+end
+else
+if yy_act = 3 then
 	yy_column := yy_column + yy_end - yy_start - yy_more_len
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
 --|#line 50 "eiffel.l"
@@ -78,7 +86,7 @@ end
 				ast_factory.append_text_to_buffer (token_buffer2, Current)
 				last_line_pragma := ast_factory.new_line_pragma (Current)
 			
-when 4 then
+else
 	yy_column := yy_column + yy_end - yy_start - yy_more_len
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
 --|#line 55 "eiffel.l"
@@ -88,7 +96,11 @@ end
 
 				ast_factory.append_text_to_buffer (token_buffer2, Current)
 			
-when 5 then
+end
+end
+else
+if yy_act <= 6 then
+if yy_act = 5 then
 yy_set_line_column
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
 --|#line 59 "eiffel.l"
@@ -98,7 +110,7 @@ end
 
 				ast_factory.append_text_to_buffer (token_buffer2, Current)
 			
-when 6 then
+else
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 63 "eiffel.l"
@@ -114,7 +126,8 @@ end
 																token_buffer2.count)
 			set_start_condition (INITIAL)						
 		
-when 7 then
+end
+else
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 85 "eiffel.l"
@@ -125,7 +138,12 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_SEMICOLON, Current)
 				last_token := TE_SEMICOLON
 			
-when 8 then
+end
+end
+else
+if yy_act <= 10 then
+if yy_act <= 9 then
+if yy_act = 8 then
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 89 "eiffel.l"
@@ -136,7 +154,7 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_COLON, Current)
 				last_token := TE_COLON
 			
-when 9 then
+else
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 93 "eiffel.l"
@@ -147,7 +165,8 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_COMMA, Current)
 				last_token := TE_COMMA
 			
-when 10 then
+end
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 97 "eiffel.l"
@@ -158,7 +177,10 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_DOTDOT, Current)
 				last_token := TE_DOTDOT
 			
-when 11 then
+end
+else
+if yy_act <= 12 then
+if yy_act = 11 then
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 101 "eiffel.l"
@@ -169,7 +191,7 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_QUESTION, Current)
 				last_token := TE_QUESTION
 			
-when 12 then
+else
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 105 "eiffel.l"
@@ -180,7 +202,8 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_TILDE, Current)
 				last_token := TE_TILDE
 			
-when 13 then
+end
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 109 "eiffel.l"
@@ -191,7 +214,14 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_CURLYTILDE, Current)
 				last_token := TE_CURLYTILDE
 			
-when 14 then
+end
+end
+end
+else
+if yy_act <= 20 then
+if yy_act <= 17 then
+if yy_act <= 15 then
+if yy_act = 14 then
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 113 "eiffel.l"
@@ -202,7 +232,7 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_DOT, Current)
 				last_token := TE_DOT
 			
-when 15 then
+else
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 117 "eiffel.l"
@@ -213,7 +243,9 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_ADDRESS, Current)
 				last_token := TE_ADDRESS
 			
-when 16 then
+end
+else
+if yy_act = 16 then
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 121 "eiffel.l"
@@ -224,7 +256,7 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_ASSIGNMENT, Current)
 				last_token := TE_ASSIGNMENT
 			
-when 17 then
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 125 "eiffel.l"
@@ -235,7 +267,11 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_ACCEPT, Current)
 				last_token := TE_ACCEPT
 			
-when 18 then
+end
+end
+else
+if yy_act <= 19 then
+if yy_act = 18 then
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 129 "eiffel.l"
@@ -246,7 +282,7 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_EQ, Current)
 				last_token := TE_EQ
 			
-when 19 then
+else
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 133 "eiffel.l"
@@ -257,7 +293,8 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_LT, Current)
 				last_token := TE_LT
 			
-when 20 then
+end
+else
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 137 "eiffel.l"
@@ -268,7 +305,12 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_GT, Current)
 				last_token := TE_GT
 			
-when 21 then
+end
+end
+else
+if yy_act <= 23 then
+if yy_act <= 22 then
+if yy_act = 21 then
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 141 "eiffel.l"
@@ -279,7 +321,7 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_LE, Current)
 				last_token := TE_LE
 			
-when 22 then
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 145 "eiffel.l"
@@ -290,7 +332,8 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_GE, Current)
 				last_token := TE_GE
 			
-when 23 then
+end
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 149 "eiffel.l"
@@ -301,7 +344,10 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_NE, Current)
 				last_token := TE_NE
 			
-when 24 then
+end
+else
+if yy_act <= 25 then
+if yy_act = 24 then
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 153 "eiffel.l"
@@ -312,7 +358,7 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_LPARAN, Current)
 				last_token := TE_LPARAN
 			
-when 25 then
+else
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 157 "eiffel.l"
@@ -323,7 +369,8 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_RPARAN, Current)
 				last_token := TE_RPARAN
 			
-when 26 then
+end
+else
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 161 "eiffel.l"
@@ -334,7 +381,16 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_LCURLY, Current)
 				last_token := TE_LCURLY
 			
-when 27 then
+end
+end
+end
+end
+else
+if yy_act <= 39 then
+if yy_act <= 33 then
+if yy_act <= 30 then
+if yy_act <= 28 then
+if yy_act = 27 then
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 165 "eiffel.l"
@@ -345,7 +401,7 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_RCURLY, Current)
 				last_token := TE_RCURLY
 			
-when 28 then
+else
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 169 "eiffel.l"
@@ -356,7 +412,9 @@ end
 				last_symbol_as_value := ast_factory.new_square_symbol_as (TE_LSQURE, Current)
 				last_token := TE_LSQURE
 			
-when 29 then
+end
+else
+if yy_act = 29 then
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 173 "eiffel.l"
@@ -367,7 +425,7 @@ end
 				last_symbol_as_value := ast_factory.new_square_symbol_as (TE_RSQURE, Current)
 				last_token := TE_RSQURE
 			
-when 30 then
+else
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 177 "eiffel.l"
@@ -378,7 +436,11 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_PLUS, Current)
 				last_token := TE_PLUS
 			
-when 31 then
+end
+end
+else
+if yy_act <= 32 then
+if yy_act = 31 then
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 181 "eiffel.l"
@@ -389,7 +451,7 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_MINUS, Current)
 				last_token := TE_MINUS
 			
-when 32 then
+else
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 185 "eiffel.l"
@@ -400,7 +462,8 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_STAR, Current)
 				last_token := TE_STAR
 			
-when 33 then
+end
+else
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 189 "eiffel.l"
@@ -411,7 +474,12 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_SLASH, Current)
 				last_token := TE_SLASH
 			
-when 34 then
+end
+end
+else
+if yy_act <= 36 then
+if yy_act <= 35 then
+if yy_act = 34 then
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 193 "eiffel.l"
@@ -422,7 +490,7 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_POWER, Current)
 				last_token := TE_POWER
 			
-when 35 then
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 197 "eiffel.l"
@@ -433,7 +501,8 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_CONSTRAIN, Current)
 				last_token := TE_CONSTRAIN
 			
-when 36 then
+end
+else
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
 --|#line 201 "eiffel.l"
@@ -444,7 +513,10 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_BANG, Current)
 				last_token := TE_BANG
 			
-when 37 then
+end
+else
+if yy_act <= 38 then
+if yy_act = 37 then
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 205 "eiffel.l"
@@ -455,7 +527,7 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_LARRAY, Current)
 				last_token := TE_LARRAY
 			
-when 38 then
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 209 "eiffel.l"
@@ -466,7 +538,8 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_RARRAY, Current)
 				last_token := TE_RARRAY
 			
-when 39 then
+end
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 213 "eiffel.l"
@@ -477,7 +550,14 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_DIV, Current)
 				last_token := TE_DIV
 			
-when 40 then
+end
+end
+end
+else
+if yy_act <= 46 then
+if yy_act <= 43 then
+if yy_act <= 41 then
+if yy_act = 40 then
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 217 "eiffel.l"
@@ -488,7 +568,7 @@ end
 				last_symbol_as_value := ast_factory.new_symbol_as (TE_MOD, Current)
 				last_token := TE_MOD
 			
-when 41 then
+else
 	yy_column := yy_column + yy_end - yy_start - yy_more_len
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
 --|#line 225 "eiffel.l"
@@ -499,7 +579,9 @@ end
 				last_token := TE_FREE
 				process_id_as
 			
-when 42 then
+end
+else
+if yy_act = 42 then
 	yy_column := yy_column + 5
 	yy_position := yy_position + 5
 --|#line 233 "eiffel.l"
@@ -510,7 +592,7 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_AGENT, Current)
 				last_token := TE_AGENT
 			
-when 43 then
+else
 	yy_column := yy_column + 5
 	yy_position := yy_position + 5
 --|#line 237 "eiffel.l"
@@ -521,7 +603,11 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_ALIAS, Current)
 				last_token := TE_ALIAS
 			
-when 44 then
+end
+end
+else
+if yy_act <= 45 then
+if yy_act = 44 then
 	yy_column := yy_column + 3
 	yy_position := yy_position + 3
 --|#line 241 "eiffel.l"
@@ -532,7 +618,7 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_ALL, Current)
 				last_token := TE_ALL
 			
-when 45 then
+else
 	yy_column := yy_column + 3
 	yy_position := yy_position + 3
 --|#line 245 "eiffel.l"
@@ -543,7 +629,8 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_AND, Current)
 				last_token := TE_AND
 			
-when 46 then
+end
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 249 "eiffel.l"
@@ -554,7 +641,12 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_AS, Current)
 				last_token := TE_AS
 			
-when 47 then
+end
+end
+else
+if yy_act <= 49 then
+if yy_act <= 48 then
+if yy_act = 47 then
 	yy_column := yy_column + 6
 	yy_position := yy_position + 6
 --|#line 253 "eiffel.l"
@@ -568,7 +660,7 @@ end
 				end
 				last_token := TE_ASSIGN
 			
-when 48 then
+else
 	yy_column := yy_column + 9
 	yy_position := yy_position + 9
 --|#line 260 "eiffel.l"
@@ -584,7 +676,8 @@ end
 							once "Use of `attribute', possibly a new keyword in future definition of `Eiffel'."))
 				end
 			
-when 49 then
+end
+else
 	yy_column := yy_column + 3
 	yy_position := yy_position + 3
 --|#line 269 "eiffel.l"
@@ -595,7 +688,10 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_BIT, Current)
 				last_token := TE_BIT
 			
-when 50 then
+end
+else
+if yy_act <= 51 then
+if yy_act = 50 then
 	yy_column := yy_column + 5
 	yy_position := yy_position + 5
 --|#line 273 "eiffel.l"
@@ -606,7 +702,7 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_CHECK, Current)
 				last_token := TE_CHECK
 			
-when 51 then
+else
 	yy_column := yy_column + 5
 	yy_position := yy_position + 5
 --|#line 277 "eiffel.l"
@@ -617,7 +713,8 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_CLASS, Current)
 				last_token := TE_CLASS
 			
-when 52 then
+end
+else
 	yy_column := yy_column + 7
 	yy_position := yy_position + 7
 --|#line 281 "eiffel.l"
@@ -628,7 +725,18 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_CONVERT, Current)
 				last_token := TE_CONVERT
 			
-when 53 then
+end
+end
+end
+end
+end
+else
+if yy_act <= 78 then
+if yy_act <= 65 then
+if yy_act <= 59 then
+if yy_act <= 56 then
+if yy_act <= 54 then
+if yy_act = 53 then
 	yy_column := yy_column + 6
 	yy_position := yy_position + 6
 --|#line 285 "eiffel.l"
@@ -639,7 +747,7 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_CREATE, Current)
 				last_token := TE_CREATE
 			
-when 54 then
+else
 	yy_column := yy_column + 8
 	yy_position := yy_position + 8
 --|#line 289 "eiffel.l"
@@ -650,7 +758,9 @@ end
 				last_keyword_as_value := ast_factory.new_creation_keyword_as (Current)
 				last_token := TE_CREATION				
 			
-when 55 then
+end
+else
+if yy_act = 55 then
 	yy_column := yy_column + 7
 	yy_position := yy_position + 7
 --|#line 293 "eiffel.l"
@@ -661,7 +771,7 @@ end
 				last_current_as_value := ast_factory.new_current_as (Current)
 				last_token := TE_CURRENT
 			
-when 56 then
+else
 	yy_column := yy_column + 5
 	yy_position := yy_position + 5
 --|#line 297 "eiffel.l"
@@ -672,7 +782,11 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_DEBUG, Current)
 				last_token := TE_DEBUG
 			
-when 57 then
+end
+end
+else
+if yy_act <= 58 then
+if yy_act = 57 then
 	yy_column := yy_column + 8
 	yy_position := yy_position + 8
 --|#line 301 "eiffel.l"
@@ -683,7 +797,7 @@ end
 				last_deferred_as_value := ast_factory.new_deferred_as (Current)
 				last_token := TE_DEFERRED			
 			
-when 58 then
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 305 "eiffel.l"
@@ -694,7 +808,8 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_DO, Current)
 				last_token := TE_DO
 			
-when 59 then
+end
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
 --|#line 309 "eiffel.l"
@@ -705,7 +820,12 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_ELSE, Current)
 				last_token := TE_ELSE
 			
-when 60 then
+end
+end
+else
+if yy_act <= 62 then
+if yy_act <= 61 then
+if yy_act = 60 then
 	yy_column := yy_column + 6
 	yy_position := yy_position + 6
 --|#line 313 "eiffel.l"
@@ -716,7 +836,7 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_ELSEIF, Current)
 				last_token := TE_ELSEIF
 			
-when 61 then
+else
 	yy_column := yy_column + 3
 	yy_position := yy_position + 3
 --|#line 317 "eiffel.l"
@@ -727,7 +847,8 @@ end
 				last_keyword_as_value := ast_factory.new_end_keyword_as (Current)
 				last_token := TE_END
 			
-when 62 then
+end
+else
 	yy_column := yy_column + 6
 	yy_position := yy_position + 6
 --|#line 321 "eiffel.l"
@@ -738,7 +859,10 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_ENSURE, Current)
 				last_token := TE_ENSURE
 			
-when 63 then
+end
+else
+if yy_act <= 64 then
+if yy_act = 63 then
 	yy_column := yy_column + 8
 	yy_position := yy_position + 8
 --|#line 325 "eiffel.l"
@@ -749,7 +873,7 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_EXPANDED, Current)
 				last_token := TE_EXPANDED
 			
-when 64 then
+else
 	yy_column := yy_column + 6
 	yy_position := yy_position + 6
 --|#line 329 "eiffel.l"
@@ -760,7 +884,8 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_EXPORT, Current)
 				last_token := TE_EXPORT
 			
-when 65 then
+end
+else
 	yy_column := yy_column + 8
 	yy_position := yy_position + 8
 --|#line 333 "eiffel.l"
@@ -771,7 +896,14 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_EXTERNAL, Current)
 				last_token := TE_EXTERNAL
 			
-when 66 then
+end
+end
+end
+else
+if yy_act <= 72 then
+if yy_act <= 69 then
+if yy_act <= 67 then
+if yy_act = 66 then
 	yy_column := yy_column + 5
 	yy_position := yy_position + 5
 --|#line 337 "eiffel.l"
@@ -782,7 +914,7 @@ end
 				last_bool_as_value := ast_factory.new_boolean_as (False, Current)
 				last_token := TE_FALSE
 			
-when 67 then
+else
 	yy_column := yy_column + 7
 	yy_position := yy_position + 7
 --|#line 341 "eiffel.l"
@@ -793,7 +925,9 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_FEATURE, Current)
 				last_token := TE_FEATURE
 			
-when 68 then
+end
+else
+if yy_act = 68 then
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
 --|#line 345 "eiffel.l"
@@ -804,7 +938,7 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_FROM, Current)
 				last_token := TE_FROM
 			
-when 69 then
+else
 	yy_column := yy_column + 6
 	yy_position := yy_position + 6
 --|#line 349 "eiffel.l"
@@ -815,7 +949,11 @@ end
 				last_keyword_as_value := ast_factory.new_frozen_keyword_as (Current)
 				last_token := TE_FROZEN
 			
-when 70 then
+end
+end
+else
+if yy_act <= 71 then
+if yy_act = 70 then
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 353 "eiffel.l"
@@ -826,7 +964,7 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_IF, Current)
 				last_token := TE_IF
 			
-when 71 then
+else
 	yy_column := yy_column + 7
 	yy_position := yy_position + 7
 --|#line 357 "eiffel.l"
@@ -837,7 +975,8 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_IMPLIES, Current)
 				last_token := TE_IMPLIES
 			
-when 72 then
+end
+else
 	yy_column := yy_column + 8
 	yy_position := yy_position + 8
 --|#line 361 "eiffel.l"
@@ -848,7 +987,12 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_INDEXING, Current)
 				last_token := TE_INDEXING
 			
-when 73 then
+end
+end
+else
+if yy_act <= 75 then
+if yy_act <= 74 then
+if yy_act = 73 then
 	yy_column := yy_column + 5
 	yy_position := yy_position + 5
 --|#line 365 "eiffel.l"
@@ -859,7 +1003,7 @@ end
 				last_keyword_as_value := ast_factory.new_infix_keyword_as (Current)
 				last_token := TE_INFIX
 			
-when 74 then
+else
 	yy_column := yy_column + 7
 	yy_position := yy_position + 7
 --|#line 369 "eiffel.l"
@@ -870,7 +1014,8 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_INHERIT, Current)
 				last_token := TE_INHERIT
 			
-when 75 then
+end
+else
 	yy_column := yy_column + 7
 	yy_position := yy_position + 7
 --|#line 373 "eiffel.l"
@@ -881,7 +1026,10 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_INSPECT, Current)
 				last_token := TE_INSPECT
 			
-when 76 then
+end
+else
+if yy_act <= 77 then
+if yy_act = 76 then
 	yy_column := yy_column + 9
 	yy_position := yy_position + 9
 --|#line 377 "eiffel.l"
@@ -892,7 +1040,7 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_INVARIANT, Current)
 				last_token := TE_INVARIANT
 			
-when 77 then
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 381 "eiffel.l"
@@ -903,7 +1051,8 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_IS, Current)
 				last_token := TE_IS
 			
-when 78 then
+end
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
 --|#line 385 "eiffel.l"
@@ -914,7 +1063,16 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_LIKE, Current)
 				last_token := TE_LIKE
 			
-when 79 then
+end
+end
+end
+end
+else
+if yy_act <= 91 then
+if yy_act <= 85 then
+if yy_act <= 82 then
+if yy_act <= 80 then
+if yy_act = 79 then
 	yy_column := yy_column + 5
 	yy_position := yy_position + 5
 --|#line 389 "eiffel.l"
@@ -925,7 +1083,7 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_LOCAL, Current)
 				last_token := TE_LOCAL
 			
-when 80 then
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
 --|#line 393 "eiffel.l"
@@ -936,23 +1094,40 @@ end
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_LOOP, Current)
 				last_token := TE_LOOP
 			
-when 81 then
-	yy_column := yy_column + 3
-	yy_position := yy_position + 3
+end
+else
+if yy_act = 81 then
+	yy_column := yy_column + 6
+	yy_position := yy_position + 6
 --|#line 397 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 397")
+end
+
+				last_keyword_as_value := ast_factory.new_keyword_as (TE_MODIFY, Current)
+				last_token := TE_MODIFY
+			
+else
+	yy_column := yy_column + 3
+	yy_position := yy_position + 3
+--|#line 401 "eiffel.l"
+debug ("GELEX")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 401")
 end
 				
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_NOT, Current)
 				last_token := TE_NOT
 			
-when 82 then
+end
+end
+else
+if yy_act <= 84 then
+if yy_act = 83 then
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 401 "eiffel.l"
+--|#line 405 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 401")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 405")
 end
 
 				last_token := TE_ID
@@ -963,47 +1138,53 @@ end
 							once "Use of `note', possibly a new keyword in future definition of `Eiffel'."))
 				end
 			
-when 83 then
+else
 	yy_column := yy_column + 8
 	yy_position := yy_position + 8
---|#line 410 "eiffel.l"
-debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 410")
-end
-				
-				last_keyword_as_value := ast_factory.new_keyword_as (TE_OBSOLETE, Current)
-				last_token := TE_OBSOLETE
-			
-when 84 then
-	yy_column := yy_column + 3
-	yy_position := yy_position + 3
 --|#line 414 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 414")
 end
 				
+				last_keyword_as_value := ast_factory.new_keyword_as (TE_OBSOLETE, Current)
+				last_token := TE_OBSOLETE
+			
+end
+else
+	yy_column := yy_column + 3
+	yy_position := yy_position + 3
+--|#line 418 "eiffel.l"
+debug ("GELEX")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 418")
+end
+				
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_OLD, Current)
 				last_token := TE_OLD
 			
-when 85 then
+end
+end
+else
+if yy_act <= 88 then
+if yy_act <= 87 then
+if yy_act = 86 then
 	yy_end := yy_end - 1
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 430 "eiffel.l"
+--|#line 434 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 430")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 434")
 end
 				
 				last_keyword_as_value := ast_factory.new_once_string_keyword_as (text,  line, column, position, 4)
 				last_token := TE_ONCE_STRING
 			
-when 86 then
+else
 	yy_end := yy_end - 1
 yy_set_line_column
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 434 "eiffel.l"
+--|#line 438 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 434")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 438")
 end
 				
 				last_keyword_as_value := ast_factory.new_once_string_keyword_as (text_substring (1, 4),  line, column, position, 4)
@@ -1011,23 +1192,27 @@ end
 				ast_factory.create_break_as_with_data (text_substring (5, text_count), line, column + 4, position + 4, text_count - 4)
 				last_token := TE_ONCE_STRING			
 			
-when 87 then
-	yy_column := yy_column + 4
-	yy_position := yy_position + 4
---|#line 441 "eiffel.l"
-debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 441")
 end
-				
-				last_keyword_as_value := ast_factory.new_keyword_as (TE_ONCE, Current)
-				last_token := TE_ONCE
-			
-when 88 then
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
 --|#line 445 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 445")
+end
+				
+				last_keyword_as_value := ast_factory.new_keyword_as (TE_ONCE, Current)
+				last_token := TE_ONCE
+			
+end
+else
+if yy_act <= 90 then
+if yy_act = 89 then
+	yy_column := yy_column + 4
+	yy_position := yy_position + 4
+--|#line 449 "eiffel.l"
+debug ("GELEX")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 449")
 end
 
 				last_token := TE_ID
@@ -1038,172 +1223,186 @@ end
 							once "Use of `only', possibly a new keyword in future definition of `Eiffel'."))
 				end
 			
-when 89 then
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
---|#line 454 "eiffel.l"
+--|#line 458 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 454")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 458")
 end
 			
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_OR, Current)
 				last_token := TE_OR
 			
-when 90 then
+end
+else
 yy_set_line_column
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 458 "eiffel.l"
-debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 458")
-end
-				
-				last_keyword_as_value := ast_factory.new_keyword_as (TE_PARTIAL_CLASS, Current)
-				last_token := TE_PARTIAL_CLASS
-			
-when 91 then
-	yy_column := yy_column + 9
-	yy_position := yy_position + 9
 --|#line 462 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 462")
 end
 				
-				last_keyword_as_value := ast_factory.new_precursor_keyword_as (Current)
-				last_token := TE_PRECURSOR
+				last_keyword_as_value := ast_factory.new_keyword_as (TE_PARTIAL_CLASS, Current)
+				last_token := TE_PARTIAL_CLASS
 			
-when 92 then
-	yy_column := yy_column + 6
-	yy_position := yy_position + 6
+end
+end
+end
+else
+if yy_act <= 98 then
+if yy_act <= 95 then
+if yy_act <= 93 then
+if yy_act = 92 then
+	yy_column := yy_column + 9
+	yy_position := yy_position + 9
 --|#line 466 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 466")
 end
 				
-				last_keyword_as_value := ast_factory.new_prefix_keyword_as (Current)
-				last_token := TE_PREFIX
+				last_keyword_as_value := ast_factory.new_precursor_keyword_as (Current)
+				last_token := TE_PRECURSOR
 			
-when 93 then
-	yy_column := yy_column + 8
-	yy_position := yy_position + 8
+else
+	yy_column := yy_column + 6
+	yy_position := yy_position + 6
 --|#line 470 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 470")
 end
 				
-				last_keyword_as_value := ast_factory.new_keyword_as (TE_REDEFINE, Current)
-				last_token := TE_REDEFINE
+				last_keyword_as_value := ast_factory.new_prefix_keyword_as (Current)
+				last_token := TE_PREFIX
 			
-when 94 then
-	yy_column := yy_column + 9
-	yy_position := yy_position + 9
+end
+else
+if yy_act = 94 then
+	yy_column := yy_column + 8
+	yy_position := yy_position + 8
 --|#line 474 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 474")
 end
 				
-				last_keyword_as_value := ast_factory.new_keyword_as (TE_REFERENCE, Current)
-				last_token := TE_REFERENCE
+				last_keyword_as_value := ast_factory.new_keyword_as (TE_REDEFINE, Current)
+				last_token := TE_REDEFINE
 			
-when 95 then
-	yy_column := yy_column + 6
-	yy_position := yy_position + 6
+else
+	yy_column := yy_column + 9
+	yy_position := yy_position + 9
 --|#line 478 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 478")
 end
 				
-				last_keyword_as_value := ast_factory.new_keyword_as (TE_RENAME, Current)
-				last_token := TE_RENAME
+				last_keyword_as_value := ast_factory.new_keyword_as (TE_REFERENCE, Current)
+				last_token := TE_REFERENCE
 			
-when 96 then
-	yy_column := yy_column + 7
-	yy_position := yy_position + 7
+end
+end
+else
+if yy_act <= 97 then
+if yy_act = 96 then
+	yy_column := yy_column + 6
+	yy_position := yy_position + 6
 --|#line 482 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 482")
 end
 				
-				last_keyword_as_value := ast_factory.new_keyword_as (TE_REQUIRE, Current)
-				last_token := TE_REQUIRE
+				last_keyword_as_value := ast_factory.new_keyword_as (TE_RENAME, Current)
+				last_token := TE_RENAME
 			
-when 97 then
-	yy_column := yy_column + 6
-	yy_position := yy_position + 6
+else
+	yy_column := yy_column + 7
+	yy_position := yy_position + 7
 --|#line 486 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 486")
 end
 				
-				last_keyword_as_value := ast_factory.new_keyword_as (TE_RESCUE, Current)
-				last_token := TE_RESCUE
+				last_keyword_as_value := ast_factory.new_keyword_as (TE_REQUIRE, Current)
+				last_token := TE_REQUIRE
 			
-when 98 then
+end
+else
 	yy_column := yy_column + 6
 	yy_position := yy_position + 6
 --|#line 490 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 490")
 end
-					
-				last_result_as_value := ast_factory.new_result_as (Current)
-				last_token := TE_RESULT
+				
+				last_keyword_as_value := ast_factory.new_keyword_as (TE_RESCUE, Current)
+				last_token := TE_RESCUE
 			
-when 99 then
-	yy_column := yy_column + 5
-	yy_position := yy_position + 5
+end
+end
+else
+if yy_act <= 101 then
+if yy_act <= 100 then
+if yy_act = 99 then
+	yy_column := yy_column + 6
+	yy_position := yy_position + 6
 --|#line 494 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 494")
 end
-				
-				last_retry_as_value := ast_factory.new_retry_as (Current)
-				last_token := TE_RETRY
+					
+				last_result_as_value := ast_factory.new_result_as (Current)
+				last_token := TE_RESULT
 			
-when 100 then
-	yy_column := yy_column + 6
-	yy_position := yy_position + 6
+else
+	yy_column := yy_column + 5
+	yy_position := yy_position + 5
 --|#line 498 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 498")
 end
 				
-				last_keyword_as_value := ast_factory.new_keyword_as (TE_SELECT, Current)
-				last_token := TE_SELECT
+				last_retry_as_value := ast_factory.new_retry_as (Current)
+				last_token := TE_RETRY
 			
-when 101 then
-	yy_column := yy_column + 8
-	yy_position := yy_position + 8
+end
+else
+	yy_column := yy_column + 6
+	yy_position := yy_position + 6
 --|#line 502 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 502")
+end
+				
+				last_keyword_as_value := ast_factory.new_keyword_as (TE_SELECT, Current)
+				last_token := TE_SELECT
+			
+end
+else
+if yy_act <= 103 then
+if yy_act = 102 then
+	yy_column := yy_column + 8
+	yy_position := yy_position + 8
+--|#line 506 "eiffel.l"
+debug ("GELEX")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 506")
 end
 			
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_SEPARATE, Current)
 				last_token := TE_SEPARATE
 			
-when 102 then
+else
 	yy_column := yy_column + 5
 	yy_position := yy_position + 5
---|#line 506 "eiffel.l"
-debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 506")
-end
-				
-				last_keyword_as_value := ast_factory.new_keyword_as (TE_STRIP, Current)
-				last_token := TE_STRIP
-			
-when 103 then
-	yy_column := yy_column + 4
-	yy_position := yy_position + 4
 --|#line 510 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 510")
 end
 				
-				last_keyword_as_value := ast_factory.new_keyword_as (TE_THEN, Current)
-				last_token := TE_THEN
+				last_keyword_as_value := ast_factory.new_keyword_as (TE_STRIP, Current)
+				last_token := TE_STRIP
 			
-when 104 then
+end
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
 --|#line 514 "eiffel.l"
@@ -1211,144 +1410,177 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 514")
 end
 				
-				last_bool_as_value := ast_factory.new_boolean_as (True, Current)
-				last_token := TE_TRUE
+				last_keyword_as_value := ast_factory.new_keyword_as (TE_THEN, Current)
+				last_token := TE_THEN
 			
-when 105 then
-	yy_column := yy_column + 5
-	yy_position := yy_position + 5
+end
+end
+end
+end
+end
+end
+else
+if yy_act <= 156 then
+if yy_act <= 130 then
+if yy_act <= 117 then
+if yy_act <= 111 then
+if yy_act <= 108 then
+if yy_act <= 106 then
+if yy_act = 105 then
+	yy_column := yy_column + 4
+	yy_position := yy_position + 4
 --|#line 518 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 518")
+end
+				
+				last_bool_as_value := ast_factory.new_boolean_as (True, Current)
+				last_token := TE_TRUE
+			
+else
+	yy_column := yy_column + 5
+	yy_position := yy_position + 5
+--|#line 522 "eiffel.l"
+debug ("GELEX")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 522")
 end
 
 				last_token := TE_TUPLE
 				process_id_as
 			
-when 106 then
+end
+else
+if yy_act = 107 then
 	yy_column := yy_column + 8
 	yy_position := yy_position + 8
---|#line 522 "eiffel.l"
-debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 522")
-end
-				
-				last_keyword_as_value := ast_factory.new_keyword_as (TE_UNDEFINE, Current)
-				last_token := TE_UNDEFINE
-			
-when 107 then
-	yy_column := yy_column + 6
-	yy_position := yy_position + 6
 --|#line 526 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 526")
 end
 				
-				last_unique_as_value := ast_factory.new_unique_as (Current)
-				last_token := TE_UNIQUE
+				last_keyword_as_value := ast_factory.new_keyword_as (TE_UNDEFINE, Current)
+				last_token := TE_UNDEFINE
 			
-when 108 then
-	yy_column := yy_column + 5
-	yy_position := yy_position + 5
+else
+	yy_column := yy_column + 6
+	yy_position := yy_position + 6
 --|#line 530 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 530")
 end
 				
-				last_keyword_as_value := ast_factory.new_keyword_as (TE_UNTIL, Current)
-				last_token := TE_UNTIL
+				last_unique_as_value := ast_factory.new_unique_as (Current)
+				last_token := TE_UNIQUE
 			
-when 109 then
-	yy_column := yy_column + 7
-	yy_position := yy_position + 7
+end
+end
+else
+if yy_act <= 110 then
+if yy_act = 109 then
+	yy_column := yy_column + 5
+	yy_position := yy_position + 5
 --|#line 534 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 534")
+end
+				
+				last_keyword_as_value := ast_factory.new_keyword_as (TE_UNTIL, Current)
+				last_token := TE_UNTIL
+			
+else
+	yy_column := yy_column + 3
+	yy_position := yy_position + 3
+--|#line 538 "eiffel.l"
+debug ("GELEX")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 538")
+end
+
+				last_keyword_as_value := ast_factory.new_keyword_as (TE_USE, Current)
+				last_token := TE_USE
+			
+end
+else
+	yy_column := yy_column + 7
+	yy_position := yy_position + 7
+--|#line 542 "eiffel.l"
+debug ("GELEX")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 542")
 end
 			
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_VARIANT, Current)
 				last_token := TE_VARIANT
 			
-when 110 then
+end
+end
+else
+if yy_act <= 114 then
+if yy_act <= 113 then
+if yy_act = 112 then
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 538 "eiffel.l"
-debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 538")
-end
-				
-				last_void_as_value := ast_factory.new_void_as (Current)
-				last_token := TE_VOID
-			
-when 111 then
-	yy_column := yy_column + 4
-	yy_position := yy_position + 4
---|#line 542 "eiffel.l"
-debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 542")
-end
-				
-				last_keyword_as_value := ast_factory.new_keyword_as (TE_WHEN, Current)
-				last_token := TE_WHEN
-			
-when 112 then
-	yy_column := yy_column + 3
-	yy_position := yy_position + 3
 --|#line 546 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 546")
 end
 				
-				last_keyword_as_value := ast_factory.new_keyword_as (TE_XOR, Current)
-				last_token := TE_XOR
+				last_void_as_value := ast_factory.new_void_as (Current)
+				last_token := TE_VOID
 			
-when 113 then
-	yy_column := yy_column + yy_end - yy_start - yy_more_len
-	yy_position := yy_position + yy_end - yy_start - yy_more_len
+else
+	yy_column := yy_column + 4
+	yy_position := yy_position + 4
+--|#line 550 "eiffel.l"
+debug ("GELEX")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 550")
+end
+				
+				last_keyword_as_value := ast_factory.new_keyword_as (TE_WHEN, Current)
+				last_token := TE_WHEN
+			
+end
+else
+	yy_column := yy_column + 3
+	yy_position := yy_position + 3
 --|#line 554 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 554")
+end
+				
+				last_keyword_as_value := ast_factory.new_keyword_as (TE_XOR, Current)
+				last_token := TE_XOR
+			
+end
+else
+if yy_act <= 116 then
+if yy_act = 115 then
+	yy_column := yy_column + yy_end - yy_start - yy_more_len
+	yy_position := yy_position + yy_end - yy_start - yy_more_len
+--|#line 562 "eiffel.l"
+debug ("GELEX")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 562")
 end
 
 				last_token := TE_ID
 				process_id_as
 			
-when 114 then
-	yy_column := yy_column + yy_end - yy_start - yy_more_len
-	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 561 "eiffel.l"
-debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 561")
-end
-
-				last_token := TE_A_BIT			
-				last_id_as_value := ast_factory.new_filled_bit_id_as (Current)
-			
-when 115 then
+else
 	yy_column := yy_column + yy_end - yy_start - yy_more_len
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
 --|#line 569 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 569")
 end
-		-- This a trick to avoid having:
-					--     when 1..2 then
-					-- to be be erroneously recognized as:
-					--     `when' `1.' `.2' `then'
-					-- instead of:
-					--     `when' `1' `..' `2' `then'
 
-				token_buffer.clear_all
-				append_text_to_string (token_buffer)				
-				last_token := TE_INTEGER
+				last_token := TE_A_BIT			
+				last_id_as_value := ast_factory.new_filled_bit_id_as (Current)
 			
-when 116 then
-	yy_end := yy_end - 2
+end
+else
 	yy_column := yy_column + yy_end - yy_start - yy_more_len
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 570 "eiffel.l"
+--|#line 577 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 570")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 577")
 end
 		-- This a trick to avoid having:
 					--     when 1..2 then
@@ -1361,24 +1593,52 @@ end
 				append_text_to_string (token_buffer)				
 				last_token := TE_INTEGER
 			
-when 117 then
+end
+end
+end
+else
+if yy_act <= 124 then
+if yy_act <= 121 then
+if yy_act <= 119 then
+if yy_act = 118 then
+	yy_end := yy_end - 2
 	yy_column := yy_column + yy_end - yy_start - yy_more_len
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 582 "eiffel.l"
+--|#line 578 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 582")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 578")
+end
+		-- This a trick to avoid having:
+					--     when 1..2 then
+					-- to be be erroneously recognized as:
+					--     `when' `1.' `.2' `then'
+					-- instead of:
+					--     `when' `1' `..' `2' `then'
+
+				token_buffer.clear_all
+				append_text_to_string (token_buffer)				
+				last_token := TE_INTEGER
+			
+else
+	yy_column := yy_column + yy_end - yy_start - yy_more_len
+	yy_position := yy_position + yy_end - yy_start - yy_more_len
+--|#line 590 "eiffel.l"
+debug ("GELEX")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 590")
 end
 		-- Recognizes hexadecimal integer numbers.
 				token_buffer.clear_all
 				append_text_to_string (token_buffer)				
 				last_token := TE_INTEGER
 			
-when 118 then
+end
+else
+if yy_act = 120 then
 	yy_column := yy_column + yy_end - yy_start - yy_more_len
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 590 "eiffel.l"
+--|#line 598 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 590")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 598")
 end
 
 				token_buffer.clear_all
@@ -1388,12 +1648,12 @@ end
 				end				
 				last_token := TE_REAL
 			
-when 119 then
+else
 	yy_column := yy_column + 3
 	yy_position := yy_position + 3
---|#line 602 "eiffel.l"
+--|#line 610 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 602")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 610")
 end
 
 				token_buffer.clear_all
@@ -1401,12 +1661,16 @@ end
 				last_token := TE_CHAR
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 120 then
+end
+end
+else
+if yy_act <= 123 then
+if yy_act = 122 then
 	yy_column := yy_column + 3
 	yy_position := yy_position + 3
---|#line 608 "eiffel.l"
+--|#line 616 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 608")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 616")
 end
 
 					-- This is not correct Eiffel!
@@ -1415,12 +1679,12 @@ end
 				last_token := TE_CHAR				
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 121 then
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 615 "eiffel.l"
+--|#line 623 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 615")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 623")
 end
 
 				token_buffer.clear_all
@@ -1428,12 +1692,13 @@ end
 				last_token := TE_CHAR
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 122 then
+end
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 621 "eiffel.l"
+--|#line 629 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 621")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 629")
 end
 
 				token_buffer.clear_all
@@ -1441,12 +1706,17 @@ end
 				last_token := TE_CHAR
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 123 then
+end
+end
+else
+if yy_act <= 127 then
+if yy_act <= 126 then
+if yy_act = 125 then
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 627 "eiffel.l"
+--|#line 635 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 627")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 635")
 end
 
 				token_buffer.clear_all
@@ -1454,12 +1724,12 @@ end
 				last_token := TE_CHAR
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 124 then
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 633 "eiffel.l"
+--|#line 641 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 633")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 641")
 end
 
 				token_buffer.clear_all
@@ -1467,12 +1737,13 @@ end
 				last_token := TE_CHAR
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 125 then
+end
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 639 "eiffel.l"
+--|#line 647 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 639")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 647")
 end
 
 				token_buffer.clear_all
@@ -1480,12 +1751,15 @@ end
 				last_token := TE_CHAR
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 126 then
+end
+else
+if yy_act <= 129 then
+if yy_act = 128 then
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 645 "eiffel.l"
+--|#line 653 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 645")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 653")
 end
 
 				token_buffer.clear_all
@@ -1493,12 +1767,12 @@ end
 				last_token := TE_CHAR
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 127 then
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 651 "eiffel.l"
+--|#line 659 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 651")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 659")
 end
 
 				token_buffer.clear_all
@@ -1506,12 +1780,13 @@ end
 				last_token := TE_CHAR
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 128 then
+end
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 657 "eiffel.l"
+--|#line 665 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 657")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 665")
 end
 
 				token_buffer.clear_all
@@ -1519,12 +1794,21 @@ end
 				last_token := TE_CHAR				
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 129 then
+end
+end
+end
+end
+else
+if yy_act <= 143 then
+if yy_act <= 137 then
+if yy_act <= 134 then
+if yy_act <= 132 then
+if yy_act = 131 then
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 663 "eiffel.l"
+--|#line 671 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 663")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 671")
 end
 
 				token_buffer.clear_all
@@ -1532,12 +1816,12 @@ end
 				last_token := TE_CHAR
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 130 then
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 669 "eiffel.l"
+--|#line 677 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 669")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 677")
 end
 
 				token_buffer.clear_all
@@ -1545,12 +1829,14 @@ end
 				last_token := TE_CHAR
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 131 then
+end
+else
+if yy_act = 133 then
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 675 "eiffel.l"
+--|#line 683 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 675")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 683")
 end
 
 				token_buffer.clear_all
@@ -1558,12 +1844,12 @@ end
 				last_token := TE_CHAR
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 132 then
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 681 "eiffel.l"
+--|#line 689 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 681")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 689")
 end
 
 				token_buffer.clear_all
@@ -1571,12 +1857,16 @@ end
 				last_token := TE_CHAR
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 133 then
+end
+end
+else
+if yy_act <= 136 then
+if yy_act = 135 then
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 687 "eiffel.l"
+--|#line 695 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 687")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 695")
 end
 
 				token_buffer.clear_all
@@ -1584,12 +1874,12 @@ end
 				last_token := TE_CHAR
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 134 then
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 693 "eiffel.l"
+--|#line 701 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 693")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 701")
 end
 
 				token_buffer.clear_all
@@ -1597,12 +1887,13 @@ end
 				last_token := TE_CHAR				
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 135 then
+end
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 699 "eiffel.l"
+--|#line 707 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 699")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 707")
 end
 
 				token_buffer.clear_all
@@ -1610,12 +1901,17 @@ end
 				last_token := TE_CHAR
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 136 then
+end
+end
+else
+if yy_act <= 140 then
+if yy_act <= 139 then
+if yy_act = 138 then
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 705 "eiffel.l"
+--|#line 713 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 705")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 713")
 end
 
 				token_buffer.clear_all
@@ -1623,12 +1919,12 @@ end
 				last_token := TE_CHAR
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 137 then
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 711 "eiffel.l"
+--|#line 719 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 711")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 719")
 end
 
 				token_buffer.clear_all
@@ -1636,12 +1932,13 @@ end
 				last_token := TE_CHAR
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 138 then
+end
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 717 "eiffel.l"
+--|#line 725 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 717")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 725")
 end
 
 				token_buffer.clear_all
@@ -1649,12 +1946,15 @@ end
 				last_token := TE_CHAR
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 139 then
+end
+else
+if yy_act <= 142 then
+if yy_act = 141 then
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 723 "eiffel.l"
+--|#line 731 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 723")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 731")
 end
 
 				token_buffer.clear_all
@@ -1662,12 +1962,12 @@ end
 				last_token := TE_CHAR
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 140 then
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 729 "eiffel.l"
+--|#line 737 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 729")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 737")
 end
 
 				token_buffer.clear_all
@@ -1675,12 +1975,13 @@ end
 				last_token := TE_CHAR
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 141 then
+end
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 735 "eiffel.l"
+--|#line 743 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 735")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 743")
 end
 
 				token_buffer.clear_all
@@ -1688,107 +1989,104 @@ end
 				last_token := TE_CHAR
 				ast_factory.set_buffer (token_buffer2, Current)
 			
-when 142 then
+end
+end
+end
+else
+if yy_act <= 150 then
+if yy_act <= 147 then
+if yy_act <= 145 then
+if yy_act = 144 then
 	yy_column := yy_column + yy_end - yy_start - yy_more_len
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 741 "eiffel.l"
+--|#line 749 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 741")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 749")
 end
 
 				process_character_code (text_substring (4, text_count - 2).to_integer)
 			
-when 143 then
+else
 	yy_column := yy_column + yy_end - yy_start - yy_more_len
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 744 "eiffel.l"
+--|#line 752 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 744")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 752")
 end
 
 					-- Unrecognized character.
 					-- (catch-all rules (no backing up))
 				report_character_missing_quote_error (text)
 			
-when 144 then
+end
+else
+if yy_act = 146 then
 	yy_column := yy_column + yy_end - yy_start - yy_more_len
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 745 "eiffel.l"
+--|#line 753 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 745")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 753")
 end
 
 					-- Unrecognized character.
 					-- (catch-all rules (no backing up))
 				report_character_missing_quote_error (text)
 			
-when 145 then
+else
 	yy_column := yy_column + 3
 	yy_position := yy_position + 3
---|#line 754 "eiffel.l"
-debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 754")
-end
-				
-				ast_factory.set_buffer (token_buffer2, Current)
-				last_token := TE_STR_LT
-			
-when 146 then
-	yy_column := yy_column + 3
-	yy_position := yy_position + 3
---|#line 758 "eiffel.l"
-debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 758")
-end
-				
-				ast_factory.set_buffer (token_buffer2, Current)
-				last_token := TE_STR_GT
-			
-when 147 then
-	yy_column := yy_column + 4
-	yy_position := yy_position + 4
 --|#line 762 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 762")
 end
 				
 				ast_factory.set_buffer (token_buffer2, Current)
-				last_token := TE_STR_LE
+				last_token := TE_STR_LT
 			
-when 148 then
-	yy_column := yy_column + 4
-	yy_position := yy_position + 4
+end
+end
+else
+if yy_act <= 149 then
+if yy_act = 148 then
+	yy_column := yy_column + 3
+	yy_position := yy_position + 3
 --|#line 766 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 766")
+end
+				
+				ast_factory.set_buffer (token_buffer2, Current)
+				last_token := TE_STR_GT
+			
+else
+	yy_column := yy_column + 4
+	yy_position := yy_position + 4
+--|#line 770 "eiffel.l"
+debug ("GELEX")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 770")
+end
+				
+				ast_factory.set_buffer (token_buffer2, Current)
+				last_token := TE_STR_LE
+			
+end
+else
+	yy_column := yy_column + 4
+	yy_position := yy_position + 4
+--|#line 774 "eiffel.l"
+debug ("GELEX")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 774")
 end
 			
 				ast_factory.set_buffer (token_buffer2, Current)
 				last_token := TE_STR_GE
 			
-when 149 then
-	yy_column := yy_column + 3
-	yy_position := yy_position + 3
---|#line 770 "eiffel.l"
-debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 770")
 end
-
-				ast_factory.set_buffer (token_buffer2, Current)
-				last_token := TE_STR_PLUS
-			
-when 150 then
-	yy_column := yy_column + 3
-	yy_position := yy_position + 3
---|#line 774 "eiffel.l"
-debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 774")
 end
-
-				ast_factory.set_buffer (token_buffer2, Current)
-				last_token := TE_STR_MINUS
-			
-when 151 then
+else
+if yy_act <= 153 then
+if yy_act <= 152 then
+if yy_act = 151 then
 	yy_column := yy_column + 3
 	yy_position := yy_position + 3
 --|#line 778 "eiffel.l"
@@ -1797,9 +2095,9 @@ debug ("GELEX")
 end
 
 				ast_factory.set_buffer (token_buffer2, Current)
-				last_token := TE_STR_STAR
+				last_token := TE_STR_PLUS
 			
-when 152 then
+else
 	yy_column := yy_column + 3
 	yy_position := yy_position + 3
 --|#line 782 "eiffel.l"
@@ -1808,9 +2106,10 @@ debug ("GELEX")
 end
 
 				ast_factory.set_buffer (token_buffer2, Current)
-				last_token := TE_STR_SLASH
+				last_token := TE_STR_MINUS
 			
-when 153 then
+end
+else
 	yy_column := yy_column + 3
 	yy_position := yy_position + 3
 --|#line 786 "eiffel.l"
@@ -1819,31 +2118,35 @@ debug ("GELEX")
 end
 
 				ast_factory.set_buffer (token_buffer2, Current)
-				last_token := TE_STR_POWER
+				last_token := TE_STR_STAR
 			
-when 154 then
-	yy_column := yy_column + 4
-	yy_position := yy_position + 4
+end
+else
+if yy_act <= 155 then
+if yy_act = 154 then
+	yy_column := yy_column + 3
+	yy_position := yy_position + 3
 --|#line 790 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 790")
 end
 
 				ast_factory.set_buffer (token_buffer2, Current)
-				last_token := TE_STR_DIV
+				last_token := TE_STR_SLASH
 			
-when 155 then
-	yy_column := yy_column + 4
-	yy_position := yy_position + 4
+else
+	yy_column := yy_column + 3
+	yy_position := yy_position + 3
 --|#line 794 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 794")
 end
 
 				ast_factory.set_buffer (token_buffer2, Current)
-				last_token := TE_STR_MOD
+				last_token := TE_STR_POWER
 			
-when 156 then
+end
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
 --|#line 798 "eiffel.l"
@@ -1852,14 +2155,49 @@ debug ("GELEX")
 end
 
 				ast_factory.set_buffer (token_buffer2, Current)
-				last_token := TE_STR_BRACKET
+				last_token := TE_STR_DIV
 			
-when 157 then
-	yy_column := yy_column + 5
-	yy_position := yy_position + 5
+end
+end
+end
+end
+end
+else
+if yy_act <= 182 then
+if yy_act <= 169 then
+if yy_act <= 163 then
+if yy_act <= 160 then
+if yy_act <= 158 then
+if yy_act = 157 then
+	yy_column := yy_column + 4
+	yy_position := yy_position + 4
 --|#line 802 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 802")
+end
+
+				ast_factory.set_buffer (token_buffer2, Current)
+				last_token := TE_STR_MOD
+			
+else
+	yy_column := yy_column + 4
+	yy_position := yy_position + 4
+--|#line 806 "eiffel.l"
+debug ("GELEX")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 806")
+end
+
+				ast_factory.set_buffer (token_buffer2, Current)
+				last_token := TE_STR_BRACKET
+			
+end
+else
+if yy_act = 159 then
+	yy_column := yy_column + 5
+	yy_position := yy_position + 5
+--|#line 810 "eiffel.l"
+debug ("GELEX")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 810")
 end
 
 				token_buffer.clear_all
@@ -1867,12 +2205,12 @@ end
 				ast_factory.set_buffer (token_buffer2, Current)
 				last_token := TE_STR_AND
 			
-when 158 then
+else
 	yy_column := yy_column + 10
 	yy_position := yy_position + 10
---|#line 808 "eiffel.l"
+--|#line 816 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 808")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 816")
 end
 
 				token_buffer.clear_all
@@ -1880,12 +2218,16 @@ end
 				ast_factory.set_buffer (token_buffer2, Current)
 				last_token := TE_STR_AND_THEN
 			
-when 159 then
+end
+end
+else
+if yy_act <= 162 then
+if yy_act = 161 then
 	yy_column := yy_column + 9
 	yy_position := yy_position + 9
---|#line 814 "eiffel.l"
+--|#line 822 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 814")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 822")
 end
 
 				token_buffer.clear_all
@@ -1893,12 +2235,12 @@ end
 				ast_factory.set_buffer (token_buffer2, Current)
 				last_token := TE_STR_IMPLIES
 			
-when 160 then
+else
 	yy_column := yy_column + 5
 	yy_position := yy_position + 5
---|#line 820 "eiffel.l"
+--|#line 828 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 820")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 828")
 end
 
 				token_buffer.clear_all
@@ -1906,12 +2248,13 @@ end
 				ast_factory.set_buffer (token_buffer2, Current)
 				last_token := TE_STR_NOT
 			
-when 161 then
+end
+else
 	yy_column := yy_column + 4
 	yy_position := yy_position + 4
---|#line 826 "eiffel.l"
+--|#line 834 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 826")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 834")
 end
 
 				token_buffer.clear_all
@@ -1919,12 +2262,17 @@ end
 				ast_factory.set_buffer (token_buffer2, Current)
 				last_token := TE_STR_OR
 			
-when 162 then
+end
+end
+else
+if yy_act <= 166 then
+if yy_act <= 165 then
+if yy_act = 164 then
 	yy_column := yy_column + 9
 	yy_position := yy_position + 9
---|#line 832 "eiffel.l"
+--|#line 840 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 832")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 840")
 end
 
 				token_buffer.clear_all
@@ -1932,12 +2280,12 @@ end
 				ast_factory.set_buffer (token_buffer2, Current)
 				last_token := TE_STR_OR_ELSE
 			
-when 163 then
+else
 	yy_column := yy_column + 5
 	yy_position := yy_position + 5
---|#line 838 "eiffel.l"
+--|#line 846 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 838")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 846")
 end
 
 				token_buffer.clear_all
@@ -1945,12 +2293,13 @@ end
 				ast_factory.set_buffer (token_buffer2, Current)
 				last_token := TE_STR_XOR
 			
-when 164 then
+end
+else
 	yy_column := yy_column + yy_end - yy_start - yy_more_len
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 844 "eiffel.l"
+--|#line 852 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 844")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 852")
 end
 
 				token_buffer.clear_all
@@ -1961,12 +2310,15 @@ end
 					report_too_long_string (token_buffer)
 				end
 			
-when 165 then
+end
+else
+if yy_act <= 168 then
+if yy_act = 167 then
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
---|#line 853 "eiffel.l"
+--|#line 861 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 853")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 861")
 end
 
 					-- Empty string.
@@ -1974,12 +2326,12 @@ end
 				string_position := position
 				last_token := TE_EMPTY_STRING
 			
-when 166 then
+else
 	yy_column := yy_column + yy_end - yy_start - yy_more_len
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 859 "eiffel.l"
+--|#line 867 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 859")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 867")
 end
 
 					-- Regular string.
@@ -1992,12 +2344,13 @@ end
 					report_too_long_string (token_buffer)
 				end
 			
-when 167 then
+end
+else
 	yy_column := yy_column + yy_end - yy_start - yy_more_len
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 870 "eiffel.l"
+--|#line 878 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 870")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 878")
 end
 
 					-- Verbatim string.
@@ -2014,24 +2367,31 @@ end
 				append_text_substring_to_string (2, text_count - 1, verbatim_marker)
 				set_start_condition (VERBATIM_STR3)
 			
-when 168 then
+end
+end
+end
+else
+if yy_act <= 176 then
+if yy_act <= 173 then
+if yy_act <= 171 then
+if yy_act = 170 then
 	yy_line := yy_line + 1
 	yy_column := 1
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 888 "eiffel.l"
+--|#line 896 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 888")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 896")
 end
 
 				ast_factory.append_text_to_buffer (token_buffer2, Current)
 				set_start_condition (VERBATIM_STR1)
 			
-when 169 then
+else
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
---|#line 892 "eiffel.l"
+--|#line 900 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 892")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 900")
 end
 
 					-- No final bracket-double-quote.
@@ -2044,12 +2404,14 @@ end
 				set_start_condition (INITIAL)
 				report_missing_end_of_verbatim_string_error (token_buffer)
 			
-when 170 then
+end
+else
+if yy_act = 172 then
 	yy_column := yy_column + yy_end - yy_start - yy_more_len
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 912 "eiffel.l"
+--|#line 920 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 912")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 920")
 end
 
 				ast_factory.append_text_to_buffer (token_buffer2, Current)
@@ -2094,25 +2456,29 @@ end
 					set_start_condition (VERBATIM_STR2)
 				end
 			
-when 171 then
+else
 	yy_column := yy_column + yy_end - yy_start - yy_more_len
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 955 "eiffel.l"
+--|#line 963 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 955")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 963")
 end
 
 				ast_factory.append_text_to_buffer (token_buffer2, Current)
 				append_text_to_string (token_buffer)
 				set_start_condition (VERBATIM_STR2)
 			
-when 172 then
+end
+end
+else
+if yy_act <= 175 then
+if yy_act = 174 then
 	yy_line := yy_line + 1
 	yy_column := 1
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 960 "eiffel.l"
+--|#line 968 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 960")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 968")
 end
 
 				ast_factory.append_text_to_buffer (token_buffer2, Current)
@@ -2122,12 +2488,12 @@ end
 					token_buffer.remove (token_buffer.count - 1)
 				end
 			
-when 173 then
+else
 	yy_column := yy_column + yy_end - yy_start - yy_more_len
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 968 "eiffel.l"
+--|#line 976 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 968")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 976")
 end
 
 					-- No final bracket-double-quote.
@@ -2136,13 +2502,14 @@ end
 				set_start_condition (INITIAL)
 				report_missing_end_of_verbatim_string_error (token_buffer)
 			
-when 174 then
+end
+else
 	yy_line := yy_line + 1
 	yy_column := 1
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 984 "eiffel.l"
+--|#line 992 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 984")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 992")
 end
 
 				ast_factory.append_text_to_buffer (token_buffer2, Current)
@@ -2153,12 +2520,17 @@ end
 				end
 				set_start_condition (VERBATIM_STR1)
 			
-when 175 then
+end
+end
+else
+if yy_act <= 179 then
+if yy_act <= 178 then
+if yy_act = 177 then
 	yy_column := yy_column + yy_end - yy_start - yy_more_len
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 993 "eiffel.l"
+--|#line 1001 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 993")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1001")
 end
 
 					-- No final bracket-double-quote.
@@ -2167,12 +2539,12 @@ end
 				set_start_condition (INITIAL)
 				report_missing_end_of_verbatim_string_error (token_buffer)
 			
-when 176 then
+else
 	yy_column := yy_column + yy_end - yy_start - yy_more_len
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 1006 "eiffel.l"
+--|#line 1014 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1006")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1014")
 end
 
 					-- String with special characters.
@@ -2185,40 +2557,22 @@ end
 				end
 				set_start_condition (SPECIAL_STR)
 			
-when 177 then
+end
+else
 	yy_column := yy_column + yy_end - yy_start - yy_more_len
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 1018 "eiffel.l"
-debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1018")
-end
-
-				ast_factory.append_text_to_buffer (token_buffer2, Current)
-				append_text_to_string (token_buffer)
-			
-when 178 then
-	yy_column := yy_column + 2
-	yy_position := yy_position + 2
---|#line 1022 "eiffel.l"
-debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1022")
-end
-
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%A")
-				token_buffer.append_character ('%A')
-			
-when 179 then
-	yy_column := yy_column + 2
-	yy_position := yy_position + 2
 --|#line 1026 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1026")
 end
 
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%B")
-				token_buffer.append_character ('%B')
+				ast_factory.append_text_to_buffer (token_buffer2, Current)
+				append_text_to_string (token_buffer)
 			
-when 180 then
+end
+else
+if yy_act <= 181 then
+if yy_act = 180 then
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 1030 "eiffel.l"
@@ -2226,10 +2580,10 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1030")
 end
 
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%C")
-				token_buffer.append_character ('%C')
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%A")
+				token_buffer.append_character ('%A')
 			
-when 181 then
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 1034 "eiffel.l"
@@ -2237,10 +2591,11 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1034")
 end
 
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%D")
-				token_buffer.append_character ('%D')
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%B")
+				token_buffer.append_character ('%B')
 			
-when 182 then
+end
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 1038 "eiffel.l"
@@ -2248,10 +2603,19 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1038")
 end
 
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%F")
-				token_buffer.append_character ('%F')
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%C")
+				token_buffer.append_character ('%C')
 			
-when 183 then
+end
+end
+end
+end
+else
+if yy_act <= 195 then
+if yy_act <= 189 then
+if yy_act <= 186 then
+if yy_act <= 184 then
+if yy_act = 183 then
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 1042 "eiffel.l"
@@ -2259,10 +2623,10 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1042")
 end
 
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%H")
-				token_buffer.append_character ('%H')
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%D")
+				token_buffer.append_character ('%D')
 			
-when 184 then
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 1046 "eiffel.l"
@@ -2270,10 +2634,12 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1046")
 end
 
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%L")
-				token_buffer.append_character ('%L')
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%F")
+				token_buffer.append_character ('%F')
 			
-when 185 then
+end
+else
+if yy_act = 185 then
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 1050 "eiffel.l"
@@ -2281,10 +2647,10 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1050")
 end
 
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%N")
-				token_buffer.append_character ('%N')
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%H")
+				token_buffer.append_character ('%H')
 			
-when 186 then
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 1054 "eiffel.l"
@@ -2292,10 +2658,14 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1054")
 end
 
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%Q")
-				token_buffer.append_character ('%Q')
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%L")
+				token_buffer.append_character ('%L')
 			
-when 187 then
+end
+end
+else
+if yy_act <= 188 then
+if yy_act = 187 then
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 1058 "eiffel.l"
@@ -2303,10 +2673,10 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1058")
 end
 
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%R")
-				token_buffer.append_character ('%R')
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%N")
+				token_buffer.append_character ('%N')
 			
-when 188 then
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 1062 "eiffel.l"
@@ -2314,10 +2684,11 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1062")
 end
 
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%S")
-				token_buffer.append_character ('%S')
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%Q")
+				token_buffer.append_character ('%Q')
 			
-when 189 then
+end
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 1066 "eiffel.l"
@@ -2325,10 +2696,15 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1066")
 end
 
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%T")
-				token_buffer.append_character ('%T')
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%R")
+				token_buffer.append_character ('%R')
 			
-when 190 then
+end
+end
+else
+if yy_act <= 192 then
+if yy_act <= 191 then
+if yy_act = 190 then
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 1070 "eiffel.l"
@@ -2336,10 +2712,10 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1070")
 end
 
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%U")
-				token_buffer.append_character ('%U')
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%S")
+				token_buffer.append_character ('%S')
 			
-when 191 then
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 1074 "eiffel.l"
@@ -2347,10 +2723,11 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1074")
 end
 
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%V")
-				token_buffer.append_character ('%V')
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%T")
+				token_buffer.append_character ('%T')
 			
-when 192 then
+end
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 1078 "eiffel.l"
@@ -2358,10 +2735,13 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1078")
 end
 
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%%%")
-				token_buffer.append_character ('%%')
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%U")
+				token_buffer.append_character ('%U')
 			
-when 193 then
+end
+else
+if yy_act <= 194 then
+if yy_act = 193 then
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 1082 "eiffel.l"
@@ -2369,10 +2749,10 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1082")
 end
 
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%%'")
-				token_buffer.append_character ('%'')
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%V")
+				token_buffer.append_character ('%V')
 			
-when 194 then
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 1086 "eiffel.l"
@@ -2380,10 +2760,11 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1086")
 end
 
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%%"")
-				token_buffer.append_character ('%"')
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%%%")
+				token_buffer.append_character ('%%')
 			
-when 195 then
+end
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 1090 "eiffel.l"
@@ -2391,10 +2772,17 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1090")
 end
 
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%(")
-				token_buffer.append_character ('%(')
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%%'")
+				token_buffer.append_character ('%'')
 			
-when 196 then
+end
+end
+end
+else
+if yy_act <= 201 then
+if yy_act <= 198 then
+if yy_act <= 197 then
+if yy_act = 196 then
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 1094 "eiffel.l"
@@ -2402,10 +2790,10 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1094")
 end
 
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%)")
-				token_buffer.append_character ('%)')
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%%"")
+				token_buffer.append_character ('%"')
 			
-when 197 then
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 1098 "eiffel.l"
@@ -2413,10 +2801,11 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1098")
 end
 
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%<")
-				token_buffer.append_character ('%<')
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%(")
+				token_buffer.append_character ('%(')
 			
-when 198 then
+end
+else
 	yy_column := yy_column + 2
 	yy_position := yy_position + 2
 --|#line 1102 "eiffel.l"
@@ -2424,38 +2813,69 @@ debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1102")
 end
 
-				ast_factory.append_string_to_buffer (token_buffer2, once "%%>")
-				token_buffer.append_character ('%>')
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%)")
+				token_buffer.append_character ('%)')
 			
-when 199 then
-	yy_column := yy_column + yy_end - yy_start - yy_more_len
-	yy_position := yy_position + yy_end - yy_start - yy_more_len
+end
+else
+if yy_act <= 200 then
+if yy_act = 199 then
+	yy_column := yy_column + 2
+	yy_position := yy_position + 2
 --|#line 1106 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1106")
 end
 
-				ast_factory.append_text_to_buffer (token_buffer2, Current)
-				process_string_character_code (text_substring (3, text_count - 1).to_integer)
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%<")
+				token_buffer.append_character ('%<')
 			
-when 200 then
-yy_set_line_column
-	yy_position := yy_position + yy_end - yy_start - yy_more_len
+else
+	yy_column := yy_column + 2
+	yy_position := yy_position + 2
 --|#line 1110 "eiffel.l"
 debug ("GELEX")
 	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1110")
+end
+
+				ast_factory.append_string_to_buffer (token_buffer2, once "%%>")
+				token_buffer.append_character ('%>')
+			
+end
+else
+	yy_column := yy_column + yy_end - yy_start - yy_more_len
+	yy_position := yy_position + yy_end - yy_start - yy_more_len
+--|#line 1114 "eiffel.l"
+debug ("GELEX")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1114")
+end
+
+				ast_factory.append_text_to_buffer (token_buffer2, Current)
+				process_string_character_code (text_substring (3, text_count - 1).to_integer)
+			
+end
+end
+else
+if yy_act <= 204 then
+if yy_act <= 203 then
+if yy_act = 202 then
+yy_set_line_column
+	yy_position := yy_position + yy_end - yy_start - yy_more_len
+--|#line 1118 "eiffel.l"
+debug ("GELEX")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1118")
 end
 
 					-- This regular expression should actually be: %\n[ \t\r]*%
 					-- Left as-is for compatibility with previous releases.
 			ast_factory.append_text_to_buffer (token_buffer2, Current)
 			
-when 201 then
+else
 	yy_column := yy_column + yy_end - yy_start - yy_more_len
 	yy_position := yy_position + yy_end - yy_start - yy_more_len
---|#line 1115 "eiffel.l"
+--|#line 1123 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1115")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1123")
 end
 
 				ast_factory.append_text_to_buffer (token_buffer2, Current)
@@ -2473,12 +2893,13 @@ end
 					end
 				end
 			
-when 202 then
+end
+else
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
---|#line 1131 "eiffel.l"
+--|#line 1139 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1131")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1139")
 end
 
 					-- Bad special character.
@@ -2486,30 +2907,34 @@ end
 				set_start_condition (INITIAL)
 				report_string_bad_special_character_error
 			
-when 203 then
+end
+else
+if yy_act <= 206 then
+if yy_act = 205 then
 	yy_line := yy_line + 1
 	yy_column := 1
 	yy_position := yy_position + 1
---|#line 1137 "eiffel.l"
+--|#line 1145 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1137")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1145")
 end
 
 					-- No final double-quote.
 				set_start_condition (INITIAL)
 				report_string_missing_quote_error (token_buffer)
 			
-when 204 then
+else
 	yy_column := yy_column + 1
 	yy_position := yy_position + 1
---|#line 1155 "eiffel.l"
+--|#line 1163 "eiffel.l"
 debug ("GELEX")
-	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1155")
+	std.error.put_line ("Executing scanner user-code from file 'eiffel.l' at line 1163")
 end
 
 				report_unknown_token_error (text_item (1))
 			
-when 205 then
+end
+else
 yy_set_line_column
 	yy_position := yy_position + 1
 --|#line 0 "eiffel.l"
@@ -2518,10 +2943,13 @@ debug ("GELEX")
 end
 last_token := yyError_token
 fatal_error ("scanner jammed")
-			else
-				last_token := yyError_token
-				fatal_error ("fatal scanner internal error: no action found")
-			end
+end
+end
+end
+end
+end
+end
+end
 		end
 
 	yy_execute_eof_action (yy_sc: INTEGER) is
@@ -2603,210 +3031,214 @@ feature {NONE} -- Table templates
 			   19,   21,   22,   23,   24,   25,   26,   27,   28,   29,
 			   30,   31,   32,   33,   34,   35,   36,   37,   38,   19,
 			   39,   40,   41,   42,   43,   44,   45,   45,   46,   45,
-			   45,   47,   45,   48,   49,   50,   45,   51,   52,   53,
-			   54,   55,   56,   57,   45,   45,   58,   59,   60,   61,
+			   45,   47,   48,   49,   50,   51,   45,   52,   53,   54,
+			   55,   56,   57,   58,   45,   45,   59,   60,   61,   62,
 			   14,   14,   39,   40,   41,   42,   43,   44,   45,   45,
-			   46,   45,   45,   47,   45,   48,   49,   50,   45,   51,
-			   52,   53,   54,   55,   56,   57,   45,   45,   62,   19,
-			   63,   64,   66,   66,  198,   67,   67,  199,   68,   68,
+			   46,   45,   45,   47,   48,   49,   50,   51,   45,   52,
+			   53,   54,   55,   56,   57,   58,   45,   45,   63,   19,
+			   64,   65,   67,   67,  201,   68,   68,  202,   69,   69,
 
-			   70,   71,   70,  578,   72,   70,   71,   70,  474,   72,
-			   77,   78,   77,   77,   78,   77,   80,   81,   80,   80,
-			   81,   80,   83,   83,   83,   83,   83,   83,  106,  108,
-			  107,   82,  121,  122,   82,  112,  543,   84,  132,  109,
-			   84,  110,  113,  111,  111,  111,  152,  114,  138,  115,
-			  115,  116,  123,  124,  159,  165,   73,  430,  139,  157,
-			  117,   73,  198,  528,  114,  202,  115,  115,  116,  114,
-			  132,  116,  116,  116,  500,  496,  158,  117,  152,  259,
-			  138,  371,  118,  205,  206,  205,  159,  165,   73,  119,
-			  139,  157,  117,   73,   86,   87,  432,   88,   87,  207,
+			   71,   72,   71,  586,   73,   71,   72,   71,  481,   73,
+			   78,   79,   78,   78,   79,   78,   81,   82,   81,   81,
+			   82,   81,   84,   84,   84,   84,   84,   84,  107,  109,
+			  108,   83,  122,  123,   83,  113,  551,   85,  133,  110,
+			   85,  111,  114,  112,  112,  112,  153,  115,  139,  116,
+			  116,  117,  124,  125,  154,  161,   74,  436,  140,  159,
+			  118,   74,  201,  536,  115,  205,  116,  116,  117,  115,
+			  133,  117,  117,  117,  507,  503,  160,  118,  153,  262,
+			  139,  376,  119,  208,  209,  208,  154,  161,   74,  120,
+			  140,  159,  118,   74,   87,   88,  438,   89,   88,  210,
 
-			  207,  207,   89,   90,  371,   91,  119,   92,  158,  117,
-			  168,  119,  361,   93,  118,   94,  127,   87,   95,  150,
-			  133,  128,  160,  129,  134,  151,   96,  135,  130,  131,
-			  136,   97,   98,  137,  140,  360,  141,  161,  169,  359,
-			  358,   99,  168,  212,  100,  101,  142,  102,  127,  357,
-			   95,  150,  133,  128,  160,  129,  134,  151,   96,  135,
-			  130,  131,  136,   97,   98,  137,  140,  143,  141,  161,
-			  169,  144,  146,   99,  166,  212,  103,   87,  142,  147,
-			  148,  153,  162,  267,  145,  149,  209,  270,  167,   88,
-			  356,  154,  163,  155,  271,  164,  272,  156,  355,  143,
+			  210,  210,   90,   91,  376,   92,  120,   93,  160,  118,
+			  171,  120,  366,   94,  119,   95,  128,   88,   96,  151,
+			  134,  129,  162,  130,  135,  152,   97,  136,  131,  132,
+			  137,   98,   99,  138,  141,  365,  142,  163,  167,  364,
+			  363,  100,  171,  168,  101,  102,  143,  103,  128,  362,
+			   96,  151,  134,  129,  162,  130,  135,  152,   97,  136,
+			  131,  132,  137,   98,   99,  138,  141,  144,  142,  163,
+			  167,  145,  147,  100,  169,  168,  104,   88,  143,  148,
+			  149,  155,  164,  172,  146,  150,  212,  215,  170,   89,
+			  361,  156,  165,  157,  270,  166,  273,  158,  360,  144,
 
-			  207,  207,  207,  144,  146,  354,  166,   83,   83,   83,
-			  353,  147,  148,  153,  162,  267,  145,  149,  198,  270,
-			  167,  199,   84,  154,  163,  155,  271,  164,  272,  156,
-			  174,  174,  174,  352,  175,  213,  103,  176,   88,  177,
-			  178,  179,  200,  198,  200,  214,  199,  180,   88,   85,
-			   85,  351,   85,  181,  210,  182,  350,   88,  183,  184,
-			  185,  186,  349,  187,  215,  188,  348,   88,  103,  189,
-			  216,  190,  347,   88,  191,  192,  193,  194,  195,  196,
-			  346,  218,  344,  217,   88,  103,  343,  220,  209,  231,
-			   88,   88,   88,  209,  209,  103,   88,   88,  201,  209,
+			  210,  210,  210,  145,  147,  359,  169,   84,   84,   84,
+			  358,  148,  149,  155,  164,  172,  146,  150,  201,  215,
+			  170,  202,   85,  156,  165,  157,  270,  166,  273,  158,
+			  177,  177,  177,  357,  178,  216,  104,  179,   89,  180,
+			  181,  182,  203,  201,  203,  217,  202,  183,   89,   86,
+			   86,  356,   86,  184,  213,  185,  355,   89,  186,  187,
+			  188,  189,  354,  190,  218,  191,  353,   89,  104,  192,
+			  219,  193,  352,   89,  194,  195,  196,  197,  198,  199,
+			  351,  221,  349,  220,   89,  104,  348,  223,  212,  234,
+			   89,   89,   89,  212,  212,  104,   89,   89,  204,  212,
 
-			  342,  219,   88,  209,  211,  209,   88,  221,   88,  341,
-			  273,  227,  228,  227,  103,  209,  268,  103,   88,  269,
-			  103,  340,  265,  265,  265,  222,  274,  103,  275,  223,
-			  201,  103,  224,  257,  257,  257,  211,  103,  103,  103,
-			  225,  226,  273,  103,  103,  276,  103,  258,  268,  103,
-			  327,  269,  103,  103,  204,  103,  230,  222,  274,  277,
-			  275,  223,  266,  103,  224,  103,  173,  229,  256,  103,
-			  103,  103,  225,  226,  233,  103,  103,  276,  278,  258,
-			  281,  103,  227,  228,  227,  103,  209,  103,  282,   88,
-			  259,  277,  260,  260,  260,  279,  286,  103,  114,  280,
+			  347,  222,   89,  212,  214,  212,   89,  224,   89,  346,
+			  274,  230,  231,  230,  104,  212,  271,  104,   89,  272,
+			  104,  345,  268,  268,  268,  225,  275,  104,  276,  226,
+			  204,  104,  227,  260,  260,  260,  214,  104,  104,  104,
+			  228,  229,  274,  104,  104,  277,  104,  261,  271,  104,
+			  332,  272,  104,  104,  207,  104,  233,  225,  275,  278,
+			  276,  226,  269,  104,  227,  104,  176,  232,  259,  104,
+			  104,  104,  228,  229,  236,  104,  104,  277,  279,  261,
+			  280,  104,  230,  231,  230,  104,  212,  104,  281,   89,
+			  262,  278,  263,  263,  263,  282,  284,  104,  115,  283,
 
-			  262,  262,  263,  283,  108,  114,  261,  263,  263,  263,
-			  278,  117,  281,  284,  287,  208,  288,  285,  289,  295,
-			  282,  296,  298,  204,  299,  173,  300,  279,  286,  303,
-			  301,  280,  304,  297,  313,  283,  103,  171,  261,  302,
-			  119,  198,  170,  117,  202,  284,  287,  119,  288,  285,
-			  289,  295,  314,  296,  298,  290,  299,  291,  300,  292,
-			  315,  303,  301,  125,  304,  297,  313,  316,  103,  234,
-			  293,  302,  235,  294,  236,  237,  238,  120,  174,  174,
-			  174,  626,  239,   75,  314,  324,  320,  290,  240,  291,
-			  241,  292,  315,  242,  243,  244,  245,  311,  246,  316,
+			  265,  265,  266,  285,  109,  115,  264,  266,  266,  266,
+			  279,  118,  280,  287,  289,  211,  290,  288,  286,  291,
+			  281,  292,  298,  207,  301,  176,  302,  282,  284,  303,
+			  304,  283,  307,  308,  317,  285,  104,  174,  264,  201,
+			  120,  173,  205,  118,  126,  287,  289,  120,  290,  288,
+			  286,  291,  318,  292,  298,  293,  301,  294,  302,  295,
+			  121,  303,  304,  634,  307,  308,  317,  319,  104,  237,
+			  296,  299,  238,  297,  239,  240,  241,   76,  177,  177,
+			  177,   76,  242,  300,  318,  329,  634,  293,  243,  294,
+			  244,  295,  305,  245,  246,  247,  248,  634,  249,  319,
 
-			  247,  312,  293,  317,  248,  294,  249,  321,  318,  250,
-			  251,  252,  253,  254,  255,  305,  322,  306,  320,  319,
-			  323,  325,  325,  325,   75,  307,  626,  626,  308,  311,
-			  309,  310,  626,  312,  626,  317,  205,  206,  205,  321,
-			  318,  200,  198,  200,  626,  199,  626,  305,  322,  306,
-			  626,  319,  323,  207,  207,  207,  329,  307,  330,   88,
-			  308,   88,  309,  310,   85,  227,  228,  227,  331,  210,
-			  375,   88,   88,  328,  228,  328,  209,  626,  209,   88,
-			  209,   88,  335,   88,  336,  626,  626,   88,  227,  228,
-			  227,  209,  209,  338,   88,   88,   88,  201,  339,  376,
+			  250,  306,  296,  299,  251,  297,  252,  320,  324,  253,
+			  254,  255,  256,  257,  258,  300,  309,  315,  310,  325,
+			  321,  316,  326,  327,  305,  322,  311,  328,  380,  312,
+			  381,  313,  314,  306,  634,  334,  323,  634,   89,  320,
+			  324,  330,  330,  330,  208,  209,  208,  382,  309,  315,
+			  310,  325,  321,  316,  326,  327,  634,  322,  311,  328,
+			  380,  312,  381,  313,  314,  203,  201,  203,  323,  202,
+			  210,  210,  210,   86,  230,  231,  230,  335,  213,  382,
+			   89,   89,  333,  231,  333,  104,  634,  336,  212,  634,
+			   89,   89,  212,  634,  212,   89,  212,   89,  340,   89,
 
-			  626,   88,  375,  332,  377,  378,  103,  379,  103,  345,
-			  345,  345,  114,  380,  369,  369,  370,  333,  103,  211,
-			  381,  382,  626,  334,  383,  117,  103,  212,  103,  201,
-			  103,  376,  337,  384,  103,  332,  377,  378,  103,  379,
-			  103,  103,  103,  103,  385,  380,  386,  626,  103,  333,
-			  103,  211,  381,  382,  119,  334,  383,  117,  103,  212,
-			  103,  626,  103,  626,  337,  384,  103,  362,  362,  362,
-			  374,  374,  374,  103,  103,  103,  385,  363,  386,  363,
-			  103,  258,  364,  364,  364,  365,  365,  365,  367,  387,
-			  367,  390,  391,  368,  368,  368,  392,  388,  114,  366,
+			  341,  634,  634,   89,  230,  231,  230,  343,  212,  383,
+			   89,   89,  350,  350,  350,  337,  344,  104,  368,   89,
+			  368,  204,  634,  369,  369,  369,  634,  104,  214,  384,
+			  115,  338,  374,  374,  375,  342,  215,  104,  104,  339,
+			  634,  383,  104,  118,  104,  385,  104,  337,  634,  372,
+			  104,  372,  634,  204,  373,  373,  373,  104,  104,  104,
+			  214,  384,  634,  338,  634,  634,  104,  342,  215,  104,
+			  104,  339,  120,  386,  104,  118,  104,  385,  104,  367,
+			  367,  367,  104,  370,  370,  370,  379,  379,  379,  104,
+			  104,  387,  115,  261,  375,  375,  375,  371,  104,  377,
 
-			  370,  370,  370,  372,  393,  373,  373,  373,  626,  395,
-			  266,  389,  396,  258,  397,  398,  399,  394,  400,  401,
-			  402,  387,  403,  390,  391,  404,  405,  406,  392,  388,
-			  407,  366,  408,  411,  409,  412,  393,  410,  413,  414,
-			  119,  395,  415,  389,  396,  266,  397,  398,  399,  394,
-			  400,  401,  402,  417,  403,  418,  419,  404,  405,  406,
-			  416,  420,  407,  421,  408,  411,  409,  412,  422,  410,
-			  413,  414,  423,  424,  415,  425,  426,  427,  428,  429,
-			  430,  431,  431,  431,  626,  417,  626,  418,  419,  328,
-			  228,  328,  416,  420,  433,  421,  434,  626,  209,   88,
+			  388,  378,  378,  378,  389,  386,  390,  391,  392,  634,
+			  393,  395,  396,  397,  398,  400,  401,  402,  403,  404,
+			  405,  406,  407,  387,  394,  261,  269,  399,  408,  371,
+			  409,  410,  388,  411,  120,  412,  389,  413,  390,  391,
+			  392,  269,  393,  395,  396,  397,  398,  400,  401,  402,
+			  403,  404,  405,  406,  407,  414,  394,  417,  415,  399,
+			  408,  416,  409,  410,  418,  411,  419,  412,  420,  413,
+			  421,  423,  424,  425,  426,  427,  428,  429,  430,  431,
+			  432,  433,  434,  435,  333,  231,  333,  414,  422,  417,
+			  415,  634,  439,  416,  440,  634,  418,   89,  419,  634,
 
-			  422,   88,  447,  436,  423,  424,   88,  425,  426,  427,
-			  428,  429,  209,  438,  626,   88,   88,  439,  345,  345,
-			  345,  440,  440,  440,  364,  364,  364,  364,  364,  364,
-			  442,  442,  442,  435,  447,  258,  368,  368,  368,  448,
-			  437,  449,  450,  212,  366,  443,  103,  443,  103,  451,
-			  444,  444,  444,  103,  368,  368,  368,  626,  452,  626,
-			  626,  441,  103,  103,  626,  435,  445,  258,  369,  369,
-			  370,  448,  437,  449,  450,  212,  366,  453,  103,  117,
-			  103,  451,  454,  455,  445,  103,  370,  370,  370,  372,
-			  452,  446,  446,  446,  103,  103,  372,  456,  374,  374,
+			  420,  634,  421,  423,  424,  425,  426,  427,  428,  429,
+			  430,  431,  432,  433,  434,  435,  436,  437,  437,  437,
+			  422,  212,  442,  212,   89,   89,   89,  444,  634,  634,
+			   89,  445,  350,  350,  350,  446,  446,  446,  215,  369,
+			  369,  369,  453,  634,  104,  369,  369,  369,  454,  261,
+			  634,  443,  448,  448,  448,  449,  441,  449,  634,  634,
+			  450,  450,  450,  373,  373,  373,  371,  373,  373,  373,
+			  215,  104,  104,  104,  453,  447,  104,  104,  634,  634,
+			  454,  261,  451,  443,  374,  374,  375,  451,  441,  375,
+			  375,  375,  634,  455,  456,  118,  457,  377,  371,  452,
 
-			  374,  457,  458,  459,  460,  461,  626,  462,  266,  453,
-			  463,  117,  464,  465,  454,  455,  466,  467,  468,  469,
-			  470,  471,  472,  473,  626,  626,  266,  477,  626,  456,
-			  478,  266,  479,  457,  458,  459,  460,  461,  266,  462,
-			  480,  481,  463,  482,  464,  465,  483,  484,  466,  467,
-			  468,  469,  470,  471,  472,  473,  474,  474,  474,  477,
-			  475,  485,  478,  486,  479,  487,  488,  489,  490,  491,
-			  492,  476,  480,  481,  493,  482,  494,  626,  483,  484,
-			  430,  495,  495,  495,  209,  209,  209,   88,   88,   88,
-			  502,  502,  502,  485,  626,  486,  626,  487,  488,  489,
+			  452,  452,  458,  104,  104,  104,  459,  634,  377,  104,
+			  379,  379,  379,  460,  461,  462,  463,  464,  634,  465,
+			  466,  467,  468,  469,  269,  455,  456,  118,  457,  269,
+			  470,  471,  472,  473,  458,  474,  475,  476,  459,  269,
+			  477,  478,  479,  480,  484,  460,  461,  462,  463,  464,
+			  269,  465,  466,  467,  468,  469,  481,  481,  481,  485,
+			  482,  486,  470,  471,  472,  473,  487,  474,  475,  476,
+			  488,  483,  477,  478,  479,  480,  484,  489,  490,  491,
+			  492,  493,  494,  495,  496,  497,  498,  499,  500,  501,
+			  634,  485,  634,  486,  436,  502,  502,  502,  487,  634,
 
-			  490,  491,  492,  444,  444,  444,  493,  626,  494,  440,
-			  440,  440,  503,  503,  503,  507,  508,  498,  444,  444,
-			  444,  499,  509,  501,  512,  510,  366,  497,  259,  511,
-			  503,  503,  503,  513,  103,  103,  103,  506,  514,  374,
-			  374,  374,  515,  516,  505,  517,  518,  507,  508,  498,
-			  519,  520,  504,  499,  509,  501,  512,  510,  366,  497,
-			  521,  511,  522,  523,  524,  513,  103,  103,  103,  525,
-			  514,  526,  529,  530,  515,  516,  505,  517,  518,  119,
-			  531,  532,  519,  520,  474,  474,  474,  533,  527,  534,
-			  535,  536,  521,  537,  522,  523,  524,  538,  539,  476,
+			  212,  212,  488,   89,   89,  212,  634,  634,   89,  489,
+			  490,  491,  492,  493,  494,  495,  496,  497,  498,  499,
+			  500,  501,  446,  446,  446,  509,  509,  509,  634,  634,
+			  510,  510,  510,  505,  514,  515,  508,  450,  450,  450,
+			  506,  634,  516,  504,  371,  450,  450,  450,  634,  634,
+			  104,  104,  517,  519,  520,  104,  518,  262,  521,  510,
+			  510,  510,  522,  523,  524,  505,  514,  515,  508,  525,
+			  511,  526,  506,  512,  516,  504,  371,  513,  527,  379,
+			  379,  379,  104,  104,  517,  519,  520,  104,  518,  528,
+			  521,  529,  530,  531,  522,  523,  524,  532,  533,  534,
 
-			  540,  525,  541,  526,  529,  530,  542,  209,  209,  556,
-			   88,   88,  531,  532,  209,  626,  626,   88,  626,  533,
-			  626,  534,  535,  536,  626,  537,  552,  552,  552,  538,
-			  539,  557,  540,  626,  541,  545,  626,  558,  542,  544,
-			  547,  556,  547,  626,  626,  548,  548,  548,  549,  549,
-			  549,  503,  503,  503,  559,  560,  546,  103,  103,  561,
-			  626,  562,  550,  557,  103,  551,  563,  545,  553,  558,
-			  553,  544,  564,  554,  554,  554,  259,  565,  552,  552,
-			  552,  566,  567,  568,  569,  570,  559,  560,  546,  103,
-			  103,  561,  555,  562,  550,  571,  103,  551,  563,  572,
+			  537,  525,  538,  526,  539,  512,  540,  481,  481,  481,
+			  527,  535,  541,  542,  543,  544,  545,  546,  547,  120,
+			  548,  528,  483,  529,  530,  531,  549,  550,  634,  532,
+			  533,  534,  537,  634,  538,  634,  539,  212,  540,  212,
+			   89,  634,   89,  564,  541,  542,  543,  544,  545,  546,
+			  547,  212,  548,  634,   89,  555,  634,  555,  549,  550,
+			  556,  556,  556,  557,  557,  557,  565,  553,  552,  510,
+			  510,  510,  560,  560,  560,  564,  566,  558,  567,  561,
+			  568,  561,  569,  559,  562,  562,  562,  104,  262,  104,
+			  560,  560,  560,  554,  570,  571,  572,  573,  565,  553,
 
-			  573,  574,  575,  576,  564,  577,  626,  209,  209,  565,
-			   88,   88,  591,  566,  567,  568,  569,  570,  592,  209,
-			  626,  626,   88,  626,  555,  626,  626,  571,  548,  548,
-			  548,  572,  573,  574,  575,  576,  579,  577,  548,  548,
-			  548,  582,  582,  582,  591,  593,  583,  581,  583,  580,
-			  592,  584,  584,  584,  585,  550,  585,  103,  103,  586,
-			  586,  586,  587,  587,  587,  554,  554,  554,  579,  103,
-			  554,  554,  554,  594,  595,  596,  588,  593,  589,  581,
-			  589,  580,  597,  590,  590,  590,  598,  550,  601,  103,
-			  103,  599,  599,  599,  602,  603,  604,  605,  550,  209,
+			  552,  104,  574,  575,  563,  576,  577,  578,  566,  558,
+			  567,  579,  568,  580,  569,  559,  581,  582,  583,  104,
+			  584,  104,  585,  634,  634,  554,  570,  571,  572,  573,
+			  556,  556,  556,  104,  574,  575,  563,  576,  577,  578,
+			  634,  212,  599,  579,   89,  580,  634,  634,  581,  582,
+			  583,  634,  584,  212,  585,  212,   89,  634,   89,  556,
+			  556,  556,  590,  590,  590,  591,  634,  591,  600,  587,
+			  592,  592,  592,  593,  599,  593,  558,  634,  594,  594,
+			  594,  601,  602,  589,  595,  595,  595,  562,  562,  562,
+			  603,  104,  562,  562,  562,  588,  604,  605,  596,  606,
 
-			  607,  103,   88,   88,  626,  594,  595,  596,  588,  608,
-			  618,  626,   88,   88,  597,  584,  584,  584,  598,  612,
-			  601,  600,  613,  615,  441,  626,  602,  603,  604,  605,
-			  550,  584,  584,  584,  626,  616,  606,  586,  586,  586,
-			  586,  586,  586,  609,  609,  609,  590,  590,  590,  103,
-			  103,  612,  617,  600,  613,  615,  610,  588,  610,  103,
-			  103,  611,  611,  611,  590,  590,  590,  616,  606,  599,
-			  599,  599,  588,  611,  611,  611,  611,  611,  611,  619,
-			  620,  103,  103,  621,  617,  622,  623,  624,  625,  588,
-			  626,  103,  103,  264,  264,  264,  626,  626,  504,  614,
+			  600,  587,  609,  104,  597,  104,  597,  610,  558,  598,
+			  598,  598,  611,  601,  602,  589,  607,  607,  607,  612,
+			  613,  212,  603,  104,   89,  620,  634,  588,  604,  605,
+			  596,  606,  634,  615,  609,  104,   89,  104,  616,  610,
+			  558,   89,  634,  634,  611,  621,  608,  592,  592,  592,
+			  634,  612,  613,  592,  592,  592,  634,  620,  614,  594,
+			  594,  594,  594,  594,  594,  623,  447,  617,  617,  617,
+			  624,  104,  558,  598,  598,  598,  625,  621,  608,  596,
+			  618,  596,  618,  104,  634,  619,  619,  619,  104,  634,
+			  614,  598,  598,  598,  607,  607,  607,  623,  626,  627,
 
-			  626,  626,  626,  626,  588,  626,  626,  626,  626,  626,
-			  626,  619,  620,  626,  626,  621,  626,  622,  623,  624,
-			  625,  126,  126,  126,  126,  126,  126,  126,  126,  126,
-			  626,  614,   65,   65,   65,   65,   65,   65,   65,   65,
-			   65,   65,   65,   65,   65,   65,   65,   69,   69,   69,
-			   69,   69,   69,   69,   69,   69,   69,   69,   69,   69,
-			   69,   69,   74,   74,   74,   74,   74,   74,   74,   74,
-			   74,   74,   74,   74,   74,   74,   74,   76,   76,   76,
-			   76,   76,   76,   76,   76,   76,   76,   76,   76,   76,
-			   76,   76,   79,   79,   79,   79,   79,   79,   79,   79,
+			  628,   89,  624,  104,  629,  511,  630,  631,  625,  632,
+			  633,  596,  634,  596,  634,  104,  619,  619,  619,  634,
+			  104,  619,  619,  619,  622,  267,  267,  267,  634,  634,
+			  634,  627,  628,  634,  634,  634,  629,  634,  630,  631,
+			  634,  632,  633,  634,  634,  634,  634,  634,  104,  634,
+			  634,  634,  634,  105,  634,  105,  622,  105,  105,  105,
+			  105,  105,  105,  105,  105,  105,  127,  127,  127,  127,
+			  127,  127,  127,  127,  127,  634,  634,  634,  634,  634,
+			  104,   66,   66,   66,   66,   66,   66,   66,   66,   66,
+			   66,   66,   66,   66,   66,   66,   70,   70,   70,   70,
 
-			   79,   79,   79,   79,   79,   79,   79,   85,  626,   85,
-			   85,   85,   85,   85,   85,   85,   85,   85,   85,   85,
-			   85,   85,  104,  626,  104,  626,  104,  104,  104,  104,
-			  104,  104,  104,  104,  104,  105,  626,  105,  105,  105,
-			  105,  105,  105,  105,  105,  105,  105,  105,  105,  105,
-			  172,  626,  172,  172,  172,  626,  172,  172,  172,  172,
-			  172,  172,  172,  172,  172,  197,  197,  197,  197,  197,
-			  197,  197,  197,  197,  197,  197,  197,  197,  197,  197,
-			  201,  201,  201,  201,  201,  201,  201,  201,  201,  201,
-			  201,  201,  201,  201,  201,  203,  203,  203,  203,  203,
+			   70,   70,   70,   70,   70,   70,   70,   70,   70,   70,
+			   70,   75,   75,   75,   75,   75,   75,   75,   75,   75,
+			   75,   75,   75,   75,   75,   75,   77,   77,   77,   77,
+			   77,   77,   77,   77,   77,   77,   77,   77,   77,   77,
+			   77,   80,   80,   80,   80,   80,   80,   80,   80,   80,
+			   80,   80,   80,   80,   80,   80,   86,  634,   86,   86,
+			   86,   86,   86,   86,   86,   86,   86,   86,   86,   86,
+			   86,  106,  634,  106,  106,  106,  106,  106,  106,  106,
+			  106,  106,  106,  106,  106,  106,  175,  634,  175,  175,
+			  175,  634,  175,  175,  175,  175,  175,  175,  175,  175,
 
-			  203,  203,  203,  203,  203,  203,  203,  203,  203,  203,
-			   87,  626,   87,   87,   87,   87,   87,   87,   87,   87,
-			   87,   87,   87,   87,   87,   88,  626,   88,  626,   88,
+			  175,  200,  200,  200,  200,  200,  200,  200,  200,  200,
+			  200,  200,  200,  200,  200,  200,  204,  204,  204,  204,
+			  204,  204,  204,  204,  204,  204,  204,  204,  204,  204,
+			  204,  206,  206,  206,  206,  206,  206,  206,  206,  206,
+			  206,  206,  206,  206,  206,  206,   88,  634,   88,   88,
 			   88,   88,   88,   88,   88,   88,   88,   88,   88,   88,
-			  232,  626,  232,  232,  232,  232,  232,  232,  232,  232,
-			  232,  232,  232,  232,  232,  326,  626,  326,  326,  326,
-			  326,  326,  326,  326,  326,  326,  326,  326,  326,  326,
-			  528,  528,  528,  528,  528,  528,  528,  528,  528,  528,
-			  528,  528,  528,  528,  528,  578,  626,  578,  578,  578,
-			  578,  578,  578,  578,  578,  578,  578,  578,  578,  578,
+			   88,   89,  634,   89,  634,   89,   89,   89,   89,   89,
+			   89,   89,   89,   89,   89,   89,  235,  634,  235,  235,
+			  235,  235,  235,  235,  235,  235,  235,  235,  235,  235,
+			  235,  331,  634,  331,  331,  331,  331,  331,  331,  331,
 
-			   13,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626, yy_Dummy>>)
+			  331,  331,  331,  331,  331,  331,  536,  536,  536,  536,
+			  536,  536,  536,  536,  536,  536,  536,  536,  536,  536,
+			  536,  586,  634,  586,  586,  586,  586,  586,  586,  586,
+			  586,  586,  586,  586,  586,  586,   13,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634, yy_Dummy>>)
 		end
 
 	yy_chk_template: SPECIAL [INTEGER] is
@@ -2821,357 +3253,363 @@ feature {NONE} -- Table templates
 			    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
 			    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
 			    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-			    1,    1,    3,    4,   69,    3,    4,   69,    3,    4,
+			    1,    1,    3,    4,   70,    3,    4,   70,    3,    4,
 
-			    5,    5,    5,  543,    5,    6,    6,    6,  528,    6,
+			    5,    5,    5,  551,    5,    6,    6,    6,  536,    6,
 			    9,    9,    9,   10,   10,   10,   11,   11,   11,   12,
 			   12,   12,   15,   15,   15,   16,   16,   16,   21,   27,
-			   21,   11,   35,   35,   12,   29,  496,   15,   40,   27,
+			   21,   11,   35,   35,   12,   29,  503,   15,   40,   27,
 			   16,   28,   29,   28,   28,   28,   48,   30,   42,   30,
-			   30,   30,   37,   37,   51,   54,    5,  495,   42,   50,
-			   30,    6,   73,  476,   31,   73,   31,   31,   31,   32,
-			   40,   32,   32,   32,  439,  432,   50,   31,   48,  372,
-			   42,  371,   30,   77,   77,   77,   51,   54,    5,   30,
-			   42,   50,   30,    6,   18,   18,  327,   18,   18,   80,
+			   30,   30,   37,   37,   49,   52,    5,  502,   42,   51,
+			   30,    6,   74,  483,   31,   74,   31,   31,   31,   32,
+			   40,   32,   32,   32,  445,  438,   51,   31,   48,  377,
+			   42,  376,   30,   78,   78,   78,   49,   52,    5,   30,
+			   42,   51,   30,    6,   18,   18,  332,   18,   18,   81,
 
-			   80,   80,   18,   18,  264,   18,   31,   18,   50,   31,
-			   56,   32,  255,   18,   30,   18,   39,   18,   18,   47,
-			   41,   39,   52,   39,   41,   47,   18,   41,   39,   39,
-			   41,   18,   18,   41,   43,  254,   43,   52,   57,  253,
-			  252,   18,   56,   88,   18,   18,   43,   18,   39,  251,
-			   18,   47,   41,   39,   52,   39,   41,   47,   18,   41,
-			   39,   39,   41,   18,   18,   41,   43,   44,   43,   52,
-			   57,   44,   46,   18,   55,   88,   18,   18,   43,   46,
-			   46,   49,   53,  127,   44,   46,   85,  129,   55,   85,
-			  250,   49,   53,   49,  130,   53,  131,   49,  249,   44,
+			   81,   81,   18,   18,  267,   18,   31,   18,   51,   31,
+			   57,   32,  258,   18,   30,   18,   39,   18,   18,   47,
+			   41,   39,   53,   39,   41,   47,   18,   41,   39,   39,
+			   41,   18,   18,   41,   43,  257,   43,   53,   55,  256,
+			  255,   18,   57,   55,   18,   18,   43,   18,   39,  254,
+			   18,   47,   41,   39,   53,   39,   41,   47,   18,   41,
+			   39,   39,   41,   18,   18,   41,   43,   44,   43,   53,
+			   55,   44,   46,   18,   56,   55,   18,   18,   43,   46,
+			   46,   50,   54,   58,   44,   46,   86,   89,   56,   86,
+			  253,   50,   54,   50,  128,   54,  130,   50,  252,   44,
 
-			   81,   81,   81,   44,   46,  248,   55,   83,   83,   83,
-			  247,   46,   46,   49,   53,  127,   44,   46,  197,  129,
-			   55,  197,   83,   49,   53,   49,  130,   53,  131,   49,
-			   68,   68,   68,  246,   68,   89,   85,   68,   89,   68,
-			   68,   68,   70,   70,   70,   90,   70,   68,   90,   87,
-			   87,  245,   87,   68,   87,   68,  244,   87,   68,   68,
-			   68,   68,  243,   68,   91,   68,  242,   91,   85,   68,
-			   92,   68,  241,   92,   68,   68,   68,   68,   68,   68,
-			  240,   93,  238,   92,   93,   89,  237,   94,   95,  102,
-			   94,   95,  102,   96,   97,   90,   96,   97,   70,   98,
+			   82,   82,   82,   44,   46,  251,   56,   84,   84,   84,
+			  250,   46,   46,   50,   54,   58,   44,   46,  200,   89,
+			   56,  200,   84,   50,   54,   50,  128,   54,  130,   50,
+			   69,   69,   69,  249,   69,   90,   86,   69,   90,   69,
+			   69,   69,   71,   71,   71,   91,   71,   69,   91,   88,
+			   88,  248,   88,   69,   88,   69,  247,   88,   69,   69,
+			   69,   69,  246,   69,   92,   69,  245,   92,   86,   69,
+			   93,   69,  244,   93,   69,   69,   69,   69,   69,   69,
+			  243,   94,  241,   93,   94,   90,  240,   95,   96,  103,
+			   95,   96,  103,   97,   98,   91,   97,   98,   71,   99,
 
-			  236,   93,   98,   99,   87,  101,   99,   94,  101,  235,
-			  132,  100,  100,  100,   91,  100,  128,   89,  100,  128,
-			   92,  234,  119,  119,  119,   95,  133,   90,  134,   96,
-			   70,   93,   97,  111,  111,  111,   87,   94,   95,  102,
-			   98,   99,  132,   96,   97,  135,   91,  111,  128,   98,
-			  208,  128,   92,   99,  203,  101,  101,   95,  133,  136,
-			  134,   96,  119,   93,   97,  100,  172,  100,  107,   94,
-			   95,  102,   98,   99,  105,   96,   97,  135,  137,  111,
-			  140,   98,  103,  103,  103,   99,  103,  101,  141,  103,
-			  114,  136,  114,  114,  114,  138,  143,  100,  115,  138,
+			  239,   94,   99,  100,   88,  102,  100,   95,  102,  238,
+			  131,  101,  101,  101,   92,  101,  129,   90,  101,  129,
+			   93,  237,  120,  120,  120,   96,  132,   91,  133,   97,
+			   71,   94,   98,  112,  112,  112,   88,   95,   96,  103,
+			   99,  100,  131,   97,   98,  134,   92,  112,  129,   99,
+			  211,  129,   93,  100,  206,  102,  102,   96,  132,  135,
+			  133,   97,  120,   94,   98,  101,  175,  101,  108,   95,
+			   96,  103,   99,  100,  106,   97,   98,  134,  136,  112,
+			  137,   99,  104,  104,  104,  100,  104,  102,  138,  104,
+			  115,  135,  115,  115,  115,  139,  141,  101,  116,  139,
 
-			  115,  115,  115,  141,   84,  116,  114,  116,  116,  116,
-			  137,  115,  140,  142,  144,   82,  145,  142,  147,  150,
-			  141,  151,  152,   74,  153,   65,  154,  138,  143,  157,
-			  155,  138,  158,  151,  161,  141,  103,   63,  114,  155,
-			  115,  201,   59,  115,  201,  142,  144,  116,  145,  142,
-			  147,  150,  162,  151,  152,  148,  153,  148,  154,  148,
-			  163,  157,  155,   38,  158,  151,  161,  164,  103,  106,
-			  148,  155,  106,  148,  106,  106,  106,   33,  174,  174,
-			  174,   13,  106,    8,  162,  174,  166,  148,  106,  148,
-			  106,  148,  163,  106,  106,  106,  106,  160,  106,  164,
+			  116,  116,  116,  142,   85,  117,  115,  117,  117,  117,
+			  136,  116,  137,  143,  144,   83,  145,  143,  142,  146,
+			  138,  148,  151,   75,  153,   66,  154,  139,  141,  155,
+			  156,  139,  159,  160,  163,  142,  104,   64,  115,  204,
+			  116,   60,  204,  116,   38,  143,  144,  117,  145,  143,
+			  142,  146,  164,  148,  151,  149,  153,  149,  154,  149,
+			   33,  155,  156,   13,  159,  160,  163,  165,  104,  107,
+			  149,  152,  107,  149,  107,  107,  107,    8,  177,  177,
+			  177,    7,  107,  152,  164,  177,    0,  149,  107,  149,
+			  107,  149,  157,  107,  107,  107,  107,    0,  107,  165,
 
-			  106,  160,  148,  165,  106,  148,  106,  167,  165,  106,
-			  106,  106,  106,  106,  106,  159,  168,  159,  166,  165,
-			  169,  180,  180,  180,    7,  159,    0,    0,  159,  160,
-			  159,  159,    0,  160,    0,  165,  205,  205,  205,  167,
-			  165,  200,  200,  200,    0,  200,    0,  159,  168,  159,
-			    0,  165,  169,  207,  207,  207,  217,  159,  219,  217,
-			  159,  219,  159,  159,  211,  211,  211,  211,  221,  211,
-			  267,  221,  211,  212,  212,  212,  222,    0,  223,  222,
-			  224,  223,  225,  224,  225,    0,    0,  225,  227,  227,
-			  227,  226,  227,  229,  226,  227,  229,  200,  230,  268,
+			  107,  157,  149,  152,  107,  149,  107,  166,  168,  107,
+			  107,  107,  107,  107,  107,  152,  161,  162,  161,  169,
+			  167,  162,  170,  171,  157,  167,  161,  172,  270,  161,
+			  271,  161,  161,  157,    0,  220,  167,    0,  220,  166,
+			  168,  183,  183,  183,  208,  208,  208,  274,  161,  162,
+			  161,  169,  167,  162,  170,  171,    0,  167,  161,  172,
+			  270,  161,  271,  161,  161,  203,  203,  203,  167,  203,
+			  210,  210,  210,  214,  214,  214,  214,  222,  214,  274,
+			  222,  214,  215,  215,  215,  220,    0,  224,  225,    0,
+			  224,  225,  226,    0,  229,  226,  227,  229,  228,  227,
 
-			    0,  230,  267,  222,  271,  272,  217,  274,  219,  239,
-			  239,  239,  262,  275,  262,  262,  262,  223,  221,  211,
-			  276,  277,    0,  224,  278,  262,  222,  212,  223,  200,
-			  224,  268,  226,  279,  225,  222,  271,  272,  217,  274,
-			  219,  226,  227,  229,  280,  275,  281,    0,  230,  223,
-			  221,  211,  276,  277,  262,  224,  278,  262,  222,  212,
-			  223,    0,  224,    0,  226,  279,  225,  257,  257,  257,
-			  266,  266,  266,  226,  227,  229,  280,  258,  281,  258,
-			  230,  257,  258,  258,  258,  260,  260,  260,  261,  283,
-			  261,  285,  286,  261,  261,  261,  287,  284,  263,  260,
+			  228,    0,    0,  228,  230,  230,  230,  232,  230,  275,
+			  232,  230,  242,  242,  242,  225,  233,  220,  261,  233,
+			  261,  203,    0,  261,  261,  261,    0,  222,  214,  277,
+			  265,  226,  265,  265,  265,  229,  215,  224,  225,  227,
+			    0,  275,  226,  265,  229,  278,  227,  225,    0,  264,
+			  228,  264,    0,  203,  264,  264,  264,  232,  230,  222,
+			  214,  277,    0,  226,    0,    0,  233,  229,  215,  224,
+			  225,  227,  265,  279,  226,  265,  229,  278,  227,  260,
+			  260,  260,  228,  263,  263,  263,  269,  269,  269,  232,
+			  230,  280,  266,  260,  266,  266,  266,  263,  233,  268,
 
-			  263,  263,  263,  265,  288,  265,  265,  265,    0,  289,
-			  266,  284,  290,  257,  291,  292,  293,  288,  294,  295,
-			  296,  283,  297,  285,  286,  298,  299,  301,  287,  284,
-			  302,  260,  303,  305,  304,  306,  288,  304,  307,  308,
-			  263,  289,  309,  284,  290,  265,  291,  292,  293,  288,
-			  294,  295,  296,  310,  297,  311,  312,  298,  299,  301,
-			  309,  313,  302,  314,  303,  305,  304,  306,  315,  304,
-			  307,  308,  316,  317,  309,  318,  319,  320,  321,  322,
-			  325,  325,  325,  325,    0,  310,    0,  311,  312,  328,
-			  328,  328,  309,  313,  332,  314,  332,    0,  333,  332,
+			  281,  268,  268,  268,  282,  279,  283,  284,  286,    0,
+			  287,  288,  289,  290,  291,  292,  293,  294,  295,  296,
+			  297,  298,  299,  280,  287,  260,  269,  291,  300,  263,
+			  301,  302,  281,  303,  266,  305,  282,  306,  283,  284,
+			  286,  268,  287,  288,  289,  290,  291,  292,  293,  294,
+			  295,  296,  297,  298,  299,  307,  287,  309,  308,  291,
+			  300,  308,  301,  302,  310,  303,  311,  305,  312,  306,
+			  313,  314,  315,  316,  317,  318,  319,  320,  321,  322,
+			  323,  325,  326,  327,  333,  333,  333,  307,  313,  309,
+			  308,    0,  337,  308,  337,    0,  310,  337,  311,    0,
 
-			  315,  333,  375,  334,  316,  317,  334,  318,  319,  320,
-			  321,  322,  335,  337,    0,  335,  337,  345,  345,  345,
-			  345,  362,  362,  362,  363,  363,  363,  364,  364,  364,
-			  365,  365,  365,  333,  375,  362,  367,  367,  367,  376,
-			  335,  377,  378,  328,  365,  366,  332,  366,  333,  379,
-			  366,  366,  366,  334,  368,  368,  368,    0,  380,    0,
-			    0,  362,  335,  337,    0,  333,  369,  362,  369,  369,
-			  369,  376,  335,  377,  378,  328,  365,  381,  332,  369,
-			  333,  379,  382,  383,  370,  334,  370,  370,  370,  373,
-			  380,  373,  373,  373,  335,  337,  374,  384,  374,  374,
+			  312,    0,  313,  314,  315,  316,  317,  318,  319,  320,
+			  321,  322,  323,  325,  326,  327,  330,  330,  330,  330,
+			  313,  338,  339,  340,  338,  339,  340,  342,    0,    0,
+			  342,  350,  350,  350,  350,  367,  367,  367,  333,  368,
+			  368,  368,  380,    0,  337,  369,  369,  369,  381,  367,
+			    0,  340,  370,  370,  370,  371,  338,  371,    0,    0,
+			  371,  371,  371,  372,  372,  372,  370,  373,  373,  373,
+			  333,  338,  339,  340,  380,  367,  337,  342,    0,    0,
+			  381,  367,  374,  340,  374,  374,  374,  375,  338,  375,
+			  375,  375,    0,  382,  383,  374,  384,  378,  370,  378,
 
-			  374,  385,  386,  387,  388,  389,    0,  390,  369,  381,
-			  391,  369,  392,  394,  382,  383,  395,  396,  397,  398,
-			  399,  400,  402,  405,    0,    0,  370,  408,    0,  384,
-			  409,  373,  410,  385,  386,  387,  388,  389,  374,  390,
-			  411,  412,  391,  413,  392,  394,  414,  415,  395,  396,
-			  397,  398,  399,  400,  402,  405,  406,  406,  406,  408,
-			  406,  416,  409,  417,  410,  418,  419,  420,  423,  424,
-			  425,  406,  411,  412,  426,  413,  427,    0,  414,  415,
-			  431,  431,  431,  431,  433,  435,  437,  433,  435,  437,
-			  441,  441,  441,  416,    0,  417,    0,  418,  419,  420,
+			  378,  378,  385,  338,  339,  340,  386,    0,  379,  342,
+			  379,  379,  379,  387,  388,  389,  390,  391,    0,  392,
+			  393,  394,  395,  396,  374,  382,  383,  374,  384,  375,
+			  397,  399,  400,  401,  385,  402,  403,  404,  386,  378,
+			  405,  407,  409,  411,  414,  387,  388,  389,  390,  391,
+			  379,  392,  393,  394,  395,  396,  412,  412,  412,  415,
+			  412,  416,  397,  399,  400,  401,  417,  402,  403,  404,
+			  418,  412,  405,  407,  409,  411,  414,  419,  420,  421,
+			  422,  423,  424,  425,  426,  429,  430,  431,  432,  433,
+			    0,  415,    0,  416,  437,  437,  437,  437,  417,    0,
 
-			  423,  424,  425,  443,  443,  443,  426,    0,  427,  440,
-			  440,  440,  442,  442,  442,  449,  450,  435,  444,  444,
-			  444,  437,  453,  440,  455,  454,  442,  433,  445,  454,
-			  445,  445,  445,  457,  433,  435,  437,  446,  458,  446,
-			  446,  446,  459,  460,  445,  461,  462,  449,  450,  435,
-			  464,  465,  442,  437,  453,  440,  455,  454,  442,  433,
-			  466,  454,  467,  469,  470,  457,  433,  435,  437,  471,
-			  458,  473,  477,  478,  459,  460,  445,  461,  462,  446,
-			  479,  480,  464,  465,  474,  474,  474,  481,  474,  482,
-			  483,  484,  466,  485,  467,  469,  470,  487,  488,  474,
+			  439,  441,  418,  439,  441,  443,    0,    0,  443,  419,
+			  420,  421,  422,  423,  424,  425,  426,  429,  430,  431,
+			  432,  433,  446,  446,  446,  447,  447,  447,    0,    0,
+			  448,  448,  448,  441,  455,  456,  446,  449,  449,  449,
+			  443,    0,  459,  439,  448,  450,  450,  450,    0,    0,
+			  439,  441,  460,  461,  463,  443,  460,  451,  464,  451,
+			  451,  451,  465,  466,  467,  441,  455,  456,  446,  468,
+			  448,  470,  443,  451,  459,  439,  448,  452,  471,  452,
+			  452,  452,  439,  441,  460,  461,  463,  443,  460,  472,
+			  464,  473,  475,  476,  465,  466,  467,  477,  479,  480,
 
-			  491,  471,  492,  473,  477,  478,  494,  498,  497,  508,
-			  498,  497,  479,  480,  499,    0,    0,  499,    0,  481,
-			    0,  482,  483,  484,    0,  485,  504,  504,  504,  487,
-			  488,  509,  491,    0,  492,  498,    0,  511,  494,  497,
-			  501,  508,  501,    0,    0,  501,  501,  501,  502,  502,
-			  502,  503,  503,  503,  512,  513,  499,  498,  497,  516,
-			    0,  518,  502,  509,  499,  503,  519,  498,  505,  511,
-			  505,  497,  521,  505,  505,  505,  506,  522,  506,  506,
-			  506,  523,  524,  525,  526,  529,  512,  513,  499,  498,
-			  497,  516,  506,  518,  502,  530,  499,  503,  519,  532,
+			  484,  468,  485,  470,  486,  451,  487,  481,  481,  481,
+			  471,  481,  488,  489,  490,  491,  492,  494,  495,  452,
+			  498,  472,  481,  473,  475,  476,  499,  501,    0,  477,
+			  479,  480,  484,    0,  485,    0,  486,  504,  487,  505,
+			  504,    0,  505,  515,  488,  489,  490,  491,  492,  494,
+			  495,  506,  498,    0,  506,  508,    0,  508,  499,  501,
+			  508,  508,  508,  509,  509,  509,  516,  505,  504,  510,
+			  510,  510,  511,  511,  511,  515,  518,  509,  519,  512,
+			  520,  512,  523,  510,  512,  512,  512,  504,  513,  505,
+			  513,  513,  513,  506,  525,  526,  528,  529,  516,  505,
 
-			  533,  535,  539,  540,  521,  542,    0,  545,  544,  522,
-			  545,  544,  556,  523,  524,  525,  526,  529,  558,  546,
-			    0,    0,  546,    0,  506,    0,    0,  530,  547,  547,
-			  547,  532,  533,  535,  539,  540,  544,  542,  548,  548,
-			  548,  549,  549,  549,  556,  560,  550,  546,  550,  545,
-			  558,  550,  550,  550,  551,  549,  551,  545,  544,  551,
-			  551,  551,  552,  552,  552,  553,  553,  553,  544,  546,
-			  554,  554,  554,  561,  562,  565,  552,  560,  555,  546,
-			  555,  545,  568,  555,  555,  555,  569,  549,  571,  545,
-			  544,  570,  570,  570,  572,  573,  575,  576,  582,  579,
+			  504,  506,  530,  531,  513,  532,  534,  537,  518,  509,
+			  519,  538,  520,  540,  523,  510,  541,  543,  547,  504,
+			  548,  505,  550,    0,    0,  506,  525,  526,  528,  529,
+			  555,  555,  555,  506,  530,  531,  513,  532,  534,  537,
+			    0,  552,  564,  538,  552,  540,    0,    0,  541,  543,
+			  547,    0,  548,  553,  550,  554,  553,    0,  554,  556,
+			  556,  556,  557,  557,  557,  558,    0,  558,  566,  552,
+			  558,  558,  558,  559,  564,  559,  557,    0,  559,  559,
+			  559,  568,  569,  554,  560,  560,  560,  561,  561,  561,
+			  570,  552,  562,  562,  562,  553,  573,  576,  560,  577,
 
-			  580,  546,  579,  580,    0,  561,  562,  565,  552,  581,
-			  606,    0,  581,  606,  568,  583,  583,  583,  569,  591,
-			  571,  570,  597,  600,  582,    0,  572,  573,  575,  576,
-			  582,  584,  584,  584,    0,  601,  579,  585,  585,  585,
-			  586,  586,  586,  587,  587,  587,  589,  589,  589,  579,
-			  580,  591,  603,  570,  597,  600,  588,  587,  588,  581,
-			  606,  588,  588,  588,  590,  590,  590,  601,  579,  599,
-			  599,  599,  609,  610,  610,  610,  611,  611,  611,  614,
-			  615,  579,  580,  619,  603,  620,  621,  622,  623,  587,
-			    0,  581,  606,  643,  643,  643,    0,    0,  609,  599,
+			  566,  552,  579,  553,  563,  554,  563,  580,  557,  563,
+			  563,  563,  581,  568,  569,  554,  578,  578,  578,  583,
+			  584,  587,  570,  552,  587,  599,    0,  553,  573,  576,
+			  560,  577,    0,  588,  579,  553,  588,  554,  589,  580,
+			  590,  589,    0,    0,  581,  605,  578,  591,  591,  591,
+			    0,  583,  584,  592,  592,  592,    0,  599,  587,  593,
+			  593,  593,  594,  594,  594,  608,  590,  595,  595,  595,
+			  609,  587,  590,  597,  597,  597,  611,  605,  578,  617,
+			  596,  595,  596,  588,    0,  596,  596,  596,  589,    0,
+			  587,  598,  598,  598,  607,  607,  607,  608,  614,  622,
 
-			    0,    0,    0,    0,  609,    0,    0,    0,    0,    0,
-			    0,  614,  615,    0,    0,  619,    0,  620,  621,  622,
-			  623,  635,  635,  635,  635,  635,  635,  635,  635,  635,
-			    0,  599,  627,  627,  627,  627,  627,  627,  627,  627,
-			  627,  627,  627,  627,  627,  627,  627,  628,  628,  628,
-			  628,  628,  628,  628,  628,  628,  628,  628,  628,  628,
-			  628,  628,  629,  629,  629,  629,  629,  629,  629,  629,
-			  629,  629,  629,  629,  629,  629,  629,  630,  630,  630,
-			  630,  630,  630,  630,  630,  630,  630,  630,  630,  630,
-			  630,  630,  631,  631,  631,  631,  631,  631,  631,  631,
+			  623,  614,  609,  587,  627,  617,  628,  629,  611,  630,
+			  631,  617,    0,  595,    0,  588,  618,  618,  618,    0,
+			  589,  619,  619,  619,  607,  651,  651,  651,    0,    0,
+			    0,  622,  623,    0,    0,    0,  627,    0,  628,  629,
+			    0,  630,  631,    0,    0,    0,    0,    0,  614,    0,
+			    0,    0,    0,  641,    0,  641,  607,  641,  641,  641,
+			  641,  641,  641,  641,  641,  641,  643,  643,  643,  643,
+			  643,  643,  643,  643,  643,    0,    0,    0,    0,    0,
+			  614,  635,  635,  635,  635,  635,  635,  635,  635,  635,
+			  635,  635,  635,  635,  635,  635,  636,  636,  636,  636,
 
-			  631,  631,  631,  631,  631,  631,  631,  632,    0,  632,
-			  632,  632,  632,  632,  632,  632,  632,  632,  632,  632,
-			  632,  632,  633,    0,  633,    0,  633,  633,  633,  633,
-			  633,  633,  633,  633,  633,  634,    0,  634,  634,  634,
-			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
-			  636,    0,  636,  636,  636,    0,  636,  636,  636,  636,
-			  636,  636,  636,  636,  636,  637,  637,  637,  637,  637,
-			  637,  637,  637,  637,  637,  637,  637,  637,  637,  637,
+			  636,  636,  636,  636,  636,  636,  636,  636,  636,  636,
+			  636,  637,  637,  637,  637,  637,  637,  637,  637,  637,
+			  637,  637,  637,  637,  637,  637,  638,  638,  638,  638,
 			  638,  638,  638,  638,  638,  638,  638,  638,  638,  638,
-			  638,  638,  638,  638,  638,  639,  639,  639,  639,  639,
+			  638,  639,  639,  639,  639,  639,  639,  639,  639,  639,
+			  639,  639,  639,  639,  639,  639,  640,    0,  640,  640,
+			  640,  640,  640,  640,  640,  640,  640,  640,  640,  640,
+			  640,  642,    0,  642,  642,  642,  642,  642,  642,  642,
+			  642,  642,  642,  642,  642,  642,  644,    0,  644,  644,
+			  644,    0,  644,  644,  644,  644,  644,  644,  644,  644,
 
-			  639,  639,  639,  639,  639,  639,  639,  639,  639,  639,
-			  640,    0,  640,  640,  640,  640,  640,  640,  640,  640,
-			  640,  640,  640,  640,  640,  641,    0,  641,    0,  641,
-			  641,  641,  641,  641,  641,  641,  641,  641,  641,  641,
-			  642,    0,  642,  642,  642,  642,  642,  642,  642,  642,
-			  642,  642,  642,  642,  642,  644,    0,  644,  644,  644,
-			  644,  644,  644,  644,  644,  644,  644,  644,  644,  644,
-			  645,  645,  645,  645,  645,  645,  645,  645,  645,  645,
-			  645,  645,  645,  645,  645,  646,    0,  646,  646,  646,
+			  644,  645,  645,  645,  645,  645,  645,  645,  645,  645,
+			  645,  645,  645,  645,  645,  645,  646,  646,  646,  646,
 			  646,  646,  646,  646,  646,  646,  646,  646,  646,  646,
+			  646,  647,  647,  647,  647,  647,  647,  647,  647,  647,
+			  647,  647,  647,  647,  647,  647,  648,    0,  648,  648,
+			  648,  648,  648,  648,  648,  648,  648,  648,  648,  648,
+			  648,  649,    0,  649,    0,  649,  649,  649,  649,  649,
+			  649,  649,  649,  649,  649,  649,  650,    0,  650,  650,
+			  650,  650,  650,  650,  650,  650,  650,  650,  650,  650,
+			  650,  652,    0,  652,  652,  652,  652,  652,  652,  652,
 
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626, yy_Dummy>>)
+			  652,  652,  652,  652,  652,  652,  653,  653,  653,  653,
+			  653,  653,  653,  653,  653,  653,  653,  653,  653,  653,
+			  653,  654,    0,  654,  654,  654,  654,  654,  654,  654,
+			  654,  654,  654,  654,  654,  654,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634, yy_Dummy>>)
 		end
 
 	yy_base_template: SPECIAL [INTEGER] is
 		once
 			Result := yy_fixed_array (<<
-			    0,    0,    0,   89,   90,   98,  103,  621,  580,  108,
-			  111,  114,  117,  581, 1800,  120,  123, 1800,  188,    0,
-			 1800,  119, 1800, 1800, 1800, 1800, 1800,  112,  123,  116,
-			  129,  146,  151,  551, 1800,  107, 1800,  126,  537,  180,
-			  100,  183,  114,  193,  237,    0,  237,  181,  102,  250,
-			  129,  120,  188,  245,  112,  244,  173,  194, 1800,  485,
-			 1800, 1800, 1800,  446, 1800,  519, 1800, 1800,  328,   91,
-			  340, 1800, 1800,  159,  520, 1800, 1800,  181, 1800, 1800,
-			  197,  298,  498,  305,  487,  280, 1800,  348,  187,  329,
-			  339,  358,  364,  375,  381,  382,  387,  388,  393,  397,
+			    0,    0,    0,   89,   90,   98,  103,  578,  574,  108,
+			  111,  114,  117,  563, 1836,  120,  123, 1836,  188,    0,
+			 1836,  119, 1836, 1836, 1836, 1836, 1836,  112,  123,  116,
+			  129,  146,  151,  534, 1836,  107, 1836,  126,  518,  180,
+			  100,  183,  114,  193,  237,    0,  237,  181,  102,  110,
+			  250,  129,  121,  188,  245,  195,  244,  173,  239, 1836,
+			  484, 1836, 1836, 1836,  446, 1836,  519, 1836, 1836,  328,
+			   91,  340, 1836, 1836,  159,  520, 1836, 1836,  181, 1836,
+			 1836,  197,  298,  498,  305,  487,  280, 1836,  348,  231,
+			  329,  339,  358,  364,  375,  381,  382,  387,  388,  393,
 
-			  409,  399,  383,  480,    0,  463,  563,  457, 1800, 1800,
-			 1800,  413, 1800, 1800,  472,  480,  487, 1800,    0,  402,
-			 1800, 1800, 1800, 1800, 1800, 1800,    0,  249,  378,  254,
-			  246,  247,  361,  392,  398,  402,  425,  431,  464,    0,
-			  432,  455,  468,  455,  484,  472,    0,  473,  522,    0,
-			  479,  489,  473,  476,  493,  498,    0,  482,  498,  582,
-			  556,  487,  518,  510,  522,  570,  539,  569,  582,  573,
-			 1800, 1800,  460, 1800,  576, 1800, 1800, 1800, 1800, 1800,
-			  601, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800,
-			 1800, 1800, 1800, 1800, 1800, 1800, 1800,  315, 1800, 1800,
+			  397,  409,  399,  383,  480,    0,  463,  563,  457, 1836,
+			 1836, 1836,  413, 1836, 1836,  472,  480,  487, 1836,    0,
+			  402, 1836, 1836, 1836, 1836, 1836, 1836,    0,  260,  378,
+			  263,  362,  377,  379,  411,  429,  435,  446,  441,  464,
+			    0,  448,  470,  468,  473,  486,  475,    0,  476,  522,
+			    0,  482,  539,  491,  477,  481,  497,  560,    0,  485,
+			  499,  583,  576,  487,  518,  517,  562,  587,  574,  572,
+			  584,  589,  580, 1836, 1836,  460, 1836,  576, 1836, 1836,
+			 1836, 1836, 1836,  621, 1836, 1836, 1836, 1836, 1836, 1836,
+			 1836, 1836, 1836, 1836, 1836, 1836, 1836, 1836, 1836, 1836,
 
-			  639,  538, 1800,  451, 1800,  634, 1800,  651,  443, 1800,
-			 1800,  663,  671, 1800, 1800, 1800, 1800,  650, 1800,  652,
-			 1800,  662,  670,  672,  674,  678,  685,  686, 1800,  687,
-			  692, 1800, 1800, 1800,  410,  398,  389,  375,  371,  689,
-			  369,  361,  355,  351,  345,  340,  322,  299,  294,  287,
-			  279,  238,  229,  228,  224,  201, 1800,  747,  762, 1800,
-			  765,  773,  694,  780,  144,  785,  750,  627,  669,    0,
-			    0,  666,  658,    0,  675,  665,  669,  691,  677,  683,
-			  710,  712,    0,  739,  767,  757,  744,  747,  762,  768,
-			  778,  776,  781,  771,  788,  785,  790,  777,  791,  782,
+			  315, 1836, 1836,  663,  536, 1836,  451, 1836,  642, 1836,
+			  668,  443, 1836, 1836,  672,  680, 1836, 1836, 1836, 1836,
+			  629, 1836,  671, 1836,  681,  682,  686,  690,  694,  688,
+			  702, 1836,  701,  710, 1836, 1836, 1836,  410,  398,  389,
+			  375,  371,  692,  369,  361,  355,  351,  345,  340,  322,
+			  299,  294,  287,  279,  238,  229,  228,  224,  201, 1836,
+			  759,  703, 1836,  763,  734,  712,  774,  144,  781,  766,
+			  585,  600,    0,    0,  609,  662,    0,  697,  697,  722,
+			  761,  753,  754,  772,  773,    0,  758,  780,  777,  764,
+			  764,  772,  774,  782,  779,  784,  774,  790,  787,  792,
 
-			    0,  793,  776,  783,  802,  799,  801,  808,  789,  810,
-			  806,  821,  826,  823,  820,  834,  831,  839,  829,  838,
-			  839,  845,  836,    0, 1800,  861,    0,  123,  887, 1800,
-			 1800, 1800,  890,  892,  897,  906, 1800,  907, 1800, 1800,
-			 1800, 1800, 1800, 1800, 1800,  898, 1800, 1800, 1800, 1800,
-			 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800,
-			 1800, 1800,  901,  904,  907,  910,  930,  916,  934,  948,
-			  966,  121,  161,  971,  978,  853,  891,  905,  904,  909,
-			  910,  943,  933,  949,  961,  954,  964,  956,  961,  958,
-			  960,  976,  962,    0,  979,  978,  964,  965,  972,  986,
+			  783,  792,  797,  789,    0,  801,  783,  806,  826,  823,
+			  830,  836,  818,  838,  824,  838,  843,  836,  832,  842,
+			  836,  844,  833,  842,    0,  843,  849,  840,    0, 1836,
+			  897,    0,  123,  882, 1836, 1836, 1836,  888,  915,  916,
+			  917, 1836,  921, 1836, 1836, 1836, 1836, 1836, 1836, 1836,
+			  912, 1836, 1836, 1836, 1836, 1836, 1836, 1836, 1836, 1836,
+			 1836, 1836, 1836, 1836, 1836, 1836, 1836,  915,  919,  925,
+			  932,  940,  943,  947,  964,  969,  121,  161,  979,  990,
+			  893,  900,  957,  956,  956,  954,  972,  964,  980,  979,
+			  969,  979,  972,  977,  974,  975,  989,  980,    0,  997,
 
-			  974,    0,  981,    0,    0,  982, 1054,    0,  989,  980,
-			  994, 1005,  994, 1001, 1008,  997, 1020, 1009, 1033, 1019,
-			 1022,    0,    0, 1034, 1034, 1020, 1033, 1046,    0,    0,
-			 1800, 1061,  105, 1078, 1800, 1079, 1800, 1080, 1800,  163,
-			 1089, 1070, 1092, 1083, 1098, 1110, 1119,    0,    0, 1072,
-			 1085,    0,    0, 1075, 1091, 1081,    0, 1086, 1103, 1108,
-			 1110, 1096, 1103,    0, 1103, 1108, 1126, 1124,    0, 1125,
-			 1132, 1131,    0, 1137, 1182, 1800,  146, 1142, 1126, 1127,
-			 1143, 1153, 1155, 1143, 1157, 1144,    0, 1148, 1168,    0,
-			    0, 1162, 1168,    0, 1163,  138,   61, 1202, 1201, 1208,
+			  994,  980,  982,  989, 1003,  993,    0, 1000,    0, 1007,
+			    0, 1002, 1054,    0, 1006, 1009, 1023, 1031, 1023, 1035,
+			 1040, 1029, 1039, 1027, 1050, 1036, 1039,    0,    0, 1051,
+			 1051, 1037, 1047, 1059,    0,    0, 1836, 1075,  105, 1094,
+			 1836, 1095, 1836, 1099, 1836,  163, 1102, 1105, 1110, 1117,
+			 1125, 1139, 1159,    0,    0, 1091, 1104,    0,    0, 1095,
+			 1118, 1110,    0, 1107, 1123, 1128, 1130, 1115, 1126,    0,
+			 1124, 1135, 1155, 1153,    0, 1154, 1161, 1159,    0, 1144,
+			 1165, 1205, 1836,  146, 1170, 1155, 1151, 1168, 1178, 1179,
+			 1167, 1181, 1167,    0, 1168, 1188,    0,    0, 1182, 1192,
 
-			 1800, 1225, 1228, 1231, 1206, 1253, 1258,    0, 1159, 1182,
-			    0, 1193, 1205, 1221,    0,    0, 1225,    0, 1231, 1232,
-			    0, 1224, 1234, 1232, 1233, 1253, 1235, 1800,  105, 1244,
-			 1247,    0, 1256, 1257,    0, 1267,    0,    0,    0, 1253,
-			 1260,    0, 1256,   37, 1302, 1301, 1313, 1308, 1318, 1321,
-			 1331, 1339, 1342, 1345, 1350, 1363, 1263,    0, 1275,    0,
-			 1312, 1340, 1333,    0,    0, 1339,    0,    0, 1339, 1352,
-			 1389, 1344, 1360, 1363,    0, 1362, 1363,    0,    0, 1393,
-			 1394, 1403, 1364, 1395, 1411, 1417, 1420, 1423, 1441, 1426,
-			 1444, 1385,    0,    0,    0,    0,    0, 1373,    0, 1467,
+			    0, 1184,  138,   61, 1231, 1233, 1245, 1836, 1240, 1243,
+			 1249, 1252, 1264, 1270,    0, 1193, 1217,    0, 1232, 1229,
+			 1246,    0,    0, 1248,    0, 1264, 1261,    0, 1248, 1254,
+			 1253, 1254, 1275,    0, 1257, 1836,  105, 1266, 1263,    0,
+			 1270, 1273,    0, 1283,    0,    0,    0, 1269, 1277,    0,
+			 1273,   37, 1335, 1347, 1349, 1310, 1339, 1342, 1350, 1358,
+			 1364, 1367, 1372, 1389, 1293,    0, 1325,    0, 1348, 1349,
+			 1349,    0,    0, 1360,    0,    0, 1354, 1365, 1414, 1358,
+			 1373, 1380,    0, 1385, 1386,    0,    0, 1415, 1427, 1432,
+			 1406, 1427, 1433, 1439, 1442, 1447, 1465, 1453, 1471, 1391,
 
-			 1382, 1388,    0, 1418,    0,    0, 1404, 1800, 1800, 1438,
-			 1453, 1456,    0,    0, 1438, 1450,    0,    0, 1800, 1453,
-			 1437, 1438, 1439, 1440,    0, 1800, 1800, 1531, 1546, 1561,
-			 1576, 1591, 1606, 1619, 1634, 1514, 1649, 1664, 1679, 1694,
-			 1709, 1724, 1739, 1486, 1754, 1769, 1784, yy_Dummy>>)
+			    0,    0,    0,    0,    0, 1396,    0, 1492, 1424, 1423,
+			    0, 1442,    0,    0, 1492, 1836, 1836, 1445, 1496, 1501,
+			    0,    0, 1458, 1470,    0,    0, 1836, 1474, 1458, 1459,
+			 1461, 1462,    0, 1836, 1836, 1580, 1595, 1610, 1625, 1640,
+			 1655, 1550, 1670, 1559, 1685, 1700, 1715, 1730, 1745, 1760,
+			 1775, 1518, 1790, 1805, 1820, yy_Dummy>>)
 		end
 
 	yy_def_template: SPECIAL [INTEGER] is
 		once
 			Result := yy_fixed_array (<<
-			    0,  626,    1,  627,  627,  628,  628,  629,  629,  630,
-			  630,  631,  631,  626,  626,  626,  626,  626,  632,  633,
-			  626,  634,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  626,  626,
-			  626,  626,  626,  626,  626,  636,  626,  626,  626,  637,
-			  637,  626,  626,  638,  639,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  632,  626,  640,  641,  632,
-			  632,  632,  632,  632,  632,  632,  632,  632,  632,  632,
+			    0,  634,    1,  635,  635,  636,  636,  637,  637,  638,
+			  638,  639,  639,  634,  634,  634,  634,  634,  640,  641,
+			  634,  642,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  643,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  634,
+			  634,  634,  634,  634,  634,  634,  644,  634,  634,  634,
+			  645,  645,  634,  634,  646,  647,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  640,  634,  648,  649,
+			  640,  640,  640,  640,  640,  640,  640,  640,  640,  640,
 
-			  632,  632,  632,  632,  633,  642,  642,  642,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  643,  626,
-			  626,  626,  626,  626,  626,  626,  635,  635,  635,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
-			  626,  626,  636,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  637,  626,  626,
+			  640,  640,  640,  640,  640,  641,  650,  650,  650,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  651,
+			  634,  634,  634,  634,  634,  634,  634,  643,  643,  643,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
+			  643,  643,  643,  634,  634,  644,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
 
-			  637,  638,  626,  639,  626,  626,  626,  626,  644,  626,
-			  626,  640,  641,  626,  626,  626,  626,  632,  626,  632,
-			  626,  632,  632,  632,  632,  632,  632,  632,  626,  632,
-			  632,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  643,  626,  626,  635,  635,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
+			  645,  634,  634,  645,  646,  634,  647,  634,  634,  634,
+			  634,  652,  634,  634,  648,  649,  634,  634,  634,  634,
+			  640,  634,  640,  634,  640,  640,  640,  640,  640,  640,
+			  640,  634,  640,  640,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  651,  634,  634,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
 
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
-			  635,  635,  635,  635,  626,  626,  644,  644,  641,  626,
-			  626,  626,  632,  632,  632,  632,  626,  632,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  643,  626,  626,  626,  635,  635,  635,  635,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  634,
+			  634,  652,  652,  649,  634,  634,  634,  640,  640,  640,
+			  640,  634,  640,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  651,  634,  634,  634,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
 
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
-			  626,  626,  644,  632,  626,  632,  626,  632,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  635,  635,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
-			  635,  635,  635,  635,  626,  626,  626,  635,  635,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
-			  635,  635,  635,  635,  635,  626,  644,  632,  632,  632,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
+			  643,  643,  643,  643,  643,  643,  634,  634,  652,  640,
+			  634,  640,  634,  640,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  643,  643,  643,  643,  643,  643,  643,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
+			  643,  634,  634,  634,  643,  643,  643,  643,  643,  643,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
 
-			  626,  626,  626,  626,  626,  626,  626,  635,  635,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
-			  635,  635,  635,  635,  635,  635,  635,  626,  645,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
-			  635,  635,  635,  644,  632,  632,  632,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  635,  635,  635,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  635,  635,
-			  635,  635,  635,  635,  635,  635,  635,  635,  646,  632,
-			  632,  632,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  635,  635,  635,  635,  635,  635,  635,  635,  626,
+			  643,  643,  634,  652,  640,  640,  640,  634,  634,  634,
+			  634,  634,  634,  634,  643,  643,  643,  643,  643,  643,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
+			  643,  643,  643,  643,  643,  634,  653,  643,  643,  643,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
+			  643,  652,  640,  640,  640,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  643,  643,  643,  643,  643,  643,
+			  643,  643,  643,  643,  643,  643,  643,  643,  643,  643,
+			  643,  643,  643,  643,  643,  643,  654,  640,  640,  640,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  643,
 
-			  635,  635,  635,  635,  635,  635,  632,  626,  626,  626,
-			  626,  626,  635,  635,  626,  635,  635,  635,  626,  626,
-			  635,  626,  635,  626,  635,  626,    0,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626,  626,  626,  626,
-			  626,  626,  626,  626,  626,  626,  626, yy_Dummy>>)
+			  643,  643,  643,  643,  643,  643,  643,  634,  643,  643,
+			  643,  643,  643,  643,  640,  634,  634,  634,  634,  634,
+			  643,  643,  634,  643,  643,  643,  634,  634,  643,  634,
+			  643,  634,  643,  634,    0,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634,  634,  634,  634,  634,  634,
+			  634,  634,  634,  634,  634, yy_Dummy>>)
 		end
 
 	yy_ec_template: SPECIAL [INTEGER] is
@@ -3231,172 +3669,176 @@ feature {NONE} -- Table templates
 			   52,   55,   58,   61,   64,   67,   70,   73,   76,   79,
 			   82,   85,   88,   91,   94,   97,  100,  103,  106,  109,
 			  112,  115,  118,  121,  124,  127,  130,  133,  136,  139,
-			  141,  144,  147,  150,  153,  156,  158,  160,  162,  164,
-			  166,  168,  170,  172,  174,  176,  178,  180,  182,  184,
-			  186,  189,  191,  193,  194,  194,  195,  196,  197,  197,
-			  198,  199,  200,  201,  202,  203,  204,  205,  206,  207,
+			  142,  144,  147,  150,  153,  156,  159,  161,  163,  165,
+			  167,  169,  171,  173,  175,  177,  179,  181,  183,  185,
+			  187,  189,  192,  194,  196,  197,  197,  198,  199,  200,
+			  200,  201,  202,  203,  204,  205,  206,  207,  208,  209,
 
-			  208,  210,  211,  212,  214,  215,  216,  217,  218,  219,
-			  220,  221,  222,  223,  224,  225,  226,  227,  228,  228,
-			  228,  229,  230,  231,  232,  233,  234,  235,  236,  237,
-			  238,  240,  241,  242,  243,  244,  245,  246,  247,  248,
-			  250,  251,  252,  253,  254,  255,  256,  258,  259,  260,
-			  262,  263,  264,  265,  266,  267,  268,  270,  271,  272,
-			  273,  274,  275,  276,  277,  278,  279,  280,  281,  282,
-			  283,  284,  285,  286,  287,  287,  288,  289,  290,  291,
-			  292,  292,  293,  294,  295,  296,  297,  298,  299,  300,
-			  301,  302,  303,  304,  305,  306,  307,  308,  309,  310,
+			  210,  211,  213,  214,  215,  217,  218,  219,  220,  221,
+			  222,  223,  224,  225,  226,  227,  228,  229,  230,  231,
+			  231,  231,  232,  233,  234,  235,  236,  237,  238,  239,
+			  240,  241,  243,  244,  245,  246,  247,  248,  249,  250,
+			  251,  253,  254,  255,  256,  257,  258,  259,  261,  262,
+			  263,  265,  266,  267,  268,  269,  270,  271,  272,  274,
+			  275,  276,  277,  278,  279,  280,  281,  282,  283,  284,
+			  285,  286,  287,  288,  289,  290,  291,  292,  292,  293,
+			  294,  295,  296,  297,  297,  298,  299,  300,  301,  302,
+			  303,  304,  305,  306,  307,  308,  309,  310,  311,  312,
 
-			  311,  312,  313,  315,  316,  317,  317,  318,  319,  320,
-			  321,  323,  325,  326,  328,  330,  332,  334,  335,  337,
-			  338,  340,  341,  342,  343,  344,  345,  346,  347,  348,
-			  349,  350,  352,  353,  355,  356,  357,  358,  359,  360,
-			  361,  362,  363,  364,  365,  366,  367,  368,  369,  370,
-			  371,  372,  373,  374,  375,  376,  377,  379,  380,  380,
-			  381,  382,  382,  383,  384,  385,  386,  386,  387,  388,
-			  390,  392,  393,  394,  396,  397,  398,  399,  400,  401,
-			  402,  403,  404,  406,  407,  408,  409,  410,  411,  412,
-			  413,  414,  415,  416,  417,  418,  419,  420,  421,  423,
+			  313,  314,  315,  316,  317,  318,  320,  321,  322,  322,
+			  323,  324,  325,  326,  328,  330,  331,  333,  335,  337,
+			  339,  340,  342,  343,  345,  346,  347,  348,  349,  350,
+			  351,  352,  353,  354,  355,  357,  358,  360,  361,  362,
+			  363,  364,  365,  366,  367,  368,  369,  370,  371,  372,
+			  373,  374,  375,  376,  377,  378,  379,  380,  381,  382,
+			  384,  385,  385,  386,  387,  387,  388,  389,  390,  391,
+			  391,  392,  393,  395,  397,  398,  399,  401,  402,  403,
+			  404,  405,  406,  407,  408,  409,  411,  412,  413,  414,
+			  415,  416,  417,  418,  419,  420,  421,  422,  423,  424,
 
-			  424,  426,  427,  428,  429,  430,  431,  432,  433,  434,
-			  435,  436,  437,  438,  439,  440,  441,  442,  443,  444,
-			  445,  446,  447,  448,  450,  451,  451,  452,  453,  453,
-			  455,  457,  459,  460,  461,  462,  463,  465,  466,  468,
-			  470,  471,  472,  473,  474,  475,  476,  477,  478,  479,
-			  480,  481,  482,  483,  484,  485,  486,  487,  488,  489,
-			  490,  491,  492,  493,  493,  494,  495,  495,  495,  496,
-			  497,  498,  498,  498,  499,  500,  501,  502,  503,  504,
-			  505,  506,  507,  508,  509,  510,  511,  513,  514,  515,
-			  516,  517,  518,  519,  521,  522,  523,  524,  525,  526,
+			  425,  426,  427,  429,  430,  432,  433,  434,  435,  436,
+			  437,  438,  439,  440,  441,  442,  443,  444,  445,  446,
+			  447,  448,  449,  450,  451,  453,  454,  455,  456,  458,
+			  459,  459,  460,  461,  461,  463,  465,  467,  468,  469,
+			  470,  471,  473,  474,  476,  478,  479,  480,  481,  482,
+			  483,  484,  485,  486,  487,  488,  489,  490,  491,  492,
+			  493,  494,  495,  496,  497,  498,  499,  500,  501,  501,
+			  502,  503,  503,  503,  504,  505,  506,  506,  506,  507,
+			  508,  509,  510,  511,  512,  513,  514,  515,  516,  517,
+			  518,  519,  521,  522,  523,  524,  525,  526,  527,  529,
 
-			  527,  528,  530,  531,  533,  535,  536,  538,  540,  541,
-			  542,  543,  544,  545,  546,  547,  548,  549,  550,  551,
-			  552,  553,  555,  557,  558,  559,  560,  561,  562,  564,
-			  566,  567,  567,  568,  569,  571,  572,  574,  575,  577,
-			  578,  579,  579,  580,  580,  581,  582,  583,  585,  587,
-			  588,  589,  591,  593,  594,  595,  596,  598,  599,  600,
-			  601,  602,  603,  604,  606,  607,  608,  609,  610,  612,
-			  613,  614,  615,  617,  618,  618,  619,  619,  620,  621,
-			  622,  623,  624,  625,  626,  627,  628,  630,  631,  632,
-			  634,  636,  637,  638,  640,  641,  641,  642,  643,  644,
+			  530,  531,  532,  533,  534,  535,  536,  538,  539,  541,
+			  542,  544,  545,  547,  549,  550,  551,  552,  553,  554,
+			  555,  556,  557,  558,  559,  560,  561,  562,  564,  566,
+			  567,  568,  569,  570,  571,  573,  575,  576,  576,  577,
+			  578,  580,  581,  583,  584,  586,  587,  588,  588,  589,
+			  589,  590,  591,  592,  594,  596,  597,  598,  600,  602,
+			  603,  604,  605,  607,  608,  609,  610,  611,  612,  613,
+			  615,  616,  617,  618,  619,  621,  622,  623,  624,  626,
+			  627,  628,  628,  629,  629,  630,  631,  632,  633,  634,
+			  635,  636,  637,  638,  640,  641,  642,  644,  646,  647,
 
-			  645,  646,  646,  647,  648,  648,  648,  649,  651,  652,
-			  653,  655,  656,  657,  658,  660,  662,  663,  665,  666,
-			  667,  669,  670,  671,  672,  673,  674,  675,  676,  676,
-			  677,  678,  680,  681,  682,  684,  685,  687,  689,  691,
-			  692,  693,  695,  696,  697,  698,  699,  700,  700,  701,
-			  702,  702,  702,  703,  703,  704,  704,  705,  707,  708,
-			  710,  711,  712,  713,  715,  717,  718,  720,  722,  723,
-			  724,  725,  726,  727,  728,  730,  731,  732,  734,  736,
-			  737,  738,  739,  740,  740,  741,  741,  742,  743,  743,
-			  743,  744,  745,  747,  749,  751,  753,  755,  756,  758,
+			  648,  650,  651,  651,  652,  653,  654,  655,  656,  656,
+			  657,  658,  658,  658,  659,  661,  662,  663,  665,  666,
+			  667,  668,  670,  672,  673,  675,  676,  677,  679,  680,
+			  681,  682,  683,  684,  686,  687,  688,  688,  689,  690,
+			  692,  693,  694,  696,  697,  699,  701,  703,  704,  705,
+			  707,  708,  709,  710,  711,  712,  712,  713,  714,  714,
+			  714,  715,  715,  716,  716,  717,  719,  720,  722,  723,
+			  724,  725,  727,  729,  730,  732,  734,  735,  736,  737,
+			  738,  739,  740,  742,  743,  744,  746,  748,  749,  750,
+			  751,  752,  752,  753,  753,  754,  755,  755,  755,  756,
 
-			  758,  759,  760,  762,  763,  765,  767,  768,  770,  772,
-			  773,  773,  774,  776,  778,  778,  779,  781,  783,  785,
-			  785,  786,  786,  787,  787,  789,  790,  790, yy_Dummy>>)
+			  757,  759,  761,  763,  765,  767,  768,  770,  770,  771,
+			  772,  774,  775,  777,  779,  780,  782,  784,  785,  785,
+			  786,  788,  790,  790,  791,  793,  795,  797,  797,  798,
+			  798,  799,  799,  801,  802,  802, yy_Dummy>>)
 		end
 
 	yy_acclist_template: SPECIAL [INTEGER] is
 		once
 			Result := yy_fixed_array (<<
-			    0,  173,  173,  175,  175,  206,  204,  205,    1,  204,
-			  205,    1,  205,   36,  204,  205,  176,  204,  205,   41,
-			  204,  205,   15,  204,  205,  143,  204,  205,   24,  204,
-			  205,   25,  204,  205,   32,  204,  205,   30,  204,  205,
-			    9,  204,  205,   31,  204,  205,   14,  204,  205,   33,
-			  204,  205,  115,  204,  205,  115,  204,  205,  115,  204,
-			  205,    8,  204,  205,    7,  204,  205,   19,  204,  205,
-			   18,  204,  205,   20,  204,  205,   11,  204,  205,  113,
-			  204,  205,  113,  204,  205,  113,  204,  205,  113,  204,
-			  205,  113,  204,  205,  113,  204,  205,  113,  204,  205,
+			    0,  175,  175,  177,  177,  208,  206,  207,    1,  206,
+			  207,    1,  207,   36,  206,  207,  178,  206,  207,   41,
+			  206,  207,   15,  206,  207,  145,  206,  207,   24,  206,
+			  207,   25,  206,  207,   32,  206,  207,   30,  206,  207,
+			    9,  206,  207,   31,  206,  207,   14,  206,  207,   33,
+			  206,  207,  117,  206,  207,  117,  206,  207,  117,  206,
+			  207,    8,  206,  207,    7,  206,  207,   19,  206,  207,
+			   18,  206,  207,   20,  206,  207,   11,  206,  207,  115,
+			  206,  207,  115,  206,  207,  115,  206,  207,  115,  206,
+			  207,  115,  206,  207,  115,  206,  207,  115,  206,  207,
 
-			  113,  204,  205,  113,  204,  205,  113,  204,  205,  113,
-			  204,  205,  113,  204,  205,  113,  204,  205,  113,  204,
-			  205,  113,  204,  205,  113,  204,  205,  113,  204,  205,
-			  113,  204,  205,  113,  204,  205,   28,  204,  205,  204,
-			  205,   29,  204,  205,   34,  204,  205,   26,  204,  205,
-			   27,  204,  205,   12,  204,  205,  177,  205,  203,  205,
-			  201,  205,  202,  205,  173,  205,  173,  205,  172,  205,
-			  171,  205,  173,  205,  175,  205,  174,  205,  169,  205,
-			  169,  205,  168,  205,    6,  205,    5,    6,  205,    5,
-			  205,    6,  205,    1,  176,  165,  176,  176,  176,  176,
+			  115,  206,  207,  115,  206,  207,  115,  206,  207,  115,
+			  206,  207,  115,  206,  207,  115,  206,  207,  115,  206,
+			  207,  115,  206,  207,  115,  206,  207,  115,  206,  207,
+			  115,  206,  207,  115,  206,  207,  115,  206,  207,   28,
+			  206,  207,  206,  207,   29,  206,  207,   34,  206,  207,
+			   26,  206,  207,   27,  206,  207,   12,  206,  207,  179,
+			  207,  205,  207,  203,  207,  204,  207,  175,  207,  175,
+			  207,  174,  207,  173,  207,  175,  207,  177,  207,  176,
+			  207,  171,  207,  171,  207,  170,  207,    6,  207,    5,
+			    6,  207,    5,  207,    6,  207,    1,  178,  167,  178,
 
-			  176,  176,  176,  176,  176,  176,  176,  176,  176, -372,
-			  176,  176,  176, -372,   41,  143,  143,  143,    2,   35,
-			   10,  118,   39,   23,  118,  115,  115,  114,   16,   37,
-			   21,   22,   38,   17,  113,  113,  113,  113,   46,  113,
-			  113,  113,  113,  113,  113,  113,  113,  113,   58,  113,
-			  113,  113,  113,  113,  113,  113,   70,  113,  113,  113,
-			   77,  113,  113,  113,  113,  113,  113,  113,   89,  113,
-			  113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-			  113,  113,  113,   40,   13,  177,  201,  194,  192,  193,
-			  195,  196,  197,  198,  178,  179,  180,  181,  182,  183,
+			  178,  178,  178,  178,  178,  178,  178,  178,  178,  178,
+			  178,  178, -376,  178,  178,  178, -376,   41,  145,  145,
+			  145,    2,   35,   10,  120,   39,   23,  120,  117,  117,
+			  116,   16,   37,   21,   22,   38,   17,  115,  115,  115,
+			  115,   46,  115,  115,  115,  115,  115,  115,  115,  115,
+			  115,   58,  115,  115,  115,  115,  115,  115,  115,   70,
+			  115,  115,  115,   77,  115,  115,  115,  115,  115,  115,
+			  115,  115,   90,  115,  115,  115,  115,  115,  115,  115,
+			  115,  115,  115,  115,  115,  115,  115,  115,   40,   13,
+			  179,  203,  196,  194,  195,  197,  198,  199,  200,  180,
 
-			  184,  185,  186,  187,  188,  189,  190,  191,  173,  172,
-			  171,  173,  173,  170,  171,  175,  174,  168,    5,    4,
-			  166,  164,  166,  176, -372, -372,  151,  166,  149,  166,
-			  150,  166,  152,  166,  176,  145,  166,  176,  146,  166,
-			  176,  176,  176,  176,  176,  176,  176, -167,  176,  176,
-			  153,  166,  143,  119,  143,  143,  143,  143,  143,  143,
-			  143,  143,  143,  143,  143,  143,  143,  143,  143,  143,
-			  143,  143,  143,  143,  143,  143,  143,  120,  143,  118,
-			  116,  118,  115,  115,  117,  115,  113,  113,   44,  113,
-			   45,  113,  113,  113,   49,  113,  113,  113,  113,  113,
+			  181,  182,  183,  184,  185,  186,  187,  188,  189,  190,
+			  191,  192,  193,  175,  174,  173,  175,  175,  172,  173,
+			  177,  176,  170,    5,    4,  168,  166,  168,  178, -376,
+			 -376,  153,  168,  151,  168,  152,  168,  154,  168,  178,
+			  147,  168,  178,  148,  168,  178,  178,  178,  178,  178,
+			  178,  178, -169,  178,  178,  155,  168,  145,  121,  145,
+			  145,  145,  145,  145,  145,  145,  145,  145,  145,  145,
+			  145,  145,  145,  145,  145,  145,  145,  145,  145,  145,
+			  145,  145,  122,  145,  120,  118,  120,  117,  117,  119,
+			  117,  115,  115,   44,  115,   45,  115,  115,  115,   49,
 
-			  113,  113,  113,  113,   61,  113,  113,  113,  113,  113,
-			  113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-			  113,   81,  113,  113,   84,  113,  113,  113,  113,  113,
-			  113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-			  113,  113,  113,  113,  113,  113,  113,  113,  112,  113,
-			  200,    4,    4,  154,  166,  147,  166,  148,  166,  176,
-			  176,  176,  176,  161,  166,  176,  156,  166,  155,  166,
-			  137,  135,  136,  138,  139,  144,  140,  141,  121,  122,
-			  123,  124,  125,  126,  127,  128,  129,  130,  131,  132,
-			  133,  134,  118,  118,  118,  118,  115,  115,  115,  115,
+			  115,  115,  115,  115,  115,  115,  115,  115,  115,   61,
+			  115,  115,  115,  115,  115,  115,  115,  115,  115,  115,
+			  115,  115,  115,  115,  115,  115,  115,   82,  115,  115,
+			   85,  115,  115,  115,  115,  115,  115,  115,  115,  115,
+			  115,  115,  115,  115,  115,  115,  115,  115,  115,  115,
+			  115,  110,  115,  115,  115,  115,  114,  115,  202,    4,
+			    4,  156,  168,  149,  168,  150,  168,  178,  178,  178,
+			  178,  163,  168,  178,  158,  168,  157,  168,  139,  137,
+			  138,  140,  141,  146,  142,  143,  123,  124,  125,  126,
+			  127,  128,  129,  130,  131,  132,  133,  134,  135,  136,
 
-			  113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-			  113,   59,  113,  113,  113,  113,  113,  113,  113,   68,
-			  113,  113,  113,  113,  113,  113,  113,  113,   78,  113,
-			  113,   80,  113,   82,  113,  113,   87,  113,   88,  113,
-			  113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-			  113,  113,  113,  103,  113,  104,  113,  113,  113,  113,
-			  113,  113,  110,  113,  111,  113,  199,    4,  176,  157,
-			  166,  176,  160,  166,  176,  163,  166,  144,  118,  118,
-			  118,  118,  115,   42,  113,   43,  113,  113,  113,   50,
-			  113,   51,  113,  113,  113,  113,   56,  113,  113,  113,
+			  120,  120,  120,  120,  117,  117,  117,  117,  115,  115,
+			  115,  115,  115,  115,  115,  115,  115,  115,  115,   59,
+			  115,  115,  115,  115,  115,  115,  115,   68,  115,  115,
+			  115,  115,  115,  115,  115,  115,   78,  115,  115,   80,
+			  115,  115,   83,  115,  115,   88,  115,   89,  115,  115,
+			  115,  115,  115,  115,  115,  115,  115,  115,  115,  115,
+			  115,  115,  104,  115,  105,  115,  115,  115,  115,  115,
+			  115,  112,  115,  113,  115,  201,    4,  178,  159,  168,
+			  178,  162,  168,  178,  165,  168,  146,  120,  120,  120,
+			  120,  117,   42,  115,   43,  115,  115,  115,   50,  115,
 
-			  113,  113,  113,  113,   66,  113,  113,  113,  113,  113,
-			   73,  113,  113,  113,  113,   79,  113,  113,   85,  113,
-			  113,  113,  113,  113,  113,  113,  113,  113,   99,  113,
-			  113,  113,  102,  113,  105,  113,  113,  113,  108,  113,
-			  113,    4,  176,  176,  176,  142,  118,  118,  118,   47,
-			  113,  113,  113,   53,  113,  113,  113,  113,   60,  113,
-			   62,  113,  113,   64,  113,  113,  113,   69,  113,  113,
-			  113,  113,  113,  113,  113,   86,  113,  113,   92,  113,
-			  113,  113,   95,  113,  113,   97,  113,   98,  113,  100,
-			  113,  113,  113,  107,  113,  113,    4,  176,  176,  176,
+			   51,  115,  115,  115,  115,   56,  115,  115,  115,  115,
+			  115,  115,  115,   66,  115,  115,  115,  115,  115,   73,
+			  115,  115,  115,  115,   79,  115,  115,  115,   86,  115,
+			  115,  115,  115,  115,  115,  115,  115,  115,  100,  115,
+			  115,  115,  103,  115,  106,  115,  115,  115,  109,  115,
+			  115,    4,  178,  178,  178,  144,  120,  120,  120,   47,
+			  115,  115,  115,   53,  115,  115,  115,  115,   60,  115,
+			   62,  115,  115,   64,  115,  115,  115,   69,  115,  115,
+			  115,  115,  115,  115,   81,  115,  115,   87,  115,  115,
+			   93,  115,  115,  115,   96,  115,  115,   98,  115,   99,
 
-			  118,  118,  118,  118,  113,   52,  113,  113,   55,  113,
-			  113,  113,  113,   67,  113,   71,  113,  113,   74,  113,
-			   75,  113,  113,  113,  113,  113,  113,  113,   96,  113,
-			  113,  113,  109,  113,    3,    4,  176,  176,  176,  118,
-			  118,  118,  118,  118,  113,   54,  113,   57,  113,   63,
-			  113,   65,  113,   72,  113,  113,   83,  113,  113,  113,
-			   93,  113,  113,  101,  113,  106,  113,  176,  159,  166,
-			  162,  166,  118,  118,   48,  113,   76,  113,  113,   91,
-			  113,   94,  113,  158,  166,  113,  113,   90,  113,   90, yy_Dummy>>)
+			  115,  101,  115,  115,  115,  108,  115,  115,    4,  178,
+			  178,  178,  120,  120,  120,  120,  115,   52,  115,  115,
+			   55,  115,  115,  115,  115,   67,  115,   71,  115,  115,
+			   74,  115,   75,  115,  115,  115,  115,  115,  115,  115,
+			   97,  115,  115,  115,  111,  115,    3,    4,  178,  178,
+			  178,  120,  120,  120,  120,  120,  115,   54,  115,   57,
+			  115,   63,  115,   65,  115,   72,  115,  115,   84,  115,
+			  115,  115,   94,  115,  115,  102,  115,  107,  115,  178,
+			  161,  168,  164,  168,  120,  120,   48,  115,   76,  115,
+			  115,   92,  115,   95,  115,  160,  168,  115,  115,   91,
+
+			  115,   91, yy_Dummy>>)
 		end
 
 feature {NONE} -- Constants
 
-	yyJam_base: INTEGER is 1800
+	yyJam_base: INTEGER is 1836
 			-- Position in `yy_nxt'/`yy_chk' tables
 			-- where default jam table starts
 
-	yyJam_state: INTEGER is 626
+	yyJam_state: INTEGER is 634
 			-- State id corresponding to jam state
 
-	yyTemplate_mark: INTEGER is 627
+	yyTemplate_mark: INTEGER is 635
 			-- Mark between normal states and templates
 
 	yyNull_equiv_class: INTEGER is 1
@@ -3415,10 +3857,10 @@ feature {NONE} -- Constants
 			-- regular expression with both leading
 			-- and trailing parts having variable length?
 
-	yyNb_rules: INTEGER is 205
+	yyNb_rules: INTEGER is 207
 			-- Number of rules
 
-	yyEnd_of_buffer: INTEGER is 206
+	yyEnd_of_buffer: INTEGER is 208
 			-- End of buffer rule code
 
 	yyLine_used: BOOLEAN is true

@@ -20,18 +20,18 @@
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
 		<library name="time" location="$ISE_LIBRARY\library\time\time.ecf"/>
 		<assembly name="eiffelsoftware.runtime" location="$ISE_EIFFEL\studio\spec\$ISE_PLATFORM\lib\EiffelSoftware.Runtime.dll"/>
-		<cluster name="gobo_kernel" location="library\kernel\" recursive="true"/>
-		<cluster name="gobo_lexical" location="library\lexical\" recursive="true"/>
-		<cluster name="gobo_math" location="library\math\" recursive="true"/>
-		<cluster name="gobo_parse" location="library\parse\" recursive="true"/>
-		<cluster name="gobo_pattern" location="library\pattern\" recursive="true"/>
-		<cluster name="gobo_regexp" location="library\regexp\" recursive="true"/>
-		<cluster name="gobo_string" location="library\string\" recursive="true"/>
-		<cluster name="gobo_structure" location="library\structure\" recursive="true"/>
-		<cluster name="gobo_time" location="library\time\" recursive="true"/>
-		<cluster name="gobo_tools" location="library\tools\" recursive="true"/>
-		<cluster name="gobo_utility" location="library\utility\" recursive="true"/>
-		<cluster name="gobo_xml" location="library\xml\" recursive="true">
+		<cluster name="gobo_kernel" location="$GOBO\library\kernel\" recursive="true"/>
+		<cluster name="gobo_lexical" location="$GOBO\library\lexical\" recursive="true"/>
+		<cluster name="gobo_math" location="$GOBO\library\math\" recursive="true"/>
+		<cluster name="gobo_parse" location="$GOBO\library\parse\" recursive="true"/>
+		<cluster name="gobo_pattern" location="$GOBO\library\pattern\" recursive="true"/>
+		<cluster name="gobo_regexp" location="$GOBO\library\regexp\" recursive="true"/>
+		<cluster name="gobo_string" location="$GOBO\library\string\" recursive="true"/>
+		<cluster name="gobo_structure" location="$GOBO\library\structure\" recursive="true"/>
+		<cluster name="gobo_time" location="$GOBO\library\time\" recursive="true"/>
+		<cluster name="gobo_tools" location="$GOBO\library\tools\" recursive="true"/>
+		<cluster name="gobo_utility" location="$GOBO\library\utility\" recursive="true"/>
+		<cluster name="gobo_xml" location="$GOBO\library\xml\" recursive="true">
 			<file_rule>
 				<exclude>/expat$</exclude>
 			</file_rule>

@@ -507,6 +507,22 @@ feature {AST_EIFFEL} -- Skeleton Visitors
 		deferred
 		end
 
+	process_modify_as (l_as: MODIFY_AS) is
+			-- Process `l_as'.
+		require
+			non_void_as: l_as /= Void
+		do
+			-- TODO: This should be deferred.
+		end
+
+	process_use_as (l_as: USE_AS) is
+			-- Process `l_as'.
+		require
+			non_void_as: l_as /= Void
+		do
+			-- TODO: This should be deferred.
+		end
+
 	process_convert_feat_as (l_as: CONVERT_FEAT_AS) is
 			-- Process `l_as'.
 		require

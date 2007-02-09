@@ -63,7 +63,7 @@ inherit
 			new_class_list_as, new_local_dec_list_as, new_formal_argu_dec_list_as, new_debug_key_list_as,
 			new_delayed_actual_list_as, new_parameter_list_as,
 			new_rename_clause_as, new_export_clause_as, new_undefine_clause_as, new_redefine_clause_as, new_select_clause_as,
-			new_creation_constrain_triple, new_named_tuple_type_as, new_line_pragma
+			new_creation_constrain_triple, new_named_tuple_type_as, new_line_pragma, new_use_as, new_modify_as
 		end
 
 feature -- Buffer operation
@@ -945,7 +945,7 @@ feature -- Access
 		do
 		end
 
-	new_routine_as (o: STRING_AS; pr: REQUIRE_AS;
+	new_routine_as (o: STRING_AS; pr: REQUIRE_AS; uf: USE_AS; mf: MODIFY_AS;
 			l: LOCAL_DEC_LIST_AS; b: ROUT_BODY_AS; po: ENSURE_AS;
 			r: EIFFEL_LIST [INSTRUCTION_AS]; end_loc: KEYWORD_AS;
 			oms_count, a_pos: INTEGER; k_as, r_as: KEYWORD_AS): ROUTINE_AS
@@ -1107,6 +1107,16 @@ feature -- Access
 		do
 		end
 
+	new_use_as (a: EIFFEL_LIST [TAGGED_AS]; k_as: KEYWORD_AS): USE_AS is
+			-- New USE AST node
+		do
+		end
+	
+	new_modify_as (a: EIFFEL_LIST [TAGGED_AS]; k_as: KEYWORD_AS): MODIFY_AS is
+			-- New MODIFY AST node
+		do
+		end
+	
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"

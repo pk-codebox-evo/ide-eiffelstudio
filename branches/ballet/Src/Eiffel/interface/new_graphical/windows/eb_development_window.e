@@ -331,7 +331,6 @@ feature {NONE} -- Initialization
 			if eiffel_layout.has_profiler then
 				create show_profiler
 			end
-
 				-- Undo/redo, cut, copy, paste.
 			create undo_cmd.make (Current)
 			toolbarable_commands.extend (undo_cmd)
@@ -1817,6 +1816,15 @@ feature {NONE} -- Menu Building
 			command_menu_item := run_finalized_cmd.new_menu_item
 			add_recyclable (command_menu_item)
 			project_menu.extend (command_menu_item)
+
+				-- Separator -------------------------------------------------
+			project_menu.extend (create {EV_MENU_SEPARATOR})
+
+			create verify_cmd
+			command_menu_item := verify_cmd.new_menu_item
+			add_recyclable (command_menu_item)
+			project_menu.extend (command_menu_item)
+			verify_cmd.enable_sensitive
 
 				-- Separator -------------------------------------------------
 			project_menu.extend (create {EV_MENU_SEPARATOR})
@@ -4563,6 +4571,9 @@ feature{EB_TOOL}
 
 	command_controller: EB_EDITOR_COMMAND_CONTROLLER
 			-- Object that takes care of updating the sensitivity of all editor commands.
+
+	verify_cmd: EB_VERIFY_COMMAND
+			-- Command to call the ballet verifier
 
 	save_as_cmd: EB_SAVE_FILE_AS_COMMAND
 			-- Command to save a class with a different file name.

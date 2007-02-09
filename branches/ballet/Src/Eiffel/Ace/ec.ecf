@@ -209,6 +209,9 @@
 	<target name="bench" extends="common">
 		<description>Eiffel Studio</description>
 		<root class="EB_KERNEL" feature="make"/>
+		<option>
+			<assertions precondition="false" postcondition="false" check="false" invariant="false" loop="false"/>
+		</option>
 		<external_object location="$(EIFFEL_SRC)/C/ipc/ewb/libmtwewb.a">
 			<condition>
 				<platform excluded_value="windows"/>
@@ -276,11 +279,19 @@
 		<library name="thread" location="$ISE_LIBRARY\library\thread\thread.ecf" readonly="false"/>
 		<library name="vision2" location="$ISE_LIBRARY\library\vision2\vision2.ecf" readonly="false"/>
 		<library name="vision2_extension" location="$ISE_LIBRARY\library\vision2_extension\vision2_extension.ecf" readonly="false"/>
+		<cluster name="ballet" location="$EIFFEL_SRC\Eiffel\ballet\" recursive="true">
+			<option>
+				<assertions precondition="true" postcondition="true" check="true" invariant="false" loop="false"/>
+			</option>
+		</cluster>
 		<cluster name="beurk" location="$EIFFEL_SRC\Eiffel\beurk\" recursive="true"/>
 		<cluster name="cli_debugger" location="$EIFFEL_SRC\Eiffel\library\cli_debugger\" recursive="true">
 			<condition>
 				<platform value="windows"/>
 			</condition>
+			<option>
+				<assertions precondition="false" postcondition="true" check="true" invariant="false" loop="false"/>
+			</option>
 			<file_rule>
 				<exclude>/unix$</exclude>
 			</file_rule>
@@ -304,11 +315,18 @@
 				<exclude>/spec$</exclude>
 			</file_rule>
 		</cluster>
-		<cluster name="compiler_api" location="$EIFFEL_SRC\Eiffel\API\" recursive="true"/>
+		<cluster name="compiler_api" location="$EIFFEL_SRC\Eiffel\API\" recursive="true">
+			<option>
+				<assertions precondition="true" postcondition="false" check="false" invariant="false" loop="false"/>
+			</option>
+		</cluster>
 		<cluster name="compiler_unix" location="$EIFFEL_SRC\Eiffel\eiffel\" recursive="true">
 			<condition>
 				<platform excluded_value="windows"/>
 			</condition>
+			<option>
+				<assertions precondition="true" postcondition="false" check="false" invariant="false" loop="false"/>
+			</option>
 			<file_rule>
 				<exclude>/windows$</exclude>
 				<exclude>/com_il_generation$</exclude>
@@ -372,6 +390,9 @@
 			</file_rule>
 		</cluster>
 		<cluster name="parser" location="$EIFFEL_SRC\Eiffel\parser\" recursive="true">
+			<option>
+				<assertions precondition="true" postcondition="false" check="false" invariant="false" loop="false"/>
+			</option>
 			<file_rule>
 				<exclude>/compiler_override$</exclude>
 				<exclude>/error$</exclude>
