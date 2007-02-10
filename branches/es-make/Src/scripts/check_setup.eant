@@ -291,8 +291,9 @@
 		<echo message="Checking Windows resources." />
 		<echo message="" />
 		
-		<!-- check if ES is installed -->
-		<available resource="${ISE_EIFFEL}/studio/spec/${ISE_PLATFORM}/bin/ec${exe}" variable="res_ec"/>
+		<!-- check if ES is installed -->		
+		<available resource="${ISE_EIFFEL}\studio\spec\${ISE_PLATFORM}\bin\ec${exe}" variable="res_ec"/>
+		<echo message="DEBUG: res_ec: ${res_ec}"/>
 		<set name="setup_error" value="" unless="$res_ec=true" />
 		<echo message="  -> EiffelStudio installed, exit code: $res_ec, ok" if="$res_ec=true" />
 		<echo message="  -> EiffelStudio not installed, exit code: $res_ec! please check you have EiffelStudio installed." unless="$res_ec=true" />		
