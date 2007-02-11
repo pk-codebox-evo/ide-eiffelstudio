@@ -207,10 +207,10 @@
 		</copy>
 
 		<!-- headers -->
-		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM" />
-		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}bin" />
-		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}include" />
-		<mkdir directory="studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}lib" />
+		<mkdir directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}$ISE_PLATFORM" />
+		<mkdir directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}bin" />
+		<mkdir directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}include" />
+		<mkdir directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}$ISE_PLATFORM${path_separator}lib" />
 		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}include" dir="${EIFFEL_SRC}${path_separator}C${path_separator}run-time">
 			<fileset include="@(*.h)" />
 		</copy>
@@ -219,9 +219,12 @@
 		<copy file="${EIFFEL_SRC}${path_separator}C${path_separator}eif_confmagic.h" to_file="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}include${path_separator}eif_confmagic.h" />
 		<copy file="${EIFFEL_SRC}${path_separator}C${path_separator}run-time${path_separator}x2c${exe}" to_file="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}x2c${exe}" />
 		<copy file="${EIFFEL_SRC}${path_separator}C${path_separator}ipc${path_separator}daemon${path_separator}ecdbgd${exe}" to_file="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}ecdbgd${exe}" />
-		<copy to_directory="${INSTALL_DIR}${path_separator}precomp${path_separator}spec${path_separator}${ISE_PLATFORM}" dir="precomp${path_separator}spec${path_separator}platform">
+		
+<!-- do we need this?
+		<copy to_directory="${INSTALL_DIR}${path_separator}precomp${path_separator}spec${path_separator}${ISE_PLATFORM}" dir="${ISE_EIFFEL}${path_separator}precomp${path_separator}spec${path_separator}platform">
 			<fileset include="@(**/*)" exclude="@(**/.svn/**/*)" />
 		</copy>
+-->
 
 		<geant target="create_delivery_unix" reuse_variables="true" fork="false" dir="${NEW_ISE_EIFFEL}" />
 		<geant target="create_delivery_windows" reuse_variables="true" fork="false" dir="${NEW_ISE_EIFFEL}" />
@@ -235,15 +238,20 @@
 		<unset name="old_ISE_LIBRARY" />
 		<set name="return_code" value="0" />
 	</target>
+	
 	<target name="create_delivery_windows" depend="init_delivery" if="${is_windows}">
 		<!-- Windows -->
-		<mkdir directory="studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}lib${path_separator}${ISE_C_COMPILER}" />
+		<mkdir directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}lib${path_separator}${ISE_C_COMPILER}" />
 		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}lib${path_separator}${ISE_C_COMPILER}" dir="${EIFFEL_SRC}${path_separator}C${path_separator}run-time${path_separator}LIB">
 			<fileset include="@(*.lib|*.dll)" />
 		</copy>
+		
+<!-- do we need this?				
 		<copy to_directory="${INSTALL_DIR}${path_separator}studio${path_separator}config${path_separator}${ISE_PLATFORM}" dir="studio${path_separator}config${path_separator}windows" unless="${ISE_PLATFORM}=windows">
 			<fileset include="@(**/*)" exclude="@(**/.svn/**/*)" />
 		</copy>
+-->
+		
 	</target>
 	<target name="create_delivery_unix" depend="init_delivery" unless="${is_windows}">
 		<exec executable="chmod a+x ${INSTALL_DIR}${path_separator}make_install" accept_errors="true" />
