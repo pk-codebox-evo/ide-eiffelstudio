@@ -1,7 +1,22 @@
 @echo off
+rem
+rem	<description>
+rem		description: "Entry point to the automatic build script, for use on windows machines"
+rem		author: "bherlig, es-make Project Team, ETH Zurich"
+rem	</description>
+rem
+
 
 rem common definitions
 set find_bin=%SYSTEMROOT%\system32\find
+
+rem checking for find.exe
+find 2> NUL:
+if not %ERRORLEVEL%==2 goto find_error
+
+rem checking for geant
+geant nonexistingtarget 2> NUL:
+if not %ERRORLEVEL%==1 goto geant_error
 
 rem **********************************************************************
 rem ATTENTION
@@ -55,12 +70,30 @@ goto end
 geant clean
 goto end
 
+:find_error
+echo ===============================================================================
+echo find.exe not found, aborting ...
+echo ===============================================================================
+goto end
+
+:geant_error
+del tmp
+echo ===============================================================================
+echo geant not found, aborting ...
+echo ===============================================================================
+goto end
+
 :reg_error
 del tmp
 echo ===============================================================================
 echo Reg.exe is not installed. Install it from the Windows 2000 Support Tools (from the Install CD), or download it from here: http://www.dynawell.com/reskit/microsoft/win2000/reg.zip 
 echo ===============================================================================
+goto end
 
 :end
 set find_bin=
+echo.
+echo --------------------------------------------------------------------
 echo Makefile.bat completed
+echo --------------------------------------------------------------------
+
