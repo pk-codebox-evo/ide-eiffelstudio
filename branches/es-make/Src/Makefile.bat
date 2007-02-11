@@ -51,6 +51,10 @@ goto end
 geant build_delivery
 goto end
 
+:clean
+geant clean
+goto end
+
 :reg_error
 del tmp
 echo ===============================================================================
