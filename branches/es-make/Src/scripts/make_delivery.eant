@@ -35,6 +35,8 @@
 		<echo message=" geant generate_documentation" />
 		<echo message=" geant build_wizards" />
 		<echo message=" geant cleanup" />
+		<echo message="     ----------" />
+		<echo message=" geant clean_delivery" />
 	</target>
 
 	<target name="init_delivery" depend="init_system" >
@@ -285,6 +287,15 @@
 		<mkdir directory="${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin" if="${tmp_available}=true" />
 		<copy dir="${OUTPUT_DIR}" file="esbuilder${exe}" to_directory="${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin" if="${tmp_available}=true" />
 
+		<available dir="${OUTPUT_DIR}" resource="quick_finalize${exe}" variable="tmp_available" />
+		<copy dir="${OUTPUT_DIR}" file="quick_finalize${exe}" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true" />
+
+		<available dir="${OUTPUT_DIR}" resource="escln${exe}" variable="tmp_available" />
+		<copy dir="${OUTPUT_DIR}" file="escln${exe}" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true" />
+
+		<available dir="${OUTPUT_DIR}" resource="compile_all${exe}" variable="tmp_available" />
+		<copy dir="${OUTPUT_DIR}" file="compile_all${exe}" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true" />
+
 		<copy dir="${OUTPUT_DIR}" to_directory="${tmp_install_dir}${path_separator}bin">
 			<fileset include="@(*.dll)" />
 		</copy>
@@ -306,6 +317,7 @@
 	<target name="install_executables_windows" depend="init_delivery" if="${is_windows}">
 		<available dir="${OUTPUT_DIR}" resource="wel_hook.dll" variable="tmp_available" />
 		<copy dir="${OUTPUT_DIR}" file="wel_hook.dll" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true" />
+		<copy dir="${OUTPUT_DIR}" file="wel_hook.dll" to_directory="${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin" if="${tmp_available}=true" />
 
 		<available dir="${OUTPUT_DIR}" resource="EiffelSoftware.Runtime.dll" variable="tmp_available" />
 		<copy dir="${OUTPUT_DIR}" file="EiffelSoftware.Runtime.dll" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true" />
@@ -313,9 +325,6 @@
 
 		<available dir="${OUTPUT_DIR}" resource="finish_freezing${exe}" variable="tmp_available" />
 		<copy dir="${OUTPUT_DIR}" file="finish_freezing${exe}" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true" />
-
-		<available dir="${OUTPUT_DIR}" resource="quick_finalize${exe}" variable="tmp_available" />
-		<copy dir="${OUTPUT_DIR}" file="quick_finalize${exe}" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true" />
 
 		<available dir="${OUTPUT_DIR}" resource="h2e${exe}" variable="tmp_available" />
 		<copy dir="${OUTPUT_DIR}" file="h2e${exe}" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true" />
@@ -347,11 +356,16 @@
 		<!-- remove unused directories -->
 		<exec executable="rmdir /q/s ${INSTALL_DIR}${path_separator}scripts" if="${is_windows}" accept_errors="true" />
 		<exec executable="rm -rf ${INSTALL_DIR}${path_separator}scripts" unless="${is_windows}" accept_errors="true" />
-		<exec executable="rmdir /q/s ${INSTALL_DIR}${path_separator}wizards" if="${is_windows}" accept_errors="true" />
-		<exec executable="rm -rf ${INSTALL_DIR}${path_separator}wizards" unless="${is_windows}" accept_errors="true" />
 
-		<!-- remove codedom_provider on unix -->
+		<exec executable="rmdir /q/s ${INSTALL_DIR}${path_separator}studio${path_separator}eifinit${path_separator}spec${path_separator}unix" if="${is_windows}" accept_errors="true" />
+		<exec executable="rm -rf ${INSTALL_DIR}${path_separator}studio${path_separator}eifinit${path_separator}spec${path_separator}windows" unless="${is_windows}" accept_errors="true" />
+
+		<!-- remove on unix -->
+		<exec executable="rm -rf ${INSTALL_DIR}${path_separator}wizards" unless="${is_windows}" accept_errors="true" />
 		<exec executable="rm -rf ${INSTALL_DIR}${path_separator}codedom_provider" unless="${is_windows}" accept_errors="true" />
+
+		<!-- remove on windows -->
+		<exec executable="rmdir /q/s ${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}unix" if="${is_windows}" accept_errors="true" />
 	</target>
 
 	<target name="generate_documentation" depend="init_delivery">

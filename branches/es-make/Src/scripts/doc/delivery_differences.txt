@@ -1,0 +1,279 @@
+Only in /cygdrive/d/appz/dev/Eiffel60/C_library/libpng: libpng.LST
+Only in /cygdrive/d/appz/dev/Eiffel60/C_library/libpng: turboc.$ln
+
+Only in Eiffel60/C_library/zlib: build.eant
+Only in Eiffel60/C_library/zlib: example.exe
+
+Only in /cygdrive/d/appz/dev/Eiffel60/C_library/zlib: turboc.$ln
+Only in /cygdrive/d/appz/dev/Eiffel60/C_library/zlib: zlib.BAK
+
+Only in Eiffel60: INSTALL.readme
+Only in Eiffel60: VERSION
+Only in Eiffel60: build_es.log
+Only in Eiffel60: codedom_provider
+
+Only in Eiffel60/docs: HTMLSimpleFilterTemplate.html
+Only in Eiffel60/docs: default.css
+Only in Eiffel60/docs: docs.html
+Only in Eiffel60/docs: docs_no_content.html
+Only in Eiffel60/docs: docs_settings.xml
+Only in Eiffel60/docs: file.gif
+Only in Eiffel60/docs: folder.gif
+Only in Eiffel60/docs: folder_open.gif
+Only in Eiffel60/docs: general
+Only in Eiffel60/docs: go_up.gif
+Only in Eiffel60/docs: header.css
+Only in Eiffel60/docs: header.html
+Only in Eiffel60/docs: header_mainarea.jpg
+Only in Eiffel60/docs: images
+Only in Eiffel60/docs: index.html
+Only in Eiffel60/docs: installation
+Only in Eiffel60/docs: libraries
+Only in Eiffel60/docs: simple_toc.js
+Only in Eiffel60/docs: simple_toc_single.js
+Only in Eiffel60/docs: spacer.gif
+Only in Eiffel60/docs: sub_tocs
+Only in Eiffel60/docs: sync_button.gif
+Only in Eiffel60/docs: technologies
+Only in Eiffel60/docs: toc.css
+Only in Eiffel60/docs: tools
+
+Only in /cygdrive/d/appz/dev/Eiffel60/docs: eiffel.chm
+
+Only in /cygdrive/d/appz/dev/Eiffel60: dotnet
+Only in /cygdrive/d/appz/dev/Eiffel60: examples
+
+Only in Eiffel60/library: ActiveX_control_container
+Only in Eiffel60/library: GIF
+Only in Eiffel60/library: base_extension
+Only in Eiffel60/library: build.eant
+Only in Eiffel60/library: diff
+Only in Eiffel60/library: docking
+Only in Eiffel60/library: editor
+Only in Eiffel60/library: eiffeltest
+Only in Eiffel60/library: eldora
+Only in Eiffel60/library: elks
+Only in Eiffel60/library: encoding
+Only in Eiffel60/library: encryption
+Only in Eiffel60/library: event
+Only in Eiffel60/library: i18n
+Only in Eiffel60/library: patterns
+Only in Eiffel60/library: png
+Only in Eiffel60/library: regex
+Only in Eiffel60/library: text_editor
+Only in Eiffel60/library: vision2_for_gtk12
+Only in Eiffel60/library: wizard
+
+Only in Eiffel60/library/com: Clib
+Only in Eiffel60/library/com: Clib_runtime
+
+Only in /cygdrive/d/appz/dev/Eiffel60/library/com/spec: bcb
+Only in /cygdrive/d/appz/dev/Eiffel60/library/com/spec: msc
+
+Only in /cygdrive/d/appz/dev/Eiffel60/library/gobo: History.txt
+Only in /cygdrive/d/appz/dev/Eiffel60/library/gobo: License.txt
+Only in /cygdrive/d/appz/dev/Eiffel60/library/gobo: Readme.txt
+Only in /cygdrive/d/appz/dev/Eiffel60/library/gobo: Release_notes.txt
+Only in /cygdrive/d/appz/dev/Eiffel60/library/gobo: bin
+Only in /cygdrive/d/appz/dev/Eiffel60/library/gobo: build.eant
+Only in /cygdrive/d/appz/dev/Eiffel60/library/gobo: doc
+Only in /cygdrive/d/appz/dev/Eiffel60/library/gobo: example
+Only in /cygdrive/d/appz/dev/Eiffel60/library/gobo: forum.txt
+Only in /cygdrive/d/appz/dev/Eiffel60/library/gobo: misc
+Only in /cygdrive/d/appz/dev/Eiffel60/library/gobo: src
+Only in /cygdrive/d/appz/dev/Eiffel60/library/gobo: test
+Only in /cygdrive/d/appz/dev/Eiffel60/library/gobo: tool
+
+Only in Eiffel60/library/gobo: gobo.ecf.in
+
+Only in Eiffel60/library/net/Clib: build.eant
+
+Only in /cygdrive/d/appz/dev/Eiffel60/library/net/spec: bcb
+
+Only in /cygdrive/d/appz/dev/Eiffel60/library/store/dbms/rdbms/oracle/Clib: oracle.obj
+Only in /cygdrive/d/appz/dev/Eiffel60/library/store/dbms/rdbms/oracle/Clib: oracle_store.lib
+
+Only in Eiffel60/library/store/install: README
+Only in /cygdrive/d/appz/dev/Eiffel60/library/store/install: Readme
+Only in Eiffel60/library/store/interface: README
+Only in /cygdrive/d/appz/dev/Eiffel60/library/store/interface: Readme
+
+Only in /cygdrive/d/appz/dev/Eiffel60/library/store: spec
+
+Only in Eiffel60/library/vision: README
+Only in /cygdrive/d/appz/dev/Eiffel60/library/vision: Readme
+
+Only in Eiffel60/library/vision2/Clib: build.eant
+Only in Eiffel60/library/vision2/implementation: gtk
+
+Only in /cygdrive/d/appz/dev/Eiffel60/library/vision2/spec: bcb
+
+Only in Eiffel60/library/wel/clib: build.eant
+Only in Eiffel60/library/wel/clib: ilwel.lib
+Only in Eiffel60/library/wel/clib: make.log
+Only in Eiffel60/library/wel/clib: wel.lib
+
+Only in /cygdrive/d/appz/dev/Eiffel60/library/wel/spec: bcb
+
+Only in Eiffel60: make_install
+
+Only in /cygdrive/d/appz/dev/Eiffel60/precomp/spec/dotnet: EIFGENs
+Only in /cygdrive/d/appz/dev/Eiffel60/precomp/spec/dotnet: precomp_dotnet_base.rc
+
+Only in Eiffel60/precomp/spec: platform
+
+Only in /cygdrive/d/appz/dev/Eiffel60/precomp/spec: windows
+Only in /cygdrive/d/appz/dev/Eiffel60: rb
+
+Only in Eiffel60/studio/config: VMSAlpha32
+Only in Eiffel60/studio/config: VMSAlpha64
+Only in Eiffel60/studio/config: vxworks
+
+Only in Eiffel60/studio/help/errors: VTGC
+Only in Eiffel60/studio/help/errors: VTGD
+Only in Eiffel60/studio/help/errors: VTMC
+Only in Eiffel60/studio/help/errors/short: VTGC1
+Only in Eiffel60/studio/help/errors/short: VTGC2
+Only in Eiffel60/studio/help/errors/short: VTGC3
+Only in Eiffel60/studio/help/errors/short: VTGD1
+Only in Eiffel60/studio/help/errors/short: VTGD2
+Only in Eiffel60/studio/help/errors/short: VTGD3
+Only in Eiffel60/studio/help/errors/short: VTMC1
+Only in Eiffel60/studio/help/errors/short: VTMC2
+
+Only in Eiffel60/studio/lang: script
+
+Only in /cygdrive/d/appz/dev/Eiffel60/studio/spec/windows/bin: gdiplus.dll
+Only in /cygdrive/d/appz/dev/Eiffel60/studio/spec/windows/bin: legacy.exe
+
+Only in /cygdrive/d/appz/dev/Eiffel60/studio/spec/windows/lib: bcb
+
+Only in /cygdrive/d/appz/dev/Eiffel60/studio/spec/windows/lib/msc: dll_finalized.lib
+Only in /cygdrive/d/appz/dev/Eiffel60/studio/spec/windows/lib/msc: dll_mtfinalized.lib
+Only in /cygdrive/d/appz/dev/Eiffel60/studio/spec/windows/lib/msc: dll_mtwkbench.lib
+Only in /cygdrive/d/appz/dev/Eiffel60/studio/spec/windows/lib/msc: dll_wkbench.lib
+Only in /cygdrive/d/appz/dev/Eiffel60/studio/spec/windows/lib/msc: finalized.dll
+Only in /cygdrive/d/appz/dev/Eiffel60/studio/spec/windows/lib/msc: ise_desc.dll
+Only in /cygdrive/d/appz/dev/Eiffel60/studio/spec/windows/lib/msc: ise_desc.lib
+Only in /cygdrive/d/appz/dev/Eiffel60/studio/spec/windows/lib/msc: mtfinalized.dll
+Only in /cygdrive/d/appz/dev/Eiffel60/studio/spec/windows/lib/msc: mtwkbench.dll
+Only in /cygdrive/d/appz/dev/Eiffel60/studio/spec/windows/lib/msc: wkbench.dll
+
+Only in Eiffel60/studio/wizards/new_projects: wizard
+Only in Eiffel60/studio/wizards/new_projects: wizard.dsc
+
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: bm_about.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: containers.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: directory_search_small.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_button.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_cell.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_check_button.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_check_menu_item.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_checkable_list.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_checkable_tree.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_combo_box.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_container.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_dialog.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_drawing_area.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_fixed.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_frame.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_grid.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_header.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_horizontal_box.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_horizontal_progress_bar.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_horizontal_range.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_horizontal_scroll_bar.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_horizontal_separator.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_horizontal_split_area.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_label.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_list.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_list_item.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_menu.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_menu_bar.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_menu_item.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_menu_separator.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_multi_column_list.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_notebook.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_password_field.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_pixmap.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_radio_button.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_radio_menu_item.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_rich_text.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_scrollable_area.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_spin_button.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_table.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_text.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_text_field.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_titled_window.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_toggle_button.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_tool_bar.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_tool_bar_button.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_tool_bar_radio_button.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_tool_bar_separator.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_tool_bar_toggle_button.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_tree.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_tree_item.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_vertical_box.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_vertical_progress_bar.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_vertical_range.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_vertical_scroll_bar.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_vertical_separator.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_vertical_split_area.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: ev_viewport.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_build_window_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_builder_window_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_clipboard_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_close_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_cluster_symbol_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_cluster_symbol_gray.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_cmd_history_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_cmd_history_title_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_code_generation_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_component_build_view_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_component_display_view_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_component_viewer_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_component_window_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_copy_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_cut_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_delete_small_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_display_window_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_display_window_window_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_expand_all_small_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_format_clients_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_format_onces_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_icon_view_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_integer_small_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_locked_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_maximize_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_minimize_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_missing_pixmap_small_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_new_class_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_new_cluster_small_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_new_editor_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_object_editor_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_object_symbol.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_object_window_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_open_file_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_past_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_preference_window.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_preferences_folder.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_preferences_root.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_recycle_bin_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_redo_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_restore_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_save_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_show_hide_directory_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_string_small_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_system_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_titled_window_main_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_titled_window_main_small_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_undo_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: icon_view_small_color.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: items.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: lightbulb.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: primitives.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: propagate.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo/bitmaps/png: widgets.png
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo: flatshort
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo: spec
+Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo: tests
