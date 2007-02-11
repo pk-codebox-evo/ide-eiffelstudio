@@ -293,7 +293,6 @@
 		
 		<!-- check if ES is installed -->		
 		<available resource="${ISE_EIFFEL}\studio\spec\${ISE_PLATFORM}\bin\ec${exe}" variable="res_ec"/>
-		<echo message="DEBUG: res_ec: ${res_ec}"/>
 		<set name="setup_error" value="" unless="$res_ec=true" />
 		<echo message="  -> EiffelStudio installed, exit code: $res_ec, ok" if="$res_ec=true" />
 		<echo message="  -> EiffelStudio not installed, exit code: $res_ec! please check you have EiffelStudio installed." unless="$res_ec=true" />		
@@ -302,7 +301,7 @@
 		<!-- check if ES in the path, and check for version number -->
 		<exec executable="cd %TMP%" if="$res_ec=true" />
 		<exec executable="(ec -version >> es_setup_check)" exit_code_variable="ec_in_path" if="$res_ec=true" />
-		<exec executable="${find_bin} /C &quot;${ec_version_string}&quot; es_setup_check" exit_code_variable="conf_ec_version" if="$res_ec=true" />
+		<exec executable="${find_bin} /C &quot;${ec_version_string}&quot; es_setup_check > NUL:" exit_code_variable="conf_ec_version" if="$res_ec=true" />
 		<exec executable="del es_setup_check" if="$res_ec=true" />
 		<set name="setup_error" value="" unless="$res_ec=true" />
 		<echo message="  -> ec in path, exit code: $res_ec, ok" if="$ec_in_path=0" />
@@ -354,7 +353,7 @@
 		<!-- check for msc -->
 		<exec executable="cd %TMP%" />
 		<exec executable="(cl >> es_setup_check)" accept_errors="true" exit_code_variable="conf_msc_cl_version" />
-		<exec executable="${find_bin} /C &quot;usage: cl&quot; es_setup_check" exit_code_variable="conf_msc_cl_version" if="${conf_msc_cl_version}=0"/>
+		<exec executable="${find_bin} /C &quot;usage: cl&quot; es_setup_check > NUL:" exit_code_variable="conf_msc_cl_version" if="${conf_msc_cl_version}=0"/>
 		<exec executable="del es_setup_check"/>
 		<set name="setup_error" value="" unless="$conf_msc_cl_version=0" />
 		<echo message="  -> cl found, exit code: $conf_msc_cl_version, ok" if="${conf_msc_cl_version}=0" />
@@ -363,7 +362,7 @@
 		<!-- check for msc-linker -->
 		<exec executable="cd %TMP%" />
 		<exec executable="(link >> es_setup_check)" accept_errors="true" exit_code_variable="conf_msc_link_available" />
-		<exec executable="${find_bin} /C &quot;usage: LINK&quot; es_setup_check" exit_code_variable="conf_msc_link_available" if="${conf_msc_link_available}=1100"/>
+		<exec executable="${find_bin} /C &quot;usage: LINK&quot; es_setup_check > NUL:" exit_code_variable="conf_msc_link_available" if="${conf_msc_link_available}=1100"/>
 		<exec executable="del es_setup_check"/>
 		<set name="setup_error" value="" unless="$conf_msc_link_available=0" />
 		<echo message="  -> link.exe found, exit code: $conf_msc_link_available, ok" if="${conf_msc_link_available}=0" />
@@ -372,7 +371,7 @@
 		<!-- check for midl -->
 		<exec executable="cd %TMP%" />
 		<exec executable="(midl >> es_setup_check)" accept_errors="true" exit_code_variable="conf_midl_available" />
-		<exec executable="${find_bin} /C &quot;MIDL1000&quot; es_setup_check" exit_code_variable="conf_midl_available" if="${conf_midl_available}=1000"/>
+		<exec executable="${find_bin} /C &quot;MIDL1000&quot; es_setup_check > NUL:" exit_code_variable="conf_midl_available" if="${conf_midl_available}=1000"/>
 		<exec executable="del es_setup_check"/>
 		<set name="setup_error" value="" unless="$conf_midl_available=0" />
 		<echo message="  -> midl.exe found, exit code: $conf_midl_available, ok" if="${conf_midl_available}=0" />
@@ -381,7 +380,7 @@
 		<!-- check for csc -->
 		<exec executable="cd %TMP%" />
 		<exec executable="(csc >> es_setup_check)" accept_errors="true" exit_code_variable="conf_csc_available" />
-		<exec executable="${find_bin} /C &quot;fatal error CS2008: No inputs specified&quot; es_setup_check" exit_code_variable="conf_csc_available" if="${conf_csc_available}=1"/>
+		<exec executable="${find_bin} /C &quot;fatal error CS2008: No inputs specified&quot; es_setup_check > NUL:" exit_code_variable="conf_csc_available" if="${conf_csc_available}=1"/>
 		<exec executable="del es_setup_check"/>
 		<set name="setup_error" value="" unless="$conf_csc_available=0" />
 		<echo message="  -> csc.exe found, exit code: $conf_csc_available, ok" if="${conf_csc_available}=0" />
