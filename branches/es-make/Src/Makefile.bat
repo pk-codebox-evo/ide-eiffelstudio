@@ -32,12 +32,30 @@ reg > tmp
 if %ERRORLEVEL%==1 goto reg_error
 del tmp
 
+rem version switch
+ver > tmp
+%FIND_BIN% /C "2000" tmp > NUL:
+if %ERRORLEVEL%==0 goto reg_val_xp
+goto reg_val_win2k
+
+
+:reg_val_xp
+rem get env-vars from registry
+del tmp
+reg query HKEY_LOCAL_MACHINE\SOFTWARE\ISE\Eiffel60 | %FIND_BIN% "REG_SZ" > keys.txt
+for /f "tokens=1,2*" %%a in (keys.txt) do set %%a=%%c
+rem del keys.txt
+goto command_switch
+
+:reg_val_win2k
+del tmp
 rem get env-vars from registry
 reg query HKEY_LOCAL_MACHINE\SOFTWARE\ISE\Eiffel60 | %FIND_BIN% "REG_SZ" > keys.txt
 for /f "tokens=1,2*" %%a in (keys.txt) do set %%b=%%c
-del keys.txt
+rem del keys.txt
+goto command_switch
 
-rem command switch
+:command_switch
 if .%1. == .check_setup. goto check_setup
 if .%1. == .build_dev. goto build_dev
 if .%1. == .build_delivery. goto build_delivery
