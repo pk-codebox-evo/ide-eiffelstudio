@@ -44,7 +44,7 @@
 		<set name="ec_minor_version" value="0" />
 		<set name="INSTALL_DIR" value="${cwd}${path_separator}Eiffel${ec_major_version}${ec_minor_version}" unless="${INSTALL_DIR}" />
 		<set name="OUTPUT_DIR" value="${INSTALL_DIR}${path_separator}temporary_bin" unless="${OUTPUT_DIR}" />
-		<set name="build_es_logfile" value="${INSTALL_DIR}${path_separator}build_es.log" unless="$build_es_logfile" />
+		<set name="build_es_logfile" value="${cwd}${path_separator}build_es.log" unless="$build_es_logfile" />
 	</target>
 
 	<target name="build_delivery" depend="init_delivery">
