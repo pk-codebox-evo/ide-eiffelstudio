@@ -11,7 +11,7 @@ class
 inherit
 	MSCL_CONFIG
 		redefine
-			batch_file_arguments
+			batch_file_arguments, batch_file_options
 		end
 
 create
@@ -37,6 +37,12 @@ feature {NONE} -- Access
 			else
 				Result.append ("/x64")
 			end
+		end
+
+	batch_file_options: STRING is
+			-- Option to the COMSPEC DOS prompt.
+		do
+			Result := "/V:ON"
 		end
 
 	full_product_reg_path: STRING is
