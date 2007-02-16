@@ -10,7 +10,7 @@ class
 	EB_GRID_EDITOR_TOKEN_PIXMAP_TRAILER
 
 inherit
-	EB_GRID_EDITOR_TOKEN_ITEM_TRAILER
+	ES_GRID_ITEM_COMPONENT
 
 create
 	make
@@ -48,7 +48,7 @@ feature -- Access
 
 feature -- Drawing
 
-	draw (a_drawable: EV_DRAWABLE; a_start_x, a_start_y: INTEGER) is
+	display (a_drawable: EV_DRAWABLE; a_start_x, a_start_y: INTEGER; a_width, a_height: INTEGER) is
 			-- Draw current trailer in `a_drawable' starting from (`a_start_x', `a_start_y').
 			-- `a_start_x' and `a_start_y' are 0-based.
 		do
@@ -65,6 +65,18 @@ feature -- Setting
 			pixmap := a_pixmap
 		ensure
 			pixmap_set: pixmap = a_pixmap
+		end
+
+feature -- Actions
+
+	on_pick (a_x, a_y: INTEGER) is
+			-- Action to be performed when pick occurs at position (`a_x', `a_y') relative to top-left corner of current item
+		do
+		end
+
+	on_pick_ended is
+			-- Action to be performed when pick-and-drop process ended
+		do
 		end
 
 invariant
