@@ -51,4 +51,23 @@
 		<set name="misc_dir" value="${scripts_dir}${path_separator}misc" />
 	</target>
 
+	<target name="logger">
+		<description>
+			writes the logmessage ${msg} to the file ${to_file}
+			call this target like this: 
+				geant target="logger" arguments="${logfile},${message_string}"
+		</description>
+		
+		<argument name="to_file"/>
+		<argument name="msg"/>
+		<!-- unix -->
+		<exec executable="date +%H:%M >> ${to_file}" accept_errors="true" unless="${is_windows}"/>
+		
+		<!-- windows -->
+		<exec executable="time /T HH:SS >> ${to_file}" accept_errors="true" if="${is_windows}"/>
+		
+		<!-- common -->
+		<echo message="${msg}" to_file="${to_file}" append="true" />
+	</target>
+	
 </project>
