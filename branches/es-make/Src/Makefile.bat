@@ -35,8 +35,8 @@ del tmp
 rem version switch
 ver > tmp
 %FIND_BIN% /C "2000" tmp > NUL:
-if %ERRORLEVEL%==0 goto reg_val_xp
-goto reg_val_win2k
+if %ERRORLEVEL%==0 goto reg_val_win2k
+goto reg_val_xp
 
 
 :reg_val_xp
@@ -44,7 +44,7 @@ rem get env-vars from registry
 del tmp
 reg query HKEY_LOCAL_MACHINE\SOFTWARE\ISE\Eiffel60 | %FIND_BIN% "REG_SZ" > keys.txt
 for /f "tokens=1,2*" %%a in (keys.txt) do set %%a=%%c
-rem del keys.txt
+del keys.txt
 goto command_switch
 
 :reg_val_win2k
@@ -52,7 +52,7 @@ del tmp
 rem get env-vars from registry
 reg query HKEY_LOCAL_MACHINE\SOFTWARE\ISE\Eiffel60 | %FIND_BIN% "REG_SZ" > keys.txt
 for /f "tokens=1,2*" %%a in (keys.txt) do set %%b=%%c
-rem del keys.txt
+del keys.txt
 goto command_switch
 
 :command_switch

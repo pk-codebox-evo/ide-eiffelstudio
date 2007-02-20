@@ -267,14 +267,24 @@
 		<echo message="--------------------------------------------------------------------" />
 		<echo message="Checking Windows tools." />
 		<echo message="" />
-		
-		<available resource="${find_bin}" variable="res_find"/>
 
+		<!-- check for find.exe available -->
+		<available resource="${find_bin}" variable="res_find"/>
 		<set name="setup_error" value="" unless="$res_find=true" />
-		
 		<echo message="  -> find.exe in path, exit code: $res_find, ok" if="$res_find=true" />
 		<echo message="  -> find.exe not in path, exit code: $res_find, ! please check !" unless="$res_find=true" />
 		
+		
+		<!-- check for cygwin/bash available -->
+		<exec executable="cd %TMP%"/>
+		<exec executable="(bash --version >> es_setup_check)" accept_errors="true" exit_code_variable="bash_in_path" />
+		<exec executable="${find_bin} /C &quot;bash&quot; es_setup_check > NUL:" exit_code_variable="bash_in_path" if="${bash_in_path}=0" />
+		<exec executable="del es_setup_check" />
+		<set name="setup_error" value="" unless="$bash_in_path=0" />
+		<echo message="  -> bash found, exit code: $bash_in_path, ok" if="${bash_in_path}=0" />
+		<echo message="  -> bash not in path, exit code: $bash_in_path, ! please check you have Cygwin and Bash installed and in your path. !" unless="${bash_in_path}=0" />
+		
+		<!-- break on error -->
 		<echo message="You have an error in your setup, please check the configuration!" if="$setup_error" />
 		<exit code="1" if="$setup_error" />
 	</target>
