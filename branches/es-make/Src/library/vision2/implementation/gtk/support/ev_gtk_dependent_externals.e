@@ -10,6 +10,11 @@ class
 
 feature -- Externals
 
+	frozen gdk_window_set_accept_focus (a_window: POINTER; a_accept: BOOLEAN)
+		external
+			"C signature (GdkWindow*, gboolean) use <gtk/gtk.h>"
+		end
+
 	frozen gdk_window_get_state (a_window: POINTER): INTEGER
 		external
 			"C signature (GdkWindow*): GdkWindowState use <gtk/gtk.h>"
@@ -2458,6 +2463,11 @@ feature -- Externals
 	frozen gdk_pixbuf_composite (src, dest: POINTER; dest_x, dest_y, dest_width, dest_height: INTEGER; offset_x, offset_y, scale_x, scale_y: DOUBLE; interp_type, overall_alpha: INTEGER) is
 		external
 			"C signature (GdkPixbuf*, GdkPixbuf*, int, int, int, int, double, double, double, double, GdkInterpType, int) use <gtk/gtk.h>"
+		end
+
+	frozen gdk_pixbuf_copy_area (src: POINTER; src_x, src_y, a_width, a_height: INTEGER; dest: POINTER; dest_x, dest_y: INTEGER) is
+		external
+			"C signature (GdkPixbuf*, int, int, int, int, GdkPixbuf*, int, int) use <gtk/gtk.h>"
 		end
 
 	frozen gtk_widget_render_icon (a_widget, a_stock_id: POINTER; a_icon_size: INTEGER; a_detail: POINTER): POINTER is

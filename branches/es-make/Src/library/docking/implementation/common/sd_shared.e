@@ -15,24 +15,24 @@ feature -- Access
 
 	icons: SD_ICONS_SINGLETON is
 			-- SD_ICONS_SINGLETON instance.
-		once
-			Result := internal_icons
+		require
+			icons_set: icons_set
+		do
+			Result := internal_icons_cell.item
 		ensure
 			not_void: Result /= Void
 		end
 
-	set_icons (a_icons: like internal_icons) is
-			-- Get the SD_ICONS_SINGLETON instance.
-		require
-			the_icons_void: not icons_set
-		local
-			l_dummy: like internal_icons
+	interface_names: SD_INTERFACE_NAMES is
+			-- All interface names
 		do
-			internal_icons := a_icons
-			-- Set the once function
-			l_dummy := icons
+			Result := internal_interface_names_cell.item
+			if Result = Void then
+				create {SD_DEFAULT_INTERFACE_NAMES} Result
+				internal_interface_names_cell.put (Result)
+			end
 		ensure
-			set: internal_icons = a_icons
+			not_void: Result /= Void
 		end
 
 	feedback: SD_FEEDBACK_DRAWER is
@@ -51,28 +51,12 @@ feature -- Access
 			not_void: Result /= Void
 		end
 
-	set_hot_zone_factory (a_factory: like hot_zone_factory) is
-			-- Set `hot_zone_factory'.
-		require
-			a_factory_not_void: a_factory /= Void
-		do
-			hot_zone_factory_cell.put (a_factory)
-		ensure
-			set: hot_zone_factory = a_factory
-		end
-
 	widget_factory: SD_WIDGET_FACTORY is
 			-- SD_WIDGET_FACTORY instance.
 		once
 			create Result.make
 		ensure
 			not_void: Result /= Void
-		end
-
-	allow_window_to_back: BOOLEAN is
-			-- Does allow SD_FLOATING_ZONE or SD_FLOATING_TOOL_BAR_ZONE to go to back of main window?
-		do
-			Result := allow_window_to_back_cell.item
 		end
 
 	tool_bar_docker_mediator_cell: CELL [SD_TOOL_BAR_DOCKER_MEDIATOR] is
@@ -83,41 +67,11 @@ feature -- Access
 			not_void: Result /= Void
 		end
 
-	set_tool_bar_docker_mediator (a_mediator: SD_TOOL_BAR_DOCKER_MEDIATOR) is
-			-- Set tool bar docker mediator singleton.
-		do
-			tool_bar_docker_mediator_cell.put (a_mediator)
-		ensure
-			set: tool_bar_docker_mediator_cell.item = a_mediator
-		end
-
-	show_all_feedback_indicator: BOOLEAN is
-			-- If show all indicators same time when use transparent rectangle style feedback?
-		do
-			Result := show_all_feedback_indicator_cell.item
-		end
-
-	set_show_all_feedback_indicator (a_bool: BOOLEAN) is
-			-- Set `show_all_feedback_indicator'.
-		do
-			show_all_feedback_indicator_cell.put (a_bool)
-		ensure
-			set: show_all_feedback_indicator = a_bool
-		end
-
 	auto_hide_tab_slide_timer_interval: INTEGER is
 			-- Auto hide tab slide timer interval
 			-- 0 means no animation.
 		do
 			Result := Auto_hide_tab_slide_timer_interval_cell.item
-		end
-
-	set_auto_hide_tab_slide_timer_interval (a_int: INTEGER) is
-			-- Set `auto_hide_tab_slide_timer_interval' with `a_int'.
-		do
-			auto_hide_tab_slide_timer_interval_cell.put (a_int)
-		ensure
-			set: auto_hide_tab_slide_timer_interval = a_int
 		end
 
 	tool_bar_font: EV_FONT is
@@ -153,31 +107,25 @@ feature -- Access
 			Result := default_screen_y_cell.item
 		end
 
-	set_default_screen_x (a_x: INTEGER) is
-			-- Set `default_screen_x'
-		require
-			valid: default_screen_x >= 0
-		do
-			default_screen_x_cell.put (a_x)
-		ensure
-			set: default_screen_x = a_x
-		end
-
-	set_default_screen_y (a_y: INTEGER) is
-			-- Set `default_screen_y'
-		require
-			valid: default_screen_y >= 0
-		do
-			default_screen_y_cell.put (a_y)
-		ensure
-			set: default_screen_y = a_y
-		end
-
 	zone_navigation_accelerator_key: INTEGER is
 			-- Accelerator key setting for zone navigation dialog.
 			-- On Windows by default is Ctlr + Tab.
 		do
 			Result := zone_navigation_accelerator_key_cell.item
+		end
+
+feature -- Status report
+
+	allow_window_to_back: BOOLEAN is
+			-- Does allow SD_FLOATING_ZONE or SD_FLOATING_TOOL_BAR_ZONE to go to back of main window?
+		do
+			Result := allow_window_to_back_cell.item
+		end
+
+	show_all_feedback_indicator: BOOLEAN is
+			-- If show all indicators same time when use transparent rectangle style feedback?
+		do
+			Result := show_all_feedback_indicator_cell.item
 		end
 
 	zone_navigation_accelerator_ctrl: BOOLEAN is
@@ -199,6 +147,88 @@ feature -- Access
 			-- On Windows by default is Ctlr + Tab.
 		do
 			Result := zone_navigation_accelerator_shift_cell.item
+		end
+
+	icons_set: BOOLEAN is
+			-- Is `icons' setted?
+		do
+			Result := internal_icons_cell.item /= Void
+		end
+
+feature -- Status setting
+
+	set_icons (a_icons: like icons) is
+			-- Set the SD_ICONS_SINGLETON instance.
+		require
+			a_icons_not_void: a_icons /= Void
+		do
+			internal_icons_cell.put (a_icons)
+		ensure
+			set: internal_icons_cell.item = a_icons
+		end
+
+	set_interface_names (a_names: like interface_names) is
+			-- Set `internal_interface_names' with `a_names'
+		require
+			not_void: a_names /= Void
+		do
+			internal_interface_names_cell.put (a_names)
+		ensure
+			set: internal_interface_names_cell.item = a_names
+		end
+
+	set_hot_zone_factory (a_factory: like hot_zone_factory) is
+			-- Set `hot_zone_factory'.
+		require
+			a_factory_not_void: a_factory /= Void
+		do
+			hot_zone_factory_cell.put (a_factory)
+		ensure
+			set: hot_zone_factory = a_factory
+		end
+
+	set_show_all_feedback_indicator (a_bool: BOOLEAN) is
+			-- Set `show_all_feedback_indicator'.
+		do
+			show_all_feedback_indicator_cell.put (a_bool)
+		ensure
+			set: show_all_feedback_indicator = a_bool
+		end
+
+	set_auto_hide_tab_slide_timer_interval (a_int: INTEGER) is
+			-- Set `auto_hide_tab_slide_timer_interval' with `a_int'.
+		do
+			auto_hide_tab_slide_timer_interval_cell.put (a_int)
+		ensure
+			set: auto_hide_tab_slide_timer_interval = a_int
+		end
+
+	set_tool_bar_docker_mediator (a_mediator: SD_TOOL_BAR_DOCKER_MEDIATOR) is
+			-- Set tool bar docker mediator singleton.
+		do
+			tool_bar_docker_mediator_cell.put (a_mediator)
+		ensure
+			set: tool_bar_docker_mediator_cell.item = a_mediator
+		end
+
+	set_default_screen_x (a_x: INTEGER) is
+			-- Set `default_screen_x'
+		require
+			valid: default_screen_x >= 0
+		do
+			default_screen_x_cell.put (a_x)
+		ensure
+			set: default_screen_x = a_x
+		end
+
+	set_default_screen_y (a_y: INTEGER) is
+			-- Set `default_screen_y'
+		require
+			valid: default_screen_y >= 0
+		do
+			default_screen_y_cell.put (a_y)
+		ensure
+			set: default_screen_y = a_y
 		end
 
 	set_zone_navigation_accelerator_key (a_key: INTEGER) is
@@ -328,34 +358,6 @@ feature  -- Colors
 			Result := color.default_background_color
 		end
 
-feature {SD_DOCKING_MANAGER}
-
-	add_docking_manager (a_manager: SD_DOCKING_MANAGER) is
-			-- Set `internal_docking_manager'.
-		require
-			a_manager_not_void: a_manager /= Void
-		do
-			docking_manager_list.extend (a_manager)
-		ensure
-			added: docking_manager_list.has (a_manager)
-		end
-
-	docking_manager_list: ARRAYED_LIST [SD_DOCKING_MANAGER] is
-			-- All docking managers.
-		once
-			create Result.make (1)
-		ensure
-			not_void: Result /= Void
-		end
-
-feature -- Contract Support
-
-	icons_set: BOOLEAN is
-			-- Is `icons' setted?
-		do
-			Result := internal_icons /= Void
-		end
-
 feature -- Constants
 
 	Border_width: INTEGER is 1
@@ -448,85 +450,30 @@ feature -- Constants
 	Notebook_minimum_width: INTEGER is 77
 			-- Minimumu width for SD_NOTEBOOK, it's useful when a zone is minimized.	
 
-	Editor_place_holder_content_name: STRING_GENERAL is
-			-- Content name for `place_holder_content' in SD_DOCKING_MANAGER_ZONES.
-		once
-			Result := "docking manager editor place holder"
-		end
-
 	Zone_navigation_column_count: INTEGER is 8
 			-- How many items per column in zone navigation dialog which is normally activated by Ctrl + Tab.
 
 	Auto_hide_tab_stub_show_delay: INTEGER is 1000
 			-- Auto hide tab stub delay time in milliseconds.
 
-	Zone_navigation_left_column_name: STRING_GENERAL is
-			-- Left column name of SD_ZONE_NAVIGATION_DIALOG.
-		once
-			Result := "Tools"
+feature {SD_DOCKING_MANAGER} -- Implementation
+
+	add_docking_manager (a_manager: SD_DOCKING_MANAGER) is
+			-- Set `internal_docking_manager'.
+		require
+			a_manager_not_void: a_manager /= Void
+		do
+			docking_manager_list.extend (a_manager)
+		ensure
+			added: docking_manager_list.has (a_manager)
 		end
 
-	Zone_navigation_right_column_name: STRING_GENERAL is
-			-- Right column name of SD_ZONE_NAVIGATION_DIALOG.
+	docking_manager_list: ARRAYED_LIST [SD_DOCKING_MANAGER] is
+			-- All docking managers.
 		once
-			Result := "Targets"
-		end
-
-	Tooltip_mini_toolbar_stick: STRING_GENERAL is
-			-- Tooltip for mini toolbar pin buttons.
-		once
-			Result := "Auto Hide"
-		end
-	Tooltip_mini_toolbar_stick_unpin: STRING_GENERAL is
-			-- Tooltip for mini toolbar unpin buttons.
-		once
-			Result := "Auto Hide"
-		end
-	Tooltip_mini_toolbar_maximize: STRING_GENERAL is
-			-- Tooltip for mini toolbar maximize buttons.
-		once
-			Result :=  "Maximize"
-		end
-	Tooltip_mini_toolbar_restore: STRING_GENERAL is
-			-- Tooltip for mini toolbar restore buttons.
-		once
-			Result := "Restore"
-		end
-	Tooltip_mini_toolbar_minimize: STRING_GENERAL is
-			-- Tooltip for mini toolbar minimize buttons.
-		once
-			Result :=  "Minimize"
-		end
-	Tooltip_mini_toolbar_close: STRING_GENERAL is
-			-- Tooltip for mini toolbar close buttons.
-		once
-			Result := "Close"
-		end
-	Tooltip_mini_toolbar_hidden_toolbar_indicator: STRING_GENERAL is
-			-- Tooltip for mini toolbar hidden tool bar indicators.
-		once
-			Result := "Show Mini Toolbar"
-		end
-	Tooltip_mini_toolbar_hidden_tab_indicator: STRING_GENERAL is
-			-- Tooltip for mini toolbar hidden tab indicators.
-		once
-			Result := "Show List"
-		end
-	Tooltip_toolbar_tail_indicator: STRING_GENERAL is
-			-- Tooltip for tool bar tail indicators.
-		once
-			Result := "Toolbar Options"
-		end
-	Tooltip_toolbar_floating_close: STRING_GENERAL is
-			-- Tooltip for tool bar close button.
-		once
-			Result := "Close"
-		end
-
-	Tooltip_notebook_hidden_tab_indicator: STRING_GENERAL is
-			-- Tooltip for notebook hidden tab indicator.
-		once
-			Result := "Show List"
+			create Result.make (1)
+		ensure
+			not_void: Result /= Void
 		end
 
 feature {NONE} -- Implementation
@@ -537,8 +484,21 @@ feature {NONE} -- Implementation
 			create Result.make
 		end
 
-	internal_icons: SD_ICONS_SINGLETON;
-			-- Icons.
+	internal_icons_cell: CELL [SD_ICONS_SINGLETON]
+			-- Singleton cell for icons.
+		once
+			create Result
+		ensure
+			not_void: Result /= Void
+		end
+
+	internal_interface_names_cell: CELL [SD_INTERFACE_NAMES]
+			-- Singleton cell for interface names.
+		once
+			create Result
+		ensure
+			not_void: Result /= Void
+		end
 
 	Show_all_feedback_indicator_cell: CELL [BOOLEAN] is
 			-- Singleton cell for show_all_feedback_indicator.

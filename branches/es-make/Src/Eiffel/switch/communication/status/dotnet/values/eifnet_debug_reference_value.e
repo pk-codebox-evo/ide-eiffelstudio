@@ -149,6 +149,7 @@ feature -- Access
 						if Result = Void then
 								--| This means we are dealing with an external type (dotnet)
 							internal_dynamic_class := icd_value_info.value_class_c
+							check internal_dynamic_class /= Void end
 							Result := internal_dynamic_class.types.first
 							is_external_type := True
 						end

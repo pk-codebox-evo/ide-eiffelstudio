@@ -223,6 +223,9 @@ feature -- Save/Open inner container data.
 				internal_docking_manager.zones.place_holder_content.close
 			end
 
+			-- We have to call `remove_empty_split_area' first to make sure no void widget when update_middle_container.
+			internal_docking_manager.query.inner_container_main.remove_empty_split_area
+
 			internal_docking_manager.query.inner_container_main.update_middle_container
 			internal_docking_manager.command.unlock_update
 			internal_docking_manager.property.set_is_opening_config (False)
@@ -424,7 +427,7 @@ feature {NONE} -- Implementation for save config.
 		do
 			create l_shared
 			a_config_data.set_is_split_area (False)
-			a_config_data.add_title (l_shared.editor_place_holder_content_name)
+			a_config_data.add_title (l_shared.interface_names.editor_place_holder_content_name)
 			-- FIXIT: this line maybe have problem if we changed the name of SD_DOCKING_STATE.
 			a_config_data.set_state ("SD_DOCKING_STATE")
 			a_config_data.set_direction ({SD_ENUMERATION}.top)
@@ -432,7 +435,7 @@ feature {NONE} -- Implementation for save config.
 			a_config_data.set_height (1)
 		ensure
 			is_editor: not a_config_data.is_split_area
-			title_correct: a_config_data.titles.first.is_equal ((create {SD_SHARED}).editor_place_holder_content_name)
+			title_correct: a_config_data.titles.first.is_equal ((create {SD_SHARED}).interface_names.editor_place_holder_content_name)
 		end
 
 	save_inner_container_data_split_area (a_split_area: SD_MIDDLE_CONTAINER; a_config_data: SD_INNER_CONTAINER_DATA) is

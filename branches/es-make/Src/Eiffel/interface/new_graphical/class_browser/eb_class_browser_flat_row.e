@@ -36,6 +36,9 @@ feature{NONE} -- Initialization
 
 			feature_signature_style.set_ql_feature (feature_item)
 			feature_signature_tokens := feature_signature_style.text
+
+			class_item_internal.set_stone_function (agent class_stone (written_class))
+			feature_item_internal.set_stone_function (agent feature_stone (e_feature))
 		end
 
 feature -- Grid binding
@@ -185,7 +188,7 @@ feature -- Setting
 
 feature{NONE} -- Grid items
 
-	class_grid_item: EB_GRID_COMPILER_ITEM is
+	class_grid_item: EB_GRID_EDITOR_TOKEN_ITEM is
 			-- Class item
 		do
 			update_row
@@ -194,7 +197,7 @@ feature{NONE} -- Grid items
 			result_attached: Result /= Void
 		end
 
-	feature_grid_item: EB_GRID_COMPILER_ITEM is
+	feature_grid_item: EB_GRID_EDITOR_TOKEN_ITEM is
 			-- Feature item
 		do
 			update_row
@@ -264,7 +267,7 @@ feature{NONE} -- Implementation
 
 feature{NONE} -- Item setup
 
-	setup_class_item_with_blank (a_item: EB_GRID_COMPILER_ITEM) is
+	setup_class_item_with_blank (a_item: EB_GRID_EDITOR_TOKEN_ITEM) is
 			-- Setup `a_item' using `class_c' into blank form.
 		require
 			a_item_attached: a_item /= Void

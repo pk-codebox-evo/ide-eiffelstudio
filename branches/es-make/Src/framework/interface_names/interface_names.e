@@ -528,6 +528,7 @@ feature -- Accelerator, focus label and menu name
 	m_set_default_layout: STRING_GENERAL is do Result := locale.translate ("Set Current Layout As Default") end
 	m_save_layout_as: STRING_GENERAL is do Result := locale.translate ("Save Layout As...") end
 	m_open_layout: STRING_GENERAL is do Result := locale.translate ("Open Layout") end
+	l_choose_class_version: STRING_GENERAL is do Result := locale.translate ("Choose one version from the following:") end
 
 feature -- Toggles
 
@@ -913,6 +914,7 @@ feature -- Label texts
 	l_no_views_are_available: STRING_GENERAL is 		do Result := locale.translate ("No views are available for this cluster") end
 	l_Not_in_system_no_info: STRING_GENERAL is	do Result := locale.translate("Select a class which is fully compiled to have information about it.")	end
 	l_Not_yet_called: STRING_GENERAL is			do Result := locale.translate("Not yet called")	end
+	l_Called: STRING_GENERAL is			do Result := locale.translate("Called")	end
 	l_in_n_classes (n: INTEGER): STRING_GENERAL is
 		do
 			Result := locale.format_string (locale.translate_plural ("in $1 class", "in $1 classes", n), [n])
@@ -927,7 +929,7 @@ feature -- Label texts
 	l_On_object: STRING_GENERAL is				do Result := locale.translate("On object")	end
 	l_As_object: STRING_GENERAL is				do Result := locale.translate("As object")	end
 	l_Onces: STRING_GENERAL is					do Result := locale.translate("once routines and constants")	end
-	l_Once_functions: STRING_GENERAL is			do Result := locale.translate("Once routines")	end
+	l_Once_routines: STRING_GENERAL is			do Result := locale.translate("Once routines")	end
 	l_only_classes_in_same_cluster: STRING_GENERAL is			do Result := locale.translate("Only classes in same cluster")	end
 	l_open: STRING_GENERAL is					do Result := locale.translate("Open")	end
 	l_Open_a_project: STRING_GENERAL is			do Result := locale.translate("Open a project")	end
@@ -1129,6 +1131,14 @@ feature -- Label texts
 			a_object_name: a_object_name /= Void
 		do
 			Result := locale.format_string (locale.translate ("$1 of $2"), [a_command_name, a_object_name])
+		end
+
+	l_temp_header_dependency (a_command_name, a_object_name: STRING_GENERAL): STRING_GENERAL is
+		require
+			a_command_name_not_void: a_command_name /= Void
+			a_object_name: a_object_name /= Void
+		do
+			Result := locale.format_string (locale.translate ("Extracting $1 of $2 ..."), [a_command_name, a_object_name])
 		end
 
 	l_history_discarded_string: STRING_GENERAL is do Result := locale.translate ("--- History discarded ---") end
@@ -1373,6 +1383,7 @@ feature -- Label texts
 	l_existing_layout_names: STRING_GENERAL is do Result := locale.translate ("Existing Layouts:") end
 	l_overwrite_layout (a_name: STRING_GENERAL): STRING_GENERAL is do Result := locale.format_string (locale.translate ("A layout with the name '$1' already exists. Do you want to overwrite?"), [a_name]) end
 	l_open_layout_error: STRING_GENERAL is do Result := locale.translate ("Open layout error. Opening default layout instead.") end
+	h_click_to_open: STRING_GENERAL is do Result := locale.translate ("Click to open") end
 
 feature -- Label text, no translation (for the editor)
 
@@ -1473,6 +1484,7 @@ feature -- Title part
 	t_Slice_limits: STRING_GENERAL is					do Result := locale.translate("Choose New Slice Limits for Special Objects")	end
 	t_System: STRING_GENERAL is							do Result := locale.translate("Project Settings")	end
 	t_target_selection: STRING_GENERAL is 				do Result := locale.translate ("Target Selection") end
+	t_this_file_has_been_modified: STRING_GENERAL is 	do Result := locale.translate ("This file has been modified by another editor.") end
 	t_Empty_development_window: STRING_GENERAL is 		do Result := locale.translate("Empty Development Tool")	end
 	t_Autocomplete_window: STRING_GENERAL is			do Result := locale.translate("Auto-Complete")	end
 	t_Diagram_class_header: STRING_GENERAL is			do Result := locale.translate("Class Header")	end
@@ -1652,6 +1664,7 @@ feature -- Title part
 	t_Save_layout_as: STRING_GENERAL is 				do Result := locale.translate ("Save Layout As...") end
 	t_Open_layout: STRING_GENERAL is					do Result := locale.translate ("Open Layout") end
 	t_Overwite_layout: STRING_GENERAL is				do Result := locale.translate ("Overwrite Layout") end
+	t_open_c_file: STRING_GENERAL is					do Result := locale.translate ("Open C file") end
 
 feature -- Titles translation needless (Title Original) for preference strings.
 
@@ -1799,6 +1812,7 @@ feature -- Description texts
 	e_save_c_compilation_output: STRING_GENERAL is do Result := locale.translate("Save C Compilation output to file")	end
 	e_go_to_w_code_dir: STRING_GENERAL is do Result := locale.translate("Go to W_code directory of this system, or right click to open W_code in specified file browser")	end
 	e_go_to_f_code_dir: STRING_GENERAL is do Result := locale.translate("Go to F_code directory of this system, or right click to open F_code in specified file browser")	end
+	e_open_c_file: STRING_GENERAL is do Result := locale.translate ("Drop a class/feature here to open its corresponding C file/function in external editor.") end
 	e_go_to_project_dir: STRING_GENERAL is do Result := locale.translate ("Go to project directory of this system, or right click to open that directory in specified file browser") end
 	e_f_code: STRING_GENERAL is do Result := locale.translate("F_code")	end
 	e_w_code: STRING_GENERAL is do Result := locale.translate("W_code")	end

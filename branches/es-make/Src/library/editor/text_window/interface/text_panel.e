@@ -82,6 +82,8 @@ feature {NONE} -- Initialization
 			-- could not be performed in `initialize',
 			-- (due to regeneration of implementation class)
 			-- can be added here.
+		local
+			l_parent: EV_HORIZONTAL_BOX
 		do
 				-- First display the first line...
 			first_line_displayed := 1
@@ -94,7 +96,15 @@ feature {NONE} -- Initialization
 			main_vbox.set_background_color (editor_preferences.normal_background_color)
 			inner_hbox.set_background_color (editor_preferences.normal_background_color)
 
+				-- Create the margin and associate it with `margin_container'.
 			create margin.make_with_panel (Current)
+			l_parent ?= margin_container.parent
+			check l_parent_not_void: l_parent /= Void end
+			l_parent.prune (margin_container)
+			margin_container := margin.margin_viewport
+			l_parent.put_front (margin_container)
+			l_parent.disable_item_expand (margin_container)
+
 			editor_drawing_area.set_minimum_size (buffered_drawable_width, buffered_drawable_height)
 
 				-- Viewport Events
@@ -410,14 +420,14 @@ feature -- File Properties
 			retried: BOOLEAN
 		do
 			if not retried then
-				Result := True
 				if file_loaded and file_exists then
 					Result := date_of_file_when_loaded = file_date_ticks and
 						size_of_file_when_loaded = file_size
 				end
 				file_date_already_checked := True
 			else
-				Result := True
+					-- If a failure occur, we are not up to date.
+				Result := False
 			end
 		rescue
 			retried := True
@@ -436,19 +446,13 @@ feature -- Status setting
 	        -- Refresh line number display in Current and update display
 		do
 			if has_margin then
-				if margin_container.is_empty then
-					-- One of line numbers or breakpoints must be visible
-					margin_container.put (margin.widget)
-				end
+				margin_container.show
 			else
-				if not margin_container.is_empty then
-					-- Nothing needs displaying so just prune
-					margin_container.prune (margin.widget)
-				end
+				margin_container.hide
 			end
 			refresh_now
 	   	ensure
-	   		widget_displayed: has_margin implies not margin_container.is_empty
+			widget_displayed: has_margin implies margin_container.is_displayed
 	   	end
 
 	enable_line_numbers is
@@ -534,52 +538,51 @@ feature -- Basic Operations
 		end
 
 	redraw_current_screen is
-			-- Redraw the current screen.  Do not scroll or move the cursor, just redraw.
+			-- Redraw the current screen. Do not scroll or move the cursor, just redraw.
 		do
 			set_first_line_displayed (first_line_displayed, True)
 		end
 
 	load_file (a_filename: STRING) is
-	        -- Load contents of `a_filename'
+			-- Load contents of `a_filename'
 		require
 			filename_not_void: a_filename /= Void
 		local
-		    l_file: RAW_FILE
-		    l_doc_type: STRING
-		    l_date: like date_of_file_when_loaded
+			l_file: RAW_FILE
+			l_doc_type: STRING
+			l_date: like date_of_file_when_loaded
 			l_size: like size_of_file_when_loaded
-  	   	do
-  	   		editor_drawing_area.disable_sensitive
-  	   			-- Check the document type of the file to load.
-  	   		l_doc_type := a_filename.substring (a_filename.last_index_of ('.', a_filename.count) + 1, a_filename.count)
-  	   		if l_doc_type /= Void and then known_document_type (l_doc_type) then
+		do
+			editor_drawing_area.disable_sensitive
+				-- Check the document type of the file to load.
+			l_doc_type := a_filename.substring (a_filename.last_index_of ('.', a_filename.count) + 1, a_filename.count)
+			if l_doc_type /= Void and then known_document_type (l_doc_type) then
 				set_current_document_class (get_class_from_type (l_doc_type))
 			else
-			    set_current_document_class (default_document_class)
-  	   		end
+				set_current_document_class (default_document_class)
+			end
 
-  	   		create l_file.make (a_filename)
-  	   		if l_file.exists then
-  	   		    l_file.open_read
-  	   		    	-- Record date when opening the file since if the file
-  	   		    	-- has changed after the close operation we won't read it again.
+			create l_file.make (a_filename)
+			if l_file.exists then
+				l_file.open_read
+					-- Record date when opening the file since if the file
+					-- has changed after the close operation we won't read it again.
 				l_date := l_file.date
 				l_size := l_file.count
-  	   		    if l_file.is_empty then
-  	   		    	load_text ("")
-  	   		    else
-	  	   		    l_file.read_stream (l_file.count)
-	  	   		    load_text (l_file.last_string)
-  	   		    end
-  	   		    l_file.close
-  	   		    create file_name.make_from_string (a_filename)
-  	   		    date_of_file_when_loaded := l_date
-				size_of_file_when_loaded := l_size
-  	   		else
-  	   			reset
-  	   			load_text ("")
-  	   		end
-  	  	end
+				if l_file.is_empty then
+					load_text ("")
+				else
+					l_file.read_stream (l_file.count)
+					load_text (l_file.last_string)
+				end
+				l_file.close
+			else
+				load_text ("File: " + a_filename + "%Ndoes not exist.")
+			end
+			create file_name.make_from_string (a_filename)
+			date_of_file_when_loaded := l_date
+			size_of_file_when_loaded := l_size
+		end
 
 	load_text (s: STRING) is
 			-- Display `s'.			
@@ -636,7 +639,9 @@ feature -- Basic Operations
 		do
 			is_checking_modifications := True
 
-			if not file_is_up_to_date then
+			if not file_exists then
+				reload
+			elseif not file_is_up_to_date then
 				if changed or not editor_preferences.automatic_update then
 						-- File has not changed in panel and is not up to date.  However, user does want auto-update so prompt for reload.
 					create dialog.make_with_text ("This file has been modified by another editor.")

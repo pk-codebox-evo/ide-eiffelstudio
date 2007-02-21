@@ -39,6 +39,9 @@ feature -- Command
 			cur_wid := develop_window.window
 			prepare (a_stone)
 
+				-- History moving is not going to be cancelled.
+			develop_window.set_history_moving_cancelled (False)
+
 			handle_break_error_ace_external_file_stone (a_stone)
 			if
 				develop_window.stone /= Void and then
@@ -64,6 +67,7 @@ feature {NONE} -- Implementation functions
 			-- Try to assign different kinds of stones.
 		local
 			l_pixmaps: EV_STOCK_PIXMAPS
+			l_editor: like current_editor
 		do
 			if cur_wid = Void then
 				--| Do nothing.
@@ -77,8 +81,9 @@ feature {NONE} -- Implementation functions
 			old_class_stone ?= develop_window.stone
 			develop_window.old_set_stone (a_stone)
 			text_loaded := develop_window.is_text_loaded
-			if current_editor /= Void then
-				current_editor.set_stone (a_stone)
+			l_editor := current_editor
+			if l_editor /= Void then
+				l_editor.set_stone (a_stone)
 			end
 
 			conv_brkstone ?= a_stone
@@ -168,6 +173,8 @@ feature {NONE} -- Implementation functions
 			if develop_window.unified_stone then
 				develop_window.tools.class_tool.set_stone (a_stone)
 				develop_window.tools.features_relation_tool.set_stone (a_stone)
+				develop_window.tools.diagram_tool.set_stone (a_stone)
+				develop_window.tools.dependency_tool.set_stone (a_stone)
 			end
 		end
 

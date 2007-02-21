@@ -114,12 +114,6 @@ feature -- Setting
 
 feature -- Actions
 
-	on_enter_pressed is
-			-- Action to be performed when enter key is pressed
-		do
-			on_expand_all_level
-		end
-
 	on_key_pressed (a_key: EV_KEY) is
 			-- Action to be performed when some key is pressed in `grid'
 		require
@@ -598,7 +592,7 @@ feature{NONE} -- Implementation
 	control_tool_bar: EV_HORIZONTAL_BOX
 			-- Implementation of `control_bar'
 
-	branch_item (a_branch_id: INTEGER): EB_GRID_COMPILER_ITEM is
+	branch_item (a_branch_id: INTEGER): EB_GRID_EDITOR_TOKEN_ITEM is
 			-- A grid item to display branch id
 		do
 			create Result
@@ -641,6 +635,15 @@ feature{NONE} -- Implementation
 					a_item.row.collapse
 				end
 			end
+		end
+
+feature{NONE} -- Implementation/Stone
+
+	item_to_put_in_editor: EV_GRID_ITEM is
+			-- Grid item which may contain a stone to put into editor
+			-- Void if no satisfied item is found.			
+		do
+			Result := item_to_put_in_editor_for_single_item_grid
 		end
 
 indexing

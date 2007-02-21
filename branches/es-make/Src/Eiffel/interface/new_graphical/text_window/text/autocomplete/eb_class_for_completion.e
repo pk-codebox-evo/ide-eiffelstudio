@@ -74,7 +74,7 @@ feature -- Access
 			Result := Current.out.twin
 		end
 
-	grid_item : EB_GRID_COMPILER_ITEM is
+	grid_item : EB_GRID_EDITOR_TOKEN_ITEM is
 			-- Corresponding grid item
 		local
 			l_class: CLASS_C
@@ -97,15 +97,6 @@ feature {NONE} -- Implementation
 
 	associated_class: CLASS_I;
 			-- Corresponding class
-
-	just_class_name_style: EB_CLASS_EDITOR_TOKEN_STYLE is
-			-- Editor token style to generate just class name for `associated_class'
-		once
-			create Result
-			Result.enable_just_name
-		ensure
-			result_attached: Result /= Void
-		end
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

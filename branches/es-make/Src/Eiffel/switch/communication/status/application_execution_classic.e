@@ -45,9 +45,32 @@ create {DEBUGGER_MANAGER}
 feature {NONE} -- Initialization
 
 	make_with_debugger (dbg: like debugger_manager) is
+		local
+			l_ipc: like ipc_engine
 		do
 			Precursor {APPLICATION_EXECUTION} (dbg)
-			create ipc_engine.make (debugger_manager)
+			check debugger_manager_not_void: debugger_manager /= Void end
+			l_ipc := ipc_engine
+			if l_ipc = Void then
+				create l_ipc.make (debugger_manager)
+				ipc_engine_cell.put (l_ipc)
+			else
+				l_ipc.change_debugger_manager (debugger_manager)
+			end
+		end
+
+feature {NONE} -- IPC implementation
+
+	ipc_engine: IPC_ENGINE is
+			-- IPC engine, used to control the ecdbgd debugger daemon.
+		do
+			Result := Ipc_engine_cell.item
+		end
+
+	Ipc_engine_cell: CELL [IPC_ENGINE] is
+			-- cell containing `ipc_engine'.
+		once
+			create Result
 		end
 
 feature -- recycling data
@@ -253,11 +276,16 @@ feature -- Query
 					else
 						create err_dv.make_with_name  (l_feat.feature_name)
 						err_dv.set_message ("Could not retrieve information (once is being called or once failed)")
+						odv := err_dv
 					end
 				else
 					create err_dv.make_with_name  (l_feat.feature_name)
 					err_dv.set_message (Interface_names.le_Not_yet_called)
-					err_dv.set_display_kind (Void_value)
+					if l_feat.is_function then
+						err_dv.set_display_kind (Void_value)
+					else
+						err_dv.set_display_kind (Procedure_return_message_value)
+					end
 					odv := err_dv
 				end
 				Result.put (odv, i)
@@ -336,11 +364,6 @@ feature {APPLICATION_STATUS}
 		once
 			create Result.make (Rqst_cont)
 		end
-
-feature {NONE} -- IPC implementation
-
-	ipc_engine: IPC_ENGINE
-			-- IPC engine, used to control the ecdbgd debugger daemon.
 
 invariant
 

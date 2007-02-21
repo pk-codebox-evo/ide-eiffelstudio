@@ -93,7 +93,6 @@ feature {NONE} -- Implementation
 	enable_capture is
 			-- Grab all the mouse and keyboard events.
 		local
-			i: INTEGER
 			l_interface: EV_WIDGET
 			l_grab_widget: POINTER
 		do
@@ -114,7 +113,9 @@ feature {NONE} -- Implementation
 				app_implementation.set_captured_widget (l_interface)
 				{EV_GTK_EXTERNALS}.gtk_grab_add (event_widget)
 				App_implementation.disable_debugger
-				grab_keyboard_and_mouse
+				if app_implementation.focused_popup_window /= top_level_window_imp then
+					grab_keyboard_and_mouse
+				end
 			end
 		end
 
@@ -124,7 +125,9 @@ feature {NONE} -- Implementation
 		do
 			if has_capture then
 				{EV_GTK_EXTERNALS}.gtk_grab_remove (event_widget)
-				release_keyboard_and_mouse
+				if app_implementation.focused_popup_window /= top_level_window_imp then
+					release_keyboard_and_mouse
+				end
 				App_implementation.enable_debugger
 				App_implementation.set_captured_widget (Void)
 			end
@@ -344,7 +347,7 @@ feature -- Implementation
 					internal_set_pointer_style (pointer_style)
 				else
 						-- Reset the cursors.
-					{EV_GTK_EXTERNALS}.gdk_window_set_cursor ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (visual_widget), NULL)
+					{EV_GTK_EXTERNALS}.gdk_window_set_cursor ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object), default_pointer)
 				end
 			end
 

@@ -52,6 +52,13 @@ inherit
 			default_create
 		end
 
+	EVS_GRID_SEARCHABLE_ITEM
+		undefine
+			copy,
+			is_equal,
+			default_create
+		end
+
 create
 	default_create,
 	make_with_text
@@ -132,6 +139,21 @@ feature -- Access
 			-- General tooltip used to display information
 			-- Use this tooltip if normal tooltip provided cannot satisfy,
 			-- for example, you want to be able to pick and drop from/to tooltip.
+
+	stone: STONE is
+			-- Stone attached to Current item
+			-- Result `stone_internal' if `stone_function' is not set,
+			-- otherwise invoke `stone_function' to get the actual stone.
+		do
+			if stone_function = Void then
+				Result := stone_internal
+			else
+				Result := stone_function.item ([])
+			end
+		end
+
+	stone_function: FUNCTION [ANY, TUPLE, STONE]
+			-- Function to fetch `stone'.
 
 feature -- Status report
 
@@ -398,6 +420,53 @@ feature -- Setting
 			general_tooltip := Void
 		ensure
 			general_tooltip_removed: general_tooltip = Void
+		end
+
+	set_stone (a_stone: like stone) is
+			-- Set `stone' with `a_stone'.
+		do
+			stone_internal := a_stone
+		ensure
+			stone_set: stone_internal = a_stone
+		end
+
+	set_stone_function (a_function: like stone_function) is
+			-- Set `stone_function' with `a_function'.
+		do
+			stone_function := a_function
+		ensure
+			stone_function_set: stone_function = a_function
+		end
+
+feature -- Searchable
+
+	set_image (a_image: like image) is
+			-- Set `image' with `a_image'.
+		require
+			a_image_attached: a_image /= Void
+		do
+			create image_internal.make_from_string (a_image)
+		ensure
+			image_set: image /= Void and then image.is_equal (a_image)
+		end
+
+	image: STRING is
+			-- Image of current used in search
+		do
+			Result := image_internal
+			if Result = Void then
+				Result := ""
+			end
+		end
+
+feature{NONE} -- Implementation
+
+	image_internal: like image
+			-- Implementation of `image'
+
+	internal_replace (original, new: STRING) is
+			-- Replace every occurrence of `original' with `new' in `image'.
+		do
 		end
 
 feature{NONE} -- Redraw
@@ -866,6 +935,15 @@ feature{NONE} -- Implementation
 
 	veto_general_tooltip_agent_internal: like veto_general_tooltip_agent
 			-- Implementation of `veto_general_tooltip_agent'
+
+	grid_item: EV_GRID_ITEM is
+			-- EV_GRID item associated with current
+		do
+			Result := Current
+		end
+
+	stone_internal: like stone
+			-- Implementation of `stone' if `stone_function' is not Set.
 
 feature{NONE} -- Action type constants
 

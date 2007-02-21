@@ -9,6 +9,9 @@ indexing
 class
 	EB_DEVELOPMENT_WINDOW_DIRECTOR
 
+inherit
+	EB_SHARED_ID_SOLUTION
+
 create
 	make
 
@@ -71,18 +74,21 @@ feature -- Command
 	construct_with_session_data (a_dev_window: EB_DEVELOPMENT_WINDOW; a_session_data: EB_DEVELOPMENT_WINDOW_SESSION_DATA) is
 			-- Recreate a previously existing development window using `a_session_data'.
 		local
+			l_conf_class: CONF_CLASS
+			l_group: CONF_GROUP
 			l_class_i: CLASS_I
 			l_class_c_stone: CLASSC_STONE
+			l_class_i_stone: CLASSI_STONE
+			l_cluster_stone: CLUSTER_STONE
 			l_cluster_string, l_class_string, l_feature_string: STRING
 			l_has_editor_restored: BOOLEAN
+			l_address_manager: EB_ADDRESS_MANAGER
 		do
 			if a_dev_window = Void then
 				internal_construct
 			else
 				develop_window := a_dev_window
 			end
-
---			develop_window.set_internal_development_window_data (a_session_data)
 				-- Initial editors.
 			l_has_editor_restored := develop_window.editors_manager.restore_editors (a_session_data.open_classes, a_session_data.open_clusters)
 			if l_has_editor_restored then
@@ -90,40 +96,59 @@ feature -- Command
 				develop_window.editors_manager.show_editors_possible
 			end
 				-- Attempt to reload last edited class of `Current'.
-			if a_session_data.file_name /= Void then
--- Temp comment by Larry, remove it later
---				develop_window.conf_todo
-				-- FIXIT: there are list of classes assiociate with a class name, which one should we use?
-				if develop_window.eiffel_universe.classes_with_name (a_session_data.file_name).count > 0 then
-					l_class_i := develop_window.eiffel_universe.classes_with_name (a_session_data.file_name).first
-				end
+			if a_session_data.current_target /= Void then
 
-				if l_class_i /= Void and then l_class_i.is_compiled then
-						-- Create compiled class stone and target `Current' to it.
-					create l_class_c_stone.make (l_class_i.compiled_class)
-					develop_window.set_stone (l_class_c_stone)
-					if a_session_data.editor_position > 0 then
-						develop_window.editors_manager.current_editor.display_line_when_ready (a_session_data.editor_position, False)
+				if not a_session_data.current_target_type then
+						-- A class target
+					l_conf_class := class_of_id (a_session_data.current_target)
+					if l_conf_class /= Void then
+						l_class_i ?= l_conf_class
+						check
+							l_class_i_not_void: l_class_i /= Void
+						end
+						if l_class_i.is_compiled then
+							create l_class_c_stone.make (l_class_i.compiled_class)
+							develop_window.set_stone (l_class_c_stone)
+						else
+							create l_class_i_stone.make (l_class_i)
+							develop_window.set_stone (l_class_i_stone)
+						end
+					end
+				else
+						-- A group target
+					l_group := group_of_id (a_session_data.current_target)
+					if l_group /= Void then
+						create l_cluster_stone.make (l_group)
+						develop_window.set_stone (l_cluster_stone)
 					end
 				end
-			end
-					-- Presumption is made that if the strings are not void then they represent
-					-- valid entities in the project.
-				l_cluster_string := a_session_data.context_cluster_string
-				l_class_string := a_session_data.context_class_string
-				l_feature_string := a_session_data.context_feature_string
-				if l_feature_string /= Void then
-					develop_window.tools.features_relation_tool.address_manager.feature_address.set_text (l_feature_string)
-					develop_window.tools.features_relation_tool.address_manager.class_address.set_text (l_class_string)
-					develop_window.tools.features_relation_tool.address_manager.execute_with_feature
-				elseif l_class_string /= Void then
-					develop_window.tools.class_tool.address_manager.class_address.set_text (l_cluster_string)
-					develop_window.tools.class_tool.address_manager.execute_with_class
-				elseif l_cluster_string /= Void then
-					-- FIXIT: We only cluster information available, which tool should we put it?
-					develop_window.tools.class_tool.address_manager.cluster_address.set_text (l_cluster_string)
-					develop_window.tools.class_tool.address_manager.execute_with_cluster
+				if 
+					a_session_data.editor_position > 0 
+					and then develop_window.editors_manager.current_editor /= Void
+				then
+					develop_window.editors_manager.current_editor.display_line_when_ready (a_session_data.editor_position, False)
 				end
+			end
+				-- Presumption is made that if the strings are not void then they represent
+				-- valid entities in the project.
+			l_cluster_string := a_session_data.context_cluster_string
+			l_class_string := a_session_data.context_class_string
+			l_feature_string := a_session_data.context_feature_string
+			if l_feature_string /= Void then
+				l_address_manager := develop_window.tools.features_relation_tool.address_manager
+				l_address_manager.feature_address.set_text (l_feature_string)
+				l_address_manager.class_address.set_text (l_class_string)
+				l_address_manager.execute_with_feature
+			elseif l_class_string /= Void then
+				l_address_manager := develop_window.tools.class_tool.address_manager
+				l_address_manager.class_address.set_text (l_class_string)
+				l_address_manager.execute_with_class
+			elseif l_cluster_string /= Void then
+				-- FIXIT: We only cluster information available, which tool should we put it?
+				l_address_manager := develop_window.tools.class_tool.address_manager
+				l_address_manager.cluster_address.set_text (l_cluster_string)
+				l_address_manager.execute_with_cluster
+			end
 		end
 
 feature -- Query
@@ -141,6 +166,7 @@ feature{NONE} -- Implementation
 			l_shared: SD_SHARED
 			l_icons: EB_SD_ICONS
 		do
+				-- Set icons for docking library.
 			create l_shared
 			create l_icons.make
 			l_shared.set_icons (l_icons)
