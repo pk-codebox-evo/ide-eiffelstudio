@@ -39,9 +39,10 @@
 		<echo message=" geant install_executables" />
 		<echo message=" geant generate_documentation" />
 		<echo message=" geant build_wizards" />
+		<echo message=" geant build_vision2demo" />
 		<echo message=" geant cleanup" />
 		<echo message="     ----------" />
-		<echo message=" geant clean_delivery" />
+		<echo message=" geant clean" />
 	</target>
 
 	<target name="init_delivery" depend="init_system" >
@@ -66,6 +67,7 @@
 		<geant target="install_executables"	fork="false" reuse_variables="true" />
 		<geant target="generate_documentation"	fork="false" reuse_variables="true" />
 		<geant target="build_wizards"		fork="false" reuse_variables="true" />
+		<geant target="build_vision2demo"	fork="false" reuse_variables="true" />
 		<geant target="cleanup"			fork="false" reuse_variables="true" />
 		
 		<unset name="logmsg" />
@@ -159,7 +161,6 @@
 		
 		<unset name="logmsg" />
 	</target>
-	
 	<target name="finalize_executables_windows" depend="init_delivery" if="${is_windows}">
 		<!-- finish_freezing -->
 		<set name="logmsg" value="Finalize finish_freezing ..."/>
@@ -287,7 +288,6 @@
 		
 		<unset name="logmsg" />
 	</target>
-	
 	<target name="create_delivery_windows" depend="init_delivery" if="${is_windows}">
 		<!-- Windows -->
 		<mkdir directory="${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}lib${path_separator}${ISE_C_COMPILER}" />
@@ -302,7 +302,6 @@
 -->
 		
 	</target>
-	
 	<target name="create_delivery_unix" depend="init_delivery" unless="${is_windows}">
 		<exec executable="chmod a+x ${INSTALL_DIR}${path_separator}make_install" accept_errors="true" />
 
@@ -361,7 +360,6 @@
 		
 		<unset name="logmsg" />
 	</target>
-	
 	<target name="install_executables_unix" depend="init_delivery" unless="${is_windows}">
 		<exec executable="chmod a+x ${INSTALL_DIR}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}* " accept_errors="true" exit_code_variable="return_code" />
 		<exec executable="chmod a+x ${INSTALL_DIR}${path_separator}esbuilder${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}* " accept_errors="true" exit_code_variable="return_code" />
@@ -386,18 +384,10 @@
 		<copy dir="${OUTPUT_DIR}" file="emake${exe}" to_directory="${tmp_install_dir}${path_separator}bin" if="${tmp_available}=true" />
 	</target>
 
-	<target name="clean_es" depend="init_delivery">
-		<exec executable="rmdir /q/s ${EIFGENs}" if="${is_windows}" />
-		<exec executable="rm -rf ${EIFGENs}" unless="${is_windows}" />
-		<available resource="${INSTALL_DIR}" variable="installdir_available" />
-		<geant target="clean_delivery" reuse_variables="true" fork="false" if="${installdir_available}=true" />
-	</target>
-
-	<target name="clean_delivery" depend="init_delivery">
-		<!--
-		<delete directory="${INSTALL_DIR}" if="${installdir_available}=true" />
-		-->
-		<exec executable="rmdir /q/s ${INSTALL_DIR}" if="${is_windows}" accept_errors="true" exit_code_variable="return_code" />
+	<target name="clean" depend="init_delivery">
+		<exec executable="rm ${build_es_logfile}" if="${is_windows}" accept_errors="true" exit_code_variable="return_code" />
+		<exec executable="rm ${build_es_logfile}" unless="${is_windows}" accept_errors="true" exit_code_variable="return_code" />
+		<exec executable="rmdir /q/s ${build_es_logfile}" if="${is_windows}" accept_errors="true" exit_code_variable="return_code" />
 		<exec executable="rm -rf ${INSTALL_DIR}" unless="${is_windows}" accept_errors="true" exit_code_variable="return_code" />
 	</target>
 
@@ -472,12 +462,10 @@
 
 		<unset name="logmsg" />
 	</target>
-
 	<target name="build_wizards_unix" depend="init_delivery" unless="${is_windows}">
 		<exec executable="rm -rf ${INSTALL_DIR}${path_separator}studio${path_separator}wizards${path_separator}new_projects${path_separator}wel*" />
 		<exec executable="rm -rf ${INSTALL_DIR}${path_separator}studio${path_separator}wizards${path_separator}new_projects${path_separator}dotnet*" />
 	</target>
-
 	<target name="build_wizards_windows" depend="init_delivery" if="${is_windows}">
 		<geant file="${misc_dir}${path_separator}compile_wizards.eant" target="finalize_wel_wizard" reuse_variables="true" fork="false" />
 		<geant file="${misc_dir}${path_separator}compile_wizards.eant" target="delivery_wizard" reuse_variables="true" fork="false" />
@@ -539,7 +527,7 @@
                 <set name="system_target" value="vision2_demo" />
                 <set name="system_ecf" value="${EIFFEL_SRC}${path_separator}examples${path_separator}vision2${path_separator}widget_test${path_separator}vision2_demo.ecf" />
                 <set name="system_dir" value="${cwd}" />
-                <geant file="${EIFFEL_SRC}${path_separator}scripts${path_separator}misc${path_separator}ise_eiffel.eant" target="finalize" reuse_variables="true"  fork="false"/>
+                <geant file="${EIFFEL_SRC}${path_separator}scripts${path_separator}misc${path_separator}ise_eiffel.eant" target="finalize" reuse_variables="true" fork="false" />
 -->
 		<exec executable="rmdir /q/s ${vision2demo_dir}${path_separator}interface" if="${is_windows}" accept_errors="true" />
 		<exec executable="rm -rf ${vision2demo_dir}${path_separator}interface" unless="${is_windows}" accept_errors="true" />

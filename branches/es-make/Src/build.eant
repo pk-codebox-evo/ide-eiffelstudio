@@ -21,9 +21,10 @@
 		<geant file="${EIFFEL_SRC}${path_separator}scripts${path_separator}build.eant" target="build_dev" reuse_variables="true" fork="false" />
 	</target>
 	<target name="build_delivery">
-		<geant file="${EIFFEL_SRC}${path_separator}scripts${path_separator}build.eant" target="make_delivery" reuse_variables="true" fork="false" />
+		<geant file="${EIFFEL_SRC}${path_separator}scripts${path_separator}make_delivery.eant" target="build_delivery" reuse_variables="true" fork="false" />
 	</target>
 	<target name="clean">
 		<geant file="${EIFFEL_SRC}${path_separator}scripts${path_separator}build.eant" target="clean_all" reuse_variables="true" fork="false" />
+		<geant file="${EIFFEL_SRC}${path_separator}scripts${path_separator}make_delivery.eant" target="clean" reuse_variables="true" fork="false" />
 	</target>
 </project>
