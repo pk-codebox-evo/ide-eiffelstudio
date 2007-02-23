@@ -59,13 +59,34 @@ feature -- Output
 				else
 					Result := once "ref"
 				end
-
 			else
 				-- we cannot handle all these at the moment
 				-- TODO: handle anchored types and friends
 				Result := "wrong_type"
 				add_error(create {BPL_AST_ERROR}.make_ast("Cannot handle type '" + type.dump
 											+ "' so far because it is a " + type.generating_type + ".", type))
+			end
+		ensure
+			Result_not_void: Result /= Void
+		end
+
+	bpl_type_for_type_a (type: TYPE_A): STRING is
+			-- Compute the suitable type in BPL for `type'.
+		require
+			type_not_void: type /= Void
+		local
+			actual: TYPE_A
+		do
+			actual := type.actual_type
+			if actual.is_integer then
+				Result := "int"
+			elseif actual.is_boolean then
+				Result := "bool"
+			elseif actual.is_expanded then
+				Result := "wrong_type"
+				add_error(create {BPL_ERROR}.make("Cannot handle type '"+actual.dump+"' since it's expanded."))
+			else
+				Result := "ref"
 			end
 		ensure
 			Result_not_void: Result /= Void

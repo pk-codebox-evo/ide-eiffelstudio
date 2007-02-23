@@ -91,17 +91,17 @@ feature -- Verification
 					write_background_theory
 					cls_ast := current_class.ast
 
-					create bpl_ast_printer.make
+					create bpl_ast_printer.make (current_class)
 					ml := match_list_server.item (current_class.class_id)
-					bpl_ast_printer.setup (cls_ast, ml, False, False)
+					bpl_ast_printer.setup (current_class.ast, ml, False, False)
 					bpl_ast_printer.process_ast_node (cls_ast)
 
-					create bpl_generator.make
+					create bpl_generator.make (current_class)
 					ml := match_list_server.item (current_class.class_id)
-					bpl_generator.setup (cls_ast, ml, False, False)
+					bpl_generator.setup (current_class.ast, ml, False, False)
 					bpl_generator.process_ast_node (cls_ast) -- print PART C (class to prove)
 					verifier.verify
-					
+
 				end
 			end
 		end

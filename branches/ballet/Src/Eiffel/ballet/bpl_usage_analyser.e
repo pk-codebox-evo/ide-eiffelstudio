@@ -10,17 +10,23 @@ class
 inherit
 	BPL_VISITOR
 		redefine
-			default_create,
+			make,
 			process_feature_as
 		end
 
+create
+	make
+
 feature{NONE} -- Initialization
 
-	default_create is
+	make (a_class: CLASS_C) is
 			-- Default creation
 		do
+			Precursor{BPL_VISITOR} (a_class)
 			create {ARRAYED_LIST [FEATURE_AS]}command_list.make (1)
 			create {ARRAYED_LIST [FEATURE_AS]}query_list.make (1)
+			create {ARRAYED_LIST [FEATURE_AS]}deferred_command_list.make (1)
+			create {ARRAYED_LIST [FEATURE_AS]}deferred_query_list.make (1)
 			create {ARRAYED_LIST [FEATURE_AS]}attribute_list.make (1)
 			create {ARRAYED_LIST [FEATURE_AS]}function_list.make (1)
 			create {ARRAYED_LIST [FEATURE_AS]}procedure_list.make (1)
@@ -31,7 +37,7 @@ feature -- Analyse
 	analyse is
 			-- Do the analysis of the class.
 		do
-			safe_process (current_class)
+			safe_process (current_class.ast)
 		end
 
 feature -- Access
@@ -41,6 +47,12 @@ feature -- Access
 
 	query_list: LIST [FEATURE_AS]
 		-- List of all queries in the class
+
+	deferred_query_list: LIST [FEATURE_AS]
+		-- List of deferred queries
+
+	deferred_command_list: LIST [FEATURE_AS]
+		-- List of deferred commands
 
 	attribute_list: LIST [FEATURE_AS]
 		-- List of all attributes in the class (queries as attributes)
@@ -63,14 +75,22 @@ feature -- Processing
 				command_list.extend (l_as)
 			end
 			if l_as.is_attribute then
-					attribute_list.extend (l_as)
-			elseif not l_as.is_deferred then
+				attribute_list.extend (l_as)
+			elseif l_as.is_deferred then
+				if l_as.is_function then
+					deferred_query_list.extend (l_as)
+				else
+					deferred_command_list.extend (l_as)
+				end
+			else
 				if l_as.is_function then
 					function_list.extend (l_as)
 				else
 					procedure_list.extend (l_as)
 				end
 			end
+
+
 		end
 
 invariant

@@ -172,13 +172,6 @@ inherit
 create
 	make
 
-feature{NONE} -- Initialization
-
-	make is
-			-- Initialization routine.
-		do
-		end
-
 feature -- Output
 
 	put_name (a_string: STRING) is
@@ -601,7 +594,7 @@ feature
 	process_operand_as (l_as: OPERAND_AS) is
 		do
 			indent := indent + 1
-			put_name ("operand_as (" + l_as.target.access_name + ")")
+			put_name ("operand_as (" + l_as.target.access_name  + ")")
 			Precursor (l_as)
 			indent := indent - 1
 		end
@@ -747,7 +740,7 @@ feature
 	process_binary_as (l_as: BINARY_AS) is
 		do
 			indent := indent + 1
-			put_name ("binary_as")
+			put_name ("binary_as"+ "--" + type_for (l_as).out)
 			Precursor (l_as)
 			indent := indent - 1
 		end

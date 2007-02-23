@@ -17,27 +17,123 @@ inherit
 
 	SHARED_BPL_ENVIRONMENT
 
-feature {NONE}
+feature{NONE} -- Initialization
 
-	current_class: CLASS_AS is
-			-- Alias for 'parsed_class'.
+	make (a_class: CLASS_C) is
+			-- Class to process.
+		require
+			not_void: a_class /= Void
 		do
-			Result := parsed_class
+			create factory
+			current_class := a_class
+		ensure
+			class_set: current_class = a_class
 		end
 
-	current_feature: FEATURE_AS
+feature -- Access
 
-feature
+	current_class: CLASS_C
+			-- Current class
+
+	current_feature: FEATURE_I
+			-- Current feature
+
+feature -- Setup
+
+	set_current_class (a_class: CLASS_C) is
+			-- Set the `current_class' to `a_class'.
+		require
+			not_void: a_class /= Void
+		do
+			current_class := a_class
+		ensure
+			value_set: current_class = a_class
+		end
+
+	set_current_feature (a_feature: FEATURE_I) is
+			-- Set the `current_feature' to `a_feature'.
+		do
+			current_feature := a_feature
+		ensure
+			value_set: current_feature = a_feature
+		end
 
 	process_feature_as (l_as: FEATURE_AS) is
 		do
-			current_feature := l_as
+			current_feature := current_class.feature_named (l_as.feature_name)
 			Precursor (l_as)
 			current_feature := Void
 		end
 
+feature -- Helper
+
+	type_for (l_as: EXPR_AS): TYPE_A is
+			-- Type for `l_as'.
+		require
+			has_current_feature: current_feature /= Void
+		local
+			ntf: NULL_TEXT_FORMATTER
+			tfd: TEXT_FORMATTER_DECORATOR
+			ados: AST_DECORATED_OUTPUT_STRATEGY
+		do
+			create ntf
+			create tfd.make_for_appending (ntf)
+			create ados.make (tfd)
+			ados.set_current_class (current_class)
+			ados.set_current_feature (current_feature)
+			ados.reset_last_class_and_type
+			Result := ados.expr_type (l_as)
+		end
+
+	nested_as_to_nested_expr_as (a_nested_as: NESTED_AS): NESTED_EXPR_AS is
+			-- Transform a NESTED_AS subtree into a NESTED_EXPR_AS subtree
+		require
+			not_void: a_nested_as /= Void
+		local
+			sub_n: NESTED_AS
+			sub_ne: NESTED_EXPR_AS
+			new_expr: EXPR_CALL_AS
+		do
+			sub_n ?= a_nested_as.message
+			new_expr := factory.new_expr_call_as (a_nested_as.target)
+			if sub_n /= Void then
+				sub_ne := nested_as_to_nested_expr_as (sub_n)
+				Result := prefix_expression (new_expr,sub_ne)
+			else
+				Result := factory.new_nested_expr_as (new_expr,a_nested_as.message,a_nested_as.dot_symbol,Void,Void)
+			end
+		ensure
+			not_void: Result /= Void
+		end
+
+	prefix_expression (e: EXPR_CALL_AS; ne: NESTED_EXPR_AS): NESTED_EXPR_AS is
+			-- Prefix the call of `ne' with a target `e'.
+		local
+			sub_ne: NESTED_EXPR_AS
+			new_expr: EXPR_CALL_AS
+		do
+			sub_ne ?= ne.target
+			if sub_ne /= Void then
+				new_expr := factory.new_expr_call_as (prefix_expression (e,sub_ne))
+				Result := factory.new_nested_expr_as (new_expr, ne.message, Void, Void, Void)
+			else
+				new_expr ?= ne.target
+				check
+					must_be_expr_call: new_expr /= Void
+				end
+				sub_ne := factory.new_nested_expr_as (e,new_expr.call, Void, Void, Void)
+				new_expr := factory.new_expr_call_as (sub_ne)
+				Result := factory.new_nested_expr_as (new_expr,ne.message, Void, Void, Void)
+			end
+		end
+
+	factory: AST_FACTORY
+
+invariant
+	factory_exists: factory /= Void
+
 indexing
-	copyright:	"Copyright (c) 2006, Raphael Mack"
+	copyright:	"Copyright (c) 2006, Raphael Mack and Bernd Schoeller"
 	license:	"GPL version 2 or later"
 	copying: "[
 

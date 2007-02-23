@@ -19,7 +19,8 @@ inherit
 
 	BPL_VISITOR
 		redefine
-			process_class_as
+			process_class_as,
+			make
 		end
 
 create
@@ -27,9 +28,10 @@ create
 
 feature {NONE} -- Initialization
 
-	make is
+	make (a_class: CLASS_C) is
 			-- Initialization routine.
 		do
+			Precursor {BPL_VISITOR}(a_class)
 			already_processed := False
 		end
 
@@ -45,6 +47,7 @@ feature -- Actual Processing of a class
 				analyse_usage
 				define_attributes
 				define_functions
+				define_signatures
 			end
 		end
 
@@ -60,8 +63,8 @@ feature {NONE} -- Implementation
 		local
 			a_list: LIST [FEATURE_AS]
 		do
-			create usage_analyser
-			usage_analyser.setup (current_class,match_list,will_process_leading_leaves,will_process_trailing_leaves)
+			create usage_analyser.make (current_class)
+			usage_analyser.setup (current_class.ast,match_list,will_process_leading_leaves,will_process_trailing_leaves)
 			usage_analyser.analyse
 
 			bpl_out ("// FEATURE LISTS ------------------------------------------%N")
@@ -73,6 +76,16 @@ feature {NONE} -- Implementation
 			a_list := usage_analyser.command_list
 			from a_list.start until a_list.off loop
 				bpl_out ("// Command: "+a_list.item.feature_name+"%N")
+				a_list.forth
+			end
+			a_list := usage_analyser.deferred_command_list
+			from a_list.start until a_list.off loop
+				bpl_out ("// Def. Command: "+a_list.item.feature_name+"%N")
+				a_list.forth
+			end
+			a_list := usage_analyser.deferred_query_list
+			from a_list.start until a_list.off loop
+				bpl_out ("// Def. Query: "+a_list.item.feature_name+"%N")
 				a_list.forth
 			end
 			a_list := usage_analyser.attribute_list
@@ -100,8 +113,8 @@ feature {NONE} -- Implementation
 		local
 			a_list: LIST [FEATURE_AS]
 		do
-			create attribute_writer
-			attribute_writer.setup (current_class,match_list,will_process_leading_leaves,will_process_trailing_leaves)
+			create attribute_writer.make (current_class)
+			attribute_writer.setup (current_class.ast,match_list,will_process_leading_leaves,will_process_trailing_leaves)
 
 			a_list := usage_analyser.attribute_list
 			from a_list.start until a_list.off loop
@@ -117,15 +130,52 @@ feature {NONE} -- Implementation
 		local
 			a_list: LIST [FEATURE_AS]
 		do
-			create function_writer
-			function_writer.setup (current_class,match_list,will_process_leading_leaves,will_process_trailing_leaves)
+			create function_writer.make (current_class)
+			function_writer.setup (current_class.ast,match_list,will_process_leading_leaves,will_process_trailing_leaves)
 
+			a_list := usage_analyser.deferred_query_list
+			from a_list.start until a_list.off loop
+				function_writer.write_function (current_class.feature_named (a_list.item.feature_name))
+				a_list.forth
+			end
 			a_list := usage_analyser.function_list
 			from a_list.start until a_list.off loop
-				function_writer.write_function (a_list.item)
+				function_writer.write_function (current_class.feature_named (a_list.item.feature_name))
 				a_list.forth
 			end
 		end
+
+	signature_writer: BPL_SIGNATURE_WRITER
+
+	define_signatures is
+			-- Define all signatures of the current class.
+		local
+			a_list: LIST [FEATURE_AS]
+		do
+			create signature_writer.make (current_class)
+
+			a_list := usage_analyser.deferred_command_list
+			from a_list.start until a_list.off loop
+				signature_writer.write_signature (current_class.feature_named (a_list.item.feature_name))
+				a_list.forth
+			end
+			a_list := usage_analyser.deferred_query_list
+			from a_list.start until a_list.off loop
+				signature_writer.write_signature (current_class.feature_named (a_list.item.feature_name))
+				a_list.forth
+			end
+			a_list := usage_analyser.function_list
+			from a_list.start until a_list.off loop
+				signature_writer.write_signature (current_class.feature_named (a_list.item.feature_name))
+				a_list.forth
+			end
+			a_list := usage_analyser.procedure_list
+			from a_list.start until a_list.off loop
+				signature_writer.write_signature (current_class.feature_named (a_list.item.feature_name))
+				a_list.forth
+			end
+		end
+
 
 indexing
 	copyright:	"Copyright (c) 2006, Raphael Mack"
