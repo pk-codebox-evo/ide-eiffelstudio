@@ -15,7 +15,8 @@
 
 	<target name="help">
 		<echo message="usage:"/>
-		<echo message=" geant  compile_runtime" />
+		<echo message=" geant compile_runtime" />
+		<echo message=" geant clean_runtime" />
 	</target>	
 
 	<!--
