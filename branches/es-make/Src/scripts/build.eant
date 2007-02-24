@@ -29,6 +29,8 @@
 		<echo message="       ----------" unless="${opt}" />
 		<set name="opt" value="" unless="${opt}" />
 		<echo message=" geant compile_runtime" />
+		<echo message=" geant clean_runtime" />
+		<echo message="       ----------"/>
 		<echo message=" geant compile_library" />
 		<echo message="       ----------"/>
 		<echo message=" geant ${opt} clean_ec"/>
@@ -97,6 +99,7 @@
 		<geant file="${scripts_dir}${path_separator}make_delivery.eant" target="build_delivery" reuse_variables="true"  fork="false"/>
 	</target>
 	<target name="clean_all">
+		<geant target="clean_runtime" reuse_variables="true" fork="false" />
 		<geant target="clean_ec" reuse_variables="true" fork="false" />
 		<geant target="clean_ec_batch" reuse_variables="true" fork="false" />
 		<geant target="clean_estudio" reuse_variables="true" fork="false" />
