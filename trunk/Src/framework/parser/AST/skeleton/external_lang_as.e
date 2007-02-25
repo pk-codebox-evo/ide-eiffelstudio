@@ -55,6 +55,13 @@ feature -- Attributes
 			-- Language name
 			-- might be replaced by external_declaration or external_definition
 
+feature -- Status report
+
+	is_built_in: BOOLEAN is
+			-- Is current a built_in one?
+		do
+		end
+
 feature -- Comparison
 
 	is_equivalent (other: like Current): BOOLEAN is
