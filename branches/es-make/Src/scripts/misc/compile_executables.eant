@@ -365,12 +365,15 @@
 	<target name="compile_library" depend="init_system">
 		<geant file="${misc_dir}/compile_library.eant" target="compile_all" reuse_variables="true"  fork="false"/>
 	</target>
+	<target name="clean_library" depend="init_system">
+		<geant file="${misc_dir}/compile_library.eant" target="clean_library" reuse_variables="true" fork="false" />
+	</target>
 
 	<!--
 	Helper scripts
 	-->
 	<target name="set_version" depend="init_system">
-		<geant file="${misc_dir}/set_version.eant" target="set_version" reuse_variables="true"  fork="false"/>
+		<geant file="${misc_dir}/set_version.eant" target="set_version" reuse_variables="true"  fork="false" />
 	</target>
 
 </project>

@@ -26,10 +26,6 @@
 	</inherit>
 	
 	<target name="help">
-		<set name="my_logfile" value="${cwd}${path_separator}my.log" unless="$build_es_logfile" />
-		<set name="my_msg" value="my logmessage" />
-		<geant target="logger" arguments="${my_logfile},${my_msg}" />
-		
 		<echo message="usage:" />
 		<echo message=" geant build_delivery" />
 		<echo message="     ----------" />
@@ -50,17 +46,22 @@
 		<set name="INSTALL_DIR" value="${cwd}${path_separator}Eiffel${ec_major_version}${ec_minor_version}" unless="${INSTALL_DIR}" />
 		<set name="OUTPUT_DIR" value="${INSTALL_DIR}${path_separator}temporary_bin" unless="${OUTPUT_DIR}" />
 		<set name="build_es_logfile" value="${cwd}${path_separator}build_es.log" unless="$build_es_logfile" />
+
+		<available resource="${INSTALL_DIR}" variable="installdir_available" />
+		<mkdir directory="${INSTALL_DIR}"  if="${installdir_available}=false" />
+		<available resource="${OUTPUT_DIR}" variable="outputdir_available" />
+		<mkdir directory="${OUTPUT_DIR}" if="${outputdir_available}=false" />
+		<unset name="installdir_available" />
+		<unset name="outputdir_available" />
 	</target>
 
 	<target name="build_delivery" depend="init_delivery">
-		<available resource="${INSTALL_DIR}" variable="installdir_available" />
-		<mkdir directory="${INSTALL_DIR}"  if="${installdir_available}=false" />
-		<mkdir directory="${OUTPUT_DIR}" />
-
 		<set name="logmsg" value="# Building EiffelStudio delivery #" />
 		<geant target="logger" arguments="${build_es_logfile},${logmsg}" />
 
+<!-- actually doing nothing
 		<geant target="set_version"		fork="false" reuse_variables="true" />
+-->
 		<geant target="finalize_executables"	fork="false" reuse_variables="true" />
 		<geant target="create_delivery" 	fork="false" reuse_variables="true" />
 		<geant target="install_executables"	fork="false" reuse_variables="true" />
@@ -69,6 +70,8 @@
 		<geant target="build_vision2demo"	fork="false" reuse_variables="true" />
 		<geant target="cleanup"			fork="false" reuse_variables="true" />
 		
+		<set name="logmsg" value="# Finished building EiffelStudio delivery #" />
+		<geant target="logger" arguments="${build_es_logfile},${logmsg}" />
 		<unset name="logmsg" />
 	</target>
 
@@ -201,25 +204,21 @@
 		<set name="logmsg" value="Creating delivery structure..." />
 		<geant target="logger" arguments="${build_es_logfile},${logmsg}" />
 
-		<!--
-			<echo message="Clean delivery ..." to_file="$build_es_logfile" append="true" if="${installdir_available}=true" />
-			<geant target="clean_delivery" reuse_variables="true" fork="false" if="${installdir_available}=true" />
-			<echo message="Error occurred during 'clean_delivery' (${return_code})" unless="${return_code}=0" />
-			<echo message="Error occurred during 'clean_delivery' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
-			<exit code="${return_code}" unless="${return_code}=0" />
+<!--
+		<echo message="Clean delivery ..." to_file="$build_es_logfile" append="true" if="${installdir_available}=true" />
+		<geant target="clean_delivery" reuse_variables="true" fork="false" if="${installdir_available}=true" />
+		<echo message="Error occurred during 'clean_delivery' (${return_code})" unless="${return_code}=0" />
+		<echo message="Error occurred during 'clean_delivery' (${return_code})" unless="${return_code}=0" to_file="$build_es_logfile" append="true" />
+		<exit code="${return_code}" unless="${return_code}=0" />
 
-			<available resource="${INSTALL_DIR}" variable="installdir_available" />
-		-->
+		<available resource="${INSTALL_DIR}" variable="installdir_available" />
+-->
 
 		<set name="return_code" value="0" />
 
-		<!-- Make delivery (until task end) -->
-		<set name="logmsg" value="Task: make_delivery" />
-		<geant target="logger" arguments="${build_es_logfile},${logmsg}" />
-		<!-- 
-			cwd -> INSTALL_DIR
-			<set name="NEW_ISE_EIFFEL" value="${cwd}" unless="${NEW_ISE_EIFFEL}" />
-		-->
+<!-- cwd -> INSTALL_DIR
+		<set name="NEW_ISE_EIFFEL" value="${cwd}" unless="${NEW_ISE_EIFFEL}" />
+-->
 		<set name="NEW_ISE_EIFFEL" value="${INSTALL_DIR}" unless="${NEW_ISE_EIFFEL}" />
 
 		<!-- skeleton -->
@@ -443,6 +442,9 @@
 		<!-- cleanup temporary files -->
 		<exec executable="rmdir /q/s ${INSTALL_DIR}${path_separator}temporary_documentation" if="${is_windows}" accept_errors="true" />
 		<exec executable="rm -rf ${INSTALL_DIR}${path_separator}temporary_documentation" unless="${is_windows}" accept_errors="true" />
+		<exec executable="rm ${EIFFEL_SRC}${path_separator}tools${path_separator}doc_builder${path_separator}output_log.txt" if="${is_windows}" accept_errors="true" />
+		<exec executable="rm ${EIFFEL_SRC}${path_separator}tools${path_separator}doc_builder${path_separator}output_log.txt" unless="${is_windows}" accept_errors="true" />
+
 		<unset name="tmp_docbuilder_avail" />
 		<unset name="tmp_documentation_avail" />
 
@@ -488,45 +490,41 @@
 		<geant target="logger" arguments="${build_es_logfile},${logmsg}" />
 
 		<set name="vision2demo_dir" value="${INSTALL_DIR}${path_separator}vision2_demo" />
+		<set name="vision2demo_source_dir" value="${EIFFEL_SRC}${path_separator}examples${path_separator}vision2${path_separator}widget_test${path_separator}interface_temp" />
 		<set name="build_dir" value="${EIFFEL_SRC}${path_separator}build" />
 
-		<mkdir directory="${vision2demo_dir}${path_separator}interface" />
+		<mkdir directory="${vision2demo_source_dir}" />
 
-		<copy file="gb_constants.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}Constants" />
-		<copy file="gb_general_utilities.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}utilities" />
-		<copy file="gb_widget_utilities.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}utilities" />
-		<copy file="ordered_string_handler.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}utilities" />
-		<copy file="gb_supported_events.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}main" />
-		<copy file="object_default_state_checker.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}utilities" />
-		<copy file="gb_color_stone.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}utilities" />
+		<copy file="gb_constants.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}Constants" />
+		<copy file="gb_general_utilities.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}utilities" />
+		<copy file="gb_widget_utilities.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}utilities" />
+		<copy file="ordered_string_handler.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}utilities" />
+		<copy file="gb_supported_events.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}main" />
+		<copy file="object_default_state_checker.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}utilities" />
+		<copy file="gb_color_stone.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}utilities" />
+		<copy file="gb_fixed_positioner.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}dialogs${path_separator}gb_fixed_positioner" />
+		<copy file="gb_fixed_positioner_imp.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}dialogs${path_separator}gb_fixed_positioner" />
+		<copy file="gb_table_positioner.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}dialogs${path_separator}gb_table_positioner" />
+		<copy file="gb_table_positioner_imp.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}dialogs${path_separator}gb_table_positioner" />
+		<copy file="gb_ev_pixmap_handler.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}interface" />
+		<copy file="gb_ev_box_editor_constructor.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}interface${path_separator}widgets${path_separator}containers" />
+		<copy file="gb_ev_container_editor_constructor.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}interface${path_separator}widgets${path_separator}containers" />
+		<copy file="gb_ev_fixed_editor_constructor.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}interface${path_separator}widgets${path_separator}containers" />
+		<copy file="gb_ev_frame_editor_constructor.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}interface${path_separator}widgets${path_separator}containers" />
+		<copy file="gb_ev_notebook_editor_constructor.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}interface${path_separator}widgets${path_separator}containers" />
+		<copy file="gb_ev_table_editor_constructor.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}interface${path_separator}widgets${path_separator}containers" />
+		<copy file="gb_ev_viewport_editor_constructor.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}interface${path_separator}widgets${path_separator}containers" />
+		<copy file="gb_ev_gauge_editor_constructor.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}interface${path_separator}widgets${path_separator}primitives" />
+		<copy file="gb_ev_text_component_editor_constructor.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}interface${path_separator}widgets${path_separator}primitives" />
+		<copy file="gb_ev_deselectable_editor_constructor.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}interface${path_separator}properties" />
+		<copy file="gb_ev_sensitive_editor_constructor.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}interface${path_separator}properties" />
+		<copy file="gb_ev_text_alignable_editor_constructor.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}interface${path_separator}properties" />
+		<copy file="gb_ev_textable_editor_constructor.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}interface${path_separator}properties" />
+		<copy file="gb_ev_tooltipable_editor_constructor.e" to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}interface${path_separator}properties" />
 
-		<copy file="gb_fixed_positioner.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}dialogs${path_separator}gb_fixed_positioner" />
-		<copy file="gb_fixed_positioner_imp.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}dialogs${path_separator}gb_fixed_positioner" />
-		<copy file="gb_table_positioner.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}dialogs${path_separator}gb_table_positioner" />
-		<copy file="gb_table_positioner_imp.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}dialogs${path_separator}gb_table_positioner" />
-
-		<copy file="gb_ev_pixmap_handler.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}interface" />
-		<copy file="gb_ev_box_editor_constructor.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}interface${path_separator}widgets${path_separator}containers" />
-		<copy file="gb_ev_container_editor_constructor.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}interface${path_separator}widgets${path_separator}containers" />
-		<copy file="gb_ev_fixed_editor_constructor.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}interface${path_separator}widgets${path_separator}containers" />
-		<copy file="gb_ev_frame_editor_constructor.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}interface${path_separator}widgets${path_separator}containers" />
-		<copy file="gb_ev_notebook_editor_constructor.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}interface${path_separator}widgets${path_separator}containers" />
-		<copy file="gb_ev_table_editor_constructor.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}interface${path_separator}widgets${path_separator}containers" />
-		<copy file="gb_ev_viewport_editor_constructor.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}interface${path_separator}widgets${path_separator}containers" />
-
-		<copy file="gb_ev_gauge_editor_constructor.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}interface${path_separator}widgets${path_separator}primitives" />
-		<copy file="gb_ev_text_component_editor_constructor.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}interface${path_separator}widgets${path_separator}primitives" />
-
-		<copy file="gb_ev_deselectable_editor_constructor.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}interface${path_separator}properties" />
-		<copy file="gb_ev_sensitive_editor_constructor.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}interface${path_separator}properties" />
-		<copy file="gb_ev_text_alignable_editor_constructor.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}interface${path_separator}properties" />
-		<copy file="gb_ev_textable_editor_constructor.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}interface${path_separator}properties" />
-		<copy file="gb_ev_tooltipable_editor_constructor.e" to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}interface${path_separator}properties" />
-
-		<copy to_directory="${vision2demo_dir}${path_separator}interface" dir="${build_dir}${path_separator}interface">
+		<copy to_directory="${vision2demo_source_dir}" dir="${build_dir}${path_separator}interface">
 			<fileset include="@(events/**/*)"/>
 		</copy>
-
 		<copy to_directory="${vision2demo_dir}" dir="${INSTALL_DIR}${path_separator}esbuilder">
 			<fileset include="@(bitmaps/**/*)"/>
 		</copy>
@@ -534,26 +532,31 @@
 		<exec executable="ec -local -config ${EIFFEL_SRC}${path_separator}examples${path_separator}vision2${path_separator}widget_test${path_separator}vision2.ecf -project_path ${cwd}" dir="${vision2demo_dir}" accept_errors="true" />
 		<exec executable="ec -local -config ${EIFFEL_SRC}${path_separator}examples${path_separator}vision2${path_separator}widget_test${path_separator}vision2.ecf -project_path ${cwd} -loop &lt; ${EIFFEL_SRC}${path_separator}examples${path_separator}vision2${path_separator}widget_test${path_separator}flatshort_instructions.txt" dir="${vision2demo_dir}" accept_errors="true" />
 
-<!-- development ;-)
                 <set name="system" value="vision2_demo"/>
                 <set name="system_target" value="vision2_demo" />
                 <set name="system_ecf" value="${EIFFEL_SRC}${path_separator}examples${path_separator}vision2${path_separator}widget_test${path_separator}vision2_demo.ecf" />
                 <set name="system_dir" value="${cwd}" />
                 <geant file="${EIFFEL_SRC}${path_separator}scripts${path_separator}misc${path_separator}ise_eiffel.eant" target="finalize" reuse_variables="true" fork="false" />
--->
-		<exec executable="rmdir /q/s ${vision2demo_dir}${path_separator}interface" if="${is_windows}" accept_errors="true" />
-		<exec executable="rm -rf ${vision2demo_dir}${path_separator}interface" unless="${is_windows}" accept_errors="true" />
 
+		<mkdir directory="${INSTALL_DIR}${path_separator}vision2_demo${path_separator}spec" />
+		<mkdir directory="${INSTALL_DIR}${path_separator}vision2_demo${path_separator}spec${path_separator}${ISE_PLATFORM}" />
+		<mkdir directory="${INSTALL_DIR}${path_separator}vision2_demo${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin" />
+		<copy file="${system_dir}${path_separator}EIFGENs${path_separator}vision2_demo${path_separator}F_code${path_separator}vision2_demo${exe}" to_file="${INSTALL_DIR}${path_separator}vision2_demo${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}vision2_demo${exe}" if="${return_code}=0" />
+
+		<!-- Unix: make executable -->
+		<exec executable="chmod a+x ${INSTALL_DIR}${path_separator}vision2_demo${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}vision2_demo${exe}" unless="${is_windows}" accept_errors="true" />
+
+		<exec executable="rmdir /q/s ${vision2demo_source_dir}" if="${is_windows}" accept_errors="true" />
+		<exec executable="rm -rf ${vision2demo_source_dir}" unless="${is_windows}" accept_errors="true" />
 		<exec executable="rmdir /q/s ${vision2demo_dir}${path_separator}templates" if="${is_windows}" accept_errors="true" />
 		<exec executable="rm -rf ${vision2demo_dir}${path_separator}templates" unless="${is_windows}" accept_errors="true" />
 
 		<unset name="build_dir" />
 		<unset name="vision2demo_dir" />
+		<unset name="vision2demo_source_dir" />
 
 		<set name="logmsg" value="Finished building vision2 demo." />
 		<geant target="logger" arguments="${build_es_logfile},${logmsg}" />
 		<unset name="logmsg" />
-
 	</target>
-
 </project>

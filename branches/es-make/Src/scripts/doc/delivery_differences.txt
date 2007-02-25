@@ -162,5 +162,4 @@ Only in /cygdrive/d/appz/dev/Eiffel60/studio/spec/windows/lib/msc: wkbench.dll
 Only in Eiffel60/studio/wizards/new_projects: wizard
 Only in Eiffel60/studio/wizards/new_projects: wizard.dsc
 
-Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo: spec
 Only in /cygdrive/d/appz/dev/Eiffel60/vision2_demo: tests
