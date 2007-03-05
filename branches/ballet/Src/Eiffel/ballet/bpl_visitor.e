@@ -12,7 +12,8 @@ inherit
 
 	AST_ROUNDTRIP_ITERATOR
 		redefine
-			process_feature_as
+			process_feature_as,
+			process_symbol_as
 		end
 
 	SHARED_BPL_ENVIRONMENT
@@ -58,12 +59,21 @@ feature -- Setup
 			value_set: current_feature = a_feature
 		end
 
+feature -- Processing
+
 	process_feature_as (l_as: FEATURE_AS) is
 		do
 			current_feature := current_class.feature_named (l_as.feature_name)
 			Precursor (l_as)
 			current_feature := Void
 		end
+
+	process_symbol_as (l_as: SYMBOL_AS) is
+			-- Do nothing here (causes problems).
+		do
+
+		end
+
 
 feature -- Helper
 
@@ -74,7 +84,8 @@ feature -- Helper
 		local
 			ntf: NULL_TEXT_FORMATTER
 			tfd: TEXT_FORMATTER_DECORATOR
-			ados: AST_DECORATED_OUTPUT_STRATEGY
+			ados: BPL_AST_TYPE_INFERER
+			routine: ROUTINE_AS
 		do
 			create ntf
 			create tfd.make_for_appending (ntf)
@@ -82,7 +93,17 @@ feature -- Helper
 			ados.set_current_class (current_class)
 			ados.set_current_feature (current_feature)
 			ados.reset_last_class_and_type
+			ados.reset_locals
+			ados.set_source_class (current_class)
+			routine ?= current_feature.body.body.content
+			if routine /= Void and then routine.locals /= Void then
+				ados.set_processing_locals (True)
+				routine.locals.process (ados)
+				ados.set_processing_locals (False)
+			end
 			Result := ados.expr_type (l_as)
+		ensure
+			not_void: Result /= Void
 		end
 
 	nested_as_to_nested_expr_as (a_nested_as: NESTED_AS): NESTED_EXPR_AS is

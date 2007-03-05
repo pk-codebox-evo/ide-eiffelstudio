@@ -48,6 +48,7 @@ feature -- Actual Processing of a class
 				define_attributes
 				define_functions
 				define_signatures
+				define_implementations
 			end
 		end
 
@@ -153,6 +154,7 @@ feature {NONE} -- Implementation
 			a_list: LIST [FEATURE_AS]
 		do
 			create signature_writer.make (current_class)
+			signature_writer.setup (current_class.ast, match_list, will_process_leading_leaves, will_process_trailing_leaves)
 
 			a_list := usage_analyser.deferred_command_list
 			from a_list.start until a_list.off loop
@@ -176,6 +178,27 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	implementation_writer: BPL_IMPLEMENTATION_WRITER
+
+	define_implementations is
+			-- Define all implementations of the current class.
+		local
+			a_list: LIST [FEATURE_AS]
+		do
+			create implementation_writer.make (current_class)
+			implementation_writer.setup (current_class.ast, match_list, will_process_leading_leaves, will_process_trailing_leaves)
+
+			a_list := usage_analyser.function_list
+			from a_list.start until a_list.off loop
+				implementation_writer.write_implementation (current_class.feature_named (a_list.item.feature_name))
+				a_list.forth
+			end
+			a_list := usage_analyser.procedure_list
+			from a_list.start until a_list.off loop
+				implementation_writer.write_implementation (current_class.feature_named (a_list.item.feature_name))
+				a_list.forth
+			end
+		end
 
 indexing
 	copyright:	"Copyright (c) 2006, Raphael Mack"

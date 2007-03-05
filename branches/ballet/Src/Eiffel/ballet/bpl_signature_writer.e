@@ -25,10 +25,13 @@ feature -- Generation
 			content: ROUTINE_AS
 			l_as: FEATURE_AS
 		do
+			setup_function_writer
 			current_feature := a_feature
 			function_writer.set_current_feature (a_feature)
-			bpl_out ("// Function: "+a_feature.feature_name+" of class "+current_class.name+"%N")
+			bpl_out ("// Signature: "+a_feature.feature_name+" of class "+current_class.name+"%N")
 			bpl_out ("procedure proc.")
+			bpl_out (current_class.name)
+			bpl_out (".")
 			bpl_out (a_feature.feature_name)
 			bpl_out ("(Current:ref")
 			l_as := a_feature.body
@@ -95,13 +98,16 @@ feature -- Generation
 
 feature{NONE} -- Implementation
 
-	function_writer: BPL_FUNCTION_WRITER is
-			-- Write out the function for assertions.
-		once
-			create Result.make (current_class)
-			Result.set_result_call ("Result")
-			Result.set_heap_ref ("Heap")
-			Result.set_this_ref ("Current")
+	function_writer: BPL_FUNCTION_WRITER
+
+	setup_function_writer is
+			-- Setup the function_writer.
+		do
+			create function_writer.make (current_class)
+			function_writer.set_result_call ("Result")
+			function_writer.set_heap_ref ("Heap")
+			function_writer.set_this_ref ("Current")
+			function_writer.setup (current_class.ast, match_list, will_process_leading_leaves, will_process_trailing_leaves)
 		end
 
 end

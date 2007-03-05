@@ -77,8 +77,6 @@ feature -- Verification
 			bpl_ast_printer: BPL_AST_PRINTER
 			bpl_generator: BPL_GENERATOR
 			ml: LEAF_AS_LIST
-			cur: CURSOR
-			error_list: LIST [BPL_ERROR]
 		do
 			environment.error_log.reset
 			if current_class /= Void then

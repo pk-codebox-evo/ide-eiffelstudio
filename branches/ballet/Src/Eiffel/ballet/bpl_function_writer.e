@@ -18,7 +18,11 @@ inherit
 			process_nested_expr_as,
 			process_nested_as,
 			process_void_as,
-			process_bin_ne_as
+			process_bin_ne_as,
+			process_id_as,
+			process_access_id_as,
+			process_current_as,
+			process_un_old_as
 		end
 
 create
@@ -304,7 +308,49 @@ feature -- Processing
 	process_void_as (l_as: VOID_AS) is
 			-- Process `l_as'.
 		do
-			expr.append ("Void")
+			expr.append ("null")
 		end
+
+
+	process_access_id_as (l_as: ACCESS_ID_AS) is
+			-- Process `l_as'.
+		do
+			if l_as.is_local then
+				expr.append ("l.")
+				expr.append (l_as.access_name)
+			elseif l_as.is_argument then
+				expr.append ("arg.")
+				expr.append (l_as.access_name)
+			else
+				expr.append ("fun.")
+				expr.append (current_class.name)
+				expr.append (".")
+				expr.append (l_as.access_name)
+				expr.append ("(Heap,")
+				expr.append (this_ref)
+				expr.append (")")
+			end
+		end
+
+	process_id_as (l_as: ID_AS) is
+			-- Process `l_as'.
+		do
+
+		end
+
+	process_current_as (l_as: CURRENT_AS) is
+			-- Process `l_as'.
+		do
+			expr.append (this_ref)
+		end
+
+	process_un_old_as (l_as: UN_OLD_AS) is
+			-- Process `l_as'.
+		do
+			expr.append ("old(")
+			l_as.expr.process (Current)
+			expr.append (")")
+		end
+
 
 end
