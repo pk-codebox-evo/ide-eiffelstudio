@@ -11,6 +11,9 @@ deferred class
 
 inherit
 	EB_COMMAND
+		undefine
+			update
+		end
 
 	EB_RECYCLABLE
 
