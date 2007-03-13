@@ -44,7 +44,7 @@ feature -- File names
 			ee: EXECUTION_ENVIRONMENT
 		once
 			create ee
-			Result := ee.get("BALLET") + "/src/theory/background_theory.bpl"
+			Result := ee.get("EIFFEL_SRC") + "/Eiffel/ballet/background_theory.bpl"
 		end
 
 	use_out_file: BOOLEAN is True
@@ -65,6 +65,10 @@ feature -- Environment Setup
 			ec ?= cc
 			if ec /= Void then
 				current_class := ec
+			else
+				check
+					cast_error: False
+				end
 			end
 		end
 
@@ -77,6 +81,7 @@ feature -- Verification
 			bpl_ast_printer: BPL_AST_PRINTER
 			bpl_generator: BPL_GENERATOR
 			ml: LEAF_AS_LIST
+			error_list: LIST [BPL_ERROR]
 		do
 			environment.error_log.reset
 			if current_class /= Void then
@@ -98,7 +103,23 @@ feature -- Verification
 					ml := match_list_server.item (current_class.class_id)
 					bpl_generator.setup (current_class.ast, ml, False, False)
 					bpl_generator.process_ast_node (cls_ast) -- print PART C (class to prove)
-					verifier.verify
+
+					if not environment.error_log.has_error then
+						verifier.verify
+						if environment.error_log.has_error then
+							from
+								error_list := environment.error_log.error_list
+								error_list.start
+							until
+								error_list.after
+						  	loop
+								io.put_string("ERROR: " + error_list.item.out + "%N")
+								error_list.forth
+							end
+						end
+			  		end
+
+					-- Report the errors
 
 				end
 			end

@@ -176,6 +176,11 @@ feature {NONE} -- Implementation
 				signature_writer.write_signature (current_class.feature_named (a_list.item.feature_name))
 				a_list.forth
 			end
+			a_list := usage_analyser.attribute_list
+			from a_list.start until a_list.off loop
+				signature_writer.write_signature (current_class.feature_named (a_list.item.feature_name))
+				a_list.forth
+			end
 		end
 
 	implementation_writer: BPL_IMPLEMENTATION_WRITER

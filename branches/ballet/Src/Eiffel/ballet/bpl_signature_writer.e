@@ -22,8 +22,10 @@ feature -- Generation
 			not_attribute: a_feature.body.body /= Void
 		local
 			a_list: EIFFEL_LIST [TAGGED_AS]
-			content: ROUTINE_AS
+			routine: ROUTINE_AS
+			content: CONTENT_AS
 			l_as: FEATURE_AS
+			call_string: STRING
 		do
 			setup_function_writer
 			current_feature := a_feature
@@ -57,16 +59,18 @@ feature -- Generation
 				end
 			end
 			bpl_out (")")
-			if a_feature.is_function then
+			if a_feature.is_function or a_feature.is_attribute then
 				bpl_out (" returns (Result:")
 				bpl_out (bpl_type_for_type_a (a_feature.type))
 				bpl_out (")")
 			end
 			bpl_out (";%N")
-			content ?= a_feature.body.body.content
-			if content /= Void then
-				if content.has_precondition then
-					a_list := content.precondition.assertions
+			bpl_out ("  requires Current != null;%N")
+			content := a_feature.body.body.content
+			routine ?= content
+			if routine /= Void then
+				if routine.has_precondition then
+					a_list := routine.precondition.assertions
 					from a_list.start until a_list.off loop
 						function_writer.reset
 						a_list.item.expr.process (function_writer)
@@ -76,18 +80,24 @@ feature -- Generation
 						a_list.forth
 					end
 				end
-				bpl_out ("  modifies Heap;%N")
-				if content.has_postcondition then
-					a_list := content.postcondition.assertions
+				if l_as.body.type = Void then
+					bpl_out ("  modifies Heap;%N")
+				end
+				if routine.has_postcondition then
+					a_list := routine.postcondition.assertions
 					from a_list.start until a_list.off loop
 						function_writer.reset
 						a_list.item.expr.process (function_writer)
 						bpl_out ("  ensures ")
 						bpl_out (function_writer.expr)
-						bpl_out (";%N")
+						bpl_out ("; ")
+						bpl_out (location_info (a_list.item, a_list.item.tag))
 						a_list.forth
 					end
 				end
+			elseif content = Void then
+				-- Attribute
+				-- We might generate a meaningful postcondition here
 			else
 				check
 					constants_not_implemented: False

@@ -81,6 +81,7 @@ feature -- Helper
 			-- Type for `l_as'.
 		require
 			has_current_feature: current_feature /= Void
+			not_void: l_as /= Void
 		local
 			ntf: NULL_TEXT_FORMATTER
 			tfd: TEXT_FORMATTER_DECORATOR
@@ -102,6 +103,9 @@ feature -- Helper
 				ados.set_processing_locals (False)
 			end
 			Result := ados.expr_type (l_as)
+			check
+				no_error: not ados.has_error
+			end
 		ensure
 			not_void: Result /= Void
 		end
@@ -149,6 +153,27 @@ feature -- Helper
 		end
 
 	factory: AST_FACTORY
+
+	location_info (pos: AST_EIFFEL; tag: STRING): STRING is
+			-- The information tag for `x'.
+		do
+			Result := "// eiffel:"
+			Result.append (current_class.name)
+			Result.append (";")
+			Result.append (pos.start_location.line.out)
+			Result.append (";")
+			Result.append (pos.start_location.column.out)
+			Result.append (";")
+			Result.append (pos.end_location.line.out)
+			Result.append (";")
+			Result.append (pos.end_location.column.out)
+			Result.append (";")
+			if tag /= Void then
+				Result.append (tag)
+			end
+			Result.append ("%N")
+		end
+
 
 invariant
 	factory_exists: factory /= Void

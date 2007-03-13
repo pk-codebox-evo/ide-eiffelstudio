@@ -19,6 +19,11 @@ inherit
 			default_create
 		end
 
+	SHARED_BPL_ENVIRONMENT
+		redefine
+			default_create
+		end
+
 create
 	default_create
 
@@ -60,6 +65,9 @@ feature -- Events
 					if eif_class.is_compiled then
 						ballet.set_class (eif_class)
 						ballet.execute_verification
+						if environment.error_log.has_error then
+							window.context_tool.error_output_view.process_errors (environment.error_log.error_list)
+						end
 					else
 						print ("Dropped class must be compiled first.%N")
 					end

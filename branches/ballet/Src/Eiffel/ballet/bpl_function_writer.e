@@ -11,18 +11,19 @@ inherit
 	BPL_VISITOR
 		redefine
 			process_bin_eq_as,
-			process_result_as,
 			process_binary_as,
 			process_integer_as,
-			process_access_feat_as,
-			process_nested_expr_as,
-			process_nested_as,
 			process_void_as,
 			process_bin_ne_as,
 			process_id_as,
+			process_un_old_as,
+			process_expr_call_as,
+			process_access_feat_as,
 			process_access_id_as,
 			process_current_as,
-			process_un_old_as
+			process_result_as,
+			process_nested_as,
+			process_nested_expr_as
 		end
 
 create
@@ -186,13 +187,37 @@ feature -- Processing Environment
 	expr: STRING
 		-- Expression output
 
+	current_expression: EXPR_AS
+		-- The current expression processed
+
 	reset is
 			-- Reset `expr' to the empty string.
 		do
 			expr := ""
+			create call_list.make (0)
+			create type_list.make (0)
 		ensure
 			expr_reset: expr.is_equal ("")
 		end
+
+	call_list: ARRAYED_LIST[STRING]
+		-- Strings that describe call that were used during the generation.
+
+	type_list: ARRAYED_LIST[STRING]
+		-- BPL types of corresponding to the types of the `call_list' subexpressions.
+
+	heap_removed (a_string: STRING): STRING is
+			-- `a_string' with the first occurrence of "Heap," removed.
+			-- (needed for using call_list strings for proc calls)
+		local
+			index: INTEGER
+		do
+			Result := a_string.twin
+			index := Result.substring_index (heap_string,1)
+			Result.remove_substring (index, index+heap_string.count-1)
+		end
+
+	heap_string: STRING is "Heap,"
 
 feature -- Processing
 
@@ -222,23 +247,40 @@ feature -- Processing
 			-- Prcoess `l_as'.
 		local
 			target_type: TYPE_A
+			tmp_expr: STRING
+			call_string: STRING
+			left_arg,right_arg: STRING
 		do
 			-- TODO
 			target_type := type_for (l_as.left)
-			if target_type.is_integer then
+			if target_type.is_integer or target_type.is_boolean then
 				l_as.left.process (Current)
 				expr.append (l_as.op_name)
 				l_as.right.process (Current)
 			else
-				expr.append ("fun.")
-				expr.append (target_type.associated_class.name)
-				expr.append ("(")
-				expr.append (heap_ref)
-				expr.append (",")
+				tmp_expr := expr
+				expr := ""
 				l_as.left.process (Current)
-				expr.append (",")
+				left_arg := expr
+				expr := ""
 				l_as.right.process (Current)
-				expr.append (")")
+				right_arg := expr
+				expr := tmp_expr
+				call_string := ""
+				call_string.append (target_type.associated_class.name)
+				call_string.append (".")
+				call_string.append ("FIXME")
+				call_string.append ("(")
+				call_string.append (heap_ref)
+				call_string.append (",")
+				call_string.append (left_arg)
+				call_string.append (",")
+				call_string.append (right_arg)
+				call_string.append (")")
+				expr.append ("fun.")
+				expr.append (call_string)
+				call_list.extend (call_string)
+				type_list.extend (bpl_type_for_type_a (type_for (l_as)))
 			end
 		end
 
@@ -250,6 +292,8 @@ feature -- Processing
 
 	process_access_feat_as (l_as: ACCESS_FEAT_AS) is
 			-- Process `l_as'.
+		local
+			call_string: STRING
 		do
 			-- TODO
 			if l_as.is_argument then
@@ -260,15 +304,20 @@ feature -- Processing
 					no_locals_in_contracts: False
 				end
 			else
+				call_string := ""
+				call_string.append (current_class.name)
+				call_string.append (".")
+				call_string.append (l_as.feature_name)
+				call_string.append ("(")
+				call_string.append (heap_ref)
+				call_string.append (",")
+				call_string.append (this_ref)
+				call_string.append (")")
+
 				expr.append ("fun.")
-				expr.append (current_class.name)
-				expr.append (".")
-				expr.append (l_as.feature_name)
-				expr.append ("(")
-				expr.append (heap_ref)
-				expr.append (",")
-				expr.append (this_ref)
-				expr.append (")")
+				expr.append (call_string)
+				call_list.extend (call_string)
+				type_list.extend (bpl_type_for_type_a (type_for (current_expression)))
 			end
 		end
 
@@ -276,19 +325,33 @@ feature -- Processing
 			-- Process `l_as'.
 		local
 			afa: ACCESS_FEAT_AS
+			call_string: STRING
+			tmp_expr: STRING
+			target_expr: STRING
 		do
 			-- TODO
 			afa ?= l_as.message
 			if afa /= Void then
-				expr.append ("fun.")
-				expr.append (type_for (l_as.target).associated_class.name)
-				expr.append (".")
-				expr.append (afa.feature_name)
-				expr.append ("(")
-				expr.append (heap_ref)
-				expr.append (",")
+				tmp_expr := expr
+				expr := ""
 				l_as.target.process (Current)
-				expr.append (")")
+				target_expr := expr
+				expr := tmp_expr
+
+				call_string := ""
+				call_string.append (type_for (l_as.target).associated_class.name)
+				call_string.append (".")
+				call_string.append (afa.feature_name)
+				call_string.append ("(")
+				call_string.append (heap_ref)
+				call_string.append (",")
+				call_string.append (target_expr)
+				call_string.append (")")
+
+				expr.append ("fun.")
+				expr.append (call_string)
+				call_list.extend (call_string)
+				type_list.extend (bpl_type_for_type_a (type_for (current_expression)))
 			else
 				check
 					unknown_access: False
@@ -314,6 +377,8 @@ feature -- Processing
 
 	process_access_id_as (l_as: ACCESS_ID_AS) is
 			-- Process `l_as'.
+		local
+			call_string: STRING
 		do
 			if l_as.is_local then
 				expr.append ("l.")
@@ -322,13 +387,13 @@ feature -- Processing
 				expr.append ("arg.")
 				expr.append (l_as.access_name)
 			else
+				call_string := current_class.name+"."+
+					l_as.access_name+"("+heap_ref+","+
+					this_ref+")"
 				expr.append ("fun.")
-				expr.append (current_class.name)
-				expr.append (".")
-				expr.append (l_as.access_name)
-				expr.append ("(Heap,")
-				expr.append (this_ref)
-				expr.append (")")
+				expr.append (call_string)
+				call_list.extend (call_string)
+				type_list.extend (bpl_type_for_type_a (type_for (current_expression)))
 			end
 		end
 
@@ -352,5 +417,19 @@ feature -- Processing
 			expr.append (")")
 		end
 
+	process_expr_call_as (l_as: EXPR_CALL_AS) is
+			-- Process `l_as'.
+		local
+			old_expr: EXPR_AS
+		do
+			old_expr := current_expression
+			current_expression := l_as
+			Precursor {BPL_VISITOR} (l_as)
+			current_expression := old_expr
+		end
 
+invariant
+	call_list_not_void: call_list /= Void
+	type_list_not_void: type_list /= Void
+	type_list_correct_size: type_list.count = call_list.count
 end

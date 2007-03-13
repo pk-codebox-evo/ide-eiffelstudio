@@ -82,6 +82,9 @@ feature -- Generation
 			bpl_out (" {%N")
 			content ?= l_as.body.content
 			if content /= Void then
+				bpl_out ("   var dump_ref:ref;%N")
+				bpl_out ("   var dump_bool:bool;%N")
+				bpl_out ("   var dump_int:int;%N")
 				if content.locals /= Void then
 					from
 						content.locals.start
@@ -153,7 +156,14 @@ feature -- Environment
 				until
 					content.locals.off or Result
 				loop
-					Result := content.locals.item.names_heap.has (a_name)
+					from
+						content.locals.item.id_list.start
+					until
+						content.locals.item.id_list.off or Result
+					loop
+						Result := content.locals.item.names_heap.item (content.locals.item.id_list.item).is_equal (a_name)
+						content.locals.item.id_list.forth
+					end
 					content.locals.forth
 				end
 			end
@@ -167,26 +177,44 @@ feature -- Processors
 			-- Create assignment.
 		local
 			result_as: RESULT_AS
+			new_code: STRING
 		do
-			code.append ("    ")
+			new_code := "    "
 			result_as ?= l_as.target
 			if is_local_variable (l_as.target.access_name) then
-				code.append ("l.")
-				code.append (l_as.target.access_name)
+				new_code.append ("l.")
+				new_code.append (l_as.target.access_name)
 			elseif result_as /= Void then
-				code.append ("Result")
+				new_code.append ("Result")
 			else
-				code.append ("Heap[Current,field.")
-				code.append (current_class.name)
-				code.append (".")
-				code.append (l_as.target.access_name)
-				code.append ("]")
+				new_code.append ("Heap[Current,field.")
+				new_code.append (current_class.name)
+				new_code.append (".")
+				new_code.append (l_as.target.access_name)
+				new_code.append ("]")
 			end
-			code.append (" := ")
+			new_code.append (" := ")
 			function_writer.reset
 			l_as.source.process (function_writer)
-			code.append (function_writer.expr)
-			code.append (";%N")
+			new_code.append (function_writer.expr)
+			new_code.append (";")
+			new_code.append (location_info (l_as, Void))
+			from
+				function_writer.call_list.start
+				function_writer.type_list.start
+			until
+				function_writer.call_list.off
+			loop
+				code.append ("    call dump_")
+				code.append (function_writer.type_list.item)
+				code.append (" := proc.")
+				code.append (function_writer.heap_removed(function_writer.call_list.item))
+				code.append (";")
+				bpl_out (location_info (l_as, Void))
+				function_writer.call_list.forth
+				function_writer.type_list.forth
+			end
+			code.append (new_code)
 		end
 
 	process_keyword_as (l_as: KEYWORD_AS) is
@@ -396,10 +424,9 @@ feature -- Processors
 	process_instr_call_as (l_as: INSTR_CALL_AS) is
 			-- Process `l_as'.
 		local
-			target: STRING
 			nested: NESTED_AS
 			nested_expr: NESTED_EXPR_AS
-			access_id: ACCESS_ID_AS
+			access_id: ACCESS_AS
 			i: INTEGER
 		do
 			nested ?= l_as.call -- Call with target 'x.foo'
@@ -409,7 +436,33 @@ feature -- Processors
 				nested_expr := nested_as_to_nested_expr_as (nested)
 			end
 			if nested_expr /= Void then
-				code.append ("    TARGETED CALL%N")
+				code.append ("    call proc.")
+				code.append (type_for (nested_expr.target).associated_class.name)
+				code.append (".")
+				access_id ?= nested_expr.message
+				check
+					need_access: access_id /= Void
+				end
+				code.append (access_id.access_name)
+				code.append ("(")
+				function_writer.reset
+				nested_expr.target.process (function_writer)
+				code.append (function_writer.expr)
+				if access_id.parameters /= Void then
+					from
+						i := 1
+					until
+						i > access_id.parameters.count
+					loop
+						code.append (",")
+						function_writer.reset
+						access_id.parameters.i_th (i).process (function_writer)
+						code.append (function_writer.expr)
+						i := i + 1
+					end
+				end
+				code.append ("); ")
+				code.append (location_info (l_as, Void))
 			elseif access_id /= Void then
 				code.append ("    call proc.")
 				code.append (current_class.name)
@@ -429,7 +482,8 @@ feature -- Processors
 						i := i + 1
 					end
 				end
-				code.append (");%N")
+				code.append ("); ")
+				code.append (location_info (l_as, Void))
 			else
 				check
 					not_implemented: False

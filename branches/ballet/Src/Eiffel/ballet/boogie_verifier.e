@@ -39,7 +39,7 @@ feature -- Process output
 			regexp.compile ("^(.*)\(([0-9]*),([0-9]*)\): Error (.*): (.*)$")
 
 			create related_expr.make
-			related_expr.compile ("^(.*)\(([0-9]*),([0-9]*)\): Related location: (.*)")
+			related_expr.compile ("^(.*)\(([0-9]*),([0-9]*)\): Related location: (.*)$")
 
 			from
 				lines.start
@@ -47,10 +47,17 @@ feature -- Process output
 				lines.after
 			loop
 				lines.item.prune_all ('%R')
+				-- Skip a 'related' message if not expecting it.
+				related_expr.match (lines.item)
+				if related_expr.match_count > 0 then
+					lines.forth
+					lines.item.prune_all ('%R')
+				end
 
-				if lines.item.count > 0 and then
+				if
+					lines.item.count > 0 and then
 					not (lines.item.substring_index ("Spec# Program Verifier", 1) = 1)
-				 then
+				then
 					regexp.match (lines.item)
 
 					if regexp.match_count < 5 then
@@ -62,8 +69,7 @@ feature -- Process output
 						bpl_error_message := regexp.captured_substring(5)
 
 						if bpl_error_code.is_equal("BP5003") then
-							-- TODO: clearify where this error is located
-							-- in the eiffel source
+							-- Postcondition violation.
 							lines.forth
 							related_expr.match (lines.item)
 
@@ -77,7 +83,6 @@ feature -- Process output
 									tag := Void
 								end
 
-								src_expr.match (bpl_lines.i_th (bpl_error_line.to_integer))
 								line_start := src_expr.captured_substring (2).to_integer
 								column_start := src_expr.captured_substring (3).to_integer
 								line_end := src_expr.captured_substring (4).to_integer
@@ -90,8 +95,34 @@ feature -- Process output
 												line_end, column_end,
 												tag))
 							end
-						else
+						elseif bpl_error_code.is_equal("BP5002") then
+							-- Precondition violation.
+							lines.forth
+							related_expr.match (lines.item)
 
+							if related_expr.match_count < 4 then
+								add_error (create {BPL_ERROR}.make("Ballet Error BP5002 incomplete: no related location given."))
+							else
+								src_expr.match (bpl_lines.i_th (bpl_error_line.to_integer))
+								if src_expr.match_count > 5 then
+									tag := src_expr.captured_substring (6)
+								else
+									tag := Void
+								end
+
+								line_start := src_expr.captured_substring (2).to_integer
+								column_start := src_expr.captured_substring (3).to_integer
+								line_end := src_expr.captured_substring (4).to_integer
+								column_end := src_expr.captured_substring (5).to_integer
+
+								add_error (create {BPL_VERIFICATION_ERROR}.make_verification
+											  ("Precondition of call not met",
+												src_expr.captured_substring (1),
+												line_start, column_start,
+												line_end, column_end,
+												tag))
+							end
+						else
 							src_expr.match (bpl_lines.i_th (bpl_error_line.to_integer))
 							if src_expr.match_count >= 5 then
 								line_start := src_expr.captured_substring (2).to_integer
