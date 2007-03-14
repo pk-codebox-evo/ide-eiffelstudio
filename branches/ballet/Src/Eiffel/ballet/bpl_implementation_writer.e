@@ -21,7 +21,13 @@ inherit
 			process_if_as,
 			process_inspect_as,
 			process_loop_as,
-			process_instr_call_as
+			process_access_feat_as,
+			process_access_id_as,
+			process_access_inv_as,
+			process_static_access_as,
+			process_create_as,
+			process_nested_as,
+			process_nested_expr_as
 		end
 
 create
@@ -82,9 +88,9 @@ feature -- Generation
 			bpl_out (" {%N")
 			content ?= l_as.body.content
 			if content /= Void then
-				bpl_out ("   var dump_ref:ref;%N")
-				bpl_out ("   var dump_bool:bool;%N")
-				bpl_out ("   var dump_int:int;%N")
+				bpl_out ("  var dump_ref:ref;%N")
+				bpl_out ("  var dump_bool:bool;%N")
+				bpl_out ("  var dump_int:int;%N")
 				if content.locals /= Void then
 					from
 						content.locals.start
@@ -171,6 +177,97 @@ feature -- Environment
 
 	function_writer: BPL_FUNCTION_WRITER
 
+feature -- Support features
+
+	generate_dummy_proc_call (x: EXPR_AS) is
+			-- Generate a proc call for expression `x' by rewriting fun.X.y(Heap,Current,...)
+			-- to "call dummy_T := proc.X.y(Current,...);" and add the result to code
+		local
+			function: STRING
+			index: INTEGER
+		do
+			code.append ("    call dump_")
+			code.append (bpl_type_for_type_a (type_for(x)))
+			code.append (" := proc")
+			function_writer.reset
+			x.process (function_writer)
+			function := function_writer.expr
+			function.remove_substring (1, 3)
+			index := function.substring_index ("Heap,", 1)
+			function.remove_substring (index, index+4)
+			code.append (function)
+			code.append (";")
+			code.append (location_info (x, Void))
+		end
+
+	generate_all_dummy_proc_calls is
+			-- Generate all dummy proc calls for the calls stored in `function_writer'.
+		local
+			expr_list: LIST[EXPR_AS]
+		do
+			from
+				expr_list := function_writer.call_list.twin
+				expr_list.start
+			until
+				expr_list.off
+			loop
+				generate_dummy_proc_call (expr_list.item)
+				expr_list.forth
+			end
+		end
+
+	assert_expression (l_as: EXPR_AS; tag: STRING) is
+			-- Process `l_as'.
+		local
+			expr: STRING
+		do
+			function_writer.reset
+			l_as.process (function_writer)
+			expr := function_writer.expr
+			generate_all_dummy_proc_calls
+			code.append ("    assert(");
+			code.append (expr)
+			code.append (");")
+			code.append (location_info (l_as, tag))
+		end
+
+	assume_expression (l_as: EXPR_AS; tag: STRING) is
+			-- Process `l_as'.
+		do
+			function_writer.reset
+			l_as.process (function_writer)
+			code.append ("    assume(");
+			code.append (function_writer.expr)
+			code.append (");")
+			code.append (location_info (l_as, tag))
+		end
+
+	assert_negated_expression (l_as: EXPR_AS; tag: STRING) is
+			-- Process `l_as'.
+		local
+			expr: STRING
+		do
+			function_writer.reset
+			l_as.process (function_writer)
+			expr := function_writer.expr
+			generate_all_dummy_proc_calls
+			code.append ("    assert(!(");
+			code.append (expr)
+			code.append ("));")
+			code.append (location_info (l_as, tag))
+		end
+
+	assume_negated_expression (l_as: EXPR_AS; tag: STRING) is
+			-- Process `l_as'.
+		do
+			function_writer.reset
+			l_as.process (function_writer)
+			code.append ("    assume(!(");
+			code.append (function_writer.expr)
+			code.append ("));")
+			code.append (location_info (l_as, tag))
+		end
+
 feature -- Processors
 
 	process_assign_as (l_as: ASSIGN_AS) is
@@ -199,21 +296,7 @@ feature -- Processors
 			new_code.append (function_writer.expr)
 			new_code.append (";")
 			new_code.append (location_info (l_as, Void))
-			from
-				function_writer.call_list.start
-				function_writer.type_list.start
-			until
-				function_writer.call_list.off
-			loop
-				code.append ("    call dump_")
-				code.append (function_writer.type_list.item)
-				code.append (" := proc.")
-				code.append (function_writer.heap_removed(function_writer.call_list.item))
-				code.append (";")
-				bpl_out (location_info (l_as, Void))
-				function_writer.call_list.forth
-				function_writer.type_list.forth
-			end
+			generate_all_dummy_proc_calls
 			code.append (new_code)
 		end
 
@@ -274,14 +357,15 @@ feature -- Processors
 			else
 				false_label := else_label
 			end
+			function_writer.reset
+			l_as.condition.process (function_writer)
+			expr := function_writer.expr
+			generate_all_dummy_proc_calls
 			code.append ("    goto ")
 			code.append (true_label)
 			code.append (",")
 			code.append (false_label)
 			code.append (";%N")
-			function_writer.reset
-			l_as.condition.process (function_writer)
-			expr := function_writer.expr
 			code.append ("  ")
 			code.append (true_label)
 			code.append (":%N")
@@ -307,6 +391,7 @@ feature -- Processors
 					function_writer.reset
 					l_as.elsif_list.item.expr.process (function_writer)
 					expr := function_writer.expr
+					generate_all_dummy_proc_calls
 					new_label ("true")
 					true_label := last_label
 					if l_as.elsif_list.islast then
@@ -363,32 +448,70 @@ feature -- Processors
 		local
 			loop_label,exit_label:STRING
 			expr: STRING
+			inv_expr_assert: STRING
+			inv_expr_assume: STRING
+			inv: EXPR_AS
+			tmp_code: STRING
+			loop_expr_code: STRING
 		do
 			if l_as.from_part /= Void then
 				l_as.from_part.process (Current)
 			end
-
+			-- We store 'code' somewhere to get the generated dummy code into 'loop_expr_code'
+			tmp_code := code
+			code := ""
+			function_writer.reset
+			l_as.stop.process (function_writer)
+			expr := function_writer.expr
+			generate_all_dummy_proc_calls
+			inv_expr_assert := ""
+			inv_expr_assume := ""
+			if l_as.invariant_part /= Void then
+				from
+					l_as.invariant_part.start
+				until
+					l_as.invariant_part.off
+				loop
+					function_writer.reset
+					l_as.invariant_part.item.expr.process (function_writer)
+					inv_expr_assume.append ("    assume(")
+					inv_expr_assume.append (function_writer.expr)
+					inv_expr_assume.append (");")
+					inv_expr_assume.append (location_info (l_as.invariant_part.item.expr, l_as.invariant_part.item.tag))
+					inv_expr_assert.append ("    assert(")
+					inv_expr_assert.append (function_writer.expr)
+					inv_expr_assert.append (");")
+					inv_expr_assert.append (location_info (l_as.invariant_part.item.expr, l_as.invariant_part.item.tag))
+					generate_all_dummy_proc_calls
+					l_as.invariant_part.forth
+				end
+			end
+			loop_expr_code := code
+			code := tmp_code
 			new_label ("loop")
 			loop_label := last_label
 			new_label ("exit")
 			exit_label := last_label
+			code.append (loop_expr_code)
+			code.append (inv_expr_assert)
 			code.append ("    goto ")
 			code.append (loop_label)
 			code.append (",")
 			code.append (exit_label)
 			code.append (";%N")
-			function_writer.reset
-			l_as.stop.process (function_writer)
-			expr := function_writer.expr
+
 			code.append ("  ")
 			code.append (loop_label)
 			code.append (":%N")
 			code.append ("    assume(!(")
 			code.append (expr)
 			code.append ("));%N")
+			code.append (inv_expr_assume)
 			if l_as.compound /= Void then
 				l_as.compound.process (Current)
 			end
+			code.append (loop_expr_code)
+			code.append (inv_expr_assert)
 			code.append ("    goto ")
 			code.append (loop_label)
 			code.append (",")
@@ -400,6 +523,7 @@ feature -- Processors
 			code.append ("    assume(")
 			code.append (expr)
 			code.append (");%N")
+			code.append (inv_expr_assume)
 		end
 
 	process_check_as (l_as: CHECK_AS) is
@@ -411,85 +535,171 @@ feature -- Processors
 				until
 					l_as.check_list.off
 				loop
-					function_writer.reset
-					l_as.check_list.item.process (function_writer)
-					code.append ("    assert(");
-					code.append (function_writer.expr)
-					code.append (");%N")
+					assert_expression (l_as.check_list.item.expr, l_as.check_list.item.tag)
 					l_as.check_list.forth
 				end
 			end
 		end
 
-	process_instr_call_as (l_as: INSTR_CALL_AS) is
-			-- Process `l_as'.
+	process_nested_as (l_as: NESTED_AS) is
+			-- Processing `l_as'.
 		local
-			nested: NESTED_AS
-			nested_expr: NESTED_EXPR_AS
-			access_id: ACCESS_AS
-			i: INTEGER
+			nested_expr_as: NESTED_EXPR_AS
 		do
-			nested ?= l_as.call -- Call with target 'x.foo'
-			nested_expr ?= l_as.call -- Call with target '(some expr).foo'
-			access_id ?= l_as.call -- Call with just an identifier 'foo'
-			if nested /= Void  then
-				nested_expr := nested_as_to_nested_expr_as (nested)
-			end
-			if nested_expr /= Void then
-				code.append ("    call proc.")
-				code.append (type_for (nested_expr.target).associated_class.name)
-				code.append (".")
-				access_id ?= nested_expr.message
-				check
-					need_access: access_id /= Void
-				end
-				code.append (access_id.access_name)
-				code.append ("(")
+			nested_expr_as := nested_as_to_nested_expr_as (l_as)
+			nested_expr_as.process (Current)
+		end
+
+	process_nested_expr_as (l_as: NESTED_EXPR_AS) is
+			-- Processing `l_as'.
+		local
+			new_code: STRING
+			afa: ACCESS_FEAT_AS
+			elist: LIST [EXPR_AS]
+		do
+			afa ?= l_as.message
+			if afa /= Void then
+				new_code := "    call proc."
+				new_code.append (type_for (l_as.target).associated_class.name)
+				new_code.append (".")
+				new_code.append (afa.feature_name)
+				new_code.append ("(")
 				function_writer.reset
-				nested_expr.target.process (function_writer)
-				code.append (function_writer.expr)
-				if access_id.parameters /= Void then
+				l_as.target.process (function_writer)
+				generate_all_dummy_proc_calls
+				new_code.append (function_writer.expr)
+				if afa.parameters /= Void then
+					elist := afa.parameters
 					from
-						i := 1
+						elist.start
 					until
-						i > access_id.parameters.count
+						elist.off
 					loop
-						code.append (",")
 						function_writer.reset
-						access_id.parameters.i_th (i).process (function_writer)
-						code.append (function_writer.expr)
-						i := i + 1
+						elist.item.process (function_writer)
+						new_code.append (",")
+						new_code.append (function_writer.expr)
+						generate_all_dummy_proc_calls
+						elist.forth
 					end
 				end
-				code.append ("); ")
-				code.append (location_info (l_as, Void))
-			elseif access_id /= Void then
-				code.append ("    call proc.")
-				code.append (current_class.name)
-				code.append (".")
-				code.append (access_id.access_name)
-				code.append ("(Current")
-				if access_id.parameters /= Void then
-					from
-						i := 1
-					until
-						i > access_id.parameters.count
-					loop
-						code.append (",")
-						function_writer.reset
-						access_id.parameters.i_th (i).process (function_writer)
-						code.append (function_writer.expr)
-						i := i + 1
-					end
-				end
-				code.append ("); ")
+				new_code.append (");")
+				code.append (new_code)
 				code.append (location_info (l_as, Void))
 			else
 				check
-					not_implemented: False
+					unknown_access: False
 				end
 			end
 		end
 
+	process_static_access_as (l_as: STATIC_ACCESS_AS) is
+			-- Process `l_as'.
+		do
+			check
+				not_implemented: False
+			end
+		end
+
+	process_access_feat_as (l_as: ACCESS_FEAT_AS) is
+			-- Process `l_as'.
+		local
+			new_code: STRING
+			elist: LIST[EXPR_AS]
+		do
+			new_code := "    call proc."
+			new_code.append (current_class.name)
+			new_code.append (".")
+			new_code.append (l_as.feature_name)
+			new_code.append ("(Current")
+			if l_as.parameters /= Void then
+				elist := l_as.parameters
+				from
+					elist.start
+				until
+					elist.off
+				loop
+					function_writer.reset
+					elist.item.process (function_writer)
+					new_code.append (",")
+					new_code.append (function_writer.expr)
+					generate_all_dummy_proc_calls
+					elist.forth
+				end
+			end
+			new_code.append (");")
+			code.append (new_code)
+			code.append (location_info (l_as, Void))
+		end
+
+	process_access_id_as (l_as: ACCESS_ID_AS) is
+			-- Process `l_as'.
+		local
+			new_code: STRING
+			elist: LIST[EXPR_AS]
+		do
+			new_code := "    call proc."
+			new_code.append (current_class.name)
+			new_code.append (".")
+			new_code.append (l_as.feature_name)
+			new_code.append ("(Current")
+			if l_as.parameters /= Void then
+				elist := l_as.parameters
+				from
+					elist.start
+				until
+					elist.off
+				loop
+					function_writer.reset
+					elist.item.process (function_writer)
+					new_code.append (",")
+					new_code.append (function_writer.expr)
+					generate_all_dummy_proc_calls
+					elist.forth
+				end
+			end
+			new_code.append (");")
+			code.append (new_code)
+			code.append (location_info (l_as, Void))
+		end
+
+	process_access_inv_as (l_as: ACCESS_INV_AS) is
+			-- Process `l_as'.
+		local
+			new_code: STRING
+			elist: LIST[EXPR_AS]
+		do
+			new_code := "    call proc."
+			new_code.append (current_class.name)
+			new_code.append (".")
+			new_code.append (l_as.feature_name)
+			new_code.append ("(Current")
+			if l_as.parameters /= Void then
+				elist := l_as.parameters
+				from
+					elist.start
+				until
+					elist.off
+				loop
+					function_writer.reset
+					elist.item.process (function_writer)
+					new_code.append (",")
+					new_code.append (function_writer.expr)
+					generate_all_dummy_proc_calls
+					elist.forth
+				end
+			end
+			new_code.append (");")
+			code.append (new_code)
+			code.append (location_info (l_as, Void))
+		end
+
+	process_create_as (l_as: CREATE_AS) is
+			-- Process `l_as'.
+		do
+			check
+				not_implemented: False
+			end
+		end
 
 end

@@ -1,11 +1,11 @@
 indexing
-	description: "The usage analyser goes through the AST of the compiled classes and generates a list of defined and used feature."
+	description: "The usage analyser goes through the AST of the compiled classes and generates a list of defined feature."
 	author: "Bernd Schoeller"
 	date: "$Date$"
 	revision: "$Revision$"
 
 class
-	BPL_USAGE_ANALYSER
+	BPL_FEATURE_LIST_GENERATOR
 
 inherit
 	BPL_VISITOR

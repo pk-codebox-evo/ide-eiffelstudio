@@ -9,30 +9,23 @@ class
 	EB_VERIFY_COMMAND
 
 inherit
-	EB_MENUABLE_COMMAND
-		redefine
-			default_create
-		end
-
+	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 	SHARED_WORKBENCH
-		redefine
-			default_create
-		end
-
 	SHARED_BPL_ENVIRONMENT
-		redefine
-			default_create
-		end
+	EV_SHARED_APPLICATION
+	EB_SHARED_GRAPHICAL_COMMANDS
+	SHARED_ERROR_HANDLER
+	COMPILER_EXPORTER
 
 create
-	default_create
+	make
 
 feature -- Initialization
 
-	default_create is
+	make is
 			-- Default initialization.
 		do
-			Precursor {EB_MENUABLE_COMMAND}
+			default_create
 			create ballet.make
 		end
 
@@ -59,17 +52,20 @@ feature -- Events
 				eif_class: EIFFEL_CLASS_I
 				window: EB_DEVELOPMENT_WINDOW
 			do
+				process_events_and_idle
 				window := window_manager.last_focused_development_window
 				eif_class ?= cs.class_i
 				if eif_class /= Void then
-					if eif_class.is_compiled then
+					melt_project_cmd.execute_and_wait
+					if workbench.successful then
 						ballet.set_class (eif_class)
 						ballet.execute_verification
 						if environment.error_log.has_error then
-							window.context_tool.error_output_view.process_errors (environment.error_log.error_list)
+							error_handler.error_list.append (environment.error_log.error_list)
+							error_handler.trace
+						else
+							window.context_tool.output_view.force_display
 						end
-					else
-						print ("Dropped class must be compiled first.%N")
 					end
 				end
 			end
@@ -82,6 +78,30 @@ feature {NONE} -- Implementation
 			-- Name as it appears in the menu (with & symbol).
 		once
 			Result := "Verify Class"
+		end
+
+	pixmap: EV_PIXMAP is
+			-- The pixmap of the command.
+		do
+			Result := pixmaps.icon_pixmaps.general_tick_icon
+		end
+
+	description: STRING is
+			-- Description of the command.
+		do
+			Result := "Run the Ballet Eiffel Verifier"
+		end
+
+	tooltip: STRING is
+			-- Tooltip of the command.
+		do
+			Result := "Run the Ballet Eiffel Verifier"
+		end
+
+	name: STRING is
+			-- Name of the command.
+		do
+			Result := "Verify_class"
 		end
 
 invariant

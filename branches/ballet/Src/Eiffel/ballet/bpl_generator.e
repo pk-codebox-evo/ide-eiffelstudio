@@ -57,7 +57,7 @@ feature {NONE} -- Implementation
 	already_processed: BOOLEAN
 		-- A class has already been processed, so there has to be more than one class definition in the file.
 
-	usage_analyser: BPL_USAGE_ANALYSER
+	usage_analyser: BPL_FEATURE_LIST_GENERATOR
 
 	analyse_usage is
 			-- Analyse the usage.

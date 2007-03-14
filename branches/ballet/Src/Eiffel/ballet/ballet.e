@@ -20,6 +20,10 @@ inherit
 
 	SHARED_SERVER
 
+	EB_SHARED_MANAGERS
+
+	EV_SHARED_APPLICATION
+
 create
 	make
 
@@ -81,11 +85,16 @@ feature -- Verification
 			bpl_ast_printer: BPL_AST_PRINTER
 			bpl_generator: BPL_GENERATOR
 			ml: LEAF_AS_LIST
-			error_list: LIST [BPL_ERROR]
 		do
 			environment.error_log.reset
 			if current_class /= Void then
 				if current_class.has_ast then
+
+					output_manager.add_string ("Ballet: generating BoogiePL%N")
+					output_manager.end_processing
+					window_manager.display_message ("Generating BoogiePL")
+					process_events_and_idle
+
 					verifier.reset
 					environment.set_out_stream (verifier.input)
 
@@ -105,22 +114,25 @@ feature -- Verification
 					bpl_generator.process_ast_node (cls_ast) -- print PART C (class to prove)
 
 					if not environment.error_log.has_error then
+						output_manager.add_string ("Ballet: starting verifier%N")
+						window_manager.display_message ("Running verifier")
+						output_manager.end_processing
+						process_events_and_idle
 						verifier.verify
-						if environment.error_log.has_error then
-							from
-								error_list := environment.error_log.error_list
-								error_list.start
-							until
-								error_list.after
-						  	loop
-								io.put_string("ERROR: " + error_list.item.out + "%N")
-								error_list.forth
-							end
+						output_manager.add_string ("Ballet: finished%N")
+						if not environment.error_log.has_error then
+							output_manager.add_string ("Ballet: class is correct :-)%N")
+							window_manager.display_message ("Verification successful !")
+						else
+							output_manager.add_string ("Ballet: there were error during verification%N")
+							window_manager.display_message ("Verification failed")
 						end
+					else
+						output_manager.add_string ("Ballet: there were errors during BoogiePL generation%N")
+						output_manager.add_string ("Ballet: not running verified%N")
+						window_manager.display_message ("BoogiePL generation failed")
 			  		end
-
-					-- Report the errors
-
+			  		output_manager.end_processing
 				end
 			end
 		end

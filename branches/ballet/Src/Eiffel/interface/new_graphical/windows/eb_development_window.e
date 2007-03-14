@@ -320,6 +320,9 @@ feature {NONE} -- Initialization
 			end
 			toolbarable_commands.extend (print_cmd)
 
+			create verify_cmd.make
+			toolbarable_commands.extend (verify_cmd)
+
 				-- Compilation
 			create c_workbench_compilation_cmd.make_workbench (Current)
 			create c_finalized_compilation_cmd.make_finalized (Current)
@@ -390,6 +393,8 @@ feature {NONE} -- Initialization
 			window_manager.minimize_all_cmd.enable_sensitive
 			toolbarable_commands.extend (window_manager.raise_all_cmd)
 			window_manager.raise_all_cmd.enable_sensitive
+
+			toolbarable_commands.extend (verify_cmd)
 
 			toolbarable_commands.extend (New_development_window_cmd)
 				-- Show tool/toolbar commands (will be filled when tools will
@@ -1820,7 +1825,7 @@ feature {NONE} -- Menu Building
 				-- Separator -------------------------------------------------
 			project_menu.extend (create {EV_MENU_SEPARATOR})
 
-			create verify_cmd
+				-- Verify class
 			command_menu_item := verify_cmd.new_menu_item
 			add_recyclable (command_menu_item)
 			project_menu.extend (command_menu_item)

@@ -40,9 +40,6 @@ feature -- Access
 	out_stream: KI_TEXT_OUTPUT_STREAM
 		-- Output stream for the generation of BoogiePL code
 
-	class_under_verification: CLASS_AS
-		-- Class ballet is verifying
-
 feature -- Settors
 
 	set_out_stream (a_stream: KI_TEXT_OUTPUT_STREAM) is
@@ -53,16 +50,6 @@ feature -- Settors
 			out_stream := a_stream
 		ensure
 			stream_set: out_stream = a_stream
-		end
-
-feature {BPL_GENERATOR}
-
-	set_verification_class(a_cls: CLASS_AS) is
-			-- Set the class currently verified.
-		do
-			class_under_verification := a_cls
-		ensure
-			class_set: class_under_verification = a_cls
 		end
 
 invariant
