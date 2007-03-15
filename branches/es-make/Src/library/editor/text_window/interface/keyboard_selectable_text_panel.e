@@ -620,12 +620,7 @@ feature {NONE} -- Handle keystrokes
 
 			when Key_end then
 					-- End key action
-				if shifted_key and then l_cursor.line.first_token = l_cursor.token and then l_cursor.pos_in_token = 1 then
-					basic_cursor_move (agent l_cursor.go_end_line)
-					basic_cursor_move (agent l_cursor.go_right_char)
-				else
-					basic_cursor_move (agent l_cursor.go_end_line)
-				end
+				basic_cursor_move (agent l_cursor.go_end_line)
 
 			when Key_page_up then
 					-- Page up
@@ -721,7 +716,7 @@ feature {NONE} -- Blink Cursor Management
 			if not blink_suspended then
 				let_blink := False
 				blink_on := True
-				blinking_timeout.actions.call ([])
+				blinking_timeout.actions.call (Void)
 				blinking_timeout.actions.block
 				blink_suspended := True
 			end
@@ -739,7 +734,7 @@ feature {NONE} -- Blink Cursor Management
 				let_blink := True
 				blink_on := True
 				blinking_timeout.actions.resume
-				blinking_timeout.actions.call ([])
+				blinking_timeout.actions.call (Void)
 				blink_suspended := False
 			else
 				reset_blinking
@@ -837,7 +832,7 @@ feature {NONE} -- Blink Cursor Management
 			if editor_preferences.blinking_cursor and has_focus then
 					-- Set up a timeout to be called to make the cursor blink
 				blinking_timeout.actions.extend (agent internal_draw_cursor (media, x, y, width, line_height, show_cursor))
-				blinking_timeout.actions.call ([])
+				blinking_timeout.actions.call (Void)
 			else
 				internal_draw_cursor (media, x, y, width, line_height, show_cursor)
 			end

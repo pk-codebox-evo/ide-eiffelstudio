@@ -89,31 +89,44 @@ feature {NONE} -- Implementation
 	set_size (a_width, a_height: INTEGER) is
 			-- Set the horizontal size to `a_width'.
 			-- Set the vertical size to `a_height'.
+		local
+			l_width, l_height: INTEGER
 		do
-			{EV_GTK_EXTERNALS}.gtk_window_resize (c_object, a_width, a_height)
-			{EV_GTK_EXTERNALS}.gtk_window_set_default_size (c_object, a_width, a_height)
+				-- Set constraints so that resize does not break existing minimum sizing.
+			l_width := a_width.max (minimum_width)
+			l_height := a_height.max (minimum_height)
+			{EV_GTK_EXTERNALS}.gtk_window_resize (c_object, l_width, l_height)
+			{EV_GTK_EXTERNALS}.gtk_window_set_default_size (c_object, l_width, l_height)
+
+				-- Set configure_event_pending to True so that dimensions are updated immediately.
+			configure_event_pending := True
+
+				-- If user cannot resize window then we recall `forbid_resize' which will update the dimensions.
+			if is_displayed and then not user_can_resize then
+				forbid_resize
+			end
 		end
 
 	width: INTEGER
 			-- Width of `Current'.
-		local
-			l_result: INTEGER_32
 		do
 			if configure_event_pending then
-				{EV_GTK_EXTERNALS}.gtk_window_get_default_size (c_object, $l_result, default_pointer)
+				{EV_GTK_EXTERNALS}.gtk_window_get_default_size (c_object, $Result, default_pointer)
+				Result := Result.max (minimum_width)
+			else
+				Result := Precursor
 			end
-			Result := l_result.max (Precursor)
 		end
 
 	height: INTEGER
 			-- Height of `Current'.
-		local
-			l_result: INTEGER_32
 		do
 			if configure_event_pending then
-				{EV_GTK_EXTERNALS}.gtk_window_get_default_size (c_object, default_pointer, $l_result)
+				{EV_GTK_EXTERNALS}.gtk_window_get_default_size (c_object, default_pointer, $Result)
+				Result := Result.max (minimum_height)
+			else
+				Result := Precursor
 			end
-			Result := l_result.max (Precursor)
 		end
 
 	set_x_position (a_x: INTEGER) is
@@ -248,6 +261,11 @@ feature -- Basic operations
 		end
 
 feature {EV_INTERMEDIARY_ROUTINES, EV_APPLICATION_IMP}
+
+	user_can_resize: BOOLEAN is
+			-- Can `Current' be resized by the user?
+		deferred
+		end
 
 	on_key_event (a_key: EV_KEY; a_key_string: STRING_32; a_key_press: BOOLEAN) is
 			-- `a_key' has either been pressed or released
@@ -390,8 +408,19 @@ feature {EV_ANY_I} -- Implementation
 
 	forbid_resize is
 			-- Forbid the resize of the window.
+		local
+			l_geometry: POINTER
+			l_width, l_height: INTEGER
 		do
-			{EV_GTK_EXTERNALS}.gtk_window_set_policy (c_object, 0, 0, 0)
+			l_geometry := {EV_GTK_EXTERNALS}.c_gdk_geometry_struct_allocate
+			l_width := width
+			l_height := height
+			{EV_GTK_EXTERNALS}.set_gdk_geometry_struct_max_width (l_geometry, l_width)
+			{EV_GTK_EXTERNALS}.set_gdk_geometry_struct_max_height (l_geometry, l_height)
+			{EV_GTK_EXTERNALS}.set_gdk_geometry_struct_min_width (l_geometry, l_width)
+			{EV_GTK_EXTERNALS}.set_gdk_geometry_struct_min_height (l_geometry, l_height)
+			{EV_GTK_EXTERNALS}.gtk_window_set_geometry_hints (c_object, NULL, l_geometry, {EV_GTK_EXTERNALS}.Gdk_hint_max_size_enum | {EV_GTK_EXTERNALS}.gdk_hint_min_size_enum)
+			l_geometry.memory_free
 		end
 
 indexing

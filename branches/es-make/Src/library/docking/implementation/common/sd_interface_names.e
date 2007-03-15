@@ -14,13 +14,6 @@ deferred class
 
 feature -- Enumeration
 
-	Editor_place_holder_content_name: STRING_GENERAL is
-			-- Content name for `place_holder_content' in SD_DOCKING_MANAGER_ZONES.
-		deferred
-		ensure
-			Result_not_void: Result /= Void
-		end
-
 	Zone_navigation_left_column_name: STRING_GENERAL is
 			-- Left column name of SD_ZONE_NAVIGATION_DIALOG.
 		deferred
@@ -158,6 +151,13 @@ feature -- Tool bar customize dialog strings
 
 	move_button_down: STRING_GENERAL is
 			-- Tool bar customize dialog move button down button text.
+		deferred
+		ensure
+			Result_not_void: Result /= Void
+		end
+
+	separator: STRING_GENERAL is
+			-- Tool bar separator name which appeared in tool bar customize dialog.
 		deferred
 		ensure
 			Result_not_void: Result /= Void

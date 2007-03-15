@@ -214,7 +214,7 @@ feature -- Basic operation
 			-- Prepare auto complete and show choice window directly.
 		do
 			if possibilities_provider /= Void then
-				precompletion_actions.call ([])
+				precompletion_actions.call (Void)
 				prepare_auto_complete
 				if possibilities_provider.completion_possible then
 					block_focus_out_actions

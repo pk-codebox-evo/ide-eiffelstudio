@@ -136,6 +136,51 @@ feature -- Access
 		deferred
 		end
 
+	component_group_name: SYSTEM_STRING
+			-- The component group name
+		require
+			can_read_options: can_read_options
+			use_grouped_components: use_grouped_components
+		deferred
+		ensure
+			not_result_is_empty: not {SYSTEM_STRING}.is_null_or_empty (Result)
+		end
+
+	generate_x64_preprocessors: BOOLEAN
+			-- Indicates if x64 specific preprocessors should be generated
+		require
+			can_read_options: can_read_options
+		deferred
+		end
+
+	generate_include: BOOLEAN
+			-- Indicates if generated code should be a WiX include instead of a fragment
+		require
+			can_read_options: can_read_options
+		deferred
+		end
+
+	root_directory_ref_id: SYSTEM_STRING
+			-- Root directories reference name
+		require
+			can_read_options: can_read_options
+			use_root_directory_ref: use_root_directory_ref
+		deferred
+		ensure
+			not_result_is_empty: not {SYSTEM_STRING}.is_null_or_empty (Result)
+		end
+
+	conditional_expressions: NATIVE_ARRAY [SYSTEM_STRING]
+			-- Conditional expression used in a preprocessor, which wraps all generated meaniful content
+		require
+			can_read_options: can_read_options
+			use_conditional_expressions: use_conditional_expressions
+		deferred
+		ensure
+			result_attached: Result /= Void
+			not_result_is_empty: Result.length > 0
+		end
+
 feature -- Status report
 
 	can_read_options: BOOLEAN
@@ -189,6 +234,25 @@ feature -- Status report
 			-- Indicates if a directory exclude pattern should be used.
 		require
 			can_read_options: can_read_options
+		deferred
+		end
+
+	use_grouped_components: BOOLEAN
+			-- Indicates if a ComponentGroup element should be added to group all generated components
+		require
+			can_read_options: can_read_options
+		deferred
+		end
+
+	use_root_directory_ref: BOOLEAN
+			-- Indicates if a root DirectoryRef should be used
+		require
+			can_read_options: can_read_options
+		deferred
+		end
+
+	use_conditional_expressions: BOOLEAN
+			-- Indicates if a conditional expression preprocessor should be used
 		deferred
 		end
 

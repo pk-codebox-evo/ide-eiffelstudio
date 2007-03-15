@@ -378,8 +378,22 @@ feature -- Constants
 	Resize_bar_width_height: INTEGER is 5
 			-- Resize bar width or height which is used by SD_RESIZE_BAR.
 
-	Title_bar_height: INTEGER is 18
+	title_bar_height: INTEGER is
 			-- Size of zone's title bar.
+		local
+			l_platform: PLATFORM
+		once
+			create l_platform
+			if l_platform.is_windows then
+				Result := 18
+			else
+				-- For Linux is a little bit bigger.
+				Result := 23
+			end
+		end
+
+	Notebook_tab_height: INTEGER is 18
+			-- Notebook tab height.
 
 	Zone_minmum_width: INTEGER is
 			-- Minmum width of a zone.
@@ -455,6 +469,14 @@ feature -- Constants
 
 	Auto_hide_tab_stub_show_delay: INTEGER is 1000
 			-- Auto hide tab stub delay time in milliseconds.
+
+	Editor_place_holder_content_name: STRING_GENERAL is
+			-- Content name for `place_holder_content' in SD_DOCKING_MANAGER_ZONES.
+		once
+			Result := "docking manager editor place holder"
+		ensure
+			Result_not_void: Result /= Void
+		end
 
 feature {SD_DOCKING_MANAGER} -- Implementation
 

@@ -342,6 +342,7 @@ feature -- Status report
 			l_editors: like editors_internal
 			l_classi_stone: CLASSI_STONE
 			l_external_file_stone: EXTERNAL_FILE_STONE
+			l_fn: FILE_NAME
 		do
 			l_editors := editors
 			from
@@ -352,12 +353,14 @@ feature -- Status report
 				l_classi_stone ?= l_editors.item.stone
 				l_external_file_stone ?= l_editors.item.stone
 				if l_classi_stone /= Void then
-					if l_classi_stone.file_name.string.is_equal (a_file_name) then
-						Result := true
+					l_fn := l_classi_stone.file_name
+					if l_fn /= Void and then l_fn.string.is_equal (a_file_name) then
+						Result := True
 					end
 				elseif l_external_file_stone /= Void then
-					if l_external_file_stone.file_name.string.is_equal (a_file_name) then
-						Result := true
+					l_fn := l_external_file_stone.file_name
+					if l_fn /= Void and then l_fn.string.is_equal (a_file_name) then
+						Result := True
 					end
 				end
 				l_editors.forth
@@ -534,7 +537,7 @@ feature -- Element change
 				l_editors.forth
 			end
 			create editors_internal.make (5)
-			editor_closed_actions.call ([])
+			editor_closed_actions.call (Void)
 		end
 
 	set_veto_pebble_function (a_func: FUNCTION [ANY, TUPLE [ANY], BOOLEAN]) is
@@ -856,7 +859,7 @@ feature {NONE}-- Implementation
 			editors_internal.prune_all (a_editor)
 			editor_number_factory.remove_editor_name (a_editor.docking_content.unique_title)
 			a_editor.docking_content.close
-			editor_closed_actions.call ([])
+			editor_closed_actions.call (Void)
 			a_editor.recycle
 			if editors_internal.is_empty then
 				last_created_editor := Void
@@ -888,6 +891,7 @@ feature {NONE}-- Implementation
 			-- Initial an editor.
 		do
 			create last_created_editor.make (development_window)
+			last_created_editor.set_is_main_editor (True)
 			last_created_editor.widget.set_minimum_size (0, 0)
 			add_observers (last_created_editor)
 			last_created_editor.drop_actions.extend (agent on_drop (?, last_created_editor))

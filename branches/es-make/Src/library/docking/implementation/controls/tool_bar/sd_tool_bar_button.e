@@ -94,8 +94,7 @@ feature -- Query
 					Result := Result + {SD_TOOL_BAR}.padding_width + text_width
 				end
 			end
-			Result := Result + icon_width
-			Result := Result + {SD_TOOL_BAR}.padding_width
+			Result := Result + icon_width + {SD_TOOL_BAR}.padding_width
 		end
 
 	text_width: INTEGER is
@@ -168,20 +167,24 @@ feature {SD_TOOL_BAR, SD_TOOL_BAR_DRAWER, SD_TOOL_BAR_DRAWER_IMP} -- Internal is
 		local
 			l_left, l_top, l_width, l_height: INTEGER
 		do
-			l_left := text_left
-			l_width := text_width
-			l_top := tool_bar.item_y (Current) + {SD_TOOL_BAR}.border_width
-			l_height := tool_bar.row_height - 2 * {SD_TOOL_BAR}.border_width
+			if tool_bar /= Void then
+				l_left := text_left
+				l_width := text_width
+				l_top := tool_bar.item_y (Current) + {SD_TOOL_BAR}.border_width
+				l_height := tool_bar.row_height - 2 * {SD_TOOL_BAR}.border_width
 
-			create Result.make (l_left, l_top, l_width, l_height)
+				create Result.make (l_left, l_top, l_width, l_height)
 
-			if state = {SD_TOOL_BAR_ITEM_STATE}.pressed then
-				if Result.right >= Result.left + 1 then
-					Result.set_left (Result.left + 1)
+				if state = {SD_TOOL_BAR_ITEM_STATE}.pressed then
+					if Result.right >= Result.left + 1 then
+						Result.set_left (Result.left + 1)
+					end
+					if Result.bottom >= Result.top + 1 then
+						Result.set_top (Result.top + 1)
+					end
 				end
-				if Result.bottom >= Result.top + 1 then
-					Result.set_top (Result.top + 1)
-				end
+			else
+				create Result
 			end
 		ensure
 			not_void: Result /= Void
@@ -252,7 +255,7 @@ feature {SD_TOOL_BAR} -- Agents
 				if state = {SD_TOOL_BAR_ITEM_STATE}.pressed then
 					state := {SD_TOOL_BAR_ITEM_STATE}.hot
 					is_need_redraw := True
-					select_actions.call ([])
+					select_actions.call (Void)
 				else
 					is_need_redraw := False
 				end

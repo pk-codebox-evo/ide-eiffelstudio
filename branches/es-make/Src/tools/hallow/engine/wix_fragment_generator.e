@@ -34,6 +34,7 @@ feature -- Basic operations
 			-- Resets internal for new generation
 		do
 			create name_table.make (512, {STRING_COMPARER}.invariant_culture_ignore_case)
+			create component_names.make
 			component_count := 1
 			directory_count := 1
 			file_count := 1
@@ -54,14 +55,103 @@ feature {NONE} -- Element generation
 			a_writer_attached: a_writer /= Void
 		local
 			l_dir: DIRECTORY_INFO
+			l_expressions: NATIVE_ARRAY [SYSTEM_STRING]
+			l_expr: SYSTEM_STRING
+			l_id_expression: REGEX
+			l_count,i : INTEGER
 		do
-				-- Start generation					
-			a_writer.write_start_element ({WIX_CONSTANTS}.include_tag, {WIX_CONSTANTS}.wix_ns)
-
 			create l_dir.make (a_options.directory)
-			generate_directory_content (l_dir, a_options, a_writer)
+
+				-- Start generation					
+			if a_options.generate_include then
+				a_writer.write_start_element ({WIX_CONSTANTS}.include_tag, {WIX_CONSTANTS}.wix_ns)
+			else
+				a_writer.write_start_element ({WIX_CONSTANTS}.wix_tag, {WIX_CONSTANTS}.wix_ns)
+				a_writer.write_start_element ({WIX_CONSTANTS}.fragment_tag, {WIX_CONSTANTS}.wix_ns)
+			end
+
+			if a_options.generate_x64_preprocessors then
+				a_writer.write_processing_instruction ({WIX_CONSTANTS}.pi_ifndef, "IsWin64")
+				a_writer.write_processing_instruction ({WIX_CONSTANTS}.pi_ifdef, "x64")
+				a_writer.write_processing_instruction ({WIX_CONSTANTS}.pi_define, "IsWin64 = %"yes%"")
+				a_writer.write_processing_instruction ({WIX_CONSTANTS}.pi_else, Void)
+				a_writer.write_processing_instruction ({WIX_CONSTANTS}.pi_define, "IsWin64 = %"no%"")
+				a_writer.write_processing_instruction ({WIX_CONSTANTS}.pi_endif, Void)
+				a_writer.write_processing_instruction ({WIX_CONSTANTS}.pi_endif, Void)
+			end
+
+			if a_options.use_conditional_expressions then
+				create l_id_expression.make ("^[ \t]*[a-z_][a-z0-9_]*[ \t]*$", {REGEX_OPTIONS}.culture_invariant | {REGEX_OPTIONS}.ignore_case)
+				l_expressions := a_options.conditional_expressions
+				l_count := l_expressions.count
+				from i := 0 until i = l_count loop
+					l_expr := l_expressions.item (i)
+					if l_id_expression.is_match (l_expr) then
+						a_writer.write_processing_instruction ({WIX_CONSTANTS}.pi_ifdef, l_expr)
+					else
+						a_writer.write_processing_instruction ({WIX_CONSTANTS}.pi_if, l_expr)
+					end
+					i := i + 1
+				end
+			end
+
+			if a_options.use_root_directory_ref then
+				a_writer.write_start_element ({WIX_CONSTANTS}.directory_ref_tag)
+				a_writer.write_attribute_string ({WIX_CONSTANTS}.id_attribute, a_options.root_directory_ref_id)
+			else
+				a_writer.write_start_element ({WIX_CONSTANTS}.directory_tag)
+				a_writer.write_attribute_string ({WIX_CONSTANTS}.id_attribute, semantic_name (l_dir.full_name, a_options, {WIX_CONSTANTS}.directory_tag, directory_prefix, False))
+				if a_options.generate_include then
+					a_writer.write_attribute_string ({WIX_CONSTANTS}.name_attribute, ".")
+				else
+					a_writer.write_attribute_string ({WIX_CONSTANTS}.name_attribute, l_dir.name)
+				end
+				a_writer.write_attribute_string ({WIX_CONSTANTS}.file_source_attribute, format_path (l_dir.full_name, a_options))
+			end
+
+			generate_directory_content (l_dir, True, a_options, a_writer)
+
+			a_writer.write_end_element
+
+			if a_options.use_grouped_components then
+				generate_component_group (a_options, a_writer)
+			end
+
+			if a_options.use_conditional_expressions then
+				from i := 0 until i = l_count loop
+					a_writer.write_processing_instruction ({WIX_CONSTANTS}.pi_endif, Void)
+					i := i + 1
+				end
+			end
 
 				-- End generation
+			a_writer.write_end_element
+			if not a_options.generate_include then
+				a_writer.write_end_element
+			end
+		end
+
+	generate_component_group (a_options: I_OPTIONS; a_writer: XML_TEXT_WRITER) is
+			-- Generates a ComponentGroup element
+			--
+			-- `a_options': The options that determine how the element is generated.
+			-- `a_writer': The writer that the generated element will be written to.
+		require
+			a_options_attached: a_options /= Void
+			use_grouped_components: a_options.use_grouped_components
+			can_read_options_a_options: a_options.can_read_options
+			a_writer_attached: a_writer /= Void
+		local
+			l_enum: STRING_ENUMERATOR
+		do
+			a_writer.write_start_element ({WIX_CONSTANTS}.component_group_tag)
+			a_writer.write_attribute_string ({WIX_CONSTANTS}.id_attribute, a_options.component_group_name)
+			l_enum := component_names.get_enumerator
+			from l_enum.reset until not l_enum.move_next loop
+				a_writer.write_start_element ({WIX_CONSTANTS}.component_ref_tag)
+				a_writer.write_attribute_string ({WIX_CONSTANTS}.id_attribute, l_enum.current_)
+				a_writer.write_end_element
+			end
 			a_writer.write_end_element
 		end
 
@@ -87,15 +177,16 @@ feature {NONE} -- Element generation
 			a_writer.write_attribute_string ({WIX_CONSTANTS}.name_attribute, a_dir.name)
 			a_writer.write_attribute_string ({WIX_CONSTANTS}.file_source_attribute, format_path (a_dir.full_name, a_options))
 
-			generate_directory_content (a_dir, a_options, a_writer)
+			generate_directory_content (a_dir, False, a_options, a_writer)
 
 			a_writer.write_end_element
 		end
 
-	generate_directory_content (a_dir: DIRECTORY_INFO; a_options: I_OPTIONS; a_writer: XML_TEXT_WRITER) is
+	generate_directory_content (a_dir: DIRECTORY_INFO; a_root: BOOLEAN; a_options: I_OPTIONS; a_writer: XML_TEXT_WRITER) is
 			-- Generates WiX Compent, File and Directory elements based on the content of a directory.
 			--
 			-- `a_dir': A directory to scan and generated XML elements base on content.
+			-- `a_root': Indicates if content is for the root directory
 			-- `a_options': The options that determine how the element is generated.
 			-- `a_writer': The writer that the generated element will be written to.
 		require
@@ -121,11 +212,11 @@ feature {NONE} -- Element generation
 					if l_count > 0 then
 						if a_options.generate_single_file_components then
 							from i := 0 until i = l_count loop
-								generate_component (l_files.item (i).full_name, agent generate_file (l_files.item (i), ?, ?), a_options, a_writer)
+								generate_component (l_files.item (i).full_name, agent generate_file (l_files.item (i), a_root, ?, ?), a_options, a_writer)
 								i := i + 1
 							end
 						else
-							generate_component (a_dir.full_name, agent generate_files (l_files, ?, ?), a_options, a_writer)
+							generate_component (a_dir.full_name, agent generate_files (l_files, a_root, ?, ?), a_options, a_writer)
 						end
 					end
 				end
@@ -182,20 +273,31 @@ feature {NONE} -- Element generation
 			a_writer_attached: a_writer /= Void
 			a_content_gen_attached: a_content_gen /= Void
 			a_content_gen_has_attached_target: a_content_gen.target /= Void
+		local
+			l_name: SYSTEM_STRING
+			i: INTEGER
 		do
+			l_name := semantic_name (a_path, a_options, {WIX_CONSTANTS}.component_tag, component_prefix, False)
+			i := component_names.add (l_name)
 			a_writer.write_start_element ({WIX_CONSTANTS}.component_tag)
-			a_writer.write_attribute_string ({WIX_CONSTANTS}.id_attribute, semantic_name (a_path, a_options, {WIX_CONSTANTS}.component_tag, component_prefix, False))
+			a_writer.write_attribute_string ({WIX_CONSTANTS}.id_attribute, l_name)
 			a_writer.write_attribute_string ({WIX_CONSTANTS}.guid_attribute, guid (a_options))
+
+			if a_options.generate_x64_preprocessors then
+				a_writer.write_attribute_string ({WIX_CONSTANTS}.win64_attribute, "$(var.IsWin64)")
+			end
+			a_writer.write_attribute_string ({WIX_CONSTANTS}.key_path_attribute, {WIX_CONSTANTS}.yes_value)
 
 			a_content_gen.call ([a_options, a_writer])
 
 			a_writer.write_end_element
 		end
 
-	generate_files (a_files: NATIVE_ARRAY [FILE_INFO]; a_options: I_OPTIONS; a_writer: XML_TEXT_WRITER) is
+	generate_files (a_files: NATIVE_ARRAY [FILE_INFO]; a_root: BOOLEAN; a_options: I_OPTIONS; a_writer: XML_TEXT_WRITER) is
 			-- Generates WiX File elements.
 			--
 			-- `a_files': An array of files to generate File elements for
+			-- `a_root': Indicates if files belong to the root directory
 			-- `a_options': The options that determine how the element is generated.
 			-- `a_writer': The writer that the generated element will be written to.
 		require
@@ -212,16 +314,17 @@ feature {NONE} -- Element generation
 			from i := 0 until i = l_count loop
 				l_fi := a_files.item (i)
 				if l_fi /= Void then
-					generate_file (a_files.item (i), a_options, a_writer)
+					generate_file (a_files.item (i), a_root, a_options, a_writer)
 				end
 				i := i + 1
 			end
 		end
 
-	generate_file (a_file: FILE_INFO; a_options: I_OPTIONS; a_writer: XML_TEXT_WRITER) is
+	generate_file (a_file: FILE_INFO; a_root: BOOLEAN; a_options: I_OPTIONS; a_writer: XML_TEXT_WRITER) is
 			-- Generates a single WiX File element.
 			--
 			-- `a_file': File to generate an element for.
+			-- `a_root': Indicates if file is part of the directory structure root
 			-- `a_options': The options that determine how the element is generated.
 			-- `a_writer': The writer that the generated element will be written to.
 		require
@@ -246,6 +349,10 @@ feature {NONE} -- Element generation
 					l_id := a_options.disk_id
 				end
 				a_writer.write_attribute_string ({WIX_CONSTANTS}.disk_id_attribute, {SYSTEM_CONVERT}.to_string (l_id))
+			end
+
+			if a_root and then a_options.use_root_directory_ref then
+				a_writer.write_attribute_string ({WIX_CONSTANTS}.source_attribute, format_path (a_file.full_name, a_options))
 			end
 
 			a_writer.write_end_element
@@ -556,6 +663,9 @@ feature {NONE} -- Tables
 			-- Table of directories to include
 			-- Key: Directory path
 			-- Value: Boolean
+
+	component_names: STRING_COLLECTION
+			-- Collection of generated components
 
 feature {NONE} -- Counters
 

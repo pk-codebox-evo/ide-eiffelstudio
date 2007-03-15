@@ -119,7 +119,7 @@ feature {NONE} -- Implementation agents.
 			when {EV_KEY_CONSTANTS}.Key_enter then
 				if current_focus_label /= Void then
 					l_selected_tab := find_tab_by_label (current_focus_label)
-					internal_notebook.select_item (internal_notebook.content_by_tab (l_selected_tab), True)
+					select_content (internal_notebook.content_by_tab (l_selected_tab))
 					l_stop := True
 				end
 				destroy
@@ -177,13 +177,13 @@ feature {NONE} -- Implementation agents.
 			l_content := internal_notebook.content_by_tab (items_and_tabs.i_th (a_index).notebook_tab)
 
 			if l_old_content /= Void and then l_content /= l_old_content then
-				l_old_content.focus_out_actions.call ([])
+				l_old_content.focus_out_actions.call (Void)
 			end
 
-			l_content.focus_in_actions.call ([])
-			internal_notebook.select_item (l_content, True)
-
-			destroy
+			select_content (l_content)
+			if not is_destroyed then
+				hide
+			end
 		ensure
 			destroyed: is_destroyed
 		end
@@ -374,7 +374,7 @@ feature {NONE} -- Implementation functions.
 		do
 			create l_screen
 			l_max_height := (l_screen.height * max_screen_height_proportion).ceiling
-			internal_tool_bar.compute_minmum_size
+			internal_tool_bar.compute_minimum_size
 			internal_scroll_area.set_item_height (internal_tool_bar.minimum_height)
 			if minimum_height + internal_tool_bar.minimum_height  <= l_max_height then
 				set_height (minimum_height + internal_tool_bar.minimum_height)
@@ -491,6 +491,15 @@ feature {NONE} -- Implementation functions.
 		do
 			Result := a_widget.screen_x <= a_screen_x and a_widget.screen_y <= a_screen_y and
 				a_widget.screen_x + a_widget.width >= a_screen_x and a_widget.screen_y + a_widget.height >= a_screen_y
+		end
+
+	select_content (a_content: SD_CONTENT) is
+			-- Select `a_content'
+		require
+			not_void: a_content /= Void
+		do
+			a_content.focus_in_actions.call (Void)
+			internal_notebook.select_item (a_content, True)
 		end
 
 feature {NONE}  --Implementation attributes.

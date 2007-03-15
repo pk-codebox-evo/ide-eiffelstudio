@@ -54,8 +54,8 @@ feature -- Command
 			end
 				--| Debugging tools menu
 			develop_window.menus.set_debugging_tools_menu (develop_window.Eb_debugger_manager.new_debugging_tools_menu)
-			develop_window.menus.debug_menu.extend (create {EV_MENU_SEPARATOR})
-			develop_window.menus.debug_menu.extend (develop_window.menus.debugging_tools_menu)
+			develop_window.menus.debug_menu.put_front (create {EV_MENU_SEPARATOR})
+			develop_window.menus.debug_menu.put_front (develop_window.menus.debugging_tools_menu)
 			develop_window.menus.update_debug_menu
 		end
 
@@ -367,7 +367,9 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 
 				-- Line numbers
 			create l_ln_cmd.make
+			l_ln_cmd.set_is_for_main_editors (True)
 			l_command_menu_item := l_ln_cmd.new_menu_item
+			l_command_controller.add_edition_command (l_ln_cmd)
 			develop_window.add_recyclable (l_command_menu_item)
 			develop_window.menus.edit_menu.extend (l_command_menu_item)
 			develop_window.commands.editor_commands.extend (l_ln_cmd)
@@ -393,7 +395,7 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 			create l_cmd.make
 			l_cmd.set_menu_name (develop_window.Interface_names.m_go_to)
 			l_cmd.add_agent (agent develop_window.goto)
-			l_cmd.set_needs_editable (True)
+			l_cmd.set_is_for_main_editors (True)
 			l_command_menu_item := l_cmd.new_menu_item
 			l_command_controller.add_edition_command (l_cmd)
 			develop_window.add_recyclable (l_command_menu_item)
@@ -445,26 +447,28 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 			l_sub_menu.extend (l_command_menu_item)
 
 				-- Find selection forward
-			create l_os_cmd.make (develop_window)
+			create l_cmd.make
 			l_string := develop_window.Interface_names.m_find_next_selection
 			l_string.append ("%T")
 			l_string.append (develop_window.preferences.editor_data.shortcuts.item ("search_selection_forward").display_string.as_string_32)
-			l_os_cmd.set_menu_name (l_string)
-			l_os_cmd.add_agent (agent develop_window.find_next_selection)
-			l_command_menu_item := l_os_cmd.new_menu_item
-			l_command_controller.add_selection_command (l_os_cmd)
+			l_cmd.set_menu_name (l_string)
+			l_cmd.add_agent (agent develop_window.find_next_selection)
+			l_command_menu_item := l_cmd.new_menu_item
+			l_command_controller.add_edition_command (l_cmd)
+			develop_window.commands.editor_commands.extend (l_cmd)
 			develop_window.add_recyclable (l_command_menu_item)
 			l_sub_menu.extend (l_command_menu_item)
 
 				-- Find selection backward
-			create l_os_cmd.make (develop_window)
+			create l_cmd.make
 			l_string := develop_window.Interface_names.m_find_previous_selection
 			l_string.append ("%T")
 			l_string.append (develop_window.preferences.editor_data.shortcuts.item ("search_selection_backward").display_string.as_string_32)
-			l_os_cmd.set_menu_name (l_string)
-			l_os_cmd.add_agent (agent develop_window.find_next_selection)
-			l_command_menu_item := l_os_cmd.new_menu_item
-			l_command_controller.add_selection_command (l_os_cmd)
+			l_cmd.set_menu_name (l_string)
+			l_cmd.add_agent (agent develop_window.find_next_selection)
+			l_command_menu_item := l_cmd.new_menu_item
+			l_command_controller.add_edition_command (l_cmd)
+			develop_window.commands.editor_commands.extend (l_cmd)
 			develop_window.add_recyclable (l_command_menu_item)
 			l_sub_menu.extend (l_command_menu_item)
 

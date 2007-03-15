@@ -55,7 +55,6 @@ feature -- Redefine
 			l_tool_bar_imp: EV_DRAWING_AREA_IMP
 			l_rect: EV_RECTANGLE
 			l_button: SD_TOOL_BAR_BUTTON
-			l_c_string: EV_GTK_C_STRING
 		do
 			l_tool_bar_imp ?= a_arguments.tool_bar.implementation
 			check not_void: l_tool_bar_imp /= Void end
@@ -183,7 +182,7 @@ feature {NONE} -- Implementation
 			l_pixbuf: POINTER
 		do
 			l_button ?= a_arguments.item
-			if l_button /= Void and l_button.pixmap /= Void then
+			if l_button /= Void and l_button.pixmap /= Void and l_button.tool_bar /= Void then
 				-- We should render pixmap by theme.
 
 				l_position := l_button.pixmap_position

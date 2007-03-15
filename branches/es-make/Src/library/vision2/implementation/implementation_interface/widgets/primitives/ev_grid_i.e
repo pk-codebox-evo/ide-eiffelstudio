@@ -3119,7 +3119,7 @@ feature {EV_GRID_COLUMN_I, EV_GRID_I, EV_GRID_DRAWER_I, EV_GRID_ROW_I, EV_GRID_I
 						l_visible_indexes_to_row_indexes.put_i_th (row_index, visible_count + 1)
 						row_index := row_index + 1
 					end
-					if current_item.is_show_requested then
+					if current_item = Void or else current_item.is_show_requested then
 						visible_count := visible_count + 1
 					if current_item /= Void and not l_is_row_height_fixed then
 						current_row_offset := current_row_offset + current_item.height
@@ -3891,7 +3891,7 @@ feature {ANY}
 					end
 				else
 					horizontal_scroll_bar.value_range.resize_exactly (0, maximum_virtual_x_position)
-					horizontal_scroll_bar.set_leap (width)
+					horizontal_scroll_bar.set_leap (width.max (1))
 					if has_horizontal_scrolling_per_item_just_changed then
 							-- If we are just switching from per item to per pixel horizontal
 							-- scrolling, we can set the position of the scroll bar exactly to match it's
@@ -4146,7 +4146,7 @@ feature {EV_GRID_LOCKED_I} -- Drawing implementation
 			-- Resize `viewport' within `static_fixed' as the viewable
 			-- area of `Current' has changed.
 		do
-			static_fixed.implementation.set_item_size (viewport, a_width, a_height)
+			static_fixed.set_item_size (viewport, a_width, a_height)
 		end
 
 	static_fixed_viewport: EV_VIEWPORT
@@ -4682,7 +4682,11 @@ feature {EV_GRID_LOCKED_I} -- Event handling
 				end
 				pointer_button_press_item_actions_internal.call ([client_x_to_virtual_x(a_x), client_y_to_virtual_y (a_y), a_button, pointed_item_interface])
 			end
-			if pointed_item /= Void and then pointed_item.pointer_button_press_actions_internal /= Void and then not pointed_item.pointer_button_press_actions_internal.is_empty then
+			if
+				pointed_item /= Void and then not pointed_item.is_destroyed and then
+				pointed_item.pointer_button_press_actions_internal /= Void and then
+				not pointed_item.pointer_button_press_actions_internal.is_empty
+			then
 				pointed_item.pointer_button_press_actions_internal.call ([client_x_to_virtual_x(a_x) - pointed_item.virtual_x_position, client_y_to_virtual_y (a_y) - pointed_item.virtual_y_position, a_button, 0.0, 0.0, 0.0, a_screen_x, a_screen_y])
 			end
 
@@ -4721,7 +4725,7 @@ feature {EV_GRID_LOCKED_I} -- Event handling
 				(not is_selection_on_single_button_click_enabled or else (is_selection_on_single_button_click_enabled and a_button = 1))
 			then
 				if
-					selected_item /= Void and then
+					selected_item /= Void and then not selected_item.is_destroyed and then
 					selected_item.is_selected and then
 					ev_application.ctrl_pressed and then
 					not ev_application.shift_pressed and then
@@ -4732,7 +4736,9 @@ feature {EV_GRID_LOCKED_I} -- Event handling
 					last_selected_item := selected_item.implementation
 					shift_key_start_item := Void
 				else
-					handle_newly_selected_item (selected_item, a_button, False)
+					if selected_item = Void or else not selected_item.is_destroyed then
+						handle_newly_selected_item (selected_item, a_button, False)
+					end
 				end
 			end
 		end
@@ -5333,6 +5339,7 @@ feature {EV_GRID_LOCKED_I} -- Event handling
 			-- mouse button `a_button'. If no mouse button was pressed to trigger the
 			-- change of selection, `a_button' should be 0.
 		require
+			a_item_valid: a_item = Void or else not a_item.is_destroyed
 			a_button_non_negative: a_button >= 0
 		local
 			start_row_index, end_row_index, start_column_index, end_column_index: INTEGER

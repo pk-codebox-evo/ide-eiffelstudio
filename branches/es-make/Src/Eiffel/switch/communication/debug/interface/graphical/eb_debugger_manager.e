@@ -72,7 +72,6 @@ feature {NONE} -- Initialization
 
 					--| Graphical Preferences settings
 				objects_split_proportion := preferences.debug_tool_data.local_vs_object_proportion
-				debug_splitter_position := preferences.debug_tool_data.main_splitter_position
 
 				display_agent_details := preferences.debug_tool_data.display_agent_details
 				preferences.debug_tool_data.display_agent_details_preference.typed_change_actions.extend (
@@ -88,6 +87,7 @@ feature {NONE} -- Initialization
 
 					--| End of settings
 				init_commands
+				init_accelerators
 				create watch_tool_list.make
 			end
 
@@ -112,6 +112,140 @@ feature {NONE} -- Initialization
 				max_evaluation_duration_set: preferences.debugger_data /= Void implies
 						max_evaluation_duration = preferences.debugger_data.max_evaluation_duration
 			end
+		end
+
+	init_commands is
+			-- Create a new project toolbar.
+		do
+--| FIXME XR: TODO: Add:
+--| 3) edit feature, feature evaluation
+			create toolbarable_commands.make (20)
+
+			create clear_bkpt
+			clear_bkpt.enable_sensitive
+			toolbarable_commands.extend (clear_bkpt)
+
+			create enable_bkpt
+			enable_bkpt.enable_sensitive
+			toolbarable_commands.extend (enable_bkpt)
+
+			create disable_bkpt
+			disable_bkpt.enable_sensitive
+			toolbarable_commands.extend (disable_bkpt)
+
+			create bkpt_info_cmd.make
+			bkpt_info_cmd.set_pixmap (pixmaps.icon_pixmaps.tool_breakpoints_icon)
+			bkpt_info_cmd.set_pixel_buffer (pixmaps.icon_pixmaps.tool_breakpoints_icon_buffer)
+			bkpt_info_cmd.set_tooltip (Interface_names.e_Bkpt_info)
+			bkpt_info_cmd.set_menu_name (Interface_names.m_Bkpt_info)
+			bkpt_info_cmd.set_tooltext (Interface_names.b_Bkpt_info)
+			bkpt_info_cmd.set_name ("Bkpt_info")
+			bkpt_info_cmd.add_agent (agent toggle_display_breakpoints)
+			bkpt_info_cmd.enable_sensitive
+			toolbarable_commands.extend (bkpt_info_cmd)
+
+			create system_info_cmd.make
+			system_info_cmd.set_pixmap (pixmaps.icon_pixmaps.command_system_info_icon)
+			system_info_cmd.set_pixel_buffer (pixmaps.icon_pixmaps.command_system_info_icon_buffer)
+			system_info_cmd.set_tooltip (Interface_names.e_Display_system_info)
+			system_info_cmd.set_menu_name (Interface_names.m_Display_system_info)
+			system_info_cmd.set_name ("System_info")
+			system_info_cmd.set_tooltext (Interface_names.b_System_info)
+			system_info_cmd.add_agent (agent display_system_status)
+			toolbarable_commands.extend (system_info_cmd)
+
+			create set_critical_stack_depth_cmd.make
+			set_critical_stack_depth_cmd.set_menu_name (Interface_names.m_Set_critical_stack_depth)
+			set_critical_stack_depth_cmd.add_agent (agent change_critical_stack_depth)
+			set_critical_stack_depth_cmd.enable_sensitive
+
+			create display_error_help_cmd.make
+			toolbarable_commands.extend (display_error_help_cmd)
+
+			create exception_handler_cmd.make
+			exception_handler_cmd.enable_sensitive
+			toolbarable_commands.extend (exception_handler_cmd)
+
+			create assertion_checking_handler_cmd.make
+			assertion_checking_handler_cmd.enable_sensitive
+			toolbarable_commands.extend (assertion_checking_handler_cmd)
+			create force_debug_mode_cmd.make (Current)
+			force_debug_mode_cmd.enable_sensitive
+			toolbarable_commands.extend (force_debug_mode_cmd)
+
+			create options_cmd.make (Current)
+			toolbarable_commands.extend (options_cmd)
+			create step_cmd.make (Current)
+			toolbarable_commands.extend (step_cmd)
+			create into_cmd.make (Current)
+			toolbarable_commands.extend (into_cmd)
+			create out_cmd.make (Current)
+			toolbarable_commands.extend (out_cmd)
+			create debug_cmd.make (Current)
+			toolbarable_commands.extend (debug_cmd)
+			create no_stop_cmd.make (Current)
+			toolbarable_commands.extend (no_stop_cmd)
+			create stop_cmd.make (Current)
+			toolbarable_commands.extend (stop_cmd)
+			create restart_cmd.make (Current)
+			toolbarable_commands.extend (restart_cmd)
+			create quit_cmd.make (Current)
+			toolbarable_commands.extend (quit_cmd)
+
+			step_cmd.enable_sensitive
+			into_cmd.enable_sensitive
+			out_cmd.enable_sensitive
+			debug_cmd.enable_sensitive
+			no_stop_cmd.enable_sensitive
+			stop_cmd.disable_sensitive
+			quit_cmd.disable_sensitive
+			restart_cmd.disable_sensitive
+
+			toolbarable_commands.extend (system_cmd)
+			toolbarable_commands.extend (Melt_project_cmd)
+			toolbarable_commands.extend (Freeze_project_cmd)
+			toolbarable_commands.extend (Finalize_project_cmd)
+			run_finalized_cmd.enable_sensitive
+			toolbarable_commands.extend (run_finalized_cmd)
+			toolbarable_commands.extend (override_scan_cmd)
+			toolbarable_commands.extend (discover_melt_cmd)
+
+				-- Disable commands if no project is loaded
+			if not Eiffel_project.manager.is_project_loaded then
+				if Eiffel_project.manager.is_created then
+					enable_commands_on_project_created
+				else
+					disable_commands_on_project_unloaded
+				end
+			else
+				enable_commands_on_project_loaded
+			end
+
+				-- Enable/Disable commands on project loading/unloading.
+			Eiffel_project.manager.create_agents.extend (agent enable_commands_on_project_created)
+			Eiffel_project.manager.load_agents.extend (agent enable_commands_on_project_loaded)
+			Eiffel_project.manager.close_agents.extend (agent disable_commands_on_project_unloaded)
+		end
+
+	init_accelerators is
+		local
+			l_acc: EV_ACCELERATOR
+		do
+			create l_acc.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_s), True, True, False)
+			l_acc.actions.extend (agent show_call_stack_tool)
+			show_call_stack_tool_accelerator := l_acc
+
+			create l_acc.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_j), True, True, False)
+			l_acc.actions.extend (agent show_objects_tool)
+			show_objects_tool_accelerator := l_acc
+
+			create l_acc.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_p), True, True, False)
+			l_acc.actions.extend (agent show_thread_tool)
+			show_thread_tool_accelerator := l_acc
+
+			create l_acc.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_h), True, True, False)
+			l_acc.actions.extend (agent show_new_or_hidden_watch_tool)
+			show_new_or_hidden_watch_tool_accelerator := l_acc
 		end
 
 feature -- Settings
@@ -165,6 +299,20 @@ feature -- Access
 	toolbarable_commands: ARRAYED_LIST [EB_TOOLBARABLE_AND_MENUABLE_COMMAND]
 			-- All commands that can be put in a toolbar.
 
+feature -- Accelerators
+
+	show_call_stack_tool_accelerator: EV_ACCELERATOR
+			-- show_call_stack_tool accelerator.
+
+	show_objects_tool_accelerator: EV_ACCELERATOR
+			-- show_objects_tool accelerator.
+
+	show_thread_tool_accelerator: EV_ACCELERATOR
+			-- show_thread_tool accelerator.
+
+	show_new_or_hidden_watch_tool_accelerator: EV_ACCELERATOR
+			-- show_new_or_hidden_watch_tool accelerator.
+
 feature -- tools
 
 	call_stack_tool: EB_CALL_STACK_TOOL
@@ -203,7 +351,6 @@ feature -- tools management
 			--| commands_initialized: toolbarable_commands /= Void
 		local
 			sep: EV_MENU_SEPARATOR
-			mit: EV_MENU_ITEM
 		do
 			create Result.make_with_text (Interface_names.m_Debug)
 
@@ -257,26 +404,39 @@ feature -- tools management
 			Result.extend (assertion_checking_handler_cmd.new_menu_item)
 			Result.extend (force_debug_mode_cmd.new_menu_item)
 
-			debug ("DEBUGGER_INTERFACE")
-					-- Separator.
-				create sep
-				Result.extend (sep)
-				create mit.make_with_text ("raise")
-				mit.select_actions.extend (agent force_raise)
-				Result.extend (mit)
-				create mit.make_with_text ("unraise")
-				mit.select_actions.extend (agent force_unraise)
-				Result.extend (mit)
-			end
-
 --| FIXME XR: TODO: Add:
 --| 3) edit feature, feature evaluation
 		end
 
-	menuable_debugging_tools: ARRAY [EB_TOOL] is
+	menuable_debugging_tools: ARRAY [TUPLE [tool: EB_TOOL; acc: EV_ACCELERATOR]] is
 			-- List of all debugging tools to be listed under the debug->tools menu.
+		local
+			i, n: INTEGER
+			bptool: ES_BREAKPOINTS_TOOL
+			bptool_acc: EV_ACCELERATOR
+			showcmd: EB_SHOW_TOOL_COMMAND
 		do
-			Result := <<call_stack_tool, threads_tool>>
+			n := 3
+			if debugging_window /= Void then
+				bptool := debugging_window.tools.breakpoints_tool
+				showcmd := debugging_window.commands.show_tool_commands.item (bptool)
+				if showcmd /= Void then
+					bptool_acc := showcmd.accelerator
+				end
+				n := n + 1
+			end
+			create Result.make (1, n)
+
+			if bptool /= Void then
+				i := i + 1
+				Result [i] := [bptool, bptool_acc]
+			end
+			i := i + 1
+			Result [i] := [call_stack_tool, show_call_stack_tool_accelerator]
+			i := i + 1
+			Result [i] := [threads_tool, show_thread_tool_accelerator]
+			i := i + 1
+			Result [i] := [objects_tool, show_objects_tool_accelerator]
 		end
 
 	new_debugging_tools_menu: EV_MENU is
@@ -294,14 +454,17 @@ feature -- tools management
 			w /= Void
 		local
 			m: EV_MENU
-			mit: EV_MENU_ITEM
-			l_tools: ARRAY [EB_TOOL]
+			mi: EV_MENU_ITEM
+			mn: STRING_GENERAL
+			l_tools: ARRAY [TUPLE [tool: EB_TOOL; acc: EV_ACCELERATOR]]
+			t: TUPLE [tool: EB_TOOL; acc: EV_ACCELERATOR]
 			l_tool: EB_TOOL
 			i: INTEGER
+			wt: ES_WATCH_TOOL
 		do
 			m := w.menus.debugging_tools_menu
 			m.wipe_out
-			if raised or debug_mode_forced then
+			if raised then
 				l_tools := menuable_debugging_tools
 				if not l_tools.is_empty then
 					from
@@ -309,18 +472,62 @@ feature -- tools management
 					until
 						i > l_tools.upper
 					loop
-						l_tool := l_tools [i]
+						t := l_tools[i]
+						l_tool := t.tool
 						if l_tool /= Void then
-							create mit.make_with_text (l_tool.menu_name)
-							if l_tool.pixmap /= Void then
-								mit.set_pixmap (l_tool.pixmap)
+							if t.acc /= Void then
+								mn := l_tool.menu_name.twin
+								mn.append ("%T")
+								mn.append (t.acc.out)
+								create mi.make_with_text (mn)
+							else
+								create mi.make_with_text (l_tool.menu_name)
 							end
-							mit.select_actions.extend (agent show_hide_debugging_tools (mit))
-							m.extend (mit)
+							mi.set_data (l_tool.menu_name)
+							if l_tool.pixmap /= Void then
+								mi.set_pixmap (l_tool.pixmap)
+							end
+							mi.select_actions.extend (agent show_debugging_tools (mi))
+							m.extend (mi)
 						end
 						i := i + 1
 					end
+
+					if watch_tool_list.is_empty then
+						mn := interface_names.f_create_new_watch.twin
+						mn.append ("%T")
+						mn.append (show_new_or_hidden_watch_tool_accelerator.out)
+						create mi.make_with_text (mn)
+					else
+						create mi.make_with_text (interface_names.f_create_new_watch)
+					end
+					mi.set_pixmap (pixmaps.icon_pixmaps.tool_watch_icon)
+					mi.select_actions.extend (agent create_and_show_new_watch_tool)
+					m.extend (mi)
+
+					if not watch_tool_list.is_empty then
+						m.extend (create {EV_MENU_SEPARATOR})
+						from
+							watch_tool_list.start
+						until
+							watch_tool_list.after
+						loop
+							wt := watch_tool_list.item
+
+							mn := wt.menu_name.twin
+							mn.append ("%T")
+							mn.append (show_new_or_hidden_watch_tool_accelerator.out)
+							create mi.make_with_text (mn)
+							mi.set_pixmap (pixmaps.icon_pixmaps.tool_watch_icon)
+							mi.select_actions.extend (agent wt.show)
+							m.extend (mi)
+
+							watch_tool_list.forth
+						end
+					end
+
 					m.enable_sensitive
+
 				end
 			else
 				m.disable_sensitive
@@ -333,57 +540,69 @@ feature -- tools management
 			window_manager.for_all_development_windows (agent update_debugging_tools_menu_from)
 		end
 
-	show_hide_debugging_tools (mit: EV_MENU_ITEM) is
+	show_debugging_tools (mi: EV_MENU_ITEM) is
 			-- Toggle display status of Tool related to `mit'
 		require
-			mit /= Void
+			mi /= Void
 		local
+			t: TUPLE [tool: EB_TOOL; acc: EV_ACCELERATOR]
 			l_tool: EB_TOOL
-			l_tools: ARRAY [EB_TOOL]
+			l_acc: EV_ACCELERATOR
+			l_tools: ARRAY [TUPLE [tool: EB_TOOL; acc: EV_ACCELERATOR]]
 			i: INTEGER
 			s: STRING_GENERAL
 		do
 			if raised then
 				l_tools := menuable_debugging_tools
 				from
-					s := mit.text
+					s ?= mi.data
 					i := l_tools.lower
 				until
 					i > l_tools.upper
 				loop
-					l_tool := l_tools [i]
+					t := l_tools [i]
+					if t /= Void then
+						l_tool := t.tool
+					end
 					if l_tool /= Void and then s.is_equal (l_tool.menu_name) then
-						if l_tool.shown then
-							l_tool.close
+						l_acc := t.acc
+						if l_acc /= Void and then not l_acc.actions.is_empty then
+							l_acc.actions.call (Void)
 						else
 							l_tool.show
-							if l_tool.widget.is_displayed then
-								l_tool.widget.set_focus
-							end
 						end
+						i := l_tools.upper --| Exit the loop						
 					end
 					i := i + 1
 				end
 			end
 		end
 
+	show_call_stack_tool is
+			-- Show call stack tool if any.
+		do
+			if call_stack_tool /= Void and raised then
+				call_stack_tool.show
+			end
+		end
+
 	show_thread_tool is
 			-- Show thread tool if any.
 		do
-			if threads_tool /= Void then
+			if threads_tool /= Void and raised then
 				threads_tool.show
 			end
 		end
 
-	show_object_tool is
+	show_objects_tool is
 			-- Show object tool if any.
 		do
-			if objects_tool /= Void then
+			if objects_tool /= Void and raised then
 				objects_tool.show
 			end
 		end
 
-	show_a_hidden_watch_tool is
+	show_new_or_hidden_watch_tool is
 			-- Show a hidden watch tool if any.
 			-- If all shown, show next one.
 		local
@@ -392,34 +611,56 @@ feature -- tools management
 			l_watch_tool: ES_WATCH_TOOL
 			l_focused_watch_index: INTEGER
 		do
-			l_watch_tools := watch_tool_list
-			from
-				l_watch_tools.start
-			until
-				l_watch_tools.after
-			loop
-				if l_watch_tools.item.content.has_focus then
-					l_shown := True
-					l_focused_watch_index := l_watch_tools.index
-				end
-				if l_watch_tool = Void and then not l_watch_tools.item.shown then
-					l_watch_tool := l_watch_tools.item
-				end
-				l_watch_tools.forth
-			end
-			if l_watch_tool /= Void then
-				l_watch_tool.show
-			elseif not l_watch_tools.is_empty then
-				if l_focused_watch_index = l_watch_tools.count then
-					l_focused_watch_index := 1
+			if raised then
+				l_watch_tools := watch_tool_list
+				if l_watch_tools.is_empty then
+					create_and_show_new_watch_tool
 				else
-					l_focused_watch_index := l_focused_watch_index + 1
+					from
+						l_watch_tools.start
+					until
+						l_watch_tools.after
+					loop
+						if l_watch_tools.item.content.has_focus then
+							l_shown := True
+							l_focused_watch_index := l_watch_tools.index
+						end
+						if l_watch_tool = Void and then not l_watch_tools.item.shown then
+							l_watch_tool := l_watch_tools.item
+						end
+						l_watch_tools.forth
+					end
+					if l_watch_tool /= Void then
+						l_watch_tool.show
+					else
+						if l_focused_watch_index = l_watch_tools.count then
+							l_focused_watch_index := 1
+						else
+							l_focused_watch_index := l_focused_watch_index + 1
+						end
+						l_watch_tools.i_th (l_focused_watch_index).show
+					end
 				end
-				l_watch_tools.i_th (l_focused_watch_index).show
 			end
 		end
 
-	create_new_watch_tool_inside_notebook (a_manager: EB_DEVELOPMENT_WINDOW; a_watch_tool: ES_WATCH_TOOL) is
+	create_and_show_new_watch_tool is
+			-- Create a new watch tool attached to current debugging window
+		local
+			t: EB_TOOL
+		do
+			if debugging_window /= Void then
+				if not watch_tool_list.is_empty then
+					t := watch_tool_list.last
+				else
+					t := objects_tool
+				end
+				create_new_watch_tool_inside_notebook (debugging_window, t)
+				watch_tool_list.last.show
+			end
+		end
+
+	create_new_watch_tool_inside_notebook (a_manager: EB_DEVELOPMENT_WINDOW; a_tool: EB_TOOL) is
 			-- Create a new watch tool.
 		require
 			a_manager /= Void
@@ -428,14 +669,25 @@ feature -- tools management
 			i: INTEGER
 		do
 			i := new_watch_tool_number
-			create l_watch_tool.make_with_title (a_manager, interface_names.t_watch_tool.as_string_32 + " #" + i.out, interface_names.to_watch_tool + " #")
-			if a_watch_tool /= Void then
-			 	l_watch_tool.attach_to_docking_manager_with (a_manager.docking_manager, a_watch_tool)
+
+				--| Create watch tool
+			create l_watch_tool.make_with_title (a_manager,
+					last_watch_tool_number,
+					Interface_names.t_watch_tool.as_string_32 + " #" + i.out,
+					Interface_names.to_watch_tool + i.out
+				)
+			if
+				a_tool /= Void
+				and then a_tool.content /= Void
+				and then a_tool.content.is_visible
+			then
+			 	l_watch_tool.attach_to_docking_manager_with (a_manager.docking_manager, a_tool)
 			else
 				l_watch_tool.attach_to_docking_manager (a_manager.docking_manager)
 			end
 			watch_tool_list.extend (l_watch_tool)
-			assgin_watch_tool_unique_titles
+			assign_watch_tool_unique_titles
+			update_all_debugging_tools_menu
 		end
 
 	close_watch_tool (wt: ES_WATCH_TOOL) is
@@ -474,7 +726,12 @@ feature {NONE} -- watch tool numbering
 
 	new_watch_tool_number: INTEGER is
 		do
-			last_watch_tool_number := last_watch_tool_number + 1
+				--| Get new watch id
+			if watch_tool_list.is_empty then
+				last_watch_tool_number := 1
+			else
+				last_watch_tool_number := last_watch_tool_number + 1
+			end
 			Result := last_watch_tool_number
 		end
 
@@ -490,6 +747,9 @@ feature -- Status report
 
 	debug_mode_forced: BOOLEAN
 			-- Do we force debugger interface to stay raised ?
+
+	is_exiting_eiffel_studio: BOOLEAN
+			-- Is exiting Eiffel Studio now?
 
 feature -- Output
 
@@ -562,12 +822,7 @@ feature -- Change
 			if conv_dev /= Void then
 				bp_tool := conv_dev.tools.breakpoints_tool
 				if bp_tool /= Void then
-					if bp_tool.shown then
-						bp_tool.close
-					else
-						bp_tool.show
-						bp_tool.refresh
-					end
+					bp_tool.show
 				end
 			end
 		end
@@ -582,9 +837,7 @@ feature -- Change
 			if conv_dev /= Void then
 				bp_tool := conv_dev.tools.breakpoints_tool
 				if bp_tool /= Void then
-					if bp_tool.shown then
-						bp_tool.refresh
-					elseif show_tool_if_closed then
+					if show_tool_if_closed then
 						bp_tool.show
 					end
 				end
@@ -709,8 +962,10 @@ feature -- Status setting
 
 		local
 			split: EV_SPLIT_AREA
-			i: INTEGER
 			l_watch_tool: ES_WATCH_TOOL
+			l_watch_tool_list: like watch_tool_list
+			l_tool: EB_TOOL
+			l_docking_manager: SD_DOCKING_MANAGER
 			nwt: INTEGER
 			l_unlock: BOOLEAN
 		do
@@ -729,29 +984,9 @@ feature -- Status setting
 			end
 			debugging_window.save_tools_docking_layout
 
-			debug ("DEBUGGER_INTERFACE")
-				io.put_string ("Right normal layout: %N")
-	 			from
-	 				i := 1
-	 			until
-	 				i > normal_right_layout.count
-	 			loop
-	 				io.put_string (normal_right_layout @ i + "%N")
-	 				i := i + 1
-	 			end
-				io.put_string ("Left normal layout: %N")
-	 			from
-	 				i := 1
-	 			until
-	 				i > normal_left_layout.count
-	 			loop
-	 				io.put_string (normal_left_layout @ i + "%N")
-	 				i := i + 1
-	 			end
-			end
-
 				-- Change the state of the debugging window.
 			debugging_window.hide_tools
+			l_docking_manager := debugging_window.docking_manager
 
 				--| Grid Objects Tool
 			if objects_tool = Void then
@@ -759,46 +994,56 @@ feature -- Status setting
 			else
 				objects_tool.set_manager (debugging_window)
 			end
-			objects_tool.attach_to_docking_manager (debugging_window.docking_manager)
+			objects_tool.attach_to_docking_manager (l_docking_manager)
 
 			objects_tool.set_cleaning_delay (preferences.debug_tool_data.delay_before_cleaning_objects_grid)
 			objects_tool.request_update
 
 				--| Watches tool
+			l_watch_tool_list := watch_tool_list
+				--| At least one watch tool
 			nwt := Preferences.debug_tool_data.number_of_watch_tools.max (1)
-			if watch_tool_list.count < nwt  then
+			if l_watch_tool_list.count < nwt  then
 				from
-					l_watch_tool := Void
-					if not watch_tool_list.is_empty then
-						l_watch_tool := watch_tool_list.last
+					l_tool := Void
+					if not l_watch_tool_list.is_empty then
+						l_watch_tool := l_watch_tool_list.last
+						if l_watch_tool.shown then
+							l_tool := l_watch_tool
+						end
 					end
 				until
-					watch_tool_list.count >= nwt
+					l_watch_tool_list.count >= nwt
 				loop
-					create_new_watch_tool_inside_notebook (debugging_window, l_watch_tool)
+					create_new_watch_tool_inside_notebook (debugging_window, l_tool)
 				end
-			else
+			elseif not l_watch_tool_list.is_empty then
 				from
-					l_watch_tool := Void
-					if not watch_tool_list.is_empty then
-						l_watch_tool := watch_tool_list.last
+					l_tool := Void
+					if not l_watch_tool_list.is_empty then
+						l_watch_tool := l_watch_tool_list.last
+						if l_watch_tool.shown then
+							l_tool := l_watch_tool
+						end
 					end
-					watch_tool_list.start
+					l_watch_tool_list.start
 				until
-					watch_tool_list.after
+					l_watch_tool_list.after
 				loop
-					l_watch_tool := watch_tool_list.item
+					l_watch_tool := l_watch_tool_list.item
 					if l_watch_tool /= Void then
 						l_watch_tool.set_manager (debugging_window)
-						l_watch_tool.attach_to_docking_manager_with (debugging_window.docking_manager, l_watch_tool)
+						if l_tool /= Void and then l_watch_tool.content /= Void and then l_watch_tool.content.target_content_shown (l_tool.content) then
+							l_watch_tool.attach_to_docking_manager_with (l_docking_manager, l_tool)
+						else
+							l_watch_tool.attach_to_docking_manager (l_docking_manager)
+						end
 					end
-					watch_tool_list.forth
+					l_watch_tool_list.forth
 				end
-
 			end
-
-			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.prepare_for_debug)
-			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.request_update)
+			l_watch_tool_list.do_all (agent {ES_WATCH_TOOL}.prepare_for_debug)
+			l_watch_tool_list.do_all (agent {ES_WATCH_TOOL}.request_update)
 
 				--| Threads Tool
 			if threads_tool = Void then
@@ -816,13 +1061,43 @@ feature -- Status setting
 
 				-- Show Tools and final visual settings
 			debugging_window.show_tools
-
 			restore_debug_docking_layout
+
+
+				--| Watch tool can not be simply hidden
+				--| they are shown or closed.
+			from
+				l_tool := Void
+				if not l_watch_tool_list.is_empty then
+					l_watch_tool := l_watch_tool_list.last
+					if l_watch_tool.shown then
+						l_tool := l_watch_tool
+					end
+				end
+				if l_tool = Void
+					and then objects_tool /= Void
+					and then objects_tool.shown
+				then
+					l_tool := objects_tool
+				end
+				l_watch_tool_list.start
+			until
+				l_watch_tool_list.after
+			loop
+				l_watch_tool := l_watch_tool_list.item
+				if l_watch_tool.content /= Void and then not l_watch_tool.content.is_visible then
+					if l_tool /= Void then
+						l_watch_tool.content.set_tab_with (l_tool.content, False)
+					end
+					l_watch_tool.content.show
+				end
+				l_watch_tool_list.forth
+			end
 
 				--| Set the Grid Objects tool split position to 200 which is the default size of the local tree.
 			split ?= objects_tool.widget
 			if split /= Void then
-				if 0 <= objects_split_proportion and objects_split_proportion <= 1then
+				if 0 <= objects_split_proportion and objects_split_proportion <= 1 then
 					split.set_proportion (objects_split_proportion)
 				end
 				split := Void
@@ -832,6 +1107,7 @@ feature -- Status setting
 			if l_unlock then
 				debugging_window.window.unlock_update
 			end
+			update_all_debugging_tools_menu
 			unpopup_switching_mode
 			force_debug_mode_cmd.enable_sensitive
 		ensure
@@ -855,12 +1131,16 @@ feature -- Status setting
 				-- FIXME: To be implemented.
 --			debugging_window.update_items_states
 --			debugging_window.update_menu_item_state
+
+			refresh_breakpoints_tool
 		end
 
 	save_debug_docking_layout is
 			-- Save debug docking layout
 		do
-			debugging_window.docking_manager.save_tools_config (debugging_window.docking_debug_config_file)
+			if debugging_window /= Void then
+				debugging_window.docking_manager.save_tools_config (debugging_window.docking_debug_config_file)
+			end
 		end
 
 	restore_standard_debug_docking_layout is
@@ -886,7 +1166,6 @@ feature -- Status setting
 		require
 			debugger_raised: raised
 		local
-			i: INTEGER
 			split: EV_SPLIT_AREA
 			l_unlock: BOOLEAN
 		do
@@ -904,27 +1183,6 @@ feature -- Status setting
 			split ?= objects_tool.widget
 			if split /= Void then
 				objects_split_proportion := split.split_position / split.width
-			end
-
-			debug ("DEBUGGER_INTERFACE")
-				io.put_string ("Right debug layout: %N")
-	 			from
-	 				i := 1
-	 			until
-	 				i > debug_right_layout.count
-	 			loop
-	 				io.put_string (debug_right_layout @ i + "%N")
-	 				i := i + 1
-	 			end
-				io.put_string ("Left debug layout: %N")
-	 			from
-	 				i := 1
-	 			until
-	 				i > debug_left_layout.count
-	 			loop
-	 				io.put_string (debug_left_layout @ i + "%N")
-	 				i := i + 1
-	 			end
 			end
 
 			save_debug_docking_layout
@@ -946,9 +1204,12 @@ feature -- Status setting
 			raised := False
 
 			debugging_window.restore_tools_docking_layout
+			refresh_breakpoints_tool
 			if l_unlock then
 				debugging_window.window.unlock_update
 			end
+
+			update_all_debugging_tools_menu
 			unpopup_switching_mode
 			force_debug_mode_cmd.enable_sensitive
 		ensure
@@ -1005,17 +1266,28 @@ feature -- Status setting
 			preferences.debug_tool_data.save_project_toolbar (toolbar)
 		end
 
-	assgin_watch_tool_unique_titles is
-			-- Reassgn all unique titles of watch tools.
+	assign_watch_tool_unique_titles is
+			-- Reassign all unique titles of watch tools.
+		local
+			w: ES_WATCH_TOOL
+			lst: like watch_tool_list
 		do
 			from
-				watch_tool_list.start
+				lst := watch_tool_list
+				lst.start
 			until
-				watch_tool_list.after
+				lst.after
 			loop
-				watch_tool_list.item.content.set_unique_title (once "watch_tool_" + watch_tool_list.index.out)
-				watch_tool_list.forth
+				w := lst.item
+				w.content.set_unique_title (once "watch_tool_" + lst.index.out)
+				lst.forth
 			end
+		end
+
+	enable_exiting_eiffel_studio is
+			-- Set `is_exiting_eiffel_studio' with true.
+		do
+			is_exiting_eiffel_studio := True
 		end
 
 feature {NONE} -- Raise/unraise notification
@@ -1026,7 +1298,7 @@ feature {NONE} -- Raise/unraise notification
 			lab: EV_LABEL
 			w,h, pw,ph: INTEGER
 		do
-			if debugging_window /= Void then
+			if debugging_window /= Void and then debugging_window.window /= Void then
 				create popup
 				popup.enable_border
 				create lab
@@ -1259,6 +1531,7 @@ feature -- Debugging events
 
 	on_application_quit is
 			-- Application just quit.
+			-- This application means the debuggee.
 		local
 			was_executing: BOOLEAN
 		do
@@ -1282,6 +1555,9 @@ feature -- Debugging events
 					raised := False
 					debug_mode_forced := False
 					force_debug_mode_cmd.set_select (False)
+				elseif is_exiting_eiffel_studio then
+					save_debug_docking_layout
+					debugging_window := Void
 				elseif not debug_mode_forced then
 					unraise
 					debugging_window := Void
@@ -1345,17 +1621,6 @@ feature {EB_DEVELOPMENT_WINDOW, EB_DEVELOPMENT_WINDOW_PART} -- Implementation
 	display_error_help_cmd: EB_ERROR_INFORMATION_CMD
 			-- Command to pop up a dialog giving help on compilation errors.
 
-feature {EB_DEVELOPMENT_WINDOW} -- Implementation
-
-	save_original_layout is
-			-- Save original layout of development window to resources.
-			-- Called by the development window with the debugger when closed,
-			-- so that the original layout of the window is stored in the registry.
-		do
-			preferences.development_window_data.left_panel_layout_preference.set_value (normal_left_layout)
-			preferences.development_window_data.right_panel_layout_preference.set_value (normal_right_layout)
-		end
-
 feature -- Options
 
 	display_agent_details: BOOLEAN
@@ -1366,17 +1631,8 @@ feature {NONE} -- Implementation
 	saved_minimized: BOOLEAN
 			-- Was the editor in the debugging window minimized before the debug session started?
 
-	debug_right_layout, debug_left_layout: ARRAY [STRING]
-			-- Used to save the display of the debugging window during debugging sessions.
-
-	debug_splitter_position, normal_splitter_position: INTEGER
-			-- Used to save the position of the main splitter of the debugging window.
-
 	objects_split_proportion: REAL
 			-- Position of the splitter inside the object tool.
-
-	normal_right_layout, normal_left_layout: ARRAY [STRING]
-			-- Used to save the display of the debugging window outside debugging sessions.
 
 	bkpt_info_cmd: EB_STANDARD_CMD
 			-- Command that can display info concerning the breakpoints in the system.
@@ -1416,118 +1672,6 @@ feature {NONE} -- Implementation
 	no_stop_cmd: EB_EXEC_NO_STOP_CMD
 			-- Run without stop points command.
 
-	init_commands is
-			-- Create a new project toolbar.
-		do
---| FIXME XR: TODO: Add:
---| 3) edit feature, feature evaluation
-			create toolbarable_commands.make (20)
-
-			create clear_bkpt
-			clear_bkpt.enable_sensitive
-			toolbarable_commands.extend (clear_bkpt)
-
-			create enable_bkpt
-			enable_bkpt.enable_sensitive
-			toolbarable_commands.extend (enable_bkpt)
-
-			create disable_bkpt
-			disable_bkpt.enable_sensitive
-			toolbarable_commands.extend (disable_bkpt)
-
-			create bkpt_info_cmd.make
-			bkpt_info_cmd.set_pixmap (pixmaps.icon_pixmaps.tool_breakpoints_icon)
-			bkpt_info_cmd.set_pixel_buffer (pixmaps.icon_pixmaps.tool_breakpoints_icon_buffer)
-			bkpt_info_cmd.set_tooltip (Interface_names.e_Bkpt_info)
-			bkpt_info_cmd.set_menu_name (Interface_names.m_Bkpt_info)
-			bkpt_info_cmd.set_tooltext (Interface_names.b_Bkpt_info)
-			bkpt_info_cmd.set_name ("Bkpt_info")
-			bkpt_info_cmd.add_agent (agent toggle_display_breakpoints)
-			bkpt_info_cmd.enable_sensitive
-			toolbarable_commands.extend (bkpt_info_cmd)
-
-			create system_info_cmd.make
-			system_info_cmd.set_pixmap (pixmaps.icon_pixmaps.command_system_info_icon)
-			system_info_cmd.set_pixel_buffer (pixmaps.icon_pixmaps.command_system_info_icon_buffer)
-			system_info_cmd.set_tooltip (Interface_names.e_Display_system_info)
-			system_info_cmd.set_menu_name (Interface_names.m_Display_system_info)
-			system_info_cmd.set_name ("System_info")
-			system_info_cmd.set_tooltext (Interface_names.b_System_info)
-			system_info_cmd.add_agent (agent display_system_status)
-			toolbarable_commands.extend (system_info_cmd)
-
-			create set_critical_stack_depth_cmd.make
-			set_critical_stack_depth_cmd.set_menu_name (Interface_names.m_Set_critical_stack_depth)
-			set_critical_stack_depth_cmd.add_agent (agent change_critical_stack_depth)
-			set_critical_stack_depth_cmd.enable_sensitive
-
-			create display_error_help_cmd.make
-			toolbarable_commands.extend (display_error_help_cmd)
-
-			create exception_handler_cmd.make
-			exception_handler_cmd.enable_sensitive
-			toolbarable_commands.extend (exception_handler_cmd)
-
-			create assertion_checking_handler_cmd.make
-			assertion_checking_handler_cmd.enable_sensitive
-			toolbarable_commands.extend (assertion_checking_handler_cmd)
-			create force_debug_mode_cmd.make (Current)
-			force_debug_mode_cmd.enable_sensitive
-			toolbarable_commands.extend (force_debug_mode_cmd)
-
-			create options_cmd.make (Current)
-			toolbarable_commands.extend (options_cmd)
-			create step_cmd.make (Current)
-			toolbarable_commands.extend (step_cmd)
-			create into_cmd.make (Current)
-			toolbarable_commands.extend (into_cmd)
-			create out_cmd.make (Current)
-			toolbarable_commands.extend (out_cmd)
-			create debug_cmd.make (Current)
-			toolbarable_commands.extend (debug_cmd)
-			create no_stop_cmd.make (Current)
-			toolbarable_commands.extend (no_stop_cmd)
-			create stop_cmd.make (Current)
-			toolbarable_commands.extend (stop_cmd)
-			create restart_cmd.make (Current)
-			toolbarable_commands.extend (restart_cmd)
-			create quit_cmd.make (Current)
-			toolbarable_commands.extend (quit_cmd)
-
-			step_cmd.enable_sensitive
-			into_cmd.enable_sensitive
-			out_cmd.enable_sensitive
-			debug_cmd.enable_sensitive
-			no_stop_cmd.enable_sensitive
-			stop_cmd.disable_sensitive
-			quit_cmd.disable_sensitive
-			restart_cmd.disable_sensitive
-
-			toolbarable_commands.extend (system_cmd)
-			toolbarable_commands.extend (Melt_project_cmd)
-			toolbarable_commands.extend (Freeze_project_cmd)
-			toolbarable_commands.extend (Finalize_project_cmd)
-			run_finalized_cmd.enable_sensitive
-			toolbarable_commands.extend (run_finalized_cmd)
-			toolbarable_commands.extend (override_scan_cmd)
-			toolbarable_commands.extend (discover_melt_cmd)
-
-				-- Disable commands if no project is loaded
-			if not Eiffel_project.manager.is_project_loaded then
-				if Eiffel_project.manager.is_created then
-					enable_commands_on_project_created
-				else
-					disable_commands_on_project_unloaded
-				end
-			else
-				enable_commands_on_project_loaded
-			end
-
-				-- Enable/Disable commands on project loading/unloading.
-			Eiffel_project.manager.create_agents.extend (agent enable_commands_on_project_created)
-			Eiffel_project.manager.load_agents.extend (agent enable_commands_on_project_loaded)
-			Eiffel_project.manager.close_agents.extend (agent disable_commands_on_project_unloaded)
-		end
 
 	enable_commands_on_project_created is
 			-- Enable commands when a new project has been created (not yet compiled)
@@ -1599,26 +1743,6 @@ feature {NONE} -- Implementation
 			into_cmd.disable_sensitive
 			out_cmd.disable_sensitive
 			assertion_checking_handler_cmd.disable_sensitive
-		end
-
-	force_raise is
-			-- Debug feature.
-		do
-			if not raised then
-					-- Update `Current'.
-				if debugging_window = Void then
-					debugging_window := last_focused_development_window (False)
-				end
-				raise
-			end
-		end
-
-	force_unraise is
-			-- Debug feature.
-		do
-			if raised then
-				unraise
-			end
 		end
 
 	change_critical_stack_depth is
@@ -1747,8 +1871,13 @@ feature {NONE} -- Implementation
 			-- Restore standard debug docking layout.
 		local
 			l_contents: ARRAYED_LIST [SD_CONTENT]
+			l_tools: EB_DEVELOPMENT_WINDOW_TOOLS
 		do
-			if debugging_window.tools.features_relation_tool.content.is_visible and debugging_window.tools.features_tool.content.state_value /= {SD_ENUMERATION}.auto_hide then
+			l_tools := debugging_window.tools
+			if
+				l_tools.features_relation_tool.content.is_visible
+				and l_tools.features_tool.content.state_value /= {SD_ENUMERATION}.auto_hide
+			then
 				-- But it is possible that is auto hide state.
 				objects_tool.content.set_relative (debugging_window.tools.features_relation_tool.content, {SD_ENUMERATION}.bottom)
 			else
@@ -1763,16 +1892,25 @@ feature {NONE} -- Implementation
 				watch_tool_list.item.content.set_tab_with (objects_tool.content, False)
 				watch_tool_list.forth
 			end
+			if objects_tool.content.is_visible then
+				objects_tool.content.set_focus
+			end
 
-			if debugging_window.tools.features_tool.content.is_visible and debugging_window.tools.features_tool.content.state_value /= {SD_ENUMERATION}.auto_hide then
-				call_stack_tool.content.set_relative (debugging_window.tools.features_tool.content, {SD_ENUMERATION}.bottom)
-			elseif debugging_window.tools.cluster_tool.content.is_visible and debugging_window.tools.cluster_tool.content.state_value /= {SD_ENUMERATION}.auto_hide then
-				call_stack_tool.content.set_relative (debugging_window.tools.cluster_tool.content, {SD_ENUMERATION}.bottom)
+			if
+				l_tools.features_tool.content.is_visible
+				and l_tools.features_tool.content.state_value /= {SD_ENUMERATION}.auto_hide
+			then
+				call_stack_tool.content.set_relative (l_tools.features_tool.content, {SD_ENUMERATION}.bottom)
+			elseif
+				l_tools.cluster_tool.content.is_visible
+				and l_tools.cluster_tool.content.state_value /= {SD_ENUMERATION}.auto_hide
+			then
+				call_stack_tool.content.set_relative (l_tools.cluster_tool.content, {SD_ENUMERATION}.bottom)
 			else
 				call_stack_tool.content.set_top ({SD_ENUMERATION}.left)
 			end
 
-			-- Minimize all editors
+				--| Minimize all editors
 			from
 				l_contents := debugging_window.docking_manager.contents
 				l_contents.start
@@ -1783,6 +1921,17 @@ feature {NONE} -- Implementation
 					l_contents.item.minimize
 				end
 				l_contents.forth
+			end
+		end
+
+	refresh_breakpoints_tool is
+			-- Refresh breakpoint tool if needed.
+		local
+			l_tool: ES_BREAKPOINTS_TOOL
+		do
+			l_tool := debugging_window.tools.breakpoints_tool
+			if l_tool.content.is_visible then
+				l_tool.refresh
 			end
 		end
 

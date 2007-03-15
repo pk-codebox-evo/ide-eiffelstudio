@@ -6,6 +6,7 @@ indexing
 	conventions:
 		"a_: Accelerator key combination; %
 		%b_: Button text; %
+		%c_: choices; %
 		%d_: Degree outputter; %
 		%f_: Focus label text (tooltips); %
 		%h_: Help text; %
@@ -107,6 +108,7 @@ feature -- Button texts
 	b_Update: STRING_GENERAL is 						do Result := locale.translate("Update")	end
 	b_Compile: STRING_GENERAL is						do Result := locale.translate("Compile")	end
 	b_Launch: STRING_GENERAL is							do Result := locale.translate("Start")	end
+	b_Restart: STRING_GENERAL							do Result := locale.translate("Restart") end
 	b_Continue: STRING_GENERAL is						do Result := locale.translate("Continue")	end
 	b_Finalize: STRING_GENERAL is						do Result := locale.translate("Finalize")	end
 	b_Freeze: STRING_GENERAL is							do Result := locale.translate("Freeze")	end
@@ -174,6 +176,55 @@ feature -- Button texts
 	b_overwrite: STRING_GENERAL is						do Result := locale.translate("Overwrite") end
 	b_append: STRING_GENERAL is							do Result := locale.translate("Append") end
 	b_ignore: STRING_GENERAL is							do Result := locale.translate("Ignore") end
+
+feature -- Choices
+
+	c_right_click_receiver: HASH_TABLE [STRING_GENERAL, STRING] is
+			-- Choice names for the preference of right_click_receiver.
+		once
+			create Result.make (5)
+			Result.put (c_new_window, co_new_window)
+			Result.put (c_editor, co_editor)
+			Result.put (c_context, co_context)
+			Result.put (c_external_editor, co_external_editor)
+			Result.put (c_new_tab_editor, co_new_tab_editor)
+		ensure
+			result_not_void: Result /= Void
+		end
+
+	c_new_window: STRING_GENERAL is 		do Result := locale.translate ("New window") end
+	c_editor: STRING_GENERAL is 			do Result := locale.translate ("Current Editor") end
+	c_context: STRING_GENERAL is 			do Result := locale.translate ("Context") end
+	c_external_editor: STRING_GENERAL is 	do Result := locale.translate ("External Editor") end
+	c_new_tab_editor: STRING_GENERAL is 	do Result := locale.translate ("New tab editor") end
+
+	c_init_search_scope: HASH_TABLE [STRING_GENERAL, STRING] is
+			-- Choice names for the preference of tools.search_tool.init_scope.
+		once
+			create Result.make (3)
+			Result.put (l_current_editor, co_current_editor)
+			Result.put (l_whole_project, co_whole_project)
+			Result.put (l_custom, co_custom)
+		ensure
+			result_not_void: Result /= Void
+		end
+
+feature -- Choice original (No translation)
+
+	co_new_window: STRING is "new_window"
+			-- Preference that indicates that stones should be launched to a new development window.
+	co_editor: STRING is "current_editor"
+			-- Preference that indicates that stones should be launched to the current editor.
+	co_context: STRING is "context"
+			-- Preference that indicates that stones should be launched to the current context tool.
+	co_external_editor: STRING is "external"
+			-- Preference that indicates that stones should be launched to the external editor.
+	co_new_tab_editor: STRING is "new_tab_editor"
+			-- Preference that indicates that stones should be launched to a new tab editor.
+
+	co_current_editor: STRING is 		"Current Editor"
+	co_whole_project: STRING is 		"Whole Project"
+	co_custom: STRING is 				"Custom"
 
 feature -- Graphical degree output
 
@@ -282,6 +333,7 @@ feature -- Accelerator, focus label and menu name
 	f_Debug_run: STRING_GENERAL is				do Result := locale.translate("Run")	end
 	m_Debug_run: STRING_GENERAL is				do Result := locale.translate("&Run%TCtrl+R")	end
 	m_Debug_run_new: STRING_GENERAL is			do Result := locale.translate("St&art")	end
+	m_Debug_run_continue: STRING_GENERAL is		do Result := locale.translate("Continue")	end
 
 	m_Force_debug_mode: STRING_GENERAL is		do Result := locale.translate("Force Debug Mode")	end
 	m_Launch_With_Arguments: STRING_GENERAL is	do Result := locale.translate("Start With Arguments")	end
@@ -529,6 +581,12 @@ feature -- Accelerator, focus label and menu name
 	m_save_layout_as: STRING_GENERAL is do Result := locale.translate ("Save Layout As...") end
 	m_open_layout: STRING_GENERAL is do Result := locale.translate ("Open Layout") end
 	l_choose_class_version: STRING_GENERAL is do Result := locale.translate ("Choose one version from the following:") end
+	m_restart_application: STRING_GENERAL is do Result := locale.translate ("Restart application") end
+	f_restart_application: STRING_GENERAL is do Result := locale.translate ("Restart application") end
+	f_show_tool (a_tool_name: STRING_GENERAL): STRING_GENERAL is
+			do
+				Result := locale.format_string (locale.translate ("Show $1"), [a_tool_name])
+			end
 
 feature -- Toggles
 
@@ -1398,6 +1456,7 @@ feature -- Label text, no translation (for the editor)
 	le_New_breakpoint: STRING is			"New breakpoint(s) to commit"
 	le_Stepped: STRING is				"Step completed"
 	le_Unknown_status: STRING is			"Unknown application status"
+	le_versions: STRING is 				"versions"
 
 feature -- Stone names
 
@@ -1704,10 +1763,15 @@ feature -- Titles translation needless (Title Original) for preference strings.
 	to_context: STRING is						"Context"
 	to_context_dot: STRING is					"Context ..."
 
+	to_Address_toolbar: STRING is				"Address Bar"
+	to_Standard_toolbar: STRING is				"Standard Buttons"
+	to_Project_toolbar: STRING is				"Project Bar"
+	to_Refactory_toolbar: STRING is				"Refactoring Bar"
+
 feature -- Description texts
 
 	e_Add_exported_feature: STRING_GENERAL is	do Result := locale.translate("Add a new feature to this dynamic library definition")	end
-	e_Bkpt_info: STRING_GENERAL is				do Result := locale.translate("Show/Hide information about breakpoints")	end
+	e_Bkpt_info: STRING_GENERAL is				do Result := locale.translate("Show information about breakpoints")	end
 	e_Check_exports: STRING_GENERAL is			do Result := locale.translate("Check the validity of the library definition")	end
 	e_Compilation_failed: STRING_GENERAL is		do Result := locale.translate("Eiffel Compilation Failed")	end
 	e_Compilation_succeeded: STRING_GENERAL is	do Result := locale.translate("Eiffel Compilation Succeeded")	end
@@ -1753,6 +1817,7 @@ feature -- Description texts
 	e_Edit_expression: STRING_GENERAL is		do Result := locale.translate("Edit an expression")	end
 	e_Edited: STRING_GENERAL is					do Result := locale.translate("Some classes were edited since last compilation")	end
 	e_Exec_debug: STRING_GENERAL is				do Result := locale.translate("Start application and stop at breakpoints")	end
+	e_Exec_debug_continue: STRING_GENERAL is	do Result := locale.translate("Continue application and stop at breakpoints")	end
 	e_Exec_kill: STRING_GENERAL is				do Result := locale.translate("Stop application")	end
 	e_Exec_into: STRING_GENERAL is				do Result := locale.translate("Step into a routine")	end
 	e_Exec_no_stop: STRING_GENERAL is			do Result := locale.translate("Start application without stopping at breakpoints")	end
@@ -1785,6 +1850,7 @@ feature -- Description texts
 	e_Remove_exported_feature: STRING_GENERAL is	do Result := locale.translate("Remove the selected feature from this dynamic library definition")	end
 	e_Remove_expressions: STRING_GENERAL is		do Result := locale.translate("Remove selected expressions")	end
 	e_Remove_object: STRING_GENERAL is			do Result := locale.translate("Remove currently selected object")	end
+	e_Restore_normal_mode: STRING_GENERAL is		do Result := locale.translate("Restore the environment to normal mode")	end
 	e_Running: STRING_GENERAL is				do Result := locale.translate("Application is running")	end
 	e_Running_no_stop_points: STRING_GENERAL is	do Result := locale.translate("Application is running (ignoring breakpoints)")	end
 	e_Save_call_stack: STRING_GENERAL is		do Result := locale.translate("Save call stack to a text file")	end

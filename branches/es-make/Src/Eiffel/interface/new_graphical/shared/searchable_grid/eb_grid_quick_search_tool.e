@@ -108,7 +108,7 @@ feature -- Display
 	show_tool is
 			-- Display current search tool.
 		do
-			show_tool_actions.call ([])
+			show_tool_actions.call (Void)
 			show
 			set_focus_on_keyword_field
 		end
@@ -116,7 +116,7 @@ feature -- Display
 	hide_tool is
 			-- Hide current search tool.
 		do
-			hide_tool_actions.call ([])
+			hide_tool_actions.call (Void)
 			hide
 		end
 
@@ -330,7 +330,7 @@ feature{NONE} -- Actions
 					end
 				end
 
-				if not l_done and then l_component.is_direct_start_search_enabled then
+				if not l_done and then (not ev_application.ctrl_pressed) and then l_component.is_direct_start_search_enabled then
 					l_key_str := a_key.out
 					if l_key_str.count = 1 then
 						if ev_application.shift_pressed then

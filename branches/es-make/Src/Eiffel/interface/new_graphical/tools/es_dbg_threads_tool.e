@@ -21,7 +21,7 @@ inherit
 
 	EB_RECYCLABLE
 
-	SHARED_DEBUGGER_MANAGER
+	EB_SHARED_DEBUGGER_MANAGER
 		export
 			{NONE} all
 		end
@@ -190,7 +190,9 @@ feature -- Status setting
 			-- Show tool.
 		do
 			Precursor {EB_TOOL}
-			grid.set_focus
+			if grid.is_displayed and grid.is_sensitive then
+				grid.set_focus
+			end
 		end
 
 	reset_tool is

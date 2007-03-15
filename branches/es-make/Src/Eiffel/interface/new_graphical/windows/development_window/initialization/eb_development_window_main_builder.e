@@ -723,7 +723,6 @@ feature -- Command
 			-- Build system widget.
 		local
 			l_cell: EV_CELL
-			l_new_split_position: INTEGER
 			l_stb: EV_STATUS_BAR
 
 			l_favorites_manager: EB_FAVORITES_MANAGER
@@ -772,8 +771,6 @@ feature -- Command
 
 				-- Add the content of the window (left bar + right cell).
 			l_container.extend (l_panel)
-
-			l_new_split_position := develop_window.preferences.development_window_data.left_panel_width
 
 				-- Add a cell for spacing (we cannot use padding: there are toolbars coming).
 			create l_cell
@@ -828,7 +825,7 @@ feature{NONE} -- Implementation
 			develop_window.commands.toolbarable_commands.extend (l_show_cmd)
 			develop_window.add_recyclable (l_cluster_tool)
 
-			create l_accel.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_l), True, True, False)
+			create l_accel.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_u), True, True, False)
 			l_accel.actions.extend (agent l_show_cmd.execute)
 			l_show_cmd.set_accelerator (l_accel)
 		end
@@ -1237,24 +1234,27 @@ feature{NONE} -- Implementation
 			-- Setup debug tools accelerators.
 		local
 			l_acc: EV_ACCELERATOR
+			dbg_manager: EB_DEBUGGER_MANAGER
+			win: EB_VISION_WINDOW
 		do
+			dbg_manager := develop_window.eb_debugger_manager
+			win := develop_window.window
+
+				-- Call stack tool
+			l_acc := dbg_manager.show_call_stack_tool_accelerator
+			win.accelerators.extend (l_acc)
+
 				-- Object tool
-			create l_acc.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_j), True, True, False)
-			l_acc.actions.extend (agent (develop_window.eb_debugger_manager).show_object_tool)
-
-			develop_window.window.accelerators.extend (l_acc)
-
-				-- Watch tool
-			create l_acc.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_h), True, True, False)
-
-			l_acc.actions.extend (agent (develop_window.eb_debugger_manager).show_a_hidden_watch_tool)
-			develop_window.window.accelerators.extend (l_acc)
+			l_acc := dbg_manager.show_objects_tool_accelerator
+			win.accelerators.extend (l_acc)
 
 				-- Thread tool
-			create l_acc.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_p), True, True, False)
+			l_acc := dbg_manager.show_thread_tool_accelerator
+			win.accelerators.extend (l_acc)
 
-			l_acc.actions.extend (agent (develop_window.eb_debugger_manager).show_thread_tool)
-			develop_window.window.accelerators.extend (l_acc)
+				-- Watch tool
+			l_acc := dbg_manager.show_new_or_hidden_watch_tool_accelerator
+			win.accelerators.extend (l_acc)
 		end
 
 	setup_focus_editor_accelerators is

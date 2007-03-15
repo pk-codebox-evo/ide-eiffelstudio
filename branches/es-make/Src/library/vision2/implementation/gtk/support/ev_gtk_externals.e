@@ -1053,6 +1053,20 @@ feature
 			"GDK_HINT_MAX_SIZE"
 		end
 
+	frozen gdk_hint_min_size_enum: INTEGER is
+		external
+			"C inline use <gtk/gtk.h>"
+		alias
+			"GDK_HINT_MIN_SIZE"
+		end
+
+	frozen gdk_hint_resize_inc_enum: INTEGER is
+		external
+			"C inline use <gtk/gtk.h>"
+		alias
+			"GDK_HINT_RESIZE_INC"
+		end
+
 	frozen gtk_realized_enum: INTEGER is
 		external
 			"C inline use <gtk/gtk.h>"
@@ -8058,6 +8072,13 @@ feature
 			"C [struct <gtk/gtk.h>] (GdkColormap): EIF_INTEGER"
 		alias
 			"size"
+		end
+
+	frozen gdk_event_crossing_struct_mode (a_c_struct: POINTER): INTEGER
+		external
+			"C [struct <gtk/gtk.h>] (GdkEventCrossing): EIF_INTEGER"
+		alias
+			"mode"
 		end
 
 	frozen gdk_event_focus_struct_in (a_c_struct: POINTER): INTEGER

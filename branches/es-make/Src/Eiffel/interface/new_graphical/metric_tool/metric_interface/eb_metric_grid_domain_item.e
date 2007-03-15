@@ -12,7 +12,6 @@ class
 inherit
 	ES_GRID_LIST_ITEM
 		redefine
-			item_type,
 			activate_action,
 			deactivate
 		end
@@ -46,7 +45,7 @@ feature{NONE} -- Implementation
 			default_create
 			set_domain (a_domain)
 			ellipsis_actions.extend (agent show_dialog)
-			enable_item_pebble
+			enable_component_pebble
 		end
 
 feature -- Access
@@ -117,7 +116,7 @@ feature -- Setting
 		do
 			domain_internal := a_domain
 			update_ui
-			change_actions.call ([])
+			change_actions.call (Void)
 		end
 
 	set_value (a_value: like value) is
@@ -125,7 +124,7 @@ feature -- Setting
 		do
 			value := a_value
 			update_ui
-			change_actions.call ([])
+			change_actions.call (Void)
 		ensure
 			value_set: value = a_value
 		end
@@ -165,7 +164,7 @@ feature -- Setting
 						l_domain.extend (l_domain_item)
 						set_domain (l_domain)
 						if a_agent /= Void then
-							a_agent.call ([])
+							a_agent.call (Void)
 						end
 					end
 				end
@@ -182,7 +181,7 @@ feature -- Setting
 		local
 			l_dialog: EB_METRIC_GRID_DOMAIN_ITEM_DIALOG [G]
 		do
-			l_dialog := dialog_function.item ([])
+			l_dialog := dialog_function.item (Void)
 			if l_dialog /= Void then
 				l_dialog.ok_actions.wipe_out
 				l_dialog.ok_actions.extend (agent on_dialog_ok (l_dialog))
@@ -268,9 +267,6 @@ feature {EV_GRID_I} -- Implementation
 
 feature{NONE} -- Implementation
 
-	item_type: ES_GRID_LIST_ITEM_COMPONENT
-			-- Anchor type
-
 	button: EV_BUTTON
 			-- Ellipsis button used to edit `Current' on activate.
 			-- Void when `Current' isn't being activated.
@@ -320,8 +316,8 @@ feature{NONE} -- Implementation
 			set_value (a_dialog.value)
 			set_domain (a_dialog.domain)
 			change_actions.resume
-			change_actions.call ([])
-			dialog_ok_actions.call ([])
+			change_actions.call (Void)
+			dialog_ok_actions.call (Void)
 		end
 
 	on_dialog_cancel (a_dialog: EB_METRIC_GRID_DOMAIN_ITEM_DIALOG [G]) is
@@ -329,7 +325,7 @@ feature{NONE} -- Implementation
 		require
 			a_dialog_attached: a_dialog /= Void
 		do
-			dialog_cancel_actions.call ([])
+			dialog_cancel_actions.call (Void)
 		end
 
 	domain_internal: EB_METRIC_DOMAIN
@@ -338,16 +334,16 @@ feature{NONE} -- Implementation
 	prepare_components is
 			-- Prepare components for display.
 		do
-			components_for_domain.do_all (agent append_new_item)
+			components_for_domain.do_all (agent append_component)
 		end
 
-	components_for_domain: LIST [ES_GRID_LIST_ITEM_COMPONENT] is
+	components_for_domain: LIST [ES_GRID_ITEM_COMPONENT] is
 			-- Component list for `domain'
 		local
 			l_domain: like domain_internal
 			l_item: EB_GRID_DOMAIN_ITEM_COMPONENT
 		do
-			create {LINKED_LIST [ES_GRID_LIST_ITEM_COMPONENT]}Result.make
+			create {LINKED_LIST [ES_GRID_ITEM_COMPONENT]}Result.make
 			from
 				l_domain := domain_internal
 				l_domain.start
@@ -365,11 +361,11 @@ feature{NONE} -- Implementation
 	update_ui is
 			-- Update UI.
 		local
-			l_items: like items
+			l_items: like components
 		do
 				-- Remove all existing components.
-			l_items := items
-			l_items.do_all (agent (a_item: like item_type) do a_item.set_parent (Void) end)
+			l_items := components
+			l_items.do_all (agent (a_item: like component_type) do a_item.set_grid_item (Void) end)
 			l_items.wipe_out
 
 				-- Retrieve new components.

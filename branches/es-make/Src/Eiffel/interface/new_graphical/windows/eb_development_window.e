@@ -557,7 +557,7 @@ feature -- Resource Update
 					managed_main_formatters.after or l_end_loop
 				loop
 					l_formatter := managed_main_formatters.item
-					if l_formatter.selected and l_formatter.button.is_sensitive  then
+					if l_formatter.selected and l_formatter.is_button_sensitive  then
 						l_end_loop := True
 						view_points_combo.enable_sensitive
 					end
@@ -672,9 +672,10 @@ feature -- Resource Update
 			save_dialog: EB_CONFIRM_SAVE_DIALOG
 		do
 			save_canceled := True
+			set_last_save_failed (False)
 			text_saved := False
-			create save_dialog.make_and_launch (Current,Current)
-			if not save_canceled and then syntax_is_correct then
+			create save_dialog.make_and_launch (Current, Current)
+			if not last_save_failed and then not save_canceled and then syntax_is_correct then
 				an_action.call(Void)
 			end
 		end
@@ -762,6 +763,9 @@ feature -- Window management
 			a_window_data: EB_DEVELOPMENT_WINDOW_SESSION_DATA
 			a_class_stone: CLASSI_STONE
 			a_cluster_stone: CLUSTER_STONE
+			l_class_id, l_feature_id: STRING
+			l_feature_stone: FEATURE_STONE
+			l_class_stone: CLASSI_STONE
 		do
 			save_window_state
 			create a_window_data.make_from_window_data (preferences.development_window_data)
@@ -789,12 +793,22 @@ feature -- Window management
 
 			save_editors_docking_layout
 
-				-- |FIXME: Principly, we need to save more than feature relation tool,
-				-- because it is now possible that class based tools (Class, Diagram, Dependency) are targeting a class while
-				-- a feature based tool (Feature Relation) is targeting nothing.
 			if tools.features_relation_tool /= Void then
-				a_window_data.save_context_data (tools.features_relation_tool.address_manager.cluster_label_text, tools.features_relation_tool.address_manager.class_label_text, tools.features_relation_tool.address_manager.feature_label_text, 1)
+				l_feature_stone ?= tools.features_relation_tool.stone
+				if l_feature_stone /= Void then
+					l_feature_id := id_of_feature (l_feature_stone.e_feature)
+				end
 			end
+			if tools.class_tool /= Void then
+				l_class_stone ?= tools.class_tool.stone
+				if l_class_stone /= Void then
+					check
+						class_not_void: l_class_stone.class_i.config_class /= Void
+					end
+					l_class_id := id_of_class (l_class_stone.class_i.config_class)
+				end
+			end
+			a_window_data.save_context_data (l_class_id, l_feature_id, 1)
 
  				-- Add the session data of `Current' to the session object.
 			a_session.window_session_data.extend (a_window_data)
@@ -816,8 +830,16 @@ feature -- Window management
 
 	save_tools_docking_layout is
 			-- Save all tools docking layout.
+		local
+			l_eb_debugger_manager: EB_DEBUGGER_MANAGER
 		do
-			docking_manager.save_tools_config (docking_config_tools_file)
+			l_eb_debugger_manager ?= debugger_manager
+			-- If directly exiting Eiffel Studio from EB_DEBUGGER_MANAGER, then we don't save the tools layout,
+			-- because current widgets layout is debug mode layout (not normal mode layout),
+			-- and the debug mode widgets layout is saved by EB_DEBUGGER_MANAGER already.
+			if l_eb_debugger_manager /= Void and then not l_eb_debugger_manager.is_exiting_eiffel_studio then
+				docking_manager.save_tools_config (docking_config_tools_file)
+			end
 		end
 
 	save_editors_docking_layout is
@@ -886,19 +908,19 @@ feature -- Window management
 			l_tool.content.set_split_proportion (0.2)
 
 			-- Tool bars
-			l_tool_bar_content := docking_manager.tool_bar_manager.content_by_title (interface_names.t_standard_toolbar)
+			l_tool_bar_content := docking_manager.tool_bar_manager.content_by_title (interface_names.to_standard_toolbar)
 			check not_void: l_tool_bar_content /= Void end
 			l_tool_bar_content.set_top ({SD_ENUMERATION}.top)
 
-			l_tool_bar_content := docking_manager.tool_bar_manager.content_by_title (interface_names.t_address_toolbar)
+			l_tool_bar_content := docking_manager.tool_bar_manager.content_by_title (interface_names.to_address_toolbar)
 			check not_void: l_tool_bar_content /= Void end
 			l_tool_bar_content.set_top ({SD_ENUMERATION}.top)
 
-			l_tool_bar_content := docking_manager.tool_bar_manager.content_by_title (interface_names.t_project_toolbar)
+			l_tool_bar_content := docking_manager.tool_bar_manager.content_by_title (interface_names.to_project_toolbar)
 			check not_void: l_tool_bar_content /= Void end
 			l_tool_bar_content.set_top ({SD_ENUMERATION}.top)
 
-			l_tool_bar_content := docking_manager.tool_bar_manager.content_by_title (interface_names.t_refactory_toolbar)
+			l_tool_bar_content := docking_manager.tool_bar_manager.content_by_title (interface_names.to_refactory_toolbar)
 			check not_void: l_tool_bar_content /= Void end
 			l_tool_bar_content.set_top ({SD_ENUMERATION}.top)
 
@@ -1377,11 +1399,11 @@ feature {EB_STONE_CHECKER, EB_STONE_FIRST_CHECKER, EB_DEVELOPMENT_WINDOW_PART} -
 			class_is_not_void: displayed_class /= Void
 			feat_as_is_not_void: feat_as /= Void
 		local
-			begin_index, offset: INTEGER
-			tmp_text: STRING
+			begin_index: INTEGER
 			l_feat_as: FEATURE_AS
 			l_feature: E_FEATURE
 			l_names: EIFFEL_LIST [FEATURE_NAME]
+			offset: TUPLE [start_offset: INTEGER; end_offset: INTEGER]
 		do
 			if not feat_as.is_il_external then
 				if not managed_main_formatters.first.selected then
@@ -1420,18 +1442,63 @@ feature {EB_STONE_CHECKER, EB_STONE_FIRST_CHECKER, EB_DEVELOPMENT_WINDOW_PART} -
 								-- We simply take the position of the first one.
 							begin_index := l_names.start_position
 						end
-						tmp_text := displayed_class.text
-						if tmp_text /= Void then
-							tmp_text := tmp_text.substring (1, begin_index)
-							offset := tmp_text.occurrences('%R')
-							editors_manager.current_editor.scroll_to_when_ready (begin_index.item - offset)
-						end
+						offset := relative_location_offset ([begin_index, 0], displayed_class)
+						editors_manager.current_editor.scroll_to_when_ready (begin_index - offset.start_offset)
 					end
 				end
 			else
 					-- Nothing for .NET features for now.
 				fixme ("It should be implemented.")
 			end
+		end
+
+	scroll_to_ast (a_ast: AST_EIFFEL; displayed_class: CLASS_I; a_selected: BOOLEAN) is
+			-- Scroll to `a_ast' in `displayed_class'.
+			-- If `a_selected' is True, select region of `a_ast'.
+		local
+			begin_index: INTEGER
+			offset: TUPLE [start_offset: INTEGER; end_offset: INTEGER]
+		do
+			begin_index := a_ast.start_position
+			offset := relative_location_offset ([begin_index, a_ast.end_position], displayed_class)
+
+			if a_selected then
+				editors_manager.current_editor.select_region_when_ready (begin_index - offset.start_offset, a_ast.end_position - offset.end_offset + 1)
+			else
+				editors_manager.current_editor.scroll_to_when_ready (begin_index - offset.start_offset)
+			end
+		end
+
+	relative_location_offset (a_location: TUPLE [a_start_pos: INTEGER; a_end_pos: INTEGER]; a_displayed_class: CLASS_I): TUPLE [related_start_pos: INTEGER; related_end_pos: INTEGER] is
+			-- Relative editor location offset (the number of all '%R' removed) of `a_location' in context of `a_displayed_class'
+		require
+			a_location_attached: a_location /= Void
+			a_displayed_class_attached: a_displayed_class /= Void
+		local
+			class_text: STRING
+			tmp_text: STRING
+			begin_offset: INTEGER
+			end_offset: INTEGER
+			a_start_pos, a_end_pos: INTEGER
+		do
+			a_start_pos := a_location.a_start_pos
+			a_end_pos := a_location.a_end_pos
+
+			class_text := a_displayed_class.text
+			if class_text /= Void then
+				tmp_text := class_text.substring (1, a_start_pos)
+				begin_offset := tmp_text.occurrences('%R')
+
+				if a_start_pos >= a_end_pos then
+					tmp_text := class_text.substring (a_start_pos + 1, a_end_pos)
+					end_offset := tmp_text.occurrences ('%R')
+				end
+				Result := [begin_offset, begin_offset + end_offset]
+			else
+				Result := [0, 0]
+			end
+		ensure
+			result_attached: Result /= Void
 		end
 
 feature {EB_DEVELOPMENT_WINDOW_PART, EB_STONE_FIRST_CHECKER, EB_DEVELOPMENT_WINDOW_BUILDER} -- Implementation
@@ -1653,10 +1720,32 @@ feature {EB_DEVELOPMENT_WINDOW_BUILDER} -- Initliazed by EB_DEVELOPMENT_WINDOW_B
 
 	send_stone_to_context is
 			-- Send current stone to the context tool.
+			-- Send current targeting feature to context tool if possible.
 			-- Used by `send_stone_to_context_cmd'.
+		local
+			l_feature_text: STRING
+			l_class_stone: CLASSI_STONE
+			l_feature_stone: FEATURE_STONE
+			l_class_c: CLASS_C
+			l_feature: E_FEATURE
 		do
-			if stone /= Void then
-				tools.set_stone (stone)
+			if address_manager /= Void then
+				l_feature_text := address_manager.feature_address.text.as_string_8
+			end
+			l_class_stone ?= stone
+			if l_class_stone /= Void then
+				l_class_c := l_class_stone.class_i.compiled_representation
+				if l_class_c /= Void then
+					if l_feature_text /= Void and then not l_feature_text.is_empty and then l_class_c.has_feature_table then
+						l_feature := l_class_c.feature_with_name (l_feature_text)
+					end
+					if l_feature /= Void then
+						create l_feature_stone.make (l_feature)
+						tools.set_stone_and_pop_tool (l_feature_stone)
+					else
+						tools.set_stone_and_pop_tool (stone)
+					end
+				end
 			end
 		end
 
@@ -1756,7 +1845,7 @@ feature {EB_DEVELOPMENT_WINDOW_MENU_BUILDER, EB_DEVELOPMENT_WINDOW_PART,
 		local
 			l_editor: EB_EDITOR
 		do
-			l_editor := editors_manager.current_editor
+			l_editor := ui.current_editor
 			if l_editor /= Void and then not l_editor.is_empty then
 				l_editor.select_all
 			end
@@ -1799,7 +1888,7 @@ feature {EB_DEVELOPMENT_WINDOW_MENU_BUILDER, EB_DEVELOPMENT_WINDOW_PART,
 			cv_ced: EB_CLICKABLE_EDITOR
 		do
 			if tools.search_tool.currently_searched /= Void then
-				cv_ced ?= editors_manager.current_editor
+				cv_ced ?= ui.current_editor
 				if cv_ced /= Void then
 					cv_ced.find_next
 				end
@@ -1814,7 +1903,7 @@ feature {EB_DEVELOPMENT_WINDOW_MENU_BUILDER, EB_DEVELOPMENT_WINDOW_PART,
 			cv_ced: EB_CLICKABLE_EDITOR
 		do
 			if tools.search_tool.currently_searched /= Void then
-				cv_ced ?= editors_manager.current_editor
+				cv_ced ?= ui.current_editor
 				if cv_ced /= Void then
 					cv_ced.find_previous
 				end
@@ -1828,7 +1917,7 @@ feature {EB_DEVELOPMENT_WINDOW_MENU_BUILDER, EB_DEVELOPMENT_WINDOW_PART,
 		local
 			cv_ced: EB_CLICKABLE_EDITOR
 		do
-			cv_ced ?= editors_manager.current_editor
+			cv_ced := ui.current_editor
 			if cv_ced /= Void then
 				cv_ced.find_next_selection
 			end
@@ -1839,7 +1928,7 @@ feature {EB_DEVELOPMENT_WINDOW_MENU_BUILDER, EB_DEVELOPMENT_WINDOW_PART,
 		local
 			cv_ced: EB_CLICKABLE_EDITOR
 		do
-			cv_ced ?= editors_manager.current_editor
+			cv_ced := ui.current_editor
 			if cv_ced /= Void then
 				cv_ced.find_previous_selection
 			end
@@ -1848,13 +1937,17 @@ feature {EB_DEVELOPMENT_WINDOW_MENU_BUILDER, EB_DEVELOPMENT_WINDOW_PART,
 	cut_selection is
 			-- Cut the selection in the current editor.
 		do
-			editors_manager.current_editor.cut_selection
+			if ui.current_editor /= Void then
+				ui.current_editor.cut_selection
+			end
 		end
 
 	copy_selection is
 			-- Cut the selection in the current editor.
 		do
-			editors_manager.current_editor.copy_selection
+			if ui.current_editor /= Void then
+				ui.current_editor.copy_selection
+			end
 		end
 
 	toggle_formatting_marks is
@@ -1997,7 +2090,7 @@ feature {EB_DEVELOPMENT_WINDOW_BUILDER, EB_ADDRESS_MANAGER} -- Builder issues
 			l_line: INTEGER
 		do
 			l_formatter := selected_formatter
-			if l_formatter.button.is_sensitive and then
+			if l_formatter.is_button_sensitive and then
 				l_formatter /= managed_main_formatters.first and then
 				editors_manager.current_editor /= Void
 			then

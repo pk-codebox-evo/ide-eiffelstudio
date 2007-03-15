@@ -20,6 +20,7 @@ feature {NONE} -- Initlization
 		do
 			state := a_tab_state
 			internal_docking_manager := a_docking_manager
+			create internal_shared
 		ensure
 			set: state = a_tab_state
 			set: internal_docking_manager = a_docking_manager
@@ -47,12 +48,17 @@ feature {SD_TAB_STATE}  -- Implementation functions.
 				l_parent := state.tab_zone.parent
 				state.tab_zone.prune (l_content, False)
 				internal_docking_manager.command.unlock_update
-				create l_docking_state.make (l_content, {SD_ENUMERATION}.left, {SD_SHARED}.title_bar_height)
+				create l_docking_state.make (l_content, {SD_ENUMERATION}.left,  internal_shared.title_bar_height)
 				l_docking_state.dock_at_top_level (l_floating_state.inner_container)
 				l_content.change_state (l_docking_state)
 				internal_docking_manager.command.lock_update (state.zone, False)
 				update_last_content_state (l_parent)
 			end
+			internal_docking_manager.query.inner_container_main.recover_normal_for_only_one
+			-- After floating, left minmized editor zone(s) in SD_MULTI_DOCK_AREA, then we
+			-- have to resize.
+			internal_docking_manager.command.resize (True)
+
 			internal_docking_manager.command.unlock_update
 		end
 
@@ -294,7 +300,8 @@ feature {SD_TAB_STATE}  -- Implementation functions.
 			l_widget: EV_WIDGET
 			l_second_parent: EV_CONTAINER
 		do
-			if state.tab_zone.count = 1 then
+			-- `a_parent' may be void if calling by `close' from SD_TAB_STATE on Linux.
+			if a_parent /= Void and then state.tab_zone.count = 1 then
 				l_split_area ?= state.tab_zone.parent
 				if l_split_area /= Void then
 					l_split_position := l_split_area.split_position
@@ -319,7 +326,10 @@ feature {SD_TAB_STATE}  -- Implementation functions.
 					check l_widget /= Void end
 					l_split_area ?= l_widget.parent
 					check l_split_area /= Void end
-					if l_split_area.minimum_split_position <= l_split_position and l_split_area.maximum_split_position >= l_split_position then
+					if
+						l_split_area.full and then
+						(l_split_area.minimum_split_position <= l_split_position and l_split_area.maximum_split_position >= l_split_position)
+					then
 						l_split_area.set_split_position (l_split_position)
 					end
 				end
@@ -349,13 +359,17 @@ feature -- Query
 
 feature {NONE} -- Implementation
 
-	first_move_to_docking_zone: BOOLEAN;
+	internal_shared: SD_SHARED
+			-- All singletons.
+
+	first_move_to_docking_zone: BOOLEAN
 			-- When moving to a docking zone, first time is different.
 
 	internal_docking_manager: SD_DOCKING_MANAGER
 			-- Docking manager.
 
 invariant
+	not_void: internal_shared /= Void
 	not_void: state /= Void
 	not_void: internal_docking_manager /= Void
 

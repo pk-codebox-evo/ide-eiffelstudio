@@ -185,10 +185,15 @@ feature -- Query
 
 	rectangle: EV_RECTANGLE is
 			-- Current tab rectangle relative to `parent'.
-		require
-			parented: parent /= Void
 		do
-			create Result.make (x, 0, internal_width, height)
+			-- When closing all editor tabs by right click menu, this feature called by on_pointer_press from SD_NOTEBOOK_TAB_BOX,
+			-- parent maybe void sometimes. It's because pointer press actions delayed, the actions are executing after
+			-- the SD_NOTEBOOK_TAB_BOX destroyed.
+			if parent /= Void then
+				create Result.make (x, 0, internal_width, height)
+			else
+				create Result
+			end
 		ensure
 			not_void: Result /= Void
 		end
@@ -287,26 +292,15 @@ feature {SD_NOTEBOOK_TAB_BOX} -- Command
 
 	on_expose is
 			-- Handle expose actions.
-		local
-			l_box: SD_NOTEBOOK_TAB_AREA
-			l_avail_width: INTEGER
 		do
-			l_box ?= parent.parent
-			check not_void: l_box /= Void end
-			l_avail_width := l_box.width
-			if l_avail_width > 0 then
-				if l_avail_width >= internal_width then
-					on_expose_with_width (internal_width)
-				else
-					on_expose_with_width (l_avail_width)
-				end
-			end
+			on_expose_with_width (drawing_width)
 		end
 
 	on_pointer_motion (a_x: INTEGER; a_y: INTEGER; a_x_tilt: DOUBLE; a_y_tilt: DOUBLE; a_pressure: DOUBLE; a_screen_x: INTEGER; a_screen_y: INTEGER) is
 			-- Hanlde pointer motion.
 		local
 			l_has_capture: BOOLEAN
+			l_drawer: like internal_tab_drawer
 		do
 			if is_pointer_pressed then
 				is_pointer_pressed := False
@@ -321,23 +315,26 @@ feature {SD_NOTEBOOK_TAB_BOX} -- Command
 				-- If user close other tab, Current tab will moved without pointer enter actiosn called.
 				-- So we set is_hot here. Otherwise tab drawing state for close button will not correct.
 				is_hot := True
-				if internal_tab_drawer.is_top_side_tab and then internal_tab_drawer.close_rectangle_parent_box.has_x_y (a_x, a_y) then
+				l_drawer := internal_tab_drawer
+				if
+					l_drawer.is_top_side_tab
+					and then l_drawer.close_rectangle_parent_box.has_x_y (a_x, a_y)
+				then
 					if not is_pointer_in_close_area and internal_width > 0 then
 						is_pointer_in_close_area := True
 						if is_selected then
-							internal_tab_drawer.expose_selected (internal_width, info)
+							l_drawer.expose_selected (drawing_width, info)
 						else
-							internal_tab_drawer.expose_hot (internal_width, info)
+							l_drawer.expose_hot (drawing_width, info)
 						end
-
 					end
 				else
 					if is_pointer_in_close_area and internal_width > 0 then
 						is_pointer_in_close_area := False
 						if is_selected then
-							internal_tab_drawer.expose_selected (internal_width, info)
+							l_drawer.expose_selected (drawing_width, info)
 						else
-							internal_tab_drawer.expose_hot (internal_width, info)
+							l_drawer.expose_hot (drawing_width, info)
 						end
 					end
 				end
@@ -348,26 +345,31 @@ feature {SD_NOTEBOOK_TAB_BOX} -- Command
 			-- Handle pointer press.
 		local
 			l_menu: SD_ZONE_MANAGEMENT_MENU
+			l_drawer: like internal_tab_drawer
 		do
 			inspect
 				a_button
 			when 1 then
 				is_pointer_pressed := True
 				parent.enable_capture (Current)
-
-				if internal_tab_drawer.is_top_side_tab and internal_width > 0 and then internal_tab_drawer.close_rectangle_parent_box.has_x_y (a_x, a_y) then
+				l_drawer := internal_tab_drawer
+				if
+					l_drawer.is_top_side_tab
+					and internal_width > 0
+					and then l_drawer.close_rectangle_parent_box.has_x_y (a_x, a_y)
+				then
 					-- For select actions, we don't call select actions.
 					if is_selected then
-						internal_tab_drawer.expose_selected (internal_width, info)
+						l_drawer.expose_selected (internal_width, info)
 					else
-						internal_tab_drawer.expose_hot (internal_width, info)
+						l_drawer.expose_hot (internal_width, info)
 					end
 				else
-					select_actions.call ([])
+					select_actions.call (Void)
 				end
 
 			when 3 then
-				select_actions.call ([])
+				select_actions.call (Void)
 				create l_menu.make (internal_notebook)
 				l_menu.show_at (parent, a_x, a_y)
 			else
@@ -377,17 +379,23 @@ feature {SD_NOTEBOOK_TAB_BOX} -- Command
 
 	on_pointer_release (a_x: INTEGER; a_y: INTEGER; a_button: INTEGER; a_x_tilt: DOUBLE; a_y_tilt: DOUBLE; a_pressure: DOUBLE; a_screen_x: INTEGER; a_screen_y: INTEGER) is
 			-- Handle pointer release.
+		local
+			l_drawer: like internal_tab_drawer
 		do
 			is_pointer_pressed := False
 			parent.disable_capture (Current)
-			if internal_tab_drawer.is_top_side_tab and internal_width > 0 and then internal_tab_drawer.close_rectangle_parent_box.has_x_y (a_x, a_y) then
-
+			l_drawer := internal_tab_drawer
+			if
+				l_drawer.is_top_side_tab
+				and internal_width > 0
+				and then l_drawer.close_rectangle_parent_box.has_x_y (a_x, a_y)
+			then
 				if is_selected then
-					internal_tab_drawer.expose_selected (internal_width, info)
+					l_drawer.expose_selected (internal_width, info)
 				else
-					internal_tab_drawer.expose_hot (internal_width, info)
+					l_drawer.expose_hot (internal_width, info)
 				end
-				close_actions.call ([])
+				close_actions.call (Void)
 			end
 		end
 
@@ -404,6 +412,7 @@ feature {SD_NOTEBOOK_TAB_BOX} -- Command
 			-- Handle pointer leave actions.
 		do
 			is_hot := False
+			is_pointer_in_close_area := False
 			on_expose
 		ensure
 			set: is_hot = False
@@ -415,16 +424,19 @@ feature {NONE}  -- Implementation agents
 			-- Handle expose with a_width. a_width is total width current should be.
 		require
 			a_width_valid: a_width >= 0
+		local
+			l_drawer: like internal_tab_drawer
 		do
 			if pixmap /= Void then
 				if width > 0 and height > 0 then
+					l_drawer := internal_tab_drawer
 					if is_selected then
-						internal_tab_drawer.expose_selected (a_width, info)
+						l_drawer.expose_selected (a_width, info)
 					else
 						if is_hot then
-							internal_tab_drawer.expose_hot (a_width, info)
+							l_drawer.expose_hot (a_width, info)
 						else
-							internal_tab_drawer.expose_unselected (a_width, info)
+							l_drawer.expose_unselected (a_width, info)
 						end
 					end
 				end
@@ -437,7 +449,7 @@ feature {NONE}  -- Implementation functions.
 			-- Update minmum size of Current.
 		local
 			l_size: INTEGER
-			l_drawer: SD_NOTEBOOK_TAB_DRAWER_I
+			l_drawer: like internal_tab_drawer
 		do
 			if parent /= Void and is_enough_space then
 
@@ -456,6 +468,29 @@ feature {NONE}  -- Implementation attributes
 
 	internal_width: INTEGER
 			-- Width
+
+	drawing_width: INTEGER is
+			-- Width showig on the screen.
+		local
+			l_box: SD_NOTEBOOK_TAB_AREA
+			l_avail_width: INTEGER
+		do
+			l_box ?= parent.parent
+			check not_void: l_box /= Void end
+			l_avail_width := l_box.width
+			if l_avail_width > 0 then
+				if l_avail_width >= internal_width then
+					Result := internal_width
+				else
+					Result := l_avail_width
+				end
+			end
+			if Result <= 0 then
+				Result := 1
+			end
+		ensure
+			positive: Result > 0
+		end
 
 	is_draw_top_tab: BOOLEAN
 			-- If current draw tab at top?

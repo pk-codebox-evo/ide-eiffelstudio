@@ -422,12 +422,9 @@ feature {NONE} -- Implementation for save config.
 			-- Save a place holder data.
 		require
 			not_void: a_config_data /= Void
-		local
-			l_shared: SD_SHARED
 		do
-			create l_shared
 			a_config_data.set_is_split_area (False)
-			a_config_data.add_title (l_shared.interface_names.editor_place_holder_content_name)
+			a_config_data.add_title (internal_shared.editor_place_holder_content_name)
 			-- FIXIT: this line maybe have problem if we changed the name of SD_DOCKING_STATE.
 			a_config_data.set_state ("SD_DOCKING_STATE")
 			a_config_data.set_direction ({SD_ENUMERATION}.top)
@@ -435,7 +432,7 @@ feature {NONE} -- Implementation for save config.
 			a_config_data.set_height (1)
 		ensure
 			is_editor: not a_config_data.is_split_area
-			title_correct: a_config_data.titles.first.is_equal ((create {SD_SHARED}).interface_names.editor_place_holder_content_name)
+			title_correct: a_config_data.titles.first.is_equal (internal_shared.editor_place_holder_content_name)
 		end
 
 	save_inner_container_data_split_area (a_split_area: SD_MIDDLE_CONTAINER; a_config_data: SD_INNER_CONTAINER_DATA) is
@@ -558,7 +555,7 @@ feature {NONE} -- Implementation for save config.
 				l_tool_bar_zone := l_float_tool_bars_item.zone
 				create l_tool_bar_data.make
 				l_tool_bar_data.set_floating (True)
-				l_tool_bar_data.set_title (l_tool_bar_zone.content.title)
+				l_tool_bar_data.set_title (l_tool_bar_zone.content.unique_title)
 				l_tool_bar_data.set_screen_x_y (l_float_tool_bars_item.screen_x, l_float_tool_bars_item.screen_y)
 				l_tool_bar_data.set_last_state (l_tool_bar_zone.assistant.last_state)
 				l_tool_bar_data.set_visible (l_tool_bar_zone.content.is_visible)
@@ -578,7 +575,7 @@ feature {NONE} -- Implementation for save config.
 					create l_tool_bar_data.make
 					l_tool_bar_data.set_visible (False)
 					l_tool_bar_data.set_floating (False)
-					l_tool_bar_data.set_title (l_tool_bar_contents_item.title)
+					l_tool_bar_data.set_title (l_tool_bar_contents_item.unique_title)
 
 					if
 						l_tool_bar_contents_item.zone /= Void
@@ -623,7 +620,7 @@ feature {NONE} -- Implementation for save config.
 					l_tool_bars.after
 				loop
 					l_zone := l_tool_bars.item_for_iteration
-					l_row_data.extend ([l_zone.content.title, l_zone.position, l_zone.assistant.last_state])
+					l_row_data.extend ([l_zone.content.unique_title, l_zone.position, l_zone.assistant.last_state])
 					l_tool_bars.forth
 				end
 				l_rows.forth

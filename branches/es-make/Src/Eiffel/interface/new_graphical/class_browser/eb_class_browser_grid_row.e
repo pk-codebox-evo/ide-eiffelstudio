@@ -49,6 +49,17 @@ feature -- Access
 			create{CLUSTER_STONE} Result.make (a_group)
 		end
 
+	ql_feature_comment (a_feature: QL_FEATURE): LIST [EDITOR_TOKEN] is
+			-- Editor token representation of comment of `a_feature'
+		require
+			a_feature_attached: a_feature /= Void
+		do
+			feature_comment_style.set_ql_feature (a_feature)
+			Result := feature_comment_style.text
+		ensure
+			result_attached: Result /= Void
+		end
+
 feature -- Setting
 
 	set_browser (a_browser: like browser) is
@@ -103,7 +114,7 @@ feature -- General tooltip
 		local
 			l_text: LIST [EDITOR_TOKEN]
 		do
-			l_text := a_text_function.item ([])
+			l_text := a_text_function.item (Void)
 			if l_text = Void then
 				create {LINKED_LIST [EDITOR_TOKEN]} l_text.make
 			end

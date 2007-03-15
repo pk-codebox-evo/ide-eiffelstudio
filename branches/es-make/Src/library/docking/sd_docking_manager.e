@@ -191,7 +191,7 @@ feature -- Command
 			-- Open a docking config from a_named_file.
 		require
 			a_file_not_void: a_file /= Void
-			a_file_exist: file_exist (a_file)
+			a_file_readable: is_file_readable (a_file)
 		local
 			l_config: SD_CONFIG_MEDIATOR
 		do
@@ -235,6 +235,12 @@ feature -- Command
 			command.update_mini_tool_bar_size (a_content)
 		end
 
+	close_editor_place_holder is
+			-- Close editors place holder zone.
+		do
+			zones.place_holder_content.close
+		end
+
 	destroy is
 			-- Destroy all underline objects.
 		do
@@ -245,13 +251,13 @@ feature -- Command
 
 feature -- Contract support
 
-	file_exist (a_file_name: STRING_GENERAL): BOOLEAN is
+	is_file_readable (a_file_name: STRING_GENERAL): BOOLEAN is
 			-- Does `a_file_name' exist?
 		local
 			l_file: RAW_FILE
 		do
-			create l_file.make_open_read (a_file_name.as_string_8)
-			Result := l_file.exists
+			create l_file.make (a_file_name.as_string_8)
+			Result := l_file.exists and then l_file.is_readable
 		end
 
 	window_valid (a_window: EV_WINDOW): BOOLEAN is

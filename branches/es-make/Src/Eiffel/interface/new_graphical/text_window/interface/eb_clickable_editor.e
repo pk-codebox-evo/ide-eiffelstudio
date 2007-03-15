@@ -239,6 +239,36 @@ feature -- Possibly delayed operations
 			end
 		end
 
+	select_region_when_ready (a_start_pos, a_end_pos: INTEGER) is
+			-- Select region between `a_start_pos' and `a_end_pos' when text is fully loaded.
+		do
+			if text_is_fully_loaded then
+				select_region (a_start_pos, a_end_pos)
+				show_selection (True)
+			else
+				after_reading_text_actions.extend (agent select_region_when_ready (a_start_pos, a_end_pos))
+			end
+		end
+
+	scroll_to_start_of_line_when_ready (a_line_number: INTEGER; a_selected: BOOLEAN) is
+			-- Scroll to `a_line_number'-th line.
+			-- If `a_selected' is True, select that line.
+		local
+			l_text: like text_displayed
+		do
+			if text_is_fully_loaded then
+				l_text := text_displayed
+				if l_text.has_selection then
+					l_text.forget_selection
+				end
+				l_text.cursor.set_y_in_lines (a_line_number)
+				l_text.cursor.go_start_line
+				display_line_when_ready (a_line_number, a_selected)
+			else
+				after_reading_text_actions.extend (agent scroll_to_start_of_line_when_ready (a_line_number, a_selected))
+			end
+		end
+
 	scroll_to_end_when_ready is
 			-- scroll to position `pos' in characters
 			-- does not need the text to be fully loaded			
@@ -643,7 +673,7 @@ feature {NONE} -- Implementation
 				end
 			end
 		end
-		
+
 	gain_focus is
 			-- Update the editor as it has just gained the focus.
 		do
