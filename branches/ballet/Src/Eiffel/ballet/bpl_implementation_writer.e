@@ -11,8 +11,6 @@ inherit
 	BPL_VISITOR
 		redefine
 			process_assign_as,
-			process_keyword_as,
-			process_id_as,
 			process_reverse_as,
 			process_check_as,
 			process_bang_creation_as,
@@ -42,92 +40,101 @@ feature -- Generation
 			content: ROUTINE_AS
 			l_as: FEATURE_AS
 		do
-			current_feature := a_feature
-			create function_writer.make (current_class)
-			function_writer.setup (current_class.ast, match_list, will_process_leading_leaves, will_process_trailing_leaves)
-			function_writer.set_current_feature (current_feature)
-			function_writer.set_heap_ref ("Heap")
-			function_writer.set_this_ref ("Current")
-			function_writer.set_result_call ("Result")
-			code := ""
-			reset_labels
-			bpl_out ("// Implementation: "+a_feature.feature_name+" of class "+current_class.name+"%N")
-			bpl_out ("implementation proc.")
-			bpl_out (current_class.name)
-			bpl_out (".")
-			bpl_out (a_feature.feature_name)
-			bpl_out ("(Current:ref")
 			l_as := a_feature.body
-			if l_as.body.arguments /= Void then
-				from
-					l_as.body.arguments.start
-				until
-					l_as.body.arguments.off
-				loop
-					from
-						l_as.body.arguments.item.id_list.start
-					until
-						l_as.body.arguments.item.id_list.off
-					loop
-						bpl_out (",")
-						bpl_out ("arg.")
-						bpl_out (l_as.body.arguments.item.names_heap.item (l_as.body.arguments.item.id_list.item))
-						bpl_out (":")
-						bpl_out (bpl_type_for (l_as.body.arguments.item.type))
-						l_as.body.arguments.item.id_list.forth
-					end
-					l_as.body.arguments.forth
-				end
-			end
-			bpl_out (")")
-			if a_feature.is_function then
-				bpl_out (" returns (Result:")
-				bpl_out (bpl_type_for_type_a (a_feature.type))
-				bpl_out (")")
-			end
-			bpl_out (" {%N")
 			content ?= l_as.body.content
 			if content /= Void then
-				bpl_out ("  var dump_ref:ref;%N")
-				bpl_out ("  var dump_bool:bool;%N")
-				bpl_out ("  var dump_int:int;%N")
-				if content.locals /= Void then
+				current_feature := a_feature
+				create function_writer.make (current_class)
+				function_writer.setup (current_class.ast, match_list, will_process_leading_leaves, will_process_trailing_leaves)
+				function_writer.set_current_feature (current_feature)
+				function_writer.set_heap_ref ("Heap")
+				function_writer.set_this_ref ("Current")
+				function_writer.set_result_call ("Result")
+				code := ""
+				create temp_vars_needed.make (5)
+				reset_labels
+				bpl_out ("// Implementation: "+a_feature.feature_name+" of class "+current_class.name+"%N")
+				bpl_out ("implementation proc.")
+				bpl_out (current_class.name)
+				bpl_out (".")
+				bpl_out (bpl_mangled_feature_name (a_feature.feature_name))
+				bpl_out ("(Current:ref")
+				if l_as.body.arguments /= Void then
 					from
-						content.locals.start
+						l_as.body.arguments.start
 					until
-						content.locals.off
+						l_as.body.arguments.off
 					loop
 						from
-							content.locals.item.id_list.start
+							l_as.body.arguments.item.id_list.start
 						until
-							content.locals.item.id_list.off
+							l_as.body.arguments.item.id_list.off
 						loop
-							bpl_out ("  var l.")
-							bpl_out (content.locals.item.names_heap.item (content.locals.item.id_list.item))
+							bpl_out (",")
+							bpl_out ("arg.")
+							bpl_out (l_as.body.arguments.item.names_heap.item (l_as.body.arguments.item.id_list.item))
 							bpl_out (":")
-							bpl_out (bpl_type_for (content.locals.item.type))
-							bpl_out (";%N")
-							content.locals.item.id_list.forth
+							bpl_out (bpl_type_for (l_as.body.arguments.item.type))
+							l_as.body.arguments.item.id_list.forth
 						end
-						content.locals.forth
+						l_as.body.arguments.forth
 					end
 				end
-
-				content.routine_body.process (Current)
-				bpl_out ("  entry:%N")
-				bpl_out (code)
-				bpl_out ("    return;%N")
-			else
-				check
-					no_constants: False
+				bpl_out (")")
+				if a_feature.is_function then
+					bpl_out (" returns (Result:")
+					bpl_out (bpl_type_for_type_a (a_feature.type))
+					bpl_out (")")
 				end
+				bpl_out (" {%N")
+				if content /= Void then
+					if content.locals /= Void then
+						from
+							content.locals.start
+						until
+							content.locals.off
+						loop
+							from
+								content.locals.item.id_list.start
+							until
+								content.locals.item.id_list.off
+							loop
+								bpl_out ("  var l.")
+								bpl_out (content.locals.item.names_heap.item (content.locals.item.id_list.item))
+								bpl_out (":")
+								bpl_out (bpl_type_for (content.locals.item.type))
+								bpl_out (";%N")
+								content.locals.item.id_list.forth
+							end
+							content.locals.forth
+						end
+					end
+					content.routine_body.process (Current)
+					from
+						temp_vars_needed.start
+					until
+						temp_vars_needed.off
+					loop
+						bpl_out ("  var ")
+						bpl_out (temp_vars_needed.key_for_iteration)
+						bpl_out (":")
+						bpl_out (temp_vars_needed.item_for_iteration)
+						bpl_out (";%N")
+						temp_vars_needed.forth
+					end
+					bpl_out ("  entry:%N")
+					bpl_out (code)
+					bpl_out ("    return;%N")
+				end
+				bpl_out ("}%N")
 			end
-			bpl_out ("}%N")
 		end
 
 feature -- Environment
 
 	code: STRING
+
+	temp_vars_needed: HASH_TABLE[STRING,STRING]
 
 	last_label: STRING
 
@@ -177,6 +184,12 @@ feature -- Environment
 
 	function_writer: BPL_FUNCTION_WRITER
 
+	record_temp_var (a_name: STRING; a_bpl_type: STRING) is
+			-- Record the need of a temp variable `a_name' of `a_bpl_type'
+		do
+			temp_vars_needed.put (a_bpl_type,a_name)
+		end
+
 feature -- Support features
 
 	generate_dummy_proc_call (x: EXPR_AS) is
@@ -185,9 +198,14 @@ feature -- Support features
 		local
 			function: STRING
 			index: INTEGER
+			tmp_name: STRING
+			tmp_type: STRING
 		do
-			code.append ("    call dump_")
-			code.append (bpl_type_for_type_a (type_for(x)))
+			tmp_type := bpl_type_for_type_a (type_for(x))
+			tmp_name := "dump_"+tmp_type
+			record_temp_var (tmp_name, tmp_type)
+			code.append ("    call ")
+			code.append (tmp_name)
 			code.append (" := proc")
 			function_writer.reset
 			x.process (function_writer)
@@ -300,18 +318,6 @@ feature -- Processors
 			code.append (new_code)
 		end
 
-	process_keyword_as (l_as: KEYWORD_AS) is
-			-- Process `l_as'.
-		do
-
-		end
-
-	process_id_as (l_as: ID_AS) is
-			-- Process `l_as'.
-		do
-
-		end
-
 	process_reverse_as (l_as: REVERSE_AS) is
 			-- Process `l_as'.
 		do
@@ -326,8 +332,45 @@ feature -- Processors
 
 	process_create_creation_as (l_as: CREATE_CREATION_AS) is
 			-- Process `l_as'.
+		local
+			v: STRING
+			result_as: RESULT_AS
+			nested_as: NESTED_AS
 		do
+			new_label ("new")
+			v := last_label
+			record_temp_var (v, "ref")
+			code.append ("    havoc ")
+			code.append (v)
+			code.append (";%N")
+			code.append ("    assume (!IsAllocated(Heap,")
+			code.append (v)
+			code.append ("));%N")
+			code.append ("    Heap[")
+			code.append (v)
+			code.append (",$allocated] := true;%N")
 
+			code.append ("    ")
+			result_as ?= l_as.target
+			if is_local_variable (l_as.target.access_name) then
+				code.append ("l.")
+				code.append (l_as.target.access_name)
+			elseif result_as /= Void then
+				code.append ("Result")
+			else
+				code.append ("Heap[Current,field.")
+				code.append (current_class.name)
+				code.append (".")
+				code.append (l_as.target.access_name)
+				code.append ("]")
+			end
+			code.append (" := ")
+			code.append (v)
+			code.append (";%N")
+			if l_as.call /= Void then
+				create nested_as.initialize (l_as.target, l_as.call,Void)
+				nested_as.process (Current)
+			end
 		end
 
 	process_debug_as (l_as: DEBUG_AS) is
@@ -450,7 +493,6 @@ feature -- Processors
 			expr: STRING
 			inv_expr_assert: STRING
 			inv_expr_assume: STRING
-			inv: EXPR_AS
 			tmp_code: STRING
 			loop_expr_code: STRING
 		do
@@ -566,8 +608,8 @@ feature -- Processors
 				new_code.append ("(")
 				function_writer.reset
 				l_as.target.process (function_writer)
-				generate_all_dummy_proc_calls
 				new_code.append (function_writer.expr)
+				generate_all_dummy_proc_calls
 				if afa.parameters /= Void then
 					elist := afa.parameters
 					from
@@ -591,6 +633,7 @@ feature -- Processors
 					unknown_access: False
 				end
 			end
+			record_usage (l_as)
 		end
 
 	process_static_access_as (l_as: STATIC_ACCESS_AS) is
@@ -630,6 +673,7 @@ feature -- Processors
 			new_code.append (");")
 			code.append (new_code)
 			code.append (location_info (l_as, Void))
+			record_usage (l_as)
 		end
 
 	process_access_id_as (l_as: ACCESS_ID_AS) is
@@ -661,6 +705,7 @@ feature -- Processors
 			new_code.append (");")
 			code.append (new_code)
 			code.append (location_info (l_as, Void))
+			record_usage (l_as)
 		end
 
 	process_access_inv_as (l_as: ACCESS_INV_AS) is
@@ -692,6 +737,7 @@ feature -- Processors
 			new_code.append (");")
 			code.append (new_code)
 			code.append (location_info (l_as, Void))
+			record_usage (l_as)
 		end
 
 	process_create_as (l_as: CREATE_AS) is

@@ -10,24 +10,35 @@ class
 inherit
 	BPL_VISITOR
 		redefine
-			process_bin_eq_as,
+			make,
 			process_binary_as,
+			process_unary_as,
 			process_integer_as,
+			process_bool_as,
 			process_void_as,
-			process_bin_ne_as,
-			process_id_as,
 			process_un_old_as,
 			process_expr_call_as,
 			process_access_feat_as,
 			process_access_id_as,
+			process_access_inv_as,
 			process_current_as,
 			process_result_as,
 			process_nested_as,
-			process_nested_expr_as
+			process_nested_expr_as,
+			process_string_as
 		end
 
 create
 	make
+
+feature -- Initialization
+
+	make (a_class: CLASS_C) is
+			-- Initialize.
+		do
+			Precursor {BPL_VISITOR} (a_class)
+			reset
+		end
 
 feature -- Main
 
@@ -35,8 +46,8 @@ feature -- Main
 			-- Write the definition of the function pointed to by `a_function'.
 		require
 			as_not_void: a_function /= Void
-			as_is_attribute: a_function.is_function
 		local
+			feat_name: STRING
 			func_name: STRING
 			return_type: STRING
 			routine: ROUTINE_AS
@@ -48,10 +59,14 @@ feature -- Main
 			set_heap_ref ("H")
 			current_feature := a_function
 			l_as := a_function.body
-			func_name := "fun."+current_class.name+"."+l_as.feature_name
+			feat_name := bpl_mangled_feature_name (l_as.feature_name)
+			func_name := "fun."+current_class.name+"."+feat_name
 			return_type := bpl_type_for (l_as.body.type)
 			bpl_out ("// Function: "+l_as.feature_name+" of class "+current_class.name+"%N")
-			bpl_out ("function "+func_name+"([ref,name]any,ref")
+			bpl_out ("function ")
+			bpl_out (func_name)
+			bpl_out ("([ref,name]any,")
+			bpl_out (bpl_type_for_class (current_class))
 			result_call := func_name+"(H,C"
 			if l_as.body.arguments /= Void then
 				from
@@ -100,7 +115,7 @@ feature -- Main
 						l_as.body.arguments.forth
 					end
 				end
-				intro.append ("::")
+				intro.append (":: (C != null)")
 				if routine.precondition /= Void and then routine.precondition.assertions /= Void then
 					ass_list := routine.precondition.assertions
 					from
@@ -108,20 +123,15 @@ feature -- Main
 					until
 						ass_list.off
 					loop
-						if ass_list.isfirst then
-							intro.append ("(")
-						end
+						intro.append (" && (")
 						expr := ""
 						ass_list.item.process (Current)
 						intro.append (expr)
-						if ass_list.islast then
-							intro.append (") ==> ")
-						else
-							intro.append (") && (")
-						end
+						intro.append (")")
 						ass_list.forth
 					end
 				end
+				intro.append (" ==> ")
 
 				if routine.postcondition /= Void and then routine.postcondition.assertions /= Void then
 					ass_list := routine.postcondition.assertions
@@ -206,25 +216,10 @@ feature -- Processing Environment
 			-- Record that the following call is used in the expression.
 		do
 			call_list.extend (e)
+			record_usage (e)
 		end
 
 feature -- Processing
-
-	process_bin_eq_as (l_as: BIN_EQ_AS) is
-			-- Process `l_as'.
-		do
-			l_as.left.process (Current)
-			expr.append ("==")
-			l_as.right.process (Current)
-		end
-
-	process_bin_ne_as (l_as: BIN_NE_AS) is
-			-- Process `l_as'.
-		do
-			l_as.left.process (Current)
-			expr.append ("!=")
-			l_as.right.process (Current)
-		end
 
 	process_result_as (l_as: RESULT_AS) is
 			-- Process `l_as'.
@@ -239,17 +234,21 @@ feature -- Processing
 		do
 			-- TODO
 			target_type := type_for (l_as.left)
-			if target_type.is_integer or target_type.is_boolean then
+			if target_type.is_integer or target_type.is_boolean or
+				l_as.op_name.is_equal ("=") or l_as.op_name.is_equal ("/=")
+				then
 				expr.append ("(")
 				l_as.left.process (Current)
-				expr.append (l_as.op_name)
+				expr.append (" ")
+				expr.append (bpl_infix_operator_for(l_as.op_name))
+				expr.append (" ")
 				l_as.right.process (Current)
 				expr.append (")")
 			else
 				expr.append ("fun.")
 				expr.append (target_type.associated_class.name)
 				expr.append (".")
-				expr.append (l_as.op_name)
+				expr.append (bpl_mangled_operator (l_as.op_name))
 				expr.append ("(")
 				expr.append (heap_ref)
 				expr.append (",")
@@ -261,10 +260,56 @@ feature -- Processing
 			end
 		end
 
+	process_unary_as (l_as: UNARY_AS) is
+			-- Prcoess `l_as'.
+		local
+			target_type: TYPE_A
+		do
+			-- TODO
+			target_type := type_for (l_as.expr)
+			if target_type.is_integer or target_type.is_boolean then
+				expr.append ("(")
+				expr.append (bpl_prefix_operator_for(l_as.operator_name))
+				expr.append (" ")
+				l_as.expr.process (Current)
+				expr.append (")")
+			else
+				expr.append ("fun.")
+				expr.append (target_type.associated_class.name)
+				expr.append (".")
+				expr.append (bpl_mangled_operator(l_as.operator_name))
+				expr.append ("(")
+				expr.append (heap_ref)
+				expr.append (",")
+				l_as.expr.process (Current)
+				expr.append (")")
+				record_call (l_as)
+			end
+		end
+
 	process_integer_as (l_as: INTEGER_AS) is
 			-- Process `l_as'.
 		do
 			expr.append (l_as.integer_64_value.out)
+		end
+
+	process_bool_as (l_as: BOOL_AS) is
+			-- Process `l_as'.
+		do
+			if l_as.value then
+				expr.append ("true")
+			else
+				expr.append ("false")
+			end
+		end
+
+	process_string_as (l_as: STRING_AS) is
+			-- Process `l_as'.
+		do
+			expr.append ("any_string(")
+			environment.new_string_id
+			expr.append (environment.last_string_id.out)
+			expr.append (")")
 		end
 
 	process_access_feat_as (l_as: ACCESS_FEAT_AS) is
@@ -277,12 +322,49 @@ feature -- Processing
 				expr.append ("arg.")
 				expr.append (l_as.feature_name)
 			elseif l_as.is_local then
-				check
-					no_locals_in_contracts: False
-				end
+				expr.append ("l.")
+				expr.append (l_as.feature_name)
 			else
 				expr.append ("fun.")
-				expr.append (current_class.name)
+				expr.append (current_class.feature_named (l_as.feature_name).written_class.name)
+				expr.append (".")
+				expr.append (l_as.feature_name)
+				expr.append ("(")
+				expr.append (heap_ref)
+				expr.append (",")
+				expr.append (this_ref)
+				if l_as.parameters /= Void then
+					elist := l_as.parameters
+					from
+						elist.start
+					until
+						elist.off
+					loop
+						expr.append (",")
+						elist.item.process (Current)
+						elist.forth
+					end
+				end
+				expr.append (")")
+				record_call (current_expression)
+			end
+		end
+
+	process_access_inv_as (l_as: ACCESS_INV_AS) is
+			-- Process `l_as'.
+		local
+			elist: LIST[EXPR_AS]
+		do
+			-- TODO
+			if l_as.is_argument then
+				expr.append ("arg.")
+				expr.append (l_as.feature_name)
+			elseif l_as.is_local then
+				expr.append ("l.")
+				expr.append (l_as.feature_name)
+			else
+				expr.append ("fun.")
+				expr.append (current_class.feature_named (l_as.feature_name).written_class.name)
 				expr.append (".")
 				expr.append (l_as.feature_name)
 				expr.append ("(")
@@ -395,12 +477,6 @@ feature -- Processing
 				expr.append (")")
 				record_call (current_expression)
 			end
-		end
-
-	process_id_as (l_as: ID_AS) is
-			-- Process `l_as'.
-		do
-
 		end
 
 	process_current_as (l_as: CURRENT_AS) is

@@ -13,7 +13,9 @@ inherit
 	AST_ROUNDTRIP_ITERATOR
 		redefine
 			process_feature_as,
-			process_symbol_as
+			process_symbol_as,
+			process_keyword_as,
+			process_id_as
 		end
 
 	SHARED_BPL_ENVIRONMENT
@@ -74,13 +76,23 @@ feature -- Processing
 
 		end
 
+	process_keyword_as (l_as: KEYWORD_AS) is
+			-- Do nothing here (causes problems).
+		do
+
+		end
+
+	process_id_as (l_as: ID_AS) is
+			-- Do nothing here (causes problems).
+		do
+
+		end
 
 feature -- Helper
 
 	type_for (l_as: EXPR_AS): TYPE_A is
 			-- Type for `l_as'.
 		require
-			has_current_feature: current_feature /= Void
 			not_void: l_as /= Void
 		local
 			ntf: NULL_TEXT_FORMATTER
@@ -93,14 +105,20 @@ feature -- Helper
 			create ados.make (tfd)
 			ados.set_current_class (current_class)
 			ados.set_current_feature (current_feature)
+			ados.set_source_class (current_class)
+			ados.set_source_feature (current_feature)
 			ados.reset_last_class_and_type
 			ados.reset_locals
 			ados.set_source_class (current_class)
-			routine ?= current_feature.body.body.content
-			if routine /= Void and then routine.locals /= Void then
-				ados.set_processing_locals (True)
-				routine.locals.process (ados)
-				ados.set_processing_locals (False)
+			if current_feature /= Void then
+				routine ?= current_feature.body.body.content
+				if routine /= Void and then routine.locals /= Void then
+					ados.set_processing_locals (True)
+					routine.locals.process (ados)
+					ados.set_processing_locals (False)
+				end
+			else
+				ados.set_current_feature (current_class.feature_named ("do_nothing"))
 			end
 			Result := ados.expr_type (l_as)
 			check
@@ -174,6 +192,252 @@ feature -- Helper
 			Result.append ("%N")
 		end
 
+	record_usage (a_node: AST_EIFFEL) is
+			-- Record the usage of the topmost feature that appears in `a_node'.
+		require
+			not_void: a_node /= Void
+		local
+			def_search: BPL_DEFINITION_SEARCH
+			feat: FEATURE_I
+		do
+			create def_search.make (current_class)
+			def_search.setup (current_class.ast, match_list, will_process_leading_leaves, will_process_trailing_leaves)
+			def_search.set_current_feature (current_feature)
+			a_node.process (def_search)
+			feat := def_search.last_feature
+			check
+				feature_found: feat /= Void
+			end
+			print ("Using: ")
+			print (feat.feature_name)
+			print (" of ")
+			print (feat.written_class.name)
+			print ("%N")
+			environment.used_features.extend (feat)
+		end
+
+	bpl_type_for (type: TYPE_AS): STRING is
+			-- Compute the suitable type in BPL for `type'.
+		require
+			type_not_void: type /= Void
+		local
+			cls_t: CLASS_TYPE_AS
+			frm_t: FORMAL_AS
+			like_cur_t: LIKE_CUR_AS
+			like_id_t: LIKE_ID_AS
+		do
+			cls_t ?= type
+			frm_t ?= type
+			like_cur_t ?= type
+			like_id_t ?= type
+			if cls_t /= Void then
+				if mapping_table.item(cls_t.class_name) /= Void then
+					Result := mapping_table.item (cls_t.class_name)
+				elseif cls_t.is_expanded then
+					add_error(create {BPL_AST_ERROR}.make_ast("Cannot handle type '" + type.dump
+												  + "' since it's expanded.", type))
+					Result := ""
+				else
+					Result := once "ref"
+				end
+			elseif frm_t /= Void then
+				Result := "ref"
+			elseif like_cur_t /= Void then
+				Result := "ref"
+			elseif like_id_t /= Void then
+				Result := "ref"
+			else
+				Result := "wrong_type"
+				add_error(create {BPL_AST_ERROR}.make_ast("Cannot handle type '" + type.dump
+											+ "' so far because it is a " + type.generating_type + ".", type))
+			end
+		ensure
+			Result_not_void: Result /= Void
+		end
+
+	bpl_type_for_class (a_class: CLASS_C):STRING is
+			-- BPL type for class `a_class'.
+		require
+			not_void: a_class /= Void
+		do
+			if mapping_table.item(a_class.name) /= Void then
+				Result := mapping_table.item (a_class.name)
+			elseif a_class.is_expanded then
+				add_error(create {BPL_AST_ERROR}.make_ast("Cannot handle type '" + a_class.name
+											  + "' since it's expanded.", a_class.ast))
+				Result := ""
+			else
+				Result := once "ref"
+			end
+		end
+
+	bpl_type_for_type_a (type: TYPE_A): STRING is
+			-- Compute the suitable type in BPL for `type'.
+		require
+			type_not_void: type /= Void
+		local
+			actual: TYPE_A
+			name: STRING
+		do
+			actual := type
+			if actual.has_associated_class then
+				name := actual.associated_class.name
+			else
+				if actual.is_boolean then
+					name := "BOOLEAN"
+				elseif actual.is_integer or actual.is_character then
+					name := "INTEGER_32"
+				else
+					name := "ANY"
+				end
+			end
+			if mapping_table.item(name) /= Void then
+				Result := mapping_table.item (name)
+			elseif actual.is_expanded then
+				Result := "wrong_type"
+				add_error(create {BPL_ERROR}.make("Cannot handle type '"+actual.dump+"' since it's expanded."))
+			else
+				Result := "ref"
+			end
+		ensure
+			Result_not_void: Result /= Void
+		end
+
+	bpl_infix_operator_for (op:STRING): STRING is
+			-- BPL version of the infix operator `op'
+		require
+			not_void: op /= Void
+			not_empty: not op.is_empty
+		do
+			if infix_operator_table.item (op) /= Void then
+				Result := infix_operator_table.item (op)
+			else
+				Result := op
+			end
+		ensure
+			not_void: Result /= Void
+		end
+
+	bpl_prefix_operator_for (op:STRING): STRING is
+			-- BPL version of the prefix operator `op'
+		require
+			not_void: op /= Void
+			not_empty: not op.is_empty
+		do
+			if prefix_operator_table.item (op) /= Void then
+				Result := prefix_operator_table.item (op)
+			else
+				Result := op
+			end
+		ensure
+			not_void: Result /= Void
+		end
+
+	bpl_mangled_operator (op:STRING): STRING is
+			-- Operator mangled that it can be used as function name in BPL
+		require
+			not_void: op /= Void
+			not_empty: not op.is_empty
+		do
+			if operator_names_mangled.item (op) /= Void then
+				Result := operator_names_mangled.item (op)
+			else
+				-- Self-defined operator, we just make up a name
+				Result := "op$"+operator_names_mangled.count.out
+				operator_names_mangled.put (Result, op)
+			end
+		ensure
+			not_void: Result /= Void
+		end
+
+	bpl_mangled_feature_name (op: STRING): STRING is
+			-- Feature name mangled that it can be used as function name in BPL
+		require
+			not_void: op /= Void
+			not_empty: not op.is_empty
+		do
+			if op.substring (1, 7).is_equal ("infix %"") then
+				Result := bpl_mangled_operator (op.substring (8, op.count-1))
+			elseif op.substring (1, 8).is_equal ("prefix %"") then
+				Result := bpl_mangled_operator (op.substring (9, op.count-1))
+			else
+				Result := op
+			end
+		ensure
+			not_void: Result /= Void
+		end
+
+feature {NONE} -- Implementation
+
+	Mapping_table: TABLE[STRING, STRING] is
+			-- Table of mappings between Eiffel and BPL types
+		once
+			create {HASH_TABLE[STRING, STRING]}Result.make(9)
+			Result.compare_objects
+			Result.put("ref", "ANY")
+			Result.put("int", "INTEGER")
+			Result.put("int", "INTEGER_8")
+			Result.put("int", "INTEGER_16")
+			Result.put("int", "INTEGER_32")
+			Result.put("int", "INTEGER_REF")
+			Result.put("int", "INTEGER_8_REF")
+			Result.put("int", "INTEGER_16_REF")
+			Result.put("int", "INTEGER_32_REF")
+			Result.put("int", "CHARACTER")
+			Result.put("int", "CHARACTER_8")
+			Result.put("int", "CHARACTER_32")
+			Result.put("int", "CHARACTER_REF")
+			Result.put("int", "CHARACTER_8_REF")
+			Result.put("int", "CHARACTER_32_REF")
+			Result.put("bool", "BOOLEAN")
+		end
+
+	Infix_Operator_table: TABLE[STRING, STRING] is
+			-- String-Versions of Operators
+		once
+			create {HASH_TABLE[STRING, STRING]}Result.make(9)
+			Result.compare_objects
+			Result.put ("==", "=")
+			Result.put ("!=", "/=")
+			Result.put ("&&","and")
+			Result.put ("||","or")
+			Result.put ("&&","and then")
+			Result.put ("||","or else")
+			Result.put ("==>","implies")
+		end
+
+	Prefix_Operator_table: TABLE[STRING, STRING] is
+			-- String-Versions of Operators
+		once
+			create {HASH_TABLE[STRING, STRING]}Result.make(9)
+			Result.compare_objects
+			Result.put ("!","not")
+		end
+
+	Operator_names_mangled: HASH_TABLE[STRING, STRING] is
+			-- Names for simple operators.
+		do
+			create Result.make(9)
+			Result.compare_objects
+			Result.put ("op$not","not")
+			Result.put ("op$plus","+")
+			Result.put ("op$minus","-")
+			Result.put ("op$mult","*")
+			Result.put ("op$div","/")
+			Result.put ("op$less","<")
+			Result.put ("op$more",">")
+			Result.put ("op$leq","<=")
+			Result.put ("op$meq",">=")
+			Result.put ("op$divdiv","//")
+			Result.put ("op$vidvid","\\")
+			Result.put ("op$hat","^")
+			Result.put ("op$and","and")
+			Result.put ("op$or","or")
+			Result.put ("op$xor","xor")
+			Result.put ("op$andthen","and then")
+			Result.put ("op$orelse","or else")
+			Result.put ("op$implies","implies")
+		end
 
 invariant
 	factory_exists: factory /= Void

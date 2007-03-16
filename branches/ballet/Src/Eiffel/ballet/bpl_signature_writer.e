@@ -24,8 +24,8 @@ feature -- Generation
 			a_list: EIFFEL_LIST [TAGGED_AS]
 			routine: ROUTINE_AS
 			content: CONTENT_AS
+			constant: CONSTANT_AS
 			l_as: FEATURE_AS
-			call_string: STRING
 		do
 			setup_function_writer
 			current_feature := a_feature
@@ -34,7 +34,7 @@ feature -- Generation
 			bpl_out ("procedure proc.")
 			bpl_out (current_class.name)
 			bpl_out (".")
-			bpl_out (a_feature.feature_name)
+			bpl_out (bpl_mangled_feature_name (a_feature.feature_name))
 			bpl_out ("(Current:ref")
 			l_as := a_feature.body
 			if l_as.body.arguments /= Void then
@@ -59,7 +59,7 @@ feature -- Generation
 				end
 			end
 			bpl_out (")")
-			if a_feature.is_function or a_feature.is_attribute then
+			if a_feature.is_function or a_feature.is_attribute or a_feature.is_constant then
 				bpl_out (" returns (Result:")
 				bpl_out (bpl_type_for_type_a (a_feature.type))
 				bpl_out (")")
@@ -80,6 +80,19 @@ feature -- Generation
 						a_list.forth
 					end
 				end
+				if current_class.ast.invariant_part /= Void and then
+					current_class.ast.invariant_part.assertion_list /= Void
+				then
+					a_list := current_class.ast.invariant_part.assertion_list
+					from a_list.start until a_list.off loop
+						function_writer.reset
+						a_list.item.expr.process (function_writer)
+						bpl_out ("  free requires ")
+						bpl_out (function_writer.expr)
+						bpl_out (";%N")
+						a_list.forth
+					end
+				end
 				if l_as.body.type = Void then
 					bpl_out ("  modifies Heap;%N")
 				end
@@ -95,12 +108,29 @@ feature -- Generation
 						a_list.forth
 					end
 				end
-			elseif content = Void then
-				-- Attribute
-				-- We might generate a meaningful postcondition here
+				if current_class.ast.invariant_part /= Void and then
+					current_class.ast.invariant_part.assertion_list /= Void
+				then
+					a_list := current_class.ast.invariant_part.assertion_list
+					from a_list.start until a_list.off loop
+						function_writer.reset
+						a_list.item.expr.process (function_writer)
+						bpl_out ("  ensures ")
+						bpl_out (function_writer.expr)
+						bpl_out (";")
+						bpl_out (location_info (a_list.item, "inv: "+a_list.item.tag))
+						a_list.forth
+					end
+				end
 			else
-				check
-					constants_not_implemented: False
+				constant ?= content
+				if constant /= Void then
+					function_writer.reset
+					constant.value.process (function_writer)
+					bpl_out ("  ensures Result == ")
+					bpl_out (function_writer.expr)
+					bpl_out (";")
+					bpl_out (location_info (constant, "constant"))
 				end
 			end
 			bpl_out ("%N")

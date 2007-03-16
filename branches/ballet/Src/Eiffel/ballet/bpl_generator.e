@@ -49,6 +49,7 @@ feature -- Actual Processing of a class
 				define_functions
 				define_signatures
 				define_implementations
+				define_used_features
 			end
 		end
 
@@ -202,6 +203,40 @@ feature {NONE} -- Implementation
 			from a_list.start until a_list.off loop
 				implementation_writer.write_implementation (current_class.feature_named (a_list.item.feature_name))
 				a_list.forth
+			end
+		end
+
+	define_used_features is
+			-- Define the features of all elements of all used elements.
+		local
+			generated_features: ARRAYED_SET[INTEGER]
+			some_feature: FEATURE_I
+			some_class: CLASS_C
+		do
+			from
+				create generated_features.make (0)
+			until
+				environment.used_features.is_empty
+			loop
+				environment.used_features.start
+				some_feature := environment.used_features.item
+				some_class := some_feature.written_class
+				if
+					not generated_features.has (some_feature.feature_id) and
+					bpl_type_for_class (some_class).is_equal ("ref") and
+					some_class.class_id /= current_class.class_id
+				then
+					if some_feature.is_function or some_feature.is_attribute or some_feature.is_constant then
+						create function_writer.make (some_class)
+						function_writer.setup (some_class.ast,match_list,will_process_leading_leaves,will_process_trailing_leaves)
+						function_writer.write_function (some_feature)
+					end
+					create signature_writer.make (some_class)
+					signature_writer.setup (some_class.ast, match_list, will_process_leading_leaves, will_process_trailing_leaves)
+					signature_writer.write_signature (some_feature)
+					generated_features.extend (some_feature.feature_id)
+				end
+				environment.used_features.prune (some_feature)
 			end
 		end
 

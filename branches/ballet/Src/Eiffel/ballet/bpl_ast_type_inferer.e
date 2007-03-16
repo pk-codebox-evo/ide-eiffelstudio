@@ -30,5 +30,5 @@ feature -- Additions
 			value_set: processing_locals = a_value
 		end
 
-
 end
+

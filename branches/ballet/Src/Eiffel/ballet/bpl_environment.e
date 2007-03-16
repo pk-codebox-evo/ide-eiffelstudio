@@ -26,6 +26,7 @@ feature{NONE} -- Initialization
 		do
 			create error_log.make
 			out_stream := std.output
+			create used_features.make (0)
 		ensure
 			stream_set: out_stream = std.output
 			error_log_generated: error_log /= Void
@@ -39,6 +40,17 @@ feature -- Access
 
 	out_stream: KI_TEXT_OUTPUT_STREAM
 		-- Output stream for the generation of BoogiePL code
+
+	used_features: ARRAYED_SET[FEATURE_I]
+		-- List of features that were used.
+
+	last_string_id: INTEGER
+
+	new_string_id is
+			-- Generate a new string ID.
+		do
+			last_string_id := last_string_id + 1
+		end
 
 feature -- Settors
 

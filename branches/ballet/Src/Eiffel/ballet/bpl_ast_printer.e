@@ -740,7 +740,7 @@ feature
 	process_binary_as (l_as: BINARY_AS) is
 		do
 			indent := indent + 1
-			put_name ("binary_as"+ "--" + type_for (l_as).out)
+			put_name ("binary_as --"+type_for (l_as).associated_class.name)
 			Precursor (l_as)
 			indent := indent - 1
 		end
