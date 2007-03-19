@@ -13,9 +13,22 @@ inherit
 	EB_CONSTANTS
 
 create
+	make,
 	make_and_save
 
 feature{NONE} -- Initialization
+
+	make (win: EV_WINDOW) is
+			-- Display warning dialog in `win' if necessary.
+		require
+			win_not_void: win /= Void
+		do
+			owner_window := win
+			title := "Save output to file"
+			extension_required := True
+		ensure
+			owner_window_set: owner_window = win
+		end
 
 	make_and_save (str: STRING; win: EV_WINDOW) is
 			-- Save `str' to a file.
@@ -24,29 +37,56 @@ feature{NONE} -- Initialization
 			str_not_void: str /= Void
 			win_not_void: win /= Void
 		do
+			make (win)
 			text := str
-			owner_window := win
 			save
 		ensure
 			text_set: text = str
-			owner_window_set: owner_window = win
 		end
 
-feature{NONE} -- Implementation
+feature -- Change
+
+	set_text (t: like text) is
+			-- Set `text' to `t'
+		do
+			text := t
+		end
+
+	set_title (t: like title) is
+			-- Set `title' to `t'
+		do
+			title := t
+		end
+
+	require_extension (b: BOOLEAN) is
+			-- Force the selected filename to have the associated extension.
+			-- for instance .txt
+		do
+			extension_required := b
+		end
+
+feature {NONE} -- Implementation
 
 	warning_dialog: EB_WARNING_DIALOG
-		-- Warning to display message	
+		-- Warning to display message.	
 
 	owner_window: EV_WINDOW
-		-- Onwer window
+		-- Onwer window.
 
 	text: STRING
-		-- Text to be saved
+		-- Text to be saved.
+
+	title: STRING_GENERAL
+		-- Dialog's title.
 
 	save_file_dlg: EV_FILE_SAVE_DIALOG
 			-- File dialog to let user choose a file.
 
+	extension_required: BOOLEAN
+			-- Is associated extension required ?
+
 feature -- Save
+
 	save  is
 			-- Save `text' to file.
 		do
@@ -61,7 +101,7 @@ feature -- Save
 	select_file_and_save is
 			-- Called when user press Save output button.
 		do
-			create save_file_dlg.make_with_title ("Save output to file")
+			create save_file_dlg.make_with_title (title)
 			save_file_dlg.filters.extend (["*.txt", "Text files (*.txt)"])
 			save_file_dlg.save_actions.extend (agent on_save_file_selected)
 			save_file_dlg.show_modal_to_window (owner_window)
@@ -82,8 +122,7 @@ feature -- Save
 			if not retried then
 				if save_file_dlg /= Void then
 					create str.make_from_string (save_file_dlg.file_name)
-					create f.make (str)
-					if save_file_dlg.selected_filter_index /= 0 then
+					if extension_required and save_file_dlg.selected_filter_index /= 0 then
 						filter_str ?= save_file_dlg.filters.i_th (save_file_dlg.selected_filter_index).item (1)
 						if filter_str.item (1) = '*' then
 							filter_str.remove (1)
@@ -99,6 +138,7 @@ feature -- Save
 						end
 					end
 					save_file_dlg.destroy
+					create f.make (str)
 					if f.exists then
 						create actions.make (1,1)
 						actions.put (agent on_overwrite_file (str), 1)
@@ -113,7 +153,7 @@ feature -- Save
 			end
 		rescue
 			retried := True
-			create warning_dialog.make_with_text ("Save failed.")
+			create warning_dialog.make_with_text (Warning_messages.w_cannot_save_file (str))
 			warning_dialog.show_modal_to_window (owner_window)
 			warning_dialog.destroy
 			retry
@@ -132,7 +172,7 @@ feature -- Save
 			end
 		rescue
 			retried := True
-			create warning_dialog.make_with_text ("Save failed.")
+			create warning_dialog.make_with_text (Warning_messages.w_cannot_save_file (file_name))
 			warning_dialog.show_modal_to_window (owner_window)
 			warning_dialog.destroy
 			retry

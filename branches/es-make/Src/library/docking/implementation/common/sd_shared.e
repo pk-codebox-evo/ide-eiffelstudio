@@ -70,8 +70,15 @@ feature -- Access
 	auto_hide_tab_slide_timer_interval: INTEGER is
 			-- Auto hide tab slide timer interval
 			-- 0 means no animation.
+		local
+			l_system: SD_SYSTEM_SETTER
 		do
-			Result := Auto_hide_tab_slide_timer_interval_cell.item
+			create {SD_SYSTEM_SETTER_IMP} l_system
+			if not l_system.is_remote_desktop then
+				Result := Auto_hide_tab_slide_timer_interval_cell.item
+			else
+				-- We disable auto hide animation in remote desktop
+			end
 		end
 
 	show_all_tab_stub_text: BOOLEAN is
@@ -206,7 +213,7 @@ feature -- Status setting
 		do
 			auto_hide_tab_slide_timer_interval_cell.put (a_int)
 		ensure
-			set: auto_hide_tab_slide_timer_interval = a_int
+			set: auto_hide_tab_slide_timer_interval_cell.item = a_int
 		end
 
 	set_show_tab_stub_text (a_bool: BOOLEAN) is
@@ -464,11 +471,14 @@ feature -- Constants
 	Hide_tab_indicator_size: INTEGER is 20
 			-- Hide tab indicator size. Hide tabs are tabs in SD_NOTEBOOK_TAB_AREA.
 
-	Drawing_area_icons_start_x: INTEGER is 0
-			-- When drawing area draw a icon, start x position.
+	title_bar_text_start_x: INTEGER is 0
+			-- When title bar drawing text, start x position.
 
-	Drawing_area_icons_start_y: INTEGER is 2
-			-- When drawing area draw a icon, start y position.
+	title_bar_text_start_y: INTEGER is
+			-- When title bar drawing text, start y position.
+		once
+			Result := (title_bar_height / 2 - tool_bar_font.height / 2).rounded
+		end
 
 	Padding_width: INTEGER is 6
 			-- Padding width used by whold system.

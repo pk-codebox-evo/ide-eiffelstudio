@@ -278,7 +278,9 @@ feature -- Command
 				-- Insert current zone to exsiting row.
 			end
 			check not_void: l_row /= Void end
-
+			if zone.row /= Void then
+				zone.tool_bar.parent.prune (zone.tool_bar)
+			end
 			l_row.extend (zone)
 			l_row.set_item_position_relative (zone.tool_bar, last_state.position)
 			zone.docking_manager.command.resize (True)
@@ -344,7 +346,7 @@ feature -- Command
 				l_name ?= l_datas.item @ 1
 				check not_void: l_name /= Void end
 				l_item := Void
-				if l_name.is_equal (l_separator.name) then
+				if l_name.as_string_8.is_equal (l_separator.name.as_string_8) then
 					-- First check if it's a separator
 					l_content.items.extend (l_separator)
 					create l_separator.make
@@ -354,7 +356,7 @@ feature -- Command
 					until
 						l_all_items.after or l_item /= Void
 					loop
-						if l_all_items.item.name.is_equal (l_name) then
+						if l_all_items.item.name.as_string_8.is_equal (l_name.as_string_8) then
 							l_item := l_all_items.item
 							if not l_datas.item.boolean_item (2) then
 								l_item.disable_displayed

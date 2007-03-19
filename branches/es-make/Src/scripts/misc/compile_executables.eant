@@ -101,6 +101,11 @@
 
 		<!-- environment related -->
 		<setenv name="ISE_LIBRARY" value="${EIFFEL_SRC}" />
+		<setenv name="EIFFEL_DELIVERY" value="${delivery_dir}" />
+
+		<!-- Default var value -->
+		<set name="force_clean" value="false" unless="$force_clean=true" />
+		<set name="force_batch" value="false" unless="$force_batch=true" />
 	</target>
 
 	<!--
@@ -281,7 +286,7 @@
 
 	<!-- eBuild -->
 	<target name="init_esbuilder" depend="init_system">
-		<set name="system" value="build"/>
+		<set name="system" value="esbuilder"/>
 		<set name="system_target" value="esbuilder" />
 		<set name="system_ecf" value="${EIFFEL_SRC}${path_separator}build${path_separator}esbuilder.ecf" />
 		<set name="system_dir" value="${compile_dir}" />

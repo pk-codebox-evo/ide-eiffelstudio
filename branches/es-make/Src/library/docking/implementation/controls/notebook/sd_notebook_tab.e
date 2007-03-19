@@ -8,6 +8,9 @@ indexing
 class
 	SD_NOTEBOOK_TAB
 
+inherit
+	HASHABLE
+
 create
 	make
 
@@ -88,6 +91,14 @@ feature -- Command
 			-- Set `internal_draw_pixmap'.
 		do
 			internal_draw_pixmap := True
+		end
+
+	set_tool_tip (a_text: STRING_GENERAL) is
+			-- Set `tool_tip' with `a_text'
+		do
+			tool_tip := a_text
+		ensure
+			set: tool_tip = a_text
 		end
 
 	clear_pressed_flag is
@@ -173,6 +184,9 @@ feature -- Query
 			Result := parent.height
 		end
 
+	tool_tip: STRING_GENERAL
+			-- Tool tip
+
 	screen_x: INTEGER is
 			-- Screen x position
 		require
@@ -209,6 +223,12 @@ feature -- Query
 
 	parent: SD_NOTEBOOK_TAB_BOX
 			-- Parent tab box
+
+	hash_code: INTEGER is
+			-- Hash code
+		do
+			Result := text.hash_code
+		end
 
 feature -- Properties
 
@@ -307,15 +327,22 @@ feature {SD_NOTEBOOK_TAB_BOX} -- Command
 		local
 			l_has_capture: BOOLEAN
 			l_drawer: like internal_tab_drawer
+			l_in_close_button: BOOLEAN
 		do
 			if is_pointer_pressed then
-				is_pointer_pressed := False
-				l_has_capture := parent.has_capture
-				parent.disable_capture (Current)
+				-- Don't start drag in close button area.
+				if is_draw_top_tab and then internal_tab_drawer.close_rectangle_parent_box.has_x_y (a_x, a_y) then
+					l_in_close_button := True
+				end
+				if not l_in_close_button then
+					is_pointer_pressed := False
+					l_has_capture := parent.has_capture
+					parent.disable_capture (Current)
 
-				-- We must check if really have vision2 capture, because capture maybe interrupted by some operations like creating a EV_DIALOG.
-				if l_has_capture then
-					drag_actions.call ([a_x, a_y, a_x_tilt, a_y_tilt, a_pressure, a_screen_x, a_screen_y])
+					-- We must check if really have vision2 capture, because capture maybe interrupted by some operations like creating a EV_DIALOG.
+					if l_has_capture then
+						drag_actions.call ([a_x, a_y, a_x_tilt, a_y_tilt, a_pressure, a_screen_x, a_screen_y])
+					end
 				end
 			else
 				-- If user close other tab, Current tab will moved without pointer enter actiosn called.
@@ -343,6 +370,18 @@ feature {SD_NOTEBOOK_TAB_BOX} -- Command
 							l_drawer.expose_hot (drawing_width, info)
 						end
 					end
+				end
+			end
+		end
+
+	on_pointer_motion_for_tooltip (a_x: INTEGER; a_y: INTEGER; a_x_tilt: DOUBLE; a_y_tilt: DOUBLE; a_pressure: DOUBLE; a_screen_x: INTEGER; a_screen_y: INTEGER) is
+			-- Handle pointer motion actions for setting tooltips.
+		do
+			if rectangle.has_x_y (a_x, a_y) then
+				if tool_tip /= Void and then not parent.tooltip.as_string_32.is_equal (tool_tip) then
+					parent.set_tooltip (tool_tip)
+				elseif tool_tip = Void then
+					parent.remove_tooltip
 				end
 			end
 		end

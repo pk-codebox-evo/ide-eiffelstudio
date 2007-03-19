@@ -1771,6 +1771,9 @@ end
 					-- Compute the root type
 				compute_root_type
 
+					-- We need to clean `instantiator' of all the types that do not make sense
+					-- anymore (see eweasel test#incr282).
+				instantiator.clean
 
 					-- Inheritance analysis: `Degree_4' is sorted by class
 					-- topological ids so the parent come first the heirs after.
@@ -2222,7 +2225,7 @@ end
 			Degree_2.initialize_non_generic_types
 
 				-- Compute the types.
-			Instantiator.process
+			instantiator.process
 		end
 
 	process_conformance_table_for_type (set_or_reset_action: PROCEDURE [ANY, TUPLE [CLASS_TYPE]]) is
@@ -4594,8 +4597,7 @@ end
 						rout_entry.set_type_id (i)
 						rout_entry.set_type (l_void)
 						rout_entry.set_written_type_id (
-							l_class.implemented_type (l_class.creation_feature.written_in,
-								class_type.type).type_id)
+							class_type.type.implemented_type (l_class.creation_feature.written_in).type_id)
 						rout_entry.set_body_index (l_class.creation_feature.body_index)
 						rout_table.extend (rout_entry)
 					end

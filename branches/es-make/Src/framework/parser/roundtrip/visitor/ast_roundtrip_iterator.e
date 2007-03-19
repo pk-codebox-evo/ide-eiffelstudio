@@ -975,7 +975,7 @@ feature
 			safe_process (l_as.lcurly_symbol)
 			safe_process (l_as.formal_para)
 			safe_process (l_as.constrain_symbol)
-			safe_process (l_as.constraint)
+			safe_process (l_as.constraints)
 			safe_process (l_as.create_keyword)
 			safe_process (l_as.creation_feature_list)
 			safe_process (l_as.end_keyword)
@@ -1000,6 +1000,13 @@ feature
 			safe_process (l_as.parameters)
 			safe_process (l_as.rcurly_symbol)
 		end
+
+	process_constraining_type_as (l_as: CONSTRAINING_TYPE_AS) is
+			do
+				l_as.type.process (Current)
+				safe_process (l_as.renaming)
+				safe_process (l_as.end_of_renaming)
+			end
 
 	process_none_type_as (l_as: NONE_TYPE_AS) is
 		do

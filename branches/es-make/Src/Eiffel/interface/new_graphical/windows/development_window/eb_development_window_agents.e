@@ -131,34 +131,76 @@ feature -- Agents
 	on_back is
 			-- User pressed Alt+left.
 			-- Go back in the history (or the context history).
+		local
+			l_history_manager: EB_HISTORY_MANAGER
+			l_tool: EB_TOOL
 		do
 			if develop_window.tools.class_tool.has_focus then
 				if develop_window.tools.class_tool.history_manager.is_back_possible then
-					develop_window.tools.class_tool.history_manager.back_command.execute
+					l_history_manager := develop_window.tools.class_tool.history_manager
+					l_tool := develop_window.tools.class_tool
 				end
 			elseif develop_window.tools.features_relation_tool.has_focus then
 				if develop_window.tools.features_relation_tool.history_manager.is_back_possible then
-					develop_window.tools.features_relation_tool.history_manager.back_command.execute
+					l_history_manager := develop_window.tools.features_relation_tool.history_manager
+					l_tool := develop_window.tools.features_relation_tool
+				end
+			elseif develop_window.tools.dependency_tool.has_focus then
+				if develop_window.tools.dependency_tool.history_manager.is_back_possible then
+					l_history_manager := develop_window.tools.dependency_tool.history_manager
+					l_tool := develop_window.tools.dependency_tool
+				end
+			elseif develop_window.tools.diagram_tool.has_focus then
+				if develop_window.tools.diagram_tool.history_manager.is_back_possible then
+					l_history_manager := develop_window.tools.diagram_tool.history_manager
+					l_tool := develop_window.tools.diagram_tool
 				end
 			elseif develop_window.history_manager.is_back_possible then
 				develop_window.history_manager.back_command.execute
+			end
+			if l_history_manager /= Void then
+				l_history_manager.back_command.execute
+				if l_tool /= Void then
+					l_tool.show
+				end
 			end
 		end
 
 	on_forth is
 			-- User pressed Alt+right.
 			-- Go forth in the history (or the context history).
+		local
+			l_history_manager: EB_HISTORY_MANAGER
+			l_tool: EB_TOOL
 		do
 			if develop_window.tools.class_tool.has_focus then
 				if develop_window.tools.class_tool.history_manager.is_forth_possible then
-					develop_window.tools.class_tool.history_manager.forth_command.execute
+					l_history_manager := develop_window.tools.class_tool.history_manager
+					l_tool := develop_window.tools.class_tool
 				end
 			elseif develop_window.tools.features_relation_tool.has_focus then
 				if develop_window.tools.features_relation_tool.history_manager.is_forth_possible then
-					develop_window.tools.features_relation_tool.history_manager.forth_command.execute
+					l_history_manager := develop_window.tools.features_relation_tool.history_manager
+					l_tool := develop_window.tools.features_relation_tool
+				end
+			elseif develop_window.tools.dependency_tool.has_focus then
+				if develop_window.tools.dependency_tool.history_manager.is_forth_possible then
+					l_history_manager := develop_window.tools.dependency_tool.history_manager
+					l_tool := develop_window.tools.dependency_tool
+				end
+			elseif develop_window.tools.diagram_tool.has_focus then
+				if develop_window.tools.diagram_tool.history_manager.is_forth_possible then
+					l_history_manager := develop_window.tools.diagram_tool.history_manager
+					l_tool := develop_window.tools.diagram_tool
 				end
 			elseif develop_window.history_manager.is_forth_possible then
 				develop_window.history_manager.forth_command.execute
+			end
+			if l_history_manager /= Void then
+				l_history_manager.forth_command.execute
+				if l_tool /= Void then
+					l_tool.show
+				end
 			end
 		end
 
@@ -219,6 +261,8 @@ feature -- Agents
 			if develop_window.has_profiler then
 				develop_window.commands.show_profiler.enable_sensitive
 			end
+			develop_window.commands.customized_formatter_command.enable_sensitive
+			develop_window.commands.customized_tool_command.enable_sensitive
 		end
 
 	on_project_loaded is
@@ -249,6 +293,41 @@ feature -- Agents
 			if develop_window.has_profiler then
 				develop_window.commands.show_profiler.disable_sensitive
 			end
+			develop_window.commands.customized_formatter_command.enable_sensitive
+			develop_window.commands.customized_tool_command.enable_sensitive
+		end
+
+	on_customized_tools_changed (a_unchanged_tools: LIST [STRING]) is
+			-- Action to be performed when customized tools changes
+		require
+			a_unchanged_tools_attached: a_unchanged_tools /= Void
+			a_unchanged_tools_valid: not a_unchanged_tools.has (Void)
+		local
+			l_customized_tools: LIST [EB_CUSTOMIZED_TOOL]
+			l_tools: EB_DEVELOPMENT_WINDOW_TOOLS
+			l_main_builder: EB_DEVELOPMENT_WINDOW_MAIN_BUILDER
+		do
+				-- Retrieve changed customized tools.
+			l_tools := develop_window.tools
+			l_customized_tools := l_tools.customized_tools_from_tools (l_tools.tools_by_id (l_tools.all_tools,a_unchanged_tools, False))
+
+			create l_main_builder.make (develop_window)
+
+				-- Remove changed tools.
+			l_customized_tools.do_all (agent l_main_builder.deregister_customized_tool)
+
+				-- Add changed/newly add tools.
+			l_customized_tools := develop_window.customized_tool_manager.tools_by_ids (a_unchanged_tools, False, develop_window)
+			l_main_builder.register_customized_tools (l_customized_tools)
+		end
+
+	on_customized_tools_changed_agent: PROCEDURE [ANY, TUPLE [LIST [STRING]]] is
+			-- Agent of `on_cutomized_tools_changed'
+		do
+			if on_customized_tools_changed_agent_internal = Void then
+				on_customized_tools_changed_agent_internal := agent on_customized_tools_changed
+			end
+			Result := on_customized_tools_changed_agent_internal
 		end
 
 feature {NONE} -- Implementation
@@ -290,6 +369,8 @@ feature {NONE} -- Implementation
 			develop_window.commands.c_workbench_compilation_cmd.enable_sensitive
 			develop_window.commands.c_finalized_compilation_cmd.enable_sensitive
 			develop_window.refactoring_manager.enable_sensitive
+			develop_window.commands.customized_formatter_command.enable_sensitive
+			develop_window.commands.customized_tool_command.enable_sensitive
 		end
 
 	disable_commands_on_project_unloaded is
@@ -314,7 +395,12 @@ feature {NONE} -- Implementation
 			develop_window.commands.c_finalized_compilation_cmd.disable_sensitive
 			develop_window.refactoring_manager.disable_sensitive
 			develop_window.refactoring_manager.forget_undo_redo
+			develop_window.commands.customized_formatter_command.disable_sensitive
+			develop_window.commands.customized_tool_command.disable_sensitive
 		end
+
+	on_customized_tools_changed_agent_internal: like on_customized_tools_changed_agent
+			-- Implementation of `on_customized_tools_changed_agent'
 
 invariant
 	not_void: develop_window /= Void

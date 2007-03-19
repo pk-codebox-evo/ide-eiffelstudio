@@ -88,7 +88,7 @@ feature -- Properties
 			result_attached: Result /= Void
 		end
 
-	displayer_generator: TUPLE [generator: FUNCTION [ANY, TUPLE, like displayer]; name: STRING] is
+	displayer_generator: TUPLE [any_generator: FUNCTION [ANY, TUPLE, like displayer]; name: STRING] is
 			-- Generator to generate proper `displayer' for Current formatter
 		deferred
 		ensure
@@ -105,6 +105,12 @@ feature -- Properties
 			-- Displayer used to display Result of Current formatter
 		deferred
 		end
+
+	veto_format_function: FUNCTION [ANY, TUPLE, BOOLEAN]
+			-- Function to veto format.
+			-- If not Void, it's invoked before `format'. And if returned value is True,
+			-- format will go on, if returned value is False, format is vetoed.
+			-- If Void, format will go on.
 
 feature -- Displayer factory
 
@@ -168,6 +174,14 @@ feature -- Setting
 			viewpoints := a_viewpoints
 		ensure
 			viewpoints_is_set: viewpoints = a_viewpoints
+		end
+
+	set_veto_format_function (a_function: like veto_format_function) is
+			-- Set `veto_format_function' with `a_function'.
+		do
+			veto_format_function := a_function
+		ensure
+			veto_format_function_set: veto_format_function = a_function
 		end
 
 	set_focus is
@@ -597,6 +611,17 @@ feature {NONE} -- Implementation
 	retrieve_sorting_order is
 			-- Retrieve last recored sorting order.
 		do
+		end
+
+	actual_veto_format_result: BOOLEAN is
+			-- Actual veto format result.
+			-- i.e., if `veto_format_function' is Void, always allow format to go on.
+		do
+			if veto_format_function /= Void then
+				Result := veto_format_function.item (Void)
+			else
+				Result := True
+			end
 		end
 
 indexing

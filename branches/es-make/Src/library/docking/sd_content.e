@@ -101,6 +101,9 @@ feature -- Access
 	detail: STRING_GENERAL
 			-- When show zone navigation dialog, we use this detail if exist.
 
+	tab_tooltip: STRING_GENERAL
+			-- Tool tip displayed on notebook tab.
+
 	pixel_buffer: like internal_pixel_buffer is
 			-- Client programmer's widget's pixel buffer
 		do
@@ -267,6 +270,15 @@ feature -- Set
 			a_detail_set: detail = a_detail
 		end
 
+	set_tab_tooltip (a_text: like tab_tooltip) is
+			-- Set `a_text' to `tab_tooltip'
+		do
+			tab_tooltip := a_text
+			state.change_tab_tooltip (a_text)
+		ensure
+			set: tab_tooltip = a_text
+		end
+
 	set_pixel_buffer (a_buffer: like internal_pixel_buffer) is
 			-- Set `internal_pixel_buffer'
 		require
@@ -348,6 +360,7 @@ feature -- Set Position
 			manager_has_content: manager_has_content (Current)
 			manager_has_content: manager_has_content (a_relative)
 			a_direction_valid: four_direction (a_direction)
+			not_auto_hide: a_relative.state_value /= {SD_ENUMERATION}.auto_hide
 		do
 			set_visible (True)
    			state.change_zone_split_area (a_relative.state.zone, a_direction)
