@@ -38,6 +38,7 @@ feature {NONE} -- Initlization
 			-- Creation method
 		do
 			default_create
+			create internal_shared
 			internal_row_height := standard_height
 			create internal_items.make (1)
 			expose_actions.extend (agent on_expose)
@@ -52,21 +53,10 @@ feature {NONE} -- Initlization
 			drop_actions.extend (agent on_drop_action)
 			drop_actions.set_veto_pebble_function (agent on_veto_pebble_function)
 
-			create internal_shared
 			set_background_color (internal_shared.default_background_color)
 		end
 
 feature -- Properties
-
-	set_row_height (a_height: INTEGER) is
-			-- Set `row_height'
-		require
-			valid: a_height > 0
-		do
-			internal_row_height := a_height
-		ensure
-			set: is_row_height_set (a_height)
-		end
 
 	row_height: INTEGER is
 			-- Height of row.
@@ -164,6 +154,33 @@ feature -- Command
 			set_minimum_height (l_minimum_height)
 		end
 
+	update_size is
+			-- Update `tool_bar' size if Current width changed.
+		local
+			l_tool_bar_row: SD_TOOL_BAR_ROW
+			l_parent: EV_CONTAINER
+			l_floating_zone: SD_FLOATING_TOOL_BAR_ZONE
+		do
+			compute_minimum_size
+			l_tool_bar_row ?= parent
+			if l_tool_bar_row /= Void then
+				l_tool_bar_row.set_item_size (Current, minimum_width, minimum_height)
+			else
+				-- If Current is in a SD_FLOATING_TOOL_BAR_ZONE which is a 3 level parent.
+				l_parent := parent
+				if l_parent /= Void then
+					l_parent := l_parent.parent
+					if l_parent /= Void then
+						l_parent := l_parent.parent
+						l_floating_zone ?= l_parent
+						if l_floating_zone /= Void then
+							l_floating_zone.set_size (l_floating_zone.minimum_width, l_floating_zone.minimum_height)
+						end
+					end
+				end
+			end
+		end
+
 	wipe_out is
 			-- Wipe out
 		do
@@ -186,8 +203,18 @@ feature -- Query
 			Result := internal_items.has (a_item)
 		end
 
-	border_width: INTEGER is 4
+	border_width: INTEGER is
 			-- Border width.
+		local
+			l_platform: PLATFORM
+		once
+			create l_platform
+			if l_platform.is_windows then
+				Result := 4
+			else
+				Result := (internal_shared.tool_bar_font.height / 2).floor
+			end
+		end
 
 	padding_width: INTEGER is 4
 			-- Padding width.
@@ -201,8 +228,7 @@ feature -- Query
 			if l_platform.is_windows then
 				Result := 23
 			else
-				-- On Linux it's a little bit bigger.
-				Result := 25
+				Result := internal_shared.tool_bar_font.height + 2 * border_width
 			end
 		end
 

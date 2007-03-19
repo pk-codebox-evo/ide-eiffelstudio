@@ -64,7 +64,11 @@ feature {NONE} -- Initlization
 			tab_zone := internal_shared.widget_factory.tab_zone (a_content, a_target_zone)
 			internal_docking_manager.zones.add_zone (tab_zone)
 
-			l_parent.extend (tab_zone)
+			-- Sometimes, `l_parent' maybe void, don't know the reason yet.
+			-- Maybe the calling of the actions have been delayed?
+			if l_parent /= Void then
+				l_parent.extend (tab_zone)
+			end
 
 			create l_target_zone_tab_state.make_with_tab_zone (a_target_zone.content, tab_zone, direction)
 			l_target_zone_tab_state.set_last_floating_height (a_target_zone.state.last_floating_height)
@@ -188,6 +192,8 @@ feature -- Redefine
 
 			is_set_width_after_restore := True
 			is_set_height_after_restore := True
+
+			update_floating_zone_visible (l_tab_zone, a_data.is_visible)
 		ensure then
 			restored:
 		end
@@ -411,7 +417,7 @@ feature {SD_CONTENT} -- Redefine
 			tab_zone.set_pixmap (a_pixmap, a_content)
 		end
 
-feature {SD_CONFIG_MEDIATOR, SD_STATE} -- Redefine
+feature {SD_OPEN_CONFIG_MEDIATOR, SD_STATE} -- Redefine
 
 	set_last_floating_width (a_int: INTEGER) is
 			-- Redefine

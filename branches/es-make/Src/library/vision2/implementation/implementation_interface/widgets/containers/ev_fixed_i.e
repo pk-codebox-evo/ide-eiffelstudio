@@ -22,7 +22,6 @@ feature -- Element change
 		require
 			a_widget_not_void: a_widget /= Void
 			a_widget_parent_void: a_widget.parent = Void
-			a_widget_not_current: a_widget /= Current
 			a_width_not_smaller_than_minimum_width:
 				a_width >= a_widget.minimum_width
 			a_height_not_smaller_than_minimum_height:
@@ -33,7 +32,7 @@ feature -- Element change
 			set_item_size (a_widget, a_width, a_height)
 		ensure
 			has_a_widget: has (a_widget)
-			parent_is_current: a_widget.parent = Current
+			parent_is_current: a_widget.parent = interface
 			count_increased: count = old count + 1
 			an_item_x_position_assigned: a_widget.x_position = a_x
 			an_item_y_position_assigned: a_widget.y_position = a_y

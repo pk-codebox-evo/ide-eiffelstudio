@@ -208,6 +208,11 @@ feature -- Access
 		deferred
 		end
 
+	caps_lock_on: BOOLEAN is
+			-- Is the Caps Lock key currently on?
+		deferred
+		end
+
 feature -- Element Change
 
 	set_invoke_garbage_collection_when_inactive (a_enabled: BOOLEAN)
@@ -845,8 +850,7 @@ feature {NONE} -- Implementation
 			-- Wait for at most `msec' milliseconds for an input.
 		require
 			msec_non_negative: msec >= 0
-		do
-			sleep (msec)
+		deferred
 		end
 
 invariant

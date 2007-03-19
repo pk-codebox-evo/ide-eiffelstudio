@@ -52,7 +52,7 @@ feature -- Query
 			-- All tool bar contents.
 
 	content_by_title (a_title: STRING_GENERAL): SD_TOOL_BAR_CONTENT is
-			-- SD_tool_bar_CONTENT which has `a_title'.
+			-- SD_TOOL_BAR_CONTENT which has `a_title'.
 		require
 			a_title_not_void: a_title /= Void
 		do
@@ -77,7 +77,7 @@ feature -- Command
 			contents.wipe_out
 		end
 
-feature {SD_DOCKING_MANAGER_AGENTS, SD_CONFIG_MEDIATOR, SD_TOOL_BAR_ZONE_ASSISTANT, SD_TOOL_BAR_CONTENT} -- Internal functions.
+feature {SD_DOCKING_MANAGER_AGENTS, SD_OPEN_CONFIG_MEDIATOR, SD_TOOL_BAR_ZONE_ASSISTANT, SD_TOOL_BAR_CONTENT} -- Internal functions.
 
 	on_resize (a_x, a_y, a_width, a_height: INTEGER; a_force: BOOLEAN) is
 			-- Handle main window resize event.
@@ -168,8 +168,8 @@ feature {SD_DOCKING_MANAGER_AGENTS, SD_CONFIG_MEDIATOR, SD_TOOL_BAR_ZONE_ASSISTA
 			internal_docking_manager.command.resize (True)
 		end
 
-feature {SD_DOCKING_MANAGER_AGENTS, SD_CONFIG_MEDIATOR, SD_TOOL_BAR_ZONE_ASSISTANT,
-			SD_TOOL_BAR_ZONE, SD_DEBUG_ACCESS} -- Internal querys
+feature {SD_DOCKING_MANAGER_AGENTS, SD_OPEN_CONFIG_MEDIATOR, SD_SAVE_CONFIG_MEDIATOR,
+			SD_TOOL_BAR_ZONE_ASSISTANT,	SD_TOOL_BAR_ZONE, SD_DEBUG_ACCESS} -- Internal querys
 
 	tool_bar_container (a_direction: INTEGER): EV_BOX is
 			-- Tool bar container base on `a_direction'.

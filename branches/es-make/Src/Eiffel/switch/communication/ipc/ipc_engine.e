@@ -75,11 +75,8 @@ feature -- Launching
 				get_environment
 				if valid_ise_ecdbgd_executable then
 					create cmd.make_from_string (ise_ecdbgd_path)
-					if cmd.has (' ') then
-						cmd.prepend_character ('"')
-						cmd.append_character ('"')
-					end
-
+					cmd.prepend_character ('"')
+					cmd.append_character ('"')
 					create cs_cmd.make (cmd)
 					create cs_pname.make ("ecdbgd")
 
@@ -168,7 +165,9 @@ feature -- Launching
 					sleep (1_000_000) -- i.e: 1 ms
 					n := n + 1
 				end
-				check not is_ecdbgd_alive end
+				check
+					not_is_ecdbgd_alive: not is_ecdbgd_alive
+				end
 				--| it is not that critical to be sure ecdbgd is closed
 				--| but it should be very quick .. so let's check
 			end

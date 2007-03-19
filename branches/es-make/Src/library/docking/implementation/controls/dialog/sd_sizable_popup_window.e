@@ -38,6 +38,7 @@ feature {NONE} -- Initialization
 			create {EV_VERTICAL_BOX} internal_border_box
 			internal_border_box.set_border_width (internal_border_width)
 			extend_sizeable_popup_window (internal_border_box)
+
 			internal_border_box.pointer_motion_actions.extend (agent on_border_box_pointer_motion)
 			internal_border_box.pointer_button_press_actions.extend (agent on_border_pointer_press)
 			internal_border_box.pointer_button_release_actions.extend (agent on_border_pointer_release)

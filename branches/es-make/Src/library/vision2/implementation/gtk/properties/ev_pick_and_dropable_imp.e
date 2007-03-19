@@ -112,10 +112,10 @@ feature {NONE} -- Implementation
 				l_interface ?= interface
 				app_implementation.set_captured_widget (l_interface)
 				{EV_GTK_EXTERNALS}.gtk_grab_add (event_widget)
-				App_implementation.disable_debugger
 				if app_implementation.focused_popup_window /= top_level_window_imp then
 					grab_keyboard_and_mouse
 				end
+				app_implementation.enable_debugger
 			end
 		end
 
@@ -128,9 +128,9 @@ feature {NONE} -- Implementation
 				if app_implementation.focused_popup_window /= top_level_window_imp then
 					release_keyboard_and_mouse
 				end
-				App_implementation.enable_debugger
 				App_implementation.set_captured_widget (Void)
 			end
+			App_implementation.enable_debugger
 		end
 
 	has_capture: BOOLEAN is
@@ -146,6 +146,7 @@ feature {NONE} -- Implementation
 			i: INTEGER
 			l_gdk_window: POINTER
 		do
+			App_implementation.disable_debugger
 			l_gdk_window := {EV_GTK_EXTERNALS}.gtk_widget_struct_window (event_widget)
 			i := {EV_GTK_EXTERNALS}.gdk_pointer_grab (
 				l_gdk_window,
@@ -169,6 +170,7 @@ feature {NONE} -- Implementation
 				0 -- guint32 time
 			)
 			{EV_GTK_EXTERNALS}.gdk_keyboard_ungrab (0) -- guint32 time
+			app_implementation.enable_debugger
 		end
 
 feature -- Implementation
@@ -250,10 +252,11 @@ feature -- Implementation
 			l_top_level_window_imp := top_level_window_imp
 			if l_top_level_window_imp /= Void then
 				if not app_imp.is_in_transport then
+					call_button_event_actions (a_type, a_x, a_y, a_button, a_x_tilt, a_y_tilt, a_pressure, a_screen_x, a_screen_y)
+					l_call_events := False
 					if a_type = {EV_GTK_EXTERNALS}.gdk_button_press_enum and then is_dockable and then a_button = 1 then
 						l_dockable_source ?= Current
 						l_dockable_source.start_dragable_filter (a_type, a_x, a_y, a_button, a_x_tilt, a_y_tilt, a_pressure, a_screen_x, a_screen_y)
-						l_call_events := False
 					elseif
 						(a_type = {EV_GTK_EXTERNALS}.gdk_button_press_enum and then able_to_transport (a_button)) or else
 						ready_for_pnd_menu (a_button, a_type) then
@@ -289,14 +292,12 @@ feature -- Implementation
 							elseif a_type = {EV_GTK_EXTERNALS}.gdk_button_press_enum and then able_to_transport (a_button) then
 								l_configure_agent.call (Void)
 							end
-							l_call_events := False
 						end
 					end
 				else
 					l_current := Current
 					if a_type = {EV_GTK_EXTERNALS}.gdk_button_press_enum and then app_imp.pick_and_drop_source = l_current then
 						end_transport (a_x, a_y, a_button, a_x_tilt, a_y_tilt, a_pressure, a_screen_x, a_screen_y)
-						l_call_events := False
 					end
 					l_dockable_source ?= l_current
 					if l_dockable_source /= Void and then a_type = {EV_GTK_EXTERNALS}.gdk_button_release_enum then

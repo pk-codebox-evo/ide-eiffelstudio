@@ -103,6 +103,11 @@ feature -- Redefine.
 			if a_data.is_minimized then
 				restore_minimize
 			end
+
+			-- When SD_OPEN_CONFIG_MEDIATOR.open_inner_container_data, `zone' maybe void.
+			if zone /= Void then
+				update_floating_zone_visible (zone, a_data.is_visible)
+			end
 		end
 
 	record_state is
@@ -347,6 +352,7 @@ stick (a_direction: INTEGER) is
 			l_spliter: EV_SPLIT_AREA
 		do
 			Precursor {SD_STATE}
+			internal_docking_manager.command.recover_normal_state
 			zone.hide
 			l_spliter ?= zone.parent
 			if l_spliter /= Void and then l_spliter.is_displayed then

@@ -67,12 +67,12 @@ feature -- Saturation
 		end
 
 	draw_color_change_gradually_in_area (a_drawing_area: EV_DRAWING_AREA; a_area: EV_RECTANGLE; a_start_color, a_to_color: EV_COLOR) is
-			--
+			-- Draw gradually changing color in `a_area' of `a_drawing_area'.
 		require
 			not_void: a_area /= Void
 		local
 			l_count: INTEGER
-			lx, aleft, aright, atop, abottom, awidth, aheight: INTEGER
+			lx, aleft, aright, atop, abottom, awidth: INTEGER
 		do
 			if a_area.width > 0 and a_area.height > 0 then
 				aleft := a_area.left

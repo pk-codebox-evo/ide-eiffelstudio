@@ -182,12 +182,7 @@ rt_public int launch_ecdbgd (char* progn, char* cmd, int eif_timeout)
 
 	init_signals();						/* Set up signal handler */
 
-#ifdef EIF_WINDOWS
-		/* First argument is 1 because we are launching the Eiffel compiler here. */
-	sp = spawn_child("dbg", 0, cmd, NULL, 0, &pid, NULL);	/* Bring "ecdbgd" to life */
-#else
-	sp = spawn_child("dbg", cmd, NULL, 0, &pid);	/* Bring "ecdbgd" to life */
-#endif
+	sp = spawn_ecdbgd ("dbg", cmd, &pid);	/* Bring "ecdbgd" to life */
 
 	if (sp == (STREAM *) 0) {
 		return -1;

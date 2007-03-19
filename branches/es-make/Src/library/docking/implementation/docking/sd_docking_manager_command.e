@@ -208,10 +208,7 @@ feature -- Commands
 			l_zone: SD_ZONE
 		do
 			if a_content /= Void then
-				l_zone := a_content.state.zone
-				if l_zone /= Void then
-					l_zone.update_mini_tool_bar_size
-				end
+				a_content.update_mini_tool_bar_size
 			else
 				from
 					l_zones := internal_docking_manager.zones.zones.twin
@@ -238,6 +235,27 @@ feature -- Commands
 			l_y := internal_docking_manager.main_window.screen_y + internal_docking_manager.main_window.height // 2 - l_dialog.height // 2
 			l_dialog.set_position (l_x, l_y)
 			l_dialog.show
+		end
+
+	propagate_accelerators is
+			-- If `main_window' of SD_DOCKING_MANAGER accelerators changed, we update all floating zones accelerators.
+		local
+			l_zones: ARRAYED_LIST [SD_FLOATING_ZONE]
+			l_global_accelerators: SEQUENCE [EV_ACCELERATOR]
+		do
+			from
+				l_zones := internal_docking_manager.query.floating_zones
+				l_global_accelerators := internal_docking_manager.query.golbal_accelerators
+				l_zones.start
+			until
+				l_zones.after
+			loop
+				l_zones.item.accelerators.wipe_out
+				if l_global_accelerators /= Void then
+					l_zones.item.accelerators.append (l_global_accelerators)
+				end
+				l_zones.forth
+			end
 		end
 
 feature -- Contract Support

@@ -71,7 +71,7 @@ feature -- Properties
 		deferred
 		end
 
-feature {SD_CONFIG_MEDIATOR, SD_CONTENT}  -- Restore
+feature {SD_OPEN_CONFIG_MEDIATOR, SD_CONTENT}  -- Restore
 
 	set_docking_manager (a_docking_manager: SD_DOCKING_MANAGER) is
 			-- Set `internal_docking_manager'.
@@ -140,6 +140,8 @@ feature -- Commands
 			else
 				internal_docking_manager.command.lock_update (Void, True)
 			end
+
+			internal_docking_manager.command.recover_normal_state
 
 			if content /= internal_docking_manager.zones.place_holder_content then
 				add_place_holder
@@ -439,6 +441,23 @@ feature {NONE} -- Implementation
 			l_upper_zone ?= internal_content.state.zone
 			if l_upper_zone /= Void then
 				l_upper_zone.minimize_for_restore
+			end
+		end
+
+	update_floating_zone_visible (a_zone: SD_ZONE; a_show_floating: BOOLEAN) is
+			-- When `restore' for docking and tab state, we should update parent floating zone visible.
+		require
+			not_void: a_zone /= Void
+		local
+			l_inner_container: SD_MULTI_DOCK_AREA
+			l_parent_floating_zone: SD_FLOATING_ZONE
+		do
+			l_inner_container := docking_manager.query.inner_container (a_zone)
+			l_parent_floating_zone := l_inner_container.parent_floating_zone
+			if l_parent_floating_zone /= Void and then not l_parent_floating_zone.is_displayed then
+				if a_show_floating then
+					l_parent_floating_zone.show
+				end
 			end
 		end
 
