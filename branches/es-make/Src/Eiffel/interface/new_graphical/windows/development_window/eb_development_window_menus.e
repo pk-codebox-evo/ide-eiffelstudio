@@ -41,6 +41,9 @@ feature -- Query
 	debug_menu: EV_MENU
 			-- Debug ID menu.
 
+	refactoring_menu: EV_MENU
+			-- Refactoring menu.
+
 	debugging_tools_menu: EV_MENU
 			-- Debugging tools menu item
 
@@ -92,6 +95,14 @@ feature -- Item querys
 	show_favorites_menu_item: EV_MENU_ITEM
 			-- Show/Hide favorites menu item.
 
+	formatting_marks_command_menu_item: EB_COMMAND_MENU_ITEM
+			-- Menu item used to shw/hide formatting marks.
+
+feature -- Other querys
+
+	number_of_displayed_external_commands: INTEGER
+			-- Number of external commands in the tools menu.
+
 feature{EB_DEVELOPMENT_WINDOW_MENU_BUILDER} -- Settings
 
 	set_debug_menu (a_menu: like debug_menu) is
@@ -100,6 +111,14 @@ feature{EB_DEVELOPMENT_WINDOW_MENU_BUILDER} -- Settings
 			debug_menu := a_menu
 		ensure
 			set: debug_menu = a_menu
+		end
+
+	set_refactoring_menu (a_menu: like refactoring_menu) is
+			-- Set `refactoring_menu'
+		do
+			refactoring_menu := a_menu
+		ensure
+			set: refactoring_menu = a_menu
 		end
 
 	set_debugging_tools_menu (a_menu: like debugging_tools_menu) is
@@ -190,6 +209,34 @@ feature{EB_DEVELOPMENT_WINDOW_MENU_BUILDER} -- Settings
 			set: favorites_menu = a_menu
 		end
 
+	set_formatting_marks_command_menu_item (a_item: like formatting_marks_command_menu_item) is
+			-- Set `formatting_marks_command_menu_item'
+		do
+			formatting_marks_command_menu_item := a_item
+		ensure
+			set: formatting_marks_command_menu_item = a_item
+		end
+
+	set_number_of_displayed_external_commands (a_number: INTEGER) is
+			-- Set `number_of_displayed_external_commands'
+		do
+			number_of_displayed_external_commands := a_number
+		ensure
+			set: number_of_displayed_external_commands = a_number
+		end
+
+feature -- Command
+
+	update_menu_lock_items is
+			-- Update 'lock docking' and 'lock tool bar' menu items state.
+		local
+			l_docking_manager: SD_DOCKING_MANAGER
+		do
+			l_docking_manager := develop_window.docking_manager
+			develop_window.commands.lock_docking_command.set_select (l_docking_manager.is_locked)
+			develop_window.commands.lock_tool_bar_command.set_select (l_docking_manager.tool_bar_manager.is_locked)
+		end
+
 feature -- Recycle
 
 	recycle_menus is
@@ -203,6 +250,9 @@ feature -- Recycle
 			end
 			if debug_menu /= Void then
 				debug_menu.destroy
+			end
+			if refactoring_menu /= Void then
+				refactoring_menu.destroy
 			end
 			if debugging_tools_menu /= Void then
 				debugging_tools_menu.destroy
@@ -219,6 +269,7 @@ feature -- Recycle
 			format_menu := Void
 			compile_menu := Void
 			debug_menu := Void
+			refactoring_menu := Void
 			debugging_tools_menu := Void
 			favorites_menu := Void
 			view_menu := Void

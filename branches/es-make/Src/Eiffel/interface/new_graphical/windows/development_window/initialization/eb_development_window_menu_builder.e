@@ -11,6 +11,8 @@ class
 inherit
 	EB_DEVELOPMENT_WINDOW_BUILDER
 
+	EB_SHARED_PREFERENCES
+
 create
 	make
 
@@ -27,6 +29,7 @@ feature -- Command
 			build_project_menu
 			build_debug_menu
 			build_tools_menu
+			build_refactoring_menu
 			build_window_menu
 			build_help_menu
 				-- Build the menu bar.
@@ -39,7 +42,7 @@ feature -- Command
 			l_conv_mit: EB_COMMAND_MENU_ITEM
 			l_debug_menu: EV_MENU
 		do
-			develop_window.menus.set_debug_menu (develop_window.Eb_debugger_manager.new_debug_menu)
+			develop_window.menus.set_debug_menu (develop_window.Eb_debugger_manager.new_debug_menu (develop_window))
 			from
 				l_debug_menu := develop_window.menus.debug_menu
 				l_debug_menu.start
@@ -56,7 +59,43 @@ feature -- Command
 			develop_window.menus.set_debugging_tools_menu (develop_window.Eb_debugger_manager.new_debugging_tools_menu)
 			develop_window.menus.debug_menu.put_front (create {EV_MENU_SEPARATOR})
 			develop_window.menus.debug_menu.put_front (develop_window.menus.debugging_tools_menu)
-			develop_window.menus.update_debug_menu
+				-- Comment because menu will be updated by `develop_window.refresh_all_commands'
+			-- develop_window.menus.update_debug_menu
+		end
+
+	build_refactoring_menu is
+			-- Create and build `refactoring_menu'.
+		local
+			l_command_menu_item: EB_COMMAND_MENU_ITEM
+			l_refactoring_menu: EV_MENU
+		do
+			create l_refactoring_menu.make_with_text (develop_window.Interface_names.m_refactoring)
+			develop_window.menus.set_refactoring_menu (l_refactoring_menu)
+
+				-- Pull up command.
+			l_command_menu_item := develop_window.refactoring_manager.pull_command.new_menu_item
+			develop_window.add_recyclable (l_command_menu_item)
+			l_refactoring_menu.extend (l_command_menu_item)
+
+				-- Rename command.
+			l_command_menu_item := develop_window.refactoring_manager.rename_command.new_menu_item
+			develop_window.add_recyclable (l_command_menu_item)
+			l_refactoring_menu.extend (l_command_menu_item)
+
+				-- Separator -------------------------------------------------
+			l_refactoring_menu.extend (create {EV_MENU_SEPARATOR})
+
+				-- Undo command.
+			l_command_menu_item := develop_window.refactoring_manager.undo_command.new_menu_item
+			develop_window.add_recyclable (l_command_menu_item)
+			l_refactoring_menu.extend (l_command_menu_item)
+
+				-- Redo command.
+			l_command_menu_item := develop_window.refactoring_manager.redo_command.new_menu_item
+			develop_window.add_recyclable (l_command_menu_item)
+			l_refactoring_menu.extend (l_command_menu_item)
+		ensure
+			refactoring_menu_created: develop_window.menus.refactoring_menu /= Void
 		end
 
 	build_menu_bar is
@@ -90,6 +129,7 @@ feature -- Command
 				l_mb.extend (develop_window.menus.favorites_menu)
 				l_mb.extend (develop_window.menus.project_menu)
 				l_mb.extend (develop_window.menus.debug_menu)
+				l_mb.extend (develop_window.menus.refactoring_menu)
 			else
 				l_mb.extend (develop_window.menus.view_menu)
 			end
@@ -135,6 +175,7 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 			l_send_to_menu: EV_MENU
 			l_menu_item: EV_MENU_ITEM
 			l_command_menu_item: EB_COMMAND_MENU_ITEM
+			l_shortcut: MANAGED_SHORTCUT
 		do
 			create l_file_menu.make_with_text (develop_window.Interface_names.m_file)
 			develop_window.menus.set_file_menu (l_file_menu)
@@ -149,14 +190,9 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 			develop_window.add_recyclable (l_command_menu_item)
 			develop_window.menus.file_menu.extend (l_command_menu_item)
 
-				-- Open
--- Larry temp comment, remove it later				
---			l_command_menu_item := develop_window.open_cmd.new_menu_item
---			develop_window.add_recyclable (l_command_menu_item)
---			develop_window.menus.file_menu.extend (l_command_menu_item)
-
 				-- Close
-			create l_menu_item.make_with_text (develop_window.Interface_names.m_close)
+			l_shortcut := preferences.misc_shortcut_data.close_window_shortcut
+			create l_menu_item.make_with_text (develop_window.Interface_names.m_close.as_string_32 + "%T" + l_shortcut.display_string)
 			l_menu_item.select_actions.extend (agent develop_window.destroy)
 			develop_window.menus.file_menu.extend (l_menu_item)
 
@@ -289,6 +325,8 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 			l_command_controller: EB_EDITOR_COMMAND_CONTROLLER
 			l_edit_menu: EV_MENU
 			l_string: STRING_GENERAL
+
+			l_shortcut: MANAGED_SHORTCUT
 		do
 			create l_command_controller.make
 			develop_window.set_command_controller (l_command_controller)
@@ -381,8 +419,8 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 				-- Search
 			create l_cmd.make
 			l_string := develop_window.Interface_names.m_search
-			l_string.append ("%T")
-			l_string.append (develop_window.preferences.editor_data.shortcuts.item ("show_search_panel").display_string.as_string_32)
+			l_shortcut := develop_window.preferences.misc_shortcut_data.shortcuts.item ("show_search_tool")
+			l_cmd.set_referred_shortcut (l_shortcut)
 			l_cmd.set_menu_name (l_string)
 			l_cmd.add_agent (agent develop_window.search)
 			l_command_menu_item := l_cmd.new_menu_item
@@ -405,11 +443,11 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 				-- Replace
 			create l_cmd.make
 			l_string := develop_window.Interface_names.m_replace
-			l_string.append ("%T")
-			l_string.append (develop_window.preferences.editor_data.shortcuts.item ("show_search_and_replace_panel").display_string.as_string_32)
+			l_shortcut := develop_window.preferences.editor_data.shortcuts.item ("show_search_and_replace_panel")
 			l_cmd.set_menu_name (l_string)
 			l_cmd.add_agent (agent editor_replace)
 			l_cmd.set_needs_editable (True)
+			l_cmd.set_referred_shortcut (l_shortcut)
 			l_command_menu_item := l_cmd.new_menu_item
 			l_command_controller.add_edition_command (l_cmd)
 			develop_window.commands.editor_commands.extend (l_cmd)
@@ -423,10 +461,10 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 				-- Find next
 			create l_cmd.make
 			l_string := develop_window.Interface_names.m_find_next
-			l_string.append ("%T")
-			l_string.append (develop_window.preferences.editor_data.shortcuts.item ("search_forward").display_string.as_string_32)
+			l_shortcut := develop_window.preferences.editor_data.shortcuts.item ("search_forward")
 			l_cmd.set_menu_name (l_string)
 			l_cmd.add_agent (agent develop_window.find_next)
+			l_cmd.set_referred_shortcut (l_shortcut)
 			l_command_menu_item := l_cmd.new_menu_item
 			l_command_controller.add_edition_command (l_cmd)
 			develop_window.commands.editor_commands.extend (l_cmd)
@@ -436,10 +474,10 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 				-- Find previous
 			create l_cmd.make
 			l_string := develop_window.Interface_names.m_find_previous
-			l_string.append ("%T")
-			l_string.append (develop_window.preferences.editor_data.shortcuts.item ("search_backward").display_string.as_string_32)
+			l_shortcut := develop_window.preferences.editor_data.shortcuts.item ("search_backward")
 			l_cmd.set_menu_name (l_string)
 			l_cmd.add_agent (agent develop_window.find_previous)
+			l_cmd.set_referred_shortcut (l_shortcut)
 			l_command_menu_item := l_cmd.new_menu_item
 			l_command_controller.add_edition_command (l_cmd)
 			develop_window.commands.editor_commands.extend (l_cmd)
@@ -449,10 +487,10 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 				-- Find selection forward
 			create l_cmd.make
 			l_string := develop_window.Interface_names.m_find_next_selection
-			l_string.append ("%T")
-			l_string.append (develop_window.preferences.editor_data.shortcuts.item ("search_selection_forward").display_string.as_string_32)
+			l_shortcut := develop_window.preferences.editor_data.shortcuts.item ("search_selection_forward")
 			l_cmd.set_menu_name (l_string)
 			l_cmd.add_agent (agent develop_window.find_next_selection)
+			l_cmd.set_referred_shortcut (l_shortcut)
 			l_command_menu_item := l_cmd.new_menu_item
 			l_command_controller.add_edition_command (l_cmd)
 			develop_window.commands.editor_commands.extend (l_cmd)
@@ -462,10 +500,10 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 				-- Find selection backward
 			create l_cmd.make
 			l_string := develop_window.Interface_names.m_find_previous_selection
-			l_string.append ("%T")
-			l_string.append (develop_window.preferences.editor_data.shortcuts.item ("search_selection_backward").display_string.as_string_32)
+			l_shortcut := develop_window.preferences.editor_data.shortcuts.item ("search_selection_backward")
 			l_cmd.set_menu_name (l_string)
 			l_cmd.add_agent (agent develop_window.find_next_selection)
+			l_cmd.set_referred_shortcut (l_shortcut)
 			l_command_menu_item := l_cmd.new_menu_item
 			l_command_controller.add_edition_command (l_cmd)
 			develop_window.commands.editor_commands.extend (l_cmd)
@@ -504,6 +542,8 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 			l_command_controller.add_selection_command (l_os_cmd)
 			l_os_cmd.set_menu_name (develop_window.Interface_names.m_to_lower)
 			l_os_cmd.add_agent (agent editor_set_selection_case (True))
+			l_shortcut := develop_window.preferences.editor_data.shortcuts.item ("set_to_lowercase")
+			l_os_cmd.set_referred_shortcut (l_shortcut)
 			l_command_menu_item := l_os_cmd.new_menu_item
 			develop_window.add_recyclable (l_command_menu_item)
 			develop_window.commands.editor_commands.extend (l_os_cmd)
@@ -514,6 +554,8 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 			l_command_controller.add_selection_command (l_os_cmd)
 			l_os_cmd.set_menu_name (develop_window.Interface_names.m_to_upper)
 			l_os_cmd.add_agent (agent editor_set_selection_case (False))
+			l_shortcut := develop_window.preferences.editor_data.shortcuts.item ("set_to_uppercase")
+			l_os_cmd.set_referred_shortcut (l_shortcut)
 			l_command_menu_item := l_os_cmd.new_menu_item
 			develop_window.add_recyclable (l_command_menu_item)
 			develop_window.commands.editor_commands.extend (l_os_cmd)
@@ -523,6 +565,8 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 			l_cmd.set_needs_editable (True)
 			l_cmd.set_menu_name (develop_window.Interface_names.m_comment)
 			l_cmd.add_agent (agent editor_comment_selection)
+			l_shortcut := develop_window.preferences.editor_data.shortcuts.item ("comment")
+			l_cmd.set_referred_shortcut (l_shortcut)
 			l_command_menu_item := l_cmd.new_menu_item
 			l_command_controller.add_edition_command (l_cmd)
 			develop_window.add_recyclable (l_command_menu_item)
@@ -533,6 +577,8 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 			l_cmd.set_needs_editable (True)
 			l_cmd.set_menu_name (develop_window.Interface_names.m_uncomment)
 			l_cmd.add_agent (agent editor_uncomment_selection)
+			l_shortcut := develop_window.preferences.editor_data.shortcuts.item ("uncomment")
+			l_cmd.set_referred_shortcut (l_shortcut)
 			l_command_menu_item := l_cmd.new_menu_item
 			l_command_controller.add_edition_command (l_cmd)
 			develop_window.add_recyclable (l_command_menu_item)
@@ -549,6 +595,8 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 			l_cmd.add_agent (agent editor_embed_in_block("if  then", 3))
 			l_command_menu_item := l_cmd.new_menu_item
 			l_command_controller.add_edition_command (l_cmd)
+			l_shortcut := develop_window.preferences.misc_shortcut_data.shortcuts.item ("embed_if_clause")
+			l_cmd.set_referred_shortcut (l_shortcut)
 			develop_window.add_recyclable (l_command_menu_item)
 			develop_window.commands.editor_commands.extend (l_cmd)
 			l_sub_menu.extend (l_command_menu_item)
@@ -560,6 +608,8 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 			l_cmd.add_agent (agent editor_embed_in_block("debug", 5))
 			l_command_menu_item := l_cmd.new_menu_item
 			l_command_controller.add_edition_command (l_cmd)
+			l_shortcut := develop_window.preferences.misc_shortcut_data.shortcuts.item ("embed_debug_clause")
+			l_cmd.set_referred_shortcut (l_shortcut)
 			develop_window.add_recyclable (l_command_menu_item)
 			develop_window.commands.editor_commands.extend (l_cmd)
 			l_sub_menu.extend (l_command_menu_item)
@@ -607,13 +657,13 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 					l_cmd.set_menu_name (develop_window.Interface_names.m_hide_formatting_marks)
 				end
 			end
-			develop_window.set_formatting_marks_command_menu_item (l_cmd.new_menu_item)
+			develop_window.menus.set_formatting_marks_command_menu_item (l_cmd.new_menu_item)
 			l_command_controller.add_edition_command (l_cmd)
 			l_cmd.add_agent (agent develop_window.toggle_formatting_marks)
 			develop_window.commands.editor_commands.extend (l_cmd)
 
-			develop_window.add_recyclable (develop_window.formatting_marks_command_menu_item)
-			l_sub_menu.extend (develop_window.formatting_marks_command_menu_item)
+			develop_window.add_recyclable (develop_window.menus.formatting_marks_command_menu_item)
+			l_sub_menu.extend (develop_window.menus.formatting_marks_command_menu_item)
 
 			develop_window.menus.edit_menu.extend (l_sub_menu)
 		end
@@ -688,6 +738,17 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 			develop_window.add_recyclable (l_new_menu_item)
 
 			l_new_menu_item := develop_window.commands.save_layout_as_command.new_menu_item
+			develop_window.menus.view_menu.extend (l_new_menu_item)
+			develop_window.add_recyclable (l_new_menu_item)
+
+				-- Separator --------------------------------------
+			develop_window.menus.view_menu.extend (create {EV_MENU_SEPARATOR})
+
+			l_new_menu_item := develop_window.commands.lock_tool_bar_command.new_menu_item
+			develop_window.menus.view_menu.extend (l_new_menu_item)
+			develop_window.add_recyclable (l_new_menu_item)
+
+			l_new_menu_item := develop_window.commands.lock_docking_command.new_menu_item
 			develop_window.menus.view_menu.extend (l_new_menu_item)
 			develop_window.add_recyclable (l_new_menu_item)
 		end
@@ -902,21 +963,21 @@ feature {EB_EXTERNAL_COMMANDS_EDITOR} -- Menu Building
 				-- Remove all the external commands, which are at the end of the menu.
 			from
 				l_tools_menu := develop_window.menus.tools_menu
-				l_tools_menu.go_i_th (l_tools_menu.count + 1 - develop_window.number_of_displayed_external_commands)
+				l_tools_menu.go_i_th (l_tools_menu.count + 1 - develop_window.menus.number_of_displayed_external_commands)
 			until
 				l_tools_menu.after
 			loop
 				l_tools_menu.remove
 			end
 			l_ms := develop_window.commands.Edit_external_commands_cmd.menus
-			develop_window.set_number_of_displayed_external_commands (l_ms.count)
+			develop_window.menus.set_number_of_displayed_external_commands (l_ms.count)
 
 			if not l_ms.is_empty and not l_tools_menu.is_empty then
 				l_sep ?= l_tools_menu.last
 				if l_sep = Void then
 					create l_sep
 					l_tools_menu.extend (l_sep)
-					develop_window.set_number_of_displayed_external_commands (develop_window.number_of_displayed_external_commands + 1)
+					develop_window.menus.set_number_of_displayed_external_commands (develop_window.menus.number_of_displayed_external_commands + 1)
 				end
 			end
 

@@ -87,7 +87,6 @@ feature {NONE} -- Initialization
 
 					--| End of settings
 				init_commands
-				init_accelerators
 				create watch_tool_list.make
 			end
 
@@ -116,7 +115,65 @@ feature {NONE} -- Initialization
 
 	init_commands is
 			-- Create a new project toolbar.
+		local
+			l_cmd: EB_STANDARD_CMD
 		do
+			create show_tool_commands.make (6)
+
+				-- Show call stack command.
+			l_cmd := new_std_cmd (  Interface_names.t_call_stack_tool,
+									Pixmaps.icon_pixmaps.tool_call_stack_icon,
+									preferences.misc_shortcut_data.shortcuts.item ("show_call_stack_tool"), True,
+									agent show_call_stack_tool
+								)
+			show_tool_commands.extend (l_cmd)
+			show_call_stack_tool_command := l_cmd
+
+				-- Show objects tool command.
+			l_cmd := new_std_cmd (  Interface_names.t_object_tool,
+									Pixmaps.icon_pixmaps.tool_objects_icon,
+									preferences.misc_shortcut_data.shortcuts.item ("show_objects_tool"), True,
+									agent show_objects_tool
+								)
+			show_tool_commands.extend (l_cmd)
+			show_objects_tool_command := l_cmd
+
+				-- Show thread tool command.
+			l_cmd := new_std_cmd (  Interface_names.t_threads_tool,
+									Pixmaps.icon_pixmaps.tool_threads_icon,
+									preferences.misc_shortcut_data.shortcuts.item ("show_threads_tool"), True,
+									agent show_thread_tool
+								)
+			show_tool_commands.extend (l_cmd)
+			show_thread_tool_command := l_cmd
+
+				-- Show object viewer tool command.
+			l_cmd := new_std_cmd (  Interface_names.t_Object_viewer_tool,
+									Pixmaps.icon_pixmaps.debugger_object_expand_icon,
+									preferences.misc_shortcut_data.shortcuts.item ("show_object_viewer_tool"), True,
+									agent show_object_viewer_tool
+								)
+			show_tool_commands.extend (l_cmd)
+			show_object_viewer_tool_command := l_cmd
+
+				-- Create and show watch tool command.
+			l_cmd := new_std_cmd (  Interface_names.f_create_new_watch,
+									Pixmaps.icon_pixmaps.tool_watch_icon,
+									show_watch_tool_preference, False, --| Only make use of shortcut displayed string.									
+									agent create_and_show_new_watch_tool
+								)
+			show_tool_commands.extend (l_cmd)
+			create_and_show_watch_tool_command := l_cmd
+
+				-- Show watch tool command.
+			l_cmd := new_std_cmd (  Interface_names.t_watch_tool,
+									Pixmaps.icon_pixmaps.tool_watch_icon,
+									show_watch_tool_preference, True,
+									agent show_new_or_hidden_watch_tool
+								)
+			show_tool_commands.extend (l_cmd)
+			show_watch_tool_command := l_cmd
+
 --| FIXME XR: TODO: Add:
 --| 3) edit feature, feature evaluation
 			create toolbarable_commands.make (20)
@@ -227,27 +284,6 @@ feature {NONE} -- Initialization
 			Eiffel_project.manager.close_agents.extend (agent disable_commands_on_project_unloaded)
 		end
 
-	init_accelerators is
-		local
-			l_acc: EV_ACCELERATOR
-		do
-			create l_acc.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_s), True, True, False)
-			l_acc.actions.extend (agent show_call_stack_tool)
-			show_call_stack_tool_accelerator := l_acc
-
-			create l_acc.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_j), True, True, False)
-			l_acc.actions.extend (agent show_objects_tool)
-			show_objects_tool_accelerator := l_acc
-
-			create l_acc.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_p), True, True, False)
-			l_acc.actions.extend (agent show_thread_tool)
-			show_thread_tool_accelerator := l_acc
-
-			create l_acc.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_h), True, True, False)
-			l_acc.actions.extend (agent show_new_or_hidden_watch_tool)
-			show_new_or_hidden_watch_tool_accelerator := l_acc
-		end
-
 feature -- Settings
 
 	classic_debugger_timeout: INTEGER is
@@ -299,19 +335,26 @@ feature -- Access
 	toolbarable_commands: ARRAYED_LIST [EB_TOOLBARABLE_AND_MENUABLE_COMMAND]
 			-- All commands that can be put in a toolbar.
 
-feature -- Accelerators
+	show_tool_commands: ARRAYED_LIST [EB_STANDARD_CMD]
+			-- Show tool commands.
 
-	show_call_stack_tool_accelerator: EV_ACCELERATOR
-			-- show_call_stack_tool accelerator.
+	show_call_stack_tool_command: EB_STANDARD_CMD
+			-- Show call stack command
 
-	show_objects_tool_accelerator: EV_ACCELERATOR
-			-- show_objects_tool accelerator.
+	show_objects_tool_command: EB_STANDARD_CMD
+			-- Show object tool command
 
-	show_thread_tool_accelerator: EV_ACCELERATOR
-			-- show_thread_tool accelerator.
+	show_thread_tool_command: EB_STANDARD_CMD
+			-- Show thread tool command
 
-	show_new_or_hidden_watch_tool_accelerator: EV_ACCELERATOR
-			-- show_new_or_hidden_watch_tool accelerator.
+	show_object_viewer_tool_command: EB_STANDARD_CMD
+			-- Show object viewer tool command			
+
+	show_watch_tool_command: EB_STANDARD_CMD
+			-- Show watch tool command
+
+	create_and_show_watch_tool_command: EB_STANDARD_CMD
+			-- Create and show watch tool.
 
 feature -- tools
 
@@ -323,7 +366,46 @@ feature -- tools
 
 	objects_tool: ES_OBJECTS_TOOL
 
+	object_viewer_tool: EB_OBJECT_VIEWERS_TOOL
+
 	watch_tool_list: LINKED_SET [ES_WATCH_TOOL]
+
+	all_tools: ARRAYED_LIST [EB_TOOL] is
+			-- All managed tools.
+		local
+			l_wc: INTEGER
+			l_list: LINKED_SET [ES_WATCH_TOOL]
+		do
+			if watch_tool_list /= Void then
+				l_wc := watch_tool_list.count
+			end
+			create Result.make (3 + l_wc)
+			if call_stack_tool /= Void then
+				Result.extend (call_stack_tool)
+			end
+			if threads_tool /= Void then
+				Result.extend (threads_tool)
+			end
+			if objects_tool /= Void then
+				Result.extend (objects_tool)
+			end
+			if object_viewer_tool /= Void then
+				Result.extend (object_viewer_tool)
+			end
+			if watch_tool_list /= Void then
+				from
+					l_list := watch_tool_list
+					l_list.start
+				until
+					l_list.after
+				loop
+					Result.extend (l_list.item)
+					l_list.forth
+				end
+			end
+		ensure
+			result_not_void: Result /= Void
+		end
 
 feature -- Output visitor
 
@@ -339,104 +421,123 @@ feature -- tools management
 			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.refresh)
 		end
 
-	new_toolbar: ARRAYED_SET [SD_TOOL_BAR_ITEM] is
+	new_toolbar (a_recycler: EB_RECYCLER): ARRAYED_SET [SD_TOOL_BAR_ITEM] is
 			-- Toolbar containing all debugging commands.
+		require
+			a_recycler_not_void: a_recycler /= Void
+		local
+			l_button: EB_SD_COMMAND_TOOL_BAR_BUTTON
 		do
 			Result := preferences.debug_tool_data.retrieve_project_toolbar (toolbarable_commands)
+			from
+				Result.start
+			until
+				Result.after
+			loop
+				l_button ?= Result.item
+				if l_button /= Void then
+					a_recycler.add_recyclable (l_button)
+				end
+				Result.forth
+			end
 		end
 
-	new_debug_menu: EV_MENU is
+	new_debug_menu (a_recycler: EB_RECYCLER): EV_MENU is
 			-- Generate a menu that can be displayed in development windows.
 		require
+			a_recycler_not_void: a_recycler /= Void
 			--| commands_initialized: toolbarable_commands /= Void
 		local
 			sep: EV_MENU_SEPARATOR
+			l_item: EB_COMMAND_MENU_ITEM
 		do
 			create Result.make_with_text (Interface_names.m_Debug)
 
+			l_item := clear_bkpt.new_menu_item
 			Result.extend (clear_bkpt.new_menu_item)
-			Result.extend (disable_bkpt.new_menu_item)
-			Result.extend (enable_bkpt.new_menu_item)
-			Result.extend (bkpt_info_cmd.new_menu_item)
+			a_recycler.add_recyclable (l_item)
+			l_item := disable_bkpt.new_menu_item
+			Result.extend (l_item)
+			a_recycler.add_recyclable (l_item)
+			l_item := enable_bkpt.new_menu_item
+			Result.extend (l_item)
+			a_recycler.add_recyclable (l_item)
+			l_item := bkpt_info_cmd.new_menu_item
+			Result.extend (l_item)
+			a_recycler.add_recyclable (l_item)
 
 				-- Separator.
 			create sep
 			Result.extend (sep)
 
-			Result.extend (options_cmd.new_menu_item)
+			l_item := options_cmd.new_menu_item
+			Result.extend (l_item)
+			a_recycler.add_recyclable (l_item)
+
+				-- Separator.
+			create sep
+			Result.extend (sep)
+			a_recycler.add_recyclable (l_item)
+
+			l_item := step_cmd.new_menu_item
+			Result.extend (l_item)
+			a_recycler.add_recyclable (l_item)
+			l_item := into_cmd.new_menu_item
+			Result.extend (l_item)
+			a_recycler.add_recyclable (l_item)
+			l_item := out_cmd.new_menu_item
+			Result.extend (l_item)
+			a_recycler.add_recyclable (l_item)
 
 				-- Separator.
 			create sep
 			Result.extend (sep)
 
-			Result.extend (step_cmd.new_menu_item)
-			Result.extend (into_cmd.new_menu_item)
-			Result.extend (out_cmd.new_menu_item)
+			l_item := debug_cmd.new_menu_item
+			Result.extend (l_item)
+			a_recycler.add_recyclable (l_item)
+			l_item := no_stop_cmd.new_menu_item
+			Result.extend (l_item)
+			a_recycler.add_recyclable (l_item)
 
 				-- Separator.
 			create sep
 			Result.extend (sep)
 
-			Result.extend (debug_cmd.new_menu_item)
-			Result.extend (no_stop_cmd.new_menu_item)
+			l_item := stop_cmd.new_menu_item
+			Result.extend (l_item)
+			a_recycler.add_recyclable (l_item)
+			l_item := quit_cmd.new_menu_item
+			Result.extend (l_item)
+			a_recycler.add_recyclable (l_item)
 
 				-- Separator.
 			create sep
 			Result.extend (sep)
 
-			Result.extend (stop_cmd.new_menu_item)
-			Result.extend (quit_cmd.new_menu_item)
+			l_item := set_critical_stack_depth_cmd.new_menu_item
+			Result.extend (l_item)
+			a_recycler.add_recyclable (l_item)
 
 				-- Separator.
 			create sep
 			Result.extend (sep)
-
-			Result.extend (set_critical_stack_depth_cmd.new_menu_item)
-
-				-- Separator.
-			create sep
-			Result.extend (sep)
-			Result.extend (exception_handler_cmd.new_menu_item)
+			l_item := exception_handler_cmd.new_menu_item
+			Result.extend (l_item)
+			a_recycler.add_recyclable (l_item)
 
 				-- Separator.
 			create sep
 			Result.extend (sep)
-			Result.extend (assertion_checking_handler_cmd.new_menu_item)
-			Result.extend (force_debug_mode_cmd.new_menu_item)
+			l_item := assertion_checking_handler_cmd.new_menu_item
+			Result.extend (l_item)
+			a_recycler.add_recyclable (l_item)
+			l_item := force_debug_mode_cmd.new_menu_item
+			Result.extend (l_item)
+			a_recycler.add_recyclable (l_item)
 
 --| FIXME XR: TODO: Add:
 --| 3) edit feature, feature evaluation
-		end
-
-	menuable_debugging_tools: ARRAY [TUPLE [tool: EB_TOOL; acc: EV_ACCELERATOR]] is
-			-- List of all debugging tools to be listed under the debug->tools menu.
-		local
-			i, n: INTEGER
-			bptool: ES_BREAKPOINTS_TOOL
-			bptool_acc: EV_ACCELERATOR
-			showcmd: EB_SHOW_TOOL_COMMAND
-		do
-			n := 3
-			if debugging_window /= Void then
-				bptool := debugging_window.tools.breakpoints_tool
-				showcmd := debugging_window.commands.show_tool_commands.item (bptool)
-				if showcmd /= Void then
-					bptool_acc := showcmd.accelerator
-				end
-				n := n + 1
-			end
-			create Result.make (1, n)
-
-			if bptool /= Void then
-				i := i + 1
-				Result [i] := [bptool, bptool_acc]
-			end
-			i := i + 1
-			Result [i] := [call_stack_tool, show_call_stack_tool_accelerator]
-			i := i + 1
-			Result [i] := [threads_tool, show_thread_tool_accelerator]
-			i := i + 1
-			Result [i] := [objects_tool, show_objects_tool_accelerator]
 		end
 
 	new_debugging_tools_menu: EV_MENU is
@@ -454,81 +555,85 @@ feature -- tools management
 			w /= Void
 		local
 			m: EV_MENU
-			mi: EV_MENU_ITEM
+			mi: EB_COMMAND_MENU_ITEM
 			mn: STRING_GENERAL
-			l_tools: ARRAY [TUPLE [tool: EB_TOOL; acc: EV_ACCELERATOR]]
-			t: TUPLE [tool: EB_TOOL; acc: EV_ACCELERATOR]
-			l_tool: EB_TOOL
-			i: INTEGER
 			wt: ES_WATCH_TOOL
+			l_recyclable: EB_RECYCLABLE
+			l_bptool: ES_BREAKPOINTS_TOOL
+			l_show_cmd: EB_SHOW_TOOL_COMMAND
 		do
 			m := w.menus.debugging_tools_menu
-			m.wipe_out
-			if raised then
-				l_tools := menuable_debugging_tools
-				if not l_tools.is_empty then
-					from
-						i := l_tools.lower
-					until
-						i > l_tools.upper
-					loop
-						t := l_tools[i]
-						l_tool := t.tool
-						if l_tool /= Void then
-							if t.acc /= Void then
-								mn := l_tool.menu_name.twin
-								mn.append ("%T")
-								mn.append (t.acc.out)
-								create mi.make_with_text (mn)
-							else
-								create mi.make_with_text (l_tool.menu_name)
-							end
-							mi.set_data (l_tool.menu_name)
-							if l_tool.pixmap /= Void then
-								mi.set_pixmap (l_tool.pixmap)
-							end
-							mi.select_actions.extend (agent show_debugging_tools (mi))
-							m.extend (mi)
-						end
-						i := i + 1
-					end
-
-					if watch_tool_list.is_empty then
-						mn := interface_names.f_create_new_watch.twin
-						mn.append ("%T")
-						mn.append (show_new_or_hidden_watch_tool_accelerator.out)
-						create mi.make_with_text (mn)
-					else
-						create mi.make_with_text (interface_names.f_create_new_watch)
-					end
-					mi.set_pixmap (pixmaps.icon_pixmaps.tool_watch_icon)
-					mi.select_actions.extend (agent create_and_show_new_watch_tool)
-					m.extend (mi)
-
-					if not watch_tool_list.is_empty then
-						m.extend (create {EV_MENU_SEPARATOR})
-						from
-							watch_tool_list.start
-						until
-							watch_tool_list.after
-						loop
-							wt := watch_tool_list.item
-
-							mn := wt.menu_name.twin
-							mn.append ("%T")
-							mn.append (show_new_or_hidden_watch_tool_accelerator.out)
-							create mi.make_with_text (mn)
-							mi.set_pixmap (pixmaps.icon_pixmaps.tool_watch_icon)
-							mi.select_actions.extend (agent wt.show)
-							m.extend (mi)
-
-							watch_tool_list.forth
-						end
-					end
-
-					m.enable_sensitive
-
+				-- Recycle existing menu items.
+			from
+				m.start
+			until
+				m.after
+			loop
+				l_recyclable ?= m.item
+				if l_recyclable /= Void then
+					l_recyclable.recycle
+					w.remove_recyclable (l_recyclable)
 				end
+				m.forth
+			end
+			m.wipe_out
+
+			if raised then
+				if debugging_window /= Void then
+					l_bptool := debugging_window.tools.breakpoints_tool
+					l_show_cmd := debugging_window.commands.show_tool_commands.item (l_bptool)
+					mi := l_show_cmd.new_menu_item
+					m.extend (mi)
+					w.add_recyclable (mi)
+				end
+				mi := show_call_stack_tool_command.new_menu_item
+				m.extend (mi)
+				w.add_recyclable (mi)
+				mi := show_thread_tool_command.new_menu_item
+				m.extend (mi)
+				w.add_recyclable (mi)
+				mi := show_objects_tool_command.new_menu_item
+				m.extend (mi)
+				w.add_recyclable (mi)
+				mi := show_object_viewer_tool_command.new_menu_item
+				m.extend (mi)
+				w.add_recyclable (mi)
+
+
+					-- Do not display shortcut if any watch tool exists.
+				if not watch_tool_list.is_empty then
+					create_and_show_watch_tool_command.set_referred_shortcut (Void)
+				else
+					create_and_show_watch_tool_command.set_referred_shortcut (show_watch_tool_preference)
+				end
+				mi := create_and_show_watch_tool_command.new_menu_item
+				m.extend (mi)
+				w.add_recyclable (mi)
+
+				if not watch_tool_list.is_empty then
+					m.extend (create {EV_MENU_SEPARATOR})
+					from
+						watch_tool_list.start
+					until
+						watch_tool_list.after
+					loop
+						wt := watch_tool_list.item
+						mn := wt.menu_name.twin
+						if show_watch_tool_command.shortcut_available then
+							mn.append ("%T")
+							mn.append (show_watch_tool_command.shortcut_string)
+						end
+						mi := show_watch_tool_command.new_menu_item
+						mi.set_text (mn)
+						mi.select_actions.wipe_out
+						mi.select_actions.extend (agent wt.show)
+						m.extend (mi)
+						w.add_recyclable (mi)
+
+						watch_tool_list.forth
+					end
+				end
+				m.enable_sensitive
 			else
 				m.disable_sensitive
 			end
@@ -538,44 +643,6 @@ feature -- tools management
 			-- Update all debugging_tools_menu in all development windows
 		do
 			window_manager.for_all_development_windows (agent update_debugging_tools_menu_from)
-		end
-
-	show_debugging_tools (mi: EV_MENU_ITEM) is
-			-- Toggle display status of Tool related to `mit'
-		require
-			mi /= Void
-		local
-			t: TUPLE [tool: EB_TOOL; acc: EV_ACCELERATOR]
-			l_tool: EB_TOOL
-			l_acc: EV_ACCELERATOR
-			l_tools: ARRAY [TUPLE [tool: EB_TOOL; acc: EV_ACCELERATOR]]
-			i: INTEGER
-			s: STRING_GENERAL
-		do
-			if raised then
-				l_tools := menuable_debugging_tools
-				from
-					s ?= mi.data
-					i := l_tools.lower
-				until
-					i > l_tools.upper
-				loop
-					t := l_tools [i]
-					if t /= Void then
-						l_tool := t.tool
-					end
-					if l_tool /= Void and then s.is_equal (l_tool.menu_name) then
-						l_acc := t.acc
-						if l_acc /= Void and then not l_acc.actions.is_empty then
-							l_acc.actions.call (Void)
-						else
-							l_tool.show
-						end
-						i := l_tools.upper --| Exit the loop						
-					end
-					i := i + 1
-				end
-			end
 		end
 
 	show_call_stack_tool is
@@ -599,6 +666,14 @@ feature -- tools management
 		do
 			if objects_tool /= Void and raised then
 				objects_tool.show
+			end
+		end
+
+	show_object_viewer_tool is
+			-- Show object viewer tool if any.
+		do
+			if object_viewer_tool /= Void and raised then
+				object_viewer_tool.show
 			end
 		end
 
@@ -671,7 +746,7 @@ feature -- tools management
 			i := new_watch_tool_number
 
 				--| Create watch tool
-			create l_watch_tool.make_with_title (a_manager,
+			create l_watch_tool.make_with_title (a_manager, Current,
 					last_watch_tool_number,
 					Interface_names.t_watch_tool.as_string_32 + " #" + i.out,
 					Interface_names.to_watch_tool + i.out
@@ -756,8 +831,10 @@ feature -- Output
 	debugger_output_message (m: STRING_GENERAL) is
 		do
 			check output_manager /= Void end
+			output_manager.start_processing (True)
 			output_manager.add_string (m)
 			output_manager.add_new_line
+			output_manager.end_processing
 		end
 
 	debugger_warning_message (m: STRING_GENERAL) is
@@ -778,7 +855,9 @@ feature -- Output
 
 	debugger_status_message (m: STRING_GENERAL) is
 		do
-			window_manager.display_message (m)
+			if m.index_of_code (('%N').natural_32_code, 1) = 0 then
+				window_manager.display_message (m)
+			end
 		end
 
 	display_application_status is
@@ -798,10 +877,9 @@ feature -- Output
 
 	display_system_status is
 		do
+			display_system_info
 			if application_is_executing then
 				display_debugger_info
-			else
-				display_system_info
 			end
 		end
 
@@ -857,6 +935,43 @@ feature -- Change
 			Precursor
 			display_breakpoints (False)
 			window_manager.synchronize_all_about_breakpoints
+		end
+
+	refresh_commands (a_window: EB_DEVELOPMENT_WINDOW) is
+			-- Refresh commands with their interfaces/shortcuts.
+		require
+			a_window_not_void: a_window /= Void
+		local
+			l_cmds: like show_tool_commands
+			w: EB_VISION_WINDOW
+		do
+			w := a_window.window
+			bkpt_info_cmd.update (w)
+			set_critical_stack_depth_cmd.update (w)
+			exception_handler_cmd.update (w)
+			assertion_checking_handler_cmd.update (w)
+			options_cmd.update (w)
+			force_debug_mode_cmd.update (w)
+			stop_cmd.update (w)
+			quit_cmd.update (w)
+			step_cmd.update (w)
+			out_cmd.update (w)
+			into_cmd.update (w)
+			debug_cmd.update (w)
+			restart_cmd.update (w)
+			no_stop_cmd.update (w)
+
+			from
+				l_cmds := show_tool_commands
+				l_cmds.start
+			until
+				l_cmds.after
+			loop
+				l_cmds.item.update (w)
+				l_cmds.forth
+			end
+
+			update_debugging_tools_menu_from (a_window)
 		end
 
 feature -- Status setting
@@ -988,6 +1103,12 @@ feature -- Status setting
 			debugging_window.hide_tools
 			l_docking_manager := debugging_window.docking_manager
 
+				--| Before any objects and watches tools
+			if object_viewer_cmd = Void then
+				create object_viewer_cmd.make
+			end
+			object_viewer_cmd.enable_sensitive
+
 				--| Grid Objects Tool
 			if objects_tool = Void then
 				create objects_tool.make_with_debugger (debugging_window, Current)
@@ -998,6 +1119,14 @@ feature -- Status setting
 
 			objects_tool.set_cleaning_delay (preferences.debug_tool_data.delay_before_cleaning_objects_grid)
 			objects_tool.request_update
+
+				--| object viewer Objects Tool
+			if object_viewer_tool = Void then
+				object_viewer_tool := object_viewer_cmd.new_tool (debugging_window)
+			else
+				object_viewer_tool.set_manager (debugging_window)
+			end
+			object_viewer_tool.attach_to_docking_manager (l_docking_manager)
 
 				--| Watches tool
 			l_watch_tool_list := watch_tool_list
@@ -1128,9 +1257,8 @@ feature -- Status setting
 			if not l_result then
 				restore_standard_debug_docking_layout
 			end
-				-- FIXME: To be implemented.
---			debugging_window.update_items_states
---			debugging_window.update_menu_item_state
+
+			debugging_window.menus.update_menu_lock_items
 
 			refresh_breakpoints_tool
 		end
@@ -1199,6 +1327,7 @@ feature -- Status setting
 
 			call_stack_tool.content.close
 			threads_tool.content.close
+			object_viewer_tool.content.close
 
 				-- Free and recycle tools
 			raised := False
@@ -1222,6 +1351,10 @@ feature -- Status setting
 			threads_tool.reset_tool
 			call_stack_tool.reset_tool
 			objects_tool.reset_tool
+			object_viewer_cmd.end_debug
+			if object_viewer_tool /= Void then
+				object_viewer_tool.reset_tool
+			end
 			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.reset_tool)
 			if application /= Void then
 				destroy_application
@@ -1258,12 +1391,6 @@ feature -- Status setting
 				call_stack_tool.update
 				threads_tool.update
 			end
-		end
-
-	save_interface (toolbar: EB_TOOLBAR) is
-			-- Save the interface configuration using `toolbar'.
-		do
-			preferences.debug_tool_data.save_project_toolbar (toolbar)
 		end
 
 	assign_watch_tool_unique_titles is
@@ -1447,6 +1574,7 @@ feature -- Debugging events
 					end
 				end
 			end
+			object_viewer_cmd.refresh
 			window_manager.quick_refresh_all_margins
 
 				-- Fill in the threads tool.
@@ -1454,12 +1582,11 @@ feature -- Debugging events
 				-- Fill in the stack tool.
 			call_stack_tool.request_update
 				-- Fill in the objects tool.
-
 			objects_tool.enable_refresh
 			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.enable_refresh)
 
 			objects_tool.request_update
-				-- Update Watch tool
+			object_viewer_tool.request_update
 			watch_tool_list.do_all (agent {ES_WATCH_TOOL}.request_update)
 
 			debugging_window.window.raise
@@ -1621,6 +1748,10 @@ feature {EB_DEVELOPMENT_WINDOW, EB_DEVELOPMENT_WINDOW_PART} -- Implementation
 	display_error_help_cmd: EB_ERROR_INFORMATION_CMD
 			-- Command to pop up a dialog giving help on compilation errors.
 
+feature {ES_OBJECTS_GRID_MANAGER} -- Command
+
+	object_viewer_cmd: EB_OBJECT_VIEWER_COMMAND
+
 feature -- Options
 
 	display_agent_details: BOOLEAN
@@ -1628,8 +1759,28 @@ feature -- Options
 
 feature {NONE} -- Implementation
 
-	saved_minimized: BOOLEAN
-			-- Was the editor in the debugging window minimized before the debug session started?
+	new_std_cmd (a_menu_name: STRING_GENERAL; a_pixmap: EV_PIXMAP;
+					a_shortcut_pref: SHORTCUT_PREFERENCE; a_use_acc: BOOLEAN;
+					a_action: PROCEDURE [ANY, TUPLE]): EB_STANDARD_CMD is
+		local
+			l_cmd: EB_STANDARD_CMD
+			l_acc: EV_ACCELERATOR
+		do
+			create l_cmd.make
+			l_cmd.enable_sensitive
+			l_cmd.set_menu_name (a_menu_name)
+			l_cmd.set_pixmap (a_pixmap)
+			l_cmd.add_agent (a_action)
+			if a_shortcut_pref /= Void then
+				l_cmd.set_referred_shortcut (a_shortcut_pref)
+				if a_use_acc then
+					create l_acc.make_with_key_combination (a_shortcut_pref.key, a_shortcut_pref.is_ctrl, a_shortcut_pref.is_alt, a_shortcut_pref.is_shift)
+					l_acc.actions.extend (agent l_cmd.execute)
+					l_cmd.set_accelerator (l_acc)
+				end
+			end
+			Result := l_cmd
+		end
 
 	objects_split_proportion: REAL
 			-- Position of the splitter inside the object tool.
@@ -1933,6 +2084,12 @@ feature {NONE} -- Implementation
 			if l_tool.content.is_visible then
 				l_tool.refresh
 			end
+		end
+
+	show_watch_tool_preference: SHORTCUT_PREFERENCE is
+			-- Show watch tool preference
+		do
+			Result := preferences.misc_shortcut_data.shortcuts.item ("show_watch_tool")
 		end
 
 feature {NONE} -- MSIL system implementation

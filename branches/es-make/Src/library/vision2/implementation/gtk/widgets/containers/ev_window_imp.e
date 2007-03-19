@@ -80,6 +80,9 @@ feature {NONE} -- Initialization
 		do
 			set_is_initialized (False)
 			l_c_object := c_object
+
+			create accel_list.make (10)
+
 			create upper_bar
 			create lower_bar
 
@@ -105,10 +108,10 @@ feature {NONE} -- Initialization
 
 feature  -- Access
 
-	has_focus: BOOLEAN is
+	has_focus: BOOLEAN
 			-- Does `Current' have the keyboard focus?
 		do
-			Result := {EV_GTK_DEPENDENT_EXTERNALS}.gtk_window_is_active (c_object)
+			Result := internal_has_focus
 		end
 
  	maximum_width: INTEGER
@@ -163,9 +166,14 @@ feature -- Status setting
 			-- Ensure no border is displayed around `Current'.
 		local
 			l_decor: INTEGER
+			l_x, l_y: INTEGER
+			l_temp: INTEGER
 		do
+				-- We are disabling the border so we need to reset the position in the exact place
+			l_temp := {EV_GTK_EXTERNALS}.gdk_window_get_origin ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object), $l_x, $l_y)
 			l_decor := default_wm_decorations.bit_and ({EV_GTK_EXTERNALS}.gdk_decor_border_enum.bit_not)
 			{EV_GTK_EXTERNALS}.gdk_window_set_decorations ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object), l_decor)
+			set_position (l_x, l_y)
 		end
 
 	internal_enable_border is
@@ -301,6 +309,11 @@ feature -- Element change
 			menu_bar := Void
 		end
 
+feature {EV_GTK_WINDOW_IMP} -- Access
+
+	accel_list: HASH_TABLE [EV_ACCELERATOR, INTEGER]
+		-- Lookup table for accelerator access.
+
 feature {NONE} -- Accelerators
 
 	connect_accelerator (an_accel: EV_ACCELERATOR) is
@@ -311,6 +324,7 @@ feature {NONE} -- Accelerators
 		do
 			if an_accel /= Void then
 				acc_imp ?= an_accel.implementation
+				accel_list.put (an_accel, acc_imp.accel_id)
 				if acc_imp.key.code = {EV_KEY_CONSTANTS}.key_f10 then
 						-- F10 is used as a default window accelerator key, if we use F10 in a custom accelerator then we override the default setting
 					a_property := once "gtk-menu-bar-accel"
@@ -324,8 +338,13 @@ feature {NONE} -- Accelerators
 
 	disconnect_accelerator (an_accel: EV_ACCELERATOR) is
 			-- Disconnect key combination `an_accel' from this window.
+		local
+			acc_imp: EV_ACCELERATOR_IMP
 		do
-			-- No implementation needed
+			if an_accel /= Void then
+				acc_imp ?= an_accel.implementation
+				accel_list.remove (acc_imp.accel_id)
+			end
 		end
 
 feature {EV_ANY_IMP} -- Implementation
@@ -350,6 +369,9 @@ feature {EV_APPLICATION_IMP} -- Implementation
 		end
 
 feature {NONE} -- Implementation
+
+	internal_has_focus: BOOLEAN
+			-- Does `Current' have the keyboard focus?
 
 	internal_set_maximum_size (a_max_width, a_max_height: INTEGER)
 			-- Set maximum width and height of `Current' to `a_max_width' and `a_max_height'.
@@ -503,12 +525,13 @@ feature {EV_MENU_BAR_IMP, EV_ACCELERATOR_IMP, EV_APPLICATION_IMP} -- Implementat
 			-- Called from focus intermediary agents when focus for `Current' has changed.
 			-- if `a_has_focus' then `Current' has just received focus.
 		do
+			internal_has_focus := a_has_focus
+			Precursor {EV_CELL_IMP} (a_has_focus)
 			if a_has_focus then
 				on_set_focus_event ({EV_GTK_EXTERNALS}.gtk_window_struct_focus_widget (c_object))
 			else
 				on_set_focus_event (default_pointer)
 			end
-			Precursor {EV_CELL_IMP} (a_has_focus)
 		end
 
 feature {EV_ACCELERATOR_IMP} -- Implementation

@@ -46,6 +46,7 @@ feature {NONE} -- Initialization
 			contents.extend (zones.place_holder_content)
 			zones.place_holder_content.set_top ({SD_ENUMERATION}.top)
 			internal_shared.set_show_all_feedback_indicator (True)
+			internal_shared.set_show_tab_stub_text (True)
 
 			if {PLATFORM}.is_windows then
 				set_main_area_background_color ((create {EV_STOCK_COLORS}).grey)
@@ -141,6 +142,9 @@ feature -- Query
 			Result := query.is_title_unique (a_title)
 		end
 
+	is_locked: BOOLEAN
+			-- If zone can be docked?
+
 feature -- Command
 
 	save_config (a_file: STRING_GENERAL) is
@@ -218,7 +222,7 @@ feature -- Command
 		end
 
 	set_main_area_background_color (a_color: EV_COLOR) is
-			-- Set main area background color.
+			-- Set main area (editors' area) background color.
 		require
 			a_color_not_void: a_color /= Void
 		do
@@ -226,6 +230,15 @@ feature -- Command
 			 zones.place_holder_widget.set_background_color (a_color)
 		ensure
 			set: query.inner_container_main.background_color.is_equal (a_color)
+		end
+
+	main_area_drop_action: EV_PND_ACTION_SEQUENCE is
+			-- Main area (editor area) drop acitons.
+			-- This actions will be called if there is no editor zone and end user drop a stone to the void editor area.
+		do
+			Result := property.main_area_drop_actions
+		ensure
+			not_void: Result /= Void
 		end
 
 	update_mini_tool_bar_size (a_content: SD_CONTENT) is
@@ -247,9 +260,26 @@ feature -- Command
 			zones.place_holder_content.close
 		end
 
+	lock is
+			-- Set `is_locked' to `True'.
+		do
+			is_locked := True
+		ensure
+			locked: is_locked = True
+		end
+
+	unlock is
+			-- Set `is_locked' to `False'.
+		do
+			is_locked := False
+		ensure
+			unlocked: is_locked = False
+		end
+
 	destroy is
 			-- Destroy all underline objects.
 		do
+			property.destroy
 			agents.destroy
 			tool_bar_manager.destroy
 			contents.wipe_out
@@ -300,7 +330,7 @@ feature {SD_TOOL_BAR_HOT_ZONE, SD_FLOATING_TOOL_BAR_ZONE, SD_CONTENT, SD_STATE,
 	  	SD_DOCKING_MANAGER_COMMAND, SD_DOCKING_MANAGER_ZONES, SD_AUTO_HIDE_ANIMATION,
 	  	SD_DOCKING_MANAGER_QUERY, SD_NOTEBOOK, SD_ZONE_NAVIGATION_DIALOG,
 	  	SD_TAB_STATE_ASSISTANT, SD_TOOL_BAR_HOT_ZONE, SD_TOOL_BAR_ZONE_ASSISTANT,
-		SD_DEBUG_ACCESS, SD_UPPER_ZONE} -- Library internals querys.
+		SD_DEBUG_ACCESS, SD_UPPER_ZONE, SD_DOCKING_MANAGER_PROPERTY} -- Library internals querys.
 
 	query: SD_DOCKING_MANAGER_QUERY
 			-- Manager helper Current for querys.

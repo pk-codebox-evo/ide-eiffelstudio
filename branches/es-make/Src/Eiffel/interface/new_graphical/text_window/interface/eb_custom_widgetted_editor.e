@@ -27,12 +27,12 @@ feature {NONE} -- Initialization
 
 	make (a_dev_window: EB_DEVELOPMENT_WINDOW) is
 			-- Initialization
-		require
-			a_dev_window_attached: a_dev_window /= Void
 		do
 			dev_window := a_dev_window
 			check_search_bar_visible_procedure := agent check_search_bar_visible
-			dev_window.window.focus_in_actions.extend (check_search_bar_visible_procedure)
+			if dev_window /= Void then
+				dev_window.window.focus_in_actions.extend (check_search_bar_visible_procedure)
+			end
 			make_editor
 			initialize_customizable_commands
 		end
@@ -42,20 +42,25 @@ feature {NONE} -- Initialization
 		do
 			Precursor {EB_EDITOR}
 			build_surrounding_widgets
-			build_search_bar
+			if dev_window /= Void then
+				build_search_bar
+			end
 		end
 
 	initialize_customizable_commands is
 			-- Create array of customizable commands.
 		do
 			create customizable_commands.make (6)
-			customizable_commands.put (agent search, "show_search_panel")
 			customizable_commands.put (agent quick_search, "show_quick_search_bar")
 			customizable_commands.put (agent replace, "show_search_and_replace_panel")
 			customizable_commands.put (agent find_next_selection, "search_selection_forward")
 			customizable_commands.put (agent find_previous_selection, "search_selection_backward")
 			customizable_commands.put (agent find_next, "search_forward")
 			customizable_commands.put (agent find_previous, "search_backward")
+			customizable_commands.put (agent run_if_editable (agent comment_selection), "comment")
+			customizable_commands.put (agent run_if_editable (agent uncomment_selection), "uncomment")
+			customizable_commands.put (agent run_if_editable (agent set_selection_case (False)), "set_to_uppercase")
+			customizable_commands.put (agent run_if_editable (agent set_selection_case (True)), "set_to_lowercase")
 		end
 
 feature -- Access
@@ -71,7 +76,9 @@ feature -- Access
 	search_tool: EB_MULTI_SEARCH_TOOL is
 			-- Current search tool.
 		do
-			Result := dev_window.tools.search_tool
+			if dev_window /= Void then
+				Result := dev_window.tools.search_tool
+			end
 		end
 
 feature -- Quick search bar basic operation
@@ -257,7 +264,7 @@ feature {NONE} -- Quick search bar.
 			-- Hide quick search bar.
 		do
 			Precursor {EB_EDITOR}
-			if not search_bar.is_destroyed and then search_bar.is_displayed then
+			if search_bar /= Void and then not search_bar.is_destroyed and then search_bar.is_displayed then
 				if not search_bar.has_focus_on_widgets and not focusing_search_bar then
 					hide_search_bar
 				else

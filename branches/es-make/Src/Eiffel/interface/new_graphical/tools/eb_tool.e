@@ -39,6 +39,12 @@ inherit
 			{NONE} all
 		end
 
+	SHARED_WORKBENCH
+
+	EB_SHARED_MANAGERS
+
+	EB_METRIC_SHARED
+
 feature {NONE} -- Initialization
 
 	make (a_manager: like develop_window) is
@@ -209,6 +215,14 @@ feature -- Status report
 	is_last_stone_processed: BOOLEAN
 			-- Is `last_stone' processed?
 			-- i.e., has `last_stone' been displayed in formatters of Current tool?
+
+	is_auto_hide: BOOLEAN is
+			-- Is current auto hide status?
+		do
+			if content /= Void then
+				Result := content.state_value = {SD_ENUMERATION}.auto_hide
+			end
+		end
 
 feature -- Status setting
 

@@ -42,6 +42,7 @@ inherit
 			{NONE} all
 			{ANY} set_position, set_size, screen_x, screen_y
 			{SD_DOCKING_MANAGER_COMMAND} accelerators
+			{SD_DOCKING_STATE} set_width, set_height
 		select
 			implementation,
 			show_allow_to_back
@@ -66,6 +67,7 @@ feature {NONE} -- Initlization
 			real_extend_dialog (internal_vertical_box)
 
 			create internal_title_bar.make
+			internal_title_bar.enable_baseline
 			internal_title_bar.drag_actions.extend (agent on_title_bar_drag)
 			internal_title_bar.close_request_actions.extend (agent on_close)
 			internal_title_bar.set_show_normal_max (False)
@@ -448,7 +450,7 @@ feature {NONE} -- Agents
 		do
 			pointer_press_offset_x := a_screen_x - screen_x
 			pointer_press_offset_y := a_screen_y - screen_y
-			create docker_mediator.make (Current, internal_docking_manager)
+			docker_mediator := internal_docking_manager.query.docker_mediator (Current, internal_docking_manager)
 			enable_capture
 			docker_mediator.cancel_actions.extend (agent on_cancel_dragging)
 			docker_mediator.start_tracing_pointer (pointer_press_offset_x, pointer_press_offset_y)

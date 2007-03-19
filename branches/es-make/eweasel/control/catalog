@@ -320,8 +320,12 @@ test	convert-to-base-class-inherited3	valid200 tcf pass validity vycq convert
 test	formal-as-base-type-for-generic		valid201 tcf pass validity formal generic
 test	single-constraint-formal-renaming	valid202 tcf pass validity formal generic
 test	inherit-from-expanded	valid203 tcf pass validity frozen expanded
+test	recheck-assertion-feature-renamed	valid204 tcf pass validity 
+test	recursive-generic-constraint-with-creation	valid205 tcf pass validity
 
 
+-- System validity tests
+test	svalid-infix-with-conversion	svalid001 tcf pass system validity
 
 -- Incrementality tests
 
@@ -1033,6 +1037,7 @@ test	feature-call-on-basic-generic	exec266 tcf pass execution generic basic
 test	expanded-formal-attached-to-reference	exec267 tcf pass execution generic basic
 test	tuple-with-basic-type		exec268 tcf pass execution generic basic
 test	signed-unsigned-in-inspect	exec269 tcf pass execution inspect
+test	mixed-basic-type-operations	exec270 tcf pass execution inspect
 
 
 
@@ -1317,12 +1322,13 @@ test	file-change-name		lib024	 tcf pass library
 
 
 -- TUPLE tests
-test	tuple-manipulation	tuple001	tcf	pass tuple
+test	tuple-manipulation		tuple001	tcf	pass tuple
 test	named-tuple-validation	tuple002	tcf	pass tuple
 test	named-tuple-as-argument	tuple003	tcf	pass tuple
-test	tuple-hashcode		tuple004	tcf	pass tuple
-test	tuple-comparison	tuple005	tcf	pass tuple
-test	tuple-twining		tuple006	tcf	pass tuple
+test	tuple-hashcode			tuple004	tcf	pass tuple
+test	tuple-comparison		tuple005	tcf	pass tuple
+test	tuple-twining			tuple006	tcf	pass tuple
+test	named-tuple-assignment	tuple007	tcf	pass tuple
 
 -- Systematic validity tests
 
@@ -1653,3 +1659,4 @@ if DOTNET test function-property-call-correction dotnet046	tcf pass dotnet prope
 if DOTNET test deferred-property-missing-assigner-implementation dotnet047	tcf pass dotnet property
 if DOTNET test deferred-property-missing-assigner-implementation-renamed dotnet048	tcf pass dotnet property
 if DOTNET test effecting-from-inherited-external	dotnet049	tcf pass dotnet
+test replicated-from-generic-type		dotnet050	tcf pass dotnet termination expanded replication

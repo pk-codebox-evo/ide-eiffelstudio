@@ -17,6 +17,8 @@ indexing
 		%s_: Stone names; %
 		%t_: Title (part); %
 		%e_: Short description, explanation; %
+		%s_: Stone names; %
+		%fs_: Fixed shortcut names; %
 		%wt_: Title for wizards step; %
 		%wb_: Body for wizards step; %
 		%ws_: Subtitle for wizards step"
@@ -284,6 +286,7 @@ feature -- Accelerator, focus label and menu name
 	m_Break_when_hit_count_equal: STRING_GENERAL is			do Result := locale.translate("Break when the hit count is equal to")	end
 	m_Break_when_hit_count_multiple_of: STRING_GENERAL is	do Result := locale.translate("Break when the hit count is a multiple of")	end
 	m_Break_when_hit_count_greater: STRING_GENERAL is		do Result := locale.translate("Break when the hit count is greater than or equal to")	end
+	m_Object_viewer_tool: STRING_GENERAL is		do Result := locale.translate("Object viewer")	end
 
 	l_class_tree_assemblies: STRING_GENERAL is	do Result := locale.translate("Assemblies")	end
 	l_class_tree_clusters: STRING_GENERAL is	do Result := locale.translate("Clusters")	end
@@ -293,7 +296,7 @@ feature -- Accelerator, focus label and menu name
 	f_Clear_breakpoints: STRING_GENERAL is		do Result := locale.translate("Remove all breakpoints")	end
 	m_Clear_breakpoints: STRING_GENERAL is		do Result := locale.translate("Re&move All Breakpoints")	end
 	f_close: STRING_GENERAL is					do Result := locale.translate("Close")	end
-	m_Comment: STRING_GENERAL is					do Result := locale.translate("&Comment%TCtrl+K")	end
+	m_Comment: STRING_GENERAL is					do Result := locale.translate("&Comment")	end
 	m_Compilation_C_Workbench: STRING_GENERAL is	do Result := locale.translate("Compile W&orkbench C Code")	end
 	m_Compilation_C_Final: STRING_GENERAL is		do Result := locale.translate("Compile F&inalized C Code")	end
 	m_Contents: STRING_GENERAL is				do Result := locale.translate("&Contents")	end
@@ -311,7 +314,7 @@ feature -- Accelerator, focus label and menu name
 	m_Copy: STRING_GENERAL is					do Result := locale.translate("&Copy%TCtrl+C")	end
 	f_Copy: STRING_GENERAL is					do Result := locale.translate("Copy (Ctrl+C)")	end
 	m_copy_of: STRING_GENERAL is					do Result := locale.translate("Copy of ")	end
-	m_Close: STRING_GENERAL is					do Result := locale.translate("&Close Window%TAlt+F4")	end
+	m_Close: STRING_GENERAL is					do Result := locale.translate("&Close Window")	end
 	m_Close_short: STRING_GENERAL is				do Result := locale.translate("&Close")	end
 	f_Create_new_cluster: STRING_GENERAL is		do Result := locale.translate("Add a cluster")	end
 	f_Create_new_library: STRING_GENERAL is		do Result := locale.translate("Add a library")	end
@@ -456,6 +459,8 @@ feature -- Accelerator, focus label and menu name
 	m_Indent: STRING_GENERAL is					do Result := locale.translate("&Indent Selection%TTab")	end
 	m_keep_grid_layout: STRING_GENERAL is					do Result := locale.translate("Keep grid layout")	end
 	m_Line_numbers: STRING_GENERAL is			do Result := locale.translate("Toggle &Line Numbers")	end
+	m_lock_tool_bar: STRING_GENERAL is			do Result := locale.translate ("Lock the Toolbars") end
+	m_lock_docking: STRING_GENERAL is			do Result := locale.translate ("Lock the Tools") end
 	f_match_case_question: STRING_GENERAL is			do Result := locale.translate("Match case?")	end
 	f_Melt: STRING_GENERAL is					do Result := locale.translate("Compile current project")	end
 	m_Melt_new: STRING_GENERAL is				do Result := locale.translate("&Compile")	end
@@ -469,6 +474,7 @@ feature -- Accelerator, focus label and menu name
 	f_move_item_down: STRING_GENERAL is				do Result := locale.translate ("Move item down") end
 	m_Ok: STRING_GENERAL is						do Result := locale.translate("&OK")	end
 	m_Open: STRING_GENERAL is					do Result := locale.translate("&Open...%TCtrl+O")	end
+	m_open_layout: STRING_GENERAL is do Result := locale.translate ("Open Layout") end
 	m_Open_new: STRING_GENERAL is				do Result := locale.translate("Op&en...")	end
 	m_Open_project: STRING_GENERAL is			do Result := locale.translate("&Open Project...")	end
 	f_Open_watch_tool_menu: STRING_GENERAL is 	do Result := locale.translate ("Open Watch tool menu") end
@@ -510,6 +516,7 @@ feature -- Accelerator, focus label and menu name
 	m_Redo: STRING_GENERAL is					do Result := locale.translate("Re&do%TCtrl+Y")	end
 	f_Redo: STRING_GENERAL is					do Result := locale.translate("Redo (Ctrl+Y)")	end
 	m_Replace: STRING_GENERAL is				do Result := locale.translate("&Replace...")	end
+	m_reset_layout: STRING_GENERAL is do Result := locale.translate ("Reset Tools layout") end
 	f_Retarget_diagram: STRING_GENERAL is		do Result := locale.translate("Target to cluster or class")	end
 	f_Run_finalized: STRING_GENERAL is			do Result := locale.translate("Run finalized system")	end
 	m_Run_finalized: STRING_GENERAL is			do Result := locale.translate("&Run Finalized System")	end
@@ -520,15 +527,18 @@ feature -- Accelerator, focus label and menu name
 	m_Save_As: STRING_GENERAL is				do Result := locale.translate("S&ave As...")	end
 	f_Save_all: STRING_GENERAL is 				do Result := locale.translate("Save All")	end
 	m_Save_All: STRING_GENERAL is 				do Result := locale.translate("Save &All")	end
+	m_save_layout_as: STRING_GENERAL is do Result := locale.translate ("Save Layout As...") end
 	m_Search: STRING_GENERAL is					do Result := locale.translate("&Find...")	end
 	m_Search_tool: STRING_GENERAL is			do Result := locale.translate("&Search")	end
 	m_Select_all: STRING_GENERAL is				do Result := locale.translate("Select &All%TCtrl+A")	end
 	m_Send_to: STRING_GENERAL is				do Result := locale.translate("Sen&d to")	end
+	m_set_default_layout: STRING_GENERAL is do Result := locale.translate ("Set Current Layout As Default") end
 	m_show_assigners: STRING_GENERAL is			do Result := locale.translate("A&ssigners")	end
 	m_Show_class_cluster: STRING_GENERAL is		do Result := locale.translate("Find in Cluster Tree")	end
 	m_show_creators: STRING_GENERAL is			do Result := locale.translate("C&reators")	end
 	m_Show_favorites: STRING_GENERAL is			do Result := locale.translate("&Show Favorites")	end
 	m_Show_formatting_marks: STRING_GENERAL is		do Result := locale.translate("&Show Formatting Marks")	end
+	f_show_tool (a_tool_name: STRING_GENERAL): STRING_GENERAL is do	Result := locale.format_string (locale.translate ("Show $1"), [a_tool_name]) end
 	m_Showancestors: STRING_GENERAL is			do Result := locale.translate("&Ancestors")	end
 	m_Showattributes: STRING_GENERAL is			do Result := locale.translate("A&ttributes")	end
 	m_Showcallers: STRING_GENERAL is			do Result := locale.translate("&Callers")	end
@@ -557,9 +567,9 @@ feature -- Accelerator, focus label and menu name
 	m_Showtext_new: STRING_GENERAL is			do Result := locale.translate("Te&xt")	end
 	m_System_new: STRING_GENERAL is				do Result := locale.translate("Project &Settings...")	end
 	m_Toolbars: STRING_GENERAL is				do Result := locale.translate("Tool&bars")	end
-	m_To_lower: STRING_GENERAL is				do Result := locale.translate("Set to &Lowercase%TCtrl+Shift+U")	end
-	m_To_upper: STRING_GENERAL is				do Result := locale.translate("Set to U&ppercase%TCtrl+U")	end
-	m_Uncomment: STRING_GENERAL is				do Result := locale.translate("U&ncomment%TCtrl+Shift+K")	end
+	m_To_lower: STRING_GENERAL is				do Result := locale.translate("Set to &Lowercase")	end
+	m_To_upper: STRING_GENERAL is				do Result := locale.translate("Set to U&ppercase")	end
+	m_Uncomment: STRING_GENERAL is				do Result := locale.translate("U&ncomment")	end
 	f_Uncomment: STRING_GENERAL is				do Result := locale.translate("Uncomment selected lines")	end
 	m_Undo: STRING_GENERAL is					do Result := locale.translate("&Undo%TCtrl+Z")	end
 	f_Undo: STRING_GENERAL is					do Result := locale.translate("Undo (Ctrl+Z)")	end
@@ -576,17 +586,36 @@ feature -- Accelerator, focus label and menu name
 	f_hide: STRING_GENERAL is do Result := locale.translate ("Hide ") end
 	f_switch_to_tree_view: STRING_GENERAL is do Result := locale.translate ("Switch to Tree View") end
 	f_switch_to_flat_view: STRING_GENERAL is do Result := locale.translate ("Switch to Flat View") end
-	m_reset_layout: STRING_GENERAL is do Result := locale.translate ("Reset Tools layout") end
-	m_set_default_layout: STRING_GENERAL is do Result := locale.translate ("Set Current Layout As Default") end
-	m_save_layout_as: STRING_GENERAL is do Result := locale.translate ("Save Layout As...") end
-	m_open_layout: STRING_GENERAL is do Result := locale.translate ("Open Layout") end
 	l_choose_class_version: STRING_GENERAL is do Result := locale.translate ("Choose one version from the following:") end
 	m_restart_application: STRING_GENERAL is do Result := locale.translate ("Restart application") end
 	f_restart_application: STRING_GENERAL is do Result := locale.translate ("Restart application") end
-	f_show_tool (a_tool_name: STRING_GENERAL): STRING_GENERAL is
-			do
-				Result := locale.format_string (locale.translate ("Show $1"), [a_tool_name])
-			end
+	t_setup_customized_formatter: STRING_GENERAL is do Result := locale.translate ("Setup Customized Formatters") end
+	f_customize_formatter: STRING_GENERAL is do Result := locale.translate ("Customize formatters") end
+	f_add_formatter: STRING_GENERAL is do Result := locale.translate ("Add customized formatter") end
+	f_remove_formatter: STRING_GENERAL is do Result := locale.translate ("Remove selected customized formatter") end
+	l_formatter: STRING_GENERAL is do Result := locale.translate ("Formatter") end
+	l_displayed_in: STRING_GENERAL is do Result := locale.translate ("Displayed in") end
+	t_tool_name: STRING_GENERAL is do Result := locale.translate ("Tool") end
+	t_formatter_displayer_name: STRING_GENERAL is do Result := locale.translate ("Formatter displayer") end
+	l_display: STRING_GENERAL is do Result := locale.translate ("Display?") end
+	l_select_formatter: STRING_GENERAL is do Result := locale.translate ("Please select a formatter.") end
+	t_setup_formatter_tools (a_formatter_name: STRING_GENERAL): STRING_GENERAL is
+		require
+			a_formatter_name_attached: a_formatter_name /= Void
+		do
+			Result := locale.format_string (locale.translate ("Setup tools for formatter %"$1%""), [a_formatter_name])
+		end
+
+feature -- Formatter displayer names
+
+	l_class_tree_displayer: STRING_GENERAL do Result := locale.translate ("Class tree view") end
+	l_class_flat_displayer: STRING_GENERAL do Result := locale.translate ("Class list view") end
+	l_class_feature_displayer: STRING_GENERAL do Result := locale.translate ("Feature list view") end
+	l_feature_displayer: STRING_GENERAL do Result := locale.translate ("Feature version view") end
+	l_feature_caller_displayer: STRING_GENERAL do Result := locale.translate ("Feature caller view") end
+	l_feature_callee_displayer: STRING_GENERAL do Result := locale.translate ("Feature callee view") end
+	l_dependency_displayer: STRING_GENERAL do Result := locale.translate ("Dependency view") end
+	l_domain_displayer: STRING_GENERAL do Result := locale.translate ("Domain view") end
 
 feature -- Toggles
 
@@ -857,6 +886,8 @@ feature -- Label texts
 	l_Not_empty: STRING_GENERAL is				do Result := locale.translate("Generate default feature clauses")	end
 	l_no_break_point: STRING_GENERAL is				do Result := locale.translate("No breakpoints")	end
 	l_edit_project: STRING_GENERAL is			do Result := locale.translate("Edit Project")	end
+	l_eiffel_class: STRING_GENERAL is			do Result := locale.translate ("Eiffel Class") end
+	l_eiffel_cluster: STRING_GENERAL is			do Result := locale.translate ("Eiffel Cluster") end
 	l_Elements: STRING_GENERAL is				do Result := locale.translate("elements.")	end
 	l_enabled: STRING_GENERAL is				do Result := locale.translate("Enabled")	end
 	l_Enter_folder_name: STRING_GENERAL is		do Result := locale.translate("Enter the name of the new folder: ")	end
@@ -1150,6 +1181,24 @@ feature -- Label texts
 	l_user_set: STRING_GENERAL is				do Result := locale.translate ("user set") end
 	l_use_inherited: STRING_GENERAL is do Result := locale.translate ("Use inherited value.")	end
 	l_Value: STRING_GENERAL is					do Result := locale.translate("Value")	end
+
+	l_viewer_display_complete_object: STRING_GENERAL is do Result := locale.translate("Display Complete Object") end
+	l_viewer_enable_word_wrapping: STRING_GENERAL is do Result := locale.translate("Enable Word Wrapping") end
+	l_copy_text_to_clipboard: STRING_GENERAL is do Result := locale.translate("Copy Text To Clipboard") end
+	t_viewer_string_display: STRING_GENERAL is do Result := locale.translate("String Display") end
+	l_viewer_string_display_full_string_length (n: INTEGER): STRING_GENERAL is
+		do
+			Result := locale.format_string (locale.translate ("Full string length = $1"), [n])
+		end
+	l_dbg_unable_to_get_value_message: STRING_GENERAL is do Result := locale.translate("Sorry a problem occurred, %Nwe are not able to show you the value ...%N") end
+	l_slice_limits: STRING_GENERAL is do Result := locale.translate ("Slice limits") end
+	l_set_slice_values: STRING_GENERAL is do Result := locale.translate("Set Slice Values") end
+	l_to: STRING_GENERAL is do Result := locale.translate("to") end
+	t_viewer_object_dumper_title: STRING_GENERAL is do Result := locale.translate ("Object.dumped") end
+	t_viewer_object_browser_title: STRING_GENERAL is do Result := locale.translate ("Object.browse") end
+	l_viewer_drop_object_here: STRING_GENERAL is do Result := locale.translate ("<< Drop object here >>") end
+	l_select_viewer: STRING_GENERAL is do Result := locale.translate ("Select viewer") end
+
 	l_When_breakpoint_is_hit: STRING_GENERAL is	do Result := locale.translate("When the breakpoint is hit:")	end
 	l_Whole_project: STRING_GENERAL is			do Result := locale.translate("Whole project")	end
 	l_Whole_word: STRING_GENERAL is				do Result := locale.translate("Whole word")	end
@@ -1439,11 +1488,20 @@ feature -- Label texts
 
 	h_search_for_class_recursively: STRING_GENERAL is do Result := locale.translate ("Search folder for classes recursively?") end
 	l_save_layout_name: STRING_GENERAL is do Result := locale.translate ("Enter or select a name to save the current layout as.") end
+	l_shortcut_modification_denied: STRING_GENERAL is do Result := locale.translate ("Shortcut modification failed. It is either used by a fixed shortcut or reserved by the system.") end
 	l_layout_name: STRING_GENERAL is do Result := locale.translate ("Name:") end
 	l_existing_layout_names: STRING_GENERAL is do Result := locale.translate ("Existing Layouts:") end
 	l_overwrite_layout (a_name: STRING_GENERAL): STRING_GENERAL is do Result := locale.format_string (locale.translate ("A layout with the name '$1' already exists. Do you want to overwrite?"), [a_name]) end
 	l_open_layout_error: STRING_GENERAL is do Result := locale.translate ("Open layout error. Opening default layout instead.") end
 	h_click_to_open: STRING_GENERAL is do Result := locale.translate ("Click to open") end
+	l_layout: STRING_GENERAL is do Result := locale.translate ("Layout") end
+	l_tooltip_lbl: STRING_GENERAL is do Result := locale.translate ("Tooltip") end
+	l_header: STRING_GENERAL is do Result := locale.translate ("Header") end
+	l_temp_header: STRING_GENERAL is do Result := locale.translate ("Temporary header") end
+	l_pixmap_file: STRING_GENERAL is do Result := locale.translate ("Pixmap File") end
+	l_metric_name: STRING_GENERAL is do Result := locale.translate ("Metric Name") end
+	l_metric_filter: STRING_GENERAL is do Result := locale.translate ("Metric Filter") end
+	l_eiffelstudio: STRING_GENERAL is do Result := locale.translate ("EiffelStudio") end
 
 feature -- Label text, no translation (for the editor)
 
@@ -1470,6 +1528,19 @@ feature -- Stone names
 	s_library_stone: STRING_GENERAL is			do Result := locale.translate("Library ")	end
 	s_target_stone: STRING_GENERAL is 			do Result := locale.translate("Target ")	end
 
+feature -- Fixed shortcut names
+
+	fs_focus_on_editor: STRING_GENERAL is			do Result := locale.translate ("Focus on current editor") end
+	fs_undo_command: STRING_GENERAL is				do Result := locale.translate ("Undo command") end
+	fs_redo_command: STRING_GENERAL is				do Result := locale.translate ("Redo command") end
+	fs_close_window: STRING_GENERAL is				do Result := locale.translate ("Close window") end
+	fs_cut: STRING_GENERAL is						do Result := locale.translate ("Cut") end
+	fs_copy: STRING_GENERAL is						do Result := locale.translate ("Copy") end
+	fs_paste: STRING_GENERAL is						do Result := locale.translate ("Paste") end
+	fs_select_all: STRING_GENERAL is				do Result := locale.translate ("Select all") end
+	fs_indent: STRING_GENERAL is					do Result := locale.translate ("Indent") end
+	fs_unindent: STRING_GENERAL is					do Result := locale.translate ("Unindent") end
+	fs_debug_menu: STRING_GENERAL is				do Result := locale.translate ("Debug menu") end
 
 feature -- Title part
 
@@ -1694,6 +1765,7 @@ feature -- Title part
 	t_Call_stack_tool: STRING_GENERAL is				do Result := locale.translate ("Call Stack")	end
 	t_Cluster_tool: STRING_GENERAL is					do Result := locale.translate ("Clusters")	end
 	t_Context_tool: STRING_GENERAL is					do Result := locale.translate ("Context")	end
+	t_Object_viewer_tool: STRING_GENERAL is			do Result := locale.translate ("Object viewer")	end
 	t_Favorites_tool: STRING_GENERAL is					do Result := locale.translate ("Favorites")	end
 	t_metric_tool: STRING_GENERAL is 					do Result := locale.translate ("Metrics")	end
 	t_Object_tool: STRING_GENERAL is					do Result := locale.translate ("Objects")	end
@@ -1726,6 +1798,8 @@ feature -- Title part
 	t_Open_layout: STRING_GENERAL is					do Result := locale.translate ("Open Layout") end
 	t_Overwite_layout: STRING_GENERAL is				do Result := locale.translate ("Overwrite Layout") end
 	t_open_c_file: STRING_GENERAL is					do Result := locale.translate ("Open C file") end
+	t_reference_position: STRING_GENERAL is				do Result := locale.translate ("Position") end
+	t_customized_formatter_setup: STRING is 			do Result := locale.translate ("Customized Formatter Setup") end
 
 feature -- Titles translation needless (Title Original) for preference strings.
 
@@ -1741,6 +1815,7 @@ feature -- Titles translation needless (Title Original) for preference strings.
 	to_Search_Report_tool: STRING is			"Search Report"
 	to_Windows_tool: STRING is					"Windows"
 	to_Watch_tool: STRING is					"Watch"
+	to_Object_viewer_tool: STRING is			"Object Viewer"
 	to_Features_tool: STRING is					"Features"
 	to_Editor: STRING is						"Editor"
 	to_Debugging_tool: STRING is				"Debugging"

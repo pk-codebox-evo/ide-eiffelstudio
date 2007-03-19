@@ -195,11 +195,7 @@ feature -- Cecil
 			make_file.put_string ("%T$(AR) cr ")
 			make_file.put_string ("$(STATIC_CECIL)")
 			make_file.put_character (' ')
-			make_file.put_string ("$(OBJECTS) ")
-			make_file.put_character (continuation)
-			make_file.put_new_line
-			generate_other_objects
-			make_file.put_string ("%T%T$(RCECIL)")
+			make_file.put_string ("$(OBJECTS) $(PRECOMP_OBJECTS) $(RCECIL)")
 			make_file.put_new_line
 			make_file.put_string ("%T$(RANLIB) ")
 			make_file.put_string ("$(STATIC_CECIL)%N")
@@ -215,7 +211,6 @@ feature -- Cecil
 			make_file.put_string ("SHARED_CECIL_OBJECT = $(OBJECTS) ")
 			make_file.put_character (continuation)
 			make_file.put_new_line
-			generate_other_objects
 			make_file.put_string ("%T%T")
 			make_file.put_string (packet_name (system_object_prefix, 1))
 			make_file.put_string ("/emain.o")
@@ -223,7 +218,7 @@ feature -- Cecil
 			make_file.put_string ("SHAREDFLAGS = $(LDSHAREDFLAGS) $(SHARED_CECIL) %N");
 			make_file.put_string ("$(SHARED_CECIL): $(SHARED_CECIL_OBJECT) %N")
 			make_file.put_string ("%T$(RM) $(SHARED_CECIL) %N")
-			make_file.put_string ("%T$(SHAREDLINK) $(SHAREDFLAGS) $(SHARED_CECIL_OBJECT) $(EXTERNALS) $(EIFLIB) $(SHAREDLIBS) %N")
+			make_file.put_string ("%T$(SHAREDLINK) $(SHAREDFLAGS) $(SHARED_CECIL_OBJECT) $(PRECOMP_OBJECTS) $(EXTERNALS) $(EIFLIB) $(SHAREDLIBS) %N")
 
 			make_file.put_new_line
 			make_file.put_new_line
@@ -244,11 +239,10 @@ feature -- Generate Dynamic Library
 			-- Generate "E1/egc_dynlib.o"
 			make_file.put_string ("%N")
 			make_file.put_string (packet_name (system_object_prefix, 1))
-			make_file.put_string ("/egc_dynlib.o: Makefile $(EIFTEMPLATES)/")
+			make_file.put_string ("/egc_dynlib.o: Makefile")
+			make_file.put_string ("%N%T$(CP) %"$(EIFTEMPLATES)/")
 			make_file.put_string (egc_dynlib_file)
-			make_file.put_string ("%N%T$(CP) $(EIFTEMPLATES)/")
-			make_file.put_string (egc_dynlib_file)
-			make_file.put_string (" ")
+			make_file.put_string ("%" ")
 			make_file.put_string (packet_name (system_object_prefix, 1))
 			make_file.put_string ("/egc_dynlib.c")
 
@@ -272,7 +266,6 @@ feature -- Generate Dynamic Library
 			make_file.put_string ("%NSYSTEM_IN_DYNAMIC_LIB_OBJ = $(OBJECTS) ")
 			make_file.put_character (continuation)
 			make_file.put_new_line
-			generate_other_objects
 			make_file.put_string ("%T%T")
 			make_file.put_string (packet_name (system_object_prefix, 1))
 			make_file.put_string ("/edynlib.o ")
@@ -281,8 +274,7 @@ feature -- Generate Dynamic Library
 			make_file.put_string ("%NDYNLIBSHAREDFLAGS = $(LDSHAREDFLAGS) $(SYSTEM_IN_DYNAMIC_LIB) %N");
 			make_file.put_string ("$(SYSTEM_IN_DYNAMIC_LIB): $(SYSTEM_IN_DYNAMIC_LIB_OBJ) %N")
 			make_file.put_string ("%T$(RM) $(SYSTEM_IN_DYNAMIC_LIB) %N")
-			make_file.put_string ("%T$(SHAREDLINK) $(DYNLIBSHAREDFLAGS) $(SYSTEM_IN_DYNAMIC_LIB_OBJ) $(EXTERNALS) $(EIFLIB) $(SHAREDLIBS) %N")
-
+			make_file.put_string ("%T$(SHAREDLINK) $(DYNLIBSHAREDFLAGS) $(SYSTEM_IN_DYNAMIC_LIB_OBJ) $(PRECOMP_OBJECTS) $(EXTERNALS) $(EIFLIB) $(SHAREDLIBS) %N")
 			make_file.put_new_line
 			make_file.put_new_line
 		end
@@ -423,7 +415,7 @@ feature -- Sub makefile generation
 					make_file  := new_makefile
 					make_file.open_write
 						-- Generate main /bin/sh preamble
-					generate_sub_preamble
+					generate_sub_preamble (packet_name (sub_dir, i))
 						-- Customize main Makefile macros
 					generate_customization
 						-- How to produce a .o from a .c file
@@ -515,14 +507,15 @@ feature -- Generation, Header
 				%*/*) cd `expr X$0 : 'X\(.*\)/'` ;;%N%
 				%esac%N")
 			make_file.put_string ("%
-				%echo %"Extracting %".%"/Makefile%
-								% (with variable substitutions)%"%N%
+				%echo %"Preparing C compilation...%"%N%
 				%$spitshell >Makefile <<!GROK!THIS!%N")
 		end
 
-	generate_sub_preamble is
+	generate_sub_preamble (a_directory: STRING) is
 			-- Generate leading part (directions to /bin/sh)
 			-- for subdirectory Makefiles.
+		require
+			a_directory_not_void: a_directory /= Void
 		do
 			make_file.put_string ("case $CONFIG in%N'')%N")
 			make_file.put_string ("%
@@ -537,8 +530,7 @@ feature -- Generation, Header
 				%*/*) cd `expr X$0 : 'X\(.*\)/'` ;;%N%
 				%esac%N")
 			make_file.put_string ("%
-				%echo %"Extracting %".%"/Makefile%
-								% (with variable substitutions)%"%N%
+				%echo %"Compiling C code in " + a_directory + "...%"%N%
 				%$spitshell >Makefile <<!GROK!THIS!%N")
 		end
 
@@ -576,7 +568,7 @@ feature -- Generation, Header
 			end
 
 			generate_specific_defines
-			make_file.put_string ("-I$rt_include ")
+			make_file.put_string ("-I%"$rt_include%" ")
 			make_file.put_string ("-I. %H$(INCLUDE_PATH)%N")
 
 			if System.in_final_mode then
@@ -601,7 +593,7 @@ feature -- Generation, Header
 
 			generate_specific_defines
 
-			make_file.put_string ("-I$rt_include ")
+			make_file.put_string ("-I%"$rt_include%" ")
 			make_file.put_string ("-I. %H$(INCLUDE_PATH)%N")
 
 			make_file.put_string ("LDFLAGS = $ldflags%N")
@@ -644,7 +636,7 @@ feature -- Generation, Header
 				%FILE_EXIST = $file_exist%N%
 				%RMDIR = $rmdir%N")
 
-			make_file.put_string ("X2C = $x2c%N")
+			make_file.put_string ("X2C = %"$x2c%"%N")
 			make_file.put_string ("SHAREDLINK = $sharedlink%N")
 			make_file.put_string ("SHAREDLIBS = $sharedlibs%N")
 			make_file.put_string ("SHARED_SUFFIX = $shared_suffix%N")
@@ -739,6 +731,7 @@ feature -- Generation, External archives and object files.
 					l_ext := object_file_names.i_th (i)
 					if l_ext.is_enabled (universe.conf_state) then
 						l_path := l_ext.location
+						safe_external_path (l_path, False)
 							-- don't add the same object multiple times
 						if not l_added_objects.has (l_path) then
 							l_added_objects.force (l_path)
@@ -768,6 +761,7 @@ feature -- Generation, External archives and object files.
 					l_ext := object_file_names.i_th (i)
 					if l_ext.is_enabled (universe.conf_state) then
 						l_path := l_ext.location
+						safe_external_path (l_path, False)
 							-- don't add the same library multiple times
 						if not l_added_objects.has (l_path) then
 							l_added_objects.force (l_path)
@@ -807,6 +801,7 @@ feature -- Generation, External archives and object files.
 					l_ext := include_paths.i_th (i)
 					if l_ext.is_enabled (universe.conf_state) then
 						l_path := l_ext.location
+						safe_external_path (l_path, False)
 							-- all remaining $ are by choice so mask them
 						l_path.replace_substring_all ("$", "\$")
 							-- because its possible that they were already masked, correct double masking
@@ -847,6 +842,7 @@ feature -- Generation, External archives and object files.
 				l_ext := makefile_names.i_th (i)
 				if l_ext.is_enabled (universe.conf_state) then
 					l_path := l_ext.location
+					safe_external_path (l_path, False)
 					if not l_added_make.has (l_path) then
 						l_added_make.force (l_path)
 						make_file.put_string (" ")
@@ -870,6 +866,12 @@ feature -- Generation (Linking rules)
 			make_file.put_string ("OBJECTS= lib")
 			make_file.put_string (system_name)
 			make_file.put_string (".obj")
+			make_file.put_new_line
+			make_file.put_new_line
+
+			make_file.put_string ("PRECOMP_OBJECTS= ")
+			generate_precompile_objects
+			make_file.put_new_line
 			make_file.put_new_line
 
 				-- Continue the declaration for the IL_SYSTEM
@@ -908,7 +910,13 @@ feature -- Generation (Linking rules)
 			generate_objects_macros
 			make_file.put_character (' ')
 			generate_system_objects_macros
-			make_file.put_string ("%N")
+			make_file.put_new_line
+			make_file.put_new_line
+
+			make_file.put_string ("PRECOMP_OBJECTS= ")
+			generate_precompile_objects
+			make_file.put_new_line
+			make_file.put_new_line
 
 			make_file.put_new_line
 			make_file.put_string (system_name)
@@ -940,8 +948,7 @@ feature -- Generation (Linking rules)
 			make_file.put_string ("/emain.o ")
 			make_file.put_character (Continuation)
 			make_file.put_new_line
-			generate_other_objects
-			make_file.put_string ("%T%T$(EXTERNALS) $(EIFLIB) $(LIBS)%N")
+			make_file.put_string ("%T%T$(PRECOMP_OBJECTS) $(EXTERNALS) $(EIFLIB) $(LIBS)%N")
 
 			generate_additional_rules
 			make_file.put_new_line
@@ -951,7 +958,7 @@ feature -- Generation (Linking rules)
 		do
 		end
 
-	generate_other_objects is
+	generate_precompile_objects is
 		do
 		end
 
@@ -1087,10 +1094,10 @@ feature -- Generation (Linking rules)
 			make_file.put_string (packet_name (system_object_prefix, 1))
 			make_file.put_string ("/emain.o: Makefile ")
 			make_file.put_string (packet_name (system_object_prefix, 1))
-			make_file.put_string ("/Makefile $(EIFTEMPLATES)/")
+			make_file.put_string ("/Makefile")
+			make_file.put_string ("%N%T$(CP) %"$(EIFTEMPLATES)/")
 			make_file.put_string (emain_file)
-			make_file.put_string ("%N%T$(CP) $(EIFTEMPLATES)/")
-			make_file.put_string (emain_file)
+			make_file.put_character ('"')
 			make_file.put_character (' ')
 			make_file.put_string (packet_name (system_object_prefix, 1))
 			make_file.put_string ("/emain.c")
@@ -1296,6 +1303,33 @@ feature {NONE} -- Implementation
 			retry
 		end
 
+	safe_external_path (a_path: STRING; a_force_quotation: BOOLEAN) is
+			-- If `a_path' has no white spaces or if `a_force_quotation', add the `"' around it.
+			-- If it has some white spaces, we cannot do anything since it would
+			-- break existing code.
+		require
+			a_path_not_void: a_path /= Void
+			a_path_not_empty: not a_path.is_empty
+		do
+			a_path.left_adjust
+			a_path.right_adjust
+			if
+				a_force_quotation or else
+				(not a_path.has (' ') and not a_path.has ('%T'))
+			then
+					-- If the path has no white space, then we can safely add the " around it
+					-- so that it will work in case the path is expanded with an environment
+					-- variable containing spaces. Of course we only do it if no " are already
+					-- present.
+				if a_path.item (1) /= '"' then
+					a_path.prepend_character ('"')
+				end
+				if a_path.item (a_path.count) /= '"' then
+					a_path.append_character ('"')
+				end
+			end
+		end
+
 feature {NONE} -- Constants
 
 	lib_location: STRING is
@@ -1316,10 +1350,10 @@ feature {NONE} -- Constants
 			-- Addition library if boehm is selected
 		do
 			if not system.uses_ise_gc_runtime and then system.external_runtime.as_lower.is_equal ("boehm") then
-				Result := " \$(ISE_EIFFEL)/studio/spec/\$(ISE_PLATFORM)/lib-boehm/"
+				Result := " %"\$(ISE_EIFFEL)/studio/spec/\$(ISE_PLATFORM)/lib-boehm/"
 				Result.append ("$prefix")
 				Result.append ("$boehmgclib")
-				Result.append ("$suffix")
+				Result.append ("$suffix%"")
 			else
 				Result := ""
 			end

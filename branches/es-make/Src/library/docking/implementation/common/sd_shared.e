@@ -74,6 +74,12 @@ feature -- Access
 			Result := Auto_hide_tab_slide_timer_interval_cell.item
 		end
 
+	show_all_tab_stub_text: BOOLEAN is
+			-- When more than one tab stubs stay together at side of main window, show inactive tab stub text?
+		do
+			Result := show_tab_stub_text_cell.item
+		end
+
 	tool_bar_font: EV_FONT is
 			-- Tool bar font
 		local
@@ -201,6 +207,14 @@ feature -- Status setting
 			auto_hide_tab_slide_timer_interval_cell.put (a_int)
 		ensure
 			set: auto_hide_tab_slide_timer_interval = a_int
+		end
+
+	set_show_tab_stub_text (a_bool: BOOLEAN) is
+			-- Set `show_tab_stub_text_cell' with `a_bool'
+		do
+			show_tab_stub_text_cell.put (a_bool)
+		ensure
+			set: show_all_tab_stub_text =  a_bool
 		end
 
 	set_tool_bar_docker_mediator (a_mediator: SD_TOOL_BAR_DOCKER_MEDIATOR) is
@@ -371,11 +385,10 @@ feature -- Constants
 		local
 			l_platform: PLATFORM
 		once
+			Result := notebook_tab_height
 			create l_platform
 			if l_platform.is_windows then
-				Result := 20
-			else
-				Result := notebook_tab_height
+				Result := Result + 2
 			end
 		end
 
@@ -390,15 +403,8 @@ feature -- Constants
 
 	title_bar_height: INTEGER is
 			-- Size of zone's title bar.
-		local
-			l_platform: PLATFORM
-		once
-			create l_platform
-			if l_platform.is_windows then
-				Result := 18
-			else
-				Result := tool_bar_font.height * 3 // 2 + 2
-			end
+		do
+			Result := tool_bar_font.height * 3 // 2 + 2
 		end
 
 	Notebook_tab_height: INTEGER is
@@ -406,11 +412,10 @@ feature -- Constants
 		local
 			l_platform: PLATFORM
 		once
+			Result := tool_bar_font.height * 3 // 2
 			create l_platform
 			if l_platform.is_windows then
-				Result := 18
-			else
-				Result := tool_bar_font.height * 3 // 2
+				Result := Result + 2
 			end
 		end
 
@@ -431,12 +436,6 @@ feature -- Constants
 
 	Tool_bar_hidden_item_dialog_max_width: INTEGER is 400
 			-- Tool bar hidden item dialog maximum allowed width.
-
-	Tool_bar_border_width: INTEGER is
-			--
-		do
-			Result := 10
-		end
 
 	Default_floating_window_width: INTEGER is 470
 			-- Default floating window width.
@@ -476,9 +475,6 @@ feature -- Constants
 
 	Feedback_tab_width: INTEGER is 60
 			-- When user dragging, the width of feedback rectangle for tab.
-
-	Floating_title_bar_height: INTEGER is 15
-			-- Height of SD_FLOATING_TOOL_BAR_ZONE's title bar.
 
 	Notebook_minimum_width: INTEGER is 77
 			-- Minimumu width for SD_NOTEBOOK, it's useful when a zone is minimized.	
@@ -567,6 +563,14 @@ feature {NONE} -- Implementation
 
 	allow_window_to_back_cell: CELL [BOOLEAN] is
 			-- Cell hold `allow_window_to_back'.
+		once
+			create Result
+		ensure
+			not_void: Result /= Void
+		end
+
+	show_tab_stub_text_cell: CELL [BOOLEAN] is
+			-- Cell hold `show_tab_stub_text'.
 		once
 			create Result
 		ensure

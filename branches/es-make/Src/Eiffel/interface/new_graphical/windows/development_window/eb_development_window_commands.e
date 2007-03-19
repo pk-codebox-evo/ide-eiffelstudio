@@ -134,6 +134,12 @@ feature -- Query
 	open_layout_command: EB_OPEN_LAYOUT_COMMAND
 			-- Open layout command.
 
+	lock_tool_bar_command: EB_LOCK_TOOL_BAR_COMMAND
+			-- Lock tool bar command
+
+	lock_docking_command: EB_LOCK_DOCKING_COMMAND
+			-- Lock tools docking mechanism command
+
 feature -- Commands
 
 	toolbarable_commands: ARRAYED_LIST [EB_TOOLBARABLE_COMMAND]
@@ -147,6 +153,9 @@ feature -- Commands
 
 	show_toolbar_commands: HASH_TABLE [EB_SHOW_TOOLBAR_COMMAND, SD_TOOL_BAR_CONTENT]
 			-- Commands to show/hide a toolbar.
+
+	simple_shortcut_commands: ARRAYED_LIST [EB_SIMPLE_SHORTCUT_COMMAND]
+			-- Simple shortcut commands.
 
 feature {EB_DEVELOPMENT_WINDOW_BUILDER, EB_DEVELOPMENT_WINDOW_TOOLBAR_BUILDER, EB_DEVELOPMENT_WINDOW} -- Settings
 
@@ -406,6 +415,30 @@ feature {EB_DEVELOPMENT_WINDOW_BUILDER, EB_DEVELOPMENT_WINDOW_TOOLBAR_BUILDER} -
 			save_layout_as_command := a_cmd
 		ensure
 			set: save_layout_as_command = a_cmd
+		end
+
+	set_simple_shortcut_commands (a_cmd: like simple_shortcut_commands) is
+			-- Set `save_layout_as_command'
+		do
+			simple_shortcut_commands := a_cmd
+		ensure
+			set: simple_shortcut_commands = a_cmd
+		end
+		
+	set_lock_tool_bar_command (a_cmd: like lock_tool_bar_command) is
+			-- Set `lock_tool_bar_command'
+		do
+			lock_tool_bar_command := a_cmd
+		ensure
+			set: lock_tool_bar_command = a_cmd
+		end
+
+	set_lock_docking_command (a_cmd: like lock_docking_command) is
+			-- Set `lock_docking_command'
+		do
+			lock_docking_command := a_cmd
+		ensure
+			set: lock_docking_command = a_cmd
 		end
 
 feature -- Recycle

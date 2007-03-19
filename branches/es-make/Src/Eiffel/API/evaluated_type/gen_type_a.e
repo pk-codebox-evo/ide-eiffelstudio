@@ -19,7 +19,7 @@ inherit
 			same_as, format, is_equivalent,
 			deep_actual_type, instantiation_in,
 			actual_argument_type, update_dependance, hash_code,
-			is_full_named_type, process
+			is_full_named_type, process, evaluated_type_in_descendant
 		end
 
 create
@@ -217,23 +217,6 @@ feature {COMPILER_EXPORTER} -- Primitives
 			generics_set: generics = g
 		end
 
-	has_formal: BOOLEAN is
-			-- Are some formal generic parameter present in the array
-			-- `generics' ?
-		local
-			i, count: INTEGER
-		do
-			from
-				i := 1
-				count := generics.count
-			until
-				i > count or else Result
-			loop
-				Result := generics.item (i).is_formal
-				i := i + 1
-			end
-		end
-
 	has_expanded: BOOLEAN is
 			-- Are some expanded type in the current generic declaration ?
 		local
@@ -383,7 +366,8 @@ feature {COMPILER_EXPORTER} -- Primitives
 					new_generics.put (generics.item (i).actual_argument_type (a_arg_types), i)
 					i := i + 1
 				end
-				create Result.make (class_id, new_generics)
+				Result := twin
+				Result.set_generics (new_generics)
 				Result.set_mark (declaration_mark)
 			end
 		end
@@ -443,11 +427,40 @@ feature {COMPILER_EXPORTER} -- Primitives
 			end
 		end
 
+	evaluated_type_in_descendant (a_ancestor, a_descendant: CLASS_C; a_feature: FEATURE_I): like Current is
+		local
+			i, nb: INTEGER
+			new_generics: like generics
+		do
+			if a_ancestor /= a_descendant then
+				if is_loose then
+					from
+						nb := generics.count
+						create new_generics.make (1, nb)
+						i := 1
+					until
+						i > nb
+					loop
+						new_generics.put (
+							generics.item (i).evaluated_type_in_descendant (a_ancestor, a_descendant, a_feature),
+							i)
+						i := i + 1
+					end
+					Result := twin
+					Result.set_generics (new_generics)
+				else
+					Result := Current
+				end
+			else
+				Result := Current
+			end
+		end
+
 	valid_generic (type: CL_TYPE_A): BOOLEAN is
 			-- Check generic parameters
 		local
 			i, count: INTEGER
-			gen_type: like Current
+			gen_type: GEN_TYPE_A
 			gen_type_generics: like generics
 		do
 			if class_id = type.class_id then

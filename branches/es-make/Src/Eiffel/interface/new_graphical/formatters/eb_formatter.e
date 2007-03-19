@@ -13,6 +13,9 @@ inherit
 	SHARED_CONFIGURE_RESOURCES
 
 	EB_RADIO_COMMAND_FEEDBACK
+		redefine
+			update
+		end
 
 	EB_SHARED_WINDOW_MANAGER
 
@@ -77,11 +80,58 @@ feature -- Properties
 		deferred
 		end
 
+	name: STRING_GENERAL is
+			-- Name of Current formatter
+		do
+			Result := command_name.twin
+		ensure
+			result_attached: Result /= Void
+		end
+
+	displayer_generator: TUPLE [generator: FUNCTION [ANY, TUPLE, like displayer]; name: STRING] is
+			-- Generator to generate proper `displayer' for Current formatter
+		deferred
+		ensure
+			result_attached: Result /= Void
+			result_valid: Result.generator /= Void and then (Result.name /= Void and then not Result.name.is_empty)
+		end
+
+	control_bar: EV_WIDGET is
+			-- Possible area to display a tool bar
+		deferred
+		end
+
+	displayer: EB_FORMATTER_DISPLAYER is
+			-- Displayer used to display Result of Current formatter
+		deferred
+		end
+
+feature -- Displayer factory
+
+	displayer_generators: EB_FORMATTER_DISPLAYERS is
+			-- Displayer generators
+		once
+			create Result
+		ensure
+			result_attached: Result /= Void
+		end
+
 feature -- Status report
 
 	is_dotnet_formatter: BOOLEAN is
 			-- Is Current able to format .NET class texts?
 		deferred
+		end
+
+	is_valid: BOOLEAN is
+			-- Is Current formatter valid?
+		do
+			Result := True
+		end
+
+	is_customized_fomatter: BOOLEAN is
+			-- Is Current a customized formatter?
+		do
 		end
 
 feature -- Setting
@@ -130,6 +180,55 @@ feature -- Setting
 		deferred
 		end
 
+	synchronize is
+			-- Check validity of Current formatter.
+			-- Update UI according to validity of Current formatter if displayed.
+		do
+			if is_valid then
+				enable_sensitive
+				widget.enable_sensitive
+			else
+				disable_sensitive
+				widget.disable_sensitive
+			end
+		end
+
+	set_displayer (a_displayer: like displayer) is
+			-- Set `a_displayer' into Current.
+		deferred
+		end
+
+	update (a_window: EV_WINDOW) is
+			-- Update `accelerator' and interfaces according to `referred_shortcut'.
+		local
+			mname: STRING_GENERAL
+			tt: STRING_GENERAL
+		do
+			Precursor {EB_RADIO_COMMAND_FEEDBACK} (a_window)
+			if menu_item /= Void then
+				mname := menu_name.twin
+				if shortcut_available then
+					mname.append (tabulation)
+					mname.append (shortcut_string)
+				end
+				menu_item.set_text (mname)
+			end
+			tt := capital_command_name.twin
+			if shortcut_available then
+				tt.append (opening_parenthesis)
+				tt.append (shortcut_string)
+				tt.append (closing_parenthesis)
+			end
+			if button /= Void then
+				button.set_tooltip (tt)
+			end
+			if sd_button /= Void then
+				sd_button.set_tooltip (tt)
+				sd_button.set_name (capital_command_name)
+				sd_button.set_description (capital_command_name)
+			end
+		end
+
 feature -- Formatting
 
 	format is
@@ -158,9 +257,9 @@ feature -- Interface
 			mname: STRING_GENERAL
 		do
 			mname := menu_name.twin
-			if accelerator /= Void then
+			if shortcut_available then
 				mname.append (Tabulation)
-				mname.append (accelerator.out)
+				mname.append (shortcut_string)
 			end
 			create Result.make_with_text (mname)
 			set_menu_item (Result)
@@ -174,9 +273,9 @@ feature -- Interface
 			create Result
 			Result.set_pixmap (symbol @ 1)
 			tt := capital_command_name.twin
-			if accelerator /= Void then
+			if shortcut_available then
 				tt.append (Opening_parenthesis)
-				tt.append (accelerator.out)
+				tt.append (shortcut_string)
 				tt.append (Closing_parenthesis)
 			end
 			Result.set_tooltip (tt)
@@ -193,9 +292,9 @@ feature -- Interface
 			Result.set_pixmap (symbol @ 1)
 			Result.set_pixel_buffer (pixel_buffer)
 			tt := capital_command_name.twin
-			if accelerator /= Void then
+			if shortcut_available then
 				tt.append (Opening_parenthesis)
-				tt.append (accelerator.out)
+				tt.append (shortcut_string)
 				tt.append (Closing_parenthesis)
 			end
 			Result.set_tooltip (tt)
@@ -243,7 +342,12 @@ feature -- Actions
 				widget_owner.set_widget (widget)
 				display_header
 			end
-			format
+			synchronize
+			if is_valid then
+				format
+			else
+				reset_display
+			end
 		end
 
 	on_hidden is
@@ -397,9 +501,6 @@ feature {NONE} -- Implementation
 	internal_displayed: BOOLEAN
 			-- Is `widget's parent visible?
 
-	internal_widget: EV_WIDGET
-			-- Widget corresponding to `editor's text area.
-
 	must_format: BOOLEAN
 			-- Is a call to `format' really necessary?
 			-- (i.e. has the stone changed since last call?)
@@ -491,6 +592,11 @@ feature {NONE} -- Implementation
 			else
 				internal_empty_widget.drop_actions.extend (agent on_stone_drop)
 			end
+		end
+
+	retrieve_sorting_order is
+			-- Retrieve last recored sorting order.
+		do
 		end
 
 indexing
