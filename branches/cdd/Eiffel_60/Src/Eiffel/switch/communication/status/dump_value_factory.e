@@ -63,7 +63,25 @@ feature -- Access
 			init_value (Result)
 		end
 
-	new_integer_32_value  (value: INTEGER; dtype: CLASS_C): DUMP_VALUE_BASIC is
+
+	new_integer_8_value  (value: INTEGER_8; dtype: CLASS_C): DUMP_VALUE_BASIC is
+			-- make a integer item initialized to `value'
+		do
+			create Result.make_empty (debugger_manager)
+			Result.set_integer_8_value (value, dtype)
+			init_value (Result)
+		end
+
+
+	new_integer_16_value  (value: INTEGER_16; dtype: CLASS_C): DUMP_VALUE_BASIC is
+			-- make a integer item initialized to `value'
+		do
+			create Result.make_empty (debugger_manager)
+			Result.set_integer_16_value (value, dtype)
+			init_value (Result)
+		end
+
+	new_integer_32_value  (value: INTEGER_32; dtype: CLASS_C): DUMP_VALUE_BASIC is
 			-- make a integer item initialized to `value'
 		do
 			create Result.make_empty (debugger_manager)
@@ -111,7 +129,7 @@ feature -- Access
 			init_value (Result)
 		end
 
-	new_real_value (value: REAL; dtype: CLASS_C): DUMP_VALUE_BASIC is
+	new_real_32_value (value: REAL_32; dtype: CLASS_C): DUMP_VALUE_BASIC is
 			-- make a real item initialized to `value'
 		do
 			create Result.make_empty (debugger_manager)

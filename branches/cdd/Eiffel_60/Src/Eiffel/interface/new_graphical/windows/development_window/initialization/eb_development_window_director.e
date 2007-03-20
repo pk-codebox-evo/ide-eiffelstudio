@@ -28,6 +28,7 @@ feature -- Command
 			-- Create a new development window.
 		local
 			l_x, l_y: INTEGER
+			l_debugger_manager: EB_DEBUGGER_MANAGER
 		do
 			internal_construct
 			l_x := develop_window.window.x_position
@@ -35,7 +36,14 @@ feature -- Command
 			develop_window.window.set_position ({INTEGER_16}.min_value, {INTEGER_16}.min_value)
 			develop_window.window.show_actions.block
 			develop_window.window.show
-			develop_window.restore_tools_docking_layout
+
+			l_debugger_manager ?= develop_window.debugger_manager
+			if not develop_window.development_window_data.is_force_debug_mode or l_debugger_manager = Void then
+				develop_window.restore_tools_docking_layout
+			else
+				l_debugger_manager.force_debug_mode_cmd.execute_for_opening (False)
+			end
+
 			develop_window.window.unlock_update
 			develop_window.window.hide
 			develop_window.window.set_position (l_x, l_y)
@@ -91,6 +99,10 @@ feature -- Command
 				develop_window := a_dev_window
 			end
 				-- Initial editors.
+			if develop_window.editors_manager.show_formatting_marks /= a_session_data.show_formatter_marks then
+				develop_window.editors_manager.toggle_formatting_marks
+				develop_window.refresh_toggle_formatting_marks_command
+			end
 			l_has_editor_restored := develop_window.editors_manager.restore_editors (a_session_data.open_classes, a_session_data.open_clusters)
 			if l_has_editor_restored then
 				develop_window.restore_editors_docking_layout
@@ -226,6 +238,7 @@ feature{NONE} -- Implementation
 
 			develop_window.set_initialized_for_builder (True)
 			develop_window.set_is_destroying (False)
+			develop_window.customized_tool_manager.change_actions.extend (develop_window.agents.on_customized_tools_changed_agent)
 		end
 
 	main_builder: EB_DEVELOPMENT_WINDOW_MAIN_BUILDER

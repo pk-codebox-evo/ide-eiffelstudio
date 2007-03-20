@@ -39,8 +39,6 @@ feature {NONE} -- Initialization
 			-- Set up the callback marshal and initialize GTK+.
 		local
 			locale_str: STRING
-			l_display: POINTER
-			l_cs: EV_GTK_C_STRING
 		do
 			base_make (an_interface)
 
@@ -64,7 +62,7 @@ feature {NONE} -- Initialization
 					-- 0 = No messages, 1 = Gtk Log Messages, 2 = Gtk Log Messages with Eiffel exception.
 				{EV_GTK_EXTERNALS}.gdk_set_show_events (False)
 
-			--	{EV_GTK_EXTERNALS}.gtk_widget_set_default_colormap ({EV_GTK_EXTERNALS}.gdk_rgb_get_cmap)
+				{EV_GTK_EXTERNALS}.gtk_widget_set_default_colormap ({EV_GTK_EXTERNALS}.gdk_rgb_get_cmap)
 
 				gtk_dependent_initialize
 				create window_oids.make
@@ -177,7 +175,7 @@ feature {EV_ANY_I} -- Implementation
 
 	fd_select (a_fd, a_timeout: INTEGER): INTEGER
 		external
-			"C inline use <stdio.h>, <sys/time.h>, <sys/types.h>, <unistd.h>"
+			"C inline use <gdk/gdkx.h>"
 		alias
 			"[
 				fd_set rfds;
@@ -277,6 +275,10 @@ feature {EV_ANY_I} -- Implementation
 							captured_widget /= Void
 						then
 							l_pnd_imp ?= captured_widget.implementation
+						elseif
+							pick_and_drop_source /= Void
+						then
+							l_pnd_imp := pick_and_drop_source
 						else
 							l_pnd_imp ?= gtk_widget_from_gdk_window (stored_display_data.window)
 						end
@@ -336,16 +338,20 @@ feature {EV_ANY_I} -- Implementation
 						debug ("GDK_EVENT")
 							print ("GDK_SCROLL%N")
 						end
-						if focused_popup_window /= Void then
-							focused_popup_window.handle_mouse_button_event (
-								{EV_GTK_EXTERNALS}.gdk_button_press_enum,
-								2,
-								{EV_GTK_EXTERNALS}.gdk_event_scroll_struct_x_root (gdk_event).truncated_to_integer,
-								{EV_GTK_EXTERNALS}.gdk_event_scroll_struct_y_root (gdk_event).truncated_to_integer
-								)
+						if not is_in_transport then
+							if focused_popup_window /= Void then
+								focused_popup_window.handle_mouse_button_event (
+									{EV_GTK_EXTERNALS}.gdk_button_press_enum,
+									2,
+									{EV_GTK_EXTERNALS}.gdk_event_scroll_struct_x_root (gdk_event).truncated_to_integer,
+									{EV_GTK_EXTERNALS}.gdk_event_scroll_struct_y_root (gdk_event).truncated_to_integer
+									)
+							end
+							l_propagate_event := True
+						else
+							l_call_event := False
 						end
 						user_events_processed_from_underlying_toolkit := True
-						l_propagate_event := True
 					when GDK_PROXIMITY_IN, GDK_PROXIMITY_OUT then
 						debug ("GDK_EVENT")
 							print ("GDK_PROXIMITY_IN%N")
@@ -397,12 +403,11 @@ feature {EV_ANY_I} -- Implementation
 						debug ("GDK_EVENT")
 							print ("GDK_MAP%N")
 						end
-						if {EV_GTK_EXTERNALS}.gtk_widget_toplevel (event_widget) then
-							l_top_level_window_imp ?= eif_object_from_gtk_object (event_widget)
-							if l_top_level_window_imp /= Void then
-								l_top_level_window_imp.on_widget_mapped
-							end
+						l_widget_imp ?= eif_object_from_gtk_object (event_widget)
+						if l_widget_imp /= Void then
+							l_widget_imp.on_widget_mapped
 						end
+						l_widget_imp := Void
 					when GDK_UNMAP then
 						debug ("GDK_EVENT")
 							print ("GDK_UNMAP%N")
@@ -451,18 +456,22 @@ feature {EV_ANY_I} -- Implementation
 						then
 							{EV_GTK_EXTERNALS}.gdk_window_get_user_data (l_gdk_window, $l_gtk_widget_ptr)
 							if l_gtk_widget_ptr /= default_pointer then
-								l_widget_imp ?= {EV_ANY_IMP}.eif_object_from_c (l_gtk_widget_ptr)
-								if l_widget_imp /= Void then
-									l_top_level_window_imp := l_widget_imp.top_level_window_imp
-									if l_top_level_window_imp = Void or else not l_top_level_window_imp.has_modal_window then
-										l_widget_imp.on_pointer_enter_leave ({EV_GTK_EXTERNALS}.gdk_event_any_struct_type (gdk_event) = GDK_ENTER_NOTIFY)
-									else
-										l_call_event := False
+								if not is_in_transport then
+									l_widget_imp ?= {EV_ANY_IMP}.eif_object_from_c (l_gtk_widget_ptr)
+									if l_widget_imp /= Void then
+										l_top_level_window_imp := l_widget_imp.top_level_window_imp
+										if l_top_level_window_imp = Void or else not l_top_level_window_imp.has_modal_window then
+											l_widget_imp.on_pointer_enter_leave ({EV_GTK_EXTERNALS}.gdk_event_any_struct_type (gdk_event) = GDK_ENTER_NOTIFY)
+										else
+											l_call_event := False
+										end
+										l_gtk_widget_imp := Void
+										l_top_level_window_imp := Void
+										l_gtk_widget_ptr := default_pointer
+										l_widget_imp := Void
 									end
-									l_gtk_widget_imp := Void
-									l_top_level_window_imp := Void
-									l_gtk_widget_ptr := default_pointer
-									l_widget_imp := Void
+								else
+									l_call_event := False
 								end
 							end
 						end
@@ -607,6 +616,41 @@ feature {NONE} -- Implementation
 			end
 		end
 
+feature -- Pick and Drop
+
+	rubber_band_is_drawn: BOOLEAN
+		-- Is the PnD rubber band drawn on screen?
+
+	draw_rubber_band is
+			-- Draw a segment between initial pick point and `destination'.
+		do
+			if rubber_band_is_drawn then
+					-- Undraw previous rubber band if any
+				pnd_screen.draw_segment (x_origin, y_origin, old_pointer_x, old_pointer_y)
+			end
+			set_old_pointer_x_y_origin (pick_and_drop_source.pointer_x, pick_and_drop_source.pointer_y)
+			pnd_screen.draw_segment (x_origin, y_origin, old_pointer_x, old_pointer_y)
+			rubber_band_is_drawn := True
+		end
+
+	erase_rubber_band is
+			-- Erase previously drawn rubber band.
+		do
+			if rubber_band_is_drawn then
+				pnd_screen.draw_segment (x_origin, y_origin, old_pointer_x, old_pointer_y)
+				rubber_band_is_drawn := False
+			end
+		end
+
+	pnd_screen: EV_SCREEN is
+			-- Screen object used for drawing PND transport line
+		once
+			create Result
+			Result.enable_dashed_line_style
+			Result.set_foreground_color ((create {EV_STOCK_COLORS}).white)
+			Result.set_invert_mode
+		end
+
 feature -- Access
 
 	ctrl_pressed: BOOLEAN is
@@ -717,6 +761,10 @@ feature -- Basic operation
 
 			if captured_widget /= Void then
 				l_pnd_item ?= captured_widget.implementation
+			elseif
+				pick_and_drop_source /= Void
+			then
+				l_pnd_item := pick_and_drop_source
 			else
 				l_gdk_window := l_stored_display_data.window
 				if l_gdk_window /= default_pointer then

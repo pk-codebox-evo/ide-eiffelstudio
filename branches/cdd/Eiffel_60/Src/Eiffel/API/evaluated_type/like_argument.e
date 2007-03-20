@@ -12,7 +12,7 @@ class LIKE_ARGUMENT
 inherit
 	LIKE_TYPE_A
 		redefine
-			actual_argument_type, is_like_argument, has_like_argument
+			actual_argument_type, is_like_argument, has_like_argument, evaluated_type_in_descendant
 		end
 
 feature -- Visitor
@@ -78,21 +78,23 @@ feature -- Output
 			Result.append (actual_dump)
 		end
 
-	ext_append_to (st: TEXT_FORMATTER; f: E_FEATURE) is
+	ext_append_to (st: TEXT_FORMATTER; c: CLASS_C) is
 		do
 			st.process_symbol_text (ti_L_bracket)
 			st.process_keyword_text (ti_Like_keyword, Void)
 			st.add_space
-			if f /= Void then
-				st.process_local_text (f.arguments.argument_names.i_th (position))
-			else
-				st.add (ti_Argument_index)
-				st.add_int (position)
-			end
+			--Martins 2/6/2007: this code here does not work anymore because of switch from E_FAETURE to CLASS_C
+			-- As it has to be removed anyway we do not spent any effort to enable it again.
+			-- if c /= Void then
+				--st.process_local_text (c.arguments.argument_names.i_th (position))
+			--else
+			st.add (ti_Argument_index)
+			st.add_int (position)
+
 			st.process_symbol_text (ti_R_bracket)
 			st.add_space
 			if is_valid then
-				actual_type.ext_append_to (st, f)
+				actual_type.ext_append_to (st, c)
 			end
 		end
 
@@ -104,6 +106,17 @@ feature {COMPILER_EXPORTER} -- Primitives
 		do
 			Result := twin
 			Result.set_actual_type (actual_type.instantiation_in (type, written_id))
+		end
+
+	evaluated_type_in_descendant (a_ancestor, a_descendant: CLASS_C; a_feature: FEATURE_I): like Current is
+		do
+			if a_ancestor /= a_descendant then
+				Result := twin
+				Result.set_actual_type (
+					a_feature.arguments.i_th (position).evaluated_type_in_descendant (a_ancestor, a_descendant, a_feature))
+			else
+				Result := Current
+			end
 		end
 
 	actual_argument_type (a_arg_types: ARRAY [TYPE_A]): TYPE_A is

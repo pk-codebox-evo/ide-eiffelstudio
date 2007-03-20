@@ -30,6 +30,7 @@ feature -- Building commands
 			build_address_toolbar
 			build_project_toolbar
 			build_refactoring_toolbar
+
 		end
 
 	build_general_toolbar is
@@ -51,7 +52,6 @@ feature -- Building commands
 
 				-- Create the command to show this toolbar.
 			create l_show_general_toolbar_command.make (l_content, develop_window.Interface_names.m_general_toolbar)
-			develop_window.commands.set_show_general_toolbar_command (l_show_general_toolbar_command)
 			develop_window.commands.show_toolbar_commands.force (l_show_general_toolbar_command, l_content)
 			if develop_window.development_window_data.show_general_toolbar then
 				l_show_general_toolbar_command.enable_visible
@@ -65,7 +65,6 @@ feature -- Building commands
 	build_address_toolbar is
 			-- Set up the address toolbar (Back, Forward, Current, Class name, feature name, ...)
 		local
-			l_accel: EV_ACCELERATOR
 			l_show_address_toolbar_command: EB_SHOW_TOOLBAR_COMMAND
 			l_sd_items: ARRAYED_SET [SD_TOOL_BAR_ITEM]
 			l_tool_bar_item: SD_TOOL_BAR_ITEM
@@ -81,19 +80,6 @@ feature -- Building commands
 				-- Forward icon
 			l_tool_bar_item := develop_window.history_manager.forth_command.new_sd_toolbar_item (False)
 			l_sd_items.extend (l_tool_bar_item)
-
-				-- Set up the accelerators.
-			create l_accel.make_with_key_combination (
-				create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.Key_right), False, True, False
-			)
-			l_accel.actions.extend (agent (develop_window.agents).on_forth)
-			develop_window.window.accelerators.extend (l_accel)
-
-			create l_accel.make_with_key_combination (
-				create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.Key_left), False, True, False
-			)
-			l_accel.actions.extend (agent (develop_window.agents).on_back)
-			develop_window.window.accelerators.extend (l_accel)
 
 			------------------------------------------
 			-- Address bar (Class name & feature name)
@@ -111,7 +97,6 @@ feature -- Building commands
 
 				-- Create the command to show this toolbar.
 			create l_show_address_toolbar_command.make (l_content, develop_window.Interface_names.m_address_toolbar)
-
 			develop_window.commands.show_toolbar_commands.force (l_show_address_toolbar_command, l_content)
 
 			if develop_window.development_window_data.show_address_toolbar then
@@ -155,8 +140,6 @@ feature -- Building commands
 
 				-- Create command to show this toolbar.
 			create l_show_project_toolbar_command.make (l_content, develop_window.Interface_names.m_project_toolbar)
-			develop_window.commands.set_show_project_toolbar_command (l_show_project_toolbar_command)
-
 			develop_window.commands.show_toolbar_commands.force (l_show_project_toolbar_command, l_content)
 
 			if develop_window.development_window_data.show_project_toolbar then
@@ -186,8 +169,8 @@ feature -- Building commands
 
 				-- Create the command to show this toolbar.
 			create l_show_tool_bar_command.make (l_content, develop_window.Interface_names.m_refactoring_toolbar)
-			develop_window.commands.set_show_refactoring_toolbar_command (l_show_tool_bar_command)
 			develop_window.commands.show_toolbar_commands.force (l_show_tool_bar_command, l_content)
+
 			if develop_window.development_window_data.show_refactoring_toolbar then
 				l_show_tool_bar_command.enable_visible
 			else

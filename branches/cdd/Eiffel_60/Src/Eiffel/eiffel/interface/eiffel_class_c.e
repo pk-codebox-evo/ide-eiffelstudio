@@ -22,6 +22,7 @@ inherit
 			melt_all, check_generics, check_generic_parameters,
 			check_creation_constraint_genericity,
 			check_constraint_genericity,
+			check_constraint_renaming,
 			feature_of_feature_id,
 			feature_with_rout_id
 		end
@@ -550,6 +551,8 @@ feature -- Third pass: byte code production and type check
 				feat_table.after
 			loop
 				feature_i := feat_table.item_for_iteration
+				ast_context.set_written_class (feature_i.written_class)
+				ast_context.set_current_feature (feature_i)
 				type_checked := False
 
 				if feature_i.to_melt_in (Current) then
@@ -604,7 +607,6 @@ feature -- Third pass: byte code production and type check
 							-- always melted
 						feature_changed := True
 					end
-					ast_context.set_current_feature (feature_i)
 
 						-- No type check for constants and attributes.
 						-- [It is done in second pass.]
@@ -689,8 +691,6 @@ feature -- Third pass: byte code production and type check
 						record_suppliers (feature_i, dependances)
 					end
 
-					ast_context.clear_feature_context
-
 					if
 						(feature_changed or else byte_code_generated)
 						and then not (type_check_error or else feature_i.is_deferred)
@@ -708,19 +708,13 @@ feature -- Third pass: byte code production and type check
 
 					if not type_checked and then changed3 and then feature_i.is_routine then
 							-- Forced type check on the feature
-						ast_context.set_current_feature (feature_i)
 						feature_checker.type_check_only (feature_i, False)
 						check_local_names_needed := False
-						ast_context.clear_feature_context
 					elseif check_local_names_needed then
-						ast_context.set_current_feature (feature_i)
 						feature_i.check_local_names (feature_i.real_body)
-						ast_context.clear_feature_context
 					end
-
 				elseif not feature_i.is_routine then
 					if feature_i.body_index /= 0 then
-						ast_context.set_current_feature (feature_i)
 						if
 							feature_changed
 							or else
@@ -757,17 +751,14 @@ feature -- Third pass: byte code production and type check
 						else
 							feature_checker.type_check_only (feature_i, False)
 						end
-						ast_context.clear_feature_context
 					end
 					record_suppliers (feature_i, dependances)
-				elseif feature_i.is_deferred and then class_id = feature_i.written_in then
-						-- Just type check it. See if VRRR or
-						-- VMRX error has occurred.
-					ast_context.set_current_feature (feature_i)
-					feature_checker.type_check_only (feature_i, False)
-					ast_context.clear_feature_context
+				elseif is_full_class_checking then
+						-- We check inherited routines in the context of current class.
+					feature_checker.type_check_only (feature_i, class_id /= feature_i.written_in)
 					record_suppliers (feature_i, dependances)
 				end
+				ast_context.clear_feature_context
 				feat_table.forth
 			end -- Main loop
 
@@ -1659,7 +1650,7 @@ feature {NONE} -- Class initialization
 				generic_name := generic_dec.name
 
 					-- First, check if the formal generic name is not the
-					-- anme of a class in the surrounding universe.
+					-- a name of a class in the surrounding universe.
 				if Universe.class_named (generic_name.name, cluster) /= Void then
 					create vcfg1
 					vcfg1.set_class (Current)
@@ -1671,6 +1662,8 @@ feature {NONE} -- Class initialization
 
 					-- Second, check if the formal generic name doesn't
 					-- appear twice in `generics'.
+
+					-- MTNASK: this is already done in the parser now. Remove the following code?
 				from
 					j := 0
 				until
@@ -1772,6 +1765,7 @@ feature {NONE} -- Class initialization
 					generic_dec_not_void: generic_dec /= Void
 				end
 				if generic_dec.has_constraint and then generic_dec.has_creation_constraint then
+						-- `check_constraint_genericity' has already been called in degree4
 					generic_dec.check_constraint_creation (Current)
 				end
 				i := i + 1
@@ -1780,26 +1774,38 @@ feature {NONE} -- Class initialization
 
 	check_constraint_genericity is
 			-- Check validity of constraint genericity
-		local
-			generic_dec: FORMAL_DEC_AS
-			constraint_type: TYPE_AS
-			l_area: SPECIAL [FORMAL_DEC_AS]
-			i, nb: INTEGER
 		do
 			Inst_context.set_group (cluster)
-			from
-				l_area := generics.area
-				nb := generics.count
-			until
-				i = nb
-			loop
-				generic_dec := l_area.item (i)
-				constraint_type := generic_dec.constraint
-				if constraint_type /= Void then
-					type_a_checker.check_constraint_type (Current, constraint_type, error_handler)
-				end
-				i := i + 1
-			end
+			generics.do_all (
+				agent (a_generic_dec: FORMAL_DEC_AS)
+					do
+						a_generic_dec.constraints.do_all (
+							agent (a_constraint: CONSTRAINING_TYPE_AS)
+								local
+									l_constraint_type: TYPE_AS
+								do
+									l_constraint_type := a_constraint.type
+									if l_constraint_type /= Void then
+										type_a_checker.check_constraint_type (Current, l_constraint_type, error_handler)
+									end
+								end)
+					end)
+		end
+
+	check_constraint_renaming
+			-- Check validity of constraint renaming
+		do
+				Inst_context.set_group (cluster)
+			generics.do_all (
+				agent (a_generic_dec: FORMAL_DEC_AS)
+					local
+						l_formal_constraint_as: FORMAL_CONSTRAINT_AS
+					do
+						l_formal_constraint_as ?= a_generic_dec
+						if l_formal_constraint_as /= Void and then l_formal_constraint_as.has_constraint then
+							l_formal_constraint_as.check_constraint_renaming (Current)
+						end
+					end)
 		end
 
 feature -- Supplier checking
@@ -1838,6 +1844,8 @@ feature -- Supplier checking
 	check_suppliers (supplier_list: SEARCH_TABLE [ID_AS]; a_light_suppliers: BOOLEAN) is
 			-- Check the supplier ids of the current parsed class
 			-- and add perhaps classes to the system.
+			--
+			-- `supplier_list' a list of suppliers to check.
 			-- `a_light_suppliers' indicates that we only record classes that are already compiled and in the system.
 		require
 			good_argument: not

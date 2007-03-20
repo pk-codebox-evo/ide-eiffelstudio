@@ -75,14 +75,19 @@ External_declaration:
 				root_node := $2
 				root_node.set_is_blocking_call ($1)
 			}
+	|	TE_BUILT_IN TE_STATIC
+			{
+				create {BUILT_IN_EXTENSION_AS} root_node.initialize (True)
+			}
+
 	|	TE_STATIC TE_BUILT_IN
 			{
-				create {BUILTIN_EXTENSION_AS} root_node.initialize (True)
+				create {BUILT_IN_EXTENSION_AS} root_node.initialize (True)
 			}
 
 	|	TE_BUILT_IN
 			{
-				create {BUILTIN_EXTENSION_AS} root_node.initialize (False)
+				create {BUILT_IN_EXTENSION_AS} root_node.initialize (False)
 			}
 	|	IL_specification
 			{

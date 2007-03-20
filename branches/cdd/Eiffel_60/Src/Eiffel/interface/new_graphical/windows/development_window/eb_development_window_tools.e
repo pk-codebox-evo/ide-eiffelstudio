@@ -42,6 +42,8 @@ feature -- Commands
 				if develop_window.has_case then
 					 diagram_tool.set_stone (a_stone)
 				end
+				develop_window.tools.set_stone_to_customized_tools (a_stone)
+
 				stone := a_stone
 			end
 		end
@@ -78,9 +80,7 @@ feature -- Commands
 					if stone /= Void then
 						stone := stone.synchronized_stone
 					end
-					class_tool.invalidate
-					features_relation_tool.invalidate
-					dependency_tool.invalidate
+					invalidate_tools
 					set_stone (stone)
 					if develop_window.has_case then
 						diagram_tool.synchronize
@@ -107,16 +107,44 @@ feature -- Commands
 
 	show_default_tool_of_feature
 		do
-			features_relation_tool.show
-			features_relation_tool.pop_default_formatter
-			features_relation_tool.set_focus
+			features_relation_tool.show_with_setting
 		end
 
 	show_default_tool_of_class
 		do
-			class_tool.show
-			class_tool.pop_default_formatter
-			class_tool.set_focus
+			class_tool.show_with_setting
+		end
+
+	set_stone_to_customized_tools (a_stone: STONE) is
+			-- Set `a_stone' to `customized_tools'.
+		local
+			l_cus_tools: like customized_tools
+			l_cursor: CURSOR
+		do
+			l_cus_tools := customized_tools
+			l_cursor := l_cus_tools.cursor
+			from
+				l_cus_tools.start
+			until
+				l_cus_tools.after
+			loop
+				l_cus_tools.item.set_stone (a_stone)
+				l_cus_tools.forth
+			end
+			l_cus_tools.go_to (l_cursor)
+		end
+
+	show_tool_by_id (a_id: STRING) is
+			-- Show the tool from `all_tools' whose id is `a_id' if possible.
+		require
+			a_id_attached: a_id /= Void
+		local
+			l_tool: EB_TOOL
+		do
+			l_tool := tool_by_id (a_id)
+			if l_tool /= Void then
+				l_tool.show_with_setting
+			end
 		end
 
 feature -- Query
@@ -165,6 +193,9 @@ feature -- Query
 			if features_relation_tool /= Void then
 				Result.extend (features_relation_tool)
 			end
+			if dependency_tool /= Void then
+				Result.extend (dependency_tool)
+			end
 			if metric_tool /= Void then
 				Result.extend (metric_tool)
 			end
@@ -181,6 +212,7 @@ feature -- Query
 				Result.extend (warnings_tool)
 			end
 			Result.append (develop_window.eb_debugger_manager.all_tools)
+			Result.append (customized_tools)
 		ensure
 			not_void: Result /= Void
 		end
@@ -247,6 +279,117 @@ feature -- Query
 	warnings_tool: EB_WARNINGS_TOOL
 			-- Warnings tool
 			-- This tool was orignal belong to context_tool
+
+	customized_tools: LIST [EB_CUSTOMIZED_TOOL] is
+			-- Customized tools
+		do
+			if customized_tools_internal = Void then
+				create {LINKED_LIST [EB_CUSTOMIZED_TOOL]} customized_tools_internal.make
+			end
+			Result := customized_tools_internal
+		ensure
+			result_attached: Result /= Void
+		end
+
+	satisfied_tools (a_tools: like all_tools; a_agent: FUNCTION [ANY, TUPLE [EB_TOOL], BOOLEAN]): like all_tools is
+			-- List of tools from `a_tools' which are satisfied by `a_agent'
+		require
+			a_tools_attached: a_tools /= Void
+			a_agent_attached: a_agent /= Void
+		do
+			Result := a_tools.twin
+			from
+				Result.start
+			until
+				Result.after
+			loop
+				if a_agent.item ([Result.item]) then
+					Result.forth
+				else
+					Result.remove
+				end
+			end
+		ensure
+			result_attached: Result /= Void
+		end
+
+	tools_by_id (a_tools: like all_tools; a_ids: LIST [STRING]; a_include: BOOLEAN): like all_tools is
+			-- Tools from `a_tools' whose IDs are in `a_ids' if `a_include' is True,
+			-- otherwise, return tools from `a_tools' whose IDS are not in `a_ids'.
+		require
+			a_tools_attached: a_tools /= Void
+			a_ids_attached: a_ids /= Void
+		local
+			l_set: DS_HASH_SET [STRING]
+		do
+			create l_set.make (a_ids.count)
+			a_ids.do_all (agent l_set.force_last)
+			Result := a_tools.twin
+			from
+				Result.start
+			until
+				Result.after
+			loop
+				if not (a_include xor l_set.has (Result.item.title_for_pre)) then
+					Result.forth
+				else
+					Result.remove
+				end
+			end
+		ensure
+			result_attached: Result /= Void
+		end
+
+	customized_tools_from_tools (a_tools: LIST [EB_TOOL]): LIST [EB_CUSTOMIZED_TOOL] is
+			-- Customized tools from `a_tools'.
+		require
+			a_tools_attached: a_tools /= Void
+			a_tools_valid: not a_tools.has (Void)
+		local
+			l_cursor: CURSOR
+			l_customized_tool: EB_CUSTOMIZED_TOOL
+		do
+			create {LINKED_LIST [EB_CUSTOMIZED_TOOL]} Result.make
+			l_cursor := a_tools.cursor
+			from
+				a_tools.start
+			until
+				a_tools.after
+			loop
+				if a_tools.item.is_customized_tool then
+					l_customized_tool ?= a_tools.item
+					Result.extend (l_customized_tool)
+				end
+				a_tools.forth
+			end
+			a_tools.go_to (l_cursor)
+		ensure
+			result_attached: Result /= Void
+		end
+
+	tool_by_id (a_id: STRING): EB_TOOL is
+			-- Tool from `all_tools' whose id is `a_id'
+			-- Void if no such tool is found.
+		require
+			a_id_attached: a_id /= Void
+		local
+			l_tools: like all_tools
+			l_cursor: CURSOR
+		do
+			l_tools := all_tools
+			l_cursor := l_tools.cursor
+			from
+				l_tools.start
+			until
+				l_tools.after or Result /= Void
+			loop
+				if l_tools.item.title_for_pre.is_equal (a_id) then
+					Result := l_tools.item
+				end
+				l_tools.forth
+			end
+			l_tools.go_to (l_cursor)
+		end
 
 feature {EB_DEVELOPMENT_WINDOW_MAIN_BUILDER, EB_DEVELOPMENT_WINDOW} -- Setting
 
@@ -392,6 +535,22 @@ feature {EB_DEVELOPMENT_WINDOW_MAIN_BUILDER, EB_DEVELOPMENT_WINDOW} -- Setting
 			windows_tool := a_tool
 		ensure
 			set: windows_tool = a_tool
+		end
+
+feature{NONE} -- Implementation
+
+	customized_tools_internal: like customized_tools
+			-- Implementation of `customized_tools'
+
+	invalidate_tools is
+			-- Invalidate tools which will force a refresh of all currently selected formatters.
+		do
+			class_tool.invalidate
+			features_relation_tool.invalidate
+			dependency_tool.invalidate
+			if not customized_tools.is_empty then
+				customized_tools.do_all (agent (a_tool: EB_CUSTOMIZED_TOOL) do a_tool.invalidate end)
+			end
 		end
 
 indexing

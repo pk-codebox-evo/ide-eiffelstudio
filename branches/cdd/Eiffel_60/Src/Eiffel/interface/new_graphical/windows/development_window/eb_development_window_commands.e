@@ -103,18 +103,6 @@ feature -- Query
 	save_as_cmd: EB_SAVE_FILE_AS_COMMAND
 			-- Command to save a class with a different file name.
 
-	show_general_toolbar_command: EB_SHOW_TOOLBAR_COMMAND
-			-- Command to show/hide the general toolbar.
-
-	show_project_toolbar_command: EB_SHOW_TOOLBAR_COMMAND
-			-- Command to show/hide the project toolbar.
-
-	show_refactoring_toolbar_command: EB_SHOW_TOOLBAR_COMMAND
-			-- Command to show/hide the refactoring toolbar.
-
-	show_address_toolbar_command: EB_SHOW_TOOLBAR_COMMAND
-			-- Command to show/hide the address toolbar.
-
 	Edit_external_commands_cmd: EB_EXTERNAL_COMMANDS_EDITOR is
 			-- Command that lets the user add new external commands to the tools menu.
 		once
@@ -139,6 +127,12 @@ feature -- Query
 
 	lock_docking_command: EB_LOCK_DOCKING_COMMAND
 			-- Lock tools docking mechanism command
+
+	customized_formatter_command: EB_SETUP_CUSTOMIZED_FORMATTER_COMMAND
+			-- Command to setup customzied formatter
+
+	customized_tool_command: EB_SETUP_CUSTOMIZED_TOOL_COMMAND
+			-- Command to setup customzied formatter			
 
 feature -- Commands
 
@@ -361,30 +355,6 @@ feature {EB_DEVELOPMENT_WINDOW_BUILDER, EB_DEVELOPMENT_WINDOW_TOOLBAR_BUILDER} -
 			set: editor_commands = a_commands
 		end
 
-	set_show_general_toolbar_command (a_cmd: like show_general_toolbar_command) is
-			-- Set `show_general_toolbar_command'
-		do
-			show_general_toolbar_command := a_cmd
-		ensure
-			set: show_general_toolbar_command = a_cmd
-		end
-
-	set_show_project_toolbar_command (a_cmd: like show_project_toolbar_command) is
-			-- Set `show_project_toolbar_command'
-		do
-			show_project_toolbar_command := a_cmd
-		ensure
-			set: show_project_toolbar_command = a_cmd
-		end
-
-	set_show_refactoring_toolbar_command (a_cmd: like show_refactoring_toolbar_command) is
-			-- Set `show_refactoring_toolbar_command'
-		do
-			show_refactoring_toolbar_command := a_cmd
-		ensure
-			set: show_refactoring_toolbar_command = a_cmd
-		end
-
 	set_reset_layout_command (a_cmd: like reset_layout_command) is
 			-- Set `reset_layout_command'
 		do
@@ -424,7 +394,7 @@ feature {EB_DEVELOPMENT_WINDOW_BUILDER, EB_DEVELOPMENT_WINDOW_TOOLBAR_BUILDER} -
 		ensure
 			set: simple_shortcut_commands = a_cmd
 		end
-		
+
 	set_lock_tool_bar_command (a_cmd: like lock_tool_bar_command) is
 			-- Set `lock_tool_bar_command'
 		do
@@ -439,6 +409,22 @@ feature {EB_DEVELOPMENT_WINDOW_BUILDER, EB_DEVELOPMENT_WINDOW_TOOLBAR_BUILDER} -
 			lock_docking_command := a_cmd
 		ensure
 			set: lock_docking_command = a_cmd
+		end
+
+	set_customized_formatter_command (a_cmd: like customized_formatter_command) is
+			-- Set `customized_formatter_command' with `a_cmd'.
+		do
+			customized_formatter_command := a_cmd
+		ensure
+			customized_formatter_command_set: customized_formatter_command = a_cmd
+		end
+
+	set_customized_tool_command (a_cmd: like customized_tool_command) is
+			-- Set `customized_tool_command' with `a_cmd'.
+		do
+			customized_tool_command := a_cmd
+		ensure
+			customized_tool_command_set: customized_tool_command = a_cmd
 		end
 
 feature -- Recycle
@@ -487,6 +473,16 @@ feature -- Recycle
 				end
 				toolbarable_commands.forth
 			end
+
+			from
+				show_toolbar_commands.start
+			until
+				show_toolbar_commands.after
+			loop
+				show_toolbar_commands.item_for_iteration.recycle
+				show_toolbar_commands.forth
+			end
+			show_toolbar_commands := Void
 
 			c_finalized_compilation_cmd := Void
 			c_finalized_compilation_cmd := Void

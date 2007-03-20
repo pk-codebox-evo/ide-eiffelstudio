@@ -206,7 +206,10 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 		do
 			if a_pointer /= pointer_style then
 				pointer_style := a_pointer
-				internal_set_pointer_style (a_pointer)
+				if is_displayed or else previous_gdk_cursor /= default_pointer then
+					internal_set_pointer_style (a_pointer)
+						-- `internal_set_pointer_style' will get called in `on_widget_mapped'				
+				end
 			end
 		end
 
@@ -222,12 +225,6 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 				a_cursor_ptr := a_cursor_imp.gdk_cursor_from_pointer_style
 			end
 			a_window := {EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object)
-			if a_window = default_pointer then
-					-- The widget hasn't been realized so we do the realization
-					-- to have a GdkWindow to set the pointer to.
-				{EV_GTK_EXTERNALS}.gtk_widget_realize (c_object)
-				a_window := {EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object)
-			end
 			if a_window /= default_pointer then
 				{EV_GTK_EXTERNALS}.gdk_window_set_cursor (a_window, a_cursor_ptr)
 			end
@@ -256,10 +253,17 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 			-- Grab keyboard focus.
 		local
 			l_window, l_widget: POINTER
+			l_interface: EV_ANY
+			l_app_imp: like app_implementation
 		do
+			l_app_imp := app_implementation
 				-- If any previous widget has the capture then disable it.
-			if app_implementation.captured_widget /= Void then
-				app_implementation.captured_widget.disable_capture
+				-- If a Pick and Drop is occurring we leave the capture as is.
+			if l_app_imp.captured_widget /= Void and then not l_app_imp.is_in_transport then
+				l_interface := interface
+				if l_interface /= l_app_imp.captured_widget then
+					l_app_imp.captured_widget.disable_capture
+				end
 			end
 			if {EV_GTK_EXTERNALS}.gtk_is_window (c_object) then
 				l_window := c_object

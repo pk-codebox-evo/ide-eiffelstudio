@@ -401,6 +401,9 @@ feature -- Status report
 			end
 		end
 
+	show_formatting_marks: BOOLEAN
+			-- Show formating marks?
+
 	not_backuped: INTEGER
 			-- Number of editors not backuped last time
 
@@ -669,6 +672,50 @@ feature -- Element change
 			synchronize_with_docking_manager
 		end
 
+	update_content_description (a_stone: STONE; a_content: SD_CONTENT) is
+			-- Update `a_content''s detail and description text which are readed from `a_stone'.
+		local
+			l_class_stone: CLASSI_STONE
+			l_cluster_stone: CLUSTER_STONE
+			l_shared: SD_SHARED
+			l_name: STRING_8
+		do
+			if a_content /= Void then
+				l_class_stone ?= a_stone
+				l_cluster_stone ?= a_stone
+				if l_class_stone /= Void then
+					a_content.set_description (interface_names.l_eiffel_class)
+					l_name := l_class_stone.file_name
+					if l_name /= Void then
+						a_content.set_detail (l_name)
+						a_content.set_tab_tooltip (l_name)
+					else
+						a_content.set_tab_tooltip (Void)
+					end
+				elseif l_cluster_stone /= Void then
+					a_content.set_description (interface_names.l_eiffel_cluster)
+
+					l_name := l_cluster_stone.group.location.evaluated_path
+					if l_name /= Void and l_cluster_stone.path /= Void then
+						l_name := l_name + l_cluster_stone.path
+					end
+
+					if l_name /= Void then
+						a_content.set_detail (l_name)
+						a_content.set_tab_tooltip (l_name)
+					else
+						a_content.set_tab_tooltip (Void)
+					end
+				else
+					-- We don't know this kind of stone.
+					create l_shared
+					a_content.set_description (l_shared.interface_names.zone_navigation_no_description_available)
+					a_content.set_detail (l_shared.interface_names.zone_navigation_no_detail_available)
+					a_content.set_tab_tooltip (Void)
+				end
+			end
+		end
+
 feature -- Basic operations
 
 	select_editor (a_editor: like current_editor) is
@@ -701,6 +748,26 @@ feature -- Basic operations
 				back_up_editor (l_editors.item)
 				l_editors.forth
 			end
+		end
+
+	toggle_formatting_marks is
+			-- Toggle formatting marks.
+		local
+			l_editors: like editors
+		do
+			from
+				l_editors := editors
+				l_editors.start
+			until
+				l_editors.after
+			loop
+				check
+					show_formatting_marks = l_editors.item.view_invisible_symbols
+				end
+				l_editors.item.toggle_view_invisible_symbols
+				l_editors.forth
+			end
+			show_formatting_marks := not show_formatting_marks
 		end
 
 feature -- Memory management
@@ -897,6 +964,9 @@ feature {NONE}-- Implementation
 		do
 			create last_created_editor.make (development_window)
 			last_created_editor.set_is_main_editor (True)
+			if show_formatting_marks /= last_created_editor.view_invisible_symbols then
+				last_created_editor.toggle_view_invisible_symbols
+			end
 			last_created_editor.widget.set_minimum_size (0, 0)
 			add_observers (last_created_editor)
 			last_created_editor.drop_actions.extend (agent on_drop (?, last_created_editor))
@@ -904,6 +974,9 @@ feature {NONE}-- Implementation
 			if editors_internal.off then
 				editors_internal.start
 			end
+		ensure
+			last_created_editor_not_void: last_created_editor /= Void
+			formatting_marks_set: show_formatting_marks = last_created_editor.view_invisible_symbols
 		end
 
 	has_editor_with_long_title (a_title: STRING_GENERAL): BOOLEAN is
@@ -1059,15 +1132,17 @@ feature {NONE}-- Implementation
 			until
 				a_editors.after or Result /= Void
 			loop
-				if a_editors.item.stone /= Void and then a_stone.is_equal (a_editors.item.stone) then
+				if a_editors.item.stone /= Void and then equal (a_stone, a_editors.item.stone) then
 					Result := a_editors.item
 				else
 					l_file_stone1 ?= a_stone
 					l_file_stone2 ?= a_editors.item.stone
-					if l_file_stone1 /= Void and l_file_stone2 /= Void then
-						if l_file_stone1.file_name.is_equal (l_file_stone2.file_name) then
-							Result := a_editors.item
-						end
+					if
+						(l_file_stone1 /= Void and l_file_stone2 /= Void) and then
+						(l_file_stone1.is_valid and l_file_stone2.is_valid) and then
+						equal (l_file_stone1.file_name, l_file_stone2.file_name)
+					then
+						Result := a_editors.item
 					end
 				end
 				a_editors.forth
@@ -1130,38 +1205,6 @@ feature {NONE}-- Implementation
 					else
 						fake_editors.forth
 					end
-				end
-			end
-		end
-
-	update_content_description (a_stone: STONE; a_content: SD_CONTENT) is
-			-- Update `a_content''s detail and description text which are readed from `a_stone'.
-		local
-			l_class_stone: CLASSI_STONE
-			l_cluster_stone: CLUSTER_STONE
-			l_shared: SD_SHARED
-			l_name: STRING_GENERAL
-		do
-			if a_content /= Void then
-				l_class_stone ?= a_stone
-				l_cluster_stone ?= a_stone
-				if l_class_stone /= Void then
-					a_content.set_description (interface_names.l_eiffel_class)
-					l_name := l_class_stone.file_name
-					if l_name /= Void then
-						a_content.set_detail (l_name)
-					end
-				elseif l_cluster_stone /= Void then
-					a_content.set_description (interface_names.l_eiffel_cluster)
-					l_name := l_cluster_stone.folder_name
-					if l_name /= Void then
-						a_content.set_detail (l_name)
-					end
-				else
-					-- We don't know this kind of stone.
-					create l_shared
-					a_content.set_description (l_shared.interface_names.zone_navigation_no_description_available)
-					a_content.set_detail (l_shared.interface_names.zone_navigation_no_detail_available)
 				end
 			end
 		end

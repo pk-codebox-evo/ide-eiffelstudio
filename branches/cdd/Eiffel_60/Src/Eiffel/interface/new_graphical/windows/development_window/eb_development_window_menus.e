@@ -81,6 +81,37 @@ feature -- Query
 	view_menu: EV_MENU
 			-- Menu representing the different selectable views.
 
+	tools_list_menu: EV_MENU
+			-- Menu containing list of supported tools
+
+	remove_item_from_tools_list_menu (a_tool: EB_TOOL) is
+			-- Remove item corresponding to `a_too' from `tools_list_mnu' and recycle their components.
+		require
+			a_tool_attached: a_tool /= Void
+		local
+			l_menu: like tools_list_menu
+			l_menu_item: EV_MENU_ITEM
+			l_data: TUPLE [menu_item: EB_COMMAND_MENU_ITEM; tool_id: STRING]
+			l_develop_window: like develop_window
+		do
+			l_menu := tools_list_menu
+			l_develop_window := develop_window
+			from
+				l_menu.start
+			until
+				l_menu.after
+			loop
+				l_menu_item := l_menu.item
+				l_data ?= l_menu_item.data
+				if l_data /= Void and then l_data.tool_id.is_equal (a_tool.title_for_pre) then
+					l_menu.remove
+					l_develop_window.recycle_item (l_data.menu_item)
+				else
+					l_menu.forth
+				end
+			end
+		end
+
 feature -- Item querys
 
 	melt_menu_item: EV_MENU_ITEM
@@ -225,6 +256,14 @@ feature{EB_DEVELOPMENT_WINDOW_MENU_BUILDER} -- Settings
 			set: number_of_displayed_external_commands = a_number
 		end
 
+	set_tools_list_menu (a_menu: like tools_list_menu) is
+			-- Set `tools_list_menu' with `a_menu'.
+		do
+			tools_list_menu := a_menu
+		ensure
+			tools_list_menu_set: tools_list_menu = a_menu
+		end
+
 feature -- Command
 
 	update_menu_lock_items is
@@ -235,6 +274,34 @@ feature -- Command
 			l_docking_manager := develop_window.docking_manager
 			develop_window.commands.lock_docking_command.set_select (l_docking_manager.is_locked)
 			develop_window.commands.lock_tool_bar_command.set_select (l_docking_manager.tool_bar_manager.is_locked)
+		end
+
+	update_show_tool_bar_items is
+			-- Update show/hide tool bar menu items state.
+		local
+			l_contents: ARRAYED_LIST [SD_TOOL_BAR_CONTENT]
+			l_commands: EB_DEVELOPMENT_WINDOW_COMMANDS
+			l_command: EB_SHOW_TOOLBAR_COMMAND
+		do
+			from
+				l_contents := develop_window.docking_manager.tool_bar_manager.contents
+				l_commands := develop_window.commands
+				l_contents.start
+			until
+				l_contents.after
+			loop
+				l_command := l_commands.show_toolbar_commands.item (l_contents.item)
+
+				if l_command /= Void then
+					if l_contents.item.is_visible then
+						l_command.enable_visible
+					else
+						l_command.disable_visible
+					end
+				end
+
+				l_contents.forth
+			end
 		end
 
 feature -- Recycle

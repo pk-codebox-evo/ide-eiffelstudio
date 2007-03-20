@@ -193,11 +193,9 @@ feature -- Breakpoints management
 				expr.evaluate
 				evaluator := expr.expression_evaluator
 				if evaluator.error_occurred then
-					bp_reached := True
 					debugger_message ("Conditional breakpoint failed to evaluate %"" + expr.expression + "%".")
-				else
-					bp_reached := bp.condition_respected --| evaluator.final_result_is_true_boolean_value
 				end
+				bp_reached := bp.condition_respected --| evaluator.final_result_is_true_boolean_value				
 			end
 
 			if bp_reached then
@@ -287,6 +285,7 @@ feature -- Breakpoints management
 								elseif v.is_case_insensitive_equal ("CALL") then
 									s.append (cse.to_string)
 								elseif v.is_case_insensitive_equal ("CALLSTACK") then
+									application_status.reload_current_call_stack
 									s.append (application_status.current_call_stack.to_string)
 								elseif v.is_case_insensitive_equal ("CLASS") and then cse.class_name /= Void then
 									s.append (cse.class_name)
@@ -827,7 +826,7 @@ feature -- Debugging events
 	incremente_debugging_operation_id is
 		do
 			if debugging_operation_id < {NATURAL_32}.max_value then
-				debugging_operation_id := (debugging_operation_id + 1)
+				debugging_operation_id := debugging_operation_id + 1
 			else
 				debugging_operation_id := 1
 			end

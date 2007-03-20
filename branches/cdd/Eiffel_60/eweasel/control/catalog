@@ -34,6 +34,7 @@ test	insert-arrayed-list		list007 tcf pass list
 test	arrayed-list-prune-all		list008 tcf pass list
 test	arrayed-list-put-*		list009 tcf pass list
 test	fixed-list-queries		list010 tcf pass list
+test	merging-compatible-arrayed-list	list011 tcf pass list
 
 test	disjoint-sets			set001  tcf pass set
 test	disjoint-sets-expanded		set001a tcf pass set
@@ -319,11 +320,14 @@ test	convert-to-base-class-inherited2	valid199 tcf pass validity vycq convert
 test	convert-to-base-class-inherited3	valid200 tcf pass validity vycq convert
 test	formal-as-base-type-for-generic		valid201 tcf pass validity formal generic
 test	single-constraint-formal-renaming	valid202 tcf pass validity formal generic
-test	inherit-from-expanded	valid203 tcf pass validity frozen expanded
-test	recheck-assertion-feature-renamed	valid204 tcf pass validity 
+test	inherit-from-expanded				valid203 tcf pass validity frozen expanded
+test	recheck-assertion-feature-renamed	valid204 tcf pass validity assertion renaming
 test	recursive-generic-constraint-with-creation	valid205 tcf pass validity
+test	named-tuple-in-parent-constraint-clauses	valid206 tcf pass validity
 
 
+-- System validity tests
+test	svalid-infix-with-conversion	svalid001 tcf pass system validity
 
 -- Incrementality tests
 
@@ -606,6 +610,8 @@ test	inline-agent-from-scratch-bug	incr277 tcf pass incrementality
 test	changing-formals-invariant-not-removed	incr278 tcf pass incrementality
 test	changing-formals-precursor-crash	incr279 tcf pass incrementality
 test	console-setting-change		incr280 tcf pass incrementality
+test	vtcg-add-remove-missing-error	incr281 tcf pass incrementality
+test	funky-removal-of-type			incr282 tcf pass incrementality
 
 
 -- Melting
@@ -1268,6 +1274,7 @@ test	agent-on-constant-attribute ccomp058 tcf pass c_compilation
 test	add-generic-c-compile-failure ccomp059 tcf fail c_compilation
 test	last-reverse-assignment-to-expanded	ccomp060 tcf pass c_compilation expanded
 test	adding-removing-classes-c-compile-error	ccomp061 tcf pass c_compilation expanded
+test	once-manifest-string-in-cpp-file	ccomp062 tcf pass c_compilation
 
 -- Storable tests
 
@@ -1327,6 +1334,8 @@ test	tuple-hashcode			tuple004	tcf	pass tuple
 test	tuple-comparison		tuple005	tcf	pass tuple
 test	tuple-twining			tuple006	tcf	pass tuple
 test	named-tuple-assignment	tuple007	tcf	pass tuple
+test	named-tuple-same-labels	tuple008	tcf	pass tuple
+test	 named-tuple-same-labels-crash	tuple009	tcf	pass tuple
 
 -- Systematic validity tests
 
@@ -1600,12 +1609,18 @@ test 	multi-constraint-formal-heavy-renaming			multicon012 tcf pass multiconstra
 test	multi-constraint-vtgc							multicon013 tcf pass multiconstraint
 test	multi-constraint-vtmc							multicon014 tcf pass multiconstraint
 test	multi-constraint-vtgd							multicon015 tcf pass multiconstraint
+test	multi-constraint-rename-conflict				multicon016 tcf pass multiconstraint
+test	multi-constraint-non-existent-renamed			multicon017 tcf pass multiconstraint
+test	multi-constraint-infix-renamed					multicon018 tcf pass multiconstraint
+test	multi-constraint-is-inherited					multicon019 tcf pass multiconstraint
 test	multi-constraint-vtgd-create					multicon020 tcf pass multiconstraint
 test	multi-constraint-add-gen-constraint				multicon021 tcf pass multiconstraint
 test	multi-constraint-renaming1						multicon022 tcf pass multiconstraint
 test	multi-constraint-renaming2						multicon023 tcf pass multiconstraint
 test	multi-constraint-check-constraints				multicon024 tcf pass multiconstraint
 test	multi-constraint-actual-type					multicon025 tcf pass multiconstraint
+test	multi-constraint-rename-formal					multicon026 tcf pass multiconstraint
+test	multi-constraint-creation-through-formal		multicon027 tcf pass multiconstraint
 
 -- .NET specific test
 if DOTNET test expanded-object-conversion	dotnet001	tcf pass dotnet
@@ -1657,3 +1672,4 @@ if DOTNET test function-property-call-correction dotnet046	tcf pass dotnet prope
 if DOTNET test deferred-property-missing-assigner-implementation dotnet047	tcf pass dotnet property
 if DOTNET test deferred-property-missing-assigner-implementation-renamed dotnet048	tcf pass dotnet property
 if DOTNET test effecting-from-inherited-external	dotnet049	tcf pass dotnet
+test replicated-from-generic-type		dotnet050	tcf pass dotnet termination expanded replication

@@ -25,6 +25,7 @@ inherit
 			{SD_TOOL_BAR_ZONE, SD_TOOL_BAR} expose_actions, pointer_button_press_actions, pointer_double_press_actions,
 							redraw_rectangle
 			{SD_NOTEBOOK_HIDE_TAB_DIALOG} key_press_actions, focus_out_actions, set_focus, has_focus
+			{SD_TOOL_BAR_DRAWER_IMP} draw_ellipsed_text_top_left
 		redefine
 			update_for_pick_and_drop
 		end
@@ -54,16 +55,6 @@ feature {NONE} -- Initlization
 			drop_actions.set_veto_pebble_function (agent on_veto_pebble_function)
 
 			set_background_color (internal_shared.default_background_color)
-		end
-
-feature -- Properties
-
-	row_height: INTEGER is
-			-- Height of row.
-		do
-			Result := internal_row_height
-		ensure
-			valid: is_row_height_valid (Result)
 		end
 
 feature -- Command
@@ -187,6 +178,18 @@ feature -- Command
 			internal_items.wipe_out
 		end
 
+feature {SD_TOOL_BAR_TITLE_BAR} -- Special setting
+
+	set_row_height (a_height: INTEGER) is
+			-- Set `internal_row_height' to `a_height'
+		require
+			valid: a_height >= 0
+		do
+			internal_row_height := a_height
+		ensure
+			set: internal_row_height = a_height
+		end
+
 feature -- Query
 
 	items: like internal_items is
@@ -221,8 +224,16 @@ feature -- Query
 
 	standard_height: INTEGER is
 			-- Standard tool bar height.
-		do
+		once
 			Result := internal_shared.tool_bar_font.height + 2 * border_width
+		end
+
+	row_height: INTEGER is
+			-- Height of row.
+		do
+			Result := internal_row_height
+		ensure
+			valid: is_row_height_valid (Result)
 		end
 
 feature -- Contract support

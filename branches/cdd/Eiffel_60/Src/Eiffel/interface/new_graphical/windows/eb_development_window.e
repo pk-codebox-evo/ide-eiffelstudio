@@ -20,7 +20,7 @@ inherit
 			{EB_STONE_CHECKER, EB_DEVELOPMENT_WINDOW_BUILDER, EB_DEVELOPMENT_WINDOW_PART, EB_ADDRESS_MANAGER}
 				Warning_messages, Interface_names,
 				init_commands, Pixmaps
-			{EB_DEVELOPMENT_WINDOW_COMMANDS, EB_TOOL, EB_STONE_CHECKER}
+			{EB_DEVELOPMENT_WINDOW_COMMANDS, EB_TOOL, EB_STONE_CHECKER, EB_DEVELOPMENT_WINDOW_DIRECTOR}
 				Debugger_manager
 			{EB_STONE_FIRST_CHECKER}
 				Ev_application
@@ -772,10 +772,10 @@ feature -- Resource Update
 			end
 		end
 
-	set_classi_changed (a_class: CLASS_I) is
+	set_classi_changed (a_class: CLASS_C) is
 			-- Change a_class in shared project.
 		do
-			Eiffel_project.Workbench.change_class (a_class)
+			Eiffel_project.Workbench.change_class (a_class.original_class)
 		end
 
 	on_text_saved is
@@ -928,6 +928,7 @@ feature -- Window management
 			l_open_clusters.merge (editors_manager.open_fake_clusters)
 			a_window_data.save_open_classes (l_open_classes)
 			a_window_data.save_open_clusters (l_open_clusters)
+			a_window_data.save_formatting_marks (editors_manager.show_formatting_marks)
 		end
 
 	save_tools_docking_layout is
@@ -1032,6 +1033,7 @@ feature -- Window management
 				restore_standard_tools_docking_layout
 			end
 			menus.update_menu_lock_items
+			menus.update_show_tool_bar_items
 		end
 
 	restore_editors_docking_layout is
@@ -1070,6 +1072,7 @@ feature -- Window management
 				internal_construct_standard_layout_by_code
 			end
 			menus.update_menu_lock_items
+			menus.update_show_tool_bar_items
 		rescue
 			retried := True
 			retry
@@ -1198,22 +1201,25 @@ feature {EB_EDITORS_MANAGER, EB_STONE_CHECKER} -- Tabbed editor
 			l_class_stone: CLASSI_STONE
 			l_cluster_stone: CLUSTER_STONE
 			l_group: CONF_GROUP
+			l_content: SD_CONTENT
 		do
 			if editors_manager.current_editor /= Void then
 				if a_stone /= Void then
 					l_class_stone ?= a_stone
 					l_cluster_stone ?= a_stone
+					l_content := editors_manager.current_editor.docking_content
 					if l_class_stone /= Void and then l_class_stone.is_valid then
-						editors_manager.current_editor.docking_content.set_pixmap (pixmap_from_class_i (l_class_stone.class_i))
-						editors_manager.current_editor.docking_content.set_short_title (l_class_stone.class_name)
-						editors_manager.current_editor.docking_content.set_long_title (l_class_stone.class_name)
+						l_content.set_pixmap (pixmap_from_class_i (l_class_stone.class_i))
+						l_content.set_short_title (l_class_stone.class_name)
+						l_content.set_long_title (l_class_stone.class_name)
 						editors_manager.current_editor.set_title_saved (not changed)
 					elseif l_cluster_stone /= Void then
 						l_group := l_cluster_stone.group
-						editors_manager.current_editor.docking_content.set_pixmap (pixmap_from_group (l_group))
-						editors_manager.current_editor.docking_content.set_short_title (l_group.name)
-						editors_manager.current_editor.docking_content.set_long_title (l_group.name)
+						l_content.set_pixmap (pixmap_from_group (l_group))
+						l_content.set_short_title (l_group.name)
+						l_content.set_long_title (l_group.name)
 					end
+					editors_manager.update_content_description (a_stone, l_content)
 				end
 			end
 		end
@@ -1327,8 +1333,14 @@ feature {EB_WINDOW_MANAGER, EB_DEVELOPMENT_WINDOW_MAIN_BUILDER} -- Window manage
 
 	 save_window_state is
 	 		-- Save window state information to preference data.
+	 	local
+	 		l_debugger_manager: EB_DEBUGGER_MANAGER
 	 	do
 			development_window_data.save_window_state (window.is_minimized, window.is_maximized)
+			l_debugger_manager ?= debugger_manager
+			if l_debugger_manager /= Void then
+				development_window_data.save_force_debug_mode (l_debugger_manager.debug_mode_forced)
+			end
 	 	end
 
 feature {EB_STONE_FIRST_CHECKER, EB_DEVELOPMENT_WINDOW_MAIN_BUILDER} -- Implementation
@@ -1746,8 +1758,8 @@ feature {NONE} -- Recycle
 				editors_manager.recycle
 				editors_manager := Void
 			end
-
 			agents.manager.remove_observer (agents)
+			customized_tool_manager.change_actions.prune_all (agents.on_customized_tools_changed_agent)
 			docking_manager.destroy
 		end
 
@@ -1840,7 +1852,7 @@ feature {EB_DEVELOPMENT_WINDOW_BUILDER} -- Initliazed by EB_DEVELOPMENT_WINDOW_B
 		end
 
 feature {EB_DEVELOPMENT_WINDOW_MENU_BUILDER, EB_DEVELOPMENT_WINDOW_PART,
-			EB_DEVELOPMENT_WINDOW_MAIN_BUILDER} -- Implementation: Editor commands
+			EB_DEVELOPMENT_WINDOW_MAIN_BUILDER, EB_DEVELOPMENT_WINDOW_DIRECTOR} -- Implementation: Editor commands
 
 	refresh_cursor_position is
 			-- Display the current cursor position in the status bar.
@@ -2045,8 +2057,14 @@ feature {EB_DEVELOPMENT_WINDOW_MENU_BUILDER, EB_DEVELOPMENT_WINDOW_PART,
 	toggle_formatting_marks is
 			-- Show/Hide formatting marks in the editor and update related menu item.
 		do
-			editors_manager.current_editor.toggle_view_invisible_symbols
-			if editors_manager.current_editor.view_invisible_symbols then
+			editors_manager.toggle_formatting_marks
+			refresh_toggle_formatting_marks_command
+		end
+
+	refresh_toggle_formatting_marks_command is
+			-- Refresh toggle formatting marks menu item.
+		do
+			if editors_manager.show_formatting_marks then
 				menus.formatting_marks_command_menu_item.set_text (Interface_names.m_hide_formatting_marks)
 			else
 				menus.formatting_marks_command_menu_item.set_text(Interface_names.m_show_formatting_marks)
@@ -2318,7 +2336,7 @@ feature {EB_DEVELOPMENT_WINDOW_MAIN_BUILDER} -- Execution
 			end
 		end
 
-feature {EB_DEVELOPMENT_WINDOW_BUILDER} -- Access
+feature {EB_DEVELOPMENT_WINDOW_BUILDER, EB_DEVELOPMENT_WINDOW_DIRECTOR} -- Access
 
 	development_window_data: EB_DEVELOPMENT_WINDOW_DATA is
 			-- Meta data describing `Current'.

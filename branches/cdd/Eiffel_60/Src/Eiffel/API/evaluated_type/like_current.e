@@ -14,7 +14,7 @@ inherit
 			actual_type, associated_class, conform_to, conformance_type, convert_to,
 			generics, has_associated_class, instantiated_in,
 			is_basic, is_expanded, is_external, is_like_current, is_none, is_reference,
-			meta_type, set_actual_type, type_i
+			meta_type, set_actual_type, type_i, evaluated_type_in_descendant
 		end
 
 feature -- Visitor
@@ -112,7 +112,7 @@ feature -- Output
 			Result.append (actual_dump)
 		end
 
-	ext_append_to (st: TEXT_FORMATTER; f: E_FEATURE) is
+	ext_append_to (st: TEXT_FORMATTER; c: CLASS_C) is
 		do
 			st.process_symbol_text (ti_L_bracket)
 			st.process_keyword_text (ti_Like_keyword, Void)
@@ -120,7 +120,7 @@ feature -- Output
 			st.process_keyword_text (ti_Current, Void)
 			st.process_symbol_text (ti_R_bracket)
 			st.add_space
-			conformance_type.ext_append_to (st, f)
+			conformance_type.ext_append_to (st, c)
 		end
 
 feature {COMPILER_EXPORTER} -- Primitives
@@ -162,6 +162,16 @@ feature {COMPILER_EXPORTER} -- Primitives
 			-- of `class_type'.
 		do
 			Result := class_type
+		end
+
+	evaluated_type_in_descendant (a_ancestor, a_descendant: CLASS_C; a_feature: FEATURE_I): LIKE_CURRENT is
+		do
+			if a_ancestor /= a_descendant then
+				create Result
+				Result.set_actual_type (a_descendant.actual_type)
+			else
+				Result := Current
+			end
 		end
 
 	create_info: CREATE_CURRENT is

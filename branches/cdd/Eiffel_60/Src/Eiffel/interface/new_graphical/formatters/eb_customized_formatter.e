@@ -14,6 +14,7 @@ inherit
 		rename
 			make as old_make
 		redefine
+			old_make,
 			is_valid,
 			is_customized_fomatter,
 			name,
@@ -37,7 +38,17 @@ create
 
 feature{NONE} -- Initialization
 
-	make (a_manager: like manager; a_cmd_name: STRING_GENERAL; a_header: like header; a_temp_header: like temp_header; a_menu_name: like menu_name; a_metric: like metric; a_viewer: like viewer; a_icon_location: like icon_location) is
+	old_make (a_manager: like manager) is
+			-- Create a formatter associated with `a_manager'.
+		do
+			Precursor (a_manager)
+			if tooltip /= Void and then not tooltip.is_empty then
+				capital_command_name.append ("%N")
+				capital_command_name.append (tooltip)
+			end
+		end
+
+	make (a_manager: like manager; a_cmd_name: STRING_GENERAL; a_header: like header; a_temp_header: like temp_header; a_menu_name: like menu_name; a_metric: like metric; a_viewer: like viewer; a_icon_location: like icon_location; a_tooltip: like tooltip) is
 			-- Initialize Current.
 		require
 			a_manager_attached: a_manager /= Void
@@ -47,6 +58,7 @@ feature{NONE} -- Initialization
 			a_menu_name_attached: a_menu_name /= Void
 			a_metric_attached: a_metric /= Void
 			a_viewer_attached: a_viewer /= Void
+			a_tooltip_attached: a_tooltip /= Void
 		do
 			set_command_name_internal (a_cmd_name)
 			set_header_internal (a_header)
@@ -55,6 +67,7 @@ feature{NONE} -- Initialization
 			set_viewer (a_viewer)
 			set_metric (a_metric)
 			set_icon_location (a_icon_location)
+			set_tooltip (a_tooltip)
 			old_make (a_manager)
 		end
 
@@ -75,6 +88,9 @@ feature -- Access
 				Result := stone.stone_name.as_string_8
 			end
 		end
+
+	tooltip: STRING_GENERAL
+			-- Tooltip
 
 	header: STRING_GENERAL is
 			-- Text displayed in the ouput_line when current formatter is displayed.
@@ -122,13 +138,13 @@ feature -- Access
 	symbol: ARRAY [EV_PIXMAP] is
 			-- Graphical representation of the command.
 		do
-			if symbol_internal = Void then
+			if (not is_pixmap_loaded) or else symbol_internal = Void then
 				if not is_pixmap_loaded then
 					load_pixmap
 				end
 				create symbol_internal.make (1, 2)
-				symbol_internal.put (actual_pixmap, 1)
-				symbol_internal.put (actual_pixmap, 2)
+				symbol_internal.put (pixmap, 1)
+				symbol_internal.put (pixmap, 2)
 			end
 			Result := symbol_internal
 		end
@@ -168,7 +184,7 @@ feature -- Access
 	viewer: STRING
 			-- Viewer
 
-	displayer_generator: TUPLE [generator: FUNCTION [ANY, TUPLE, like displayer]; name: STRING] is
+	displayer_generator: TUPLE [any_generator: FUNCTION [ANY, TUPLE, like displayer]; name: STRING] is
 			-- Generator to generate proper `displayer' for Current formatter
 		do
 			Result := [displayer_generators.generator_with_name (viewer), viewer]
@@ -251,6 +267,14 @@ feature -- Setting
 		do
 		end
 
+	set_tooltip (a_tooltip: like tooltip) is
+			-- Set `tooltip' with `a_tooltip'.
+		do
+			tooltip := a_tooltip
+		ensure
+			tooltip_set: tooltip = a_tooltip
+		end
+
 	set_metric (a_metric_name: like metric) is
 			-- Set `metric' with `a_metric_name'.
 		require
@@ -320,7 +344,7 @@ feature -- Setting
 	format is
 			-- Refresh `widget' if `must_format' and `selected'.
 		do
-			if stone /= Void and then selected and then displayed then
+			if stone /= Void and then selected and then displayed and then actual_veto_format_result then
 				if is_valid then
 					retrieve_sorting_order
 					display_temp_header
@@ -349,7 +373,9 @@ feature -- Setting
 
 				if l_domain_item /= Void then
 					l_metric := metric_manager.metric_with_name (metric)
-					l_metric.enable_fill_domain
+					if l_metric.is_result_domain_available then
+						l_metric.enable_fill_domain
+					end
 					if is_filter_enabled then
 						l_metric.enable_filter_result
 					else
@@ -359,7 +385,11 @@ feature -- Setting
 					l_domain.extend (l_domain_item)
 					l_value := l_metric.value_item (l_domain)
 					browser.set_starting_element (l_domain_item.query_language_item)
-					browser.update (Void, l_metric.last_result_domain)
+					if l_metric.is_basic and then l_metric.unit.scope /= Void then
+						browser.update (Void, l_metric.last_result_domain)
+					else
+						browser.update (Void, l_value)
+					end
 				else
 					browser.reset_display
 				end
@@ -447,19 +477,6 @@ feature{NONE} -- Implementation/Data
 	pixmap: EV_PIXMAP
 			-- Customized pixmap for Current formatter
 
-	actual_pixmap: like pixmap is
-			-- Actual pixmap for Current formatter
-			-- If `pixmap' is Void, use a default pixmap, otherwise use `pixmap'.
-		do
-			if pixmap /= Void then
-				Result := pixmap
-			else
-				Result := pixmaps.icon_pixmaps.diagram_export_to_png_icon
-			end
-		ensure
-			result_attached: Result /= Void
-		end
-
 	placeholder: STRING_GENERAL is
 			-- Placeholder for header/temp_header replacement.
 		do
@@ -543,25 +560,18 @@ feature{NONE} -- Implementation/Setting
 	load_pixmap is
 			-- Load pixmap.
 		local
-			l_retried: BOOLEAN
-			l_file: RAW_FILE
+			l_pixmap_loader: EB_PIXMAP_LOAD_HELPER
+			l_result: TUPLE [a_pixmap: EV_PIXMAP; a_buffer: EV_PIXEL_BUFFER]
 		do
-			if not l_retried and then not icon_location.is_empty then
-				create pixel_buffer_internal
-				create l_file.make (icon_location)
-				if l_file.exists and then l_file.is_readable then
-					pixel_buffer_internal.set_with_named_file (icon_location)
-					set_is_pixmap_loaded (True)
-					pixmap := pixel_buffer_internal.sub_pixmap (create {EV_RECTANGLE}.make (0, 0, pixel_buffer_internal.width, pixel_buffer_internal.height))
-					pixmap.stretch (16, 16)
-				end
-			end
-		rescue
+			create l_pixmap_loader
+			l_result := l_pixmap_loader.loaded_pixmap_from_file (icon_location, pixmaps.icon_pixmaps.diagram_export_to_png_icon, pixmaps.icon_pixmaps.diagram_export_to_png_icon_buffer)
+			l_result.a_pixmap.stretch (16, 16)
+			set_pixmap (l_result.a_pixmap)
+			pixel_buffer_internal := l_result.a_buffer
 			set_is_pixmap_loaded (True)
-			l_retried := True
-			pixel_buffer_internal := Void
-			pixmap := Void
-			retry
+		ensure
+			pixmap_attached: pixmap /= Void
+			pixel_buffer_attached: pixel_buffer_internal /= Void
 		end
 
 	set_is_pixmap_loaded (b: BOOLEAN) is

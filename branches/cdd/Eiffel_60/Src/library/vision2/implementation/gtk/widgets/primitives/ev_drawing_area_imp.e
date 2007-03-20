@@ -124,8 +124,12 @@ feature {NONE} -- Implementation
 	on_pointer_enter_leave (a_enter: BOOLEAN) is
 			-- The mouse pointer has either just entered or left `Current'.
 		do
-			update_tooltip (a_enter)
-			Precursor {EV_PRIMITIVE_IMP} (a_enter)
+			if not app_implementation.is_in_transport then
+				update_tooltip (a_enter)
+				Precursor {EV_PRIMITIVE_IMP} (a_enter)
+			else
+				update_tooltip (False)
+			end
 		end
 
 	update_tooltip (a_show_tooltip: BOOLEAN) is
@@ -169,12 +173,12 @@ feature {NONE} -- Implementation
 					l_height := {EV_GTK_EXTERNALS}.gtk_requisition_struct_height (gr)
 					create l_screen
 					tooltip_initial_x := a_screen_x + a_x
-					tooltip_initial_y := a_screen_y + a_y
+					tooltip_initial_y := a_screen_y + a_y + tooltip_window_y_offset
 					if tooltip_initial_x + l_width > l_screen.width then
 						tooltip_initial_x := l_screen.width - l_width
 					end
 					if tooltip_initial_y + l_height > l_screen.height then
-						tooltip_initial_y := l_screen.height - l_height - (2 * tooltip_window_y_offset)
+						tooltip_initial_y := a_screen_y + a_y - l_height - tooltip_window_y_offset
 					end
 					reset_tooltip_position := False
 				end
@@ -184,7 +188,7 @@ feature {NONE} -- Implementation
 				tooltip_repeater.set_interval (0)
 			end
 			if l_show_tooltips then
-				{EV_GTK_EXTERNALS}.gtk_window_move (a_tip_win, tooltip_initial_x, tooltip_initial_y + tooltip_window_y_offset)
+				{EV_GTK_EXTERNALS}.gtk_window_move (a_tip_win, tooltip_initial_x, tooltip_initial_y)
 				{EV_GTK_EXTERNALS}.gtk_widget_show (a_tip_win)
 			else
 				{EV_GTK_EXTERNALS}.gtk_widget_hide (a_tip_win)
@@ -194,8 +198,11 @@ feature {NONE} -- Implementation
 	tooltip_initial_x, tooltip_initial_y: INTEGER
 		-- Initial x and y coordinates for the tooltip window.
 
-	tooltip_window_y_offset: INTEGER is 20
-		-- Amount of pixels tooltip window is offset down from the mouse pointer when shown.
+	tooltip_window_y_offset: INTEGER
+			-- Amount of pixels tooltip window is offset down from the mouse pointer when shown.
+		do
+			Result := {EV_GTK_EXTERNALS}.gdk_display_get_default_cursor_size ({EV_GTK_EXTERNALS}.gdk_display_get_default)
+		end
 
 	tooltip_repeater: EV_TIMEOUT
 		-- Timeout repeater used for hiding/show tooltip.

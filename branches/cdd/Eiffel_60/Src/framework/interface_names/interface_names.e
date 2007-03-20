@@ -286,6 +286,7 @@ feature -- Accelerator, focus label and menu name
 	m_Break_when_hit_count_equal: STRING_GENERAL is			do Result := locale.translate("Break when the hit count is equal to")	end
 	m_Break_when_hit_count_multiple_of: STRING_GENERAL is	do Result := locale.translate("Break when the hit count is a multiple of")	end
 	m_Break_when_hit_count_greater: STRING_GENERAL is		do Result := locale.translate("Break when the hit count is greater than or equal to")	end
+	m_Object_viewer_tool: STRING_GENERAL is		do Result := locale.translate("Object viewer")	end
 
 	l_class_tree_assemblies: STRING_GENERAL is	do Result := locale.translate("Assemblies")	end
 	l_class_tree_clusters: STRING_GENERAL is	do Result := locale.translate("Clusters")	end
@@ -604,17 +605,63 @@ feature -- Accelerator, focus label and menu name
 		do
 			Result := locale.format_string (locale.translate ("Setup tools for formatter %"$1%""), [a_formatter_name])
 		end
+	t_customized_tool_setup: STRING_GENERAL is do Result := locale.translate ("Setup Customized Tools") end
+	t_setup_customized_tool: STRING_GENERAL is do Result := locale.translate ("Setup customized tools") end
+	l_select_tool: STRING_GENERAL is do Result := locale.translate ("Please select a tool.") end
+	f_add_tool: STRING_GENERAL is do Result := locale.translate ("Add customized tool") end
+	f_remove_tool: STRING_GENERAL is do Result := locale.translate ("Remove selected customized tool") end
+	l_no_info_of_element: STRING_GENERAL is do Result := locale.translate ("Please select a programming element (target/group/class/feature...).") end
+	l_setup_stone_handler (l_tool_name: STRING_GENERAL): STRING_GENERAL
+		do
+			Result := locale.format_string (locale.translate ("Setup stone handlers for tool %"$1%""), [l_tool_name])
+		end
+	l_stone_name: STRING_GENERAL is do Result := locale.translate ("Stone name") end
+	l_feature_stone_name: STRING_GENERAL is do Result := locale.translate ("Feature stone") end
+	l_uncompiled_class_stone_name: STRING_GENERAL is do Result := locale.translate ("Uncompiled class stone") end
+	l_compiled_class_stone_name: STRING_GENERAL is do Result := locale.translate ("Compiled class stone") end
+	l_group_stone_name: STRING_GENERAL is do Result := locale.translate ("Group stone") end
+	l_target_stone_name: STRING_GENERAL is do Result := locale.translate ("Target stone") end
 
 feature -- Formatter displayer names
+	l_class_tree_displayer_help: STRING_GENERAL do Result := locale.translate ("This view is suitable for displaying class hierarchy%Nsuch as class ancestors/descendants") end
+	l_class_flat_displayer_help: STRING_GENERAL do Result := locale.translate ("This view is suitable for displaying class list%Nsuch as class clients/suppliers") end
+	l_class_feature_displayer_help: STRING_GENERAL do Result := locale.translate ("This view is suitable for displaying features in form of list from a class%Nsuch as attributes/routines") end
+	l_feature_displayer_help: STRING_GENERAL do Result := locale.translate ("This view is suitable for displaying different versions of a feature%Nsuch as feature implementors/ancestor versions/descendant versions") end
+	l_feature_caller_displayer_help: STRING_GENERAL do Result := locale.translate ("This view is suitable for displaying feature callers") end
+	l_feature_callee_displayer_help: STRING_GENERAL do Result := locale.translate ("This view is suitable for displaying feature callees") end
+	l_domain_displayer_help: STRING_GENERAL do Result := locale.translate ("This view can be used to display result of all formatters%Nthus it is used as a default view for formatters") end
 
 	l_class_tree_displayer: STRING_GENERAL do Result := locale.translate ("Class tree view") end
 	l_class_flat_displayer: STRING_GENERAL do Result := locale.translate ("Class list view") end
 	l_class_feature_displayer: STRING_GENERAL do Result := locale.translate ("Feature list view") end
 	l_feature_displayer: STRING_GENERAL do Result := locale.translate ("Feature version view") end
+
 	l_feature_caller_displayer: STRING_GENERAL do Result := locale.translate ("Feature caller view") end
 	l_feature_callee_displayer: STRING_GENERAL do Result := locale.translate ("Feature callee view") end
 	l_dependency_displayer: STRING_GENERAL do Result := locale.translate ("Dependency view") end
 	l_domain_displayer: STRING_GENERAL do Result := locale.translate ("Domain view") end
+
+	l_formatter_header_help: STRING_GENERAL do Result := locale.translate ("Message that will be displayed in the formatter view when calculation has finished.") end
+	l_formatter_placeholder: STRING_GENERAL do Result := locale.translate ("%"$target%" serves as a placeholder which will be replaced by the input to current fomatter.") end
+	l_formatter_temp_header_help: STRING_GENERAL do Result := locale.translate ("Message that will be displayed in the formatter view when calculation is going on.") end
+	l_formatter_filter_help: STRING_GENERAL do Result := locale.translate ("Will invisible items be appressed from display?") end
+	l_formatter_scope_help: STRING_GENERAL do Result := locale.translate ("Is this formatter of per EiffelStudio scope or per target scope?") end
+	l_formatter_displayed_in_help: STRING_GENERAL do Result := locale.translate ("In which tool(s) will this formatter be displayed") end
+	l_formatter_metric_help: STRING_GENERAL do Result := locale.translate ("From which result of this formatter is generated.") end
+	l_formatter_default_header (l_ellipse: STRING_GENERAL): STRING_GENERAL
+		do
+			Result := locale.format_string (locale.translate ("$1 from $target"), [l_ellipse])
+		end
+	l_formatter_default_temp_header (l_ellipse: STRING_GENERAL): STRING_GENERAL
+		do
+			Result := locale.format_string (locale.translate ("Extracting $1 from $target ..."), [l_ellipse])
+		end
+
+	l_formatter_invalid_metric: STRING_GENERAL do Result := locale.translate ("Specified metric is not defined or invalid, this will cause current formatter not usable") end
+	l_add_stone_handler: STRING_GENERAL is do Result := locale.translate ("Add new stone handler") end
+	l_remove_stone_handler: STRING_GENERAL is do Result := locale.translate ("Remove selected stone handler") end
+	l_stone_handler: STRING_GENERAL is do Result := locale.translate ("Stone handler") end
+	l_stone_handler_help: STRING_GENERAL is do Result := locale.translate ("Specify default tools for specific stones") end
 
 feature -- Toggles
 
@@ -1181,6 +1228,24 @@ feature -- Label texts
 	l_user_set: STRING_GENERAL is				do Result := locale.translate ("user set") end
 	l_use_inherited: STRING_GENERAL is do Result := locale.translate ("Use inherited value.")	end
 	l_Value: STRING_GENERAL is					do Result := locale.translate("Value")	end
+
+	l_viewer_display_complete_object: STRING_GENERAL is do Result := locale.translate("Display Complete Object") end
+	l_viewer_enable_word_wrapping: STRING_GENERAL is do Result := locale.translate("Enable Word Wrapping") end
+	l_copy_text_to_clipboard: STRING_GENERAL is do Result := locale.translate("Copy Text To Clipboard") end
+	t_viewer_string_display: STRING_GENERAL is do Result := locale.translate("String Display") end
+	l_viewer_string_display_full_string_length (n: INTEGER): STRING_GENERAL is
+		do
+			Result := locale.format_string (locale.translate ("Full string length = $1"), [n])
+		end
+	l_dbg_unable_to_get_value_message: STRING_GENERAL is do Result := locale.translate("Sorry a problem occurred, %Nwe are not able to show you the value ...%N") end
+	l_slice_limits: STRING_GENERAL is do Result := locale.translate ("Slice limits") end
+	l_set_slice_values: STRING_GENERAL is do Result := locale.translate("Set Slice Values") end
+	l_to: STRING_GENERAL is do Result := locale.translate("to") end
+	t_viewer_object_dumper_title: STRING_GENERAL is do Result := locale.translate ("Object Dump") end
+	t_viewer_object_browser_title: STRING_GENERAL is do Result := locale.translate ("Object Browse") end
+	l_viewer_drop_object_here: STRING_GENERAL is do Result := locale.translate ("<< Drop object here >>") end
+	l_select_viewer: STRING_GENERAL is do Result := locale.translate ("Select Viewer") end
+
 	l_When_breakpoint_is_hit: STRING_GENERAL is	do Result := locale.translate("When the breakpoint is hit:")	end
 	l_Whole_project: STRING_GENERAL is			do Result := locale.translate("Whole project")	end
 	l_Whole_word: STRING_GENERAL is				do Result := locale.translate("Whole word")	end
@@ -1747,6 +1812,7 @@ feature -- Title part
 	t_Call_stack_tool: STRING_GENERAL is				do Result := locale.translate ("Call Stack")	end
 	t_Cluster_tool: STRING_GENERAL is					do Result := locale.translate ("Clusters")	end
 	t_Context_tool: STRING_GENERAL is					do Result := locale.translate ("Context")	end
+	t_Object_viewer_tool: STRING_GENERAL is			do Result := locale.translate ("Object viewer")	end
 	t_Favorites_tool: STRING_GENERAL is					do Result := locale.translate ("Favorites")	end
 	t_metric_tool: STRING_GENERAL is 					do Result := locale.translate ("Metrics")	end
 	t_Object_tool: STRING_GENERAL is					do Result := locale.translate ("Objects")	end
@@ -1780,7 +1846,7 @@ feature -- Title part
 	t_Overwite_layout: STRING_GENERAL is				do Result := locale.translate ("Overwrite Layout") end
 	t_open_c_file: STRING_GENERAL is					do Result := locale.translate ("Open C file") end
 	t_reference_position: STRING_GENERAL is				do Result := locale.translate ("Position") end
-	t_customized_formatter_setup: STRING is 			do Result := locale.translate ("Customized Formatter Setup") end
+	t_customized_formatter_setup: STRING is 			do Result := locale.translate ("Setup customized formatters") end
 
 feature -- Titles translation needless (Title Original) for preference strings.
 
@@ -1796,6 +1862,7 @@ feature -- Titles translation needless (Title Original) for preference strings.
 	to_Search_Report_tool: STRING is			"Search Report"
 	to_Windows_tool: STRING is					"Windows"
 	to_Watch_tool: STRING is					"Watch"
+	to_Object_viewer_tool: STRING is			"Object Viewer"
 	to_Features_tool: STRING is					"Features"
 	to_Editor: STRING is						"Editor"
 	to_Debugging_tool: STRING is				"Debugging"
@@ -1911,6 +1978,7 @@ feature -- Description texts
 	e_Running: STRING_GENERAL is				do Result := locale.translate("Application is running")	end
 	e_Running_no_stop_points: STRING_GENERAL is	do Result := locale.translate("Application is running (ignoring breakpoints)")	end
 	e_Save_call_stack: STRING_GENERAL is		do Result := locale.translate("Save call stack to a text file")	end
+	e_Save_exception_into: STRING_GENERAL is		do Result := locale.translate("Save exception message to a text file")	end
 	e_Save_dynamic_lib_definition: STRING_GENERAL is do Result := locale.translate("Save this dynamic library definition")	end
 	e_Show_class_cluster: STRING_GENERAL is		do Result := locale.translate("Locate currently edited class or cluster")	end
 	e_Send_stone_to_context: STRING_GENERAL is	do Result := locale.translate("Synchronize context")	end

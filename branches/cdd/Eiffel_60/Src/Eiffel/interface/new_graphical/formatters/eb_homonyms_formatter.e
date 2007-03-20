@@ -47,7 +47,7 @@ feature -- Properties
 	browser: EB_FEATURE_BROWSER_GRID_VIEW
 			-- Browser
 
-	displayer_generator: TUPLE [generator: FUNCTION [ANY, TUPLE, like displayer]; name: STRING] is
+	displayer_generator: TUPLE [any_generator: FUNCTION [ANY, TUPLE, like displayer]; name: STRING] is
 			-- Generator to generate proper `displayer' for Current formatter
 		do
 			Result := [agent displayer_generators.new_feature_displayer, displayer_generators.feature_displayer]
@@ -83,7 +83,7 @@ feature -- Formatting
 		local
 			cf: EB_DISCARDABLE_CONFIRMATION_DIALOG
 		do
-			if associated_feature /= Void and then selected and then displayed then
+			if associated_feature /= Void and then selected and then displayed and then actual_veto_format_result then
 				retrieve_sorting_order
 				display_temp_header
 				setup_viewpoint

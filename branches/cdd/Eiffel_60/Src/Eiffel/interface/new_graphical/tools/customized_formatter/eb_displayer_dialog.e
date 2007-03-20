@@ -59,6 +59,7 @@ feature{NONE} -- Initialization
 			grid.column (1).set_title (interface_names.l_display)
 			grid.column (2).set_title (interface_names.t_tool_name)
 			grid.column (3).set_title (interface_names.t_formatter_displayer_name)
+			grid.key_press_actions.extend (agent on_key_pressed_in_grid)
 			grid_wrapper.set_sort_info (2, create {EVS_GRID_TWO_WAY_SORTING_INFO [STRING_GENERAL]}.make (agent tool_name_tester, ascending_order))
 			grid_wrapper.set_sorting_status (grid_wrapper.sorted_columns_from_string ("2:1"))
 			grid_wrapper.set_sort_action (agent sort_agent)
@@ -68,6 +69,7 @@ feature{NONE} -- Initialization
 			element_container.extend (l_box)
 			l_box.extend (grid)
 			ok_button.select_actions.extend (agent on_ok_pressed)
+			remove_default_push_button
 		end
 
 feature -- Access
@@ -145,6 +147,7 @@ feature{NONE} -- Actions
 			-- Action to be performed when view changes
 		do
 			a_view.set_data ("")
+			a_view.set_tooltip (view_table.item (view_name_table.item (a_view.text)).view_help)
 			set_has_changed (True)
 		end
 
@@ -159,12 +162,38 @@ feature{NONE} -- Actions
 	on_show is
 			-- Action to be performed when Current dialog is shown
 		do
+			last_value_from_grid := Void
 			grid_wrapper.disable_auto_sort_order_change
 			grid_wrapper.sort (0, 0, 1, 0, 0, 0, 0, 0, 2)
 			grid_wrapper.enable_auto_sort_order_change
 			bind_grid
 			set_has_changed (False)
 			set_title (interface_names.t_setup_formatter_tools (formatter_name))
+		end
+
+	on_key_pressed_in_grid (a_key: EV_KEY) is
+			-- Action to be performed when `a_key' is pressed in `grid'.
+		require
+			a_key_attached: a_key /= Void
+		local
+			l_selected_items: LIST [EV_GRID_ITEM]
+			l_choice: EV_GRID_CHOICE_ITEM
+			l_check: EV_GRID_CHECKABLE_LABEL_ITEM
+		do
+			if a_key.code = {EV_KEY_CONSTANTS}.key_enter or a_key.code = {EV_KEY_CONSTANTS}.key_space then
+				l_selected_items := grid.selected_items
+				if l_selected_items.count = 1 then
+					l_check ?= l_selected_items.first
+					if l_check /= Void then
+						l_check.set_is_checked (not l_check.is_checked)
+					else
+						l_choice ?= l_selected_items.first
+						if l_choice /= Void then
+							l_choice.activate
+						end
+					end
+				end
+			end
 		end
 
 feature{NONE} -- Implementation
@@ -212,7 +241,8 @@ feature{NONE} -- Implementation
 		end
 
 	view_name_table: HASH_TABLE [STRING, STRING_GENERAL] is
-			--
+			-- View name table.
+			-- [View storage name, View display name]
 		local
 			l_tbl: like view_table
 		do
@@ -223,48 +253,52 @@ feature{NONE} -- Implementation
 			until
 				l_tbl.after
 			loop
-				Result.put (l_tbl.key_for_iteration, l_tbl.item_for_iteration)
+				Result.put (l_tbl.key_for_iteration, l_tbl.item_for_iteration.view_name)
 				l_tbl.forth
 			end
 		ensure
 			result_attached: Result /= Void
 		end
 
-	view_name_list: LINKED_LIST [STRING_GENERAL] is
+	view_name_list: LIST [STRING_GENERAL] is
 			-- List of supported view names.
 		local
 			l_view_table: like view_table
+			l_sorted_list: SORTED_TWO_WAY_LIST [STRING_GENERAL]
 		do
-			create Result.make
 			l_view_table := view_table
+			create l_sorted_list.make
 			from
 				l_view_table.start
 			until
 				l_view_table.after
 			loop
-				Result.extend (l_view_table.item_for_iteration)
+				l_sorted_list.put_front (l_view_table.item_for_iteration.view_name)
 				l_view_table.forth
 			end
+			l_sorted_list.sort
+			Result := l_sorted_list
 		ensure
 			result_attached: Result /= Void
 		end
 
-	view_table: HASH_TABLE [STRING_GENERAL, STRING] is
+	view_table: HASH_TABLE [TUPLE [view_name: STRING_GENERAL; view_help: STRING_GENERAL], STRING] is
 			-- View table.
 			-- [View display name, View store name]
 		local
 			l_displayers: EB_FORMATTER_DISPLAYERS
+			l_names: like interface_names
 		once
 			create Result.make (7)
 			create l_displayers
-			Result.put (interface_names.l_class_tree_displayer, l_displayers.class_tree_displayer)
-			Result.put (interface_names.l_class_flat_displayer, l_displayers.class_flat_displayer)
-			Result.put (interface_names.l_class_feature_displayer, l_displayers.class_feature_displayer)
-			Result.put (interface_names.l_feature_displayer, l_displayers.feature_displayer)
-			Result.put (interface_names.l_feature_caller_displayer, l_displayers.feature_caller_displayer)
-			Result.put (interface_names.l_feature_callee_displayer, l_displayers.feature_callee_displayer)
-			Result.put (interface_names.l_dependency_displayer, l_displayers.dependency_displayer)
-			Result.put (interface_names.l_domain_displayer, l_displayers.domain_displayer)
+			l_names := interface_names
+			Result.put ([l_names.l_class_tree_displayer,     l_names.l_class_tree_displayer_help],      l_displayers.class_tree_displayer)
+			Result.put ([l_names.l_class_flat_displayer,     l_names.l_class_flat_displayer_help],      l_displayers.class_flat_displayer)
+			Result.put ([l_names.l_class_feature_displayer,  l_names.l_class_feature_displayer_help],   l_displayers.class_feature_displayer)
+			Result.put ([l_names.l_feature_displayer,        l_names.l_feature_displayer_help],         l_displayers.feature_displayer)
+			Result.put ([l_names.l_feature_caller_displayer, l_names.l_feature_caller_displayer_help],  l_displayers.feature_caller_displayer)
+			Result.put ([l_names.l_feature_callee_displayer, l_names.l_feature_callee_displayer_help],  l_displayers.feature_callee_displayer)
+			Result.put ([l_names.l_domain_displayer,         l_names.l_domain_displayer_help],          l_displayers.domain_displayer)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -292,10 +326,21 @@ feature{NONE} -- Implementation/Sorting
 		local
 			l_sorter: DS_QUICK_SORTER [STRING_GENERAL]
 		do
+			if last_value_from_grid = Void then
+				if value = Void then
+					create last_value_from_grid.make (1)
+				else
+					last_value_from_grid := value
+				end
+			else
+				last_value_from_grid := value_from_grid
+			end
 			create l_sorter.make (a_comparator)
 			l_sorter.sort (display_tool_names)
 			bind_grid
 		end
+
+	last_value_from_grid: like value_from_grid
 
 feature{NONE} -- Implementation/Binding
 
@@ -312,7 +357,7 @@ feature{NONE} -- Implementation/Binding
 			l_size_table: HASH_TABLE [TUPLE [INTEGER, INTEGER], INTEGER]
 		do
 			create l_displayers
-			l_value := value
+			l_value := last_value_from_grid
 			if l_value = Void then
 				create l_value.make (1)
 			end
@@ -341,6 +386,10 @@ feature{NONE} -- Implementation/Binding
 			l_size_table.put ([70, 80], 1)
 			l_size_table.put ([150, 200], 2)
 			grid_wrapper.auto_resize_columns (grid, l_size_table)
+			if grid.selected_items.is_empty and then grid.row_count > 0 then
+				grid.row (1).item (1).enable_select
+				grid.set_focus
+			end
 		end
 
 	bind_row (a_grid_row: EV_GRID_ROW; a_tool: STRING; a_selected: BOOLEAN; a_view: STRING; a_sorting: STRING) is
@@ -367,9 +416,10 @@ feature{NONE} -- Implementation/Binding
 
 			create l_view
 			l_view.set_item_strings (view_name_list)
-			l_view.set_text (view_table.item (a_view))
+			l_view.set_text (view_table.item (a_view).view_name)
+			l_view.set_tooltip (view_table.item (a_view).view_help)
 			l_view.pointer_button_press_actions.force_extend (agent l_view.activate)
-			l_view.select_actions.extend (agent on_view_change (l_view))
+			l_view.deactivate_actions.extend (agent on_view_change (l_view))
 			l_view.set_data (a_sorting)
 			a_grid_row.set_data (a_tool)
 			a_grid_row.set_item (3, l_view)

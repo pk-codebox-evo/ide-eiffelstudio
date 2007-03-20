@@ -224,6 +224,11 @@ feature -- Status report
 			end
 		end
 
+	is_customized_tool: BOOLEAN is
+			-- Is Current tool a customized tool?
+		do
+		end
+
 feature -- Status setting
 
 	close is
@@ -241,6 +246,12 @@ feature -- Status setting
 			end
 			content.set_focus
 			force_last_stone
+		end
+
+	show_with_setting is
+			-- Show current tool (if possible), and do some settings
+		do
+			show
 		end
 
 	has_focus: BOOLEAN is
