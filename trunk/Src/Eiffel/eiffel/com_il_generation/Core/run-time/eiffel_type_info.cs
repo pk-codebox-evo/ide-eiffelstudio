@@ -82,12 +82,6 @@ feature -- Duplication
 		// New object field-by-field identical to `other'.
 		// Always uses default copying semantics.
 
-/*
-feature -- Settings
-*/
-
-	void ____set_type(RT_GENERIC_TYPE type);
-		/* Set `____type' with `type'. */
 }
 
 }
