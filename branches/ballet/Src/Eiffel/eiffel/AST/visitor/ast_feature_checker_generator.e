@@ -10,6 +10,9 @@ class
 
 inherit
 	AST_VISITOR
+		redefine
+			process_un_confined_as
+		end
 
 	REFACTORING_HELPER
 		export
@@ -3062,6 +3065,25 @@ feature -- Implementation
 					-- Reset flag for vaol check
 				check_for_vaol := False
 			end
+		end
+
+	process_un_confined_as (l_as: UN_CONFINED_AS) is
+		local
+			l_vaol1: VAOL1
+		do
+			if not is_checking_postcondition then
+				-- TODO: We should throw an own error, not an VAOL1 error.
+				create l_vaol1
+				context.init_error (l_vaol1)
+				l_vaol1.set_location (l_as.expr.start_location)
+				error_handler.insert_error (l_vaol1)
+				error_handler.raise_error
+			end
+			-- TODO: check that the inner expression is a FRAME type
+			if is_byte_node_enabled then
+				create {BOOL_CONST_B} last_byte_node.make (true)
+			end
+			last_type := boolean_type
 		end
 
 	process_un_plus_as (l_as: UN_PLUS_AS) is

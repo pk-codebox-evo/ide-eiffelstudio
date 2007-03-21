@@ -36,7 +36,7 @@ create
 %left		TE_FREE
 %right		TE_NOT
 %nonassoc	TE_STRIP
-%left		TE_OLD
+%left		TE_OLD TE_CONFINED
 %left		TE_DOT
 %right		TE_LPARAN
 
@@ -76,7 +76,7 @@ create
 
 %token <KEYWORD_AS> TE_IS
 %token <KEYWORD_AS> TE_AGENT TE_ALIAS TE_ALL TE_AND TE_AS
-%token <KEYWORD_AS> TE_ASSIGN TE_BIT TE_CHECK TE_CLASS TE_CONVERT
+%token <KEYWORD_AS> TE_ASSIGN TE_BIT TE_CHECK TE_CLASS TE_CONFINED TE_CONVERT
 %token <KEYWORD_AS> TE_CREATE TE_DEBUG TE_DO TE_ELSE TE_ELSEIF
 %token <KEYWORD_AS> TE_ENSURE TE_EXPANDED TE_EXPORT TE_EXTERNAL TE_FEATURE
 %token <KEYWORD_AS> TE_FROM TE_IF TE_IMPLIES TE_INDEXING TE_INHERIT
@@ -2444,6 +2444,8 @@ Factor: TE_VOID
 			{ $$ := $1; has_type := False }
 	|	TE_OLD Expression
 			{ $$ := ast_factory.new_un_old_as ($2, $1); has_type := True }
+	|	TE_CONFINED Expression
+			{ $$ := ast_factory.new_un_confined_as ($2, $1); has_type := True }
 	|	TE_STRIP TE_LPARAN Strip_identifier_list TE_RPARAN
 			{
 				$$ := ast_factory.new_un_strip_as ($3, $1, $2, $4); has_type := True

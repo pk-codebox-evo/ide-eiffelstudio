@@ -3,7 +3,7 @@ RM=del
 
 # Gobo flag for gelex
 GOBO_LEX_FLAGS=-z
-GOBO_LEX=$(GOBO)\bin\gelex $(GOBO_LEX_FLAGS)
+GOBO_LEX=$(GOBO)/bin/gelex $(GOBO_LEX_FLAGS)
 
 # Gobo flag for geyaxx
 # To have verbose mode, simply add -v FILE_NAME

@@ -125,6 +125,7 @@ H		([0-9A-Fa-f])
 [cC][hH][eE][cC][kK]					|
 [cC][lL][aA][sS][sS]					|
 [cC][oO][nN][vV][eE][rR][tT]			|
+[cC][oO][nN][fF][iI][nN][eE][dD]			|
 [cC][rR][eE][aA][tT][eE]				|
 [cC][rR][eE][aA][tT][iI][oO][nN]		|
 [cC][uU][rR][rR][eE][nN][tT]			|

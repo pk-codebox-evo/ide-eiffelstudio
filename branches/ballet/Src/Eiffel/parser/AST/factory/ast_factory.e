@@ -1567,6 +1567,14 @@ feature -- Access
 			end
 		end
 
+	new_un_confined_as (e: EXPR_AS; o: AST_EIFFEL): UN_CONFINED_AS is
+			-- New unary confined AST node
+		do
+			if e /= Void then
+				create Result.initialize (e, o)
+			end
+		end
+
 	new_un_plus_as (e: EXPR_AS; o: AST_EIFFEL): UN_PLUS_AS is
 			-- New unary + AST node
 		do
@@ -1699,13 +1707,13 @@ feature -- Access
 		do
 			create Result.make (a, k_as)
 		end
-	
+
 	new_modify_as (a: EIFFEL_LIST [TAGGED_AS]; k_as: KEYWORD_AS): MODIFY_AS is
 			-- New MODIFY AST node
 		do
 			create Result.make (a, k_as)
 		end
-	
+
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"

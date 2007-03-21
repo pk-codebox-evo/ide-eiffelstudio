@@ -282,6 +282,10 @@ U		([0-9]|[0-9][0-9]|[0-9][0-9][0-9])
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_CONVERT, Current)
 				last_token := TE_CONVERT
 			}
+[cC][oO][nN][fF][iI][nN][eE][dD]	{				
+				last_keyword_as_value := ast_factory.new_keyword_as (TE_CONFINED, Current)
+				last_token := TE_CONFINED
+			}
 [cC][rR][eE][aA][tT][eE]	{				
 				last_keyword_as_value := ast_factory.new_keyword_as (TE_CREATE, Current)
 				last_token := TE_CREATE
