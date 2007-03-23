@@ -79,7 +79,7 @@
 		<echo message="Process Gobo" />
 
 		<!-- take gobo from $GOBO -->
-		<!-  <available resource="${GOBO}${path_separator}library" variable="gobo_available" true_value="native" />
+		<!-- <available resource="${GOBO}${path_separator}library" variable="gobo_available" true_value="native" />
 		<echo message="GOBO is already installed ${GOBO}${path_separator}library" if="${gobo_available}=native" />
 		<replace file="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf.in" to_file="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf" token="##GOBO##" replace="##DOLLAR##{GOBO}${path_separator}" flags="g" if="${gobo_available}=native" /> -->
 		
