@@ -153,6 +153,12 @@
 		<set name="setup_error" value="" unless="$res_ise_eiffel=true" />
 		<set name="setup_error" value="" unless="$res_ec=0" />
 		<set name="setup_error" value="" unless="$conf_ec_version=0" />
+		
+		<!-- check if all precompiles are available -->
+		<available resource="$ISE_EIFFEL/precomp/spec/$ISE_PLATFORM/EIFGENs/base" variable="precomp_base" />
+		<available resource="$ISE_EIFFEL/precomp/spec/$ISE_PLATFORM/EIFGENs/vision2" variable="precomp_vision2" />
+		<set name="setup_error" value="" unless="$precomp_base=true" />
+		<set name="setup_error" value="" unless="$precomp_vision2=true" />
 
 		<echo message="  -> $EIFFEL_SVN: ok" if="$res_eiffel_svn=true" />
 		<echo message="warning:  -> $EIFFEL_SVN not found, please point it to the svn url if you want to use this variable!" unless="$res_eiffel_svn=true" /> 
@@ -176,6 +182,14 @@
 		<echo message="===============================================================================" unless="$conf_ec_version=0" />
 		<echo message="ERROR: ec wrong version, exit code: $conf_ec_version,! please install ${ec_version_string}!" unless="$conf_ec_version=0" />
 		<echo message="===============================================================================" unless="$conf_ec_version=0" />
+		<echo message="  -> precompiled Base ok" if="$precomp_base=true" />
+		<echo message="===============================================================================" unless="$precomp_base=true" />
+		<echo message="ERROR: EiffelBase not precompiled." unless="$precomp_base=true" />
+		<echo message="===============================================================================" unless="$precomp_base=true" />
+		<echo message="  -> precompiled Vision2 ok" if="$precomp_vision2=true" />
+		<echo message="===============================================================================" unless="$precomp_vision2=true" />
+		<echo message="ERROR: Vision2 not precompiled." unless="$precomp_vision2=true" />
+		<echo message="===============================================================================" unless="$precomp_vision2=true" />
 		<echo message="" if="$setup_error" />
 		<echo message="" if="$setup_error" />
 		<echo message="ERROR: You have an error in your setup, please check the configuration!" if="$setup_error" />
@@ -319,6 +333,17 @@
 		<exit code="1" if="$setup_error" />		<!-- break if not installed -->
 		<set name="setup_error" value="" unless="$conf_ec_version=0" />
 		
+		<!-- break on error -->
+		<echo message="You have an error in your setup, please check the configuration. See above for some hints." if="$setup_error" />
+		<exit code="1" if="$setup_error" />
+		
+		
+		<!-- check if all precompiles are available -->
+		<available resource="$ISE_EIFFEL/precomp/spec/$ISE_PLATFORM/EIFGENs/base" variable="precomp_base" />
+		<available resource="$ISE_EIFFEL/precomp/spec/$ISE_PLATFORM/EIFGENs/vision2" variable="precomp_vision2" />
+		<set name="setup_error" value="" unless="$precomp_base=true" />
+		<set name="setup_error" value="" unless="$precomp_vision2=true" />
+		
 		<!-- check for available folders that the env-vars point to -->
 		<available resource="$EIFFEL_SVN" variable="res_eiffel_svn" if="$conf_eiffel_svn" />
 		<available resource="$EIFFEL_SRC" variable="res_eiffel_src" if="$conf_eiffel_src" />
@@ -327,7 +352,11 @@
 		<set name="setup_error" value="" unless="$res_eiffel_src=true" />
 		<set name="setup_error" value="" unless="$res_ise_library=true" />
 		<set name="setup_error" value="" unless="$res_ise_eiffel=true" />
-		
+
+		<echo message="  -> Precompiled Base: ok" if="$precomp_base=true" />
+		<echo message="-> EiffelBase not precompiled! Make shure you precompiled it." unless="$precomp_base=true" />
+		<echo message="  -> Precompiled Vision2: ok" if="$precomp_vision2=true" />
+		<echo message="-> Vision2 not precompiled! Make shure you precompiled it." unless="$precomp_vision2=true" />
 		<echo message="  -> $EIFFEL_SVN: ok" if="$res_eiffel_svn=true" />
 		<echo message="warning:  -> $EIFFEL_SVN: not found, ! please check if you need it." unless="$res_eiffel_svn=true" />
 		<echo message="  -> $EIFFEL_SRC: ok" if="$res_eiffel_src=true" />
