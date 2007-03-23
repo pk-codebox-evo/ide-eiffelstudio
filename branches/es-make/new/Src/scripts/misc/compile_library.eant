@@ -79,19 +79,19 @@
 		<echo message="Process Gobo" />
 
 		<!-- take gobo from $GOBO -->
-		<available resource="${GOBO}${path_separator}library" variable="gobo_available" true_value="native" />
+		<!-  <available resource="${GOBO}${path_separator}library" variable="gobo_available" true_value="native" />
 		<echo message="GOBO is already installed ${GOBO}${path_separator}library" if="${gobo_available}=native" />
-		<replace file="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf.in" to_file="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf" token="##GOBO##" replace="##DOLLAR##{GOBO}${path_separator}" flags="g" if="${gobo_available}=native" />
+		<replace file="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf.in" to_file="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf" token="##GOBO##" replace="##DOLLAR##{GOBO}${path_separator}" flags="g" if="${gobo_available}=native" /> -->
 		
 		<!-- take gobo from $ISE_LIBRARY -->
 		<available resource="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}library" variable="gobo_available" true_value="lib" if="${gobo_available}=false" />
 		<echo message="GOBO is already installed ${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}library" if="${gobo_available}=lib" />
-		<replace file="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf.in" to_file="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf" token="##GOBO##" replace="##DOLLAR##{ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}" flags="g" if="${gobo_available}=lib" />
+		<!-- <replace file="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf.in" to_file="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf" token="##GOBO##" replace="##DOLLAR##{ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}" flags="g" if="${gobo_available}=lib" /> -->
 		
 		<!-- take gobo from $ISE_EIFFEL -->
 		<available resource="${ISE_EIFFEL}${path_separator}library${path_separator}gobo${path_separator}library" variable="gobo_available" true_value="ise" if="${gobo_available}=false" />
 		<echo message="GOBO is already installed ${ISE_EIFFEL}${path_separator}library${path_separator}gobo${path_separator}library" if="${gobo_available}=ise" />
-		<replace file="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf.in" to_file="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf" token="##GOBO##" replace="##DOLLAR##{ISE_EIFFEL}${path_separator}library${path_separator}gobo${path_separator}" flags="g" if="${gobo_available}=ise" />
+		<!-- <replace file="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf.in" to_file="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf" token="##GOBO##" replace="##DOLLAR##{ISE_EIFFEL}${path_separator}library${path_separator}gobo${path_separator}" flags="g" if="${gobo_available}=ise" /> -->
 
 		<!-- in every case: replace the dollar sign -->
 		<replace file="${ISE_LIBRARY}${path_separator}library${path_separator}gobo${path_separator}gobo.ecf" token="##DOLLAR##" replace="$" flags="g" />
