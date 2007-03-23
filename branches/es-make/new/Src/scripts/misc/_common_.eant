@@ -8,7 +8,7 @@
 	</description>
 
 	<target name="help">
-		<echo message="usage:"/>
+		<echo message="usage:" />
 		<echo message=" Do not call this script directly" />
 	</target>	
 
@@ -39,7 +39,7 @@
 	**************************************************************************************
 	-->
 
-	<target name="init" >
+	<target name="init">
 		<set name="environment_valid" value="true" />
 		<geant target="check_environment" reuse_variables="true" />
 		<geant target="check_environment_windows" if="${is_windows}" reuse_variables="true" />
@@ -51,4 +51,22 @@
 		<set name="misc_dir" value="${scripts_dir}${path_separator}misc" />
 	</target>
 
+	<target name="logger">
+		<description>
+			writes the logmessage ${msg} to the file ${to_file}
+			call this target like this: 
+				geant target="logger" arguments="${logfile},${message_string}"
+		</description>
+		
+		<argument name="to_file" />
+		<argument name="msg" />
+
+		<!-- unix -->
+		<exec executable="echo &quot;`date +%H:%M` ${msg}&quot; >> ${to_file}" accept_errors="true" unless="${is_windows}" />
+		
+		<!-- windows -->
+		<exec executable="time /T HH:SS >> ${to_file}" accept_errors="true" if="${is_windows}" />
+		<echo message="${msg}" to_file="${to_file}" append="true" if="${is_windows}" />
+	</target>
+	
 </project>

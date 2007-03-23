@@ -15,58 +15,53 @@
 	
 	<target name="help">
 		<echo message="usage:"/>
-		<echo message=" options : -Dforce_clean=true " unless="${opt}" />
-		<echo message="       ----------" unless="${opt}" />
-		<echo message=" geant clean          : display help with -Dforce_clean=true " unless="${opt}"/>
-		<echo message="       ----------" unless="${opt}" />
-		<set name="opt" value="" unless="${opt}" />
 		<echo message=" geant compile_runtime" />
 		<echo message=" geant compile_library" />
 		<echo message="       ----------"/>
-		<echo message=" geant ${opt} clean_ec"/>
-		<echo message=" geant ${opt} compile_ec"/>
-		<echo message=" geant ${opt} finalize_ec"/>
+		<echo message=" geant clean_ec"/>
+		<echo message=" geant compile_ec"/>
+		<echo message=" geant finalize_ec"/>
 		<echo message="       ----------"/>
-		<echo message=" geant ${opt} clean_ec_batch"/>
-		<echo message=" geant ${opt} compile_ec_batch"/>
-		<echo message=" geant ${opt} finalize_ec_batch"/>
+		<echo message=" geant clean_ec_batch"/>
+		<echo message=" geant compile_ec_batch"/>
+		<echo message=" geant finalize_ec_batch"/>
 		<echo message="       ----------"/>
-		<echo message=" geant ${opt} compile_ec_unix_on_windows"/>
+		<echo message=" geant compile_ec_unix_on_windows"/>
 		<echo message="       ----------"/>
-		<echo message=" geant ${opt} clean_estudio"/>
-		<echo message=" geant ${opt} finalize_estudio"/>
+		<echo message=" geant clean_estudio"/>
+		<echo message=" geant finalize_estudio"/>
 		<echo message="       ----------"/>
-		<echo message=" geant ${opt} clean_finish_freezing"/>
-		<echo message=" geant ${opt} finalize_finish_freezing"/>
+		<echo message=" geant clean_finish_freezing"/>
+		<echo message=" geant finalize_finish_freezing"/>
 		<echo message="       ----------"/>
-		<echo message=" geant ${opt} clean_quick_finalize"/>
-		<echo message=" geant ${opt} finalize_quick_finalize"/>
+		<echo message=" geant clean_quick_finalize"/>
+		<echo message=" geant finalize_quick_finalize"/>
 		<echo message="       ----------"/>
-		<echo message=" geant ${opt} clean_h2e"/>
-		<echo message=" geant ${opt} finalize_h2e"/>
+		<echo message=" geant clean_h2e"/>
+		<echo message=" geant finalize_h2e"/>
 		<echo message="       ----------"/>
-		<echo message=" geant ${opt} clean_emake"/>
-		<echo message=" geant ${opt} finalize_emake"/>
+		<echo message=" geant clean_emake"/>
+		<echo message=" geant finalize_emake"/>
 		<echo message="       ----------"/>
-		<echo message=" geant ${opt} clean_mdconsumer"/>
-		<echo message=" geant ${opt} compile_mdconsumer"/>
-		<echo message=" geant ${opt} finalize_mdconsumer"/>
+		<echo message=" geant clean_mdconsumer"/>
+		<echo message=" geant compile_mdconsumer"/>
+		<echo message=" geant finalize_mdconsumer"/>
 		<echo message="       ----------"/>
-		<echo message=" geant ${opt} clean_emdc"/>
-		<echo message=" geant ${opt} finalize_emdc"/>
+		<echo message=" geant clean_emdc"/>
+		<echo message=" geant finalize_emdc"/>
 		<echo message="       ----------"/>
-		<echo message=" geant ${opt} clean_esbuilder"/>
-		<echo message=" geant ${opt} compile_esbuilder"/>
-		<echo message=" geant ${opt} finalize_esbuilder"/>
+		<echo message=" geant clean_esbuilder"/>
+		<echo message=" geant compile_esbuilder"/>
+		<echo message=" geant finalize_esbuilder"/>
 		<echo message="       ----------"/>
-		<echo message=" geant ${opt} clean_compile_all"/>
-		<echo message=" geant ${opt} finalize_compile_all"/>
-		<echo message=" geant ${opt} clean_es_cleaner"/>
-		<echo message=" geant ${opt} finalize_es_cleaner"/>
-	</target>
-	<target name="clean">
-		<set name="opt" value=" -Dforce_clean=true " />
-		<geant target="help" reuse_variables="true" />
+		<echo message=" geant clean_docbuilder"/>
+		<echo message=" geant finalize_docbuilder"/>
+		<echo message="       ----------"/>
+		<echo message=" geant clean_compile_all"/>
+		<echo message=" geant finalize_compile_all"/>
+		<echo message="       ----------"/>
+		<echo message=" geant clean_es_cleaner"/>
+		<echo message=" geant finalize_es_cleaner"/>
 	</target>
 
 	<!-- 
@@ -82,7 +77,9 @@
 		<echo message="Executable ec not found " unless="${ise_ec_available}" />
 		<exit code="1" unless="${ise_ec_available}" />
 
-		<exec executable="sed --version"  accept_errors="true" exit_code_variable="return_code" />
+		<exec executable="sed --version > /dev/null 2> /dev/null"  accept_errors="true" exit_code_variable="return_code" unless="${is_windows}"/>
+		<exec executable="sed --version > NUL:"  accept_errors="true" exit_code_variable="return_code" if="${is_windows}"/>
+		
 		<echo message="-------" />
 		<echo message="sed is not found (${return_code})" unless="${return_code}=0" />
 		<exit code="${return_code}" unless="${return_code}=0" />
@@ -101,9 +98,6 @@
 
 		<!-- compilation related -->
 		<set name="compile_dir" value="${cwd}"/>
-
-		<!-- source related -->
-		<set name="delivery_dir" value="${EIFFEL_SRC}${path_separator}..${path_separator}Delivery" />
 
 		<!-- environment related -->
 		<setenv name="ISE_LIBRARY" value="${EIFFEL_SRC}" />
@@ -161,7 +155,6 @@
 	</target>
 
 	<!-- final estudio -->
-
 	<target name="init_estudio" depend="init_system">
 		<set name="system" value="estudio"/>
 		<set name="system_target" value="estudio" />
@@ -176,7 +169,6 @@
 		<echo message="Compilation : $system in $system_dir"/>
 		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${misc_dir}"  fork="false"/>
 	</target>
-
 
 	<!-- finish_freezing -->
 	<target name="init_finish_freezing" depend="init_system">
@@ -254,7 +246,6 @@
 	</target>
 
 	<!-- Consumer -->
-
 	<target name="init_mdconsumer" depend="init_system">
 		<set name="system" value="EiffelSoftware.MetadataConsumer"/>
 		<!-- 
@@ -313,6 +304,22 @@
 		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${misc_dir}"  fork="false"/>
 	</target>
 
+	<!-- compile_docbuilder -->
+	<target name="init_docbuilder" depend="init_system">
+		<set name="system" value="doc_builder"/>
+		<set name="system_target" value="doc_builder" />
+		<set name="system_ecf" value="${EIFFEL_SRC}${path_separator}tools${path_separator}doc_builder${path_separator}doc_builder.ecf" />
+		<set name="system_dir" value="${compile_dir}" />
+	</target>
+	<target name="clean_docbuilder" depend="init_docbuilder">
+		<echo message="Cleaning: $system in $system_dir"/>
+		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${misc_dir}" fork="false"/>
+	</target>
+	<target name="finalize_docbuilder" depend="init_docbuilder">
+		<echo message="Compilation: $system in $system_dir"/>
+		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${misc_dir}"  fork="false"/>
+	</target>
+
 	<!-- compile_all -->
 	<target name="init_compile_all" depend="init_system">
 		<set name="system" value="compile_all"/>
@@ -363,12 +370,15 @@
 	<target name="compile_library" depend="init_system">
 		<geant file="${misc_dir}/compile_library.eant" target="compile_all" reuse_variables="true"  fork="false"/>
 	</target>
+	<target name="clean_library" depend="init_system">
+		<geant file="${misc_dir}/compile_library.eant" target="clean_library" reuse_variables="true" fork="false" />
+	</target>
 
 	<!--
 	Helper scripts
 	-->
 	<target name="set_version" depend="init_system">
-		<geant file="${misc_dir}/set_version.eant" target="set_version" reuse_variables="true"  fork="false"/>
+		<geant file="${misc_dir}/set_version.eant" target="set_version" reuse_variables="true"  fork="false" />
 	</target>
 
 </project>
