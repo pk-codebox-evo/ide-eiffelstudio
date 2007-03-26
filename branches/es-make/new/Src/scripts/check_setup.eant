@@ -206,7 +206,7 @@
 
 		<exec executable="which gcc > /dev/null" exit_code_variable="res_gcc" />
 		<exec executable="pkg-config --exists gtk+-2.0" exit_code_variable="res_gtk" />
-		<exec executable="pkg-config --exists xtst" exit_code_variable="res_xtst" />
+		<exec executable="ld -L/usr/X11R6/lib --library=Xtst -i" exit_code_variable="res_xtst"/>
 		<set name="setup_error" value="" unless="$res_gcc=0" />
 		<set name="setup_error" value="" unless="$res_gtk=0" />
 		<set name="setup_error" value="" unless="$res_xtst=0" />
