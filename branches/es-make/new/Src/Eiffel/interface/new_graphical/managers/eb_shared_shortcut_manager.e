@@ -1,17 +1,17 @@
 indexing
-	description: "Objects that ..."
+	description: "Shortcut manger access."
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
-	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
-deferred class
-	SHARED_DEBUGGED_OBJECT_MANAGER
+class
+	EB_SHARED_SHORTCUT_MANAGER
 
-feature {NONE} -- Access
+feature -- Access
 
-	Debugged_object_manager: DEBUGGED_OBJECT_MANAGER is
+	shortcut_manager: EB_SHORTCUT_MANAGER
+			-- Shortcut manager
 		once
 			create Result.make
 		end

@@ -153,6 +153,13 @@ feature -- Query
 	is_locked: BOOLEAN
 			-- If zone can be docked?
 
+	docker_mediator: SD_DOCKER_MEDIATOR is
+			-- Manager for user dragging events.
+			-- Maybe Void if user is not dragging.
+		do
+			Result := property.docker_mediator
+		end
+
 feature -- Command
 
 	save_config (a_file: STRING_GENERAL) is
@@ -338,7 +345,7 @@ feature {SD_TOOL_BAR_HOT_ZONE, SD_FLOATING_TOOL_BAR_ZONE, SD_CONTENT, SD_STATE,
 	  	SD_DOCKING_MANAGER_COMMAND, SD_DOCKING_MANAGER_ZONES, SD_AUTO_HIDE_ANIMATION,
 	  	SD_DOCKING_MANAGER_QUERY, SD_NOTEBOOK, SD_ZONE_NAVIGATION_DIALOG,
 	  	SD_TAB_STATE_ASSISTANT, SD_TOOL_BAR_HOT_ZONE, SD_TOOL_BAR_ZONE_ASSISTANT,
-		SD_DEBUG_ACCESS, SD_UPPER_ZONE, SD_DOCKING_MANAGER_PROPERTY} -- Library internals querys.
+		SD_DEBUG_ACCESS, SD_UPPER_ZONE, SD_DOCKING_MANAGER_PROPERTY, SD_TOOL_BAR_CONTENT} -- Library internals querys.
 
 	query: SD_DOCKING_MANAGER_QUERY
 			-- Manager helper Current for querys.

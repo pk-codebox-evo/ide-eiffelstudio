@@ -435,18 +435,6 @@ feature -- Actions on all windows
 			for_all (agent refresh_action)
 		end
 
-	refresh_commands is
-			-- Refresh all windows commands.
-		do
-			for_all (agent refresh_commands_action)
-		end
-
-	refresh_external_commands is
-			-- Only refresh external commands
-		do
-			for_all (agent refresh_external_commands_action)
-		end
-
 	save_all is
 			-- Ask each window to save its content.
 		do
@@ -703,6 +691,20 @@ feature -- Actions on all windows
 			if managed_windows.valid_index (l_index) then
 				managed_windows.go_i_th (l_index)
 			end
+		end
+
+feature {EB_SHORTCUT_MANAGER} -- Actions on all windows
+
+	refresh_commands is
+			-- Refresh all windows commands.
+		do
+			for_all (agent refresh_commands_action)
+		end
+
+	refresh_external_commands is
+			-- Only refresh external commands
+		do
+			for_all (agent refresh_external_commands_action)
 		end
 
 feature {EB_WINDOW, EB_DEVELOPMENT_WINDOW_BUILDER} -- Events
@@ -1007,6 +1009,7 @@ feature -- Events
 			Finalize_project_cmd.disable_sensitive
 			terminate_c_compilation_cmd.enable_sensitive
 			for_all (agent c_compilation_start_action)
+			run_workbench_cmd.disable_sensitive
 			if process_manager.is_finalizing_running then
 				run_finalized_cmd.disable_sensitive
 			end
@@ -1019,8 +1022,8 @@ feature -- Events
 			Freeze_project_cmd.enable_sensitive
 			Finalize_project_cmd.enable_sensitive
 			terminate_c_compilation_cmd.disable_sensitive
-			run_finalized_cmd.enable_sensitive
 			for_all (agent c_compilation_stop_action)
+			run_workbench_cmd.enable_sensitive
 			run_finalized_cmd.enable_sensitive
 		end
 
@@ -1047,6 +1050,7 @@ feature -- Events
 					Finalize_project_cmd.disable_sensitive
 					Precompilation_cmd.enable_sensitive
 					Run_project_cmd.disable_sensitive
+					Run_workbench_cmd.disable_sensitive
 					Run_finalized_cmd.disable_sensitive
 					override_scan_cmd.disable_sensitive
 					discover_melt_cmd.disable_sensitive
@@ -1056,6 +1060,7 @@ feature -- Events
 					Finalize_project_cmd.enable_sensitive
 					Precompilation_cmd.disable_sensitive
 					Run_project_cmd.enable_sensitive
+					Run_workbench_cmd.enable_sensitive
 					Run_finalized_cmd.enable_sensitive
 					override_scan_cmd.enable_sensitive
 					discover_melt_cmd.enable_sensitive
@@ -1098,6 +1103,7 @@ feature -- Events
 			Export_cmd.disable_sensitive
 			Document_cmd.disable_sensitive
 			Run_project_cmd.disable_sensitive
+			Run_workbench_cmd.disable_sensitive
 			Run_finalized_cmd.disable_sensitive
 			override_scan_cmd.disable_sensitive
 			discover_melt_cmd.disable_sensitive

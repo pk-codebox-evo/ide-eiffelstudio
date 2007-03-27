@@ -75,6 +75,7 @@ feature{NONE} -- Initialization
 			Precursor {EB_OUTPUT_TOOL}(a_docking_manager)
 			content.drop_actions.extend (agent drop_class)
 			content.drop_actions.extend (agent drop_feature)
+			content.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
 		end
 
 	initialization (a_tool: EB_DEVELOPMENT_WINDOW) is
@@ -155,6 +156,8 @@ feature{NONE} -- Initialization
 			output_text.drop_actions.extend (agent drop_feature)
 			output_text.drop_actions.extend (agent drop_cluster)
 			output_text.drop_actions.extend (agent drop_breakable)
+			output_text.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
+			
 			output_text.change_actions.extend (agent on_text_change)
 
 			on_text_change
@@ -320,21 +323,13 @@ feature -- Action
 			-- Open selected text from `output_text' as file name in external editor.
 		local
 			req: COMMAND_EXECUTOR
-			cmd_string: STRING
 		do
 			if has_selected_file then
-				cmd_string := command_shell_name
-				if not cmd_string.is_empty then
-					check
-						selected_file_exists: selected_file_path /= Void
-					end
-					cmd_string.replace_substring_all ("$target", selected_file_path)
-					cmd_string.replace_substring_all ("$line", "1")
-					create req
-					req.execute (cmd_string)
-				else
-					display_status_message (interface_names.e_external_editor_not_defined)
+				check
+					selected_file_exists: selected_file_path /= Void
 				end
+				create req
+				req.execute (preferences.misc_data.external_editor_cli (selected_file_path, 1))
 			end
 		end
 
@@ -697,16 +692,10 @@ feature{NONE}	-- Implementation
 	open_c_file_in_editor (a_file_name: STRING; a_line_number: INTEGER) is
 			-- Open `a_file_name' in external editor and scroll to line `a_line_number'.
 		local
-			l_shell_command: STRING
 			req: COMMAND_EXECUTOR
 		do
-			l_shell_command := preferences.misc_data.external_editor_command.twin
-			if l_shell_command /= Void and then not l_shell_command.is_empty then
-				l_shell_command.replace_substring_all ("$target", a_file_name)
-				l_shell_command.replace_substring_all ("$line", a_line_number.out)
-				create req
-				req.execute (l_shell_command)
-			end
+			create req
+			req.execute (preferences.misc_data.external_editor_cli (a_file_name, a_line_number))
 		end
 
 feature{NONE} -- Implementation
@@ -733,12 +722,6 @@ feature{NONE} -- Implementation
 
 	open_editor_btn: EV_TOOL_BAR_BUTTON
 			-- Button to open selected text in `console' in an external editor
-
-	command_shell_name: STRING is
-			-- Name of the command to execute in the shell dialog.
-		do
-			Result := preferences.misc_data.external_editor_command.twin
-		end
 
 	directory_separator: CHARACTER is
 			-- Directory separator

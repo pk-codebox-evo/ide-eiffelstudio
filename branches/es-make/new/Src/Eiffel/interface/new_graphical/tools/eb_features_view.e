@@ -126,6 +126,7 @@ feature -- Status setting
 			end
 			if widget.is_displayed or else is_auto_hide then
 				force_last_stone
+					--| Note: this will also call `flat_formatter.show_debugged_line' if any
 			end
 		end
 
@@ -133,10 +134,8 @@ feature -- Status setting
 			-- Decide which tool to display.
 		local
 			fs: FEATURE_STONE
-			cs: CLASSI_STONE
 		do
 			fs ?= a_st
-			cs ?= a_st
 			if fs /= Void then
 				show
 				set_focus
@@ -177,18 +176,36 @@ feature -- Status setting
 
 				-- Class tool is the default tool to display a class stone
 				-- when ancestor of old feature is not found in the class stone.
-			if fst = Void and then not found then
+			if fst = Void and then not found and then develop_window.link_tools then
 				develop_window.tools.show_default_tool_of_class
 			end
 
 			if develop_window.unified_stone then
 				develop_window.set_stone (st)
-			else
+			elseif develop_window.link_tools then
 				if not found then
 					develop_window.tools.set_stone (st)
 				else
 					develop_window.tools.set_stone (new_fs)
 				end
+			else
+				if not found then
+					set_stone (st)
+				else
+					set_stone (new_fs)
+				end
+			end
+		end
+
+	veto_pebble_function (a_stone: ANY): BOOLEAN is
+		local
+			l_fs: FEATURE_STONE
+		do
+			if develop_window.link_tools then
+				Result := True
+			else
+				l_fs ?= a_stone
+				Result := l_fs /= Void
 			end
 		end
 
@@ -213,8 +230,6 @@ feature -- Status setting
 			end
 			(formatters @ real_index).execute
 		end
-
-feature -- Actions
 
 feature {NONE} -- Implementation
 
@@ -263,12 +278,11 @@ feature {NONE} -- Implementation
 
 	force_last_stone is
 			-- Force that `last_stone' is displayed in formatters in Current view
+			-- And show debugged line if any.
 		do
-			if not is_last_stone_processed then
-				Precursor
-				if flat_formatter /= Void then
-					flat_formatter.show_debugged_line
-				end
+			Precursor
+			if flat_formatter /= Void then
+				flat_formatter.show_debugged_line
 			end
 		end
 

@@ -65,6 +65,7 @@ feature{NONE} -- Initialization
 		do
 			Precursor (a_docking_manager)
 			content.drop_actions.extend (agent on_item_dropped)
+			content.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
 		end
 
 	build_interface is
@@ -97,14 +98,6 @@ feature -- Access
 	address_manager: EB_ADDRESS_MANAGER
 			-- Manager for the header info.
 
-	last_widget: EV_WIDGET is
-			-- Last set widget
-		do
-			if formatter_container.readable then
-				Result := formatter_container.item
-			end
-		end
-
 	predefined_formatters: like formatters is
 			-- Predefined formatters
 		deferred
@@ -130,6 +123,7 @@ feature -- Access
 				l_frame.set_background_color ((create {EV_STOCK_COLORS}).white)
 				Result := l_frame
 				l_frame.drop_actions.extend (agent drop_stone)
+				l_frame.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
 				empty_widget_internal := l_frame
 			end
 			Result := empty_widget_internal
@@ -154,6 +148,11 @@ feature -- Setting
 
 	drop_stone (st: like last_stone) is
 			-- Set `st' in the stone manager and pop up the feature view if it is a feature stone.
+		deferred
+		end
+
+	veto_pebble_function (a_stone: ANY): BOOLEAN is
+			-- Veto pebble function, where `drop_stone', `on_item_drop' is used.
 		deferred
 		end
 
@@ -252,8 +251,6 @@ feature -- Setting
 					formatter_tool_bar_area.extend (l_control_bar)
 					formatter_tool_bar_area.disable_item_expand (l_control_bar)
 				end
-				outer_container.wipe_out
-				outer_container.extend (formatter_container)
 				formatter_container.replace (l_formatter_widget)
 			end
 		end
@@ -531,6 +528,7 @@ feature{NONE} -- Implementation
 			if Result = Void then
 				create l_drop_actions
 				l_drop_actions.extend (agent drop_stone)
+				l_drop_actions.set_veto_pebble_function (agent veto_pebble_function)
 				Result := a_generator.item ([develop_window, l_drop_actions])
 				Result.set_refresher (agent refresh)
 				l_cache.put (Result, a_name)
@@ -568,9 +566,6 @@ feature{NONE} -- Implementation
 
 	history_toolbar: EV_TOOL_BAR
 			-- Toolbar containing the history commands.
-
-	outer_container: EV_CELL
-			-- Container to hold `formatter_container' and `editor_frame' (if current formatter is an editor formatter)
 
 	used: BOOLEAN
 			-- Has the class view been used yet to perform any formatting?
@@ -708,7 +703,6 @@ feature{NONE} -- Implementation
 			create widget
 			create formatter_container
 			create output_line
-			create outer_container
 			create tool_bar_area
 			create formatter_tool_bar_area
 			create sep
@@ -720,9 +714,7 @@ feature{NONE} -- Implementation
 			widget.disable_item_expand (sep)
 			widget.extend (output_line)
 			widget.disable_item_expand (output_line)
-			outer_container.wipe_out
-			outer_container.extend (formatter_container)
-			widget.extend (outer_container)
+			widget.extend (formatter_container)
 			output_line.set_text (no_target_message)
 		end
 
@@ -850,3 +842,4 @@ invariant
 	veto_format_function_agent_attached: veto_format_function_agent /= Void
 
 end
+

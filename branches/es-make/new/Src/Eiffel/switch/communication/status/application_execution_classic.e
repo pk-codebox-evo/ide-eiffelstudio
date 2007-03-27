@@ -102,7 +102,7 @@ feature -- Properties
 
 feature -- Execution
 
-	run_with_env_string (args, cwd: STRING; env: STRING_GENERAL) is
+	run_with_env_string (app, args, cwd: STRING; env: STRING_GENERAL) is
 			-- Run application with arguments `args' in directory `cwd'.
 			-- If `is_running' is false after the
 			-- execution of this routine, it means that
@@ -114,18 +114,21 @@ feature -- Execution
 			cwd_not_void: cwd /= Void
 			env_not_void: env /= Void
 		local
-			app: STRING
+			cmd: STRING
 			l_status: APPLICATION_STATUS
 			l_env_s8: STRING_8
 		do
 			ipc_engine.launch_ec_dbg
 			if ipc_engine.ec_dbg_launched then
-				app := Eiffel_system.application_name (True)
+				cmd := app.twin
 				if args /= Void then
-					app.extend (' ')
-					app.append (args)
+					cmd.extend (' ')
+					cmd.append (args)
 				end
-				run_request.set_application_name (app)
+					--| Do not double quote the path
+					--| since it will be done by ecdbgd
+					--| FIXME: we may want to change that ...
+				run_request.set_application_name (cmd)
 				run_request.set_working_directory (cwd)
 				if env /= Void then
 					fixme ("[
@@ -275,12 +278,12 @@ feature -- Query
 						odv.set_name (l_feat.feature_name)
 					else
 						create err_dv.make_with_name  (l_feat.feature_name)
-						err_dv.set_message ("Could not retrieve information (once is being called or once failed)")
+						err_dv.set_message (debugger_names.m_Could_not_retrieve_once_information)
 						odv := err_dv
 					end
 				else
 					create err_dv.make_with_name  (l_feat.feature_name)
-					err_dv.set_message (Interface_names.le_Not_yet_called)
+					err_dv.set_message (debugger_names.m_Not_yet_called)
 					if l_feat.is_function then
 						err_dv.set_display_kind (Void_value)
 					else
@@ -323,23 +326,30 @@ feature {APPLICATION_EXECUTION} -- Launching status
 		local
 			env_var_str: STRING_8
 		do
+			Result := debugger_names.w_Cannot_launch_system.as_string_8
+
 			if ipc_engine.is_vms then
 				env_var_str := "logical name"
 			else
 				env_var_str := "environment variable"
 			end
-
-			Result := "Could not launch system.%N"
+			Result.append_character ('%N')
 			if not ipc_engine.valid_ise_ecdbgd_executable then
-				Result.append ("The Eiffel debugger is not found or not executable%N")
-				Result.append ("  current path = "+ ipc_engine.ise_ecdbgd_path + " %N")
-				Result.append ("%NYou can change this value in the preferences%N")
-				Result.append (" or restart after setting the " + env_var_str + " " + ipc_engine.ise_ecdbgd_varname + "%N")
+				Result.append_string_general (
+						debugger_names.w_Cannot_find_valid_ecdbgd (
+								ipc_engine.ise_ecdbgd_path,
+								env_var_str,
+								ipc_engine.ise_ecdbgd_varname
+							)
+					)
 			else
-				Result.append ("The system could not be launched in allotted time:%N")
-				Result.append ("%NYour current timeout is " + ipc_engine.ise_timeout.out + " seconds %N")
-				Result.append ("%NYou can change this value in the preferences%N")
-				Result.append (" or restart after setting the " + env_var_str + " " + ipc_engine.ise_timeout_varname + "%N")
+				Result.append_string_general (
+						debugger_names.w_Cannot_launch_in_allotted_time (
+								ipc_engine.ise_timeout,
+								env_var_str,
+								ipc_engine.ise_timeout_varname
+							)
+					)
 			end
 		end
 

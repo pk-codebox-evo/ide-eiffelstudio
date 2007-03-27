@@ -24,8 +24,6 @@ inherit
 
 	DEBUG_VALUE_EXPORTER
 
-	EB_CONSTANTS
-
 	VALUE_TYPES
 
 	APPLICATION_STATUS_EXPORTER
@@ -245,39 +243,38 @@ feature -- Bridge to Debugger
 
 feature -- Execution
 
-	run_with_env_string (args, cwd: STRING; env: STRING_GENERAL) is
-			-- Run application with arguments `args' in directory `cwd'.
+	run_with_env_string (app: STRING; args, cwd: STRING; env: STRING_GENERAL) is
+			-- Run application `app' with arguments `args' in directory `cwd'.
 			-- If `is_running' is false after the
 			-- execution of this routine, it means that
 			-- the application was unable to be launched
 			-- due to the time_out (see `eiffel_timeout_message').
 			-- Before running the application you must check
 			-- to see if the debugged information is up to date.
-		local
-			app: STRING
 		do
 			reload_dotnet_debug_info_if_needed
-			Eifnet_debugger.initialize_debugger_session (debugger_manager.windows_handle)
-			if Eifnet_debugger.is_debugging then
-				app := Eiffel_system.application_name (True)
+			if il_debug_info_recorder.entry_point_feature_i = Void then
+				--| No entry point .. this is not an executable system
+			else
+				Eifnet_debugger.initialize_debugger_session (debugger_manager.windows_handle)
+				if Eifnet_debugger.is_debugging then
+					process_before_running
 
-				process_before_running
+					Eifnet_debugger.do_run (safe_path (app), cwd, args, env)
 
-				Eifnet_debugger.do_run (app, cwd, args, env)
+					if not Eifnet_debugger.last_dbg_call_succeed then
+							-- This means we had issue creating process
+						Eifnet_debugger.terminate_debugger_session
+						Eifnet_debugger.destroy_monitoring_of_process_termination_on_exit
+					else
+						build_status
+					end
 
-				if not Eifnet_debugger.last_dbg_call_succeed then
-						-- This means we had issue creating process
---					destroy_status
-					Eifnet_debugger.terminate_debugger_session
-					Eifnet_debugger.destroy_monitoring_of_process_termination_on_exit
-				else
-					build_status
-				end
-
-				if is_running then
-						-- Application was able to be started
-					status.set_is_stopped (False)
-					status.set_process_id (eifnet_debugger.last_process_id)
+					if is_running then
+							-- Application was able to be started
+						status.set_is_stopped (False)
+						status.set_process_id (eifnet_debugger.last_process_id)
+					end
 				end
 			end
 		end
@@ -388,8 +385,11 @@ feature {APPLICATION_EXECUTION} -- Launching status
 	can_not_launch_system_message: STRING is
 			-- Message displayed when estudio is unable to launch the system
 		do
-			Result := "An error occurred during initialization of the ICorDebug Debugger%N"
-				+ "or during the Process creation (.NET)."
+			if il_debug_info_recorder /= Void and then il_debug_info_recorder.entry_point_feature_i = Void then
+				Result := debugger_names.w_System_has_no_entry_and_is_not_executable.as_string_8
+			else
+				Result := debugger_names.w_Error_occurred_during_icordebug_initialization.as_string_8
+			end
 		end
 
 feature -- Query
@@ -424,7 +424,7 @@ feature -- Query
 				if l_eifnet_debugger.last_once_available then
 					if not l_eifnet_debugger.last_once_already_called then
 						create err_dv.make_with_name  (l_feat.feature_name)
-						err_dv.set_message (Interface_names.le_Not_yet_called)
+						err_dv.set_message (debugger_names.m_Not_yet_called)
 						err_dv.set_display_kind (Void_value)
 						if l_feat.is_function then
 							err_dv.set_display_kind (Void_value)
@@ -460,7 +460,7 @@ feature -- Query
 					end
 				else
 					create err_dv.make_with_name  (l_feat.feature_name)
-					err_dv.set_message (Interface_names.le_Not_yet_called)
+					err_dv.set_message (debugger_names.m_Not_yet_called)
 					err_dv.set_display_kind (Void_value)
 					if l_feat.is_function then
 						err_dv.set_display_kind (Void_value)
@@ -497,6 +497,7 @@ feature -- Control execution
 	process_before_running is
 		local
 			l_entry_point_feature: E_FEATURE
+			l_entry_fi: FEATURE_I
 			bpm: BREAKPOINTS_MANAGER
 		do
 			check il_debug_info_recorder.last_loading_is_workbench end
@@ -517,10 +518,13 @@ feature -- Control execution
 					debug ("debugger_trace_stepping")
 						print ("Let's add a breakpoint at the entry point of the system%N")
 					end
-					l_entry_point_feature := Il_debug_info_recorder.entry_point_feature_i.e_feature
-					bpm.enable_breakpoint (l_entry_point_feature, 1)
-					send_breakpoints
-					bpm.remove_breakpoint (l_entry_point_feature , 1)
+					l_entry_fi := Il_debug_info_recorder.entry_point_feature_i
+					if l_entry_fi /= Void then
+						l_entry_point_feature := l_entry_fi.e_feature
+						bpm.enable_breakpoint (l_entry_point_feature, 1)
+						send_breakpoints
+						bpm.remove_breakpoint (l_entry_point_feature , 1)
+					end
 				else
 					send_breakpoints
 				end
