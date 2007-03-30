@@ -5,13 +5,14 @@
 			<assertions precondition="true" postcondition="false" check="false" invariant="false" loop="false"/>
 		</option>
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
+		<library name="dynframes" location="$ISE_LIBRARY\library\mml\dynframes.ecf"/>
 		<library name="gobo" location="$ISE_LIBRARY\library\gobo\gobo.ecf"/>
-		<cluster name="mml" location="$ISE_LIBRARY\library\mml\" recursive="true">
+		<library name="mml" location="$ISE_LIBRARY\library\mml\mml.ecf"/>
+		<cluster name="cc_eiffelbase" location=".\cc_eiffelbase\" recursive="true">
 			<file_rule>
 				<exclude>EIFGENs</exclude>
 				<exclude>.svn</exclude>
 				<exclude>CVS</exclude>
-				<exclude>documentation</exclude>
 			</file_rule>
 		</cluster>
 		<cluster name="root_cluster" location=".\" recursive="true">
@@ -19,6 +20,9 @@
 				<exclude>EIFGENs</exclude>
 				<exclude>.svn</exclude>
 				<exclude>CVS</exclude>
+			</file_rule>
+			<file_rule>
+				<exclude>^/cc_eiffelbase$</exclude>
 			</file_rule>
 		</cluster>
 	</target>

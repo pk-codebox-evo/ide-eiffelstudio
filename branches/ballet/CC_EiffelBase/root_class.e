@@ -1,5 +1,7 @@
 indexing
-	description	: "System's root class"
+	description	: "System's root class aka Dump"
+	author: "Marco Zietzling"
+	copyright: "Copyright (c) 2007, Marco Zietzling"
 	date: "$Date$"
 	revision: "$Revision$"
 
