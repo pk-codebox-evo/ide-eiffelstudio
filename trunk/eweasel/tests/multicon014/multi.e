@@ -5,20 +5,18 @@ indexing
 	revision: "$Revision$"
 
 class
-		MULTI[G->{COMPARABLE, NUMERIC}]
+		MULTI[G->{COMPARABLE rename default_create as default_create2, NUMERIC} create default_create, default_create2]
 
 create
 	default_create
 
 feature -- do compuations
 
-		abs_diff ( a_g1, a_g2: G): G is
+		test: G is
 			-- for testing
 		do
-			if a_g1 > a_g2 then
-				Result := a_g1 - a_g2
-			else
-				Result := a_g2 - a_g1
-			end
+				-- Abstract creation should not be possible as it is not known which version
+				-- of default_create should be taken.
+			create Result
 		end
-end
+nd
