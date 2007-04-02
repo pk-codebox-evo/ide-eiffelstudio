@@ -91,6 +91,8 @@ feature {NONE} -- Initialization
 			end
 
 			create {DEBUGGER_TEXT_FORMATTER_OUTPUT} text_formatter_visitor.make
+
+			create cdd_manager.make
 		end
 
 	set_default_parameters
@@ -358,6 +360,9 @@ feature -- Access
 
 	force_debug_mode_cmd: EB_FORCE_DEBUG_MODE_CMD
 			-- Force debug mode command.
+
+	cdd_manager: CDD_MANAGER
+			-- Manager used for cdd
 
 feature -- tools
 
@@ -2120,6 +2125,9 @@ feature {NONE} -- MSIL system implementation
 feature {NONE} -- specific implementation
 
 	implementation: EB_DEBUGGER_MANAGER_IMP;
+
+invariant
+	cdd_manager_not_void: cdd_manager /= Void
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
