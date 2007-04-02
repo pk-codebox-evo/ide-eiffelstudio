@@ -11,7 +11,7 @@ rem common definitions
 set find_bin=%SYSTEMROOT%\system32\find
 
 rem checking for find.exe
-find 2> NUL:
+%FIND_BIN% 2> NUL:
 if not %ERRORLEVEL%==2 goto find_error
 
 rem checking for geant

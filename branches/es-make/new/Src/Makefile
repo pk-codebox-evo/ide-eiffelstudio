@@ -25,9 +25,14 @@ check_setup: check_geant
 
 build_workbench: check_geant
 	geant build_workbench
+	@echo "You should now be able to start development on EiffelStudio"
+	@echo "by opening 'Eiffel/Ace/ec.ecf' in EiffelStudio, using"
+	@echo "the current directory as 'Location' ..."
 
 make_delivery: check_geant
 	geant make_delivery
+	@echo "If everything worked well, the delivery should now be"
+	@echo "available in the 'Eiffel60' subdirectory."
 
 clean: check_geant
 	geant clean
