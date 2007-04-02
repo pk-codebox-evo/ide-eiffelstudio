@@ -7,7 +7,7 @@
 		note: "This script could be split into severals scripts, one for each product"
 	</description>
 	<inherit>
-		<parent location="${EIFFEL_SRC}/scripts/misc/compile_executables.eant">
+		<parent location="${EIFFEL_SRC}/scripts/compile_executables.eant">
 			<redefine target="help"/>
 		</parent>
 	</inherit>

@@ -7,9 +7,8 @@
 		note: "This script could be split into severals scripts, one for each product"
 	</description>
 	<inherit>
-		<parent location="${EIFFEL_SRC}/scripts/misc/_common_.eant">
+		<parent location="${EIFFEL_SRC}/scripts/_common_.eant">
 			<redefine target="help"/>
-			<redefine target="check_environment"/>
 		</parent>
 	</inherit>
 	
@@ -64,30 +63,6 @@
 		<echo message=" geant finalize_es_cleaner"/>
 	</target>
 
-	<!-- 
-	**************************************************************************************
-	*** Check environment  ***************************************************************
-	**************************************************************************************
-	-->
-	<target name="check_environment" once="true">
-		<precursor/>
-
-		<set name="ise_bin" value="${ISE_EIFFEL}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin" />
-		<available resource="${ise_bin}${path_separator}ec${exe}" variable="ise_ec_available"/>
-		<echo message="Executable ec not found " unless="${ise_ec_available}" />
-		<exit code="1" unless="${ise_ec_available}" />
-
-		<exec executable="(echo 'X' | sed '=') > /dev/null 2> /dev/null"  accept_errors="true" exit_code_variable="return_code" unless="${is_windows}"/>
-		<exec executable="sed --version > NUL:"  accept_errors="true" exit_code_variable="return_code" if="${is_windows}"/>
-		
-		<echo message="-------" />
-		<echo message="sed is not found (${return_code})" unless="${return_code}=0" />
-		<exit code="${return_code}" unless="${return_code}=0" />
-		<set name="sed_available" value="true" />
-
-		<echo message="System Environment is valid" />
-	</target>
-
 	<!--
 	**************************************************************************************
 	***  INIT/SETTINGS : ec, batch, unix ...   *******************************************
@@ -126,15 +101,15 @@
 	</target>
 	<target name="clean_ec" depend="init_ec">
 		<echo message="Cleaning : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${misc_dir}" fork="false"/>
+		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${scripts_dir}" fork="false"/>
 	</target>
 	<target name="compile_ec" depend="init_ec">
 		<echo message="Compilation : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="compile" reuse_variables="true" dir="${misc_dir}" fork="false"/>
+		<geant file="ise_eiffel.eant" target="compile" reuse_variables="true" dir="${scripts_dir}" fork="false"/>
 	</target>
 	<target name="finalize_ec" depend="init_ec">
 		<echo message="Compilation : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${misc_dir}"  fork="false"/>
+		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${scripts_dir}"  fork="false"/>
 	</target>
 
 	<!-- batch ec -->
@@ -143,15 +118,15 @@
 	</target>
 	<target name="clean_ec_batch" depend="init_ec_batch">
 		<echo message="Cleaning : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${misc_dir}" fork="false"/>
+		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${scripts_dir}" fork="false"/>
 	</target>
 	<target name="compile_ec_batch" depend="init_ec_batch">
 		<echo message="Compilation : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="compile" reuse_variables="true" dir="${misc_dir}" fork="false"/>
+		<geant file="ise_eiffel.eant" target="compile" reuse_variables="true" dir="${scripts_dir}" fork="false"/>
 	</target>
 	<target name="finalize_ec_batch" depend="init_ec_batch">
 		<echo message="Compilation : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${misc_dir}"  fork="false"/>
+		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${scripts_dir}"  fork="false"/>
 	</target>
 
 	<!-- final estudio -->
@@ -163,11 +138,11 @@
 	</target>
 	<target name="clean_estudio" depend="init_estudio">
 		<echo message="Cleaning : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${misc_dir}" fork="false"/>
+		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${scripts_dir}" fork="false"/>
 	</target>
 	<target name="finalize_estudio" depend="init_estudio">
 		<echo message="Compilation : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${misc_dir}"  fork="false"/>
+		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${scripts_dir}"  fork="false"/>
 	</target>
 
 	<!-- finish_freezing -->
@@ -179,11 +154,11 @@
 	</target>
 	<target name="clean_finish_freezing" depend="init_finish_freezing">
 		<echo message="Cleaning : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${misc_dir}" fork="false"/>
+		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${scripts_dir}" fork="false"/>
 	</target>
 	<target name="finalize_finish_freezing" depend="init_finish_freezing">
 		<echo message="Compilation : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${misc_dir}"  fork="false"/>
+		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${scripts_dir}"  fork="false"/>
 	</target>
 
 	<!-- h2e -->
@@ -195,11 +170,11 @@
 	</target>
 	<target name="clean_h2e" depend="init_h2e">
 		<echo message="Cleaning : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${misc_dir}" fork="false"/>
+		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${scripts_dir}" fork="false"/>
 	</target>
 	<target name="finalize_h2e" depend="init_h2e">
 		<echo message="Compilation : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${misc_dir}"  fork="false"/>
+		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${scripts_dir}"  fork="false"/>
 	</target>
 
 	<!-- quick_finalize -->
@@ -211,11 +186,11 @@
 	</target>
 	<target name="clean_quick_finalize" depend="init_quick_finalize">
 		<echo message="Cleaning : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${misc_dir}" fork="false"/>
+		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${scripts_dir}" fork="false"/>
 	</target>
 	<target name="finalize_quick_finalize" depend="init_quick_finalize">
 		<echo message="Compilation : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${misc_dir}"  fork="false"/>
+		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${scripts_dir}"  fork="false"/>
 	</target>
 
 	<!-- emake -->
@@ -227,11 +202,11 @@
 	</target>
 	<target name="clean_emake" depend="init_emake">
 		<echo message="Cleaning : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${misc_dir}" fork="false"/>
+		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${scripts_dir}" fork="false"/>
 	</target>
 	<target name="finalize_emake" depend="init_emake">
 		<echo message="Compilation : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${misc_dir}"  fork="false"/>
+		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${scripts_dir}"  fork="false"/>
 	</target>
 
 	<!-- unix ec -->
@@ -242,7 +217,7 @@
 	<target name="compile_ec_unix_on_windows" depend="init_ec_unix_on_windows">
 		<echo message="Compilation : $system in $system_dir"/>
 		<set name="c_compile" value="false" />
-		<geant file="ise_eiffel.eant" target="compile" reuse_variables="true" dir="${misc_dir}"  fork="false"/>
+		<geant file="ise_eiffel.eant" target="compile" reuse_variables="true" dir="${scripts_dir}"  fork="false"/>
 	</target>
 
 	<!-- Consumer -->
@@ -257,16 +232,16 @@
 	</target>
 	<target name="clean_mdconsumer" depend="init_mdconsumer">
 		<echo message="Cleaning : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${misc_dir}" fork="false"/>
+		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${scripts_dir}" fork="false"/>
 	</target>
 	<target name="compile_mdconsumer" depend="init_mdconsumer">
 		<echo message="Compilation : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="compile" reuse_variables="true" dir="${misc_dir}"  fork="false"/>
+		<geant file="ise_eiffel.eant" target="compile" reuse_variables="true" dir="${scripts_dir}"  fork="false"/>
 	</target>
 	<target name="finalize_mdconsumer" depend="init_mdconsumer">
 		<echo message="Compilation : $system in $system_dir"/>
 		<set name="c_compile" value="true" />
-		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${misc_dir}"  fork="false"/>
+		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${scripts_dir}"  fork="false"/>
 	</target>
 
 	<!-- emdc -->
@@ -276,12 +251,12 @@
 	</target>
 	<target name="clean_emdc" depend="init_emdc">
 		<echo message="Cleaning : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${misc_dir}" fork="false"/>
+		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${scripts_dir}" fork="false"/>
 	</target>
 	<target name="finalize_emdc" depend="init_emdc">
 		<echo message="Compilation : $system in $system_dir"/>
 		<set name="c_compile" value="true" />
-		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${misc_dir}"  fork="false"/>
+		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${scripts_dir}"  fork="false"/>
 	</target>
 
 	<!-- eBuild -->
@@ -293,15 +268,15 @@
 	</target>
 	<target name="clean_esbuilder" depend="init_esbuilder">
 		<echo message="Cleaning : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${misc_dir}" fork="false"/>
+		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${scripts_dir}" fork="false"/>
 	</target>
 	<target name="compile_esbuilder" depend="init_esbuilder">
 		<echo message="Compilation : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="compile" reuse_variables="true" dir="${misc_dir}" fork="false"/>
+		<geant file="ise_eiffel.eant" target="compile" reuse_variables="true" dir="${scripts_dir}" fork="false"/>
 	</target>
 	<target name="finalize_esbuilder" depend="init_esbuilder">
 		<echo message="Compilation : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${misc_dir}"  fork="false"/>
+		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${scripts_dir}"  fork="false"/>
 	</target>
 
 	<!-- compile_docbuilder -->
@@ -313,11 +288,11 @@
 	</target>
 	<target name="clean_docbuilder" depend="init_docbuilder">
 		<echo message="Cleaning: $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${misc_dir}" fork="false"/>
+		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${scripts_dir}" fork="false"/>
 	</target>
 	<target name="finalize_docbuilder" depend="init_docbuilder">
 		<echo message="Compilation: $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${misc_dir}"  fork="false"/>
+		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${scripts_dir}"  fork="false"/>
 	</target>
 
 	<!-- compile_all -->
@@ -329,11 +304,11 @@
 	</target>
 	<target name="clean_compile_all" depend="init_compile_all">
 		<echo message="Cleaning : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${misc_dir}" fork="false"/>
+		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${scripts_dir}" fork="false"/>
 	</target>
 	<target name="finalize_compile_all" depend="init_compile_all">
 		<echo message="Compilation : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${misc_dir}"  fork="false"/>
+		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${scripts_dir}"  fork="false"/>
 	</target>
 
 	<!-- es_cleaner -->
@@ -345,11 +320,11 @@
 	</target>
 	<target name="clean_es_cleaner" depend="init_es_cleaner">
 		<echo message="Cleaning : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${misc_dir}" fork="false"/>
+		<geant file="ise_eiffel.eant" target="clean" reuse_variables="true" dir="${scripts_dir}" fork="false"/>
 	</target>
 	<target name="finalize_es_cleaner" depend="init_es_cleaner">
 		<echo message="Compilation : $system in $system_dir"/>
-		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${misc_dir}"  fork="false"/>
+		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${scripts_dir}"  fork="false"/>
 	</target>
 
 	<!--
@@ -359,26 +334,26 @@
 	-->
 
 	<target name="compile_runtime" depend="init_system">
-		<geant file="${misc_dir}/compile_runtime.eant" target="compile_runtime" reuse_variables="true"  fork="false"/>
+		<geant file="${scripts_dir}/compile_runtime.eant" target="compile_runtime" reuse_variables="true"  fork="false"/>
 	</target>
 	<target name="clean_runtime" depend="init_system">
-		<geant file="${misc_dir}/compile_runtime.eant" target="clean_runtime" reuse_variables="true"  fork="false"/>
+		<geant file="${scripts_dir}/compile_runtime.eant" target="clean_runtime" reuse_variables="true"  fork="false"/>
 	</target>
 	<target name="compile_runtime_dll" depend="init_system">
-		<geant file="${misc_dir}/compile_runtime.eant" target="compile_runtime_dll" reuse_variables="true"  fork="false"/>
+		<geant file="${scripts_dir}/compile_runtime.eant" target="compile_runtime_dll" reuse_variables="true"  fork="false"/>
 	</target>
 	<target name="compile_library" depend="init_system">
-		<geant file="${misc_dir}/compile_library.eant" target="compile_all" reuse_variables="true"  fork="false"/>
+		<geant file="${scripts_dir}/compile_library.eant" target="compile_all" reuse_variables="true"  fork="false"/>
 	</target>
 	<target name="clean_library" depend="init_system">
-		<geant file="${misc_dir}/compile_library.eant" target="clean_library" reuse_variables="true" fork="false" />
+		<geant file="${scripts_dir}/compile_library.eant" target="clean_library" reuse_variables="true" fork="false" />
 	</target>
 
 	<!--
 	Helper scripts
 	-->
 	<target name="set_version" depend="init_system">
-		<geant file="${misc_dir}/set_version.eant" target="set_version" reuse_variables="true"  fork="false" />
+		<geant file="${scripts_dir}/set_version.eant" target="set_version" reuse_variables="true"  fork="false" />
 	</target>
 
 </project>

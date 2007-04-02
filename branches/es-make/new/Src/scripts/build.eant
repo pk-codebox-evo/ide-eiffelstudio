@@ -7,7 +7,7 @@
 		note: "This script could be split into severals scripts, one for each product"
 	</description>
 	<inherit>
-		<parent location="${EIFFEL_SRC}/scripts/misc/_common_.eant">
+		<parent location="${EIFFEL_SRC}/scripts/_common_.eant">
 			<redefine target="help" />
 		</parent>
 	</inherit>
@@ -21,6 +21,7 @@
 		<echo message="       ----------" />
 		<echo message=" geant help_extended" />
 	</target>
+
 	<target name="help_extended">
 		<echo message="usage:" />
 		<echo message=" options : -Dforce_clean=true " unless="${opt}" />
@@ -161,17 +162,17 @@
 	<!-- templates -->
 	<target name="tmp_clean_executable" depend="init">
 		<argument name="executable_target" />
-		<geant file="${misc_dir}${path_separator}compile_executables.eant" target="clean_${executable_target}" reuse_variables="true" dir="${cwd}" fork="false" />
+		<geant file="${scripts_dir}${path_separator}compile_executables.eant" target="clean_${executable_target}" reuse_variables="true" dir="${cwd}" fork="false" />
 	</target>
 	<target name="tmp_compile_executable" depend="init">
 		<argument name="executable_target" />
 		<set name="use_settings" value="true" />
-		<geant file="${misc_dir}${path_separator}compile_executables.eant" target="compile_${executable_target}" reuse_variables="true" dir="${cwd}" fork="false" />
+		<geant file="${scripts_dir}${path_separator}compile_executables.eant" target="compile_${executable_target}" reuse_variables="true" dir="${cwd}" fork="false" />
 		<unset name="use_settings" />
 	</target>
 	<target name="tmp_finalize_executable" depend="init">
 		<argument name="executable_target" />
-		<geant file="${misc_dir}${path_separator}compile_executables.eant" target="finalize_${executable_target}" reuse_variables="true" dir="${cwd}" fork="false" />
+		<geant file="${scripts_dir}${path_separator}compile_executables.eant" target="finalize_${executable_target}" reuse_variables="true" dir="${cwd}" fork="false" />
 	</target>
 
 	<!-- bench ec -->
@@ -356,26 +357,26 @@
 	-->
 
 	<target name="compile_runtime" depend="init">
-		<geant file="${misc_dir}${path_separator}compile_runtime.eant" target="compile_runtime" reuse_variables="true" fork="false" />
+		<geant file="${scripts_dir}${path_separator}compile_runtime.eant" target="compile_runtime" reuse_variables="true" fork="false" />
 	</target>
 	<target name="clean_runtime" depend="init">
-		<geant file="${misc_dir}${path_separator}compile_runtime.eant" target="clean_runtime" reuse_variables="true" fork="false" />
+		<geant file="${scripts_dir}${path_separator}compile_runtime.eant" target="clean_runtime" reuse_variables="true" fork="false" />
 	</target>
 	<target name="compile_runtime_dll" depend="init">
-		<geant file="${misc_dir}${path_separator}compile_runtime.eant" target="compile_runtime_dll" reuse_variables="true" fork="false" />
+		<geant file="${scripts_dir}${path_separator}compile_runtime.eant" target="compile_runtime_dll" reuse_variables="true" fork="false" />
 	</target>
 	<target name="compile_library" depend="init">
-		<geant file="${misc_dir}${path_separator}compile_library.eant" target="compile_all" reuse_variables="true" fork="false" />
+		<geant file="${scripts_dir}${path_separator}compile_library.eant" target="compile_all" reuse_variables="true" fork="false" />
 	</target>
 	<target name="clean_library" depend="init">
-		<geant file="${misc_dir}${path_separator}compile_library.eant" target="clean_library" reuse_variables="true" fork="false" />
+		<geant file="${scripts_dir}${path_separator}compile_library.eant" target="clean_library" reuse_variables="true" fork="false" />
 	</target>
 
 	<!--
 	Helper scripts
 	-->
 	<target name="set_version" depend="init">
-		<geant file="${misc_dir}${path_separator}set_version.eant" target="set_version" reuse_variables="true" fork="false" />
+		<geant file="${scripts_dir}${path_separator}set_version.eant" target="set_version" reuse_variables="true" fork="false" />
 	</target>
 
 </project>

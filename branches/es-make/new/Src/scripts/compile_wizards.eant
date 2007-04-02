@@ -7,9 +7,8 @@
 		note: "This script provides features to compile the wizards."
 	</description>
 	<inherit>
-		<parent location="${EIFFEL_SRC}/scripts/misc/_common_.eant">
+		<parent location="${EIFFEL_SRC}/scripts/_common_.eant">
 			<redefine target="help"/>
-			<redefine target="check_environment"/>
 		</parent>
 	</inherit>
 	
@@ -20,30 +19,6 @@
 		<echo message=" geant finalize_wel_wizard" />
 		<echo message=" geant finalize_dotnet_wizard" />
 		<echo message=" geant finalize_precompile_wizard" />
-	</target>
-
-	<!-- 
-	**************************************************************************************
-	*** Check environment  ***************************************************************
-	**************************************************************************************
-	-->
-	<target name="check_environment" once="true">
-		<precursor/>
-
-		<set name="ise_bin" value="${ISE_EIFFEL}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin" />
-		<available resource="${ise_bin}${path_separator}ec${exe}" variable="ise_ec_available"/>
-		<echo message="Executable ec not found " unless="${ise_ec_available}" />
-		<exit code="1" unless="${ise_ec_available}" />
-
-		<exec executable="(echo 'X' | sed '=') > /dev/null 2> /dev/null"  accept_errors="true" exit_code_variable="return_code" unless="${is_windows}"/>
-		<exec executable="sed --version > NUL:"  accept_errors="true" exit_code_variable="return_code" if="${is_windows}"/>
-		
-		<echo message="-------" />
-		<echo message="sed is not found (${return_code})" unless="${return_code}=0" />
-		<exit code="${return_code}" unless="${return_code}=0" />
-		<set name="sed_available" value="true" />
-
-		<echo message="System Environment is valid" />
 	</target>
 
 	<!--
@@ -122,7 +97,7 @@
 		<echo message="Finalization: ${wizard_name} wizard in $system_dir"/>
                 <exec executable="rmdir /q/s ${compile_dir}${path_separator}EIFGENs${path_separator}${system_target}" accept_errors="true" if="${is_windows}" />
                 <exec executable="rm -rf ${compile_dir}${path_separator}EIFGENs${path_separator}${system_target}" accept_errors="true" unless="${is_windows}" />
-		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${misc_dir}"  fork="false"/>
+		<geant file="ise_eiffel.eant" target="finalize" reuse_variables="true" dir="${scripts_dir}"  fork="false"/>
 	</target>
 	<target name="delivery_wizard" depend="init_system">
                 <mkdir directory="${wizard_dir}${path_separator}spec" />

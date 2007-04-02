@@ -20,7 +20,7 @@
 	-->
 
 	<inherit>
-		<parent location="${EIFFEL_SRC}${path_separator}scripts${path_separator}misc${path_separator}compile_executables.eant">
+		<parent location="${EIFFEL_SRC}${path_separator}scripts${path_separator}compile_executables.eant">
 			<redefine target="help" />
 		</parent>
 	</inherit>

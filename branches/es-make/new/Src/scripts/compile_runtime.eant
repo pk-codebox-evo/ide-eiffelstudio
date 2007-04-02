@@ -8,7 +8,7 @@
 	</description>
 
 	<inherit>
-		<parent location="${EIFFEL_SRC}/scripts/misc/_common_.eant">
+		<parent location="${EIFFEL_SRC}/scripts/_common_.eant">
 			<redefine target="help"/>
 		</parent>
 	</inherit>

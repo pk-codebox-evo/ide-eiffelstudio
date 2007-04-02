@@ -7,24 +7,38 @@
 		note: "Root script"
 	</description>
 	
-	<target name="help">
+	<inherit>
+		<parent location="${EIFFEL_SRC}/scripts/_common_.eant">
+			<redefine target="help" />
+		</parent>
+	</inherit>
+
+	<target name="help" depend="init">
+		<echo message="EiffelStudio automated build scripts" />
+		<echo message="------------------------------------"/>
+		<echo message="" />
 		<echo message="usage:"/>
 		<echo message=" geant check_setup" />
-		<echo message=" geant build_dev"/>
-		<echo message=" geant build_delivery"/>
+		<echo message=" geant build_workbench"/>
+		<echo message=" geant make_delivery"/>
 		<echo message=" geant clean"/>
 	</target>
-	<target name="check_setup">
-		<geant file="${EIFFEL_SRC}${path_separator}scripts${path_separator}build.eant" target="check_setup" reuse_variables="true" fork="false" />
+
+	<target name="check_setup" depend="init">
+		<geant file="${scripts_dir}build.eant" target="check_setup" reuse_variables="true" fork="false" />
 	</target>
-	<target name="build_dev">
-		<geant file="${EIFFEL_SRC}${path_separator}scripts${path_separator}build.eant" target="build_dev" reuse_variables="true" fork="false" />
+
+	<target name="build_workbench" depend="init">
+		<geant file="${scripts_dir}build.eant" target="build_dev" reuse_variables="true" fork="false" />
 	</target>
-	<target name="build_delivery">
-		<geant file="${EIFFEL_SRC}${path_separator}scripts${path_separator}make_delivery.eant" target="build_delivery" reuse_variables="true" fork="false" />
+
+	<target name="make_delivery" depend="init">
+		<geant file="${scripts_dir}make_delivery.eant" target="build_delivery" reuse_variables="true" fork="false" />
 	</target>
-	<target name="clean">
-		<geant file="${EIFFEL_SRC}${path_separator}scripts${path_separator}build.eant" target="clean_all" reuse_variables="true" fork="false" />
-		<geant file="${EIFFEL_SRC}${path_separator}scripts${path_separator}make_delivery.eant" target="clean" reuse_variables="true" fork="false" />
+
+	<target name="clean" depend="init">
+		<geant file="${scripts_dir}build.eant" target="clean_all" reuse_variables="true" fork="false" />
+		<geant file="${scripts_dir}make_delivery.eant" target="clean" reuse_variables="true" fork="false" />
 	</target>
+
 </project>
