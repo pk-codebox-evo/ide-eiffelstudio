@@ -42,7 +42,7 @@ goto reg_val_xp
 :reg_val_xp
 rem get env-vars from registry
 del tmp
-reg query HKEY_LOCAL_MACHINE\SOFTWARE\ISE\Eiffel60 | %FIND_BIN% "REG_SZ" > keys.txt
+reg query HKEY_LOCAL_MACHINE\SOFTWARE\ISE\Eiffel60 2> NUL: | %FIND_BIN% "REG_SZ" > keys.txt
 for /f "tokens=1,2*" %%a in (keys.txt) do set %%a=%%c
 del keys.txt
 goto command_switch
@@ -62,14 +62,7 @@ if .%1. == .build_delivery. goto build_delivery
 if .%1. == .clean. goto clean
 
 :usage
-echo --------------------------------------------------------------------
-echo EiffelStudio source tree:
-echo		The following targets are available:
-echo        check_setup		- Check if everything is correctly setup
-echo        build_dev		- Setup an environment for development
-echo        build_delivery	- Build a delivery from the source tree
-echo        clean			- Clean up the tree
-echo --------------------------------------------------------------------
+geant help
 goto end
 	
 :check_setup
@@ -98,6 +91,9 @@ goto end
 del tmp
 echo ===============================================================================
 echo geant not found, aborting ...
+echo You can compile geant from precompiled c code, for example by calling
+echo cl library\gobo\geant.c
+echo Just make sure that you add the binary to your path afterwards.
 echo ===============================================================================
 goto end
 
@@ -111,7 +107,4 @@ goto end
 :end
 set find_bin=
 echo.
-echo --------------------------------------------------------------------
-echo Makefile.bat completed
-echo --------------------------------------------------------------------
 

@@ -25,15 +25,15 @@
 	</target>
 
 	<target name="check_setup" depend="init">
-		<geant file="${scripts_dir}build.eant" target="check_setup" reuse_variables="true" fork="false" />
+		<geant file="${scripts_dir}check_setup.eant" target="check_setup" />
 	</target>
 
 	<target name="build_workbench" depend="init">
-		<geant file="${scripts_dir}build.eant" target="build_dev" reuse_variables="true" fork="false" />
+		<geant file="${scripts_dir}build.eant" target="build_dev" />
 	</target>
 
 	<target name="make_delivery" depend="init">
-		<geant file="${scripts_dir}make_delivery.eant" target="build_delivery" reuse_variables="true" fork="false" />
+		<geant file="${scripts_dir}make_delivery.eant" target="build_delivery" />
 	</target>
 
 	<target name="clean" depend="init">

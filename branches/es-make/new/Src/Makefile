@@ -15,7 +15,8 @@ help:
 	@echo ""
 	@echo "'geant' has to be in your path. It is part of the GOBO tool chain."
 	@echo "You can create a binary from pre-compiled C by calling:"
-	@echo "cc -o geant library/gobo/svn/work/bootstrap/geant.c"
+	@echo "cc -o geant library/gobo/geant.c"
+	@echo "and move the generated binary into your path"
 
 # ----------------------------------------------------------------------
 # Official targets

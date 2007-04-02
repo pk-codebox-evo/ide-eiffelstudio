@@ -88,9 +88,9 @@
 		<set name="find_bin" value="${SYSTEMROOT}/system32/find${exe}" />
 		<available resource="${find_bin}" variable="conf_find"/>
 		<echo message="  -> find.exe in path, exit code: $conf_find, ok" if="$conf_find=true" />
-		<echo message="===============================================================================" unless="$conf_find=0" />
+		<echo message="===============================================================================" unless="$conf_find=true" />
 		<echo message="ERROR: find.exe not in path, exit code: $conf_find." unless="$conf_find=true" />
-		<echo message="===============================================================================" unless="$conf_find=0" />
+		<echo message="===============================================================================" unless="$conf_find=true" />
 		<set name="setup_error" value="" unless="$conf_find=true" />
 		
 		<!-- check for cygwin/bash available -->
@@ -262,7 +262,7 @@
 		<exec executable="cd %TMP%" />
 
 		<!-- 'ec' in path -->
-		<exec executable="(ec -version >> es_setup_check)" exit_code_variable="$conf_ec_in_path" />
+		<exec executable="ec -version > es_setup_check" exit_code_variable="conf_ec_in_path" />
 		<echo message="  -> ec in path, ok" if="$conf_ec_in_path=0" />
 		<echo message="===============================================================================" unless="$conf_ec_in_path=0" />
 		<echo message="ERROR: ec not in path." unless="$conf_ec_in_path=0" />
@@ -272,8 +272,7 @@
 
 		<!-- 'ec' correct version -->
 		<exec executable="${find_bin} /C &quot;${ec_version_string}&quot; es_setup_check > NUL:" exit_code_variable="conf_ec_version" />
-		<exec executable="del es_setup_check" if="$res_ec=true" />
-		<exec executable="ec -version | grep -q '${ec_version_string}' > /dev/null" exit_code_variable="conf_ec_version" />
+		<exec executable="del es_setup_check" />
 		<echo message="  -> ec ${ec_version_string}, ok" if="$conf_ec_version=0" />
 		<echo message="===============================================================================" unless="$conf_ec_version=0" />
 		<echo message="ERROR: ec wrong version." unless="$conf_ec_version=0" />
@@ -339,7 +338,7 @@
 		<exec executable="cd %TMP%" />
 
 		<!-- check for msc -->
-		<exec executable="(cl >> es_setup_check)" accept_errors="true" exit_code_variable="conf_msc_cl_version" />
+		<exec executable="(cl > es_setup_check 2> NUL:)" accept_errors="true" exit_code_variable="conf_msc_cl_version" />
 		<exec executable="${find_bin} /C &quot;usage: cl&quot; es_setup_check > NUL:" exit_code_variable="conf_msc_cl_version" if="${conf_msc_cl_version}=0"/>
 		<exec executable="del es_setup_check"/>
 		<echo message="  -> cl found, exit code: $conf_msc_cl_version, ok" if="${conf_msc_cl_version}=0" />
@@ -351,7 +350,7 @@
 		
 		<!-- check for msc-linker -->
 		<exec executable="cd %TMP%" />
-		<exec executable="(link >> es_setup_check)" accept_errors="true" exit_code_variable="conf_msc_link_available" />
+		<exec executable="(link > es_setup_check 2> NUL:)" accept_errors="true" exit_code_variable="conf_msc_link_available" />
 		<exec executable="${find_bin} /C &quot;usage: LINK&quot; es_setup_check > NUL:" exit_code_variable="conf_msc_link_available" if="${conf_msc_link_available}=1100"/>
 		<exec executable="del es_setup_check"/>
 		<echo message="  -> link.exe found, exit code: $conf_msc_link_available, ok" if="${conf_msc_link_available}=0" />
@@ -360,7 +359,7 @@
 		
 		<!-- check for midl -->
 		<exec executable="cd %TMP%" />
-		<exec executable="(midl >> es_setup_check)" accept_errors="true" exit_code_variable="conf_midl_available" />
+		<exec executable="(midl > es_setup_check 2> NUL:)" accept_errors="true" exit_code_variable="conf_midl_available" />
 		<exec executable="${find_bin} /C &quot;MIDL1000&quot; es_setup_check > NUL:" exit_code_variable="conf_midl_available" if="${conf_midl_available}=1000"/>
 		<exec executable="del es_setup_check"/>
 		<echo message="  -> midl.exe found, exit code: $conf_midl_available, ok" if="${conf_midl_available}=0" />
@@ -369,7 +368,7 @@
 		
 		<!-- check for csc -->
 		<exec executable="cd %TMP%" />
-		<exec executable="(csc >> es_setup_check)" accept_errors="true" exit_code_variable="conf_csc_available" />
+		<exec executable="(csc > es_setup_check 2> NUL:)" accept_errors="true" exit_code_variable="conf_csc_available" />
 		<exec executable="${find_bin} /C &quot;fatal error CS2008: No inputs specified&quot; es_setup_check > NUL:" exit_code_variable="conf_csc_available" if="${conf_csc_available}=1"/>
 		<exec executable="del es_setup_check"/>
 		<echo message="  -> csc.exe found, exit code: $conf_csc_available, ok" if="${conf_csc_available}=0" />
