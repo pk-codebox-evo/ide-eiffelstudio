@@ -35,8 +35,6 @@
 	</target>
 
 	<target name="make_delivery" depend="init">
-		<geant file="${scripts_dir}compile_runtime.eant" target="compile_runtime" />
-		<geant file="${scripts_dir}compile_library.eant" target="compile_all" />
 		<geant file="${scripts_dir}make_delivery.eant" target="make_delivery" />
 	</target>
 
