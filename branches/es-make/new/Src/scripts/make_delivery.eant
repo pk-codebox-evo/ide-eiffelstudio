@@ -60,7 +60,7 @@
 
 	<target name="compile_runtime_and_libs" depend="init">
 		<geant file="${scripts_dir}compile_runtime.eant" target="compile_runtime"/>	
-		<geant file="${scripts_dir}compile_libraries.eant" target="compile_all"/>	
+		<geant file="${scripts_dir}compile_library.eant" target="compile_all"/>	
 	</target>
 
 	<target name="finalize_executables" depend="init_delivery">
