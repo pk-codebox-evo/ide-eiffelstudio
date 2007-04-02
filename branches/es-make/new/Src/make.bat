@@ -57,8 +57,8 @@ goto command_switch
 
 :command_switch
 if .%1. == .check_setup. goto check_setup
-if .%1. == .build_dev. goto build_dev
-if .%1. == .build_delivery. goto build_delivery
+if .%1. == .build_workbench. goto build_dev
+if .%1. == .make_delivery. goto build_delivery
 if .%1. == .clean. goto clean
 
 :usage
@@ -92,7 +92,7 @@ del tmp
 echo ===============================================================================
 echo geant not found, aborting ...
 echo You can compile geant from precompiled c code, for example by calling
-echo cl library\gobo\geant.c
+echo cl library\gobo\src\geant\geant.c
 echo Just make sure that you add the binary to your path afterwards.
 echo ===============================================================================
 goto end

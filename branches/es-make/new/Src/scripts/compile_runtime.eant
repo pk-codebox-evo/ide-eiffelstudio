@@ -8,16 +8,8 @@
 	</description>
 
 	<inherit>
-		<parent location="${EIFFEL_SRC}/scripts/_common_.eant">
-			<redefine target="help"/>
-		</parent>
+		<parent location="${EIFFEL_SRC}/scripts/_common_.eant"/>
 	</inherit>
-
-	<target name="help">
-		<echo message="usage:"/>
-		<echo message=" geant compile_runtime" />
-		<echo message=" geant clean_runtime" />
-	</target>	
 
 	<!--
 	**************************************************************************************
@@ -28,10 +20,6 @@
 	<target name="clean_runtime" depend="init">
 		<exec executable="configure clean" dir="${EIFFEL_SRC}/C" if="${ISE_PLATFORM}=windows" />
 		<exec executable="make clobber" dir="${EIFFEL_SRC}/C" unless="${ISE_PLATFORM}=windows" />
-		<exec executable="rm */Makefile.bak" dir="${EIFFEL_SRC}/C" if="${ISE_PLATFORM}=windows" />
-		<exec executable="rm */Makefile.bak" dir="${EIFFEL_SRC}/C" unless="${ISE_PLATFORM}=windows" />
-		<exec executable="rm */*/Makefile.bak" dir="${EIFFEL_SRC}/C" if="${ISE_PLATFORM}=windows" />
-		<exec executable="rm */*/Makefile.bak" dir="${EIFFEL_SRC}/C" unless="${ISE_PLATFORM}=windows" />
 	</target>
 
 	<target name="compile_runtime" depend="init">

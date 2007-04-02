@@ -29,16 +29,21 @@
 	</target>
 
 	<target name="build_workbench" depend="init">
-		<geant file="${scripts_dir}build.eant" target="build_dev" />
+		<geant file="${scripts_dir}compile_runtime.eant" target="compile_runtime"/>
+		<geant file="${scripts_dir}compile_library.eant" target="compile_all" />
+		<geant file="${scripts_dir}compile_executables.eant" target="compile_ec" />
 	</target>
 
 	<target name="make_delivery" depend="init">
-		<geant file="${scripts_dir}make_delivery.eant" target="build_delivery" />
+		<geant file="${scripts_dir}compile_runtime.eant" target="compile_runtime" />
+		<geant file="${scripts_dir}compile_library.eant" target="compile_all" />
+		<geant file="${scripts_dir}make_delivery.eant" target="make_delivery" />
 	</target>
 
 	<target name="clean" depend="init">
-		<geant file="${scripts_dir}build.eant" target="clean_all" reuse_variables="true" fork="false" />
-		<geant file="${scripts_dir}make_delivery.eant" target="clean" reuse_variables="true" fork="false" />
+		<geant file="${scripts_dir}compile_runtime.eant" target="clean_runtime" />
+		<geant file="${scripts_dir}compile_library.eant" target="clean_library" />
+		<geant file="${scripts_dir}compile_executables.eant" target="clean_ec" />
 	</target>
 
 </project>

@@ -20,14 +20,14 @@
 	-->
 
 	<inherit>
-		<parent location="${EIFFEL_SRC}${path_separator}scripts${path_separator}compile_executables.eant">
+		<parent location="${EIFFEL_SRC}/scripts/_common_.eant">
 			<redefine target="help" />
 		</parent>
 	</inherit>
 	
 	<target name="help">
 		<echo message="usage:" />
-		<echo message=" geant build_delivery" />
+		<echo message=" geant make_delivery" />
 		<echo message="     ----------" />
 		<echo message=" geant finalize_executables" />
 		<echo message=" geant create_delivery" />
@@ -40,43 +40,43 @@
 		<echo message=" geant clean" />
 	</target>
 
-	<target name="init_delivery" depend="init_system">
-		<set name="ec_major_version" value="6" />
-		<set name="ec_minor_version" value="0" />
-		<set name="INSTALL_DIR" value="${cwd}${path_separator}Eiffel${ec_major_version}${ec_minor_version}" unless="${INSTALL_DIR}" />
-		<set name="OUTPUT_DIR" value="${INSTALL_DIR}${path_separator}temporary_bin" unless="${OUTPUT_DIR}" />
-		<set name="build_es_logfile" value="${cwd}${path_separator}build_es.log" unless="$build_es_logfile" />
-
-		<available resource="${INSTALL_DIR}" variable="installdir_available" />
-		<mkdir directory="${INSTALL_DIR}"  if="${installdir_available}=false" />
-		<available resource="${OUTPUT_DIR}" variable="outputdir_available" />
-		<mkdir directory="${OUTPUT_DIR}" if="${outputdir_available}=false" />
-		<unset name="installdir_available" />
-		<unset name="outputdir_available" />
+	<target name="init_delivery" depend="init">
+		<available resource="${delivery_dir}" variable="delivery_dir_available" />
+		<mkdir directory="${delivery_dir}"  if="${delivery_dir_available}=false" />
 	</target>
 
-	<target name="build_delivery" depend="init_delivery">
+	<target name="make_delivery" depend="init_delivery">
 		<set name="logmsg" value="# Building EiffelStudio delivery #" />
 		<geant target="logger" arguments="${build_es_logfile},${logmsg}" />
 
-<!-- actually doing nothing
-		<geant target="set_version"		fork="false" reuse_variables="true" />
--->
-		<geant target="finalize_executables"	fork="false" reuse_variables="true" />
-		<geant target="create_delivery" 	fork="false" reuse_variables="true" />
+		<geant target="finalize_executables" fork="false" reuse_variables="true" />
+		<geant target="create_delivery" fork="false" reuse_variables="true" />
 		<geant target="install_executables"	fork="false" reuse_variables="true" />
 		<geant target="generate_documentation"	fork="false" reuse_variables="true" />
-		<geant target="build_wizards"		fork="false" reuse_variables="true" />
-		<geant target="build_vision2demo"	fork="false" reuse_variables="true" />
-		<geant target="cleanup"			fork="false" reuse_variables="true" />
-		
+		<geant target="build_wizards" fork="false" reuse_variables="true" />
+		<geant target="build_vision2demo" fork="false" reuse_variables="true" />
+		<geant target="cleanup" fork="false" reuse_variables="true" />
+
 		<set name="logmsg" value="# Finished building EiffelStudio delivery #" />
 		<geant target="logger" arguments="${build_es_logfile},${logmsg}" />
-		<unset name="logmsg" />
 	</target>
 
 	<target name="finalize_executables" depend="init_delivery">
-		<set name="logmsg" value="Finalizing executables into ${OUTPUT_DIR}" />
+		<geant file="${scripts_dir}compile_executables.eant" target="finalize_ec"/>
+		<geant file="${scripts_dir}compile_executables.eant" target="finalize_estudio"/>
+		<geant file="${scripts_dir}compile_executables.eant" target="finalize_finish_freezing"/>
+		<geant file="${scripts_dir}compile_executables.eant" target="finalize_h2e"/>
+		<geant file="${scripts_dir}compile_executables.eant" target="finalize_emake"/>
+		<geant file="${scripts_dir}compile_executables.eant" target="finalize_mdconsumer"/>
+		<geant file="${scripts_dir}compile_executables.eant" target="finalize_emdc"/>
+		<geant file="${scripts_dir}compile_executables.eant" target="finalize_esbuilder"/>
+		<geant file="${scripts_dir}compile_executables.eant" target="finalize_docbuilder"/>
+		<geant file="${scripts_dir}compile_executables.eant" target="finalize_compile_all"/>
+		<geant file="${scripts_dir}compile_executables.eant" target="finalize_es_cleaner"/>
+	</target>
+	
+	<target name="finalize_executables_old" depend="init_delivery">
+		<set name="logmsg" value="Finalizing executables into ${compile_dir}" />
 		<geant target="logger" arguments="${build_es_logfile},${logmsg}" />
 
 		<!-- run-time -->
@@ -93,7 +93,7 @@
 		<set name="logmsg" value="Error occurred during 'compile_library' (${return_code})" unless="${return_code}=0"/>
 		<geant target="logger" arguments="${build_es_logfile},${logmsg}" unless="${return_code}=0"/>
 		<available resource="${EIFFEL_SRC}${path_separator}library${path_separator}wel${path_separator}spec${path_separator}msc${path_separator}dll${path_separator}wel_hook.dll" variable="tmp_available" />
-		<copy file="${EIFFEL_SRC}${path_separator}library${path_separator}wel${path_separator}spec${path_separator}msc${path_separator}dll${path_separator}wel_hook.dll" to_file="${OUTPUT_DIR}${path_separator}wel_hook.dll" if="${tmp_available}=true" />
+		<copy file="${EIFFEL_SRC}${path_separator}library${path_separator}wel${path_separator}spec${path_separator}msc${path_separator}dll${path_separator}wel_hook.dll" to_file="${delivery_dir}${path_separator}wel_hook.dll" if="${tmp_available}=true" />
 
 		<!-- IL runtime -->
 		<available resource="${EIFFEL_SRC}${path_separator}Eiffel${path_separator}eiffel${path_separator}com_il_generation${path_separator}Core${path_separator}run-time${path_separator}EiffelSoftware.Runtime.dll" variable="tmp_available" />
