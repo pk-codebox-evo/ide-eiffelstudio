@@ -70,11 +70,11 @@ geant check_setup
 goto end
 
 :build_dev
-geant build_dev
+geant build_workbench
 goto end
 
 :build_delivery
-geant build_delivery
+geant make_delivery
 goto end
 
 :clean
