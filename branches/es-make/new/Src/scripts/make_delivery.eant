@@ -66,7 +66,6 @@
 	<target name="finalize_executables" depend="init_delivery">
 		<geant file="${scripts_dir}compile_executables.eant" target="finalize_ec"/>
 		<geant file="${scripts_dir}compile_executables.eant" target="finalize_estudio"/>
-		<geant file="${scripts_dir}compile_executables.eant" target="finalize_emdc"/>
 		<geant file="${scripts_dir}compile_executables.eant" target="finalize_esbuilder"/>
 		<geant file="${scripts_dir}compile_executables.eant" target="finalize_docbuilder"/>
 		<geant file="${scripts_dir}compile_executables.eant" target="finalize_compile_all"/>
@@ -76,6 +75,7 @@
 		<geant file="${scripts_dir}compile_executables.eant" target="finalize_h2e" if="${is_windows}"/>
 		<geant file="${scripts_dir}compile_executables.eant" target="finalize_emake" if="${is_windows}"/>
 		<geant file="${scripts_dir}compile_executables.eant" target="finalize_mdconsumer" if="${is_windows}"/>
+		<geant file="${scripts_dir}compile_executables.eant" target="finalize_emdc" if="${is_windows}"/>
 	</target>
 	
 	<target name="finalize_executables_old" depend="init_delivery">

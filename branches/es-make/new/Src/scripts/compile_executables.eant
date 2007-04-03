@@ -264,7 +264,7 @@
 
 	<!-- es_cleaner -->
 	<target name="init_es_cleaner" depend="init_system">
-		<set name="system" value="es_cleaner"/>
+		<set name="system" value="escln"/>
 		<set name="system_target" value="escln_graphical" />
 		<set name="system_ecf" value="${EIFFEL_SRC}${path_separator}tools${path_separator}es_cleaner${path_separator}escln.ecf" />
 		<set name="system_dir" value="${compile_dir}" />
