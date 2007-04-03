@@ -276,4 +276,79 @@
 		<geant file="${scripts_dir}ise_eiffel.eant" target="finalize" reuse_variables="true" fork="false"/>
 	</target>
 
+	<!-- vision2 wizard -->
+	<target name="init_vision2_wizard" depend="init_system">
+		<set name="system" value="wizard"/>
+		<set name="system_target" value="wizard" />
+		<set name="system_ecf" value="${EIFFEL_SRC}${path_separator}help${path_separator}wizards${path_separator}vision2_wizard.ecf" />
+		<set name="system_dir" value="${compile_dir}${path_separator}vision2_wizard" />
+		<mkdir directory="${system_dir}" />
+	</target>
+	<target name="clean_vision2_wizard" depend="init_vision2_wizard">
+		<geant file="${scripts_dir}ise_eiffel.eant" target="clean" reuse_variables="true" fork="false"/>
+	</target>
+	<target name="finalize_vision2_wizard" depend="init_vision2_wizard">
+		<geant file="${scripts_dir}ise_eiffel.eant" target="finalize" reuse_variables="true" fork="false"/>
+	</target>
+
+	<!-- wizard wizard -->
+	<target name="init_wizard_wizard" depend="init_system">
+		<set name="system" value="wizard"/>
+		<set name="system_target" value="wizard" />
+		<set name="system_ecf" value="${EIFFEL_SRC}${path_separator}help${path_separator}wizards${path_separator}wizard_wizard.ecf" />
+		<set name="system_dir" value="${compile_dir}${path_separator}wizard_wizard" />
+		<mkdir directory="${system_dir}" />
+	</target>
+	<target name="clean_wizard_wizard" depend="init_wizard_wizard">
+		<geant file="${scripts_dir}ise_eiffel.eant" target="clean" reuse_variables="true" fork="false"/>
+	</target>
+	<target name="finalize_wizard_wizard" depend="init_wizard_wizard">
+		<geant file="${scripts_dir}ise_eiffel.eant" target="finalize" reuse_variables="true" fork="false"/>
+	</target>
+
+	<!-- precompile wizard -->
+	<target name="init_precompile_wizard" depend="init_system">
+		<set name="system" value="wizard"/>
+		<set name="system_target" value="wizard" />
+		<set name="system_ecf" value="${EIFFEL_SRC}${path_separator}help${path_separator}wizards${path_separator}precompile_wizard.ecf" />
+		<set name="system_dir" value="${compile_dir}${path_separator}precompile_wizard" />
+		<mkdir directory="${system_dir}" />
+	</target>
+	<target name="clean_precompile_wizard" depend="init_precompile_wizard">
+		<geant file="${scripts_dir}ise_eiffel.eant" target="clean" reuse_variables="true" fork="false"/>
+	</target>
+	<target name="finalize_precompile_wizard" depend="init_precompile_wizard">
+		<geant file="${scripts_dir}ise_eiffel.eant" target="finalize" reuse_variables="true" fork="false"/>
+	</target>
+
+	<!-- wel wizard -->
+	<target name="init_wel_wizard" depend="init_system">
+		<set name="system" value="wizard"/>
+		<set name="system_target" value="wizard" />
+		<set name="system_ecf" value="${EIFFEL_SRC}${path_separator}help${path_separator}wizards${path_separator}wel_wizard.ecf" />
+		<set name="system_dir" value="${compile_dir}${path_separator}wel_wizard" />
+		<mkdir directory="${system_dir}" />
+	</target>
+	<target name="clean_wel_wizard" depend="init_wel_wizard">
+		<geant file="${scripts_dir}ise_eiffel.eant" target="clean" reuse_variables="true" fork="false"/>
+	</target>
+	<target name="finalize_wel_wizard" depend="init_wel_wizard">
+		<geant file="${scripts_dir}ise_eiffel.eant" target="finalize" reuse_variables="true" fork="false"/>
+	</target>
+
+	<!-- dotnet wizard -->
+	<target name="init_dotnet_wizard" depend="init_system">
+		<set name="system" value="wizard"/>
+		<set name="system_target" value="wizard" />
+		<set name="system_ecf" value="${EIFFEL_SRC}${path_separator}help${path_separator}wizards${path_separator}dotnet_wizard.ecf" />
+		<set name="system_dir" value="${compile_dir}${path_separator}dotnet_wizard" />
+		<mkdir directory="${system_dir}" />
+	</target>
+	<target name="clean_dotnet_wizard" depend="init_dotnet_wizard">
+		<geant file="${scripts_dir}ise_eiffel.eant" target="clean" reuse_variables="true" fork="false"/>
+	</target>
+	<target name="finalize_dotnet_wizard" depend="init_dotnet_wizard">
+		<geant file="${scripts_dir}ise_eiffel.eant" target="finalize" reuse_variables="true" fork="false"/>
+	</target>
+
 </project>
