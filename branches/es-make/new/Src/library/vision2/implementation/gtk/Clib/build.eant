@@ -20,7 +20,7 @@
 	</target>
 	
 	<target name="compile" depend="init">
-		<exec executable="finish_freezing -library" dir="${ISE_LIBRARY}/vision2/implementation/gtk/Clib" unless="${is_windows}" />
+		<exec executable="finish_freezing -library" dir="${ISE_LIBRARY}/library/vision2/implementation/gtk/Clib" unless="${is_windows}" />
 	</target>
 	
 	<target name="clean" depend="init">

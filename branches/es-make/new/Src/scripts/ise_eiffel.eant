@@ -37,7 +37,7 @@
 		<set name="c_compile" value="true" />
 		<set name="finalize" value="true" />
 		<geant target="compile" reuse_variables="true" fork="false" />
-		<copy file="${system_dir}${path_separator}EIFGENs${path_separator}${system_target}${path_separator}F_code${path_separator}${system_target}${exe}" to_file="${system_dir}${path_separator}/${system_target}${exe}"/>
+		<copy file="${system_dir}${path_separator}EIFGENs${path_separator}${system_target}${path_separator}F_code${path_separator}${system}${exe}" to_file="${system_dir}${path_separator}${system}${exe}"/>
 	</target>
 
 	<target name="compile" depend="init_arguments">

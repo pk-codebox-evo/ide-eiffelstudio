@@ -24,14 +24,14 @@
 		<geant dir="${ISE_LIBRARY}/library/net/Clib" file="${ISE_LIBRARY}/library/net/Clib/build.eant" target="compile" />
 		<geant dir="${ISE_LIBRARY}/library/vision2/Clib" file="${ISE_LIBRARY}/library/vision2/Clib/build.eant" target="compile" />
 		<geant dir="${ISE_LIBRARY}/library/vision2/implementation/gtk/Clib" file="${ISE_LIBRARY}/library/vision2/implementation/gtk/Clib/build.eant" target="compile" />
-		<geant dir="${ISE_LIBRARY}/library/wel/Clib" file="${ISE_LIBRARY}/library/wel/Clib/build.eant" target="compile" />
+		<geant dir="${ISE_LIBRARY}/library/wel/clib" file="${ISE_LIBRARY}/library/wel/clib/build.eant" target="compile" />
 	</target>
 	
 	<target name="clean" depend="init">
 		<geant dir="${ISE_LIBRARY}/library/net/Clib" file="${ISE_LIBRARY}/library/net/Clib/build.eant" target="clean" />
 		<geant dir="${ISE_LIBRARY}/library/vision2/Clib" file="${ISE_LIBRARY}/library/vision2/Clib/build.eant" target="clean" />
 		<geant dir="${ISE_LIBRARY}/library/vision2/implementation/gtk/Clib" file="${ISE_LIBRARY}/library/vision2/implementation/gtk/Clib/build.eant" target="clean" />
-		<geant dir="${ISE_LIBRARY}/library/wel/Clib" file="${ISE_LIBRARY}/library/wel/Clib/build.eant" target="clean" />
+		<geant dir="${ISE_LIBRARY}/library/wel/clib" file="${ISE_LIBRARY}/library/wel/clib/build.eant" target="clean" />
 	</target>
 
 	<target name="clobber" depend="clean" />
