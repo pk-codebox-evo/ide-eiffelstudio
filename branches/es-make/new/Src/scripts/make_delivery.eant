@@ -5,19 +5,6 @@
 		description: "Builds an EiffelStudio delivery, from the current tree."
 		author: "trosim, es-make Project Team, ETH Zurich"
 	</description>
-	<!--
-		============
-		== README ==
-		============
-		
-		This script is under heavy developement.
-		
-		USE ON YOUR OWN RISK!
-		
-		start the script like this:
-			cd %EIFFEL_SRC%
-			geant -b make_delivery.eant
-	-->
 
 	<inherit>
 		<parent location="${EIFFEL_SRC}/scripts/_common_.eant">
@@ -52,16 +39,9 @@
 		<geant target="compile_runtime_and_libs" fork="false" reuse_variables="true" />
 		<geant target="finalize_executables" fork="false" reuse_variables="true" />
 		<geant target="create_delivery" fork="false" reuse_variables="true" />
-		<geant target="create_delivery_windows" fork="false" reuse_variables="true" />
-		<geant target="create_delivery_unix" fork="false" reuse_variables="true" />
 		<geant target="bootstrap_gobo" fork="false" reuse_variables="true" />
 		<geant target="install_executables"	fork="false" reuse_variables="true" />
-		<!--
 		<geant target="generate_documentation"	fork="false" reuse_variables="true" />
-		<geant target="build_wizards" fork="false" reuse_variables="true" />
-		<geant target="build_vision2demo" fork="false" reuse_variables="true" />
-		<geant target="cleanup" fork="false" reuse_variables="true" />
-		-->
 	</target>
 
 	<target name="compile_runtime_and_libs" depend="init">
@@ -146,6 +126,10 @@
 
 		<!-- delete unused stuff -->
 		<delete directory="${delivery_dir}/scripts" />
+
+		<!-- OS specific stuff -->
+		<geant target="create_delivery_windows" fork="false" reuse_variables="true" />
+		<geant target="create_delivery_unix" fork="false" reuse_variables="true" />
 	</target>
 	
 	<target name="bootstrap_gobo" depend="init_delivery">
@@ -205,6 +189,19 @@
 		<exec executable="chmod a+x ${exe_target}/${exe_name}${exe}" unless="${is_windows}" />
 	</target>
 
+	<target name="install_a_wizard">
+		<argument name="exe_name" />
+		<argument name="exe_target" />
+
+		<available resource="${compile_dir}/${exe_name}/wizard${exe}" variable="bin_available" />
+		<echo message="${compile_dir}/${exe_name}/wizard${exe} missing, aborting ..." if="${bin_available}=false" />
+		<exit code="1" if="${bin_available}=false" />
+		<mkdir directory="${exe_target}/spec" />
+		<mkdir directory="${exe_target}/spec/${ISE_PLATFORM}" />
+		<copy to_directory="${exe_target}" file="${compile_dir}/${exe_name}/wizard${exe}" />
+		<exec executable="chmod a+x ${exe_target}/wizard${exe}" unless="${is_windows}" />
+	</target>
+
 	<target name="install_executables" depend="init_delivery">
 		<geant target="install_an_executable" arguments="ec,${delivery_dir}/studio/spec/${ISE_PLATFORM}/bin" />
 		<geant target="install_an_executable" arguments="estudio,${delivery_dir}/studio/spec/${ISE_PLATFORM}/bin" />
@@ -213,9 +210,15 @@
 		<geant target="install_an_executable" arguments="escln,${delivery_dir}/esbuilder/spec/${ISE_PLATFORM}/bin" />
 		<geant target="install_an_executable" arguments="compile_all,${delivery_dir}/esbuilder/spec/${ISE_PLATFORM}/bin" />
 
+		<geant target="install_a_wizard" arguments="precompile_wizard,${delivery_dir}/studio/wizards/others/precompile" />
+		<geant target="install_a_wizard" arguments="vision2_wizard,${delivery_dir}/studio/wizards/new_projects/vision2" />
+
 		<geant target="install_an_executable" arguments="finish_freezing,${delivery_dir}/studio/spec/${ISE_PLATFORM}/bin" if="${is_windows}" />
 		<geant target="install_an_executable" arguments="emake,${delivery_dir}/studio/spec/${ISE_PLATFORM}/bin" if="${is_windows}" />
 		<geant target="install_an_executable" arguments="h2e,${delivery_dir}/studio/spec/${ISE_PLATFORM}/bin" if="${is_windows}" />
+
+		<geant target="install_a_wizard" arguments="dotnet_wizard,${delivery_dir}/studio/wizards/new_projects/dotnet" if="${is_windows}"/>
+		<geant target="install_a_wizard" arguments="wel_wizard,${delivery_dir}/studio/wizards/new_projects/wel" if="${is_windows}"/>
 	</target>
 
 	<target name="install_executables_old" depend="init_delivery">
@@ -272,44 +275,15 @@
 		<delete directory="${compile_dir}/tmp_doc" />
 	</target>
 
-	<target name="build_wizards" depend="init_delivery">
-		<set name="logmsg" value="Building wizards into ${delivery_dir}" />
-		<geant target="logger" arguments="${build_es_logfile},${logmsg}" />
-
-		<geant file="${misc_dir}/compile_wizards.eant" target="finalize_vision2_wizard" reuse_variables="true" fork="false" />
-		<geant file="${misc_dir}/compile_wizards.eant" target="delivery_wizard" reuse_variables="true" fork="false" />
-
-		<geant file="${misc_dir}/compile_wizards.eant" target="finalize_wizard_wizard" reuse_variables="true" fork="false" />
-		<geant file="${misc_dir}/compile_wizards.eant" target="delivery_wizard" reuse_variables="true" fork="false" />
-
-		<geant file="${misc_dir}/compile_wizards.eant" target="finalize_precompile_wizard" reuse_variables="true" fork="false" />
-		<geant file="${misc_dir}/compile_wizards.eant" target="delivery_wizard" reuse_variables="true" fork="false" />
-
-		<geant target="build_wizards_unix" reuse_variables="true" fork="false" />
-		<geant target="build_wizards_windows" reuse_variables="true" fork="false" />
-
-		<set name="logmsg" value="Finished building wizards." />
-		<geant target="logger" arguments="${build_es_logfile},${logmsg}" />
-		<unset name="logmsg" />
-	</target>
-	<target name="build_wizards_unix" depend="init_delivery" unless="${is_windows}">
-		<exec executable="rm -rf ${delivery_dir}/studio/wizards/new_projects/wel*" />
-		<exec executable="rm -rf ${delivery_dir}/studio/wizards/new_projects/dotnet*" />
-	</target>
-	<target name="build_wizards_windows" depend="init_delivery" if="${is_windows}">
-		<geant file="${misc_dir}/compile_wizards.eant" target="finalize_wel_wizard" reuse_variables="true" fork="false" />
-		<geant file="${misc_dir}/compile_wizards.eant" target="delivery_wizard" reuse_variables="true" fork="false" />
-
-		<geant file="${misc_dir}/compile_wizards.eant" target="finalize_dotnet_wizard" reuse_variables="true" fork="false" />
-		<geant file="${misc_dir}/compile_wizards.eant" target="delivery_wizard" reuse_variables="true" fork="false" />
-	</target>
-
 	<target name="build_vision2demo" depend="init_delivery">
-		<set name="logmsg" value="Building vision2 demo..." />
-		<geant target="logger" arguments="${build_es_logfile},${logmsg}" />
+		<!--
+		Not working yet !!!
+		-->
+	</target>
 
-		<set name="vision2demo_dir" value="${delivery_dir}/vision2_demo" />
-		<set name="vision2demo_source_dir" value="${EIFFEL_SRC}/examples/vision2/widget_test/interface_temp" />
+	<target name="build_vision2demo_old" depend="init_delivery">
+		<set name="vision2demo_dir" value="${delivery_dir}${path_separator}vision2_demo" />
+		<set name="vision2demo_source_dir" value="${compile_dir}${path_separator}" />
 		<set name="build_dir" value="${EIFFEL_SRC}/build" />
 
 		<mkdir directory="${vision2demo_source_dir}" />
