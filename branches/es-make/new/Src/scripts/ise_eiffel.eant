@@ -43,7 +43,7 @@
 	<target name="compile" depend="init_arguments">
 		<mkdir directory="${system_dir}"/>
 		<geant target="clean" if="${force_clean}=true"/>
-		<set name="eccmd" value="ec${exe} " />
+		<set name="eccmd" value="${ISE_EIFFEL}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}ec${exe} " />
 		<set name="eccmd" value="${eccmd} -config ${system_ecf}" />
 		<set name="eccmd" value="${eccmd} -target ${system_target}" />
 		<set name="eccmd" value="${eccmd} -project_path ${system_dir}" />
