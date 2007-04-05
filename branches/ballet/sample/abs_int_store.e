@@ -17,8 +17,12 @@ feature{NONE} -- Initialization
 
 	make is
 			-- Creation
+		modify
+			repr
 		do
-
+			item := 0
+		ensure
+			init: item = 0
 		end
 
 feature -- Implementation

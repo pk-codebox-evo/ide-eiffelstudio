@@ -70,4 +70,12 @@ feature -- Settings
 			value_set: item = a_value
 		end
 
+feature -- Framing
+	repr: FRAME is
+		use
+			own: repr
+		do
+			create Result.make_from_element (Current)
+		end
+
 end
