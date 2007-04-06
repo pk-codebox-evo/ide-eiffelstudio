@@ -62,7 +62,11 @@ if .%1. == .make_delivery. goto build_delivery
 if .%1. == .clean. goto clean
 
 :usage
-geant help
+echo usage:
+echo    make.bat check_setup
+echo    make.bat build_dev
+echo    make.bat build_delivery
+echo    make.bat clean
 goto end
 	
 :check_setup
