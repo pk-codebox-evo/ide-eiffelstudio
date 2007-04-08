@@ -79,7 +79,7 @@ feature -- Titles
 	t_input_domain: STRING_GENERAL is do Result := locale.translate ("Input domain") end
 	t_result: STRING_GENERAL is do Result := locale.translate ("Results:") end
 	t_input_domain_title: STRING_GENERAL is do Result := locale.translate ("Input domain:") end
-	t_metric_criterion_definition: STRING_GENERAL is do Result := locale.translate ("definition:") end
+	t_metric_criterion_definition: STRING_GENERAL is do Result := locale.translate ("Definition:") end
 	t_select_domain_scope: STRING_GENERAL is do Result := locale.translate ("Select domain scope") end
 	t_predefined_text_not_editable: STRING_GENERAL is do Result := locale.translate ("Text not editable because current metric is predefined.") end
 	t_text_not_editable: STRING_GENERAL is do Result := locale.translate ("Text not editable.") end
@@ -170,6 +170,8 @@ feature -- Titles
 	t_regexp: STRING_GENERAL is do Result := locale.translate ("Regular expression") end
 	t_matching_strategy: STRING_GENERAL is do Result := locale.translate ("Matching Strategy") end
 	t_clear_result: STRING_GENERAL is do Result := locale.translate ("Clear detailed result") end
+	t_case_sensitive: STRING_GENERAL is do Result := locale.translate ("Case-sensitive") end
+	t_case_insensitive: STRING_GENERAL is do Result := locale.translate ("Case-insensitive") end
 
 feature -- Titles for editor token
 
@@ -200,6 +202,16 @@ feature -- Labels
 	l_constant_value: STRING_GENERAL is do Result := locale.translate ("constant value") end
 	l_metric_value: STRING_GENERAL is do Result := locale.translate ("metric value") end
 	l_value_tester: STRING_GENERAL is do Result := locale.translate ("value tester") end
+	l_current: STRING_GENERAL is do Result := locale.translate ("current") end
+	l_current_version: STRING_GENERAL is do Result := locale.translate ("current version") end
+	l_desendent_versions: STRING_GENERAL is do Result := locale.translate ("descendent versions") end
+	l_direct: STRING_GENERAL is do Result := locale.translate ("direct") end
+	l_indirect: STRING_GENERAL is do Result := locale.translate ("indirect") end
+	l_normal_referenced: STRING_GENERAL is do Result := locale.translate ("normal") end
+	l_syntactical_referenced: STRING_GENERAL is do Result := locale.translate ("syntactical") end
+	l_empty_domain: STRING_GENERAL is do Result := locale.translate ("empty domain") end
+	l_use_parent_delayed_domain: STRING_GENERAL is do Result := locale.translate ("use parent delayed domain") end
+	l_no_value_tester: STRING_GENERAL is do Result := locale.translate ("No value tester") end
 
 feature -- Tooltip
 
@@ -938,7 +950,7 @@ feature -- Error/warning message
 		require
 			a_value_attached: a_value /= Void
 		do
-			Result := locale.format_string (locale.translate ("Only syntactically referenced supplier/client class attribute %"$1%" is invalid. A boolean value is expected."), [a_value])
+			Result := locale.format_string (locale.translate ("Attribute %"$1%" is invalid. A boolean value is expected."), [a_value])
 		ensure
 			result_attached: Result /= Void
 		end
@@ -1032,6 +1044,34 @@ feature -- Error/warning message
 			a_invalid_strategy_attached: a_invalid_strategy /= Void
 		do
 			Result := locale.format_string (locale.translate ("Matching strategy %"$1%" is invalid."), [a_invalid_strategy])
+		end
+
+	err_archive_file_name_exists (a_file_name: STRING_GENERAL): STRING_GENERAL is
+		require
+			a_file_name_attached: a_file_name /= Void
+		do
+			Result := locale.format_string (locale.translate ("Remote file will be loaded in: $1.%NThis file already exists. Overwrite?"), [a_file_name])
+		end
+
+	err_unable_to_read_from_url (a_url: STRING_GENERAL): STRING_GENERAL is
+		require
+			a_url_attached: a_url /= Void
+		do
+			Result := locale.format_string (locale.translate ("Unable to read remote file.%NPlease check URL: $1"), [a_url])
+		end
+
+	err_unable_to_load_archive_file (a_file_name: STRING_GENERAL): STRING_GENERAL is
+		require
+			a_file_name_attached: a_file_name /= Void
+		do
+			Result := locale.format_string (locale.translate ("Unable to load remote file in: $1%NPlease make sure file does not exits or is writable."), [a_file_name])
+		end
+
+	err_transfer_file (a_reason: STRING_GENERAL): STRING_GENERAL is
+		require
+			a_reason_attached: a_reason /= Void
+		do
+			Result := locale.format_string (locale.translate ("Unable to transfer remote file.%NReason: $1"), [a_reason])
 		end
 
 feature -- To do messages
@@ -1352,3 +1392,4 @@ indexing
 
 
 end
+

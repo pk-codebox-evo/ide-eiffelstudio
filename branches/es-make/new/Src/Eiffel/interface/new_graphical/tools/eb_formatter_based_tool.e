@@ -8,13 +8,14 @@ deferred class
 	EB_FORMATTER_BASED_TOOL
 
 inherit
-	EB_TOOL
+	EB_STONABLE_TOOL
 		redefine
 			build_mini_toolbar,
 			build_docking_content,
 			mini_toolbar,
 			force_last_stone,
 			show,
+			internal_recycle,
 			show_with_setting
 		end
 
@@ -65,7 +66,6 @@ feature{NONE} -- Initialization
 		do
 			Precursor (a_docking_manager)
 			content.drop_actions.extend (agent on_item_dropped)
-			content.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
 		end
 
 	build_interface is
@@ -123,7 +123,6 @@ feature -- Access
 				l_frame.set_background_color ((create {EV_STOCK_COLORS}).white)
 				Result := l_frame
 				l_frame.drop_actions.extend (agent drop_stone)
-				l_frame.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
 				empty_widget_internal := l_frame
 			end
 			Result := empty_widget_internal
@@ -148,16 +147,6 @@ feature -- Setting
 
 	drop_stone (st: like last_stone) is
 			-- Set `st' in the stone manager and pop up the feature view if it is a feature stone.
-		deferred
-		end
-
-	veto_pebble_function (a_stone: ANY): BOOLEAN is
-			-- Veto pebble function, where `drop_stone', `on_item_drop' is used.
-		deferred
-		end
-
-	set_stone (new_stone: STONE) is
-			-- Associate current formatter with stone contained in `new_stone'.
 		deferred
 		end
 
@@ -528,7 +517,6 @@ feature{NONE} -- Implementation
 			if Result = Void then
 				create l_drop_actions
 				l_drop_actions.extend (agent drop_stone)
-				l_drop_actions.set_veto_pebble_function (agent veto_pebble_function)
 				Result := a_generator.item ([develop_window, l_drop_actions])
 				Result.set_refresher (agent refresh)
 				l_cache.put (Result, a_name)
@@ -566,9 +554,6 @@ feature{NONE} -- Implementation
 
 	history_toolbar: EV_TOOL_BAR
 			-- Toolbar containing the history commands.
-
-	used: BOOLEAN
-			-- Has the class view been used yet to perform any formatting?
 
 	tool_bar: EV_TOOL_BAR
 			-- Toolbar containing all buttons.
@@ -756,7 +741,8 @@ feature{NONE} -- Implementation
 			l_formatters := layout_formatters
 			if l_formatters.is_empty then
 				formatter_tool_bar_area.wipe_out
-				formatter_container.replace (empty_widget)
+				formatter_container.wipe_out
+				formatter_container.extend (empty_widget)
 				output_line.set_text ("")
 			else
 				l_cursor := l_formatters.cursor
@@ -820,7 +806,7 @@ feature{NONE} -- Recycle
 	internal_recycle is
 			-- To be called when the button has became useless.
 		do
-			Precursor
+			Precursor {EB_HISTORY_OWNER}
 
 			safe_remove_agent (on_customized_formatter_loaded_agent, customized_formatter_manager.change_actions)
 			if eiffel_project.manager.load_agents.has (on_project_loaded_agent) then
@@ -830,7 +816,7 @@ feature{NONE} -- Recycle
 			do_all_in_list (customized_formatters, agent (a_formatter: EB_FORMATTER) do a_formatter.recycle end)
 			do_all_in_list (displayer_cache.linear_representation, agent (a_displayer: EB_FORMATTER_DISPLAYER) do a_displayer.recycle end)
 
-			develop_window := Void
+			Precursor {EB_STONABLE_TOOL}
 		end
 
 invariant

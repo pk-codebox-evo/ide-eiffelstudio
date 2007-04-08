@@ -735,7 +735,7 @@ feature {COMPILER_EXPORTER} -- Primitives
 									-- of TEST declared as A [TOTO], maybe TOTO has not yet been recompiled?
 									-- So we store all the needed information and we will do a check at the
 									-- end of the degree 4 (look at PASS2 for the code which does the checking).
-								l_formal_generic_parameter ?= l_generic_parameter
+								l_formal_generic_parameter ?= l_generic_parameter.conformance_type
 								if System.in_pass3 then
 									creation_constraint_check (
 											l_formal_dec_as, l_constraints, a_type_context,
@@ -747,7 +747,7 @@ feature {COMPILER_EXPORTER} -- Primitives
 --											l_generic_parameter, l_constraints, l_formal_dec_as, i, l_formal_generic_parameter, False))
 --									else
 										add_future_checking (a_type_context,
-											agent delayed_creation_constraint_check (a_type_context, Void,
+											agent delayed_creation_constraint_check (a_type_context, a_context_feature,
 											l_generic_parameter, l_constraints, l_formal_dec_as, i, l_formal_generic_parameter))
 --									end
 								end
@@ -811,16 +811,18 @@ feature {COMPILER_EXPORTER} -- Primitives
 		require
 			formal_dec_as_not_void: formal_dec_as /= Void
 			creation_constraint_exists: formal_dec_as.has_creation_constraint
+			to_check_is_formal_implies_formal_type_not_void: to_check.conformance_type.is_formal implies formal_type /= Void
 		local
 			l_vtcg7: VTCG7
 		do
 			reset_constraint_error_list
 			if context_class.is_valid and then to_check /= Void and then to_check.is_valid then
-				creation_constraint_check (formal_dec_as, constraint_type, context_class, to_check, i, formal_type)
+				creation_constraint_check (formal_dec_as, constraint_type, context_class, to_check, i, formal_type) -- MTNTODO: Replace void with formal_type
 				if not constraint_error_list.is_empty then
 						-- The feature listed in the creation constraint have
 						-- not been declared in the constraint class.
 					create l_vtcg7
+				--	l_vtcg7.set_location (Current.first_token (context.))
 					l_vtcg7.set_class (context_class)
 					l_vtcg7.set_error_list (constraint_error_list)
 					l_vtcg7.set_parent_type (Current)
@@ -846,13 +848,13 @@ feature {COMPILER_EXPORTER} -- Primitives
 			creation_constraint_exists: formal_dec_as.has_creation_constraint
 		local
 			formal_type_dec_as: FORMAL_CONSTRAINT_AS
-			formal_crc_list, crc_list: LINKED_LIST [FEATURE_I];
+			formal_crc_list, crc_list: LINKED_LIST [TUPLE [type_item: EXTENDED_TYPE_A; feature_item: FEATURE_I]];
 			creators_table: HASH_TABLE [EXPORT_I, STRING]
 			matched: BOOLEAN
 			feat_tbl: FEATURE_TABLE
 			class_c: CLASS_C
 			other_feature_i, feature_i: FEATURE_I
-			l_unmatched_features: LIST[FEATURE_I]
+			l_unmatched_features: LIST [FEATURE_I]
 		do
 
 				-- If there is a creation constraint we are facing two different cases:
@@ -870,8 +872,9 @@ feature {COMPILER_EXPORTER} -- Primitives
 				--            * m >= n
 				--            * for each `make_i' where 1 <= i <= n, there is a `j' (1 <= j <= m)
 				--              where `my_make_k' is a redefined/renamed version of `make_i'.
-			crc_list := formal_dec_as.constraint_creation_list (context_class)
+			crc_list := formal_dec_as.constraint_creation_list (associated_class)
 			if formal_type = Void then
+					-- We're in the case of a class type.
 				if to_check.has_associated_class then
 					-- `to_check' may not have an associated class if it represents NONE type, for
 						-- example in PROCEDURE [ANY, NONE], we will check NONE against
@@ -894,7 +897,7 @@ feature {COMPILER_EXPORTER} -- Primitives
 						crc_list.after
 					loop
 							-- Let's take one of the creation procedure defined in the constraint.
-						feature_i := crc_list.item
+						feature_i := crc_list.item.feature_item
 
 							-- Take the redefined/renamed version of the previous version in the
 							-- descendant class `to_check'/`class_c'.
@@ -916,17 +919,26 @@ feature {COMPILER_EXPORTER} -- Primitives
 						crc_list.forth
 					end
 				else
+						-- The class type does not have a creation clause:
 						-- May be we are handling a case where the constraint only specfies
 						-- `default_create', so let's check that the constraint defines
 						-- `default_create' as creation procedure and that `creators_table'
 						-- is Void (as empty means there is no way to create an instance of this
 						-- class).
+						-- At last we check that this class is not deferred.
 					if
 					 	creators_table = Void and then
 						(crc_list.count = 1 and then formal_dec_as.has_default_create)
 					then
-						-- Ok, no error: We have no create clause which makes `default_create' available
-						-- and the constraint demands only `default_create'
+							-- Ok, no error: We have no create clause which makes `default_create' available
+							-- and the constraint demands only `default_create'
+							-- But maybe it is a deferred class?
+							if class_c /= Void and then class_c.is_deferred then
+								if l_unmatched_features = Void then
+									create {LINKED_LIST[FEATURE_I]} l_unmatched_features.make
+								end
+								l_unmatched_features.extend (crc_list.first.feature_item)
+							end
 					else
 							-- Generate list of features not matching constraint.
 						from
@@ -940,8 +952,9 @@ feature {COMPILER_EXPORTER} -- Primitives
 								-- If it is Void, then `{ANY}.default_create' is a valid creation routine, in that
 								-- case we should not list `default_create' has not beeing met if listed in the creation
 								-- constraint.
-							if creators_table /= Void or else not crc_list.item.rout_id_set.has (system.default_create_id) then
-								l_unmatched_features.extend (crc_list.item)
+							feature_i := crc_list.item.feature_item
+							if creators_table /= Void or else not feature_i.rout_id_set.has (system.default_create_id) then
+								l_unmatched_features.extend (feature_i)
 							end
 							crc_list.forth
 						end
@@ -964,18 +977,17 @@ feature {COMPILER_EXPORTER} -- Primitives
 						until
 							crc_list.after
 						loop
-							feature_i := crc_list.item
+							feature_i := crc_list.item.feature_item
 								-- Check that all the creation procedures defined in the creation
 								-- constraint clause `crc_list' are indeed present under a
 								-- redefined/renamed version in the creation constraint clause
-								-- `formal_crc_list'.
 							from
 								matched := False
 								formal_crc_list.start
 							until
 								matched or else formal_crc_list.after
 							loop
-								matched := formal_crc_list.item.rout_id_set.has (
+								matched := formal_crc_list.item.feature_item.rout_id_set.has (
 											feature_i.rout_id_set.first)
 								formal_crc_list.forth
 							end

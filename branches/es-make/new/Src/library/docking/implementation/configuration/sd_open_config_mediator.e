@@ -30,8 +30,12 @@ feature -- Open inner container data.
 			-- Open all docking library datas from `a_file'.
 		require
 			a_file_not_void: a_file /= Void
+		local
+			l_config_data: SD_CONFIG_DATA
 		do
 			Result := open_all_config (a_file)
+			l_config_data := config_data_from_file (a_file)
+			internal_open_maximized_tool_data (l_config_data)
 			internal_docking_manager.command.resize (True)
 		end
 
@@ -55,36 +59,37 @@ feature -- Open inner container data.
 			l_reader.set_for_reading
 			create l_facility
 			l_data ?= l_facility.retrieved (l_reader, True)
-			check not_void: l_data /= Void end
-			l_top_parent := editor_top_parent_for_restore
-			internal_docking_manager.command.lock_update (Void, True)
-			clean_up_all_editors
+			if l_data /= Void then
+				l_top_parent := editor_top_parent_for_restore
+				internal_docking_manager.command.lock_update (Void, True)
 
-			open_inner_container_data (l_data, l_top_parent)
-			l_split_area ?= l_top_parent
-			if l_split_area /= Void then
-				if l_split_area.first /= Void then
-					l_split_area ?= l_split_area.first
-					if l_split_area /= Void then
-						open_inner_container_data_split_position (l_data, l_split_area)
+				clean_up_all_editors
+
+				open_inner_container_data (l_data, l_top_parent)
+				l_split_area ?= l_top_parent
+				if l_split_area /= Void then
+					if l_split_area.first /= Void then
+						l_split_area ?= l_split_area.first
+						if l_split_area /= Void then
+							open_inner_container_data_split_position (l_data, l_split_area)
+						end
 					end
 				end
+
+				-- If this time we only restore a editor place holder zone? No real editors restored.
+				if not internal_docking_manager.main_container.has_recursive (internal_docking_manager.zones.place_holder_content.state.zone) then
+					-- We should close place holder content if exist. Because there is(are) already normal editor zone(s).				
+					internal_docking_manager.zones.place_holder_content.close
+				end
+
+				-- We have to call `remove_empty_split_area' first to make sure no void widget when update_middle_container.
+				internal_docking_manager.query.inner_container_main.remove_empty_split_area
+
+				internal_docking_manager.query.inner_container_main.update_middle_container
+				internal_docking_manager.property.set_is_opening_config (False)
+				internal_docking_manager.command.resize (True)
+				internal_docking_manager.command.unlock_update
 			end
-
-			-- If this time we only restore a editor place holder zone? No real editors restored.
-			if not internal_docking_manager.main_container.has_recursive (internal_docking_manager.zones.place_holder_content.state.zone) then
-				-- We should close place holder content if exist. Because there is(are) already normal editor zone(s).				
-				internal_docking_manager.zones.place_holder_content.close
-			end
-
-			-- We have to call `remove_empty_split_area' first to make sure no void widget when update_middle_container.
-			internal_docking_manager.query.inner_container_main.remove_empty_split_area
-
-			internal_docking_manager.query.inner_container_main.update_middle_container
-			internal_docking_manager.property.set_is_opening_config (False)
-			internal_docking_manager.command.resize (True)
-			internal_docking_manager.command.unlock_update
-
 		end
 
 	open_tools_config (a_file: STRING_GENERAL): BOOLEAN is
@@ -101,6 +106,7 @@ feature -- Open inner container data.
 			l_temp_split: SD_VERTICAL_SPLIT_AREA
 			l_container: EV_CONTAINER
 			l_config_data: SD_CONFIG_DATA
+			l_env: EV_ENVIRONMENT
 		do
 			if not internal_docking_manager.has_content (internal_docking_manager.zones.place_holder_content) then
 				top_container := internal_docking_manager.query.inner_container_main.editor_parent
@@ -159,11 +165,46 @@ feature -- Open inner container data.
 
 			if Result then
 				open_editor_minimized_data_minimize (l_config_data)
+
 			end
 
 			internal_docking_manager.command.resize (True)
+
+			-- We have to do it on idle, otherwise, maximized mini tool bar buttons positions in floating zone not correct.
+			create l_env
+			l_env.application.do_once_on_idle (agent internal_open_maximized_tool_data (l_config_data))
 		ensure
 			cleared: top_container = Void
+		end
+
+	open_maximized_tool_data (a_file: STRING_GENERAL) is
+			-- Open maximized tool data.
+		require
+			a_file_not_void: a_file /= Void
+		local
+			l_data: SD_CONFIG_DATA
+		do
+			l_data := config_data_from_file (a_file)
+			internal_open_maximized_tool_data (l_data)
+		end
+
+feature -- Query
+
+	config_data_from_file (a_file: STRING_GENERAL): SD_CONFIG_DATA is
+			-- Config data readed from `a_file'
+		require
+			not_void: a_file /= Void
+		local
+			l_file: RAW_FILE
+			l_facility: SED_STORABLE_FACILITIES
+			l_reader: SED_MEDIUM_READER_WRITER
+		do
+			create l_file.make_open_read (a_file.as_string_8)
+			create l_reader.make (l_file)
+			l_reader.set_for_reading
+			create l_facility
+			Result ?=  l_facility.retrieved (l_reader, True)
+			l_file.close
 		end
 
 	top_container: EV_WIDGET
@@ -941,21 +982,30 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	config_data_from_file (a_file: STRING_GENERAL): SD_CONFIG_DATA is
-			-- Config data readed from `a_file'
-		require
-			not_void: a_file /= Void
+	internal_open_maximized_tool_data (a_config_data: SD_CONFIG_DATA) is
+			-- Open maximized tool data.
 		local
-			l_file: RAW_FILE
-			l_facility: SED_STORABLE_FACILITIES
-			l_reader: SED_MEDIUM_READER_WRITER
+			l_content: SD_CONTENT
+			l_maximzied_tools: ARRAYED_LIST [STRING_GENERAL]
+			l_zone: SD_ZONE
 		do
-			create l_file.make_open_read (a_file.as_string_8)
-			create l_reader.make (l_file)
-			l_reader.set_for_reading
-			create l_facility
-			Result ?=  l_facility.retrieved (l_reader, True)
-			l_file.close
+			if a_config_data /= Void then
+				from
+					l_maximzied_tools := a_config_data.maximized_tools
+					l_maximzied_tools.start
+				until
+					l_maximzied_tools.after
+				loop
+					l_content := internal_docking_manager.query.content_by_title (l_maximzied_tools.item)
+					if l_content /= Void then
+						l_zone := l_content.state.zone
+						if l_zone /= Void and then not l_zone.is_maximized then
+							l_content.state.on_normal_max_window
+						end
+					end
+					l_maximzied_tools.forth
+				end
+			end
 		end
 
 feature {NONE} -- Internals.

@@ -34,14 +34,9 @@ inherit
 
 	SHARED_PLATFORM_CONSTANTS
 
-	EB_SHARED_PREFERENCES
-		export
-			{NONE} all
-		end
+	EB_TEXT_OUTPUT_TOOL
 
 	EB_CONSTANTS
-
-	EB_TEXT_OUTPUT_TOOL
 
 create
 	make
@@ -64,7 +59,6 @@ feature{NONE} -- Initialization
 			Precursor {EB_OUTPUT_TOOL} (a_docking_manager)
 			content.drop_actions.extend (agent drop_class)
 			content.drop_actions.extend (agent drop_feature)
-			content.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
 			create l_constants
 			content.set_long_title (title)
 			content.set_short_title (title)
@@ -109,6 +103,8 @@ feature{NONE} -- Initialization
 			l_ev_horizontal_box_7: EV_HORIZONTAL_BOX
 			l_ev_vertical_box_1: EV_VERTICAL_BOX
 			l_ev_vertical_box_2: EV_VERTICAL_BOX
+			l_locale_text: EV_LABEL
+			l_cell: EV_CELL
 
 			l_ev_cmd_lbl: EV_LABEL
 			l_ev_output_lbl: EV_LABEL
@@ -154,6 +150,8 @@ feature{NONE} -- Initialization
 			create toolbar
 			create l_del_tool_bar
 
+			create l_locale_text.make_with_text (interface_names.l_locale)
+
 			l_ev_empty_lbl.set_minimum_height (State_bar_height)
 			l_ev_empty_lbl.set_minimum_width (State_bar_height * 2)
 			l_ev_horizontal_box_7.extend (l_ev_empty_lbl)
@@ -178,6 +176,15 @@ feature{NONE} -- Initialization
 			l_ev_horizontal_box_1.extend (l_ev_horizontal_box_2)
 			l_ev_horizontal_box_2.extend (l_ev_cmd_lbl)
 			l_ev_horizontal_box_2.extend (cmd_lst)
+			create l_cell
+			l_cell.set_minimum_width (5)
+			l_ev_horizontal_box_2.extend (l_cell)
+			l_ev_horizontal_box_2.disable_item_expand (l_cell)
+			l_ev_horizontal_box_2.extend (l_locale_text)
+			l_ev_horizontal_box_2.disable_item_expand (l_locale_text)
+			l_ev_horizontal_box_2.extend (locale_combo)
+			locale_combo.set_minimum_width (200)
+			l_ev_horizontal_box_2.disable_item_expand (locale_combo)
 			l_ev_horizontal_box_2.set_padding_width (5)
 			l_ev_horizontal_box_5.extend (cmd_toolbar)
 			l_ev_horizontal_box_5.extend (toolbar.widget)
@@ -229,7 +236,6 @@ feature{NONE} -- Initialization
 			output_text.drop_actions.extend (agent drop_feature)
 			output_text.drop_actions.extend (agent drop_cluster)
 			output_text.drop_actions.extend (agent drop_breakable)
-			output_text.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
 
 			terminate_btn.set_tooltip (f_terminate_command_button)
 			terminate_btn.select_actions.extend (agent on_terminate_process)
@@ -244,7 +250,6 @@ feature{NONE} -- Initialization
 			state_label.drop_actions.extend (agent drop_feature)
 			state_label.drop_actions.extend (agent drop_cluster)
 			state_label.drop_actions.extend (agent drop_breakable)
-			state_label.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
 
 			run_btn.set_pixmap (pixmaps.icon_pixmaps.debug_run_icon)
 			run_btn.set_tooltip (f_start_command_button)
@@ -258,7 +263,6 @@ feature{NONE} -- Initialization
 			cmd_lst.drop_actions.extend (agent drop_feature)
 			cmd_lst.drop_actions.extend (agent drop_cluster)
 			cmd_lst.drop_actions.extend (agent drop_breakable)
-			cmd_lst.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
 
 			edit_cmd_detail_btn.set_pixmap (pixmaps.icon_pixmaps.general_add_icon)
 			edit_cmd_detail_btn.select_actions.extend (agent on_edit_command_detail)
@@ -269,7 +273,6 @@ feature{NONE} -- Initialization
 			input_field.drop_actions.extend (agent drop_feature)
 			input_field.drop_actions.extend (agent drop_cluster)
 			input_field.drop_actions.extend (agent drop_breakable)
-			input_field.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
 
 			send_input_btn.set_pixmap (icon_pixmaps.general_send_enter_icon)
 			send_input_btn.set_tooltip (f_send_input_button)
@@ -287,17 +290,14 @@ feature{NONE} -- Initialization
 			l_ev_cmd_lbl.drop_actions.extend (agent drop_feature)
 			l_ev_cmd_lbl.drop_actions.extend (agent drop_cluster)
 			l_ev_cmd_lbl.drop_actions.extend (agent drop_breakable)
-			l_ev_cmd_lbl.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
 			l_ev_output_lbl.drop_actions.extend (agent drop_class)
 			l_ev_output_lbl.drop_actions.extend (agent drop_feature)
 			l_ev_output_lbl.drop_actions.extend (agent drop_cluster)
 			l_ev_output_lbl.drop_actions.extend (agent drop_breakable)
-			l_ev_output_lbl.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
 			l_ev_input_lbl.drop_actions.extend (agent drop_class)
 			l_ev_input_lbl.drop_actions.extend (agent drop_feature)
 			l_ev_input_lbl.drop_actions.extend (agent drop_cluster)
 			l_ev_input_lbl.drop_actions.extend (agent drop_breakable)
-			l_ev_input_lbl.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
 
 			synchronize_command_list (Void)
 			if external_launcher.is_launch_session_over then
@@ -307,7 +307,7 @@ feature{NONE} -- Initialization
 			end
 		end
 
-feature
+feature -- Docking
 
 	attach_to_docking_manager (a_docking_manager: SD_DOCKING_MANAGER) is
 			-- Attach to docking manager
@@ -471,7 +471,7 @@ feature -- Basic operation
 		do
 			str ?= text_block.data
 			if str /= Void then
-				output_text.append_text (str)
+				output_text.append_text (source_encoding.convert_to (destination_encoding, str))
 			end
 		end
 
@@ -609,29 +609,26 @@ feature{NONE} -- Actions
 	on_send_input_btn_pressed is
 			-- Agent called when user pressed `send_input_btn'
 		local
-			str: STRING
 			found: BOOLEAN
+			l_text: STRING_32
 		do
-			if input_field.text /= Void then
-				create str.make_from_string (input_field.text)
-			else
-				str :=""
-			end
-			on_input_to_process (str + "%N")
-			if not str.is_empty then
+			l_text := input_field.text.twin
+
+			on_input_to_process (destination_encoding.convert_to (source_encoding, l_text + "%N").as_string_8)
+			if not l_text.is_empty then
 				from
 					input_field.start
 					found := False
 				until
 					input_field.after or found
 				loop
-					if str.is_equal (input_field.item.text) then
+					if l_text.is_equal (input_field.item.text) then
 						found := True
 					end
 					input_field.forth
 				end
 				if not found then
-					input_field.put_front (create {EV_LIST_ITEM}.make_with_text (str))
+					input_field.put_front (create {EV_LIST_ITEM}.make_with_text (l_text))
 					if input_field.count > 10 then
 						input_field.go_i_th (input_field.count)
 						input_field.remove

@@ -9,7 +9,9 @@ class
 	EB_FEATURES_TOOL
 
 inherit
-	EB_TOOL
+	EB_STONABLE_TOOL
+		rename
+			stone as current_stone
 		redefine
 			menu_name,
 			pixmap,
@@ -20,6 +22,7 @@ inherit
 			attach_to_docking_manager,
 			mini_toolbar,
 			build_mini_toolbar,
+			internal_recycle,
 			show
 		end
 
@@ -127,7 +130,7 @@ feature -- Command
 	show is
 			-- Show tool.
 		do
-			Precursor {EB_TOOL}
+			Precursor {EB_STONABLE_TOOL}
 			if tree.is_displayed then
 				tree.set_focus
 			end
@@ -188,7 +191,7 @@ feature {NONE} -- Memory management
 			widget.destroy
 			widget := Void
 			tree := Void
-			develop_window := Void
+			Precursor {EB_STONABLE_TOOL}
 		end
 
 feature -- Element change

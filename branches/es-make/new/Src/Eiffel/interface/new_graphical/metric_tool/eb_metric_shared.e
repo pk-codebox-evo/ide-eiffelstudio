@@ -94,14 +94,6 @@ feature -- Status report
 			Result := a_type = basic_metric_type or a_type = linear_metric_type or a_type = ratio_metric_type
 		end
 
-	is_uuid_valid (a_uuid: STRING): BOOLEAN is
-			-- Is `a_uuid' a valid UUID?
-		require
-			a_uuid_attached: a_uuid /= Void
-		do
-			Result := shared_uuid.is_valid_uuid (a_uuid)
-		end
-
 feature -- UUID
 
 	shared_uuid: UUID is
@@ -156,6 +148,21 @@ feature -- Access/Criterion type
 			Result.put (less_than_equal_to_type, less_than_equal_to_operator)
 			Result.put (greater_than_type, greater_than_operator)
 			Result.put (greater_than_equal_to_type, greater_than_equal_to_operator)
+		ensure
+			result_attached: Result /= Void
+		end
+
+feature -- Matching strategies
+
+	matching_strategy_names_table: HASH_TABLE [STRING_32, INTEGER] is
+			-- Display name table for matching strategies
+			-- [Displayed matching strategy name, matching strategy index]
+		once
+			create Result.make (4)
+			Result.put (metric_names.t_identical, {QL_NAME_CRITERION}.identity_matching_strategy)
+			Result.put (metric_names.t_containing, {QL_NAME_CRITERION}.containing_matching_strategy)
+			Result.put (metric_names.t_wildcard, {QL_NAME_CRITERION}.wildcard_matching_strategy)
+			Result.put (metric_names.t_regexp, {QL_NAME_CRITERION}.regular_expression_matching_strategy)
 		ensure
 			result_attached: Result /= Void
 		end

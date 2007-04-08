@@ -19,7 +19,12 @@ inherit
 			process_routine_creation_as,
 			process_tagged_as,
 			process_binary_as,
-			process_unary_as
+			process_unary_as,
+			process_static_access_as,
+			process_bracket_as,
+			process_like_id_as,
+			process_assign_as,
+			process_creation_as
 		end
 
 	QL_UTILITY
@@ -37,6 +42,7 @@ feature{NONE} -- Initialization
 			-- Initialize Current.
 		do
 			create {LINKED_LIST [TUPLE [AST_EIFFEL, CLASS_C, BOOLEAN]]} accessors.make
+			create flag_stack.make
 			create ancestor_class_id_set.make (20)
 		end
 
@@ -46,6 +52,19 @@ feature -- Access
 			-- Accessors found by last `find_accessors'
 			-- The TUPLE is in form of [accessor AST, accessor written class]
 
+	flag: INTEGER_8
+			-- Required flag to match certain kinds of accessors such as assigner, creator..
+
+feature -- Setting
+
+	set_flag (a_flag: like flag) is
+			-- Set `flag' with `a_flag'.
+		do
+			flag := a_flag
+		ensure
+			flag_set: flag = a_flag
+		end
+
 feature -- Process
 
 	find_accessors (a_callee: QL_FEATURE; a_caller: QL_FEATURE) is
@@ -54,6 +73,7 @@ feature -- Process
 			a_callee_attached: a_callee /= Void
 			a_caller_attached: a_caller /= Void
 		do
+			flag_stack.wipe_out
 			accessors.wipe_out
 			ancestor_class_id_set.wipe_out
 			if a_callee.is_real_feature then
@@ -113,18 +133,23 @@ feature{NONE} -- Implementation
 	e_feature: E_FEATURE
 			-- Eiffel feature whose accessors are to be found
 
-	is_accessor (a_class_id: INTEGER; a_feature_name: STRING): BOOLEAN is
-			-- Is feature named `a_feature_name' whose associated class id is `a_class_id' a successor of `e_feature'?
+	is_accessor (a_feature: E_FEATURE; a_class_id: INTEGER; a_feature_name: STRING): BOOLEAN is
+			-- Is feature named `a_feature_name' whose associated class id is `a_class_id' a accessor of `a_feature'?
 		require
+			a_feature_attached: a_feature /= Void
 			a_feature_name_attached: a_feature_name /= Void
 			not_a_feature_name_is_empty: not a_feature_name.is_empty
-		local
-			l_feature: like e_feature
 		do
-			l_feature := e_feature
-			Result := (a_feature_name.is_case_insensitive_equal (l_feature.name) or else
-					   a_feature_name.is_case_insensitive_equal (ti_Precursor_keyword))
-					  and then ancestor_class_id_set.has (a_class_id)
+			if ancestor_class_id_set.has (a_class_id) then
+				Result := a_feature_name.is_case_insensitive_equal (a_feature.name) or else
+					   	  a_feature_name.is_case_insensitive_equal (ti_Precursor_keyword)
+				if (not Result) and then a_feature.has_alias_name then
+					Result := a_feature_name.is_case_insensitive_equal (a_feature.alias_name)
+				end
+				if Result then
+					Result := flag /= 0 implies flag_stack.has (flag)
+				end
+			end
 		end
 
 	ancestor_class_id_set: DS_HASH_SET [INTEGER]
@@ -135,11 +160,13 @@ feature{NONE} -- Implementation
 
 feature -- Accessor checking
 
-	check_accessor (l_as: ACCESS_FEAT_AS) is
-			-- Check if `l_as' is an accessor of `e_feature'.
+	check_accessor (a_feature: like e_feature; l_as: ACCESS_FEAT_AS) is
+			-- Check if `l_as' is an accessor of `a_feature'.
 			-- If it is, store `l_as' into `accessors'.
+		require
+			a_feature_attached: a_feature /= Void
 		do
-			if is_accessor (l_as.class_id, l_as.access_name) then
+			if is_accessor (a_feature, l_as.class_id, l_as.access_name) then
 				check last_class_c /= Void end
 				accessors.extend ([l_as.feature_name, last_class_c])
 			end
@@ -151,7 +178,7 @@ feature -- Accessor checking
 		do
 				-- Watch out since `feature_name' from ROUTINE_CREATION_AS can be Void in
 				-- the case of an inline agent.
-			if l_as.feature_name /= Void and then is_accessor (l_as.class_id, l_as.feature_name.name) then
+			if l_as.feature_name /= Void and then is_accessor (e_feature, l_as.class_id, l_as.feature_name.name) then
 				check last_class_c /= Void end
 				accessors.extend ([l_as.feature_name, last_class_c])
 			end
@@ -165,7 +192,7 @@ feature -- Accessor checking
 			a_feature_name_attached: a_feature_name /= Void
 			a_ast_attached: a_ast /= Void
 		do
-			if is_accessor (a_class_id, a_feature_name) then
+			if is_accessor (e_feature, a_class_id, a_feature_name) then
 				check last_class_c /= Void end
 				accessors.extend ([a_ast, last_class_c])
 			end
@@ -195,13 +222,29 @@ feature{NONE} -- Implementation/Process
 
 	process_access_feat_as (l_as: ACCESS_FEAT_AS) is
 		do
-			check_accessor (l_as)
+			check_accessor (e_feature, l_as)
 			Precursor (l_as)
 		end
 
 	process_access_assert_as (l_as: ACCESS_ASSERT_AS) is
+		local
+			l_feature: like e_feature
+			l_ancestor_feature: like e_feature
 		do
-			process_access_feat_as (l_as)
+			l_feature := e_feature
+				-- For renamed features in inherited assertions
+			if l_as.class_id /= l_feature.associated_class.class_id then
+				l_ancestor_feature := l_feature.ancestor_version (system.class_of_id (l_as.class_id))
+				if l_ancestor_feature /= Void then
+					if
+						(not l_ancestor_feature.name.is_case_insensitive_equal (l_feature.name)) or else
+						(l_ancestor_feature.has_alias_name or else l_feature.has_alias_name)
+					then
+						check_accessor (l_ancestor_feature, l_as)
+					end
+				end
+			end
+			Precursor (l_as)
 		end
 
 	process_assertion (a_assertion: QL_ASSERTION) is
@@ -242,6 +285,51 @@ feature{NONE} -- Implementation/Process
 			end
 			Precursor (l_as)
 		end
+
+	process_static_access_as (l_as: STATIC_ACCESS_AS) is
+		do
+			check_accessor (e_feature, l_as)
+			Precursor (l_as)
+		end
+
+	process_bracket_as (l_as: BRACKET_AS) is
+		do
+			check_accessor_for_operators (l_as.class_id, "[]", l_as)
+			Precursor (l_as)
+		end
+
+	process_like_id_as (l_as: LIKE_ID_AS) is
+		do
+			check_accessor_for_operators (e_feature.associated_class.class_id, l_as.anchor.name, l_as.anchor)
+		end
+
+	process_assign_as (l_as: ASSIGN_AS) is
+		local
+			l_flag_stack: like flag_stack
+		do
+			l_flag_stack := flag_stack
+			l_flag_stack.extend ({DEPEND_UNIT}.is_in_assignment_flag)
+			l_as.target.process (Current)
+			l_flag_stack.remove
+			l_as.source.process (Current)
+		end
+
+	process_creation_as (l_as: CREATION_AS) is
+		local
+			l_flag_stack: like flag_stack
+		do
+			l_flag_stack := flag_stack
+			l_flag_stack.extend ({DEPEND_UNIT}.is_in_creation_flag)
+			l_as.target.process (Current)
+			l_flag_stack.remove
+			safe_process (l_as.type)
+			safe_process (l_as.call)
+		end
+
+feature{NONE} -- Implementation
+
+	flag_stack: LINKED_STACK [INTEGER_8]
+			-- Stack of flags
 
 invariant
 	accessors_attached: accessors /= Void

@@ -119,10 +119,13 @@ feature -- Status setting
 					(stone /= Void and then not l_feature_comparer.same_feature (stone.e_feature, fst.e_feature))
 				then
 					set_last_stone (fst)
+					develop_window.tools.set_last_stone (stone)
 					history_manager.extend (fst)
 				end
 			else
-				do_all_in_list (formatters, agent (a_formatter: EB_FORMATTER) do a_formatter.reset_display end)
+				if new_stone = Void or else (not new_stone.is_valid) then
+					do_all_in_list (formatters, agent (a_formatter: EB_FORMATTER) do a_formatter.reset_display end)
+				end
 			end
 			if widget.is_displayed or else is_auto_hide then
 				force_last_stone
@@ -130,7 +133,7 @@ feature -- Status setting
 			end
 		end
 
-	decide_tool_to_display (a_st: STONE) is
+	decide_tool_to_display (a_st: STONE): EB_STONABLE_TOOL is
 			-- Decide which tool to display.
 		local
 			fs: FEATURE_STONE
@@ -139,6 +142,7 @@ feature -- Status setting
 			if fs /= Void then
 				show
 				set_focus
+				Result := Current
 			end
 		end
 
@@ -151,8 +155,9 @@ feature -- Status setting
 			classi_stone: CLASSI_STONE
 			cl: CLASS_C
 			found: BOOLEAN
+			l_tool: EB_STONABLE_TOOL
 		do
-			decide_tool_to_display (st)
+			l_tool := decide_tool_to_display (st)
 			fst ?= st
 			if fst = Void then
 				classi_stone ?= st
@@ -176,8 +181,9 @@ feature -- Status setting
 
 				-- Class tool is the default tool to display a class stone
 				-- when ancestor of old feature is not found in the class stone.
-			if fst = Void and then not found and then develop_window.link_tools then
+			if fst = Void and then not found then
 				develop_window.tools.show_default_tool_of_class
+				l_tool := develop_window.tools.default_class_tool
 			end
 
 			if develop_window.unified_stone then
@@ -189,23 +195,13 @@ feature -- Status setting
 					develop_window.tools.set_stone (new_fs)
 				end
 			else
-				if not found then
-					set_stone (st)
-				else
-					set_stone (new_fs)
+				if l_tool /= Void then
+					if not found then
+						l_tool.set_stone (st)
+					else
+						l_tool.set_stone (new_fs)
+					end
 				end
-			end
-		end
-
-	veto_pebble_function (a_stone: ANY): BOOLEAN is
-		local
-			l_fs: FEATURE_STONE
-		do
-			if develop_window.link_tools then
-				Result := True
-			else
-				l_fs ?= a_stone
-				Result := l_fs /= Void
 			end
 		end
 

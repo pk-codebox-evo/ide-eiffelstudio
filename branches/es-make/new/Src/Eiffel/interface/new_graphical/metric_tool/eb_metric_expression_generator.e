@@ -127,29 +127,83 @@ feature{NONE} -- Process
 
 	process_domain_criterion (a_criterion: EB_METRIC_DOMAIN_CRITERION) is
 			-- Process `a_criterion'.
+		do
+			process_domain_criterion_internal (a_criterion, Void, Void)
+		end
+
+	process_domain_criterion_internal (a_criterion: EB_METRIC_DOMAIN_CRITERION; a_modifiers: LIST [STRING_GENERAL]; a_modifier_separator: STRING_GENERAL) is
+			-- Process `a_criterion'.
+			-- If `a_modifiers' is not Void, display those modifiers (separated by `a_modifier_separator') as well.
+		require
+			a_criterion_attached: a_criterion /= Void
+			a_modifiers_valid: a_modifiers /= Void implies (not a_modifiers.has (Void))
+			a_modifier_separator_valid: (a_modifiers /= Void and then not a_modifiers.is_empty) implies a_modifier_separator /= Void
 		local
 			l_output: like output
+			l_cursor: CURSOR
 		do
 			l_output := output
 			append_negation_start (a_criterion)
 			l_output.put_criterion_name (a_criterion)
 			l_output.put_normal_text (ti_space.as_string_32)
 			l_output.put_normal_text (ti_l_parenthesis.as_string_32)
-			a_criterion.domain.process (Current)
+			process_domain_internal (a_criterion.domain)
+				-- Process modifiers if any.
+			if a_modifiers /= Void and then not a_modifiers.is_empty then
+				l_output.put_operator (", ")
+				l_cursor := a_modifiers.cursor
+				from
+					a_modifiers.start
+				until
+					a_modifiers.after
+				loop
+					l_output.put_modifier (a_modifiers.item)
+					if a_modifiers.index < a_modifiers.count then
+						l_output.put_normal_text (" ")
+						l_output.put_operator (a_modifier_separator)
+						l_output.put_normal_text (" ")
+					end
+					a_modifiers.forth
+				end
+				a_modifiers.go_to (l_cursor)
+			end
 			l_output.put_normal_text (ti_r_parenthesis.as_string_32)
 			append_negation_end (a_criterion)
 		end
 
 	process_caller_callee_criterion (a_criterion: EB_METRIC_CALLER_CALLEE_CRITERION) is
-			-- Process `a_criterion'.
+			-- Process `a_criterion'.		
+		local
+			l_modifiers: ARRAYED_LIST [STRING_GENERAL]
 		do
-			process_domain_criterion (a_criterion)
+			create l_modifiers.make (2)
+			if a_criterion.only_current_version then
+				l_modifiers.extend (metric_names.l_current_version)
+			else
+				l_modifiers.extend (metric_names.l_current)
+				l_modifiers.extend (metric_names.l_desendent_versions)
+			end
+			process_domain_criterion_internal (a_criterion, l_modifiers, "+")
 		end
 
 	process_supplier_client_criterion (a_criterion: EB_METRIC_SUPPLIER_CLIENT_CRITERION) is
 			-- Process `a_criterion'.
+		local
+			l_modifiers: ARRAYED_LIST [STRING_GENERAL]
 		do
-			process_domain_criterion (a_criterion)
+			create l_modifiers.make (3)
+			if a_criterion.indirect_referenced_class_retrieved then
+				l_modifiers.extend (metric_names.l_indirect)
+			else
+				l_modifiers.extend (metric_names.l_direct)
+			end
+			if a_criterion.normal_referenced_class_retrieved then
+				l_modifiers.extend (metric_names.l_normal_referenced)
+			end
+			if a_criterion.only_syntactically_referencedd_class_retrieved then
+				l_modifiers.extend (metric_names.l_syntactical_referenced)
+			end
+			process_domain_criterion_internal (a_criterion, l_modifiers, "+")
 		end
 
 	process_text_criterion (a_criterion: EB_METRIC_TEXT_CRITERION) is
@@ -161,7 +215,21 @@ feature{NONE} -- Process
 			append_negation_start (a_criterion)
 			l_output.put_criterion_name (a_criterion)
 			l_output.put_normal_text (once " ")
-			l_output.put_string (a_criterion.text)
+			l_output.put_normal_text (ti_l_parenthesis.as_string_32)
+			if a_criterion.text.is_empty then
+				l_output.put_warning ("%"%"")
+			else
+				l_output.put_string (a_criterion.text)
+			end
+			l_output.put_normal_text (", ")
+			l_output.put_modifier (names.string_general_as_lower (matching_strategy_names_table.item (a_criterion.matching_strategy)))
+			l_output.put_operator (" + ")
+			if a_criterion.is_case_sensitive then
+				l_output.put_modifier (names.string_general_as_lower (metric_names.t_case_sensitive))
+			else
+				l_output.put_modifier (names.string_general_as_lower (metric_names.t_case_insensitive))
+			end
+			l_output.put_normal_text (ti_r_parenthesis.as_string_32)
 			append_negation_end (a_criterion)
 		end
 
@@ -187,8 +255,12 @@ feature{NONE} -- Process
 			l_output := output
 			l_output.put_normal_text ("value of metric (")
 			l_output.put_metric_name (a_criterion.metric_name)
+			if a_criterion.should_delayed_domain_from_parent_be_used then
+				l_output.put_normal_text (", ")
+				l_output.put_modifier (metric_names.l_use_parent_delayed_domain)
+			end
 			l_output.put_normal_text (") over (")
-			a_criterion.domain.process (Current)
+			process_domain_internal (a_criterion.domain)
 			l_output.put_normal_text (") is (")
 			a_criterion.value_tester.process (Current)
 			l_output.put_normal_text (ti_r_parenthesis.as_string_32)
@@ -331,26 +403,30 @@ feature{NONE} -- Process
 			l_output: like output
 		do
 			l_output := output
-			if a_item.is_anded then
-				l_connector := query_language_names.ql_cri_and
+			if a_item.criteria.is_empty then
+				l_output.put_warning (metric_names.l_no_value_tester)
 			else
-				l_connector := query_language_names.ql_cri_or
-			end
-			from
-				l_cri_list := a_item.criteria
-				l_count := l_cri_list.count
-				l_cri_list.start
-			until
-				l_cri_list.after
-			loop
-				l_output.put_operator (operator_table.item (l_cri_list.item.l_criterion_type))
-				l_cri_list.item.l_retriever.process (Current)
-				if l_cri_list.index < l_count then
-					l_output.put_normal_text (ti_space.as_string_32)
-					l_output.put_keyword (l_connector)
-					l_output.put_normal_text (ti_space.as_string_32)
+				if a_item.is_anded then
+					l_connector := query_language_names.ql_cri_and
+				else
+					l_connector := query_language_names.ql_cri_or
 				end
-				l_cri_list.forth
+				from
+					l_cri_list := a_item.criteria
+					l_count := l_cri_list.count
+					l_cri_list.start
+				until
+					l_cri_list.after
+				loop
+					l_output.put_operator (operator_table.item (l_cri_list.item.l_criterion_type))
+					l_cri_list.item.l_retriever.process (Current)
+					if l_cri_list.index < l_count then
+						l_output.put_normal_text (ti_space.as_string_32)
+						l_output.put_keyword (l_connector)
+						l_output.put_normal_text (ti_space.as_string_32)
+					end
+					l_cri_list.forth
+				end
 			end
 		end
 
@@ -369,8 +445,20 @@ feature{NONE} -- Process
 			l_output.put_normal_text ("value of metric (")
 			l_output.put_metric_name (a_item.metric_name)
 			l_output.put_normal_text (") over (")
-			a_item.input_domain.process (Current)
+			process_domain_internal (a_item.input_domain)
 			l_output.put_normal_text (")")
+		end
+
+	process_domain_internal (a_domain: EB_METRIC_DOMAIN) is
+			-- Process `a_domain'.
+		require
+			a_domain_attached: a_domain /= Void
+		do
+			if a_domain.is_empty then
+				output.put_warning (metric_names.l_empty_domain)
+			else
+				a_domain.process (Current)
+			end
 		end
 
 feature{NONE} -- Implementation

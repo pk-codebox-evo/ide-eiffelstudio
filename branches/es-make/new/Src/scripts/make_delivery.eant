@@ -91,6 +91,7 @@
 		<copy to_directory="${delivery_dir}/library/gobo" dir="${EIFFEL_SRC}/library/gobo/svn">
 			<fileset include="@(**/*)" exclude="@(**/.svn/**/*)" />
 		</copy>
+		<mkdir directory="bin" dir="${delivery_dir}/library/gobo" />		
 
 		<!-- C_library -->
 		<mkdir directory="C_library" dir="${delivery_dir}" />
@@ -137,6 +138,7 @@
 		<echo message="Gobo missing in ${delivery_dir}/library ..." if="${gobo_dir_available}=false" />
 		<exit code="1" if="${gobo_dir_available}=false" />
 		<setenv name="GOBO" value="${delivery_dir}${path_separator}library${path_separator}gobo"/>
+		<geant file="${GOBO}/build.eant" dir="${GOBO}" target="bootstrap1"/>
 		<geant file="${GOBO}/build.eant" dir="${GOBO}" target="bootstrap2"/>
 	</target>
 

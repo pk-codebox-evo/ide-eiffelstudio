@@ -93,6 +93,11 @@ inherit
 			{NONE} all
 		end
 
+	REFACTORING_HELPER
+		export
+			{NONE} all
+		end
+
 feature -- Initialization
 
 	init (a_context: AST_CONTEXT) is
@@ -557,9 +562,19 @@ feature {NONE} -- Implementation: Access
 	last_access_writable: BOOLEAN
 			-- Is last ACCESS_AS node creatable?
 
+	last_original_feature_name: STRING
+			-- Original name of last ACCESS_AS (`last_feature_name' might be different and depending
+			-- on what usage is intended this or the other might be the one to use)
+
+	last_original_feature_name_id: INTEGER
+			-- Names_heap Id of `last_original_feature_name'
+
 	last_feature_name: STRING
 			-- Actual name of last ACCESS_AS (might be different from original name
-			-- in case an overloading resolution took place)
+			-- in case an overloading resolution or a renaming of a formal constraint took place)
+
+	last_feature_name_id: INTEGER
+			-- Names_heap Id of `last_feature_name'
 
 	is_last_access_tuple_access: BOOLEAN
 			-- Is last ACCESS_AS node an access to a TUPLE element?
@@ -579,7 +594,11 @@ feature -- Settings
 			check_for_vaol := False
 			depend_unit_level := 0
 			last_access_writable := False
+			last_original_feature_name := Void
+			last_original_feature_name_id := 0
 			last_feature_name := Void
+			last_feature_name_id := 0
+			last_calls_target_type := Void
 			is_type_compatible := False
 			last_assigner_command := Void
 			is_inherited := False
@@ -1075,6 +1094,7 @@ feature -- Implementation
 			l_is_multiple_constraint_case: BOOLEAN
 			l_result_tuple: TUPLE[feature_item: FEATURE_I; class_type_of_feature: CL_TYPE_A; features_found_count: INTEGER; constraint_position: INTEGER]
 			l_tuple_access_b: TUPLE_ACCESS_B
+			l_vtmc1: VTMC1
 		do
 				-- Reset
 			last_calls_target_type := Void
@@ -1095,7 +1115,15 @@ feature -- Implementation
 			l_is_assigner_call := is_assigner_call
 			is_assigner_call := False
 
-			l_feature_name := a_name
+				-- `a_name' can be void for inline agents
+			if a_name /= Void then
+				l_feature_name := a_name
+					-- We need to store the original name as it may change due to
+					-- renamings applied of multi constraint formal generics.
+				last_original_feature_name := a_name.name
+				last_original_feature_name_id := a_name.name_id
+			end
+
 			l_context_current_class := context.current_class
 
 			l_last_type := a_type.actual_type
@@ -1125,7 +1153,9 @@ feature -- Implementation
 				l_formal ?= l_last_type
 				if l_formal.has_multi_constraints (l_context_current_class) then
 					l_last_type_set := l_last_type.to_type_set.constraining_types  (l_context_current_class)
-						-- from now on we now that we have multiple constraints
+						-- from now on we know that we have multiple constraints
+						-- we cannot compute `l_last_class', `l_last_id', ... as we do not know which
+						-- which type to take out of the type set. we know it after we computed the feature.
 					l_is_multiple_constraint_case := True
 				else
 						-- Resolve formal type
@@ -1146,9 +1176,10 @@ feature -- Implementation
 				l_feature := a_feature
 			else
 				if l_is_multiple_constraint_case then
-					check l_last_type_set  /= Void end
-					check l_last_constrained = Void end
-					check l_last_class = Void end
+					check type_set_available: l_last_type_set  /= Void end
+					check no_last_constraint: l_last_constrained = Void end
+					check no_last_class: l_last_class = Void end
+					check no_last_id: l_last_id = 0 end
 						-- NOTE: The look-up for overlaoded functions for .NET is not done because it's not used so often.
 					l_result_tuple := l_last_type_set.feature_i_state_by_name_id (l_feature_name.name_id)
 						-- If there we did not found a feature it could still be a tuple item.
@@ -1163,9 +1194,10 @@ feature -- Implementation
 						l_last_id := l_last_class.class_id
 					end
 				else
-					check l_last_type_set = Void end
-					check l_last_constrained /= Void end
-					check l_last_class /= Void end
+					check no_type_set_available: l_last_type_set = Void end
+					check last_constrained_available: l_last_constrained /= Void end
+					check last_class_available: l_last_class /= Void end
+					check last_class_id_available: l_last_id >= 0 end
 						-- Look for a feature in the class associated to the
 						-- last actual type onto the context type stack. If it
 						-- is a generic take the associated constraint.
@@ -1196,6 +1228,10 @@ feature -- Implementation
 				end
 			end
 
+			check
+				--environment_set_if_feature_exists: l_feature /= Void implies (l_last_id /= 0 and then l_last_class /= Void and then l_last_constrained /= Void)
+			end
+
 				-- No feature was found, so if the target of the call is a named tuple
 				-- then it might be a call on one of its label.
 				--| This we only check in the case of single cosntraint formals.
@@ -1210,6 +1246,7 @@ feature -- Implementation
 						last_type := l_named_tuple.generics.item (l_label_pos)
 						l_is_last_access_tuple_access := True
 						last_feature_name := l_feature_name.name
+						last_feature_name_id := l_feature_name.name_id
 						if l_needs_byte_node then
 							create {TUPLE_ACCESS_B} l_tuple_access_b.make (l_named_tuple.type_i, l_label_pos)
 							last_byte_node := l_tuple_access_b
@@ -1549,19 +1586,32 @@ feature -- Implementation
 					last_calls_target_type := l_last_constrained
 					last_access_writable := l_feature.is_attribute
 					last_feature_name := l_feature.feature_name
+					last_feature_name_id := l_feature.feature_name_id
 					last_routine_id_set := l_feature.rout_id_set
 				else
 						-- `l_feature' was not valid for current, report
 						-- corresponding error.
 					if l_feature = Void then
 							-- Not a valid feature name.
-						create l_veen
-						context.init_error (l_veen)
-						l_veen.set_identifier (l_feature_name.name)
-						l_veen.set_parameter_count (l_actual_count)
-						l_veen.set_location (l_feature_name)
-						error_handler.insert_error (l_veen)
-						error_handler.raise_error
+							-- In case of a multi constraint we throw a VTMC1 error instead of a VEEN.
+						if l_is_multiple_constraint_case then
+							create l_vtmc1
+							context.init_error (l_vtmc1)
+							l_vtmc1.set_feature_call_name (l_feature_name.name)
+							l_vtmc1.set_location (l_feature_name)
+							l_vtmc1.set_type_set (l_last_type_set)
+							l_vtmc1.set_location (l_feature_name)
+							error_handler.insert_error (l_vtmc1)
+							error_handler.raise_error
+						else
+							create l_veen
+							context.init_error (l_veen)
+							l_veen.set_identifier (l_feature_name.name)
+							l_veen.set_parameter_count (l_actual_count)
+							l_veen.set_location (l_feature_name)
+							error_handler.insert_error (l_veen)
+							error_handler.raise_error
+						end
 					elseif is_static then
 							-- Not a valid feature for static access.	
 						create l_vsta2
@@ -1976,15 +2026,20 @@ feature -- Implementation
 	process_access_feat_as (l_as: ACCESS_FEAT_AS) is
 		local
 			l_type_a: TYPE_A
+			l_formal: FORMAL_A
 			l_feature: FEATURE_I
+			l_result: LIST [TUPLE [feature_i: FEATURE_I; cl_type: EXTENDED_TYPE_A]]
+			l_result_item: TUPLE [feature_i: FEATURE_I; cl_type: EXTENDED_TYPE_A]
 			l_type_a_is_multi_constrained_formal: BOOLEAN
+			l_type_set: TYPE_SET_A
+
 		do
 			l_type_a := last_type.actual_type
 			if l_type_a.is_formal then
 				l_type_a_is_multi_constrained_formal := l_type_a.is_multi_constrained_formal (context.current_class)
 			end
 			if  not l_type_a_is_multi_constrained_formal then
-				l_type_a := constrained_type_fixed (last_type.actual_type)
+				l_type_a := constrained_type_fixed (l_type_a)
 				if not l_type_a.is_none and not l_type_a.is_void then
 					if is_inherited and not l_as.is_tuple_access then
 							-- Reuse the feature when it is really one, otherwise when it is a tuple
@@ -1992,18 +2047,48 @@ feature -- Implementation
 						l_feature := l_type_a.associated_class.feature_of_rout_id (l_as.routine_ids.first)
 					end
 				end
+					-- Type check the call
+				process_call (last_type, Void, l_as.feature_name, l_feature, l_as.parameters,
+					False, False, True, False)
 			else
+					-- Multi constraint case
 				if is_inherited then
-					if not l_as.is_tuple_access then
-							-- We need to iterate through the type set to find the routine of ID
-							-- l_as.routine_ids.first.
-							-- FIXME: FIXME
+						-- This code here is very similar to some parts of `process_abstract_creation'.
+						-- It has the very same issues as described there.
+					fixme ("Related to fix me in `process_abstract_creation'")
+
+					-- MTNASK: removed tuple access protection as it is not possible to occur here.
+
+						-- We need to iterate through the type set to find the routine of ID													
+					l_formal ?= l_type_a
+					check
+							-- It should work as we are in the multi constraint case
+						l_formal_not_void: l_formal /= Void
 					end
+					l_type_set := context.current_class.constraints (l_formal.position)
+					l_type_set := l_type_set.constraining_types (context.current_class)
+					l_result := l_type_set.feature_i_list_by_rout_id (l_as.routine_ids.first)
+					check at_least_one_feature_found: l_result.count > 0 end
+					from
+						l_result.start
+					until
+						l_result.after
+					loop
+						l_result_item := l_result.item
+						l_feature := l_result_item.feature_i
+						last_type := l_result_item.cl_type.type
+							-- Type check the call
+						process_call (last_type, Void, l_as.feature_name, l_feature, l_as.parameters,
+							False, False, True, False)
+						l_result.forth
+					end
+				else
+						-- Type check the call
+					process_call (last_type, Void, l_as.feature_name, l_feature, l_as.parameters,
+						False, False, True, False)
 				end
 			end
 
-			process_call (last_type, Void, l_as.feature_name, l_feature, l_as.parameters,
-				False, False, True, False)
 			error_handler.checksum
 
 			if not is_inherited then
@@ -2160,7 +2245,7 @@ feature -- Implementation
 						-- Look for a feature
 					l_feature := Void
 					if is_inherited then
-						check system.class_of_id (l_last_id) = last_type.associated_class end -- MTNASK: cam former be replaced with `lsat_type.associated_class'?
+						check system.class_of_id (l_last_id) = last_type.associated_class end -- MTNASK: cam former be replaced with `last_type.associated_class'?
 						l_feature := system.class_of_id (l_last_id).feature_of_rout_id (l_as.routine_ids.first)
 					end
 					process_call (last_type, Void, l_as.feature_name, l_feature, l_as.parameters, False, False, False, False)
@@ -4346,6 +4431,7 @@ feature -- Implementation
 			l_formal_type: FORMAL_A
 			l_formal_dec: FORMAL_CONSTRAINT_AS
 			l_creation_class: CLASS_C
+			l_creation_type: TYPE_A
 			l_is_formal_creation, l_is_default_creation: BOOLEAN
 			l_feature: FEATURE_I
 			l_orig_call, l_call: ACCESS_INV_AS
@@ -4361,8 +4447,12 @@ feature -- Implementation
 			l_constraint_type: TYPE_A
 			l_deferred_classes: LINKED_LIST[CLASS_C]
 			l_is_multi_constraint_case: BOOLEAN
-			l_result_tuple: TUPLE[feature_item: FEATURE_I; class_type_of_feature: CL_TYPE_A; features_found_count: INTEGER]
 			l_is_deferred: BOOLEAN
+			l_constraint_creation_list: LIST [TUPLE [type_item: EXTENDED_TYPE_A; feature_item: FEATURE_I]]
+			l_ccl_item: TUPLE [type_item: EXTENDED_TYPE_A; feature_item: FEATURE_I]
+			l_mc_feature_info: MC_ERROR_REPORT
+			l_result: LIST [TUPLE [feature_i: FEATURE_I; cl_type: EXTENDED_TYPE_A]]
+			l_result_item: TUPLE [feature_i: FEATURE_I; cl_type: EXTENDED_TYPE_A]
 		do
 			l_needs_byte_node := is_byte_node_enabled
 			l_orig_call := a_call
@@ -4371,7 +4461,7 @@ feature -- Implementation
 			if l_actual_creation_type.is_formal then
 					-- Cannot be Void
 				l_formal_type ?= l_actual_creation_type
-				l_is_multi_constraint_case :=  l_formal_type.has_multi_constraints (context.current_class)
+				l_is_multi_constraint_case := l_formal_type.has_multi_constraints (context.current_class)
 					-- Get the corresponding constraint type of the current class
 				l_formal_dec ?= context.current_class.generics.i_th (l_formal_type.position)
 				check l_formal_dec_not_void: l_formal_dec /= Void end
@@ -4433,19 +4523,61 @@ feature -- Implementation
 
 			if
 				l_orig_call = Void and then
-				((l_creation_class /= Void and then l_creation_class.allows_default_creation) or
+				((l_creation_class /= Void and then l_creation_class.allows_default_creation) or else
 				(l_is_formal_creation and then l_formal_dec.has_default_create))
 			then
 				if l_creation_class /= Void  then
 					check not_is_multi_constraint_case: not l_is_multi_constraint_case end
 					l_feature := l_creation_class.default_create_feature
 				else
-					check l_is_multi_constraint_case end
-					l_result_tuple := l_type_set.feature_i_state_by_name_id (names_heap.default_create_name_id)
-					check	l_result_tuple.features_found_count = 1 end
-					l_feature := l_result_tuple.feature_item
-					l_creation_class := l_result_tuple.class_type_of_feature.associated_class
+					check
+						is_multi_constrainet_case: l_is_multi_constraint_case
+						l_formal_type_not_void: l_formal_type /= Void
+						l_formal_dec_not_void: l_formal_dec /= Void
+						l_creation_class_is_void: l_creation_class = Void
+						second_part_of_if_is_true: l_is_formal_creation and then l_formal_dec.has_default_create
+					end
+						-- What we want to do is the following:
+						-- We go through the list of creation constraints and have a look at each feature.
+						-- If a feature is a version of `default_create' from `ANY' we record it.
+						-- We should find exactly one feature as otherwise l_formal_dec.has_default_create should not have been true.						
+					l_constraint_creation_list := l_formal_dec.constraint_creation_list (context.current_class)
+					from
+						l_constraint_creation_list.start
+					until
+						l_constraint_creation_list.after or l_creation_class /= Void
+					loop
+						l_ccl_item := l_constraint_creation_list.item
+						l_feature := l_ccl_item.feature_item
+						if l_feature.rout_id_set.first = system.default_create_id then
+							l_creation_type := l_ccl_item.type_item.type
+							l_creation_class := l_creation_type.associated_class
+							last_type := l_creation_type
+						end
+						l_constraint_creation_list.forth
+					end
+
+					check
+						found_item_was_the_only_one:
+							 (agent (a_constraint_creation_list: LIST [TUPLE [type_item: EXTENDED_TYPE_A; feature_item: FEATURE_I]]): BOOLEAN
+							 		-- Check that there is no more version of default create.
+							 		--| Otherwise we should never get in here as `l_formal_dec.has_default_create'
+							 		--| should have returned false and prevented this from happening.
+							 	do
+							 		Result := True
+							 		from do_nothing
+							 		until
+							 			a_constraint_creation_list.after
+							 		loop
+						 				if a_constraint_creation_list.item.feature_item.rout_id_set.first = system.default_create_id then
+						 					Result := False
+						 				end
+							 			a_constraint_creation_list.forth
+							 		end
+							 	end).item ([l_constraint_creation_list])
+					end
 				end
+
 				check l_feature /= Void  end
 				check l_creation_class /= Void  end
 
@@ -4473,15 +4605,46 @@ feature -- Implementation
 
 			if l_call /= Void then
 				if is_inherited then
-						-- FIXME: Look at `access_feat_as' and propose the same algorithm here to find the
-						-- routine of ID `l_call.routine_ids.first'.
-					-- l_class_id := constrained_type (last_type.actual_type).associated_class.class_id
-					-- l_feature := system.class_of_id (l_class_id).feature_of_rout_id (l_call.routine_ids.first)
+					if l_is_multi_constraint_case then
+							-- We need to iterate through the type set to find the routine of ID
+						check
+								-- It should work as we are in the multi constraint case
+							l_formal_not_void: l_formal_type /= Void
+						end
+						l_result := l_type_set.feature_i_list_by_rout_id (l_call.routine_ids.first)
+						check at_least_one_feature_found: l_result.count > 0 end
+						from
+							l_result.start
+						until
+							l_result.after
+						loop
+							l_result_item := l_result.item
+							l_feature := l_result_item.feature_i
+							l_creation_type := l_result_item.cl_type.type
+							l_creation_class := l_creation_type.associated_class
+							last_type := l_creation_type
+								-- Type check the call
+							process_call (last_type, Void, l_call.feature_name, l_feature, l_call.parameters, False, False, False, False)
+						end
+							-- Martins 3/29/2007
+							-- After the loop we simply continue with whatever feature was last found.
+							-- Is this a good idea? Well, it depends:
+							-- We have done all checks, so whatever it might be, we're fine.
+							-- But if we would have to generate new code (replication?) it is not decideable what to do
+							-- because the selection of the static type of the call has an influence to the dynamic binding.
+							-- And we have possibly more than one possibility to chose from and they are equally acceptable.
+						fixme ("Possibly a multi constraint issue (in the future) regarding dynamic binding.")
+					else
+						check l_creation_class_not_void: l_creation_class /= Void end
+						l_feature := l_creation_class.feature_of_rout_id (l_call.routine_ids.first)
+							-- Type check the call
+						process_call (last_type, Void, l_call.feature_name, l_feature, l_call.parameters, False, False, False, False)
+					end
+				else
+						-- Type check the call
+					process_call (last_type, Void, l_call.feature_name, l_feature, l_call.parameters, False, False, False, False)
 				end
 
-					-- Type check the call: as if it was an unqualified call (as export checking
-					-- is done later below)
-				process_call (last_type, Void, l_call.feature_name, l_feature, l_call.parameters, False, False, False, False)
 				check l_creation_class /= Void implies last_calls_target_type.associated_class.conform_to (l_creation_class) end
 				if not is_inherited then
 						-- Set some type informations		
@@ -4502,6 +4665,12 @@ feature -- Implementation
 				last_type := a_creation_type
 				if l_needs_byte_node and then l_orig_call /= Void then
 					l_call_access ?= last_byte_node
+					if l_is_multi_constraint_case and then l_is_default_creation then
+						check
+							no_static_set: not l_call_access.has_multi_constraint_static
+						end
+						l_call_access.set_multi_constraint_static (l_creation_type.type_i)
+					end
 				end
 
 				if not l_is_formal_creation then
@@ -4524,7 +4693,7 @@ feature -- Implementation
 							l_vgcc5.set_target_name (a_name)
 							l_vgcc5.set_type (a_creation_type)
 							l_vgcc5.set_creation_feature (
-								l_creation_class.feature_table.item (last_feature_name))
+								l_creation_class.feature_table.item_id (last_feature_name_id))
 							l_vgcc5.set_location (l_call.feature_name)
 							error_handler.insert_error (l_vgcc5)
 						end
@@ -4533,11 +4702,21 @@ feature -- Implementation
 						-- Check that the creation feature used for creating the generic
 						-- parameter has been listed in the constraint for the generic
 						-- parameter.
-					if not l_formal_dec.has_creation_feature_name (last_feature_name) then
+					fixme ("MTNTODO: Check whether this is good or bad in context of overloaded features for .NET. Maybe it was even a bug there.")
+					if not l_formal_dec.has_creation_feature_name_id (last_original_feature_name_id) then
 						create l_vgcc11
 						context.init_error (l_vgcc11)
 						l_vgcc11.set_target_name (a_name)
-						l_vgcc11.set_creation_feature (l_creation_class.feature_table.item (last_feature_name))
+						if l_is_multi_constraint_case then
+							l_mc_feature_info := l_type_set.info_about_feature_by_name_id (last_original_feature_name_id, l_formal_type.position, context.current_class)
+							if not l_mc_feature_info.is_empty then
+								l_vgcc11.set_creation_feature (l_mc_feature_info.first.feature_i)
+							end
+						else
+							check l_creation_class /= Void end
+							l_vgcc11.set_creation_feature (l_creation_class.feature_table.item (last_feature_name))
+						end
+
 						l_vgcc11.set_location (l_call.feature_name)
 						error_handler.insert_error (l_vgcc11)
 					end
@@ -4568,7 +4747,7 @@ feature -- Implementation
 					context.init_error (l_vgcc1)
 					l_vgcc1.set_target_name (a_name)
 					l_vgcc1.set_location (a_location)
-					error_handler.insert_error (l_vgcc1);
+					error_handler.insert_error (l_vgcc1)
 				end
 			end
 			error_handler.checksum
@@ -7298,11 +7477,10 @@ feature {NONE} -- Implementation: type validation
 		require
 			a_type_not_void: a_type /= Void
 			a_last_type_not_void: a_last_type /= Void
-			a_last_constrained_not_void: a_last_constrained /= Void
+			a_last_constrained_not_void: a_type.is_formal implies a_last_constrained /= Void
 		local
 			l_formal_type: FORMAL_A
 		do
-			Result := a_type
 				-- If the declared target type is formal
 				-- and if the corresponding generic parameter is
 				-- constrained to a class which is also generic
@@ -7328,6 +7506,7 @@ feature {NONE} -- Implementation: type validation
 				-- Note: the following conditional instruction will not be executed
 				-- if the class type of the constraint id not generic since in that
 				-- case `Result' would not be formal.
+			Result := a_type
 			if a_last_type.is_formal then
 				if Result.is_formal then
 					l_formal_type ?= Result

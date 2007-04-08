@@ -14,6 +14,7 @@ inherit
 		redefine
 			menu_name,
 			attach_to_docking_manager,
+			internal_recycle,
 			pixmap
 		end
 
@@ -43,7 +44,6 @@ feature {NONE} -- Initialization
 			text_area.drop_actions.extend (agent drop_class)
 			text_area.drop_actions.extend (agent drop_feature)
 			text_area.drop_actions.extend (agent drop_cluster)
-			text_area.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
 			text_area.disable_line_numbers
 			l_f.extend (text_area.widget)
 			widget := l_f
@@ -124,7 +124,7 @@ feature -- Clean up
 			graphical_output_manager.prune (Current)
 			text_area.recycle
 			text_area := Void
-			develop_window := Void
+			Precursor {EB_TOOL}
 		end
 
 feature -- Status setting
@@ -316,12 +316,6 @@ feature {NONE} -- Implementation
 			st_valid: st /= Void
 		do
 			develop_window.tools.launch_stone (st)
-		end
-
-	veto_pebble_function (a_stone: ANY): BOOLEAN is
-			-- Veto pebble function
-		do
-			Result := develop_window.link_tools
 		end
 
 indexing

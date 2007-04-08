@@ -38,6 +38,9 @@ feature{NONE} -- Initialization
 
 feature -- Access
 
+	flag: INTEGER_8
+			-- Flag to distinguish different accessors such as assigner, creator
+
 	feature_item: QL_FEATURE
 			-- feature_item
 
@@ -50,8 +53,21 @@ feature -- Access
 	row_type: INTEGER
 			-- Type of Current row
 
-	staring_column_index: INTEGER
+	starting_column_index: INTEGER
 			-- Index for the first item in Current row
+
+	item (a_index: INTEGER): EV_GRID_ITEM is
+			-- The `a_index'-th grid item in Current row
+		require
+			a_index_valid: a_index >= starting_column_index and then a_index <= starting_column_index + 2
+		do
+			if a_index - starting_column_index = 0 then
+				Result := grid_item
+			else
+				calculate_reference_position
+				Result := accessor_grid_item
+			end
+		end
 
 feature -- Access/Row type
 
@@ -121,10 +137,37 @@ feature -- Setting
 			is_for_caller_set: is_for_caller = b
 		end
 
+	set_starting_column_index (a_index: INTEGER) is
+			-- Set `starting_column_index' with `a_index'.
+		do
+			starting_column_index := a_index
+		ensure
+			starting_column_index_set: starting_column_index = a_index
+		end
+
+	set_flag (a_flag: like flag) is
+			-- Set `flag' with `a_flag'.
+		do
+			flag := a_flag
+		ensure
+			flag_set: flag = a_flag
+		end
+
+	bind_reference_position_item is
+			-- Bind reference position item into grid.
+		do
+			if not has_position_calculated then
+				calculate_reference_position
+			end
+			if is_binded_to_grid then
+				grid_row.set_item (starting_column_index + 1, accessor_grid_item)
+			end
+		end
+
 	calculate_reference_position is
 			-- Calculate reference (callers/callees) positions for `feature_item' and display them in another grid item.
 		local
-			l_accessor_visitor: EB_ACCESSED_FEATURE_VISITOR
+			l_accessor_visitor: like accessor_visitor
 			l_caller: like feature_item
 			l_callee: like feature_item
 			l_accessors: LIST [TUPLE [a_ast: AST_EIFFEL; a_class: CLASS_C]]
@@ -139,36 +182,48 @@ feature -- Setting
 				end
 
 				if l_callee /= Void and then l_callee.is_real_feature then
-					create l_accessor_visitor.make
+					l_accessor_visitor := accessor_visitor
+					l_accessor_visitor.set_flag (flag)
 					l_accessor_visitor.find_accessors (l_callee, l_caller)
 					l_accessors := l_accessor_visitor.accessors
 					if l_accessors.is_empty then
 						-- Fixme: add code
 					else
 						create_accessor_grid_item (l_accessors)
-						if is_binded_to_grid then
-							grid_row.set_item (staring_column_index + 1, accessor_grid_item)
-						end
 					end
 				end
 				set_has_position_calculated (True)
 			end
 		end
 
+	accessor_visitor: EB_ACCESSED_FEATURE_VISITOR is
+			-- Visitor to calculate reference positions
+		once
+			create Result.make
+		ensure
+			result_attached: Result /= Void
+		end
+
+
 feature -- Grid binding
 
-	bind_row (a_grid_row: EV_GRID_ROW; a_column_index: INTEGER) is
+	bind_row (a_grid_row: EV_GRID_ROW; a_column_index: INTEGER; a_force_reference_calculation: BOOLEAN) is
 			-- Bind Current row into `grid' starting from column indexed by `a_column_index'.
+			-- If `a_force_reference_calculation' is True, referenced position grid item will be binded also.
 		local
 			l_accessor_grid_item: like accessor_grid_item
 		do
 			if is_binded_to_grid and then grid_row.parent /= Void then
 				grid_row.clear
 			end
-			staring_column_index := a_column_index
+			starting_column_index := a_column_index
 			set_grid_row (a_grid_row)
 			a_grid_row.set_item (a_column_index, grid_item)
 			a_grid_row.set_data (Current)
+
+			if a_force_reference_calculation and then not has_position_calculated then
+				calculate_reference_position
+			end
 			l_accessor_grid_item := accessor_grid_item
 			if l_accessor_grid_item /= Void then
 				a_grid_row.set_item (a_column_index + 1, l_accessor_grid_item)
