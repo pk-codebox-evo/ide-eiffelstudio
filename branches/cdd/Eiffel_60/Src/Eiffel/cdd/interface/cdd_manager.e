@@ -9,6 +9,8 @@ class
 
 inherit
 
+	CDD_SUPPORT
+
 	EB_CLUSTER_MANAGER_OBSERVER
 		rename
 			manager as eb_cluster_manager,
@@ -85,31 +87,18 @@ feature -- Access (CDD Status)
 			open_project_not_void: Result /= Void
 		end
 
-	is_valid_status (an_application_status: APPLICATION_STATUS): BOOLEAN is
-			-- Is 'an_application_status' valid for creating a test case?
-		do
-			Result := an_application_status.is_stopped and
-					an_application_status.exception_occurred and
-					(an_application_status.exception_code = {EXCEP_CONST}.void_call_target or
-					an_application_status.exception_code = {EXCEP_CONST}.postcondition or
-					an_application_status.exception_code = {EXCEP_CONST}.class_invariant or
-					an_application_status.exception_code = {EXCEP_CONST}.precondition or
-					an_application_status.exception_code = {EXCEP_CONST}.check_instruction)
-		end
-
-
 feature -- Status setting (Application)
 
 	on_application_stopped (an_application_status: APPLICATION_STATUS) is
 			-- Check whether we want to create a new test case from the current
 			-- application status `an_application_status'.
 		do
-			if is_capturing_enabled and is_valid_status (an_application_status) then
-				capturer.make_reflection (an_application_status)
-				if capturer.last_reflection /= Void then
+			--if is_capturing_enabled and is_valid_status (an_application_status) then
+				capturer.reflect_call_stack (an_application_status)
+				if not capturer.reflected_call_stack.is_empty then
 
 				end
-			end
+			--end
 		end
 
 	on_application_quit is
