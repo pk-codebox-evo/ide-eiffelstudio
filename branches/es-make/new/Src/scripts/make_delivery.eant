@@ -86,6 +86,12 @@
 			<fileset include="@(**/*)" exclude="@(**/.svn/**/*|gobo/**/*)" />
 		</copy>
 
+		<!-- examples -->
+		<mkdir directory="library" dir="${delivery_dir}" />
+		<copy to_directory="${delivery_dir}/examples" dir="${EIFFEL_SRC}/examples">
+			<fileset include="@(**/*)" exclude="@(**/.svn/**/*|gobo/**/*)" />
+		</copy>
+
 		<!-- gobo -->
 		<mkdir directory="gobo" dir="${delivery_dir}/library" />		
 		<copy to_directory="${delivery_dir}/library/gobo" dir="${EIFFEL_SRC}/library/gobo/svn">
@@ -140,28 +146,16 @@
 		
 		<!-- Environment setup -->
 		<setenv name="GOBO" value="${delivery_dir}${path_separator}library${path_separator}gobo"/>
-		<setenv name="GOBO_EIFFEL" value="ise"/>
 		<setenv name="GOBO_OS" value="unix" unless="${is_windows}" />
 		<setenv name="GOBO_OS" value="windows" if="${is_windows}" />
 		<setenv name="GOBO_DOTNET" value="true" if="${is_windows}" />
-		<setenv name="ISE_5_6" value="false"/>
 
-		<!-- Install -->
-		<geant file="${GOBO}/build.eant" dir="${GOBO}" target="clobber"/>
-		<geant file="${GOBO}/build.eant" dir="${GOBO}" target="install"/>
-
-		<!-- Build binaries -->
-                <geant file="${GOBO}/src/build.eant" target="compile_ise" dir="${compile_dir}"/>
-                <geant file="${GOBO}/src/build.eant" target="clean" dir="${compile_dir}"/>
-		<copy to_directory="${delivery_dir}/library/gobo/bin" file="${compile_dir}/geant"/>
-		<copy to_directory="${delivery_dir}/library/gobo/bin" file="${compile_dir}/gec"/>
-		<copy to_directory="${delivery_dir}/library/gobo/bin" file="${compile_dir}/gelex"/>
-		<copy to_directory="${delivery_dir}/library/gobo/bin" file="${compile_dir}/gelint"/>
-		<copy to_directory="${delivery_dir}/library/gobo/bin" file="${compile_dir}/gepp"/>
-		<copy to_directory="${delivery_dir}/library/gobo/bin" file="${compile_dir}/getest"/>
-		<copy to_directory="${delivery_dir}/library/gobo/bin" file="${compile_dir}/gexace"/>
-		<copy to_directory="${delivery_dir}/library/gobo/bin" file="${compile_dir}/gexslt"/>
-		<copy to_directory="${delivery_dir}/library/gobo/bin" file="${compile_dir}/geyacc"/>
+		<!-- Call bootstrap -->
+		<set name="verb_flag" value="" unless="${verbose}=true" />
+		<set name="verb_flag" value="-v" if="${verbose}=true" />
+		<exec executable="bash ./bootstrap.sh ${verb_flag} gcc ge" dir="${GOBO}/work/bootstrap" unless="${is_windows}"/>
+		<exec executable="bootstrap.bat ${verb_flag} msc ge" dir="${GOBO}/work/bootstrap" if="${is_windows}"/>
+		<unset name="verb_flag"/>
 	</target>
 
 	<target name="create_delivery_windows" depend="init_delivery" if="${is_windows}">
@@ -223,7 +217,7 @@
 		<exit code="1" if="${bin_available}=false" />
 		<mkdir directory="${exe_target}/spec" />
 		<mkdir directory="${exe_target}/spec/${ISE_PLATFORM}" />
-		<copy to_directory="${exe_target}" file="${compile_dir}/${exe_name}/wizard${exe}" />
+		<copy to_directory="${exe_target}/spec/${ISE_PLATFORM}" file="${compile_dir}/${exe_name}/wizard${exe}" />
 		<exec executable="chmod a+x ${exe_target}/wizard" unless="${is_windows}" />
 		<exec executable="strip ${exe_target}/wizard" unless="${is_windows}" />
 	</target>
@@ -280,7 +274,7 @@
 
 		<set name="conf_documentation_directory" value="${EIFFEL_SRC}/../Documentation" />		
 		<available resource="${conf_documentation_directory}" variable="tmp_documentation_avail" />
-		<echo message="doc_builder missing" if="${tmp_documentation_avail}=false" />
+		<echo message="Documentation folder missing in parent of EIFFEL_SRC" if="${tmp_documentation_avail}=false" />
 		<exit code="1" if="${tmp_documentation_avail}=false" />
 
 		<available resource="${delivery_dir}" variable="tmp_delivery_avail" />
