@@ -58,7 +58,8 @@
 		<exec executable="which bash > /dev/null" exit_code_variable="conf_bash" />
 		<echo message="  -> bash found, ok" if="$conf_bash=0" />
 		<echo message="===============================================================================" unless="$conf_bash=0" />
-		<echo message="ERROR: bash not in path, please install 'bash' or update your PATH." unless="$conf_bash=0" />
+		<echo message="ERROR: bash not in path." unless="$conf_bash=0" />
+		<echo message="Please install 'bash' or update your PATH." unless="$conf_bash=0" />
 		<echo message="===============================================================================" unless="$conf_bash=0" />
 		<set name="setup_error" value="" unless="$conf_bash=0" />
 
@@ -66,7 +67,8 @@
 		<exec executable="which sed > /dev/null" exit_code_variable="conf_sed" />
 		<echo message="  -> sed found, ok" if="$conf_sed=0" />
 		<echo message="===============================================================================" unless="$conf_sed=0" />
-		<echo message="ERROR: sed not in path, please install 'sed' or update your PATH." unless="$conf_sed=0" />
+		<echo message="ERROR: sed not in path." unless="$conf_sed=0" />
+		<echo message="Please install 'sed' or update your PATH." unless="$conf_sed=0" />
 		<echo message="===============================================================================" unless="$conf_sed=0" />
 		<set name="setup_error" value="" unless="$conf_sed=0" />
 
@@ -74,9 +76,19 @@
 		<exec executable="which pkg-config > /dev/null" exit_code_variable="conf_pkgconfig" />
 		<echo message="  -> pkg-config found, ok" if="$conf_pkgconfig=0" />
 		<echo message="===============================================================================" unless="$conf_pkgconfig=0" />
-		<echo message="ERROR: pkg-config not in path, please install 'pkg-config' or update your PATH." unless="$conf_pkgconfig=0" />
+		<echo message="ERROR: pkg-config not in path." unless="$conf_pkgconfig=0" />
+		<echo message="Please install 'pkg-config' or update your PATH." unless="$conf_pkgconfig=0" />
 		<echo message="===============================================================================" unless="$conf_pkgconfig=0" />
 		<set name="setup_error" value="" unless="$conf_pkgconfig=0" />
+
+		<!-- 'strip' -->
+		<exec executable="which strip > /dev/null" exit_code_variable="conf_strip" />
+		<echo message="  -> strip found, ok" if="$conf_strip=0" />
+		<echo message="===============================================================================" unless="$conf_strip=0" />
+		<echo message="ERROR: strip not in path." unless="$conf_strip=0" />
+		<echo message="Please install 'strip' or update your PATH. Strip is part of the 'binutils'." unless="$conf_strip=0" />
+		<echo message="===============================================================================" unless="$conf_strip=0" />
+		<set name="setup_error" value="" unless="$conf_strip=0" />
 	</target>
 	
 	<target name="check_tools_windows" if="$is_windows">

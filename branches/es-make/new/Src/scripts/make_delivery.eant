@@ -210,7 +210,8 @@
 		<echo message="${compile_dir}/${exe_name}${exe} missing, aborting ..." if="${bin_available}=false" />
 		<exit code="1" if="${bin_available}=false" />
 		<copy to_directory="${exe_target}" file="${compile_dir}/${exe_name}${exe}" />
-		<exec executable="chmod a+x ${exe_target}/${exe_name}${exe}" unless="${is_windows}" />
+		<exec executable="chmod a+x ${exe_target}/${exe_name}" unless="${is_windows}" />
+		<exec executable="strip ${exe_target}/${exe_name}" unless="${is_windows}" />
 	</target>
 
 	<target name="install_a_wizard">
@@ -223,7 +224,8 @@
 		<mkdir directory="${exe_target}/spec" />
 		<mkdir directory="${exe_target}/spec/${ISE_PLATFORM}" />
 		<copy to_directory="${exe_target}" file="${compile_dir}/${exe_name}/wizard${exe}" />
-		<exec executable="chmod a+x ${exe_target}/wizard${exe}" unless="${is_windows}" />
+		<exec executable="chmod a+x ${exe_target}/wizard" unless="${is_windows}" />
+		<exec executable="strip ${exe_target}/wizard" unless="${is_windows}" />
 	</target>
 
 	<target name="install_executables" depend="init_delivery">
@@ -296,7 +298,6 @@
 		<copy dir="${compile_dir}/tmp_doc/Help" to_directory="${delivery_dir}/docs">
 			<fileset include="@(**/*)" />
 		</copy>
-		<delete directory="${compile_dir}/tmp_doc" />
 	</target>
 
 	<target name="build_vision2demo" depend="init_delivery">
