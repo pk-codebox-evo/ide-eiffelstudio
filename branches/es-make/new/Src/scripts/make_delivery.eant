@@ -137,9 +137,31 @@
 		<available resource="${delivery_dir}/library/gobo/library" variable="gobo_dir_available" />
 		<echo message="Gobo missing in ${delivery_dir}/library ..." if="${gobo_dir_available}=false" />
 		<exit code="1" if="${gobo_dir_available}=false" />
+		
+		<!-- Environment setup -->
 		<setenv name="GOBO" value="${delivery_dir}${path_separator}library${path_separator}gobo"/>
-		<geant file="${GOBO}/build.eant" dir="${GOBO}" target="bootstrap1"/>
-		<geant file="${GOBO}/build.eant" dir="${GOBO}" target="bootstrap2"/>
+		<setenv name="GOBO_EIFFEL" value="ise"/>
+		<setenv name="GOBO_OS" value="unix" unless="${is_windows}" />
+		<setenv name="GOBO_OS" value="windows" if="${is_windows}" />
+		<setenv name="GOBO_DOTNET" value="true" if="${is_windows}" />
+		<setenv name="ISE_5_6" value="false"/>
+
+		<!-- Install -->
+		<geant file="${GOBO}/build.eant" dir="${GOBO}" target="clobber"/>
+		<geant file="${GOBO}/build.eant" dir="${GOBO}" target="install"/>
+
+		<!-- Build binaries -->
+                <geant file="${GOBO}/src/build.eant" target="compile_ise" dir="${compile_dir}"/>
+                <geant file="${GOBO}/src/build.eant" target="clean" dir="${compile_dir}"/>
+		<copy to_directory="${delivery_dir}/library/gobo/bin" file="${compile_dir}/geant"/>
+		<copy to_directory="${delivery_dir}/library/gobo/bin" file="${compile_dir}/gec"/>
+		<copy to_directory="${delivery_dir}/library/gobo/bin" file="${compile_dir}/gelex"/>
+		<copy to_directory="${delivery_dir}/library/gobo/bin" file="${compile_dir}/gelint"/>
+		<copy to_directory="${delivery_dir}/library/gobo/bin" file="${compile_dir}/gepp"/>
+		<copy to_directory="${delivery_dir}/library/gobo/bin" file="${compile_dir}/getest"/>
+		<copy to_directory="${delivery_dir}/library/gobo/bin" file="${compile_dir}/gexace"/>
+		<copy to_directory="${delivery_dir}/library/gobo/bin" file="${compile_dir}/gexslt"/>
+		<copy to_directory="${delivery_dir}/library/gobo/bin" file="${compile_dir}/geyacc"/>
 	</target>
 
 	<target name="create_delivery_windows" depend="init_delivery" if="${is_windows}">

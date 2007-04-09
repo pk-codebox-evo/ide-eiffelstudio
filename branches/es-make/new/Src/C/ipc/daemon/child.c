@@ -249,6 +249,7 @@ rt_public STREAM *spawn_child(char* id, char *a_exe_path, char* exe_args, char *
 	char *t_uu;				/* Result of UUEncode */
 	int uu_buffer_size;		/* Size of buffer needed for UUEncoding. */
 
+	char *startpath = NULL;	/* Paths for directory to start in */
 	char error_msg[128] = "";								/* Error message displayed when we cannot lauch the program */
 #else
 	int pp2c[2];				/* The opened downwards file descriptors : parent to child */
@@ -257,10 +258,9 @@ rt_public STREAM *spawn_child(char* id, char *a_exe_path, char* exe_args, char *
 	Pid_t pid;					/* Pid of the child */
 	char **argv;				/* Argument vector */
 #endif
-	char *startpath = NULL, *cmdline;	/* Paths for directory to start in */
 	STREAM *sp;							/* Stream used for communications with ewb */
 	char* quoted_exe_path;
-	char* exe_path;
+	char* exe_path, *cmdline;;
 
 	exe_path = safe_unquoted_path (a_exe_path);
 	quoted_exe_path = safe_quoted_path (exe_path);

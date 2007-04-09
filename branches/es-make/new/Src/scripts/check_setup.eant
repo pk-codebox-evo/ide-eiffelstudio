@@ -208,6 +208,7 @@
 		</description>
 
 		<!-- 'base' library precompiled -->
+		<!--
 		<available resource="$ISE_EIFFEL/precomp/spec/$ISE_PLATFORM/EIFGENs/base" variable="precomp_base" />
 		<echo message="  -> precompiled Base ok" if="$precomp_base=true" />
 		<echo message="===============================================================================" unless="$precomp_base=true" />
@@ -215,8 +216,10 @@
 		<echo message="Please make sure that you have precompiled 'base'." unless="$precomp_base=true" />
 		<echo message="===============================================================================" unless="$precomp_base=true" />
 		<set name="setup_error" value="" unless="$precomp_base=true" />
+		-->
 
 		<!-- 'vision2' library precompiled -->
+		<!--
 		<available resource="$ISE_EIFFEL/precomp/spec/$ISE_PLATFORM/EIFGENs/vision2" variable="precomp_vision2" />
 		<echo message="  -> precompiled Vision2 ok" if="$precomp_vision2=true" />
 		<echo message="===============================================================================" unless="$precomp_vision2=true" />
@@ -224,6 +227,7 @@
 		<echo message="Please make sure that you have precompiled 'vision2'." unless="$precomp_vision2=true" />
 		<echo message="===============================================================================" unless="$precomp_vision2=true" />
 		<set name="setup_error" value="" unless="$precomp_vision2=true" />
+		-->
 
 		<echo message="EiffelStudio setup flawed, aborting checker." if="$setup_error" />
 		<exit code="1" if="$setup_error" />
