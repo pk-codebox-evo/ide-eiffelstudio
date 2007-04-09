@@ -8,20 +8,21 @@
 	</description>
 	
 	<inherit>
-		<parent location="${EIFFEL_SRC}/scripts/_common_.eant">
+		<parent location="scripts/_common_.eant">
 			<redefine target="help" />
 		</parent>
 	</inherit>
 
 	<target name="help" depend="init">
-		<echo message="EiffelStudio automated build scripts" />
-		<echo message="------------------------------------"/>
+		<echo message="Available targets:"/>
+		<echo message="  check_setup              Check if your setup is ok for compilation" />
+		<echo message="  build_workbench          Prepare everything for development on 'ec'"/>
+		<echo message="  make_delivery            Build a complete delivery"/>
+		<echo message="  clean                    Clean up the mess"/>
 		<echo message="" />
-		<echo message="usage:"/>
-		<echo message=" geant check_setup" />
-		<echo message=" geant build_workbench"/>
-		<echo message=" geant make_delivery"/>
-		<echo message=" geant clean"/>
+		<echo message="Defines:" />
+		<echo message="  -Dclean_after_compile    Clean after compilation (to save disk space)"/>
+		<echo message="  -Dcompile_dir=PATH       Build intermediate binaries in PATH"/>
 	</target>
 
 	<target name="check_setup" depend="init">

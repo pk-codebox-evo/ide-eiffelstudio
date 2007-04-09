@@ -38,7 +38,6 @@ ver > tmp
 if %ERRORLEVEL%==0 goto reg_val_win2k
 goto reg_val_xp
 
-
 :reg_val_xp
 rem get env-vars from registry
 del tmp
@@ -56,55 +55,48 @@ del keys.txt
 goto command_switch
 
 :command_switch
-if .%1. == .check_setup. goto check_setup
-if .%1. == .build_workbench. goto build_dev
-if .%1. == .make_delivery. goto build_delivery
-if .%1. == .clean. goto clean
+if .%1. == .. goto usage
+geant %1 %2 %3 %4 %5 %6
+goto end
 
 :usage
 echo usage:
-echo    make.bat check_setup
-echo    make.bat build_dev
-echo    make.bat build_delivery
-echo    make.bat clean
+echo    make.bat [defines ...] target
+echo.
+geant help
 goto end
 	
-:check_setup
-geant check_setup
-goto end
-
-:build_dev
-geant build_workbench
-goto end
-
-:build_delivery
-geant make_delivery
-goto end
-
-:clean
-geant clean
-goto end
-
 :find_error
 echo ===============================================================================
-echo find.exe not found, aborting ...
+echo ERROR: find.exe not found.
+echo.
+echo Make sure that Windows find.exe is in your PATH. Also, make sure that Cygwin
+echo find.exe is not in your path first.
 echo ===============================================================================
 goto end
 
 :geant_error
 del tmp
 echo ===============================================================================
-echo geant not found, aborting ...
+echo ERROR: geant not found.
+echo.
 echo You can compile geant from precompiled c code, for example by calling
 echo cl library\gobo\src\geant\geant.c
-echo Just make sure that you add the binary to your path afterwards.
+echo.
+echo Make sure to add the binary to your PATH afterwards
 echo ===============================================================================
 goto end
 
 :reg_error
 del tmp
 echo ===============================================================================
-echo Reg.exe is not installed. Install it from the Windows 2000 Support Tools (from the Install CD), or download it from here: http://www.dynawell.com/reskit/microsoft/win2000/reg.zip 
+echo ERROR: Reg.exe is not installed. 
+echo.
+echo If you are using Windows 2000, please install it from the Windows 2000 Support 
+echo Tools (from the Install CD), or download it from here: 
+echo http://www.dynawell.com/reskit/microsoft/win2000/reg.zip 
+echo.
+echo If you are using Windows XP and beyond, make sure that it is in your PATH
 echo ===============================================================================
 goto end
 
