@@ -739,8 +739,7 @@ feature {AST_EIFFEL} -- Expressions visitors
 			-- Process `l_as'.
 		require
 			non_void_as: l_as /= Void
-		do
-			-- TODO: This should be deferred.
+		deferred
 		end
 
 	process_un_plus_as (l_as: UN_PLUS_AS) is

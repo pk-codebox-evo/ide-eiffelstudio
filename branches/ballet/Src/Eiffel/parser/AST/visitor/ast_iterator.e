@@ -359,6 +359,11 @@ feature {NONE} -- Implementation
 			process_unary_as (l_as)
 		end
 
+	process_un_confined_as (l_as: UN_CONFINED_AS) is
+		do
+			process_unary_as (l_as)			
+		end
+
 	process_un_plus_as (l_as: UN_PLUS_AS) is
 		do
 			process_unary_as (l_as)

@@ -1588,6 +1588,19 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	process_un_confined_as (l_as: UN_CONFINED_AS) is
+		do
+			if not expr_type_visiting then
+				text_formatter_decorator.begin
+				text_formatter_decorator.process_keyword_text (ti_confined_keyword, Void)
+				text_formatter_decorator.put_space
+			end
+			l_as.expr.process (Current)
+			if not expr_type_visiting then
+				text_formatter_decorator.commit
+			end
+		end
+
 	process_un_plus_as (l_as: UN_PLUS_AS) is
 		do
 			process_unary_as (l_as)

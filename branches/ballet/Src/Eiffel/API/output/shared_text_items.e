@@ -135,6 +135,9 @@ feature {NONE} -- Keywords
 	ti_Old_keyword: STRING is "old"
 			-- "old" keyword
 
+	ti_confined_keyword: STRING is "confined"
+			-- "confined" keyword
+
 	ti_Once_keyword: STRING is "once"
 			-- "once" keyword
 

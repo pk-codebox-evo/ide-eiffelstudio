@@ -278,6 +278,10 @@ feature -- Implementation
 		do
 		end
 
+	process_un_confined_as (l_as: UN_CONFINED_AS) is
+		do
+		end
+
 	process_un_plus_as (l_as: UN_PLUS_AS) is
 		do
 		end
