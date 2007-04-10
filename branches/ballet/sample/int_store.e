@@ -14,6 +14,8 @@ feature -- Access
 		use
 			uses_repr: repr
 		deferred
+		ensure
+			confined repr
 		end
 
 	added (x: INT_STORE): INTEGER is
@@ -74,8 +76,7 @@ feature -- Framing
 	repr: FRAME is
 		use
 			own: repr
-		do
-			create Result.make_from_element (Current)
+		deferred
 		end
 
 end

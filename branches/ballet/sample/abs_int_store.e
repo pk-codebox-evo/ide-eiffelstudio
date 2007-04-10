@@ -34,4 +34,9 @@ feature -- Implementation
 			item := a_value
 		end
 
+feature -- Framing
+	repr: FRAME is
+		do
+			create Result.make_from_element (Current)
+		end
 end

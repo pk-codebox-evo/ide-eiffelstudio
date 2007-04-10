@@ -9,9 +9,6 @@ class
 
 inherit
 	INT_STORE
-		redefine
-			repr
-		end
 
 create
 	make
