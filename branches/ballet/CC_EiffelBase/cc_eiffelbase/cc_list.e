@@ -5,6 +5,6 @@ indexing
 	revision: "$Revision$"
 
 deferred class
-	CC_LIST
+	CC_LIST [G]
 
 end

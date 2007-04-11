@@ -5,6 +5,10 @@ indexing
 	revision: "$Revision$"
 
 deferred class
-	CC_TABLE
+	CC_TABLE [G, K]
 
+inherit
+	CC_COLLECTION [G]
+
+-- representation vielleicht set von tupeln
 end

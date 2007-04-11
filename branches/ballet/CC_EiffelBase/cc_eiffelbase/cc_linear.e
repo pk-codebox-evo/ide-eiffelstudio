@@ -1,0 +1,372 @@
+indexing
+	description: "Structures whose items may be accessed sequentially, one-way"
+	author: "Marco Zietzling"
+	library: "EiffelBase with complete contracts"
+	date: "$Date$"
+	revision: "$Revision$"
+
+deferred class
+	CC_LINEAR [G]
+
+inherit
+	CC_TRAVERSABLE [G]
+		rename
+			model as traversable_model
+		redefine
+			do_all, do_if, there_exists, for_all
+		end
+
+feature -- Access
+
+	has (v: like item): BOOLEAN is
+			-- Does structure include an occurrence of `v'?
+			-- (Reference or object equality,
+			-- based on `object_comparison'.)
+		use
+			use_own_repr: repr
+		do
+			start
+			if not off then
+				search (v)
+			end
+			Result := not exhausted
+		end
+
+	index_of (v: like item; i: INTEGER): INTEGER is
+			-- Index of `i'-th occurrence of `v'.
+			-- 0 if none.
+			-- (Reference or object equality,
+			-- based on `object_comparison'.)
+		require
+			positive_occurrences: i > 0
+		use
+			use_own_repr: repr
+		local
+			occur, pos: INTEGER
+		do
+			if object_comparison and v /= Void then
+				from
+					start
+					pos := 1
+				until
+					exhausted or (occur = i)
+				loop
+					if item /= Void and then v.is_equal (item) then
+						occur := occur + 1
+					end
+					forth
+					pos := pos + 1
+				end
+			else
+				from
+					start
+					pos := 1
+				until
+					exhausted or (occur = i)
+				loop
+					if item = v then
+						occur := occur + 1
+					end
+					forth
+					pos := pos + 1
+				end
+			end
+			if occur = i then
+				Result := pos - 1
+			end
+		ensure
+			non_negative_result: Result >= 0
+		end
+
+	search (v: like item) is
+			-- Move to first position (at or after current
+			-- position) where `item' and `v' are equal.
+			-- (Reference or object equality,
+			-- based on `object_comparison'.)
+			-- If no such position ensure that `exhausted' will be true.
+		modify
+			modify_own_repr: repr
+		do
+			if object_comparison and v /= Void then
+				from
+				until
+					exhausted or else (item /= Void and then v.is_equal (item))
+				loop
+					forth
+				end
+			else
+				from
+				until
+					exhausted or else v = item
+				loop
+					forth
+				end
+			end
+		ensure
+			object_found: (not exhausted and object_comparison)
+				 implies equal (v, item)
+			item_found: (not exhausted and not object_comparison)
+				 implies v = item
+		end
+
+	index: INTEGER is
+			-- Index of current position
+		use
+			use_own_repr: repr
+		deferred
+		end
+
+	occurrences (v: like item): INTEGER is
+			-- Number of times `v' appears.
+			-- (Reference or object equality,
+			-- based on `object_comparison'.)
+		use
+			use_own_repr: repr
+		do
+			from
+				start
+				search (v)
+			until
+				exhausted
+			loop
+				Result := Result + 1
+				forth
+				search (v)
+			end
+		end
+
+feature -- Status report
+
+	exhausted: BOOLEAN is
+			-- Has structure been completely explored?
+		use
+			use_own_repr: repr
+		do
+			Result := off
+		ensure
+			exhausted_when_off: off implies Result
+		end
+
+	after: BOOLEAN is
+			-- Is there no valid position to the right of current one?
+		use
+			use_own_repr: repr
+		deferred
+		end
+
+	off: BOOLEAN is
+			-- Is there no current item?
+		use
+			use_own_repr: repr
+		do
+			Result := is_empty or after
+		end
+
+feature -- Cursor movement
+
+	finish is
+			-- Move to last position.
+		modify
+			modify_own_repr: repr
+		deferred
+		end
+
+	forth is
+			-- Move to next position; if no next position,
+			-- ensure that `exhausted' will be true.
+		require
+			not_after: not after
+		modify
+			modify_own_repr: repr
+		deferred
+		ensure
+			-- moved_forth_before_end: (not after) implies index = old index + 1
+		end
+
+feature -- Iteration
+
+	do_all (action: PROCEDURE [ANY, TUPLE [G]]) is
+			-- Apply `action' to every item.
+			-- Semantics not guaranteed if `action' changes the structure;
+			-- in such a case, apply iterator to clone of structure instead.
+		modify
+			modify_own_repr: repr
+		local
+			t: TUPLE [G]
+			cs: CURSOR_STRUCTURE [G]
+			c: CURSOR
+		do
+			cs ?= Current
+			if cs /= Void then
+				c := cs.cursor
+			end
+
+			create t
+			from
+				start
+			until
+				after
+			loop
+				t.put (item, 1)
+				action.call (t)
+				forth
+			end
+
+			if cs /= Void then
+				cs.go_to (c)
+			end
+		end
+
+	do_if (action: PROCEDURE [ANY, TUPLE [G]]; test: FUNCTION [ANY, TUPLE [G], BOOLEAN]) is
+			-- Apply `action' to every item that satisfies `test'.
+			-- Semantics not guaranteed if `action' or `test' changes the structure;
+			-- in such a case, apply iterator to clone of structure instead.
+		modify
+			modify_own_repr: repr
+		local
+			t: TUPLE [G]
+			cs: CURSOR_STRUCTURE [G]
+			c: CURSOR
+		do
+			cs ?= Current
+			if cs /= Void then
+				c := cs.cursor
+			end
+
+			create t
+			from
+				start
+			until
+				after
+			loop
+				t.put (item, 1)
+				if test.item (t) then
+					action.call (t)
+				end
+				forth
+			end
+
+			if cs /= Void then
+				cs.go_to (c)
+			end
+		end
+
+	there_exists (test: FUNCTION [ANY, TUPLE [G], BOOLEAN]): BOOLEAN is
+			-- Is `test' true for at least one item?
+			-- Semantics not guaranteed if `test' changes the structure;
+			-- in such a case, apply iterator to clone of structure instead.
+		use
+			use_own_repr: repr
+		local
+			cs: CURSOR_STRUCTURE [G]
+			c: CURSOR
+			t: TUPLE [G]
+		do
+			create t
+
+			cs ?= Current
+			if cs /= Void then
+				c := cs.cursor
+			end
+
+			from
+				start
+			until
+				after or Result
+			loop
+				t.put (item, 1)
+				Result := test.item (t)
+				forth
+			end
+
+			if cs /= Void then
+				cs.go_to (c)
+			end
+		end
+
+	for_all (test: FUNCTION [ANY, TUPLE [G], BOOLEAN]): BOOLEAN is
+			-- Is `test' true for all items?
+			-- Semantics not guaranteed if `test' changes the structure;
+			-- in such a case, apply iterator to clone of structure instead.
+		use
+			use_own_repr: repr
+		local
+			cs: CURSOR_STRUCTURE [G]
+			c: CURSOR
+			t: TUPLE [G]
+		do
+			create t
+
+			cs ?= Current
+			if cs /= Void then
+				c := cs.cursor
+			end
+
+			from
+				start
+				Result := True
+			until
+				after or not Result
+			loop
+				t.put (item, 1)
+				Result := test.item (t)
+				forth
+			end
+
+			if cs /= Void then
+				cs.go_to (c)
+			end
+		ensure then
+			empty: is_empty implies Result
+		end
+
+feature -- Conversion
+
+	linear_representation: CC_LINEAR [G] is
+			-- Representation as a linear structure
+		modify
+			modify_own_repr: repr
+		do
+			Result := Current
+		end
+
+feature -- Model
+-- TODO hier schon implementierung oder erst deferred???
+	model_sequence: MML_SEQUENCE [G] is
+			-- Model of a general traversable structure
+		modify
+			modify_own_repr: repr
+		deferred
+		end
+
+	model_cursor: INTEGER is
+			-- Model of a cursor for traversal
+		modify
+			modify_own_repr: repr
+		do
+			Result := index
+		end
+
+	model: MML_PAIR [MML_SEQUENCE [G], INTEGER] is
+			-- Model of the sequentially-accessible structure
+		modify
+			modify_own_repr: repr
+		deferred
+		end
+
+feature -- Framing
+
+	repr: FRAME is
+			-- Representation of a general sequentially-accessible structure
+		use
+			use_own_repr: repr
+		deferred
+		end
+
+
+invariant
+
+	after_constraint: after implies off
+	empty_defined_through_model: is_empty = container_model.is_empty
+
+end

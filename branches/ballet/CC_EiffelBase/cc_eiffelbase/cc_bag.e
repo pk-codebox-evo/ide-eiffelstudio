@@ -5,6 +5,11 @@ indexing
 	revision: "$Revision$"
 
 deferred class
-	CC_BAG
+	CC_BAG [G]
+
+inherit
+	CC_COLLECTION [G]
+
+-- representation: bag
 
 end
