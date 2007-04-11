@@ -76,28 +76,40 @@
 		<mkdir directory="${delivery_dir}" />
 
 		<!-- skeleton -->
-		<copy to_directory="${delivery_dir}" dir="${orig_delivery_dir}">
-			<fileset include="@(**/*)" exclude="@(**/.svn/**/*)" />
-		</copy>
+		<geant target="copy_full_tree" arguments="${orig_delivery_dir},${delivery_dir}"/>
 
 		<!-- library -->
-		<mkdir directory="library" dir="${delivery_dir}" />
-		<copy to_directory="${delivery_dir}/library" dir="${EIFFEL_SRC}/library">
-			<fileset include="@(**/*)" exclude="@(**/.svn/**/*|gobo/**/*)" />
-		</copy>
+		<geant target="copy_library" arguments="Eiffel2Java"/>
+		<geant target="copy_library" arguments="base"/>
+		<geant target="copy_library" arguments="diff"/>
+		<geant target="copy_library" arguments="event"/>
+		<geant target="copy_library" arguments="gobo_extension"/>
+		<geant target="copy_library" arguments="graph"/>
+		<geant target="copy_library" arguments="lex"/>
+		<geant target="copy_library" arguments="mel"/>
+		<geant target="copy_library" arguments="memory_analyzer"/>
+		<geant target="copy_library" arguments="net"/>
+		<geant target="copy_library" arguments="obsolete"/>
+		<geant target="copy_library" arguments="parse"/>
+		<geant target="copy_library" arguments="preferences"/>
+		<geant target="copy_library" arguments="process"/>
+		<geant target="copy_library" arguments="store"/>
+		<geant target="copy_library" arguments="thread"/>
+		<geant target="copy_library" arguments="time"/>
+		<geant target="copy_library" arguments="uuid"/>
+		<geant target="copy_library" arguments="vision"/>
+		<geant target="copy_library" arguments="vision2"/>
+		<geant target="copy_library" arguments="vision2_extension"/>
+		<geant target="copy_library" arguments="web"/>
+		<geant target="copy_library" arguments="wel"/>
+
+		<!-- GOBO from svn subfolder -->
+		<geant target="copy_full_tree" arguments="${EIFFEL_SRC}${path_separator}library${path_separator}gobo${path_separator}svn,${delivery_dir}${path_separator}library${path_separator}gobo"/>
+
 
 		<!-- examples -->
-		<mkdir directory="library" dir="${delivery_dir}" />
-		<copy to_directory="${delivery_dir}/examples" dir="${EIFFEL_SRC}/examples">
-			<fileset include="@(**/*)" exclude="@(**/.svn/**/*|gobo/**/*)" />
-		</copy>
+		<geant target="copy_full_tree" arguments="${EIFFEL_SRC}${path_separator}examples,${delivery_dir}${path_separator}examples"/>
 
-		<!-- gobo -->
-		<mkdir directory="gobo" dir="${delivery_dir}/library" />		
-		<copy to_directory="${delivery_dir}/library/gobo" dir="${EIFFEL_SRC}/library/gobo/svn">
-			<fileset include="@(**/*)" exclude="@(**/.svn/**/*)" />
-		</copy>
-		<mkdir directory="bin" dir="${delivery_dir}/library/gobo" />		
 
 		<!-- C_library -->
 		<mkdir directory="C_library" dir="${delivery_dir}" />
@@ -153,9 +165,12 @@
 		<!-- Call bootstrap -->
 		<set name="verb_flag" value="" unless="${verbose}=true" />
 		<set name="verb_flag" value="-v" if="${verbose}=true" />
-		<exec executable="bash ./bootstrap.sh ${verb_flag} gcc ge" dir="${GOBO}/work/bootstrap" unless="${is_windows}"/>
-		<exec executable="bootstrap.bat ${verb_flag} msc ge" dir="${GOBO}/work/bootstrap" if="${is_windows}"/>
+		<set name="gobo_compiler" value="ise" unless="${gobo_using_gec}" />
+		<set name="gobo_compiler" value="ge" if="${gobo_using_gec}" />
+		<exec executable="bash ./bootstrap.sh ${verb_flag} gcc ${gobo_compiler}" dir="${GOBO}/work/bootstrap" unless="${is_windows}"/>
+		<exec executable="bootstrap.bat ${verb_flag} msc ${gobo_compiler}" dir="${GOBO}/work/bootstrap" if="${is_windows}"/>
 		<unset name="verb_flag"/>
+		<unset name="gobo_compiler"/>
 	</target>
 
 	<target name="create_delivery_windows" depend="init_delivery" if="${is_windows}">
@@ -218,8 +233,8 @@
 		<mkdir directory="${exe_target}/spec" />
 		<mkdir directory="${exe_target}/spec/${ISE_PLATFORM}" />
 		<copy to_directory="${exe_target}/spec/${ISE_PLATFORM}" file="${compile_dir}/${exe_name}/wizard${exe}" />
-		<exec executable="chmod a+x ${exe_target}/wizard" unless="${is_windows}" />
-		<exec executable="strip ${exe_target}/wizard" unless="${is_windows}" />
+		<exec executable="chmod a+x ${exe_target}/spec/${ISE_PLATFORM}/wizard" unless="${is_windows}" />
+		<exec executable="strip ${exe_target}/spec/${ISE_PLATFORM}/wizard" unless="${is_windows}" />
 	</target>
 
 	<target name="install_executables" depend="init_delivery">
@@ -287,11 +302,35 @@
 		<exec executable="chmod a+x ${compile_dir}${path_separator}doc_builder${exe}" unless="${is_windows}" />
 		<exec executable="${compile_dir}${path_separator}doc_builder${exe} -gen /xml2help -o /studio -t /web_simple -nohtml ${conf_documentation_directory}${path_separator}xmldoc${path_separator}projects${path_separator}documentation.dpr" dir="${compile_dir}/tmp_doc" />
 
-		<!-- move documentation -->
-		<mkdir directory="${delivery_dir}/docs" />
-		<copy dir="${compile_dir}/tmp_doc/Help" to_directory="${delivery_dir}/docs">
-			<fileset include="@(**/*)" />
-		</copy>
+		<!-- copy documentation -->
+		<geant target="copy_full_tree" arguments="${compile_dir}${path_separator}tmp_doc${path_separator}Help,${delivery_dir}${path_separator}docs"/>
+	</target>
+
+	<target name="copy_full_tree">
+		<!-- Tool to copy a full tree without .svn dirs -->
+		<!-- Added, as geant copy does not copy empty directories *sigh* -->
+		<!-- TODO: update, once it is possile to copy empty directories with geant copy -->
+		<argument name="source_dir"/>
+		<argument name="target_dir"/>
+		
+		<available resource="${source_dir}" variable="source_avail" />
+		<echo message="${source_dir} missing, copy aborted" unless="${source_avail}=true" />
+		<exit code="1" unless="${source_avail}=true" />
+
+		<!-- recreate the directory structure -->
+		<mkdir directory="${target_dir}"/>
+		<exec executable="cd ${source_dir} ; find . -type d ! -path '*/.svn*' -exec 'mkdir' '-p' '${target_dir}/{}' ';'" unless="${is_windows}"/>
+		<exec executable="xcopy /t ${source_dir} ${target_dir}" if="${is_windows}"/>
+
+		<!-- copy files -->
+		<copy to_directory="${target_dir}" dir="${source_dir}">
+			<fileset include="@(**/*)" exclude="@(**/.svn/**/*)" />
+		</copy>		
+	</target>
+
+	<target name="copy_library">
+		<argument name="lib_name"/>
+		<geant target="copy_full_tree" arguments="${EIFFEL_SRC}${path_separator}library${path_separator}${lib_name},${delivery_dir}${path_separator}library${path_separator}${lib_name}"/>
 	</target>
 
 	<target name="build_vision2demo" depend="init_delivery">
