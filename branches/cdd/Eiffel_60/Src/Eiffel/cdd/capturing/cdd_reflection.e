@@ -14,10 +14,10 @@ inherit
 --			{NONE} all
 --		end
 
-	SHARED_DEBUGGED_OBJECT_MANAGER
-		export
-			{NONE} all
-		end
+--	SHARED_DEBUGGED_OBJECT_MANAGER
+--		export
+--			{NONE} all
+--		end
 
 	VALUE_TYPES
 		export
@@ -243,9 +243,9 @@ feature {NONE} -- Implementation
 			l_attr_obj: CDD_OBJECT
 		do
 			if a_type.is_special then
-				l_dbg_obj ?= debugged_object_manager.debugged_object (an_addr, debugger_manager.min_slice, debugger_manager.max_slice)
+				--l_dbg_obj ?= debugged_object_manager.debugged_object (an_addr, debugger_manager.min_slice, debugger_manager.max_slice)
 			else
-				l_dbg_obj := debugged_object_manager.classic_debugged_object_with_class (an_addr, a_type)
+				--l_dbg_obj := debugged_object_manager.classic_debugged_object_with_class (an_addr, a_type)
 			end
 			l_dv_list := l_dbg_obj.attributes
 			if a_type.is_generic or a_type.is_tuple then
@@ -286,7 +286,7 @@ feature {NONE} -- Implementation
 			not_addressed: a_dv.address = Void
 			eiffel_type: a_dv.dynamic_class.is_eiffel_class_c
 		do
-			create Result.make_with_value (a_dv.dump_value.output_value)
+			create Result.make_with_value (a_dv.dump_value.output_value (True))
 		ensure
 			result_not_void: Result /= Void
 		end
