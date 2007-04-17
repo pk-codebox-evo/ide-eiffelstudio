@@ -22,6 +22,7 @@
 		<echo message="" />
 		<echo message="defines:" />
 		<echo message="  -Dclean_after_compile    Clean after compilation (to save disk space)"/>
+		<echo message="  -Dgobo_using_gec         Build GOBO tools using GEC"/>
 		<echo message="  -Dcompile_dir=PATH       Build intermediate binaries in PATH"/>
 	</target>
 
