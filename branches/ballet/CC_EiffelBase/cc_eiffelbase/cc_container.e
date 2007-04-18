@@ -1,6 +1,6 @@
 indexing
 	description: "[
-		Data structures of the most general kind,
+		Finite data structures of the most general kind,
 		used to hold zero or more items.
 		]"
 	author: "Marco Zietzling"
@@ -21,10 +21,22 @@ feature -- Access
 			-- (Reference or object equality,
 			-- based on `object_comparison'.)
 		use
-			use_own_repr: repr
+			use_own_representation: representation
 		deferred
 		ensure
 			not_found_in_empty: Result implies not is_empty
+			model_correspondends: Result = model.contains (v)
+		end
+
+feature -- Measurement
+
+	count: INTEGER is
+			-- Number of items
+		use
+			use_own_representation: representation
+		deferred
+		ensure
+			model_correspondends: Result = model.count
 		end
 
 feature -- Status report
@@ -32,20 +44,22 @@ feature -- Status report
 	is_empty: BOOLEAN is
 			-- Is there no element?
 		use
-			use_own_repr: repr
+			use_own_representation: representation
 		deferred
+		ensure
+			model_correspondends: Result = model.is_empty
 		end
 
 -- TODO obsolete Sachen aus meiner Base Library schmeissen?
-	empty: BOOLEAN is
-			-- Is there no element?
-		obsolete
-			"ELKS 2000: Use `is_empty' instead"
-		do
-			Result := is_empty
-		end
+--	empty: BOOLEAN is
+--			-- Is there no element?
+--		obsolete
+--			"ELKS 2000: Use `is_empty' instead"
+--		do
+--			Result := is_empty
+--		end
 
--- TODO wie hier mahcen?
+-- TODO wie hier machen?
 	object_comparison: BOOLEAN
 			-- Must search operations use `equal' rather than `='
 			-- for comparing references? (Default: no, use `='.)
@@ -66,7 +80,7 @@ feature -- Status setting
 		require
 			changeable_comparison_criterion: changeable_comparison_criterion
 		modify
-			modify_own_repr: repr
+			modify_own_representation: representation
 		do
 			object_comparison := True
 		ensure
@@ -79,7 +93,7 @@ feature -- Status setting
 		require
 			changeable_comparison_criterion: changeable_comparison_criterion
 		modify
-			modify_own_repr: repr
+			modify_own_representation: representation
 		do
 			object_comparison := False
 		ensure
@@ -91,16 +105,18 @@ feature -- Conversion
 	linear_representation: CC_LINEAR [G] is
 			-- Representation as a linear structure
 		modify
-			modify_own_repr: repr
+			modify_own_representation: representation
 		deferred
+		ensure
+			models_are_equivalent: model.domain |=| Result.model.first.range
 		end
 
 feature -- Model
--- TODO hier schon implementierung oder erst deferred???
+
 	model: MML_BAG [G] is
 			-- Model of a general container
 		modify
-			modify_own_repr: repr
+			modify_own_representation: representation
 		local
 			linear: CC_LINEAR [G]
 		do
@@ -121,15 +137,16 @@ feature -- Model
 
 feature -- Framing
 
-	repr: FRAME is
+	representation: FRAME is
 			-- Representation of a general container
 		use
-			use_own_repr: repr
+			use_own_representation: representation
 		deferred
 		end
 
 invariant
 
 	empty_defined_through_model: is_empty = model.is_empty
+	count_defined_through_model: count = model.count
 
 end

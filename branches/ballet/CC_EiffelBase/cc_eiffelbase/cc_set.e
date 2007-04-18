@@ -11,18 +11,9 @@ deferred class
 inherit
 	CC_COLLECTION [G]
 		rename
-			model as collection_model
+			model as model_collection
 		redefine
 			changeable_comparison_criterion
-		end
-
-feature -- Measurement
-
-	count: INTEGER is
-			-- Number of items
-		use
-			use_own_repr: repr
-		deferred
 		end
 
 feature -- Element change
@@ -30,11 +21,12 @@ feature -- Element change
 	extend, put (v: G) is
 			-- Ensure that set includes `v'.
 		modify
-			modify_own_repr: repr
+			modify_own_representation: representation
 		deferred
 		ensure then
 			in_set_already: old has (v) implies (count = old count)
 			added_to_set: not old has (v) implies (count = old count + 1)
+			-- TODO hier noch contracts oder reicht das geerbte?
 		end
 
 feature -- Removal
@@ -42,12 +34,13 @@ feature -- Removal
 	prune (v: G) is
 			-- Remove `v' if present.
 		modify
-			modify_own_repr: repr
+			modify_own_representation: representation
 		deferred
 		ensure then
 			removed_count_change: old has (v) implies (count = old count - 1)
 			not_removed_no_count_change: not old has (v) implies (count = old count)
 			item_deleted: not has (v)
+			model_corresponds: not model.contains (v)
 		end
 
 	changeable_comparison_criterion: BOOLEAN is
@@ -55,7 +48,7 @@ feature -- Removal
 			-- (Answer: only if set empty; otherwise insertions might
 			-- introduce duplicates, destroying the set property.)
 		use
-			use_own_repr: repr
+			use_own_representation: representation
 		do
 			Result := is_empty
 		ensure then
@@ -63,36 +56,22 @@ feature -- Removal
 		end
 
 feature -- Model
--- TODO hier schon implementierung oder erst deferred???
+
 	model: MML_SET [G] is
 			-- Model of a set
 		modify
-			modify_own_repr: repr
-		local
-			linear: CC_LINEAR [G]
+			modify_own_representation: representation
 		do
-			create {MML_DEFAULT_SET [G]} Result.make_empty
-			linear := linear_representation
-
-			from
-				linear.start
-			until
-				linear.off
-			loop
-				Result := Result.extended (linear.item)
-				linear.forth
-			end
+			Result := model_collection.domain
 		ensure
 			Result_not_void: Result /= Void
 		end
 
-feature -- Framing
+invariant
 
-	repr: FRAME is
-			-- Representation of a set
-		use
-			use_own_repr: repr
-		deferred
-		end
+	empty_defined_through_model: is_empty = model.is_empty
+	count_defined_through_model: count = model.count
+	models_correspondend: model.count = model_collection.count
+	models_equivalent: model |=| model_collection.domain
 
 end

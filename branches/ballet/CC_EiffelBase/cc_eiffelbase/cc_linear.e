@@ -10,8 +10,6 @@ deferred class
 
 inherit
 	CC_TRAVERSABLE [G]
-		rename
-			model as traversable_model
 		redefine
 			do_all, do_if, there_exists, for_all
 		end
@@ -23,7 +21,7 @@ feature -- Access
 			-- (Reference or object equality,
 			-- based on `object_comparison'.)
 		use
-			use_own_repr: repr
+			use_own_representation: representation
 		do
 			start
 			if not off then
@@ -40,7 +38,7 @@ feature -- Access
 		require
 			positive_occurrences: i > 0
 		use
-			use_own_repr: repr
+			use_own_representation: representation
 		local
 			occur, pos: INTEGER
 		do
@@ -85,7 +83,7 @@ feature -- Access
 			-- based on `object_comparison'.)
 			-- If no such position ensure that `exhausted' will be true.
 		modify
-			modify_own_repr: repr
+			modify_own_representation: representation
 		do
 			if object_comparison and v /= Void then
 				from
@@ -103,6 +101,7 @@ feature -- Access
 				end
 			end
 		ensure
+			-- TODO hier die equal ansehen
 			object_found: (not exhausted and object_comparison)
 				 implies equal (v, item)
 			item_found: (not exhausted and not object_comparison)
@@ -112,7 +111,7 @@ feature -- Access
 	index: INTEGER is
 			-- Index of current position
 		use
-			use_own_repr: repr
+			use_own_representation: representation
 		deferred
 		end
 
@@ -121,7 +120,7 @@ feature -- Access
 			-- (Reference or object equality,
 			-- based on `object_comparison'.)
 		use
-			use_own_repr: repr
+			use_own_representation: representation
 		do
 			from
 				start
@@ -140,7 +139,7 @@ feature -- Status report
 	exhausted: BOOLEAN is
 			-- Has structure been completely explored?
 		use
-			use_own_repr: repr
+			use_own_representation: representation
 		do
 			Result := off
 		ensure
@@ -150,14 +149,14 @@ feature -- Status report
 	after: BOOLEAN is
 			-- Is there no valid position to the right of current one?
 		use
-			use_own_repr: repr
+			use_own_representation: representation
 		deferred
 		end
 
 	off: BOOLEAN is
 			-- Is there no current item?
 		use
-			use_own_repr: repr
+			use_own_representation: representation
 		do
 			Result := is_empty or after
 		end
@@ -167,8 +166,10 @@ feature -- Cursor movement
 	finish is
 			-- Move to last position.
 		modify
-			modify_own_repr: repr
+			modify_own_representation: representation
 		deferred
+		ensure
+			confined representation
 		end
 
 	forth is
@@ -177,10 +178,11 @@ feature -- Cursor movement
 		require
 			not_after: not after
 		modify
-			modify_own_repr: repr
+			modify_own_representation: representation
 		deferred
 		ensure
 			-- moved_forth_before_end: (not after) implies index = old index + 1
+			confined representation
 		end
 
 feature -- Iteration
@@ -190,7 +192,7 @@ feature -- Iteration
 			-- Semantics not guaranteed if `action' changes the structure;
 			-- in such a case, apply iterator to clone of structure instead.
 		modify
-			modify_own_repr: repr
+			modify_own_representation: representation
 		local
 			t: TUPLE [G]
 			cs: CURSOR_STRUCTURE [G]
@@ -222,7 +224,7 @@ feature -- Iteration
 			-- Semantics not guaranteed if `action' or `test' changes the structure;
 			-- in such a case, apply iterator to clone of structure instead.
 		modify
-			modify_own_repr: repr
+			modify_own_representation: representation
 		local
 			t: TUPLE [G]
 			cs: CURSOR_STRUCTURE [G]
@@ -256,7 +258,7 @@ feature -- Iteration
 			-- Semantics not guaranteed if `test' changes the structure;
 			-- in such a case, apply iterator to clone of structure instead.
 		use
-			use_own_repr: repr
+			use_own_representation: representation
 		local
 			cs: CURSOR_STRUCTURE [G]
 			c: CURSOR
@@ -289,7 +291,7 @@ feature -- Iteration
 			-- Semantics not guaranteed if `test' changes the structure;
 			-- in such a case, apply iterator to clone of structure instead.
 		use
-			use_own_repr: repr
+			use_own_representation: representation
 		local
 			cs: CURSOR_STRUCTURE [G]
 			c: CURSOR
@@ -325,48 +327,16 @@ feature -- Conversion
 	linear_representation: CC_LINEAR [G] is
 			-- Representation as a linear structure
 		modify
-			modify_own_repr: repr
+			modify_own_representation: representation
 		do
 			Result := Current
+		ensure then
+			result_corresponds: Result.model |=| model
 		end
-
-feature -- Model
--- TODO hier schon implementierung oder erst deferred???
-	model_sequence: MML_SEQUENCE [G] is
-			-- Model of a general traversable structure
-		modify
-			modify_own_repr: repr
-		deferred
-		end
-
-	model_cursor: INTEGER is
-			-- Model of a cursor for traversal
-		modify
-			modify_own_repr: repr
-		do
-			Result := index
-		end
-
-	model: MML_PAIR [MML_SEQUENCE [G], INTEGER] is
-			-- Model of the sequentially-accessible structure
-		modify
-			modify_own_repr: repr
-		deferred
-		end
-
-feature -- Framing
-
-	repr: FRAME is
-			-- Representation of a general sequentially-accessible structure
-		use
-			use_own_repr: repr
-		deferred
-		end
-
 
 invariant
 
 	after_constraint: after implies off
-	empty_defined_through_model: is_empty = container_model.is_empty
+	empty_defined_through_model: is_empty = model_container.is_empty
 
 end

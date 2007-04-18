@@ -13,37 +13,34 @@ deferred class
 
 inherit
 	CC_CONTAINER [G]
-	-- TODO hier renamen oder redefinen? oder überhaupt?
-		rename
-			model as container_model
-		end
 
 feature -- Status report
 
 	extendible: BOOLEAN is
 			-- May new items be added?
 		use
-			use_own_repr: repr
+			use_own_representation: representation
 		deferred
 		end
 
 	prunable: BOOLEAN is
 			-- May items be removed?
 		use
-			use_own_repr: repr
+			use_own_representation: representation
 		deferred
 		end
 
-	is_inserted (v: G): BOOLEAN is
-			-- Has `v' been inserted by the most recent insertion?
-			-- (By default, the value returned is equivalent to calling
-			-- `has (v)'. However, descendants might be able to provide more
-			-- efficient implementations.)
-		use
-			use_own_repr: repr
-		do
-			Result := has (v)
-		end
+-- TODO gemäss bernd unnötig
+--	is_inserted (v: G): BOOLEAN is
+--			-- Has `v' been inserted by the most recent insertion?
+--			-- (By default, the value returned is equivalent to calling
+--			-- `has (v)'. However, descendants might be able to provide more
+--			-- efficient implementations.)
+--		use
+--			use_own_representation: representation
+--		do
+--			Result := has (v)
+--		end
 
 feature -- Element change
 
@@ -52,10 +49,13 @@ feature -- Element change
 		require
 			extendible: extendible
 		modify
-			modify_own_repr: repr
+			modify_own_representation: representation
 		deferred
 		ensure
-			item_inserted: is_inserted (v)
+--			item_inserted: is_inserted (v)
+			model_updated: model |=| old model.extended (v)
+			model_correspondends: model.contains (v)
+			confined representation
 		end
 
 	fill (other: CC_CONTAINER [G]) is
@@ -66,9 +66,9 @@ feature -- Element change
 			other_not_void: other /= Void
 			extendible: extendible
 		use
-			use_other_repr: other.repr
+			use_other_representation: other.representation
 		modify
-			modify_own_repr: repr
+			modify_own_representation: representation
 		local
 			lin_rep: CC_LINEAR [G]
 		do
@@ -81,6 +81,11 @@ feature -- Element change
 				extend (lin_rep.item)
 				lin_rep.forth
 			end
+		ensure
+			--count: count = old count + other.count -- keine gute idee, da plötzlich !extendible sein könnte
+			--model |=| old model.united (other.model)
+			--TODO
+			confined representation
 		end
 
 feature -- Removal
@@ -92,8 +97,13 @@ feature -- Removal
 		require
 			prunable: prunable
 		modify
-			modify_own_repr: repr
+			modify_own_representation: representation
 		deferred
+		ensure
+			-- TODO übel??
+			old has (v) implies (old count = count - 1)
+			model_corresponds: old model |=| model.pruned (v)
+			confined representation
 		end
 
 	prune_all (v: G) is
@@ -104,7 +114,7 @@ feature -- Removal
 		require
 			prunable: prunable
 		modify
-			modify_own_repr: repr
+			modify_own_representation: representation
 		do
 			from
 			until not has (v) loop
@@ -112,6 +122,8 @@ feature -- Removal
 			end
 		ensure
 			no_more_occurrences: not has (v)
+			model_corresponds: not model.contains (v)
+			confined representation
 		end
 
 	wipe_out is
@@ -119,47 +131,17 @@ feature -- Removal
 		require
 			prunable: prunable
 		modify
-			modify_own_repr: repr
+			modify_own_representation: representation
 		deferred
 		ensure
 			wiped_out: is_empty
-		end
-
-feature -- Model
--- TODO hier schon implementierung oder erst deferred???
-	model: MML_BAG [G] is
-			-- Model of a general collection
-		modify
-			modify_own_repr: repr
-		local
-			linear: CC_LINEAR [G]
-		do
-			create {MML_DEFAULT_BAG [G]} Result.make_empty
-			linear := linear_representation
-
-			from
-				linear.start
-			until
-				linear.off
-			loop
-				Result := Result.extended (linear.item)
-				linear.forth
-			end
-		ensure
-			Result_not_void: Result /= Void
-		end
-
-feature -- Framing
-
-	repr: FRAME is
-			-- Representation of a general collection
-		use
-			use_own_repr: repr
-		deferred
+			model_corresponds: model.is_empty
+			confined representation
 		end
 
 invariant
 
 	empty_defined_through_model: is_empty = model.is_empty
+	count_defined_through_model: count = model.count
 
 end
