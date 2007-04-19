@@ -83,6 +83,7 @@ feature -- Verification
 		local
 			cls_ast: CLASS_AS
 			bpl_ast_printer: BPL_AST_PRINTER
+			bpl_bn_printer: BPL_BN_PRINTER
 			bpl_generator: BPL_GENERATOR
 			ml: LEAF_AS_LIST
 		do
@@ -107,6 +108,9 @@ feature -- Verification
 					ml := match_list_server.item (current_class.class_id)
 					bpl_ast_printer.setup (current_class.ast, ml, False, False)
 					bpl_ast_printer.process_ast_node (cls_ast)
+
+					create bpl_bn_printer.make (current_class)
+					bpl_bn_printer.visit_all_features
 
 					create bpl_generator.make (current_class)
 					ml := match_list_server.item (current_class.class_id)
