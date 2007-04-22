@@ -123,6 +123,10 @@ feature -- Commands
 				zone.on_focus_in (a_content)
 				docking_manager.property.set_last_focus_content (content)
 			end
+			if zone /= Void and then not zone.is_displayed then
+				-- Maybe current is hidden, we restore zones normal state in that dock area.
+				docking_manager.command.recover_normal_state_in_dock_area_of (zone)
+			end
 		end
 
 	show is
@@ -146,7 +150,7 @@ feature -- Commands
 				internal_docking_manager.command.lock_update (Void, True)
 			end
 
-			internal_docking_manager.command.recover_normal_state
+			internal_docking_manager.command.recover_normal_state_in_dock_area_of (zone)
 
 			if content /= internal_docking_manager.zones.place_holder_content then
 				add_place_holder
@@ -217,9 +221,24 @@ feature -- Commands
 		do
 		end
 
+	auto_hide_tab_with (a_target_content: SD_CONTENT) is
+			-- When `a_tartget_content' is auto hide state, `content''s auto hide tab dock at side of `a_target_content' auto hide tab.
+		require
+			a_target_content_not_void: a_target_content /= Void
+		local
+			l_auto_hide_state: SD_AUTO_HIDE_STATE
+		do
+			content.set_visible (True)
+			internal_docking_manager.command.lock_update (Void, True)
+			create l_auto_hide_state.make_with_friend (content, a_target_content)
+			content.change_state (l_auto_hide_state)
+			internal_docking_manager.command.unlock_update
+		end
+
 	on_normal_max_window is
 			-- Handle normal\max zone.
 		do
+			zone.on_normal_max_window
 		end
 
 feature -- Properties

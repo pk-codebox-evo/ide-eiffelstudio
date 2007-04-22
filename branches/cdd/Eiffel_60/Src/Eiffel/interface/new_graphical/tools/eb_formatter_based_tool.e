@@ -8,13 +8,14 @@ deferred class
 	EB_FORMATTER_BASED_TOOL
 
 inherit
-	EB_TOOL
+	EB_STONABLE_TOOL
 		redefine
 			build_mini_toolbar,
 			build_docking_content,
 			mini_toolbar,
 			force_last_stone,
 			show,
+			internal_recycle,
 			show_with_setting
 		end
 
@@ -29,8 +30,6 @@ inherit
 
 	EB_VIEWPOINT_AREA
 
-	WIDGET_OWNER
-
 	SHARED_WORKBENCH
 
 	EB_CONSTANTS
@@ -42,13 +41,6 @@ inherit
 	EB_SHARED_FORMATTER_DIALOGS
 
 feature{NONE} -- Initialization
-
-	make_with_tool (a_tool: EB_DEVELOPMENT_WINDOW) is
-			-- Initialize `development_window' with `a_too'.
-		require
-			a_tool_attached: a_tool /= Void
-		deferred
-		end
 
 	initialize is
 			-- Initialize.
@@ -79,9 +71,13 @@ feature{NONE} -- Initialization
 	build_interface is
 			-- Build interface
 		do
-			make_with_tool (develop_window)
 			create history_manager.make (Current)
 			create address_manager.make (Current, True)
+
+			initialize
+			build_formatters
+			fill_in
+			on_select
 		end
 
 feature -- Access
@@ -102,14 +98,6 @@ feature -- Access
 	address_manager: EB_ADDRESS_MANAGER
 			-- Manager for the header info.
 
-	last_widget: EV_WIDGET is
-			-- Last set widget
-		do
-			if formatter_container.readable then
-				Result := formatter_container.item
-			end
-		end
-
 	predefined_formatters: like formatters is
 			-- Predefined formatters
 		deferred
@@ -120,6 +108,24 @@ feature -- Access
 	no_target_message: STRING_GENERAL is
 			-- Message to be displayed in `output_line' when no stone is set
 		deferred
+		ensure
+			result_attached: Result /= Void
+		end
+
+	empty_widget: EV_WIDGET is
+			-- Empty widget of Current tool if there is no formatter attached
+		local
+			l_frame: EV_FRAME
+		do
+			if empty_widget_internal = Void then
+				create l_frame
+				l_frame.set_style ({EV_FRAME_CONSTANTS}.Ev_frame_lowered)
+				l_frame.set_background_color ((create {EV_STOCK_COLORS}).white)
+				Result := l_frame
+				l_frame.drop_actions.extend (agent drop_stone)
+				empty_widget_internal := l_frame
+			end
+			Result := empty_widget_internal
 		ensure
 			result_attached: Result /= Void
 		end
@@ -141,11 +147,6 @@ feature -- Setting
 
 	drop_stone (st: like last_stone) is
 			-- Set `st' in the stone manager and pop up the feature view if it is a feature stone.
-		deferred
-		end
-
-	set_stone (new_stone: STONE) is
-			-- Associate current formatter with stone contained in `new_stone'.
 		deferred
 		end
 
@@ -221,37 +222,25 @@ feature -- Setting
 			do_all_in_list (formatters, agent (a_formatter: EB_FORMATTER) do a_formatter.set_focus end)
 		end
 
-	set_widget (new_widget: EV_WIDGET) is
-			-- Display `new_widget' under the tool bar.
+	ensure_formatter_display (a_formatter: EB_FORMATTER) is
+			-- Ensure that `a_formatter' is displayed in Current tool.
+		require
+			a_formatter_attached: a_formatter /= Void
+			a_formatter_exists: formatters.has (a_formatter)
+			a_formatter_selected: a_formatter.selected
 		local
-			l_formatters: like formatters
-			l_cursor: CURSOR
 			l_control_bar: EV_WIDGET
-			done: BOOLEAN
+			l_formatter_widget: EV_WIDGET
 		do
-			if not formatter_container.has (new_widget) then
-				l_formatters := formatters
-				l_cursor := l_formatters.cursor
-				from
-					formatter_tool_bar_area.wipe_out
-					l_formatters.start
-				until
-					l_formatters.after or done
-				loop
-					if l_formatters.item.selected then
-						l_control_bar := l_formatters.item.control_bar
-						if l_control_bar /= Void then
-							formatter_tool_bar_area.extend (l_control_bar)
-							formatter_tool_bar_area.disable_item_expand (l_control_bar)
-						end
-						outer_container.wipe_out
-						outer_container.extend (formatter_container)
-						done := True
-					end
-					l_formatters.forth
+			l_formatter_widget := a_formatter.widget
+			if not formatter_container.has (l_formatter_widget) then
+				formatter_tool_bar_area.wipe_out
+				l_control_bar := a_formatter.control_bar
+				if l_control_bar /= Void then
+					formatter_tool_bar_area.extend (l_control_bar)
+					formatter_tool_bar_area.disable_item_expand (l_control_bar)
 				end
-				l_formatters.go_to (l_cursor)
-				formatter_container.replace (new_widget)
+				formatter_container.replace (l_formatter_widget)
 			end
 		end
 
@@ -491,6 +480,11 @@ feature{NONE} -- Implementation
 			l_cursor: CURSOR
 			l_formatter: EB_FORMATTER
 			l_generator: TUPLE [displayer_generator: FUNCTION [ANY, TUPLE, EB_FORMATTER_DISPLAYER]; displayer_name: STRING]
+			l_browser_formatter: EB_BROWSER_FORMATTER
+			l_editor_formatter: EB_EDITOR_FORMATTER
+			l_displayer: EB_FORMATTER_DISPLAYER
+			l_browser_displayer: EB_FORMATTER_BROWSER_DISPLAYER
+			l_editor_displayer: EB_FORMATTER_EDITOR_DISPLAYER
 		do
 				-- Setup displaysers.
 			l_formatters := a_formatters
@@ -504,7 +498,16 @@ feature{NONE} -- Implementation
 				if l_formatter /= Void and then l_formatter.displayer = Void then
 					l_formatter.set_viewpoints (viewpoints)
 					l_generator := l_formatter.displayer_generator
-					l_formatter.set_displayer (new_displayer (l_generator.displayer_name, l_generator.displayer_generator))
+					l_displayer := new_displayer (l_generator.displayer_name, l_generator.displayer_generator)
+					if l_formatter.is_browser_formatter then
+						l_browser_displayer ?= l_displayer
+						l_browser_formatter ?= l_formatter
+						l_browser_formatter.set_browser_displayer (l_browser_displayer)
+					else
+						l_editor_displayer ?= l_displayer
+						l_editor_formatter ?= l_formatter
+						l_editor_formatter.set_editor_displayer (l_editor_displayer)
+					end
 				end
 				l_formatters.forth
 			end
@@ -529,6 +532,7 @@ feature{NONE} -- Implementation
 				create l_drop_actions
 				l_drop_actions.extend (agent drop_stone)
 				Result := a_generator.item ([develop_window, l_drop_actions])
+				Result.set_refresher (agent refresh)
 				l_cache.put (Result, a_name)
 			end
 		ensure
@@ -565,12 +569,6 @@ feature{NONE} -- Implementation
 	history_toolbar: EV_TOOL_BAR
 			-- Toolbar containing the history commands.
 
-	outer_container: EV_CELL
-			-- Container to hold `formatter_container' and `editor_frame' (if current formatter is an editor formatter)
-
-	used: BOOLEAN
-			-- Has the class view been used yet to perform any formatting?
-
 	tool_bar: EV_TOOL_BAR
 			-- Toolbar containing all buttons.
 
@@ -591,6 +589,9 @@ feature{NONE} -- Implementation
 
 	customized_formatters: like formatters
 			-- Customized formatters
+
+	empty_widget_internal: like empty_widget
+			-- Implementation of `empty_widget'
 
 feature{NONE} -- Actions
 
@@ -701,7 +702,6 @@ feature{NONE} -- Implementation
 			create widget
 			create formatter_container
 			create output_line
-			create outer_container
 			create tool_bar_area
 			create formatter_tool_bar_area
 			create sep
@@ -713,9 +713,7 @@ feature{NONE} -- Implementation
 			widget.disable_item_expand (sep)
 			widget.extend (output_line)
 			widget.disable_item_expand (output_line)
-			outer_container.wipe_out
-			outer_container.extend (formatter_container)
-			widget.extend (outer_container)
+			widget.extend (formatter_container)
 			output_line.set_text (no_target_message)
 		end
 
@@ -748,7 +746,6 @@ feature{NONE} -- Implementation
 			l_formatters: like formatters
 			l_cursor: CURSOR
 			l_formatter: EB_FORMATTER
-			l_control_bar: EV_WIDGET
 		do
 			set_is_format_vetoed (True)
 			tool_bar.wipe_out
@@ -756,30 +753,49 @@ feature{NONE} -- Implementation
 			formatter_tool_bar_area.wipe_out
 			viewpoint_area.hide
 			l_formatters := layout_formatters
-			l_cursor := l_formatters.cursor
-			from
-				l_formatters.start
-			until
-				l_formatters.after
-			loop
-				l_formatter := l_formatters.item
-				if l_formatter /= Void then
-					l_formatter.set_widget_owner (Current)
-					tool_bar.extend (l_formatter.new_button)
-					l_formatter.set_output_line (output_line)
-					if l_formatter.selected then
-						l_control_bar := l_formatters.item.control_bar
-						if l_control_bar /= Void then
-							formatter_tool_bar_area.extend (l_control_bar)
-							formatter_tool_bar_area.disable_item_expand (l_control_bar)
-						end
+			if l_formatters.is_empty then
+				formatter_tool_bar_area.wipe_out
+				formatter_container.wipe_out
+				formatter_container.extend (empty_widget)
+				output_line.set_text ("")
+			else
+				l_cursor := l_formatters.cursor
+				from
+					l_formatters.start
+				until
+					l_formatters.after
+				loop
+					l_formatter := l_formatters.item
+					if l_formatter /= Void then
+						attach_formatter (l_formatter)
+					else
+						tool_bar.extend (create {EV_TOOL_BAR_SEPARATOR})
 					end
-				else
-					tool_bar.extend (create {EV_TOOL_BAR_SEPARATOR})
+					l_formatters.forth
 				end
-				l_formatters.forth
+				l_formatters.go_to (l_cursor)
 			end
 			pop_default_formatter
+		end
+
+	attach_formatter (a_formatter: EB_FORMATTER) is
+			-- Attach `a_formatter' to Current tool.
+		require
+			a_formatter_attached: a_formatter /= Void
+		local
+			l_control_bar: EV_WIDGET
+		do
+			a_formatter.set_widget_owner (Current)
+			a_formatter.set_viewpoints (viewpoints)
+			tool_bar.extend (a_formatter.new_button)
+			a_formatter.set_output_line (output_line)
+			if a_formatter.selected then
+				l_control_bar := a_formatter.control_bar
+				if l_control_bar /= Void then
+					formatter_tool_bar_area.extend (l_control_bar)
+					formatter_tool_bar_area.disable_item_expand (l_control_bar)
+				end
+			end
 		end
 
 	customized_formatter_button: EV_TOOL_BAR_BUTTON is
@@ -804,17 +820,20 @@ feature{NONE} -- Recycle
 	internal_recycle is
 			-- To be called when the button has became useless.
 		do
-			Precursor
+			Precursor {EB_HISTORY_OWNER}
 
 			safe_remove_agent (on_customized_formatter_loaded_agent, customized_formatter_manager.change_actions)
 			if eiffel_project.manager.load_agents.has (on_project_loaded_agent) then
 				eiffel_project.manager.load_agents.prune_all (on_project_loaded_agent)
 			end
+			if metric_manager.metric_loaded_actions.has (on_metric_loaded_agent) then
+				metric_manager.metric_loaded_actions.prune_all (on_metric_loaded_agent)
+			end
 			detach_veto_format_function
 			do_all_in_list (customized_formatters, agent (a_formatter: EB_FORMATTER) do a_formatter.recycle end)
 			do_all_in_list (displayer_cache.linear_representation, agent (a_displayer: EB_FORMATTER_DISPLAYER) do a_displayer.recycle end)
 
-			develop_window := Void
+			Precursor {EB_STONABLE_TOOL}
 		end
 
 invariant
@@ -826,3 +845,4 @@ invariant
 	veto_format_function_agent_attached: veto_format_function_agent /= Void
 
 end
+

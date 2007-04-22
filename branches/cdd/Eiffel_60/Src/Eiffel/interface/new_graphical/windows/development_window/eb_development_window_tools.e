@@ -10,6 +10,9 @@ class
 
 inherit
 	EB_DEVELOPMENT_WINDOW_PART
+		redefine
+			internal_recycle
+		end
 
 	EB_STONABLE
 
@@ -32,20 +35,25 @@ feature -- Commands
 			-- Dispatch stone to tools.
 			-- Orignal version from EB_CONTEXT_TOOL set_stone.
 		do
-			if develop_window.unified_stone then
-				develop_window.set_stone (a_stone)
-			else
-				develop_window.eb_debugger_manager.set_stone (a_stone)
-				features_relation_tool.set_stone (a_stone)
-				class_tool.set_stone (a_stone)
-				dependency_tool.set_stone (a_stone)
-				if develop_window.has_case then
-					 diagram_tool.set_stone (a_stone)
-				end
-				develop_window.tools.set_stone_to_customized_tools (a_stone)
-
-				stone := a_stone
+			develop_window.eb_debugger_manager.set_stone (a_stone)
+			features_relation_tool.set_stone (a_stone)
+			class_tool.set_stone (a_stone)
+			dependency_tool.set_stone (a_stone)
+			if develop_window.has_case then
+				 diagram_tool.set_stone (a_stone)
 			end
+			set_stone_to_customized_tools (a_stone)
+
+			stone := a_stone
+		end
+
+	set_last_stone (a_stone: STONE) is
+			-- Set `stone' without setting to tools.
+			-- For synchronizing use.
+		do
+			stone := a_stone
+		ensure
+			stone_set: stone = a_stone
 		end
 
 	set_stone_and_pop_tool (a_stone: STONE) is
@@ -71,19 +79,29 @@ feature -- Commands
 			-- or similar action that needs resynchonization.
 		local
 			conv_dev: EB_DEVELOPMENT_WINDOW
+			l_stone: STONE
 		do
 			develop_window.history_manager.synchronize
 
 			conv_dev := develop_window
 			if conv_dev /= Void then
 				if not conv_dev.unified_stone then
-					if stone /= Void then
-						stone := stone.synchronized_stone
-					end
 					invalidate_tools
-					set_stone (stone)
-					if develop_window.has_case then
-						diagram_tool.synchronize
+					if conv_dev.link_tools then
+						if stone /= Void then
+							stone := stone.synchronized_stone
+						end
+						set_stone (stone)
+						if develop_window.has_case then
+							diagram_tool.synchronize
+						end
+					else
+						l_stone := diagram_tool.last_stone
+						if l_stone /= Void and develop_window.has_case then
+							l_stone := l_stone.synchronized_stone
+							diagram_tool.set_stone (l_stone)
+						end
+						refresh
 					end
 				end
 			else
@@ -103,16 +121,21 @@ feature -- Commands
 			end
 			class_tool.refresh
 			features_relation_tool.refresh
+			dependency_tool.refresh
+			customized_tools.do_all (agent (a_tool: EB_CUSTOMIZED_TOOL)
+				do
+					a_tool.refresh
+				end)
 		end
 
 	show_default_tool_of_feature
 		do
-			features_relation_tool.show_with_setting
+			default_feature_tool.show_with_setting
 		end
 
 	show_default_tool_of_class
 		do
-			class_tool.show_with_setting
+			default_class_tool.show_with_setting
 		end
 
 	set_stone_to_customized_tools (a_stone: STONE) is
@@ -145,6 +168,40 @@ feature -- Commands
 			if l_tool /= Void then
 				l_tool.show_with_setting
 			end
+		end
+
+	refresh_customized_tool_appearance (a_tool: EB_CUSTOMIZED_TOOL) is
+			-- Refresh appearance such as title, pixmap, stone handlers for `a_tool'.
+		require
+			a_tool_attached: a_tool /= Void
+		local
+			l_manager: EB_CUSTOMIZED_TOOL_MANAGER
+			l_tool_desp: EB_CUSTOMIZED_TOOL_DESP
+		do
+			l_manager := develop_window.customized_tool_manager
+			l_tool_desp := l_manager.descriptor_by_id (a_tool.title_for_pre)
+			check l_tool_desp /= Void end
+			a_tool.set_title (l_tool_desp.name)
+			a_tool.set_stone_handlers (l_tool_desp.handlers)
+			a_tool.set_pixmap_location (l_tool_desp.pixmap_location)
+
+			a_tool.content.set_long_title (a_tool.title)
+			a_tool.content.set_short_title (a_tool.title)
+			a_tool.content.set_pixel_buffer (a_tool.pixel_buffer)
+			a_tool.content.set_pixmap (a_tool.pixmap)
+			develop_window.menus.update_item_from_tools_list_menu (a_tool)
+		end
+
+feature -- Default tools
+
+	default_class_tool: EB_STONABLE_TOOL is
+		do
+			Result := class_tool
+		end
+
+	default_feature_tool: EB_STONABLE_TOOL is
+		do
+			Result := features_relation_tool
 		end
 
 feature -- Query
@@ -321,8 +378,10 @@ feature -- Query
 			a_ids_attached: a_ids /= Void
 		local
 			l_set: DS_HASH_SET [STRING]
+			l_keep: BOOLEAN
 		do
 			create l_set.make (a_ids.count)
+			l_set.set_equality_tester (create {AGENT_BASED_EQUALITY_TESTER [STRING]}.make (agent (a_str, b_str: STRING): BOOLEAN do Result := equal (a_str, b_str) end))
 			a_ids.do_all (agent l_set.force_last)
 			Result := a_tools.twin
 			from
@@ -330,7 +389,12 @@ feature -- Query
 			until
 				Result.after
 			loop
-				if not (a_include xor l_set.has (Result.item.title_for_pre)) then
+				if a_include then
+					l_keep := l_set.has (Result.item.title_for_pre)
+				else
+					l_keep := not l_set.has (Result.item.title_for_pre)
+				end
+				if l_keep then
 					Result.forth
 				else
 					Result.remove
@@ -551,6 +615,18 @@ feature{NONE} -- Implementation
 			if not customized_tools.is_empty then
 				customized_tools.do_all (agent (a_tool: EB_CUSTOMIZED_TOOL) do a_tool.invalidate end)
 			end
+		end
+
+feature {NONE} -- Recycle
+
+	internal_recycle is
+		do
+			set_windows_tool (Void)
+			set_favorites_tool (Void)
+			set_features_tool (Void)
+			set_breakpoints_tool (Void)
+			set_search_tool (Void)
+			Precursor {EB_DEVELOPMENT_WINDOW_PART}
 		end
 
 indexing

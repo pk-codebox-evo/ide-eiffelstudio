@@ -67,6 +67,15 @@ feature {NONE}-- Initialization
 			editor_drawing_area.set_pebble_function (agent pebble_from_x_y)
 			editor_drawing_area.enable_pebble_positioning
 			editor_drawing_area.drop_actions.extend (agent resume_cursor_for_drop)
+
+
+			--editor_drawing_area.set_configurable_target_menu_mode
+			--editor_drawing_area.set_configurable_target_menu_handler (agent handle_context_menu)
+		end
+
+	handle_context_menu (a_menu: EV_MENU; a_target_list: ARRAYED_LIST [EV_PND_TARGET_DATA]; a_source: EV_PICK_AND_DROPABLE; a_pebble: ANY)
+		do
+			a_menu.extend (create {EV_MENU_ITEM}.make_with_text ("There are " + a_target_list.count.out + " targets for " + a_pebble.generating_type))
 		end
 
 feature -- Access
@@ -188,13 +197,13 @@ feature -- Possibly delayed operations
 		local
 			ln: INTEGER
 		do
-				if text_is_fully_loaded then
-					ln := l_num.min (maximum_top_line_index)
-					set_first_line_displayed (ln, True)
-					refresh_now
-				else
-					after_reading_text_actions.extend(agent display_line_at_top_when_ready (l_num))
-				end
+			if text_is_fully_loaded then
+				ln := l_num.min (maximum_top_line_index)
+				set_first_line_displayed (ln, True)
+				refresh_now
+			else
+				after_reading_text_actions.extend(agent display_line_at_top_when_ready (l_num))
+			end
 		end
 
 	highlight_when_ready (a, b: INTEGER) is
@@ -253,9 +262,10 @@ feature -- Possibly delayed operations
 			end
 		end
 
-	scroll_to_start_of_line_when_ready (a_line_number: INTEGER; a_selected: BOOLEAN) is
+	scroll_to_start_of_line_when_ready_if_top (a_line_number: INTEGER; a_selected: BOOLEAN; a_top: BOOLEAN) is
 			-- Scroll to `a_line_number'-th line.
 			-- If `a_selected' is True, select that line.
+			-- If `a_top' then display `a_line_number' at top.
 		local
 			l_text: like text_displayed
 		do
@@ -266,10 +276,21 @@ feature -- Possibly delayed operations
 				end
 				l_text.cursor.set_y_in_lines (a_line_number)
 				l_text.cursor.go_start_line
-				display_line_when_ready (a_line_number, a_selected)
+				if a_top then
+					display_line_at_top_when_ready  (a_line_number)
+				else
+					display_line_when_ready (a_line_number, a_selected)
+				end
 			else
 				after_reading_text_actions.extend (agent scroll_to_start_of_line_when_ready (a_line_number, a_selected))
 			end
+		end
+
+	scroll_to_start_of_line_when_ready (a_line_number: INTEGER; a_selected: BOOLEAN) is
+			-- Scroll to `a_line_number'-th line.
+			-- If `a_selected' is True, select that line.
+		do
+			scroll_to_start_of_line_when_ready_if_top (a_line_number, a_selected, False)
 		end
 
 	scroll_to_end_when_ready is
@@ -369,10 +390,12 @@ feature {EB_CLICKABLE_MARGIN}-- Process Vision2 Events
 	on_mouse_button_down (abs_x_pos, y_pos, button: INTEGER; unused1,unused2,unused3: DOUBLE; a_screen_x, a_screen_y: INTEGER) is
 			-- Process single click on mouse buttons.
 		do
-			if pick_n_drop_status = pnd_pick then
-				refresh_now
+			if not is_recycled then
+				if pick_n_drop_status = pnd_pick then
+					refresh_now
+				end
+				Precursor {EB_CUSTOM_WIDGETTED_EDITOR} (abs_x_pos, y_pos, button, unused1, unused2, unused3, a_screen_x, a_screen_y)
 			end
-			Precursor {EB_CUSTOM_WIDGETTED_EDITOR} (abs_x_pos, y_pos, button, unused1, unused2, unused3, a_screen_x, a_screen_y)
 		end
 
 	on_click_in_text (x_pos, y_pos, button: INTEGER; a_screen_x, a_screen_y: INTEGER) is

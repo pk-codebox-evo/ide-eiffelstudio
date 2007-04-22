@@ -231,7 +231,7 @@ feature -- Setting
 			has_grid_been_binded_for_current_data_set: has_grid_been_binded_for_current_data = a_binded
 		end
 
-feature -- Actions
+feature{NONE} -- Actions
 
 	on_categorized_folder_changed is
 			-- Action to be performed when selection status of `categorized_folder_button' changes
@@ -317,7 +317,7 @@ feature -- Notification
 			disable_force_multi_column_sorting
 			enable_auto_sort_order_change
 			set_has_grid_been_binded_for_current_data (True)
-			try_auto_resize_grid (<<[150, 300, 1], [150, 300, 2], [150, 200, 3], [100, 200, 4]>>)
+			try_auto_resize_grid (<<[150, 300, 1], [150, 300, 2], [150, 200, 3], [100, 200, 4], [100, 200, 5]>>, False)
 		end
 
 feature -- Sorting
@@ -398,6 +398,7 @@ feature -- Constants
 	referencer_class_column: INTEGER is 3
 	feature_column: INTEGER is 4
 	feature_list_column: INTEGER is 5
+	position_column: INTEGER is 6
 			-- Column names
 
 feature{NONE} -- Grid binding
@@ -428,6 +429,7 @@ feature{NONE} -- Grid binding
 			l_grid_item.set_text_with_tokens (token_name_from_domain_item (l_domain_item))
 			l_grid_item.set_pixmap (pixmap_from_domain_item (l_domain_item))
 			l_grid_item.set_image (l_grid_item.text)
+			l_grid_item.set_stone (starting_element)
 			grid.insert_new_row (1)
 			grid.row (1).set_item (1, l_grid_item)
 		ensure
@@ -599,7 +601,6 @@ feature{NONE} -- Grid binding
 			l_feature_table: like called_features
 			l_features: DS_HASH_SET [QL_FEATURE]
 			l_grid_row: EV_GRID_ROW
-			l_column_tbl: HASH_TABLE [TUPLE [INTEGER, INTEGER], INTEGER]
 			l_sorter: DS_QUICK_SORTER [QL_FEATURE]
 			l_level_index: INTEGER
 		do
@@ -670,9 +671,7 @@ feature{NONE} -- Grid binding
 			end
 
 				-- Auto resize grid columns.
-			create l_column_tbl.make (1)
-			l_column_tbl.put (Void, feature_list_column)
-			auto_resize_columns (grid, l_column_tbl)
+			try_auto_resize_grid (<<[100, 200, feature_list_column], [100, 500, position_column]>>, False)
 		end
 
 	add_trailer (a_class: QL_CLASS; a_pixmap: EV_PIXMAP; a_text: STRING; a_grid_item: EB_GRID_EDITOR_TOKEN_ITEM)is
@@ -1360,11 +1359,24 @@ feature{NONE} -- Implementation
 	recycle_agents is
 			-- Recycle agents
 		do
-			categorize_folder_button.recycle
-			show_self_dependency_button.recycle
-			inheritance_button.recycle
-			normal_referenced_button.recycle
-			syntactical_button.recycle
+			if categorize_folder_button_internal /= Void then
+				categorize_folder_button.recycle
+			end
+			if show_self_dependency_button_internal /= Void then
+				show_self_dependency_button.recycle
+			end
+			if inheritance_button_internal /= Void then
+				inheritance_button.recycle
+			end
+			if normal_referenced_button_internal /= Void then
+				normal_referenced_button.recycle
+			end
+			if syntactical_button_internal /= Void then
+				syntactical_button.recycle
+			end
+			if recursive_button_internal /= Void then
+				recursive_button.recycle
+			end
 			Precursor
 		end
 
@@ -1449,7 +1461,8 @@ feature{NONE} -- Initialization
 			-- Build `grid'.
 		do
 			create grid
-			grid.set_column_count_to (5)
+			grid.set_column_count_to (6)
+			grid.column (6).set_title (interface_names.t_reference_position)
 			grid.enable_selection_on_single_button_click
 			grid.enable_single_row_selection
 			grid.enable_tree
@@ -1528,7 +1541,15 @@ feature{NONE} -- Implementation/Stone
 			l_rows := grid.selected_rows
 			if l_rows.count = 1 then
 				l_grid_row := l_rows.first
-				if (not l_grid_row.is_expandable) or else l_grid_row.is_expanded then
+				if
+					is_subrow_recursively_expanded (
+						l_grid_row,
+						agent (a_grid_row: EV_GRID_ROW): BOOLEAN
+							do
+								Result := a_grid_row.is_expanded or else (a_grid_row.subrow_count = 1 and then a_grid_row.subrow (1).index_of_first_item = 0)
+							end
+					)
+				then
 					l_row ?= l_grid_row.data
 					if l_row /= Void then
 						if not l_row.is_stone_set then
@@ -1537,6 +1558,10 @@ feature{NONE} -- Implementation/Stone
 						l_index := l_grid_row.index_of_first_item
 						if l_index /= 0 then
 							Result := l_grid_row.item (l_index)
+						end
+					else
+						if l_grid_row.index = 1 then
+							Result ?= l_grid_row.item (1)
 						end
 					end
 				end

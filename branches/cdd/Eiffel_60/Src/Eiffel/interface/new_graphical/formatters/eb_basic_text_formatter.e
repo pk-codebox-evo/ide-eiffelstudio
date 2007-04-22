@@ -125,12 +125,9 @@ feature -- Status setting
 			else
 				classi := Void
 				if selected then
-					if widget_owner /= Void then
-						widget_owner.set_widget (widget)
-					end
 					editor.clear_window
-					display_header
 				end
+				ensure_display_in_widget_owner
 			end
 		end
 
@@ -145,12 +142,7 @@ feature -- Status setting
 			end
 			must_format := True
 			format
-			if selected then
-				if widget_owner /= Void then
-					widget_owner.set_widget (widget)
-				end
-				display_header
-			end
+			ensure_display_in_widget_owner
 		end
 
 feature {NONE} -- Properties
@@ -161,10 +153,10 @@ feature {NONE} -- Properties
 	classi: CLASS_I
 			-- Class currently associated with `Current'.
 
-	command_name: STRING_GENERAL is
+	capital_command_name: STRING_GENERAL is
 			-- Name of the command.
 		do
-			Result := Interface_names.string_general_as_lower (interface_names.l_Basic_text)
+			Result := Interface_names.l_Basic_text
 		end
 
 	post_fix: STRING is "txt"

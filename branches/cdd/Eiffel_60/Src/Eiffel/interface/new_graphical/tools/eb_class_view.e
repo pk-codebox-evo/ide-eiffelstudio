@@ -22,18 +22,6 @@ inherit
 create
 	make
 
-feature {NONE} -- Initialization
-
-	make_with_tool (a_tool: EB_DEVELOPMENT_WINDOW) is
-			-- Set default values.
-		do
-			develop_window := a_tool
-			initialize
-			build_formatters
-			fill_in
-			on_select
-		end
-
 feature {EB_DEVELOPMENT_WINDOW_MAIN_BUILDER} -- Docking issues
 
 	attach_to_docking_manager (a_docking_manager: SD_DOCKING_MANAGER) is
@@ -135,6 +123,7 @@ feature -- Status setting
 			if cst = Void or else stone = Void or else not stone.same_as (cst) then
 					-- Set the stones.
 				set_last_stone (cst)
+				develop_window.tools.set_last_stone (stone)
 			end
 			if widget.is_displayed or else is_auto_hide then
 				force_last_stone
@@ -209,16 +198,23 @@ feature {NONE} -- Implementation
 			-- Set `st' in the stone manager and pop up the feature view if it is a feature stone.
 		local
 			fst: FEATURE_STONE
+			l_tool: EB_STONABLE_TOOL
 		do
 			fst ?= st
-			decide_tool_to_display (st)
-			develop_window.tools.set_stone (st)
+			l_tool := decide_tool_to_display (st)
+			if develop_window.unified_stone then
+				develop_window.set_stone (st)
+			elseif develop_window.link_tools then
+				develop_window.tools.set_stone (st)
+			else
+				l_tool.set_stone (st)
+			end
 			if fst /= Void and then address_manager /= Void then
 				address_manager.hide_address_bar
 			end
 		end
 
-	decide_tool_to_display (a_st: STONE) is
+	decide_tool_to_display (a_st: STONE): EB_STONABLE_TOOL is
 			-- Decide which tool to display.
 		local
 			fs: FEATURE_STONE
@@ -226,10 +222,14 @@ feature {NONE} -- Implementation
 			fs ?= a_st
 			if fs /= Void then
 				develop_window.tools.show_default_tool_of_feature
+				Result := develop_window.tools.default_feature_tool
 			else
 				show
 				set_focus
+				Result := Current
 			end
+		ensure
+			Result_not_void: Result /= Void
 		end
 
 indexing

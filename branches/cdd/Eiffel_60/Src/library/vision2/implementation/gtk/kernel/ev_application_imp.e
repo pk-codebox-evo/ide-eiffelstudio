@@ -229,7 +229,8 @@ feature {EV_ANY_I} -- Implementation
 			l_motion_tuple: like motion_tuple
 			l_app_motion_tuple: like app_motion_tuple
 			l_no_more_events: BOOLEAN
-			i, l_widget_x, l_widget_y, l_screen_x, l_screen_y: INTEGER
+			i, l_widget_x, l_widget_y, l_screen_x, l_screen_y, l_button_number: INTEGER
+			l_has_grab_widget: BOOLEAN
 		do
 			from
 				l_motion_tuple := motion_tuple
@@ -245,9 +246,19 @@ feature {EV_ANY_I} -- Implementation
 						-- event_widget may be null.
 					l_call_event := True
 					l_propagate_event := False
+
 					l_grab_widget := {EV_GTK_EXTERNALS}.gtk_grab_get_current
 					if l_grab_widget = default_pointer then
+						l_has_grab_widget := False
 						l_grab_widget := event_widget
+					else
+						l_has_grab_widget := True
+							-- Cancel any invalid event capture.
+						if pick_and_drop_source /= Void and then not pick_and_drop_source.is_displayed then
+							pick_and_drop_source.end_transport (0, 0, 0, 0, 0, 0, 0, 0)
+						elseif captured_widget /= Void and then not captured_widget.is_displayed then
+							captured_widget.disable_capture
+						end
 					end
 					inspect
 						{EV_GTK_EXTERNALS}.gdk_event_any_struct_type (gdk_event)
@@ -270,7 +281,6 @@ feature {EV_ANY_I} -- Implementation
 						stored_display_data.originating_y := l_widget_y
 
 						l_call_event := False
-
 						if
 							captured_widget /= Void
 						then
@@ -283,7 +293,7 @@ feature {EV_ANY_I} -- Implementation
 							l_pnd_imp ?= gtk_widget_from_gdk_window (stored_display_data.window)
 						end
 
-						if l_pnd_imp /= Void then
+						if l_pnd_imp /= Void and then l_pnd_imp.is_displayed then
 							l_top_level_window_imp := l_pnd_imp.top_level_window_imp
 							if l_top_level_window_imp /= Void then
 								if not l_top_level_window_imp.has_modal_window then
@@ -346,6 +356,15 @@ feature {EV_ANY_I} -- Implementation
 									{EV_GTK_EXTERNALS}.gdk_event_scroll_struct_x_root (gdk_event).truncated_to_integer,
 									{EV_GTK_EXTERNALS}.gdk_event_scroll_struct_y_root (gdk_event).truncated_to_integer
 									)
+							end
+							l_widget_imp ?= eif_object_from_gtk_object (event_widget)
+							if l_widget_imp /= Void then
+								if {EV_GTK_DEPENDENT_EXTERNALS}.gdk_event_scroll_struct_scroll_direction (gdk_event) = {EV_GTK_DEPENDENT_EXTERNALS}.gdk_scroll_up_enum then
+									l_button_number := 4
+								else
+									l_button_number := 5
+								end
+								l_widget_imp.call_button_event_actions ({EV_GTK_EXTERNALS}.gdk_button_press_enum, 0, 0, l_button_number, 0.5, 0.5, 0.5, 0, 0)
 							end
 							l_propagate_event := True
 						else
@@ -449,29 +468,32 @@ feature {EV_ANY_I} -- Implementation
 							print ("GDK_ENTER_LEAVE_NOTIFY%N")
 						end
 						l_gdk_window := {EV_GTK_EXTERNALS}.gdk_event_any_struct_window (gdk_event)
+						l_call_event := False
 						if
 							l_gdk_window /= default_pointer
 							and then {EV_GTK_EXTERNALS}.gdk_event_any_struct_send_event (gdk_event) = 0
 							and then {EV_GTK_EXTERNALS}.gdk_event_crossing_struct_mode (gdk_event) = 0
 						then
 							{EV_GTK_EXTERNALS}.gdk_window_get_user_data (l_gdk_window, $l_gtk_widget_ptr)
+
 							if l_gtk_widget_ptr /= default_pointer then
 								if not is_in_transport then
-									l_widget_imp ?= {EV_ANY_IMP}.eif_object_from_c (l_gtk_widget_ptr)
-									if l_widget_imp /= Void then
-										l_top_level_window_imp := l_widget_imp.top_level_window_imp
+									l_pnd_imp ?= eif_object_from_gtk_object (l_gtk_widget_ptr)
+									if l_pnd_imp /= Void then
+										l_top_level_window_imp := l_pnd_imp.top_level_window_imp
 										if l_top_level_window_imp = Void or else not l_top_level_window_imp.has_modal_window then
-											l_widget_imp.on_pointer_enter_leave ({EV_GTK_EXTERNALS}.gdk_event_any_struct_type (gdk_event) = GDK_ENTER_NOTIFY)
-										else
-											l_call_event := False
+											l_widget_imp ?= l_pnd_imp
+											if l_widget_imp /= Void then
+												l_widget_imp.on_pointer_enter_leave ({EV_GTK_EXTERNALS}.gdk_event_any_struct_type (gdk_event) = GDK_ENTER_NOTIFY)
+											end
+											l_call_event := True
+											l_widget_imp := Void
 										end
+										l_pnd_imp := Void
 										l_gtk_widget_imp := Void
 										l_top_level_window_imp := Void
 										l_gtk_widget_ptr := default_pointer
-										l_widget_imp := Void
 									end
-								else
-									l_call_event := False
 								end
 							end
 						end
@@ -492,17 +514,19 @@ feature {EV_ANY_I} -- Implementation
 						end
 						if l_gtk_widget_imp /= Void then
 							l_gtk_window_imp := l_gtk_widget_imp.top_level_gtk_window_imp
-							l_top_level_window_imp ?= l_gtk_window_imp
-							if l_top_level_window_imp = Void or else not l_top_level_window_imp.has_modal_window then
-								use_stored_display_data_for_keys := True
-								stored_display_data.mask := {EV_GTK_EXTERNALS}.gdk_event_key_struct_state (gdk_event)
-								l_call_event := False
-								l_gtk_window_imp.process_key_event (gdk_event)
-								use_stored_display_data_for_keys := False
+							if l_gtk_window_imp /= Void then
+								l_top_level_window_imp ?= l_gtk_window_imp
+								if l_top_level_window_imp = Void or else not l_top_level_window_imp.has_modal_window then
+									use_stored_display_data_for_keys := True
+									stored_display_data.mask := {EV_GTK_EXTERNALS}.gdk_event_key_struct_state (gdk_event)
+									l_call_event := False
+									l_gtk_window_imp.process_key_event (gdk_event)
+									use_stored_display_data_for_keys := False
+								end
+								l_gtk_widget_imp := Void
+								l_gtk_window_imp := Void
+								l_top_level_window_imp := Void
 							end
-							l_gtk_widget_imp := Void
-							l_gtk_window_imp := Void
-							l_top_level_window_imp := Void
 						end
 						if l_gdk_window /= default_pointer then
 								-- Restore remapped event.
@@ -614,41 +638,6 @@ feature {NONE} -- Implementation
 			if {EV_GTK_EXTERNALS}.gtk_min_ver >= 6 and then {EV_GTK_EXTERNALS}.g_module_supported then
 				Result := {EV_GTK_EXTERNALS}.g_module_open (default_pointer, 0)
 			end
-		end
-
-feature -- Pick and Drop
-
-	rubber_band_is_drawn: BOOLEAN
-		-- Is the PnD rubber band drawn on screen?
-
-	draw_rubber_band is
-			-- Draw a segment between initial pick point and `destination'.
-		do
-			if rubber_band_is_drawn then
-					-- Undraw previous rubber band if any
-				pnd_screen.draw_segment (x_origin, y_origin, old_pointer_x, old_pointer_y)
-			end
-			set_old_pointer_x_y_origin (pick_and_drop_source.pointer_x, pick_and_drop_source.pointer_y)
-			pnd_screen.draw_segment (x_origin, y_origin, old_pointer_x, old_pointer_y)
-			rubber_band_is_drawn := True
-		end
-
-	erase_rubber_band is
-			-- Erase previously drawn rubber band.
-		do
-			if rubber_band_is_drawn then
-				pnd_screen.draw_segment (x_origin, y_origin, old_pointer_x, old_pointer_y)
-				rubber_band_is_drawn := False
-			end
-		end
-
-	pnd_screen: EV_SCREEN is
-			-- Screen object used for drawing PND transport line
-		once
-			create Result
-			Result.enable_dashed_line_style
-			Result.set_foreground_color ((create {EV_STOCK_COLORS}).white)
-			Result.set_invert_mode
 		end
 
 feature -- Access
@@ -801,7 +790,10 @@ feature -- Basic operation
 			end
 
 			if not l_ignore_event then
-				{EV_GTK_EXTERNALS}.gtk_main_do_event (a_gdk_event)
+				if pick_and_drop_source = Void then
+						-- We don't want signals firing during transport.
+					{EV_GTK_EXTERNALS}.gtk_main_do_event (a_gdk_event)
+				end
 				if l_pnd_item /= Void then
 					l_pnd_item.on_mouse_button_event (
 						{EV_GTK_EXTERNALS}.gdk_event_button_struct_type (a_gdk_event),
@@ -1235,29 +1227,6 @@ feature {EV_ANY_I, EV_FONT_IMP, EV_STOCK_PIXMAPS_IMP, EV_INTERMEDIARY_ROUTINES} 
 			-- Persistent GdkColorStruct
 		once
 			Result := {EV_GTK_EXTERNALS}.c_gdk_color_struct_allocate
-		end
-
-feature {EV_PICK_AND_DROPABLE_IMP} -- Pnd Handling
-
-	x_origin, y_origin: INTEGER
-		-- Temp coordinate values for origin of Pick and Drop.
-
-	set_x_y_origin (a_x_origin, a_y_origin: INTEGER) is
-			-- Set `x_origin' and `y_origin' to `a_x_origin' and `a_y_origin' respectively.
-		do
-			x_origin := a_x_origin
-			y_origin := a_y_origin
-		end
-
-	old_pointer_x,
-	old_pointer_y: INTEGER
-		-- Position of pointer on previous PND draw.
-
-	set_old_pointer_x_y_origin (a_old_pointer_x, a_old_pointer_y: INTEGER) is
-			-- Set PND pointer origins to `a_old_pointer_x' and `a_old_pointer_y'.
-		do
-			old_pointer_x := a_old_pointer_x
-			old_pointer_y := a_old_pointer_y
 		end
 
 feature -- Thread Handling.

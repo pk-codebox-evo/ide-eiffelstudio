@@ -41,6 +41,17 @@ feature -- Command Execution
 			appl_name_not_void: appl_name /= Void
 			args_not_void: args /= Void
 			working_directory_not_void: working_directory /= Void
+		do
+			execute_with_args_and_working_directory_and_environment (appl_name, args, working_directory, Void)
+		end
+
+	execute_with_args_and_working_directory_and_environment (appl_name, args, working_directory: STRING;
+				envir: HASH_TABLE [STRING, STRING]) is
+			-- Execute external command `appl_name' with following arguments and working_directory.
+		require
+			appl_name_not_void: appl_name /= Void
+			args_not_void: args /= Void
+			working_directory_not_void: working_directory /= Void
 		local
 			command: STRING
 			l_prc_factory: PROCESS_FACTORY
@@ -52,6 +63,9 @@ feature -- Command Execution
 			command.append (args)
 			create l_prc_factory
 			l_prc_launcher := l_prc_factory.process_launcher_with_command_line (command, working_directory)
+			if envir /= Void then
+				l_prc_launcher.set_environment_variable_table (envir)
+			end
 			l_prc_launcher.set_separate_console (True)
 			l_prc_launcher.launch
 		end
@@ -63,12 +77,19 @@ feature -- $EiffelGraphicalCompiler$ specific calls
 			-- the eiffel project.
 		do
 			if server_mode then
-				eif_gr_link_driver (request, c_code_dir.to_c,
-					system_name.to_c, prelink_cmd_name.to_c,
-					driver_name.to_c)
+				eif_gr_link_driver (request,
+						c_code_dir.to_c,
+						system_name.to_c,
+						prelink_cmd_name.to_c,
+						driver_name.to_c
+					)
 			else
-				eif_link_driver (c_code_dir.to_c, system_name.to_c,
-					prelink_cmd_name.to_c, driver_name.to_c)
+				eif_link_driver (
+						c_code_dir.to_c,
+						system_name.to_c,
+						prelink_cmd_name.to_c,
+						driver_name.to_c
+					)
 			end
 		end
 

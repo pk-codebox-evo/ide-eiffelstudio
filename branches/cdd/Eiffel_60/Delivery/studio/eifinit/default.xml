@@ -35,7 +35,7 @@
 	<PREF NAME="debugger.grid_column_layout_stack_objects" DESCRIPTION="Configuration of the stack objects grid.%N This should be a list of 5 sequences: nature_id;is_shown;is_auto_resized;width;header_name; %NThe position in the list indicate the column.%NThe nature_id are: 1:name; 2:value; 3:type; 4:address; 5:context..." RESTART="True"><STRING>1;True;False;150;Name;2;True;False;76;Value;3;True;False;100;Type;4;True;False;173;Address;5;False;False;80;</STRING></PREF>
 	<PREF NAME="debugger.grid_column_layout_debugged_objects" DESCRIPTION="Configuration of the debugged objects grid.%NCheck grid_column_layout_stack_objects for full description." RESTART="True"><STRING>1;True;False;150;Name;2;True;False;150;Value;3;True;False;200;Type;4;True;False;80;Address;5;False;False;80;</STRING></PREF>
 	<PREF NAME="debugger.grid_column_layout_watches" DESCRIPTION="Configuration of the watches objects grid. %NCheck grid_column_layout_stack_objects for full description." RESTART="True"><STRING>1;True;False;150;Expression;2;True;False;150;Value;3;True;False;100;Type;4;True;False;80;Address;5;True;False;200;Context</STRING></PREF>
-	<PREF NAME="debugger.objects_tool_layout" HIDDEN="true" DESCRIPTION="Location of main objects tool's items &lt;&lt;'Current object', 'Stack information', 'Argument(s)', 'Local(s)', 'Result', 'Dropped references'&gt;&gt;. The left grid is represented by '1' and the right grid by '2'"><LIST>2;1;1;1;1;2</LIST></PREF>
+	<PREF NAME="debugger.objects_tool_layout" HIDDEN="true" DESCRIPTION="Location of main objects tool's items &lt;&lt;'Current object', 'Stack information', 'Argument(s)', 'Local(s)', 'Result', 'Dropped references'&gt;&gt;. The left grid is represented by '1' and the right grid by '2'"><LIST>1;1;1;1;1;1</LIST></PREF>
 	<PREF NAME="debugger.show_text_in_project_toolbar" HIDDEN="true" DESCRIPTION="Should text be shown alongside preselected toolbar items?"><BOOLEAN>True</BOOLEAN></PREF>
 	<PREF NAME="debugger.show_all_text_in_project_toolbar" HIDDEN="true" DESCRIPTION="Should text be shown alongside all toolbar items?"><BOOLEAN>False</BOOLEAN></PREF>
 	<PREF NAME="debugger.watch_tools_layout" HIDDEN="true" DESCRIPTION="Layout of watch tools."><LIST></LIST></PREF>
@@ -182,7 +182,6 @@
 
 	<PREF NAME="interface.development_window.class_completion" DESCRIPTION="Allow class name completion in the address combo boxes?"><BOOLEAN>True</BOOLEAN></PREF>
 	<PREF NAME="interface.development_window.ctrl_right_click_receiver" DESCRIPTION="Receivers of control-right-click."><LIST>[new_tab_editor];new_window;current_editor;context;external</LIST></PREF>
-	<PREF NAME="interface.development_window.dock_tracking" DESCRIPTION="Docked tools track main window?"><BOOLEAN>True</BOOLEAN></PREF>
 	<PREF NAME="interface.development_window.editor_left_side" DESCRIPTION="Display editor on left?" RESTART="True"><BOOLEAN>False</BOOLEAN></PREF>
 	<PREF NAME="interface.development_window.estudio_dbg_menu_allowed" DESCRIPTION="Is EiffelStudio Debug menu allowed?" HIDDEN="True"><BOOLEAN>True</BOOLEAN></PREF>
 	<PREF NAME="interface.development_window.estudio_dbg_menu_accelerator_allowed" DESCRIPTION="When estudio_dbg_menu_enabled_preference is True, is EiffelStudio Debug menu shown by accelerator?" HIDDEN="True"><BOOLEAN>True</BOOLEAN></PREF>
@@ -209,6 +208,7 @@
 	<PREF NAME="interface.development_window.show_all_text_in_general_toolbar" DESCRIPTION="Is text of toolbar items displayed?"><BOOLEAN>False</BOOLEAN></PREF>
 	<PREF NAME="interface.development_window.general_toolbar_layout" HIDDEN="true" DESCRIPTION="Items shown in general toolbar."><LIST>New_tab__visible;New_window__visible;New_editor__hidden;New_context_window__hidden;Open_file__hidden;New_class__visible;New_feature__visible;Save_file__visible;Save_all_file__visible;Open_shell__visible;Separator;Undo__visible;Redo__visible;Separator;Editor_cut__visible;Editor_copy__visible;Editor_paste__visible;Separator;Clusters__visible;Features__visible;Search__visible;Editor__visible;Context__visible;Separator;Send_to_context__visible;New_cluster__hidden;Remove_class_cluster__hidden;Favorites__hidden;Windows__hidden;Toggle_stone__hidden;Raise_all__hidden;Minimize_all__hidden;Print__hidden;Properties__hidden;Breakpoints__hidden</LIST></PREF>
 	<PREF NAME="interface.development_window.unified_stone" DESCRIPTION="Link the context tool with other components by default?"><BOOLEAN>False</BOOLEAN></PREF>
+	<PREF NAME="interface.development_window.link_tools" DESCRIPTION="Link tools? True means that a tool propagates stone to other tools if possible."><BOOLEAN>True</BOOLEAN></PREF>
 	<PREF NAME="interface.development_window.use_animated_icons" DESCRIPTION="Use animated icons in the status bar?"><BOOLEAN>True</BOOLEAN></PREF>
 	<PREF NAME="interface.development_window.width" DESCRIPTION="Width of development window." HIDDEN="true"><INTEGER>950</INTEGER></PREF>
 	<PREF NAME="interface.development_window.height" DESCRIPTION="Height of development window." HIDDEN="true"><INTEGER>700</INTEGER></PREF>
@@ -577,6 +577,8 @@
 	<PREF NAME="editor.general.colors.operator_background_color" DESCRIPTION="Background color of operator text."><COLOR>auto</COLOR></PREF>
 	<PREF NAME="editor.general.colors.number_text_color" DESCRIPTION="Color of number text."><COLOR>128;0;255</COLOR></PREF>
 	<PREF NAME="editor.general.colors.number_background_color" DESCRIPTION="Background color of number text."><COLOR>auto</COLOR></PREF>
+	<PREF NAME="editor.general.colors.warning_text_color" DESCRIPTION="Warning text color"><COLOR>200;64;0</COLOR></PREF>
+	<PREF NAME="editor.general.colors.warning_background_color" DESCRIPTION="Background color of warning text"><COLOR>255;255;255</COLOR></PREF>	
 	<PREF NAME="editor.general.use_buffered_line" DESCRIPTION="Indicates if editor line drawing is first buffered and then drawn, or just drawn directly to the screen.  If set to True, content will not flicker, but drawing performance will be reduced."><BOOLEAN>True</BOOLEAN></PREF>
 	<PREF NAME="editor.general.show_line_numbers" DESCRIPTION="Indicates if editor displays the line numbers by default."><BOOLEAN>False</BOOLEAN></PREF>
 	<PREF NAME="editor.general.smart_home" DESCRIPTION="Indicates if editor should go to the beginning on the first non-whitespace character, on a line, when the HOME key is pressed."><BOOLEAN>True</BOOLEAN></PREF>

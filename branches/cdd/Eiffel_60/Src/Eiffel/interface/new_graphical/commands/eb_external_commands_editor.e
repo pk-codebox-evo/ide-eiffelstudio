@@ -399,6 +399,7 @@ feature {NONE} -- Implementation
 				close_button.set_focus
 			end
 			update_edit_buttons
+			shortcut_manager.update_external_commands
 		end
 
 	edit_command is
@@ -411,6 +412,8 @@ feature {NONE} -- Implementation
 		do
 			comm ?= list.selected_item.data
 			comm.edit_properties (dialog)
+			comm.setup_managed_shortcut (accelerators)
+			shortcut_manager.update_external_commands
 			refresh_list
 			update_edit_buttons
 			dialog.set_focus

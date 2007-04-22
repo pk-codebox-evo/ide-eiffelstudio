@@ -14,6 +14,7 @@ class
 inherit
 	EV_DRAWABLE
 		redefine
+			is_in_default_state,
 			implementation,
 			create_implementation,
 			is_equal,
@@ -27,9 +28,10 @@ inherit
 			set_foreground_color,
 			foreground_color,
 			is_equal,
-			is_in_default_state,
 			copy
 		redefine
+			is_in_default_state,
+			is_in_default_state_for_tabs,
 			implementation
 		end
 
@@ -44,10 +46,12 @@ inherit
 create
 	default_create,
 	make_with_size,
-	make_with_pointer_style
+	make_with_pointer_style,
+	make_with_pixel_buffer
 
 convert
-	make_with_pointer_style ({EV_POINTER_STYLE})
+	make_with_pointer_style ({EV_POINTER_STYLE}),
+	make_with_pixel_buffer ({EV_PIXEL_BUFFER})
 
 feature {NONE} -- Initialization
 
@@ -65,7 +69,7 @@ feature {NONE} -- Initialization
 		end
 
 	make_with_pointer_style (a_pointer_style: EV_POINTER_STYLE) is
-			-- Create from `a_pointer_style'
+			-- Create from `a_pointer_style'.
 		local
 			l_temp: EV_POINTER_STYLE
 		do
@@ -75,6 +79,15 @@ feature {NONE} -- Initialization
 				create l_temp
 			end
 			implementation.init_from_pointer_style (l_temp)
+		end
+
+	make_with_pixel_buffer (a_pixel_buffer: EV_PIXEL_BUFFER) is
+			-- Create from `a_pixel_buffer'.
+		require
+			a_pixel_buffer_not_void: a_pixel_buffer /= Void
+		do
+			default_create
+			implementation.init_from_pixel_buffer (a_pixel_buffer)
 		end
 
 feature -- Basic Operations
@@ -100,6 +113,20 @@ feature -- Comparison
 					width * other.height = other.width * height
 				)
 			end
+		end
+
+feature {EV_ANY} -- Contract support
+
+	is_in_default_state: BOOLEAN is
+			-- Is `Current' in its default state?
+		do
+			Result := Precursor {EV_DRAWABLE} and then is_in_default_state_for_tabs
+		end
+
+	is_in_default_state_for_tabs: BOOLEAN is
+			-- Is `Current' in its default state with regards to tabs?
+		do
+			Result := not is_tabable_to and not is_tabable_from
 		end
 
 feature {EV_BUILDER} -- Access

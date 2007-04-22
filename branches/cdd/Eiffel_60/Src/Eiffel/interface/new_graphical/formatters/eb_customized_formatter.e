@@ -31,7 +31,7 @@ inherit
 
 	EXCEPTIONS
 
-	EB_METRIC_INTERFACE_PROVIDER
+	EB_METRIC_TOOL_HELPER
 
 create
 	make
@@ -73,10 +73,10 @@ feature{NONE} -- Initialization
 
 feature -- Access
 
-	command_name: STRING_GENERAL is
+	capital_command_name: STRING_GENERAL is
 			-- Name of current command throughout the interface (in lower case).
 		do
-			Result := Interface_names.string_general_as_lower (command_name_internal)
+			Result := command_name_internal
 		end
 
 	element_name: STRING is
@@ -248,13 +248,9 @@ feature -- Status report
 			-- Is Current formatter valid?
 		local
 			l_metric_manager: like metric_manager
-			l_metric: like metric
 		do
 			l_metric_manager := metric_manager
-			l_metric := metric
-			Result := l_metric_manager.is_metric_loaded and then
-					  l_metric_manager.has_metric (l_metric) and then
-					  l_metric_manager.is_metric_valid (l_metric)
+			Result := l_metric_manager.is_metric_loaded and then l_metric_manager.is_metric_calculatable (metric)
 		end
 
 	is_customized_fomatter: BOOLEAN is True
@@ -312,15 +308,7 @@ feature -- Setting
 				stone := Void
 				reset_display
 			end
-			if
-				selected and then
-				not widget.is_displayed
-			then
-				if widget_owner /= Void then
-					widget_owner.set_widget (widget)
-				end
-				display_header
-			end
+			ensure_display_in_widget_owner
 		end
 
 	reset_display is

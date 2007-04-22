@@ -19,7 +19,7 @@ inherit
 			on_right_button_down, on_left_button_down, on_middle_button_down,
  			on_left_button_up, on_left_button_double_click,
  			on_middle_button_double_click, on_right_button_double_click,
- 			minimum_width, minimum_height, pnd_press, escape_pnd
+ 			minimum_width, minimum_height, pnd_press, escape_pnd, update_for_pick_and_drop
 		redefine
 			parent_imp, wel_move_and_resize, on_mouse_move, on_key_down,
 			destroy, interface, initialize, on_left_button_double_click,
@@ -146,7 +146,8 @@ feature {NONE} -- Initialization
 
 			-- On Windows, we only can set ex style of toolbar this way.
 			l_prev_ex_style := {WEL_API}.send_message_result_integer (wel_item, tb_setextendedstyle, to_wparam (0), to_lparam (tbstyle_ex_mixedbuttons | tbstyle_ex_drawddarrows ))
-
+			disable_tabable_from
+			disable_tabable_to
 		end
 
 feature -- Access
@@ -731,23 +732,6 @@ feature -- Basic operation
 			end
 		end
 
-feature {EV_ANY_I}
-
-	update_for_pick_and_drop (starting: BOOLEAN) is
-			-- Pick and drop status has changed so update appearence of
-			-- all children.
-		do
-			from
-				ev_children.start
-			until
-				ev_children.off
-			loop
-				ev_children.item.update_for_pick_and_drop (starting)
-				ev_children.forth
-			end
-		end
-
-
 feature {EV_INTERNAL_TOOL_BAR_IMP} -- Click action event
 
 	button_associated_with_id (command_id: INTEGER): EV_TOOL_BAR_BUTTON_IMP is
@@ -1011,7 +995,7 @@ feature {NONE} -- WEL Implementation
 	on_key_down (virtual_key, key_data: INTEGER) is
 			-- A key has been pressed
 		do
-			process_tab_key (virtual_key)
+			process_navigation_key (virtual_key)
 			Precursor {EV_PRIMITIVE_IMP} (virtual_key, key_data)
 		end
 

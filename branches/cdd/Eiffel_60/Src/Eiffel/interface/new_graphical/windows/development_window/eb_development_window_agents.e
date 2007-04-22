@@ -35,15 +35,22 @@ feature -- Text observer Agents
 		local
 			str: STRING_32
 		do
-			str := develop_window.title.twin.as_string_32
-			if str @ 1 = '*' then
-				str.keep_tail (str.count - 2)
-				develop_window.set_title (str)
+			if not is_recycled then
+				str := develop_window.title.twin.as_string_32
+				if str @ 1 = '*' then
+					str.keep_tail (str.count - 2)
+					develop_window.set_title (str)
+				end
+
+				-- We close a UN-FOCUSED editor by pointer, we should not disable formatters if there is/are still editor(s) opened.
+				if develop_window.editors_manager.editor_count <= 0 then
+					develop_window.address_manager.disable_formatters
+				end
+
+				develop_window.status_bar.reset
+				develop_window.status_bar.remove_cursor_position
+				develop_window.set_text_edited (False)
 			end
-			develop_window.address_manager.disable_formatters
-			develop_window.status_bar.reset
-			develop_window.status_bar.remove_cursor_position
-			develop_window.set_text_edited (False)
 		end
 
 	on_text_edited (unused: BOOLEAN) is
@@ -53,23 +60,25 @@ feature -- Text observer Agents
 			l_str: STRING_32
 			l_cst: CLASSI_STONE
 		do
-			if not develop_window.text_edited then
-				l_str := develop_window.title.twin.as_string_32
-				if l_str @ 1 /= '*' then
-					l_str.prepend ("* ")
-					develop_window.set_title (l_str)
+			if not is_recycled then
+				if not develop_window.text_edited then
+					l_str := develop_window.title.twin.as_string_32
+					if l_str @ 1 /= '*' then
+						l_str.prepend ("* ")
+						develop_window.set_title (l_str)
+					end
+					develop_window.address_manager.disable_formatters
+					l_cst ?= develop_window.stone
+					if l_cst /= Void then
+						develop_window.Eiffel_project.Manager.class_is_edited (l_cst.class_i)
+					end
+					develop_window.set_text_edited (True)
 				end
-				develop_window.address_manager.disable_formatters
-				l_cst ?= develop_window.stone
-				if l_cst /= Void then
-					develop_window.Eiffel_project.Manager.class_is_edited (l_cst.class_i)
+				if not develop_window.status_bar.message.is_equal (develop_window.interface_names.e_c_compilation_running) then
+						-- We don't want the "Background C compilation in progress" message flash every time
+						-- user presses a key.
+					develop_window.status_bar.display_message ("")
 				end
-				develop_window.set_text_edited (True)
-			end
-			if not develop_window.status_bar.message.is_equal (develop_window.interface_names.e_c_compilation_running) then
-					-- We don't want the "Background C compilation in progress" message flash every time
-					-- user presses a key.
-				develop_window.status_bar.display_message ("")
 			end
 		end
 
@@ -78,14 +87,15 @@ feature -- Text observer Agents
 		local
 			str: STRING_32
 		do
-			str := develop_window.title.twin.as_string_32
-			if str @ 1 = '*' then
-				str.keep_tail (str.count - 2)
-				develop_window.set_title (str)
+			if not is_recycled then
+				str := develop_window.title.twin.as_string_32
+				if str @ 1 = '*' then
+					str.keep_tail (str.count - 2)
+					develop_window.set_title (str)
+				end
+				develop_window.update_formatters
+				develop_window.set_text_edited (False)
 			end
-			develop_window.update_formatters
-			develop_window.set_text_edited (False)
-
 		end
 
 	on_cursor_moved is
@@ -94,36 +104,40 @@ feature -- Text observer Agents
 		local
 			l_context_refreshing_timer: EV_TIMEOUT
 		do
-			if not develop_window.is_empty then
-				develop_window.refresh_cursor_position
-			end
-			if develop_window.context_refreshing_timer = Void then
-				create l_context_refreshing_timer.make_with_interval (100)
-				develop_window.set_context_refreshing_timer (l_context_refreshing_timer)
-				l_context_refreshing_timer.actions.extend (agent develop_window.refresh_context_info)
-			end
-			if develop_window.feature_locating then
-				develop_window.context_refreshing_timer.set_interval (0)
-			else
-				develop_window.context_refreshing_timer.set_interval (100)
+			if not is_recycled then
+				if not develop_window.is_empty then
+					develop_window.refresh_cursor_position
+				end
+				if develop_window.context_refreshing_timer = Void then
+					create l_context_refreshing_timer.make_with_interval (100)
+					develop_window.set_context_refreshing_timer (l_context_refreshing_timer)
+					l_context_refreshing_timer.actions.extend (agent develop_window.refresh_context_info)
+				end
+				if develop_window.feature_locating then
+					develop_window.context_refreshing_timer.set_interval (0)
+				else
+					develop_window.context_refreshing_timer.set_interval (100)
+				end
 			end
 		end
 
 	on_text_fully_loaded is
 			-- The main editor has just been reloaded.
 		do
-			develop_window.update_paste_cmd
-			develop_window.update_formatters
-			if develop_window.syntax_is_correct then
-				develop_window.status_bar.reset
-			else
-				develop_window.status_bar.display_message (develop_window.Interface_names.L_syntax_error)
-			end
-			if not develop_window.is_empty then
-				develop_window.refresh_cursor_position
-			end
+			if not is_recycled then
+				develop_window.update_paste_cmd
+				develop_window.update_formatters
+				if develop_window.syntax_is_correct then
+					develop_window.status_bar.reset
+				else
+					develop_window.status_bar.display_message (develop_window.Interface_names.L_syntax_error)
+				end
+				if not develop_window.is_empty then
+					develop_window.refresh_cursor_position
+				end
 
-			develop_window.set_text_edited (False)
+				develop_window.set_text_edited (False)
+			end
 		end
 
 feature -- Agents
@@ -297,28 +311,33 @@ feature -- Agents
 			develop_window.commands.customized_tool_command.enable_sensitive
 		end
 
-	on_customized_tools_changed (a_unchanged_tools: LIST [STRING]) is
-			-- Action to be performed when customized tools changes
+	on_customized_tools_changed (a_changed_tools: LIST [STRING]) is
+			-- Action to be performed when customized tools changes			
 		require
-			a_unchanged_tools_attached: a_unchanged_tools /= Void
-			a_unchanged_tools_valid: not a_unchanged_tools.has (Void)
+			a_changed_tools_attached: a_changed_tools /= Void
+			a_changed_tools_valid: not a_changed_tools.has (Void)
 		local
 			l_customized_tools: LIST [EB_CUSTOMIZED_TOOL]
 			l_tools: EB_DEVELOPMENT_WINDOW_TOOLS
 			l_main_builder: EB_DEVELOPMENT_WINDOW_MAIN_BUILDER
+			l_unchanged_tools: LIST [EB_CUSTOMIZED_TOOL]
 		do
-				-- Retrieve changed customized tools.
 			l_tools := develop_window.tools
-			l_customized_tools := l_tools.customized_tools_from_tools (l_tools.tools_by_id (l_tools.all_tools,a_unchanged_tools, False))
-
 			create l_main_builder.make (develop_window)
 
 				-- Remove changed tools.
+			l_customized_tools := l_tools.customized_tools_from_tools (l_tools.tools_by_id (l_tools.all_tools, a_changed_tools, True))
 			l_customized_tools.do_all (agent l_main_builder.deregister_customized_tool)
 
-				-- Add changed/newly add tools.
-			l_customized_tools := develop_window.customized_tool_manager.tools_by_ids (a_unchanged_tools, False, develop_window)
+				-- Add changed/newly added tools.
+			l_customized_tools := develop_window.customized_tool_manager.tools_by_ids (a_changed_tools, True, develop_window)
 			l_main_builder.register_customized_tools (l_customized_tools)
+
+				-- Refresh titile/pixmap/stone handlers for unchanged tools.
+			l_unchanged_tools := l_tools.customized_tools_from_tools (l_tools.tools_by_id (l_tools.all_tools, a_changed_tools, False))
+			if not l_unchanged_tools.is_empty then
+				l_unchanged_tools.do_all (agent l_tools.refresh_customized_tool_appearance)
+			end
 		end
 
 	on_customized_tools_changed_agent: PROCEDURE [ANY, TUPLE [LIST [STRING]]] is
@@ -342,6 +361,10 @@ feature {NONE} -- Implementation
 			then
 				develop_window.commands.send_stone_to_context_cmd.enable_sensitive
 			end
+			develop_window.commands.new_class_cmd.enable_sensitive
+			develop_window.commands.new_library_cmd.enable_sensitive
+			develop_window.commands.new_assembly_cmd.enable_sensitive
+			develop_window.commands.new_cluster_cmd.enable_sensitive
 		end
 
 	enable_commands_on_project_loaded is
@@ -353,18 +376,12 @@ feature {NONE} -- Implementation
 			if develop_window.has_dll_generation then
 				develop_window.show_dynamic_lib_tool.enable_sensitive
 			end
-			develop_window.commands.new_class_cmd.enable_sensitive
-			develop_window.commands.new_library_cmd.enable_sensitive
-			develop_window.commands.new_assembly_cmd.enable_sensitive
-			develop_window.commands.new_cluster_cmd.enable_sensitive
 			develop_window.commands.system_info_cmd.enable_sensitive
 			if develop_window.unified_stone then
 				develop_window.commands.send_stone_to_context_cmd.disable_sensitive
 			elseif develop_window.stone /= Void then
 				develop_window.commands.send_stone_to_context_cmd.enable_sensitive
 			end
-			develop_window.commands.new_class_cmd.enable_sensitive
-			develop_window.commands.new_cluster_cmd.enable_sensitive
 			develop_window.commands.delete_class_cluster_cmd.enable_sensitive
 			develop_window.commands.c_workbench_compilation_cmd.enable_sensitive
 			develop_window.commands.c_finalized_compilation_cmd.enable_sensitive
@@ -403,7 +420,7 @@ feature {NONE} -- Implementation
 			-- Implementation of `on_customized_tools_changed_agent'
 
 invariant
-	not_void: develop_window /= Void
+	not_void: not is_recycled implies develop_window /= Void
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

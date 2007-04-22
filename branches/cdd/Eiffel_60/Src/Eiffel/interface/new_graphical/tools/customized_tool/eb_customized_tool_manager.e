@@ -8,25 +8,22 @@ class
 	EB_CUSTOMIZED_TOOL_MANAGER
 
 inherit
-	EB_CUSTOMIZED_FORMATTER_RELATED_MANAGER
-		redefine
-			item_anchor
-		end
+	EB_CUSTOMIZED_FORMATTER_RELATED_MANAGER [EB_CUSTOMIZED_TOOL_DESP]
 
 feature -- Access
 
 	change_actions: ACTION_SEQUENCE [TUPLE [LIST [STRING]]] is
 			-- Actions to be performed when customized tools changes
-			-- Argument of the actions are list of ids of tools that are not changed.
+			-- Argument of the actions are list of ids of tools that are changed.			
+			-- By "changed", it means that tools that are removed or newly added.
+			-- By contrast, tools that has modifications such as name/pixmap location/stone handlers modification are
+			-- called "modified".
 		do
 			if change_actions_internal = Void then
 				create change_actions_internal
 			end
 			Result := change_actions_internal
 		end
-
-	item_anchor: EB_CUSTOMIZED_TOOL_DESP
-			-- Anchor type of items
 
 	tool_descriptors: LIST [EB_CUSTOMIZED_TOOL_DESP] is
 			-- List of loaded descriptors for customized tool
@@ -37,6 +34,28 @@ feature -- Access
 			Result := tool_descriptors_internal
 		ensure
 			result_attached: Result /= Void
+		end
+
+	descriptor_by_id (a_id: STRING): EB_CUSTOMIZED_TOOL_DESP is
+			-- Tool descriptor from `tool_descriptors' whose id is `a_id'
+			-- Void if no descriptor is found.
+		local
+			l_desps: like tool_descriptors
+			l_cursor: CURSOR
+		do
+			l_desps := tool_descriptors
+			l_cursor := l_desps.cursor
+			from
+				l_desps.start
+			until
+				l_desps.after or Result /= Void
+			loop
+				if l_desps.item.id.is_equal (a_id) then
+					Result := l_desps.item
+				end
+				l_desps.forth
+			end
+			l_desps.go_to (l_cursor)
 		end
 
 	tools_by_ids (a_ids: LIST [STRING]; a_include: BOOLEAN; a_develop_window: EB_DEVELOPMENT_WINDOW): LIST [EB_CUSTOMIZED_TOOL] is
@@ -50,8 +69,10 @@ feature -- Access
 			l_desps: like tool_descriptors
 			l_cursor: CURSOR
 			l_id_set: DS_HASH_SET [STRING]
+			l_insert: BOOLEAN
 		do
 			create l_id_set.make (a_ids.count)
+			l_id_set.set_equality_tester (create {AGENT_BASED_EQUALITY_TESTER [STRING]}.make (agent (a_str, b_str: STRING): BOOLEAN do Result := equal (a_str, b_str) end))
 			a_ids.do_all (agent l_id_set.force_last)
 			l_desps := tool_descriptors
 			l_cursor := l_desps.cursor
@@ -61,7 +82,12 @@ feature -- Access
 			until
 				l_desps.after
 			loop
-				if not (a_include xor l_id_set.has (l_desps.item.id)) then
+				if a_include then
+					l_insert := l_id_set.has (l_desps.item.id)
+				else
+					l_insert := not l_id_set.has (l_desps.item.id)
+				end
+				if l_insert then
 					Result.extend (l_desps.item.new_tool (a_develop_window))
 				end
 				l_desps.forth
@@ -112,7 +138,7 @@ feature -- Access
 			Result := a_id.is_equal (b_id)
 		end
 
-	xml_for_descriptor (a_descriptor: like item_anchor; a_parent: XM_COMPOSITE): XM_ELEMENT is
+	xml_for_descriptor (a_descriptor: EB_CUSTOMIZED_TOOL_DESP; a_parent: XM_COMPOSITE): XM_ELEMENT is
 			-- Xml element for `a_descriptor'
 		require
 			a_descriptor_attached: a_descriptor /= Void
@@ -140,8 +166,8 @@ feature -- Access
 				l_handler_table.after
 			loop
 				create l_handler.make_last (l_handlers, n_handler, l_namespace)
-				l_handler.add_unqualified_attribute (n_stone, l_handler_table.item_for_iteration)
-				l_handler.add_unqualified_attribute (n_default_tool, l_handler_table.key_for_iteration)
+				l_handler.add_unqualified_attribute (n_stone, l_handler_table.key_for_iteration)
+				l_handler.add_unqualified_attribute (n_default_tool, l_handler_table.item_for_iteration)
 				l_handler_table.forth
 			end
 		ensure
@@ -167,12 +193,19 @@ feature -- Storage
 			l_id_set: like tool_id_set
 			l_id_list: LINKED_LIST [STRING]
 			l_cursor: DS_HASH_SET_CURSOR [STRING]
+			l_old_id_set: like tool_id_set
+			l_new_id_set: like tool_id_set
+			l_changed_id_set: like tool_id_set
 		do
+			l_old_id_set := tool_id_set
 			l_id_set := tool_id_set
 			tool_descriptors.wipe_out
 			create l_callback.make
-			l_desp_tuple := items_from_file (tool_file, l_callback, agent l_callback.tools, agent l_callback.last_error, agent set_is_file_readable (False))
-			set_last_error (l_desp_tuple.error)
+			clear_last_error
+			l_desp_tuple := items_from_file (tool_file, l_callback, agent l_callback.tools, agent l_callback.last_error, agent set_last_error (create{EB_METRIC_ERROR}.make (metric_names.err_file_not_readable (tool_file))))
+			if last_error = Void then
+				set_last_error (l_desp_tuple.error)
+			end
 			if a_error_agent /= Void then
 				a_error_agent.call (Void)
 				clear_last_error
@@ -180,9 +213,11 @@ feature -- Storage
 			tool_descriptors.append (l_desp_tuple.items)
 			set_is_loaded (True)
 
-			l_id_set := l_id_set.union (tool_id_set)
+				-- Calculate "changed" (either removed or newly added) tools.
+			l_new_id_set := tool_id_set
+			l_changed_id_set := l_old_id_set.union (l_new_id_set).subtraction (l_old_id_set.intersection (l_new_id_set))
 			create l_id_list.make
-			l_cursor := l_id_set.new_cursor
+			l_cursor := l_changed_id_set.new_cursor
 			from
 				l_cursor.start
 			until
@@ -191,7 +226,6 @@ feature -- Storage
 				l_id_list.extend (l_cursor.item)
 				l_cursor.forth
 			end
-			l_id_list.wipe_out
 			change_actions.call ([l_id_list])
 		end
 

@@ -34,6 +34,8 @@ inherit
 		end
 
 	EB_METRIC_INTERFACE_PROVIDER
+		rename
+			load_metrics as load_metrics_for_system
 		undefine
 			default_create,
 			is_equal,
@@ -116,6 +118,8 @@ feature {NONE} -- Initialization
 			metric_grid_wrapper.set_sort_action (agent sort_agent)
 			metric_grid.key_press_actions.extend (agent on_key_pressed_for_metric_navigation (?, True))
 			metric_grid.key_press_string_actions.extend (agent on_key_string_pressed_for_metric_navigation (?, True))
+			metric_grid.set_focused_selection_color (preferences.editor_data.selection_background_color)
+			metric_grid.set_non_focused_selection_color (preferences.editor_data.focus_out_selection_background_color)
 
 			create move_unit_up_key_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_numpad_8), True, False, False)
 			create move_unit_down_key_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_numpad_2), True, False, False)
@@ -210,18 +214,6 @@ feature -- Access
 				end
 			else
 				create {LINKED_LIST[STRING]} Result.make
-			end
-		end
-
-	selected_item_name: STRING is
-			-- Name of selected metric in `metric_grid'.
-			-- Void if no metric is selected
-		local
-			l_metric: EB_METRIC
-		do
-			l_metric := selected_metric
-			if l_metric /= Void then
-				Result := l_metric.name.twin
 			end
 		end
 
@@ -798,16 +790,12 @@ feature{NONE} -- Implementation/Sorting
 		do
 			metric_selected_actions.block
 			group_selected_actions.block
-			metric_table := metric_manager.ordered_metrics (mapped_sorting_order, not tree_view_checkbox.is_selected)
+			metric_table := metric_manager.ordered_metrics (agent metric_order_tester (?, ?, current_sort_order), not tree_view_checkbox.is_selected)
 			setup_selection_status
 			load_metric_in_grid
 			try_to_selected_last_metric
 			metric_selected_actions.resume
 			group_selected_actions.resume
-		end
-
-	metric_order_tester (a_metric, b_metric: EB_METRIC; a_order: INTEGER): BOOLEAN is
-		do
 		end
 
 	current_sort_order: INTEGER is
@@ -829,7 +817,7 @@ feature{NONE} -- Implementation/Sorting
 			l_new_tbl: like selection_status
 			l_name: STRING
 		do
-			l_metric_tbl := metric_manager.ordered_metrics (mapped_sorting_order, True)
+			l_metric_tbl := metric_manager.ordered_metrics (agent metric_order_tester (?, ?, current_sort_order), True)
 			l_metrics := l_metric_tbl.item (no_unit)
 			l_old_tbl := selection_status.twin
 			l_new_tbl := selection_status
@@ -882,17 +870,17 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	mapped_sorting_order: INTEGER is
-			-- Mapped sorting order for `metric_grid'
-		do
-			if current_sort_order = ascending_order then
-				Result := metric_manager.ascending_order
-			elseif current_sort_order = descending_order then
-				Result := metric_manager.descending_order
-			elseif current_sort_order = topology_order then
-				Result := metric_manager.topological_order
-			end
-		end
+--	mapped_sorting_order: INTEGER is
+--			-- Mapped sorting order for `metric_grid'
+--		do
+--			if current_sort_order = ascending_order then
+--				Result := metric_manager.ascending_order
+--			elseif current_sort_order = descending_order then
+--				Result := metric_manager.descending_order
+--			elseif current_sort_order = topology_order then
+--				Result := metric_manager.topological_order
+--			end
+--		end
 
 	select_metrics (a_predefined: BOOLEAN; a_select: BOOLEAN) is
 			-- Selected metrics:
@@ -1134,9 +1122,6 @@ feature {NONE} -- Implementation
 			-- Expansion status for every unit lised in Current selector.
 			-- Indexed by metric unit. If value is True, means that the grid row for that unit is expaned
 			-- when last time expansion status is checked.
-
-	cached_key_field_window: EV_POPUP_WINDOW
-			-- Popup window to display `cached_key_field'			
 
 feature{NONE} -- Key shortcuts
 

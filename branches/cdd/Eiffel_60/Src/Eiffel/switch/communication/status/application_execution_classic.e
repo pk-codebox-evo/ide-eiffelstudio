@@ -16,6 +16,7 @@ inherit
 			update_critical_stack_depth,
 			can_not_launch_system_message,
 			recycle,
+			clean_on_process_termination,
 			make_with_debugger
 		end
 
@@ -102,7 +103,7 @@ feature -- Properties
 
 feature -- Execution
 
-	run_with_env_string (args, cwd: STRING; env: STRING_GENERAL) is
+	run_with_env_string (app, args, cwd: STRING; env: STRING_GENERAL) is
 			-- Run application with arguments `args' in directory `cwd'.
 			-- If `is_running' is false after the
 			-- execution of this routine, it means that
@@ -114,18 +115,13 @@ feature -- Execution
 			cwd_not_void: cwd /= Void
 			env_not_void: env /= Void
 		local
-			app: STRING
 			l_status: APPLICATION_STATUS
 			l_env_s8: STRING_8
 		do
 			ipc_engine.launch_ec_dbg
 			if ipc_engine.ec_dbg_launched then
-				app := Eiffel_system.application_name (True)
-				if args /= Void then
-					app.extend (' ')
-					app.append (args)
-				end
 				run_request.set_application_name (app)
+				run_request.set_arguments (args)
 				run_request.set_working_directory (cwd)
 				if env /= Void then
 					fixme ("[
@@ -156,35 +152,9 @@ feature -- Execution
 			-- Send an interrupt to the application
 			-- which will stop at the next breakable line number
 		do
-			quit_request.make (Rqst_interrupt)
-			quit_request.send
+			ewb_request.make (Rqst_interrupt)
+			ewb_request.send
 		end
-
-	disable_assertion_check is
-			-- Send a message to the application to disable assertion checking
-		local
-			s: STRING
-		do
-			quit_request.make (Rqst_set_assertion_check)
-			quit_request.send_integer (0)
-			s := c_tread
-			if s /= Void and then s.is_boolean then
-				last_assertion_check := s.to_boolean
-			end
-		end
-
-	restore_assertion_check is
-			-- Send a message to the application to restore the previous assertion check status
-		local
-			s: STRING
-		do
-			quit_request.make (Rqst_set_assertion_check)
-			quit_request.send_integer (last_assertion_check.to_integer)
-			s := c_tread
-		end
-
-	last_assertion_check: BOOLEAN
-			-- Last assertion check value when it had been disabled by `disable_assertion_check'.
 
 	notify_newbreakpoint is
 			-- Send an interrupt to the application
@@ -192,15 +162,15 @@ feature -- Execution
 			-- in order to record the new breakpoint(s) before
 			-- automatically resuming its execution.
 		do
-			quit_request.make (Rqst_new_breakpoint)
-			quit_request.send
+			ewb_request.make (Rqst_new_breakpoint)
+			ewb_request.send
 		end
 
 	kill is
 			-- Ask the application to terminate itself.
 		do
-			quit_request.make (Rqst_kill)
-			quit_request.send
+			ewb_request.make (Rqst_kill)
+			ewb_request.send
 
 				-- Don't wait until the next event loop to
 				-- to process the actual termination of the application.
@@ -208,7 +178,7 @@ feature -- Execution
 				-- the application until the application is dead.
 			from
 			until
-				quit_request.recv_dead
+				ewb_request.recv_dead
 			loop
 				debug ("ipc")
 					print (generator + ".kill -> quit_request.recv_dead ? %N")
@@ -226,6 +196,7 @@ feature -- Execution
 			-- Process the termination of the executed
 			-- application. Also execute the `termination_command'.
 		do
+			Precursor {APPLICATION_EXECUTION}
 			release_all_objects
 		end
 
@@ -233,6 +204,21 @@ feature -- Execution
 			-- Request ipc engine end of debugging
 		do
 			Ipc_engine.end_of_debugging
+		end
+
+feature {NONE} -- Assertion change Implementation
+
+	impl_check_assert (b: BOOLEAN): BOOLEAN is
+			-- `check_assert (b)' on debuggee
+		local
+			s: STRING
+		do
+			ewb_request.make (Rqst_set_assertion_check)
+			ewb_request.send_integer (b.to_integer)
+			s := c_tread
+			if s /= Void and then s.is_boolean then
+				Result := s.to_boolean
+			end
 		end
 
 feature -- Change
@@ -275,12 +261,12 @@ feature -- Query
 						odv.set_name (l_feat.feature_name)
 					else
 						create err_dv.make_with_name  (l_feat.feature_name)
-						err_dv.set_message ("Could not retrieve information (once is being called or once failed)")
+						err_dv.set_message (debugger_names.m_Could_not_retrieve_once_information)
 						odv := err_dv
 					end
 				else
 					create err_dv.make_with_name  (l_feat.feature_name)
-					err_dv.set_message (Interface_names.le_Not_yet_called)
+					err_dv.set_message (debugger_names.m_Not_yet_called)
 					if l_feat.is_function then
 						err_dv.set_display_kind (Void_value)
 					else
@@ -323,23 +309,30 @@ feature {APPLICATION_EXECUTION} -- Launching status
 		local
 			env_var_str: STRING_8
 		do
+			Result := debugger_names.w_Cannot_launch_system.as_string_8
+
 			if ipc_engine.is_vms then
 				env_var_str := "logical name"
 			else
 				env_var_str := "environment variable"
 			end
-
-			Result := "Could not launch system.%N"
+			Result.append_character ('%N')
 			if not ipc_engine.valid_ise_ecdbgd_executable then
-				Result.append ("The Eiffel debugger is not found or not executable%N")
-				Result.append ("  current path = "+ ipc_engine.ise_ecdbgd_path + " %N")
-				Result.append ("%NYou can change this value in the preferences%N")
-				Result.append (" or restart after setting the " + env_var_str + " " + ipc_engine.ise_ecdbgd_varname + "%N")
+				Result.append_string_general (
+						debugger_names.w_Cannot_find_valid_ecdbgd (
+								ipc_engine.ise_ecdbgd_path,
+								env_var_str,
+								ipc_engine.ise_ecdbgd_varname
+							)
+					)
 			else
-				Result.append ("The system could not be launched in allotted time:%N")
-				Result.append ("%NYour current timeout is " + ipc_engine.ise_timeout.out + " seconds %N")
-				Result.append ("%NYou can change this value in the preferences%N")
-				Result.append (" or restart after setting the " + env_var_str + " " + ipc_engine.ise_timeout_varname + "%N")
+				Result.append_string_general (
+						debugger_names.w_Cannot_launch_in_allotted_time (
+								ipc_engine.ise_timeout,
+								env_var_str,
+								ipc_engine.ise_timeout_varname
+							)
+					)
 			end
 		end
 
@@ -350,7 +343,7 @@ feature {APPLICATION_STATUS}
 			create Result.make
 		end
 
-	quit_request: EWB_REQUEST is
+	ewb_request: EWB_REQUEST is
 		once
 			create Result.make (Rqst_quit)
 		end

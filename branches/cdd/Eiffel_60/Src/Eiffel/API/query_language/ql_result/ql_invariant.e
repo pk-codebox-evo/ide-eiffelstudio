@@ -78,6 +78,12 @@ feature -- Access
 			no_description_attached_to_invariant: Result.is_equal ("")
 		end
 
+	class_i: CLASS_I is
+			-- CLASS_I object associated with current item
+		do
+			Result := class_c.lace_class
+		end
+
 	class_c: CLASS_C
 			-- Associated class with current feature
 
@@ -86,8 +92,6 @@ feature -- Access
 		do
 			check written_class.has_invariant end
 			Result := written_class.invariant_ast
-		ensure then
-			good_result: Result = written_class.invariant_ast
 		end
 
 	written_class: like class_c

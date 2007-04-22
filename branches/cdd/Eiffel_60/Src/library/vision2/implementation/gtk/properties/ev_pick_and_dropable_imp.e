@@ -136,7 +136,7 @@ feature {NONE} -- Implementation
 	has_capture: BOOLEAN is
 			-- Does Current have the keyboard and mouse event capture?
 		do
-			Result := App_implementation.captured_widget = interface
+			Result := App_implementation.captured_widget = interface or else app_implementation.pick_and_drop_source = Current
 		end
 
 	grab_keyboard_and_mouse is
@@ -224,6 +224,7 @@ feature -- Implementation
 				end
 				App_implementation.set_x_y_origin (pick_x + (a_screen_x - a_x), pick_y + (a_screen_y - a_y))
 			end
+			modify_widget_appearance (True)
 		end
 
 	is_dockable: BOOLEAN is
@@ -279,6 +280,7 @@ feature -- Implementation
 							local
 								l_cursor: EV_POINTER_STYLE
 							do
+								enable_capture
 								pre_pick_steps (a_start_x, a_start_y, a_start_screen_x, a_start_screen_y)
 								if drop_actions_internal /= Void and then drop_actions_internal.accepts_pebble (pebble) then
 										-- Set correct accept cursor if `Current' accepts its own pebble.
@@ -296,11 +298,10 @@ feature -- Implementation
 									end
 								end
 								internal_set_pointer_style (l_cursor)
-								enable_capture
 							end (a_x, a_y, a_screen_x, a_screen_y)
 
 							if ready_for_pnd_menu (a_button, a_type) then
-								app_imp.target_menu (pebble, l_configure_agent).show
+								app_imp.create_target_menu (interface, pebble, l_configure_agent)
 							elseif a_type = {EV_GTK_EXTERNALS}.gdk_button_press_enum and then able_to_transport (a_button) then
 								l_configure_agent.call (Void)
 							end
@@ -355,6 +356,7 @@ feature -- Implementation
 			disable_capture
 			app_imp := app_implementation
 			erase_rubber_band
+			modify_widget_appearance (False)
 			if not is_destroyed then
 				if pointer_style /= Void then
 					internal_set_pointer_style (pointer_style)

@@ -17,24 +17,12 @@ inherit
 			attach_to_docking_manager,
 			pixmap,
 			stone,
-			retrieve_formatters
+			retrieve_formatters,
+			force_last_stone
 		end
 
 create
 	make
-
-feature {NONE} -- Initialization
-
-	make_with_tool (a_tool: EB_DEVELOPMENT_WINDOW) is
-			-- Set default values.
-		do
-			develop_window := a_tool
-			initialize
-			build_formatters
-			fill_in
-			on_select
-		end
-
 
 feature{EB_DEVELOPMENT_WINDOW_MAIN_BUILDER} -- Docking issue
 
@@ -131,27 +119,21 @@ feature -- Status setting
 					(stone /= Void and then not l_feature_comparer.same_feature (stone.e_feature, fst.e_feature))
 				then
 					set_last_stone (fst)
+					develop_window.tools.set_last_stone (stone)
 					history_manager.extend (fst)
 				end
-				if flat_formatter /= Void then
-					flat_formatter.show_debugged_line
-				end
 			else
-				from
-					formatters.start
-				until
-					formatters.after
-				loop
-					formatters.item.reset_display
-					formatters.forth
+				if new_stone = Void or else (not new_stone.is_valid) then
+					do_all_in_list (formatters, agent (a_formatter: EB_FORMATTER) do a_formatter.reset_display end)
 				end
 			end
 			if widget.is_displayed or else is_auto_hide then
 				force_last_stone
+					--| Note: this will also call `flat_formatter.show_debugged_line' if any
 			end
 		end
 
-	decide_tool_to_display (a_st: STONE) is
+	decide_tool_to_display (a_st: STONE): EB_STONABLE_TOOL is
 			-- Decide which tool to display.
 		local
 			fs: FEATURE_STONE
@@ -160,6 +142,7 @@ feature -- Status setting
 			if fs /= Void then
 				show
 				set_focus
+				Result := Current
 			end
 		end
 
@@ -169,16 +152,17 @@ feature -- Status setting
 		local
 			fst, ofst, new_fs: FEATURE_STONE
 			new_f: E_FEATURE
-			cst: CLASSC_STONE
+			classi_stone: CLASSI_STONE
 			cl: CLASS_C
 			found: BOOLEAN
+			l_tool: EB_STONABLE_TOOL
 		do
-			decide_tool_to_display (st)
+			l_tool := decide_tool_to_display (st)
 			fst ?= st
 			if fst = Void then
-				cst ?= st
-				if cst /= Void then
-					cl := cst.e_class
+				classi_stone ?= st
+				if classi_stone /= Void then
+					cl := classi_stone.class_i.compiled_representation
 					ofst ?= stone
 					if ofst /= Void and then cl /= Void then
 						new_f := ofst.e_feature.ancestor_version (cl)
@@ -199,15 +183,24 @@ feature -- Status setting
 				-- when ancestor of old feature is not found in the class stone.
 			if fst = Void and then not found then
 				develop_window.tools.show_default_tool_of_class
+				l_tool := develop_window.tools.default_class_tool
 			end
 
 			if develop_window.unified_stone then
 				develop_window.set_stone (st)
-			else
+			elseif develop_window.link_tools then
 				if not found then
 					develop_window.tools.set_stone (st)
 				else
 					develop_window.tools.set_stone (new_fs)
+				end
+			else
+				if l_tool /= Void then
+					if not found then
+						l_tool.set_stone (st)
+					else
+						l_tool.set_stone (new_fs)
+					end
 				end
 			end
 		end
@@ -233,8 +226,6 @@ feature -- Status setting
 			end
 			(formatters @ real_index).execute
 		end
-
-feature -- Actions
 
 feature {NONE} -- Implementation
 
@@ -278,6 +269,16 @@ feature {NONE} -- Implementation
 						formatters.forth
 					end
 				end
+			end
+		end
+
+	force_last_stone is
+			-- Force that `last_stone' is displayed in formatters in Current view
+			-- And show debugged line if any.
+		do
+			Precursor
+			if flat_formatter /= Void then
+				flat_formatter.show_debugged_line
 			end
 		end
 

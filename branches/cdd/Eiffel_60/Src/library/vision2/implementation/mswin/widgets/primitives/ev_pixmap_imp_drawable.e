@@ -31,12 +31,14 @@ inherit
 			{EV_PIXMAP_IMP_WIDGET} wel_drawing_mode
 		redefine
 			interface,
+			initialize,
 			destroy,
 			sub_pixmap
 		end
 
 create
-	make_with_simple
+	make_with_simple,
+	make_with_pixel_buffer
 
 feature {NONE} -- Initialization
 
@@ -53,6 +55,8 @@ feature {NONE} -- Initialization
 				-- Initialize the drawable part.
 			initialize -- from EV_DRAWABLE_IMP
 
+			copy_tab_status (other)
+
 				-- Select the palette if needed.
 			if dc.palette_selected then
 				dc.unselect_palette
@@ -64,6 +68,12 @@ feature {NONE} -- Initialization
 				-- Is_initialized should be set to True
 				-- when the bridge pattern is linked.
 			set_state_flag (is_initialized_flag, False)
+		end
+
+	make_with_pixel_buffer (a_dc: WEL_MEMORY_DC) is
+			-- Creation method for EV_PIXEL_BUFFER specially
+		do
+			dc := a_dc
 		end
 
 	promote_from_simple (other: EV_PIXMAP_IMP) is
@@ -122,10 +132,31 @@ feature {NONE} -- Initialization
 			other.safe_destroy
 		end
 
+	copy_tab_status (other: EV_PIXMAP_IMP) is
+			-- Retrieve all common attributes between `other'
+			-- and `Current' & make `Current' have the same
+			-- attributes than `other'.
+		require
+			other_not_void: other /= Void
+		do
+				-- Update navigation attribute
+			if other.is_tabable_from then
+				enable_tabable_from
+			else
+				disable_tabable_from
+			end
+			if other.is_tabable_to then
+				enable_tabable_to
+			else
+				disable_tabable_to
+			end
+		end
+
 	adapt_from_simple (other: EV_PIXMAP_IMP) is
 			-- Adapt the current implementation to `other'.
 		do
 			promote_from_simple (other)
+			copy_tab_status (other)
 
 				-- Reset the drawable part.
 			internal_initialized_pen := False
@@ -198,6 +229,13 @@ feature {NONE} -- Initialization
 			-- Initialize from `a_pointer_style'
 		do
 			check should_not_be_called: False end
+		end
+
+	initialize is
+		do
+			Precursor {EV_DRAWABLE_IMP}
+			disable_tabable_from
+			disable_tabable_to
 		end
 
 feature {NONE} -- Saving
@@ -453,6 +491,41 @@ feature -- Element change
 			mask_dc.select_bitmap (internal_mask_bitmap)
 
 			s_dc.release
+		end
+
+feature -- Navigation
+
+	internal_tabable_info: NATURAL_8
+			-- Storage for `is_tabable_from' and `is_tabable_to'.
+
+	is_tabable_to: BOOLEAN is
+		do
+			Result := internal_tabable_info.bit_test (1)
+		end
+
+	is_tabable_from: BOOLEAN is
+		do
+			Result := internal_tabable_info.bit_test (2)
+		end
+
+	enable_tabable_from is
+		do
+			internal_tabable_info := internal_tabable_info.set_bit (True, 2)
+		end
+
+	disable_tabable_from is
+		do
+			internal_tabable_info := internal_tabable_info.set_bit (False, 2)
+		end
+
+	enable_tabable_to is
+		do
+			internal_tabable_info := internal_tabable_info.set_bit (True, 1)
+		end
+
+	disable_tabable_to is
+		do
+			internal_tabable_info := internal_tabable_info.set_bit (False, 1)
 		end
 
 feature {

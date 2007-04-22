@@ -14,12 +14,13 @@ inherit
 
 	ES_OBJECTS_GRID_MANAGER
 
-	EB_TOOL
+	EB_STONABLE_TOOL
 		redefine
 			menu_name,
 			pixmap,
 			show,
 			close,
+			internal_recycle,
 			mini_toolbar,
 			build_mini_toolbar,
 			build_docking_content
@@ -210,7 +211,7 @@ feature {NONE} -- Initialization
 			-- Build content for docking.
 
 		do
-			Precursor {EB_TOOL} (a_docking_manager)
+			Precursor {EB_STONABLE_TOOL} (a_docking_manager)
 			content.drop_actions.extend (agent on_element_drop)
 		end
 
@@ -273,6 +274,9 @@ feature -- Access
 	debugger_manager: EB_DEBUGGER_MANAGER
 			-- Manager in charge of all debugging operations.
 
+	stone: STONE
+			-- Not used.
+
 feature -- Change
 
 	set_debugger_manager (a_manager: like debugger_manager) is
@@ -306,7 +310,7 @@ feature -- Change
 	show is
 			-- Show tool
 		do
-			Precursor {EB_TOOL}
+			Precursor {EB_STONABLE_TOOL}
 			if watches_grid.is_displayed then
 				watches_grid.set_focus
 			end
@@ -1046,19 +1050,13 @@ feature {NONE} -- Event handling
 		local
 			expr_item: like watched_item_from
 		do
-			if expr.evaluation_disabled then
-				-- Nothing special
-			else
-				if debugger_manager.safe_application_is_stopped then
-					expr.evaluate
-				else
-					expr.set_unevaluated
-				end
-			end
 			if auto_expression_enabled and expr.error_occurred then
 				-- Do not display it
 			else
 				expr_item := new_watched_item_from_expression (expr, watches_grid)
+				if debugger_manager.safe_application_is_stopped then
+					expr_item.request_evaluation (True)
+				end
 				watched_items.extend (expr_item)
 
 				if expr_item /= Void and then expr_item.row /= Void then
@@ -1192,7 +1190,7 @@ feature -- Access
 			l_row := a_item.row
 			l_expr := a_item.expression
 			if l_expr.evaluation_disabled then
-				-- nothing special
+				--| nothing special
 			else
 				if debugger_manager.safe_application_is_stopped then
 					l_expr.evaluate
@@ -1414,11 +1412,6 @@ feature {NONE} -- Implementation
 						if l_item /= Void then
 							expr ?= l_item.expression
 							if expr.on_context then
-								if expr.evaluation_disabled then
-									expr.set_unevaluated
-								else
-									expr.evaluate
-								end
 								refresh_watched_item (l_item)
 							end
 						end

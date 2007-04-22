@@ -76,7 +76,6 @@ feature -- Properties
 			Result := false
 		end
 
-
 	has_associated_class: BOOLEAN is
 			-- Does Current have an associated class?
 		do
@@ -433,21 +432,12 @@ feature -- Conversion
 
 	to_type_set: TYPE_SET_A is
 			-- Create a type set containing one element which is `Current'.
-		local
-			l_extended_type: EXTENDED_TYPE_A
 		do
-			if is_extended then
-				l_extended_type ?= Current
-				check
-					l_extended_type_not_void:  l_extended_type /= Void
-				end
-			else
-				create l_extended_type.make (Current, Void)
-			end
-			create Result.make (3)
-			Result.extend (l_extended_type)
+			create Result.make (1)
+			Result.extend (create {EXTENDED_TYPE_A}.make (Current, Void))
+		ensure
+			to_type_set_not_void: Result /= Void
 		end
-
 
 feature {COMPILER_EXPORTER} -- Access
 

@@ -174,7 +174,11 @@ feature -- Basic operations
 					-- Set the title if a stone hasn't already been set by session manager.
 				a_window.set_title (new_title)
 			end
-			notify_observers (a_window, Notify_added_window)
+			if a_new_window then
+				notify_observers (a_window, Notify_added_window)
+			else
+				notify_observers (a_window, Notify_changed_window)
+			end
 			last_created_window := a_window
 
 				-- Show the window if not already shown
@@ -429,12 +433,6 @@ feature -- Actions on all windows
 			-- Refresh all the windows after a compilation
 		do
 			for_all (agent refresh_action)
-		end
-
-	refresh_commands is
-			-- Refresh all windows commands.
-		do
-			for_all (agent refresh_commands_action)
 		end
 
 	save_all is
@@ -693,6 +691,20 @@ feature -- Actions on all windows
 			if managed_windows.valid_index (l_index) then
 				managed_windows.go_i_th (l_index)
 			end
+		end
+
+feature {EB_SHORTCUT_MANAGER} -- Actions on all windows
+
+	refresh_commands is
+			-- Refresh all windows commands.
+		do
+			for_all (agent refresh_commands_action)
+		end
+
+	refresh_external_commands is
+			-- Only refresh external commands
+		do
+			for_all (agent refresh_external_commands_action)
 		end
 
 feature {EB_WINDOW, EB_DEVELOPMENT_WINDOW_BUILDER} -- Events
@@ -997,6 +1009,7 @@ feature -- Events
 			Finalize_project_cmd.disable_sensitive
 			terminate_c_compilation_cmd.enable_sensitive
 			for_all (agent c_compilation_start_action)
+			run_workbench_cmd.disable_sensitive
 			if process_manager.is_finalizing_running then
 				run_finalized_cmd.disable_sensitive
 			end
@@ -1009,8 +1022,8 @@ feature -- Events
 			Freeze_project_cmd.enable_sensitive
 			Finalize_project_cmd.enable_sensitive
 			terminate_c_compilation_cmd.disable_sensitive
-			run_finalized_cmd.enable_sensitive
 			for_all (agent c_compilation_stop_action)
+			run_workbench_cmd.enable_sensitive
 			run_finalized_cmd.enable_sensitive
 		end
 
@@ -1037,6 +1050,7 @@ feature -- Events
 					Finalize_project_cmd.disable_sensitive
 					Precompilation_cmd.enable_sensitive
 					Run_project_cmd.disable_sensitive
+					Run_workbench_cmd.disable_sensitive
 					Run_finalized_cmd.disable_sensitive
 					override_scan_cmd.disable_sensitive
 					discover_melt_cmd.disable_sensitive
@@ -1046,6 +1060,7 @@ feature -- Events
 					Finalize_project_cmd.enable_sensitive
 					Precompilation_cmd.disable_sensitive
 					Run_project_cmd.enable_sensitive
+					Run_workbench_cmd.enable_sensitive
 					Run_finalized_cmd.enable_sensitive
 					override_scan_cmd.enable_sensitive
 					discover_melt_cmd.enable_sensitive
@@ -1088,6 +1103,7 @@ feature -- Events
 			Export_cmd.disable_sensitive
 			Document_cmd.disable_sensitive
 			Run_project_cmd.disable_sensitive
+			Run_workbench_cmd.disable_sensitive
 			Run_finalized_cmd.disable_sensitive
 			override_scan_cmd.disable_sensitive
 			discover_melt_cmd.disable_sensitive
@@ -1135,9 +1151,15 @@ feature {NONE} -- Implementation
 		end
 
 	refresh_commands_action (a_window: EB_WINDOW)  is
-			-- Action to be performed on `item' in `refresh'.
+			-- Action to be performed on `item' in `refresh_all_commands'.
 		do
 			a_window.refresh_all_commands
+		end
+
+	refresh_external_commands_action (a_window: EB_WINDOW)  is
+			-- Action to be performed on `item' in `refresh_external_commands'.
+		do
+			a_window.refresh_external_commands
 		end
 
 	synchronize_breakpoints_action (a_window: EB_WINDOW) is

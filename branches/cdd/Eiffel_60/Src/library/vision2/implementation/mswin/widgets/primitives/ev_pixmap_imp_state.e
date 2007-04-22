@@ -277,6 +277,15 @@ feature -- Misc.
 			Result_not_void: Result /= Void
 		end
 
+	init_from_pixel_buffer (a_pixel_buffer: EV_PIXEL_BUFFER) is
+			-- Initialize from `a_pixel_buffer'
+		local
+			l_pixel_buffer: EV_PIXEL_BUFFER_IMP
+		do
+			l_pixel_buffer ?= a_pixel_buffer.implementation
+			l_pixel_buffer.draw_to_drawable (interface)
+		end
+
 feature -- Measurement
 
 	width: INTEGER is
@@ -373,6 +382,15 @@ feature {EV_POINTER_STYLE_IMP} -- Implementation
 				tmp_mask_bitmap.decrement_reference
 				tmp_mask_bitmap := Void
 			end
+		end
+
+feature {EV_ANY_I} -- Implementation
+
+	update_for_pick_and_drop (starting: BOOLEAN) is
+			-- Pick and drop status has changed so update appearance of
+			-- `Current' to reflect available targets.
+		do
+			-- Nothing to do here.
 		end
 
 feature {NONE} -- External

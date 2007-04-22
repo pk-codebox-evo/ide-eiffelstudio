@@ -183,12 +183,6 @@ feature {EB_SHARED_PREFERENCES, EB_DEVELOPMENT_WINDOW_SESSION_DATA,
 			Result := class_completion_preference.value
 		end
 
-	dock_tracking: BOOLEAN is
-			--
-		do
-			Result := dock_tracking_preference.value
-		end
-
 	last_browsed_cluster_directory: STRING is
 			--
 		do
@@ -198,6 +192,11 @@ feature {EB_SHARED_PREFERENCES, EB_DEVELOPMENT_WINDOW_SESSION_DATA,
 	context_unified_stone: BOOLEAN is
 		do
 			Result := context_unified_stone_preference.value
+		end
+
+	link_tools: BOOLEAN is
+		do
+			Result := link_tools_preference.value
 		end
 
 	graphical_output_disabled: BOOLEAN is
@@ -301,11 +300,11 @@ feature {EB_SHARED_PREFERENCES} -- Preference
 
 	class_completion_preference: BOOLEAN_PREFERENCE
 
-	dock_tracking_preference: BOOLEAN_PREFERENCE
-
 	last_browsed_cluster_directory_preference: STRING_PREFERENCE
 
 	context_unified_stone_preference: BOOLEAN_PREFERENCE
+
+	link_tools_preference: BOOLEAN_PREFERENCE
 
 	graphical_output_disabled_preference: BOOLEAN_PREFERENCE
 
@@ -390,7 +389,7 @@ feature {NONE} -- Preference Strings
 	height_string: STRING is "interface.development_window.height"
 	x_position_string: STRING is "interface.development_window.x_position"
 	y_position_string: STRING is "interface.development_window.y_position"
-	is_force_debug_mode_string: STRING is "interface.developement_window.is_force_debug_mode"
+	is_force_debug_mode_string: STRING is "interface.development_window.is_force_debug_mode"
 	is_maximized_string: STRING is "interface.development_window.is_maximized"
 	left_panel_use_explorer_style_string: STRING is "interface.development_window.left_panel_use_explorer_style"
 	left_panel_width_string: STRING is "interface.development_window.window_left_panel_width"
@@ -413,9 +412,9 @@ feature {NONE} -- Preference Strings
 	progress_bar_color_preference_string: STRING is "interface.development_window.progress_bar_color"
 	ctrl_right_click_receiver_string: STRING is "interface.development_window.ctrl_right_click_receiver"
 	class_completion_string: STRING is "interface.development_window.class_completion"
-	dock_tracking_string: STRING is "interface.development_window.dock_tracking"
 	last_browsed_cluster_directory_string: STRING is "interface.development_window.last_browsed_cluster_directory"
 	context_unified_stone_string: STRING is "interface.development_window.unified_stone"
+	link_tools_string: STRING is "interface.development_window.link_tools"
 	graphical_output_disabled_string: STRING is "interface.development_window.graphical_output_disabled"
 	use_animated_icons_string: STRING is "interface.development_window.use_animated_icons"
 	c_output_panel_prompted_string: STRING is "interface.development_window.c_output_panel_prompted"
@@ -460,9 +459,9 @@ feature {NONE} -- Implementation
 			ctrl_right_click_receiver_preference := l_manager.new_array_preference_value (l_manager, ctrl_right_click_receiver_string, <<"[new_tab_editor];new_window;current_editor;context;external">>)
 			ctrl_right_click_receiver_preference.set_is_choice (True)
 			class_completion_preference := l_manager.new_boolean_preference_value (l_manager, class_completion_string, True)
-			dock_tracking_preference := l_manager.new_boolean_preference_value (l_manager, dock_tracking_string, True)
 			last_browsed_cluster_directory_preference := l_manager.new_string_preference_value (l_manager, last_browsed_cluster_directory_string, "")
 			context_unified_stone_preference := l_manager.new_boolean_preference_value (l_manager, context_unified_stone_string, False)
+			link_tools_preference := l_manager.new_boolean_preference_value (l_manager, link_tools_string, True)
 			graphical_output_disabled_preference := l_manager.new_boolean_preference_value (l_manager, graphical_output_disabled_string, False)
 			use_animated_icons_preference := l_manager.new_boolean_preference_value (l_manager, use_animated_icons_string, True)
 			c_output_panel_prompted_preference := l_manager.new_boolean_preference_value (l_manager, c_output_panel_prompted_string, False)

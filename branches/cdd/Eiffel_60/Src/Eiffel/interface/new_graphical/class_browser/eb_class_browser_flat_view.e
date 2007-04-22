@@ -324,8 +324,8 @@ feature -- Access
 				create l_tool_bar
 				create l_tool_bar3
 				l_tool_bar.extend (create{EV_TOOL_BAR_SEPARATOR})
-				l_tool_bar.extend (show_tooltip_button)
 				l_tool_bar.extend (show_feature_from_any_button)
+				l_tool_bar.extend (show_tooltip_button)
 				control_tool_bar.set_padding (2)
 				control_tool_bar.extend (l_tool_bar)
 				control_tool_bar.disable_item_expand (l_tool_bar)
@@ -403,7 +403,7 @@ feature{NONE} -- Update
 			disable_force_multi_column_sorting
 			bind_grid
 			enable_auto_sort_order_change
-			try_auto_resize_grid (<<[150, 300, 1]>>)
+			try_auto_resize_grid (<<[150, 300, 1]>>, False)
 		end
 
 	bind_grid is
@@ -659,7 +659,9 @@ feature{NONE} -- Implementation
 	recycle_agents is
 			-- Recycle agents
 		do
-			show_feature_from_any_button.recycle
+			if show_feature_from_any_button_internal /= Void then
+				show_feature_from_any_button.recycle
+			end
 			Precursor {EB_CLASS_BROWSER_GRID_VIEW}
 		end
 

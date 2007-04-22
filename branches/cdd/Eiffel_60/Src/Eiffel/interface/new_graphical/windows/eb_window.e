@@ -244,6 +244,12 @@ feature -- Window management / Status Setting
 					cd.button (cd.ok).select_actions.extend (agent window_manager.try_to_destroy_window (Current))
 					cd.show_modal_to_window (window)
 				else
+					if Window_manager.development_windows_count > 1 and then
+						Eb_debugger_manager.debugging_window = l_window and then
+						Eb_debugger_manager.raised
+					then
+						Eb_debugger_manager.unraise
+					end
 					window_manager.try_to_destroy_window (Current)
 				end
 			end
@@ -259,6 +265,14 @@ feature -- Window management / Status Setting
 
 	refresh_all_commands is
 			-- Refresh all commands.
+		require
+			exists: not destroyed
+		do
+			-- | By default do nothing.
+		end
+
+	refresh_external_commands is
+			-- Refresh external commands.
 		require
 			exists: not destroyed
 		do

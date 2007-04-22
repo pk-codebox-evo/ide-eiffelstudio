@@ -67,7 +67,7 @@ feature {NONE} -- Initialization
 		require
 			exp /= Void
 		do
-			is_readonly := True
+			set_read_only (True)
 			make_with_expression (exp, g)
 		end
 
@@ -175,6 +175,13 @@ feature -- change properties
 			end
 		end
 
+feature -- Settings
+
+	set_read_only (b: like is_readonly) is
+		do
+			is_readonly := b
+		end
+
 feature -- Properties
 
 	is_readonly: BOOLEAN
@@ -200,7 +207,7 @@ feature -- Properties
 
 	object_spec_capacity: INTEGER is
 		do
-			Result := debugged_object_manager.special_object_capacity_at_address (object_address)
+			Result := debugger_manager.object_manager.special_object_capacity_at_address (object_address)
 		end
 
 feature -- Query
@@ -214,7 +221,7 @@ fixme ("find a smarter way to get a valid value")
 	sorted_attributes_values: DS_LIST [ABSTRACT_DEBUG_VALUE] is
 		do
 			if object_address /= Void then
-				Result := debugged_object_manager.sorted_attributes_at_address (object_address, object_spec_lower, object_spec_upper)
+				Result := debugger_manager.object_manager.sorted_attributes_at_address (object_address, object_spec_lower, object_spec_upper)
 			end
 		end
 
@@ -387,7 +394,8 @@ feature -- Graphical changes
 			r: EV_GRID_ROW
 		do
 			if
-				abutton = 1
+				not is_readonly
+				and then abutton = 1
 				and not ev_application.ctrl_pressed
 				and not ev_application.shift_pressed
 				and not ev_application.alt_pressed

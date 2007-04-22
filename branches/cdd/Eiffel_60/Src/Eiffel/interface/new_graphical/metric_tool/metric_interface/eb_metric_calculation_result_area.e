@@ -89,6 +89,13 @@ inherit
 			default_create
 		end
 
+	EB_DOCKING_NAMES
+		undefine
+			is_equal,
+			copy,
+			default_create
+		end
+
 create
 	make
 
@@ -103,6 +110,7 @@ feature {NONE} -- Initialization
 			create show_percentage_btn.make (preferences.metric_tool_data.display_percentage_for_ratio_preference)
 			create maximize_result_btn
 			create result_grid.make (a_tool.develop_window, tool_drop_actions (a_tool))
+			result_grid.enable_use_fixed_fonts
 			maximize_result_preference_change_agent := agent on_maximize_result_preference_change
 			preferences.metric_tool_data.metric_information_in_result_panel_preference.change_actions.extend (maximize_result_preference_change_agent)
 			set_metric_tool (a_tool)
@@ -123,7 +131,6 @@ feature {NONE} -- Initialization
 		local
 			l_text: EV_TEXT_FIELD
 			l_font: EV_FONT
-			l_grid_support: like new_grid_support
 			l_maximized: BOOLEAN
 		do
 				-- Setup `input_grid'.			
@@ -135,8 +142,8 @@ feature {NONE} -- Initialization
 			input_grid.set_focused_selection_color (editor_preferences.selection_background_color)
 			input_grid_area.extend (input_grid)
 			input_grid.enable_selection_on_single_button_click
-			l_grid_support := new_grid_support (input_grid)
-			l_grid_support.enable_grid_item_pnd_support
+			grid_support := new_grid_support (input_grid)
+			grid_support.enable_grid_item_pnd_support
 
 			result_grid_area.extend (result_grid.widget)
 
@@ -182,6 +189,10 @@ feature {NONE} -- Initialization
 			l_maximized := preferences.metric_tool_data.metric_information_in_result_panel_preference.value
 			is_maximize_set := not l_maximized
 			set_maximize_status (l_maximized)
+
+			clear_result_btn.set_tooltip (metric_names.t_clear_result)
+			clear_result_btn.set_pixmap (pixmaps.icon_pixmaps.general_reset_icon)
+			clear_result_btn.select_actions.extend (agent on_clear_detailed_result)
 		ensure then
 			input_grid_attached: input_grid /= Void
 		end
@@ -195,9 +206,6 @@ feature -- Result loading
 			a_metric_attached: a_metric /= Void
 			a_input_attached: a_input /= Void
 		do
-			if domain /= Void then
-				domain.wipe_out
-			end
 			if a_metric.is_ratio then
 				ratio_btn_toolbar.show
 			else
@@ -263,17 +271,14 @@ feature -- Result loading
 
 feature{NONE} -- Implementation/Access
 
+	grid_support: like new_grid_support
+			-- Grid support.
+
 	input_grid: ES_GRID
 			-- Grid to display input
 
 	result_grid: EB_CLASS_BROWSER_DOMAIN_VIEW
 			-- Result grid
-
-	grid_wrapper: EVS_SEARCHABLE_COMPONENT [EB_METRIC_RESULT_ROW]
-			-- `grid' wrapper
-
-	domain: DS_LINKED_LIST [EB_METRIC_RESULT_ROW]
-			-- Domain to be displayed in Current
 
 	metric_panel: EB_METRIC_RESULT_AREA
 			-- Metric panel to which current is attached
@@ -358,6 +363,18 @@ feature{NONE} -- Implementation
 			end
 		end
 
+	on_clear_detailed_result is
+			-- Action to be performed to clear detailed result
+		local
+			l_domain: QL_DOMAIN
+		do
+			l_domain ?= result_grid.data
+			if l_domain /= Void then
+				l_domain.wipe_out
+				result_grid.update (Void, l_domain)
+			end
+		end
+
 feature{NONE} -- Implementation
 
 	set_maximize_status (b: BOOLEAN) is
@@ -367,11 +384,13 @@ feature{NONE} -- Implementation
 				is_maximize_set := b
 				if is_maximize_set then
 					maximize_result_btn.set_pixmap (pixmaps.mini_pixmaps.toolbar_restore_icon)
+					maximize_result_btn.set_tooltip (tooltip_mini_toolbar_restore)
 					metric_area.hide
 					input_area.hide
 					result_lbl.show
 				else
 					maximize_result_btn.set_pixmap (pixmaps.mini_pixmaps.toolbar_maximize_icon)
+					maximize_result_btn.set_tooltip (tooltip_mini_toolbar_maximize)
 					metric_area.show
 					input_area.show
 					result_lbl.hide
@@ -391,6 +410,9 @@ feature {NONE} -- Recycle
 		do
 			preferences.metric_tool_data.metric_information_in_result_panel_preference.change_actions.prune_all (maximize_result_preference_change_agent)
 			show_percentage_btn.recycle
+			result_grid.recycle
+			grid_support.desynchronize_color_or_font_change_with_editor
+			grid_support.desynchronize_scroll_behavior_with_editor
 		end
 
 invariant

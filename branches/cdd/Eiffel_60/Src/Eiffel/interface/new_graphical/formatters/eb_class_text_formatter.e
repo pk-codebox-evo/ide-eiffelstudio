@@ -12,12 +12,16 @@ deferred class
 inherit
 	EB_CLASS_INFO_FORMATTER
 		undefine
-			internal_recycle
+			internal_recycle,
+			is_editor_formatter
 		redefine
-			new_sd_button
+			new_sd_button,
+			force_stone
 		end
 
 	EB_EDITOR_FORMATTER
+		undefine
+			force_stone
 		redefine
 			new_sd_button
 		end
@@ -157,36 +161,44 @@ feature -- Status setting
 				associated_class := Void
 				class_cmd := Void
 				reset_display
-				if
-					selected and then
-					not widget.is_displayed
-				then
-					if widget_owner /= Void then
-						widget_owner.set_widget (widget)
-					end
-					display_header
-				end
+				ensure_display_in_widget_owner
+			end
+		end
+
+	force_stone (a_stone: STONE) is
+			-- Directly set `stone' with `a_stone'
+		local
+			l_stone: CLASSC_STONE
+		do
+			Precursor (a_stone)
+			l_stone ?= a_stone
+			if l_stone /= Void then
+				set_associated_class (l_stone.e_class)
+			end
+		end
+
+	set_associated_class (a_class: CLASS_C) is
+			-- Set `associated_class' with `a_class'.
+		do
+			if a_class = Void or else not a_class.has_feature_table then
+				associated_class := Void
+			else
+				associated_class := a_class
 			end
 		end
 
 	set_class (a_class: CLASS_C) is
 			-- Associate current formatter with `a_class'.
 		do
-			associated_class := a_class
-			if a_class = Void or else not a_class.has_feature_table then
-				class_cmd := Void
-				associated_class := Void
-			else
+			set_associated_class (a_class)
+			if associated_class /= Void then
 				create_class_cmd
+			else
+				class_cmd := Void
 			end
 			must_format := True
 			format
-			if selected then
-				if widget_owner /= Void then
-					widget_owner.set_widget (widget)
-				end
-				display_header
-			end
+			ensure_display_in_widget_owner
 		ensure
 			class_set: (a_class /= Void and then a_class.has_feature_table) implies (a_class = associated_class)
 			cmd_created_if_possible: (a_class = Void or else not a_class.has_feature_table) = (class_cmd = Void)

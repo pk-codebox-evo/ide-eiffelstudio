@@ -115,7 +115,7 @@ feature {NONE} -- Initialization
 				-- Setup basic metric definition area.
 			create metric_definer.make (metric_tool, Current, new_mode, class_unit)
 			metric_definer.change_actions_internal.extend (agent on_definition_change)
-			metric_definer.hide_name_area
+			metric_definer.name_area.hide
 			criterion_area.extend (metric_definer.widget)
 
 				-- Initialize unit list.
@@ -208,6 +208,7 @@ feature {NONE} -- Initialization
 			percentage_tool_bar.extend (show_percent_btn)
 			percentage_tool_bar.wipe_out
 			send_to_history_btn.disable_sensitive
+			set_is_reload_metric_definer_safe (True)
 		end
 
 feature -- Status report
@@ -450,8 +451,7 @@ feature -- Actions
 			l_current_metric := current_selected_metric
 			if is_using_quick_metric then
 				if l_current_metric /= Void then
-					metric_tool.go_to_definition (l_current_metric, True)
-					uuid_internal := Void
+					metric_tool.go_to_definition (l_current_metric.identical_new_instance, True)
 				end
 			else
 				if
@@ -481,7 +481,7 @@ feature -- Actions
 			metric_definer.set_mode (metric_definer.new_mode)
 			l_unit ?= unit_combo.selected_item.data
 			check l_unit /= Void end
-			metric_definer.initialize_editor (Void, metric_definer.edit_mode, l_unit, uuid)
+			metric_definer.initialize_editor (Void, metric_definer.edit_mode, l_unit)
 		end
 
 	on_quick_metric_button_pressed (a_metric: EB_METRIC_BASIC) is
@@ -498,7 +498,6 @@ feature -- Actions
 					unit_combo.select_actions.block
 					unit_combo.retrieve_item_by_data (a_metric.unit, False).enable_select
 					unit_combo.select_actions.resume
-					metric_definer.set_uuid (uuid)
 					metric_definer.set_unit (a_metric.unit)
 					metric_definer.set_mode (metric_definer.new_mode)
 					metric_definer.load_criterion (a_metric.identical_new_instance.criteria)
@@ -516,7 +515,9 @@ feature -- Actions
 	on_definition_change (a_criterion: EB_METRIC_CRITERION) is
 			-- Action to be performed when definition in `metric_definer' change.
 		do
+			set_is_reload_metric_definer_safe (False)
 			on_metric_selected (quick_metric (a_criterion, True))
+			set_is_reload_metric_definer_safe (True)
 			metric_definer.resize_criterion_grid_column (1, 0)
 			metric_definer.resize_criterion_grid_column (2, 0)
 		end
@@ -567,20 +568,6 @@ feature {NONE} -- Implementation/Data
 	domain_generator_internal: QL_DOMAIN_GENERATOR
 			-- Domain generator used to setup metric evaluation
 
-	uuid: UUID is
-			-- Current UUID used for quick metric
-		local
-			l_uuid_generator: UUID_GENERATOR
-		do
-			if uuid_internal = Void then
-				create l_uuid_generator
-				uuid_internal := l_uuid_generator.generate_uuid
-			end
-			Result := uuid_internal
-		ensure
-			result_attached: Result /= Void
-		end
-
 	detailed_result_btn: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON
 	filter_result_btn: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON
 	auto_go_to_result_btn: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON
@@ -592,9 +579,6 @@ feature {NONE} -- Implementation/Data
 
 	on_process_gui_agent: PROCEDURE [ANY, TUPLE [a_item: QL_ITEM]]
 			-- Agent of `process_gui'
-
-	uuid_internal: like uuid
-			-- Implementation of `uuid'	
 
 	domain_selector: EB_METRIC_DOMAIN_SELECTOR
 			-- Domain selector
@@ -615,7 +599,7 @@ feature {NONE} -- Implementation/Data
 		do
 			l_unit ?= unit_combo.selected_item.data
 			check l_unit /= Void end
-			create l_metric.make (metric_manager.next_metric_name_with_unit (l_unit), l_unit, uuid)
+			create l_metric.make (metric_manager.next_metric_name_with_unit (l_unit), l_unit)
 			if a_appliable then
 				l_metric.set_criteria (a_criterion)
 			else
@@ -848,12 +832,6 @@ feature{NONE} -- Actions
 			update_ui
 		end
 
-	on_filter_result_changed is
-			-- Action to be performed when selection status of `detailed_result_btn' changes
-		do
-			preferences.metric_tool_data.keep_metric_detailed_result_preference.set_value (detailed_result_btn.is_selected)
-		end
-
 feature-- UI Update
 
 	current_selected_metric: EB_METRIC is
@@ -894,6 +872,17 @@ feature-- UI Update
 			-- Is metric runnable?
 		do
 			Result := is_selected_metric_valid and then is_selected_input_domain_valid
+		end
+
+	is_reload_metric_definer_safe: BOOLEAN
+			-- Is it safe to reload `metric_definer'?
+
+	set_is_reload_metric_definer_safe (b: BOOLEAN) is
+			-- Set `is_reload_metric_definer_safe' with `b'.
+		do
+			is_reload_metric_definer_safe := b
+		ensure
+			is_reload_metric_definer_safe_set: is_reload_metric_definer_safe = b
 		end
 
 	update_ui is
@@ -945,11 +934,13 @@ feature-- UI Update
 						metric_definition_area.enable_sensitive
 						stop_metric_btn.disable_sensitive
 						if metric_definer.is_editor_initialized then
-							metric_definer.change_actions.block
-							metric_definer.change_actions_internal.block
-							metric_definer.load_metric (metric_definer.metric, False)
-							metric_definer.change_actions_internal.resume
-							metric_definer.change_actions.resume
+							if is_reload_metric_definer_safe then
+								metric_definer.change_actions.block
+								metric_definer.change_actions_internal.block
+								metric_definer.load_metric (metric_definer.metric, False)
+								metric_definer.change_actions_internal.resume
+								metric_definer.change_actions.resume
+							end
 						end
 						l_metric := current_selected_metric
 						if l_metric /= Void and then l_metric.is_ratio then

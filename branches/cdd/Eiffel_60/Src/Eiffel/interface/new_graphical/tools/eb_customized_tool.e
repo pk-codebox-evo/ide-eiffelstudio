@@ -1,6 +1,7 @@
 indexing
 	description: "Customized tool"
-	author: ""
+	legal: "See notice at end of class."
+	status: "See notice at end of class."
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -31,21 +32,12 @@ feature{NONE} -- Initialization
 			a_pixmap_location_attached: a_pixmap_location /= Void
 			a_handlers_attached: a_handlers /= Void
 		do
+			develop_window := a_develop_window
 			set_id (a_id)
 			set_title (a_title)
 			set_pixmap_location (a_pixmap_location)
 			set_stone_handlers (a_handlers)
-			develop_window := a_develop_window
 			build_interface
-		end
-
-
-	make_with_tool (a_tool: EB_DEVELOPMENT_WINDOW) is
-			-- Initialize `development_window' with `a_too'.
-		do
-			initialize
-			fill_in
-			on_select
 		end
 
 feature -- Access
@@ -114,14 +106,6 @@ feature -- Access
 	stone_handlers: HASH_TABLE [STRING, STRING]
 			-- Stone handlers [tool_id, stone_name]
 
-	set_stone_handlers (a_handlers: like stone_handlers) is
-			-- Set `stone_handlers' with `a_handlers'.
-		require
-			a_handlers_attached: a_handlers /= Void
-		do
-			stone_handlers := a_handlers.twin
-		end
-
 feature -- Status report
 
 	is_customized_tool: BOOLEAN is
@@ -173,15 +157,23 @@ feature -- Setting
 			-- Set `st' in the stone manager and pop up the feature view if it is a feature stone.
 		local
 			l_tool_id: STRING
+			l_tool: EB_STONABLE_TOOL
 		do
 			l_tool_id := suitable_tool_for_stone (st)
 			if l_tool_id /= Void then
 				develop_window.tools.show_tool_by_id (l_tool_id)
+			end
+			if develop_window.unified_stone then
+				develop_window.set_stone (st)
+			elseif develop_window.link_tools then
 				develop_window.tools.set_stone (st)
 			else
-				develop_window.tools.set_stone (st)
-				show
-				set_focus
+				if l_tool_id /= Void then
+					l_tool ?= develop_window.tools.tool_by_id (l_tool_id)
+					if l_tool /= Void then
+						l_tool.set_stone (st)
+					end
+				end
 			end
 		end
 
@@ -194,6 +186,7 @@ feature -- Setting
 			if l_stone = Void or else stone = Void or else not stone.same_as (l_stone) then
 					-- Set the stones.
 				set_last_stone (l_stone)
+				develop_window.tools.set_last_stone (last_stone)
 			end
 			if widget.is_displayed or else is_auto_hide then
 				force_last_stone
@@ -238,6 +231,14 @@ feature -- Setting
 			is_pixmap_loaded := b
 		ensure
 			is_pixmap_loaded_set: is_pixmap_loaded = b
+		end
+
+	set_stone_handlers (a_handlers: like stone_handlers) is
+			-- Set `stone_handlers' with `a_handlers'.
+		require
+			a_handlers_attached: a_handlers /= Void
+		do
+			stone_handlers := a_handlers.twin
 		end
 
 feature{NONE} -- Implementation/Data
@@ -359,6 +360,38 @@ feature{NONE} -- Stone testers
 
 invariant
 	id_attached: id /= Void
+
+indexing
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
+	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
+	licensing_options:	"http://www.eiffel.com/licensing"
+	copying: "[
+			This file is part of Eiffel Software's Eiffel Development Environment.
+
+			Eiffel Software's Eiffel Development Environment is free
+			software; you can redistribute it and/or modify it under
+			the terms of the GNU General Public License as published
+			by the Free Software Foundation, version 2 of the License
+			(available at the URL listed under "license" above).
+
+			Eiffel Software's Eiffel Development Environment is
+			distributed in the hope that it will be useful,	but
+			WITHOUT ANY WARRANTY; without even the implied warranty
+			of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+			See the	GNU General Public License for more details.
+
+			You should have received a copy of the GNU General Public
+			License along with Eiffel Software's Eiffel Development
+			Environment; if not, write to the Free Software Foundation,
+			Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
+		]"
+	source: "[
+			 Eiffel Software
+			 356 Storke Road, Goleta, CA 93117 USA
+			 Telephone 805-685-1006, Fax 805-685-6869
+			 Website http://www.eiffel.com
+			 Customer support http://support.eiffel.com
+		]"
 
 end
 

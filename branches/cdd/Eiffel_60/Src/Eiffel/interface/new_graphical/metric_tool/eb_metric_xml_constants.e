@@ -45,7 +45,6 @@ feature{NONE} -- Attribute constants
 	at_unit: INTEGER is 1001
 	at_numerator: INTEGER is 1002
 	at_denominator: INTEGER is 1003
-	at_denominator_scope: INTEGER is 1004
 	at_negation: INTEGER is 1005
 	at_case_sensitive: INTEGER is 1006
 	at_regular_expression: INTEGER is 1007
@@ -69,6 +68,7 @@ feature{NONE} -- Attribute constants
 	at_relation: INTEGER is 1025
 	at_use_external_delayed: INTEGER is 1026
 	at_location: INTEGER is 1027
+	at_matching_strategy: INTEGER is 1028
 
 feature{NONE} -- Text
 
@@ -94,7 +94,6 @@ feature{NONE} -- Text
 	n_unit: STRING is "unit"
 	n_numerator: STRING is "numerator"
 	n_denominator: STRING is "denominator"
-	n_denominator_scope: STRING is "denominator_scope"
 	n_negation: STRING is "negation"
 	n_case_sensitive: STRING is "case_sensitive"
 	n_regular_expression: STRING is "regular_expression"
@@ -134,7 +133,29 @@ feature{NONE} -- Text
 	n_relation: STRING is "relation"
 	n_metric_name: STRING is "metric_name"
 	n_use_external_delayed: STRING is "use_external_delayed"
-	n_location: STRING is "location";
+	n_location: STRING is "location"
+	n_matching_strategy: STRING is "matching_strategy"
+
+feature -- Names of matching strategies
+
+	identity_matching_strategy_name: STRING is "identity"
+	containing_matching_strategy_name: STRING is "containing"
+	wildcard_matching_strategy_name: STRING is "wildcard"
+	regexp_matching_strategy_name: STRING is "regular expression";
+
+	matching_strategy_table: HASH_TABLE [INTEGER, STRING] is
+			-- Table of matching strategies.
+			-- [strategy id, strategy name]
+			-- strategy name is in lower case.
+		once
+			create Result.make (4)
+			Result.put ({QL_NAME_CRITERION}.identity_matching_strategy, identity_matching_strategy_name)
+			Result.put ({QL_NAME_CRITERION}.containing_matching_strategy, containing_matching_strategy_name)
+			Result.put ({QL_NAME_CRITERION}.wildcard_matching_strategy, wildcard_matching_strategy_name)
+			Result.put ({QL_NAME_CRITERION}.regular_expression_matching_strategy, regexp_matching_strategy_name)
+		ensure
+			result_attached: Result /= Void
+		end
 
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"

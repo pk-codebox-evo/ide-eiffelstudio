@@ -18,8 +18,7 @@ inherit
 			copy,
 			default_create
 		redefine
-			metric,
-			is_basic_metric_editor
+			metric
 		end
 
 	EB_CONSTANTS
@@ -142,6 +141,13 @@ feature {NONE} -- Initialization
 			combination_grid.register_shortcut (del_key_shortcut, agent on_remove_criterion)
 			combination_grid.register_shortcut (and_indent_shortcut, agent on_indent (True))
 			combination_grid.register_shortcut (or_indent_shortcut, agent on_indent (False))
+			combination_grid.item_select_actions.extend (agent on_item_selected)
+			combination_grid.item_deselect_actions.extend (agent on_item_deselected)
+			indent_and_btn.disable_sensitive
+			indent_or_btn.disable_sensitive
+			remove_criterion_btn.disable_sensitive
+			up_btn.disable_sensitive
+			down_btn.disable_sensitive
 
 			up_btn.set_tooltip (metric_names.f_move_row_up.as_string_32 + " (" + move_row_up_shortcut.out + ")")
 			down_btn.set_tooltip (metric_names.f_move_row_down.as_string_32 + " (" + move_row_down_shortcut.out + ")")
@@ -151,25 +157,6 @@ feature {NONE} -- Initialization
 
 			criterion_lbl.set_text (metric_names.t_metric_criterion_definition)
 			attach_non_editable_warning_to_text (metric_names.t_text_not_editable, expression_text, metric_tool_window)
-
-			add_current_target_item_btn.set_pixmap (pixmaps.icon_pixmaps.metric_domain_application_icon)
-			add_current_target_item_btn.set_tooltip (metric_names.f_application_scope)
-			add_current_target_item_btn.select_actions.extend (agent on_add_domain_item (agent new_current_application_target_domain_item))
-
-			add_input_domain_item_btn.set_pixmap (pixmaps.icon_pixmaps.metric_domain_delayed_icon)
-			add_input_domain_item_btn.set_tooltip (metric_names.f_delayed_scope)
-			add_input_domain_item_btn.select_actions.extend (agent on_add_domain_item (agent new_input_domain_item))
-
-			add_delayed_domain_item_btn.set_pixmap (pixmaps.icon_pixmaps.metric_domain_delayed_icon)
-			add_delayed_domain_item_btn.set_tooltip (metric_names.f_use_delayed_scope)
-			add_delayed_domain_item_btn.select_actions.extend (agent on_add_domain_item (agent new_delayed_domain_item))
-
-			clear_domain_btn.set_pixmap (pixmaps.icon_pixmaps.general_remove_icon)
-			clear_domain_btn.set_tooltip (metric_names.f_clear_defined_domain)
-			clear_domain_btn.select_actions.extend (agent on_clear_defined_domain)
-
-			combination_grid.item_select_actions.extend (agent on_grid_item_selected)
-			quick_domain_item_tool_bar.disable_sensitive
 		ensure then
 			del_key_shortcut_attached: del_key_shortcut /= Void
 			ctrl_up_shortcut_attached: move_row_up_shortcut /= Void
@@ -178,24 +165,13 @@ feature {NONE} -- Initialization
 			alt_right_shortcut_attached: or_indent_shortcut /= Void
 		end
 
-feature -- Status report
-
-	is_basic_metric_editor: BOOLEAN is True
-			-- Is current a basic metric editor?
-
 feature -- Setting
 
 	set_mode (a_mode: INTEGER) is
 			-- Set `mode' with `a_mode'.
 		do
 			mode := a_mode
-			if mode = readonly_mode then
-				remove_criterion_btn.disable_sensitive
-				remove_all_criterion_btn.disable_sensitive
-			else
-				remove_criterion_btn.enable_sensitive
-				remove_all_criterion_btn.enable_sensitive
-			end
+			synchronize_button_status
 		end
 
 	load_metric_definition (a_metric: like metric) is
@@ -255,7 +231,7 @@ feature -- Access
 	metric: EB_METRIC_BASIC is
 			-- Metric in current editor
 		do
-			create Result.make (name_area.name, unit, uuid)
+			create Result.make (name_area.name, unit)
 			Result.set_description (name_area.description)
 			Result.set_criteria (combination_grid.criterion)
 		end
@@ -364,17 +340,6 @@ feature{NONE} -- Actions
 			on_definition_change
 		end
 
-	on_grid_item_selected (a_item: EV_GRID_ITEM) is
-			-- Agent to be performed when `a_item' in `combination_grid' is selected
-		do
-			current_selected_grid_domain_item ?= a_item
-			if current_selected_grid_domain_item /= Void then
-				quick_domain_item_tool_bar.enable_sensitive
-			else
-				quick_domain_item_tool_bar.disable_sensitive
-			end
-		end
-
 	on_add_domain_item (a_domain_item_retrieval_agent: FUNCTION [ANY, TUPLE, EB_METRIC_DOMAIN_ITEM]) is
 			-- Action to be performed to add domain item retrieved from `a_domain_item_retrieval_agent'
 			-- into current selected domain grid item
@@ -403,13 +368,56 @@ feature{NONE} -- Actions
 			end
 		end
 
-feature{NONE} -- Implementation/Access
+	on_item_selected (a_item: EV_GRID_ITEM) is
+			-- Action to be performed when `a_item' is selected.
+		do
+			synchronize_button_status
+		end
+
+	on_item_deselected (a_item: EV_GRID_ITEM) is
+			-- Action to be performed when `a_item' is deselected.
+		do
+			synchronize_button_status
+		end
+
+feature{NONE} -- Implementation
 
 	combination_grid: EB_METRIC_CRITERION_GRID
 			-- Criterion combination grid
 
 	current_selected_grid_domain_item: EB_METRIC_GRID_DOMAIN_ITEM [ANY]
 			-- Current selected grid domain item
+
+	synchronize_button_status is
+			-- Synchronize button status
+		local
+			l_criterion_row: EB_METRIC_CRITERION_ROW
+			l_items: LIST [EV_GRID_ITEM]
+			l_item: EV_GRID_ITEM
+			l_item_selected: BOOLEAN
+		do
+			if mode /= readonly_mode then
+				l_items := combination_grid.selected_items
+				if l_items.count = 1 then
+					l_item := l_items.first
+					l_criterion_row ?= l_item.row.data
+					l_item_selected := l_criterion_row /= Void and then not l_criterion_row.is_empty_row
+				end
+			end
+			if l_item_selected then
+				indent_and_btn.enable_sensitive
+				indent_or_btn.enable_sensitive
+				remove_criterion_btn.enable_sensitive
+				up_btn.enable_sensitive
+				down_btn.enable_sensitive
+			else
+				indent_and_btn.disable_sensitive
+				indent_or_btn.disable_sensitive
+				remove_criterion_btn.disable_sensitive
+				up_btn.disable_sensitive
+				down_btn.disable_sensitive
+			end
+		end
 
 feature -- Key shortcuts
 

@@ -204,6 +204,7 @@ feature -- Status setting
 			-- Set `show_all_feedback_indicator'.
 		do
 			show_all_feedback_indicator_cell.put (a_bool)
+			is_set_show_all_feedback_indicator_called.put (True)
 		ensure
 			set: show_all_feedback_indicator = a_bool
 		end
@@ -220,6 +221,7 @@ feature -- Status setting
 			-- Set `show_tab_stub_text_cell' with `a_bool'
 		do
 			show_tab_stub_text_cell.put (a_bool)
+			is_set_show_all_feedback_indicator_called.put (True)
 		ensure
 			set: show_all_tab_stub_text =  a_bool
 		end
@@ -426,6 +428,13 @@ feature -- Constants
 			end
 		end
 
+	Notebook_tab_maximum_size: INTEGER is
+			-- Maximum size of a notebook tab.
+			-- If the title on the tab would exceed this size, it is cropped.
+		do
+			Result := tool_bar_font.width * 35
+		end
+
 	Zone_minmum_width: INTEGER is
 			-- Minmum width of a zone.
 		once
@@ -480,7 +489,7 @@ feature -- Constants
 			Result := (title_bar_height / 2 - tool_bar_font.height / 2).rounded
 		end
 
-	Padding_width: INTEGER is 6
+	Padding_width: INTEGER is 4
 			-- Padding width used by whold system.
 
 	Feedback_tab_width: INTEGER is 60
@@ -519,6 +528,22 @@ feature {SD_DOCKING_MANAGER} -- Implementation
 			-- All docking managers.
 		once
 			create Result.make (1)
+		ensure
+			not_void: Result /= Void
+		end
+
+	is_set_show_all_feedback_indicator_called: CELL [BOOLEAN] is
+			-- If `set_show_all_feedback_indicator' has been called?
+		once
+			create Result
+		ensure
+			not_void: Result /= Void
+		end
+
+	is_set_show_tab_stub_text_called: CELL [BOOLEAN] is
+			-- If `set_show_tab_stub_text' has been called?
+		once
+			create Result
 		ensure
 			not_void: Result /= Void
 		end

@@ -33,6 +33,7 @@ feature{NONE} -- Initialization
 			agent_table.put (agent new_name_is_criterion, c_name_is)
 			agent_table.put (agent new_text_contain_criterion, c_text_contain)
 			agent_table.put (agent new_value_criterion, c_value_of_metric_is)
+			agent_table.put (agent new_is_implementation_comment_criterion, c_is_implementation_comment)
 
 			create name_table.make (10)
 			name_table.put (c_false, query_language_names.ql_cri_false)
@@ -43,6 +44,7 @@ feature{NONE} -- Initialization
 			name_table.put (c_name_is, query_language_names.ql_cri_name_is)
 			name_table.put (c_text_contain, query_language_names.ql_cri_text_contain)
 			name_table.put (c_value_of_metric_is, query_language_names.ql_cri_value_of_metric_is)
+			name_table.put (c_is_implementation_comment, query_language_names.ql_cri_is_implementation_comment)
 		end
 
 feature{NONE} -- Implementation
@@ -98,22 +100,22 @@ feature{NONE} -- New criterion
 			result_attached: Result /= Void
 		end
 
-	new_name_is_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_LINE_NAME_IS_CRI is
+	new_name_is_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_LINE_NAME_IS_CRI is
 			-- New {QL_LINE_NAME_IS_CRI} criterion.
 		require
 			a_name_attached: a_name /= Void
 		do
-			create Result.make_with_setting (a_name, a_case_sensitive, a_identical)
+			create Result.make_with_setting (a_name, a_case_sensitive, a_matching_strategy)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_text_contain_criterion (a_text: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_LINE_TEXT_CONTAIN_CRI is
+	new_text_contain_criterion (a_text: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_LINE_TEXT_CONTAIN_CRI is
 			-- New {QL_LINE_TEXT_CONTAIN_CRI} criterion.
 		require
 			a_text_attached: a_text /= Void
 		do
-			create Result.make_with_setting (a_text, a_case_sensitive, a_identical)
+			create Result.make_with_setting (a_text, a_case_sensitive, a_matching_strategy)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -126,6 +128,15 @@ feature{NONE} -- New criterion
 			create Result.make (agent value_criterion_evalaute_agent ({QL_LINE}?, a_evaluate_value_func), False)
 		end
 
+	new_is_implementation_comment_criterion: QL_LINE_IS_COMMENT_CRI is
+			-- New implementation comment criterion
+		do
+			create Result
+			Result.set_is_for_implementation_comment (True)
+		ensure
+			result_attached: Result /= Void
+		end
+
 feature -- Criterion index
 
 	c_false: INTEGER is 1
@@ -136,6 +147,7 @@ feature -- Criterion index
 	c_name_is: INTEGER is 6
 	c_text_contain: INTEGER is 7
 	c_value_of_metric_is: INTEGER is 8
+	c_is_implementation_comment: INTEGER is 9
 
 feature{NONE} -- Implementation
 

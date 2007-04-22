@@ -27,17 +27,15 @@ feature{NONE} -- Initialization
 
 feature -- Basic operation
 
-	initialize_editor (a_metric: like metric; a_mode: INTEGER; a_unit: QL_METRIC_UNIT; a_uuid: like uuid) is
+	initialize_editor (a_metric: like metric; a_mode: INTEGER; a_unit: QL_METRIC_UNIT) is
 			-- Initialize current editor using `a_metric', `mode' with `a_mode' and `unit'with `a_unit'.
 		require
 			a_unit_attached: a_unit /= Void
 			a_mode_valid: is_mode_valid (a_mode)
-			a_uuid_attached: a_uuid /= Void
 		do
 			is_editor_initialized := True
 			set_unit (a_unit)
 			set_mode (a_mode)
-			set_uuid (a_uuid)
 			load_metric (a_metric, a_mode = readonly_mode)
 		ensure
 			initialized: is_editor_initialized
@@ -103,28 +101,6 @@ feature -- Setting
 		deferred
 		end
 
-	show_name_area is
-			-- Show `name_area'.
-		do
-			name_area.show
-		end
-
-	hide_name_area is
-			-- Hide `name_area'.
-		do
-			name_area.hide
-		end
-
-	set_uuid (a_uuid: like uuid) is
-			-- Set `uuid' with `a_uuid'.
-		require
-			a_uuid_attached: a_uuid /= Void
-		do
-			uuid := a_uuid
-		ensure
-			uuid_set: uuid = a_uuid
-		end
-
 	check_validity_for_metric is
 			-- Check validity for `metric'.
 		local
@@ -178,11 +154,6 @@ feature -- Access
 				l_ver.extend (name_area)
 				l_ver.disable_item_expand (name_area)
 				l_ver.extend (definition_area_widget)
-				if is_ratio_metric_editor then
-					l_ver.disable_item_expand (definition_area_widget)
-				else
-					l_ver.enable_item_expand (definition_area_widget)
-				end
 				l_ver.extend (status_area)
 				l_ver.disable_item_expand (status_area)
 				widget_internal := l_ver
@@ -246,9 +217,6 @@ feature -- Access
 	change_actions: ACTION_SEQUENCE [TUPLE]
 			-- Actions to be performed when `is_definition_changes' or `is_description_changes'
 
-	uuid: UUID
-			-- UUID of current edited metric
-
 feature -- Actions
 
 	on_definition_change is
@@ -303,21 +271,6 @@ feature -- Status report
 			-- Is criterion of Current definable?
 		do
 			Result := unit.scope /= Void
-		end
-
-	is_basic_metric_editor: BOOLEAN is
-			-- Is current a basic metric editor?
-		do
-		end
-
-	is_linear_metric_editor: BOOLEAN is
-			-- Is current a linear metric editor?
-		do
-		end
-
-	is_ratio_metric_editor: BOOLEAN is
-			-- Is current a ratio metric editor?
-		do
 		end
 
 	is_loading_metric: BOOLEAN

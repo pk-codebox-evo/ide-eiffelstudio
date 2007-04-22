@@ -38,6 +38,8 @@ feature -- Access
 			Result := internal_pebble_positioning_enabled
 		end
 
+	configurable_target_menu_handler: PROCEDURE [ANY, TUPLE [menu: EV_MENU; target_list: ARRAYED_LIST [EV_PND_TARGET_DATA]; source: EV_PICK_AND_DROPABLE; source_pebble: ANY]]
+
 	accept_cursor: EV_POINTER_STYLE
 			-- Accept cursor set by user.
 			-- To be displayed when the screen pointer is over a target that accepts
@@ -158,6 +160,12 @@ feature -- Status setting
 			mode_is_target_menu: mode_is_configurable_target_menu
 		end
 
+	set_configurable_target_menu_handler (a_handler: like configurable_target_menu_handler)
+			-- Set Configurable Target Menu Handler to `a_handler'.
+		do
+			configurable_target_menu_handler := a_handler
+		end
+
 	set_accept_cursor (a_cursor: like accept_cursor) is
 			-- Set `a_cursor' to be displayed when the screen pointer is over a
 			-- target that accepts `pebble' during pick and drop.
@@ -259,9 +267,11 @@ feature {EV_ANY_I} -- Implementation
 			real_target: EV_PICK_AND_DROPABLE
 			application: EV_APPLICATION_IMP
 		do
-			draw_rubber_band
+			erase_rubber_band
 			pointer_x := a_screen_x.to_integer_16
 			pointer_y := a_screen_y.to_integer_16
+			application_implementation.set_pnd_pointer_coords (a_screen_x, a_screen_y)
+			draw_rubber_band
 
 			target := pointed_target
 			real_target ?= target
@@ -345,6 +355,30 @@ feature {EV_ANY_I} -- Implementation
 			end
 		end
 
+	modify_widget_appearance (starting: BOOLEAN) is
+			-- Modify the appearence of widgets to reflect current
+			-- state of pick and drop and dropable targets.
+			-- If `starting' then the pick and drop is starting,
+			-- else it is ending.
+		local
+			window_imp: EV_WINDOW_IMP
+			windows: LINEAR [EV_WINDOW]
+		do
+			windows := application_implementation.windows
+			from
+				windows.start
+			until
+				windows.off
+			loop
+				window_imp ?= windows.item.implementation
+				check
+					window_implementation_not_void: window_imp /= Void
+				end
+				window_imp.update_for_pick_and_drop (starting)
+				windows.forth
+			end
+		end
+
 feature {EV_WIDGET, EV_WIDGET_I}
 
 	set_pointer_style (c: EV_POINTER_STYLE) is
@@ -368,6 +402,12 @@ feature {EV_WIDGET, EV_WIDGET_I}
 		end
 
 feature {EV_ANY_I} -- Implementation
+
+	application_implementation: EV_APPLICATION_I is
+			-- Application implementation object.
+		do
+			Result := environment.application.implementation
+		end
 
 	environment: EV_ENVIRONMENT is
 			-- Environment object.

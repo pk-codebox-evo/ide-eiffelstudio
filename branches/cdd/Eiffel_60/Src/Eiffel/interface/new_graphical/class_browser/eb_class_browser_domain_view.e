@@ -10,7 +10,7 @@ class
 	EB_CLASS_BROWSER_DOMAIN_VIEW
 
 inherit
-	EB_CLASS_BROWSER_GRID_VIEW [EB_METRIC_RESULT_ROW]
+	EB_CLASS_BROWSER_GRID_VIEW [TUPLE [ql_item: QL_ITEM; item_path: STRING]]
 		redefine
 			data,
 			update,
@@ -146,7 +146,7 @@ feature{NONE} -- Implementation/Data
 			Result := item_to_put_in_editor_for_single_item_grid
 		end
 
-	domain: DS_LINKED_LIST [EB_METRIC_RESULT_ROW]
+	domain: DS_LINKED_LIST [TUPLE [ql_item: QL_ITEM; item_path: STRING]]
 			-- Domain to be displayed in Current
 
 	editor_token_grid_support: EB_EDITOR_TOKEN_GRID_SUPPORT
@@ -172,8 +172,8 @@ feature{NONE} -- Implementation/Data
 	row_background_color (y: INTEGER): EV_COLOR is
 			-- Background color for items in row indexed by `y'
 		local
-			l_last_item: EB_METRIC_GRID_RESULT_ITEM
-			l_current_item: EB_METRIC_GRID_RESULT_ITEM
+			l_last_item: EB_GRID_QL_ITEM
+			l_current_item: EB_GRID_QL_ITEM
 			l_last_sorted_column: INTEGER
 		do
 			l_last_sorted_column := last_sorted_column
@@ -240,7 +240,7 @@ feature{NONE} -- Implementation/Data
 			y_valid: y > 0 and y <= domain.count
 		local
 			i, j: INTEGER
-			l_content: DS_LIST [EB_METRIC_RESULT_ROW]
+			l_content: DS_LIST [TUPLE [ql_item: QL_ITEM; item_path: STRING]]
 			l_tbl: HASH_TABLE [EV_GRID_ITEM, INTEGER]
 		do
 			from
@@ -318,10 +318,10 @@ feature{NONE} -- Implementation/Data
 			end
 		end
 
-	invisible_items: DS_LINKED_LIST [EB_METRIC_RESULT_ROW]
+	invisible_items: DS_LINKED_LIST [TUPLE [ql_item: QL_ITEM; item_path: STRING]]
 			-- List of invisible result rows
 
-	last_comparator: AGENT_LIST_COMPARATOR [EB_METRIC_RESULT_ROW]
+	last_comparator: AGENT_LIST_COMPARATOR [TUPLE [ql_item: QL_ITEM; item_path: STRING]]
 			-- Last comparator
 
 feature{NONE} -- Implementation
@@ -362,6 +362,7 @@ feature{NONE} -- Implementation
 			l_domain: like domain
 			a_domain: like data
 		do
+			grid.set_row_height (default_row_height)
 			a_domain := data
 			if a_domain /= Void then
 				if should_headers_be_shown then
@@ -379,14 +380,14 @@ feature{NONE} -- Implementation
 				until
 					l_content.after
 				loop
-					l_domain.force_last (create {EB_METRIC_RESULT_ROW}.make(l_content.item))
+					l_domain.force_last ([l_content.item, l_content.item.partial_path])
 					l_content.forth
 				end
 			else
 				grid.column (1).set_title ("")
 				domain := Void
 			end
-			try_auto_resize_grid (<<[150, 500, 1]>>)
+			try_auto_resize_grid (<<[300, 500, 1]>>, False)
 		end
 
 	build_grid is
@@ -424,13 +425,14 @@ feature{NONE} -- Implementation
 			set_item_text_function (agent text_of_grid_item)
 			set_select_all_action (agent select_all)
 			enable_copy
+			disable_use_fixed_fonts
 		end
 
 	build_sortable_and_searchable is
 			-- Build sortable and searchable facilities
 		local
-			l_item_sort_info: EVS_GRID_TWO_WAY_SORTING_INFO [EB_METRIC_RESULT_ROW]
-			l_path_sort_info: EVS_GRID_TWO_WAY_SORTING_INFO [EB_METRIC_RESULT_ROW]
+			l_item_sort_info: EVS_GRID_TWO_WAY_SORTING_INFO [TUPLE [ql_item: QL_ITEM; item_path: STRING]]
+			l_path_sort_info: EVS_GRID_TWO_WAY_SORTING_INFO [TUPLE [ql_item: QL_ITEM; item_path: STRING]]
 		do
 			old_make (grid)
 			create l_item_sort_info.make (agent item_order_tester, ascending_order)
@@ -451,21 +453,27 @@ feature{NONE} -- Implementation
 			enable_direct_start_search
 		end
 
-	generate_grid_item (a_y: INTEGER; a_item: EB_METRIC_RESULT_ROW) is
+	generate_grid_item (a_y: INTEGER; a_item: TUPLE [ql_item: QL_ITEM; item_path: STRING]) is
 			-- Generate grid items for row `a_y' from `a_item'.
 		require
 			domain_attached: domain /= Void
 			a_y_valid: a_y > 0 and a_y <= domain.count
 			a_item_attached: a_item /= Void
 		local
-			l_item: EB_METRIC_GRID_RESULT_ITEM
-			l_path_item: EB_METRIC_GRID_RESULT_ITEM
-			l_ql_item: QL_ITEM
+			l_item: EB_GRID_QL_ITEM
+			l_path_item: EB_GRID_QL_ITEM
 			l_row_background_color: EV_COLOR
+			l_ql_item: QL_ITEM
+			l_fixed_fonts: like label_font_table
 		do
-			l_ql_item := a_item.item
+			l_ql_item := a_item.ql_item
 			create l_item.make (l_ql_item, 1, a_y, False)
 			create l_path_item.make (l_ql_item, 2, a_y, True)
+			if is_fixed_fonts_used then
+				l_fixed_fonts := label_font_table
+				l_item.set_overriden_fonts (l_fixed_fonts)
+				l_path_item.set_overriden_fonts (l_fixed_fonts)
+			end
 
 			l_item.set_stone (stone_from_ql_item (l_ql_item))
 			l_path_item.set_stone (stone_from_ql_item (l_ql_item.parent))
@@ -482,7 +490,7 @@ feature{NONE} -- Implementation
 			-- Ensure that `a_item' is visible.
 			-- If `a_selected' is True, make sure that `a_item' is in its selected status.
 		local
-			l_grid_item: EB_METRIC_GRID_RESULT_ITEM
+			l_grid_item: EB_GRID_QL_ITEM
 			l_grid: like grid
 		do
 			l_grid_item ?= a_item.grid_item
@@ -504,34 +512,13 @@ feature{NONE} -- Implementation
 
 	select_all is
 			-- Action to be performed to select all items in `grid'					
-		local
-			l_row_index: INTEGER
-			l_row_count: INTEGER
-			l_grid: like grid
-			l_row: EV_GRID_ROW
 		do
-			l_grid := grid
-			from
-				l_row_index := 1
-				l_row_count := l_grid.row_count
-			until
-				l_row_index > l_row_count
-			loop
-				l_row := l_grid.row (l_row_index)
-				if l_row.item (1) = Void then
-					l_row.set_item (1, item_function (1, l_row_index))
-				end
-				if l_row.item (2) = Void then
-					l_row.set_item (2, item_function (2, l_row_index))
-				end
-				l_grid.select_row (l_row_index)
-				l_row_index := l_row_index + 1
-			end
+			select_all_in_dynamic_grid (grid, agent item_function, Void)
 		end
 
 feature{NONE} -- Implementation/Sorting
 
-	sort_agent (a_column_list: LIST [INTEGER]; a_comparator: AGENT_LIST_COMPARATOR [EB_METRIC_RESULT_ROW]) is
+	sort_agent (a_column_list: LIST [INTEGER]; a_comparator: AGENT_LIST_COMPARATOR [TUPLE [ql_item: QL_ITEM; item_path: STRING]]) is
 			-- Action to be performed when sort `a_column_list' using `a_comparator'.
 		require
 			a_column_list_attached: a_column_list /= Void
@@ -542,12 +529,12 @@ feature{NONE} -- Implementation/Sorting
 			fill_rows
 		end
 
-	sort_domain (a_comparator: AGENT_LIST_COMPARATOR [EB_METRIC_RESULT_ROW]) is
+	sort_domain (a_comparator: AGENT_LIST_COMPARATOR [TUPLE [ql_item: QL_ITEM; item_path: STRING]]) is
 			-- Sort `domain' using `a_comparator'.
 		require
 			a_comparator_attached: a_comparator /= Void
 		local
-			l_sorter: DS_QUICK_SORTER [EB_METRIC_RESULT_ROW]
+			l_sorter: DS_QUICK_SORTER [TUPLE [ql_item: QL_ITEM; item_path: STRING]]
 			l_domain: like domain
 		do
 			l_domain := domain
@@ -557,29 +544,29 @@ feature{NONE} -- Implementation/Sorting
 			end
 		end
 
-	item_order_tester (a_item, b_item: EB_METRIC_RESULT_ROW; a_order: INTEGER): BOOLEAN
+	item_order_tester (a_item, b_item: TUPLE [ql_item: QL_ITEM; item_path: STRING]; a_order: INTEGER): BOOLEAN
 			-- Order tester for `a_item' and `b_item' using item name
 		require
 			a_item_attached: a_item /= Void
 			b_item_attached: b_item /= Void
 		do
 			if a_order = ascending_order then
-				Result := a_item.item.name < b_item.item.name
+				Result := a_item.ql_item.name < b_item.ql_item.name
 			else
-				Result := a_item.item.name > b_item.item.name
+				Result := a_item.ql_item.name > b_item.ql_item.name
 			end
 		end
 
-	path_order_tester (a_item, b_item: EB_METRIC_RESULT_ROW; a_order: INTEGER): BOOLEAN
+	path_order_tester (a_item, b_item: TUPLE [ql_item: QL_ITEM; item_path: STRING]; a_order: INTEGER): BOOLEAN
 			-- Order tester for `a_item' and `b_item' using item path
 		require
 			a_item_attached: a_item /= Void
 			b_item_attached: b_item /= Void
 		do
 			if a_order = ascending_order then
-				Result := a_item.path < b_item.path
+				Result := a_item.item_path < b_item.item_path
 			else
-				Result := a_item.path > b_item.path
+				Result := a_item.item_path > b_item.item_path
 			end
 		end
 
@@ -588,11 +575,9 @@ feature{NONE} -- Recycle
 	internal_recycle is
 			-- Recycle.
 		do
-			if not is_recycled then
-				Precursor
-				editor_token_grid_support.desynchronize_color_or_font_change_with_editor
-				editor_token_grid_support.desynchronize_scroll_behavior_with_editor
-			end
+			Precursor
+			editor_token_grid_support.desynchronize_color_or_font_change_with_editor
+			editor_token_grid_support.desynchronize_scroll_behavior_with_editor
 		end
 
 indexing

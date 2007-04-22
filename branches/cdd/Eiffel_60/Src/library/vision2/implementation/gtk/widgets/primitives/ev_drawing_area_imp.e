@@ -61,23 +61,15 @@ feature {NONE} -- Initialization
 			gc := {EV_GTK_EXTERNALS}.gdk_gc_new (App_implementation.default_gdk_window)
 			init_default_values
 			disable_double_buffering
-			disable_tabable_to
-			disable_tabable_from
 
 			real_set_background_color (c_object, background_color)
 
 				-- Initialize tooltip.
 			internal_tooltip := ""
 			Precursor {EV_PRIMITIVE_IMP}
+			disable_tabable_to
+			disable_tabable_from
 		end
-
-feature -- Status report
-
-	is_tabable_to: BOOLEAN
-			-- Is Current able to be tabbed to?
-
-	is_tabable_from: BOOLEAN
-			-- Is Current able to be tabbed from?
 
 feature -- Status setting
 
@@ -93,43 +85,13 @@ feature -- Status setting
 			{EV_GTK_EXTERNALS}.gtk_widget_set_double_buffered (visual_widget, False)
 		end
 
-	enable_tabable_to is
-			-- Make `is_tabable_to' `True'.
-		do
-			{EV_GTK_EXTERNALS}.gtk_widget_set_flags (c_object, {EV_GTK_EXTERNALS}.GTK_CAN_FOCUS_ENUM)
-			is_tabable_to := True
-		end
-
-	disable_tabable_to is
-			-- Make `is_tabable_to' `False'.
-		do
-			{EV_GTK_EXTERNALS}.gtk_widget_unset_flags (c_object, {EV_GTK_EXTERNALS}.GTK_CAN_FOCUS_ENUM)
-			is_tabable_to := False
-		end
-
-	enable_tabable_from is
-			-- Make `is_tabable_from' `True'.
-		do
-			is_tabable_from := True
-		end
-
-	disable_tabable_from is
-			-- Make `is_tabable_from' `False'.
-		do
-			is_tabable_from := False
-		end
-
 feature {NONE} -- Implementation
 
 	on_pointer_enter_leave (a_enter: BOOLEAN) is
 			-- The mouse pointer has either just entered or left `Current'.
 		do
-			if not app_implementation.is_in_transport then
-				update_tooltip (a_enter)
-				Precursor {EV_PRIMITIVE_IMP} (a_enter)
-			else
-				update_tooltip (False)
-			end
+			update_tooltip (a_enter)
+			Precursor {EV_PRIMITIVE_IMP} (a_enter)
 		end
 
 	update_tooltip (a_show_tooltip: BOOLEAN) is

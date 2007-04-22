@@ -322,6 +322,16 @@ feature -- Set
 			end
 		end
 
+	set_focus_no_maximzied (a_zone: EV_WIDGET) is
+			-- Same as `set_focus', but only do things when no maximized zone in dock area which has `a_zone'
+		do
+			if docking_manager.property.last_focus_content /= Current and not docking_manager.property.is_opening_config then
+				if docking_manager.query.maximized_inner_container (a_zone) = Void then
+					set_focus
+				end
+			end
+		end
+
 	set_user_widget (a_widget: EV_WIDGET) is
 			-- Set `user_widget' with `a_widget'.
 		require
@@ -406,23 +416,25 @@ feature -- Set Position
 		require
 			manager_has_current_content: manager_has_content (Current)
 			manager_has_a_content: manager_has_content (a_content)
-			target_content_shown: target_content_shown (a_content)
+			target_content_zone_parent_exist: target_content_zone_parent_exist (a_content)
 		local
 			l_tab_zone: SD_TAB_ZONE
 			l_docking_zone: SD_DOCKING_ZONE
 		do
 			set_visible (True)
 			l_tab_zone ?= a_content.state.zone
+			l_docking_zone ?= a_content.state.zone
 			if l_tab_zone /= Void then
 				if not a_left then
 				 	state.move_to_tab_zone (l_tab_zone, l_tab_zone.count + 1)
 				 else
 				 	state.move_to_tab_zone (l_tab_zone, 1)
 				end
-			else
-				l_docking_zone ?= a_content.state.zone
-				check l_docking_zone /= Void end
+			elseif l_docking_zone /= Void then
 				state.move_to_docking_zone (l_docking_zone, a_left)
+			else
+				-- `a_content' is auto hide state, zone is void.
+				state.auto_hide_tab_with (a_content)
 			end
 			set_focus
 		end
@@ -432,6 +444,7 @@ feature -- Set Position
 		require
 			manager_has_content: manager_has_content (Current)
 			editor_place_holder_in: manager_has_place_holder
+			is_editor: type = {SD_ENUMERATION}.editor
 		do
 			set_visible (True)
 			set_relative (docking_manager.zones.place_holder_content, {SD_ENUMERATION}.top)
@@ -503,7 +516,6 @@ feature -- Command
 	show is
 			-- Show zone which has `Current'.
 		do
-			docking_manager.command.recover_normal_state
 			state.show
 			is_visible := True
 		end
@@ -554,6 +566,19 @@ feature -- States report
 		do
 			l_zone := a_target_content.state.zone
 			Result := l_zone /= Void and then l_zone.parent /= Void
+		end
+
+	target_content_zone_parent_exist (a_target_content: SD_CONTENT): BOOLEAN is
+			-- If `a_target_content''s zone parent not void if exists.
+		local
+			l_zone: SD_ZONE
+		do
+			l_zone := a_target_content.state.zone
+			if l_zone /= Void then
+				Result := l_zone.parent /= Void
+			else
+				Result := True
+			end
 		end
 
 feature {SD_STATE, SD_HOT_ZONE, SD_OPEN_CONFIG_MEDIATOR, SD_SAVE_CONFIG_MEDIATOR, SD_ZONE,
@@ -625,7 +650,7 @@ feature {SD_STATE, SD_OPEN_CONFIG_MEDIATOR}
 				internal_user_widget.show
 			end
 			l_zone := state.zone
-			if l_zone /= Void and then not l_zone.is_displayed then
+			if l_zone /= Void and then not l_zone.is_destroyed and then not l_zone.is_displayed then
 				l_zone.show
 			end
 		ensure

@@ -18,8 +18,7 @@ inherit
 			copy,
 			default_create
 		redefine
-			metric,
-			is_linear_metric_editor
+			metric
 		end
 
 	EB_CONSTANTS
@@ -136,11 +135,6 @@ feature {NONE} -- Initialization
 			metric_grid_attached: metric_grid /= Void
 		end
 
-feature -- Status report
-
-	is_linear_metric_editor: BOOLEAN is True
-			-- Is current a linear metric editor?
-
 feature -- Setting
 
 	set_mode (a_mode: INTEGER) is
@@ -155,7 +149,7 @@ feature -- Setting
 			load_metric_name_and_description (a_metric, mode = readonly_mode)
 			if a_metric = Void then
 					-- For new metric				
-				load_variable_metric (create {EB_METRIC_LINEAR}.make (metric_manager.next_metric_name_with_unit (unit), unit, uuid))
+				load_variable_metric (create {EB_METRIC_LINEAR}.make (metric_manager.next_metric_name_with_unit (unit), unit))
 			else
 				load_variable_metric (a_metric)
 			end
@@ -178,7 +172,7 @@ feature -- Setting
 
 feature -- Access
 
-	data_in_row (a_row: EV_GRID_ROW): TUPLE [criterion_name: STRING; coefficient: STRING; uuid: UUID] is
+	data_in_row (a_row: EV_GRID_ROW): TUPLE [criterion_name: STRING; coefficient: STRING] is
 			-- Data in `a_row'
 		require
 			a_row_attached: a_row /= Void
@@ -186,7 +180,6 @@ feature -- Access
 		local
 			l_metric_item: EV_GRID_LABEL_ITEM
 			l_coefficient_item: EV_GRID_EDITABLE_ITEM
-			l_uuid: UUID
 		do
 			if a_row.data /= Void then
 				l_coefficient_item ?= a_row.item (1)
@@ -195,9 +188,7 @@ feature -- Access
 					l_coefficient_item /= Void
 					l_metric_item /= Void
 				end
-				l_uuid ?= l_metric_item.data
-				check l_uuid /= Void end
-				Result := [l_metric_item.text.out, l_coefficient_item.text.out, l_uuid]
+				Result := [l_metric_item.text.out, l_coefficient_item.text.out]
 			end
 		end
 
@@ -208,9 +199,9 @@ feature -- Access
 			l_coefficient_list: ARRAYED_LIST [DOUBLE]
 			l_index: INTEGER
 			l_count: INTEGER
-			l_data: TUPLE [metric: STRING; coefficient: STRING; uuid: UUID]
+			l_data: TUPLE [metric: STRING; coefficient: STRING]
 		do
-			create Result.make (name_area.name, unit, uuid)
+			create Result.make (name_area.name, unit)
 			Result.set_description (name_area.description)
 			create l_criterion_list.make (metric_grid.row_count - 1)
 			create l_coefficient_list.make (metric_grid.row_count - 1)
@@ -228,7 +219,6 @@ feature -- Access
 					else
 						Result.coefficient.extend (0)
 					end
-					Result.variable_metric_uuid.extend (l_data.uuid)
 				end
 				l_index := l_index + 1
 			end
@@ -251,13 +241,12 @@ feature -- Access
 
 feature{NONE} -- Implementation/Actions
 
-	load_metric_in_row (a_name: STRING; a_coefficient: STRING; a_uuid: UUID; a_row: EV_GRID_ROW) is
+	load_metric_in_row (a_name: STRING; a_coefficient: STRING; a_row: EV_GRID_ROW) is
 			-- Load metric named `a_name' with `a_coefficient' in `a_row'.
 		require
 			a_name_attached: a_name /= Void
 			a_row_attached: a_row /= Void
 			a_row_parented: a_row.parent /= Void
-			a_uuid_attached: a_uuid /= Void
 		local
 			l_coefficient_item: EV_GRID_EDITABLE_ITEM
 			l_metric_item: EV_GRID_COMBO_ITEM
@@ -277,7 +266,6 @@ feature{NONE} -- Implementation/Actions
 			bind_metric_item_menu (l_metric_item)
 			l_metric_item.pointer_double_press_actions.extend (agent on_pointer_press_on_variable_metric_item (l_metric_item, ?, ?, ?, ?, ?, ?, ?, ?))
 			l_metric_item.deactivate_actions.extend (agent on_variable_metric_deactivate (l_metric_item))
-			l_metric_item.set_data (a_uuid)
 				-- Setup coefficient item.
 			l_coefficient_item.pointer_double_press_actions.force_extend (agent l_coefficient_item.activate)
 			l_coefficient_item.deactivate_actions.extend (agent on_change)
@@ -314,7 +302,7 @@ feature{NONE} -- Implementation/Actions
 				l_row_index := l_row.index
 				metric_grid.insert_new_row (l_row_index)
 				l_row := metric_grid.row (l_row_index)
-				load_metric_in_row (l_metric.name, "1", l_metric.uuid, l_row)
+				load_metric_in_row (l_metric.name, "1", l_row)
 				metric_grid.remove_selection
 				l_row.enable_select
 				on_change
@@ -331,7 +319,6 @@ feature{NONE} -- Implementation/Actions
 			l_row_index: INTEGER
 			l_metric: EB_METRIC
 			l_metric_name: STRING
-			l_uuid: UUID
 		do
 			l_row_index := a_item.row.index
 			metric_grid.insert_new_row (l_row_index)
@@ -339,11 +326,9 @@ feature{NONE} -- Implementation/Actions
 			l_metric_name := a_item.text
 			if metric_manager.has_metric (l_metric_name) then
 				l_metric := metric_manager.metric_with_name (l_metric_name)
-				l_uuid := l_metric.uuid
 			else
-				l_uuid := metric_manager.uuid_generator.generate_uuid
 			end
-			load_metric_in_row (l_metric_name, "1", l_uuid, l_row)
+			load_metric_in_row (l_metric_name, "1", l_row)
 			a_item.set_text ("...")
 			metric_grid.set_focus
 			metric_grid.remove_selection
@@ -387,7 +372,7 @@ feature{NONE} -- Implementation/Actions
 			l_row: EV_GRID_ROW
 			l_new_row: EV_GRID_ROW
 			l_index: INTEGER
-			l_data: TUPLE [metric: STRING; coefficient: STRING; uuid: UUID]
+			l_data: TUPLE [metric: STRING; coefficient: STRING]
 		do
 			if not metric_grid.selected_rows.is_empty then
 				l_row := metric_grid.selected_rows.first
@@ -396,7 +381,7 @@ feature{NONE} -- Implementation/Actions
 					metric_grid.insert_new_row (l_index - 1)
 					l_new_row := metric_grid.row (l_index - 1)
 					l_data := data_in_row (l_row)
-					load_metric_in_row (l_data.metric, l_data.coefficient, l_data.uuid, l_new_row)
+					load_metric_in_row (l_data.metric, l_data.coefficient, l_new_row)
 					metric_grid.remove_selection
 					l_new_row.enable_select
 					metric_grid.remove_row (l_row.index)
@@ -411,7 +396,7 @@ feature{NONE} -- Implementation/Actions
 			l_row: EV_GRID_ROW
 			l_new_row: EV_GRID_ROW
 			l_index: INTEGER
-			l_data: TUPLE [metric: STRING; coefficient: STRING; uuid: UUID]
+			l_data: TUPLE [metric: STRING; coefficient: STRING]
 		do
 			if not metric_grid.selected_rows.is_empty then
 				l_row := metric_grid.selected_rows.first
@@ -420,7 +405,7 @@ feature{NONE} -- Implementation/Actions
 					metric_grid.insert_new_row (l_index + 2)
 					l_new_row := metric_grid.row (l_index + 2)
 					l_data := data_in_row (l_row)
-					load_metric_in_row (l_data.metric, l_data.coefficient, l_data.uuid, l_new_row)
+					load_metric_in_row (l_data.metric, l_data.coefficient, l_new_row)
 					metric_grid.remove_selection
 					l_new_row.enable_select
 					metric_grid.remove_row (l_row.index)
@@ -465,7 +450,7 @@ feature{NONE} -- Implementation/Actions
 				l_coefficient_item /= Void
 				l_uuid /= Void
 			end
-			load_metric_in_row (a_item.text, l_coefficient_item.text, l_uuid, l_row)
+			load_metric_in_row (a_item.text, l_coefficient_item.text, l_row)
 			metric_grid.remove_selection
 			metric_grid.set_focus
 			l_row.enable_select
@@ -536,7 +521,6 @@ feature{NONE} -- Implementation
 			l_row: EV_GRID_ROW
 			l_variable_metric_list: LIST [STRING]
 			l_coefficient_list: LIST [DOUBLE]
-			l_uuid_list: LIST [UUID]
 		do
 			if metric_grid.row_count > 0 then
 				metric_grid.remove_rows (1, metric_grid.row_count)
@@ -544,19 +528,16 @@ feature{NONE} -- Implementation
 			from
 				l_variable_metric_list := a_metric.variable_metric
 				l_coefficient_list := a_metric.coefficient
-				l_uuid_list := a_metric.variable_metric_uuid
 				l_variable_metric_list.start
 				l_coefficient_list.start
-				l_uuid_list.start
 			until
 				a_metric.variable_metric.after
 			loop
 				metric_grid.insert_new_row (metric_grid.row_count + 1)
 				l_row := metric_grid.row (metric_grid.row_count)
-				load_metric_in_row (l_variable_metric_list.item, l_coefficient_list.item.out, l_uuid_list.item, l_row)
+				load_metric_in_row (l_variable_metric_list.item, l_coefficient_list.item.out, l_row)
 				l_variable_metric_list.forth
 				l_coefficient_list.forth
-				l_uuid_list.forth
 			end
 
 				-- Insert new line.
@@ -597,7 +578,7 @@ feature{NONE} -- Implementation
 			l_metric_name_array: ARRAY [STRING]
 			l_index: INTEGER
 		do
-			l_metric_table := metric_manager.ordered_metrics (metric_manager.ascending_order, False)
+			l_metric_table := metric_manager.ordered_metrics (agent metric_order_tester (?, ?, ascending_order), False)
 			l_metric_list := l_metric_table.item (unit)
 			if l_metric_list /= Void and then not l_metric_list.is_empty then
 				create l_metric_name_array.make (1, l_metric_list.count)

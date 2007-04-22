@@ -151,6 +151,13 @@ feature -- Additional properties
 	is_compiling: BOOLEAN
 			-- Is the project being compiled?
 
+	is_in_stable_state: BOOLEAN is
+			-- Is project in such a state that one can manipulate the project settings,
+			-- add new classes, search for classes,...
+		do
+			Result := system_defined and then not is_compiling and then last_reached_degree <= 5
+		end
+
 	last_reached_degree: INTEGER is
 			-- What is the lowest degree that was reached during last compilation?
 			-- Or what is the current degree if `is_compiling'?
@@ -515,6 +522,19 @@ feature -- Commands
 			Degree_4.insert_new_class (class_to_recompile)
 			Degree_3.insert_new_class (class_to_recompile)
 			Degree_2.insert_new_class (class_to_recompile)
+		end
+
+feature -- Directory creation
+
+	create_data_directory is
+			-- Create the subdirectory for data storage.
+		local
+			d: DIRECTORY
+		do
+			create d.make (project_location.data_path)
+			if not d.exists then
+				d.create_dir
+			end
 		end
 
 feature -- Automatic backup

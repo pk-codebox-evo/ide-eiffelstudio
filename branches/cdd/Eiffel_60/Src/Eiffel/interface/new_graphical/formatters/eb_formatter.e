@@ -33,10 +33,9 @@ feature -- Initialization
 			-- Create a formatter associated with `a_manager'.
 		do
 			manager := a_manager
-			capital_command_name := command_name.twin
-			capital_command_name := interface_names.string_general_as_left_adjusted (capital_command_name)
-				-- Set the first character to upper case.
-			capital_command_name := interface_names.first_character_as_upper (capital_command_name)
+			command_name := capital_command_name.twin
+			command_name := interface_names.string_general_as_left_adjusted (command_name)
+			command_name := interface_names.string_general_as_lower (command_name)
 			create post_execution_action
 		ensure
 			valid_capital_command_name: valid_string (capital_command_name)
@@ -72,6 +71,9 @@ feature -- Properties
 			end
 			Result := internal_empty_widget
 		end
+
+	command_name: STRING_GENERAL
+			-- Command name
 
 	element_name: STRING is
 			-- name of associated element in current formatter.
@@ -140,6 +142,16 @@ feature -- Status report
 		do
 		end
 
+	is_editor_formatter: BOOLEAN is
+			-- Is Current formatter based on an editor?
+		do
+		end
+
+	is_browser_formatter: BOOLEAN is
+			-- Is Current formatter based on a browser?
+		do
+		end
+		
 feature -- Setting
 
 	invalidate is
@@ -207,11 +219,6 @@ feature -- Setting
 			end
 		end
 
-	set_displayer (a_displayer: like displayer) is
-			-- Set `a_displayer' into Current.
-		deferred
-		end
-
 	update (a_window: EV_WINDOW) is
 			-- Update `accelerator' and interfaces according to `referred_shortcut'.
 		local
@@ -240,6 +247,15 @@ feature -- Setting
 				sd_button.set_tooltip (tt)
 				sd_button.set_name (capital_command_name)
 				sd_button.set_description (capital_command_name)
+			end
+		end
+
+	ensure_display_in_widget_owner is
+			-- If Current is selected, ensure Current is displayed in `widget_owner' if `widget_owner' is attached.
+		do
+			if selected and then widget_owner /= Void then
+				widget_owner.ensure_formatter_display (Current)
+				display_header
 			end
 		end
 
@@ -323,9 +339,7 @@ feature -- Pop up
 			-- Make `widget' visible.
 		do
 			if widget_owner /= Void then
-				if widget_owner.last_widget /= widget then
-					widget_owner.set_widget (widget)
-				end
+				widget_owner.ensure_formatter_display (Current)
 				widget_owner.force_display
 			end
 			display_header
@@ -334,10 +348,10 @@ feature -- Pop up
 			end
 		end
 
-	widget_owner: WIDGET_OWNER
+	widget_owner: EB_FORMATTER_BASED_TOOL
 			-- Container of `widget'.
 
-	set_widget_owner (new_owner: WIDGET_OWNER) is
+	set_widget_owner (new_owner: like widget_owner) is
 			-- Set `widget_owner' to `new_owner'.
 		do
 			widget_owner := new_owner
@@ -349,13 +363,7 @@ feature -- Actions
 			-- `Widget's parent is displayed.
 		do
 			internal_displayed := True
-			if
-				widget_owner /= Void and then
-				selected
-			then
-				widget_owner.set_widget (widget)
-				display_header
-			end
+			ensure_display_in_widget_owner
 			synchronize
 			if is_valid then
 				format

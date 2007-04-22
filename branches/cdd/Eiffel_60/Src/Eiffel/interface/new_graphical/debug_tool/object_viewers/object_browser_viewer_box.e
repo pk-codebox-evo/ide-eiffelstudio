@@ -21,8 +21,6 @@ inherit
 
 	EB_SHARED_DEBUGGER_MANAGER
 
-	SHARED_DEBUGGED_OBJECT_MANAGER
-
 	EB_SHARED_WINDOW_MANAGER
 
 	EB_SHARED_PREFERENCES
@@ -85,7 +83,7 @@ feature -- Access
 
 feature -- Access
 
-	is_valid_stone (st: OBJECT_STONE): BOOLEAN is
+	is_valid_stone (st: OBJECT_STONE; is_strict: BOOLEAN): BOOLEAN is
 			-- Is `st' valid stone for Current?
 		do
 			Result := st /= Void

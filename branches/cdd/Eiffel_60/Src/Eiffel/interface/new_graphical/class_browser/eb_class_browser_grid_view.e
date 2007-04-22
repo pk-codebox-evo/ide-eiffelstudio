@@ -63,6 +63,8 @@ feature{NONE} -- Initialization
 			grid.resizing_behavior.header_resize_end_actions.extend (agent on_column_resize_by_user_end (?, True))
 			grid.enable_default_tree_navigation_behavior (True, True, True, True)
 			set_item_text_function (agent text_of_grid_item)
+			grid.set_focused_selection_color (preferences.editor_data.selection_background_color)
+			grid.set_non_focused_selection_color (preferences.editor_data.focus_out_selection_background_color)
 			enable_copy
 		ensure
 			drop_actions_set: drop_actions = a_drop_actions
@@ -107,18 +109,6 @@ feature -- Setting
 			-- Set `start_class' with `a_class'.
 		do
 			starting_element ?= a_class
-		end
-
-	lock_update_grid is
-			-- Lock update on `grid'.
-		do
-			grid.lock_update
-		end
-
-	unlock_update_grid is
-			-- Unlock update on `grid'.
-		do
-			grid.unlock_update
 		end
 
 	enable_tree_node_highlight is
@@ -188,17 +178,19 @@ feature -- Setting
 			sorting_order_setter_set: sorting_order_setter = a_setter
 		end
 
-	try_auto_resize_grid (a_columns: ARRAY [TUPLE [min_width: INTEGER; max_width: INTEGER; column_index: INTEGER]]) is
-			-- Auto resize `grid' using size given by `a_columns' if `grid' has not been resized manually by user.
+	try_auto_resize_grid (a_columns: ARRAY [TUPLE [min_width: INTEGER; max_width: INTEGER; column_index: INTEGER]]; a_force: BOOLEAN) is
+			-- Auto resize `grid' using size given by `a_columns' if `a_force' is True or else if `grid' has not been resized manually by user.
+			-- If `min_width' or `max_width' for some column is negative, then that column will be resized according to its required width.
 			-- For more information about `min_width' and `max_width', see `auto_resize_columns'.
 		require
 			a_columns_attached: a_columns /= Void
+			a_columns_valid: not a_columns.has (Void)
 		local
 			i: INTEGER
 			l_item: TUPLE [min_width: INTEGER; max_width: INTEGER; column_index: INTEGER]
 			l_size_tbl: HASH_TABLE [TUPLE [min_width: INTEGER; max_width: INTEGER], INTEGER]
 		do
-			if not has_grid_been_resized_manually then
+			if a_force or else not has_grid_been_resized_manually then
 				create l_size_tbl.make (a_columns.upper - a_columns.lower + 1)
 				from
 					i := a_columns.lower
@@ -206,13 +198,35 @@ feature -- Setting
 					i > a_columns.upper
 				loop
 					l_item := a_columns.item (i)
-					l_size_tbl.put ([l_item.min_width, l_item.max_width], l_item.column_index)
+					if l_item.min_width < 0 or else l_item.max_width < 0 then
+						l_size_tbl.put (Void, l_item.column_index)
+					else
+						l_size_tbl.put ([l_item.min_width, l_item.max_width], l_item.column_index)
+					end
 					i := i + 1
 				end
 				grid.header.item_resize_end_actions.block
 				auto_resize_columns (grid, l_size_tbl)
 				grid.header.item_resize_end_actions.resume
 			end
+		end
+
+	enable_use_fixed_fonts is
+			-- Enable to use fixed fonts.
+			-- Fixed fonts don't change with preferences.
+		do
+			is_fixed_fonts_used := True
+		ensure
+			is_fixed_fonts_used_set: is_fixed_fonts_used
+		end
+
+	disable_use_fixed_fonts is
+			-- Enable to use fixed fonts.
+			-- Fixed fonts don't change with preferences.		
+		do
+			is_fixed_fonts_used := False
+		ensure
+			is_fixed_fonts_used_set: not is_fixed_fonts_used
 		end
 
 feature -- Navigation
@@ -485,6 +499,24 @@ feature -- Access
 	sorting_order_setter: PROCEDURE [ANY, TUPLE [STRING]]
 			-- Agent to retrieve last recored sorting order
 
+	selected_row_background_color (a_grid_row: EV_GRID_ROW): EV_COLOR is
+			-- Background color for selected row `a_grid_row'
+		require
+			a_grid_row_attached: a_grid_row /= Void
+			a_grid_valid: a_grid_row.is_selected and then a_grid_row.is_selected
+		local
+			l_grid: EV_GRID
+		do
+			l_grid := a_grid_row.parent
+			if l_grid.has_focus then
+				Result := l_grid.focused_selection_color
+			else
+				Result := l_grid.non_focused_selection_color
+			end
+		ensure
+			result_attached: Result /= Void
+		end
+
 feature -- Status report
 
 	is_up_to_date: BOOLEAN
@@ -508,6 +540,11 @@ feature -- Status report
 
 	has_grid_been_resized_manually: BOOLEAN
 			-- Has `grid' been binded before?
+
+	is_fixed_fonts_used: BOOLEAN
+			-- Should content of Current view use fixed fonts?
+			-- Fixed fonts don't change with preferences.
+			-- Default: False
 
 feature{NONE} -- Implementation
 
@@ -670,7 +707,9 @@ feature {NONE} -- Recycle
 		do
 			desynchronize_color_or_font_change_with_editor
 			desynchronize_scroll_behavior_with_editor
-			show_tooltip_button.recycle
+			if show_tooltip_button_internal /= Void then
+				show_tooltip_button.recycle
+			end
 		end
 
 feature {NONE} -- Implementation
@@ -678,8 +717,12 @@ feature {NONE} -- Implementation
 	default_row_height: INTEGER is
 			-- Default height to set grid rows.
 		do
-			Result := line_height.max (pixmap_height)
-				-- We make sure we give enough space to display the pixmap.
+			if is_fixed_fonts_used then
+				Result := (create {EV_FONT}).height.max (pixmap_height)
+			else
+				Result := line_height.max (pixmap_height)
+					-- We make sure we give enough space to display the pixmap.
+			end
 		end
 
 	quick_search_bar: EB_GRID_QUICK_SEARCH_TOOL
@@ -813,25 +856,6 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	tooltip_with_accelerator (a_text: STRING_GENERAL; a_accelerator: EV_ACCELERATOR): STRING_GENERAL is
-			-- Tooltip text `a_text' with information of accelerator key `a_accelerator'
-		require
-			a_text_attached: a_text /= Void
-			a_accelerator_attached: a_accelerator /= Void
-		local
-			l_text: STRING_32
-		do
-			create l_text.make (a_text.count + 10)
-			l_text.append (a_text)
-			l_text.append (" (")
-			l_text.append (a_accelerator.out)
-			l_text.append_character (')')
-			Result := l_text
-		ensure
-			result_attached: Result /= Void
-			not_result_is_empty: not Result.is_empty
-		end
-
 	show_tooltip_button_internal: like show_tooltip_button
 			-- Implementation of `show_tooltip_button'	
 
@@ -845,6 +869,62 @@ feature {NONE} -- Implementation
 			is_resize_by_user := b
 		ensure
 			is_resize_by_user_set: is_resize_by_user = b
+		end
+
+	select_all_in_dynamic_grid (a_grid: EV_GRID; a_item_function: FUNCTION [ANY, TUPLE [INTEGER, INTEGER], EV_GRID_ITEM]; a_columns: LIST [INTEGER]) is
+			-- Select all rows/items in dynamic grid `a_grid'.			
+			-- `a_item_function' is the function to get grid items on the fly.			
+			-- `a_columns' contains indexes of columns whose items are to be retrieved.
+			-- `a_columns' is Void means all columns of `a_grid' are to be retrieved.
+		require
+			a_grid_attached: a_grid /= Void
+			a_grid_valid: a_grid.is_content_partially_dynamic
+			a_item_function_attached: a_item_function /= Void
+		local
+			l_row_count: INTEGER
+			l_column_count: INTEGER
+			l_row, l_column: INTEGER
+			l_columns: LIST [INTEGER]
+			l_cur_column: INTEGER
+		do
+			a_grid.remove_selection
+			l_row_count := a_grid.row_count
+			l_column_count := a_grid.column_count
+
+			if a_columns = Void then
+				create {ARRAYED_LIST [INTEGER]}l_columns.make (l_row_count)
+				from
+					l_column := 1
+				until
+					l_column > l_column_count
+				loop
+					l_columns.extend (l_column)
+					l_column := l_column + 1
+				end
+			else
+				l_columns := a_columns
+			end
+			l_column_count := l_columns.count
+
+			from
+				l_row := 1
+			until
+				l_row > l_row_count
+			loop
+				from
+					l_columns.start
+				until
+					l_columns.after
+				loop
+					l_cur_column := l_columns.item
+					if a_grid.item (l_cur_column, l_row) = Void then
+						a_grid.set_item (l_cur_column, l_row, a_item_function.item ([l_cur_column, l_row]))
+					end
+					l_columns.forth
+				end
+				a_grid.row (l_row).enable_select
+				l_row := l_row + 1
+			end
 		end
 
 feature{NONE} -- Implementation/Exception
@@ -898,11 +978,7 @@ feature -- Tree hierarchy highlight
 		do
 			if is_tree_node_highlight_enabled then
 				if a_row.is_selected then
-					if grid.has_focus then
-						a_row.set_background_color (preferences.editor_data.selection_background_color)
-					else
-						a_row.set_background_color (preferences.editor_data.focus_out_selection_background_color)
-					end
+					a_row.set_background_color (selected_row_background_color (a_row))
 				else
 					a_row.set_background_color (odd_line_color)
 				end
@@ -941,11 +1017,7 @@ feature -- Tree hierarchy highlight
 					l_parent_row := l_parent_row.parent_row
 				end
 				if a_row.is_selected then
-					if grid.has_focus then
-						a_row.set_background_color (preferences.editor_data.selection_background_color)
-					else
-						a_row.set_background_color (preferences.editor_data.focus_out_selection_background_color)
-					end
+					a_row.set_background_color (selected_row_background_color (a_row))
 				else
 					if l_is_parent_selected then
 						a_row.set_background_color (odd_line_color)
@@ -1013,10 +1085,38 @@ feature{NONE} -- Implementation/Stone
 			if l_rows.count = 1 then
 				if l_rows.first.parent = grid then
 					l_grid_row := l_rows.first
-					if (not l_grid_row.is_expandable) or else (l_grid_row.is_expanded) then
+					if is_subrow_recursively_expanded (l_grid_row, agent (a_grid_row: EV_GRID_ROW): BOOLEAN do Result := a_grid_row.is_expanded end) then
 						Result := l_grid_row.item (1)
 					end
 				end
+			end
+		end
+
+	is_subrow_recursively_expanded (a_row: EV_GRID_ROW; a_expanded_agent: FUNCTION [ANY, TUPLE [EV_GRID_ROW], BOOLEAN]): BOOLEAN is
+			-- Is `a_row' and all its recursive subrows expanded?
+			-- `a_expanded_agent' is a function to decide if the grid row given as the only argument is expanded.
+		require
+			a_row_attached: a_row /= Void
+			a_expanded_agent_attached: a_expanded_agent /= Void
+		local
+			l_row_count: INTEGER
+			l_row_index: INTEGER
+		do
+			if a_row.is_expandable then
+				Result := a_expanded_agent.item ([a_row])
+				l_row_count := a_row.subrow_count
+				if Result and then l_row_count > 0 then
+					from
+						l_row_index := 1
+					until
+						l_row_index > l_row_count or not Result
+					loop
+						Result := is_subrow_recursively_expanded (a_row.subrow (l_row_index), a_expanded_agent)
+						l_row_index := l_row_index + 1
+					end
+				end
+			else
+				Result := True
 			end
 		end
 

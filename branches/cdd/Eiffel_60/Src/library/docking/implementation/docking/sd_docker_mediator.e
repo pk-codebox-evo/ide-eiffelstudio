@@ -44,6 +44,7 @@ feature -- Initlization
 			create l_screen
 
 			create cancel_actions
+			-- FIXIT: When there is no feedback rectangle (the transparency blue area) on Windows, key press actions will not be called.
 			internal_key_press_function := agent on_key_press
 			internal_key_release_function := agent on_key_release
 			ev_application.key_press_actions.extend (internal_key_press_function)
@@ -51,6 +52,8 @@ feature -- Initlization
 
 			is_dockable := True
 			setter.before_enable_capture
+
+			docking_manager.property.set_docker_mediator (Current)
 		ensure
 			set: caller = a_caller
 			set: docking_manager = a_docking_manager
@@ -89,7 +92,7 @@ feature -- Hanlde pointer events
 
 			focus_out_agent := agent on_focus_out
 			create l_env
-			l_env.application.focus_out_actions.extend_kamikaze (focus_out_agent)
+			l_env.application.focus_out_actions.extend (focus_out_agent)
 		ensure
 			set: offset_x = a_offset_x and offset_y = a_offset_y
 		end
@@ -147,6 +150,7 @@ feature -- Hanlde pointer events
 			is_tracing: is_tracing
 		local
 			l_drawed: BOOLEAN
+			l_hot_zones: like hot_zones
 		do
 			debug ("docking")
 				print ("%N SD_DOCKER_MEDIATOR on_pointer_motion screen_x, screen_y: " + a_screen_x.out + " " + a_screen_y.out)
@@ -157,12 +161,13 @@ feature -- Hanlde pointer events
 				screen_y := a_screen_y
 
 				from
-					hot_zones.start
+					l_hot_zones := hot_zones.twin
+					l_hot_zones.start
 				until
-					hot_zones.after or l_drawed
+					l_hot_zones.after or l_drawed
 				loop
-					l_drawed := hot_zones.item.update_for_feedback (a_screen_x, a_screen_y, is_dockable)
-					hot_zones.forth
+					l_drawed := l_hot_zones.item.update_for_feedback (a_screen_x, a_screen_y, is_dockable)
+					l_hot_zones.forth
 					debug ("docking")
 						print ("%N SD_DOCKER_MEDIATOR on_pointer_motion")
 					end
@@ -243,6 +248,8 @@ feature {NONE} -- Implementation functions
 			create l_env
 			l_env.application.focus_out_actions.start
 			l_env.application.focus_out_actions.prune (focus_out_agent)
+
+			docking_manager.property.set_docker_mediator (Void)
 		end
 
 	on_key_press (a_widget: EV_WIDGET; a_key: EV_KEY) is
@@ -284,12 +291,18 @@ feature {NONE} -- Implementation functions
 			-- Handle focus out actions.
 		local
 			l_platform: PLATFORM
+			l_env: EV_ENVIRONMENT
 		do
 			create l_platform
+
 			-- On Vision2 GTK implementation, there is additional focus out actions (compare with Windows Vision2) to be called after just started dragging. If we don't ignore it, it will cause UI hanging.
 			-- We ignore focus out actions on Linux is ok since on Linux when enable capture it's full capture, atl + tab, alt + f1 etc. not work (not like Windows).
 			if l_platform.is_windows then
-				cancel_tracing_pointer
+				-- When SD_SHARED.show_all_feedback_indicator is False, we should check `focused_widget' is not void to make sure our application have focus.
+				create l_env
+				if l_env.application.focused_widget = Void then
+					cancel_tracing_pointer
+				end
 			end
 		end
 
@@ -413,18 +426,20 @@ feature {NONE} -- Implementation functions
 			-- Handle pointer motion event for draw docking indicator.
 		local
 			l_drawed: BOOLEAN
+			l_hot_zones: like hot_zones
 		do
 			from
-				hot_zones.start
+				l_hot_zones := hot_zones.twin
+				l_hot_zones.start
 			until
-				hot_zones.after or l_drawed
+				l_hot_zones.after or l_drawed
 			loop
-				l_drawed := hot_zones.item.update_for_indicator (a_screen_x, a_screen_y)
-				hot_zones.forth
+				l_drawed := l_hot_zones.item.update_for_indicator (a_screen_x, a_screen_y)
+				l_hot_zones.forth
 			end
 
-			if not hot_zones.after then
-				l_drawed := hot_zones.last.update_for_indicator (a_screen_x, a_screen_y)
+			if not l_hot_zones.after then
+				l_drawed := l_hot_zones.last.update_for_indicator (a_screen_x, a_screen_y)
 			end
 		end
 

@@ -60,7 +60,8 @@ feature {NONE} -- Implementation
 
 			create lower_slice_field
 			lower_slice_field.return_actions.extend (agent return_pressed_in_lower_slice_field)
-			lower_slice_field.set_minimum_width (layout_constants.default_button_width)
+			lower_slice_field.set_minimum_width_in_characters (7)
+
 			hb.extend (lower_slice_field)
 			hb.disable_item_expand (lower_slice_field)
 
@@ -70,7 +71,7 @@ feature {NONE} -- Implementation
 
 			create upper_slice_field
 			upper_slice_field.return_actions.extend (agent return_pressed_in_upper_slice_field)
-			upper_slice_field.set_minimum_width (layout_constants.default_button_width)
+			upper_slice_field.set_minimum_width_in_characters (7)
 			hb.extend (upper_slice_field)
 			hb.disable_item_expand (upper_slice_field)
 
@@ -252,7 +253,7 @@ feature -- Slice limits
 
 feature -- Access
 
-	is_valid_stone (st: OBJECT_STONE): BOOLEAN is
+	is_valid_stone (st: OBJECT_STONE; is_strict: BOOLEAN): BOOLEAN is
 			-- Is `st' valid stone for Current?
 		do
 			Result := st /= Void and then

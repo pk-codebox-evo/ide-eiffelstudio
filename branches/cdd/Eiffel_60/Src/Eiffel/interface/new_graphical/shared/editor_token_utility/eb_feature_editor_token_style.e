@@ -84,6 +84,7 @@ feature -- Access
 			l_writer: like token_writer
 			l_constant_as: CONSTANT_AS
 			l_output_strategy: like output_strategy
+			l_class_c: CLASS_C
 		do
 			if is_comment_enabled and then e_feature /= Void then
 				Result := feature_comment (e_feature)
@@ -108,7 +109,10 @@ feature -- Access
 						l_output_strategy := output_strategy (class_c)
 						l_output_strategy.set_current_class (class_c)
 						l_output_strategy.set_source_class (written_class)
+						l_class_c := system.current_class
+						system.set_current_class (class_c)
 						l_constant_as.process (l_output_strategy)
+						system.set_current_class (l_class_c)
 					end
 				end
 				Result := l_writer.last_line.content
@@ -497,7 +501,9 @@ feature{NONE} -- Implementation
 					loop
 						token_writer.new_line
 						l_comment := l_comments.item.content
-						l_comment.left_adjust
+						if l_comment.count > 1 and then l_comment.item (1).is_space then
+							l_comment.remove (1)
+						end
 						token_writer.add_comment_text (l_comment.out)
 						l_tokens.fill (token_writer.last_line.content)
 						l_tokens.extend (create{EDITOR_TOKEN_EOL}.make)

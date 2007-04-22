@@ -84,6 +84,7 @@ feature{NONE} -- Initialization
 			l_ev_tool_bar_1: EV_TOOL_BAR
 			l_ev_save_toolbar: EV_TOOL_BAR
 			l_ev_h_area_1: EV_HORIZONTAL_BOX
+			l_cell: EV_CELL
 		do
 			create l_ev_vertical_box_1
 			create l_ev_tool_bar_1
@@ -97,11 +98,18 @@ feature{NONE} -- Initialization
 			create open_editor_btn
 			create message_label
 			create project_dir_btn
+			create l_cell
 
 			message_label.align_text_left
 			l_ev_h_area_1.extend (message_label)
+			locale_combo.set_minimum_width (200)
+			l_ev_h_area_1.extend (locale_combo)
+			l_cell.set_minimum_height (10)
+			l_ev_h_area_1.extend (l_cell)
 			l_ev_h_area_1.extend (l_ev_save_toolbar)
 			l_ev_h_area_1.extend (l_ev_tool_bar_1)
+			l_ev_h_area_1.disable_item_expand (l_cell)
+			l_ev_h_area_1.disable_item_expand (locale_combo)
 			l_ev_h_area_1.disable_item_expand (l_ev_save_toolbar)
 			l_ev_h_area_1.disable_item_expand (l_ev_tool_bar_1)
 
@@ -155,6 +163,7 @@ feature{NONE} -- Initialization
 			output_text.drop_actions.extend (agent drop_feature)
 			output_text.drop_actions.extend (agent drop_cluster)
 			output_text.drop_actions.extend (agent drop_breakable)
+
 			output_text.change_actions.extend (agent on_text_change)
 
 			on_text_change
@@ -254,16 +263,20 @@ feature -- Basic operation
 		do
 		end
 
-	process_block_text (text_block: EB_PROCESS_IO_DATA_BLOCK) is
-			-- Print `text_block' on `console'.
-		local
-			str: STRING
-		do
-			str ?= text_block.data
-			if str /= Void then
-				output_text.append_text (str)
-			end
-		end
+--	process_block_text (text_block: EB_PROCESS_IO_DATA_BLOCK) is
+--			-- Print `text_block' on `console'.
+--		local
+--			str: STRING
+--		do
+--			str ?= text_block.data
+--			if str /= Void then
+--				if source_encoding /= Void and then destination_encoding /= Void then
+--					output_text.append_text (source_encoding.convert_to (destination_encoding, str))
+--				else
+--					output_text.append_text (str)
+--				end
+--			end
+--		end
 
 	show is
 			-- Show tool.
@@ -320,21 +333,13 @@ feature -- Action
 			-- Open selected text from `output_text' as file name in external editor.
 		local
 			req: COMMAND_EXECUTOR
-			cmd_string: STRING
 		do
 			if has_selected_file then
-				cmd_string := command_shell_name
-				if not cmd_string.is_empty then
-					check
-						selected_file_exists: selected_file_path /= Void
-					end
-					cmd_string.replace_substring_all ("$target", selected_file_path)
-					cmd_string.replace_substring_all ("$line", "1")
-					create req
-					req.execute (cmd_string)
-				else
-					display_status_message (interface_names.e_external_editor_not_defined)
+				check
+					selected_file_exists: selected_file_path /= Void
 				end
+				create req
+				req.execute (preferences.misc_data.external_editor_cli (selected_file_path, 1))
 			end
 		end
 
@@ -697,16 +702,10 @@ feature{NONE}	-- Implementation
 	open_c_file_in_editor (a_file_name: STRING; a_line_number: INTEGER) is
 			-- Open `a_file_name' in external editor and scroll to line `a_line_number'.
 		local
-			l_shell_command: STRING
 			req: COMMAND_EXECUTOR
 		do
-			l_shell_command := preferences.misc_data.external_editor_command.twin
-			if l_shell_command /= Void and then not l_shell_command.is_empty then
-				l_shell_command.replace_substring_all ("$target", a_file_name)
-				l_shell_command.replace_substring_all ("$line", a_line_number.out)
-				create req
-				req.execute (l_shell_command)
-			end
+			create req
+			req.execute (preferences.misc_data.external_editor_cli (a_file_name, a_line_number))
 		end
 
 feature{NONE} -- Implementation
@@ -733,12 +732,6 @@ feature{NONE} -- Implementation
 
 	open_editor_btn: EV_TOOL_BAR_BUTTON
 			-- Button to open selected text in `console' in an external editor
-
-	command_shell_name: STRING is
-			-- Name of the command to execute in the shell dialog.
-		do
-			Result := preferences.misc_data.external_editor_command.twin
-		end
 
 	directory_separator: CHARACTER is
 			-- Directory separator

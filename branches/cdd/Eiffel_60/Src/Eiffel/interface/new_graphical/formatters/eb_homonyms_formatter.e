@@ -61,10 +61,10 @@ feature -- Properties
 
 feature {NONE} -- Properties
 
-	command_name: STRING_GENERAL is
+	capital_command_name: STRING_GENERAL is
 			-- Name of the command.
 		do
-			Result := Interface_names.string_general_as_lower (interface_names.l_Homonyms)
+			Result := Interface_names.l_Homonyms
 		end
 
 	post_fix: STRING is "hom"
@@ -91,6 +91,9 @@ feature -- Formatting
 				create cf.make_initialized (2, preferences.dialog_data.generate_homonyms_string, Interface_names.l_homonym_confirmation, Interface_names.L_do_not_show_again, preferences.preferences)
 				cf.set_ok_action (agent confirm_generate)
 				cf.show_modal_to_window (Window_manager.last_focused_development_window.window)
+				if not widget.is_displayed then
+					widget.show
+				end
 				if confirmed then
 					last_was_error := False
 					rebuild_browser
@@ -98,10 +101,6 @@ feature -- Formatting
 				else
 					browser.update (Void, Void)
 				end
-				if not widget.is_displayed then
-					widget.show
-				end
-				display_header
 			end
 		end
 
@@ -122,7 +121,7 @@ feature {NONE} -- Implementation
 	criterion: QL_CRITERION is
 			-- Criterion of current formatter
 		do
-			create {QL_FEATURE_NAME_IS_CRI}Result.make_with_setting (associated_feature.name, False, True)
+			create {QL_FEATURE_NAME_IS_CRI}Result.make_with_setting (associated_feature.name, False, {QL_NAME_CRITERION}.identity_matching_strategy)
 		end
 
 	rebuild_browser is

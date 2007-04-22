@@ -53,10 +53,10 @@ feature -- Properties
 
 feature {NONE} -- Properties
 
-	command_name: STRING_GENERAL is
+	capital_command_name: STRING_GENERAL is
 			-- Name of the command.
 		do
-			Result := Interface_names.string_general_as_lower (interface_names.l_Short)
+			Result := Interface_names.l_Short
 		end
 
 	post_fix: STRING is "sho"
@@ -177,12 +177,7 @@ feature -- Status setting
 			class_cmd := Void
 			must_format := True
 			format
-			if selected then
-				if widget_owner /= Void then
-					widget_owner.set_widget (widget)
-				end
-				display_header
-			end
+			ensure_display_in_widget_owner
 		end
 
 indexing

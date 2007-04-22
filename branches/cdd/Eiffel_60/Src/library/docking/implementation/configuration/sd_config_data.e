@@ -18,6 +18,7 @@ feature {NONE} -- Initlization
 			create internal_inner_container_datas.make (1)
 			create internal_auto_hide_zones_data.make
 			create tool_bar_datas.make (1)
+			create maximized_tools.make (1)
 			name := ""
 		end
 
@@ -107,6 +108,11 @@ feature -- Data for only one editor zone
 			set: is_editor_minimized = a_bool
 		end
 
+feature -- Data for maximized.
+
+	maximized_tools: ARRAYED_LIST [STRING_GENERAL]
+			-- Maximized tool, count is 0 if no maximized tool.
+
 feature {NONE}  -- Implementation
 
 	internal_inner_container_datas: ARRAYED_LIST [SD_INNER_CONTAINER_DATA]
@@ -114,6 +120,9 @@ feature {NONE}  -- Implementation
 
 	internal_auto_hide_zones_data: SD_AUTO_HIDE_PANEL_DATA;
 			-- Auto hide zones datas.
+
+invariant
+	not_void: maximized_tools /= Void
 
 indexing
 	library:	"SmartDocking: Library of reusable components for Eiffel."

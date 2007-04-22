@@ -16,8 +16,6 @@ inherit
 			{NONE} all
 		end
 
-	SHARED_DEBUGGED_OBJECT_MANAGER
-
 	SHARED_DEBUGGER_MANAGER
 
 feature {NONE} -- Initialization
@@ -334,19 +332,22 @@ feature -- Access
 			-- if final_result is a boolean
 			-- return its value
 			-- otherwise return False .
+		local
+			dmvb: DUMP_VALUE_BASIC
 		do
-			Result := final_result_type.is_basic
-				and then final_result_value.is_type_boolean
-				and then final_result_value.value_boolean
+			if final_result_type.is_basic then
+				dmvb ?= final_result_value
+				Result := dmvb.is_type_boolean and then dmvb.value_boolean
+			end
 		end
 
 	final_result_static_type: CLASS_C
 			-- Static type of `Current'.
 			-- Only used and set in `is_condition', not in `evaluate' or `set_expression'.
 
-feature -- Evaluation
+feature {EB_EXPRESSION} -- Evaluation
 
-	evaluate is
+	evaluate (keep_assertion_checking: BOOLEAN) is
 			-- Compute the value of the last message of `Current'.
 		require
 			dbg_expression_valid_syntax: as_object or else not dbg_expression.syntax_error

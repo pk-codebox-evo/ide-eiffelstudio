@@ -45,8 +45,16 @@ feature {NONE} -- Initialization
 
 			contents.extend (zones.place_holder_content)
 			zones.place_holder_content.set_top ({SD_ENUMERATION}.top)
-			internal_shared.set_show_all_feedback_indicator (True)
-			internal_shared.set_show_tab_stub_text (True)
+
+			if not internal_shared.is_set_show_all_feedback_indicator_called.item then
+				-- We don't override client programmers' setting.
+				internal_shared.set_show_all_feedback_indicator (True)
+			end
+
+			if not internal_shared.is_set_show_tab_stub_text_called.item then
+				-- We don't override client programmers' setting.
+				internal_shared.set_show_tab_stub_text (True)
+			end
 
 			if {PLATFORM}.is_windows then
 				set_main_area_background_color ((create {EV_STOCK_COLORS}).grey)
@@ -145,6 +153,30 @@ feature -- Query
 	is_locked: BOOLEAN
 			-- If zone can be docked?
 
+	docker_mediator: SD_DOCKER_MEDIATOR is
+			-- Manager for user dragging events.
+			-- Maybe Void if user is not dragging.
+		do
+			Result := property.docker_mediator
+		end
+
+	is_config_data_valid (a_file_name: STRING): BOOLEAN is
+			 -- Is config data located at `a_file_name' valid?
+		local
+			l_data: SD_CONFIG_DATA
+			l_file: RAW_FILE
+			l_config_mediator: SD_OPEN_CONFIG_MEDIATOR
+		do
+			create l_file.make (a_file_name)
+			if l_file.exists then
+				create l_config_mediator.make (Current)
+				l_data := l_config_mediator.config_data_from_file (a_file_name)
+				if l_data /= Void then
+					Result := True
+				end
+			end
+		end
+
 feature -- Command
 
 	save_config (a_file: STRING_GENERAL) is
@@ -221,6 +253,15 @@ feature -- Command
 			Result := l_config.open_tools_config (a_file)
 		end
 
+	open_maximized_tool_config (a_file: STRING_GENERAL) is
+			-- Open maximized tool config data.
+		local
+			l_config: SD_OPEN_CONFIG_MEDIATOR
+		do
+			create l_config.make (Current)
+			l_config.open_maximized_tool_data (a_file)
+		end
+
 	set_main_area_background_color (a_color: EV_COLOR) is
 			-- Set main area (editors' area) background color.
 		require
@@ -279,6 +320,7 @@ feature -- Command
 	destroy is
 			-- Destroy all underline objects.
 		do
+			internal_shared.docking_manager_list.prune_all (Current)
 			property.destroy
 			agents.destroy
 			tool_bar_manager.destroy
@@ -330,7 +372,7 @@ feature {SD_TOOL_BAR_HOT_ZONE, SD_FLOATING_TOOL_BAR_ZONE, SD_CONTENT, SD_STATE,
 	  	SD_DOCKING_MANAGER_COMMAND, SD_DOCKING_MANAGER_ZONES, SD_AUTO_HIDE_ANIMATION,
 	  	SD_DOCKING_MANAGER_QUERY, SD_NOTEBOOK, SD_ZONE_NAVIGATION_DIALOG,
 	  	SD_TAB_STATE_ASSISTANT, SD_TOOL_BAR_HOT_ZONE, SD_TOOL_BAR_ZONE_ASSISTANT,
-		SD_DEBUG_ACCESS, SD_UPPER_ZONE, SD_DOCKING_MANAGER_PROPERTY} -- Library internals querys.
+		SD_DEBUG_ACCESS, SD_UPPER_ZONE, SD_DOCKING_MANAGER_PROPERTY, SD_TOOL_BAR_CONTENT} -- Library internals querys.
 
 	query: SD_DOCKING_MANAGER_QUERY
 			-- Manager helper Current for querys.

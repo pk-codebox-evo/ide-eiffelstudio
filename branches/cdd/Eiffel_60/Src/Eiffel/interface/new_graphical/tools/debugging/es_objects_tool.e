@@ -17,7 +17,7 @@ inherit
 			objects_grid_item as get_object_display_item
 		end
 
-	EB_TOOL
+	EB_STONABLE_TOOL
 		rename
 			make as make_tool,
 			mini_toolbar as mini_toolbar_box,
@@ -28,12 +28,8 @@ inherit
 			mini_toolbar_box,
 			build_mini_toolbar_box,
 			build_docking_content,
+			internal_recycle,
 			show
-		end
-
-	EB_RECYCLABLE
-		export
-			{NONE} all
 		end
 
 	VALUE_TYPES
@@ -92,12 +88,12 @@ feature {NONE} -- Internal properties
 			if objects_grids_positions = Void then
 				create objects_grids_positions.make (Position_current, Position_objects)
 			end
-			objects_grids_positions[Position_current] 	:= second_grid_id
+			objects_grids_positions[Position_current] 	:= first_grid_id
 			objects_grids_positions[Position_stack] 	:= first_grid_id
 			objects_grids_positions[Position_arguments] := first_grid_id
 			objects_grids_positions[Position_locals] 	:= first_grid_id
 			objects_grids_positions[Position_result] 	:= first_grid_id
-			objects_grids_positions[Position_objects] 	:= second_grid_id
+			objects_grids_positions[Position_objects] 	:= first_grid_id
 		end
 
 	Position_current: INTEGER is 1
@@ -302,7 +298,7 @@ feature {NONE} -- Interface
 	build_docking_content (a_docking_manager: SD_DOCKING_MANAGER) is
 			-- Build docking content
 		do
-			Precursor {EB_TOOL} (a_docking_manager)
+			Precursor {EB_STONABLE_TOOL} (a_docking_manager)
 			content.drop_actions.extend (agent add_debugged_object)
 			content.drop_actions.extend (agent drop_stack_element)
 		end
@@ -498,6 +494,9 @@ feature -- Access
 
 	debugger_manager: EB_DEBUGGER_MANAGER
 			-- Manager in charge of all debugging operations.
+
+	stone: STONE
+			-- Not used.
 
 feature {NONE} -- Notebook item's behavior
 
@@ -738,7 +737,7 @@ feature -- Change
 		local
 			l_grid: like objects_grid
 		do
-			Precursor {EB_TOOL}
+			Precursor {EB_STONABLE_TOOL}
 			l_grid := objects_grid (first_grid_id)
 			if not l_grid.is_destroyed and then l_grid.is_displayed and then l_grid.is_sensitive then
 				l_grid.set_focus

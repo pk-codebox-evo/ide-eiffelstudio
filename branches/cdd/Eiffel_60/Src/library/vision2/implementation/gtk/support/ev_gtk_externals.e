@@ -304,6 +304,20 @@ feature
 			"y"
 		end
 
+	frozen set_gtk_fixed_child_struct_x (a_c_struct: POINTER; a_x: INTEGER) is
+		external
+			"C [struct <gtk/gtk.h>] (GtkFixedChild, gint)"
+		alias
+			"x"
+		end
+
+	frozen set_gtk_fixed_child_struct_y (a_c_struct: POINTER; a_y: INTEGER) is
+		external
+			"C [struct <gtk/gtk.h>] (GtkFixedChild, gint)"
+		alias
+			"y"
+		end
+
 	frozen gtk_win_pos_mouse_enum: INTEGER is
 		external
 			"C inline use <gtk/gtk.h>"
@@ -344,6 +358,13 @@ feature
 			"GTK_WIDGET_SET_FLAGS"
 		end
 
+	frozen gtk_widget_flags (a_widget: POINTER): INTEGER is
+		external
+			"C macro use <gtk/gtk.h>"
+		alias
+			"GTK_WIDGET_FLAGS"
+		end
+		
 	frozen gtk_widget_unset_flags (a_widget: POINTER; a_flag: INTEGER) is
 		external
 			"C [macro <gtk/gtk.h>]"

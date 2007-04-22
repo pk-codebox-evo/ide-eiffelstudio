@@ -17,7 +17,8 @@ inherit
 
 	EB_CLASS_INFO_FORMATTER
 		undefine
-			retrieve_sorting_order
+			retrieve_sorting_order,
+			is_browser_formatter
 		redefine
 			line_numbers_allowed,
 			widget,
@@ -83,15 +84,7 @@ feature -- Setting
 			else
 				associated_class := Void
 				reset_display
-				if
-					selected and then
-					not widget.is_displayed
-				then
-					if widget_owner /= Void then
-						widget_owner.set_widget (widget)
-					end
-					display_header
-				end
+				ensure_display_in_widget_owner
 			end
 		end
 
@@ -104,12 +97,7 @@ feature -- Setting
 			end
 			must_format := True
 			format
-			if selected then
-				if widget_owner /= Void then
-					widget_owner.set_widget (widget)
-				end
-				display_header
-			end
+			ensure_display_in_widget_owner
 		ensure
 			class_set: (a_class /= Void and then a_class.has_feature_table) implies (a_class = associated_class)
 		end

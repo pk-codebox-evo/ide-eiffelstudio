@@ -557,7 +557,7 @@ feature{NONE} -- Implementation
 				l_row.bind_row (Void, grid, l_bg_color, 0, l_is_path_displayed)
 				l_rows.forth
 			end
-			try_auto_resize_grid (<<[500, 800, 1]>>)
+			try_auto_resize_grid (<<[500, 800, 1]>>, False)
 		end
 
 	first_occurrence (a_row: EB_CLASS_BROWSER_TREE_ROW): EB_CLASS_BROWSER_TREE_ROW is
@@ -662,9 +662,15 @@ feature{NONE} -- Implementation
 	recycle_agents is
 			-- Recycle agents
 		do
-			display_path_button.recycle
-			syntactical_button.recycle
-			normal_referenced_button.recycle
+			if display_path_button_internal /= Void then
+				display_path_button.recycle
+			end
+			if syntactical_button_internal /= Void then
+				syntactical_button.recycle
+			end
+			if normal_referenced_button_internal /= Void then
+				normal_referenced_button.recycle
+			end
 			Precursor {EB_CLASS_BROWSER_GRID_VIEW}
 		end
 

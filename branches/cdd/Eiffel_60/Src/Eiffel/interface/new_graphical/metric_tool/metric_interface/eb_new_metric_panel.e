@@ -225,10 +225,10 @@ feature -- Basic operations
 				metric_definition_area.extend (current_metric_editor.widget)
 			end
 			if original_metric /= Void then
-				current_metric_editor.initialize_editor (a_metric, l_mode, a_unit, original_metric.uuid)
+				current_metric_editor.initialize_editor (a_metric, l_mode, a_unit)
 			else
 				create l_uuid_generator
-				current_metric_editor.initialize_editor (a_metric, l_mode, a_unit, l_uuid_generator.generate_uuid)
+				current_metric_editor.initialize_editor (a_metric, l_mode, a_unit)
 			end
 			set_is_up_to_date (False)
 			update_ui
@@ -312,7 +312,7 @@ feature -- Actions
 				metric_tool.store_metrics
 				set_is_metric_changed (False)
 				original_metric := l_new_metric
-				current_metric_editor.initialize_editor (l_new_metric, {EB_METRIC_EDITOR}.edit_mode, l_new_metric.unit, l_new_metric.uuid)
+				current_metric_editor.initialize_editor (l_new_metric, {EB_METRIC_EDITOR}.edit_mode, l_new_metric.unit)
 				set_is_up_to_date (False)
 				update_ui
 			else
@@ -377,24 +377,10 @@ feature -- Actions
 			-- Action to be performed to open user defined metric file in specified external editor
 		local
 			l_cmd_exec: COMMAND_EXECUTOR
-			l_cmd_string: STRING
-			l_file: STRING
-			l_platform: PLATFORM_CONSTANTS
 		do
 			if metric_manager.is_userdefined_metric_file_exist then
-				l_cmd_string := preferences.misc_data.external_editor_command.twin
-				if not l_cmd_string.is_empty then
-					l_file := metric_manager.userdefined_metrics_file.twin
-					create l_platform
-					if l_platform.is_windows and then l_file.has (' ') then
-						l_file.prepend_character ('"')
-						l_file.append_character ('"')
-					end
-					l_cmd_string.replace_substring_all ("$target", l_file)
-					l_cmd_string.replace_substring_all ("$line", "0")
-					create l_cmd_exec
-					l_cmd_exec.execute (l_cmd_string)
-				end
+				create l_cmd_exec
+				l_cmd_exec.execute (preferences.misc_data.external_editor_cli (metric_manager.userdefined_metrics_file, 1))
 			end
 		end
 
@@ -630,7 +616,7 @@ feature{NONE} -- UI Update
 							when {EB_METRIC_EDITOR}.new_mode then
 								l_metric := current_metric_editor.metric
 								metric_selector.remove_selection
-								current_metric_editor.initialize_editor (l_metric, l_mode, l_metric.unit, l_metric.uuid)
+								current_metric_editor.initialize_editor (l_metric, l_mode, l_metric.unit)
 							when {EB_METRIC_EDITOR}.readonly_mode then
 								if metric_manager.has_metric (original_metric.name) then
 									metric_selector.select_metric (original_metric.name)
@@ -648,7 +634,7 @@ feature{NONE} -- UI Update
 										metric_selector.metric_selected_actions.resume
 										l_metric := current_metric_editor.metric
 										original_metric := metric_selector.selected_metric
-										current_metric_editor.initialize_editor (l_metric, l_mode, l_metric.unit, l_metric.uuid)
+										current_metric_editor.initialize_editor (l_metric, l_mode, l_metric.unit)
 									else
 										metric_selector.select_metric (original_metric.name)
 									end

@@ -185,7 +185,7 @@ feature {EV_ANY_I} -- Implementation
 						if mode_is_configurable_target_menu then
 							l_configure_agent := agent real_start_transport (a_x, a_y, a_button, a_x_tilt, a_y_tilt, a_pressure, a_screen_x, a_screen_y)
 						end
-						application_imp.target_menu (pebble, l_configure_agent).show
+						application_imp.create_target_menu (interface, pebble, l_configure_agent)
 					elseif mode_is_pick_and_drop and a_button = 3 then
 						real_start_transport (a_x, a_y, a_button, a_x_tilt,
 							a_y_tilt, a_pressure, a_screen_x, a_screen_y)
@@ -205,31 +205,6 @@ feature {EV_ANY_I} -- Implementation
 				end
 			end
 		end
-
-	modify_widget_appearance (starting: BOOLEAN) is
-			-- Modify the appearence of widgets to reflect current
-			-- state of pick and drop and dropable targets.
-			-- If `starting' then the pick and drop is starting,
-			-- else it is ending.
-		local
-			window_imp: EV_WINDOW_IMP
-			windows: LINEAR [EV_WINDOW]
-		do
-			windows := application_imp.windows
-			from
-				windows.start
-			until
-				windows.off
-			loop
-				window_imp ?= windows.item.implementation
-				check
-					window_implementation_not_void: window_imp /= Void
-				end
-				window_imp.update_for_pick_and_drop (starting)
-				windows.forth
-			end
-		end
-
 
 	real_start_transport (a_x, a_y, a_button: INTEGER; a_x_tilt, a_y_tilt,
 		a_pressure: DOUBLE; a_screen_x, a_screen_y: INTEGER) is
@@ -259,8 +234,6 @@ feature {EV_ANY_I} -- Implementation
 
 					-- We now create the screen at the start of every pick.
 					-- See `pnd_screen' comment for explanation.
-				create pnd_screen
-				pnd_screen.enable_dashed_line_style
 
 				interface.pointer_motion_actions.block
 					-- Block `pointer_motion_actions'.
@@ -303,11 +276,9 @@ feature {EV_ANY_I} -- Implementation
 						end
 						pt.client_to_screen (l_win)
 					end
-					internal_pick_x := pt.x
-					internal_pick_y := pt.y
+					application_imp.set_x_y_origin (pt.x, pt.y)
 				else
-					internal_pick_x := a_screen_x
-					internal_pick_y := a_screen_y
+					application_imp.set_x_y_origin (a_screen_x, a_screen_y)
 				end
 				press_action := Ev_pnd_end_transport
 				motion_action := Ev_pnd_execute
@@ -568,30 +539,22 @@ feature {EV_ANY_I} -- Implementation
 	is_dnd_in_transport: BOOLEAN
 		-- Is `Current' executing drag and drop?
 
-	press_action: INTEGER
+	press_action: NATURAL_8
 		-- State which is used to decide action on pick/drag and drop press.
 
-	release_action: INTEGER
+	release_action: NATURAL_8
 		-- State which is used to describe action on pick/drag and drop release.
 
-	motion_action: INTEGER
+	motion_action: NATURAL_8
 		-- State which is used to describe action on pick/drab and drop
 		-- pointer motion.
 
-	Ev_pnd_disabled: INTEGER is 0
-	Ev_pnd_start_transport: INTEGER is 1
-	Ev_pnd_end_transport: INTEGER is 2
-	Ev_pnd_execute: INTEGER is 3
+	Ev_pnd_disabled: NATURAL_8 is 0
+	Ev_pnd_start_transport: NATURAL_8 is 1
+	Ev_pnd_end_transport: NATURAL_8 is 2
+	Ev_pnd_execute: NATURAL_8 is 3
 		-- Allowable states for use with `press_action', release_action' and
 		-- `motion_action'.
-
-	old_pointer_x, old_pointer_y: INTEGER
-		-- Hold the last position that the rubber band was drawn to.
-		--| Used to stop unecessary re-draw of the band when no movement.
-
-	internal_pick_x, internal_pick_y: INTEGER
-		-- Rubber band starting position.
-		-- Only initialised when a pick/drag and drop is started.
 
 	pnd_stored_cursor: EV_POINTER_STYLE
 			-- Cursor used on the widget before PND started.
@@ -619,30 +582,13 @@ feature {EV_ANY_I} -- Implementation
 			-- Erase previously drawn rubber band.
 			-- Draw a rubber band between initial pick point and cursor.
 		do
-			if rubber_band_is_drawn then
-				real_draw_rubber_band
-			end
-			old_pointer_x := pointer_x
-			old_pointer_y := pointer_y
-			real_draw_rubber_band
-			rubber_band_is_drawn := True
-		end
-
-	real_draw_rubber_band is
-			-- Draw rubber band.
-		do
-			pnd_screen.set_invert_mode
-			pnd_screen.draw_segment
-				(internal_pick_x, internal_pick_y, old_pointer_x, old_pointer_y)
+			application_imp.draw_rubber_band
 		end
 
 	erase_rubber_band  is
 			-- Erase previously drawn rubber band.
 		do
-			if rubber_band_is_drawn then
-				real_draw_rubber_band
-				rubber_band_is_drawn := False
-			end
+			application_imp.erase_rubber_band
 		end
 
 	enable_capture is

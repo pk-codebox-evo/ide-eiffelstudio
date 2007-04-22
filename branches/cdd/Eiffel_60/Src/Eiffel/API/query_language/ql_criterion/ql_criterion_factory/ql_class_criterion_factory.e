@@ -72,7 +72,6 @@ feature{NONE} -- Initialization
 			agent_table.put (agent new_top_indexing_has_tag_criterion, c_top_indexing_has_tag)
 			agent_table.put (agent new_bottom_indexing_has_tag_criterion, c_bottom_indexing_has_tag)
 			agent_table.put (agent new_indexing_has_tag_criterion, c_indexing_has_tag)
-			agent_table.put (agent new_contain_ast_criterion, c_contain_ast)
 			agent_table.put (agent new_value_criterion, c_value_of_metric_is)
 
 			create name_table.make (45)
@@ -123,7 +122,6 @@ feature{NONE} -- Initialization
 			name_table.put (c_bottom_indexing_has_tag, query_language_names.ql_cri_bottom_indexing_has_tag)
 			name_table.put (c_indexing_has_tag, query_language_names.ql_cri_indexing_has_tag)
 
-			name_table.put (c_contain_ast, query_language_names.ql_cri_contain_ast)
 			name_table.put (c_value_of_metric_is, query_language_names.ql_cri_value_of_metric_is)
 		end
 
@@ -325,72 +323,72 @@ feature{NONE} -- New criterion
 			result_attached: Result /= Void
 		end
 
-	new_name_is_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_CLASS_NAME_IS_CRI is
+	new_name_is_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_CLASS_NAME_IS_CRI is
 			-- New {QL_CLASS_NAME_IS_CRI} criterion.
 		require
 			a_name_attached: a_name /= Void
 		do
-			create Result.make_with_setting (a_name, a_case_sensitive, a_identical)
+			create Result.make_with_setting (a_name, a_case_sensitive, a_matching_strategy)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_top_indexing_has_tag_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_CLASS_TOP_INDEXING_HAS_TAG_CRI is
+	new_top_indexing_has_tag_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_CLASS_TOP_INDEXING_HAS_TAG_CRI is
 			-- New {QL_CLASS_NAME_IS_CRI} criterion.
 		require
 			a_name_attached: a_name /= Void
 		do
-			create Result.make_with_setting (a_name, a_case_sensitive, a_identical)
+			create Result.make_with_setting (a_name, a_case_sensitive, a_matching_strategy)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_bottom_indexing_has_tag_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_CLASS_BOTTOM_INDEXING_HAS_TAG_CRI is
+	new_bottom_indexing_has_tag_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_CLASS_BOTTOM_INDEXING_HAS_TAG_CRI is
 			-- New {QL_CLASS_NAME_IS_CRI} criterion.
 		require
 			a_name_attached: a_name /= Void
 		do
-			create Result.make_with_setting (a_name, a_case_sensitive, a_identical)
+			create Result.make_with_setting (a_name, a_case_sensitive, a_matching_strategy)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_indexing_has_tag_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_CLASS_INDEXING_HAS_TAG_CRI is
+	new_indexing_has_tag_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_CLASS_INDEXING_HAS_TAG_CRI is
 			-- New {QL_CLASS_NAME_IS_CRI} criterion.
 		require
 			a_name_attached: a_name /= Void
 		do
-			create Result.make_with_setting (a_name, a_case_sensitive, a_identical)
+			create Result.make_with_setting (a_name, a_case_sensitive, a_matching_strategy)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_top_indexing_contain_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_CLASS_TOP_INDEXING_CONTAIN_CRI is
+	new_top_indexing_contain_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_CLASS_TOP_INDEXING_CONTAIN_CRI is
 			-- New {QL_CLASS_NAME_IS_CRI} criterion.
 		require
 			a_name_attached: a_name /= Void
 		do
-			create Result.make_with_setting (a_name, a_case_sensitive, a_identical)
+			create Result.make_with_setting (a_name, a_case_sensitive, a_matching_strategy)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_bottom_indexing_contain_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_CLASS_BOTTOM_INDEXING_CONTAIN_CRI is
+	new_bottom_indexing_contain_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_CLASS_BOTTOM_INDEXING_CONTAIN_CRI is
 			-- New {QL_CLASS_NAME_IS_CRI} criterion.
 		require
 			a_name_attached: a_name /= Void
 		do
-			create Result.make_with_setting (a_name, a_case_sensitive, a_identical)
+			create Result.make_with_setting (a_name, a_case_sensitive, a_matching_strategy)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_indexing_contain_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_CLASS_INDEXING_CONTAIN_CRI is
+	new_indexing_contain_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_CLASS_INDEXING_CONTAIN_CRI is
 			-- New {QL_CLASS_NAME_IS_CRI} criterion.
 		require
 			a_name_attached: a_name /= Void
 		do
-			create Result.make_with_setting (a_name, a_case_sensitive, a_identical)
+			create Result.make_with_setting (a_name, a_case_sensitive, a_matching_strategy)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -415,12 +413,12 @@ feature{NONE} -- New criterion
 			result_attached: Result /= Void
 		end
 
-	new_text_contain_criterion (a_text: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_CLASS_TEXT_CONTAIN_CRI is
+	new_text_contain_criterion (a_text: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_CLASS_TEXT_CONTAIN_CRI is
 			-- New {QL_CLASS_TEXT_CONTAIN_CRI} criterion.
 		require
 			a_text_attached: a_text /= Void
 		do
-			create Result.make_with_setting (a_text, a_case_sensitive, a_identical)
+			create Result.make_with_setting (a_text, a_case_sensitive, a_matching_strategy)
 		ensure
 			result_attached: Result /= Void
 		end

@@ -20,7 +20,8 @@ inherit
 			instantiation_in,
 			is_loose,
 			is_valid,
-			is_type_set
+			is_type_set,
+			to_type_set
 		end
 
 	ARRAYED_LIST[EXTENDED_TYPE_A]
@@ -49,21 +50,12 @@ inherit
 			is_equal, copy
 		end
 
---	SHARED_AST_CONTEXT
---		export
---			{NONE} all
---		undefine
---			is_equal, copy
---		end
-
 	SHARED_NAMES_HEAP
 		export
 			{NONE} all
 		undefine
 			is_equal, copy
 		end
-
-
 
 create
 	make, make_filled, make_from_array
@@ -173,7 +165,6 @@ feature -- Access
 			result_semantic_correct: Result.features_found_count > 1  implies (Result.feature_item = Void and Result.class_type_of_feature = Void)
 		end
 
-
 	feature_i_state_by_rout_id (a_routine_id: INTEGER): TUPLE [feature_item: FEATURE_I; class_type_of_feature: CL_TYPE_A; features_found_count: INTEGER; constraint_position: INTEGER]
 			-- Compute feature state.
 			--
@@ -225,8 +216,39 @@ feature -- Access
 
 		end
 
-	feature_i_list_by_rout_id (a_routine_id: INTEGER): ARRAYED_LIST[TUPLE[feature_item: FEATURE_I; class_type: EXTENDED_TYPE_A]]
+	any_feature_i_by_routine_id (a_routine_id: INTEGER): TUPLE [feature_item: FEATURE_I; class_type: EXTENDED_TYPE_A]
+			-- Returns the first matching feature and its class type (you need to to an assignment attempt)
 			--
+			-- `a_routine_id' is a routine id for which we query all types in the type set.
+		require
+			not_loose: not is_loose
+		local
+			l_class: CLASS_C
+			l_feat: FEATURE_I
+			l_item: EXTENDED_TYPE_A
+		do
+			from
+				start
+			until
+				after or Result /= Void
+			loop
+				l_item := item
+					-- implied by precondition: not_loose
+				check has_associated_class: l_item.has_associated_class end
+				l_class := l_item.associated_class
+				l_feat := l_class.feature_of_rout_id (a_routine_id)
+				if l_feat /= Void then
+					Result := [l_feat, l_item]
+				end
+				forth
+			end
+		end
+
+	feature_i_list_by_rout_id (a_routine_id: INTEGER): ARRAYED_LIST[TUPLE[feature_item: FEATURE_I; class_type: EXTENDED_TYPE_A]]
+			-- Builds a list of pairs of FEATURE_I and EXTENDED_TYPE_A which all have a feature with routine id `a_routine_id'.
+			--
+			-- `a_routine_id' is the routine ID of the routine for which the list is built.
+			--| If you are just interested in any feature for a given routine id use `first_feature_i'
 		require
 			not_loose: not is_loose
 		local
@@ -269,7 +291,7 @@ feature -- Access
 			l_class_c: CLASS_C
 			l_last_class_type: CL_TYPE_A
 			l_constraint_position: INTEGER
-					-- The Position at which the constraint where the feature was selected from is written.
+				-- The Position at which the constraint where the feature was selected from is written.
 			l_features_found_count: INTEGER
 			l_item: EXTENDED_TYPE_A
 		do
@@ -503,6 +525,8 @@ feature -- Access for Error handling
 			a_context_class_not_void_if_needed: has_formal implies a_context_class /= Void
 		do
 			Result := info_about_feature_by_name_id (a_id.name_id, a_formal_position, a_context_class)
+		ensure
+			Result_not_void: Result /= Void
 		end
 
 	info_about_feature_by_name_id (a_name_id: INTEGER; a_formal_position: INTEGER; a_context_class: CLASS_C): like info_about_feature
@@ -512,6 +536,7 @@ feature -- Access for Error handling
 			-- `a_formal_position' position of the formal to which this typeset belongs.
 			-- `a_context_class' is the class where the formal (denoted by `a_formal_position') has been defined.
 		require
+			a_name_id_valid: a_name_id > 0
 			a_context_class_not_void_if_needed: has_formal implies a_context_class /= Void
 		local
 			l_feature_agent: FUNCTION [ANY, TUPLE [EXTENDED_TYPE_A], TUPLE [e_feature: E_FEATURE; feature_i: FEATURE_I]]
@@ -531,13 +556,17 @@ feature -- Access for Error handling
 								else
 									l_renamed_id := g_name_id
 								end
-								Result := [	l_class.feature_with_name_id (l_renamed_id),
-											l_class.feature_of_name_id (l_renamed_id)]
+								if l_renamed_id > 0 then
+									Result := [	l_class.feature_with_name_id (l_renamed_id),
+												l_class.feature_of_name_id (l_renamed_id)]
+								end
 							end
 						end
 					end (a_name_id, ?)
 			Result := info_about_feature_by_agent (l_feature_agent, a_formal_position, a_context_class, create {SEARCH_TABLE [INTEGER]}.make (3))
 			Result.set_data (names_heap.item (a_name_id), a_formal_position, a_context_class)
+		ensure
+			Result_not_void: Result /= Void
 		end
 
 	info_about_feature_by_rout_id (a_routine_id: INTEGER; a_formal_position: INTEGER;  a_context_class: CLASS_C): like info_about_feature
@@ -563,11 +592,15 @@ feature -- Access for Error handling
 							if l_class.has_feature_table then
 								Result := [	l_class.feature_with_rout_id (g_routine_id),
 											l_class.feature_of_rout_id (g_routine_id)]
+							else
+								-- Result := Void
 							end
 						end
 					end (a_routine_id, ?)
 			Result := info_about_feature_by_agent (l_feature_agent, a_formal_position, a_context_class, create {SEARCH_TABLE [INTEGER]}.make (3))
 			Result.set_data (Void, a_formal_position, a_context_class)
+		ensure
+			Result_not_void: Result /= Void
 		end
 
 	check_renaming
@@ -634,6 +667,46 @@ feature {TYPE_SET_A} -- Access implementation
 				end
 				forth
 			end
+		ensure
+			Result_not_void: Result /= Void
+		end
+
+feature -- Conversion
+
+	to_type_set: TYPE_SET_A
+			-- Create a type set containing one element which is `Current'.
+		do
+			Result := Current
+		end
+
+	substitude_formals (a_generic_context_type: GEN_TYPE_A)
+			-- Replaces (!) formal types with their generic derivation.
+			--
+			-- `a_generic_context_type' is the supplier of the actual generics
+		require
+			a_generic_context_type_not_void: a_generic_context_type /= Void
+		local
+			l_formal: FORMAL_A
+			l_gen_type: GEN_TYPE_A
+			l_item_type: TYPE_A
+		do
+			from
+				start
+			until
+				after
+			loop
+				l_item_type := item.type
+				l_formal ?= l_item_type
+				if l_formal /= Void then
+					item.set_type (a_generic_context_type.generics [l_formal.position])
+				else
+					l_gen_type ?= l_item_type
+					if l_gen_type /= Void then
+						l_gen_type.substitute (a_generic_context_type.generics)
+					end
+				end
+				forth
+			end
 		end
 
 feature -- Comparison
@@ -658,8 +731,7 @@ feature -- Comparison
 				loop
 					if item.type.conform_to (a_other.item.type) then
 						a_other.remove
-					end
-					if not a_other.after then
+					elseif not a_other.after then
 						a_other.forth
 					end
 				end
@@ -675,24 +747,31 @@ feature -- Comparison
 
 	conform_to_type (a_type: TYPE_A): BOOLEAN is
 			-- Is `Current' conform to `a_type'?
+		local
+			l_type_set: TYPE_SET_A
 		do
-			-- If at least one element of `Current' conforms to `a_type' then the type set conforms to the type.
-			Result := False
-			from
-				start
-			until
-				after or Result
-			loop
-				Result := item.type.conform_to (a_type)
-				last_type_checked := item
-				forth
+			l_type_set ?= a_type
+			if l_type_set /= Void then
+				Result := conform_to (l_type_set.twin)
+			else
+					-- If at least one element of `Current' conforms to `a_type' then the type set conforms to the type.
+				Result := False
+				from
+					start
+				until
+					after or Result
+				loop
+					Result := item.type.conform_to (a_type.conformance_type)
+					last_type_checked := item
+					forth
+				end
 			end
 		end
 
 	is_conforming_type (a_type: TYPE_A): BOOLEAN is
 			-- Conforms `a_type' to the type set?
 		do
-			-- If `a_type' is not conform to at least one element of the type set then `a_type' is not conform to the type set.
+				-- If `a_type' is not conform to at least one element of the type set then `a_type' is not conform to the type set.
 			Result := True
 			from
 				start
@@ -789,7 +868,6 @@ feature -- Status
 						end)
 		end
 
-
 	has_void: BOOLEAN is
 			-- Does the current type set contain the NONE type?
 		do
@@ -853,7 +931,6 @@ feature -- Status
 			Result := True
 		end
 
-
 	is_valid: BOOLEAN is
 			-- Is the type set valid, meaning that all items are valid items?
 		do
@@ -887,11 +964,11 @@ feature -- Status
 		do
 			Result := there_exists (agent (a_item: EXTENDED_TYPE_A): BOOLEAN
 						 do
-						 	Result := a_item.associated_class.is_deferred
+						 	if a_item.has_associated_class then
+						 		Result := a_item.associated_class.is_deferred
+						 	end
 						 end)
 		end
-
-feature -- Setters
 
 feature -- Access
 
@@ -1046,7 +1123,6 @@ feature -- Access
 			not_has_formal: not Result.has_formal
 		end
 
-
 	overloaded_items (an_id: INTEGER): LIST [FEATURE_I] is
 			-- List of features matching overloaded name `an_id'.
 		local
@@ -1128,7 +1204,6 @@ feature -- Visitor
 		end
 
 feature {NONE} -- Implementation
-
 
 	formal_resolution_stack: STACK[INTEGER] is
 			-- A stack which is used to prohibit inifinite recursion while resolving a formal type to its constraining type set.

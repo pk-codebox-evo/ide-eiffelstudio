@@ -324,6 +324,10 @@ test	inherit-from-expanded				valid203 tcf pass validity frozen expanded
 test	recheck-assertion-feature-renamed	valid204 tcf pass validity assertion renaming
 test	recursive-generic-constraint-with-creation	valid205 tcf pass validity
 test	named-tuple-in-parent-constraint-clauses	valid206 tcf pass validity
+test	valid-generic-derivation	valid207 tcf pass validity
+test	creation-constraint-like-current-deferred	valid208 tcf pass validity
+test	creation-constraint-like-current-deferred2	valid209 tcf pass validity
+test	vtgc-expanded	valid210 tcf pass validity
 
 
 -- System validity tests
@@ -531,7 +535,7 @@ test	create-sub-cluster-bogus-vd30	incr197  tcf fail incrementality
 test	vgcc-weasel			incr198  tcf fail incrementality
 test	add-vuar-remove-finalize	incr199  tcf pass incrementality
 test	vtec-weasel			incr200  tcf fail incrementality
-test	vtcg-then-syntax-error		incr201  tcf pass incrementality
+test	vtcg-then-syntax-error-then-ok		incr201  tcf pass incrementality
 test	implicit-def-create-finalize	incr202  tcf pass incrementality
 test	remove-syntax-warning-yes	incr203  tcf pass incrementality
 test	bogus-vtec			incr204  tcf pass incrementality
@@ -612,6 +616,7 @@ test	changing-formals-precursor-crash	incr279 tcf pass incrementality
 test	console-setting-change		incr280 tcf pass incrementality
 test	vtcg-add-remove-missing-error	incr281 tcf pass incrementality
 test	funky-removal-of-type			incr282 tcf pass incrementality
+test	multi-constraint-incremental-crash		incr283 tcf pass incrementality
 
 
 -- Melting
@@ -1042,6 +1047,8 @@ test	expanded-formal-attached-to-reference	exec267 tcf pass execution generic ba
 test	tuple-with-basic-type		exec268 tcf pass execution generic basic
 test	signed-unsigned-in-inspect	exec269 tcf pass execution inspect
 test	mixed-basic-type-operations	exec270 tcf pass execution inspect
+test	wrong-agent-creation-type	exec271 tcf pass execution inspect
+test	expanded-derivation-reattachment	exec272 tcf pass execution expanded generic
 
 
 
@@ -1184,6 +1191,7 @@ test	creation-expression-in-inherited-assertion	term143 tcf pass termination
 test	inspect-using-static-procedure	term144 tcf pass termination
 test	constraint-type-comparison	term145 tcf pass termination generic
 test	missing-actual-generic-crash	term146 tcf pass termination generic
+test	actual-generic-none-crash	term147 tcf pass termination generic
 
 -- Config
 
@@ -1287,6 +1295,7 @@ test	store-generic-reference-class-used-as-expanded	store006 tcf pass storable
 test	various-storable-format-testing	store007 tcf pass storable
 test	missing-type-retrieval		store008 tcf pass storable
 test	store-expanded-as-reference	store009 tcf pass storable expanded
+test	store-expanded-class-type	store010 tcf pass storable expanded
 
 
 -- Flat, short, flatshort tests
@@ -1621,6 +1630,11 @@ test	multi-constraint-check-constraints				multicon024 tcf pass multiconstraint
 test	multi-constraint-actual-type					multicon025 tcf pass multiconstraint
 test	multi-constraint-rename-formal					multicon026 tcf pass multiconstraint
 test	multi-constraint-creation-through-formal		multicon027 tcf pass multiconstraint
+test	multi-constraint-abstract-creation				multicon028 tcf pass multiconstraint
+test	multi-constraint-creation-crash01				multicon029 tcf pass multiconstraint
+test	multi-constraint-code-generation-crash01		multicon030 tcf pass multiconstraint
+test	multi-constraint-renamed-creation-feature		multicon031 tcf pass multiconstraint
+test	multi-constraint-single-constraint-renaming		multicon032 tcf pass multiconstraint
 
 -- .NET specific test
 if DOTNET test expanded-object-conversion	dotnet001	tcf pass dotnet
@@ -1673,3 +1687,5 @@ if DOTNET test deferred-property-missing-assigner-implementation dotnet047	tcf p
 if DOTNET test deferred-property-missing-assigner-implementation-renamed dotnet048	tcf pass dotnet property
 if DOTNET test effecting-from-inherited-external	dotnet049	tcf pass dotnet
 test replicated-from-generic-type		dotnet050	tcf pass dotnet termination expanded replication
+test implicit-type-cause-crash-on-cast	dotnet051	tcf pass dotnet termination
+if DOTNET test incremental-custom-attribute-constant-change	dotnet052	tcf pass dotnet
