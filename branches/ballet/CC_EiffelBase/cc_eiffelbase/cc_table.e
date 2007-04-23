@@ -13,7 +13,15 @@ inherit
 	CC_COLLECTION [G]
 		rename
 			model as model_container,
-			put as collection_put
+			put as collection_put,
+			extend as collection_extend,
+			can_extend as collection_can_extend,
+			can_put as collection_can_put,
+			can_prune as collection_can_prune
+		redefine
+			collection_can_extend,
+			collection_can_put,
+			collection_can_prune
 		end
 
 feature -- Access
@@ -58,6 +66,7 @@ feature -- Element change
 			-- Associate value `v' with key `k'.
 		require
 			valid_key: valid_key (k)
+			can_put_element: can_put (v, k)
 		modify
 			modify_own_representation: representation
 		deferred
@@ -67,9 +76,58 @@ feature -- Element change
 			confined representation
 		end
 
+feature -- Element specific status report
+
+-- die beiden machen eher keinen sinn, da die table eher key zentriert ist
+	can_extend (v: G; k: H) : BOOLEAN is
+			-- Can `an_item' be added? Only iff the key is not yet used.
+		use
+			use_own_representation: representation
+		do
+			-- auch checken, dass key noch nicht existiert
+			Result := extendible and (item (k) = Void) -- TODO korrekt?
+		ensure
+			model_corresponds: not model.range.contains (k)
+		end
+
+	can_put (v: G; k: H) : BOOLEAN is
+			-- Can `an_item' be added?
+		use
+			use_own_representation: representation
+		do
+			Result := extendible
+		end
+
+-- TODO nötig? gibt ja keine verschiedenen prune mechanismen im vergleich zu extend <> put <> force_*
+	can_prune (v: G; k: H) : BOOLEAN is
+			-- Can `an_item' be pruned?
+		use
+			use_own_representation: representation
+		do
+			Result := prunable
+		end
+
 feature {NONE} -- Inapplicable
 
+-- TODO sehr unschön
+
 	collection_put (v: G) is
+		do
+		end
+
+	collection_extend (v: G) is
+		do
+		end
+
+	collection_can_extend (v: G) : BOOLEAN is
+		do
+		end
+
+	collection_can_put (v: G) : BOOLEAN is
+		do
+		end
+
+	collection_can_prune (v: G) : BOOLEAN is
 		do
 		end
 
@@ -81,6 +139,7 @@ feature -- Model
 			modify_own_representation: representation
 		do
 			create {MML_DEFAULT_RELATION [G, H]} Result.make_empty
+			-- TODO
 		ensure
 			Result_not_void: Result /= Void
 		end

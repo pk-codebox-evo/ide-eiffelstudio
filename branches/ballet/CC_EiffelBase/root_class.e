@@ -45,6 +45,10 @@ feature -- DUMP
 			-- DUMP
 			eiffelBase_collection: COLLECTION [INTEGER]
 
+			cc_set: CC_SET [INTEGER]
+			cc_bag: CC_BAG [INTEGER]
+			cc_table: CC_TABLE [INTEGER, INTEGER]
+
 		do
 			create gobo_linked_list.make
 			create eiffelbase_linked_list.make

@@ -13,12 +13,26 @@ inherit
 		rename
 			model as model_collection
 		redefine
-			changeable_comparison_criterion
+			changeable_comparison_criterion,
+			can_extend,
+			can_put,
+			can_prune
 		end
 
 feature -- Element change
 
-	extend, put (v: G) is
+	extend (v: G) is
+			-- Ensure that set includes `v' iff `v' can be added.
+		modify
+			modify_own_representation: representation
+		deferred
+		ensure then
+			--in_set_already: old has (v) implies (count = old count) TODO diese postcondition nicht nötig
+			added_to_set: not old has (v) implies (count = old count + 1)
+			-- TODO hier noch contracts oder reicht das geerbte?
+		end
+
+	put (v: G) is
 			-- Ensure that set includes `v'.
 		modify
 			modify_own_representation: representation
@@ -53,6 +67,40 @@ feature -- Removal
 			Result := is_empty
 		ensure then
 			only_on_empty: Result = is_empty
+		end
+
+feature -- Element specific status report
+
+	can_extend (v: G) : BOOLEAN is
+			-- Can `an_item' be added?
+			-- True only if it is not already in the set.
+		use
+			use_own_representation: representation
+		do
+			Result := extendible and not has(v)
+		ensure then
+			element_not_in_set: not has (v)
+			model_corresponds: not model.contains (v)
+		end
+
+	can_put (v: G) : BOOLEAN is
+			-- Can `an_item' be added?
+		use
+			use_own_representation: representation
+		do
+			Result := extendible
+		end
+
+-- TODO nötig?
+	can_prune (v: G) : BOOLEAN is
+			-- Can `an_item' be pruned?
+		use
+			use_own_representation: representation
+		do
+			Result := has (v)
+		ensure then
+			element_in_set: has (v)
+			model_corresponds: model.contains (v)
 		end
 
 feature -- Model

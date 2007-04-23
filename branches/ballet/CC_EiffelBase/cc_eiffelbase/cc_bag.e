@@ -40,7 +40,6 @@ feature -- Element change
 		deferred
 		ensure then
 			one_more_occurrence: occurrences (v) = old (occurrences (v)) + 1
-			-- TODO nötig? model_corresponds: model.count = old model.count + 1
 			model_corresponds: model.occurrences (v) = old model.occurrences (v) + 1
 		end
 

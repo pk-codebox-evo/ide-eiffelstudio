@@ -1,6 +1,6 @@
 indexing
 	description: "[
-		Structures for which there exists a traversal policy
+		Finite structures for which there exists a traversal policy
 		that will visit every element exactly once.
 		]"
 	author: "Marco Zietzling"
@@ -30,13 +30,15 @@ feature -- Access
 
 feature -- Status report
 
+-- TODO gemäss bernd unnötig. off erst in CC_LINEAR... hmm doch hier lassen
 	off: BOOLEAN is
 			-- Is there no current item?
+			-- Either we are before or after the data structure.
 		use
 			use_own_representation: representation
 		deferred
 		ensure
-			model_corresponds: model_cursor = model_sequence.count -- TODO korrekt?
+			--model_corresponds: model_cursor = model_sequence.count -- TODO korrekt? cursor nicht beeinträchtigen...
 		end
 
 feature -- Cursor movement
@@ -159,6 +161,5 @@ invariant
 	empty_defined_through_model: is_empty = model_sequence.is_empty
 	model_container_corresponds_to_model_sequence: model_container.count = model_sequence.count
 	models_equivalent: model_sequence.range |=| model_container.domain
-	model_cursor_within_range: model_cursor >= 0 and model_cursor <= model_sequence.count
 
 end

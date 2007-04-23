@@ -1,5 +1,5 @@
 indexing
-	description: "Structures whose items may be accessed sequentially, one-way"
+	description: "Finite structures whose items may be accessed sequentially, one-way"
 	author: "Marco Zietzling"
 	library: "EiffelBase with complete contracts"
 	date: "$Date$"
@@ -337,6 +337,10 @@ feature -- Conversion
 invariant
 
 	after_constraint: after implies off
+
+	-- TODO additional constraint
+	after_constraint_2: after implies exhausted
+
 	empty_defined_through_model: is_empty = model_container.is_empty
 
 end
