@@ -106,6 +106,7 @@ feature -- Access
 				 implies equal (v, item)
 			item_found: (not exhausted and not object_comparison)
 				 implies v = item
+			models_equal_before_after: model_sequence |=| old model_sequence
 		end
 
 	index: INTEGER is

@@ -49,6 +49,8 @@ feature -- DUMP
 			cc_bag: CC_BAG [INTEGER]
 			cc_table: CC_TABLE [INTEGER, INTEGER]
 
+			cc_bilinear: CC_BILINEAR [INTEGER]
+
 		do
 			create gobo_linked_list.make
 			create eiffelbase_linked_list.make
