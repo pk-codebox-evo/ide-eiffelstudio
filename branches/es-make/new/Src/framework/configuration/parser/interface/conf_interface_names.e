@@ -305,6 +305,9 @@ feature -- Option names and descriptions
 	option_warnings_name: STRING_GENERAL is do Result := locale.translate ("Enabled")	end
 	option_warnings_description: STRING_GENERAL is do Result := locale.translate ("Are warnings enabled?")	end
 
+	option_cat_call_detection_name: STRING_GENERAL is do Result := locale.translate ("Cat call detection") end
+	option_cat_call_detection_description: STRING_GENERAL is do Result := locale.translate ("Are all feature calls checked if they are a potential cat-call?") end
+
 	warning_names: HASH_TABLE [STRING_GENERAL, STRING] is
 			-- Warning names.
 		once
@@ -472,9 +475,7 @@ feature -- Class option dialog
 
 	dialog_class_option_class_name: STRING_GENERAL is do Result := locale.translate ("Class name")	end
 
-
 	remove_group_text: STRING_GENERAL is do Result := locale.translate ("Remove group")	end
-
 
 feature -- Validation warnings
 

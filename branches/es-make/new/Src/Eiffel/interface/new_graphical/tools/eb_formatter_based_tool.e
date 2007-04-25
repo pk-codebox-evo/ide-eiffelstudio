@@ -66,6 +66,7 @@ feature{NONE} -- Initialization
 		do
 			Precursor (a_docking_manager)
 			content.drop_actions.extend (agent on_item_dropped)
+			content.drop_actions.set_veto_pebble_function (agent (a_stone: STONE): BOOLEAN do Result := a_stone.is_storable end)
 		end
 
 	build_interface is
@@ -233,15 +234,21 @@ feature -- Setting
 			l_formatter_widget: EV_WIDGET
 		do
 			l_formatter_widget := a_formatter.widget
+			l_control_bar := a_formatter.control_bar
 			if not formatter_container.has (l_formatter_widget) then
-				formatter_tool_bar_area.wipe_out
-				l_control_bar := a_formatter.control_bar
-				if l_control_bar /= Void then
-					formatter_tool_bar_area.extend (l_control_bar)
-					formatter_tool_bar_area.disable_item_expand (l_control_bar)
-				end
+
 				formatter_container.replace (l_formatter_widget)
 			end
+
+			if l_control_bar /= Void and then not formatter_tool_bar_area.has (l_control_bar) then
+				formatter_tool_bar_area.wipe_out
+
+				formatter_tool_bar_area.extend (l_control_bar)
+				formatter_tool_bar_area.disable_item_expand (l_control_bar)
+				l_control_bar.show
+
+			end
+
 		end
 
 	force_last_stone is
@@ -480,6 +487,11 @@ feature{NONE} -- Implementation
 			l_cursor: CURSOR
 			l_formatter: EB_FORMATTER
 			l_generator: TUPLE [displayer_generator: FUNCTION [ANY, TUPLE, EB_FORMATTER_DISPLAYER]; displayer_name: STRING]
+			l_browser_formatter: EB_BROWSER_FORMATTER
+			l_editor_formatter: EB_EDITOR_FORMATTER
+			l_displayer: EB_FORMATTER_DISPLAYER
+			l_browser_displayer: EB_FORMATTER_BROWSER_DISPLAYER
+			l_editor_displayer: EB_FORMATTER_EDITOR_DISPLAYER
 		do
 				-- Setup displaysers.
 			l_formatters := a_formatters
@@ -493,7 +505,16 @@ feature{NONE} -- Implementation
 				if l_formatter /= Void and then l_formatter.displayer = Void then
 					l_formatter.set_viewpoints (viewpoints)
 					l_generator := l_formatter.displayer_generator
-					l_formatter.set_displayer (new_displayer (l_generator.displayer_name, l_generator.displayer_generator))
+					l_displayer := new_displayer (l_generator.displayer_name, l_generator.displayer_generator)
+					if l_formatter.is_browser_formatter then
+						l_browser_displayer ?= l_displayer
+						l_browser_formatter ?= l_formatter
+						l_browser_formatter.set_browser_displayer (l_browser_displayer)
+					else
+						l_editor_displayer ?= l_displayer
+						l_editor_formatter ?= l_formatter
+						l_editor_formatter.set_editor_displayer (l_editor_displayer)
+					end
 				end
 				l_formatters.forth
 			end
@@ -552,10 +573,10 @@ feature{NONE} -- Implementation
 	mini_toolbar: EV_HORIZONTAL_BOX
 			-- Mini tool bar.
 
-	history_toolbar: EV_TOOL_BAR
+	history_toolbar: SD_TOOL_BAR
 			-- Toolbar containing the history commands.
 
-	tool_bar: EV_TOOL_BAR
+	tool_bar: SD_TOOL_BAR
 			-- Toolbar containing all buttons.
 
 	tool_bar_area: EV_HORIZONTAL_BOX
@@ -661,9 +682,10 @@ feature{NONE} -- Implementation
 	build_mini_toolbar is
 			-- Redefine
 		do
-			create history_toolbar
-			history_toolbar.extend (history_manager.back_command.new_mini_toolbar_item)
-			history_toolbar.extend (history_manager.forth_command.new_mini_toolbar_item)
+			create history_toolbar.make
+			history_toolbar.extend (history_manager.back_command.new_mini_sd_toolbar_item)
+			history_toolbar.extend (history_manager.forth_command.new_mini_sd_toolbar_item)
+			history_toolbar.compute_minimum_size
 
 			create mini_toolbar
 			mini_toolbar.extend (address_manager.header_info)
@@ -707,11 +729,11 @@ feature{NONE} -- Implementation
 			-- Create diagram option bar.
 		local
 			l_cell: EV_CELL
-			l_setup_toolbar: EV_TOOL_BAR
+			l_setup_toolbar: SD_TOOL_BAR
 		do
-			create tool_bar
+			create tool_bar.make
 			create l_cell
-			create l_setup_toolbar
+			create l_setup_toolbar.make
 			tool_bar_area.extend (tool_bar)
 			tool_bar_area.disable_item_expand (tool_bar)
 			tool_bar_area.extend (formatter_tool_bar_area)
@@ -723,6 +745,7 @@ feature{NONE} -- Implementation
 			tool_bar_area.disable_item_expand (l_setup_toolbar)
 
 			l_setup_toolbar.extend (customized_formatter_button)
+			l_setup_toolbar.compute_minimum_size
 			attach_formatters
 		end
 
@@ -755,12 +778,13 @@ feature{NONE} -- Implementation
 					if l_formatter /= Void then
 						attach_formatter (l_formatter)
 					else
-						tool_bar.extend (create {EV_TOOL_BAR_SEPARATOR})
+						tool_bar.extend (create {SD_TOOL_BAR_SEPARATOR}.make)
 					end
 					l_formatters.forth
 				end
 				l_formatters.go_to (l_cursor)
 			end
+			tool_bar.compute_minimum_size
 			pop_default_formatter
 		end
 
@@ -773,7 +797,7 @@ feature{NONE} -- Implementation
 		do
 			a_formatter.set_widget_owner (Current)
 			a_formatter.set_viewpoints (viewpoints)
-			tool_bar.extend (a_formatter.new_button)
+			tool_bar.extend (a_formatter.new_sd_button)
 			a_formatter.set_output_line (output_line)
 			if a_formatter.selected then
 				l_control_bar := a_formatter.control_bar
@@ -784,12 +808,13 @@ feature{NONE} -- Implementation
 			end
 		end
 
-	customized_formatter_button: EV_TOOL_BAR_BUTTON is
+	customized_formatter_button: SD_TOOL_BAR_BUTTON is
 			-- Button used to setup customized formatters
 		do
 			if customized_formatter_button_internal = Void then
-				create customized_formatter_button_internal
+				create customized_formatter_button_internal.make
 				customized_formatter_button_internal.set_pixmap (pixmaps.icon_pixmaps.general_edit_icon)
+				customized_formatter_button_internal.set_pixel_buffer (pixmaps.icon_pixmaps.general_edit_icon_buffer)
 				 customized_formatter_button_internal.set_tooltip (interface_names.f_customize_formatter)
 				 customized_formatter_button_internal.select_actions.extend (agent on_setup_customized_formatters)
 			end
@@ -811,6 +836,9 @@ feature{NONE} -- Recycle
 			safe_remove_agent (on_customized_formatter_loaded_agent, customized_formatter_manager.change_actions)
 			if eiffel_project.manager.load_agents.has (on_project_loaded_agent) then
 				eiffel_project.manager.load_agents.prune_all (on_project_loaded_agent)
+			end
+			if metric_manager.metric_loaded_actions.has (on_metric_loaded_agent) then
+				metric_manager.metric_loaded_actions.prune_all (on_metric_loaded_agent)
 			end
 			detach_veto_format_function
 			do_all_in_list (customized_formatters, agent (a_formatter: EB_FORMATTER) do a_formatter.recycle end)

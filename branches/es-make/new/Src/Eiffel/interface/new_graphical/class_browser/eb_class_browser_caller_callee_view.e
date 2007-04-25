@@ -41,12 +41,12 @@ feature -- Access
 	control_bar: EV_WIDGET is
 			-- Widget of a control bar through which, certain control can be performed upon current view
 		local
-			l_tool_bar: EV_TOOL_BAR
+			l_tool_bar: SD_TOOL_BAR
 		do
 			if control_tool_bar = Void then
 				create control_tool_bar
-				create l_tool_bar
-				l_tool_bar.extend (create{EV_TOOL_BAR_SEPARATOR})
+				create l_tool_bar.make
+				l_tool_bar.extend (create{SD_TOOL_BAR_SEPARATOR}.make)
 				l_tool_bar.extend (show_tooltip_button)
 				control_tool_bar.set_padding (2)
 				control_tool_bar.extend (l_tool_bar)
@@ -231,7 +231,6 @@ feature -- Grind binding
 			set_row_count (l_row_count)
 		end
 
-
 	build_row_table (a_node: EB_TREE_NODE [like row_type]) is
 			-- Build `row_table'.
 		local
@@ -336,7 +335,7 @@ feature -- Grind binding
 				l_width := l_width.max (l_grid_item.required_width + l_expand_pixmap_width + (l_subrow_depth) * l_subrow_indent)
 				l_row := l_row + 1
 			end
-			required_width_of_first_column := l_width + 20
+			required_width_of_first_column := l_width + 40
 		end
 
 	required_width_of_first_column: INTEGER
@@ -433,6 +432,7 @@ feature{NONE} -- Implementation
 			l_row: EB_CLASS_BROWSER_CALLER_CALLEE_ROW
 			l_y: INTEGER
 			l_done: BOOLEAN
+			l_width: INTEGER
 		do
 			if version_count > 1 then
 				if a_y = 1 then
@@ -449,6 +449,12 @@ feature{NONE} -- Implementation
 				l_row := row_table.item (l_y)
 				if l_row /= Void then
 					Result := l_row.item (a_x)
+				end
+			end
+			if a_x > 1 and then Result /= Void then
+				l_width := Result.required_width
+				if grid.is_displayed and then grid.column (2).width < l_width then
+					grid.column (2).set_width (l_width + 10)
 				end
 			end
 		end

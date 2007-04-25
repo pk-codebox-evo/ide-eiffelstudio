@@ -872,10 +872,10 @@ feature {NONE} -- Implementation
 											if l_feat_result.count > 1 then
 												set_error_message ("Multi constraint formal: More than one feature available for feature with routine id: " + l_rout_id_set.first.out)
 											end
+										else
+											last_class := current_class
 										end
 									else
-										-- MTNTODO: this was not here previously: either remove the if and it always
-										-- works or then the check (+15 lines) is not really valid
 										last_class := current_class
 									end
 								end
@@ -1964,7 +1964,7 @@ feature {NONE} -- Implementation
 			l_last_type: TYPE_A
 			l_last_type_set: TYPE_SET_A
 			l_last_class: CLASS_C
-			l_result: LIST[TUPLE[feature_item: E_FEATURE; type: EXTENDED_TYPE_A]]
+			l_result: LIST[TUPLE[feature_item: E_FEATURE; type: RENAMED_TYPE_A]]
 		do
 			if not expr_type_visiting then
 				text_formatter_decorator.begin
@@ -1978,8 +1978,8 @@ feature {NONE} -- Implementation
 				last_type := last_type.actual_type
 				if last_type.is_formal and then last_type.is_multi_constrained_formal (current_class)then
 					l_last_type_set := constraining_types (last_type)
-						-- Here we get back the feature and the extended type where the feature is from (it means that it includes a possible renaming)
-					l_result := l_last_type_set.e_feature_list_by_rout_id(l_as.routine_ids.first)
+						-- Here we get back the feature and the renamed type where the feature is from (it means that it includes a possible renaming)
+					l_result := l_last_type_set.e_feature_list_by_rout_id (l_as.routine_ids.first)
 					last_class := l_result.first.type.associated_class
 					l_feat := l_result.first.feature_item
 				else
@@ -2993,7 +2993,6 @@ feature {NONE} -- Implementation
 			end
 		end
 
-
 	process_class_type_as (l_as: CLASS_TYPE_AS) is
 		do
 			process_type_as (l_as)
@@ -3460,7 +3459,7 @@ feature {NONE} -- Implementation: helpers
 			-- `l_type' is the type where we lookup the feautre
 			--| The code has 2 arguments as it suites the actual code better. (May be changed.)
 		require
-			not_both_void: a_type /= Void and a_type_set /= Void
+			not_both_void: a_type /= Void or a_type_set /= Void
 		local
 			l_feat: E_FEATURE
 			l_result: TUPLE [feature_item: E_FEATURE; class_type_of_feature: CL_TYPE_A; features_found_count: INTEGER; constraint_position: INTEGER]
@@ -3481,7 +3480,6 @@ feature {NONE} -- Implementation: helpers
 				text_formatter_decorator.process_local_text (a_feature_name.visual_name)
 			end
 		end
-
 
 	append_format_multilined (s: STRING; indentable: BOOLEAN) is
 		require
@@ -3885,7 +3883,7 @@ feature {NONE} -- Implementation: helpers
 			Result := a_current_class.feature_table.item_id (a_name_id)
 		end
 
-	feature_from_type_set (a_type_set: TYPE_SET_A;	a_id_set: ID_SET): LIST[TUPLE[feature_item: E_FEATURE; class_type: EXTENDED_TYPE_A]]
+	feature_from_type_set (a_type_set: TYPE_SET_A;	a_id_set: ID_SET): LIST[TUPLE[feature_item: E_FEATURE; class_type: RENAMED_TYPE_A]]
 			-- Feature with `a_id_set' in `a_class_c'
 		require
 			a_type_set_not_void: a_type_set /= Void
@@ -3906,7 +3904,6 @@ feature {NONE} -- Implementation: helpers
 		ensure
 			feature_in_class_not_void: not has_error_internal implies Result /= Void
 		end
-
 
 	feature_in_class (a_class_c: CLASS_C; a_id_set: ID_SET): E_FEATURE is
 			-- Feature with `a_id_set' in `a_class_c'
@@ -3985,7 +3982,7 @@ feature {NONE} -- Implementation: helpers
 		do
 			if a_type.is_formal then
 				l_formal_type ?= a_type
-				Result := current_class.constraint_fixed (l_formal_type.position)
+				Result := current_class.constraint (l_formal_type.position)
 			else
 				Result := a_type
 			end
@@ -4128,7 +4125,6 @@ feature {NONE} -- Implementation: helpers
 					l_count := 1
 				end
 				create l_argtypes.make (1, l_count)
-
 
 					-- Create `l_oargtypes'. But first we need to find the `l_count', number
 					-- of open operands.

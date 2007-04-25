@@ -210,7 +210,7 @@ feature -- Labels
 	l_normal_referenced: STRING_GENERAL is do Result := locale.translate ("normal") end
 	l_syntactical_referenced: STRING_GENERAL is do Result := locale.translate ("syntactical") end
 	l_empty_domain: STRING_GENERAL is do Result := locale.translate ("empty domain") end
-	l_use_parent_delayed_domain: STRING_GENERAL is do Result := locale.translate ("use parent delayed domain") end
+	l_use_external_delayed_domain: STRING_GENERAL is do Result := locale.translate ("use external delayed domain") end
 	l_no_value_tester: STRING_GENERAL is do Result := locale.translate ("No value tester") end
 
 feature -- Tooltip
@@ -1309,7 +1309,6 @@ feature -- Utilities
 			result_attached: Result /= Void
 		end
 
-
 	coloned_string (a_string: STRING_GENERAL; a_first_letter_upper: BOOLEAN): STRING_GENERAL is
 			-- String which is `a_string' suffixed with a colon
 			-- If `a_first_letter_upper' is True, make sure the first letter of returned string is in upper case (if current locale permits).
@@ -1389,7 +1388,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
-
 
 end
 

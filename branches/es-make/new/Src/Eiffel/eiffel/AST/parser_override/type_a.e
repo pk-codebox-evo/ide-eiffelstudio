@@ -76,7 +76,6 @@ feature -- Properties
 			Result := false
 		end
 
-
 	has_associated_class: BOOLEAN is
 			-- Does Current have an associated class?
 		do
@@ -95,6 +94,17 @@ feature -- Properties
 	is_multi_constrained_formal (a_context_class: CLASS_C): BOOLEAN is
 			-- Is current type a multi constrained formal type?
 			-- | G -> {A, B}			
+		do
+			-- False
+		end
+
+	is_single_constrained_formal_without_renaming (a_context_class: CLASS_C): BOOLEAN is
+			-- Is current type a formal type which is single constrained and the constraint has not a feature renaming?
+			--| G -> A -> True
+			--| G -> A rename a as b end -> False
+			--| G -> {A, B} -> False
+		require
+			a_context_class_not_void: a_context_class /= Void
 		do
 			-- False
 		end
@@ -178,10 +188,10 @@ feature -- Properties
 			-- Do nothing
 		end
 
-	is_extended: BOOLEAN is
-			-- Is current type an extended type?
+	is_renamed_type: BOOLEAN is
+			-- Is current type an instance of `RENAMED_TYPE_A'?
+			-- If so there is the possibility that some features of this type are renamed.
 		do
-
 		end
 
 	is_reference: BOOLEAN is
@@ -435,7 +445,7 @@ feature -- Conversion
 			-- Create a type set containing one element which is `Current'.
 		do
 			create Result.make (1)
-			Result.extend (create {EXTENDED_TYPE_A}.make (Current, Void))
+			Result.extend (create {RENAMED_TYPE_A}.make (Current, Void))
 		ensure
 			to_type_set_not_void: Result /= Void
 		end

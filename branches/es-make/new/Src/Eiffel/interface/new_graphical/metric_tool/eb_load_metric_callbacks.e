@@ -39,7 +39,7 @@ feature{NONE} -- Initialization
 
 feature -- Access
 
-	factory: EB_LOAD_METRIC_FACTORY
+	factory: EB_LOAD_METRIC_DEFINITION_FACTORY
 			-- Factory used to create new nodes when parsing xml definition file
 
 	last_error: EB_METRIC_ERROR
@@ -301,7 +301,6 @@ feature{NONE} -- Status report
 		end
 
 feature{NONE} -- Implementation
-
 
 	remove_receiver_from_stack (a_stack: STACK [TUPLE [a_setter: PROCEDURE [ANY, TUPLE [ANY]]; is_called: BOOLEAN]];  a_error_message: STRING_GENERAL) is
 			-- Test if last registered receiver from `a_stack' has receivered data
@@ -614,6 +613,5 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
-
 
 end

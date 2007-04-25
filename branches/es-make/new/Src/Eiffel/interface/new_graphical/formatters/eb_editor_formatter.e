@@ -11,9 +11,12 @@ deferred class
 
 inherit
 	EB_FORMATTER
+		undefine
+			veto_pebble_function
 		redefine
 			displayer,
-			internal_recycle
+			internal_recycle,
+			is_editor_formatter
 		end
 
 feature -- Access
@@ -54,6 +57,14 @@ feature -- Access
 	displayer: EB_FORMATTER_EDITOR_DISPLAYER
 			-- Displayer used to display results of Current formatter
 
+feature -- Status report
+
+	is_editor_formatter: BOOLEAN is
+			-- Is Current formatter based on an editor?
+		do
+			Result := True
+		end
+
 feature -- Setting
 
 	setup_viewpoint is
@@ -64,8 +75,8 @@ feature -- Setting
 			end
 		end
 
-	set_displayer (a_displayer: like displayer) is
-			-- Set `a_displayer' into Current.
+	set_editor_displayer (a_displayer: like displayer) is
+			-- Set `a_displayer' with `a_displayer'.
 		do
 			displayer := a_displayer
 		end
@@ -91,8 +102,11 @@ feature{NONE} -- Recycle
 	internal_recycle is
 			-- Recycle.
 		do
-			Precursor
+			if displayer /= Void then
+				displayer.recycle
+			end
 			displayer := Void
+			Precursor {EB_FORMATTER}
 		end
 
 indexing

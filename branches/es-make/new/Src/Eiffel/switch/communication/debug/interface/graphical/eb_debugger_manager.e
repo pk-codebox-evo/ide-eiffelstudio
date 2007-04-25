@@ -234,12 +234,13 @@ feature {NONE} -- Initialization
 			toolbarable_commands.extend (display_error_help_cmd)
 
 			create exception_handler_cmd.make
-			exception_handler_cmd.enable_sensitive
+			exception_handler_cmd.disable_sensitive
 			toolbarable_commands.extend (exception_handler_cmd)
 
 			create assertion_checking_handler_cmd.make
 			assertion_checking_handler_cmd.enable_sensitive
 			toolbarable_commands.extend (assertion_checking_handler_cmd)
+
 			create force_debug_mode_cmd.make (Current)
 			force_debug_mode_cmd.enable_sensitive
 			toolbarable_commands.extend (force_debug_mode_cmd)
@@ -617,7 +618,6 @@ feature -- tools management
 				mi := show_object_viewer_tool_command.new_menu_item
 				m.extend (mi)
 				w.add_recyclable (mi)
-
 
 					-- Do not display shortcut if any watch tool exists.
 				if not watch_tool_list.is_empty then
@@ -1241,7 +1241,6 @@ feature -- Status setting
 				-- Show Tools and final visual settings
 			debugging_window.show_tools
 			restore_debug_docking_layout
-
 
 				--| Watch tool can not be simply hidden
 				--| they are shown or closed.
@@ -1872,7 +1871,6 @@ feature {NONE} -- Implementation
 	no_stop_cmd: EB_EXEC_NO_STOP_CMD
 			-- Run without stop points command.
 
-
 	enable_commands_on_project_created is
 			-- Enable commands when a new project has been created (not yet compiled)
 		do
@@ -1901,6 +1899,7 @@ feature {NONE} -- Implementation
 				assertion_checking_handler_cmd.disable_sensitive
 
 				options_cmd.enable_sensitive
+				exception_handler_cmd.enable_sensitive
 				step_cmd.enable_sensitive
 				into_cmd.enable_sensitive
 				out_cmd.disable_sensitive
@@ -1924,6 +1923,7 @@ feature {NONE} -- Implementation
 			assertion_checking_handler_cmd.disable_sensitive
 
 			options_cmd.disable_sensitive
+			exception_handler_cmd.disable_sensitive
 		end
 
 	disable_debugging_commands (full: BOOLEAN) is

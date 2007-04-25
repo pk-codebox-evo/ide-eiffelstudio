@@ -361,7 +361,6 @@ feature -- Action
 		do
 		end
 
-
 feature -- Conformance dependencies
 
 	conf_dep_table: PACKED_BOOLEANS
@@ -529,7 +528,7 @@ feature -- Expanded rues validity
 			-- Pass 2 must be done on all the classes
 			-- (the creators must be up to date)
 		local
-			constraint_types: LIST[EXTENDED_TYPE_A]
+			constraint_types: LIST[RENAMED_TYPE_A]
 			l_formals: like generic_features
 			l_cursor: CURSOR
 			l_formal_dec: FORMAL_CONSTRAINT_AS
@@ -666,7 +665,6 @@ feature -- Setting
 		ensure
 			assembly_info_set: assembly_info = a
 		end
-
 
 feature -- Melting
 
@@ -1791,6 +1789,12 @@ feature -- Convenience features
 			Result := lace_class.is_full_class_checking
 		end
 
+	is_cat_call_detection: BOOLEAN is
+			-- Do we perform cat-call detection on all feature calls?
+		do
+			Result := lace_class.is_cat_call_detection
+		end
+
 feature -- Actual class type
 
 	constraint_actual_type: CL_TYPE_A is
@@ -1894,28 +1898,12 @@ end
 			changed_features.put (feature_name_id)
 		end
 
-		-- MTNTODO: refactor to constraint before commit
-	constraint_fixed (i: INTEGER): TYPE_A is
-			-- I-th constraint of the class
-		require
-			generics_exists: is_generic
-			valid_index: generics.valid_index (i)
-			not_is_multi_constraint: not generics.i_th (i).has_multi_constraints
-		local
-			l_formal_dec: FORMAL_CONSTRAINT_AS
-		do
-			l_formal_dec ?= generics.i_th (i)
-			check l_formal_dec_not_void: l_formal_dec /= Void end
-			Result := l_formal_dec.constraint_type (Current).type
-		ensure
-			constraint_not_void: Result /= Void
-		end
-
 	constraint (i: INTEGER): TYPE_A is
 			-- I-th constraint of the class
 		require
 			generics_exists: is_generic
 			valid_index: generics.valid_index (i)
+			not_is_multi_constraint: not generics.i_th (i).has_multi_constraints
 		local
 			l_formal_dec: FORMAL_CONSTRAINT_AS
 		do
@@ -2735,7 +2723,6 @@ feature -- Access
 			Result := l_formal_dec.has_multi_constraints
 		end
 
-
 	is_fully_deferred: BOOLEAN is
 			-- Are parents of current class either ANY or a fully deferred class?
 			-- Does current class contain only deferred features?
@@ -2822,7 +2809,6 @@ feature -- Access
 			Result := obsolete_message /= Void
 		end
 
-
 	feature_with_name_id (a_feature_name_id: INTEGER): E_FEATURE is
 			-- Feature whose internal name is `n'
 		require
@@ -2836,7 +2822,6 @@ feature -- Access
 				Result := f.api_feature (class_id)
 			end
 		end
-
 
 	feature_with_id (a_feature_id: ID_AS): E_FEATURE is
 			-- Feature whose internal name is `n'
@@ -4066,5 +4051,4 @@ indexing
 		]"
 
 end -- class CLASS_C
-
 

@@ -206,7 +206,8 @@ feature -- Special checking
 						error_handler.insert_error (l_vtug)
 					else
 						a_type.reset_constraint_error_list
-						a_type.check_constraints (current_class,current_feature, False)
+							-- We check creation readyness if the type is expanded. See ECMA 356 2nd edition: section 8.12.12/
+						a_type.check_constraints (current_class,current_feature, a_type.is_expanded)
 						if not a_type.constraint_error_list.is_empty then
 							create l_vtcg3
 							l_vtcg3.set_class (current_class)
@@ -491,7 +492,7 @@ feature {TYPE_A} -- Visitors
 			end
 		end
 
-	process_extended_type_a (a_type: EXTENDED_TYPE_A) is
+	process_renamed_type_a (a_type: RENAMED_TYPE_A) is
 			-- Process `a_type'.
 		do
 		--	last_type := a_type.type -- MTNASK: what should it be? EXTENED or not?

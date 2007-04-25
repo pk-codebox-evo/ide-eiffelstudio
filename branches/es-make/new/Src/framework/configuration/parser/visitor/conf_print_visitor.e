@@ -229,7 +229,6 @@ feature -- Visit nodes
 			indent_back: indent = old indent
 		end
 
-
 	process_assembly (an_assembly: CONF_ASSEMBLY) is
 			-- Visit `an_assembly'.
 		local
@@ -707,7 +706,6 @@ feature {NONE} -- Implementation
 			end
 		end
 
-
 	append_options (an_options: CONF_OPTION; a_class: STRING) is
 			-- Append `an_options', optionally for `a_class'.
 		local
@@ -744,6 +742,9 @@ feature {NONE} -- Implementation
 				end
 				if an_options.is_full_class_checking_configured then
 					append_text (" full_class_checking=%""+an_options.is_full_class_checking.out.as_lower+"%"")
+				end
+				if an_options.is_cat_call_detection_configured then
+					append_text (" cat_call_detection=%""+an_options.is_cat_call_detection.out.as_lower+"%"")
 				end
 				l_str := an_options.local_namespace
 				if l_str /= Void and then not l_str.is_empty then
@@ -878,7 +879,6 @@ feature {NONE} -- Implementation
 			end
 
 		end
-
 
 	append_pre_group (a_tag: STRING; a_group: CONF_GROUP) is
 			-- Append the things that start the entry for `a_group'

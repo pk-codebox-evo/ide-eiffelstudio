@@ -639,6 +639,7 @@ feature{NONE} -- Recycle
 			uninstall_metric_history_agent
 			group_btn.recycle
 			keep_result_btn.recycle
+			check_warning_btn.recycle
 		end
 
 feature{NONE} -- Implementation/Data
@@ -866,6 +867,5 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
-
 
 end

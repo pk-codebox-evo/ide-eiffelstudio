@@ -47,6 +47,7 @@ feature{NONE} -- Initialization
 			agent_table.put (agent new_is_constant_criterion, c_is_constant)
 			agent_table.put (agent new_is_creator_criterion, c_is_creator)
 			agent_table.put (agent new_is_deferred_criterion, c_is_deferred)
+			agent_table.put (agent new_is_effective_criterion, c_is_effective)
 			agent_table.put (agent new_is_exported_criterion, c_is_exported)
 			agent_table.put (agent new_is_external_criterion, c_is_external)
 			agent_table.put (agent new_is_feature_criterion, c_is_feature)
@@ -81,7 +82,6 @@ feature{NONE} -- Initialization
 			agent_table.put (agent new_creators_of_criterion, c_createe_is)
 			agent_table.put (agent new_creator_is_criterion, c_creator_is)
 			agent_table.put (agent new_return_type_is_criterion, c_return_type_is)
-			agent_table.put (agent new_contain_ast_criterion, c_contain_ast)
 			agent_table.put (agent new_value_criterion, c_value_of_metric_is)
 
 			create name_table.make (50)
@@ -122,8 +122,8 @@ feature{NONE} -- Initialization
 			name_table.put (c_true, query_language_names.ql_cri_true)
 			name_table.put (c_name_is, query_language_names.ql_cri_name_is)
 			name_table.put (c_text_contain, query_language_names.ql_cri_text_contain)
-			name_table.put (c_ancestor_is, query_language_names.ql_cri_ancestor_is)
-			name_table.put (c_descendant_is, query_language_names.ql_cri_descendant_is)
+			name_table.put (c_ancestor_is, query_language_names.ql_cri_descendant_is)
+			name_table.put (c_descendant_is, query_language_names.ql_cri_ancestor_is)
 			name_table.put (c_implementors_of, query_language_names.ql_cri_implementors_of)
 			name_table.put (c_is_exported_to, query_language_names.ql_cri_is_exported_to)
 			name_table.put (c_callee_is, query_language_names.ql_cri_callee_is)
@@ -133,8 +133,8 @@ feature{NONE} -- Initialization
 			name_table.put (c_createe_is, query_language_names.ql_cri_createe_is)
 			name_table.put (c_creator_is, query_language_names.ql_cri_creator_is)
 			name_table.put (c_return_type_is, query_language_names.ql_cri_return_type_is)
-			name_table.put (c_contain_ast, query_language_names.ql_cri_contain_ast)
 			name_table.put (c_value_of_metric_is, query_language_names.ql_cri_value_of_metric_is)
+			name_table.put (c_is_effective, query_language_names.ql_cri_is_effective)
 		end
 
 feature{NONE} -- Implementation
@@ -266,6 +266,14 @@ feature{NONE} -- New criterion
 			-- New criterion to test if a feature is deferred
 		do
 			create Result.make (agent is_deferred_agent, True)
+		ensure
+			result_attached: Result /= Void
+		end
+
+	new_is_effective_criterion: QL_SIMPLE_FEATURE_CRITERION is
+			-- New criterion to test if a feature is effective
+		do
+			create Result.make (agent is_effective_agent, True)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -634,6 +642,7 @@ feature -- Criterion index
 	c_return_type_is: INTEGER is 48
 	c_contain_ast: INTEGER is 49
 	c_value_of_metric_is: INTEGER is 50
+	c_is_effective: INTEGER is 51
 
 feature{NONE} -- Implementation
 
@@ -663,12 +672,12 @@ feature{NONE} -- Implementation
 			a_item_attached: a_item /= Void
 			a_item_valid: a_item.is_valid_domain_item
 		local
-			l_feature: E_FEATURE
+			l_e_feature: E_FEATURE
 		do
 			Result := a_item.is_real_feature
 			if Result then
-				l_feature := a_item.e_feature
-				Result := l_feature.has_precondition or l_feature.has_postcondition
+				l_e_feature := a_item.e_feature
+				Result := l_e_feature.has_precondition or l_e_feature.has_postcondition
 			end
 		end
 
@@ -859,7 +868,6 @@ feature{NONE} -- Implementation
 			end
 		end
 
-
 	is_deferred_agent (a_item: QL_FEATURE): BOOLEAN is
 			-- Agent to test if `a_item' is deferred
 			-- Require compiled: True
@@ -868,6 +876,16 @@ feature{NONE} -- Implementation
 			a_item_valid: a_item.is_valid_domain_item
 		do
 			Result := a_item.is_real_feature and then a_item.e_feature.is_deferred
+		end
+
+	is_effective_agent (a_item: QL_FEATURE): BOOLEAN is
+			-- Agent to test if `a_item' is effective
+			-- Require compiled: True
+		require
+			a_item_attached: a_item /= Void
+			a_item_valid: a_item.is_valid_domain_item
+		do
+			Result := a_item.is_real_feature and then not a_item.e_feature.is_deferred
 		end
 
 	is_external_agent (a_item: QL_FEATURE): BOOLEAN is
@@ -1101,8 +1119,5 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
-
-
-
 
 end

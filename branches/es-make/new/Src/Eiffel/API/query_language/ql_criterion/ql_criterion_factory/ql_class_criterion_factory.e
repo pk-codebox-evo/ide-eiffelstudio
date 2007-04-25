@@ -72,7 +72,6 @@ feature{NONE} -- Initialization
 			agent_table.put (agent new_top_indexing_has_tag_criterion, c_top_indexing_has_tag)
 			agent_table.put (agent new_bottom_indexing_has_tag_criterion, c_bottom_indexing_has_tag)
 			agent_table.put (agent new_indexing_has_tag_criterion, c_indexing_has_tag)
-			agent_table.put (agent new_contain_ast_criterion, c_contain_ast)
 			agent_table.put (agent new_value_criterion, c_value_of_metric_is)
 
 			create name_table.make (45)
@@ -123,10 +122,8 @@ feature{NONE} -- Initialization
 			name_table.put (c_bottom_indexing_has_tag, query_language_names.ql_cri_bottom_indexing_has_tag)
 			name_table.put (c_indexing_has_tag, query_language_names.ql_cri_indexing_has_tag)
 
-			name_table.put (c_contain_ast, query_language_names.ql_cri_contain_ast)
 			name_table.put (c_value_of_metric_is, query_language_names.ql_cri_value_of_metric_is)
 		end
-
 
 feature{NONE} -- Implementation
 
@@ -824,8 +821,6 @@ feature{NONE} -- Implementation/Evaluate agent
 			Result := a_item.is_visible
 		end
 
-
-
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"
         license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
@@ -857,8 +852,5 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
-
-
-
 
 end

@@ -850,7 +850,6 @@ feature {NONE} -- Callback actions
 					--| current il offset if corresponding to a bp slot, or approximate offset.
 			end
 
-
 			create l_copy.make_copy (l_previous_stack_info)
 			l_copy.set_current_il_offset (l_potential_il_offset)
 			if l_copy.is_equal (l_current_stack_info) then
@@ -1385,6 +1384,37 @@ feature -- Bridge to EIFNET_DEBUGGER_INFO
 			end
 		end
 
+feature -- Assertion change
+
+	check_assert_on_debuggee (b: BOOLEAN): BOOLEAN is
+		local
+			l_frame: ICOR_DEBUG_FRAME
+			l_bool, l_icd: ICOR_DEBUG_VALUE
+			l_icd_module: ICOR_DEBUG_MODULE
+			l_token: INTEGER
+			l_func: ICOR_DEBUG_FUNCTION
+		do
+			l_icd_module := ise_runtime_module
+			l_token := edv_external_formatter.token_iseruntime__check_assert
+			if l_token /= 0 then
+				l_func := l_icd_module.get_function_from_token (l_token)
+				if l_func /= Void then
+					l_frame := current_stack_icor_debug_frame
+					l_bool := eifnet_dbg_evaluator.new_boolean_evaluation (l_frame, b)
+					l_icd := eifnet_dbg_evaluator.function_evaluation (l_frame, l_func, << l_bool >>)
+					l_bool.clean_on_dispose
+					if eifnet_dbg_evaluator.last_eval_is_exception and l_icd /= Void then
+						l_icd.clean_on_dispose
+						l_icd := Void
+					end
+					if l_icd /= Void then
+						Result := edv_formatter.icor_debug_value_to_boolean (l_icd)
+						l_icd.clean_on_dispose
+					end
+				end
+			end
+		end
+
 feature -- Exception
 
 	reset_evaluation_exception is
@@ -1787,7 +1817,8 @@ feature -- Specific function evaluation
 						l_function_to_cil := l_module.get_function_from_token (l_feat_to_cil_token)
 						if l_function_to_cil /= Void then
 							l_icd_value := eifnet_dbg_evaluator.function_evaluation (Void, l_function_to_cil, <<icd_string_instance_ref>>)
-							if eifnet_dbg_evaluator.last_eval_is_exception then
+							if eifnet_dbg_evaluator.last_eval_is_exception and l_icd_value /= Void then
+								l_icd_value.clean_on_dispose
 								l_icd_value := Void
 							end
 								--| l_icd_value represents the `System.String' value
@@ -1885,7 +1916,8 @@ feature -- Specific function evaluation
 
 			if l_func /= Void then
 				l_icd := eifnet_dbg_evaluator.function_evaluation (a_frame, l_func, <<a_icd>>)
-				if eifnet_dbg_evaluator.last_eval_is_exception then
+				if eifnet_dbg_evaluator.last_eval_is_exception and l_icd /= Void then
+					l_icd.clean_on_dispose
 					l_icd := Void
 				end
 				if l_icd /= Void then
@@ -1963,7 +1995,8 @@ feature -- Specific function evaluation
 						if l_func /= Void then
 							l_icd_frame := a_frame
 							l_icd := eifnet_dbg_evaluator.function_evaluation (l_icd_frame, l_func, <<a_icd>>)
-							if eifnet_dbg_evaluator.last_eval_is_exception then
+							if eifnet_dbg_evaluator.last_eval_is_exception and l_icd /= Void then
+								l_icd.clean_on_dispose
 								l_icd := Void
 							end
 						else
@@ -2033,7 +2066,8 @@ feature -- Specific function evaluation
 
 				if l_func /= Void then
 					l_icd := eifnet_dbg_evaluator.function_evaluation (a_frame, l_func, <<a_icd>>)
-					if eifnet_dbg_evaluator.last_eval_is_exception then
+					if eifnet_dbg_evaluator.last_eval_is_exception and l_icd /= Void then
+						l_icd.clean_on_dispose
 						l_icd := Void
 					end
 					if l_icd /= Void then
@@ -2080,7 +2114,8 @@ feature -- Specific function evaluation
 			l_func := l_icd_module.get_function_from_token (l_feature_token)
 			if l_func /= Void then
 				l_icd := eifnet_dbg_evaluator.function_evaluation (a_frame, l_func, <<a_icd>>)
-				if eifnet_dbg_evaluator.last_eval_is_exception then
+				if eifnet_dbg_evaluator.last_eval_is_exception and l_icd /= Void then
+					l_icd.clean_on_dispose
 					l_icd := Void
 				end
 				if l_icd /= Void then
@@ -2265,7 +2300,6 @@ feature -- Specific function evaluation
 --			l_icdf := l_icdm.get_function_from_token (l_meth_token)
 --			eifnet_dbg_evaluator.method_evaluation (active_frame, l_icdf, <<icdv>>)
 --		end
-
 
 feature -- Bridge to debug_value_keeper
 

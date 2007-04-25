@@ -278,7 +278,6 @@ feature {NONE} -- Initialize
 			hbox.extend (vbox)
 			hbox.disable_item_expand (vbox)
 
-
 			create vbox
 			vbox.extend (scope_list)
 			scope_list.set_minimum_width (min_width_of_keyword_field)
@@ -340,11 +339,13 @@ feature {EB_DEVELOPMENT_WINDOW_BUILDER} -- Initialize
 		local
 			l_cmd: EB_SHOW_TOOL_COMMAND
 		do
-			create mini_toolbar
+			create mini_toolbar.make
 			l_cmd := develop_window.commands.show_tool_commands.item (report_tool)
 				-- Pixmap should be changed.
 			l_cmd.set_mini_pixmap (pixmaps.mini_pixmaps.callstack_send_to_external_editor_icon)
-			mini_toolbar.extend (l_cmd.new_mini_toolbar_item)
+			l_cmd.set_mini_pixel_buffer (pixmaps.mini_pixmaps.callstack_send_to_external_editor_icon_buffer)
+			mini_toolbar.extend (l_cmd.new_mini_sd_toolbar_item)
+			mini_toolbar.compute_minimum_size
 
 			content.set_mini_toolbar (mini_toolbar)
 		ensure then
@@ -393,10 +394,14 @@ feature -- EB_TOOL
 		do
 			show
 			if currently_searched /= Void and then currently_searched.is_empty then
-				keyword_field.set_text (currently_searched)
+				if not keyword_field.is_destroyed and currently_searched /= Void and not currently_searched.has_code (('%R').natural_32_code) and keyword_field.is_editable then
+					keyword_field.set_text (currently_searched)
+				end
 			end
 			if currently_replacing /= Void and then not currently_replacing.is_empty then
-				replace_field.set_text (currently_replacing)
+				if not replace_field.is_destroyed and currently_replacing /= Void and not currently_replacing.has_code (('%R').natural_32_code) then
+					replace_field.set_text (currently_replacing)
+				end
 			end
 			keyword_field.set_focus
 		end
@@ -515,7 +520,7 @@ feature -- Widgets
 	options: EV_FRAME
 			-- Options widget
 
-	mini_toolbar: EV_TOOL_BAR
+	mini_toolbar: SD_TOOL_BAR
 			-- Mini tool bar.
 
 feature -- Status report

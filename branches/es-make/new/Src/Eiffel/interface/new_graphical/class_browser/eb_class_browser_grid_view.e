@@ -129,7 +129,6 @@ feature -- Setting
 			tree_node_highlight_disabled: not is_tree_node_highlight_enabled
 		end
 
-
 	set_trace (a_msg: STRING) is
 			-- Set `trace' with `a_msg'.
 		do
@@ -479,7 +478,7 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
-	show_tooltip_button: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON is
+	show_tooltip_button: EB_PREFERENCED_SD_TOOL_BAR_TOGGLE_BUTTON is
 			-- Checkbox to indicate whether or not tooltip is displayed
 		do
 			if show_tooltip_button_internal = Void then
@@ -707,7 +706,9 @@ feature {NONE} -- Recycle
 		do
 			desynchronize_color_or_font_change_with_editor
 			desynchronize_scroll_behavior_with_editor
-			show_tooltip_button.recycle
+			if show_tooltip_button_internal /= Void then
+				show_tooltip_button.recycle
+			end
 		end
 
 feature {NONE} -- Implementation
@@ -1175,6 +1176,5 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
-
 
 end
