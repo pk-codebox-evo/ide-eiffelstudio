@@ -236,16 +236,16 @@ feature {NONE} -- Implementation
 			a_type_not_void: a_type /= Void
 		local
 			l_dv: DUMP_VALUE
-			l_dbg_obj: DEBUGGED_OBJECT_CLASSIC
+			l_dbg_obj: DEBUGGED_OBJECT
 			l_dv_list: DS_LIST [ABSTRACT_DEBUG_VALUE]
 			l_attr_count: INTEGER
 			l_gen_type: STRING
 			l_attr_obj: CDD_OBJECT
 		do
 			if a_type.is_special then
-				--l_dbg_obj ?= debugged_object_manager.debugged_object (an_addr, debugger_manager.min_slice, debugger_manager.max_slice)
+				l_dbg_obj := debugger_manager.object_manager.debugged_object (an_addr, debugger_manager.min_slice, debugger_manager.max_slice)
 			else
-				--l_dbg_obj := debugged_object_manager.classic_debugged_object_with_class (an_addr, a_type)
+				l_dbg_obj := debugger_manager.object_manager.classic_debugged_object_with_class (an_addr, a_type)
 			end
 			l_dv_list := l_dbg_obj.attributes
 			if a_type.is_generic or a_type.is_tuple then
@@ -272,7 +272,8 @@ feature {NONE} -- Implementation
 				if l_attr_obj /= Void then
 					Result.add_attribute (l_dv_list.item_for_iteration.name, l_attr_obj)
 				else
-					-- NOTE: instead of terminating reflection, we just don't care about this attribute
+					-- NOTE: instead of terminating reflection, we just set the attribute to Void
+					-- taking into account that the test case might be invalid
 					-- Result := Void
 				end
 				l_dv_list.forth

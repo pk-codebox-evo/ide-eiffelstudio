@@ -1658,6 +1658,8 @@ feature -- Debugging events
 			debug ("debugger_trace_synchro")
 				io.put_string (generator + ".on_application_just_stopped : done%N")
 			end
+
+			cdd_manager.on_application_stopped (application.status)
 		end
 
 	on_application_before_resuming is

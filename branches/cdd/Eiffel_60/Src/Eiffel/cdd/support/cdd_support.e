@@ -21,7 +21,19 @@ feature -- Access
 					an_application_status.exception_code = {EXCEP_CONST}.check_instruction)
 		end
 
-feature -- Measurement
+feature -- Project constants
+
+	tests_cluster_name: STRING is "cdd_test_suite"
+			-- Name of cdd cluster
+
+feature -- Error constants
+
+	error_none,				-- No error occured
+	error_bad_root_cluster,	-- Root cluster is not a normal cluster
+	error_need_recompile,
+	error_unable_to_create_dir: INTEGER is unique
+			-- Error codes
+
 
 feature -- Status report
 

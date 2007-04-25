@@ -27,25 +27,20 @@ inherit
 			{NONE} all
 		end
 
---	EB_SHARED_WINDOW_MANAGER
---		export
---			{NONE} all
---		end
-
 --	EB_CONSTANTS
 --		export
 --			{NONE} all
 --		end
 
---	CONF_ACCESS
---		export
---			{NONE} all
---		end
+	CONF_ACCESS
+		export
+			{NONE} all
+		end
 
---	EB_SHARED_GRAPHICAL_COMMANDS
---		export
---			{NONE} all
---		end
+	EB_SHARED_GRAPHICAL_COMMANDS
+		export
+			{NONE} all
+		end
 
 create
 	make
@@ -54,8 +49,13 @@ feature {NONE} -- Initialization
 
 	make is
 			-- Add `Current' to cluster observer list.
+		local
+			l_prj_manager: EB_PROJECT_MANAGER
 		do
-			create capturer
+			l_prj_manager := eiffel_project.manager
+			l_prj_manager.load_agents.extend (agent check_for_existing_cdd_cluster)
+			l_prj_manager.compile_stop_agents.extend (agent refresh)
+			eb_cluster_manager.add_observer (Current)
 		end
 
 feature -- Access (CDD Status)
@@ -70,13 +70,19 @@ feature -- Access (CDD Status)
 			-- Test suite which is managed by `Current'
 
 	can_enable_cdd: BOOLEAN is
-			-- Can testing mode be enabled?
+			-- Can cdd support be enabled?
 		do
+			Result := not is_cdd_enabled and
+				not project.initialized and
+				not project.is_read_only and
+				not target.system.date_has_changed
 		end
 
-	can_enable_capturing: BOOLEAN is
-			-- Can capturing be enabled?
+	can_disable_cdd: BOOLEAN is
+			-- Can cdd support be disabled?
 		do
+			Result := is_cdd_enabled and
+				not target.system.date_has_changed
 		end
 
 	project: E_PROJECT is
@@ -86,6 +92,19 @@ feature -- Access (CDD Status)
 		ensure
 			open_project_not_void: Result /= Void
 		end
+
+	target: CONF_TARGET is
+			-- Currently opened target of `project'
+		require
+			project_initialized: project.initialized
+		do
+			Result := eiffel_universe.target
+		ensure
+			not_void: Result /= Void
+		end
+
+	last_error: INTEGER
+			-- Last error that occured
 
 feature -- Status setting (Application)
 
@@ -109,25 +128,101 @@ feature -- Status setting (Application)
 feature -- Status setting (CDD)
 
 	enable_cdd is
-			-- Create test suite and notify tools.
+			-- Try to create cdd cluster within project. On succeed recompile,
+			-- otherwise set `last_error' appropriately.
+		require
+			not_enabled_yet: not is_cdd_enabled
+			can_enable: can_enable_cdd
+		local
+			l_dirname: DIRECTORY_NAME
+			l_dir: KL_DIRECTORY
+			l_loc: CONF_FILE_LOCATION
+			l_lib: CONF_LIBRARY
+			ed: EV_ERROR_DIALOG
+			l_root: CONF_CLUSTER
+			rule: CONF_FILE_RULE
 		do
+			last_error := error_none
+			l_root ?= eiffel_system.root_cluster
+			if l_root = Void then
+				last_error := error_bad_root_cluster
+			else
+				create l_dirname.make_from_string (l_root.location.evaluated_directory)
+				l_dirname.extend (tests_cluster_name)
+				create l_dir.make (l_dirname)
+				l_dir.create_directory
+				if l_dir.exists then
+					eb_cluster_manager.remove_observer (Current)
+					l_loc := conf_factory.new_location_from_full_path ("$ISE_LIBRARY\library\cdd\cdd.ecf", target)
+					l_lib := conf_factory.new_library ("cdd", l_loc, target)
+					target.add_library (l_lib)
+					if l_root.is_recursive then
+						create rule.make
+						rule.add_exclude (tests_cluster_name)
+						l_root.add_file_rule (rule)
+					end
+					create l_dirname.make_from_string (l_root.location.original_directory)
+					l_dirname.extend (tests_cluster_name)
+					eb_cluster_manager.add_cluster (tests_cluster_name, l_root, l_dirname)
+					create test_suite.make_with_cluster (eb_cluster_manager.last_added_cluster)
+					eb_cluster_manager.add_observer (Current)
+					melt_project_cmd.execute
+				else
+					last_error := error_unable_to_create_dir
+				end
+			end
 		end
 
 	disable_cdd is
-			-- Disable cdd support.
+			-- Try to remove cdd cluster from project but leave all
+			-- created directories and test cases.
+		require
+			cdd_enabled: can_disable_cdd
 		do
+			-- TODO: make sure no execution is running....
+			target.remove_cluster (tests_cluster_name)
+			target.system.store
+			Discover_melt_cmd.execute
+			test_suite := Void
+		ensure
+			cdd_disabled: not is_cdd_enabled
 		end
 
 	enable_capturing is
 			-- Enable capturing mode.
 		do
+			is_capturing_enabled := True
+		end
+
+	disable_capturing is
+			-- Disable capturing mode.
+		do
+			is_capturing_enabled := False
+		end
+
+	start_execution is
+			--
+		do
+
+		end
+
+	start_examinating is
+			--
+		do
+
+		end
+
+	start_debugging is
+			--
+		do
+
 		end
 
 feature {EB_CLUSTERS} -- Status setting (Eiffel Project)
 
 	check_for_existing_cdd_cluster is
 			-- Check if testing was enabled for this project before
-			-- Note: Usually called when project is opened in EiffelStudio.
+			-- Note: This is usually called when project is opened.
 		do
 		end
 
@@ -157,6 +252,15 @@ feature {NONE} -- Implementation
 
 	capturer: CDD_CAPTURER
 			-- Capturer used for retrieving reflection
+		once
+			create Result
+		end
+
+	conf_factory: CONF_FACTORY is
+			-- Factory for creating cdd library
+		once
+			create Result
+		end
 
 invariant
 	capturer_not_void: capturer /= Void
