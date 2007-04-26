@@ -28,7 +28,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_class: CLASS_C) is
+	make (a_class: EIFFEL_CLASS_C) is
 			-- Initialization routine.
 		do
 			Precursor {BPL_VISITOR}(a_class)
@@ -184,7 +184,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	implementation_writer: BPL_IMPLEMENTATION_WRITER
+	implementation_writer: BPL_BN_IMPLEMENTATION_WRITER
 
 	define_implementations is
 			-- Define all implementations of the current class.
@@ -192,7 +192,7 @@ feature {NONE} -- Implementation
 			a_list: LIST [FEATURE_AS]
 		do
 			create implementation_writer.make (current_class)
-			implementation_writer.setup (current_class.ast, match_list, will_process_leading_leaves, will_process_trailing_leaves)
+			implementation_writer.set_leaf_list (match_list)
 
 			a_list := usage_analyser.function_list
 			from a_list.start until a_list.off loop
@@ -211,7 +211,7 @@ feature {NONE} -- Implementation
 		local
 			generated_features: ARRAYED_SET[INTEGER]
 			some_feature: FEATURE_I
-			some_class: CLASS_C
+			some_class: EIFFEL_CLASS_C
 		do
 			from
 				create generated_features.make (0)
@@ -220,8 +220,9 @@ feature {NONE} -- Implementation
 			loop
 				environment.used_features.start
 				some_feature := environment.used_features.item
-				some_class := some_feature.written_class
+				some_class ?= some_feature.written_class
 				if
+					some_class /= Void and
 					not generated_features.has (some_feature.feature_id) and
 					bpl_type_for_class (some_class).is_equal ("ref") and
 					some_class.class_id /= current_class.class_id

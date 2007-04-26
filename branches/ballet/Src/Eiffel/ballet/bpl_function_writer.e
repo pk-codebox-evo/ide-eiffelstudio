@@ -33,7 +33,7 @@ create
 
 feature -- Initialization
 
-	make (a_class: CLASS_C) is
+	make (a_class: EIFFEL_CLASS_C) is
 			-- Initialize.
 		do
 			Precursor {BPL_VISITOR} (a_class)

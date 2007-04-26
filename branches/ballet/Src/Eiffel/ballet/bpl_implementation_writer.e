@@ -31,7 +31,6 @@ inherit
 create
 	make
 
-
 feature -- Generation
 
 	write_implementation (a_feature: FEATURE_I) is

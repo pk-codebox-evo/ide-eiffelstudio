@@ -9,8 +9,8 @@ class
 
 inherit
 	BYTE_NODE_VISITOR
-
 	SHARED_SERVER
+	SHARED_BPL_ENVIRONMENT
 
 create
 	make
@@ -49,8 +49,24 @@ feature -- Main processors
 feature -- Access
 
 	current_class: EIFFEL_CLASS_C
+		-- Current class processed
 
 	current_feature: FEATURE_I
+		-- Current feature processed
+
+	leaf_list: LEAF_AS_LIST
+		-- Leaf list from parent iterator
+
+feature -- Setting
+
+	set_leaf_list (a_list: LEAF_AS_LIST)
+			-- Setup environment for roundtrip visit.
+			-- TODO: Remove me, please, I am not needed when we only work with BYTE_CODE !!
+		require
+			a_list_not_void: a_list /= Void
+		do
+			leaf_list := a_list
+		end
 
 feature -- Extra Processors
 
@@ -63,7 +79,7 @@ feature -- Extra Processors
 		do
 			current_feature := a_feature
 			if byte_server.has (current_feature.code_id) then
-				byte_code := byte_server.item (current_feature.code_id)
+				byte_code := byte_server.disk_item (current_feature.code_id)
 				process_byte_code (byte_code)
 			else
 				process_feature_without_code (a_feature)
@@ -86,6 +102,74 @@ feature -- Extra Processors
 			-- Process a feature that does not have code.
 		do
 
+		end
+
+feature -- Supporting Features
+
+	bpl_mangled_operator (op:STRING): STRING is
+			-- Operator mangled that it can be used as function name in BPL
+		require
+			not_void: op /= Void
+			not_empty: not op.is_empty
+		do
+			if operator_names_mangled.item (op) /= Void then
+				Result := operator_names_mangled.item (op)
+			else
+				-- Self-defined operator, we just make up a name
+				Result := "op$"+operator_names_mangled.count.out
+				operator_names_mangled.put (Result, op)
+			end
+		ensure
+			not_void: Result /= Void
+		end
+
+	bpl_mangled_feature_name (op: STRING): STRING is
+			-- Feature name mangled that it can be used as function name in BPL
+		require
+			not_void: op /= Void
+			not_empty: not op.is_empty
+		do
+			if op.substring (1, 7).is_equal ("infix %"") then
+				Result := bpl_mangled_operator (op.substring (8, op.count-1))
+			elseif op.substring (1, 8).is_equal ("prefix %"") then
+				Result := bpl_mangled_operator (op.substring (9, op.count-1))
+			else
+				Result := op
+			end
+		ensure
+			not_void: Result /= Void
+		end
+
+	bpl_type_for_type_a (type: TYPE_A): STRING is
+			-- Compute the suitable type in BPL for `type'.
+		require
+			type_not_void: type /= Void
+		local
+			actual: TYPE_A
+			name: STRING
+		do
+			actual := type
+			if actual.has_associated_class then
+				name := actual.associated_class.name
+			else
+				if actual.is_boolean then
+					name := "BOOLEAN"
+				elseif actual.is_integer or actual.is_character then
+					name := "INTEGER_32"
+				else
+					name := "ANY"
+				end
+			end
+			if mapping_table.item(name) /= Void then
+				Result := mapping_table.item (name)
+			elseif actual.is_expanded then
+				Result := "wrong_type"
+				add_error(create {BPL_ERROR}.make("Cannot handle type '"+actual.dump+"' since it's expanded."))
+			else
+				Result := "ref"
+			end
+		ensure
+			Result_not_void: Result /= Void
 		end
 
 feature {BYTE_NODE} -- Visitors
@@ -637,6 +721,78 @@ feature {BYTE_NODE} -- Visitors
 			-- Process `a_node'.
 		do
 			-- No subnode
+		end
+
+feature{NONE} -- Tables
+
+	Operator_names_mangled: HASH_TABLE[STRING, STRING] is
+			-- Names for simple operators.
+		do
+			create Result.make(9)
+			Result.compare_objects
+			Result.put ("op$not","not")
+			Result.put ("op$plus","+")
+			Result.put ("op$minus","-")
+			Result.put ("op$mult","*")
+			Result.put ("op$div","/")
+			Result.put ("op$less","<")
+			Result.put ("op$more",">")
+			Result.put ("op$leq","<=")
+			Result.put ("op$meq",">=")
+			Result.put ("op$divdiv","//")
+			Result.put ("op$vidvid","\\")
+			Result.put ("op$hat","^")
+			Result.put ("op$and","and")
+			Result.put ("op$or","or")
+			Result.put ("op$xor","xor")
+			Result.put ("op$andthen","and then")
+			Result.put ("op$orelse","or else")
+			Result.put ("op$implies","implies")
+		end
+
+	Mapping_table: TABLE[STRING, STRING] is
+			-- Table of mappings between Eiffel and BPL types
+		once
+			create {HASH_TABLE[STRING, STRING]}Result.make(9)
+			Result.compare_objects
+			Result.put("ref", "ANY")
+			Result.put("int", "INTEGER")
+			Result.put("int", "INTEGER_8")
+			Result.put("int", "INTEGER_16")
+			Result.put("int", "INTEGER_32")
+			Result.put("int", "INTEGER_REF")
+			Result.put("int", "INTEGER_8_REF")
+			Result.put("int", "INTEGER_16_REF")
+			Result.put("int", "INTEGER_32_REF")
+			Result.put("int", "CHARACTER")
+			Result.put("int", "CHARACTER_8")
+			Result.put("int", "CHARACTER_32")
+			Result.put("int", "CHARACTER_REF")
+			Result.put("int", "CHARACTER_8_REF")
+			Result.put("int", "CHARACTER_32_REF")
+			Result.put("bool", "BOOLEAN")
+		end
+
+	Infix_Operator_table: TABLE[STRING, STRING] is
+			-- String-Versions of Operators
+		once
+			create {HASH_TABLE[STRING, STRING]}Result.make(9)
+			Result.compare_objects
+			Result.put ("==", "=")
+			Result.put ("!=", "/=")
+			Result.put ("&&","and")
+			Result.put ("||","or")
+			Result.put ("&&","and then")
+			Result.put ("||","or else")
+			Result.put ("==>","implies")
+		end
+
+	Prefix_Operator_table: TABLE[STRING, STRING] is
+			-- String-Versions of Operators
+		once
+			create {HASH_TABLE[STRING, STRING]}Result.make(9)
+			Result.compare_objects
+			Result.put ("!","not")
 		end
 
 end

@@ -22,7 +22,7 @@ inherit
 
 feature{NONE} -- Initialization
 
-	make (a_class: CLASS_C) is
+	make (a_class: EIFFEL_CLASS_C) is
 			-- Class to process.
 		require
 			not_void: a_class /= Void
@@ -35,7 +35,7 @@ feature{NONE} -- Initialization
 
 feature -- Access
 
-	current_class: CLASS_C
+	current_class: EIFFEL_CLASS_C
 			-- Current class
 
 	current_feature: FEATURE_I
@@ -43,7 +43,7 @@ feature -- Access
 
 feature -- Setup
 
-	set_current_class (a_class: CLASS_C) is
+	set_current_class (a_class: EIFFEL_CLASS_C) is
 			-- Set the `current_class' to `a_class'.
 		require
 			not_void: a_class /= Void

@@ -19,7 +19,7 @@ create
 
 feature{NONE} -- Initialization
 
-	make (a_class: CLASS_C) is
+	make (a_class: EIFFEL_CLASS_C) is
 			-- Default creation
 		do
 			Precursor{BPL_VISITOR} (a_class)
