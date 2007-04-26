@@ -1,0 +1,544 @@
+indexing
+	description: "Write out the functional definition for functions"
+	author: "Bernd Schoeller, Raphael Mack"
+	date: "$Date$"
+	revision: "$Revision:$"
+
+class
+	BPL_BN_FUNCTION_WRITER
+
+inherit
+	BPL_BN_ITERATOR
+		redefine
+			make,
+			process_bin_ne_b,
+			process_bin_eq_b,
+			process_integer_constant,
+			process_attribute_b,
+			process_result_b,
+			process_argument_b,
+			process_bin_and_b,
+			process_bin_and_then_b,
+			process_bin_div_b,
+			process_bin_ge_b,
+			process_bin_gt_b,
+			process_bin_implies_b,
+			process_bin_le_b,
+			process_bin_lt_b,
+			process_bin_minus_b,
+			process_bin_mod_b,
+			process_bin_or_b,
+			process_bin_or_else_b,
+			process_bin_plus_b,
+			process_bin_power_b,
+			process_bin_slash_b,
+			process_bin_star_b,
+			process_bin_xor_b,
+			process_bit_const_b,
+			process_bool_const_b,
+			process_char_const_b,
+			process_constant_b,
+			process_current_b,
+			process_feature_b,
+			process_int64_val_b,
+			process_int_val_b,
+			process_nat64_val_b,
+			process_nat_val_b,
+			process_paran_b,
+			process_un_minus_b,
+			process_un_not_b,
+			process_void_b
+			
+		end
+
+create
+	make
+
+feature -- Initialization
+
+	make (a_class: EIFFEL_CLASS_C) is
+			-- Initialize.
+		do
+			Precursor {BPL_BN_ITERATOR} (a_class)
+			reset
+		end
+
+feature -- Main
+
+	write_function (a_function: FEATURE_I) is
+			-- Write the definition of the function pointed to by `a_function'.
+		require
+			as_not_void: a_function /= Void
+		local
+			feat_name: STRING
+			func_name: STRING
+			arg_name: STRING
+			arg_type: TYPE_A
+			return_type: STRING
+			ass_list: BYTE_LIST[BYTE_NODE]
+			intro: STRING
+			byte_code: BYTE_CODE
+			i: INTEGER
+		do
+			current_feature := a_function
+			if byte_server.has (current_feature.code_id) then
+				-- TODO: it's unclear what we can do for features which have no bytecode
+				
+				byte_code := byte_server.disk_item (current_feature.code_id)
+				
+				set_this_ref ("C")
+				set_heap_ref ("H")
+				current_feature := a_function
+				feat_name := bpl_mangled_feature_name (a_function.feature_name)
+				func_name := "fun." + current_class.name + "." + feat_name
+				return_type := bpl_type_for_type_a (a_function.type)
+				bpl_out ("// Function: " + a_function.feature_name + " of class " + current_class.name + "%N")
+				bpl_out ("function ")
+				bpl_out (func_name)
+				bpl_out ("([ref,name]any,")
+				bpl_out (bpl_type_for_class (current_class))
+				result_call := func_name + "(H,C"
+
+				from
+					i := 1
+				until
+					i > a_function.argument_count
+				loop
+					arg_name := a_function.arguments.item_name (i)
+					arg_type := a_function.arguments.i_th (i)
+					bpl_out (",arg.")
+					bpl_out (arg_name)
+					bpl_out (":")
+					bpl_out (bpl_type_for_type_a (arg_type))
+					result_call.append (",arg.")
+					result_call.append (arg_name)
+
+					i := i + 1
+				end
+			
+				bpl_out (") returns (" + return_type + ");%N")
+				result_call.append (")")
+				intro := "forall H:[ref,name]any,C:ref"
+
+
+				from
+					i := 1
+				until
+					i > a_function.argument_count
+				loop
+					arg_name := a_function.arguments.item_name (i)
+					arg_type := a_function.arguments.i_th (i)
+					intro.append (",arg.")
+					intro.append (arg_name)
+					intro.append (":")
+					intro.append (bpl_type_for_type_a (arg_type))
+					i := i + 1
+				end
+				
+				intro.append (":: (C != null)")
+				ass_list := byte_code.precondition
+				if ass_list /= Void then
+					from
+						ass_list.start
+					until
+						ass_list.off
+					loop
+						intro.append (" && (")
+						expr := ""
+						ass_list.item.process (Current)
+						intro.append (expr)
+						intro.append (")")
+						ass_list.forth
+					end
+				end
+				intro.append (" ==> ")
+
+				ass_list := byte_code.postcondition
+				if ass_list /= Void then
+					from
+						ass_list.start
+					until
+						ass_list.off
+					loop
+						bpl_out ("axiom (")
+						bpl_out (intro)
+						expr := ""
+						ass_list.item.process (Current)
+						bpl_out (expr)
+						bpl_out (");%N")
+						ass_list.forth
+					end
+				end
+				bpl_out ("%N")
+			end
+
+		end
+
+feature -- Processing Environment
+
+	result_call: STRING
+		-- String to insert for `Result'
+
+	set_result_call (a_string: STRING) is
+			-- Set the text to insert on a Result to `a_string'.
+		require
+			not_void: a_string /= Void
+		do
+			result_call := a_string
+		ensure
+			value_set: result_call = a_string
+		end
+
+	heap_ref: STRING
+
+	set_heap_ref (a_string: STRING) is
+			-- Set the text to insert on a Heap reference.
+		require
+			not_void: a_string /= Void
+		do
+			heap_ref := a_string
+		ensure
+			value_set: heap_ref = a_string
+		end
+
+	this_ref: STRING
+
+	set_this_ref (a_string: STRING) is
+			-- Set the text to insert on a reference to the current object.
+		require
+			not_void: a_string /= Void
+		do
+			this_ref := a_string
+		ensure
+			value_set: this_ref = a_string
+		end
+
+	expr: STRING
+		-- Expression output
+
+	reset is
+			-- Reset `expr' to the empty string.
+		do
+			expr := ""
+		ensure
+			expr_reset: expr.is_equal ("")
+		end
+
+	-- TODO: add record usage
+		-- Expressions that are feature calls used during the generation.
+
+feature -- Processing
+	process_argument_b (a_node: ARGUMENT_B) is
+			-- Process `a_node'.
+		do
+			expr.append("arg.")
+			expr.append(current_feature.arguments.item_name (a_node.position))			
+		end
+
+	process_attribute_b (a_node: ATTRIBUTE_B) is
+			-- Process `a_node'.
+		do
+			expr.append("fun.")
+			expr.append(System.class_of_id(a_node.written_in).name)
+			expr.append(".")
+			expr.append(a_node.attribute_name)
+			expr.append("(")
+			expr.append(heap_ref)
+			expr.append(", ")
+			expr.append(this_ref)
+			expr.append(")")
+		end
+
+	process_bin_and_b (a_node: BIN_AND_B) is
+			-- Process `a_node'.
+		do
+			safe_process (a_node.left)
+			expr.append(" && ")
+			safe_process (a_node.right)
+		end
+
+	process_bin_and_then_b (a_node: B_AND_THEN_B) is
+			-- Process `a_node'.
+		do
+			safe_process (a_node.left)
+			expr.append(" && ")
+			safe_process (a_node.right)
+		end
+
+	process_bin_div_b (a_node: BIN_DIV_B) is
+			-- Process `a_node'.
+		do
+			safe_process (a_node.left)
+			expr.append(" / ")
+			safe_process (a_node.right)
+		end
+
+	process_bin_eq_b (a_node: BIN_EQ_B) is
+			-- Process `a_node'.
+		do
+			safe_process (a_node.left)
+			expr.append (" == ")
+			safe_process (a_node.right)
+		end
+
+	process_bin_ge_b (a_node: BIN_GE_B) is
+			-- Process `a_node'.
+		do
+			safe_process (a_node.left)
+			expr.append(" >= ")
+			safe_process (a_node.right)
+		end
+
+	process_bin_gt_b (a_node: BIN_GT_B) is
+			-- Process `a_node'.
+		do
+			safe_process (a_node.left)
+			expr.append(" > ")
+			safe_process (a_node.right)
+		end
+
+	process_bin_implies_b (a_node: B_IMPLIES_B) is
+			-- Process `a_node'.
+		do
+			expr.append("(")
+			safe_process (a_node.left)
+			expr.append(") ==> (")
+			safe_process (a_node.right)
+			expr.append(")")
+		end
+
+	process_bin_le_b (a_node: BIN_LE_B) is
+			-- Process `a_node'.
+		do
+			safe_process (a_node.left)
+			expr.append(" <= ")
+			safe_process (a_node.right)
+		end
+
+	process_bin_lt_b (a_node: BIN_LT_B) is
+			-- Process `a_node'.
+		do
+			safe_process (a_node.left)
+			expr.append(" < ")
+			safe_process (a_node.right)
+		end
+
+	process_bin_minus_b (a_node: BIN_MINUS_B) is
+			-- Process `a_node'.
+		do
+			safe_process (a_node.left)
+			expr.append(" - ")
+			safe_process (a_node.right)
+		end
+
+	process_bin_mod_b (a_node: BIN_MOD_B) is
+			-- Process `a_node'.
+		do
+			safe_process (a_node.left)
+			expr.append(" %% ")
+			safe_process (a_node.right)
+		end
+
+	process_bin_ne_b (a_node: BIN_NE_B) is
+			-- Process `a_node'.
+		do
+			safe_process (a_node.left)
+			expr.append (" != ")
+			safe_process (a_node.right)
+		end
+
+	process_bin_or_b (a_node: BIN_OR_B) is
+			-- Process `a_node'.
+		do
+			safe_process (a_node.left)
+			expr.append(" || ")
+			safe_process (a_node.right)
+		end
+
+	process_bin_or_else_b (a_node: B_OR_ELSE_B) is
+			-- Process `a_node'.
+		do
+			safe_process (a_node.left)
+			expr.append(" || ")
+			safe_process (a_node.right)
+		end
+
+	process_bin_plus_b (a_node: BIN_PLUS_B) is
+			-- Process `a_node'.
+		do
+			safe_process (a_node.left)
+			expr.append(" + ")
+			safe_process (a_node.right)
+		end
+
+	process_bin_power_b (a_node: BIN_POWER_B) is
+			-- Process `a_node'.
+		do
+			safe_process (a_node.left)
+			expr.append("  ")
+			-- TODO: how to store ^ in bpl
+			safe_process (a_node.right)
+		end
+
+	process_bin_slash_b (a_node: BIN_SLASH_B) is
+			-- Process `a_node'.
+		do
+			safe_process (a_node.left)
+			expr.append(" / ")
+			safe_process (a_node.right)
+		end
+
+	process_bin_star_b (a_node: BIN_STAR_B) is
+			-- Process `a_node'.
+		do
+			safe_process (a_node.left)
+			expr.append(" * ")
+			safe_process (a_node.right)
+		end
+
+	process_bin_xor_b (a_node: BIN_XOR_B) is
+			-- Process `a_node'.
+		do
+			safe_process (a_node.left)
+			expr.append(" != ")
+			safe_process (a_node.right)
+		end
+
+	process_bit_const_b (a_node: BIT_CONST_B) is
+			-- Process `a_node'.
+		do
+			expr.append(a_node.value)
+			-- TODO
+		end
+
+	process_bool_const_b (a_node: BOOL_CONST_B) is
+			-- Process `a_node'.
+		do
+			if a_node.value then
+				expr.append("true")
+			else
+				expr.append("false")
+			end
+		end
+	
+	process_char_const_b (a_node: CHAR_CONST_B) is
+			-- Process `a_node'.
+		do
+			expr.append(a_node.value.code.out)
+			-- TODO: how a CHARACTERS handled?
+		end
+
+	process_constant_b (a_node: CONSTANT_B) is
+			-- Process `a_node'.
+		do
+			expr.append(a_node.value.string_value)
+		end
+
+	process_current_b (a_node: CURRENT_B) is
+			-- Process `a_node'.
+		do
+			expr.append(this_ref)
+		end
+
+	process_feature_b (a_node: FEATURE_B) is
+			-- Process `a_node'.
+		local
+			i: INTEGER
+			tmp: STRING
+		do
+			expr.append("fun.")
+			expr.append(System.class_of_id(a_node.written_in).name)
+			expr.append(".")
+			expr.append(a_node.feature_name)
+			expr.append("(")
+			expr.append(heap_ref)
+			expr.append(",")
+			expr.append(this_ref)
+
+			if a_node.parameters /= Void then
+				from
+					tmp := expr
+					i := 0
+				until
+					i > a_node.parameters.count
+				loop
+					expr := ""
+					safe_process(a_node.parameters.i_th(i))
+					tmp.append(",")
+					tmp.append(expr)
+					i := i + 1
+				end
+				expr := tmp
+			end
+			expr.append(")")
+		end
+
+	process_int64_val_b (a_node: INT64_VAL_B) is
+			-- Process `a_node'.
+		do
+			expr.append(a_node.value.out)
+		end
+
+	process_int_val_b (a_node: INT_VAL_B) is
+			-- Process `a_node'.
+		do
+			expr.append(a_node.value.out)
+		end
+	
+	process_integer_constant (a_node: INTEGER_CONSTANT) is
+			-- Process `a_node'.
+		do
+			expr.append (a_node.integer_64_value.out)
+		end
+
+	process_nat64_val_b (a_node: NAT64_VAL_B) is
+			-- Process `a_node'.
+		do
+			expr.append (a_node.value.out)
+		end
+
+	process_nat_val_b (a_node: NAT_VAL_B) is
+			-- Process `a_node'.
+		do
+			expr.append (a_node.value.out)
+		end
+
+	process_paran_b (a_node: PARAN_B) is
+			-- Process `a_node'.
+		do
+			expr.append("(")
+			safe_process (a_node.expr)
+			expr.append(")")
+		end
+
+	process_result_b (b_node: RESULT_B) is
+			-- Process `b_node'.
+		do
+			expr.append (result_call)
+		end
+
+	process_un_minus_b (a_node: UN_MINUS_B) is
+			-- Process `a_node'.
+		do
+			expr.append("( -")
+			safe_process (a_node.access)
+			safe_process (a_node.expr)
+			expr.append (")")
+		end
+
+	process_un_not_b (a_node: UN_NOT_B) is
+			-- Process `a_node'.
+		do
+			expr.append("( !")
+			safe_process (a_node.access)
+			safe_process (a_node.expr)
+			expr.append (")")
+		end
+
+	process_void_b (a_node: VOID_B) is
+			-- Process `a_node'.
+		do
+			expr.append ("null")
+		end
+	
+end

@@ -172,6 +172,22 @@ feature -- Supporting Features
 			Result_not_void: Result /= Void
 		end
 
+	bpl_type_for_class (a_class: CLASS_C):STRING is
+			-- BPL type for class `a_class'.
+		require
+			not_void: a_class /= Void
+		do
+			if mapping_table.item(a_class.name) /= Void then
+				Result := mapping_table.item (a_class.name)
+			elseif a_class.is_expanded then
+				add_error(create {BPL_AST_ERROR}.make_ast("Cannot handle type '" + a_class.name
+											  + "' since it's expanded.", a_class.ast))
+				Result := ""
+			else
+				Result := once "ref"
+			end
+		end
+
 feature {BYTE_NODE} -- Visitors
 
 	process_access_expr_b (a_node: ACCESS_EXPR_B) is
@@ -214,7 +230,7 @@ feature {BYTE_NODE} -- Visitors
 	process_attribute_b (a_node: ATTRIBUTE_B) is
 			-- Process `a_node'.
 		do
-			-- No Subnode			
+			-- No Subnode
 		end
 
 	process_bin_and_b (a_node: BIN_AND_B) is
