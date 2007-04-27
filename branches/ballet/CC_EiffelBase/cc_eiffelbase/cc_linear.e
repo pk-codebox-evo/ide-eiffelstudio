@@ -22,12 +22,18 @@ feature -- Access
 			-- based on `object_comparison'.)
 		use
 			use_own_representation: representation
+		local
+			old_index: INTEGER
 		do
+			old_index := index
+
 			start
 			if not off then
 				search (v)
 			end
 			Result := not exhausted
+
+			go_i_th (old_index) -- restore internal cursor position
 		end
 
 	index_of (v: like item; i: INTEGER): INTEGER is
@@ -40,8 +46,10 @@ feature -- Access
 		use
 			use_own_representation: representation
 		local
-			occur, pos: INTEGER
+			occur, pos, old_index: INTEGER
 		do
+			old_index := index
+
 			if object_comparison and v /= Void then
 				from
 					start
@@ -72,6 +80,8 @@ feature -- Access
 			if occur = i then
 				Result := pos - 1
 			end
+
+			go_i_th (old_index)
 		ensure
 			non_negative_result: Result >= 0
 		end
@@ -122,7 +132,11 @@ feature -- Access
 			-- based on `object_comparison'.)
 		use
 			use_own_representation: representation
+		local
+			old_index: INTEGER
 		do
+			old_index := index
+
 			from
 				start
 				search (v)
@@ -133,6 +147,10 @@ feature -- Access
 				forth
 				search (v)
 			end
+
+			go_i_th (old_index)
+		ensure
+			model_corresponds: Result = model_sequence.occurrences (v)
 		end
 
 feature -- Status report
@@ -162,6 +180,16 @@ feature -- Status report
 			Result := is_empty or after
 		end
 
+	valid_index (i: INTEGER): BOOLEAN is
+			-- Is `i' within allowable bounds?
+		use
+			use_own_representation: representation
+		do
+			Result := (i >= 1) and (i <= count)
+		ensure
+			valid_index_definition: Result = ((i >= 1) and (i <= count))
+		end
+
 feature -- Cursor movement
 
 	finish is
@@ -170,6 +198,7 @@ feature -- Cursor movement
 			modify_own_representation: representation
 		deferred
 		ensure
+			model_sequence_not_changed: model_sequence |=| old model_sequence
 			confined representation
 		end
 
@@ -183,6 +212,34 @@ feature -- Cursor movement
 		deferred
 		ensure
 			-- moved_forth_before_end: (not after) implies index = old index + 1
+			model_cursor_corresponds: model_cursor = old model_cursor + 1
+			model_sequence_not_changed: model_sequence |=| old model_sequence
+			confined representation
+		end
+
+	go_i_th (i: INTEGER) is
+			-- Move internal cursor to `i'-th position. `i' must be a legal
+			-- index position (1 <= i <= count)
+		require
+			valid_index: valid_index (i)
+		modify
+			modify_own_representation: representation
+		local
+			position: INTEGER
+		do
+			from
+				start
+				position := 1
+			until
+				position = i
+			loop
+				forth
+				position := position + 1
+			end
+		ensure
+			position_expected: index = i
+			model_cursor_corresponds: model_cursor = i
+			model_sequence_not_changed: model_sequence |=| old model_sequence
 			confined representation
 		end
 
@@ -264,7 +321,10 @@ feature -- Iteration
 			cs: CURSOR_STRUCTURE [G]
 			c: CURSOR
 			t: TUPLE [G]
+			old_index: INTEGER
 		do
+			old_index := index
+
 			create t
 
 			cs ?= Current
@@ -285,6 +345,8 @@ feature -- Iteration
 			if cs /= Void then
 				cs.go_to (c)
 			end
+
+			go_i_th (old_index)
 		end
 
 	for_all (test: FUNCTION [ANY, TUPLE [G], BOOLEAN]): BOOLEAN is
@@ -297,7 +359,10 @@ feature -- Iteration
 			cs: CURSOR_STRUCTURE [G]
 			c: CURSOR
 			t: TUPLE [G]
+			old_index: INTEGER
 		do
+			old_index := index
+
 			create t
 
 			cs ?= Current
@@ -319,6 +384,8 @@ feature -- Iteration
 			if cs /= Void then
 				cs.go_to (c)
 			end
+
+			go_i_th (old_index)
 		ensure then
 			empty: is_empty implies Result
 		end
@@ -335,13 +402,21 @@ feature -- Conversion
 			result_corresponds: Result.model |=| model
 		end
 
+feature -- Model
+
+	model_cursor: INTEGER is
+			-- Model of a cursor for traversal
+		modify
+			modify_own_representation: representation
+		do
+			Result := index;
+		end
+
 invariant
 
 	after_constraint: after implies off
 
 	-- TODO additional constraint
 	after_constraint_2: after implies exhausted
-
-	empty_defined_through_model: is_empty = model_container.is_empty
 
 end

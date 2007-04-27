@@ -37,8 +37,6 @@ feature -- Status report
 		use
 			use_own_representation: representation
 		deferred
-		ensure
-			--model_corresponds: model_cursor = model_sequence.count -- TODO korrekt? cursor nicht beeinträchtigen...
 		end
 
 feature -- Cursor movement
@@ -49,7 +47,7 @@ feature -- Cursor movement
 			modify_own_representation: representation
 		deferred
 		ensure
-			model_corresponds: model_cursor = 0 -- TODO Korrekt?
+			model_sequence_not_changed: model_sequence |=| old model_sequence
 			confined representation
 		end
 
@@ -66,7 +64,6 @@ feature -- Iteration
 		do
 			linear_representation.do_all (action)
 		ensure
-			-- model_corresponds: model |=| old model.first. -- TODO
 			confined representation
 		end
 
@@ -84,7 +81,6 @@ feature -- Iteration
 		do
 			linear_representation.do_if (action, test)
 		ensure
-			-- TODO wietere contracts
 			confined representation
 		end
 
@@ -99,6 +95,7 @@ feature -- Iteration
 			Result := linear_representation.there_exists (test)
 		ensure
 			model_corresponds: Result = model.first.there_exists (test)
+			no_model_change: model |=| old model
 		end
 
 	for_all (test: FUNCTION [ANY, TUPLE [G], BOOLEAN]): BOOLEAN is
@@ -112,6 +109,7 @@ feature -- Iteration
 			Result := linear_representation.for_all (test)
 		ensure
 			model_corresponds: Result = model.first.for_all (test)
+			no_model_change: model |=| old model
 		end
 
 feature -- Model
@@ -158,7 +156,6 @@ feature -- Model
 invariant
 
 	empty_constraint: is_empty implies off
-	empty_defined_through_model: is_empty = model_sequence.is_empty
 	model_container_corresponds_to_model_sequence: model_container.count = model_sequence.count
 	models_equivalent: model_sequence.range |=| model_container.domain
 

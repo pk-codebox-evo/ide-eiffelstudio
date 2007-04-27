@@ -15,8 +15,7 @@ inherit
 		redefine
 			changeable_comparison_criterion,
 			can_extend,
-			can_put,
-			can_prune
+			can_put
 		end
 
 feature -- Element change
@@ -91,18 +90,6 @@ feature -- Element specific status report
 			Result := extendible
 		end
 
--- TODO nötig?
-	can_prune (v: G) : BOOLEAN is
-			-- Can `an_item' be pruned?
-		use
-			use_own_representation: representation
-		do
-			Result := has (v)
-		ensure then
-			element_in_set: has (v)
-			model_corresponds: model.contains (v)
-		end
-
 feature -- Model
 
 	model: MML_SET [G] is
@@ -117,8 +104,6 @@ feature -- Model
 
 invariant
 
-	empty_defined_through_model: is_empty = model.is_empty
-	count_defined_through_model: count = model.count
 	models_correspondend: model.count = model_collection.count
 	models_equivalent: model |=| model_collection.domain
 

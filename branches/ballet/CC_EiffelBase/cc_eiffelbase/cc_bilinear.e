@@ -16,7 +16,8 @@ inherit
 			{NONE}
 				linear_search
 		redefine
-			off
+			off,
+			go_i_th
 		end
 
 feature -- Status report
@@ -47,7 +48,39 @@ feature -- Cursor movement
 		deferred
 		ensure then
 			-- moved_forth_after_start: (not before) implies index = old index - 1
-			models_equal_before_after: model_sequence |=| old model_sequence -- TODO nötig? wenn ja dann auch im linear und traversable
+			model_cursor_corresponds: model_cursor = old model_cursor - 1
+			model_sequence_not_changed: model_sequence |=| old model_sequence
+		end
+
+	go_i_th (i: INTEGER) is
+			-- Move internal cursor to `i'-th position. `i' must be a legal
+			-- index position (1 <= i <= count)
+		modify
+			modify_own_representation: representation
+		local
+			difference: INTEGER
+		do
+			if (i > index) then
+				-- i is bigger than current index -> move forward
+				from
+					difference := i - index
+				until
+					difference = 0
+				loop
+					forth
+					difference := difference - 1
+				end
+			else
+				-- i is smaller than current index -> move backward
+				from
+					difference := index - i
+				until
+					difference = 0
+				loop
+					back
+					difference := difference - 1
+				end
+			end
 		end
 
 feature -- Access
@@ -70,6 +103,7 @@ feature -- Access
 			linear_search (v)
 		ensure
 			models_equal_before_after: model_sequence |=| old model_sequence
+			confined representation
 		end
 
 invariant

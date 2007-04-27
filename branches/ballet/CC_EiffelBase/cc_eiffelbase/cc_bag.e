@@ -43,9 +43,4 @@ feature -- Element change
 			model_corresponds: model.occurrences (v) = old model.occurrences (v) + 1
 		end
 
-invariant
-
-	empty_defined_through_model: is_empty = model.is_empty
-	count_defined_through_model: count = model.count
-
 end

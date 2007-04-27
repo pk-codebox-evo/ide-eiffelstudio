@@ -172,18 +172,4 @@ feature -- Element specific status report
 			-- TODO hier schon definieren oder erst deferred?
 		end
 
--- TODO nötig? gibt ja keine verschiedenen prune mechanismen im vergleich zu extend <> put <> force_*
-	can_prune (v: G) : BOOLEAN is
-			-- Can `an_item' be pruned?
-		use
-			use_own_representation: representation
-		do
-			Result := prunable
-		end
-
-invariant
-
-	empty_defined_through_model: is_empty = model.is_empty
-	count_defined_through_model: count = model.count
-
 end

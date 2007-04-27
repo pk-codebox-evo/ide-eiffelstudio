@@ -16,12 +16,10 @@ inherit
 			put as collection_put,
 			extend as collection_extend,
 			can_extend as collection_can_extend,
-			can_put as collection_can_put,
-			can_prune as collection_can_prune
+			can_put as collection_can_put
 		redefine
 			collection_can_extend,
-			collection_can_put,
-			collection_can_prune
+			collection_can_put
 		end
 
 feature -- Access
@@ -98,15 +96,6 @@ feature -- Element specific status report
 			Result := extendible
 		end
 
--- TODO nötig? gibt ja keine verschiedenen prune mechanismen im vergleich zu extend <> put <> force_*
-	can_prune (v: G; k: H) : BOOLEAN is
-			-- Can `an_item' be pruned?
-		use
-			use_own_representation: representation
-		do
-			Result := prunable
-		end
-
 feature {NONE} -- Inapplicable
 
 -- TODO sehr unschön
@@ -127,10 +116,6 @@ feature {NONE} -- Inapplicable
 		do
 		end
 
-	collection_can_prune (v: G) : BOOLEAN is
-		do
-		end
-
 feature -- Model
 
 	model: MML_RELATION [G, H] is
@@ -143,9 +128,5 @@ feature -- Model
 		ensure
 			Result_not_void: Result /= Void
 		end
-
-invariant
-
-
 
 end
