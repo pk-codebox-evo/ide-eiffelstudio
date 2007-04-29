@@ -208,12 +208,15 @@ feature -- Helper
 			check
 				feature_found: feat /= Void
 			end
-			print ("Using: ")
-			print (feat.feature_name)
-			print (" of ")
-			print (feat.written_class.name)
-			print ("%N")
-			environment.used_features.extend (feat)
+         io.put_string("feat.written_class.name = " + feat.written_class.name + "%N")
+         if Mapping_table.item(feat.written_class.name) = Void then
+            print ("Using: ")
+            print (feat.feature_name)
+            print (" of ")
+            print (feat.written_class.name)
+            print ("%N")
+            environment.used_features.extend (feat)
+         end
 		end
 
 	bpl_type_for (type: TYPE_AS): STRING is
@@ -299,6 +302,7 @@ feature -- Helper
 			else
 				Result := "ref"
 			end
+         io.put_string("Result = " + Result + "2%N")
 		ensure
 			Result_not_void: Result /= Void
 		end
@@ -368,6 +372,15 @@ feature -- Helper
 		end
 
 feature {NONE} -- Implementation
+   types_in_background_theory: ARRAY[STRING] is
+         -- names of all types, which are defined in the background theory
+      once
+         Result := <<"ANY", "INTEGER", "INTEGER_8",
+         "INTEGER_16", "INTEGER_32", "INTEGER_64",
+         "STRING", "STRING_8",
+         "MML_DEFAULT_SET", "MML_SET",
+         "FRAME">>
+      end
 
 	Mapping_table: TABLE[STRING, STRING] is
 			-- Table of mappings between Eiffel and BPL types
@@ -390,6 +403,9 @@ feature {NONE} -- Implementation
 			Result.put("int", "CHARACTER_8_REF")
 			Result.put("int", "CHARACTER_32_REF")
 			Result.put("bool", "BOOLEAN")
+			Result.put("set", "FRAME")
+			Result.put("set", "MML_SET")
+			Result.put("set", "MML_DEFAULT_SET")
 		end
 
 	Infix_Operator_table: TABLE[STRING, STRING] is
