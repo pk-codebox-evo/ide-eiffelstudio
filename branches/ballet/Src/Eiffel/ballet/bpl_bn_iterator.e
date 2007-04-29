@@ -119,7 +119,7 @@ feature -- Extra Processors
 
 		end
 
-feature -- Supporting Features
+feature {NONE} -- Supporting Features
 
 	bpl_mangled_operator (op:STRING): STRING is
 			-- Operator mangled that it can be used as function name in BPL
@@ -214,10 +214,31 @@ feature -- Supporting Features
 			Result.append (pos.line_number.out)
 			Result.append (";")
 			ass ?= pos
-			if ass /= Void then
+			if ass /= Void and then ass.tag /= Void then
 				Result.append (ass.tag)
 			end
 			Result.append ("%N")
+		end
+
+	record_usage (a_node: CALL_ACCESS_B) is
+			-- Record the usage of the topmost feature that appears in `a_node'.
+		require
+			not_void: a_node /= Void
+		local
+			feat: FEATURE_I
+		do
+			feat := Feat_tbl_server.item (a_node.written_in).feature_of_feature_id(a_node.feature_id)
+			check
+				feature_found: feat /= Void
+			end
+         if Mapping_table.item(feat.written_class.name) = Void then
+            print ("Using: ")
+            print (feat.feature_name)
+            print (" of ")
+            print (feat.written_class.name)
+            print ("%N")
+            environment.used_features.extend (feat)
+         end
 		end
 
 feature {BYTE_NODE} -- Visitors

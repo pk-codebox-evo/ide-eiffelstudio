@@ -63,7 +63,7 @@ feature {NONE} -- Implementation
 	analyse_usage is
 			-- Analyse the usage.
 		local
-			a_list: LIST [FEATURE_AS]
+			a_list: LIST [FEATURE_I]
 		do
 			create usage_analyser.make (current_class)
 			usage_analyser.setup (current_class.ast,match_list,will_process_leading_leaves,will_process_trailing_leaves)
@@ -113,10 +113,10 @@ feature {NONE} -- Implementation
 	define_attributes is
 			-- Define all attributes of the current class.
 		local
-			a_list: LIST [FEATURE_AS]
+			a_list: LIST [FEATURE_I]
 		do
 			create attribute_writer.make (current_class)
-			attribute_writer.setup (current_class.ast,match_list,will_process_leading_leaves,will_process_trailing_leaves)
+			attribute_writer.set_leaf_list (match_list)
 
 			a_list := usage_analyser.attribute_list
 			from a_list.start until a_list.off loop
@@ -130,19 +130,19 @@ feature {NONE} -- Implementation
 	define_functions is
 			-- Define all functions of the current class.
 		local
-			a_list: LIST [FEATURE_AS]
+			a_list: LIST [FEATURE_I]
 		do
 			create function_writer.make (current_class)
 			function_writer.set_leaf_list (match_list)
 
 			a_list := usage_analyser.deferred_query_list
 			from a_list.start until a_list.off loop
-				function_writer.write_function (current_class.feature_named (a_list.item.feature_name))
+				function_writer.write_function (a_list.item)
 				a_list.forth
 			end
 			a_list := usage_analyser.function_list
 			from a_list.start until a_list.off loop
-				function_writer.write_function (current_class.feature_named (a_list.item.feature_name))
+				function_writer.write_function (a_list.item)
 				a_list.forth
 			end
 		end
@@ -152,7 +152,7 @@ feature {NONE} -- Implementation
 	define_signatures is
 			-- Define all signatures of the current class.
 		local
-			a_list: LIST [FEATURE_AS]
+			a_list: LIST [FEATURE_I]
 		do
 			create signature_writer.make (current_class)
 			signature_writer.set_leaf_list (match_list)
@@ -189,7 +189,7 @@ feature {NONE} -- Implementation
 	define_implementations is
 			-- Define all implementations of the current class.
 		local
-			a_list: LIST [FEATURE_AS]
+			a_list: LIST [FEATURE_I]
 		do
 			create implementation_writer.make (current_class)
 			implementation_writer.set_leaf_list (match_list)
@@ -219,6 +219,7 @@ feature {NONE} -- Implementation
 				environment.used_features.is_empty
 			loop
 				environment.used_features.start
+
 				some_feature := environment.used_features.item
 				some_class ?= some_feature.written_class
 				if
@@ -230,9 +231,14 @@ feature {NONE} -- Implementation
 				 then
                if not types_in_background_theory.has(some_class.name) then
                   if some_feature.is_function or some_feature.is_attribute or some_feature.is_constant then
-                     create function_writer.make (some_class)
-							function_writer.set_leaf_list (match_list)
-                     function_writer.write_function (some_feature)
+							if some_feature.is_attribute then
+								create attribute_writer.make (some_class)
+								attribute_writer.write_attribute (some_feature)
+							else
+								create function_writer.make (some_class)
+								function_writer.set_leaf_list (match_list)
+								function_writer.write_function (some_feature)
+							end
 						end
                   create signature_writer.make (some_class)
 						signature_writer.set_leaf_list (match_list)

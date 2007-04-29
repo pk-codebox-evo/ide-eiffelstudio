@@ -30,117 +30,126 @@ feature -- Generation
 			setup_function_writer
 			current_feature := a_feature
 			function_writer.set_current_feature (a_feature)
-			if byte_server.has (current_feature.code_id) then
-				-- TODO: it's unclear what we can do for features which have no bytecode
-				
-				byte_code := byte_server.disk_item (current_feature.code_id)
-			
-				bpl_out ("// Signature: " + a_feature.feature_name + " of class " + current_class.name + "%N")
-				bpl_out ("procedure proc.")
-				bpl_out (current_class.name)
-				bpl_out (".")
-				bpl_out (bpl_mangled_feature_name (a_feature.feature_name))
-				bpl_out ("(Current:ref")
-				
-				from
-					i := 1
-				until
-					i > a_feature.argument_count
-				loop
-					arg_name := a_feature.arguments.item_name (i)
-					arg_type := a_feature.arguments.i_th (i)
-					bpl_out (",arg.")
-					bpl_out (arg_name)
-					bpl_out (":")
-					bpl_out (bpl_type_for_type_a (arg_type))
-					i := i + 1
-				end
-				bpl_out (")")
-				if a_feature.is_function or a_feature.is_attribute or a_feature.is_constant then
-					bpl_out (" returns (Result:")
+
+			bpl_out ("// Signature: " + a_feature.feature_name + " of class " + current_class.name + "%N")
+			bpl_out ("procedure proc.")
+			bpl_out (current_class.name)
+			bpl_out (".")
+			bpl_out (bpl_mangled_feature_name (a_feature.feature_name))
+			bpl_out ("(Current:ref")
+			from
+				i := 1
+			until
+				i > a_feature.argument_count
+			loop
+				arg_name := a_feature.arguments.item_name (i)
+				arg_type := a_feature.arguments.i_th (i)
+				bpl_out (",arg.")
+				bpl_out (arg_name)
+				bpl_out (":")
+				bpl_out (bpl_type_for_type_a (arg_type))
+				i := i + 1
+			end
+			bpl_out (")")
+			if a_feature.is_function or a_feature.is_attribute or a_feature.is_constant then
+				bpl_out (" returns (Result:")
 				bpl_out (bpl_type_for_type_a (a_feature.type))
 				bpl_out (")")
-				end
-				bpl_out (";%N")
-				bpl_out ("  requires Current != null;%N")
-				
-				ass_list := byte_code.precondition
-				if ass_list /= Void then
-					from
-						ass_list.start
-					until
-						ass_list.off
-					loop
-						function_writer.reset
-						ass_list.item.process (function_writer)
-						bpl_out ("  requires ")
-						bpl_out (function_writer.expr)
-						bpl_out (";%N")
-						ass_list.forth
-					end
-				end
+			end
+			bpl_out (";%N")
+			bpl_out ("  requires Current != null;%N")
 
+			if inv_byte_server.has(current_class.class_id) then
 				ass_list := inv_byte_server.item (current_class.class_id).byte_list
-
-				if ass_list /= Void then
-					from
-						ass_list.start
-					until
-						ass_list.off
-					loop
-						function_writer.reset
-						ass_list.item.process (function_writer)
-						
-						bpl_out ("  free requires ")
-						bpl_out (function_writer.expr)
-						bpl_out (";%N")
-						ass_list.forth
-					end
-				end
-
-				if a_feature.type /= Void then
-					bpl_out ("  modifies Heap;%N")
-				end
-				ass_list := byte_code.postcondition
-				if ass_list /= Void then
-					from
-						ass_list.start
-					until
-						ass_list.off
-					loop
-						function_writer.reset
-						ass_list.item.process (function_writer)
-						bpl_out ("  ensures ")
-						bpl_out (function_writer.expr)
-						bpl_out ("; ")
-						bpl_out (location_info (ass_list.item))
-						ass_list.forth
-					end
-				end
-
-				ass_list := inv_byte_server.item (current_class.class_id).byte_list
-				if ass_list /= Void then
-					from
-						ass_list.start
-					until
-						ass_list.off
-					loop
-						function_writer.reset
-						ass_list.item.process (function_writer)
-						bpl_out ("  ensures ")
-						bpl_out (function_writer.expr)
-						bpl_out (";")
-						bpl_out (location_info (ass_list.item))
-						ass_list.forth
-					end
-				end
-				if a_feature.is_constant then
+				from
+					ass_list.start
+				until
+					ass_list.off
+				loop
 					function_writer.reset
-					byte_code.process (function_writer)
-					bpl_out ("  ensures Result == ")
+					ass_list.item.process (function_writer)
+					
+					bpl_out ("  free requires ")
+					bpl_out (function_writer.expr)
+					bpl_out (";%N")
+
+					function_writer.reset
+					ass_list.item.process (function_writer)
+					bpl_out ("  ensures ")
 					bpl_out (function_writer.expr)
 					bpl_out (";")
-					bpl_out (location_info (byte_code))
+					bpl_out (location_info (ass_list.item))
+					ass_list.forth
+				end
+			end
+
+			if a_feature.is_deferred then
+				-- TODO
+				-- generate contracts (incl. inherited)
+
+			else
+				if byte_server.has (current_feature.code_id) then
+					byte_code := byte_server.disk_item (current_feature.code_id)
+				end
+		
+				if not (current_feature.is_attribute or current_feature.is_constant) then
+					check
+						bc_not_void: byte_code /= Void
+					end
+					ass_list := byte_code.precondition
+					if ass_list /= Void then
+						from
+							ass_list.start
+						until
+							ass_list.off
+						loop
+							function_writer.reset
+							ass_list.item.process (function_writer)
+							bpl_out ("  requires ")
+							bpl_out (function_writer.expr)
+							bpl_out (";%N")
+							ass_list.forth
+						end
+					end
+					
+					ass_list := byte_code.postcondition
+					if ass_list /= Void then
+						from
+							ass_list.start
+						until
+							ass_list.off
+						loop
+							function_writer.reset
+							ass_list.item.process (function_writer)
+							bpl_out ("  ensures ")
+							bpl_out (function_writer.expr)
+							bpl_out ("; ")
+							bpl_out (location_info (ass_list.item))
+							ass_list.forth
+						end
+					end
+				end
+				
+				if a_feature.type.is_void then
+					bpl_out ("  modifies Heap;%N")
+				else
+					bpl_out ("  free ensures fun.")
+					bpl_out (current_class.name)
+					bpl_out (".")
+					bpl_out (bpl_mangled_feature_name (a_feature.feature_name))
+					bpl_out ("(Heap, Current")
+					from
+						i := 1
+					until
+						i > a_feature.argument_count
+					loop
+						arg_name := a_feature.arguments.item_name (i)
+						arg_type := a_feature.arguments.i_th (i)
+						bpl_out (",arg.")
+						bpl_out (arg_name)
+						i := i + 1
+					end
+					bpl_out (") == Result;%N")
 				end
 			end
 			bpl_out ("%N")

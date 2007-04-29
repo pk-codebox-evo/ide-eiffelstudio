@@ -44,6 +44,7 @@ inherit
 			process_int_val_b,
 			process_nat64_val_b,
 			process_nat_val_b,
+			process_nested_b,
 			process_paran_b,
 			process_un_minus_b,
 			process_un_not_b,
@@ -70,6 +71,7 @@ feature -- Main
 		require
 			as_not_void: a_function /= Void
 		local
+			a_constant: CONSTANT_I
 			feat_name: STRING
 			func_name: STRING
 			arg_name: STRING
@@ -82,58 +84,77 @@ feature -- Main
 		do
 			current_feature := a_function
 			if byte_server.has (current_feature.code_id) then
-				-- TODO: it's unclear what we can do for features which have no bytecode
-				
 				byte_code := byte_server.disk_item (current_feature.code_id)
+			end
 				
-				set_this_ref ("C")
-				set_heap_ref ("H")
-				current_feature := a_function
-				feat_name := bpl_mangled_feature_name (a_function.feature_name)
-				func_name := "fun." + current_class.name + "." + feat_name
-				return_type := bpl_type_for_type_a (a_function.type)
-				bpl_out ("// Function: " + a_function.feature_name + " of class " + current_class.name + "%N")
-				bpl_out ("function ")
-				bpl_out (func_name)
-				bpl_out ("([ref,name]any,")
-				bpl_out (bpl_type_for_class (current_class))
-				result_call := func_name + "(H,C"
+			set_this_ref ("C")
+			set_heap_ref ("H")
+			current_feature := a_function
+			feat_name := bpl_mangled_feature_name (a_function.feature_name)
+			func_name := "fun." + current_class.name + "." + feat_name
+			return_type := bpl_type_for_type_a (a_function.type)
+			bpl_out ("// Function: " + a_function.feature_name + " of class " + current_class.name + "%N")
+			bpl_out ("function ")
+			bpl_out (func_name)
+			bpl_out ("([ref,name]any,")
+			bpl_out (bpl_type_for_class (current_class))
+			result_call := func_name + "(H,C"
 
-				from
-					i := 1
-				until
-					i > a_function.argument_count
-				loop
-					arg_name := a_function.arguments.item_name (i)
-					arg_type := a_function.arguments.i_th (i)
-					bpl_out (",arg.")
-					bpl_out (arg_name)
-					bpl_out (":")
-					bpl_out (bpl_type_for_type_a (arg_type))
-					result_call.append (",arg.")
-					result_call.append (arg_name)
-
-					i := i + 1
-				end
+			from
+				i := 1
+			until
+				i > a_function.argument_count
+			loop
+				arg_name := a_function.arguments.item_name (i)
+				arg_type := a_function.arguments.i_th (i)
+				bpl_out (",arg.")
+				bpl_out (arg_name)
+				bpl_out (":")
+				bpl_out (bpl_type_for_type_a (arg_type))
+				result_call.append (",arg.")
+				result_call.append (arg_name)
+				
+				i := i + 1
+			end
 			
-				bpl_out (") returns (" + return_type + ");%N")
-				result_call.append (")")
-				intro := "forall H:[ref,name]any,C:ref"
+			bpl_out (") returns (" + return_type + ");%N")
+			result_call.append (")")
+			intro := "forall H:[ref,name]any,C:ref"
 
-				from
-					i := 1
-				until
-					i > a_function.argument_count
-				loop
-					arg_name := a_function.arguments.item_name (i)
-					arg_type := a_function.arguments.i_th (i)
-					intro.append (",arg.")
-					intro.append (arg_name)
-					intro.append (":")
-					intro.append (bpl_type_for_type_a (arg_type))
-					i := i + 1
+			from
+				i := 1
+			until
+				i > a_function.argument_count
+			loop
+				arg_name := a_function.arguments.item_name (i)
+				arg_type := a_function.arguments.i_th (i)
+				intro.append (",arg.")
+				intro.append (arg_name)
+				intro.append (":")
+				intro.append (bpl_type_for_type_a (arg_type))
+				i := i + 1
+			end
+			
+			if a_function.is_constant then
+				a_constant ?= a_function
+				check
+					const_is_const: a_constant /= Void
 				end
+				bpl_out ("axiom (")
+				bpl_out (intro)
+				bpl_out (":: ")
+				bpl_out (result_call)
+				bpl_out (" == ")
+				bpl_out (a_constant.value.dump)
+				bpl_out (");%N")
+			elseif a_function.is_deferred then
+				-- TODO
+				-- generate contracts (incl. inherited)
 				
+			else
+				check
+					byte_code_not_void: byte_code /= Void
+				end
 				intro.append (":: (C != null)")
 				ass_list := byte_code.precondition
 				if ass_list /= Void then
@@ -151,7 +172,7 @@ feature -- Main
 					end
 				end
 				intro.append (" ==> ")
-
+			
 				ass_list := byte_code.postcondition
 				if ass_list /= Void then
 					from
@@ -168,9 +189,8 @@ feature -- Main
 						ass_list.forth
 					end
 				end
-				bpl_out ("%N")
 			end
-
+			bpl_out ("%N")
 		end
 
 feature -- Processing Environment
@@ -219,12 +239,20 @@ feature -- Processing Environment
 			-- Reset `expr' to the empty string.
 		do
 			expr := ""
+			create call_list.make (0)			
 		ensure
 			expr_reset: expr.is_equal ("")
 		end
 
-	-- TODO: add record usage
-		-- Expressions that are feature calls used during the generation.
+	call_list: ARRAYED_LIST[CALL_ACCESS_B]
+		-- feature calls used during the generation.
+
+	record_call (e: CALL_ACCESS_B) is
+			-- Record that the following call is used in the expression.
+		do
+			call_list.extend (e)
+			record_usage (e)
+		end
 
 feature -- Processing
 	process_argument_b (a_node: ARGUMENT_B) is
@@ -246,6 +274,7 @@ feature -- Processing
 			expr.append(", ")
 			expr.append(this_ref)
 			expr.append(")")
+			record_call(a_node)
 		end
 
 	process_bin_and_b (a_node: BIN_AND_B) is
@@ -470,6 +499,7 @@ feature -- Processing
 				expr := tmp
 			end
 			expr.append(")")
+			record_call(a_node)
 		end
 
 	process_int64_val_b (a_node: INT64_VAL_B) is
@@ -500,6 +530,22 @@ feature -- Processing
 			-- Process `a_node'.
 		do
 			expr.append (a_node.value.out)
+		end
+
+	process_nested_b (a_node: NESTED_B) is
+			-- Process `a_node'.
+		local
+			tmp_expr: STRING
+			tmp_this_ref: STRING
+		do
+			tmp_expr := expr
+			expr := ""
+			safe_process (a_node.target)
+			tmp_this_ref := this_ref
+			this_ref := expr
+			expr := tmp_expr
+			safe_process (a_node.message)
+			this_ref := tmp_this_ref
 		end
 
 	process_paran_b (a_node: PARAN_B) is
@@ -539,5 +585,7 @@ feature -- Processing
 		do
 			expr.append ("null")
 		end
+invariant
+	call_list_not_void: call_list /= Void
 	
 end

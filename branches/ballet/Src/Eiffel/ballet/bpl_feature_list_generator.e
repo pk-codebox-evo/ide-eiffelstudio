@@ -23,13 +23,13 @@ feature{NONE} -- Initialization
 			-- Default creation
 		do
 			Precursor{BPL_VISITOR} (a_class)
-			create {ARRAYED_LIST [FEATURE_AS]}command_list.make (1)
-			create {ARRAYED_LIST [FEATURE_AS]}query_list.make (1)
-			create {ARRAYED_LIST [FEATURE_AS]}deferred_command_list.make (1)
-			create {ARRAYED_LIST [FEATURE_AS]}deferred_query_list.make (1)
-			create {ARRAYED_LIST [FEATURE_AS]}attribute_list.make (1)
-			create {ARRAYED_LIST [FEATURE_AS]}function_list.make (1)
-			create {ARRAYED_LIST [FEATURE_AS]}procedure_list.make (1)
+			create {ARRAYED_LIST [FEATURE_I]}command_list.make (1)
+			create {ARRAYED_LIST [FEATURE_I]}query_list.make (1)
+			create {ARRAYED_LIST [FEATURE_I]}deferred_command_list.make (1)
+			create {ARRAYED_LIST [FEATURE_I]}deferred_query_list.make (1)
+			create {ARRAYED_LIST [FEATURE_I]}attribute_list.make (1)
+			create {ARRAYED_LIST [FEATURE_I]}function_list.make (1)
+			create {ARRAYED_LIST [FEATURE_I]}procedure_list.make (1)
 		end
 
 feature -- Analyse
@@ -42,25 +42,25 @@ feature -- Analyse
 
 feature -- Access
 
-	command_list: LIST [FEATURE_AS]
+	command_list: LIST [FEATURE_I]
 		-- List of all commands in the class
 
-	query_list: LIST [FEATURE_AS]
+	query_list: LIST [FEATURE_I]
 		-- List of all queries in the class
 
-	deferred_query_list: LIST [FEATURE_AS]
+	deferred_query_list: LIST [FEATURE_I]
 		-- List of deferred queries
 
-	deferred_command_list: LIST [FEATURE_AS]
+	deferred_command_list: LIST [FEATURE_I]
 		-- List of deferred commands
 
-	attribute_list: LIST [FEATURE_AS]
+	attribute_list: LIST [FEATURE_I]
 		-- List of all attributes in the class (queries as attributes)
 
-	function_list: LIST [FEATURE_AS]
+	function_list: LIST [FEATURE_I]
 		-- List of all functions in the class (queries with implementation)
 
-	procedure_list: LIST [FEATURE_AS]
+	procedure_list: LIST [FEATURE_I]
 		-- List of all procedures in the class (command with implementation)
 
 feature -- Processing
@@ -70,23 +70,23 @@ feature -- Processing
 		do
 			Precursor {BPL_VISITOR}(l_as)
 			if l_as.is_attribute or l_as.is_function then
-				query_list.extend (l_as)
+				query_list.extend (current_class.feature_named (l_as.feature_name))
 			else
-				command_list.extend (l_as)
+				command_list.extend (current_class.feature_named (l_as.feature_name))
 			end
 			if l_as.is_attribute then
-				attribute_list.extend (l_as)
+				attribute_list.extend (current_class.feature_named (l_as.feature_name))
 			elseif l_as.is_deferred then
 				if l_as.is_function then
-					deferred_query_list.extend (l_as)
+					deferred_query_list.extend (current_class.feature_named (l_as.feature_name))
 				else
-					deferred_command_list.extend (l_as)
+					deferred_command_list.extend (current_class.feature_named (l_as.feature_name))
 				end
 			else
 				if l_as.is_function then
-					function_list.extend (l_as)
+					function_list.extend (current_class.feature_named (l_as.feature_name))
 				else
-					procedure_list.extend (l_as)
+					procedure_list.extend (current_class.feature_named (l_as.feature_name))
 				end
 			end
 

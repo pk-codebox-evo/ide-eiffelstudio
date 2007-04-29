@@ -44,7 +44,7 @@ feature -- Generation
 			if content /= Void then
 				current_feature := a_feature
 				create function_writer.make (current_class)
-				function_writer.setup (current_class.ast, match_list, will_process_leading_leaves, will_process_trailing_leaves)
+				function_writer.set_leaf_list (match_list)
 				function_writer.set_current_feature (current_feature)
 				function_writer.set_heap_ref ("Heap")
 				function_writer.set_this_ref ("Current")
@@ -181,7 +181,7 @@ feature -- Environment
 			end
 		end
 
-	function_writer: BPL_FUNCTION_WRITER
+	function_writer: BPL_BN_FUNCTION_WRITER
 
 	record_temp_var (a_name: STRING; a_bpl_type: STRING) is
 			-- Record the need of a temp variable `a_name' of `a_bpl_type'
@@ -333,43 +333,67 @@ feature -- Processors
 			-- Process `l_as'.
 		local
 			v: STRING
+			entity: STRING
 			result_as: RESULT_AS
 			nested_as: NESTED_AS
+			bpl_type: STRING
 		do
-			new_label ("new")
-			v := last_label
-			record_temp_var (v, "ref")
-			code.append ("    havoc ")
-			code.append (v)
-			code.append (";%N")
-			code.append ("    assume (!IsAllocated(Heap,")
-			code.append (v)
-			code.append ("));%N")
-			code.append ("    Heap[")
-			code.append (v)
-			code.append (",$allocated] := true;%N")
-
-			code.append ("    ")
 			result_as ?= l_as.target
-			if is_local_variable (l_as.target.access_name) then
-				code.append ("l.")
-				code.append (l_as.target.access_name)
-			elseif result_as /= Void then
-				code.append ("Result")
-			else
-				code.append ("Heap[Current,field.")
-				code.append (current_class.name)
-				code.append (".")
-				code.append (l_as.target.access_name)
-				code.append ("]")
-			end
-			code.append (" := ")
-			code.append (v)
-			code.append (";%N")
-			if l_as.call /= Void then
-				create nested_as.initialize (l_as.target, l_as.call,Void)
-				nested_as.process (Current)
-			end
+
+         if is_local_variable (l_as.target.access_name) then
+            entity := "l."
+            entity.append (l_as.target.access_name)
+            bpl_type := bpl_type_for_access_as(l_as.target)
+         elseif result_as /= Void then
+            entity := "Result"
+            bpl_type := bpl_type_for_type_a(current_feature.type)
+         else
+            entity := "Heap[Current,field."
+            entity.append (current_class.name)
+            entity.append (".")
+            entity.append (l_as.target.access_name)
+            entity.append ("]")
+            bpl_type := bpl_type_for_access_as(l_as.target)
+         end
+
+         if l_as.type /= Void then
+            -- explicit type is given in {}
+            bpl_type := bpl_type_for(l_as.type)
+         end
+
+         if bpl_type.is_equal("ref") then
+            new_label ("new")
+            v := last_label
+            record_temp_var (v, "ref")
+            code.append ("    havoc ")
+            code.append (v)
+            code.append (";%N")
+            code.append ("    assume (!IsAllocated(Heap,")
+            code.append (v)
+            code.append ("));%N")
+            code.append ("    Heap[")
+            code.append (v)
+            code.append (",$allocated] := true;%N")
+
+            code.append ("    ")
+            code.append (entity)
+            code.append (" := ")
+            code.append (v)
+            code.append (";%N")
+            if l_as.call /= Void then
+               create nested_as.initialize (l_as.target, l_as.call, Void)
+               nested_as.process (Current)
+            end
+         else
+            code.append (entity)
+            code.append (" := ")
+
+				function_writer.reset
+				l_as.process (function_writer)
+				code.append (function_writer.expr)
+
+            code.append ("%N")
+         end
 		end
 
 	process_debug_as (l_as: DEBUG_AS) is
