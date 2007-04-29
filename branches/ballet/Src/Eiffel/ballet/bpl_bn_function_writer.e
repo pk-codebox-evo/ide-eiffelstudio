@@ -2,7 +2,7 @@ indexing
 	description: "Write out the functional definition for functions"
 	author: "Bernd Schoeller, Raphael Mack"
 	date: "$Date$"
-	revision: "$Revision:$"
+	revision: "$Revision$"
 
 class
 	BPL_BN_FUNCTION_WRITER
@@ -119,7 +119,6 @@ feature -- Main
 				bpl_out (") returns (" + return_type + ");%N")
 				result_call.append (")")
 				intro := "forall H:[ref,name]any,C:ref"
-
 
 				from
 					i := 1
@@ -458,7 +457,7 @@ feature -- Processing
 			if a_node.parameters /= Void then
 				from
 					tmp := expr
-					i := 0
+					i := 1
 				until
 					i > a_node.parameters.count
 				loop

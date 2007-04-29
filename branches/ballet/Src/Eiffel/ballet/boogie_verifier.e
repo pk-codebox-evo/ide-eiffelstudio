@@ -22,8 +22,7 @@ feature -- Process output
 			related_expr: RX_PCRE_REGULAR_EXPRESSION
 			bpl_error_line, bpl_error_code, bpl_error_message: STRING
 			bpl_lines: LIST[STRING]
-			line_start, column_start: INTEGER
-			line_end, column_end: INTEGER
+			line_start: INTEGER
 			tag: STRING
 		do
 			lines := a_string.split ('%N')
@@ -33,7 +32,7 @@ feature -- Process output
 			bpl_lines := bpl_code.split ('%N')
 
 			create src_expr.make
-			src_expr.compile ("^.*// eiffel:(.*);([0-9]*);([0-9]*);([0-9]*);([0-9]*);(.*)$")
+			src_expr.compile ("^.*// eiffel:(.*);([0-9]*);(.*)$")
 
 			create regexp.make
 			regexp.compile ("^(.*)\(([0-9]*),([0-9]*)\): Error (.*): (.*)$")
@@ -77,23 +76,18 @@ feature -- Process output
 								add_error (create {BPL_ERROR}.make("Ballet Error BP5003 incomplete: no related location given."))
 							else
 								src_expr.match (bpl_lines.i_th (related_expr.captured_substring (2).to_integer))
-								if src_expr.match_count > 5 then
-									tag := src_expr.captured_substring (6)
+								if src_expr.match_count > 2 then
+									tag := src_expr.captured_substring (3)
 								else
 									tag := Void
 								end
 
 								line_start := src_expr.captured_substring (2).to_integer
-								column_start := src_expr.captured_substring (3).to_integer
-								line_end := src_expr.captured_substring (4).to_integer
-								column_end := src_expr.captured_substring (5).to_integer
 
 								add_error (create {BPL_VERIFICATION_ERROR}.make_verification
 											  ("Postcondition might not hold at end of feature",
 												src_expr.captured_substring (1),
-												line_start, column_start,
-												line_end, column_end,
-												tag))
+												line_start, tag))
 							end
 						elseif bpl_error_code.is_equal("BP5002") then
 							-- Precondition violation.
@@ -104,42 +98,32 @@ feature -- Process output
 								add_error (create {BPL_ERROR}.make("Ballet Error BP5002 incomplete: no related location given."))
 							else
 								src_expr.match (bpl_lines.i_th (bpl_error_line.to_integer))
-								if src_expr.match_count > 5 then
-									tag := src_expr.captured_substring (6)
+								if src_expr.match_count > 2 then
+									tag := src_expr.captured_substring (3)
 								else
 									tag := Void
 								end
 
 								line_start := src_expr.captured_substring (2).to_integer
-								column_start := src_expr.captured_substring (3).to_integer
-								line_end := src_expr.captured_substring (4).to_integer
-								column_end := src_expr.captured_substring (5).to_integer
 
 								add_error (create {BPL_VERIFICATION_ERROR}.make_verification
 											  ("Precondition of call not met",
 												src_expr.captured_substring (1),
-												line_start, column_start,
-												line_end, column_end,
-												tag))
+												line_start, tag))
 							end
 						else
 							src_expr.match (bpl_lines.i_th (bpl_error_line.to_integer))
-							if src_expr.match_count >= 5 then
+							if src_expr.match_count >= 3 then
 								line_start := src_expr.captured_substring (2).to_integer
-								column_start := src_expr.captured_substring (3).to_integer
-								line_end := src_expr.captured_substring (4).to_integer
-								column_end := src_expr.captured_substring (5).to_integer
-								if src_expr.match_count > 5 then
-									tag := src_expr.captured_substring (6)
+								if src_expr.match_count > 2 then
+									tag := src_expr.captured_substring (3)
 								else
 									tag := Void
 								end
 								add_error (create {BPL_VERIFICATION_ERROR}.make_verification
 											  (bpl_error_message,
 												src_expr.captured_substring (1),
-												line_start, column_start,
-												line_end, column_end,
-												tag))
+												line_start, tag))
 							else
 								add_error (create {BPL_ERROR}.make("Cannot associate ballet output '" +
 																			  lines.item + "' to a eiffel source."))

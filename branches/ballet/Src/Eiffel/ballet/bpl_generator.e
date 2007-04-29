@@ -147,7 +147,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	signature_writer: BPL_SIGNATURE_WRITER
+	signature_writer: BPL_BN_SIGNATURE_WRITER
 
 	define_signatures is
 			-- Define all signatures of the current class.
@@ -155,7 +155,7 @@ feature {NONE} -- Implementation
 			a_list: LIST [FEATURE_AS]
 		do
 			create signature_writer.make (current_class)
-			signature_writer.setup (current_class.ast, match_list, will_process_leading_leaves, will_process_trailing_leaves)
+			signature_writer.set_leaf_list (match_list)
 
 			a_list := usage_analyser.deferred_command_list
 			from a_list.start until a_list.off loop
@@ -235,7 +235,7 @@ feature {NONE} -- Implementation
                      function_writer.write_function (some_feature)
 						end
                   create signature_writer.make (some_class)
-                  signature_writer.setup (some_class.ast, match_list, will_process_leading_leaves, will_process_trailing_leaves)
+						signature_writer.set_leaf_list (match_list)
                   signature_writer.write_signature (some_feature)
                end
                if generated_features.item(some_class.name) = Void then

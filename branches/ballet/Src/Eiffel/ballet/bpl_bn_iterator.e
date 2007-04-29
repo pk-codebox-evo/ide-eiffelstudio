@@ -33,7 +33,7 @@ feature -- Main processors
 			-- Visit all features of the class.
 		local
 			feat_table: FEATURE_TABLE
-			byte_code: BYTE_CODE
+			inv_byte_code: INVARIANT_B
 		do
 			from
 				feat_table := Feat_tbl_server.item (current_class.class_id)
@@ -44,6 +44,12 @@ feature -- Main processors
 				process_feature_i (feat_table.item_for_iteration)
 				feat_table.forth
 			end
+
+			if inv_byte_server.has (current_class.class_id) then
+				bpl_out ("// invariant for class " + current_class.name + "%N")
+				inv_byte_code := inv_byte_server.item (current_class.class_id)
+				safe_process (inv_byte_code)
+			end
 		end
 
 feature -- Access
@@ -53,6 +59,15 @@ feature -- Access
 
 	current_feature: FEATURE_I
 		-- Current feature processed
+
+	set_current_feature (a_feature: FEATURE_I) is
+			-- Set the `current_feature' to `a_feature'.
+		do
+			current_feature := a_feature
+		ensure
+			value_set: current_feature = a_feature
+		end
+
 
 	leaf_list: LEAF_AS_LIST
 		-- Leaf list from parent iterator
@@ -186,6 +201,23 @@ feature -- Supporting Features
 			else
 				Result := once "ref"
 			end
+		end
+
+	location_info (pos: BYTE_NODE): STRING is
+			-- The information tag for `pos'.
+		local
+			ass: ASSERT_B
+		do
+			Result := "// eiffel:"
+			Result.append (current_class.name)
+			Result.append (";")
+			Result.append (pos.line_number.out)
+			Result.append (";")
+			ass ?= pos
+			if ass /= Void then
+				Result.append (ass.tag)
+			end
+			Result.append ("%N")
 		end
 
 feature {BYTE_NODE} -- Visitors
