@@ -100,6 +100,7 @@ feature -- Model
 			Result := model_collection.domain
 		ensure
 			Result_not_void: Result /= Void
+			confined representation
 		end
 
 invariant

@@ -127,6 +127,7 @@ feature -- Model
 			-- TODO
 		ensure
 			Result_not_void: Result /= Void
+			confined representation
 		end
 
 end

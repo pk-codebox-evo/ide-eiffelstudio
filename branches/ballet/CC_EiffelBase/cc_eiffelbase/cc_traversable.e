@@ -15,6 +15,9 @@ inherit
 	CC_CONTAINER [G]
 		rename
 			model as model_container
+		export
+			{NONE}
+				model_container
 		end
 
 feature -- Access
@@ -30,7 +33,6 @@ feature -- Access
 
 feature -- Status report
 
--- TODO gemäss bernd unnötig. off erst in CC_LINEAR... hmm doch hier lassen
 	off: BOOLEAN is
 			-- Is there no current item?
 			-- Either we are before or after the data structure.
@@ -134,6 +136,7 @@ feature -- Model
 			end
 		ensure
 			Result /= Void
+			confined representation
 		end
 
 	model_cursor: INTEGER is
@@ -141,6 +144,8 @@ feature -- Model
 		modify
 			modify_own_representation: representation
 		deferred
+		ensure
+			confined representation
 		end
 
 	model: MML_PAIR [MML_SEQUENCE [G], INTEGER] is
@@ -151,6 +156,7 @@ feature -- Model
 			create {MML_DEFAULT_PAIR [MML_SEQUENCE [G], INTEGER]}Result.make_from (model_sequence, model_cursor)
 		ensure
 			Result /= Void
+			confined representation
 		end
 
 invariant

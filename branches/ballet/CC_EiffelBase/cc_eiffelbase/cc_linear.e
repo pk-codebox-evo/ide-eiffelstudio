@@ -11,7 +11,10 @@ deferred class
 inherit
 	CC_TRAVERSABLE [G]
 		redefine
-			do_all, do_if, there_exists, for_all
+			do_all,
+			do_if,
+			there_exists,
+			for_all
 		end
 
 feature -- Access
