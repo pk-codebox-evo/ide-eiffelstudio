@@ -13,24 +13,12 @@ inherit
 	DEBUGGER_CONTROLLER
 		redefine
 			manager,
-			before_starting,
-			after_starting,
 			if_confirmed_do,
 			discardable_if_confirmed_do,
 			activate_debugger_environment
 		end
 
 feature
-
-	before_starting is
-		do
-			Precursor
-		end
-
-	after_starting is
-		do
-			Precursor
-		end
 
 	if_confirmed_do (msg: STRING_GENERAL; a_action: PROCEDURE [ANY, TUPLE]) is
 		local
