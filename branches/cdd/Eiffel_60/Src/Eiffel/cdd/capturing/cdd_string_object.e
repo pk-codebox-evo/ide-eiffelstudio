@@ -15,13 +15,13 @@ create
 
 feature {NONE} -- Initialization
 
-	make_with_string (a_type: like dynamic_type; a_string: like representation) is
+	make_with_string (a_type: like dynamic_type; a_string: like representation; an_id: INTEGER) is
 			-- Create reflection of an object of type `a_type' with value `a_string'.
 		require else
 			class_of_type_string: a_type.name.is_equal ("STRING_8") or
 				a_type.name.is_equal ("STRING_32")
 		do
-			make (a_type)
+			make (a_type, an_id)
 			representation := a_string
 		ensure
 			representation_set: representation = a_string

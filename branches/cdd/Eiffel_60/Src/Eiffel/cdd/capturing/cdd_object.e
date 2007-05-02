@@ -9,11 +9,9 @@ deferred class
 
 feature -- Access
 
-	identifier: STRING is
-			-- Identifier for this object
+	identifier: STRING
+			-- Identifier for later refering to the object within a test case
 		deferred
-		ensure
-			result_not_empty: Result /= Void and then not Result.is_empty
 		end
 
 	is_addressable: BOOLEAN is

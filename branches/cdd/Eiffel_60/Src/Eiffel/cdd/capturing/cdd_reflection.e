@@ -9,16 +9,6 @@ class
 
 inherit
 
---	SHARED_DEBUG
---		export
---			{NONE} all
---		end
-
---	SHARED_DEBUGGED_OBJECT_MANAGER
---		export
---			{NONE} all
---		end
-
 	VALUE_TYPES
 		export
 			{NONE} all
@@ -29,14 +19,15 @@ create
 
 feature {NONE} -- Initialization
 
-	make (an_app_status: APPLICATION_STATUS; a_cse: EIFFEL_CALL_STACK_ELEMENT; a_is_creation_call: BOOLEAN) is
-			-- Reflect the object associated to `a_cse'
+	make (an_app_status: APPLICATION_STATUS; a_cse: EIFFEL_CALL_STACK_ELEMENT; a_is_creation_call: BOOLEAN; a_call_stack_uuid: STRING) is
+			-- Reflect the object associated to `a_cse' and set `call_stack_uuid' to `a_call_stack_uuid'.
 		require
 			an_app_status_not_void: an_app_status /= Void
 			an_app_status_valid: an_app_status.is_stopped
 			a_cse_not_void: a_cse /= Void
 			a_cse_valid: an_app_status.current_call_stack.i_th (a_cse.level_in_stack) = a_cse
 			is_eiffel_cse: an_app_status.current_call_stack_element.is_eiffel_call_stack_element
+			a_call_stack_uuid_not_empty: a_call_stack_uuid /= Void and then not a_call_stack_uuid.is_empty
 		local
 			l_alist: LIST [ABSTRACT_DEBUG_VALUE]
 			i: INTEGER
@@ -47,7 +38,7 @@ feature {NONE} -- Initialization
 			is_creation_feature := a_is_creation_call
 			create addressed_objects.make (object_count)
 			if is_creation_feature then
-				root_object := create {CDD_REGULAR_OBJECT}.make_with_count (a_cse.dynamic_class.eiffel_class_c, 0)
+				root_object := create {CDD_REGULAR_OBJECT}.make_with_count (a_cse.dynamic_class.eiffel_class_c, 0, 1)
 			else
 				root_object := create_composite_object (a_cse.object_address, a_cse.dynamic_class.eiffel_class_c)
 			end
@@ -103,6 +94,8 @@ feature {NONE} -- Initialization
 				create composite_objects.make (0)
 			end
 			addressed_objects := Void
+			call_stack_uuid := a_call_stack_uuid
+			call_stack_index := a_cse.level_in_stack
 		end
 
 	is_no_error_value (a_dv: ABSTRACT_DEBUG_VALUE): BOOLEAN is
@@ -130,8 +123,11 @@ feature -- Access
 	is_creation_feature: BOOLEAN
 			-- Is `called_feature' a creation feature?
 
-	id: STRING is "not implemented"
-			-- Identifier for this reflection
+	call_stack_uuid: STRING
+			-- UUID of the call stack in which `called_feature' was called
+
+	call_stack_index: INTEGER
+			-- Position of `called_feature' in call stack
 
 	composite_objects: DS_ARRAYED_LIST [CDD_COMPOSITE_OBJECT]
 			-- Objects referenced to directly or indirectly by `root_object'.
@@ -182,6 +178,9 @@ feature {NONE} -- Implementation
 						Result := addressed_objects.item (a_dv.address)
 					elseif addressed_objects.count < max_object_count then
 						Result := create_composite_object (a_dv.address, a_dv.dynamic_class.eiffel_class_c)
+					else
+						-- NOTE: exceeded max number of composite objects
+						do_nothing
 					end
 				else
 					if a_dv.dynamic_class.name.is_equal ("POINTER") then
@@ -222,7 +221,7 @@ feature {NONE} -- Implementation
 			l_dv: DUMP_VALUE
 		do
 			l_dv := debugger_manager.dump_value_factory.new_object_value (an_addr, a_type)
-			create Result.make_with_string (a_type, l_dv.formatted_output)
+			create Result.make_with_string (a_type, l_dv.formatted_output, addressed_objects.count + 1)
 			add_addressed_object (Result, an_addr)
 		ensure
 			result_not_void: Result /= Void
@@ -253,14 +252,14 @@ feature {NONE} -- Implementation
 					-- Note: not sure yet what effect this Boolean value has
 				l_gen_type := extract_generic_type (l_dv.generating_type_representation (True))
 				if a_type.is_tuple then
-					create {CDD_TUPLE_OBJECT} Result.make_tuple (a_type, l_dv_list.count, l_gen_type)
+					create {CDD_TUPLE_OBJECT} Result.make_tuple (a_type, l_dv_list.count, l_gen_type, addressed_objects.count + 1)
 				elseif a_type.is_special then
-					create {CDD_SPECIAL_OBJECT} Result.make_special (a_type, l_dv_list.count, l_gen_type)
+					create {CDD_SPECIAL_OBJECT} Result.make_special (a_type, l_dv_list.count, l_gen_type, addressed_objects.count + 1)
 				else
-					create {CDD_GENERIC_OBJECT} Result.make_generic (a_type, l_dv_list.count, l_gen_type)
+					create {CDD_GENERIC_OBJECT} Result.make_generic (a_type, l_dv_list.count, l_gen_type, addressed_objects.count + 1)
 				end
 			else
-				create Result.make_with_count (a_type, l_dv_list.count)
+				create Result.make_with_count (a_type, l_dv_list.count, addressed_objects.count + 1)
 			end
 			add_addressed_object (Result, an_addr)
 			from
@@ -315,5 +314,7 @@ invariant
 	arguments_not_void: arguments /= Void
 	valid_argument_count: arguments.is_empty = not called_feature.has_arguments
 	debugger_manager_not_void: debugger_manager /= Void
+	call_stack_uuid_not_empty: call_stack_uuid /= Void and then not call_stack_uuid.is_empty
+	call_stack_index_positive: call_stack_index > 0
 
 end

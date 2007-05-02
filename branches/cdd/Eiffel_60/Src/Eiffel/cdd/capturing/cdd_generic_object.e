@@ -16,7 +16,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make_generic (a_type: like dynamic_type; a_count: INTEGER; a_gen_type: STRING) is
+	make_generic (a_type: like dynamic_type; a_count: INTEGER; a_gen_type: STRING; an_id: INTEGER) is
 			-- Create reflection for generic object of type `a_type' with generic parameter `a_gen_type'
 			-- `a_count' is number of attributes 'a_type' has defined.
 		require
@@ -24,7 +24,7 @@ feature {NONE} -- Initialization
 			-- NOTE: Produced error with empty generic clause (e.g. TUPLE objects)
 			a_gen_type_not_empty: a_gen_type /= Void -- and then not a_gen_type.is_empty
 		do
-			make_with_count (a_type, a_count)
+			make_with_count (a_type, a_count, an_id)
 			type.append (" " + a_gen_type)
 		ensure
 			type_modified: type.has_substring (a_gen_type)

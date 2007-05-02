@@ -31,6 +31,7 @@ feature -- Basic operations
 			l_class: EIFFEL_CLASS_C
 			l_is_creation_call: BOOLEAN
 			l_reflection: CDD_REFLECTION
+			l_uuid: STRING
 		do
 			create reflected_call_stack.make
 			l_cse ?= an_application_status.current_call_stack_element
@@ -45,6 +46,7 @@ feature -- Basic operations
 
 			-- Make sure we are trying to reflect an eiffel class
 			if l_cse /= Void and then l_cse.dynamic_class /= Void and then l_cse.dynamic_class.is_eiffel_class_c then
+				l_uuid := uuid_generator.generate_uuid.out
 				from
 					l_feature := l_cse.routine
 				until
@@ -54,7 +56,7 @@ feature -- Basic operations
 						l_class := l_cse.dynamic_class.eiffel_class_c
 						l_is_creation_call := is_creation_procedure (l_class, l_feature)
 						if l_is_creation_call or l_feature.export_status.is_all then
-							create l_reflection.make (an_application_status, l_cse, l_is_creation_call)
+							create l_reflection.make (an_application_status, l_cse, l_is_creation_call, l_uuid)
 							if l_reflection.reflection_succeded then
 								reflected_call_stack.put_last (l_reflection)
 							end
@@ -91,5 +93,16 @@ feature {NONE} -- Implementation
 				Result ?= a_call_stack.i_th (a_element.level_in_stack + 1)
 			end
 		end
+
+feature {NONE} -- Implementation
+
+	uuid_generator: UUID_GENERATOR is
+			-- UUID generator for creating uuid's
+		once
+			create Result
+		ensure
+			not_void: Result /= Void
+		end
+
 
 end
