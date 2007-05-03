@@ -9,6 +9,10 @@ class
 
 inherit
 	BPL_BN_ITERATOR
+		redefine
+			set_current_feature,
+			process_byte_code
+		end
 
 create
 	make
@@ -24,11 +28,9 @@ feature -- Generation
 			i: INTEGER
 			arg_name: STRING
 			arg_type: TYPE_A
-			byte_code: BYTE_CODE
 			ass_list: BYTE_LIST[BYTE_NODE]
 		do
 			setup_function_writer
-			current_feature := a_feature
 			function_writer.set_current_feature (a_feature)
 
 			bpl_out ("// Signature: " + a_feature.feature_name + " of class " + current_class.name + "%N")
@@ -83,76 +85,85 @@ feature -- Generation
 				end
 			end
 
-			if a_feature.is_deferred then
-				-- TODO
-				-- generate contracts (incl. inherited)
-
+			if a_feature.type.is_void then
+				bpl_out ("  modifies Heap;%N")
 			else
-				if byte_server.has (current_feature.code_id) then
-					byte_code := byte_server.disk_item (current_feature.code_id)
+				bpl_out ("  free ensures fun.")
+				bpl_out (current_class.name)
+				bpl_out (".")
+				bpl_out (bpl_mangled_feature_name (a_feature.feature_name))
+				bpl_out ("(Heap, Current")
+				from
+					i := 1
+				until
+					i > a_feature.argument_count
+				loop
+					arg_name := a_feature.arguments.item_name (i)
+					arg_type := a_feature.arguments.i_th (i)
+					bpl_out (",arg.")
+					bpl_out (arg_name)
+					i := i + 1
 				end
-		
-				if not (current_feature.is_attribute or current_feature.is_constant) then
-					check
-						bc_not_void: byte_code /= Void
-					end
-					ass_list := byte_code.precondition
-					if ass_list /= Void then
-						from
-							ass_list.start
-						until
-							ass_list.off
-						loop
-							function_writer.reset
-							ass_list.item.process (function_writer)
-							bpl_out ("  requires ")
-							bpl_out (function_writer.expr)
-							bpl_out (";%N")
-							ass_list.forth
-						end
-					end
-					
-					ass_list := byte_code.postcondition
-					if ass_list /= Void then
-						from
-							ass_list.start
-						until
-							ass_list.off
-						loop
-							function_writer.reset
-							ass_list.item.process (function_writer)
-							bpl_out ("  ensures ")
-							bpl_out (function_writer.expr)
-							bpl_out ("; ")
-							bpl_out (location_info (ass_list.item))
-							ass_list.forth
-						end
-					end
-				end
-				
-				if a_feature.type.is_void then
-					bpl_out ("  modifies Heap;%N")
-				else
-					bpl_out ("  free ensures fun.")
-					bpl_out (current_class.name)
-					bpl_out (".")
-					bpl_out (bpl_mangled_feature_name (a_feature.feature_name))
-					bpl_out ("(Heap, Current")
-					from
-						i := 1
-					until
-						i > a_feature.argument_count
-					loop
-						arg_name := a_feature.arguments.item_name (i)
-						arg_type := a_feature.arguments.i_th (i)
-						bpl_out (",arg.")
-						bpl_out (arg_name)
-						i := i + 1
-					end
-					bpl_out (") == Result;%N")
+				bpl_out (") == Result;%N")
+			end
+			
+			process_feature_i (a_feature) -- generate assertions
+
+			bpl_out ("%N")
+		end
+
+feature -- Settors
+
+	set_current_feature (a_feature: FEATURE_I) is
+			-- Set the current feature to `a_feature', keeping the feature in the
+			-- function writer syncronous.
+		do
+			Precursor {BPL_BN_ITERATOR} (a_feature)
+			function_writer.set_current_feature (a_feature)
+		end
+
+
+feature {BYTE_NODE} -- Visitors
+	process_byte_code (a_node: BYTE_CODE) is
+			-- We have to have an extra processor here, as BYTE_CODEs do
+			-- not want to be BYTE_NODEs (though they are).
+		local
+			ass_list: BYTE_LIST[BYTE_NODE]
+		do
+			ass_list := a_node.precondition
+			if ass_list /= Void then
+				from
+					ass_list.start
+				until
+					ass_list.off
+				loop
+					function_writer.reset
+					ass_list.item.process (function_writer)
+					bpl_out ("  requires ")
+					bpl_out (function_writer.expr)
+					bpl_out (";%N")
+					ass_list.forth
 				end
 			end
-			bpl_out ("%N")
+
+			ass_list := a_node.postcondition
+			if ass_list /= Void then
+				from
+					ass_list.start
+				until
+					ass_list.off
+				loop
+					function_writer.reset
+					ass_list.item.process (function_writer)
+					bpl_out ("  ensures ")
+					bpl_out (function_writer.expr)
+					bpl_out ("; ")
+					bpl_out (location_info (ass_list.item))
+					ass_list.forth
+				end
+			end
+
+			
 		end
 
 feature{NONE} -- Implementation

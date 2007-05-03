@@ -35,6 +35,7 @@ inherit
 			process_bin_star_b,
 			process_bin_xor_b,
 			process_bit_const_b,
+			process_byte_code,
 			process_bool_const_b,
 			process_char_const_b,
 			process_constant_b,
@@ -49,8 +50,8 @@ inherit
 			process_paran_b,
 			process_un_minus_b,
 			process_un_not_b,
-			process_void_b
-
+			process_void_b,
+			process_feature_without_code
 		end
 
 create
@@ -72,14 +73,11 @@ feature -- Main
 		require
 			as_not_void: a_function /= Void
 		local
-			a_constant: CONSTANT_I
 			feat_name: STRING
 			func_name: STRING
 			arg_name: STRING
 			arg_type: TYPE_A
 			return_type: STRING
-			ass_list: BYTE_LIST[BYTE_NODE]
-			intro: STRING
 			byte_code: BYTE_CODE
 			i: INTEGER
 		do
@@ -136,64 +134,25 @@ feature -- Main
 				i := i + 1
 			end
 
-			if a_function.is_constant then
-				a_constant ?= a_function
-				check
-					const_is_const: a_constant /= Void
-				end
+			process_feature_i (current_feature) -- generate assertions
+			
+			bpl_out ("%N")
+		end
+	
+	process_feature_without_code (a_feature: FEATURE_I) is
+			-- Process a feature that does not have code.
+		do
+			if a_feature.is_constant then
 				bpl_out ("axiom (")
 				bpl_out (intro)
 				bpl_out (":: ")
 				bpl_out (result_call)
 				bpl_out (" == ")
-				bpl_out (a_constant.value.dump)
+				bpl_out (current_constant.value.dump)
 				bpl_out (");%N")
-			elseif a_function.is_deferred then
-				-- TODO
-				-- generate contracts (incl. inherited)
-
-			else
-				check
-					byte_code_not_void: byte_code /= Void
-				end
-				intro.append (":: (C != null)")
-				ass_list := byte_code.precondition
-				if ass_list /= Void then
-					from
-						ass_list.start
-					until
-						ass_list.off
-					loop
-						intro.append (" && (")
-						expr := ""
-						ass_list.item.process (Current)
-						intro.append (expr)
-						intro.append (")")
-						ass_list.forth
-					end
-				end
-				intro.append (" ==> ")
-
-				ass_list := byte_code.postcondition
-				if ass_list /= Void then
-					from
-						ass_list.start
-					until
-						ass_list.off
-					loop
-						bpl_out ("axiom (")
-						bpl_out (intro)
-						expr := ""
-						ass_list.item.process (Current)
-						bpl_out (expr)
-						bpl_out (");%N")
-						ass_list.forth
-					end
-				end
 			end
-			bpl_out ("%N")
 		end
-
+	
 feature -- Processing Environment
 
 	result_call: STRING
@@ -254,6 +213,9 @@ feature -- Processing Environment
 			call_list.extend (e)
 			record_usage (e)
 		end
+
+	intro: STRING
+			-- first part of the assertions (forall ...)
 
 feature -- Processing
 	process_argument_b (a_node: ARGUMENT_B) is
@@ -450,6 +412,50 @@ feature -- Processing
 			end
 		end
 
+	process_byte_code (a_node: BYTE_CODE) is
+			-- We have to have an extra processor here, as BYTE_CODEs do
+			-- not want to be BYTE_NODEs (though they are).
+		local
+			ass_list: BYTE_LIST[BYTE_NODE]
+			precondition: STRING
+		do
+			precondition := intro.twin
+			precondition.append (":: (C != null)")
+			ass_list := a_node.precondition
+			if ass_list /= Void then
+				from
+					ass_list.start
+				until
+					ass_list.off
+				loop
+					precondition.append (" && (")
+					expr := ""
+					ass_list.item.process (Current)
+					precondition.append (expr)
+					precondition.append (")")
+					ass_list.forth
+				end
+			end
+			precondition.append (" ==> ")
+			
+			ass_list := a_node.postcondition
+			if ass_list /= Void then
+				from
+					ass_list.start
+				until
+					ass_list.off
+				loop
+					bpl_out ("axiom (")
+					bpl_out (precondition)
+					expr := ""
+					ass_list.item.process (Current)
+					bpl_out (expr)
+					bpl_out (");%N")
+					ass_list.forth
+				end
+			end
+		end
+			
 	process_char_const_b (a_node: CHAR_CONST_B) is
 			-- Process `a_node'.
 		do
