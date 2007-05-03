@@ -219,9 +219,9 @@ feature -- Processors
 					until
 						i >= n
 					loop
-						new_code.append (",")
 						function_writer.reset
 						call_access_b.parameters.i_th (i).process (function_writer)
+						new_code.append (",")
 						new_code.append (function_writer.expr)
 						i := i + 1
 					end
