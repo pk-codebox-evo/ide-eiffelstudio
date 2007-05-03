@@ -10,6 +10,7 @@ class
 inherit
 	BPL_BN_ITERATOR
 		redefine
+			set_current_feature,
 			process_byte_code,
 			process_assign_b,
 			process_check_b,
@@ -68,9 +69,22 @@ feature -- Generation
 				bpl_out (")")
 			end
 			bpl_out (" {%N")
+			bpl_out ("  // Code for "+a_feature.feature_name+" in "+current_class.name+"%N")
 			process_feature_i (a_feature)
 			bpl_out ("}%N")
 		end
+
+feature -- Settors
+
+	set_current_feature (a_feature: FEATURE_I) is
+			-- Set the current feature to `a_feature', keeping the feature in the
+			-- function writer syncronous.
+		do
+			Precursor {BPL_BN_ITERATOR} (a_feature)
+			function_writer.set_current_feature (a_feature)
+		end
+
+feature -- Processors
 
 	process_byte_code (a_node: BYTE_CODE) is
 			-- Process the byte code.

@@ -92,7 +92,7 @@ feature -- Extra Processors
 		local
 			byte_code: BYTE_CODE
 		do
-			current_feature := a_feature
+			set_current_feature (a_feature)
 			if byte_server.has (current_feature.code_id) then
 				byte_code := byte_server.disk_item (current_feature.code_id)
 				process_byte_code (byte_code)

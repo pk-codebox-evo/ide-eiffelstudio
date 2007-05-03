@@ -50,7 +50,7 @@ inherit
 			process_un_minus_b,
 			process_un_not_b,
 			process_void_b
-			
+
 		end
 
 create
@@ -87,7 +87,7 @@ feature -- Main
 			if byte_server.has (current_feature.code_id) then
 				byte_code := byte_server.disk_item (current_feature.code_id)
 			end
-				
+
 			set_this_ref ("C")
 			set_heap_ref ("H")
 			current_feature := a_function
@@ -114,10 +114,10 @@ feature -- Main
 				bpl_out (bpl_type_for_type_a (arg_type))
 				result_call.append (",arg.")
 				result_call.append (arg_name)
-				
+
 				i := i + 1
 			end
-			
+
 			bpl_out (") returns (" + return_type + ");%N")
 			result_call.append (")")
 			intro := "forall H:[ref,name]any,C:ref"
@@ -135,7 +135,7 @@ feature -- Main
 				intro.append (bpl_type_for_type_a (arg_type))
 				i := i + 1
 			end
-			
+
 			if a_function.is_constant then
 				a_constant ?= a_function
 				check
@@ -151,7 +151,7 @@ feature -- Main
 			elseif a_function.is_deferred then
 				-- TODO
 				-- generate contracts (incl. inherited)
-				
+
 			else
 				check
 					byte_code_not_void: byte_code /= Void
@@ -173,7 +173,7 @@ feature -- Main
 					end
 				end
 				intro.append (" ==> ")
-			
+
 				ass_list := byte_code.postcondition
 				if ass_list /= Void then
 					from
@@ -240,7 +240,7 @@ feature -- Processing Environment
 			-- Reset `expr' to the empty string.
 		do
 			expr := ""
-			create call_list.make (0)			
+			create call_list.make (0)
 		ensure
 			expr_reset: expr.is_equal ("")
 		end
@@ -259,8 +259,8 @@ feature -- Processing
 	process_argument_b (a_node: ARGUMENT_B) is
 			-- Process `a_node'.
 		do
-			expr.append("arg.")
-			expr.append(current_feature.arguments.item_name (a_node.position))			
+			expr.append ("arg.")
+			expr.append (current_feature.arguments.item_name (a_node.position))
 		end
 
 	process_attribute_b (a_node: ATTRIBUTE_B) is
@@ -449,7 +449,7 @@ feature -- Processing
 				expr.append("false")
 			end
 		end
-	
+
 	process_char_const_b (a_node: CHAR_CONST_B) is
 			-- Process `a_node'.
 		do
@@ -514,7 +514,7 @@ feature -- Processing
 		do
 			expr.append(a_node.value.out)
 		end
-	
+
 	process_integer_constant (a_node: INTEGER_CONSTANT) is
 			-- Process `a_node'.
 		do
@@ -594,5 +594,5 @@ feature -- Processing
 		end
 invariant
 	call_list_not_void: call_list /= Void
-	
+
 end
