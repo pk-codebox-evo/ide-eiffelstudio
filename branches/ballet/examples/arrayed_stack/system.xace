@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+
+<system name="main">
+  
+  <description>
+    A stack implemented by an array. BA_ARRAYED_STACK is the pure stack,
+    BA_ARRAYED_STACK_MML is the same stack containing MML contracts.
+  </description>
+  
+  <root class="MAIN" creation="make"/>
+  
+  <cluster name="root_cluster" location="."/>
+
+  <mount location="${MML_HOME}/library.xace"/>
+  <mount location="${GOBO}/library/kernel.xace"/>
+  <mount location="${GOBO}/library/library.xace"/>
+  
+</system>

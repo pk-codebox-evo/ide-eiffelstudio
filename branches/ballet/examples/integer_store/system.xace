@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+
+<system name="main">
+  
+  <description>
+    The INTEGER_STORE example deals with the Frame problem: The
+    purpose of the example is to verify that integer_stores_assign in
+    INTEGER_STORE_CLIENT does what it is supposed to do.
+  </description>
+  
+  <root class="MAIN" creation="make"/>
+  
+  <cluster name="root_cluster" location="."/>
+  
+  <mount location="${GOBO}/library/kernel.xace"/>
+  <mount location="${GOBO}/library/library.xace"/>
+  
+</system>

@@ -1,0 +1,46 @@
+using Microsoft.Contracts;
+
+public class BankAccount
+{
+	[SpecPublic] int balance;
+	invariant balance >= 0;
+	
+	public BankAccount()
+		ensures balance == 0;
+	{
+		balance = 0;
+	}
+	
+	public virtual void deposit (int amount)
+		requires amount >= 0;
+		modifies balance;
+		ensures balance == old(balance) + amount;
+	{
+		expose (this) {
+			this.balance = this.balance + amount;
+		}
+	}
+
+	public virtual void withdraw (int amount)
+		requires amount >= 0;
+		requires amount <= balance;
+		modifies balance;
+		ensures balance == old(balance) - amount;
+	{
+		expose (this) {
+			this.balance = this.balance - amount;
+		}
+	}
+
+	public void transfer (BankAccount! target, int amount)
+		requires amount >= 0;
+		requires amount <= balance;
+		// The following aliasing condition is needed for this to verify.
+		// requires this != target;
+		ensures balance == old (balance) - amount;
+		ensures target.balance == old (target.balance) + amount;
+	{
+		withdraw (amount);
+		target.deposit (amount);
+	}		
+}
