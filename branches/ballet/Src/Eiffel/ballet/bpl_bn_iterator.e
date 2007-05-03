@@ -60,12 +60,24 @@ feature -- Access
 	current_feature: FEATURE_I
 		-- Current feature processed
 
+	current_attribute: ATTRIBUTE_I
+		-- Current feature as attribute (if valid)
+
+	current_constant: CONSTANT_I
+		-- Current feature as constant (if valid)
+
 	set_current_feature (a_feature: FEATURE_I) is
 			-- Set the `current_feature' to `a_feature'.
+		require
+			not_void: a_feature /= Void
 		do
 			current_feature := a_feature
+			current_attribute ?= a_feature
+			current_constant ?= a_feature
 		ensure
 			value_set: current_feature = a_feature
+			attribute_set: a_feature.is_attribute implies current_attribute = a_feature
+			constant_set: a_feature.is_constant implies current_constant = a_feature
 		end
 
 
