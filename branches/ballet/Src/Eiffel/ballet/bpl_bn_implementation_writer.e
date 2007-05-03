@@ -16,7 +16,6 @@ inherit
 			process_check_b,
 			process_if_b,
 			process_instr_call_b,
-			process_instr_list_b,
 			process_loop_b
 		end
 
@@ -36,7 +35,6 @@ feature -- Generation
 		do
 			create function_writer.make (current_class)
 			function_writer.set_leaf_list (leaf_list)
-			function_writer.set_current_feature (current_feature)
 			function_writer.set_heap_ref ("Heap")
 			function_writer.set_this_ref ("Current")
 			function_writer.set_result_call ("Result")
@@ -162,8 +160,23 @@ feature -- Processors
 
 	process_check_b (a_node: CHECK_B) is
 			-- Process `a_node'.
+		local
+			i: INTEGER
+			assert_b: ASSERT_B
 		do
-
+			from
+				i := 1
+			until
+				i > a_node.check_list.count
+			loop
+				assert_b ?= a_node.check_list.item
+				check is_assert_b: assert_b /= Void end
+				code.append ("    assert (")
+				assert_b.expr.process (function_writer)
+				code.append ("); ")
+				code.append (location_info (assert_b))
+				i := i + 1
+			end
 		end
 
 	process_if_b (a_node: IF_B) is
@@ -174,14 +187,51 @@ feature -- Processors
 
 	process_instr_call_b (a_node: INSTR_CALL_B) is
 			-- Process `a_node'.
+		local
+			new_code: STRING
+			i,n: INTEGER
+			call_access_b: CALL_ACCESS_B
+			nested_b: NESTED_B
 		do
-
-		end
-
-	process_instr_list_b (a_node: INSTR_LIST_B) is
-			-- Process `a_node'.
-		do
-
+			nested_b ?= a_node.call
+			if nested_b /= Void then
+				call_access_b ?= nested_b.message
+			else
+				call_access_b ?= a_node.call
+			end
+			if call_access_b /= Void then
+				new_code := "    call proc."
+				new_code.append (system.class_of_id (call_access_b.written_in).name)
+				new_code.append (".")
+				new_code.append (call_access_b.feature_name)
+				new_code.append ("(")
+				if nested_b /= Void then
+					function_writer.reset
+					nested_b.target.process (function_writer)
+					new_code.append (function_writer.expr)
+				else
+					new_code.append ("Current")
+				end
+				if call_access_b.parameters /= Void then
+					from
+						i := 1
+						n := call_access_b.parameters.count
+					until
+						i >= n
+					loop
+						new_code.append (",")
+						function_writer.reset
+						call_access_b.parameters.i_th (i).process (function_writer)
+						new_code.append (function_writer.expr)
+						i := i + 1
+					end
+				end
+				new_code.append (");")
+				code.append (new_code)
+				code.append (location_info (a_node))
+			else
+				check unknown_instruction: false end
+			end
 		end
 
 	process_loop_b (a_node: LOOP_B) is
