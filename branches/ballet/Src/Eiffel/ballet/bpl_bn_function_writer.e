@@ -42,6 +42,7 @@ inherit
 			process_feature_b,
 			process_int64_val_b,
 			process_int_val_b,
+			process_local_b,
 			process_nat64_val_b,
 			process_nat_val_b,
 			process_nested_b,
@@ -518,6 +519,12 @@ feature -- Processing
 			-- Process `a_node'.
 		do
 			expr.append (a_node.integer_64_value.out)
+		end
+
+	process_local_b (a_node: LOCAL_B) is
+			-- Process `a_node'.
+		do
+			expr.append ("l" + a_node.position.out)
 		end
 
 	process_nat64_val_b (a_node: NAT64_VAL_B) is
