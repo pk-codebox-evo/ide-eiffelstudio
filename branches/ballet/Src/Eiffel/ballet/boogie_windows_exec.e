@@ -34,6 +34,7 @@ feature	-- Verification
 			tmp_filename: STRING
 			output_file: KL_TEXT_OUTPUT_FILE;
 		do
+			create ee
 			tmp_filename := ee.get("TEMP") + "\output" + process_factory.current_process_info.process_id.out + ".bpl"
 			bpl_code := input.string.twin
 
