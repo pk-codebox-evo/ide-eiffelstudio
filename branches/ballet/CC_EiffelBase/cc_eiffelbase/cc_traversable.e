@@ -135,7 +135,7 @@ feature -- Model
 				linear.forth
 			end
 		ensure
-			Result /= Void
+			result_not_void: Result /= Void
 			confined representation
 		end
 
@@ -155,7 +155,7 @@ feature -- Model
 		do
 			create {MML_DEFAULT_PAIR [MML_SEQUENCE [G], INTEGER]}Result.make_from (model_sequence, model_cursor)
 		ensure
-			Result /= Void
+			result_not_void: Result /= Void
 			confined representation
 		end
 

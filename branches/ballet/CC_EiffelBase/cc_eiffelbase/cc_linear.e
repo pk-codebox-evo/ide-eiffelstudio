@@ -188,9 +188,9 @@ feature -- Status report
 		use
 			use_own_representation: representation
 		do
-			Result := (i >= 1) and (i <= count)
+			Result := 1 <= i and i <= count
 		ensure
-			valid_index_definition: Result = ((i >= 1) and (i <= count))
+			valid_index_definition: Result = (1 <= i and i <= count)
 		end
 
 feature -- Cursor movement

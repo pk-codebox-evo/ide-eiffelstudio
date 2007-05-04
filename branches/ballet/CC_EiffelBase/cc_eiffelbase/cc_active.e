@@ -1,7 +1,7 @@
 indexing
 	description: "[
-		``Active'' data structures, which at every stage have
-		a possibly undefined ``current item''.
+		"Active" data structures, which at every stage have
+		a possibly undefined "current item".
 		Basic access and modification operations apply to the current item.
 		]"
 	author: "Marco Zietzling"

@@ -6,8 +6,8 @@ indexing
 	revision: "$Revision$"
 
 deferred class
-	CC_TABLE [G, H]
-	-- TODO delete, G typ der items, H typ der keys
+	CC_TABLE [G, K]
+	-- TODO delete, G typ der items, K typ der keys
 
 inherit
 	CC_COLLECTION [G]
@@ -24,7 +24,7 @@ inherit
 
 feature -- Access
 
-	item alias "[]", infix "@" (k: H): G assign put is
+	item alias "[]", infix "@" (k: K): G assign put is
 			-- Entry of key `k'.
 		require
 			valid_key: valid_key (k)
@@ -51,7 +51,7 @@ feature -- Measurement
 
 feature -- Status report
 
-	valid_key (k: H): BOOLEAN is
+	valid_key (k: K): BOOLEAN is
 			-- Is `k' a valid key?
 		use
 			use_own_representation: representation
@@ -60,7 +60,7 @@ feature -- Status report
 
 feature -- Element change
 
-	put (v: G; k: H) is
+	put (v: G; k: K) is
 			-- Associate value `v' with key `k'.
 		require
 			valid_key: valid_key (k)
@@ -77,7 +77,7 @@ feature -- Element change
 feature -- Element specific status report
 
 -- die beiden machen eher keinen sinn, da die table eher key zentriert ist
-	can_extend (v: G; k: H) : BOOLEAN is
+	can_extend (v: G; k: K) : BOOLEAN is
 			-- Can `an_item' be added? Only iff the key is not yet used.
 		use
 			use_own_representation: representation
@@ -88,7 +88,7 @@ feature -- Element specific status report
 			model_corresponds: not model.range.contains (k)
 		end
 
-	can_put (v: G; k: H) : BOOLEAN is
+	can_put (v: G; k: K) : BOOLEAN is
 			-- Can `an_item' be added?
 		use
 			use_own_representation: representation
@@ -118,16 +118,23 @@ feature {NONE} -- Inapplicable
 
 feature -- Model
 
-	model: MML_RELATION [G, H] is
+	model: MML_RELATION [G, K] is
 			-- Model of a table
 		modify
 			modify_own_representation: representation
 		do
-			create {MML_DEFAULT_RELATION [G, H]} Result.make_empty
+			create {MML_DEFAULT_RELATION [G, K]} Result.make_empty
 			-- TODO
+
+
+
 		ensure
-			Result_not_void: Result /= Void
+			result_not_void: Result /= Void
 			confined representation
 		end
+
+invariant
+
+	--TODO models verknüpfen
 
 end

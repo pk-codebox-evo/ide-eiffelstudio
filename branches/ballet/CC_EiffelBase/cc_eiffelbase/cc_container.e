@@ -132,7 +132,7 @@ feature -- Model
 				linear.forth
 			end
 		ensure
-			Result_not_void: Result /= Void
+			result_not_void: Result /= Void
 			confined representation
 		end
 

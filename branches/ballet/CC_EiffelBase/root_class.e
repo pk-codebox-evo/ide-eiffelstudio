@@ -53,6 +53,8 @@ feature -- DUMP
 
 			cc_bilinear: CC_BILINEAR [INTEGER]
 
+			cc_list: CC_LIST [INTEGER]
+
 		do
 			create gobo_linked_list.make
 			create eiffelbase_linked_list.make

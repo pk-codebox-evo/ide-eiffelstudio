@@ -49,7 +49,7 @@ feature -- Status report
 
 feature -- Element change
 
-	force (v: like item) is
+	force (v: G) is
 			-- Add `v' to end.
 		require
 			extendible: extendible
@@ -94,7 +94,7 @@ feature -- Element change
 	 		confined representation
 		end
 
-	put (v: like item) is
+	put (v: G) is
 			-- Add `v' to end.
 		do
 			-- TODO extend???
@@ -105,7 +105,7 @@ feature -- Element change
 
 feature -- Removal
 
-	prune (v: like item) is
+	prune (v: G) is
 			-- Remove the first occurrence of `v' if any.
 			-- If no such occurrence go `off'.
 		do
@@ -116,7 +116,7 @@ feature -- Removal
 			end
 		end
 
-	prune_all (v: like item) is
+	prune_all (v: G) is
 			-- Remove all occurrences of `v'; go `off'.
 		do
 			from
