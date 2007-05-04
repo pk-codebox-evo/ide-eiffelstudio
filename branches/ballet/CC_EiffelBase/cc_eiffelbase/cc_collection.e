@@ -160,7 +160,6 @@ feature -- Element specific status report
 			use_own_representation: representation
 		do
 			Result := extendible
-			-- TODO hier schon definieren oder erst deferred?
 		end
 
 	can_put (v: G) : BOOLEAN is
@@ -169,7 +168,6 @@ feature -- Element specific status report
 			use_own_representation: representation
 		do
 			Result := extendible
-			-- TODO hier schon definieren oder erst deferred?
 		end
 
 end

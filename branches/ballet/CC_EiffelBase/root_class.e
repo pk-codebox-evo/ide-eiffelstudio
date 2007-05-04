@@ -11,6 +11,8 @@ class
 create
 	make
 
+--TODO delete this here... :-)
+
 feature -- Initialization
 
 	make is

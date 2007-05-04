@@ -18,12 +18,12 @@ inherit
 		end
 
 -- TODO probleme mit repeated inheritance - select clause nötig. korrekt so? unschön? wtf?
-	CC_COLLECTION [G]
+	CC_ACTIVE [G]
 		rename
-			model as model_collection
+			model as model_active
 		export
 			{NONE}
-				model_collection
+				model_active
 		redefine
 			prune_all
 		end
@@ -52,20 +52,25 @@ feature -- Element change
 	force (v: like item) is
 			-- Add `v' to end.
 		require
---			extendible: extendible
+			extendible: extendible
 		modify
 			modify_own_representation: representation
 		do
---			extend (v)
+			-- TODO ev hier ändern da ja force auf jeden fall das elemnt hinzufügt
+			extend (v)
 		ensure
 	 		new_count: count = old count + 1
 			item_inserted: has (v)
+			model_corresponds: model.first |=| old model.first.extended (v)
+			confined representation
 		end
 
-	append (s: SEQUENCE [G]) is
-			-- Append a copy of `s'.
+	append (s: CC_SEQUENCE [G]) is
+			-- Append a copy of `s' which is another sequence.
 		require
 			argument_not_void: s /= Void
+		modify
+			modify_own_representation: representation
 		local
 			l: like s
 		do
@@ -79,17 +84,21 @@ feature -- Element change
 			until
 				l.exhausted
 			loop
---				extend (l.item)
+				-- TODO extend???
+				extend (l.item)
 				l.forth
 			end
 		ensure
 	 		new_count: count >= old count
+	 		model_corresponds: model.first |=| old model.first.concatenated (s.model.first)
+	 		confined representation
 		end
 
 	put (v: like item) is
 			-- Add `v' to end.
 		do
---			extend (v)
+			-- TODO extend???
+			extend (v)
 		ensure then
 	 		new_count: count = old count + 1
 		end
@@ -103,7 +112,7 @@ feature -- Removal
 			start
 			search (v)
 			if not exhausted then
---				remove
+				remove_item
 			end
 		end
 
@@ -117,11 +126,14 @@ feature -- Removal
 			loop
 				search (v)
 				if not exhausted then
---					remove
+					remove_item
 				end
 			end
 		end
 
 invariant
+
+	-- combine inherited models
+	inherited_models_equal: model_active |=| model_container
 
 end
