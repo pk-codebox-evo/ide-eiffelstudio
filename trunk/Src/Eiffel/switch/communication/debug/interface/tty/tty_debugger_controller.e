@@ -37,7 +37,9 @@ feature
 		local
 			bp: BOOLEAN_PREFERENCE
 		do
-			bp ?= preferences.preferences.get_preference (a_pref_string)
+			if a_pref_string /= Void then
+				bp ?= preferences.preferences.get_preference (a_pref_string)
+			end
 			if bp /= Void and then bp.value then
 				a_action.call (Void)
 			else
