@@ -53,6 +53,13 @@ feature -- Miscellaneous
 
 feature -- Basic operations
 
+	accept(resolver: ENTITY_RESOLVER): ANY is
+			-- Resolve this entity
+		do
+			Result := resolver.resolve_basic_entity(Current)
+		end
+
+
 feature -- Obsolete
 
 feature -- Inapplicable
