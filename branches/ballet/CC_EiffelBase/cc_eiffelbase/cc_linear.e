@@ -95,6 +95,8 @@ feature -- Access
 			-- (Reference or object equality,
 			-- based on `object_comparison'.)
 			-- If no such position ensure that `exhausted' will be true.
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		do
@@ -197,6 +199,8 @@ feature -- Cursor movement
 
 	finish is
 			-- Move to last position.
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		deferred
@@ -210,6 +214,8 @@ feature -- Cursor movement
 			-- ensure that `exhausted' will be true.
 		require
 			not_after: not after
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		deferred
@@ -225,6 +231,8 @@ feature -- Cursor movement
 			-- index position (1 <= i <= count)
 		require
 			valid_index: valid_index (i)
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		local
@@ -252,6 +260,8 @@ feature -- Iteration
 			-- Apply `action' to every item.
 			-- Semantics not guaranteed if `action' changes the structure;
 			-- in such a case, apply iterator to clone of structure instead.
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		local
@@ -284,6 +294,8 @@ feature -- Iteration
 			-- Apply `action' to every item that satisfies `test'.
 			-- Semantics not guaranteed if `action' or `test' changes the structure;
 			-- in such a case, apply iterator to clone of structure instead.
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		local
@@ -397,6 +409,8 @@ feature -- Conversion
 
 	linear_representation: CC_LINEAR [G] is
 			-- Representation as a linear structure
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		do
@@ -409,6 +423,8 @@ feature -- Model
 
 	model_cursor: INTEGER is
 			-- Model of a cursor for traversal
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		do

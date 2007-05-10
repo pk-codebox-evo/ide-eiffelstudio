@@ -30,24 +30,14 @@ feature -- Status report
 		deferred
 		end
 
--- TODO gemäss bernd unnötig
---	is_inserted (v: G): BOOLEAN is
---			-- Has `v' been inserted by the most recent insertion?
---			-- (By default, the value returned is equivalent to calling
---			-- `has (v)'. However, descendants might be able to provide more
---			-- efficient implementations.)
---		use
---			use_own_representation: representation
---		do
---			Result := has (v)
---		end
-
 feature -- Element change
 
 	extend (v: G) is
 			-- Ensure that structure includes `v' iff `v' can be added.
 		require
 			can_add_element: can_extend (v)
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		deferred
@@ -61,6 +51,8 @@ feature -- Element change
 			-- Ensure that structure includes `v'.
 		require
 			can_add_element: can_put (v)
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		deferred
@@ -109,6 +101,8 @@ feature -- Removal
 			-- based on `object_comparison'.)
 		require
 			prunable: prunable
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		deferred
@@ -126,6 +120,8 @@ feature -- Removal
 			--|Default implementation, usually inefficient.
 		require
 			prunable: prunable
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		do
@@ -143,6 +139,8 @@ feature -- Removal
 			-- Remove all items.
 		require
 			prunable: prunable
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		deferred

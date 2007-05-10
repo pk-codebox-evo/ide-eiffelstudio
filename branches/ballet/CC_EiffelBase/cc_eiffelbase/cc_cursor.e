@@ -5,6 +5,8 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 
+-- TODO cursor erstmal ignoreren - nur so wie in eiffelbase
+
 deferred class
 	CC_CURSOR [G]
 
@@ -64,16 +66,6 @@ feature -- Status report
 --		ensure
 --			Result implies container.valid_cursor (other)
 --		end
-
-----	is_valid: BOOLEAN is
-----			-- Is cursor valid?
-----		obsolete
-----			"Backward compatibility with Gobo 1.4"
-----		do
-----			Result := True
-----		ensure
-----			definition: Result = True
-----		end
 
 --feature -- Cursor movement
 

@@ -22,6 +22,8 @@ feature -- Element change
 
 	extend (v: G) is
 			-- Ensure that set includes `v' iff `v' can be added.
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		deferred
@@ -33,6 +35,8 @@ feature -- Element change
 
 	put (v: G) is
 			-- Ensure that set includes `v'.
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		deferred
@@ -46,6 +50,8 @@ feature -- Removal
 
 	prune (v: G) is
 			-- Remove `v' if present.
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		deferred
@@ -94,6 +100,8 @@ feature -- Model
 
 	model: MML_SET [G] is
 			-- Model of a set
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		do

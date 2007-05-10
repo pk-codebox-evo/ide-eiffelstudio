@@ -43,6 +43,8 @@ feature -- Cursor movement
 			-- Move to previous position.
 		require
 			not_before: not before
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		deferred
@@ -55,6 +57,8 @@ feature -- Cursor movement
 	go_i_th (i: INTEGER) is
 			-- Move internal cursor to `i'-th position. `i' must be a legal
 			-- index position (1 <= i <= count)
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		local
@@ -92,6 +96,8 @@ feature -- Access
 			-- `exhausted' will be true.
 			-- (Reference or object equality,
 			-- based on `object_comparison'.)
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		do

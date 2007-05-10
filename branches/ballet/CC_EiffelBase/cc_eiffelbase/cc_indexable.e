@@ -17,15 +17,12 @@ inherit
 		export
 			{NONE}
 				model_collection
-		redefine
-			put_last,
-			extend_last
 		end
 
 feature -- Access
 
 	infix "@", item (i: INTEGER): G is
-			-- Item at index `i'
+			-- Item at index `i'.
 		require
 			valid_index: valid_index (i)
 		use
@@ -34,7 +31,7 @@ feature -- Access
 		end
 
 	first: G is
-			-- First item in container
+			-- First item in container.
 		require
 			not_empty: not is_empty
 		use
@@ -45,7 +42,7 @@ feature -- Access
 		end
 
 	last: G is
-			-- Last item in container
+			-- Last item in container.
 		require
 			not_empty: not is_empty
 		use
@@ -67,25 +64,55 @@ feature -- Status report
 			valid_index_definition: Result = (1 <= i and i <= count)
 		end
 
+feature -- Element change
+
+-- TODO reichen can_add_element oder muss ein spezialisiertes can_add_element_at damit man auch
+-- den index berücksichtigt?
+
+-- TODO wie ist das ganze modelliert? wenn z.b. die indices 1..5 schon besetzt sind und ich mache dann ein
+-- put (bla, 10) dann gibt es eine lücke und count wäre dann 6. damit stimmt mein model nicht mehr.
+
+	put (v: G; i: INTEGER) is
+			-- Associate value `v' with index `i'.
+		require
+			can_add_element: can_put (v)
+		use
+			use_own_representation: representation
+		modify
+			modify_own_representation: representation
+		deferred
+		ensure
+			-- TODO
+			insertion_done: item (i) = v
+--			model_updated: model |=| old model.extended (v)
+--			model_correspondends: model.contains (v)
+			confined representation
+		end
+
+	-- TODO ev auch ein extend (v, i)
+
 feature -- Model
 
 	model: MML_RELATION [INTEGER, G] is
-			-- Model for an indexable data structure
+			-- Model for an indexable data structure.
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
-		local
-			i: INTEGER
-		do
-			create {MML_DEFAULT_RELATION [INTEGER, G]} Result.make_empty
+		deferred
+--		local
+--			i: INTEGER
+--		do
+--			create {MML_DEFAULT_RELATION [INTEGER, G]} Result.make_empty
 
-			from
-				i := 1
-			until
-				i > count
-			loop
-				Result := Result.extended_by_pair (i, item(i))
-				i := i + 1
-			end
+--			from
+--				i := 1
+--			until
+--				i > count
+--			loop
+--				Result := Result.extended_by_pair (i, item(i))
+--				i := i + 1
+--			end
 		ensure
 			result_not_void: Result /= Void
 			confined representation

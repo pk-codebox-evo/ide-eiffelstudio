@@ -35,6 +35,8 @@ feature -- Element change
 
 	extend (v: G) is
 			-- Add a new occurrence of `v'.
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		deferred

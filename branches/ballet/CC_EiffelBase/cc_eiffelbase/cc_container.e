@@ -50,15 +50,6 @@ feature -- Status report
 			model_correspondends: Result = model.is_empty
 		end
 
--- TODO obsolete Sachen aus meiner Base Library schmeissen?
---	empty: BOOLEAN is
---			-- Is there no element?
---		obsolete
---			"ELKS 2000: Use `is_empty' instead"
---		do
---			Result := is_empty
---		end
-
 -- TODO wie hier machen?
 	object_comparison: BOOLEAN
 			-- Must search operations use `equal' rather than `='
@@ -79,6 +70,8 @@ feature -- Status setting
 			-- rather than `=' for comparing references.
 		require
 			changeable_comparison_criterion: changeable_comparison_criterion
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		do
@@ -92,6 +85,8 @@ feature -- Status setting
 			-- rather than `equal' for comparing references.
 		require
 			changeable_comparison_criterion: changeable_comparison_criterion
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		do
@@ -104,6 +99,8 @@ feature -- Conversion
 
 	linear_representation: CC_LINEAR [G] is
 			-- Representation as a linear structure
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		deferred
@@ -115,6 +112,8 @@ feature -- Model
 
 	model: MML_BAG [G] is
 			-- Model of a general container
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		local

@@ -53,6 +53,8 @@ feature -- Element change
 			-- Add `v' to end.
 		require
 			extendible: extendible
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		do
@@ -69,6 +71,8 @@ feature -- Element change
 			-- Append a copy of `s' which is another sequence.
 		require
 			argument_not_void: s /= Void
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		local

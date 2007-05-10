@@ -48,6 +48,8 @@ feature -- Element change
 			-- Replace current item by `v'.
 		require
 			writable: writable
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		deferred
@@ -65,6 +67,8 @@ feature -- Removal
 		require
 			prunable: prunable
 			writable: writable
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		deferred

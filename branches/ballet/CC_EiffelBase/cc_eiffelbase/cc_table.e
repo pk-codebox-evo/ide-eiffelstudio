@@ -65,6 +65,8 @@ feature -- Element change
 		require
 			valid_key: valid_key (k)
 			can_put_element: can_put (v, k)
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		deferred
@@ -120,14 +122,11 @@ feature -- Model
 
 	model: MML_RELATION [G, K] is
 			-- Model of a table
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
-		do
-			create {MML_DEFAULT_RELATION [G, K]} Result.make_empty
-			-- TODO
-
-
-
+		deferred
 		ensure
 			result_not_void: Result /= Void
 			confined representation

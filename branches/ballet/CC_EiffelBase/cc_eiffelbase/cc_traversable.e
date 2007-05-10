@@ -45,6 +45,8 @@ feature -- Cursor movement
 
 	start is
 			-- Move to first position if any.
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		deferred
@@ -61,6 +63,8 @@ feature -- Iteration
 			-- in such a case, apply iterator to clone of structure instead.
 		require
 			action_exists: action /= Void
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		do
@@ -78,6 +82,8 @@ feature -- Iteration
 			action_exists: action /= Void
 			test_exits: test /= Void
 			-- test.is_pure
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		do
@@ -118,6 +124,8 @@ feature -- Model
 
 	model_sequence: MML_SEQUENCE [G] is
 			-- Model of a general traversable structure
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		local
@@ -141,6 +149,8 @@ feature -- Model
 
 	model_cursor: INTEGER is
 			-- Model of a cursor for traversal
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		deferred
@@ -150,6 +160,8 @@ feature -- Model
 
 	model: MML_PAIR [MML_SEQUENCE [G], INTEGER] is
 			-- Model of the traversable structure
+		use
+			use_own_representation: representation
 		modify
 			modify_own_representation: representation
 		do
