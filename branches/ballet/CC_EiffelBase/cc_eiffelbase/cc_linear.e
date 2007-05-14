@@ -420,6 +420,7 @@ feature -- Model
 invariant
 
 	after_constraint: after implies off
+	model_cursor_corresponds: model_cursor = index
 
 	-- TODO additional constraint
 	after_constraint_2: after implies exhausted

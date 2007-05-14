@@ -13,7 +13,8 @@ inherit
 	CC_SEQUENCE [G]
 		redefine
 			has,
-			index_of
+			index_of,
+			off
 		select
 			model_container,
 			prune_all,
@@ -46,8 +47,6 @@ inherit
 		select
 			put
 		end
-
--- from chain -----------------------------------------------------------------------------------------------------------
 
 feature -- Access
 
@@ -106,15 +105,15 @@ feature -- Access
 			go_to (old_position)
 		end
 
---	i_th alias "[]", infix "@" (i: INTEGER): like item assign put_i_th is
+--	i_th alias "[]", infix "@" (i: INTEGER): like item is
 --			-- Item at `i'-th position
 --		local
---			pos: CURSOR
+--			old_position: CURSOR
 --		do
---			pos := cursor
+--			old_position := cursor
 --			go_i_th (i)
 --			Result := item
---			go_to (pos)
+--			go_to (old_position)
 --		end
 
 feature -- Measurement
@@ -142,6 +141,55 @@ feature -- Measurement
 --			count_definition: Result.count = count
 --		end
 
+
+-- from list
+feature -- Comparison
+
+--	is_equal (other: like Current): BOOLEAN is
+--			-- Does `other' contain the same elements?
+--		local
+--			c1, c2: CURSOR
+--		do
+--			if Current = other then
+--				Result := True
+--			else
+--				Result := (is_empty = other.is_empty) and
+--						(object_comparison = other.object_comparison) and
+--						(count = other.count)
+--				if Result and not is_empty then
+--					c1 ?= cursor
+--					c2 ?= other.cursor
+--					check
+--						cursors_exist: c1 /= Void and c2 /= Void
+--							-- Because every list contains a cursor object
+--					end
+--					
+--					from
+--						start
+--						other.start
+--					until
+--						after or not Result
+--					loop
+--						if object_comparison then
+--							Result := equal (item, other.item)
+--						else
+--							Result := (item = other.item)
+--						end
+--						forth
+--						other.forth
+--					end
+--					go_to (c1)
+--					other.go_to (c2)
+--				elseif is_empty and other.is_empty and
+--					object_comparison = other.object_comparison then
+--					Result := True
+--				end
+--			end
+--		ensure then
+--			indices_unchanged:
+--				index = old index and other.index = old other.index
+--			true_implies_same_size: Result implies count = other.count
+--		end
 
 
 feature -- Cursor movement
@@ -219,49 +267,69 @@ feature -- Cursor movement
 --			position_expected: index = i
 --		end
 
+-- from list
+--feature -- Cursor movement
 
+--	forth is
+--			-- Move to next position; if no next position,
+--			-- ensure that `exhausted' will be true.
+--		deferred
+--		ensure then
+--			moved_forth: index = old index + 1
+--		end
 
  feature -- Status report
 
---	valid_index (i: INTEGER): BOOLEAN is
---			-- Is `i' within allowable bounds?
---		do
---			Result := (i >= 1) and (i <= count)
---		ensure then
---			valid_index_definition: Result = ((i >= 1) and (i <= count))
---		end
+	is_first: BOOLEAN is
+			-- Is cursor at first position?
+		use
+			use_own_representation: representation
+		do
+			Result := not is_empty and (index = 1)
+		ensure
+			valid_position: Result implies not is_empty
+			model_cursor_corresponds: Result = (model_cursor = 1)
+		end
+
+	is_last: BOOLEAN is
+			-- Is cursor at last position?
+		use
+			use_own_representation: representation
+		do
+			Result := not is_empty and (index = count)
+		ensure
+			valid_position: Result implies not is_empty
+			model_cursor_corresponds: Result = (model_cursor = count)
+		end
+
+	off: BOOLEAN is
+			-- Is there no current item?
+		do
+			Result := (index = 0) or (index = count + 1)
+		end
 
 
---	isfirst: BOOLEAN is
---			-- Is cursor at first position?
---		do
---			Result := not is_empty and (index = 1)
---		ensure
---			valid_position: Result implies not is_empty
---		end
+	valid_cursor_index (i: INTEGER): BOOLEAN is
+			-- Is `i' correctly bounded for cursor movement?
+		use
+			use_own_representation: representation
+		do
+			Result := (i >= 0) and (i <= count + 1)
+		ensure
+			valid_cursor_index_definition: Result = ((i >= 0) and (i <= count + 1))
+		end
 
---	islast: BOOLEAN is
---			-- Is cursor at last position?
---		do
---			Result := not is_empty and (index = count)
---		ensure
---			valid_position: Result implies not is_empty
---		end
+	after: BOOLEAN is
+			-- Is there no valid cursor position to the right of cursor?
+		do
+			Result := (index = count + 1)
+		end
 
---	off: BOOLEAN is
---			-- Is there no current item?
---		do
---			Result := (index = 0) or (index = count + 1)
---		end
-
-
---	valid_cursor_index (i: INTEGER): BOOLEAN is
---			-- Is `i' correctly bounded for cursor movement?
---		do
---			Result := (i >= 0) and (i <= count + 1)
---		ensure
---			valid_cursor_index_definition: Result = ((i >= 0) and (i <= count + 1))
---		end
+	before: BOOLEAN is
+			-- Is there no valid cursor position to the left of cursor?
+		do
+			Result := (index = 0)
+		end
 
 feature -- Element change
 
@@ -309,166 +377,69 @@ feature -- Element change
 --			go_to (l_cursor)
 --		end
 
---	fill (other: CONTAINER [G]) is
---			-- Fill with as many items of `other' as possible.
---			-- The representations of `other' and current structure
---			-- need not be the same.
---		local
---			lin_rep: LINEAR [G]
---			l_cursor: CURSOR
---		do
---			lin_rep := other.linear_representation
---			from
---				l_cursor := cursor
---				lin_rep.start
---			until
---				not extendible or else lin_rep.off
---			loop
---				extend (lin_rep.item)
---				finish
---				lin_rep.forth
---			end
---			go_to (l_cursor)
---		end
 feature -- Transformation
 
---	swap (i: INTEGER) is
---			-- Exchange item at `i'-th position with item
---			-- at cursor position.
---		require
---			not_off: not off
---			valid_index: valid_index (i)
---		local
---			old_item, new_item: like item
---			pos: CURSOR
---		do
---			pos := cursor
---			old_item := item
---			go_i_th (i)
---			new_item := item
---			replace (old_item)
---			go_to (pos)
---			replace (new_item)
---		ensure
---	 		swapped_to_item: item = old i_th (i)
---	 		swapped_from_item: i_th (i) = old item
---		end
+	swap (i: INTEGER) is
+			-- Exchange item at `i'-th position with item
+			-- at cursor position.
+		require
+			not_off: not off
+			valid_index: valid_index (i)
+		use
+			use_own_representation: representation
+		modify
+			modify_own_representation: representation
+		local
+			old_item, new_item: like item
+			old_position: CC_CURSOR_POSITION
+		do
+			old_position := cursor
+			old_item := item
+			go_i_th (i)
+			new_item := item
+			replace_item_with (old_item)
+			go_to (old_position)
+			replace_item_with (new_item)
+		ensure
+	 		swapped_to_item: item = old i_th (i)
+	 		swapped_from_item: i_th (i) = old item
+	 		confined representation
+		end
 
 feature -- Duplication
 
---	duplicate (n: INTEGER): like Current is
---			-- Copy of sub-chain beginning at current position
---			-- and having min (`n', `from_here') items,
---			-- where `from_here' is the number of items
---			-- at or to the right of current position.
---		require
---			not_off_unless_after: off implies after
---			valid_subchain: n >= 0
---		deferred
---		end
+	duplicate (n: INTEGER): like Current is
+			-- Copy of sub-list beginning at current position
+			-- and having min (`n', `from_here') items,
+			-- where `from_here' is the number of items
+			-- at or to the right of current position.
+		require
+			not_off_unless_after: off implies after
+			valid_subchain: n >= 0
+		use
+			use_own_representation: representation
+		modify
+			modify_own_representation: representation
+		deferred
+		ensure
+			-- TODO weitere model contracts
+			models_correspond: model.first |=| Result.model.first
+			confined representation
+		end
 
-feature {NONE} -- Inapplicable
+invariant
 
---	remove is
---			-- Remove current item.
---		do
---		end
-
---invariant
-
---	non_negative_index: index >= 0
---	index_small_enough: index <= count + 1
+	non_negative_index: index >= 0
+	index_small_enough: index <= count + 1
 --	off_definition: off = ((index = 0) or (index = count + 1))
---	isfirst_definition: isfirst = ((not is_empty) and (index = 1))
---	islast_definition: islast = ((not is_empty) and (index = count))
+--	isfirst_definition: is_first = ((not is_empty) and (index = 1))
+--	islast_definition: is_last = ((not is_empty) and (index = count))
 --	item_corresponds_to_index: (not off) implies (item = i_th (index))
 --	index_set_has_same_count: index_set.count = count
 
 
-
-
-
-
-
 -- from list
-
---feature -- Comparison
-
---	is_equal (other: like Current): BOOLEAN is
---			-- Does `other' contain the same elements?
---		local
---			c1, c2: CURSOR
---		do
---			if Current = other then
---				Result := True
---			else
---				Result := (is_empty = other.is_empty) and
---						(object_comparison = other.object_comparison) and
---						(count = other.count)
---				if Result and not is_empty then
---					c1 ?= cursor
---					c2 ?= other.cursor
---					check
---						cursors_exist: c1 /= Void and c2 /= Void
---							-- Because every list contains a cursor object
---					end
---					
---					from
---						start
---						other.start
---					until
---						after or not Result
---					loop
---						if object_comparison then
---							Result := equal (item, other.item)
---						else
---							Result := (item = other.item)
---						end
---						forth
---						other.forth
---					end
---					go_to (c1)
---					other.go_to (c2)
---				elseif is_empty and other.is_empty and
---					object_comparison = other.object_comparison then
---					Result := True
---				end
---			end
---		ensure then
---			indices_unchanged:
---				index = old index and other.index = old other.index
---			true_implies_same_size: Result implies count = other.count
---		end
-
---feature -- Status report
-
---	after: BOOLEAN is
---			-- Is there no valid cursor position to the right of cursor?
---		do
---			Result := (index = count + 1)
---		end
-
---	before: BOOLEAN is
---			-- Is there no valid cursor position to the left of cursor?
---		do
---			Result := (index = 0)
---		end
-
---feature -- Cursor movement
-
---	forth is
---			-- Move to next position; if no next position,
---			-- ensure that `exhausted' will be true.
---		deferred
---		ensure then
---			moved_forth: index = old index + 1
---		end
-
---invariant
-
 --	before_definition: before = (index = 0)
 --	after_definition: after = (index = count + 1)
-
-
 
 end
