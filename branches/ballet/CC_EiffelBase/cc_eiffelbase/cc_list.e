@@ -11,6 +11,9 @@ deferred class
 inherit
 	-- TODO checken
 	CC_SEQUENCE [G]
+		redefine
+			has,
+			index_of
 		select
 			model_container,
 			prune_all,
@@ -32,64 +35,76 @@ inherit
 				valid_index_indexable
 		end
 
+	CC_CURSOR_STRUCTURE [G]
+		rename
+			model as model_cursor_structure
+		export
+			{NONE}
+				model_cursor_structure
+		undefine
+			prune_all
+		select
+			put
+		end
 
--- from chain
+-- from chain -----------------------------------------------------------------------------------------------------------
 
+feature -- Access
 
+	first: like item is
+			-- Item at first position
+		local
+			old_position: CC_CURSOR_POSITION
+		do
+			old_position := cursor
+			start
+			Result := item
+			go_to (old_position)
+		end
 
---feature -- Access
+	last: like item is
+			-- Item at last position
+		local
+			old_position: CC_CURSOR_POSITION
+		do
+			old_position := cursor
+			finish
+			Result := item
+			go_to (old_position)
+		end
 
---	first: like item is
---			-- Item at first position
---		require
---			not_empty: not is_empty
---		local
---			pos: CURSOR
---		do
---			pos := cursor
---			start
---			Result := item
---			go_to (pos)
---		end
+	has (v: like item): BOOLEAN is
+			-- Does list include `v'?
+			-- (Reference or object equality,
+			-- based on `object_comparison'.)
+		local
+			old_position: CC_CURSOR_POSITION
+		do
+			old_position := cursor
 
---	last: like item is
---			-- Item at last position
---		require
---			not_empty: not is_empty
---		local
---			pos: CURSOR
---		do
---			pos := cursor
---			finish
---			Result := item
---			go_to (pos)
---		end
+			start
+			if not off then
+				search (v)
+			end
+			Result := not exhausted
 
---	has (v: like item): BOOLEAN is
---			-- Does chain include `v'?
---			-- (Reference or object equality,
---			-- based on `object_comparison'.)
+			go_to (old_position)
+		end
 
---		local
---			pos: CURSOR
---		do
---			pos := cursor
---			Result := sequential_has (v)
---			go_to (pos)
---		end
+	index_of (v: like item; i: INTEGER): INTEGER is
+			-- Index of `i'-th occurrence of item identical to `v'.
+			-- (Reference or object equality,
+			-- based on `object_comparison'.)
+			-- 0 if none.
+		local
+			old_position: CC_CURSOR_POSITION
+		do
+			old_position := cursor
 
---	index_of (v: like item; i: INTEGER): INTEGER is
---			-- Index of `i'-th occurrence of item identical to `v'.
---			-- (Reference or object equality,
---			-- based on `object_comparison'.)
---			-- 0 if none.
---		local
---			pos: CURSOR
---		do
---			pos := cursor
---			Result := sequential_index_of (v, i)
---			go_to (pos)
---		end
+			-- TODO
+
+			go_to (old_position)
+		end
 
 --	i_th alias "[]", infix "@" (i: INTEGER): like item assign put_i_th is
 --			-- Item at `i'-th position
@@ -102,7 +117,7 @@ inherit
 --			go_to (pos)
 --		end
 
---feature -- Measurement
+feature -- Measurement
 
 --	occurrences (v: like item): INTEGER is
 --			-- Number of times `v' appears.
@@ -116,6 +131,9 @@ inherit
 --			go_to (pos)
 --		end
 
+
+
+-- TODO ignorieren???
 --	index_set: INTEGER_INTERVAL is
 --			-- Range of acceptable indexes
 --		do
@@ -124,7 +142,9 @@ inherit
 --			count_definition: Result.count = count
 --		end
 
---feature -- Cursor movement
+
+
+feature -- Cursor movement
 
 --	start is
 --			-- Move cursor to first position.
@@ -186,6 +206,9 @@ inherit
 --			expected_index: (not exhausted) implies (index = old index + i)
 --		end
 
+
+
+-- TOOD schon vorhanden
 --	go_i_th (i: INTEGER) is
 --			-- Move cursor to `i'-th position.
 --		require
@@ -196,7 +219,9 @@ inherit
 --			position_expected: index = i
 --		end
 
--- feature -- Status report
+
+
+ feature -- Status report
 
 --	valid_index (i: INTEGER): BOOLEAN is
 --			-- Is `i' within allowable bounds?
@@ -238,7 +263,7 @@ inherit
 --			valid_cursor_index_definition: Result = ((i >= 0) and (i <= count + 1))
 --		end
 
---feature -- Element change
+feature -- Element change
 
 --	put (v: like item) is
 --			-- Replace current item by `v'.
@@ -305,7 +330,7 @@ inherit
 --			end
 --			go_to (l_cursor)
 --		end
---feature -- Transformation
+feature -- Transformation
 
 --	swap (i: INTEGER) is
 --			-- Exchange item at `i'-th position with item
@@ -329,7 +354,7 @@ inherit
 --	 		swapped_from_item: i_th (i) = old item
 --		end
 
---feature -- Duplication
+feature -- Duplication
 
 --	duplicate (n: INTEGER): like Current is
 --			-- Copy of sub-chain beginning at current position
@@ -342,7 +367,7 @@ inherit
 --		deferred
 --		end
 
---feature {NONE} -- Inapplicable
+feature {NONE} -- Inapplicable
 
 --	remove is
 --			-- Remove current item.

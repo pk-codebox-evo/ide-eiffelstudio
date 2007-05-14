@@ -24,8 +24,6 @@ feature -- Status report
 
 	off: BOOLEAN is
 			-- Is there no current item?
-		use
-			use_own_representation: representation
 		do
 			Result := before or after
 		end
@@ -57,10 +55,6 @@ feature -- Cursor movement
 	go_i_th (i: INTEGER) is
 			-- Move internal cursor to `i'-th position. `i' must be a legal
 			-- index position (1 <= i <= count)
-		use
-			use_own_representation: representation
-		modify
-			modify_own_representation: representation
 		local
 			difference: INTEGER
 		do

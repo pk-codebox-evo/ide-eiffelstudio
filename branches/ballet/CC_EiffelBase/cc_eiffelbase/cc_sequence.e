@@ -32,8 +32,6 @@ feature -- Status report
 
 	readable: BOOLEAN is
 			-- Is there a current item that may be read?
-		use
-			use_own_representation: representation
 		do
 			Result := not off
 		end
@@ -41,8 +39,6 @@ feature -- Status report
 
 	writable: BOOLEAN is
 			-- Is there a current item that may be modified?
-		use
-			use_own_representation: representation
 		do
 			Result := not off
 		end
@@ -57,13 +53,11 @@ feature -- Element change
 			use_own_representation: representation
 		modify
 			modify_own_representation: representation
-		do
-			-- TODO ev hier ändern da ja force auf jeden fall das elemnt hinzufügt
-			extend (v)
+		deferred
 		ensure
 	 		new_count: count = old count + 1
 			item_inserted: has (v)
-			model_corresponds: model.first |=| old model.first.extended (v)
+			model_updated: model.first |=| old model.first.extended (v)
 			confined representation
 		end
 
@@ -83,13 +77,13 @@ feature -- Element change
 			else
 				l := s
 			end
+
 			from
 				l.start
 			until
 				l.exhausted
 			loop
-				-- TODO extend???
-				extend (l.item)
+				put (l.item)
 				l.forth
 			end
 		ensure
@@ -98,11 +92,17 @@ feature -- Element change
 	 		confined representation
 		end
 
+	extend (v: G) is
+			-- Add `v' to end.
+		deferred
+		ensure then
+			new_count: count = old count + 1
+		end
+
+
 	put (v: G) is
 			-- Add `v' to end.
-		do
-			-- TODO extend???
-			extend (v)
+		deferred
 		ensure then
 	 		new_count: count = old count + 1
 		end
@@ -139,5 +139,6 @@ invariant
 
 	-- combine inherited models
 	inherited_models_equal: model_active |=| model_container
+	--models_equivalent: model_active.domain |=| model.first.range -- TODO underspecification and false...
 
 end

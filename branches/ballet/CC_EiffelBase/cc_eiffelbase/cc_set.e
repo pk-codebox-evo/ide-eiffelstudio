@@ -66,8 +66,6 @@ feature -- Removal
 			-- May `object_comparison' be changed?
 			-- (Answer: only if set empty; otherwise insertions might
 			-- introduce duplicates, destroying the set property.)
-		use
-			use_own_representation: representation
 		do
 			Result := is_empty
 		ensure then
@@ -79,8 +77,6 @@ feature -- Element specific status report
 	can_extend (v: G) : BOOLEAN is
 			-- Can `an_item' be added?
 			-- True only if it is not already in the set.
-		use
-			use_own_representation: representation
 		do
 			Result := extendible and not has(v)
 		ensure then
@@ -90,8 +86,6 @@ feature -- Element specific status report
 
 	can_put (v: G) : BOOLEAN is
 			-- Can `an_item' be added?
-		use
-			use_own_representation: representation
 		do
 			Result := extendible
 		end

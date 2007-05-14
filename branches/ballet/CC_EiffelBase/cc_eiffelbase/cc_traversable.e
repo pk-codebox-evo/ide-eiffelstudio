@@ -174,7 +174,7 @@ feature -- Model
 invariant
 
 	empty_constraint: is_empty implies off
-	model_container_corresponds_to_model_sequence: model_container.count = model_sequence.count
+	cout_from_model_container_corresponds_to_model_sequence: model_container.count = model_sequence.count
 	models_equivalent: model_sequence.range |=| model_container.domain
 
 end

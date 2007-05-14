@@ -62,37 +62,6 @@ feature -- Element change
 			confined representation
 		end
 
--- TODO gemäss bernd erstmal ignorieren
---	fill (other: CC_CONTAINER [G]) is
---			-- Fill with as many items of `other' as possible.
---			-- The representations of `other' and current structure
---			-- need not be the same.
---		require
---			other_not_void: other /= Void
---			extendible: extendible
---		use
---			use_other_representation: other.representation
---		modify
---			modify_own_representation: representation
---		local
---			lin_rep: CC_LINEAR [G]
---		do
---			lin_rep := other.linear_representation
---			from
---				lin_rep.start
---			until
---				not extendible or else lin_rep.off
---			loop
---				extend (lin_rep.item)
---				lin_rep.forth
---			end
---		ensure
---			--count: count = old count + other.count -- keine gute idee, da plötzlich !extendible sein könnte
---			--model |=| old model.united (other.model)
---			--TODO
---			confined representation
---		end
-
 feature -- Removal
 
 	prune (v: G) is
@@ -154,6 +123,7 @@ feature -- Element specific status report
 
 	can_extend (v: G) : BOOLEAN is
 			-- Can `an_item' be added?
+			-- Non-defensive -> stronges preconditions
 		use
 			use_own_representation: representation
 		do
@@ -162,6 +132,7 @@ feature -- Element specific status report
 
 	can_put (v: G) : BOOLEAN is
 			-- Can `an_item' be added?
+			-- Medium defensive -> mathematical view
 		use
 			use_own_representation: representation
 		do

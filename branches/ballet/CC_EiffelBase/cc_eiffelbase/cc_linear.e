@@ -23,8 +23,6 @@ feature -- Access
 			-- Does structure include an occurrence of `v'?
 			-- (Reference or object equality,
 			-- based on `object_comparison'.)
-		use
-			use_own_representation: representation
 		local
 			old_index: INTEGER
 		do
@@ -260,10 +258,6 @@ feature -- Iteration
 			-- Apply `action' to every item.
 			-- Semantics not guaranteed if `action' changes the structure;
 			-- in such a case, apply iterator to clone of structure instead.
-		use
-			use_own_representation: representation
-		modify
-			modify_own_representation: representation
 		local
 			t: TUPLE [G]
 			cs: CURSOR_STRUCTURE [G]
@@ -294,10 +288,6 @@ feature -- Iteration
 			-- Apply `action' to every item that satisfies `test'.
 			-- Semantics not guaranteed if `action' or `test' changes the structure;
 			-- in such a case, apply iterator to clone of structure instead.
-		use
-			use_own_representation: representation
-		modify
-			modify_own_representation: representation
 		local
 			t: TUPLE [G]
 			cs: CURSOR_STRUCTURE [G]
@@ -330,8 +320,6 @@ feature -- Iteration
 			-- Is `test' true for at least one item?
 			-- Semantics not guaranteed if `test' changes the structure;
 			-- in such a case, apply iterator to clone of structure instead.
-		use
-			use_own_representation: representation
 		local
 			cs: CURSOR_STRUCTURE [G]
 			c: CURSOR
@@ -368,8 +356,6 @@ feature -- Iteration
 			-- Is `test' true for all items?
 			-- Semantics not guaranteed if `test' changes the structure;
 			-- in such a case, apply iterator to clone of structure instead.
-		use
-			use_own_representation: representation
 		local
 			cs: CURSOR_STRUCTURE [G]
 			c: CURSOR
