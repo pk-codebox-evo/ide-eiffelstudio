@@ -187,6 +187,7 @@ feature -- Processors
 			endif_label: STRING
 			cond_expr: STRING
 			i: INTEGER
+			elsif_b: ELSIF_B
 		do
 			new_label ("true")
 			true_label := last_label
@@ -219,7 +220,56 @@ feature -- Processors
 			code.append (endif_label)
 			code.append (";%N")
 
-			-- TODO: Handling of `elsif'
+			from i := 1 until
+				a_node.elsif_list = Void or else
+				i > a_node.elsif_list.count
+			loop
+
+				elsif_b ?= a_node.elsif_list.i_th (i)
+
+				check
+					not_void: elsif_b /= Void
+				end
+
+				code.append ("  ")
+				code.append (false_label)
+				code.append (":%N")
+
+				code.append ("    assume(!(")
+				code.append (cond_expr)
+				code.append ("));%N")
+
+				function_writer.reset
+				elsif_b.expr.process (function_writer)
+				cond_expr := function_writer.expr
+
+				new_label ("true")
+				true_label := last_label
+				new_label ("false")
+				false_label := last_label
+
+				code.append ("    goto ")
+				code.append (true_label)
+				code.append (",")
+				code.append (false_label)
+				code.append (";%N")
+
+				code.append ("  ")
+				code.append (true_label)
+				code.append (":%N")
+
+				code.append ("    assume(")
+				code.append (cond_expr)
+				code.append (");%N")
+
+				elsif_b.compound.process (Current)
+
+				code.append ("    goto ")
+				code.append (endif_label)
+				code.append (";%N")
+
+				i := i + 1
+			end
 
 			code.append ("  ")
 			code.append (false_label)
@@ -229,7 +279,9 @@ feature -- Processors
 			code.append (cond_expr)
 			code.append ("));%N")
 
-			a_node.compound.process (Current)
+			if a_node.else_part /= Void then
+				a_node.else_part.process (Current)
+			end
 
 			code.append ("    goto ")
 			code.append (endif_label)

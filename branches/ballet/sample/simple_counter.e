@@ -88,6 +88,21 @@ feature
 			x_added: x = old x + other.x
 		end
 
+	move_to_zero is
+			-- Move the counter one value closer to 0.
+		do
+			if x > 0 then
+				x := x - 1
+			elseif x < 0 then
+				x := x + 1
+			else
+				x := 0
+			end
+		ensure
+			close_to_zero: (x.abs < (old x.abs)) or (x = 0)
+		end
+
+
 	move_one (other:SIMPLE_COUNTER) is
 			-- Add one count to `other'.
 		require
