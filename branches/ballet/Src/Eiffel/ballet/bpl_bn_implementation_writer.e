@@ -181,7 +181,63 @@ feature -- Processors
 
 	process_if_b (a_node: IF_B) is
 			-- Process `a_node'.
+		local
+			true_label: STRING
+			false_label: STRING
+			endif_label: STRING
+			cond_expr: STRING
+			i: INTEGER
 		do
+			new_label ("true")
+			true_label := last_label
+			new_label ("false")
+			false_label := last_label
+			new_label ("endif")
+			endif_label := last_label
+
+			function_writer.reset
+			a_node.condition.process (function_writer)
+			cond_expr := function_writer.expr
+
+			code.append ("    goto ")
+			code.append (true_label)
+			code.append (",")
+			code.append (false_label)
+			code.append (";%N")
+
+			code.append ("  ")
+			code.append (true_label)
+			code.append (":%N")
+
+			code.append ("    assume(")
+			code.append (cond_expr)
+			code.append (");%N")
+
+			a_node.compound.process (Current)
+
+			code.append ("    goto ")
+			code.append (endif_label)
+			code.append (";%N")
+
+			-- TODO: Handling of `elsif'
+
+			code.append ("  ")
+			code.append (false_label)
+			code.append (":%N")
+
+			code.append ("    assume(!(")
+			code.append (cond_expr)
+			code.append ("));%N")
+
+			a_node.compound.process (Current)
+
+			code.append ("    goto ")
+			code.append (endif_label)
+			code.append (";%N")
+
+			code.append ("  ")
+			code.append (endif_label)
+			code.append (":%N")
 
 		end
 
@@ -217,7 +273,7 @@ feature -- Processors
 						i := 1
 						n := call_access_b.parameters.count
 					until
-						i >= n
+						i > n
 					loop
 						function_writer.reset
 						call_access_b.parameters.i_th (i).process (function_writer)
@@ -239,7 +295,7 @@ feature -- Processors
 		local
 			loop_label,exit_label:STRING
 			stop_expr: STRING
-			inv_expr: STRING
+			inv_assert: STRING
 			var_expr: STRING
 		do
 			new_label ("loop")
@@ -250,8 +306,60 @@ feature -- Processors
 			if a_node.from_part /= Void then
 				a_node.from_part.process (Current)
 			end
+
 			function_writer.reset
-			a_node.stop.process (Current)
+			a_node.stop.process (function_writer)
+			stop_expr := function_writer.expr
+
+			if a_node.invariant_part /= Void then
+				function_writer.reset
+				a_node.invariant_part.process (function_writer)
+				inv_assert := "    assert("
+				inv_assert.append(function_writer.expr)
+				inv_assert.append(");%N")
+			else
+				inv_assert := ""
+			end
+
+			if a_node.variant_part /= Void then
+				function_writer.reset
+				a_node.variant_part.process (function_writer)
+				var_expr := function_writer.expr
+			end
+
+			-- TODO: Generate assertions for variant
+
+			code.append (inv_assert)
+			code.append ("    goto ")
+			code.append (loop_label)
+			code.append (",")
+			code.append (exit_label)
+			code.append (";%N")
+
+			code.append ("  ")
+			code.append (loop_label)
+			code.append (":%N")
+
+			code.append ("    assume(!(")
+			code.append (stop_expr)
+			code.append ("));%N")
+
+			a_node.compound.process (Current)
+
+			code.append (inv_assert)
+			code.append ("    goto ")
+			code.append (loop_label)
+			code.append (",")
+			code.append (exit_label)
+			code.append (";%N")
+
+			code.append ("  ")
+			code.append (exit_label)
+			code.append (":%N")
+
+			code.append ("    assume(")
+			code.append (stop_expr)
+			code.append (");%N")
 		end
 
 feature -- Access

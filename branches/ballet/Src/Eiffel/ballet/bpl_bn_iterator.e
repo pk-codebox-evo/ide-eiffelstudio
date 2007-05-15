@@ -244,11 +244,11 @@ feature {NONE} -- Supporting Features
 				feature_found: feat /= Void
 			end
          if Mapping_table.item(feat.written_class.name) = Void then
-            print ("Using: ")
-            print (feat.feature_name)
-            print (" of ")
-            print (feat.written_class.name)
-            print ("%N")
+--            print ("Using: ")
+--            print (feat.feature_name)
+--            print (" of ")
+--            print (feat.written_class.name)
+--            print ("%N")
             environment.used_features.extend (feat)
          end
 		end

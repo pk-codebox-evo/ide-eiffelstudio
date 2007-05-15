@@ -50,6 +50,7 @@ inherit
 			process_paran_b,
 			process_un_minus_b,
 			process_un_not_b,
+			process_un_old_b,
 			process_void_b,
 			process_feature_without_code
 		end
@@ -135,10 +136,10 @@ feature -- Main
 			end
 
 			process_feature_i (current_feature) -- generate assertions
-			
+
 			bpl_out ("%N")
 		end
-	
+
 	process_feature_without_code (a_feature: FEATURE_I) is
 			-- Process a feature that does not have code.
 		do
@@ -152,7 +153,7 @@ feature -- Main
 				bpl_out (");%N")
 			end
 		end
-	
+
 feature -- Processing Environment
 
 	result_call: STRING
@@ -437,7 +438,7 @@ feature -- Processing
 				end
 			end
 			precondition.append (" ==> ")
-			
+
 			ass_list := a_node.postcondition
 			if ass_list /= Void then
 				from
@@ -455,7 +456,7 @@ feature -- Processing
 				end
 			end
 		end
-			
+
 	process_char_const_b (a_node: CHAR_CONST_B) is
 			-- Process `a_node'.
 		do
@@ -579,7 +580,6 @@ feature -- Processing
 			-- Process `a_node'.
 		do
 			expr.append("( -")
-			safe_process (a_node.access)
 			safe_process (a_node.expr)
 			expr.append (")")
 		end
@@ -588,7 +588,14 @@ feature -- Processing
 			-- Process `a_node'.
 		do
 			expr.append("( !")
-			safe_process (a_node.access)
+			safe_process (a_node.expr)
+			expr.append (")")
+		end
+
+	process_un_old_b (a_node: UN_OLD_B) is
+			-- Process `a_node'.
+		do
+			expr.append("old(")
 			safe_process (a_node.expr)
 			expr.append (")")
 		end
