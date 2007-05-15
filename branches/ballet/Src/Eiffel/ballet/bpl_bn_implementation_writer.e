@@ -236,8 +236,22 @@ feature -- Processors
 
 	process_loop_b (a_node: LOOP_B) is
 			-- Process `a_node'.
+		local
+			loop_label,exit_label:STRING
+			stop_expr: STRING
+			inv_expr: STRING
+			var_expr: STRING
 		do
+			new_label ("loop")
+			loop_label := last_label
+			new_label ("exit")
+			exit_label := last_label
 
+			if a_node.from_part /= Void then
+				a_node.from_part.process (Current)
+			end
+			function_writer.reset
+			a_node.stop.process (Current)
 		end
 
 feature -- Access
