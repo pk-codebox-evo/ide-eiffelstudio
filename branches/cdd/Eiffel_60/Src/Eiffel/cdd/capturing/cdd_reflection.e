@@ -19,7 +19,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make (an_app_status: APPLICATION_STATUS; a_cse: EIFFEL_CALL_STACK_ELEMENT; a_is_creation_call: BOOLEAN; a_call_stack_uuid: STRING) is
+	make (an_app_status: APPLICATION_STATUS; a_cse: EIFFEL_CALL_STACK_ELEMENT; an_is_creation_call: BOOLEAN; a_call_stack_uuid: STRING) is
 			-- Reflect the object associated to `a_cse' and set `call_stack_uuid' to `a_call_stack_uuid'.
 		require
 			an_app_status_not_void: an_app_status /= Void
@@ -35,10 +35,10 @@ feature {NONE} -- Initialization
 		do
 			debugger_manager := an_app_status.application.debugger_manager
 			called_feature := a_cse.routine
-			is_creation_feature := a_is_creation_call
+			is_creation_feature := an_is_creation_call
 			create addressed_objects.make (object_count)
 			if is_creation_feature then
-				root_object := create {CDD_REGULAR_OBJECT}.make_with_count (a_cse.dynamic_class.eiffel_class_c, 0, 1)
+				root_object := create {CDD_REGULAR_OBJECT}.make_with_count (a_cse.dynamic_class.eiffel_class_c, 0, a_cse.object_address)
 			else
 				root_object := create_composite_object (a_cse.object_address, a_cse.dynamic_class.eiffel_class_c)
 			end
@@ -80,20 +80,6 @@ feature {NONE} -- Initialization
 			else
 				create arguments.make (0)
 			end
-			if reflection_succeded then
-				create composite_objects.make (addressed_objects.count)
-				from
-					addressed_objects.start
-				until
-					addressed_objects.after
-				loop
-					composite_objects.put_last (addressed_objects.item_for_iteration)
-					addressed_objects.forth
-				end
-			else
-				create composite_objects.make (0)
-			end
-			addressed_objects := Void
 			call_stack_uuid := a_call_stack_uuid
 			call_stack_index := a_cse.level_in_stack
 		end
@@ -129,9 +115,10 @@ feature -- Access
 	call_stack_index: INTEGER
 			-- Position of `called_feature' in call stack
 
-	composite_objects: DS_ARRAYED_LIST [CDD_COMPOSITE_OBJECT]
-			-- Objects referenced to directly or indirectly by `root_object'.
-			-- NOTE: if `called_feature' is not a creation feature `composite_objects' contains `root_object'.
+	addressed_objects: DS_HASH_TABLE [CDD_COMPOSITE_OBJECT, STRING]
+			-- All composite objects stored by the reflected objects address,
+			-- (used to determine cycles in the reference graph, void after creation
+			-- since addresses or no longer valid)
 
 	arguments: DS_ARRAYED_LIST [CDD_OBJECT]
 			-- Reflected arguments of `called_feature'
@@ -143,11 +130,6 @@ feature {NONE} -- Implementation
 
 	max_object_count: INTEGER is 100
 			-- Maximum number of addressed objects that will be reflected
-
-	addressed_objects: DS_HASH_TABLE [CDD_COMPOSITE_OBJECT, STRING]
-			-- All composite objects stored by the reflected objects address,
-			-- (used to determine cycles in the reference graph, void after creation
-			-- since addresses or no longer valid)
 
 	debugger_manager: DEBUGGER_MANAGER
 			-- Instance of the current debugger manager
@@ -221,7 +203,7 @@ feature {NONE} -- Implementation
 			l_dv: DUMP_VALUE
 		do
 			l_dv := debugger_manager.dump_value_factory.new_object_value (an_addr, a_type)
-			create Result.make_with_string (a_type, l_dv.formatted_output, addressed_objects.count + 1)
+			create Result.make_with_string (a_type, l_dv.formatted_output, an_addr)
 			add_addressed_object (Result, an_addr)
 		ensure
 			result_not_void: Result /= Void
@@ -252,14 +234,14 @@ feature {NONE} -- Implementation
 					-- Note: not sure yet what effect this Boolean value has
 				l_gen_type := extract_generic_type (l_dv.generating_type_representation (True))
 				if a_type.is_tuple then
-					create {CDD_TUPLE_OBJECT} Result.make_tuple (a_type, l_dv_list.count, l_gen_type, addressed_objects.count + 1)
+					create {CDD_TUPLE_OBJECT} Result.make_tuple (a_type, l_dv_list.count, l_gen_type, an_addr)
 				elseif a_type.is_special then
-					create {CDD_SPECIAL_OBJECT} Result.make_special (a_type, l_dv_list.count, l_gen_type, addressed_objects.count + 1)
+					create {CDD_SPECIAL_OBJECT} Result.make_special (a_type, l_dv_list.count, l_gen_type, an_addr)
 				else
-					create {CDD_GENERIC_OBJECT} Result.make_generic (a_type, l_dv_list.count, l_gen_type, addressed_objects.count + 1)
+					create {CDD_GENERIC_OBJECT} Result.make_generic (a_type, l_dv_list.count, l_gen_type, an_addr)
 				end
 			else
-				create Result.make_with_count (a_type, l_dv_list.count, addressed_objects.count + 1)
+				create Result.make_with_count (a_type, l_dv_list.count, an_addr)
 			end
 			add_addressed_object (Result, an_addr)
 			from
@@ -310,7 +292,7 @@ invariant
 	correct_reflection_status: reflection_succeded = (
 									root_object /= Void and
 									called_feature /= Void)
-	composite_objects_not_void: composite_objects /= Void
+	composite_objects_not_void: addressed_objects /= Void
 	arguments_not_void: arguments /= Void
 	valid_argument_count: arguments.is_empty = not called_feature.has_arguments
 	debugger_manager_not_void: debugger_manager /= Void

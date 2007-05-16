@@ -16,10 +16,14 @@ create
 
 feature {NONE} -- Initialization
 
-	make_with_count (a_type: like dynamic_type; a_count: INTEGER; an_id: INTEGER) is
+	make_with_count (a_type: like dynamic_type; a_count: INTEGER; an_address: like address) is
 			-- Create reflection for object of type `a_type' with `a_count' attributes.
+		require
+			a_type_not_void: a_type /= Void
+			not_basic_type: not a_type.is_basic
+			an_address_not_empty: an_address /= Void and then not an_address.is_empty
 		do
-			make (a_type, an_id)
+			make (a_type, an_address)
 			create attributes.make (a_count)
 		ensure
 			correct_size: attributes.capacity >= a_count

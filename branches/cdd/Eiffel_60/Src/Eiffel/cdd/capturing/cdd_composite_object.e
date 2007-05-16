@@ -10,6 +10,9 @@ deferred class
 inherit
 
 	CDD_OBJECT
+		rename
+			identifier as address
+		end
 
 --	COMPARABLE
 --		export
@@ -20,15 +23,16 @@ inherit
 
 feature {NONE} -- Initialization
 
-	make (a_type: like dynamic_type; an_id: INTEGER) is
+	make (a_type: like dynamic_type; an_address: like address) is
 			-- Create reflection for object of type `a_type' and set `id' to `an_id'.
 		require else
 			a_type_not_void: a_type /= Void
 			not_basic_type: not a_type.is_basic
+			an_address_not_empty: an_address /= Void and then not an_address.is_empty
 		do
 			dynamic_type := a_type
 			create type.make_from_string (dynamic_type.name)
-			identifier := an_id.out
+			address := an_address
 --			create identifier.make_from_string (a_type.name)
 --			identifier.to_lower
 --			identifier.append ("_id" + counter.item.out)
@@ -37,7 +41,7 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	identifier: STRING
+	address: STRING
 			-- Identifier used for test case generation
 
 	dynamic_type: EIFFEL_CLASS_C

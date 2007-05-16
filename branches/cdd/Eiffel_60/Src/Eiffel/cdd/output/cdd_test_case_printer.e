@@ -407,8 +407,8 @@ feature {NONE} -- Implementation
 				if l_cursor.item.is_addressable then
 					append_text ("%N%T%T%TResult.put_reference (objects.i_th (")
 					append_text (l_cursor.item.identifier)
-					append_text ("), " + l_cursor.index + ")")
-					append_text
+					--append_text ("), " + l_cursor.index + ")")
+					--append_text
 				end
 				l_cursor.forth
 			end
