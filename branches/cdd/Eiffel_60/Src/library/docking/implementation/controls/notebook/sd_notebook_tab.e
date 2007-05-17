@@ -394,26 +394,28 @@ feature {SD_NOTEBOOK_TAB_BOX} -- Command
 		do
 			inspect
 				a_button
-			when 1 then
+			when {EV_POINTER_CONSTANTS}.left then
 				is_pointer_pressed := True
-				parent.enable_capture (Current)
+
 				l_drawer := internal_tab_drawer
 				if
 					l_drawer.is_top_side_tab
 					and internal_width > 0
 					and then l_drawer.close_rectangle_parent_box.has_x_y (a_x, a_y)
 				then
-					-- For select actions, we don't call select actions.
+					-- For close actions, we don't call select actions.
 					if is_selected then
-						l_drawer.expose_selected (internal_width, info)
+						redraw_selected
 					else
 						l_drawer.expose_hot (internal_width, info)
 					end
 				else
 					select_actions.call (Void)
 				end
-
-			when 3 then
+				
+				-- We enable capture after calling `select_actions', this will make debugger working in client programmers `select_actions'.
+				parent.enable_capture (Current)
+			when {EV_POINTER_CONSTANTS}.right then
 				select_actions.call (Void)
 				create l_menu.make (internal_notebook)
 				l_menu.show_at (parent, a_x, a_y)
@@ -436,7 +438,7 @@ feature {SD_NOTEBOOK_TAB_BOX} -- Command
 				and then l_drawer.close_rectangle_parent_box.has_x_y (a_x, a_y)
 			then
 				if is_selected then
-					l_drawer.expose_selected (internal_width, info)
+					redraw_selected
 				else
 					l_drawer.expose_hot (internal_width, info)
 				end
@@ -461,6 +463,32 @@ feature {SD_NOTEBOOK_TAB_BOX} -- Command
 			on_expose
 		ensure
 			set: is_hot = False
+		end
+
+feature {SD_NOTEBOOK_TAB_DRAWER_IMP, SD_NOTEBOOK_TAB_BOX} -- Internal command
+
+	redraw_selected is
+			-- Redraw selected.
+		local
+			l_drawer: like internal_tab_drawer
+		do
+			l_drawer := internal_tab_drawer
+			if l_drawer /= Void then
+				internal_tab_drawer.expose_selected (internal_width, info)
+			end
+		end
+
+	draw_focus_rect is
+			-- Draw focus rectangle.
+		local
+			l_rect: EV_RECTANGLE
+		do
+			l_rect := rectangle
+			l_rect.set_left (l_rect.left + focus_rect_padding)
+			l_rect.set_top (l_rect.top + focus_rect_padding)
+			l_rect.set_right (l_rect.right - focus_rect_padding)
+			l_rect.set_bottom (l_rect.bottom - focus_rect_padding)
+			internal_tab_drawer.draw_focus_rect (l_rect)
 		end
 
 feature {NONE}  -- Implementation agents
@@ -512,6 +540,9 @@ feature {NONE}  -- Implementation functions.
 
 feature {NONE}  -- Implementation attributes
 
+	focus_rect_padding: INTEGER is 2
+			-- Padding with of focus rectangle.
+
 	internal_width: INTEGER
 			-- Width
 
@@ -553,13 +584,16 @@ feature {NONE}  -- Implementation attributes
 	internal_tab_drawer: SD_NOTEBOOK_TAB_DRAWER_I is
 			-- Drawer of Current
 		do
-			Result := internal_shared.notebook_tab_drawer
-			Result.set_drawing_area (Current)
-			Result.set_is_draw_at_top (is_draw_top_tab)
-			Result.set_selected (is_selected, is_focused)
-			Result.set_text (text)
-			Result.set_pixmap (pixmap)
-			Result.set_enough_space (is_enough_space)
+			-- `interal_shared' cannot be void, but in fact, it maybe void when running. See bug#12519.
+			if internal_shared /= Void  then
+				Result := internal_shared.notebook_tab_drawer
+				Result.set_drawing_area (Current)
+				Result.set_is_draw_at_top (is_draw_top_tab)
+				Result.set_selected (is_selected, is_focused)
+				Result.set_text (text)
+				Result.set_pixmap (pixmap)
+				Result.set_enough_space (is_enough_space)
+			end
 		end
 
 invariant

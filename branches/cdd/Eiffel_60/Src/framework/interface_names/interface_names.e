@@ -463,7 +463,8 @@ feature -- Accelerator, focus label and menu name
 	m_Line_numbers: STRING_GENERAL is			do Result := locale.translate("Toggle &Line Numbers")	end
 	m_lock_tool_bar: STRING_GENERAL is			do Result := locale.translate ("Lock the Toolbars") end
 	m_lock_docking: STRING_GENERAL is			do Result := locale.translate ("Lock the Tools") end
-	f_match_case_question: STRING_GENERAL is			do Result := locale.translate("Match case?")	end
+	m_lock_docking_editor: STRING_GENERAL is	do Result := locale.translate ("Lock the Editors") end
+	f_match_case_question: STRING_GENERAL is	do Result := locale.translate("Match case?")	end
 	f_Melt: STRING_GENERAL is					do Result := locale.translate("Compile current project")	end
 	m_Melt_new: STRING_GENERAL is				do Result := locale.translate("&Compile")	end
 	m_New: STRING_GENERAL is					do Result := locale.translate("&New")	end
@@ -646,7 +647,7 @@ feature -- Formatter displayer names
 	l_formatter_header_help: STRING_GENERAL do Result := locale.translate ("Message that will be displayed in the formatter view when calculation has finished.") end
 	l_formatter_placeholder: STRING_GENERAL do Result := locale.translate ("%"$target%" serves as a placeholder which will be replaced by the input to current fomatter.") end
 	l_formatter_temp_header_help: STRING_GENERAL do Result := locale.translate ("Message that will be displayed in the formatter view when calculation is going on.") end
-	l_formatter_filter_help: STRING_GENERAL do Result := locale.translate ("Will invisible items be displayed?") end
+	l_formatter_filter_help: STRING_GENERAL do Result := locale.translate ("Display non visible items?") end
 	l_formatter_scope_help: STRING_GENERAL do Result := locale.translate ("Is this formatter of per EiffelStudio scope or per target scope?") end
 	l_formatter_displayed_in_help: STRING_GENERAL do Result := locale.translate ("In which tool(s) will this formatter be displayed") end
 	l_formatter_metric_help: STRING_GENERAL do Result := locale.translate ("From which result of this formatter is generated.") end
@@ -740,11 +741,42 @@ feature -- Menu mnenomics
 	m_Separate_stone: STRING_GENERAL is			do Result := locale.translate("Unlin&k Context Tool")	end
 	m_Tools: STRING_GENERAL is					do Result := locale.translate("&Tools")	end
 	m_Unify_stone: STRING_GENERAL is			do Result := locale.translate("Lin&k Context Tool")	end
-	m_View: STRING_GENERAL is					do Result := locale.translate("&View")	end
 
 	m_When_hits: STRING_GENERAL is				do Result := locale.translate("When Hits ...")	end
 	m_Window: STRING_GENERAL is					do Result := locale.translate("&Window")	end
 	m_Refactoring: STRING_GENERAL is			do Result := locale.translate("&Refactoring")	end
+
+feature -- Context menu
+
+	m_add_to: STRING_GENERAL is					do Result := locale.translate("&Add to")	end
+	m_add_subcluster: STRING_GENERAL is			do Result := locale.translate("Add &subcluster")	end
+	m_Assembly: STRING_GENERAL is				do Result := locale.translate ("Assembly") end
+	m_center_diagram: STRING_GENERAL is			do Result := locale.translate ("Center target in diagram") end
+	m_change_color: STRING_GENERAL is			do Result := locale.translate ("Change color") end
+	m_clone_metric: STRING_GENERAL is			do Result := locale.translate ("Clone metric") end
+	m_delete: STRING_GENERAL is					do Result := b_delete_command	end
+	m_diagram_with: STRING_GENERAL is	do Result := locale.translate ("Diagram with") end
+	m_expanded_object_view: STRING_GENERAL is	do Result := locale.translate ("Expanded object view") end
+	m_include_all_classes: STRING_GENERAL is	do Result := locale.translate ("Include all classes") end
+	m_import_metrics_from_file: STRING_GENERAL is do Result := locale.translate("Import metrics from file") end
+	m_input_domain: STRING_GENERAL is			do Result := locale.translate("&Input domain") end
+	m_library: STRING_GENERAL is				do Result := locale.translate ("Library") end
+	m_move_down: STRING_GENERAL is				do Result := locale.translate ("Move down") end
+	m_move_up: STRING_GENERAL is				do Result := locale.translate ("Move up") end
+	m_new_metric: STRING_GENERAL is				do Result := locale.translate ("New metric") end
+	m_open_user_defined_metric: STRING_GENERAL is	do Result := locale.translate ("Open user defined metrics externally") end
+	m_Pick: STRING_GENERAL is					do Result := locale.translate("&Pick") end
+	m_quick_metric: STRING_GENERAL is			do Result := locale.translate("Quick metric") end
+	m_reload_metrics: STRING_GENERAL is			do Result := locale.translate("&Reload metrics") end
+	m_remove: STRING_GENERAL					do Result := locale.translate ("&Remove") end
+	m_remove_all: STRING_GENERAL				do Result := locale.translate ("Remove &all") end
+	m_remove_from_diagram: STRING_GENERAL		do Result := locale.translate ("&Remove from diagram") end
+	m_remove_from_favorites: STRING_GENERAL		do Result := locale.translate ("&Remove from Favorites") end
+	m_search_scope: STRING_GENERAL		do Result := locale.translate ("Search scope") end
+	m_show_diagram_history: STRING_GENERAL is	do Result := locale.translate("&Show diagram history")	end
+	m_Show: STRING_GENERAL is					do Result := locale.translate("&Show")	end
+	m_synchronize_in_tools: STRING_GENERAL is	do Result := locale.translate("Synchronize in tools")	end
+	m_View: STRING_GENERAL is					do Result := locale.translate("&View")	end
 
 feature -- Label texts
 
@@ -934,6 +966,7 @@ feature -- Label texts
 	l_Not_empty: STRING_GENERAL is				do Result := locale.translate("Generate default feature clauses")	end
 	l_no_break_point: STRING_GENERAL is				do Result := locale.translate("No breakpoints")	end
 	l_edit_project: STRING_GENERAL is			do Result := locale.translate("Edit Project")	end
+	l_edit_text: STRING_GENERAL is				do Result := locale.translate("Edit Text") end
 	l_eiffel_class: STRING_GENERAL is			do Result := locale.translate ("Eiffel Class") end
 	l_eiffel_cluster: STRING_GENERAL is			do Result := locale.translate ("Eiffel Cluster") end
 	l_Elements: STRING_GENERAL is				do Result := locale.translate("elements.")	end
@@ -1484,7 +1517,7 @@ feature -- Label texts
 	l_callees_from_supplier_class: STRING_GENERAL is do Result := locale.translate("Callees from supplier class") end
 	l_from_x: STRING is "From "
 	h_categorize_folder: STRING_GENERAL is do Result := locale.translate("Categorize classes in folder?") end
-	h_show_syntactical_classes: STRING_GENERAL is do Result := locale.translate("Show only synctactically referenced classes?") end
+	h_show_syntactical_classes: STRING_GENERAL is do Result := locale.translate("Show only syntactically referenced classes?") end
 	h_show_normal_referenced_classes: STRING_GENERAL is do Result := locale.translate("Show normal referenced classes?") end
 	h_show_ancestor_classes: STRING_GENERAL is do Result := locale.translate("Show ancestor classes?") end
 	h_show_descendant_classes: STRING_GENERAL is do Result := locale.translate("Show descendant classes?") end
@@ -1546,6 +1579,8 @@ feature -- Label texts
 	l_existing_layout_names: STRING_GENERAL is do Result := locale.translate ("Existing Layouts:") end
 	l_overwrite_layout (a_name: STRING_GENERAL): STRING_GENERAL is do Result := locale.format_string (locale.translate ("A layout with the name '$1' already exists. Do you want to overwrite?"), [a_name]) end
 	l_open_layout_error: STRING_GENERAL is do Result := locale.translate ("Open layout error. Opening default layout instead.") end
+	l_open_exception_dialog_tooltip: STRING_GENERAL is do Result := locale.translate ("Open exception dialog for more details") end
+
 	h_click_to_open: STRING_GENERAL is do Result := locale.translate ("Click to open") end
 	l_layout: STRING_GENERAL is do Result := locale.translate ("Layout") end
 	l_tooltip_lbl: STRING_GENERAL is do Result := locale.translate ("Tooltip") end
@@ -1874,7 +1909,6 @@ feature -- Titles translation needless (Title Original) for preference strings.
 	to_Editor: STRING is						"Editor"
 	to_Debugging_tool: STRING is				"Debugging"
 
-
 	to_Output_tool: STRING is					"Output"
 	to_Diagram_tool: STRING is					"Diagram"
 	to_Class_tool: STRING is					"Class"
@@ -2183,5 +2217,4 @@ indexing
 		]"
 
 end -- class INTERFACE_NAMES
-
 

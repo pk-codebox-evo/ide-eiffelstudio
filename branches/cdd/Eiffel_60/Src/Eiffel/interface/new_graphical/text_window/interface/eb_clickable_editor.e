@@ -67,19 +67,14 @@ feature {NONE}-- Initialization
 			editor_drawing_area.set_pebble_function (agent pebble_from_x_y)
 			editor_drawing_area.enable_pebble_positioning
 			editor_drawing_area.drop_actions.extend (agent resume_cursor_for_drop)
+			editor_drawing_area.pick_actions.force_extend (agent suspend_cursor_blinking)
+			editor_drawing_area.pick_ended_actions.force_extend (agent resume_cursor_blinking)
 
-
-			--editor_drawing_area.set_configurable_target_menu_mode
-			--editor_drawing_area.set_configurable_target_menu_handler (agent handle_context_menu)
-		end
-
-	handle_context_menu (a_menu: EV_MENU; a_target_list: ARRAYED_LIST [EV_PND_TARGET_DATA]; a_source: EV_PICK_AND_DROPABLE; a_pebble: ANY)
-		do
-			a_menu.extend (create {EV_MENU_ITEM}.make_with_text ("There are " + a_target_list.count.out + " targets for " + a_pebble.generating_type))
+			editor_drawing_area.set_configurable_target_menu_mode
+			editor_drawing_area.set_configurable_target_menu_handler (agent (dev_window.menus.context_menu_factory).editor_menu (?, ?, ?, ?, Current))
 		end
 
 feature -- Access
-
 	text_length: INTEGER is
 			-- Length of displayed text.
 		do
@@ -391,9 +386,6 @@ feature {EB_CLICKABLE_MARGIN}-- Process Vision2 Events
 			-- Process single click on mouse buttons.
 		do
 			if not is_recycled then
-				if pick_n_drop_status = pnd_pick then
-					refresh_now
-				end
 				Precursor {EB_CUSTOM_WIDGETTED_EDITOR} (abs_x_pos, y_pos, button, unused1, unused2, unused3, a_screen_x, a_screen_y)
 			end
 		end
@@ -411,7 +403,6 @@ feature {EB_CLICKABLE_MARGIN}-- Process Vision2 Events
 		do
 			if button = 1 then
 				Precursor {EB_CUSTOM_WIDGETTED_EDITOR} (x_pos, y_pos, button, a_screen_x, a_screen_y)
-				set_pick_and_drop_status (no_pnd)
 			elseif button = 3 then
 				mouse_right_button_down := True
 				if x_pos <= 0 then
@@ -457,6 +448,11 @@ feature {EB_CLICKABLE_MARGIN}-- Process Vision2 Events
 			if not l_shortcuts.is_empty and then l_shortcuts.first /= Void then
 				l_shortcuts.first.apply
 				check_cursor_position
+			elseif ev_key.code = {EV_KEY_CONSTANTS}.key_menu then
+				if not text_displayed.is_empty then
+					check_cursor_position
+					editor_drawing_area.show_configurable_target_menu (current_cursor_position + left_margin_width, (text_displayed.cursor.y_in_lines) * line_height - (line_height // 2))
+				end
 			else
 				Precursor {EB_CUSTOM_WIDGETTED_EDITOR} (ev_key)
 			end
@@ -508,6 +504,10 @@ feature {EB_CLICKABLE_MARGIN} -- Pick and drop
 						create cur.make_from_character_pos (1, 1, text_displayed)
 						position_cursor (cur, x_pos, y_pos)
 						Result := text_displayed.stone_at (cur)
+						if Result = Void then
+							position_cursor (cur, x_pos -1, y_pos)
+							Result := text_displayed.stone_at (cur)
+						end
 						if Result /= Void and then Result.is_valid then
 							bkst ?= Result
 							if bkst = Void then
@@ -533,8 +533,6 @@ feature {EB_CLICKABLE_MARGIN} -- Pick and drop
 								if Result.x_stone_cursor /= Void then
 									editor_drawing_area.set_deny_cursor (Result.x_stone_cursor)
 								end
-								set_pick_and_drop_status (pnd_pick)
-
 								invalidate_line (l_number, True)
 								invalidate_line (l_line, True)
 							else
@@ -547,22 +545,6 @@ feature {EB_CLICKABLE_MARGIN} -- Pick and drop
 				end
 			end
 		end
-
-	set_pick_and_drop_status (a_status: INTEGER) is
-			-- Set status of pick and drop
-		require
-			status_valid: a_status = pnd_pick or a_status = no_pnd
-		do
-			if a_status = pnd_pick then
-				suspend_cursor_blinking
-			end
-		end
-
-	pick_n_drop_status: INTEGER
-			-- Step of the pick n drop where the editor is.
-
-	pnd_pick: INTEGER is 1
-	no_pnd: INTEGER is 2
 
 feature {NONE} -- Text Loading
 
@@ -728,6 +710,10 @@ feature {NONE} -- Memory management
 	internal_recycle is
 			-- Destroy `Current'
 		do
+			if dev_window /= Void and then dev_window.ui.current_editor = Current then
+					-- To avoid reference on recycled editor.
+				dev_window.ui.set_current_editor (Void)
+			end
 			Precursor {EB_CUSTOM_WIDGETTED_EDITOR}
 			if customizable_commands /= Void then
 				customizable_commands.wipe_out

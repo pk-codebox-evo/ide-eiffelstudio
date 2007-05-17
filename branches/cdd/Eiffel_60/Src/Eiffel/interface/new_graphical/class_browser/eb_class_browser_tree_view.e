@@ -59,31 +59,28 @@ feature -- Status report
 
 feature -- Access
 
-	control_bar: EV_WIDGET is
+	control_bar: ARRAYED_LIST [SD_TOOL_BAR_ITEM] is
 			-- Widget of a control bar through which, certain control can be performed upon current view
 		do
 			if control_tool_internal = Void then
-				create control_tool_internal
-				control_tool_bar.extend (create{EV_TOOL_BAR_SEPARATOR})
-				control_tool_bar.extend (display_path_button)
+				create control_tool_internal.make (4)
+				control_tool_internal.extend (create{SD_TOOL_BAR_SEPARATOR}.make)
+				control_tool_internal.extend (display_path_button)
 				if is_flat_view_enabled then
-					control_tool_bar.extend (normal_referenced_button)
-					control_tool_bar.extend (syntactical_button)
+					control_tool_internal.extend (normal_referenced_button)
+					control_tool_internal.extend (syntactical_button)
 				end
-				control_tool_internal.set_padding (2)
-				control_tool_internal.extend (control_tool_bar)
-				control_tool_internal.disable_item_expand (control_tool_bar)
 			end
 			Result := control_tool_internal
 		ensure then
 			result_attached: Result /= Void
 		end
 
-	control_tool_bar: EV_TOOL_BAR is
+	control_tool_bar: SD_TOOL_BAR is
 			-- Tool bar contained in `control_bar'
 		do
 			if control_tool_bar_internal = Void then
-				create control_tool_bar_internal
+				create control_tool_bar_internal.make
 			end
 			Result := control_tool_bar_internal
 		ensure
@@ -95,7 +92,7 @@ feature -- Access
 			-- This is used when a tree view is to be built. And starting element serves as the root of that tree.
 			-- If `starting_element' is Void, don't build tree.
 
-	syntactical_button: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON is
+	syntactical_button: EB_PREFERENCED_SD_TOOL_BAR_TOGGLE_BUTTON is
 			-- Toggle button to indicate if syntactical supplier/clients are displayed
 		do
 			if syntactical_button_internal = Void then
@@ -109,7 +106,7 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
-	normal_referenced_button: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON is
+	normal_referenced_button: EB_PREFERENCED_SD_TOOL_BAR_TOGGLE_BUTTON is
 			-- Toggle button to indicate if normal referenced supplier/clients are displayed
 		do
 			if normal_referenced_button_internal = Void then
@@ -633,10 +630,10 @@ feature{NONE} -- Implementation
 	class_table_internal: like class_table
 			-- Implementation of `class_table'		
 
-	control_tool_internal: EV_HORIZONTAL_BOX
+	control_tool_internal: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
 			-- Implementation of `control_bar'
 
-	display_path_button: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON is
+	display_path_button: EB_PREFERENCED_SD_TOOL_BAR_TOGGLE_BUTTON is
 			-- Toggle button to turn on/off item path display
 		do
 			if display_path_button_internal = Void then
@@ -805,6 +802,5 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
-
 
 end

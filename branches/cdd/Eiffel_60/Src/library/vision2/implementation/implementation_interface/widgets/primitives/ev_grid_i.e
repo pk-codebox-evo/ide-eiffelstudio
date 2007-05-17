@@ -30,7 +30,12 @@ inherit
 			set_deny_cursor,
 			enable_capture,
 			disable_capture,
-			has_capture
+			has_capture,
+			set_pick_and_drop_mode,
+			set_drag_and_drop_mode,
+			set_target_menu_mode,
+			set_configurable_target_menu_mode,
+			set_configurable_target_menu_handler
 		end
 
 	EV_TOOLTIPABLE_I
@@ -1940,7 +1945,42 @@ feature -- Status setting
 
 	is_horizontal_scroll_bar_show_requested: BOOLEAN
 			-- Will a horizontal scroll bar be displayed in `Current' when
-			-- `virtual_width' exceeds `viewable_width'?	
+			-- `virtual_width' exceeds `viewable_width'?
+
+	set_pick_and_drop_mode is
+			-- Set transport mechanism to pick and drop,
+		do
+			Precursor {EV_CELL_I}
+			drawable.set_pick_and_drop_mode
+		end
+
+	set_drag_and_drop_mode is
+			-- Set transport mechanism to drag and drop,
+		do
+			Precursor {EV_CELL_I}
+			drawable.set_drag_and_drop_mode
+		end
+
+	set_target_menu_mode is
+			-- Set transport mechanism to a target_menu.
+		do
+			Precursor {EV_CELL_I}
+			drawable.set_target_menu_mode
+		end
+
+	set_configurable_target_menu_mode is
+			-- Set transport mechanism to a configurable target_menu.
+		do
+			Precursor {EV_CELL_I}
+			drawable.set_configurable_target_menu_mode
+		end
+
+	set_configurable_target_menu_handler (a_handler: like configurable_target_menu_handler) is
+			-- Set Configurable Target Menu Handler to `a_handler'.
+		do
+			Precursor {EV_CELL_I}(a_handler)
+			drawable.set_configurable_target_menu_handler (a_handler)
+		end
 
 feature -- Status report
 
@@ -3016,6 +3056,7 @@ feature {EV_GRID_COLUMN_I, EV_GRID_I, EV_GRID_DRAWER_I, EV_GRID_ROW_I, EV_GRID_I
 			l_is_row_height_fixed: BOOLEAN
 			l_row_height: INTEGER
 			l_original_computed_visible_row_count: INTEGER
+			l_visible_row_count: INTEGER
 		do
 			l_original_computed_visible_row_count := computed_visible_row_count
 			original_row_index := rows.index
@@ -3049,20 +3090,15 @@ feature {EV_GRID_COLUMN_I, EV_GRID_I, EV_GRID_DRAWER_I, EV_GRID_ROW_I, EV_GRID_I
 				else
 					current_row_offset := row_offsets @ (index)
 					rows.go_i_th (index)
+					l_visible_row_count := visible_row_count
 					if index > 1 then
-						if index < last_row_count_in_recompute_row_offsets then
+						if l_visible_row_count > 0 and then index <= visible_indexes_to_row_indexes.i_th (l_visible_row_count) then
 							visible_count := row_indexes_to_visible_indexes.i_th (index)
 						else
-							--| FIXME This check no longer holds in all circumstances due to
-							--| `last_row_count_in_recompute_row_offsets' change.
---							check
---								index_is_row_count: index = row_count
---							end
-								-- In this situation, we are adding a new row that has not already
-								-- been computed. Now we set the visible count to the previous (and last)
-								-- item and add one. Without this, we are unable to determine the
-								-- visible row count.
-							visible_count := row_indexes_to_visible_indexes.i_th (index - 1) + 1
+								-- In this situation, we are adding a row that has not already been computed.
+								-- Therefore, `visible_count' is set to the number of rows that was previously
+								-- computed during the last call to this feature.
+							visible_count := l_visible_row_count
 						end
 					else
 							-- In this case, the feature has already been called when there are
@@ -3151,15 +3187,10 @@ feature {EV_GRID_COLUMN_I, EV_GRID_I, EV_GRID_DRAWER_I, EV_GRID_ROW_I, EV_GRID_I
 				virtual_size_changed_actions_internal.call ([virtual_width, virtual_height])
 			end
 			rows.go_i_th (original_row_index)
-
-			last_row_count_in_recompute_row_offsets := l_row_count
 		ensure
 			offsets_consistent_when_not_fixed: not is_row_height_fixed implies row_offsets.count >= rows.count + 1
 			row_index_not_changed: old rows.index = rows.index
 		end
-
- 	last_row_count_in_recompute_row_offsets: INTEGER
- 		-- The row count of `Current' last time `recompute_row_offsets' was called.
 
 	restrict_virtual_y_position_to_maximum is
 			-- Ensure `virtual_y_position' is within the maximum permitted.
@@ -5171,7 +5202,7 @@ feature {EV_GRID_LOCKED_I} -- Event handling
 		local
 			l_parent_row_i: EV_GRID_ROW_I
 		do
-			if a_item.row.height > 0 or a_item.row.is_show_requested then
+			if a_item.row.height > 0 and then a_item.row.is_show_requested then
 					-- Only visible rows may be navigated to.
 				Result := True
 				if is_tree_enabled then

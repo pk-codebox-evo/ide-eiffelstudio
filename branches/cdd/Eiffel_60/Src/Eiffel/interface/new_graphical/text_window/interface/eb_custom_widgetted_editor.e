@@ -165,8 +165,12 @@ feature {NONE} -- Quick search bar.
 			bottom_widget_created: bottom_widget /= Void
 		do
 			create search_bar.make (search_tool)
-			search_tool.first_result_reached_actions.extend (agent search_bar.trigger_first_reached_pixmap)
-			search_tool.bottom_reached_actions.extend (agent search_bar.trigger_bottom_reached_pixmap)
+
+			first_result_reached_action := agent search_bar.trigger_first_reached_pixmap
+			bottom_reached_action := agent search_bar.trigger_bottom_reached_pixmap
+
+			search_tool.first_result_reached_actions.extend (first_result_reached_action)
+			search_tool.bottom_reached_actions.extend (bottom_reached_action)
 			bottom_widget.extend (search_bar)
 			hide_search_bar
 			search_bar.advanced_button.select_actions.extend (agent trigger_advanced_search)
@@ -412,9 +416,6 @@ feature -- Search commands
 			-- Display search tool if necessary.
 		do
 			if search_tool /= Void then
-				if not search_tool.mode_is_search then
-					search_tool.set_mode_is_search (True)
-				end
 				prepare_search_tool (False)
 			end
 		end
@@ -423,9 +424,6 @@ feature -- Search commands
 			-- Display search tool (with Replace field) if necessary.
 		do
 			if search_tool /= Void then
-				if search_tool.mode_is_search then
-					search_tool.set_mode_is_search (False)
-				end
 				prepare_search_tool (True)
 			end
 		end
@@ -446,6 +444,10 @@ feature {NONE} -- Implementation
 			-- Recycle
 		do
 			dev_window.window.focus_in_actions.prune_all (check_search_bar_visible_procedure)
+			if search_tool /= Void then
+				search_tool.first_result_reached_actions.prune_all (first_result_reached_action)
+				search_tool.bottom_reached_actions.prune_all (bottom_reached_action)
+			end
 			search_bar.destroy
 			Precursor {EB_EDITOR}
 		end
@@ -483,7 +485,7 @@ feature {NONE} -- Implementation
 			l_search_tool := search_tool
 			l_search_tool.set_check_class_succeed (True)
 			if not text_displayed.has_selection then
-				select_current_token
+				select_current_token (True)
 			end
 			if text_displayed.has_selection then
 				l_search_tool.force_new_search
@@ -542,6 +544,10 @@ feature {NONE} -- Implementation
 
 	check_search_bar_visible_procedure: PROCEDURE [ANY, TUPLE];
 			-- Procedure instance added into focus_in_actions of current window
+
+	first_result_reached_action: PROCEDURE [ANY, TUPLE]
+	bottom_reached_action: PROCEDURE [ANY, TUPLE];
+			-- Actions to recycle
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

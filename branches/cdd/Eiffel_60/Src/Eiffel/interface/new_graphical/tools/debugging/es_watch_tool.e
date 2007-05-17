@@ -114,6 +114,9 @@ feature {NONE} -- Initialization
 
 			esgrid.set_pre_activation_action (agent pre_activate_cell)
 
+			esgrid.set_configurable_target_menu_mode
+			esgrid.set_configurable_target_menu_handler (agent context_menu_handler)
+
 			watches_grid := esgrid
 			initialize_watches_grid_layout (preferences.debug_tool_data.is_watches_grids_layout_managed_preference)
 
@@ -123,86 +126,95 @@ feature {NONE} -- Initialization
 	build_mini_toolbar is
 			-- Build associated tool bar
 		local
-			tbb: EV_TOOL_BAR_BUTTON
+			tbb: SD_TOOL_BAR_BUTTON
 			scmd: EB_STANDARD_CMD
 		do
-			create mini_toolbar
+			create mini_toolbar.make
 
 			create scmd.make
 			scmd.set_mini_pixmap (pixmaps.mini_pixmaps.toolbar_dropdown_icon)
+			scmd.set_mini_pixel_buffer (pixmaps.mini_pixmaps.toolbar_dropdown_icon_buffer)
 			scmd.set_tooltip (interface_names.f_Open_watch_tool_menu)
 			scmd.add_agent (agent open_watch_menu (mini_toolbar, 0, 0))
 			scmd.enable_sensitive
-			mini_toolbar.extend (scmd.new_mini_toolbar_item)
+			mini_toolbar.extend (scmd.new_mini_sd_toolbar_item)
 
 			create toggle_auto_behavior_cmd.make
 			toggle_auto_behavior_cmd.set_pixmap (pixmaps.mini_pixmaps.watch_auto_icon)
 			toggle_auto_behavior_cmd.set_mini_pixmap (pixmaps.mini_pixmaps.watch_auto_icon)
+			toggle_auto_behavior_cmd.set_mini_pixel_buffer (pixmaps.mini_pixmaps.watch_auto_icon_buffer)
 			toggle_auto_behavior_cmd.set_name ("AutoExpression")
 			toggle_auto_behavior_cmd.set_menu_name (interface_names.m_auto_expressions)
 			toggle_auto_behavior_cmd.set_tooltip (interface_names.m_auto_expressions)
 			toggle_auto_behavior_cmd.add_action (agent toggle_auto_expressions)
 			toggle_auto_behavior_cmd.set_is_selected_function (agent auto_expression_enabled)
 			toggle_auto_behavior_cmd.enable_sensitive
-			mini_toolbar.extend (toggle_auto_behavior_cmd.new_mini_toolbar_item)
-
+			mini_toolbar.extend (toggle_auto_behavior_cmd.new_mini_sd_toolbar_item)
 
 			create create_expression_cmd.make
 			create_expression_cmd.set_mini_pixmap (pixmaps.mini_pixmaps.new_expression_icon)
+			create_expression_cmd.set_mini_pixel_buffer (pixmaps.mini_pixmaps.new_expression_icon_buffer)
 			create_expression_cmd.set_tooltip (interface_names.e_new_expression)
 			create_expression_cmd.add_agent (agent define_new_expression)
 			create_expression_cmd.enable_sensitive
-			mini_toolbar.extend (create_expression_cmd.new_mini_toolbar_item)
+			mini_toolbar.extend (create_expression_cmd.new_mini_sd_toolbar_item)
 
 			create edit_expression_cmd.make
 			edit_expression_cmd.set_mini_pixmap (pixmaps.mini_pixmaps.general_edit_icon)
+			edit_expression_cmd.set_mini_pixel_buffer (pixmaps.mini_pixmaps.general_edit_icon_buffer)
 			edit_expression_cmd.set_tooltip (interface_names.e_edit_expression)
 			edit_expression_cmd.add_agent (agent edit_expression)
-			tbb := edit_expression_cmd.new_mini_toolbar_item
+			tbb := edit_expression_cmd.new_mini_sd_toolbar_item
 			mini_toolbar.extend (tbb)
 
 			create toggle_state_of_expression_cmd.make
 			toggle_state_of_expression_cmd.set_mini_pixmap (pixmaps.mini_pixmaps.general_toogle_icon)
+			toggle_state_of_expression_cmd.set_mini_pixel_buffer (pixmaps.mini_pixmaps.general_toogle_icon_buffer)
 			toggle_state_of_expression_cmd.set_tooltip (interface_names.e_toggle_state_of_expressions)
 			toggle_state_of_expression_cmd.add_agent (agent toggle_state_of_selected)
-			tbb := toggle_state_of_expression_cmd.new_mini_toolbar_item
+			tbb := toggle_state_of_expression_cmd.new_mini_sd_toolbar_item
 			mini_toolbar.extend (tbb)
 
 			create slices_cmd.make (Current)
 			slices_cmd.enable_sensitive
-			mini_toolbar.extend (slices_cmd.new_mini_toolbar_item)
+			mini_toolbar.extend (slices_cmd.new_mini_sd_toolbar_item)
 
 			create hex_format_cmd.make (agent set_hexadecimal_mode (?))
 			hex_format_cmd.enable_sensitive
-			mini_toolbar.extend (hex_format_cmd.new_mini_toolbar_item)
+			mini_toolbar.extend (hex_format_cmd.new_mini_sd_toolbar_item)
 
-			mini_toolbar.extend (object_viewer_cmd.new_mini_toolbar_item)
+			mini_toolbar.extend (object_viewer_cmd.new_mini_sd_toolbar_item)
 
 			create delete_expression_cmd.make
 			delete_expression_cmd.set_mini_pixmap (pixmaps.mini_pixmaps.general_delete_icon)
+			delete_expression_cmd.set_mini_pixel_buffer (pixmaps.mini_pixmaps.general_delete_icon_buffer)
 			delete_expression_cmd.set_tooltip (interface_names.e_remove_expressions)
 			delete_expression_cmd.add_agent (agent remove_selected)
-			tbb := delete_expression_cmd.new_mini_toolbar_item
+			tbb := delete_expression_cmd.new_mini_sd_toolbar_item
 			tbb.drop_actions.extend (agent remove_object_line)
 			tbb.drop_actions.set_veto_pebble_function (agent is_removable )
 			mini_toolbar.extend (tbb)
 
 			create move_up_cmd.make
 			move_up_cmd.set_mini_pixmap (pixmaps.mini_pixmaps.general_up_icon)
+			move_up_cmd.set_mini_pixel_buffer (pixmaps.mini_pixmaps.general_up_icon_buffer)
 			move_up_cmd.set_tooltip (interface_names.f_move_item_up)
 			move_up_cmd.add_agent (agent move_selected (watches_grid, -1))
-			tbb := move_up_cmd.new_mini_toolbar_item
+			tbb := move_up_cmd.new_mini_sd_toolbar_item
 			mini_toolbar.extend (tbb)
 
 			create move_down_cmd.make
 			move_down_cmd.set_mini_pixmap (pixmaps.mini_pixmaps.general_down_icon)
+			move_down_cmd.set_mini_pixel_buffer (pixmaps.mini_pixmaps.general_down_icon_buffer)
 			move_down_cmd.set_tooltip (interface_names.f_move_item_down)
 			move_down_cmd.add_agent (agent move_selected (watches_grid, +1))
-			tbb := move_down_cmd.new_mini_toolbar_item
+			tbb := move_down_cmd.new_mini_sd_toolbar_item
 			mini_toolbar.extend (tbb)
 
 				--| Attach the slices_cmd to the objects grid
 			watches_grid.set_slices_cmd (slices_cmd)
+
+			mini_toolbar.compute_minimum_size
 		ensure then
 			mini_toolbar_exists: mini_toolbar /= Void
 		end
@@ -213,6 +225,12 @@ feature {NONE} -- Initialization
 		do
 			Precursor {EB_STONABLE_TOOL} (a_docking_manager)
 			content.drop_actions.extend (agent on_element_drop)
+		end
+
+	context_menu_handler (a_menu: EV_MENU; a_target_list: ARRAYED_LIST [EV_PND_TARGET_DATA]; a_source: EV_PICK_AND_DROPABLE; a_pebble: ANY) is
+			-- Context menu handler
+		do
+			develop_window.menus.context_menu_factory.watch_tool_menu (a_menu, a_target_list, a_source, a_pebble, Current)
 		end
 
 feature -- Properties
@@ -234,7 +252,7 @@ feature {EB_DEBUGGER_MANAGER} -- Closing
 
 feature -- Access
 
-	mini_toolbar: EV_TOOL_BAR
+	mini_toolbar: SD_TOOL_BAR
 			-- Associated mini toolbar.
 
 	widget: EV_WIDGET is
@@ -325,11 +343,10 @@ feature -- Properties setting
 
 feature {ES_OBJECTS_GRID_SLICES_CMD} -- Query
 
-	objects_grid_item (addr: STRING): ES_OBJECTS_GRID_LINE is
+	objects_grid_object_line (addr: STRING): ES_OBJECTS_GRID_OBJECT_LINE is
 		local
 			r: INTEGER
 			lrow: EV_GRID_ROW
-			litem: ES_OBJECTS_GRID_LINE
 			ladd: STRING
 		do
 			from
@@ -339,11 +356,11 @@ feature {ES_OBJECTS_GRID_SLICES_CMD} -- Query
 			loop
 				lrow := watches_grid.row (r)
 				if lrow.parent_row = Void then
-					litem ?= grid_data_from_widget (lrow)
-					if litem /= Void then
-						ladd := litem.object_address
-						if ladd /= Void and then ladd.is_equal (addr) then
-							Result := litem
+					Result ?= grid_data_from_widget (lrow)
+					if Result /= Void then
+						ladd := Result.object_address
+						if ladd = Void or else not ladd.is_equal (addr) then
+							Result := Void
 						end
 					end
 				end
@@ -511,6 +528,79 @@ feature {NONE} -- add new expression from the grid
 	valid_expression_text (s: STRING_32): BOOLEAN is
 		do
 			Result := s /= Void and then not s.has ('%R') and not s.has ('%N')
+		end
+
+feature {EB_CONTEXT_MENU_FACTORY} -- Context menu
+
+	on_element_drop (s: CLASSC_STONE) is
+			-- Something was dropped in `ev_list'.
+		local
+			fst: FEATURE_STONE
+			cst: CLASSC_STONE
+			ost: OBJECT_STONE
+			fost: FEATURE_ON_OBJECT_STONE
+			dlg: EB_EXPRESSION_DEFINITION_DIALOG
+			oname: STRING
+		do
+			show
+			fost ?= s
+			if fost /= Void then
+				oname := fost.feature_name
+				if ev_application.ctrl_pressed then
+					ost := fost.object_stone
+					if ost /= Void then
+						on_element_drop (ost)
+					end
+				else
+					create dlg.make_with_expression_on_object (fost.object_address, fost.feature_name)
+				end
+			else
+				fst ?= s
+				if fst /= Void then
+					oname := fst.feature_name
+					create dlg.make_with_expression_text (fst.feature_name)
+					if fst.e_class /= Void then
+						dlg.set_class_text (fst.e_class)
+					end
+				else
+					ost ?= s
+					if ost /= Void then
+						oname := ost.name + ": " + ost.object_address
+						if ev_application.ctrl_pressed then
+							add_object (ost, oname)
+						else
+							create dlg.make_with_named_object (ost.object_address, oname)
+						end
+					else
+						cst ?= s
+						if cst /= Void then
+							create dlg.make_with_class (cst.e_class)
+						end
+					end
+				end
+			end
+			if dlg /= Void then
+				dlg.set_callback (agent add_expression_with_dialog (dlg))
+				dlg.show_modal_to_window (debugger_manager.debugging_window.window)
+			end
+		end
+
+	is_removable (a: ANY): BOOLEAN is
+		do
+			Result := True
+		end
+
+	remove_object_line (a: ANY) is
+		do
+			remove_selected
+		end
+
+	has_selected_item: BOOLEAN is
+			-- Does the grid have selected item?
+		do
+			if watches_grid /= Void then
+				Result := not watches_grid.selected_items.is_empty
+			end
 		end
 
 feature {NONE} -- Event handling
@@ -737,16 +827,6 @@ feature {NONE} -- Event handling
 			end
 		end
 
-	is_removable (a: ANY): BOOLEAN is
-		do
-			Result := True
-		end
-
-	remove_object_line (a: ANY) is
-		do
-			remove_selected
-		end
-
 	remove_selected is
 			-- Remove the selected expressions from the list.
 		local
@@ -794,59 +874,6 @@ feature {NONE} -- Event handling
 --| bug#11272 : using the next line raises display issue:
 --|			watches_grid.remove_row (row.index)
 			watches_grid.remove_rows (row.index, row.index + row.subrow_count_recursive)
-		end
-
-	on_element_drop (s: CLASSC_STONE) is
-			-- Something was dropped in `ev_list'.
-		local
-			fst: FEATURE_STONE
-			cst: CLASSC_STONE
-			ost: OBJECT_STONE
-			fost: FEATURE_ON_OBJECT_STONE
-			dlg: EB_EXPRESSION_DEFINITION_DIALOG
-			oname: STRING
-		do
-			show
-			fost ?= s
-			if fost /= Void then
-				oname := fost.feature_name
-				if ev_application.ctrl_pressed then
-					ost := fost.object_stone
-					if ost /= Void then
-						on_element_drop (ost)
-					end
-				else
-					create dlg.make_with_expression_on_object (fost.object_address, fost.feature_name)
-				end
-			else
-				fst ?= s
-				if fst /= Void then
-					oname := fst.feature_name
-					create dlg.make_with_expression_text (fst.feature_name)
-					if fst.e_class /= Void then
-						dlg.set_class_text (fst.e_class)
-					end
-				else
-					ost ?= s
-					if ost /= Void then
-						oname := ost.name + ": " + ost.object_address
-						if ev_application.ctrl_pressed then
-							add_object (ost, oname)
-						else
-							create dlg.make_with_named_object (ost.object_address, oname)
-						end
-					else
-						cst ?= s
-						if cst /= Void then
-							create dlg.make_with_class (cst.e_class)
-						end
-					end
-				end
-			end
-			if dlg /= Void then
-				dlg.set_callback (agent add_expression_with_dialog (dlg))
-				dlg.show_modal_to_window (debugger_manager.debugging_window.window)
-			end
 		end
 
 	disable_commands_on_expressions is
@@ -1461,3 +1488,4 @@ indexing
 		]"
 
 end -- class ES_WATCH_TOOL
+

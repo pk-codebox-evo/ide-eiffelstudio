@@ -592,7 +592,6 @@ feature -- Generation Structure
 
 			create md_dispenser.make
 
-
 				-- Create signature for `done' and `sync' in once computation.
 			create done_sig.make
 			done_sig.set_type ({MD_SIGNATURE_CONSTANTS}.Element_type_boolean, 0)
@@ -1301,6 +1300,7 @@ feature -- Class info
 				until
 					i > nb
 				loop
+					l_ext_class := Void
 					l_type := l_gen_type.meta_generic.item (i)
 					l_ref ?= l_type
 					if l_ref /= Void then
@@ -3350,7 +3350,6 @@ feature -- IL Generation
 					l_sequence_point_list.extend ([dbg_offsets_count, dbg_offsets, dbg_start_lines,
 						dbg_start_columns, dbg_end_lines, dbg_end_columns, feat.written_in])
 
-
 						--| feature is not attribute |--
 						-- we assume the feature concerned by `generate_feature_code'
 						-- here are static and not in_interface
@@ -4456,7 +4455,6 @@ feature -- Variables access
 				implementation_feature_token (type_i.implementation_id, a_feature_id))
 		end
 
-
 	generate_argument (n: INTEGER) is
 			-- Generate access to `n'-th variable arguments of current feature.
 		do
@@ -5044,7 +5042,6 @@ feature -- Conversion
 		do
 			method_body.put_opcode ({MD_OPCODES}.Conv_u8)
 		end
-
 
 	convert_to_real_64 is
 			-- Convert top of stack into appropriate type.
@@ -7215,28 +7212,6 @@ feature {CIL_CODE_GENERATOR, IL_MODULE, CUSTOM_ATTRIBUTE_GENERATOR} -- Custom at
 			l_ca_token: INTEGER
 		do
 			l_ca_token := md_emit.define_custom_attribute (token, ctor_token, data)
-		end
-
-feature {NONE} -- Onces
-
-	language_guid: COM_GUID is
-			-- Language guid used to identify our language when debugging.
-		once
-			create Result.make (0x6805C61E, 0x8195, 0x490C,
-				<<0x87, 0xEE, 0xA7, 0x13, 0x30, 0x1A, 0x67, 0x0C>>)
-		end
-
-	vendor_guid: COM_GUID is
-			-- Vendor guid used to identify us when debugging.
-		once
-			create Result.make (0xB68AF30E, 0x9424, 0x485F,
-				<<0x82, 0x64, 0xD4, 0xA7, 0x26, 0xC1, 0x62, 0xE7>>)
-		end
-
-	document_type_guid: COM_GUID is
-			-- Document type guid.
-		once
-			create Result.make_empty
 		end
 
 feature {NONE} -- Once per type definition

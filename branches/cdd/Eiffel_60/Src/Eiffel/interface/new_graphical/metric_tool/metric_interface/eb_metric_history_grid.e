@@ -288,7 +288,6 @@ feature{NONE} -- Grid item generation
 			result_attached: Result /= Void
 		end
 
-
 	previous_value_item (a_archive_node: EB_METRIC_ARCHIVE_NODE): EV_GRID_LABEL_ITEM is
 			-- Previous value item for `a_archive_node'		
 		require
@@ -482,7 +481,6 @@ feature{NONE} -- Item updator
 				a_item.align_text_center
 			end
 		end
-
 
 	update_time_item (a_item: EV_GRID_LABEL_ITEM; a_archive_node: EB_METRIC_ARCHIVE_NODE) is
 			-- Update `a_item' with `a_archive_node'.
@@ -878,6 +876,7 @@ feature{NONE} -- Implementation
 			grid.key_press_actions.extend (agent on_key_pressed)
 			l_grid_support := new_grid_support (grid)
 			l_grid_support.enable_grid_item_pnd_support
+			l_grid_support.set_context_menu_factory_function (agent context_menu_factory)
 			grid.enable_row_separators
 			grid.enable_column_separators
 			grid.enable_single_row_selection
@@ -917,6 +916,12 @@ feature{NONE} -- Implementation
 		deferred
 		end
 
+	context_menu_factory: EB_CONTEXT_MENU_FACTORY is
+			-- Context menu factory
+		do
+			Result := metric_history_panel.metric_tool.develop_window.menus.context_menu_factory
+		end
+
 invariant
 	last_selected_nodes_attached: last_selected_nodes /= Void
 	metric_history_panel_attached: metric_history_panel /= Void
@@ -953,6 +958,5 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
-
 
 end

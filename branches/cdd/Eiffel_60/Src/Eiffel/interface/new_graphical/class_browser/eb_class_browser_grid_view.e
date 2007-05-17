@@ -99,6 +99,12 @@ feature{NONE} -- Initialization
 			color_or_font_change_actions.extend (agent on_color_or_font_changed)
 			synchronize_color_or_font_change_with_editor
 			synchronize_scroll_behavior_with_editor
+
+				-- Setup context menu handler.
+			grid.set_configurable_target_menu_mode
+			grid.set_configurable_target_menu_handler (agent context_menu_handler)
+			set_context_menu_factory_function (agent (development_window.menus).context_menu_factory)
+
 			enable_direct_start_search
 			quick_search_bar.hide_tool_actions.extend (agent do grid.set_focus end)
 		end
@@ -128,7 +134,6 @@ feature -- Setting
 		ensure
 			tree_node_highlight_disabled: not is_tree_node_highlight_enabled
 		end
-
 
 	set_trace (a_msg: STRING) is
 			-- Set `trace' with `a_msg'.
@@ -442,7 +447,7 @@ feature -- Access
 			Result := widget_internal
 		end
 
-	control_bar: EV_WIDGET is
+	control_bar: ARRAYED_LIST [SD_TOOL_BAR_ITEM] is
 			-- Widget of a control bar through which, certain control can be performed upon current view
 			-- Every view can provide a customized control bar. Normally a tool bar is placed in this area
 			-- through which behavior (such as tooltip display) of current view can be changed.
@@ -479,7 +484,7 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
-	show_tooltip_button: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON is
+	show_tooltip_button: EB_PREFERENCED_SD_TOOL_BAR_TOGGLE_BUTTON is
 			-- Checkbox to indicate whether or not tooltip is displayed
 		do
 			if show_tooltip_button_internal = Void then
@@ -716,11 +721,29 @@ feature {NONE} -- Implementation
 
 	default_row_height: INTEGER is
 			-- Default height to set grid rows.
+		local
+			l_height: INTEGER
+			l_font_table: like label_font_table
+			l_index, l_count: INTEGER
 		do
 			if is_fixed_fonts_used then
-				Result := (create {EV_FONT}).height.max (pixmap_height)
+				from
+					l_font_table := label_font_table
+					l_count := l_font_table.count
+				until
+					l_index = l_count
+				loop
+					if l_font_table.item (l_index) /= Void then
+						l_height := l_font_table.item (l_index).height
+						if l_height > Result then
+							Result := l_height
+						end
+					end
+					l_index := l_index + 1
+				end
+				Result := Result.max (pixmap_height) + 1
 			else
-				Result := line_height.max (pixmap_height)
+				Result := line_height.max (pixmap_height) + 1
 					-- We make sure we give enough space to display the pixmap.
 			end
 		end
@@ -1177,6 +1200,5 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
-
 
 end

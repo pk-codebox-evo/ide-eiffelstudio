@@ -151,7 +151,10 @@ feature -- Query
 		end
 
 	is_locked: BOOLEAN
-			-- If zone can be docked?
+			-- If tool type zone can be docked?
+
+	is_editor_locked: BOOLEAN
+			-- If editor type zone can be docked?
 
 	docker_mediator: SD_DOCKER_MEDIATOR is
 			-- Manager for user dragging events.
@@ -262,6 +265,15 @@ feature -- Command
 			l_config.open_maximized_tool_data (a_file)
 		end
 
+	open_tool_bar_item_config (a_file: STRING_GENERAL) is
+			-- Open maximized tool config data.
+		local
+			l_config: SD_OPEN_CONFIG_MEDIATOR
+		do
+			create l_config.make (Current)
+			l_config.open_tool_bar_item_data (a_file)
+		end
+
 	set_main_area_background_color (a_color: EV_COLOR) is
 			-- Set main area (editors' area) background color.
 		require
@@ -317,14 +329,43 @@ feature -- Command
 			unlocked: is_locked = False
 		end
 
+	lock_editor is
+			-- Set `is_editor_locked' to `True'.
+		do
+			is_editor_locked := True
+		ensure
+			locked: is_editor_locked = True
+		end
+
+	unlock_editor is
+			-- Set `is_editor_locked' to `False'
+		do
+			is_editor_locked := False
+		ensure
+			unlocked: is_editor_locked = False
+		end
+
 	destroy is
 			-- Destroy all underline objects.
+		local
+			l_floating_zones: ARRAYED_LIST [SD_FLOATING_ZONE]
 		do
 			internal_shared.docking_manager_list.prune_all (Current)
 			property.destroy
 			agents.destroy
 			tool_bar_manager.destroy
 			contents.wipe_out
+
+			-- We have to destroy floating zones for Linux implementation, on Windows not needed.
+			from
+				l_floating_zones := query.floating_zones
+				l_floating_zones.start
+			until
+				l_floating_zones.after
+			loop
+				l_floating_zones.item.destroy
+				l_floating_zones.forth
+			end
 		end
 
 feature -- Contract support
@@ -367,8 +408,8 @@ feature -- Contract support
 
 feature {SD_TOOL_BAR_HOT_ZONE, SD_FLOATING_TOOL_BAR_ZONE, SD_CONTENT, SD_STATE,
 		SD_DOCKER_MEDIATOR, SD_OPEN_CONFIG_MEDIATOR, SD_SAVE_CONFIG_MEDIATOR, SD_HOT_ZONE, SD_ZONE, SD_TOOL_BAR_DOCKER_MEDIATOR,
-	 	SD_TOOL_BAR_MANAGER, SD_AUTO_HIDE_PANEL, SD_TOOL_BAR_ZONE,
-	  	SD_TAB_STUB, SD_MULTI_DOCK_AREA, SD_DOCKING_MANAGER_AGENTS,
+	 	SD_TOOL_BAR_MANAGER, SD_AUTO_HIDE_PANEL, SD_TOOL_BAR_ZONE, SD_WIDGET_TOOL_BAR,
+	  	SD_TAB_STUB, SD_MULTI_DOCK_AREA, SD_DOCKING_MANAGER_AGENTS, SD_TOOL_BAR_HIDDEN_ITEM_DIALOG,
 	  	SD_DOCKING_MANAGER_COMMAND, SD_DOCKING_MANAGER_ZONES, SD_AUTO_HIDE_ANIMATION,
 	  	SD_DOCKING_MANAGER_QUERY, SD_NOTEBOOK, SD_ZONE_NAVIGATION_DIALOG,
 	  	SD_TAB_STATE_ASSISTANT, SD_TOOL_BAR_HOT_ZONE, SD_TOOL_BAR_ZONE_ASSISTANT,

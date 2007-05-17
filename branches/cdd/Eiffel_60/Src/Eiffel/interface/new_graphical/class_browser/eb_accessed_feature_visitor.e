@@ -24,7 +24,8 @@ inherit
 			process_bracket_as,
 			process_like_id_as,
 			process_assign_as,
-			process_creation_as
+			process_creation_as,
+			process_interval_as
 		end
 
 	QL_UTILITY
@@ -200,7 +201,6 @@ feature -- Accessor checking
 			end
 		end
 
-
 	check_accessor_for_assertions (a_source_domain: QL_DOMAIN; a_immediate: BOOLEAN) is
 			-- Check accessors in assertions from `a_source_domain'.
 			-- `a_immediate' indicates if assertions should be immediate or not.
@@ -295,7 +295,6 @@ feature{NONE} -- Implementation/Process
 			Precursor (l_as)
 		end
 
-
 	process_like_id_as (l_as: LIKE_ID_AS) is
 		local
 			l_ancestor_feature: E_FEATURE
@@ -317,7 +316,7 @@ feature{NONE} -- Implementation/Process
 					set_last_class_c (l_old_last_class_c)
 				end
 			end
-			
+
 			check_accessor_for_operators (l_e_feature, l_e_feature_associated_class_id, l_as.anchor.name, l_as.anchor)
 		end
 
@@ -342,6 +341,25 @@ feature{NONE} -- Implementation/Process
 			l_flag_stack.remove
 			safe_process (l_as.type)
 			safe_process (l_as.call)
+		end
+
+	process_interval_as (l_as: INTERVAL_AS) is
+		local
+			l_atom: ATOMIC_AS
+		do
+			Precursor (l_as)
+			l_atom := l_as.lower
+			if l_atom.is_id then
+				if is_accessor (e_feature, last_class_c.class_id, l_atom.string_value) then
+					accessors.extend ([l_atom, last_class_c])
+				end
+			end
+			l_atom := l_as.upper
+			if l_atom /= Void then
+				if is_accessor (e_feature, last_class_c.class_id, l_atom.string_value) then
+					accessors.extend ([l_atom, last_class_c])
+				end
+			end
 		end
 
 feature{NONE} -- Implementation

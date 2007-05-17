@@ -132,7 +132,7 @@ feature -- Titles
 	f_send_to_history: STRING_GENERAL is do Result := locale.translate ("Send last calculated metric value to history") end
 	t_hide_old_archive: STRING_GENERAL is do Result := locale.translate ("Hide archives more than ") end
 	t_days: STRING_GENERAL is do Result := locale.translate (" days old.") end
-	f_keep_archive_detailed_result: STRING_GENERAL is do Result := locale.translate ("Keep detailed result when recalculating archive?") end
+	f_keep_archive_detailed_result: STRING_GENERAL is do Result := locale.translate ("Keep detailed result when recalculating archive?%NIf yes, detailed result will be available by double clicking the icon in %"Result%" column in history result area after recalculation.") end
 	f_keep_metric_detailed_result: STRING_GENERAL is do Result := locale.translate ("Keep detailed result when evaluating metric?") end
 	f_remove_detailed_result: STRING_GENERAL is do Result := locale.translate ("Remove detailed result?") end
 	t_detailed_result: STRING_GENERAL is do Result := locale.translate ("Result") end
@@ -1309,7 +1309,6 @@ feature -- Utilities
 			result_attached: Result /= Void
 		end
 
-
 	coloned_string (a_string: STRING_GENERAL; a_first_letter_upper: BOOLEAN): STRING_GENERAL is
 			-- String which is `a_string' suffixed with a colon
 			-- If `a_first_letter_upper' is True, make sure the first letter of returned string is in upper case (if current locale permits).
@@ -1389,7 +1388,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
-
 
 end
 

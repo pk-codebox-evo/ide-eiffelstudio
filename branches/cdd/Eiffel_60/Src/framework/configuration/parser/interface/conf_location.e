@@ -67,6 +67,7 @@ feature -- Access queries
 			-- The fully resolved path with file name.
 		do
 			Result := file_system.pathname_from_file_system (internal_evaluated_path, windows_file_system)
+			Result := file_system.canonical_pathname (Result)
 		ensure
 			Result_not_void: Result /= Void
 		end
@@ -77,6 +78,7 @@ feature -- Access queries
 			Result := file_system.pathname_from_file_system(directory (internal_evaluated_path), windows_file_system)
 				-- if we have an empty result that means we only got a '\' or '/' which got removed because we remove
 				-- trailing separators
+			Result := file_system.canonical_pathname (Result)
 			if Result.is_empty then
 				Result := operating_environment.directory_separator.out
 			end
@@ -134,7 +136,6 @@ feature -- Access queries
 		ensure
 			Result_not_void: Result /= Void
 		end
-
 
 feature {CONF_ACCESS} -- Update, stored in configuration file
 
@@ -289,7 +290,6 @@ feature {NONE} -- Implementation
 		ensure
 			Result_not_void: Result /= Void
 		end
-
 
 	directory (a_path: STRING): STRING is
 			-- Get the directory of `a_path' that is in the internal format.

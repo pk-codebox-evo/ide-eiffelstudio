@@ -28,6 +28,8 @@ inherit
 
 	EB_METRIC_TOOL_HELPER
 
+	EB_SHARED_WINDOW_MANAGER
+
 feature -- Metric menu
 
 	approximate_width_of_menu (a_menu: EV_MENU): INTEGER is
@@ -558,7 +560,5 @@ indexing
                          Customer support http://support.eiffel.com
                 ]"
 
-
 end
-
 

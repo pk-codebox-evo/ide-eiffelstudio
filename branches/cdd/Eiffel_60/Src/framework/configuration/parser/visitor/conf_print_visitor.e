@@ -87,6 +87,9 @@ feature -- Visit nodes
 			l_target: CONF_TARGET
 		do
 			create text.make_from_string (header)
+			if not text.is_empty then
+				append_text ("%N")
+			end
 			append_text_indent ("<system")
 			append_text (" xmlns=%""+Namespace+"%"")
 			append_text (" xmlns:xsi=%"http://www.w3.org/2001/XMLSchema-instance%"")
@@ -228,7 +231,6 @@ feature -- Visit nodes
 		ensure then
 			indent_back: indent = old indent
 		end
-
 
 	process_assembly (an_assembly: CONF_ASSEMBLY) is
 			-- Visit `an_assembly'.
@@ -707,7 +709,6 @@ feature {NONE} -- Implementation
 			end
 		end
 
-
 	append_options (an_options: CONF_OPTION; a_class: STRING) is
 			-- Append `an_options', optionally for `a_class'.
 		local
@@ -881,7 +882,6 @@ feature {NONE} -- Implementation
 			end
 
 		end
-
 
 	append_pre_group (a_tag: STRING; a_group: CONF_GROUP) is
 			-- Append the things that start the entry for `a_group'

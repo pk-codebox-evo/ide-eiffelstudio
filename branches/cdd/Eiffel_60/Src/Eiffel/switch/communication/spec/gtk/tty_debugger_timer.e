@@ -17,9 +17,9 @@ create
 
 feature {NONE} -- Initialization
 
-	make (dmi: TTY_DEBUGGER_MANAGER_IMP) is
+	make (dmi: TTY_DEBUGGER_EVENTS_HANDLER_IMP) is
 		do
-			tty_dbg_manager_imp := dmi
+			tty_dbg_events_handler_imp := dmi
 			create actions
 
 			if gtk_init_check then
@@ -51,7 +51,7 @@ feature -- Change
 
 feature {NONE} -- Implementation
 
-	tty_dbg_manager_imp: TTY_DEBUGGER_MANAGER_IMP;
+	tty_dbg_events_handler_imp: TTY_DEBUGGER_EVENTS_HANDLER_IMP;
 
 	timeout_connection_id: INTEGER
 
@@ -88,7 +88,6 @@ feature {NONE} -- Implementation
 		alias
 			"c_ev_gtk_callback_marshal_set_is_enabled"
 		end
-
 
 	frozen marshal_timeout_connect (a_delay: INTEGER_32; an_agent: PROCEDURE [ANY, TUPLE]): INTEGER_32
 			-- Call `an_agent' after `a_delay'.

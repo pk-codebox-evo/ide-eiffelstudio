@@ -503,6 +503,12 @@ feature{NONE} -- Implementation/Data
 	pixel_buffer_internal: like pixel_buffer
 			-- Implementation of `pixel_buffer'
 
+	veto_pebble_function (a_any: ANY): BOOLEAN is
+			-- Veto pebble function
+		do
+			Result := actual_veto_format_result
+		end
+
 feature{NONE} -- Implementation/Setting
 
 	set_command_name_internal (a_name: like command_name_internal) is
@@ -510,9 +516,9 @@ feature{NONE} -- Implementation/Setting
 		require
 			a_name_attached: a_name /= Void
 		do
-			command_name_internal := a_name
+			command_name_internal := a_name.twin
 		ensure
-			command_name_internal_set: command_name_internal = a_name
+			command_name_internal_set: command_name_internal.is_equal (a_name)
 		end
 
 	set_header_internal (a_header: like header_internal) is
@@ -520,9 +526,9 @@ feature{NONE} -- Implementation/Setting
 		require
 			a_header_attached: a_header /= Void
 		do
-			header_internal := a_header
+			header_internal := a_header.twin
 		ensure
-			header_internal_set: header_internal = a_header
+			header_internal_set: header_internal.is_equal (a_header)
 		end
 
 	set_temp_header_internal (a_temp_header: like temp_header_internal) is
@@ -530,9 +536,9 @@ feature{NONE} -- Implementation/Setting
 		require
 			a_temp_header_attached: a_temp_header /= Void
 		do
-			temp_header_internal := a_temp_header
+			temp_header_internal := a_temp_header.twin
 		ensure
-			temp_header_internal_set: temp_header_internal = a_temp_header
+			temp_header_internal_set: temp_header_internal.is_equal (a_temp_header)
 		end
 
 	set_menu_name_internal (a_name: like menu_name_internal) is
@@ -540,9 +546,9 @@ feature{NONE} -- Implementation/Setting
 		require
 			a_name_attached: a_name /= Void
 		do
-			menu_name_internal := a_name
+			menu_name_internal := a_name.twin
 		ensure
-			menu_name_internal_set: menu_name_internal = a_name
+			menu_name_internal_set: menu_name_internal.is_equal (a_name)
 		end
 
 	load_pixmap is
@@ -608,6 +614,5 @@ indexing
 			 Website http://www.eiffel.com
 			 Customer support http://support.eiffel.com
 		]"
-
 
 end

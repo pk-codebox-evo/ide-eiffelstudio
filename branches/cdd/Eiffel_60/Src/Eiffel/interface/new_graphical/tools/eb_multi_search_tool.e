@@ -11,8 +11,6 @@ class
 inherit
 
 	EB_MULTI_SEARCH_TOOL_IMP
-		export
-			{MSR_REPLACE_IN_ESTUDIO_STRATEGY, EB_SEARCH_REPORT_TOOL} develop_window
 		redefine
 			make,
 			reverse,
@@ -105,9 +103,6 @@ feature {NONE} -- Initialization
 
 			replace_combo_box.key_press_actions.extend (agent key_pressed (?, False))
 			replace_combo_box.drop_actions.extend (agent display_stone_signature (replace_combo_box, ?))
-
-			replace_check_button.select_actions.extend (agent switch_mode)
-			replace_check_button.key_press_actions.extend (agent key_pressed (?, True ))
 
 			replace_button.select_actions.extend (agent replace_current)
 			replace_button.key_press_actions.extend (agent handle_enter_on_button (?, agent replace_current))
@@ -574,30 +569,6 @@ feature {EB_SEARCH_REPORT_GRID, EB_CUSTOM_WIDGETTED_EDITOR} -- Build interface
 			content.focus_in_actions.extend (agent show)
 		end
 
-	report : EV_FRAME
-			-- Report container
-
-	report_button : EV_TOOL_BAR_BUTTON
-			-- Button to hide or show report.
-
-	summary_label : EV_LABEL
-			-- Label to show search summary.
-
-	shortcut_tool_bar: EV_TOOL_BAR
-			-- Tool bar contains expand all button etc.
-
-	new_search_tool_bar: EV_TOOL_BAR
-			-- Tool bar contains new search button.
-
-	new_search_button: EV_TOOL_BAR_BUTTON
-			-- Button to force a new search.
-
-	expand_all_button: EV_TOOL_BAR_BUTTON
-			-- Button to expand all.
-
-	collapse_all_button: EV_TOOL_BAR_BUTTON
-			-- Button to collapse all.
-
 	prepare_interface is
 			-- Initialize options' status.
 		local
@@ -700,7 +671,7 @@ feature {NONE} -- Shortcut button actions
 			end
 		end
 
-feature {EB_CUSTOM_WIDGETTED_EDITOR} -- Actions handler
+feature {EB_CUSTOM_WIDGETTED_EDITOR, EB_CONTEXT_MENU_FACTORY} -- Actions handler
 
 	new_search_or_go_next is
 			-- If new search is not necessary, go to next found.
@@ -838,7 +809,7 @@ feature {EB_CUSTOM_WIDGETTED_EDITOR} -- Actions handler
 			-- Add a new scope from a choose dialog to the list.
 		do
 			if choose_dialog = Void or else choose_dialog.is_destroyed then
-				create choose_dialog.make
+				create choose_dialog.make (develop_window.menus.context_menu_factory)
 				choose_dialog.set_class_add_action (agent add_class_item)
 				choose_dialog.set_cluster_add_action (agent add_cluster_item)
 				choose_dialog.set_folder_add_action (agent add_folder_item)
@@ -847,7 +818,18 @@ feature {EB_CUSTOM_WIDGETTED_EDITOR} -- Actions handler
 			else
 				choose_dialog.show
 			end
-			choose_dialog.set_focus
+			if not choose_dialog.is_destroyed and then
+				choose_dialog.is_displayed and then
+				choose_dialog.is_sensitive
+			then
+				choose_dialog.set_focus
+			end
+			if not choose_dialog.classes_tree.is_destroyed and then
+				choose_dialog.classes_tree.is_displayed and then
+				choose_dialog.classes_tree.is_sensitive
+			then
+				choose_dialog.classes_tree.set_focus
+			end
 		end
 
 	on_drop_custom_button (a_any: ANY) is
@@ -912,6 +894,12 @@ feature {EB_CUSTOM_WIDGETTED_EDITOR} -- Actions handler
 					remove_cluster_item (l_cluster_stone.group)
 				end
 			end
+		end
+
+	remove_all is
+			-- Remove all from scope
+		do
+			scope_list.wipe_out
 		end
 
 	on_text_edited (directly_edited: BOOLEAN) is
@@ -1008,16 +996,18 @@ feature {EB_CUSTOM_WIDGETTED_EDITOR} -- Actions handler
 			l_classi_stone: CLASSI_STONE
 			l_cluster_stone: CLUSTER_STONE
 		do
-			inspect notebook.pointed_tab_index
-			when 1 then
-				Result := true
-			when 2 then
-				l_classi_stone ?= a_stone
-				l_cluster_stone ?= a_stone
-				if l_classi_stone /= Void or else l_cluster_stone /= Void then
+			if notebook /= Void and then not notebook.is_destroyed then
+				inspect notebook.pointed_tab_index
+				when 1 then
 					Result := true
+				when 2 then
+					l_classi_stone ?= a_stone
+					l_cluster_stone ?= a_stone
+					if l_classi_stone /= Void or else l_cluster_stone /= Void then
+						Result := true
+					end
+				else
 				end
-			else
 			end
 		end
 
@@ -1320,6 +1310,13 @@ feature {EB_CUSTOM_WIDGETTED_EDITOR} -- Search perform
 				old_search_key_value := currently_searched
 				old_editor := editor
 				search_report_grid.redraw_grid
+				if
+					not is_current_editor_searched and then
+					not multi_search_performer.is_empty and then
+					not report_tool.shown
+				then
+					report_tool.show
+				end
 				trigger_keyword_field_color (keyword_field)
 				changed_classes.wipe_out
 				extend_and_run_loaded_action (agent force_not_changed)
@@ -1523,6 +1520,8 @@ feature -- Custom search scope
 				l_item.set_pebble_function (agent scope_pebble_function (a_class))
 				l_item.set_accept_cursor (Cursors.cur_class)
 				l_item.set_deny_cursor (Cursors.cur_x_class)
+				l_item.set_configurable_target_menu_mode
+				l_item.set_configurable_target_menu_handler (agent (develop_window.menus.context_menu_factory).search_scope_menu)
 				force_new_search
 			end
 		end
@@ -1557,6 +1556,8 @@ feature -- Custom search scope
 					l_item.set_pebble_function (agent scope_pebble_function (a_group))
 					l_item.set_accept_cursor (Cursors.cur_cluster)
 					l_item.set_deny_cursor (Cursors.cur_x_cluster)
+					l_item.set_configurable_target_menu_mode
+					l_item.set_configurable_target_menu_handler (agent (develop_window.menus.context_menu_factory).search_scope_menu)
 					force_new_search
 				end
 			end
@@ -1591,6 +1592,8 @@ feature -- Custom search scope
 				l_item.set_pebble_function (agent scope_pebble_function (a_folder))
 				l_item.set_accept_cursor (Cursors.cur_cluster)
 				l_item.set_deny_cursor (Cursors.cur_x_cluster)
+				l_item.set_configurable_target_menu_mode
+				l_item.set_configurable_target_menu_handler (agent (develop_window.menus.context_menu_factory).search_scope_menu)
 				force_new_search
 			end
 		end
@@ -1611,7 +1614,7 @@ feature -- Custom search scope
 			-- Scope pebble function
 		local
 			l_class_i: CLASS_I
-			l_cluster_i: CLUSTER_I
+			l_cluster_i: CONF_GROUP
 			l_folder: EB_FOLDER
 		do
 			l_class_i ?= a_data
@@ -1619,10 +1622,10 @@ feature -- Custom search scope
 			l_folder ?= a_data
 			if l_class_i /= Void then
 				Result := stone_from_class_i (l_class_i)
-			elseif l_cluster_i /= Void then
-				create {CLUSTER_STONE}Result.make (l_cluster_i)
 			elseif l_folder /= Void then
 				create {CLUSTER_STONE}Result.make_subfolder (l_folder.cluster, l_folder.path, l_folder.name)
+			elseif l_cluster_i /= Void then
+				create {CLUSTER_STONE}Result.make (l_cluster_i)
 			end
 		end
 
@@ -1866,12 +1869,6 @@ feature {EB_SEARCH_REPORT_GRID, EB_CUSTOM_WIDGETTED_EDITOR} -- Implementation
 			end
 		end
 
-	remove_all is
-			-- Remove all from scope
-		do
-			scope_list.wipe_out
-		end
-
 	switch_mode is
 			-- Switch from the normal mode to the replace mode
 			-- or the opposite
@@ -2055,7 +2052,6 @@ feature {EB_SEARCH_REPORT_GRID, EB_CUSTOM_WIDGETTED_EDITOR} -- Implementation
 		do
 			keyword_field.change_actions.block
 			replace_combo_box.key_press_actions.block
-			replace_check_button.key_press_actions.block
 			case_sensitive_button.key_press_actions.block
 			whole_word_button.key_press_actions.block
 			use_regular_expression_button.key_press_actions.block
@@ -2079,7 +2075,6 @@ feature {EB_SEARCH_REPORT_GRID, EB_CUSTOM_WIDGETTED_EDITOR} -- Implementation
 		do
 			keyword_field.change_actions.resume
 			replace_combo_box.key_press_actions.resume
-			replace_check_button.key_press_actions.resume
 			case_sensitive_button.key_press_actions.resume
 			whole_word_button.key_press_actions.resume
 			use_regular_expression_button.key_press_actions.resume

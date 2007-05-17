@@ -50,6 +50,8 @@ inherit
 			{NONE} all
 		end
 
+	EB_CONTEXT_MENU_HANDLER
+
 create
 	make
 
@@ -133,7 +135,7 @@ feature {NONE} -- Initialization
 				hbox.extend (class_address)
 			else
 				-- Then we build a `class_addre
-				create {SD_TOOL_BAR_WIDGET_ITEM} l_item.make (class_address)
+				create {SD_TOOL_BAR_RESIZABLE_ITEM} l_item.make (class_address)
 				l_item.set_description ("Class address")
 				l_item.set_name (l_item.description)
 
@@ -166,7 +168,7 @@ feature {NONE} -- Initialization
 			if mode then
 				hbox.extend (feature_address)
 			else
-				create {SD_TOOL_BAR_WIDGET_ITEM} l_item.make (feature_address)
+				create {SD_TOOL_BAR_RESIZABLE_ITEM} l_item.make (feature_address)
 				l_item.set_description ("Feature address")
 				l_item.set_name (l_item.description)
 				tool_bar_items.extend (l_item)
@@ -189,6 +191,7 @@ feature {NONE} -- Initialization
 			end
 			if not mode then
 				build_viewpoints
+				view_points_combo.set_font (l_font)
 				parent_widget.set_view_points (view_points_combo)
 			end
 
@@ -269,8 +272,14 @@ feature -- Access
 
 	new_view_points_tool_bar_item: SD_TOOL_BAR_ITEM is
 			-- New view points docking widget
+		local
+			l_combo: EV_COMBO_BOX
 		do
-			create {SD_TOOL_BAR_WIDGET_ITEM} Result.make (view_points_widget)
+			l_combo := view_points_combo
+			if l_combo.parent /= Void then
+				l_combo.parent.prune (l_combo)
+			end
+			create {SD_TOOL_BAR_RESIZABLE_ITEM} Result.make (l_combo)
 			Result.set_name ("Viewpoints")
 			Result.set_description (Result.name)
 		ensure
@@ -375,7 +384,7 @@ feature -- Element change
 			l_but: SD_TOOL_BAR_BUTTON
 			l_cnt: INTEGER
 		do
-			create formatters_combo
+			create formatters_combo.make
 			known_formatters := new_formatters
 			from
 				l_cnt := 1
@@ -383,7 +392,6 @@ feature -- Element change
 				l_cnt > 5
 			loop
 				l_but := known_formatters.i_th (l_cnt).new_sd_button
-				l_but.drop_actions.set_veto_pebble_function (agent is_not_feature_stone (?))
 				tool_bar_items.extend (l_but)
 				l_cnt := l_cnt + 1
 			end
@@ -404,7 +412,7 @@ feature -- Element change
 	viewpoints: EV_HORIZONTAL_BOX
 			-- Viewpoints combo box
 
-	formatters_combo: EV_TOOL_BAR
+	formatters_combo: SD_TOOL_BAR
 			-- Tool bar containing class format option buttons.
 
 	disable_formatters is
@@ -1073,6 +1081,7 @@ feature {NONE} -- Implementation
 					process_cluster_callback (1)
 				else
 					create choice.make_default (address_dialog, agent process_cluster_callback (?))
+					choice.destroy_actions.extend (agent one_lost_focus)
 					choice.set_title (Interface_names.t_Select_cluster)
 					choice.set_list (cluster_names, cluster_pixmaps)
 					choice.set_position (cluster_address.screen_x, cluster_address.screen_y + cluster_address.height)
@@ -1141,6 +1150,7 @@ feature {NONE} -- Implementation
 					process_class_callback (1)
 				else
 					create choice.make_default (address_dialog, agent process_class_callback (?))
+					choice.destroy_actions.extend (agent one_lost_focus)
 					choice.set_title (Interface_names.t_Select_class)
 					choice.set_list (class_names, class_pixmaps)
 					choice.set_position (class_address.screen_x, class_address.screen_y + class_address.height)
@@ -1181,6 +1191,7 @@ feature {NONE} -- Implementation
 					process_feature_callback (1)
 				else
 					create choice.make_default (address_dialog, agent process_feature_callback (?))
+					choice.destroy_actions.extend (agent one_lost_focus)
 					choice.set_title (Interface_names.t_Select_feature)
 					choice.set_list (feature_names, feature_pixmaps)
 					choice.set_position (feature_address.screen_x, feature_address.screen_y + feature_address.height)
@@ -2106,15 +2117,6 @@ feature {NONE} -- Implementation of the clickable labels for `header_info'
 	address_dialog: EV_POPUP_WINDOW
 			-- Window that pops up in the context tool to change the stone centering.
 
-	is_not_feature_stone (st: ANY): BOOLEAN is
-			-- Is `st' not a feature stone?
-		local
-			fst: FEATURE_STONE
-		do
-			fst ?= st
-			Result := fst = Void
-		end
-
 	set_mode (for_context_tool: BOOLEAN) is
 			-- Define `Current's execution mode (generated parent_windows are different).
 		do
@@ -2174,6 +2176,14 @@ feature {NONE} -- Implementation of the clickable labels for `header_info'
 			highlight_label (feature_label)
 			unhighlight_label (feature_label)
 
+			cluster_label.set_configurable_target_menu_mode
+			class_label.set_configurable_target_menu_mode
+			feature_label.set_configurable_target_menu_mode
+
+			cluster_label.set_configurable_target_menu_handler (agent context_menu_handler)
+			class_label.set_configurable_target_menu_handler (agent context_menu_handler)
+			feature_label.set_configurable_target_menu_handler (agent context_menu_handler)
+
 			hb.set_padding (2)
 			hb.extend (cluster_label)
 			hb.extend (class_label)
@@ -2182,6 +2192,14 @@ feature {NONE} -- Implementation of the clickable labels for `header_info'
 			hb.disable_item_expand (class_label)
 			hb.disable_item_expand (feature_label)
 			header_info.extend (hb)
+		end
+
+	context_menu_handler (a_menu: EV_MENU; a_target_list: ARRAYED_LIST [EV_PND_TARGET_DATA]; a_source: EV_PICK_AND_DROPABLE; a_pebble: ANY) is
+			-- Context menu handler
+		do
+			if context_menu_factory /= Void then
+				context_menu_factory.standard_compiler_item_menu (a_menu, a_target_list, a_source, a_pebble)
+			end
 		end
 
 	update_labels is

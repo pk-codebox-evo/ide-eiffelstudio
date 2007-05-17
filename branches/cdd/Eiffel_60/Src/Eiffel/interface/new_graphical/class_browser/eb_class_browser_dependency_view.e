@@ -53,33 +53,30 @@ feature{NONE} -- Initialization
 
 feature -- Access
 
-	control_bar: EV_WIDGET is
+	control_bar: ARRAYED_LIST [SD_TOOL_BAR_ITEM] is
 			-- Widget of a control bar through which, certain control can be performed upon current view
 		local
-			l_tool_bar: EV_TOOL_BAR
+			l_tool_bar: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
 		do
 			if control_tool_bar = Void then
-				create control_tool_bar
-				create l_tool_bar
-				l_tool_bar.extend (create{EV_TOOL_BAR_SEPARATOR})
+				create control_tool_bar.make (10)
+				l_tool_bar := control_tool_bar
+
+				l_tool_bar.extend (create{SD_TOOL_BAR_SEPARATOR}.make)
 
 				l_tool_bar.extend (show_self_dependency_button)
 				l_tool_bar.extend (categorize_folder_button)
 				l_tool_bar.extend (recursive_button)
 
-				l_tool_bar.extend (create{EV_TOOL_BAR_SEPARATOR})
+				l_tool_bar.extend (create{SD_TOOL_BAR_SEPARATOR}.make)
 
 				l_tool_bar.extend (normal_referenced_button)
 				l_tool_bar.extend (syntactical_button)
 				l_tool_bar.extend (inheritance_button)
 
-				l_tool_bar.extend (create{EV_TOOL_BAR_SEPARATOR})
+				l_tool_bar.extend (create{SD_TOOL_BAR_SEPARATOR}.make)
 
 				l_tool_bar.extend (show_tooltip_button)
-
-				control_tool_bar.set_padding (2)
-				control_tool_bar.extend (l_tool_bar)
-				control_tool_bar.disable_item_expand (l_tool_bar)
 			end
 			Result := control_tool_bar
 		ensure then
@@ -97,7 +94,7 @@ feature -- Access
 	post_row_bind_action_table: HASH_TABLE [PROCEDURE [ANY, TUPLE [EV_GRID_ROW]], INTEGER]
 			-- Table of action to be performed after a row whose level index is specified by key of the table has been binded into `grid'.
 
-	syntactical_button: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON is
+	syntactical_button: EB_PREFERENCED_SD_TOOL_BAR_TOGGLE_BUTTON is
 			-- Toggle button to indicate if syntactical supplier/clients are displayed
 		do
 			if syntactical_button_internal = Void then
@@ -111,7 +108,7 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
-	inheritance_button: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON is
+	inheritance_button: EB_PREFERENCED_SD_TOOL_BAR_TOGGLE_BUTTON is
 			-- Toggle button to indicate if inheritance are displayed
 		do
 			if inheritance_button_internal = Void then
@@ -125,7 +122,7 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
-	normal_referenced_button: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON is
+	normal_referenced_button: EB_PREFERENCED_SD_TOOL_BAR_TOGGLE_BUTTON is
 			-- Toggle button to indicate if normal referenced supplier/clients are displayed
 		do
 			if normal_referenced_button_internal = Void then
@@ -139,7 +136,7 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
-	recursive_button: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON is
+	recursive_button: EB_PREFERENCED_SD_TOOL_BAR_TOGGLE_BUTTON is
 			-- Toggle button to indicate if class search is recursive for folder
 		do
 			if recursive_button_internal = Void then
@@ -299,9 +296,13 @@ feature -- Notification
 			-- Provide result displayed in Current view.
 		local
 			l_cluster_stone: CLUSTER_STONE
+			l_item_from_stone: like domain_item_from_stone
 		do
 			set_has_grid_been_binded_for_current_data (False)
-			starting_element_group := domain_item_from_stone (starting_element).group
+			l_item_from_stone := domain_item_from_stone (starting_element)
+			if l_item_from_stone /= Void and then l_item_from_stone.is_valid then
+				starting_element_group := domain_item_from_stone (starting_element).group
+			end
 			l_cluster_stone ?= starting_element
 			is_starting_element_folder := l_cluster_stone /= Void and then (l_cluster_stone.path /= Void and then not l_cluster_stone.path.is_empty)
 
@@ -888,10 +889,10 @@ feature{NONE} -- Implementation
 			--				   |
 			--		           +- foo		make_from_string, count, as_lower			
 
-	control_tool_bar: EV_HORIZONTAL_BOX
+	control_tool_bar: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
 			-- Implementation of `control_bar'
 
-	show_self_dependency_button: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON is
+	show_self_dependency_button: EB_PREFERENCED_SD_TOOL_BAR_TOGGLE_BUTTON is
 			-- Toggle button to turn on/off item path display
 			-- For examples, if we are displaying suppliers for a given group "demo",
 			-- actually we are displaying supplier classes of every class in that group,
@@ -913,7 +914,7 @@ feature{NONE} -- Implementation
 	show_self_dependency_button_internal: like show_self_dependency_button
 			-- Implementation of `show_self_dependency_button'
 
-	categorize_folder_button: EB_PREFERENCED_TOOL_BAR_TOGGLE_BUTTON is
+	categorize_folder_button: EB_PREFERENCED_SD_TOOL_BAR_TOGGLE_BUTTON is
 			-- Toggle button to decide if classes in a given group should be displayed in physical folders where they locates.
 			-- For example, if this button is not selected, the following will be displayed:
 			-- + base

@@ -1,6 +1,7 @@
 indexing
 	description: "Tool as formatters container"
-	author: ""
+	legal: "See notice at end of class."
+	status: "See notice at end of class."
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -66,6 +67,7 @@ feature{NONE} -- Initialization
 		do
 			Precursor (a_docking_manager)
 			content.drop_actions.extend (agent on_item_dropped)
+			content.drop_actions.set_veto_pebble_function (agent (a_stone: STONE): BOOLEAN do Result := a_stone.is_storable end)
 		end
 
 	build_interface is
@@ -73,6 +75,7 @@ feature{NONE} -- Initialization
 		do
 			create history_manager.make (Current)
 			create address_manager.make (Current, True)
+			address_manager.set_context_menu_factory (develop_window.menus.context_menu_factory)
 
 			initialize
 			build_formatters
@@ -84,6 +87,9 @@ feature -- Access
 
 	formatters: LIST [EB_FORMATTER]
 			-- List of formatters to be displayed in Current tool
+
+	customized_formatters: like formatters
+			-- Customized formatters
 
 	widget: EV_VERTICAL_BOX
 			-- Graphical object of `Current'.
@@ -224,23 +230,32 @@ feature -- Setting
 
 	ensure_formatter_display (a_formatter: EB_FORMATTER) is
 			-- Ensure that `a_formatter' is displayed in Current tool.
-		require
-			a_formatter_attached: a_formatter /= Void
-			a_formatter_exists: formatters.has (a_formatter)
-			a_formatter_selected: a_formatter.selected
 		local
-			l_control_bar: EV_WIDGET
+			l_control_bar: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
 			l_formatter_widget: EV_WIDGET
 		do
 			l_formatter_widget := a_formatter.widget
+			l_control_bar := a_formatter.control_bar
 			if not formatter_container.has (l_formatter_widget) then
-				formatter_tool_bar_area.wipe_out
-				l_control_bar := a_formatter.control_bar
-				if l_control_bar /= Void then
-					formatter_tool_bar_area.extend (l_control_bar)
-					formatter_tool_bar_area.disable_item_expand (l_control_bar)
-				end
 				formatter_container.replace (l_formatter_widget)
+			end
+
+			if l_control_bar /= Void and then l_control_bar.count > 0 then
+				if not tool_bar.has (l_control_bar.first) then
+					clear_control_bar_butons (tool_bar)
+					from
+						l_control_bar.start
+					until
+						l_control_bar.after
+					loop
+						tool_bar.extend (l_control_bar.item)
+
+						l_control_bar.forth
+					end
+					tool_bar.compute_minimum_size
+				end
+			else
+				clear_control_bar_butons (tool_bar)
 			end
 		end
 
@@ -566,10 +581,10 @@ feature{NONE} -- Implementation
 	mini_toolbar: EV_HORIZONTAL_BOX
 			-- Mini tool bar.
 
-	history_toolbar: EV_TOOL_BAR
+	history_toolbar: SD_TOOL_BAR
 			-- Toolbar containing the history commands.
 
-	tool_bar: EV_TOOL_BAR
+	tool_bar: SD_WIDGET_TOOL_BAR
 			-- Toolbar containing all buttons.
 
 	tool_bar_area: EV_HORIZONTAL_BOX
@@ -587,11 +602,47 @@ feature{NONE} -- Implementation
 	on_project_loaded_agent: PROCEDURE [ANY, TUPLE]
 			-- Agent of `on_project_loaded'
 
-	customized_formatters: like formatters
-			-- Customized formatters
-
 	empty_widget_internal: like empty_widget
 			-- Implementation of `empty_widget'
+
+	clear_control_bar_butons (a_tool_bar: SD_TOOL_BAR) is
+			-- Clear previous `control_bar' buttons from a formatter.
+		require
+			not_void: a_tool_bar /= Void
+		local
+			l_predefind, l_customized: INTEGER
+			l_items: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
+			l_widget_item: SD_TOOL_BAR_WIDGET_ITEM
+			l_parent: EV_CONTAINER
+		do
+			l_predefind := predefined_formatters.count
+			l_customized := customized_formatters.count
+			if l_customized >= 1 then
+				-- There is an additional tool bar separator if customized formatter exists.
+				l_customized := l_customized + 1
+			end
+			from
+				l_items := a_tool_bar.items
+				l_items.go_i_th (l_predefind + l_customized)
+			until
+				l_items.after
+			loop
+				l_items.forth
+
+				if not l_items.after then
+					a_tool_bar.prune (l_items.item)
+					l_widget_item ?= l_items.item
+					if l_widget_item /= Void then
+						l_parent := l_widget_item.widget.parent
+						if l_parent /= Void then
+							l_parent.prune (l_widget_item.widget)
+						end
+					end
+				end
+			end
+
+			a_tool_bar.compute_minimum_size
+		end
 
 feature{NONE} -- Actions
 
@@ -675,9 +726,10 @@ feature{NONE} -- Implementation
 	build_mini_toolbar is
 			-- Redefine
 		do
-			create history_toolbar
-			history_toolbar.extend (history_manager.back_command.new_mini_toolbar_item)
-			history_toolbar.extend (history_manager.forth_command.new_mini_toolbar_item)
+			create history_toolbar.make
+			history_toolbar.extend (history_manager.back_command.new_mini_sd_toolbar_item)
+			history_toolbar.extend (history_manager.forth_command.new_mini_sd_toolbar_item)
+			history_toolbar.compute_minimum_size
 
 			create mini_toolbar
 			mini_toolbar.extend (address_manager.header_info)
@@ -721,11 +773,11 @@ feature{NONE} -- Implementation
 			-- Create diagram option bar.
 		local
 			l_cell: EV_CELL
-			l_setup_toolbar: EV_TOOL_BAR
+			l_setup_toolbar: SD_TOOL_BAR
 		do
-			create tool_bar
+			create tool_bar.make (create {SD_TOOL_BAR}.make)
 			create l_cell
-			create l_setup_toolbar
+			create l_setup_toolbar.make
 			tool_bar_area.extend (tool_bar)
 			tool_bar_area.disable_item_expand (tool_bar)
 			tool_bar_area.extend (formatter_tool_bar_area)
@@ -737,6 +789,7 @@ feature{NONE} -- Implementation
 			tool_bar_area.disable_item_expand (l_setup_toolbar)
 
 			l_setup_toolbar.extend (customized_formatter_button)
+			l_setup_toolbar.compute_minimum_size
 			attach_formatters
 		end
 
@@ -769,12 +822,13 @@ feature{NONE} -- Implementation
 					if l_formatter /= Void then
 						attach_formatter (l_formatter)
 					else
-						tool_bar.extend (create {EV_TOOL_BAR_SEPARATOR})
+						tool_bar.extend (create {SD_TOOL_BAR_SEPARATOR}.make)
 					end
 					l_formatters.forth
 				end
 				l_formatters.go_to (l_cursor)
 			end
+			tool_bar.compute_minimum_size
 			pop_default_formatter
 		end
 
@@ -783,27 +837,36 @@ feature{NONE} -- Implementation
 		require
 			a_formatter_attached: a_formatter /= Void
 		local
-			l_control_bar: EV_WIDGET
+			l_control_bar: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
 		do
 			a_formatter.set_widget_owner (Current)
 			a_formatter.set_viewpoints (viewpoints)
-			tool_bar.extend (a_formatter.new_button)
+			tool_bar.extend (a_formatter.new_sd_button)
 			a_formatter.set_output_line (output_line)
 			if a_formatter.selected then
 				l_control_bar := a_formatter.control_bar
-				if l_control_bar /= Void then
-					formatter_tool_bar_area.extend (l_control_bar)
-					formatter_tool_bar_area.disable_item_expand (l_control_bar)
+				if l_control_bar /= Void and then l_control_bar.count > 0 then
+					from
+						l_control_bar.start
+					until
+						l_control_bar.after
+					loop
+						tool_bar.extend (l_control_bar.item)
+						l_control_bar.forth
+					end
+
+					tool_bar.compute_minimum_size
 				end
 			end
 		end
 
-	customized_formatter_button: EV_TOOL_BAR_BUTTON is
+	customized_formatter_button: SD_TOOL_BAR_BUTTON is
 			-- Button used to setup customized formatters
 		do
 			if customized_formatter_button_internal = Void then
-				create customized_formatter_button_internal
+				create customized_formatter_button_internal.make
 				customized_formatter_button_internal.set_pixmap (pixmaps.icon_pixmaps.general_edit_icon)
+				customized_formatter_button_internal.set_pixel_buffer (pixmaps.icon_pixmaps.general_edit_icon_buffer)
 				 customized_formatter_button_internal.set_tooltip (interface_names.f_customize_formatter)
 				 customized_formatter_button_internal.select_actions.extend (agent on_setup_customized_formatters)
 			end
@@ -843,6 +906,38 @@ invariant
 	on_project_loaded_agent_attached: on_project_loaded_agent /= Void
 	customized_formatters_attached: customized_formatters /= Void
 	veto_format_function_agent_attached: veto_format_function_agent /= Void
+
+indexing
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
+	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
+	licensing_options:	"http://www.eiffel.com/licensing"
+	copying: "[
+			This file is part of Eiffel Software's Eiffel Development Environment.
+			
+			Eiffel Software's Eiffel Development Environment is free
+			software; you can redistribute it and/or modify it under
+			the terms of the GNU General Public License as published
+			by the Free Software Foundation, version 2 of the License
+			(available at the URL listed under "license" above).
+			
+			Eiffel Software's Eiffel Development Environment is
+			distributed in the hope that it will be useful,	but
+			WITHOUT ANY WARRANTY; without even the implied warranty
+			of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+			See the	GNU General Public License for more details.
+			
+			You should have received a copy of the GNU General Public
+			License along with Eiffel Software's Eiffel Development
+			Environment; if not, write to the Free Software Foundation,
+			Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
+		]"
+	source: "[
+			 Eiffel Software
+			 356 Storke Road, Goleta, CA 93117 USA
+			 Telephone 805-685-1006, Fax 805-685-6869
+			 Website http://www.eiffel.com
+			 Customer support http://support.eiffel.com
+		]"
 
 end
 

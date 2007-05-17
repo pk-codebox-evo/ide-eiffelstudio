@@ -15,9 +15,11 @@ inherit
 	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 		redefine
 			mini_pixmap,
+			mini_pixel_buffer,
 			new_toolbar_item,
 			new_mini_toolbar_item,
 			new_sd_toolbar_item,
+			new_mini_sd_toolbar_item,
 			tooltext
 		end
 
@@ -56,6 +58,17 @@ feature -- Access
 		end
 
 	new_mini_toolbar_item: EB_COMMAND_TOOL_BAR_BUTTON is
+			-- Create a new toolbar button for this command.
+			--
+			-- Call `recycle' on the result when you don't need it anymore otherwise
+			-- it will never be garbage collected.
+		do
+			Result := Precursor
+			Result.drop_actions.extend (agent drop_class)
+			Result.drop_actions.extend (agent drop_cluster)
+		end
+
+	new_mini_sd_toolbar_item: EB_SD_COMMAND_TOOL_BAR_BUTTON is
 			-- Create a new toolbar button for this command.
 			--
 			-- Call `recycle' on the result when you don't need it anymore otherwise
@@ -107,6 +120,12 @@ feature -- Properties
 			-- Pixmap representing `Current' in toolbars.
 		do
 			Result := pixmaps.mini_pixmaps.general_delete_icon
+		end
+
+	mini_pixel_buffer: EV_PIXEL_BUFFER is
+			-- Pixel buffer representing `Current' in toolbars.
+		do
+			Result := pixmaps.mini_pixmaps.general_delete_icon_buffer
 		end
 
 	tooltip: STRING_GENERAL is

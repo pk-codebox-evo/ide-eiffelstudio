@@ -39,8 +39,14 @@ feature -- Initialization
 			development_window := a_dev_win
 			docking_manager := a_dev_win.docking_manager
 			docking_manager.tab_drop_actions.extend (agent ((a_dev_win.commands).new_tab_cmd).execute_with_stone_content)
+			if veto_pebble_function_internal = Void then
+				docking_manager.tab_drop_actions.set_veto_pebble_function (agent default_veto_func)
+			end
 			create_editor
 			docking_manager.main_area_drop_action.extend (agent create_editor_beside_content (?, Void))
+			if veto_pebble_function_internal = Void then
+				docking_manager.main_area_drop_action.set_veto_pebble_function (agent default_veto_func)
+			end
 		ensure
 			editors_internal_not_void: editors_internal /= Void
 			editors_not_empty: not editors_internal.is_empty
@@ -407,6 +413,16 @@ feature -- Status report
 	not_backuped: INTEGER
 			-- Number of editors not backuped last time
 
+	stone_acceptable (a_stone: ANY): BOOLEAN is
+			-- Is `a_stone' suitable for a new editor?
+		do
+			if veto_pebble_function_internal /= Void then
+				Result := veto_pebble_function_internal.item ([a_stone])
+			else
+				Result := default_veto_func (a_stone)
+			end
+		end
+
 feature -- Editor observer
 
 	add_edition_observer (a_text_observer: TEXT_OBSERVER) is
@@ -560,6 +576,9 @@ feature -- Element change
 				l_editors.after
 			loop
 				l_editors.item.drop_actions.set_veto_pebble_function (a_func)
+				if l_editors.item.docking_content /= Void then
+					l_editors.item.docking_content.drop_actions.set_veto_pebble_function (a_func)
+				end
 				l_editors.forth
 			end
 		end
@@ -888,16 +907,7 @@ feature {NONE} -- Observer
 			a_editor.drop_actions.set_veto_pebble_function (veto_pebble_function_internal)
 		end
 
-feature {NONE}-- Implementation
-
-	is_opening_editors: BOOLEAN
-		-- If Current opening more than one editors?
-
-	editor_number_factory: EB_EDITOR_NUMBER_FACTORY
-			-- Produce editor number and internal names.
-
-	veto_pebble_function_internal: FUNCTION [ANY, TUPLE [ANY], BOOLEAN]
-			-- Veto pebble function.
+feature {NONE} -- Agents
 
 	on_focus (a_editor: like current_editor) is
 			-- Invoke when `a_editor' is focusing.
@@ -927,6 +937,55 @@ feature {NONE}-- Implementation
 					l_editor.editor_drawing_area.set_focus
 				end
 			end
+		end
+
+	on_fake_focus (a_editor: like current_editor) is
+			-- Handle `focus_in_actions' of fake editors.
+		local
+			l_env: EV_ENVIRONMENT
+		do
+			if on_show_imp_agent /= Void then
+				create l_env
+				l_env.application.remove_idle_action (on_show_imp_agent)
+				on_show_imp_agent := Void
+			end
+
+			on_focus (a_editor)
+		end
+
+	on_show (a_editor: like current_editor) is
+			-- Handle `show_actions' of fake editors.
+		local
+			l_env: EV_ENVIRONMENT
+		do
+			-- show actions of same editor maybe called more than once.
+			if on_show_imp_agent = Void then
+				on_show_imp_agent := agent on_show_imp (a_editor)
+				create l_env
+				l_env.application.do_once_on_idle (on_show_imp_agent)
+			end
+		ensure
+			registed: on_show_imp_agent /= Void
+		end
+
+	on_show_imp (a_editor: like current_editor) is
+			-- Invoke when `a_editor' is shown, and `a_editor' is fake focus editor.
+		local
+			l_last_focused_editor: like last_focused_editor
+		do
+			if not is_opening_editors then
+				if last_focused_editor /= Void then
+					l_last_focused_editor := last_focused_editor
+				end
+				on_focus (a_editor)
+				-- When changing fake editor to real one, we don't want to change `last_focused_editor'.
+				if l_last_focused_editor /= Void and a_editor /= Void and then a_editor.docking_content /= l_last_focused_editor.docking_content then
+					on_focus (l_last_focused_editor)
+				end
+			end
+			on_show_imp_agent := Void
+		ensure
+			cleared: on_show_imp_agent = Void
 		end
 
 	on_drop (a_stone: STONE; a_editor: like current_editor) is
@@ -960,6 +1019,20 @@ feature {NONE}-- Implementation
 			end
 		end
 
+feature {NONE} -- Implementation
+
+	is_opening_editors: BOOLEAN
+		-- If Current opening more than one editors?
+
+	on_show_imp_agent: PROCEDURE [ANY, TUPLE]
+			-- Agent created by `on_show', cleared by `on_show_imp' or `on_fake_focus'.
+
+	editor_number_factory: EB_EDITOR_NUMBER_FACTORY
+			-- Produce editor number and internal names.
+
+	veto_pebble_function_internal: FUNCTION [ANY, TUPLE [ANY], BOOLEAN]
+			-- Veto pebble function.
+			
 	close_editor_perform (a_editor: like current_editor) is
 			-- Perform closing editor.
 		do
@@ -1004,6 +1077,9 @@ feature {NONE}-- Implementation
 			end
 			last_created_editor.widget.set_minimum_size (0, 0)
 			add_observers (last_created_editor)
+			if veto_pebble_function_internal = Void then
+				last_created_editor.drop_actions.set_veto_pebble_function (agent default_veto_func)
+			end
 			last_created_editor.drop_actions.extend (agent on_drop (?, last_created_editor))
 			editors_internal.extend (last_created_editor)
 			if editors_internal.off then
@@ -1042,6 +1118,9 @@ feature {NONE}-- Implementation
 			create Result.make_with_widget_title_pixmap (a_editor.widget, Pixmaps.icon_pixmaps.general_document_icon , a_unique_title)
 
 			Result.drop_actions.extend (agent on_drop (?, a_editor))
+			if veto_pebble_function_internal = Void then
+				Result.drop_actions.set_veto_pebble_function (agent default_veto_func)
+			end
 
 			docking_manager.contents.extend (Result)
 			Result.focus_in_actions.extend (agent on_focus (a_editor))
@@ -1065,7 +1144,9 @@ feature {NONE}-- Implementation
 			create {EB_FAKE_SMART_EDITOR} last_created_editor.make (Result)
 			last_created_editor.set_docking_content (Result)
 
-			Result.focus_in_actions.extend (agent on_focus (last_created_editor))
+			-- When fake editor first time showing, we change it to a real one.
+			Result.focus_in_actions.extend (agent on_fake_focus (last_created_editor))
+			Result.show_actions.extend (agent on_show (last_created_editor))
 			Result.close_request_actions.extend (agent Result.close)
 
 			docking_manager.contents.extend (Result)
@@ -1080,6 +1161,11 @@ feature {NONE}-- Implementation
 		do
 			a_content.set_user_widget (a_editor.widget)
 			a_content.drop_actions.extend (agent on_drop (?, a_editor))
+			if veto_pebble_function_internal = Void then
+				a_content.drop_actions.set_veto_pebble_function (agent default_veto_func)
+			end
+
+			a_content.show_actions.wipe_out
 
 			a_content.focus_in_actions.wipe_out
 			a_content.focus_in_actions.extend (agent on_focus (a_editor))
@@ -1240,6 +1326,23 @@ feature {NONE}-- Implementation
 					else
 						fake_editors.forth
 					end
+				end
+			end
+		end
+
+	default_veto_func (a_stone: ANY): BOOLEAN is
+			-- Default veto function
+		local
+			l_cluster_stone: CLUSTER_STONE
+			l_filed_stone: FILED_STONE
+		do
+			l_filed_stone ?= a_stone
+			if l_filed_stone /= Void then
+				Result := True
+			else
+				l_cluster_stone ?= a_stone
+				if l_cluster_stone /= Void then
+					Result := True
 				end
 			end
 		end

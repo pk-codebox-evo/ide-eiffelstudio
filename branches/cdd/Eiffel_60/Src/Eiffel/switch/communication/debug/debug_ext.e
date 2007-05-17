@@ -124,6 +124,29 @@ feature
 			"C signature (EIF_REFERENCE)"
 		end
 
+	send_ack_ok is
+		external
+			"C"
+		alias
+			"ewb_send_ack_ok"
+		end;
+
+	send_string_content (s: STRING_GENERAL) is
+		local
+			c_string: C_STRING
+		do
+			create c_string.make (s)
+			c_send_str (c_string.item)
+		end
+
+	send_string_content_with_size (s: STRING_GENERAL; a_size: INTEGER) is
+		local
+			c_string: C_STRING
+		do
+			create c_string.make (s)
+			c_send_sized_str (c_string.item, a_size)
+		end
+
 	recv_ack: BOOLEAN is
 		external
 			"C"
@@ -331,7 +354,6 @@ feature {NONE} -- Implementation
 			a := s.area;
 			($Result).memory_copy ($a, Double_bytes)
 		end
-
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

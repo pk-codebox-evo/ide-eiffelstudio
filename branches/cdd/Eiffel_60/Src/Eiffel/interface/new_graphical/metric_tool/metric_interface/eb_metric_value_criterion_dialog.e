@@ -14,7 +14,8 @@ inherit
 		redefine
 			initialize,
 			on_ok,
-			on_cancel
+			on_cancel,
+			set_context_menu_factory
 		end
 
 	EB_CONSTANTS
@@ -108,7 +109,6 @@ feature{NONE} -- Initialization
 			l_tester_area.extend (value_tester)
 			l_tester_selector_area.extend (l_tester_area)
 
-
 			l_ver.set_padding (15)
 			l_hor.set_padding (5)
 			if is_metric_area_shown then
@@ -146,6 +146,15 @@ feature -- Access
 
 	use_external_delayed_domain_checkbox: EV_CHECK_BUTTON
 			-- Check box to setup if external delayed domain is used
+
+feature -- Status setting
+
+	set_context_menu_factory (a_factory: EB_CONTEXT_MENU_FACTORY) is
+			-- Set context menu factory.
+		do
+			Precursor {EB_METRIC_GRID_DOMAIN_ITEM_DIALOG}(a_factory)
+			value_tester.set_context_menu_factory (a_factory)
+		end
 
 feature -- Status report
 

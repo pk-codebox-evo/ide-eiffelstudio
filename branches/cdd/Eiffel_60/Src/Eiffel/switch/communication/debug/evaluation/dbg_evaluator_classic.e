@@ -15,6 +15,8 @@ inherit
 			init
 		end
 
+	DEBUG_EXT
+
 	RECV_VALUE
 		rename
 			error as recv_error
@@ -155,6 +157,29 @@ feature {DBG_EVALUATOR} -- Interface
 				end
 			else
 				notify_error (cst_error_occurred, "Once feature " + f.feature_name + ": not yet called")
+			end
+		end
+
+	create_empty_instance_of (a_type_i: CL_TYPE_I) is
+			-- create an empty instance of `a_type_i' in the context of object's type `a_curr_obj_typeid'
+		local
+			b: BOOLEAN
+			c_string: C_STRING
+		do
+			send_rqst_1 (Rqst_new_instance, a_type_i.associated_class_type.type_id - 1)
+			create c_string.make (a_type_i.name)
+			send_string_value (c_string.item)
+			b := recv_ack
+			reset_recv_value
+			if b then
+				recv_value (Current)
+			end
+			if item /= Void then
+				item.set_hector_addr
+				last_result_value := item.dump_value
+				reset_recv_value
+			else
+				notify_error (cst_error_occurred, "Instance creation of class {" + a_type_i.name + "} raised an error.")
 			end
 		end
 

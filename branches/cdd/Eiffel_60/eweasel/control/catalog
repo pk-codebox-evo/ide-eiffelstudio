@@ -327,7 +327,12 @@ test	named-tuple-in-parent-constraint-clauses	valid206 tcf pass validity
 test	valid-generic-derivation	valid207 tcf pass validity
 test	creation-constraint-like-current-deferred	valid208 tcf pass validity
 test	creation-constraint-like-current-deferred2	valid209 tcf pass validity
-test	vtgc-expanded	valid210 tcf pass validity
+test	vtcg-expanded	valid210 tcf pass validity
+test	vtcg-generic	valid211 tcf pass validity
+test	wrong-vgcc		valid212 tcf pass validity
+test	named-tuple-convert-conformance					valid213 tcf fail validity
+test	nested-generics-creation-readiness				valid214 tcf valid
+
 
 
 -- System validity tests
@@ -1049,6 +1054,7 @@ test	signed-unsigned-in-inspect	exec269 tcf pass execution inspect
 test	mixed-basic-type-operations	exec270 tcf pass execution inspect
 test	wrong-agent-creation-type	exec271 tcf pass execution inspect
 test	expanded-derivation-reattachment	exec272 tcf pass execution expanded generic
+test	expanded-creation-semantics	exec273 tcf pass execution expanded creation attachment clone
 
 
 
@@ -1635,6 +1641,14 @@ test	multi-constraint-creation-crash01				multicon029 tcf pass multiconstraint
 test	multi-constraint-code-generation-crash01		multicon030 tcf pass multiconstraint
 test	multi-constraint-renamed-creation-feature		multicon031 tcf pass multiconstraint
 test	multi-constraint-single-constraint-renaming		multicon032 tcf pass multiconstraint
+test	multi-constraint-single-constraint-renaming2	multicon033 tcf pass multiconstraint
+test	multi-constraint-recursion-bug					multicon034 tcf pass multiconstraint
+test	multi-constraint-nested-calls					multicon035 tcf pass multiconstraint
+test	multi-constraint-vtmc4							multicon036 tcf pass multiconstraint
+test	multi-constraint-tuples							multicon037 tcf pass multiconstraint
+test	multi-constraint-tuples2						multicon038 tcf pass multiconstraint
+
+
 
 -- .NET specific test
 if DOTNET test expanded-object-conversion	dotnet001	tcf pass dotnet
@@ -1689,3 +1703,7 @@ if DOTNET test effecting-from-inherited-external	dotnet049	tcf pass dotnet
 test replicated-from-generic-type		dotnet050	tcf pass dotnet termination expanded replication
 test implicit-type-cause-crash-on-cast	dotnet051	tcf pass dotnet termination
 if DOTNET test incremental-custom-attribute-constant-change	dotnet052	tcf pass dotnet
+if DOTNET test wrong-eiffel-name-attribute-generation	dotnet053	tcf pass dotnet
+if DOTNET test field-attribute-test	dotnet054	tcf fail dotnet
+if DOTNET test creation-without-default-ctor	dotnet055	tcf fail dotnet
+if DOTNET test incr-remove-create-dotnet-constructor	dotnet056	tcf fail dotnet

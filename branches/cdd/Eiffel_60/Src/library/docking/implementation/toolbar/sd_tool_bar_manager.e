@@ -209,7 +209,7 @@ feature {SD_DOCKING_MANAGER_AGENTS, SD_OPEN_CONFIG_MEDIATOR, SD_TOOL_BAR_ZONE_AS
 			create l_tool_bar_zone.make (False, docking_manager, a_content.is_menu_bar)
 			l_tool_bar_zone.extend (a_content)
 
-			create l_tool_bar_row.make (False)
+			create l_tool_bar_row.make (docking_manager, False)
 			l_tool_bar_row.set_ignore_resize (True)
 			l_tool_bar_row.extend (l_tool_bar_zone)
 			l_tool_bar_row.record_state
@@ -221,7 +221,7 @@ feature {SD_DOCKING_MANAGER_AGENTS, SD_OPEN_CONFIG_MEDIATOR, SD_TOOL_BAR_ZONE_AS
 		end
 
 feature {SD_DOCKING_MANAGER_AGENTS, SD_OPEN_CONFIG_MEDIATOR, SD_SAVE_CONFIG_MEDIATOR,
-			SD_TOOL_BAR_ZONE_ASSISTANT,	SD_TOOL_BAR_ZONE, SD_DEBUG_ACCESS} -- Internal querys
+			SD_TOOL_BAR_ZONE_ASSISTANT,	SD_TOOL_BAR_ZONE, SD_DEBUG_ACCESS, SD_TOOL_BAR} -- Internal querys
 
 	tool_bar_container (a_direction: INTEGER): EV_BOX is
 			-- Tool bar container base on `a_direction'.
@@ -276,7 +276,8 @@ feature {SD_DOCKING_MANAGER_AGENTS, SD_OPEN_CONFIG_MEDIATOR, SD_SAVE_CONFIG_MEDI
 			from
 				l_floating_bars := floating_tool_bars.twin
 				l_floating_bars.start
-				Result := contents.twin
+				create Result.make (contents.count)
+				Result.append (contents)
 			until
 				l_floating_bars.after
 			loop
@@ -284,6 +285,24 @@ feature {SD_DOCKING_MANAGER_AGENTS, SD_OPEN_CONFIG_MEDIATOR, SD_SAVE_CONFIG_MEDI
 				Result.start
 				Result.prune (l_floating_bars.item.content)
 				l_floating_bars.forth
+			end
+		end
+
+	content_of (a_tool_bar: SD_TOOL_BAR): SD_TOOL_BAR_CONTENT is
+			-- Content of `a_tool_bar'
+		local
+			l_contents: ARRAYED_LIST [SD_TOOL_BAR_CONTENT]
+		do
+			from
+				l_contents := contents
+				l_contents.start
+			until
+				l_contents.after or Result /= Void
+			loop
+				if l_contents.item.zone /= Void and then l_contents.item.zone.tool_bar = a_tool_bar then
+					Result := l_contents.item
+				end
+				l_contents.forth
 			end
 		end
 
@@ -310,7 +329,16 @@ feature {NONE} -- Agents
 	on_menu_area_click (a_widget: EV_WIDGET; a_button, a_screen_x, a_screen_y: INTEGER) is
 			-- Handle menu area right click.
 		do
-			if is_at_menu_area (a_widget) and a_button = {EV_POINTER_CONSTANTS}.right and not has_pointer_actions (a_screen_x, a_screen_y) then
+			if is_at_menu_area (a_widget) and a_button = {EV_POINTER_CONSTANTS}.right
+				and then not has_pointer_actions (a_screen_x, a_screen_y)
+				and then not has_pebble_function (a_screen_x, a_screen_y)
+				and then not has_drop_function (a_screen_x, a_screen_y) then
+				-- We query if a button `has_drop_function' before showing the menu, because if a
+				-- pick action starts from a widget which is same as the widget receive the drop
+				-- action, then there will be an additional pointer click actions called after drop
+				-- action. If the pick action not from the same widget which receive the drop action,
+				-- then there won't be a pointer click actions action called after drop action. I think
+				-- this is a bug.		 Larry Apr. 27th 2007.
 				right_click_menu.show
 			end
 		end
@@ -398,6 +426,32 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	has_pebble_function (a_screen_x, a_screen_y: INTEGER): BOOLEAN is
+			-- If SD_TOOL_BAR_ITEM at `a_screen_x', `a_screen_y' had pebble function?
+		do
+			from
+				contents.start
+			until
+				contents.after or Result
+			loop
+				Result := contents.item.zone.has_pebble_function (a_screen_x, a_screen_y)
+				contents.forth
+			end
+		end
+
+	has_drop_function (a_screen_x, a_screen_y: INTEGER): BOOLEAN is
+			-- If SD_TOOL_BAR_ITEM at `a_screen_x', `a_screen_y' had pebble function?
+		do
+			from
+				contents.start
+			until
+				contents.after or Result
+			loop
+				Result := contents.item.zone.has_drop_function (a_screen_x, a_screen_y)
+				contents.forth
+			end
+		end
+
 	right_click_menu: EV_MENU is
 			-- Construct a right click menu
 		local
@@ -436,7 +490,7 @@ feature {NONE} -- Implementation
 			loop
 
 				create l_custom_dialog.make_for_menu (contents.item.zone)
-				l_string := customize_string_start.as_string_32
+				l_string := internal_shared.interface_names.tool_bar_right_click_customize.as_string_32
 				l_string.append (contents.item.title)
 				l_string.append (customize_string_end)
 				create l_menu_item.make_with_text_and_action (l_string, agent l_custom_dialog.on_customize)
@@ -444,12 +498,6 @@ feature {NONE} -- Implementation
 				contents.forth
 			end
 
-		end
-
-	customize_string_start: STRING_GENERAL is
-			-- String for customize
-		once
-			Result := "Customize "
 		end
 
 	customize_string_end: STRING_GENERAL is
