@@ -93,7 +93,6 @@ feature {NONE} -- Initialization
 			create {DEBUGGER_TEXT_FORMATTER_OUTPUT} text_formatter_visitor.make
 
 			window_manager.add_observer (Current)
-			create cdd_manager.make
 		end
 
 	initialize is
@@ -374,9 +373,6 @@ feature -- Access
 
 	force_debug_mode_cmd: EB_FORCE_DEBUG_MODE_CMD
 			-- Force debug mode command.
-
-	cdd_manager: CDD_MANAGER
-			-- Manager used for cdd
 
 feature -- tools
 

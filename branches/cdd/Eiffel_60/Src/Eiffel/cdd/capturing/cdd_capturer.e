@@ -11,6 +11,62 @@ inherit
 
 	CDD_SUPPORT
 
+create
+	make
+
+feature {NONE} -- Initialization
+
+	make is
+			-- Create `last_created_test_cases'.
+		do
+			create last_created_test_cases.make
+		end
+
+feature -- Access
+
+	last_created_test_cases: DS_LINKED_LIST [STRING]
+			-- File names of last captured cdd test cases
+
+feature -- Basic operations
+
+	capture_call_stack (a_status: APPLICATION_STATUS) is
+			-- Create test cases for each feature call in the stack.
+		require
+			a_status_not_void: a_status /= Void
+			a_status_valid: a_status.is_stopped
+		do
+			last_created_test_cases.wipe_out
+		end
+
+	capture_active_stack_frame (a_status: APPLICATION_STATUS) is
+			-- Create test case for top feature call in call stack.
+		require
+			a_status_not_void: a_status /= Void
+			a_status_valid: a_status.is_stopped
+		do
+			last_created_test_cases.wipe_out
+		end
+
+feature -- Implementation
+
+	printer: CDD_TEST_CASE_PRINTER
+			-- Printer for creating test case classes
+		once
+			create Result
+		ensure
+			not_void: Result /= Void
+		end
+
+	uuid_generator: UUID_GENERATOR is
+			-- UUID generator for creating uuid's
+		once
+			create Result
+		ensure
+			not_void: Result /= Void
+		end
+
+-- NOTE: everything below is obsolete and will be removed soon...
+
 feature -- Access
 
 	reflected_call_stack: DS_LINKED_LIST [CDD_REFLECTION]
@@ -94,15 +150,6 @@ feature {NONE} -- Implementation
 			end
 		end
 
-feature {NONE} -- Implementation
-
-	uuid_generator: UUID_GENERATOR is
-			-- UUID generator for creating uuid's
-		once
-			create Result
-		ensure
-			not_void: Result /= Void
-		end
 
 
 end

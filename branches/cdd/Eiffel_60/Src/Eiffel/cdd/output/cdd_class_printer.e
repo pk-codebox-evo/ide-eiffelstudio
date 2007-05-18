@@ -23,10 +23,13 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	is_initialized: BOOLEAN
+	is_initialized: BOOLEAN is
 			-- Are we currently writting to a file?
+		do
+			Result := output_file /= Void
+		end
 
-feature -- Status change
+feature {NONE} -- Status change
 
 	terminate is
 			-- Close file and set `output_file' to Void.

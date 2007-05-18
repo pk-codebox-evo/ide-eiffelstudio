@@ -111,12 +111,24 @@ feature -- Status setting (Application)
 	on_application_stopped (an_application_status: APPLICATION_STATUS) is
 			-- Check whether we want to create a new test case from the current
 			-- application status `an_application_status'.
+		local
+			l_file: KL_TEXT_OUTPUT_FILE
+			l_cse: EIFFEL_CALL_STACK_ELEMENT
 		do
-			--if is_capturing_enabled and is_valid_status (an_application_status) then
-				capturer.reflect_call_stack (an_application_status)
-				if not capturer.reflected_call_stack.is_empty then
+			create l_file.make (eiffel_system.root_cluster.location.original_directory + "/" + tests_cluster_name + "/new_test_case.e")
 
-				end
+			l_file.open_write
+			if l_file.is_open_write then
+				l_cse ?= an_application_status.current_call_stack_element
+				--printer.print_test_case (l_cse, "NEW_TEST_CASE", l_file)
+			else
+				io.put_string ("could not open file...%N%N")
+			end
+			--if is_capturing_enabled and is_valid_status (an_application_status) then
+--				capturer.reflect_call_stack (an_application_status)
+--				if not capturer.reflected_call_stack.is_empty then
+
+--				end
 			--end
 		end
 
@@ -250,10 +262,16 @@ feature -- Status change
 
 feature {NONE} -- Implementation
 
+	printer: CDD_TEST_CASE_PRINTER
+			-- Printer for creating test cases
+		once
+			create Result
+		end
+
 	capturer: CDD_CAPTURER
 			-- Capturer used for retrieving reflection
 		once
-			create Result
+			create Result.make
 		end
 
 	conf_factory: CONF_FACTORY is
