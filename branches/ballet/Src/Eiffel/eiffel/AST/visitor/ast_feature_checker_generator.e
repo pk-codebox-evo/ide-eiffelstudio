@@ -11,7 +11,9 @@ class
 inherit
 	AST_VISITOR
 		redefine
-			process_un_confined_as
+			process_un_confined_as,
+			process_use_as,
+			process_modify_as
 		end
 
 	REFACTORING_HELPER
@@ -465,6 +467,9 @@ feature {NONE} -- Implementation: State
 	is_checking_cas: BOOLEAN
 			-- Is a custom attribute being processed?
 
+	is_checking_frame: BOOLEAN
+			-- Is a frame expression being processed?
+
 feature {NONE} -- Implementation: Access
 
 	last_access_writable: BOOLEAN
@@ -579,6 +584,14 @@ feature -- Settings
 			is_in_assignment_set: is_in_assignment = b
 		end
 
+	set_is_checking_frame (b: BOOLEAN) is
+			-- Assign `b' to `is_checking_frame'.
+		do
+			is_checking_frame := b
+		ensure
+			is_in_frame: is_checking_frame = b
+		end
+	
 	set_current_feature (a_feature: FEATURE_I) is
 			-- Assign `a_feature' to `current_feature'.
 		do
@@ -2214,6 +2227,7 @@ feature -- Implementation
 			if l_as.locals /= Void then
 				check_locals (l_as)
 			end
+
 				-- Check preconditions
 			if l_as.precondition /= Void then
 					-- Set Result access analysis level to `is_checking_precondition': locals
@@ -2233,6 +2247,35 @@ feature -- Implementation
 				l_byte_code ?= last_byte_node
 				context.init_byte_code (l_byte_code)
 				l_byte_code.set_precondition (l_list)
+			end
+
+			io.put_string("processing ROUTINE " + l_as.out + "%N")
+
+			  -- Check use frame
+			if l_as.use_frame /= Void then
+				-- TODO check, that old, Result are not in frame expressions
+				set_is_checking_frame(True)
+				io.put_string("processing use frame " + l_as.use_frame.out + "%N")
+				l_as.use_frame.process (Current)
+				if l_needs_byte_node then
+					l_list ?= last_byte_node
+					l_byte_code.set_use_frame (l_list)
+					io.put_string("got use frame " + l_list.out + "%N")
+				end
+				-- reset the levels to default values
+				set_is_checking_frame(False)
+			end
+			
+			-- Check modify frame
+			if l_as.modify_frame /= Void then
+				set_is_checking_frame(True)
+				l_as.modify_frame.process (Current)
+				if l_needs_byte_node then
+					l_list ?= last_byte_node
+					l_byte_code.set_modify_frame (l_list)
+				end
+				-- reset the levels to default values
+				set_is_checking_frame(False)
 			end
 
 				-- Check postconditions
@@ -2356,6 +2399,7 @@ feature -- Implementation
 		local
 			l_vwbe3: VWBE3
 			l_assert: ASSERT_B
+			l_frame: FRAME_B
 			l_expr: EXPR_B
 		do
 			break_point_slot_count := break_point_slot_count + 1
@@ -2364,25 +2408,49 @@ feature -- Implementation
 
 			l_as.expr.process (Current)
 
-				-- Check if the type of the expression is boolean
-			if not last_type.actual_type.is_boolean then
-				create l_vwbe3
-				context.init_error (l_vwbe3)
-				l_vwbe3.set_type (last_type)
-				l_vwbe3.set_location (l_as.expr.end_location)
-				error_handler.insert_error (l_vwbe3)
-			end
-
-			if is_byte_node_enabled then
-				l_expr ?= last_byte_node
-				check
-					l_expr_not_void: l_expr /= Void
+			if is_checking_frame then
+				if not last_type.actual_type.associated_class.name.is_equal("FRAME") then
+-- TODO:
+--					create l_vwbe3
+--					context.init_error (l_vwbe3)
+--					l_vwbe3.set_type (last_type)
+--					l_vwbe3.set_location (l_as.expr.end_location)
+					--					error_handler.insert_error (l_vwbe3)
+-- TODO
+					io.put_string("Frame specification has wrong type!%N")
+				end				
+				if is_byte_node_enabled then
+					l_expr ?= last_byte_node
+					check
+						l_expr_not_void: l_expr /= Void
+					end
+					create l_frame
+					l_frame.set_tag (l_as.tag)
+					l_frame.set_expr (l_expr)
+					l_frame.set_line_number (l_as.expr.start_location.line)
+					last_byte_node := l_frame
 				end
-				create l_assert
-				l_assert.set_tag (l_as.tag)
-				l_assert.set_expr (l_expr)
-				l_assert.set_line_number (l_as.expr.start_location.line)
-				last_byte_node := l_assert
+
+			else
+				-- Check if the type of the expression is boolean
+				if not last_type.actual_type.is_boolean then
+					create l_vwbe3
+					context.init_error (l_vwbe3)
+					l_vwbe3.set_type (last_type)
+					l_vwbe3.set_location (l_as.expr.end_location)
+					error_handler.insert_error (l_vwbe3)
+				end
+				if is_byte_node_enabled then
+					l_expr ?= last_byte_node
+					check
+						l_expr_not_void: l_expr /= Void
+					end
+					create l_assert
+					l_assert.set_tag (l_as.tag)
+					l_assert.set_expr (l_expr)
+					l_assert.set_line_number (l_as.expr.start_location.line)
+					last_byte_node := l_assert
+				end
 			end
 		end
 
@@ -2540,6 +2608,8 @@ feature -- Implementation
 				context.init_error (l_veen2a)
 				l_veen2a.set_location (l_as.start_location)
 				error_handler.insert_error (l_veen2a)
+				-- TODO: elseif is_checking_frame then
+				-- Result in frame
 			end
 			l_type := current_feature.type
 			create {TYPED_POINTER_A} last_type.make_typed (l_type)
@@ -4987,7 +5057,21 @@ feature -- Implementation
 				l_as.assertions.process (Current)
 			end
 		end
-
+	
+	process_use_as (l_as: USE_AS) is
+		do
+			if l_as.assertions /= Void then
+				l_as.assertions.process (Current)
+			end
+		end
+	
+	process_modify_as (l_as: MODIFY_AS) is
+		do
+			if l_as.assertions /= Void then
+				l_as.assertions.process (Current)
+			end
+		end
+	
 	process_require_else_as (l_as: REQUIRE_ELSE_AS) is
 		do
 			if l_as.assertions /= Void then

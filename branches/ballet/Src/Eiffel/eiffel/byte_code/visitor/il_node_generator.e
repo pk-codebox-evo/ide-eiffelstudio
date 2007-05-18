@@ -1668,6 +1668,12 @@ feature {NONE} -- Visitors
 			end
 		end
 
+	process_frame_b (a_node: FRAME_B) is
+			-- Process `a_node'.
+		do
+			-- ingnore frame nodes
+		end
+
 	process_agent_call_b (a_node: AGENT_CALL_B) is
 		do
 			process_feature_b (a_node)

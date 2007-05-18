@@ -173,6 +173,7 @@ feature -- Processors
 				check is_assert_b: assert_b /= Void end
 				code.append ("    assert (")
 				assert_b.expr.process (function_writer)
+				code.append (function_writer.expr)
 				code.append ("); ")
 				code.append (location_info (assert_b))
 				i := i + 1

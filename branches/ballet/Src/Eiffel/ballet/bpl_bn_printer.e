@@ -53,6 +53,7 @@ inherit
 			process_expr_address_b,
 			process_external_b,
 			process_feature_b,
+			process_frame_b,
 			process_agent_call_b,
 			process_formal_conversion_b,
 			process_hector_b,
@@ -537,6 +538,15 @@ feature {BYTE_NODE} -- Visitors
 		do
 			indent := indent + 1
 			put_name ("feature_b ("+a_node.feature_name+" of ClassID: "+	a_node.written_in.out+")")
+			Precursor {BPL_BN_ITERATOR}(a_node)
+			indent := indent - 1
+		end
+
+	process_frame_b (a_node: FRAME_B) is
+			-- Process `a_node'.
+		do
+			indent := indent + 1
+			put_name ("frame_b")
 			Precursor {BPL_BN_ITERATOR}(a_node)
 			indent := indent - 1
 		end

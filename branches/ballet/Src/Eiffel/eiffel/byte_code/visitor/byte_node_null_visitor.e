@@ -228,6 +228,11 @@ feature {BYTE_NODE} -- Visitors
 		do
 		end
 
+	process_frame_b (a_node: FRAME_B) is
+			-- Process `a_node'.
+		do
+		end
+
 	process_agent_call_b (a_node: AGENT_CALL_B) is
 			-- Process `a_node'.
 		do

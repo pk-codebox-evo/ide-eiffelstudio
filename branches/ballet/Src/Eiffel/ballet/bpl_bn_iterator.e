@@ -119,6 +119,8 @@ feature -- Extra Processors
 		require
 			not_void: a_node /= Void
 		do
+			safe_process (a_node.use_frame)
+			safe_process (a_node.modify_frame)
 			safe_process (a_node.precondition)
 			safe_process (a_node.compound)
 			safe_process (a_node.rescue_clause)
@@ -545,6 +547,12 @@ feature {BYTE_NODE} -- Visitors
 			-- Process `a_node'.
 		do
 			safe_process (a_node.parameters)
+		end
+
+	process_frame_b (a_node: FRAME_B) is
+			-- Process `a_node'.
+		do
+			safe_process (a_node.expr)			
 		end
 
 	process_agent_call_b (a_node: AGENT_CALL_B) is
