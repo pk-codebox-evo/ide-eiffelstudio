@@ -172,6 +172,7 @@ feature -- Processors
 				assert_b ?= a_node.check_list.item
 				check is_assert_b: assert_b /= Void end
 				code.append ("    assert (")
+				function_writer.reset
 				assert_b.expr.process (function_writer)
 				code.append (function_writer.expr)
 				code.append ("); ")
