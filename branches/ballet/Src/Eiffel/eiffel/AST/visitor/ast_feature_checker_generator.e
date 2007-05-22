@@ -2249,24 +2249,20 @@ feature -- Implementation
 				l_byte_code.set_precondition (l_list)
 			end
 
-			io.put_string("processing ROUTINE " + l_as.out + "%N")
-
 			  -- Check use frame
 			if l_as.use_frame /= Void then
 				-- TODO check, that old, Result are not in frame expressions
 				set_is_checking_frame(True)
-				io.put_string("processing use frame " + l_as.use_frame.out + "%N")
 				l_as.use_frame.process (Current)
 				if l_needs_byte_node then
 					l_list ?= last_byte_node
 					l_byte_code.set_use_frame (l_list)
-					io.put_string("got use frame " + l_list.out + "%N")
 				end
 				-- reset the levels to default values
 				set_is_checking_frame(False)
 			end
 			
-			-- Check modify frame
+			  -- Check modify frame
 			if l_as.modify_frame /= Void then
 				set_is_checking_frame(True)
 				l_as.modify_frame.process (Current)
@@ -2409,15 +2405,16 @@ feature -- Implementation
 			l_as.expr.process (Current)
 
 			if is_checking_frame then
-				if not last_type.actual_type.associated_class.name.is_equal("FRAME") then
--- TODO:
+				-- TODO: allow a subtype of FRAME?
+				if not last_type.associated_class.name.is_equal("FRAME") then
+-- TODO: create some meaningful error
 --					create l_vwbe3
 --					context.init_error (l_vwbe3)
 --					l_vwbe3.set_type (last_type)
 --					l_vwbe3.set_location (l_as.expr.end_location)
 					--					error_handler.insert_error (l_vwbe3)
 -- TODO
-					io.put_string("Frame specification has wrong type!%N")
+					io.put_string("Frame specification has wrong type:" + last_type.associated_class.name + "%N")
 				end				
 				if is_byte_node_enabled then
 					l_expr ?= last_byte_node

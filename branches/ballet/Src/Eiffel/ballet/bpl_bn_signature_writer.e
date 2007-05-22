@@ -1,6 +1,6 @@
 indexing
 	description: "Write the signature of procedures"
-	author: "Bernd Schoeller"
+	author: "Bernd Schoeller, Raphael Mack"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -11,9 +11,13 @@ inherit
 	BPL_BN_ITERATOR
 		redefine
 			set_current_feature,
-			process_byte_code
+			process_byte_code,
+			process_feature_without_code
 		end
+	SHARED_SERVER
 
+	SHARED_BYTE_CONTEXT
+	
 create
 	make
 
@@ -33,6 +37,8 @@ feature -- Generation
 			setup_function_writer
 			function_writer.set_current_feature (a_feature)
 
+			--			context.change_class_type_context(a_feature.written_class.types.first, a_feature.written_class.types.first)
+			context.init (a_feature.written_class.types.first)
 			bpl_out ("// Signature: " + a_feature.feature_name + " of class " + current_class.name + "%N")
 			bpl_out ("procedure proc.")
 			bpl_out (current_class.name)
@@ -46,7 +52,7 @@ feature -- Generation
 			loop
 				arg_name := a_feature.arguments.item_name (i)
 				arg_type := a_feature.arguments.i_th (i)
-				bpl_out (",arg.")
+				bpl_out (", arg.")
 				bpl_out (arg_name)
 				bpl_out (":")
 				bpl_out (bpl_type_for_type_a (arg_type))
@@ -100,7 +106,7 @@ feature -- Generation
 				loop
 					arg_name := a_feature.arguments.item_name (i)
 					arg_type := a_feature.arguments.i_th (i)
-					bpl_out (",arg.")
+					bpl_out (", arg.")
 					bpl_out (arg_name)
 					i := i + 1
 				end
@@ -129,6 +135,10 @@ feature {BYTE_NODE} -- Visitors
 			-- not want to be BYTE_NODEs (though they are).
 		local
 			ass_list: BYTE_LIST[BYTE_NODE]
+			inh_assert: INHERITED_ASSERTION
+			feat: FEATURE_I
+			byte_l: BYTE_LIST [BYTE_NODE]
+			e_cls, tmp_cls: EIFFEL_CLASS_C
 		do
 			ass_list := a_node.precondition
 			if ass_list /= Void then
@@ -163,9 +173,94 @@ feature {BYTE_NODE} -- Visitors
 				end
 			end
 
+			-- inherited contracts
+			
+			Context.clear_feature_data
+			Context.set_current_feature (current_feature)
+			inh_assert := Context.inherited_assertion
+			inh_assert.wipe_out
+			
+			if current_feature.assert_id_set /= Void  then
+				a_node.formulate_inherited_assertions(current_feature.assert_id_set)
+			end
+			
+			from
+				inh_assert.precondition_list.start
+				inh_assert.precondition_types.start
+			until
+				inh_assert.precondition_list.after
+			loop
+				check
+					same_length_types: not inh_assert.precondition_types.after
+				end
+				e_cls ?= inh_assert.precondition_types.item.associated_class
+				check
+					need_eiffel: e_cls /= Void
+				end
+
+				from
+					byte_l := inh_assert.precondition_list.item
+					byte_l.start
+				until
+					byte_l.after
+				loop
+					function_writer.reset
+					byte_l.item.process (function_writer)
+					bpl_out ("  requires ")
+					bpl_out (function_writer.expr)
+					bpl_out ("; // (inherited) ")
+					tmp_cls := current_class
+					current_class := e_cls
+					bpl_out (location_info (byte_l.item))
+					e_cls := tmp_cls
+					byte_l.forth
+				end
+				inh_assert.precondition_list.forth
+			end
+			
+			from
+				inh_assert.postcondition_list.start
+				inh_assert.precondition_types.start
+			until
+				inh_assert.postcondition_list.after
+			loop
+				check
+					same_length_types: not inh_assert.precondition_types.after
+				end
+				e_cls ?= inh_assert.precondition_types.item.associated_class
+				check
+					need_eiffel: e_cls /= Void
+				end
+
+				from
+					byte_l := inh_assert.postcondition_list.item
+					byte_l.start
+				until
+					byte_l.after
+				loop
+					function_writer.reset
+					byte_l.item.process (function_writer)
+					bpl_out ("  ensures ")
+					bpl_out (function_writer.expr)
+					bpl_out ("; // (inherited) ")
+					tmp_cls := current_class
+					current_class := e_cls
+					bpl_out (location_info (byte_l.item))
+					e_cls := tmp_cls
+					byte_l.forth
+				end
+				inh_assert.postcondition_list.forth
+			end
 			
 		end
 
+feature -- Extra processors
+	process_feature_without_code (a_feature: FEATURE_I) is
+			-- Process a feature that does not have code.
+		do
+			bpl_out("//TODO generate contracts (incl. frames) for feature: " + a_feature.feature_name + " (it doesn't have byte_code)%N")
+		end
+	
 feature{NONE} -- Implementation
 
 	function_writer: BPL_BN_FUNCTION_WRITER

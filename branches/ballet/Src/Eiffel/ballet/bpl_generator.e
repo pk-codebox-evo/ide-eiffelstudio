@@ -49,7 +49,7 @@ feature -- Actual Processing of a class
 				define_functions
 				define_signatures
 				define_implementations
-				define_used_features
+--				define_used_features
 			end
 		end
 
@@ -72,37 +72,37 @@ feature {NONE} -- Implementation
 			bpl_out ("// FEATURE LISTS ------------------------------------------%N")
 			a_list := usage_analyser.query_list
 			from a_list.start until a_list.off loop
-				bpl_out ("// Query: "+a_list.item.feature_name+"%N")
+				bpl_out ("// Query: " + a_list.item.feature_name + "%N")
 				a_list.forth
 			end
 			a_list := usage_analyser.command_list
 			from a_list.start until a_list.off loop
-				bpl_out ("// Command: "+a_list.item.feature_name+"%N")
+				bpl_out ("// Command: " + a_list.item.feature_name + "%N")
 				a_list.forth
 			end
 			a_list := usage_analyser.deferred_command_list
 			from a_list.start until a_list.off loop
-				bpl_out ("// Def. Command: "+a_list.item.feature_name+"%N")
+				bpl_out ("// Def. Command: " + a_list.item.feature_name + "%N")
 				a_list.forth
 			end
 			a_list := usage_analyser.deferred_query_list
 			from a_list.start until a_list.off loop
-				bpl_out ("// Def. Query: "+a_list.item.feature_name+"%N")
+				bpl_out ("// Def. Query: " + a_list.item.feature_name + "%N")
 				a_list.forth
 			end
 			a_list := usage_analyser.attribute_list
 			from a_list.start until a_list.off loop
-				bpl_out ("// Attribute: "+a_list.item.feature_name+"%N")
+				bpl_out ("// Attribute: " + a_list.item.feature_name + "%N")
 				a_list.forth
 			end
 			a_list := usage_analyser.function_list
 			from a_list.start until a_list.off loop
-				bpl_out ("// Function: "+a_list.item.feature_name+"%N")
+				bpl_out ("// Function: " + a_list.item.feature_name + "%N")
 				a_list.forth
 			end
 			a_list := usage_analyser.procedure_list
 			from a_list.start until a_list.off loop
-				bpl_out ("// Procedure: "+a_list.item.feature_name+"%N")
+				bpl_out ("// Procedure: " + a_list.item.feature_name + "%N")
 				a_list.forth
 			end
 			bpl_out ("%N")
@@ -215,6 +215,7 @@ feature {NONE} -- Implementation
 		do
 			from
 				create generated_features.make (0)
+				generated_features.compare_references
 			until
 				environment.used_features.is_empty
 			loop
@@ -224,12 +225,12 @@ feature {NONE} -- Implementation
 				some_class ?= some_feature.written_class
 				if
 					some_class /= Void and then
-					           ((generated_features.item(some_class.name) = Void)
+					           ((generated_features.item (some_class.name) = Void)
 								  or else not generated_features.item(some_class.name).has (some_feature.feature_id)) and
 					bpl_type_for_class (some_class).is_equal ("ref") and
 					some_class.class_id /= current_class.class_id
 				 then
-               if not types_in_background_theory.has(some_class.name) then
+               if not types_in_background_theory.has (some_class.name) then
                   if some_feature.is_function or some_feature.is_attribute or some_feature.is_constant then
 							if some_feature.is_attribute then
 								create attribute_writer.make (some_class)
@@ -244,10 +245,10 @@ feature {NONE} -- Implementation
 						signature_writer.set_leaf_list (match_list)
                   signature_writer.write_signature (some_feature)
                end
-               if generated_features.item(some_class.name) = Void then
-                  generated_features.put(create {ARRAYED_SET[INTEGER]}.make(8), some_class.name)
+               if generated_features.item (some_class.name) = Void then
+                  generated_features.put (create {ARRAYED_SET[INTEGER]}.make(8), some_class.name)
                end
-					generated_features.item(some_class.name).extend(some_feature.feature_id)
+					generated_features.item (some_class.name).extend(some_feature.feature_id)
 				end
 				environment.used_features.prune (some_feature)
 			end

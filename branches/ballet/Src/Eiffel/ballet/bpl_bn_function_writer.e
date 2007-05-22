@@ -96,9 +96,9 @@ feature -- Main
 			bpl_out ("// Function: " + a_function.feature_name + " of class " + current_class.name + "%N")
 			bpl_out ("function ")
 			bpl_out (func_name)
-			bpl_out ("([ref,name]any,")
+			bpl_out ("([ref, name]any, ")
 			bpl_out (bpl_type_for_class (current_class))
-			result_call := func_name + "(H,C"
+			result_call := func_name + "(H, C"
 
 			from
 				i := 1
@@ -107,11 +107,11 @@ feature -- Main
 			loop
 				arg_name := a_function.arguments.item_name (i)
 				arg_type := a_function.arguments.i_th (i)
-				bpl_out (",arg.")
+				bpl_out (", arg.")
 				bpl_out (arg_name)
 				bpl_out (":")
 				bpl_out (bpl_type_for_type_a (arg_type))
-				result_call.append (",arg.")
+				result_call.append (", arg.")
 				result_call.append (arg_name)
 
 				i := i + 1
@@ -119,7 +119,7 @@ feature -- Main
 
 			bpl_out (") returns (" + return_type + ");%N")
 			result_call.append (")")
-			intro := "forall H:[ref,name]any,C:ref"
+			intro := "forall H:[ref, name]any, C:ref"
 
 			from
 				i := 1
@@ -128,7 +128,7 @@ feature -- Main
 			loop
 				arg_name := a_function.arguments.item_name (i)
 				arg_type := a_function.arguments.i_th (i)
-				intro.append (",arg.")
+				intro.append (", arg.")
 				intro.append (arg_name)
 				intro.append (":")
 				intro.append (bpl_type_for_type_a (arg_type))
@@ -216,7 +216,7 @@ feature -- Processing Environment
 		end
 
 	intro: STRING
-			-- first part of the assertions (forall ...)
+			-- first part of the assertions ("forall ...")
 
 feature -- Processing
 	process_argument_b (a_node: ARGUMENT_B) is
@@ -488,7 +488,7 @@ feature -- Processing
 			expr.append(a_node.feature_name)
 			expr.append("(")
 			expr.append(heap_ref)
-			expr.append(",")
+			expr.append(", ")
 			expr.append(this_ref)
 
 			if a_node.parameters /= Void then
@@ -500,7 +500,7 @@ feature -- Processing
 				loop
 					expr := ""
 					safe_process(a_node.parameters.i_th(i))
-					tmp.append(",")
+					tmp.append(", ")
 					tmp.append(expr)
 					i := i + 1
 				end

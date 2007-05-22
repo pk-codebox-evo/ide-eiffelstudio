@@ -12,6 +12,7 @@ inherit
 	SHARED_SERVER
 	SHARED_BPL_ENVIRONMENT
 
+
 create
 	make
 
@@ -79,8 +80,7 @@ feature -- Access
 			attribute_set: a_feature.is_attribute implies current_attribute = a_feature
 			constant_set: a_feature.is_constant implies current_constant = a_feature
 		end
-
-
+	
 	leaf_list: LEAF_AS_LIST
 		-- Leaf list from parent iterator
 
@@ -106,7 +106,7 @@ feature -- Extra Processors
 		do
 			set_current_feature (a_feature)
 			if byte_server.has (current_feature.code_id) then
-				byte_code := byte_server.disk_item (current_feature.code_id)
+				byte_code := byte_server.item (current_feature.code_id)
 				process_byte_code (byte_code)
 			else
 				process_feature_without_code (a_feature)
