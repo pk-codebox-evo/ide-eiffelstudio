@@ -14,7 +14,7 @@ inherit
 	EB_CLUSTER_MANAGER_OBSERVER
 		rename
 			manager as eb_cluster_manager,
-			refresh as be_cluster_refresh,
+			refresh as eb_cluster_refresh,
 			on_class_removed as remove_test_case_for_class
 		export
 			{NONE} all
@@ -115,21 +115,7 @@ feature -- Status setting (Application)
 			l_file: KL_TEXT_OUTPUT_FILE
 			l_cse: EIFFEL_CALL_STACK_ELEMENT
 		do
-			create l_file.make (eiffel_system.root_cluster.location.original_directory + "/" + tests_cluster_name + "/new_test_case.e")
-
-			l_file.open_write
-			if l_file.is_open_write then
-				l_cse ?= an_application_status.current_call_stack_element
-				--printer.print_test_case (l_cse, "NEW_TEST_CASE", l_file)
-			else
-				io.put_string ("could not open file...%N%N")
-			end
-			--if is_capturing_enabled and is_valid_status (an_application_status) then
---				capturer.reflect_call_stack (an_application_status)
---				if not capturer.reflected_call_stack.is_empty then
-
---				end
-			--end
+			capturer.capture_call_stack (an_application_status)
 		end
 
 	on_application_quit is
@@ -271,7 +257,7 @@ feature {NONE} -- Implementation
 	capturer: CDD_CAPTURER
 			-- Capturer used for retrieving reflection
 		once
-			create Result.make
+			create Result.make (Current)
 		end
 
 	conf_factory: CONF_FACTORY is

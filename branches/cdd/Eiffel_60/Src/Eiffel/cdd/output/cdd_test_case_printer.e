@@ -53,7 +53,7 @@ feature -- Output
 			l_args: E_FEATURE_ARGUMENTS
 		do
 			l_class := a_cse.dynamic_class.eiffel_class_c
-			l_feature := l_feature
+			l_feature := a_cse.routine
 
 				-- Check wheter `l_feature' was used as an creation call
 			l_is_creation_call := l_class.creation_feature = l_feature.associated_feature_i
@@ -63,20 +63,23 @@ feature -- Output
 
 				-- Initialize generic parameters for test case
 			l_class_name := l_class.name_in_upper
-			l_arg_tuple := "TUPLE ["
-			from
-				l_args := l_feature.arguments
-				l_args.start
-			until
-				l_args.after
-			loop
-				l_arg_tuple.append (l_args.item.dump)
-				if not l_args.islast then
-					l_arg_tuple.append (", ")
+			l_arg_tuple := "TUPLE"
+			l_args := l_feature.arguments
+			if l_args /= Void then
+				l_arg_tuple.append (" [")
+				from
+					l_args.start
+				until
+					l_args.after
+				loop
+					l_arg_tuple.append (l_args.item.dump)
+					if not l_args.islast then
+						l_arg_tuple.append (", ")
+					end
+					l_args.forth
 				end
-				l_args.forth
+				l_arg_tuple.append ("]")
 			end
-			l_arg_tuple.append ("]")
 
 				-- Start printing test case
 			initialize (a_file)
@@ -84,7 +87,7 @@ feature -- Output
 			append_class_header (l_class.name_in_upper, a_class_name, l_arg_tuple)
 
 			append_set_up (l_feature, l_is_creation_call)
-			append_access (a_class_name, l_feature.name)
+			append_access (l_class.name_in_upper, l_feature.name)
 			append_context (a_cse, l_is_creation_call, l_arg_tuple)
 
 			append_class_footer (a_class_name)
@@ -140,8 +143,8 @@ feature {NONE} -- Implementation
 		do
 			append_text ("indexing%N")
 			append_text ("%Tdescription: %"Objects that represent a cdd test case%"%N")
-			append_text ("%Tcall_stack_uuid: %"" + an_uuid + "%"")
-			append_text ("%Tcall_stack_index: " + an_index.out + "")
+			append_text ("%Tcall_stack_uuid: %"" + an_uuid + "%"%N")
+			append_text ("%Tcall_stack_index: " + an_index.out + "%N")
 			-- NOTE: not sure if class/feature information is needed by manager
 			-- since it is part of the test case class text -Arno
 			--append_text ("%Tcdd_cluster: %"" + l_class.cluster.cluster_name + "%"%N")
@@ -154,7 +157,7 @@ feature {NONE} -- Implementation
 			file_size_increased: output_file.count > old output_file.count
 		end
 
-	append_class_header (a_class_name, a_cut_name, an_arg_list: STRING) is
+	append_class_header (a_cut_name, a_class_name, an_arg_list: STRING) is
 			-- Append cdd test case class header with name `a_class_name' for testing `a_cut_name'.
 			-- The feature under test takes the arguments listed in `a_arg_list'.
 		require
@@ -164,7 +167,7 @@ feature {NONE} -- Implementation
 			an_arg_list_not_empty: an_arg_list /= Void and then not an_arg_list.is_empty
 		do
 			append_text ("class%N%T" + a_class_name + "%N%N")
-			append_text ("inherit%N%TCDD_SHARED_TESTING [" + a_cut_name + ", " + an_arg_list + "]%N%N")
+			append_text ("inherit%N%TCDD_TEST_CASE [" + a_cut_name + ", " + an_arg_list + "]%N%N")
 			append_text ("%N%Ncreate%N%Tmake%N%N")
 		ensure
 			file_size_increased: output_file.count > old output_file.count
@@ -178,38 +181,45 @@ feature {NONE} -- Implementation
 		local
 			i: INTEGER
 		do
-			append_text ("feature -- Initialization%N%N")
+			append_text ("feature {NONE} -- Initialization%N%N")
 			append_text ("%Tset_up_routine is%N")
 			append_text ("%T%T%T-- Initialize agent that calls feature under test%N")
 			append_text ("%T%Tdo%N")
 			append_text ("%T%T%Troutine_under_test := agent ")
 			if an_is_creation_call then
-				append_text ("(")
-				from
-					i := 1
-				until
-					i > a_feature.argument_count
-				loop
-					append_text ("an_arg" + i.out + ": " + a_feature.arguments.i_th (i).dump)
-					if i < a_feature.argument_count then
-						append_text ("; ")
+				if a_feature.argument_count > 0 then
+					append_text ("(")
+					from
+						i := 1
+					until
+						i > a_feature.argument_count
+					loop
+						append_text ("an_arg" + i.out + ": " + a_feature.arguments.i_th (i).dump)
+						if i < a_feature.argument_count then
+							append_text ("; ")
+						end
+						i := i + 1
 					end
-					i := i + 1
+					append_text (")")
 				end
-				append_text (")%N%T%T%T%Tdo%N%T%T%T%T%T")
-				append_text ("create object_under_test." + a_feature.name + "(")
-				from
-					i := 1
-				until
-					i > a_feature.argument_count
-				loop
-					append_text ("an_arg" + i.out)
-					if i < a_feature.argument_count then
-						append_text (", ")
+				append_text ("%N%T%T%T%Tdo%N%T%T%T%T%T")
+				append_text ("create object_under_test." + a_feature.name)
+				if a_feature.argument_count > 0 then
+					append_text ("(")
+					from
+						i := 1
+					until
+						i > a_feature.argument_count
+					loop
+						append_text ("an_arg" + i.out)
+						if i < a_feature.argument_count then
+							append_text (", ")
+						end
+						i := i + 1
 					end
-					i := i + 1
+					append_text (")")
 				end
-				append_text (")%N%T%T%T%Tend")
+				append_text ("%N%T%T%T%Tend")
 			else
 				append_text ("object_under_test." + a_feature.name)
 			end
@@ -263,19 +273,21 @@ feature {NONE} -- Implementation
 
 				-- Append arguments as first object in context
 			append_text ("%T%T%T%T%T-- Arguments for calling `routine_under_test'%N")
-			append_text ("%T%T%T%T[#1, %"" + an_arg_list + "%", << ")
-			from
-				l_args := a_cse.arguments
-				i := 1
-			until
-				i > l_args.count
-			loop
-				l_adv := l_args.item
-				append_text ("%"" + attribute_value (l_adv) + "%"")
-				if i < l_args.count then
-					append_text (", ")
+			append_text ("%T%T%T%T[%"#1%", %"" + an_arg_list + "%", << ")
+			l_args := a_cse.arguments
+			if l_args /= Void then
+				from
+					i := 1
+				until
+					i > l_args.count
+				loop
+					l_adv := l_args.i_th (i)
+					append_text ("%"" + attribute_value (l_adv) + "%"")
+					if i < l_args.count then
+						append_text (", ")
+					end
+					i := i + 1
 				end
-				i := i + 1
 			end
 			append_text (" >>],%N")
 
@@ -283,7 +295,10 @@ feature {NONE} -- Implementation
 
 			if an_is_creation_call then
 					-- Append Void object since routine is an creation call
-				append_text ("%T%T%T%TVoid,%N")
+				append_text ("%T%T%T%TVoid")
+				if not object_queue.is_empty then
+					append_text (",%N")
+				end
 			end
 
 			from until
@@ -291,9 +306,12 @@ feature {NONE} -- Implementation
 			loop
 				append_single_object_context (object_queue.item)
 				object_queue.remove
+				if not object_queue.is_empty then
+					append_text (",%N")
+				end
 			end
 
-			append_text ("%N%T%Tend%N%N")
+			append_text ("%N%T%T%T%T>>%N%T%Tend%N%N")
 		ensure
 			file_size_increased: output_file.count > old output_file.count
 		end
@@ -308,6 +326,9 @@ feature {NONE} -- Implementation
 		local
 			l_new_id: STRING
 		do
+			if object_map.is_full then
+				object_map.resize (object_map.capacity * 2)
+			end
 			object_count := object_count + 1
 			l_new_id := "#" + object_count.out
 			object_map.put (l_new_id, an_adv.address)
@@ -324,27 +345,17 @@ feature {NONE} -- Implementation
 		require
 			initialized: is_initialized
 		do
-			inspect an_adv.kind
-			when {VALUE_TYPES}.reference_value then
+			if is_reference_value (an_adv) then
 				if  an_adv.dynamic_class /= Void and then an_adv.dynamic_class.is_eiffel_class_c then
-					if object_map.has (an_adv.address) then
-						Result := object_map.item (an_adv.address)
-					else
-						if object_map.is_full then
-							object_map.resize (object_map.capacity * 2)
-						end
-						object_count := object_count + 1
-						Result := "#" + object_count.out
-						object_map.put (Result, an_adv.address)
-						object_queue.put (an_adv)
+					if not object_map.has (an_adv.address) then
+						add_referenced_object (an_adv)
 					end
+					Result := object_map.item (an_adv.address)
 				end
-			when {VALUE_TYPES}.immediate_value then
+			elseif an_adv.kind = {VALUE_TYPES}.immediate_value then
 				Result := an_adv.output_value
-			when {VALUE_TYPES}.void_value then
-				Result := "Void"
 			else
-				create Result.make_empty
+				Result := "Void"
 			end
 		ensure
 			not_void: Result /= Void
@@ -364,24 +375,25 @@ feature {NONE} -- Implementation
 			l_class := an_object.dynamic_class.eiffel_class_c
 
 			l_id := object_map.item (an_object.address)
-			append_text ("%T%T%T%T[%"#" + l_id + "%", %"" + l_class.name_in_upper)
-			if l_class.is_generic then
-				append_text (" [" + an_object.dump_value.generating_type_representation (True) + "]")
-			end
+			append_text ("%T%T%T%T[%"" + l_id + "%", %"")
+			append_text (an_object.dump_value.generating_type_representation (True))
 			append_text ("%", ")
 
 			if l_class.name.is_equal ("STRING_8") or l_class.name.is_equal ("STRING_32") then
 				l_ref_adv ?= an_object
 				check l_ref_adv_not_void: l_ref_adv /= Void end
-				append_text ("<< [%"1%", %"" + l_ref_adv.string_value + "%"] >>")
+				append_text ("<< %"" + l_ref_adv.dump_value.formatted_output + "%" >>")
+			elseif l_class.is_special or l_class.is_tuple then
+				append_object_attributes (an_object.children, False)
 			else
 				append_object_attributes (an_object.children, True)
 			end
-			append_text ("%"]")
+			append_text ("]")
 		end
 
 	append_object_attributes (an_attr_list: DS_LIST [ABSTRACT_DEBUG_VALUE]; an_use_attr_names: BOOLEAN) is
-			-- Append a list of attributes for an object in the context.
+			-- Append a list of attributes for `an_attr_list' in the context.
+			-- If `an_use_attr_name' is true, also provide the attributes names.
 		require
 			initialized: is_initialized
 			object_map_not_void: object_map /= Void
@@ -401,16 +413,17 @@ feature {NONE} -- Implementation
 			loop
 				l_child := l_cursor.item
 				l_value := attribute_value (l_child)
-				if l_value /= Void then
-					if an_use_attr_names then
-						append_text ("[%"" + l_child.name + "%", %"" + l_value + "%"]")
-					else
-						append_text ("[%"" + l_cursor.index.out + "%", %"" + l_value + "%"]")
-					end
+				if an_use_attr_names then
+					append_text ("%"" + l_child.name + "%", %"" + l_value + "%"")
+				else
+					append_text ("%"" + l_value + "%"")
+				end
+				if not l_cursor.is_last then
+					append_text (", ")
 				end
 				l_cursor.forth
 			end
-			append_text (">>")
+			append_text (" >>")
 		end
 
 	append_class_footer (test_class_name: STRING) is
@@ -418,7 +431,7 @@ feature {NONE} -- Implementation
 		require
 			test_class_name_not_void: test_class_name /= Void
 		do
-			append_text ("%N%Nend -- " + test_class_name + "%N%N")
+			append_text ("%N%Nend -- class " + test_class_name + "%N%N")
 		ensure
 			file_size_increased: output_file.count > old output_file.count
 		end
