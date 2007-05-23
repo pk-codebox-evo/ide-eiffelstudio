@@ -16,7 +16,7 @@ inherit
 
 feature -- Access
 
-	cursor: CC_CURSOR_POSITION is
+	cursor_position: CC_CURSOR_POSITION is
 			-- Current cursor position.
 		use
 			use_own_representation: representation

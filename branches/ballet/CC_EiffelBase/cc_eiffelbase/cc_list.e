@@ -11,10 +11,17 @@ deferred class
 inherit
 	-- TODO checken
 	CC_SEQUENCE [G]
+		rename
+			occurrences as occurrences_sequence
+		export
+			{NONE}
+				occurrences_sequence
 		redefine
 			has,
 			index_of,
-			off
+			off,
+			is_equal,
+			append
 		select
 			model_container,
 			prune_all,
@@ -27,13 +34,16 @@ inherit
 			model as model_indexable,
 			prune_all as prune_all_indexable,
 			valid_index as valid_index_indexable,
-			item as i_th,
+			item as i_th alias "[]",
 			put as put_indexable
 		export
 			{NONE}
 				model_indexable,
-				prune_all_indexable,
-				valid_index_indexable
+				prune_all_indexable
+				--valid_index_indexable
+				-- TODO wenn ich das nach none exportiere -> i_th benutzt das in precondition
+		redefine
+			is_equal
 		end
 
 	CC_CURSOR_STRUCTURE [G]
@@ -44,6 +54,8 @@ inherit
 				model_cursor_structure
 		undefine
 			prune_all
+		redefine
+			is_equal
 		select
 			put
 		end
@@ -55,7 +67,7 @@ feature -- Access
 		local
 			old_position: CC_CURSOR_POSITION
 		do
-			old_position := cursor
+			old_position := cursor_position
 			start
 			Result := item
 			go_to (old_position)
@@ -66,7 +78,7 @@ feature -- Access
 		local
 			old_position: CC_CURSOR_POSITION
 		do
-			old_position := cursor
+			old_position := cursor_position
 			finish
 			Result := item
 			go_to (old_position)
@@ -79,7 +91,7 @@ feature -- Access
 		local
 			old_position: CC_CURSOR_POSITION
 		do
-			old_position := cursor
+			old_position := cursor_position
 
 			start
 			if not off then
@@ -98,178 +110,158 @@ feature -- Access
 		local
 			old_position: CC_CURSOR_POSITION
 		do
-			old_position := cursor
+			old_position := cursor_position
 
 			-- TODO
 
 			go_to (old_position)
 		end
 
---	i_th alias "[]", infix "@" (i: INTEGER): like item is
---			-- Item at `i'-th position
---		local
---			old_position: CURSOR
---		do
---			old_position := cursor
---			go_i_th (i)
---			Result := item
---			go_to (old_position)
---		end
+	i_th alias "[]", infix "@" (i: INTEGER): like item is
+			-- Item at `i'-th position.
+		local
+			old_position: CC_CURSOR_POSITION
+		do
+			old_position := cursor_position
+			go_i_th (i)
+			Result := item
+			go_to (old_position)
+		end
 
 feature -- Measurement
 
---	occurrences (v: like item): INTEGER is
---			-- Number of times `v' appears.
---			-- (Reference or object equality,
---			-- based on `object_comparison'.)
---		local
---			pos: CURSOR
---		do
---			pos := cursor
---			Result := sequential_occurrences (v)
---			go_to (pos)
---		end
+	occurrences (v: like item): INTEGER is
+			-- Number of times `v' appears.
+			-- (Reference or object equality,
+			-- based on `object_comparison'.)
+		local
+			old_position: CC_CURSOR_POSITION
+		do
+			old_position := cursor_position
+			Result := occurrences_sequence (v)
+			go_to (old_position)
+		end
 
-
-
--- TODO ignorieren???
---	index_set: INTEGER_INTERVAL is
---			-- Range of acceptable indexes
---		do
---			create Result.make (1, count)
---		ensure then
---			count_definition: Result.count = count
---		end
-
-
--- from list
 feature -- Comparison
 
---	is_equal (other: like Current): BOOLEAN is
---			-- Does `other' contain the same elements?
---		local
---			c1, c2: CURSOR
---		do
---			if Current = other then
---				Result := True
---			else
---				Result := (is_empty = other.is_empty) and
---						(object_comparison = other.object_comparison) and
---						(count = other.count)
---				if Result and not is_empty then
---					c1 ?= cursor
---					c2 ?= other.cursor
---					check
---						cursors_exist: c1 /= Void and c2 /= Void
---							-- Because every list contains a cursor object
---					end
---					
---					from
---						start
---						other.start
---					until
---						after or not Result
---					loop
---						if object_comparison then
---							Result := equal (item, other.item)
---						else
---							Result := (item = other.item)
---						end
---						forth
---						other.forth
---					end
---					go_to (c1)
---					other.go_to (c2)
---				elseif is_empty and other.is_empty and
---					object_comparison = other.object_comparison then
---					Result := True
---				end
---			end
---		ensure then
---			indices_unchanged:
---				index = old index and other.index = old other.index
---			true_implies_same_size: Result implies count = other.count
---		end
+	is_equal (other: like Current): BOOLEAN is
+			-- Does `other' contain the same elements?
+		use
+			use_own_representation: representation
+		local
+			old_position_1, old_position_2: CC_CURSOR_POSITION
+		do
+			if Current = other then
+				Result := True
+			else
+				Result := (is_empty = other.is_empty) and
+						(object_comparison = other.object_comparison) and
+						(count = other.count)
+				if Result and not is_empty then
+					old_position_1 ?= cursor_position
+					old_position_2 ?= other.cursor_position
+					check
+						cursors_exist: old_position_1 /= Void and old_position_2 /= Void
+							-- Because every list contains a cursor object
+					end
 
+					from
+						start
+						other.start
+					until
+						after or not Result
+					loop
+						if object_comparison then
+							Result := equal (item, other.item)
+						else
+							Result := (item = other.item)
+						end
+						forth
+						other.forth
+					end
+					go_to (old_position_1)
+					other.go_to (old_position_2)
+				elseif is_empty and other.is_empty and
+					object_comparison = other.object_comparison then
+					Result := True
+				end
+			end
+		ensure then
+			indices_unchanged:
+				index = old index and other.index = old other.index
+			true_implies_same_size: Result implies count = other.count
+			-- TODO add model contracts
+		end
 
 feature -- Cursor movement
 
---	start is
---			-- Move cursor to first position.
---			-- (No effect if empty)
---		do
---			if not is_empty then
---				go_i_th (1)
---			end
---		ensure then
---			at_first: not is_empty implies isfirst
---		end
+	start is
+			-- Move cursor to first position.
+			-- (No effect if empty)
+		do
+			if not is_empty then
+				go_i_th (1)
+			end
+		ensure then
+			at_first: not is_empty implies is_first
+		end
 
---	finish is
---			-- Move cursor to last position.
---			-- (No effect if empty)
---		do
---			if not is_empty then
---				go_i_th (count)
---			end
---		ensure then
---			at_last: not is_empty implies islast
---		end
+	finish is
+			-- Move cursor to last position.
+			-- (No effect if empty)
+		do
+			if not is_empty then
+				go_i_th (count)
+			end
+		ensure then
+			at_last: not is_empty implies is_last
+		end
 
---	move (i: INTEGER) is
---			-- Move cursor `i' positions. The cursor
---			-- may end up `off' if the absolute value of `i'
---			-- is too big.
---		local
---			counter, pos, final: INTEGER
---		do
---			if i > 0 then
---				from
---				until
---					(counter = i) or else off
---				loop
---					forth
---					counter := counter + 1
---				end
---			elseif i < 0 then
---				final := index + i
---				if final <= 0 then
---					start
---					back
---				else
---					from
---						start
---						pos := 1
---					until
---						pos = final
---					loop
---						forth
---						pos := pos + 1
---					end
---				end
---			end
---		ensure
---			too_far_right: (old index + i > count) implies exhausted
---			too_far_left: (old index + i < 1) implies exhausted
---			expected_index: (not exhausted) implies (index = old index + i)
---		end
+	move (i: INTEGER) is
+			-- Move cursor `i' positions. The cursor
+			-- may end up `off' if the absolute value of `i'
+			-- is too big.
+		use
+			use_own_representation: representation
+		modify
+			modify_own_representation: representation
+		local
+			counter, pos, final: INTEGER
+		do
+			if i > 0 then
+				from
+				until
+					(counter = i) or else off
+				loop
+					forth
+					counter := counter + 1
+				end
+			elseif i < 0 then
+				final := index + i
+				if final <= 0 then
+					start
+					back
+				else
+					from
+						start
+						pos := 1
+					until
+						pos = final
+					loop
+						forth
+						pos := pos + 1
+					end
+				end
+			end
+		ensure
+			too_far_right: (old index + i > count) implies exhausted
+			too_far_left: (old index + i < 1) implies exhausted
+			expected_index: (not exhausted) implies (index = old index + i)
+			-- TODO add model contracts
+			confined representation
+		end
 
-
-
--- TOOD schon vorhanden
---	go_i_th (i: INTEGER) is
---			-- Move cursor to `i'-th position.
---		require
---			valid_cursor_index: valid_cursor_index (i)
---		do
---			move (i - index)
---		ensure
---			position_expected: index = i
---		end
-
--- from list
---feature -- Cursor movement
-
+-- TODO unnötig??????
 --	forth is
 --			-- Move to next position; if no next position,
 --			-- ensure that `exhausted' will be true.
@@ -333,49 +325,62 @@ feature -- Cursor movement
 
 feature -- Element change
 
---	put (v: like item) is
---			-- Replace current item by `v'.
---			-- (Synonym for `replace')
---		do
---			replace (v)
---		ensure then
---	 		same_count: count = old count
---		end
+	-- TODO hier probleme mit contracts - mal im flat view ansehen. put hat verschiedenste meinungen
+	-- hinzufügen vs. ersetzten -> count contracts stimmen nicht
 
---	put_i_th (v: like item; i: INTEGER) is
---			-- Put `v' at `i'-th position.
---		local
---			pos: CURSOR
---		do
---			pos := cursor
---			go_i_th (i)
---			replace (v)
---			go_to (pos)
---		end
+	put (v: like item) is
+			-- Replace current item by `v'.
+			-- (Synonym for `replace_item_with')
+		do
+			replace_item_with (v)
+		ensure then
+	 		same_count: count = old count
+		end
 
---	append (s: SEQUENCE [G]) is
---			-- Append a copy of `s'.
---		local
---			l: like s
---			l_cursor: CURSOR
---		do
---			if s = Current then
---				l := s.twin
---			else
---				l := s
---			end
---			from
---				l_cursor := cursor
---				l.start
---			until
---				l.exhausted
---			loop
---				extend (l.item)
---				finish
---				l.forth
---			end
---			go_to (l_cursor)
---		end
+	put_i_th (v: like item; i: INTEGER) is
+			-- Put `v' at `i'-th position.
+		use
+			use_own_representation: representation
+		modify
+			modify_own_representation: representation
+		local
+			old_position: CC_CURSOR_POSITION
+		do
+			old_position := cursor_position
+			go_i_th (i)
+			replace_item_with (v)
+			go_to (old_position)
+		ensure
+			-- TODO add more model contracts
+			confined representation
+		end
+
+	append (s: CC_SEQUENCE [G]) is
+			-- Append a copy of `s'.
+		local
+			l: like s
+			old_position: CC_CURSOR_POSITION
+		do
+			if s = Current then
+				l := s.twin
+			else
+				l := s
+			end
+
+			from
+				old_position := cursor_position
+				l.start
+			until
+				l.exhausted
+			loop
+				extend (l.item) -- TODO extend???
+				finish
+				l.forth
+			end
+			go_to (old_position)
+		ensure then
+			-- TODO add more model contracts
+		end
 
 feature -- Transformation
 
@@ -393,7 +398,7 @@ feature -- Transformation
 			old_item, new_item: like item
 			old_position: CC_CURSOR_POSITION
 		do
-			old_position := cursor
+			old_position := cursor_position
 			old_item := item
 			go_i_th (i)
 			new_item := item
@@ -431,15 +436,11 @@ invariant
 
 	non_negative_index: index >= 0
 	index_small_enough: index <= count + 1
---	off_definition: off = ((index = 0) or (index = count + 1))
---	isfirst_definition: is_first = ((not is_empty) and (index = 1))
---	islast_definition: is_last = ((not is_empty) and (index = count))
---	item_corresponds_to_index: (not off) implies (item = i_th (index))
---	index_set_has_same_count: index_set.count = count
-
-
--- from list
---	before_definition: before = (index = 0)
---	after_definition: after = (index = count + 1)
+	off_definition: off = ((index = 0) or (index = count + 1))
+	isfirst_definition: is_first = ((not is_empty) and (index = 1))
+	islast_definition: is_last = ((not is_empty) and (index = count))
+	item_corresponds_to_index: (not off) implies (item = i_th (index))
+	before_definition: before = (index = 0)
+	after_definition: after = (index = count + 1)
 
 end
