@@ -1,4 +1,4 @@
-test_name 	 multi-constraint-alias
+test_name 	 multi-constraint-rename-alias
 test_description Feature can get an alias as a result of renaming in formal generic constraint.
 
 copy_raw	a.e $CLUSTER a.e
