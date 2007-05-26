@@ -5,7 +5,7 @@ indexing
 	revision: "$Revision$"
 
 deferred class
-	CDD_TEST_CASE
+	CDD_ABSTRACT_TEST_CASE
 
 feature -- Access
 

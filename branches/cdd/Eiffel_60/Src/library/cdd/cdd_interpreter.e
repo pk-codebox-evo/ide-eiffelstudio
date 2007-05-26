@@ -41,7 +41,7 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	test_case: CDD_TEST_CASE
+	test_case: CDD_ABSTRACT_TEST_CASE
 			-- Test case to be tested
 
 feature -- Measurement
