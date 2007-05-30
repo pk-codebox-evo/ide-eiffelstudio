@@ -28,6 +28,9 @@ feature -- Access
 		use
 			use_own_representation: representation
 		deferred
+		ensure
+			-- TODO model contracts
+			model_corresponds: Result = model.item (i)
 		end
 
 	first: G is
@@ -39,6 +42,7 @@ feature -- Access
 		deferred
 		ensure
 			definition: Result = item (1)
+			model_corresponds: Result = model.item (1)
 		end
 
 	last: G is
@@ -50,6 +54,7 @@ feature -- Access
 		deferred
 		ensure
 			definition: Result = item (count)
+			model_corresponds: Result = model.item (count)
 		end
 
 feature -- Status report
@@ -62,6 +67,7 @@ feature -- Status report
 			Result := 1 <= i and i <= count
 		ensure
 			valid_index_definition: Result = (1 <= i and i <= count)
+			model_corresponds: Result = (1 <= i and i <= model.count)
 		end
 
 feature -- Element change
@@ -79,14 +85,13 @@ feature -- Element change
 			modify_own_representation: representation
 		deferred
 		ensure
-			-- TODO
 			insertion_done: item (i) = v
---			model_updated: model |=| old model.extended (v)
---			model_correspondends: model.contains (v)
+			model_updated: model |=| old model.extended_by_pair (i, v)
+			model_corresponds: model.item (i) = v
 			confined representation
 		end
 
-	-- TODO ev auch ein extend (v, i)
+	-- TODO ev auch ein extend (v, i)??
 
 feature -- Model
 

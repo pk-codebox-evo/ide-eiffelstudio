@@ -85,6 +85,7 @@ feature -- Access
 			go_i_th (old_index)
 		ensure
 			non_negative_result: Result >= 0
+			-- TODO model contracts here!
 		end
 
 	search (v: like item) is
@@ -173,6 +174,8 @@ feature -- Status report
 		use
 			use_own_representation: representation
 		deferred
+		ensure
+			model_cursor_corresponds: Result = (model_cursor = count + 1)
 		end
 
 	off: BOOLEAN is
@@ -203,6 +206,7 @@ feature -- Cursor movement
 			modify_own_representation: representation
 		deferred
 		ensure
+			model_cursor_corresponds: not is_empty implies (model_cursor = count)
 			model_sequence_not_changed: model_sequence |=| old model_sequence
 			confined representation
 		end

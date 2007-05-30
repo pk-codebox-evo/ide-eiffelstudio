@@ -39,6 +39,8 @@ feature -- Status report
 		use
 			use_own_representation: representation
 		deferred
+		ensure
+			model_cursor_corresponds: Result = (model_cursor = 0) or (model_cursor = count + 1)
 		end
 
 feature -- Cursor movement
@@ -51,6 +53,7 @@ feature -- Cursor movement
 			modify_own_representation: representation
 		deferred
 		ensure
+			model_cursor_corresponds: not is_empty implies (model_cursor = 1)
 			model_sequence_not_changed: model_sequence |=| old model_sequence
 			confined representation
 		end

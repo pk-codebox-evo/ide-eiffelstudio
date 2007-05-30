@@ -33,6 +33,8 @@ feature -- Status report
 		use
 			use_own_representation: representation
 		deferred
+		ensure
+			model_cursor_corresponds: Result = (model_cursor = 0)
 		end
 
 feature -- Cursor movement

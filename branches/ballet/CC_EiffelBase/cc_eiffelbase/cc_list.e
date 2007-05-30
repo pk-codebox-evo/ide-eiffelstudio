@@ -12,10 +12,14 @@ inherit
 	-- TODO checken
 	CC_SEQUENCE [G]
 		rename
-			occurrences as occurrences_sequence
+			occurrences as occurrences_sequence,
+			put as put_at_end,
+			valid_index as valid_index_sequence
 		export
 			{NONE}
 				occurrences_sequence
+		undefine
+			valid_index_sequence -- TODO join with valid index von indexable
 		redefine
 			has,
 			index_of,
@@ -25,7 +29,6 @@ inherit
 		select
 			model_container,
 			prune_all,
-			put,
 			extend
 		end
 
@@ -33,15 +36,12 @@ inherit
 		rename
 			model as model_indexable,
 			prune_all as prune_all_indexable,
-			valid_index as valid_index_indexable,
 			item as i_th alias "[]",
 			put as put_indexable
 		export
 			{NONE}
 				model_indexable,
 				prune_all_indexable
-				--valid_index_indexable
-				-- TODO wenn ich das nach none exportiere -> i_th benutzt das in precondition
 		redefine
 			is_equal
 		end
@@ -112,9 +112,11 @@ feature -- Access
 		do
 			old_position := cursor_position
 
-			-- TODO
+			-- TODO ist das performant genug??? sonst halt nochmal code kopieren
+			Result := linear_representation.index_of (v, i)
 
 			go_to (old_position)
+		-- TODO model contracts? ev schon im cc_linear
 		end
 
 	i_th alias "[]", infix "@" (i: INTEGER): like item is
@@ -134,12 +136,16 @@ feature -- Measurement
 			-- Number of times `v' appears.
 			-- (Reference or object equality,
 			-- based on `object_comparison'.)
+		use
+			use_own_representation: representation
 		local
 			old_position: CC_CURSOR_POSITION
 		do
 			old_position := cursor_position
 			Result := occurrences_sequence (v)
 			go_to (old_position)
+		ensure
+			model_corresponds: Result = model.first.occurrences (v)
 		end
 
 feature -- Comparison
@@ -191,6 +197,7 @@ feature -- Comparison
 				index = old index and other.index = old other.index
 			true_implies_same_size: Result implies count = other.count
 			-- TODO add model contracts
+			models_are_equal: Result = (model |=| other.model)
 		end
 
 feature -- Cursor movement
@@ -261,15 +268,6 @@ feature -- Cursor movement
 			confined representation
 		end
 
--- TODO unnötig??????
---	forth is
---			-- Move to next position; if no next position,
---			-- ensure that `exhausted' will be true.
---		deferred
---		ensure then
---			moved_forth: index = old index + 1
---		end
-
  feature -- Status report
 
 	is_first: BOOLEAN is
@@ -325,9 +323,9 @@ feature -- Cursor movement
 
 feature -- Element change
 
-	-- TODO hier probleme mit contracts - mal im flat view ansehen. put hat verschiedenste meinungen
-	-- hinzufügen vs. ersetzten -> count contracts stimmen nicht
-
+-- TODO besser wäre nur replace_item_with... put ist irreführend
+-- auch wegen contracts die vom collection geerbt werden: model_container |=| old model_container.extended (v)
+-- stimmt natürlich nicht
 	put (v: like item) is
 			-- Replace current item by `v'.
 			-- (Synonym for `replace_item_with')
@@ -352,6 +350,7 @@ feature -- Element change
 			go_to (old_position)
 		ensure
 			-- TODO add more model contracts
+			model_updated: model.first |=| old model.first.extended_at (v, i)
 			confined representation
 		end
 
@@ -380,6 +379,7 @@ feature -- Element change
 			go_to (old_position)
 		ensure then
 			-- TODO add more model contracts
+			-- sollte eigentlich reichen
 		end
 
 feature -- Transformation
@@ -408,11 +408,14 @@ feature -- Transformation
 		ensure
 	 		swapped_to_item: item = old i_th (i)
 	 		swapped_from_item: i_th (i) = old item
+	 		model_corresponds_to: model_sequence.item (i) = old model_sequence.item (model_cursor)
+	 		model_corresponds_from: model_sequence.item (model_cursor) = old model_sequence.item (i)
 	 		confined representation
 		end
 
 feature -- Duplication
 
+-- TODO command or query?
 	duplicate (n: INTEGER): like Current is
 			-- Copy of sub-list beginning at current position
 			-- and having min (`n', `from_here') items,
@@ -428,7 +431,8 @@ feature -- Duplication
 		deferred
 		ensure
 			-- TODO weitere model contracts
-			models_correspond: model.first |=| Result.model.first
+			--models_correspond: model_sequence |=| Result.model_sequence ist doch falsch
+
 			confined representation
 		end
 
