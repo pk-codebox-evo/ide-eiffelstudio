@@ -9,7 +9,7 @@ deferred class
 	CC_LIST [G]
 
 inherit
-	-- TODO checken
+
 	CC_SEQUENCE [G]
 		rename
 			occurrences as occurrences_sequence,
@@ -19,7 +19,7 @@ inherit
 			{NONE}
 				occurrences_sequence
 		undefine
-			valid_index_sequence -- TODO join with valid index von indexable
+			valid_index_sequence
 		redefine
 			has,
 			index_of,
