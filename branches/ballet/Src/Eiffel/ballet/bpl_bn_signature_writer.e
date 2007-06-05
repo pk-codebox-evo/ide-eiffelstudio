@@ -220,14 +220,14 @@ feature {BYTE_NODE} -- Visitors
 			
 			from
 				inh_assert.postcondition_list.start
-				inh_assert.precondition_types.start
+				inh_assert.postcondition_types.start
 			until
 				inh_assert.postcondition_list.after
 			loop
 				check
-					same_length_types: not inh_assert.precondition_types.after
+					same_length_types: not inh_assert.postcondition_types.after
 				end
-				e_cls ?= inh_assert.precondition_types.item.associated_class
+				e_cls ?= inh_assert.postcondition_types.item.associated_class
 				check
 					need_eiffel: e_cls /= Void
 				end
@@ -259,7 +259,7 @@ feature -- Extra processors
 	process_feature_without_code (a_feature: FEATURE_I) is
 			-- Process a feature that does not have code.
 		do
-			bpl_out("//TODO generate contracts (incl. frames) for feature: " + a_feature.feature_name + " (it doesn't have byte_code)%N")
+			-- no need to do anything here
 		end
 	
 feature{NONE} -- Implementation
