@@ -14,12 +14,6 @@ feature -- Access
 		deferred
 		end
 
-	executor: CDD_TEST_CASE_EXECUTOR is
-			--
-		deferred
-		end
-
-
 feature -- Measurement
 
 feature -- Status report

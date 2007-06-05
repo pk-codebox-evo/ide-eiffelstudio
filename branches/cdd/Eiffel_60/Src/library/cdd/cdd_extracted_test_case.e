@@ -52,9 +52,6 @@ feature -- Access
 		deferred
 		end
 
-	executor: CDD_TEST_CASE_EXECUTOR
-			-- NOTE: needs to be further specified (e.g. CDD_EXTRACTED_TEST_CASE_EXECUTOR)
-
 --	is_creation_call: BOOLEAN is
 --			-- Is `routine_under_test' a creation procedure of G?
 --		deferred

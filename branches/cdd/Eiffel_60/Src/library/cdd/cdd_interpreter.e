@@ -1,8 +1,8 @@
 indexing
 	description: "[
-		Objects that run test cases and print testing result
-		to console. Descendants of this class should be used
-		as the root class of some target.
+			Objects that run test cases and print testing result
+			to console. Descendants of this class should be used
+			as the root class of some target.
 		]"
 	author: "fivaa"
 	date: "$Date$"
