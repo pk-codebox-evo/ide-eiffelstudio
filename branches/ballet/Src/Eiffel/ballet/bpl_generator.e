@@ -49,7 +49,7 @@ feature -- Actual Processing of a class
 				define_functions
 				define_signatures
 				define_implementations
---				define_used_features
+				define_used_features
 			end
 		end
 
@@ -108,13 +108,14 @@ feature {NONE} -- Implementation
 			bpl_out ("%N")
 		end
 
-	attribute_writer: BPL_ATTRIBUTE_WRITER
+	attribute_writer: BPL_BN_ATTRIBUTE_WRITER
 
 	define_attributes is
 			-- Define all attributes of the current class.
 		local
 			a_list: LIST [FEATURE_I]
 		do
+			bpl_out ("// defining attributes%N")
 			create attribute_writer.make (current_class)
 			attribute_writer.set_leaf_list (match_list)
 
@@ -132,6 +133,7 @@ feature {NONE} -- Implementation
 		local
 			a_list: LIST [FEATURE_I]
 		do
+			bpl_out ("// defining functions%N")
 			create function_writer.make (current_class)
 			function_writer.set_leaf_list (match_list)
 
@@ -154,6 +156,7 @@ feature {NONE} -- Implementation
 		local
 			a_list: LIST [FEATURE_I]
 		do
+			bpl_out ("// defining signatures: def_command%N")
 			create signature_writer.make (current_class)
 			signature_writer.set_leaf_list (match_list)
 
@@ -162,21 +165,25 @@ feature {NONE} -- Implementation
 				signature_writer.write_signature (current_class.feature_named (a_list.item.feature_name))
 				a_list.forth
 			end
+			bpl_out ("// defining signatures: def_q%N")
 			a_list := usage_analyser.deferred_query_list
 			from a_list.start until a_list.off loop
 				signature_writer.write_signature (current_class.feature_named (a_list.item.feature_name))
 				a_list.forth
 			end
+			bpl_out ("// defining signatures: fun%N")
 			a_list := usage_analyser.function_list
 			from a_list.start until a_list.off loop
 				signature_writer.write_signature (current_class.feature_named (a_list.item.feature_name))
 				a_list.forth
 			end
+			bpl_out ("// defining signatures: proc%N")
 			a_list := usage_analyser.procedure_list
 			from a_list.start until a_list.off loop
 				signature_writer.write_signature (current_class.feature_named (a_list.item.feature_name))
 				a_list.forth
 			end
+			bpl_out ("// defining signatures: att%N")
 			a_list := usage_analyser.attribute_list
 			from a_list.start until a_list.off loop
 				signature_writer.write_signature (current_class.feature_named (a_list.item.feature_name))
@@ -191,6 +198,7 @@ feature {NONE} -- Implementation
 		local
 			a_list: LIST [FEATURE_I]
 		do
+			bpl_out ("// defining implementations%N")
 			create implementation_writer.make (current_class)
 			implementation_writer.set_leaf_list (match_list)
 
@@ -209,13 +217,13 @@ feature {NONE} -- Implementation
 	define_used_features is
 			-- Define the features of all elements of all used elements.
 		local
-			generated_features: HASH_TABLE[ARRAYED_SET[INTEGER], STRING]
+			generated_features: HASH_TABLE[ARRAYED_SET[FEATURE_I], EIFFEL_CLASS_C]
 			some_feature: FEATURE_I
 			some_class: EIFFEL_CLASS_C
 		do
 			from
+				bpl_out ("// defining used features%N")
 				create generated_features.make (0)
-				generated_features.compare_references
 			until
 				environment.used_features.is_empty
 			loop
@@ -225,13 +233,13 @@ feature {NONE} -- Implementation
 				some_class ?= some_feature.written_class
 				if
 					some_class /= Void and then
-					           ((generated_features.item (some_class.name) = Void)
-								  or else not generated_features.item(some_class.name).has (some_feature.feature_id)) and
+					((generated_features.item (some_class) = Void)
+								  or else (not generated_features.item (some_class).has (some_feature))) and
 					bpl_type_for_class (some_class).is_equal ("ref") and
 					some_class.class_id /= current_class.class_id
 				 then
-               if not types_in_background_theory.has (some_class.name) then
-                  if some_feature.is_function or some_feature.is_attribute or some_feature.is_constant then
+					if not types_in_background_theory.has (some_class.name) then
+						if some_feature.is_function or some_feature.is_attribute or some_feature.is_constant then
 							if some_feature.is_attribute then
 								create attribute_writer.make (some_class)
 								attribute_writer.write_attribute (some_feature)
@@ -241,14 +249,14 @@ feature {NONE} -- Implementation
 								function_writer.write_function (some_feature)
 							end
 						end
-                  create signature_writer.make (some_class)
+						create signature_writer.make (some_class)
 						signature_writer.set_leaf_list (match_list)
-                  signature_writer.write_signature (some_feature)
-               end
-               if generated_features.item (some_class.name) = Void then
-                  generated_features.put (create {ARRAYED_SET[INTEGER]}.make(8), some_class.name)
-               end
-					generated_features.item (some_class.name).extend(some_feature.feature_id)
+						signature_writer.write_signature (some_feature)
+					end
+					if generated_features.item (some_class) = Void then
+						generated_features.put (create {ARRAYED_SET[FEATURE_I]}.make (8), some_class)
+					end
+					generated_features.item (some_class).extend (some_feature)
 				end
 				environment.used_features.prune (some_feature)
 			end

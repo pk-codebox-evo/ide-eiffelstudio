@@ -75,7 +75,9 @@ feature -- Processing
 				command_list.extend (current_class.feature_named (l_as.feature_name))
 			end
 			if l_as.is_attribute then
+				bpl_out ("// found att: " + l_as.feature_name + " current class = " + current_class.name + "%N")
 				attribute_list.extend (current_class.feature_named (l_as.feature_name))
+				bpl_out ("// found att: " + current_class.feature_named (l_as.feature_name).feature_name + " current class = " + current_class.feature_named (l_as.feature_name).written_class.name + "%N")
 			elseif l_as.is_deferred then
 				if l_as.is_function then
 					deferred_query_list.extend (current_class.feature_named (l_as.feature_name))

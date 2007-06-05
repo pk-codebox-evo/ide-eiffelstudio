@@ -60,12 +60,12 @@ feature -- Main
 			current_feature := a_function
 			l_as := a_function.body
 			feat_name := bpl_mangled_feature_name (l_as.feature_name)
-			func_name := "fun."+current_class.name+"."+feat_name
+			func_name := "fun." + current_class.name + "." + feat_name
 			return_type := bpl_type_for (l_as.body.type)
-			bpl_out ("// Function: "+l_as.feature_name+" of class "+current_class.name+"%N")
+			bpl_out ("// Function: " + l_as.feature_name + " of class " + current_class.name + "%N")
 			bpl_out ("function ")
 			bpl_out (func_name)
-			bpl_out ("([ref,name]any,")
+			bpl_out ("([ref,name]any, ")
 			bpl_out (bpl_type_for_class (current_class))
 			result_call := func_name+"(H,C"
 			if l_as.body.arguments /= Void then

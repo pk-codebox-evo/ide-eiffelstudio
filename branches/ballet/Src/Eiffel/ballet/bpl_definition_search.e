@@ -82,7 +82,7 @@ feature -- Process
 			type_a: TYPE_A
 		do
 			type_a := type_for(l_as.left)
-			last_feature := type_a.associated_class.feature_named ("infix %""+l_as.op_name+"%"")
+			last_feature := type_a.associated_class.feature_named ("infix %"" + l_as.op_name + "%"")
 		end
 
 	process_unary_as (l_as: UNARY_AS) is
@@ -91,7 +91,7 @@ feature -- Process
 			type_a: TYPE_A
 		do
 			type_a := type_for(l_as.expr)
-			last_feature := type_a.associated_class.feature_named ("prefix %""+l_as.operator_name+"%"")
+			last_feature := type_a.associated_class.feature_named ("prefix %"" + l_as.operator_name + "%"")
 		end
 
 end

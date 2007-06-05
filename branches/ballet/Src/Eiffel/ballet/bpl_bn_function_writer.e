@@ -81,6 +81,8 @@ feature -- Main
 			return_type: STRING
 			byte_code: BYTE_CODE
 			i: INTEGER
+			feat: FEATURE_I
+			parents: FIXED_LIST[CLASS_C]
 		do
 			current_feature := a_function
 			if byte_server.has (current_feature.code_id) then
@@ -137,6 +139,47 @@ feature -- Main
 
 			process_feature_i (current_feature) -- generate assertions
 
+			-- tie result to inherited result
+			parents := current_feature.written_class.parents_classes
+			if parents /= Void then
+				from
+					parents.start
+				until
+					parents.after
+				loop
+					-- TODO: this does probably not work with renamed features
+					feat := parents.item.feature_named (current_feature.feature_name)
+					if feat /= Void then
+						record_usage_feature (feat)
+						bpl_out ("axiom (")
+						bpl_out (intro)
+						bpl_out (" :: ")
+						bpl_out (result_call)
+						bpl_out (" == ")
+						
+						bpl_out ("fun." + parents.item.name + "." + feat.feature_name + "(H, C")
+						from
+							i := 1
+						until
+							i > a_function.argument_count
+						loop
+							arg_name := a_function.arguments.item_name (i)
+							arg_type := a_function.arguments.i_th (i)
+							intro.append ("arg.")
+							intro.append (arg_name)
+							i := i + 1
+						end
+					
+						bpl_out ("));%N")
+					else
+						bpl_out ("// no feature for " + current_feature.feature_name + " in class " + parents.item.name +"%N")
+					end
+					parents.forth			
+				end
+			else
+				bpl_out ("// no parents for this feature%N")
+			end
+			
 			bpl_out ("%N")
 		end
 

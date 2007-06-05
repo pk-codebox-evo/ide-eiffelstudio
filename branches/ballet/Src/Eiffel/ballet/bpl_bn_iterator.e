@@ -245,14 +245,16 @@ feature {NONE} -- Supporting Features
 			check
 				feature_found: feat /= Void
 			end
-         if Mapping_table.item(feat.written_class.name) = Void then
---            print ("Using: ")
---            print (feat.feature_name)
---            print (" of ")
---            print (feat.written_class.name)
---            print ("%N")
-            environment.used_features.extend (feat)
-         end
+			record_usage_feature (feat)
+		end
+
+	record_usage_feature (feat: FEATURE_I) is
+		require
+			feat_not_void: feat /= Void
+		do
+			if Mapping_table.item(feat.written_class.name) = Void then
+				environment.used_features.extend (feat)
+			end
 		end
 
 feature {BYTE_NODE} -- Visitors

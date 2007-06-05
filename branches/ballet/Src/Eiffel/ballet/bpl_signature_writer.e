@@ -30,7 +30,7 @@ feature -- Generation
 			setup_function_writer
 			current_feature := a_feature
 			function_writer.set_current_feature (a_feature)
-			bpl_out ("// Signature: "+a_feature.feature_name+" of class "+current_class.name+"%N")
+			bpl_out ("// Signature: " + a_feature.feature_name + " of class " + current_class.name + "%N")
 			bpl_out ("procedure proc.")
 			bpl_out (current_class.name)
 			bpl_out (".")

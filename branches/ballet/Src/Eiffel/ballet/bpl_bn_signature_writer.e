@@ -136,7 +136,6 @@ feature {BYTE_NODE} -- Visitors
 		local
 			ass_list: BYTE_LIST[BYTE_NODE]
 			inh_assert: INHERITED_ASSERTION
-			feat: FEATURE_I
 			byte_l: BYTE_LIST [BYTE_NODE]
 			e_cls, tmp_cls: EIFFEL_CLASS_C
 		do
@@ -213,6 +212,7 @@ feature {BYTE_NODE} -- Visitors
 					current_class := e_cls
 					bpl_out (location_info (byte_l.item))
 					e_cls := tmp_cls
+					current_class := e_cls
 					byte_l.forth
 				end
 				inh_assert.precondition_list.forth
@@ -247,6 +247,7 @@ feature {BYTE_NODE} -- Visitors
 					current_class := e_cls
 					bpl_out (location_info (byte_l.item))
 					e_cls := tmp_cls
+					current_class := e_cls
 					byte_l.forth
 				end
 				inh_assert.postcondition_list.forth
