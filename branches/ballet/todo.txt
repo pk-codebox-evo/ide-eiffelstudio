@@ -1,0 +1,13 @@
+- for deferred features no contracts are generated (->bpl_bn_signature_wirter.process_feature_without_code)
+- BPL_BN_IMPLEMENTATION_WRITER has to be fixed
+- FRAMES
+
+- generics do not work (e. g. attribute c: MY_CELL [STRING])
+
+- typecheck "confined EXRR": EXPR should be (a subtype of) FRAME
+- confined is only allowed in postconditions in commands
+- ast_feature_checker_generator create meaningful error, if type of frame_specification is wrong
+
+- types which are declared in the background theory are detected only by the
+  class name -> we should handle cluster shadowing
+

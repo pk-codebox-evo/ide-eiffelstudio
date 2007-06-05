@@ -9,6 +9,9 @@ class
 
 inherit
 	INT_STORE
+	redefine
+		set_item, repr, item
+	end
 
 create
 	make
@@ -25,6 +28,7 @@ feature -- Initialization
 			modifies_repr: own_frame
 		do
 			store := a_store
+			value := 0
 		ensure
 			store_set: store = a_store
 			item_set: item = a_store.item
@@ -59,17 +63,17 @@ feature -- Framing
 		use
 			own: repr
 		do
-			create Result.make_from_element (Current)
-			Result := Result.united(store.repr)
-		ensure then
-			Result.is_superset_of(own_frame)
+--			create Result.make_from_element (Current)
+--			Result := Result.united(store.repr)
+--		ensure then
+--			Result.is_superset_of(own_frame)
 		end
 
 	own_frame: FRAME is
 		use
 			own: own_frame
 		do
-			create Result.make_from_element (Current)
+--			create Result.make_from_element (Current)
 		end
 
 invariant

@@ -14,8 +14,6 @@ feature -- Access
 		use
 			uses_repr: repr
 		deferred
-		ensure
-			confined repr
 		end
 
 	added (x: INT_STORE): INTEGER is
@@ -63,20 +61,23 @@ feature -- Access
 
 feature -- Settings
 
-	set_item (a_value: INTEGER) is
+	set_item (a_valu: INTEGER) is
 			-- Set `item' to `a_value'.
+		require
+			big: a_valu /= -4
+			very_big: a_valu > -2
 		modify
 			modifies_repr: repr
 		deferred
 		ensure
-			value_set: item = a_value
+			value_sett: item = a_valu
 		end
 
 feature -- Framing
 	repr: FRAME is
 		use
 			own: repr
-		deferred
+		do
 		end
 
 end

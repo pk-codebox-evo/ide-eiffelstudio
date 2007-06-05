@@ -15,18 +15,20 @@ feature -- Initialization
 	b: INT_STORE
 	t: TOKEN_DISPENSER
 
+	ft: FRAME_TEST
+
 	c: SIMPLE_COUNTER
 	m: MY_CELL[ANY]
 	mt: MY_CELL_USER
+	r: RAMACK_TEST
 
 	create_structure is
 			-- Create the object structure.
-		modify
-			Current
 		local
 			abs_store: ABS_INT_STORE
 			rel_store: REL_INT_STORE
 		do
+			create ft.set_item(5)
 			create abs_store.make
 			create rel_store.make (abs_store)
 			a := abs_store
@@ -45,8 +47,6 @@ feature -- Initialization
 
 			print ("Item of A: "+a.item.out+"%N")
 			print ("Item of B: "+b.item.out+"%N")
-		ensure
-			confined a
 		end
 
 	copy_item (x,y: INT_STORE) is

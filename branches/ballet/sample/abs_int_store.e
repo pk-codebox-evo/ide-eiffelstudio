@@ -9,16 +9,23 @@ class
 
 inherit
 	INT_STORE
+		redefine
+			set_item,
+			item,
+			repr
+		end
 
 create
 	make
 
-feature{NONE} -- Initialization
+feature {NONE} -- Initialization
 
 	make is
 			-- Creation
+		require
+			eee: 1 = 1
 		modify
-			repr
+			fd: repr
 		do
 			item := 0
 		ensure
@@ -32,11 +39,13 @@ feature -- Implementation
 	set_item (a_value: INTEGER) is
 		do
 			item := a_value
+		ensure then
+			setet: item = a_value
 		end
 
 feature -- Framing
 	repr: FRAME is
 		do
-			create Result.make_from_element (Current)
+--			create Result.make_from_ele (Current)
 		end
 end
