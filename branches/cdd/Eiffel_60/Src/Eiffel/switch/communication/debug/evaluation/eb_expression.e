@@ -14,6 +14,8 @@ class
 
 inherit
 
+	DEBUG_OUTPUT
+
 	SHARED_BENCH_NAMES
 		rename
 			names as interface_names
@@ -112,6 +114,28 @@ feature -- Properties
 	name: STRING_32
 			-- Optional name to qualify this expression.
 
+feature -- debug output
+
+	debug_output: STRING is
+			--
+		local
+		do
+			create Result.make_empty
+			if expression /= Void then
+				Result.append_string_general ("exp=%"")
+				Result.append_string_general (expression)
+				Result.append_string_general ("%" ")
+			end
+			if is_evaluated then
+				Result.append_string_general (" evaluated")
+			else
+				Result.append_string_general (" NOT evaluated")
+			end
+			if error_occurred then
+				Result.append_string_general (" -> ERROR")
+			end
+		end
+
 feature -- Change
 
 	set_name (n: like name) is
@@ -195,17 +219,17 @@ feature -- Status report
 			-- Return a string representing `Current's context.
 		do
 			if on_class then
-				Result := context_class.name_in_upper
+				Result := context_class.name_in_upper.twin
 			elseif as_object then
-				Result :=  interface_names.l_As_object
+				Result :=  interface_names.l_As_object.twin
 			elseif on_object then
-				Result := context_address
+				Result := context_address.twin
 			else
-				Result := interface_names.l_Current_context
+				Result := interface_names.l_Current_context.twin
 			end
 			if keep_assertion_checking then
 				Result.append (" - ")
-				Result.append (interface_names.b_eval_keep_assertions_checking)
+				Result.append (interface_names.b_eval_keep_assertion_checking)
 			end
 		end
 
@@ -257,7 +281,7 @@ feature {EB_EXPRESSION_DEFINITION_DIALOG, ES_OBJECTS_GRID_EXPRESSION_LINE} -- Re
 			end
 		end
 
-feature {ES_WATCH_TOOL, ES_OBJECTS_GRID_LINE, EB_EXPRESSION_EVALUATOR_TOOL, EB_EXPRESSION_DEFINITION_DIALOG} -- Status report: Propagate the context and the results.
+feature {ES_WATCH_TOOL, ES_OBJECTS_GRID_LINE, EB_EXPRESSION_DEFINITION_DIALOG} -- Status report: Propagate the context and the results.
 
 	as_object: BOOLEAN
 			-- Is the expression represent the context object ?

@@ -80,6 +80,7 @@ feature {NONE} -- Initialization
 		local
 			esgrid: ES_OBJECTS_GRID
 		do
+			auto_expressions_deltas := [-2, +1]
 			create watched_items.make (10)
 
 			create esgrid.make_with_name (title, "watches" + watch_id.out)
@@ -145,7 +146,7 @@ feature {NONE} -- Initialization
 			toggle_auto_behavior_cmd.set_mini_pixel_buffer (pixmaps.mini_pixmaps.watch_auto_icon_buffer)
 			toggle_auto_behavior_cmd.set_name ("AutoExpression")
 			toggle_auto_behavior_cmd.set_menu_name (interface_names.m_auto_expressions)
-			toggle_auto_behavior_cmd.set_tooltip (interface_names.m_auto_expressions)
+			toggle_auto_behavior_cmd.set_tooltip (interface_names.t_auto_expressions)
 			toggle_auto_behavior_cmd.add_action (agent toggle_auto_expressions)
 			toggle_auto_behavior_cmd.set_is_selected_function (agent auto_expression_enabled)
 			toggle_auto_behavior_cmd.enable_sensitive
@@ -420,14 +421,25 @@ feature -- Status setting
 				witems.after
 			loop
 				witem := witems.item
-
-				l_expr := witem.expression
-				if not l_expr.is_still_valid then
+				if witem = Void then
 					witems.remove
 				else
-					l_expr.set_unevaluated
-					add_watched_item_to_grid (witem, watches_grid)
-					witems.forth
+					if witem.is_auto_expression then
+						witem.safe_unattach
+						witems.remove
+					else
+						l_expr := witem.expression
+						if
+							l_expr = Void
+							or else not l_expr.is_still_valid
+						then
+							witems.remove
+						else
+							l_expr.set_unevaluated
+							add_watched_item_to_grid (witem, watches_grid)
+							witems.forth
+						end
+					end
 				end
 			end
 
@@ -466,12 +478,21 @@ feature {NONE} -- Memory management
 				witems.after
 			loop
 				witem := witems.item
-				witem.reset
-				check witem.expression /= Void	end
-				if not witem.expression.is_still_valid then
-					witems.remove
+				if witem /= Void then
+					if witem.is_auto_expression then
+						witem.safe_unattach
+						witems.remove
+					else
+						check witem.expression /= Void	end
+						if not witem.expression.is_still_valid then
+							witems.remove
+						else
+							witems.forth
+						end
+					end
+					witem.reset
 				else
-					witems.forth
+					witems.remove
 				end
 			end
 		end
@@ -492,27 +513,23 @@ feature {NONE} -- add new expression from the grid
 		local
 			glab: ES_OBJECTS_GRID_EMPTY_EXPRESSION_CELL
 		do
-			if not auto_expression_enabled then
-				if
-					new_expression_row = Void
-					or else new_expression_row.is_destroyed
-					or else new_expression_row.parent = Void
-				then
-					new_expression_row := watches_grid.extended_new_row
-					create glab.make_with_text ("...")
-					grid_cell_set_tooltip (glab, interface_names.f_add_new_expression)
+			if
+				new_expression_row = Void
+				or else new_expression_row.is_destroyed
+				or else new_expression_row.parent = Void
+			then
+				new_expression_row := watches_grid.extended_new_row
+				create glab.make_with_text ("...")
+				grid_cell_set_tooltip (glab, interface_names.f_add_new_expression)
 
-					new_expression_row.set_item (1, glab)
-					glab.pointer_double_press_actions.force_extend (agent glab.activate)
-					glab.apply_actions.extend (agent add_new_expression_for_context)
-					set_up_complete_possibilities_provider (glab)
-				elseif new_expression_row.index < watches_grid.row_count then
-					grid_move_to_end_of_grid (new_expression_row)
-				end
-				watches_grid_empty := False
+				new_expression_row.set_item (1, glab)
+				glab.pointer_double_press_actions.force_extend (agent glab.activate)
+				glab.apply_actions.extend (agent add_new_expression_for_context)
+				set_up_complete_possibilities_provider (glab)
+			elseif new_expression_row.index < watches_grid.row_count then
+				grid_move_to_end_of_grid (new_expression_row)
 			end
-		ensure
-			not auto_expression_enabled implies new_expression_row.index = watches_grid.row_count
+			watches_grid_empty := False
 		end
 
 	add_new_expression_for_context (s: STRING_32) is
@@ -521,7 +538,17 @@ feature {NONE} -- add new expression from the grid
 		do
 			if valid_expression_text (s) then
 				create expr.make_for_context (s)
-				add_expression (expr)
+				add_expression (expr, False)
+			end
+		end
+
+	add_new_auto_expression (s: STRING_32) is
+		local
+			expr: EB_EXPRESSION
+		do
+			if valid_expression_text (s) then
+				create expr.make_for_context (s)
+				add_expression (expr, True)
 			end
 		end
 
@@ -619,6 +646,12 @@ feature {NONE} -- Event handling
 				m.extend (create {EV_MENU_SEPARATOR})
 			end
 
+				--| Watch wipeout
+			if watched_items.count > 0 then
+				create mi.make_with_text_and_action (interface_names.f_clear_watch_tool_expressions, agent clear_watch_tool)
+				m.extend (mi)
+			end
+
 				--| Watch management
 			create mi.make_with_text_and_action (interface_names.f_create_new_watch, agent open_new_created_watch_tool)
 			m.extend (mi)
@@ -662,6 +695,7 @@ feature {NONE} -- Event handling
 				else
 					create dlg.make_new_expression
 				end
+				dlg.set_new_expression_mode
 				dlg.set_callback (agent add_expression_with_dialog (dlg))
 				dlg.show_modal_to_window (debwin.window)
 			end
@@ -671,42 +705,46 @@ feature {NONE} -- Event handling
 		do
 			if not auto_expression_enabled then
 				auto_expression_enabled := True
-				disable_commands_on_expressions
-				create_expression_cmd.disable_sensitive
-				edit_expression_cmd.disable_sensitive
-				toggle_state_of_expression_cmd.disable_sensitive
-				add_auto_expressions
 			else
 				auto_expression_enabled := False
-				create_expression_cmd.enable_sensitive
-				edit_expression_cmd.enable_sensitive
-				toggle_state_of_expression_cmd.enable_sensitive
-				update
+				remove_auto_expressions_from_watched_items
 			end
+			update
 		end
+
+	auto_expressions_deltas: TUPLE [low: INTEGER; up: INTEGER]
+			-- Default might be (-)2, (+)1
+
+	show_only_auto_expression_successfully_evaluated: BOOLEAN is True
+			-- Show auto expression only if successfully evaluated ?
 
 	add_auto_expressions is
 		local
 			l_auto: AST_DEBUGGER_AUTO_EXPRESSION_VISITOR
-			expressions: LIST [STRING]
+			exprs: LIST [STRING]
 			s: STRING
 		do
-			watched_items.wipe_out
-			clean_watched_grid
+			remove_auto_expressions_from_watched_items
 			create l_auto
-			expressions := l_auto.auto_expressions (debugger_manager.current_debugging_breakable_index, -2, +1, debugger_manager.current_debugging_feature, debugger_manager.current_debugging_class_c)
-			if expressions /= Void and then not expressions.is_empty then
+			exprs := l_auto.auto_expressions (
+									debugger_manager.current_debugging_breakable_index,
+									auto_expressions_deltas.low,
+									auto_expressions_deltas.up,
+									debugger_manager.current_debugging_feature,
+									debugger_manager.current_debugging_class_c
+								)
+			if exprs /= Void and then not exprs.is_empty then
 				watches_grid_empty := False
 				from
-					expressions.start
+					exprs.start
 				until
-					expressions.after
+					exprs.after
 				loop
-					s := expressions.item
+					s := exprs.item
 					if s /= Void then
-						add_new_expression_for_context (s.as_string_32)
+						add_new_auto_expression (s.as_string_32)
 					end
-					expressions.forth
+					exprs.forth
 				end
 			end
 		end
@@ -733,6 +771,7 @@ feature {NONE} -- Event handling
 						expr := l_item.expression
 						check expr /= Void end
 						create dlg.make_with_expression (expr)
+						dlg.set_edit_expression_title
 						dlg.set_callback (agent refresh_expression (expr))
 						dlg.show_modal_to_window (debugger_manager.debugging_window.window)
 					end
@@ -868,7 +907,7 @@ feature {NONE} -- Event handling
 		do
 			l_item ?= watched_item_from (row)
 			if l_item /= Void then
-				l_item.unattach
+				l_item.safe_unattach
 				watched_items.prune_all (l_item)
 			end
 --| bug#11272 : using the next line raises display issue:
@@ -897,11 +936,10 @@ feature {NONE} -- Event handling
 	on_row_selected (row: EV_GRID_ROW) is
 			-- An item in the list of expression was selected.
 		do
-
 			if
-				not auto_expression_enabled and
 				row.parent_row = Void
 				and row /= new_expression_row
+				and not is_auto_expression_watched_item (row)
 			then
 				enable_commands_on_expressions
 			else
@@ -912,14 +950,7 @@ feature {NONE} -- Event handling
 	on_row_deselected (row: EV_GRID_ROW) is
 			-- An item in the list of expression was selected.
 		do
-			if
-				not auto_expression_enabled and
-				row /= Void and then row.parent_row = Void
-			then
-				enable_commands_on_expressions
-			else
-				disable_commands_on_expressions
-			end
+			disable_commands_on_expressions
 		end
 
 	key_pressed (k: EV_KEY) is
@@ -1056,7 +1087,7 @@ feature {NONE} -- Event handling
 			l_expr: EB_EXPRESSION
 		do
 			l_expr := dlg.new_expression
-			add_expression (l_expr)
+			add_expression (l_expr, False)
 		end
 
 	add_object (ost: OBJECT_STONE; oname: STRING) is
@@ -1070,23 +1101,33 @@ feature {NONE} -- Event handling
 			debugger_manager.application_status.keep_object (ost.object_address)
 			create expr.make_as_object (ost.dynamic_class , ost.object_address)
 			expr.set_name (oname)
-			add_expression (expr)
+			add_expression (expr, False)
 		end
 
-	add_expression (expr: EB_EXPRESSION) is
+	add_expression (expr: EB_EXPRESSION; is_auto: BOOLEAN) is
 		local
 			expr_item: like watched_item_from
 		do
-			if auto_expression_enabled and expr.error_occurred then
-				-- Do not display it
+			if is_auto then
+				if debugger_manager.safe_application_is_stopped then
+					if not expr.is_evaluated then
+						expr.evaluate
+					end
+				end
+				if not show_only_auto_expression_successfully_evaluated or else not expr.error_occurred then
+					expr_item := new_watched_item_from_expression (expr, watches_grid)
+					expr_item.set_auto_expression (True)
+				end
 			else
 				expr_item := new_watched_item_from_expression (expr, watches_grid)
-				if debugger_manager.safe_application_is_stopped then
+			end
+			if expr_item /= Void then
+				if not expr.is_evaluated and debugger_manager.safe_application_is_stopped then
 					expr_item.request_evaluation (True)
 				end
-				watched_items.extend (expr_item)
 
-				if expr_item /= Void and then expr_item.row /= Void then
+				watched_items.extend (expr_item)
+				if expr_item.row /= Void then
 					if
 						not expr_item.compute_grid_display_done
 						and then (expr /= Void and then (expr.evaluation_disabled or not expr.is_evaluated))
@@ -1104,18 +1145,19 @@ feature {NONE} -- Event handling
 
 feature {NONE} -- Event handling on notebook item
 
-	on_notebook_item_pointer_button_pressed (ax, ay, ab: INTEGER; x_tilt, y_tilt, pressure: DOUBLE; screen_x, screen_y: INTEGER) is
-			-- FIXIT: this feature seems useless?
-		do
-			if
-				ab = 3
-				and then not Ev_application.ctrl_pressed
-				and then not Ev_application.shift_pressed
-				and then not Ev_application.alt_pressed
-			then
+--| Commented since not used for now
+--	on_notebook_item_pointer_button_pressed (ax, ay, ab: INTEGER; x_tilt, y_tilt, pressure: DOUBLE; screen_x, screen_y: INTEGER) is
+--			-- FIXIT: this feature seems useless?
+--		do
+--			if
+--				ab = 3
+--				and then not Ev_application.ctrl_pressed
+--				and then not Ev_application.shift_pressed
+--				and then not Ev_application.alt_pressed
+--			then
 --				open_watch_menu (notebook_item.parent.widget, ax, ay)
-			end
-		end
+--			end
+--		end
 
 feature {NONE} -- Implementation: internal data
 
@@ -1154,6 +1196,37 @@ feature {EB_DEBUGGER_MANAGER} -- Grid
 			-- List of items that are displayed
 			-- ie: mostly ES_OBJECTS_GRID_EXPRESSION_LINE
 
+	remove_auto_expressions_from_watched_items is
+		local
+			witem: like watched_item_from
+			witems: like watched_items
+			r: EV_GRID_ROW
+		do
+			from
+				witems := watched_items
+				witems.start
+			until
+				witems.after
+			loop
+				witem := witems.item
+				if witem = Void then
+					witems.remove
+				else
+					if witem.is_auto_expression then
+						r := witem.row
+						witem.safe_unattach
+						if r /= Void and r.parent /= Void then
+							watches_grid.remove_rows (r.index, r.index + r.subrow_count_recursive)
+--							watches_grid.remove_row (r.index)
+						end
+						witems.remove
+					else
+						witems.forth
+					end
+				end
+			end
+		end
+
 feature -- Grid management
 
 	watches_grid_empty: BOOLEAN
@@ -1172,6 +1245,14 @@ feature -- Grid management
 				watches_grid.record_layout
 				process_record_layout_on_next_recording_request := False
 			end
+		end
+
+	clear_watch_tool is
+			-- Clear watch tool expression.
+		do
+			watched_items.wipe_out
+			clean_watched_grid
+			ensure_last_row_is_new_expression_row
 		end
 
 feature {NONE} -- grid Layout Implementation
@@ -1287,34 +1368,33 @@ feature {NONE} -- Implementation
 				process_record_layout_on_next_recording_request := False
 				watches_grid.record_layout
 			end
+			from
+				witems := watched_items
+				witems.start
+			until
+				witems.after
+			loop
+				l_item := witems.item
+				l_item.request_evaluation (False)
+				l_expr := l_item.expression
+				if l_expr.evaluation_disabled then
+					-- Nothing special
+				else
+					if eval then
+						l_item.request_evaluation (True)
+					else
+						l_expr.set_unevaluated
+					end
+				end
+				if l_item.row = Void then
+						--| It seems to occur when "Restarting" debugging
+					l_item.attach_to_row (watches_grid.extended_new_row)
+				end
+				l_item.request_refresh
+				witems.forth
+			end
 			if auto_expression_enabled then
 				add_auto_expressions
-			else
-				from
-					witems := watched_items
-					witems.start
-				until
-					witems.after
-				loop
-					l_item := witems.item
-					l_item.request_evaluation (False)
-					l_expr := l_item.expression
-					if l_expr.evaluation_disabled then
-						-- Nothing special
-					else
-						if eval then
-							l_item.request_evaluation (True)
-						else
-							l_expr.set_unevaluated
-						end
-					end
-					if l_item.row = Void then
-							--| It seems to occur when "Restarting" debugging
-						l_item.attach_to_row (watches_grid.extended_new_row)
-					end
-					l_item.request_refresh
-					witems.forth
-				end
 			end
 			ensure_last_row_is_new_expression_row
 			on_row_deselected (Void) -- Reset toolbar buttons
@@ -1354,9 +1434,7 @@ feature {NONE} -- Implementation
 			witem /= Void
 			a_grid /= Void
 		do
-			if witem.is_attached_to_row then
-				witem.unattach
-			end
+			witem.safe_unattach
 			witem.attach_to_row (a_grid.extended_new_row)
 			ensure_last_row_is_new_expression_row
 		end
@@ -1384,6 +1462,16 @@ feature {NONE} -- Implementation
 					Result ?= ctlr.data
 				end
 			end
+		end
+
+	is_auto_expression_watched_item (row: EV_GRID_ROW): BOOLEAN is
+		require
+			row_not_void: row /= Void
+		local
+			w: like watched_item_from
+		do
+			w := watched_item_from (row)
+			Result := w /= Void and then w.is_auto_expression
 		end
 
 	watched_item_for_expression (expr: EB_EXPRESSION): like watched_item_from is
@@ -1453,6 +1541,7 @@ feature {NONE} -- Implementation
 			--	expressions.count = watches_grid.row_count
 
 invariant
+	watched_items_not_void: watched_items /= Void
 	not_void_delete_expression_cmd: mini_toolbar /= Void implies delete_expression_cmd /= Void
 
 indexing

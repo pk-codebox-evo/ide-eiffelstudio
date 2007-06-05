@@ -63,6 +63,10 @@ inherit
 			on_expose,
 			initialize,
 			item_at_position
+		select
+			has_capture_vision2,
+			enable_capture_vision2,
+			disable_capture_vision2
 		end
 
 	EV_FIXED
@@ -71,14 +75,14 @@ inherit
 			wipe_out as wipe_out_fixed,
 			has as has_fixed,
 			prune as prune_fixed,
-			force as force_fixed
+			force as force_fixed,
+			has_capture as has_capture_not_use,
+			enable_capture as enable_capture_not_use,
+			disable_capture as disable_capture_not_use
 		export
 			{NONE} all
 			{ANY} is_destroyed
 		undefine
-			enable_capture,
-			disable_capture,
-			has_capture,
 			pointer_motion_actions,
 			pointer_button_release_actions,
 			pointer_button_press_actions,
@@ -124,6 +128,8 @@ feature -- Properties
 
 	row_height: INTEGER is
 			--  Height of row.
+		local
+			l_tool_bar: SD_TOOL_BAR
 		do
 			if is_need_calculate_size then
 				is_need_calculate_size := False
@@ -133,7 +139,12 @@ feature -- Properties
 				until
 					after
 				loop
-					Result := Result.max (item.minimum_height)
+					l_tool_bar ?= item
+					-- Ignore SD_TOOL_BAR's height, only take account of other widgets' height such as EV_COMBO_BOX.
+					-- Otherwise, when dragging a multi-row floating tool bar, the height is larger and larger after dock it back.
+					if l_tool_bar = Void then
+						Result := Result.max (item.minimum_height)
+					end
 					forth
 				end
 				internal_row_height  := Result

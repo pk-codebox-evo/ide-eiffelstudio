@@ -48,7 +48,8 @@ feature -- Concrete initialization
 feature {DBG_EVALUATOR} -- Interface
 
 	effective_evaluate_routine (addr: STRING; a_target: DUMP_VALUE; f, realf: FEATURE_I;
-			ctype: CLASS_TYPE; orig_class: CLASS_C; params: LIST [DUMP_VALUE]) is
+			ctype: CLASS_TYPE; orig_class: CLASS_C; params: LIST [DUMP_VALUE];
+			is_static_call: BOOLEAN) is
 			-- Evaluate dotnet function
 		local
 			l_params: ARRAY [DUMP_VALUE]
@@ -281,20 +282,19 @@ feature {DBG_EVALUATOR} -- Interface
 			l_ctype: CLASS_TYPE
 			l_icdv_args: ARRAY [ICOR_DEBUG_VALUE]
 			l_icdm: ICOR_DEBUG_MODULE
-			l_cl_tok, l_f_tok: INTEGER
 			l_icd_fun: ICOR_DEBUG_FUNCTION
 			l_result: ICOR_DEBUG_VALUE
 			l_adv: ABSTRACT_DEBUG_VALUE
 			l_icd_frame: ICOR_DEBUG_FRAME
 		do
-				--| Reset error status
-			reset_error
-
 			debug ("debugger_trace_eval")
 				print (generating_type + ".dotnet_evaluate_static_function : ")
 				print (ctype.associated_class.name_in_upper + "." + f.feature_name)
 				print ("%N")
 			end
+
+				--| Reset error status
+			reset_error
 
 			if params /= Void and then not params.is_empty then
 				prepare_parameters (ctype, f, params)
@@ -309,9 +309,7 @@ feature {DBG_EVALUATOR} -- Interface
 			l_icdm := Eifnet_debugger.ise_runtime_module
 				--| FIXME jfiat: here we are only dealing with EiffelSoftware runtime ... classes
 
-			l_cl_tok := l_icdm.md_class_token_by_type_name (l_ctype.full_il_type_name)
-			l_f_tok := l_icdm.md_feature_token (l_cl_tok, f.external_name)
-			l_icd_fun := l_icdm.get_function_from_token (l_f_tok)
+			l_icd_fun := eifnet_debugger.icd_function_by_names (l_icdm, l_ctype.full_il_type_name, f.external_name)
 			if l_icd_fun /= Void then
 				l_icd_frame := current_icor_debug_frame
 				if l_icd_frame = Void then
@@ -445,10 +443,7 @@ feature {DBG_EVALUATOR} -- Interface
 			l_dyn_type_from_str_feat_i,
 			l_new_instance_of_feat_i: FEATURE_I
 			l_icd_func: ICOR_DEBUG_FUNCTION
-			l_icd_args: ARRAY [ICOR_DEBUG_VALUE]
-			l_args: ARRAY [DUMP_VALUE]
-			l_i_dv,
-			l_dv: DUMP_VALUE
+			l_i_dv, l_dv: DUMP_VALUE
 		do
 			l_dyn_type_from_str_feat_i := a_internal_class_c.feature_named ("dynamic_type_from_string")
 			l_icd_func := eifnet_debugger.icd_function_by_feature (a_internal_value, a_internal_class_c.types.first, l_dyn_type_from_str_feat_i)

@@ -172,7 +172,7 @@ feature -- Access
 			-- attributes to be re-generated ?]
 
 	is_basic: BOOLEAN is
-			-- Is current class type a basci type?
+			-- Is current class type a basic type?
 		do
 			Result := basic_type /= Void
 		end
@@ -479,6 +479,10 @@ feature -- Update
 					a_parent := l_parent_type.associated_class_type
 					a_parent.build_conformance_table_of (cl)
 					i := i + 1
+				end
+				if l_gen_type /= Void and then not l_gen_type.base_class.is_tuple then
+						-- Mark all generic derivations this one conforms to.
+					l_gen_type.enumerate_interfaces (agent {CLASS_TYPE}.build_conformance_table_of (cl))
 				end
 			end
 		end
@@ -1687,7 +1691,7 @@ feature -- Structure generation
 				else
 					if has_creation_routine then
 						c_name := encoder.feature_name (static_type_id, initialization_body_index)
-						Extern_declarations.add_routine_with_signature (Void_c_type,
+						Extern_declarations.add_routine_with_signature (Void_c_type.c_string,
 							c_name, <<"EIF_REFERENCE, EIF_REFERENCE">>)
 						buffer.put_string (c_name)
 						buffer.put_character ('(')
@@ -1720,7 +1724,7 @@ feature -- Structure generation
 					buffer.put_string (c_name)
 					buffer.put_character ('(')
 					buffer.put_string (a_target_name)
-					Extern_declarations.add_routine_with_signature (Void_c_type,
+					Extern_declarations.add_routine_with_signature (Void_c_type.c_string,
 						c_name, <<"EIF_REFERENCE">>)
 					buffer.put_string (");")
 					buffer.put_new_line

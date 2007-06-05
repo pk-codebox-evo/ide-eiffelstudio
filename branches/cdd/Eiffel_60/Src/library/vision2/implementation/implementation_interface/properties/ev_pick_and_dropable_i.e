@@ -72,7 +72,7 @@ feature -- Status setting
 			-- Show the configurable target menu at position `a_x', `a_y' relative to `Current'.
 		do
 			if application_implementation.pick_and_drop_source = Void then
-				start_transport (a_x, a_y, 3, False, 0, 0, 0, screen_x + a_x, screen_y + a_y)
+				start_transport (a_x, a_y, 3, False, 0, 0, 0, screen_x + a_x, screen_y + a_y, True)
 			end
 		end
 
@@ -123,6 +123,18 @@ feature -- Status setting
 		ensure
 			pebble_removed: pebble = Void and pebble_function = Void
 			is_transport_disabled: not is_transport_enabled
+		end
+
+	reset_pebble_function
+			-- Reset any values created by calling `pebble_function'.
+		local
+			l_pebble_function: like pebble_function
+		do
+			l_pebble_function := pebble_function
+			if l_pebble_function /= Void then
+				l_pebble_function.clear_last_result
+				pebble := Void
+			end
 		end
 
 	enable_transport is
@@ -253,7 +265,7 @@ feature {EV_ANY_I} -- Implementation
 	start_transport (
 		a_x, a_y, a_button: INTEGER; a_press: BOOLEAN;
 		a_x_tilt, a_y_tilt, a_pressure: DOUBLE;
-		a_screen_x, a_screen_y: INTEGER)
+		a_screen_x, a_screen_y: INTEGER; a_menu_only: BOOLEAN)
 	is
 			-- Start a pick and drop transport.
 		deferred

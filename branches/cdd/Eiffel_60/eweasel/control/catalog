@@ -332,7 +332,7 @@ test	vtcg-generic	valid211 tcf pass validity
 test	wrong-vgcc		valid212 tcf pass validity
 test	named-tuple-convert-conformance					valid213 tcf fail validity
 test	nested-generics-creation-readiness				valid214 tcf valid
-
+test	static-comparison-test							valid215 tcf fail validity
 
 
 -- System validity tests
@@ -622,6 +622,7 @@ test	console-setting-change		incr280 tcf pass incrementality
 test	vtcg-add-remove-missing-error	incr281 tcf pass incrementality
 test	funky-removal-of-type			incr282 tcf pass incrementality
 test	multi-constraint-incremental-crash		incr283 tcf pass incrementality
+test	removing-formal-crashes			incr284 tcf pass incrementality
 
 
 -- Melting
@@ -703,6 +704,8 @@ test	increment-character	 	melt073  tcf pass execution
 test	int64-cast-uint64	 	melt074  tcf pass execution
 test	character_32-inspect 	melt075  tcf pass execution
 test	invariant-check-melted-agent-callee melt076  tcf pass execution
+test	dollar-with-tuple		melt077  tcf pass execution
+test	dollar-with-expanded-attribute	melt078  tcf pass execution
 
 -- Freezing
 
@@ -1055,6 +1058,9 @@ test	mixed-basic-type-operations	exec270 tcf pass execution inspect
 test	wrong-agent-creation-type	exec271 tcf pass execution inspect
 test	expanded-derivation-reattachment	exec272 tcf pass execution expanded generic
 test	expanded-creation-semantics	exec273 tcf pass execution expanded creation attachment clone
+test	agent-for-expanded-derivation	exec274 tcf pass execution expanded generic agent
+test	merging-feature-with-formal	exec275 tcf pass execution expanded generic merging
+test	entry-point-defined	exec276 tcf pass execution expanded generic merging
 
 
 
@@ -1289,6 +1295,7 @@ test	add-generic-c-compile-failure ccomp059 tcf fail c_compilation
 test	last-reverse-assignment-to-expanded	ccomp060 tcf pass c_compilation expanded
 test	adding-removing-classes-c-compile-error	ccomp061 tcf pass c_compilation expanded
 test	once-manifest-string-in-cpp-file	ccomp062 tcf pass c_compilation
+test	feature-call-via-cecil			ccomp063 tcf pass c_compilation
 
 -- Storable tests
 
@@ -1602,6 +1609,7 @@ test	synonyms-with-indexing		fixed128 tcf pass fixed
 test	elseif-with-compound		fixed129 tcf pass fixed
 test	attribute-in-inherited-assertion	fixed130 tcf pass fixed
 test	external-inline-boolean	fixed131 tcf pass fixed
+test	class-name-in-multiline-string	fixed132 tcf pass fixed
 
 test	roundtrip-test rdtp001 tcf pass fixed
 test	roundtrip-number-denoted-character rdtp002 tcf pass fixed
@@ -1647,6 +1655,31 @@ test	multi-constraint-nested-calls					multicon035 tcf pass multiconstraint
 test	multi-constraint-vtmc4							multicon036 tcf pass multiconstraint
 test	multi-constraint-tuples							multicon037 tcf pass multiconstraint
 test	multi-constraint-tuples2						multicon038 tcf pass multiconstraint
+test	multi-constraint-rename-alias							multicon039 tcf pass multiconstraint
+test	multi-constraint-assigner						multicon040 tcf pass multiconstraint
+test	multi-constraint-recursive-generic				multicon041 tcf pass multiconstraint manual
+test	multi-constraint-rename-clause-crash			multicon042 tcf pass multiconstraint
+test	multi-constraint-order-affects-semantic			multicon043 tcf pass multiconstraint
+test	multi-constraint-rename-to-infix				multicon044 tcf pass multiconstraint
+test	multi-constraint-alias						multicon045 tcf pass multiconstraint
+
+--test					multicon047 tcf pass multiconstraint
+--test					multicon048 tcf pass multiconstraint
+
+-- tests for expanded types
+test	expanded-array-attached-reference-array			expanded001 tcf pass expanded
+test	expanded-reverse-assignment						expanded002 tcf pass expanded
+test	array-of-user-defined-expanded					expanded003 tcf pass expanded
+test	expanded-formal-multiconstraint					expanded004 tcf pass expanded
+test	expanded-formal-multiconstraint2				expanded005 tcf pass expanded
+
+--test						expanded006 tcf pass expanded
+--test						expanded007 tcf pass expanded
+--test						expanded008 tcf pass expanded
+--test						expanded009 tcf pass expanded
+
+
+test	filename-classname-mismatch-warning	warn001	tcf pass warning
 
 
 
@@ -1668,24 +1701,24 @@ test dotnet-inherit-new-array-type		dotnet014	tcf pass dotnet
 test none-usage-in-internal-type-comparison	dotnet015	tcf fail dotnet
 if DOTNET test dotnet-empty-custom-attributes	dotnet016	tcf pass dotnet
 test dotnet-replicated-standard_twin		dotnet017	tcf pass dotnet
-if DOTNET test dotnet-custom-attributes	dotnet018	tcf pass dotnet
+if DOTNET test dotnet-custom-attributes	dotnet018	tcf fail dotnet custom_attributes
 if DOTNET test dotnet-attribute-in-enum	dotnet019	tcf pass dotnet
-if DOTNET test dotnet-enum-value		dotnet020	tcf pass dotnet
+if DOTNET test dotnet-enum-value		dotnet020	tcf fail dotnet
 if DOTNET test dotnet-value-type-initialization	dotnet021	tcf pass dotnet
-if DOTNET test custom-attribute-type-change	dotnet022	tcf pass dotnet incrementality
+if DOTNET test custom-attribute-type-change	dotnet022	tcf pass dotnet incrementality custom_attributes
 if DOTNET test deferred-inherited-from-external	dotnet023	tcf pass dotnet
 if DOTNET test renamed-feature-from-interface	dotnet024	tcf pass dotnet
 if DOTNET test property-name-clash	dotnet025	tcf pass dotnet property
 if DOTNET test enum-inspect-validity	dotnet026	tcf pass dotnet
-if DOTNET test property-assigner-generation	dotnet027	tcf pass dotnet
+if DOTNET test property-assigner-generation	dotnet027	tcf pass dotnet property assign
 if DOTNET test field-assigner-generation	dotnet028	tcf pass dotnet
-test property-accessor-name-clash		dotnet029	tcf pass dotnet
+test property-accessor-name-clash		dotnet029	tcf pass dotnet property
 test inline-agent-of-descendant dotnet030 tcf pass dotnet
 test deferred-class-inherit-dotnet dotnet031 tcf pass dotnet
 if DOTNET test single-inheritance-test dotnet032 tcf pass dotnet
-test assertion-evaluation-order dotnet033 tcf pass dotnet
+test assertion-evaluation-order dotnet033 tcf fail dotnet
 test pointer-to-external-expanded		dotnet034	tcf pass dotnet expanded
-if DOTNET test ambiguous-dotnet-types	dotnet035	tcf pass dotnet expanded
+if DOTNET test ambiguous-dotnet-types	dotnet035	tcf fail dotnet expanded
 test real-output-no-locale	dotnet036	tcf pass dotnet real locale
 if DOTNET test overload-with-argument-type	dotnet037	tcf pass dotnet
 if DOTNET test compatible-single-and-interface	dotnet038	tcf pass dotnet
@@ -1702,8 +1735,55 @@ if DOTNET test deferred-property-missing-assigner-implementation-renamed dotnet0
 if DOTNET test effecting-from-inherited-external	dotnet049	tcf pass dotnet
 test replicated-from-generic-type		dotnet050	tcf pass dotnet termination expanded replication
 test implicit-type-cause-crash-on-cast	dotnet051	tcf pass dotnet termination
-if DOTNET test incremental-custom-attribute-constant-change	dotnet052	tcf pass dotnet
-if DOTNET test wrong-eiffel-name-attribute-generation	dotnet053	tcf pass dotnet
-if DOTNET test field-attribute-test	dotnet054	tcf fail dotnet
-if DOTNET test creation-without-default-ctor	dotnet055	tcf fail dotnet
-if DOTNET test incr-remove-create-dotnet-constructor	dotnet056	tcf fail dotnet
+if DOTNET test incremental-custom-attribute-constant-change	dotnet052	tcf fail dotnet custom_attributes
+if DOTNET test wrong-eiffel-name-attribute-generation	dotnet053	tcf pass dotnet custom_attributes
+if DOTNET test field-attribute-test	dotnet054	tcf fail dotnet custom_attributes
+if DOTNET test creation-without-default-ctor	dotnet055	tcf fail dotnet constructor
+if DOTNET test incr-remove-create-dotnet-constructor	dotnet056	tcf fail dotnet constructor incrementality
+if DOTNET test smart-object-automatic-implementation	dotnet057	tcf fail dotnet
+if DOTNET test expected-any-type-name	dotnet058	tcf pass dotnet namespace dotnet_names
+if DOTNET test expected-basic-type-names	dotnet059	tcf pass dotnet namespace dotnet_names
+if DOTNET test dotnet-name-generation	dotnet060	tcf fail dotnet dotnet_names
+if DOTNET test external-name-conflict-validation	dotnet061	tcf pass dotnet dotnet_names
+if DOTNET test target-namespace-generation-rules	dotnet062	tcf fail dotnet namespace
+if DOTNET test target-named-namespace-generation-rules	dotnet063	tcf pass dotnet namespace
+if DOTNET test library-namespace-generation-rules	dotnet064	tcf fail dotnet namespace
+if DOTNET test library-named-namespace-generation-rules	dotnet065	tcf pass dotnet namespace
+if DOTNET test uncompiled-managed-resource-embeddeding	dotnet066	tcf pass dotnet resources
+if DOTNET test compiled-managed-resource-embeddeding	dotnet067	tcf pass dotnet resources
+if DOTNET test peripheral-resource-embeddeding	dotnet068	tcf pass dotnet resources
+if DOTNET test non-existent-resource-embeddeding	dotnet069	tcf fail dotnet resources
+if DOTNET test uncompiled-managed-resource-modified	dotnet070	tcf fail dotnet resources
+if DOTNET test property-name-clash-named dotnet071	tcf pass dotnet property
+if DOTNET test property-name-clash-single-named dotnet072	tcf pass dotnet property
+if DOTNET test property-name-clash-named-inherited dotnet073	tcf pass dotnet property
+if DOTNET test properties-generated-on_eiffel-interface dotnet074	tcf pass dotnet property
+if DOTNET test illegal-routine-properties dotnet075	tcf pass dotnet property
+if DOTNET test property-reusing-parent-setter dotnet076	tcf fail dotnet property
+if DOTNET test deferred-property-function-on-single dotnet077	tcf fail dotnet property
+if DOTNET test property-incremental-add-remove dotnet078	tcf pass dotnet property incrementality
+if DOTNET test property-incremental-add-remove-single dotnet079	tcf pass dotnet property incrementality
+if DOTNET test property-on-procedure dotnet080	tcf pass dotnet property
+if DOTNET test ctor-basic dotnet081	tcf fail dotnet constructor
+if DOTNET test ctor-basic-dynamic dotnet082	tcf pass dotnet constructor
+if DOTNET test ctor-non-existing-create dotnet083	tcf pass dotnet constructor
+if DOTNET test ctor-single-default-ctor dotnet084	tcf pass dotnet constructor
+if DOTNET test ctor-parent-ctor-reference dotnet085	tcf pass dotnet constructor
+if DOTNET test ctor-parent-argumented-ctor-reference dotnet086	tcf pass dotnet constructor
+if DOTNET test ctor-parent-argumented-ctor-redefine dotnet087	tcf fail dotnet constructor
+if DOTNET test ctor-root-creation-ctor dotnet088	tcf fail dotnet constructor
+if DOTNET test ctor-multi-source-ctors dotnet089	tcf fail dotnet constructor
+if DOTNET test ctor-reference-from-external-type dotnet090	tcf fail dotnet constructor
+if DOTNET test ctor-multi-source-unique-ctors dotnet091	tcf fail dotnet constructor
+if DOTNET test ca-use-of-non-native-attribute dotnet092	tcf fail dotnet custom_attributes
+if DOTNET test ca-incorrect-context-usage dotnet093	tcf fail dotnet custom_attributes
+if DOTNET test ca-peripheral-assembly-metadata dotnet094	tcf pass dotnet custom_attributes
+if DOTNET test ca-assembly-md-with-compile-all dotnet095	tcf fail dotnet custom_attributes
+if DOTNET test ca-correct-assignment dotnet096	tcf pass dotnet custom_attributes
+if DOTNET test ca-basic-custom-attribute dotnet097	tcf pass dotnet custom_attributes
+if DOTNET test ca-custom-attribute-with-property dotnet098	tcf fail dotnet custom_attributes property
+if DOTNET test ca-custom-attribute-with-ctor dotnet099	tcf pass dotnet custom_attributes constructor
+if DOTNET test ca-custom-attribute-with-create dotnet100	tcf fail dotnet custom_attributes
+if DOTNET test application-optimizations-enabled dotnet101	tcf pass dotnet optimization
+if DOTNET test system-object-remapped-in-mscorlib-only dotnet102	tcf pass dotnet consumer
+if DOTNET test consumable-attribute-usage-in-eiffel dotnet103	tcf fail dotnet consumer consumable custom_attributes

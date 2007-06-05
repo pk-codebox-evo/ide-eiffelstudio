@@ -81,12 +81,6 @@ feature -- Access
 			end
 		end
 
-	show_all_tab_stub_text: BOOLEAN is
-			-- When more than one tab stubs stay together at side of main window, show inactive tab stub text?
-		do
-			Result := show_tab_stub_text_cell.item
-		end
-
 	tool_bar_font: EV_FONT is
 			-- Tool bar font
 		local
@@ -139,6 +133,12 @@ feature -- Status report
 			-- If show all indicators same time when use transparent rectangle style feedback?
 		do
 			Result := show_all_feedback_indicator_cell.item
+		end
+
+	show_all_tab_stub_text: BOOLEAN is
+			-- When more than one tab stubs stay together at side of main window, show inactive tab stub text?
+		do
+			Result := show_tab_stub_text_cell.item
 		end
 
 	zone_navigation_accelerator_ctrl: BOOLEAN is
@@ -224,14 +224,6 @@ feature -- Status setting
 			is_set_show_all_feedback_indicator_called.put (True)
 		ensure
 			set: show_all_tab_stub_text =  a_bool
-		end
-
-	set_tool_bar_docker_mediator (a_mediator: SD_TOOL_BAR_DOCKER_MEDIATOR) is
-			-- Set tool bar docker mediator singleton.
-		do
-			tool_bar_docker_mediator_cell.put (a_mediator)
-		ensure
-			set: tool_bar_docker_mediator_cell.item = a_mediator
 		end
 
 	set_default_screen_x (a_x: INTEGER) is
@@ -435,6 +427,12 @@ feature -- Constants
 			Result := tool_bar_font.width * 35
 		end
 
+	tab_zone_upper_minimum_height: INTEGER is
+			-- SD_TAB_ZONE_UPPER and SD_DOCKING_ZONE_UPPER's minimum height.
+		do
+			Result := notebook_tab_height + 5
+		end
+
 	Zone_minmum_width: INTEGER is
 			-- Minmum width of a zone.
 		once
@@ -512,7 +510,15 @@ feature -- Constants
 			Result_not_void: Result /= Void
 		end
 
-feature {SD_DOCKING_MANAGER} -- Implementation
+feature {SD_DOCKING_MANAGER, SD_TOOL_BAR_DRAGGING_AGENTS, SD_TOOL_BAR_DOCKER_MEDIATOR} -- Implementation
+
+	set_tool_bar_docker_mediator (a_mediator: SD_TOOL_BAR_DOCKER_MEDIATOR) is
+			-- Set tool bar docker mediator singleton.
+		do
+			tool_bar_docker_mediator_cell.put (a_mediator)
+		ensure
+			set: tool_bar_docker_mediator_cell.item = a_mediator
+		end
 
 	add_docking_manager (a_manager: SD_DOCKING_MANAGER) is
 			-- Set `internal_docking_manager'.
@@ -636,19 +642,19 @@ feature {NONE} -- Implementation
 
 	zone_navigation_accelerator_ctrl_cell: CELL [BOOLEAN] is
 			-- Singleton cell for `zone_navigation_accelerator_ctrl'
-		do
+		once
 			create Result.put (True)
 		end
 
 	zone_navigation_accelerator_alt_cell: CELL [BOOLEAN] is
 			-- Singleton cell for `zone_navigation_accelerator_alt'
-		do
+		once
 			create Result.put (False)
 		end
 
 	zone_navigation_accelerator_shift_cell: CELL [BOOLEAN] is
 			-- Singleton cell for `zone_navigation_accelerator_shift'
-		do
+		once
 			create Result.put (False)
 		end
 

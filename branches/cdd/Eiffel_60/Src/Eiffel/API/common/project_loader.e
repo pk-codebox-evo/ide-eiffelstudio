@@ -260,6 +260,7 @@ feature -- Loading
 			-- `a_project_path': Path of project
 			-- `from_scratch': Indicates if a clean is requested before compilation
 		require
+			a_libraries_not_void: a_libraries /= Void
 			a_class_filename_not_void: a_class_filename /= Void
 		local
 			l_directory, l_filename, l_target_name, l_config_file_name: STRING
@@ -809,11 +810,11 @@ feature {NONE} -- Settings
 			l_list: DS_ARRAYED_LIST [STRING]
 		do
 			if a_proposed_target /= Void then
-				a_targets.search (a_proposed_target)
-				if a_targets.found then
-					target_name := a_proposed_target.twin
-				else
+				target_name := a_proposed_target.as_lower
+				a_targets.search (target_name)
+				if not a_targets.found then
 					l_not_found := True
+					target_name := Void
 				end
 			else
 				l_not_found := True

@@ -1717,7 +1717,6 @@ feature {NONE} -- Implementation
 				last_type := last_type.actual_type
 				if last_type.is_formal then
 					l_formal ?= last_type
-						-- MTNASK: Why is  type_from_ancestor needed?
 					last_type := type_from_ancestor (source_class, l_formal)
 				else
 					l_left_type := last_type
@@ -1753,7 +1752,6 @@ feature {NONE} -- Implementation
 							-- same class ID as the one recorded in BINARY_AS, it means that target
 							-- was not converted, otherwise target was converted and its type is the
 							-- one from the right-hand side.
-						-- MTNASK: what to do here?
 						if l_left_type.associated_class.class_id = l_as.class_id then
 							last_type := l_left_type
 						else
@@ -1982,16 +1980,19 @@ feature {NONE} -- Implementation
 				last_type := last_type.actual_type
 				if last_type.is_formal then
 					l_formal ?= last_type
-					if l_formal.is_multi_constrained (current_class)then
+					if l_formal.is_multi_constrained (current_class) then
 						l_last_type_set := l_formal.constrained_types (current_class)
 							-- Here we get back the feature and the renamed type where the feature is from (it means that it includes a possible renaming)
 						l_result := l_last_type_set.e_feature_list_by_rout_id (l_as.routine_ids.first)
 						last_class := l_result.first.type.associated_class
 						l_feat := l_result.first.feature_item
 					else
-						last_class :=l_formal.constrained_type (current_class).associated_class
+						last_class := l_formal.constrained_type (current_class).associated_class
 						l_feat := feature_in_class (last_class, l_as.routine_ids)
 					end
+				else
+					last_class := last_type.associated_class
+					l_feat := feature_in_class (last_class, l_as.routine_ids)
 				end
 			end
 			if not expr_type_visiting then
@@ -2928,14 +2929,6 @@ feature {NONE} -- Implementation
 						text_formatter_decorator.put_space
 						feature_name ?= l_as.creation_feature_list.item
 						append_feature_by_id (feature_name, l_constrained_type, l_constrained_type_set)
---						if not l_constrained_type.is_formal then
---							l_feat := l_type.associated_class.feature_with_name (feature_name.visual_name)
---							if l_feat /= Void then
---								text_formatter_decorator.process_feature_text (feature_name.visual_name, l_feat, False)
---							end
---						else
---							text_formatter_decorator.process_local_text (feature_name.visual_name)
---						end
 						l_as.creation_feature_list.forth
 					until
 						l_as.creation_feature_list.after
@@ -3978,37 +3971,6 @@ feature {NONE} -- Implementation: helpers
 				Result := l_type.associated_class
 			end
 		end
-
---	 constrained_type (a_type: TYPE_A): TYPE_A is
---			-- Constrained type of `a_type'.
---		require
---			a_type_not_void: a_type /= Void
---			a_type_has_no_multi_constraint: not a_type.is_multi_constrained (current_class)
---		local
---			l_formal_type: FORMAL_A
---		do
---			if a_type.is_formal then
---				l_formal_type ?= a_type
---				Result := current_class.constraint (l_formal_type.position)
---			else
---				Result := a_type
---			end
---		end
-
---	constraining_types (a_type: TYPE_A): TYPE_SET_A is
---			-- Constrained type of `a_type'.
---		require
---			a_type_not_void: a_type /= Void
---		local
---			l_formal_type: FORMAL_A
---		do
---			if a_type.is_formal then
---				l_formal_type ?= a_type
---				Result := current_class.constraints (l_formal_type.position)
---			else
---				Result := a_type.to_type_set
---			end
---		end
 
 	strip_type: GEN_TYPE_A is
 			-- Strip type

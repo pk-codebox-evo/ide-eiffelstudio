@@ -153,6 +153,7 @@ feature
 			rout_table: ROUT_TABLE
 			internal_name: STRING
 			inline_ext: INLINE_EXTENSION_I
+			return_type_string: STRING
 		do
 			check
 				final_mode: context.final_mode
@@ -173,7 +174,14 @@ feature
 					-- The call is polymorphic, so generate access to the
 					-- routine table. The dereferenced function pointer has
 					-- to be enclosed in parenthesis.
-				table_name := Encoder.table_name (routine_id)
+				table_name := Encoder.routine_table_name (routine_id)
+
+				if system.seed_of_routine_id (routine_id).type.type_i.is_formal and then l_type_i.is_basic then
+						-- Feature returns a reference that need to be used as a basic one.
+					buf.put_character ('*')
+					type_c.generate_access_cast (buf)
+					type_c := reference_c_type
+				end
 
 				buf.put_character ('(');
 				type_c.generate_function_cast (buf, argument_types)
@@ -243,7 +251,12 @@ feature
 							-- Remember extern routine declaration if not written in same class. But no need
 							-- doing this for an inline C/C++ since the code of the inline routine will be
 							-- generated again.
-						Extern_declarations.add_routine_with_signature (type_c,
+						if context.workbench_mode then
+							return_type_string := "EIF_UNION"
+						else
+							return_type_string := type_c.c_string
+						end
+						Extern_declarations.add_routine_with_signature (return_type_string,
 								internal_name, local_argument_types)
 					end
 

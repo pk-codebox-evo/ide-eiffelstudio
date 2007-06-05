@@ -135,10 +135,13 @@ feature {NONE}
 	W_code: STRING is "W_code"
 
 	eiffel_extension: STRING is "e"
+			-- File extension for an Eiffel source file without the dot
 
 	project_extension: STRING is "epr"
+			-- File extension for an Eiffel Studio project file without the dot
 
 	config_extension: STRING is "ecf"
+			-- File extension for an Eiffel configuration file without the dot
 
 	ace_file_extension: STRING is "ace"
 
@@ -191,6 +194,10 @@ feature {AUXILIARY_FILES} -- Versioning
 			Result.append (compiler_version_number.version)
 			Result.append_character (' ')
 			Result.append_string (version_type_name)
+			Result.append_character (' ')
+			Result.append_character ('-')
+			Result.append_character (' ')
+			Result.append_string (eiffel_layout.eiffel_platform)
 		end
 
 	Version_tag: INTEGER is 0x026

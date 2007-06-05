@@ -114,6 +114,7 @@ feature {NONE} -- Initialization
 				set_slices (preferences.debugger_data.min_slice, preferences.debugger_data.max_slice)
 				set_displayed_string_size (preferences.debugger_data.default_displayed_string_size)
 				set_maximum_stack_depth (preferences.debugger_data.default_maximum_stack_depth)
+				set_critical_stack_depth (preferences.debugger_data.critical_stack_depth)
 
 				set_max_evaluation_duration (preferences.debugger_data.max_evaluation_duration)
 				preferences.debugger_data.max_evaluation_duration_preference.typed_change_actions.extend (agent set_max_evaluation_duration)
@@ -522,6 +523,10 @@ feature -- tools management
 			create sep
 			Result.extend (sep)
 
+
+			l_item := restart_cmd.new_menu_item
+			Result.extend (l_item)
+			a_recycler.add_recyclable (l_item)
 			l_item := stop_cmd.new_menu_item
 			Result.extend (l_item)
 			a_recycler.add_recyclable (l_item)
@@ -1270,6 +1275,11 @@ feature -- Status setting
 			update_all_debugging_tools_menu
 			unpopup_switching_mode
 			force_debug_mode_cmd.enable_sensitive
+
+			-- Save default debug layout file if not exists.
+			-- Because if not save, the default layout of debug mode is restored by `restore_standard_debug_docking_layout_by_code' which
+			-- put debugging tools to current layout directly. This will confuse end user.
+			debugging_window.commands.set_default_layout_command.execute_if_not_setted
 		ensure
 			raised
 		end
@@ -1576,7 +1586,6 @@ feature -- Debugging events
 			-- Application was just stopped (by a breakpoint, ...).
 		local
 			st: CALL_STACK_STONE
-			cd: EB_CONFIRMATION_DIALOG
 		do
 			Precursor
 			debug ("debugger_trace_synchro")
@@ -1625,8 +1634,7 @@ feature -- Debugging events
 			debugging_window.window.raise
 
 			if application_status.reason_is_overflow then
-				create cd.make_with_text_and_actions (Warning_messages.w_Overflow_detected, <<agent do_nothing, agent resume_application>>)
-				cd.show_modal_to_window (debugging_window.window)
+				on_overflow_detected
 			end
 
 			debug ("debugger_interface")
@@ -1637,6 +1645,20 @@ feature -- Debugging events
 			end
 
 			cdd_manager.on_application_stopped (application.status)
+		end
+
+	on_overflow_detected is
+			-- OVERFLOW detected
+		do
+			--| Fixme: we might try to prevent debugging tools to refresh before poping up this dialog...				
+			ev_application.do_once_on_idle (agent
+					local
+						cd: EB_CONFIRMATION_DIALOG
+					do
+						create cd.make_with_text_and_actions (Warning_messages.w_Overflow_detected, <<agent do_nothing, agent resume_application>>)
+						cd.show_modal_to_window (debugging_window.window)
+					end
+				)
 		end
 
 	on_application_before_resuming is
@@ -1695,14 +1717,14 @@ feature -- Debugging events
 			-- Application just quit.
 			-- This application means the debuggee.
 		do
+				-- Modify the debugging window display.
+			window_manager.quick_refresh_all_margins
+			disable_debugging_commands (False)
+
+				--| Clean and reset debugging tools
+			reset_tools
+
 			if was_executing then
-					-- Modify the debugging window display.
-				window_manager.quick_refresh_all_margins
-				disable_debugging_commands (False)
-
-					--| Clean and reset debugging tools
-				reset_tools
-
 					-- Make all debugging tools disappear.
 				if debugging_window.destroyed then
 					debugging_window := Void
@@ -1716,25 +1738,25 @@ feature -- Debugging events
 					unraise
 					debugging_window := Void
 				end
-
-				enable_debugging_commands
-				update_all_debugging_tools_menu
-
-					-- Make related buttons insensitive.
-				stop_cmd.disable_sensitive
-				quit_cmd.disable_sensitive
-				restart_cmd.disable_sensitive
-				debug_cmd.enable_sensitive
-				debug_cmd.set_launched (False)
-				no_stop_cmd.enable_sensitive
-
-				step_cmd.enable_sensitive
-				into_cmd.enable_sensitive
-				out_cmd.disable_sensitive
-
-				set_critical_stack_depth_cmd.enable_sensitive
-				assertion_checking_handler_cmd.reset
 			end
+			enable_debugging_commands
+			update_all_debugging_tools_menu
+
+				-- Make related buttons insensitive.
+			stop_cmd.disable_sensitive
+			quit_cmd.disable_sensitive
+			restart_cmd.disable_sensitive
+			debug_cmd.enable_sensitive
+			debug_cmd.set_launched (False)
+			no_stop_cmd.enable_sensitive
+
+			step_cmd.enable_sensitive
+			into_cmd.enable_sensitive
+			out_cmd.disable_sensitive
+
+			set_critical_stack_depth_cmd.enable_sensitive
+			assertion_checking_handler_cmd.reset
+
 			Precursor (was_executing)
 		end
 
@@ -1909,6 +1931,7 @@ feature {NONE} -- Implementation
 				enable_bkpt.disable_sensitive
 				disable_bkpt.disable_sensitive
 				bkpt_info_cmd.disable_sensitive
+				force_debug_mode_cmd.disable_sensitive
 			end
 
 			debug_cmd.disable_sensitive

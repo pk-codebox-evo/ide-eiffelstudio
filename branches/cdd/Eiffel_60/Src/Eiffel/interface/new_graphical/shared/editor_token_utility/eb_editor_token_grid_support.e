@@ -57,18 +57,6 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
-	stone_at_position (a_x, a_y: INTEGER): ANY  is
-			-- Stone at position (`a_x', `a_y') which is related to the top-left coordinate of `grid'
-			-- Void if no item is found or that item contains no stone.			
-		local
-			l_pickable_item: ES_GRID_PICKABLE_ITEM
-		do
-			l_pickable_item ?= grid_item_at_position (grid, a_x, a_y)
-			if l_pickable_item /= Void then
-				Result := l_pickable_item.pebble_at_position
-			end
-		end
-
 feature -- Pick and drop support for grid items
 
 	on_pick_start_from_grid_pickable_item (a_item: EV_GRID_ITEM; a_grid_support: EB_EDITOR_TOKEN_GRID_SUPPORT) is
@@ -81,15 +69,13 @@ feature -- Pick and drop support for grid items
 			l_grid: EV_GRID
 			l_stone: STONE
 		do
-			if a_item /= Void and then a_item.is_parented and then not ev_application.ctrl_pressed then
+			if a_item /= Void and then a_item.is_parented then
 				l_item ?= a_item
 				if l_item /= Void and then l_item.grid_item.is_parented then
 					l_stone ?= l_item.on_pick
 					if l_stone /= Void then
 						l_grid := l_item.grid_item.parent
 						set_last_picked_item (l_item.grid_item)
-						set_last_pebble (l_stone)
-						a_grid_support.set_last_pebble (l_stone)
 						l_grid.remove_selection
 						l_grid.set_accept_cursor (l_stone.stone_cursor)
 						l_grid.set_deny_cursor (l_stone.x_stone_cursor)
