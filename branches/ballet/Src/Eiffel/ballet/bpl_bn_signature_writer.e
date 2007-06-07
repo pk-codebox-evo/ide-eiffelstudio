@@ -17,7 +17,7 @@ inherit
 	SHARED_SERVER
 
 	SHARED_BYTE_CONTEXT
-	
+
 create
 	make
 
@@ -76,7 +76,7 @@ feature -- Generation
 				loop
 					function_writer.reset
 					ass_list.item.process (function_writer)
-					
+
 					bpl_out ("  free requires ")
 					bpl_out (function_writer.expr)
 					bpl_out (";%N")
@@ -112,7 +112,7 @@ feature -- Generation
 				end
 				bpl_out (") == Result;%N")
 			end
-			
+
 			process_feature_i (a_feature) -- generate assertions
 
 			bpl_out ("%N")
@@ -173,16 +173,16 @@ feature {BYTE_NODE} -- Visitors
 			end
 
 			-- inherited contracts
-			
+
 			Context.clear_feature_data
 			Context.set_current_feature (current_feature)
 			inh_assert := Context.inherited_assertion
 			inh_assert.wipe_out
-			
+
 			if current_feature.assert_id_set /= Void  then
 				a_node.formulate_inherited_assertions(current_feature.assert_id_set)
 			end
-			
+
 			from
 				inh_assert.precondition_list.start
 				inh_assert.precondition_types.start
@@ -217,7 +217,7 @@ feature {BYTE_NODE} -- Visitors
 				end
 				inh_assert.precondition_list.forth
 			end
-			
+
 			from
 				inh_assert.postcondition_list.start
 				inh_assert.postcondition_types.start
@@ -252,7 +252,7 @@ feature {BYTE_NODE} -- Visitors
 				end
 				inh_assert.postcondition_list.forth
 			end
-			
+
 		end
 
 feature -- Extra processors
@@ -261,7 +261,7 @@ feature -- Extra processors
 		do
 			-- no need to do anything here
 		end
-	
+
 feature{NONE} -- Implementation
 
 	function_writer: BPL_BN_FUNCTION_WRITER
