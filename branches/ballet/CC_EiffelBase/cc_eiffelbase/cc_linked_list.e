@@ -19,11 +19,18 @@ inherit
 			first,
 			last,
 			is_first,
-			is_last
---			go_i_th, put_left, move, wipe_out,
---			is_inserted,
---			finish, merge_left, merge_right,
---			start, copy
+			is_last,
+			start,
+			finish,
+			move,
+			go_i_th,
+			put_left
+--			move
+--			wipe_out
+--			is_inserted
+--			merge_left
+--			merge_right
+--			copy
 		end
 
 --create
@@ -134,30 +141,31 @@ feature -- Status report
 						(active /= Void) and then (active.right = Void)
 		end
 
---	valid_cursor (p: CURSOR): BOOLEAN is
---			-- Can the cursor be moved to position `p'?
---		local
---			ll_c: like cursor
---			temp, sought: like first_element
---		do
---			ll_c ?= p
---			if ll_c /= Void then
---				from
---					temp := first_element
---					sought := ll_c.active
---					Result := ll_c.after or else ll_c.before
---				until
---					Result or else temp = Void
---				loop
---					Result := (temp = sought)
---					temp := temp.right
---				end
---			end
---		end
+	valid_cursor_position (p: CC_CURSOR_POSITION): BOOLEAN is
+			-- Can the cursor be moved to position `p'?
+		local
+			ll_c: like cursor_position
+			temp, sought: like first_element
+		do
+			ll_c ?= p
+			if ll_c /= Void then
+				from
+					temp := first_element
+					sought := ll_c.active
+					Result := ll_c.after or else ll_c.before
+				until
+					Result or else temp = Void
+				loop
+					Result := (temp = sought)
+					temp := temp.right
+				end
+			end
+		end
 
---	full: BOOLEAN is False
---		-- Is structured filled to capacity? (Answer: no.)
+	full: BOOLEAN is False -- TODO use clause?s
+		-- Is structured filled to capacity? (Answer: no.)
 
+-- TODO not needed
 --	is_inserted (v: G): BOOLEAN is
 --			-- Has `v' been inserted at the end by the most recent `put' or
 --			-- `extend'?
@@ -175,174 +183,174 @@ feature -- Status report
 
 feature -- Cursor movement
 
---	start is
---			-- Move cursor to first position.
---		do
---			if first_element /= Void then
---				active := first_element
---				after := False
---			else
---				after := True
---			end
---			before := False
---		ensure then
---			empty_convention: is_empty implies after
---		end
+	start is
+			-- Move cursor to first position.
+		do
+			if first_element /= Void then
+				active := first_element
+				after := False
+			else
+				after := True
+			end
+			before := False
+		ensure then
+			empty_convention: is_empty implies after
+		end
 
---	finish is
---			-- Move cursor to last position.
---			-- (Go before if empty)
---		local
---			p: like first_element
---		do
---			if not is_empty then
---				from
---					p := active
---				until
---					p.right = Void
---				loop
---					p := p.right
---				end
---				active := p
---				after := False
---				before := False
---			else
---				before := True
---				after := False
---			end
---		ensure then
---			Empty_convention: is_empty implies before
---		end
+	finish is
+			-- Move cursor to last position.
+			-- (Go before if empty)
+		local
+			p: like first_element
+		do
+			if not is_empty then
+				from
+					p := active
+				until
+					p.right = Void
+				loop
+					p := p.right
+				end
+				active := p
+				after := False
+				before := False
+			else
+				before := True
+				after := False
+			end
+		ensure then
+			empty_convention: is_empty implies before
+		end
 
---	forth is
---			-- Move cursor to next position.
---		local
---			old_active: like first_element
---		do
---			if before then
---				before := False
---				if is_empty then after := True end
---			else
---				old_active := active
---				active := active.right
---				if active = Void then
---					active := old_active
---					after := True
---				end
---			end
---		end
+	forth is
+			-- Move cursor to next position.
+		local
+			old_active: like first_element
+		do
+			if before then
+				before := False
+				if is_empty then after := True end
+			else
+				old_active := active
+				active := active.right
+				if active = Void then
+					active := old_active
+					after := True
+				end
+			end
+		end
 
---	back is
---			-- Move to previous item.
---		do
---			if is_empty then
---				before := True
---				after := False
---			elseif after then
---				after := False
---			elseif isfirst then
---				before := True
---			else
---				active := previous
---			end
---		end
+	back is
+			-- Move to previous item.
+		do
+			if is_empty then
+				before := True
+				after := False
+			elseif after then
+				after := False
+			elseif is_first then
+				before := True
+			else
+				active := previous
+			end
+		end
 
---	move (i: INTEGER) is
---			-- Move cursor `i' positions. The cursor
---			-- may end up `off' if the offset is too big.
---		local
---			counter, new_index: INTEGER
---			p: like first_element
---		do
---			if i > 0 then
---				if before then
---					before := False
---					counter := 1
---				end
---				from
---					p := active
---				until
---					(counter = i) or else (p = Void)
---				loop
---					active := p
---					p := p.right
---					counter := counter + 1
---				end
---				if p = Void then
---					after := True
---				else
---					active := p
---				end
---			elseif i < 0 then
---				new_index := index + i
---				before := True
---				after := False
---				active := first_element
---				if (new_index > 0) then
---					move (new_index)
---				end
---			end
---		ensure then
---	 		moved_if_inbounds:
---	 			((old index + i) >= 0 and
---	 			(old index + i) <= (count + 1))
---	 				implies index = (old index + i)
---	 		before_set: (old index + i) <= 0 implies before
---	 		after_set: (old index + i) >= (count + 1) implies after
---		end
+	move (i: INTEGER) is
+			-- Move cursor `i' positions. The cursor
+			-- may end up `off' if the offset is too big.
+		local
+			counter, new_index: INTEGER
+			p: like first_element
+		do
+			if i > 0 then
+				if before then
+					before := False
+					counter := 1
+				end
+				from
+					p := active
+				until
+					(counter = i) or else (p = Void)
+				loop
+					active := p
+					p := p.right
+					counter := counter + 1
+				end
+				if p = Void then
+					after := True
+				else
+					active := p
+				end
+			elseif i < 0 then
+				new_index := index + i
+				before := True
+				after := False
+				active := first_element
+				if (new_index > 0) then
+					move (new_index)
+				end
+			end
+		ensure then
+	 		moved_if_inbounds:
+	 			((old index + i) >= 0 and
+	 			(old index + i) <= (count + 1))
+	 				implies index = (old index + i)
+	 		before_set: (old index + i) <= 0 implies before
+	 		after_set: (old index + i) >= (count + 1) implies after
+		end
 
---	go_i_th (i: INTEGER) is
---			-- Move cursor to `i'-th position.
---		do
---			if i = 0 then
---				before := True
---				after := False
---				active := first_element
---			elseif i = count + 1 then
---				before := False
---				after := True
---				active := last_element
---			else
---				move (i - index)
---			end
---		end
+	go_i_th (i: INTEGER) is
+			-- Move cursor to `i'-th position.
+		do
+			if i = 0 then
+				before := True
+				after := False
+				active := first_element
+			elseif i = count + 1 then
+				before := False
+				after := True
+				active := last_element
+			else
+				move (i - index)
+			end
+		end
 
---	go_to (p: CURSOR) is
---			-- Move cursor to position `p'.
---		local
---			ll_c: like cursor
---		do
---			ll_c ?= p
---				check
---					ll_c /= Void
---				end
---			after := ll_c.after
---			before := ll_c.before
---			if before then
---				active := first_element
---			elseif after then
---				active := last_element
---			else
---				active := ll_c.active
---			end
---		end
+	go_to (p: CC_CURSOR_POSITION) is
+			-- Move cursor to position `p'.
+		local
+			ll_cursor_position: like cursor_position
+		do
+			ll_cursor_position ?= p
+				check
+					ll_cursor_position /= Void
+				end
+			after := ll_cursor_position.after
+			before := ll_cursor_position.before
+			if before then
+				active := first_element
+			elseif after then
+				active := last_element
+			else
+				active := ll_cursor_position.active
+			end
+		end
 
 feature -- Element change
 
---	put_front (v: like item) is
---			-- Add `v' to beginning.
---			-- Do not move cursor.
---		local
---			p: like first_element
---		do
---			p := new_cell (v)
---			p.put_right (first_element)
---			first_element := p
---			if before or is_empty then
---				active := p
---			end
---			count := count + 1
---		end
+	put_front (v: like item) is
+			-- Add `v' to beginning.
+			-- Do not move cursor.
+		local
+			cell: like first_element
+		do
+			cell := new_cell (v)
+			cell.put_right (first_element)
+			first_element := cell
+			if before or is_empty then
+				active := cell
+			end
+			count := count + 1
+		end
 
 --	extend (v: like item) is
 --			-- Add `v' to end.
@@ -361,59 +369,59 @@ feature -- Element change
 --			count := count + 1
 --		end
 
---	put_left (v: like item) is
---			-- Add `v' to the left of cursor position.
---			-- Do not move cursor.
---		local
---			p: like first_element
---		do
---			if is_empty then
---				put_front (v)
---			elseif after then
---				back
---				put_right (v)
---				move (2)
---			else
---				p := new_cell (active.item)
---				p.put_right (active.right)
---				active.put (v)
---				active.put_right (p)
---				active := p
---				count := count + 1
---			end
---		ensure then
---			previous_exists: previous /= Void
---			item_inserted: previous.item = v
---		end
+	put_left (v: like item) is
+			-- Add `v' to the left of cursor position.
+			-- Do not move cursor.
+		local
+			cell: like first_element
+		do
+			if is_empty then
+				put_front (v)
+			elseif after then
+				back
+				put_right (v)
+				move (2)
+			else
+				cell := new_cell (active.item)
+				cell.put_right (active.right)
+				active.put (v)
+				active.put_right (cell)
+				active := cell
+				count := count + 1
+			end
+		ensure then
+			previous_exists: previous /= Void
+			item_inserted: previous.item = v
+		end
 
---	put_right (v: like item) is
---			-- Add `v' to the right of cursor position.
---			-- Do not move cursor.
---		local
---			p: like first_element
---		do
---			p := new_cell (v)
---			check is_empty implies before end
---			if before then
---				p.put_right (first_element)
---				first_element := p
---				active := p
---			else
---				p.put_right (active.right)
---				active.put_right (p)
---			end
---			count := count + 1
---		ensure then
---			next_exists: next /= Void
---			item_inserted: not old before implies next.item = v
---			item_inserted_before: old before implies active.item = v
---		end
+	put_right (v: like item) is
+			-- Add `v' to the right of cursor position.
+			-- Do not move cursor.
+		local
+			cell: like first_element
+		do
+			cell := new_cell (v)
+			check is_empty implies before end
+			if before then
+				cell.put_right (first_element)
+				first_element := cell
+				active := cell
+			else
+				cell.put_right (active.right)
+				active.put_right (cell)
+			end
+			count := count + 1
+		ensure then
+			next_exists: next /= Void
+			item_inserted: not old before implies next.item = v
+			item_inserted_before: old before implies active.item = v
+		end
 
---	replace (v: like item) is
---			-- Replace current item by `v'.
---		do
---			active.put (v)
---		end
+	replace (v: like item) is
+			-- Replace current item by `v'.
+		do
+			active.put (v)
+		end
 
 --	merge_left (other: like Current) is
 --			-- Merge `other' into current structure before cursor
