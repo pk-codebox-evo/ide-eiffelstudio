@@ -23,15 +23,15 @@ feature -- Initialization
 
 feature -- DUMP
 
-	cc_any: CC_ANY
-	cc_bag: CC_BAG[INTEGER]
-	cc_collection: CC_COLLECTION[INTEGER]
-	cc_container: CC_CONTAINER[INTEGER]
-	cc_linear: CC_LINEAR[INTEGER]
-	cc_list: CC_LIST[INTEGER]
-	cc_set: CC_SET[INTEGER]
-	cc_table: CC_TABLE[INTEGER,INTEGER]
-	cc_traversable: CC_TRAVERSABLE[INTEGER]
+--	cc_any: CC_ANY
+--	cc_bag: CC_BAG[INTEGER]
+--	cc_collection: CC_COLLECTION[INTEGER]
+--	cc_container: CC_CONTAINER[INTEGER]
+--	cc_linear: CC_LINEAR[INTEGER]
+--	cc_list: CC_LIST[INTEGER]
+--	cc_set: CC_SET[INTEGER]
+--	cc_table: CC_TABLE[INTEGER,INTEGER]
+--	cc_traversable: CC_TRAVERSABLE[INTEGER]
 
 	foo is
 			-- test bla
@@ -64,6 +64,8 @@ feature -- DUMP
 			cc_bilinear: CC_BILINEAR [INTEGER]
 
 			cc_list: CC_LIST [INTEGER]
+
+			cc_linked_list: CC_LINKED_LIST [INTEGER]
 
 		do
 			create gobo_linked_list.make

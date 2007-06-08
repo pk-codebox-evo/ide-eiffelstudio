@@ -5,7 +5,7 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 
--- TODO deferred wegnehmen . ist effective
+-- TODO remove deferred. is effective
 deferred class
 	CC_LINKED_LIST [G]
 
@@ -15,10 +15,14 @@ inherit
 			before,
 			after,
 			readable,
-			off
+			off,
+			first,
+			last,
+			is_first,
+			is_last
 --			go_i_th, put_left, move, wipe_out,
---			isfirst, islast, is_inserted,
---			first, last, finish, merge_left, merge_right,
+--			is_inserted,
+--			finish, merge_left, merge_right,
 --			start, copy
 		end
 
@@ -33,57 +37,64 @@ feature {NONE} -- Initialization
 			before := True
 		ensure
 			is_before: before
+			confined representation
 		end
 
 feature -- Access
 
---	item: G is
---			-- Current item
---		do
---			Result := active.item
---		end
+	item: G is
+			-- Current item
+		use
+			use_own_representation: representation
+		do
+			Result := active.item
+		end
 
---	first: like item is
---			-- Item at first position
---		do
---			Result := first_element.item
---		end
+	first: like item is
+			-- Item at first position
+		use
+			use_own_representation: representation
+		do
+			Result := first_element.item
+		end
 
---	last: like item is
---			-- Item at last position
---		do
---			Result := last_element.item
---		end
+	last: like item is
+			-- Item at last position
+		use
+			use_own_representation: representation
+		do
+			Result := last_element.item
+		end
 
---	index: INTEGER is
---			-- Index of current position
---		local
---			p: LINKED_LIST_CURSOR [G]
---		do
---			if after then
---				Result := count + 1
---			elseif not before then
---				p ?= cursor
---				check
---					p /= Void
---				end
---				from
---					start; Result := 1
---				until
---					p.active = active
---				loop
---					forth
---					Result := Result + 1
---				end
---				go_to (p)
---			end
---		end
+	index: INTEGER is
+			-- Index of current position
+		local
+			p: CC_LINKED_LIST_CURSOR_POSITION [G]
+		do
+			if after then
+				Result := count + 1
+			elseif not before then
+				p ?= cursor_position
+				check
+					p /= Void
+				end
+				from
+					start; Result := 1
+				until
+					p.active = active
+				loop
+					forth
+					Result := Result + 1
+				end
+				go_to (p)
+			end
+		end
 
---	cursor: LINKED_LIST_CURSOR [G] is
---			-- Current cursor position
---		do
---			create Result.make (active, after, before)
---		end
+	cursor_position: CC_LINKED_LIST_CURSOR_POSITION [G] is
+			-- Current cursor position
+		do
+			create Result.make (active, after, before)
+		end
 
 feature -- Measurement
 
@@ -110,18 +121,18 @@ feature -- Status report
 			Result := after or before
 		end
 
---	is_first: BOOLEAN is
---			-- Is cursor at first position?
---		do
---			Result := not after and not before and (active = first_element)
---		end
+	is_first: BOOLEAN is
+			-- Is cursor at first position?
+		do
+			Result := not after and not before and (active = first_element)
+		end
 
---	is_last: BOOLEAN is
---			-- Is cursor at last position?
---		do
---			Result := not after and not before and
---						(active /= Void) and then (active.right = Void)
---		end
+	is_last: BOOLEAN is
+			-- Is cursor at last position?
+		do
+			Result := not after and not before and
+						(active /= Void) and then (active.right = Void)
+		end
 
 --	valid_cursor (p: CURSOR): BOOLEAN is
 --			-- Can the cursor be moved to position `p'?
@@ -573,79 +584,87 @@ feature -- Duplication
 --			object_comparison := obj_comparison
 --		end
 
-feature {LINKED_LIST} -- Implementation
+feature {CC_LINKED_LIST} -- Implementation
 
---	new_chain: like Current is
---			-- A newly created instance of the same type.
---			-- This feature may be redefined in descendants so as to
---			-- produce an adequately allocated and initialized object.
---		do
---			create Result.make
---		end
+	new_dynamic_list: like Current is
+			-- A newly created instance of the same type.
+			-- This feature may be redefined in descendants so as to
+			-- produce an adequately allocated and initialized object.
+		do
+			--create Result.make -- TODO Remove comment if class is effective
+		end
 
---	new_cell (v: like item): like first_element is
---			-- A newly created instance of the same type as `first_element'.
---			-- This feature may be redefined in descendants so as to
---			-- produce an adequately allocated and initialized object.
---		do
---			create Result
---			Result.put (v)
---		ensure
---			result_exists: Result /= Void
---		end
+	new_cell (v: like item): like first_element is
+			-- A newly created instance of the same type as `first_element'.
+			-- This feature may be redefined in descendants so as to
+			-- produce an adequately allocated and initialized object.
+		use
+			use_own_representation: representation
+		do
+			create Result
+			Result.put (v)
+		ensure
+			result_exists: Result /= Void
+		end
 
---	previous: like first_element is
---			-- Element left of cursor
---		local
---			p: like first_element
---		do
---			if after then
---				Result := active
---			elseif not (isfirst or before) then
---				from
---					p := first_element
---				until
---					p.right = active
---				loop
---					p := p.right
---				end
---				Result := p
---			end
---		end
+	previous: like first_element is
+			-- Element left of cursor
+		use
+			use_own_representation: representation
+		local
+			p: like first_element
+		do
+			if after then
+				Result := active
+			elseif not (is_first or before) then
+				from
+					p := first_element
+				until
+					p.right = active
+				loop
+					p := p.right
+				end
+				Result := p
+			end
+		end
 
---	next: like first_element is
---			-- Element right of cursor
---		do
---			if before then
---				Result := active
---			elseif active /= Void then
---				Result := active.right
---			end
---		end
+	next: like first_element is
+			-- Element right of cursor
+		use
+			use_own_representation: representation
+		do
+			if before then
+				Result := active
+			elseif active /= Void then
+				Result := active.right
+			end
+		end
 
---	active: like first_element
---			-- Element at cursor position
+	active: like first_element
+			-- Element at cursor position
 
---	first_element: LINKABLE [like item]
---			-- Head of list
+	first_element: CC_LINKABLE [like item]
+			-- Head of list
 
---	last_element: like first_element is
---			-- Tail of list
---		local
---			p: like first_element
---		do
---			if not is_empty then
---				from
---					Result := active
---					p := active.right
---				until
---					p = Void
---				loop
---					Result := p
---					p := p.right
---				end
---			end
---		end
+	last_element: like first_element is
+			-- Tail of list
+		use
+			use_own_representation: representation
+		local
+			p: like first_element
+		do
+			if not is_empty then
+				from
+					Result := active
+					p := active.right
+				until
+					p = Void
+				loop
+					Result := p
+					p := p.right
+				end
+			end
+		end
 
 --	cleanup_after_remove (v: like first_element) is
 --			-- Clean-up a just removed cell.
@@ -676,12 +695,14 @@ feature {NONE} -- Implementation
 
 invariant
 
---	prunable: prunable
---	empty_constraint: is_empty implies ((first_element = Void) and
---				(active = Void))
---	not_void_unless_empty: (active = Void) implies is_empty
---	before_constraint: before implies (active = first_element)
---	after_constraint: after implies (active = last_element)
+	prunable: prunable
+	empty_constraint: is_empty implies ((first_element = Void) and
+				(active = Void))
+	not_void_unless_empty: (active = Void) implies is_empty
+	before_constraint: before implies (active = first_element)
+	after_constraint: after implies (active = last_element)
 
+	-- TODO add more
+	item_equals_cell_model_item: item = active.model
 
 end

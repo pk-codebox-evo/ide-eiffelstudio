@@ -50,7 +50,7 @@ feature -- Status report
 			model_correspondends: Result = model.is_empty
 		end
 
--- TODO wie hier machen?
+-- TODO what to do here? and how :-D
 	object_comparison: BOOLEAN
 			-- Must search operations use `equal' rather than `='
 			-- for comparing references? (Default: no, use `='.)

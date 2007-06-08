@@ -5,10 +5,39 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 
-deferred class
+class
 	CC_CURSOR_POSITION
 
 inherit
 	CC_ANY
+
+feature -- Model
+
+	model: INTEGER is
+			-- Model of a general container
+		use
+			use_own_representation: representation
+		modify
+			modify_own_representation: representation
+		do
+			-- TODO do something
+		ensure
+			result_not_void: Result /= Void
+			confined representation
+		end
+
+feature -- Framing
+
+	representation: FRAME is
+			-- Representation of a general container
+		use
+			use_own_representation: representation
+		do
+			-- TODO do something because effective class
+		end
+
+invariant
+
+	-- TODO
 
 end
