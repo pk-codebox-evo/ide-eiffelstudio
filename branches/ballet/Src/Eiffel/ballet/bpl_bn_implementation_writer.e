@@ -12,6 +12,7 @@ inherit
 		redefine
 			set_current_feature,
 			process_byte_code,
+			process_feature_without_code,
 			process_assign_b,
 			process_check_b,
 			process_if_b,
@@ -83,6 +84,14 @@ feature -- Settors
 		end
 
 feature -- Processors
+
+	process_feature_without_code (a_feature: FEATURE_I) is
+			-- Process a constant (no code attached).
+		do
+			bpl_out ("  entry:%N")
+			bpl_out ("    assume(false);%N")
+			bpl_out ("    return;%N")
+		end
 
 	process_byte_code (a_node: BYTE_CODE) is
 			-- Process the byte code.
@@ -350,7 +359,7 @@ feature -- Processors
 			loop_label,exit_label:STRING
 			stop_expr: STRING
 			inv_assert: STRING
-			var_expr: STRING
+			i: INTEGER
 		do
 			new_label ("loop")
 			loop_label := last_label
@@ -365,20 +374,19 @@ feature -- Processors
 			a_node.stop.process (function_writer)
 			stop_expr := function_writer.expr
 
-			if a_node.invariant_part /= Void then
+			from
+				i := 1
+				inv_assert := ""
+			until
+				a_node.invariant_part = Void or else
+				i > a_node.invariant_part.count
+			loop
 				function_writer.reset
 				a_node.invariant_part.process (function_writer)
-				inv_assert := "    assert("
+				inv_assert.append("    assert(")
 				inv_assert.append(function_writer.expr)
 				inv_assert.append(");%N")
-			else
-				inv_assert := ""
-			end
-
-			if a_node.variant_part /= Void then
-				function_writer.reset
-				a_node.variant_part.process (function_writer)
-				var_expr := function_writer.expr
+				i := i + 1
 			end
 
 			-- TODO: Generate assertions for variant
