@@ -27,6 +27,8 @@ feature{NONE} -- Initialization
 			create error_log.make
 			out_stream := std.output
 			create used_features.make (0)
+			next_free_label := 1
+			last_label := "first_label"
 		ensure
 			stream_set: out_stream = std.output
 			error_log_generated: error_log /= Void
@@ -64,7 +66,25 @@ feature -- Settors
 			stream_set: out_stream = a_stream
 		end
 
+feature -- Label handling
+
+	last_label: STRING
+
+	new_label (a_prefix: STRING) is
+			-- Create a new label.
+		require
+			not_void: a_prefix /= Void
+			not_empty: a_prefix.count >= 1
+		do
+			last_label := a_prefix+next_free_label.out
+			next_free_label := next_free_label + 1
+		end
+
+	next_free_label: INTEGER
+		-- Next label number to create
+
 invariant
 	error_log_not_void: error_log /= Void
 	out_not_void: out_stream /= Void
+	last_label_not_void: last_label /= Void
 end

@@ -8,6 +8,7 @@ class
 	BPL_BN_IMPLEMENTATION_WRITER
 
 inherit
+
 	BPL_BN_ITERATOR
 		redefine
 			set_current_feature,
@@ -40,8 +41,7 @@ feature -- Generation
 			function_writer.set_this_ref ("Current")
 			function_writer.set_result_call ("Result")
 			code := ""
-			create temp_vars_needed.make (5)
-			reset_labels
+			local_vars := ""
 			bpl_out ("// Implementation: "+a_feature.feature_name+" of class "+current_class.name+"%N")
 			bpl_out ("implementation proc.")
 			bpl_out (current_class.name)
@@ -113,18 +113,8 @@ feature -- Processors
 				bpl_out (";%N")
 				i := i + 1
 			end
-			from
-				temp_vars_needed.start
-			until
-				temp_vars_needed.off
-			loop
-				bpl_out ("  var ")
-				bpl_out (temp_vars_needed.key_for_iteration)
-				bpl_out (":")
-				bpl_out (temp_vars_needed.item_for_iteration)
-				bpl_out (";%N")
-				temp_vars_needed.forth
-			end
+
+			bpl_out (local_vars)
 			bpl_out ("  entry:%N")
 			bpl_out (code)
 			bpl_out ("    return;%N")
@@ -431,35 +421,24 @@ feature -- Access
 
 feature{NONE} -- Implementation
 
-	temp_vars_needed: HASH_TABLE[STRING,STRING]
-
-	last_label: STRING
-
-	next_free_label: INTEGER
-
-	reset_labels is
-			-- Reset the label counter.
-		do
-			next_free_label := 0
-			new_label ("l")
-		end
-
-	new_label (a_prefix: STRING) is
-			-- Create a new label.
-		require
-			not_void: a_prefix /= Void
-			not_empty: a_prefix.count >= 1
-		do
-			last_label := a_prefix+next_free_label.out
-			next_free_label := next_free_label + 1
-		end
+	local_vars: STRING
 
 	function_writer: BPL_BN_FUNCTION_WRITER
 
-	record_temp_var (a_name: STRING; a_bpl_type: STRING) is
+	record_local_var (a_name: STRING; a_bpl_type: STRING) is
 			-- Record the need of a temp variable `a_name' of `a_bpl_type'
 		do
-			temp_vars_needed.put (a_bpl_type,a_name)
+			local_vars.append ("  var ")
+			local_vars.append (a_name)
+			local_vars.append (":")
+			local_vars.append (a_bpl_type)
+			local_vars.append (";%N")
+		end
+
+	append_local_vars (a_string: STRING) is
+			-- Append the local vars defined in `a_string' to `local_vars'.
+		do
+			local_vars.append (a_string)
 		end
 
 end

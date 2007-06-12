@@ -34,5 +34,23 @@ feature -- Output
 			error_recorded: environment.error_log.has_error
 		end
 
+feature -- Label handling
+
+	last_label: STRING is
+			-- Last label created by `new_label'
+		do
+			Result := environment.last_label
+		ensure
+			not_void: Result /= Void
+		end
+
+	new_label (a_prefix: STRING) is
+			-- Create a new label.
+		require
+			not_void: a_prefix /= Void
+			not_empty: a_prefix.count >= 1
+		do
+			environment.new_label (a_prefix)
+		end
 
 end

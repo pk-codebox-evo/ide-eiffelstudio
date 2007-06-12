@@ -80,7 +80,7 @@ feature -- Access
 			attribute_set: a_feature.is_attribute implies current_attribute = a_feature
 			constant_set: a_feature.is_constant implies current_constant = a_feature
 		end
-	
+
 	leaf_list: LEAF_AS_LIST
 		-- Leaf list from parent iterator
 
@@ -554,7 +554,7 @@ feature {BYTE_NODE} -- Visitors
 	process_frame_b (a_node: FRAME_B) is
 			-- Process `a_node'.
 		do
-			safe_process (a_node.expr)			
+			safe_process (a_node.expr)
 		end
 
 	process_agent_call_b (a_node: AGENT_CALL_B) is

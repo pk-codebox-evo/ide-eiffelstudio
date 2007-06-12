@@ -40,6 +40,7 @@ inherit
 			process_char_const_b,
 			process_constant_b,
 			process_current_b,
+			process_creation_expr_b,
 			process_feature_b,
 			process_int64_val_b,
 			process_int_val_b,
@@ -156,7 +157,7 @@ feature -- Main
 						bpl_out (" :: ")
 						bpl_out (result_call)
 						bpl_out (" == ")
-						
+
 						bpl_out ("fun." + parents.item.name + "." + feat.feature_name + "(H, C")
 						from
 							i := 1
@@ -169,17 +170,17 @@ feature -- Main
 							intro.append (arg_name)
 							i := i + 1
 						end
-					
+
 						bpl_out ("));%N")
 					else
 						bpl_out ("// no feature for " + current_feature.feature_name + " in class " + parents.item.name +"%N")
 					end
-					parents.forth			
+					parents.forth
 				end
 			else
 				bpl_out ("// no parents for this feature%N")
 			end
-			
+
 			bpl_out ("%N")
 		end
 
@@ -239,13 +240,34 @@ feature -- Processing Environment
 	expr: STRING
 		-- Expression output
 
+	side_effect: STRING
+		-- Set of instructions that minic the side-effect
+
+	local_vars: STRING
+		-- Set of local variables needed for the evaluation of the expression
+
+	record_local_var (a_name: STRING; a_bpl_type: STRING) is
+			-- Record the need of a temp variable `a_name' of `a_bpl_type'
+		do
+			local_vars.append ("  var ")
+			local_vars.append (a_name)
+			local_vars.append (":")
+			local_vars.append (a_bpl_type)
+			local_vars.append (";%N")
+		end
+
 	reset is
 			-- Reset `expr' to the empty string.
 		do
 			expr := ""
+			local_vars := ""
+			side_effect := ""
 			create call_list.make (0)
 		ensure
 			expr_reset: expr.is_equal ("")
+			local_vars_reset: local_vars.is_equal ("")
+			side_effect_reset: side_effect.is_equal ("")
+			call_list_empty: call_list.is_empty
 		end
 
 	call_list: ARRAYED_LIST[CALL_ACCESS_B]
@@ -262,6 +284,7 @@ feature -- Processing Environment
 			-- first part of the assertions ("forall ...")
 
 feature -- Processing
+
 	process_argument_b (a_node: ARGUMENT_B) is
 			-- Process `a_node'.
 		do
@@ -553,6 +576,12 @@ feature -- Processing
 			record_call(a_node)
 		end
 
+	process_creation_expr_b (a_node: CREATION_EXPR_B) is
+			-- Process `a_node'.
+		do
+
+		end
+
 	process_int64_val_b (a_node: INT64_VAL_B) is
 			-- Process `a_node'.
 		do
@@ -648,7 +677,7 @@ feature -- Processing
 		do
 			expr.append ("null")
 		end
+
 invariant
 	call_list_not_void: call_list /= Void
-
 end
