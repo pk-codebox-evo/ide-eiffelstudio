@@ -12,14 +12,12 @@ inherit
 
 	CC_SEQUENCE [G]
 		rename
-			occurrences as occurrences_sequence,
-			put as put_at_end,
-			valid_index as valid_index_sequence
+			occurrences as occurrences_sequence
 		export
 			{NONE}
 				occurrences_sequence
 		undefine
-			valid_index_sequence
+			valid_index
 		redefine
 			has,
 			index_of,
@@ -29,7 +27,8 @@ inherit
 		select
 			model_container,
 			prune_all,
-			extend
+			extend_at_end,
+			put_at_end
 		end
 
 	CC_INDEXABLE [G]
@@ -37,7 +36,7 @@ inherit
 			model as model_indexable,
 			prune_all as prune_all_indexable,
 			item as i_th alias "[]",
-			put as put_indexable
+			put as put_i_th
 		export
 			{NONE}
 				model_indexable,
@@ -56,8 +55,6 @@ inherit
 			prune_all
 		redefine
 			is_equal
-		select
-			put
 		end
 
 feature -- Access
@@ -326,21 +323,17 @@ feature -- Element change
 -- TODO besser wäre nur replace_item_with... put ist irreführend
 -- auch wegen contracts die vom collection geerbt werden: model_container |=| old model_container.extended (v)
 -- stimmt natürlich nicht
-	put (v: like item) is
-			-- Replace current item by `v'.
-			-- (Synonym for `replace_item_with')
-		do
-			replace_item_with (v)
-		ensure then
-	 		same_count: count = old count
-		end
+--	put (v: like item) is
+--			-- Replace current item by `v'.
+--			-- (Synonym for `replace_item_with')
+--		do
+--			replace_item_with (v)
+--		ensure then
+--	 		same_count: count = old count
+--		end
 
 	put_i_th (v: like item; i: INTEGER) is
 			-- Put `v' at `i'-th position.
-		use
-			use_own_representation: representation
-		modify
-			modify_own_representation: representation
 		local
 			old_position: CC_CURSOR_POSITION
 		do
@@ -348,10 +341,6 @@ feature -- Element change
 			go_i_th (i)
 			replace_item_with (v)
 			go_to (old_position)
-		ensure
-			-- TODO add more model contracts
-			model_updated: model.first |=| old model.first.extended_at (v, i)
-			confined representation
 		end
 
 	append (s: CC_SEQUENCE [G]) is

@@ -5,7 +5,7 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 
-class
+deferred class
 	CC_CURSOR_POSITION
 
 inherit
@@ -19,8 +19,7 @@ feature -- Model
 			use_own_representation: representation
 		modify
 			modify_own_representation: representation
-		do
-			-- TODO do something
+		deferred
 		ensure
 			result_not_void: Result /= Void
 			confined representation
@@ -33,7 +32,8 @@ feature -- Framing
 		use
 			use_own_representation: representation
 		do
-			-- TODO do something because effective class
+			create Result.make_empty
+			Result := Result.extended (Current)
 		end
 
 invariant

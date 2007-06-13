@@ -20,7 +20,9 @@ inherit
 -- TODO probleme mit repeated inheritance - select clause nötig. korrekt so? unschön? wtf?
 	CC_ACTIVE [G]
 		rename
-			model as model_active
+			model as model_active,
+			put as put_at_end,
+			extend as extend_at_end
 		export
 			{NONE}
 				model_active
@@ -45,7 +47,7 @@ feature -- Status report
 
 feature -- Element change
 
-	force (v: G) is
+	force_at_end (v: G) is
 			-- Add `v' to end.
 		require
 			extendible: extendible
@@ -53,7 +55,8 @@ feature -- Element change
 			use_own_representation: representation
 		modify
 			modify_own_representation: representation
-		deferred
+		do
+			put(v) -- TODO ???
 		ensure
 	 		new_count: count = old count + 1
 			item_inserted: has (v)
@@ -92,7 +95,7 @@ feature -- Element change
 	 		confined representation
 		end
 
-	extend (v: G) is
+	extend_at_end (v: G) is
 			-- Add `v' to end.
 		deferred
 		ensure then
@@ -100,7 +103,7 @@ feature -- Element change
 		end
 
 
-	put (v: G) is
+	put_at_end (v: G) is
 			-- Add `v' to end.
 		deferred
 		ensure then

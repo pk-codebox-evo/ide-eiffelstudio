@@ -38,6 +38,13 @@ feature {CC_LINKED_LIST} -- Implementation
 			-- Is there no valid cursor position to the right of cursor?
 
 -- TODO maybe redefine the model or representation
+feature -- Model
+
+	model: INTEGER is
+			-- Model of a general container
+		do
+			-- TODO do what? we have no index at this level
+		end
 
 invariant
 	not_both: not (before and after)

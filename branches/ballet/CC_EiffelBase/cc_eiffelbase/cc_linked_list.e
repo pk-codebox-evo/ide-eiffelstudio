@@ -5,8 +5,7 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 
--- TODO remove deferred. is effective
-deferred class
+class
 	CC_LINKED_LIST [G]
 
 inherit
@@ -24,17 +23,15 @@ inherit
 			finish,
 			move,
 			go_i_th,
-			put_left
---			move
---			wipe_out
---			is_inserted
---			merge_left
---			merge_right
---			copy
+			put_left,
+			wipe_out,
+			merge_left,
+			merge_right,
+			copy
 		end
 
---create
---	make
+create
+	make
 
 feature {NONE} -- Initialization
 
@@ -50,7 +47,7 @@ feature {NONE} -- Initialization
 feature -- Access
 
 	item: G is
-			-- Current item
+			-- Current item.
 		use
 			use_own_representation: representation
 		do
@@ -58,7 +55,7 @@ feature -- Access
 		end
 
 	first: like item is
-			-- Item at first position
+			-- Item at first position.
 		use
 			use_own_representation: representation
 		do
@@ -66,7 +63,7 @@ feature -- Access
 		end
 
 	last: like item is
-			-- Item at last position
+			-- Item at last position.
 		use
 			use_own_representation: representation
 		do
@@ -74,7 +71,7 @@ feature -- Access
 		end
 
 	index: INTEGER is
-			-- Index of current position
+			-- Index of current position.
 		local
 			p: CC_LINKED_LIST_CURSOR_POSITION [G]
 		do
@@ -98,7 +95,7 @@ feature -- Access
 		end
 
 	cursor_position: CC_LINKED_LIST_CURSOR_POSITION [G] is
-			-- Current cursor position
+			-- Current cursor position.
 		do
 			create Result.make (active, after, before)
 		end
@@ -106,7 +103,7 @@ feature -- Access
 feature -- Measurement
 
 	count: INTEGER
-			-- Number of items
+			-- Number of items.
 
 feature -- Status report
 
@@ -126,6 +123,12 @@ feature -- Status report
 			-- Is there no current item?
 		do
 			Result := after or before
+		end
+
+	is_empty: BOOLEAN is
+			-- Is structure empty?
+		do
+			Result := (count = 0)
 		end
 
 	is_first: BOOLEAN is
@@ -162,24 +165,8 @@ feature -- Status report
 			end
 		end
 
-	full: BOOLEAN is False -- TODO use clause?s
+	full: BOOLEAN is False -- TODO use clause? TODO rename to is_full
 		-- Is structured filled to capacity? (Answer: no.)
-
--- TODO not needed
---	is_inserted (v: G): BOOLEAN is
---			-- Has `v' been inserted at the end by the most recent `put' or
---			-- `extend'?
---		do
---			if not is_empty then
---				check
---					put_constraint: (v /= last_element.item) implies not off
---						-- Because, if this routine has not been called by
---						-- `extend', it was called by `put' which replaces the
---						-- current item, which implies the cursor is not `off'.
---				end
---				Result := (v = last_element.item) or else (v = item)
---			end
---		end
 
 feature -- Cursor movement
 
@@ -352,22 +339,31 @@ feature -- Element change
 			count := count + 1
 		end
 
---	extend (v: like item) is
---			-- Add `v' to end.
---			-- Do not move cursor.
---		local
---			p: like first_element
---		do
---			p := new_cell (v)
---			if is_empty then
---				first_element := p
---				active := p
---			else
---				last_element.put_right (p)
---				if after then active := p end
---			end
---			count := count + 1
---		end
+	put_at_end (v: like item) is
+			-- Add `v' to end.
+			-- Do not move cursor.
+		do
+			extend_at_end (v)
+			-- TODO ugly - either remove extend or put_at_end or rename extend....
+		end
+
+
+	extend_at_end (v: like item) is
+			-- Add `v' to end.
+			-- Do not move cursor.
+		local
+			cell: like first_element
+		do
+			cell := new_cell (v)
+			if is_empty then
+				first_element := cell
+				active := cell
+			else
+				last_element.put_right (cell)
+				if after then active := cell end
+			end
+			count := count + 1
+		end
 
 	put_left (v: like item) is
 			-- Add `v' to the left of cursor position.
@@ -417,180 +413,180 @@ feature -- Element change
 			item_inserted_before: old before implies active.item = v
 		end
 
-	replace (v: like item) is
+	replace_item_with (v: like item) is
 			-- Replace current item by `v'.
 		do
 			active.put (v)
 		end
 
---	merge_left (other: like Current) is
---			-- Merge `other' into current structure before cursor
---			-- position. Do not move cursor. Empty `other'.
---		local
---			other_first_element: like first_element
---			other_last_element: like first_element
---			p: like first_element
---			other_count: INTEGER
---		do
---			if not other.is_empty then
---				other_first_element := other.first_element
---				other_last_element := other.last_element
---				other_count := other.count
---					check
---						other_first_element /= Void
---						other_last_element /= Void
---					end
---				if is_empty then
---					first_element := other_first_element
---					active := first_element
---				elseif isfirst then
---					p := first_element
---					other_last_element.put_right (p)
---					first_element := other_first_element
---				else
---					p := previous
---					if p /= Void then
---						p.put_right (other_first_element)
---					end
---					other_last_element.put_right (active)
---				end
---				count := count + other_count
---				other.wipe_out
---			end
---		end
+	merge_left (other: like Current) is
+			-- Merge `other' into current structure before cursor
+			-- position. Do not move cursor. Empty `other'.
+		local
+			other_first_element: like first_element
+			other_last_element: like first_element
+			cell: like first_element
+			other_count: INTEGER
+		do
+			if not other.is_empty then
+				other_first_element := other.first_element
+				other_last_element := other.last_element
+				other_count := other.count
+					check
+						other_first_element /= Void
+						other_last_element /= Void
+					end
+				if is_empty then
+					first_element := other_first_element
+					active := first_element
+				elseif is_first then
+					cell := first_element
+					other_last_element.put_right (cell)
+					first_element := other_first_element
+				else
+					cell := previous
+					if cell /= Void then
+						cell.put_right (other_first_element)
+					end
+					other_last_element.put_right (active)
+				end
+				count := count + other_count
+				other.wipe_out
+			end
+		end
 
---	merge_right (other: like Current) is
---			-- Merge `other' into current structure after cursor
---			-- position. Do not move cursor. Empty `other'.
---		local
---			other_first_element: like first_element
---			other_last_element: like first_element
---			other_count: INTEGER
---		do
---			if not other.is_empty then
---				other_first_element := other.first_element
---				other_last_element := other.last_element
---				other_count := other.count
---					check
---						other_first_element /= Void
---						other_last_element /= Void
---					end
---				if is_empty then
---					first_element := other_first_element
---					active := first_element
---				else
---					if not islast then
---						other_last_element.put_right (active.right)
---					end
---					active.put_right (other_first_element)
---				end
---				count := count + other_count
---				other.wipe_out
---			end
---		end
+	merge_right (other: like Current) is
+			-- Merge `other' into current structure after cursor
+			-- position. Do not move cursor. Empty `other'.
+		local
+			other_first_element: like first_element
+			other_last_element: like first_element
+			other_count: INTEGER
+		do
+			if not other.is_empty then
+				other_first_element := other.first_element
+				other_last_element := other.last_element
+				other_count := other.count
+					check
+						other_first_element /= Void
+						other_last_element /= Void
+					end
+				if is_empty then
+					first_element := other_first_element
+					active := first_element
+				else
+					if not is_last then
+						other_last_element.put_right (active.right)
+					end
+					active.put_right (other_first_element)
+				end
+				count := count + other_count
+				other.wipe_out
+			end
+		end
 
 feature -- Removal
 
---	remove is
---			-- Remove current item.
---			-- Move cursor to right neighbor
---			-- (or `after' if no right neighbor).
---		local
---			removed, succ: like first_element
---		do
---			removed := active
---			if isfirst then
---				first_element := first_element.right
---				active.forget_right
---				active := first_element
---				if count = 1 then
---					check
---						no_active: active = Void
---					end
---					after := True
---				end
---			elseif islast then
---				active := previous
---				if active /= Void then
---					active.forget_right
---				end
---				after := True
---			else
---				succ := active.right
---				previous.put_right (succ)
---				active.forget_right
---				active := succ
---			end
---			count := count - 1
---			cleanup_after_remove (removed)
---		end
+	remove_item is
+			-- Remove current item.
+			-- Move cursor to right neighbor
+			-- (or `after' if no right neighbor).
+		local
+			removed, successor: like first_element
+		do
+			removed := active
+			if is_first then
+				first_element := first_element.right
+				active.forget_right
+				active := first_element
+				if count = 1 then
+					check
+						no_active: active = Void
+					end
+					after := True
+				end
+			elseif is_last then
+				active := previous
+				if active /= Void then
+					active.forget_right
+				end
+				after := True
+			else
+				successor := active.right
+				previous.put_right (successor)
+				active.forget_right
+				active := successor
+			end
+			count := count - 1
+			cleanup_after_remove (removed)
+		end
 
---	remove_left is
---			-- Remove item to the left of cursor position.
---			-- Do not move cursor.
---		do
---			move (- 2)
---			remove_right
---			forth
---		end
+	remove_left is
+			-- Remove item to the left of cursor position.
+			-- Do not move cursor.
+		do
+			move (- 2)
+			remove_right
+			forth
+		end
 
---	remove_right is
---			-- Remove item to the right of cursor position.
---			-- Do not move cursor.
---		local
---			removed, succ: like first_element
---		do
---			if before then
---				removed := first_element
---				first_element := first_element.right
---				active.forget_right
---				active := first_element
---			else
---				succ := active.right
---				removed := succ
---				active.put_right (succ.right)
---				succ.forget_right
---			end
---			count := count - 1
---			cleanup_after_remove (removed)
---		end
+	remove_right is
+			-- Remove item to the right of cursor position.
+			-- Do not move cursor.
+		local
+			removed, successor: like first_element
+		do
+			if before then
+				removed := first_element
+				first_element := first_element.right
+				active.forget_right
+				active := first_element
+			else
+				successor := active.right
+				removed := successor
+				active.put_right (successor.right)
+				successor.forget_right
+			end
+			count := count - 1
+			cleanup_after_remove (removed)
+		end
 
---	wipe_out is
---			-- Remove all items.
---		do
---			internal_wipe_out
---		end
+	wipe_out is
+			-- Remove all items.
+		do
+			internal_wipe_out
+		end
 
 feature -- Duplication
 
---	copy (other: like Current) is
---			-- Update current object using fields of object attached
---			-- to `other', so as to yield equal objects.
---		local
---			cur: LINKED_LIST_CURSOR [G]
---			obj_comparison: BOOLEAN
---		do
---			obj_comparison := other.object_comparison
---			standard_copy (other)
---			if not other.is_empty then
---				internal_wipe_out
---				cur ?= other.cursor
---				from
---					other.start
---				until
---					other.off
---				loop
---					extend (other.item)
---						-- For speeding up next insertion, we go
---						-- to the end, that way `extend' does not
---						-- need to traverse the list completely.
---					finish
---					other.forth
---				end
---				other.go_to (cur)
---			end
---			object_comparison := obj_comparison
---		end
+	copy (other: like Current) is
+			-- Update current object using fields of object attached
+			-- to `other', so as to yield equal objects.
+		local
+			cursor: CC_LINKED_LIST_CURSOR_POSITION [G]
+			obj_comparison: BOOLEAN
+		do
+			obj_comparison := other.object_comparison
+			standard_copy (other)
+			if not other.is_empty then
+				internal_wipe_out
+				cursor ?= other.cursor
+				from
+					other.start
+				until
+					other.off
+				loop
+					extend (other.item)
+						-- For speeding up next insertion, we go
+						-- to the end, that way `extend' does not
+						-- need to traverse the list completely.
+					finish
+					other.forth
+				end
+				other.go_to (cursor)
+			end
+			object_comparison := obj_comparison
+		end
 
 feature {CC_LINKED_LIST} -- Implementation
 
@@ -674,38 +670,71 @@ feature {CC_LINKED_LIST} -- Implementation
 			end
 		end
 
---	cleanup_after_remove (v: like first_element) is
---			-- Clean-up a just removed cell.
---		require
---			non_void_cell: v /= Void
---		do
---		end
+	cleanup_after_remove (v: like first_element) is
+			-- Clean-up a just removed cell.
+		require
+			non_void_cell: v /= Void
+		do
+		end
 
 feature {NONE} -- Implementation
 
---	frozen internal_wipe_out is
---			-- Remove all items.
---			--| Used by `copy' instead of `wipe_out' to ensure that it
---			--| will behave consistently even in descendants that
---			--| redefine `wipe_out'.
---		require
---			prunable
---		do
---			active := Void
---			first_element := Void
---			before := True
---			after := False
---			count := 0
---		ensure
---			wiped_out: is_empty
---			is_before: before
---		end
+	frozen internal_wipe_out is
+			-- Remove all items.
+			--| Used by `copy' instead of `wipe_out' to ensure that it
+			--| will behave consistently even in descendants that
+			--| redefine `wipe_out'.
+		require
+			prunable
+		do
+			active := Void
+			first_element := Void
+			before := True
+			after := False
+			count := 0
+		ensure
+			wiped_out: is_empty
+			is_before: before
+		end
+feature -- Model
+
+	model_indexable: MML_RELATION [INTEGER, G] is
+			-- Model for an indexable data structure.
+		do
+			create {MML_DEFAULT_RELATION [INTEGER, G]}Result.make_empty
+			from
+				start
+			until
+				off
+			loop
+				Result := Result.extended_by_pair (index, item)
+			end
+		end
+
+feature -- Framing
+
+	representation: FRAME is
+			-- Representation of a general linked list
+		local
+			current_element: like first_element
+		do
+			create Result.make_empty
+			Result := Result.extended (Current)
+
+			from
+				start
+			until
+				off
+			loop
+				Result := Result.extended(active)
+				forth
+			end
+		end
 
 invariant
 
 	prunable: prunable
-	empty_constraint: is_empty implies ((first_element = Void) and
-				(active = Void))
+	empty_constraint: is_empty implies ((first_element = Void) and (active = Void))
 	not_void_unless_empty: (active = Void) implies is_empty
 	before_constraint: before implies (active = first_element)
 	after_constraint: after implies (active = last_element)

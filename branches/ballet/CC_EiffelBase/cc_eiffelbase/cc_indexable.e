@@ -11,8 +11,8 @@ deferred class
 inherit
 	CC_COLLECTION [G]
 		rename
-			put as put_last,
-			extend as extend_last,
+			put as put_at_end,
+			extend as extend_at_end,
 			model as model_collection
 		export
 			{NONE}

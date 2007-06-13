@@ -46,9 +46,5 @@ feature -- Cursor movement
 			modify_own_representation: representation
 		deferred
 		end
-
-feature -- Model
-
--- TODO ev auch für active ein neues model
-
+		
 end

@@ -43,6 +43,7 @@ feature -- Model
 			modify_own_representation: representation
 		do
 			Result := item
+			-- TODO correct?
 		ensure
 			result_not_void: Result /= Void
 			confined representation
@@ -55,7 +56,9 @@ feature -- Framing
 		use
 			use_own_representation: representation
 		do
-			-- TODO do something
+			create Result.make_empty
+			Result := Result.extended (Current)
+			-- TODO enough? or extend also with item?
 		end
 
 invariant

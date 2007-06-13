@@ -11,27 +11,17 @@ class
 create
 	make
 
---TODO delete this here... :-)
-
 feature -- Initialization
 
 	make is
 			-- Creation procedure.
 		do
-			--| Add your code here
+			-- test cc_linked_list from CC_EiffelBase
+
+			-- test linked_list from EiffelBase
 		end
 
 feature -- DUMP
-
---	cc_any: CC_ANY
---	cc_bag: CC_BAG[INTEGER]
---	cc_collection: CC_COLLECTION[INTEGER]
---	cc_container: CC_CONTAINER[INTEGER]
---	cc_linear: CC_LINEAR[INTEGER]
---	cc_list: CC_LIST[INTEGER]
---	cc_set: CC_SET[INTEGER]
---	cc_table: CC_TABLE[INTEGER,INTEGER]
---	cc_traversable: CC_TRAVERSABLE[INTEGER]
 
 	foo is
 			-- test bla
