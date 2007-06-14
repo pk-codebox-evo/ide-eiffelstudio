@@ -16,7 +16,8 @@ feature -- Initialization
 	t: TOKEN_DISPENSER
 
 	ft: FRAME_TEST
-
+	ftc: FRAME_TEST_CLIENT
+	
 	c: SIMPLE_COUNTER
 	m: MY_CELL[ANY]
 	mt: MY_CELL_USER

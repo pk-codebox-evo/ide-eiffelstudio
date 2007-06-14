@@ -135,7 +135,7 @@ feature -- Extra Processors
 
 feature {NONE} -- Supporting Features
 
-	bpl_mangled_operator (op:STRING): STRING is
+	bpl_mangled_operator (op: STRING): STRING is
 			-- Operator mangled that it can be used as function name in BPL
 		require
 			not_void: op /= Void
@@ -232,29 +232,6 @@ feature {NONE} -- Supporting Features
 				Result.append (ass.tag)
 			end
 			Result.append ("%N")
-		end
-
-	record_usage (a_node: CALL_ACCESS_B) is
-			-- Record the usage of the topmost feature that appears in `a_node'.
-		require
-			not_void: a_node /= Void
-		local
-			feat: FEATURE_I
-		do
-			feat := Feat_tbl_server.item (a_node.written_in).feature_of_feature_id(a_node.feature_id)
-			check
-				feature_found: feat /= Void
-			end
-			record_usage_feature (feat)
-		end
-
-	record_usage_feature (feat: FEATURE_I) is
-		require
-			feat_not_void: feat /= Void
-		do
-			if Mapping_table.item(feat.written_class.name) = Void then
-				environment.used_features.extend (feat)
-			end
 		end
 
 feature {BYTE_NODE} -- Visitors
@@ -819,7 +796,7 @@ feature{NONE} -- Tables
 	Operator_names_mangled: HASH_TABLE[STRING, STRING] is
 			-- Names for simple operators.
 		do
-			create Result.make(9)
+			create Result.make(19)
 			Result.compare_objects
 			Result.put ("op$not","not")
 			Result.put ("op$plus","+")
@@ -843,8 +820,9 @@ feature{NONE} -- Tables
 
 	Mapping_table: TABLE[STRING, STRING] is
 			-- Table of mappings between Eiffel and BPL types
+			-- features for all classes which ware mentioned here will not be generated
 		once
-			create {HASH_TABLE[STRING, STRING]}Result.make(9)
+			create {HASH_TABLE[STRING, STRING]}Result.make(19)
 			Result.compare_objects
 			Result.put("ref", "ANY")
 			Result.put("int", "INTEGER")
@@ -861,7 +839,17 @@ feature{NONE} -- Tables
 			Result.put("int", "CHARACTER_REF")
 			Result.put("int", "CHARACTER_8_REF")
 			Result.put("int", "CHARACTER_32_REF")
-			Result.put("bool", "BOOLEAN")
+			Result.put("ref", "STRING")
+			Result.put("ref", "STRING_8")
+			Result.put("ref", "STRING_32")
+			Result.put("ref", "ISE_RUNTIME")
+			Result.put("ref", "EXCEPTIONS")
+			Result.put("ref", "STD_FILES")
+			Result.put("ref", "MISMATCH_CORRECTOR")
+			Result.put("set", "FRAME")
+			Result.put("set", "MML_SET")
+			Result.put("set", "MML_DEFAULT_SET")
+			
 		end
 
 	Infix_Operator_table: TABLE[STRING, STRING] is

@@ -26,7 +26,6 @@ feature{NONE} -- Initialization
 		do
 			create error_log.make
 			out_stream := std.output
-			create used_features.make (0)
 			next_free_label := 1
 			last_label := "first_label"
 		ensure
@@ -43,9 +42,6 @@ feature -- Access
 	out_stream: KI_TEXT_OUTPUT_STREAM
 		-- Output stream for the generation of BoogiePL code
 
-	used_features: ARRAYED_SET[FEATURE_I]
-		-- List of features that were used.
-
 	last_string_id: INTEGER
 
 	new_string_id is
@@ -54,6 +50,9 @@ feature -- Access
 			last_string_id := last_string_id + 1
 		end
 
+	usage_analyser: BPL_FEATURE_LIST_GENERATOR
+		-- collect the lists of queries, which are defined and used in current class
+	
 feature -- Settors
 
 	set_out_stream (a_stream: KI_TEXT_OUTPUT_STREAM) is
@@ -64,6 +63,16 @@ feature -- Settors
 			out_stream := a_stream
 		ensure
 			stream_set: out_stream = a_stream
+		end
+
+	set_usage_analyser (analyser: BPL_FEATURE_LIST_GENERATOR) is
+			-- Set the usage_analyser to `analyser'
+		require
+			analyser_not_void: analyser /= Void
+		do
+			usage_analyser := analyser
+		ensure
+			analyser_set: usage_analyser = analyser
 		end
 
 feature -- Label handling

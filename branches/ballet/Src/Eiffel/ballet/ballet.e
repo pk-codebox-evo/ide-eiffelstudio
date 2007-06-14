@@ -115,7 +115,7 @@ feature -- Verification
 					create bpl_generator.make (current_class)
 					ml := match_list_server.item (current_class.class_id)
 					bpl_generator.setup (current_class.ast, ml, False, False)
-					bpl_generator.process_ast_node (cls_ast) -- print PART C (class to prove)
+					bpl_generator.process_ast_node (cls_ast) -- print class to prove
 
 					if not environment.error_log.has_error then
 						output_manager.add_string ("Ballet: starting verifier%N")
@@ -135,6 +135,8 @@ feature -- Verification
 						output_manager.add_string ("Ballet: there were errors during BoogiePL generation%N")
 						output_manager.add_string ("Ballet: not running verified%N")
 						window_manager.display_message ("BoogiePL generation failed")
+						process_events_and_idle
+						verifier.verify
 			  		end
 			  		output_manager.end_processing
 				end

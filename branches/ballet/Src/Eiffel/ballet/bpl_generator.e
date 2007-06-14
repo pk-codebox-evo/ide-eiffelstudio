@@ -23,6 +23,8 @@ inherit
 			make
 		end
 
+	SHARED_BPL_ENVIRONMENT
+	
 create
 	make
 
@@ -58,17 +60,16 @@ feature {NONE} -- Implementation
 	already_processed: BOOLEAN
 		-- A class has already been processed, so there has to be more than one class definition in the file.
 
-	usage_analyser: BPL_FEATURE_LIST_GENERATOR
-
 	analyse_usage is
 			-- Analyse the usage.
 		local
 			a_list: LIST [FEATURE_I]
+			usage_analyser: BPL_FEATURE_LIST_GENERATOR
 		do
 			create usage_analyser.make (current_class)
-			usage_analyser.setup (current_class.ast,match_list,will_process_leading_leaves,will_process_trailing_leaves)
 			usage_analyser.analyse
-
+			environment.set_usage_analyser (usage_analyser)
+			
 			bpl_out ("// FEATURE LISTS ------------------------------------------%N")
 			a_list := usage_analyser.query_list
 			from a_list.start until a_list.off loop
@@ -100,6 +101,11 @@ feature {NONE} -- Implementation
 				bpl_out ("// Function: " + a_list.item.feature_name + "%N")
 				a_list.forth
 			end
+			a_list := usage_analyser.constant_list
+			from a_list.start until a_list.off loop
+				bpl_out ("// Constant: " + a_list.item.feature_name + "%N")
+				a_list.forth
+			end
 			a_list := usage_analyser.procedure_list
 			from a_list.start until a_list.off loop
 				bpl_out ("// Procedure: " + a_list.item.feature_name + "%N")
@@ -119,7 +125,7 @@ feature {NONE} -- Implementation
 			create attribute_writer.make (current_class)
 			attribute_writer.set_leaf_list (match_list)
 
-			a_list := usage_analyser.attribute_list
+			a_list := environment.usage_analyser.attribute_list
 			from a_list.start until a_list.off loop
 				attribute_writer.write_attribute (a_list.item)
 				a_list.forth
@@ -137,12 +143,17 @@ feature {NONE} -- Implementation
 			create function_writer.make (current_class)
 			function_writer.set_leaf_list (match_list)
 
-			a_list := usage_analyser.deferred_query_list
+			a_list := environment.usage_analyser.deferred_query_list
 			from a_list.start until a_list.off loop
 				function_writer.write_function (a_list.item)
 				a_list.forth
 			end
-			a_list := usage_analyser.function_list
+			a_list := environment.usage_analyser.function_list
+			from a_list.start until a_list.off loop
+				function_writer.write_function (a_list.item)
+				a_list.forth
+			end
+			a_list := environment.usage_analyser.constant_list
 			from a_list.start until a_list.off loop
 				function_writer.write_function (a_list.item)
 				a_list.forth
@@ -160,33 +171,39 @@ feature {NONE} -- Implementation
 			create signature_writer.make (current_class)
 			signature_writer.set_leaf_list (match_list)
 
-			a_list := usage_analyser.deferred_command_list
+			a_list := environment.usage_analyser.deferred_command_list
 			from a_list.start until a_list.off loop
-				signature_writer.write_signature (current_class.feature_named (a_list.item.feature_name))
+				signature_writer.write_signature (a_list.item)
 				a_list.forth
 			end
-			bpl_out ("// defining signatures: def_q%N")
-			a_list := usage_analyser.deferred_query_list
+			bpl_out ("// defining signatures: deferred_queries%N")
+			a_list := environment.usage_analyser.deferred_query_list
 			from a_list.start until a_list.off loop
-				signature_writer.write_signature (current_class.feature_named (a_list.item.feature_name))
+				signature_writer.write_signature (a_list.item)
 				a_list.forth
 			end
-			bpl_out ("// defining signatures: fun%N")
-			a_list := usage_analyser.function_list
+			bpl_out ("// defining signatures: functions%N")
+			a_list := environment.usage_analyser.function_list
 			from a_list.start until a_list.off loop
-				signature_writer.write_signature (current_class.feature_named (a_list.item.feature_name))
+				signature_writer.write_signature (a_list.item)
 				a_list.forth
 			end
-			bpl_out ("// defining signatures: proc%N")
-			a_list := usage_analyser.procedure_list
+			bpl_out ("// defining signatures: procedures%N")
+			a_list := environment.usage_analyser.procedure_list
 			from a_list.start until a_list.off loop
-				signature_writer.write_signature (current_class.feature_named (a_list.item.feature_name))
+				signature_writer.write_signature (a_list.item)
 				a_list.forth
 			end
-			bpl_out ("// defining signatures: att%N")
-			a_list := usage_analyser.attribute_list
+			bpl_out ("// defining signatures: attributes%N")
+			a_list := environment.usage_analyser.attribute_list
 			from a_list.start until a_list.off loop
-				signature_writer.write_signature (current_class.feature_named (a_list.item.feature_name))
+				signature_writer.write_signature (a_list.item)
+				a_list.forth
+			end
+			bpl_out ("// defining signatures: constants%N")
+			a_list := environment.usage_analyser.constant_list
+			from a_list.start until a_list.off loop
+				signature_writer.write_signature (a_list.item)
 				a_list.forth
 			end
 		end
@@ -202,14 +219,19 @@ feature {NONE} -- Implementation
 			create implementation_writer.make (current_class)
 			implementation_writer.set_leaf_list (match_list)
 
-			a_list := usage_analyser.function_list
+			a_list := environment.usage_analyser.function_list
 			from a_list.start until a_list.off loop
-				implementation_writer.write_implementation (current_class.feature_named (a_list.item.feature_name))
+				implementation_writer.write_implementation (a_list.item)
 				a_list.forth
 			end
-			a_list := usage_analyser.procedure_list
+			a_list := environment.usage_analyser.procedure_list
 			from a_list.start until a_list.off loop
-				implementation_writer.write_implementation (current_class.feature_named (a_list.item.feature_name))
+				implementation_writer.write_implementation (a_list.item)
+				a_list.forth
+			end
+			a_list := environment.usage_analyser.constant_list
+			from a_list.start until a_list.off loop
+				implementation_writer.write_implementation (a_list.item)
 				a_list.forth
 			end
 		end
@@ -220,16 +242,18 @@ feature {NONE} -- Implementation
 			generated_features: HASH_TABLE[ARRAYED_SET[FEATURE_I], EIFFEL_CLASS_C]
 			some_feature: FEATURE_I
 			some_class: EIFFEL_CLASS_C
+			used_features: LIST[FEATURE_I]
 		do
 			from
 				bpl_out ("// defining used features%N")
 				create generated_features.make (0)
+				used_features := environment.usage_analyser.used_feature_list.twin
 			until
-				environment.used_features.is_empty
+				used_features.is_empty
 			loop
-				environment.used_features.start
+				used_features.start
 
-				some_feature := environment.used_features.item
+				some_feature := used_features.item
 				some_class ?= some_feature.written_class
 				if
 					some_class /= Void and then
@@ -258,13 +282,13 @@ feature {NONE} -- Implementation
 					end
 					generated_features.item (some_class).extend (some_feature)
 				end
-				environment.used_features.prune (some_feature)
+				used_features.prune (some_feature)
 			end
 		end
 	
 
 indexing
-	copyright:	"Copyright (c) 2006, Raphael Mack"
+	copyright:	"Copyright (c) 2006, 2007 Raphael Mack, Bernd Schöller"
 	license:	"GPL version 2 or later"
 	copying: "[
 

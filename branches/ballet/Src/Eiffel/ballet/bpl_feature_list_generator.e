@@ -8,10 +8,13 @@ class
 	BPL_FEATURE_LIST_GENERATOR
 
 inherit
-	BPL_VISITOR
+	BPL_BN_ITERATOR
 		redefine
 			make,
-			process_feature_as
+			process_attribute_b,
+			process_feature_i,
+			process_feature_b,
+			process_byte_code
 		end
 
 create
@@ -22,14 +25,19 @@ feature{NONE} -- Initialization
 	make (a_class: EIFFEL_CLASS_C) is
 			-- Default creation
 		do
-			Precursor{BPL_VISITOR} (a_class)
+			Precursor (a_class)
 			create {ARRAYED_LIST [FEATURE_I]}command_list.make (1)
 			create {ARRAYED_LIST [FEATURE_I]}query_list.make (1)
 			create {ARRAYED_LIST [FEATURE_I]}deferred_command_list.make (1)
 			create {ARRAYED_LIST [FEATURE_I]}deferred_query_list.make (1)
 			create {ARRAYED_LIST [FEATURE_I]}attribute_list.make (1)
 			create {ARRAYED_LIST [FEATURE_I]}function_list.make (1)
+			create {ARRAYED_LIST [FEATURE_I]}constant_list.make (1)
 			create {ARRAYED_LIST [FEATURE_I]}procedure_list.make (1)
+			create {ARRAYED_LIST [FEATURE_I]}used_query_list.make (1)
+			create {ARRAYED_LIST [FEATURE_I]}used_command_list.make (1)
+			create {ARRAYED_LIST [FEATURE_I]}used_feature_list.make (1)
+			create {ARRAYED_LIST [FEATURE_I]}all_query_list.make (1)
 		end
 
 feature -- Analyse
@@ -37,16 +45,16 @@ feature -- Analyse
 	analyse is
 			-- Do the analysis of the class.
 		do
-			safe_process (current_class.ast)
+			visit_all_features
 		end
 
 feature -- Access
 
 	command_list: LIST [FEATURE_I]
-		-- List of all commands in the class
+		-- List of all commands defined in the class
 
 	query_list: LIST [FEATURE_I]
-		-- List of all queries in the class
+		-- List of all queries defined in the class
 
 	deferred_query_list: LIST [FEATURE_I]
 		-- List of deferred queries
@@ -55,45 +63,116 @@ feature -- Access
 		-- List of deferred commands
 
 	attribute_list: LIST [FEATURE_I]
-		-- List of all attributes in the class (queries as attributes)
+		-- List of all attributes defined in the class (queries as attributes)
 
 	function_list: LIST [FEATURE_I]
-		-- List of all functions in the class (queries with implementation)
+		-- List of all functions defined in the class (queries with implementation)
+
+	constant_list: LIST [FEATURE_I]
+		-- List of all constants defined in the class
 
 	procedure_list: LIST [FEATURE_I]
-		-- List of all procedures in the class (command with implementation)
+		-- List of all procedures defined in the class (command with implementation)
 
+
+	used_command_list: LIST [FEATURE_I]
+		-- List of all supplier commands which are used in the class
+
+	used_query_list: LIST [FEATURE_I]
+		-- List of all supplier queries which are used in the class and recursivly by there contracts
+
+	used_feature_list: LIST [FEATURE_I]
+		-- List of all supplier commands and queries which are used in the class and recursivly by there contracts
+
+
+	all_query_list: LIST [FEATURE_I]
+		-- List of all queries defined or used in the class
+	
 feature -- Processing
 
-	process_feature_as (l_as: FEATURE_AS) is
+	-- TODO: only insert each element once in the list
+	process_feature_i (a_feature: FEATURE_I) is
 			-- Process a feature to record it in the lists.
 		do
-			Precursor {BPL_VISITOR}(l_as)
-			if l_as.is_attribute or l_as.is_function then
-				query_list.extend (current_class.feature_named (l_as.feature_name))
-			else
-				command_list.extend (current_class.feature_named (l_as.feature_name))
-			end
-			if l_as.is_attribute then
-				bpl_out ("// found att: " + l_as.feature_name + " current class = " + current_class.name + "%N")
-				attribute_list.extend (current_class.feature_named (l_as.feature_name))
-				bpl_out ("// found att: " + current_class.feature_named (l_as.feature_name).feature_name + " current class = " + current_class.feature_named (l_as.feature_name).written_class.name + "%N")
-			elseif l_as.is_deferred then
-				if l_as.is_function then
-					deferred_query_list.extend (current_class.feature_named (l_as.feature_name))
-				else
-					deferred_command_list.extend (current_class.feature_named (l_as.feature_name))
-				end
-			else
-				if l_as.is_function then
-					function_list.extend (current_class.feature_named (l_as.feature_name))
-				else
-					procedure_list.extend (current_class.feature_named (l_as.feature_name))
-				end
-			end
+			if Mapping_table.item (a_feature.written_class.name) = Void then
+				current_feature := a_feature
+				Precursor (a_feature)
 
-
+				if a_feature.is_attribute or a_feature.is_function or a_feature.is_constant then
+					query_list.extend (a_feature)
+					all_query_list.extend (a_feature)
+				else
+					command_list.extend (a_feature)
+				end
+				if a_feature.is_attribute then
+					attribute_list.extend (a_feature)
+				elseif a_feature.is_deferred then
+					if a_feature.is_function then
+						deferred_query_list.extend (a_feature)
+					else
+						deferred_command_list.extend (a_feature)
+					end
+				elseif a_feature.is_constant then
+					constant_list.extend (a_feature)
+				else
+					if a_feature.is_function then
+						function_list.extend (a_feature)
+					else
+						procedure_list.extend (a_feature)
+					end
+				end
+			end
 		end
+
+	process_byte_code (a_node: BYTE_CODE) is
+		do
+			safe_process (a_node.use_frame)
+			safe_process (a_node.modify_frame)
+			safe_process (a_node.precondition)
+			-- only process the implementation for current_class
+			if current_feature.written_in = current_class.class_id then
+				safe_process (a_node.compound)
+				safe_process (a_node.rescue_clause)
+			end
+			safe_process (a_node.postcondition)
+		end
+
+	process_feature_b (a_node: FEATURE_B) is
+		local
+			used_feature: FEATURE_I
+		do
+			used_feature := Feat_tbl_server.item (a_node.written_in).feature_of_feature_id(a_node.feature_id)
+			if Mapping_table.item(used_feature.written_class.name) = Void and then not used_feature_list.has (used_feature) then
+				if used_feature.is_attribute or used_feature.is_function or used_feature.is_constant then
+					used_query_list.extend (used_feature)
+					all_query_list.extend (used_feature)
+				else
+					used_command_list.extend (used_feature)
+				end
+				used_feature_list.extend (used_feature)
+				if inv_byte_server.has(used_feature.written_in) then
+					safe_process(inv_byte_server.item(used_feature.written_in).byte_list)
+				end
+				-- TODO: add precursors of feature_b, too
+			end
+		end
+
+	process_attribute_b (a_node: ATTRIBUTE_B) is
+		local
+			used_feature: FEATURE_I
+		do
+			used_feature := Feat_tbl_server.item (a_node.written_in).feature_of_feature_id(a_node.attribute_id)
+			if Mapping_table.item(used_feature.written_class.name) = Void and then not used_feature_list.has (used_feature) then
+				used_query_list.extend (used_feature)
+				used_feature_list.extend (used_feature)
+				all_query_list.extend (used_feature)
+				if inv_byte_server.has(used_feature.written_in) then
+					safe_process(inv_byte_server.item(used_feature.written_in).byte_list)
+				end
+				-- TODO: add precursors of feature_b, too
+			end
+		end
+
 
 invariant
 	command_list_not_void: command_list /= Void

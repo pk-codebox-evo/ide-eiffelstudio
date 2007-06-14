@@ -151,7 +151,6 @@ feature -- Main
 					-- TODO: this does probably not work with renamed features
 					feat := parents.item.feature_named (current_feature.feature_name)
 					if feat /= Void then
-						record_usage_feature (feat)
 						bpl_out ("axiom (")
 						bpl_out (intro)
 						bpl_out (" :: ")
@@ -262,22 +261,10 @@ feature -- Processing Environment
 			expr := ""
 			local_vars := ""
 			side_effect := ""
-			create call_list.make (0)
 		ensure
 			expr_reset: expr.is_equal ("")
 			local_vars_reset: local_vars.is_equal ("")
 			side_effect_reset: side_effect.is_equal ("")
-			call_list_empty: call_list.is_empty
-		end
-
-	call_list: ARRAYED_LIST[CALL_ACCESS_B]
-		-- feature calls used during the generation.
-
-	record_call (e: CALL_ACCESS_B) is
-			-- Record that the following call is used in the expression.
-		do
-			call_list.extend (e)
-			record_usage (e)
 		end
 
 	intro: STRING
@@ -304,7 +291,6 @@ feature -- Processing
 			expr.append(", ")
 			expr.append(this_ref)
 			expr.append(")")
-			record_call(a_node)
 		end
 
 	process_bin_and_b (a_node: BIN_AND_B) is
@@ -573,7 +559,6 @@ feature -- Processing
 				expr := tmp
 			end
 			expr.append(")")
-			record_call(a_node)
 		end
 
 	process_creation_expr_b (a_node: CREATION_EXPR_B) is
@@ -678,6 +663,4 @@ feature -- Processing
 			expr.append ("null")
 		end
 
-invariant
-	call_list_not_void: call_list /= Void
 end

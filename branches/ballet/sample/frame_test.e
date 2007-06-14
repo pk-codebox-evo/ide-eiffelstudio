@@ -15,8 +15,7 @@ feature -- Access
 	item: INTEGER is
 			-- Integer value stored
 		use
-			uses_repr: repr
-			uses2: repr1
+			uses_repr: representation
 		do
 			Result := x
 		end
@@ -26,27 +25,19 @@ feature -- Settings
 	set_item (a_value: INTEGER) is
 			-- Set `item' to `a_value'.
 		modify
-			modifies_repr: repr
+			modifies_repr: representation
 		do
 			x := a_value
 		ensure
 			value_set: item = a_value
-			not_zero: item /= 0
 		end
 
 feature -- Framing
-	repr: FRAME is
+	representation: FRAME is
 		use
-			own: repr
+			own: representation
 		do
-
-		end
-
-	repr1: FRAME is
-		use
-			own: repr1
-		do
-
+			create Result.make_from_element (Current)
 		end
 
 feature {}

@@ -18,6 +18,8 @@ inherit
 
 	SHARED_BYTE_CONTEXT
 
+	SHARED_BPL_ENVIRONMENT
+
 create
 	make
 
@@ -33,6 +35,7 @@ feature -- Generation
 			arg_name: STRING
 			arg_type: TYPE_A
 			ass_list: BYTE_LIST[BYTE_NODE]
+			all_queries: LIST[FEATURE_I]
 		do
 			setup_function_writer
 			function_writer.set_current_feature (a_feature)
@@ -114,7 +117,19 @@ feature -- Generation
 			end
 
 			process_feature_i (a_feature) -- generate assertions
+			-- write ensure clauses for all queries in the program to state, that they
+			-- are not changed if the frames do not overlap
 
+			from
+				all_queries := environment.usage_analyser.all_query_list
+				all_queries.start
+			until
+				all_queries.after
+			loop
+				bpl_out ("// TODO: frame contract for " + all_queries.item.written_class.name + "." + all_queries.item.feature_name + "%N")
+				all_queries.forth
+			end
+			
 			bpl_out ("%N")
 		end
 

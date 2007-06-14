@@ -215,7 +215,6 @@ feature -- Helper
             print (" of ")
             print (feat.written_class.name)
             print ("%N")
-            environment.used_features.extend (feat)
          end
 		end
 

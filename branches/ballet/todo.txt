@@ -1,5 +1,6 @@
 - BPL_BN_IMPLEMENTATION_WRITER has to be fixed
 - FRAMES
+- TODOs in BPL_FEATURE_LIST_GENERATOR
 - models
 
 - typecheck "confined EXRR": EXPR should be (a subtype of) FRAME
@@ -9,4 +10,4 @@
 - types which are declared in the background theory are detected only by the
   class name -> we should handle cluster shadowing
 
-- generics do not work (e. g. attribute c: MY_CELL [STRING])
+- generics do not work (e. g. attribute c: MY_CELL [STRING]), they crash ballet
