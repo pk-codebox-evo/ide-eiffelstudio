@@ -84,6 +84,7 @@ feature -- Main
 			i: INTEGER
 			feat: FEATURE_I
 			parents: FIXED_LIST[CLASS_C]
+			idx: INTEGER
 		do
 			current_feature := a_function
 			if byte_server.has (current_feature.code_id) then
@@ -148,31 +149,37 @@ feature -- Main
 				until
 					parents.after
 				loop
-					-- TODO: this does probably not work with renamed features
-					feat := parents.item.feature_named (current_feature.feature_name)
-					if feat /= Void then
-						bpl_out ("axiom (")
-						bpl_out (intro)
-						bpl_out (" :: ")
-						bpl_out (result_call)
-						bpl_out (" == ")
-
-						bpl_out ("fun." + parents.item.name + "." + feat.feature_name + "(H, C")
-						from
-							i := 1
-						until
-							i > a_function.argument_count
-						loop
-							arg_name := a_function.arguments.item_name (i)
-							arg_type := a_function.arguments.i_th (i)
-							intro.append ("arg.")
-							intro.append (arg_name)
-							i := i + 1
+					from
+						idx := current_feature.rout_id_set.lower
+					until
+						idx > current_feature.rout_id_set.count + current_feature.rout_id_set.lower - 1
+					loop
+						feat := parents.item.feature_of_feature_id (current_feature.rout_id_set.item (idx))
+						if feat /= Void then
+							bpl_out ("axiom (")
+							bpl_out (intro)
+							bpl_out (" :: ")
+							bpl_out (result_call)
+							bpl_out (" == ")
+							
+							bpl_out ("fun." + parents.item.name + "." + feat.feature_name + "(H, C")
+							from
+								i := 1
+							until
+								i > a_function.argument_count
+							loop
+								arg_name := a_function.arguments.item_name (i)
+								arg_type := a_function.arguments.i_th (i)
+								intro.append ("arg.")
+								intro.append (arg_name)
+								i := i + 1
+							end
+							
+							bpl_out ("));%N")
+						else
+							bpl_out ("// no feature for " + current_feature.feature_name + " in class " + parents.item.name +"%N")
 						end
-
-						bpl_out ("));%N")
-					else
-						bpl_out ("// no feature for " + current_feature.feature_name + " in class " + parents.item.name +"%N")
+						idx := idx + 1
 					end
 					parents.forth
 				end

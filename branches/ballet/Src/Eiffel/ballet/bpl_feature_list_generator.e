@@ -139,10 +139,12 @@ feature -- Processing
 
 	process_feature_b (a_node: FEATURE_B) is
 		local
-			used_feature: FEATURE_I
+			used_feature, inherited_feature: FEATURE_I
+			idx: INTEGER
+			parents: FIXED_LIST[CLASS_C]
 		do
 			used_feature := Feat_tbl_server.item (a_node.written_in).feature_of_feature_id(a_node.feature_id)
-			if Mapping_table.item(used_feature.written_class.name) = Void and then not used_feature_list.has (used_feature) then
+			if Mapping_table.item (used_feature.written_class.name) = Void and then not used_feature_list.has (used_feature) then
 				if used_feature.is_attribute or used_feature.is_function or used_feature.is_constant then
 					used_query_list.extend (used_feature)
 					all_query_list.extend (used_feature)
@@ -151,9 +153,30 @@ feature -- Processing
 				end
 				used_feature_list.extend (used_feature)
 				if inv_byte_server.has(used_feature.written_in) then
-					safe_process(inv_byte_server.item(used_feature.written_in).byte_list)
+					safe_process (inv_byte_server.item (used_feature.written_in).byte_list)
 				end
-				-- TODO: add precursors of feature_b, too
+				-- add precursors of feature_b
+				parents := current_feature.written_class.parents_classes
+				if parents /= Void then
+					from
+						parents.start
+					until
+						parents.after
+					loop
+						from
+							idx := current_feature.rout_id_set.lower
+						until
+							idx > current_feature.rout_id_set.count + current_feature.rout_id_set.lower - 1
+						loop
+							inherited_feature := parents.item.feature_of_feature_id (current_feature.rout_id_set.item (idx))
+							if inherited_feature /= Void and not used_feature_list.has (inherited_feature) then
+								used_feature_list.extend (inherited_feature)
+							end
+							idx := idx + 1
+						end
+						parents.forth
+					end
+				end
 			end
 		end
 
@@ -161,13 +184,13 @@ feature -- Processing
 		local
 			used_feature: FEATURE_I
 		do
-			used_feature := Feat_tbl_server.item (a_node.written_in).feature_of_feature_id(a_node.attribute_id)
-			if Mapping_table.item(used_feature.written_class.name) = Void and then not used_feature_list.has (used_feature) then
+			used_feature := Feat_tbl_server.item (a_node.written_in).feature_of_feature_id (a_node.attribute_id)
+			if Mapping_table.item (used_feature.written_class.name) = Void and then not used_feature_list.has (used_feature) then
 				used_query_list.extend (used_feature)
 				used_feature_list.extend (used_feature)
 				all_query_list.extend (used_feature)
 				if inv_byte_server.has(used_feature.written_in) then
-					safe_process(inv_byte_server.item(used_feature.written_in).byte_list)
+					safe_process (inv_byte_server.item (used_feature.written_in).byte_list)
 				end
 				-- TODO: add precursors of feature_b, too
 			end
