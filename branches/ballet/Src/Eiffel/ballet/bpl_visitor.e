@@ -384,7 +384,7 @@ feature {NONE} -- Implementation
 	Mapping_table: TABLE[STRING, STRING] is
 			-- Table of mappings between Eiffel and BPL types
 		once
-			create {HASH_TABLE[STRING, STRING]}Result.make(9)
+			create {HASH_TABLE[STRING, STRING]}Result.make(19)
 			Result.compare_objects
 			Result.put("ref", "ANY")
 			Result.put("int", "INTEGER")
@@ -402,7 +402,7 @@ feature {NONE} -- Implementation
 			Result.put("int", "CHARACTER_8_REF")
 			Result.put("int", "CHARACTER_32_REF")
 			Result.put("bool", "BOOLEAN")
-			Result.put("set", "FRAME")
+			Result.put("frame", "FRAME")
 			Result.put("set", "MML_SET")
 			Result.put("set", "MML_DEFAULT_SET")
 		end

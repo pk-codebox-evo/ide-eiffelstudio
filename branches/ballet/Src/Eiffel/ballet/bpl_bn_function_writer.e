@@ -540,14 +540,23 @@ feature -- Processing
 		local
 			i: INTEGER
 			tmp: STRING
+			cls_name: STRING
 		do
-			expr.append("fun.")
-			expr.append(System.class_of_id(a_node.written_in).name)
-			expr.append(".")
-			expr.append(a_node.feature_name)
-			expr.append("(")
-			expr.append(heap_ref)
-			expr.append(", ")
+			cls_name := System.class_of_id(a_node.written_in).name
+			if Mapping_table.item (cls_name) /= Void then
+				expr.append(Mapping_table.item (cls_name))
+				expr.append(".")
+				expr.append(a_node.feature_name)
+				expr.append("(")
+			else
+				expr.append("fun.")
+				expr.append(cls_name)
+				expr.append(".")
+				expr.append(a_node.feature_name)
+				expr.append("(")
+				expr.append(heap_ref)
+				expr.append(", ")
+			end
 			expr.append(this_ref)
 
 			if a_node.parameters /= Void then
