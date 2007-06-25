@@ -9,8 +9,9 @@ class
 
 inherit
 
-		-- NOTE: will be removed when cdd manager has its own cdd cluster
-	SHARED_EIFFEL_PROJECT
+	CDD_ROUTINES
+
+	DEBUG_VALUE_EXPORTER
 		export
 			{NONE} all
 		end
@@ -20,24 +21,22 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_manager: like manager) is
-			-- Create `last_created_test_cases'.
-		require
-			a_manager_not_void: a_manager /= Void
+	make is
+			-- Create `capture_observers'.
 		do
-			create last_created_test_cases.make
-			manager := a_manager
-		ensure
-			manager_set: manager = a_manager
+			create capture_observers.make
 		end
 
 feature -- Access
 
-	manager: CDD_MANAGER
-			-- Manager for all CDD activities
+	capture_observers: DS_LINKED_LIST [CDD_CAPTURE_OBSERVER]
+			-- Observers tracking the capture process
 
-	last_created_test_cases: DS_LINKED_LIST [STRING]
-			-- File names of last captured cdd test cases
+	are_observers_initialized: BOOLEAN is
+			-- Are all items of `capture_obervers' initialized?
+		do
+
+		end
 
 feature -- Basic operations
 
@@ -59,12 +58,7 @@ feature -- Basic operations
 			capture_stack_frames (a_status, 1)
 		end
 
-feature {NONE} -- Implementation
-
-	cdd_directory_name: STRING is "cdd_tests"
-			-- Directory name within root cluster in which all test cases will be created
-			-- NOTE: assuming directy already exists - this will be replaced
-			-- as soon CDD_MANAGER has its own cdd cluster
+feature {NONE} -- Implementation (Capturing)
 
 	capture_stack_frames (a_status: APPLICATION_STATUS; a_count: INTEGER) is
 			-- Capture max `a_count' test cases for valid call stack elements
@@ -76,8 +70,9 @@ feature {NONE} -- Implementation
 		local
 			i: INTEGER
 			l_cse: EIFFEL_CALL_STACK_ELEMENT
+			an_uuid: UUID
 		do
-			last_created_test_cases.wipe_out
+			--last_created_test_cases.wipe_out
 			l_cse ?= a_status.current_call_stack_element
 			if a_status.exception_code = {EXCEP_CONST}.precondition then
 				if l_cse /= Void and then l_cse.level_in_stack < a_status.current_call_stack.count then
@@ -86,16 +81,200 @@ feature {NONE} -- Implementation
 			end
 			from
 				i := 1
+				an_uuid := uuid_generator.generate_uuid
 			until
 				l_cse = Void or i > a_count
 			loop
 				l_cse := next_valid_cse (a_status, l_cse)
 				if l_cse /= Void then
-					create_test_case (l_cse)
+					capture_call_stack_element (l_cse, an_uuid, i)
 					l_cse := caller (l_cse, a_status.current_call_stack)
 					i := i + 1
 				end
 			end
+		end
+
+	capture_call_stack_element (a_cse: EIFFEL_CALL_STACK_ELEMENT; a_cs_uuid: UUID; a_cs_level: INTEGER) is
+			-- Capture state for `a_cse'. `a_cs_uuid' is the call stack's uuid.
+		require
+			a_cse_not_void: a_cse /= Void
+			valid_cse: is_valid_cse (a_cse)
+			a_cs_level_positiv: a_cs_level > 0
+		local
+			l_feature: E_FEATURE
+			l_class: CLASS_C
+			l_cursor: DS_LINKED_LIST_CURSOR [CDD_CAPTURE_OBSERVER]
+		do
+			l_cursor := capture_observers.new_cursor
+			l_feature := a_cse.routine
+			l_class := a_cse.dynamic_class
+
+				-- Notify all observers that capturing has started
+			from
+				l_cursor.start
+			until
+				l_cursor.after
+			loop
+				l_cursor.item.start (l_feature, l_class, a_cs_uuid, a_cs_level)
+				l_cursor.forth
+			end
+
+				-- Start capturing objects
+			from until
+				object_queue.is_empty
+			loop
+				put_object (object_queue.item)
+				object_queue.remove
+			end
+
+				-- Notify all observers that capturing has finished
+			from
+				l_cursor.start
+			until
+				l_cursor.after
+			loop
+				l_cursor.item.finish
+				l_cursor.forth
+			end
+		end
+
+	put_object (an_object: ABSTRACT_DEBUG_VALUE) is
+			--
+		require
+			capturing: is_capturing
+			reference_value: is_reference_value (an_object)
+			object_already_added: object_map.has (an_object.address)
+		local
+			l_class: EIFFEL_CLASS_C
+			l_id, l_type: STRING
+			l_ref_adv: ABSTRACT_REFERENCE_VALUE
+			l_attrs: DS_LIST [STRING]
+			l_cursor: DS_LINKED_LIST_CURSOR [CDD_CAPTURE_OBSERVER]
+		do
+			l_class := an_object.dynamic_class.eiffel_class_c
+			l_type := an_object.dump_value.generating_type_representation (True)
+			l_id := object_map.item (an_object.address)
+
+			if l_class.name.is_equal ("STRING_8") or l_class.name.is_equal ("STRING_32") then
+				create {DS_ARRAYED_LIST [STRING]} l_attrs.make (1)
+				l_ref_adv ?= an_object
+				check l_ref_adv_not_void: l_ref_adv /= Void end
+				l_attrs.put_first (l_ref_adv.dump_value.formatted_output)
+			elseif l_class.is_special or l_class.is_tuple then
+				l_attrs := fetch_object_attributes (an_object.children, False)
+			else
+				l_attrs := fetch_object_attributes (an_object.children, True)
+			end
+
+			l_cursor := capture_observers.new_cursor
+			from
+				l_cursor.start
+			until
+				l_cursor.after
+			loop
+					-- TODO: replace boolean constant in feature call
+				l_cursor.item.put_object (l_id, l_type, True, l_attrs)
+				l_cursor.forth
+			end
+		end
+
+	add_referenced_object (an_adv: ABSTRACT_DEBUG_VALUE) is
+			-- Add `an_adv' to `object_map' and `object_queue'.
+		require
+			capturing: is_capturing
+			an_adv_valid: an_adv /= Void and is_reference_value (an_adv)
+			not_yet_added: not object_map.has (an_adv.address)
+		local
+			l_new_id: STRING
+		do
+			if object_map.is_full then
+				object_map.resize (object_map.capacity * 2)
+			end
+			current_object_id := current_object_id + 1
+			l_new_id := "#" + current_object_id.out
+			object_map.put (l_new_id, an_adv.address)
+			object_queue.put (an_adv)
+		ensure
+			added_to_mapping: object_map.has (an_adv.address)
+			added_to_queue: object_queue.count = old object_queue.count + 1
+		end
+
+	fetch_object_attributes (an_attr_list: DS_LIST [ABSTRACT_DEBUG_VALUE]; an_use_attr_names: BOOLEAN): DS_LIST [STRING] is
+			-- List of string representations for attributes in `an_attr_list'.
+			-- If `an_use_attr_name' is true, also provide the attributes names.
+		require
+			capturing: is_capturing
+			object_map_not_void: object_map /= Void
+			object_queue_not_void: object_queue /= Void
+			an_attr_list_not_void: an_attr_list /= Void
+		local
+			l_cursor: DS_LIST_CURSOR [ABSTRACT_DEBUG_VALUE]
+			l_child: ABSTRACT_DEBUG_VALUE
+			l_value: STRING
+		do
+			create {DS_LINKED_LIST [STRING]} Result.make
+			from
+				l_cursor := an_attr_list.new_cursor
+				l_cursor.start
+			until
+				l_cursor.after
+			loop
+				l_child := l_cursor.item
+				l_value := attribute_value (l_child)
+				if an_use_attr_names then
+					Result.put_last (l_child.name)
+				end
+				Result.put_last (l_value)
+				l_cursor.forth
+			end
+		end
+
+	attribute_value (an_adv: ABSTRACT_DEBUG_VALUE): STRING is
+			-- Value represented by `an_adv' if it is a basic type,
+			-- otherwise the mapped id for the object it is pointing to.
+			-- Is void in case `an_adv' represents a void or unhandled value.
+		require
+			capturing: is_capturing
+		do
+			if is_reference_value (an_adv) then
+				if  an_adv.dynamic_class /= Void and then an_adv.dynamic_class.is_eiffel_class_c then
+					if not object_map.has (an_adv.address) then
+						add_referenced_object (an_adv)
+					end
+					Result := object_map.item (an_adv.address)
+				end
+			elseif an_adv.kind = {VALUE_TYPES}.immediate_value then
+				Result := an_adv.output_value
+			else
+				Result := "Void"
+			end
+		ensure
+			not_void: Result /= Void
+		end
+
+feature {NONE} -- Implementation (Access)
+
+	object_map: DS_HASH_TABLE [STRING, STRING]
+			-- Hash table that maps object addresses to an id in the test case context
+
+	object_queue: DS_LINKED_QUEUE [ABSTRACT_DEBUG_VALUE]
+			-- Queue of objects which still need to printed in the context
+
+	current_object_id: INTEGER
+			-- Counter for giving new objects an id.
+			-- NOTE: this will be replaced with id from capture/replay module.
+
+	is_capturing: BOOLEAN is
+			-- Are we currently capturing?
+		do
+			Result := object_map /= Void and
+				object_queue /= Void
+		end
+
+	is_reference_value (an_adv: ABSTRACT_DEBUG_VALUE): BOOLEAN is
+			-- Is `an_adv' a reference to some object?
+		do
+			Result := an_adv.kind = {VALUE_TYPES}.reference_value or an_adv.kind = {VALUE_TYPES}.special_value
 		end
 
 	caller (a_element: EIFFEL_CALL_STACK_ELEMENT; a_call_stack: EIFFEL_CALL_STACK): EIFFEL_CALL_STACK_ELEMENT is
@@ -110,8 +289,9 @@ feature {NONE} -- Implementation
 				Result ?= a_call_stack.i_th (a_element.level_in_stack + 1)
 			end
 		ensure
-			valid_result: Result = Void or else Result.level_in_stack = a_element.level_in_stack + 1
-			valid_result: Result = Void or else a_call_stack.i_th (Result.level_in_stack) = Result
+			valid_result: Result = Void or else
+				(Result.level_in_stack = a_element.level_in_stack + 1 and
+				a_call_stack.i_th (Result.level_in_stack) = Result)
 		end
 
 	is_valid_cse (a_cse: EIFFEL_CALL_STACK_ELEMENT): BOOLEAN is
@@ -162,59 +342,7 @@ feature {NONE} -- Implementation
 			result_is_valid_cse: Result = Void or else an_app_status.current_call_stack.i_th (Result.level_in_stack) = Result
 		end
 
-	create_test_case (a_cse: EIFFEL_CALL_STACK_ELEMENT) is
-			-- Create a test case which will invoke `a_cse'.
-		require
-			a_cse_not_void: a_cse /= Void
-			valid_cse: is_valid_cse (a_cse)
-		local
-			l_file: KL_TEXT_OUTPUT_FILE
-			l_dir_name: DIRECTORY_NAME
-			l_dir: KL_DIRECTORY
-			i: INTEGER
-			l_file_name, l_class_name: STRING
-		do
-			create l_dir_name.make_from_string (eiffel_system.root_cluster.location.evaluated_directory)
-			l_dir_name.extend (cdd_directory_name)
-			create l_dir.make (l_dir_name)
-			if l_dir.exists then
-				l_dir_name.extend ("")
-				from
-					i := 1
-				until
-					(l_file /= Void and then not l_file.exists) or i > 999
-				loop
-					l_class_name := "CDD_TEST_" + a_cse.dynamic_class.name_in_upper + "_"
-					if i < 10 then
-						l_class_name.append ("00")
-					elseif i < 100 then
-						l_class_name.append_character ('0')
-					end
-					l_class_name.append_integer (i)
-					l_file_name := l_class_name.as_lower + ".e"
-					create l_file.make (l_dir_name + l_file_name)
-					i := i + 1
-				end
-
-				if not l_file.exists then
-					l_file.open_write
-					if l_file.is_open_write  then
-						printer.print_test_case (a_cse, l_class_name, l_file, uuid_generator.generate_uuid.out)
-						last_created_test_cases.put_last (l_file_name)
-					end
-				end
-			end
-		end
-
 feature {NONE} -- Implementation
-
-	printer: CDD_TEST_CASE_PRINTER
-			-- Printer for creating test case classes
-		once
-			create Result
-		ensure
-			not_void: Result /= Void
-		end
 
 	uuid_generator: UUID_GENERATOR is
 			-- UUID generator for creating uuid's
@@ -224,80 +352,8 @@ feature {NONE} -- Implementation
 			not_void: Result /= Void
 		end
 
--- NOTE: everything below is obsolete and will be removed soon...
-
---feature {NOEN} -- Access
-
---	reflected_call_stack: DS_LINKED_LIST [CDD_REFLECTION]
---			-- List of all reflected call stack elements
---			-- Note: Top element of the stack is first in the list
-
---feature {NONE} -- Basic operations
-
---	reflect_call_stack (an_application_status: APPLICATION_STATUS) is
---			-- Try to reflect current state of `an_application_status' for called feature in `a_cse'.
---			-- Result is stored in `last_reflection'.
---		require
---			an_application_status_not_void: an_application_status /= Void
---			valid_application_status: is_valid_status (an_application_status)
---		local
---			l_cse: EIFFEL_CALL_STACK_ELEMENT
---			l_feature: E_FEATURE
---			l_class: EIFFEL_CLASS_C
---			l_is_creation_call: BOOLEAN
---			l_reflection: CDD_REFLECTION
---			l_uuid: STRING
---		do
---			create reflected_call_stack.make
---			l_cse ?= an_application_status.current_call_stack_element
-
---			-- Check whether it is the callers fault
---			if l_cse /= Void then
---				if an_application_status.exception_code = {EXCEP_CONST}.precondition and
---						l_cse.level_in_stack < an_application_status.current_call_stack.count then
---					l_cse := caller (l_cse, an_application_status.current_call_stack)
---				end
---			end
-
---			-- Make sure we are trying to reflect an eiffel class
---			if l_cse /= Void and then l_cse.dynamic_class /= Void and then l_cse.dynamic_class.is_eiffel_class_c then
---				l_uuid := uuid_generator.generate_uuid.out
---				from
---					l_feature := l_cse.routine
---				until
---					l_cse = Void
---				loop
---					if l_cse.dynamic_class /= Void and then l_cse.dynamic_class.is_eiffel_class_c then
---						l_class := l_cse.dynamic_class.eiffel_class_c
---						l_is_creation_call := is_creation_procedure (l_class, l_feature)
---						if l_is_creation_call or l_feature.export_status.is_all then
---							create l_reflection.make (an_application_status, l_cse, l_is_creation_call, l_uuid)
---							if l_reflection.reflection_succeded then
---								reflected_call_stack.put_last (l_reflection)
---							end
---						end
---					end
---					l_cse := caller (l_cse, an_application_status.current_call_stack)
---				end
---			end
---		end
-
---feature {NONE} -- Implementation
-
---	is_creation_procedure (a_class: EIFFEL_CLASS_C; a_feature: E_FEATURE): BOOLEAN is
---			-- Is `l_feature' a creation procedure of `a_class'?
---		require
---			a_class_not_void: a_class /= Void
---			a_feature_not_void: a_feature /= Void
---		do
---			Result := a_class.creation_feature = a_feature.associated_feature_i
---			if not Result then
---				Result := a_class.creators /= Void and then a_class.creators.has (a_feature.name)
---			end
---		end
-
 invariant
-	manager_not_void: manager /= Void
+	capture_observers_not_void: capture_observers /= Void
 
 
 end

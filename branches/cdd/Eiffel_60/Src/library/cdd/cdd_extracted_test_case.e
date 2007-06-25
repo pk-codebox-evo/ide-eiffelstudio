@@ -12,17 +12,27 @@ inherit
 	CDD_ABSTRACT_TEST_CASE
 		rename
 			tear_down as do_nothing
+		redefine
+			default_create
 		end
 
 	INTERNAL
 		export
 			{NONE} all
+		undefine
+			default_create
+		end
+
+	EXCEPTIONS
+		rename
+			class_name as exc_class_name
+		export
+			{NONE} all
+		undefine
+			default_create
 		end
 
 feature -- Access
-
-	routine_under_test: ROUTINE [ANY, like operands]
-			-- Agent for calling feature under test
 
 	is_set_up: BOOLEAN is
 			-- Has the `context' and the `routine' been initialized yet?
@@ -30,10 +40,44 @@ feature -- Access
 			Result := is_context_set_up and is_routine_set_up
 		end
 
+feature -- Basic operations
+
+	set_up is
+			-- Initialize all objects in `context' needed to run `current'.
+		do
+			set_up_routine
+			set_up_context
+		end
+
+	test_feature_under_test is
+			-- Call `routine_under_test'. This is the default
+			-- test feature of extracted test cases.
+		require
+			set_up: is_set_up
+		do
+			routine_under_test.call (operands)
+		end
+
+feature {NONE} -- Initialization
+
+	default_create is
+			-- Create `object_map'.
+		do
+			create object_map.make (context.count)
+		end
+
+feature {NONE} -- Implementation (Access)
+
+	routine_under_test: ROUTINE [ANY, like operands]
+			-- Agent for calling the feature under test
+
 	is_context_set_up: BOOLEAN is
 			-- Is test case set up?
+		local
+			i: INTEGER
+			l_id: STRING
 		do
-			Result := objects /= Void and then context.count = objects.count
+			Result := operands /= Void and then routine_under_test.valid_operands (operands)
 		end
 
 	is_routine_set_up: BOOLEAN is
@@ -52,33 +96,12 @@ feature -- Access
 		deferred
 		end
 
---	is_creation_call: BOOLEAN is
---			-- Is `routine_under_test' a creation procedure of G?
---		deferred
---		end
-
-feature -- Basic operations
-
-	set_up is
-			-- Initialize all objects in `context' needed to run `current'.
-		do
-			set_up_context
-			set_up_routine
-			check valid_operands: routine_under_test.valid_operands (operands) end
-		end
-
-	run is
-			-- Call `routine_under_test'.
-		do
-			routine_under_test.call (operands)
-		end
-
 feature {NONE} -- Implementation
 
 	operands: TUPLE
 			-- Arguments for calling `routine_under_test'
 
-	context: ARRAY [TUPLE [id: STRING; name: STRING; attributes: ARRAY [STRING]]] is
+	context: ARRAY [TUPLE [id: STRING; type: STRING; inv: BOOLEAN; attributes: ARRAY [STRING]]] is
 			-- Context of the captured test case
 		deferred
 		ensure
@@ -88,7 +111,7 @@ feature {NONE} -- Implementation
 			context_entries_valid: Result.for_all (agent is_valid_context_entry)
 		end
 
-	is_valid_context_entry (an_entry: TUPLE [id: STRING; name: STRING; attributes: ARRAY [STRING]]): BOOLEAN is
+	is_valid_context_entry (an_entry: TUPLE [id: STRING; name: STRING; inv: BOOLEAN; attributes: ARRAY [STRING]]): BOOLEAN is
 			-- Is `a_pair' a valid context pair? I.e. can it appear in as an array
 			-- item in `context'?
 		require
@@ -101,7 +124,7 @@ feature {NONE} -- Implementation
 					  not an_entry.id.is_empty and not an_entry.name.is_empty
 			if Result then
 				from
-					i :=an_entry.attributes.lower
+					i := an_entry.attributes.lower
 				until
 					i > an_entry.attributes.upper or not Result
 				loop
@@ -112,8 +135,8 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	objects: HASH_TABLE [ANY, STRING]
-			-- Objects created from `context'
+	object_map: HASH_TABLE [ANY, STRING]
+			-- Objects created from `context' mapped with the given id in `context'.
 
 feature {NONE} -- Object initialization
 
@@ -137,15 +160,13 @@ feature {NONE} -- Object initialization
 			l_tuple_object: TUPLE
 			l_special_object: SPECIAL [ANY]
 		do
-			create objects.make (context.count)
-
 				-- Create instance for each object in `context'
 			from
 				i := context.lower + 1
 			until
 				i > context.upper
 			loop
-				l_name := context.item (i).name
+				l_name := context.item (i).type
 				if l_name.is_equal ("STRING_8") then
 					create l_string8_object.make_from_string (context.item (i).attributes.item (1))
 					l_object := l_string8_object
@@ -160,7 +181,7 @@ feature {NONE} -- Object initialization
 						-- Class we do not support yet
 					check invalid_class_name: False end
 				end
-				objects.put (l_object, context.item (i).id)
+				object_map.put (l_object, context.item (i).id)
 				i := i + 1
 			end
 
@@ -170,23 +191,37 @@ feature {NONE} -- Object initialization
 			until
 				i > context.upper
 			loop
-				l_name := context.item (i).name
-				if is_special (objects.item (context.item (i).id)) then
-					l_special_object ?= objects.item (context.item (i).id)
+				l_name := context.item (i).type
+				if is_special (object_map.item (context.item (i).id)) then
+					l_special_object ?= object_map.item (context.item (i).id)
 					set_special_attributes (l_special_object, context.item (i).attributes)
-				elseif is_tuple (objects.item (context.item (i).id)) then
-					l_tuple_object ?= objects.item (context.item (i).id)
+				elseif is_tuple (object_map.item (context.item (i).id)) then
+					l_tuple_object ?= object_map.item (context.item (i).id)
 					check is_tuple_objects: l_tuple_object /= Void end
 					set_tuple_attributes (l_tuple_object, context.item (i).attributes)
 				elseif not (l_name.is_equal ("STRING_8") or l_name.is_equal ("STRING_32")) then
-					set_attributes (objects.item (context.item (i).id), context.item (i).attributes)
+					set_attributes (object_map.item (context.item (i).id), context.item (i).attributes)
 				end
 				i := i + 1
 			end
 
-			operands ?= objects.item (context.item (1).id)
+				-- Check if each object in context fulfills its invariants if it has to
+			from
+				i := context.lower
+			until
+				i > context.upper
+			loop
+				if context.item (i).inv then
+					object_map.item (context.item (i).id).do_nothing
+				end
+				i := i + 1
+			end
+
+			operands ?= object_map.item (context.item (1).id)
 				-- First object in context did not conform to operands type
-			check operands_not_valid: operands /= Void end
+			if operands = Void then
+				raise ("operands in context have wrong type")
+			end
 		ensure
 			context_set_up: is_context_set_up
 		end
@@ -284,8 +319,8 @@ feature {NONE} -- Object initialization
 					l_value := l_attributes.item (l_name)
 					inspect field_type (i, an_object)
 					when reference_type then
-						if objects.valid_key (l_value) then
-							set_reference_field (i, an_object, objects.item (l_value))
+						if object_map.valid_key (l_value) then
+							set_reference_field (i, an_object, object_map.item (l_value))
 						end
 					when boolean_type then
 						if l_value.is_boolean then
@@ -368,8 +403,8 @@ feature {NONE} -- Object initialization
 				i > a_tuple.count or i > an_attribute_list.count
 			loop
 				l_value := an_attribute_list.item (i)
-				if a_tuple.is_reference_item (i) and objects.valid_key (l_value) then
-					a_tuple.put_reference (objects.item (l_value), i)
+				if a_tuple.is_reference_item (i) and object_map.valid_key (l_value) then
+					a_tuple.put_reference (object_map.item (l_value), i)
 				elseif a_tuple.is_boolean_item (i) and l_value.is_boolean then
 					a_tuple.put_boolean (l_value.to_boolean, i)
 				elseif a_tuple.is_character_8_item (i) and l_value.count > 0 then
@@ -490,8 +525,8 @@ feature {NONE} -- Object initialization
 				l_value := an_attribute_list.item (i)
 				inspect l_type
 				when reference_type then
-					if objects.valid_key (l_value) then
-						a_special.put (objects.item (l_value), i-1)
+					if object_map.valid_key (l_value) then
+						a_special.put (object_map.item (l_value), i-1)
 					end
 				when boolean_type then
 					if l_value.is_boolean then
@@ -552,5 +587,8 @@ feature {NONE} -- Object initialization
 				i := i + 1
 			end
 		end
+
+invariant
+	object_map_valid: object_map /= Void and then object_map.capacity = context.count
 
 end

@@ -9,7 +9,7 @@ class
 
 inherit
 
-	CDD_SUPPORT
+	CDD_CONSTANTS
 
 	EB_CLUSTER_MANAGER_OBSERVER
 		rename
@@ -60,14 +60,22 @@ feature {NONE} -- Initialization
 
 feature -- Access (CDD Status)
 
-	is_cdd_enabled: BOOLEAN
+	is_cdd_enabled: BOOLEAN is
 			-- Is testing currently enabled?
+		do
+			Result := test_suite /= Void
+		end
 
-	is_capturing_enabled: BOOLEAN
+	is_capturing_enabled: BOOLEAN is
 			-- Is capturing currently enabled?
+		do
+			Result := is_cdd_enabled and then capturer /= Void
+		end
 
 	test_suite: CDD_TEST_SUITE
 			-- Test suite which is managed by `Current'
+
+	capturer: CDD_CAPTURER
 
 	can_enable_cdd: BOOLEAN is
 			-- Can cdd support be enabled?
@@ -115,7 +123,9 @@ feature -- Status setting (Application)
 			l_file: KL_TEXT_OUTPUT_FILE
 			l_cse: EIFFEL_CALL_STACK_ELEMENT
 		do
-			capturer.capture_call_stack (an_application_status)
+			if is_capturing_enabled then
+				capturer.capture_call_stack (an_application_status)
+			end
 		end
 
 	on_application_quit is
@@ -177,7 +187,7 @@ feature -- Status setting (CDD)
 		require
 			cdd_enabled: can_disable_cdd
 		do
-			-- TODO: make sure no execution is running....
+				-- TODO: make sure no execution is running....
 			target.remove_cluster (tests_cluster_name)
 			target.system.store
 			Discover_melt_cmd.execute
@@ -189,13 +199,13 @@ feature -- Status setting (CDD)
 	enable_capturing is
 			-- Enable capturing mode.
 		do
-			is_capturing_enabled := True
+			--is_capturing_enabled := True
 		end
 
 	disable_capturing is
 			-- Disable capturing mode.
 		do
-			is_capturing_enabled := False
+			--is_capturing_enabled := False
 		end
 
 	start_execution is
@@ -221,7 +231,23 @@ feature {EB_CLUSTERS} -- Status setting (Eiffel Project)
 	check_for_existing_cdd_cluster is
 			-- Check if testing was enabled for this project before
 			-- Note: This is usually called when project is opened.
+		local
+			l_cdd_enabled, l_cpt_enabled: BOOLEAN
+			l_cluster: CLUSTER_I
+			l_printer: CDD_TEST_CASE_PRINTER
 		do
+			l_cdd_enabled := is_cdd_enabled
+			l_cpt_enabled := is_capturing_enabled
+			l_cluster := eiffel_universe.cluster_of_name (tests_cluster_name)
+			if l_cluster /= Void and not is_cdd_enabled then
+				create test_suite.make_with_cluster (l_cluster)
+			end
+
+			if is_cdd_enabled and not is_capturing_enabled then
+				create l_printer.make_with_cluster (l_cluster)
+				create capturer.make
+				capturer.capture_observers.put_last (l_printer)
+			end
 		end
 
 	refresh is
@@ -247,18 +273,6 @@ feature -- Status change
 			-- Agents for redirecting all output from external processes
 
 feature {NONE} -- Implementation
-
-	printer: CDD_TEST_CASE_PRINTER
-			-- Printer for creating test cases
-		once
-			create Result
-		end
-
-	capturer: CDD_CAPTURER
-			-- Capturer used for retrieving reflection
-		once
-			create Result.make (Current)
-		end
 
 	conf_factory: CONF_FACTORY is
 			-- Factory for creating cdd library

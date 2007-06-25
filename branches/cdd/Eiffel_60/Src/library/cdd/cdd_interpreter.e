@@ -22,21 +22,17 @@ feature {NONE} -- Initialization
 
 	make is
 			-- Run `test_case' and report testing results.
-		local
-			l_executor: CDD_TEST_CASE_EXECUTOR
 		do
 			initialize_test_case
-			l_executor := test_case.executor
-			l_executor.execute
 
-			if l_executor.failed then
-				io.put_string ("Test failed:!%N")
-				io.put_string ("Reason: " + l_executor.reason.out)
-				io.put_string ("%NMessage: " + l_executor.message)
-				die (30)
-			else
-				io.put_string ("Test succeeded%N")
-			end
+--			if F then
+--				io.put_string ("Test failed:!%N")
+--				io.put_string ("Reason: " + l_executor.reason.out)
+--				io.put_string ("%NMessage: " + l_executor.message)
+--				die (30)
+--			else
+--				io.put_string ("Test succeeded%N")
+--			end
 		end
 
 feature -- Access

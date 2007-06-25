@@ -9,131 +9,177 @@ class
 
 inherit
 
+	CDD_CAPTURE_OBSERVER
+		rename
+			start as start_capturing,
+			finish as finish_capturing
+		end
+
 	CDD_CLASS_PRINTER
-		export
-			{NONE} all
-		redefine
-			initialize,
-			is_initialized,
-			terminate
-		end
-
-	DEBUG_VALUE_EXPORTER
+		rename
+			finish as finish_printing
 		export
 			{NONE} all
 		end
 
-feature {NONE} -- Initialization
-
-	initialize (a_file: like output_file) is
-			-- Set `output_file' to `a_file'.
-		do
-			Precursor (a_file)
-			create object_map.make (20)
-			create object_queue.make
-			object_count := 1
+	CDD_ROUTINES
+		export
+			{NONE} all
 		end
 
-feature -- Output
+create
+	make_with_cluster
 
-	print_test_case (a_cse: EIFFEL_CALL_STACK_ELEMENT; a_class_name: STRING; a_file: like output_file; an_uuid: STRING) is
-			-- Create cdd test case class for simulating `a_cse'. Test class shall be named `a_class_name' and be
-			-- written to `a_file'. Use `an_uuid' for the call stack's id.
+feature -- Initialization
+
+	make_with_cluster, set_cluster (a_cluster: like cluster) is
+			-- Set `a_cluster' to cluster
 		require
-			a_cse_not_void: a_cse /= Void
-			a_cse_valid: a_cse.dynamic_class /= Void and then a_cse.dynamic_class.is_eiffel_class_c
-			a_class_name_not_empty: a_class_name /= Void and then not a_class_name.is_empty
-			a_file_empty: a_file /= Void and then a_file.count = 0
-			a_file_writeable: a_file.is_open_write
-		local
-			l_class: EIFFEL_CLASS_C
-			l_feature: E_FEATURE
-			l_class_name, l_arg_tuple: STRING
-			l_is_creation_call: BOOLEAN
-			l_args: E_FEATURE_ARGUMENTS
+			a_cluster_not_void: a_cluster /= Void
 		do
-			l_class := a_cse.dynamic_class.eiffel_class_c
-			l_feature := a_cse.routine
-
-				-- Check wheter `l_feature' was used as an creation call
-			l_is_creation_call := l_class.creation_feature = l_feature.associated_feature_i
-			if not l_is_creation_call then
-				l_is_creation_call := l_class.creators /= Void and then l_class.creators.has (l_feature.name)
-			end
-
-				-- Initialize generic parameters for test case
-			l_class_name := l_class.name_in_upper
-			l_arg_tuple := "TUPLE"
-			l_args := l_feature.arguments
-			if l_args /= Void then
-				l_arg_tuple.append (" [")
-				from
-					l_args.start
-				until
-					l_args.after
-				loop
-					l_arg_tuple.append (l_args.item.dump)
-					if not l_args.islast then
-						l_arg_tuple.append (", ")
-					end
-					l_args.forth
-				end
-				l_arg_tuple.append ("]")
-			end
-
-				-- Start printing test case
-			initialize (a_file)
-			append_indexing (an_uuid, a_cse.level_in_stack)
-			append_class_header (l_class.name_in_upper, a_class_name, l_arg_tuple)
-
-			append_set_up (l_feature, l_is_creation_call)
-			append_access (l_class.name_in_upper, l_feature.name)
-			append_context (a_cse, l_is_creation_call, l_arg_tuple)
-
-			append_class_footer (a_class_name)
-			terminate
+			cluster := a_cluster
 		ensure
-			a_file_not_empty: a_file.count > 0
+			cluster_set: cluster = a_cluster
 		end
 
-feature {NONE} -- Implementation (Access)
+feature -- Access
 
 	is_initialized: BOOLEAN is
-			-- Can we create test case class text?
+			--
 		do
-			Result := Precursor and
-				object_map /= Void and
-				object_queue /= Void and
-				object_count > 0
+			Result := failed or else is_output_stream_valid
 		end
 
-	object_map: DS_HASH_TABLE [STRING, STRING]
-			-- Hash table that maps object addresses to an id in the test case context
+	cluster: CLUSTER_I
+			-- Cluster in which test cases will be created
 
-	object_queue: DS_LINKED_QUEUE [ABSTRACT_DEBUG_VALUE]
-			-- Queue of objects which still need to printed in the context
+feature	-- Basic operations
 
-	object_count: INTEGER
-			-- Number of objects inserted to into object queue total
-
-	is_reference_value (an_adv: ABSTRACT_DEBUG_VALUE): BOOLEAN is
-			-- Is `an_adv' a reference to some object?
+	start_capturing (a_feature: E_FEATURE; a_class: CLASS_C; a_cs_uuid: UUID; a_cs_level: INTEGER) is
+			-- Start capturing state for `a_feature' in `a_class'.
+			-- `a_cs_uuid' is an ID for the call stack and `a_cs_level' is the
+			-- index of the frame beeing captured.
+		local
+			l_class_name: STRING
+			an_output_file: KL_TEXT_OUTPUT_FILE
 		do
-			Result := an_adv.kind = {VALUE_TYPES}.reference_value or an_adv.kind = {VALUE_TYPES}.special_value
+			failed := False
+			printed_objects := 0
+			l_class_name := new_class_name (a_class)
+			if l_class_name = Void then
+				failed := True
+			else
+				create an_output_file.make (l_class_name.as_lower + ".e")
+				an_output_file.open_write
+				if not an_output_file.is_open_write then
+					failed := True
+				else
+					initialize (an_output_file)
+
+						-- Print test class headers
+					put_indexing (a_cs_uuid.out, a_cs_level)
+					put_class_header (l_class_name)
+
+					put_set_up (a_feature, is_creation_feature (a_feature))
+					put_access (a_class.name_in_upper, a_feature.name)
+
+					put_string ("feature -- Context%N%N")
+
+						-- Context
+					put_string ("%Tcontext: ARRAY [TUPLE [STRING, STRING, ARRAY [STRING]]] is%N")
+					put_string ("%T%T%T-- Context for executing test case%N")
+					put_string ("%T%T%T-- NOTE: by definition first element are arguments, second the object itself%N")
+					put_string ("%T%Tonce%N")
+					put_string ("%T%T%TResult := <<%N")
+				end
+			end
 		end
 
+	put_object (an_id, a_type: STRING; an_inv: BOOLEAN; some_attributes: DS_LIST [STRING]) is
+			-- Add a captured object of type `a_type' and attributes `some_attributes'.
+			-- `an_id' is the associated id for reconstructing the state and `an_inv'
+			-- indicated if the object has to fulfill its invariants.
+		local
+			l_attrs: STRING
+			l_cursor: DS_LIST_CURSOR [STRING]
+		do
+			if not failed then
+				if printed_objects > 0 then
+					put_string (",%N")
+				end
+				printed_objects := printed_objects + 1
+				create l_attrs.make_from_string ("<< ")
+				l_cursor := some_attributes.new_cursor
+				from
+					l_cursor.start
+				until
+					l_cursor.after
+				loop
+					l_attrs.append ("%"" + l_cursor.item + "%"")
+					if not l_cursor.is_last then
+						l_attrs.append (", ")
+					end
+					l_cursor.forth
+				end
+				l_attrs.append (" >>")
+				put_string ("[%"" + an_id + "%", %"" + a_type + "%", " + an_inv.out + ", " + l_attrs + "]")
+			end
+		rescue
+			failed := True
+			retry
+		end
+
+	finish_capturing is
+			-- Set `output_stream' to `Void'.
+		do
+			put_string ("%N%T%T%T%T>>%N%T%Tend%N%N")
+			put_class_footer
+			finish_printing
+		rescue
+			failed := True
+			retry
+		end
 
 feature {NONE} -- Implementation
 
-	terminate is
-			-- Clean up everything we used for creating test case class text.
+	failed: BOOLEAN
+			-- Has `Current' raised any exception since last call to `start_capturing'?
+
+	printed_objects: INTEGER
+			-- Number of objects printed to context since last `start_capturing'
+
+	new_class_name (a_cud: CLASS_C): STRING is
+			-- New unique test class name for testing `a_cud' in `a_cluster'.
+			-- Note: Result is Void if there are already 99 test classes for `a_cud'.
+		require
+			a_cud_not_void: a_cud /= Void
+		local
+			l_prefix: STRING
+			l_file: KL_TEXT_INPUT_FILE
+			i: INTEGER
 		do
-			Precursor
-			object_map := Void
-			object_queue := Void
+			l_prefix := "CDD_TEST_" + a_cud.name + "_"
+			from
+				i := 1
+			until
+				Result /= Void or i > 99
+			loop
+				create Result.make_from_string (l_prefix)
+				if i < 10 then
+					Result.append_character ('0')
+				end
+				--Result.append (i.out + ".e")
+				create l_file.make (cluster.location.build_path ("", Result.as_lower + ".e"))
+				if l_file.exists then
+					Result := Void
+				end
+				i := i + 1
+			end
+		ensure
+			not_empty: Result = Void or else not Result.is_empty
 		end
 
-	append_indexing (an_uuid: STRING; an_index: INTEGER) is
+	put_indexing (an_uuid: STRING; an_index: INTEGER) is
 			-- Append indexing clause using `an_uuid' for call
 			-- stack id and `an_index' for call stack index.
 		require
@@ -141,39 +187,33 @@ feature {NONE} -- Implementation
 			an_uuid_not_empty: an_uuid /= Void and then not an_uuid.is_empty
 			an_index_positive: an_index > 0
 		do
-			append_text ("indexing%N")
-			append_text ("%Tdescription: %"Objects that represent a cdd test case%"%N")
-			append_text ("%Tcall_stack_uuid: %"" + an_uuid + "%"%N")
-			append_text ("%Tcall_stack_index: " + an_index.out + "%N")
+			put_string ("indexing%N")
+			put_string ("%Tdescription: %"Objects that represent a cdd test case%"%N")
+			put_string ("%Tcall_stack_uuid: %"" + an_uuid + "%"%N")
+			put_string ("%Tcall_stack_index: " + an_index.out + "%N")
 			-- NOTE: not sure if class/feature information is needed by manager
 			-- since it is part of the test case class text -Arno
-			--append_text ("%Tcdd_cluster: %"" + l_class.cluster.cluster_name + "%"%N")
-			--append_text ("%Tcdd_class: %"" + l_class.name_in_upper + "%"%N")
-			--append_text ("%Tcdd_feature: %"" + a_name + "%"%N")
-			append_text ("%Tauthor: %"CDD_TEST_CASE_PRINTER%"%N")
-			append_text ("%Tdate: %"$Date$%"%N")
-			append_text ("%Trevision: %"$Revision$%"%N%N")
-		ensure
-			file_size_increased: output_file.count > old output_file.count
+			--put_string ("%Tcdd_cluster: %"" + l_class.cluster.cluster_name + "%"%N")
+			--put_string ("%Tcdd_class: %"" + l_class.name_in_upper + "%"%N")
+			--put_string ("%Tcdd_feature: %"" + a_name + "%"%N")
+			put_string ("%Tauthor: %"CDD_TEST_CASE_PRINTER%"%N")
+			put_string ("%Tdate: %"$Date$%"%N")
+			put_string ("%Trevision: %"$Revision$%"%N%N")
 		end
 
-	append_class_header (a_cut_name, a_class_name, an_arg_list: STRING) is
+	put_class_header (a_class_name: STRING) is
 			-- Append cdd test case class header with name `a_class_name' for testing `a_cut_name'.
 			-- The feature under test takes the arguments listed in `a_arg_list'.
 		require
 			initialized: is_initialized
 			a_class_name_not_empty: a_class_name /= Void and then not a_class_name.is_empty
-			a_cut_name_not_empty: a_cut_name /= Void and then not a_cut_name.is_empty
-			an_arg_list_not_empty: an_arg_list /= Void and then not an_arg_list.is_empty
 		do
-			append_text ("class%N%T" + a_class_name + "%N%N")
-			append_text ("inherit%N%TCDD_TEST_CASE [" + a_cut_name + ", " + an_arg_list + "]%N%N")
-			append_text ("%N%Ncreate%N%Tmake%N%N")
-		ensure
-			file_size_increased: output_file.count > old output_file.count
+			put_string ("class%N%T" + a_class_name + "%N%N")
+			put_string ("inherit%N%TCDD_TEST_CASE%N%N")
+			put_string ("%N%Ncreate%N%Tmake%N%N")
 		end
 
-	append_set_up (a_feature: E_FEATURE; an_is_creation_call: BOOLEAN) is
+	put_set_up (a_feature: E_FEATURE; an_is_creation_call: BOOLEAN) is
 			-- Append class header text for 'test_class_name'
 		require
 			initialized: is_initialized
@@ -181,382 +221,69 @@ feature {NONE} -- Implementation
 		local
 			i: INTEGER
 		do
-			append_text ("feature {NONE} -- Initialization%N%N")
-			append_text ("%Tset_up_routine is%N")
-			append_text ("%T%T%T-- Initialize agent that calls feature under test%N")
-			append_text ("%T%Tdo%N")
-			append_text ("%T%T%Troutine_under_test := agent ")
+			put_string ("feature {NONE} -- Initialization%N%N")
+			put_string ("%Tset_up_routine is%N")
+			put_string ("%T%T%T-- Initialize agent that calls feature under test%N")
+			put_string ("%T%Tdo%N")
+			put_string ("%T%T%Troutine_under_test := agent ")
 			if an_is_creation_call then
 				if a_feature.argument_count > 0 then
-					append_text ("(")
+					put_string ("(")
 					from
 						i := 1
 					until
 						i > a_feature.argument_count
 					loop
-						append_text ("an_arg" + i.out + ": " + a_feature.arguments.i_th (i).dump)
+						put_string ("an_arg" + i.out + ": " + a_feature.arguments.i_th (i).dump)
 						if i < a_feature.argument_count then
-							append_text ("; ")
+							put_string ("; ")
 						end
 						i := i + 1
 					end
-					append_text (")")
+					put_string (")")
 				end
-				append_text ("%N%T%T%T%Tdo%N%T%T%T%T%T")
-				append_text ("create object_under_test." + a_feature.name)
+				put_string ("%N%T%T%T%Tdo%N%T%T%T%T%T")
+				put_string ("create object_under_test." + a_feature.name)
 				if a_feature.argument_count > 0 then
-					append_text ("(")
+					put_string ("(")
 					from
 						i := 1
 					until
 						i > a_feature.argument_count
 					loop
-						append_text ("an_arg" + i.out)
+						put_string ("an_arg" + i.out)
 						if i < a_feature.argument_count then
-							append_text (", ")
+							put_string (", ")
 						end
 						i := i + 1
 					end
-					append_text (")")
+					put_string (")")
 				end
-				append_text ("%N%T%T%T%Tend")
+				put_string ("%N%T%T%T%Tend")
 			else
-				append_text ("object_under_test." + a_feature.name)
+				put_string ("object_under_test." + a_feature.name)
 			end
-			append_text ("%N%T%Tend%N%N")
-		ensure
-			file_size_increased: output_file.count > old output_file.count
+			put_string ("%N%T%Tend%N%N")
 		end
 
-	append_access (a_cut_name, a_feature_name: STRING) is
+	put_access (a_cut_name, a_feature_name: STRING) is
 			-- Append class header text for `test_class_name'.
 		require
 			initialized: is_initialized
 			a_cut_name_not_empty: a_cut_name /= Void and then not a_cut_name.is_empty
 			a_feature_name_not_empty: a_feature_name /= Void and then not a_feature_name.is_empty
 		do
-			append_text ("feature -- Access%N%N")
-			append_text ("%Tclass_under_test: STRING is %"" + a_cut_name + "%"%N")
-			append_text ("%T%T%T-- Name of the class beeing tested%N%N")
-			append_text ("%Tfeature_under_test: STRING is %"" + a_feature_name + "%"%N")
-			append_text ("%T%T%T-- Name of the feature beeing tested%N%N")
-		ensure
-			file_size_increased: output_file.count > old output_file.count
+			put_string ("feature -- Access%N%N")
+			put_string ("%Tclass_under_test: STRING is %"" + a_cut_name + "%"%N")
+			put_string ("%T%T%T-- Name of the class beeing tested%N%N")
+			put_string ("%Tfeature_under_test: STRING is %"" + a_feature_name + "%"%N")
+			put_string ("%T%T%T-- Name of the feature beeing tested%N%N")
 		end
 
-	append_context (a_cse: EIFFEL_CALL_STACK_ELEMENT; an_is_creation_call: BOOLEAN; an_arg_list: STRING) is
-			-- Append class header text for `test_class_name'
-		require
-			initialized: is_initialized
-			a_cse_valid: a_cse /= Void
-			an_arg_list_not_empty: an_arg_list /= Void and then not an_arg_list.is_empty
-		local
-			l_args: LIST [ABSTRACT_DEBUG_VALUE]
-			l_adv: ABSTRACT_DEBUG_VALUE
-			i: INTEGER
-		do
-				-- Reserve second object in context for object under test
-			if an_is_creation_call then
-				object_count := 2
-			else
-				add_referenced_object (a_cse.current_object_value)
-			end
-
-			append_text ("feature -- Context%N%N")
-
-				-- Context
-			append_text ("%Tcontext: ARRAY [TUPLE [STRING, STRING, ARRAY [STRING]]] is%N")
-			append_text ("%T%T%T-- Context for executing test case%N")
-			append_text ("%T%T%T-- NOTE: by definition first element are arguments, second the object itself%N")
-			append_text ("%T%Tonce%N")
-			append_text ("%T%T%TResult := <<%N")
-
-				-- Append arguments as first object in context
-			append_text ("%T%T%T%T%T-- Arguments for calling `routine_under_test'%N")
-			append_text ("%T%T%T%T[%"#1%", %"" + an_arg_list + "%", << ")
-			l_args := a_cse.arguments
-			if l_args /= Void then
-				from
-					i := 1
-				until
-					i > l_args.count
-				loop
-					l_adv := l_args.i_th (i)
-					append_text ("%"" + attribute_value (l_adv) + "%"")
-					if i < l_args.count then
-						append_text (", ")
-					end
-					i := i + 1
-				end
-			end
-			append_text (" >>],%N")
-
-			append_text ("%T%T%T%T%T-- Actual object under test%N")
-
-			if an_is_creation_call then
-					-- Append Void object since routine is an creation call
-				append_text ("%T%T%T%TVoid")
-				if not object_queue.is_empty then
-					append_text (",%N")
-				end
-			end
-
-			from until
-				object_queue.is_empty
-			loop
-				append_single_object_context (object_queue.item)
-				object_queue.remove
-				if not object_queue.is_empty then
-					append_text (",%N")
-				end
-			end
-
-			append_text ("%N%T%T%T%T>>%N%T%Tend%N%N")
-		ensure
-			file_size_increased: output_file.count > old output_file.count
-		end
-
-	add_referenced_object (an_adv: ABSTRACT_DEBUG_VALUE) is
-			-- Add `an_adv' to `object_map' and `object_queue'.
-		require
-			object_map_not_void: object_map /= Void
-			object_queue_not_void: object_queue /= Void
-			an_adv_valid: an_adv /= Void and is_reference_value (an_adv)
-			not_yet_added: not object_map.has (an_adv.address)
-		local
-			l_new_id: STRING
-		do
-			if object_map.is_full then
-				object_map.resize (object_map.capacity * 2)
-			end
-			object_count := object_count + 1
-			l_new_id := "#" + object_count.out
-			object_map.put (l_new_id, an_adv.address)
-			object_queue.put (an_adv)
-		ensure
-			added_to_mapping: object_map.has (an_adv.address)
-			added_to_queue: object_queue.count = old object_queue.count + 1
-		end
-
-	attribute_value (an_adv: ABSTRACT_DEBUG_VALUE): STRING is
-			-- Value represented by `an_adv' if it is a basic type,
-			-- otherwise the mapped id for the object it is pointing to.
-			-- Is void in case `an_adv' represents a void or unhandled value.
-		require
-			initialized: is_initialized
-		do
-			if is_reference_value (an_adv) then
-				if  an_adv.dynamic_class /= Void and then an_adv.dynamic_class.is_eiffel_class_c then
-					if not object_map.has (an_adv.address) then
-						add_referenced_object (an_adv)
-					end
-					Result := object_map.item (an_adv.address)
-				end
-			elseif an_adv.kind = {VALUE_TYPES}.immediate_value then
-				Result := an_adv.output_value
-			else
-				Result := "Void"
-			end
-		ensure
-			not_void: Result /= Void
-		end
-
-	append_single_object_context (an_object: ABSTRACT_DEBUG_VALUE) is
-			-- Append `an_object' with id `an_id' to test case context.
-		require
-			initialized: is_initialized
-			reference_value: is_reference_value (an_object)
-			added_object: object_map.has (an_object.address)
-		local
-			l_class: EIFFEL_CLASS_C
-			l_id, l_value: STRING
-			l_ref_adv: ABSTRACT_REFERENCE_VALUE
-		do
-			l_class := an_object.dynamic_class.eiffel_class_c
-
-			l_id := object_map.item (an_object.address)
-			append_text ("%T%T%T%T[%"" + l_id + "%", %"")
-			append_text (an_object.dump_value.generating_type_representation (True))
-			append_text ("%", ")
-
-			if l_class.name.is_equal ("STRING_8") or l_class.name.is_equal ("STRING_32") then
-				l_ref_adv ?= an_object
-				check l_ref_adv_not_void: l_ref_adv /= Void end
-				append_text ("<< %"" + l_ref_adv.dump_value.formatted_output + "%" >>")
-			elseif l_class.is_special or l_class.is_tuple then
-				append_object_attributes (an_object.children, False)
-			else
-				append_object_attributes (an_object.children, True)
-			end
-			append_text ("]")
-		end
-
-	append_object_attributes (an_attr_list: DS_LIST [ABSTRACT_DEBUG_VALUE]; an_use_attr_names: BOOLEAN) is
-			-- Append a list of attributes for `an_attr_list' in the context.
-			-- If `an_use_attr_name' is true, also provide the attributes names.
-		require
-			initialized: is_initialized
-			object_map_not_void: object_map /= Void
-			object_queue_not_void: object_queue /= Void
-			an_attr_list_not_void: an_attr_list /= Void
-		local
-			l_cursor: DS_LIST_CURSOR [ABSTRACT_DEBUG_VALUE]
-			l_child: ABSTRACT_DEBUG_VALUE
-			l_value: STRING
-		do
-			append_text ("<< ")
-			from
-				l_cursor := an_attr_list.new_cursor
-				l_cursor.start
-			until
-				l_cursor.after
-			loop
-				l_child := l_cursor.item
-				l_value := attribute_value (l_child)
-				if an_use_attr_names then
-					append_text ("%"" + l_child.name + "%", %"" + l_value + "%"")
-				else
-					append_text ("%"" + l_value + "%"")
-				end
-				if not l_cursor.is_last then
-					append_text (", ")
-				end
-				l_cursor.forth
-			end
-			append_text (" >>")
-		end
-
-	append_class_footer (test_class_name: STRING) is
+	put_class_footer is
 			-- Append class footer for test_class_name.
-		require
-			test_class_name_not_void: test_class_name /= Void
 		do
-			append_text ("%N%Nend -- class " + test_class_name + "%N%N")
-		ensure
-			file_size_increased: output_file.count > old output_file.count
+			put_string ("%N%Nend -- class %N%N")
 		end
-
--- NOTE: everything below (except invariants) is obsolete and will be removed soon...
-
-feature {CDD_OBJECT} -- Testcase generation
-
-	append_object_declaration (an_object: CDD_COMPOSITE_OBJECT) is
-			-- Append declaration text for 'an_object'
-		require
-			an_object_not_void: an_object /= Void
-		do
---			append_text ("%T" + an_object.identifier + ": " + an_object.type + "%N")
-		end
-
-	append_regular_creation (an_object: CDD_REGULAR_OBJECT) is
-			-- Append creation text for 'an_object'
-		require
-			an_object_not_void: an_object /= Void
-		do
-			--append_instruction (an_object.identifier + " ?= build_object (%"" +an_object.type + "%")")
-		end
-
-	append_regular_assignment (an_object: CDD_REGULAR_OBJECT) is
-			-- Append assignment text for 'an_object'.
-		require
-			an_object_not_void: an_object /= Void
-		local
-			instr: STRING
-			a_key: STRING
-			a_value: CDD_OBJECT
-		do
-			append_instruction ("create attributes.make (" + an_object.attributes.count.out + ")")
-			from
-				an_object.attributes.start
-			until
-				an_object.attributes.after
-			loop
-				a_key := an_object.attributes.key_for_iteration
-				a_value := an_object.attributes.item_for_iteration
-				instr := "" --"attributes.put (" + a_value.identifier + ", %""
-				instr.append (a_key + "%")")
-				append_instruction (instr)
-				an_object.attributes.forth
-			end
-			--append_instruction ("set_attributes (" + an_object.identifier + ")")
-		end
-
-	append_string_creation (a_string: CDD_STRING_OBJECT) is
-			-- Append creation text for 'a_string'
-		require
-			a_string_not_void: a_string /= Void
-		do
---			append_instruction (a_string.identifier + " := " + a_string.representation)
-		end
-
-	append_string_assignment (a_string: CDD_STRING_OBJECT) is
-			-- Append assignment text for 'a_string'
-		require
-			a_string_not_void: a_string /= Void
-		do
-			-- NOTE: do nothing since strings get fully assigned at creation
-		end
-
-
-	append_special_creation (a_special: CDD_SPECIAL_OBJECT) is
-			-- Append creation text for 'a_special'
-		require
-			a_special_not_void: a_special /= Void
-		do
---			append_instruction ("create " + a_special.identifier + ".make(" + a_special.attributes.count.out + ")")
-		end
-
-	append_special_assignment (a_special: CDD_SPECIAL_OBJECT) is
-			-- Append assignment text for 'a_special'.
-		require
-			a_special_not_void: a_special /= Void
-		local
-			i: INTEGER
-			instr: STRING
-		do
-			from
-				i := 0
-			until
-				i = a_special.attributes.count
-			loop
---				instr := a_special.identifier + ".put ("
---				instr.append (a_special.attributes.item (i.out).identifier)
---				instr.append (", " + i.out + ")")
---				append_instruction (instr)
-				i := i + 1
-			end
-		end
-
-	append_tuple_creation (a_tuple: CDD_TUPLE_OBJECT) is
-			-- Append creation text for 'a_tuple'.
-		require
-			a_tuple_not_void: a_tuple /= Void
-		do
---			append_instruction ("create " + a_tuple.identifier)
-		end
-
-	append_tuple_assignment (a_tuple: CDD_TUPLE_OBJECT) is
-			-- Append assignment text for 'a_tuple'.
-		require
-			a_tuple_not_void: a_tuple /= Void
-		local
-			i: INTEGER
-			instr: STRING
-		do
-			from
-				i := 1
-			until
-				i > a_tuple.attributes.count
-			loop
---				instr := a_tuple.identifier + ".put ("
---				instr.append (a_tuple.attributes.item (i.out).identifier + ", " + i.out)
---				instr.append (")")
---				append_instruction (instr)
-				i := i + 1
-			end
-		end
-
-invariant
-	object_count_not_negative: object_count >= 0
 
 end
