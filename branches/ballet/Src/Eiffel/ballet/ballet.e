@@ -104,10 +104,10 @@ feature -- Verification
 					write_background_theory
 					cls_ast := current_class.ast
 
-					create bpl_ast_printer.make (current_class)
-					ml := match_list_server.item (current_class.class_id)
-					bpl_ast_printer.setup (current_class.ast, ml, False, False)
-					bpl_ast_printer.process_ast_node (cls_ast)
+					-- create bpl_ast_printer.make (current_class)
+					-- ml := match_list_server.item (current_class.class_id)
+					-- bpl_ast_printer.setup (current_class.ast, ml, False, False)
+					-- bpl_ast_printer.process_ast_node (cls_ast)
 
 					create bpl_bn_printer.make (current_class)
 					bpl_bn_printer.visit_all_features

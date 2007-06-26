@@ -66,8 +66,6 @@ feature -- Initialization
 		do
 			Precursor {BPL_BN_ITERATOR} (a_class)
 			reset
-		ensure then
-			in_contract_mode: not is_writing_implementation
 		end
 
 feature -- Main
@@ -76,7 +74,6 @@ feature -- Main
 			-- Write the definition of the function pointed to by `a_function'.
 		require
 			as_not_void: a_function /= Void
-			in_contract_mode: not is_writing_implementation
 		local
 			feat_name: STRING
 			func_name: STRING
@@ -290,31 +287,6 @@ feature -- Processing Environment
 			value_set: this_ref = a_string
 		end
 
-	is_writing_implementation: BOOLEAN
-			-- Is the function writer generating code for implementations?
-
-	is_writing_contract: BOOLEAN is
-			-- Is the function writer generating code for contracts?
-		do
-			Result := not is_writing_implementation
-		end
-
-	write_implementation_mode is
-			-- Switch the function writer to generate code for implementation.
-		do
-			is_writing_implementation := True
-		ensure
-			status_set: is_writing_implementation
-		end
-
-	write_contact_mode is
-			-- Switch the function writer to generate code for contracts.
-		do
-			is_writing_implementation := False
-		ensure
-			status_set: is_writing_contract
-		end
-
 feature -- Result and side-effects
 
 	expr: STRING
@@ -364,36 +336,37 @@ feature -- Processing
 			-- Process `a_node'.
 		local
 			var: STRING
+			new_side_effect: STRING
 			new_code: STRING
 		do
-			if is_writing_implementation then
-				new_label ("attr")
-				var := last_label
-				new_code := "    call "
-				new_code.append (var)
-				new_code.append (" := proc.")
-			else
-				new_code := "fun."
-			end
+			-- Compute Side-Effect
+			new_label ("attr")
+			var := last_label
+			new_side_effect := "    call "
+			new_side_effect.append (var)
+			new_side_effect.append (" := proc.")
+			new_side_effect.append (System.class_of_id(a_node.written_in).name)
+			new_side_effect.append (".")
+			new_side_effect.append (a_node.attribute_name)
+			new_side_effect.append ("(")
+			new_side_effect.append (this_ref)
+			new_side_effect.append (")")
+			new_side_effect.append ("; ")
+			new_side_effect.append (location_info (a_node))
+			side_effect.append (new_side_effect)
+			record_local_var (var, bpl_type_for_type_i (a_node.type))
+
+			-- Compute function call
+			new_code := "fun."
 			new_code.append (System.class_of_id(a_node.written_in).name)
 			new_code.append (".")
 			new_code.append (a_node.attribute_name)
 			new_code.append ("(")
-			if is_writing_contract then
-				new_code.append (heap_ref)
-				new_code.append (", ")
-			end
+			new_code.append (heap_ref)
+			new_code.append (", ")
 			new_code.append (this_ref)
 			new_code.append (")")
-			if is_writing_implementation then
-				new_code.append ("; ")
-				new_code.append (location_info (a_node))
-				side_effect.append (new_code)
-				record_local_var (var, bpl_type_for_type_i (a_node.type))
-				expr.append (var)
-			else
-				expr.append (new_code)
-			end
+			expr.append (new_code)
 		end
 
 	process_bin_and_b (a_node: BIN_AND_B) is
@@ -596,8 +569,10 @@ feature -- Processing
 			var: STRING
 			i: INTEGER
 			args: STRING
+			side_effect_args: STRING
 			tmp_expr: STRING
 			new_code: STRING
+			new_side_effect: STRING
 			cls_name: STRING
 			special_call: BOOLEAN
 		do
@@ -605,11 +580,13 @@ feature -- Processing
 			special_call := Mapping_table.item (cls_name) /= Void
 
 			args := ""
-			if is_writing_contract and not special_call then
+			if not special_call then
 				args.append (heap_ref)
 				args.append (", ")
 			end
 			args.append (this_ref)
+			side_effect_args := ""
+			side_effect_args.append (this_ref)
 
 			tmp_expr := expr
 			if a_node.parameters /= Void then
@@ -622,27 +599,39 @@ feature -- Processing
 					safe_process (a_node.parameters.i_th (i))
 					args.append (", ")
 					args.append(expr)
+					side_effect_args.append (", ")
+					side_effect_args.append(expr)
 					i := i + 1
 				end
 			end
 			expr := tmp_expr
 
 			if special_call then
+				-- Call on special classes
 				new_code := ""
 				new_code.append(Mapping_table.item (cls_name))
 				new_code.append(".")
 				new_code.append(a_node.feature_name)
 			else
-				if is_writing_implementation then
-					new_label ("zwerg")
-					var := last_label
-					record_local_var (var, bpl_type_for_type_i (a_node.type))
-					new_code := "    call "
-					new_code.append (var)
-					new_code.append (" := proc.")
-				else
-					new_code := "fun."
-				end
+				-- Not special calls have potential side-effects
+				new_label ("zwerg")
+				var := last_label
+				record_local_var (var, bpl_type_for_type_i (a_node.type))
+				new_side_effect := "    call "
+				new_side_effect.append (var)
+				new_side_effect.append (" := proc.")
+				new_side_effect.append (cls_name)
+				new_side_effect.append (".")
+				new_side_effect.append (a_node.feature_name)
+				new_side_effect.append ("(")
+				new_side_effect.append (args)
+				new_side_effect.append (")")
+				new_side_effect.append ("; ")
+				new_side_effect.append (location_info (a_node))
+				side_effect.append (new_side_effect)
+
+				-- Call on regular classes
+				new_code := "fun."
 				new_code.append (cls_name)
 				new_code.append (".")
 				new_code.append (a_node.feature_name)
@@ -650,14 +639,7 @@ feature -- Processing
 			new_code.append ("(")
 			new_code.append (args)
 			new_code.append (")")
-			if is_writing_implementation then
-				new_code.append ("; ")
-				new_code.append (location_info (a_node))
-				side_effect.append (new_code)
-				expr.append (var)
-			else
-				expr.append (new_code)
-			end
+			expr.append (new_code)
 		end
 
 	process_creation_expr_b (a_node: CREATION_EXPR_B) is
@@ -710,13 +692,20 @@ feature -- Processing
 			tmp_expr: STRING
 			tmp_this_ref: STRING
 		do
+			-- First, store the expr somewhere
 			tmp_expr := expr
+			-- Evatuate the target expression
 			expr := ""
 			safe_process (a_node.target)
+			-- Store the this_ref somewhere
 			tmp_this_ref := this_ref
+			-- Make the target expression the this expression
 			this_ref := expr
+			-- Restore the expr
 			expr := tmp_expr
+			-- Call the actual query
 			safe_process (a_node.message)
+			-- Restore the this expression to its original value
 			this_ref := tmp_this_ref
 		end
 
@@ -764,6 +753,4 @@ feature -- Processing
 			expr.append ("null")
 		end
 
-invariant
-	one_mode: is_writing_implementation /= is_writing_contract
 end

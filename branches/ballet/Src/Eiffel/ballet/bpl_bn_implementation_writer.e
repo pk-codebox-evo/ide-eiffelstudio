@@ -40,7 +40,6 @@ feature -- Generation
 			function_writer.set_heap_ref ("Heap")
 			function_writer.set_this_ref ("Current")
 			function_writer.set_result_call ("Result")
-			function_writer.write_implementation_mode
 			code := ""
 			local_vars := ""
 			bpl_out ("// Implementation: "+a_feature.feature_name+" of class "+current_class.name+"%N")
