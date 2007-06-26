@@ -276,6 +276,7 @@ feature -- Processing Environment
 		end
 
 	this_ref: STRING
+	current_this_ref: STRING
 
 	set_this_ref (a_string: STRING) is
 			-- Set the text to insert on a reference to the current object.
@@ -283,6 +284,7 @@ feature -- Processing Environment
 			not_void: a_string /= Void
 		do
 			this_ref := a_string
+			current_this_ref := this_ref
 		ensure
 			value_set: this_ref = a_string
 		end
@@ -349,7 +351,7 @@ feature -- Processing
 			new_side_effect.append (".")
 			new_side_effect.append (a_node.attribute_name)
 			new_side_effect.append ("(")
-			new_side_effect.append (this_ref)
+			new_side_effect.append (current_this_ref)
 			new_side_effect.append (")")
 			new_side_effect.append ("; ")
 			new_side_effect.append (location_info (a_node))
@@ -571,6 +573,7 @@ feature -- Processing
 			args: STRING
 			side_effect_args: STRING
 			tmp_expr: STRING
+			tmp_this_ref: STRING
 			new_code: STRING
 			new_side_effect: STRING
 			cls_name: STRING
@@ -584,17 +587,19 @@ feature -- Processing
 				args.append (heap_ref)
 				args.append (", ")
 			end
-			args.append (this_ref)
+			args.append (current_this_ref)
 			side_effect_args := ""
-			side_effect_args.append (this_ref)
+			side_effect_args.append (current_this_ref)
 
 			tmp_expr := expr
+			tmp_this_ref := current_this_ref
 			if a_node.parameters /= Void then
 				from
 					i := 1
 				until
 					i > a_node.parameters.count
 				loop
+					current_this_ref := this_ref
 					expr := ""
 					safe_process (a_node.parameters.i_th (i))
 					args.append (", ")
@@ -604,6 +609,7 @@ feature -- Processing
 					i := i + 1
 				end
 			end
+			current_this_ref := this_ref
 			expr := tmp_expr
 
 			if special_call then
@@ -690,23 +696,20 @@ feature -- Processing
 			-- Process `a_node'.
 		local
 			tmp_expr: STRING
-			tmp_this_ref: STRING
 		do
 			-- First, store the expr somewhere
 			tmp_expr := expr
 			-- Evatuate the target expression
 			expr := ""
 			safe_process (a_node.target)
-			-- Store the this_ref somewhere
-			tmp_this_ref := this_ref
 			-- Make the target expression the this expression
-			this_ref := expr
+			current_this_ref := expr
 			-- Restore the expr
 			expr := tmp_expr
 			-- Call the actual query
 			safe_process (a_node.message)
 			-- Restore the this expression to its original value
-			this_ref := tmp_this_ref
+			current_this_ref := this_ref
 		end
 
 	process_paran_b (a_node: PARAN_B) is
