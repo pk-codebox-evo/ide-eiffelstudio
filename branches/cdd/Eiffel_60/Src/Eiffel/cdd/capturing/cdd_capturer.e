@@ -104,6 +104,9 @@ feature {NONE} -- Implementation (Capturing)
 			l_feature: E_FEATURE
 			l_class: CLASS_C
 			l_cursor: DS_LINKED_LIST_CURSOR [CDD_CAPTURE_OBSERVER]
+			l_arguments: DS_ARRAYED_LIST [ABSTRACT_DEBUG_VALUE]
+			i,j: INTEGER
+			l_type: STRING
 		do
 			l_cursor := capture_observers.new_cursor
 			l_feature := a_cse.routine
@@ -119,11 +122,44 @@ feature {NONE} -- Implementation (Capturing)
 				l_cursor.forth
 			end
 
+				-- Add operands as first object of context
+			current_object_id := 1
+			create object_queue.make
+			create object_map.make (20) -- Note: this value says how many objects we assume to reflect...
+
+			if not is_creation_feature (l_feature) then
+				i := 1
+			end
+			create l_arguments.make (l_feature.argument_count + i)
+			l_type := "TUPLE ["
+			if i > 0 then
+				l_arguments.put_first (a_cse.current_object_value)
+				l_type.append (a_cse.dynamic_class.name_in_upper)
+				if l_feature.argument_count > 0 then
+					l_type.append (", ")
+				end
+			end
+
+			from
+				j := 1
+			until
+				j > l_feature.argument_count
+			loop
+				l_arguments.put (a_cse.arguments.i_th (j), j + i)
+				l_type.append (l_feature.arguments.i_th (j).associated_class.name_in_upper)
+				if l_feature.argument_count > j then
+					l_type.append (", ")
+				end
+				j := j + 1
+			end
+			l_type.append ("]")
+			put_object ("#operand", l_type, True, fetch_object_attributes (l_arguments, False))
+
 				-- Start capturing objects
 			from until
 				object_queue.is_empty
 			loop
-				put_object (object_queue.item)
+				process_object (object_queue.item)
 				object_queue.remove
 			end
 
@@ -138,7 +174,7 @@ feature {NONE} -- Implementation (Capturing)
 			end
 		end
 
-	put_object (an_object: ABSTRACT_DEBUG_VALUE) is
+	process_object (an_object: ABSTRACT_DEBUG_VALUE) is
 			--
 		require
 			capturing: is_capturing
@@ -149,7 +185,6 @@ feature {NONE} -- Implementation (Capturing)
 			l_id, l_type: STRING
 			l_ref_adv: ABSTRACT_REFERENCE_VALUE
 			l_attrs: DS_LIST [STRING]
-			l_cursor: DS_LINKED_LIST_CURSOR [CDD_CAPTURE_OBSERVER]
 		do
 			l_class := an_object.dynamic_class.eiffel_class_c
 			l_type := an_object.dump_value.generating_type_representation (True)
@@ -165,15 +200,26 @@ feature {NONE} -- Implementation (Capturing)
 			else
 				l_attrs := fetch_object_attributes (an_object.children, True)
 			end
+				-- TODO: replace boolean constant in feature call
+			put_object (l_id, l_type, True, l_attrs)
+		end
 
+	put_object (an_id, a_type: STRING; an_inv: BOOLEAN; some_attrs: DS_LIST [STRING]) is
+			--
+		require
+			an_id_not_empty: an_id /= Void and then not an_id.is_empty
+			a_type_not_empty: a_type /= Void and then not a_type.is_empty
+			some_attrs_valid: some_attrs /= Void and then not some_attrs.has (Void)
+		local
+			l_cursor: DS_LINKED_LIST_CURSOR [CDD_CAPTURE_OBSERVER]
+		do
 			l_cursor := capture_observers.new_cursor
 			from
 				l_cursor.start
 			until
 				l_cursor.after
 			loop
-					-- TODO: replace boolean constant in feature call
-				l_cursor.item.put_object (l_id, l_type, True, l_attrs)
+				l_cursor.item.put_object (an_id, a_type, an_inv, some_attrs)
 				l_cursor.forth
 			end
 		end

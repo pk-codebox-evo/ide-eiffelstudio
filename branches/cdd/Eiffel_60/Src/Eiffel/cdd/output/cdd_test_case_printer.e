@@ -69,7 +69,7 @@ feature	-- Basic operations
 			if l_class_name = Void then
 				failed := True
 			else
-				create an_output_file.make (l_class_name.as_lower + ".e")
+				create an_output_file.make (cluster.location.build_path ("", l_class_name.as_lower + ".e"))
 				an_output_file.open_write
 				if not an_output_file.is_open_write then
 					failed := True
@@ -81,16 +81,20 @@ feature	-- Basic operations
 					put_class_header (l_class_name)
 
 					put_set_up (a_feature, is_creation_feature (a_feature))
-					put_access (a_class.name_in_upper, a_feature.name)
+					put_access (a_class.name_in_upper, a_feature)
 
-					put_string ("feature -- Context%N%N")
+					put_line ("feature -- Context%N")
 
 						-- Context
-					put_string ("%Tcontext: ARRAY [TUPLE [STRING, STRING, ARRAY [STRING]]] is%N")
-					put_string ("%T%T%T-- Context for executing test case%N")
-					put_string ("%T%T%T-- NOTE: by definition first element are arguments, second the object itself%N")
-					put_string ("%T%Tonce%N")
-					put_string ("%T%T%TResult := <<%N")
+					increase_indent
+					put_line ("context: ARRAY [TUPLE [STRING, STRING, BOOLEAN, ARRAY [STRING]]] is")
+					increase_indent
+					put_comment ("Context for executing test case")
+					put_comment ("NOTE: by definition first element is operand for calling `routine_under_test'")
+					put_line ("once")
+					increase_indent
+					put_line ("Result := <<")
+					increase_indent
 				end
 			end
 		end
@@ -122,6 +126,7 @@ feature	-- Basic operations
 					l_cursor.forth
 				end
 				l_attrs.append (" >>")
+				put_string (indent)
 				put_string ("[%"" + an_id + "%", %"" + a_type + "%", " + an_inv.out + ", " + l_attrs + "]")
 			end
 		rescue
@@ -132,9 +137,18 @@ feature	-- Basic operations
 	finish_capturing is
 			-- Set `output_stream' to `Void'.
 		do
-			put_string ("%N%T%T%T%T>>%N%T%Tend%N%N")
-			put_class_footer
-			finish_printing
+			if not failed then
+				decrease_indent
+				put_string ("%N")
+				put_line (">>")
+				decrease_indent
+				put_line ("end")
+				decrease_indent
+				put_class_footer
+				output_stream.flush
+				output_stream.close
+				finish_printing
+			end
 		rescue
 			failed := True
 			retry
@@ -168,7 +182,7 @@ feature {NONE} -- Implementation
 				if i < 10 then
 					Result.append_character ('0')
 				end
-				--Result.append (i.out + ".e")
+				Result.append (i.out)
 				create l_file.make (cluster.location.build_path ("", Result.as_lower + ".e"))
 				if l_file.exists then
 					Result := Void
@@ -187,18 +201,16 @@ feature {NONE} -- Implementation
 			an_uuid_not_empty: an_uuid /= Void and then not an_uuid.is_empty
 			an_index_positive: an_index > 0
 		do
-			put_string ("indexing%N")
-			put_string ("%Tdescription: %"Objects that represent a cdd test case%"%N")
-			put_string ("%Tcall_stack_uuid: %"" + an_uuid + "%"%N")
-			put_string ("%Tcall_stack_index: " + an_index.out + "%N")
-			-- NOTE: not sure if class/feature information is needed by manager
-			-- since it is part of the test case class text -Arno
-			--put_string ("%Tcdd_cluster: %"" + l_class.cluster.cluster_name + "%"%N")
-			--put_string ("%Tcdd_class: %"" + l_class.name_in_upper + "%"%N")
-			--put_string ("%Tcdd_feature: %"" + a_name + "%"%N")
-			put_string ("%Tauthor: %"CDD_TEST_CASE_PRINTER%"%N")
-			put_string ("%Tdate: %"$Date$%"%N")
-			put_string ("%Trevision: %"$Revision$%"%N%N")
+			put_line ("indexing%N")
+			increase_indent
+			put_line ("description: %"Objects that represent a cdd test case%"")
+			put_line ("call_stack_uuid: %"" + an_uuid + "%"")
+			put_line ("call_stack_index: " + an_index.out + "")
+			put_line ("author: %"CDD Tool%"")
+			put_line ("date: %"$Date$%"")
+			put_line ("revision: %"$Revision$%"")
+			decrease_indent
+			put_line ("")
 		end
 
 	put_class_header (a_class_name: STRING) is
@@ -208,9 +220,18 @@ feature {NONE} -- Implementation
 			initialized: is_initialized
 			a_class_name_not_empty: a_class_name /= Void and then not a_class_name.is_empty
 		do
-			put_string ("class%N%T" + a_class_name + "%N%N")
-			put_string ("inherit%N%TCDD_TEST_CASE%N%N")
-			put_string ("%N%Ncreate%N%Tmake%N%N")
+			put_line ("class")
+			increase_indent
+			put_line (a_class_name + "%N")
+			decrease_indent
+			put_line ("inherit")
+			increase_indent
+			put_line ("CDD_EXTRACTED_TEST_CASE%N")
+			decrease_indent
+			put_line ("create")
+			increase_indent
+			put_line ("make%N")
+			decrease_indent
 		end
 
 	put_set_up (a_feature: E_FEATURE; an_is_creation_call: BOOLEAN) is
@@ -220,64 +241,100 @@ feature {NONE} -- Implementation
 			a_feature_not_void: a_feature /= Void
 		local
 			i: INTEGER
+			l_agent, l_class: STRING
 		do
-			put_string ("feature {NONE} -- Initialization%N%N")
-			put_string ("%Tset_up_routine is%N")
-			put_string ("%T%T%T-- Initialize agent that calls feature under test%N")
-			put_string ("%T%Tdo%N")
-			put_string ("%T%T%Troutine_under_test := agent ")
-			if an_is_creation_call then
+			put_line ("feature {NONE} -- Initialization%N")
+			increase_indent
+			put_line ("set_up_routine is")
+			increase_indent
+			put_comment ("Initialize agent that calls feature under test")
+			put_line ("do")
+			increase_indent
+			l_class := a_feature.associated_class.name_in_upper
+			l_agent := "routine_under_test := agent "
+			if an_is_creation_call or a_feature.is_infix or a_feature.is_prefix then
 				if a_feature.argument_count > 0 then
-					put_string ("(")
+					l_agent.append ("(")
 					from
 						i := 1
 					until
 						i > a_feature.argument_count
 					loop
-						put_string ("an_arg" + i.out + ": " + a_feature.arguments.i_th (i).dump)
+						l_agent.append ("an_arg" + i.out + ": " + a_feature.arguments.i_th (i).associated_class.name_in_upper)
 						if i < a_feature.argument_count then
-							put_string ("; ")
+							l_agent.append ("; ")
 						end
 						i := i + 1
 					end
-					put_string (")")
+					l_agent.append (")")
 				end
-				put_string ("%N%T%T%T%Tdo%N%T%T%T%T%T")
-				put_string ("create object_under_test." + a_feature.name)
-				if a_feature.argument_count > 0 then
-					put_string ("(")
-					from
-						i := 1
-					until
-						i > a_feature.argument_count
-					loop
-						put_string ("an_arg" + i.out)
-						if i < a_feature.argument_count then
-							put_string (", ")
+				if a_feature.has_return_value then
+					l_agent.append (": " + a_feature.associated_class.name_in_upper)
+				else
+					l_agent.append (": " + l_class)
+				end
+				put_line (l_agent)
+				increase_indent
+				put_line ("do")
+				increase_indent
+				if an_is_creation_call then
+					l_agent := "Result := create {" + l_class + "}." + a_feature.name
+					if a_feature.argument_count > 0 then
+						l_agent.append (" (")
+						from
+							i := 1
+						until
+							i > a_feature.argument_count
+						loop
+							l_agent.append ("an_arg" + i.out)
+							if i < a_feature.argument_count then
+								l_agent.append (", ")
+							end
+							i := i + 1
 						end
-						i := i + 1
+						l_agent.append (")")
 					end
-					put_string (")")
+				elseif a_feature.is_infix then
+					l_agent := "Result := an_arg1 " + a_feature.infix_symbol + " an_arg2"
+				else
+					l_agent := "Result := " + a_feature.prefix_symbol + "an_arg1"
 				end
-				put_string ("%N%T%T%T%Tend")
+				put_line (l_agent)
+				decrease_indent
+				put_line ("end")
+				decrease_indent
 			else
-				put_string ("object_under_test." + a_feature.name)
+				put_line (l_agent + "{" + l_class + "}." + a_feature.name)
 			end
-			put_string ("%N%T%Tend%N%N")
+			decrease_indent
+			put_line ("end%N")
+			decrease_indent
+			decrease_indent
 		end
 
-	put_access (a_cut_name, a_feature_name: STRING) is
+	put_access (a_cut_name: STRING; a_feature: E_FEATURE) is
 			-- Append class header text for `test_class_name'.
 		require
 			initialized: is_initialized
 			a_cut_name_not_empty: a_cut_name /= Void and then not a_cut_name.is_empty
-			a_feature_name_not_empty: a_feature_name /= Void and then not a_feature_name.is_empty
+			a_feature_not_void: a_feature /= Void
+		local
+			l_feature_name: STRING
 		do
-			put_string ("feature -- Access%N%N")
-			put_string ("%Tclass_under_test: STRING is %"" + a_cut_name + "%"%N")
-			put_string ("%T%T%T-- Name of the class beeing tested%N%N")
-			put_string ("%Tfeature_under_test: STRING is %"" + a_feature_name + "%"%N")
-			put_string ("%T%T%T-- Name of the feature beeing tested%N%N")
+			put_line ("feature -- Access%N")
+			increase_indent
+			put_line ("class_under_test: STRING is %"" + a_cut_name + "%"")
+			put_comment ("Name of the class beeing tested%N")
+			if a_feature.is_infix then
+				l_feature_name := "infix %%%"" + a_feature.infix_symbol + "%%%""
+			elseif a_feature.is_prefix then
+				l_feature_name := "prefix %%%"" + a_feature.prefix_symbol + "%%%""
+			else
+				l_feature_name := a_feature.name
+			end
+			put_line ("feature_under_test: STRING is %"" + l_feature_name + "%"")
+			put_comment ("Name of the feature beeing tested%N")
+			decrease_indent
 		end
 
 	put_class_footer is

@@ -93,6 +93,10 @@ feature {NONE} -- Initialization
 			create {DEBUGGER_TEXT_FORMATTER_OUTPUT} text_formatter_visitor.make
 
 			window_manager.add_observer (Current)
+
+
+				-- Invoke cdd manager so instance of it is created...
+			cdd_manager.do_nothing 
 		end
 
 	initialize is

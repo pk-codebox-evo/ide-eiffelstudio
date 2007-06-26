@@ -54,7 +54,7 @@ feature {NONE} -- Initialization
 		do
 			l_prj_manager := eiffel_project.manager
 			l_prj_manager.load_agents.extend (agent check_for_existing_cdd_cluster)
-			l_prj_manager.compile_stop_agents.extend (agent refresh)
+			l_prj_manager.compile_stop_agents.extend (agent check_for_existing_cdd_cluster)
 			eb_cluster_manager.add_observer (Current)
 		end
 
@@ -281,6 +281,5 @@ feature {NONE} -- Implementation
 		end
 
 invariant
-	capturer_not_void: capturer /= Void
 	capturing_implies_cdd_enabled: is_capturing_enabled implies is_cdd_enabled
 end
