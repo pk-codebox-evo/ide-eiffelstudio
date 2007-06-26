@@ -10,7 +10,7 @@
 function IsHeap(h:[ref,name]any) returns (bool);
 
 // Given an heap, some things are allocated
-const $allocated:name;
+const unique $allocated:name;
 function IsAllocated(h: [ref,name]any, o: any) returns (bool);
 axiom (forall h: [ref,name]any, o: ref ::
         IsAllocated(h,o) <==> cast(h[o,$allocated],bool));
