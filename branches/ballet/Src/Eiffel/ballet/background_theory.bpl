@@ -168,11 +168,9 @@ axiom (forall h:[ref,name]any,a:ref,b:ref :: { fun.ANY.conforms_to(h,a,b) }
 // INTEGER_32 functions
 
 // abs
-function fun.INTEGER_32_REF.abs([ref,name]any,int) returns (int);
-axiom (forall h:[ref,name]any,c:int :: { fun.INTEGER_32_REF.abs(h,c) }
-	(c >= 0) ==> (fun.INTEGER_32_REF.abs(h,c) == c));
-axiom (forall h:[ref,name]any,c:int :: { fun.INTEGER_32_REF.abs(h,c) }
-	(c < 0) ==> (fun.INTEGER_32_REF.abs(h,c) == -c));
+function int.abs(int) returns (int);
+axiom (forall c:int :: { int.abs(c) } (c >= 0) ==> (int.abs(c) == c));
+axiom (forall c:int :: { int.abs(c) } (c <= 0) ==> (int.abs(c) == -c));
 
 // out
 function fun.INTEGER_32.out([ref,name]any,int) returns (ref);
