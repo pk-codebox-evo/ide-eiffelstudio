@@ -624,7 +624,7 @@ feature -- Processing
 				new_side_effect.append (".")
 				new_side_effect.append (a_node.feature_name)
 				new_side_effect.append ("(")
-				new_side_effect.append (args)
+				new_side_effect.append (side_effect_args)
 				new_side_effect.append (")")
 				new_side_effect.append ("; ")
 				new_side_effect.append (location_info (a_node))
