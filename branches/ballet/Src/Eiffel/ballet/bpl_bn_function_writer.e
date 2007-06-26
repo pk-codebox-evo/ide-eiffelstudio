@@ -366,7 +366,7 @@ feature -- Processing
 			new_code.append ("(")
 			new_code.append (heap_ref)
 			new_code.append (", ")
-			new_code.append (this_ref)
+			new_code.append (current_this_ref)
 			new_code.append (")")
 			expr.append (new_code)
 		end
@@ -609,7 +609,7 @@ feature -- Processing
 					i := i + 1
 				end
 			end
-			current_this_ref := this_ref
+			current_this_ref := tmp_this_ref
 			expr := tmp_expr
 
 			if special_call then
@@ -694,12 +694,15 @@ feature -- Processing
 			-- Process `a_node'.
 		local
 			tmp_expr: STRING
+			tmp_this_ref: STRING
 		do
 			-- First, store the expr somewhere
 			tmp_expr := expr
 			-- Evatuate the target expression
 			expr := ""
 			safe_process (a_node.target)
+			-- Safe the current_this_ref
+			tmp_this_ref := current_this_ref
 			-- Make the target expression the this expression
 			current_this_ref := expr
 			-- Restore the expr
@@ -707,7 +710,7 @@ feature -- Processing
 			-- Call the actual query
 			safe_process (a_node.message)
 			-- Restore the this expression to its original value
-			current_this_ref := this_ref
+			current_this_ref := tmp_this_ref
 		end
 
 	process_paran_b (a_node: PARAN_B) is

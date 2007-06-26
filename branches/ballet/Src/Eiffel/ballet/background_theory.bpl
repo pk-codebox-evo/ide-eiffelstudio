@@ -7,36 +7,32 @@
 // STATE
 
 // Some things are heaps
-function IsHeap(h: [ref,name]any) returns (bool);
+function IsHeap(h:[ref,name]any) returns (bool);
 
 // Given an heap, some things are allocated
 const $allocated:name;
-
 function IsAllocated(h: [ref,name]any, o: any) returns (bool);
+axiom (forall h: [ref,name]any, o: ref ::
+        IsAllocated(h,o) <==> cast(h[o,$allocated],bool));
 
-axiom (forall h: [ref,name]any, o: ref :: 
-	{ IsAllocated(h,o) } 
-	IsAllocated(h,o) <==> cast(h[o,$allocated],bool));
+// Every reference stored in the heap is allocated
+axiom (forall h:[ref,name]any, o: ref, f: name :: 
+	{ IsAllocated(h,h[o,f]) }
+	IsHeap(h) ==> IsAllocated(h,h[o,f]));
 
-// On a heap, the target of any fields is allocated
-axiom (forall h: [ref,name]any, o: ref, f: name :: 
-	{ IsAllocated(h, h[o, f]) } 
-	IsHeap(h) ==> IsAllocated(h, h[o, f]));
+function new([ref,name]any) returns (ref);
+function X([ref,name]any) returns ([ref,name]any);
 
-// ----------------------------------------------------------------------
-// The following two axioms are faulty. Because of the weak typing in bpl
-// they cause the prover to find less problems.
-// 
-// Integers are always allocated
-//axiom (forall h: [ref,name]any, i: int :: 
-//	{ IsAllocated(h,i) } 
-//	IsAllocated(h,i));
+axiom (forall h:[ref,name]any :: 
+	{IsAllocated(X(h),new(h))} 
+	IsAllocated(X(h),new(h)));
 
-// Booleans are always allocated
-//axiom (forall h: [ref,name]any, b: bool :: 
-//	{ IsAllocated(h,b) } 
-//	IsAllocated(h,b));
-// ----------------------------------------------------------------------
+axiom (forall h:[ref,name]any :: 
+	!IsAllocated(h,new(h)));
+
+axiom (forall h:[ref,name]any, o:ref, f:name :: 
+	{X(h)[o,f]}
+	IsAllocated(h,o) ==> (X(h)[o,f] == h[o,f]));
 
 // Void are always allocated
 axiom (forall h: [ref,name]any :: 
