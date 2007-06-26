@@ -169,7 +169,7 @@ feature -- Processors
 			until
 				i > a_node.check_list.count
 			loop
-				assert_b ?= a_node.check_list.item
+				assert_b ?= a_node.check_list.i_th (i)
 				check is_assert_b: assert_b /= Void end
 				function_writer.reset
 				assert_b.expr.process (function_writer)
