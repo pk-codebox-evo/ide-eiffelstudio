@@ -1,5 +1,5 @@
 - BPL_BN_IMPLEMENTATION_WRITER has to be fixed
-- FRAMES
+- inherited FRAMES, confined keyword
 - TODOs in BPL_FEATURE_LIST_GENERATOR
 - models
 

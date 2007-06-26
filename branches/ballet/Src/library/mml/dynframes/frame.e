@@ -15,6 +15,7 @@ inherit
 			is_subset_of,
 			is_proper_subset_of,
 			is_proper_superset_of,
+			is_empty,
 			cartesian_product,
 			intersected,
 			united,
@@ -60,6 +61,13 @@ feature -- Properties
 			-- Is `other' a proper subset of `current'?
 		do
 			Result := Precursor {MML_DEFAULT_SET}(other)
+		end
+
+	is_empty : BOOLEAN is
+			-- Is `current' empty?
+		do
+			do_nothing
+			Result := Precursor
 		end
 
 feature -- Basic Operations

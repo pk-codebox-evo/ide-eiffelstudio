@@ -16,6 +16,7 @@ feature -- Access
 			-- Integer value stored
 		use
 			uses_repr: representation
+			u: representation
 		do
 			Result := x
 		end
@@ -30,6 +31,7 @@ feature -- Settings
 			x := a_value
 		ensure
 			value_set: item = a_value
+			confined_: representation.equals(old representation)
 		end
 
 feature -- Framing

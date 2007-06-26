@@ -100,8 +100,10 @@ axiom (forall s1:set,s2:set,x:any ::
     set.is_member (s1,x)));
 	
 // Equality
-axiom (forall s1:set,s2:set :: (s1 == s2) == (set.is_subset(s1,s2) &&
-  set.is_subset(s2,s1)));
+function set.equals (set, set) returns (bool);
+axiom (forall s1:set, s2:set :: (s1 == s2) == (set.is_subset(s1, s2) &&
+  set.is_subset(s2, s1)));
+axiom (forall s1:set, s2:set :: (s1 == s2) == (set.equals(s1, s2)));
 
 // Union
 function set.united (set,set) returns (set);
@@ -122,11 +124,12 @@ axiom (forall s1:set,s2:set,x:any :: {set.intersected(s1, set.extended(s2, x))}
     set.intersected(s1,s2)));
   
 // Disjoint
-function set.is_disjoint (set,set) returns (bool);
-axiom (forall s:set :: {set.is_disjoint (s,set.make_empty)}
-  set.is_disjoint (s,set.make_empty));
-axiom (forall s1:set,s2:set,x:any :: set.is_disjoint(s1,set.extended(s2,x)) ==
-  (!set.is_member(s1,x) && set.is_disjoint(s1,s2)));
+function set.is_disjoint_from (set,set) returns (bool);
+axiom (forall s:set :: {set.is_disjoint_from (s,set.make_empty)}
+  set.is_disjoint_from (s,set.make_empty));
+axiom (forall s1:set,s2:set,x:any :: set.is_disjoint_from (s1,set.extended(s2,x)) ==
+  (!set.is_member(s1,x) && set.is_disjoint_from (s1, s2)));
+axiom (forall s1:set, s2:set :: set.is_disjoint_from (s1, s2) == set.is_disjoint_from (s2, s1));
 
 // Superset
 function set.is_superset (set,set) returns (bool);

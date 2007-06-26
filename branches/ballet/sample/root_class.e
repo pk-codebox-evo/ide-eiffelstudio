@@ -17,7 +17,7 @@ feature -- Initialization
 
 	ft: FRAME_TEST
 	ftc: FRAME_TEST_CLIENT
-	
+
 	c: SIMPLE_COUNTER
 	m: MY_CELL[ANY]
 	mt: MY_CELL_USER
@@ -46,8 +46,8 @@ feature -- Initialization
 			b.set_item (11)
 			a.set_item (22)
 
-			print ("Item of A: "+a.item.out+"%N")
-			print ("Item of B: "+b.item.out+"%N")
+--			print ("Item of A: " + a.item.out + "%N")
+--			print ("Item of B: " + b.item.out + "%N")
 		end
 
 	copy_item (x,y: INT_STORE) is

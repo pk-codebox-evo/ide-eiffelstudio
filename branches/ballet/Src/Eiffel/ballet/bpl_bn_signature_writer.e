@@ -36,6 +36,14 @@ feature -- Generation
 			arg_type: TYPE_A
 			ass_list: BYTE_LIST[BYTE_NODE]
 			all_queries: LIST[FEATURE_I]
+			frame: FRAME_B
+			call: CALL_ACCESS_B
+			byte_code: BYTE_CODE
+			mod_frame: FRAME_B
+			mod_frame_call: CALL_ACCESS_B
+			mod_byte_code: BYTE_CODE
+			modifies_expression: STRING
+			use_expression: STRING
 		do
 			setup_function_writer
 			function_writer.set_current_feature (a_feature)
@@ -120,16 +128,80 @@ feature -- Generation
 			-- write ensure clauses for all queries in the program to state, that they
 			-- are not changed if the frames do not overlap
 
-			from
-				all_queries := environment.usage_analyser.all_query_list
-				all_queries.start
-			until
-				all_queries.after
-			loop
-				bpl_out ("// TODO: frame contract for " + all_queries.item.written_class.name + "." + all_queries.item.feature_name + "%N")
-				all_queries.forth
+			-- TODO: handle subtyping
+			if Byte_server.has (a_feature.code_id)  then
+				mod_byte_code := Byte_server.item (a_feature.code_id)
+				if mod_byte_code.modify_frame /= Void then
+					from
+						mod_byte_code.modify_frame.start
+						modifies_expression := Void
+					until
+						mod_byte_code.modify_frame.after
+					loop
+						mod_frame ?= mod_byte_code.modify_frame.item
+						check
+							mod_frame /= Void
+						end
+						mod_frame_call ?= mod_frame.expr
+						check
+							mod_frame_call /= Void
+						end
+						if modifies_expression = Void then
+							modifies_expression := "fun." + a_feature.written_class.name + "." + mod_frame_call.feature_name + " (old (Heap), o)"
+						else
+							modifies_expression := "set.union (" + modifies_expression + ", " +
+								"fun." + a_feature.written_class.name + "." + mod_frame_call.feature_name + " (old (Heap), o))"
+						end
+						mod_byte_code.modify_frame.forth
+					end
+					from
+						all_queries := environment.usage_analyser.all_query_list
+						all_queries.start
+					until
+						all_queries.after
+					loop
+						if Byte_server.has (all_queries.item.code_id) then
+							byte_code := Byte_server.item (all_queries.item.code_id)
+							if byte_code.use_frame /= Void then
+								bpl_out ("  free ensures (")
+								
+								from
+									byte_code.use_frame.start
+									use_expression := Void
+								until
+									byte_code.use_frame.after
+								loop
+									frame ?= byte_code.use_frame.item
+									check
+										frame /= Void
+									end
+									call ?= frame.expr
+									check
+										call /= Void
+									end
+									if use_expression = Void then
+										use_expression := "fun." + all_queries.item.written_class.name + "." + call.feature_name + " (old (Heap), Current))"
+									else
+										use_expression := "set.union (" + use_expression + ", " +
+											"fun." + all_queries.item.written_class.name + "." + call.feature_name + " (old (Heap), Current))"
+									end
+									byte_code.use_frame.forth
+								end
+
+								bpl_out ("forall o:ref :: ((set.is_disjoint_from (" +
+									modifies_expression + ", " +
+									use_expression + ")")
+
+								bpl_out (" ==> (fun." + all_queries.item.written_class.name +
+									"." + all_queries.item.feature_name + " (Heap, o) == fun." + 
+									all_queries.item.written_class.name + "." +
+									all_queries.item.feature_name + " (old (Heap), o))));%N")
+							end
+						end
+						all_queries.forth
+					end
+				end
 			end
-			
 			bpl_out ("%N")
 		end
 
@@ -163,9 +235,9 @@ feature {BYTE_NODE} -- Visitors
 				loop
 					function_writer.reset
 					ass_list.item.process (function_writer)
-					bpl_out ("  requires ")
+					bpl_out ("  requires (")
 					bpl_out (function_writer.expr)
-					bpl_out (";%N")
+					bpl_out (");%N")
 					ass_list.forth
 				end
 			end
@@ -179,9 +251,9 @@ feature {BYTE_NODE} -- Visitors
 				loop
 					function_writer.reset
 					ass_list.item.process (function_writer)
-					bpl_out ("  ensures ")
+					bpl_out ("  ensures (")
 					bpl_out (function_writer.expr)
-					bpl_out ("; ")
+					bpl_out ("); ")
 					bpl_out (location_info (ass_list.item))
 					ass_list.forth
 				end
@@ -220,9 +292,9 @@ feature {BYTE_NODE} -- Visitors
 				loop
 					function_writer.reset
 					byte_l.item.process (function_writer)
-					bpl_out ("  requires ")
+					bpl_out ("  requires (")
 					bpl_out (function_writer.expr)
-					bpl_out ("; // (inherited) ")
+					bpl_out ("); // (inherited) ")
 					tmp_cls := current_class
 					current_class := e_cls
 					bpl_out (location_info (byte_l.item))
@@ -255,9 +327,9 @@ feature {BYTE_NODE} -- Visitors
 				loop
 					function_writer.reset
 					byte_l.item.process (function_writer)
-					bpl_out ("  ensures ")
+					bpl_out ("  ensures (")
 					bpl_out (function_writer.expr)
-					bpl_out ("; // (inherited) ")
+					bpl_out ("); // (inherited) ")
 					tmp_cls := current_class
 					current_class := e_cls
 					bpl_out (location_info (byte_l.item))

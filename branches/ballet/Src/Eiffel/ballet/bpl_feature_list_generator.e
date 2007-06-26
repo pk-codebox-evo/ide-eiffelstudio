@@ -35,9 +35,13 @@ feature{NONE} -- Initialization
 			create {ARRAYED_LIST [FEATURE_I]}constant_list.make (1)
 			create {ARRAYED_LIST [FEATURE_I]}procedure_list.make (1)
 			create {ARRAYED_LIST [FEATURE_I]}used_query_list.make (1)
+			used_query_list.compare_objects
 			create {ARRAYED_LIST [FEATURE_I]}used_command_list.make (1)
+			used_command_list.compare_objects
 			create {ARRAYED_LIST [FEATURE_I]}used_feature_list.make (1)
+			used_feature_list.compare_objects
 			create {ARRAYED_LIST [FEATURE_I]}all_query_list.make (1)
+			
 		end
 
 feature -- Analyse
@@ -90,7 +94,6 @@ feature -- Access
 	
 feature -- Processing
 
-	-- TODO: only insert each element once in the list
 	process_feature_i (a_feature: FEATURE_I) is
 			-- Process a feature to record it in the lists.
 		do
@@ -142,6 +145,7 @@ feature -- Processing
 			used_feature, inherited_feature: FEATURE_I
 			idx: INTEGER
 			parents: FIXED_LIST[CLASS_C]
+			byte_code: BYTE_CODE
 		do
 			used_feature := Feat_tbl_server.item (a_node.written_in).feature_of_feature_id(a_node.feature_id)
 			if Mapping_table.item (used_feature.written_class.name) = Void and then not used_feature_list.has (used_feature) then
@@ -177,7 +181,17 @@ feature -- Processing
 						parents.forth
 					end
 				end
+				-- handle frames
+				if Byte_server.has (a_node.body_index) then
+					byte_code := Byte_server.item (a_node.body_index)
+					safe_process (byte_code.use_frame)
+					safe_process (byte_code.modify_frame)
+				end
 			end
+
+			-- handle arguments
+			Precursor (a_node)
+
 		end
 
 	process_attribute_b (a_node: ATTRIBUTE_B) is

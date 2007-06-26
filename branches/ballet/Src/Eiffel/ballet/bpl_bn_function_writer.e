@@ -651,9 +651,7 @@ feature -- Processing
 	process_creation_expr_b (a_node: CREATION_EXPR_B) is
 			-- Process `a_node'.
 		do
-			check
-				todo: False
-			end
+
 		end
 
 	process_int64_val_b (a_node: INT64_VAL_B) is
