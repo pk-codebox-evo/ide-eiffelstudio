@@ -66,6 +66,8 @@ feature -- Initialization
 		do
 			Precursor {BPL_BN_ITERATOR} (a_class)
 			reset
+		ensure then
+			in_contract_mode: not is_writing_implementation
 		end
 
 feature -- Main
@@ -74,6 +76,7 @@ feature -- Main
 			-- Write the definition of the function pointed to by `a_function'.
 		require
 			as_not_void: a_function /= Void
+			in_contract_mode: not is_writing_implementation
 		local
 			feat_name: STRING
 			func_name: STRING
@@ -161,7 +164,7 @@ feature -- Main
 							bpl_out (" :: ")
 							bpl_out (result_call)
 							bpl_out (" == ")
-							
+
 							bpl_out ("fun." + parents.item.name + "." + feat.feature_name + "(H, C")
 							from
 								i := 1
@@ -174,7 +177,7 @@ feature -- Main
 								intro.append (arg_name)
 								i := i + 1
 							end
-							
+
 							bpl_out ("));%N")
 						else
 							bpl_out ("// no feature for " + current_feature.feature_name + " in class " + parents.item.name +"%N")
@@ -201,6 +204,50 @@ feature -- Main
 				bpl_out (" == ")
 				bpl_out (current_constant.value.dump)
 				bpl_out (");%N")
+			end
+		end
+
+	process_byte_code (a_node: BYTE_CODE) is
+			-- We have to have an extra processor here, as BYTE_CODEs do
+			-- not want to be BYTE_NODEs (though they are).
+		local
+			ass_list: BYTE_LIST[BYTE_NODE]
+			precondition: STRING
+		do
+			precondition := intro.twin
+			precondition.append (":: (C != null)")
+			ass_list := a_node.precondition
+			if ass_list /= Void then
+				from
+					ass_list.start
+				until
+					ass_list.off
+				loop
+					precondition.append (" && (")
+					expr := ""
+					ass_list.item.process (Current)
+					precondition.append (expr)
+					precondition.append (")")
+					ass_list.forth
+				end
+			end
+			precondition.append (" ==> ")
+
+			ass_list := a_node.postcondition
+			if ass_list /= Void then
+				from
+					ass_list.start
+				until
+					ass_list.off
+				loop
+					bpl_out ("axiom (")
+					bpl_out (precondition)
+					expr := ""
+					ass_list.item.process (Current)
+					bpl_out (expr)
+					bpl_out (");%N")
+					ass_list.forth
+				end
 			end
 		end
 
@@ -243,6 +290,33 @@ feature -- Processing Environment
 			value_set: this_ref = a_string
 		end
 
+	is_writing_implementation: BOOLEAN
+			-- Is the function writer generating code for implementations?
+
+	is_writing_contract: BOOLEAN is
+			-- Is the function writer generating code for contracts?
+		do
+			Result := not is_writing_implementation
+		end
+
+	write_implementation_mode is
+			-- Switch the function writer to generate code for implementation.
+		do
+			is_writing_implementation := True
+		ensure
+			status_set: is_writing_implementation
+		end
+
+	write_contact_mode is
+			-- Switch the function writer to generate code for contracts.
+		do
+			is_writing_implementation := False
+		ensure
+			status_set: is_writing_contract
+		end
+
+feature -- Result and side-effects
+
 	expr: STRING
 		-- Expression output
 
@@ -263,7 +337,7 @@ feature -- Processing Environment
 		end
 
 	reset is
-			-- Reset `expr' to the empty string.
+			-- Reset the result and side-effects to process a new function
 		do
 			expr := ""
 			local_vars := ""
@@ -288,16 +362,38 @@ feature -- Processing
 
 	process_attribute_b (a_node: ATTRIBUTE_B) is
 			-- Process `a_node'.
+		local
+			var: STRING
+			new_code: STRING
 		do
-			expr.append("fun.")
-			expr.append(System.class_of_id(a_node.written_in).name)
-			expr.append(".")
-			expr.append(a_node.attribute_name)
-			expr.append("(")
-			expr.append(heap_ref)
-			expr.append(", ")
-			expr.append(this_ref)
-			expr.append(")")
+			if is_writing_implementation then
+				new_label ("attr")
+				var := last_label
+				new_code := "    call "
+				new_code.append (var)
+				new_code.append (" := proc.")
+			else
+				new_code := "fun."
+			end
+			new_code.append (System.class_of_id(a_node.written_in).name)
+			new_code.append (".")
+			new_code.append (a_node.attribute_name)
+			new_code.append ("(")
+			if is_writing_contract then
+				new_code.append (heap_ref)
+				new_code.append (", ")
+			end
+			new_code.append (this_ref)
+			new_code.append (")")
+			if is_writing_implementation then
+				new_code.append ("; ")
+				new_code.append (location_info (a_node))
+				side_effect.append (new_code)
+				record_local_var (var, bpl_type_for_type_i (a_node.type))
+				expr.append (var)
+			else
+				expr.append (new_code)
+			end
 		end
 
 	process_bin_and_b (a_node: BIN_AND_B) is
@@ -425,10 +521,11 @@ feature -- Processing
 	process_bin_power_b (a_node: BIN_POWER_B) is
 			-- Process `a_node'.
 		do
+			expr.append("power(")
 			safe_process (a_node.left)
-			expr.append("  ")
-			-- TODO: how to store ^ in bpl
+			expr.append(",")
 			safe_process (a_node.right)
+			expr.append(")")
 		end
 
 	process_bin_slash_b (a_node: BIN_SLASH_B) is
@@ -457,9 +554,11 @@ feature -- Processing
 
 	process_bit_const_b (a_node: BIT_CONST_B) is
 			-- Process `a_node'.
+		local
+			error: BPL_ERROR
 		do
-			expr.append(a_node.value)
-			-- TODO
+			create error.make ("Bit constants are not supported")
+			add_error (error)
 		end
 
 	process_bool_const_b (a_node: BOOL_CONST_B) is
@@ -469,50 +568,6 @@ feature -- Processing
 				expr.append("true")
 			else
 				expr.append("false")
-			end
-		end
-
-	process_byte_code (a_node: BYTE_CODE) is
-			-- We have to have an extra processor here, as BYTE_CODEs do
-			-- not want to be BYTE_NODEs (though they are).
-		local
-			ass_list: BYTE_LIST[BYTE_NODE]
-			precondition: STRING
-		do
-			precondition := intro.twin
-			precondition.append (":: (C != null)")
-			ass_list := a_node.precondition
-			if ass_list /= Void then
-				from
-					ass_list.start
-				until
-					ass_list.off
-				loop
-					precondition.append (" && (")
-					expr := ""
-					ass_list.item.process (Current)
-					precondition.append (expr)
-					precondition.append (")")
-					ass_list.forth
-				end
-			end
-			precondition.append (" ==> ")
-
-			ass_list := a_node.postcondition
-			if ass_list /= Void then
-				from
-					ass_list.start
-				until
-					ass_list.off
-				loop
-					bpl_out ("axiom (")
-					bpl_out (precondition)
-					expr := ""
-					ass_list.item.process (Current)
-					bpl_out (expr)
-					bpl_out (");%N")
-					ass_list.forth
-				end
 			end
 		end
 
@@ -538,49 +593,79 @@ feature -- Processing
 	process_feature_b (a_node: FEATURE_B) is
 			-- Process `a_node'.
 		local
+			var: STRING
 			i: INTEGER
-			tmp: STRING
+			args: STRING
+			tmp_expr: STRING
+			new_code: STRING
 			cls_name: STRING
+			special_call: BOOLEAN
 		do
 			cls_name := System.class_of_id(a_node.written_in).name
-			if Mapping_table.item (cls_name) /= Void then
-				expr.append(Mapping_table.item (cls_name))
-				expr.append(".")
-				expr.append(a_node.feature_name)
-				expr.append("(")
-			else
-				expr.append("fun.")
-				expr.append(cls_name)
-				expr.append(".")
-				expr.append(a_node.feature_name)
-				expr.append("(")
-				expr.append(heap_ref)
-				expr.append(", ")
-			end
-			expr.append(this_ref)
+			special_call := Mapping_table.item (cls_name) /= Void
 
+			args := ""
+			if is_writing_contract and not special_call then
+				args.append (heap_ref)
+				args.append (", ")
+			end
+			args.append (this_ref)
+
+			tmp_expr := expr
 			if a_node.parameters /= Void then
 				from
-					tmp := expr
 					i := 1
 				until
 					i > a_node.parameters.count
 				loop
 					expr := ""
-					safe_process(a_node.parameters.i_th(i))
-					tmp.append(", ")
-					tmp.append(expr)
+					safe_process (a_node.parameters.i_th (i))
+					args.append (", ")
+					args.append(expr)
 					i := i + 1
 				end
-				expr := tmp
 			end
-			expr.append(")")
+			expr := tmp_expr
+
+			if special_call then
+				new_code := ""
+				new_code.append(Mapping_table.item (cls_name))
+				new_code.append(".")
+				new_code.append(a_node.feature_name)
+			else
+				if is_writing_implementation then
+					new_label ("zwerg")
+					var := last_label
+					record_local_var (var, bpl_type_for_type_i (a_node.type))
+					new_code := "    call "
+					new_code.append (var)
+					new_code.append (" := proc.")
+				else
+					new_code := "fun."
+				end
+				new_code.append (cls_name)
+				new_code.append (".")
+				new_code.append (a_node.feature_name)
+			end
+			new_code.append ("(")
+			new_code.append (args)
+			new_code.append (")")
+			if is_writing_implementation then
+				new_code.append ("; ")
+				new_code.append (location_info (a_node))
+				side_effect.append (new_code)
+				expr.append (var)
+			else
+				expr.append (new_code)
+			end
 		end
 
 	process_creation_expr_b (a_node: CREATION_EXPR_B) is
 			-- Process `a_node'.
 		do
-
+			check
+				todo: False
+			end
 		end
 
 	process_int64_val_b (a_node: INT64_VAL_B) is
@@ -679,4 +764,6 @@ feature -- Processing
 			expr.append ("null")
 		end
 
+invariant
+	one_mode: is_writing_implementation /= is_writing_contract
 end

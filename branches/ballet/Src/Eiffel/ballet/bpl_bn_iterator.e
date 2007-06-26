@@ -201,6 +201,24 @@ feature {NONE} -- Supporting Features
 			Result_not_void: Result /= Void
 		end
 
+	bpl_type_for_type_i (type: TYPE_I): STRING is
+			-- Compute the suitable type in BPL for `type'.
+		require
+			type_not_void: type /= Void
+		do
+			if mapping_table.item(type.name) /= Void then
+				Result := mapping_table.item (type.name)
+			elseif type.is_expanded then
+				add_error(create {BPL_ERROR}.make("Cannot handle type '" + type.name
+											  + "' since it's expanded."))
+				Result := once "any"
+			else
+				Result := once "ref"
+			end
+		ensure
+			Result_not_void: Result /= Void
+		end
+
 	bpl_type_for_class (a_class: CLASS_C):STRING is
 			-- BPL type for class `a_class'.
 		require
@@ -211,7 +229,7 @@ feature {NONE} -- Supporting Features
 			elseif a_class.is_expanded then
 				add_error(create {BPL_AST_ERROR}.make_ast("Cannot handle type '" + a_class.name
 											  + "' since it's expanded.", a_class.ast))
-				Result := ""
+				Result := "any"
 			else
 				Result := once "ref"
 			end
@@ -849,7 +867,7 @@ feature{NONE} -- Tables
 			Result.put("set", "FRAME")
 			Result.put("set", "MML_SET")
 			Result.put("set", "MML_DEFAULT_SET")
-			
+
 		end
 
 	Infix_Operator_table: TABLE[STRING, STRING] is

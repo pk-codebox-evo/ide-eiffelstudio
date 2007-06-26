@@ -40,6 +40,7 @@ feature -- Generation
 			function_writer.set_heap_ref ("Heap")
 			function_writer.set_this_ref ("Current")
 			function_writer.set_result_call ("Result")
+			function_writer.write_implementation_mode
 			code := ""
 			local_vars := ""
 			bpl_out ("// Implementation: "+a_feature.feature_name+" of class "+current_class.name+"%N")
@@ -72,18 +73,6 @@ feature -- Generation
 			process_feature_i (a_feature)
 			bpl_out ("}%N")
 		end
-
-feature -- Settors
-
-	set_current_feature (a_feature: FEATURE_I) is
-			-- Set the current feature to `a_feature', keeping the feature in the
-			-- function writer syncronous.
-		do
-			Precursor {BPL_BN_ITERATOR} (a_feature)
-			function_writer.set_current_feature (a_feature)
-		end
-
-feature -- Processors
 
 	process_feature_without_code (a_feature: FEATURE_I) is
 			-- Process a constant (no code attached).
@@ -120,41 +109,54 @@ feature -- Processors
 			bpl_out ("    return;%N")
 		end
 
+feature -- Settors
+
+	set_current_feature (a_feature: FEATURE_I) is
+			-- Set the current feature to `a_feature', keeping the feature in the
+			-- function writer syncronous.
+		do
+			Precursor {BPL_BN_ITERATOR} (a_feature)
+			function_writer.set_current_feature (a_feature)
+		end
+
+feature -- Processors
+
 	process_assign_b (a_node: ASSIGN_B) is
 			-- Process `a_node'.
 		local
-			new_code: STRING
 			local_b: LOCAL_B
 			attribute_b: ATTRIBUTE_B
 		do
-			new_code := "    "
+			function_writer.reset
+			a_node.source.process (function_writer)
+			append_local_vars (function_writer.local_vars)
+			code.append (function_writer.side_effect)
+
+			code.append ("    ")
 			if a_node.target.is_local then
 				local_b ?= a_node.target
 				check not_void: local_b /= Void end
-				new_code.append ("l")
-				new_code.append (local_b.position.out)
+				code.append ("l")
+				code.append (local_b.position.out)
 			elseif a_node.target.is_Result then
-				new_code.append ("Result")
+				code.append ("Result")
 			elseif a_node.target.is_attribute then
 				attribute_b ?= a_node.target
 				check not_void: attribute_b /= Void end
-				new_code.append ("Heap[Current,field.")
-				new_code.append (system.class_of_id (attribute_b.written_in).name)
-				new_code.append (".")
-				new_code.append (attribute_b.attribute_name)
-				new_code.append ("]")
+				code.append ("Heap[Current,field.")
+				code.append (system.class_of_id (attribute_b.written_in).name)
+				code.append (".")
+				code.append (attribute_b.attribute_name)
+				code.append ("]")
 			else
 				check
 					should_not_be_here: false
 				end
 			end
-			new_code.append (" := ")
-			function_writer.reset
-			a_node.source.process (function_writer)
-			new_code.append (function_writer.expr)
-			new_code.append (";")
-			new_code.append (location_info (a_node))
-			code.append (new_code)
+			code.append (" := ")
+			code.append (function_writer.expr)
+			code.append (";")
+			code.append (location_info (a_node))
 		end
 
 	process_check_b (a_node: CHECK_B) is
@@ -170,9 +172,11 @@ feature -- Processors
 			loop
 				assert_b ?= a_node.check_list.item
 				check is_assert_b: assert_b /= Void end
-				code.append ("    assert (")
 				function_writer.reset
 				assert_b.expr.process (function_writer)
+				append_local_vars (function_writer.local_vars)
+				code.append (function_writer.side_effect)
+				code.append ("    assert (")
 				code.append (function_writer.expr)
 				code.append ("); ")
 				code.append (location_info (assert_b))
@@ -199,6 +203,8 @@ feature -- Processors
 
 			function_writer.reset
 			a_node.condition.process (function_writer)
+			append_local_vars (function_writer.local_vars)
+			code.append (function_writer.side_effect)
 			cond_expr := function_writer.expr
 
 			code.append ("    goto ")
@@ -242,6 +248,8 @@ feature -- Processors
 
 				function_writer.reset
 				elsif_b.expr.process (function_writer)
+				append_local_vars (function_writer.local_vars)
+				code.append (function_writer.side_effect)
 				cond_expr := function_writer.expr
 
 				new_label ("true")
@@ -317,6 +325,8 @@ feature -- Processors
 				if nested_b /= Void then
 					function_writer.reset
 					nested_b.target.process (function_writer)
+					append_local_vars (function_writer.local_vars)
+					code.append (function_writer.side_effect)
 					new_code.append (function_writer.expr)
 				else
 					new_code.append ("Current")
@@ -330,6 +340,8 @@ feature -- Processors
 					loop
 						function_writer.reset
 						call_access_b.parameters.i_th (i).process (function_writer)
+						append_local_vars (function_writer.local_vars)
+						code.append (function_writer.side_effect)
 						new_code.append (",")
 						new_code.append (function_writer.expr)
 						i := i + 1
@@ -350,6 +362,7 @@ feature -- Processors
 			stop_expr: STRING
 			inv_assert: STRING
 			i: INTEGER
+			stop_side_effect: STRING
 		do
 			new_label ("loop")
 			loop_label := last_label
@@ -362,7 +375,9 @@ feature -- Processors
 
 			function_writer.reset
 			a_node.stop.process (function_writer)
+			append_local_vars (function_writer.local_vars)
 			stop_expr := function_writer.expr
+			stop_side_effect := function_writer.side_effect
 
 			from
 				i := 1
@@ -372,15 +387,19 @@ feature -- Processors
 				i > a_node.invariant_part.count
 			loop
 				function_writer.reset
-				a_node.invariant_part.process (function_writer)
+				a_node.invariant_part.i_th (i).process (function_writer)
+				append_local_vars (function_writer.local_vars)
+				stop_side_effect.append (function_writer.side_effect)
 				inv_assert.append("    assert(")
 				inv_assert.append(function_writer.expr)
-				inv_assert.append(");%N")
+				inv_assert.append("); ")
+				inv_assert.append(location_info (a_node.invariant_part.i_th (i)))
 				i := i + 1
 			end
 
 			-- TODO: Generate assertions for variant
 
+			code.append (stop_side_effect)
 			code.append (inv_assert)
 			code.append ("    goto ")
 			code.append (loop_label)
@@ -398,6 +417,7 @@ feature -- Processors
 
 			a_node.compound.process (Current)
 
+			code.append (stop_side_effect)
 			code.append (inv_assert)
 			code.append ("    goto ")
 			code.append (loop_label)
