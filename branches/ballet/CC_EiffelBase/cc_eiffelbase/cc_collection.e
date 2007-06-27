@@ -123,7 +123,7 @@ feature -- Element specific status report
 
 	can_extend (v: G) : BOOLEAN is
 			-- Can `an_item' be added?
-			-- Non-defensive -> stronges preconditions
+			-- Non-defensive -> strongest preconditions
 		use
 			use_own_representation: representation
 		do

@@ -56,7 +56,7 @@ feature -- Element change
 		modify
 			modify_own_representation: representation
 		do
-			put(v) -- TODO ???
+			put_at_end(v) -- TODO ???
 		ensure
 	 		new_count: count = old count + 1
 			item_inserted: has (v)
@@ -86,7 +86,7 @@ feature -- Element change
 			until
 				l.exhausted
 			loop
-				put (l.item)
+				put_at_end (l.item)
 				l.forth
 			end
 		ensure

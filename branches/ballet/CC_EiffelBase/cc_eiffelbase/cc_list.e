@@ -320,6 +320,8 @@ feature -- Cursor movement
 
 feature -- Element change
 
+-- TODO hier wenn möglich put und extend von cursor_structure definieren. diese sind am ende immer noch deferred
+
 -- TODO besser wäre nur replace_item_with... put ist irreführend
 -- auch wegen contracts die vom collection geerbt werden: model_container |=| old model_container.extended (v)
 -- stimmt natürlich nicht

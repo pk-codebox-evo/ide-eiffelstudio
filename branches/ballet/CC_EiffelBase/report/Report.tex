@@ -1,0 +1,90 @@
+\documentclass[a4paper,12pt,twoside]{book}
+
+% math imports
+\usepackage{amsmath}
+%\usepackage{amssymb}
+%\usepackage{amstext}
+%\usepackage{amsthm}
+%\usepackage{amsfonts}
+
+% picture imports
+\usepackage{graphicx}
+\usepackage{color}
+\definecolor{lbcolor}{rgb}{0.85,0.85,0.85}
+
+% import for sourcecode 
+\usepackage[final]{listings}
+\lstloadlanguages{Eiffel}
+\lstset{language=Eiffel,backgroundcolor=\color{lbcolor},frame=tb,breaklines=true}
+
+% the actual document
+\begin{document}
+
+\pagenumbering{roman}
+
+% the titlepage
+\title{Verification and Validation Studies for Multiresolution SPH}
+\author{Marco Zietzling}
+
+\begin{titlepage}
+	\vskip 20pt
+	\begin{center}
+		\Huge \textbf{Complete contracts for EiffelBase}
+	\end{center}
+
+	\vskip 60pt
+	\begin{center}
+%		\includegraphics[width=1.00\textwidth]{pictures/Title_small}
+	\end{center}
+	
+	\vskip 40pt
+	\begin{flushright}
+		\large \textbf{Marco Zietzling}\\
+		Semester Thesis\\
+		Summer 2007\\
+	\end{flushright}
+	
+	\vskip 20pt
+	\begin{flushright}
+		\large Computer Graphics Lab\\
+		Department of Computer Science\\
+		ETH Z\"{u}rich
+	\end{flushright}
+		
+	\vskip 20pt
+	\begin{flushright}
+		\large Bernd Schoeller\\
+		Prof. Bertrand Meyer
+	\end{flushright}	
+  \vfil
+\end{titlepage}
+
+% prolog
+\addtolength{\parskip}{0.5\baselineskip} % add extra spacing between paragraphs
+\include{Abstract}
+%\include{Zusammenfassung}
+%\include{TaskDescription} % a PDF is finally inserted - see comments there
+\include{Acknowledgments}
+
+% table of contents
+\addtolength{\parskip}{-0.5\baselineskip} % reset paragraph spacing
+\tableofcontents
+
+% chapters
+\addtolength{\parskip}{0.5\baselineskip} % add extra spacing between paragraphs
+%\include{Introduction}
+%\include{MultiresolutionSPH}
+%\include{ColagrossiDamBreak}
+%\include{KarmanVortexStreet}
+%\include{Zalesak}
+%\include{Enright}
+%\include{ResultsConclusions}
+
+% epilog
+\addtolength{\parskip}{-0.5\baselineskip} % reset paragraph spacing
+\addcontentsline{toc}{chapter}{Bibliography}
+\bibliographystyle{alpha}
+\bibliography{References}
+
+% end of document
+\end{document}

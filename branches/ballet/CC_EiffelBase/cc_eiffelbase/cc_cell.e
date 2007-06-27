@@ -8,6 +8,9 @@ indexing
 class
 	CC_CELL [G]
 
+inherit
+	CC_ANY
+
 create
 	default_create,
 	put

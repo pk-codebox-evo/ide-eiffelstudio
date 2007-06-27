@@ -5,7 +5,7 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 
-class
+deferred class
 	CC_LINKED_LIST [G]
 
 inherit
@@ -30,8 +30,8 @@ inherit
 			copy
 		end
 
-create
-	make
+--create
+--	make
 
 feature {NONE} -- Initialization
 
@@ -570,7 +570,7 @@ feature -- Duplication
 			standard_copy (other)
 			if not other.is_empty then
 				internal_wipe_out
-				cursor ?= other.cursor
+				cursor ?= other.cursor_position
 				from
 					other.start
 				until

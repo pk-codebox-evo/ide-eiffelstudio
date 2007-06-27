@@ -401,8 +401,10 @@ feature -- Conversion
 			-- Representation as a linear structure
 		use
 			use_own_representation: representation
-		modify
-			modify_own_representation: representation
+--		modify
+--			modify_own_representation: representation
+-- TODO restore cursor position
+-- computing the model should never change the state
 		do
 			Result := Current
 		ensure then
