@@ -23,30 +23,31 @@
 \pagenumbering{roman}
 
 % the titlepage
-\title{Verification and Validation Studies for Multiresolution SPH}
+\title{Complete Contracts for EiffelBase}
 \author{Marco Zietzling}
 
 \begin{titlepage}
 	\vskip 20pt
 	\begin{center}
-		\Huge \textbf{Complete contracts for EiffelBase}
+		\Huge \textbf{Complete Contracts for EiffelBase}
 	\end{center}
 
 	\vskip 60pt
-	\begin{center}
+%	\begin{center}
 %		\includegraphics[width=1.00\textwidth]{pictures/Title_small}
-	\end{center}
+%	\end{center}
 	
 	\vskip 40pt
 	\begin{flushright}
 		\large \textbf{Marco Zietzling}\\
+		02-906-998\\
 		Semester Thesis\\
 		Summer 2007\\
 	\end{flushright}
 	
 	\vskip 20pt
 	\begin{flushright}
-		\large Computer Graphics Lab\\
+		\large Chair of Software Engineering\\
 		Department of Computer Science\\
 		ETH Z\"{u}rich
 	\end{flushright}
@@ -56,14 +57,12 @@
 		\large Bernd Schoeller\\
 		Prof. Bertrand Meyer
 	\end{flushright}	
-  \vfil
+	\vfil
 \end{titlepage}
 
 % prolog
 \addtolength{\parskip}{0.5\baselineskip} % add extra spacing between paragraphs
 \include{Abstract}
-%\include{Zusammenfassung}
-%\include{TaskDescription} % a PDF is finally inserted - see comments there
 \include{Acknowledgments}
 
 % table of contents
@@ -72,19 +71,17 @@
 
 % chapters
 \addtolength{\parskip}{0.5\baselineskip} % add extra spacing between paragraphs
-%\include{Introduction}
-%\include{MultiresolutionSPH}
-%\include{ColagrossiDamBreak}
-%\include{KarmanVortexStreet}
-%\include{Zalesak}
-%\include{Enright}
+\include{Introduction}
+\include{Frames}
+\include{Models}
+\include{LibraryDesign}
 %\include{ResultsConclusions}
 
 % epilog
 \addtolength{\parskip}{-0.5\baselineskip} % reset paragraph spacing
 \addcontentsline{toc}{chapter}{Bibliography}
-\bibliographystyle{alpha}
-\bibliography{References}
+%\bibliographystyle{alpha}
+%\bibliography{References}
 
 % end of document
 \end{document}

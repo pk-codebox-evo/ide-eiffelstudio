@@ -20,6 +20,8 @@
 				<exclude>EIFGENs</exclude>
 				<exclude>.svn</exclude>
 				<exclude>CVS</exclude>
+				<exclude>report</exclude>
+				<exclude>Documentation</exclude>
 			</file_rule>
 			<file_rule>
 				<exclude>^/cc_eiffelbase$</exclude>

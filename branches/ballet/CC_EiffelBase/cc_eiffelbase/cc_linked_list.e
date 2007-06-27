@@ -5,7 +5,7 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 
-deferred class
+class
 	CC_LINKED_LIST [G]
 
 inherit
@@ -30,8 +30,8 @@ inherit
 			copy
 		end
 
---create
---	make
+create
+	make
 
 feature {NONE} -- Initialization
 
@@ -576,7 +576,7 @@ feature -- Duplication
 				until
 					other.off
 				loop
-					extend (other.item)
+					extend_at_end (other.item)
 						-- For speeding up next insertion, we go
 						-- to the end, that way `extend' does not
 						-- need to traverse the list completely.

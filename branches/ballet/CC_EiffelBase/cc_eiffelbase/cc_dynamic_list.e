@@ -282,7 +282,7 @@ feature -- Duplication
 			until
 				(counter = n) or else exhausted
 			loop
-				Result.extend (item)
+				Result.extend_at_end (item)
 				forth
 				counter := counter + 1
 			end

@@ -6,7 +6,7 @@
 
 all:
 	rubber -d Report.tex
-	evince Report.pdf
+	evince Report.pdf &
 
 clean:
 	-rm *~

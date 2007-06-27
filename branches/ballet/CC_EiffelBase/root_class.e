@@ -17,54 +17,73 @@ feature -- Initialization
 			-- Creation procedure.
 		do
 			-- test cc_linked_list from CC_EiffelBase
+			test_cc_linked_list
 
 			-- test linked_list from EiffelBase
 		end
 
-feature -- DUMP
+feature -- Testing
 
-	foo is
-			-- test bla
-		use
-			-- FRAME expr
-		modify
-			-- FRAME expr
+	test_cc_linked_list is
+			-- Test the linked list from the CC_EiffelBase library.
 		local
-			gobo_linked_list: DS_LINKED_LIST [INTEGER]
-			eiffelBase_linked_list: LINKED_LIST [INTEGER]
-
-			repr: MML_SET [ANY]
-
-			gobo_set: DS_SET [INTEGER]
-			eiffelBase_set: SET[INTEGER]
-
-			gobo_table: DS_TABLE [ANY, INTEGER]
-			eiffelBase_table: TABLE [ANY, INTEGER]
-
-			eiffelBase_bag: BAG [INTEGER]
-			-- kein gobo bag
-
-			-- DUMP
-			eiffelBase_collection: COLLECTION [INTEGER]
-
-			cc_set: CC_SET [INTEGER]
-			cc_bag: CC_BAG [INTEGER]
-			cc_table: CC_TABLE [INTEGER, INTEGER]
-
-			cc_bilinear: CC_BILINEAR [INTEGER]
-
-			cc_list: CC_LIST [INTEGER]
-
-			cc_linked_list: CC_LINKED_LIST [INTEGER]
-
+			linked_list: CC_LINKED_LIST [INTEGER]
+			second_linked_list : CC_LINKED_LIST [INTEGER]
 		do
-			create gobo_linked_list.make
-			create eiffelbase_linked_list.make
+			create linked_list.make
+			linked_list.put_front (4)
+			linked_list.put_front (3)
+			linked_list.put_front (2)
+			linked_list.put_front (1)
 
-			-- create eiffelbase_collection.make
-		ensure
-			confined bla -- FRAME expr
+			io.put_string ("List with some elements%N")
+			print_cc_linked_list (linked_list)
+
+			linked_list.start
+			second_linked_list := linked_list.duplicate (3)
+
+			io.put_string ("Duplicated list with three elements%N")
+			print_cc_linked_list (second_linked_list)
+
+			linked_list.append (second_linked_list)
+
+			io.put_string ("Appended list%N")
+			print_cc_linked_list (linked_list)
 		end
 
+	test_linked_list is
+			-- Test the linked list from the EiffelBase library.
+		local
+			linked_list: LINKED_LIST [INTEGER]
+			second_linked_list : LINKED_LIST [INTEGER]
+		do
+			create linked_list.make
+		end
+
+feature -- Printing
+
+	print_cc_linked_list (a_list: CC_LINKED_LIST [INTEGER]) is
+			-- Prints the contents of `a_list'
+		do
+			from
+				a_list.start
+			until
+				a_list.off
+			loop
+				io.put_string (a_list.item.out + " ")
+			end
+		end
+
+	print_linked_list (a_list: LINKED_LIST [INTEGER]) is
+			-- Prints the contents of `a_list'
+		do
+			from
+				a_list.start
+			until
+				a_list.off
+			loop
+				io.put_string (a_list.item.out + " ")
+			end
+		end
 
 end -- class ROOT_CLASS
