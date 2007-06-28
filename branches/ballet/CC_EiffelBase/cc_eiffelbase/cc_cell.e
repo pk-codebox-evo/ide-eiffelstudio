@@ -42,14 +42,11 @@ feature -- Model
 			-- Model of a general cell
 		use
 			use_own_representation: representation
-		modify
-			modify_own_representation: representation
 		do
 			Result := item
 			-- TODO correct?
 		ensure
 			result_not_void: Result /= Void
-			confined representation
 		end
 
 feature -- Framing
@@ -66,6 +63,6 @@ feature -- Framing
 
 invariant
 
-	model_equals_item: model = item
+	model_equals_item: item /= Void implies model = item
 
 end

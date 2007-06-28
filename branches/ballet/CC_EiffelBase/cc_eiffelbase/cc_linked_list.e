@@ -165,7 +165,7 @@ feature -- Status report
 			end
 		end
 
-	full: BOOLEAN is False -- TODO use clause? TODO rename to is_full
+	is_full: BOOLEAN is False
 		-- Is structured filled to capacity? (Answer: no.)
 
 feature -- Cursor movement
@@ -344,7 +344,6 @@ feature -- Element change
 			-- Do not move cursor.
 		do
 			extend_at_end (v)
-			-- TODO ugly - either remove extend or put_at_end or rename extend....
 		end
 
 
@@ -595,7 +594,7 @@ feature {CC_LINKED_LIST} -- Implementation
 			-- This feature may be redefined in descendants so as to
 			-- produce an adequately allocated and initialized object.
 		do
-			--create Result.make -- TODO Remove comment if class is effective
+			create Result.make
 		end
 
 	new_cell (v: like item): like first_element is

@@ -129,8 +129,6 @@ feature -- Model
 			-- Model of a general traversable structure
 		use
 			use_own_representation: representation
-		modify
-			modify_own_representation: representation
 		local
 			linear: CC_LINEAR [G]
 		do
@@ -147,31 +145,23 @@ feature -- Model
 			end
 		ensure
 			result_not_void: Result /= Void
-			confined representation
 		end
 
 	model_cursor: INTEGER is
 			-- Model of a cursor for traversal
 		use
 			use_own_representation: representation
-		modify
-			modify_own_representation: representation
 		deferred
-		ensure
-			confined representation
 		end
 
 	model: MML_PAIR [MML_SEQUENCE [G], INTEGER] is
 			-- Model of the traversable structure
 		use
 			use_own_representation: representation
-		modify
-			modify_own_representation: representation
 		do
 			create {MML_DEFAULT_PAIR [MML_SEQUENCE [G], INTEGER]}Result.make_from (model_sequence, model_cursor)
 		ensure
 			result_not_void: Result /= Void
-			confined representation
 		end
 
 invariant

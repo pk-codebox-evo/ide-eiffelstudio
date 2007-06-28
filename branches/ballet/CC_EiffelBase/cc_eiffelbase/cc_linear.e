@@ -401,8 +401,6 @@ feature -- Conversion
 			-- Representation as a linear structure
 		use
 			use_own_representation: representation
---		modify
---			modify_own_representation: representation
 -- TODO restore cursor position
 -- computing the model should never change the state
 		do
@@ -415,10 +413,6 @@ feature -- Model
 
 	model_cursor: INTEGER is
 			-- Model of a cursor for traversal
-		use
-			use_own_representation: representation
-		modify
-			modify_own_representation: representation
 		do
 			Result := index;
 		end

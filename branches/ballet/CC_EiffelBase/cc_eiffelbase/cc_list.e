@@ -115,7 +115,6 @@ feature -- Access
 			Result := linear_representation.index_of (v, i)
 
 			go_to (old_position)
-		-- TODO model contracts? ev schon im cc_linear
 		end
 
 	i_th alias "[]", infix "@" (i: INTEGER): like item is

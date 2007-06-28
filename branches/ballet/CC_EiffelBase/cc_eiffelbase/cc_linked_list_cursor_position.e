@@ -41,9 +41,10 @@ feature {CC_LINKED_LIST} -- Implementation
 feature -- Model
 
 	model: INTEGER is
-			-- Model of a general container
+			-- Model of a general linked list cursor position
 		do
 			-- TODO do what? we have no index at this level
+
 		end
 
 invariant

@@ -14,15 +14,12 @@ inherit
 feature -- Model
 
 	model: INTEGER is
-			-- Model of a general container
+			-- Model of a general cursor position
 		use
 			use_own_representation: representation
-		modify
-			modify_own_representation: representation
 		deferred
 		ensure
 			result_not_void: Result /= Void
-			confined representation
 		end
 
 feature -- Framing

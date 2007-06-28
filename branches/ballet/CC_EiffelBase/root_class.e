@@ -31,24 +31,24 @@ feature -- Testing
 			second_linked_list : CC_LINKED_LIST [INTEGER]
 		do
 			create linked_list.make
-			linked_list.put_front (4)
-			linked_list.put_front (3)
-			linked_list.put_front (2)
-			linked_list.put_front (1)
+			linked_list.put_at_end (4)
+			linked_list.put_at_end (3)
+			linked_list.put_at_end (2)
+			linked_list.put_at_end (1)
 
 			io.put_string ("List with some elements%N")
-			print_cc_linked_list (linked_list)
+--			print_cc_linked_list (linked_list)
 
 			linked_list.start
 			second_linked_list := linked_list.duplicate (3)
 
 			io.put_string ("Duplicated list with three elements%N")
-			print_cc_linked_list (second_linked_list)
+--			print_cc_linked_list (second_linked_list)
 
 			linked_list.append (second_linked_list)
 
 			io.put_string ("Appended list%N")
-			print_cc_linked_list (linked_list)
+--			print_cc_linked_list (linked_list)
 		end
 
 	test_linked_list is

@@ -101,8 +101,6 @@ feature -- Conversion
 			-- Representation as a linear structure
 		use
 			use_own_representation: representation
---		modify
---			modify_own_representation: representation
 		deferred
 		ensure
 			models_are_equivalent: model.domain |=| Result.model.first.range
@@ -114,8 +112,6 @@ feature -- Model
 			-- Model of a general container
 		use
 			use_own_representation: representation
---		modify
---			modify_own_representation: representation
 		local
 			linear: CC_LINEAR [G]
 		do
@@ -132,7 +128,6 @@ feature -- Model
 			end
 		ensure
 			result_not_void: Result /= Void
---			confined representation
 		end
 
 feature -- Framing

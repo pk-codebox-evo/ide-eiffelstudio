@@ -28,7 +28,6 @@ feature -- Element change
 			modify_own_representation: representation
 		deferred
 		ensure then
-			--in_set_already: old has (v) implies (count = old count) TODO diese postcondition nicht nötig
 			added_to_set: not old has (v) implies (count = old count + 1)
 			-- TODO hier noch contracts oder reicht das geerbte?
 		end

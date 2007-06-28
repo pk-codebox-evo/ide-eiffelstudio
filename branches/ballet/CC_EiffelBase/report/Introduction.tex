@@ -6,11 +6,11 @@
 \section{Motivation}
 \label{sec:Motivation}
 
-The contracts currently used in Eiffel (TODO hier zitat) are strong underspecifications. There are always some properties when invoking Eiffel features that are not expressed through the contracts. This is specially true when it comes to express what does not change through feature invocation. This makes the formal verification of Eiffel impossible, as in the case of verification we have to assume the worst possible implementation that still satisfies the contract.
+The contracts currently used in Eiffel (cf. \cite{Meyer92Eiffel, Meyer92Applying, Meyer97Object}) are strong underspecifications. There are always some properties when invoking Eiffel features that are not expressed through the contracts. This is specially true when it comes to express what does not change through feature invocation. This makes the formal verification of Eiffel impossible, as in the case of verification we have to assume the worst possible implementation that still satisfies the contract.
 
 To overcome these lacks, two approaches will be used to add full functional specifications to Eiffel: Models and Frames.
 \begin{itemize}
-\item Models are mathematical structures which describe the abstract state of an object. These mathematical structures are built out of sets, relations, functions and sequences. The currently available library called MML (TODO zitat) provides this functionality. This model library is based on a typed set theory of finite sets.
+\item Models are mathematical structures which describe the abstract state of an object. These mathematical structures are built out of sets, relations, functions and sequences. The currently available library called MML (cf. \cite{Widmer04Reusable}, downloadable from \cite{mml}) provides this functionality. This model library is based on a typed set theory of finite sets.
 \item Dynamic Frame Contracts (DFC) (TODO zitat) enable us to talk about infinite sets of objects. They are contractual expressions describing the read effect and the write effect of a feature. With DFC we can solve the "frame problem" and exclude unwanted side effects.
 \end{itemize}
 
@@ -24,4 +24,4 @@ This semester thesis is an effort to redevelop a major part of the EiffelBase Li
 \section{Overview}
 \label{sec:Overview}
 
-In Chapter \ref{sec:Frames} we present a short overview over the concept of Frames. In Chapter \ref{sec:Models} a short introduction into the concept of Models is given. In Chapter \ref{sec:LibraryDesign} the redesigned and reimplemented Library is presented. In particular the new Library using DFCs and Models is introduced (Section \ref{sec:CCEiffelBaseLibrary}) and differences to the original EiffelBase Library are emphasized (Section \ref{sec:DifferencesToEiffelBase}). Finally we present our results, conclusions and ideas for future work in Chapter \ref{sec:Conclusions}.
+In Chapter \ref{sec:Frames} we present a short overview over the concept of Frames. In Chapter \ref{sec:Models} a short introduction into the concept of Models is given. In Chapter \ref{sec:LibraryDesign} the redesigned and reimplemented Library is presented. In particular the new Library using DFCs and Models is introduced (Section \ref{sec:EiffelBaseWithCompleteContracts}) and differences to the original EiffelBase Library are emphasized (Section \ref{sec:DifferencesToEiffelBase}). Finally we present our results, conclusions and ideas for future work in Chapter \ref{sec:Conclusions}.
