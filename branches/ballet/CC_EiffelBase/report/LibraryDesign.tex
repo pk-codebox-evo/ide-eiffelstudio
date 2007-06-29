@@ -1,14 +1,52 @@
 \chapter{Library Design}
 \label{sec:LibraryDesign}
 
-One part of this semester thesis was the redesign of the EiffelBase Library (cf. \cite{eiffelbase}).
+One part of this semester thesis was the redesign of the EiffelBase Library (cf. \cite{eiffelbase}). The goal was to get a cleaner and smoother base library. Of course the new base library should use Dynamic Frame Contracts and Models as discussed in Section \ref{sec:DynamicFramesInEiffel} and Section \ref{sec:ModelsInEiffel}.
+
+The current EiffelBase Library is over engineered and sometimes messy. The usage of multi inheritance is 
 
 \section{EiffelBase with Complete Contracts}
 \label{sec:EiffelBaseWithCompleteContracts}
 
 
 
-\section{Differences to EiffelBase}
+\subsection{Differences to EiffelBase}
 \label{sec:DifferencesToEiffelBase}
 
+
+
+
+Dump of Notes:
+
+wir sind immer finite
+table kein erbe von bag
+bilinear erbt nicht mehr 2mal von linear
+klarer unterschied zwischen extend, put und force
+extend: non-defensive, stärkste precondition
+put: mittelding, mathematischer ansatz
+force: defensive, schwächste precondition, macht alles damit operation erfolgreich ist (bsp array verdoppeln wenn kein platz mehr)
+um diese unterschiede auch machen zu können -> flags eingeführt (can_extend(x), can_put(x))
+collection.fill rausgenommen
+strikte command vs. query separation
+commands: modify und confined representation
+queries: use representation
+dürfen keine side effects haben
+problematisch waren:
+has in CC_LINEAR: moved cursor auf start bevor er sucht
+index_of in CC_LINEAR: moved cursor
+occurences in CC_LINEAR
+there_exists in CC_LINEAR
+for_all in CC_LINEAR
+Lösungen: interner cursor speichern und wieder zurück setzen
+active erbt direkt von collection – nicht von bag
+chain ansehen...
+chain weggelassen
+indexable eher wie ds_indexable und nicht wie in eiffelbase
+cursor_structure wieso erben von active? cursor.item ist doch dasselbe wie nur item vom container...
+cursor_position statt normalem cursor der EiffelBase, welche allerdings selber auch eine position ist
+
+
+
+\section{Linked List class}
+\label{sec:LinkedListClass}
 

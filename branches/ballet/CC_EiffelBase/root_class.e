@@ -17,6 +17,8 @@ feature -- Initialization
 			-- Creation procedure.
 		do
 			-- test cc_linked_list from CC_EiffelBase
+			io.put_string ("Testing the CC_LINKED_LIST%N")
+--			io.read_line
 			test_cc_linked_list
 
 			-- test linked_list from EiffelBase
@@ -38,12 +40,13 @@ feature -- Testing
 			until
 				counter > 1000000
 			loop
+				io.put_string ("put " + counter.out + " in list%N")
 				linked_list.put_at_end (counter)
 				counter := counter + 1
 			end
 
 --			io.put_string ("List with some elements%N")
---			print_cc_linked_list (linked_list)
+			print_cc_linked_list (linked_list)
 
 
 		end
