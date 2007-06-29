@@ -739,6 +739,6 @@ invariant
 	after_constraint: after implies (active = last_element)
 
 	-- TODO add more
-	item_equals_cell_model_item: item = active.model
+	item_equals_cell_model_item: not is_empty implies (item = active.model)
 
 end
