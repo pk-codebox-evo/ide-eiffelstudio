@@ -1,7 +1,7 @@
 \chapter{Library Design}
 \label{sec:LibraryDesign}
 
-One part of this semester thesis was the redesign of the EiffelBase Library (cf. \cite{eiffelbase}). The goal was to get a cleaner and smoother base library. Of course the new base library should use Dynamic Frame Contracts and Models as discussed in Section \ref{sec:DynamicFramesInEiffel} and Section \ref{sec:ModelsInEiffel}. The redesign was focused on the linked list class and all supporting classes.
+One part of this semester thesis was the redesign of the EiffelBase Library (cf. \cite{eiffelbase}). The goal was to get a cleaner and smoother base library. Of course the new base library should use Dynamic Frame Contracts and Models as discussed in Section \ref{sec:DynamicFramesInEiffel} and Section \ref{sec:ModelsInEiffel}. The redesign was focused on linked list class and all supporting classes.
 
 The current EiffelBase Library is over engineered and sometimes messy. The usage of multi inheritance is somewhat a
 
@@ -20,10 +20,10 @@ Actually there are a lot of differences to the original EiffelBase Library. We t
 	\item [Table not a heir of Bag] The table class is no longer a heir of the bag class. Originally the idea was that a table is a bag of elements which can be directly accessed through an index. But for us the mathematical concept behind a bag and a table are too different to be directly related.
 	\item [Active not a heir of Bag] 
 	\item [Bilinear class] In the EiffelBase Library the bilinear class inherits two times from the linear class. One time to actually inherit features which are then redefined to fit the bilinear case. The other time to be able to use features of the original linear class inside the implementation.
-	\item [extend vs. put vs. force] We tried to really define and implement differences between these features which are doing essentially the same.
+	\item [extend vs. put vs. force] We tried to really define and implement differences between these features which are doing essentially the same but having different meanings.
 	\begin{itemize}
 		\item extend is defined as the non-defensive version of putting a new element into a container. This implies the strongest preconditions.
-		\item put is defined as the medium-defensive version. This is more or less the mathematical point of view.
+		\item put is defined as the medium-defensive version. This is more or less the mathematical point of view. For example if an element is already included in a set, the operation is just ignored.
 		\item force is defined as the defensive version. This implies the weakest preconditions. This feature does everything to ensure a successful operation. The force feature would for example double an array if there is no more free space in it.
 	\end{itemize}
 	To be able to realize these different behaviors, new flags have been introduced. In particular can\_extend(x) and can\_put(x) are added to the preconditions of extend and put.
