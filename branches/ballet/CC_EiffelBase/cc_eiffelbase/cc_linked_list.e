@@ -707,6 +707,7 @@ feature -- Model
 				off
 			loop
 				Result := Result.extended_by_pair (index, item)
+				forth
 			end
 		end
 

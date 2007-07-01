@@ -38,14 +38,14 @@ feature -- Testing
 			from
 				counter := 0
 			until
-				counter > 1000000
+--				counter > 1000000
+				counter > 10
 			loop
-				io.put_string ("put " + counter.out + " in list%N")
 				linked_list.put_at_end (counter)
 				counter := counter + 1
 			end
 
---			io.put_string ("List with some elements%N")
+			io.put_string ("List with some elements%N")
 			print_cc_linked_list (linked_list)
 
 
@@ -71,6 +71,7 @@ feature -- Printing
 				a_list.off
 			loop
 				io.put_string (a_list.item.out + " ")
+				a_list.forth
 			end
 		end
 
@@ -83,6 +84,7 @@ feature -- Printing
 				a_list.off
 			loop
 				io.put_string (a_list.item.out + " ")
+				a_list.forth
 			end
 		end
 
