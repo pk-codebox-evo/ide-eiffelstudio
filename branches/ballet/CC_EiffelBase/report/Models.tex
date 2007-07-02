@@ -10,9 +10,35 @@ Models are mathematical constructs that describe the abstract behavior of a data
 \section{Mathematical Model Library (MML)}
 \label{sec:MML}
 
-The mathematical model library (MML, cf. \cite{MML}) introduced a way to make specifications complete by using pure mathematical models that describe the abstract behavior of data types.
+The mathematical model library (MML) resulted from the Master Thesis of Tobias Widmer (cf. \cite{Widmer04Reusable}) and an improved version can be downloaded from \cite{MML}. This library introduced a way to make specifications complete by using pure mathematical models that describe the abstract behavior of data types.
+
+Models are represented by immutable objects. Immutable objects are objects that never change once they are created. Therefore the identity of such a model objects is defined through its state. That means that two objects that have the same state (therefore have the same values) are considered equal. Operations on immutable objects do not change the object itself, but produce new objects based on the current object and the arguments.
+
+The MML is used in this semester thesis to create Models and to be able to write model contracts for features of the new base library, see Section \ref{sec:ModelsInEiffel}.
 
 \section{Models in Eiffel}
 \label{sec:ModelsInEiffel}
+
+Every class in the new base library contains a special query that constructs the model from the current state of the instance. This query should be side-effect free and should only create the model object. This query is named \textit{model}.
+
+This \textit{model} query is then used in contracts of features of this class. An example is given in Listing \ref{lst:} in the \textbf{ensure} clause.
+
+\begin{lstlisting}[float,caption=put feature of the CC\_COLLECTION class.,label=lst:put]
+feature -- Element change
+	put (v: G) is
+			-- Ensure that structure includes `v'.
+		require
+			can_add_element: can_put (v)
+		use
+			use_own_representation: representation
+		modify
+			modify_own_representation: representation
+		deferred
+		ensure
+			model_updated: model |=| old model.extended (v)
+			model_correspondends: model.contains (v)
+			confined representation
+		end
+\end{lstlisting}
 
 
