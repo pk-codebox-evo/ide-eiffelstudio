@@ -1,7 +1,16 @@
 \chapter{Models}
 \label{sec:Models}
 
+Reusable components should have precise specifications of their functionality. The creation of such precise specifications is a difficult but important task because precise specifications enable the client to understand the requirements for the usage of these components. An additional benefit for the component's creator is implementation hiding. Such a decoupling of different views on a component (author versus client) is needed for reuse and evolution of these components. \cite{Schoeller03Strengthening} gives an overview over the problem of creating precise specifications.
 
+The creation of specifications in general is error-prone and often components are under-specified or over-specified. If they are under-specified, they leave too much space for misleading assumptions. If they are over-specified, they possibly violate information hiding, making reuse and evolution nearly impossible. As already described in Section \ref{sec:FrameProblem}, the Frame Problem is the best known specification problem because it is nearly impossible to clearly describe what has not changed during execution of a feature.
+
+Models are mathematical constructs that describe the abstract behavior of a data type without dealing with the actual implementation. Examples are sequences, sets, bags or relations. The idea was to enable precise specifications through the usage of models. Even Hoare in 1972 (cf. \cite{Hoare72Proof}) related program verification to abstract data types and models.
+
+\section{Mathematical Model Library (MML)}
+\label{sec:MML}
+
+The mathematical model library (MML, cf. \cite{MML}) introduced a way to make specifications complete by using pure mathematical models that describe the abstract behavior of data types.
 
 \section{Models in Eiffel}
 \label{sec:ModelsInEiffel}

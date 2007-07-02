@@ -10,8 +10,8 @@ The contracts currently used in Eiffel (cf. \cite{Meyer92Eiffel, Meyer92Applying
 
 To overcome these lacks, two approaches will be used to add full functional specifications to Eiffel: Models and Frames.
 \begin{itemize}
-\item Models are mathematical structures which describe the abstract state of an object. These mathematical structures are built out of sets, relations, functions and sequences. The currently available library called MML (cf. \cite{Widmer04Reusable}, downloadable from \cite{mml}) provides this functionality. This model library is based on a typed set theory of finite sets.
-\item Dynamic Frame Contracts (DFC) (TODO zitat) enable us to talk about infinite sets of objects. They are contractual expressions describing the read effect and the write effect of a feature. With DFC we can solve the "frame problem" and exclude unwanted side effects.
+\item Models are mathematical structures which describe the abstract state of an object. These mathematical structures are built out of sets, relations, functions and sequences. The currently available library called MML (cf. \cite{Widmer04Reusable}, downloadable from \cite{MML}) provides this functionality. This model library is based on a typed set theory of finite sets.
+\item Dynamic Frame Contracts (DFC) (cf. \cite{SchoellerDynamic}) enable us to talk about infinite sets of objects. They are contractual expressions describing the read effect and the write effect of a feature. With DFC we can solve the "frame problem" and exclude unwanted side effects.
 \end{itemize}
 
 This semester thesis is an effort to redevelop a major part of the EiffelBase Library to support Dynamic Frame Contracts and Models. The goal is to redesign and implement the linked list class in the EiffelBase Library and all supporting classes to allow full functional specifications and therefore formal verification. The redesign of the EiffelBase Library structure should lead to a cleaner and smoother Base Library.
