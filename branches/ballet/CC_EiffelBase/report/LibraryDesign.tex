@@ -17,9 +17,14 @@ Actually there are a lot of differences to the original EiffelBase Library. We t
 
 \begin{description}
 	\item [Finite containers] In contrast to the EiffelBase Library the new library is always finite. To be more precise, only finite containers are available.
-	\item [Table not a heir of Bag] The table class is no longer a heir of the bag class. Originally the idea was that a table is a bag of elements which can be directly accessed through an index. But for us the mathematical concept behind a bag and a table are too different to be directly related.
+	\item [Table not a heir of Bag] The TABLE class is no longer a heir of the BAG class. Originally in the EiffelBase Library the idea was that a table is a bag of elements which can be directly accessed through an index. But for us the mathematical concept behind a bag and a table are too different to be directly related.
 	\item [Active not a heir of Bag] 
-	\item [Bilinear class] In the EiffelBase Library the bilinear class inherits two times from the linear class. One time to actually inherit features which are then redefined to fit the bilinear case. The other time to be able to use features of the original linear class inside the implementation.
+	\item [Feature renaming] Some features in the original EiffelBase Library have names which do not reflect the actual meaning or which are not compliant with the Eiffel style guidelines (cf. Chapter 26 in \cite{Meyer97Object}).
+	\begin{itemize}
+		\item Feature cursor in CURSOR\_STRUCTURE class has been renamed to cursor\_position because it actually describes a position.
+		\item Features isfirst and islast in the LIST class have been renamed to is\_first and is\_last to comply with the Eiffel style guidelines.
+	\end{itemize}
+	\item [Bilinear class] In the EiffelBase Library the BILINEAR class inherits two times from the LINEAR class. One time to actually inherit features which are then redefined to fit the bilinear case. The other time to be able to use features of the original linear class inside the implementation.
 	\item [extend vs. put vs. force] We tried to really define and implement differences between these features which are doing essentially the same but having different meanings.
 	\begin{itemize}
 		\item extend is defined as the non-defensive version of putting a new element into a container. This implies the strongest preconditions.
@@ -27,14 +32,14 @@ Actually there are a lot of differences to the original EiffelBase Library. We t
 		\item force is defined as the defensive version. This implies the weakest preconditions. This feature does everything to ensure a successful operation. The force feature would for example double an array if there is no more free space in it.
 	\end{itemize}
 	To be able to realize these different behaviors, new flags have been introduced. In particular can\_extend(x) and can\_put(x) are added to the preconditions of extend and put.
-	\item [Fill feature discarded] The fill feature has been discarded in the collection class because this would have introduced some nasty model contracts including underspecifications.
-	\item [Command-query separation] A strict command-query separation has been introduced. This was not the case in the original EiffelBase Library. Some features mainly in the linear class were queries but they would move the internal cursor which obviously should not be the case. Queries are defined as side-effect free. The solution used in the new library was to save the internal cursor, do the operation and then move the cursor back to the old position. This was also necessary for the new Dynamic Frame Contracts (cf. Section \ref{sec:DynamicFramesInEiffel}) because a query has only a use clause, a command has a use and a modify clause.
-	\item [Cursor renamed to cursor\_position] Because the cursor in the EiffelBase Library is in fact a cursor position, the corresponding class in the new library has been named cursor\_position.
+	\item [Fill feature discarded] The fill feature has been discarded in the COLLECTION class because this would have introduced some nasty model contracts including under-specifications.
+	\item [Command-query separation] A strict command-query separation has been introduced. This was not the case in the original EiffelBase Library. Some features, mainly in the LINEAR class, were queries but in fact they move the internal cursor which obviously should not be the case. Queries are defined as side-effect free. The solution used in the new library was to save the internal cursor, do the operation and then move the cursor back to the old position. This was also necessary for the new Dynamic Frame Contracts (cf. Section \ref{sec:DynamicFramesInEiffel}) because a query has only a use clause, a command has a use and a modify clause.
+	\item [Cursor renamed to cursor\_position] Because the cursor in the EiffelBase Library is in fact a cursor position, the corresponding class in the new library has been named CURSOR\_POSITION.
 	\item [Discarded classes] Some classes which are supporting classes of the linked list class in the EiffelBase Library have been discarded in the new library.
 	\begin{itemize}
-		\item The classes box, finite and unbounded have been discarded because as stated above, only finite containers are available.
-		\item The chain class has been discarded and all features have been directly included in the list class.
-		\item The dynamic\_chain class has been discarded and all features have been directly included in the dynamic\_list class.
+		\item The classes BOX, FINITE and UNBOUNDED have been discarded because as stated above, only finite containers are available.
+		\item The CHAIN class has been discarded and all features have been directly included in the LIST class.
+		\item The DYNAMIC\_CHAIN class has been discarded and all features have been directly included in the DYNAMIC\_LIST class.
 	\end{itemize}
 \end{description}
 

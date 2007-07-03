@@ -19,14 +19,14 @@ The frame problem in general is to specify which variables are affected by a com
 
 For Kassios, a frame is nothing more than a specification variable whose value is a set of memory locations. So the new contribution of Kassios is that the frame itself is part of the state. The frame is like a function depending on the state. It is not a constant but it is dynamic which means the set of memory locations can change. For example suppose we have a frame which frames a whole list of elements. If we insert a new element, it is automatically framed too and its memory address is added to the frame variable. The virtual address of the frame or the specification variable respectively can be itself part of the frame. Which in fact means that frames could frame themselves.
 
-Kassios introduced three new definitions or framing specifications concerning frames: The first specification (Equation \ref{eq:Preservation}) is preservation which is satisfied by every computation that does not touch region f.
+Kassios introduced three new definitions or framing specifications: The first specification (Equation \ref{eq:Preservation}) is preservation which is satisfied by every computation that does not touch region f.
 
 \begin{equation}
 	\Xi f := \sigma' \triangleright f = \sigma \triangleright f
 	\label{eq:Preservation}
 \end{equation}
 
-The second specification (Equation \ref{eq:Modification}) is modification which is satisfied by every computation that only touches region f or at most allocates new memory. So all allocated locations other than f are not touched.
+The second specification (Equation \ref{eq:Modification}) is modification which is satisfied by every computation that only touches region f or at most allocates new memory. That implies all allocated locations other than f are not touched.
 
 \begin{equation}
 	\Delta f := \Xi (\text{Used} \; \backslash \; f)
@@ -40,14 +40,14 @@ The third specification (Equation \ref{eq:SwingingPivot}) is the swinging pivot 
 	\label{eq:SwingingPivot}
 \end{equation}
 
-Equation \ref{eq:Framing} states that a variable v depends only on locations in f, so leaving these locations untouched preserves the value of v.
+Equation \ref{eq:Framing} states that a variable v depends only on locations in f. Leaving these locations untouched preserves the value of v.
 
 \begin{equation}
 	f \; \text{\bf{frames}} \; v := \forall \sigma' \cdot \Xi f \Rightarrow v' = v
 	\label{eq:Framing}
 \end{equation}
 
-Independence of two variables can be expressed as disjointness of dynamic frames. Disjointness of frames is an important property. Therefore it is desired to establish and preserve disjointness. To preserve disjointness, dynamic frames usually frame themselfes.
+Independence of two variables can be expressed as disjointness of dynamic frames. Disjointness of frames is an important property. It is desired to establish and preserve disjointness. To preserve disjointness, dynamic frames usually frame themselfes.
 
 \begin{equation}
 	f \; \text{\bf{frames}} \; x  \; \wedge \; g \; \text{\bf{frames}} \; y \; \wedge \; \text{\textit{disjoint}} [f;g] \; \wedge \; \Delta f \Rightarrow y' = y
@@ -62,7 +62,6 @@ Independence of two variables can be expressed as disjointness of dynamic frames
 \section{Dynamic Frames in Eiffel}
 \label{sec:DynamicFramesInEiffel}
 
-
-
+Every feature in every class in the new base library uses two new contract mechanisms. 
 
 

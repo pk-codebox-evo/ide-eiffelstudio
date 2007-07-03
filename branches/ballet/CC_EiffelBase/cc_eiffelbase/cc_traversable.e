@@ -132,7 +132,7 @@ feature -- Model
 		local
 			linear: CC_LINEAR [G]
 		do
-			create {MML_DEFAULT_SEQUENCE [G]}Result.make_empty
+			create {MML_DEFAULT_SEQUENCE [G]} Result.make_empty
 			linear := linear_representation
 
 			from
@@ -159,7 +159,7 @@ feature -- Model
 		use
 			use_own_representation: representation
 		do
-			create {MML_DEFAULT_PAIR [MML_SEQUENCE [G], INTEGER]}Result.make_from (model_sequence, model_cursor)
+			create {MML_DEFAULT_PAIR [MML_SEQUENCE [G], INTEGER]} Result.make_from (model_sequence, model_cursor)
 		ensure
 			result_not_void: Result /= Void
 		end

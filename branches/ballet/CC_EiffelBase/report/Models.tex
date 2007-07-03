@@ -21,9 +21,36 @@ The MML is used in this semester thesis to create Models and to be able to write
 
 Every class in the new base library contains a special query that constructs the model from the current state of the instance. This query should be side-effect free and should only create the model object. This query is named \textit{model}.
 
-This \textit{model} query is then used in contracts of features of this class. An example is given in Listing \ref{lst:} in the \textbf{ensure} clause.
+An example of such a \textit{model} query is given in Listing \ref{lst:container_model}. Here a bag is chosen as a model for a general container to contain its elements. The bag is created using a default implementation from the MML. Then all elements of the container are added to the bag object using an intermediate linear representation.
 
-\begin{lstlisting}[float,caption=put feature of the CC\_COLLECTION class.,label=lst:put]
+\begin{lstlisting}[float,caption=model feature of the CC\_CONTAINER class.,label=lst:container_model]
+feature -- Model
+	model: MML_BAG [G] is
+			-- Model of a general container
+		use
+			use_own_representation: representation
+		local
+			linear: CC_LINEAR [G]
+		do
+			create {MML_DEFAULT_BAG [G]} Result.make_empty
+			linear := linear_representation
+
+			from
+				linear.start
+			until
+				linear.off
+			loop
+				Result := Result.extended (linear.item)
+				linear.forth
+			end
+		ensure
+			result_not_void: Result /= Void
+		end
+\end{lstlisting}
+
+Such a \textit{model} query is then used in contracts of features of this class. An example is given in Listing \ref{lst:put_feature} in the \textbf{ensure} clause. 
+
+\begin{lstlisting}[float,caption=put feature of the CC\_COLLECTION class.,label=lst:put_feature]
 feature -- Element change
 	put (v: G) is
 			-- Ensure that structure includes `v'.
@@ -41,4 +68,47 @@ feature -- Element change
 		end
 \end{lstlisting}
 
+\textit{Model} queries themselves can be built from several sub-models. An example is given in Listing \ref{lst:traversable_model}. Here the \textit{model} is built from a \textit{model\_sequence} which represents the sequence itself with all elements and a \textit{model\_cursor} which represents the current cursor position of the internal cursor. The final \textit{model} is a pair of \textit{model\_sequence} and \textit{model\_cursor}. Two traversable objects are therefore equal if and only if they contain the same elements in the same order and the internal cursor is at the same location.
+
+\begin{lstlisting}[float,caption=Model and sub-models from the CC\_TRAVERSABLE class.,label=lst:traversable_model]
+feature -- Model
+	model_sequence: MML_SEQUENCE [G] is
+			-- Model of a general traversable structure
+		use
+			use_own_representation: representation
+		local
+			linear: CC_LINEAR [G]
+		do
+			create {MML_DEFAULT_SEQUENCE [G]} Result.make_empty
+			linear := linear_representation
+
+			from
+				linear.start
+			until
+				linear.off
+			loop
+				Result := Result.extended (linear.item)
+				linear.forth
+			end
+		ensure
+			result_not_void: Result /= Void
+		end
+
+	model_cursor: INTEGER is
+			-- Model of a cursor for traversal
+		use
+			use_own_representation: representation
+		deferred
+		end
+
+	model: MML_PAIR [MML_SEQUENCE [G], INTEGER] is
+			-- Model of the traversable structure
+		use
+			use_own_representation: representation
+		do
+			create {MML_DEFAULT_PAIR [MML_SEQUENCE [G], INTEGER]} Result.make_from (model_sequence, model_cursor)
+		ensure
+			result_not_void: Result /= Void
+		end
+\end{lstlisting}
 
