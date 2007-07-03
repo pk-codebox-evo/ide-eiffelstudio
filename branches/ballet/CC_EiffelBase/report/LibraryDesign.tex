@@ -8,7 +8,7 @@ The current EiffelBase Library is over engineered and sometimes messy. The usage
 \section{EiffelBase with Complete Contracts}
 \label{sec:EiffelBaseWithCompleteContracts}
 
-As stated above the new base library was focused on the linked list class and all supporting classes. In total there are about 20 classes in the library.
+As stated above the new base library was focused on the linked list class and all supporting classes. In total there are about 20 classes in the library. Every class has a "CC\_" prefix in front of the name to be able to use this library in parallel to the original EiffelBase Library.
 
 \subsection{Differences to EiffelBase}
 \label{sec:DifferencesToEiffelBase}
@@ -34,7 +34,7 @@ Actually there are a lot of differences to the original EiffelBase Library. We t
 	To be able to realize these different behaviors, new flags have been introduced. In particular can\_extend(x) and can\_put(x) are added to the preconditions of extend and put.
 	\item [Fill feature discarded] The fill feature has been discarded in the COLLECTION class because this would have introduced some nasty model contracts including under-specifications.
 	\item [Command-query separation] A strict command-query separation has been introduced. This was not the case in the original EiffelBase Library. Some features, mainly in the LINEAR class, were queries but in fact they move the internal cursor which obviously should not be the case. Queries are defined as side-effect free. The solution used in the new library was to save the internal cursor, do the operation and then move the cursor back to the old position. This was also necessary for the new Dynamic Frame Contracts (cf. Section \ref{sec:DynamicFramesInEiffel}) because a query has only a use clause, a command has a use and a modify clause.
-	\item [Cursor renamed to cursor\_position] Because the cursor in the EiffelBase Library is in fact a cursor position, the corresponding class in the new library has been named CURSOR\_POSITION.
+	\item [Cursor renamed to cursor\_position] Because the cursor in the EiffelBase Library is in fact a cursor position, the corresponding class in the new library has been named CURSOR\_POSITION. As stated above, the feature cursor has also been renamed to cursor\_position.
 	\item [Discarded classes] Some classes which are supporting classes of the linked list class in the EiffelBase Library have been discarded in the new library.
 	\begin{itemize}
 		\item The classes BOX, FINITE and UNBOUNDED have been discarded because as stated above, only finite containers are available.

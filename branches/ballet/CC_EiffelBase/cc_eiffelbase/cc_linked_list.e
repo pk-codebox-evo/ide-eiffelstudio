@@ -700,7 +700,7 @@ feature -- Model
 	model_indexable: MML_RELATION [INTEGER, G] is
 			-- Model for an indexable data structure.
 		do
-			create {MML_DEFAULT_RELATION [INTEGER, G]}Result.make_empty
+			create {MML_DEFAULT_RELATION [INTEGER, G]} Result.make_empty
 			from
 				start
 			until

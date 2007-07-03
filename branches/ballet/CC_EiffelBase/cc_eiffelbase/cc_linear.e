@@ -403,8 +403,9 @@ feature -- Conversion
 			use_own_representation: representation
 -- TODO restore cursor position
 -- computing the model should never change the state
+-- Problems here... TODO!!!
 		do
-			Result := Current
+			Result := Current.twin
 		ensure then
 			result_corresponds: Result.model |=| model
 		end
