@@ -81,7 +81,7 @@ feature -- Element change
 		ensure
 	 		new_count: count = old count + 1
 	 		new_index: index = old index + 1
-	 		model_corresponds: model |=| old model.first.extended_at (v, model.second - 1) -- TODO Stimmen hier die cursor?
+	 		model_corresponds: model |=| old model.first.extended_at (v, model.second - 1)
 	 		confined representation
 		end
 
@@ -132,9 +132,9 @@ feature -- Element change
 			other_is_empty: other.is_empty
 			other_model_is_empty: other.model.first.is_empty
 			--model_corresponds: model.first |=| old model.first.
-			-- TODO hier wird noch nichts über cursor gesagt
-			-- reicht denn ein einfaches united? ist ja eine sequence
-			-- muss auch confined other.representation stehen?
+			-- TODO no contracts about cursor
+			-- is 'united' sufficient, because it is a sequence -> order important
+			-- confined other.representation??? necessary???
 			confined representation
 		end
 
@@ -167,7 +167,7 @@ feature -- Element change
 	 		same_index: index = old index
 			other_is_empty: other.is_empty
 			other_model_is_empty: other.model.first.is_empty
-			-- TODO siehe bei merge_left
+			-- TODO see comment at 'merge_left'
 			confined representation
 		end
 
@@ -270,7 +270,7 @@ feature -- Duplication
 			-- where `from_here' is the number of items
 			-- at or to the right of current position.
 		local
-			pos: CC_CURSOR_POSITION
+			old_cursor_position: CC_CURSOR_POSITION
 			counter: INTEGER
 		do
 			from
@@ -278,7 +278,7 @@ feature -- Duplication
 				if object_comparison then
 					Result.compare_objects
 				end
-				pos := cursor_position
+				old_cursor_position := cursor_position
 			until
 				(counter = n) or else exhausted
 			loop
@@ -286,7 +286,7 @@ feature -- Duplication
 				forth
 				counter := counter + 1
 			end
-			go_to (pos)
+			go_to (old_cursor_position)
 		end
 
 feature {CC_DYNAMIC_LIST} -- Implementation
@@ -305,6 +305,5 @@ feature {CC_DYNAMIC_LIST} -- Implementation
 invariant
 
 	extendible: extendible
-	-- TODO mehr model contracts?
 
 end

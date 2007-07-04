@@ -13,7 +13,7 @@ inherit
 		export
 			{CC_CELL, CC_LIST}
 				put
-			{ANY}
+			{CC_ANY}
 				item
 		end
 
@@ -49,7 +49,5 @@ feature {CC_CELL, CC_LIST} -- Implementation
 			not_chained: right = Void
 			confined representation
 		end
-
--- TODO think about the model - also model pointer to neighbour
 
 end

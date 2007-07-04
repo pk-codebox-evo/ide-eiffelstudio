@@ -1,5 +1,5 @@
 indexing
-	description	: "System's root class aka Dump"
+	description	: "System's root - provides some test cases for the new CC_EiffelBase Library"
 	author: "Marco Zietzling"
 	copyright: "Copyright (c) 2007, Marco Zietzling"
 	date: "$Date$"
@@ -17,11 +17,11 @@ feature -- Initialization
 			-- Creation procedure.
 		do
 			-- test cc_linked_list from CC_EiffelBase
-			io.put_string ("Testing the CC_LINKED_LIST%N")
---			io.read_line
+			io.put_string ("Testing CC_LINKED_LIST%N")
 			test_cc_linked_list
 
 			-- test linked_list from EiffelBase
+			io.put_string ("Testing LINKED_LIST%N")
 		end
 
 feature -- Testing
@@ -39,7 +39,7 @@ feature -- Testing
 				counter := 0
 			until
 --				counter > 1000000
-				counter > 10
+				counter > 2
 			loop
 				linked_list.put_at_end (counter)
 				counter := counter + 1
@@ -73,6 +73,7 @@ feature -- Printing
 				io.put_string (a_list.item.out + " ")
 				a_list.forth
 			end
+			io.put_new_line
 		end
 
 	print_linked_list (a_list: LINKED_LIST [INTEGER]) is
@@ -86,6 +87,7 @@ feature -- Printing
 				io.put_string (a_list.item.out + " ")
 				a_list.forth
 			end
+			io.put_new_line
 		end
 
 end -- class ROOT_CLASS

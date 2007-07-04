@@ -22,43 +22,28 @@ feature -- Element change
 
 	extend (v: G) is
 			-- Ensure that set includes `v' iff `v' can be added.
-		use
-			use_own_representation: representation
-		modify
-			modify_own_representation: representation
 		deferred
 		ensure then
 			added_to_set: not old has (v) implies (count = old count + 1)
-			-- TODO hier noch contracts oder reicht das geerbte?
 		end
 
 	put (v: G) is
 			-- Ensure that set includes `v'.
-		use
-			use_own_representation: representation
-		modify
-			modify_own_representation: representation
 		deferred
 		ensure then
 			in_set_already: old has (v) implies (count = old count)
 			added_to_set: not old has (v) implies (count = old count + 1)
-			-- TODO hier noch contracts oder reicht das geerbte?
 		end
 
 feature -- Removal
 
 	prune (v: G) is
 			-- Remove `v' if present.
-		use
-			use_own_representation: representation
-		modify
-			modify_own_representation: representation
 		deferred
 		ensure then
 			removed_count_change: old has (v) implies (count = old count - 1)
 			not_removed_no_count_change: not old has (v) implies (count = old count)
 			item_deleted: not has (v)
-			model_corresponds: not model.contains (v)
 		end
 
 	changeable_comparison_criterion: BOOLEAN is
@@ -95,13 +80,10 @@ feature -- Model
 			-- Model of a set
 		use
 			use_own_representation: representation
-		modify
-			modify_own_representation: representation
 		do
 			Result := model_collection.domain
 		ensure
 			Result_not_void: Result /= Void
-			confined representation
 		end
 
 invariant

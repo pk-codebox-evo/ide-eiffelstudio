@@ -194,7 +194,6 @@ feature -- Comparison
 			indices_unchanged:
 				index = old index and other.index = old other.index
 			true_implies_same_size: Result implies count = other.count
-			-- TODO add model contracts
 			models_are_equal: Result = (model |=| other.model)
 		end
 
@@ -262,7 +261,7 @@ feature -- Cursor movement
 			too_far_right: (old index + i > count) implies exhausted
 			too_far_left: (old index + i < 1) implies exhausted
 			expected_index: (not exhausted) implies (index = old index + i)
-			-- TODO add model contracts
+			model_sequence_not_changed: model_sequence |=| old model_sequence
 			confined representation
 		end
 
@@ -321,20 +320,6 @@ feature -- Cursor movement
 
 feature -- Element change
 
--- TODO hier wenn möglich put und extend von cursor_structure definieren. diese sind am ende immer noch deferred
-
--- TODO besser wäre nur replace_item_with... put ist irreführend
--- auch wegen contracts die vom collection geerbt werden: model_container |=| old model_container.extended (v)
--- stimmt natürlich nicht
---	put (v: like item) is
---			-- Replace current item by `v'.
---			-- (Synonym for `replace_item_with')
---		do
---			replace_item_with (v)
---		ensure then
---	 		same_count: count = old count
---		end
-
 	put_i_th (v: like item; i: INTEGER) is
 			-- Put `v' at `i'-th position.
 		local
@@ -369,9 +354,6 @@ feature -- Element change
 				l.forth
 			end
 			go_to (old_position)
-		ensure then
-			-- TODO add more model contracts
-			-- sollte eigentlich reichen
 		end
 
 feature -- Transformation
@@ -407,7 +389,6 @@ feature -- Transformation
 
 feature -- Duplication
 
--- TODO command or query?
 	duplicate (n: INTEGER): like Current is
 			-- Copy of sub-list beginning at current position
 			-- and having min (`n', `from_here') items,
@@ -418,14 +399,9 @@ feature -- Duplication
 			valid_subchain: n >= 0
 		use
 			use_own_representation: representation
-		modify
-			modify_own_representation: representation
 		deferred
 		ensure
-			-- TODO weitere model contracts
-			--models_correspond: model_sequence |=| Result.model_sequence ist doch falsch
-
-			confined representation
+			-- TODO add model contracts - difficult because of finite number of copied elements
 		end
 
 invariant

@@ -29,7 +29,6 @@ feature -- Access
 			use_own_representation: representation
 		deferred
 		ensure
-			-- TODO model contracts
 			model_corresponds: Result = model.item (i)
 		end
 
@@ -72,8 +71,8 @@ feature -- Status report
 
 feature -- Element change
 
--- TODO reichen can_add_element oder muss ein spezialisiertes can_add_element_at damit man auch
--- den index berücksichtigt?
+-- TODO is 'can_add_element' sufficient or do we need a special 'can_add_element_at' to
+-- take care of the index?
 
 	put (v: G; i: INTEGER) is
 			-- Associate value `v' with index `i'.
@@ -91,7 +90,7 @@ feature -- Element change
 			confined representation
 		end
 
-	-- TODO ev auch ein extend (v, i)??
+	-- TODO ev also an extend (v, i) needed?
 
 feature -- Model
 
@@ -99,17 +98,13 @@ feature -- Model
 			-- Model for an indexable data structure.
 		use
 			use_own_representation: representation
-		modify
-			modify_own_representation: representation
 		deferred
 		ensure
 			result_not_void: Result /= Void
-			confined representation
 		end
 
 invariant
 
-	-- TODO models verknüpfen
 	models_equal: model.range |=| model_collection.domain
 
 end

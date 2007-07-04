@@ -48,10 +48,11 @@ feature -- Cursor movement
 		modify
 			modify_own_representation: representation
 		deferred
-		ensure then
+		ensure
 			-- moved_forth_after_start: (not before) implies index = old index - 1
 			model_cursor_corresponds: model_cursor = old model_cursor - 1
 			model_sequence_not_changed: model_sequence |=| old model_sequence
+			confined representation
 		end
 
 	go_i_th (i: INTEGER) is

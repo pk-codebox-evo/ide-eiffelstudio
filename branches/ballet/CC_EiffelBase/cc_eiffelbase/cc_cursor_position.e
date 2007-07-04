@@ -14,7 +14,7 @@ inherit
 feature -- Model
 
 	model: INTEGER is
-			-- Model of a general cursor position
+			-- Model of a general cursor position.
 		use
 			use_own_representation: representation
 		deferred
@@ -25,16 +25,14 @@ feature -- Model
 feature -- Framing
 
 	representation: FRAME is
-			-- Representation of a general container
+			-- Representation of a general cursor position.
 		use
 			use_own_representation: representation
 		do
 			create Result.make_empty
 			Result := Result.extended (Current)
+		ensure
+			result_not_void: Result /= Void
 		end
-
-invariant
-
-	-- TODO
 
 end

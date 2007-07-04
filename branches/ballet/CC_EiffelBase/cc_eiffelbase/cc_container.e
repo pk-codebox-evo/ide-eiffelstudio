@@ -59,6 +59,8 @@ feature -- Status report
 	changeable_comparison_criterion: BOOLEAN is
 			-- May `object_comparison' be changed?
 			-- (Answer: yes by default.)
+		use
+			use_own_representation: representation
 		do
 			Result := True
 		end
@@ -78,6 +80,7 @@ feature -- Status setting
 			object_comparison := True
 		ensure
 			object_comparison
+			confined representation
 		end
 
 	compare_references is
@@ -93,6 +96,7 @@ feature -- Status setting
 			object_comparison := False
 		ensure
 			reference_comparison: not object_comparison
+			confined representation
 		end
 
 feature -- Conversion
@@ -103,7 +107,7 @@ feature -- Conversion
 			use_own_representation: representation
 		deferred
 		ensure
-			models_are_equivalent: model.domain |=| Result.model.first.range
+			models_equivalent: model.domain |=| Result.model.first.range
 		end
 
 feature -- Model
@@ -137,6 +141,8 @@ feature -- Framing
 		use
 			use_own_representation: representation
 		deferred
+		ensure
+			result_not_void: Result /= Void
 		end
 
 invariant

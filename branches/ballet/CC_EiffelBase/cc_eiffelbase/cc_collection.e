@@ -76,9 +76,8 @@ feature -- Removal
 			modify_own_representation: representation
 		deferred
 		ensure
-			-- TODO übel??
 			old has (v) implies (old count = count - 1) -- TODO ev unnötig, da mit unterem statement das schon gesagt wird
-			model_corresponds: old model |=| model.pruned (v)
+			model_corresponds: model |=| old model.pruned (v)
 			confined representation
 		end
 

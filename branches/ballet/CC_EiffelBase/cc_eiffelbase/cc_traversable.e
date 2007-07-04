@@ -131,9 +131,11 @@ feature -- Model
 			use_own_representation: representation
 		local
 			linear: CC_LINEAR [G]
+			old_cursor_position: INTEGER
 		do
 			create {MML_DEFAULT_SEQUENCE [G]} Result.make_empty
 			linear := linear_representation
+			old_cursor_position := linear.index
 
 			from
 				linear.start
@@ -143,6 +145,8 @@ feature -- Model
 				Result := Result.extended (linear.item)
 				linear.forth
 			end
+
+			linear.go_i_th (old_cursor_position)
 		ensure
 			result_not_void: Result /= Void
 		end

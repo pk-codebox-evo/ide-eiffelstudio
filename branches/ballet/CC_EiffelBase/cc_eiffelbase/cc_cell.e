@@ -38,13 +38,13 @@ feature -- Element change
 
 feature -- Model
 
-	model: G is
+	model: MML_BAG [G] is
 			-- Model of a general cell
 		use
 			use_own_representation: representation
 		do
-			Result := item
-			-- TODO correct?
+			create {MML_DEFAULT_BAG [G]} Result.make_empty
+			Result := Result.extended (item)
 		ensure
 			result_not_void: Result /= Void
 		end
@@ -52,17 +52,19 @@ feature -- Model
 feature -- Framing
 
 	representation: FRAME is
-			-- Representation of a general container
+			-- Representation of a general cell
 		use
 			use_own_representation: representation
 		do
 			create Result.make_empty
 			Result := Result.extended (Current)
-			-- TODO enough? or extend also with item?
+			Result := Result.extended (item)
+		ensure
+			result_not_void: Result /= Void
 		end
 
 invariant
 
-	model_equals_item: item /= Void implies model = item
+	model_contains_item: item /= Void implies model.contains (item)
 
 end

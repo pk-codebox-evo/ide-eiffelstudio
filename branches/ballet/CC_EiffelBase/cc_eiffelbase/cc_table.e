@@ -7,7 +7,6 @@ indexing
 
 deferred class
 	CC_TABLE [G, K]
-	-- TODO delete, G typ der items, K typ der keys
 
 inherit
 	CC_COLLECTION [G]
@@ -24,15 +23,13 @@ inherit
 
 feature -- Access
 
-	item alias "[]", infix "@" (k: K): G assign put is
+	item alias "[]", infix "@" (k: K): G is
 			-- Entry of key `k'.
 		require
 			valid_key: valid_key (k)
 		use
 			use_own_representation: representation
 		deferred
-		ensure
-			-- TODO
 		end
 
 feature -- Measurement
@@ -64,7 +61,23 @@ feature -- Element change
 			-- Associate value `v' with key `k'.
 		require
 			valid_key: valid_key (k)
-			can_put_element: can_put (v, k)
+			can_add_element: can_put (v, k)
+		use
+			use_own_representation: representation
+		modify
+			modify_own_representation: representation
+		deferred
+		ensure
+			model_updated: model |=| old model.extended_by_pair (v, k)
+			model_corresponds: model.contains_pair (v, k)
+			confined representation
+		end
+
+	extend (v: G; k: K) is
+			-- Associate value `v' with key `k'.
+		require
+			valid_key: valid_key (k)
+			can_add_element: can_extend (v, k)
 		use
 			use_own_representation: representation
 		modify
@@ -78,14 +91,12 @@ feature -- Element change
 
 feature -- Element specific status report
 
--- die beiden machen eher keinen sinn, da die table eher key zentriert ist
 	can_extend (v: G; k: K) : BOOLEAN is
-			-- Can `an_item' be added? Only iff the key is not yet used.
+			-- Can `an_item' be added? Only if the key is not yet used.
 		use
 			use_own_representation: representation
 		do
-			-- auch checken, dass key noch nicht existiert
-			Result := extendible and (item (k) = Void) -- TODO korrekt?
+			Result := extendible and (item (k) = Void)
 		ensure
 			model_corresponds: not model.range.contains (k)
 		end
@@ -100,7 +111,7 @@ feature -- Element specific status report
 
 feature {NONE} -- Inapplicable
 
--- TODO sehr unschön
+-- TODO ugly... really ugly
 
 	collection_put (v: G) is
 		do
@@ -124,16 +135,9 @@ feature -- Model
 			-- Model of a table
 		use
 			use_own_representation: representation
-		modify
-			modify_own_representation: representation
 		deferred
 		ensure
 			result_not_void: Result /= Void
-			confined representation
 		end
-
-invariant
-
-	--TODO models verknüpfen
 
 end

@@ -48,24 +48,18 @@ feature -- Access
 
 	item: G is
 			-- Current item.
-		use
-			use_own_representation: representation
 		do
 			Result := active.item
 		end
 
 	first: like item is
 			-- Item at first position.
-		use
-			use_own_representation: representation
 		do
 			Result := first_element.item
 		end
 
 	last: like item is
 			-- Item at last position.
-		use
-			use_own_representation: representation
 		do
 			Result := last_element.item
 		end
@@ -90,14 +84,14 @@ feature -- Access
 					forth
 					Result := Result + 1
 				end
-				go_to (p)
+--				go_to (p) not necessary because we stop at p
 			end
 		end
 
 	cursor_position: CC_LINKED_LIST_CURSOR_POSITION [G] is
 			-- Current cursor position.
 		do
-			create Result.make (active, after, before)
+			create Result.make (active, after, before, Current)
 		end
 
 feature -- Measurement
@@ -561,6 +555,10 @@ feature -- Duplication
 	copy (other: like Current) is
 			-- Update current object using fields of object attached
 			-- to `other', so as to yield equal objects.
+		use
+			use_own_representation: representation
+		modify
+			modify_own_representation: representation
 		local
 			cursor: CC_LINKED_LIST_CURSOR_POSITION [G]
 			obj_comparison: BOOLEAN
@@ -585,6 +583,9 @@ feature -- Duplication
 				other.go_to (cursor)
 			end
 			object_comparison := obj_comparison
+		ensure then
+			models_are_equivalent: other.model.first |=| model.first
+			confined representation
 		end
 
 feature {CC_LINKED_LIST} -- Implementation
@@ -673,7 +674,14 @@ feature {CC_LINKED_LIST} -- Implementation
 			-- Clean-up a just removed cell.
 		require
 			non_void_cell: v /= Void
+		use
+			use_own_representation: representation
+		modify
+			modify_own_representation: representation
+			-- TODO not true - we modify not current.representation but 'v'
 		do
+		ensure
+			confined representation
 		end
 
 feature {NONE} -- Implementation
@@ -685,6 +693,10 @@ feature {NONE} -- Implementation
 			--| redefine `wipe_out'.
 		require
 			prunable
+		use
+			use_own_representation: representation
+		modify
+			modify_own_representation: representation
 		do
 			active := Void
 			first_element := Void
@@ -694,13 +706,19 @@ feature {NONE} -- Implementation
 		ensure
 			wiped_out: is_empty
 			is_before: before
+			model_corresponds: model.first.is_empty
+			confined representation
 		end
 feature -- Model
 
 	model_indexable: MML_RELATION [INTEGER, G] is
 			-- Model for an indexable data structure.
+		local
+			old_position: like cursor_position
 		do
 			create {MML_DEFAULT_RELATION [INTEGER, G]} Result.make_empty
+			old_position := cursor_position
+
 			from
 				start
 			until
@@ -709,6 +727,8 @@ feature -- Model
 				Result := Result.extended_by_pair (index, item)
 				forth
 			end
+
+			go_to (old_position)
 		end
 
 feature -- Framing
@@ -717,9 +737,11 @@ feature -- Framing
 			-- Representation of a general linked list
 		local
 			current_element: like first_element
+			old_position: like cursor_position
 		do
 			create Result.make_empty
 			Result := Result.extended (Current)
+			old_position := cursor_position
 
 			from
 				start
@@ -729,6 +751,8 @@ feature -- Framing
 				Result := Result.extended(active)
 				forth
 			end
+
+			go_to (old_position)
 		end
 
 invariant
@@ -739,7 +763,7 @@ invariant
 	before_constraint: before implies (active = first_element)
 	after_constraint: after implies (active = last_element)
 
-	-- TODO add more
+	-- TODO add some more
 	item_equals_cell_model_item: not is_empty implies (item = active.model)
 
 end

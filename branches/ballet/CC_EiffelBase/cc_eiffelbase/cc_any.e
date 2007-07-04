@@ -11,7 +11,4 @@ indexing
 deferred class
 	CC_ANY
 
-inherit
-	ANY
-
 end

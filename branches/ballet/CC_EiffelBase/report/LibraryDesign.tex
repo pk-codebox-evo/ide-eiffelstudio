@@ -23,6 +23,7 @@ Actually there are a lot of differences to the original EiffelBase Library. We t
 	\begin{itemize}
 		\item Feature cursor in CURSOR\_STRUCTURE class has been renamed to cursor\_position because it actually describes a position.
 		\item Features isfirst and islast in the LIST class have been renamed to is\_first and is\_last to comply with the Eiffel style guidelines.
+		\item TODO: replace\_item\_with statt nur replace etc noch anderes., remove\_item statt nur remove, put\_at\_end statt nur put
 	\end{itemize}
 	\item [Bilinear class] In the EiffelBase Library the BILINEAR class inherits two times from the LINEAR class. One time to actually inherit features which are then redefined to fit the bilinear case. The other time to be able to use features of the original linear class inside the implementation.
 	\item [extend vs. put vs. force] We tried to really define and implement differences between these features which are doing essentially the same but having different meanings.

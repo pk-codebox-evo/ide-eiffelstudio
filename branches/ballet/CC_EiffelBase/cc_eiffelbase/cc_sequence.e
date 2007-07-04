@@ -17,7 +17,6 @@ inherit
 			model_container
 		end
 
--- TODO probleme mit repeated inheritance - select clause nötig. korrekt so? unschön? wtf?
 	CC_ACTIVE [G]
 		rename
 			model as model_active,
@@ -102,7 +101,6 @@ feature -- Element change
 			new_count: count = old count + 1
 		end
 
-
 	put_at_end (v: G) is
 			-- Add `v' to end.
 		deferred
@@ -140,8 +138,6 @@ feature -- Removal
 
 invariant
 
-	-- combine inherited models
 	inherited_models_equal: model_active |=| model_container
-	--models_equivalent: model_active.domain |=| model.first.range -- TODO underspecification and false...
 
 end

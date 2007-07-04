@@ -115,12 +115,12 @@ feature -- Access
 				end
 			end
 		ensure
-			-- TODO hier die equal ansehen
 			object_found: (not exhausted and object_comparison)
 				 implies equal (v, item)
 			item_found: (not exhausted and not object_comparison)
 				 implies v = item
 			models_equal_before_after: model_sequence |=| old model_sequence
+			confined representation
 		end
 
 	index: INTEGER is
@@ -223,7 +223,7 @@ feature -- Cursor movement
 		deferred
 		ensure
 			-- moved_forth_before_end: (not after) implies index = old index + 1
-			model_cursor_corresponds: model_cursor = old model_cursor + 1
+			model_cursor_corresponds: (not after) implies (model_cursor = old model_cursor + 1)
 			model_sequence_not_changed: model_sequence |=| old model_sequence
 			confined representation
 		end
@@ -399,13 +399,8 @@ feature -- Conversion
 
 	linear_representation: CC_LINEAR [G] is
 			-- Representation as a linear structure
-		use
-			use_own_representation: representation
--- TODO restore cursor position
--- computing the model should never change the state
--- Problems here... TODO!!!
 		do
-			Result := Current.twin
+			Result := Current
 		ensure then
 			result_corresponds: Result.model |=| model
 		end

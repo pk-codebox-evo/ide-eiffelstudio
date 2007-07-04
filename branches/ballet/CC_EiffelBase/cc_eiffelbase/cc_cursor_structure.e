@@ -45,6 +45,8 @@ feature -- Cursor movement
 		modify
 			modify_own_representation: representation
 		deferred
+		ensure
+			confined representation
 		end
-		
+
 end
