@@ -65,6 +65,7 @@ feature -- Initialization
 			-- Initialize.
 		do
 			Precursor {BPL_BN_ITERATOR} (a_class)
+			argument_prefix := once "arg."
 			reset
 		end
 
@@ -84,16 +85,18 @@ feature -- Main
 			i: INTEGER
 			feat: FEATURE_I
 			parents: FIXED_LIST[CLASS_C]
-			idx: INTEGER
+			last_current_class: EIFFEL_CLASS_C
+			precursor_call: STRING
 		do
-			current_feature := a_function
+			last_current_class := current_class
+			set_current_feature (a_function)
 			if byte_server.has (current_feature.code_id) then
 				byte_code := byte_server.disk_item (current_feature.code_id)
 			end
 
 			set_this_ref ("C")
 			set_heap_ref ("H")
-			current_feature := a_function
+
 			feat_name := bpl_mangled_feature_name (a_function.feature_name)
 			func_name := "fun." + current_class.name + "." + feat_name
 			return_type := bpl_type_for_type_a (a_function.type)
@@ -111,11 +114,13 @@ feature -- Main
 			loop
 				arg_name := a_function.arguments.item_name (i)
 				arg_type := a_function.arguments.i_th (i)
-				bpl_out (", arg.")
+				bpl_out (", ")
+				bpl_out (argument_prefix)
 				bpl_out (arg_name)
 				bpl_out (":")
 				bpl_out (bpl_type_for_type_a (arg_type))
-				result_call.append (", arg.")
+				result_call.append (", ")
+				result_call.append (argument_prefix)
 				result_call.append (arg_name)
 
 				i := i + 1
@@ -132,7 +137,8 @@ feature -- Main
 			loop
 				arg_name := a_function.arguments.item_name (i)
 				arg_type := a_function.arguments.i_th (i)
-				intro.append (", arg.")
+				intro.append (", ")
+				intro.append (argument_prefix)
 				intro.append (arg_name)
 				intro.append (":")
 				intro.append (bpl_type_for_type_a (arg_type))
@@ -149,37 +155,32 @@ feature -- Main
 				until
 					parents.after
 				loop
-					from
-						idx := current_feature.rout_id_set.lower
-					until
-						idx > current_feature.rout_id_set.count + current_feature.rout_id_set.lower - 1
-					loop
-						feat := parents.item.feature_of_feature_id (current_feature.rout_id_set.item (idx))
-						if feat /= Void then
-							bpl_out ("axiom (")
-							bpl_out (intro)
-							bpl_out (" :: ")
-							bpl_out (result_call)
-							bpl_out (" == ")
-
-							bpl_out ("fun." + parents.item.name + "." + feat.feature_name + "(H, C")
-							from
-								i := 1
-							until
-								i > a_function.argument_count
-							loop
-								arg_name := a_function.arguments.item_name (i)
-								arg_type := a_function.arguments.i_th (i)
-								intro.append ("arg.")
-								intro.append (arg_name)
-								i := i + 1
-							end
-
-							bpl_out ("));%N")
-						else
-							bpl_out ("// no feature for " + current_feature.feature_name + " in class " + parents.item.name +"%N")
+					feat := Feat_tbl_server.item (parents.item.class_id).feature_of_rout_id_set (current_feature.rout_id_set)
+					if feat /= Void then
+						bpl_out ("// feat = " + feat.feature_name + "%N")
+						bpl_out ("  axiom (")
+						bpl_out (intro)
+						bpl_out (" :: ")
+						bpl_out (result_call)
+						bpl_out (" == ")
+						
+						bpl_out ("fun." + parents.item.name + "." + feat.feature_name + "(H, C")
+						from
+							i := 1
+						until
+							i > a_function.argument_count
+						loop
+							arg_name := a_function.arguments.item_name (i)
+							arg_type := a_function.arguments.i_th (i)
+							bpl_out (", ")
+							bpl_out (argument_prefix)
+							bpl_out (arg_name)
+							i := i + 1
 						end
-						idx := idx + 1
+						
+						bpl_out ("));%N")
+					else
+						bpl_out ("// no feature for " + current_feature.feature_name + " in class " + parents.item.name +"%N")
 					end
 					parents.forth
 				end
@@ -187,14 +188,59 @@ feature -- Main
 				bpl_out ("// no parents for this feature%N")
 			end
 
+			if a_function.written_class /= last_current_class then
+				feat_name := bpl_mangled_feature_name (a_function.feature_name)
+				func_name := "fun." + last_current_class.name + "." + feat_name
+				return_type := bpl_type_for_type_a (a_function.type)
+				bpl_out ("%Nfunction ")
+				bpl_out (func_name)
+				bpl_out ("([ref, name]any, ")
+				bpl_out (bpl_type_for_class (last_current_class))
+
+				precursor_call := result_call
+				result_call := func_name + "(H, C"
+
+				from
+					i := 1
+				until
+					i > a_function.argument_count
+				loop
+					arg_name := a_function.arguments.item_name (i)
+					arg_type := a_function.arguments.i_th (i)
+					bpl_out (", ")
+					bpl_out (argument_prefix)
+					bpl_out (arg_name)
+					bpl_out (":")
+					bpl_out (bpl_type_for_type_a (arg_type))
+					result_call.append (", ")
+					result_call.append (argument_prefix)
+					result_call.append (arg_name)
+
+					i := i + 1
+				end
+
+				bpl_out (") returns (" + return_type + ");%N")
+				result_call.append (")")
+
+				bpl_out ("  axiom (")
+				bpl_out (intro)
+				bpl_out (" :: ")
+				bpl_out (result_call)
+				bpl_out (" == ")
+				bpl_out (precursor_call)
+				bpl_out (");%N")
+				
+			end
 			bpl_out ("%N")
+			
+			current_class := last_current_class
 		end
 
 	process_feature_without_code (a_feature: FEATURE_I) is
 			-- Process a feature that does not have code.
 		do
 			if a_feature.is_constant then
-				bpl_out ("axiom (")
+				bpl_out ("  axiom (")
 				bpl_out (intro)
 				bpl_out (":: ")
 				bpl_out (result_call)
@@ -237,7 +283,7 @@ feature -- Main
 				until
 					ass_list.off
 				loop
-					bpl_out ("axiom (")
+					bpl_out ("  axiom (")
 					bpl_out (precondition)
 					expr := ""
 					ass_list.item.process (Current)
@@ -289,6 +335,19 @@ feature -- Processing Environment
 			value_set: this_ref = a_string
 		end
 
+	argument_prefix: STRING
+
+	set_argument_prefix (a_string: STRING) is
+			-- Set the text to appended to argument names
+		require
+			not_void: a_string /= Void
+		do
+			argument_prefix := a_string
+		ensure
+			value_set: argument_prefix = a_string
+		end
+	
+	
 feature -- Result and side-effects
 
 	expr: STRING
@@ -316,22 +375,31 @@ feature -- Result and side-effects
 			expr := ""
 			local_vars := ""
 			side_effect := ""
+			used_arguments := create {ARRAYED_LIST[STRING]}.make (0)
 		ensure
 			expr_reset: expr.is_equal ("")
 			local_vars_reset: local_vars.is_equal ("")
 			side_effect_reset: side_effect.is_equal ("")
+			used_arguemnts_reset: used_arguments /= Void and then used_arguments.count = 0
 		end
 
 	intro: STRING
 			-- first part of the assertions ("forall ...")
 
+	used_arguments: LIST[STRING]
+			-- names of used arguments, including prefix
+	
 feature -- Processing
 
 	process_argument_b (a_node: ARGUMENT_B) is
 			-- Process `a_node'.
+		local
+			name: STRING
 		do
-			expr.append ("arg.")
-			expr.append (current_feature.arguments.item_name (a_node.position))
+			name := current_feature.arguments.item_name (a_node.position)
+			expr.append (argument_prefix)
+			expr.append (name)
+			used_arguments.extend (argument_prefix + name)
 		end
 
 	process_attribute_b (a_node: ATTRIBUTE_B) is

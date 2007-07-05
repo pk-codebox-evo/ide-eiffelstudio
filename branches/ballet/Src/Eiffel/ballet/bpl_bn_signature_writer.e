@@ -38,24 +38,30 @@ feature -- Generation
 			all_queries: LIST[FEATURE_I]
 			frame: FRAME_B
 			call: CALL_ACCESS_B
+			nested: NESTED_B
 			byte_code: BYTE_CODE
 			mod_frame: FRAME_B
 			mod_frame_call: CALL_ACCESS_B
 			mod_byte_code: BYTE_CODE
 			modifies_expression: STRING
 			use_expression: STRING
+			target: STRING
+			argument_quantifier: STRING
+			call_arguments: STRING
+			last_current_class: EIFFEL_CLASS_C
 		do
+			last_current_class := current_class
+
 			setup_function_writer
 			function_writer.set_current_feature (a_feature)
 
-			--			context.change_class_type_context(a_feature.written_class.types.first, a_feature.written_class.types.first)
 			context.init (a_feature.written_class.types.first)
 			bpl_out ("// Signature: " + a_feature.feature_name + " of class " + current_class.name + "%N")
 			bpl_out ("procedure proc.")
 			bpl_out (current_class.name)
 			bpl_out (".")
 			bpl_out (bpl_mangled_feature_name (a_feature.feature_name))
-			bpl_out ("(Current:ref")
+			bpl_out ("(Current: ref")
 			from
 				i := 1
 			until
@@ -105,7 +111,7 @@ feature -- Generation
 			if a_feature.type.is_void then
 				bpl_out ("  modifies Heap;%N")
 			else
-				bpl_out ("  free ensures fun.")
+				bpl_out ("  free ensures (fun.")
 				bpl_out (current_class.name)
 				bpl_out (".")
 				bpl_out (bpl_mangled_feature_name (a_feature.feature_name))
@@ -121,10 +127,11 @@ feature -- Generation
 					bpl_out (arg_name)
 					i := i + 1
 				end
-				bpl_out (") == Result;%N")
+				bpl_out (") == Result);%N")
 			end
 
 			process_feature_i (a_feature) -- generate assertions
+			function_writer.set_current_feature (a_feature)
 			-- write ensure clauses for all queries in the program to state, that they
 			-- are not changed if the frames do not overlap
 
@@ -140,16 +147,16 @@ feature -- Generation
 					loop
 						mod_frame ?= mod_byte_code.modify_frame.item
 						check
-							mod_frame /= Void
+							mod_frame_not_void: mod_frame /= Void
 						end
 						mod_frame_call ?= mod_frame.expr
 						check
-							mod_frame_call /= Void
+							mod_frame_call_not_void: mod_frame_call /= Void
 						end
 						if modifies_expression = Void then
 							modifies_expression := "fun." + a_feature.written_class.name + "." + mod_frame_call.feature_name + " (old (Heap), o)"
 						else
-							modifies_expression := "set.union (" + modifies_expression + ", " +
+							modifies_expression := "set.united(" + modifies_expression + ", " +
 								"fun." + a_feature.written_class.name + "." + mod_frame_call.feature_name + " (old (Heap), o))"
 						end
 						mod_byte_code.modify_frame.forth
@@ -161,6 +168,7 @@ feature -- Generation
 						all_queries.after
 					loop
 						if Byte_server.has (all_queries.item.code_id) then
+							argument_quantifier := ""
 							byte_code := Byte_server.item (all_queries.item.code_id)
 							if byte_code.use_frame /= Void then
 								bpl_out ("  free ensures (")
@@ -173,29 +181,57 @@ feature -- Generation
 								loop
 									frame ?= byte_code.use_frame.item
 									check
-										frame /= Void
+										frame_not_void: frame /= Void
 									end
 									call ?= frame.expr
+									nested ?= frame.expr
+									call_arguments := ""
+									if nested /= Void then
+										call ?= nested.message
+										function_writer.reset
+										function_writer.set_current_feature (all_queries.item)
+										function_writer.set_argument_prefix (all_queries.item.written_class.name + "." + call.feature_name + ".arg.")
+										nested.target.process (function_writer)
+										target := function_writer.expr
+										from
+											function_writer.used_arguments.start
+										until
+											function_writer.used_arguments.after
+										loop
+											argument_quantifier.append (", ")
+											argument_quantifier.append (function_writer.used_arguments.item.out)
+											argument_quantifier.append (":ref")
+											call_arguments.append (", ")
+											call_arguments.append (function_writer.used_arguments.item.out)
+											function_writer.used_arguments.forth
+										end
+									else
+										target := "Current"
+									end
 									check
-										call /= Void
+										call_not_void: call /= Void
 									end
 									if use_expression = Void then
-										use_expression := "fun." + all_queries.item.written_class.name + "." + call.feature_name + " (old (Heap), Current))"
+										use_expression := "fun." + all_queries.item.written_class.name + "." +
+											call.feature_name + " (old (Heap), " + target + ")"
 									else
-										use_expression := "set.union (" + use_expression + ", " +
-											"fun." + all_queries.item.written_class.name + "." + call.feature_name + " (old (Heap), Current))"
+										use_expression := "set.united (" + use_expression + ", " +
+											"fun." + all_queries.item.written_class.name + "." + call.feature_name +
+											" (old (Heap), " + target + "))"
 									end
 									byte_code.use_frame.forth
 								end
 
-								bpl_out ("forall o:ref :: ((set.is_disjoint_from (" +
+								bpl_out ("forall o:ref")
+								bpl_out (argument_quantifier)
+								bpl_out (" :: ((set.is_disjoint_from (" +
 									modifies_expression + ", " +
-									use_expression + ")")
+									use_expression + "))")
 
 								bpl_out (" ==> (fun." + all_queries.item.written_class.name +
-									"." + all_queries.item.feature_name + " (Heap, o) == fun." + 
+									"." + all_queries.item.feature_name + " (Heap, o" + call_arguments + ") == fun." + 
 									all_queries.item.written_class.name + "." +
-									all_queries.item.feature_name + " (old (Heap), o))));%N")
+									all_queries.item.feature_name + " (old (Heap), o" + call_arguments + "))));%N")
 							end
 						end
 						all_queries.forth
@@ -203,6 +239,7 @@ feature -- Generation
 				end
 			end
 			bpl_out ("%N")
+			current_class := last_current_class			
 		end
 
 feature -- Settors

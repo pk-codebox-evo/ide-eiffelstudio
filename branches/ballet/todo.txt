@@ -1,3 +1,6 @@
+- compilation does not always setup the byte_code tree correct (e.g. if one adds a use frame it is likely that everything is messed up - to go on the project seems to be CLEANED and compiled from scratch)
+- supplier side for frames: POGs need to be generated as assert-statements
+- generate POG for sideeffect-freeness of queries
 - BPL_BN_IMPLEMENTATION_WRITER has to be fixed
 - inherited FRAMES, confined keyword
 - TODOs in BPL_FEATURE_LIST_GENERATOR

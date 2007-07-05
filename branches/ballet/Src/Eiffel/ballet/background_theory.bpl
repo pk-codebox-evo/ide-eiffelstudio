@@ -89,17 +89,17 @@ function set.any_element (set) returns (any);
 axiom (forall s:set,x:any :: set.any_element(set.extended(s,x)) == x);	
 
 // Subset
-function set.is_subset (set,set) returns (bool);
-axiom (forall s:set :: set.is_subset (s,set.make_empty));
-axiom (forall s1:set,s2:set,x:any :: 
-  set.is_subset (s1,set.extended(s2,x)) == (set.is_subset (s1,s2) &&
-    set.is_member (s1,x)));
+function set.is_subset_of (set, set) returns (bool);
+axiom (forall s:set :: set.is_subset_of (s, set.make_empty));
+axiom (forall s1:set, s2:set, x:any :: 
+  set.is_subset_of (s1, set.extended(s2, x)) == (set.is_subset_of (s1, s2) &&
+    set.is_member (s1, x)));
 	
 // Equality
 function set.equals (set, set) returns (bool);
-axiom (forall s1:set, s2:set :: (s1 == s2) == (set.is_subset(s1, s2) &&
-  set.is_subset(s2, s1)));
-axiom (forall s1:set, s2:set :: (s1 == s2) == (set.equals(s1, s2)));
+axiom (forall s1:set, s2:set :: (s1 == s2) == (set.is_subset_of (s1, s2) &&
+  set.is_subset_of (s2, s1)));
+axiom (forall s1:set, s2:set :: (s1 == s2) == (set.equals (s1, s2)));
 
 // Union
 function set.united (set,set) returns (set);
@@ -128,19 +128,19 @@ axiom (forall s1:set,s2:set,x:any :: set.is_disjoint_from (s1,set.extended(s2,x)
 axiom (forall s1:set, s2:set :: set.is_disjoint_from (s1, s2) == set.is_disjoint_from (s2, s1));
 
 // Superset
-function set.is_superset (set,set) returns (bool);
-axiom (forall s1:set,s2:set :: {set.is_superset(s1,s2)}
-	set.is_superset(s1,s2) == set.is_subset(s2,s1));
+function set.is_superset_of (set, set) returns (bool);
+axiom (forall s1:set, s2:set :: {set.is_superset_of (s1, s2)}
+	set.is_superset_of (s1, s2) == set.is_subset_of (s2, s1));
 	
 // proper Subset
-function set.is_proper_superset (set,set) returns (bool);
-axiom (forall s1:set,s2:set :: {set.is_proper_superset(s1,s2)}
-  set.is_proper_superset(s1,s2) == (set.is_subset(s2,s1) && (s1 != s2)));
+function set.is_proper_superset (set, set) returns (bool);
+axiom (forall s1:set, s2:set :: {set.is_proper_superset (s1, s2)}
+  set.is_proper_superset (s1, s2) == (set.is_subset_of (s2, s1) && (s1 != s2)));
 
 // proper Superset
 function set.is_proper_subset (set,set) returns (bool);
-axiom (forall s1:set,s2:set :: {set.is_proper_subset(s1,s2)}
-  set.is_proper_subset(s1,s2) == (set.is_subset(s1,s2) && (s1 != s2)));
+axiom (forall s1:set,s2:set :: {set.is_proper_subset (s1, s2)}
+  set.is_proper_subset (s1,s2) == (set.is_subset_of (s1, s2) && (s1 != s2)));
 
 // Substracted
 function set.subtracted (set,set) returns (set);

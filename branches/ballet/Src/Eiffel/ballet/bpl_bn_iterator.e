@@ -75,10 +75,15 @@ feature -- Access
 			current_feature := a_feature
 			current_attribute ?= a_feature
 			current_constant ?= a_feature
+			current_class ?= a_feature.written_class
+			check
+				only_eiffel_classes: current_class /= Void
+			end
 		ensure
 			value_set: current_feature = a_feature
 			attribute_set: a_feature.is_attribute implies current_attribute = a_feature
 			constant_set: a_feature.is_constant implies current_constant = a_feature
+			current_class_set: current_class = a_feature.written_class
 		end
 
 	leaf_list: LEAF_AS_LIST

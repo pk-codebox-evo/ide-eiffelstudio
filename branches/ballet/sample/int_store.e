@@ -14,6 +14,8 @@ feature -- Access
 		use
 			uses_repr: repr
 		deferred
+		ensure
+			item = 4 or item /= 4
 		end
 
 	added (x: INT_STORE): INTEGER is

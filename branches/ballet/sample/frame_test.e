@@ -16,7 +16,6 @@ feature -- Access
 			-- Integer value stored
 		use
 			uses_repr: representation
-			u: representation
 		do
 			Result := x
 		end
@@ -39,7 +38,7 @@ feature -- Framing
 		use
 			own: representation
 		do
-			create Result.make_from_element (Current)
+--			create Result.make_from_element (Current)
 		end
 
 feature {}

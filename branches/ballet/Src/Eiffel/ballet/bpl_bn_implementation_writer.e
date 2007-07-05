@@ -11,6 +11,7 @@ inherit
 
 	BPL_BN_ITERATOR
 		redefine
+			make,
 			set_current_feature,
 			process_byte_code,
 			process_feature_without_code,
@@ -24,6 +25,14 @@ inherit
 create
 	make
 
+feature -- Initialization
+	make (a_class: EIFFEL_CLASS_C) is
+		do
+			Precursor (a_class)
+			create function_writer.make (current_class)
+			
+		end
+	
 feature -- Generation
 
 	write_implementation (a_feature: FEATURE_I) is
@@ -34,43 +43,50 @@ feature -- Generation
 			i: INTEGER
 			arg_type: TYPE_A
 			arg_name: STRING
+			last_current_class: EIFFEL_CLASS_C
 		do
-			create function_writer.make (current_class)
-			function_writer.set_leaf_list (leaf_list)
-			function_writer.set_heap_ref ("Heap")
-			function_writer.set_this_ref ("Current")
-			function_writer.set_result_call ("Result")
-			code := ""
-			local_vars := ""
-			bpl_out ("// Implementation: "+a_feature.feature_name+" of class "+current_class.name+"%N")
-			bpl_out ("implementation proc.")
-			bpl_out (current_class.name)
-			bpl_out (".")
-			bpl_out (bpl_mangled_feature_name (a_feature.feature_name))
-			bpl_out ("(Current:ref")
-			from
-				i := 1
-			until
-				i > a_feature.argument_count
-			loop
-				arg_name := a_feature.arguments.item_name (i)
-				arg_type := a_feature.arguments.i_th (i)
-				bpl_out (",arg.")
-				bpl_out (arg_name)
-				bpl_out (":")
-				bpl_out (bpl_type_for_type_a (arg_type))
-				i := i + 1
-			end
-			bpl_out (")")
-			if a_feature.is_function then
-				bpl_out (" returns (Result:")
-				bpl_out (bpl_type_for_type_a (a_feature.type))
+			last_current_class := current_class
+			set_current_feature (a_feature)
+			-- only generate implementations for currently verified class
+			if last_current_class = current_class then
+				function_writer.reset
+				function_writer.set_leaf_list (leaf_list)
+				function_writer.set_heap_ref ("Heap")
+				function_writer.set_this_ref ("Current")
+				function_writer.set_result_call ("Result")
+				code := ""
+				local_vars := ""
+				bpl_out ("// Implementation: "+a_feature.feature_name+" of class "+current_class.name+"%N")
+				bpl_out ("implementation proc.")
+				bpl_out (current_class.name)
+				bpl_out (".")
+				bpl_out (bpl_mangled_feature_name (a_feature.feature_name))
+				bpl_out ("(Current:ref")
+				from
+					i := 1
+				until
+					i > a_feature.argument_count
+				loop
+					arg_name := a_feature.arguments.item_name (i)
+					arg_type := a_feature.arguments.i_th (i)
+					bpl_out (",arg.")
+					bpl_out (arg_name)
+					bpl_out (":")
+					bpl_out (bpl_type_for_type_a (arg_type))
+					i := i + 1
+				end
 				bpl_out (")")
+				if a_feature.is_function then
+					bpl_out (" returns (Result:")
+					bpl_out (bpl_type_for_type_a (a_feature.type))
+					bpl_out (")")
+				end
+				bpl_out (" {%N")
+				bpl_out ("  // Code for "+a_feature.feature_name+" in "+current_class.name+"%N")
+				process_feature_i (a_feature)
+				bpl_out ("}%N")
 			end
-			bpl_out (" {%N")
-			bpl_out ("  // Code for "+a_feature.feature_name+" in "+current_class.name+"%N")
-			process_feature_i (a_feature)
-			bpl_out ("}%N")
+			current_class := last_current_class
 		end
 
 	process_feature_without_code (a_feature: FEATURE_I) is
@@ -460,4 +476,6 @@ feature{NONE} -- Implementation
 			local_vars.append (a_string)
 		end
 
+invariant
+	function_writer_not_void: function_writer /= Void
 end
