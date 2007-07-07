@@ -39,34 +39,34 @@ feature -- Initialization
 			player ?= program_flow_sink
 			if player /= Void then
 				player.play
-			end
-
-			test_performance := False
-			-- <methodbody_start name="make" args="[]">
-			if program_flow_sink.is_capture_replay_enabled then
-				program_flow_sink.enter
-				program_flow_sink.put_feature_invocation("make", Current, [])
-				program_flow_sink.leave
-			end
-			if (not program_flow_sink.is_replay_phase) or is_observed then
-			-- </methodbody_start>
-				create bank.make
-				atm := bank.atm
-				if test_performance then
-					create {PERFORMANCE_TESTER_ATM_UI} ui.make (atm)
-					atm.set_ui (ui)
-				else
-					ui := atm.ui
+			else
+				test_performance := False
+				-- <methodbody_start name="make" args="[]">
+				if program_flow_sink.is_capture_replay_enabled then
+					program_flow_sink.enter
+					program_flow_sink.put_feature_invocation("make", Current, [])
+					program_flow_sink.leave
 				end
-				ui.run
-			-- <methodbody_end return_value="False">
+				if (not program_flow_sink.is_replay_phase) or is_observed then
+				-- </methodbody_start>
+					create bank.make
+					atm := bank.atm
+					if test_performance then
+						create {PERFORMANCE_TESTER_ATM_UI} ui.make (atm)
+						atm.set_ui (ui)
+					else
+						ui := atm.ui
+					end
+					ui.run
+				-- <methodbody_end return_value="False">
+				end
+				if program_flow_sink.is_capture_replay_enabled then
+					program_flow_sink.enter
+					ignore_result ?= program_flow_sink.put_feature_exit(Void)
+					program_flow_sink.leave
+				end
+				-- </methodbody_end>
 			end
-			if program_flow_sink.is_capture_replay_enabled then
-				program_flow_sink.enter
-				ignore_result ?= program_flow_sink.put_feature_exit(Void)
-				program_flow_sink.leave
-			end
-			-- </methodbody_end>
 		end
 
 feature --Access
