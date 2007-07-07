@@ -33,7 +33,8 @@ feature -- Initialization
 		do
 			--Initialize the rest of the PROGRAM_FLOW_SINK:
 			create caller
-			create config.make (caller)
+			create config.make
+--no. use erl_g to call...			config.set_caller(caller)
 			config.configure_program_flow_sink (program_flow_sink)
 			player ?= program_flow_sink
 			if player /= Void then

@@ -43,16 +43,9 @@ feature -- Initialization
 			parser: TEXT_EVENT_PARSER
 			input_file: KL_TEXT_INPUT_FILE
 		do
-			create resolver.make
-			create event_input
 			create input_file.make (filename)
 			input_file.open_read
-			create parser.make (input_file, event_input)
-
-			caller := a_caller
-
-			set_capture_replay_enabled (True)
-			set_replay_phase (True)
+			setup_on_input_stream (input_file, a_caller)
 		ensure
 			capture_replay_enabled: is_capture_replay_enabled
 			replay_phase_enabled: is_replay_phase
@@ -64,12 +57,30 @@ feature -- Initialization
 			log_not_void: log /= Void
 			a_caller_not_void: a_caller /= Void
 		local
-			parser: TEXT_EVENT_PARSER
-
+			string_input: KL_STRING_INPUT_STREAM
 		do
-
+			create string_input.make(log)
+			setup_on_input_stream(string_input, a_caller)
 		end
 
+	setup_on_input_stream(an_input_stream: KI_TEXT_INPUT_STREAM; a_caller: CALLER) is
+			-- Set the player up to replay the log coming from `an_input_stream'
+		require
+			an_input_stream_not_void: an_input_stream /= Void
+			an_input_stream_open: an_input_stream.is_open_read
+			a_caller_not_void: a_caller /= Void
+		local
+			parser: TEXT_EVENT_PARSER
+		do
+			create resolver.make
+			create event_input
+			create parser.make (an_input_stream, event_input)
+
+			caller := a_caller
+
+			set_capture_replay_enabled (True)
+			set_replay_phase (True)
+		end
 
 feature -- Access
 
