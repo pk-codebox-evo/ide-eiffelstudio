@@ -245,7 +245,8 @@ feature -- Basic operations
 			enter
 				-- Grab first event...
 			consume_event
-			if not has_error then
+
+			if not has_error and not event_input.end_of_input then
 				simulate_unobserved_body
 			end
 			leave
@@ -266,7 +267,8 @@ feature {NONE} -- Implementation
 			message_not_void: message /= Void
 		do
 			has_error := True
-			print("replay error on event " + event_input.event_number.out + ": "+ message + "%N")
+			error_message :=  "replay error on event " + event_input.event_number.out + ": "+ message
+			print(error_message + "%N")
 		ensure
 			error_message_not_void: error_message /= Void
 		end

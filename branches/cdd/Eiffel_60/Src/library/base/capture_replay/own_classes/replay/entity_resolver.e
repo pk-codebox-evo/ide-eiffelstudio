@@ -65,8 +65,11 @@ feature -- Access
 		require
 			object_not_void: object /= Void
 			entity_not_void: id /= Void
-			no_different_object_for_same_id: entities[id] /= Void implies object = entities[id]
+			no_different_object_for_same_id: (entities.upper>id and then entities[id] /= Void) implies object = entities[id]
 		do
+			if id > entities.upper then
+				entities.grow (id*2)
+			end
 			if entities[id] = Void then
 				entities[id] := object
 				object.cr_set_object_id (id)
@@ -80,7 +83,7 @@ feature -- Access
 		require
 			object_not_void: object /= Void
 			entity_not_void: entity /= Void
-			no_different_object_for_same_id: entities[entity.id] /= Void implies object = entities[entity.id]
+			no_different_object_for_same_id: (entities.upper>entity.id and then entities[entity.id] /= Void) implies object = entities[entity.id]
 		do
 			associate_object_to_object_id (object, entity.id)
 		ensure
@@ -125,7 +128,7 @@ feature -- Access
 			-- Resolve `non_basic' to an object representing a non basic type.
 			do
 				if entities.upper < non_basic.id then
-					entities.resize (0, non_basic.id * 2)
+					entities.grow (non_basic.id * 2)
 				end
 
 				if entities[non_basic.id] = Void then
