@@ -15,15 +15,27 @@
 		<option warning="true"/>
 		<library name="base" location="$ISE_LIBRARY/library/base/base.ecf" readonly="True"/>
 		<library name="time" location="$ISE_LIBRARY/library/time/time.ecf" readonly="True"/>
-		<external_include location="${ISE_LIBRARY}/library/vision2/implementation/carbon/wrapper/generated_wrapper/c/include" />
-		<external_include location="${ISE_LIBRARY}/library/vision2/implementation/carbon/wrapper/generated_wrapper/c/include/spec/ise -isysroot /Developer/SDKs/MacOSX10.4u.sdk" />
-		<external_object location="${ISE_LIBRARY}/library/vision2/implementation/carbon/wrapper/carbon_c_eiffel_glue_library_ise_gcc.a -framework Carbon" />
+		<external_include location="${ISE_LIBRARY_CARBON}/library/vision2/implementation/carbon/wrapper/generated_wrapper/c/include" />
+		<external_include location="${ISE_LIBRARY_CARBON}/library/vision2/implementation/carbon/wrapper/generated_wrapper/c/include/spec/ise -isysroot /Developer/SDKs/MacOSX10.4u.sdk" />
+		<external_object location="${ISE_LIBRARY_CARBON}/library/vision2/implementation/carbon/wrapper/carbon_c_eiffel_glue_library_ise_gcc.a -framework Carbon" />
 		<cluster name="ewg" location="${EWG}\library\runtime\eiffel\">
 			<cluster name="spec" location="$|spec">
 				<cluster name="ise" location="$|ise"/>
 			</cluster>
 		</cluster>
-		<library name="gobo" location="$ISE_LIBRARY/library/gobo/gobo.ecf" readonly="True"/>
+		<cluster name="gobo" location="${GOBO}\library\">
+			<cluster name="kl_kernel" location="$|kernel\">
+				<cluster name="kl_basic" location="$|basic\"/>
+				<cluster name="kl_elks" location="$|elks\"/>
+				<cluster name="kl_io" location="$|io\"/>
+				<cluster name="kl_misc" location="$|misc\"/>
+				<cluster name="kl_spec" location="$|spec\">
+					<cluster name="kl_spec_ise" location="$|ise\"/>
+				</cluster>
+				<cluster name="kl_support" location="$|support\"/>
+				<cluster name="kl_unicode" location="$|unicode\"/>
+			</cluster>
+		</cluster>
 		<cluster name="carbon" location="generated_wrapper\eiffel\">
 			<cluster name="abstraction" location="$|abstraction\">
 				<cluster name="abstraction_callback" location="$|callback\"/>

@@ -304,7 +304,7 @@ feature -- Status setting
 			if notebook.selected_item_index /= 1 then
 				notebook.select_item (notebook.i_th (1))
 			end
-			set_focus_if_possible (keyword_field)
+			keyword_field.set_focus
 		end
 
 	show_and_set_focus_replace is
@@ -314,7 +314,7 @@ feature -- Status setting
 			if notebook.selected_item_index /= 1 then
 				notebook.select_item (notebook.i_th (1))
 			end
-			set_focus_if_possible (replace_combo_box)
+			replace_combo_box.set_focus
 		end
 
 	search_current_editor_only is
@@ -821,8 +821,18 @@ feature {EB_CUSTOM_WIDGETTED_EDITOR, EB_CONTEXT_MENU_FACTORY} -- Actions handler
 			else
 				choose_dialog.show
 			end
-			set_focus_if_possible (choose_dialog)
-			set_focus_if_possible (choose_dialog.classes_tree)
+			if not choose_dialog.is_destroyed and then
+				choose_dialog.is_displayed and then
+				choose_dialog.is_sensitive
+			then
+				choose_dialog.set_focus
+			end
+			if not choose_dialog.classes_tree.is_destroyed and then
+				choose_dialog.classes_tree.is_displayed and then
+				choose_dialog.classes_tree.is_sensitive
+			then
+				choose_dialog.classes_tree.set_focus
+			end
 		end
 
 	on_drop_custom_button (a_any: ANY) is

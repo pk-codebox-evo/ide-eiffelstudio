@@ -16,8 +16,7 @@ inherit
 		redefine
 			update_for_pick_and_drop,
 			interface,
-			initialize,
-			gdk_events_mask
+			initialize
 		end
 
 	EV_SHARED_APPLICATION
@@ -39,13 +38,6 @@ feature -- Initialize
 		end
 
 feature {NONE} -- Implementation
-
-	Gdk_events_mask: INTEGER is
-			-- Mask of all the gdk events the gdkwindow shall receive.
-		once
-			Result := Precursor | {EV_GTK_EXTERNALS}.GDK_POINTER_MOTION_HINT_MASK_ENUM
-				-- This is needed so that we only retrieve motion events when requested.
-		end
 
 	update_for_pick_and_drop (a_starting: BOOLEAN) is
 			-- Redefine

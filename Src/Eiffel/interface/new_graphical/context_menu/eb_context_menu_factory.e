@@ -329,7 +329,8 @@ feature -- Metrics tool
 				if l_unit /= Void then
 					extend_metric_selector_move_up_and_down (a_menu, a_selector, l_unit)
 				elseif l_metric /= Void then
-					extend_metric_clone_metric (a_menu, l_metric)
+-- Does not work at the moment. See bug#13214					
+--					extend_metric_clone_metric (a_menu, l_metric)
 						-- Only basic metric can be used as a template for quick metrics
 					if l_basic_metric /= Void then
 						extend_metric_quick_metric (a_menu, l_basic_metric)
@@ -1584,7 +1585,7 @@ feature {NONE} -- Metrics tool section, Granularity 1.
 			a_menu.extend (new_menu_item (names.m_clone_metric))
 			a_menu.last.set_pixmap (l_metric_panel.send_current_to_new_btn.pixmap)
 			a_menu.last.select_actions.extend (agent (dev_window.tools.metric_tool.metric_notebook).select_item (l_metric_panel))
-			a_menu.last.select_actions.extend (agent l_metric_panel.clone_and_load_metric (a_basic.identical_new_instance))
+			a_menu.last.select_actions.extend (agent l_metric_panel.clone_and_load_metric (a_basic))
 		end
 
 	extend_reload_metrics (a_menu: EV_MENU) is

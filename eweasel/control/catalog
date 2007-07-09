@@ -1205,7 +1205,6 @@ test	inspect-using-static-procedure	term144 tcf pass termination
 test	constraint-type-comparison	term145 tcf pass termination generic
 test	missing-actual-generic-crash	term146 tcf pass termination generic
 test	actual-generic-none-crash	term147 tcf pass termination generic
-test	complex-generics-crash		term148 tcf fail termination generic
 
 -- Config
 
@@ -1300,7 +1299,6 @@ test	once-manifest-string-in-cpp-file	ccomp062 tcf pass c_compilation
 test	feature-call-via-cecil			ccomp063 tcf pass c_compilation
 test	deferred-to-string-constant	ccomp064 tcf pass finalizing
 test	built-in-unary-plus	ccomp065 tcf fail c_compilation
-test	 expanded-generic-conformance-c-bad-finalization	ccomp066 tcf fail c_compilation
 
 -- Storable tests
 
@@ -1800,4 +1798,3 @@ if DOTNET test ca-custom-attribute-with-create dotnet100	tcf fail dotnet custom_
 if DOTNET test application-optimizations-enabled dotnet101	tcf pass dotnet optimization
 if DOTNET test system-object-remapped-in-mscorlib-only dotnet102	tcf pass dotnet consumer
 if DOTNET test consumable-attribute-usage-in-eiffel dotnet103	tcf fail dotnet consumer consumable custom_attributes
-if DOTNET test generic-creation-with-external-ctor	dotnet104	tcf pass constructor generic external creation
