@@ -163,6 +163,26 @@ feature -- Testing the tests:
 			assert_equal ("objects with equal content are equal", ex1, ex2)
 		end
 
+	test_deep_equal_any is
+
+		local
+			ex1, ex2, ex3: EXAMPLE_CLASS
+		do
+			create ex1.make
+			create ex2.make
+			create ex3.make
+
+			-- Set the two only fields of ex1, ex2
+			ex1.set_basic_field (99)
+			ex2.set_basic_field (ex1.basic_field)
+			ex3.set_basic_field(10)
+			ex3.set_non_basic_field (ex1)
+			ex1.set_non_basic_field (ex3)
+			ex2.set_non_basic_field (ex3)
+
+			assert ("objects with same references are deep equal", ex1.is_deep_equal(ex2))
+		end
+
 
 feature {NONE} -- Implementation
 
