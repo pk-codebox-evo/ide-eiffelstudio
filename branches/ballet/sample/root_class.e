@@ -14,6 +14,7 @@ feature -- Initialization
 	a: INT_STORE
 	b: INT_STORE
 	t: TOKEN_DISPENSER
+	v: VISITOR_TEST
 
 	ft: FRAME_TEST
 	ftc: FRAME_TEST_CLIENT
@@ -41,10 +42,22 @@ feature -- Initialization
 
 	make is
 			-- Creation procedure.
+		local
+			e1, e2: EXPRESSION
 		do
-			create_structure
-			b.set_item (11)
-			a.set_item (22)
+			e1 := create {ADDITION}.make (
+					create {ADDITION}.make (create {INT_CONSTANT}.set_value (3), create {INT_CONSTANT}.set_value (4)),
+					create {VARIABLE}.make ("a"))
+
+			e2 := create {ADDITION}.make (
+					create {ADDITION}.make (create {INT_CONSTANT}.set_value (3), create {INT_CONSTANT}.set_value (4)),
+					create {VARIABLE}.make ("a"))
+
+			create v
+			v.test (e1, e2)
+--			create_structure
+--			b.set_item (11)
+--			a.set_item (22)
 
 --			print ("Item of A: " + a.item.out + "%N")
 --			print ("Item of B: " + b.item.out + "%N")
