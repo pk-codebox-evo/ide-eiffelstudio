@@ -14,6 +14,7 @@
 		<parent location="${GOBO}/misc/test.eant">
 			<redefine target="init_system"/>
 			<redefine target="other_clean"/>
+			<redefine target="other_install"/>
 		</parent>
 	</inherit>
 
@@ -33,9 +34,13 @@
 		<delete directory="EIFGENs" />
 	</target>
 
-	<target name="run_test">
-		<ise ace="application.ecf" system="application" finalize="false" finish_freezing="true"/> 
+	<target name="other_install">
+		<geant file="build.eant" dir="../../examples/capture_replay/iteration0/" target="install"/>
 		<exec executable="getest --ise"/>
+	</target>
+
+	<target name="compile_application">
+		<ise ace="application.ecf" system="application" finalize="false" finish_freezing="true"/> 
 	</target>
 
 </project>
