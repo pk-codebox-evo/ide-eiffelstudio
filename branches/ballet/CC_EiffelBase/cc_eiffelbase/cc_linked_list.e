@@ -736,7 +736,6 @@ feature -- Framing
 	representation: FRAME is
 			-- Representation of a general linked list
 		local
-			current_element: like first_element
 			old_position: like cursor_position
 		do
 			create Result.make_empty
@@ -764,6 +763,6 @@ invariant
 	after_constraint: after implies (active = last_element)
 
 	-- TODO add some more
-	item_equals_cell_model_item: not is_empty implies (item = active.model)
+	item_equals_cell_model_item: not is_empty implies (item = active.item)
 
 end

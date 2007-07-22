@@ -64,8 +64,8 @@ feature -- Element specific status report
 		do
 			Result := extendible and not has(v)
 		ensure then
-			element_not_in_set: not has (v)
-			model_corresponds: not model.contains (v)
+			element_not_in_set: Result = not has (v)
+			model_corresponds: Result = not model.contains (v)
 		end
 
 	can_put (v: G) : BOOLEAN is
