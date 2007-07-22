@@ -9,5 +9,5 @@ all:
 	evince Report.pdf &
 
 clean:
-	-rm *~
+#	-rm *~
 	-rubber --clean Report.tex

@@ -62,6 +62,27 @@ Independence of two variables can be expressed as disjointness of dynamic frames
 \section{Dynamic Frames in Eiffel}
 \label{sec:DynamicFramesInEiffel}
 
-Every feature in every class in the new base library uses two new contract mechanisms. 
+Every feature in every class in the new base library uses new contract mechanisms. They are called \emph{use} and \emph{modify} and are used just like normal contracts. An example is given in Listing \ref{lst:put_feature_frames}. If a feature is a query, only the \emph{use} clause is necessary. If a feature is a command, both \emph{use} and \emph{modify} are needed. Additionally, a command should provide in its \emph{ensure} clause the statement `\lstinline!confined! \emph{frame\_name}'.
 
+\begin{description}
+	\item [use clause] The \emph{use} clause describes which frames are used by this feature.
+	\item [modify clause] The \emph{modify} clause describes which frames are possibly modified by calling this feature.
+\end{description}
 
+\begin{lstlisting}[float,caption=put feature of the CC\_COLLECTION class.,label=lst:put_feature_frames]
+feature -- Element change
+	put (v: G) is
+			-- Ensure that structure includes `v'.
+		require
+			can_add_element: can_put (v)
+		use
+			use_own_representation: representation
+		modify
+			modify_own_representation: representation
+		deferred
+		ensure
+			model_updated: model |=| old model.extended (v)
+			model_correspondends: model.contains (v)
+			confined representation
+		end
+\end{lstlisting}
