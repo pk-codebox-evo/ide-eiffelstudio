@@ -24,7 +24,6 @@ feature{NONE} -- Initialization
 		do
 			set_name (a_name)
 			set_id (a_id)
-			set_pixmap_location ("")
 			create handlers.make (2)
 		end
 
@@ -103,7 +102,7 @@ feature -- Setting
 		end
 
 invariant
-	name_valid: name /= Void
+	name_valid: name /= Void and then not name.is_empty
 	id_valid: id /= Void and then not id.is_empty
 	pixmap_location_attached: pixmap_location /= Void
 	handlers_attached: handlers /= Void

@@ -48,6 +48,7 @@ feature -- Extension
 			a_type_attached: a_type /= Void
 			a_activator_attached: a_activator /= Void
 			not_proffers_service: not proffers_service (a_type, a_promote)
+			service_conforms_to_type: service_conforms_to_type (a_type, a_activator)
 		deferred
 		ensure
 			proffers_service: proffers_service (a_type, a_promote)
@@ -86,7 +87,7 @@ feature -- Query
 			l_internal: INTERNAL
 		do
 			create l_internal
-			Result := l_internal.type_conforms_to (l_internal.dynamic_type (l_internal.type_of (a_service)), l_internal.dynamic_type (a_type))
+			Result := l_internal.type_conforms_to (l_internal.dynamic_type (a_service), l_internal.dynamic_type (a_type.default_value))
 		end
 
 	type_hash_code (a_type: TYPE [ANY]): STRING_8 is

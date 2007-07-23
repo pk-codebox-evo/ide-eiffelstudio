@@ -1,5 +1,5 @@
 indexing
-	description: "Eiffel Vision font. Carbon implementation."
+	description: "Eiffel Vision font. GTK implementation."
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
 	keywords: "character, face, height, family, weight, shape, bold, italic"
@@ -31,18 +31,18 @@ feature {NONE} -- Initialization
 		end
 
 
-	initialize is
+initialize is
 			-- Set up `Current'
 		local
 			l_app_imp: like app_implementation
 		do
 			--l_app_imp := app_implementation
 			create preferred_families
-			set_family (family_sans)
-			set_face_name ("Arial") --l_app_imp.default_font_name
+			family := Family_sans
+			--set_face_name (l_app_imp.default_font_name)
 			--set_height_in_points (l_app_imp.default_font_point_height_internal)
-			set_shape (shape_regular)
-			set_weight (weight_regular)
+			--set_shape (l_app_imp.default_font_style_internal)
+			--set_weight (l_app_imp.default_font_weight_internal)
 			--preferred_families.internal_add_actions.extend (agent update_preferred_faces)
 			--preferred_families.internal_remove_actions.extend (preferred_families.internal_add_actions.first)
 			set_is_initialized (True)
@@ -62,6 +62,7 @@ feature -- Access
 
 	char_set: INTEGER
 			-- Charset
+			-- This is not meaningful on GTK.
 
 	weight: INTEGER
 			-- Preferred font thickness.
@@ -80,41 +81,37 @@ feature -- Element change
 	set_family (a_family: INTEGER) is
 			-- Set `a_family' as preferred font category.
 		do
-			family := a_family
+
 		end
 
 	set_face_name (a_face: STRING_GENERAL) is
 			-- Set the face name for current.
 		do
-			name := a_face
-			calculate_font_metrics
+
 		end
 
 	set_weight (a_weight: INTEGER) is
 			-- Set `a_weight' as preferred font thickness.
 		do
 			weight := a_weight
-			calculate_font_metrics
 		end
 
 	set_shape (a_shape: INTEGER) is
 			-- Set `a_shape' as preferred font slant.
 		do
 			shape := a_shape
-			calculate_font_metrics
 		end
 
 	set_height (a_height: INTEGER) is
 			-- Set `a_height' as preferred font size in screen pixels
 		do
 			height := a_height
-			calculate_font_metrics
 		end
 
 	set_height_in_points (a_height: INTEGER) is
 			-- Set `a_height' as preferred font size in screen pixels
 		do
-			calculate_font_metrics
+
 		end
 
 	set_values (a_family, a_weight, a_shape, a_height: INTEGER;
@@ -122,7 +119,6 @@ feature -- Element change
 			-- Set `a_family', `a_weight', `a_shape' `a_height' and
 			-- `a_preferred_face' at the same time for speed.
 		do
-			calculate_font_metrics
 		end
 
 feature -- Status report
@@ -136,8 +132,6 @@ feature -- Status report
 	calculate_font_metrics is
 			-- Calculate metrics for font
 		do
-			ascent := 1
-			descent := 1
 		end
 
 	ascent: INTEGER
@@ -210,6 +204,11 @@ feature {NONE} -- Implementation
 
 feature {EV_FONT_IMP, EV_CHARACTER_FORMAT_IMP, EV_RICH_TEXT_IMP, EV_DRAWABLE_IMP} -- Implementation
 
+	pango_family_string: STRING_32 is
+			-- Get standard string to represent family.
+		do
+		end
+
 	monospace_string: STRING is "monospace"
 	serif_string: STRING is "serif"
 	courier_string: STRING is"courier"
@@ -217,10 +216,35 @@ feature {EV_FONT_IMP, EV_CHARACTER_FORMAT_IMP, EV_RICH_TEXT_IMP, EV_DRAWABLE_IMP
 	lucida_string: STRING is "lucida"
 		-- Font string constants
 
+	pango_style: INTEGER is
+			-- Pango Style constant of `Current'
+		do
+		end
+
+	pango_weight: INTEGER is
+			-- Pango Weight of `Current'
+		do
+		end
+
+	set_weight_from_pango_weight (a_pango_weight: INTEGER) is
+			-- Set `weight' from Pango weight value `a_pango_weight'.
+		do
+		end
+
 feature {EV_ANY_IMP, EV_DRAWABLE_IMP, EV_APPLICATION_IMP} -- Implementation
 
 	font_description: POINTER
 		-- Pointer to the PangoFontDescription struct
+
+feature {EV_ANY_I} -- Implementation
+
+	frozen pango_weight_ultra_light: INTEGER is 200
+	frozen pango_weight_light: INTEGER is 300
+	frozen pango_weight_normal: INTEGER is 400
+	frozen pango_weight_bold: INTEGER is 700
+	frozen pango_weight_ultrabold: INTEGER is 800
+	frozen pango_weight_heavy: INTEGER is 900
+		-- Pango font weight constants
 
 feature {NONE} -- Implementation
 
@@ -245,6 +269,18 @@ feature {EV_ANY_I} -- Implementation
 		end
 
 indexing
-	copyright:	"Copyright (c) 2007, The Eiffel.Mac Team"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"
+	license:	"Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
+	source: "[
+			 Eiffel Software
+			 356 Storke Road, Goleta, CA 93117 USA
+			 Telephone 805-685-1006, Fax 805-685-6869
+			 Website http://www.eiffel.com
+			 Customer support http://support.eiffel.com
+		]"
+
+
+
+
 end -- class EV_FONT_IMP
 

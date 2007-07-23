@@ -634,14 +634,15 @@ feature{NONE} -- Actions
 		do
 			l_text := input_field.text.twin
 			l_text.append ("%N")
-			if source_encoding /= Void then
-				l_string := utf16_to_console_encoding (source_encoding, l_text)
-			end
-			if l_string = Void then
-					-- Conversion fails.
-				l_input_text := l_text.as_string_8
+			if destination_encoding /= Void and then source_encoding /= Void then
+				l_string := destination_encoding.convert_to (source_encoding, l_text)
+				if not destination_encoding.last_conversion_successful then
+					l_input_text := l_text.as_string_8
+				else
+					l_input_text := l_string.as_string_8
+				end
 			else
-				l_input_text := l_string.as_string_8
+				l_input_text := l_text.as_string_8
 			end
 			on_input_to_process (l_input_text)
 

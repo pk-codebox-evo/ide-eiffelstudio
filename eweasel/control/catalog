@@ -1063,7 +1063,6 @@ test	agent-for-expanded-derivation	exec274 tcf pass execution expanded generic a
 test	merging-feature-with-formal	exec275 tcf pass execution expanded generic merging
 test	entry-point-defined	exec276 tcf pass execution expanded generic merging
 test	derivation-reverse-attachment	exec277 tcf pass execution expanded generic attachment
-test	expanded-creation-correctness	exec278 tcf fail execution expanded
 
 
 -- Compiler termination (exception trace, panic, etc.)
@@ -1206,7 +1205,6 @@ test	inspect-using-static-procedure	term144 tcf pass termination
 test	constraint-type-comparison	term145 tcf pass termination generic
 test	missing-actual-generic-crash	term146 tcf pass termination generic
 test	actual-generic-none-crash	term147 tcf pass termination generic
-test	complex-generics-crash		term148 tcf fail termination generic
 
 -- Config
 
@@ -1284,10 +1282,10 @@ test	finalize-ext-exp-inline-create	ccomp045 tcf pass c_compilation
 test	inline-c-ten-pass-local		ccomp046 tcf pass c_compilation
 test	inline-c-arg-prefix-other	ccomp047 tcf pass c_compilation
 test	pass-void-to-double		ccomp048 tcf pass c_compilation
-test	slash-power-on-formal-bad-code	ccomp049 tcf pass c_compilation
-test	print-pointer-local-address	ccomp050 tcf pass c_compilation
-test	inline-expanded-conversion	ccomp051 tcf pass c_compilation
-test	create-generic-conform-double	ccomp052 tcf pass c_compilation
+test 	slash-power-on-formal-bad-code	ccomp049 tcf pass c_compilation
+test 	print-pointer-local-address	ccomp050 tcf pass c_compilation
+test 	inline-expanded-conversion	ccomp051 tcf pass c_compilation
+test 	create-generic-conform-double	ccomp052 tcf pass c_compilation
 test	long-string-generation		ccomp053 tcf pass c_compilation
 test	inline-incorrect-with-cpp	ccomp054 tcf pass c_compilation
 test	polymorphic-dollar-agent-incorrect-wrapper	ccomp055 tcf pass c_compilation
@@ -1301,8 +1299,6 @@ test	once-manifest-string-in-cpp-file	ccomp062 tcf pass c_compilation
 test	feature-call-via-cecil			ccomp063 tcf pass c_compilation
 test	deferred-to-string-constant	ccomp064 tcf pass finalizing
 test	built-in-unary-plus	ccomp065 tcf fail c_compilation
-test	expanded-generic-conformance-c-bad-finalization	ccomp066 tcf fail c_compilation
-if WINDOWS test	dll-generation-failure		ccomp067 tcf fail c_compilation
 
 -- Storable tests
 
@@ -1760,9 +1756,9 @@ if DOTNET test expected-any-type-name	dotnet058	tcf pass dotnet namespace dotnet
 if DOTNET test expected-basic-type-names	dotnet059	tcf pass dotnet namespace dotnet_names
 if DOTNET test dotnet-name-generation	dotnet060	tcf fail dotnet dotnet_names
 if DOTNET test external-name-conflict-validation	dotnet061	tcf pass dotnet dotnet_names
-if DOTNET test target-namespace-generation-rules	dotnet062	tcf pass dotnet namespace
+if DOTNET test target-namespace-generation-rules	dotnet062	tcf fail dotnet namespace
 if DOTNET test target-named-namespace-generation-rules	dotnet063	tcf pass dotnet namespace
-if DOTNET test library-namespace-generation-rules	dotnet064	tcf pass dotnet namespace
+if DOTNET test library-namespace-generation-rules	dotnet064	tcf fail dotnet namespace
 if DOTNET test library-named-namespace-generation-rules	dotnet065	tcf pass dotnet namespace
 if DOTNET test uncompiled-managed-resource-embeddeding	dotnet066	tcf pass dotnet resources
 if DOTNET test compiled-managed-resource-embeddeding	dotnet067	tcf pass dotnet resources
@@ -1802,5 +1798,3 @@ if DOTNET test ca-custom-attribute-with-create dotnet100	tcf fail dotnet custom_
 if DOTNET test application-optimizations-enabled dotnet101	tcf pass dotnet optimization
 if DOTNET test system-object-remapped-in-mscorlib-only dotnet102	tcf pass dotnet consumer
 if DOTNET test consumable-attribute-usage-in-eiffel dotnet103	tcf fail dotnet consumer consumable custom_attributes
-if DOTNET test generic-creation-with-external-ctor	dotnet104	tcf pass constructor generic external creation
-if DOTNET test overridden-cluster-namespace-preserved	dotnet105	tcf pass namespace

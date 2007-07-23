@@ -209,15 +209,13 @@ extern "C" {
 
 #if defined(USE_TLS)
 #	ifdef EIF_WINDOWS
-#		ifndef __MINGW32__
-#			if defined(EIF_MAKE_DLL) || defined(EIF_USE_DLL)
-#				/* TLS can be accessed only through accessors */
-#				define EIF_TLS_WRAP
-#				define EIF_TLS_DECL __declspec (thread)
-#				define EIF_TLS
-#			else
-#				define EIF_TLS __declspec (thread)
-#			endif
+#		if defined(EIF_MAKE_DLL) || defined(EIF_USE_DLL)
+#			/* TLS can be accessed only through accessors */
+#			define EIF_TLS_WRAP
+#			define EIF_TLS_DECL __declspec (thread)
+#			define EIF_TLS
+#		else
+#			define EIF_TLS __declspec (thread)
 #		endif
 #	else
 #		if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 303)

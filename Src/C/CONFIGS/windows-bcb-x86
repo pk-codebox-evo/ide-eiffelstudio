@@ -2,35 +2,26 @@
 # This is the configuration file for BORLAND C++
 #
 borlandecdbgd='ecdbgd'
-make='"$compiler_path\bin\make.exe"'
+include_path='$compiler_path\include'
+lib_path='$compiler_path\lib'
+make='$compiler_path\bin\make'
 del='del'
-mv='copy'
-mkdir_target='if not exist $@ mkdir $@'
-dir_sep='\\'
 #
-output_exe_cmd='-e'
 output_cmd='-o'
 input_cmd=''
-resource_compiler='"$compiler_path\bin\brc32.exe"'
+resource_compiler='$compiler_path\bin\brc32'
 #
 obj='obj'
 lib='lib'
 #
 # Standard runtime
 #-----------------
-mtccflags='$ccflags -DEIF_THREADS'
-ccflags='-q $debug $warning_level -tWM -DEIF_BORLAND -I"$compiler_path\include" -L"$compiler_path\lib"'
+ccflags='-q $debug $warning_level -tWM -DEIF_BORLAND -I$compiler_path\include -L$compiler_path\lib'
+mtccflags='-q $debug $warning_level -tWM -DEIF_BORLAND -DEIF_THREADS -I$compiler_path\include -L$compiler_path\lib'
 output_libraries='standard mtstandard'
 #
-#-- DLL:
-#-------
-#mtccflags='$ccflags -DEIF_THREADS'
-#ccflags='-q $debug $warning_level -tWM -DEIF_BORLAND -DEIF_MAKE_DLL -I"$compiler_path\include" -L"$compiler_path\lib"'
-#output_libraries='dll mtdll'
 #
-#
-link_line='&"$compiler_path\bin\tlib.exe" /p512 $@ -+$**'
-alib_line='&"$compiler_path\bin\tlib.exe" /p512 $@ -+$**'
+link_line='&$compiler_path\bin\tlib /p512 $@ +$**'
 #
 #
 optimize='-O2'
@@ -38,12 +29,9 @@ debug=''
 #optimize=''
 #debug='-v'
 warning_level='-w-8004 -w-8057'
-dll_flags='-Tpd -o$@'
-dll_libs='CW32.lib IMPORT32.lib OLE2w32.lib'
 #
-cc='"$compiler_path\bin\bcc32.exe"'
-link32='"$compiler_path\bin\ilink32.exe" -q -x -Gn -L"$compiler_path\lib" '
-compiler_path='$(ISE_EIFFEL)\BCC55'
+cc='$compiler_path\bin\bcc32'
+compiler_path='f:\Eiffel57\BCC55'
 all_dependency=''
 #
 
@@ -166,10 +154,10 @@ spitshell='cat'
 
 #Compiler/Preprocessor
 rt_version=''
-rt_include='$(ISE_EIFFEL)\studio\spec\$(ISE_PLATFORM)\include'
-rt_lib='$(ISE_EIFFEL)\studio\spec\$(ISE_PLATFORM)\lib\$(ISE_C_COMPILER)'
-rt_templates='$(ISE_EIFFEL)\studio\config\$(ISE_PLATFORM)\$(ISE_C_COMPILER)\templates'
-x2c='$(ISE_EIFFEL)\studio\spec\$(ISE_PLATFORM)\bin\x2c.exe'
+rt_include='$ISE_EIFFEL/studio/spec/$ISE_PLATFORM/include'
+rt_lib='$ISE_EIFFEL/studio/spec/$ISE_PLATFORM/lib'
+rt_templates='$ISE_EIFFEL/studio/config/$ISE_PLATFORM/templates'
+x2c='$ISE_EIFFEL/studio/spec/$ISE_PLATFORM/bin/x2c'
 add_log='undef'
 cpp_stuff='42'
 defvoidused='15'

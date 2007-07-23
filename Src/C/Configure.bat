@@ -1,7 +1,4 @@
 @echo off
-set OLD_PATH=%PATH%
-set PATH=%~dp0\shell\bin;%PATH%
-
 if .%1. == .clean. goto clean
 if .%1. == .win32. goto win32
 if .%1. == .win64. goto win64
@@ -10,21 +7,14 @@ echo make ...
 echo     Options:
 echo        clean          - remove unecessary files including desc
 echo        win32 b        - build a Win32 run-time for Borland
-echo        win32 g        - build a Win32 run-time for MinGW
 echo        win32 m  [dll] - build a Win32 run-time for Microsoft C++ 2005 [as DLL if specified]
 echo        win32 m6 [dll] - build a Win32 run-time for Microsoft C++ 6.0 [as DLL if specified]
 echo        win64 m  [dll] - build a Win64 run-time for Microsoft C++ 2005 [as DLL if specified]
 goto end
 :win32
 if .%2. == .. goto usage
-if NOT .%2. == .b. goto mingw
-set PATH=%ISE_EIFFEL%\BCC55\bin;%PATH%
+if NOT .%2. == .b. goto msc
 copy CONFIGS\windows-bcb-x86 config.sh
-set remove_desc=1
-goto process
-:mingw
-if NOT .%2. == .g. goto msc
-copy CONFIGS\windows-mingw-x86 config.sh
 set remove_desc=1
 goto process
 :msc
@@ -44,32 +34,20 @@ goto process
 :process
 
 if .%3. == .dll. (
-	shell\bin\sed -e "s/\-W3/\-DEIF_MAKE_DLL\ \-W3/g" config.sh >> config.sh.modif
-	shell\bin\mv config.sh.modif config.sh
-	shell\bin\sed -e "s/standard\ mtstandard/dll\ mtdll/g" config.sh >> config.sh.modif
-	shell\bin\mv config.sh.modif config.sh
+	sed -e "s/\-W3/\-DEIF_MAKE_DLL\ \-W3/g" config.sh >> config.sh.modif
+	mv config.sh.modif config.sh
+	sed -e "s/standard\ mtstandard/dll\ mtdll/g" config.sh >> config.sh.modif
+	mv config.sh.modif config.sh
 )
 
-shell\bin\sh.exe eif_config_h.SH
+bash eif_config_h.SH
 cd run-time
-..\shell\bin\sh.exe eif_size_h.SH
+bash eif_size_h.SH
 cd ..
 
-rem Get the actual make name
-echo echo $make > make_name.bat
-shell\bin\rt_converter.exe make_name.bat make_name.bat
-rem Replace $(XX) into %X%
-shell\bin\sed -e "s/\$(\([^)]*\))/%%\1%%/g" make_name.bat >> make_name.modif
-shell\bin\mv make_name.modif make_name.bat
-
-rem Generate the make.w32 file with the above name
-echo @echo off > make.w32 
-call make_name.bat >> make.w32
-del make_name.bat
-rem Replace all / by \
-shell\bin\sed -e "s/\//\\\/g" make.w32 >> make.w32.modif
-shell\bin\mv make.w32.modif make.w32
-
+echo @echo off > make.w32
+echo $make %%1>> make.w32
+rt_converter.exe make.w32 make.w32
 if exist run-time\eif_config.h del run-time\eif_config.h
 rem
 rem Copy the config 
@@ -110,29 +88,29 @@ rem
 rem Call the converter tranforming the makefile-win.sh to Makefile
 rem
 cd ipc\shared
-..\..\shell\bin\rt_converter.exe makefile-win.sh Makefile
+..\..\rt_converter.exe makefile-win.sh Makefile
 cd ..\..\run-time
-..\shell\bin\rt_converter.exe makefile-win.sh Makefile
+..\rt_converter.exe makefile-win.sh Makefile
 cd ..\platform
-..\shell\bin\rt_converter.exe makefile-win.sh Makefile
+..\rt_converter.exe makefile-win.sh Makefile
 cd ..\idrs
-..\shell\bin\rt_converter.exe makefile-win.sh Makefile
+..\rt_converter.exe makefile-win.sh Makefile
 cd ..\console
-..\shell\bin\rt_converter.exe makefile-win.sh Makefile
+..\rt_converter.exe makefile-win.sh Makefile
 cd ..\bench
-..\shell\bin\rt_converter.exe makefile-win.sh Makefile
+..\rt_converter.exe makefile-win.sh Makefile
 if not "%remove_desc%" == "1" (
 	cd ..\desc
-	..\shell\bin\rt_converter.exe makefile-win.sh Makefile
+	..\rt_converter.exe makefile-win.sh Makefile
 )
 cd ..\ipc\daemon
-..\..\shell\bin\rt_converter.exe makefile-win.sh Makefile
+..\..\rt_converter.exe makefile-win.sh Makefile
 cd ..\ewb
-..\..\shell\bin\rt_converter.exe makefile-win.sh Makefile
+..\..\rt_converter.exe makefile-win.sh Makefile
 cd ..\app
-..\..\shell\bin\rt_converter.exe makefile-win.sh Makefile
+..\..\rt_converter.exe makefile-win.sh Makefile
 cd ..\shared
-..\..\shell\bin\rt_converter.exe makefile-win.sh Makefile
+..\..\rt_converter.exe makefile-win.sh Makefile
 cd ..\..
 rem
 rem Call make
@@ -165,6 +143,29 @@ echo cd ..>> make.bat
 call make
 goto end
 :clean
+del cleanup.bat
+echo del *.err >> cleanup.bat
+echo del *.tr2 >> cleanup.bat
+echo del *.ob? >> cleanup.bat
+echo del *.l?b >> cleanup.bat
+echo del *.l?k >> cleanup.bat
+echo del *.ex? >> cleanup.bat
+echo del *.res >> cleanup.bat
+echo del *.map >> cleanup.bat
+echo del *.$$$ >> cleanup.bat
+echo del *.bak >> cleanup.bat
+echo del *.zip >> cleanup.bat
+echo del *.pdb >> cleanup.bat
+echo del *.pch >> cleanup.bat
+echo del *.dll >> cleanup.bat
+echo del *.tds >> cleanup.bat
+echo del *.o >> cleanup.bat
+echo del *.il? >> cleanup.bat
+echo del config.sh >> cleanup.bat
+echo del Makefile >> cleanup.bat
+echo del make.bat >> cleanup.bat
+echo del cleanup.bat >> cleanup.bat
+
 copy cleanup.bat console\
 copy cleanup.bat bench\
 copy cleanup.bat desc\
@@ -179,59 +180,49 @@ if exist run-time\OBJDIR copy cleanup.bat run-time\OBJDIR\
 if exist run-time\LIB copy cleanup.bat run-time\LIB\
 
 cd bench
-call cleanup.bat
-if exist cleanup.bat del cleanup.bat
+call cleanup
 cd ..\console
-call cleanup.bat
-if exist cleanup.bat del cleanup.bat
+call cleanup
 cd ..\desc
-call cleanup.bat
-if exist cleanup.bat del cleanup.bat
+call cleanup
 cd ..\ipc\app
-call cleanup.bat
-if exist cleanup.bat del cleanup.bat
+call cleanup
 cd ..\daemon
-call cleanup.bat
-if exist cleanup.bat del cleanup.bat
+call cleanup
 cd ..\ewb
-call cleanup.bat
-if exist cleanup.bat del cleanup.bat
+call cleanup
 cd ..\shared
-call cleanup.bat
-if exist cleanup.bat del cleanup.bat
+call cleanup
 cd ..\..\platform
-call cleanup.bat
-if exist cleanup.bat del cleanup.bat
+call cleanup
 cd ..\idrs
-call cleanup.bat
-if exist cleanup.bat del cleanup.bat
+call cleanup
 cd ..\run-time
-call cleanup.bat
-if exist cleanup.bat del cleanup.bat
+call cleanup
 if exist OBJDIR (
 cd OBJDIR
-call cleanup.bat
-if exist cleanup.bat del cleanup.bat
+call cleanup
 cd ..
 )
 if exist LIB (
 cd LIB
-call cleanup.bat
-if exist cleanup.bat del cleanup.bat
+call cleanup
 cd ..
 )
 cd ..
 
-if exist run-time\eif_config.h del run-time\eif_config.h
-if exist run-time\eif_size.h del run-time\eif_size.h
-if exist run-time\eif_portable.h del run-time\eif_portable.h
-if exist config.sh del config.sh
-if exist confmagc.h del confmagc.h
-if exist eif_config.h del eif_config.h
-if exist make.bat del make.bat
-if exist eif_size.h del eif_size.h
+del run-time\eif_config.h
+del run-time\eif_size.h
+del run-time\eif_portable.h
+del config.sh
+del confmagc.h
+del eif_config.h
+del make.bat
+del eif_size.h
+del *.$$$
+
+del cleanup.bat
 
 :end
-set PATH=%OLD_PATH%
 set remove_desc=
 echo Make completed

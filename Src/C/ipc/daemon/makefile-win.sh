@@ -1,16 +1,17 @@
-TOP = ..$(DIR)..
-DIR = $dir_sep
+TOP = ..\..
 CC = $cc
 JCFLAGS = $(CFLAGS) $ccflags $optimize
+MV = copy
+RM = del
 
 # Where shared archive is located (path and name)
-LIBDIR = ..$(DIR)shared
+LIBDIR = ..\shared
 LIBNAME = ipc.$lib
-LIBARCH = $(LIBDIR)$(DIR)$(LIBNAME)
-LIBRUN = $(TOP)$(DIR)run-time -I$(TOP)$(DIR)run-time$(DIR)include
-LIBIDR = $(TOP)$(DIR)idrs
+LIBARCH = $(LIBDIR)\$(LIBNAME)
+LIBRUN = $(TOP)\run-time -I$(TOP)\run-time\include
+LIBIDR = $(TOP)\idrs
 LIBIDRNAME = idrs.$obj
-LIBIDRARCH = $(LIBIDR)$(DIR)$(LIBIDRNAME)
+LIBIDRARCH = $(LIBIDR)\$(LIBIDRNAME)
 LIBS = $(LIBIDRARCH) $(LIBARCH)
 
 CFLAGS = -I$(TOP) -I$(LIBDIR) -I$(LIBRUN) -I$(LIBIDR)
@@ -30,14 +31,19 @@ DBGOBJECTS = \
 
 all:: ecdbgd.exe
 
-$mingwecdbgd.exe: $(LIBS) $(DBGOBJECTS)
-	$(CC) -mwindows -o $@ $(DBGOBJECTS) $(LIBS) -lgdi32 -ladvapi32 -luser32
+$microsoftecdbgd.exe: $(LIBS) ecdbgd.lmk
+	link $(LDFLAGS) $(LIBS) -SUBSYSTEM:WINDOWS -OUT:$@ @ecdbgd.lmk
 
-$microsoftecdbgd.exe: $(LIBS) $(DBGOBJECTS)
-	link $(LDFLAGS) $(LIBS) -SUBSYSTEM:WINDOWS -OUT:$@ $(DBGOBJECTS) GDI32.lib ADVAPI32.lib USER32.lib
+ecdbgd.lmk: $(DBGOBJECTS)
+	echo $(DBGOBJECTS) > ecdbgd.lmk
+	echo GDI32.LIB ADVAPI32.LIB USER32.LIB >> ecdbgd.lmk
 
-$borlandecdbgd.exe: $(LIBS)  $(DBGOBJECTS)
-	"$compiler_path$(DIR)bin$(DIR)ilink32" -L"$compiler_path$(DIR)lib"  "$compiler_path$(DIR)lib$(DIR)c0w32.$obj" $(DBGOBJECTS), \
-	ecdbgd.exe,, CW32 IMPORT32 $(LIBS),, 
+$borlandecdbgd.exe: $(LIBS) ecdbgd.lbk
+	ilink32 @ecdbgd.lbk
 
-listen.$obj: ..$(DIR)shared$(DIR)select.h
+ecdbgd.lbk: $(DBGOBJECTS)
+	del ecdbgd.lbk
+	echo $compiler_path\lib\c0w32.$obj $(DBGOBJECTS), \
+	ecdbgd.exe,, CW32 IMPORT32 $(LIBS),, >> ecdbgd.lbk
+
+listen.$obj: ..\shared\select.h

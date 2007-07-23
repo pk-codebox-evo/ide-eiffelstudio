@@ -1,13 +1,15 @@
 TOP = ..
-DIR = $dir_sep
 OUTDIR= .
 INDIR= .
 CC = $cc
 OUTPUT_CMD = $output_cmd
-CFLAGS = -I$(TOP)$(DIR)run-time -I$(TOP)$(DIR)run-time$(DIR)include -I$(TOP) -I$(TOP)$(DIR)ipc$(DIR)app -I$(TOP)$(DIR)idrs
+CFLAGS = -I$(TOP)\run-time -I$(TOP)\run-time\include -I$(TOP) -I$(TOP)\ipc\app -I$(TOP)\idrs
 DPFLAGS = -I$(TOP)
 JCFLAGS = $(CFLAGS) $ccflags $optimize
 JMTCFLAGS = $(CFLAGS) $mtccflags $optimize
+LN = copy
+MV = \bin\mv
+RM = del
 OBJECTS = argcargv.$obj econsole.$obj
 MT_OBJECTS = MTargcargv.$obj MTeconsole.$obj
 WOBJECTS = argcargv.$obj weconsole.$obj
@@ -24,16 +26,16 @@ standard:: winconsole.$lib wwinconsole.$lib
 mtstandard:: mtwinconsole.$lib mtwwinconsole.$lib
 
 winconsole.$lib: $(OBJECTS)
-	$alib_line
+	$link_line
 
 mtwinconsole.$lib: $(MT_OBJECTS)
-	$alib_line
+	$link_line
 
 wwinconsole.$lib: $(WOBJECTS)
-	$alib_line
+	$link_line
 
 mtwwinconsole.$lib: $(MT_WOBJECTS)
-	$alib_line
+	$link_line
 
 weconsole.$obj: econsole.c
 	$(CC) $(JCFLAGS) -DWORKBENCH $(OUTPUT_CMD)$@ -c $?

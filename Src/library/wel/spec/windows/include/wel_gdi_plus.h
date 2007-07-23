@@ -133,6 +133,8 @@ typedef float REAL;
 #define    PixelFormat32bppARGB       (10 | (32 << 8) | PixelFormatAlpha | PixelFormatGDI | PixelFormatCanonical)
 #define    PixelFormat32bppPARGB      (11 | (32 << 8) | PixelFormatAlpha | PixelFormatPAlpha | PixelFormatGDI)
 
+typedef float REAL;
+
 #endif // !_GDIPLUS_H
 
 #ifndef _GDIPLUSCOLORMATRIX_H

@@ -283,7 +283,6 @@ int main(int argc, char **argv)
 	fclose (input_file);
 	fclose (output_file);
 	exit(0);
-	return 0;
 }
 
 rt_private void print_usage(void) {

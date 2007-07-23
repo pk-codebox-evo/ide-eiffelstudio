@@ -186,8 +186,7 @@ void eif_gr_link_driver (EIF_OBJECT request, EIF_OBJECT c_code_dir, EIF_OBJECT s
 EIF_REFERENCE eif_date_string (EIF_INTEGER a_date)
 {
 	EIF_REFERENCE result;
-	time_t l_date = (time_t) a_date;
-	char *date_string = ctime((time_t*)&l_date);
+	char *date_string = ctime((time_t*)&a_date);
 
 	result = RTMS(date_string);
 	/* free (date_string); FIXME - check with xavier */

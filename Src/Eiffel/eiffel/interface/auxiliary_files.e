@@ -116,7 +116,10 @@ feature -- Dynamic Library file
 					def_buffer.put_string("LIBRARY ")
 					def_buffer.put_string(system_name)
 					def_buffer.put_string(".dll%N")
-					def_buffer.put_string("%NEXPORTS%N")
+					def_buffer.put_string("DESCRIPTION ")
+					def_buffer.put_string(system_name.as_upper)
+					def_buffer.put_string(".DLL%N")
+					def_buffer.put_string("%NEXPORTS%N%N")
 
 					-- generation of everything
 				from

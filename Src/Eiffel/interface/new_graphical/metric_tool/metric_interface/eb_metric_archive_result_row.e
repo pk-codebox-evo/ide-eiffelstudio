@@ -31,7 +31,6 @@ feature{NONE} -- Initialization
 			if is_ratio_set then
 				ratio := current_value / reference_value
 			end
-			time := a_time
 		end
 
 feature -- Access

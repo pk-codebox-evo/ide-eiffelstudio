@@ -2,13 +2,9 @@
 # This is the configuration file for MICROSOFT'S VISUAL C++
 #
 microsoftecdbgd='ecdbgd'
-make='nmake -nologo'
+make='nmake'
 del='-del'
-mv='copy'
-mkdir_target='if not exist $@ mkdir $@'
-dir_sep='\ '
 #
-output_exe_cmd='-Fe'
 output_cmd='-Fo'
 input_cmd='-Fd$(INDIR)\\'
 resource_compiler='rc'
@@ -19,21 +15,20 @@ lib='lib'
 #
 # Standard runtime:
 #------------------
-mtccflags='$ccflags -DEIF_THREADS'
 ccflags='$warning_level $debug -nologo -MT'
+mtccflags='$warning_level $debug -nologo -MT -DEIF_THREADS'
 output_libraries='standard mtstandard'
 #
 #-- DLL:
 #--------
-#mtccflags='$ccflags -DEIF_THREADS'
 #ccflags='-DEIF_MAKE_DLL $warning_level -nologo $debug -MT'
+#mtccflags='-DEIF_MAKE_DLL $warning_level -nologo $debug -MT -DEIF_THREADS'
 #output_libraries='dll mtdll'
 #
 #
 #Link Lines in non debug mode:
 #-----------------------------
-link_line='lib -OUT:$@ $**'
-alib_line='lib -OUT:$@ $**'
+link_line='lib -OUT:$@ $** $link_flags'
 #
 #
 optimize='-O2 -GS-'
@@ -41,12 +36,12 @@ debug=''
 #optimize='-Od -GS'
 #debug='-Zi'
 
-warning_level='-W3 -Wp64 -D_CRT_SECURE_NO_DEPRECATE -wd4996'
-dll_flags='-nologo -subsystem:WINDOWS -dll -incremental:no -nodefaultlib:libc -OUT:$@'
-dll_libs='kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib wsock32.lib'
+link_flags=''
+warning_level='-W3 -Wp64 -D_CRT_SECURE_NO_DEPRECATE'
+dllflags='-nologo -subsystem:WINDOWS -dll -incremental:no -nodefaultlib:libc'
 #
-cc='cl'
 link32='link'
+cc='cl'
 all_dependency='*.obj: eif_config.h eif_portable.h eif_globals.h eif_eiffel.h eif_macros.h'
 #
 
@@ -169,10 +164,10 @@ spitshell='cat'
 
 #Compiler/Preprocessor
 rt_version=''
-rt_include='$(ISE_EIFFEL)\studio\spec\$(ISE_PLATFORM)\include'
-rt_lib='$(ISE_EIFFEL)\studio\spec\$(ISE_PLATFORM)\lib\$(ISE_C_COMPILER)'
-rt_templates='$(ISE_EIFFEL)\studio\config\$(ISE_PLATFORM)\$(ISE_C_COMPILER)\templates'
-x2c='$(ISE_EIFFEL)\studio\spec\$(ISE_PLATFORM)\bin\x2c.exe'
+rt_include='$ISE_EIFFEL/studio/spec/$ISE_PLATFORM/include'
+rt_lib='$ISE_EIFFEL/studio/spec/$ISE_PLATFORM/lib'
+rt_templates='$ISE_EIFFEL/studio/config/$ISE_PLATFORM/templates'
+x2c='$ISE_EIFFEL/studio/spec/$ISE_PLATFORM/bin/x2c'
 add_log='undef'
 cpp_stuff='42'
 defvoidused='15'

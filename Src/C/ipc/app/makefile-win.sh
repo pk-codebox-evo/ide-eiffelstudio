@@ -1,17 +1,18 @@
-TOP = ..$(DIR)..
-DIR = $dir_sep
+TOP = ..\..
 OUTDIR = .
 INDIR = .
 CC = $cc
 OUTPUT_CMD = $output_cmd
-CFLAGS = -I$(TOP) -I..$(DIR)shared -I$(LIBRUN) -I$(LIBIDR) -I$(LIBRUN)$(DIR)include
+CFLAGS = -I$(TOP) -I..\shared -I$(LIBRUN) -I$(LIBIDR) -I$(LIBRUN)\include
 JCFLAGS = $(CFLAGS) $ccflags $optimize -DWORKBENCH -DEIF_IPC
 JMTCFLAGS = $(CFLAGS) $mtccflags $optimize -DWORKBENCH -DEIF_IPC
 MAKE = $make
+MV = copy
+RM = del
 # Where shared archive is located (path and name)
-LIBDIR = ..$(DIR)shared
-LIBRUN = $(TOP)$(DIR)run-time
-LIBIDR = $(TOP)$(DIR)idrs
+LIBDIR = ..\shared
+LIBRUN = $(TOP)\run-time
+LIBIDR = $(TOP)\idrs
 LIBNAME = ipc.$lib
 LIBMTNAME = mtipc.$lib
 
@@ -24,14 +25,14 @@ OBJECTS = \
 	app_proto.$obj \
 	app_server.$obj \
 	app_transfer.$obj \
-	$(LIBDIR)$(DIR)$(LIBNAME)
+	$(LIBDIR)\$(LIBNAME)
 
 MT_OBJECTS = \
 	MTapp_listen.$obj \
 	MTapp_proto.$obj \
 	MTapp_server.$obj \
 	MTapp_transfer.$obj \
-	$(LIBDIR)$(DIR)$(LIBMTNAME)
+	$(LIBDIR)\$(LIBMTNAME)
 
 all:: $output_libraries
 
@@ -40,11 +41,11 @@ mtdll: mtstandard
 standard: network.$lib
 mtstandard: mtnetwork.$lib
 
-network.$lib: $(OBJECTS) $(LIBDIR)$(DIR)$(LIBNAME)
-	$alib_line
+network.$lib: $(OBJECTS) $(LIBDIR)\$(LIBNAME)
+	$link_line
 
-mtnetwork.$lib: $(MT_OBJECTS) $(LIBDIR)$(DIR)$(LIBMTNAME)
-	$alib_line
+mtnetwork.$lib: $(MT_OBJECTS) $(LIBDIR)\$(LIBMTNAME)
+	$link_line
 
 MTapp_listen.$obj: app_listen.c
 	$(CC) $(JMTCFLAGS) $(OUTPUT_CMD)$@ -c $? 

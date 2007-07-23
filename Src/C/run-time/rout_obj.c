@@ -325,12 +325,13 @@ rt_public void rout_obj_call_procedure_dynamic (
 	EIF_REFERENCE open_map)
 {
 	EIF_GET_CONTEXT
-	int i = 2;
-	int args_count = open_count + closed_count;
+	size_t i = 2;
+	size_t args_count = open_count + closed_count;
 	int next_open = 0xFFFF;
 	int open_idx = 1;
 	int closed_idx = 1;
 	EIF_TYPED_ELEMENT* first_arg = 0;
+	EIF_TYPED_ELEMENT* arg = 0;
 	EIF_INTEGER* open_positions = 0;
 
 	if (closed_count > 0) {
@@ -419,6 +420,7 @@ rt_public void rout_obj_call_function_dynamic (
 	EIF_TYPED_ELEMENT* open_args, int open_count, 
 	EIF_REFERENCE open_map, void* res)
 {
+	EIF_GET_CONTEXT
 	struct item* it = 0;
 
 	rout_obj_call_procedure_dynamic (stype_id, feature_id, is_precompiled, is_basic_type, is_inline_agent,

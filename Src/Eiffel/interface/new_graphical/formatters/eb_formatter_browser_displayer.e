@@ -70,7 +70,7 @@ feature {NONE} -- Recycle
 		end
 
 invariant
-	browser_attached: not is_recycled implies browser /= Void
+	browser_attached: browser /= Void
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
