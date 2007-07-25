@@ -1,27 +1,24 @@
 \chapter{Results and Conclusions}
 \label{sec:ResultsAndConclusions}
 
-
-
-TODO
-
 \section{Usage of Frames and Models in Eiffel}
 \label{sec:UsageOfFramesAndModelsInEiffel}
 
-A part of this semester thesis was to experiment with the usage of Dynamic Frame Contracts and Models in practice. An easy usage is of course necessary because developers should be encouraged to use these new mechanism. The usage would definitely not be easy if developers have to learn a new language or write too much.
+A part of this semester thesis was to experiment with the usage of Dynamic Frame Contracts and models in practice. An easy usage is of course necessary because developers should be encouraged to use these new mechanism. The usage would definitely not be easy if developers have to learn a new language or write too much just to give a complete specification.
 
-TODO
+The usage of frames and Dynamic Frame Contracts in particular is rather simple. As stated before in Section \ref{sec:DynamicFramesInEiffel}, if a feature is a query, only a \emph{use} clause is necessary. If a feature is a command, both \emph{use} and \emph{modify} clauses are needed. Additionally, a command should provide in its \emph{ensure} clause the statement `\lstinline!confined! \emph{frame\_name}'. This is straight forward and not too much overhead to write and a part of the additional text could be done automatically using an improved feature creation wizard.
 
+When it comes to models, the developer himself has to think which model could be used to abstractly represent the class he is about to write. Additionally, for each feature model contracts have to be added and class invariants concerning its model have to be written. This is not straight forward and needs more thinking. But this has also positive aspects because the developer has to clearly specify what its class is about to do by defining a model for it.
 
 \section{Measurements}
 \label{sec:Measurements}
 
 A simple test case has been created which creates an empty list and inserts 100'000 elements. This is done one time for the original LINKED\_LIST class from the EiffelBase Library and one time for the new CC\_LINKED\_LIST class of the new library. The execution of these test runs has been measured using the unix `time' command. These test runs were done in \emph{finalized} mode of the Eiffel project. One time with all contracts enabled and one time without contracts at all.
 
-In Table \ref{tab:TimeMeasurements} the timing results are shown. For testing, the following computer was used: Dell Inspiron 6400 notebook with Intel Core2Duo processor 1.8 GHz and 2 GB RAM on Ubuntu Linux 6.10 with a 2.6.15 Kernel.
+In Table \ref{tab:TimeMeasurements} the timing results are shown. For testing, the following computer was used: Dell Inspiron 6400 notebook with Intel Core2Duo processor 1.8 GHz and 2 GB RAM on Ubuntu Linux 6.10 with a 2.6.15 kernel.
 
 \begin{table}
-	\caption{}
+	\caption{Time measurements of the test case.}
 	\centering
 	\begin{tabular}{|l|rr|rr|}
 		\hline
@@ -34,7 +31,7 @@ In Table \ref{tab:TimeMeasurements} the timing results are shown. For testing, t
 	\label{tab:TimeMeasurements}
 \end{table}
 
-TODO interpretation der resultate
+TODO: Interpretation of results
 
 \section{Future Work}
 \label{sec:FutureWork}

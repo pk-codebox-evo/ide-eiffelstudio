@@ -66,7 +66,7 @@ Independence of two variables can be expressed as disjointness of dynamic frames
 
 Every feature in every class in the new base library uses new contract clauses. They are called \emph{use} and \emph{modify} and are used just like normal contracts. An example is given in Listing \ref{lst:put_feature_frames}.
 
-The \emph{use} clause specifies which frames are used (read) by calling this feature. In contrast, the \emph{modify} clause specifies which frames are possibly modified by calling this feature. If a feature is a query, only \emph{use} is necessary. If a feature is a command, both \emph{use} and \emph{modify} are needed. Additionally, a command should provide in its \emph{ensure} clause the statement `\lstinline!confined! \emph{frame\_name}'. This statement ensures the third of Kassios framing specifications (Equation \ref{eq:SwingingPivot}).
+The \emph{use} clause specifies which frames are used (read) by calling this feature. In contrast, the \emph{modify} clause specifies which frames are possibly modified by calling this feature. If a feature is a query, only a \emph{use} clause is necessary. If a feature is a command, both \emph{use} and \emph{modify} clauses are needed. Additionally, a command should provide in its \emph{ensure} clause the statement `\lstinline!confined! \emph{frame\_name}'. This statement ensures the third of Kassios framing specifications (Equation \ref{eq:SwingingPivot}).
 
 \begin{lstlisting}[float,caption=put feature of the CC\_COLLECTION class.,label=lst:put_feature_frames]
 feature -- Element change

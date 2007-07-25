@@ -3,7 +3,7 @@
 
 One part of this semester thesis was the redesign of the EiffelBase Library (cf. \cite{eiffelbase}). The goal was to get a cleaner and smoother base library. The new base library should use Dynamic Frame Contracts and Models as discussed in Section \ref{sec:DynamicFramesInEiffel} and Section \ref{sec:ModelsInEiffel}. The redesign was focused on LINKED\_LIST class and all supporting classes.
 
-The current EiffelBase Library is over engineered and sometimes messy. The usage of multi inheritance is somewhat a TODO
+The current EiffelBase Library is over engineered and sometimes messy. Some features have names which do not comply with the own Eiffel style guidelines (cf. Chapter 26 in \cite{Meyer97Object}) or which do not reflect the true meaning of this feature or even of a class. An example for this is cursor which in Eiffel is rather a cursor position rather than a real cursor.
 
 \section{EiffelBase with Complete Contracts}
 \label{sec:EiffelBaseWithCompleteContracts}
@@ -49,7 +49,7 @@ Figure \ref{fig:CC_EiffelBase} shows the final `CC\_EiffelBase' Library as a BON
 
 \begin{figure}
 	\centering
-		\includegraphics[width=1.00\textwidth]{pictures/CC_EiffelBase.png}
+	\includegraphics[width=1.00\textwidth]{pictures/CC_EiffelBase.png}
 	\caption{Overview over all classes in the new EiffelBase Library with complete contracts.}
 	\label{fig:CC_EiffelBase}
 \end{figure}
