@@ -32,7 +32,7 @@ feature -- Element change
 			item := v
 		ensure
 			item_inserted: item = v
-			model_corresponds: model = v
+			model_corresponds: model.contains (v)
 			confined representation
 		end
 
