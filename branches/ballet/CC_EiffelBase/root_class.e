@@ -18,36 +18,36 @@ feature -- Initialization
 		do
 			-- test cc_linked_list from CC_EiffelBase
 			io.put_string ("Testing CC_LINKED_LIST%N")
-			test_cc_linked_list
+--			test_cc_linked_list
 
 			-- test linked_list from EiffelBase
 			io.put_string ("Testing LINKED_LIST%N")
+			test_linked_list
 		end
 
 feature -- Testing
+
+	number_of_elements: INTEGER is 100000
 
 	test_cc_linked_list is
 			-- Test the linked list from the CC_EiffelBase library.
 		local
 			linked_list: CC_LINKED_LIST [INTEGER]
-			second_linked_list : CC_LINKED_LIST [INTEGER]
 			counter: INTEGER
 		do
 			create linked_list.make
 
 			from
-				counter := 0
+				counter := 1
 			until
---				counter > 1000000
-				counter > 2
+				counter > number_of_elements
 			loop
 				linked_list.put_at_end (counter)
 				counter := counter + 1
 			end
 
-			io.put_string ("List with some elements%N")
-			print_cc_linked_list (linked_list)
-
+			io.put_string ("List with " + linked_list.count.out + " elements%N")
+--			print_cc_linked_list (linked_list)
 
 		end
 
@@ -55,9 +55,22 @@ feature -- Testing
 			-- Test the linked list from the EiffelBase library.
 		local
 			linked_list: LINKED_LIST [INTEGER]
-			second_linked_list : LINKED_LIST [INTEGER]
+			counter: INTEGER
 		do
 			create linked_list.make
+
+			from
+				counter := 1
+			until
+				counter > number_of_elements
+			loop
+				linked_list.put_front (counter)
+				counter := counter + 1
+			end
+
+			io.put_string ("List with " + linked_list.count.out + " elements%N")
+--			print_linked_list (linked_list)
+
 		end
 
 feature -- Printing

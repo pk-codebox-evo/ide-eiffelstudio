@@ -1,13 +1,44 @@
 \chapter{Results and Conclusions}
 \label{sec:ResultsAndConclusions}
 
+
+
 TODO
 
 \section{Usage of Frames and Models in Eiffel}
 \label{sec:UsageOfFramesAndModelsInEiffel}
 
+A part of this semester thesis was to experiment with the usage of Dynamic Frame Contracts and Models in practice. An easy usage is of course necessary because developers should be encouraged to use these new mechanism. The usage would definitely not be easy if developers have to learn a new language or write too much.
+
 TODO
 
 
+\section{Measurements}
+\label{sec:Measurements}
+
+A simple test case has been created which creates an empty list and inserts 100'000 elements. This is done one time for the original LINKED\_LIST class from the EiffelBase Library and one time for the new CC\_LINKED\_LIST class of the new library. The execution of these test runs has been measured using the unix `time' command. These test runs were done in \emph{finalized} mode of the Eiffel project. One time with all contracts enabled and one time without contracts at all.
+
+In Table \ref{tab:TimeMeasurements} the timing results are shown. For testing, the following computer was used: Dell Inspiron 6400 notebook with Intel Core2Duo processor 1.8 GHz and 2 GB RAM on Ubuntu Linux 6.10 with a 2.6.15 Kernel.
+
+\begin{table}
+	\caption{}
+	\centering
+	\begin{tabular}{|l|rr|rr|}
+		\hline
+		& \multicolumn{2}{c}{LINKED\_LIST} \vline & \multicolumn{2}{c}{CC\_LINKED\_LIST} \vline \\
+		\hline
+		Contracts & with & without & with & without \\
+		Time & 2.00 & 2.00 & 2.00 & 2.00 \\
+		\hline
+	\end{tabular}
+	\label{tab:TimeMeasurements}
+\end{table}
+
+TODO interpretation der resultate
+
+\section{Future Work}
+\label{sec:FutureWork}
+
+TODO
 
 
