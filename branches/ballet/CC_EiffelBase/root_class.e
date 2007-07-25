@@ -42,7 +42,7 @@ feature -- Testing
 			until
 				counter > number_of_elements
 			loop
-				linked_list.put_at_end (counter)
+				linked_list.put_right (counter)
 				counter := counter + 1
 			end
 
@@ -64,7 +64,7 @@ feature -- Testing
 			until
 				counter > number_of_elements
 			loop
-				linked_list.put_front (counter)
+				linked_list.put (counter)
 				counter := counter + 1
 			end
 

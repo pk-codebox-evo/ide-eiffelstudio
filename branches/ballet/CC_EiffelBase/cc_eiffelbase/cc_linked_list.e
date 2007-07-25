@@ -39,6 +39,7 @@ feature {NONE} -- Initialization
 			-- Create an empty list.
 		do
 			before := True
+			after := False
 		ensure
 			is_before: before
 			confined representation
