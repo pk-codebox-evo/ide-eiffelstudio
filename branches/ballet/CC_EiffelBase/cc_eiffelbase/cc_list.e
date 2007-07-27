@@ -27,8 +27,6 @@ inherit
 		select
 			model_container,
 			prune_all
-			--extend_at_end,
-			--put_at_end
 		end
 
 	CC_INDEXABLE [G]
@@ -48,8 +46,8 @@ inherit
 	CC_CURSOR_STRUCTURE [G]
 		rename
 			model as model_cursor_structure,
-			extend as extend_at_end,
-			put as put_at_end
+			extend as extend_end,
+			put as put_end
 		export
 			{NONE}
 				model_cursor_structure
@@ -349,7 +347,7 @@ feature -- Element change
 			until
 				l.exhausted
 			loop
-				extend_at_end (l.item) -- TODO extend???
+				extend_end (l.item) -- TODO extend???
 				finish
 				l.forth
 			end

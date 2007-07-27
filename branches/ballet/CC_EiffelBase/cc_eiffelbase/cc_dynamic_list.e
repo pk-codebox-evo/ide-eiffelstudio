@@ -49,7 +49,7 @@ feature -- Element change
 		ensure
 	 		new_count: count = old count + 1
 			item_inserted: first = v
-			model_corresponds: model |=| old model.first.extended_at (v, 1)
+			model_corresponds: model.first |=| old model.first.extended_at (v, 1)
 			confined representation
 		end
 
@@ -81,7 +81,7 @@ feature -- Element change
 		ensure
 	 		new_count: count = old count + 1
 	 		new_index: index = old index + 1
-	 		model_corresponds: model |=| old model.first.extended_at (v, model.second - 1)
+	 		model_corresponds: model.first |=| old model.first.extended_at (v, model.second - 1)
 	 		confined representation
 		end
 
@@ -99,7 +99,7 @@ feature -- Element change
 		ensure
 	 		new_count: count = old count + 1
 	 		same_index: index = old index
-	 		model_corresponds: model |=| old model.first.extended_at (v, model.second + 1)
+	 		model_corresponds: model.first |=| old model.first.extended_at (v, model.second + 1)
 	 		confined representation
 		end
 
@@ -282,7 +282,7 @@ feature -- Duplication
 			until
 				(counter = n) or else exhausted
 			loop
-				Result.extend_at_end (item)
+				Result.extend_end (item)
 				forth
 				counter := counter + 1
 			end

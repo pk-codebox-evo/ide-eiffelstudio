@@ -20,8 +20,8 @@ inherit
 	CC_ACTIVE [G]
 		rename
 			model as model_active,
-			put as put_at_end,
-			extend as extend_at_end
+			put as put_end,
+			extend as extend_end
 		export
 			{NONE}
 				model_active
@@ -46,7 +46,7 @@ feature -- Status report
 
 feature -- Element change
 
-	force_at_end (v: G) is
+	force_end (v: G) is
 			-- Add `v' to end.
 		require
 			extendible: extendible
@@ -55,7 +55,7 @@ feature -- Element change
 		modify
 			modify_own_representation: representation
 		do
-			put_at_end(v) -- TODO ???
+			put_end(v) -- TODO ???
 		ensure
 	 		new_count: count = old count + 1
 			item_inserted: has (v)
@@ -85,7 +85,7 @@ feature -- Element change
 			until
 				l.exhausted
 			loop
-				put_at_end (l.item)
+				put_end (l.item)
 				l.forth
 			end
 		ensure
@@ -94,14 +94,14 @@ feature -- Element change
 	 		confined representation
 		end
 
-	extend_at_end (v: G) is
+	extend_end (v: G) is
 			-- Add `v' to end.
 		deferred
 		ensure then
 			new_count: count = old count + 1
 		end
 
-	put_at_end (v: G) is
+	put_end (v: G) is
 			-- Add `v' to end.
 		deferred
 		ensure then

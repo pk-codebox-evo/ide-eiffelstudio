@@ -400,7 +400,7 @@ feature -- Conversion
 	linear_representation: CC_LINEAR [G] is
 			-- Representation as a linear structure
 		do
-			Result := Current
+			Result := Current.twin
 		ensure then
 			result_corresponds: Result.model |=| model
 		end

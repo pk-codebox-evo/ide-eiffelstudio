@@ -39,7 +39,6 @@ feature {NONE} -- Initialization
 			-- Create an empty list.
 		do
 			before := True
-			after := False
 		ensure
 			is_before: before
 			confined representation
@@ -334,15 +333,15 @@ feature -- Element change
 			count := count + 1
 		end
 
-	put_at_end (v: like item) is
+	put_end (v: like item) is
 			-- Add `v' to end.
 			-- Do not move cursor.
 		do
-			extend_at_end (v)
+			extend_end (v)
 		end
 
 
-	extend_at_end (v: like item) is
+	extend_end (v: like item) is
 			-- Add `v' to end.
 			-- Do not move cursor.
 		local
@@ -574,7 +573,7 @@ feature -- Duplication
 				until
 					other.off
 				loop
-					extend_at_end (other.item)
+					extend_end (other.item)
 						-- For speeding up next insertion, we go
 						-- to the end, that way `extend' does not
 						-- need to traverse the list completely.

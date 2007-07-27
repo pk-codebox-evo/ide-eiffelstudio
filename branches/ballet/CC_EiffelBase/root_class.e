@@ -18,11 +18,11 @@ feature -- Initialization
 		do
 			-- test cc_linked_list from CC_EiffelBase
 			io.put_string ("Testing CC_LINKED_LIST%N")
---			test_cc_linked_list
+			test_cc_linked_list
 
 			-- test linked_list from EiffelBase
 			io.put_string ("Testing LINKED_LIST%N")
-			test_linked_list
+--			test_linked_list
 		end
 
 feature -- Testing
@@ -42,7 +42,7 @@ feature -- Testing
 			until
 				counter > number_of_elements
 			loop
-				linked_list.put_right (counter)
+				linked_list.put_front (counter)
 				counter := counter + 1
 			end
 
@@ -64,7 +64,7 @@ feature -- Testing
 			until
 				counter > number_of_elements
 			loop
-				linked_list.put (counter)
+				linked_list.put_front (counter)
 				counter := counter + 1
 			end
 
