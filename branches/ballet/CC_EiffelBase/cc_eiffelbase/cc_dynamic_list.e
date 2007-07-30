@@ -49,7 +49,8 @@ feature -- Element change
 		ensure
 	 		new_count: count = old count + 1
 			item_inserted: first = v
-			model_corresponds: model.first |=| old model.first.extended_at (v, 1)
+			model_corresponds: model.first.first = v
+			model_corresponds: model.first.tail |=| old model.first
 			confined representation
 		end
 
