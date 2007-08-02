@@ -13,25 +13,37 @@ When it comes to models, the developer himself has to think which model could be
 \section{Measurements}
 \label{sec:Measurements}
 
-A simple test case has been created which creates an empty list and inserts 100'000 elements. This is done one time for the original LINKED\_LIST class from the EiffelBase Library and one time for the new CC\_LINKED\_LIST class of the new library. The execution of these test runs has been measured using the unix `time' command. These test runs were done in \emph{finalized} mode of the Eiffel project. One time with all contracts enabled and one time without contracts at all.
-
-In Table \ref{tab:TimeMeasurements} the timing results are shown. For testing, the following computer was used: Dell Inspiron 6400 notebook with Intel Core2Duo processor 1.8 GHz and 2 GB RAM on Ubuntu Linux 6.06 with a 2.6.15 kernel.
+Two simple test cases have been created. The first test case creates an empty list and inserts 1'000 elements, the second test case does the same but inserts 100'000 elements. This is done for the original LINKED\_LIST class from the EiffelBase Library and for the new CC\_LINKED\_LIST class of the new library. The execution of these test runs has been measured using the unix `time' command. The test runs were done in \emph{finalized} mode of the Eiffel project. One time with all contracts enabled and one time without contracts at all. For testing, the following computer was used: Dell Inspiron 6400 notebook with Intel Core2Duo processor 1.8 GHz and 2 GB RAM on Ubuntu Linux 6.06 with a 2.6.15 kernel. In Table \ref{tab:TimeMeasurements1} and Table \ref{tab:TimeMeasurements2} the timing results for each test case are shown. Remark: the test case with 100'000 elements in the CC\_LINKED\_LIST class with all contracts enabled has been canceled after nearly three hours of computation (cf. Table \ref{tab:TimeMeasurements2}).
 
 \begin{table}
-	\caption{Time measurements of the test case.}
+	\caption{Time measurements of the test case with 1'000 elements.}
 	\centering
 	\begin{tabular}{|l|rr|rr|}
 		\hline
 		& \multicolumn{2}{c}{LINKED\_LIST} \vline & \multicolumn{2}{c}{CC\_LINKED\_LIST} \vline \\
 		\hline
 		Contracts & with & without & with & without \\
-		Time & 0m0.603s & 0m0.045s & 0 & 0m0.046s \\
+		Time & 0m0.005s & 0m0.003s & 0m13.539s & 0m0.003s \\
 		\hline
 	\end{tabular}
-	\label{tab:TimeMeasurements}
+	\label{tab:TimeMeasurements1}
 \end{table}
 
-As can be seen by the results of Table \ref{tab:TimeMeasurements}, 
+\begin{table}
+	\caption{Time measurements of the test case with 100'000 elements.}
+	\centering
+	\begin{tabular}{|l|rr|rr|}
+		\hline
+		& \multicolumn{2}{c}{LINKED\_LIST} \vline & \multicolumn{2}{c}{CC\_LINKED\_LIST} \vline \\
+		\hline
+		Contracts & with & without & with & without \\
+		Time & 0m0.603s & 0m0.045s & 162m11.846s (canceled) & 0m0.046s \\
+		\hline
+	\end{tabular}
+	\label{tab:TimeMeasurements2}
+\end{table}
+
+As can be seen by the results of Table \ref{tab:TimeMeasurements1} and Table \ref{tab:TimeMeasurements2}, the test runs 
 
 TODO: Interpretation of results
 

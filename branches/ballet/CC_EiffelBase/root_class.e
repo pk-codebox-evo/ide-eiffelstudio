@@ -18,16 +18,16 @@ feature -- Initialization
 		do
 			-- test cc_linked_list from CC_EiffelBase
 			io.put_string ("Testing CC_LINKED_LIST%N")
-			test_cc_linked_list
+--			test_cc_linked_list
 
 			-- test linked_list from EiffelBase
 			io.put_string ("Testing LINKED_LIST%N")
---			test_linked_list
+			test_linked_list
 		end
 
 feature -- Testing
 
-	number_of_elements: INTEGER is 100000
+	number_of_elements: INTEGER is 1000
 
 	test_cc_linked_list is
 			-- Test the linked list from the CC_EiffelBase library.
