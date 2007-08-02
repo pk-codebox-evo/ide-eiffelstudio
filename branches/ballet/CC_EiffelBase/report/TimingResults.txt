@@ -1,0 +1,57 @@
+Testing normal LinkedList
+#########################
+
+100'000 items, with contracts
+*****************************
+real    0m0.603s
+user    0m0.156s
+sys     0m0.004s
+
+100'000 items, without conctracts
+*********************************
+real    0m0.045s
+user    0m0.036s
+sys     0m0.008s
+
+
+1'000 items, with contracts
+***************************
+real    0m0.005s
+user    0m0.004s
+sys     0m0.000s
+
+1'000 items, without contracts
+******************************
+real    0m0.003s
+user    0m0.004s
+sys     0m0.000s
+
+
+Testing CC_LinkedList
+#####################
+
+100'000 items, with contracts
+*****************************
+real    162m11.846s (canceled)
+user    161m50.451s
+sys     0m4.784s
+
+100'000 items, without conctracts
+*********************************
+real    0m0.046s
+user    0m0.036s
+sys     0m0.008s
+
+
+1'000 items, with contracts
+***************************
+real    0m13.539s
+user    0m13.429s
+sys     0m0.044s
+
+1'000 items, without contracts
+******************************
+real    0m0.003s
+user    0m0.000s
+sys     0m0.004s
+
