@@ -19,7 +19,7 @@ Actually there are a lot of differences to the original EiffelBase Library. We t
 	\item [Finite containers] In contrast to the EiffelBase Library the new library is always finite. To be more precise, only finite containers are available.
 	\item [TABLE not a heir of BAG] The TABLE class is no longer a heir of the BAG class. Originally in the EiffelBase Library the idea was that a table is a bag of elements which can be directly accessed through an index. But for us the mathematical concept behind a bag and a table are too different to be directly related.
 	\item [ACTIVE not a heir of BAG] The ACTIVE class is no longer a heir of the BAG class. An active object is defined as a data structure, which at every stage has a possibly undefined current item. Here again the mathematical concept behind an active and a bag are too different to be directly related.
-	\item [INDEXABLE not a heir of TABLE] The INDEXABLE class is no longer a heir of the TABLE class. TODO really useful?
+	\item [INDEXABLE not a heir of TABLE] The INDEXABLE class is no longer a heir of the TABLE class.
 	\item [Feature renaming] Some features in the original EiffelBase Library have names which do not reflect the actual meaning or which are not compliant with the Eiffel style guidelines (cf. Chapter 26 in \cite{Meyer97Object}).
 	\begin{itemize}
 		\item Feature cursor in CURSOR\_STRUCTURE class has been renamed to cursor\_position because it actually describes a position rather than a cursor object as known for example from \cite{Bezault07Gobo}.
