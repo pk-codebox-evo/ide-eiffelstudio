@@ -121,4 +121,8 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+
+
+
+end -- class WEL_NM_UP_DOWN_CONTROL
+

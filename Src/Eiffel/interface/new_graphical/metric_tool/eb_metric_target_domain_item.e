@@ -10,16 +10,74 @@ class
 	EB_METRIC_TARGET_DOMAIN_ITEM
 
 inherit
-	EB_TARGET_DOMAIN_ITEM
-
 	EB_METRIC_DOMAIN_ITEM
-		undefine
+		redefine
+			is_target_item,
 			is_valid,
-			is_target_item
+			string_representation
+		end
+
+	QL_SHARED
+		undefine
+			is_equal
 		end
 
 create
 	make
+
+feature -- Status report
+
+	is_target_item: BOOLEAN is True
+			-- Is current an application target item?
+
+	is_valid: BOOLEAN is
+			-- Does current represent a valid domain item?
+		do
+			Result := id.is_empty or else target_of_id (id) /= Void
+		end
+
+feature -- Access
+
+	domain (a_scope: QL_SCOPE): QL_DOMAIN is
+			-- New query lanaguage domain representing current item
+		do
+			if id.is_empty then
+				Result := query_target_item_from_conf_target (universe.target).wrapped_domain
+			else
+				Result := query_target_item_from_conf_target (target_of_id (id)).wrapped_domain
+			end
+		end
+
+	string_representation: STRING is
+			-- Text of current item
+		local
+			l_target: CONF_TARGET
+			l_target_name: STRING
+		do
+			if id.is_empty then
+				Result := "Application target"
+			else
+				l_target := target_of_id (id)
+				if l_target /= Void then
+					Result := l_target.name
+				else
+					l_target_name := last_target_name
+					if l_target_name /= Void and then not l_target_name.is_empty then
+						Result := l_target_name
+					else
+						Result := Precursor
+					end
+				end
+			end
+		end
+
+	query_language_item: QL_ITEM is
+			-- Query language item representation of current domain item
+		do
+			if not id.is_empty then
+				Result := query_target_item_from_conf_target (target_of_id (id))
+			end
+		end
 
 feature -- Process
 
@@ -28,6 +86,7 @@ feature -- Process
 		do
 			a_visitor.process_application_target_domain_item (Current)
 		end
+
 
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"
@@ -60,5 +119,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

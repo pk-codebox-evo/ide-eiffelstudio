@@ -77,13 +77,6 @@ inherit
 			default_create
 		end
 
-	SHARED_NAMES_HEAP
-		export
-			{NONE} all
-		undefine
-			default_create
-		end
-
 create
 	make_with_tool,
 	make
@@ -131,6 +124,7 @@ feature -- Access
 
 	last_removed_code: ARRAYED_LIST [TUPLE [STRING, INTEGER]]
 			-- List of code and positions that has been removed.
+
 
 	last_added_code: ARRAYED_LIST [TUPLE[STRING, INTEGER]]
 			-- List of added code and position.
@@ -390,7 +384,7 @@ feature -- Modification (Add/Remove feature)
 					data.after
 				loop
 					l_item := data.item
-					actual_feature_as := class_as.feature_with_name (l_item.feature_name.name_id)
+					actual_feature_as := class_as.feature_with_name (l_item.feature_name)
 					if actual_feature_as /= Void then
 						if actual_feature_as.feature_names.count = 1 then
 							feat_code := code (actual_feature_as.start_position, actual_feature_as.end_position)
@@ -429,7 +423,7 @@ feature -- Modification (Add/Remove feature)
 								remove_code (name_start_position, name_end_position - 1)
 								reparse
 							else
-								tmp := feat_code.substring_index (l_item.feature_name.name, 1)
+								tmp := feat_code.substring_index (l_item.feature_name, 1)
 								name_start_position := actual_feature_as.start_position + tmp
 								name_end_position := actual_feature_as.start_position +
 									feat_code.index_of (',', tmp) + 1
@@ -530,7 +524,7 @@ feature -- Modification (Add/Remove feature)
 			qcw: EB_QUERY_COMPOSITION_WIZARD
 			x, y: INTEGER
 		do
-			context_editor.develop_window.window.set_pointer_style (context_editor.default_pixmaps.Wait_cursor)
+			context_editor.development_window.window.set_pointer_style (context_editor.default_pixmaps.Wait_cursor)
 			last_feature_as := Void
 			prepare_for_modification
 			if valid_syntax then
@@ -548,16 +542,16 @@ feature -- Modification (Add/Remove feature)
 					y := y_pos - 150
 				end
 				qcw.set_position (x, y)
-				context_editor.develop_window.window.set_pointer_style (context_editor.default_pixmaps.Standard_cursor)
+				context_editor.development_window.window.set_pointer_style (context_editor.default_pixmaps.Standard_cursor)
 				execute_wizard_from_diagram (qcw)
 			else
 				create warning_dialog.make_with_text (
-					Warning_messages.w_Class_syntax_error_before_generation (class_i.name))
-				warning_dialog.show_modal_to_window (context_editor.develop_window.window)
+					Warning_messages.w_Class_syntax_error_before_generation (class_i.name_in_upper))
+				warning_dialog.show_modal_to_window (context_editor.development_window.window)
 				warning_dialog := Void
 				extend_from_diagram_successful := False
 				invalidate_text
-				context_editor.develop_window.window.set_pointer_style (context_editor.default_pixmaps.Standard_cursor)
+				context_editor.development_window.window.set_pointer_style (context_editor.default_pixmaps.Standard_cursor)
 			end
 		end
 
@@ -569,7 +563,7 @@ feature -- Modification (Add/Remove feature)
 			qcw: EB_QUERY_COMPOSITION_WIZARD
 			x, y: INTEGER
 		do
-			context_editor.develop_window.window.set_pointer_style (context_editor.Default_pixmaps.Wait_cursor)
+			context_editor.development_window.window.set_pointer_style (context_editor.Default_pixmaps.Wait_cursor)
 			last_feature_as := Void
 			prepare_for_modification
 			if valid_syntax then
@@ -588,16 +582,16 @@ feature -- Modification (Add/Remove feature)
 					y := y_pos - 150
 				end
 				qcw.set_position (x, y)
-				context_editor.develop_window.window.set_pointer_style (context_editor.Default_pixmaps.Standard_cursor)
+				context_editor.development_window.window.set_pointer_style (context_editor.Default_pixmaps.Standard_cursor)
 				execute_wizard_from_diagram (qcw)
 			else
 				create warning_dialog.make_with_text (
-					Warning_messages.w_Class_syntax_error_before_generation (class_i.name))
-				warning_dialog.show_modal_to_window (context_editor.develop_window.window)
+					Warning_messages.w_Class_syntax_error_before_generation (class_i.name_in_upper))
+				warning_dialog.show_modal_to_window (context_editor.development_window.window)
 				warning_dialog := Void
 				extend_from_diagram_successful := False
 				invalidate_text
-				context_editor.develop_window.window.set_pointer_style (context_editor.Default_pixmaps.Standard_cursor)
+				context_editor.development_window.window.set_pointer_style (context_editor.Default_pixmaps.Standard_cursor)
 			end
 		end
 
@@ -645,13 +639,14 @@ feature -- Modification (Add/Remove feature)
 					end
 				else
 					create warning_dialog.make_with_text (
-						Warning_messages.w_Class_syntax_error_before_generation (class_i.name))
+						Warning_messages.w_Class_syntax_error_before_generation (class_i.name_in_upper))
 					warning_dialog.show_modal_to_window (Window_manager.last_focused_development_window.window)
 					warning_dialog := Void
 					invalidate_text
 				end
 			end
 		end
+
 
 --	extend_ancestor (a_name: STRING; ihf: BON_INHERITANCE_FIGURE) is
 --			-- Add `a_name' to parent list of the class
@@ -895,6 +890,7 @@ feature -- Modification (Change class name)
 			end
 		end
 
+
 feature {NONE} -- Implementation
 
 	text: STRING
@@ -926,7 +922,7 @@ feature {NONE} -- Implementation
 		do
 			if not retried then
 					--| FIXME set `current_class' in `system'.
-				if class_i.is_compiled then
+				if class_i.compiled then
 					l_class_c := class_i.compiled_class
 					class_i.system.set_current_class (l_class_c)
 				end
@@ -977,7 +973,7 @@ feature {NONE} -- Implementation
 			last_feature_as := Void
 			reparse
 			if class_as /= Void then
-				last_feature_as := class_as.feature_with_name (names_heap.id_of (a_name))
+				last_feature_as := class_as.feature_with_name (a_name)
 			end
 		end
 
@@ -1212,10 +1208,10 @@ feature {NONE} -- Implementation
 	date: INTEGER
 			-- Date of last modification on `class_i' by `Current'.
 
-	context_editor: EB_DIAGRAM_TOOL
+	context_editor: EB_CONTEXT_EDITOR
 			--
 
-	warning_dialog: EB_WARNING_DIALOG
+	warning_dialog: EV_WARNING_DIALOG
 			-- Window that warns user of incorrect syntax or file modification.
 
 	invalidate_text is
@@ -1225,6 +1221,7 @@ feature {NONE} -- Implementation
 			text := Void
 		end
 
+
 	execute_wizard_from_diagram (fcw: EB_FEATURE_COMPOSITION_WIZARD) is
 			-- Show `fcw' and generate code if requested.
 			-- Add any graphical items.
@@ -1232,7 +1229,7 @@ feature {NONE} -- Implementation
 			valid_syntax: valid_syntax
 			unmodified: not is_modified
 		do
-			fcw.show_modal_to_window (context_editor.develop_window.window)
+			fcw.show_modal_to_window (context_editor.development_window.window)
 			if fcw.ok_clicked then
 				extend_from_diagram_successful := True
 				extend_feature_on_diagram_with_wizard (fcw)
@@ -1251,14 +1248,14 @@ feature {NONE} -- Implementation
 			editor: EB_SMART_EDITOR
 			new_code: STRING
 		do
-			editor := context_editor.develop_window.editors_manager.current_editor
+			editor := context_editor.development_window.editor_tool.text_area
 			if not editor.is_empty then
 					-- Wait for the editor to read class text.
 				from
+					process_events_and_idle
 				until
 					editor.text_is_fully_loaded
 				loop
-					ev_application.process_events
 				end
 			end
 
@@ -1297,29 +1294,29 @@ feature {NONE} -- Implementation
 							commit_modification
 						else
 							create warning_dialog.make_with_text (Warning_messages.w_New_feature_syntax_error)
-							warning_dialog.show_modal_to_window (context_editor.develop_window.window)
+							warning_dialog.show_modal_to_window (context_editor.development_window.window)
 							warning_dialog := Void
 							extend_from_diagram_successful := False
 							invalidate_text
 						end
 					else
 						create warning_dialog.make_with_text (Warning_messages.w_New_feature_syntax_error)
-						warning_dialog.show_modal_to_window (context_editor.develop_window.window)
+						warning_dialog.show_modal_to_window (context_editor.development_window.window)
 						warning_dialog := Void
 						extend_from_diagram_successful := False
 						invalidate_text
 					end
 				else
 					create warning_dialog.make_with_text (Warning_messages.w_New_feature_syntax_error)
-					warning_dialog.show_modal_to_window (context_editor.develop_window.window)
+					warning_dialog.show_modal_to_window (context_editor.development_window.window)
 					warning_dialog := Void
 					extend_from_diagram_successful := False
 					invalidate_text
 				end
 			else
 				create warning_dialog.make_with_text (
-					Warning_messages.w_Class_syntax_error_before_generation (class_i.name))
-				warning_dialog.show_modal_to_window (context_editor.develop_window.window)
+					Warning_messages.w_Class_syntax_error_before_generation (class_i.name_in_upper))
+				warning_dialog.show_modal_to_window (context_editor.development_window.window)
 				warning_dialog := Void
 				extend_from_diagram_successful := False
 				invalidate_text

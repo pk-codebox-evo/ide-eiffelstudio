@@ -73,7 +73,6 @@ feature -- Initialization
 			end
 
 			Result.add_entry (create {EWB_STRING}.make (system_cmd_name, system_help, system_abb, system_menu))
-
 			if eiffel_layout.has_profiler then
 				Result.add_entry (
 					create {EWB_STRING}.make (profile_cmd_name, profile_help, profile_abb, profile_menu))
@@ -184,16 +183,15 @@ feature -- Initialization
 		end
 
 	c_menu: EWB_MENU is
-			-- Menu options for execution
+			-- Menu options for c compilations
 		do
-			create Result.make (1,9)
+			create Result.make (1,8)
 			Result.add_entry (create {EWB_ARGS})
 			Result.add_entry (create {EWB_F_COMPILE})
 			Result.add_entry (create {EWB_FINALIZE}.make (False))
 			Result.add_entry (create {EWB_FREEZE})
 			Result.add_entry (create {EWB_COMP})
 			Result.add_entry (create {EWB_QUICK_MELT})
-			Result.add_entry (create {EWB_DEBUG})
 			Result.add_entry (create {EWB_RUN})
 			Result.add_entry (create {EWB_W_COMPILE})
 		ensure
@@ -279,36 +277,36 @@ feature -- Update
 	save_to_disk is
 			-- Save last output to file.
 		local
-			s: STRING_32
+			s: STRING
 			file_w: FILE_WINDOW
 			done: BOOLEAN
 		do
 			s := yank_window.stored_output
 			if s.is_empty then
-				localized_print_error (ewb_names.thers_is_no_output_to_save)
+				io.error.put_string ("There is no output to save.%N")
 			else
 				from
 				until
 					done
 				loop
 					if not command_line_io.more_arguments then
-						localized_print (ewb_names.arrow_file_name)
+						io.put_string ("--> File name: ")
 						command_line_io.get_name
 					end
 					command_line_io.get_last_input
 					if not command_line_io.last_input.is_empty then
 						create file_w.make (command_line_io.last_input)
 						if file_w.exists then
-							localized_print (ewb_names.file_already_exists)
+							io.put_string ("File already exists.%N")
 						else
 							file_w.open_file
 							if file_w.exists then
-								save_string_32_in_file (file_w, s)
+								file_w.put_string (s)
 								file_w.close
 								done := True
 							else
-								localized_print_error (ewb_names.can_not_create_file)
-								localized_print_error (file_w.name)
+								io.error.put_string ("Cannot create file: ")
+								io.error.put_string (file_w.name)
 								io.error.put_new_line
 							end
 						end
@@ -330,7 +328,7 @@ feature -- Update
 			until
 				done
 			loop
-				localized_print (ewb_names.command_arrow)
+				io.put_string ("Command => ")
 				command_line_io.get_name
 				command_line_io.get_last_input
 				rq := command_line_io.last_input
@@ -404,7 +402,9 @@ feature -- Update
 							process_request (option)
 						end
 					else
-						localized_print (ewb_names.unknow_menu (menu))
+						io.put_string ("Unknown menu ")
+						io.put_string (menu)
+						io.put_string (".%N")
 					end
 				end
 			else
@@ -443,7 +443,9 @@ feature -- Update
 						end
 						display_commands
 					else
-						localized_print (ewb_names.unknow_option (req))
+						io.put_string ("Unknown option ")
+						io.put_string (req)
+						io.put_string (".%N")
 					end
 				end
 			end
@@ -453,7 +455,9 @@ feature -- Output
 
 	display_header is
 		do
-			localized_print (ewb_names.ise_batch_version (Workbench_name, Version_number))
+			io.put_string ("==== ISE " + Workbench_name + " - Interactive Batch Version (v")
+			io.put_string (Version_number)
+			io.put_string (") ====%N%N")
 		end
 
 	display_commands is

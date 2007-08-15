@@ -1,13 +1,11 @@
 indexing
-	description: "[
-		Resource Type (RT) constants.
-		
-		Note: Changed all Resource Types from INTEGER to POINTER.
-	]"
+	description: "Resource Type (RT) constants."
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
 	date: "$Date$"
 	revision: "$Revision$"
+	note: "Changed all Resource Types from INTEGER%
+			%to POINTER"
 
 class
 	WEL_RT_CONSTANTS

@@ -32,8 +32,10 @@ inherit
 			interface,
 			initialize,
 			make,
+			on_key_event,
 			on_size_allocate,
 			hide,
+			internal_set_minimum_size,
 			on_widget_mapped,
 			destroy,
 			has_focus,
@@ -48,12 +50,16 @@ inherit
 			parent_imp
 		redefine
 			interface,
+			on_key_event,
 			has_focus,
 			show,
 			hide
 		end
 
 	EV_WINDOW_ACTION_SEQUENCES_IMP
+		redefine
+			interface
+		end
 
 create
 	make
@@ -74,15 +80,13 @@ feature {NONE} -- Initialization
 			-- and the status bar.
 			-- The `container_widget' will contain the child of the window.
 		local
+			on_key_event_intermediary_agent: PROCEDURE [EV_GTK_CALLBACK_MARSHAL, TUPLE [EV_KEY, STRING_32, BOOLEAN]]
 			app_imp: like app_implementation
 			l_gtk_marshal: EV_GTK_CALLBACK_MARSHAL
 			l_c_object: POINTER
 		do
 			set_is_initialized (False)
 			l_c_object := c_object
-
-			create accel_list.make (10)
-
 			create upper_bar
 			create lower_bar
 
@@ -91,27 +95,53 @@ feature {NONE} -- Initialization
 			app_imp := app_implementation
 			l_gtk_marshal := app_imp.gtk_marshal
 
+			signal_connect_true (app_imp.delete_event_string, agent (l_gtk_marshal).on_window_close_request (l_c_object))
 			initialize_client_area
 
-			l_gtk_marshal.signal_connect (l_c_object, app_imp.set_focus_event_string, agent (l_gtk_marshal).on_set_focus_event_intermediary (internal_id, ?), l_gtk_marshal.set_focus_event_translate_agent, True)
+			default_height := -1
+			default_width := -1
+
+			on_key_event_intermediary_agent := agent (l_gtk_marshal).on_key_event_intermediary (internal_id, ?, ?, ?)
+			signal_connect (l_c_object, app_imp.key_press_event_string, on_key_event_intermediary_agent, key_event_translate_agent, False)
+			signal_connect (l_c_object, app_imp.key_release_event_string, on_key_event_intermediary_agent, key_event_translate_agent, False)
+
+			signal_connect (l_c_object, app_imp.set_focus_event_string, agent (l_gtk_marshal).on_set_focus_event_intermediary (internal_id, ?), set_focus_event_translate_agent, True)
 				-- Used to propagate focus events between internal gtk widgets.
+
+			signal_connect (l_c_object, app_imp.focus_in_event_string, agent (l_gtk_marshal).window_focus_intermediary (internal_id, True), Void, True)
+			signal_connect (l_c_object, app_imp.focus_out_event_string, agent (l_gtk_marshal).window_focus_intermediary (internal_id, False), Void, True)
+				-- Used to handle explicit Window focus handling.
+
+			signal_connect (l_c_object, app_imp.configure_event_string, agent (l_gtk_marshal).on_size_allocate_intermediate (internal_id, ?, ?, ?, ?), configure_translate_agent, False)
+
+			accel_group := {EV_GTK_EXTERNALS}.gtk_accel_group_new
+			if {EV_GTK_EXTERNALS}.gtk_maj_ver > 1 then
+					-- This is performed in EV_ACCELERATOR_IMP for gtk 1.2 implementation.
+				signal_connect (
+					accel_group,
+					app_imp.accel_activate_string,
+					agent (App_imp.gtk_marshal).accel_activate_intermediary (internal_id, ?, ?),
+					Void,
+					False
+				)
+			end
+			{EV_GTK_EXTERNALS}.gtk_window_add_accel_group (l_c_object, accel_group)
 
 			{EV_GTK_EXTERNALS}.gtk_window_set_default_size (l_c_object, 1, 1)
 			Precursor {EV_CELL_IMP}
 				-- Need to set decorations after window is realized.
 			{EV_GTK_EXTERNALS}.gdk_window_set_decorations ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (l_c_object), default_wm_decorations)
 			internal_is_border_enabled := True
-			configure_event_pending := True
 			user_can_resize := True
 			set_is_initialized (True)
 		end
 
 feature  -- Access
 
-	has_focus: BOOLEAN
+	has_focus: BOOLEAN is
 			-- Does `Current' have the keyboard focus?
 		do
-			Result := internal_has_focus
+			Result := {EV_GTK_DEPENDENT_EXTERNALS}.gtk_window_is_active (c_object)
 		end
 
  	maximum_width: INTEGER
@@ -146,34 +176,13 @@ feature  -- Access
 
 feature -- Status setting
 
-	add_transient_child (a_child: EV_GTK_WINDOW_IMP)
-			-- Add `a_child' as transient child for `Current'.
-		require
-			a_child_not_void: a_child /= Void
-		do
-			{EV_GTK_EXTERNALS}.gtk_window_set_transient_for (a_child.c_object, c_object)
-		end
-
-	remove_transient_child (a_child: EV_GTK_WINDOW_IMP)
-			-- Remove `a_child' as transient child for `Current'.
-		require
-			a_child_not_void: a_child /= Void
-		do
-			{EV_GTK_EXTERNALS}.gtk_window_set_transient_for (a_child.c_object, default_pointer)
-		end
-
 	internal_disable_border is
 			-- Ensure no border is displayed around `Current'.
 		local
 			l_decor: INTEGER
-			l_x, l_y: INTEGER
-			l_temp: INTEGER
 		do
-				-- We are disabling the border so we need to reset the position in the exact place
-			l_temp := {EV_GTK_EXTERNALS}.gdk_window_get_origin ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object), $l_x, $l_y)
 			l_decor := default_wm_decorations.bit_and ({EV_GTK_EXTERNALS}.gdk_decor_border_enum.bit_not)
 			{EV_GTK_EXTERNALS}.gdk_window_set_decorations ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object), l_decor)
-			set_position (l_x, l_y)
 		end
 
 	internal_enable_border is
@@ -185,43 +194,10 @@ feature -- Status setting
 			{EV_GTK_EXTERNALS}.gdk_window_set_decorations ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object), l_decor)
 		end
 
-	disable_user_resize_called: BOOLEAN
-		-- Has `disable_user_resize' been called?
-
-	disable_user_resize is
-			-- Forbid the resize of the window.
-		do
-			disable_user_resize_called := True
-			user_can_resize := False
-			if is_displayed then
-				forbid_resize
-			end
-		end
-
-	enable_user_resize is
-			-- Allow the resize of the window.
-		do
-			if not user_can_resize then
-				disable_user_resize_called := False
-				user_can_resize := True
-				if is_displayed then
-					allow_resize
-				end
-			end
-		end
-
 	allow_resize is
 			-- Allow the resize of the window.
-		local
-			l_geometry: POINTER
 		do
-			l_geometry := {EV_GTK_EXTERNALS}.c_gdk_geometry_struct_allocate
-			{EV_GTK_EXTERNALS}.set_gdk_geometry_struct_max_width (l_geometry, maximum_width)
-			{EV_GTK_EXTERNALS}.set_gdk_geometry_struct_max_height (l_geometry, maximum_height)
-			{EV_GTK_EXTERNALS}.set_gdk_geometry_struct_min_width (l_geometry, minimum_width)
-			{EV_GTK_EXTERNALS}.set_gdk_geometry_struct_min_height (l_geometry, minimum_height)
-			{EV_GTK_EXTERNALS}.gtk_window_set_geometry_hints (c_object, NULL, l_geometry, {EV_GTK_EXTERNALS}.Gdk_hint_max_size_enum | {EV_GTK_EXTERNALS}.gdk_hint_min_size_enum)
-			l_geometry.memory_free
+			{EV_GTK_EXTERNALS}.gtk_window_set_policy (c_object, 0, 1, 0)
 			internal_enable_border
 		end
 
@@ -230,20 +206,16 @@ feature -- Status setting
 		do
 			if not is_show_requested then
 				call_show_actions := True
-				if disable_user_resize_called then
-					if not user_can_resize then
-						forbid_resize
-					else
-							-- Forbid the window manager from resizing window.
-						allow_resize
-					end
-				end
 				Precursor {EV_GTK_WINDOW_IMP}
+				is_positioned := True
 			end
 			if blocking_window /= Void then
 				set_blocking_window (Void)
 			end
 		end
+
+	is_positioned: BOOLEAN
+		-- Has the Window been previously positioned on screen?
 
 	call_show_actions: BOOLEAN
 		-- Should the show actions be called?
@@ -259,26 +231,36 @@ feature -- Status setting
 				disable_capture
 				Precursor {EV_GTK_WINDOW_IMP}
 					-- Setting positions so that if `Current' is reshown then it reappears in the same place, as on Windows.
-				if disable_user_resize_called then
-					allow_resize
-				end
-
 				set_position (a_x_pos, a_y_pos)
 			end
 		end
 
 feature -- Element change
 
-	set_maximum_width (a_max_width: INTEGER) is
-			-- Set `maximum_width' to `a_max_width'.
+	set_maximum_width (max_width: INTEGER) is
+			-- Set `maximum_width' to `max_width'.
+		local
+			a_geometry: POINTER
 		do
-			internal_set_maximum_size (a_max_width, maximum_height)
+			a_geometry := {EV_GTK_EXTERNALS}.c_gdk_geometry_struct_allocate
+			{EV_GTK_EXTERNALS}.set_gdk_geometry_struct_max_width (a_geometry, max_width)
+			{EV_GTK_EXTERNALS}.set_gdk_geometry_struct_max_height (a_geometry, maximum_height)
+			{EV_GTK_EXTERNALS}.gtk_window_set_geometry_hints (c_object, NULL, a_geometry, {EV_GTK_EXTERNALS}.Gdk_hint_max_size_enum)
+			a_geometry.memory_free
+			maximum_width := max_width
 		end
 
-	set_maximum_height (a_max_height: INTEGER) is
-			-- Set `maximum_height' to `a_max_height'.
+	set_maximum_height (max_height: INTEGER) is
+			-- Set `maximum_height' to `max_height'.
+		local
+			a_geometry: POINTER
 		do
-			internal_set_maximum_size (maximum_width, a_max_height)
+			a_geometry := {EV_GTK_EXTERNALS}.c_gdk_geometry_struct_allocate
+			{EV_GTK_EXTERNALS}.set_gdk_geometry_struct_max_width (a_geometry, maximum_width)
+			{EV_GTK_EXTERNALS}.set_gdk_geometry_struct_max_height (a_geometry, max_height)
+			{EV_GTK_EXTERNALS}.gtk_window_set_geometry_hints (c_object, NULL, a_geometry, {EV_GTK_EXTERNALS}.Gdk_hint_max_size_enum)
+			a_geometry.memory_free
+			maximum_height := max_height
 		end
 
 	set_title (new_title: STRING_GENERAL) is
@@ -321,11 +303,6 @@ feature -- Element change
 			menu_bar := Void
 		end
 
-feature {EV_GTK_WINDOW_IMP} -- Access
-
-	accel_list: HASH_TABLE [EV_ACCELERATOR, NATURAL_32]
-		-- Lookup table for accelerator access.
-
 feature {NONE} -- Accelerators
 
 	connect_accelerator (an_accel: EV_ACCELERATOR) is
@@ -334,17 +311,16 @@ feature {NONE} -- Accelerators
 			acc_imp: EV_ACCELERATOR_IMP
 			a_property, a_origin, a_value: EV_GTK_C_STRING
 		do
-			if an_accel /= Void then
-				acc_imp ?= an_accel.implementation
-				accel_list.put (an_accel, acc_imp.accel_id)
-				if acc_imp.key.code = {EV_KEY_CONSTANTS}.key_f10 then
-						-- F10 is used as a default window accelerator key, if we use F10 in a custom accelerator then we override the default setting
-					a_property := once "gtk-menu-bar-accel"
-					a_value := once "<Shift><Control><Mod1><Mod2><Mod3><Mod4><Mod5>F10"
-						-- This is a value that is highly unlikely to be used
-					a_origin := once "Vision2"
-					{EV_GTK_EXTERNALS}.gtk_settings_set_string_property (app_implementation.default_gtk_settings, a_property.item, a_value.item, a_origin.item)
-				end
+			acc_imp ?= an_accel.implementation
+			acc_imp.add_accel (Current)
+
+			if acc_imp.key.code = {EV_KEY_CONSTANTS}.key_f10 then
+					-- F10 is used as a default window accelerator key, if we use F10 in a custom accelerator then we override the default setting
+				a_property := once "gtk-menu-bar-accel"
+				a_value := once "<Shift><Control><Mod1><Mod2><Mod3><Mod4><Mod5>F10"
+					-- This is a value that is highly unlikely to be used
+				a_origin := once "Vision2"
+				{EV_GTK_EXTERNALS}.gtk_settings_set_string_property (app_implementation.default_gtk_settings, a_property.item, a_value.item, a_origin.item)
 			end
 		end
 
@@ -353,10 +329,8 @@ feature {NONE} -- Accelerators
 		local
 			acc_imp: EV_ACCELERATOR_IMP
 		do
-			if an_accel /= Void then
-				acc_imp ?= an_accel.implementation
-				accel_list.remove (acc_imp.accel_id)
-			end
+			acc_imp ?= an_accel.implementation
+			acc_imp.remove_accel (Current)
 		end
 
 feature {EV_ANY_IMP} -- Implementation
@@ -369,35 +343,44 @@ feature {EV_ANY_IMP} -- Implementation
 			Precursor {EV_CELL_IMP}
 		end
 
-feature {EV_APPLICATION_IMP} -- Implementation
+feature {NONE} -- Implementation
 
 	on_widget_mapped is
 			-- `Current' has been mapped to the screen.
 		do
-			Precursor
 			if show_actions_internal /= Void and call_show_actions then
 				show_actions_internal.call (Void)
 			end
 			call_show_actions := False
 		end
 
-feature {NONE} -- Implementation
-
-	internal_has_focus: BOOLEAN
-			-- Does `Current' have the keyboard focus?
-
-	internal_set_maximum_size (a_max_width, a_max_height: INTEGER)
-			-- Set maximum width and height of `Current' to `a_max_width' and `a_max_height'.
-		local
-			l_geometry: POINTER
+	internal_set_minimum_size (a_minimum_width, a_minimum_height: INTEGER) is
+			-- Set the minimum horizontal size to `a_minimum_width'.
+			-- Set the minimum vertical size to `a_minimum_height'.
 		do
-			l_geometry := {EV_GTK_EXTERNALS}.c_gdk_geometry_struct_allocate
-			{EV_GTK_EXTERNALS}.set_gdk_geometry_struct_max_width (l_geometry, a_max_width)
-			{EV_GTK_EXTERNALS}.set_gdk_geometry_struct_max_height (l_geometry, a_max_height)
-			{EV_GTK_EXTERNALS}.gtk_window_set_geometry_hints (c_object, NULL, l_geometry, {EV_GTK_EXTERNALS}.Gdk_hint_max_size_enum)
-			l_geometry.memory_free
-			maximum_width := a_max_width
-			maximum_height := a_max_height
+			{EV_GTK_EXTERNALS}.gtk_widget_set_usize (c_object, -1, -1)
+			Precursor (a_minimum_width, a_minimum_height)
+		end
+
+	on_size_allocate (a_x, a_y, a_width, a_height: INTEGER) is
+			-- Gtk_Widget."size-allocate" happened.
+		local
+			a_x_pos, a_y_pos: INTEGER
+		do
+				--| `default_width' and `default_height' are not useful anymore.
+			a_x_pos := x_position
+			a_y_pos := y_position
+			default_width := -1
+			default_height := -1
+			positioned_by_user := False
+			Precursor (a_x_pos, a_y_pos, a_width, a_height)
+			if a_x_pos  /= previous_x_position or a_y_pos /= previous_y_position then
+				previous_x_position := a_x_pos
+				previous_y_position := a_y_pos
+				if move_actions_internal /= Void then
+					move_actions_internal.call (app_implementation.gtk_marshal.dimension_tuple (previous_x_position, previous_y_position, a_width, a_height))
+				end
+			end
 		end
 
 	previously_focused_widget: POINTER
@@ -413,8 +396,66 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	on_focus_changed (a_has_focus: BOOLEAN) is
+			-- Called from focus intermediary agents when focus for `Current' has changed.
+			-- if `a_has_focus' then `Current' has just received focus.
+		do
+			if a_has_focus then
+				on_set_focus_event ({EV_GTK_EXTERNALS}.gtk_window_struct_focus_widget (c_object))
+			else
+				on_set_focus_event (default_pointer)
+			end
+			Precursor {EV_CELL_IMP} (a_has_focus)
+		end
+
 	previous_x_position, previous_y_position: INTEGER
 		-- Positions of previously set x and y coordinates of `Current'.
+
+	on_key_event (a_key: EV_KEY; a_key_string: STRING_32; a_key_press: BOOLEAN; call_application_events: BOOLEAN) is
+			-- Used for key event actions sequences.
+		local
+			a_cs: EV_GTK_C_STRING
+			l_app_imp: like app_implementation
+			a_focus_widget: EV_WIDGET_IMP
+			l_block_events: BOOLEAN
+			l_tab_controlable: EV_TAB_CONTROLABLE_I
+		do
+			l_app_imp := app_implementation
+			Precursor {EV_CELL_IMP} (a_key, a_key_string, a_key_press, True)
+				-- Fire the widget events.
+			a_focus_widget ?= l_app_imp.eif_object_from_gtk_object ({EV_GTK_EXTERNALS}.gtk_window_struct_focus_widget (c_object))
+
+			if a_focus_widget /= Void and then a_focus_widget.is_sensitive and then a_focus_widget.has_focus then
+				if a_key /= Void then
+					if a_focus_widget.default_key_processing_handler /= Void then
+						l_block_events := not a_focus_widget.default_key_processing_handler.item ([a_key])
+					end
+
+					if not l_block_events then
+							-- If tab controllable we must make sure that it will not lose the focus
+							-- if `is_tabable_from' is set to `False'.
+						l_tab_controlable ?= a_focus_widget
+						if l_tab_controlable /= Void and then not l_tab_controlable.is_tabable_from then
+							l_block_events := a_key.is_arrow or else a_key.code = {EV_KEY_CONSTANTS}.key_tab
+						end
+					end
+					if l_block_events then
+						if a_key_press then
+							a_cs := l_app_imp.key_press_event_string
+						else
+							a_cs := l_app_imp.key_release_event_string
+						end
+							-- Block gtk from doing anything else with the key press, such as keyboard navigation.
+						{EV_GTK_EXTERNALS}.signal_emit_stop_by_name (c_object, a_cs.item)
+					end
+				end
+				if l_app_imp.pick_and_drop_source /= Void and then a_key_press and then a_key /= Void and then (a_key.code = {EV_KEY_CONSTANTS}.key_escape or a_key.code = {EV_KEY_CONSTANTS}.key_alt) then
+					l_app_imp.pick_and_drop_source.end_transport (0, 0, 0, 0, 0, 0, 0, 0)
+				else
+					a_focus_widget.on_key_event (a_key, a_key_string, a_key_press, False)
+				end
+			end
+		end
 
 	client_area: POINTER is
 			-- Pointer to the widget that is treated as the main holder of the client area within the window.
@@ -444,32 +485,15 @@ feature {NONE} -- Implementation
 			{EV_GTK_EXTERNALS}.gtk_box_pack_start (vbox, bar_imp.c_object, False, True, 0)
 
 			app_implementation.window_oids.extend (internal_id)
+
+				-- Initialize accelerators box.
+			accel_box := {EV_GTK_EXTERNALS}.gtk_menu_item_new
+			{EV_GTK_EXTERNALS}.gtk_container_add (accel_box, {EV_GTK_EXTERNALS}.gtk_label_new (NULL))
+			{EV_GTK_EXTERNALS}.gtk_widget_set_minimum_size (accel_box, 0, 0)
+			{EV_GTK_EXTERNALS}.gtk_box_pack_start (vbox, accel_box, False, False, 0)
 		end
 
-feature {EV_INTERMEDIARY_ROUTINES, EV_APPLICATION_IMP} -- Implementation
-
-	on_size_allocate (a_x, a_y, a_width, a_height: INTEGER) is
-			-- GdkEventConfigure event occurred.
-		local
-			l_x_pos, l_y_pos: INTEGER
-		do
-			{EV_GTK_EXTERNALS}.gtk_window_get_position (c_object, $l_x_pos, $l_y_pos)
-			configure_event_pending := False
-			Precursor (l_x_pos, l_y_pos, a_width, a_height)
-			if l_x_pos  /= previous_x_position or else l_y_pos /= previous_y_position then
-				previous_x_position := l_x_pos
-				previous_y_position := l_y_pos
-				if move_actions_internal /= Void then
-					move_actions_internal.call (app_implementation.gtk_marshal.dimension_tuple (l_x_pos, l_y_pos, a_width, a_height))
-				end
-			end
-		end
-
-	call_window_state_event (a_changed_mask, a_new_state: INTEGER) is
-			-- Call either minimize, maximize or restore actions for window
-		do
-			-- Move implementation from EV_TITLED_WINDOW_IMP when necessary
-		end
+feature {EV_INTERMEDIARY_ROUTINES} -- Implementation
 
 	on_set_focus_event (a_widget_ptr: POINTER) is
 			-- The focus of a widget has changed within `Current'.
@@ -479,13 +503,13 @@ feature {EV_INTERMEDIARY_ROUTINES, EV_APPLICATION_IMP} -- Implementation
 		do
 			a_widget ?= app_implementation.eif_object_from_gtk_object (a_widget_ptr)
 			l_previously_focused_widget ?= app_implementation.eif_object_from_gtk_object (previously_focused_widget)
-			set_focused_widget (a_widget)
-				-- If `a_widget_ptr' is null then `a_widget' is Void.
-			if a_widget /= Void then
-				a_widget.on_focus_changed (True)
-			end
 			if l_previously_focused_widget /= Void and then l_previously_focused_widget /= a_widget then
+				set_focused_widget (Void)
 				l_previously_focused_widget.on_focus_changed (False)
+			end
+			if a_widget /= Void then
+				set_focused_widget (a_widget)
+				a_widget.on_focus_changed (True)
 			end
 		end
 
@@ -532,20 +556,42 @@ feature {EV_GTK_WINDOW_IMP, EV_PICK_AND_DROPABLE_IMP, EV_APPLICATION_IMP} -- Imp
 			{EV_GTK_EXTERNALS}.gtk_window_set_accept_focus (c_object, False)
 		end
 
-feature {EV_MENU_BAR_IMP, EV_ACCELERATOR_IMP, EV_APPLICATION_IMP} -- Implementation
-
-	on_focus_changed (a_has_focus: BOOLEAN) is
-			-- Called from focus intermediary agents when focus for `Current' has changed.
-			-- if `a_has_focus' then `Current' has just received focus.
+	grab_keyboard_and_mouse is
+			-- Perform a global mouse and keyboard grab.
+		local
+			i: INTEGER
 		do
-			internal_has_focus := a_has_focus
-			Precursor {EV_CELL_IMP} (a_has_focus)
-			if a_has_focus then
-				on_set_focus_event ({EV_GTK_EXTERNALS}.gtk_window_struct_focus_widget (c_object))
-			else
-				on_set_focus_event (default_pointer)
-			end
+			i := {EV_GTK_EXTERNALS}.gdk_pointer_grab (
+				{EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object),
+				1,
+				{EV_GTK_EXTERNALS}.gdk_button_release_mask_enum |
+				{EV_GTK_EXTERNALS}.gdk_button_press_mask_enum |
+				{EV_GTK_EXTERNALS}.gdk_pointer_motion_mask_enum |
+				{EV_GTK_EXTERNALS}.gdk_pointer_motion_hint_mask_enum
+				,
+				null,
+				null,
+				0
+			)
+			i := {EV_GTK_EXTERNALS}.gdk_keyboard_grab ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object), True, 0)
 		end
+
+	release_keyboard_and_mouse is
+			-- Release mouse and keyboard grab.
+		do
+			{EV_GTK_EXTERNALS}.gdk_pointer_ungrab (
+				0 -- guint32 time
+			)
+			{EV_GTK_EXTERNALS}.gdk_keyboard_ungrab (0) -- guint32 time
+		end
+
+feature {EV_MENU_BAR_IMP, EV_ACCELERATOR_IMP} -- Implementation
+
+	accel_group: POINTER
+			-- Pointer to GtkAccelGroup struct.
+
+	accel_box: POINTER
+			-- Pointer to the on screen zero size accelerator widget
 
 feature {EV_ACCELERATOR_IMP} -- Implementation
 
@@ -558,7 +604,7 @@ feature {EV_INTERMEDIARY_ROUTINES}
 	call_close_request_actions is
 			-- Call the close request actions.
 		do
-			if close_request_actions_internal /= Void and then not App_implementation.is_in_transport and then not has_modal_window and then not is_destroyed then
+			if close_request_actions_internal /= Void and then not App_implementation.is_in_transport and then not has_modal_window then
 				close_request_actions_internal.call (Void)
 			end
 		end

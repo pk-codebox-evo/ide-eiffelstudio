@@ -12,16 +12,16 @@ class
 
 feature -- Constants
 
-	Ev_frame_lowered: INTEGER is 1
+	Ev_frame_lowered: INTEGER is unique
 			-- Inward bevel.
 
-	Ev_frame_raised: INTEGER is 2
+	Ev_frame_raised: INTEGER is unique
 			-- Outward bevel.
 
-	Ev_frame_etched_in: INTEGER is 3
+	Ev_frame_etched_in: INTEGER is unique
 			-- Sunken groove.
 
-	Ev_frame_etched_out: INTEGER is 4
+	Ev_frame_etched_out: INTEGER is unique
 			-- Raised ridge.
 
 feature -- Contract support

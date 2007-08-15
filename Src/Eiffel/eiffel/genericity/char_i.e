@@ -8,7 +8,7 @@ inherit
 		rename
 			make as base_make
 		redefine
-			is_char, is_character_8, is_character_32,
+			is_char,
 			element_type, tuple_code,
 			description, sk_value, hash_code,
 			maximum_interval_value,
@@ -31,34 +31,28 @@ feature -- Initialization
 				w implies (System.character_32_class /= Void and then
 					System.character_32_class.is_compiled)
 		do
-			is_character_32 := w
+			is_wide := w
 			if w then
 				base_make (System.character_32_class.compiled_class.class_id)
 			else
 				base_make (System.character_8_class.compiled_class.class_id)
 			end
 		ensure
-			is_character_32_set: is_character_32 = w
+			is_wide_set: is_wide = w
 		end
 
 feature -- Property
 
-	is_character_32: BOOLEAN
-			-- Is the type a CHARACTER_32 type?
+	is_wide: BOOLEAN
+			-- Is current character a wide one?
 
 	is_char: BOOLEAN is True
 			-- Is the type a char type ?
 
-	is_character_8: BOOLEAN is
-			-- Is the type a CHARACTER_8 type?
-		do
-			Result := not is_character_32
-		end
-
 	element_type: INTEGER_8 is
 			-- Pointer element type
 		do
-			if is_character_32 then
+			if is_wide then
 				Result := {MD_SIGNATURE_CONSTANTS}.element_type_u4
 			else
 				Result := {MD_SIGNATURE_CONSTANTS}.Element_type_char
@@ -68,7 +62,7 @@ feature -- Property
 	tuple_code: INTEGER_8 is
 			-- Tuple code for class type
 		do
-			if is_character_32 then
+			if is_wide then
 				Result := {SHARED_GEN_CONF_LEVEL}.wide_character_tuple_code
 			else
 				Result := {SHARED_GEN_CONF_LEVEL}.character_tuple_code
@@ -78,7 +72,7 @@ feature -- Property
 	reference_type: CL_TYPE_I is
 			-- Assocated reference type of Current.
 		do
-			if is_character_32 then
+			if is_wide then
 				create Result.make (system.character_32_ref_class.compiled_class.class_id)
 			else
 				create Result.make (system.character_8_ref_class.compiled_class.class_id)
@@ -90,7 +84,7 @@ feature -- Access
 	level: INTEGER is
 			-- Internal code for generation
 		do
-			if is_character_32 then
+			if is_wide then
 				Result := C_wide_char
 			else
 				Result := C_char
@@ -100,33 +94,32 @@ feature -- Access
 	description: CHAR_DESC is
 			-- Type description for skeleton
 		do
-			create Result.make (is_character_32)
+			create Result.make (is_wide)
 		end
 
 	c_string: STRING is
 			-- String generated for the type.
 		do
-			if is_character_32 then
+			if is_wide then
 				Result := Wide_char_string
 			else
 				Result := Character_string
 			end
 		end
 
-	typed_field: STRING is
-			-- Value field of a C structure corresponding to this type
+	union_tag: STRING is
 		do
-			if is_character_32 then
-				Result := "it_c4"
+			if is_wide then
+				Result := Union_wide_char_tag
 			else
-				Result := "it_c1"
+				Result := Union_character_tag
 			end
 		end
 
 	hash_code: INTEGER is
 			-- Hash code for current type
 		do
-			if is_character_32 then
+			if is_wide then
 				Result := Wide_char_code
 			else
 				Result := Character_code
@@ -136,7 +129,7 @@ feature -- Access
 	sk_value: INTEGER is
 			-- Generate SK value associated to the current type.
 		do
-			if is_character_32 then
+			if is_wide then
 				Result := Sk_wchar
 			else
 				Result := Sk_char
@@ -146,7 +139,7 @@ feature -- Access
 	generate_sk_value (buffer: GENERATION_BUFFER) is
 			-- Generate SK value associated to current C type in `buffer'.
 		do
-			if is_character_32 then
+			if is_wide then
 				buffer.put_string ("SK_WCHAR")
 			else
 				buffer.put_string ("SK_CHAR")
@@ -155,17 +148,17 @@ feature -- Access
 
 	type_a: CHARACTER_A is
 		do
-			create Result.make (is_character_32)
+			create Result.make (is_wide)
 		end
 
-	generate_typed_tag (buffer: GENERATION_BUFFER) is
-			-- Generate tag of C structure "EIF_TYPED_VALUE" associated
+	generate_union (buffer: GENERATION_BUFFER) is
+			-- Generate discriminant of C structure "item" associated
 			-- to the current C type in `buffer'.
 		do
-			if is_character_32 then
-				buffer.put_string ("type = SK_WCHAR")
+			if is_wide then
+				buffer.put_string ("it_wchar")
 			else
-				buffer.put_string ("type = SK_CHAR")
+				buffer.put_string ("it_char")
 			end
 		end
 
@@ -180,17 +173,17 @@ feature -- Code generation
 	maximum_interval_value: CHAR_VAL_B is
 			-- Maximum value in inspect interval for current type
 		do
-			if is_character_32 then
+			if is_wide then
 				create Result.make ({CHARACTER_32}.max_value.to_character_32)
 			else
-				create Result.make ({CHARACTER_8}.Max_value.to_character_8)
+				create Result.make ({EIFFEL_SCANNER_SKELETON}.Maximum_character_code.to_character_8)
 			end
 		end
 
 	make_default_byte_code (ba: BYTE_ARRAY) is
 			-- Generate default value of basic type on stack.
 		do
-			if is_character_32 then
+			if is_wide then
 				ba.append (Bc_wchar)
 				ba.append_integer (0)
 			else
@@ -202,10 +195,13 @@ feature -- Code generation
 feature {NONE} -- Constants
 
 	Character_string: STRING is "EIF_CHARACTER"
-	Wide_char_string: STRING is "EIF_WIDE_CHAR";
+	Wide_char_string: STRING is "EIF_WIDE_CHAR"
+
+	Union_character_tag: STRING is "carg"
+	Union_wide_char_tag: STRING is "wcarg";
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

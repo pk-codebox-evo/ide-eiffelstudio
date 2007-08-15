@@ -26,7 +26,7 @@ feature -- Initalization
 
 feature -- Properties
 
-	stored_output: STRING_32
+	stored_output: STRING
 
 	count : INTEGER is
 			-- Count
@@ -43,12 +43,12 @@ feature -- Element change
 
 feature -- Output
 
-	put_string (s: STRING_GENERAL) is
+	put_string (s: STRING) is
 		do
 			stored_output.append (s)
 		end;
 
-	put_char (c: CHARACTER_32) is
+	put_char (c: CHARACTER) is
 		do
 			stored_output.extend (c)
 		end;

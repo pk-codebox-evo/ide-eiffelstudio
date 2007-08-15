@@ -18,11 +18,11 @@ inherit
 			has_true_formal, is_identical, generate_gen_type_il, make_full_type_byte_code_parameters,
 			has_actual, has_formal, same_as, make_gen_type_byte_code, duplicate,
 			instantiation_in, meta_generic, true_generics, hash_code, base_class,
-			debug_output, complete_instantiation_in, internal_generic_derivation
+			debug_output, complete_instantiation_in, generic_derivation
 		redefine
 			is_feature_pointer, name,
 			description, sk_value,
-			element_type, reference_type, true_reference_type, tuple_code, hash_code
+			element_type, reference_type, true_reference_type, tuple_code
 		end
 
 	ONE_GEN_TYPE_I
@@ -34,7 +34,7 @@ inherit
 		redefine
 			is_feature_pointer, description, sk_value,
 			element_type, tuple_code, true_reference_type,
-			name, hash_code, internal_generic_derivation
+			name
 		end
 
 create
@@ -44,16 +44,9 @@ feature -- Access
 
 	il_type_name (a_prefix: STRING): STRING is
 			-- Name of current class
-		local
-			t: TYPE_I
 		do
-			t := true_generics.item (1)
-			Result := t.il_type_name (a_prefix).twin
+			Result := true_generics.item (1).il_type_name (a_prefix).twin
 			Result.append ("&")
-			if a_prefix /= Void and then t.is_external then
-				Result.precede ('.')
-				Result.prepend (a_prefix)
-			end
 		end
 
 	generic_il_type_name: STRING is
@@ -92,30 +85,6 @@ feature -- Access
 			-- Tuple code for class type
 		do
 			Result := {SHARED_GEN_CONF_LEVEL}.pointer_tuple_code
-		end
-
-	internal_generic_derivation (a_level: INTEGER): like Current is
-			-- Precise generic derivation of current type.
-			-- That is to say given a type, it gives the associated TYPE_I
-			-- which can be used to search its associated CLASS_TYPE.
-		local
-			c: like cr_info
-		do
-			if system.il_generation then
-					-- We need to keep track of all generic derivation,
-					-- thus we can keep current as a valid generic derivation.
-				c := cr_info
-					-- Remove creation information.
-				cr_info := Void
-				Result := twin
-				cr_info := c
-				Result.set_meta_generic (meta_generic.twin)
-				Result.set_true_generics (true_generics.twin)
-				Result.meta_generic.put (Result.meta_generic.item (1).internal_generic_derivation (a_level + 1), 1)
-				Result.true_generics.put (Result.true_generics.item (1).internal_generic_derivation (a_level + 1), 1)
-			else
-				Result := Precursor {ONE_GEN_TYPE_I} (a_level)
-			end
 		end
 
 feature
@@ -166,14 +135,7 @@ feature
 			Result.append_character (' ')
 		end
 
-	typed_field: STRING is "it_p"
-			-- Value field of a C structure corresponding to this type
-
-	hash_code: INTEGER is
-			-- Hash code for current type
-		once
-			Result := Pointer_code
-		end
+	union_tag: STRING is "parg"
 
 	sk_value: INTEGER is
 			-- Generate SK value associated to the current type.
@@ -181,11 +143,11 @@ feature
 			Result := Sk_pointer
 		end
 
-	generate_typed_tag (buffer: GENERATION_BUFFER) is
-			-- Generate tag of C structure "EIF_TYPED_VALUE" associated
+	generate_union (buffer: GENERATION_BUFFER) is
+			-- Generate discriminant of C structure "item" associated
 			-- to the current C type in `buffer'.
 		do
-			buffer.put_string ("type = SK_POINTER")
+			buffer.put_string ("it_ptr")
 		end
 
 	generate_sk_value (buffer: GENERATION_BUFFER) is
@@ -208,7 +170,7 @@ feature
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

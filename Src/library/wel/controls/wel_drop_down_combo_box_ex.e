@@ -62,7 +62,7 @@ feature -- Status settings
 			else
 				create a_wel_string.make_empty (0)
 			end
-			{WEL_API}.set_window_text (edit_item, a_wel_string.item)
+			cwin_set_window_text (edit_item, a_wel_string.item)
 		end
 
 	set_limit_text (limit: INTEGER) is
@@ -71,7 +71,7 @@ feature -- Status settings
 			exists: exists
 			positive_limit: limit >= 0
 		do
-			{WEL_API}.send_message (edit_item, Em_limittext, to_wparam (limit), to_lparam (0))
+			cwin_send_message (edit_item, Em_limittext, to_wparam (limit), to_lparam (0))
 		end
 
 feature {NONE} -- Implementation
@@ -82,7 +82,7 @@ feature {NONE} -- Implementation
 		require
 			exists: exists
 		do
-			Result := {WEL_API}.send_message_result (item, Cbem_geteditcontrol, to_wparam (0), to_lparam (0))
+			Result := cwin_send_message_result (item, Cbem_geteditcontrol, to_wparam (0), to_lparam (0))
 		end
 
 	default_style: INTEGER is

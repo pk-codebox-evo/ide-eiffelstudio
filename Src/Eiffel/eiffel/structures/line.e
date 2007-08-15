@@ -17,6 +17,7 @@ create
 
 	make
 
+	
 feature
 
 	cursor: INTEGER;
@@ -31,6 +32,7 @@ feature {NONE}
 
 	Chunk: INTEGER is 50;
 
+	
 feature 
 
 	insert (a: T) is

@@ -58,11 +58,6 @@ feature {NONE} -- Initialization
 
 			editor_drawing_area.enable_sensitive
 			let_blink := True
-
-				-- Initialize stored values, since these values should never be smaller than 1.
-			stored_cursor_line := 1
-			stored_cursor_char := 1
-			stored_first_line := 1
 		end
 
 feature -- Access
@@ -367,17 +362,13 @@ feature -- Observation
 	add_cursor_observer (txt_observer: TEXT_OBSERVER) is
 			-- Add observer of `text_displayed' for cursor position changes.
 		do
-			if text_displayed /= Void then
-				text_displayed.add_cursor_observer (txt_observer)
-			end
+			text_displayed.add_cursor_observer (txt_observer)
 		end
 
 	remove_observer (txt_observer: TEXT_OBSERVER) is
 			-- Remove observer of `text_displayed'.
 		do
-			if text_displayed /= Void then
-				text_displayed.remove_observer (txt_observer)
-			end
+			text_displayed.remove_observer (txt_observer)
 		end
 
 	on_text_loaded is
@@ -391,9 +382,7 @@ feature -- Observation
 				if number_of_lines >= stored_cursor_line then
 					text_displayed.cursor.set_y_in_lines (stored_cursor_line)
 					set_first_line_displayed (stored_first_line, True)
-						-- We add 1 to represent the last position of a line.
-						-- The position of 1 means the position before the first character of a line.
-					if text_displayed.line (stored_cursor_line).image.count + 1 >= stored_cursor_char then
+					if text_displayed.line (stored_cursor_line).image.count >= stored_cursor_char then
 						text_displayed.cursor.set_x_in_characters (stored_cursor_char)
 					end
 					invalidate_cursor_rect (True)
@@ -421,7 +410,7 @@ feature {NONE} -- Process Vision2 events
 			-- Process Wm_keydown message corresponding to the
 			-- key `virtual_key' and the associated data `key_data'.
 		do
-			if ev_key /= Void and then not ignore_keyboard_input then
+			if ev_key /= Void and then not ignore_keyboard_input and then not alt_key then
 					-- Handle state key.
 
 				reset_blinking
@@ -433,10 +422,9 @@ feature {NONE} -- Process Vision2 events
 					key_action_timer.actions.wipe_out
 					key_action_timer.set_interval (40)
 					continue_key_action := True
-					if ctrled_key and then not alt_key then
+					if ctrled_key then
 						key_action_timer.actions.extend (agent repeat_ctrled_key (ev_key))
-					elseif not (not ctrled_key and not shifted_key and alt_key) then
-							-- Ignore the case only Alt is pressed.
+					else
 						key_action_timer.actions.extend (agent repeat_extended_key (ev_key))
 					end
 				end
@@ -479,10 +467,8 @@ feature {NONE} -- Process Vision2 events
 				-- Redraw the line where the cursor is (we will erase the cursor)
 			show_cursor := False
 			if not editor_drawing_area.is_destroyed then
-				invalidate_selection_rect (False)
-					-- No need to suspend the blinking of the cursor here since the drawing
-					-- routine `draw_cursor' takes into consideration that when you do not have
-					-- the focus we draw a fix grey cursor.
+				invalidate_selection_rect (True)
+				suspend_cursor_blinking
 			end
 		end
 
@@ -630,7 +616,12 @@ feature {NONE} -- Handle keystrokes
 
 			when Key_end then
 					-- End key action
-				basic_cursor_move (agent l_cursor.go_end_line)
+				if shifted_key and then l_cursor.line.first_token = l_cursor.token and then l_cursor.pos_in_token = 1 then
+					basic_cursor_move (agent l_cursor.go_end_line)
+					basic_cursor_move (agent l_cursor.go_right_char)
+				else
+					basic_cursor_move (agent l_cursor.go_end_line)
+				end
 
 			when Key_page_up then
 					-- Page up
@@ -726,7 +717,7 @@ feature {NONE} -- Blink Cursor Management
 			if not blink_suspended then
 				let_blink := False
 				blink_on := True
-				blinking_timeout.actions.call (Void)
+				blinking_timeout.actions.call ([])
 				blinking_timeout.actions.block
 				blink_suspended := True
 			end
@@ -744,7 +735,7 @@ feature {NONE} -- Blink Cursor Management
 				let_blink := True
 				blink_on := True
 				blinking_timeout.actions.resume
-				blinking_timeout.actions.call (Void)
+				blinking_timeout.actions.call ([])
 				blink_suspended := False
 			else
 				reset_blinking
@@ -826,7 +817,7 @@ feature {NONE} -- Blink Cursor Management
 			if not is_empty then
 				line_start := text_displayed.selection_start.y_in_lines
 				line_end := text_displayed.selection_end.y_in_lines
-				invalidate_block (line_start, line_end, flush_screen)
+				invalidate_block (line_start, line_end, true)
 			end
 		end
 
@@ -842,8 +833,10 @@ feature {NONE} -- Blink Cursor Management
 			if editor_preferences.blinking_cursor and has_focus then
 					-- Set up a timeout to be called to make the cursor blink
 				blinking_timeout.actions.extend (agent internal_draw_cursor (media, x, y, width, line_height, show_cursor))
+				blinking_timeout.actions.call ([])
+			else
+				internal_draw_cursor (media, x, y, width, line_height, show_cursor)
 			end
-			internal_draw_cursor (media, x, y, width, line_height, show_cursor)
  		end
 
 	internal_draw_cursor (media: EV_DRAWABLE; x, y, width_cursor, ln_height: INTEGER; do_show: BOOLEAN) is
@@ -854,7 +847,7 @@ feature {NONE} -- Blink Cursor Management
 		do
 			if not updating_line then
 				blink_on := not blink_on
-				invalidate_cursor_rect (False)
+				invalidate_cursor_rect (True)
 			end
 			media.set_xor_mode
 			if not do_show then
@@ -920,7 +913,7 @@ feature {NONE} -- Implementation
 	ignore_keyboard_input: BOOLEAN is
 			-- Ignore keyboard events?
 		do
-			Result := text_displayed.is_empty or else ev_application.transport_in_progress
+			Result := text_displayed.is_empty or else editor_drawing_area.pebble /= Void
 		end
 
 	check_position (a_cursor: like cursor_type) is
@@ -930,16 +923,12 @@ feature {NONE} -- Implementation
 		local
 			cur_pos: INTEGER
 			l_int: INTEGER
-			l_fld: INTEGER
 		do
 			cur_pos := a_cursor.y_in_lines
 			if cur_pos < first_line_displayed then
 				set_first_line_displayed (cur_pos, False)
 			elseif cur_pos >= (first_line_displayed + number_of_lines_displayed) then
-				l_fld := cur_pos - number_of_lines_displayed + 1
-				if l_fld <= text_displayed.number_of_lines.max (1) and vertical_scrollbar.value_range.has (l_fld) then
-					set_first_line_displayed (l_fld, False)
-				end
+				set_first_line_displayed (cur_pos - number_of_lines_displayed + 1, False)
 			end
 			cur_pos := x_position_of_cursor (a_cursor)
 			l_int := offset + editor_viewport.width - 30
@@ -1191,7 +1180,7 @@ feature {NONE} -- Implementation
 							-- Some (or all) of the line ends in the viewable area.  So we must clear from the end of
 							-- the line to the edge of the viewport in the background color.
 						if view_invisible_symbols then
-							l_start_clear := font.string_width (once "Â¶")
+							l_start_clear := font.string_width (once "¶")
 						else
 							l_start_clear := 0
 						end
@@ -1304,11 +1293,6 @@ feature {NONE} -- Private Constants
 	Token_not_selected	: INTEGER is 0
 	Token_selected		: INTEGER is 1
 	Token_half_selected	: INTEGER is 4;
-
-invariant
-	stored_cursor_line_not_negative: stored_cursor_line >= 0
-	stored_cursor_char_not_negative: stored_cursor_char >= 0
-	stored_first_line_not_negative: stored_first_line >= 0
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"

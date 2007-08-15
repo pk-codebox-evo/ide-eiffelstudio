@@ -5,10 +5,11 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 
-class
+class 
 	DATABASE_DATETIME [G -> DATABASE create default_create end]
 
 inherit
+
 	DB_TYPE
 
 	HANDLE_SPEC [G]
@@ -21,10 +22,10 @@ feature -- Status report
 			Result := db_spec.sql_name_datetime
 		end
 
-	eiffel_ref: ANY is
-			-- Shared absolute date reference
+	eiffel_ref: DATE_TIME is
+			-- Shared absolute date reference 
 		once
-			create {DATE_TIME} Result.make_now
+			create Result.make_now
 		end
 
 indexing

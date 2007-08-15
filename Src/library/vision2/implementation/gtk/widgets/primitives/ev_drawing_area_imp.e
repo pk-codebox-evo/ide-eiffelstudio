@@ -40,6 +40,10 @@ inherit
 		end
 
 	EV_DRAWING_AREA_ACTION_SEQUENCES_IMP
+		redefine
+			interface,
+			process_gdk_event
+		end
 
 create
 	make
@@ -61,15 +65,23 @@ feature {NONE} -- Initialization
 			gc := {EV_GTK_EXTERNALS}.gdk_gc_new (App_implementation.default_gdk_window)
 			init_default_values
 			disable_double_buffering
+			disable_tabable_to
+			disable_tabable_from
 
 			real_set_background_color (c_object, background_color)
 
 				-- Initialize tooltip.
 			internal_tooltip := ""
 			Precursor {EV_PRIMITIVE_IMP}
-			disable_tabable_to
-			disable_tabable_from
 		end
+
+feature -- Status report
+
+	is_tabable_to: BOOLEAN
+			-- Is Current able to be tabbed to?
+
+	is_tabable_from: BOOLEAN
+			-- Is Current able to be tabbed from?
 
 feature -- Status setting
 
@@ -83,6 +95,32 @@ feature -- Status setting
 			-- Disable double buffering for exposed areas.
 		do
 			{EV_GTK_EXTERNALS}.gtk_widget_set_double_buffered (visual_widget, False)
+		end
+
+	enable_tabable_to is
+			-- Make `is_tabable_to' `True'.
+		do
+			{EV_GTK_EXTERNALS}.gtk_widget_set_flags (c_object, {EV_GTK_EXTERNALS}.GTK_CAN_FOCUS_ENUM)
+			is_tabable_to := True
+		end
+
+	disable_tabable_to is
+			-- Make `is_tabable_to' `False'.
+		do
+			{EV_GTK_EXTERNALS}.gtk_widget_unset_flags (c_object, {EV_GTK_EXTERNALS}.GTK_CAN_FOCUS_ENUM)
+			is_tabable_to := False
+		end
+
+	enable_tabable_from is
+			-- Make `is_tabable_from' `True'.
+		do
+			is_tabable_from := True
+		end
+
+	disable_tabable_from is
+			-- Make `is_tabable_from' `False'.
+		do
+			is_tabable_from := False
 		end
 
 feature {NONE} -- Implementation
@@ -120,28 +158,14 @@ feature {NONE} -- Implementation
 			a_tip_win: POINTER
 			l_show_tooltips: BOOLEAN
 			a_window: POINTER
-			i, a_x, a_y, a_screen_x, a_screen_y, l_width, l_height: INTEGER
-			l_screen: EV_SCREEN
-			gr: POINTER
+			i, a_x, a_y, a_screen_x, a_screen_y: INTEGER
 		do
 			a_window := {EV_GTK_EXTERNALS}.gdk_window_at_pointer ($a_x, $a_y)
-			a_tip_win := {EV_GTK_EXTERNALS}.gtk_tooltips_struct_tip_window (tooltips_pointer)
 			if a_window = drawable and then show_tooltips_if_activated and then not has_capture then
 				if reset_tooltip_position then
 					i := {EV_GTK_EXTERNALS}.gdk_window_get_origin (a_window, $a_screen_x, $a_screen_y)
-					gr := reusable_requisition_struct.item
-					{EV_GTK_EXTERNALS}.gtk_widget_size_request (a_tip_win, gr)
-					l_width := {EV_GTK_EXTERNALS}.gtk_requisition_struct_width (gr)
-					l_height := {EV_GTK_EXTERNALS}.gtk_requisition_struct_height (gr)
-					create l_screen
 					tooltip_initial_x := a_screen_x + a_x
-					tooltip_initial_y := a_screen_y + a_y + tooltip_window_y_offset
-					if tooltip_initial_x + l_width > l_screen.width then
-						tooltip_initial_x := l_screen.width - l_width
-					end
-					if tooltip_initial_y + l_height > l_screen.height then
-						tooltip_initial_y := a_screen_y + a_y - l_height - tooltip_window_y_offset
-					end
+					tooltip_initial_y := a_screen_y + a_y
 					reset_tooltip_position := False
 				end
 				l_show_tooltips := True
@@ -149,8 +173,9 @@ feature {NONE} -- Implementation
 				show_tooltips_if_activated := False
 				tooltip_repeater.set_interval (0)
 			end
-			if l_show_tooltips and then not internal_tooltip.is_empty then
-				{EV_GTK_EXTERNALS}.gtk_window_move (a_tip_win, tooltip_initial_x, tooltip_initial_y)
+			a_tip_win := {EV_GTK_EXTERNALS}.gtk_tooltips_struct_tip_window (tooltips_pointer)
+			if l_show_tooltips then
+				{EV_GTK_EXTERNALS}.gtk_window_move (a_tip_win, tooltip_initial_x, tooltip_initial_y + tooltip_window_y_offset)
 				{EV_GTK_EXTERNALS}.gtk_widget_show (a_tip_win)
 			else
 				{EV_GTK_EXTERNALS}.gtk_widget_hide (a_tip_win)
@@ -160,11 +185,8 @@ feature {NONE} -- Implementation
 	tooltip_initial_x, tooltip_initial_y: INTEGER
 		-- Initial x and y coordinates for the tooltip window.
 
-	tooltip_window_y_offset: INTEGER
-			-- Amount of pixels tooltip window is offset down from the mouse pointer when shown.
-		do
-			Result := {EV_GTK_EXTERNALS}.gdk_display_get_default_cursor_size ({EV_GTK_EXTERNALS}.gdk_display_get_default)
-		end
+	tooltip_window_y_offset: INTEGER is 20
+		-- Amount of pixels tooltip window is offset down from the mouse pointer when shown.
 
 	tooltip_repeater: EV_TIMEOUT
 		-- Timeout repeater used for hiding/show tooltip.
@@ -318,12 +340,12 @@ feature {EV_INTERMEDIARY_ROUTINES} -- Implementation
 
 feature {NONE} -- Implementation
 
-	on_key_event (a_key: EV_KEY; a_key_string: STRING_32; a_key_press: BOOLEAN) is
+	on_key_event (a_key: EV_KEY; a_key_string: STRING_32; a_key_press: BOOLEAN; call_application_events: BOOLEAN) is
 			-- Used for key event actions sequences.
 		do
 				-- Make sure tooltip window is hidden.
 			update_tooltip (False)
-			Precursor {EV_PRIMITIVE_IMP} (a_key, a_key_string, a_key_press)
+			Precursor {EV_PRIMITIVE_IMP} (a_key, a_key_string, a_key_press, call_application_events)
 		end
 
 	call_button_event_actions (a_type: INTEGER; a_x, a_y, a_button: INTEGER; a_x_tilt, a_y_tilt, a_pressure: DOUBLE; a_screen_x, a_screen_y: INTEGER) is

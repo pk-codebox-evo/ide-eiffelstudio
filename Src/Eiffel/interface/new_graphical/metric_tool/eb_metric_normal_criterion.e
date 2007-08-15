@@ -17,7 +17,8 @@ inherit
 		end
 
 create
-	make
+	make,
+	make_with_setting
 
 feature -- Access
 
@@ -83,5 +84,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

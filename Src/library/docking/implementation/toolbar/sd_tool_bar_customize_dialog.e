@@ -19,14 +19,14 @@ create
 feature -- Initialization
 
 	make is
-			-- Creation method
 		local
 			l_constants: EV_LAYOUT_CONSTANTS
+			l_shared: SD_SHARED
 		do
 			create l_constants
-			create internal_shared
-			make_with_title (internal_shared.interface_names.tool_bar_customize_title)
-			set_icon_pixmap (internal_shared.icons.tool_bar_customize_dialog)
+			create l_shared
+			make_with_title ("Customize Toolbar")
+			set_icon_pixmap (l_shared.icons.tool_bar_customize_dialog)
 			w_width := l_constants.dialog_unit_to_pixels(560)
 			w_height := l_constants.dialog_unit_to_pixels(360)
 			close_request_actions.wipe_out
@@ -59,44 +59,42 @@ feature -- Initialization
 
 			create pool_list.make (True)
 			pool_list.drop_actions.extend (agent move_to_pool_list)
-			pool_list.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
 			pool_list.disable_multiple_selection
 			pool_list.select_actions.extend (agent on_pool_select)
 			pool_list.deselect_actions.extend (agent on_pool_deselect)
 			create current_list.make (False)
 			current_list.drop_actions.extend (agent move_to_current_list)
-			current_list.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
 			current_list.disable_multiple_selection
 			current_list.select_actions.extend (agent on_current_select)
 			current_list.deselect_actions.extend (agent on_current_deselect)
 
-			create pool_label.make_with_text (internal_shared.interface_names.available_buttons)
+			create pool_label.make_with_text ("Available buttons")
 			pool_label.align_text_left
-			create current_label.make_with_text (internal_shared.interface_names.displayed_buttons)
+			create current_label.make_with_text ("Displayed buttons")
 			current_label.align_text_left
 
-			create add_button.make_with_text (internal_shared.interface_names.add_button)
+			create add_button.make_with_text ("Add ->")
 			add_button.select_actions.extend (agent add_to_displayed)
 			l_layout_constants.set_default_size_for_button (add_button)
 
 			add_button.disable_sensitive
-			create remove_button.make_with_text (internal_shared.interface_names.remove_button)
+			create remove_button.make_with_text ("<- Remove")
 			l_layout_constants.set_default_size_for_button (remove_button)
 			remove_button.select_actions.extend (agent remove_from_displayed)
 			remove_button.disable_sensitive
-			create up_button.make_with_text (internal_shared.interface_names.move_button_up)
+			create up_button.make_with_text ("Up")
 			l_layout_constants.set_default_size_for_button (up_button)
 			up_button.select_actions.extend (agent move_up)
 			up_button.disable_sensitive
-			create down_button.make_with_text (internal_shared.interface_names.move_button_down)
+			create down_button.make_with_text ("Down")
 			l_layout_constants.set_default_size_for_button (down_button)
 			down_button.select_actions.extend (agent move_down)
 			down_button.disable_sensitive
-			create ok_button.make_with_text (internal_shared.interface_names.ok)
+			create ok_button.make_with_text ("Ok")
 			l_layout_constants.set_default_size_for_button (ok_button)
 			ok_button.select_actions.extend (agent generate_toolbar)
 			ok_button.select_actions.extend (agent exit)
-			create cancel_button.make_with_text (internal_shared.interface_names.cancel)
+			create cancel_button.make_with_text ("Cancel")
 			cancel_button.select_actions.extend (agent exit)
 			l_layout_constants.set_default_size_for_button (cancel_button)
 
@@ -141,6 +139,7 @@ feature -- Initialization
 			main_container.set_padding (l_layout_constants.Default_padding_size)
 			main_container.set_border_width (l_layout_constants.Default_border_size)
 			main_container.extend (square_container)
+
 				-- Add widgets to our window
 			extend (main_container)
 
@@ -158,7 +157,6 @@ feature -- Initialization
 			is_text_displayed := text_displayed
 			is_text_important := text_important
 
-			all_items := toolbar
 			fill_lists (toolbar)
 
 			valid_data := False
@@ -181,21 +179,6 @@ feature -- Result
 
 	final_toolbar: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
 			-- list containing the buttons to be displayed and then the ones in the pool
-
-	veto_pebble_function (an_item: SD_CUSTOMIZABLE_LIST_ITEM): BOOLEAN is
-			-- Veto pebble function
-		local
-			l_tool_bar_item: SD_TOOL_BAR_ITEM
-			l_separator: SD_TOOL_BAR_SEPARATOR
-		do
-			l_separator ?= an_item.data
-			l_tool_bar_item ?= an_item.data
-			if l_separator /= Void then
-				Result := True
-			elseif l_tool_bar_item /= Void then
-				Result := all_items.has (l_tool_bar_item)
-			end
-		end
 
 feature {NONE} -- Graphical interface
 
@@ -238,9 +221,6 @@ feature {NONE} -- Graphical interface
 			--
 			-- Useful only because Vision2 currently does not remember the size
 			-- of the window after a hide/show.
-
-	all_items: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
-			-- All tool bar items in one SD_TOOL_BAR_CONTENT.
 
 feature {NONE} -- Button actions
 
@@ -309,7 +289,7 @@ feature {NONE} -- Button actions
 					pool_list.start
 					pool_list.prune (sel)
 				else
-					create sel.make (Current, create {SD_TOOL_BAR_SEPARATOR}.make)
+					create sel.make (create {SD_TOOL_BAR_SEPARATOR}.make)
 					set_up_events (sel)
 				end -- if
 				sel2 := current_list.customizable_selected_item
@@ -454,7 +434,7 @@ feature {NONE} -- Actions performed by agents like graying buttons
 					an_item.parent.prune (an_item)
 					current_list.extend (an_item)
 				else
-					current_list.extend (create {SD_CUSTOMIZABLE_LIST_ITEM}.make (Current, create {SD_TOOL_BAR_SEPARATOR}.make))
+					current_list.extend (create {SD_CUSTOMIZABLE_LIST_ITEM}.make (create {SD_TOOL_BAR_SEPARATOR}.make))
 					set_up_events (an_item)
 				end
 			end
@@ -489,7 +469,7 @@ feature {NONE} -- Internal data
 			conv_cust: SD_CUSTOMIZABLE_LIST_ITEM
 		do
 			if
-				(src.is_separator and src.custom_parent /= Void) and then
+				src.is_separator and then
 				src.custom_parent.is_a_pool_list and then
 				not dst.custom_parent.is_a_pool_list
 			then
@@ -513,7 +493,7 @@ feature {NONE} -- Internal data
 		do
 			pool_list.wipe_out
 			current_list.wipe_out
-			create n.make (Current, create {SD_TOOL_BAR_SEPARATOR}.make)
+			create n.make (create {SD_TOOL_BAR_SEPARATOR}.make)
 			n.pointer_double_press_actions.extend (agent mouse_move (n, ?, ?, ?, ?, ?, ?, ?, ?))
 			pool_list.extend (n)
 			from
@@ -521,7 +501,7 @@ feature {NONE} -- Internal data
 			until
 				a_toolbar.after
 			loop
-				create n.make (Current, a_toolbar.item)
+				create n.make (a_toolbar.item)
 				set_up_events (n)
 				if n.is_separator then
 					current_list.extend (n)
@@ -535,9 +515,6 @@ feature {NONE} -- Internal data
 				a_toolbar.forth
 			end -- loop
 		end
-
-	internal_shared: SD_SHARED;
-			-- All singletons.
 
 indexing
 	library:	"SmartDocking: Library of reusable components for Eiffel."
@@ -553,4 +530,4 @@ indexing
 
 
 
-end -- class SD_TOOL_BAR_CUSTOMIZE_DIALOG
+end -- class TOOLBAR_EDITOR_BOX

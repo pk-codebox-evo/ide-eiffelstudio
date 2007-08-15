@@ -35,8 +35,7 @@ inherit
 		end
 
 create
-	make,
-	make_for_splash
+	make
 
 feature {NONE} -- Initlization
 
@@ -51,56 +50,24 @@ feature {NONE} -- Initlization
 			check not_void: l_composite_window /= Void end
 			make_dlg (l_composite_window)
 
-			init_common (a_pixel_buffer)
-		ensure
-			set: pixel_buffer = a_pixel_buffer
-		end
-
-	make_for_splash (a_pixel_buffer: like pixel_buffer) is
-			-- Creation method for splash screen.
-		require
-			not_void: a_pixel_buffer /= Void
-		local
-			l_env: EV_ENVIRONMENT
-			l_app_imp: EV_APPLICATION_IMP
-		do
-			create l_env
-			l_app_imp ?= l_env.application.implementation
-			check not_void: l_app_imp /= Void end
-			make_dlg (l_app_imp.silly_main_window)
-
-			init_common (a_pixel_buffer)
-		end
-
-	init_common (a_pixel_buffer: EV_PIXEL_BUFFER) is
-			-- Initlize common parts.
-		require
-			not_void: a_pixel_buffer /= Void
-		do
 			set_ex_style ({WEL_WS_CONSTANTS}.ws_ex_layered)
 
 			pixel_buffer := a_pixel_buffer
 			wel_bitmap := rgba_dib
+		ensure
+			set: pixel_buffer = a_pixel_buffer
 		end
 
 feature -- Command
 
 	show is
 			-- Show
-		local
-			l_routine: WEL_WINDOWS_ROUTINES
 		do
 			create timer
 			timer.set_interval (timer_interval)
 
 			timer.actions.extend (agent on_timer)
-			create l_routine
-			if l_routine.is_terminal_service then
-				-- We disable fading effect in remote desktop
-				alpha := 255
-			else
-				alpha := alpha_step
-			end
+			alpha := alpha_step
 
 			wel_show
 		end
@@ -275,9 +242,7 @@ feature {NONE} -- Implementation
 		do
 			Precursor {SD_DIALOG}
 			if should_destroy_bitmap then
-				wel_bitmap := Void
-				-- `wel_bitmap' will be destroyed by garbage collector
-				-- We can't call wel_bitmap.delete directly, because it'll be called by garbage collector, otherwise it will cause segmentation violation.
+				wel_bitmap.delete
 			end
 		end
 
@@ -351,7 +316,7 @@ feature {NONE} -- Externals
 feature {NONE} -- Features inherit from EV_ANY.
 
 	create_implementation is
-			-- Fake.
+			-- Fack.
 		do
 		end
 

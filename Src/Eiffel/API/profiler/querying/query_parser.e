@@ -293,7 +293,8 @@ feature {NONE} -- Implementation
 				end
 			end
 		end
-
+					
+		
 feature {NONE} -- Externals
 
 	chis_space (c: CHARACTER): BOOLEAN is

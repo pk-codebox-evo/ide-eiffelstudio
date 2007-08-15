@@ -9,8 +9,6 @@ class
 	EXTERNAL_CLASS_C
 
 inherit
-	CONSUMER_EXPORT
-
 	CLASS_C
 		rename
 			group as assembly
@@ -29,7 +27,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make (l: like original_class) is
+	make (l: CLASS_I) is
 			-- Create instance of a compiled class using 'l'.
 		do
 			Precursor {CLASS_C} (l)
@@ -70,7 +68,7 @@ feature -- Initialization
 				is_deferred := external_class.is_deferred
 				is_expanded := external_class.is_expanded
 				is_enum := external_class.is_enum
-				internal_is_frozen := external_class.is_frozen
+				is_frozen := external_class.is_frozen
 
 					-- Initializes inheritance structure
 				process_parents
@@ -94,7 +92,7 @@ feature -- Initialization
 
 					-- Create abstract syntax tree.
 				create l_ast.initialize (
-					create {ID_AS}.initialize (name),
+					create {ID_AS}.make (10),
 					create {STRING_AS}.initialize (external_class.dotnet_name, 0, 0, 0, 0),
 					is_deferred,
 					is_expanded,
@@ -185,9 +183,6 @@ feature -- Initialization
 			end
 				-- Add features from ANY
 			add_features_of_any (l_feat_tbl)
-			if is_enum then
-				add_enum_conversion (l_feat_tbl)
-			end
 
 				-- Clean `overloaded_names' to remove non-overloaded routines.
 			clean_overloaded_names (l_feat_tbl)
@@ -748,8 +743,28 @@ feature {NONE} -- Initialization
 					end
 				end
 
-					-- Check if this is a constructor
+					-- Add creation routine to `creators' if any.
 				l_constructor ?= l_member
+				if l_constructor /= Void then
+						-- Special case for value type where creation routines
+						-- are simply generated as normal feature and cannot be used
+						-- as creation procedure because usually there are more
+						-- than one possible creation routine and this is forbidden
+						-- by Eiffel specification on expanded.
+					l_creators.put (l_all_export, l_member.eiffel_name)
+					if external_class.is_expanded then
+						l_feat.set_export_status (l_all_export)
+					else
+						l_feat.set_export_status (l_none_export)
+					end
+				else
+					if l_member.is_public then
+						l_feat.set_export_status (l_all_export)
+					else
+						l_feat.set_export_status (l_none_export)
+					end
+				end
+
 
 				if l_member.is_static then
 					if l_member.is_attribute then
@@ -929,29 +944,6 @@ feature {NONE} -- Initialization
 				l_written_type := internal_type_from_consumed_type (True, l_member.declared_type)
 				l_feat.set_written_in (l_written_type.class_id)
 
-					-- Add creation routine to `creators' if any.
-				if l_constructor /= Void then
-						-- Special case for value type where creation routines
-						-- are simply generated as normal feature and cannot be used
-						-- as creation procedure because usually there are more
-						-- than one possible creation routine and this is forbidden
-						-- by Eiffel specification on expanded.
-					l_creators.put (l_all_export, l_member.eiffel_name)
-					if external_class.is_expanded then
-						l_feat.set_export_status (l_all_export)
-					else
-						l_feat.set_export_status (l_none_export)
-					end
-				else
-					if l_member.is_public then
-						l_feat.set_export_status (l_all_export)
-					else
-							-- It is not exported but consumed, it means it is only
-							-- available to descendants in unqualified and qualified calls.
-						l_feat.set_export_status (new_family_export (l_written_type.class_id))
-					end
-				end
-
 					-- Let's update `l_feat' with info from parent classes.
 				update_feature_with_parents (a_feat_tbl, l_feat, l_member)
 
@@ -991,59 +983,42 @@ feature {NONE} -- Initialization
 		require
 			a_feat_tbl_attached: a_feat_tbl /= Void
 		local
-			l_class: like external_class
 			l_properties: ARRAYED_LIST [CONSUMED_PROPERTY]
 			l_property: CONSUMED_PROPERTY
 			l_fields: ARRAYED_LIST [CONSUMED_FIELD]
 			l_getter, l_setter: CONSUMED_ENTITY
-			l_feat: FEATURE_I
 			l_extrn_func_i: EXTERNAL_FUNC_I
 			l_def_func_i: DEF_FUNC_I
 			l_feat_i: FEATURE_I
 			l_attr_i: ATTRIBUTE_I
-			l_inherited: ARRAYED_LIST [CONSUMED_ENTITY]
-			l_setter_name: STRING
 		do
-			l_class := external_class
-			l_inherited := l_class.inherited_entities
-			l_properties := l_class.properties
+			l_properties := external_class.properties
 			from
 				l_properties.start
 			until
 				l_properties.after
 			loop
 				l_property := l_properties.item
-				if l_property /= Void  then
-					l_setter := l_property.setter
-						-- Only setters with one argument can be used as assigner commands
-						-- because order of arguments in setters and assigner commands is
-						-- opposite.
-					if l_setter /= Void and then l_setter.arguments.count = 1 then
-						l_getter := l_property.getter
-						if l_getter /= Void then
-							l_feat_i := a_feat_tbl.item (l_getter.eiffel_name)
-							l_extrn_func_i ?= l_feat_i
-							if l_extrn_func_i = Void then
-								l_def_func_i ?= l_feat_i
-							end
-							check func_attached: l_extrn_func_i /= Void or l_def_func_i /= Void end
-							l_setter_name := l_setter.eiffel_name
-							if l_inherited /= Void and then l_inherited.has (l_property) then
-									-- property is inherited so use inherit setter name (fixes test#dotnet043)
-								l_feat := l_feat_i.written_class.feature_named (l_getter.eiffel_name)
-								if l_feat /= Void and then l_feat.assigner_name /= Void then
-									l_setter_name := l_feat.assigner_name
-								end
-							end
-							check l_setter_name_attached: l_setter_name /= Void end
-							l_feat_i := a_feat_tbl.item (l_setter_name)
-							check l_feat_i_attached: l_feat_i /= Void end
-							if l_feat_i /= Void then
-								if l_extrn_func_i /= Void then
-									l_extrn_func_i.set_type (l_extrn_func_i.type, l_feat_i.feature_name_id)
-								elseif l_def_func_i /= Void then
-									l_def_func_i.set_type (l_def_func_i.type, l_feat_i.feature_name_id)
-								end
+				l_setter := l_property.setter
+					-- Only setters with one argument can be used as assigner commands
+					-- because order of arguments in setters and assigner commands is
+					-- opposite.
+				if l_setter /= Void and then l_setter.arguments.count = 1 then
+					l_getter := l_property.getter
+					if l_getter /= Void then
+						l_feat_i := a_feat_tbl.item (l_getter.eiffel_name)
+						l_extrn_func_i ?= l_feat_i
+						if l_extrn_func_i = Void then
+							l_def_func_i ?= l_feat_i
+						end
+						check func_attached: l_extrn_func_i /= Void or l_def_func_i /= Void end
+						l_feat_i := a_feat_tbl.item (l_setter.eiffel_name)
+						check l_feat_i_attached: l_feat_i /= Void end
+						if l_feat_i /= Void then
+							if l_extrn_func_i /= Void then
+								l_extrn_func_i.set_type (l_extrn_func_i.type, l_feat_i.feature_name_id)
+							elseif l_def_func_i /= Void then
+								l_def_func_i.set_type (l_def_func_i.type, l_feat_i.feature_name_id)
 							end
 						end
 					end
@@ -1051,7 +1026,7 @@ feature {NONE} -- Initialization
 				l_properties.forth
 			end
 
-			l_fields := l_class.fields
+			l_fields := external_class.fields
 			if l_fields.count > 0 then
 				from
 					l_fields.start
@@ -1059,48 +1034,18 @@ feature {NONE} -- Initialization
 					l_fields.after
 				loop
 					l_getter := l_fields.item
-					if l_getter /= Void and then not l_inherited.has (l_getter) then
-						l_setter := l_fields.item.setter
-						if l_setter /= Void then
-							l_attr_i ?= a_feat_tbl.item (l_getter.eiffel_name)
-							check l_attr_i_attached: l_attr_i /= Void end
+					l_setter := l_fields.item.setter
+					if l_setter /= Void then
+						l_attr_i ?= a_feat_tbl.item (l_getter.eiffel_name)
+						check l_attr_i_attached: l_attr_i /= Void end
 
-							l_feat_i := a_feat_tbl.item (l_setter.eiffel_name)
-							check l_feat_i_attached: l_feat_i /= Void end
-							if l_feat_i /= Void and l_attr_i /= Void then
-								l_attr_i.set_type (l_attr_i.type, l_feat_i.feature_name_id)
-							end
+						l_feat_i := a_feat_tbl.item (l_setter.eiffel_name)
+						check l_feat_i_attached: l_feat_i /= Void end
+						if l_feat_i /= Void and l_attr_i /= Void then
+							l_attr_i.set_type (l_attr_i.type, l_feat_i.feature_name_id)
 						end
 					end
 					l_fields.forth
-				end
-			end
-		end
-
-	add_enum_conversion (a_feat_tbl: like feature_table) is
-			-- Binds a conversion routine to an Enum type for artifical `to_integer' feature.
-		require
-			is_enum: is_enum
-			a_feat_tbl_attached: a_feat_tbl /= Void
-			convert_to_unattached: convert_to = Void
-		local
-			l_feat: FEATURE_I
-			l_type: NAMED_TYPE_A
-		do
-			l_feat := a_feat_tbl.item_id ({NAMES_HEAP}.to_integer_name_id)
-			check
-				l_feat_attached: l_feat /= Void
-			end
-			if l_feat /= Void then
-				l_type ?= l_feat.type
-				check
-					l_type_attached: l_type /= Void
-					l_type_is_integer: l_type.is_integer
-				end
-				if l_type /= Void then
-					create convert_to.make (1)
-					convert_to.set_key_equality_tester (create {CONVERTIBILITY_CHECKER})
-					convert_to.force ({NAMES_HEAP}.to_integer_name_id, l_type)
 				end
 			end
 		end
@@ -1373,7 +1318,7 @@ feature {NONE} -- Implementation
 						System.native_array_class.compiled_class.class_id, l_generics)
 				end
 			else
-				l_result ?= assembly.class_by_dotnet_name (l_type_name, c.assembly_id)
+				l_result := assembly.class_by_dotnet_name (l_type_name, c.assembly_id)
 				if l_result = Void then
 						-- Case where this is a class from `mscorlib' that is in fact
 						-- written as an Eiffel class, e.g. INTEGER, ....
@@ -1507,7 +1452,7 @@ feature {NONE} -- Implementation
 				end
 				create l_char_value.make_character_8 (a_value.item (1))
 				l_value := l_char_value
-			elseif a_external_type.associated_class.original_class = System.system_string_class then
+			elseif a_external_type.associated_class.lace_class = System.system_string_class then
 				create l_string_value.make (a_value, True)
 				l_value := l_string_value
 			end
@@ -1547,8 +1492,8 @@ feature {NONE} -- Implementation
 		local
 			l_emitter: IL_EMITTER
 			l_man: CONF_CONSUMER_MANAGER
-			l_assemblies: HASH_TABLE [CONF_PHYSICAL_ASSEMBLY_INTERFACE, STRING_8]
-			l_assembly: CONF_PHYSICAL_ASSEMBLY
+			l_assemblies: HASH_TABLE [CONF_ASSEMBLY, STRING_8]
+			l_assembly: CONF_ASSEMBLY
 			l_path: STRING
 			l_asm: STRING
 			l_key: STRING
@@ -1569,49 +1514,32 @@ feature {NONE} -- Implementation
 			end
 			degree_output.put_string ("   Consuming required assembly '" + l_asm + "'...")
 
+
 			create l_path.make (256)
 
-			l_assemblies := universe.conf_system.all_assemblies
+			l_assemblies := universe.target.all_assemblies
 			if l_assemblies /= Void then
 					-- Note: All system assemblies are required because they are needed by the consumer
 					-- to resolve dependencies.
 				from l_assemblies.start until l_assemblies.after loop
-					l_assembly ?= l_assemblies.item_for_iteration
-					check
-						physical_assembly: l_assembly /= Void
-					end
+					l_assembly := l_assemblies.item_for_iteration
 					if not l_assembly.is_dependency then
 						l_path.append_character (';')
-						l_path.append (l_assembly.consumed_assembly.location)
+						l_path.append (l_assembly.location.evaluated_path)
 					end
 					l_assemblies.forth
 				end
 				if not l_path.is_empty then
-					create l_man.make (create {CONF_COMP_FACTORY}, system.metadata_cache_path, system.clr_runtime_version, assembly.target,  create {DS_HASH_SET [CONF_CLASS]}.make_default, create {DS_HASH_SET [CONF_CLASS]}.make_default, create {DS_HASH_SET [CONF_CLASS]}.make_default)
-					l_emitter := l_man.il_emitter
-					if l_emitter.exists and then l_emitter.is_initialized then
-						l_emitter.consume_assembly_from_path (assembly.consumed_assembly.location, False, l_path)
-						l_man.rebuild_assembly (assembly)
-						l_emitter.unload
-					end
+					create l_emitter.make (system.metadata_cache_path, system.clr_runtime_version)
+					l_emitter.consume_assembly_from_path (assembly.location.evaluated_path, False, l_path)
+					create l_man.make (create {CONF_COMP_FACTORY}, system.metadata_cache_path, system.clr_runtime_version, create {DS_HASH_SET [CONF_CLASS]}.make_default, create {DS_HASH_SET [CONF_CLASS]}.make_default, create {DS_HASH_SET [CONF_CLASS]}.make_default)
+					l_man.rebuild_classes (assembly, assembly.dotnet_classes)
+					assembly.set_is_partially_consumed (False)
+					l_emitter.unload
 				end
 			end
 		ensure
 			not_assembly_is_partially_consumed: not assembly.is_partially_consumed
-		end
-
-	new_family_export (written_in: INTEGER): EXPORT_SET_I is
-			-- New export clause to
-		local
-			l_clients: ARRAYED_LIST [STRING]
-		do
-			create Result.make
-			Result.compare_objects
-			create l_clients.make (1)
-			l_clients.extend (system.class_of_id (written_in).name)
-			Result.put (create {CLIENT_I}.make (l_clients, written_in))
-		ensure
-			Result_not_void: Result /= Void
 		end
 
 invariant

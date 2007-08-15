@@ -14,6 +14,14 @@ inherit
 			interface
 		end
 
+	EV_ANY_IMP
+		undefine
+			needs_event_box,
+			destroy
+		redefine
+			interface
+		end
+
 feature -- Status report
 
 	peers: LINKED_LIST [like interface] is
@@ -32,7 +40,7 @@ feature -- Status report
 					cur = l_null
 				loop
 					wid_obj := widget_object (cur)
-					if wid_obj /= default_pointer then
+					if wid_obj /= NULL then
 						peer_imp ?= eif_object_from_c (wid_obj)
 						if peer_imp /= Void then
 							Result.extend (peer_imp.interface)
@@ -70,18 +78,6 @@ feature -- Status report
 		end
 
 feature {NONE} -- Implementation
-
-	eif_object_from_c (a_c_object: POINTER): EV_ANY_IMP is
-		deferred
-		end
-
-	c_object: POINTER
-		deferred
-		end
-
-	visual_widget: POINTER
-		deferred
-		end
 
 	widget_object (a_list: POINTER): POINTER is
 			-- Returns c_object relative to a_list data.

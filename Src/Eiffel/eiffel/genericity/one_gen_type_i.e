@@ -21,6 +21,7 @@ inherit
 			anchor_instantiation_in,
 			duplicate,
 			instantiation_in,
+			generic_derivation,
 			same_as
 		end
 
@@ -59,6 +60,22 @@ feature -- Comparison
 			l_full_gen_type_i ?= other
 			if l_full_gen_type_i /= Void then
 				Result := Precursor {GEN_TYPE_I} (l_full_gen_type_i)
+			end
+		end
+
+feature -- Access
+
+	generic_derivation: like Current is
+			-- Precise generic derivation of current type.
+			-- That is to say given a type, it gives the associated TYPE_I
+			-- which can be used to search its associated CLASS_TYPE.
+		do
+			if system.il_generation then
+					-- We need to keep track of all generic derivation,
+					-- thus we can keep current as a valid generic derivation.
+				Result := Current
+			else
+				Result := Precursor {GEN_TYPE_I}
 			end
 		end
 

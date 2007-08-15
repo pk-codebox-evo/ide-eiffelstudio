@@ -22,8 +22,9 @@ inherit
 			initialize,
 			call_button_event_actions,
 			destroy,
-			x_position,
-			y_position
+			minimum_width,
+			minimum_height,
+			on_key_event
 		end
 
 	EV_SENSITIVE_IMP
@@ -37,6 +38,18 @@ inherit
 		end
 
 	EV_WIDGET_ACTION_SEQUENCES_IMP
+		export
+			{EV_INTERMEDIARY_ROUTINES}
+				focus_in_actions_internal,
+				focus_out_actions_internal,
+				pointer_motion_actions_internal,
+				pointer_button_release_actions,
+				pointer_leave_actions,
+				pointer_leave_actions_internal,
+				pointer_enter_actions_internal
+		redefine
+			interface
+		end
 
 	EV_DOCKABLE_SOURCE_IMP
 		redefine
@@ -51,6 +64,9 @@ feature {NONE} -- Initialization
 			-- Connect action sequences to GTK signals.
 		do
 			Precursor {EV_PICK_AND_DROPABLE_IMP}
+				-- Reset the initial internal sizes, once set they should not be reset to -1
+			internal_minimum_width := -1
+			internal_minimum_height := -1
 			set_is_initialized (True)
 		end
 
@@ -73,24 +89,72 @@ feature {NONE} -- Initialization
 			]"
 		end
 
-feature {EV_WINDOW_IMP, EV_INTERMEDIARY_ROUTINES, EV_ANY_I, EV_APPLICATION_IMP} -- Implementation
+feature {EV_WINDOW_IMP, EV_INTERMEDIARY_ROUTINES, EV_ANY_I} -- Implementation
 
-	on_key_event (a_key: EV_KEY; a_key_string: STRING_32; a_key_press: BOOLEAN) is
+	on_key_event (a_key: EV_KEY; a_key_string: STRING_32; a_key_press: BOOLEAN; call_application_events: BOOLEAN) is
 			-- Used for key event actions sequences.
+		local
+			temp_key_string: STRING_32
+			l_char: CHARACTER_32
+			app_imp: like app_implementation
 		do
-			if a_key_press then
-				if a_key /= Void and then key_press_actions_internal /= Void then
-					key_press_actions_internal.call ([a_key])
-				end
-				if key_press_string_actions_internal /= Void then
-					if a_key_string /= Void then
-						key_press_string_actions_internal.call ([a_key_string])
+			app_imp := app_implementation
+			if has_focus then
+					-- We make sure that only the widget with focus receives key events
+				if a_key_press then
+						-- The event is a key press event.
+					if app_imp.key_press_actions_internal /= Void and then call_application_events then
+						app_imp.key_press_actions_internal.call ([interface, a_key])
 					end
-				end
-			else
-				if a_key /= Void then
-					if key_release_actions_internal /= Void then
-						key_release_actions_internal.call ([a_key])
+					if a_key /= Void and then key_press_actions_internal /= Void then
+						key_press_actions_internal.call ([a_key])
+					end
+					if key_press_string_actions_internal /= Void then
+							-- Check to see if the character is a printable character.
+						if a_key_string /= Void and then a_key_string.valid_index (1) then
+							l_char := a_key_string.item (1)
+							if l_char.is_character_8 then
+								if l_char.to_character_8.is_printable or else l_char.code >= 128 then
+										--| FIXME `is_printable' should return True for characters above 127
+									temp_key_string := a_key_string
+								end
+							else
+								temp_key_string := a_key_string
+							end
+						end
+						if a_key /= Void then
+							if a_key.out.count /= 1 and not a_key.is_numpad then
+									-- The key pressed is an action key, we only want
+								inspect
+									a_key.code
+								when {EV_KEY_CONSTANTS}.Key_space then
+									temp_key_string := once  " "
+								when {EV_KEY_CONSTANTS}.Key_enter then
+									temp_key_string := once "%N"
+								when {EV_KEY_CONSTANTS}.Key_tab then
+									temp_key_string := once "%T"
+								else
+										-- The action key pressed has no printable value
+									temp_key_string := Void
+								end
+							end
+						end
+						if temp_key_string /= Void then
+							if app_imp.key_press_string_actions_internal /= Void and then call_application_events then
+								app_imp.key_press_string_actions_internal.call ([interface, temp_key_string])
+							end
+							key_press_string_actions_internal.call ([temp_key_string])
+						end
+					end
+				else
+						-- The event is a key release event.
+					if a_key /= Void then
+						if app_imp.key_release_actions_internal /= Void and then call_application_events then
+							app_imp.key_release_actions.call ([interface, a_key])
+						end
+						if key_release_actions_internal /= Void then
+							key_release_actions_internal.call ([a_key])
+						end
 					end
 				end
 			end
@@ -99,15 +163,15 @@ feature {EV_WINDOW_IMP, EV_INTERMEDIARY_ROUTINES, EV_ANY_I, EV_APPLICATION_IMP} 
 	on_size_allocate (a_x, a_y, a_width, a_height: INTEGER) is
 			-- Gtk_Widget."size-allocate" happened.
 		do
-			if a_width /= previous_width or else a_height /= previous_height then
-				previous_width := a_width.to_integer_16
-				previous_height := a_height.to_integer_16
+			if last_width /= a_width or else last_height /= a_height then
+				last_width := a_width.to_natural_16
+				last_height := a_height.to_natural_16
 				if resize_actions_internal /= Void then
 					resize_actions_internal.call (app_implementation.gtk_marshal.dimension_tuple (a_x, a_y, a_width, a_height))
 				end
-			end
-			if parent_imp /= Void then
-				parent_imp.child_has_resized (Current)
+				if parent_imp /= Void then
+					parent_imp.child_has_resized (Current)
+				end
 			end
 		end
 
@@ -135,15 +199,17 @@ feature {EV_WINDOW_IMP, EV_INTERMEDIARY_ROUTINES, EV_ANY_I, EV_APPLICATION_IMP} 
 	on_pointer_enter_leave (a_pointer_enter: BOOLEAN) is
 			-- Called from pointer enter leave intermediary agents when the mouse pointer either enters or leaves `Current'.
 		do
-			if a_pointer_enter then
-					-- The mouse pointer has entered `Current'.
-				if pointer_enter_actions_internal /= Void then
-					pointer_enter_actions_internal.call (Void)
-				end
-			else
-					-- The mouse pointer has left `Current'.
-				if pointer_leave_actions_internal /= Void then
-					pointer_leave_actions_internal.call (Void)
+			if not app_implementation.is_in_transport then
+				if a_pointer_enter then
+						-- The mouse pointer has entered `Current'.
+					if pointer_enter_actions_internal /= Void then
+						pointer_enter_actions_internal.call (Void)
+					end
+				else
+						-- The mouse pointer has left `Current'.
+					if pointer_leave_actions_internal /= Void then
+						pointer_leave_actions_internal.call (Void)
+					end
 				end
 			end
 		end
@@ -201,14 +267,14 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 				if a_button >= 1 and then a_button <= 3 then
 					if a_type = {EV_GTK_EXTERNALS}.GDK_BUTTON_PRESS_ENUM then
 						if app_implementation.pointer_button_press_actions_internal /= Void then
-							app_implementation.pointer_button_press_actions_internal.call ([interface, a_button, a_screen_x, a_screen_y])
+							app_implementation.pointer_button_press_actions_internal.call ([interface, a_x, a_y, a_button, a_x_tilt, a_y_tilt, a_pressure, a_screen_x, a_screen_y])
 						end
 						if pointer_button_press_actions_internal /= Void then
 							pointer_button_press_actions_internal.call (t)
 						end
 					elseif a_type = {EV_GTK_EXTERNALS}.GDK_2BUTTON_PRESS_ENUM then
 						if app_implementation.pointer_double_press_actions_internal /= Void then
-							app_implementation.pointer_double_press_actions_internal.call ([interface, a_button, a_screen_x, a_screen_y])
+							app_implementation.pointer_double_press_actions_internal.call ([interface, a_x, a_y, a_button, a_x_tilt, a_y_tilt, a_pressure, a_screen_x, a_screen_y])
 						end
 						if pointer_double_press_actions_internal /= Void then
 							pointer_double_press_actions_internal.call (t)
@@ -222,7 +288,7 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 						app_implementation.pointer_button_release_actions_internal.call ([interface, a_button, a_screen_x, a_screen_y])
 					end
 					if pointer_button_release_actions_internal /= Void then
-						pointer_button_release_actions_internal.call (t)
+						pointer_button_release_actions_internal.call ([a_x, a_y, a_button, a_x_tilt, a_y_tilt, a_pressure, a_screen_x, a_screen_y])
 					end
 				end
 			end
@@ -254,67 +320,21 @@ feature -- Element change
 
 	set_minimum_width (a_minimum_width: INTEGER) is
 			-- Set the minimum horizontal size to `a_minimum_width'.
-		local
-			l_height: INTEGER
-			l_viewport_parent: EV_VIEWPORT_IMP
-			l_fixed_parent: EV_FIXED_IMP
 		do
-			{EV_GTK_EXTERNALS}.g_object_get_integer (c_object, height_request_string.item, $l_height)
-			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_widget_set_minimum_size (c_object, a_minimum_width, l_height)
-
-				-- If the parent is a fixed or scrollable area we need to update the item size.
-			l_viewport_parent ?= parent_imp
-			if l_viewport_parent /= Void then
-				l_viewport_parent.set_item_width (a_minimum_width.max (width))
-			else
-				l_fixed_parent ?= parent_imp
-				if l_fixed_parent /= Void then
-					l_fixed_parent.set_item_width (interface, a_minimum_width.max (width))
-				end
-			end
+			internal_set_minimum_size (a_minimum_width, internal_minimum_height)
 		end
 
 	set_minimum_height (a_minimum_height: INTEGER) is
 			-- Set the minimum vertical size to `a_minimum_height'.
-		local
-			l_width: INTEGER
-			l_viewport_parent: EV_VIEWPORT_IMP
-			l_fixed_parent: EV_FIXED_IMP
 		do
-			{EV_GTK_EXTERNALS}.g_object_get_integer (c_object, width_request_string.item, $l_width)
-			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_widget_set_minimum_size (c_object, l_width, a_minimum_height)
-
-				-- If the parent is a fixed or scrollable area we need to update the item size.
-			l_viewport_parent ?= parent_imp
-			if l_viewport_parent /= Void then
-				l_viewport_parent.set_item_height (a_minimum_height.max (height))
-			else
-				l_fixed_parent ?= parent_imp
-				if l_fixed_parent /= Void then
-					l_fixed_parent.set_item_height (interface, a_minimum_height.max (height))
-				end
-			end
+			internal_set_minimum_size (internal_minimum_width, a_minimum_height)
 		end
 
 	set_minimum_size (a_minimum_width, a_minimum_height: INTEGER) is
 			-- Set the minimum horizontal size to `a_minimum_width'.
 			-- Set the minimum vertical size to `a_minimum_height'.
-		local
-			l_viewport_parent: EV_VIEWPORT_IMP
-			l_fixed_parent: EV_FIXED_IMP
 		do
-			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_widget_set_minimum_size (c_object, a_minimum_width, a_minimum_height)
-
-				-- If the parent is a fixed or scrollable area we need to update the item size.
-			l_viewport_parent ?= parent_imp
-			if l_viewport_parent /= Void then
-				l_viewport_parent.set_item_size (a_minimum_width.max (width), a_minimum_height.max (height))
-			else
-				l_fixed_parent ?= parent_imp
-				if l_fixed_parent /= Void then
-					l_fixed_parent.set_item_size (interface, a_minimum_width.max (width), a_minimum_height.max (height))
-				end
-			end
+			internal_set_minimum_size (a_minimum_width, a_minimum_height)
 		end
 
 feature -- Measurement
@@ -323,13 +343,23 @@ feature -- Measurement
 			-- Horizontal offset relative to parent `x_position'.
 			-- Unit of measurement: screen pixels.
 		local
+			a_aux_info, l_null: POINTER
+			tmp_struct_x: INTEGER
 			a_fixed_imp: EV_FIXED_IMP
 		do
 			a_fixed_imp ?= parent_imp
 			if a_fixed_imp /= Void then
 				Result := a_fixed_imp.x_position_of_child (Current)
 			else
-				Result := Precursor {EV_PICK_AND_DROPABLE_IMP}
+				Result := {EV_GTK_EXTERNALS}.gtk_allocation_struct_x ({EV_GTK_EXTERNALS}.gtk_widget_struct_allocation (c_object))
+				a_aux_info := aux_info_struct
+				if a_aux_info /= l_null then
+					tmp_struct_x := {EV_GTK_EXTERNALS}.gtk_widget_aux_info_struct_x (a_aux_info)
+					if tmp_struct_x >= 0 then
+						Result := tmp_struct_x
+					end
+				end
+				Result := Result.max (0)
 			end
 		end
 
@@ -337,17 +367,54 @@ feature -- Measurement
 			-- Vertical offset relative to parent `y_position'.
 			-- Unit of measurement: screen pixels.
 		local
+			a_aux_info, l_null: POINTER
+			tmp_struct_y: INTEGER
 			a_fixed_imp: EV_FIXED_IMP
 		do
 			a_fixed_imp ?= parent_imp
 			if a_fixed_imp /= Void then
 				Result := a_fixed_imp.y_position_of_child (Current)
 			else
+				Result := {EV_GTK_EXTERNALS}.gtk_allocation_struct_y ({EV_GTK_EXTERNALS}.gtk_widget_struct_allocation (c_object))
+				a_aux_info := aux_info_struct
+				if a_aux_info /= l_null then
+					tmp_struct_y := {EV_GTK_EXTERNALS}.gtk_widget_aux_info_struct_y (a_aux_info)
+					if tmp_struct_y >= 0 then
+						Result := tmp_struct_y
+					end
+				end
+				Result := Result.max (0)
+			end
+		end
+
+	minimum_width: INTEGER is
+			-- Minimum width that the widget may occupy.
+		do
+			if internal_minimum_width /= -1 then
+				Result := internal_minimum_width
+			else
+				Result := Precursor {EV_PICK_AND_DROPABLE_IMP}
+			end
+		end
+
+	minimum_height: INTEGER is
+			-- Minimum width that the widget may occupy.
+		do
+			if internal_minimum_height /= -1 then
+				Result := internal_minimum_height
+			else
 				Result := Precursor {EV_PICK_AND_DROPABLE_IMP}
 			end
 		end
 
 feature {EV_ANY_I} -- Implementation
+
+	reset_minimum_size is
+			-- Reset all values to defaults.
+			-- Called by EV_FIXED and EV_VIEWPORT implementations.
+		do
+			internal_set_minimum_size (internal_minimum_width, internal_minimum_height)
+		end
 
 	refresh_now is
 			-- Flush any pending redraws due for `Current'.
@@ -363,6 +430,14 @@ feature {EV_ANY_I} -- Implementation
 				{EV_GTK_EXTERNALS}.gdk_flush
 			end
 		end
+
+feature {EV_FIXED_IMP, EV_VIEWPORT_IMP} -- Implementation
+
+	internal_minimum_width: INTEGER
+			-- Minimum width for the widget.
+
+	internal_minimum_height: INTEGER
+			-- Minimum height for the widget.
 
 feature {EV_CONTAINER_IMP} -- Implementation
 
@@ -390,17 +465,29 @@ feature {EV_ANY_IMP, EV_GTK_DEPENDENT_INTERMEDIARY_ROUTINES} -- Implementation
 			-- Container widget that contains `Current'.
 			-- (Void if `Current' is not in a container)
 
-feature {EV_INTERMEDIARY_ROUTINES, EV_APPLICATION_IMP} -- Implementation
+feature {EV_INTERMEDIARY_ROUTINES} -- Implementation
 
 	on_widget_mapped is
 			-- `Current' has been mapped on to the screen.
 		do
-			if pointer_style /= Void and then previous_gdk_cursor = default_pointer then
+			if pointer_style /= Void then
 				internal_set_pointer_style (pointer_style)
 			end
 		end
 
 feature {NONE} -- Implementation
+
+	internal_set_minimum_size (a_minimum_width, a_minimum_height: INTEGER) is
+			-- Abstracted implementation for minimum size setting.
+		do
+			if a_minimum_width /= -1 then
+				internal_minimum_width := a_minimum_width
+			end
+			if a_minimum_height /= -1 then
+				internal_minimum_height := a_minimum_height
+			end
+			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_widget_set_minimum_size (c_object, internal_minimum_width, internal_minimum_height)
+		end
 
 	propagate_foreground_color_internal (a_color: EV_COLOR; a_c_object: POINTER) is
 			-- Propagate `a_color' to the foreground color of `a_c_object's children.
@@ -462,10 +549,11 @@ feature {NONE} -- Implementation
 			end
 		end
 
-feature {EV_APPLICATION_IMP} -- Implementation
+	last_width, last_height: NATURAL_16
+			-- Dimenions during last "size-allocate".
 
-	previous_width, previous_height: INTEGER_16
-			-- Dimensions during last "size-allocate".
+	in_resize_event: BOOLEAN
+			-- Is `interface.resize_actions' being executed?
 
 feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 

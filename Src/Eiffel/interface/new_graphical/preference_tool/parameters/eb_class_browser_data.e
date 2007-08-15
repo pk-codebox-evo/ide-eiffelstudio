@@ -66,95 +66,11 @@ feature {EB_SHARED_PREFERENCES} -- Value
 			Result := class_tree_view_sorting_order_preference.value
 		end
 
-	class_client_view_sorting_order: STRING is
-			-- String representation of class client view sorting order
-		do
-			Result := class_client_view_sorting_order_preference.value
-		end
-
 	feature_view_sorting_order: STRING is
 			-- String representation of feature view sorting order
 		do
 			Result := feature_view_sorting_order_preference.value
-		end
-
-	dependency_view_sorting_order: STRING is
-			-- String representation of dependency view sorting order
-		do
-			Result := dependency_view_sorting_order_preference.value
-		end
-
-	is_item_path_shown: BOOLEAN is
-			-- Is item path shown?
-		do
-			Result := show_item_path_preference.value
-		end
-
-	is_self_dependency_shown: BOOLEAN is
-			-- Is dependency on self shown?
-		do
-			Result := show_self_dependency_preference.value
-		end
-
-	should_referenced_class_be_expanded: BOOLEAN is
-			-- Should referenced classes in dependency view be expanded by default?
-		do
-			Result := expand_referenced_class_preference.value
-		end
-
-	should_referencer_class_be_expanded: BOOLEAN is
-			-- Should referencer classes in dependency view be expanded by default?
-		do
-			Result := expand_referencer_class_preference.value
-		end
-
-	is_class_categorized_in_folder: BOOLEAN is
-			-- Should classes be categorized in physical folders where they locates?
-		do
-			Result := categorized_folder_preference.value
-		end
-
-	is_syntactical_class_shown: BOOLEAN is
-			-- Should syntactical referenced classes be displayed?
-		do
-			Result := syntactical_class_preference.value
-		end
-
-	is_inheritance_class_shown: BOOLEAN is
-			-- Should inheritance classes be displayed?
-		do
-			Result := inheritance_class_preference.value
-		end
-
-	is_normal_referenced_class_shown: BOOLEAN is
-			-- Should normally referenced classes be displayed?
-		do
-			Result := normal_referenced_class_preference.value
-		end
-
-	is_folder_search_recursive: BOOLEAN is
-			-- Should search for classes in a folder be recursive?
-		do
-			Result := folder_search_recursive_preference.value
-		end
-
-	should_categorized_folder_level_be_expanded: BOOLEAN is
-			-- Should categorized folder level in dependency view be expanded?
-		do
-			Result := expand_categorized_folder_level_preference.value
-		end
-
-	caller_sorting_order: STRING is
-			-- Caller sorting order status
-		do
-			Result := caller_sorting_order_preference.value
-		end
-
-	callee_sorting_order: STRING is
-			-- Caller sorting order status
-		do
-			Result := callee_sorting_order_preference.value
-		end
+		end		
 
 feature {EB_SHARED_PREFERENCES} -- Preference
 
@@ -164,21 +80,7 @@ feature {EB_SHARED_PREFERENCES} -- Preference
 	show_tooltip_preference: BOOLEAN_PREFERENCE
 	class_flat_view_sorting_order_preference: STRING_PREFERENCE
 	class_tree_view_sorting_order_preference: STRING_PREFERENCE
-	class_client_view_sorting_order_preference: STRING_PREFERENCE
 	feature_view_sorting_order_preference: STRING_PREFERENCE
-	dependency_view_sorting_order_preference: STRING_PREFERENCE
-	show_item_path_preference: BOOLEAN_PREFERENCE
-	show_self_dependency_preference: BOOLEAN_PREFERENCE
-	expand_referenced_class_preference: BOOLEAN_PREFERENCE
-	expand_referencer_class_preference: BOOLEAN_PREFERENCE
-	categorized_folder_preference: BOOLEAN_PREFERENCE
-	syntactical_class_preference: BOOLEAN_PREFERENCE
-	inheritance_class_preference: BOOLEAN_PREFERENCE
-	normal_referenced_class_preference: BOOLEAN_PREFERENCE
-	folder_search_recursive_preference: BOOLEAN_PREFERENCE
-	expand_categorized_folder_level_preference: BOOLEAN_PREFERENCE
-	caller_sorting_order_preference: STRING_PREFERENCE
-	callee_sorting_order_preference: STRING_PREFERENCE
 
 feature {NONE} -- Preference Strings
 
@@ -188,21 +90,7 @@ feature {NONE} -- Preference Strings
 	show_tooltip_string: STRING is "tools.class_browser.show_tooltip"
 	class_flat_view_sorting_order_string: STRING is "tools.class_browser.class_flat_view_sorting_order"
 	class_tree_view_sorting_order_string: STRING is "tools.class_browser.class_flat_tree_sorting_order"
-	class_client_view_sorting_order_string: STRING is "tools.class_browser.class_flat_client_sorting_order"
 	feature_view_sorting_order_string: STRING is "tools.class_browser.feature_view_sorting_order"
-	dependency_view_sorting_order_string: STRING is "tools.class_browser.dependency_view_sorting_order"
-	show_item_path_string: STRING is "tools.class_browser.show_item_path"
-	show_self_dependency_string: STRING is "tools.class_browser.show_self_dependency"
-	expand_referenced_class_string: STRING is "tools.class_browser.expand_referenced_class"
-	expand_referencer_class_string: STRING is "tools.class_browser.expand_referencer_class"
-	categorized_folder_string: STRING is "tools.class_browser.classes_categorized_folder"
-	syntactical_class_string: STRING is "tools.class_browser.syntactical_classes"
-	inheritance_class_string: STRING is "tools.class_browser.inheritance_classes"
-	normal_referenced_class_string: STRING is "tools.class_browser.normal_referenced_classes"
-	folder_search_recursive_string: STRING is "tools.class_browser.folder_search_recursive"
-	expand_categorized_folder_level_string: STRING is "tools.class_browser.expand_categorized_folder_level"
-	caller_sorting_order_string: STRING is "tools.class_browser.caller_sorting_order"
-	callee_sorting_order_string: STRING is "tools.class_browser.callee_sorting_order"
 
 feature {NONE} -- Implementation
 
@@ -219,25 +107,9 @@ feature {NONE} -- Implementation
 			class_flat_view_sorting_order_preference := l_manager.new_string_preference_value (l_manager, class_flat_view_sorting_order_string, "2:1")
 			class_flat_view_sorting_order_preference.set_hidden (True)
 			class_tree_view_sorting_order_preference := l_manager.new_string_preference_value (l_manager, class_tree_view_sorting_order_string, "1:1")
-			class_client_view_sorting_order_preference := l_manager.new_string_preference_value (l_manager, class_client_view_sorting_order_string, "1:1")
 			class_tree_view_sorting_order_preference.set_hidden (True)
 			feature_view_sorting_order_preference := l_manager.new_string_preference_value (l_manager, feature_view_sorting_order_string, "2:1")
 			feature_view_sorting_order_preference.set_hidden (True)
-
-			dependency_view_sorting_order_preference := l_manager.new_string_preference_value (l_manager, dependency_view_sorting_order_string, "1:1,2:1,3:1,4:1")
-			dependency_view_sorting_order_preference.set_hidden (True)
-			show_item_path_preference := l_manager.new_boolean_preference_value (l_manager, show_item_path_string, False)
-			show_self_dependency_preference := l_manager.new_boolean_preference_value (l_manager, show_self_dependency_string, False)
-			expand_referenced_class_preference := l_manager.new_boolean_preference_value (l_manager, expand_referenced_class_string, True)
-			expand_referencer_class_preference := l_manager.new_boolean_preference_value (l_manager, expand_referencer_class_string, False)
-			categorized_folder_preference := l_manager.new_boolean_preference_value (l_manager, categorized_folder_string, False)
-			syntactical_class_preference := l_manager.new_boolean_preference_value (l_manager, syntactical_class_string, False)
-			inheritance_class_preference := l_manager.new_boolean_preference_value (l_manager, inheritance_class_string, False)
-			normal_referenced_class_preference := l_manager.new_boolean_preference_value (l_manager, normal_referenced_class_string, True)
-			folder_search_recursive_preference := l_manager.new_boolean_preference_value (l_manager, folder_search_recursive_string, True)
-			expand_categorized_folder_level_preference := l_manager.new_boolean_preference_value (l_manager, expand_categorized_folder_level_string, False)
-			caller_sorting_order_preference := l_manager.new_string_preference_value (l_manager, caller_sorting_order_string, "1:1")
-			callee_sorting_order_preference := l_manager.new_string_preference_value (l_manager, callee_sorting_order_string, "1:1")
 		end
 
 	preferences: PREFERENCES

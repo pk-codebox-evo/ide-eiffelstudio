@@ -30,6 +30,7 @@ inherit
 		redefine
 			on_mouse_move,
 			on_key_down,
+			on_char,
 			interface,
 			initialize,
 			set_background_color,
@@ -75,7 +76,7 @@ inherit
 			on_desactivate, on_key_down, on_char, on_key_up,
 			on_set_cursor, show, hide, on_size, x_position, y_position,
 			on_sys_key_down, default_process_message, on_sys_key_up,
-			on_mouse_wheel, on_getdlgcode, on_wm_dropfiles
+			on_mouse_wheel, on_getdlgcode
 		redefine
 			default_style, on_tvn_selchanged, on_tvn_itemexpanded,
 			on_tvn_selchanging, on_erase_background, collapse_item,
@@ -142,7 +143,7 @@ feature -- Access
 			handle: POINTER
 		do
 			if selected then
-				handle := {WEL_API}.send_message_result (wel_item, Tvm_getnextitem,
+				handle := cwin_send_message_result (wel_item, Tvm_getnextitem,
 					to_wparam (Tvgn_caret), to_lparam (0))
 				Result ?= (all_ev_children @ handle).interface
 			else
@@ -159,7 +160,7 @@ feature -- Access
 			handle: POINTER
 		do
 			if selected then
-				handle := {WEL_API}.send_message_result (wel_item, Tvm_getnextitem,
+				handle := cwin_send_message_result (wel_item, Tvm_getnextitem,
 					to_wparam (Tvgn_caret), to_lparam (0))
 				Result ?= all_ev_children @ handle
 			else
@@ -268,17 +269,17 @@ feature -- Basic operations
 			create Result.make (1)
 			from
 				if item_imp = Void then
-					hwnd := {WEL_API}.send_message_result (
+					hwnd := cwin_send_message_result (
 						wel_item, Tvm_getnextitem, to_wparam (Tvgn_root), to_lparam (0))
 				else
-					hwnd := {WEL_API}.send_message_result (
+					hwnd := cwin_send_message_result (
 						wel_item, Tvm_getnextitem, to_wparam (Tvgn_child), item_imp.h_item)
 				end
 			until
 				hwnd = a_default_pointer
 			loop
 				Result.extend (all_ev_children @ hwnd)
-				hwnd := {WEL_API}.send_message_result (wel_item,
+				hwnd := cwin_send_message_result (wel_item,
 					Tvm_getnextitem, to_wparam (Tvgn_next), hwnd)
 			end
 		end
@@ -293,7 +294,7 @@ feature -- Basic operations
 			check
 				tree_node_imp /= Void
 			end
-			{WEL_API}.send_message (wel_item, Tvm_ensurevisible, to_wparam (0), tree_node_imp.h_item)
+			cwin_send_message (wel_item, Tvm_ensurevisible, to_wparam (0), tree_node_imp.h_item)
 		end
 
 feature {EV_TREE_NODE_I} -- Implementation
@@ -323,7 +324,7 @@ feature {EV_TREE_NODE_I} -- Implementation
 			-- The item must have all the necessary flags and
 			-- informations to notify.
 		do
-			{WEL_API}.send_message (wel_item, Tvm_setitem, to_wparam (0), item_imp.wel_item)
+			cwin_send_message (wel_item, Tvm_setitem, to_wparam (0), item_imp.wel_item)
 		end
 
 feature {EV_ANY_I} -- Implementation
@@ -366,7 +367,7 @@ feature {EV_ANY_I} -- Implementation
 		do
 			create pt.make (x_pos, y_pos)
 			create info.make_with_point (pt)
-			{WEL_API}.send_message (wel_item, Tvm_hittest, to_wparam (0), info.item)
+			cwin_send_message (wel_item, Tvm_hittest, to_wparam (0), info.item)
 			if flag_set (info.flags, Tvht_onitemlabel)
 			or flag_set (info.flags, Tvht_onitemicon)
 			then
@@ -600,7 +601,7 @@ feature {EV_ANY_I} -- WEL Implementation
 			expand_called_manually := True
 			tree_item ?= an_item
 			if not is_expanded (tree_item) then
-				{WEL_API}.send_message (wel_item, Tvm_expand, to_wparam (Tve_expand), an_item.h_item)
+				cwin_send_message (wel_item, Tvm_expand, to_wparam (Tve_expand), an_item.h_item)
 				tree_item.interface.expand_actions.call (Void)
 			end
 			expand_called_manually := False
@@ -616,7 +617,7 @@ feature {EV_ANY_I} -- WEL Implementation
 			expand_called_manually := True
 			tree_item ?= an_item
 			if is_expanded (tree_item) then
-				{WEL_API}.send_message (wel_item, Tvm_expand, to_wparam (Tve_collapse), an_item.h_item)
+				cwin_send_message (wel_item, Tvm_expand, to_wparam (Tve_collapse), an_item.h_item)
 				tree_item.interface.collapse_actions.call (Void)
 			end
 			expand_called_manually := False
@@ -641,8 +642,19 @@ feature {EV_ANY_I} -- WEL Implementation
 	on_key_down (virtual_key, key_data: INTEGER) is
 			-- A key has been pressed.
 		do
-			process_navigation_key (virtual_key)
+			process_tab_key (virtual_key)
 			Precursor {EV_PRIMITIVE_IMP} (virtual_key, key_data)
+		end
+
+	on_char (character_code, key_data: INTEGER) is
+			-- Wm_char message
+			-- Avoid an unconvenient `beep' when the user
+			-- tab to another control.
+		do
+			Precursor {EV_PRIMITIVE_IMP} (character_code, key_data)
+			if not has_focus then
+				disable_default_processing
+			end
 		end
 
 	on_mouse_move (keys, x_pos, y_pos: INTEGER) is

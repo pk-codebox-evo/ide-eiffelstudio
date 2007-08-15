@@ -9,6 +9,7 @@ indexing
 class
 	EB_COMMENT_COMMAND
 
+
 inherit
 
 	EB_CONSTANTS
@@ -29,6 +30,7 @@ feature -- Execution
 		do
 			target.editor_tool.text_area.comment_selection
 		end
+
 
 feature -- Basic operations
 
@@ -78,6 +80,8 @@ feature -- Basic operations
 				end
 			end
 
+
+
 feature {NONE} -- Implementation
 
 	menu_name: STRING is
@@ -103,6 +107,7 @@ feature {NONE} -- Implementation
 		do
 			Result := Interface_names.f_Comment
 		end
+
 
 	description: STRING is
 			-- Description for current command

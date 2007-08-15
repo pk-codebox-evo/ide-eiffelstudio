@@ -50,16 +50,19 @@ gboolean c_io_watcher_marshal (
 }
 
 void
-c_gtk_menu_position_func (GtkMenu * menu, gint * x, gint * y, gboolean *push_in,
+c_gtk_menu_position_func (GtkMenu * menu, gint * x, gint * y,
 		gpointer user_data) // is
 		// Callback that returns `x' and `y' from `user_data' for `menu'.
 {
-	menu_position * posp;
-	posp = (menu_position*) user_data;
-	*x = posp->x_position;
-	*y = posp->y_position;
-	free (posp);
-}	
+	// local
+		c_position * posp;
+	// require
+		g_return_if_fail (user_data != NULL);
+	// do
+		posp = user_data;
+		x = &posp->x_position;
+		y = &posp->y_position;
+}	// end
 
 void
 c_gtk_return_combo_toggle (GtkWidget *widget, GtkWidget** user_data)

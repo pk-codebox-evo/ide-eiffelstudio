@@ -13,9 +13,7 @@ inherit
 	QL_CRITERION_FACTORY
 
 		redefine
-			criterion_type,
-			item_type,
-			simple_criterion_type
+			criterion_type
 		end
 create
 	make
@@ -29,27 +27,17 @@ feature{NONE} -- Initialization
 			agent_table.put (agent new_false_criterion, c_false)
 			agent_table.put (agent new_is_compiled_criterion, c_is_compiled)
 			agent_table.put (agent new_true_criterion, c_true)
-			agent_table.put (agent new_value_criterion, c_value_of_metric_is)
-			agent_table.put (agent new_value_criterion, c_is_satisfied_by)
 
 			create name_table.make (3)
 			name_table.put (c_false, query_language_names.ql_cri_false)
 			name_table.put (c_true, query_language_names.ql_cri_true)
 			name_table.put (c_is_compiled, query_language_names.ql_cri_is_compiled)
-			name_table.put (c_value_of_metric_is, query_language_names.ql_cri_value_of_metric_is)
-			name_table.put (c_is_satisfied_by, query_language_names.ql_cri_is_satisfied_by)
 		end
 
 feature{NONE} -- Implementation
 
 	criterion_type: QL_QUANTITY_CRITERION
 			-- Criterion anchor type
-
-	item_type: QL_QUANTITY
-			-- Item anchor type
-
-	simple_criterion_type: QL_SIMPLE_QUANTITY_CRITERION
-			-- Simple criterion type			
 
 feature{NONE} -- New criterion
 
@@ -77,21 +65,11 @@ feature{NONE} -- New criterion
 			result_attached: Result /= Void
 		end
 
-	new_value_criterion (a_evaluate_value_func: FUNCTION [ANY, TUPLE [QL_ITEM], BOOLEAN]): like simple_criterion_type is
-			-- New value criterion
-		require
-			a_evaluate_value_func_attached: a_evaluate_value_func /= Void
-		do
-			create Result.make (agent value_criterion_evalaute_agent ({QL_QUANTITY}?, a_evaluate_value_func), False)
-		end
-
 feature -- Criterion index
 
-	c_false: INTEGER is 1
-	c_true: INTEGER is 2
-	c_is_compiled: INTEGER is 3
-	c_value_of_metric_is: INTEGER is 4
-	c_is_satisfied_by: INTEGER is 5
+	c_false,
+	c_true,
+	c_is_compiled: INTEGER is unique
 
 feature{NONE} -- Implementation
 
@@ -124,6 +102,7 @@ feature{NONE} -- Implementation
 			Result := a_item.is_compiled
 		end
 
+
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"
         license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
@@ -155,5 +134,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

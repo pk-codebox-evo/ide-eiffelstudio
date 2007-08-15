@@ -14,8 +14,7 @@ inherit
 		redefine
 			name,
 			executable,
-			new_toolbar_item,
-			pixel_buffer
+			new_toolbar_item
 		end
 
 	EB_CONSTANTS
@@ -51,7 +50,6 @@ feature {NONE} -- Initialization
 					s := preferences.external_command_data.i_th_external_preference_value (i)
 					if not s.is_empty and not s.is_equal (" ") then
 						create c.make_from_string (s)
-						c.setup_managed_shortcut (accelerators)
 					end
 					i := i + 1
 				end
@@ -118,13 +116,7 @@ feature -- Status report
 			Result := pixmaps.icon_pixmaps.tool_external_commands_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.tool_external_commands_icon_buffer
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := description
@@ -134,7 +126,7 @@ feature -- Status report
 			-- Name of the command. Use to store the command in the
 			-- preferences.
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Pop up help on the toolbar button.
 		do
 			Result := Interface_names.l_manage_external_commands
@@ -155,12 +147,6 @@ feature -- Status report
 			Result.set_tooltip (tooltip)
 		end
 
-	list_exists: BOOLEAN is
-			-- Does `list' exist?
-		do
-			Result := list /= Void
-		end
-
 feature -- Actions
 
 	on_shortcut_change (i: INTEGER) is
@@ -170,7 +156,7 @@ feature -- Actions
 		local
 			l_shortcut: SHORTCUT_PREFERENCE
 		do
-			l_shortcut := preferences.external_command_data.shortcuts.item ("shortcut_" + i.out)
+			l_shortcut := preferences.editor_data.shortcuts.item ("shortcut_" + i.out)
 			accelerators.put (create{EV_ACCELERATOR}.make_with_key_combination (l_shortcut.key, l_shortcut.is_ctrl, l_shortcut.is_alt, l_shortcut.is_shift), i)
 			accelerators.item (i).actions.extend (agent execute_command_at_position (i))
 		end
@@ -196,29 +182,6 @@ feature -- Basic operations
 		do
 			if commands.item (a_pos) /= Void then
 				commands.item (a_pos).execute
-			end
-		end
-
-	refresh_list is
-			-- Rebuild the list of available commands.
-		require
-			list_exists: list_exists
-		local
-			i: INTEGER
-			litem: EV_LIST_ITEM
-		do
-			from
-				list.wipe_out
-			until
-				i > 9
-			loop
-				if commands @ i /= Void then
-					create litem
-					litem.set_text ((commands @ i).name)
-					litem.set_data (commands @ i)
-					list.extend (litem)
-				end
-				i := i + 1
 			end
 		end
 
@@ -369,6 +332,29 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	refresh_list is
+			-- Rebuild the list of available commands.
+		require
+			list_exists: list /= Void
+		local
+			i: INTEGER
+			litem: EV_LIST_ITEM
+		do
+			from
+				list.wipe_out
+			until
+				i > 9
+			loop
+				if commands @ i /= Void then
+					create litem
+					litem.set_text ((commands @ i).name)
+					litem.set_data (commands @ i)
+					list.extend (litem)
+				end
+				i := i + 1
+			end
+		end
+
 	update_edit_buttons is
 			-- Update the sensitivity of the buttons that alter the list.
 		require
@@ -392,14 +378,12 @@ feature {NONE} -- Implementation
 			new_command: EB_EXTERNAL_COMMAND
 		do
 			create new_command.make (dialog)
-			new_command.setup_managed_shortcut (accelerators)
 			refresh_list
 			if not commands.has (Void) then
 				add_button.disable_sensitive
 				close_button.set_focus
 			end
 			update_edit_buttons
-			shortcut_manager.update_external_commands
 		end
 
 	edit_command is
@@ -412,8 +396,6 @@ feature {NONE} -- Implementation
 		do
 			comm ?= list.selected_item.data
 			comm.edit_properties (dialog)
-			comm.setup_managed_shortcut (accelerators)
-			shortcut_manager.update_external_commands
 			refresh_list
 			update_edit_buttons
 			dialog.set_focus
@@ -448,29 +430,13 @@ feature {NONE} -- Implementation
 
 	update_menus is
 			-- Refresh the 'tools' menus of all development windows.
-		local
-			l_builder: EB_DEVELOPMENT_WINDOW_MENU_BUILDER
-			l_managed_windows: ARRAYED_SET [EB_WINDOW]
-			l_develop_window: EB_DEVELOPMENT_WINDOW
 		do
-			from
-				l_managed_windows := window_manager.managed_windows
-				l_managed_windows.start
-			until
-				l_managed_windows.after
-			loop
-				l_develop_window ?= l_managed_windows.item
-				if l_develop_window /= Void then
-					create l_builder.make (l_develop_window)
-					l_builder.rebuild_tools_menu
-				end
-				l_managed_windows.forth
-			end
+			Window_manager.for_all_development_windows (agent {EB_DEVELOPMENT_WINDOW}.rebuild_tools_menu)
 		end
 
 feature {NONE} -- Properties
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name of `Current' as it appears in menus.
 		do
 			Result := interface_names.m_Edit_external_commands

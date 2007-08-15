@@ -7,7 +7,7 @@ indexing
 	date: "$Date$";
 	revision: "$Revision $"
 
-class E_SHOW_ROUTINE_HOMONYMS
+class E_SHOW_ROUTINE_HOMONYMNS
 
 inherit
 
@@ -20,6 +20,7 @@ inherit
 		end
 
 	SHARED_EIFFEL_PROJECT
+
 
 create
 	make, default_create
@@ -37,7 +38,7 @@ feature{NONE} -- Implemetation
 	criterion: QL_CRITERION is
 			-- Criterion used in current command
 		do
-			create {QL_FEATURE_NAME_IS_CRI}Result.make_with_setting (current_feature.name, False, {QL_NAME_CRITERION}.identity_matching_strategy)
+			create {QL_FEATURE_NAME_IS_CRI}Result.make_with_setting (current_feature.name, False, True)
 		ensure then
 			result_attached: Result /= Void
 		end

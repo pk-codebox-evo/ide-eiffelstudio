@@ -82,74 +82,6 @@ feature {EB_SHARED_PREFERENCES} -- Value
 			result_attached: Result /= Void
 		end
 
-	is_tree_view_for_history: BOOLEAN is
-			-- Is tree view used to display metric history?
-		do
-			Result := tree_view_for_history_preference.value
-		end
-
-	history_flat_view_sorting_order: STRING is
-			-- History flat view sorting order
-		do
-			Result := flat_view_sorting_order_preference.value
-		end
-
-	history_tree_view_sorting_order: STRING is
-			-- History tree view sorting order
-		do
-			Result := tree_view_sorting_order_preference.value
-		end
-
-	is_old_archive_item_hidden: BOOLEAN is
-			-- Should old archive items be hidden?
-		do
-			Result := hide_old_item_preference.value
-		end
-
-	old_archive_item_age: INTEGER is
-			-- Age in days for an archive item to be considered old
-		do
-			Result := old_item_day_preference.value
-		end
-
-	is_archive_detailed_result_kept: BOOLEAN is
-			-- Is detailed result kept when recalculation metric archive history?
-		do
-			Result := keep_archive_detailed_result_preference.value
-		end
-
-	is_metric_detailed_result_kept: BOOLEAN is
-			-- Is detailed result kept when metric is evaluated?
-		do
-			Result := keep_metric_detailed_result_preference.value
-		end
-
-	should_warning_be_checked: BOOLEAN is
-			-- Should defined metric archive warning be checked when metric archive is recalculated?
-		do
-			Result := check_warning_preference.value
-		end
-
-	warning_background_color: EV_COLOR is
-			-- Background color for grid rows which contained a metric archive value which violates predefined warning criteria.
-		do
-			Result := warning_background_color_preference.value
-		end
-
-	is_metric_information_displayed_in_result_panel: BOOLEAN is
-			-- is_metric information displayed in result panel?
-		do
-			Result := metric_information_in_result_panel_preference.value
-		end
-
-	highlight_background_color: EV_COLOR is
-			-- Background color for highlighted text or grid row
-		do
-			Result := highlight_background_color_preference.value
-		ensure
-			result_attached: Result /= Void
-		end
-
 feature -- Setting
 
 	set_unit_order (a_unit_list: LIST [QL_METRIC_UNIT]) is
@@ -187,17 +119,6 @@ feature {EB_SHARED_PREFERENCES} -- Preference
 	display_percentage_for_ratio_preference: BOOLEAN_PREFERENCE
 	automatic_go_to_result_panel_preference: BOOLEAN_PREFERENCE
 	unit_order_preference: STRING_PREFERENCE
-	tree_view_for_history_preference: BOOLEAN_PREFERENCE
-	flat_view_sorting_order_preference: STRING_PREFERENCE
-	tree_view_sorting_order_preference: STRING_PREFERENCE
-	hide_old_item_preference: BOOLEAN_PREFERENCE
-	old_item_day_preference: INTEGER_PREFERENCE
-	keep_archive_detailed_result_preference: BOOLEAN_PREFERENCE
-	keep_metric_detailed_result_preference: BOOLEAN_PREFERENCE
-	check_warning_preference: BOOLEAN_PREFERENCE
-	warning_background_color_preference: COLOR_PREFERENCE
-	metric_information_in_result_panel_preference: BOOLEAN_PREFERENCE
-	highlight_background_color_preference: COLOR_PREFERENCE
 
 feature {NONE} -- Preference Strings
 
@@ -207,17 +128,6 @@ feature {NONE} -- Preference Strings
 	display_percentage_for_ratio_string: STRING is "tools.metric_tool.display_percentage_for_ratio"
 	automatic_go_to_result_panel_string: STRING is "tools.metric_tool.automatic_go_to_result_panel"
 	unit_order_string: STRING is "tools.metric_tool.unit_order"
-	tree_view_for_history_string: STRING is "tools.metric_tool.tree_view_for_metric_history"
-	flat_view_sorting_order_string: STRING is "tools.metric_tool.history_flat_view_sorting_order"
-	tree_view_sorting_order_string: STRING is "tools.metric_tool.history_tree_view_sorting_order"
-	hide_old_item_string: STRING is "tools.metric_tool.hide_old_archive"
-	old_item_day_string: STRING is "tools.metric_tool.old_archive_age_in_days"
-	keep_archive_detailed_result_string: STRING is "tools.metric_tool.keep_archive_detailed_result"
-	keep_metric_detailed_result_string: STRING is "tools.metric_tool.keep_metric_detailed_result"
-	check_warning_string: STRING is "tools.metric_tool.check_defined_warning"
-	warning_background_color_string: STRING is "tools.metric_tool.warning_background_color"
-	metric_information_in_result_panel_string: STRING is "tools.metric_tool.maximize_metric_result_area"
-	highlight_background_color_string: STRING is "tools.metric_tool.highlight_background_color"
 
 feature {NONE} -- Implementation
 
@@ -232,28 +142,9 @@ feature {NONE} -- Implementation
 			filter_invisible_result_preference := l_manager.new_boolean_preference_value (l_manager, filter_invisible_result_string, False)
 			display_percentage_for_ratio_preference := l_manager.new_boolean_preference_value (l_manager, display_percentage_for_ratio_string, True)
 			automatic_go_to_result_panel_preference := l_manager.new_boolean_preference_value (l_manager, automatic_go_to_result_panel_string, True)
-			unit_order_preference := l_manager.new_string_preference_value (l_manager, unit_order_string, "")
-			unit_order_preference.set_hidden (True)
-				-- Default value is a list of hashes which is not stored in the 'eifinit.xml' file, thus it is set here
-			unit_order_preference.set_default_value (initial_unit_order)
-			if unit_order_preference.value = Void or else unit_order_preference.value.is_empty then
-				unit_order_preference.set_value (initial_unit_order)
-			end
+			unit_order_preference := l_manager.new_string_preference_value (l_manager, unit_order_string, initial_unit_order)
 			criterion_completion_list_width_preference.set_hidden (True)
 			criterion_completion_list_height_preference.set_hidden (True)
-			tree_view_for_history_preference := l_manager.new_boolean_preference_value (l_manager, tree_view_for_history_string, False)
-			flat_view_sorting_order_preference := l_manager.new_string_preference_value (l_manager, flat_view_sorting_order_string, "1:1")
-			flat_view_sorting_order_preference.set_hidden (True)
-			tree_view_sorting_order_preference := l_manager.new_string_preference_value (l_manager, tree_view_sorting_order_string, "1:1")
-			tree_view_sorting_order_preference.set_hidden (True)
-			hide_old_item_preference := l_manager.new_boolean_preference_value (l_manager, hide_old_item_string, False)
-			old_item_day_preference := l_manager.new_integer_preference_value (l_manager, old_item_day_string, 30)
-			keep_archive_detailed_result_preference := l_manager.new_boolean_preference_value (l_manager, keep_archive_detailed_result_string, False)
-			keep_metric_detailed_result_preference := l_manager.new_boolean_preference_value (l_manager, keep_metric_detailed_result_string, True)
-			check_warning_preference := l_manager.new_boolean_preference_value (l_manager, check_warning_string, False)
-			warning_background_color_preference := l_manager.new_color_preference_value (l_manager, warning_background_color_string, create{EV_COLOR}.make_with_8_bit_rgb (253, 209, 199))
-			metric_information_in_result_panel_preference := l_manager.new_boolean_preference_value (l_manager, metric_information_in_result_panel_string, True)
-			highlight_background_color_preference := l_manager.new_color_preference_value (l_manager, highlight_background_color_string, create{EV_COLOR}.make_with_8_bit_rgb (255, 255, 170))
 		end
 
 	preferences: PREFERENCES
@@ -295,6 +186,7 @@ feature {NONE} -- Implementation
 
 			Result.append (group_unit.hash_code.out)
 			Result.append_character (';')
+
 
 			Result.append (generic_unit.hash_code.out)
 			Result.append_character (';')

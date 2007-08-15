@@ -132,7 +132,7 @@ feature -- Access
 		do
 			create l_domain_generator
 			l_domain_generator.enable_fill_domain
-			l_target_domain ?= wrapped_domain.new_domain (l_domain_generator)
+			l_target_domain ?= Current.wrapped_domain.new_domain (l_domain_generator)
 			check
 				l_target_domain /= Void and then l_target_domain.count = 1
 			end
@@ -155,13 +155,6 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
-	parent_with_real_path: QL_ITEM is
-			-- Parent item of Current with real path.
-			-- Real path means that every parent is physically determined.
-		do
-			Result := query_target_item_from_conf_target (group.target)
-		end
-
 feature -- Status report
 
 	is_compiled: BOOLEAN is True
@@ -173,30 +166,6 @@ feature -- Status report
 			Result := group_scope
 		ensure then
 			good_result: Result = group_scope
-		end
-
-	is_library: BOOLEAN is
-			-- Is `group' a library?
-		do
-			Result := group.is_library
-		end
-
-	is_assembly: BOOLEAN is
-			-- Is `group' an assembly?
-		do
-			Result := group.is_assembly
-		end
-
-	is_cluster: BOOLEAN is
-			-- Is `group' a cluster?
-		do
-			Result := group.is_cluster
-		end
-
-	is_physical_assembly: BOOLEAN is
-			-- Is `group' a physical assembly?
-		do
-			Result := group.is_physical_assembly
 		end
 
 feature -- Visit
@@ -258,5 +227,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

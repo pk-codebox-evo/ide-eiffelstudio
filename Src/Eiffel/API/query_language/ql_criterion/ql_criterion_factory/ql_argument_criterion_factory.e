@@ -12,9 +12,7 @@ class
 inherit
 	QL_CRITERION_FACTORY
 		redefine
-			criterion_type,
-			item_type,
-			simple_criterion_type
+			criterion_type
 		end
 create
 	make
@@ -32,8 +30,6 @@ feature{NONE} -- Initialization
 			agent_table.put (agent new_is_in_immediate_feature_criterion, c_is_immediate)
 			agent_table.put (agent new_name_is_criterion, c_name_is)
 			agent_table.put (agent new_text_contain_criterion, c_text_contain)
-			agent_table.put (agent new_value_criterion, c_value_of_metric_is)
-			agent_table.put (agent new_value_criterion, c_is_satisfied_by)
 
 			create name_table.make (10)
 			name_table.put (c_false, query_language_names.ql_cri_false)
@@ -43,20 +39,12 @@ feature{NONE} -- Initialization
 			name_table.put (c_true, query_language_names.ql_cri_true)
 			name_table.put (c_name_is, query_language_names.ql_cri_name_is)
 			name_table.put (c_text_contain, query_language_names.ql_cri_text_contain)
-			name_table.put (c_value_of_metric_is, query_language_names.ql_cri_value_of_metric_is)
-			name_table.put (c_is_satisfied_by, query_language_names.ql_cri_is_satisfied_by)
 		end
 
 feature{NONE} -- Implementation
 
 	criterion_type: QL_ARGUMENT_CRITERION
 			-- Criterion anchor type
-
-	item_type: QL_ARGUMENT
-			-- Item anchor type
-
-	simple_criterion_type: QL_SIMPLE_ARGUMENT_CRITERION
-			-- Simple criterion type
 
 feature{NONE} -- New criterion
 
@@ -100,59 +88,35 @@ feature{NONE} -- New criterion
 			result_attached: Result /= Void
 		end
 
-	new_name_is_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_ARGUMENT_NAME_IS_CRI is
+	new_name_is_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_ARGUMENT_NAME_IS_CRI is
 			-- New {QL_ARGUMENT_NAME_IS_CRI} criterion.
 		require
 			a_name_attached: a_name /= Void
 		do
-			create Result.make_with_setting (a_name, a_case_sensitive, a_matching_strategy)
+			create Result.make_with_setting (a_name, a_case_sensitive, a_identical)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_text_contain_criterion (a_text: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_ARGUMENT_TEXT_CONTAIN_CRI is
+	new_text_contain_criterion (a_text: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_ARGUMENT_TEXT_CONTAIN_CRI is
 			-- New {QL_ARGUMENT_TEXT_CONTAIN_CRI} criterion.
 		require
 			a_text_attached: a_text /= Void
 		do
-			create Result.make_with_setting (a_text, a_case_sensitive, a_matching_strategy)
+			create Result.make_with_setting (a_text, a_case_sensitive, a_identical)
 		ensure
 			result_attached: Result /= Void
-		end
-
-	new_contain_ast_criterion (a_ast_type_list: STRING; a_and_relation: BOOLEAN; a_check_detail: BOOLEAN): QL_SIMPLE_ARGUMENT_CRITERION is
-			-- New {QL_SIMPLE_ARGUMENT_CRITERION} criterion.
-		require
-			a_ast_type_list_attached: a_ast_type_list /= Void
-		local
-			l_visitor: QL_AST_VISITOR
-		do
-			create l_visitor.make (ast_index_list_from_string (a_ast_type_list), a_and_relation)
-			create Result.make (agent l_visitor.is_code_structure_item_satisfied ({QL_ARGUMENT}?), True)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	new_value_criterion (a_evaluate_value_func: FUNCTION [ANY, TUPLE [QL_ITEM], BOOLEAN]): like simple_criterion_type is
-			-- New value criterion
-		require
-			a_evaluate_value_func_attached: a_evaluate_value_func /= Void
-		do
-			create Result.make (agent value_criterion_evalaute_agent ({QL_ARGUMENT}?, a_evaluate_value_func), False)
 		end
 
 feature -- Criterion index
 
-	c_false: INTEGER is 1
-	c_true: INTEGER is 2
-	c_is_visible: INTEGER is 3
-	c_name_is: INTEGER is 4
-	c_text_contain: INTEGER is 5
-	c_is_compiled: INTEGER is 6
-	c_is_immediate: INTEGER is 7
-	c_contain_ast: INTEGER is 8
-	c_value_of_metric_is: INTEGER is 9
-	c_is_satisfied_by: INTEGER is 10
+	c_false,
+	c_true,
+	c_is_visible,
+	c_name_is,
+	c_text_contain,
+	c_is_compiled,
+	c_is_immediate: INTEGER is unique;
 
 feature{NONE} -- Implementation
 
@@ -240,5 +204,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

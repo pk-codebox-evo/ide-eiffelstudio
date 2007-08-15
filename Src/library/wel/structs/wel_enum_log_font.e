@@ -101,4 +101,8 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+
+
+
+end -- class WEL_ENUM_LOG_FONT
+

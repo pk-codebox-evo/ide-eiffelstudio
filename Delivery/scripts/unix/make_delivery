@@ -72,24 +72,24 @@ fi
 md $INSTALL_DIR
 cd $INSTALL_DIR
 remtrace studio
-exprt -r $ORIGO_SVN_REVISION $DEFAULT_ORIGO_SVN/Delivery/studio studio 
+exprt $DEFAULT_ORIGO_SVN/Delivery/studio studio 
 fullrd studio/config/windows
 fullrd studio/wizards/new_projects/wizard
 fullrf studio/wizards/new_projects/wizard.dsc
 fullrd studio/wizards/new_projects/dotnet
 fullrf studio/wizards/new_projects/dotnet.dsc
-fullrd studio/wizards/new_projects/wel
-fullrf studio/wizards/new_projects/wel.dsc
 
-remtrace esbuilder
-exprt -r $ORIGO_SVN_REVISION $DEFAULT_ORIGO_SVN/Delivery/esbuilder esbuilder 
-remtrace vision2_demo
-exprt -r $ORIGO_SVN_REVISION $DEFAULT_ORIGO_SVN/Delivery/vision2_demo vision2_demo 
+remtrace build
+exprt $DEFAULT_ORIGO_SVN/Delivery/build build 
+remtrace vision2_tour
+exprt $DEFAULT_ORIGO_SVN/Delivery/vision2_tour vision2_tour 
+remtrace eifinit
+exprt $DEFAULT_ORIGO_SVN/Delivery/eifinit eifinit 
 remtrace precomp
 safe_md $INSTALL_DIR/precomp
 safe_md $INSTALL_DIR/precomp/spec
 cd $INSTALL_DIR/precomp/spec
-exprt -r $ORIGO_SVN_REVISION $DEFAULT_ORIGO_SVN/Delivery/precomp/spec/platform platform 
+exprt $DEFAULT_ORIGO_SVN/Delivery/precomp/spec/platform platform 
 cd platform
 fullrd lex
 fullrd mel
@@ -99,10 +99,10 @@ fullrd parse
 fullrd vision
 cd $INSTALL_DIR
 remtrace C_library
-exprt -r $ORIGO_SVN_REVISION $DEFAULT_ORIGO_SVN/Src/C_library C_library 
+exprt $DEFAULT_ORIGO_SVN/Src/C_library C_library 
 cd $INSTALL_DIR
 remtrace root
-exprt -N -r $ORIGO_SVN_REVISION $DEFAULT_ORIGO_SVN/Delivery Delivery
+exprt -N $DEFAULT_ORIGO_SVN/Delivery Delivery
 move Delivery/* . >> $INSTALL_LOG
 fullrd Delivery >> $INSTALL_LOG
 
@@ -136,41 +136,7 @@ if [ ! "$NO_COMPILE" ]; then
 		fullrd $EIFFEL_SRC
 	fi
 	md $EIFFEL_SRC
-	co -r $ORIGO_SVN_REVISION $DEFAULT_ORIGO_SVN/Src $EIFFEL_SRC
-
-	if [ -n "$UNIX_BASE_PATH" ]; then
-		remtrace Adjusting unix base path
-		# updating EIFFEL_ENV
-		rm -f tmp
-		sed -e "/UNIX_BASE_PATH/s|/usr/local|$UNIX_BASE_PATH|g" $EIFFEL_SRC/framework/environment/interface/eiffel_env.e  > tmp
-		rm -f $EIFFEL_SRC/framework/environment/interface/eiffel_env.e
-		mv -f tmp $EIFFEL_SRC/framework/environment/interface/eiffel_env.e
-
-		# update finish_freezing
-		rm -f tmp
-		sed -e "/UNIX_BASE_PATH/s|/usr/local|$UNIX_BASE_PATH|g" $INSTALL_DIR/studio/spec/unix/finish_freezing > tmp
-		rm -f $INSTALL_DIR/studio/spec/unix/finish_freezing
-		mv -f tmp $INSTALL_DIR/studio/spec/unix/finish_freezing
-
-		chmod +x $INSTALL_DIR/studio/spec/unix/finish_freezing
-	fi
-
-	if [ -n "$UNIX_LIB_NAME" ]; then
-		remtrace Adjusting unix lib name
-		# updating EIFFEL_ENV
-		rm -f tmp
-		sed -e "/UNIX_LIB_NAME/s/lib/$UNIX_LIB_NAME/g" $EIFFEL_SRC/framework/environment/interface/eiffel_env.e  > tmp
-		rm -f $EIFFEL_SRC/framework/environment/interface/eiffel_env.e
-		mv -f tmp $EIFFEL_SRC/framework/environment/interface/eiffel_env.e
-
-		# update finish_freezing
-		rm -f tmp
-		sed -e "/UNIX_LIB_NAME/s/lib/$UNIX_LIB_NAME/g" $INSTALL_DIR/studio/spec/unix/finish_freezing > tmp
-		rm -f $INSTALL_DIR/studio/spec/unix/finish_freezing
-		mv -f tmp $INSTALL_DIR/studio/spec/unix/finish_freezing
-
-		chmod +x $INSTALL_DIR/studio/spec/unix/finish_freezing 
-	fi
+	co $DEFAULT_ORIGO_SVN/Src $EIFFEL_SRC
 
 	remtrace ISE specific files
 	cd $EIFFEL_SRC
@@ -203,8 +169,6 @@ else
 fi
 
 remtrace Check out the documentation
-# When compiling for GTK 1.2, disable the building of the documentation
-# since on most machine GTK 1.2 is not installed.
 cd $INIT_DIR
 . make_xml_documentation
 
@@ -216,9 +180,14 @@ cd $INIT_DIR
 
 cd $INSTALL_DIR
 remtrace Free add ons
-exprt -r $ORIGO_SVN_REVISION $DEFAULT_ORIGO_SVN/free_add_ons free_add_ons 
-cd $INSTALL_DIR
-fullrd free_add_ons
+exprt $DEFAULT_ORIGO_SVN/free_add_ons free_add_ons 
+cd $INSTALL_DIR/library
+gunzip -c $INSTALL_DIR/free_add_ons/gobo/gobo_34_unix.tgz | tar -xf -
+cd $INSTALL_DIR/free_add_ons
+fullrd eclop
+fullrd gobo
+fullrd micoe
+fullrd wex
 cd $INIT_DIR
 
 if [ ! "$NO_INSTALL" ]; then
@@ -227,24 +196,24 @@ if [ ! "$NO_INSTALL" ]; then
 		remtrace C directory
 		cd $EIFFEL_SRC
 		tar -cf c.tar C
-		bzip2 c.tar
-		move c.tar.bz2 $EXPORT_DIR
+		gzip c.tar
+		move c.tar.gz $EXPORT_DIR
 
 		remtrace C_library
 		tar -cf c_libs.tar C_library
-		bzip2 c_libs.tar
-		move c_libs.tar.bz2 $EXPORT_DIR
+		gzip c_libs.tar
+		move c_libs.tar.gz $EXPORT_DIR
 
 		remtrace Eiffel libraries
 		tar -cf libs.tar library
-		bzip2 libs.tar
-		move libs.tar.bz2 $EXPORT_DIR
+		gzip libs.tar
+		move libs.tar.gz $EXPORT_DIR
 	fi
 	remtrace The delivery itself
 	cd $INSTALL_DIR
 	tar -cf delivery.tar *
-	bzip2 delivery.tar
-	move delivery.tar.bz2 $EXPORT_DIR
+	gzip delivery.tar
+	move delivery.tar.gz $EXPORT_DIR
 	
 	cd $INIT_DIR
 	copy compile* $EXPORT_DIR
@@ -258,8 +227,7 @@ if [ ! "$NO_INSTALL" ]; then
 	rm -f set_aliases
 	mv -f tmp set_aliases
 		# Update the revision number as well
-	FILE_SVN_REVISION=`$INIT_DIR/set_version.sh $EIFFEL_SRC`
-	sed -e "s/^FILE_SVN_REVISION.*$/FILE_SVN_REVISION=$FILE_SVN_REVISION/g" set_aliases > tmp
+	sed -e "s/^SVN_VERSION.*$/SVN_VERSION=$SVN_VERSION/g" set_aliases > tmp
 	rm -f set_aliases
 	mv -f tmp set_aliases
 	cd $INIT_DIR

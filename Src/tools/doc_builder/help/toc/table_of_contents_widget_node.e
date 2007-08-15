@@ -159,7 +159,7 @@ feature -- Actions
 				
 			end
 			
-			enable_select
+			Current.enable_select
 			parent_widget.set_modified (True)		
 		end	
 

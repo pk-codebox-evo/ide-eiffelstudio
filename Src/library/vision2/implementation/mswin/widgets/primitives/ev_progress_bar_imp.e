@@ -19,8 +19,7 @@ inherit
 		undefine
 			valid_maximum
 		redefine
-			interface,
-			initialize
+			interface
 		end
 
 	WEL_PROGRESS_BAR
@@ -74,8 +73,7 @@ inherit
 			on_sys_key_down,
 			on_sys_key_up,
 			default_process_message,
-			on_getdlgcode,
-			on_wm_dropfiles
+			on_getdlgcode
 		redefine
 			wel_set_step
 		end
@@ -98,13 +96,6 @@ feature {NONE} -- Initialization
 		do
 			base_make (an_interface)
 			wel_make (default_parent, 0, 0, 0, 0, -1)
-		end
-
-	initialize is
-		do
-			Precursor {EV_GAUGE_IMP}
-			disable_tabable_from
-			disable_tabable_to
 		end
 
 feature -- Access

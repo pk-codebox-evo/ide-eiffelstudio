@@ -24,9 +24,6 @@ inherit
 		end
 
 	EB_SHORTCUTS_DATA
-		redefine
-			update
-		end
 
 	EB_SHARED_MANAGERS
 
@@ -36,11 +33,6 @@ inherit
 		end
 
 	EB_EDITOR_TOKEN_IDS
-
-	SHARED_BENCH_NAMES
-		export
-			{NONE} all
-		end
 
 create
 	make
@@ -53,7 +45,7 @@ feature {EB_PREFERENCES} -- Initialization
 			Precursor {EDITOR_DATA} (a_preferences)
 		end
 
-feature {EB_EDITORS_MANAGER, EB_SHARED_PREFERENCES, EDITOR_TOKEN} -- Value
+feature {EB_SHARED_PREFERENCES, EDITOR_TOKEN} -- Value
 
 	breakpoint_background_color: EV_COLOR is
 			-- Background color used to display breakpoints		
@@ -129,16 +121,6 @@ feature {EB_EDITORS_MANAGER, EB_SHARED_PREFERENCES, EDITOR_TOKEN} -- Value
 	feature_background_color: EV_COLOR is
 		do
 			Result := feature_background_color_preference.value
-		end
-
-	target_text_color: EV_COLOR is
-		do
-			Result := target_text_color_preference.value
-		end
-
-	target_background_color: EV_COLOR is
-		do
-			Result := target_background_color_preference.value
 		end
 
 	cluster_text_color: EV_COLOR is
@@ -269,63 +251,9 @@ feature {EB_EDITORS_MANAGER, EB_SHARED_PREFERENCES, EDITOR_TOKEN} -- Value
 			Result := customized_string_3_preference.value
 		end
 
-	new_tab_at_left: BOOLEAN is
-			-- When creating new tab, should added it at the begin of the target notebook?
-		do
-			Result := new_tab_at_left_preference.value
-		end
-
 	left_side: BOOLEAN
 
 	maximized: BOOLEAN
-
-	warning_text_color: EV_COLOR is
-			-- Warning text color
-		do
-			Result := warning_text_color_preference.value
-		ensure
-			result_attached: Result /= Void
-		end
-
-	warning_background_color: EV_COLOR is
-			-- Warning background color
-		do
-			Result := warning_background_color_preference.value
-		ensure
-			result_attached: Result /= Void
-		end
-
-	argument_text_color: EV_COLOR is
-			-- Argument text color
-		do
-			Result := argument_text_color_preference.value
-		ensure
-			result_attached: Result /= Void
-		end
-
-	argument_background_color: EV_COLOR is
-			-- Argument background color
-		do
-			Result := argument_background_color_preference.value
-		ensure
-			result_attached: Result /= Void
-		end
-
-	folder_text_color: EV_COLOR is
-			-- Folder text color
-		do
-			Result := folder_text_color_preference.value
-		ensure
-			result_attached: Result /= Void
-		end
-
-	folder_background_color: EV_COLOR is
-			-- Folder background color
-		do
-			Result := folder_background_color_preference.value
-		ensure
-			result_attached: Result /= Void
-		end
 
 feature {EB_SHARED_PREFERENCES} -- Preference
 
@@ -354,6 +282,7 @@ feature {EB_SHARED_PREFERENCES} -- Preference
 	object_background_color_preference: COLOR_PREFERENCE
 	target_text_color_preference: COLOR_PREFERENCE
 	target_background_color_preference: COLOR_PREFERENCE
+
 
 	once_and_constant_in_upper_preference: BOOLEAN_PREFERENCE
 			-- Is first letter of once or constant in upper case?
@@ -401,20 +330,6 @@ feature {EB_SHARED_PREFERENCES} -- Preference
 	customized_string_3_preference: STRING_PREFERENCE
 			-- strings defined by the user.			
 
-	new_tab_at_left_preference: BOOLEAN_PREFERENCE
-			-- When create new tab, should it created at the begin of the target notebook?
-
-	warning_text_color_preference: COLOR_PREFERENCE
-	warning_background_color_preference: COLOR_PREFERENCE
-
-	argument_text_color_preference: COLOR_PREFERENCE
-	argument_background_color_preference: COLOR_PREFERENCE
-			-- Color of name of arguments displayed in metric tool
-
-	folder_text_color_preference: COLOR_PREFERENCE
-	folder_background_color_preference: COLOR_PREFERENCE
-			-- Color of name of folders displayed in metric tool
-
 feature {NONE} -- Preference Strings
 
 	assertion_tag_text_color_string: STRING is "editor.eiffel.colors.assertion_tag_text_color"
@@ -440,14 +355,6 @@ feature {NONE} -- Preference Strings
 	breakpoint_background_color_string: STRING is "editor.eiffel.colors.breakpoint_background_color"
 	target_text_color_string: STRING is "editor.eiffel.colors.target_text_color"
 	target_background_color_string: STRING is "editor.eiffel.colors.target_text_background_color"
-	warning_text_color_string: STRING is "editor.eiffel.colors.warning_text_color"
-	warning_background_color_string: STRING is "editor.eiffel.colors.warning_background_color"
-	line_text_color_string: STRING is "editor.eiffel.colors.line_text_color"
-	line_background_color_string: STRING is "editor.eiffel.colors.line_background_color"
-	argument_text_color_string: STRING is "editor.eiffel.colors.argument_text_color"
-	argument_background_color_string: STRING is "editor.eiffel.colors.argument_background_color"
-	folder_text_color_string: STRING is "editor.eiffel.colors.folder_text_color"
-	folder_background_color_string: STRING is "editor.eiffel.colors.folder_background_color"
 
 	once_and_constant_in_upper_string: STRING is "editor.eiffel.once_and_constant_in_upper"
 			-- Is first letter of once or constant in upper case?
@@ -495,9 +402,6 @@ feature {NONE} -- Preference Strings
 	customized_string_3_string: STRING is "editor.eiffel.customized_string_3"
 			-- strings defined by the user.
 
-	new_tab_at_left_string: STRING is "editor.general.new_tab_at_left"
-			-- Create new tab at left side of the target notebook?
-
 feature {NONE} -- Init colors and fonts.
 
 	init_colors is
@@ -527,12 +431,6 @@ feature {NONE} -- Init colors and fonts.
 			colors.put (object_background_color_preference.value, object_background_color_id)
 			colors.put (target_text_color_preference.value, target_text_color_id)
 			colors.put (target_background_color_preference.value, target_background_color_id)
-			colors.put (warning_text_color_preference.value, warning_text_color_id)
-			colors.put (warning_background_color_preference.value, warning_background_color_id)
-			colors.put (argument_text_color_preference.value, argument_text_color_id)
-			colors.put (argument_background_color_preference.value, argument_background_color_id)
-			colors.put (folder_text_color_preference.value, folder_text_color_id)
-			colors.put (folder_background_color_preference.value, folder_background_color_id)
 		end
 
 	init_fonts is
@@ -541,6 +439,7 @@ feature {NONE} -- Init colors and fonts.
 			Precursor
 		end
 
+
 feature -- Update
 
 	update is
@@ -548,7 +447,6 @@ feature -- Update
 		do
 			init_colors
 			window_manager.quick_refresh_all_editors
-			Precursor {EB_SHORTCUTS_DATA}
 		end
 
 feature {NONE} -- Initialization
@@ -559,8 +457,6 @@ feature {NONE} -- Initialization
 			l_manager: EB_PREFERENCE_MANAGER
 		do
 			Precursor {EDITOR_DATA}
-			initialize_fixed_shortcuts
-
 			create l_manager.make (preferences, "editor.eiffel")
 
 				-- Colors
@@ -587,12 +483,6 @@ feature {NONE} -- Initialization
 			object_background_color_preference := l_manager.new_color_preference_value (l_manager, object_background_color_string, create {EV_COLOR}.make_with_8_bit_rgb (255, 255, 255))
 			target_text_color_preference := l_manager.new_color_preference_value (l_manager, target_text_color_string, create {EV_COLOR}.make_with_8_bit_rgb (0, 0, 0))
 			target_background_color_preference := l_manager.new_color_preference_value (l_manager, target_background_color_string, create {EV_COLOR}.make_with_8_bit_rgb (255, 255, 255))
-			warning_text_color_preference := l_manager.new_color_preference_value (l_manager, warning_text_color_string, create{EV_COLOR}.make_with_8_bit_rgb (200, 64, 0))
-			warning_background_color_preference := l_manager.new_color_preference_value (l_manager, warning_background_color_string, create{EV_COLOR}.make_with_8_bit_rgb (255, 255, 255))
-			argument_text_color_preference := l_manager.new_color_preference_value (l_manager, argument_text_color_string, create{EV_COLOR}.make_with_8_bit_rgb (0, 0, 0))
-			argument_background_color_preference := l_manager.new_color_preference_value (l_manager, argument_background_color_string, create{EV_COLOR}.make_with_8_bit_rgb (255, 255, 255))
-			folder_text_color_preference := l_manager.new_color_preference_value (l_manager, folder_text_color_string, create{EV_COLOR}.make_with_8_bit_rgb (0, 0, 0))
-			folder_background_color_preference := l_manager.new_color_preference_value (l_manager, folder_background_color_string, create{EV_COLOR}.make_with_8_bit_rgb (255, 255, 255))
 
 				-- Booleans			
 			underscore_is_separator_preference := l_manager.new_boolean_preference_value (l_manager, underscore_is_separator_string, False)
@@ -614,7 +504,6 @@ feature {NONE} -- Initialization
 			customized_strings.extend (customized_string_2_preference)
 			customized_string_3_preference := l_manager.new_string_preference_value (l_manager, customized_string_3_string, "")
 			customized_strings.extend (customized_string_3_preference)
-			new_tab_at_left_preference := l_manager.new_boolean_preference_value (l_manager, new_tab_at_left_string, True)
 
 				-- Auto colors
 			indexing_tag_background_color_preference.set_auto_preference (normal_background_color_preference)
@@ -678,23 +567,11 @@ feature {NONE} -- Initialization
 			customized_string_1_preference.change_actions.extend (agent update)
 			customized_string_2_preference.change_actions.extend (agent update)
 			customized_string_3_preference.change_actions.extend (agent update)
-			new_tab_at_left_preference.change_actions.extend (agent update)
 			normal_text_color_preference.change_actions.extend (agent update)
-			warning_text_color_preference.change_actions.extend (agent update)
-			warning_background_color_preference.change_actions.extend (agent update)
-			argument_text_color_preference.change_actions.extend (agent update)
-			argument_background_color_preference.change_actions.extend (agent update)
-			folder_text_color_preference.change_actions.extend (agent update)
-			folder_background_color_preference.change_actions.extend (agent update)
 
 			initialize_autocomplete_prefs
 
-			default_shortcut_actions := editor_shortcut_actions
-			create l_manager.make (preferences, "shortcuts.editor")
-			initialize_shortcuts_prefs (l_manager)
-
-			default_shortcut_actions := completion_shortcut_actions
-			create l_manager.make (preferences, "shortcuts.code_completion")
+			create l_manager.make (preferences, "editor.eiffel.keyboard_shortcuts")
 			initialize_shortcuts_prefs (l_manager)
 		end
 
@@ -772,18 +649,6 @@ feature {NONE} -- Initialization
 			end
 		end
 
-	initialize_fixed_shortcuts is
-			-- Initialize fixed shortcuts in relative shortcuts.
-			-- Fixed shortcuts can not be overridden by normal shortcuts.
-		do
-			indention_shortcut.set_group (main_window_group)
-			unindention_shortcut.set_group (main_window_group)
-			editor_cut_shortcut.set_group (main_window_group)
-			editor_copy_shortcut.set_group (main_window_group)
-			editor_paste_shortcut.set_group (main_window_group)
-			editor_select_all_shortcut.set_group (main_window_group)
-		end
-
 feature {NONE} -- Build preferences for autocomplete
 
 	default_insert: ARRAY [ARRAY [STRING]] is
@@ -825,6 +690,8 @@ feature {NONE} -- Build preferences for autocomplete
 					<<" $cursor$", "%N$indent$%%T$cursor$", " $cursor$", "%N$indent$%T$cursor$">>,
 						-- alias
 					<<" %"$cursor$%"", "%N$indent$%%T%"$cursor$%"", " $cursor$", "%N$indent$$cursor$">>,
+
+
 
 						-- if
 					<<" $cursor$ then%N$indent$%%T%N$indent$end", "%N$indent$%%T$cursor$%N$indent$then%N$indent$%%T%N$indent$end", " $cursor$", "%N$indent$%T$cursor$">>,
@@ -948,6 +815,7 @@ feature -- Syntax Completion Customization
 			Result.compare_objects
 		end
 
+
 	other_completed_keywords: ARRAYED_LIST [STRING] is
 			-- list of completed keywords
 		once
@@ -978,44 +846,6 @@ feature -- Syntax Completion Customization
 			create Result.make_from_array (<<"class_structure_keywords", "feature_structure_keywords", "inherit_clauses_keywords", "control_structure_keywords", "other_keywords">>)
 		end
 
-feature -- Fixed shortcuts
-
-	indention_shortcut: EB_FIXED_SHORTCUT is
-			-- Indention shortcut
-		once
-			create Result.make (names.fs_indent,  create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_tab), False, False, False)
-		end
-
-	unindention_shortcut: EB_FIXED_SHORTCUT is
-			-- Unindention shortcut
-		once
-			create Result.make (names.fs_unindent,  create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_tab), False, False, True)
-		end
-
-	editor_cut_shortcut: EB_FIXED_SHORTCUT is
-			-- Fixed shortcut for Cut.
-		once
-			create Result.make (names.fs_cut, create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_x), False, True, False)
-		end
-
-	editor_copy_shortcut: EB_FIXED_SHORTCUT is
-			-- Fixed shortcut for Copy.
-		once
-			create Result.make (names.fs_copy, create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_c), False, True, False)
-		end
-
-	editor_paste_shortcut: EB_FIXED_SHORTCUT is
-			-- Fixed shortcut for Paste.
-		once
-			create Result.make (names.fs_paste, create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_v), False, True, False)
-		end
-
-	editor_select_all_shortcut: EB_FIXED_SHORTCUT is
-			-- Fixed shortcut for Select All.
-		once
-			create Result.make (names.fs_select_all, create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_a), False, True, False)
-		end
-
 feature -- Keybord shortcuts Customization
 
 	customized_strings: ARRAYED_LIST [STRING_PREFERENCE] is
@@ -1030,59 +860,28 @@ feature -- Keybord shortcuts Customization
 			create Result.make (default_shortcut_actions.count)
 		end
 
-	default_shortcut_actions: ARRAYED_LIST [TUPLE [HASH_TABLE [TUPLE [BOOLEAN, BOOLEAN, BOOLEAN, STRING_8], STRING_8], MANAGED_SHORTCUT_GROUP]]
+	default_shortcut_actions: HASH_TABLE [TUPLE [BOOLEAN, BOOLEAN, BOOLEAN, STRING], STRING] is
 			-- Array of shortcut defaults (Alt/Ctrl/Shift/KeyString)
-
-	editor_shortcut_actions: ARRAYED_LIST [TUPLE [HASH_TABLE [TUPLE [BOOLEAN, BOOLEAN, BOOLEAN, STRING_8], STRING_8], MANAGED_SHORTCUT_GROUP]] is
-		local
-			l_hash: HASH_TABLE [TUPLE [BOOLEAN, BOOLEAN, BOOLEAN, STRING_8], STRING_8]
 		once
-			create Result.make (1)
+			create Result.make (17)
+			Result.put ([False,  True, False, key_strings.item (Key_space).twin.as_string_8], "autocomplete")
+			Result.put ([False,  True,  True, key_strings.item (Key_space).twin.as_string_8], "class_autocomplete")
+			Result.put ([False, False, False, key_strings.item (Key_F2).twin.as_string_8], "customized_insertion_1")
+			Result.put ([False,  True, False, key_strings.item (Key_F2).twin.as_string_8], "customized_insertion_2")
+			Result.put ([False, False,  True, key_strings.item (Key_F2).twin.as_string_8], "customized_insertion_3")
+			Result.put ([False, False,  True, key_strings.item (key_F3).twin.as_string_8], "search_backward")
+			Result.put ([False, False,  False, key_strings.item (key_F3).twin.as_string_8], "search_forward")
+			Result.put ([False, True, False, key_strings.item (Key_F3).twin.as_string_8], "search_selection_forward")
+			Result.put ([False, True, True, key_strings.item (Key_F3).twin.as_string_8], "search_selection_backward")
 
-				-- Shortcuts for main window group
-			create l_hash.make (14)
-			l_hash.put ([False, False, False, key_strings.item (Key_F2).twin.as_string_8], "customized_insertion_1")
-			l_hash.put ([False,  True, False, key_strings.item (Key_F2).twin.as_string_8], "customized_insertion_2")
-			l_hash.put ([False, False,  True, key_strings.item (Key_F2).twin.as_string_8], "customized_insertion_3")
-			l_hash.put ([False, False,  True, key_strings.item (key_F3).twin.as_string_8], "search_backward")
-			l_hash.put ([False, False,  False, key_strings.item (key_F3).twin.as_string_8], "search_forward")
-			l_hash.put ([False, True, False, key_strings.item (Key_F3).twin.as_string_8], "search_selection_forward")
-			l_hash.put ([False, True, True, key_strings.item (Key_F3).twin.as_string_8], "search_selection_backward")
-
-			l_hash.put ([False,  True, False, key_strings.item (Key_f).twin.as_string_8], "show_quick_search_bar")
-			l_hash.put ([False,  True, False, key_strings.item (Key_h).twin.as_string_8], "show_search_and_replace_panel")
-			l_hash.put ([False,  True, False, key_strings.item (Key_k).twin.as_string_8], "comment")
-			l_hash.put ([False,  True, True, key_strings.item (Key_k).twin.as_string_8], "uncomment")
-			l_hash.put ([False,  True, False, key_strings.item (Key_u).twin.as_string_8], "set_to_uppercase")
-			l_hash.put ([False,  True, True, key_strings.item (Key_u).twin.as_string_8], "set_to_lowercase")
-
-			l_hash.put ([False,  True, False, key_strings.item (Key_l).twin.as_string_8], "toggle_line_number_visibility")
-
-			l_hash.put ([False,  True, False, key_strings.item (Key_i).twin.as_string_8], "embed_if_clause")
-			l_hash.put ([False,  True, False, key_strings.item (Key_d).twin.as_string_8], "embed_debug_clause")
-
-			Result.extend ([l_hash, main_window_group])
-		end
-
-	completion_shortcut_actions: ARRAYED_LIST [TUPLE [HASH_TABLE [TUPLE [BOOLEAN, BOOLEAN, BOOLEAN, STRING_8], STRING_8], MANAGED_SHORTCUT_GROUP]] is
-		local
-			l_hash: HASH_TABLE [TUPLE [BOOLEAN, BOOLEAN, BOOLEAN, STRING_8], STRING_8]
-		once
-			create Result.make (2)
-
-			create l_hash.make (2)
-			l_hash.put ([False,  True, False, key_strings.item (Key_space).twin.as_string_8], "autocomplete")
-			l_hash.put ([False,  True,  True, key_strings.item (Key_space).twin.as_string_8], "class_autocomplete")
-			Result.extend ([l_hash, main_window_group])
-
-				-- Shortcuts for completion window group
-			create l_hash.make (5)
-			l_hash.put ([False, False, False, key_strings.item (Key_F1).twin.as_string_8], "toggle_filter")
-			l_hash.put ([False, False, False, key_strings.item (Key_F2).twin.as_string_8], "toggle_show_type")
-			l_hash.put ([False, False, False, key_strings.item (Key_F3).twin.as_string_8], "toggle_show_signature")
-			l_hash.put ([False, False, False, key_strings.item (Key_F4).twin.as_string_8], "toggle_show_disambiguated_name")
-			l_hash.put ([False, False, False, key_strings.item (Key_F5).twin.as_string_8], "toggle_remember_size")
-			Result.extend ([l_hash, completion_window_group])
+			Result.put ([False,  True, False, key_strings.item (Key_f).twin.as_string_8], "show_quick_search_bar")
+			Result.put ([False,  True, False, key_strings.item (Key_h).twin.as_string_8], "show_search_and_replace_panel")
+			Result.put ([ True,  True, False, key_strings.item (Key_f).twin.as_string_8], "show_search_panel")
+			Result.put ([False, False, False, key_strings.item (Key_F1).twin.as_string_8], "toggle_filter")
+			Result.put ([False, False, False, key_strings.item (Key_F2).twin.as_string_8], "toggle_show_type")
+			Result.put ([False, False, False, key_strings.item (Key_F3).twin.as_string_8], "toggle_show_signature")
+			Result.put ([False, False, False, key_strings.item (Key_F4).twin.as_string_8], "toggle_show_disambiguated_name")
+			Result.put ([False, False, False, key_strings.item (Key_F5).twin.as_string_8], "toggle_remember_size")
 		end
 
 invariant
@@ -1142,10 +941,6 @@ invariant
 	customized_string_1_preference_not_void: customized_string_1_preference /= Void
 	customized_string_2_preference_not_void: customized_string_2_preference /= Void
 	customized_string_3_preference_not_void: customized_string_3_preference /= Void
-	warning_text_color_preference_attached: warning_text_color_preference /= Void
-	warning_background_color_preference_attached: warning_background_color_preference /= Void
-	argument_text_color_preference_attached: argument_text_color_preference /= Void
-	argument_background_color_preference_attached: argument_background_color_preference /= Void
 
 
 indexing
@@ -1181,4 +976,3 @@ indexing
 		]"
 
 end -- class EB_EDITOR_DATA
-

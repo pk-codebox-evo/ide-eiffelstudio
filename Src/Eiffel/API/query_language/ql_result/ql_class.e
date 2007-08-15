@@ -19,8 +19,7 @@ inherit
 			ast,
 			is_compiled,
 			text,
-			is_visible,
-			parent_with_real_path
+			is_visible
 		end
 
 	QL_UTILITY
@@ -148,7 +147,7 @@ feature -- Access
 						l_indexing.after or done
 					loop
 						l_index_item := l_indexing.item
-						l_string := l_index_item.tag.name
+						l_string := l_index_item.tag
 						if l_string.is_case_insensitive_equal (description_string) then
 							if not l_index_item.index_list.is_empty then
 								l_string := l_index_item.index_list.first.string_value
@@ -229,13 +228,6 @@ feature -- Access
 				end
 				Result := text_internal
 			end
-		end
-
-	parent_with_real_path: QL_ITEM is
-			-- Parent item of Current with real path.
-			-- Real path means that every parent is physically determined.
-		do
-			Result := query_group_item_from_conf_group (class_i.group)
 		end
 
 feature -- Status report
@@ -386,5 +378,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

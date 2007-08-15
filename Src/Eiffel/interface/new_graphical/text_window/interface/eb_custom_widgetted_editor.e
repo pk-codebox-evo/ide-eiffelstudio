@@ -17,7 +17,7 @@ inherit
 			user_initialization,
 			gain_focus,
 			lose_focus,
-			internal_recycle
+			recycle
 		end
 
 create
@@ -27,14 +27,15 @@ feature {NONE} -- Initialization
 
 	make (a_dev_window: EB_DEVELOPMENT_WINDOW) is
 			-- Initialization
+		require
+			a_dev_window_attached: a_dev_window /= Void
 		do
 			dev_window := a_dev_window
 			check_search_bar_visible_procedure := agent check_search_bar_visible
-			if dev_window /= Void then
-				dev_window.window.focus_in_actions.extend (check_search_bar_visible_procedure)
-			end
+			dev_window.window.focus_in_actions.extend (check_search_bar_visible_procedure)
 			make_editor
 			initialize_customizable_commands
+			search_tool.show_actions.extend (agent hide_search_bar)
 		end
 
 	user_initialization is
@@ -42,25 +43,20 @@ feature {NONE} -- Initialization
 		do
 			Precursor {EB_EDITOR}
 			build_surrounding_widgets
-			if dev_window /= Void then
-				build_search_bar
-			end
+			build_search_bar
 		end
 
 	initialize_customizable_commands is
 			-- Create array of customizable commands.
 		do
 			create customizable_commands.make (6)
+			customizable_commands.put (agent search, "show_search_panel")
 			customizable_commands.put (agent quick_search, "show_quick_search_bar")
 			customizable_commands.put (agent replace, "show_search_and_replace_panel")
 			customizable_commands.put (agent find_next_selection, "search_selection_forward")
 			customizable_commands.put (agent find_previous_selection, "search_selection_backward")
 			customizable_commands.put (agent find_next, "search_forward")
 			customizable_commands.put (agent find_previous, "search_backward")
-			customizable_commands.put (agent run_if_editable (agent comment_selection), "comment")
-			customizable_commands.put (agent run_if_editable (agent uncomment_selection), "uncomment")
-			customizable_commands.put (agent run_if_editable (agent set_selection_case (False)), "set_to_uppercase")
-			customizable_commands.put (agent run_if_editable (agent set_selection_case (True)), "set_to_lowercase")
 		end
 
 feature -- Access
@@ -76,9 +72,7 @@ feature -- Access
 	search_tool: EB_MULTI_SEARCH_TOOL is
 			-- Current search tool.
 		do
-			if dev_window /= Void then
-				Result := dev_window.tools.search_tool
-			end
+			Result := dev_window.search_tool
 		end
 
 feature -- Quick search bar basic operation
@@ -88,22 +82,20 @@ feature -- Quick search bar basic operation
 		local
 			l_string : STRING
 		do
-			if search_tool /= Void then
-				if search_tool.is_visible then
-					search_tool.close
-				end
-				show_search_bar
-				if has_selection then
-					l_string := string_selection
-					search_bar.keyword_field.change_actions.block
-					search_bar.keyword_field.set_text (l_string)
-					search_bar.keyword_field.change_actions.resume
-					search_bar.trigger_sensibility
-				end
-				focusing_search_bar := true
-				search_bar.keyword_field.set_focus
-				focusing_search_bar := false
+			if search_tool.is_visible then
+				search_tool.close
 			end
+			show_search_bar
+			if has_selection then
+				l_string := string_selection
+				search_bar.keyword_field.change_actions.block
+				search_bar.keyword_field.set_text (l_string)
+				search_bar.keyword_field.change_actions.resume
+				search_bar.trigger_sensibility
+			end
+			focusing_search_bar := true
+			search_bar.keyword_field.set_focus
+			focusing_search_bar := false
 		end
 
 	hide_search_bar is
@@ -165,12 +157,8 @@ feature {NONE} -- Quick search bar.
 			bottom_widget_created: bottom_widget /= Void
 		do
 			create search_bar.make (search_tool)
-
-			first_result_reached_action := agent search_bar.trigger_first_reached_pixmap
-			bottom_reached_action := agent search_bar.trigger_bottom_reached_pixmap
-
-			search_tool.first_result_reached_actions.extend (first_result_reached_action)
-			search_tool.bottom_reached_actions.extend (bottom_reached_action)
+			search_tool.first_result_reached_actions.extend (agent search_bar.trigger_first_reached_pixmap)
+			search_tool.bottom_reached_actions.extend (agent search_bar.trigger_bottom_reached_pixmap)
 			bottom_widget.extend (search_bar)
 			hide_search_bar
 			search_bar.advanced_button.select_actions.extend (agent trigger_advanced_search)
@@ -227,24 +215,22 @@ feature {NONE} -- Quick search bar.
 		local
 			l_editor: EB_EDITOR
 		do
-			if not search_tool.is_recycled then
-				if not is_empty and search_tool.is_incremental_search then
-					if search_bar.keyword_field.text_length /= 0 then
-						l_editor := search_tool.old_editor
-						search_tool.set_old_editor (Current)
-						search_tool.incremental_search (search_bar.keyword_field.text, search_tool.incremental_search_start_pos, False)
-						if search_tool.has_result then
-							search_tool.select_in_current_editor
-						else
-							search_tool.retrieve_cursor
-						end
-						search_tool.set_old_editor (l_editor)
+			if not is_empty and search_tool.is_incremental_search then
+				if search_bar.keyword_field.text_length /= 0 then
+					l_editor := search_tool.old_editor
+					search_tool.set_old_editor (Current)
+					search_tool.incremental_search (search_bar.keyword_field.text, search_tool.incremental_search_start_pos, False)
+					if search_tool.has_result then
+						search_tool.select_in_current_editor
 					else
 						search_tool.retrieve_cursor
 					end
+					search_tool.set_old_editor (l_editor)
+				else
+					search_tool.retrieve_cursor
 				end
-				search_tool.trigger_keyword_field_color (search_bar.keyword_field)
 			end
+			search_tool.trigger_keyword_field_color (search_bar.keyword_field)
 		end
 
 	trigger_advanced_search is
@@ -272,7 +258,7 @@ feature {NONE} -- Quick search bar.
 			-- Hide quick search bar.
 		do
 			Precursor {EB_EDITOR}
-			if search_bar /= Void and then not search_bar.is_destroyed and then search_bar.is_displayed then
+			if not search_bar.is_destroyed and then search_bar.is_displayed then
 				if not search_bar.has_focus_on_widgets and not focusing_search_bar then
 					hide_search_bar
 				else
@@ -313,7 +299,7 @@ feature {NONE} -- Quick search bar.
 				search_bar.record_current_searched
 			elseif a_key.code = {EV_KEY_CONSTANTS}.key_enter and ctrled_key and not shifted_key and not alt_key then
 				search_bar.record_current_searched
-				ev_application.do_once_on_idle (agent editor_drawing_area.set_focus)
+				ev_application.idle_actions.extend_kamikaze (agent editor_drawing_area.set_focus)
 			elseif l_shortcut_forw.matches (a_key, alt_key, ctrled_key, shifted_key) then
 				quick_find_next
 			elseif l_shortcut_backw.matches (a_key, alt_key, ctrled_key, shifted_key) then
@@ -330,7 +316,7 @@ feature {NONE} -- Quick search bar.
 		do
 			if ctrled_key and not shifted_key and not alt_key then
 				search_bar.record_current_searched
-				ev_application.do_once_on_idle (agent editor_drawing_area.set_focus)
+				ev_application.idle_actions.extend_kamikaze (agent editor_drawing_area.set_focus)
 			elseif not ctrled_key and not shifted_key and not alt_key then
 				quick_find_next
 			elseif not ctrled_key and shifted_key and not alt_key then
@@ -343,7 +329,7 @@ feature {NONE} -- Quick search bar.
 		do
 			set_quick_search_mode (false)
 			hide_search_bar
-			ev_application.do_once_on_idle (agent set_focus_to_drawing_area)
+			ev_application.idle_actions.extend_kamikaze (agent set_focus_to_drawing_area)
 		end
 
 	quick_search_mode : BOOLEAN is
@@ -418,6 +404,9 @@ feature -- Search commands
 			-- Display search tool if necessary.
 		do
 			if search_tool /= Void then
+				if not search_tool.mode_is_search then
+					search_tool.set_mode_is_search (True)
+				end
 				prepare_search_tool (False)
 			end
 		end
@@ -426,6 +415,9 @@ feature -- Search commands
 			-- Display search tool (with Replace field) if necessary.
 		do
 			if search_tool /= Void then
+				if search_tool.mode_is_search then
+					search_tool.set_mode_is_search (False)
+				end
 				prepare_search_tool (True)
 			end
 		end
@@ -442,14 +434,10 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	internal_recycle is
+	recycle is
 			-- Recycle
 		do
 			dev_window.window.focus_in_actions.prune_all (check_search_bar_visible_procedure)
-			if search_tool /= Void then
-				search_tool.first_result_reached_actions.prune_all (first_result_reached_action)
-				search_tool.bottom_reached_actions.prune_all (bottom_reached_action)
-			end
 			search_bar.destroy
 			Precursor {EB_EDITOR}
 		end
@@ -462,19 +450,25 @@ feature {NONE} -- Implementation
 
 	prepare_search_tool (a_replace: BOOLEAN) is
 			-- Show and give focus to search panel.
-		local
-			l_replace: BOOLEAN
 		do
-			l_replace := a_replace and then (not text_displayed.is_empty and then not text_displayed.selection_is_empty)
-
-			search_tool.notebook.select_item (search_tool.notebook.i_th (1))
-			if l_replace then
-				search_tool.show_and_set_focus_replace
+			if search_tool.is_visible then
+				if not a_replace then
+					search_tool.set_focus
+				else
+					search_tool.show_and_set_focus_replace
+				end
 			else
-				search_tool.show_and_set_focus
+				if search_tool.explorer_bar_item.is_minimized then
+					search_tool.explorer_bar_item.restore
+				end
+				search_tool.notebook.select_item (search_tool.notebook.i_th (1))
+				if not a_replace then
+					search_tool.show_and_set_focus
+				else
+					search_tool.show_and_set_focus_replace
+				end
 			end
-
-			if l_replace then
+			if not text_displayed.is_empty and then not text_displayed.selection_is_empty then
 				search_tool.set_current_searched (text_displayed.selected_string)
 			end
 			if not text_displayed.is_empty then
@@ -490,9 +484,6 @@ feature {NONE} -- Implementation
 		do
 			l_search_tool := search_tool
 			l_search_tool.set_check_class_succeed (True)
-			if not text_displayed.has_selection then
-				select_current_token (True)
-			end
 			if text_displayed.has_selection then
 				l_search_tool.force_new_search
 				l_incremental_search := l_search_tool.is_incremental_search
@@ -548,12 +539,11 @@ feature {NONE} -- Implementation
 	customizable_commands: HASH_TABLE [PROCEDURE [like Current, TUPLE], STRING]
 			-- Hash of customizable commands (agent hashed by shortcut name)
 
-	check_search_bar_visible_procedure: PROCEDURE [ANY, TUPLE];
+	check_search_bar_visible_procedure: PROCEDURE [ANY, TUPLE]
 			-- Procedure instance added into focus_in_actions of current window
 
-	first_result_reached_action: PROCEDURE [ANY, TUPLE]
-	bottom_reached_action: PROCEDURE [ANY, TUPLE];
-			-- Actions to recycle
+invariant
+	invariant_clause: True -- Your invariant here
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

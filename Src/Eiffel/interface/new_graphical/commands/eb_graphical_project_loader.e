@@ -14,8 +14,7 @@ inherit
 			warning_messages
 		redefine
 			is_project_location_requested,
-			post_create_project,
-			retrieve_or_create_project
+			post_create_project
 		end
 
 	EB_CONSTANTS
@@ -40,7 +39,7 @@ inherit
 			{NONE} all
 		end
 
-	FILE_DIALOG_CONSTANTS
+	EB_FILE_DIALOG_CONSTANTS
 		export
 			{NONE} all
 		end
@@ -134,8 +133,7 @@ feature -- Settings
 			l_prc_launcher.set_separate_console (False)
 			l_prc_launcher.set_hidden (True)
 			create l_dialog
-			l_dialog.set_process (l_prc_launcher)
-			l_dialog.set_title (interface_names.t_precompile_progress)
+			l_dialog.set_title ("Precompilation Progress")
 			l_prc_launcher.redirect_output_to_agent (agent l_dialog.append_in_gui_thread)
 			l_prc_launcher.redirect_error_to_same_as_output
 			l_prc_launcher.set_on_exit_handler (agent l_dialog.hide_in_gui_thread)
@@ -230,29 +228,13 @@ feature {NONE} -- Actions
 			end
 		end
 
-	retrieve_or_create_project (a_project_path: STRING_8) is
-			-- Retrieve or create project.
-		local
-			l_win: EB_DEVELOPMENT_WINDOW
-		do
-			l_win := window_manager.last_created_window
-			if l_win /= Void then
-				-- We call it here to prevent Windows Desktop flickers.	
-				l_win.lock_update
-			end
-			Precursor {PROJECT_LOADER} (a_project_path)
-			if l_win /= Void then
-				l_win.unlock_update
-			end
-		end
-
 	estudio_cmd_line: STRING is
 			-- Command line to open/compile currently selected project.
 		require
 			not_has_error: not has_error
 		do
 			create Result.make (1024)
-			Result.append ("%"" + eiffel_layout.estudio_command_name + "%"")
+			Result.append (eiffel_layout.estudio_command_name)
 			Result.append (" -config %"")
 			Result.append (config_file_name)
 			Result.append ("%" -project_path %"")
@@ -267,20 +249,20 @@ feature {NONE} -- Actions
 
 feature {NONE} -- Error reporting
 
-	new_error_dialog: EB_ERROR_DIALOG is
+	new_error_dialog: EV_ERROR_DIALOG is
 			-- New error dialog properly initialized.
 		do
 			create Result
-			Result.set_title (interface_names.t_configuration_loading_error)
-			Result.set_buttons (<< interface_names.b_ok >>)
-			Result.set_default_push_button (Result.button (interface_names.b_ok))
-			Result.set_default_cancel_button (Result.button (interface_names.b_ok))
+			Result.set_title ("Configuration Loading Error")
+			Result.set_buttons (<< ev_ok >>)
+			Result.set_default_push_button (Result.button (ev_ok))
+			Result.set_default_cancel_button (Result.button (ev_ok))
 		end
 
 	report_non_readable_configuration_file (a_file_name: STRING) is
 			-- Report an error when `a_file_name' cannot be read.
 		local
-			l_ev: EB_ERROR_DIALOG
+			l_ev: EV_ERROR_DIALOG
 		do
 			l_ev := new_error_dialog
 			l_ev.set_text (warning_messages.w_cannot_read_file (a_file_name))
@@ -292,7 +274,7 @@ feature {NONE} -- Error reporting
 			-- Report an error when ace file `a_file_name' cannot be accessed from epr file `a_epr_name'.
 			-- Note that `a_file_name' can be Void if `a_epr_name' does not mention it.
 		local
-			l_ev: EB_ERROR_DIALOG
+			l_ev: EV_ERROR_DIALOG
 		do
 			l_ev := new_error_dialog
 			l_ev.set_text (warning_messages.w_cannot_read_ace_file_from_epr (a_epr_name, a_file_name))
@@ -304,10 +286,14 @@ feature {NONE} -- Error reporting
 			-- Report an error when ace  file `a_file_name' can be read, but its content cannot
 			-- be properly interpreted. The details of the error are stored in `a_conf_error'.
 		local
-			l_ev: EB_ERROR_DIALOG
+			l_ev: EV_ERROR_DIALOG
+			l_msg: STRING
 		do
 			l_ev := new_error_dialog
-			l_ev.set_text (warning_messages.w_unable_to_load_ace_file (a_file_name, a_conf_error.text))
+			create l_msg.make_from_string (warning_messages.w_unable_to_load_ace_file (a_file_name))
+			l_msg.append ("%NFor the following reasons:%N")
+			l_msg.append_string (a_conf_error.text)
+			l_ev.set_text (l_msg)
 			l_ev.show_modal_to_window (parent_window)
 			set_has_error
 		end
@@ -316,10 +302,14 @@ feature {NONE} -- Error reporting
 			-- Report an error when a config file `a_file_name' can be read, but its content cannot
 			-- be properly interpreted. The details of the error are stored in `a_conf_error'.
 		local
-			l_ev: EB_ERROR_DIALOG
+			l_ev: EV_ERROR_DIALOG
+			l_msg: STRING
 		do
 			l_ev := new_error_dialog
-			l_ev.set_text (warning_messages.w_unable_to_load_config_file (a_file_name, a_conf_error.text))
+			create l_msg.make_from_string (warning_messages.w_unable_to_load_config_file (a_file_name))
+			l_msg.append ("%NFor the following reasons:%N")
+			l_msg.append_string (a_conf_error.text)
+			l_ev.set_text (l_msg)
 			l_ev.show_modal_to_window (parent_window)
 			set_has_error
 		end
@@ -328,7 +318,7 @@ feature {NONE} -- Error reporting
 			-- Report an error when result of a conversion from ace to new format cannot be stored
 			-- in file `a_file_name'.
 		local
-			l_ev: EB_ERROR_DIALOG
+			l_ev: EV_ERROR_DIALOG
 		do
 			l_ev := new_error_dialog
 			l_ev.set_text (warning_messages.w_cannot_save_file (a_file_name))
@@ -336,10 +326,11 @@ feature {NONE} -- Error reporting
 			set_has_error
 		end
 
+
 	report_cannot_convert_project (a_file_name: STRING) is
 			-- Report an error when result of a conversion from ace `a_file_name' to new format failed.
 		local
-			l_ev: EB_ERROR_DIALOG
+			l_ev: EV_ERROR_DIALOG
 		do
 			l_ev := new_error_dialog
 			l_ev.set_text (warning_messages.w_cannot_convert_file (a_file_name))
@@ -350,7 +341,7 @@ feature {NONE} -- Error reporting
 	report_cannot_create_project (a_dir_name: STRING) is
 			-- Report an error when we cannot create project in `a_dir_name'.
 		local
-			l_ev: EB_ERROR_DIALOG
+			l_ev: EV_ERROR_DIALOG
 		do
 			l_ev := new_error_dialog
 			l_ev.set_text (warning_messages.w_cannot_create_project_directory (a_dir_name))
@@ -358,11 +349,11 @@ feature {NONE} -- Error reporting
 			set_has_error
 		end
 
-	report_cannot_open_project (a_msg: STRING_GENERAL) is
+	report_cannot_open_project (a_msg: STRING) is
 			-- Report an error when project cannot be read/write for some reasons
 			-- and possibly propose user to upgrade
 		local
-			l_ev: EB_ERROR_DIALOG
+			l_ev: EV_ERROR_DIALOG
 		do
 			l_ev := new_error_dialog
 			l_ev.set_text (a_msg)
@@ -370,11 +361,11 @@ feature {NONE} -- Error reporting
 			set_has_error
 		end
 
-	report_incompatible_project (a_msg: STRING_GENERAL) is
+	report_incompatible_project (a_msg: STRING) is
 			-- Report an error when retrieving an incompatible project and possibly
 			-- propose user to upgrade.
 		local
-			cd: EB_DISCARDABLE_CONFIRMATION_DIALOG
+			cd: STANDARD_DISCARDABLE_CONFIRMATION_DIALOG
 		do
 				-- Ace file included in the header of the .epr file...we can recompile if needed.
 			create cd.make_initialized (
@@ -392,11 +383,11 @@ feature {NONE} -- Error reporting
 			end
 		end
 
-	report_project_corrupted (a_msg: STRING_GENERAL) is
+	report_project_corrupted (a_msg: STRING) is
 			-- Report an error when retrieving a project which is corrupted and possibly
 			-- propose user to recompile from scratch.
 		local
-			l_ev: EB_ERROR_DIALOG
+			l_ev: EV_ERROR_DIALOG
 		do
 			l_ev := new_error_dialog
 			l_ev.set_text (a_msg)
@@ -404,10 +395,10 @@ feature {NONE} -- Error reporting
 			set_has_error
 		end
 
-	report_project_retrieval_interrupted (a_msg: STRING_GENERAL) is
+	report_project_retrieval_interrupted (a_msg: STRING) is
 			-- Report an error when project retrieval was stopped.
 		local
-			l_ev: EB_ERROR_DIALOG
+			l_ev: EV_ERROR_DIALOG
 		do
 			l_ev := new_error_dialog
 			l_ev.set_text (a_msg)
@@ -415,11 +406,11 @@ feature {NONE} -- Error reporting
 			set_has_error
 		end
 
-	report_project_incomplete (a_msg: STRING_GENERAL) is
+	report_project_incomplete (a_msg: STRING) is
 			-- Report an error when project is incomplete and possibly propose
 			-- user to recompile from scratch.
 		local
-			l_ev: EB_ERROR_DIALOG
+			l_ev: EV_ERROR_DIALOG
 		do
 			l_ev := new_error_dialog
 			l_ev.set_text (a_msg)
@@ -430,12 +421,12 @@ feature {NONE} -- Error reporting
 	report_project_loaded_successfully is
 			-- Report that project was loaded successfully.
 		local
-			l_title: STRING_GENERAL
+			l_title: STRING
 		do
 			l_title := Interface_names.l_loaded_project.twin
 			l_title.append (target_name)
 			if Eiffel_system.is_precompiled then
-				l_title.append (interface_names.l_precompiled)
+				l_title.append ("  (precompiled)")
 			end
 			window_manager.display_message (l_title)
 			recent_projects_manager.add_recent_project (config_file_name)
@@ -453,7 +444,7 @@ feature {NONE} -- Error reporting
 	report_precompilation_error is
 			-- Report that the precompilation of a precompile did not work.
 		local
-			l_ev: EB_ERROR_DIALOG
+			l_ev: EV_ERROR_DIALOG
 		do
 			l_ev := new_error_dialog
 			l_ev.set_text (warning_messages.w_project_build_precompile_error)
@@ -471,20 +462,22 @@ feature {NONE} -- User interaction
 			l_save_as: EV_FILE_SAVE_DIALOG
 			l_file_name: FILE_NAME
 			l_ev: EV_MESSAGE_DIALOG
-			l_save_as_msg: STRING_32
+			l_save_as_msg: STRING
 		do
 			create l_file_name.make_from_string (a_dir_name)
 			l_file_name.set_file_name (a_file_name)
 
 			create l_ev
-			l_save_as_msg := interface_names.b_Save_as
-			l_ev.set_title (interface_names.t_configuration_loading_message)
-			l_ev.set_buttons (<<interface_names.b_ok, l_save_as_msg, interface_names.b_cancel>>)
-			l_ev.set_default_push_button (l_ev.button (interface_names.b_ok))
-			l_ev.set_default_cancel_button (l_ev.button (interface_names.b_ok))
-			l_ev.set_text (warning_messages.w_configuration_files_needs_to_be_converted (a_file_name))
+			l_save_as_msg := "Save As..."
+			l_ev.set_title ("Configuration Loading Message")
+			l_ev.set_buttons (<< ev_ok, l_save_as_msg, ev_cancel>>)
+			l_ev.set_default_push_button (l_ev.button (ev_ok))
+			l_ev.set_default_cancel_button (l_ev.button (ev_cancel))
+			l_ev.set_text ("Your old configration file needs to be converted to the new format.%N%
+				%The default name for the new configuration is '" + a_file_name + "'.%N%
+				%Select OK if you want to keep this name, or 'Save As...' to choose a different name.")
 
-			create l_save_as.make_with_title (interface_names.t_choose_name_for_new_configuration_file)
+			create l_save_as.make_with_title ("Choose name for new configuration file")
 			l_save_as.set_start_directory (a_dir_name)
 			l_save_as.set_file_name (a_file_name)
 			l_save_as.filters.extend ([config_files_filter, config_files_description])
@@ -492,8 +485,8 @@ feature {NONE} -- User interaction
 			l_save_as.cancel_actions.extend (agent set_has_error)
 
 			l_ev.button (l_save_as_msg).select_actions.extend (agent l_save_as.show_modal_to_window (parent_window))
-			l_ev.button (interface_names.b_cancel).select_actions.extend (agent on_cancelled (l_ev))
-			l_ev.button (interface_names.b_ok).select_actions.extend (agent a_action.call ([l_file_name.string]))
+			l_ev.button (ev_cancel).select_actions.extend (agent on_cancelled (l_ev))
+			l_ev.button (ev_ok).select_actions.extend (agent a_action.call ([l_file_name.string]))
 			l_ev.show_modal_to_window (parent_window)
 		end
 
@@ -507,7 +500,7 @@ feature {NONE} -- User interaction
 			a_action_not_void: a_action /= Void
 		local
 			file_name: STRING
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 			file: RAW_FILE
 		do
 				-- This is a callback from the name chooser when user click OK.
@@ -516,11 +509,11 @@ feature {NONE} -- User interaction
 			create file.make (file_name)
 			if file.exists then
 				create wd.make_with_text (Warning_messages.w_file_exists (file_name))
-				wd.set_buttons (<< interface_names.b_ok, interface_names.b_cancel >>)
-				wd.set_default_push_button (wd.button (interface_names.b_ok))
-				wd.set_default_cancel_button (wd.button (interface_names.b_cancel))
-				wd.button (interface_names.b_cancel).select_actions.extend (agent a_dlg.show_modal_to_window (parent_window))
-				wd.button (interface_names.b_ok).select_actions.extend (agent a_action.call ([file_name]))
+				wd.set_buttons (<< ev_ok, ev_cancel >>)
+				wd.set_default_push_button (wd.button (ev_ok))
+				wd.set_default_cancel_button (wd.button (ev_cancel))
+				wd.button (ev_cancel).select_actions.extend (agent a_dlg.show_modal_to_window (parent_window))
+				wd.button (ev_ok).select_actions.extend (agent a_action.call ([file_name]))
 
 					-- Display the warning window. If user presses `Cancel' we ask him again
 					-- for a file name, otherwise if he presses `OK' we simply override
@@ -536,7 +529,7 @@ feature {NONE} -- User interaction
 			-- If not Void, `a_target' is the one selected by user.
 		local
 			l_dialog: EV_DIALOG
-			l_error_dialog: EB_WARNING_DIALOG
+			l_error_dialog: EV_WARNING_DIALOG
 			l_list: EV_LIST
 			l_vbox: EV_VERTICAL_BOX
 			l_hbox: EV_HORIZONTAL_BOX
@@ -555,19 +548,19 @@ feature {NONE} -- User interaction
 			end
 			if l_need_choice then
 				if a_targets.is_empty then
-					create l_error_dialog.make_with_text (warning_messages.w_project_constains_no_compilable_target)
+					create l_error_dialog.make_with_text ("This project contains no compilable target.%NPlease open a different project.")
 					l_error_dialog.show_modal_to_window (parent_window)
 					has_error := True
 					l_need_choice := False
 				end
 			end
 			if l_need_choice then
-				create l_dialog.make_with_title (interface_names.t_target_selection)
+				create l_dialog.make_with_title ("Target Selection")
 
 				if a_target = Void then
-					create l_label.make_with_text (interface_names.l_one_target_among)
+					create l_label.make_with_text ("Choose one target among: ")
 				else
-					create l_label.make_with_text (interface_names.l_target_does_not_exist (a_target))
+					create l_label.make_with_text ("Target `" + a_target + "' does not exist or is not compilable.%NChoose one target among:")
 				end
 				l_label.align_text_left
 				create l_list
@@ -598,12 +591,12 @@ feature {NONE} -- User interaction
 				l_vbox.disable_item_expand (l_hbox)
 
 				l_hbox.extend (create {EV_CELL})
-				create l_select_button.make_with_text_and_action (interface_names.b_select_target, agent on_select_button_pushed (l_dialog, l_list))
+				create l_select_button.make_with_text_and_action ("Select target", agent on_select_button_pushed (l_dialog, l_list))
 				set_default_width_for_button (l_select_button)
 				l_hbox.extend (l_select_button)
 				l_hbox.disable_item_expand (l_select_button)
 
-				create l_button.make_with_text_and_action (interface_names.b_cancel, agent on_cancelled (l_dialog))
+				create l_button.make_with_text_and_action (ev_cancel, agent on_cancelled (l_dialog))
 				set_default_width_for_button (l_button)
 				l_hbox.extend (l_button)
 				l_hbox.disable_item_expand (l_button)
@@ -643,7 +636,7 @@ feature {NONE} -- User interaction
 	ask_compile_precompile is
 			-- Should a needed precompile be automatically built?
 		local
-			l_dial: EB_DISCARDABLE_CONFIRMATION_DIALOG
+			l_dial: STANDARD_DISCARDABLE_CONFIRMATION_DIALOG
 		do
 			create l_dial.make_initialized (2, preferences.dialog_data.confirm_build_precompile_string, warning_messages.w_project_build_precompile, interface_names.l_Discard_build_precompile_dialog, preferences.preferences)
 			l_dial.set_ok_action (agent
@@ -651,17 +644,6 @@ feature {NONE} -- User interaction
 					is_user_wants_precompile := True
 				end)
 			l_dial.show_modal_to_window (parent_window)
-		end
-
-	ask_environment_update (a_key, a_old_val, a_new_val: STRING) is
-			-- Should new environment values be accepted?
-		local
-			l_cd: EB_CONFIRMATION_DIALOG
-		do
-			create l_cd.make_with_text (warning_messages.w_environment_changed (a_key, a_old_val, a_new_val))
-			l_cd.set_buttons_and_actions (<<interface_names.b_yes, interface_names.b_no>>,
-				<<agent do is_update_environment := True end, agent do is_update_environment := False end>>)
-			l_cd.show_modal_to_window (parent_window)
 		end
 
 feature {NONE} -- Actions
@@ -805,6 +787,7 @@ feature {NONE} -- Actions
 				a_dlg.destroy
 			end
 		end
+
 
 feature {NONE} -- Implementation / Private constants.
 

@@ -27,9 +27,9 @@ feature -- Access
 		do
 			Result := implementation.tooltip
 		ensure
-			bridge_ok: is_bridge_ok (Result)
+			bridge_ok: equal (Result, implementation.tooltip)
 			not_void: Result /= Void
-			cloned: is_cloned (Result)
+			cloned: Result /= implementation.tooltip
 		end
 
 feature -- Element change
@@ -54,20 +54,6 @@ feature -- Element change
 			set_tooltip ("")
 		ensure
 			tooltip_removed: tooltip.is_empty
-		end
-
-feature -- Contract support
-
-	is_bridge_ok (a_string: STRING_32): BOOLEAN is
-			-- If `a_string' equal implementation's `tooltip'?
-		do
-			Result := a_string.is_equal (a_string)
-		end
-
-	is_cloned (a_string: STRING_32): BOOLEAN is
-			-- If `a_string' same instance as implementation's `tooltip'?
-		do
-			Result := a_string /= implementation.tooltip
 		end
 
 feature {NONE} -- Contract support

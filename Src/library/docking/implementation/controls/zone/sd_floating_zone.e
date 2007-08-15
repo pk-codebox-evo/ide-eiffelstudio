@@ -12,17 +12,17 @@ inherit
 	SD_ZONE
 		rename
 			internal_shared as internal_shared_zone,
-			extend_widget as extend_sizeable_popup_window,
+			extend_widget as extend_dialog,
 			has_widget as has_untitled_dialog,
 			is_maximized as is_maximized_zone
 		export
 			{NONE} all
-			{ANY} has_focus, width, height, is_destroyed, is_displayed
-			{SD_OPEN_CONFIG_MEDIATOR, SD_DOCKING_MANAGER} destroy
+			{ANY} has_focus, width, height, is_destroyed
+			{SD_CONFIG_MEDIATOR} destroy
 		undefine
 			initialize,
-			Identifier_path_separator,
 			show
+
 		redefine
 			type,
 			state
@@ -33,16 +33,14 @@ inherit
 			default_create, copy
 		end
 
-	SD_SIZABLE_POPUP_WINDOW
+	EV_UNTITLED_DIALOG
 		rename
-			extend as real_extend_dialog,
+			extend as extend_dialog,
 			show as show_allow_to_back,
 			has as has_untitled_dialog
 		export
 			{NONE} all
-			{ANY} set_position, set_size, screen_x, screen_y
-			{SD_DOCKING_MANAGER_COMMAND} accelerators
-			{SD_DOCKING_STATE} set_width, set_height
+			{ANY} set_position, set_size
 		select
 			implementation,
 			show_allow_to_back
@@ -57,6 +55,9 @@ feature {NONE} -- Initlization
 			-- Creation method.
 		require
 			a_floating_state_not_void: a_floating_state /= Void
+		local
+			l_acceler_test: EV_ACCELERATOR
+			l_test_key: EV_KEY
 		do
 			internal_floating_state := a_floating_state
 			internal_docking_manager := a_floating_state.docking_manager
@@ -64,10 +65,9 @@ feature {NONE} -- Initlization
 			create internal_shared_zone
 			default_create
 			create internal_vertical_box
-			real_extend_dialog (internal_vertical_box)
-
+			extend_dialog (internal_vertical_box)
+			enable_user_resize
 			create internal_title_bar.make
-			internal_title_bar.enable_baseline
 			internal_title_bar.drag_actions.extend (agent on_title_bar_drag)
 			internal_title_bar.close_request_actions.extend (agent on_close)
 			internal_title_bar.set_show_normal_max (False)
@@ -79,8 +79,12 @@ feature {NONE} -- Initlization
 			internal_inner_container.set_parent_floating_zone (Current)
 			if internal_floating_state.docking_manager.query.golbal_accelerators /= Void then
 				accelerators.append (internal_floating_state.docking_manager.query.golbal_accelerators)
+				set_title ("")
+				create l_test_key.make_with_code ({EV_KEY_CONSTANTS}.key_a)
+				create l_acceler_test.make_with_key_combination (l_test_key, False, False, False)
+				l_acceler_test.actions.extend (agent on_test_del_it)
+				accelerators.extend (l_acceler_test)
 			end
-			set_title ("")
 			focus_in_actions.extend (agent on_dialog_focus_in)
 			focus_out_actions.extend (agent on_dialog_focus_out)
 			focus_in_actions.extend (agent (internal_docking_manager.agents).on_top_level_window_focus_in)
@@ -88,7 +92,17 @@ feature {NONE} -- Initlization
 			resize_actions.extend (agent on_resize)
 		end
 
-feature {SD_OPEN_CONFIG_MEDIATOR} -- Save config
+	on_test_del_it is
+			-- FIXIT:
+			-- Why dialog don't response to accelerators? But EV_TITLED_WINDOW works?
+		local
+			l_test: EV_INFORMATION_DIALOG
+		do
+			create l_test.make_with_text ("Test in SD_FLOATING_ZONE")
+			l_test.show
+		end
+
+feature {SD_CONFIG_MEDIATOR} -- Save config
 
 	save_content_title (a_config_data: SD_INNER_CONTAINER_DATA) is
 		do
@@ -102,7 +116,6 @@ feature -- Command
 			-- Destroy Current if no zone in.
 		local
 			l_title_zone: SD_TITLE_BAR_REMOVEABLE
-			l_env: EV_ENVIRONMENT
 		do
 			if not is_destroyed then
 				if internal_inner_container.readable and then all_zones.count > 0 then
@@ -132,11 +145,7 @@ feature -- Command
 					-- No widget in `Current'.
 					internal_floating_state.docking_manager.command.prune_inner_container (internal_inner_container)
 					internal_floating_state.docking_manager.zones.zones.prune (Current)
-
-					-- We don't call `destroy' directly here, because if window destroy and creating very fast,
-					-- Windows will not clear window area after destroy a window.
-					create l_env
-					l_env.application.do_once_on_idle (agent destroy)
+					destroy
 				end
 			end
 		end
@@ -287,13 +296,8 @@ feature {NONE} -- Implementation
 			end
 			l_split_area ?= a_widget
 			if l_split_area /= Void then
-				-- When restoring docking widget layout, this function called from `update_title_bar', widget strucutre maybe NOT full two fork tree structure.
-				if l_split_area.first /= Void then
-					all_zones_in_current (l_split_area.first, a_zones)
-				end
-				if l_split_area.second /= Void then
-					all_zones_in_current (l_split_area.second, a_zones)
-				end
+				all_zones_in_current (l_split_area.first, a_zones)
+				all_zones_in_current (l_split_area.second, a_zones)
 			end
 		end
 
@@ -327,16 +331,11 @@ feature {NONE} -- Implementation
 				l_split ?= a_container
 				check must_zone_or_split: l_split /= Void end
 				l_container ?= l_split.first
-				if l_container /= Void then
-					count_zone_display (l_container)
-				end
+				count_zone_display (l_container)
+
 				l_container := Void
 				l_container ?= l_split.second
-				-- When `open_inner_container_data', if a SD_CONTENT not is_visible, then SD_DOCKING_STATE.hide will execute,
-				-- At this time, updated title bar will be called, and l_container maybe void. Because it CONSTRUCTING widget layout.
-				if l_container /= Void then
-					count_zone_display (l_container)
-				end
+				count_zone_display (l_container)
 			end
 		end
 
@@ -377,10 +376,8 @@ feature {NONE} -- Agents
 				if not has_recursive (l_last_zone) then
 					l_zones := all_zones
 					if l_zones.count > 0 then
-						-- If the first content is not visible, it means the floating zone is showing for the first time.
-						if l_zones.first.content.is_visible then
-							l_zones.first.content.set_focus
-						end
+						l_zones.first.on_focus_in (l_zones.first.content)
+						internal_docking_manager.property.set_last_focus_content (l_zones.first.content)
 					end
 				else
 					l_last_zone.set_focus_color (True)
@@ -396,7 +393,7 @@ feature {NONE} -- Agents
 		do
 			if internal_docking_manager.property.last_focus_content /= Void then
 				l_last_zone := internal_docking_manager.property.last_focus_content.state.zone
-				if not is_destroyed and then has_recursive (l_last_zone) then
+				if has_recursive (l_last_zone) then
 					internal_title_bar.enable_non_focus_active_color
 					l_last_zone.set_non_focus_selection_color
 				end
@@ -409,7 +406,7 @@ feature {NONE} -- Agents
 			debug ("docking")
 				print ("%NSD_FLOATING_ZONE on_pointer_motion screen_x, screen_y: " + a_screen_x.out + " " + a_screen_y.out)
 			end
-			if docker_mediator /= Void and then docker_mediator.is_tracing_pointer then
+			if docker_mediator /= Void then
 				docker_mediator.on_pointer_motion (a_screen_x, a_screen_y)
 			end
 		end
@@ -436,11 +433,11 @@ feature {NONE} -- Agents
 					until
 						l_contents.after
 					loop
-						l_contents.item.close_request_actions.call (Void)
+						l_contents.item.close_request_actions.call ([])
 						l_contents.forth
 					end
 				else
-					l_zones.item.content.close_request_actions.call (Void)
+					l_zones.item.content.close_request_actions.call ([])
 				end
 
 				l_zones.forth
@@ -452,7 +449,7 @@ feature {NONE} -- Agents
 		do
 			pointer_press_offset_x := a_screen_x - screen_x
 			pointer_press_offset_y := a_screen_y - screen_y
-			docker_mediator := internal_docking_manager.query.docker_mediator (Current, internal_docking_manager)
+			create docker_mediator.make (Current, internal_docking_manager)
 			enable_capture
 			docker_mediator.cancel_actions.extend (agent on_cancel_dragging)
 			docker_mediator.start_tracing_pointer (pointer_press_offset_x, pointer_press_offset_y)

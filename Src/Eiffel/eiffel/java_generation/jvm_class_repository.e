@@ -89,7 +89,8 @@ feature {ANY} -- Status
 			wf ?= repository.item (type_id).features.item (feature_id)
 			Result := wf /= Void
 		end
-
+							
+			
 	valid_id (id: INTEGER): BOOLEAN is
 			-- is `id' a valid id?
 		do
@@ -131,7 +132,8 @@ feature {ANY} -- Status
 				end
 			end
 		end
-
+			
+			
 feature {ANY} -- Element Change
 			
 	put (n: STRING; id: INTEGER) is
@@ -235,3 +237,9 @@ indexing
 
 end -- class JVM_CLASS_REPOSITORY
 
+
+
+
+
+			
+			

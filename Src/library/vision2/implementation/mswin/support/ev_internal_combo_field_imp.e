@@ -39,11 +39,6 @@ inherit
 			on_getdlgcode
 		end
 
-	EV_WEL_TOOLTIPABLE
-		redefine
-			tooltip_window
-		end
-
 create
 	make_with_combo
 
@@ -58,7 +53,6 @@ feature {NONE} -- Initialization
 				register_current_window
 				set_default_window_procedure
 			end
-			align_text_left
 		end
 
 feature -- Access
@@ -71,47 +65,6 @@ feature -- Access
 			parent_not_void: parent /= Void
 		end
 
-feature -- Alignment
-
-	text_alignment: INTEGER
-			-- Current text alignment. Possible value are
-			--	* Text_alignment_left
-			--	* Text_alignment_right
-			--	* Text_alignment_center		
-
-	align_text_center
-			-- Display text centered.
-		local
-			l_style: like style
-		do
-			l_style := clear_flag (style, ss_left | ss_right)
-			l_style := l_style | ss_center
-			set_style (l_style)
-			text_alignment := {EV_TEXT_ALIGNMENT_CONSTANTS}.ev_text_alignment_center
-		end
-
-	align_text_right
-			-- Display text right aligned.
-		local
-			l_style: like style
-		do
-			l_style := clear_flag (style, ss_left | ss_center)
-			l_style := l_style | ss_right
-			set_style (l_style)
-			text_alignment := {EV_TEXT_ALIGNMENT_CONSTANTS}.ev_text_alignment_right
-		end
-
-	align_text_left
-			-- Display text left aligned.
-		local
-			l_style: like style
-		do
-			l_style := clear_flag (style, ss_center | ss_right)
-			l_style := l_style | ss_left
-			set_style (l_style)
-			text_alignment := {EV_TEXT_ALIGNMENT_CONSTANTS}.ev_text_alignment_left
-		end
-
 feature {NONE} -- Implementation
 
 	on_left_button_down (keys, x_pos, y_pos: INTEGER) is
@@ -119,15 +72,7 @@ feature {NONE} -- Implementation
 			-- We verify that there is indeed a command to avoid
 			-- the creation of an object for nothing.
 		do
-			parent.increment_level
 			parent.on_left_button_down (keys, x_pos, y_pos)
-			if parent.has_return_value then
-				set_message_return_value (parent.message_return_value)
-			end
-			if not parent.default_processing then
-				disable_default_processing
-			end
-			parent.decrement_level
 		end
 
 	on_middle_button_down (keys, x_pos, y_pos: INTEGER) is
@@ -135,15 +80,7 @@ feature {NONE} -- Implementation
 			-- We verify that there is indeed a command to avoid
 			-- the creation of an object for nothing.
 		do
-			parent.increment_level
 			parent.on_middle_button_down (keys, x_pos, y_pos)
-			if parent.has_return_value then
-				set_message_return_value (parent.message_return_value)
-			end
-			if not parent.default_processing then
-				disable_default_processing
-			end
-			parent.decrement_level
 		end
 
 	on_right_button_down (keys, x_pos, y_pos: INTEGER) is
@@ -151,15 +88,7 @@ feature {NONE} -- Implementation
 			-- We verify that there is indeed a command to avoid
 			-- the creation of an object for nothing.
 		do
-			parent.increment_level
 			parent.on_right_button_down (keys, x_pos, y_pos)
-			if parent.has_return_value then
-				set_message_return_value (parent.message_return_value)
-			end
-			if not parent.default_processing then
-				disable_default_processing
-			end
-			parent.decrement_level
 		end
 
 	on_left_button_up (keys, x_pos, y_pos: INTEGER) is
@@ -167,15 +96,7 @@ feature {NONE} -- Implementation
 			-- We verify that there is indeed a command to avoid
 			-- the creation of an object for nothing.
 		do
-			parent.increment_level
 			parent.on_left_button_up (keys, x_pos, y_pos)
-			if parent.has_return_value then
-				set_message_return_value (parent.message_return_value)
-			end
-			if not parent.default_processing then
-				disable_default_processing
-			end
-			parent.decrement_level
 		end
 
 	on_middle_button_up (keys, x_pos, y_pos: INTEGER) is
@@ -183,15 +104,7 @@ feature {NONE} -- Implementation
 			-- We verify that there is indeed a command to avoid
 			-- the creation of an object for nothing.
 		do
-			parent.increment_level
 			parent.on_middle_button_up (keys, x_pos, y_pos)
-			if parent.has_return_value then
-				set_message_return_value (parent.message_return_value)
-			end
-			if not parent.default_processing then
-				disable_default_processing
-			end
-			parent.decrement_level
 		end
 
 	on_right_button_up (keys, x_pos, y_pos: INTEGER) is
@@ -199,15 +112,7 @@ feature {NONE} -- Implementation
 			-- We verify that there is indeed a command to avoid
 			-- the creation of an object for nothing.
 		do
-			parent.increment_level
 			parent.on_right_button_up (keys, x_pos, y_pos)
-			if parent.has_return_value then
-				set_message_return_value (parent.message_return_value)
-			end
-			if not parent.default_processing then
-				disable_default_processing
-			end
-			parent.decrement_level
 		end
 
 	on_left_button_double_click (keys, x_pos, y_pos: INTEGER) is
@@ -215,15 +120,7 @@ feature {NONE} -- Implementation
 			-- We verify that there is indeed a command to avoid
 			-- the creation of an object for nothing.
 		do
-			parent.increment_level
 			parent.on_left_button_double_click (keys, x_pos, y_pos)
-			if parent.has_return_value then
-				set_message_return_value (parent.message_return_value)
-			end
-			if not parent.default_processing then
-				disable_default_processing
-			end
-			parent.decrement_level
 		end
 
 	on_middle_button_double_click (keys, x_pos, y_pos: INTEGER) is
@@ -231,15 +128,7 @@ feature {NONE} -- Implementation
 			-- We verify that there is indeed a command to avoid
 			-- the creation of an object for nothing.
 		do
-			parent.increment_level
 			parent.on_middle_button_double_click (keys, x_pos, y_pos)
-			if parent.has_return_value then
-				set_message_return_value (parent.message_return_value)
-			end
-			if not parent.default_processing then
-				disable_default_processing
-			end
-			parent.decrement_level
 		end
 
 	on_right_button_double_click (keys, x_pos, y_pos: INTEGER) is
@@ -247,15 +136,7 @@ feature {NONE} -- Implementation
 			-- We verify that there is indeed a command to avoid
 			-- the creation of an object for nothing.
 		do
-			parent.increment_level
 			parent.on_right_button_double_click (keys, x_pos, y_pos)
-			if parent.has_return_value then
-				set_message_return_value (parent.message_return_value)
-			end
-			if not parent.default_processing then
-				disable_default_processing
-			end
-			parent.decrement_level
 		end
 
 	on_mouse_move (keys, x_pos, y_pos: INTEGER) is
@@ -263,15 +144,7 @@ feature {NONE} -- Implementation
 			-- We verify that there is indeed a command to avoid
 			-- the creation of an object for nothing.
 		do
-			parent.increment_level
 			parent.on_mouse_move (keys, x_pos, y_pos)
-			if parent.has_return_value then
-				set_message_return_value (parent.message_return_value)
-			end
-			if not parent.default_processing then
-				disable_default_processing
-			end
-			parent.decrement_level
 		end
 
 	on_key_down (virtual_key, key_data: INTEGER) is
@@ -285,15 +158,7 @@ feature {NONE} -- Implementation
 					-- be called. Without this fix, the key press or release actions
 					-- in a combo box are called twice for these two keys. Unfortunately
 					-- at the moment, I am unaware why this happens. Julian.
-				parent.increment_level
 				parent.on_key_down (virtual_key, key_data)
-				if parent.has_return_value then
-					set_message_return_value (parent.message_return_value)
-				end
-				if not parent.default_processing then
-					disable_default_processing
-				end
-				parent.decrement_level
 			end
 		end
 
@@ -302,15 +167,9 @@ feature {NONE} -- Implementation
 			-- Avoid an unconvenient `bip' when the user
 			-- tab to another control.
 		do
-			parent.increment_level
-			parent.on_char (character_code, key_data)
-			if parent.has_return_value then
-				set_message_return_value (parent.message_return_value)
-			end
-			if not parent.default_processing then
+			if not has_focus then
 				disable_default_processing
 			end
-			parent.decrement_level
 		end
 
 	on_key_up (virtual_key, key_data: INTEGER) is
@@ -318,54 +177,27 @@ feature {NONE} -- Implementation
 			-- We verify that there is indeed a command to avoid
 			-- the creation of an object for nothing.
 		do
-			parent.increment_level
 			parent.on_key_up (virtual_key, key_data)
-			if parent.has_return_value then
-				set_message_return_value (parent.message_return_value)
-			end
-			if not parent.default_processing then
-				disable_default_processing
-			end
-			parent.decrement_level
 		end
 
 	on_set_focus is
 			-- Wm_setfocus message.
 		do
-			parent.increment_level
 			parent.on_set_focus
-			if parent.has_return_value then
-				set_message_return_value (parent.message_return_value)
-			end
-			if not parent.default_processing then
-				disable_default_processing
-			end
-			parent.decrement_level
 		end
 
 	on_kill_focus is
 			-- Wm_killfocus message.
 		do
-			parent.increment_level
 			parent.on_kill_focus
-			if parent.has_return_value then
-				set_message_return_value (parent.message_return_value)
-			end
-			if not parent.default_processing then
-				disable_default_processing
-			end
-			parent.decrement_level
 		end
 
 	on_set_cursor (hit_code: INTEGER) is
 			-- Wm_setcursor message.
 			-- See class WEL_HT_CONSTANTS for valid `hit_code' values.
 		do
-			if
-				(hit_code = ({WEL_HT_CONSTANTS}.Htnowhere) or else
-				hit_code = ({WEL_HT_CONSTANTS}.Htclient)) and then
-				parent.cursor_pixmap /= Void
-			then
+			if (hit_code = ({WEL_HT_CONSTANTS}.Htnowhere) or else hit_code = ({WEL_HT_CONSTANTS}.Htclient))
+				and then parent.cursor_pixmap /= Void then
 				parent.internal_on_set_cursor
 			end
 		end
@@ -414,11 +246,6 @@ feature {NONE} -- Implementation
 			set_message_return_value (to_lresult ({WEL_DLGC_CONSTANTS}.dlgc_want_all_keys))
 		end
 
-	tooltip_window: WEL_WINDOW
-		do
-			Result := Current
-		end
-
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"
 	license:	"Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
@@ -430,5 +257,8 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+
+
+
+end -- class EV_INTERNAL_COMBO_FIELD_IMP
 

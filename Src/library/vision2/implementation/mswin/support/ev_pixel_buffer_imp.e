@@ -13,8 +13,7 @@ inherit
 	EV_PIXEL_BUFFER_I
 
 create
-	make,
-	make_with_pixmap
+	make
 
 feature {NONE} -- Initlization
 
@@ -33,6 +32,7 @@ feature {NONE} -- Initlization
 			else
 				create pixmap
 			end
+
 		ensure then
 			set: is_gdi_plus_installed implies initial_width = a_width
 			set: is_gdi_plus_installed implies initial_height = a_height
@@ -42,28 +42,6 @@ feature {NONE} -- Initlization
 			-- Creation method.
 		do
 			base_make (an_interface)
-		end
-
-	make_with_pixmap (a_pixmap: EV_PIXMAP) is
-			-- Creation method.
-		local
-			l_source_graphics: WEL_GDIP_GRAPHICS
-			l_source_dc: WEL_MEMORY_DC
-			l_drawable: EV_DRAWABLE_IMP
-		do
-			make_with_size (a_pixmap.width, a_pixmap.height)
-
-			create l_source_graphics.make_from_image (gdip_bitmap)
-
-			l_source_dc := l_source_graphics.dc
-
-			create {EV_PIXMAP_IMP_DRAWABLE} l_drawable.make_with_pixel_buffer (l_source_dc)
-			-- We have to set drawing mode here, otherwise if `a_pixmap' doesn't have mask bitmap, drawing mode will not correct.
-			-- It will cause bug#13249.
-			l_drawable.set_drawing_mode (l_drawable.drawing_mode_copy)
-			l_drawable.draw_pixmap (0, 0, a_pixmap)
-
-			l_source_graphics.release_dc (l_source_dc)
 		end
 
 	initialize is
@@ -106,20 +84,6 @@ feature -- Command
 			end
 		end
 
-	save_to_named_file (a_file_name: STRING) is
-			-- Save pixel datas to `a_file_name'
-		local
-			l_file_name: FILE_NAME
-		do
-			if is_gdi_plus_installed then
-				gdip_bitmap.save_image_to_file (a_file_name)
-			else
-				create l_file_name.make_from_string (a_file_name)
-				-- FIXIT: How to know the orignal format of `pixmap'? It's BMP or PNG.
-				pixmap.save_to_named_file (create {EV_PNG_FORMAT}, l_file_name)
-			end
-		end
-
 	sub_pixmap (a_rect: EV_RECTANGLE): EV_PIXMAP is
 			-- Create asub pixmap from Current.
 		local
@@ -154,56 +118,33 @@ feature -- Command
 
 	sub_pixel_buffer (a_rect: EV_RECTANGLE): EV_PIXEL_BUFFER is
 			-- Create a new sub pixel buffer object.
-		do
-			create Result.make_with_size (a_rect.width, a_rect.height)
-			Result.draw_pixel_buffer (interface, a_rect)
-		end
-
-	draw_pixel_buffer_with_rect (a_pixel_buffer: EV_PIXEL_BUFFER; a_dest_rect: EV_RECTANGLE) is
-			-- Draw `a_pixel_buffer' at `a_rect'.
 		local
 			l_imp: EV_PIXEL_BUFFER_IMP
+			l_temp_pixmap: EV_PIXMAP
 			l_graphics: WEL_GDIP_GRAPHICS
 			l_dest_rect, l_src_rect: WEL_RECT
+			l_image: WEL_GDIP_BITMAP
 		do
-			l_imp ?= a_pixel_buffer.implementation
+			create Result.make_with_size (a_rect.width, a_rect.height)
+			l_imp ?= Result.implementation
 			check not_void: l_imp /= Void end
 
 			if is_gdi_plus_installed then
-				create l_graphics.make_from_image (gdip_bitmap)
-				create l_src_rect.make (0, 0, a_pixel_buffer.width, a_pixel_buffer.height)
-				create l_dest_rect.make (a_dest_rect.x, a_dest_rect.y, a_dest_rect.right, a_dest_rect.bottom)
-				l_graphics.draw_image_with_dest_rect_src_rect (l_imp.gdip_bitmap, l_dest_rect, l_src_rect)
+				l_image := l_imp.gdip_bitmap
+				create l_graphics.make_from_image (l_image)
+				create l_dest_rect.make (0, 0, a_rect.width, a_rect.height)
+				create l_src_rect.make (a_rect.x, a_rect.y, a_rect.right, a_rect.bottom)
+				l_graphics.draw_image_with_src_rect_dest_rect (gdip_bitmap, l_dest_rect, l_src_rect)
 
 				l_dest_rect.dispose
 				l_src_rect.dispose
 				l_graphics.destroy_item
 				-- In GDI+, alpha data issue is automatically handled, so we don't need to set mask.			
 			else
-				pixmap.draw_pixmap (a_dest_rect.x, a_dest_rect.y, l_imp.pixmap)
-			end
-		end
+				l_temp_pixmap := pixmap.sub_pixmap (a_rect)
+				l_imp.pixmap.set_size (width, height)
+				l_imp.pixmap.draw_pixmap (0, 0, l_temp_pixmap)
 
-	draw_text (a_text: STRING_GENERAL; a_font: EV_FONT; a_point: EV_COORDINATE) is
-			-- Draw `a_text' with `a_font' at `a_rect'.
-		local
-			l_graphics: WEL_GDIP_GRAPHICS
-			l_font: WEL_GDIP_FONT
-			l_font_family: WEL_GDIP_FONT_FAMILY
-		do
-			if is_gdi_plus_installed then
-				create l_graphics.make_from_image (gdip_bitmap)
-
-				-- FIXIT: We can't query font name now.
-				-- EV_FONT.name and WEL_LOG_FONT.name all return "".
-				check only_roman_supported_currently: a_font.family = {EV_FONT_CONSTANTS}.family_roman end
-				create l_font_family.make_with_name ("Times New Roman")
-
-				create l_font.make (l_font_family, a_font.height_in_points)
-				l_graphics.draw_string (a_text, a_text.count, l_font, a_point.x, a_point.y)
-			else
-				pixmap.set_font (a_font)
-				pixmap.draw_text_top_left (a_point.x, a_point.y, a_text)
 			end
 		end
 
@@ -226,6 +167,7 @@ feature -- Command
 				--| FIXME IEK Implement me
 			end
 		end
+
 
 feature -- Query
 
@@ -376,33 +318,6 @@ feature {EV_PIXEL_BUFFER_IMP} -- Implementation
 			Result.set_m_row (<<-1, -1, -1, 0, 0>>, 4)
 		ensure
 			not_void: Result /= Void
-		end
-
-feature -- Obsolete
-
-	draw_pixel_buffer (a_pixel_buffer: EV_PIXEL_BUFFER; a_dest_rect: EV_RECTANGLE) is
-			-- Draw `a_pixel_buffer' at `a_rect'.
-		local
-			l_imp: EV_PIXEL_BUFFER_IMP
-			l_graphics: WEL_GDIP_GRAPHICS
-			l_dest_rect, l_src_rect: WEL_RECT
-		do
-			l_imp ?= a_pixel_buffer.implementation
-			check not_void: l_imp /= Void end
-
-			if is_gdi_plus_installed then
-				create l_graphics.make_from_image (gdip_bitmap)
-				create l_src_rect.make (0, 0, a_dest_rect.width, a_dest_rect.height)
-				create l_dest_rect.make (a_dest_rect.x, a_dest_rect.y, a_dest_rect.right, a_dest_rect.bottom)
-				l_graphics.draw_image_with_src_rect_dest_rect (l_imp.gdip_bitmap, l_src_rect, l_dest_rect)
-
-				l_dest_rect.dispose
-				l_src_rect.dispose
-				l_graphics.destroy_item
-				-- In GDI+, alpha data issue is automatically handled, so we don't need to set mask.			
-			else
-				pixmap.draw_pixmap (a_dest_rect.x, a_dest_rect.y, l_imp.pixmap)
-			end
 		end
 
 indexing

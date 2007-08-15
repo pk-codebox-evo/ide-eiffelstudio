@@ -51,27 +51,67 @@ feature -- Directory creation
 	create_project_directories is
 			-- Create basic structure for project.
 		local
-			l_dirs: ARRAY [DIRECTORY_NAME]
+			d: DIRECTORY
 		do
-			l_dirs := <<eifgens_path, target_path, compilation_path, final_path, workbench_path, partial_generation_path, data_path>>
-			l_dirs.do_all (agent safe_create_directory)
+			create d.make (eifgens_path)
+			if not d.exists then
+				d.create_dir
+			end
+
+			create d.make (target_path)
+			if not d.exists then
+				d.create_dir
+			end
+
+			create d.make (compilation_path)
+			if not d.exists then
+				d.create_dir
+			end
+
+			create d.make (final_path)
+			if not d.exists then
+				d.create_dir
+			end
+
+			create d.make (workbench_path)
+			if not d.exists then
+				d.create_dir
+			end
+
+			create d.make (partial_generation_path)
+			if not d.exists then
+				d.create_dir
+			end
 		end
 
 	create_profiler_directory is
 			-- Directory where the profiler files are generated
+		local
+			d: DIRECTORY
 		do
 			create_project_directories
-			safe_create_directory (profiler_path)
+			create d.make (profiler_path)
+			if not d.exists then
+				d.create_dir
+			end
 		end
 
 	create_local_assemblies_directory (is_final: BOOLEAN) is
 			-- Directory where local assemblies will be generated.
+		local
+			d: DIRECTORY
 		do
 			create_project_directories
 			if is_final then
-				safe_create_directory (final_assemblies_path)
+				create d.make (final_assemblies_path)
+				if not d.exists then
+					d.create_dir
+				end
 			else
-				safe_create_directory (workbench_assemblies_path)
+				create d.make (workbench_assemblies_path)
+				if not d.exists then
+					d.create_dir
+				end
 			end
 		end
 
@@ -232,19 +272,6 @@ feature -- Directories
 			workbench_path_not_void: Result /= Void
 		end
 
-	data_path: DIRECTORY_NAME is
-			-- Path to `Data" directory which is used to store customized formatter, metrics, docking layout files.
-		do
-			Result := internal_data_path
-			if Result = Void then
-				create Result.make_from_string (target_path)
-				Result.extend (data_directory)
-				internal_data_path := Result
-			end
-		ensure
-			data_path_not_void: Result /= Void
-		end
-
 feature -- Files
 
 	project_file_name: FILE_NAME is
@@ -294,47 +321,7 @@ feature -- Files
 				internal_lock_file_name := Result
 			end
 		ensure
-			lock_file_name_not_void: Result /= Void
-		end
-
-	workbench_executable_file_name: FILE_NAME
-			-- Path to executable of workbench mode.
-		do
-			create Result.make_from_string (workbench_path)
-			Result.set_file_name (executable_file_name)
-		ensure
-			workbench_executable_file_name_not_void: Result /= Void
-		end
-
-	final_executable_file_name: FILE_NAME
-			-- Path to executable of finalized mode.
-		do
-			create Result.make_from_string (final_path)
-			Result.set_file_name (executable_file_name)
-		ensure
-			final_executable_file_name_not_void: Result /= Void
-		end
-
-	single_file_compilation_executable_file_name: FILE_NAME
-			-- Path to executable location after single file compilation mode.
-		do
-				-- The executable will be copied into the current working directory.
-			create Result.make
-			Result.set_file_name (executable_file_name)
-		ensure
-			single_file_compilation_executable_file_name_not_void: Result /= Void
-		end
-
-	executable_file_name: FILE_NAME
-			-- File name of executable.
-		do
-			if platform_constants.is_windows then
-				create Result.make_from_string (target + ".exe")
-			else
-				create Result.make_from_string (target)
-			end
-		ensure
-			executable_file_name_not_void: Result /= Void
+			locl_file_name_not_void: Result /= Void
 		end
 
 feature -- Status report
@@ -441,7 +428,7 @@ feature -- Locking
 				create l_file.make_open_write (lock_file_name)
 				l_file.put_string (eiffel_layout.ise_eiffel_env)
 				l_file.put_character ('=')
-				l_file.put_string (eiffel_layout.ec_command_name)
+				l_file.put_string (eiffel_layout.eiffel_installation_dir_name)
 				l_file.put_new_line
 				l_file.put_string ("version=")
 				l_file.put_string (compiler_version_number.version)
@@ -499,21 +486,6 @@ feature -- Settings
 			target_set: target = a_target
 		end
 
-feature -- Directory creation
-
-	safe_create_directory (a_dir: DIRECTORY_NAME) is
-			-- Create `a_dir' if it doesn't exist.
-		require
-			a_dir_attached: a_dir /= Void
-		local
-			d: DIRECTORY
-		do
-			create d.make (a_dir)
-			if not d.exists then
-				d.create_dir
-			end
-		end
-
 feature {NONE} -- Implementation
 
 	reset_content is
@@ -550,7 +522,6 @@ feature {NONE} -- Implementation: Access
 	internal_target_path: like target_path
 	internal_workbench_assemblies_path: like workbench_assemblies_path
 	internal_workbench_path: like workbench_path
-	internal_data_path: like data_path
 			-- Placeholders for storing path.
 
 	internal_precompilation_file_name: like precompilation_file_name

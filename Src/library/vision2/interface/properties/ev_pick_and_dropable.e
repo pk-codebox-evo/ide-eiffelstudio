@@ -40,14 +40,6 @@ inherit
 			set_pebble_function
 		end
 
-	EV_POSITIONED
-		undefine
-			initialize
-		redefine
-			implementation,
-			is_in_default_state
-		end
-
 	EV_PICK_AND_DROPABLE_ACTION_SEQUENCES
 		redefine
 			implementation
@@ -140,11 +132,6 @@ feature -- Access
 			bridge_ok: Result = implementation.deny_cursor
 		end
 
-	configurable_target_menu_handler: PROCEDURE [ANY, TUPLE [menu: EV_MENU; target_list: ARRAYED_LIST [EV_PND_TARGET_DATA]; source: EV_PICK_AND_DROPABLE; source_pebble: ANY]]
-			-- Agent used for customizing the Pick and Drop Target Menu of `Current'.
-		do
-			Result := implementation.configurable_target_menu_handler
-		end
 
 feature -- Status setting
 
@@ -215,26 +202,6 @@ feature -- Status setting
 			target_menu_mode_set: mode_is_target_menu
 		end
 
-	set_configurable_target_menu_mode is
-			-- Set user interface mode to pop-up menu of targets.
-			-- Target menu is configurable as the first option can be used to
-			-- initiate a regular 'pick and drop' of the source pebble.
-		require
-			not_destroyed: not is_destroyed
-		do
-			implementation.set_configurable_target_menu_mode
-		ensure
-			target_menu_mode_set: mode_is_configurable_target_menu
-		end
-
-	set_configurable_target_menu_handler (a_handler: PROCEDURE [ANY, TUPLE [menu: EV_MENU; target_list: ARRAYED_LIST [EV_PND_TARGET_DATA]; source: EV_PICK_AND_DROPABLE; source_pebble: ANY]])
-			-- Set Configurable Target Menu Handler to `a_handler'.
-		do
-			implementation.set_configurable_target_menu_handler (a_handler)
-		ensure
-			configurable_target_menu_hander_assigned: configurable_target_menu_handler = a_handler
-		end
-
 	set_pebble_position (a_x, a_y: INTEGER) is
 			-- Set the initial position for pick and drop
 			-- Coordinates are in pixels and are relative to position of `Current'.
@@ -292,16 +259,6 @@ feature -- Status setting
 			pebble_positioning_updated: not pebble_positioning_enabled
 		end
 
-	show_configurable_target_menu (a_x, a_y: INTEGER)
-			-- Show the configurable target menu at position `a_x', `a_y' relative to `Current'.
-		require
-			not_destroyed: not is_destroyed
-			mode_is_configurable_target_menu: mode_is_configurable_target_menu
-			configurable_menu_handler_set: configurable_target_menu_handler /= Void
-		do
-			implementation.show_configurable_target_menu (a_x, a_y)
-		end
-
 feature -- Status report
 
 	mode_is_pick_and_drop: BOOLEAN is
@@ -334,22 +291,12 @@ feature -- Status report
 			bridge_ok: Result = implementation.mode_is_target_menu
 		end
 
-	mode_is_configurable_target_menu: BOOLEAN is
-			-- Is the user interface mode a configurable pop-up menu of targets?
-		require
-			not_destroyed: not is_destroyed
-		do
-			Result := implementation.mode_is_configurable_target_menu
-		ensure then
-			bridge_ok: Result = implementation.mode_is_configurable_target_menu
-		end
-
 feature {NONE} -- Contract support
 
 	is_in_default_state: BOOLEAN is
 			-- Is `Current' in its default state?
 		do
-			Result := Precursor {EV_ANY} and Precursor {EV_POSITIONED} and mode_is_pick_and_drop
+			Result := Precursor {EV_ANY} and mode_is_pick_and_drop
 				and pebble = Void
 		end
 

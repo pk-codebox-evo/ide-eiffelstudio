@@ -312,4 +312,8 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+
+
+
+end -- class WEL_TOOL_BAR_BUTTON
+

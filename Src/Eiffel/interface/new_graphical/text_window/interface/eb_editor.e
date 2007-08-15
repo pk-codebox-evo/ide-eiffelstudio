@@ -12,20 +12,18 @@ class
 inherit
 	EDITABLE_TEXT_PANEL
 		rename
-			cursors as editor_cursors,
-			recycle as internal_recycle
+			cursors as editor_cursors
 		undefine
 			font,
 			line_height
 		redefine
+			handle_extended_ctrled_key,
 			display_not_editable_warning_message,
 			load_file,
 			load_text,
 			initialize_editor_context,
 			reference_window,
-			internal_recycle,
-			show_warning_message,
-			check_document_modifications_and_reload
+			recycle
 		end
 
 	EB_SHARED_MANAGERS
@@ -43,6 +41,8 @@ inherit
 		end
 
 	EB_RECYCLABLE
+		export
+			{EB_RECYCLER} all
 		undefine
 			default_create
 		end
@@ -104,7 +104,7 @@ feature -- Warning messages display
 	display_not_editable_warning_message is
 				-- display warning message : text is not editable...
 		local
-			wm: STRING_32
+			wm: STRING
 			w: EB_TEXT_LOADING_WARNING_DIALOG
 		do
 			if text_displayed /= Void then
@@ -122,82 +122,41 @@ feature -- Warning messages display
 			end
 		end
 
-	show_warning_message (a_message: STRING_GENERAL) is
-			-- show `a_message' in a dialog window		
-		local
-			wd: EB_WARNING_DIALOG
-		do
-			create wd.make_with_text (a_message)
-			wd.pointer_button_release_actions.force_extend (agent wd.destroy)
-			wd.key_press_actions.force_extend (agent wd.destroy)
-			wd.show_modal_to_window (reference_window)
-		end
-
 feature -- Access
 
 	dev_window: EB_DEVELOPMENT_WINDOW
 			-- Associated development window
-
-	docking_content: SD_CONTENT
-			-- Docking content.
-
-feature -- Docking
-
-	set_docking_content (a_content: SD_CONTENT) is
-			-- Set `docking_content' with `a_content' and associate `widget' to `a_content'.
-		require
-			a_content_attached: a_content /= Void
-		do
-			docking_content := a_content
-		end
-
-feature -- Status report
-
-	is_main_editor: BOOLEAN
-			-- Is current main editor?
-
-feature -- Status setting
-
-	set_is_main_editor (a_b: BOOLEAN) is
-			-- Set `is_main_editor' with `a_b'.
-		do
-			is_main_editor := a_b
-		end
 
 feature -- Text Loading
 
 	load_file (a_filename: STRING) is
 	        -- Load contents of `a_filename'
 		local
-	--	    test_file, test_file_2: RAW_FILE
+		    test_file, test_file_2: RAW_FILE
 		    l_filename: FILE_NAME
   	   	do
   	   		reset
   	   		load_file_error := False
 
-			create l_filename.make_from_string (a_filename)
-			Precursor (l_filename)
-				-- The following code is broken. See bug#13171 and bug#13082. For the 6.0 release,
-				-- we are simply disabling this code and never load the backup (see the above two lines)
---  	   	create l_filename.make_from_string (a_filename)
---			create test_file.make (l_filename.string.twin)
---			l_filename.add_extension ("swp")
---			create test_file_2.make (l_filename)
---			if test_file_2.exists and then test_file_2.is_readable and then ((not test_file.exists) or else test_file.date < test_file_2.date) then
---				if test_file.exists then
---					ask_if_opens_backup
---					if not open_backup then
---						test_file_2.delete
---							-- Use original file
---						create l_filename.make_from_string (a_filename)
---					end
---				end
---					-- If `test_file' does not exist we force a loading of the backup file.
---				Precursor (l_filename)
---			else
---				create l_filename.make_from_string (a_filename)
---				Precursor (l_filename)
---			end
+  	   		create l_filename.make_from_string (a_filename)
+			create test_file.make (l_filename.string.twin)
+			l_filename.add_extension ("swp")
+			create test_file_2.make (l_filename)
+			if test_file_2.exists and then test_file_2.is_readable and then ((not test_file.exists) or else test_file.date < test_file_2.date) then
+				if test_file.exists then
+					ask_if_opens_backup
+					if not open_backup then
+						test_file_2.delete
+							-- Use original file
+						create l_filename.make_from_string (a_filename)
+					end
+				end
+					-- If `test_file' does not exist we force a loading of the backup file.
+				Precursor (l_filename)
+			else
+				create l_filename.make_from_string (a_filename)
+				Precursor (l_filename)
+			end
   	  	end
 
 	load_text (s: STRING) is
@@ -217,49 +176,6 @@ feature -- Text Loading
 				end
 			end
 			Precursor {EDITABLE_TEXT_PANEL} (s)
-		end
-
-	check_document_modifications_and_reload is
-			-- Check if current stone is changed and reload.
-		local
-			dialog: EV_INFORMATION_DIALOG
-			button_labels: ARRAY [STRING_GENERAL]
-			actions: ARRAY [PROCEDURE [ANY, TUPLE]]
-			l_class_stone: CLASSI_STONE
-		do
-			is_checking_modifications := True
-
-				-- After refactoring, the stone is possibly changed,
-				-- and file name is possibly changed.
-			l_class_stone ?= stone
-			if l_class_stone /= Void then
-				if not file_name.is_equal (l_class_stone.class_i.file_name) then
-					file_name := l_class_stone.class_i.file_name
-				end
-			end
-
-			if not file_exists then
-				reload
-			elseif not file_is_up_to_date then
-				if changed or not editor_preferences.automatic_update then
-						-- File has not changed in panel and is not up to date.  However, user does want auto-update so prompt for reload.
-					create dialog.make_with_text (interface_names.t_this_file_has_been_modified)
-					create button_labels.make (1, 2)
-					create actions.make (1, 2)
-					button_labels.put (interface_names.b_Reload, 1)
-					actions.put (agent reload, 1)
-					button_labels.put (interface_names.b_Continue_anyway, 2)
-					actions.put (agent continue_editing, 2)
-					dialog.set_buttons_and_actions (button_labels, actions)
-					dialog.set_default_push_button (dialog.button (button_labels @ 1))
-					dialog.set_default_cancel_button (dialog.button (button_labels @ 2))
-					dialog.set_title (interface_names.t_External_edition)
-					dialog.show_modal_to_window (reference_window)
-				elseif editor_preferences.automatic_update and not changed then
-					reload
-				end
-			end
-			is_checking_modifications := False
 		end
 
 feature -- Stonable
@@ -288,14 +204,39 @@ feature -- Stonable
 
 feature {NONE} -- Memory Management
 
-	internal_recycle is
+	recycle is
 			-- Destroy `Current'.
 		do
 			Precursor {EDITABLE_TEXT_PANEL}
 			dev_window := Void
 		end
 
-feature {EB_COMMAND, EB_SEARCH_PERFORMER, EB_DEVELOPMENT_WINDOW, EB_DEVELOPMENT_WINDOW_MENU_BUILDER} -- Edition Operations on text
+feature {NONE} -- Handle keystokes
+
+	handle_extended_ctrled_key (ev_key: EV_KEY) is
+ 			-- Process the push on Ctrl + an extended key.
+		do
+			inspect
+				ev_key.code
+
+			when Key_u then
+					-- Ctrl-U
+				run_if_editable (agent set_selection_case(shifted_key))
+
+			when Key_k then
+				if shifted_key then
+						-- Ctrl+Shift+K uncomment selection
+					run_if_editable (agent uncomment_selection)
+				else
+						-- Ctrl+K
+					run_if_editable (agent comment_selection)
+				end
+			else
+				Precursor (ev_key)
+			end
+		end
+
+feature {EB_COMMAND, EB_SEARCH_PERFORMER, EB_DEVELOPMENT_WINDOW} -- Edition Operations on text
 
 	comment_selection is
 			-- Comment selected lines if possible.
@@ -321,7 +262,7 @@ feature {NONE} -- Retrieving backup
 			-- Display a dialog asking the user whether he wants to open
 			-- the original file or the backup one, and set `open_backup' accordingly.
 		local
-			dial: EB_WARNING_DIALOG
+			dial: EV_WARNING_DIALOG
 		do
 			create dial.make_with_text (Warning_messages.w_Found_backup)
 			dial.set_buttons_and_actions (<<Interface_names.b_Open_backup, Interface_names.b_Open_original>>, <<agent open_backup_selected, agent open_normal_selected>>)

@@ -12,9 +12,7 @@ inherit
 	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 		redefine
 			mini_pixmap,
-			mini_pixel_buffer,
-			tooltext,
-			pixel_buffer
+			tooltext
 		end
 
 	EB_DEVELOPMENT_WINDOW_COMMAND
@@ -30,30 +28,22 @@ feature -- Basic operations
 			-- Pop up class wizard.
 		local
 			dial: EB_CREATE_CLASS_DIALOG
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 		do
-			if Workbench.is_in_stable_state then
-				create dial.make_default (target)
-				dial.set_stone_when_finished
-				dial.call_default
+			if Workbench.is_already_compiled then
+				if
+					not Workbench.is_compiling or else
+					Workbench.last_reached_degree <= 5
+				then
+					create dial.make_default (target)
+					dial.set_stone_when_finished
+					dial.call_default
+				else
+					create wd.make_with_text (Warning_messages.w_unsufficient_compilation (3))
+					wd.show_modal_to_window (target.window)
+				end
 			else
-				create wd.make_with_text (Warning_messages.w_Unsufficient_compilation (6))
-				wd.show_modal_to_window (target.window)
-			end
-		end
-
-	execute_stone (a_stone: CLUSTER_STONE) is
-			-- Pop up class wizard with location of `a_stone'.
-		local
-			dial: EB_CREATE_CLASS_DIALOG
-			wd: EB_WARNING_DIALOG
-		do
-			if Workbench.is_in_stable_state then
-				create dial.make_default (target)
-				dial.set_stone_when_finished
-				dial.call_stone (a_stone)
-			else
-				create wd.make_with_text (Warning_messages.w_Unsufficient_compilation (6))
+				create wd.make_with_text (Warning_messages.w_project_not_compiled)
 				wd.show_modal_to_window (target.window)
 			end
 		end
@@ -66,15 +56,9 @@ feature -- Access
 			Result := pixmaps.mini_pixmaps.new_class_icon
 		end
 
-	mini_pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command for mini toolbars.
-		once
-			Result := pixmaps.mini_pixmaps.new_class_icon_buffer
-		end
-
 feature {NONE} -- Implementation
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it appears in the menu (with & symbol).
 		do
 			Result := Interface_names.m_create_new_class
@@ -86,25 +70,19 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.new_class_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.new_class_icon_buffer
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.f_create_new_class
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text for the toolbar button.
 		do
 			Result := Interface_names.b_create_new_class
 		end
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Description for this command.
 		do
 			Result := Interface_names.f_create_new_class

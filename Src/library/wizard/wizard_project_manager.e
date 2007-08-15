@@ -26,7 +26,7 @@ feature {NONE} -- Initialization
 			-- Initialize and launch application
 		do
 			if argument_count < 1 then
-				io.put_string("wizard -arg1 [resource_path] [-arg2 [locale_id]]%N")
+				io.put_string("wizard -arg1 [resource_path]%N")
 			else
 				default_create
 				set_application (Current)
@@ -47,11 +47,17 @@ feature {NONE} -- Initialization
 			l_window.load_first_state
 
 			first_window.set_title (Wizard_title)
-			first_window.close_request_actions.extend (agent first_window.cancel_actions)
+			first_window.close_request_actions.extend (agent end_application)
 			first_window.show
 		end
 
-	Wizard_title: STRING_GENERAL is
+	end_application is
+			-- End the current application.
+		do
+			(create {EV_ENVIRONMENT}).application.destroy
+		end
+
+	Wizard_title: STRING is
 			-- Window title for this wizard.
 		once
 			Result := "Wizard Version 1.1"

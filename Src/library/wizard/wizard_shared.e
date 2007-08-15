@@ -125,29 +125,6 @@ feature -- Access
 			help_engine_created: Result /= Void
 		end
 
-	locale: I18N_LOCALE is
-			-- Current locale.
-		local
-			l_manager: I18N_LOCALE_MANAGER
-		do
-			Result := locale_cell.item
-			if Result = Void then
-				create l_manager.make ("")
-				Result := l_manager.system_locale
-				locale_cell.put (Result)
-			end
-		ensure
-			locale_not_void: Result /= Void
-		end
-
-feature -- Element Change
-
-	set_locale (a_locale: like locale) is
-			-- Set `locale' with `a_locale'.
-		do
-			locale_cell.put (a_locale)
-		end
-
 feature -- Colors
 
 	White_color: EV_COLOR is
@@ -248,25 +225,6 @@ feature -- Colors
 			-- Border on the left of the text in the core of the wizard.
 		once
 			Result := dialog_unit_to_pixels (42)
-		end
-
-feature -- Interface names
-
-	b_back: STRING_GENERAL is do Result := locale.translation ("< Back ") end
-	b_next: STRING_GENERAL is do Result := locale.translation ("Next >") end
-	b_cancel: STRING_GENERAL is do Result := locale.translation ("Cancel") end
-	b_help: STRING_GENERAL is do Result := locale.translation ("Help") end
-	b_finish: STRING_GENERAL is do Result := locale.translation ("Finish") end
-	b_abort: STRING_GENERAL is do Result := locale.translation ("Abort") end
-	b_browse: STRING_GENERAL is do Result := locale.translation ("Browse...") end
-
-	t_choose_directory: STRING_GENERAL is do Result := locale.translation ("Please choose a folder.") end
-
-feature {NONE} -- Implementation
-
-	locale_cell: CELL [I18N_LOCALE] is
-		once
-			create Result
 		end
 
 invariant

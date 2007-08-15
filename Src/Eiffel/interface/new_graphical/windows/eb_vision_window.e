@@ -12,7 +12,7 @@ class
 inherit
 	EV_TITLED_WINDOW
 		export
-			{EV_ANY, EV_ANY_I, EV_ANY_HANDLER} implementation
+			{EV_ANY, EV_ANY_I, EB_DEBUGGER_MANAGER_IMP} implementation
 		end
 
 create

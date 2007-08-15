@@ -70,6 +70,7 @@ feature {NONE} -- Implementation
 	new_name_ext: STRING
 			-- The new name of the file including the extension but without path.
 
+
 invariant
 	class_i_not_void: class_i /= Void
 	old_name_ext_set: old_name_ext /= Void and not old_name_ext.is_empty

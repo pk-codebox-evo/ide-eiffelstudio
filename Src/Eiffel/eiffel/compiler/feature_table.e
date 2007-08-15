@@ -25,14 +25,13 @@ inherit
 		rename
 			item as item_id,
 			has as has_id,
-			has_key as has_key_id,
 			search as search_id
 		export
 			{NONE} all
-			{FEATURE_TABLE} keys, content, deleted_marks, has_default
+			{FEATURE_TABLE} keys, content, deleted_marks
 			{ANY}
 				after, conflict, count, cursor, forth, found,
-				found_item, go_to, has_id, has_key_id, item_for_iteration,
+				found_item, go_to, has_id, item_for_iteration,
 				item_id, key_for_iteration, linear_representation,
 				put, remove, replace, search_id, start, valid_key, off,
 				valid_cursor
@@ -128,14 +127,6 @@ feature -- Access
 			Result := alias_table.item (alias_name_id)
 		end
 
-	search_id_under_renaming (a_feature_name_id: INTEGER; a_renaming: RENAMING_A)
-			-- Search `a_name_id' in the current feature table but apply `a_renaming' first.
-		require
-			a_renaing_not_void: a_renaming /= Void
-		do
-			search_id (a_renaming.renamed (a_feature_name_id))
-		end
-
 feature {NONE} -- Implementation
 
 	alias_table: HASH_TABLE [FEATURE_I, INTEGER]
@@ -152,18 +143,21 @@ feature -- Access: compatibility
 			id: INTEGER
 		do
 			id := Names_heap.id_of (s)
-			Result := item_id (id)
+			if id > 0 then
+				Result := item_id (id)
+			end
 		end
 
-	overloaded_items (an_id: INTEGER): LIST [FEATURE_I] is
+	overloaded_items (s: STRING): LIST [FEATURE_I] is
 			-- List of features matching overloaded name `s'.
 		require
-			an_id_valid: an_id >= 0
-			has_overloaded_an_id: has_overloaded (an_id)
+			s_not_void: s /= Void
+			s_not_empty: not s.is_empty
+			has_overloaded_s: has_overloaded (s)
 		local
 			l_names: ARRAYED_LIST [INTEGER]
 		do
-			l_names := overloaded_names.item (an_id)
+			l_names := overloaded_names.item (Names_heap.id_of (s))
 			create {ARRAYED_LIST [FEATURE_I]} Result.make (l_names.count)
 			from
 				l_names.start
@@ -186,7 +180,27 @@ feature -- Access: compatibility
 			l_id: INTEGER
 		do
 			l_id := Names_heap.id_of (s)
-			Result := l_id > 0 and then has_key_id (l_id)
+			Result := l_id > 0 and then has_id (l_id)
+		end
+
+	search (key: STRING) is
+			-- Search for item of key `key'
+			-- If found, set `found' to True, and set
+			-- `found_item' to item associated with `key'.
+			-- (from HASH_TABLE)
+		require
+			key_not_void: key /= Void
+			key_not_empty: not key.is_empty
+		local
+			l_id: INTEGER
+		do
+			l_id := Names_heap.id_of (key)
+			if l_id > 0 then
+				search_id (l_id)
+			else
+				control := Not_found_constant
+				found_item := Void
+			end
 		end
 
 	alias_item (alias_name: STRING): FEATURE_I is
@@ -200,12 +214,15 @@ feature -- Access: compatibility
 
 feature -- Status report
 
-	has_overloaded (a_feature_name_id: INTEGER): BOOLEAN is
+	has_overloaded (a_feature_name: STRING): BOOLEAN is
 			-- Does Current have `a_feature_name' has being an overloaded routine?
+		local
+			l_id: INTEGER
 		do
 			if associated_class.is_true_external and overloaded_names /= Void then
-				if a_feature_name_id > 0 then
-					Result := overloaded_names.has (a_feature_name_id)
+				l_id := Names_heap.id_of (a_feature_name)
+				if l_id > 0 then
+					Result := overloaded_names.has (l_id)
 				end
 			end
 		end
@@ -302,18 +319,10 @@ feature -- Comparison
 			f1, f2: FEATURE_I
 			depend_unit: DEPEND_UNIT
 			ext_i: EXTERNAL_I
-			c: CLASS_C
-			is_freeze_requested: BOOLEAN
 		do
-			c := system.class_of_id (feat_tbl_id)
 			if other.count = 0 then
 				Result := False
-				if not system.is_freeze_requested and then c.has_visible then
-						-- Ensure the system is frozen for CECIL.
-					system.request_freeze
-				end
 			else
-				is_freeze_requested := system.is_freeze_requested
 				from
 					start
 					Result := True
@@ -327,18 +336,11 @@ feature -- Comparison
 							-- Old feature is not in Current feature table, this
 							-- is not equivalent
 						Result := False
-						if not is_freeze_requested and then c.visible_level.is_visible (f1, feat_tbl_id) then
-								-- Remove references to the old feature in CECIL data.
-							system.request_freeze
-							is_freeze_requested := True
-						end
 					else
 						check
 							f1.feature_name_id = f2.feature_name_id
 						end
-						if f1.equiv (f2) then
-							f1.set_code_id (f2.code_id)
-						else
+						if not f1.equiv (f2) then
 	debug ("ACTIVITY")
 		io.error.put_string ("%Tfeature ")
 		io.error.put_string (f2.feature_name)
@@ -349,26 +351,24 @@ feature -- Comparison
 									-- export status. We need to freeze only if the
 									-- information specific to EXTERNAL_I is not equiv
 								ext_i ?= f1
-								if not is_freeze_requested and then not ext_i.freezing_equiv (f2) then
+								if
+									not ext_i.freezing_equiv (f2)
+								then
 										-- The external definition has changed
-									System.request_freeze
-									is_freeze_requested := True
+									System.set_freeze
 								end
 							end
 							Result := False
 							create depend_unit.make (feat_tbl_id, f2)
 							pass2_ctrl.propagators.extend (depend_unit)
-							if not is_freeze_requested and then c.visible_level.is_visible (f1, feat_tbl_id) then
-									-- Regenerate C code for visible feature so that it can be accessed via CECIL.
-								system.request_freeze
-								is_freeze_requested := True
-							end
+						else
+							f1.set_code_id (f2.code_id)
 						end
 					end
 					forth
 				end
 				if Result then
-					Result := origin_table.equiv (other.origin_table, c)
+					Result := origin_table.equiv (other.origin_table)
 debug ("ACTIVITY")
 	if not Result then
 		io.error.put_string ("%TOrigin table is not equivalent%N")
@@ -385,7 +385,7 @@ end
 			old_feature_i, new_feature_i: FEATURE_I
 			feature_name_id: INTEGER
 			propagators, melted_propagators: TWO_WAY_SORTED_SET [DEPEND_UNIT]
-			removed_features: SEARCH_TABLE [INTEGER]
+			removed_features: SEARCH_TABLE [FEATURE_I]
 			depend_unit: DEPEND_UNIT
 			external_i: EXTERNAL_I
 			propagate_feature: BOOLEAN
@@ -418,7 +418,7 @@ end
 						then
 							-- Force a re-freeze in order
 							-- to get a correct 'ececil.c'
-							System.request_freeze
+							System.set_freeze
 						end
 						has_same_type := old_feature_i.same_class_type (new_feature_i)
 					end
@@ -464,19 +464,16 @@ end
 						pass_control.remove_external (external_i)
 					end
 					if
-						new_feature_i = Void or else
-						(new_feature_i.written_in /= feat_tbl_id) or else
-						(new_feature_i.body_index /= old_feature_i.body_index)
+						new_feature_i = Void or else not (new_feature_i.written_in = feat_tbl_id)
 					then
-							-- A feature written in the associated class disapearred,
-							-- or was moved in the inheritance hierarchy,
-							-- or had a different body_index.
+							-- A feature written in the associated class
+							-- disapear
 debug ("ACTIVITY")
 	io.error.put_string ("Removed feature: ")
 	io.error.put_string (old_feature_i.feature_name)
 	io.error.put_new_line
 end
-						removed_features.put (old_feature_i.body_index)
+						removed_features.put (old_feature_i)
 						propagate_feature := True
 					end
 				end
@@ -531,12 +528,11 @@ end
 				loop
 	debug ("ACTIVITY")
 		io.error.put_string ("%Tfeature of id ")
-		io.error.put_integer (removed_feature_ids.item.routine_id)
+		io.error.put_integer (removed_feature_ids.item)
 		io.error.put_string (" (removed by `update_table' is propagated to clients%N")
 	end
-					create depend_unit.make_no_dead_code (feat_tbl_id, removed_feature_ids.item.routine_id)
+					create depend_unit.make_no_dead_code (feat_tbl_id, removed_feature_ids.item)
 					propagators.put (depend_unit)
-					removed_features.put (removed_feature_ids.item.body_id)
 					removed_feature_ids.forth
 				end
 				removed_feature_ids := Void
@@ -608,16 +604,15 @@ end
 					-- There is no need for a corresponding "reactivate" here
 					-- since it will be done in by pass2 in `feature_unit' if need be
 
-					removed_feature_ids.extend ([f.rout_id_set.first, f.body_index])
+					removed_feature_ids.extend (f.rout_id_set.first)
 					remove (key_for_iteration)
-				else
-					forth
 				end
+				forth
 			end
 		end
 
-	removed_feature_ids: LINKED_LIST [TUPLE[routine_id, body_id: INTEGER]]
-			-- Set of routine_id and body_id removed by `update_table'
+	removed_feature_ids: LINKED_LIST [INTEGER]
+			-- Set of routine_ids removed by `update_table'
 			--| It will be used for incrementality (propagation of pass3)
 
 	check_table is
@@ -864,13 +859,12 @@ end
 				-- Reset `visible_table_size' since size is computed
 				-- during generation.
 			a_class.set_visible_table_size (0)
-			debug ("refactor_fixme")
-				(create {REFACTORING_HELPER}).fixme ("[
-					Remove information about visible features from byte code
-					format as they are supported only in frozen code.
-				]")
+			if a_class.has_visible then
+				ba.append ('%/001/')
+				a_class.visible_level.make_byte_code (ba, Current)
+			else
+				ba.append ('%U')
 			end
-			ba.append ('%U')
 		end
 
 	generate (buffer: GENERATION_BUFFER) is

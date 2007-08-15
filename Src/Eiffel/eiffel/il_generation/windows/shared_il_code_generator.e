@@ -15,14 +15,16 @@ feature -- IL generator object
 		once
 			Result := cil_generator
 		end
-
+		
 	cil_generator: CIL_CODE_GENERATOR is
 			-- Generator for CIL code
+		local
+			single: SINGLE_IL_CODE_GENERATOR
+			multiple: INTERFACE_IL_CODE_GENERATOR
 		once
 				-- We keep both `INTERFACE_xx' and `SINGLE_xx' in
 				-- our system for the moment in case we need to
 				-- switch back to either one or the other.
-			create {SINGLE_IL_CODE_GENERATOR} Result.make
 			create {INTERFACE_IL_CODE_GENERATOR} Result.make
 		end
 

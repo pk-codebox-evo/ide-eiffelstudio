@@ -11,12 +11,8 @@ class
 inherit
 	EB_CLASS_HIERARCHY_FORMATTER
 		redefine
-			is_tree_node_highlight_enabled,
-			is_inheritance_formatter,
-			browser
+			is_tree_node_highlight_enabled
 		end
-
-	EB_CONSTANTS
 
 create
 	make
@@ -31,47 +27,21 @@ feature -- Properties
 			Result.put (pixmaps.icon_pixmaps.class_descendents_icon, 2)
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Graphical representation of the command.
-		once
-			Result := pixmaps.icon_pixmaps.class_descendents_icon_buffer
-		end
-
 	class_cmd: E_SHOW_DESCENDANTS
 			-- Class command that can generate the information.
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Identifier of `Current' in menus.
 		do
 			Result := Interface_names.m_Showdescendants
 		end
 
-	browser: EB_CLASS_BROWSER_TREE_VIEW
-			-- Browser
-
-	displayer_generator: TUPLE [any_generator: FUNCTION [ANY, TUPLE, like displayer]; name: STRING] is
-			-- Generator to generate proper `displayer' for Current formatter
-		do
-			Result := [agent displayer_generators.new_class_tree_displayer, displayer_generators.class_tree_displayer]
-		end
-
-	sorting_status_preference: STRING_PREFERENCE is
-			-- Preference to store last sorting orders of Current formatter
-		do
-			Result := preferences.class_browser_data.class_tree_view_sorting_order_preference
-		end
-
-feature -- Status report
-
 	is_tree_node_highlight_enabled: BOOLEAN is True
 			-- Is tree node highlight enabled?
 
-	is_inheritance_formatter: BOOLEAN is True
-			-- Is current a class inheritance (ancestor/descendant) formatter?
-
 feature {NONE} -- Properties
 
-	capital_command_name: STRING_GENERAL is
+	command_name: STRING is
 			-- Name of the command.
 		do
 			Result := Interface_names.l_Descendants
@@ -98,7 +68,7 @@ feature {NONE} -- Implementation
 		do
 			check associated_class /= Void end
 			l_class := query_class_item_from_class_c (associated_class)
-			create {QL_CLASS_DESCENDANT_RELATION_CRI}Result.make (l_class.wrapped_domain, {QL_CLASS_DESCENDANT_RELATION_CRI}.descendant_type)
+			create {QL_CLASS_DESCENDANT_RELATION_CRI}Result.make (l_class.wrapped_domain, class_descendant_relation)
 		end
 
 indexing

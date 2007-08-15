@@ -41,6 +41,14 @@ inherit
 			is_in_default_state
 		end
 
+	EV_POSITIONED
+		undefine
+			initialize
+		redefine
+			implementation,
+			is_in_default_state
+		end
+
 	EV_WIDGET_ACTION_SEQUENCES
 		redefine
 			implementation
@@ -318,7 +326,7 @@ feature -- Element change
 			implementation.set_minimum_width (a_minimum_width)
 			minimum_width_set_by_user := True
 		ensure
-			minimum_width_assigned: (a_minimum_width > 0 implies minimum_width = a_minimum_width) or (a_minimum_width = 0 implies (minimum_width <= 1))
+			minimum_width_assigned: minimum_width = a_minimum_width
 			minimum_width_set_by_user_set: minimum_width_set_by_user
 		end
 
@@ -334,7 +342,7 @@ feature -- Element change
 			implementation.set_minimum_height (a_minimum_height)
 			minimum_height_set_by_user := True
 		ensure
-			minimum_height_assigned: (a_minimum_height > 0 implies minimum_height = a_minimum_height) or (a_minimum_height = 0 implies (minimum_height <= 1))
+			minimum_height_assigned: minimum_height = a_minimum_height
 			minimum_height_set_by_user_set: minimum_height_set_by_user
 		end
 
@@ -353,8 +361,8 @@ feature -- Element change
 			minimum_height_set_by_user := True
 			minimum_width_set_by_user := True
 		ensure
-			minimum_width_assigned: (a_minimum_width > 0 implies minimum_width = a_minimum_width) or (a_minimum_width = 0 implies (minimum_width <= 1))
-			minimum_height_assigned: (a_minimum_height > 0 implies minimum_height = a_minimum_height) or (a_minimum_height = 0 implies (minimum_height <= 1))
+			minimum_width_assigned: minimum_width = a_minimum_width
+			minimum_height_assigned: minimum_height = a_minimum_height
 			minimum_height_set_by_user_set: minimum_height_set_by_user
 			minimum_width_set_by_user_set: minimum_width_set_by_user
 		end
@@ -377,13 +385,35 @@ feature {EV_BUILDER} -- Element change
 			minimum_height_set_by_user_reset: not minimum_height_set_by_user
 		end
 
+feature -- Measurement
+
+	screen_x: INTEGER is
+			-- Horizontal offset relative to left of screen in pixels.
+		require
+			not_destroyed: not is_destroyed
+		do
+			Result := implementation.screen_x
+		ensure
+			bridge_ok: Result = implementation.screen_x
+		end
+
+	screen_y: INTEGER is
+			-- Vertical offset relative to top of screen in pixels.
+		require
+			not_destroyed: not is_destroyed
+		do
+			Result := implementation.screen_y
+		ensure
+			bridge_ok: Result = implementation.screen_y
+		end
+
 feature {NONE} -- Contract support
 
 	is_in_default_state: BOOLEAN is
 			-- Is `Current' in its default state?
 		do
 			Result := Precursor {EV_PICK_AND_DROPABLE} and Precursor {EV_SENSITIVE} and
-				Precursor {EV_COLORIZABLE} and
+				Precursor {EV_COLORIZABLE} and Precursor {EV_POSITIONED} and
 				Precursor {EV_HELP_CONTEXTABLE} and Precursor {EV_DOCKABLE_SOURCE}
 		end
 

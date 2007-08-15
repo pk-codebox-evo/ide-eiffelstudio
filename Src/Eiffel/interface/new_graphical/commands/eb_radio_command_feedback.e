@@ -13,7 +13,6 @@ inherit
 	EB_COMMAND_FEEDBACK
 		redefine
 			button,
-			sd_button,
 			menu_item
 		end
 
@@ -27,11 +26,6 @@ feature -- Status setting
 				button.select_actions.block
 				button.enable_select
 				button.select_actions.resume
-			end
-			if sd_button /= Void then
-				sd_button.select_actions.block
-				sd_button.enable_select
-				sd_button.select_actions.resume
 			end
 			if menu_item /= Void then
 				menu_item.select_actions.block
@@ -55,7 +49,7 @@ feature -- Status setting
 
 feature -- Interface
 
-	command_name: STRING_GENERAL is
+	command_name: STRING is
 			-- Name of current command throughout the interface (in lower case).
 		deferred
 		ensure
@@ -63,12 +57,10 @@ feature -- Interface
 			lower_case: is_lower_case (Result)
 		end
 
-	capital_command_name: STRING_GENERAL
+	capital_command_name: STRING
 			-- Name of current command throughout the interface (in lower case, but the first letter).
-		deferred
-		end
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- String representation in the associated menu.
 		deferred
 		ensure
@@ -85,6 +77,9 @@ feature -- Status setting
 
 feature -- Access
 
+	button: EV_TOOL_BAR_RADIO_BUTTON
+			-- Button on the toolbar.
+
 	menu_item: EV_RADIO_MENU_ITEM
 			-- Menu entry in the menu.
 
@@ -94,9 +89,7 @@ feature -- Access
 	selected: BOOLEAN is
 			-- Is current command selected?
 		do
-			if sd_button /= Void then
-				Result := sd_button.is_selected
-			elseif button /= Void then
+			if button /= Void then
 				Result := button.is_selected
 			elseif menu_item /= Void then
 				Result := menu_item.is_selected
@@ -107,41 +100,25 @@ feature -- Access
 
 feature -- Implementation
 
-	valid_string (str: STRING_GENERAL): BOOLEAN is
-			-- Is `str' neither Void nor empty
-			-- It used to be nor filled with blanks with STRING_8
+	valid_string (str: STRING): BOOLEAN is
+			-- Is `str' neither Void nor empty nor filled with blanks?
 			--| Cannot be in a non exported part because post conditions use it.
+		local
+			blank_string: STRING
 		do
-			Result := str /= Void and then not str.is_empty
+			if str /= Void and then not str.is_equal ("") then
+				create blank_string.make (str.count)
+				blank_string.fill_blank
+				Result := not str.is_equal (blank_string)
+			end
 		end
 
-	is_lower_case (str: STRING_GENERAL): BOOLEAN is
+	is_lower_case (str: STRING): BOOLEAN is
 			-- Is `str' lower case?
 			--| Cannot be in a non exported part because post conditions use it.
 		do
-			Result := interface_names.is_string_general_lower (str)
+			Result := str.as_lower.is_equal (str)
 		end
-
-	is_button_sensitive: BOOLEAN is
-			-- Is button appear sensitive?
-		do
-			check
-				only_one_button_is_available: (button /= Void or sd_button /= Void) and not (button = Void and sd_button = Void)
-			end
-			if button /= Void then
-				Result := button.is_sensitive
-			elseif sd_button.is_sensitive then
-				Result := sd_button.is_sensitive
-			end
-		end
-
-feature {NONE} -- Access
-
-	button: EV_TOOL_BAR_RADIO_BUTTON
-			-- Button on the toolbar.
-
-	sd_button: SD_TOOL_BAR_RADIO_BUTTON
-			-- Button on the toolbar.
 
 feature {NONE} -- Implementation
 

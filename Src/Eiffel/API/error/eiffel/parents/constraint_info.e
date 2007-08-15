@@ -6,7 +6,7 @@ indexing
 	date: "$Date$"
 	revision: "$Revision $"
 
-class CONSTRAINT_INFO
+class CONSTRAINT_INFO 
 
 feature -- Properties
 
@@ -17,79 +17,41 @@ feature -- Properties
 	formal_number: INTEGER
 			-- Number of the generic parameter violating the rule
 
-	actual_type_set: TYPE_SET_A
-			-- Type set involved
-
-	c_type: TYPE_SET_A
-			-- Type set involved in the constraint
-
-	unmatched_creation_constraints: LIST[FEATURE_I]
-			-- List of unmatched creation constraints
+	actual_type, c_type: TYPE_A
+			-- Types involved
 
 feature -- Output
 
 	build_explain (a_text_formatter: TEXT_FORMATTER) is
 		require
-			actual_type_set /= Void
+			actual_type /= Void
 			c_type /= Void
-		local
-			l_gen_type: GEN_TYPE_A
 		do
 			a_text_formatter.add_new_line
 			a_text_formatter.add ("For type: ")
 			type.append_to (a_text_formatter)
 			a_text_formatter.add_new_line
-			a_text_formatter.add ("Formal #")
+			a_text_formatter.add ("Argument number: ")
 			a_text_formatter.add_int (formal_number)
-			a_text_formatter.add (": ")
-			actual_type_set.ext_append_to (a_text_formatter, type.associated_class )
+			a_text_formatter.add (":")
 			a_text_formatter.add_new_line
-			if c_type.has_formal then
-				l_gen_type ?= type
-				check type_is_generic: l_gen_type /= Void end
-				c_type := c_type.twin
-				c_type.substitude_formals (l_gen_type)
-			end
-			if not actual_type_set.conform_to_type (c_type) then
-				a_text_formatter.add ("Type to which it should conform: ")
-				c_type.ext_append_to (a_text_formatter, type.associated_class)
-				a_text_formatter.add_new_line
-			end
-
-			if unmatched_creation_constraints /= Void then
-				if actual_type_set.has_deferred then
-					a_text_formatter.add ("Unmet creation constraint features because class is deferred:%N")
-				else
-					a_text_formatter.add ("Unmet creation constraint features:%N")
-				end
-				unmatched_creation_constraints.do_all (
-					agent (aa_text_formatter: TEXT_FORMATTER; a_feature: FEATURE_I)
-							-- Print all features
-						do
-							aa_text_formatter.add_feature_name (a_feature.names_heap.item (a_feature.feature_name_id), a_feature.written_class)
-							aa_text_formatter.add (" ")
-						end (a_text_formatter, ?))
-				a_text_formatter.add ("%N")
-			end
+			a_text_formatter.add ("Actual generic parameter: ")
+			actual_type.append_to (a_text_formatter)
+			a_text_formatter.add_new_line
+			a_text_formatter.add ("Type to which it should conform: ")
+			c_type.append_to (a_text_formatter)
+			a_text_formatter.add_new_line
 		end
 
 feature {COMPILER_EXPORTER} -- Setting
 
-	set_unmatched_creation_constraints (a_unmatched_creation_constraints: LIST[FEATURE_I])
-			-- Set `unmatched_creation_constraints' to `a_unmatched_creation_constraints'
-		do
-			unmatched_creation_constraints := a_unmatched_creation_constraints
-		ensure
-			set: unmatched_creation_constraints = a_unmatched_creation_constraints
-		end
-
-	set_actual_type_set (t: TYPE_SET_A) is
+	set_actual_type (t: TYPE_A) is
 			-- Assign `t' to `type1'.
 		do
-			actual_type_set := t
+			actual_type := t
 		end
 
-	set_constraint_types (t: TYPE_SET_A) is
+	set_constraint_type (t: TYPE_A) is
 			-- Assign `t' to `type2'.
 		do
 			c_type := t

@@ -71,26 +71,6 @@ feature -- Status report
 			end
 		end
 
-	name: STRING_GENERAL is
-			-- Only used in interface.
-		do
-			inspect
-				type
-			when cf_Chart then
-				Result := ewb_names.l_chart
-			when cf_Diagram then
-				Result := ewb_names.l_relations
-			when cf_Clickable then
-				Result := ewb_names.l_text
-			when cf_Flat then
-				Result := ewb_names.l_flat
-			when cf_Short then
-				Result := ewb_names.l_contract
-			when cf_Flatshort then
-				Result := ewb_names.l_flatshort
-			end
-		end
-
 	description: STRING is
 			-- Appearing in menu item for example.
 		do
@@ -131,19 +111,19 @@ indexing
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[
 			This file is part of Eiffel Software's Eiffel Development Environment.
-
+			
 			Eiffel Software's Eiffel Development Environment is free
 			software; you can redistribute it and/or modify it under
 			the terms of the GNU General Public License as published
 			by the Free Software Foundation, version 2 of the License
 			(available at the URL listed under "license" above).
-
+			
 			Eiffel Software's Eiffel Development Environment is
 			distributed in the hope that it will be useful,	but
 			WITHOUT ANY WARRANTY; without even the implied warranty
 			of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 			See the	GNU General Public License for more details.
-
+			
 			You should have received a copy of the GNU General Public
 			License along with Eiffel Software's Eiffel Development
 			Environment; if not, write to the Free Software Foundation,

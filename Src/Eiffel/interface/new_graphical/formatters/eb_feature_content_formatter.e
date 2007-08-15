@@ -10,19 +10,10 @@ deferred class
 	EB_FEATURE_CONTENT_FORMATTER
 
 inherit
-	EB_BROWSER_FORMATTER
-		rename
-			internal_recycle as browser_formatter_recycle
-		end
-
 	EB_FEATURE_INFO_FORMATTER
-		undefine
-			retrieve_sorting_order,
-			is_browser_formatter
 		redefine
-			internal_recycle
-		select
-			internal_recycle
+			empty_widget,
+			recycle
 		end
 
 	QL_UTILITY
@@ -40,14 +31,13 @@ feature -- Setting
 				browser.set_focus
 			end
 		end
-
+		
 feature -- Formatting
 
 	format is
 			-- Refresh `widget'.
 		do
-			if associated_feature /= Void and then selected and then displayed and then actual_veto_format_result then
-				retrieve_sorting_order
+			if associated_feature /= Void and then selected and then displayed then
 				display_temp_header
 				if not widget.is_displayed then
 					widget.show
@@ -61,6 +51,9 @@ feature -- Formatting
 
 feature -- Access
 
+	browser: EB_FEATURE_BROWSER_GRID_VIEW
+			-- Browser where information gets displayed
+
 	widget: EV_WIDGET is
 			-- Graphical representation of the information provided.
 		do
@@ -69,6 +62,23 @@ feature -- Access
 			else
 				Result := browser.widget
 			end
+		end
+
+	empty_widget: EV_WIDGET is
+			-- Widget displayed when no information can be displayed.
+		local
+			def: EV_STOCK_COLORS
+			l_frame: EV_FRAME
+			l_cell: EV_CELL
+		do
+			create def
+			create l_frame
+			l_frame.set_style ({EV_FRAME_CONSTANTS}.Ev_frame_lowered)
+			create l_cell
+			l_cell.extend (l_frame)
+			Result := l_cell
+			l_frame.set_background_color (def.White)
+			l_frame.drop_actions.extend (agent on_feature_drop)
 		end
 
 feature -- Setting
@@ -81,9 +91,14 @@ feature -- Setting
 			end
 		end
 
-	setup_viewpoint is
-			-- Setup viewpoint for formatting.
+	set_browser (a_browser: like browser) is
+			-- Set `browser' with `a_browser'.
+		require
+			a_browser_attached: a_browser /= Void
 		do
+			browser := a_browser
+		ensure
+			browser_set: browser = a_browser
 		end
 
 feature -- Status setting
@@ -98,7 +113,15 @@ feature -- Status setting
 				end
 			else
 				associated_feature := Void
-				ensure_display_in_widget_owner
+				if
+					selected and then
+					not widget.is_displayed
+				then
+					if widget_owner /= Void then
+						widget_owner.set_widget (widget)
+					end
+					display_header
+				end
 			end
 		end
 
@@ -111,18 +134,27 @@ feature -- Status setting
 			end
 			must_format := True
 			format
-			ensure_display_in_widget_owner
+			if
+				selected and then
+				not widget.is_displayed
+			then
+				if widget_owner /= Void then
+					widget_owner.set_widget (widget)
+				end
+				display_header
+			end
 		ensure
 			feature_set: a_feature = associated_feature
 		end
 
-feature {NONE} -- Recyclable
+feature -- Recyclable
 
-	internal_recycle is
+	recycle is
 			-- Recycle
 		do
 			Precursor {EB_FEATURE_INFO_FORMATTER}
-			browser_formatter_recycle
+			browser.recycle
+			browser := Void
 		end
 
 feature{NONE} -- Implementation
@@ -130,11 +162,13 @@ feature{NONE} -- Implementation
 	generate_result is
 			-- Generate result for display
 		local
+			l_domain: QL_FEATURE_DOMAIN
 			l_retried: BOOLEAN
 		do
 			if not l_retried then
 				browser.set_trace (Void)
-				browser.update (Void, result_data)
+				l_domain ?= system_target_domain.new_domain (domain_generator)
+				browser.update (Void, l_domain)
 			else
 				browser.set_trace (exception_trace)
 				browser.update (Void, Void)
@@ -142,12 +176,6 @@ feature{NONE} -- Implementation
 		rescue
 			l_retried := True
 			retry
-		end
-
-	result_data: QL_FEATURE_DOMAIN is
-			-- Result for Current formatter
-		do
-			Result ?= system_target_domain.new_domain (domain_generator)
 		end
 
 	domain_generator: QL_DOMAIN_GENERATOR is

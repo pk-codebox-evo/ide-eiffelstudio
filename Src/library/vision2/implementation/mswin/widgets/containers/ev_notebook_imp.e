@@ -27,6 +27,7 @@ inherit
 			compute_minimum_width,
 			compute_minimum_height,
 			compute_minimum_size,
+			on_key_down,
 			on_size,
 			interface,
 			child_added,
@@ -100,13 +101,14 @@ inherit
 			on_sys_key_down,
 			on_sys_key_up,
 			on_notify,
-			default_process_message,
-			on_wm_dropfiles
+			default_process_message
 		redefine
 			default_style,
 			default_ex_style,
 			hide_current_selection,
 			on_tcn_selchange,
+			wel_move_and_resize,
+			wel_resize,
 			on_wm_theme_changed,
 			on_erase_background
 		end
@@ -199,7 +201,7 @@ feature {EV_ANY_I} -- Status report
 			point.set_x (point.x - screen_x)
 			point.set_y (point.y - screen_y)
 			create hit_test_info.make_with_point (point)
-			Result := {WEL_API}.send_message_result_integer (wel_item, tcm_hittest, to_wparam (0), hit_test_info.item) + 1
+			Result := cwin_send_message_result_integer (wel_item, tcm_hittest, to_wparam (0), hit_test_info.item) + 1
 		end
 
 	item_tab (an_item: EV_WIDGET): EV_NOTEBOOK_TAB is
@@ -287,7 +289,7 @@ feature {EV_ANY_I} -- Element change
 	set_font (f: EV_FONT) is
 			-- Set `font' to `f'.
 			-- When the tabs are vertical, we set back the default font
-			-- by using `{WEL_API}.send_message' (feature not implemented in WEL)
+			-- by using `cwin_send_message' (feature not implemented in WEL)
 			-- because vertical fonts doesn't work with everything.
 		do
 			private_font := f
@@ -375,6 +377,30 @@ feature -- Assertion features
 		end
 
 feature {NONE} -- Implementation
+
+	tab_action (direction: BOOLEAN) is
+			-- Go to the next widget that takes the focus through to the tab
+			-- key. If `direction' it goes to the next widget otherwise, it
+			-- goes to the previous one.
+		local
+			hwnd: POINTER
+			window: WEL_WINDOW
+		do
+			hwnd := next_dlgtabitem (top_level_window_imp.wel_item,
+				wel_item, direction)
+			window := window_of_item (hwnd)
+			window.set_focus
+		end
+
+	process_tab_key (virtual_key: INTEGER) is
+			-- Process a tab or arrow key press to give the focus to the next
+			-- widget. Need to be called in the feature on_key_down when the
+			-- control need to process this kind of keys.
+		do
+			if virtual_key = Vk_tab then
+				tab_action (not key_down (Vk_shift))
+			end
+		end
 
 	compute_minimum_width is
 			-- Recompute the minimum_width of `Current'.
@@ -599,6 +625,31 @@ feature {NONE} -- WEL Implementation
 			end
 		end
 
+	on_key_down (virtual_key, key_data: INTEGER) is
+			-- A key has been pressed.
+		do
+			process_tab_key (virtual_key)
+			Precursor {EV_WIDGET_LIST_IMP} (virtual_key, key_data)
+		end
+
+	wel_move_and_resize (a_x, a_y, a_width, a_height: INTEGER;
+			repaint: BOOLEAN) is
+			-- Move the window to `a_x', `a_y' position and
+			-- resize it with `a_width', `a_height'.
+		do
+			move_and_resize_internal (a_x, a_y, a_width, a_height, repaint)
+		end
+
+	wel_resize (a_width, a_height: INTEGER) is
+			-- Resize the window with `a_width', `a_height'.
+		local
+			a_default_pointer: POINTER
+		do
+			cwin_set_window_pos (wel_item, a_default_pointer,
+				0, 0, a_width, a_height,
+				Swp_nomove + Swp_nozorder + Swp_noactivate)
+		end
+
 feature {NONE} -- Feature that should be directly implemented by externals
 
 	get_wm_hscroll_code (wparam, lparam: POINTER): INTEGER is
@@ -821,7 +872,7 @@ feature {EV_NOTEBOOK_TAB_IMP} -- Implementation
 						-- If no image list is associated with `Current', retrieve
 						-- and associate one.
 					image_list := get_imagelist_with_size (pixmaps_width, pixmaps_height)
-					{WEL_API}.send_message (wel_item, tcm_setimagelist, to_wparam (0), image_list.item)
+					cwin_send_message (wel_item, tcm_setimagelist, to_wparam (0), image_list.item)
 				end
 				image_list.add_pixmap (a_pixmap)
 					-- Set the `iimage' to the index of the image to be used
@@ -854,7 +905,7 @@ feature {EV_NOTEBOOK_TAB_IMP} -- Implementation
 					-- Note that `get_item' is not used as this does not set the `mask' enabling
 					-- `iimage' to be returned. I did not want to change the behaviour in WEL_TAB_CONTROL_ITEM
 					-- to avoid breaking something. Julian
-				{WEL_API}.send_message (wel_item, Tcm_getitem, to_wparam (index_of (v, 1) - 1), a_wel_item.item)
+				cwin_send_message (wel_item, Tcm_getitem, to_wparam (index_of (v, 1) - 1), a_wel_item.item)
 				image_index := a_wel_item.iimage
 					-- `image_index' may be -1 in the case where a tab does not have an associated image.
 					-- If so, there is nothing to do as the returned pixmap must be `Void'.
@@ -1032,7 +1083,7 @@ feature {NONE} -- Font implementation
 					set_default_font
 				end
 			else
-				{WEL_API}.send_message (wel_item, Wm_setfont, to_wparam (0), cwin_make_long (1, 0))
+				cwin_send_message (wel_item, Wm_setfont, to_wparam (0), cwin_make_long (1, 0))
 			end
 			notify_change (nc_minsize, Current)
 		end

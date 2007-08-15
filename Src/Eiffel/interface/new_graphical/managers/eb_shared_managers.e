@@ -16,50 +16,46 @@ inherit
 
 	PROJECT_CONTEXT
 
-	EB_SHARED_METRIC_MANAGER
-
-	EB_SHARED_SHORTCUT_MANAGER
-
 feature -- Status report
 
 	process_manager: EB_PROCESS_MANAGER is
-			-- Manager to manipulated processed spawned by Current process
+			--
 		once
 			create Result.make (freezing_launcher, finalizing_launcher, external_launcher)
 		end
 
 	external_launcher: EB_EXTERNAL_LAUNCHER is
-			-- Launcher to launch external processed used in external output tool
+			--
 		once
 			create Result.initialize
 		end
 
 	freezing_launcher: EB_FREEZING_LAUNCHER is
-			-- Launcher to launch c compiler for freezing
+			--
 		once
 			create Result.make
 		end
 
 	finalizing_launcher: EB_FINALIZING_LAUNCHER is
-			-- Launcher to luanch c compiler for finalizing
+			--
 		once
 			create Result.make
 		end
 
 	idle_printing_manager: EB_IDLE_PRINTING_MANAGER is
-			-- Manager to maintain output data got from launched processes
+			--
 		once
 			create Result.make
 		end
 
 	external_output_manager: EB_EXTERNAL_OUTPUT_MANAGER is
-			-- Manager for output from external processes
+			--
 		do
 			Result := external_output_manager_cell.item
 		end
 
 	c_compilation_output_manager: EB_C_COMPILATION_OUTPUT_MANAGER is
-			-- Manager for output from C compiler
+			--
 		do
 			Result := c_compilation_output_manager_cell.item
 		end
@@ -89,25 +85,13 @@ feature -- Status report
 			create Result
 		end
 
-	customized_formatter_manager: EB_CUSTOMIZED_FORMATTER_MANAGER is
-			-- Customized formatter manager
-		once
-			create Result
-		end
-
-	customized_tool_manager: EB_CUSTOMIZED_TOOL_MANAGER is
-			-- Customized tool manager
-		once
-			create Result
-		end
+feature {NONE} -- Implementation
 
 	Refactoring_manager: ERF_MANAGER is
 			-- The refactoring manager.
 		once
 			create Result.make
 		end
-
-feature {NONE} -- Implementation
 
 	Recent_projects_manager_cell: CELL [EB_RECENT_PROJECTS_MANAGER] is
 			-- Recent projects manager for ebench
@@ -122,13 +106,13 @@ feature {NONE} -- Implementation
 		end
 
 	External_output_manager_cell: CELL [EB_EXTERNAL_OUTPUT_MANAGER] is
-			-- External output manager
+			--
 		once
 			create Result.put (Void)
 		end
 
 	C_compilation_output_manager_cell: CELL [EB_C_COMPILATION_OUTPUT_MANAGER] is
-			-- C compiler output manager
+			--
 		once
 			create Result.put (Void)
 		end

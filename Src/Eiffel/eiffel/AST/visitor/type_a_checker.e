@@ -53,7 +53,6 @@ feature -- Status report
 			last_type := Void
 			associated_type_ast := Void
 		end
-
 	check_and_solved (a_unevaluated_type: TYPE_A; a_type_as: TYPE_AS): TYPE_A is
 			-- Check that validity of `a_unevaluated_type' in current context
 			-- as initialized by `init' or `init_with_feature_table'.
@@ -206,8 +205,7 @@ feature -- Special checking
 						error_handler.insert_error (l_vtug)
 					else
 						a_type.reset_constraint_error_list
-							-- We check creation readyness if the type is expanded. See ECMA 356 2nd edition: section 8.12.12/
-						a_type.check_constraints (current_class,current_feature, a_type.is_expanded)
+						a_type.check_constraints (current_class)
 						if not a_type.constraint_error_list.is_empty then
 							create l_vtcg3
 							l_vtcg3.set_class (current_class)
@@ -228,21 +226,12 @@ feature -- Special checking
 
 	check_constraint_type (a_context_class: CLASS_C; a_type: TYPE_AS; a_error_handler: ERROR_HANDLER) is
 			-- Is `a_type' a valid constraint for `a_context_class'?
-			--| We check whether the `a_type' exists in the very same group as `a_context_class'.
-			--| In case `a_type' is generic, we check that all actual generic parameters meet their constraints.
-			--| Example:
-			--| class A[G -> LIST[INTEGER]] end
-			--| `a_type' is LIST
-			--| `a_context_class' is A
-			--| * Check that LIST is in the same group (cluster, library) as A.
-			--| * Check that INTEGER fullfils the constraint of LIST's first and only generic.
 		require
 			a_context_class_not_void: a_context_class /= Void
 			a_type_not_void: a_type /= Void
 			a_error_handler_not_void: a_error_handler /= Void
 		local
 			l_class_type: CLASS_TYPE_AS
-			l_class_type_generics: TYPE_LIST_AS
 			l_associated_class: CLASS_C
 			l_temp, l_cl_generics: EIFFEL_LIST [FORMAL_DEC_AS]
 			l_class_i: CLASS_I
@@ -255,11 +244,9 @@ feature -- Special checking
 			l_t1, l_t2: TYPE_AS
 			l_t1_a, l_t2_a: TYPE_A
 			l_pos: INTEGER
-			l_cursor1, l_cursor2: INTEGER
 			l_is_tuple_type : BOOLEAN
 			l_gen_type: GEN_TYPE_A
 			l_type_a: TYPE_A
-			l_generics: TYPE_LIST_AS
 		do
 			l_class_type ?= a_type
 			l_type_a := type_a_generator.evaluate_type (a_type, a_context_class)
@@ -270,15 +257,13 @@ feature -- Special checking
 				l_vcfg3.set_formal_name ("Constraint genericity")
 				l_vcfg3.set_location (a_type.start_location)
 				a_error_handler.insert_error (l_vcfg3)
-				-- If `l_class_type' is Void, we stop because we habe a formal generic, which is always valid.
 			elseif l_class_type /= Void then
 				l_cluster := a_context_class.group
-				l_class_i := universe.class_named (l_class_type.class_name.name, l_cluster)
+				l_class_i := universe.class_named (l_class_type.class_name, l_cluster)
 				if l_class_i = Void then
-					fixme ("Produce better error message: Say that it was not found in the current cluster if it exists in another cluster.")
 					create l_vtct
 					l_vtct.set_class (a_context_class)
-					l_vtct.set_class_name (l_class_type.class_name.name)
+					l_vtct.set_class_name (l_class_type.class_name)
 					l_vtct.set_location (l_class_type.start_location)
 					a_error_handler.insert_error (l_vtct)
 					a_error_handler.raise_error
@@ -286,28 +271,25 @@ feature -- Special checking
 					l_associated_class := l_class_i.compiled_class
 					l_is_tuple_type := l_associated_class.is_tuple
 					l_cl_generics := l_associated_class.generics
-						-- The generic parameters to check (INTEGER in the example above).
-					l_class_type_generics := l_class_type.generics
 						-- TUPLEs can have any number of generics
 					if not l_is_tuple_type then
-						if l_class_type_generics /= Void then
+						if l_class_type.generics /= Void then
 							if (l_cl_generics = Void) then
 								create {VTUG1} l_vtug
-							elseif (l_cl_generics.count /= l_class_type_generics.count) then
+							elseif (l_cl_generics.count /= l_class_type.generics.count) then
 								create {VTUG2} l_vtug
 							end
 						elseif l_cl_generics /= Void then
 							create {VTUG2} l_vtug
 						end
 					end
-
 					if l_vtug /= Void then
 						l_vtug.set_class (a_context_class)
 						l_vtug.set_type (l_type_a)
 						l_vtug.set_base_class (l_associated_class)
 						l_vtug.set_location (l_class_type.class_name)
 						a_error_handler.insert_error (l_vtug)
-					elseif l_class_type_generics /= Void then
+					elseif l_class_type.generics /= Void then
 						if not l_is_tuple_type then
 							from
 								l_temp := l_cl_generics
@@ -328,60 +310,45 @@ feature -- Special checking
 										-- some generic parameters
 									l_gen_type_not_void: l_gen_type /= Void
 								end
-								l_cursor1 := l_class_type_generics.index
-								l_class_type_generics.start
+								l_class_type.generics.start
 								l_cl_generics.start
 								l_pos := 1
-								a_error_handler.mark
 							until
-								l_class_type_generics.after or else l_has_error
+								l_class_type.generics.after or else l_has_error
 							loop
 								l_nb_errors := a_error_handler.nb_errors
-								l_t1 := l_class_type_generics.item
+								l_t1 := l_class_type.generics.item
 								check_constraint_type (a_context_class, l_t1, a_error_handler)
 								l_has_error := a_error_handler.nb_errors /= l_nb_errors
 								if not l_has_error then
 									l_t1_a := type_a_generator.evaluate_type (l_t1, a_context_class)
-									from
-										l_cursor2 := l_cl_generics.item.constraints.index
-										l_cl_generics.item.constraints.start
-									until
-										l_cl_generics.item.constraints.after or l_has_error
-									loop
-										l_t2 := l_cl_generics.item.constraints.item.type
-										if l_t2 /= Void then
-											l_t2_a := type_a_generator.evaluate_type (l_t2, a_context_class)
-											if l_t2_a /= Void then
-												l_t1_a.check_const_gen_conformance
-													(l_gen_type, l_t2_a, a_context_class, l_pos)
-												l_has_error := a_error_handler.nb_errors /= l_nb_errors
-											end
+									l_t2 := l_cl_generics.item.constraint
+									if l_t2 /= Void then
+										l_t2_a := type_a_generator.evaluate_type (l_t2, a_context_class)
+										if l_t2_a /= Void then
+											l_t1_a.check_const_gen_conformance
+												(l_gen_type, l_t2_a, a_context_class, l_pos)
+											l_has_error := a_error_handler.new_error
 										end
-										l_cl_generics.item.constraints.forth
 									end
-									l_cl_generics.item.constraints.go_i_th (l_cursor2)
 								end
 								l_pos := l_pos + 1
-								l_class_type_generics.forth
+								l_class_type.generics.forth
 								l_cl_generics.forth
 							end
-							l_cl_generics.go_i_th (l_cursor1)
 						else
 								-- TUPLE: has no generics
 							from
-								l_generics := l_class_type.generics
-								l_generics.start
-								l_pos := l_generics.index
+								l_class_type.generics.start
 							until
-								l_generics.after or else l_has_error
+								l_class_type.generics.after or else l_has_error
 							loop
 								l_nb_errors := a_error_handler.nb_errors
-								l_t1 := l_generics.item
+								l_t1 := l_class_type.generics.item
 								check_constraint_type (a_context_class, l_t1, a_error_handler)
 								l_has_error := a_error_handler.nb_errors /= l_nb_errors
-								l_generics.forth
+								l_class_type.generics.forth
 							end
-							l_generics.go_i_th (l_pos)
 						end
 					end
 				end
@@ -490,13 +457,6 @@ feature {TYPE_A} -- Visitors
 				end
 				record_exp_dependance (a_type.associated_class)
 			end
-		end
-
-	process_renamed_type_a (a_type: RENAMED_TYPE_A [TYPE_A]) is
-			-- Process `a_type'.
-		do
-			a_type.type.process (Current)
-			last_type := a_type
 		end
 
 	process_formal_a (a_type: FORMAL_A) is
@@ -737,22 +697,12 @@ feature {TYPE_A} -- Visitors
 			if l_anchor_feature /= Void then
 					-- Create instance of LIKE_FEATURE
 				create l_like_feature.make (l_anchor_feature, current_class.class_id)
-				if a_type.has_attached_mark then
-					l_like_feature.set_attached_mark
-				elseif a_type.has_detachable_mark then
-					l_like_feature.set_detachable_mark
-				end
 				update_like_feature (l_anchor_feature, l_like_feature)
 			else
-				l_argument_position := current_feature.argument_position (a_type.anchor_name_id)
+				l_argument_position := current_feature.argument_position (a_type.anchor)
 				if l_argument_position /= 0 then
 					create l_like_argument
 					l_like_argument.set_position (l_argument_position)
-					if a_type.has_attached_mark then
-						l_like_argument.set_attached_mark
-					elseif a_type.has_detachable_mark then
-						l_like_argument.set_detachable_mark
-					end
 					update_like_argument (current_feature, l_like_argument)
 				else
 					last_type := Void
@@ -785,6 +735,7 @@ feature {NONE} -- Implementation
 			a_feature_not_void: a_feature /= Void
 			a_type_not_void: a_type /= Void
 		local
+			l_anchor_type: TYPE_A
 			l_vtat1a: VTAT1A
 			l_controler_state: BOOLEAN
 		do
@@ -807,8 +758,8 @@ feature {NONE} -- Implementation
 					like_control.turn_on
 				end
 				like_control.put_argument (a_type.position)
-				a_feature.arguments.i_th (a_type.position).process (Current)
-				like_control.remove_argument
+				l_anchor_type := a_feature.arguments.i_th (a_type.position)
+				l_anchor_type.process (Current)
 				if last_type /= Void then
 					a_type.set_actual_type (last_type)
 					last_type := a_type
@@ -855,11 +806,9 @@ feature {NONE} -- Implementation
 				end
 					-- Update anchored type controler
 				like_control.put_routine_id (l_rout_id)
+
 					-- Process type referenced by anchor.
 				a_feature.type.process (Current)
-					-- Update anchored type controler
-				like_control.remove_routine_id
-
 				l_anchor_type := last_type
 
 				if l_anchor_type = Void then
@@ -919,7 +868,7 @@ feature {NONE} -- Implementation
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

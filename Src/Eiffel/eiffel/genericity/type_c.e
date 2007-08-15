@@ -6,11 +6,6 @@ deferred class TYPE_C
 inherit
 	HASHABLE
 
-	SHARED_BYTE_CONTEXT
-		export
-			{NONE} all
-		end
-
 	SHARED_NAMES_HEAP
 		export
 			{NONE} all
@@ -111,38 +106,27 @@ feature
 			good_arguments: buffer /= Void and arg_types /= Void
 			good_array: arg_types.lower = 1
 		do
-			buffer.put_string (function_cast_string)
-			buffer.put_character ('(')
-			if context.workbench_mode and then not is_void then
-				buffer.put_string (union_string)
-			else
-				buffer.put_string (c_string)
-			end
-			buffer.put_three_character (',', ' ', '(')
-			buffer.put_string_array (arg_types)
-			buffer.put_three_character (')', ')', ' ')
+			generate_function_cast_type (buffer, Void, arg_types)
 		end
 
-	generate_external_function_cast_type (buffer: GENERATION_BUFFER; call_type: STRING; arg_types: ARRAY [STRING]) is
-			-- Generate C external function cast in `buffer'.
+	generate_function_cast_type (buffer: GENERATION_BUFFER; call_type: STRING; arg_types: ARRAY [STRING]) is
+			-- Generate C function cast in `buffer'.
 		require
 			good_arguments: buffer /= Void and arg_types /= Void
 			good_array: arg_types.lower = 1
 		do
 			if call_type /= Void then
-				buffer.put_string (function_cast_type_string)
-				buffer.put_character ('(')
+				buffer.put_string ("FUNCTION_CAST_TYPE(")
 				buffer.put_string (c_string)
 				buffer.put_character (',')
 				buffer.put_string (call_type)
 			else
-				buffer.put_string (function_cast_string)
-				buffer.put_character ('(')
+				buffer.put_string ("FUNCTION_CAST(")
 				buffer.put_string (c_string)
 			end
-			buffer.put_three_character (',', ' ', '(')
-			buffer.put_string_array (arg_types)
-			buffer.put_three_character (')', ')', ' ')
+			buffer.put_string (", (")
+			buffer.put_array (arg_types)
+			buffer.put_string (")) ")
 		end
 
 	generate_conversion_to_real_64 (buffer: GENERATION_BUFFER) is
@@ -167,20 +151,11 @@ feature
 			end
 		end
 
-	frozen generate_typed_field (buffer: GENERATION_BUFFER) is
-			-- Generate field of C structure "EIF_TYPED_VALUE" associated
+	generate_union (buffer: GENERATION_BUFFER) is
+			-- Generate discriminant of C structure "item" associated
 			-- to the current C type in `buffer'.
 		require
-			buffer_attached: buffer /= Void
-		do
-			buffer.put_string (typed_field)
-		end
-
-	generate_typed_tag (buffer: GENERATION_BUFFER) is
-			-- Generate tag of C structure "EIF_TYPED_VALUE" associated
-			-- to the current C type in `buffer'.
-		require
-			buffer_attached: buffer /= Void
+			good_argument: buffer /= Void
 		deferred
 		end
 
@@ -196,28 +171,18 @@ feature
 		deferred
 		end
 
-	typed_field: STRING is
-			-- Value field of a C structure corresponding to this type
+	union_tag: STRING is
+			-- Union tag name for type in EIF_ARG_UNIONs.
 		deferred
-		ensure
-			result_attached: Result /= Void
-			result_not_empty: not Result.is_empty
 		end
 
 feature {NONE} -- Constants
 
-	Sizeof: STRING is "sizeof("
+	Sizeof: STRING is "sizeof(";
 			-- Used for generation.
 
-	union_string: STRING is "EIF_TYPED_VALUE"
-			-- Name for union structure.
-
-	function_cast_string: STRING is "FUNCTION_CAST"
-	function_cast_type_string: STRING is "FUNCTION_CAST_TYPE";
-			-- Name of different function casts.
-
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

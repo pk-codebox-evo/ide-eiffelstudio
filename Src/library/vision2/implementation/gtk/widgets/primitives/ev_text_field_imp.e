@@ -22,8 +22,7 @@ inherit
 			create_change_actions,
 			needs_event_box,
 			on_key_event,
-			set_minimum_width_in_characters,
-			initialize
+			set_minimum_width_in_characters
 		end
 
 	EV_FONTABLE_IMP
@@ -65,13 +64,6 @@ feature {NONE} -- Initialization
 			set_text (once "")
 		end
 
-	initialize
-			-- Initialize `Current'.
-		do
-			align_text_left
-			Precursor
-		end
-
 feature -- Access
 
 	text: STRING_32 is
@@ -98,7 +90,6 @@ feature -- Status setting
 		do
 			a_cs := a_text
 			{EV_GTK_EXTERNALS}.gtk_entry_set_text (entry_widget, a_cs.item)
-			on_change_actions
 		end
 
 	append_text (a_text: STRING_GENERAL) is
@@ -108,7 +99,6 @@ feature -- Status setting
 		do
 			a_cs := a_text
 			{EV_GTK_EXTERNALS}.gtk_entry_append_text (entry_widget, a_cs.item)
-			on_change_actions
 		end
 
 	prepend_text (a_text: STRING_GENERAL) is
@@ -118,45 +108,12 @@ feature -- Status setting
 		do
 			a_cs := a_text
 			{EV_GTK_EXTERNALS}.gtk_entry_prepend_text (entry_widget, a_cs.item)
-			on_change_actions
 		end
 
 	set_capacity (len: INTEGER) is
 			-- Set the maximum number of characters that `Current' can hold to `len'.
 		do
 			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_entry_set_max_length (entry_widget, len)
-		end
-
-	align_text_left
-			-- Make text left aligned.
-		do
-			text_alignment := {EV_TEXT_ALIGNMENT_CONSTANTS}.ev_text_alignment_left
-			{EV_GTK_EXTERNALS}.gtk_entry_set_alignment (entry_widget, 0.0)
-		end
-
-	align_text_right
-			-- Make text right aligned.
-		do
-			text_alignment := {EV_TEXT_ALIGNMENT_CONSTANTS}.ev_text_alignment_right
-			{EV_GTK_EXTERNALS}.gtk_entry_set_alignment (entry_widget, 1.0)
-		end
-
-	align_text_center
-			-- Make text center aligned.
-		do
-			text_alignment := {EV_TEXT_ALIGNMENT_CONSTANTS}.ev_text_alignment_center
-			{EV_GTK_EXTERNALS}.gtk_entry_set_alignment (entry_widget, 0.5)
-		end
-
-feature -- Status Report
-
-	text_alignment: INTEGER
-		-- Text alignment of `Current'.
-
-	caret_position: INTEGER is
-			-- Current position of the caret.
-		do
-			Result := {EV_GTK_EXTERNALS}.gtk_editable_get_position (entry_widget) + 1
 		end
 
 	capacity: INTEGER is
@@ -166,15 +123,19 @@ feature -- Status Report
 			Result := {EV_GTK_EXTERNALS}.gtk_entry_struct_text_max_length (entry_widget)
 		end
 
-feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
+feature -- Status Report
 
-	on_key_event (a_key: EV_KEY; a_key_string: STRING_32; a_key_press: BOOLEAN)
+	caret_position: INTEGER is
+			-- Current position of the caret.
 		do
-			Precursor (a_key, a_key_string, a_key_press)
-			if a_key_press then
-				on_change_actions
+			Result := {EV_GTK_EXTERNALS}.gtk_editable_get_position (entry_widget) + 1
+			if in_change_action and then not last_key_backspace then
+					-- Hack needed for autocompletion in EiffelStudio
+				Result := Result + 1
 			end
 		end
+
+feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 
 	create_return_actions: EV_NOTIFY_ACTION_SEQUENCE is
 			-- Create an initialize return actions for `Current'.
@@ -251,7 +212,6 @@ feature -- Basic operation
 			-- Insert `txt' at the current position.
 		do
 			insert_text_at_position (txt, caret_position)
-			on_change_actions
 		end
 
 	insert_text_at_position (txt: STRING_GENERAL; a_pos: INTEGER) is
@@ -275,6 +235,27 @@ feature -- Basic operation
 			-- 'start_pos' and 'end_pos'.
 		do
 			{EV_GTK_EXTERNALS}.gtk_editable_select_region (entry_widget, start_pos.min (end_pos) - 1, end_pos.max (start_pos))
+
+				-- Hack to ensure text field is selected when called from change actions
+			if not last_key_backspace and then change_actions_internal /= Void and then change_actions_internal.state = change_actions_internal.blocked_state and then end_pos = text.count then
+				app_implementation.do_once_on_idle (agent select_from_start_pos (start_pos, end_pos))
+			end
+		end
+
+	select_from_start_pos (start_pos, end_pos: INTEGER) is
+			-- Hack to select region from change actions
+		local
+			a_start, a_end, text_count: INTEGER
+		do
+			if not is_destroyed then
+				a_start := start_pos.min (end_pos)
+				a_end := end_pos.max (start_pos)
+				text_count := text.count
+				if a_end < text_count then
+					a_start := a_start + (text_count - a_end)
+				end
+				{EV_GTK_EXTERNALS}.gtk_editable_select_region (entry_widget, a_start - 1, -1)
+			end
 		end
 
 	deselect_all is
@@ -287,7 +268,6 @@ feature -- Basic operation
 			-- Delete the current selection.
 		do
 			{EV_GTK_EXTERNALS}.gtk_editable_delete_selection (entry_widget)
-			on_change_actions
 		end
 
 	cut_selection is
@@ -298,7 +278,6 @@ feature -- Basic operation
 			-- nothing.
 		do
 			{EV_GTK_EXTERNALS}.gtk_editable_cut_clipboard (entry_widget)
-			on_change_actions
 		end
 
 	copy_selection is
@@ -317,7 +296,6 @@ feature -- Basic operation
 			-- If the Clipboard is empty, it does nothing.
 		do
 			insert_text_at_position (clipboard_content, index)
-			on_change_actions
 		end
 
 feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
@@ -325,6 +303,7 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 	create_change_actions: EV_NOTIFY_ACTION_SEQUENCE is
 		do
 			create Result
+			real_signal_connect (entry_widget, once "changed", agent  (App_implementation.gtk_marshal).text_component_change_intermediary (c_object), Void)
 		end
 
 	stored_text: STRING_32
@@ -337,8 +316,7 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 			new_text: STRING_32
 		do
 			new_text := text
-			if --not in_change_action and then
-			(stored_text /= Void and then not new_text.is_equal (stored_text)) or else stored_text = Void then
+			if not in_change_action and then (stored_text /= Void and then not new_text.is_equal (stored_text)) or else stored_text = Void then
 					-- The text has actually changed
 				in_change_action := True
 				if change_actions_internal /= Void then
@@ -352,6 +330,20 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 
 	in_change_action: BOOLEAN
 		-- Is `Current' in the process of calling `on_change_actions'
+
+	last_key_backspace: BOOLEAN
+		-- Was the last key pressed a backspace, used for select region hack for EiffelStudio.
+
+	on_key_event (a_key: EV_KEY; a_key_string: STRING_32; a_key_press: BOOLEAN; call_application_events: BOOLEAN) is
+			-- A key event has occurred
+		do
+			if a_key_press then
+				if a_key /= Void then
+					last_key_backspace := a_key.code = {EV_KEY_CONSTANTS}.key_back_space
+				end
+			end
+			Precursor {EV_TEXT_COMPONENT_IMP} (a_key, a_key_string, a_key_press, call_application_events)
+		end
 
 feature {NONE} -- Implementation
 

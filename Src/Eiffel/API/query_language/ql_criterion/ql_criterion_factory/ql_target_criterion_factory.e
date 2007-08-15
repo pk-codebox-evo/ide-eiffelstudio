@@ -12,9 +12,7 @@ class
 inherit
 	QL_CRITERION_FACTORY
 		redefine
-			criterion_type,
-			item_type,
-			simple_criterion_type
+			criterion_type
 		end
 create
 	make
@@ -29,28 +27,18 @@ feature{NONE} -- Initialization
 			agent_table.put (agent new_is_compiled_criterion, c_is_compiled)
 			agent_table.put (agent new_true_criterion, c_true)
 			agent_table.put (agent new_name_is_criterion, c_name_is)
-			agent_table.put (agent new_value_criterion, c_value_of_metric_is)
-			agent_table.put (agent new_value_criterion, c_is_satisfied_by)
 
 			create name_table.make (4)
 			name_table.put (c_false, query_language_names.ql_cri_false)
 			name_table.put (c_true, query_language_names.ql_cri_true)
 			name_table.put (c_is_compiled, query_language_names.ql_cri_is_compiled)
 			name_table.put (c_name_is, query_language_names.ql_cri_name_is)
-			name_table.put (c_value_of_metric_is, query_language_names.ql_cri_value_of_metric_is)
-			name_table.put (c_is_satisfied_by, query_language_names.ql_cri_is_satisfied_by)
 		end
 
 feature{NONE} -- Implementation
 
 	criterion_type: QL_TARGET_CRITERION
 			-- Criterion anchor type
-
-	item_type: QL_TARGET
-			-- Item anchor type
-
-	simple_criterion_type: QL_SIMPLE_TARGET_CRITERION
-			-- Simple criterion type
 
 feature{NONE} -- New criterion
 
@@ -78,32 +66,22 @@ feature{NONE} -- New criterion
 			result_attached: Result /= Void
 		end
 
-	new_name_is_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_TARGET_NAME_IS_CRI is
+	new_name_is_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_TARGET_NAME_IS_CRI is
 			-- New {QL_TARGET_NAME_IS_CRI} criterion.
 		require
 			a_name_attached: a_name /= Void
 		do
-			create Result.make_with_setting (a_name, a_case_sensitive, a_matching_strategy)
+			create Result.make_with_setting (a_name, a_case_sensitive, a_identical)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_value_criterion (a_evaluate_value_func: FUNCTION [ANY, TUPLE [QL_ITEM], BOOLEAN]): like simple_criterion_type is
-			-- New value criterion
-		require
-			a_evaluate_value_func_attached: a_evaluate_value_func /= Void
-		do
-			create Result.make (agent value_criterion_evalaute_agent ({QL_TARGET}?, a_evaluate_value_func), False)
-		end
-
 feature -- Criterion index
 
-	c_false: INTEGER is 1
-	c_true: INTEGER is 2
-	c_name_is: INTEGER is 3
-	c_is_compiled: INTEGER is 4
-	c_value_of_metric_is: INTEGER is 5
-	c_is_satisfied_by: INTEGER is 6
+	c_false,
+	c_true,
+	c_name_is,
+	c_is_compiled: INTEGER is unique;
 
 feature{NONE} -- Implementation
 
@@ -167,5 +145,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

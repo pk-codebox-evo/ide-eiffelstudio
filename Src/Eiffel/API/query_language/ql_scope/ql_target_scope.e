@@ -54,7 +54,7 @@ feature -- Access
 	delayed_domain: QL_DELAYED_TARGET_DOMAIN is
 			-- An empty delayed domain whose scope is same as current scope
 		do
-			create Result.make
+			create Result
 		end
 
 	path_domain_generator (a_item: QL_TARGET; a_path: STRING): QL_DOMAIN_GENERATOR is
@@ -64,30 +64,30 @@ feature -- Access
 		do
 			if class_path_marker.is_equipped_with_marker (a_path) then
 				create {QL_CLASS_DOMAIN_GENERATOR}Result
-				Result.set_criterion (create{QL_CLASS_NAME_IS_CRI}.make_with_setting (class_path_marker.base_name (a_path), False, {QL_NAME_CRITERION}.identity_matching_strategy))
+				Result.set_criterion (create{QL_CLASS_NAME_IS_CRI}.make_with_setting (class_path_marker.base_name (a_path), False, True))
 			elseif feature_path_marker.is_equipped_with_marker (a_path) then
 				create {QL_FEATURE_DOMAIN_GENERATOR}Result
-				Result.set_criterion (create {QL_FEATURE_NAME_IS_CRI}.make_with_setting (feature_path_marker.base_name (a_path), False, {QL_NAME_CRITERION}.identity_matching_strategy))
+				Result.set_criterion (create {QL_FEATURE_NAME_IS_CRI}.make_with_setting (feature_path_marker.base_name (a_path), False, True))
 			elseif assertion_path_marker.is_equipped_with_marker (a_path) then
 				create {QL_ASSERTION_DOMAIN_GENERATOR}Result
 				l_assert_name := assertion_path_marker.base_name (a_path)
 				if not l_assert_name.is_equal (empty_assertion_name) then
-					Result.set_criterion (create{QL_ASSERTION_NAME_IS_CRI}.make_with_setting (l_assert_name, False, {QL_NAME_CRITERION}.identity_matching_strategy))
+					Result.set_criterion (create{QL_ASSERTION_NAME_IS_CRI}.make_with_setting (l_assert_name, False, True))
 				else
-					Result.set_criterion (create{QL_ASSERTION_NAME_IS_CRI}.make_with_setting ("", False, {QL_NAME_CRITERION}.identity_matching_strategy))
+					Result.set_criterion (create{QL_ASSERTION_NAME_IS_CRI}.make_with_setting ("", False, True))
 				end
 			elseif argument_path_marker.is_equipped_with_marker (a_path) then
 				create {QL_ARGUMENT_DOMAIN_GENERATOR}Result
-				Result.set_criterion (create {QL_ARGUMENT_NAME_IS_CRI}.make_with_setting (argument_path_marker.base_name (a_path), False, {QL_NAME_CRITERION}.identity_matching_strategy))
+				Result.set_criterion (create {QL_ARGUMENT_NAME_IS_CRI}.make_with_setting (argument_path_marker.base_name (a_path), False, True))
 			elseif local_path_marker.is_equipped_with_marker (a_path) then
 				create {QL_LOCAL_DOMAIN_GENERATOR}Result
-				Result.set_criterion (create {QL_LOCAL_NAME_IS_CRI}.make_with_setting (local_path_marker.base_name (a_path), False, {QL_NAME_CRITERION}.identity_matching_strategy))
+				Result.set_criterion (create {QL_LOCAL_NAME_IS_CRI}.make_with_setting (local_path_marker.base_name (a_path), False, True))
 			elseif generic_path_marker.is_equipped_with_marker (a_path) then
 				create {QL_GENERIC_DOMAIN_GENERATOR}Result
-				Result.set_criterion (create {QL_GENERIC_NAME_IS_CRI}.make_with_setting (generic_path_marker.base_name (a_path), False, {QL_NAME_CRITERION}.identity_matching_strategy))
+				Result.set_criterion (create {QL_GENERIC_NAME_IS_CRI}.make_with_setting (generic_path_marker.base_name (a_path), False, True))
 			elseif group_path_marker.is_equipped_with_marker (a_path) then
 				create {QL_GROUP_DOMAIN_GENERATOR}Result
-				Result.set_criterion (create {QL_GROUP_NAME_IS_CRI}.make_with_setting (group_path_marker.base_name (a_path), False, {QL_NAME_CRITERION}.identity_matching_strategy))
+				Result.set_criterion (create {QL_GROUP_NAME_IS_CRI}.make_with_setting (group_path_marker.base_name (a_path), False, True))
 			end
 		end
 
@@ -128,5 +128,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

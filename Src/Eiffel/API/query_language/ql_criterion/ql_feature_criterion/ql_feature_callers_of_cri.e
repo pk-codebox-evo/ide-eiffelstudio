@@ -25,31 +25,28 @@ inherit
 			intrinsic_domain
 		end
 
-	QL_SHARED_FEATURE_INVOKE_RELATION_TYPES
-
 create
 	make
 
 feature{NONE} -- Initialization
 
-	make (a_feature: like criterion_domain; a_caller_type: INTEGER_8; only_current_version: BOOLEAN) is
+	make (a_feature: like criterion_domain; a_caller_type: like caller_type; only_current_version: BOOLEAN) is
 			-- Initialize `criterion_domain' with `a_feature' and `caller_type' with `a_caller_type'.
 			-- if `only_current_version' is True, only find callers of current version of features in `a_feature'.
 		require
 			a_feature_attached: a_feature /= Void
-			a_caller_type_valid: is_caller_type_valid (a_caller_type)
+			a_caller_type_attached: a_caller_type /= Void
 		do
 			only_find_current_version := only_current_version
 			caller_type := a_caller_type
 			old_make (a_feature)
 		ensure
-			caller_type_set: caller_type = a_caller_type
 			only_find_current_version_set: only_find_current_version = only_current_version
 		end
 
 feature -- Status report
 
-	caller_type: INTEGER_8
+	caller_type: QL_FEATURE_CALLER_TYPE
 			-- Feature caller type
 
 	only_find_current_version: BOOLEAN
@@ -69,7 +66,6 @@ feature{QL_DOMAIN} -- Intrinsic domain
 			l_feature_callee: like callee_list_for_feature
 			l_data_feature: QL_FEATURE
 			l_e_feature: E_FEATURE
-			l_generator: like used_in_domain_generator
 		do
 			if not is_criterion_domain_evaluated then
 				initialize_domain
@@ -79,7 +75,6 @@ feature{QL_DOMAIN} -- Intrinsic domain
 			l_current_domain.clear_cache
 			l_feature_callee := callee_list_for_feature
 			l_feature_list := feature_list
-			l_generator := used_in_domain_generator
 			create Result.make
 			from
 				l_feature_list.start
@@ -92,7 +87,6 @@ feature{QL_DOMAIN} -- Intrinsic domain
 					l_data_feature := query_feature_item (l_feature_callee.i_th (l_feature_list.index))
 					l_feature.set_data (l_data_feature)
 					Result.extend (l_feature)
-					l_generator.increase_internal_counter (l_feature)
 				end
 				l_feature_list.forth
 			end
@@ -111,8 +105,7 @@ feature{QL_DOMAIN} -- Intrinsic domain
 					l_data_feature := query_feature_item (l_invariant_callee.item)
 					l_feature.set_data (l_data_feature)
 					Result.extend (l_feature)
-					l_generator.increase_internal_counter (l_feature)
-					l_invariant_list.forth
+				l_invariant_list.forth
 					l_invariant_callee.forth
 				end
 			end
@@ -123,7 +116,7 @@ feature{NONE} -- Implementation
 	find_result is
 			-- Find callers to `criterion_domain'.
 		do
-			find_all_callers (caller_type)
+			find_all_callers (caller_type.type)
 			is_intrinsic_domain_cached_in_domain_generator := False
 		end
 
@@ -145,7 +138,6 @@ feature{NONE} -- Implementation
 			l_branch_id_list: like user_data_list
 			l_invariant_callee: like callee_list_for_invariant
 			l_feature_callee: like callee_list_for_feature
-			l_domain_generator: like used_in_domain_generator
 		do
 			l_invariant_list := invariant_list
 			l_feature_list := feature_list
@@ -154,7 +146,6 @@ feature{NONE} -- Implementation
 			clients := l_class.clients
 			create table.make (20)
 			create classes.make
-			l_domain_generator := used_in_domain_generator
 			from
 				clients.start
 			until
@@ -167,7 +158,6 @@ feature{NONE} -- Implementation
 					classes.put_front (client.lace_class)
 				end
 				clients.forth
-				l_domain_generator.increase_internal_counter (Void)
 			end
 			l_invariant_callee := callee_list_for_invariant
 			l_feature_callee := callee_list_for_feature
@@ -188,12 +178,10 @@ feature{NONE} -- Implementation
 					if cfeat.is_equal (invariant_name) then
 						l_invariant_list.extend (client)
 						l_invariant_callee.extend (l_feat)
-						l_domain_generator.increase_internal_counter (Void)
 					else
 						l_feature_list.extend (client.feature_with_name (cfeat))
 						l_feature_callee.extend (l_feat)
 						l_branch_id_list.extend (1)
-						l_domain_generator.increase_internal_counter (Void)
 					end
 					list.forth
 				end
@@ -212,7 +200,6 @@ feature{NONE} -- Implementation
 			rid: INTEGER
 			l_feature_domain: like features_from_domain
 			l_feature: QL_FEATURE
-			l_e_feature: E_FEATURE
 		do
 			l_feature_domain := features_from_domain (criterion_domain)
 			if not l_feature_domain.is_empty then
@@ -223,13 +210,12 @@ feature{NONE} -- Implementation
 				loop
 					l_feature := l_feature_domain.item
 					if l_feature.is_real_feature then
-						l_e_feature := l_feature.e_feature
 						create descendants.make
-						rid := l_e_feature.rout_id_set.item (1)
+						rid := l_feature.e_feature.rout_id_set.item (1)
 						if not only_find_current_version then
-							record_descendants (descendants, l_e_feature.associated_class)
+							record_descendants (descendants, l_feature.e_feature.associated_class)
 						else
-							descendants.extend (l_e_feature.associated_class)
+							descendants.extend (l_feature.e_feature.associated_class)
 						end
 						from
 							create a_list.make (descendants.count)
@@ -358,11 +344,12 @@ feature{NONE} -- Evaluate
 		end
 
 invariant
-	caller_type_valid: is_caller_type_valid (caller_type)
-	feature_callee_valid:
-		(callee_list_for_feature /= Void and then feature_list /= Void) implies (callee_list_for_feature.count = feature_list.count)
-	invariant_callee_valid:
-		(callee_list_for_invariant /= Void and then invariant_list /= Void) implies (callee_list_for_invariant.count = invariant_list.count)
+	caller_type_attached: caller_type /= Void
+	invariant_list_attached: invariant_list /= Void
+	callee_list_for_invariant_attached: callee_list_for_invariant /= Void
+	callee_list_for_invariant_invariant_list_valid: callee_list_for_invariant.count = invariant_list.count
+	callee_list_for_feature_attached: callee_list_for_feature /= Void
+	callee_list_for_feature_invariant_list_valid: callee_list_for_feature.count = feature_list.count
 
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"
@@ -395,5 +382,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

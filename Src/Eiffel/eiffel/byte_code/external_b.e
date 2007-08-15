@@ -11,7 +11,7 @@ inherit
 			precursor_type as static_class_type,
 			set_precursor_type as set_static_class_type
 		redefine
-			same, is_external, set_parameters, parameters, enlarged, enlarged_on,
+			same, is_external, set_parameters, parameters, enlarged,
 			is_unsafe, optimized_byte_node,
 			calls_special_features, size,
 			pre_inlined_code, inlined_byte_code,
@@ -21,6 +21,8 @@ inherit
 	SHARED_INCLUDE
 
 	SHARED_IL_CONSTANTS
+		rename
+			static_type as il_static_type
 		export
 			{NONE} all
 		end
@@ -117,11 +119,8 @@ feature -- Routines for externals
 	set_parameters (p: like parameters) is
 			-- Assign `p' to `parameters'.
 		do
-			parameters := p
-			if p /= Void then
-				p.do_all (agent {PARAMETER_B}.set_parent (Current))
-			end
-		end
+			parameters := p;
+		end;
 
 	set_type (t: TYPE_I) is
 			-- Assign `t' to `type'.
@@ -199,15 +198,8 @@ feature -- Status report
 		end;
 
 	enlarged: CALL_ACCESS_B is
-			-- Enlarge the tree to get more attributes and return the
+			-- Enlarges the tree to get more attributes and returns the
 			-- new enlarged tree node.
-		do
-				-- Fallback to default implementation.
-			Result := enlarged_on (context_type)
-		end
-
-	enlarged_on (a_type_i: TYPE_I): CALL_ACCESS_B is
-			-- Enlarged byte node evaluated in the context of `a_type_i'.
 		local
 			external_bl: EXTERNAL_BL
 			c: CL_TYPE_I
@@ -215,7 +207,7 @@ feature -- Status report
 		do
 			if not is_static_call and then not context.is_written_context then
 					-- Ensure the feature is not redeclared into attribute or internal routine.
-				c ?= real_type (a_type_i)
+				c ?= real_type (context_type)
 				if c /= Void then
 					f := c.base_class.feature_of_rout_id (routine_id)
 					if f.is_external then
@@ -328,7 +320,7 @@ feature -- Inlining
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

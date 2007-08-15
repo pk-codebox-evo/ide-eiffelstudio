@@ -13,11 +13,7 @@ inherit
 		redefine
 			menu_name,
 			pixmap,
-			pixel_buffer,
-			widget,
-			attach_to_docking_manager,
-			internal_recycle,
-			show
+			widget
 		end
 
 	EB_SHARED_WINDOW_MANAGER
@@ -33,16 +29,16 @@ feature {NONE} -- Initialization
 			widget := window_manager.new_widget
 		end
 
-feature {EB_DEVELOPMENT_WINDOW_BUILDER} -- Initialization
-
-	attach_to_docking_manager (a_docking_manager: SD_DOCKING_MANAGER) is
-			-- Attach to docking manager
+	build_explorer_bar_item (explorer_bar: EB_EXPLORER_BAR) is
+			-- Build the associated explorer bar item and
+			-- Add it to `explorer_bar'
 		do
-			build_docking_content (a_docking_manager)
-
-			check not_already_has: not a_docking_manager.has_content (content) end
-			a_docking_manager.contents.extend (content)
-			check friend_created: develop_window.tools.favorites_tool  /= Void end
+			create explorer_bar_item.make (explorer_bar, widget, title, True)
+			explorer_bar_item.set_menu_name (menu_name)
+			if pixmap /= Void then
+				explorer_bar_item.set_pixmap (pixmap)
+			end
+			explorer_bar.add (explorer_bar_item)
 		end
 
 feature -- Access
@@ -50,19 +46,13 @@ feature -- Access
 	widget: EB_WINDOW_MANAGER_LIST
 			-- Widget representing Current
 
-	title: STRING_GENERAL is
-			-- Redefine
+	title: STRING is
+			-- Title of the tool
 		do
-			Result := interface_names.t_windows_tool
+			Result := Interface_names.t_Windows_tool
 		end
 
-	title_for_pre: STRING is
-			-- Title for prefence, STRING_8
-		do
-			Result := Interface_names.to_windows_tool
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it may appear in a menu.
 		do
 			Result := Interface_names.m_Windows_tool
@@ -74,28 +64,19 @@ feature -- Access
 			Result := pixmaps.icon_pixmaps.windows_windows_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer
-		do
-			Result := pixmaps.icon_pixmaps.windows_windows_icon_buffer
-		end
-
-	show is
-			-- Show tool.
-		do
-			Precursor {EB_TOOL}
-			widget.set_focus
-		end
-
 feature -- Memory management
 
-	internal_recycle is
+	recycle is
 			-- Recycle `Current', but leave `Current' in an unstable state,
 			-- so that we know whether we're still referenced or not.
 		do
+			if explorer_bar_item /= Void then
+				explorer_bar_item.recycle
+				explorer_bar_item := Void
+			end
 			widget.recycle
 			widget := Void
-			Precursor {EB_TOOL}
+			manager := Void
 		end
 
 indexing

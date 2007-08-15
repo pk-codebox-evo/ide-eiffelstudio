@@ -289,6 +289,7 @@ feature -- Element change
 			set_label_line_start_and_end
 		end
 
+
 feature {EG_FIGURE, EG_FIGURE_WORLD} -- Update
 
 	update is

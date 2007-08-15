@@ -25,8 +25,7 @@ inherit
 		redefine
 			interface,
 			initialize,
-			container_widget,
-			needs_event_box
+			container_widget
 		end
 
 feature {NONE} -- Initialization
@@ -45,7 +44,7 @@ feature -- Access
 	split_position: INTEGER is
 			-- Position from the left/top of the splitter from `Current'.
 		do
-			Result := {EV_GTK_EXTERNALS}.gtk_paned_struct_child1_size (container_widget).max (minimum_split_position).min (maximum_split_position)
+			Result := {EV_GTK_EXTERNALS}.gtk_paned_struct_child1_size (container_widget)
 		end
 
 	set_first (an_item: like item) is
@@ -114,13 +113,9 @@ feature -- Access
 			-- Set the position of the splitter.
 		do
 			{EV_GTK_EXTERNALS}.gtk_paned_set_position (container_widget, a_split_position)
-				-- Force child allocation to update immediately.
-			{EV_GTK_EXTERNALS}.gtk_container_check_resize (container_widget)
 		end
 
 feature {NONE} -- Implementation
-
-	needs_event_box: BOOLEAN is True
 
 	container_widget: POINTER
 		-- Pointer to the GtkPaned widget.

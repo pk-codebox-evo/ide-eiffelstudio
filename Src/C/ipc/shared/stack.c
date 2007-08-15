@@ -9,7 +9,7 @@
 			]"
 	date:		"$Date$"
 	revision:	"$Revision$"
-	copyright:	"Copyright (c) 1985-2007, Eiffel Software."
+	copyright:	"Copyright (c) 1985-2006, Eiffel Software."
 	license:	"GPL version 2 see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"Commercial license is available at http://www.eiffel.com/licensing"
 	copying: "[
@@ -83,12 +83,12 @@ rt_private struct dump 	*variable_item(int variable_type, uint32 n, uint32 start
 /* Public Routines declarations */
 rt_public void 			send_stack(EIF_PSTREAM s, uint32 elem_nb);	/* Dump the application */
 rt_public unsigned char modify_local(uint32 stack_depth, uint32 loc_type, 
-                                     uint32 loc_number, EIF_TYPED_VALUE *new_value); /* modify a local value */
+                                     uint32 loc_number, struct item *new_value); /* modify a local value */
 rt_public void			send_stack_variables(EIF_PSTREAM s, int where);	/* Dump the locals and arguments of a feature */
 rt_public void 			send_once_result(EIF_PSTREAM s, MTOT OResult, int otype); /* dump the results of onces feature */
 
 /* extern Routines used */
-extern EIF_TYPED_ADDRESS 	*c_oitem(uint32 n); /* from debug.c - Returns a pointer to the item at position `n' down the stack */
+extern struct item 	*c_oitem(uint32 n); /* from debug.c - Returns a pointer to the item at position `n' down the stack */
 
 /*-------------------------
  - Routine implementation -
@@ -401,7 +401,7 @@ rt_private uint32 go_ith_stack_level(int level)
  * (The interpreter registers are supposed to be correctly synchronized)  *
  **************************************************************************/
 rt_private struct dump *get_next_variable(uint32 start)
-{
+	{
 	static struct dump dumped;			/* Item returned */
 	struct dump *dp;					/* Partial dump pointer */
 	static int arg_done = 0;			/* True when arguments processed */
@@ -409,27 +409,26 @@ rt_private struct dump *get_next_variable(uint32 start)
 	static uint32 locn = 0;				/* Local number */
 
 	if (!arg_done)						/* There are still some arguments */
-	{
+		{
 		dp = variable_item(IV_ARG,argn++,start);	/* Get next argument */
-		if (dp != (struct dump *) 0) {
+		if (dp != (struct dump *) 0)
 			return dp;
-		}
 		arg_done = 1;					/* No more arguments */
 		dumped.dmp_type = DMP_VOID;		/* Tell ebench there are no more */
 		return &dumped;					/* arguments to be sent. */
-	} else {
+		}
+	else
 		dp = variable_item(IV_LOCAL,locn++,start);	/* Get next local then */
-	}
 			
 	if (dp == (struct dump *) 0)		/* Finished: reset static vars */
-	{
+		{
 		arg_done = 0;
 		argn = 0;
 		locn = 0;
-	}
+		}
 
 	return dp;			/* Pointer to static data or null */
-}
+	}
 
 /************************************************************************** 
  * NAME: variable_item                                                    * 
@@ -446,24 +445,24 @@ rt_private struct dump *get_next_variable(uint32 start)
 rt_private struct dump *variable_item(int variable_type, uint32 n, uint32 start)
 	{
 	uint32 type;
-	static EIF_DEBUG_VALUE ip;					/* Partial item pointer */
+	struct item *ip;					/* Partial item pointer */
 	static struct dump dumped;			/* Item returned */
 
-	ivalue(&ip, variable_type, n, start);
-	if (ip.address == NULL)
+	ip = ivalue(variable_type, n, start);
+	if (ip == NULL)
 		return NULL;
 
 	dumped.dmp_type = DMP_ITEM;			/* We are dumping a variable */
-	dumped.dmp_item = &(ip.value);
+	dumped.dmp_item = ip;
 
 	/* Because the interpreter (from time to time) does not care about the
 	 * consistency between SK_DTYPE of an item and EO_TYPE of its referenced
 	 * object, we have to resynchronize these two entities before sending
 	 * that item to ewb (which relies on that consistency).
 	 */
-	type = ip.value.type & SK_HEAD;
-	if ((type == SK_EXP || type == SK_REF) && (ip.value.it_ref != NULL))
-		ip.value.type = type | Dtype(ip.value.it_ref);
+	type = ip->type & SK_HEAD;
+	if ((type == SK_EXP || type == SK_REF) && (ip->it_ref != NULL))
+		ip->type = type | Dtype(ip->it_ref);
 
 	return &dumped;			/* Pointer to static data */
 	}
@@ -480,32 +479,34 @@ rt_private struct dump *variable_item(int variable_type, uint32 n, uint32 start)
 rt_public void send_once_result(EIF_PSTREAM s, MTOT OResult, int otype)
 	{
 	uint32 type;
-	EIF_TYPED_VALUE ip;					/* Partial item pointer */
+	struct item ip;					/* Partial item pointer */
 	struct dump dumped;					/* Item to send */
 
-	memset (&ip, 0, sizeof(EIF_TYPED_VALUE));
+	memset (&ip, 0, sizeof(struct item));	
 
 	ip.type = otype;
 	switch (ip.type & SK_HEAD)
 		{
-		case SK_BOOL: ip.it_bool = (EIF_BOOLEAN) OResult->result.EIF_BOOLEAN_result; break;
-		case SK_CHAR: ip.it_char = (EIF_CHARACTER) OResult->result.EIF_CHARACTER_result; break;
-		case SK_WCHAR: ip.it_wchar = (EIF_WIDE_CHAR) OResult->result.EIF_WIDE_CHAR_result; break;
-		case SK_UINT8: ip.it_uint8 = (EIF_NATURAL_8) OResult->result.EIF_NATURAL_8_result; break;
-		case SK_UINT16:ip.it_uint16 = (EIF_NATURAL_16) OResult->result.EIF_NATURAL_16_result; break;
-		case SK_UINT32:ip.it_uint32 = (EIF_NATURAL_32) OResult->result.EIF_NATURAL_32_result; break;
-		case SK_UINT64:ip.it_uint64 = (EIF_NATURAL_64) OResult->result.EIF_NATURAL_64_result; break;
-		case SK_INT8: ip.it_int8 = (EIF_INTEGER_8) OResult->result.EIF_INTEGER_8_result; break;
-		case SK_INT16:ip.it_int16 = (EIF_INTEGER_16) OResult->result.EIF_INTEGER_16_result; break;
-		case SK_INT32:ip.it_int32 = (EIF_INTEGER_32) OResult->result.EIF_INTEGER_32_result; break;
-		case SK_INT64:ip.it_int64 = (EIF_INTEGER_64) OResult->result.EIF_INTEGER_64_result; break;
-		case SK_REAL32: ip.it_real32 = (EIF_REAL_32) OResult->result.EIF_REAL_32_result; break;
-		case SK_REAL64: ip.it_real64 = (EIF_REAL_64) OResult->result.EIF_REAL_64_result; break;
-		case SK_POINTER: ip.it_ptr = (EIF_POINTER) OResult->result.EIF_POINTER_result; break;
-		case SK_REF: ip.it_ref = *(EIF_REFERENCE*) OResult->result.EIF_REFERENCE_result; break;
-		case SK_BIT: ip.it_bit = *(EIF_REFERENCE*) OResult->result.EIF_REFERENCE_result; break;
+		case SK_BOOL: ip.itu.itu_char = (EIF_BOOLEAN) OResult->result.EIF_BOOLEAN_result; break;
+		case SK_CHAR: ip.itu.itu_char = (EIF_CHARACTER) OResult->result.EIF_CHARACTER_result; break;
+		case SK_WCHAR: ip.itu.itu_wchar = (EIF_WIDE_CHAR) OResult->result.EIF_WIDE_CHAR_result; break;
+		case SK_UINT8: ip.itu.itu_uint8 = (EIF_NATURAL_8) OResult->result.EIF_NATURAL_8_result; break;
+		case SK_UINT16:ip.itu.itu_uint16 = (EIF_NATURAL_16) OResult->result.EIF_NATURAL_16_result; break;
+		case SK_UINT32:ip.itu.itu_uint32 = (EIF_NATURAL_32) OResult->result.EIF_NATURAL_32_result; break;
+		case SK_UINT64:ip.itu.itu_uint64 = (EIF_NATURAL_64) OResult->result.EIF_NATURAL_64_result; break;
+		case SK_INT8: ip.itu.itu_int8 = (EIF_INTEGER_8) OResult->result.EIF_INTEGER_8_result; break;
+		case SK_INT16:ip.itu.itu_int16 = (EIF_INTEGER_16) OResult->result.EIF_INTEGER_16_result; break;
+		case SK_INT32:ip.itu.itu_int32 = (EIF_INTEGER_32) OResult->result.EIF_INTEGER_32_result; break;
+		case SK_INT64:ip.itu.itu_int64 = (EIF_INTEGER_64) OResult->result.EIF_INTEGER_64_result; break;
+		case SK_REAL32: ip.itu.itu_real32 = (EIF_REAL_32) OResult->result.EIF_REAL_32_result; break;
+		case SK_REAL64: ip.itu.itu_real64 = (EIF_REAL_64) OResult->result.EIF_REAL_64_result; break;
+		case SK_POINTER: ip.itu.itu_ptr = (EIF_POINTER) OResult->result.EIF_POINTER_result; break;
+		case SK_REF: ip.itu.itu_ref = *(EIF_REFERENCE*) OResult->result.EIF_REFERENCE_result; break;
+		case SK_BIT: ip.itu.itu_bit = *(EIF_REFERENCE*) OResult->result.EIF_REFERENCE_result; break;
 		}
 	
+	ip.it_addr = NULL; 
+
 	dumped.dmp_type = DMP_ITEM;			/* We are dumping a variable */
 	dumped.dmp_item = &ip;
 
@@ -538,12 +539,12 @@ rt_public void send_once_result(EIF_PSTREAM s, MTOT OResult, int otype)
  * modify the value of a local variable / an argument / the result        * 
  * of a feature with the given new value                                  * 
  **************************************************************************/
-rt_public unsigned char modify_local(uint32 stack_depth, uint32 loc_type, uint32 loc_number, EIF_TYPED_VALUE *new_value)
+rt_public unsigned char modify_local(uint32 stack_depth, uint32 loc_type, uint32 loc_number, struct item *new_value)
 	{
 	EIF_GET_CONTEXT
 
 	struct ex_vect	*top = NULL; 		/* Exception vector */
-	EIF_DEBUG_VALUE	ip;			/* Partial dump pointer */
+	struct item 	*ip = NULL;			/* Partial dump pointer */
 	uint32 			start = 0;			/* start of operation stack for current feature within whole operation stack */
 	char 			*new_object = NULL;	/* new value for the local variable if it's a reference */
 	unsigned char 	error_code = 0;		/* error code - different from zero means that an error occurred */
@@ -555,16 +556,16 @@ rt_public unsigned char modify_local(uint32 stack_depth, uint32 loc_type, uint32
 	switch(loc_type)
 		{
 		case DLT_ARGUMENT:
-			ivalue(&ip, IV_ARG, loc_number-1, start);
+			ip = ivalue(IV_ARG, loc_number-1, start);
 			break;
 		
 		case DLT_LOCALVAR:
-			ivalue(&ip, IV_LOCAL, loc_number-1, start);
+			ip = ivalue(IV_LOCAL, loc_number-1, start);
 			break;
 
 		case DLT_RESULT:
 			top = extop (&eif_stack);
-			ivalue(&ip, IV_LOCAL, top->ex_locnum, start);
+			ip = ivalue(IV_LOCAL, top->ex_locnum, start);
 			break;
 		default:
 			error_code = 3; /* bad value for loc_type */
@@ -577,23 +578,23 @@ rt_public unsigned char modify_local(uint32 stack_depth, uint32 loc_type, uint32
 	switch (new_value->type & SK_HEAD)
 		{
 		case SK_BOOL:
-		case SK_CHAR: *(EIF_CHARACTER *)(ip.address) = new_value->it_char; break;
-		case SK_WCHAR: *(EIF_WIDE_CHAR *)(ip.address) = new_value->it_wchar; break;
-		case SK_UINT8: *(EIF_NATURAL_8 *)(ip.address) = new_value->it_uint8; break;
-		case SK_UINT16: *(EIF_NATURAL_16 *)(ip.address) = new_value->it_uint16; break;
-		case SK_UINT32: *(EIF_NATURAL_32 *)(ip.address) = new_value->it_uint32; break;
-		case SK_UINT64: *(EIF_NATURAL_64 *)(ip.address) = new_value->it_uint64; break;
-		case SK_INT8: *(EIF_INTEGER_8 *)(ip.address) = new_value->it_int8; break;
-		case SK_INT16: *(EIF_INTEGER_16 *)(ip.address) = new_value->it_int16; break;
-		case SK_INT32: *(EIF_INTEGER_32 *)(ip.address) = new_value->it_int32; break;
-		case SK_INT64: *(EIF_INTEGER_64 *)(ip.address) = new_value->it_int64; break;
-		case SK_REAL32: *(EIF_REAL_32 *)(ip.address) = new_value->it_real32; break;
-		case SK_REAL64: *(EIF_REAL_64 *)(ip.address) = new_value->it_real64; break;
-		case SK_POINTER: *(EIF_POINTER *)(ip.address) = new_value->it_ptr; break;
-		case SK_STRING: *(EIF_REFERENCE *)(ip.address) = RTMS(new_value->it_ref); break;
+		case SK_CHAR: *(EIF_CHARACTER *)(ip->it_addr) = new_value->it_char; break;
+		case SK_WCHAR: *(EIF_WIDE_CHAR *)(ip->it_addr) = new_value->it_wchar; break;
+		case SK_UINT8: *(EIF_NATURAL_8 *)(ip->it_addr) = new_value->it_uint8; break;
+		case SK_UINT16: *(EIF_NATURAL_16 *)(ip->it_addr) = new_value->it_uint16; break;
+		case SK_UINT32: *(EIF_NATURAL_32 *)(ip->it_addr) = new_value->it_uint32; break;
+		case SK_UINT64: *(EIF_NATURAL_64 *)(ip->it_addr) = new_value->it_uint64; break;
+		case SK_INT8: *(EIF_INTEGER_8 *)(ip->it_addr) = new_value->it_int8; break;
+		case SK_INT16: *(EIF_INTEGER_16 *)(ip->it_addr) = new_value->it_int16; break;
+		case SK_INT32: *(EIF_INTEGER_32 *)(ip->it_addr) = new_value->it_int32; break;
+		case SK_INT64: *(EIF_INTEGER_64 *)(ip->it_addr) = new_value->it_int64; break;
+		case SK_REAL32: *(EIF_REAL_32 *)(ip->it_addr) = new_value->it_real32; break;
+		case SK_REAL64: *(EIF_REAL_64 *)(ip->it_addr) = new_value->it_real64; break;
+		case SK_POINTER: *(EIF_POINTER *)(ip->it_addr) = new_value->it_ptr; break;
+		case SK_STRING: *(EIF_REFERENCE *)(ip->it_addr) = RTMS(new_value->it_ref); break;
 		case SK_REF:
 			new_object = eif_access((EIF_OBJECT)(&(eif_access((EIF_OBJECT) (new_value->it_ref)))));
-			*(EIF_REFERENCE *)(ip.address) = new_object;
+			*(EIF_REFERENCE *)(ip->it_addr) = new_object;
 			break;
 		case SK_BIT:
 			error_code = 1; /* not yet implemented */

@@ -19,11 +19,10 @@ inherit
 		end
 
 	PREFERENCE_VIEW
-		rename
-			make as view_make,
-			make_with_hidden as view_make_with_hidden
 		undefine
 			copy, default_create
+		redefine
+			make
 		end
 
 	PREFERENCE_CONSTANTS
@@ -36,27 +35,14 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_preferences: PREFERENCES; a_obs_parent_window: EV_WINDOW) is
-			-- New window.  Redefined to register EiffelStudio specific preference widgets for
-			-- special preference types.
-		do
-			make_with_hidden (a_preferences, a_obs_parent_window, False)
-		end
-
-	make_with_hidden (a_preferences: PREFERENCES; a_obs_parent_window: EV_WINDOW; a_show_hidden_flag: BOOLEAN) is
-			-- New window.  Redefined to register EiffelStudio specific preference widgets for
-			-- special preference types.
+	make (a_preferences: like preferences; a_parent_window: like parent_window) is
+			-- New view.
 		do
 			default_create
-			parent_window := Current
-			view_make_with_hidden (a_preferences, a_show_hidden_flag)
-
-			check
-				preferenese_root_is_valid_as_string_8: preferenese_root.is_valid_as_string_8
-			end
-			root_node_text := preferenese_root.as_string_8
+			Precursor {PREFERENCE_VIEW} (a_preferences, Current)
+			root_node_text := "Preferences root"
 			set_size (640, 460)
-			set_title (preferences_title)
+			set_title ("Preferences")
 			fill_list
 			create grid
 			default_row_height := grid.row_height
@@ -212,7 +198,8 @@ feature {NONE} -- Events
 			l_confirmation_dialog: EV_CONFIRMATION_DIALOG
 		do
 			create l_confirmation_dialog
-			l_confirmation_dialog.set_text (restore_preference_string)
+			l_confirmation_dialog.set_text ("This will reset ALL preferences to their default values%N%
+				% and all previous settings will be overwritten.  Are you sure?")
 			l_confirmation_dialog.show_modal_to_window (parent_window)
 			if l_confirmation_dialog.selected_button.is_equal ((create {EV_DIALOG_CONSTANTS}).ev_ok) then
 				preferences.restore_defaults
@@ -241,7 +228,7 @@ feature {NONE} -- Events
 
 						-- The right clicked preference matches the selection in the grid
 					create l_popup_menu
-					create l_menu_item.make_with_text (l_restore_default)
+					create l_menu_item.make_with_text ("Restore Default")
 					l_menu_item.select_actions.extend (agent set_preference_to_default (a_item, a_pref))
 					l_popup_menu.extend (l_menu_item)
 					l_popup_menu.show
@@ -654,18 +641,16 @@ feature {NONE} -- Implementation
 		require
 			preference_not_void: a_preference /= Void
 		local
-			l_text: STRING_GENERAL
+			l_text: STRING
 		do
 			if a_preference.description /= Void then
-					-- We know that descriptions of preference have been extacted out
-					-- from the config file.
-				l_text := try_to_translate (a_preference.description)
+				l_text := a_preference.description
 			else
 				l_text := no_description_text
 			end
 
 			if a_preference.restart_required then
-				description_text.set_text (l_text.as_string_32 + l_request_restart)
+				description_text.set_text (l_text + once " (REQUIRES RESTART)")
 			else
 				description_text.set_text (l_text)
 			end
@@ -793,20 +778,7 @@ feature {NONE} -- Implementation
 			create Result.make (10)
 		end
 
-	try_to_translate (a_string: STRING_GENERAL): STRING_GENERAL is
-			-- Try to translate `a_string'.
-		require
-			a_string_not_void: a_string /= Void
-		do
-			Result := a_string
-		ensure
-			result_not_void: Result /= Void
-		end
-
 feature {NONE} -- Private attributes
-
-	parent_window: EV_WINDOW
-			-- Parent window.
 
 	show_full_preference_name: BOOLEAN
 			-- Show the full name of the preference in the list?

@@ -21,7 +21,7 @@ inherit
 		redefine
 			process_feature
 		end
-		
+
 create
 
 	make, do_nothing
@@ -40,7 +40,7 @@ feature {NONE} -- Properties
 			gs: LINEAR [FORMAL_DEC_AS]
 			gts: ARRAY [STRING]
 			types: LINEAR [TYPE_A]
-			l_names: LINEAR [STRING]
+			names: LINEAR [STRING]
 			i: INTEGER
 			s: STRING
 		do
@@ -53,7 +53,11 @@ feature {NONE} -- Properties
 				until
 					gs.after
 				loop
-					gts.put (gs.item.constraints.dump (False),i)
+					if gs.item.constraint /= Void then
+						gts.put (gs.item.constraint.dump, i)
+					else
+						gts.put ("ANY", i)
+					end
 					i := i + 1
 					gs.forth
 				end
@@ -61,15 +65,15 @@ feature {NONE} -- Properties
 
 			if e_feature.arguments /= Void and  e_feature.arguments.argument_names /= Void then
 				types := e_feature.arguments.linear_representation
-				l_names := e_feature.arguments.argument_names.linear_representation
+				names := e_feature.arguments.argument_names.linear_representation
 
 				from
 					types.start
-					l_names.start
+					names.start
 				until
 					types.after
 				loop
-					print (l_names.item + ": ")
+					print (names.item + ": ")
 					if types.item /= Void then
 						s := types.item.dump
 					else
@@ -89,7 +93,7 @@ feature {NONE} -- Properties
 						s.replace_substring ("", 1, s.index_of (']', 1) + 1)
 					end
 					types.forth
-					l_names.forth
+					names.forth
 					print (s+ "%N")
 				end
 			end

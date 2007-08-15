@@ -76,7 +76,7 @@ feature -- Status setting
 				Ev_pnd_start_transport
 			then
 				start_transport
-					(a_x, a_y, a_button, True, 0, 0, 0.5, a_screen_x, a_screen_y, False)
+					(a_x, a_y, a_button, 0, 0, 0.5, a_screen_x, a_screen_y)
 			when
 				Ev_pnd_end_transport
 			then
@@ -120,7 +120,7 @@ feature -- Status setting
 			if awaiting_movement then
 				if (original_x - a_x).abs > drag_and_drop_starting_movement or
 					(original_y - a_y).abs > drag_and_drop_starting_movement
-					then real_start_transport (pebble, original_x, original_y, 1,
+					then real_start_transport (original_x, original_y, 1,
 						original_x_tilt, original_y_tilt, original_pressure,
 						a_screen_x + (original_x - a_x), a_screen_y +
 						(original_y - a_y))
@@ -158,36 +158,32 @@ feature -- Status setting
 
 feature {EV_ANY_I} -- Implementation
 
-	start_transport (a_x, a_y, a_button: INTEGER; a_press: BOOLEAN a_x_tilt, a_y_tilt,
-		a_pressure: DOUBLE; a_screen_x, a_screen_y: INTEGER; a_menu_only: BOOLEAN) is
+	start_transport (a_x, a_y, a_button: INTEGER; a_x_tilt, a_y_tilt,
+		a_pressure: DOUBLE; a_screen_x, a_screen_y: INTEGER) is
 			-- Initialize the pick/drag and drop mechanism.
-		local
-			l_configure_agent: PROCEDURE [ANY, TUPLE]
-			l_pebble: like pebble
 		do
 			application_imp.clear_transport_just_ended
 			if mode_is_pick_and_drop and a_button /= 3 then
 			else
+					-- We used to call `call_pebble_function' here, but this causes
+					-- the pebble function to be executed twice. The first execution
+					-- occurrs in EV_WINDOW_IMP source_at_pointer_position. This should
+					-- have always been called in order for us to be here in `start_transport'.
+					-- If it is not, then there must be a fix for that, but I do not know of any
+					-- case in which it would not be called first. Julian 09/27/2001
 				if pebble_function /= Void then
-					call_pebble_function (a_x, a_y, a_screen_x, a_screen_y)
+					pebble := pebble_function.last_result
 				end
-				l_pebble := pebble
-				reset_pebble_function
-				if not application_imp.drop_actions_executing then
+				if pebble /= Void and not application_imp.drop_actions_executing then
 					-- Note that we check there is not a pick and drop source currently executing.
 					-- If you drop on to a widget that is also a source and call `process_events' from the
 					-- `drop_actions', this causes the transport to start. The above check prevents this
 					-- from occurring.
-					if (mode_is_target_menu or mode_is_configurable_target_menu) and a_button = 3 then
-						if l_pebble /= Void and then mode_is_configurable_target_menu then
-							l_configure_agent := agent real_start_transport (l_pebble, a_x, a_y, a_button, a_x_tilt, a_y_tilt, a_pressure, a_screen_x, a_screen_y)
-						end
-						application_imp.create_target_menu (a_x, a_y, a_screen_x, a_screen_y, interface, l_pebble, l_configure_agent, a_menu_only)
-					elseif l_pebble /= Void and then mode_is_pick_and_drop and a_button = 3 then
-							real_start_transport (l_pebble, a_x, a_y, a_button, a_x_tilt,
-								a_y_tilt, a_pressure, a_screen_x, a_screen_y)
-					elseif l_pebble /= Void and then mode_is_drag_and_drop and a_button = 1 then
-						pebble := l_pebble
+
+					if mode_is_pick_and_drop and a_button = 3 then
+						real_start_transport (a_x, a_y, a_button, a_x_tilt,
+							a_y_tilt, a_pressure, a_screen_x, a_screen_y)
+					elseif mode_is_drag_and_drop and a_button = 1 then
 						if not awaiting_movement then
 								-- Store arguments so they can be passed to
 								-- real_start_transport.
@@ -199,12 +195,39 @@ feature {EV_ANY_I} -- Implementation
 							awaiting_movement := True
 							application_imp.start_awaiting_movement
 						end
+					elseif mode_is_target_menu and a_button = 3 then
+						application_imp.target_menu (pebble).show
 					end
 				end
 			end
 		end
 
-	real_start_transport (a_pebble: like pebble; a_x, a_y, a_button: INTEGER; a_x_tilt, a_y_tilt,
+	modify_widget_appearance (starting: BOOLEAN) is
+			-- Modify the appearence of widgets to reflect current
+			-- state of pick and drop and dropable targets.
+			-- If `starting' then the pick and drop is starting,
+			-- else it is ending.
+		local
+			window_imp: EV_WINDOW_IMP
+			windows: LINEAR [EV_WINDOW]
+		do
+			windows := application_imp.windows
+			from
+				windows.start
+			until
+				windows.off
+			loop
+				window_imp ?= windows.item.implementation
+				check
+					window_implementation_not_void: window_imp /= Void
+				end
+				window_imp.update_for_pick_and_drop (starting)
+				windows.forth
+			end
+		end
+
+
+	real_start_transport (a_x, a_y, a_button: INTEGER; a_x_tilt, a_y_tilt,
 		a_pressure: DOUBLE; a_screen_x, a_screen_y: INTEGER) is
 			-- Actually start the pick/drag and drop mechanism.
 		require
@@ -219,14 +242,11 @@ feature {EV_ANY_I} -- Implementation
 		do
 			if
 				(mode_is_drag_and_drop and a_button = 1) or
-				(mode_is_pick_and_drop and a_button = 3) or
-				(mode_is_target_menu and a_button = 3)
+				(mode_is_pick_and_drop and a_button = 3)
 				-- Check that transport can be started.
 				--| Drag and drop is always started with the left button press.
 				--| Pick and drop is always started with the right button press.
 			then
-					-- Set the pebble.
-				pebble := a_pebble
 
 					-- We need to store `top_level_window_imp' for use later if `Current'
 					-- is unparented during the pick and drop execution.
@@ -234,6 +254,8 @@ feature {EV_ANY_I} -- Implementation
 
 					-- We now create the screen at the start of every pick.
 					-- See `pnd_screen' comment for explanation.
+				create pnd_screen
+				pnd_screen.enable_dashed_line_style
 
 				interface.pointer_motion_actions.block
 					-- Block `pointer_motion_actions'.
@@ -276,9 +298,11 @@ feature {EV_ANY_I} -- Implementation
 						end
 						pt.client_to_screen (l_win)
 					end
-					application_imp.set_x_y_origin (pt.x, pt.y)
+					internal_pick_x := pt.x
+					internal_pick_y := pt.y
 				else
-					application_imp.set_x_y_origin (a_screen_x, a_screen_y)
+					internal_pick_x := a_screen_x
+					internal_pick_y := a_screen_y
 				end
 				press_action := Ev_pnd_end_transport
 				motion_action := Ev_pnd_execute
@@ -304,12 +328,10 @@ feature {EV_ANY_I} -- Implementation
 			abstract_pick_and_dropable: EV_ABSTRACT_PICK_AND_DROPABLE
 			text_component: EV_TEXT_COMPONENT_IMP
 			l_pebble: like pebble
-			l_original: like original_top_level_window_imp
 		do
 			check
 				original_top_level_window_imp_not_void: original_top_level_window_imp /= Void
 			end
-			l_original := original_top_level_window_imp
 			modify_widget_appearance (False)
 				-- Remove the capture (as soon as possible because we can't
 				-- debug when the capture is enabled)
@@ -389,7 +411,7 @@ feature {EV_ANY_I} -- Implementation
 			interface.pointer_motion_actions.resume
 				-- Resume `pointer_motion_actions'.
 
-			l_original.allow_movement
+			original_top_level_window_imp.allow_movement
 			original_top_level_window_imp := Void
 
 				-- Reset internal attributes.
@@ -539,22 +561,30 @@ feature {EV_ANY_I} -- Implementation
 	is_dnd_in_transport: BOOLEAN
 		-- Is `Current' executing drag and drop?
 
-	press_action: NATURAL_8
+	press_action: INTEGER
 		-- State which is used to decide action on pick/drag and drop press.
 
-	release_action: NATURAL_8
+	release_action: INTEGER
 		-- State which is used to describe action on pick/drag and drop release.
 
-	motion_action: NATURAL_8
+	motion_action: INTEGER
 		-- State which is used to describe action on pick/drab and drop
 		-- pointer motion.
 
-	Ev_pnd_disabled: NATURAL_8 is 0
-	Ev_pnd_start_transport: NATURAL_8 is 1
-	Ev_pnd_end_transport: NATURAL_8 is 2
-	Ev_pnd_execute: NATURAL_8 is 3
+	Ev_pnd_disabled: INTEGER is 0
+	Ev_pnd_start_transport: INTEGER is 1
+	Ev_pnd_end_transport: INTEGER is 2
+	Ev_pnd_execute: INTEGER is 3
 		-- Allowable states for use with `press_action', release_action' and
 		-- `motion_action'.
+
+	old_pointer_x, old_pointer_y: INTEGER
+		-- Hold the last position that the rubber band was drawn to.
+		--| Used to stop unecessary re-draw of the band when no movement.
+
+	internal_pick_x, internal_pick_y: INTEGER
+		-- Rubber band starting position.
+		-- Only initialised when a pick/drag and drop is started.
 
 	pnd_stored_cursor: EV_POINTER_STYLE
 			-- Cursor used on the widget before PND started.
@@ -582,13 +612,30 @@ feature {EV_ANY_I} -- Implementation
 			-- Erase previously drawn rubber band.
 			-- Draw a rubber band between initial pick point and cursor.
 		do
-			application_imp.draw_rubber_band
+			if rubber_band_is_drawn then
+				real_draw_rubber_band
+			end
+			old_pointer_x := pointer_x
+			old_pointer_y := pointer_y
+			real_draw_rubber_band
+			rubber_band_is_drawn := True
+		end
+
+	real_draw_rubber_band is
+			-- Draw rubber band.
+		do
+			pnd_screen.set_invert_mode
+			pnd_screen.draw_segment
+				(internal_pick_x, internal_pick_y, old_pointer_x, old_pointer_y)
 		end
 
 	erase_rubber_band  is
 			-- Erase previously drawn rubber band.
 		do
-			application_imp.erase_rubber_band
+			if rubber_band_is_drawn then
+				real_draw_rubber_band
+				rubber_band_is_drawn := False
+			end
 		end
 
 	enable_capture is
@@ -673,6 +720,7 @@ feature {EV_ANY_I, WEL_WINDOW} -- Implementation
 
 	application_imp: EV_APPLICATION_IMP is
 			-- `Result' is implementation of application from environment.
+		local
 		once
 			Result ?= environment.application.implementation
 		ensure

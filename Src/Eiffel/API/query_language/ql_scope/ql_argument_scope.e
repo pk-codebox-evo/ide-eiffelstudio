@@ -53,7 +53,7 @@ feature -- Access
 		do
 			if line_path_marker.is_equipped_with_marker (a_path) then
 				create {QL_LINE_DOMAIN_GENERATOR}Result
-				Result.set_criterion (create {QL_LINE_NAME_IS_CRI}.make_with_setting (line_path_marker.base_name (a_path), False, {QL_NAME_CRITERION}.identity_matching_strategy))
+				Result.set_criterion (create {QL_LINE_NAME_IS_CRI}.make_with_setting (line_path_marker.base_name (a_path), False, True))
 			end
 		ensure then
 			good_result: line_path_marker.is_equipped_with_marker (a_path) implies Result /= Void
@@ -68,7 +68,7 @@ feature -- Access
 	delayed_domain: QL_DELAYED_ARGUMENT_DOMAIN is
 			-- An empty delayed domain whose scope is same as current scope
 		do
-			create Result.make
+			create Result
 		end
 
 feature -- Status report
@@ -117,5 +117,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

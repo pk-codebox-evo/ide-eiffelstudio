@@ -675,12 +675,10 @@ feature {NONE} -- Mouse copy cut
 				former_mouse_y := a_screen_y
 				mouse_copy_cut := True
 				mouse_left_button_down := True
-				if cursors /= Void then
-					if ctrled_key then
-						editor_drawing_area.set_pointer_style (Cursors.Cur_copy_selection)
-					else
-						editor_drawing_area.set_pointer_style (Cursors.Cur_cut_selection)
-					end
+				if ctrled_key then
+					editor_drawing_area.set_pointer_style (Cursors.Cur_copy_selection)
+				else
+					editor_drawing_area.set_pointer_style (Cursors.Cur_cut_selection)
 				end
 			else
 				mouse_copy_cut := False
@@ -899,7 +897,6 @@ feature {NONE} -- Text Loading
 		do
 			Precursor {SELECTABLE_TEXT_PANEL}
 			date_of_file_when_loaded := 0
-			size_of_file_when_loaded := 0
 			file_name := Void
 		end
 

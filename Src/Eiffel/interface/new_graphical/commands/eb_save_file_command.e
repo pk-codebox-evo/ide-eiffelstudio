@@ -9,7 +9,6 @@ class
 	EB_SAVE_FILE_COMMAND
 
 inherit
-
 	EB_FILEABLE_COMMAND
 		redefine
 			make
@@ -23,8 +22,7 @@ inherit
 
 	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 		redefine
-			tooltext,
-			pixel_buffer
+			tooltext
 		end
 
 	EB_SHARED_WINDOW_MANAGER
@@ -34,12 +32,16 @@ inherit
 
 	SHARED_WORKBENCH
 
+
 	EB_SHARED_PREFERENCES
 		export
 			{NONE} all
 		end
 
 	EB_SAVE_FILE
+		export
+			{NONE} all
+		end
 
 create
 	make
@@ -48,14 +50,12 @@ feature -- Initialization
 
 	make (a_manager: like target) is
 			-- Create a formatter associated with `a_manager'.
-		local
-			l_shortcut: SHORTCUT_PREFERENCE
 		do
 			Precursor (a_manager)
-			l_shortcut := preferences.misc_shortcut_data.shortcuts.item ("save")
-			create accelerator.make_with_key_combination (l_shortcut.key, l_shortcut.is_ctrl, l_shortcut.is_alt, l_shortcut.is_shift)
+			create accelerator.make_with_key_combination (
+				create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.Key_s),
+				True, False, False)
 			accelerator.actions.extend (agent execute)
-			set_referred_shortcut (l_shortcut)
 			disable_sensitive
 		end
 
@@ -65,7 +65,7 @@ feature -- Execution
 			-- Save a file with the chosen name.
 		local
 			compileok: BOOLEAN
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 		do
 				-- FIXME XR: We add a test `is_sensitive' to prevent calls from the accelerator.
 				-- It would be nicer to use the `executable' feature but that's 5.1 :)
@@ -90,8 +90,6 @@ feature -- Execution
 						target.set_last_saving_date (last_saving_date)
 						target.on_text_saved
 						target.update_save_symbol
-					else
-						target.set_last_save_failed (True)
 					end
 				end
 			end
@@ -99,7 +97,7 @@ feature -- Execution
 
 feature {NONE} -- Implementation
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it appears in the menu (with & symbol).
 		do
 			Result := Interface_names.m_Save_new
@@ -111,25 +109,19 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.general_save_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.general_save_icon_buffer
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.f_Save
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text for the toolbar button.
 		do
 			Result := Interface_names.b_Save
 		end
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.f_Save
@@ -144,6 +136,7 @@ feature {NONE} -- Implementation
 		do
 			enable_sensitive
 		end
+
 
 	on_text_reset is
 			-- make the command insensitive

@@ -141,18 +141,6 @@ doc:	</attribute>
 */
 rt_public char **eif_environ;	/* Environment variable pointer */
 
-/*
-doc:	<attribute name="eoption" return_type="struct eif_opt *" export="public">
-doc:		<summary>Option table. Store assertion and profiling option per dynamic type.</summary>
-doc:		<access>Read/Write</access>
-doc:		<indexing>Dtype</indexing>
-doc:		<thread_safety>Safe</thread_safety>
-doc:		<synchronization>None since initialized in `main.c' and updated in `update.c'.</synchronization>
-doc:	</attribute>
-*/
-rt_public struct eif_opt *eoption;
-
-
 #ifdef WORKBENCH
 /*
 doc:	<attribute name="ccount" return_type="int" export="public">
@@ -215,6 +203,17 @@ doc:		<synchronization>None since initialized in compiler generated `einit.c'.</
 doc:	</attribute>
 */
 rt_public uint32 eif_nb_features;
+
+/*
+doc:	<attribute name="eoption" return_type="struct eif_opt *" export="public">
+doc:		<summary>Option table. Store assertion and profiling option per dynamic type.</summary>
+doc:		<access>Read/Write</access>
+doc:		<indexing>Dtype</indexing>
+doc:		<thread_safety>Safe</thread_safety>
+doc:		<synchronization>None since initialized in `main.c' and updated in `update.c'.</synchronization>
+doc:	</attribute>
+*/
+rt_public struct eif_opt *eoption;
 
 /*
 doc:	<attribute name="mpatidtab" return_type="int *" export="shared">
@@ -404,17 +403,6 @@ doc:	</routine>
 
 rt_public int is_debug_mode (void){
 	return debug_mode;
-}
-
-/*
-doc:	<routine name="set_debug_mode" return_type="void" export="public">
-doc:		<summary>Public assigner to `debug_mode'.</summary>
-doc:		<thread_safety>Safe</thread_safety>
-doc:	</routine>
-*/
-
-rt_public void set_debug_mode (int v){
-	debug_mode = v;
 }
 
 rt_public void once_init (void)
@@ -681,6 +669,10 @@ rt_public void eif_rtinit(int argc, char **argv, char **envp)
 	 */
 
 #ifdef EIF_WINDOWS
+	static char module_name [255] = {0};
+#endif
+
+#ifdef EIF_WINDOWS
 	set_windows_exception_filter();
 #endif
 
@@ -717,12 +709,11 @@ rt_public void eif_rtinit(int argc, char **argv, char **envp)
 		TIMEOUT = 30;
 	}
 
-	eoption = egc_foption;
-
 #ifdef WORKBENCH
 	xinitint();							/* Interpreter initialization */
 	esystem = egc_fsystem;
 	ecall = egc_fcall;
+	eoption = egc_foption;
 	eif_par_table = egc_partab;
 	eif_par_table_size = egc_partab_size;
 	eorg_table = egc_forg_table;
@@ -796,7 +787,7 @@ rt_public void eif_rtinit(int argc, char **argv, char **envp)
 #endif
 #ifdef WORKBENCH
 	if (egc_routdisp_wb == 0) {
-		egc_routdisp_wb = (void (*)(EIF_REFERENCE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE)) egc_routdisp;
+		egc_routdisp_wb = egc_routdisp;
 	}
 #else
 	if (egc_routdisp_fl == 0) {

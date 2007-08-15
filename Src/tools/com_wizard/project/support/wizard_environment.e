@@ -57,7 +57,7 @@ feature -- Access
 	class_cluster_name: STRING
 			-- Cluster to which Eiffel class belongs
 
-	eiffel_project_path: STRING
+	eiffel_project_name: STRING
 			-- Eiffel project name
 
 	eiffel_target: STRING
@@ -309,15 +309,15 @@ feature -- Element Change
 			source_ecf_file_name_set: source_ecf_file_name = a_file
 		end
 
-	set_eiffel_project_path (p_name: like eiffel_project_path) is
+	set_eiffel_project (p_name: like eiffel_project_name) is
 			-- Set 'eiffel_project_name' to 'p_name'.
 		require
 			non_void_name: p_name /= Void
 			valid_name: not p_name.is_empty
 		do
-			eiffel_project_path := expanded_path (p_name)
+			eiffel_project_name := expanded_path (p_name)
 		ensure
-			name_set: eiffel_project_path.is_equal (expanded_path (p_name))
+			name_set: eiffel_project_name.is_equal (expanded_path (p_name))
 		end
 
 	set_eiffel_target (p_name: like eiffel_target) is
@@ -350,10 +350,17 @@ feature -- Element Change
 		require
 			non_void_name: a_name /= Void
 			valid_name: not a_name.is_empty
+		local
+			l_index: INTEGER
 		do
-			project_name := a_name
+			l_index := a_name.last_index_of ('.', a_name.count)
+			if l_index > 0 then
+				project_name := a_name.substring (1, l_index - 1)
+			else
+				project_name := a_name
+			end
 		ensure
-			project_name_set: project_name = a_name
+			project_name_set: project_name = a_name or else project_name.is_equal (a_name.substring (1, a_name.last_index_of ('.', a_name.count) - 1))
 		end
 
 	set_idl_file_name (a_idl_file_name: like idl_file_name) is

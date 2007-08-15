@@ -112,11 +112,14 @@ feature {NONE} -- Implementation
 		require
 			at_least_one_item_selected: favorites_tree.selected_item /= Void
 		local
+			source: EB_FAVORITES_ITEM_LIST
 			item_to_remove: EB_FAVORITES_ITEM
 		do
 				-- Retrieve item to move
 			item_to_remove ?= favorites_tree.selected_item.data
-			favorites_manager.remove (item_to_remove)
+			source := item_to_remove.parent
+			source.start
+			source.prune (item_to_remove)
 			move_button.disable_sensitive
 			remove_button.disable_sensitive
 		end
@@ -124,15 +127,41 @@ feature {NONE} -- Implementation
 	new_favorite_class is
 			-- Create a new "favorite class" and add it to the
 			-- end of the root list.
+		local
+			choose_class_dialog: EB_CHOOSE_CLASS_DIALOG
+			class_name: STRING
 		do
-			favorites_manager.new_favorite_class (Current)
+			create choose_class_dialog.make
+			choose_class_dialog.show_modal_to_window (Current)
+			if choose_class_dialog.selected then
+				class_name := choose_class_dialog.class_name
+				favorites.add_class (class_name)
+			end
 		end
 
 	create_folder is
 			-- create a new folder and add it to the end of the
 			-- root list.
+		local
+			folder_name_dialog: EB_TYPE_FOLDER_DIALOG
+			folder_name: STRING
+			wd: EV_WARNING_DIALOG
 		do
-			favorites_manager.create_folder (Current)
+			create folder_name_dialog.make
+			folder_name_dialog.show_modal_to_window (Current)
+			if folder_name_dialog.selected then
+				folder_name := folder_name_dialog.folder_name
+				if
+					folder_name.has ('(')
+					or folder_name.has (')')
+					or folder_name.has ('*')
+				then
+					create wd.make_with_text (Warning_messages.w_Invalid_folder_name + "%N A favorite folder name cannot contain any ot the following characters: %N ( ) * ")
+					wd.show_modal_to_window (Current)
+				else
+					favorites.add_folder (folder_name)
+				end
+			end
 		end
 
 	move_to_folder is
@@ -140,14 +169,48 @@ feature {NONE} -- Implementation
 		require
 			at_least_one_item_selected: favorites_tree.selected_item /= Void
 		local
+			choose_folder_dialog: EB_CHOOSE_FAVORITES_FOLDER_DIALOG
+			destination: EB_FAVORITES_ITEM_LIST
+			source: EB_FAVORITES_ITEM_LIST
 			item_to_move: EB_FAVORITES_ITEM
+			conv_folder: EB_FAVORITES_FOLDER
+			conv_item: EB_FAVORITES_ITEM
+			wd: EV_WARNING_DIALOG
 		do
 				-- Retrieve item to move
 			item_to_move ?= favorites_tree.selected_item.data
-			favorites_manager.move_to_folder (item_to_move, Current)
-			if favorites_tree.selected_item = Void then
-				move_button.disable_sensitive
-				remove_button.disable_sensitive
+			if item_to_move.is_feature then
+				create wd.make_with_text (Warning_messages.w_Cannot_move_feature_alone)
+				wd.show_modal_to_window (Current)
+			else
+				source := item_to_move.parent
+
+					-- Retrieve destination
+				create choose_folder_dialog.make (favorites_manager)
+				choose_folder_dialog.show_modal_to_window (Current)
+
+					-- Move item.
+				if choose_folder_dialog.selected then
+					destination := choose_folder_dialog.chosen_folder
+					conv_folder ?= item_to_move
+					conv_item ?= destination
+					if
+						conv_folder /= Void and then
+						conv_item /= Void and then
+						conv_folder.has_recursive_child (conv_item)
+					then
+						create wd.make_with_text (Warning_messages.w_Cannot_move_favorite_to_a_child)
+						wd.show_modal_to_window (Current)
+					else
+						source.prune_all (item_to_move)
+						destination.extend (item_to_move)
+						item_to_move.set_parent (destination)
+					end
+				end
+				if favorites_tree.selected_item = Void then
+					move_button.disable_sensitive
+					remove_button.disable_sensitive
+				end
 			end
 		end
 

@@ -174,6 +174,7 @@ feature -- Comparison
 			end
 		end
 
+
 feature -- Code generation
 
 	generate_il is

@@ -170,18 +170,18 @@ feature -- Execution
 			-- Create a blank project in directory `directory_name'.
 		local
 			blank_project_builder: BLANK_PROJECT_BUILDER
-			retried: BOOLEAN
+			rescued: BOOLEAN
 			cla, clu, f: STRING
 			sc: EIFFEL_SYNTAX_CHECKER
 			l_project_loader: EB_GRAPHICAL_PROJECT_LOADER
 			l_project_initialized: BOOLEAN
 		do
 			success := False
-			if not retried then
+			if not rescued then
 				create sc
 					-- Retrieve System parameters
 				if directory_field.text = Void or else directory_field.text.is_empty then
-					add_error_message (Warning_messages.w_fill_in_location_field)
+					add_error_message (Warning_messages.w_Fill_in_location_field)
 					raise_exception (Invalid_directory_exception)
 				end
 				create directory_name.make_from_string (directory_field.text)
@@ -189,12 +189,12 @@ feature -- Execution
 
 				system_name := system_name_field.text
 				if not sc.is_valid_system_name (system_name) then
-					add_error_message (Warning_messages.w_fill_in_project_name_field)
+					add_error_message (Warning_messages.w_Fill_in_project_name_field)
 					raise_exception (Invalid_project_name_exception)
 				end
 				cla := root_class_field.text
 				cla.to_upper
-				if not sc.is_valid_class_type_name (cla) then
+				if not sc.is_valid_class_name (cla) then
 					add_error_message (Warning_messages.w_invalid_class_name (cla))
 					raise_exception (Invalid_project_name_exception)
 				end
@@ -242,15 +242,16 @@ feature -- Execution
 					(not Eiffel_ace.file_name.is_empty)
 
 				destroy
-			else
-				if not is_destroyed and then is_displayed then
+			end
+			if rescued or else not success then
+				if is_displayed then
 					display_error_message (Current)
 				else
 					display_error_message (parent_window)
 				end
 			end
 		rescue
-			retried := True
+			rescued := True
 			retry
 		end
 
@@ -433,13 +434,12 @@ feature {NONE} -- Implementation
 		do
 			if ask_for_system_name then
 				system_name_field.set_caret_position (1)
-				system_name_field.set_focus
 			else
 				if not directory_field.text.is_empty then
 					directory_field.set_caret_position (1)
-					directory_field.set_focus
 				end
 			end
+			directory_field.set_focus
 		end
 
 	browse_directory is
@@ -510,8 +510,6 @@ feature {NONE} -- Implementation
 			Result := l_project_location
 		end
 
-	old_project_name: STRING
-			-- Old project name, set by user
 
 feature {NONE} -- Callbacks
 
@@ -530,10 +528,6 @@ feature {NONE} -- Callbacks
 			else
 				select_project_path
 			end
-			if success and (ace_file_name /= Void and then not ace_file_name.is_empty) then
-				recent_projects_manager.add_recent_project (ace_file_name)
-				recent_projects_manager.save_recent_projects
-			end
 		end
 
 	on_change_project_name is
@@ -543,12 +537,8 @@ feature {NONE} -- Callbacks
 			curr_project_name: STRING
 			sep_index: INTEGER
 		do
-			curr_project_name := system_name_field.text
 			curr_project_location := directory_field.text
-
-			if old_project_name = Void or else old_project_name.is_equal (root_cluster_field.text) then
-				root_cluster_field.set_text (curr_project_name)
-			end
+			curr_project_name := system_name_field.text
 			if not curr_project_location.is_empty then
 				sep_index := curr_project_location.last_index_of (Operating_environment.Directory_separator, curr_project_location.count)
 				curr_project_location.keep_head (sep_index)
@@ -558,17 +548,12 @@ feature {NONE} -- Callbacks
 
 				directory_field.set_text (curr_project_location)
 			end
-
-			old_project_name := system_name_field.text
-		ensure
-			old_project_name_attached: old_project_name /= Void
-			old_project_name_set: old_project_name.is_equal (system_name_field.text)
 		end
 
 	retrieve_directory (dialog: EV_DIRECTORY_DIALOG) is
 			-- Get callback information from `dialog', then send it to the directory field.
 		local
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 			dir_name: STRING
 		do
 			dir_name := dialog.directory
@@ -583,14 +568,14 @@ feature {NONE} -- Callbacks
 	retrieve_ace_file (dialog: EV_FILE_OPEN_DIALOG) is
 			-- Get callback information from `dialog', then send it to the ace file name field.
 		local
-			cd: EB_CONFIRMATION_DIALOG
+			cd: EV_CONFIRMATION_DIALOG
 			file_name: STRING
 		do
 			file_name := dialog.file_name
 			if file_name.is_empty then
 				create cd.make_with_text (Warning_messages.w_Not_a_file_retry (file_name))
 				cd.show_modal_to_window (Current)
-				if cd.is_ok_selected then
+				if cd.selected_button.is_equal ((create {EV_DIALOG_CONSTANTS}).ev_ok) then
 					browse_ace_file
 				end
 			else
@@ -644,13 +629,13 @@ feature {NONE} -- Vision2 architechture
 
 feature {NONE} -- Constants
 
-	Default_project_name: STRING is "project"
+	Default_project_name: STRING is "sample"
 
-	Default_root_class_name: STRING is "APPLICATION"
+	Default_root_class_name: STRING is "ROOT_CLASS"
 
 	Default_root_feature_name: STRING is "make"
 
-	Default_root_cluster_name: STRING is "project"
+	Default_root_cluster_name: STRING is "root_cluster"
 
 	Invalid_ace_exception: STRING is "Invalid_ace"
 

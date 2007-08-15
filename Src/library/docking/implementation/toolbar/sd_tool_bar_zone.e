@@ -20,19 +20,14 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_vertical: BOOLEAN; a_docking_manager: SD_DOCKING_MANAGER; a_is_menu_bar: BOOLEAN) is
+	make (a_vertical: BOOLEAN; a_docking_manager: SD_DOCKING_MANAGER) is
 			-- Creation method.
 		require
 			a_docking_manager_not_void: a_docking_manager /= Void
 		do
 			create internal_shared
 			docking_manager := a_docking_manager
-			if not a_is_menu_bar then
-				create {SD_WIDGET_TOOL_BAR} tool_bar.make (create {SD_TOOL_BAR}.make)
-			else
-				create {SD_MENU_BAR} tool_bar.make
-			end
-
+			create {SD_WIDGET_TOOL_BAR} tool_bar.make (create {SD_TOOL_BAR}.make)
 			is_vertical := a_vertical
 
 			create internal_tool_bar_dot_drawer.make (tool_bar.background_color)
@@ -45,17 +40,13 @@ feature {NONE} -- Initialization
 		ensure
 			set: is_vertical = a_vertical
 			set: docking_manager = a_docking_manager
-			tool_bar_not_void: tool_bar /= Void
 		end
 
 	init_drag_area is
 			-- Initlization of `drag_area'.
 		do
-			if not docking_manager.tool_bar_manager.is_locked then
-				set_drag_area (True)
-			else
-				disable_drag_area
-			end
+			tool_bar.set_start_x (internal_drag_area_size)
+			create drag_area_rectangle.make (0, 0, tool_bar.start_x, tool_bar.row_height)
 
 			tool_bar.expose_actions.extend (agent on_redraw_drag_area)
 
@@ -76,10 +67,7 @@ feature -- Command
 			l_items: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
 			l_widget_button: SD_TOOL_BAR_WIDGET_ITEM
 		do
-			if not docking_manager.tool_bar_manager.is_locked then
-				set_drag_area (a_horizontal)
-			end
-
+			set_drag_area (a_horizontal)
 			from
 				if not a_horizontal then
 					create internal_text.make (1)
@@ -134,8 +122,8 @@ feature -- Command
 			direction_changed: is_vertical = not a_horizontal
 		end
 
-	destroy_parent_containers is
-			-- Destroy related parent containers
+	float (a_screen_x, a_screen_y: INTEGER) is
+			-- Float to `a_screen_x' and `a_screen_y'.
 		local
 			l_row: SD_TOOL_BAR_ROW
 		do
@@ -151,35 +139,14 @@ feature -- Command
 					end
 				end
 			end
-		end
-
-	disable_drag_area is
-			-- Remove drag area which is located at head.
-		do
-			tool_bar.set_start_x (0)
-			tool_bar.set_start_y (0)
-			create drag_area_rectangle.make (0, 0, 0, 0)
-		end
-
-	enable_drag_area is
-			-- Show drag area which is located at the head.
-		do
-			if not is_floating then
-				set_drag_area (not is_vertical)
-			end
-		end
-
-	float (a_screen_x, a_screen_y: INTEGER; a_visible: BOOLEAN) is
-			-- Float to `a_screen_x' and `a_screen_y'.
-		local
-			l_platform: PLATFORM
-		do
-			destroy_parent_containers
 
 			if is_vertical then
 				change_direction (True)
 			end
-			disable_drag_area
+			tool_bar.set_start_x (0)
+			tool_bar.set_start_y (0)
+			create drag_area_rectangle.make (0, 0, 0, 0)
+			tool_bar.redraw_rectangle (0, 0, {SD_TOOL_BAR_SEPARATOR}.width, tool_bar.row_height)
 
 			create floating_tool_bar.make (docking_manager)
 			if tool_bar.parent /= Void then
@@ -188,25 +155,11 @@ feature -- Command
 			floating_tool_bar.extend (Current)
 
 			prune (tail_indicator)
-
-			-- We have to compute minimum width, because the tail tool bar option button is removed.
-			compute_minmum_size
-
 			floating_tool_bar.set_position (a_screen_x, a_screen_y)
 			if assistant.last_state.floating_group_info /= Void then
 				floating_tool_bar.assistant.position_groups (assistant.last_state.floating_group_info)
 			end
-			if a_visible then
-				floating_tool_bar.show
-			end
-
-			-- We have to set position again after showing on Solaris. Otherwise it will cause bug#12873.
-			-- The vertical position problem only happens on Solaris JDS. Not happens on Windows, Ubuntu (both GNome and KDE) and
-			-- Solaris CDE. Maybe it's a bug of JDS.
-			create l_platform
-			if l_platform.is_unix then
-				floating_tool_bar.set_position (a_screen_x, a_screen_y)
-			end
+			floating_tool_bar.show
 
 			docking_manager.tool_bar_manager.floating_tool_bars.extend (floating_tool_bar)
 
@@ -234,11 +187,7 @@ feature -- Command
 			if tool_bar.parent /= Void then
 				tool_bar.parent.prune (tool_bar)
 			end
-
-			if not docking_manager.tool_bar_manager.is_locked then
-				set_drag_area (True)
-			end
-
+			set_drag_area (True)
 			change_direction (True)
 			extend_one_item (tail_indicator)
 			compute_minmum_size
@@ -255,7 +204,6 @@ feature -- Command
 			l_items: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
 		do
 			content := a_content
-			tool_bar.set_content (a_content)
 			a_content.set_zone (Current)
 			l_items := a_content.items.twin
 			from
@@ -270,7 +218,6 @@ feature -- Command
 			extend_one_item (tail_indicator)
 			tail_indicator.set_pixmap (internal_shared.icons.tool_bar_customize_indicator)
 			tail_indicator.set_pixel_buffer (internal_shared.icons.tool_bar_customize_indicator_buffer)
-			tail_indicator.set_tooltip (internal_shared.interface_names.tooltip_toolbar_tail_indicator)
 			tail_indicator.select_actions.extend (agent assistant.on_tail_indicator_selected)
 
 			compute_minmum_size
@@ -292,7 +239,7 @@ feature -- Command
 	compute_minmum_size is
 			-- Redefine
 		do
-			tool_bar.compute_minimum_size
+			tool_bar.compute_minmum_size
 			if row /= Void and row.has (tool_bar) then
 				row.set_item_size (tool_bar, tool_bar.minimum_width, tool_bar.minimum_height)
 			end
@@ -337,9 +284,6 @@ feature -- Query
 			Result := floating_tool_bar /= Void
 		end
 
-	customize_dialog: SD_TOOL_BAR_CUSTOMIZE_DIALOG
-			-- SD_TOOL_BAR_CUSTOMIZE_DIALOG if exists.
-
 	tool_bar: SD_TOOL_BAR
 			-- Tool bar which managed by Current.
 
@@ -350,7 +294,7 @@ feature -- Query
 			-- Content in `Current'.
 
 	tool_bar_items: ARRAYED_LIST [SD_TOOL_BAR_ITEM] is
-			-- Tool bar items on `Current' including invisible items.
+			-- Tool bar items on `Current'.
 		do
 			Result := content.items
 		ensure
@@ -370,13 +314,9 @@ feature -- Query
 			-- Current size.
 		do
 			if is_vertical then
-				Result := tool_bar.minimum_height
+				Result := tool_bar.height
 			else
-				-- On GTK, SD_TOOL_BAR `minimum_width' is not always equal `width' here.
-				-- On Windows, SD_TOOL_BAR `minimum_width' is always equal `width' here.
-				-- See bug#12651, so we use `minimum_width' for it.
-				-- Same for `minimum_height' and `height'.
-				Result := tool_bar.minimum_width
+				Result := tool_bar.width
 			end
 		ensure
 			valid: Result >= 0
@@ -418,52 +358,6 @@ feature -- Query
 			Result := tool_bar.has (a_item)
 		end
 
-	has_right_click_action (a_screen_x, a_screen_y: INTEGER): BOOLEAN is
-			-- If button at `a_screen_x', `a_screen_y' has pointer actions?
-		local
-			l_button: SD_TOOL_BAR_BUTTON
-		do
-			if tool_bar.is_item_position_valid (a_screen_x, a_screen_y) then
-				from
-					tool_bar_items.start
-				until
-					tool_bar_items.after or Result
-				loop
-					l_button ?= tool_bar_items.item
-					if l_button /= Void and l_button.rectangle.has_x_y (a_screen_x - tool_bar.screen_x, a_screen_y - tool_bar.screen_y) then
-						Result := l_button.pointer_button_press_actions.count > 0
-					end
-					tool_bar_items.forth
-				end
-			end
-		end
-
-	has_pebble_function (a_screen_x, a_screen_y: INTEGER): BOOLEAN is
-			-- If button at `a_screen_x', `a_screen_y' has pebble function?
-		local
-			l_item: SD_TOOL_BAR_ITEM
-		do
-			if tool_bar.is_item_position_valid (a_screen_x, a_screen_y) then
-				l_item := tool_bar.item_at_position (a_screen_x, a_screen_y)
-				if l_item /= Void then
-					Result := l_item.pebble_function /= Void
-				end
-			end
-		end
-
-	has_drop_function (a_screen_x, a_screen_y: INTEGER): BOOLEAN is
-			-- If button at `a_screen_x', `a_screen_y' has drop function?
-		local
-			l_item: SD_TOOL_BAR_ITEM
-		do
-			if tool_bar.is_item_position_valid (a_screen_x, a_screen_y) then
-				l_item := tool_bar.item_at_position (a_screen_x, a_screen_y)
-				if l_item /= Void then
-					Result := l_item.drop_actions.count >= 1
-				end
-			end
-		end
-
 feature {NONE} -- Agents
 
 	on_redraw_drag_area (a_x: INTEGER; a_y: INTEGER; a_width: INTEGER; a_height: INTEGER) is
@@ -498,7 +392,7 @@ feature {NONE} -- Implmentation
 	hash_code: INTEGER is
 			-- Hash code is index in all tool bar zones.
 		do
-			Result := docking_manager.tool_bar_manager.contents.index_of (content, 1)
+			Result := docking_manager.tool_bar_manager.contents.index_of (Current.content, 1)
 		end
 
 	internal_shared: SD_SHARED
@@ -517,28 +411,21 @@ feature {NONE} -- Implmentation
 
 	set_drag_area (a_is_for_horizontal: BOOLEAN) is
 			-- Set `drag_area_rectangle' and `start_x', `start_y' for tool bar.
-		local
-			l_row_height: INTEGER
 		do
-			l_row_height := tool_bar.row_height
-			-- Maybe the row height not setted at the moment, we use `standard_height' as default.
-			if l_row_height <= 0 then
-				l_row_height := tool_bar.standard_height
-			end
 			if a_is_for_horizontal then
 				-- Change to horizontal drag area.
 				tool_bar.set_start_x (internal_drag_area_size)
 				tool_bar.set_start_y (0)
-				create drag_area_rectangle.make (0, 0, internal_drag_area_size, l_row_height)
+				create drag_area_rectangle.make (0, 0, internal_drag_area_size, tool_bar.row_height)
 			else
 				-- Change to vertical drag area.
 				tool_bar.set_start_x (0)
 				tool_bar.set_start_y (internal_drag_area_size)
-				create drag_area_rectangle.make (0, 0, l_row_height, internal_drag_area_size)
+				create drag_area_rectangle.make (0, 0, tool_bar.row_height, internal_drag_area_size)
 			end
 		end
 
-	internal_text: ARRAYED_LIST [STRING_GENERAL]
+	internal_text: ARRAYED_LIST [STRING]
 			-- When `is_vertical' we hide all texts, store orignal texts here.
 
 	internal_hidden_widget_items: DS_HASH_TABLE [SD_TOOL_BAR_WIDGET_ITEM, INTEGER]
@@ -574,30 +461,6 @@ feature {NONE} -- Implmentation
 			end
 		end
 
-feature {SD_TOOL_BAR_ZONE_ASSISTANT, SD_TOOL_BAR_HIDDEN_ITEM_DIALOG, SD_FLOATING_TOOL_BAR_ZONE, SD_TOOL_BAR, SD_TOOL_BAR_CONTENT} -- Internal issues
-
-	tail_indicator: SD_TOOL_BAR_NARROW_BUTTON
-			-- Button at tail of Current, which used for show hide buttons and customize dialog.
-
-	docking_manager: SD_DOCKING_MANAGER
-			-- Docking manager manage Current.
-
-	extend_one_item (a_item: SD_TOOL_BAR_ITEM) is
-			-- Extend `a_item' if `a_item' is_displayed.
-		local
-			l_widget_item: SD_TOOL_BAR_WIDGET_ITEM
-		do
-			if a_item.is_displayed then
-				l_widget_item ?= a_item
-				if l_widget_item /= Void then
-					if l_widget_item.widget.parent /= Void then
-						l_widget_item.widget.parent.prune (l_widget_item.widget)
-					end
-				end
-				tool_bar.extend (a_item)
-			end
-		end
-
 	update_maximum_size is
 			-- Update `maximize_size'
 		do
@@ -608,12 +471,20 @@ feature {SD_TOOL_BAR_ZONE_ASSISTANT, SD_TOOL_BAR_HIDDEN_ITEM_DIALOG, SD_FLOATING
 			end
 		end
 
-	set_customize_dialog (a_dialog: like customize_dialog) is
-			-- Set `customize_dialog' with `a_dialog'
+feature {SD_TOOL_BAR_ZONE_ASSISTANT, SD_TOOL_BAR_HIDDEN_ITEM_DIALOG, SD_FLOATING_TOOL_BAR_ZONE} -- Internal issues
+
+	tail_indicator: SD_TOOL_BAR_NARROW_BUTTON
+			-- Button at tail of Current, which used for show hide buttons and customize dialog.
+
+	docking_manager: SD_DOCKING_MANAGER
+			-- Docking manager manage Current.
+
+	extend_one_item (a_item: SD_TOOL_BAR_ITEM) is
+			-- Extend `a_item' if `a_item' is_displayed.
 		do
-			customize_dialog := a_dialog
-		ensure
-			set: customize_dialog = a_dialog
+			if a_item.is_displayed then
+				tool_bar.extend (a_item)
+			end
 		end
 
 feature {SD_FLOATING_TOOL_BAR_ZONE} -- Internal issues.
@@ -624,7 +495,6 @@ invariant
 
 	not_void: internal_shared /= Void
 	not_void: assistant /= Void
-	tool_bar_not_void: tool_bar /= Void
 
 indexing
 	library:	"SmartDocking: Library of reusable components for Eiffel."

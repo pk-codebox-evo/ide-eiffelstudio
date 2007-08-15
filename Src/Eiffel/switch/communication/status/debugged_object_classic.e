@@ -58,7 +58,7 @@ feature {NONE} -- Creation
 			-- conform to `a_class'.
 		require
 			non_void_addr: addr /= Void;
-			valid_addr: is_valid_object_address (addr);
+			valid_addr: Application.is_valid_object_address (addr);
 			class_not_void: a_class /= Void
 			class_has_types: a_class.has_types
 		do
@@ -78,12 +78,6 @@ feature {NONE} -- Creation
 
 feature {DEBUGGED_OBJECT_MANAGER} -- Refreshing
 
-	reset is
-			-- Reset internal data
-		do
-			attributes := Void
-		end
-
 	refresh (sp_lower, sp_upper: INTEGER) is
 		local
 			rqst: ATTR_REQUEST
@@ -91,7 +85,6 @@ feature {DEBUGGED_OBJECT_MANAGER} -- Refreshing
 			debug ("debug_recv")
 				print (generator + ".refresh (" + sp_lower.out + ", " + sp_upper.out + ") : address=" + object_address + "%N")
 			end
-			reset
 			create rqst.make (object_address)
 			rqst.set_sp_bounds (sp_lower, sp_upper);
 			rqst.send;
@@ -101,11 +94,12 @@ feature {DEBUGGED_OBJECT_MANAGER} -- Refreshing
 			capacity := rqst.capacity;
 			max_capacity := rqst.max_capacity
 		end
-
+		
 feature -- Properties
 
 	attributes: DS_LIST [ABSTRACT_DEBUG_VALUE];
 			-- Attributes of object being inspected (sorted by name)
+		
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

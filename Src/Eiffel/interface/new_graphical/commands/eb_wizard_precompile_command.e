@@ -27,11 +27,6 @@ inherit
 			{NONE} all
 		end
 
-	SHARED_LOCALE
-		export
-			{NONE} all
-		end
-
 feature -- Execution
 
 	execute is
@@ -40,20 +35,15 @@ feature -- Execution
 			command: STRING
 		do
 			create command.make (50)
-			command.append ("%"" + eiffel_layout.Precompilation_wizard_command_name + "%"")
-			command.append (" %"")
+			command.append (eiffel_layout.Precompilation_wizard_command_name)
+			command.append (" ")
 			command.append (eiffel_layout.precompilation_wizard_resources_directory)
-			command.append ("%" ")
-			command.append (locale.info.id.name.out)
 			launch(command)
 		end
 
 feature {NONE} -- Implementation
 
-	pixmap: EV_PIXMAP
-			-- Pixmap
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it appears in the menu (with & symbol).
 		do
 			Result := Interface_names.m_Wizard_precompile

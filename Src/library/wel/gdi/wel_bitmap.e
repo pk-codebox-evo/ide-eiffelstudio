@@ -137,10 +137,9 @@ feature {NONE} -- Initialization
 			a_header_info_not_void: a_header_info /= Void
 			a_header_info_exist: a_header_info.exists
 		local
-			l_null_pointer, l_ppv_bits: POINTER
+			l_null_pointer: POINTER
 		do
-			item := cwin_create_dib_section (l_null_pointer, a_header_info.item, {WEL_DIB_COLORS_CONSTANTS}.dib_rgb_colors, $l_ppv_bits, l_null_pointer, 0)
-			ppv_bits := l_ppv_bits
+			item := cwin_create_dib_section (l_null_pointer, a_header_info.item, {WEL_DIB_COLORS_CONSTANTS}.dib_rgb_colors, $ppv_bits, l_null_pointer, 0)
 		ensure
 			bitmap_created: item /= default_pointer
 			ppv_bits_assigned: ppv_bits /= default_pointer

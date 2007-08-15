@@ -59,7 +59,6 @@ feature {NONE} -- real_update
 
 	reset_update_on_idle is
 		do
-			cancel_process_real_update_on_idle
 			last_real_update_id := 0
 		end
 
@@ -76,7 +75,7 @@ feature {NONE} -- real_update
 		do
 			l_dbg_is_stopped := real_update_on_idle_called_on_stopped
 			debug ("update_on_idle")
-				print (generator + ".real_update_on_idle : dbg_is_stopped=" + l_dbg_is_stopped.out + "%N")
+				print (generator +".real_update_on_idle : dbg_is_stopped="+l_dbg_is_stopped.out+"%N")
 			end
 			cancel_process_real_update_on_idle
 			if real_update_allowed (l_dbg_is_stopped) then
@@ -89,15 +88,12 @@ feature {NONE} -- real_update
 		end
 
 	real_update_allowed (dbg_was_stopped: BOOLEAN): BOOLEAN is
-		local
-			app_impl: APPLICATION_EXECUTION_DOTNET
 		do
 			Result := not is_real_update_on_idle_processing
-			if Result and Debugger_manager.is_dotnet_project then
-				app_impl ?= Debugger_manager.application
-				check app_impl /= Void end
-				Result := not app_impl.callback_notification_processing
-			end
+				and (
+					not debugger_manager.application_is_dotnet
+					or else not debugger_manager.application.imp_dotnet.callback_notification_processing
+					)
 		end
 
 	real_update (arg_is_stopped: BOOLEAN) is
@@ -137,22 +133,18 @@ feature {NONE} -- Implementation
 			-- Call `real_update' on idle action
 		do
 			real_update_on_idle_called_on_stopped := a_dbg_stopped
-			ev_application.add_idle_action (update_on_idle_agent)
+			ev_application.idle_actions.extend (update_on_idle_agent)
 		end
 
 	cancel_process_real_update_on_idle is
 			-- cancel any calls to `real_update' on idle action	
 		do
 			real_update_on_idle_called_on_stopped := False
-			ev_application.remove_idle_action (update_on_idle_agent)
+			ev_application.idle_actions.prune_all (update_on_idle_agent)
 		end
 
 	update_on_idle_agent: PROCEDURE [ANY, TUPLE]; --TUPLE [BOOLEAN]]
 			-- Procedure used in the update on idle mecanism
-
-invariant
-
-	update_on_idle_agent_not_void: update_on_idle_agent /= Void
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

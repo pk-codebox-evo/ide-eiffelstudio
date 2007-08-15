@@ -17,8 +17,7 @@ inherit
 			is_equal
 		redefine
 			implementation,
-			is_in_default_state,
-			is_in_default_state_for_tabs
+			is_in_default_state
 		end
 
 	EV_DOCKABLE_TARGET
@@ -117,11 +116,6 @@ feature {NONE} -- Contract support
 			-- Is `Current' in its default state?
 		do
 			Result := Precursor {EV_PRIMITIVE} and Precursor {EV_ITEM_LIST} and has_vertical_button_style
-		end
-
-	is_in_default_state_for_tabs: BOOLEAN is
-		do
-			Result := not is_tabable_from and not is_tabable_to
 		end
 
 feature -- Constract support

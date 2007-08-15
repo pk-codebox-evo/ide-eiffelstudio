@@ -12,9 +12,7 @@ class
 inherit
 	QL_CRITERION_FACTORY
 		redefine
-			criterion_type,
-			item_type,
-			simple_criterion_type
+			criterion_type
 		end
 
 	QL_SHARED_FEATURE_INVOKE_RELATION_TYPES
@@ -47,7 +45,6 @@ feature{NONE} -- Initialization
 			agent_table.put (agent new_is_constant_criterion, c_is_constant)
 			agent_table.put (agent new_is_creator_criterion, c_is_creator)
 			agent_table.put (agent new_is_deferred_criterion, c_is_deferred)
-			agent_table.put (agent new_is_effective_criterion, c_is_effective)
 			agent_table.put (agent new_is_exported_criterion, c_is_exported)
 			agent_table.put (agent new_is_external_criterion, c_is_external)
 			agent_table.put (agent new_is_feature_criterion, c_is_feature)
@@ -82,8 +79,6 @@ feature{NONE} -- Initialization
 			agent_table.put (agent new_creators_of_criterion, c_createe_is)
 			agent_table.put (agent new_creator_is_criterion, c_creator_is)
 			agent_table.put (agent new_return_type_is_criterion, c_return_type_is)
-			agent_table.put (agent new_value_criterion, c_value_of_metric_is)
-			agent_table.put (agent new_value_criterion, c_is_satisfied_by)
 
 			create name_table.make (50)
 			name_table.put (c_false, query_language_names.ql_cri_false)
@@ -123,8 +118,8 @@ feature{NONE} -- Initialization
 			name_table.put (c_true, query_language_names.ql_cri_true)
 			name_table.put (c_name_is, query_language_names.ql_cri_name_is)
 			name_table.put (c_text_contain, query_language_names.ql_cri_text_contain)
-			name_table.put (c_ancestor_is, query_language_names.ql_cri_descendant_is)
-			name_table.put (c_descendant_is, query_language_names.ql_cri_ancestor_is)
+			name_table.put (c_ancestor_is, query_language_names.ql_cri_ancestor_is)
+			name_table.put (c_descendant_is, query_language_names.ql_cri_descendant_is)
 			name_table.put (c_implementors_of, query_language_names.ql_cri_implementors_of)
 			name_table.put (c_is_exported_to, query_language_names.ql_cri_is_exported_to)
 			name_table.put (c_callee_is, query_language_names.ql_cri_callee_is)
@@ -134,21 +129,12 @@ feature{NONE} -- Initialization
 			name_table.put (c_createe_is, query_language_names.ql_cri_createe_is)
 			name_table.put (c_creator_is, query_language_names.ql_cri_creator_is)
 			name_table.put (c_return_type_is, query_language_names.ql_cri_return_type_is)
-			name_table.put (c_value_of_metric_is, query_language_names.ql_cri_value_of_metric_is)
-			name_table.put (c_is_effective, query_language_names.ql_cri_is_effective)
-			name_table.put (c_is_satisfied_by, query_language_names.ql_cri_is_satisfied_by)
 		end
 
 feature{NONE} -- Implementation
 
 	criterion_type: QL_FEATURE_CRITERION
 			-- Criterion anchor type
-
-	item_type: QL_FEATURE
-			-- Item anchor type
-
-	simple_criterion_type: QL_SIMPLE_FEATURE_CRITERION
-			-- Simple criterion type
 
 feature{NONE} -- New criterion
 
@@ -268,14 +254,6 @@ feature{NONE} -- New criterion
 			-- New criterion to test if a feature is deferred
 		do
 			create Result.make (agent is_deferred_agent, True)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	new_is_effective_criterion: QL_SIMPLE_FEATURE_CRITERION is
-			-- New criterion to test if a feature is effective
-		do
-			create Result.make (agent is_effective_agent, True)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -441,22 +419,22 @@ feature{NONE} -- New criterion
 			result_attached: Result /= Void
 		end
 
-	new_name_is_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_FEATURE_NAME_IS_CRI is
+	new_name_is_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_FEATURE_NAME_IS_CRI is
 			-- New {QL_FEATURE_NAME_IS_CRI} criterion.
 		require
 			a_name_attached: a_name /= Void
 		do
-			create Result.make_with_setting (a_name, a_case_sensitive, a_matching_strategy)
+			create Result.make_with_setting (a_name, a_case_sensitive, a_identical)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_text_contain_criterion (a_text: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_FEATURE_TEXT_CONTAIN_CRI is
+	new_text_contain_criterion (a_text: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_FEATURE_TEXT_CONTAIN_CRI is
 			-- New {QL_FEATURE_TEXT_CONTAIN_CRI} criterion.
 		require
 			a_text_attached: a_text /= Void
 		do
-			create Result.make_with_setting (a_text, a_case_sensitive, a_matching_strategy)
+			create Result.make_with_setting (a_text, a_case_sensitive, a_identical)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -506,7 +484,7 @@ feature{NONE} -- New criterion
 		require
 			a_domain_attached: a_domain /= Void
 		do
-			create Result.make (a_domain, normal_caller_type, a_only_current_version)
+			create Result.make (a_domain, normal_caller, a_only_current_version)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -516,7 +494,7 @@ feature{NONE} -- New criterion
 		require
 			a_domain_attached: a_domain /= Void
 		do
-			create Result.make (a_domain, normal_callee_type, a_only_current_version)
+			create Result.make (a_domain, normal_callee, a_only_current_version)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -526,7 +504,7 @@ feature{NONE} -- New criterion
 		require
 			a_domain_attached: a_domain /= Void
 		do
-			create Result.make (a_domain, assigner_caller_type, a_only_current_version)
+			create Result.make (a_domain, assigner_caller, a_only_current_version)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -536,7 +514,7 @@ feature{NONE} -- New criterion
 		require
 			a_domain_attached: a_domain /= Void
 		do
-			create Result.make (a_domain, assigner_callee_type, a_only_current_version)
+			create Result.make (a_domain, assigner_callee, a_only_current_version)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -546,7 +524,7 @@ feature{NONE} -- New criterion
 		require
 			a_domain_attached: a_domain /= Void
 		do
-			create Result.make (a_domain, creator_caller_type, a_only_current_version)
+			create Result.make (a_domain, creator_caller, a_only_current_version)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -556,7 +534,7 @@ feature{NONE} -- New criterion
 		require
 			a_domain_attached: a_domain /= Void
 		do
-			create Result.make (a_domain, creator_callee_type, a_only_current_version)
+			create Result.make (a_domain, creator_callee, a_only_current_version)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -571,81 +549,57 @@ feature{NONE} -- New criterion
 			result_attached: Result /= Void
 		end
 
-	new_contain_ast_criterion (a_ast_type_list: STRING; a_and_relation: BOOLEAN; a_check_detail: BOOLEAN): QL_SIMPLE_FEATURE_CRITERION is
-			-- New {QL_SIMPLE_FEATURE_CRITERION} criterion.
-		require
-			a_ast_type_list_attached: a_ast_type_list /= Void
-		local
-			l_visitor: QL_AST_VISITOR
-		do
-			create l_visitor.make (ast_index_list_from_string (a_ast_type_list), a_and_relation)
-			create Result.make (agent l_visitor.is_code_structure_item_satisfied ({QL_FEATURE}?), True)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	new_value_criterion (a_evaluate_value_func: FUNCTION [ANY, TUPLE [QL_ITEM], BOOLEAN]): like simple_criterion_type is
-			-- New value criterion
-		require
-			a_evaluate_value_func_attached: a_evaluate_value_func /= Void
-		do
-			create Result.make (agent value_criterion_evalaute_agent ({QL_FEATURE}?, a_evaluate_value_func), False)
-		end
 
 feature -- Criterion index
 
-	c_false: INTEGER is 1
-	c_has_argument: INTEGER is 2
-	c_has_assertion: INTEGER is 3
-	c_has_assigner: INTEGER is 4
-	c_has_comment: INTEGER is 5
-	c_has_indexing: INTEGER is 6
-	c_has_local: INTEGER is 7
-	c_has_postcondition: INTEGER is 8
-	c_has_precondition: INTEGER is 9
-	c_has_rescue: INTEGER is 10
-	c_is_attribute: INTEGER is 11
-	c_is_compiled: INTEGER is 12
-	c_is_constant: INTEGER is 13
-	c_is_creator: INTEGER is 14
-	c_is_deferred: INTEGER is 15
-	c_is_exported: INTEGER is 16
-	c_is_external: INTEGER is 17
-	c_is_feature: INTEGER is 18
-	c_is_frozen: INTEGER is 19
-	c_is_function: INTEGER is 20
-	c_is_hidden: INTEGER is 21
-	c_is_immediate: INTEGER is 22
-	c_is_infix: INTEGER is 23
-	c_is_invariant_feature: INTEGER is 24
-	c_is_obsolete: INTEGER is 25
-	c_is_once: INTEGER is 26
-	c_is_origin: INTEGER is 27
-	c_is_prefix: INTEGER is 28
-	c_is_procedure: INTEGER is 29
-	c_is_unique: INTEGER is 30
-	c_is_query: INTEGER is 31
-	c_is_command: INTEGER is 32
-	c_is_visible: INTEGER is 33
-	c_is_from_any: INTEGER is 34
-	c_true: INTEGER is 35
-	c_name_is: INTEGER is 36
-	c_text_contain: INTEGER is 37
-	c_ancestor_is: INTEGER is 38
-	c_descendant_is: INTEGER is 39
-	c_implementors_of: INTEGER is 40
-	c_is_exported_to: INTEGER is 41
-	c_callee_is: INTEGER is 42
-	c_caller_is: INTEGER is 43
-	c_assignee_is: INTEGER is 44
-	c_assigner_is: INTEGER is 45
-	c_createe_is: INTEGER is 46
-	c_creator_is: INTEGER is 47
-	c_return_type_is: INTEGER is 48
-	c_contain_ast: INTEGER is 49
-	c_value_of_metric_is: INTEGER is 50
-	c_is_effective: INTEGER is 51
-	c_is_satisfied_by: INTEGER is 52
+	c_false,
+	c_has_argument,
+	c_has_assertion,
+	c_has_assigner,
+	c_has_comment,
+	c_has_indexing,
+	c_has_local,
+	c_has_postcondition,
+	c_has_precondition,
+	c_has_rescue,
+	c_is_attribute,
+	c_is_compiled,
+	c_is_constant,
+	c_is_creator,
+	c_is_deferred,
+	c_is_exported,
+	c_is_external,
+	c_is_feature,
+	c_is_frozen,
+	c_is_function,
+	c_is_hidden,
+	c_is_immediate,
+	c_is_infix,
+	c_is_invariant_feature,
+	c_is_obsolete,
+	c_is_once,
+	c_is_origin,
+	c_is_prefix,
+	c_is_procedure,
+	c_is_unique,
+	c_is_query,
+	c_is_command,
+	c_is_visible,
+	c_is_from_any,
+	c_true,
+	c_name_is,
+	c_text_contain,
+	c_ancestor_is,
+	c_descendant_is,
+	c_implementors_of,
+	c_is_exported_to,
+	c_callee_is,
+	c_caller_is,
+	c_assignee_is,
+	c_assigner_is,
+	c_createe_is,
+	c_creator_is,
+	c_return_type_is: INTEGER is unique
 
 feature{NONE} -- Implementation
 
@@ -675,12 +629,12 @@ feature{NONE} -- Implementation
 			a_item_attached: a_item /= Void
 			a_item_valid: a_item.is_valid_domain_item
 		local
-			l_e_feature: E_FEATURE
+			l_feature: E_FEATURE
 		do
 			Result := a_item.is_real_feature
 			if Result then
-				l_e_feature := a_item.e_feature
-				Result := l_e_feature.has_precondition or l_e_feature.has_postcondition
+				l_feature := a_item.e_feature
+				Result := l_feature.has_precondition or l_feature.has_postcondition
 			end
 		end
 
@@ -782,11 +736,18 @@ feature{NONE} -- Implementation
 			a_item_valid: a_item.is_valid_domain_item
 		local
 			l_feature: E_FEATURE
+			l_routine: ROUTINE_AS
 		do
 			Result := a_item.is_real_feature
 			if Result then
 				l_feature := a_item.e_feature
-				Result := l_feature.has_rescue_clause
+				Result := l_feature.is_procedure or l_feature.is_function
+				if Result then
+					l_routine ?= l_feature.ast.body.content
+					if l_routine /= Void then
+						Result := l_routine.rescue_clause /= Void
+					end
+				end
 			end
 		end
 
@@ -863,6 +824,7 @@ feature{NONE} -- Implementation
 				Result := l_export_status.is_all or else l_export_status.is_exported_to (l_system.class_of_id (l_system.any_id))
 			end
 		end
+		
 
 	is_deferred_agent (a_item: QL_FEATURE): BOOLEAN is
 			-- Agent to test if `a_item' is deferred
@@ -872,16 +834,6 @@ feature{NONE} -- Implementation
 			a_item_valid: a_item.is_valid_domain_item
 		do
 			Result := a_item.is_real_feature and then a_item.e_feature.is_deferred
-		end
-
-	is_effective_agent (a_item: QL_FEATURE): BOOLEAN is
-			-- Agent to test if `a_item' is effective
-			-- Require compiled: True
-		require
-			a_item_attached: a_item /= Void
-			a_item_valid: a_item.is_valid_domain_item
-		do
-			Result := a_item.is_real_feature and then not a_item.e_feature.is_deferred
 		end
 
 	is_external_agent (a_item: QL_FEATURE): BOOLEAN is
@@ -1115,5 +1067,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

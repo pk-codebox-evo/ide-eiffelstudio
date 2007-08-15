@@ -27,10 +27,6 @@ feature -- Access
 	target_name: STRING_GENERAL
 			-- Optional textual name describing `Current' pick and drop hole.
 
-	target_data_function: FUNCTION [ANY, TUPLE [ANY], EV_PND_TARGET_DATA]
-			-- Function for computing target meta data based on source pebble.
-			-- Primarily used for Pick and Drop target menu.
-
 	pebble_function: FUNCTION [ANY, TUPLE, ANY] is
 			-- Returns data to be transported by pick and drop mechanism.
 		deferred
@@ -101,17 +97,6 @@ feature -- Status setting
 		ensure
 			target_name_assigned:
 				a_name /= target_name and a_name.is_equal (target_name)
-		end
-
-	set_target_data_function (a_function: FUNCTION [ANY, TUPLE [like pebble], EV_PND_TARGET_DATA]) is
-			-- Set `a_function' to compute target meta data based on transport source.
-			-- Overrides any `target_name' set with `set_target_name'.
-		require
-			a_function_not_void: a_function /= Void
-		do
-			target_data_function := a_function.twin
-		ensure
-			target_data_function_assigned: target_data_function /= Void and then target_data_function.is_equal (a_function)
 		end
 
 	set_accept_cursor (a_cursor: like accept_cursor) is

@@ -14,11 +14,6 @@ inherit
 			initialize
 		end
 
-	EB_SHARED_PREFERENCES
-		export
-			{NONE} all
-		end
-
 create
 	make
 
@@ -26,13 +21,11 @@ feature {NONE} -- Initialization
 
 	initialize is
 			-- Initialize default values.
-		local
-			l_shortcut: MANAGED_SHORTCUT
 		do
-			l_shortcut := preferences.misc_shortcut_data.undo_shortcut
-			create accelerator.make_with_key_combination (l_shortcut.key, l_shortcut.is_ctrl, l_shortcut.is_alt, l_shortcut.is_shift)
+			create accelerator.make_with_key_combination (
+				create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_z),
+				True, False, False)
 			accelerator.actions.extend (agent execute)
-			set_referred_shortcut (l_shortcut)
 		end
 
 feature -- Basic operations
@@ -45,7 +38,7 @@ feature -- Basic operations
 			end
 		end
 
-feature {EB_DEVELOPMENT_WINDOW_MAIN_BUILDER} -- Accelerator action
+feature {EB_DEVELOPMENT_WINDOW} -- Accelerator action
 
 	on_ctrl_z is
 			-- Undo last action if possible and if the diagram
@@ -64,13 +57,7 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.general_undo_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.general_undo_icon_buffer
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.f_diagram_undo

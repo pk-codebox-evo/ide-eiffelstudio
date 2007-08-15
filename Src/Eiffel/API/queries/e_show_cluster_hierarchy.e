@@ -88,7 +88,7 @@ feature {NONE} -- Implementation
 					text_formatter.add_space
 					text_formatter.add (output_interface_names.precompiled)
 				end
-			elseif a_group.is_assembly or a_group.is_physical_assembly then
+			elseif a_group.is_assembly then
 				text_formatter.add (output_interface_names.assembly)
 			end
 			if l_classes /= Void and then not l_classes.is_empty then
@@ -107,6 +107,7 @@ feature {NONE} -- Implementation
 			text_formatter.add_new_line
 		end
 
+
 	display_group (a_group: QL_GROUP; a_tab_count: INTEGER; a_is_class_displayed: BOOLEAN) is
 			-- Display `a_group' in `text_formatter' starting with `a_tab_count' tabs.
 			-- If `a_is_class_displayed' is True, display classes in `a_group'.
@@ -117,7 +118,6 @@ feature {NONE} -- Implementation
 			l_group: CONF_GROUP
 			l_library: CONF_LIBRARY
 			l_assembly: CONF_ASSEMBLY
-			l_phys_as: CONF_PHYSICAL_ASSEMBLY
 			l_classes: HASH_TABLE [CONF_CLASS, STRING]
 			l_processed: BOOLEAN
 			l_assembly_processed: BOOLEAN
@@ -129,27 +129,21 @@ feature {NONE} -- Implementation
 			text_formatter.add_group (l_group, l_group.name)
 			if l_group.is_library then
 				l_library ?= l_group
-				l_processed := processed_libraries.has (l_library.library_target.system.uuid)
+				l_processed := processed_libraries.has (l_library.uuid)
 				if l_processed then
 					text_formatter.add (output_interface_names.ellipse)
 				else
-					processed_libraries.extend (l_library.library_target.system.uuid)
+					processed_libraries.extend (l_library.uuid)
 				end
-			elseif l_group.is_assembly or l_group.is_physical_assembly then
+			elseif l_group.is_assembly then
 				l_assembly ?= l_group
-				if l_assembly /= Void then
-					l_phys_as ?= l_assembly.physical_assembly
-					check
-						physical_assembly: l_phys_as /= Void
+				if l_assembly.classes_set then
+					l_assembly_processed := processed_assemblies.has (l_assembly.guid)
+					if l_assembly_processed then
+						text_formatter.add (output_interface_names.ellipse)
+					else
+						processed_assemblies.extend (l_assembly.guid)
 					end
-				else
-					l_phys_as ?= l_group
-				end
-				l_assembly_processed := processed_assemblies.has (l_phys_as.guid)
-				if l_assembly_processed then
-					text_formatter.add (output_interface_names.ellipse)
-				else
-					processed_assemblies.extend (l_phys_as.guid)
 				end
 			end
 			text_formatter.add_space
@@ -353,7 +347,7 @@ feature {NONE} -- Implementation
 			-- Display `a_classes' `a_group' into `text_formatter' starting with `a_tab_count' tabs.
 		require
 			a_group_attached: a_group /= Void
-			a_group_is_assembly: a_group.is_assembly or a_group.is_physical_assembly
+			a_group_is_assembly: a_group.is_assembly
 			a_tab_count_non_negative: a_tab_count >= 0
 		local
 			l_sorted_list: DS_LIST [CONF_CLASS]

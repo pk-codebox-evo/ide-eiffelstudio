@@ -19,8 +19,7 @@ inherit
 			set_class,
 			format,
 			make,
-			set_accelerator,
-			force_stone
+			set_accelerator
 		end
 
 create
@@ -49,13 +48,7 @@ feature -- Properties
 			Result.put (pixmaps.icon_pixmaps.view_editor_icon, 2)
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Graphical representation of the command.
-		once
-			Result := pixmaps.icon_pixmaps.view_editor_icon_buffer
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Identifier of `Current' in menus.
 		do
 			Result := Interface_names.m_Showtext_new
@@ -66,23 +59,34 @@ feature -- Formatting
 	format is
 			-- Refresh `widget'.
 		local
+			class_file: RAW_FILE
 			f_name: STRING
 		do
-			if classi /= Void and then selected and then displayed and then actual_veto_format_result then
+			if
+				classi /= Void and then
+				selected and then
+				displayed
+			then
 				display_temp_header
 				setup_viewpoint
-				if not equal (classi.file_name, editor.file_name) then
-					editor.set_stone (stone)
-					editor.load_file (classi.file_name)
-					go_to_position
-				end
-				if editor.load_file_error then
-					f_name := editor.file_name
-					editor.clear_window
-					if f_name = Void or else f_name.is_empty then
-						f_name := classi.file_name
+				create class_file.make (classi.file_name)
+				if class_file.exists then
+					if not equal (classi.file_name, editor.file_name) then
+						editor.set_stone (stone)
+						editor.load_file (classi.file_name)
+						go_to_position
 					end
-					editor.display_message (Warning_messages.w_Cannot_read_file (f_name).out)
+					if editor.load_file_error then
+						f_name := editor.file_name
+						editor.clear_window
+						if f_name = Void or else f_name.is_empty then
+							f_name := classi.file_name
+						end
+						editor.display_message (Warning_messages.w_Cannot_read_file (f_name))
+					end
+				else
+					editor.clear_window
+					editor.display_message (Warning_messages.w_file_not_exist (classi.file_name))
 				end
 				is_editable :=	not classi.is_read_only and not editor.load_file_error
 				editor.set_read_only (not is_editable)
@@ -92,12 +96,9 @@ feature -- Formatting
 					editor.disable_has_breakable_slots
 				end
 				display_header
-				stone.set_pos_container (Current)
-				if editor /= Void and then editor.stone /= Void then
-					editor.stone.set_pos_container (Current)
-				end
 			end
 		end
+
 
 feature -- Status setting
 
@@ -111,7 +112,7 @@ feature -- Status setting
 	set_class (a_class: CLASS_C) is
 			-- Associate `Current' with `a_class'.
 		do
-			set_classi (a_class.original_class)
+			set_classi (a_class.lace_class)
 		end
 
 	set_stone (new_stone: CLASSI_STONE) is
@@ -128,9 +129,12 @@ feature -- Status setting
 			else
 				classi := Void
 				if selected then
+					if widget_owner /= Void then
+						widget_owner.set_widget (widget)
+					end
 					editor.clear_window
+					display_header
 				end
-				ensure_display_in_widget_owner
 			end
 		end
 
@@ -145,18 +149,11 @@ feature -- Status setting
 			end
 			must_format := True
 			format
-			ensure_display_in_widget_owner
-		end
-
-	force_stone (a_stone: STONE) is
-			-- Directly set `stone' with `a_stone'
-		local
-			l_stone: CLASSI_STONE
-		do
-			Precursor (a_stone)
-			l_stone ?= a_stone
-			if l_stone /= Void then
-				set_classi (l_stone.class_i)
+			if selected then
+				if widget_owner /= Void then
+					widget_owner.set_widget (widget)
+				end
+				display_header
 			end
 		end
 
@@ -168,7 +165,7 @@ feature {NONE} -- Properties
 	classi: CLASS_I
 			-- Class currently associated with `Current'.
 
-	capital_command_name: STRING_GENERAL is
+	command_name: STRING is
 			-- Name of the command.
 		do
 			Result := Interface_names.l_Basic_text

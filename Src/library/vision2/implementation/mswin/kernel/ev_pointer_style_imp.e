@@ -41,9 +41,7 @@ feature {NONE} -- Initlization
 			build_bitmap (a_pixel_buffer)
 			build_native_cursor (a_pixel_buffer.width, a_pixel_buffer.height, a_x_hotspot, a_y_hotspot)
 			wel_bitmap.delete
-			wel_bitmap := Void
 			wel_mask_bitmap.delete
-			wel_mask_bitmap := Void
 		end
 
 	init_from_cursor (a_cursor: EV_CURSOR) is
@@ -76,9 +74,12 @@ feature {NONE} -- Initlization
 
 	init_predefined (a_constants: INTEGER) is
 			-- Initialized a predefined cursor.
+		local
+			l_env: EV_ENVIRONMENT
 		do
 			destroy_gdi_objects
 			build_default_icon (to_windows_constants (a_constants))
+			create l_env
 		end
 
 feature -- Command
@@ -101,7 +102,6 @@ feature -- Command
 			l_icon_info: WEL_ICON_INFO
 		do
 			l_icon_info := wel_cursor.get_icon_info
-			check l_icon_info /= Void end
 			wel_cursor.decrement_reference
 			if a_is_x then
 				l_icon_info.set_x_hotspot (a_position)
@@ -151,14 +151,21 @@ feature -- Query
 
 	x_hotspot: INTEGER is
 			-- Specifies the x-coordinate of a cursor's hot spot.
+		local
+			l_icon_info: WEL_ICON_INFO
 		do
-			Result := wel_cursor.x_hotspot
+			l_icon_info := wel_cursor.get_icon_info
+			Result := l_icon_info.x_hotspot
+			l_icon_info.delete
 		end
 
 	y_hotspot: INTEGER is
 			-- Specifies the y-coordinate of a cursor's hot spot.
+		local
+			l_icon_info: WEL_ICON_INFO
 		do
-			Result := wel_cursor.y_hotspot
+			l_icon_info := wel_cursor.get_icon_info
+			Result := l_icon_info.y_hotspot
 		end
 
 	to_windows_constants (a_constants: INTEGER): POINTER is
@@ -194,8 +201,6 @@ feature -- Query
 				Result := Idc_constants.Idc_uparrow
 			when {EV_POINTER_STYLE_CONSTANTS}.wait_cursor then
 				Result := Idc_constants.Idc_wait
-			when {EV_POINTER_STYLE_CONSTANTS}.header_sizewe_cursor then
-				Result := Idc_constants.Idc_sizewe
 			end
 		end
 

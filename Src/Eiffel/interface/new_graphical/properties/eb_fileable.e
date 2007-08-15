@@ -17,11 +17,6 @@ inherit
 			{NONE} all
 		end
 
-	EB_CONSTANTS
-		export
-			{NONE} all
-		end
-
 feature -- Access
 
 	stone: STONE
@@ -56,8 +51,6 @@ feature -- Access
 			-- Text representing Current
 		deferred
 		end
-
-	last_save_failed: BOOLEAN
 
 feature -- Status Settings
 
@@ -96,14 +89,6 @@ feature -- Status Settings
 --				stone_b.set_pebble (new_stone)
 --			end
 --| END FIXME
-		end
-
-	set_last_save_failed (a_fail: BOOLEAN) is
-			-- Set `last_save_failed' with `a_fail'.
-		do
-			last_save_failed := a_fail
-		ensure
-			set: a_fail = last_save_failed
 		end
 
 	reset_stone is
@@ -190,12 +175,6 @@ feature -- "Save command" related features
 			save_cmd.execute
 		end
 
-	save_all is
-			-- Launch the save all command.
-		do
-			save_all_cmd.execute
-		end
-
 	perform_check_before_save is
 			-- Perform checks, if any, before saving
 		do
@@ -215,11 +194,8 @@ feature -- Commands
 			-- be usefull later, that's why we keep it here
 
 	save_cmd: EB_SAVE_FILE_COMMAND
-			-- Command to save current text in the associated file.
-			-- If no file is associated, `save_as_cmd' is executed.
-
-	save_all_cmd: EB_SAVE_ALL_FILE_COMMAND
-			-- Command t sava all tabs's text in the associated file.
+		-- Command to save current text in the associated file.
+		-- If no file is associated, `save_as_cmd' is executed.
 
 feature {NONE} -- Execution
 
@@ -229,14 +205,14 @@ feature {NONE} -- Execution
 			-- This function is called when mouse cames on tool window.
 		local
 			f: PLAIN_TEXT_FILE
-			qd: EB_QUESTION_DIALOG
+			qd: EV_QUESTION_DIALOG
 		do
 			if file_name /= Void then
 				create f.make (file_name)
 				if f.exists and then f.date > last_saving_date then
-					create qd.make_with_text (interface_names.l_file_changed_by_other_tool)
-					qd.button (interface_names.b_yes).select_actions.extend (agent revert)
-					qd.button (interface_names.b_cancel).hide
+					create qd.make_with_text ("File has been changed by another tool/editor%NDo you want to load the changes?")
+					qd.button ("Yes").select_actions.extend (agent revert)
+					qd.button ("Cancel").hide
 					set_last_saving_date (f.date)
 				end
 			end

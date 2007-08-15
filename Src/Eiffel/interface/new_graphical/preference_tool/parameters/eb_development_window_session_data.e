@@ -26,7 +26,9 @@ feature {NONE} -- Creation
 			save_size (a_window_data.width, a_window_data.height)
 			save_window_state (a_window_data.is_minimized, a_window_data.is_maximized)
 			save_position (a_window_data.x_position, a_window_data.y_position)
-			save_force_debug_mode (a_window_data.is_force_debug_mode)
+			save_left_panel_layout (a_window_data.left_panel_layout)
+			save_left_panel_width (a_window_data.left_panel_width)
+			save_right_panel_layout (a_window_data.right_panel_layout)
 			general_toolbar_layout := a_window_data.general_toolbar_layout.twin
 			refactoring_toolbar_layout := a_window_data.refactoring_toolbar_layout.twin
 			show_general_toolbar := a_window_data.show_general_toolbar
@@ -37,39 +39,25 @@ feature {NONE} -- Creation
 			show_address_toolbar := a_window_data.show_address_toolbar
 		end
 
-feature {EB_DEVELOPMENT_WINDOW, EB_DEVELOPMENT_WINDOW_DIRECTOR} -- Access
+feature {EB_DEVELOPMENT_WINDOW} -- Access
 
-	current_target: STRING
-			-- Class or group the development window is currently targeting.
-			-- We save the ID of a class or a cluster.
+	file_name: FILE_NAME
+			-- Filename that the development window is currently targeted to.
 
-	current_target_type: BOOLEAN
-			-- Class if False, otherwise a group
+	context_cluster_string: STRING
+			-- String representing any targeted cluster in the context pane.
 
-	open_classes: HASH_TABLE [STRING, STRING]
-			-- Open classes
-			-- 1st parametar is class name
-			-- 2nd parameter is docking content unique name
+	context_class_string: STRING
+			-- String representing any targeted class in the context pane.
 
-	open_clusters: HASH_TABLE [STRING, STRING]
-			-- Open clusters
-			-- 1st parametar is cluster name
-			-- 2nd parameter is docking content unique name			
-
-	feature_relation_feature_id: STRING
-			-- ID of the feature targeted in Feature relation tool.
-
-	class_class_id: STRING
-			-- ID of the class targeted in Class tool.
+	context_feature_string: STRING
+			-- String representing any targeted feature in the context pane.
 
 	context_tab_index: INTEGER
 			-- Index of the selected tab in the context pane.
 
 	editor_position: INTEGER
 			-- Position that editor was set to if any.
-
-	show_formatter_marks: BOOLEAN
-			-- Show formatter marks?
 
 	width: INTEGER
 			-- Width for the development window.
@@ -88,9 +76,6 @@ feature {EB_DEVELOPMENT_WINDOW, EB_DEVELOPMENT_WINDOW_DIRECTOR} -- Access
 
 	is_minimized: BOOLEAN
 			-- Is the development window minimized?
-
-	is_force_debug_mode: BOOLEAN
-			-- Is the development window force debug mode?
 
 	left_panel_use_explorer_style: BOOLEAN
 			-- Should there be only one tool in the left panel?
@@ -139,62 +124,23 @@ feature {EB_DEVELOPMENT_WINDOW, EB_DEVELOPMENT_WINDOW_DIRECTOR} -- Access
 
 feature {EB_DEVELOPMENT_WINDOW} -- Element change
 
-	save_current_target (a_current_target: like current_target; a_type: BOOLEAN) is
-			-- Save the object that the window is currently targeting.
-		do
-			if a_current_target /= Void then
-				current_target := a_current_target.twin
-			else
-				current_target := Void
-			end
-			current_target_type := a_type
-		ensure
-			current_target_cloned: a_current_target /= Void implies
-									(current_target /= a_current_target and then
-									current_target.is_equal (a_current_target))
-			type_set: current_target_type = a_type
-		end
-
-	save_open_classes (a_open_classes: like open_classes) is
-			-- Save Open classes
+	save_filename (a_filename: like file_name) is
+			-- Save the filename that the window is currently targeted to.
 		require
-			a_open_classes_not_void: a_open_classes /= Void
+			a_filename_not_void: a_filename /= Void
 		do
-			open_classes := a_open_classes
+			file_name := a_filename.twin
 		ensure
-			open_classes_not_void: open_classes /= Void
+			file_name_cloned: file_name /= a_filename and then file_name.is_equal (a_filename)
 		end
 
-	save_open_clusters (a_open_clusters: like open_clusters) is
-			-- Save open clusters
-		require
-			a_open_clusters_not_void: a_open_clusters /= Void
-		do
-			open_clusters := a_open_clusters
-		ensure
-			open_clusters_not_void: open_clusters /= Void
-		end
-
-	save_formatting_marks (a_show_formatter_marks: like show_formatter_marks) is
-			-- Save formatter marks
-		do
-			show_formatter_marks := a_show_formatter_marks
-		ensure
-			show_formatter_marks_set: show_formatter_marks = a_show_formatter_marks
-		end
-
-	save_context_data (a_class_id, a_feature_id: STRING; a_tab_index: INTEGER) is
+	save_context_data (a_cluster_string, a_class_string, a_feature_string: STRING; a_tab_index: INTEGER) is
 			-- Save the context information of the window.
-			-- Feature in feature relation tool.
-			-- Class in class tool. There is no need to save classes targeted in other tools
-			-- Because the class is propagated when setting.
 		do
-			class_class_id := a_class_id
-			feature_relation_feature_id := a_feature_id
+			context_cluster_string := a_cluster_string
+			context_class_string := a_class_string
+			context_feature_string := a_feature_string
 			context_tab_index := a_tab_index
-		ensure
-			class_class_id_set: class_class_id = a_class_id
-			feature_relation_feature_id_set: feature_relation_feature_id = a_feature_id
 		end
 
 	save_editor_position (a_position: INTEGER) is
@@ -221,12 +167,6 @@ feature {EB_DEVELOPMENT_WINDOW} -- Element change
 			is_minimized := a_minimized
 		end
 
-	save_force_debug_mode (a_bool: BOOLEAN) is
-			-- Save if `is_force_debug_mode'
-		do
-			is_force_debug_mode := a_bool
-		end
-
 	save_position (a_x, a_y: INTEGER) is
 			-- Save the position of the window.
 		do
@@ -234,18 +174,36 @@ feature {EB_DEVELOPMENT_WINDOW} -- Element change
 			y_position := a_y
 		end
 
-feature -- Basic operations
-
-	retrieve_general_toolbar (command_pool: LIST [EB_TOOLBARABLE_COMMAND]): ARRAYED_SET [SD_TOOL_BAR_ITEM] is
-			-- Retreive the general toolbar using the available commands in `command_pool'
+	save_left_panel_width (a_width: INTEGER) is
+			-- Save the width of the left panel of the window.
 		do
-			Result := retrieve_toolbar_items (command_pool, general_toolbar_layout)
+			left_panel_width := a_width
 		end
 
-	retrieve_refactoring_toolbar (command_pool: LIST [EB_TOOLBARABLE_COMMAND]): ARRAYED_SET [SD_TOOL_BAR_ITEM] is
+	save_left_panel_layout (a_layout: ARRAY [STRING]) is
+			-- Save the layout of the left panel of the window.
+		do
+			left_panel_layout := a_layout.twin
+		end
+
+	save_right_panel_layout (a_layout: ARRAY [STRING]) is
+			-- Save the layout of the left panel of the window.
+		do
+			right_panel_layout := a_layout.twin
+		end
+
+feature -- Basic operations
+
+	retrieve_general_toolbar (command_pool: LIST [EB_TOOLBARABLE_COMMAND]): EB_TOOLBAR is
+			-- Retreive the general toolbar using the available commands in `command_pool'
+		do
+			Result := retrieve_toolbar (command_pool, general_toolbar_layout)
+		end
+
+	retrieve_refactoring_toolbar (command_pool: LIST [EB_TOOLBARABLE_COMMAND]): EB_TOOLBAR is
 			-- Retreive the refactoring toolbar using the available commands in `command_pool'
 		do
-			Result := retrieve_toolbar_items (command_pool, refactoring_toolbar_layout)
+			Result := retrieve_toolbar (command_pool, refactoring_toolbar_layout)
 		end
 
 indexing

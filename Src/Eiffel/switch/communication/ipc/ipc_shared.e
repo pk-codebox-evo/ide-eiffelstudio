@@ -92,9 +92,6 @@ feature {IPC_ENGINE} -- Request constants
 	Rqst_application_cwd: INTEGER is 40
 			-- Set current directory for application.
 
-	Rqst_application_env: INTEGER is 48
-			-- Set current env for application.
-
 	Rqst_overflow_detection: INTEGER is 41
 			-- Set the call stack depth at which we warn the user.
 
@@ -115,9 +112,6 @@ feature {IPC_ENGINE} -- Request constants
 
 	Rqst_dbg_Exception_trace: INTEGER is 47
 			-- Get dbg exception trace
-
-	Rqst_new_instance: INTEGER is 49
-			-- Create new instance of class
 
 feature {NONE} -- Resume
 
@@ -141,6 +135,7 @@ feature {NONE} -- Resume
 
 	Break_set_stepinto: INTEGER is 3		-- ( <=> DT_SET_STEPINTO in run-time )
 			-- Activate stepinto mode
+
 
 feature {NONE} -- Inspection constants
 
@@ -174,29 +169,29 @@ feature {NONE} -- Inspection constants
 	Out_once_per_process: INTEGER is 1
 			-- Precised that once is per process
 
---feature {APPLICATION_STATUS} -- Implementation
+feature {APPLICATION_STATUS} -- Implementation
 
---	Pg_raise: INTEGER is 1
---			-- Explicitely raised exception
+	Pg_raise: INTEGER is 1
+			-- Explicitely raised exception
 
---	Pg_viol: INTEGER is 2
---			-- Implicitely raised exception
+	Pg_viol: INTEGER is 2
+			-- Implicitely raised exception
 
---	Pg_break: INTEGER is 3
---			-- Breakpoint reached
+	Pg_break: INTEGER is 3
+			-- Breakpoint reached
 
---	Pg_interrupt: INTEGER is 4
---			-- System execution interrupted
+	Pg_interrupt: INTEGER is 4
+			-- System execution interrupted
 
---	Pg_new_breakpoint: INTEGER is 5
---			-- New breakpoints added while running. The application should stop
---			-- to record the new breakpoints.
+	Pg_new_breakpoint: INTEGER is 5
+			-- New breakpoints added while running. The application should stop
+			-- to record the new breakpoints.
 
---	Pg_step: INTEGER is 6
---			-- The application completed a step operation.
+	Pg_step: INTEGER is 6
+			-- The application completed a step operation.
 
---	Pg_overflow: INTEGER is 7
---			-- The application might run into a stack overflow.
+	Pg_overflow: INTEGER is 7
+			-- The application might run into a stack overflow.
 
 		-- stack request code: same as in ipc/shared/stack.h
 --	Exceptions_stack: INTEGER is 0
@@ -206,6 +201,7 @@ feature {NONE} -- Inspection constants
 --	Args_stack: INTEGER is 4
 --	Vars_stack: INTEGER is 5
 --	Once_stack: INTEGER is 6
+
 
 -- Need to be updated.
 	Rqst_cont: INTEGER is 2

@@ -9,7 +9,7 @@ indexing
 	revision: "$date: $"
 
 class
-	REAL_VALUE_I
+	REAL_VALUE_I 
 
 inherit
 	VALUE_I
@@ -47,7 +47,7 @@ feature -- Comparison
 	is_equivalent (other: like Current): BOOLEAN is
 			-- Is `other' equivalent to the current object ?
 		do
-			Result := (is_real_64 = other.is_real_64) and
+			Result := (is_real_64 = other.is_real_64) and 
 				(real_64_value = other.real_64_value) and
 				(real_32_value = other.real_32_value)
 		end
@@ -67,13 +67,13 @@ feature -- Status report
 
 	is_real_64: BOOLEAN
 			-- Is the current constant a double one?
-
+			
 	is_real_32: BOOLEAN is
 			-- Is current constant a real one?
 		do
 			Result := not is_real_64
 		end
-
+		
 	valid_type (t: TYPE_A): BOOLEAN is
 			-- Is the current value compatible with `t' ?
 		do
@@ -101,7 +101,7 @@ feature -- Settings
 				is_real_64 := not l_is_real_64
 			end
 		end
-
+		
 feature -- Unary operators
 
 	unary_minus: VALUE_I is
@@ -121,7 +121,7 @@ feature -- Code generation
 		local
 			l_buf: like buffer
 			l_val: STRING
-			l_nb, l_pos: INTEGER
+			l_nb: INTEGER
 		do
 			l_buf := buffer
 			if is_real_64 then
@@ -131,18 +131,10 @@ feature -- Code generation
 			end
 			l_buf.put_string (l_val)
 			l_nb := l_val.count
-				-- Special trick when current locale decimal separator
-				-- is the coma (See bug#5659)
-			l_pos := l_val.last_index_of (',', l_nb)
-			if l_pos > 0 then
-					-- Replace the `,' with a `.'.
-				l_val.put ('.', l_pos)
-			elseif
+			if
 				l_val.last_index_of ('.', l_nb) = 0 and
 				l_val.last_index_of ('e', l_nb) = 0
 			then
-					-- It is an integer value, we need to add the '.'
-					-- as otherwise it is not a valid C identifier.
 				l_buf.put_character ('.')
 			end
 			if is_real_32 then

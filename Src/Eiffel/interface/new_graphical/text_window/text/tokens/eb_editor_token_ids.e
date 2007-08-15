@@ -64,21 +64,9 @@ feature -- Color ids
 
 	target_background_color_id: INTEGER is 52
 
-	warning_text_color_id: INTEGER is 53
-
-	warning_background_color_id: INTEGER is 54
-
-	argument_text_color_id: INTEGER is 55
-
-	argument_background_color_id: INTEGER is 56
-
-	folder_text_color_id: INTEGER is 57
-
-	folder_background_color_id: INTEGER is 58
-
 	max_color_id: INTEGER is
 		do
-			Result := folder_background_color_id
+			Result := target_background_color_id
 		end
 
 feature {NONE} -- Implementation

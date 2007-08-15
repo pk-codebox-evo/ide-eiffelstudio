@@ -1,31 +1,24 @@
 indexing
-description	: "Controls execution of dotnet debugged application."
+	description	: "Controls execution of debugged application under dotnet."
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
 	date		: "$Date$"
-	revision	: "$Revision $"
+	author		: "$Author$"
+	revision	: "$Revision$"
 
-class
-	APPLICATION_EXECUTION_DOTNET
+class APPLICATION_EXECUTION_DOTNET
 
 inherit
-	APPLICATION_EXECUTION
-		redefine
-			status,
-			is_valid_object_address,
-			can_not_launch_system_message,
-			recycle,
-			clean_on_process_termination,
-			make_with_debugger
-		end
 
 	SHARED_EIFNET_DEBUGGER
 
 	EB_SHARED_MANAGERS
 
-	DEBUG_VALUE_EXPORTER
-
-	VALUE_TYPES
+	APPLICATION_EXECUTION_IMP
+		redefine
+			make, recycle, load_system_dependent_debug_info,
+			can_not_launch_system_message
+		end
 
 	APPLICATION_STATUS_EXPORTER
 		export
@@ -57,30 +50,31 @@ inherit
 			{NONE} all
 		end
 
-create {DEBUGGER_MANAGER}
-	make_with_debugger
+	EB_SHARED_PREFERENCES
+		export
+			{NONE} all
+		end
+
+create {APPLICATION_EXECUTION}
+	make
 
 feature {APPLICATION_EXECUTION} -- Initialization
 
-	make_with_debugger (dbg: like debugger_manager) is
+	make is
 			-- Create Current
-		local
-			p: BOOLEAN_PREFERENCE
 		do
-			Precursor {APPLICATION_EXECUTION} (dbg)
+			Precursor
 			Eifnet_debugger.init
-
-			p := Debugger_manager.dotnet_keep_stepping_info_non_eiffel_feature_pref
-			if p /= Void then
-				if p.value then
+			if preferences.debugger_data /= Void then
+				if preferences.debugger_data.keep_stepping_info_dotnet_feature then
 					eifnet_debugger.enable_keep_stepping_into_dotnet_feature
 				else
 					eifnet_debugger.disable_keep_stepping_into_dotnet_feature
 				end
-				p.typed_change_actions.extend (
-					agent (b: BOOLEAN; ed: EIFNET_DEBUGGER)
+				preferences.debugger_data.keep_stepping_info_dotnet_feature_preference.change_actions.extend (
+					agent (p: BOOLEAN_PREFERENCE; ed: EIFNET_DEBUGGER)
 						do
-							if b then
+							if p.value then
 								ed.enable_keep_stepping_into_dotnet_feature
 							else
 								ed.disable_keep_stepping_into_dotnet_feature
@@ -96,8 +90,8 @@ feature -- recycling data
 
 	recycle is
 		do
-			Eifnet_debugger.recycle_debug_value_keeper
 			Precursor
+			Eifnet_debugger.recycle_debug_value_keeper
 		end
 
 feature {EIFNET_DEBUGGER, EIFNET_EXPORTER} -- Trigger eStudio done
@@ -157,7 +151,7 @@ feature {EIFNET_DEBUGGER, EIFNET_EXPORTER} -- Trigger eStudio done
 			retry
 		end
 
-feature {EIFNET_EXPORTER, EV_SHARED_APPLICATION}  -- Trigger eStudio status
+feature {EIFNET_EXPORTER, EB_EXPRESSION_EVALUATOR_TOOL, EV_SHARED_APPLICATION}  -- Trigger eStudio status
 
 	callback_notification_processing: BOOLEAN is
 			-- Is inside callback notification processing ?
@@ -167,21 +161,21 @@ feature {EIFNET_EXPORTER, EV_SHARED_APPLICATION}  -- Trigger eStudio status
 
 feature {APPLICATION_EXECUTION} -- load and save
 
---	load_dotnet_debug_info is
---			-- Load debug information
---		local
---			w_dlg: EB_WARNING_DIALOG
---		do
---			Il_debug_info_recorder.load_data_for_debugging
---			if not Il_debug_info_recorder.load_successful then
---				if (create {EV_ENVIRONMENT}).application /= Void then
---					create w_dlg.make_with_text (Il_debug_info_recorder.loading_errors_message)
---					w_dlg.show
---				else
---					io.error.put_string (Il_debug_info_recorder.loading_errors_message)
---				end
---			end
---		end
+	load_dotnet_debug_info is
+			-- Load debug information
+		local
+			w_dlg: EV_WARNING_DIALOG
+		do
+			Il_debug_info_recorder.load_data_for_debugging
+			if not Il_debug_info_recorder.load_successful then
+				if (create {EV_ENVIRONMENT}).application /= Void then
+					create w_dlg.make_with_text (Il_debug_info_recorder.loading_errors_message)
+					w_dlg.show
+				else
+					io.error.put_string (Il_debug_info_recorder.loading_errors_message)
+				end
+			end
+		end
 
 	reload_dotnet_debug_info_if_needed is
 			-- Reload debug information if last mode was finalized
@@ -192,7 +186,7 @@ feature {APPLICATION_EXECUTION} -- load and save
 				debug ("debugger_trace")
 					print ("Reload IL debug info for dotnet %N")
 				end
-				Il_debug_info_recorder.load_data_for_debugging
+				load_dotnet_debug_info
 			else
 				debug ("debugger_trace")
 					print ("Keep current IL debug info for dotnet %N")
@@ -200,17 +194,13 @@ feature {APPLICATION_EXECUTION} -- load and save
 			end
 		end
 
-feature {NONE} -- Status
-
-	build_status is
-		do
-			create status.make (Current)
-		end
-
 feature -- Properties
 
-	status: APPLICATION_STATUS_DOTNET
+	status: APPLICATION_STATUS_DOTNET is
 			-- Status of the running dotnet application
+		do
+			Result ?= Application.status
+		end
 
 	is_inside_callback_notification_processing: BOOLEAN is
 		do
@@ -223,7 +213,7 @@ feature {APPLICATION_EXECUTION} -- Properties
 			-- Is object address `addr' valid?
 			-- (i.e Does bench know about it)
 		do
-			Result := Precursor (addr) and then Eifnet_debugger.know_about_kept_object (addr)
+			Result := Eifnet_debugger.know_about_kept_object (addr)
 		end
 
 feature -- Bridge to Debugger
@@ -242,47 +232,51 @@ feature -- Bridge to Debugger
 			Result := status.exception_occurred
 		end
 
+
 feature -- Execution
 
-	run_with_env_string (app: STRING; args, cwd: STRING; env: STRING_GENERAL) is
-			-- Run application `app' with arguments `args' in directory `cwd'.
+	run (args, cwd: STRING) is
+			-- Run application with arguments `args' in directory `cwd'.
 			-- If `is_running' is false after the
 			-- execution of this routine, it means that
 			-- the application was unable to be launched
 			-- due to the time_out (see `eiffel_timeout_message').
 			-- Before running the application you must check
 			-- to see if the debugged information is up to date.
+		local
+			app: STRING
 		do
 			reload_dotnet_debug_info_if_needed
-			if il_debug_info_recorder.entry_point_feature_i = Void then
-				--| No entry point .. this is not an executable system
-			else
-				Eifnet_debugger.initialize_debugger_session (debugger_manager.windows_handle)
-				if Eifnet_debugger.is_debugging then
-					process_before_running
+			Eifnet_debugger.initialize_debugger_session (debugger_manager.windows_handle)
+			if Eifnet_debugger.is_debugging then
+				app := Eiffel_system.application_name (True)
 
-					Eifnet_debugger.do_run (safe_path (app), cwd, args, env)
+				Eifnet_debugger.set_debug_param_directory (cwd)
+				Eifnet_debugger.set_debug_param_executable (app)
+				Eifnet_debugger.set_debug_param_arguments (args)
 
-					if not Eifnet_debugger.last_dbg_call_succeed then
-							-- This means we had issue creating process
-						Eifnet_debugger.terminate_debugger_session
-						Eifnet_debugger.destroy_monitoring_of_process_termination_on_exit
-					else
-						build_status
-					end
+				process_before_running
+				Application.build_status
 
-					if is_running then
-							-- Application was able to be started
-						status.set_is_stopped (False)
-						status.set_process_id (eifnet_debugger.last_process_id)
-					end
+				Eifnet_debugger.do_run
+
+				if not Eifnet_debugger.last_dbg_call_succeed then
+						-- This means we had issue creating process
+					Application.destroy_status
+					Eifnet_debugger.terminate_debugger_session
+					Eifnet_debugger.destroy_monitoring_of_process_termination_on_exit
+				end
+
+				if Application.is_running then
+						-- Application was able to be started
+					Application.status.set_is_stopped (False)
 				end
 			end
 		end
 
 	continue_ignoring_kept_objects is
 		do
-			inspect execution_mode
+			inspect application.execution_mode
 			when {EXEC_MODES}.step_into then
 				step_into
 			when {EXEC_MODES}.step_by_step then
@@ -330,6 +324,18 @@ feature -- Execution
 			end
 		end
 
+	disable_assertion_check is
+			-- Send a message to the application to disable assertion checking
+		do
+			to_implement ("to implemente: change_assertion_check")
+		end
+
+	restore_assertion_check is
+			-- Send a message to the application to restore the previous assertion check status
+		do
+			to_implement ("to implemente: restore_assertion_check")
+		end
+
 	notify_newbreakpoint is
 			-- Send an interrupt to the application
 			-- which will stop at the next breakable line number
@@ -346,14 +352,13 @@ feature -- Execution
 				Eifnet_debugger.set_last_control_mode_is_kill
 				Eifnet_debugger.terminate_debugging
 			end
-			process_termination
+			application.process_termination
 		end
 
-	clean_on_process_termination is
+	process_termination is
 			-- Process the termination of the executed
 			-- application. Also execute the `termination_command'.
 		do
-			Precursor {APPLICATION_EXECUTION}
 			Eifnet_debugger.reset_debugging_data
 			Eifnet_debugger.destroy_monitoring_of_process_termination_on_exit
 
@@ -361,21 +366,13 @@ feature -- Execution
 -- this is now called directly from EIFNET_DEBUGGER.on_exit_process
 		end
 
---	load_system_dependent_debug_info is
---		do
---			if
---				Eiffel_system.workbench.system_defined
---			then
---				load_dotnet_debug_info
---			end
---		end
-
-feature {NONE} -- Assertion change Implementation
-
-	impl_check_assert (b: BOOLEAN): BOOLEAN is
-			-- `check_assert (b)' on debuggee
+	load_system_dependent_debug_info is
 		do
-			Result := eifnet_debugger.check_assert_on_debuggee (b)
+			if
+				Eiffel_system.workbench.system_defined
+			then
+				load_dotnet_debug_info
+			end
 		end
 
 feature {APPLICATION_EXECUTION} -- Launching status
@@ -383,11 +380,8 @@ feature {APPLICATION_EXECUTION} -- Launching status
 	can_not_launch_system_message: STRING is
 			-- Message displayed when estudio is unable to launch the system
 		do
-			if il_debug_info_recorder /= Void and then il_debug_info_recorder.entry_point_feature_i = Void then
-				Result := debugger_names.w_System_has_no_entry_and_is_not_executable.as_string_8
-			else
-				Result := debugger_names.w_Error_occurred_during_icordebug_initialization.as_string_8
-			end
+			Result := "An error occurred during initialization of the ICorDebug Debugger%N"
+				+ "or during the Process creation (.NET)."
 		end
 
 feature -- Query
@@ -399,7 +393,6 @@ feature -- Query
 			i: INTEGER
 			err_dv: DUMMY_MESSAGE_DEBUG_VALUE
 			exc_dv: EXCEPTION_DEBUG_VALUE
-			proc_dv: PROCEDURE_RETURN_DEBUG_VALUE
 			odv: ABSTRACT_DEBUG_VALUE
 			icdv: ICOR_DEBUG_VALUE
 			l_icdframe: ICOR_DEBUG_FRAME
@@ -417,55 +410,44 @@ feature -- Query
 					--| Get the once's value
 				l_feat := flist.item.associated_feature_i
 				check l_feat.type /= Void end
-				l_class := l_feat.written_class
-				icdv := l_eifnet_debugger.once_function_value (l_icdframe, l_class, l_feat)
-				if l_eifnet_debugger.last_once_available then
-					if not l_eifnet_debugger.last_once_already_called then
-						create err_dv.make_with_name  (l_feat.feature_name)
-						err_dv.set_message (debugger_names.m_Not_yet_called)
-						err_dv.set_display_kind (Void_value)
-						if l_feat.is_function then
-							err_dv.set_display_kind (Void_value)
-						else
-							err_dv.set_display_kind (Procedure_return_message_value)
-						end
-						odv := err_dv
-					elseif l_eifnet_debugger.last_once_failed then
-						create exc_dv.make_with_name (l_feat.feature_name)
-						exc_dv.set_tag ("An exception occurred during the once execution")
-						exc_dv.set_exception_value (debug_value_from_icdv (icdv, Void))
-						odv := exc_dv
-					elseif icdv /= Void then
-						odv := debug_value_from_icdv (icdv, l_feat.type.associated_class)
-						odv.set_name (l_feat.feature_name)
-					elseif not l_feat.is_function then
-						create proc_dv.make_with_name (l_feat.feature_name)
-						odv := proc_dv
-					else
-							--| This case occurs when we enter into the once's code
-							--| then the once is Called
-							--| but the once's data are not yet initialized and set
-							--| then the once' value is not yet available
-						create err_dv.make_with_name  (l_feat.feature_name)
-						err_dv.set_message ("Could not retrieve information (once is being called)")
-						err_dv.set_display_kind (Void_value)
-						if l_feat.is_function then
-							err_dv.set_display_kind (Void_value)
-						else
-							err_dv.set_display_kind (Procedure_return_message_value)
-						end
-						odv := err_dv
-					end
-				else
+				if l_feat.argument_count > 0 then
 					create err_dv.make_with_name  (l_feat.feature_name)
-					err_dv.set_message (debugger_names.m_Not_yet_called)
-					err_dv.set_display_kind (Void_value)
-					if l_feat.is_function then
-						err_dv.set_display_kind (Void_value)
-					else
-						err_dv.set_display_kind (Procedure_return_message_value)
-					end
+					err_dv.set_message ("Could not evaluate once with arguments...")
 					odv := err_dv
+				else
+					l_class := l_feat.written_class
+					icdv := l_eifnet_debugger.once_function_value (l_icdframe, l_class, l_feat)
+					if l_eifnet_debugger.last_once_available then
+						if not l_eifnet_debugger.last_once_already_called then
+							create err_dv.make_with_name  (l_feat.feature_name)
+							err_dv.set_message (Interface_names.l_Not_yet_called)
+							err_dv.set_display_kind (Void_value)
+							odv := err_dv
+						elseif l_eifnet_debugger.last_once_failed then
+							create exc_dv.make_with_name (l_feat.feature_name)
+							exc_dv.set_tag ("An exception occurred during the once execution")
+							exc_dv.set_exception_value (debug_value_from_icdv (icdv, Void))
+--							err_dv.set_display_kind (Exception_message_value)
+							odv := exc_dv
+						elseif icdv /= Void then
+							odv := debug_value_from_icdv (icdv, l_feat.type.associated_class)
+							odv.set_name (l_feat.feature_name)
+						else
+								--| This case occurs when we enter into the once's code
+								--| then the once is Called
+								--| but the once's data are not yet initialized and set
+								--| then the once' value is not yet available
+							create err_dv.make_with_name  (l_feat.feature_name)
+							err_dv.set_message ("Could not retrieve information (once is being called)")
+							err_dv.set_display_kind (Void_value)
+							odv := err_dv
+						end
+					else
+						create err_dv.make_with_name  (l_feat.feature_name)
+						err_dv.set_message (Interface_names.l_Not_yet_called)
+						err_dv.set_display_kind (Void_value)
+						odv := err_dv
+					end
 				end
 				Result.put (odv, i)
 				i := i + 1
@@ -495,8 +477,6 @@ feature -- Control execution
 	process_before_running is
 		local
 			l_entry_point_feature: E_FEATURE
-			l_entry_fi: FEATURE_I
-			bpm: BREAKPOINTS_MANAGER
 		do
 			check il_debug_info_recorder.last_loading_is_workbench end
 
@@ -506,23 +486,19 @@ feature -- Control execution
 				print ("%N%N")
 			end
 
-			bpm := Debugger_manager
-			bpm.update_debugger_data
-			inspect execution_mode
+			Application.debug_info.update
+			inspect Application.execution_mode
 			when {EXEC_MODES}.no_stop_points then
 				send_no_breakpoints
 			when {EXEC_MODES}.step_by_step, {EXEC_MODES}.step_into then
-				if not is_running then
+				if not Application.is_running then
 					debug ("debugger_trace_stepping")
 						print ("Let's add a breakpoint at the entry point of the system%N")
 					end
-					l_entry_fi := Il_debug_info_recorder.entry_point_feature_i
-					if l_entry_fi /= Void then
-						l_entry_point_feature := l_entry_fi.e_feature
-						bpm.enable_breakpoint (l_entry_point_feature, 1)
-						send_breakpoints
-						bpm.remove_breakpoint (l_entry_point_feature , 1)
-					end
+					l_entry_point_feature := Il_debug_info_recorder.entry_point_feature_i.e_feature
+					Application.enable_breakpoint (l_entry_point_feature, 1)
+					send_breakpoints
+					Application.remove_breakpoint (l_entry_point_feature , 1)
 				else
 					send_breakpoints
 				end
@@ -715,7 +691,7 @@ feature -- Breakpoints controller
 			debug ("debugger_trace_breakpoint")
 				print (generator + ".send_breakpoints %N")
 			end
-			l_bp_list := Debugger_manager.breakpoints
+			l_bp_list := Application.debug_info.breakpoints
 
 			from
 				l_bp_list.start
@@ -754,7 +730,7 @@ feature -- Breakpoints controller
 			l_bp_list: BREAK_LIST
 			l_bp_item: BREAKPOINT
 		do
-			l_bp_list := Debugger_manager.breakpoints
+			l_bp_list := Application.debug_info.breakpoints
 
 			from
 				l_bp_list.start
@@ -948,7 +924,7 @@ feature {NONE} -- Events on notification
 	notify_execution_on_debugger_error is
 			-- Notify the system is exiting on debugger error
 		local
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 --			st: TEXT_FORMATTER
 			l_err_msg: STRING
 			dbg_info: EIFNET_DEBUGGER_INFO
@@ -986,10 +962,10 @@ feature {NONE} -- Events on notification
 			dbg_info := Eifnet_debugger.info
 
 --| Useless, but we may need it one day
---			on_application_before_stopped
+--			Application.on_application_before_stopped
 
 				--| on top of the stack = current stack/feature
-			set_current_execution_stack_number (1)
+			application.set_current_execution_stack_number (1)
 			-- FIXME jfiat: we should point to the first Eiffel Call Stack ...
 
 				--| We need to stop
@@ -1032,14 +1008,14 @@ feature {NONE} -- Events on notification
 
 --| not true in case of empty stack .. when exception occurs during launching
 --			set_current_execution_stack (1)
-			set_current_execution_stack_number (number_of_stack_elements)
+			Application.set_current_execution_stack_number (Application.number_of_stack_elements)
 
 			if need_to_continue then
 				debug ("debugger_trace_callstack")
 					print ("Note: Continue on stopped status (need_to_continue = True)%N")
 					print ("Note: last managed callback = " + Eifnet_debugger.managed_callback_name (cb_id) + "%N")
 				end
-				release_all_but_kept_object
+				Application.release_all_but_kept_object
 				l_status.set_is_stopped (False)
 				Eifnet_debugger.do_continue
 			else
@@ -1051,6 +1027,8 @@ feature {NONE} -- Events on notification
 			-- In case of conditional breakpoint, do we really stop on it ?
 		local
 			l_bp: BREAKPOINT
+			expr: EB_EXPRESSION
+			evaluator: DBG_EXPRESSION_EVALUATOR
 		do
 			if Eifnet_debugger.last_control_mode_is_stepping then
 				debug ("debugger_trace")
@@ -1059,7 +1037,25 @@ feature {NONE} -- Events on notification
 				Result := True
 			else
 				l_bp := Eifnet_debugger.current_breakpoint
-				Result := debugger_manager.process_breakpoint (l_bp)
+				if l_bp /= Void and then l_bp.has_condition then
+					debug ("debugger_trace")
+						print ("CONDITIONAL BP %N")
+					end
+					expr := l_bp.condition
+					if expr /= Void then
+						expr.evaluate
+						evaluator := expr.expression_evaluator
+						if evaluator.error_occurred then
+							Result := True
+						else
+							Result := evaluator.final_result_is_true_boolean_value
+						end
+					else
+						Result := True
+					end
+				else
+					Result := True
+				end
 			end
 		end
 
@@ -1091,8 +1087,8 @@ feature -- update processing
 			-- but in the studio graphical loop
 		do
 				--FIXME jfiat: may be we should move this EV_... to another class
-			debugger_manager.remove_idle_action (agent_update_notify_on_after_stopped)
-			debugger_manager.add_idle_action (agent_update_notify_on_after_stopped)
+			ev_application.idle_actions.prune_all (agent_update_notify_on_after_stopped)
+			ev_application.idle_actions.extend (agent_update_notify_on_after_stopped)
 		end
 
 	real_update_notify_on_after_stopped is
@@ -1105,17 +1101,17 @@ feature -- update processing
 				debug ("debugger_trace")
 					io.error.put_string (generator + ".real_update_notify_on_after_stopped %N")
 				end
-				debugger_manager.remove_idle_action (agent_update_notify_on_after_stopped)
+				ev_application.idle_actions.prune_all (agent_update_notify_on_after_stopped)
 				if not callback_notification_processing then
 					debug ("debugger_trace")
 						io.error.put_string (generator + ".real_update_notify_on_after_stopped : call real notification%N")
 					end
-					on_application_just_stopped
+					Application.on_application_just_stopped
 				else
 					debug ("debugger_trace")
 						io.error.put_string (generator + ".real_update_notify_on_after_stopped : postpone real notification%N")
 					end
-					debugger_manager.add_idle_action (agent_update_notify_on_after_stopped)
+					ev_application.idle_actions.extend (agent_update_notify_on_after_stopped)
 				end
 			else
 				debug ("debugger_trace")
@@ -1165,6 +1161,7 @@ feature -- Call stack related
 					l_class_token := l_class.get_token
 					l_module := l_func.get_module
 					l_module_name := l_module.get_name
+
 
 					l_module_display := l_module_name.twin
 					l_module_display.keep_tail (20)

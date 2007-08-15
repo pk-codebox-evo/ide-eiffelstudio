@@ -59,19 +59,24 @@ feature -- Access
 			Result := e_class.class_signature
 		end
 
-	history_name: STRING_GENERAL is
+	history_name: STRING is
 		do
-			Result := Interface_names.s_Class_stone.as_string_32 + stone_signature
+			Result := Interface_names.s_Class_stone + stone_signature
 		end
 
-	header: STRING_GENERAL is
+	header: STRING is
 			-- Display class name, class' cluster and class location in
 			-- window title bar.
 		do
+			create Result.make (80)
+			Result.append (stone_signature)
+			Result.append ("  in cluster ")
+			Result.append (e_class.group.name)
 			if e_class.is_precompiled then
-				Result := interface_names.l_classc_header_precompiled (stone_signature, e_class.group.name)
+				Result.append ("  (precompiled)")
 			else
-				Result := interface_names.l_classc_header (stone_signature, e_class.group.name, e_class.lace_class.file_name)
+				Result.append ("   located in ")
+				Result.append (e_class.lace_class.file_name)
 			end
 		end
 

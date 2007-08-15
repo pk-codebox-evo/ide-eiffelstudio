@@ -16,7 +16,7 @@ indexing
 			----------------------------------
 		]"
 	status: "See notice at end of class."
-	keywords: "notebook, tab, page"
+	keywrods: "notebook, tab, page"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -204,16 +204,16 @@ feature -- Status setting
 
 feature -- Constants
 
-	Tab_left: INTEGER is 1
+	Tab_left: INTEGER is unique
 			-- Value used to position tab at left.
 
-	Tab_right: INTEGER is 2
+	Tab_right: INTEGER is unique
 			-- Value used to position tab at right.
 
-	Tab_top: INTEGER is 3
+	Tab_top: INTEGER is unique
 			-- Value used to position tab at top.
 
-	Tab_bottom: INTEGER is 4
+	Tab_bottom: INTEGER is unique
 			-- Value used to position tab at bottom.
 
 feature -- Element change

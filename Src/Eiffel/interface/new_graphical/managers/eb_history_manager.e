@@ -13,9 +13,9 @@ inherit
 
 	EB_RECYCLER
 		rename
-			destroy as internal_recycle
+			destroy as recycle
 		redefine
-			internal_recycle
+			recycle
 		end
 
 	EB_SHARED_PREFERENCES
@@ -55,10 +55,7 @@ feature -- Access
 			if not is_empty then
 				Result := history.i_th (index_active)
 				if Result /= Void and then not Result.is_valid then
-					Result := Result.synchronized_stone
-					if Result /= Void and then not Result.is_valid then
-						Result := Void
-					end
+					Result := Void
 				end
 			end
 		ensure
@@ -170,27 +167,6 @@ feature -- Status report
 			Result := (not is_empty) and (i >= 1) and (i <= count)
 		end
 
-	has (a_stone: STONE): BOOLEAN is
-			-- Does current has `a_stone'?
-		local
-			l_history: like history
-			l_index: INTEGER
-		do
-			l_history := history
-			l_index := l_history.index
-			from
-				l_history.start
-			until
-				l_history.after or else Result
-			loop
-				if l_history.item /= Void and then a_stone.same_as (l_history.item) then
-					Result := True
-				end
-				l_history.forth
-			end
-			l_history.go_i_th (l_index)
-		end
-
 feature -- Element change
 
 	back is
@@ -218,12 +194,11 @@ feature -- Element change
 			index_active := index_active + 1
 			notify_observers (notify_move, Void, index_active)
 			target.advanced_set_stone (active)
-			if target.history_moving_cancelled then
+			if not equal (target.stone, active) then
 					-- The user cancelled the set_stone.
 					-- We must go back to our previous position.
 				index_active := initial
 				notify_observers (notify_move, Void, index_active)
-				target.set_history_moving_cancelled (False)
 			end
 		end
 
@@ -253,12 +228,11 @@ feature -- Element change
 			index_active := index_active - 1
 			notify_observers (notify_move, Void, index_active)
 			target.advanced_set_stone (active)
-			if target.history_moving_cancelled then
+			if not equal (target.stone, active) then
 					-- The user cancelled the set_stone.
 					-- We must go back to our previous position.
 				index_active := initial
 				notify_observers (notify_move, Void, index_active)
-				target.set_history_moving_cancelled (False)
 			end
 		end
 
@@ -277,49 +251,12 @@ feature -- Element change
 			index_active := i
 			notify_observers (notify_move, Void, index_active)
 			target.advanced_set_stone (active)
-			if target.history_moving_cancelled then
+			if not target.stone.is_equal (active) then
 					-- The user cancelled the set_stone.
 					-- We must go back to our previous position.
 				index_active := initial
 				notify_observers (notify_move, Void, index_active)
-				target.set_history_moving_cancelled (False)
 			end
-		end
-
-	navigate_to (a_stone: STONE) is
-			-- Navigate to `a_stone'.
-		require
-			has_a_stone: has (a_stone)
-		local
-			l_history: like history
-			l_item: STONE
-			l_found: BOOLEAN
-			initial: INTEGER
-		do
-			initial := index_active
-			l_history := history.twin
-			from
-				l_history.start
-			until
-				l_history.after or else l_found
-			loop
-				l_item := l_history.item
-				if l_item /= Void and then a_stone.same_as (l_item) then
-					index_active := l_history.index
-					notify_observers (notify_remove, l_item, index_active)
-					l_found := True
-				end
-				l_history.forth
-			end
-			if target.history_moving_cancelled then
-					-- The user cancelled the set_stone.
-					-- We must go back to our previous position.
-				index_active := initial
-				notify_observers (notify_move, Void, index_active)
-				target.set_history_moving_cancelled (False)
-			end
-		ensure
-			active_is_a_stone: a_stone.same_as (active)
 		end
 
 	extend (a_stone: STONE) is
@@ -373,8 +310,9 @@ feature -- Element change
 					-- Add the new stone at the end of the history.
 				fst := Void
 				fst2 ?= a_stone
-				if fst2 /= Void  then
-					history.extend (fst2)
+				if fst2 /= Void and then fst2.e_feature /= Void then
+					create fst.make (fst2.e_feature)
+					history.extend (fst)
 				else
 					history.extend (a_stone)
 				end
@@ -441,9 +379,9 @@ feature {EB_HISTORY_MANAGER_OBSERVER} -- Observer pattern / Registration
 			end
 		end
 
-feature {NONE} -- Recyclable
+feature -- Recyclable
 
-	internal_recycle is
+	recycle is
 			-- Recycle
 		do
 			target := Void

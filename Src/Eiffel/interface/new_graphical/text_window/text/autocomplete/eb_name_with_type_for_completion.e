@@ -38,26 +38,23 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	grid_item: EB_GRID_EDITOR_TOKEN_ITEM is
+	grid_item: EB_GRID_LOCAL_ITEM is
 			-- Grid item
 		local
-			l_style: like local_style
+			l_style: EB_GRID_LOCAL_ITEM_STYLE
 		do
-			l_style := local_style
 			if show_type then
-				l_style.enable_type
+				create {EB_GRID_LOCAL_ITEM_NAME_TYPE_STYLE}l_style
 			else
-				l_style.disable_type
+				create {EB_GRID_LOCAL_ITEM_NAME_STYLE}l_style
 			end
-			l_style.set_local (name, return_type, feature_i)
-			create Result
-			Result.set_overriden_fonts (label_font_table, label_font_height)
+			create Result.make_with_type (name, return_type, feature_i, l_style)
+			Result.set_tooltip_display_function (agent display_colorized_tooltip)
+			Result.enable_pixmap
 			if has_child then
 				Result.set_pixmap (pixmaps.icon_pixmaps.feature_group_icon)
-			else
-				Result.set_pixmap (pixmaps.icon_pixmaps.feature_local_variable_icon)
 			end
-			Result.set_text_with_tokens (l_style.text)
+			Result.set_overriden_fonts (label_font_table)
 		end
 
 	feature_i: FEATURE_I;

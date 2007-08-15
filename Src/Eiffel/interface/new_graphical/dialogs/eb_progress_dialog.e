@@ -23,7 +23,8 @@ class
 inherit
 	EB_DIALOG
 		redefine
-			initialize
+			initialize,
+			show
 		end
 
 	EB_CONSTANTS
@@ -222,13 +223,25 @@ feature -- Status setting
 
 feature -- Basic operation
 
+	show is
+			-- Show dialog if not shown yet it to front.
+		do
+			update_progress_bar_color
+			if not is_show_requested then
+				Precursor {EB_DIALOG}
+			end
+			if is_minimized then
+				restore
+			end
+			raise
+		end
+
 	start (nr_items: INTEGER) is
 			-- Set to zero percent.
 			-- Prepare to process `nr_items'.
 		do
 			progress_bar.reset_with_range (0 |..| nr_items)
-			update_progress_bar_color
-			raise
+			show
 			graphical_update
 		end
 
@@ -247,7 +260,7 @@ feature -- Actions
 			-- Process any pending events.
 			-- Not needed after `start' or `set_value'.
 		do
-			ev_application.process_events
+			process_events_and_idle
 			if cancel_compilation_requested then
 				cancel_compilation_requested := False
 				Error_handler.insert_interrupt_error (True)

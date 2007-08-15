@@ -27,7 +27,14 @@ inherit
 			{NONE} all
 		undefine
 			is_equal
-		end
+		end;
+
+	SHARED_DEBUG
+		export
+			{NONE} all
+		undefine
+			is_equal
+		end;
 
 create {DEBUG_VALUE_EXPORTER}
 
@@ -95,11 +102,12 @@ feature -- Access
 				end
 				print ("%N")
 			end
-			l_cl := dynamic_class
-			if l_cl = Void then
+			if dynamic_class /= Void then
+				l_cl := dynamic_class
+			else
 				l_cl := static_class
 			end
-			Result := Debugger_manager.Dump_value_factory.new_object_value (address, l_cl)
+			create Result.make_object (address, l_cl)
 		end
 
 feature -- Expanded status
@@ -151,7 +159,7 @@ feature -- Output
 			debug ("debug_recv")
 				print ("REFERENCE_VALUE.children%N")
 			end
-			obj := debugger_manager.object_manager.debugged_object (address, min_slice, max_slice)
+			obj := debugged_object_manager.debugged_object (address, min_slice, max_slice)
 			is_already_sorted := obj.is_tuple or obj.is_special
 			Result := obj.attributes
 		end
@@ -191,13 +199,13 @@ feature {NONE} -- Property
 	min_slice: INTEGER is
 			-- From which attribute number should special objects be displayed?
 		do
-			Result := debugger_manager.min_slice
+			Result := min_slice_ref.item
 		end
 
 	max_slice: INTEGER is
 			-- Up to which attribute number should special objects be displayed?
 		do
-			Result := debugger_manager.max_slice
+			Result := max_slice_ref.item
 		end
 
 	dynamic_type_id: INTEGER;
@@ -205,6 +213,7 @@ feature {NONE} -- Property
 
 	private_dynamic_class: CLASS_C;
 			-- Saved class
+
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

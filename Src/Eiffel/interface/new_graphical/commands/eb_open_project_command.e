@@ -43,7 +43,7 @@ inherit
 			{NONE} all
 		end
 
-	FILE_DIALOG_CONSTANTS
+	EB_FILE_DIALOG_CONSTANTS
 		export
 			{NONE} all
 		end
@@ -89,7 +89,7 @@ feature -- Execution
 		require
 			a_project_file_name_valid: a_project_file_name /= Void
 		local
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 			file: RAW_FILE
 			ebench_name: STRING
 			l_project_loader: EB_GRAPHICAL_PROJECT_LOADER
@@ -103,7 +103,7 @@ feature -- Execution
 					create wd.make_with_text (warning_messages.w_file_not_exist (a_project_file_name))
 					wd.show_modal_to_window (parent_window)
 				else
-					ebench_name := "%"" + eiffel_layout.Estudio_command_name + "%""
+					ebench_name := eiffel_layout.Estudio_command_name.twin
 					ebench_name.append (" ")
 					ebench_name.append (a_project_file_name)
 					launch_ebench (ebench_name)

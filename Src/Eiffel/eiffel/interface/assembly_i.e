@@ -9,10 +9,14 @@ class
 	ASSEMBLY_I
 
 inherit
-	CONF_PHYSICAL_ASSEMBLY
+	CONF_ASSEMBLY
+		redefine
+			class_type
+		end
 
 create
-	make_from_consumed
+	make,
+	make_from_gac
 
 feature -- Access
 
@@ -61,6 +65,9 @@ feature -- Output
 			end
 		end
 
+feature {NONE} -- Class type anchor
+
+	class_type: EXTERNAL_CLASS_I;
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"

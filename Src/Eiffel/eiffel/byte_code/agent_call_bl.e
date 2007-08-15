@@ -10,7 +10,7 @@ class
 inherit
 	AGENT_CALL_B
 		rename
-			parent as parent_b, make as make_agent_call
+			parent as parent_b
 		undefine
 			allocates_memory,
 			free_register,
@@ -27,19 +27,20 @@ inherit
 			has_call,
 			set_register,
 			register,
-			set_parent,
-			need_invariant,
-			set_need_invariant
+			set_parent
 		redefine
 			generate_on,
 			enlarged
 		end
 
 	FEATURE_BL
+		rename
+			make as make_feature
 		undefine
 			process,
 			set_parameters,
 			is_polymorphic,
+			make_feature,
 			set_type,
 			inlined_byte_code
 		redefine
@@ -49,8 +50,7 @@ inherit
 			generate_on,
 			enlarged
 		select
-			parent,
-			make_node
+			parent
 		end
 
 feature -- Code generation
@@ -152,7 +152,7 @@ feature -- Code generation
 			then
 				create_optimized_parameters
 				if is_manifest_optimizable then
-					set_parameters (optimized_parameters)
+					parameters := optimized_parameters
 				end
 			end
 		end
@@ -353,7 +353,7 @@ feature {NONE} --Implementation
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

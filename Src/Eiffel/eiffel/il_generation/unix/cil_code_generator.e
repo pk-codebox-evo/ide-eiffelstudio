@@ -144,8 +144,9 @@ feature -- Object creation
 		do
 		end
 
-	create_expanded_object (t: CL_TYPE_I) is
-			-- Create an object of expanded type `t'.
+	initialize_expanded_variable (variable_class_type: CLASS_TYPE) is
+			-- Initialize an expanded variable of type `variable_class_type' assuming
+			-- that its address is currently on the evaluation stack.
 		do
 		end
 
@@ -171,11 +172,6 @@ feature -- Variables access
 	generate_current_as_reference is
 			-- Generate access to `Current' in its reference form.
 			-- (I.e. box value type object if required.)
-		do
-		end
-
-	generate_current_as_basic is
-			-- Load `Current' as a basic value.
 		do
 		end
 
@@ -239,31 +235,9 @@ feature -- Variables access
 		do
 		end
 
-	generate_external_metamorphose (type_i: TYPE_I) is
-			-- Generate `metamorphose', ie boxing an expanded type `type_i'
-			-- using an associated external type (if any).
-		do
-		end
-
-	generate_eiffel_metamorphose (a_type: TYPE_I) is
-			-- Generate a metamorphose of `a_type' into a _REF type.
-		do
-		end
-
 	generate_unmetamorphose (type_i: TYPE_I) is
 			-- Generate `unmetamorphose', ie unboxing a reference to a basic type of `type_i'.
 			-- Load content of address resulting from unbox operation.
-		do
-		end
-
-	generate_external_unmetamorphose (type_i: CL_TYPE_I) is
-			-- Generate `unmetamorphose', ie unboxing an external reference to a basic type of `type_i'.
-			-- Load content of address resulting from unbox operation.
-		do
-		end
-
-	generate_creation (cl_type_i: CL_TYPE_I) is
-			-- Generate IL code for a hardcoded creation type `cl_type_i'.
 		do
 		end
 
@@ -310,16 +284,6 @@ feature -- Addresses
 		do
 		end
 
-	generate_load_from_address_as_object (a_type: TYPE_I) is
-			-- Load value of non-built-in `a_type' type from address pushed on stack.
-		do
-		end
-
-	generate_load_from_address_as_basic (a_type: TYPE_I) is
-			-- Load value of a basic type `a_type' from address of an Eiffel object pushed on stack.
-		do
-		end
-
 feature -- Assignments
 
 	generate_is_true_instance_of (type_i: TYPE_I) is
@@ -329,11 +293,6 @@ feature -- Assignments
 
 	generate_is_instance_of (type_i: TYPE_I) is
 			-- Generate `Isinst' byte code instruction.
-		do
-		end
-
-	generate_is_instance_of_external (type_i: CL_TYPE_I) is
-			-- Generate `Isinst' byte code instruction for external variant of the type `type_i'.
 		do
 		end
 
@@ -491,7 +450,7 @@ feature -- Array manipulation
 		do
 		end
 
-	generate_array_initialization (array_type: CL_TYPE_I; actual_generic: CLASS_TYPE) is
+	generate_array_initialization (actual_generic: CLASS_TYPE) is
 			-- Initialize native array with actual parameter type
 			-- `actual_generic' on the top of the stack.
 		do
@@ -553,16 +512,6 @@ feature -- Assertions
 
 	generate_in_assertion_status is
 			-- Generate value of `in_assertion' on stack.
-		do
-		end
-
-	generate_save_supplier_precondition is
-			-- Generate code to save the current supplier precondition in a local.
-		do
-		end
-
-	generate_restore_supplier_precondition is
-			-- Restores the supplier precondition flag using the local.
 		do
 		end
 
@@ -857,6 +806,11 @@ feature -- Line info
 		
 feature -- Convenience
 
+	implemented_type (implemented_in: INTEGER; current_type: CL_TYPE_I): CL_TYPE_I is
+			-- Return static_type_id of class that defined `feat'.
+		do
+		end
+
 	generate_call_on_void_target_exception is
 			-- Generate call on void target exception.
 		do
@@ -889,8 +843,14 @@ feature -- Generic conformance
 		do
 		end
 
+	assign_computed_type is
+			-- Given elements on stack, compute associated type and set it to
+			-- newly created object.
+		do
+		end
+
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

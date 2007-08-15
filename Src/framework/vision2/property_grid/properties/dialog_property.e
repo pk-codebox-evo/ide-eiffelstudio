@@ -47,13 +47,12 @@ feature {NONE} -- Agents
 	show_dialog is
 			-- Show text editor.
 		require
-			parented: is_parented
-			parent_window: parent_window (parent) /= Void
+			parent_window: parent_window /= Void
 		local
 			l_parent: EV_WINDOW
 		do
 			update_text_on_deactivation
-			l_parent := parent_window (parent)
+			l_parent := parent_window
 			is_dialog_open := True
 			if dialog = Void then
 				create dialog
@@ -75,6 +74,7 @@ feature {NONE} -- Implementation
 
 	dialog: PROPERTY_DIALOG [G]
 			-- Dialog to show to change the value.
+
 
 feature {NONE} -- Implementation
 

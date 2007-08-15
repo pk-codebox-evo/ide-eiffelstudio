@@ -27,9 +27,7 @@ feature -- Basic operations
 			interface_creator: EI_MIDL_INTERFACE_CREATOR
 		do
 			create midl_coclass.make (eiffel_class.name)
-			if eiffel_class.description /= Void and not eiffel_class.description.is_empty then
-				midl_coclass.set_description (eiffel_class.description)
-			end
+			midl_coclass.set_description (eiffel_class.description)
 
 			create interface_creator.make
 			interface_creator.create_from_eiffel_class (eiffel_class)

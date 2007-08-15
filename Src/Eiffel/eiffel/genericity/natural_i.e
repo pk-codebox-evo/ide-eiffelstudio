@@ -156,11 +156,15 @@ feature -- Access
 			end
 		end
 
-	typed_field: STRING is
-			-- Value field of a C structure corresponding to this type
+	union_tag: STRING is
+			-- Union name to specify type for Agents
 		do
-			Result := "it_n"
-			Result.append_integer (size // 8)
+			inspect size
+			when 8 then Result := Union_tag_8
+			when 16 then Result := Union_tag_16
+			when 32 then Result := Union_tag_32
+			when 64 then Result := Union_tag_64
+			end
 		end
 
 	hash_code: INTEGER is
@@ -185,11 +189,11 @@ feature -- Access
 			end
 		end
 
-	generate_typed_tag (buffer: GENERATION_BUFFER) is
-			-- Generate tag of C structure "EIF_TYPED_VALUE" associated
+	generate_union (buffer: GENERATION_BUFFER) is
+			-- Generate discriminant of C structure "item" associated
 			-- to the current C type in `buffer'.
 		do
-			buffer.put_string ("type = SK_UINT")
+			buffer.put_string ("it_uint")
 			buffer.put_integer (size)
 		end
 
@@ -287,11 +291,16 @@ feature {NONE} -- Constants for generation
 	String_natural_32: STRING is "EIF_NATURAL_32"
 	String_natural_64: STRING is "EIF_NATURAL_64"
 
+	Union_tag_8: STRING is "u8arg"
+	Union_tag_16: STRING is "u16arg"
+	Union_tag_32: STRING is "u32arg"
+	Union_tag_64: STRING is "u64arg"
+
 invariant
 	correct_size: size = 8 or size = 16 or size = 32 or size = 64
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

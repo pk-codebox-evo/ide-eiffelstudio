@@ -1,4 +1,3 @@
-
 indexing
 	description:
 		"Facilities for accessing default pixmaps."
@@ -48,85 +47,79 @@ feature -- Default cursors
 	Busy_cursor: EV_POINTER_STYLE is
 			-- Standard arrow and small hourglass
 		once
-			create Result.make_predefined ({EV_POINTER_STYLE_CONSTANTS}.busy_cursor)
+			Result := Implementation.Busy_cursor
 		end
 
 	Standard_cursor: EV_POINTER_STYLE is
 			-- Standard arrow
 		once
-			create Result.make_predefined ({EV_POINTER_STYLE_CONSTANTS}.standard_cursor)
+			Result := Implementation.Standard_cursor
 		end
 
 	Crosshair_cursor: EV_POINTER_STYLE is
 			-- Crosshair
 		once
-			create Result.make_predefined ({EV_POINTER_STYLE_CONSTANTS}.crosshair_cursor)
+			Result := Implementation.Crosshair_cursor
 		end
 
 	Help_cursor: EV_POINTER_STYLE is
 			-- Arrow and question mark
 		once
-			create Result.make_predefined ({EV_POINTER_STYLE_CONSTANTS}.help_cursor)
+			Result := Implementation.Help_cursor
 		end
 
 	Ibeam_cursor: EV_POINTER_STYLE is
-			-- I-beam
+			-- I-beam displayed in editable widgets.
 		once
-			create Result.make_predefined ({EV_POINTER_STYLE_CONSTANTS}.ibeam_cursor)
+			Result := Implementation.Ibeam_cursor
 		end
 
 	No_cursor: EV_POINTER_STYLE is
 			-- Slashed_circle
 		once
-			create Result.make_predefined ({EV_POINTER_STYLE_CONSTANTS}.no_cursor)
+			Result := Implementation.No_cursor
 		end
 
 	Sizeall_cursor: EV_POINTER_STYLE is
 			-- Four-pointed arrow pointing north, south, east and west
 		once
-			create Result.make_predefined ({EV_POINTER_STYLE_CONSTANTS}.sizeall_cursor)
+			Result := Implementation.Sizeall_cursor
 		end
 
 	Sizens_cursor: EV_POINTER_STYLE is
 			-- Double-pointed arrow pointing north and south
 		once
-			create Result.make_predefined ({EV_POINTER_STYLE_CONSTANTS}.sizens_cursor)
+			Result := Implementation.Sizens_cursor
 		end
 
 	Sizenwse_cursor: EV_POINTER_STYLE is
 			-- Double-pointed arrow pointing north-west and south-east
 		once
-			create Result.make_predefined ({EV_POINTER_STYLE_CONSTANTS}.sizenwse_cursor)
+			Result := Implementation.Sizenwse_cursor
 		end
 
 	Sizenesw_cursor: EV_POINTER_STYLE is
 			-- Double-pointed arrow pointing north-east and south-west
 		once
-			create Result.make_predefined ({EV_POINTER_STYLE_CONSTANTS}.sizenesw_cursor)
+			Result := Implementation.Sizenesw_cursor
 		end
 
 	Sizewe_cursor: EV_POINTER_STYLE is
 			-- Double-pointed arrow pointing west and east
 		once
-			create Result.make_predefined ({EV_POINTER_STYLE_CONSTANTS}.sizewe_cursor)
+			Result := Implementation.Sizewe_cursor
 		end
 
 	Uparrow_cursor: EV_POINTER_STYLE is
 			-- Vertical arrow
 		once
-			create Result.make_predefined ({EV_POINTER_STYLE_CONSTANTS}.uparrow_cursor)
+			Result := Implementation.Uparrow_cursor
 		end
 
 	Wait_cursor: EV_POINTER_STYLE is
 			-- Hourglass
 		once
-			create Result.make_predefined ({EV_POINTER_STYLE_CONSTANTS}.busy_cursor)
-		end
-
-	Header_sizewe_cursor: EV_POINTER_STYLE is
-			-- Cursor used when resizing header widget columns.
-		once
-			create Result.make_predefined ({EV_POINTER_STYLE_CONSTANTS}.header_sizewe_cursor)
+			Result := Implementation.Wait_cursor
 		end
 
 feature {NONE} -- Implementation

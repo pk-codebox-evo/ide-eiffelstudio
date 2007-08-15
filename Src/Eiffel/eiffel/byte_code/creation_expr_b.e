@@ -234,7 +234,6 @@ feature -- Generation
 			l_special_creation: BOOLEAN
 			l_special_type: GEN_TYPE_I
 			l_class_type: SPECIAL_CLASS_TYPE
-			parameter: PARAMETER_BL
 		do
 			buf := buffer
 			generate_line_info
@@ -256,27 +255,26 @@ feature -- Generation
 				l_special_type ?= context.creation_type (type)
 				check
 					is_special_type: l_special_type /= Void and then
-						l_special_type.base_class.original_class = system.special_class
+						l_special_type.base_class.lace_class = system.special_class
 				end
 				l_class_type ?= l_special_type.associated_class_type
 				check
 					l_class_type_not_void: l_class_type /= Void
 				end
 				l_call.parameters.first.generate
-				info.generate_start (buf)
-				info.generate_gen_type_conversion
-				parameter ?= l_call.parameters.first
-				l_class_type.generate_creation (buf, info, register, parameter)
-				info.generate_end (buf)
+				info.generate_start (Current)
+				info.generate_gen_type_conversion (Current)
+				l_class_type.generate_creation (buf, info, register, l_call.parameters.first)
+				info.generate_end (Current)
 			else
-				info.generate_start (buf)
-				info.generate_gen_type_conversion
+				info.generate_start (Current)
+				info.generate_gen_type_conversion (Current)
 				register.print_register
 				buf.put_string (" = ")
 				info.generate
 				buf.put_character (';')
 				buf.put_new_line
-				info.generate_end (buf)
+				info.generate_end (Current)
 
 				if call /= Void then
 					call.set_parent (nested_b)
@@ -289,9 +287,9 @@ feature -- Generation
 				end
 				if
 					context.workbench_mode
-					or else context.system.keep_assertions
+					or else context.assertion_level.check_invariant
 				then
-					buf.put_string ("RTCI2(")
+					buf.put_string ("RTCI(")
 					register.print_register
 					buf.put_string (gc_rparan_semi_c)
 					buf.put_new_line
@@ -322,7 +320,7 @@ feature {BYTE_NODE_VISITOR} -- Assertion support
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

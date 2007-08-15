@@ -141,4 +141,8 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+
+
+
+end -- class WEL_MEASURE_ITEM_STRUCT
+

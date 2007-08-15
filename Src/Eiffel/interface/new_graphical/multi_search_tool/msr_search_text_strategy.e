@@ -88,6 +88,7 @@ feature -- Access
 			class_name_not_void: Result = class_name_internal
 		end
 
+
 feature -- Status report
 
 	is_text_to_be_searched_set : BOOLEAN is

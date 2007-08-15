@@ -11,22 +11,22 @@ deferred class
 inherit
 	EB_TARGET_COMMAND
 		redefine
-			target, internal_recycle
+			target
 		end
 
 	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 		redefine
 			new_toolbar_item,
 			new_mini_toolbar_item,
-			new_mini_sd_toolbar_item,
-			new_menu_item,
-			new_menu_item_unmanaged
+			new_menu_item
 		end
 
 	EB_HISTORY_MANAGER_OBSERVER
 		redefine
 			on_position_changed, on_update, on_item_added, on_item_removed
 		end
+
+	EB_RECYCLABLE
 
 feature -- Execution
 
@@ -64,58 +64,25 @@ feature -- Basic operations
 				Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND}
 			end
 
-	new_mini_sd_toolbar_item: EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new toolbar button for this command.
-		do
-			start_observer
-			if not executable then
-				disable_sensitive
-			end
-
-			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND}
-		end
-
 	new_menu_item: EB_COMMAND_MENU_ITEM is
 			-- Create a new menu entry for this command.
-		do
-			start_observer
-			if not executable then
-				disable_sensitive
+			do
+				start_observer
+				if not executable then
+					disable_sensitive
+				end
+
+				Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND}
 			end
 
-			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND}
-		end
+feature -- Recycle
 
-	new_menu_item_unmanaged: EV_MENU_ITEM is
-			-- Create an unmanaged menu item for this command.
-		do
-			start_observer
-			if not executable then
-				disable_sensitive
-			end
-
-			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND}
-		end
-
-	set_accelerator (a_acc: like accelerator) is
-			-- Set `accelerator' with `a_acc'.
-		do
-			accelerator := a_acc
-		ensure
-			accelerator_set: accelerator = a_acc
-		end
-
-feature {NONE} -- Recycle
-
-	internal_recycle is
+	recycle is
 			-- Recycle current command.
 		do
 			if observer_started then
 				history_manager.remove_observer (Current)
 			end
-				-- Precursor calls needs to be after since the above `history_manager'
-				-- relies on `target' being cleared by Precursor.
-			Precursor {EB_TARGET_COMMAND}
 		end
 
 feature -- Properties
@@ -123,7 +90,7 @@ feature -- Properties
 	target: EB_HISTORY_OWNER
 			-- That that owns the history that will be modified.
 
-feature {EB_HISTORY_COMMAND_MENU_ITEM} -- Implementation
+feature {EB_HISTORY_COMMAND_TOOL_BAR, EB_HISTORY_COMMAND_MENU_ITEM} -- Implementation
 
 	history_manager: EB_HISTORY_MANAGER is
 			-- Manager for history. It encapsulates the history.

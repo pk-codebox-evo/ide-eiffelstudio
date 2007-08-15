@@ -51,7 +51,7 @@ feature -- Redefine.
 		do
 		end
 
-	restore (a_data: SD_INNER_CONTAINER_DATA; a_container: EV_CONTAINER) is
+	restore (titles: ARRAYED_LIST [STRING]; a_container: EV_CONTAINER; a_direction: INTEGER) is
 			-- Redefine.
 		do
 			content.set_visible (False)
@@ -113,7 +113,7 @@ feature -- Redefine.
 		do
 			content.set_visible (True)
 			internal_docking_manager.command.lock_update (Void, True)
-			create l_floating_state.make (a_x, a_y, internal_docking_manager, True)
+			create l_floating_state.make (a_x, a_y, internal_docking_manager)
 			create l_docking_state.make (internal_content, direction, 0)
 			l_docking_state.dock_at_top_level (l_floating_state.inner_container)
 			change_state (l_docking_state)
@@ -167,25 +167,8 @@ feature -- Redefine.
 			l_docking_zone: SD_DOCKING_ZONE
 			l_auto_hide_state, l_new_state: SD_AUTO_HIDE_STATE
 			l_restired: BOOLEAN
-			l_dock_area: SD_MULTI_DOCK_AREA
-			l_zone: SD_ZONE
 		do
 			if relative /= Void and not l_restired and relative.is_visible then
-				l_zone := relative.state.zone
-				if l_zone /= Void then
-					l_dock_area := docking_manager.query.inner_container_include_hidden (l_zone)
-				end
-
-				if l_dock_area /= Void then
-					-- We should care about if maximized zone is in the same SD_MULTI_DOCK_AREA with current zone.
-					-- If yes, then call recover from normal state of that zone.
-					-- If no, then don't call recover from normal state.
-					docking_manager.command.recover_normal_state_in (l_dock_area)
-				else
-					-- We can't find `l_zone', so we restore every zone. This code should not be called.
-					docking_manager.command.recover_normal_state
-				end
-
 				l_tab_zone ?= relative.state.zone
 				l_docking_zone ?= relative.state.zone
 				if l_tab_zone /= Void then
@@ -199,13 +182,11 @@ feature -- Redefine.
 					change_state (l_new_state)
 				end
 			else
-				float (internal_shared.default_screen_x, internal_shared.default_screen_y)
+				float (0, 0)
 			end
 		rescue
-			if not l_restired then
-				l_restired := True
-				retry
-			end
+			l_restired := True
+			retry
 		end
 
 	close is

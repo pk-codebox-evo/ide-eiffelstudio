@@ -120,4 +120,8 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+
+
+
+end -- class WEL_CLIENT_CREATE_STRUCT
+

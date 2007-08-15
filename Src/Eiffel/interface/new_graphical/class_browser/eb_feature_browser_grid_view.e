@@ -12,7 +12,6 @@ class
 inherit
 	EB_CLASS_BROWSER_GRID_VIEW [EB_FEATURE_BROWSER_GRID_ROW]
 		redefine
-			make,
 			data,
 			recycle_agents,
 			default_ensure_visible_action
@@ -22,14 +21,6 @@ inherit
 
 create
 	make
-
-feature{NONE} -- Initialization
-
-	make (a_dev_window: like development_window; a_drop_actions: like drop_actions) is
-			-- Initialize.
-		do
-			Precursor (a_dev_window, a_drop_actions)
-		end
 
 feature -- Status report
 
@@ -49,9 +40,9 @@ feature -- Status report
 	should_tooltip_be_displayed: BOOLEAN is
 			-- Should tooltip display be vetoed?
 		do
-			Result := show_tooltip_button.is_selected
-		ensure then
-			good_result: Result = show_tooltip_button.is_selected
+			Result := show_tooltip_checkbox.is_selected
+		ensure
+			good_result: Result = show_tooltip_checkbox.is_selected
 		end
 
 	is_last_sorted_column_valid (a_column_index: INTEGER): BOOLEAN is
@@ -109,20 +100,75 @@ feature -- Setting
 			-- Rebuild interface
 		local
 			l_written_class_sort_info: EVS_GRID_THREE_WAY_SORTING_INFO [EB_FEATURE_BROWSER_GRID_ROW]
+--			i: INTEGER
+--			l_column: EV_GRID_COLUMN
 		do
 			if is_written_class_used then
+				grid.set_column_count_to (3)
+--				from
+--					 i := 1
+--				until
+--					i > 3
+--				loop
+--					l_column := grid.column (i)
+--					if not l_column.is_displayed then
+--						l_column.show
+--					end
+--					i := i + 1
+--				end
+--				l_column.header_item
 				grid.column (3).header_item.set_text (interface_names.l_version_from)
+--				grid.header.i_th (3).set_text (interface_names.l_version_from)
 				create l_written_class_sort_info.make (agent written_class_tester, ascending_order)
 				l_written_class_sort_info.enable_auto_indicator
 				set_sort_info (3, l_written_class_sort_info)
 			else
-				grid.column (3).header_item.set_text ("")
-				remove_sort_info (3)
-				grid.column (3).clear
+				grid.set_column_count_to (2)
 			end
 		end
 
 feature -- Actions
+
+	on_show_tooltip_changed is
+			-- Action to be performed when selection status of `show_tooltip_checkbox' changes
+		do
+			if preferences.class_browser_data.is_tooltip_shown /= show_tooltip_checkbox.is_selected then
+				preferences.class_browser_data.show_tooltip_preference.set_value (show_tooltip_checkbox.is_selected)
+			end
+		end
+
+	on_show_tooltip_changed_from_outside is
+			-- Action to be performed when selection status of `show_tooltip_checkbox' changes from outside
+		local
+			l_displayed: BOOLEAN
+		do
+			l_displayed := preferences.class_browser_data.is_tooltip_shown
+			if l_displayed /= show_tooltip_checkbox.is_selected then
+				if l_displayed then
+					show_tooltip_checkbox.enable_select
+				else
+					show_tooltip_checkbox.disable_select
+				end
+			end
+		end
+
+	collapse_button_pressed_action: PROCEDURE [ANY, TUPLE] is
+			-- Action to be performed when `collapse_button' is pressed
+		do
+			Result := agent on_collapse_one_level
+		end
+
+	expand_button_pressed_action: PROCEDURE [ANY, TUPLE] is
+			-- Action to be performed when `expand_button' is pressed
+		do
+			Result := agent on_expand_one_level
+		end
+
+	on_enter_pressed is
+			-- Action to be performed when enter key is pressed
+		do
+			on_expand_all_level
+		end
 
 	on_key_pressed (a_key: EV_KEY) is
 			-- Action to be performed when some key is pressed in `grid'
@@ -132,6 +178,54 @@ feature -- Actions
 			l_processed: BOOLEAN
 		do
 			l_processed := on_predefined_key_pressed (a_key)
+		end
+
+	go_to_parent (a_item: EV_GRID_ITEM) is
+			-- Go to parent of `a_item', if any.
+		require
+			a_item_attached: a_item /= Void
+			a_item_is_parented: a_item.parent /= Void
+		local
+			l_row: EV_GRID_ROW
+			l_grid_item: EV_GRID_ITEM
+		do
+			if a_item.column.index = 1 then
+				l_row := a_item.row
+				if l_row.is_expandable and then l_row.is_expanded then
+					l_row.collapse
+				else
+					if l_row.parent_row /= Void then
+						l_row.disable_select
+						l_grid_item := l_row.parent_row.item (1)
+						l_grid_item.row.ensure_visible
+						l_grid_item.enable_select
+					end
+				end
+			end
+		end
+
+	go_to_first_child (a_item: EV_GRID_ITEM) is
+			-- Go to first child of `a_item'.
+		require
+			a_item_attached: a_item /= Void
+			a_item_is_parented: a_item.parent /= Void
+		local
+			l_row: EV_GRID_ROW
+			l_grid_item: EVS_GRID_SEARCHABLE_ITEM
+		do
+			l_row := a_item.row
+			if l_row.is_expandable then
+				if not l_row.is_expanded then
+					l_row.expand
+				else
+					if l_row.subrow_count > 0 then
+						l_row.disable_select
+						l_grid_item ?= l_row.subrow (1).item (1)
+						check l_grid_item /= Void end
+						ensure_visible (l_grid_item, True)
+					end
+				end
+			end
 		end
 
 	on_expand_all_level is
@@ -158,7 +252,7 @@ feature -- Actions
 				l_item := l_selected_items.first
 				if l_item.column.index = 1 then
 					if not l_item.row.is_expandable or else l_item.row.is_expanded then
-						go_to_first_child (l_item.row)
+						go_to_first_child (l_item)
 						l_done := True
 					end
 				end
@@ -180,9 +274,7 @@ feature -- Actions
 				l_item := l_selected_items.first
 				if l_item.column.index = 1 then
 					if not l_item.row.is_expandable or else not l_item.row.is_expanded then
-						if l_item.column.index = 1 then
-							go_to_parent (l_item.row)
-						end
+						go_to_parent (l_item)
 						l_done := True
 					end
 				end
@@ -192,15 +284,32 @@ feature -- Actions
 			end
 		end
 
+	on_notify is
+			-- Action to be performed when `update' is called.
+		do
+		end
+
+	on_post_sort (a_sorting_status_snapshot: LINKED_LIST [TUPLE [a_column_index: INTEGER; a_sorting_order: INTEGER]]) is
+			-- Action to be performed after a sorting
+		do
+			preferences.class_browser_data.feature_view_sorting_order_preference.set_value (string_representation_of_sorted_columns)
+		end
+
 feature -- Access
 
-	control_bar: ARRAYED_LIST [SD_TOOL_BAR_ITEM] is
+	control_bar: EV_WIDGET is
 			-- Widget of a control bar through which, certain control can be performed upon current view
+		local
+			l_tool_bar: EV_TOOL_BAR
 		do
 			if control_tool_bar = Void then
-				create control_tool_bar.make (2)
-				control_tool_bar.extend (create{SD_TOOL_BAR_SEPARATOR}.make)
-				control_tool_bar.extend (show_tooltip_button)
+				create control_tool_bar
+				create l_tool_bar
+				l_tool_bar.extend (create{EV_TOOL_BAR_SEPARATOR})
+				l_tool_bar.extend (show_tooltip_checkbox)
+				control_tool_bar.set_padding (2)
+				control_tool_bar.extend (l_tool_bar)
+				control_tool_bar.disable_item_expand (l_tool_bar)
 			end
 			Result := control_tool_bar
 		ensure then
@@ -266,11 +375,11 @@ feature{NONE} -- Initialization
 			-- Build `grid'.
 		do
 			create grid
-			grid.set_column_count_to (3)
 			if is_written_class_used then
+				grid.set_column_count_to (3)
 				grid.header.i_th (3).set_text (interface_names.l_version_from)
 			else
-				grid.header.i_th (3).set_text ("")
+				grid.set_column_count_to (2)
 			end
 			grid.enable_selection_on_single_button_click
 			grid.header.i_th (1).set_text (interface_names.l_class_browser_classes)
@@ -282,7 +391,10 @@ feature{NONE} -- Initialization
 				grid.drop_actions.fill (drop_actions)
 			end
 			enable_ctrl_right_click_to_open_new_window
-			enable_grid_item_pnd_support
+			show_tooltip_checkbox.select_actions.extend (agent on_show_tooltip_changed)
+			on_show_tooltip_changed_from_outside_agent := agent on_show_tooltip_changed_from_outside
+			preferences.class_browser_data.show_tooltip_preference.change_actions.extend (on_show_tooltip_changed_from_outside_agent)
+			enable_editor_token_pnd
 		end
 
 	build_sortable_and_searchable is
@@ -315,27 +427,79 @@ feature{NONE} -- Initialization
 
 feature -- Notification
 
-	provide_result is
-			-- Provide result displayed in Current view.
+	update_view is
+			-- Update current view according to change in `model'.
+		local
+			l_msg: STRING
 		do
-			fill_rows
-			if last_sorted_column_internal = 0 then
-				last_sorted_column_internal := class_column
+			if not is_up_to_date then
+				if data /= Void then
+					text.hide
+					component_widget.show
+					fill_rows
+					if last_sorted_column_internal = 0 then
+						last_sorted_column_internal := class_column
+					end
+					disable_auto_sort_order_change
+					enable_force_multi_column_sorting
+					if not sorted_columns.is_empty and then is_last_sorted_column_valid (sorted_columns.last) then
+						sort (0, 0, 1, 0, 0, 0, 0, 0, sorted_columns.last)
+					else
+						sort (0, 0, 1, 0, 0, 0, 0, 0, class_column)
+					end
+					disable_force_multi_column_sorting
+					enable_auto_sort_order_change
+				else
+					component_widget.hide
+					text.show
+					l_msg := Warning_messages.w_Formatter_failed.twin
+					if trace /= Void then
+						l_msg.append ("%N")
+						l_msg.append (trace)
+					end
+					text.set_text (l_msg)
+				end
+				auto_resize
+				is_up_to_date := True
 			end
-			disable_auto_sort_order_change
-			enable_force_multi_column_sorting
-			if not sorted_columns.is_empty and then is_last_sorted_column_valid (sorted_columns.last) then
-				sort (0, 0, 1, 0, 0, 0, 0, 0, sorted_columns.last)
-			else
-				sort (0, 0, 1, 0, 0, 0, 0, 0, class_column)
-			end
-			disable_force_multi_column_sorting
-			enable_auto_sort_order_change
-			try_auto_resize_grid (<<[150, 300, 1]>>, False)
-			if not is_written_class_used then
-				try_auto_resize_grid (<<[-1, 0, 2]>>, True)
-			else
-				try_auto_resize_grid (<<[300, 500, 2]>>, True)
+		end
+
+	auto_resize is
+			-- Auto resize columns to give a best view point.
+		local
+			l_requested_width: INTEGER
+			l_font: EV_FONT
+			l_header_width: INTEGER
+		do
+			create l_font
+			if grid.row_count > 0 then
+				l_requested_width := grid.column (1).required_width_of_item_span (1, grid.row_count)
+				if l_requested_width > 300 then
+					l_requested_width := 300
+				else
+					l_header_width := l_font.string_width (grid.column (1).header_item.text)
+					if l_requested_width < l_header_width then
+						l_requested_width := l_header_width + 30
+					else
+						l_requested_width := l_requested_width + 10
+					end
+				end
+				grid.column (1).set_width (l_requested_width)
+				l_requested_width := grid.column (2).required_width_of_item_span (1, grid.row_count)
+				if l_requested_width > 500 then
+					l_requested_width := 500
+				else
+					l_header_width := l_font.string_width (grid.column (2).header_item.text)
+					if l_requested_width < l_header_width then
+						l_requested_width := l_header_width + 30
+					else
+						l_requested_width := l_requested_width + 10
+					end
+				end
+				grid.column (2).set_width (l_requested_width)
+				if grid.column_count > 2 and then grid.column (3).is_displayed then
+					grid.column (3).resize_to_content
+				end
 			end
 		end
 
@@ -351,7 +515,6 @@ feature -- Notification
 			l_is_first: BOOLEAN
 			l_last_bid: INTEGER
 			l_is_single_branch_id: BOOLEAN
-			l_written_class_used: BOOLEAN
 		do
 			l_rows := rows
 			l_rows.wipe_out
@@ -360,7 +523,6 @@ feature -- Notification
 				l_data.start
 				l_is_first := True
 				l_is_single_branch_id := True
-				l_written_class_used := is_written_class_used
 			until
 				l_data.after
 			loop
@@ -379,12 +541,15 @@ feature -- Notification
 					end
 				end
 				l_last_bid := l_branch_id
-				create l_row.make (l_data.item, l_branch_id, Current, l_written_class_used, is_signature_displayed)
+				create l_row.make (l_data.item, l_branch_id, Current)
+				l_row.set_is_written_class_used (is_written_class_used)
+				l_row.set_is_signature_displayed (is_signature_displayed)
 				l_rows.force_last (l_row)
 				l_data.forth
 			end
 			set_is_branch_id_used (not l_is_single_branch_id)
 		end
+
 
 feature -- Visiability
 
@@ -397,18 +562,15 @@ feature -- Visiability
 		do
 			l_grid_row := a_item.grid_item.row
 			l_row ?= l_grid_row.data
-			grid.remove_selection
-			if l_row /= Void then
-				if l_row.parent /= Void then
-					if l_row.parent.is_expandable then
-						l_row.parent.expand
-					end
-					l_grid_row.ensure_visible
+			check l_row /= Void end
+			if l_row.parent /= Void then
+				if l_row.parent.is_expandable then
+					l_row.parent.expand
 				end
-				a_item.grid_item.enable_select
-			else
-				l_grid_row.enable_select
+				l_grid_row.ensure_visible
 			end
+			grid.remove_selection
+			a_item.grid_item.enable_select
 		end
 
 feature{NONE} -- Sorting
@@ -432,9 +594,9 @@ feature{NONE} -- Sorting
 				Result := row_a.branch_id < row_b.branch_id
 			else
 				if a_order = ascending_order then
-					Result := row_a.feature_image < row_b.feature_image
+					Result := row_a.feature_item.name < row_b.feature_item.name
 				else
-					Result := row_a.feature_image > row_b.feature_image
+					Result := row_a.feature_item.name > row_b.feature_item.name
 				end
 			end
 		end
@@ -510,9 +672,14 @@ feature -- Recyclable
 			-- Recyclable
 		do
 			Precursor {EB_CLASS_BROWSER_GRID_VIEW}
+			if on_show_tooltip_changed_from_outside_agent /= Void then
+				preferences.class_browser_data.show_tooltip_preference.change_actions.prune_all (on_show_tooltip_changed_from_outside_agent)
+			end
 		end
 
 feature{NONE} -- Implementation
+
+	on_show_tooltip_changed_from_outside_agent: PROCEDURE [ANY, TUPLE]
 
 	data: QL_FEATURE_DOMAIN
 			-- Data to be displayed
@@ -531,24 +698,13 @@ feature{NONE} -- Implementation
 	rows_internal: like rows
 			-- Implementation of `rows'	
 
-	control_tool_bar: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
+	control_tool_bar: EV_HORIZONTAL_BOX
 			-- Implementation of `control_bar'
 
 	branch_item (a_branch_id: INTEGER): EB_GRID_EDITOR_TOKEN_ITEM is
 			-- A grid item to display branch id
 		do
-			create Result
-			branch_item_style.set_source_text (interface_names.le_branch (a_branch_id))
-			Result.set_text_with_tokens (branch_item_style.text)
-			Result.set_pixmap (pixmaps.icon_pixmaps.feature_group_icon)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	branch_item_style: EB_TEXT_EDITOR_TOKEN_STYLE is
-			-- Style to generate editor tokens for branch items
-		once
-			create Result
+			create Result.make_with_text (interface_names.l_branch+a_branch_id.out)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -577,15 +733,6 @@ feature{NONE} -- Implementation
 					a_item.row.collapse
 				end
 			end
-		end
-
-feature{NONE} -- Implementation/Stone
-
-	item_to_put_in_editor: EV_GRID_ITEM is
-			-- Grid item which may contain a stone to put into editor
-			-- Void if no satisfied item is found.			
-		do
-			Result := item_to_put_in_editor_for_single_item_grid
 		end
 
 indexing
@@ -619,5 +766,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

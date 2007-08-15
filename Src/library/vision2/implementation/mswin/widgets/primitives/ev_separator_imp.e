@@ -1,4 +1,4 @@
-indexing
+indexing 
 	description: "EiffelVision horizontal separator. Mswindows implementation."
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
@@ -18,8 +18,7 @@ inherit
 		undefine
 			set_default_minimum_size
 		redefine
-			interface,
-			initialize
+			interface
 		end
 
 	EV_SYSTEM_PEN_IMP
@@ -27,8 +26,7 @@ inherit
 	EV_WEL_CONTROL_WINDOW
 		undefine
 			on_sys_key_down,
-			on_getdlgcode,
-			on_wm_dropfiles
+			on_getdlgcode
 		redefine
 			default_style,
 			background_brush,
@@ -43,13 +41,6 @@ feature {NONE} -- Initialization
 			base_make (an_interface)
 			wel_make (default_parent, "EV_SEPARATOR")
  		end
-
-	initialize is
-		do
-			Precursor {EV_PRIMITIVE_IMP}
-			disable_tabable_from
-			disable_tabable_to
-		end
 
 feature {NONE} -- WEL Implementation
 

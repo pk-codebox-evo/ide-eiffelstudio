@@ -2,7 +2,7 @@
 	description: "Generic conformance routines."
 	date:		"$Date$"
 	revision:	"$Revision$"
-	copyright:	"Copyright (c) 1985-2007, Eiffel Software."
+	copyright:	"Copyright (c) 1985-2006, Eiffel Software."
 	license:	"GPL version 2 see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"Commercial license is available at http://www.eiffel.com/licensing"
 	copying: "[
@@ -1001,7 +1001,7 @@ rt_public int eif_tuple_count (EIF_REFERENCE obj)
 
 rt_shared int eif_tuple_is_atomic (EIF_REFERENCE obj)
 {
-	EIF_VALUE *l_item = (EIF_VALUE *) obj;
+	EIF_ARG_UNION *l_item = (EIF_ARG_UNION *) obj;
 	unsigned int count;
 	
 	if (obj == NULL) {
@@ -1012,11 +1012,11 @@ rt_shared int eif_tuple_is_atomic (EIF_REFERENCE obj)
 	CHECK("Tuple object", HEADER(obj)->ov_flags & EO_TUPLE);
 	count = RT_SPECIAL_COUNT(obj);
 
-		/* Don't forget that first element of TUPLE is the BOOLEAN
-		 * `object_comparison' attribute. */
+		/* Don't forget that first element of TUPLE is just a placeholder
+		 * to avoid offset computation from Eiffel code */
 	l_item++;
 	for (; count > 0 ; count--) {
-		if (eif_is_reference_tuple_item(l_item)) {
+		if (eif_tuple_item_type(l_item) == EIF_REFERENCE_CODE) {
 				/* It has a reference. This is therefore not atomic */
 			return 0;
 		}
@@ -1144,7 +1144,7 @@ rt_public EIF_REFERENCE eif_gen_typecode_str (EIF_REFERENCE obj)
 		/* Protect address in case it moves */
 
 	nstcall = 0;
-	RT_STRING_MAKE(ret, (EIF_INTEGER) len);
+	(egc_strmake)(ret, (EIF_INTEGER) len);
 	RT_STRING_SET_COUNT(ret, len);
 
 	/* We know the `area' is the very first reference
@@ -1226,7 +1226,7 @@ rt_public EIF_REFERENCE eif_gen_tuple_typecode_str (EIF_REFERENCE obj)
 		/* Protect address in case it moves */
 
 	nstcall = 0;
-	RT_STRING_MAKE(ret, (EIF_INTEGER) len);
+	(egc_strmake)(ret, (EIF_INTEGER) len);
 	RT_STRING_SET_COUNT(ret, len);
 
 	/* We know the `area' is the very first reference

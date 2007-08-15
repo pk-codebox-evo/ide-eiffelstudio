@@ -14,30 +14,27 @@ inherit
 		redefine
 			name,
 			ast,
-			is_equal,
-			written_class
+			is_equal
 		end
 
 feature{NONE} -- Initialization
 
-	make (a_name: STRING; a_parent: like parent; a_written_class: like written_class) is
+	make (a_name: STRING; a_parent: like parent) is
 			-- Initialize `name' with `a_name' and `parent' with `a_parent'.
 		require
 			a_name_attached: a_name /= Void
 			not_a_name_is_empty: not a_name.is_empty
 			a_parent_attached: a_parent /= Void
 			a_parent_valid: a_parent.is_compiled and then a_parent.is_valid_domain_item and then a_parent.is_real_feature
-			a_written_class_attached: a_written_class /= Void
 		do
 			set_name (a_name)
 			set_parent (a_parent)
-			written_class := a_written_class
 		ensure
 			name_set: name.is_equal (a_name.as_lower)
 			parent_set: parent = a_parent
 		end
 
-	make_with_ast (a_name: STRING; a_ast: like ast; a_parent: like parent; a_written_class: like written_class) is
+	make_with_ast (a_name: STRING; a_ast: like ast; a_parent: like parent) is
 			-- Initialize `ast' with `a_ast' and `parent' with `a_parent'.
 		require
 			a_name_attached: a_name /= Void
@@ -45,10 +42,9 @@ feature{NONE} -- Initialization
 			a_ast_attached: a_ast /= Void
 			a_parent_attached: a_parent /= Void
 			a_parent_valid: a_parent.is_compiled and then a_parent.is_valid_domain_item and then a_parent.is_real_feature
-			a_written_class_attached: a_written_class /= Void
 		do
 			internal_ast := a_ast
-			make (a_name, a_parent, a_written_class)
+			make (a_name, a_parent)
 		ensure
 			name_set: name.is_equal (a_name.as_lower)
 			parent_set: parent = a_parent
@@ -84,13 +80,13 @@ feature -- Access
 			good_result: Result = internal_ast
 		end
 
-	written_class: like class_c
---			-- CLASS_C in which current is written
---		do
---			Result := class_c
---		ensure then
---			good_result: Result = class_c
---		end
+	written_class: like class_c is
+			-- CLASS_C in which current is written
+		do
+			Result := class_c
+		ensure then
+			good_result: Result = class_c
+		end
 
 feature{NONE} -- Implementation
 
@@ -180,5 +176,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

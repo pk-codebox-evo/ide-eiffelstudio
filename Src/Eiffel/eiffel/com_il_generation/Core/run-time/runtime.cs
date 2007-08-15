@@ -103,7 +103,7 @@ feature -- Assertions
 
 	[System.Diagnostics.DebuggerHiddenAttribute]
   	[System.Diagnostics.DebuggerStepThroughAttribute]
-	public static void check_invariant (object o)
+	public static void check_invariant (object o, bool is_final)
 		// Given object `o' if it has some invariant to be checked, make
 		// sure that they are checked and recursively goes to inherited
 		// invariants and check them too.
@@ -112,7 +112,7 @@ feature -- Assertions
 
 		if (
 			(!in_assertion ()) &&
-			(o != null && is_assertion_checked (o.GetType (), ASSERTION_LEVEL_ENUM.invariant, false))
+			((is_final) || (o != null && is_assertion_checked (o.GetType (), ASSERTION_LEVEL_ENUM.invariant)))
 		) {
 			target = o as EIFFEL_TYPE_INFO;
 			if (target != null) {
@@ -193,7 +193,7 @@ feature -- Assertions
 		}
 	}
 
-	public static bool is_assertion_checked (Type t, ASSERTION_LEVEL_ENUM val, bool saved_caller_supplier_precondition)
+	public static bool is_assertion_checked (Type t, ASSERTION_LEVEL_ENUM val)
 		// Are assertions checked for type `t' for assertion type `val'.
 		// Note that `val' is not a combination.
 	{
@@ -213,62 +213,24 @@ feature -- Assertions
 
 		Result = !in_assertion();
 		if (Result) {
-			if (val == ASSERTION_LEVEL_ENUM.require && saved_caller_supplier_precondition) {
-				Result = true;
-			} else {
-					// Let's extract the specified assertion level for type `t'.
-					// If `is_global_assertion_level_set' is set, then we can return
-					// the global one.
-				if (is_global_assertion_level_set) {
-					return (global_assertion_level & val) == val;
-				} else if ((assertion_levels != null)) {
-					obj = assertion_levels [t];
-					if (obj != null) {
-						type_assertion_level = (ASSERTION_LEVEL_ENUM) obj;
-					} else {
-						type_assertion_level = ASSERTION_LEVEL_ENUM.no;
-					}
+				// Let's extract the specified assertion level for type `t'.
+				// If `is_global_assertion_level_set' is set, then we can return
+				// the global one.
+			if (is_global_assertion_level_set) {
+				return (global_assertion_level & val) == val;
+			} else if ((assertion_levels != null)) {
+				obj = assertion_levels [t];
+				if (obj != null) {
+					type_assertion_level = (ASSERTION_LEVEL_ENUM) obj;
 				} else {
 					type_assertion_level = ASSERTION_LEVEL_ENUM.no;
 				}
-				Result = ((type_assertion_level & val) == val);
-			}
-		}
-		return Result;
-	}
-
-	public static bool save_supplier_precondition (Type t)
-		// Are supplier preconditions checked for type `t'.
-	{
-		ASSERTION_LEVEL_ENUM type_assertion_level;
-		object obj;
-		bool Result = caller_supplier_precondition;
-
-			// Let's extract the specified assertion level for type `t'.
-			// If `is_global_assertion_level_set' is set, then we can return
-			// the global one.
-		if (is_global_assertion_level_set) {
-			caller_supplier_precondition = 
-				(global_assertion_level & ASSERTION_LEVEL_ENUM.supplier_precond ) == ASSERTION_LEVEL_ENUM.supplier_precond;
-			return Result;
-		} else if ((assertion_levels != null)) {
-			obj = assertion_levels [t];
-			if (obj != null) {
-				type_assertion_level = (ASSERTION_LEVEL_ENUM) obj;
 			} else {
 				type_assertion_level = ASSERTION_LEVEL_ENUM.no;
 			}
-		} else {
-			type_assertion_level = ASSERTION_LEVEL_ENUM.no;
+			Result = ((type_assertion_level & val) == val);
 		}
-		caller_supplier_precondition = 
-			((type_assertion_level & ASSERTION_LEVEL_ENUM.supplier_precond ) == ASSERTION_LEVEL_ENUM.supplier_precond);
 		return Result;
-	}
-
-	public static void restore_supplier_precondition (bool val)
-	{
-		caller_supplier_precondition = val;
 	}
 
 /*
@@ -316,11 +278,6 @@ feature {NONE} -- Implementations: Assertions
 		// Flag used during assertion checking to make sure
 		// that assertions are not checked within an assertion
 		// checking.
-	
-	[ThreadStatic]
-	private static bool caller_supplier_precondition = false;
-		// Flag used to detect whether the caller has supplier
-		// preconditions enabled.
 
 	private static ASSERTION_LEVEL_ENUM global_assertion_level = ASSERTION_LEVEL_ENUM.no;
 		// Default global level of assertion checking. If `is_global_assertion_level_set'
@@ -376,12 +333,6 @@ feature -- Redirection to feature of ANY class
 		// or attached to isomorphic object structures?
 	{
 		return ANY.deep_equal (Current, some, other);
-	}
-
-	public static bool is_deep_equal (object Current, object other)
-		// Are `Current' and `other' attached to isomorphic object structures?
-	{
-		return ANY.deep_equal (Current, Current, other);
 	}
 
 	public static object deep_twin (object Current)
@@ -484,11 +435,23 @@ feature -- Object creation
 	public static object create_type (RT_CLASS_TYPE a_type)
 		// Create new instance of `a_type'.
 	{
+		RT_GENERIC_TYPE computed_type;
+		object Result;
+
 			// Create new object of type `a_type'.
+			// Note: We use the `Activator' class because it is much faster than
+			// creating an instance by getting the associated `ConstructorInfo'.
+		Result = Activator.CreateInstance (Type.GetTypeFromHandle (a_type.type));
+
 			// Properly initializes `Result'.
-		return GENERIC_CONFORMANCE.create_instance
-			(Type.GetTypeFromHandle (a_type.type),
-			a_type as RT_GENERIC_TYPE);
+		computed_type = a_type as RT_GENERIC_TYPE;
+		if (computed_type != null) {
+			#if ASSERTIONS
+				ASSERTIONS.CHECK ("Is Eiffel type", Result is EIFFEL_TYPE_INFO);
+			#endif
+			((EIFFEL_TYPE_INFO) Result).____set_type (computed_type);
+		}
+		return Result;
 	}
 
 /*

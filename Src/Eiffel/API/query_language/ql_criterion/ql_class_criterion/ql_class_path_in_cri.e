@@ -23,46 +23,25 @@ inherit
 		end
 
 create
-	make,
-	make_with_flag
+	make
 
 feature{NONE} -- Initialization
 
 	make (a_name: STRING) is
 			-- Initialize `name' with `a_name'.
-			-- Set `is_recursive' to True by default.
 		do
-			make_with_setting (a_name, True, {QL_NAME_CRITERION}.containing_matching_strategy)
-			is_recursive := True
-		ensure
-			is_recursive_set: is_recursive
-		end
-
-	make_with_flag (a_name: STRING; a_recursive: BOOLEAN) is
-			-- Initialize `name' with `a_name' and `is_recursive' with `a_recursive'.
-		do
-			make (a_name)
-			is_recursive := a_recursive
-		ensure
-			is_recursive_set: is_recursive = a_recursive
+			make_with_setting (a_name, True, True)
 		end
 
 feature -- Evaluate
 
 	is_satisfied_by (a_item: QL_CLASS): BOOLEAN is
 			-- Evaluate `a_item'.
-		local
-			l_path: STRING
 		do
-			l_path := a_item.conf_class.path
 			if name.is_empty then
-				Result := l_path /= Void and then l_path.is_empty
+				Result := True
 			else
-				if is_recursive then
-					Result := l_path.substring (1, name.count).is_equal (name)
-				else
-					Result := l_path.is_equal (name)
-				end
+				Result := a_item.conf_class.path.substring (1, name.count).is_equal (name)
 			end
 		end
 
@@ -73,9 +52,6 @@ feature -- Status report
 		do
 			Result := False
 		end
-
-	is_recursive: BOOLEAN;
-			--Is path search recursive?
 
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"
@@ -108,5 +84,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

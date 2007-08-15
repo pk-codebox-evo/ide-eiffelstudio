@@ -23,6 +23,8 @@ inherit
 	CONF_CLASS_ASSEMBLY
 		rename
 			file_name as base_name,
+			name as original_name,
+			renamed_name as name,
 			group as assembly,
 			check_changed as set_date
 		undefine
@@ -82,18 +84,12 @@ feature -- Access
 							-- written as an Eiffel class, e.g. INTEGER, ....
 					Result := basic_type_mapping.item (l_name)
 					if Result = Void then
-						Result ?= assembly.class_by_dotnet_name (l_name, c.assembly_id)
-						check has_result: Result /= Void end
+						Result := assembly.class_by_dotnet_name (l_name, c.assembly_id)
 					end
 				end
 			end
 		ensure
 			result_not_void: Result /= Void
-		end
-
-	class_to_recompile: EXTERNAL_CLASS_C
-		do
-			create Result.make (Current)
 		end
 
 feature -- Status Report

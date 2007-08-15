@@ -83,6 +83,9 @@ feature -- Access
 			uses_ise_gc_runtime: Result implies (external_runtime = Void or else external_runtime.is_empty)
 		end
 
+	full_type_checking: BOOLEAN
+			-- Does compiler checks inherited feature as well as local feature.
+
 	platform: INTEGER
 			-- User specified platform.
 
@@ -317,6 +320,13 @@ feature -- Update
 				(create {SHARED_WORKBENCH}).Workbench.is_already_compiled or else dotnet_naming_convention = v
 		end
 
+	set_full_type_checking (b: BOOLEAN) is
+		do
+			full_type_checking := b
+		ensure
+			full_type_checking_set: full_type_checking = b
+		end
+
 	set_do_not_check_vape (b: BOOLEAN) is
 		do
 			do_not_check_vape := b
@@ -402,7 +412,7 @@ feature -- Update
 			-- Set `internal_has_multithreaded' to `b'
 		do
 			if internal_has_multithreaded /= b then
-				request_freeze
+				set_freeze
 			end
 			internal_has_multithreaded := b
 		ensure
@@ -425,7 +435,7 @@ feature -- Update
 			-- Set `is_console_application' to `b'
 		do
 			if is_console_application /= b then
-				request_freeze
+				set_freeze
 			end
 			is_console_application := b
 		ensure
@@ -436,7 +446,7 @@ feature -- Update
 			-- Set `force_32bits' to `b'
 		do
 			if force_32bits /= b then
-				request_freeze
+				set_freeze
 			end
 			force_32bits := b
 		ensure
@@ -447,7 +457,7 @@ feature -- Update
 			-- Set `is_console_application' to `b'
 		do
 			if has_dynamic_runtime /= b then
-				request_freeze
+				set_freeze
 			end
 			has_dynamic_runtime := b
 		ensure
@@ -470,10 +480,10 @@ feature -- Update
 			dynamic_def_file_set: dynamic_def_file = f
 		end
 
-	request_freeze is
+	set_freeze is
 			-- Force freezing of system.
 		do
-			is_freeze_requested := True
+			private_freeze := True
 		end
 
 	set_melt is
@@ -516,17 +526,15 @@ feature -- Update
 			platform_set: platform = a_platform
 		end
 
-feature -- Status report
-
-	is_freeze_requested: BOOLEAN
-			-- Is freeze requested by the compiler due to some
-			-- conditions like the need to generate an external
-			-- feature, a feature, called by CECIL, etc.?
 
 feature {SYSTEM_I} -- Implementation
 
 	internal_msil_classes_per_module: INTEGER
 			-- Number of classes per generated module in IL code generation
+
+	private_freeze: BOOLEAN
+			-- Freeze set if externals or new derivation
+			-- of special is generated
 
 	private_finalize: BOOLEAN
 			-- Force a finalization even if no classes have changed.

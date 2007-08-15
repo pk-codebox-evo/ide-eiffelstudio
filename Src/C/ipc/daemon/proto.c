@@ -92,7 +92,6 @@ rt_private void set_ipc_ewb_pid(int pid);						/* Set IPC ewb pid value */
 rt_private void set_ipc_timeout(unsigned int t);				/* Set IPC TIMEOUT value */
 rt_private void start_app(EIF_PSTREAM sp);						/* Start Eiffel application */
 rt_private void get_application_cwd (EIF_PSTREAM sp);			/* Get application cwd */
-rt_private void get_application_env (EIF_PSTREAM sp);			/* Get application env */
 rt_public void drqsthandle(EIF_PSTREAM);							/* General request processor */
 #ifdef EIF_WINDOWS
 rt_public int dbg_recv_packet(EIF_PSTREAM sp, Request *rqst, BOOL reset);	/* Request reception */
@@ -107,7 +106,6 @@ rt_private IDRF dbg_idrf;				/* IDR filters used for serializing */
 rt_private char dbg_idrf_initialized = (char) 0;	/* IDR filter already initialized ? */
 rt_private int interrupted;			/* Has application been asked to be interrupted */
 rt_private char *current_directory = NULL;	/* Directory where application is launched */
-rt_private char *current_app_env = NULL;	/* Environment in which application is launched */
 
 extern void dexit(int code);				/* Daemon exiting procedure */
 
@@ -174,8 +172,8 @@ rt_private void dprocess_request(EIF_PSTREAM sp, Request *rqst)
 	case KPALIVE:			/* Dummy request for connection checks */
 		break;
 	case SET_IPC_PARAM:		/* set IPC parameters */
-		set_ipc_ewb_pid ((int) rqst->rq_opaque.op_1);	
-		set_ipc_timeout ((unsigned int) rqst->rq_opaque.op_2);	
+		set_ipc_ewb_pid ((int) rqst->rq_opaque.op_first);	
+		set_ipc_timeout ((unsigned int) rqst->rq_opaque.op_second);	
 		break;
 	case TRANSFER:			/* Data transfer via daemon */
 		transfer(sp, rqst);
@@ -188,9 +186,6 @@ rt_private void dprocess_request(EIF_PSTREAM sp, Request *rqst)
 		break;
 	case APPLICATION_CWD:	/* Current directory where application will be launched */
 		get_application_cwd(sp);	
-		break;
-	case APPLICATION_ENV:	/* Current environment in which application will be launched */
-		get_application_env(sp);	
 		break;
 	case APPLICATION:		/* Start application */
 		interrupted = FALSE;
@@ -326,11 +321,11 @@ rt_private LPVOID get_interrupt_flag(EIF_PSTREAM sp, Request *rqst)
  * Sending/receiving packets.
  */
 
-rt_public int dbg_recv_packet(EIF_PSTREAM sp, Request *rqst
 #ifdef EIF_WINDOWS
-		, BOOL reset
+rt_public int dbg_recv_packet(EIF_PSTREAM sp, Request *rqst, BOOL reset)
+#else
+rt_public int dbg_recv_packet(EIF_PSTREAM sp, Request *rqst)
 #endif
-		)
 				/* The connected socket */
 				/* The request received */
  {
@@ -343,11 +338,11 @@ rt_public int dbg_recv_packet(EIF_PSTREAM sp, Request *rqst
 	 */
 
 	/* If we cannot receive data, then the connection is surely broken */
- 	if (-1 == net_recv(sp, idrs_buf(&dbg_idrf.i_decode), IDRF_SIZE
 #ifdef EIF_WINDOWS
-		, reset
+ 	if (-1 == net_recv(sp, idrs_buf(&dbg_idrf.i_decode), IDRF_SIZE, reset)) {
+#else
+	if (-1 == net_recv(sp, idrs_buf(&dbg_idrf.i_decode), IDRF_SIZE)) {
 #endif
-		)) {
 #ifdef USE_ADD_LOG
 		add_log(9, "SYSERR recv: %m (%e)");
 		add_log(12, "connection broken on fd #%d", sp);
@@ -534,7 +529,8 @@ rt_private void run_command(EIF_PSTREAM sp)
 	if (!appname)
 		strcpy (meltpath, ".");
 #endif
-	envstring = (char *)malloc (strlen (meltpath) + strlen ("MELT_PATH=") + 1);
+	envstring = (char *)malloc (strlen (meltpath)
+ 		 + strlen ("MELT_PATH=") + 1);
 	if (!envstring){
 #ifdef USE_ADD_LOG
 		add_log(2, "ERROR out of memory: cannot exec '%s'", cmd);
@@ -638,8 +634,8 @@ rt_private void run_asynchronous(EIF_PSTREAM sp, Request *rqst)
 	cmd = recv_str(sp, NULL);		/* Get command */
 
 	dans.rq_type = ASYNACK;				/* Initialize the answer type */
-	jobnum = rqst->rq_opaque.op_1;	/* Job number assigned by client */
-	dans.rq_opaque.op_1 = jobnum;	/* Anwser is tagged with job number */
+	jobnum = rqst->rq_opaque.op_first;	/* Job number assigned by client */
+	dans.rq_opaque.op_first = jobnum;	/* Anwser is tagged with job number */
 
 #ifdef EIF_WINDOWS
 	current_dir = (char *) getcwd(NULL, PATH_MAX);
@@ -685,7 +681,7 @@ rt_private void run_asynchronous(EIF_PSTREAM sp, Request *rqst)
 		add_log(1, "SYSERR fork: %m (%e)");
 		add_log(2, "ERROR cannot run asynchronous command");
 #endif
-		dans.rq_opaque.op_2 = AK_ERROR;
+		dans.rq_opaque.op_second = AK_ERROR;
 /*
  * Asynchronous commands do not send acknowledgment back anymore
  * -- FRED
@@ -756,9 +752,9 @@ rt_private void run_asynchronous(EIF_PSTREAM sp, Request *rqst)
 	free(cmd);
 
 	if (status == 0)
-		dans.rq_opaque.op_2 = AK_OK;	/* Command completed sucessfully */
+		dans.rq_opaque.op_second = AK_OK;	/* Command completed sucessfully */
 	else
-		dans.rq_opaque.op_2 = AK_ERROR;	/* Comamnd failed */
+		dans.rq_opaque.op_second = AK_ERROR;	/* Comamnd failed */
 
 #ifdef EIF_VMS
 	if (status) {	/* command failed */
@@ -787,6 +783,7 @@ rt_private void run_asynchronous(EIF_PSTREAM sp, Request *rqst)
 
 rt_private void get_application_cwd (EIF_PSTREAM sp)
 {
+
 	current_directory = recv_str(sp, NULL);		/* Get command */
 
 	CHECK ("valid_count", strlen (current_directory) > 0);
@@ -796,17 +793,6 @@ rt_private void get_application_cwd (EIF_PSTREAM sp)
 	if ((current_directory[0] == '.') && (strlen (current_directory) == 1)) {
 		free(current_directory);
 		current_directory = NULL;
-	}
-}
-
-rt_private void get_application_env (EIF_PSTREAM sp)
-{
-	current_app_env = recv_str(sp, NULL);		/* Get command */
-		/* If current app env is '' we reset the value to NULL,
-		 * meaning that we won't look at the value of `current_app_env' */
-	if (strlen (current_app_env) == 0) {
-		free(current_app_env);
-		current_app_env = NULL;
 	}
 }
 
@@ -833,8 +819,7 @@ rt_private void start_app(EIF_PSTREAM sp)
 	 * A positive acknowledgment is sent back if the process starts correctly.
 	 */
 
-	char *exe_path;			/* Application to be run */
-	char *exe_args;			/* Arguments to use for application execution */
+	char *cmd;			/* Application to be run */
 	STREAM *cp;			/* Child stream */
 #ifdef EIF_WINDOWS
 	HANDLE process_handle;	/* Child process handle */
@@ -843,12 +828,7 @@ rt_private void start_app(EIF_PSTREAM sp)
 	Pid_t pid;			/* Child pid */
 #endif
 
-	/* Get Application executable path */
-	exe_path = recv_str(sp, NULL);		
-
-	/* Get Application arguments */
-	exe_args = recv_str(sp, NULL);
-
+	cmd = recv_str(sp, NULL);		/* Get command */
 #ifdef USE_ADD_LOG
 	add_log(12, "starting app \n");
 #endif
@@ -856,24 +836,17 @@ rt_private void start_app(EIF_PSTREAM sp)
 #ifdef EIF_WINDOWS
 		/* First argument is 0 because we are not launching the compiler, but
 		 * an application being debugged by the Eiffel debugger. */
-	cp = spawn_child("app", 0, exe_path, exe_args, current_directory, (char*)current_app_env, 1, &process_handle, &process_id);	/* Start up children */
+	cp = spawn_child("app", 0, cmd, current_directory, 1, &process_handle, &process_id);	/* Start up children */
 #else
-	cp = spawn_child("app", exe_path, exe_args, current_directory, (char*)current_app_env, 1, &pid);	/* Start up children */
+	cp = spawn_child("app", cmd, current_directory, 1, &pid);	/* Start up children */
 #endif
 
-	free(exe_path);
-	exe_path = NULL;
-	free(exe_args);
-	exe_args = NULL;
+	free(cmd);
+	cmd = NULL;
 	if (current_directory) {
 		free(current_directory);
 		current_directory = NULL;
 	}
-	if (current_app_env) {
-		free(current_app_env);
-		current_app_env = NULL;
-	}
-	
 
 #ifdef EIF_WINDOWS
 	if (cp != (STREAM *) 0) {
@@ -891,8 +864,6 @@ rt_private void start_app(EIF_PSTREAM sp)
 			add_log(100, "sending ak_ok");
 #endif
 			send_ack(sp, AK_OK);		/* Application started ok */
-			/* Send the process id to ewb */
-			twrite(sp, &(daemon_data.d_app_id), sizeof(int));
 		}
 	} else {
 #ifdef USE_ADD_LOG
@@ -915,8 +886,6 @@ rt_private void start_app(EIF_PSTREAM sp)
 			add_log(100, "sending ak_ok");
 #endif
 			send_ack(sp, AK_OK);		/* Application started ok */
-			/* Send the process id to ewb */
-			twrite(sp, &(daemon_data.d_app), sizeof(int));
 		}
 	} else {
 #ifdef USE_ADD_LOG

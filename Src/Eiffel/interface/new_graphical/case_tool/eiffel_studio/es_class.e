@@ -408,11 +408,11 @@ feature -- Element change
 					graph.remove_node (Current)
 				end
 			else
-				if not class_i.name.is_equal (name) then
+				if not class_i.name_in_upper.is_equal (name) then
 					-- should never happen (see above)
-					set_name (class_i.name)
+					set_name (class_i.name_in_upper)
 				end
-				set_is_root_class (class_i.name.is_equal (system.root_type_name))
+				set_is_root_class (class_i.name.is_equal (class_i.System.root_class_name))
 				c := class_c
 				if c /= Void then
 					if c.has_ast then
@@ -468,7 +468,7 @@ feature -- Element change
 							until
 								b or i.after
 							loop
-								s := i.item.tag.name
+								s := i.item.tag
 								b := s /= Void and then s.is_equal (l_persistent_str)
 								i.forth
 							end
@@ -480,7 +480,7 @@ feature -- Element change
 							until
 								b or i.after
 							loop
-								s := i.item.tag.name
+								s := i.item.tag
 								b := s /= Void and then s.is_equal (l_persistent_str)
 								i.forth
 							end
@@ -526,7 +526,7 @@ feature -- Element change
 						feature_clause_list_changed_actions.call (Void)
 					end
 				end
-				b := class_i.is_compiled
+				b := class_i.compiled
 				if b /= is_compiled then
 					is_compiled := b
 					is_properties_changed := True
@@ -577,7 +577,7 @@ feature {NONE} -- Implementation
 			if not suppliers.is_empty then
 				suppliers.wipe_out
 			end
-			if class_i.is_compiled and class_i.compiled_class.has_feature_table then
+			if class_i.compiled and class_i.compiled_class.has_feature_table then
 				f := class_i.compiled_class.written_in_features
 				from
 					f.start
@@ -615,7 +615,7 @@ feature {NONE} -- Implementation
 		do
 			ct ?= a_type
 			if ct /= Void then
-				l_class_i := class_i_by_name (ct.class_name.name)
+				l_class_i := class_i_by_name (ct.class_name)
 				check
 					l_class_i_not_void: l_class_i /= Void
 				end
@@ -657,7 +657,7 @@ feature {NONE} -- Implementation
 		do
 			ct ?= a_type
 			if ct /= Void then
-				Result := class_i_by_name (ct.class_name.name) = a_class
+				Result := class_i_by_name (ct.class_name) = a_class
 				if not Result then
 					g := ct.generics
 					if g /= Void then

@@ -95,6 +95,7 @@ feature -- Enlarging
 			buffer.put_string (" && ");
 		end;
 
+
 	is_commutative: BOOLEAN is
 			-- Is operation commutative ?
 		do

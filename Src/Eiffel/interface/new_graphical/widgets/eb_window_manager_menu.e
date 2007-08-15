@@ -58,9 +58,9 @@ feature {NONE} -- Initialization
 			build_menu
 		end
 
-feature {NONE} -- Element change
+feature -- Element change
 
-	internal_recycle is
+	recycle is
 			-- To be called when the object is no more used.
 		do
 			window_manager.remove_observer (Current)
@@ -113,7 +113,7 @@ feature {NONE} -- Initialization Implementation
 
 					-- Build the menu item and add it to the menu.
 				create menu_item
-				menu_item.select_actions.extend (agent window_manager.show_window (an_item))
+				menu_item.select_actions.extend (agent window_manager.raise_window (an_item))
 				conv_dev ?= an_item
 				if
 					conv_dev = Void or else
@@ -141,7 +141,7 @@ feature -- Observer pattern
 		do
 				-- Create a new entry for `a_item' in the menu.
 			create menu_item
-			menu_item.select_actions.extend (agent window_manager.show_window (an_item))
+			menu_item.select_actions.extend (agent window_manager.raise_window (an_item))
 			conv_dev ?= an_item
 			if
 				conv_dev = Void or else

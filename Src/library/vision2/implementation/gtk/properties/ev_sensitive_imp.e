@@ -16,6 +16,14 @@ inherit
 			interface
 		end
 
+	EV_ANY_IMP
+		undefine
+			destroy,
+			needs_event_box
+		redefine
+			interface
+		end
+
 feature -- Status report
 
 	is_sensitive: BOOLEAN is
@@ -23,7 +31,10 @@ feature -- Status report
 		do
 			-- Shift to put bit in least significant place then take mod 2
 			if not is_destroyed then
-				Result := {EV_GTK_EXTERNALS}.gtk_widget_is_sensitive (c_object)
+				Result := (
+					({EV_GTK_EXTERNALS}.gtk_object_struct_flags (c_object)
+					// {EV_GTK_EXTERNALS}.gTK_SENSITIVE_ENUM) \\ 2
+				) = 1
 			end
 		end
 
@@ -51,10 +62,6 @@ feature -- Status setting
 
 feature {EV_ANY_I} -- Implementation
 
-	c_object: POINTER
-		deferred
-		end
-
 	has_parent: BOOLEAN is
 			-- Is `Current' parented?
 		do
@@ -66,7 +73,7 @@ feature {EV_ANY_I} -- Implementation
 		end
 
 	parent_is_sensitive: BOOLEAN is
-			-- Is `parent' sensitive?
+			-- (export status {NONE})
 		local
 			sensitive_parent: EV_SENSITIVE
 		do

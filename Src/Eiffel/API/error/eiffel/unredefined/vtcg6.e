@@ -22,7 +22,7 @@ feature -- Properties
 
 	constraint_class: CLASS_C
 
-	constraint_types: TYPE_SET_A
+	constraint_type: TYPE_A
 			-- Constraint type
 
 	code: STRING is "VTCG"
@@ -34,10 +34,11 @@ feature -- Status report
 			-- Is the error fully defined?
 		do
 			Result := Precursor and then feature_name /= Void and then
-				(constraint_class /= Void or else constraint_types /= Void)
+				(constraint_class /= Void or else constraint_type /= Void)
 		end
 
 feature -- Output
+
 
 	build_explain (a_text_formatter: TEXT_FORMATTER) is
 			-- Build specific explanation explain for current error
@@ -57,9 +58,9 @@ feature -- Output
 				constraint_class.append_signature (a_text_formatter, False)
 			else
 				check
-					constraint_type_not_void: constraint_types /= Void
+					constraint_type_not_void: constraint_type /= Void
 				end
-				constraint_types.ext_append_to (a_text_formatter, constraint_class)
+				constraint_type.append_to (a_text_formatter)
 			end
 			a_text_formatter.add (" cannot be used for creation.")
 			a_text_formatter.add_new_line
@@ -90,15 +91,15 @@ feature {COMPILER_EXPORTER} -- Setting
 			constraint_class_set: constraint_class = c
 		end
 
-	set_constraint_types (t: TYPE_SET_A) is
+	set_constraint_type (t: TYPE_A) is
 			-- Set `t' to `constraint_type' which does not
 			-- contain `feature_name'.
 		require
 			t_not_void: t /= Void
 		do
-			constraint_types := t
+			constraint_type := t
 		ensure
-			constraint_types_set: constraint_types = t
+			constraint_type_set: constraint_type = t
 		end
 
 indexing

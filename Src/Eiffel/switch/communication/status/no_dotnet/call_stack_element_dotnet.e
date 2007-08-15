@@ -8,7 +8,7 @@ indexing
 class CALL_STACK_ELEMENT_DOTNET
 
 inherit
-
+	
 	CALL_STACK_ELEMENT
 		redefine
 			make
@@ -32,12 +32,35 @@ feature -- Properties
 	object_address: STRING
 
 	display_object_address: like object_address
-
+			
 feature -- Dotnet Properties
 
 	dotnet_module_name: STRING is
 		do
 		end
+
+	dotnet_module_filename: STRING is
+		do
+		end
+		
+feature
+	
+	display_feature (a_text_formatter: TEXT_FORMATTER) is
+			-- Display information about associated routine.
+		do
+		end
+		
+	display_locals (a_text_formatter: TEXT_FORMATTER) is
+			-- Display the local entities and result (if it exists) of
+			-- the routine associated with Current call.
+		do
+		end		
+		
+	display_arguments (a_text_formatter: TEXT_FORMATTER) is
+			-- Display the arguments passed to the routine
+			-- associated with Current call.
+		do
+		end		
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

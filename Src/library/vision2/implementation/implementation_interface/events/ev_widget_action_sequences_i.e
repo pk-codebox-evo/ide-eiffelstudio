@@ -13,11 +13,11 @@ deferred class
 
 feature -- Event handling
 
-	file_drop_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [LIST [STRING_32]]] is
+	file_drop_actions: ACTION_SEQUENCE [TUPLE [LIST [STRING_32]]] is
 			-- Actions to be performed when an OS file drop occurs on `Current'.
 		do
 			if file_drop_actions_internal = Void then
-				file_drop_actions_internal := create_file_drop_actions
+				create file_drop_actions_internal
 			end
 			Result := file_drop_actions_internal
 		ensure
@@ -26,7 +26,7 @@ feature -- Event handling
 
 feature {EV_ANY_I} -- Implementation
 
-	file_drop_actions_internal: EV_LITE_ACTION_SEQUENCE [TUPLE [LIST [STRING_32]]]
+	file_drop_actions_internal: ACTION_SEQUENCE [TUPLE [LIST [STRING_32]]]
 			-- Implementation of once per object `file_drop_actions'.
 
 feature -- Event handling
@@ -43,11 +43,6 @@ feature -- Event handling
 		end
 
 feature {EV_ANY_I} -- Implementation
-
-	create_file_drop_actions: like file_drop_actions_internal is
-			-- Create a file_drop action sequence.
-		deferred
-		end
 
 	create_pointer_motion_actions: EV_POINTER_MOTION_ACTION_SEQUENCE is
 			-- Create a pointer_motion action sequence.

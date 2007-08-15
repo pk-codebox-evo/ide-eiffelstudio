@@ -116,6 +116,7 @@ feature -- Update
 			not_is_changed: not is_changed
 		end
 
+
 feature -- Update from retrieved object.
 
 	update_from_retrieved_project (other: like Current) is
@@ -149,13 +150,6 @@ feature -- Additional properties
 
 	is_compiling: BOOLEAN
 			-- Is the project being compiled?
-
-	is_in_stable_state: BOOLEAN is
-			-- Is project in such a state that one can manipulate the project settings,
-			-- add new classes, search for classes,...
-		do
-			Result := system_defined and then not is_compiling and then last_reached_degree <= 5
-		end
 
 	last_reached_degree: INTEGER is
 			-- What is the lowest degree that was reached during last compilation?
@@ -305,19 +299,8 @@ feature -- Commands
 			degree_6_done: BOOLEAN
 			l_pre_actions_done: BOOLEAN
 		do
-			if retried = 0 then
-				error_handler.clear_display
-			end
 			not_actions_successful := False
-			if retried = 0 and then (system = Void or else system.automatic_backup) then
-					-- Even if backup is not enabled, we will always create a BACKUP
-					-- directory. This will be done only once if `automatic_backup' is not
-					-- enabled.
-				backup_counter := backup_counter + 1
-				create_backup_directory
-				save_starting_backup_info
-			end
-
+			start_compilation
 				-- We perform a degree 6 only when it is the first the compilation or
 				-- when there was an error during the compilation concerning a missing
 				-- class and that no degree 6 has been done before.
@@ -331,8 +314,13 @@ feature -- Commands
 				end
 
 				if Lace.successful then
+					if system.automatic_backup then
+						backup_counter := backup_counter + 1
+						create_backup_directory
+					end
+
 					if not l_pre_actions_done then
-						process_actions (universe.conf_system.all_pre_compile_action)
+						process_actions (universe.new_target.all_pre_compile_action)
 						l_pre_actions_done := True
 					end
 
@@ -344,12 +332,19 @@ feature -- Commands
 					else
 						System.set_config_changed (False)
 					end
-					if Lace.has_group_changed or missing_class_error or compilation_modes.is_discover then
+					if Lace.has_group_changed then
+						System.set_rebuild (True)
+					end
+					if missing_class_error then
+						system.set_rebuild (True)
+					end
+						-- Patrickr 04/04/06: For now, if we aren't quick compiling always rebuild
+					if not (compilation_modes.is_quick_melt or compilation_modes.is_override_scan) then
 						system.set_rebuild (True)
 					end
 					System.recompile
 
-					process_actions (universe.conf_system.all_post_compile_action)
+					process_actions (universe.target.all_post_compile_action)
 				else
 					if not Error_handler.error_list.is_empty then
 						Error_handler.raise_error
@@ -379,7 +374,11 @@ feature -- Commands
 				--|	(the next compilation will be stored in a different
 				--| directory)
 			if system /= Void and then system.automatic_backup then
-				save_ending_backup_info
+				save_backup_info
+			end
+
+			if not Eiffel_project.is_finalizing then
+				stop_compilation
 			end
 		ensure
 			increment_compilation_counter:
@@ -397,6 +396,9 @@ feature -- Commands
 						-- successful, project is created.
 					compilation_counter := compilation_counter + 1
 					save_project (Compilation_modes.is_precompiling)
+				end
+				if not Compilation_modes.is_precompiling then
+					Compilation_modes.reset_modes
 				end
 				Rescue_status.set_is_error_exception (False)
 				retried := retried + 1
@@ -442,6 +444,7 @@ feature -- Commands
 				-- merging of SERVER_CONTROLs from the different precompiled libraries.
 			System.prepare_before_saving (not was_precompiling)
 			if was_precompiling then
+				System.set_licensed_precompilation (False)
 				System.save_precompilation_info
 			end
 				-- NOTE: possible speed improvement by saving the project when this
@@ -451,7 +454,7 @@ feature -- Commands
 				-- is corrupted.
 			Eiffel_project.save_project
 			if was_precompiling then
-				Eiffel_project.save_precomp
+				Eiffel_project.save_precomp (False)
 			end
 		end
 
@@ -514,21 +517,6 @@ feature -- Commands
 			Degree_2.insert_new_class (class_to_recompile)
 		end
 
-feature -- Directory creation
-
-	create_data_directory is
-			-- Create the subdirectory for data storage.
-		local
-			d: DIRECTORY
-		do
-			if universe_defined then
-				create d.make (project_location.data_path)
-				if not d.exists then
-					d.create_dir
-				end
-			end
-		end
-
 feature -- Automatic backup
 
 	create_backup_directory is
@@ -568,51 +556,26 @@ feature -- Automatic backup
 			Result.set_file_name (Backup_info)
 		end
 
-	save_starting_backup_info is
-			-- Save the information about this compilation
+	save_backup_info is
+			-- Save the information about this recompilation
 		local
 			file: PLAIN_TEXT_FILE
 		do
-			create file.make (backup_info_file_name)
-			if file.is_creatable or else (file.exists and then file.is_writable) then
-				file.open_append
-				file.put_string ("Compiler version: ")
-				file.put_string (Version_number)
-				file.put_new_line
-				file.put_string ("Type: ")
-				file.put_string (compilation_modes.string_representation)
-				file.put_new_line
-				file.put_string ("batch mode: ")
-				file.put_boolean (Eiffel_project.batch_mode)
-				file.put_new_line
-				file.put_string ("new session: ")
-				file.put_boolean (new_session)
-				file.put_new_line
-				file.put_string ("starting date: ")
-				file.put_string ((create {DATE_TIME}.make_now).out)
-				file.put_new_line
-				file.close
-			end
+			create file.make_open_write (backup_info_file_name)
+			file.put_string ("Compiler version: ")
+			file.put_string (Version_number)
+			file.put_new_line
+			file.put_string ("batch mode: ")
+			file.put_boolean (Eiffel_project.batch_mode)
+			file.put_new_line
+			file.put_string ("new session: ")
+			file.put_boolean (new_session)
+			file.put_new_line
+			file.put_string ("successful: ")
+			file.put_boolean (successful)
+			file.put_new_line
 
-			new_session := False
-		end
-
-	save_ending_backup_info is
-			-- Save the information about the status of this compilation
-		local
-			file: PLAIN_TEXT_FILE
-		do
-			create file.make (backup_info_file_name)
-			if file.is_creatable or else (file.exists and then file.is_writable) then
-				file.open_append
-				file.put_string ("Compilation status is: ")
-				file.put_boolean (successful)
-				file.put_new_line
-				file.put_string ("ending date: ")
-				file.put_string ((create {DATE_TIME}.make_now).out)
-				file.put_new_line
-				file.close
-			end
+			file.close
 
 			new_session := False
 		end
@@ -644,8 +607,16 @@ feature {NONE} -- Automatic Backup
 
 feature {NONE} -- Implementation
 
-	not_actions_successful: BOOLEAN;
+	not_actions_successful: BOOLEAN
 			-- Was there a problem during running the pre and post compile actions?
+
+feature {NONE} -- Externals
+
+	eif_date (s: POINTER): INTEGER is
+			-- Date of file of name `str'.
+		external
+			"C"
+		end
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

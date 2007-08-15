@@ -193,7 +193,7 @@ feature {NONE} -- Handle mouse clicks
 			cursors_set: cursors /= Void
 		local
 			old_l_number	: INTEGER
-			l_cursor: like cursor_type
+			stop, l_cursor: like cursor_type
 		do
 			l_cursor := text_displayed.cursor
 			old_l_number := l_cursor.y_in_lines
@@ -222,7 +222,22 @@ feature {NONE} -- Handle mouse clicks
 				mouse_up_delayed := False
 				if click_count /= 1 then
 					if click_count = 2 then
-						select_current_token (False)
+						empty_word_selection := False
+						stop := l_cursor.twin
+						text_displayed.set_selection_cursor (l_cursor)
+						text_displayed.selection_cursor.go_start_word
+						l_cursor.go_end_word
+						text_displayed.enable_selection
+						if l_cursor.is_equal (text_displayed.selection_cursor) then
+							l_cursor.go_right_char_no_down_line
+							l_cursor.go_end_word
+							if l_cursor.is_equal (text_displayed.selection_cursor) then
+								text_displayed.disable_selection
+								empty_word_selection := True
+								l_cursor := stop
+							end
+						end
+						invalidate_line (l_cursor.y_in_lines, False)
 					elseif editor_preferences.quadruple_click_enabled and then click_count > 3 then
 						select_all
 					else
@@ -232,62 +247,6 @@ feature {NONE} -- Handle mouse clicks
 						text_displayed.enable_selection
 						invalidate_block (text_displayed.selection_start.y_in_lines, text_displayed.selection_end.y_in_lines, True)
 					end
-				end
-			end
-		end
-
-	select_current_token (is_for_word: BOOLEAN) is
-			-- Select the token where current cursor is, if `is_for_word',
-			-- look for the previous token if current token is not a word.
-		local
-			stop, l_cursor: like cursor_type
-		do
-			l_cursor := text_displayed.cursor
-			empty_word_selection := False
-			if is_for_word and then (not l_cursor.token.is_text or else not is_word (l_cursor.token.image)) then
-					-- Current token does not represent a word, we try the previous one only, no loops until
-					-- we find one that corresponds. This is the behavior that other editors have.
-				l_cursor.go_left_word
-			elseif l_cursor.token.is_new_line then
-					-- When clicking past the end of the line, we do as if the previous token was chosen.
-				l_cursor.go_left_word
-			end
-			stop := l_cursor.twin
-			text_displayed.set_selection_cursor (l_cursor)
-			text_displayed.selection_cursor.go_start_word
-			l_cursor.go_end_word
-			text_displayed.enable_selection
-			if l_cursor.is_equal (text_displayed.selection_cursor) then
-				l_cursor.go_right_char_no_down_line
-				l_cursor.go_end_word
-				if l_cursor.is_equal (text_displayed.selection_cursor) then
-					text_displayed.disable_selection
-					empty_word_selection := True
-					l_cursor := stop
-				end
-			end
-			invalidate_line (l_cursor.y_in_lines, False)
-		end
-
-	is_word (s: STRING): BOOLEAN is
-			-- Is `s' a word?
-		require
-			s_not_void: s /= Void
-		local
-			c: CHARACTER
-			i, nb: INTEGER
-		do
-			nb := s.count
-			if nb > 0 then
-				from
-					i := 1
-					Result := True
-				until
-					i > nb or not Result
-				loop
-					c := s.item (i)
-					Result := c.is_alpha_numeric or c = '_'
-					i := i + 1
 				end
 			end
 		end
@@ -331,7 +290,7 @@ feature {NONE} -- Handle mouse clicks
 					if l_cursor.token /= Void then
 						l_num := l_cursor.y_in_lines
 						l_cursor.make_from_character_pos (l_cursor.x_in_characters, l_num, text_displayed)
-						invalidate_line (l_cursor.y_in_lines, False)
+						invalidate_line (l_cursor.y_in_lines, True)
 						if l_click_count < 4 then
 								-- If the click count is greater than 3 don't move the cursor to the bottom of the screen
 							check_cursor_position

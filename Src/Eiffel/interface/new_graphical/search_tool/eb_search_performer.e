@@ -442,6 +442,7 @@ feature {NONE} -- Implementation
 	y_pos_when_moved: INTEGER
 			-- y position of cursor when saved.
 
+
 feature {UNDO_REDO_STACK} -- Observer pattern
 
 	on_changed is

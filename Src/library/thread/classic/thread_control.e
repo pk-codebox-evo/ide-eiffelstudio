@@ -12,7 +12,7 @@ feature -- Basic operations
 
 	yield is
 			-- The calling thread yields its execution in favor of another
-			-- thread for an OS specific amount of time.
+			-- thread.
 		external
 			"C | %"eif_threads.h%""
 		alias
@@ -102,9 +102,6 @@ feature {NONE} -- Externals
 		alias
 			"eif_thr_last_thread"
 		end
-
-invariant
-	thread_capable: {PLATFORM}.is_thread_capable
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"

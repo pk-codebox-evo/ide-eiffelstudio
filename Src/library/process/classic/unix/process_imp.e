@@ -32,12 +32,6 @@ inherit
 			{NONE}all
 		end
 
-	EXCEPTIONS
-		rename
-			ignore as exce_ignore,
-			catch as exec_catch
-		end
-
 create
 	make, make_with_command_line
 
@@ -52,19 +46,26 @@ feature {NONE} -- Initialization
 
 	make_with_command_line (cmd_line: STRING; a_working_directory: STRING) is
 		local
+			ls: LIST [STRING]
 			p_name :STRING
-			args: LIST [STRING]
+			args: ARRAYED_LIST [STRING]
 		do
-			args := separated_words (cmd_line)
-			check not args.is_empty end
-			if args.count = 1 then
-				make (args.first, Void, a_working_directory)
-			else
-				args.start
-				p_name := args.item
-				args.remove
-				make (p_name, args, a_working_directory)
+			ls := cmd_line.split (' ')
+			create p_name.make_from_string (ls.i_th (1))
+			ls.start
+			ls.remove
+			if ls.count > 0 then
+				create args.make (ls.count)
+				from
+					ls.start
+				until
+					ls.after
+				loop
+					args.extend (ls.item)
+					ls.forth
+				end
 			end
+			make (p_name, args, a_working_directory)
 		end
 
 feature  -- Control
@@ -157,10 +158,12 @@ feature {PROCESS_TIMER}  -- Status checking
 					has_process_exited := not child_process.is_executing
 						-- If launched process exited, send signal to all listenning threads.
 					if has_process_exited then
+						if child_process.is_terminated_by_signal then
+							force_terminated := True
+						end
 						if is_launched_in_new_process_group and then is_terminal_control_enabled then
 							attach_terminals (process_id)
 						end
-
 						if in_thread /= Void then
 							in_thread.set_exit_signal
 						end
@@ -234,30 +237,21 @@ feature{PROCESS_IO_LISTENER_THREAD} -- Interprocess IO
 			l_cnt: INTEGER
 			l_left: INTEGER
 			l_str: STRING
-			l_retried: BOOLEAN
 		do
-			if not l_retried and then not is_read_pipe_broken then
-				input_mutex.lock
-				l_cnt := input_buffer.count
-				if l_cnt > 0 then
-					last_input_bytes := l_cnt.min (buffer_size)
-					create l_str.make (last_input_bytes)
-					l_left := l_cnt - last_input_bytes
-					l_str.append (input_buffer.substring (1, last_input_bytes))
-					input_buffer.keep_tail (l_left)
-				else
-					last_input_bytes := 0
-				end
-				input_mutex.unlock
-				if l_str /= Void then
-					child_process.put_string (l_str)
-				end
+			input_mutex.lock
+			l_cnt := input_buffer.count
+			if l_cnt > 0 then
+				last_input_bytes := l_cnt.min (buffer_size)
+				create l_str.make (last_input_bytes)
+				l_left := l_cnt - last_input_bytes
+				l_str.append (input_buffer.substring (1, last_input_bytes))
+				input_buffer.keep_tail (l_left)
+			else
+				last_input_bytes := 0
 			end
-		rescue
-			l_retried := True
-			if is_signal and then signal = sigpipe then
-				set_is_read_pipe_broken (True)
-				retry
+			input_mutex.unlock
+			if l_str /= Void then
+				child_process.put_string (l_str)
 			end
 		end
 
@@ -325,7 +319,6 @@ feature {NONE}  -- Implementation
 			else
 				child_process.set_error_file_name (error_file_name)
 			end
-			set_is_read_pipe_broken (False)
 		end
 
 	initialize_after_launch is
@@ -338,15 +331,6 @@ feature {NONE}  -- Implementation
 			start_listening_threads
 		end
 
-	new_thread_attributes: THREAD_ATTRIBUTES is
-			-- New threads attributes used to launch thread
-		do
-			create Result.make
-			Result.set_detached (True)
-		ensure
-			result_attached: Result /= Void
-		end
-
 	start_listening_threads is
 			-- Setup listeners for process output/error and for process status acquiring.
 		do
@@ -354,18 +338,18 @@ feature {NONE}  -- Implementation
 				create input_buffer.make (initial_buffer_size)
 				create input_mutex.make
 				create in_thread.make (Current)
-				in_thread.launch_with_attributes (new_thread_attributes)
+				in_thread.launch
 			end
 				-- Start  output listening thread is necessory
 			if output_direction = {PROCESS_REDIRECTION_CONSTANTS}.to_agent then
 				create out_thread.make (Current)
-			   	out_thread.launch_with_attributes (new_thread_attributes)
+			   	out_thread.launch
 			end
 				-- Start a error listening thread is necessory	
 			if (error_direction /= {PROCESS_REDIRECTION_CONSTANTS}.to_same_as_output)  then
 				if error_direction = {PROCESS_REDIRECTION_CONSTANTS}.to_agent then
 					create err_thread.make (Current)
-					err_thread.launch_with_attributes (new_thread_attributes)
+					err_thread.launch
 				end
 			end
 					-- Start a timer for process status acquiring.
@@ -491,19 +475,6 @@ feature {NONE} -- Implementation
 			else
 				Result := default_pointer
 			end
-		end
-
-feature{NONE} -- Error recovery
-
-	is_read_pipe_broken: BOOLEAN
-			-- Is pipe used for reading broken?
-
-	set_is_read_pipe_broken (b: BOOLEAN) is
-			-- Set `is_read_pipe_broken' with `b'.
-		do
-			is_read_pipe_broken := b
-		ensure
-			is_read_pipe_broken_set: is_read_pipe_broken = b
 		end
 
 invariant

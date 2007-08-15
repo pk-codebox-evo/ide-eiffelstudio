@@ -28,9 +28,7 @@ inherit
 feature -- Launching parameters setting
 
 	prepare_command_line (cmd: STRING; args: LIST [STRING]; a_working_directory: STRING) is
-			-- Prepare command line for process launching.
-			-- `cmd' is the process command to launch, `args' are possible arguments and
-			-- `a_working_directory' is the path where process will be launched.
+			--
 		require
 			process_not_in_action: (not launched) or (launched and has_exited)
 			cmd_not_void: cmd /= Void
@@ -75,6 +73,7 @@ feature -- Launching parameters setting
 		ensure
 			is_hidden_set: is_hidden = h
 		end
+
 
 	set_buffer_size (size: INTEGER) is
 			-- Set buffer_size to `size'
@@ -175,76 +174,6 @@ feature -- Launching parameters setting
 			handler_set: on_terminate_handler = handler
 		end
 
-feature -- Actions
-
-	start_actions: ACTION_SEQUENCE [TUPLE] is
-			-- Actions to be invoked when process launch starts
-			-- These actions are called before the process launch, and then
-			-- after launch, either `launchd_actions' or `launch_failed_actions' will be called.
-		do
-			if start_actions_internal = Void then
-				create start_actions_internal
-			end
-			Result := start_actions_internal
-		ensure
-			result_attached: Result /= Void
-		end
-
-	launched_actions: ACTION_SEQUENCE [TUPLE] is
-			-- Actions to be invoked when process is launched successfully
-		do
-			if launched_actions_internal = Void then
-				create launched_actions_internal
-			end
-			Result := launched_actions_internal
-		ensure
-			result_attached: Result /= Void
-		end
-
-	launch_failed_actions: ACTION_SEQUENCE [TUPLE] is
-			-- Actions to be invoked when process launch is failed
-		do
-			if launch_failed_actions_internal = Void then
-				create launch_failed_actions_internal
-			end
-			Result := launch_failed_actions_internal
-		ensure
-			result_attached: Result /= Void
-		end
-
-	terminated_actions: ACTION_SEQUENCE [TUPLE] is
-			-- Actions to be invoked when process is terminated by user
-		do
-			if terminated_actions_internal = Void then
-				create terminated_actions_internal
-			end
-			Result := terminated_actions_internal
-		ensure
-			result_attached: Result /= Void
-		end
-
-	exited_actions: ACTION_SEQUENCE [TUPLE] is
-			-- Actions to be invoked when process is exited by itself
-		do
-			if exited_actions_internal = Void then
-				create exited_actions_internal
-			end
-			Result := exited_actions_internal
-		ensure
-			result_attached: Result /= Void
-		end
-
-	finished_actions: ACTION_SEQUENCE [TUPLE] is
-			-- Actions to be invoked when process is finished (either launch failed, terminated or exited)
-		do
-			if finished_actions_internal = Void then
-				create finished_actions_internal
-			end
-			Result := finished_actions_internal
-		ensure
-			result_attached: Result /= Void
-		end
-
 feature -- Control
 
 	launch (redirection_needed: BOOLEAN; use_argument: BOOLEAN) is
@@ -314,7 +243,7 @@ feature -- Control
 				dir := ee.current_working_directory
 				ee.change_working_directory (working_directory)
 			end
-			data_storage.wipe_out
+			external_storage.wipe_out
 			prc.launch
 
 			if ee /= Void then
@@ -501,27 +430,6 @@ feature {NONE} -- Implementation
 
 	child_termination_timeout: INTEGER is 5000
 			-- Time in milliseconds to wait when terminating child process
-
-feature{NONE} -- Implementation
-
-	start_actions_internal: like start_actions
-			-- Implementation of `start_actions'
-
-	launched_actions_internal: like launched_actions
-			-- Implementation of `launched_actions'
-
-	launch_failed_actions_internal: like launch_failed_actions
-			-- Implementation of `launch_failed_actions'
-
-	terminated_actions_internal: like terminated_actions
-			-- Implementation of `terminated_actions'
-
-	exited_actions_internal: like exited_actions
-			-- Implementation of `exited_actions'
-
-	finished_actions_internal: like finished_actions
-			-- Implementation of `finished_actions'
-
 
 invariant
 	data_storage_not_void: data_storage /= Void

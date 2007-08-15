@@ -64,13 +64,6 @@ inherit
 			{NONE} all
 		end
 
-	CONF_ACCESS
-
-	KL_SHARED_FILE_SYSTEM
-		export
-			{NONE} all
-		end
-
 feature -- Loading
 
 	open_project_file (a_file_name: STRING; a_target_name: STRING; a_project_path: STRING; from_scratch: BOOLEAN) is
@@ -252,85 +245,6 @@ feature -- Loading
 			end
 		end
 
-	open_single_file_compilation_project (a_class_filename: STRING; a_libraries: LIST [STRING]; a_project_path: STRING; from_scratch: BOOLEAN) is
-			-- Open project for a single file compilation.
-			--
-			-- `a_class_filename': Filename of Eiffel class which acts as root
-			-- `a_libraries': List of libraries which should be included
-			-- `a_project_path': Path of project
-			-- `from_scratch': Indicates if a clean is requested before compilation
-		require
-			a_libraries_not_void: a_libraries /= Void
-			a_class_filename_not_void: a_class_filename /= Void
-		local
-			l_directory, l_filename, l_target_name, l_config_file_name: STRING
-			l_file: RAW_FILE
-			l_factory: CONF_FACTORY
-			l_system: CONF_SYSTEM
-			l_target: CONF_TARGET
-			l_load: CONF_LOAD
-		do
-				-- First split the class name into components. A possible classname is 'path/to/file/hello_world.e'
-				-- This will be split into:
-				--   l_directory: 'path/to/file'
-				--   l_filename: 'hello_world.e'
-				--   l_target_name: 'hello_world'
-			l_directory := file_system.dirname (a_class_filename)
-			l_filename := file_system.basename (a_class_filename)
-			l_target_name := l_filename.twin
-			l_target_name.remove_tail (2)
-			l_config_file_name := file_system.pathname (l_directory, l_target_name + "." + config_extension)
-
-			create l_factory
-				-- Only create ecf if it does not exist yet
-			create l_file.make (l_config_file_name)
-			if l_file.exists then
-					-- ecf exists, load it
-				create l_load.make (l_factory)
-				l_load.retrieve_configuration (l_config_file_name)
-				if l_load.is_error then
-						-- ecf could not be loaded, an error will be triggered
-						-- later when the config file will be loaded again by
-						-- the `open_project_file' feature
-				else
-					l_system := l_load.last_system
-						-- Check if target exists
-					if l_system.targets.has (l_target_name) then
-							-- Default target exists,
-						l_target := l_system.targets.item (l_target_name)
-
-							-- Add libraries
-						a_libraries.do_all (agent add_library_to_target (?, l_target))
-
-							-- Check console application flag
-						if l_target.libraries.current_keys.there_exists (agent is_gui_library (?)) then
-							l_target.update_setting ("console_application", "false")
-						end
-					else
-							-- Target does not exist yet, create it
-						add_single_file_compilation_target (l_system, l_target_name, l_target_name.as_upper, "make", a_libraries)
-					end
-						-- Save config file to disk
-					l_system.store
-				end
-			else
-					-- ecf does not exist, create it
-
-					-- Configuration system
-				l_system := l_factory.new_system_generate_uuid (l_target_name)
-				l_system.set_file_name (l_config_file_name)
-
-					-- Add the target for single file compilation
-				add_single_file_compilation_target (l_system, l_target_name, l_target_name.as_upper, "make", a_libraries)
-
-					-- Save config file to disk
-				l_system.store
-			end
-
-				-- Now that an ecf exists, call the normal project loading with the new ecf.
-			open_project_file (l_config_file_name, l_target_name, a_project_path, from_scratch)
-		end
-
 feature -- Access
 
 	has_error: BOOLEAN
@@ -400,6 +314,7 @@ feature -- Settings
 		ensure
 			has_library_conversion_set: has_library_conversion = v
 		end
+
 
 feature {NONE} -- Settings
 
@@ -492,9 +407,6 @@ feature -- Status report
 
 	is_precompilation_error: BOOLEAN
 			-- Was there an error during the generation of a needed precompile?
-
-	is_update_environment: BOOLEAN
-			-- Should changed environment variables be used?
 
 feature {NONE} -- Status report
 
@@ -590,7 +502,7 @@ feature {NONE} -- Settings
 	retrieve_or_create_project (a_project_path: STRING) is
 			-- Retrieve or create project.
 		local
-			msg: STRING_32
+			msg: STRING
 		do
 				--| Define temporary default directory structure for project
 			lace.process_user_file (a_project_path, not ignore_user_configuration_file)
@@ -604,7 +516,7 @@ feature {NONE} -- Settings
 				Eiffel_project.make (compiler_project_location)
 
 				if not eiffel_project.error_occurred then
-					check_used_environemnt
+						-- Nothing to be done here
 					report_project_loaded_successfully
 				else
 					if Eiffel_project.retrieval_error then
@@ -647,54 +559,6 @@ feature {NONE} -- Settings
 				is_recompile_from_scrach := True
 				create_project (lace.project_path, is_project_location_requested)
 				post_create_project
-			end
-		end
-
-	check_used_environemnt is
-			-- Check if the current environment values still have the same values as the ones stored in the project settings.
-		local
-			l_envs: HASH_TABLE [STRING, STRING]
-			l_key, l_old_val, l_new_val: STRING
-		do
-			if
-				eiffel_project.system_defined and then eiffel_project.initialized and then
-				eiffel_system.workbench.is_already_compiled and then
-				eiffel_system.workbench.last_reached_degree <= 5
-			then
-				from
-					l_envs := eiffel_system.workbench.universe.target.environ_variables
-					l_envs.start
-				until
-					l_envs.after
-				loop
-					l_key := l_envs.key_for_iteration
-					l_old_val := l_envs.item_for_iteration
-					l_new_val := eiffel_layout.get_environment (l_key)
-					if eiffel_layout.platform.is_windows then
-						l_old_val.to_lower
-						if l_new_val /= Void then
-							l_new_val.to_lower
-						end
-					end
-					if
-						not l_key.is_case_insensitive_equal (eiffel_layout.default_il_environment.ise_dotnet_framework_env) and then
-						not l_key.is_case_insensitive_equal (eiffel_layout.ise_precomp_env) and then
-						not equal (l_new_val, l_old_val)
-					then
-						ask_environment_update (l_key, l_old_val, l_new_val)
-						if is_update_environment then
-							if l_new_val /= Void then
-								l_envs.force (l_new_val, l_key)
-							else
-								l_envs.remove (l_key)
-							end
-							system.force_rebuild
-						else
-							eiffel_layout.set_environment (l_old_val, l_key)
-						end
-					end
-					l_envs.forth
-				end
 			end
 		end
 
@@ -768,7 +632,9 @@ feature {NONE} -- Settings
 			l_args.extend ("-c_compile")
 			l_args.extend ("-batch")
 			if l_target.setting_msil_generation then
-				l_args.extend ("-finalize")
+				if l_target.setting_msil_use_optimized_precompile then
+					l_args.extend ("-finalize")
+				end
 				l_path := overridden_metadata_cache_path
 				if l_path = Void then
 					l_path := l_target.setting_metadata_cache_path
@@ -810,11 +676,11 @@ feature {NONE} -- Settings
 			l_list: DS_ARRAYED_LIST [STRING]
 		do
 			if a_proposed_target /= Void then
-				target_name := a_proposed_target.as_lower
-				a_targets.search (target_name)
-				if not a_targets.found then
+				a_targets.search (a_proposed_target)
+				if a_targets.found then
+					target_name := a_proposed_target.twin
+				else
 					l_not_found := True
-					target_name := Void
 				end
 			else
 				l_not_found := True
@@ -915,7 +781,7 @@ feature {NONE} -- Error reporting
 			has_error_set: has_error
 		end
 
-	report_cannot_open_project (a_msg: STRING_GENERAL) is
+	report_cannot_open_project (a_msg: STRING) is
 			-- Report an error when project cannot be read/write for some reasons
 			-- and possibly propose user to upgrade
 		require
@@ -923,7 +789,7 @@ feature {NONE} -- Error reporting
 		deferred
 		end
 
-	report_incompatible_project (a_msg: STRING_GENERAL) is
+	report_incompatible_project (a_msg: STRING) is
 			-- Report an error when retrieving an incompatible project and possibly
 			-- propose user to upgrade.
 		require
@@ -931,7 +797,7 @@ feature {NONE} -- Error reporting
 		deferred
 		end
 
-	report_project_corrupted (a_msg: STRING_GENERAL) is
+	report_project_corrupted (a_msg: STRING) is
 			-- Report an error when retrieving a project which is corrupted and possibly
 			-- propose user to recompile from scratch.
 		require
@@ -939,14 +805,14 @@ feature {NONE} -- Error reporting
 		deferred
 		end
 
-	report_project_retrieval_interrupted (a_msg: STRING_GENERAL) is
+	report_project_retrieval_interrupted (a_msg: STRING) is
 			-- Report an error when project retrieval was stopped.
 		require
 			a_msg_not_void: a_msg /= Void
 		deferred
 		end
 
-	report_project_incomplete (a_msg: STRING_GENERAL) is
+	report_project_incomplete (a_msg: STRING) is
 			-- Report an error when project is incomplete and possibly propose
 			-- user to recompile from scratch.
 		require
@@ -1005,14 +871,6 @@ feature {NONE} -- User interaction
 
 	ask_compile_precompile is
 			-- Should a needed precompile be automatically built?
-		deferred
-		end
-
-	ask_environment_update (a_key, a_old_val, a_new_val: STRING) is
-			-- Should new environment values be accepted?
-		require
-			a_key_ok: a_key /= Void and then not a_key.is_empty and then not a_key.has ('%U')
-			a_old_val_ok: a_old_val /= Void and then not a_old_val.has ('%U')
 		deferred
 		end
 
@@ -1085,120 +943,6 @@ feature {NONE} -- Implementation
 		rescue
 			retried := True
 			retry
-		end
-
-	add_single_file_compilation_target (a_system: CONF_SYSTEM; a_target_name, a_root_class_name, a_root_feature_name: STRING; a_libraries: LIST [STRING]) is
-			-- Add a target to `a_system' consisting of given parameters.
-			--
-			-- `a_system': The configuration system which the target will be added to
-			-- `a_target_name': Name of target to add to the system
-			-- `a_root_class_name': Name of root class
-			-- `a_root_feature_name': Name of root feature
-			-- `a_libraries': List of libraries which will be added to the target
-		require
-			a_system_not_void: a_system /= Void
-			a_target_name_not_void: a_target_name /= Void
-			a_root_class_name_not_void: a_root_class_name /= Void
-			a_root_feature_name_not_void: a_root_feature_name /= Void
-		local
-			l_factory: CONF_FACTORY
-			l_target: CONF_TARGET
-			l_root: CONF_ROOT
-			l_file_location: CONF_FILE_LOCATION
-			l_directory_location: CONF_DIRECTORY_LOCATION
-			l_cluster: CONF_CLUSTER
-			l_library: CONF_LIBRARY
-			l_precompile: CONF_PRECOMPILE
-		do
-			create l_factory
-
-				-- Configuration target
-			l_target := l_factory.new_target (a_target_name, a_system)
-			a_system.add_target (l_target)
-
-				-- Root class and feature
-			l_root := l_factory.new_root (Void, a_root_class_name, a_root_feature_name, False)
-			l_target.set_root (l_root)
-
-				-- Default to console application
-			l_target.update_setting ("console_application", "true")
-
-				-- Add libraries to target
-			if a_libraries /= Void then
-				a_libraries.do_all (agent add_library_to_target (?, l_target))
-			end
-
-				-- Check if there are any gui libraries and set flag accordingly
-			if l_target.libraries.current_keys.there_exists (agent is_gui_library (?)) then
-				l_target.update_setting ("console_application", "false")
-			end
-
-				-- Add 'current directory' as root cluster
-			l_directory_location := l_factory.new_location_from_path ("./", l_target)
-			l_cluster := l_factory.new_cluster (a_target_name, l_directory_location, l_target)
-			l_target.add_cluster (l_cluster)
-
-				-- Add base library
-			l_file_location := l_factory.new_location_from_full_path ("$ISE_LIBRARY/library/base/base.ecf", l_target)
-			l_library := l_factory.new_library ("base", l_file_location, l_target)
-			l_target.add_library (l_library)
-
-			if l_target.precompile = Void then
-					-- No precompile is set, add base as precompile
-				l_precompile := l_factory.new_precompile ("base_pre", "$ISE_PRECOMP/base.ecf", l_target)
-				l_target.set_precompile (l_precompile)
-			end
-		ensure
-			target_exists: a_system.targets.has (a_target_name)
-		end
-
-	add_library_to_target (a_library: STRING; a_target: CONF_TARGET) is
-			-- Add library `a_library' to `a_target'.
-			--
-			-- `a_library': Either the name of a library or the location of an ecf file
-			-- `a_target': Configuration target where library is added
-		require
-			a_library_not_void: a_library /= Void
-			a_target_not_void: a_target /= Void
-		local
-			l_factory: CONF_FACTORY
-			l_library_name, l_extension, l_ecf_path: STRING
-			l_file_location: CONF_FILE_LOCATION
-			l_library: CONF_LIBRARY
-		do
-			create l_factory
-				-- Get extension of library argument
-			l_extension := a_library.twin
-			l_extension.keep_tail (4)
-				-- Check if extension denotes a configuration file
-			if l_extension.is_equal ("." + config_extension) then
-					-- The library is specified as full path to ecf file
-				l_file_location := l_factory.new_location_from_full_path (a_library, a_target)
-					-- Name of config file is taken as name of library
-				l_library_name := file_system.basename (a_library)
-				l_library_name.remove_tail (4)
-			else
-					-- The library is specified as name only
-				l_library_name := a_library.twin
-					-- Guess location
-				l_ecf_path := "$ISE_LIBRARY/library/" + a_library + "/" + a_library + "." + config_extension
-				l_file_location := l_factory.new_location_from_full_path (l_ecf_path, a_target)
-					-- Todo: smarter guess, check if ECF exists in this location and try also $ISE_LIBRARY/framework/
-					-- Todo: check if location exist and raise an error if it does not
-					-- Todo: check if library can be used as precompile (e.g. Vision2)
-			end
-				-- Add library to ecf target
-			l_library := l_factory.new_library (l_library_name, l_file_location, a_target)
-			a_target.add_library (l_library)
-		end
-
-	is_gui_library (a_library: STRING): BOOLEAN is
-			-- Is `a_library' a GUI library?
-			-- At the moment this only checks if 'Vision2' or 'WEL' is present.
-		require
-			a_library_not_void: a_library /= Void
-		do
-			Result := a_library.is_equal ("vision2") or a_library.is_equal ("wel")
 		end
 
 indexing

@@ -66,8 +66,6 @@ inherit
 			{NONE} all
 		end
 
-	DEBUG_OUTPUT
-
 	REFACTORING_HELPER
 
 create
@@ -81,22 +79,17 @@ feature {NONE} -- Initialization
 		require
 			good_argument: t /= Void
 			not_anchored: not t.is_anchored
-			not_formal:
-				(t.base_class.original_class /= system.native_array_class and then
-				t.base_class.original_class /= system.typed_pointer_class) implies
-				not t.has_formal
+			not_formal: t.base_class.lace_class /= system.native_array_class implies not t.has_formal
 		do
-			if t.is_basic then
-				basic_type ?= t
+			type := t.generic_derivation
+			if not t.is_expanded then
+					-- Set creation info as if the type is used as "like Current".
+				if type = t then
+						-- Duplicate type object to avoid modification of `t'.
+					type := t.duplicate
+				end
+				type.set_cr_info (create_current)
 			end
-			type ?= t.generic_derivation
-			check type_not_void: type /= Void end
-				-- Set creation info as if the type is used as "like Current".
-			if type = t then
-					-- Duplicate type object to avoid modification of `t'.
-				type := t.duplicate
-			end
-			type.set_cr_info (create_current)
 			is_changed := True
 			type_id := System.type_id_counter.next
 			static_type_id := Static_type_id_counter.next_id
@@ -107,13 +100,6 @@ feature {NONE} -- Initialization
 						-- Only Eiffel types that are generated with an interface
 						-- and an implementation get a different `implementation_id'.
 					implementation_id := Static_type_id_counter.next_id
-				end
-					-- Set `external_id'.
-				if basic_type /= Void and then associated_class.is_external and then not associated_class.is_typed_pointer then
-						-- Basic types have a specific ID for external counterparts.
-					external_id := Static_type_id_counter.next_id
-				else
-					external_id := static_type_id
 				end
 			end
 			System.reset_melted_conformance_table
@@ -132,12 +118,6 @@ feature -- Access
 			-- Same as `static_type_id' but used in IL mode only to
 			-- give a different ID wether we are handling interface
 			-- or implementation of current CLASS_TYPE.
-
-	external_id: INTEGER
-			-- Same as `static_type_id' but used in IL mode only to
-			-- give a different ID wether we are handling external
-			-- variant of current CLASS_TYPE (if any), otherwise
-			-- it defaults to `static_type_id'.
 
 	type: CL_TYPE_I
 			-- Type of the class: it includes meta-instantiation of
@@ -173,26 +153,12 @@ feature -- Access
 			-- Is the attribute list changed ? [has the skeleton of
 			-- attributes to be re-generated ?]
 
-	is_basic: BOOLEAN is
-			-- Is current class type a basic type?
-		do
-			Result := basic_type /= Void
-		end
-
 	is_expanded: BOOLEAN is
 			-- Is current class type expanded?
 		require
 			type_not_void: type /= Void
 		do
 			Result := type.is_expanded
-		end
-
-	is_true_expanded: BOOLEAN is
-			-- Is current class type expanded but not basic?
-		require
-			type_not_void: type /= Void
-		do
-			Result := type.is_true_expanded and basic_type = Void
 		end
 
 	is_generic: BOOLEAN is
@@ -212,7 +178,7 @@ feature -- Access
 			l_class: like associated_class
 		do
 			l_class := associated_class
-			Result := l_class.is_external and then (not l_class.is_basic or else l_class.is_typed_pointer)
+			Result := l_class.is_external and (l_class.is_basic implies type.is_basic)
 		end
 
 	is_generated_as_single_type: BOOLEAN is
@@ -274,12 +240,6 @@ feature -- Access
 			end
 			Result := type_number_int
 		end
-
-feature {NONE} -- Implementation: Access
-
-	basic_type: BASIC_I
-			-- If `type' is originally a basic type, we keep the BASIC_I instance
-			-- as it is used for certain queries (e.g. tuple_code).
 
 feature -- Status report
 
@@ -405,27 +365,10 @@ feature -- Settings
 			l_pos: INTEGER
 		do
 			internal_namespace := associated_class.original_class.actual_namespace.twin
-			if basic_type /= Void then
-				internal_type_name := basic_type.il_type_name (Void)
-			else
-				internal_type_name := type.il_type_name (Void)
-			end
+			internal_type_name := type.il_type_name (Void)
 			l_pos := internal_type_name.last_index_of ('.', internal_type_name.count)
 			internal_type_name := internal_type_name.substring (l_pos + 1, internal_type_name.count)
 			is_dotnet_name := System.dotnet_naming_convention
-		end
-
-feature {SYSTEM_I} -- Setting
-
-	set_implementation_id (i: like implementation_id) is
-			-- Set `implementation_id' with `i'
-		require
-			il_generation: system.il_generation
-			i_positive: i > 0
-		do
-			implementation_id := i
-		ensure
-			implementation_id_set: implementation_id = i
 		end
 
 feature -- Update
@@ -482,10 +425,6 @@ feature -- Update
 					a_parent.build_conformance_table_of (cl)
 					i := i + 1
 				end
-				if l_gen_type /= Void and then not l_gen_type.base_class.is_tuple then
-						-- Mark all generic derivations this one conforms to.
-					l_gen_type.enumerate_interfaces (agent {CLASS_TYPE}.build_conformance_table_of (cl))
-				end
 			end
 		end
 
@@ -497,11 +436,7 @@ feature -- Conveniences
 		require
 			il_generation: System.il_generation
 		do
-			if basic_type /= Void then
-				Result := basic_type.il_type_name (Void)
-			else
-				Result := type.il_type_name (Void)
-			end
+			Result := type.il_type_name (Void)
 		ensure
 			full_il_create_type_name_not_void: Result /= Void
 			full_il_create_type_name_not_empty: not Result.is_empty
@@ -513,11 +448,7 @@ feature -- Conveniences
 		require
 			il_generation: System.il_generation
 		do
-			if basic_type /= Void then
-				Result := basic_type.il_type_name ("Impl")
-			else
-				Result := type.il_type_name ("Impl")
-			end
+			Result := type.il_type_name ("Impl")
 		ensure
 			full_il_create_type_name_not_void: Result /= Void
 			full_il_create_type_name_not_empty: not Result.is_empty
@@ -529,11 +460,7 @@ feature -- Conveniences
 		require
 			il_generation: System.il_generation
 		do
-			if basic_type /= Void then
-				Result := basic_type.il_type_name ("Create")
-			else
-				Result := type.il_type_name ("Create")
-			end
+			Result := type.il_type_name ("Create")
 		ensure
 			full_il_create_type_name_not_void: Result /= Void
 			full_il_create_type_name_not_empty: not Result.is_empty
@@ -643,7 +570,7 @@ feature -- Generation
 
 				generate_c_code := has_creation_routine or else
 						(current_class.has_invariant and then
-						 system.keep_assertions)
+						 current_class.assertion_level.check_invariant)
 
 				from
 					feature_table.start
@@ -740,7 +667,7 @@ feature -- Generation
 				if
 					current_class.has_invariant and then
 					((not final_mode) or else
-					system.keep_assertions)
+					current_class.assertion_level.check_invariant)
 				then
 					inv_byte_code := Inv_byte_server.disk_item (current_class.class_id)
 					byte_context.set_byte_code (create {STD_BYTE_CODE})
@@ -1303,7 +1230,7 @@ feature {NONE} -- Implementation
 			if is_expanded then
 					-- Use a reference counterpart as a parent to ensure
 					-- that reattachment of expanded to reference works
-					-- as expected.
+					-- as expectde
 				parent_type := type.reference_type
 				if parent_type.has_associated_class_type then
 					par_table.append_type (parent_type)
@@ -1395,7 +1322,7 @@ feature -- Skeleton generation
 			if
 				byte_context.final_mode and
 				associated_class.has_invariant and
-				system.keep_assertions
+				associated_class.assertion_level.check_invariant
 			then
 					-- Generate extern declaration for invariant
 					-- routine of the current class type
@@ -1450,7 +1377,8 @@ feature -- Skeleton generation
 
 			if byte_context.final_mode then
 				if
-					a_class.has_invariant and then system.keep_assertions
+					a_class.has_invariant and then
+					a_class.assertion_level.check_invariant
 				then
 					buffer.put_string (Encoder.feature_name (static_type_id, Invariant_body_index))
 				else
@@ -1693,7 +1621,7 @@ feature -- Structure generation
 				else
 					if has_creation_routine then
 						c_name := encoder.feature_name (static_type_id, initialization_body_index)
-						Extern_declarations.add_routine_with_signature (Void_c_type.c_string,
+						Extern_declarations.add_routine_with_signature (Void_c_type,
 							c_name, <<"EIF_REFERENCE, EIF_REFERENCE">>)
 						buffer.put_string (c_name)
 						buffer.put_character ('(')
@@ -1726,7 +1654,7 @@ feature -- Structure generation
 					buffer.put_string (c_name)
 					buffer.put_character ('(')
 					buffer.put_string (a_target_name)
-					Extern_declarations.add_routine_with_signature (Void_c_type.c_string,
+					Extern_declarations.add_routine_with_signature (Void_c_type,
 						c_name, <<"EIF_REFERENCE">>)
 					buffer.put_string (");")
 					buffer.put_new_line
@@ -1758,10 +1686,18 @@ feature -- Cecil generation
 			buffer.put_character ('{')
 			buffer.put_string ("(int32) ")
 			buffer.put_integer (associated_class.visible_table_size)
-			buffer.put_string (", sizeof(char *(*)()), cl")
+			if final_mode then
+				buffer.put_string (", sizeof(char *(*)()), cl")
+			else
+				buffer.put_string (", sizeof(int32), cl")
+			end
 			buffer.put_integer (associated_class.class_id)
 			buffer.put_string (", (char *) cr")
-			buffer.put_integer (type_id)
+			if final_mode then
+				buffer.put_integer (type_id)
+			else
+				buffer.put_integer (associated_class.class_id)
+			end
 			buffer.put_character ('}')
 		end
 
@@ -1942,13 +1878,7 @@ feature {NONE} -- Convenience
 			l_class := associated_class
 
 				-- From bit 0 to bit 3: we store `tuple_code'.
-			if basic_type /= Void then
-					-- For basic types, we use `basic_type' as `type' only
-					-- contains the true expanded forms of basic types (i.e CL_TYPE_I).
-				Result := basic_type.tuple_code
-			else
-				Result := type.tuple_code
-			end
+			Result := type.tuple_code
 
 				-- Bit 8: Store `is_declared_as_expanded'
 			if l_class.is_expanded then
@@ -1973,31 +1903,6 @@ feature {NONE} -- Convenience
 				-- Bit 12: Store `is_deferred'
 			if l_class.is_deferred then
 				Result := Result | 0x1000
-			end
-		end
-
-feature {NONE} -- Debug output
-
-	debug_output: STRING is
-			-- Output displayed in debugger.
-		local
-			l_name: STRING
-		do
-			if type /= Void then
-				l_name := type.name
-				create Result.make (l_name.count + 15 )
-			else
-				create Result.make (13)
-			end
-			Result.append_character ('s')
-			Result.append_character (':')
-			Result.append_integer (static_type_id)
-			Result.append_character (',')
-			Result.append_integer (type_id)
-			if l_name /= Void then
-				Result.append_character (':')
-				Result.append_character (' ')
-				Result.append (l_name)
 			end
 		end
 

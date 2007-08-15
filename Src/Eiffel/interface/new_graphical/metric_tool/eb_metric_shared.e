@@ -1,5 +1,5 @@
 indexing
-	description: "Shared metric utilities. Can be used in both batch and gui mode"
+	description: "Shared metric utilities."
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
 	author: ""
@@ -10,22 +10,20 @@ class
 	EB_METRIC_SHARED
 
 inherit
-	SHARED_BENCH_NAMES
-
-	EB_SHARED_METRIC_MANAGER
+	EB_CONSTANTS
 
 feature -- Access
 
-	metric_validity_checker: EB_METRIC_VALIDITY_VISITOR is
-			-- Metric validity checker
+	metric_manager: EB_METRIC_MANAGER is
+			-- Metric manager
 		once
-			create Result.make (metric_manager)
+			create Result.make
 		ensure
 			result_attached: Result /= Void
 		end
 
-	archive_validity_checker: EB_METRIC_ARCHIVE_VALIDITY_CHECKER is
-			-- Metric archiv evalidity checker
+	metric_vadility_checker: EB_METRIC_VADILITY_VISITOR is
+			-- Metric vadility checker
 		once
 			create Result.make (metric_manager)
 		ensure
@@ -67,23 +65,19 @@ feature -- Access/Metric type
 			good_result: is_metric_type_valid (Result)
 		end
 
-	metric_type_name (a_metric_type_id: INTEGER): STRING_GENERAL is
-			-- Metric type name of `a_metrc_type_id'
-		require
-			a_metric_type_id_valid: is_metric_type_valid (a_metric_type_id)
-		do
-			inspect
-				a_metric_type_id
-			when basic_metric_type then
-				Result := metric_names.l_basic_metric
-			when linear_metric_type then
-				Result := metric_names.l_linear_metric
-			when ratio_metric_type then
-				Result := metric_names.l_ratio_metric
-			end
-		ensure
-			result_attached: Result /= Void
-		end
+feature -- Metric editor mode
+
+	readonly_mode: INTEGER is 1
+			-- Read only mode
+			-- This is used for browsing predefined metrics
+
+	new_mode: INTEGER is 2
+			-- New mode
+			-- This is used for define new metrics
+
+	edit_mode: INTEGER is 3
+			-- Edit mode
+			-- This is used for editing existing metrics
 
 feature -- Status report
 
@@ -94,75 +88,28 @@ feature -- Status report
 			Result := a_type = basic_metric_type or a_type = linear_metric_type or a_type = ratio_metric_type
 		end
 
+	is_mode_valid (a_mode: INTEGER): BOOLEAN is
+			-- Is `a_mode' valid?
+		do
+			Result := a_mode = readonly_mode or a_mode = new_mode or a_mode = edit_mode
+		ensure
+			good_result: Result implies (a_mode = readonly_mode or a_mode = new_mode or a_mode = edit_mode)
+		end
+
+	is_uuid_valid (a_uuid: STRING): BOOLEAN is
+			-- Is `a_uuid' a valid UUID?
+		require
+			a_uuid_attached: a_uuid /= Void
+		do
+			Result := shared_uuid.is_valid_uuid (a_uuid)
+		end
+
 feature -- UUID
 
 	shared_uuid: UUID is
 			-- UUID
 		once
 			create Result
-		ensure
-			result_attached: Result /= Void
-		end
-
-feature -- Value test operator type index
-
-	equal_to_type: INTEGER is 1
-	not_equal_to_type: INTEGER is 2
-	less_than_type: INTEGER is 3
-	less_than_equal_to_type: INTEGER is 4
-	greater_than_type: INTEGER is 5
-	greater_than_equal_to_type: INTEGER is 6
-
-	equal_to_operator: STRING is "="
-	not_equal_to_operator: STRING is "/="
-	less_than_operator: STRING is "<"
-	less_than_equal_to_operator: STRING is "<="
-	greater_than_operator: STRING is ">"
-	greater_than_equal_to_operator: STRING is ">="
-
-feature -- Access/Criterion type
-
-	operator_table: HASH_TABLE [STRING, INTEGER] is
-			-- Table for "=", "/=", ">", ">=", "<", "<=" operators
-			-- Key is operator type index, value is name of that operator
-		once
-			create Result.make (6)
-			Result.put (equal_to_operator, equal_to_type)
-			Result.put (not_equal_to_operator, not_equal_to_type)
-			Result.put (less_than_operator, less_than_type)
-			Result.put (less_than_equal_to_operator, less_than_equal_to_type)
-			Result.put (greater_than_operator, greater_than_type)
-			Result.put (greater_than_equal_to_operator, greater_than_equal_to_type)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	operator_name_table: HASH_TABLE [INTEGER, STRING] is
-			-- Table for "=", "/=", ">", ">=", "<", "<=" operators
-			-- Key is the operator name, value is operator type index of that operator
-		once
-			create Result.make (6)
-			Result.put (equal_to_type, equal_to_operator)
-			Result.put (not_equal_to_type, not_equal_to_operator)
-			Result.put (less_than_type, less_than_operator)
-			Result.put (less_than_equal_to_type, less_than_equal_to_operator)
-			Result.put (greater_than_type, greater_than_operator)
-			Result.put (greater_than_equal_to_type, greater_than_equal_to_operator)
-		ensure
-			result_attached: Result /= Void
-		end
-
-feature -- Matching strategies
-
-	matching_strategy_names_table: HASH_TABLE [STRING_32, INTEGER] is
-			-- Display name table for matching strategies
-			-- [Displayed matching strategy name, matching strategy index]
-		once
-			create Result.make (4)
-			Result.put (metric_names.t_identical, {QL_NAME_CRITERION}.identity_matching_strategy)
-			Result.put (metric_names.t_containing, {QL_NAME_CRITERION}.containing_matching_strategy)
-			Result.put (metric_names.t_wildcard, {QL_NAME_CRITERION}.wildcard_matching_strategy)
-			Result.put (metric_names.t_regexp, {QL_NAME_CRITERION}.regular_expression_matching_strategy)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -198,5 +145,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

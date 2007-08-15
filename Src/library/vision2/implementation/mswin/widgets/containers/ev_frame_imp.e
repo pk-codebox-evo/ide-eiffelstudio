@@ -22,8 +22,6 @@ inherit
 		end
 
 	EV_SINGLE_CHILD_CONTAINER_IMP
-		undefine
-			on_wm_dropfiles
 		redefine
 			client_x,
 			client_y,
@@ -84,11 +82,6 @@ inherit
 		end
 
 	WEL_THEME_GBS_CONSTANTS
-		export
-			{NONE} all
-		end
-
-	WEL_SHARED_METRICS
 		export
 			{NONE} all
 		end
@@ -199,25 +192,18 @@ feature -- Element change
 		local
 			font_imp: EV_FONT_IMP
 			t: TUPLE [INTEGER, INTEGER]
-			l_text: like text
 		do
-			l_text := text
-				-- Add a space before and after `l_text'.
-				-- Adding it dynamically inline will result in a STRING_8 object being created.
-			l_text.prepend (" ")
-			l_text.append (" ")
-				-- `l_text' is a copy of `text'.
 			if private_font /= Void then
-				font_imp ?= private_font.implementation
-				check
-					font_not_void: font_imp /= Void
+					font_imp ?= private_font.implementation
+					check
+						font_not_void: font_imp /= Void
+					end
+					t := font_imp.wel_font.string_size (" " + text + " ")
+				else
+					t := private_wel_font.string_size (" " + text + " ")
 				end
-				t := font_imp.string_size (l_text)
-			else
-				t := private_wel_font.string_size (l_text)
-			end
-			text_width := t.integer_item (1)
-			text_height := t.integer_item (2)
+				text_width := t.integer_item (1)
+				text_height := t.integer_item (2)
 		end
 
 
@@ -355,22 +341,16 @@ feature {NONE} -- WEL Implementation
 			theme_drawer: EV_THEME_DRAWER_IMP
 			text_rect: WEL_RECT
 			drawstate: INTEGER
-			memory_dc: WEL_DC
+			memory_dc: WEL_MEMORY_DC
 			wel_bitmap: WEL_BITMAP
 			color_imp: EV_COLOR_IMP
-			l_is_remote: BOOLEAN
 		do
-			l_is_remote := metrics.is_remote_session
 			theme_drawer := application_imp.theme_drawer
 
-			if l_is_remote then
-				memory_dc := paint_dc
-			else
-				create {WEL_MEMORY_DC} memory_dc.make_by_dc (paint_dc)
-				create wel_bitmap.make_compatible (paint_dc, width, height)
-				memory_dc.select_bitmap (wel_bitmap)
-				wel_bitmap.dispose
-			end
+			create memory_dc.make_by_dc (paint_dc)
+			create wel_bitmap.make_compatible (paint_dc, width, height)
+			memory_dc.select_bitmap (wel_bitmap)
+			wel_bitmap.dispose
 
 				-- Cache value of `ev_width' and `ev_height' for
 				-- faster access
@@ -462,11 +442,7 @@ feature {NONE} -- WEL Implementation
 				end
 				theme_drawer.draw_text (open_theme, memory_dc, bp_groupbox, gbs_disabled, text, dt_center, is_sensitive, text_rect, color_imp)
 			end
-			if not l_is_remote then
-				paint_dc.bit_blt (invalid_rect.left, invalid_rect.top,
-					invalid_rect.width, invalid_rect.height,
-					memory_dc, invalid_rect.left, invalid_rect.top, {WEL_RASTER_OPERATIONS_CONSTANTS}.Srccopy)
-			end
+			paint_dc.bit_blt (invalid_rect.left, invalid_rect.top, invalid_rect.width, invalid_rect.height, memory_dc, invalid_rect.left, invalid_rect.top, {WEL_RASTER_OPERATIONS_CONSTANTS}.Srccopy)
 			memory_dc.unselect_all
 			memory_dc.delete
 			disable_default_processing

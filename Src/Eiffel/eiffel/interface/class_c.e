@@ -85,17 +85,10 @@ inherit
 			{NONE} all
 		end
 
-	SHARED_TYPE_I
-		export
-			{NONE} all
-		end
-
 	SHARED_STATELESS_VISITOR
 		export
 			{NONE} all
 		end
-
-	CLASS_C_EXPORT
 
 	REFACTORING_HELPER
 		export
@@ -104,7 +97,7 @@ inherit
 
 feature {NONE} -- Initialization
 
-	make (l: like original_class) is
+	make (l: CLASS_I) is
 			-- Creation of Current class
 		require
 			good_argument: l /= Void
@@ -138,18 +131,6 @@ feature -- Access
 	is_external_class_c: BOOLEAN is
 			-- Is `Current' an EXTERNAL_CLASS_C?
 		do
-		end
-
-	is_valid_formal_position (a_formal_position: INTEGER): BOOLEAN
-			-- Is `a_formal_position' a valid formal position for this class?
-			--
-			-- `a_formal_position' is the position index which has to be checked.
-		require
-			is_generic: is_generic
-		do
-			Result := a_formal_position >= 1 and then a_formal_position <= generics.count
-		ensure
-			Result_set: Result = (a_formal_position >= 1 and then a_formal_position <= generics.count)
 		end
 
 	eiffel_class_c: EIFFEL_CLASS_C is
@@ -198,7 +179,7 @@ feature -- Access
 			-- written in current class.
 
 	changed4: BOOLEAN
-			-- Has the class a new class type, or changed its generics?
+			-- Has the class a new class type ?
 
 	is_generic: BOOLEAN is
 			-- Is current class generic?
@@ -226,9 +207,10 @@ feature -- Access
 
 	is_debuggable: BOOLEAN is
 			-- Is the class able to be debugged?
-			-- (not if it doesn't have class types)
+			-- (not if it doesn't have class types
+			-- or is a special class)
 		do
-			Result := has_types
+			Result := not is_basic and then has_types
 		end
 
 	has_expanded: BOOLEAN
@@ -335,12 +317,6 @@ feature -- Status report
 			Result := lace_class.options.is_warning_enabled (a_warning)
 		end
 
-	apply_msil_application_optimizations: BOOLEAN is
-			-- Should MSIL application optimizations be applied?
-		do
-			Result := False
-		end
-
 	has_external_ancestor_class: BOOLEAN is
 			-- Does current class have an external ancestor which is a class (not interface)?
 		local
@@ -372,6 +348,7 @@ feature -- Action
 	record_precompiled_class_in_system is
 		do
 		end
+
 
 feature -- Conformance dependencies
 
@@ -508,6 +485,7 @@ feature -- Building conformance table
 			-- Build recursively the conformance table of class `cl.
 		require
 			good_argument: cl /= Void
+			conformance_table_exists: cl.conformance_table /= Void
 			topological_id_processed: topological_id > 0
 			conformance: topological_id <= cl.topological_id
 		local
@@ -540,7 +518,7 @@ feature -- Expanded rues validity
 			-- Pass 2 must be done on all the classes
 			-- (the creators must be up to date)
 		local
-			constraint_types: LIST[RENAMED_TYPE_A [TYPE_A]]
+			constraint_type: TYPE_A
 			l_formals: like generic_features
 			l_cursor: CURSOR
 			l_formal_dec: FORMAL_CONSTRAINT_AS
@@ -577,16 +555,9 @@ end
 				loop
 					l_formal_dec ?= generics.item
 					check l_formal_dec_not_void: l_formal_dec /= Void end
-					constraint_types := l_formal_dec.constraint_types (Current)
-					from
-						constraint_types.start
-					until
-						constraint_types.after
-					loop
-						if constraint_types.item.type.has_generics then
-							System.expanded_checker.check_actual_type (constraint_types.item.type)
-						end
-						constraint_types.forth
+					constraint_type := l_formal_dec.constraint_type (Current)
+					if constraint_type.has_generics then
+						System.expanded_checker.check_actual_type (constraint_type)
 					end
 					generics.forth
 				end
@@ -677,6 +648,7 @@ feature -- Setting
 		ensure
 			assembly_info_set: assembly_info = a
 		end
+
 
 feature -- Melting
 
@@ -1062,12 +1034,6 @@ feature
 		do
 		end
 
-	check_constraint_renaming is
-			-- Check validity of renaming
-			-- Requires feature tables!!
-		do
-		end
-
 feature -- Parent checking
 
 	fill_parents (a_old_class_info, a_class_info: CLASS_INFO) is
@@ -1094,7 +1060,6 @@ feature -- Parent checking
 			l_tuple: TUPLE [BOOLEAN, BOOLEAN]
 			l_compiled_parent_generator: AST_PARENT_C_GENERATOR
 			l_parent_type: CL_TYPE_A
-			l_vtug: VTUG
 		do
 				-- Reset flag
 			need_new_parents := False
@@ -1139,6 +1104,12 @@ feature -- Parent checking
 						Error_handler.insert_error (l_ve04)
 					else
 						computed_parents.extend (l_parent_c)
+							-- Use reference class type as a parent.
+						l_parent_type := l_parent_c.parent_type
+						if l_parent_type.is_expanded then
+							l_parent_type := l_parent_type.reference_type
+						end
+						parents.extend (l_parent_type)
 
 						l_parent_class := clickable_info.associated_eiffel_class (lace_class,
 							l_parent_as.type).compiled_class
@@ -1150,42 +1121,6 @@ feature -- Parent checking
 						end
 						l_parent_class.add_descendant (Current)
 
-							-- Use reference class type as a parent.
-						l_parent_type := l_parent_c.parent_type
-						if l_parent_type.is_expanded then
-							l_parent_type := l_parent_type.reference_type
-						end
-
-						if l_parent_class.is_generic then
-								-- Look for a derivation of the same class.
-							from
-								parents_classes.start
-							until
-								parents_classes.after
-							loop
-								if parents_classes.item = l_parent_class then
-									if not parents.i_th (parents_classes.index).same_as (l_parent_type) then
-											-- Different generic derivations are used in Parent parts.
-										error_handler.insert_error (create {VHPR5_ECMA}.make
-											(Current, l_parent_type, parents.i_th (parents_classes.index), l_parent_as.start_location))
-									end
-								end
-								parents_classes.forth
-							end
-						end
-
-							-- This addresses eweasel test#term146 where we assumed before at degree 4
-							-- they had the correct number of formal generics and thus performed conformance
-							-- checking blindly. Now we check the error at the end of degree 5 to prevent
-							-- this problem.
-						if not l_parent_type.good_generics then
-							l_vtug := l_parent_type.error_generics
-							l_vtug.set_class (Current)
-							l_vtug.set_location (l_parent_as.start_location)
-							error_handler.insert_error (l_vtug)
-						end
-
-						parents.extend (l_parent_type)
 							-- Insertion in `parents_classes'.
 						parents_classes.extend (l_parent_class)
 					end
@@ -1259,6 +1194,7 @@ feature -- Parent checking
 		require
 			parents_not_void: parents /= Void
 		local
+			vtug: VTUG
 			vtcg4: VTCG4
 			vifi1: VIFI1
 			vifi2: VIFI2
@@ -1269,13 +1205,10 @@ feature -- Parent checking
 			l_single_classes: LINKED_LIST [CLASS_C]
 			l_old_is_single, l_has_external_parent: BOOLEAN
 		do
-				-- Clear feature context
-			ast_context.clear_feature_context
 			from
 				l_area := parents.area
 				nb := parents.count
 				l_old_is_single := is_single
-				has_external_main_parent := False
 			until
 				i = nb
 			loop
@@ -1293,22 +1226,25 @@ feature -- Parent checking
 					l_single_classes.finish
 				end
 
-				check
-						-- This has already been checked in `fill_parents'.
-					valid_generics: parent_actual_type.good_generics
-				end
-				if parent_actual_type.generics /= Void then
-						-- Check constrained genericity validity rule
-					parent_actual_type.reset_constraint_error_list
-						-- Check creation readyness because parents have to be creation ready.
-					parent_actual_type.check_constraints (Current, Void, True)
-					if not parent_actual_type.constraint_error_list.is_empty then
-						create vtcg4
-						vtcg4.set_class (Current)
-						vtcg4.set_error_list (parent_actual_type.constraint_error_list)
-						vtcg4.set_parent_type (parent_actual_type)
-						fixme ("Shouldn't we be able to provide a location?")
-						Error_handler.insert_error (vtcg4)
+				if not parent_actual_type.good_generics then
+						-- Wrong number of geneneric parameters in parent
+					vtug := parent_actual_type.error_generics
+					vtug.set_class (Current)
+					fixme ("Shouldn't we be able to provide a location?")
+					Error_handler.insert_error (vtug)
+				else
+					if parent_actual_type.generics /= Void then
+							-- Check constrained genericity validity rule
+						parent_actual_type.reset_constraint_error_list
+						parent_actual_type.check_constraints (Current)
+						if not parent_actual_type.constraint_error_list.is_empty then
+							create vtcg4
+							vtcg4.set_class (Current)
+							vtcg4.set_error_list (parent_actual_type.constraint_error_list)
+							vtcg4.set_parent_type (parent_actual_type)
+							fixme ("Shouldn't we be able to provide a location?")
+							Error_handler.insert_error (vtcg4)
+						end
 					end
 				end
 
@@ -1344,19 +1280,10 @@ feature -- Parent checking
 				-- are marked `single.
 			set_is_single (l_single_classes /= Void and then l_single_classes.count = 1)
 			if System.il_generation and then l_old_is_single /= is_single then
-					-- Class has its `is_single' status changed.
-					-- We have to reset its `types' so that they are recomputed and
-					-- we have to remove existing types from `System.class_types'
+					-- Class has its `is_single' status changed. We have to
+					-- reset its `types' so that they are recomputed and we have
+					-- to remove existing types from `System.class_types'
 				remove_types
-					-- Force recompilation of all clients, as the code to create objects might have changed
-				from
-					clients.start
-				until
-					clients.after
-				loop
-					clients.item.melt_all
-					clients.forth
-				end
 			end
 			Error_handler.checksum
 		ensure
@@ -1384,17 +1311,25 @@ feature -- Parent checking
 
 feature -- Supplier checking
 
-	check_that_root_class_is_not_deferred is
+	check_non_genericity_of_root_class is
 		-- Check non-genericity of root class
 		require
 			is_root_class: Current = System.root_class.compiled_class
 		local
-			l_vsrt3: VSRT3
+			vsrc1: VSRC1
+			vsrc2: VSRC2
 		do
+			if generics /= Void then
+				create vsrc1
+				vsrc1.set_class (Current)
+				Error_handler.insert_error (vsrc1)
+				Error_handler.checksum
+			end
+
 			if is_deferred then
-				create l_vsrt3
-				l_vsrt3.set_class (Current)
-				Error_handler.insert_error (l_vsrt3)
+				create vsrc2
+				vsrc2.set_class (Current)
+				Error_handler.insert_error (vsrc2)
 				Error_handler.checksum
 			end
 		end
@@ -1402,79 +1337,73 @@ feature -- Supplier checking
 	check_root_class_creators is
 			-- Check creation procedures of root class
 		require
-			is_root: Current = System.root_type.associated_class
+			is_root: Current = System.root_class.compiled_class
 		local
-			l_creation_proc: FEATURE_I
-			l_system_creation: STRING
-			l_error: BOOLEAN
-			l_vsrp2: VSRP2
-			l_arg_type: TYPE_A
-			l_vd27: VD27
-			l_feat_tbl: like feature_table
+			creation_proc: FEATURE_I
+			system_creation: STRING
+			error: BOOLEAN
+			vsrc3: VSRC3
+			arg_type: TYPE_A
+			vd27: VD27
+			feat_tbl: like feature_table
 		do
-			l_system_creation := System.root_creation_name
-			if creators /= Void and l_system_creation/= Void then
-				l_feat_tbl := feature_table
+			if creators /= Void then
+				feat_tbl := feature_table
 				from
 					creators.start
 				until
 					creators.after
 				loop
-					if l_system_creation.is_equal (creators.key_for_iteration) then
-							-- `creators.key_for_iteration' contains the creation_name
-						l_creation_proc := l_feat_tbl.item (creators.key_for_iteration)
+						-- `creators.key_for_iteration' contains the creation_name
+					creation_proc := feat_tbl.item (creators.key_for_iteration)
 
-						inspect
-							l_creation_proc.argument_count
-						when 0 then
-							l_error := False
-						when 1 then
-							l_arg_type ?= l_creation_proc.arguments.first
-							l_arg_type := l_arg_type.instantiation_in (system.root_type, class_id).actual_type
-							l_error := not l_arg_type.is_safe_equivalent (Array_of_string)
-						else
-							l_error := True
-						end
+					inspect
+						creation_proc.argument_count
+					when 0 then
+						error := False
+					when 1 then
+						arg_type ?= creation_proc.arguments.first
+						arg_type := arg_type.instantiation_in (actual_type, class_id).actual_type
+						error := not arg_type.is_deep_equal (Array_of_string)
+					else
+						error := True
+					end
 
-						if l_error then
-							create l_vsrp2
-							l_vsrp2.set_class (Current)
-							l_vsrp2.set_root_type (system.root_type)
-								-- Need duplication otherwise we would change the original FEATURE_I
-								-- object while displaying the error.
-							l_creation_proc := l_creation_proc.duplicate
-							l_creation_proc.instantiation_in (system.root_type)
-							l_vsrp2.set_creation_feature (l_creation_proc)
-							Error_handler.insert_error (l_vsrp2)
-						end
+					if error then
+						create vsrc3
+						vsrc3.set_class (Current)
+						vsrc3.set_creation_feature (creation_proc)
+						Error_handler.insert_error (vsrc3)
 					end
 					creators.forth
 				end
 			end
 
-			if l_system_creation /= Void and then creators = Void then
+			system_creation := System.root_creation_name
+
+			if	system_creation /= Void	and then creators = Void then
 					-- Check default create
-				l_creation_proc := default_create_feature
-				if not l_creation_proc.feature_name.is_equal (l_system_creation) then
-					create l_vd27
-					l_vd27.set_creation_routine (l_system_creation)
-					l_vd27.set_root_class (Current)
-					Error_handler.insert_error (l_vd27)
+				creation_proc := default_create_feature
+				if not creation_proc.feature_name.is_equal (system_creation) then
+					create vd27
+					vd27.set_creation_routine (system_creation)
+					vd27.set_root_class (Current)
+					Error_handler.insert_error (vd27)
 				end
-			elseif l_system_creation /= Void and then not creators.has (l_system_creation) then
-				create l_vd27
-				l_vd27.set_creation_routine (l_system_creation)
-				l_vd27.set_root_class (Current)
-				Error_handler.insert_error (l_vd27)
-			elseif l_system_creation = Void then
+			elseif system_creation /= Void and then not creators.has (system_creation) then
+				create vd27
+				vd27.set_creation_routine (system_creation)
+				vd27.set_root_class (Current)
+				Error_handler.insert_error (vd27)
+			elseif system_creation = Void then
 				if allows_default_creation then
 						-- Set creation_name in System
 					System.set_creation_name (default_create_feature.feature_name)
 				else
-					create l_vd27
-					l_vd27.set_creation_routine ("")
-					l_vd27.set_root_class (Current)
-					Error_handler.insert_error (l_vd27)
+					create vd27
+					vd27.set_creation_routine ("")
+					vd27.set_root_class (Current)
+					Error_handler.insert_error (vd27)
 				end
 			end
 
@@ -1501,6 +1430,7 @@ feature -- Order relation for inheritance and topological sort
 			-- Is `other' an ancestor of Current?
 		require
 			good_argument: other /= Void
+			conformance_table_exists: conformance_table /= Void
 		local
 			otopid: INTEGER
 		do
@@ -1516,6 +1446,7 @@ feature -- Order relation for inheritance and topological sort
 			-- Is `other' an ancestor of Current ?
 		require
 			good_argument: other /= Void
+			conformance_table_exists: conformance_table /= Void
 		local
 			dep_class: CLASS_C
 			otopid: INTEGER
@@ -1732,17 +1663,19 @@ feature -- Convenience features
 			inserted: descendants.has (c)
 		end
 
+	--MREMOVE
+	visible_name: STRING is
+			-- Visible name
+		do
+--			Result := lace_class.visible_name
+		end
+
+	--MANU_MOVE_DOWN
 	external_name: STRING is
 			-- External name
-		local
-			l_vis: EQUALITY_TUPLE [TUPLE [class_renamed: STRING; features: EQUALITY_HASH_TABLE [STRING, STRING]]]
 		do
-			l_vis := lace_class.visible
-			if l_vis /= Void then
-				Result := l_vis.item.class_renamed
-			else
-				Result := name
-			end
+--			Result := lace_class.external_name
+			Result := name
 		ensure
 			external_name_not_void: Result /= Void
 			external_name_in_upper: Result.as_upper.is_equal (Result)
@@ -1755,7 +1688,7 @@ feature -- Convenience features
 					-- In final mode we do not generate assertions
 					-- if the dead code remover is on.
 				if not System.keep_assertions then
-					create Result
+					create Result.make_no
 				else
 					Result := lace_class.assertion_level
 				end
@@ -1796,19 +1729,6 @@ feature -- Convenience features
 			Result := lace_class.visible_level
 		end
 
-	is_full_class_checking: BOOLEAN is
-			-- Do we perform a flat checking on the calss, i.e. checking
-			-- inherited routines in the context of the descendant class?
-		do
-			Result := lace_class.is_full_class_checking
-		end
-
-	is_cat_call_detection: BOOLEAN is
-			-- Do we perform cat-call detection on all feature calls?
-		do
-			Result := lace_class.is_cat_call_detection
-		end
-
 feature -- Actual class type
 
 	constraint_actual_type: CL_TYPE_A is
@@ -1828,7 +1748,7 @@ feature -- Actual class type
 				until
 					i > count
 				loop
-					actual_generic.put (constraints (i), i)
+					actual_generic.put (constraint (i), i)
 					i := i + 1
 				end
 			end
@@ -1866,7 +1786,7 @@ feature -- Actual class type
 			actual_type_not_void: Result /= Void
 		end
 
-feature {TYPE_AS, AST_TYPE_A_GENERATOR, AST_FEATURE_CHECKER_GENERATOR} -- Actual class type
+feature {TYPE_AS, AST_TYPE_A_GENERATOR} -- Actual class type
 
 	partial_actual_type (gen: ARRAY [TYPE_A]; is_exp, is_sep: BOOLEAN): CL_TYPE_A is
 			-- Actual type of `current depending on the context in which it is declared
@@ -1917,124 +1837,14 @@ end
 		require
 			generics_exists: is_generic
 			valid_index: generics.valid_index (i)
-			not_is_multi_constraint: not generics.i_th (i).has_multi_constraints
 		local
 			l_formal_dec: FORMAL_CONSTRAINT_AS
 		do
 			l_formal_dec ?= generics.i_th (i)
 			check l_formal_dec_not_void: l_formal_dec /= Void end
-			Result := l_formal_dec.constraint_type (Current).type
+			Result := l_formal_dec.constraint_type (Current)
 		ensure
 			constraint_not_void: Result /= Void
-		end
-
-	constraint_if_possible (i: INTEGER): TYPE_A is
-			-- I-th constraint of the class
-		require
-			generics_exists: is_generic
-			valid_index: generics.valid_index (i)
-			not_is_multi_constraint: not generics.i_th (i).has_multi_constraints
-		local
-			l_formal_dec: FORMAL_CONSTRAINT_AS
-			l_result: RENAMED_TYPE_A [TYPE_A]
-		do
-			l_formal_dec ?= generics.i_th (i)
-			check l_formal_dec_not_void: l_formal_dec /= Void end
-			l_result := l_formal_dec.constraint_type_if_possible (Current)
-			if l_result /= Void then
-				Result := l_result.type
-			end
-		end
-
-	constraints (i: INTEGER): TYPE_SET_A is
-			-- I-th constraint set of the class
-		require
-			generics_exists: is_generic
-			valid_index: generics.valid_index (i)
-		local
-			l_formal_dec: FORMAL_CONSTRAINT_AS
-		do
-				-- Fixme: Should we store computation of `constraint_types'?
-			l_formal_dec ?= generics.i_th (i)
-			check l_formal_dec_not_void: l_formal_dec /= Void end
-			Result := l_formal_dec.constraint_types (Current)
-		ensure
-			constraint_not_void: Result /= Void
-		end
-
-	constraints_if_possible (i: INTEGER): TYPE_SET_A is
-			-- I-th constraint set of the class
-		require
-			generics_exists: is_generic
-			valid_index: generics.valid_index (i)
-		local
-			l_formal_dec: FORMAL_CONSTRAINT_AS
-		do
-				-- Fixme: Should we store computation of `constraint_types_if_possible'?
-			l_formal_dec ?= generics.i_th (i)
-			check l_formal_dec_not_void: l_formal_dec /= Void end
-			Result := l_formal_dec.constraint_types_if_possible (Current)
-		ensure
-			constraint_not_void: Result /= Void
-		end
-
-	constrained_type (a_formal_position: INTEGER): TYPE_A
-			-- Constraint of Current.
-			--
-			-- `a_formal_position' is the position of the formal whose constraint is returned.
-			-- Warning: Result is cached, do not modify it.
-		require
-			is_generic: is_generic
-			valid_formal_position: is_valid_formal_position (a_formal_position)
-			not_multi_constraint: not generics [a_formal_position].is_multi_constrained (generics)
-		local
-			l_formal_type: FORMAL_A
-			l_recursion_break: SPECIAL [BOOLEAN]
-			l_break: BOOLEAN
-			l_formal_type_position: INTEGER
-		do
-			Result := constrained_type_cache [a_formal_position - 1]
-			if Result = Void then
-				create l_recursion_break.make (generics.count + 1)
-				from
-					Result := constraint (a_formal_position)
-				until
-					not Result.is_formal or l_break
-				loop
-					l_formal_type ?= Result
-					check l_formal_type_not_void: l_formal_type /= Void end
-					l_formal_type_position := l_formal_type.position
-					check valid_formal_position: is_valid_formal_position (l_formal_type_position) end
-					l_break := l_recursion_break [l_formal_type_position]
-					l_recursion_break [l_formal_type_position] := True
-					Result := constraint (l_formal_type_position)
-				end
-				if l_break then
-					Result := any_type
-				end
-				constrained_type_cache [a_formal_position - 1] := Result
-			end
-		ensure
-			Result_not_void: Result /= Void
-			Result_is_named_but_not_formal:  (Result.is_none or Result.is_named_type) and not Result.is_formal
-		end
-
-	constrained_types (a_formal_position: INTEGER): TYPE_SET_A
-			-- Constrained types of Current.
-			--
-			-- `a_context_class' is the context class where the formal occurs in.
-			--| It is a list of class types which constraint the current Formal.
-			-- Warning: Result is cached, do not modify it.
-		require
-			valid_formal_position: is_valid_formal_position (a_formal_position)
-		do
-			Result ?= constrained_types_cache [a_formal_position - 1]
-			if Result = Void then
-				Result := constraints (a_formal_position).constraining_types (Current)
-				constrained_types_cache [a_formal_position - 1] := Result
-			end
-		ensure
-			Result_not_void_and_not_empty: Result /= Void and not Result.is_empty
 		end
 
 	update_instantiator1 is
@@ -2078,7 +1888,7 @@ end
 			data := actual_type.type_i
 			register_type (data).do_nothing
 			instantiator.dispatch (data.type_a, Current)
-			if data.is_expanded and then not data.is_external or else data.is_basic then -- and then not data.is_char then
+			if data.is_expanded and then not data.is_external then
 					-- Process reference counterpart.
 				data := data.reference_type
 				register_type (data).do_nothing
@@ -2091,10 +1901,7 @@ end
 		require
 			good_argument: data /= Void
 			consistency: data.base_class = Current
-			good_context:
-				(data.base_class.original_class /= system.native_array_class and then
-				data.base_class.original_class /= system.typed_pointer_class) implies
-				not data.has_formal
+			good_context: data.base_class.lace_class /= system.native_array_class implies not data.has_formal
 		local
 			new_class_type: CLASS_TYPE
 		do
@@ -2147,100 +1954,30 @@ feature {NONE} -- Incrementality
 			-- return the associated class type.
 		require
 			data_not_void: data /= Void
-		local
-			g: GEN_TYPE_I
-		do
-			if data.meta_generic /= Void then
-					-- Register this generic type and other required types.
-				g ?= data
-				Result := register_generic_type (g, g.meta_generic.count)
-			elseif types.has_type (data) then
-				Result := types.found_item
-			else
-					-- Found a new type for the class
-				Result := register_new_type (data)
-			end
-		ensure
-			result_not_void: Result /= Void
-			data_is_registered: types.has_type (data)
-		end
-
-	register_new_type (data: CL_TYPE_I): CLASS_TYPE is
-			-- Register new type `data' and return the corresponding descriptor.
-		require
-			data_attached: data /= Void
-			data_is_new: not types.has_type (data)
-		do
-debug ("GENERICITY")
-	io.error.put_string ("new type%N")
-end
-			Result := new_type (normalized_type_i (data))
-				-- If the $ operator is used in the class,
-				-- an encapsulation of the feature must be generated
-			if System.address_table.class_has_dollar_operator (class_id) then
-				System.request_freeze
-			end
-				-- Mark the class `changed4' because there is a new type
-			changed4 := True
-			Degree_2.insert_new_class (Current)
-				-- Insertion of the new class type
-			types.extend (Result)
-			System.insert_class_type (Result)
-		ensure
-			result_attached: Result /= Void
-			data_is_registered: types.has_type (data)
-		end
-
-	register_generic_type (data: GEN_TYPE_I; n: INTEGER): CLASS_TYPE is
-			-- Ensure that `data' has an associated class type by creating
-			-- a new class type descriptor if it is not already created;
-			-- return the associated class type. Register all the types
-			-- required by this type for code generation.
-		local
-			g: GEN_TYPE_I
-			t: ARRAY [TYPE_I]
-			p: TYPE_I
-			c: CL_TYPE_I
-			i: INTEGER
-			a: NATIVE_ARRAY_TYPE_I
-			r: GEN_TYPE_I
 		do
 			if types.has_type (data) then
 				Result := types.found_item
 			else
 					-- Found a new type for the class
-				Result := register_new_type (data)
-				r ?= Result.type
-				check
-					r_attached: r /= Void
+debug ("GENERICITY")
+	io.error.put_string ("new type%N")
+end
+				Result := new_type (normalized_type_i (data))
+					-- If the $ operator is used in the class,
+					-- an encapsulation of the feature must be generated
+				if System.address_table.class_has_dollar_operator (class_id) then
+					System.set_freeze
 				end
-				a ?= r
---				if False then
---					-- TODO: see GEN_TYPE_I.enumerate_interfaces
-				if a = Void and then system.is_precompiled then
-						-- Register all types where expanded parameters are replaced with reference ones.
-					t := r.true_generics
-					from
-						i := n
-					until
-						i <= 0
-					loop
-						p := t [i]
-						if p.is_expanded then
-							g := r.duplicate
-							c ?= p
-							check
-								c_attached: c /= Void
-							end
-							g.true_generics [i] := c.reference_type
-							g.meta_generic [i] := reference_c_type
-							register_generic_type (g, i - 1).do_nothing
-							update_types (g)
-						end
-						i := i - 1
-					end
-				end
+					-- Mark the class `changed4' because there is a new type
+				changed4 := True
+				Degree_2.insert_new_class (Current)
+					-- Insertion of the new class type
+				types.extend (Result)
+				System.insert_class_type (Result)
 			end
+		ensure
+			result_not_void: Result /= Void
+			data_is_registered: types.has_type (data)
 		end
 
 	normalized_type_i (data: CL_TYPE_I): CL_TYPE_I is
@@ -2299,12 +2036,7 @@ debug ("GENERICITY")
 	io.error.put_string (filter.base_class.name)
 	io.error.put_new_line
 end
-				if filter.has_formal implies
-					(filter.base_class.original_class = system.native_array_class or else
-					filter.base_class.original_class = system.typed_pointer_class)
-				then
-					filter.base_class.update_types (filter)
-				end
+				filter.base_class.update_types (filter)
 				class_filters.go_to (class_filters_cursor)
 				class_filters.forth
 			end
@@ -2340,11 +2072,7 @@ feature {CLASS_C} -- Incrementality
 				class_filters_cursor := class_filters.cursor
 					-- Instantiation of the filter with `data'
 				filter := class_filters.item.anchor_instantiation_in (new_class_type)
-				if
-					(filter.base_class.original_class /= system.native_array_class and then
-					filter.base_class.original_class /= system.typed_pointer_class) implies
-					not filter.has_formal
-				then
+				if filter.base_class.original_class /= system.native_array_class implies not filter.has_formal then
 debug ("GENERICITY")
 	io.error.put_string ("Propagation of ")
 	filter.trace
@@ -2392,6 +2120,37 @@ feature -- Meta-type
 			end
 		ensure
 			meta_type_not_void: Result /= Void
+		end
+
+feature -- Type evaluation
+
+	implemented_type (implemented_in: INTEGER; current_type: CL_TYPE_I): CL_TYPE_I is
+			-- Return CL_TYPE_I instance associated to `current_type' of current class.
+		require
+			valid_implemented_in: implemented_in > 0
+			current_type_not_void: current_type /= Void
+		local
+			cl_type_a: CL_TYPE_A
+			written_class: CLASS_C
+		do
+				-- If it is defined in current class, that's easy and we
+				-- return `current_type'. Otherwise we have to find the
+				-- correct CLASS_TYPE object where it is implemented.
+			if class_id = implemented_in then
+				Result := current_type
+			else
+				written_class := System.class_of_id (implemented_in)
+					-- We go through the hierarchy only when `written_class'
+					-- is generic, otherwise for the most general case where
+					-- `written_class' is not generic it will take a long
+					-- time to go through the inheritance hierarchy.
+				if written_class.generics = Void then
+					Result := written_class.types.first.type
+				else
+					cl_type_a := current_type.type_a
+					Result := cl_type_a.find_class_type (written_class).type_i
+				end
+			end
 		end
 
 feature -- Validity class
@@ -2497,16 +2256,15 @@ feature -- Dead code removal
 
 feature -- Cecil
 
-	generate_cecil (generated_wrappers: DS_HASH_SET [STRING]) is
+	generate_cecil is
 			-- Generate cecil table for a class having visible features
 		require
 			has_visible: has_visible
-			generated_wrappers_attached: generated_wrappers /= Void
 		do
 				-- Reset hash-table size which will be computed during
 				-- generation.
 			set_visible_table_size (0)
-			visible_level.generate_cecil_table (Current, generated_wrappers)
+			visible_level.generate_cecil_table (Current)
 		end
 
 feature -- Invariant feature
@@ -2680,11 +2438,8 @@ feature -- Properties
 	has_external_main_parent: BOOLEAN
 			-- Is one non-external parent class generated as a single IL type?
 
-	is_frozen: BOOLEAN is
+	is_frozen: BOOLEAN
 			-- Is class frozen, ie we cannot inherit from it?
-		do
-			Result := internal_is_frozen or apply_msil_application_optimizations
-		end
 
 	is_external: BOOLEAN
 			-- Is class an external one?
@@ -2729,102 +2484,6 @@ feature -- Properties
 		do
 			Result := lace_class.text
 		end
-
-	constraint_classes (a_formal_dec: FORMAL_DEC_AS) : ARRAY [CLASS_C] is
-			-- Computed constraint classes for every formal of the current class.
-			-- Only class types are put into this cache so every item in the cache is error free.
-			-- All other positions are void especially those of formals.
-		require
-			a_formal_dec_not_void: a_formal_dec /= Void
-			valid_formal: a_formal_dec.position <= generics.count
-		local
-			l_cache: like constraint_cache
-			l_formal_cache: like formal_constraint_cache
-			l_pos: INTEGER
-		do
-				-- Check if `constraint_cache' has been created.
-			l_cache := constraint_cache
-			if l_cache = Void then
-				create l_cache.make (generics.count)
-				constraint_cache := l_cache
-			end
-				-- Check if an entry for `a_formal_dec' was created.
-			l_pos := a_formal_dec.position - 1
-			l_formal_cache := l_cache.item (l_pos)
-			if l_formal_cache /= Void then
-				Result := l_formal_cache.constraint_classes
-					-- Check if it is Void (case where `constraint_renaming'
-					-- was already called for `a_formal_dec').
-				if Result = Void then
-					create Result.make (1, a_formal_dec.constraints.count)
-					l_formal_cache.constraint_classes := Result
-				end
-			else
-					-- Insert `a_formal_dec'.
-				create Result.make (1, a_formal_dec.constraints.count)
-				l_cache.put ([Result, Void], l_pos)
-			end
-		ensure
-			constraint_classes_not_void: Result /= Void
-		end
-
-	constraint_renaming (a_formal_dec: FORMAL_DEC_AS): ARRAY [RENAMING_A] is
-			-- Computed renamings for every formal of the current class.
-			-- Only sane renamings are put into this cache so every item in the cache is error free.
-			-- All other positions are void especially those of formal constraints as they are not allowed to have renamings.
-		require
-			a_formal_dec_not_void: a_formal_dec /= Void
-		local
-			l_cache: like constraint_cache
-			l_formal_cache: like formal_constraint_cache
-			l_pos: INTEGER
-		do
-				-- Check if `constraint_cache' has been created.
-			l_cache := constraint_cache
-			if l_cache = Void then
-				create l_cache.make (generics.count)
-				constraint_cache := l_cache
-			end
-				-- Check if an entry for `a_formal_dec' was created.
-			l_pos := a_formal_dec.position - 1
-			l_formal_cache := l_cache.item (l_pos)
-			if l_formal_cache /= Void then
-				Result := l_formal_cache.constraint_renaming
-					-- Check if it is Void (case where `constraint_classes'
-					-- was already called for `a_formal_dec').
-				if Result = Void then
-					create Result.make (1, a_formal_dec.constraints.count)
-					l_formal_cache.constraint_renaming := Result
-				end
-			else
-					-- Insert `a_formal_dec'.
-				create Result.make (1, a_formal_dec.constraints.count)
-				l_cache.put ([Void, Result], l_pos)
-			end
-		ensure
-			constraint_renaming_not_void: Result /= Void
-		end
-
-feature {NONE} -- Implementation: Properties
-
-	constraint_cache: SPECIAL [like formal_constraint_cache]
-			-- To store computed information about generic constraints of Current.
-
-	formal_constraint_cache: TUPLE [
-			constraint_classes: ARRAY [CLASS_C];
-			constraint_renaming: ARRAY [RENAMING_A]]
-		is
-			-- For easy type checking of `constraint_cache'.
-		do
-		end
-
-	constrained_type_cache: SPECIAL [TYPE_A]
-			-- Constraining type for each given formal, if there exists one
-
-	constrained_types_cache: SPECIAL [TYPE_SET_A]
-			-- Constraining types for each given formal
-			--| In case someone requests a type set for a single constraint this is just fine.
-			--| That is why we have two caches.
 
 feature -- IL code generation
 
@@ -2898,18 +2557,6 @@ feature {CLASS_I} -- Settings
 		end
 
 feature -- Access
-
-	has_multi_constraints (i: INTEGER): BOOLEAN is
-			-- Does i-th generic parameter have multiple constraints?
-		require
-			has_generics: generics /= Void
-		local
-			l_formal_dec: FORMAL_CONSTRAINT_AS
-		do
-			l_formal_dec ?= generics.i_th (i)
-			check l_formal_dec_not_void: l_formal_dec /= Void end
-			Result := l_formal_dec.has_multi_constraints
-		end
 
 	is_fully_deferred: BOOLEAN is
 			-- Are parents of current class either ANY or a fully deferred class?
@@ -2995,34 +2642,6 @@ feature -- Access
 			-- Is Current feature obsolete?
 		do
 			Result := obsolete_message /= Void
-		end
-
-	feature_with_name_id (a_feature_name_id: INTEGER): E_FEATURE is
-			-- Feature whose internal name is `n'
-		require
-			valid_a_feature_name_id: a_feature_name_id > 0
-			has_feature_table: has_feature_table
-		local
-			f: FEATURE_I
-		do
-			f := feature_table.item_id (a_feature_name_id)
-			if f /= Void then
-				Result := f.api_feature (class_id)
-			end
-		end
-
-	feature_with_id (a_feature_id: ID_AS): E_FEATURE is
-			-- Feature whose internal name is `n'
-		require
-			valid_a_feature_id: a_feature_id /= Void
-			has_feature_table: has_feature_table
-		local
-			f: FEATURE_I
-		do
-			f := feature_table.item_id (a_feature_id.name_id)
-			if f /= Void then
-				Result := f.api_feature (class_id)
-			end
 		end
 
 	feature_with_name (n: STRING): E_FEATURE is
@@ -3184,17 +2803,6 @@ feature -- Access
 			end
 		end
 
-	feature_of_name_id (a_name_id: INTEGER): FEATURE_I is
-			-- Feature whose feature_id is `a_feature_id'.
-			-- Look into `feature_table', `generic_features' and
-			-- `anchored_features'.
-		require
-			a_name_id: a_name_id > 0
-			has_feature_table: has_feature_table
-		do
-			Result := feature_table.item_id (a_name_id)
-		end
-
 	api_feature_table: E_FEATURE_TABLE is
 			-- Feature table for current class
 			--| Can be Void when `feature_table' has not yet
@@ -3206,7 +2814,7 @@ feature -- Access
 		end
 
 	once_functions: SORTED_TWO_WAY_LIST [E_FEATURE] is
-			-- List of once functions.
+			-- List of once functions
 		local
 			f_table: FEATURE_TABLE
 			feat: FEATURE_I
@@ -3222,33 +2830,6 @@ feature -- Access
 			loop
 				feat := f_table.item_for_iteration
 				if feat.is_once and then feat.is_function then
-					Result.put_front (feat.api_feature (cid))
-				end
-				f_table.forth
-			end
-			Result.sort
-		ensure
-			non_void_result: Result /= Void
-			result_sorted: Result.sorted
-		end
-
-	once_routines: SORTED_TWO_WAY_LIST [E_FEATURE] is
-			-- List of once features (functions and procedures).
-		local
-			f_table: FEATURE_TABLE
-			feat: FEATURE_I
-			cid: INTEGER
-		do
-			cid := class_id
-			create Result.make
-			f_table := feature_table
-			from
-				f_table.start
-			until
-				f_table.after
-			loop
-				feat := f_table.item_for_iteration
-				if feat.is_once then
 					Result.put_front (feat.api_feature (cid))
 				end
 				f_table.forth
@@ -3398,7 +2979,7 @@ feature -- Output
 			-- Append short signature of current class in `a_text_formatter'.
 			-- Short signature is to use "..." to replace constrained generic type, so
 			-- class {HASH_TABLE [G, H -> HASHABLE]} becomes {HASH_TABLE [G, H -> ...]}.
-			-- Short signature is used to save some display space.
+			-- Short signature is used to save some display space.		
 			-- If `a_with_deferred_symbol' then add a `*' to the class name.
 		require
 			non_void_st: a_text_formatter /= Void
@@ -3481,10 +3062,6 @@ feature {COMPILER_EXPORTER} -- Setting
 			-- Assign `g' to `generics'.
 		do
 			generics := g
-			if g /= Void then
-				create constrained_type_cache.make (g.count)
-				create constrained_types_cache.make (g.count)
-			end
 		ensure
 			generics_set: generics = g
 		end
@@ -3508,14 +3085,6 @@ feature {COMPILER_EXPORTER} -- Setting
 		end
 
 feature -- Genericity
-
-	invalidate_caches_related_to_generics
-			-- Invalidates the cache which stores computed renamings
-		do
-			constraint_cache := Void
-		ensure
-			constraint_cache_void: constraint_cache = Void
-		end
 
 	formal_at_position (n: INTEGER): TYPE_FEATURE_I is
 			-- Find first TYPE_FEATURE_I in `generic_features' that
@@ -4154,9 +3723,6 @@ feature -- output
 
 feature {NONE} -- Implementation
 
-	internal_is_frozen: BOOLEAN
-			-- Mutable version of `is_frozen'.
-
 	internal_feature_table_file_id: INTEGER
 			-- Number added at end of C file corresponding to generated
 			-- feature table. Initialized by default to -1.
@@ -4164,7 +3730,7 @@ feature {NONE} -- Implementation
 	append_signature_internal (a_text_formatter: TEXT_FORMATTER; a_with_deferred_symbol: BOOLEAN; a_short: BOOLEAN) is
 			-- Append the signature of current class in `a_text_formatter'. If `a_with_deferred_symbol'
 			-- then add a `*' to the class name.
-			-- If `a_short', use "..." to replace constrained generic type.
+			-- If `a_short', use "..." to replace constrained generic type.			
 		require
 			non_void_st: a_text_formatter /= Void
 		local
@@ -4209,7 +3775,6 @@ invariant
 	suppliers_exisis: suppliers /= Void
 	clients_exists: clients /= Void
 	config_class_connection: original_class.compiled_class = Current
-	conformance_table_not_void: conformance_table /= Void
 
 		-- Invariants IL versus normal generation.
 	anchored_features_void_in_non_il_generation:
@@ -4224,19 +3789,19 @@ indexing
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[
 			This file is part of Eiffel Software's Eiffel Development Environment.
-
+			
 			Eiffel Software's Eiffel Development Environment is free
 			software; you can redistribute it and/or modify it under
 			the terms of the GNU General Public License as published
 			by the Free Software Foundation, version 2 of the License
 			(available at the URL listed under "license" above).
-
+			
 			Eiffel Software's Eiffel Development Environment is
 			distributed in the hope that it will be useful,	but
 			WITHOUT ANY WARRANTY; without even the implied warranty
 			of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 			See the	GNU General Public License for more details.
-
+			
 			You should have received a copy of the GNU General Public
 			License along with Eiffel Software's Eiffel Development
 			Environment; if not, write to the Free Software Foundation,
@@ -4251,4 +3816,5 @@ indexing
 		]"
 
 end -- class CLASS_C
+
 

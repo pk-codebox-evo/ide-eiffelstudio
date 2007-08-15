@@ -297,7 +297,7 @@ feature {EWB_GENERATE, EB_PROFILER_WIZARD_GENERATOR} -- Error handling
 	profiler_type: STRING
 		-- The profile tool used for profiling.
 
-	Invalid_profiler_type: INTEGER is 1;
+	Invalid_profiler_type: INTEGER is unique;
 		-- No profiler information file found in
 		-- Eiffel installation directory under "bench/profiler".
 

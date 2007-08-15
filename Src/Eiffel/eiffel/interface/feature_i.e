@@ -128,7 +128,7 @@ feature -- Access
 
 	feature_id: INTEGER
 			-- Feature id: first key in feature call hash table
-			-- of a class: two features of different names have two
+			-- of a class: tow features of different names have two
 			-- different feature ids.
 
 	written_in: INTEGER
@@ -222,79 +222,6 @@ feature -- Access
 			-- Not used at the moment.
 		end
 
-	has_formal: BOOLEAN is
-			-- Is formal type present in the feature signature at the top level?
-			-- (Formals used as parameters of generic class types do not count.)
-		local
-			a: like arguments
-		do
-			if type.type_i.is_formal then
-				Result := True
-			else
-				a := arguments
-				if a /= Void then
-					from
-						a.start
-					until
-						a.after
-					loop
-						if a.item.type_i.is_formal then
-							Result := True
-							a.finish
-						end
-						a.forth
-					end
-				end
-			end
-		end
-
-	generic_fingerprint: STRING is
-			-- Fingerprint of the feature signature that distinguishes
-			-- between formal generic and non-formal-generic types.
-		local
-			digit: NATURAL_8
-			a: like arguments
-			i: NATURAL_8
-			z: INTEGER
-		do
-			create Result.make_empty
-			if type.type_i.is_formal then
-				digit := 1
-			end
-			a := arguments
-			if a /= Void then
-				from
-					i := 2
-					a.start
-				until
-					a.after
-				loop
-					if a.item.type_i.is_formal then
-						digit := digit + i
-					end
-					i := i |<< 1
-					if i >= 16 then
-							-- Add a digit to the result.
-						Result.append_character (digit.to_hex_character)
-						if digit = 0 then
-							z := z + 1
-						else
-							z := 0
-						end
-						digit := 0
-						i := 1
-					end
-					a.forth
-				end
-			end
-			if digit /= 0 then
-				Result.append_character (digit.to_hex_character)
-			elseif z > 0 then
-					-- Remove trailing zeroes.
-				Result.remove_tail (z)
-			end
-		end
-
 	extension: EXTERNAL_EXT_I is
 			-- Encapsulation of the external extension
 		do
@@ -321,7 +248,7 @@ feature -- Access
 		end
 
 	is_inline_agent: BOOLEAN is
-			-- is the feature an inline agent
+			-- is the feature an inline angent
 		do
 			Result := inline_agent_nr /= 0
 		end
@@ -450,7 +377,6 @@ feature -- Debugger access
 				l_routine ?= l_body.content
 				Result := l_routine.number_of_breakpoint_slots
 			end
-			Result := Result.max (1)
 		end
 
 	first_breakpoint_slot_index: INTEGER is
@@ -474,7 +400,6 @@ feature -- Debugger access
 					end
 				end
 			end
-			Result := Result.max (1)
 		end
 
 feature -- Status
@@ -699,13 +624,6 @@ feature -- Setting
 			is_fake_inline_agent_set: is_fake_inline_agent = b
 		end
 
-	frozen set_has_rescue_clause (b: BOOLEAN) is
-			-- Assign `b' to `has_rescue_clause'.
-		do
-			feature_flags := feature_flags.set_bit_with_mask (b, has_rescue_clause_mask)
-		ensure
-			has_rescue_clause_set: has_rescue_clause = b
-		end
 
 	set_is_selected (b: BOOLEAN) is
 			-- Assign `b' to `is_selected'.
@@ -809,10 +727,6 @@ feature -- Incrementality
 				and then alias_name_id = other.alias_name_id
 				and then has_convert_mark = other.has_convert_mark
 				and then assigner_name_id = other.assigner_name_id
-				and then has_property = other.has_property
-				and then (has_property implies property_name.is_equal (other.property_name))
-				and then has_property_getter = other.has_property_getter
-				and then has_property_setter = other.has_property_setter
 debug ("ACTIVITY")
 	if not Result then
 			io.error.put_boolean (written_in = other.written_in) io.error.put_new_line;
@@ -868,7 +782,7 @@ end
 						and then rout_id_set.same_as (other.rout_id_set)
 						and then is_origin = other.is_origin
 						and then body_index = other.body_index
-						and then type.is_safe_equivalent (other.type)
+						and then type.is_deep_equal (other.type)
 		end
 
 	is_valid: BOOLEAN is
@@ -951,7 +865,7 @@ feature -- creation of default rescue clause
 			then
 				my_body := body
 				if (my_body /= Void) then
-					my_body.create_default_rescue (def_resc_name_id)
+					my_body.create_default_rescue (names_heap.item (def_resc_name_id))
 				end
 			end
 		end
@@ -1118,10 +1032,10 @@ feature -- Conveniences
 						 -- Static access only if it is a C external (l_ext = Void)
 						 -- or if IL external does not need an object.
 					Result :=
-						(l_ext = Void and (is_external and not has_assertion)) or
+						(l_ext = Void and (is_external and is_frozen and not has_assertion)) or
 						(l_ext /= Void and then not l_ext.need_current (l_ext.type))
 				else
-					Result := is_external and not has_assertion
+					Result := is_external and is_frozen and not has_assertion
 				end
 			end
 		end
@@ -1160,12 +1074,6 @@ feature -- Conveniences
 			-- Is postcondition block of feature a redefined one ?
 		do
 			Result := feature_flags & is_fake_inline_agent_mask = is_fake_inline_agent_mask
-		end
-
-	frozen has_rescue_clause: BOOLEAN is
-			-- Has rescue clause ?
-		do
-			Result := feature_flags & has_rescue_clause_mask = has_rescue_clause_mask
 		end
 
 	is_invariant: BOOLEAN is
@@ -1225,7 +1133,7 @@ feature -- Conveniences
 		end
 
 	type: TYPE_A is
-			-- Result type of feature
+			-- Type of feature
 		do
 			Result := void_type
 		end
@@ -1384,7 +1292,7 @@ feature -- Check
 					-- best we can do is to search through the
 					-- class ast and find the feature as
 					class_ast := Tmp_ast_server.item (written_in)
-					Result ?= class_ast.feature_with_name (feature_name_id)
+					Result ?= class_ast.feature_with_name (feature_name)
 				end
 			end
 		end
@@ -1430,36 +1338,10 @@ feature -- IL code generation
 		local
 			byte_code: BYTE_CODE
 		do
-			if not is_attribute and then not is_external and then not is_il_external then
+			if not is_attribute and then not is_external then
 				if Byte_server.has (body_index) then
 					byte_code := Byte_server.item (body_index)
 					Result := byte_code.custom_attributes
-				end
-			end
-		end
-
-	class_custom_attributes: BYTE_LIST [BYTE_NODE] is
-			-- Class custom attributes of Current if any.
-		local
-			byte_code: BYTE_CODE
-		do
-			if not is_attribute and then not is_external and then not is_il_external then
-				if Byte_server.has (body_index) then
-					byte_code := Byte_server.item (body_index)
-					Result := byte_code.class_custom_attributes
-				end
-			end
-		end
-
-	interface_custom_attributes: BYTE_LIST [BYTE_NODE] is
-			-- Interface custom attributes of Current if any.
-		local
-			byte_code: BYTE_CODE
-		do
-			if not is_attribute and then not is_external and then not is_il_external then
-				if Byte_server.has (body_index) then
-					byte_code := Byte_server.item (body_index)
-					Result := byte_code.interface_custom_attributes
 				end
 			end
 		end
@@ -1511,52 +1393,15 @@ feature -- Polymorphism
  			Result := True
  		end
 
-	new_poly_table (rout_id: INTEGER): POLY_TABLE [ENTRY] is
- 			-- New polymorphic table
- 		require
-			positive_rout_id: rout_id > 0
-			valid_rout_id: rout_id_set.has (rout_id)
-		local
-			seed: FEATURE_I
- 		do
- 			if not is_attribute or else not Routine_id_counter.is_attribute (rout_id) then
- 					-- This is a routine.
- 					-- The seed is a routine as well.
- 				create {ROUT_TABLE} Result.make (rout_id)
- 			elseif has_formal then
- 					-- This is an attribute of a formal generic type.
- 					-- The seed is also of a formal generic type.
- 				create {GENERIC_ATTRIBUTE_TABLE} Result.make (rout_id)
- 			else
- 				seed := system.seed_of_routine_id (rout_id)
- 				if seed = Current or else not seed.has_formal then
-	 					-- This is an attribute that is not of a formal generic type
-	 					-- and its seed is not of a formal generic type.
-	 				create {ATTR_TABLE [ATTR_ENTRY]} Result.make (rout_id)
- 				else
-	 					-- This is an attribute with a seed of a formal generic type.
-	 				create {GENERIC_ATTRIBUTE_TABLE} Result.make (rout_id)
- 				end
- 			end
- 		end
-
  	new_entry (rout_id: INTEGER): ENTRY is
  			-- New polymorphic unit
  		require
 			rout_id_not_void: rout_id /= 0
-		local
-			r: like new_rout_entry
  		do
- 			if is_attribute and then Routine_id_counter.is_attribute (rout_id) then
- 				if has_formal or else byte_context.workbench_mode then
-	 				r := new_rout_entry
-	 				r.set_is_attribute
-	 				Result := r
- 				else
-	 				Result := new_attr_entry
- 				end
- 			else
+ 			if not is_attribute or not Routine_id_counter.is_attribute (rout_id) then
  				Result := new_rout_entry
+ 			else
+ 				Result := new_attr_entry
  			end
  		end
 
@@ -1695,7 +1540,7 @@ feature -- Signature checking
 					vreg.set_entity_name (Names_heap.item (arg_id))
 					Error_handler.insert_error (vreg)
 				end
-				if feat_table.has_key_id (arg_id) then
+				if feat_table.has_id (arg_id) then
 						-- An argument name is a feature name of the feature
 						-- table.
 					create vrfa
@@ -2011,7 +1856,7 @@ end
 				-- `new_type' is the actual type of the join already
 				-- instantiated
 			new_type ?= type
-			if not new_type.is_safe_equivalent (old_type) then
+			if not new_type.is_deep_equal (old_type) then
 				create vdjr1
 				vdjr1.init (old_feature, Current)
 				vdjr1.set_type (new_type)
@@ -2036,7 +1881,7 @@ end
 				loop
 					old_type ?= old_arguments.i_th (i)
 					new_type ?= arguments.i_th (i)
-					if not new_type.is_safe_equivalent (old_type) then
+					if not new_type.is_deep_equal (old_type) then
 						create vdjr2
 						vdjr2.init (old_feature, Current)
 						vdjr2.set_type (new_type)
@@ -2135,7 +1980,7 @@ end
 		local
 			i, nb: INTEGER
 		do
-			Result := type.is_safe_equivalent (other.type)
+			Result := type.is_deep_equal (other.type)
 			from
 				nb := argument_count
 				Result := Result and then nb = other.argument_count
@@ -2144,19 +1989,19 @@ end
 			until
 				i > nb or else not Result
 			loop
-				Result := arguments.i_th (i).is_safe_equivalent (other.arguments.i_th (i))
+				Result := arguments.i_th (i).is_deep_equal (other.arguments.i_th (i))
 				i := i + 1
 			end
 		end
 
-	argument_position (arg_id: INTEGER): INTEGER is
+	argument_position (arg_id: STRING): INTEGER is
 			-- Position of argument `arg_id' in list of arguments
 			-- of current feature. 0 if none or not found.
 		require
-			arg_id_not_void: arg_id >= 0
+			arg_id /= Void
 		do
 			if arguments /= Void then
-				Result := arguments.argument_position_id (arg_id, 1)
+				Result := arguments.argument_position (arg_id, 1)
 			end
 		end
 
@@ -2174,18 +2019,12 @@ end
 			-- Find an associated property setter in `class_type'.
 		require
 			class_type_attached: class_type /= Void
-		local
-			f: FEATURE_I
 		do
 			if type.is_void then
-				f := Current
+				Result := class_type.associated_class.feature_of_rout_id (rout_id_set.first)
 			elseif assigner_name_id /= 0 then
-				f := written_class.feature_table.item_id (assigner_name_id)
-			else
-				f := ancestor_property_setter_in (class_type.associated_class)
-			end
-			if f /= Void then
-				Result := class_type.associated_class.feature_of_rout_id (f.rout_id_set.first)
+				Result := class_type.associated_class.feature_of_rout_id
+					(written_class.feature_table.item_id (assigner_name_id).rout_id_set.first)
 			end
 		ensure
 			result_attached: (type.is_void or else assigner_name_id /= 0) implies Result /= Void
@@ -2326,7 +2165,6 @@ feature -- Undefinition
 			Result.set_is_binary (is_binary)
 			Result.set_is_unary (is_unary)
 			Result.set_has_convert_mark (has_convert_mark)
-			Result.set_has_rescue_clause (has_rescue_clause)
 
 			if is_external then
 				ext ?= Current
@@ -2490,31 +2328,17 @@ feature -- Dead code removal
 
 feature -- Byte code access
 
-	frozen access (access_type: TYPE_I; is_qualified: BOOLEAN): ACCESS_B is
+	frozen access (access_type: TYPE_I): ACCESS_B is
 			-- Byte code access for current feature
 		require
 			access_type_not_void: access_type /= Void
 		do
-			Result := access_for_feature (access_type, Void, is_qualified)
+			Result := access_for_feature (access_type, Void)
 		ensure
 			Result_exists: Result /= Void
 		end
 
-	frozen access_for_multi_constraint (access_type: TYPE_I; a_static_type: TYPE_I; is_qualified: BOOLEAN): ACCESS_B is
-			-- Creates a byte code access for a multi constraint target.
-			-- `a_static_type' is the type where the feature is from.
-			-- It is NOT a static call that will be generated, but a dynamic one. It is only needed for W_bench.
-		require
-			access_type_not_void: access_type /= Void
-		do
-			Result := access (access_type, is_qualified)
-			check Result /= Void end
-			Result.set_multi_constraint_static (a_static_type)
-		ensure
-			Result_exists: Result /= Void
-		end
-
-	access_for_feature (access_type: TYPE_I; static_type: TYPE_I; is_qualified: BOOLEAN): ACCESS_B is
+	access_for_feature (access_type: TYPE_I; static_type: TYPE_I): ACCESS_B is
 			-- Byte code access for current feature. Dynamic binding if
 			-- `static_type' is Void, otherwise static binding on `static_type'.
 		require
@@ -2757,7 +2581,6 @@ feature {NONE} -- Implementation
 	has_property_getter_mask: INTEGER_32 is 0x4000
 	has_property_setter_mask: INTEGER_32 is 0x8000
 	is_fake_inline_agent_mask: INTEGER_32 is 0x10000
-	has_rescue_clause_mask: INTEGER_32 is 0x20000
 			-- Mask used for each feature property.
 
 feature {INHERIT_TABLE} -- Access

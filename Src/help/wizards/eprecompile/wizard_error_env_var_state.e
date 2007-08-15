@@ -19,21 +19,18 @@ create
 
 feature -- Access
 
-	final_message: STRING_GENERAL is
-		local
-			l_str: STRING_32
+	final_message: STRING is
 		do
-			create l_str.make (100)
-			l_str.append (interface_names.m_following_evironment_variables_not_set)
+			create Result.make (100)
+			Result.append ("The following environment variables are not set:%N")
 			if eiffel_layout.Eiffel_installation_dir_name = Void then
-				l_str.append (" - ISE_EIFFEL%N")
+				Result.append (" - ISE_EIFFEL%N")
 			end
 			if eiffel_layout.Eiffel_platform = Void then
-				l_str.append (" - ISE_PLATFORM%N")
+				Result.append (" - ISE_PLATFORM%N")
 			end
-			l_str.append ("%N%N")
-			l_str.append (interface_names.m_fix_and_restart)
-			Result := l_str
+			Result.append ("%N%N")
+			Result.append ("Fix the problem and restart the wizard.")
 		end
 
 	pixmap_icon_location: FILE_NAME is
@@ -47,7 +44,7 @@ feature {NONE} -- Implementation
 
 	display_state_text is
 		do
-			title.set_text (interface_names.t_variables_error)
+			title.set_text ("Environment variables Error")
 			message.set_text (final_message)
 		end
 

@@ -24,20 +24,19 @@ inherit
 			{NONE} all
 		end
 
-	SHARED_DEBUGGER_MANAGER
+	EB_SHARED_DEBUG_TOOLS
 		export
 			{NONE} all
 		end
 
 	EB_SHARED_PREFERENCES
 
-	DEBUGGER_OBSERVER
+	EB_DEBUGGER_OBSERVER
 		export
 			{NONE} all
 		redefine
-			on_application_quit,
+			on_application_killed,
 			on_application_launched,
-			on_application_resumed,
 			on_application_stopped
 		end
 
@@ -52,31 +51,37 @@ feature {NONE} -- Initialization
 			-- Initialize `Current'.
 		local
 			mg: EB_PROJECT_MANAGER
-			dbg: DEBUGGER_MANAGER
 		do
 				-- Build all widgets.
 			--copy_icons
 			build_interface
-
-			dbg := debugger_manager
 				-- Update the status.
 			mg := eiffel_project.manager
 			if mg.is_created then
-				on_project_created (dbg)
+				on_project_created
 				if mg.has_edited_classes then
 					on_project_edited
 				end
 			end
 			if mg.is_project_loaded then
-				on_project_loaded (dbg)
+				on_project_loaded
+				if eb_debugger_manager.application_is_executing then
+					if eb_debugger_manager.application_is_stopped then
+						on_application_stopped
+					else
+						on_application_launched
+					end
+				else
+					on_application_killed
+				end
 			else
-				on_project_closed (dbg)
+				on_project_closed
 			end
 				-- Handle events.
-			load_agent := agent on_project_loaded (dbg)
-			create_agent := agent on_project_created (dbg)
-			close_agent := agent on_project_closed (dbg)
 			edition_agent := agent on_project_edited
+			load_agent := agent on_project_loaded
+			create_agent := agent on_project_created
+			close_agent := agent on_project_closed
 			compile_start_agent := agent on_project_compiles
 			compile_stop_agent := agent on_project_compiled
 			mg.edition_agents.extend (edition_agent)
@@ -86,7 +91,7 @@ feature {NONE} -- Initialization
 			mg.compile_start_agents.extend (compile_start_agent)
 			mg.compile_stop_agents.extend (compile_stop_agent)
 
-			dbg.add_observer (Current)
+			eb_debugger_manager.observers.extend (Current)
 		end
 
 	build_interface is
@@ -249,14 +254,14 @@ feature -- Status setting
 			coordinate_label.enable_sensitive
 		end
 
-feature {NONE} -- Status setting
+feature {EB_RECYCLER} -- Status setting
 
-	internal_recycle is
+	recycle is
 			-- Remove references to `Current', which becomes no longer usable.
 		local
 			mg: EB_PROJECT_MANAGER
 		do
-			Debugger_manager.remove_observer (Current)
+			eb_debugger_manager.observers.prune_all (Current)
 
 			mg := Eiffel_project.manager
 			mg.create_agents.prune_all (create_agent)
@@ -290,7 +295,7 @@ feature -- Access
 			Result := progress_bar.value
 		end
 
-feature {EIFFEL_WORLD, EB_WINDOW_MANAGER, EB_DEVELOPMENT_WINDOW, EB_DEVELOPMENT_WINDOW_DIRECTOR} -- Access
+feature {EIFFEL_WORLD, EB_WINDOW_MANAGER, EB_DEVELOPMENT_WINDOW} -- Access
 
 	label: EV_LABEL
 			-- Label where messages are displayed.
@@ -324,14 +329,8 @@ feature {NONE} -- Implementation: widgets
 
 feature {NONE} -- Implementation: event handling
 
-	on_application_launched (dbg: DEBUGGER_MANAGER) is
+	on_application_launched is
 			-- The application has just been launched by the debugger.
-		do
-			on_application_resumed (dbg)
-		end
-
-	on_application_resumed (dbg: DEBUGGER_MANAGER) is
-			-- The application has been resumed by the debugger.
 		do
 			if debugger_cell.is_empty then
 				debugger_cell.extend (debugger_icon)
@@ -347,7 +346,7 @@ feature {NONE} -- Implementation: event handling
 			end
 		end
 
-	on_application_stopped (dbg: DEBUGGER_MANAGER) is
+	on_application_stopped is
 			-- The application has just stopped (paused).
 		local
 			p: EV_PIXMAP
@@ -363,21 +362,21 @@ feature {NONE} -- Implementation: event handling
 			end
 		end
 
-	on_application_quit (dbg: DEBUGGER_MANAGER) is
+	on_application_killed is
 			-- The application has just terminated (dead).
 		do
 			running_timer.set_interval (0)
 			debugger_cell.prune_all (debugger_icon)
 		end
 
-	on_project_created (dbg: DEBUGGER_MANAGER) is
+	on_project_created is
 			-- The project has been created.
 		do
 			on_project_updated
-			on_application_quit (dbg)
+			on_application_killed
 		end
 
-	on_project_loaded (dbg: DEBUGGER_MANAGER) is
+	on_project_loaded is
 			-- The project has been loaded.
 		do
 			set_project_name (eiffel_system.name)
@@ -386,24 +385,24 @@ feature {NONE} -- Implementation: event handling
 			else
 				on_project_updated
 			end
-			if dbg.application_is_executing then
-				if dbg.application_is_stopped then
-					on_application_stopped (dbg)
+			if eb_debugger_manager.application_is_executing then
+				if eb_debugger_manager.application_is_stopped then
+					on_application_stopped
 				else
-					on_application_launched (dbg)
+					on_application_launched
 				end
 			else
-				on_application_quit (dbg)
+				on_application_killed
 			end
 			if not eiffel_project.workbench.is_compiling then
 				on_project_compiled
 			end
 		end
 
-	on_project_closed (dbg: DEBUGGER_MANAGER) is
+	on_project_closed is
 			-- The project has been closed.
 		do
-			set_project_name (interface_names.l_no_project)
+			set_project_name ("No project")
 			compilation_icon.set_background_color (debugger_cell.background_color)
 			compilation_icon.clear
 			compilation_icon.remove_tooltip
@@ -411,7 +410,7 @@ feature {NONE} -- Implementation: event handling
 			edition_icon.clear
 			edition_icon.remove_tooltip
 				--| This is probably redundant...
-			on_application_quit (dbg)
+			on_application_killed
 		end
 
 	on_project_compiles is
@@ -497,13 +496,13 @@ feature {NONE} -- Implementation: event handling
 
 feature {NONE} -- Implementation
 
-	set_project_name (n: STRING_GENERAL) is
+	set_project_name (n: STRING) is
 			-- Display `n' as the project name.
 		require
 			valid_name: n /= Void
 		local
 			f: EV_FONT
-			s: STRING_32
+			s: STRING
 			w: INTEGER
 		do
 			f := project_label.font

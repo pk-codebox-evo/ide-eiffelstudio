@@ -23,29 +23,17 @@ feature -- Name generation
 			Result.set_count (name_count)
 		end
 
-	attribute_table_name (rout_id: INTEGER): STRING is
-			-- Name of a table of attribute offsets for the final Eiffel executable.
+	table_name (rout_id: INTEGER): STRING is
+			-- Name of a table of data for the final Eiffel executable.
+			-- It is either a name of a routine table or an attribute
+			-- offset table name.
 		do
-			Result := Attribute_table_buffer
-			eif011 ($Result, rout_id)
+			Result := Table_buffer;
+			eif011 ($Result, rout_id);
 				-- In order to get a proper `hash_code' value for `Result'
 				-- we reset its count to the same value.
 			Result.set_count (name_count)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	routine_table_name (rout_id: INTEGER): STRING is
-			-- Name of a routine table for the final Eiffel executable.
-		do
-			Result := Routine_table_buffer
-			eif011 ($Result, rout_id)
-				-- In order to get a proper `hash_code' value for `Result'
-				-- we reset its count to the same value.
-			Result.set_count (name_count)
-		ensure
-			result_attached: Result /= Void
-		end
+		end;
 
 	type_table_name (rout_id: INTEGER): STRING is
 			-- Name of a type table associated to an attribute offset or
@@ -115,18 +103,11 @@ feature {NONE}
 			Result.append ("F000000")
 		end
 
-	Attribute_table_buffer: STRING is
+	Table_buffer: STRING is
 			-- String buffer for feature generation.
 		once
 			create Result.make (name_count)
-			Result.append ("O000000")
-		end
-
-	Routine_table_buffer: STRING is
-			-- String buffer for feature generation.
-		once
-			create Result.make (name_count)
-			Result.append ("R000000")
+			Result.append ("T000000")
 		end
 
 	Type_table_buffer: STRING is

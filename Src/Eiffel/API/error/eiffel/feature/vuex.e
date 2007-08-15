@@ -106,6 +106,7 @@ feature {NONE} -- Implementation: Access
 	is_target_none: BOOLEAN
 			-- Is target of current feature call of type NONE?
 
+
 invariant
 	feature_name_set: is_target_none implies feature_name /= Void
 

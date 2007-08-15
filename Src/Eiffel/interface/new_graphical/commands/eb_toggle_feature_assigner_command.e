@@ -11,8 +11,7 @@ class
 inherit
 	EB_TOOLBARABLE_TOGGLE_COMMAND
 		redefine
-			mini_pixmap,
-			mini_pixel_buffer
+			mini_pixmap
 		end
 
 	EB_DEVELOPMENT_WINDOW_COMMAND
@@ -27,7 +26,7 @@ feature -- Basic operations
 	execute is
 			-- show/hide assigner name
 		do
-			target.tools.features_tool.toggle_assigner
+			target.features_tool.toggle_assigner
 		end
 
 feature -- Access
@@ -38,12 +37,6 @@ feature -- Access
 			Result := pixmaps.mini_pixmaps.completion_show_assigner_icon
 		end
 
-	mini_pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixmap representing the command for mini toolbars.
-		do
-			Result := pixmaps.mini_pixmaps.completion_show_assigner_icon_buffer
-		end
-
 feature {NONE} -- Implementation
 
 	pixmap: EV_PIXMAP is
@@ -51,13 +44,7 @@ feature {NONE} -- Implementation
 		do
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			-- Currently there is no pixel buffer for this command.
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			if is_selected then
@@ -69,10 +56,10 @@ feature {NONE} -- Implementation
 
 	is_selected: BOOLEAN is
 		do
-			Result := target.tools.features_tool.is_assigner_enabled
+			Result := target.features_tool.is_assigner_enabled
 		end
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Description for this command.
 		do
 			Result := Interface_names.l_toggle_assigner

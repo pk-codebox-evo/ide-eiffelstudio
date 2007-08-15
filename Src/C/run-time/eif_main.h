@@ -75,7 +75,6 @@ RT_LNK int eif_nCmdShow;
 
 RT_LNK char **eif_environ;
 RT_LNK int is_debug_mode (void);
-RT_LNK void set_debug_mode (int);
 
 #ifdef __cplusplus
 }

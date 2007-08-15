@@ -1,23 +1,18 @@
 indexing
-	description: "Enlarged node for Eiffel feature call in workbench mode."
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
-	date: "$Date$"
-	revision: "$Revision$"
+-- Enlarged node for Eiffel feature call in workbench mode
 
 class FEATURE_BW
 
 inherit
 
 	FEATURE_BL
+		rename
+			make as node_make
 		redefine
-			analyze_on,
-			check_dt_current,
-			free_register,
-			generate_access_on_type,
-			generate_end,
-			is_polymorphic,
-			unanalyze
+			check_dt_current, generate_access_on_type, is_polymorphic,
+			need_invariant, set_need_invariant
 		end
 
 create
@@ -31,34 +26,19 @@ feature
 			Result := True;
 		end;
 
-	analyze_on (reg: REGISTRABLE) is
-			-- Analyze feature call on `reg'.
-		local
-			return_type: like c_type
-		do
-			Precursor (reg)
-			return_type := c_type
-			if return_type.is_pointer then
-					-- Do not use reference type because this register should not be tracked by GC.
-				result_register := context.get_argument_register (pointer_c_type)
-			end
-		end
+	need_invariant: BOOLEAN;
+			-- Does the call need an invariant check ?
 
-	free_register is
-			-- Free registers.
+	set_need_invariant (b: BOOLEAN) is
+			-- Assign `b' to `need_invariant'.
 		do
-			Precursor
-			if result_register /= Void then
-				result_register.free_register
-			end
-		end
+			need_invariant := b
+		end;
 
-	unanalyze is
-			-- Undo the analysis
+	make is
 		do
-			Precursor
-			result_register := Void
-		end
+			need_invariant := True;
+		end;
 
 	check_dt_current (reg: REGISTRABLE) is
 			-- Check whether we need to compute the dynamic type of current
@@ -91,26 +71,70 @@ feature
 		end;
 
 	generate_access_on_type (reg: REGISTRABLE; typ: CL_TYPE_I) is
-			-- Generate feature call in a `typ' context.
+			-- Generate feature call in a `typ' context
+		local
+			is_nested: BOOLEAN;
+			rout_info: ROUT_INFO;
+			base_class: CLASS_C;
+			buf: GENERATION_BUFFER
+			cl_type_i: CL_TYPE_I
 		do
-			generate_workbench_access_on_type (reg, typ, result_register)
-		end
+			is_nested := not is_first;
+			buf := buffer
+			buf.put_character ('(');
+			real_type (type).c_type.generate_function_cast (buf, argument_types);
+			base_class := typ.base_class;
 
-	generate_end (gen_reg: REGISTRABLE; class_type: CL_TYPE_I) is
-			-- Generate final portion of C code.
-		do
-			Precursor (gen_reg, class_type)
-			generate_workbench_end (result_register)
-		end
-
-feature {NONE} -- Implementation
-
-	result_register: REGISTER;
-			-- A register to hold return value
-			-- to be normalized before use.
+			if
+				Compilation_modes.is_precompiling or else
+				base_class.is_precompiled
+			then
+				if is_nested and need_invariant then
+					buf.put_string ("RTVPF(");
+				else
+					buf.put_string ("RTWPF(");
+				end;
+				rout_info := System.rout_info_table.item (routine_id);
+				buf.put_class_id (rout_info.origin)
+				buf.put_string (gc_comma);
+				buf.put_integer (rout_info.offset);
+			else
+				if is_nested and need_invariant then
+					buf.put_string ("RTVF(");
+				else
+					buf.put_string ("RTWF(");
+				end;
+				buf.put_static_type_id (typ.associated_class_type.static_type_id);
+				buf.put_string (gc_comma);
+				buf.put_integer (real_feature_id (typ.base_class))
+			end;
+			buf.put_string (gc_comma);
+			if not is_nested then
+				if precursor_type /= Void then
+						-- Use dynamic type of parent instead
+						-- of dynamic type of Current.
+					buf.put_string ("RTUD(");
+					cl_type_i ?= context.real_type (precursor_type)
+					check cl_type_i_not_void: cl_type_i /= Void end
+					buf.put_static_type_id (cl_type_i.associated_class_type.static_type_id)
+					buf.put_character (')');
+				else
+					context.generate_current_dtype;
+				end
+			elseif need_invariant then
+				buf.put_string_literal (feature_name)
+				buf.put_string (gc_comma)
+				reg.print_register;
+			else
+				buf.put_string (gc_upper_dtype_lparan);
+				reg.print_register;
+				buf.put_character (')');
+			end;
+			buf.put_string ("))");
+		end;
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

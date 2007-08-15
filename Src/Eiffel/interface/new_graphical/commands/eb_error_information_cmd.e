@@ -13,7 +13,6 @@ inherit
 	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 		redefine
 			new_toolbar_item,
-			new_sd_toolbar_item,
 			tooltext
 		end
 
@@ -46,19 +45,19 @@ feature -- Status setting
 
 feature -- Status report
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Explanatory text for this command.
 		do
 			Result := Interface_names.e_Display_error_help
 		end
 
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for `Current's toolbar button.
 		do
 			Result := Interface_names.e_Display_error_help
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text for `Current's toolbar button.
 		do
 			Result := Interface_names.b_Display_error_help
@@ -73,13 +72,7 @@ feature -- Status report
 			Result := pixmaps.icon_pixmaps.command_error_info_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.command_error_info_icon_buffer
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Text used for menu items for `Current'.
 		do
 			Result := Interface_names.m_Display_error_help
@@ -93,24 +86,6 @@ feature -- Status report
 		do
 			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND} (display_text)
 			Result.drop_actions.extend (agent execute_with_stone)
-			Result.drop_actions.set_veto_pebble_function (agent (a_pebble: ANY): BOOLEAN
-				do
-					Result := (({ERROR_STONE}) #? a_pebble) /= Void
-				end)
-		end
-
-	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new toolbar button for this command.
-			--
-			-- Call `recycle' on the result when you don't need it anymore otherwise
-			-- it will never be garbage collected.
-		do
-			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND} (display_text)
-			Result.drop_actions.extend (agent execute_with_stone)
-			Result.drop_actions.set_veto_pebble_function (agent (a_pebble: ANY): BOOLEAN
-				do
-					Result := (({ERROR_STONE}) #? a_pebble) /= Void
-				end)
 		end
 
 feature {NONE} -- Implementation

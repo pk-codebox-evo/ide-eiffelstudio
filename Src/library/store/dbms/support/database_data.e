@@ -5,7 +5,7 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 
-class
+class 
 	DATABASE_DATA [G -> DATABASE create default_create end]
 
 inherit
@@ -35,17 +35,11 @@ feature -- Status report
 	item (index: INTEGER): ANY is
 			-- Data at `index'-th column.
 		require else
-			index_in_range: valid_index (index)
+			index_in_range: index > 0 and index <= count
 		do
 			Result := value.item (index)
 		ensure then
 			returned_value: Result = value.item (index)
-		end
-
-	valid_index (index: INTEGER): BOOLEAN is
-			-- Is `index' valid for `value'?
-		do
-			Result := index >0 and index <= count
 		end
 
 	column_name (index: INTEGER): STRING is
@@ -85,7 +79,7 @@ feature -- Element change
 				from
 					index := 1
 				until
-					index > g or else field_name (index, object).is_equal (buffer)
+					index > g or else field_name (index, object).is_equal (buffer) 
 				loop
 					index := index + 1
 				end
@@ -93,6 +87,7 @@ feature -- Element change
 					map_table.put (index, ind)
 				else
 					db_spec.update_map_table_error (handle, map_table, ind)
+					ind := count
 				end
 				ind := ind + 1
 			end
@@ -119,7 +114,7 @@ feature -- Element change
 				create value_type.make (1, count)
 				create select_name.make (1, count)
 				get_metadata := True --PGC
-
+				
 					-- `metadata_to_update' is True at the beginning of every new selection.
 			elseif metadata_to_update then
 				value.conservative_resize (1, count)
@@ -156,7 +151,7 @@ feature -- Element change
 				f_any := value.item (ind)
 
 				if not db_spec.is_null_data (no_descriptor, ind) then
-
+					
 					-- STRING TYPE
 					if value_type.item (ind) = String_type_database then
 						database_string.get_value (no_descriptor, ind)
@@ -173,7 +168,7 @@ feature -- Element change
 						value.put (f_string, ind)
 
 					-- INTEGER type
-					elseif value_type.item (ind) = Integer_type_database then
+					elseif value_type.item (ind) = Integer_type_database then		
 						if f_any = Void then
 							create f_integer
 							value.put (f_integer, ind)
@@ -268,7 +263,7 @@ feature {NONE} -- Status report
 			-- Temporary variables
 
 	database_string: DATABASE_STRING_EX [G]
-		-- String returned from the database C interface
+		-- String returned from the database C interface 
 
 	buffer: STRING is
 			-- String buffer.

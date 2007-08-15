@@ -39,12 +39,7 @@ inherit
 			disable_capture,
 			has_capture,
 			set_default_colors,
-			set_default_key_processing_handler,
-			set_pick_and_drop_mode,
-			set_drag_and_drop_mode,
-			set_target_menu_mode,
-			set_configurable_target_menu_mode,
-			set_configurable_target_menu_handler
+			set_default_key_processing_handler
 		redefine
 			interface,
 			initialize,
@@ -177,10 +172,7 @@ feature {EV_GRID_ITEM_I} -- Implementation
 			Result.set_rgb_with_16_bit (a_r, a_g, a_b)
 		end
 
-	text_style: INTEGER is 1
-	base_style: INTEGER is 2
-	fg_style: INTEGER is 3
-	bg_style: INTEGER is 4;
+	text_style, base_style, fg_style, bg_style: INTEGER is unique
 		-- Different coloring styles used in gtk.
 
 feature {EV_ANY_I} -- Implementation

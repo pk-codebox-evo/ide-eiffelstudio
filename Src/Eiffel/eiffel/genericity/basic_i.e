@@ -17,7 +17,7 @@ inherit
 		redefine
 			is_basic, is_reference, c_type, is_consistent,
 			generate_cecil_value, generic_il_type_name,
-			true_reference_type, internal_generic_derivation
+			true_reference_type
 		end
 
 	TYPE_C
@@ -57,18 +57,6 @@ feature -- Access
 			Result.set_reference_mark
 		end
 
-	internal_generic_derivation (a_level: INTEGER): CL_TYPE_I is
-			-- Precise generic derivation of current type.
-			-- That is to say given a type, it gives the associated TYPE_I
-			-- which can be used to search its associated CLASS_TYPE.
-		do
-			if a_level = 0 then
-				create Result.make (class_id)
-			else
-				Result := Precursor (a_level)
-			end
-		end
-
 	associated_reference_class_type: CLASS_TYPE is
 			-- Reference class type of Current
 		do
@@ -101,7 +89,7 @@ feature -- Status report
 feature -- Byte code generation
 
 	metamorphose
-		(reg, value: REGISTRABLE; buffer: GENERATION_BUFFER) is
+		(reg, value: REGISTRABLE; buffer: GENERATION_BUFFER; workbench_mode: BOOLEAN) is
 			-- Generate the metamorphism from simple type to reference and
 			-- put result in register `reg'. The value of the basic type is
 			-- held in `value'.
@@ -139,6 +127,21 @@ feature -- Byte code generation
 			reg.print_register
 			buf.put_string (" = ")
 			value.print_register
+		end
+
+	end_of_metamorphose (reg, value: REGISTRABLE; buffer: GENERATION_BUFFER) is
+			-- After the metamorphosis, we need to put back the new value computed
+			-- in `reg' into `value' otherwise the metamorphosis has no effect.
+		require
+			valid_reg: reg /= Void
+			valid_value: value /= Void
+			valid_file: buffer /= Void
+		do
+--			value.print_register
+--			buffer.put_string (" = ")
+--			buffer.put_character ('*')
+--			generate_access_cast (buffer)
+--			reg.print_register
 		end
 
 feature -- C code generation

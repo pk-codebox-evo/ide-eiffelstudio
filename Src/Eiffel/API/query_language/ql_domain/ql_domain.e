@@ -307,7 +307,7 @@ feature -- Set operation
 			-- An new domain containing all the elements from both `Current' and `other'.
 		require
 			other_attached: other /= Void
-			current_and_other_of_same_type: same_type (other)
+			current_and_other_of_same_type: current.same_type (other)
 		deferred
 		ensure
 			result_attached: Result /= Void
@@ -317,7 +317,7 @@ feature -- Set operation
 			-- A new domain containing all the elements that are in both `Current' and `other'.			
 		require
 			other_attached: other /= Void
-			current_and_other_of_same_type: same_type (other)
+			current_and_other_of_same_type: current.same_type (other)
 		deferred
 		ensure
 			result_attached: Result /= Void
@@ -327,7 +327,7 @@ feature -- Set operation
 			-- A new domain containing all the elements of `Current', with the elements from `other' removed.
 		require
 			other_attached: other /= Void
-			current_and_other_of_same_type: same_type (other)
+			current_and_other_of_same_type: current.same_type (other)
 		deferred
 		ensure
 			result_attached: Result /= Void
@@ -344,14 +344,13 @@ feature -- Set operation
 			-- Is current domain a subset of `other'?
 		require
 			other_attached: other /= Void
-			current_and_other_are_of_same_type: scope = other.scope
+			current_and_other_are_of_same_type: current.scope = other.scope
 		local
-			l_other_set: DS_HASH_SET [like item_type]
+			l_other_set: DS_HASH_SET [QL_ITEM]
 			l_cur_content: like content
 			l_cursor: CURSOR
 		do
 			create l_other_set.make (other.count)
-			l_other_set.set_equality_tester (create {KL_EQUALITY_TESTER [like item_type]})
 			other.content.do_all (agent l_other_set.put)
 			l_cur_content := content
 			l_cursor := l_cur_content.cursor
@@ -477,12 +476,12 @@ feature{NONE} -- Implementation
 	is_domain_valid: BOOLEAN is
 			-- Is current domain valid?
 		do
-			Result := content.for_all (agent is_item_valid)
+			Result := content.for_all (agent is_item_valid ({QL_ITEM}?))
 		ensure
-			good_result: Result implies content.for_all (agent is_item_valid)
+			good_result: Result implies content.for_all (agent is_item_valid ({QL_ITEM}?))
 		end
 
-	is_item_valid (a_item: like item_type): BOOLEAN is
+	is_item_valid (a_item: QL_ITEM): BOOLEAN is
 			-- Is `a_item' valid?
 			-- True if all items in current are valid domain item.
 			-- See {QL_ITEM}.`is_valid_domain_item' for more information.
@@ -502,11 +501,11 @@ feature{NONE} -- Implementation/Set operations
 			a_new_domain_and_a_other_domain_of_same_type: a_new_domain.same_type (a_other_domain)
 			a_new_domain_is_empty: a_new_domain.is_empty
 		local
-			l_item_set: DS_HASH_SET [like item_type]
-			l_tester: AGENT_BASED_EQUALITY_TESTER [like item_type]
+			l_item_set: DS_HASH_SET [QL_ITEM]
+			l_tester: AGENT_BASED_EQUALITY_TESTER [QL_ITEM]
 			l_content: like content
 			l_content2: like content
-			l_item: like item_type
+			l_item: QL_ITEM
 		do
 			if a_other_domain.is_empty then
 				a_new_domain.content.fill (content)
@@ -541,11 +540,11 @@ feature{NONE} -- Implementation/Set operations
 			a_new_domain_and_a_other_domain_of_same_type: a_new_domain.same_type (a_other_domain)
 			a_new_domain_is_empty: a_new_domain.is_empty
 		local
-			l_item_set: DS_HASH_SET [like item_type]
-			l_tester: AGENT_BASED_EQUALITY_TESTER [like item_type]
+			l_item_set: DS_HASH_SET [QL_ITEM]
+			l_tester: AGENT_BASED_EQUALITY_TESTER [QL_ITEM]
 			l_content: like content
 			l_content2: like content
-			l_item: like item_type
+			l_item: QL_ITEM
 		do
 			if not a_other_domain.is_empty then
 				create l_item_set.make (count)
@@ -577,11 +576,11 @@ feature{NONE} -- Implementation/Set operations
 			a_new_domain_and_a_other_domain_of_same_type: a_new_domain.same_type (a_other_domain)
 			a_new_domain_is_empty: a_new_domain.is_empty
 		local
-			l_item_set: DS_HASH_SET [like item_type]
-			l_tester: AGENT_BASED_EQUALITY_TESTER [like item_type]
+			l_item_set: DS_HASH_SET [QL_ITEM]
+			l_tester: AGENT_BASED_EQUALITY_TESTER [QL_ITEM]
 			l_content: like content
 			l_content2: like content
-			l_item: like item_type
+			l_item: QL_ITEM
 		do
 			if a_other_domain.is_empty then
 				a_new_domain.content.fill (content)
@@ -642,17 +641,16 @@ feature{NONE} -- Implementation/Set operations
 
 feature{NONE} -- Item comparison
 
-	are_items_equivalent (a_item, b_item: like item_type): BOOLEAN is
+	are_items_equivalent (a_item, b_item: QL_ITEM): BOOLEAN is
 			-- Is `a_item' equal to `b_item'?
 		require
 			a_item_attached: a_item /= Void
 			b_item_attached: b_item /= Void
+			a_b_of_same_type: a_item.same_type (b_item)
 		do
-			if a_item.same_type (b_item) then
-				Result := a_item.is_equal (b_item)
-			end
+			Result := a_item.is_equal (b_item)
 		ensure
-			good_result: Result implies (a_item.same_type (b_item) and then a_item.is_equal (b_item))
+			good_result: Result implies (a_item.is_equal (b_item))
 		end
 
 	item_type: QL_ITEM
@@ -693,5 +691,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

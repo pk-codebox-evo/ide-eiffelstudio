@@ -2,7 +2,7 @@
 	description: "Externals for dealing with sent (outgoing) requests."
 	date:		"$Date$"
 	revision:	"$Revision$"
-	copyright:	"Copyright (c) 1985-2007, Eiffel Software."
+	copyright:	"Copyright (c) 1985-2006, Eiffel Software."
 	license:	"GPL version 2 see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"Commercial license is available at http://www.eiffel.com/licensing"
 	copying: "[
@@ -49,7 +49,7 @@ extern void stop_timer(void);			/* Stops the timer */
 #endif
 
 /* forward definitions */
-rt_private void send_dmpitem_request(EIF_TYPED_VALUE *ip);
+rt_private void send_dmpitem_request(struct item *ip);
 
 rt_public void send_rqst_0 (long int code)
 {
@@ -79,7 +79,7 @@ rt_public void send_rqst_1 (long int code, long int info1)
 #endif
 	Request_Clean (rqst);
 	rqst.rq_type = (int) code;
-	rqst.rq_opaque.op_1 = (int) info1;
+	rqst.rq_opaque.op_first = (int) info1;
 
 	ewb_send_packet(ewb_sp, &rqst);
 }
@@ -94,8 +94,8 @@ rt_public void send_rqst_2 (long int code, long int info1, long int info2)
 
 	Request_Clean (rqst);
 	rqst.rq_type = (int) code;
-	rqst.rq_opaque.op_1 = (int) info1;
-	rqst.rq_opaque.op_2 = (int) info2;
+	rqst.rq_opaque.op_first = (int) info1;
+	rqst.rq_opaque.op_second = (int) info2;
 
 	ewb_send_packet(ewb_sp, &rqst);
 }
@@ -110,32 +110,14 @@ rt_public void send_rqst_3 (long int code, long int info1, long int info2, rt_ui
 
 	Request_Clean (rqst);
 	rqst.rq_type = (int) code;
-	rqst.rq_opaque.op_1 = (int) info1;
-	rqst.rq_opaque.op_2 = (int) info2;
-	rqst.rq_opaque.op_3 = info3;
+	rqst.rq_opaque.op_first = (int) info1;
+	rqst.rq_opaque.op_second = (int) info2;
+	rqst.rq_opaque.op_third = info3;
 
 	ewb_send_packet(ewb_sp, &rqst);
 }
 
-rt_public void send_rqst_4 (long int code, long int info1, long int info2, rt_uint_ptr info3, long int info4)
-{
-	Request rqst;
-
-#ifdef USE_ADD_LOG
-    add_log(100, "sending request 3: %ld from ec", code);
-#endif
-
-	Request_Clean (rqst);
-	rqst.rq_type = (int) code;
-	rqst.rq_opaque.op_1 = (int) info1;
-	rqst.rq_opaque.op_2 = (int) info2;
-	rqst.rq_opaque.op_3 = info3;
-	rqst.rq_opaque.op_4 = (int) info4;
-
-	ewb_send_packet(ewb_sp, &rqst);
-}
-
-rt_private void send_dmpitem_request(EIF_TYPED_VALUE *ip)
+rt_private void send_dmpitem_request(struct item *ip)
 {
 	Request rqst;
 
@@ -153,40 +135,15 @@ rt_private void send_dmpitem_request(EIF_TYPED_VALUE *ip)
 	ewb_send_packet(ewb_sp, &rqst);
 }
 
-/* send an integer_8 value to the application */
-rt_public void send_integer_8_value(EIF_INTEGER_8 value)
-{	
-	EIF_TYPED_VALUE item;
-	
-	/* fill in the item to send */
-	item.type = SK_INT8;
-	item.it_int8 = value;
-	
-	/* send the request */
-	send_dmpitem_request(&item);
-}
-
 /* send an integer value to the application */
-rt_public void send_integer_16_value(EIF_INTEGER_16 value)
+rt_public void send_integer_value(EIF_INTEGER value)
 {	
-	EIF_TYPED_VALUE item;
-	
-	/* fill in the item to send */
-	item.type = SK_INT16;
-	item.it_int16 = value;
-	
-	/* send the request */
-	send_dmpitem_request(&item);
-}
-
-/* send an integer value to the application */
-rt_public void send_integer_32_value(EIF_INTEGER_32 value)
-{	
-	EIF_TYPED_VALUE item;
+	struct item item;
 	
 	/* fill in the item to send */
 	item.type = SK_INT32;
 	item.it_int32 = value;
+	item.it_addr = NULL;
 	
 	/* send the request */
 	send_dmpitem_request(&item);
@@ -195,115 +152,68 @@ rt_public void send_integer_32_value(EIF_INTEGER_32 value)
 /* send an integer_64 value to the application */
 rt_public void send_integer_64_value(EIF_INTEGER_64 value)
 {	
-	EIF_TYPED_VALUE item;
+	struct item item;
 	
 	/* fill in the item to send */
 	item.type = SK_INT64;
 	item.it_int64 = value;
+	item.it_addr = NULL;
 	
 	/* send the request */
 	send_dmpitem_request(&item);
 }
 
-/* send an natural_8 value to the application */
-rt_public void send_natural_8_value(EIF_NATURAL_8 value)
-{	
-	EIF_TYPED_VALUE item;
-	
-	/* fill in the item to send */
-	item.type = SK_UINT8;
-	item.it_uint8 = value;
-	
-	/* send the request */
-	send_dmpitem_request(&item);
-}
-
-/* send an natural value to the application */
-rt_public void send_natural_16_value(EIF_NATURAL_16 value)
-{	
-	EIF_TYPED_VALUE item;
-	
-	/* fill in the item to send */
-	item.type = SK_UINT16;
-	item.it_uint16 = value;
-	
-	/* send the request */
-	send_dmpitem_request(&item);
-}
-
-/* send an natural value to the application */
-rt_public void send_natural_32_value(EIF_NATURAL_32 value)
-{	
-	EIF_TYPED_VALUE item;
-	
-	/* fill in the item to send */
-	item.type = SK_UINT32;
-	item.it_uint32 = value;
-	
-	/* send the request */
-	send_dmpitem_request(&item);
-}
-
-/* send an natural_64 value to the application */
-rt_public void send_natural_64_value(EIF_NATURAL_64 value)
-{	
-	EIF_TYPED_VALUE item;
-	
-	/* fill in the item to send */
-	item.type = SK_UINT64;
-	item.it_uint64 = value;
-	
-	/* send the request */
-	send_dmpitem_request(&item);
-}
-
-/* send a real 32 value to the application */
-rt_public void send_real_32_value(EIF_REAL_32 value)
+/* send a real value to the application */
+rt_public void send_real_value(EIF_REAL_32 value)
 {
-	EIF_TYPED_VALUE item;
+	struct item item;
 	
 	/* fill in the item to send */
 	item.type = SK_REAL32;
 	item.it_real32 = value;
+	item.it_addr = NULL;
 	
 	/* send the request */
 	send_dmpitem_request(&item);
 }
 
-/* send a real 64 value to the application */
-rt_public void send_real_64_value(EIF_REAL_64 value)
+/* send a double value to the application */
+rt_public void send_double_value(EIF_REAL_64 value)
 {
-	EIF_TYPED_VALUE item;
+	struct item item;
 	
 	/* fill in the item to send */
 	item.type = SK_REAL64;
 	item.it_real64 = value;
+	item.it_addr = NULL;
 	
 	/* send the request */
 	send_dmpitem_request(&item);
 }
 
 /* send a char value to the application */
-rt_public void send_char_8_value(EIF_CHARACTER value)
+rt_public void send_char_value(EIF_CHARACTER value)
 {
-	EIF_TYPED_VALUE item;
+	struct item item;
 	
 	/* fill in the item to send */
 	item.type = SK_CHAR;
 	item.it_char = value;
+	item.it_addr = NULL;
 	
 	/* send the request */
 	send_dmpitem_request(&item);
 }
 
 /* send a wchar value to the application */
-rt_public void send_char_32_value(EIF_WIDE_CHAR value)
+rt_public void send_wchar_value(EIF_WIDE_CHAR value)
 {
-	EIF_TYPED_VALUE item;
+	struct item item;
 	
 	/* fill in the item to send */
 	item.type = SK_WCHAR;
 	item.it_wchar = value;
+	item.it_addr = NULL;
 	
 	/* send the request */
 	send_dmpitem_request(&item);
@@ -312,11 +222,12 @@ rt_public void send_char_32_value(EIF_WIDE_CHAR value)
 /* send a boolean value to the application */
 rt_public void send_bool_value(EIF_BOOLEAN value)
 {
-	EIF_TYPED_VALUE item;
+	struct item item;
 	
 	/* fill in the item to send */
 	item.type = SK_BOOL;
 	item.it_char = value;
+	item.it_addr = NULL;
 	
 	/* send the request */
 	send_dmpitem_request(&item);
@@ -325,11 +236,12 @@ rt_public void send_bool_value(EIF_BOOLEAN value)
 /* send a reference value to the application */
 rt_public void send_ref_value(EIF_REFERENCE value)
 {
-	EIF_TYPED_VALUE item;
+	struct item item;
 	
 	/* fill in the item to send */
 	item.type = SK_REF;
 	item.it_ref = value;
+	item.it_addr = NULL;
 	
 	/* send the request */
 	send_dmpitem_request(&item);
@@ -338,11 +250,12 @@ rt_public void send_ref_value(EIF_REFERENCE value)
 /* send a pointer value to the application */
 rt_public void send_ptr_value(EIF_POINTER value)
 {
-	EIF_TYPED_VALUE item;
+	struct item item;
 	
 	/* fill in the item to send */
 	item.type = SK_POINTER;
 	item.it_ptr = value;
+	item.it_addr = NULL;
 	
 	/* send the request */
 	send_dmpitem_request(&item);
@@ -351,11 +264,12 @@ rt_public void send_ptr_value(EIF_POINTER value)
 /* send a string to the application */
 rt_public void send_string_value(char* string)
 {
-	EIF_TYPED_VALUE item;
+	struct item item;
 	
 	/* fill in the item to send */
 	item.type = SK_STRING;
 	item.it_ref = string;
+	item.it_addr = NULL;
 	
 	/* send the request */
 	send_dmpitem_request(&item);
@@ -364,35 +278,15 @@ rt_public void send_string_value(char* string)
 /* send a bit value to the application */
 rt_public void send_bit_value(char *value)
 {
-	EIF_TYPED_VALUE item;
+	struct item item;
 	
 	/* fill in the item to send */
 	item.type = SK_BIT;
 	item.it_bit = value;
+	item.it_addr = NULL;
 	
 	/* send the request */
 	send_dmpitem_request(&item);
-}
-
-rt_public void ewb_send_ack_ok(void)
-      		/* The socket descriptor */
-         	/* The acknowledgment code */
-{
-	/* Send an acknowledgment report. In case it is a negative one, the error
-	 * parameter gives some complementary informations. It is possible to
-	 * omit the third parameters for AK_OK or AK_DENIED reports.
-	 */
-
-	Request pack;		/* The answer we'll send back */
-
-	Request_Clean (pack);
-	pack.rq_type = ACKNLGE;				/* We are sending an acknowledgment */
-	pack.rq_ack.ak_type = AK_OK;		/* Report code */
-
-#ifdef USE_ADD_LOG
-	add_log(100, "sending ack %d on pipe %d", code, writefd (sp));
-#endif
-	ewb_send_packet (ewb_sp, &pack);
 }
 
 rt_public EIF_BOOLEAN recv_ack (void)
@@ -459,11 +353,6 @@ rt_public EIF_BOOLEAN recv_dead (void)
 	default:
 		return (EIF_BOOLEAN) 0;
 	}
-}
-
-rt_public void c_send_sized_str (char *s, int size)
-{
-	send_sized_str (ewb_sp, s, size);
 }
 
 rt_public void c_send_str (char *s)

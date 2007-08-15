@@ -14,7 +14,6 @@ inherit
 			is_valid,
 			is_equivalent,
 			same_as,
-			has_associated_class,
 			associated_class,
 			ext_append_to,
 			dump,
@@ -37,8 +36,6 @@ feature -- Properties
 		do
 			Result := True
 		end
-
-	has_associated_class: BOOLEAN is False
 
 feature -- Comparison
 
@@ -72,7 +69,7 @@ feature -- Access
 
 feature -- Output
 
-	ext_append_to (st: TEXT_FORMATTER; c: CLASS_C) is
+	ext_append_to (st: TEXT_FORMATTER; f: E_FEATURE) is
 		do
 			st.add (ti_Open_arg)
 		end

@@ -38,10 +38,6 @@ feature -- Event handling
 			-- Use of `idle_actions' is not thread-safe.  For thread-safe idle
 			-- actions handling use 'add_idle_action', `remove_idle_action'
 			-- or `do_once_on_idle' in conjunction with EV_THREAD_APPLICATION.
-		obsolete
-			"Use add_idle_action, do_once_on_idle or remove_idle_action instead"
-		require
-			single_threaded: not {PLATFORM}.is_thread_capable
 		do
 			Result := implementation.idle_actions
 		ensure
@@ -87,19 +83,7 @@ feature -- Event handling
 			not_void: Result /= Void
 		end
 
-	file_drop_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [widget: EV_WIDGET; file_list: LIST [STRING_32]]]
-			-- Actions to be performed when an OS file drop is performed on `Current'.
-			-- `widget' is the widget on which the file(s) where dropped on to.
-			-- `file_list' is a list of the file paths being dropped on to `widget'.
-			-- In order for `file_drop_actions' to be called an agent has to be already
-			-- present in the `file_drop_actions' of `widget' otherwise a drop is disallowed.
-		do
-			Result := implementation.file_drop_actions
-		ensure
-			not_void: Result /= Void
-		end
-
-	uncaught_exception_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [exception: EXCEPTION]] is
+	uncaught_exception_actions: ACTION_SEQUENCE [TUPLE [EXCEPTION]] is
 			-- Actions to be performed when an
 			-- action sequence called via callback
 			-- from the underlying toolkit raises an
@@ -110,80 +94,90 @@ feature -- Event handling
 			not_void: Result /= Void
 		end
 
-	pointer_motion_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [widget: EV_WIDGET; screen_x: INTEGER; screen_y: INTEGER]] is
-			-- Actions to be performed when screen pointer moves.
+	pointer_motion_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER]] is
+			-- Actions to be performed when screen pointer moves with open arguments
+			-- widget: EV_WIDGET; screen_x, screen_y: INTEGER
 		do
 			Result := implementation.pointer_motion_actions
 		ensure
 			not_void: Result /= Void
 		end
 
-	pointer_button_press_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [widget: EV_WIDGET; button: INTEGER; screen_x: INTEGER; screen_y: INTEGER]] is
-			-- Actions to be performed when screen pointer button is pressed.
+	pointer_button_press_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]] is
+			-- Actions to be performed when screen pointer button is pressed with open arguments
+			-- widget: EV_WIDGET; button, screen_x, screen_y: INTEGER
 		do
 			Result := implementation.pointer_button_press_actions
 		ensure
 			not_void: Result /= Void
 		end
 
-	pointer_double_press_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [widget: EV_WIDGET; button: INTEGER; screen_x: INTEGER; screen_y: INTEGER]] is
-			-- Actions to be performed when screen pointer is double clicked.
+	pointer_double_press_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]] is
+			-- Actions to be performed when screen pointer is double clicked with open arguments
+			-- widget: EV_WIDGET; button, screen_x, screen_y: INTEGER
 		do
 			Result := implementation.pointer_double_press_actions
 		ensure
 			not_void: Result /= Void
 		end
 
-	pointer_button_release_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [widget: EV_WIDGET; button: INTEGER; screen_x: INTEGER; screen_y: INTEGER]] is
-			-- Actions to be performed when screen pointer button is released.
+	pointer_button_release_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]] is
+			-- Actions to be performed when screen pointer button is released with open arguments
+			-- widget: EV_WIDGET; button, screen_x, screen_y: INTEGER
 		do
 			Result := implementation.pointer_button_release_actions
 		ensure
 			not_void: Result /= Void
 		end
 
-	mouse_wheel_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [widget: EV_WIDGET; delta: INTEGER]] is
-			-- Actions to be performed when mouse wheel is rotated.
+	mouse_wheel_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER]] is
+			-- Actions to be performed when mouse wheel is rotated with open arguments
+			-- widget: EV_WIDGET; delta: INTEGER
 		do
 			Result := implementation.mouse_wheel_actions
 		ensure
 			not_void: Result /= Void
 		end
 
-	key_press_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [widget: EV_WIDGET; key: EV_KEY]] is
-			-- Actions to be performed when a keyboard key is pressed.
+	key_press_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, EV_KEY]] is
+			-- Actions to be performed when a keyboard key is pressed with open arguments
+			-- widget: EV_WIDGET; key: EV_KEY
 		do
 			Result := implementation.key_press_actions
 		ensure
 			not_void: Result /= Void
 		end
 
-	key_press_string_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [widget: EV_WIDGET; string: STRING_GENERAL]] is
-			-- Actions to be performed when a keyboard press generates a displayable character.
+	key_press_string_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, STRING_GENERAL]] is
+			-- Actions to be performed when a keyboard press generates a displayable character with
+			-- open arguments widget: EV_WIDGET; string: STRING_GENERAL
 		do
 			Result := implementation.key_press_string_actions
 		ensure
 			not_void: Result /= Void
 		end
 
-	key_release_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [widget: EV_WIDGET; key: EV_KEY]] is
-			-- Actions to be performed when a keyboard key is released.
+	key_release_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, EV_KEY]] is
+			-- Actions to be performed when a keyboard key is released with open arguments
+			-- widget: EV_WIDGET; key: EV_KEY
 		do
 			Result := implementation.key_release_actions
 		ensure
 			not_void: Result /= Void
 		end
 
-	focus_in_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [widget: EV_WIDGET]] is
-			-- Actions to be performed when getting focus.
+	focus_in_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET]] is
+			-- Actions to be performed when getting focus with open arguments
+			-- widget: EV_WIDGET
 		do
 			Result := implementation.focus_in_actions
 		ensure
 			not_void: Result /= Void
 		end
 
-	focus_out_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [widget: EV_WIDGET]] is
-			-- Actions to be performed when losing focus.
+	focus_out_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET]] is
+			-- Actions to be performed when losing focus with open arguments
+			-- widget: EV_WIDGET
 		do
 			Result := implementation.focus_out_actions
 		ensure

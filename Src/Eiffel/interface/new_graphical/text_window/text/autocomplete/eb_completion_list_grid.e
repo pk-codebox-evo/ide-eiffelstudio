@@ -15,13 +15,6 @@ inherit
 			initialize
 		end
 
-	EB_SHARED_PREFERENCES
-		undefine
-			default_create,
-			is_equal,
-			copy
-		end
-
 feature {NONE} -- Initialization
 
 	initialize is
@@ -30,8 +23,6 @@ feature {NONE} -- Initialization
 			Precursor
 			pick_ended_actions.force_extend (agent on_pick_ended)
 			set_item_pebble_function (agent on_pick)
-			set_focused_selection_color (preferences.editor_data.selection_background_color)
-			set_non_focused_selection_color (preferences.editor_data.focus_out_selection_background_color)
 		end
 
 feature {NONE} -- Implementation
@@ -43,7 +34,7 @@ feature {NONE} -- Implementation
 		do
 			l_item ?= last_picked_item
 			if l_item /= Void then
-				l_item.set_last_picked_item (0)
+				l_item.set_last_picked_token (0)
 				if l_item.is_parented then
 					l_item.redraw
 				end
@@ -71,7 +62,7 @@ feature {NONE} -- Implementation
 						remove_selection
 						set_accept_cursor (l_stone.stone_cursor)
 						set_deny_cursor (l_stone.x_stone_cursor)
-						l_item.set_last_picked_item (l_index)
+						l_item.set_last_picked_token (l_index)
 						l_item.redraw
 						last_picked_item := l_item
 					end

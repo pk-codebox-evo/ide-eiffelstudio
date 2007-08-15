@@ -39,9 +39,7 @@ inherit
 			call_button_event_actions,
 			create_pointer_motion_actions,
 			visual_widget,
-			on_pointer_motion,
-			pebble_source,
-			needs_event_box
+			on_pointer_motion
 		end
 
 	EV_ITEM_LIST_IMP [EV_MULTI_COLUMN_LIST_ROW]
@@ -113,8 +111,6 @@ feature {NONE} -- Initialization
 			l_release_actions := pointer_button_release_actions
 			connect_selection_actions
 		end
-
-	needs_event_box: BOOLEAN = True
 
 feature {EV_GTK_DEPENDENT_INTERMEDIARY_ROUTINES} -- Implementation
 
@@ -653,7 +649,6 @@ feature -- Element change
 	column_title_changed (a_txt: STRING_GENERAL; a_column: INTEGER) is
 			-- Make `a_txt' the title of the column number.
 		local
-			l_txt: STRING_32
 			a_cs: EV_GTK_C_STRING
 			a_column_ptr: POINTER
 		do
@@ -664,9 +659,7 @@ feature -- Element change
 			check
 				a_column_not_null: a_column_ptr /= default_pointer
 			end
-			l_txt := a_txt.as_string_32
-			l_txt.replace_substring_all (once "_", once "__")
-			a_cs := l_txt
+			a_cs := a_txt
 			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_tree_view_column_set_title (a_column_ptr, a_cs.item)
 		end
 
@@ -764,17 +757,6 @@ feature -- Element change
 
 feature -- Implementation
 
-	pebble_source: EV_PICK_AND_DROPABLE
-			-- Source of pebble, used for widgets with deferred PND implementation
-			-- such as EV_TREE and EV_MULTI_COLUMN_LIST.
-		do
-			if pnd_row_imp /= Void then
-				Result := pnd_row_imp.interface
-			else
-				Result := Precursor
-			end
-		end
-
 	set_to_drag_and_drop: BOOLEAN is
 			-- Set transport mode to drag and drop.
 		do
@@ -789,19 +771,21 @@ feature -- Implementation
 			-- Is list or row able to transport PND data using `a_button'.
 		do
 			if pnd_row_imp /= Void then
-				Result := pnd_row_imp.able_to_transport (a_button)
+				Result := (pnd_row_imp.mode_is_drag_and_drop and a_button = 1) or
+				(pnd_row_imp.mode_is_pick_and_drop and a_button = 3)
 			else
-				Result := Precursor (a_button)
+				Result := (mode_is_drag_and_drop and a_button = 1) or
+				(mode_is_pick_and_drop and a_button = 3)
 			end
 		end
 
-	ready_for_pnd_menu (a_button: INTEGER_32; a_press: BOOLEAN): BOOLEAN
+	ready_for_pnd_menu (a_button: INTEGER): BOOLEAN is
 			-- Is list or row able to display PND menu using `a_button'
 		do
 			if pnd_row_imp /= Void then
-				Result := pnd_row_imp.ready_for_pnd_menu (a_button, a_press)
+				Result := pnd_row_imp.mode_is_target_menu and then a_button = 3
 			else
-				Result := Precursor (a_button, a_press)
+				Result := mode_is_target_menu and then a_button = 3
 			end
 		end
 
@@ -854,11 +838,9 @@ feature -- Implementation
 
 			if a_row_index > 0 then
 				pnd_row_imp := ev_children.i_th (a_row_index)
-				if not (pnd_row_imp.able_to_transport (a_button) or pnd_row_imp.mode_is_configurable_target_menu) then
+				if not pnd_row_imp.able_to_transport (a_button) then
 					pnd_row_imp := Void
 				end
-			else
-				pnd_row_imp := Void
 			end
 
 			Precursor (
@@ -947,7 +929,6 @@ feature -- Implementation
 					)
 				end
 			end
-			modify_widget_appearance (True)
 		end
 
 	post_drop_steps (a_button: INTEGER)  is

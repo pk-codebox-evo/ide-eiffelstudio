@@ -109,8 +109,7 @@ feature
 	c_string: STRING is "EIF_REFERENCE"
 			-- String generated for the type.
 
-	typed_field: STRING is "it_r"
-			-- Value field of a C structure corresponding to this type
+	union_tag : STRING is "rarg"
 
 	hash_code: INTEGER is
 			-- Hash code for current type
@@ -125,7 +124,7 @@ feature
 		end
 
 	metamorphose
-	(reg, value: REGISTRABLE; buffer: GENERATION_BUFFER) is
+	(reg, value: REGISTRABLE; buffer: GENERATION_BUFFER; workbench_mode: BOOLEAN) is
 			-- Generate the metamorphism from simple type to reference and
 			-- put result in register `reg'. The value of the basic type is
 			-- held in `value'.
@@ -135,11 +134,11 @@ feature
 			value.print_register
 		end
 
-	generate_typed_tag (buffer: GENERATION_BUFFER) is
-			-- Generate tag of C structure "EIF_TYPED_VALUE" associated
+	generate_union (buffer: GENERATION_BUFFER) is
+			-- Generate discriminant of C structure "item" associated
 			-- to the current C type in `buffer'.
 		do
-			buffer.put_string ("type = SK_REF")
+			 buffer.put_string ("it_bit")
 		end
 
 	generate_sk_value (buffer: GENERATION_BUFFER) is
@@ -232,7 +231,7 @@ feature
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

@@ -35,11 +35,11 @@ lngpad_2='LNGPAD(2)'
 #Formatting
 #Check value for next 4
 inttypes_include='#include <sys/inttypes.h>'
-eif_integer_64_display='"lld"'
-eif_natural_64_display='"llu"'
+eif_integer_64_display='PRId64'
+eif_natural_64_display='PRIu64'
 eif_pointer_display='"X"'
-eif_integer_64_constant='CAT2(x,ll)'
-eif_natural_64_constant='CAT2(x,ull)'
+eif_integer_64_constant='INT64_C(x)'
+eif_natural_64_constant='UINT64_C(x)'
 d_uint64_to_real='define'
 
 #File system
@@ -139,38 +139,22 @@ sed='/bin/sed'
 spitshell='cat'
 
 #Compiler/Preprocessor
-if [ -n "$ISE_VERSION" ]; then
-	rt_version=$ISE_VERSION
-else
-	rt_version=''
-fi
-if [ -n "$ISE_EIFFEL" ]; then
-	rt_include=$ISE_EIFFEL/studio/spec/$ISE_PLATFORM/include
-	rt_lib=$ISE_EIFFEL/studio/spec/$ISE_PLATFORM/lib
-	rt_templates=$ISE_EIFFEL/studio/config/$ISE_PLATFORM/templates
-	x2c=$ISE_EIFFEL/studio/spec/$ISE_PLATFORM/bin/x2c
-else
-	rt_include=$ISE_PREFIX/include/eiffel$rt_version
-	rt_lib=$ISE_PREFIX/$ISE_LIB_NAME/eiffel$rt_version
-	rt_templates=$ISE_PREFIX/share/eiffel$rt_version/ec/config/$ISE_PLATFORM/templates
-	x2c=$ISE_PREFIX/$ISE_LIB_NAME/eiffel$rt_version/ec/x2c
-fi
 add_log='undef'
 if [ -n "$CC" ]; then
 	cc=$CC
 else
-	cc='cc'
+	cc='gcc'
 fi
 if [ -n "$CFLAGS" ]; then
 	ccflags=$CFLAGS
 else
-	ccflags='-D__BUILTIN_VA_ARG_INCR -K PIC'
+	ccflags='-pipe -D__BUILTIN_VA_ARG_INCR'
 fi
 ccldflags=''
 if [ -n "$CPP" ]; then
 	cpp=$CPP
 else
-	cpp='CC'
+	cpp='g++'
 fi
 if [ -n "$CPPFLAGS" ]; then
 	cppflags=$CPPFLAGS
@@ -184,18 +168,16 @@ eif_sgi='undef'
 eif_solaris='define'
 eif_windows='undef'
 eif_64_bits='undef'
-eif_os='EIF_SUNOS'
-eif_arch='EIF_SPARC'
 Mcc='Mcc'
 d_tls='undef'
 #Check value for next 2
-mtccflags="$ccflags -D_REENTRANT -DEIF_THREADS -DEIF_POSIX_THREADS"
-mtcppflags="$cppflags -D_REENTRANT -DEIF_THREADS -DEIF_POSIX_THREADS"
-optimize="-xO2"
+mtccflags="$ccflags -D_REENTRANT -DEIF_THREADS -DSOLARIS_THREADS"
+mtcppflags="$cppflags -D_REENTRANT -DEIF_THREADS -DSOLARIS_THREADS"
+optimize="-O3"
 voidflags='15'
 #Check value for next 1
-warning_level=''
-wkoptimize=""
+warning_level='-Wall'
+wkoptimize="-O0"
 
 #Makefiles
 ar='ar'
@@ -218,7 +200,7 @@ mkdep='\$(EIFFEL_SRC)/C/mkdep'
 mkdir='mkdir'
 mtldflags="$ldflags"
 mtldsharedflags="$ldsharedflags"
-mtlibs="$libs -lrt -lpthread"
+mtlibs="$libs -lrt -lthread"
 mt_prefix='mt'
 mv='/bin/mv'
 prefix='lib'

@@ -64,20 +64,6 @@ feature {EV_ANY_I} -- Access
 			c_object_coupled: eif_object_from_c (c_object) = Current
 		end
 
-	frozen couple_object_id_with_gtk_object (a_gtk_object: POINTER; a_object_id: INTEGER)
-			-- Associate GtkObject `a_gtk_object' with object id `a_object_id'
-		external
-			"C inline use %"ev_any_imp.h%""
-		alias
-			"[
-	            g_object_set_data (
-	                G_OBJECT ($a_gtk_object),
-	                "eif_oid",
-	                (gpointer) (rt_int_ptr) $a_object_id
-	            );
-			]"
-		end
-
 	frozen eif_object_from_c (a_c_object: POINTER): EV_ANY_IMP is
 			-- Retrieve the EV_ANY_IMP stored in `a_c_object'.
 		external
@@ -111,22 +97,25 @@ feature {EV_ANY_I, EV_APPLICATION_IMP} -- Event handling
 		an_agent: PROCEDURE [ANY, TUPLE]
 		) is
 			-- Connect `an_agent' to `a_signal_name'.
+			-- Use `translate' to convert GTK+ event data to TUPLE.
 		require
 			a_signal_name_not_void: a_signal_name /= Void
 			an_agent_not_void: an_agent /= Void
 		local
+			l_translate: FUNCTION [ANY, TUPLE [INTEGER, POINTER], TUPLE];
 			a_connection_id: INTEGER
 		do
+			l_translate := app_implementation.default_translate
 			a_connection_id := {EV_GTK_CALLBACK_MARSHAL}.c_signal_connect_true (
 				c_object,
 				a_signal_name.item,
-				an_agent
+				agent (App_implementation.gtk_marshal).translate_and_call (an_agent, l_translate)
 			)
 		end
 
 	real_signal_connect (
 		a_c_object: like c_object;
-		a_signal_name: STRING_8;
+		a_signal_name: STRING;
 		an_agent: PROCEDURE [ANY, TUPLE];
 		translate: FUNCTION [ANY, TUPLE [INTEGER, POINTER], TUPLE];
 		) is
@@ -140,12 +129,12 @@ feature {EV_ANY_I, EV_APPLICATION_IMP} -- Event handling
 			l_app_imp: EV_APPLICATION_IMP
 		do
 			l_app_imp := app_implementation
-			l_app_imp.gtk_marshal.signal_connect (a_c_object, a_signal_name, an_agent, translate, False)
+			l_app_imp.gtk_marshal.signal_connect (a_c_object, l_app_imp.c_string_from_eiffel_string (a_signal_name), an_agent, translate, False)
 		end
 
 	real_signal_connect_after (
 		a_c_object: like c_object;
-		a_signal_name: STRING_8;
+		a_signal_name: STRING;
 		an_agent: PROCEDURE [ANY, TUPLE];
 		translate: FUNCTION [ANY, TUPLE [INTEGER, POINTER], TUPLE];
 		) is
@@ -161,6 +150,17 @@ feature {EV_ANY_I, EV_APPLICATION_IMP} -- Event handling
 		do
 			l_app_imp := app_implementation
 			l_app_imp.gtk_marshal.signal_connect (a_c_object, l_app_imp.c_string_from_eiffel_string (a_signal_name), an_agent, translate, True)
+		end
+
+	signal_connect (
+		a_c_object: like c_object;
+		a_signal_name: EV_GTK_C_STRING;
+		an_agent: PROCEDURE [ANY, TUPLE];
+		translate: FUNCTION [ANY, TUPLE [INTEGER, POINTER], TUPLE];
+		invoke_after_handler: BOOLEAN) is
+				--
+		do
+			app_implementation.gtk_marshal.signal_connect (a_c_object, a_signal_name, an_agent, translate, invoke_after_handler)
 		end
 
 	last_signal_connection_id: INTEGER is

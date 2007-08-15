@@ -56,7 +56,7 @@ feature -- IL Generation
 			local_feature_processor: PROCEDURE [ANY, TUPLE [FEATURE_I, FEATURE_I, CLASS_TYPE, BOOLEAN]];
 			inherited_feature_processor: PROCEDURE [ANY, TUPLE [FEATURE_I, FEATURE_I, CLASS_TYPE]];
 			type_feature_processor: PROCEDURE [ANY, TUPLE [TYPE_FEATURE_I]];
-			inline_agent_processor: PROCEDURE [CIL_CODE_GENERATOR, TUPLE [FEATURE_I]])
+			generate_inline_agents: BOOLEAN)
 		is
 			-- Generate IL code for feature in `class_c'.
 		local
@@ -87,8 +87,8 @@ feature -- IL Generation
 			generate_il_type_features (class_c, class_type, class_c.anchored_features, type_feature_processor)
 
 				-- Generate features for inline agents.
-			if class_c.is_eiffel_class_c then
-				generate_il_inline_agents (class_c.eiffel_class_c, inline_agent_processor)
+			if class_c.is_eiffel_class_c and then generate_inline_agents then
+				generate_il_inline_agents (class_c.eiffel_class_c, class_type)
 			end
 
 				-- Generate current features implement locally in `current_class_type'
@@ -170,7 +170,7 @@ feature -- IL Generation
 				agent generate_local_feature,
 				agent generate_inherited_feature,
 				agent generate_type_feature,
-				agent generate_feature_code (?, True))
+				True)
 				-- Generate class invariant and internal run-time features.
 			generate_class_features (class_c, class_type)
 
@@ -212,7 +212,7 @@ feature -- IL Generation
 			local_feature_processor_not_void: local_feature_processor /= Void
 			inherited_feature_processor_not_void: inherited_feature_processor /= Void
 		local
-			parents: ARRAYED_LIST [CLASS_INTERFACE]
+			parents: SEARCH_TABLE [CLASS_INTERFACE]
 			l_interface: CLASS_INTERFACE
 			l_cl_type: CLASS_TYPE
 		do
@@ -222,7 +222,7 @@ feature -- IL Generation
 			until
 				parents.after
 			loop
-				l_interface := parents.item
+				l_interface := parents.item_for_iteration
 				l_cl_type := l_interface.class_type
 
 				if not processed_tbl.has (l_cl_type.static_type_id) then
@@ -320,7 +320,7 @@ feature -- IL Generation
 					-- Generate local definition of `inh_feat' which
 					-- calls static definition.
 				rout_id := inh_feat.rout_id_set.first
-				if rout_ids_tbl.has_key (rout_id) then
+				if rout_ids_tbl.has (rout_id) then
 					if implemented_feature_processor /= Void then
 						feat := rout_ids_tbl.found_item
 						implemented_feature_processor.call ([feat, class_type, inh_feat])
@@ -328,16 +328,10 @@ feature -- IL Generation
 				else
 					feat := current_select_tbl.item (rout_id)
 						-- Generate code for current class only.
-					if feat /= Void and then feat.is_il_external then
-						if
-							inherited_feature_processor /= Void and then
-							inh_feat.is_deferred and then
-							not feat.written_class.conform_to (inh_feat.written_class)
-						then
-								-- Implementation of the feature has to be generated.
-							inherited_feature_processor.call ([feat, inh_feat, class_type])
-						end
-					elseif feat /= Void and then not feat.is_deferred then
+					if
+						feat /= Void and then
+						not feat.is_deferred and then not feat.is_il_external
+					then
 						if feat.written_in = l_class_id or else feat.is_attribute then
 							local_feature_processor.call ([feat, inh_feat, class_type, False])
 							mark_as_treated (feat)
@@ -385,7 +379,6 @@ feature -- IL Generation
 			impl_feat: FEATURE_I
 			impl_type: CL_TYPE_I
 			impl_class_type: CLASS_TYPE
-			written_class_type: CLASS_TYPE
 		do
 			is_expanded := current_class_type.is_expanded
 			if feat.body_index = standard_twin_body_index then
@@ -393,23 +386,12 @@ feature -- IL Generation
 			else
 				impl_feat := inh_feat
 				impl_class_type := class_type
-				if is_replicated then
-						-- Calculate class type where the feature is written.
-					written_class_type := current_class_type.type.implemented_type
-						(feat.written_in).associated_class_type
-				end
 				if not is_single_class then
 						-- Generate static definition of a routine `feat' if the class type is not expanded.
 					if not is_replicated or else feat.is_once then
 						if not is_expanded or else feat.is_attribute or else feat.is_external then
 							generate_feature (feat, False, True, False)
-							if is_replicated then
-								byte_context.change_class_type_context (current_class_type, written_class_type)
-							end
 							generate_feature_code (feat, True)
-							if is_replicated then
-								byte_context.restore_class_type_context
-							end
 						end
 					end
 
@@ -421,13 +403,7 @@ feature -- IL Generation
 					end
 
 					if is_expanded and then not feat.is_attribute and then not feat.is_external then
-						if is_replicated then
-							byte_context.change_class_type_context (current_class_type, written_class_type)
-						end
 						generate_feature_code (feat, False)
-						if is_replicated then
-							byte_context.restore_class_type_context
-						end
 					elseif not is_replicated or else feat.is_once then
 							-- We call locally above generated static feature
 						generate_feature_il (feat,
@@ -438,7 +414,8 @@ feature -- IL Generation
 							-- This static feature is defined in parent which explains the search
 							-- made below to find in which parent's type.
 						generate_feature_il (feat,
-							written_class_type.implementation_id,
+							implemented_type (feat.written_in,
+							current_class_type.type).associated_class_type.implementation_id,
 							feat.written_feature_id)
 					end
 				else
@@ -463,26 +440,21 @@ feature -- IL Generation
 								signatures (impl_class_type.static_type_id, impl_feat.feature_id))
 					end
 					if feat.is_c_external then
-						if is_replicated then
-							generate_feature_il (feat,
-								written_class_type.implementation_id,
-								feat.written_feature_id)
-						else
+						if not is_replicated then
 							generate_feature (feat, False, True, True)
 							generate_external_il (feat)
+						else
+							generate_feature_il (feat,
+								implemented_type (feat.written_in,
+								current_class_type.type).associated_class_type.implementation_id,
+								feat.written_feature_id)
 						end
 					elseif is_expanded and then feat.is_attribute then
 						generate_feature_il (feat,
 							current_class_type.implementation_id,
 							feat.feature_id)
 					else
-						if is_replicated then
-							byte_context.change_class_type_context (current_class_type, written_class_type)
-						end
 						generate_feature_code (feat, True)
-						if is_replicated then
-							byte_context.restore_class_type_context
-						end
 					end
 				end
 				if l_is_method_impl_generated then
@@ -518,7 +490,7 @@ feature -- IL Generation
 
 				if feat.body_index = standard_twin_body_index then
 					generate_feature_standard_twin (feat)
-				elseif current_class_type.is_expanded and then not feat.is_c_external then
+				elseif current_class_type.is_expanded then
 					generate_feature_code (feat, False)
 				else
 					if feat.is_once then
@@ -529,8 +501,7 @@ feature -- IL Generation
 						implementation_feature_id := feat.written_feature_id
 					end
 					generate_feature_il (feat,
-						current_class_type.type.implemented_type
-							(implementation_class_id).implementation_id,
+						implemented_type (implementation_class_id, current_class_type.type).implementation_id,
 						implementation_feature_id)
 				end
 
@@ -547,8 +518,8 @@ feature -- IL Generation
 					generate_feature_code (feat, False)
 				else
 					generate_feature_il (feat,
-						current_class_type.type.implemented_type
-							(feat.written_in).associated_class_type.implementation_id,
+						implemented_type (feat.written_in,
+							current_class_type.type).associated_class_type.implementation_id,
 							feat.written_feature_id)
 				end
 			end

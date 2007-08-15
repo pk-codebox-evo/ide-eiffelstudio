@@ -12,7 +12,7 @@ inherit
 	PROCEDURE_I
 		redefine
 			is_deferred, has_entry, to_generate_in, extension,
-			update_api, transfer_to, access_for_feature
+			to_melt_in, update_api, transfer_to, access_for_feature
 		end
 
 feature -- Status Report
@@ -27,7 +27,7 @@ feature -- Status Report
 
 feature -- Access
 
-	access_for_feature (access_type: TYPE_I; static_type: TYPE_I; is_qualified: BOOLEAN): ACCESS_B is
+	access_for_feature (access_type: TYPE_I; static_type: TYPE_I): ACCESS_B is
 			-- New ACCESS_B structure for current deferred routine
 		local
 			external_b: EXTERNAL_B
@@ -43,11 +43,20 @@ feature -- Access
 				external_b.set_extension (extension)
 				Result := external_b
 			else
-				Result := Precursor (access_type, static_type, is_qualified)
+				Result := Precursor {PROCEDURE_I} (access_type, static_type)
 			end
 		end
 
 feature -- Conversion
+
+	to_melt_in (a_class: CLASS_C): BOOLEAN is
+			-- Has the current feature to be melted in class `a_class' ?
+			-- (Deferred routines with pre or post conditions are
+			-- melted)
+		do
+			Result := a_class.class_id = written_in and then
+					(has_precondition or else has_postcondition);
+		end;
 
 	to_generate_in (a_class: CLASS_C): BOOLEAN is
 			-- Has the current feature to be generated in class `a_class' ?

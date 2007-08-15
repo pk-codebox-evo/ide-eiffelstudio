@@ -30,7 +30,8 @@ feature -- Change agent
 		do
 			on_new_position_yielded := a_procedure
 		end
-
+		
+	
 feature -- Replacement
 
 	append_replace_all_to_string (a_string, a_replacement: STRING) is

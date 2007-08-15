@@ -14,6 +14,7 @@ inherit
 			make_child as make
 		redefine
 			move_and_resize,
+			move,
 			minimal_width,
 			minimal_height,
 			maximal_width,
@@ -60,7 +61,7 @@ feature -- Access
 				Result := (create {WEL_SHARED_FONTS}).system_font
 			else
 				create Result.make_by_pointer (
-					{WEL_API}.send_message_result (item, Wm_getfont,
+					cwin_send_message_result (item, Wm_getfont,
 					default_pointer, default_pointer))
 			end
 		ensure
@@ -76,7 +77,7 @@ feature -- Element change
 			a_font_not_void: a_font /= Void
 			a_font_exists: a_font.exists
 		do
-			{WEL_API}.send_message (item, Wm_setfont,
+			cwin_send_message (item, Wm_setfont,
 				a_font.item,
 				cwin_make_long (1, 0))
 		ensure
@@ -90,7 +91,7 @@ feature -- Status report
 		require
 			exists: exists
 		do
-			Result := {WEL_API}.send_message_result (item, Wm_getfont,
+			Result := cwin_send_message_result (item, Wm_getfont,
 				default_pointer, default_pointer) = default_pointer
 		end
 
@@ -124,7 +125,15 @@ feature -- Basic operations
 			-- Move the window to `a_x', `a_y' position and
 			-- resize it with `a_width', `a_height'.
 		do
-			move_and_resize_internal (a_x, a_y, a_width, a_height, repaint, 0)
+			move_and_resize_internal (a_x, a_y, a_width, a_height, repaint)
+		end
+
+	move (a_x, a_y: INTEGER) is
+			-- Move the window to `a_x', `a_y' position.
+		do
+			cwin_set_window_pos (item, default_pointer,
+				a_x, a_y, 0, 0,
+				Swp_nosize | Swp_nozorder | Swp_noactivate)
 		end
 
 feature {NONE} -- Implementation
@@ -146,7 +155,7 @@ feature {NONE} -- Implementation
 		once
 			Result := "WELControlWindowClass"
 		end
-
+		
 	class_requires_icon: BOOLEAN is
 			-- Does `Current' require an icon to be registered?
 			-- If `True' `register_class' assigns a class icon, otherwise

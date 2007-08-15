@@ -136,36 +136,12 @@ feature -- Access
 
 	line_in_file: INTEGER is
 			-- Line number of current item in file
-		do
-			if code_structure.is_compiled then
-				Result := code_structure.first_line + line_number - 1
-			else
-				Result := line_number
-			end
-		end
-
-	code_structure: QL_CODE_STRUCTURE_ITEM is
-			-- Class associated with Current line
-		do
-			if code_structure_internal = Void then
-				code_structure_internal ?= parent
-			end
-			Result := code_structure_internal
-		ensure
-			result_attached: Result /= Void
-		end
-
-	parent_with_real_path: QL_ITEM is
-			-- Parent item of Current with real path.
-			-- Real path means that every parent is physically determined.
 		local
-			l_parent: QL_ITEM
+			l_parent: QL_CODE_STRUCTURE_ITEM
 		do
-			Result := parent.twin
-			l_parent := Result.parent_with_real_path
-			if l_parent /= Void then
-				Result.set_parent (l_parent)
-			end
+			l_parent ?= parent
+			check l_parent /= Void end
+			Result := l_parent.first_line + line_number - 1
 		end
 
 feature -- Status report
@@ -331,9 +307,6 @@ feature{NONE} -- Implementation
 	is_comment_calculated: BOOLEAN
 			-- Has `is_comment' been calculated?
 
-	code_structure_internal: like code_structure
-			-- Implementation of `code_structure'
-
 feature -- Comparison
 
 	is_equal (other: like Current): BOOLEAN is
@@ -348,6 +321,7 @@ feature -- Comparison
 				(parent.same_type (other.parent) and then
 				 parent.is_equal (other.parent) and then
 				 line_number = other.line_number)
+
 		end
 
 invariant
@@ -386,5 +360,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

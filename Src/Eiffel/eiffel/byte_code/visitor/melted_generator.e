@@ -117,17 +117,20 @@ feature {NONE} -- Visitors
 			l_target_type := l_real_ty.meta_generic.item (1)
 			l_base_class := l_real_ty.base_class
 			l_feat_i := l_base_class.feature_table.item_id ({PREDEFINED_NAMES}.make_name_id)
+				-- Need to insert into
+				-- the stack back to front in order
+				-- to be inserted into the area correctly
 			from
-				a_node.expressions.start
+				a_node.expressions.finish
 			until
-				a_node.expressions.after
+				a_node.expressions.before
 			loop
 				l_expr ?= a_node.expressions.item
 				check
 					l_expr_not_void: l_expr /= Void
 				end
 				make_expression_byte_code_for_type (l_expr, l_target_type)
-				a_node.expressions.forth
+				a_node.expressions.back
 			end
 			if l_base_class.is_precompiled then
 				ba.append (Bc_parray)
@@ -159,14 +162,17 @@ feature {NONE} -- Visitors
 	process_assign_b (a_node: ASSIGN_B) is
 			-- Process `a_node'.
 		local
+			l_source_type: TYPE_I
 			l_target_type: TYPE_I
 			l_target_node: ACCESS_B
 			l_hector_b: HECTOR_B
 		do
 			generate_melted_debugger_hook
-				-- Generate expression byte code	
+
+				-- Generate expression byte code
+			l_source_type := context.real_type (a_node.source.type)
 			l_target_node := a_node.target
-			l_target_type := Context.real_type_fixed (l_target_node.type)
+			l_target_type := Context.real_type (l_target_node.type)
 			if a_node.is_creation_instruction then
 					-- Avoid object cloning.
 				a_node.source.process (Current)
@@ -486,7 +492,7 @@ feature {NONE} -- Visitors
 			l_call: CALL_ACCESS_B
 			l_nested: NESTED_B
 		do
-			l_basic_type ?= context.real_type_fixed (a_node.type)
+			l_basic_type ?= context.real_type (a_node.type)
 			if l_basic_type /= Void then
 					-- Special cases for basic types where nothing needs to be created, we
 					-- simply need to push a default value as their creation procedure
@@ -619,10 +625,9 @@ feature {NONE} -- Visitors
 			l_hector_b: HECTOR_B
 			l_expr_address_b: EXPR_ADDRESS_B
 			l_nb_expr_address: INTEGER
-			l_pos, r_id: INTEGER
+			l_pos: INTEGER
 			l_cl_type: CL_TYPE_I
 			l_is_in_creation_call: like is_in_creation_call
-			l_rout_info: ROUT_INFO
 		do
 			l_is_in_creation_call := is_in_creation_call
 			is_in_creation_call := False
@@ -685,19 +690,11 @@ feature {NONE} -- Visitors
 			if a_node.is_static_call then
 				ba.append (bc_current)
 				l_cl_type ?= context.real_type (a_node.static_class_type)
-				if l_cl_type.base_class.is_precompiled then
-					r_id := a_node.routine_id
-					l_rout_info := System.rout_info_table.item (r_id)
-					ba.append (bc_pextern)
-					ba.append_integer (l_rout_info.origin)
-					ba.append_integer (l_rout_info.offset)
-				else
-					ba.append (bc_extern)
-					ba.append_integer (a_node.real_feature_id (l_cl_type.base_class))
-					l_type_id := l_cl_type.associated_class_type.static_type_id - 1
-					ba.append_short_integer (l_type_id)
-				end
-				make_precursor_byte_code (a_node)
+				ba.append (bc_extern)
+				ba.append_integer (a_node.real_feature_id (l_cl_type.base_class))
+				l_type_id := l_cl_type.associated_class_type.static_type_id - 1
+				ba.append_short_integer (l_type_id)
+				ba.append_short_integer (l_type_id)
 			else
 				make_call_access_b (
 					a_node, bc_extern, bc_extern_inv, bc_pextern, bc_pextern_inv, l_is_in_creation_call)
@@ -706,11 +703,6 @@ feature {NONE} -- Visitors
 			if l_nb_expr_address > 0 then
 				ba.append (Bc_pop)
 				ba.append_uint32_integer (l_nb_expr_address)
-			end
-
-			if context.real_type (a_node.type).is_reference then
-					-- Box return value if required.
-				ba.append (bc_metamorphose)
 			end
 		end
 
@@ -818,11 +810,6 @@ feature {NONE} -- Visitors
 			if l_nb_expr_address > 0 then
 				ba.append (Bc_pop)
 				ba.append_uint32_integer (l_nb_expr_address)
-			end
-
-			if context.real_type (a_node.type).is_reference then
-					-- Box return value if required.
-				ba.append (bc_metamorphose)
 			end
 		end
 
@@ -1065,6 +1052,8 @@ feature {NONE} -- Visitors
 				l_tmp_ba.append_integer (l_local_list.item.sk_value)
 				l_local_list.forth
 			end
+
+			l_tmp_ba.append (Bc_no_clone_arg)
 
 			context.byte_prepend (ba, l_tmp_ba)
 		end
@@ -1388,6 +1377,7 @@ feature {NONE} -- Visitors
 			ba.append_raw_string (a_node.value)
 		end
 
+
 	process_strip_b (a_node: STRIP_B) is
 			-- Process `a_node'.
 		local
@@ -1547,6 +1537,7 @@ feature {NONE} -- Implementation
 		local
 			l_expression_type: TYPE_I
 			l_hector_b: HECTOR_B
+			l_typed_pointer_type: TYPED_POINTER_I
 		do
 			an_expr.process (Current)
 			l_expression_type := context.real_type (an_expr.type)
@@ -1561,7 +1552,13 @@ feature {NONE} -- Implementation
 				if l_expression_type.is_basic then
 						-- Source is basic and target is a reference:
 						-- metamorphose
-					ba.append (Bc_metamorphose)
+					l_typed_pointer_type ?= l_expression_type
+					if l_typed_pointer_type = Void then
+						ba.append (Bc_metamorphose)
+					else
+						ba.append (Bc_box)
+						l_typed_pointer_type.make_full_type_byte_code (ba)
+					end
 				elseif l_expression_type.is_expanded then
 						-- Source is expanded and target is a reference:
 						-- clone
@@ -1918,6 +1915,7 @@ feature {NONE} -- Implementation
 				ba.append_short_integer (-1)
 			end
 		end
+
 
 	generate_melted_debugger_hook is
 			-- Record breakable point (standard)

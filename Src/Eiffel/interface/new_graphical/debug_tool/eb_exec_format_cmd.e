@@ -13,9 +13,7 @@ inherit
 	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 		redefine
 			new_toolbar_item,
-			new_sd_toolbar_item,
-			new_menu_item,
-			new_menu_item_unmanaged
+			new_menu_item
 		end
 
 	EB_SHARED_INTERFACE_TOOLS
@@ -29,17 +27,12 @@ inherit
 
 	EB_SHARED_WINDOW_MANAGER
 
-	EB_SHARED_PREFERENCES
-		export
-			{NONE} all
-		end
-
 feature {NONE} -- Initialization
 
-	make (a_manager: like eb_debugger_manager) is
+	make (a_manager: like debugger_manager) is
 			-- Initialize `Current' and associate it with `a_manager'.
 		do
-			eb_debugger_manager := a_manager
+			debugger_manager := a_manager
 		end
 
 feature -- Formatting
@@ -62,10 +55,10 @@ feature -- Formatting
 
 feature -- Properties
 
-	eb_debugger_manager: EB_DEBUGGER_MANAGER
+	debugger_manager: EB_DEBUGGER_MANAGER
 			-- Manager in charge of all debugging operations.
 
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for `Current'.
 		do
 			Result := internal_tooltip
@@ -74,39 +67,21 @@ feature -- Properties
 feature -- Access
 
 	new_toolbar_item (display_text: BOOLEAN): EB_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new toolbar item.
 		do
 			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND} (display_text)
 			Result.select_actions.put_front (agent execute_from (Result))
-			Result.pointer_button_press_actions.put_front (agent button_right_click_action)
-		end
-
-	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new docking toolbar item.
-		do
-			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND} (display_text)
-			Result.select_actions.put_front (agent execute_from (eb_debugger_manager.debugging_window.window))
 			Result.pointer_button_press_actions.put_front (agent button_right_click_action)
 		end
 
 	new_menu_item: EB_COMMAND_MENU_ITEM is
-			-- Create a new menu item
 		do
 			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND}
-			Result.select_actions.put_front (agent execute_from (Result))
-		end
-
-	new_menu_item_unmanaged: EV_MENU_ITEM is
-			-- Create a new menu item unmanaged.
-		do
-			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND}
-				-- Fixme: If this item is used in contextual menu. Window will not be found.
 			Result.select_actions.put_front (agent execute_from (Result))
 		end
 
 feature {NONE} -- Attributes
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- What appears in the customize dialog box.
 		do
 			Result := tooltip
@@ -124,26 +99,23 @@ feature {NONE} -- Implementation
 		local
 			conv_dev: EB_DEVELOPMENT_WINDOW
 		do
-			if not executed_from_widget and not eb_debugger_manager.raised then
+			if not executed_from_widget and not debugger_manager.raised then
 					-- The debugging window has not been updated yet.
 					-- If a shortcut was used, the corresponding window
 					-- must have the focus.
 				conv_dev ?= window_manager.last_focused_window
 				if conv_dev /= Void then
-					eb_debugger_manager.set_debugging_window (conv_dev)
+					debugger_manager.set_debugging_window (conv_dev)
 				else
 					debug  end
-					eb_debugger_manager.set_debugging_window (Window_manager.a_development_window)
+					debugger_manager.set_debugging_window (Window_manager.a_development_window)
 				end
 			end
-			eb_debugger_manager.debug_run_cmd.execute_with_mode (a_execution_mode)
-			if not eb_debugger_manager.application_is_executing then
+			debugger_manager.debug_run_cmd.execute_with_mode (a_execution_mode)
+			if not debugger_manager.application_is_executing then
 					-- The application was not launched for some reason
 					-- (a compilation was running, the user didn't want to launch it after all,...)
-				if eb_debugger_manager.raised and then not eb_debugger_manager.debug_mode_forced then
-					eb_debugger_manager.unraise
-				end
-				eb_debugger_manager.set_debugging_window (Void)
+				debugger_manager.set_debugging_window (Void)
 			end
 			debug
 				executed_from_widget := False
@@ -159,7 +131,7 @@ feature {NONE} -- Implementation
 			dev: EB_DEVELOPMENT_WINDOW
 		do
 			executed_from_widget := False
-			if not eb_debugger_manager.raised then
+			if not debugger_manager.raised then
 					-- We try to find from which window we were launched.
 				from
 					trigger := widget
@@ -176,7 +148,7 @@ feature {NONE} -- Implementation
 				end
 				window ?= trigger
 				if window /= Void then
-					eb_debugger_manager.set_debugging_window (
+					debugger_manager.set_debugging_window (
 						window_manager.development_window_from_window (window)
 					)
 					executed_from_widget := True
@@ -186,13 +158,13 @@ feature {NONE} -- Implementation
 					end
 					dev ?= Window_manager.last_focused_window
 					if dev /= Void then
-						eb_debugger_manager.set_debugging_window (dev)
+						debugger_manager.set_debugging_window (dev)
 						executed_from_widget := True
 					else
 						debug ("DEBUGGER_INTERFACE")
 							io.put_string ("Could not find the last focused window (dixit EB_EXEC_FORMAT_CMD)%N")
 						end
-						eb_debugger_manager.set_debugging_window (Window_manager.a_development_window)
+						debugger_manager.set_debugging_window (Window_manager.a_development_window)
 						if Window_manager.a_development_window /= Void then
 							executed_from_widget := True
 						end
@@ -205,7 +177,7 @@ feature {NONE} -- Implementation
 			-- Was the command launched through a menu or a toolbar button
 			-- (by opposition to an accelerator)?
 
-	internal_tooltip: STRING_GENERAL is
+	internal_tooltip: STRING is
 			-- Basic tooltip (without the key shortcut).
 		deferred
 		end
@@ -226,6 +198,12 @@ feature {NONE} -- Implementation
 						set_argument_dialog (args_dialog)
 					else
 						argument_dialog.update
+					end
+					if not argument_dialog.is_displayed then
+						argument_dialog.show
+					end
+					if argument_dialog.is_minimized then
+						argument_dialog.restore
 					end
 					argument_dialog.raise
 				end

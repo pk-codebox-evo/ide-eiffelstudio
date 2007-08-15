@@ -5,10 +5,7 @@ indexing
 	date: "$Date$"
 	revision: "$Revision $"
 
-class COMMAND_LINE_IO
-
-inherit
-	SHARED_BATCH_NAMES
+class COMMAND_LINE_IO 
 
 feature -- Properties
 
@@ -21,32 +18,24 @@ feature -- Properties
 	abort: BOOLEAN
 			-- Does the user want to abort the command?
 
-feature -- Status report
-
-	has_failure: BOOLEAN
-			-- Did last read operation fail?
-
 feature -- Input/output
 
 	termination_requested: BOOLEAN is
 		local
 			str: STRING
 		do
-			localized_print_error (("%N").as_string_32 + ewb_names.err_press_return_to_resume + ("%N").as_string_32)
+			io.error.put_string ("%N%
+				%Press <Return> to resume compilation or <Q> to quit%N")
 			wait_for_return
-			if has_failure then
-				Result := True
-			else
-				str := io.last_string.as_lower
-				Result := ((str.count >= 1) and then (str.item (1) = 'q'))
-			end
+			str := io.last_string.as_lower
+			Result := ((str.count >= 1) and then (str.item (1) = 'q'))
 		end
 
-	confirmed (message: STRING_GENERAL): BOOLEAN is
+	confirmed (message: STRING): BOOLEAN is
 		local
 			c: CHARACTER
 		do
-			localized_print (message)
+			io.put_string (message)
 			io.put_string (" [y/n]? ")
 			io.read_character
 			c := io.last_character
@@ -57,19 +46,8 @@ feature -- Input/output
 		end
 
 	wait_for_return is
-			-- Wait for an input. Set `has_failure' if nothing can be read.
-		local
-			retried: BOOLEAN
 		do
-			if not retried then
-				io.read_line
-				has_failure := False
-			else
-				has_failure := True
-			end
-		rescue
-			retried := True
-			retry
+			io.read_line
 		end
 
 	get_last_input is
@@ -124,7 +102,7 @@ feature -- Input/output
 	get_class_name is
 		do
 			if not more_arguments then
-				localized_print (ewb_names.arrow_class_name)
+				io.put_string ("--> Class name: ")
 				get_name
 			end
 			get_last_input
@@ -137,7 +115,7 @@ feature -- Input/output
 	get_feature_name is
 		do
 			if not more_arguments then
-				localized_print (ewb_names.arrow_feature_name)
+				io.put_string ("--> Feature name: ")
 				get_name
 			end
 			get_last_input
@@ -150,13 +128,13 @@ feature -- Input/output
 	get_filter_name is
 		do
 			if not more_arguments then
-				localized_print (ewb_names.arrow_filter_name)
+				io.put_string ("--> Filter name: ")
 				get_name
 			end
 			get_last_input
 		end
 
-	get_option_value (an_option: STRING_GENERAL; value: BOOLEAN) is
+	get_option_value (an_option: STRING; value: BOOLEAN) is
 			-- Get a valid from `an_option' of either
 			-- true or false.
 			-- Set `last_input' to "False" or "True"
@@ -167,7 +145,7 @@ feature -- Input/output
 		do
 			if not more_arguments then
 				io.put_string ("--> ")
-				localized_print (an_option)
+				io.put_string (an_option)
 				io.put_string (" [")
 				if value then
 					io.put_string ("yes")
@@ -195,7 +173,7 @@ feature -- Input/output
 	get_prof_file_name is
 		do
 			if not more_arguments then
-				localized_print (ewb_names.arrow_profile_infomation_file_name)
+				io.put_string ("--> Profile information file name (default: `profinfo'): ")
 				get_name
 			end
 			get_last_input
@@ -205,14 +183,14 @@ feature -- Input/output
 		do
 			if not more_arguments then
 				from
-					localized_print (ewb_names.arrow_compile_type)
+					io.put_string ("--> Compile type (default: `workbench'): ")
 					get_name
 					get_last_input
 				until
 					last_input.is_empty or else last_input.is_equal ("workbench") or else
 					last_input.is_equal ("final")
 				loop
-					localized_print (ewb_names.arrow_compile_type)
+					io.put_string ("--> Compile type (default: `workbench'): ")
 					get_name
 					get_last_input
 				end
@@ -224,7 +202,7 @@ feature -- Input/output
 	get_profiler is
 		do
 			if not more_arguments then
-				localized_print (ewb_names.arrow_used_profiler)
+				io.put_string ("--> Used profiler (default: `eiffel'): ")
 				get_name
 			end
 			get_last_input
@@ -243,7 +221,8 @@ feature -- Input/output
 		local
 			not_first: BOOLEAN
 		do
-			localized_print_error (ewb_names.err_too_many_arguments)
+			io.error.put_string ("%
+				%Too many arguments. The following arguments will be ignored:%N")
 			from
 			until
 				not more_arguments

@@ -16,21 +16,13 @@ deferred class
 inherit
 	EV_GAUGE
 		redefine
-			implementation,
-			is_in_default_state_for_tabs
+			implementation
 		end
 
 feature {EV_ANY, EV_ANY_I} -- Implementation
 
-	implementation: EV_SCROLL_BAR_I
+	implementation: EV_SCROLL_BAR_I;
 			-- Responsible for interaction with native graphics toolkit.
-
-feature {NONE} -- Contract support
-
-	is_in_default_state_for_tabs: BOOLEAN is
-		do
-			Result := not is_tabable_from and not is_tabable_to
-		end
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"

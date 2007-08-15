@@ -38,8 +38,6 @@ feature {NONE}
 
 	Documentation: STRING is "Documentation"
 
-	dot_e: STRING is ".e"
-
 	Dot_c: STRING is ".c"
 
 	Dot_cpp: STRING is ".cpp"
@@ -135,13 +133,10 @@ feature {NONE}
 	W_code: STRING is "W_code"
 
 	eiffel_extension: STRING is "e"
-			-- File extension for an Eiffel source file without the dot
 
 	project_extension: STRING is "epr"
-			-- File extension for an Eiffel Studio project file without the dot
 
 	config_extension: STRING is "ecf"
-			-- File extension for an Eiffel configuration file without the dot
 
 	ace_file_extension: STRING is "ace"
 
@@ -161,43 +156,41 @@ feature {NONE}
 
 	info_flag_end: STRING is "-- end of info"
 
-	data_directory: STRING is "Data"
-			-- Directory name `Data'
-
 feature {AUXILIARY_FILES} -- Versioning
 
 	Compiler_version_number: CONF_VERSION is
 			-- Version of the compiler
 		once
-				-- We put (9999 + 1) because if we were to put 10000 the 4 zeros
-				-- will get replaced by the delivery scripts (see comments for `snv_revision'.
-			create Result.make_version (
-				eiffel_layout.major_version,
-				eiffel_layout.minor_version,
-				(svn_revision // (9999 + 1).as_natural_32).as_natural_16,
-				(svn_revision \\ (9999 + 1).as_natural_32).as_natural_16)
+				-- 0000 because it will be replace by the svn version number by the build script
+			create Result.make_version (eiffel_layout.major_version, eiffel_layout.minor_version, 0000, 0)
 		end
 
-	svn_revision: NATURAL_32 is
-			-- SVN revision that build the compiler.
-			-- We use `0000' because it is replaced by the actual svn revision number
-			-- when doing a delivery.
-		do
-			Result := 0000
+	Major_version_number: INTEGER is
+		once
+			Result := compiler_version_number.major
 		end
+	Minor_version_number: INTEGER is
+		once
+			Result := compiler_version_number.minor
+		end
+	Build_version_number: INTEGER is
+		once
+			Result := compiler_version_number.release
+		end
+			-- Version number
 
 	Version_number: STRING is
 			-- Version number composed of
-			-- `Major' . `Minor' . `Release' . `Build'.
+			-- `Major_version_number' . `Minor_version_number' . `Build_version_number'.
 		once
 			create Result.make (30)
-			Result.append (compiler_version_number.version)
+			Result.append_integer (Major_version_number)
+			Result.append_character ('.')
+			Result.append_integer (Minor_version_number)
+			Result.append_character ('.')
+			Result.append_integer (Build_version_number)
 			Result.append_character (' ')
 			Result.append_string (version_type_name)
-			Result.append_character (' ')
-			Result.append_character ('-')
-			Result.append_character (' ')
-			Result.append_string (eiffel_layout.eiffel_platform)
 		end
 
 	Version_tag: INTEGER is 0x026

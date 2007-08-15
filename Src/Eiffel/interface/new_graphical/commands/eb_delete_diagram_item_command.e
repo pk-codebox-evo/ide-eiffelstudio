@@ -17,9 +17,8 @@ inherit
 			menu_name
 		redefine
 			new_toolbar_item,
-			new_sd_toolbar_item,
 			description,
-			internal_recycle
+			recycle
 		select
 			name
 		end
@@ -35,22 +34,17 @@ inherit
 			disable_sensitive,
 			new_toolbar_item,
 			new_mini_toolbar_item,
-			new_mini_sd_toolbar_item,
-			new_sd_toolbar_item,
 			mini_pixmap,
-			mini_pixel_buffer,
 			description,
 			tooltip,
 			tooltext,
-			pixmap,
-			pixel_buffer
+			pixmap
 		redefine
 			drop_class,
 			delete_class,
 			delete_cluster,
 			execute,
-			internal_recycle,
-			menu_name
+			recycle
 		end
 
 create
@@ -71,17 +65,60 @@ feature -- Access
 			-- Display information about `Current'.
 		do
 			create explain_dialog.make_with_text (Interface_names.e_Diagram_delete_item)
-			explain_dialog.show_modal_to_window (tool.develop_window.window)
+			explain_dialog.show_modal_to_window (tool.development_window.window)
 		end
+
+	new_toolbar_item (display_text: BOOLEAN): EB_COMMAND_TOOL_BAR_BUTTON is
+			-- Create a new toolbar button for this command.
+		do
+			Result := Precursor {EB_CONTEXT_DIAGRAM_COMMAND} (display_text)
+			Result.drop_actions.extend (agent execute_with_inherit_stone)
+			Result.drop_actions.extend (agent execute_with_client_stone)
+			Result.drop_actions.extend (agent drop_class)
+			Result.drop_actions.extend (agent drop_cluster)
+		end
+
+	pixmap: EV_PIXMAP is
+			-- Pixmap representing the command.
+		do
+			Result := pixmaps.icon_pixmaps.general_delete_icon
+		end
+
+	tooltip: STRING is
+			-- Tooltip for the toolbar button.
+		do
+			Result := Interface_names.f_diagram_delete
+		end
+
+	description: STRING is
+			-- Description for this command.
+		do
+			Result := Interface_names.l_diagram_delete
+		end
+
+	name: STRING is "Delete_item"
+			-- Name of the command. Used to store the command in the
+			-- preferences.
+
+feature -- Removal
+
+	recycle is
+			-- Recycle code.
+		do
+			Precursor {EB_CONTEXT_DIAGRAM_COMMAND}
+			Precursor {EB_DELETE_CLASS_CLUSTER_COMMAND}
+		end
+
+feature {NONE} -- Implementation
 
 	drop_class (st: CLASSI_STONE) is
 			-- Extract the class that should be removed from `st' and erase it.
 		local
 			fs: CLASSI_FIGURE_STONE
 			es_class: ES_CLASS
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 			referenced_classes: STRING
-			msg: STRING_GENERAL
+			msg: STRING
 			l_ss: LIST [CLASS_C]
 			l_item: CLASS_C
 		do
@@ -120,6 +157,71 @@ feature -- Access
 			end
 		end
 
+	delete_class is
+			-- Remove `class_i' from the system.
+		local
+			file: PLAIN_TEXT_FILE
+			wd: EV_WARNING_DIALOG
+			retried: BOOLEAN
+			es_class: ES_CLASS
+			es_classes: ARRAYED_LIST [ES_CLASS]
+			l_links: LIST [EG_LINK]
+		do
+			if not retried then
+				if eb_debugger_manager.application_is_executing then
+					eb_debugger_manager.application.kill
+				end
+				Eb_debugger_manager.disable_debug
+				create file.make (class_i.file_name)
+				if
+					file.exists and then
+					file.is_writable
+				then
+					file.delete
+					manager.remove_class (class_i)
+					could_not_delete := False
+				end
+				Eb_debugger_manager.resynchronize_breakpoints
+				window_manager.synchronize_all
+			end
+			if could_not_delete then
+					-- We were not able to delete the file.
+				create wd.make_with_text (Warning_messages.w_Not_writable (class_i.file_name))
+				wd.show_modal_to_window (window.window)
+			else
+				es_classes := tool.graph.class_from_interface (class_i)
+				from
+					es_classes.start
+				until
+					es_classes.after
+				loop
+					es_class := es_classes.item
+					from
+						l_links := es_class.links
+						l_links.start
+					until
+						l_links.after
+					loop
+						tool.graph.remove_link (l_links.item)
+						l_links.forth
+					end
+					tool.graph.remove_node (es_class)
+					es_classes.forth
+				end
+				tool.reset_history
+			end
+		rescue
+			retried := True
+			retry
+		end
+
+	delete_cluster is
+			-- Remove `group' from the system.
+		do
+			tool.reset_history
+			Precursor {EB_DELETE_CLASS_CLUSTER_COMMAND}
+		end
+
 	execute_with_inherit_stone (a_stone: INHERIT_STONE) is
 			-- Remove `a_stone' from diagram.
 		local
@@ -144,6 +246,24 @@ feature -- Access
 					interface_names.t_diagram_delete_inheritance_link_cmd (ancestor.name, descendant.name),
 					agent remove_ancestor (ctm, ancestor.name, e_item),
 					agent add_ancestor (ctm, ancestor.name, e_item))
+			end
+		end
+
+	remove_ancestor (a_ctm: CLASS_TEXT_MODIFIER; a_name: STRING; a_link: ES_INHERITANCE_LINK) is
+			-- Remove ancestor with `a_name' and hide `a_link' if succesfull.
+		do
+			a_ctm.remove_ancestor (a_name)
+			if not a_ctm.class_modified_outside_diagram then
+				a_link.disable_needed_on_diagram
+			end
+		end
+
+	add_ancestor (a_ctm: CLASS_TEXT_MODIFIER; a_name: STRING; a_link: ES_INHERITANCE_LINK) is
+			--Add ancestor with `a_name' and show `a_link' if succesfull.
+		do
+			a_ctm.add_ancestor (a_name)
+			if not a_ctm.class_modified_outside_diagram then
+				a_link.enable_needed_on_diagram
 			end
 		end
 
@@ -192,191 +312,6 @@ feature -- Access
 			end
 		end
 
-	new_toolbar_item (display_text: BOOLEAN): EB_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new toolbar button for this command.
-		do
-			Result := Precursor {EB_CONTEXT_DIAGRAM_COMMAND} (display_text)
-			Result.drop_actions.extend (agent execute_with_inherit_stone)
-			Result.drop_actions.extend (agent execute_with_client_stone)
-			Result.drop_actions.extend (agent drop_class)
-			Result.drop_actions.extend (agent drop_cluster)
-			Result.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
-		end
-
-	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new toolbar button for docking.
-		do
-			Result := Precursor {EB_CONTEXT_DIAGRAM_COMMAND}(display_text)
-			Result.drop_actions.extend (agent execute_with_inherit_stone)
-			Result.drop_actions.extend (agent execute_with_client_stone)
-			Result.drop_actions.extend (agent drop_class)
-			Result.drop_actions.extend (agent drop_cluster)
-			Result.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
-		end
-
-	pixmap: EV_PIXMAP is
-			-- Pixmap representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.general_delete_icon
-		end
-
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixmap representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.general_delete_icon_buffer
-		end
-
-	tooltip: STRING_GENERAL is
-			-- Tooltip for the toolbar button.
-		do
-			Result := Interface_names.f_diagram_delete
-		end
-
-	description: STRING_GENERAL is
-			-- Description for this command.
-		do
-			Result := Interface_names.l_diagram_delete
-		end
-
-	menu_name: STRING_GENERAL is
-			-- Menu name
-		do
-			Result := interface_names.m_delete
-		end
-
-	name: STRING is "Delete_item"
-			-- Name of the command. Used to store the command in the
-			-- preferences.
-
-feature -- Status report
-
-	veto_pebble_function (a_pebble: ANY): BOOLEAN is
-			-- Veto pebble function
-		local
-			l_client: CLIENT_STONE
-			l_inherit: INHERIT_STONE
-			l_classi: CLASSI_STONE
-			l_cluster: CLUSTER_STONE
-			l_feature_stone: FEATURE_STONE
-		do
-			l_classi ?= a_pebble
-			if l_classi /= Void then
-				l_feature_stone ?= a_pebble
-				if l_feature_stone = Void then
-					Result := True
-				end
-			else
-				l_cluster ?= a_pebble
-				if l_cluster /= Void then
-					Result := True
-				else
-					l_inherit ?= a_pebble
-					if l_inherit /= Void then
-						Result := True
-					else
-						l_client ?= a_pebble
-						if l_client /= Void then
-							Result := True
-						end
-					end
-				end
-			end
-		end
-
-feature {NONE} -- Removal
-
-	internal_recycle is
-			-- Recycle code.
-		do
-			Precursor {EB_CONTEXT_DIAGRAM_COMMAND}
-			Precursor {EB_DELETE_CLASS_CLUSTER_COMMAND}
-		end
-
-feature {NONE} -- Implementation
-
-	delete_class is
-			-- Remove `class_i' from the system.
-		local
-			file: PLAIN_TEXT_FILE
-			wd: EB_WARNING_DIALOG
-			retried: BOOLEAN
-			es_class: ES_CLASS
-			es_classes: ARRAYED_LIST [ES_CLASS]
-			l_links: LIST [EG_LINK]
-		do
-			if not retried then
-				if Debugger_manager.application_is_executing then
-					Debugger_manager.application.kill
-				end
-				Debugger_manager.disable_debug
-				create file.make (class_i.file_name)
-				if
-					file.exists and then
-					file.is_writable
-				then
-					file.delete
-					manager.remove_class (class_i)
-					could_not_delete := False
-				end
-				Debugger_manager.resynchronize_breakpoints
-				window_manager.synchronize_all
-			end
-			if could_not_delete then
-					-- We were not able to delete the file.
-				create wd.make_with_text (Warning_messages.w_Not_writable (class_i.file_name))
-				wd.show_modal_to_window (window.window)
-			else
-				es_classes := tool.graph.class_from_interface (class_i)
-				from
-					es_classes.start
-				until
-					es_classes.after
-				loop
-					es_class := es_classes.item
-					from
-						l_links := es_class.links
-						l_links.start
-					until
-						l_links.after
-					loop
-						tool.graph.remove_link (l_links.item)
-						l_links.forth
-					end
-					tool.graph.remove_node (es_class)
-					es_classes.forth
-				end
-				tool.reset_history
-			end
-		rescue
-			retried := True
-			retry
-		end
-
-	delete_cluster is
-			-- Remove `group' from the system.
-		do
-			tool.reset_history
-			Precursor {EB_DELETE_CLASS_CLUSTER_COMMAND}
-		end
-
-	remove_ancestor (a_ctm: CLASS_TEXT_MODIFIER; a_name: STRING; a_link: ES_INHERITANCE_LINK) is
-			-- Remove ancestor with `a_name' and hide `a_link' if succesfull.
-		do
-			a_ctm.remove_ancestor (a_name)
-			if not a_ctm.class_modified_outside_diagram then
-				a_link.disable_needed_on_diagram
-			end
-		end
-
-	add_ancestor (a_ctm: CLASS_TEXT_MODIFIER; a_name: STRING; a_link: ES_INHERITANCE_LINK) is
-			--Add ancestor with `a_name' and show `a_link' if succesfull.
-		do
-			a_ctm.add_ancestor (a_name)
-			if not a_ctm.class_modified_outside_diagram then
-				a_link.enable_needed_on_diagram
-			end
-		end
-
 	item_from_name (a_list: LIST [FEATURE_AS]; a_name: STRING): FEATURE_AS is
 			-- Feature with `a_name' in `a_list' or Void if none.
 		require
@@ -388,7 +323,7 @@ feature {NONE} -- Implementation
 			until
 				Result /= Void or else a_list.after
 			loop
-				if a_name.is_equal (a_list.item.feature_name.name) then
+				if a_name.is_equal (a_list.item.feature_name) then
 					Result := a_list.item
 				end
 				a_list.forth

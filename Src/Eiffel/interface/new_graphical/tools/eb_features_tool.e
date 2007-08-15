@@ -9,22 +9,13 @@ class
 	EB_FEATURES_TOOL
 
 inherit
-	EB_STONABLE_TOOL
-		rename
-			stone as current_stone
+	EB_TOOL
 		redefine
 			menu_name,
 			pixmap,
-			pixel_buffer,
 			on_shown,
 			widget,
-			make,
-			attach_to_docking_manager,
-			mini_toolbar,
-			build_mini_toolbar,
-			internal_recycle,
-			show,
-			force_last_stone
+			make
 		end
 
 	EB_SHARED_PREFERENCES
@@ -39,10 +30,10 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_manager: EB_DEVELOPMENT_WINDOW) is
+	make (a_manager: EB_TOOL_MANAGER) is
 			-- Make a new features tool.
 		do
-			develop_window ?= a_manager
+			development_window ?= a_manager
 			is_signature_enabled := Preferences.feature_tool_data.is_signature_enabled
 			is_alias_enabled := Preferences.feature_tool_data.is_alias_enabled
 			is_assigner_enabled := Preferences.feature_tool_data.is_assigner_enabled
@@ -61,35 +52,41 @@ feature {NONE} -- Initialization
 	build_mini_toolbar is
 			-- Build the associated toolbar
 		do
-			create mini_toolbar.make
-			mini_toolbar.extend (develop_window.commands.new_feature_cmd.new_mini_sd_toolbar_item)
-			mini_toolbar.extend (develop_window.commands.toggle_feature_alias_cmd.new_mini_sd_toolbar_item)
-			mini_toolbar.extend (develop_window.commands.toggle_feature_signature_cmd.new_mini_sd_toolbar_item)
-			mini_toolbar.extend (develop_window.commands.toggle_feature_assigner_cmd.new_mini_sd_toolbar_item)
+			create mini_toolbar
+			mini_toolbar.extend (development_window.new_feature_cmd.new_mini_toolbar_item)
+			mini_toolbar.extend (development_window.toggle_feature_alias_cmd.new_mini_toolbar_item)
+			mini_toolbar.extend (development_window.toggle_feature_signature_cmd.new_mini_toolbar_item)
+			mini_toolbar.extend (development_window.toggle_feature_assigner_cmd.new_mini_toolbar_item)
 
-			mini_toolbar.compute_minimum_size
-
-			develop_window.commands.toggle_feature_signature_cmd.set_select (is_signature_enabled)
-			develop_window.commands.toggle_feature_alias_cmd.set_select (is_alias_enabled)
-			develop_window.commands.toggle_feature_assigner_cmd.set_select (is_assigner_enabled)
-		ensure then
+			development_window.toggle_feature_signature_cmd.set_select (is_signature_enabled)
+			development_window.toggle_feature_alias_cmd.set_select (is_alias_enabled)
+			development_window.toggle_feature_assigner_cmd.set_select (is_assigner_enabled)
+		ensure
 			mini_toolbar_exists: mini_toolbar /= Void
 		end
 
-feature
-
-	attach_to_docking_manager (a_docking_manager: SD_DOCKING_MANAGER) is
-			-- Attach to docking manager
+	build_explorer_bar_item (explorer_bar: EB_EXPLORER_BAR) is
+			-- Build the associated explorer bar item and
+			-- Add it to `explorer_bar'
 		do
-			build_docking_content (a_docking_manager)
+			if mini_toolbar = Void then
+				build_mini_toolbar
+			end
 
-			check not_already_has: not a_docking_manager.has_content (content) end
-			a_docking_manager.contents.extend (content)
+			create {EB_EXPLORER_BAR_ITEM} explorer_bar_item.make_with_mini_toolbar (
+				explorer_bar, widget, title, True, mini_toolbar
+			)
+			explorer_bar_item.set_menu_name (menu_name)
+			if pixmap /= Void then
+				explorer_bar_item.set_pixmap (pixmap)
+			end
+			explorer_bar_item.show_actions.extend (agent on_bar_item_shown)
+			explorer_bar.add (explorer_bar_item)
 		end
 
 feature -- Access
 
-	mini_toolbar: SD_TOOL_BAR
+	mini_toolbar: EV_TOOL_BAR
 			-- Bar containing a button for a new feature.
 
 	widget: EV_CELL
@@ -98,19 +95,13 @@ feature -- Access
 	tree: EB_FEATURES_TREE
 			-- Widget corresponding to the tree of features.
 
-	title: STRING_GENERAL is
+	title: STRING is
 			-- Title of the tool
 		do
 			Result := Interface_names.t_features_tool
 		end
 
-	title_for_pre: STRING is
-			-- Title for prefence, STRING_8
-		do
-			Result := Interface_names.to_features_tool
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it may appear in a menu.
 		do
 			Result := Interface_names.m_features_tool
@@ -120,23 +111,6 @@ feature -- Access
 			-- Pixmap as it may appear in toolbars and menus.
 		do
 			Result := pixmaps.icon_pixmaps.tool_features_icon
-		end
-
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.tool_features_icon_buffer
-		end
-
-feature -- Command
-
-	show is
-			-- Show tool.
-		do
-			Precursor {EB_STONABLE_TOOL}
-			if tree.is_displayed then
-				tree.set_focus
-			end
 		end
 
 feature -- Behavior
@@ -151,7 +125,6 @@ feature -- Behavior
 			-- Do we display signature of feature ?
 
 	update_tree is
-			-- Update tree.
 		do
 			if tree /= Void then
 				tree.update_all
@@ -185,16 +158,20 @@ feature -- Behavior
 			end
 		end
 
-feature {NONE} -- Memory management
+feature -- Memory management
 
-	internal_recycle is
+	recycle is
 			-- Recycle `Current', but leave `Current' in an unstable state,
 			-- so that we know whether we're still referenced or not.
 		do
+			if explorer_bar_item /= Void then
+				explorer_bar_item.recycle
+			end
 			widget.destroy
 			widget := Void
 			tree := Void
-			Precursor {EB_STONABLE_TOOL}
+			manager := Void
+			development_window := Void
 		end
 
 feature -- Element change
@@ -265,128 +242,18 @@ feature -- Element change
 
 	set_stone (c: STONE) is
 			-- Set `current_class' if c is instance of CLASSC_STONE, `Void' otherwise.
-		do
-			set_last_stone (c)
-			if widget.is_displayed or else is_auto_hide then
-				force_last_stone
-			end
-		end
-
-feature {EB_FEATURES_TREE, EB_CONTEXT_MENU_FACTORY} -- Status setting
-
-	go_to (a_feature: E_FEATURE) is
-			-- `a_feature' has been selected, the associated class
-			-- window should load corresponding feature.
-		require
-			a_feature_not_void: a_feature /= Void
-		local
-			feature_stone: FEATURE_STONE
-		do
-			create feature_stone.make (a_feature)
-			develop_window.set_feature_locating (true)
-			develop_window.set_stone (feature_stone)
-			develop_window.set_feature_locating (false)
-		end
-
-	go_to_clause (a_clause: FEATURE_CLAUSE_AS; a_focus: BOOLEAN) is
-			-- `a_clause' has been selected, the associated class
-			-- window should display the corresponding feature clause.
-			-- the premise is that basic view is being used.
-			-- `a_focus' means if set focus to current editor.
-		local
-			s: STRING
-			l_formatter: EB_BASIC_TEXT_FORMATTER
-			l_current_editor:  EB_SMART_EDITOR
-			l_line, l_pos: INTEGER
-		do
-			if a_clause.start_position > 0 and then develop_window.editors_manager.current_editor /= Void then
-				s := current_compiled_class.text
-				l_current_editor := develop_window.editors_manager.current_editor
-				if s = Void then
-					s := l_current_editor.text
-				end
-				check
-					s_not_void: s /= Void
-				end
-				l_formatter ?= develop_window.pos_container
-				if l_formatter /= Void then
-					l_pos := a_clause.start_position
-					l_line := character_line (l_pos, s)
-					if not a_focus then
-						l_current_editor.display_line_at_top_when_ready  (l_line)
-					else
-						l_current_editor.docking_content.set_focus
-						l_current_editor.set_focus
-						l_current_editor.scroll_to_start_of_line_when_ready_if_top (l_line, False, True)
-					end
-				end
-			end
-		end
-
-	go_to_line (a_line: INTEGER) is
-			-- Text at `a_line' has been selected, the associated class
-			-- window should display the corresponding line.
-		local
-			l_formatter: EB_BASIC_TEXT_FORMATTER
-		do
-			if a_line > 0 and then develop_window.editors_manager.current_editor /= Void then
-				l_formatter ?= develop_window.pos_container
-				if l_formatter = Void then
-					develop_window.managed_main_formatters.first.execute
-				end
-				develop_window.editors_manager.current_editor.display_line_at_top_when_ready (
-					a_line)
-			end
-		end
-
-	go_to_feature_with_name (a_name: STRING) is
-			-- Go to feature with `a_name'
-			-- We use this to loacte a feature which is only parsed.
-		require
-			a_name_not_void: a_name /= Void
-		local
-			l_formatter: EB_BASIC_TEXT_FORMATTER
-		do
-			if develop_window.editors_manager.current_editor /= Void then
-				l_formatter ?= develop_window.pos_container
-				if l_formatter = Void then
-					develop_window.managed_main_formatters.first.execute
-				end
-				develop_window.editors_manager.current_editor.find_feature_named (a_name)
-			end
-		end
-
-feature {EB_FEATURES_TREE} -- Implementation
-
-	current_class: CLASS_AS
-			-- Class currently opened.	
-
-	current_compiled_class: CLASS_C
-			-- Class currently opened.
-
-feature {NONE} -- Implementation	
-
-	current_stone: CLASSI_STONE
-			-- Classc stone that was last dropped into `Current'.
-
-	force_last_stone is
-			-- Set `current_class' if `last_stone' is instance of CLASSC_STONE, `Void' otherwise.
 		local
 			classc_stone: CLASSC_STONE
 			external_classc: EXTERNAL_CLASS_C
 			feature_clauses: EIFFEL_LIST [FEATURE_CLAUSE_AS]
 			conv_cst: CLASSI_STONE
 		do
-			if not is_last_stone_processed then
-				debug ("docking_integration")
-					print ("%N EB_FEATURES_TOOL set_stone")
-				end
-				conv_cst ?= last_stone
-				if conv_cst /= Void then
-					current_stone := conv_cst
-				end
-				classc_stone ?= last_stone
-
+			conv_cst ?= c
+			if conv_cst /= Void then
+				current_stone := conv_cst
+			end
+			classc_stone ?= c
+			if shown then
 					-- We put the tree off-screen to optimize performance only when something
 					-- will happen to the tree (check calls to `widget.wipe_out' and
 					-- `widget.extend (tree)'.
@@ -398,9 +265,9 @@ feature {NONE} -- Implementation
 						if classc_stone.e_class /= current_compiled_class then
 							widget.wipe_out
 							Eiffel_system.System.set_current_class (classc_stone.e_class)
-							if classc_stone.e_class.is_precompiled then
+							if classc_stone.e_class.is_precompiled or not classc_stone.e_class.file_is_readable then
 								current_class := classc_stone.e_class.ast
-							elseif classc_stone.e_class.eiffel_class_c.file_is_readable then
+							else
 								current_class := classc_stone.e_class.eiffel_class_c.parsed_ast (False)
 							end
 							if current_class /= Void then
@@ -449,9 +316,98 @@ feature {NONE} -- Implementation
 					tree.wipe_out
 					current_compiled_class := Void
 				end
-				Precursor
 			end
 		end
+
+feature {EB_FEATURES_TREE} -- Status setting
+
+	go_to (a_feature: E_FEATURE) is
+			-- `a_feature' has been selected, the associated class
+			-- window should load corresponding feature.
+		require
+			a_feature_not_void: a_feature /= Void
+		local
+			feature_stone: FEATURE_STONE
+		do
+--			if current_compiled_class /= Void and then current_compiled_class.has_feature_table then
+--				ef := current_compiled_class.feature_with_name (a_feature.feature_name)
+				create feature_stone.make (a_feature)
+				development_window.set_feature_locating (true)
+				development_window.set_stone (feature_stone)
+				development_window.set_feature_locating (false)
+--			end
+		end
+
+	go_to_clause (a_clause: FEATURE_CLAUSE_AS) is
+			-- `a_clause' has been selected, the associated class
+			-- window should display the corresponding feature clause.
+			-- the premise is that basic view is being used.
+		local
+			s: STRING
+			l_formatter: EB_BASIC_TEXT_FORMATTER
+		do
+			if a_clause.start_position > 0 then
+				s := current_compiled_class.text
+				if s = Void then
+					s := development_window.editor_tool.text_area.text
+				end
+				check
+					s_not_void: s /= Void
+				end
+				l_formatter ?= development_window.pos_container
+				if l_formatter /= Void then
+					development_window.editor_tool.text_area.display_line_at_top_when_ready (
+						character_line (a_clause.start_position, s))
+				end
+			end
+		end
+
+	go_to_line (a_line: INTEGER) is
+			-- Text at `a_line' has been selected, the associated class
+			-- window should display the corresponding line.
+		local
+			l_formatter: EB_BASIC_TEXT_FORMATTER
+		do
+			if a_line > 0 then
+				l_formatter ?= development_window.pos_container
+				if l_formatter = Void then
+					development_window.managed_main_formatters.first.execute
+				end
+				development_window.editor_tool.text_area.display_line_at_top_when_ready (
+					a_line)
+			end
+		end
+
+	go_to_feature_with_name (a_name: STRING) is
+			-- Go to feature with `a_name'
+			-- We use this to loacte a feature which is only parsed.
+		require
+			a_name_not_void: a_name /= Void
+		local
+			l_formatter: EB_BASIC_TEXT_FORMATTER
+		do
+			l_formatter ?= development_window.pos_container
+			if l_formatter = Void then
+				development_window.managed_main_formatters.first.execute
+			end
+			development_window.editor_tool.text_area.find_feature_named (a_name)
+		end
+
+feature {EB_FEATURES_TREE} -- Implementation
+
+	current_class: CLASS_AS
+			-- Class currently opened.	
+
+	current_compiled_class: CLASS_C
+			-- Class currently opened.	
+
+feature {NONE} -- Implementation	
+
+	current_stone: CLASSI_STONE
+			-- Classc stone that was last dropped into `Current'.
+
+	development_window: EB_DEVELOPMENT_WINDOW
+			-- Associated development window.
 
 	character_line (pos: INTEGER; s: STRING): INTEGER is
 			-- Line number of character number `pos' in `s'.

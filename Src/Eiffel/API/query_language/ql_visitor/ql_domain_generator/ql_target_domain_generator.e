@@ -63,9 +63,7 @@ feature -- Process
 			l_group := a_item.group
 			if l_group.is_library then
 				l_library ?= l_group
-				if l_library.library_target /= Void then
-					create l_target.make_with_parent (l_library.library_target, a_item)
-				end
+				create l_target.make_with_parent (l_library.library_target, a_item)
 				evaluate_item (l_target)
 			end
 		end
@@ -181,5 +179,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

@@ -21,6 +21,8 @@ inherit
 
 	SHARED_ERROR_HANDLER
 
+	EB_SHARED_DEBUG_TOOLS
+
 	SHARED_EIFFEL_PARSER
 
 	SYSTEM_CONSTANTS
@@ -28,12 +30,12 @@ inherit
 			{NONE} all
 		end
 
-	COMPILER_EXPORTER
-
-	EB_SHARED_PREFERENCES
+	SHARED_ENV
 		export
 			{NONE} all
 		end
+
+	COMPILER_EXPORTER
 
 feature -- Initialization
 
@@ -54,6 +56,7 @@ feature -- Initialization
  			Execution_environment.change_working_directory (a_project_location.path)
 			retrieve
 			if not error_occurred then
+				is_finalizing := False
 				Workbench.on_project_loaded
 				manager.on_project_create
 				manager.on_project_loaded
@@ -388,6 +391,9 @@ feature -- Status report
 			Result := degree_output_cell.item
 		end
 
+	is_finalizing: BOOLEAN
+			-- Are we in the middle of a finalization?
+
 feature -- Status setting
 
 	set_degree_output (a_degree_ouput: like degree_output) is
@@ -418,9 +424,42 @@ feature -- Status setting
 			set: compiler_mode = batch_mode
 		end
 
+	set_filter_path (f_path: STRING) is
+			-- Set filter_path to `f_path'.
+		require
+			valid_arg: f_path /= Void
+		do
+			if not f_path.is_equal (eiffel_layout.filter_path) then
+				eiffel_layout.filter_path.make_from_string (
+					environ.interpreted_string (f_path).twin)
+			end
+		end
+
+	set_profile_path (p_path: STRING) is
+			-- Set profile_path to `p_path'.
+		require
+			valid_arg: p_path /= Void
+		do
+			if not p_path.is_equal (eiffel_layout.profile_path) then
+				eiffel_layout.profile_path.make_from_string (
+					environ.interpreted_string (p_path).twin)
+			end
+		end
+
+	set_tmp_directory (t_path: STRING) is
+			-- Set tmp_directory to `t_path'.
+		require
+			valid_args: t_path /= Void
+		do
+			if not t_path.is_equal (eiffel_layout.tmp_directory) then
+				eiffel_layout.tmp_directory.wipe_out
+				eiffel_layout.tmp_directory.make_from_string (environ.interpreted_string (t_path))
+			end
+		end
+
 feature -- Update
 
-	melt (is_for_finalization: BOOLEAN) is
+	melt is
 			-- Incremental recompilation of Eiffel project.
 			-- Raise error messages if necessary if unsuccessful. Otherwize,
 			-- save the project and link driver to precompiled library
@@ -432,15 +471,16 @@ feature -- Update
 			degree_output.put_new_compilation
 			if not Compilation_modes.is_precompiling then
 				is_compiling_ref.set_item (True)
-				workbench.start_compilation
-				workbench.recompile
-				if not is_for_finalization then
-					workbench.stop_compilation
-				end
+				Workbench.recompile
 
 				if successful then
 					if not freezing_occurred then
 						link_driver
+					end
+
+					if Debugger_manager.has_breakpoints then
+						Degree_output.put_resynchronizing_breakpoints_message
+						Debugger_manager.resynchronize_breakpoints
 					end
 					if
 						not manager.is_project_loaded and then
@@ -468,24 +508,6 @@ feature -- Update
 			is_compiling_ref.set_item (False)
 		end
 
-	discover_melt is
-			-- Full rebuild and melt.
-		require
-			able_to_compile: able_to_compile
-		do
-			if not Compilation_modes.is_precompiling then
-				Compilation_modes.set_is_discover
-				melt (False)
-			else
-				Compilation_modes.reset_modes
-				precompile (False)
-			end
-		ensure
-			was_saved: successful and then not
-				error_occurred implies was_saved
-			error_implies: error_occurred implies save_error
-		end
-
 	quick_melt is
 			-- Melt eiffel project and then freeze it (i.e generate
 			-- C code for workbench mode).
@@ -494,7 +516,7 @@ feature -- Update
 		do
 			if not Compilation_modes.is_precompiling then
 				Compilation_modes.set_is_quick_melt
-				melt (False)
+				melt
 			else
 				Compilation_modes.reset_modes
 				precompile (False)
@@ -512,7 +534,7 @@ feature -- Update
 		do
 			if not Compilation_modes.is_precompiling then
 				Compilation_modes.set_is_override_scan
-				melt (False)
+				melt
 			else
 				Compilation_modes.reset_modes
 				precompile (False)
@@ -530,7 +552,7 @@ feature -- Update
 			able_to_compile: able_to_compile
 		do
 			Compilation_modes.set_is_freezing
-			melt (False)
+			melt
 		ensure
 			was_saved: successful and then not
 				error_occurred implies was_saved
@@ -545,26 +567,29 @@ feature -- Update
 		require
 			able_to_compile: able_to_compile
 		do
-			Compilation_modes.set_is_quick_melt
-			melt (True)
+			is_finalizing := True
+
+			melt
+				-- Add warning for non-optimal finalization.
 			if successful then
 				Compilation_modes.set_is_finalizing
 				set_error_status (Ok_status)
 				is_compiling_ref.set_item (True)
 				Comp_system.finalize_system (keep_assertions)
-				if successful then
-						-- No point on trying to save a cancelled (i.e. non successful compilation).
-						-- False because we are not precompiling here.
-					Workbench.save_project (False)
-				end
+					-- False because we are not precompiling here.
+				Workbench.save_project (False)
 				is_compiling_ref.set_item (False)
 				Compilation_modes.reset_modes
 			end
+			error_handler.trace_warnings
 			Workbench.stop_compilation
+			is_finalizing := False
 		ensure
 			was_saved: successful and then not
 				error_occurred implies was_saved
 			error_implies: error_occurred implies save_error
+		rescue
+			is_finalizing := False
 		end
 
 	call_finish_freezing (workbench_mode: BOOLEAN) is
@@ -574,22 +599,17 @@ feature -- Update
 		local
 			path: STRING
 			l_cmd: STRING
-			l_processors: INTEGER
 		do
 			if workbench_mode then
 				path := project_directory.workbench_path
 			else
 				path := project_directory.final_path
 			end
-			create l_cmd.make_from_string ("%"" + eiffel_layout.Freeze_command_name + "%"")
+			create l_cmd.make_from_string (eiffel_layout.Freeze_command_name)
+			l_cmd.append (" -silent")
 			if comp_system.il_generation and (not eiffel_layout.platform.is_windows_64_bits or Comp_system.force_32bits) then
 					-- Force 32bit compilation
 				l_cmd.append (" -x86")
-			end
-			l_processors := preferences.maximum_processor_usage
-			if l_processors > 0 then
-				l_cmd.append (" -nproc ")
-				l_cmd.append_integer (l_processors)
 			end
 			invoke_finish_freezing (path, l_cmd, True, workbench_mode)
 		end
@@ -602,27 +622,22 @@ feature -- Update
 		local
 			path: STRING
 			l_cmd: STRING
-			l_processors: INTEGER
 		do
 			if workbench_mode then
 				path := project_directory.workbench_path
 			else
 				path := project_directory.final_path
 			end
-			create l_cmd.make_from_string ("%"" + eiffel_layout.Freeze_command_name + "%"")
+			create l_cmd.make_from_string (eiffel_layout.Freeze_command_name)
+			l_cmd.append (" -silent")
 			if comp_system.il_generation and (not eiffel_layout.platform.is_windows_64_bits or Comp_system.force_32bits) then
 					-- Force 32bit compilation
 				l_cmd.append (" -x86")
 			end
-			l_processors := preferences.maximum_processor_usage
-			if l_processors > 0 then
-				l_cmd.append (" -nproc ")
-				l_cmd.append_integer (l_processors)
-			end
 			invoke_finish_freezing (path, l_cmd, False, workbench_mode)
 		end
 
-	precompile (is_for_finalization: BOOLEAN) is
+	precompile (licensed: BOOLEAN) is
 			-- Precompile eiffel project.
 		require
 			able_to_compile: able_to_compile
@@ -631,16 +646,13 @@ feature -- Update
 			set_error_status (ok_status)
 			Compilation_modes.set_is_precompiling (True)
 			Compilation_modes.set_is_freezing
-			workbench.start_compilation
-			workbench.recompile
-			if not is_for_finalization then
-				workbench.stop_compilation
-			end
+			Workbench.recompile
 
 			if successful then
+				Comp_system.set_licensed_precompilation (licensed)
 				Comp_system.save_precompilation_info
 				if not save_error then
-					save_precomp
+					save_precomp (licensed)
 				end
 				if
 					not manager.is_project_loaded and then
@@ -659,13 +671,14 @@ feature -- Update
 			is_compiling_ref.set_item (False)
 		end
 
-	finalize_precompile (keep_assertions: BOOLEAN) is
+	finalize_precompile (licensed: BOOLEAN; keep_assertions: BOOLEAN) is
 			-- precompile eiffel project and then finalize it (i.e generate
 			-- optimize C code for workbench mode).
 		require
 			able_to_compile: able_to_compile
 		do
-			precompile (True)
+			is_finalizing := True
+			precompile (licensed)
 			if successful and then comp_system.il_generation then
 				Compilation_modes.set_is_finalizing
 				set_error_status (Ok_status)
@@ -675,11 +688,14 @@ feature -- Update
 				is_compiling_ref.set_item (False)
 			end
 			Workbench.stop_compilation
+			is_finalizing := False
 		ensure
 			was_saved: successful and then not
 				error_occurred implies was_saved
 			error_implies: error_occurred implies save_error
 			successful_implies_freezing_occurred: successful implies freezing_occurred
+		rescue
+			is_finalizing := False
 		end
 
 	delete_generation_directory (
@@ -755,7 +771,7 @@ feature -- Output
 
 			error_status_mode.set_item (Ok_status)
 			l_epr_file := project_directory.project_file
-			l_epr_file.store (Current, comp_system.compilation_id)
+			l_epr_file.store (Current, version_number, comp_system.compilation_id)
 
 			if l_epr_file.has_error then
 				set_error_status (Save_error_status)
@@ -765,7 +781,7 @@ feature -- Output
 			error_implies: error_occurred implies save_error
 		end
 
-	save_precomp is
+	save_precomp (licensed: BOOLEAN) is
 			-- Save precompilation information to disk.
 		require
 			initialized: initialized
@@ -775,9 +791,9 @@ feature -- Output
 			l_epr_file: PROJECT_EIFFEL_FILE
 		do
 			error_status_mode.set_item (Ok_status)
-			create precomp_info.make (Precompilation_directories)
+			create precomp_info.make (Precompilation_directories, licensed)
 			create l_epr_file.make (project_directory.precompilation_file_name)
-			l_epr_file.store (precomp_info, comp_system.compilation_id)
+			l_epr_file.store (precomp_info, version_number, comp_system.compilation_id)
 
 			if l_epr_file.has_error then
 				set_error_status (Precomp_save_error_status)
@@ -794,6 +810,13 @@ feature {LACE_I} -- Initialization
 			-- Initializes the system.
 		do
 			create system.make
+		end
+
+feature {APPLICATION_EXECUTION}
+
+	compilation_counter: INTEGER is
+		do
+			Result := Workbench.compilation_counter
 		end
 
 feature {NONE} -- Retrieval
@@ -835,6 +858,7 @@ feature {NONE} -- Retrieval
 						incompatible_version_number.append (p_eif.project_version_number)
 					end
 				else
+--!! FIXME: check Concurrent_Eiffel license
 					system := e_project.system
 					dynamic_lib := e_project.dynamic_lib
 					Workbench.update_from_retrieved_project (e_project.saved_workbench)
@@ -842,6 +866,7 @@ feature {NONE} -- Retrieval
 						precomp_dirs := Workbench.precompiled_directories
 						Precompilation_directories.copy (precomp_dirs)
 						create remote_dir.make (project_directory)
+						remote_dir.set_licensed (Comp_system.licensed_precompilation)
 						remote_dir.set_system_name (Comp_system.name)
 						remote_dir.set_is_precompile_finalized (comp_system.is_precompile_finalized)
 						Precompilation_directories.force
@@ -1025,6 +1050,11 @@ feature {NONE} -- Implementation
 			file_name: FILE_NAME
 		do
 			if Comp_system.uses_precompiled then
+-- FIXME: check Makefile.SH
+-- FIXME: check Makefile.SH
+-- FIXME: check Makefile.SH
+-- FIXME: check Makefile.SH
+
 					-- Target
 				create file_name.make_from_string (project_directory.workbench_path)
 				file_name.set_file_name (System.name)

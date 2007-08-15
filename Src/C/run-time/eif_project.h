@@ -42,7 +42,6 @@
 
 #include "eif_portable.h"
 #include "eif_struct.h"
-#include "eif_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,21 +54,19 @@ extern "C" {
 /*************/	
 
 	RT_LNK EIF_INTEGER egc_prof_enabled;	  /* Is the Eiffel profiler on */
-#ifdef WORKBENCH
-	RT_LNK void (*egc_strmake)(EIF_REFERENCE, EIF_TYPED_VALUE);	/* STRING creation feature */
-	RT_LNK void (*egc_strset)(EIF_REFERENCE, EIF_TYPED_VALUE);
-	RT_LNK void (*egc_arrmake)(EIF_REFERENCE, EIF_TYPED_VALUE, EIF_TYPED_VALUE);/* ARRAY creation feature */
-#else
 	RT_LNK void (*egc_strmake)(EIF_REFERENCE, EIF_INTEGER);	/* STRING creation feature */
+#ifdef WORKBENCH
+	RT_LNK void (*egc_strset)(EIF_REFERENCE, EIF_INTEGER);
+#else
 	RT_LNK uint32 egc_str_count_offset;
 	RT_LNK uint32 egc_str_hash_offset;
-	RT_LNK void (*egc_arrmake)(EIF_REFERENCE, EIF_INTEGER, EIF_INTEGER);/* ARRAY creation feature */
 #endif
+	RT_LNK void (*egc_arrmake)(EIF_REFERENCE, EIF_INTEGER, EIF_INTEGER);/* ARRAY creation feature */
 	RT_LNK void (*egc_routdisp)(EIF_REFERENCE, EIF_POINTER, EIF_POINTER, EIF_POINTER, EIF_INTEGER, EIF_INTEGER,
 							    EIF_REFERENCE, EIF_BOOLEAN, EIF_BOOLEAN, EIF_BOOLEAN, EIF_BOOLEAN, EIF_REFERENCE, EIF_INTEGER); 	/* ROUTINE `set_rout_disp' feature */
 #ifdef WORKBENCH
-	RT_LNK void (*egc_routdisp_wb)(EIF_REFERENCE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE,
-		EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE); 	/* ROUTINE `set_rout_disp' feature */
+	RT_LNK void (*egc_routdisp_wb)(EIF_REFERENCE, EIF_POINTER, EIF_POINTER, EIF_POINTER, EIF_INTEGER, EIF_INTEGER,
+		EIF_REFERENCE, EIF_BOOLEAN, EIF_BOOLEAN, EIF_BOOLEAN, EIF_BOOLEAN, EIF_REFERENCE, EIF_INTEGER); 	/* ROUTINE `set_rout_disp' feature */
 #else
 	RT_LNK void (*egc_routdisp_fl)(EIF_REFERENCE, EIF_POINTER, EIF_POINTER, EIF_POINTER, EIF_REFERENCE, EIF_BOOLEAN, EIF_INTEGER); /* ROUTINE `set_rout_disp_final' feature */
 #endif
@@ -137,10 +134,10 @@ extern "C" {
 	RT_LNK int egc_partab_size;				/* Size of parent table */
 	RT_LNK int egc_type_of_gc;
 
-	RT_LNK struct eif_opt *egc_foption;	/* Frozen option table */
 #ifdef WORKBENCH
 	RT_LNK fnptr *egc_frozen;			/* C routine array (frozen routines) */
 	RT_LNK int *egc_fpatidtab;			/* Table of pattern id's indexed by body id's */
+	RT_LNK struct eif_opt *egc_foption;	/* Frozen option table */
 	RT_LNK fnptr *egc_address_table;		/* Table of $ operator encapsulation functions */
 	RT_LNK struct p_interface *egc_fpattern;
 
@@ -160,13 +157,8 @@ extern "C" {
 	RT_LNK long *egc_fsize;
 #endif
 
-#ifdef WORKBENCH
-	RT_LNK EIF_TYPED_VALUE (*egc_equal)(EIF_REFERENCE, EIF_TYPED_VALUE, EIF_TYPED_VALUE); /* {ANY}.equal */
-	RT_LNK EIF_TYPED_VALUE (*egc_twin)(EIF_REFERENCE); /* {ANY}.twin */
-#else
 	RT_LNK EIF_BOOLEAN   (*egc_equal)(EIF_REFERENCE, EIF_REFERENCE, EIF_REFERENCE); /* {ANY}.equal */
 	RT_LNK EIF_REFERENCE (*egc_twin)(EIF_REFERENCE); /* {ANY}.twin */
-#endif
 
 	RT_LNK int32 egc_rcdt;				/* E1/einit.c */
 	RT_LNK int32 egc_rcorigin;			/* E1/einit.c */

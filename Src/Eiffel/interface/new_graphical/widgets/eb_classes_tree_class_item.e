@@ -14,7 +14,7 @@ inherit
 		redefine
 			data,
 			set_data,
-			internal_recycle
+			recycle
 		end
 
 	EB_PIXMAPABLE_ITEM_PIXMAP_FACTORY
@@ -76,8 +76,6 @@ feature -- Status setting
 			set_deny_cursor (Cursors.cur_X_Class)
 			set_tooltip (name)
 			set_pixmap (pixmap_from_class_i (a_class))
-			set_configurable_target_menu_mode
-			set_configurable_target_menu_handler (agent context_menu_handler)
 		end
 
 	load_overriden_children is
@@ -102,7 +100,7 @@ feature -- Status setting
 						class_i: class_i /= Void
 					end
 					if class_i.is_valid then
-						create over_item.make (class_i, class_i.name)
+						create over_item.make (class_i, class_i.name_in_upper)
 
 						if associated_window /= Void then
 							over_item.set_associated_window (associated_window)
@@ -130,7 +128,7 @@ feature -- Status setting
 					class_i: class_i /= Void
 				end
 				if class_i.is_valid then
-					create over_item.make (class_i, class_i.name)
+					create over_item.make (class_i, class_i.name_in_upper)
 
 					if associated_window /= Void then
 						over_item.set_associated_window (associated_window)
@@ -179,9 +177,9 @@ feature -- Status setting
 			pointer_double_press_actions.extend (p)
 		end
 
-feature {NONE} -- Recycle
+feature -- Recycle
 
-	internal_recycle is
+	recycle is
 			-- Recycle
 		do
 			Precursor {EB_CLASSES_TREE_ITEM}
@@ -247,7 +245,7 @@ feature {NONE} -- Implementation
 			-- Print class name in textable, the associated text component.
 		do
 			if associated_textable /= Void then
-				associated_textable.set_text (data.name)
+				associated_textable.set_text (data.name_in_upper)
 			end
 		end
 

@@ -47,7 +47,7 @@ feature
 			routine_id := f.routine_id
 			parameters := f.parameters;
 			if parameters /= Void then
-				set_parameters (parameters.inlined_byte_code)
+				parameters := parameters.inlined_byte_code
 			end
 		end
 
@@ -506,6 +506,7 @@ feature {NONE} -- Registers
 			end
 		end;
 
+
 	get_inline_register (type_i: TYPE_I): REGISTER is
 		do
 			create Result.make (type_i.c_type);
@@ -583,7 +584,7 @@ feature -- Code to inline
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

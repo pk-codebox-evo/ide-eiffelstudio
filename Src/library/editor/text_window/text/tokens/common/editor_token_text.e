@@ -30,7 +30,8 @@ feature -- Initialisation
 			text_not_void: text /= Void
 			no_eol_in_text: not text.has ('%N')
 		do
-			set_image (text)
+			image := text
+			length := text.count
 		ensure
 			image_not_void: image /= Void
 		end
@@ -304,20 +305,6 @@ feature -- Visitor
 			-- Visitor
 		do
 			a_visitor.process_editor_token_text (Current)
-		end
-
-feature -- Setting
-
-	set_image (a_image: like image) is
-			-- Set `image' with `a_image'.
-		require
-			a_image_not_void: a_image /= Void
-			no_eol_in_a_image: not a_image.has ('%N')
-		do
-			image := a_image
-			length := a_image.count
-		ensure
-			image_not_void: image /= Void
 		end
 
 feature -- implementation of clickable and editable text

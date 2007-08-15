@@ -8,14 +8,6 @@ indexing
 class
 	SD_TOOL_BAR_DOCKER_MEDIATOR
 
-inherit
-	ANY
-
-	EV_SHARED_APPLICATION
-		export
-			{NONE} all
-		end
-
 create
 	make
 
@@ -52,12 +44,15 @@ feature {NONE} -- Initialization
 
 	init_key_actions is
 			-- Initialize key actions.
+		local
+			l_env: EV_ENVIRONMENT
 		do
 			internal_key_press_actions := agent on_key_press
 			internal_key_release_actions := agent on_key_release
 
-			ev_application.key_press_actions.extend (internal_key_press_actions)
-			ev_application.key_release_actions.extend (internal_key_release_actions)
+			create l_env
+			l_env.application.key_press_actions.extend (internal_key_press_actions)
+			l_env.application.key_release_actions.extend (internal_key_release_actions)
 		end
 
 feature -- Command
@@ -74,9 +69,6 @@ feature -- Command
 			debug ("docking")
 				print ("%N%N%N---------------------------- SD_TOOL_BAR_DOCKER_MEDIATOR start drag ---------------------------- is_in_orignal_row: " + is_in_orignal_row.out)
 			end
-
-			focus_out_agent := agent on_focus_out
-			ev_application.focus_out_actions.extend (focus_out_agent)
 		end
 
 	is_resizing_mode: BOOLEAN
@@ -87,41 +79,35 @@ feature -- Command
 		local
 			l_in_four_side: BOOLEAN
 		do
-			if not docking_manager.tool_bar_manager.is_locked then
-				internal_last_screen_x := screen_x
-				internal_last_screen_y := screen_y
-				screen_x := a_screen_x
-				screen_y := a_screen_y
+			internal_last_screen_x := screen_x
+			internal_last_screen_y := screen_y
+			screen_x := a_screen_x
+			screen_y := a_screen_y
 
-				if not is_resizing_mode then
-					if internal_dockable  then
-						-- Vertical easy drag area is different from horizontal easy drag area.
-						-- Otherwise, horizontal tool bar row hot area will cover vertical easy drag area, so there is no vertical easy drag area.
-						if not is_vertical_easy_drag_area (a_screen_y) then
-							l_in_four_side := on_motion_in_four_side (a_screen_x, a_screen_y, offset_x, offset_y)
-						end
-					end
-					if not l_in_four_side then
-						if not caller.is_floating then
-							float_tool_bar_zone (a_screen_x, a_screen_y)
-						end
-						if caller.is_floating then
-							caller.set_position (a_screen_x - offset_x, a_screen_y - offset_y)
-						end
-					end
-				else
-					if not caller.row.is_vertical then
-						caller.row.on_pointer_motion (a_screen_x)
-					else
-						caller.row.on_pointer_motion (a_screen_y)
+			if not is_resizing_mode then
+				if internal_dockable  then
+					-- Vertical easy drag area is different from horizontal easy drag area.
+					-- Otherwise, horizontal tool bar row hot area will cover vertical easy drag area, so there is no vertical easy drag area.
+					if not is_vertical_easy_drag_area (a_screen_y) then
+						l_in_four_side := on_motion_in_four_side (a_screen_x, a_screen_y, offset_x, offset_y)
 					end
 				end
-				switch_to_reszing_mode (a_screen_x, a_screen_y)
+				if not l_in_four_side then
+					if not caller.is_floating then
+						float_tool_bar_zone (a_screen_x, a_screen_y)
+					end
+					if caller.is_floating then
+						caller.set_position (a_screen_x - offset_x, a_screen_y - offset_y)
+					end
+				end
 			else
-				if caller.is_floating then
-					caller.set_position (a_screen_x - offset_x, a_screen_y - offset_y)
+				if not caller.row.is_vertical then
+					caller.row.on_pointer_motion (a_screen_x)
+				else
+					caller.row.on_pointer_motion (a_screen_y)
 				end
 			end
+			switch_to_reszing_mode (a_screen_x, a_screen_y)
 		end
 
 	apply_change (a_screen_x, a_screen_y: INTEGER) is
@@ -146,25 +132,6 @@ feature -- Command
 			set: offset_x = a_offset_x
 			set: offset_y = a_offset_y
 			set: start_floating = a_start_floating
-		end
-
-	set_ignore_focus_out_actions (a_bool: BOOLEAN) is
-			-- Set `ignore_next_focus_out' with True.
-		do
-			ignore_focus_out_actions := a_bool
-		ensure
-			set: ignore_focus_out_actions = a_bool
-		end
-
-	clean is
-			-- Clean global key press/release actions.
-		do
-			ev_application.key_press_actions.prune_all (internal_key_press_actions)
-			ev_application.key_release_actions.prune_all (internal_key_release_actions)
-
-			ev_application.focus_out_actions.prune_all (focus_out_agent)
-			caller := Void
-			cancel_actions.call ([])
 		end
 
 feature -- Query
@@ -204,10 +171,10 @@ feature {NONE} -- Implementation functions
 			elseif internal_right_hot_zone.area_managed.has_x_y (a_screen_x, a_screen_y)	then
 				l_changed := internal_right_hot_zone.on_pointer_motion (a_screen_x, a_screen_y)
 				Result := True
-			elseif internal_top_hot_zone.area_managed.has_x_y (a_screen_x, a_screen_y - a_offset_y) then
+			elseif internal_top_hot_zone.area_managed.has_x_y (a_screen_x - a_offset_x, a_screen_y - a_offset_y)  then
 				l_changed := internal_top_hot_zone.on_pointer_motion (a_screen_x, a_screen_y)
 				Result := True
-			elseif internal_bottom_hot_zone.area_managed.has_x_y (a_screen_x, a_screen_y - a_offset_y) then
+			elseif internal_bottom_hot_zone.area_managed.has_x_y (a_screen_x - a_offset_x, a_screen_y - a_offset_y) then
 				l_changed := internal_bottom_hot_zone.on_pointer_motion (a_screen_x, a_screen_y)
 				Result := True
 			end
@@ -230,7 +197,7 @@ feature {NONE} -- Implementation functions
 			when {EV_KEY_CONSTANTS}.key_ctrl then
 				on_pointer_motion (internal_last_screen_x, internal_last_screen_y)
 			when {EV_KEY_CONSTANTS}.key_escape then
-				clean
+				cancel_tracing_pointer
 			else
 
 			end
@@ -267,6 +234,23 @@ feature {NONE} -- Implementation functions
 			end
 		end
 
+	clean is
+			-- Clean global key press/release actions.
+		local
+			l_env: EV_ENVIRONMENT
+		do
+			create l_env
+			l_env.application.key_press_actions.prune_all (internal_key_press_actions)
+			l_env.application.key_release_actions.prune_all (internal_key_release_actions)
+		end
+
+	cancel_tracing_pointer is
+			-- Cancel tracing pointer.
+		do
+			clean
+			cancel_actions.call ([])
+		end
+
 	switch_to_reszing_mode (a_screen_x, a_screen_y: INTEGER) is
 			-- Swtich to only resize tool bar mode if possible.
 		local
@@ -299,8 +283,6 @@ feature {NONE} -- Implementation functions
 			not_floating: not caller.is_floating
 		local
 			l_should_float: BOOLEAN
-			l_env: EV_ENVIRONMENT
-			l_platform: PLATFORM
 		do
 			-- We should detect if user dragging at the beginning of a tool bar row/column
 			-- This is let user easily drag a tool bar to the begnning of a row/column
@@ -310,42 +292,12 @@ feature {NONE} -- Implementation functions
 				docking_manager.command.lock_update (Void, True)
 				caller.assistant.record_docking_state
 
-				create l_platform
-				if not l_platform.is_windows then
-					-- On windows, following disable/enable capture lines is not needed,
-					-- But on Gtk, we need first disable capture then enable capture,
-					-- because it's off-screen widget, it'll not have capture until it show again.
-					caller.tool_bar.disable_capture
-				end
-
-				-- Ignore next two focus out actions, this one is caused by the floating tool bar getting focus.
-				set_ignore_focus_out_actions (True)
-				caller.float (a_screen_x - offset_x, a_screen_y - offset_y, True)
-				set_ignore_focus_out_actions (False)
-
-				if not l_platform.is_windows then
-					-- We can't enable capture immediately, seems GTK window is not ready at this point.
-					-- enable capture not fully working at this point (only capture events when pointer in main window), see bug#12542 problem 1.
-					-- caller.tool_bar.enable_capture
-					create l_env
-					l_env.application.do_once_on_idle (agent
-															local
-																l_screen: EV_SCREEN
-																l_position: EV_COORDINATE
-															do
-																if caller /= Void and then
-																	caller.tool_bar /= Void and then
-																	not caller.tool_bar.is_destroyed then
-																	caller.tool_bar.enable_capture
-
-																	-- Set floating tool bar to current pointer position.
-																	create l_screen
-																	l_position := l_screen.pointer_position
-																	on_pointer_motion (l_position.x, l_position.y)
-																end
-															end
-														)
-				end
+				-- On windows, following disable/enable capture lines is not needed,
+				-- But on Gtk, we need first disable_capture then enable capture,
+				-- because it's off-screen widget, it'll not have capture when it show again.
+				caller.tool_bar.disable_capture
+				caller.float (a_screen_x - offset_x, a_screen_y - offset_y)
+				caller.tool_bar.enable_capture
 
 				docking_manager.command.unlock_update
 			else
@@ -402,28 +354,7 @@ feature {NONE} -- Implementation functions
 			end
 		end
 
-	on_focus_out (a_widget: EV_WIDGET) is
-			-- Handle focus out actions.
-		local
-			l_platform: PLATFORM
-		do
-			create l_platform
-			-- We ignore focus out actions on Linux is ok since on Linux when enable capture it's full capture, atl + tab, alt + f1 etc. not work (not like Windows).
-			if l_platform.is_windows then
-				if not ignore_focus_out_actions then
-					clean
-				end
-			end
-		end
-
 feature {NONE} -- Implementation attributes.
-
-	focus_out_agent: PROCEDURE [SD_TOOL_BAR_DOCKER_MEDIATOR, TUPLE [EV_WIDGET]]
-			-- Focus out agent.
-
-	ignore_focus_out_actions: BOOLEAN
-			-- Times for ignore `on_focus_out' action?
-			-- We use it when dragging tool bar is changing from docking to floating, or changing from floating to docking.
 
 	orignal_row: SD_TOOL_BAR_ROW
 			-- Orignal row when start drag if exist.
@@ -431,7 +362,7 @@ feature {NONE} -- Implementation attributes.
 	is_in_orignal_row: BOOLEAN
 			-- Orignal parent row which `caller' in.
 
-	motion_count_max: INTEGER is 40
+	motion_count_max: INTEGER is 20
 			-- Max number start to change to resizing mode.
 
 	easy_drag_offset: INTEGER is 50
@@ -442,8 +373,11 @@ feature {NONE} -- Implementation attributes.
 
 	internal_dockable: BOOLEAN is
 			-- If `caller' dockable?
+		local
+			l_env: EV_ENVIRONMENT
 		do
-			Result := not ev_application.ctrl_pressed
+			create l_env
+			Result := not l_env.application.ctrl_pressed
 		end
 
 	internal_key_press_actions, internal_key_release_actions: PROCEDURE [SD_TOOL_BAR_DOCKER_MEDIATOR, TUPLE [EV_WIDGET, EV_KEY]]

@@ -29,39 +29,27 @@ feature -- Access
 			Result := "BOOLEAN"
 		end
 
-	change_item_widget: EV_GRID_CHECKABLE_LABEL_ITEM
+	change_item_widget: EV_GRID_CHOICE_ITEM
 
 feature -- Status Setting
 
 	update_changes is
 			-- Update the changes made in `change_item_widget' to `preference'.
 		do
-			preference.set_value (value_from_displayed)
+			preference.set_value_from_string (change_item_widget.text)
 			Precursor {PREFERENCE_WIDGET}
 		end
 
 	show is
 			-- Show the widget in its editable state
 		do
-			-- It is already editable as a checkbox
+			activate_combo
 		end
 
 	refresh is
 		do
 			Precursor {PREFERENCE_WIDGET}
-			change_item_widget.checked_changed_actions.block
-			change_item_widget.set_is_checked (preference.value)
-			change_item_widget.checked_changed_actions.resume
-			change_item_widget.set_text (displayed_value (preference.value))
-		end
-
-	set_displayed_booleans (a_true, a_false: STRING_GENERAL) is
-			-- Set booleans to display.
-			-- {BOOLEAN}.out is used if void.
-		do
-			displayed_true := a_true
-			displayed_false := a_false
-			refresh
+			change_item_widget.set_text (preference.string_value)
 		end
 
 feature {NONE} -- Implementation
@@ -75,65 +63,23 @@ feature {NONE} -- Implementation
 			-- Create and setup `change_item_widget'.
 		do
 			create change_item_widget
-			change_item_widget.set_spacing (4)
-			change_item_widget.set_is_checked (preference.value)
-			change_item_widget.set_text (displayed_value (preference.value))
-			change_item_widget.checked_changed_actions.extend (agent checkbox_value_changed)
+			change_item_widget.deactivate_actions.extend (agent update_changes)
+			change_item_widget.set_item_strings (<<"True", "False">>)
+			change_item_widget.set_text (preference.value.out)
+			change_item_widget.pointer_button_press_actions.force_extend (agent activate_combo)
 		end
 
-	checkbox_value_changed (v: EV_GRID_CHECKABLE_LABEL_ITEM) is
+	activate_combo is
+			-- Activate the combo
 		do
-			preference.set_value (v.is_checked)
-			change_item_widget.set_text (displayed_value (preference.value))
-			update_changes
+			change_item_widget.activate
 		end
 
 	preference: BOOLEAN_PREFERENCE
 			-- Actual preference.	
 
-	last_selected_value: BOOLEAN
+	last_selected_value: BOOLEAN;
 			-- Last selected value in the combo widget.
-
-	displayed_value (a_b: BOOLEAN): STRING_GENERAL is
-			-- Displayed value according to `a_b'
-		do
-			if a_b then
-				if displayed_true /= Void then
-					Result := displayed_true
-				end
-			else
-				if displayed_false /= Void then
-					Result := displayed_false
-				end
-			end
-			if Result = Void then
-				Result := a_b.out
-			end
-			if a_b then
-				last_displayed_true := Result
-			else
-				last_displayed_false := Result
-			end
-		ensure
-			Result_not_void: Result /= Void
-		end
-
-	value_from_displayed: BOOLEAN is
-			-- Value from what have been displayed.
-		local
-			l_str: STRING_32
-		do
-			l_str := change_item_widget.text
-			if l_str.is_equal (last_displayed_true.as_string_32) then
-				Result := True
-			else
-				Result := False
-			end
-		end
-
-	displayed_true, displayed_false: STRING_GENERAL
-
-	last_displayed_true, last_displayed_false: STRING_GENERAL;
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"

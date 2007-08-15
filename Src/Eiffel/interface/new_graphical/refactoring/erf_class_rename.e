@@ -107,12 +107,12 @@ feature {NONE} -- Implementation
 		local
 			dialog: ERF_CLASS_RENAME_DIALOG
         do
-        	preferences.set_old_class_name (class_i.name)
+        	preferences.set_old_class_name (class_i.name_in_upper)
 
 			create dialog
-			dialog.set_name (class_i.name)
+			dialog.set_name (class_i.name_in_upper)
 			dialog.disable_user_resize
-			if class_i.is_compiled then
+			if class_i.compiled then
 				dialog.enable_compiled
 			else
 				dialog.disable_compiled
@@ -142,6 +142,7 @@ feature {NONE} -- Implementation
 			checks.extend (create {ERF_CHK_SAME_CLASS_NAME}.make (class_i.cluster, preferences.new_class_name))
         end
 
+
     apply_to_project is
             -- Make project global changes (eg. *.ace, create/remove/rename cluster/files, ...).
 		require else
@@ -149,7 +150,7 @@ feature {NONE} -- Implementation
 		local
 			project_modifier: ERF_PROJECT_TEXT_MODIFICATION
 			file_rename: ERF_CLASS_FILE_RENAME
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
         do
         		-- if the renamed class was the root class
         	if system.root_class.name.is_equal (preferences.new_class_name) then
@@ -177,6 +178,7 @@ feature {NONE} -- Implementation
         	end
 		end
 
+
     apply_to_class (a_class: CLASS_I) is
             -- Make the changes in `a_class'.
 		require else
@@ -198,6 +200,7 @@ feature {NONE} -- Implementation
         	class_modifier.commit
         	current_actions.extend (class_modifier)
         end
+
 
 	class_i: EIFFEL_CLASS_I;
 			-- The class to rename.

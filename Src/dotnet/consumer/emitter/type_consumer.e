@@ -53,16 +53,12 @@ feature {NONE} -- Initialization
 			parent_type: SYSTEM_TYPE
 			l_ab_type: EC_CHECKED_ABSTRACT_TYPE
 			l_force_sealed: BOOLEAN
-			l_members: like internal_members
 		do
 			create dotnet_name.make_from_cil (t.full_name)
-			if not t.is_interface then
-				parent_type := consumed_parent (t)
-				if parent_type /= Void then
-					parent := referenced_type_from_type (parent_type)
-				end
+			parent_type := consumed_parent (t)
+			if parent_type /= Void then
+				parent := referenced_type_from_type (parent_type)
 			end
-
 			from
 				inter := t.get_interfaces
 				i := 0
@@ -81,16 +77,12 @@ feature {NONE} -- Initialization
 
 			l_force_sealed := t.is_sealed
 			if not l_force_sealed and then (t.is_interface or t.is_abstract) then
-					-- Enum and ValueType should not be decended from in Eiffel
-				l_force_sealed := t.equals_type (enum_type) or t.equals_type (value_type_type)
-				if not l_force_sealed then
-						-- For non-Eiffel compliant interfaces we need to force them to be frozen
-						-- so they cannot be descended, which would result in an incomplete interface
-						-- implementation, because of the non-compliant members
-					l_ab_type ?= checked_type (t)
-					if l_ab_type /= Void then
-						l_force_sealed := not l_ab_type.is_eiffel_compliant_interface
-					end
+					-- For non-Eiffel compliant interfaces we need to force them to be frozen
+					-- so they cannot be descended, which would result in an incomplete interface
+					-- implementation, because of the non-compliant members
+				l_ab_type ?= checked_type (t)
+				if l_ab_type /= Void then
+					l_force_sealed := not l_ab_type.is_eiffel_compliant_interface
 				end
 			end
 
@@ -100,11 +92,11 @@ feature {NONE} -- Initialization
 					is_declaring_type_consumed: is_consumed_type (t.declaring_type)
 				end
 				create {CONSUMED_NESTED_TYPE} consumed_type.make (
-					dotnet_name, en, t.is_interface, (not l_force_sealed and then t.is_abstract),
+					dotnet_name, en, t.is_interface, t.is_abstract,
 					l_force_sealed, t.is_value_type, t.is_enum, parent, interfaces,
 					referenced_type_from_type (t.declaring_type))
 			else
-				create consumed_type.make (dotnet_name, en, t.is_interface, (not l_force_sealed and then t.is_abstract),
+				create consumed_type.make (dotnet_name, en, t.is_interface, t.is_abstract,
 					l_force_sealed, t.is_value_type, t.is_enum, parent, interfaces)
 			end
 
@@ -113,7 +105,7 @@ feature {NONE} -- Initialization
 					-- from parent interfaces as `t.get_members_binding_flags' does not do it.
 				update_interface_members (t)
 			else
-				l_members := t.get_members_binding_flags ({BINDING_FLAGS}.instance |
+				internal_members := t.get_members_binding_flags ({BINDING_FLAGS}.instance |
 						{BINDING_FLAGS}.static | {BINDING_FLAGS}.public |
 						{BINDING_FLAGS}.non_public)
 				internal_properties := t.get_properties_binding_flags ({BINDING_FLAGS}.instance |
@@ -122,15 +114,6 @@ feature {NONE} -- Initialization
 				internal_events := t.get_events_binding_flags ({BINDING_FLAGS}.instance |
 						{BINDING_FLAGS}.public | {BINDING_FLAGS}.non_public|
 						{BINDING_FLAGS}.static)
-
-					-- Add static features of System.Object for correct overload resolution (because of interfaces inheriting System.Object)
-				if not t.equals_type ({SYSTEM_OBJECT}) then
-					create internal_members.make (object_static_methods.count + l_members.count)
-					{SYSTEM_ARRAY}.copy (l_members, internal_members, l_members.count)
-					{SYSTEM_ARRAY}.copy (object_static_methods, 0, internal_members, l_members.count, object_static_methods.count)
-				else
-					internal_members := l_members
-				end
 			end
 
 			internal_constructors := t.get_constructors_binding_flags (
@@ -160,6 +143,7 @@ feature -- Access
 feature {NONE} --Implementation
 
 	overload_solver: OVERLOAD_SOLVER
+
 
 feature -- Status Report
 
@@ -358,57 +342,48 @@ feature -- Basic Operation
 			l_meth: METHOD_INFO
 			l_property: PROPERTY_INFO
 			l_event: EVENT_INFO
-			l_properties: NATIVE_ARRAY [PROPERTY_INFO]
-			l_events: NATIVE_ARRAY [EVENT_INFO]
-			l_members: NATIVE_ARRAY [MEMBER_INFO]
-			l_solver: like overload_solver
 		do
-			create l_solver.make
-			overload_solver := l_solver
-
 				-- Add properties to `properties_and_events'.
-			l_properties := internal_properties
 			from
 				i := 0
-				nb := l_properties.count
+				nb := internal_properties.count
+				create overload_solver.make
 			until
 				i = nb
 			loop
-				l_property := l_properties.item (i)
+				l_property := internal_properties.item (i)
 				check
 					non_void_l_propery: l_property /= Void
 				end
 				add_property (l_property)
-				l_solver.add_property (l_property)
+				overload_solver.add_property (l_property)
 				i := i + 1
 			end
 
 				-- Add events to `properties_and_events'.
-			l_events := internal_events
 			from
 				i := 0
-				nb := l_events.count
+				nb := internal_events.count
 			until
 				i = nb
 			loop
-				l_event := l_events.item (i)
+				l_event := internal_events.item (i)
 				check
 					non_void_l_event: l_event /= Void
 				end
 				add_event (l_event)
-				l_solver.add_event (l_event)
+				overload_solver.add_event (l_event)
 				i := i + 1
 			end
 
 				-- Add methods (procedures, functions) in overload_solver
-			l_members := internal_members
 			from
 				i := 0
-				nb := l_members.count
+				nb := internal_members.count
 			until
 				i = nb
 			loop
-				l_member := l_members.item (i)
+				l_member := internal_members.item (i)
 				if l_member.member_type = {MEMBER_TYPES}.method then
 					l_meth ?= l_member
 					check
@@ -416,7 +391,7 @@ feature -- Basic Operation
 					end
 					if not is_property_or_event (l_meth) then
 						if is_consumed_method (l_meth) then
-							l_solver.add_method (l_meth)
+							overload_solver.add_method (l_meth)
 						end
 					end
 				end
@@ -931,11 +906,29 @@ feature {NONE} -- Status Setting.
 	Op_explicit: SYSTEM_STRING is "op_Explicit"
 			-- Special prefix for .NET operators
 
+--	internal_is_prefix_set: BOOLEAN
+--			-- Was `internal_is_prefix' calculated?
+--
+--	internal_is_prefix: BOOLEAN
+--			-- Cached value for `is_prefix'
+--
+--	internal_is_infix_set: BOOLEAN
+--			-- Was `internal_is_infix' calculated?
+--
+--	internal_is_infix: BOOLEAN
+--			-- Cached value for `is_infix'
+--
+--	internal_is_function_set: BOOLEAN
+--			-- Was `internal_is_function' calculated?
+--
+--	internal_is_function: BOOLEAN
+--			-- Cached value for `is_function'
+
 
 feature {NONE} -- Added features of System.Object to Interfaces
 
 	update_interface_members (t: SYSTEM_TYPE) is
-			-- Updates members of interface to present a flat list of members and to include members of System.Object.
+			--
 		local
 			l_members: NATIVE_ARRAY [MEMBER_INFO]
 			l_method, l_obj_method: METHOD_INFO
@@ -964,7 +957,7 @@ feature {NONE} -- Added features of System.Object to Interfaces
 			loop
 				l_method ?= l_members.item (i)
 				if l_method /= Void then
-					l_obj_method := l_object_methods.item (object_key_name (l_method))
+					l_obj_method := l_object_methods.item (l_method.name)
 					if l_obj_method /= Void then
 							-- Let's check return type and arguments type.
 						l_obj_params := l_obj_method.get_parameters
@@ -1007,11 +1000,7 @@ feature {NONE} -- Added features of System.Object to Interfaces
 				l_object_methods.forth
 			end
 
---			if l_members.count > 0 then
---				internal_members := prune_deferred_duplicates (l_members)
---			else
-				internal_members := l_members
---			end
+			internal_members := l_members
 		end
 
 	internal_update_interface_members (t: SYSTEM_TYPE; processed: HASHTABLE) is
@@ -1019,18 +1008,23 @@ feature {NONE} -- Added features of System.Object to Interfaces
 			-- if not already in `processed'.
 		local
 			l_merged_members: NATIVE_ARRAY [MEMBER_INFO]
+--			l_merged_methods: NATIVE_ARRAY [METHOD_INFO]
 			l_merged_properties: NATIVE_ARRAY [PROPERTY_INFO]
 			l_merged_events: NATIVE_ARRAY [EVENT_INFO]
 			l_interfaces: NATIVE_ARRAY [SYSTEM_TYPE]
 			i, nb: INTEGER
 			l_interface: SYSTEM_TYPE
 			l_members: NATIVE_ARRAY [MEMBER_INFO]
+--			l_methods: NATIVE_ARRAY [METHOD_INFO]
 			l_properties: NATIVE_ARRAY [PROPERTY_INFO]
 			l_events: NATIVE_ARRAY [EVENT_INFO]
 		do
 			l_members := t.get_members_binding_flags ({BINDING_FLAGS}.instance |
 					{BINDING_FLAGS}.static | {BINDING_FLAGS}.public |
 					{BINDING_FLAGS}.non_public)
+--			l_methods := t.get_methods_binding_flags ({BINDING_FLAGS}.instance |
+--					{BINDING_FLAGS}.static | {BINDING_FLAGS}.public |
+--					{BINDING_FLAGS}.non_public)
 			l_properties := t.get_properties_binding_flags ({BINDING_FLAGS}.instance |
 					{BINDING_FLAGS}.public | {BINDING_FLAGS}.non_public |
 					{BINDING_FLAGS}.static)
@@ -1038,11 +1032,18 @@ feature {NONE} -- Added features of System.Object to Interfaces
 					{BINDING_FLAGS}.public | {BINDING_FLAGS}.non_public |
 					{BINDING_FLAGS}.static)
 
+
 				-- merge members.
 			create l_merged_members.make (internal_members.count + l_members.count)
 			{SYSTEM_ARRAY}.copy (internal_members, l_merged_members, internal_members.count)
 			{SYSTEM_ARRAY}.copy (l_members, 0, l_merged_members, internal_members.count, l_members.count)
 			internal_members := l_merged_members
+
+--				-- merge methods.
+--			create l_merged_methods.make (internal_methods.count + l_methods.count)
+--			{SYSTEM_ARRAY}.copy (internal_methods, l_merged_methods, internal_methods.count)
+--			{SYSTEM_ARRAY}.copy_array_integer (l_methods, 0, l_merged_methods, internal_methods.count, l_methods.count)
+--			internal_methods := l_merged_methods
 
 				-- merge properties.
 			create l_merged_properties.make (internal_properties.count + l_properties.count)
@@ -1076,11 +1077,11 @@ feature {NONE} -- Added features of System.Object to Interfaces
 		local
 			l_type: SYSTEM_TYPE
 			l_methods: NATIVE_ARRAY [METHOD_INFO]
-			l_meth: METHOD_INFO
 			i, nb: INTEGER
 		once
-			l_type := {SYSTEM_OBJECT}
-			l_methods := l_type.get_methods_binding_flags ({BINDING_FLAGS}.instance | {BINDING_FLAGS}.static | {BINDING_FLAGS}.public | {BINDING_FLAGS}.non_public)
+			l_type := {SYSTEM_TYPE}.get_type_string ("System.Object")
+			l_methods := l_type.get_methods_binding_flags ({BINDING_FLAGS}.instance |
+				{BINDING_FLAGS}.public)
 			create Result.make (l_methods.count)
 			from
 				i := l_methods.lower
@@ -1088,167 +1089,29 @@ feature {NONE} -- Added features of System.Object to Interfaces
 			until
 				i > nb
 			loop
-				l_meth := l_methods.item (i)
-				if (l_meth.is_public or l_meth.is_family or l_meth.is_family_or_assembly) then
-					Result.put (l_meth, object_key_name (l_meth))
-				end
+				Result.put (l_methods.item (i), l_methods.item (i).name)
 				i := i + 1
 			end
 		ensure
 			object_methods: Result /= Void
 		end
-
-	object_static_methods: NATIVE_ARRAY [METHOD_INFO] is
-			-- List of members of System.Object static methods
-		local
-			l_type: SYSTEM_TYPE
-		once
-			l_type := {SYSTEM_OBJECT}
-			Result := l_type.get_methods_binding_flags ({BINDING_FLAGS}.static | {BINDING_FLAGS}.public | {BINDING_FLAGS}.non_public)
-		ensure
-			object_methods: Result /= Void
-		end
-
-	object_key_name (a_method: METHOD_INFO): STRING is
-			-- Retrieves a key for use with `object_methods' given method `a_method'
-		require
-			a_method_attached: a_method /= Void
-		local
-			l_params: NATIVE_ARRAY [PARAMETER_INFO]
-			l_param: PARAMETER_INFO
-			l_res: STRING_BUILDER
-			l_count, i: INTEGER
-		do
-			create l_res.make (30)
-			l_res := l_res.append (a_method.name)
-			l_res := l_res.append ('(')
-			l_params := a_method.get_parameters
-			l_count := l_params.length
-			from until i = l_count loop
-				l_param := l_params.item (i)
-				i := i + 1
-				l_res := l_res.append (l_param.parameter_type.name)
-				if i < l_count then
-					l_res := l_res.append (',')
-				end
-			end
-			l_res := l_res.append (')')
-			Result := l_res.to_string
-		ensure
-			result_attached: Result /= Void
-			not_result_is_empty: not Result.is_empty
-		end
-
-feature {NONE} -- Filtering
-
--- Commented out because this is not how Eiffel behaves, but how C# does. See `update_interface_members' for usage.
-
---	prune_deferred_duplicates (a_members: NATIVE_ARRAY [MEMBER_INFO]): NATIVE_ARRAY [MEMBER_INFO] is
---			-- Prunes duplicate deferred members in `a_members' and returns a new array of members.
---		require
---			a_members_attached: a_members /= Void
---			not_a_members_is_empty: a_members.count > 0
---		local
---			l_list: ARRAYED_LIST [MEMBER_INFO]
---			l_member: MEMBER_INFO
---			l_method, l_other_method: METHOD_INFO
---			l_key: STRING
---			l_method_list: ARRAY_LIST
-
---			l_values: ICOLLECTION
---			l_enum, l_list_enum: IENUMERATOR
---			l_dict_enum: IDICTIONARY_ENUMERATOR
---			l_comparer: CONSUMER_STRING_COMPARER
---			l_safe: HASHTABLE
---			l_overloaded: HASHTABLE
---			l_name: SYSTEM_STRING
---			l_count, i: INTEGER
---			l_match_table: HASH_TABLE [MEMBER_INFO, STRING]
---		do
---			create {CONSUMER_STRING_COMPARER}l_comparer.make (True)
---			create l_safe.make (a_members.count, l_comparer, l_comparer)
---			create l_overloaded.make (a_members.count, l_comparer, l_comparer)
-
---				-- Separate overload members from
---			l_count := a_members.count
---			from until i = l_count loop
---				l_member := a_members.item (i)
---				l_method ?= l_member
---				l_name := l_member.name
---				if l_method /= Void and then l_safe.contains_key (l_name) then
---					l_other_method ?= l_safe.item (l_name)
---					l_safe.remove (l_name)
-
---					check l_other_method_attached: l_other_method /= Void end
---					if l_overloaded.contains_key (l_name) then
---						l_method_list ?= l_overloaded.item (l_name)
---					else
---						create l_method_list.make (2)
---						l_method_list.add (l_other_method).do_nothing
---						l_overloaded.add (l_name, l_method_list)
---					end
---					check l_method_list_attached: l_method_list /= Void end
---					l_method_list.add (l_method).do_nothing
---				else
---					l_safe.add (l_name, l_member)
---				end
---				i := i + 1
---			end
-
---				-- Removed overloads and add unique methods to safe table
---			l_values := l_overloaded.values
---			l_count := l_values.count
---			if l_count > 0 then
---				create l_match_table.make (30)
---				l_enum := l_values.get_enumerator
---				from l_enum.reset until not l_enum.move_next loop
---					l_method_list ?= l_enum.current_
---					check l_method_list_attached: l_method_list /= Void end
---					l_list_enum := l_method_list.get_enumerator
---					from l_list_enum.reset until not l_list_enum.move_next loop
---						l_method ?= l_list_enum.current_
---						check l_method_attached: l_method /= Void end
---						l_name := object_key_name (l_method)
---						if not l_safe.contains_key (l_name) then
---							l_safe.add (l_name, l_method)
---						end
---					end
---				end
---			end
-
---				-- Create result list
---			l_dict_enum := l_safe.get_enumerator
---			create Result.make (l_safe.count)
---			from
---				i := 0
---				l_dict_enum.reset
---			until not l_dict_enum.move_next loop
---				l_member ?= l_dict_enum.value
---				check l_member_attached: l_member /= Void end
---				Result.put (i, l_member)
---				i := i + 1
---			end
---		ensure
---			result_attached: Result /= Void
---			not_result_is_empty: Result.length > 0
---		end
 
 feature {NONE} -- Added features for ENUM types.
 
 	Additional_enum_features: INTEGER is 3
 			-- Number of additional features for enum types.
 
-	infix_and_feature (a_enum_type: CONSUMED_REFERENCED_TYPE): CONSUMED_FUNCTION is
+	infix_and_feature (enum_type: CONSUMED_REFERENCED_TYPE): CONSUMED_FUNCTION is
 			-- Create instance of CONSUMED_FUNCTION for `&' in enum type `t'.
 		require
-			a_enum_type_not_void: a_enum_type /= Void
+			enum_type_not_void: enum_type /= Void
 		local
 			l_args: ARRAY [CONSUMED_ARGUMENT]
 			l_arg: CONSUMED_ARGUMENT
 		do
-			create l_arg.make ("other", "other", a_enum_type)
+			create l_arg.make ("other", "other", enum_type)
 			l_args := <<l_arg>>
-			create Result.make ("&", "&", "&", l_args, a_enum_type,
+			create Result.make ("&", "&", "&", l_args, enum_type,
 				True,	-- is_frozen
 				False,	-- is_static
 				False,	-- is_deferred
@@ -1258,21 +1121,21 @@ feature {NONE} -- Added features for ENUM types.
 				False,  -- is_new_slot
 				True,	-- is_virtual
 				False,	-- is_property_or_event
-				a_enum_type)
+				enum_type)
 			Result.set_is_artificially_added (True)
 		end
 
-	infix_or_feature (a_enum_type: CONSUMED_REFERENCED_TYPE): CONSUMED_FUNCTION is
+	infix_or_feature (enum_type: CONSUMED_REFERENCED_TYPE): CONSUMED_FUNCTION is
 			-- Create instance of CONSUMED_FUNCTION for `|' in enum type `t'.
 		require
-			a_enum_type_not_void: a_enum_type /= Void
+			enum_type_not_void: enum_type /= Void
 		local
 			l_args: ARRAY [CONSUMED_ARGUMENT]
 			l_arg: CONSUMED_ARGUMENT
 		do
-			create l_arg.make ("other", "other", a_enum_type)
+			create l_arg.make ("other", "other", enum_type)
 			l_args := <<l_arg>>
-			create Result.make ("|", "|", "|", l_args, a_enum_type,
+			create Result.make ("|", "|", "|", l_args, enum_type,
 				True,	-- is_frozen
 				False,	-- is_static
 				False,	-- is_deferred
@@ -1282,21 +1145,21 @@ feature {NONE} -- Added features for ENUM types.
 				False,  -- is_new_slot
 				True,	-- is_virtual
 				False,	-- is_property_or_event
-				a_enum_type)
+				enum_type)
 			Result.set_is_artificially_added (True)
 		end
 
-	from_integer_feature (a_enum_type: CONSUMED_REFERENCED_TYPE; a_underlying_enum_type: CONSUMED_REFERENCED_TYPE): CONSUMED_FUNCTION is
+	from_integer_feature (enum_type: CONSUMED_REFERENCED_TYPE; underlying_enum_type: CONSUMED_REFERENCED_TYPE): CONSUMED_FUNCTION is
 			-- Create instance of CONSUMED_FUNCTION for`from_integer' in enum type `t'.
 		require
-			a_enum_type_not_void: a_enum_type /= Void
+			enum_type_not_void: enum_type /= Void
 		local
 			l_args: ARRAY [CONSUMED_ARGUMENT]
 			l_arg: CONSUMED_ARGUMENT
 		do
-			create l_arg.make ("a_value", "a_value", a_underlying_enum_type)
+			create l_arg.make ("a_value", "a_value", underlying_enum_type)
 			l_args := <<l_arg>>
-			create Result.make ("from_integer", "from_integer", "from_integer", l_args, a_enum_type,
+			create Result.make ("from_integer", "from_integer", "from_integer", l_args, enum_type,
 				True,	-- is_frozen
 				False,	-- is_static
 				False,	-- is_deferred
@@ -1306,19 +1169,19 @@ feature {NONE} -- Added features for ENUM types.
 				False,	-- is_new_slot
 				True,	-- is_virtual
 				False,	-- is_property_or_event
-				a_enum_type)
+				enum_type)
 			Result.set_is_artificially_added (True)
 		end
 
-	to_integer_feature (a_enum_type: CONSUMED_REFERENCED_TYPE; a_underlying_enum_type: CONSUMED_REFERENCED_TYPE): CONSUMED_FUNCTION is
+	to_integer_feature (enum_type: CONSUMED_REFERENCED_TYPE; underlying_enum_type: CONSUMED_REFERENCED_TYPE): CONSUMED_FUNCTION is
 			-- Create instance of CONSUMED_FUNCTION for`to_integer' in enum type `t'.
 		require
-			a_enum_type_not_void: a_enum_type /= Void
+			enum_type_not_void: enum_type /= Void
 		local
 			l_args: ARRAY [CONSUMED_ARGUMENT]
 		do
 			create l_args.make (1, 0)
-			create Result.make ("to_integer", "to_integer", "to_integer", l_args, a_underlying_enum_type,
+			create Result.make ("to_integer", "to_integer", "to_integer", l_args, underlying_enum_type,
 				True,	-- is_frozen
 				False,	-- is_static
 				False,	-- is_deferred
@@ -1328,7 +1191,7 @@ feature {NONE} -- Added features for ENUM types.
 				False,	-- is_new_slot
 				True,	-- is_virtual
 				False,	-- is_property_or_event
-				a_enum_type)
+				enum_type)
 			Result.set_is_artificially_added (True)
 		end
 
@@ -1412,22 +1275,6 @@ feature {NONE} -- Added features for ENUM types.
 			-- typeof (float)
 		once
 			Result := {SYSTEM_TYPE}.get_type_string (("System.Single").to_cil)
-		end
-
-	enum_type: SYSTEM_TYPE is
-			-- typeof (System.Enum)
-		once
-			Result := {ENUM}
-		ensure
-			result_attached: Result /= Void
-		end
-
-	value_type_type: SYSTEM_TYPE is
-			-- typeof (System.ValueType)
-		once
-			Result := {VALUE_TYPE}
-		ensure
-			result_attached: Result /= Void
 		end
 
 indexing

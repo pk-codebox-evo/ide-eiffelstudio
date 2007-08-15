@@ -195,4 +195,8 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+
+
+
+end -- class WEL_CHARACTER_FORMAT2
+

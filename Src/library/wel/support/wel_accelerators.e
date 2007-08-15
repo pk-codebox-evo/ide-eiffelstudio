@@ -39,10 +39,8 @@ feature {NONE} -- Implementation
 	destroy_item is
 			-- Destroy accelerators.
 		do
-			if item /= default_pointer then
-				cwin_destroy_accelerator_table (item)
-				item := default_pointer
-			end
+			-- We don't need to destroy accelerators.
+			item := default_pointer
 		end
 
 feature {NONE} -- Externals
@@ -54,7 +52,7 @@ feature {NONE} -- Externals
 		alias
 			"LoadAccelerators"
 		end
-
+		
 	cwin_destroy_accelerator_table (p: POINTER) is
 			-- SDK DestroyAcceleratorTable
 		external
@@ -69,7 +67,7 @@ feature {NONE} -- Externals
 			"C [macro <wel.h>] (LPACCEL, int): EIF_POINTER"
 		alias
 			"CreateAcceleratorTable"
-		end
+		end		
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"

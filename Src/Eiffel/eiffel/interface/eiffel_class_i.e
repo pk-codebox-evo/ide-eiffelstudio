@@ -23,9 +23,16 @@ inherit
 
 	COMPILER_EXPORTER
 
+	DEBUG_OUTPUT
+		rename
+			debug_output as name_in_upper
+		end
+
 	CONF_CLASS
 		rename
 			file_name as base_name,
+			name as original_name,
+			renamed_name as name,
 			check_changed as set_date,
 			group as cluster
 		export
@@ -56,79 +63,6 @@ feature -- Access
 			Result := Current
 		end
 
-	class_to_recompile: EIFFEL_CLASS_C
-		local
-			local_system: SYSTEM_I
-		do
-			local_system := system
-			if Current = local_system.boolean_class then
-				create {BOOLEAN_B} Result.make (Current)
-
-			elseif Current = local_system.character_8_class then
-				create {CHARACTER_B} Result.make (Current, False)
-
-			elseif Current = local_system.character_32_class then
-				create {CHARACTER_B} Result.make (Current, True)
-
-			elseif Current = local_system.natural_8_class then
-				create {NATURAL_B} Result.make (Current, 8)
-
-			elseif Current = local_system.natural_16_class then
-				create {NATURAL_B} Result.make (Current, 16)
-
-			elseif Current = local_system.natural_32_class then
-				create {NATURAL_B} Result.make (Current, 32)
-
-			elseif Current = local_system.natural_64_class then
-				create {NATURAL_B} Result.make (Current, 64)
-
-			elseif Current = local_system.integer_8_class then
-				create {INTEGER_B} Result.make (Current, 8)
-
-			elseif Current = local_system.integer_16_class then
-				create {INTEGER_B} Result.make (Current, 16)
-
-			elseif Current = local_system.integer_32_class then
-				create {INTEGER_B} Result.make (Current, 32)
-
-			elseif Current = local_system.integer_64_class then
-				create {INTEGER_B} Result.make (Current, 64)
-
-			elseif Current = local_system.real_32_class then
-				create {REAL_32_B} Result.make (Current)
-
-			elseif Current = local_system.real_64_class then
-				create {REAL_64_B} Result.make (Current)
-
-			elseif Current = local_system.pointer_class then
-				create {POINTER_B} Result.make (Current, False)
-
-			elseif Current = local_system.typed_pointer_class then
-				create {POINTER_B} Result.make (Current, True)
-
-			elseif Current = local_system.special_class then
-				create {SPECIAL_B} Result.make (Current)
-
-			elseif Current = local_system.array_class then
-				create {ARRAY_CLASS_B} Result.make (Current)
-
-			elseif Current = local_system.string_8_class then
-				create {STRING_CLASS_B} Result.make (Current)
-
-			elseif Current = local_system.tuple_class then
-				create {TUPLE_CLASS_B} Result.make (Current)
-
-			elseif Current = local_system.native_array_class then
-				create {NATIVE_ARRAY_B} Result.make (Current)
-
-			elseif Current = local_system.type_class then
-				create {TYPE_CLASS_C} Result.make (Current)
-
-			else
-				create Result.make (Current)
-			end
-		end
-
 feature -- Setting
 
 	set_base_name (s: STRING) is
@@ -141,6 +75,7 @@ feature -- Setting
 		ensure
 			base_name_set: base_name = s
 		end
+
 
 feature {NONE} -- Type anchor
 

@@ -12,9 +12,7 @@ inherit
 	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 		redefine
 			mini_pixmap,
-			mini_pixel_buffer,
-			tooltext,
-			pixel_buffer
+			tooltext
 		end
 
 	EB_DEVELOPMENT_WINDOW_COMMAND
@@ -32,7 +30,7 @@ feature -- Basic operations
 			c: CLASSI_STONE
 			class_i: CLASS_I
 			cg: CLASS_TEXT_MODIFIER
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 			class_c: CLASS_C
 			retried: BOOLEAN
 		do
@@ -75,15 +73,9 @@ feature -- Access
 			Result := pixmaps.mini_pixmaps.new_feature_icon
 		end
 
-	mini_pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command for mini toolbars.
-		do
-			Result := pixmaps.mini_pixmaps.new_feature_icon_buffer
-		end
-
 feature {NONE} -- Implementation
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it appears in the menu (with & symbol).
 		do
 			Result := Interface_names.m_Create_new_feature
@@ -95,25 +87,19 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.new_feature_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.new_feature_icon_buffer
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.f_Create_new_feature
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text for the toolbar button.
 		do
 			Result := Interface_names.b_Create_new_feature
 		end
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Description for this command.
 		do
 			Result := Interface_names.f_Create_new_feature

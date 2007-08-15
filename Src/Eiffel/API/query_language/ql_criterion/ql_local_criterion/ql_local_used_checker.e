@@ -10,8 +10,6 @@ class
 	QL_LOCAL_USED_CHECKER
 
 inherit
-	ANY
-
 	AST_ITERATOR
 		export
 			{NONE}all
@@ -60,7 +58,7 @@ feature{NONE} -- Access
 		do
 			if not last_is_used then
 				check last_local_name /= Void end
-				last_is_used := last_local_name.is_case_insensitive_equal (l_as.feature_name.internal_name.name)
+				last_is_used := last_local_name.is_case_insensitive_equal (l_as.feature_name.internal_name)
 			end
 		end
 
@@ -95,5 +93,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

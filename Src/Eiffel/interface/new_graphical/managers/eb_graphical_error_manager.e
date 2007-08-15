@@ -29,19 +29,19 @@ feature -- Basic operations
 		require
 			a_relative_windows_not_void: a_relative_window /= Void
 		local
-			error_dialog: EB_ERROR_DIALOG
+			error_dialog: EV_ERROR_DIALOG
 			error_string: STRING
 		do
 				-- Set up the error message.
 			if error_messages.is_empty then
-				error_string := warning_messages.w_Unknown_error.as_string_8
+				error_string := "An unknown error has occurred%N"
 			else
 				from
 					error_messages.start
 				until
 					error_messages.after
 				loop
-					error_string := error_messages.item.as_string_32 + "%N%N"
+					error_string := error_messages.item + "%N%N"
 					error_messages.forth
 				end
 			end
@@ -67,7 +67,7 @@ feature {NONE} -- Implementation
 		do
 			catch_exception := new_state
 		end
-
+	
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"

@@ -177,22 +177,8 @@ feature -- Status report
 
 feature -- Status setting
 
-	enable_sensitive is
-			 -- Enable `Current'.
-		do
-			enabled_before := is_sensitive
-			enable_sensitive_internal
-		end
-
-	disable_sensitive is
-			 -- Disable `Current'.
-		do
-			enabled_before := is_sensitive
-			disable_sensitive_internal
-		end
-
 	enable_sensitive_internal is
-			 -- Enable `Current'.
+			 -- Disable `Current'.
 			 -- This is a special version used internally by the code that updates
 			 -- the pick and drop so that `enabled_before' is not updated. In
 			 -- `enable_sensitive' which is called by a user, we must always updated the
@@ -200,6 +186,16 @@ feature -- Status setting
 			 -- this new state is respected at the end of the transport.
 		do
 			is_sensitive := True
+			if parent_imp /= Void then
+				parent_imp.enable_button (id)
+			end
+		end
+
+	enable_sensitive is
+			 -- Enable `Current'.
+		do
+			is_sensitive := True
+			enabled_before := is_sensitive
 			if parent_imp /= Void then
 				parent_imp.enable_button (id)
 			end
@@ -214,6 +210,16 @@ feature -- Status setting
 			 -- this new state is respected at the end of the transport.
 		do
 			is_sensitive := False
+			if parent_imp /= Void then
+				parent_imp.disable_button (id)
+			end
+		end
+
+	disable_sensitive is
+			 -- Disable `Current'.
+		do
+			is_sensitive := False
+			enabled_before := is_sensitive
 			if parent_imp /= Void then
 				parent_imp.disable_button (id)
 			end
@@ -419,66 +425,29 @@ feature -- Element change
 			end
 		end
 
-feature -- Measurement
+	enabled_before: BOOLEAN
+		-- Was `Current' enabled before `update_for_pick_and_drop' modified
+		-- the current state.
 
-	x_position: INTEGER is
-			-- Horizontal offset relative to parent `x_position' in pixels.
+	update_for_pick_and_drop (starting: BOOLEAN) is
+			-- Pick and drop status has changed so update appearance of
+			-- `Current' to reflect available targets.
+		local
+			env: EV_ENVIRONMENT
+			app_imp: EV_APPLICATION_IMP
 		do
-			if parent_imp /= Void then
-				Result := parent_imp.child_x (interface)
+			create env
+			app_imp ?= env.application.implementation
+			if starting then
+				if not interface.drop_actions.accepts_pebble (app_imp.pick_and_drop_source.pebble) then
+					enabled_before := is_sensitive
+					disable_sensitive_internal
+				end
+			else
+				if enabled_before then
+					enable_sensitive_internal
+				end
 			end
-		end
-
-	y_position: INTEGER is
-			-- Vertical offset relative to parent `y_position' in pixels.
-		do
-			if parent_imp /= Void then
-				Result := parent_imp.child_y (interface)
-			end
-		end
-
-	screen_x: INTEGER is
-			-- Horizontal offset relative to screen.
-		do
-			if parent_imp /= Void then
-				Result := parent_imp.child_x_absolute (interface)
-			end
-		end
-
-	screen_y: INTEGER is
-			-- Vertical offset relative to screen.
-		do
-			if parent_imp /= Void then
-				Result := parent_imp.child_y_absolute (interface)
-			end
-		end
-
-	width: INTEGER is
-			-- Horizontal size in pixels.
-		do
-			if parent_imp /= Void then
-				Result := parent_imp.child_width (interface)
-			end
-		end
-
-	height: INTEGER is
-			-- Vertical size in pixels.
-		do
-			if parent_imp /= Void then
-				Result := parent_imp.child_height (interface)
-			end
-		end
-
-	minimum_width: INTEGER is
-			-- Minimum horizontal size in pixels.
-		do
-			Result := width
-		end
-
-	minimum_height: INTEGER is
-			-- Minimum vertical size in pixels.
-		do
-			Result := height
 		end
 
 feature {EV_TOOL_BAR_IMP} -- Implementation

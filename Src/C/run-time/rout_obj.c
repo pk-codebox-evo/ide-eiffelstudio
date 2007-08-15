@@ -2,7 +2,7 @@
 	description: "Agent creation/deletion."
 	date:		"$Date$"
 	revision:	"$Revision$"
-	copyright:	"Copyright (c) 1985-2007, Eiffel Software."
+	copyright:	"Copyright (c) 1985-2006, Eiffel Software."
 	license:	"GPL version 2 see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"Commercial license is available at http://www.eiffel.com/licensing"
 	copying: "[
@@ -109,71 +109,33 @@ rt_public EIF_REFERENCE rout_obj_create_wb ( int16 dftype, EIF_POINTER rout_disp
 {
 	EIF_GET_CONTEXT
 	EIF_REFERENCE result = NULL;
-	EIF_TYPED_VALUE u_rout_disp;
-	EIF_TYPED_VALUE u_encaps_rout_disp;
-	EIF_TYPED_VALUE u_calc_rout_addr;
-	EIF_TYPED_VALUE u_class_id;
-	EIF_TYPED_VALUE u_feature_id;
-	EIF_TYPED_VALUE u_open_map;
-	EIF_TYPED_VALUE u_is_precompiled;
-	EIF_TYPED_VALUE u_is_basic;
-	EIF_TYPED_VALUE u_is_target_closed;
-	EIF_TYPED_VALUE u_is_inline_agent;
-	EIF_TYPED_VALUE u_closed_operands;
-	EIF_TYPED_VALUE u_open_count;
 	RTLD;
 
-	u_rout_disp.type = SK_POINTER;
-	u_rout_disp.it_p = rout_disp;
-	u_encaps_rout_disp.type = SK_POINTER;
-	u_encaps_rout_disp.it_p = encaps_rout_disp;
-	u_calc_rout_addr.type = SK_POINTER;
-	u_calc_rout_addr.it_p = calc_rout_addr;
-	u_class_id.type = SK_INT32;
-	u_class_id.it_i4 = class_id;
-	u_feature_id.type = SK_INT32;
-	u_feature_id.it_i4 = feature_id;
-	u_open_map.type = SK_REF;
-	u_open_map.it_r = open_map;
-	u_is_precompiled.type = SK_BOOL;
-	u_is_precompiled.it_b = is_precompiled;
-	u_is_basic.type = SK_BOOL;
-	u_is_basic.it_b = is_basic;
-	u_is_target_closed.type = SK_BOOL;
-	u_is_target_closed.it_b = is_target_closed;
-	u_is_inline_agent.type = SK_BOOL;
-	u_is_inline_agent.it_b = is_inline_agent;
-	u_closed_operands.type = SK_REF;
-	u_closed_operands.it_r = closed_operands;
-	u_open_count.type = SK_INT32;
-	u_open_count.it_i4 = open_count;
 		/* Protect address in case it moves */
- 	RTLI(5);
+ 	RTLI(3);
 	RTLR (0, result);
 	RTLR (1, closed_operands);
 	RTLR (2, open_map);
-	RTLR (3, u_open_map.it_r);
-	RTLR (4, u_closed_operands.it_r);
 
 		/* Create ROUTINE object */
 	result = emalloc(dftype);
 	nstcall = 0;
 		/* Call 'set_rout_disp' from ROUTINE */
-	(*egc_routdisp_wb)(
-		result,
-		u_rout_disp,
-		u_encaps_rout_disp,
-		u_calc_rout_addr,
-		u_class_id,
-		u_feature_id,
-		u_open_map,
-		u_is_precompiled,
-		u_is_basic,
-		u_is_target_closed,
-		u_is_inline_agent,
-		u_closed_operands,
-		u_open_count
-	);
+	(FUNCTION_CAST (void, ( EIF_REFERENCE,
+							EIF_POINTER, 
+							EIF_POINTER, 
+							EIF_POINTER, 
+							EIF_INTEGER,
+							EIF_INTEGER,
+							EIF_REFERENCE,
+							EIF_BOOLEAN,
+							EIF_BOOLEAN, 
+							EIF_BOOLEAN,
+							EIF_BOOLEAN,
+							EIF_REFERENCE,
+							EIF_INTEGER)) egc_routdisp_wb)( result, rout_disp, encaps_rout_disp, calc_rout_addr, 
+														    class_id, feature_id, open_map, is_precompiled, is_basic, 
+														    is_target_closed, is_inline_agent, closed_operands, open_count);
 
 	RTLE;
 	return result;
@@ -223,7 +185,7 @@ rt_public EIF_POINTER rout_obj_new_args (EIF_INTEGER count)
 	EIF_POINTER result = (EIF_POINTER) 0;
 
 	if (count > 0) {
-		result = (EIF_POINTER) eif_malloc (count * sizeof (EIF_VALUE));
+		result = (EIF_POINTER) eif_malloc (count * sizeof (EIF_ARG_UNION));
 		if (result == (EIF_POINTER) 0)
 			enomem();
 	}
@@ -244,67 +206,67 @@ rt_public void rout_obj_free_args (EIF_POINTER args)
 rt_public void rout_obj_call_function (EIF_REFERENCE res, EIF_POINTER rout, EIF_POINTER args)
 {
 	EIF_GET_CONTEXT
-	EIF_VALUE result, *ap;
+	EIF_ARG_UNION result, *ap;
 	char gcode, *resp;
 
 		/* Protect address in case it moves */
 	RT_GC_PROTECT(res);
 
-	ap = (EIF_VALUE *) args;
+	ap = (EIF_ARG_UNION *) args;
 	gcode = (FUNCTION_CAST (char,
 				(EIF_REFERENCE,
-				EIF_VALUE *,
-				EIF_VALUE *)) rout) (ap[0].r, ap + 1, &result);
+				EIF_ARG_UNION *,
+				EIF_ARG_UNION *)) rout) (ap[0].rarg, ap + 1, &result);
 
 	resp = *(EIF_REFERENCE *) res;
 
 	switch (gcode)
 	{
 		case EIF_BOOLEAN_CODE:
-			*((EIF_BOOLEAN *) resp) = result.b;
+			*((EIF_BOOLEAN *) resp) = result.barg;
 			break;
 		case EIF_CHARACTER_CODE:
-			*((EIF_CHARACTER *) resp) = result.c1;
+			*((EIF_CHARACTER *) resp) = result.carg;
 			break;
 		case EIF_REAL_64_CODE:
-			*((EIF_REAL_64 *) resp) = result.r8;
+			*((EIF_REAL_64 *) resp) = result.darg;
 			break;
 		case EIF_NATURAL_8_CODE:
-			*((EIF_NATURAL_8 *) resp) = result.n1;
+			*((EIF_NATURAL_8 *) resp) = result.u8arg;
 			break;
 		case EIF_NATURAL_16_CODE:
-			*((EIF_NATURAL_16 *) resp) = result.n2;
+			*((EIF_NATURAL_16 *) resp) = result.u16arg;
 			break;
 		case EIF_NATURAL_32_CODE:
-			*((EIF_NATURAL *) resp) = result.n4;
+			*((EIF_NATURAL *) resp) = result.u32arg;
 			break;
 		case EIF_NATURAL_64_CODE:
-			*((EIF_NATURAL_64 *) resp) = result.n8;
+			*((EIF_NATURAL_64 *) resp) = result.u64arg;
 			break;
 		case EIF_INTEGER_8_CODE:
-			*((EIF_INTEGER_8 *) resp) = result.i1;
+			*((EIF_INTEGER_8 *) resp) = result.i8arg;
 			break;
 		case EIF_INTEGER_16_CODE:
-			*((EIF_INTEGER_16 *) resp) = result.i2;
+			*((EIF_INTEGER_16 *) resp) = result.i16arg;
 			break;
 		case EIF_INTEGER_32_CODE:
-			*((EIF_INTEGER *) resp) = result.i4;
+			*((EIF_INTEGER *) resp) = result.i32arg;
 			break;
 		case EIF_INTEGER_64_CODE:
-			*((EIF_INTEGER_64 *) resp) = result.i8;
+			*((EIF_INTEGER_64 *) resp) = result.i64arg;
 			break;
 		case EIF_POINTER_CODE:
-			*((EIF_POINTER *) resp) = result.p;
+			*((EIF_POINTER *) resp) = result.parg;
 			break;
 		case EIF_REAL_32_CODE:
-			*((EIF_REAL_32 *) resp) = result.r4;
+			*((EIF_REAL_32 *) resp) = result.farg;
 			break;
 		case EIF_WIDE_CHAR_CODE:
-			*((EIF_WIDE_CHAR *) resp) = result.c4;
+			*((EIF_WIDE_CHAR *) resp) = result.wcarg;
 			break;
 		default:
-			*((EIF_REFERENCE *) resp) = result.r;
-			RTAR(resp, result.r);
+			*((EIF_REFERENCE *) resp) = result.rarg;
+			RTAR(resp, result.rarg);
 			break;
 	}
 
@@ -316,21 +278,22 @@ rt_public void rout_obj_call_function (EIF_REFERENCE res, EIF_POINTER rout, EIF_
 #ifdef WORKBENCH
 
 #include "eif_setup.h"
-void fill_it (EIF_TYPED_VALUE* it, EIF_TYPED_VALUE* te);
+void fill_it (struct item* it, EIF_TYPED_ELEMENT* te);
 
 rt_public void rout_obj_call_procedure_dynamic (
 	int stype_id, int feature_id, int is_precompiled, int is_basic_type, int is_inline_agent,
-	EIF_TYPED_VALUE* closed_args, int closed_count, 
-	EIF_TYPED_VALUE* open_args, int open_count, 
+	EIF_TYPED_ELEMENT* closed_args, int closed_count, 
+	EIF_TYPED_ELEMENT* open_args, int open_count, 
 	EIF_REFERENCE open_map)
 {
 	EIF_GET_CONTEXT
-	int i = 2;
-	int args_count = open_count + closed_count;
+	size_t i = 2;
+	size_t args_count = open_count + closed_count;
 	int next_open = 0xFFFF;
 	int open_idx = 1;
 	int closed_idx = 1;
-	EIF_TYPED_VALUE* first_arg = 0;
+	EIF_TYPED_ELEMENT* first_arg = 0;
+	EIF_TYPED_ELEMENT* arg = 0;
 	EIF_INTEGER* open_positions = 0;
 
 	if (closed_count > 0) {
@@ -385,23 +348,40 @@ rt_public void rout_obj_call_procedure_dynamic (
 		/* We are calling a feature through an agent, in this case, we consider all calls
 		 * as qualified so that the invariant is checked. */
 	nstcall = 1;
-		/* We pass `0' for `dtype' in `dynamic_eval' because for an agent call we always have
-		 * a target object to get this from. */
-	dynamic_eval (feature_id, stype_id, 0, is_precompiled, is_basic_type, 0, is_inline_agent);
+	dynamic_eval (feature_id, stype_id, is_precompiled, is_basic_type, is_inline_agent);
 }
 
-void fill_it (EIF_TYPED_VALUE* it, EIF_TYPED_VALUE* te) 
+void fill_it (struct item* it, EIF_TYPED_ELEMENT* te) 
 {
-	*it = *te;
+		switch ((*te).type)
+		{
+			case EIF_BOOLEAN_CODE: it->type = SK_BOOL; it->itu.itu_char = (*te).element.barg; break;
+			case EIF_CHARACTER_CODE: it->type = SK_CHAR; it->itu.itu_char = (*te).element.carg; break;
+			case EIF_REAL_64_CODE: it->type = SK_REAL64; it->itu.itu_real64 = (*te).element.darg; break;
+			case EIF_NATURAL_8_CODE: it->type = SK_UINT8; it->itu.itu_uint8 = (*te).element.u8arg; break;
+			case EIF_NATURAL_16_CODE: it->type = SK_UINT16; it->itu.itu_uint16 = (*te).element.u16arg; break;
+			case EIF_NATURAL_32_CODE: it->type = SK_UINT32; it->itu.itu_uint32 = (*te).element.u32arg; break;
+			case EIF_NATURAL_64_CODE: it->type = SK_UINT64; it->itu.itu_uint64 = (*te).element.u64arg; break;
+			case EIF_INTEGER_8_CODE: it->type = SK_INT8; it->itu.itu_int8 = (*te).element.i8arg; break;
+			case EIF_INTEGER_16_CODE: it->type = SK_INT16; it->itu.itu_int16 = (*te).element.i16arg; break;
+			case EIF_INTEGER_32_CODE: it->type = SK_INT32; it->itu.itu_int32 = (*te).element.i32arg; break;
+			case EIF_INTEGER_64_CODE: it->type = SK_INT64; it->itu.itu_int64 = (*te).element.i64arg; break;
+			case EIF_POINTER_CODE: it->type = SK_POINTER; it->itu.itu_ptr = (*te).element.parg; break;
+			case EIF_REAL_32_CODE: it->type = SK_REAL32; it->itu.itu_real32 = (*te).element.farg; break;
+			case EIF_WIDE_CHAR_CODE: it->type = SK_WCHAR; it->itu.itu_wchar = (*te).element.wcarg; break;
+			default:
+				it->type = SK_REF; it->itu.itu_ref = (*te).element.rarg;
+		}
 }
 
 rt_public void rout_obj_call_function_dynamic (
 	int stype_id, int feature_id, int is_precompiled, int is_basic_type, int is_inline_agent,
-	EIF_TYPED_VALUE* closed_args, int closed_count, 
-	EIF_TYPED_VALUE* open_args, int open_count, 
+	EIF_TYPED_ELEMENT* closed_args, int closed_count, 
+	EIF_TYPED_ELEMENT* open_args, int open_count, 
 	EIF_REFERENCE open_map, void* res)
 {
-	EIF_TYPED_VALUE* it = 0;
+	EIF_GET_CONTEXT
+	struct item* it = 0;
 
 	rout_obj_call_procedure_dynamic (stype_id, feature_id, is_precompiled, is_basic_type, is_inline_agent,
 									 closed_args, closed_count, open_args, open_count, open_map);
@@ -410,50 +390,28 @@ rt_public void rout_obj_call_function_dynamic (
 
 	switch (it->type)
 	{
-		case SK_BOOL: *((EIF_CHARACTER *) res) = it->it_bool; break;
-		case SK_CHAR: *((EIF_CHARACTER *) res) = it->it_char; break;
-		case SK_REAL64: *((EIF_REAL_64 *)res) = it->it_real64; break;
-		case SK_UINT8: *((EIF_NATURAL_8* )res) = it->it_uint8; break;
-		case SK_UINT16: *((EIF_NATURAL_16 *)res) = it->it_uint16; break;
-		case SK_UINT32: *((EIF_NATURAL_32 *)res) = it->it_uint32; break;
-		case SK_UINT64: *((EIF_NATURAL_64 *)res)= it->it_uint64; break;
-		case SK_INT8: *((EIF_INTEGER_8 *)res) = it->it_int8; break;
-		case SK_INT16: *((EIF_INTEGER_16 *)res) = it->it_int16; break;
-		case SK_INT32: *((EIF_INTEGER_32 *)res) = it->it_int32; break;
-		case SK_INT64: *((EIF_INTEGER_64 *)res) = it->it_int64; break;
-		case SK_POINTER: *((EIF_POINTER *)res) = it->it_ptr; break;
-		case SK_REAL32: *((EIF_REAL_32 *)res) = it->it_real32; break;
-		case SK_WCHAR: *((EIF_WIDE_CHAR* )res) = it->it_wchar; break;
+		case SK_BOOL:
+		case SK_CHAR:
+			*((EIF_CHARACTER *) res) = it->itu.itu_char; break;
+		case SK_REAL64: *((EIF_REAL_64 *)res) = it->itu.itu_real64; break;
+		case SK_UINT8: *((EIF_NATURAL_8* )res) = it->itu.itu_uint8; break;
+		case SK_UINT16: *((EIF_NATURAL_16 *)res) = it->itu.itu_uint16; break;
+		case SK_UINT32: *((EIF_NATURAL_32 *)res) = it->itu.itu_uint32; break;
+		case SK_UINT64: *((EIF_NATURAL_64 *)res)= it->itu.itu_uint64; break;
+		case SK_INT8: *((EIF_INTEGER_8 *)res) = it->itu.itu_int8; break;
+		case SK_INT16: *((EIF_INTEGER_16 *)res) = it->itu.itu_int16; break;
+		case SK_INT32: *((EIF_INTEGER_32 *)res) = it->itu.itu_int32; break;
+		case SK_INT64: *((EIF_INTEGER_64 *)res) = it->itu.itu_int64; break;
+		case SK_POINTER: *((EIF_POINTER *)res) = it->itu.itu_ptr; break;
+		case SK_REAL32: *((EIF_REAL_32 *)res) = it->itu.itu_real32; break;
+		case SK_WCHAR: *((EIF_WIDE_CHAR* )res) = it->itu.itu_wchar; break;
 		default:
-			*((EIF_REFERENCE *)res) = it->it_ref;
+			*((EIF_REFERENCE *)res) = it->itu.itu_ref;
 	}
 }
 #endif
 
 /*------------------------------------------------------------------*/
-
-rt_public char eif_sk_type_to_type_code (uint32 sk_type)
-{
-	switch (sk_type) {
-		case SK_BOOL:    return EIF_BOOLEAN_CODE; break;
-		case SK_CHAR:    return EIF_CHARACTER_CODE; break;
-		case SK_WCHAR:   return EIF_WIDE_CHAR_CODE; break;
-		case SK_INT8:    return EIF_INTEGER_8_CODE; break;
-		case SK_INT16:   return EIF_INTEGER_16_CODE; break;
-		case SK_INT32:   return EIF_INTEGER_32_CODE; break;
-		case SK_INT64:   return EIF_INTEGER_64_CODE; break;
-		case SK_UINT8:   return EIF_NATURAL_8_CODE; break;
-		case SK_UINT16:  return EIF_NATURAL_16_CODE; break;
-		case SK_UINT32:  return EIF_NATURAL_32_CODE; break;
-		case SK_UINT64:  return EIF_NATURAL_64_CODE; break;
-		case SK_POINTER: return EIF_POINTER_CODE; break;
-		case SK_REAL32:  return EIF_REAL_32_CODE; break;
-		case SK_REAL64:  return EIF_REAL_64_CODE; break;
-		case SK_REF:     return EIF_REFERENCE_CODE; break;
-	}
-	return EIF_REFERENCE_CODE;
-}
-
 
 /*
 doc:</file>

@@ -25,12 +25,10 @@ feature {NONE} -- Initialization
 
 	make is
 			-- Initialize default values.
-		local
-			l_shortcut: SHORTCUT_PREFERENCE
 		do
-			l_shortcut := preferences.misc_shortcut_data.shortcuts.item ("freeze")
-			create accelerator.make_with_key_combination (l_shortcut.key, l_shortcut.is_ctrl, l_shortcut.is_alt, l_shortcut.is_shift)
-			set_referred_shortcut (l_shortcut)
+			create accelerator.make_with_key_combination (
+				create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.Key_f7),
+				True, False, False)
 			accelerator.actions.extend (agent execute)
 		end
 
@@ -39,7 +37,7 @@ feature {NONE} -- Implementation
 	confirm_and_compile is
 			-- Ask for confirmation, and compile thereafter.
 		local
-			cd: EB_DISCARDABLE_CONFIRMATION_DIALOG
+			cd: STANDARD_DISCARDABLE_CONFIRMATION_DIALOG
 		do
 			create cd.make_initialized (
 				3, preferences.dialog_data.confirm_freeze_string,
@@ -73,13 +71,13 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Implementation
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Description for the command.
 		do
 			Result := Interface_names.f_Freeze
 		end
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it appears in the menu (with & symbol).
 		do
 			Result := Interface_names.m_Freeze_new
@@ -91,13 +89,13 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.project_freeze_icon
 		end
 
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.f_Freeze
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text for the toolbar button.
 		do
 			Result := Interface_names.b_Freeze

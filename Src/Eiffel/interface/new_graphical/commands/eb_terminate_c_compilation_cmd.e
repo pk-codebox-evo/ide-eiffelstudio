@@ -45,21 +45,22 @@ feature -- Status setting
 			internal_execute
 		end
 
+
 feature -- Status report
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Explanatory text for this command.
 		do
 			Result := Interface_names.e_Terminate_c_compilation
 		end
 
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for `Current's toolbar button.
 		do
 			Result := Interface_names.b_Terminate_c_compilation
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text for `Current's toolbar button.
 		do
 			Result := Interface_names.b_Terminate_c_compilation
@@ -74,13 +75,7 @@ feature -- Status report
 			Result := Void
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			-- Currently there is no pixel buffer for this command.
-		end
-		
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Text used for menu items for `Current'.
 		do
 			Result := Interface_names.b_Terminate_c_compilation

@@ -177,8 +177,6 @@ feature {NONE} -- Initialization
 			output_grid.pointer_button_press_item_actions.extend (agent item_pressed)
 			output_grid.key_press_actions.extend (agent key_pressed)
 			output_grid.mouse_wheel_actions.extend (agent mouse_wheel_received)
-			output_grid.set_configurable_target_menu_mode
-			output_grid.set_configurable_target_menu_handler (agent context_menu_handler)
 
 			create grid_border
 			grid_border.set_border_width (1)
@@ -230,17 +228,6 @@ feature {NONE} -- Initialization
 			preferences.editor_data.cluster_text_color_preference.change_actions.extend (colors_changed_agent)
 			preferences.editor_data.class_text_color_preference.change_actions.extend (colors_changed_agent)
 
-		end
-
-	context_menu_handler (a_menu: EV_MENU; a_target_list: ARRAYED_LIST [EV_PND_TARGET_DATA]; a_source: EV_PICK_AND_DROPABLE; a_pebble: ANY) is
-			-- Context menu handler.
-		local
-			l_win: EB_DEVELOPMENT_WINDOW
-		do
-			l_win := window_manager.last_focused_development_window
-			if l_win /= Void then
-				l_win.menus.context_menu_factory.standard_compiler_item_menu (a_menu, a_target_list, a_source, a_pebble)
-			end
 		end
 
 feature {EB_SAVE_RESULT_CMD} -- Save commands
@@ -1013,6 +1000,7 @@ feature {NONE} -- Implementation
 					-- Should sorting be performed within the last sort?
 				sort_within_last := ev_application.ctrl_pressed
 
+
 				sorted_tuple ?= output_grid.column (displayed_column_indexes.item (column_index)).data
 				check
 					sorted_tuple_not_void: sorted_tuple /= Void
@@ -1027,6 +1015,7 @@ feature {NONE} -- Implementation
 					ascending := sorted_tuple.boolean_item (2)
 					sorted_tuple.put_boolean (not ascending, 2)
 				end
+
 
 					-- Now perform actual sort on data.
 				if tree_structure_enabled then
@@ -1318,10 +1307,6 @@ feature {NONE} -- Implementation
 								end
 							end
 						end
-					end
-					if Result /= Void then
-						output_grid.set_accept_cursor (Result.stone_cursor)
-						output_grid.set_deny_cursor (Result.x_stone_cursor)
 					end
 				end
 			end
@@ -1632,8 +1617,10 @@ feature {NONE} -- Implementation
 			query_grid_row.set_is_expanded (False)
 		end
 
+
 	last_x, last_y: INTEGER
 		-- Last x and y position relative to an item within `output_grid'.
+
 
 feature -- Update
 
@@ -1889,7 +1876,7 @@ feature {NONE} -- execution
 			parser: EB_QUERY_PARSER
 			txt: STRING
 			operator: SUBQUERY_OPERATOR
-			error_dialog: EB_WARNING_DIALOG
+			error_dialog: EV_WARNING_DIALOG
 		do
 			txt := subquery
 			if txt /= Void and then not txt.is_empty then

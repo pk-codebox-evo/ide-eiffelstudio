@@ -26,8 +26,6 @@ inherit
 
 	SHARED_WORKBENCH
 
-	SHARED_BATCH_NAMES
-
 	EXCEPTIONS
 		rename
 			die as lic_die,
@@ -43,7 +41,7 @@ feature -- Properties
 		deferred
 		end
 
-	help_message: STRING_GENERAL is
+	help_message: STRING is
 		deferred
 		end
 
@@ -75,7 +73,7 @@ feature -- Comparison
 			Result := name < other.name
 		end
 
-feature -- Setting
+feature {ES} -- Setting
 
 	set_output_window (display: OUTPUT_WINDOW) is
 			-- Set the output window to `display'
@@ -85,7 +83,7 @@ feature -- Setting
 			command_line_io.output_window = display
 		end
 
-feature -- Execution
+feature {ES} -- Execution
 
 	execute is
 			-- Action performed when invoked from the

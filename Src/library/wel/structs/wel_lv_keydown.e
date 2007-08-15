@@ -81,4 +81,8 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+
+
+
+end -- class WEL_LV_KEYDOWN
+

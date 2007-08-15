@@ -10,17 +10,81 @@ class
 	EB_METRIC_FOLDER_DOMAIN_ITEM
 
 inherit
-	EB_FOLDER_DOMAIN_ITEM
-
 	EB_METRIC_DOMAIN_ITEM
-		undefine
-			is_valid,
+		redefine
 			is_folder_item,
-			make
+			is_valid,
+			string_representation
 		end
 
 create
 	make
+
+feature -- Status report
+
+	is_folder_item: BOOLEAN is True
+			-- Is current a folder item?
+
+	is_valid: BOOLEAN is
+			-- Does current represent a valid domain item?
+		do
+			Result := folder_of_id (id) /= Void
+		end
+
+feature -- Access
+
+	domain (a_scope: QL_SCOPE): QL_DOMAIN is
+			-- New query lanaguage domain representing current item
+		local
+			l_class_domain_generator: QL_CLASS_DOMAIN_GENERATOR
+			l_folder: EB_FOLDER
+		do
+			l_folder := folder_of_id (id)
+			check l_folder /= Void end
+			create l_class_domain_generator.make (create{QL_CLASS_PATH_IN_CRI}.make (l_folder.path), True)
+			Result := query_group_item_from_conf_group (l_folder.cluster).wrapped_domain.new_domain (l_class_domain_generator)
+		end
+
+	string_representation: STRING is
+			-- Text of current item
+		local
+			l_folder: EB_FOLDER
+			l_folder_name: STRING
+		do
+			if not is_valid then
+				Result := Precursor
+			else
+				l_folder := folder_of_id (id)
+			end
+
+			l_folder := folder_of_id (id)
+			if l_folder /= Void then
+				Result := l_folder.name
+			else
+				l_folder_name := last_folder_name
+				if l_folder_name /= Void and then not l_folder_name.is_empty then
+					Result := l_folder_name.twin
+				else
+					Result := Precursor
+				end
+			end
+		end
+
+	folder: EB_FOLDER is
+			-- Folder item for current
+		require
+			valid: is_valid
+		do
+			Result := folder_of_id (id)
+		ensure
+			result_attached: Result /= Void
+		end
+
+	query_language_item: QL_ITEM is
+			-- Query language item representation of current domain item
+		do
+			Result := query_group_item_from_conf_group (folder.cluster)
+		end
 
 feature -- Process
 
@@ -29,6 +93,7 @@ feature -- Process
 		do
 			a_visitor.process_folder_domain_item (Current)
 		end
+
 
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"
@@ -61,5 +126,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

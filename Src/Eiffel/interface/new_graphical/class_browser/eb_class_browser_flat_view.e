@@ -12,13 +12,10 @@ class
 inherit
 	EB_CLASS_BROWSER_GRID_VIEW [EB_CLASS_BROWSER_FLAT_ROW]
 		redefine
-			make,
 			grid_selected_items,
 			data,
 			recycle_agents,
-			default_ensure_visible_action,
-			starting_element,
-			update_view
+			default_ensure_visible_action
 		end
 
 	EVS_GRID_TWO_WAY_SORTING_ORDER
@@ -27,16 +24,6 @@ inherit
 
 create
 	make
-
-feature{NONE} -- Initialization
-
-	make (a_dev_window: like development_window; a_drop_actions: like drop_actions) is
-			-- Initialize.
-		do
-			create filter.make (agent is_selected)
-			create wild_matcher.make_empty
-			Precursor (a_dev_window, a_drop_actions)
-		end
 
 feature -- Actions
 
@@ -99,11 +86,52 @@ feature -- Actions
 		end
 
 	on_show_feature_from_any_changed is
-			-- Action to be performed when selection status of `show_feature_from_any_button' changes
+			-- Action to be performed when selection status of `show_feature_from_any_checkbox' changes
 		do
 			if not is_displaying_class_any then
 				is_up_to_date := False
 				update_view
+				preferences.class_browser_data.show_feature_from_any_preference.set_value (show_feature_from_any_checkbox.is_selected)
+			end
+		end
+
+	on_show_tooltip_changed is
+			-- Action to be performed when selection status of `show_tooltip_checkbox' changes
+		do
+			if preferences.class_browser_data.is_tooltip_shown /= show_tooltip_checkbox.is_selected then
+				preferences.class_browser_data.show_tooltip_preference.set_value (show_tooltip_checkbox.is_selected)
+			end
+		end
+
+	on_show_tooltip_changed_from_outside is
+			-- Action to be performed when selection status of `show_tooltip_checkbox' changes from outside
+		local
+			l_displayed: BOOLEAN
+		do
+			l_displayed := preferences.class_browser_data.is_tooltip_shown
+			if l_displayed /= show_tooltip_checkbox.is_selected then
+				if l_displayed then
+					show_tooltip_checkbox.enable_select
+				else
+					show_tooltip_checkbox.disable_select
+				end
+			end
+		end
+
+	on_show_feature_from_any_changed_from_outside is
+			-- Action to be performed when selection status of `show_feature_from_any' changes from outside
+		local
+			l_displayed: BOOLEAN
+		do
+			if not is_displaying_class_any then
+				l_displayed := preferences.class_browser_data.is_feature_from_any_shown
+				if l_displayed /= show_feature_from_any_checkbox.is_selected then
+					if l_displayed then
+						show_feature_from_any_checkbox.enable_select
+					else
+						show_feature_from_any_checkbox.disable_select
+					end
+				end
 			end
 		end
 
@@ -122,6 +150,24 @@ feature -- Actions
 					on_collapse_one_level
 				end
 			end
+		end
+
+	on_enter_pressed is
+			-- Action to be performed when enter key is pressed
+		do
+			on_expand_all_level
+		end
+
+	collapse_button_pressed_action: PROCEDURE [ANY, TUPLE] is
+			-- Action to be performed when `collapse_button' is pressed
+		do
+			Result := agent on_collapse_one_level
+		end
+
+	expand_button_pressed_action: PROCEDURE [ANY, TUPLE] is
+			-- Action to be performed when `expand_button' is pressed
+		do
+			Result := agent on_expand_one_level
 		end
 
 	on_key_pressed_in_feature_name_list (a_key: EV_KEY) is
@@ -190,6 +236,19 @@ feature -- Actions
 			do_all_in_items (grid.selected_items, agent collapse_item)
 		end
 
+	on_notify is
+			-- Action to be performed when `update' is called.
+		do
+			feature_name_list.set_text ("")
+			cancel_delayed_update_matches
+		end
+
+	on_post_sort (a_sorting_status_snapshot: LINKED_LIST [TUPLE [a_column_index: INTEGER; a_sorting_order: INTEGER]]) is
+			-- Action to be performed after a sorting
+		do
+			preferences.class_browser_data.class_flat_view_sorting_order_preference.set_value (string_representation_of_sorted_columns)
+		end
+
 feature{NONE} -- Sorting
 
 	class_column: INTEGER is 1
@@ -256,29 +315,33 @@ feature -- Status report
 	should_tooltip_be_displayed: BOOLEAN is
 			-- Should tooltip display be vetoed?
 		do
-			Result := show_tooltip_button.is_selected
-		ensure then
-			good_result: Result = show_tooltip_button.is_selected
+			Result := show_tooltip_checkbox.is_selected
+		ensure
+			good_result: Result = show_tooltip_checkbox.is_selected
 		end
 
 	is_displaying_class_any: BOOLEAN is
 			-- Is class any been displayed currently?
 		do
-			Result := starting_element /= Void and then starting_element.is_compiled and then starting_element.class_c.class_id = system.any_id
+			Result := start_class /= Void and then start_class.is_compiled and then start_class.class_c.class_id = system.any_id
 		end
 
 feature -- Access
 
-	show_feature_from_any_button: EB_PREFERENCED_SD_TOOL_BAR_TOGGLE_BUTTON is
+	show_feature_from_any_checkbox: EV_TOOL_BAR_TOGGLE_BUTTON is
 			-- Checkbox to indicate whether or not unchanged features from ANY is displayed
 		do
-			if show_feature_from_any_button_internal = Void then
-				create show_feature_from_any_button_internal.make (preferences.class_browser_data.show_feature_from_any_preference)
-				show_feature_from_any_button_internal.set_pixmap (pixmaps.icon_pixmaps.command_show_features_of_any_icon)
-				show_feature_from_any_button_internal.set_tooltip (interface_names.h_show_feature_from_any)
-				show_feature_from_any_button_internal.select_actions.extend (agent on_show_feature_from_any_changed)
+			if show_feature_from_any_checkbox_internal = Void then
+				create show_feature_from_any_checkbox_internal
+				show_feature_from_any_checkbox_internal.set_tooltip (interface_names.h_show_feature_from_any)
+				show_feature_from_any_checkbox_internal.set_pixmap (pixmaps.icon_pixmaps.command_show_features_of_any_icon)
+				if preferences.class_browser_data.is_feature_from_any_shown then
+					show_feature_from_any_checkbox_internal.enable_select
+				else
+					show_feature_from_any_checkbox_internal.disable_select
+				end
 			end
-			Result := show_feature_from_any_button_internal
+			Result := show_feature_from_any_checkbox_internal
 		ensure
 			result_attached: Result /= Void
 		end
@@ -311,33 +374,34 @@ feature -- Access
 			end
 		end
 
-	control_bar: ARRAYED_LIST [SD_TOOL_BAR_ITEM] is
+	control_bar: EV_WIDGET is
 			-- Widget of a control bar through which, certain control can be performed upon current view
 		local
+			l_tool_bar: EV_TOOL_BAR
+			l_tool_bar2: EV_TOOL_BAR
 			l_label: EV_LABEL
-			l_box: EV_HORIZONTAL_BOX
-			l_widget_item: SD_TOOL_BAR_WIDGET_ITEM
-			l_contants: EV_LAYOUT_CONSTANTS
+			l_tool_bar3: EV_TOOL_BAR
 		do
 			if control_tool_bar = Void then
-				create control_tool_bar.make (5)
-				control_tool_bar.extend (create{SD_TOOL_BAR_SEPARATOR}.make)
-				control_tool_bar.extend (show_feature_from_any_button)
-				control_tool_bar.extend (show_tooltip_button)
-
-				control_tool_bar.extend (create{SD_TOOL_BAR_SEPARATOR}.make)
-
+				create control_tool_bar
+				create l_tool_bar
+				create l_tool_bar3
+				l_tool_bar.extend (create{EV_TOOL_BAR_SEPARATOR})
+				l_tool_bar.extend (show_tooltip_checkbox)
+				l_tool_bar.extend (show_feature_from_any_checkbox)
+				control_tool_bar.set_padding (2)
+				control_tool_bar.extend (l_tool_bar)
+				control_tool_bar.disable_item_expand (l_tool_bar)
+				create l_tool_bar2
+				l_tool_bar2.extend (create{EV_TOOL_BAR_SEPARATOR})
+				control_tool_bar.extend (l_tool_bar2)
+				control_tool_bar.disable_item_expand (l_tool_bar2)
 				create l_label.make_with_text (interface_names.l_filter)
-				create l_box
-				l_box.extend (l_label)
-				create l_contants
-				l_box.set_border_width (l_contants.small_border_size)
-				create l_widget_item.make (l_box)
-				control_tool_bar.extend (l_widget_item)
-
+				control_tool_bar.extend (l_label)
+				control_tool_bar.disable_item_expand (l_label)
 				feature_name_list.set_minimum_width (100)
-				create l_widget_item.make (feature_name_list)
-				control_tool_bar.extend (l_widget_item)
+				control_tool_bar.extend (feature_name_list)
+				control_tool_bar.disable_item_expand (feature_name_list)
 			end
 			Result := control_tool_bar
 		ensure then
@@ -364,45 +428,51 @@ feature -- Access
 	rows: DS_ARRAYED_LIST [EB_CLASS_BROWSER_FLAT_ROW]
 			-- Rows for features that are to be displayed
 
-	starting_element: QL_CLASS
-			-- Starting element as root of the tree displayed in current browser.
-			-- This is used when a tree view is to be built. And starting element serves as the root of that tree.
-			-- If `starting_element' is Void, don't build tree.			
-
 feature{NONE} -- Update
 
 	update_view is
 			-- Update current view according to change in `model'.
+		local
+			l_msg: STRING
 		do
-			cancel_delayed_update_matches
-			Precursor
-		end
-
-	provide_result is
-			-- Provide result displayed in Current view.
-		do
-			if is_displaying_class_any then
-				show_feature_from_any_button.enable_select
-				show_feature_from_any_button.disable_sensitive
-			else
-				show_feature_from_any_button.enable_sensitive
+			if not is_up_to_date then
+				if data /= Void then
+					if is_displaying_class_any then
+						show_feature_from_any_checkbox.enable_select
+						show_feature_from_any_checkbox.disable_sensitive
+					else
+						show_feature_from_any_checkbox.enable_sensitive
+					end
+					text.hide
+					component_widget.show
+					fill_rows
+					if last_sorted_column_internal = 0 then
+						expand_all_rows
+						last_sorted_column_internal := class_column
+					end
+					disable_auto_sort_order_change
+					enable_force_multi_column_sorting
+					if not sorted_columns.is_empty then
+						sort (0, 0, 1, 0, 0, 0, 0, 0, sorted_columns.last)
+					else
+						sort (0, 0, 1, 0, 0, 0, 0, 0, feature_column)
+					end
+					disable_force_multi_column_sorting
+					bind_grid
+					enable_auto_sort_order_change
+				else
+					component_widget.hide
+					text.show
+					l_msg := Warning_messages.w_Formatter_failed.twin
+					if trace /= Void then
+						l_msg.append ("%N")
+						l_msg.append (trace)
+					end
+					text.set_text (l_msg)
+				end
+				auto_resize
+				is_up_to_date := True
 			end
-			fill_rows
-			if last_sorted_column_internal = 0 then
-				expand_all_rows
-				last_sorted_column_internal := class_column
-			end
-			disable_auto_sort_order_change
-			enable_force_multi_column_sorting
-			if not sorted_columns.is_empty then
-				sort (0, 0, 1, 0, 0, 0, 0, 0, sorted_columns.last)
-			else
-				sort (0, 0, 1, 0, 0, 0, 0, 0, feature_column)
-			end
-			disable_force_multi_column_sorting
-			bind_grid
-			enable_auto_sort_order_change
-			try_auto_resize_grid (<<[150, 300, 1]>>, False)
 		end
 
 	bind_grid is
@@ -450,11 +520,27 @@ feature{NONE} -- Update
 			grid.row_collapse_actions.force_extend (agent on_row_collapsed)
 		end
 
+	auto_resize is
+			-- Auto resize columns to give a best view point.
+		local
+			l_requested_width: INTEGER
+		do
+			if grid.row_count > 0 then
+				l_requested_width := grid.column (1).required_width_of_item_span (1, grid.row_count)
+				if l_requested_width > 300 then
+					l_requested_width := 300
+				else
+					l_requested_width := l_requested_width + 10
+				end
+				grid.column (1).set_width (l_requested_width)
+			end
+		end
+
 	default_ensure_visible_action (a_item: EVS_GRID_SEARCHABLE_ITEM; a_selected: BOOLEAN) is
 			-- Ensure that `a_item' is visible.
 			-- If `a_selected' is True, make sure that `a_item' is in its selected status.
 		local
-			l_compiler_item: EB_GRID_EDITOR_TOKEN_ITEM
+			l_compiler_item: EB_GRID_COMPILER_ITEM
 			l_item: EV_GRID_ITEM
 			l_row: EB_CLASS_BROWSER_FLAT_ROW
 			l_grid_row: EV_GRID_ROW
@@ -501,8 +587,19 @@ feature{NONE} -- Initialization
 				grid.drop_actions.fill (drop_actions)
 			end
 			enable_ctrl_right_click_to_open_new_window
+			create filter_engine.make
+			filter_engine.set_empty_allowed (False)
+			filter_engine.set_multiline (False)
+			filter_engine.set_caseless (True)
 			grid.key_press_actions.extend (agent on_key_pressed)
-			enable_grid_item_pnd_support
+			show_feature_from_any_checkbox.select_actions.extend (agent on_show_feature_from_any_changed)
+			show_tooltip_checkbox.select_actions.extend (agent on_show_tooltip_changed)
+
+			on_show_tooltip_changed_from_outside_agent := agent on_show_tooltip_changed_from_outside
+			on_show_feature_from_any_changed_from_outside_agent := agent on_show_feature_from_any_changed_from_outside
+			preferences.class_browser_data.show_tooltip_preference.change_actions.extend (on_show_tooltip_changed_from_outside_agent)
+			preferences.class_browser_data.show_feature_from_any_preference.change_actions.extend (on_show_feature_from_any_changed_from_outside_agent)
+			enable_editor_token_pnd
 		end
 
 	build_sortable_and_searchable is
@@ -530,13 +627,16 @@ feature{NONE} -- Initialization
 
 feature{NONE} -- Implementation/Data
 
-	control_tool_bar: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
+	control_tool_bar: EV_HORIZONTAL_BOX
 			-- Tool bar of current view
 
-	show_feature_from_any_button_internal: like show_feature_from_any_button
-			-- Implementation of `show_feature_from_any_button'
+	show_feature_from_any_checkbox_internal: like show_feature_from_any_checkbox
+			-- Implementation of `show_feature_from_any_checkbox'
 
 feature{NONE} -- Implementation			
+
+	filter_engine: RX_PCRE_REGULAR_EXPRESSION
+			-- Filter engine used to filter features whose name is given by `feature_name_list'
 
 	fill_rows is
 			-- Fill `rows' using information from `data'.
@@ -548,8 +648,8 @@ feature{NONE} -- Implementation
 			l_feature_from_any_displayed: BOOLEAN
 			l_filter_used: BOOLEAN
 			l_filter_name: STRING
-			l_filter: like filter
-			l_macher: like wild_matcher
+			l_filter: like filter_engine
+			l_ok: BOOLEAN
 		do
 			l_feature_list := data
 			if rows = Void then
@@ -558,15 +658,14 @@ feature{NONE} -- Implementation
 				rows.wipe_out
 			end
 			l_any_class_id := system.any_id
-			l_feature_from_any_displayed := show_feature_from_any_button.is_selected or is_displaying_class_any
+			l_feature_from_any_displayed := show_feature_from_any_checkbox.is_selected or is_displaying_class_any
 			l_filter_name := feature_name_list.text
 			l_filter_name.left_adjust
 			l_filter_name.right_adjust
-			l_filter_used := not l_filter_name.is_empty
-			if l_filter_used then
-				l_macher := wild_matcher
-				l_macher.set_pattern (l_filter_name)
-				l_filter := filter
+			if not l_filter_name.is_empty then
+				l_filter_used := True
+				l_filter := filter_engine
+				l_filter.compile (l_filter_name)
 			end
 			from
 				l_feature_list.start
@@ -575,13 +674,22 @@ feature{NONE} -- Implementation
 			loop
 				l_feature := l_feature_list.item
 				if l_feature_from_any_displayed or else (l_feature.written_class.class_id /= l_any_class_id) then
-					if not l_filter_used or else l_filter.is_selected (l_feature, Void, Current) then
+					if l_filter_used then
+						l_filter.match (l_feature.name)
+						if l_filter.has_matched then
+							l_ok := True
+						end
+					else
+						l_ok := True
+					end
+					if l_ok then
 						create l_row.make (l_feature_list.item, Current)
 						l_row.set_is_expanded (True)
 						rows.force_last (l_row)
 					end
 				end
 				l_feature_list.forth
+				l_ok := False
 			end
 		end
 
@@ -658,10 +766,13 @@ feature{NONE} -- Implementation
 	recycle_agents is
 			-- Recycle agents
 		do
-			if show_feature_from_any_button_internal /= Void then
-				show_feature_from_any_button.recycle
-			end
 			Precursor {EB_CLASS_BROWSER_GRID_VIEW}
+			if on_show_tooltip_changed_from_outside_agent /= Void then
+				preferences.class_browser_data.show_tooltip_preference.change_actions.prune_all (on_show_tooltip_changed_from_outside_agent)
+			end
+			if on_show_feature_from_any_changed_from_outside_agent /= Void then
+				preferences.class_browser_data.show_feature_from_any_preference.change_actions.prune_all (on_show_feature_from_any_changed_from_outside_agent)
+			end
 		end
 
 	collapse_item (a_item: EV_GRID_ITEM) is
@@ -723,41 +834,18 @@ feature{NONE} -- Implementation
 			update_view
 		end
 
+	on_show_tooltip_changed_from_outside_agent: PROCEDURE [ANY, TUPLE]
+			-- Agent kept for recycling
+
+	on_show_feature_from_any_changed_from_outside_agent: PROCEDURE [ANY, TUPLE]
+			-- Agent kept for recycling
+
 	wait_to_update_view_time: INTEGER is 500
 			-- Time interval (in milliseconds) to wait before we update view
 
-feature{NONE} -- Implementation/Stone
-
-	item_to_put_in_editor: EV_GRID_ITEM is
-			-- Grid item which may contain a stone to put into editor
-			-- Void if no satisfied item is found.			
-		do
-			Result := item_to_put_in_editor_for_single_item_grid
-		end
-
-feature{NONE} -- Filter
-
-	filter: EB_CLASS_BROWSER_AGENT_FILTER [QL_FEATURE]
-			-- Filter used in Current view
-
-	wild_matcher: KMP_WILD
-			-- Wildcard matcher
-
-	is_selected (a_feature: QL_FEATURE; a_context: EB_CLASS_BROWSER_FILTER_CONTEXT [QL_FEATURE]; a_viewer: like Current): BOOLEAN is
-			-- Will `a_feature' be filtered out?
-		local
-			l_wild_matcher: like wild_matcher
-		do
-			if a_feature /= Void then
-				l_wild_matcher := wild_matcher
-				l_wild_matcher.set_text (a_feature.name)
-				Result := l_wild_matcher.pattern_matches
-			end
-		end
-
 invariant
-	filter_attached: filter /= Void
-	wild_matcher_attached: wild_matcher /= Void
+	development_window_attached: development_window /= Void
+	filter_engine_attached: filter_engine /= Void
 
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"
@@ -790,5 +878,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

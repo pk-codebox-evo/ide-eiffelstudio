@@ -5,6 +5,7 @@ indexing
 	date: "$Date$"
 	revision: "$Revision $"
 
+
 class
 	E_SHOW_ROUTINE_FLAT
 
@@ -34,6 +35,7 @@ feature -- Execution
 				--| as parameter to the `format' feature
 			ctxt.format (current_feature, False, text_formatter);
 		end;
+
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

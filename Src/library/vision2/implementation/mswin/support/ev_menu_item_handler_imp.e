@@ -104,7 +104,17 @@ feature -- Basic operations
 			end
 		end
 
-feature {NONE} -- Deferred features
+feature {NONE} -- WEL Implementation
+
+--	on_menu_command (menu_id: INTEGER) is
+			-- The `menu_id' has been choosen from the menu.
+			-- If this feature is called, it means that the 
+			-- child is a menu.
+--		do
+			--menu_items.item(menu_id).on_activate
+--		end
+
+feature {EV_POPUP_MENU_IMP} -- Deferred features
 
 	top_level_window_imp: EV_WINDOW_IMP is
 			-- Top level window that contains the current widget.

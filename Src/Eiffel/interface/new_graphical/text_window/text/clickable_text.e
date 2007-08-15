@@ -37,8 +37,7 @@ inherit
 			after_reading_idle_action,
 			new_line_from_lexer,
 			first_line,
-			cursor,
-			lexer
+			cursor
 		end
 
 	SHARED_WORKBENCH
@@ -143,9 +142,6 @@ feature {EB_CLICKABLE_EDITOR} -- Load Text handling
 			-- Start processing text.
 		do
 			reading_text_finished := false
-			if not append then
-				block_counter := 0
-			end
 		end
 
 	end_processing is
@@ -230,16 +226,14 @@ feature {NONE} -- Load Text handling
 					set_selection_cursor (cursor)
 				end
 			end
-			if block_counter = 0 then
-				if line_read > first_read_block_size then
-					on_text_block_loaded (True)
-					block_counter := block_counter + 1
+			if number_of_lines > first_read_block_size then
+				on_text_block_loaded (True)
+				line_read := 0
+			else
+				if line_read > Lines_read_per_idle_action then
+					on_text_block_loaded (False)
 					line_read := 0
 				end
-			elseif line_read > Lines_read_per_idle_action then
-				on_text_block_loaded (False)
-				line_read := 0
-				block_counter := block_counter + 1
 			end
 			new_line
 			append_line (last_processed_line)
@@ -315,29 +309,6 @@ feature {NONE} -- Implementation
 	finish_reading_text_agent: PROCEDURE [like Current, TUPLE]
 			-- Agent for function `finish_reading_text'
 
-feature {EB_EDITOR} -- Multi editor support
-
-	set_lexer (a_lexer: like lexer) is
-			-- Set lexer.
-		do
-			internal_lexer := a_lexer
-		ensure
-			internal_lexer_set: internal_lexer = a_lexer
-		end
-
-	lexer: EDITOR_SCANNER is
-			-- Lexer
-		do
-			if internal_lexer /= Void then
-				Result := internal_lexer
-			else
-				Result := current_class.scanner
-			end
-		end
-
-	internal_lexer: like lexer
-			-- Internal lexer
-
 feature {NONE} -- Private status
 
 	load_type: INTEGER
@@ -346,14 +317,11 @@ feature {NONE} -- Private status
 	line_read: INTEGER
 			-- Lines read during loading a block
 
-	block_counter: INTEGER
-			-- Blocks loaded.
-
 feature {NONE} -- Private Constants
 
-	from_string: INTEGER is 1
+	from_string: INTEGER is unique
 
-	from_text: INTEGER is 2;
+	from_text: INTEGER is unique;
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

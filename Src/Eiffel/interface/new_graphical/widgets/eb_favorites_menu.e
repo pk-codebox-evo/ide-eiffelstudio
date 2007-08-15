@@ -314,9 +314,9 @@ feature -- Observer pattern
 			end
 		end
 
-feature {NONE} -- Memory management
+feature -- Memory management
 
-	internal_recycle is
+	recycle is
 			-- Recycle `Current', but leave `Current' in an unstable state,
 			-- so that we know whether we're still referenced or not.
 		do

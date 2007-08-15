@@ -4,6 +4,8 @@ indexing
 class FINISH_FREEZING
 
 inherit
+	ARGUMENTS
+
 	EXECUTION_ENVIRONMENT
 		rename
 			command_line as non_used_command_line
@@ -47,19 +49,16 @@ feature -- Initialization
 			unc_mapper: UNC_PATH_MAPPER
 			mapped_path: BOOLEAN
 			l_exception: EXCEPTIONS
-			l_processors: NATURAL_8
 			gen_only: BOOLEAN
-			l_library_cmd: STRING
-			l_c_setup: COMPILER_SETUP
-			l_options: RESOURCE_TABLE
 		do
 			if not retried then
+					-- Location defaults to the current directory
+				location := current_working_directory
+
 					-- if location has been specified, update it
+
 				if a_parser.has_location then
 					location := a_parser.location
-				else
-						-- Location defaults to the current directory
-					location := current_working_directory
 				end
 
 					-- if generate_only is specified then only generate makefile
@@ -79,58 +78,14 @@ feature -- Initialization
 					change_working_directory (location)
 				end
 
-				if a_parser.has_max_processors then
-					l_processors := a_parser.max_processors
-				else
-						-- Use default
-					l_processors := 0
-				end
+				set_option_sign ('-')
+				create translator.make (mapped_path, a_parser.force_32bit_code_generation)
 
-
-				create l_options.make (20)
-				read_options_in (l_options)
-				if a_parser.is_for_library then
-					create l_c_setup.initialize (l_options, a_parser.force_32bit_code_generation)
-						-- Simply execute our batch script to compile the C code of libraries.
-					create l_library_cmd.make (256)
-						-- The double quote twice are there because the command is executed through COMSPEC.
-					l_library_cmd.append_character ('"')
-					l_library_cmd.append_character ('"')
-					l_library_cmd.append (eiffel_layout.compile_library_command_name)
-					l_library_cmd.append_character ('"')
-					l_library_cmd.append_character ('"')
-					env.system (l_library_cmd)
-				else
-					create translator.make (l_options, mapped_path, a_parser.force_32bit_code_generation, l_processors)
-
-					translator.translate
-					if not gen_only and translator.has_makefile_sh then
-							-- We don't want to be launched when there is no Makefile.SH file.
-						translator.run_make
-						c_error := c_compilation_error
-					end
-
-					if not gen_only then
-						if translator = Void then
-							l_msg := "Internal error during Makefile translation preparation.%N%N%
-									%Please report this problem to Eiffel Software at:%N%
-									%http://support.eiffel.com"
-							io.put_string (l_msg)
-							io.default_output.flush
-						else
-							if translator.has_makefile_sh then
-								if not c_error then
-										-- For eweasel processing
-									io.put_string ("C compilation completed%N")
-								end
-								io.default_output.flush
-							elseif translator.is_il_code and not c_error then
-									-- For eweasel processing
-								io.put_string ("C compilation completed%N")
-								io.default_output.flush
-							end
-						end
-					end
+				translator.translate
+				if not gen_only and translator.has_makefile_sh then
+						-- We don't want to be launched when there is no Makefile.SH file.
+					translator.run_make
+					c_error := c_compilation_error
 				end
 
 					-- Destroy network path mapping if any
@@ -138,8 +93,40 @@ feature -- Initialization
 					unc_mapper.destroy
 					unc_mapper := Void
 				end
-			end
 
+				if not gen_only then
+					if translator = Void then
+						l_msg := "Internal error during Makefile translation preparation.%N%N%
+								%Please report this problem to Eiffel Software at:%N%
+								%http://support.eiffel.com"
+						if not a_parser.silent then
+							create status_box.make_fatal (l_msg)
+						else
+							io.put_string (l_msg)
+							io.default_output.flush
+						end
+					else
+						if translator.has_makefile_sh then
+							if not a_parser.silent then
+								make_util := translator.options.get_string ("make", "make utility")
+								create status_box.make (make_util, retried, c_error, False, False)
+							else
+								if not c_error then
+										-- For eweasel processing
+									io.put_string ("C compilation completed%N")
+								end
+								io.default_output.flush
+							end
+						else
+							if index_of_word_option ("silent") /= 0 and translator.is_il_code and not c_error then
+									-- For eweasel processing
+								io.put_string ("C compilation completed%N")
+								io.default_output.flush
+							end
+						end
+					end
+				end
+			end
 			if retried or else (c_error and not gen_only) then
 					-- Make the application return a non-zero value to OS to flag an error
 					-- to calling process.
@@ -173,32 +160,6 @@ feature -- Access
 				completed.delete
 				Result := False
 			end
-		end
-
-feature -- Implementation
-
-	read_options_in (a_options: RESOURCE_TABLE) is
-			-- read options from config.eif
-		require
-			a_options_not_void: a_options /= Void
-		local
-			reader: RESOURCE_PARSER
-			l_layout: FINISH_FREEZING_EIFFEL_LAYOUT
-		do
-			create reader
-			l_layout ?= eiffel_layout
-			check layout_not_void: l_layout /= Void end
-			reader.parse_file (l_layout.config_eif, a_options)
-		end
-
-feature -- Externals
-
-	is_windows_x64: BOOLEAN is
-			-- Is Current running on Windows 64 bits?
-		external
-			"C macro use %"eif_eiffel.h%""
-		alias
-			"EIF_IS_64_BITS"
 		end
 
 indexing

@@ -26,9 +26,7 @@ inherit
 			set_actual_drop_target_agent, has_parent, parent_is_sensitive,
 			internal_set_pointer_style, widget_imp_at_pointer_position,
 			pnd_screen, internal_enable_dockable, internal_disable_dockable,
-			update_buttons, refresh_now, create_file_drop_actions, update_for_pick_and_drop,
-			is_tabable_from, is_tabable_to, enable_tabable_from, enable_tabable_to,
-			disable_tabable_from, disable_tabable_to
+			update_buttons, refresh_now
 		redefine
 			interface, initialize,
 			read_from_named_file,
@@ -59,8 +57,7 @@ inherit
 	EV_WEL_CONTROL_WINDOW
 		undefine
 			on_sys_key_down,
-			wel_font, wel_set_font, on_getdlgcode,
-			on_wm_dropfiles
+			wel_font, wel_set_font, on_getdlgcode
 		redefine
 			on_paint, on_erase_background,
 			class_background,
@@ -147,18 +144,6 @@ feature {NONE} -- Initialization
 
  				-- update events from `other'.
 			copy_events_from_other (other)
-
-				-- Update navigation attribute
-			if other.is_tabable_from then
-				enable_tabable_from
-			else
-				disable_tabable_from
-			end
-			if other.is_tabable_to then
-				enable_tabable_to
-			else
-				disable_tabable_to
-			end
 
 				-- Is_initialized should be set to True
 				-- when the bridge pattern is linked.

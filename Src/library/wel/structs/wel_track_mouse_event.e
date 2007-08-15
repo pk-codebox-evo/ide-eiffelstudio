@@ -149,4 +149,8 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+
+
+
+end -- class WEL_TRACK_MOUSE_EVENT
+

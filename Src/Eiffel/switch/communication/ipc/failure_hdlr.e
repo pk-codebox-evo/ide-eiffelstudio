@@ -6,23 +6,22 @@ class FAILURE_HDLR
 
 inherit
 
-	RQST_HANDLER
-
-	SHARED_DEBUGGER_MANAGER
+	RQST_HANDLER;
+	SHARED_DEBUG;
 
 create
 
 	make
 
-feature
+feature 
 
 	make is
 			-- Create Current and pass addresses to C.
 		do
 			request_type := Rep_failure;
 			pass_addresses
-		end
-
+		end;
+	
 	execute is
 			-- Restore the debug information when
 			-- a failure occurs.
@@ -30,7 +29,7 @@ feature
 			debug ("DEBUGGER")
 				io.error.put_string ("Failure happened%N")
 			end
-			Debugger_manager.debugger_data.restore
+			debug_info.restore
 		end
 
 indexing

@@ -1,5 +1,5 @@
 indexing
-	description: "Visitor that changes all occurrences of a feature name to a new name."
+	description: "Visitor that changes all occurances of a feature name to a new name."
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
 	date: "$Date$"
@@ -55,7 +55,7 @@ feature {NONE} -- Initialization
 			feature_i := a_feature
 			rout_id_set := feature_i.rout_id_set
 			old_feature_name := a_feature.feature_name.as_lower
-			new_feature_name := a_new_feature_name
+			new_feature_name := a_new_feature_name.as_lower
 			change_comments := a_change_comments
 			change_strings := a_change_strings
 			recursive_descendants := a_recursive_descendants
@@ -81,7 +81,7 @@ feature {NONE} -- Visitor implementation
 				if
 					l_as.routine_ids /= Void and then
 					l_as.routine_ids.has (feature_i.rout_id_set.first) and then
-					old_feature_name.is_case_insensitive_equal (l_as.feature_name.name)
+					old_feature_name.is_case_insensitive_equal (l_as.feature_name)
 				then
 					l_as.feature_name.replace_text (new_feature_name, match_list)
 					has_modified := True
@@ -107,19 +107,21 @@ feature {NONE} -- Visitor implementation
 		local
 			l_atom: ATOMIC_AS
 		do
-			Precursor (l_as)
-				-- if we are a descendent we have to deal with ids as values.
+				-- we only have to do this stuff if we are a descendant
 			if is_descendant then
 				l_atom := l_as.lower
+				safe_process (l_atom)
 				if l_atom.is_id and then l_atom.string_value.is_case_insensitive_equal (old_feature_name) then
 					l_atom.replace_text (new_feature_name, match_list)
 				end
 				l_atom := l_as.upper
+				safe_process (l_atom)
 				if l_atom /= Void and then l_atom.is_id and then l_atom.string_value.is_case_insensitive_equal (old_feature_name) then
 					l_atom.replace_text (new_feature_name, match_list)
 				end
 			end
 		end
+
 
 	process_parent_as (l_as: PARENT_AS) is
 			-- Process the inherit clause node
@@ -153,7 +155,7 @@ feature {NONE} -- Visitor implementation
 						loop
 							l_rename := l_renamings.item
 								-- if the feature we change was renamed
-							if l_rename.old_name.internal_name.name_id = feature_i.feature_name_id then
+							if l_rename.old_name.internal_name_id = feature_i.feature_name_id then
 								is_renaming := True
 									-- did we rename into the new name?
 								if l_rename.new_name.visual_name.is_case_insensitive_equal (new_feature_name) then
@@ -205,7 +207,7 @@ feature {NONE} -- Visitor implementation
 							loop
 								l_rename := l_renamings.item
 									-- if there is already a renaming, update it
-								l_name_id := l_rename.old_name.internal_name.name_id
+								l_name_id := l_rename.old_name.internal_name_id
 								if l_parent_features.has (l_name_id) then
 									l_rename.new_name.replace_text (new_feature_name, match_list)
 									l_parent_features.remove (l_name_id)
@@ -249,7 +251,7 @@ feature {NONE} -- Visitor implementation
 			-- Process like statements.
 		do
 			if is_descendant and then not is_renaming then
-				if old_feature_name.is_case_insensitive_equal (l_as.anchor.name) then
+				if old_feature_name.is_case_insensitive_equal (l_as.anchor) then
 					l_as.anchor.replace_text (new_feature_name, match_list)
 					has_modified := True
 				end
@@ -259,7 +261,7 @@ feature {NONE} -- Visitor implementation
 	process_feat_name_id_as (l_as: FEAT_NAME_ID_AS) is
 			-- Process feature name.
 		do
-			if old_feature_name.is_case_insensitive_equal (l_as.feature_name.name) then
+			if old_feature_name.is_case_insensitive_equal (l_as.feature_name) then
 				l_as.feature_name.replace_text (new_feature_name, match_list)
 				has_modified := True
 			end
@@ -289,7 +291,7 @@ feature {NONE} -- Visitor implementation
 			if
 				is_descendant and not is_renaming
 				and l_as.assigner /= Void
-				and old_feature_name.is_case_insensitive_equal (l_as.assigner.name)
+				and old_feature_name.is_case_insensitive_equal (l_as.assigner)
 			then
 				l_as.assigner.replace_text (new_feature_name, match_list)
 				has_modified := True
@@ -314,7 +316,7 @@ feature {NONE} -- Visitor implementation
 				if
 					l_as.routine_ids /= Void and then
 					l_as.routine_ids.has (feature_i.rout_id_set.first) and then
-					old_feature_name.is_case_insensitive_equal (l_as.feature_name.name)
+					old_feature_name.is_case_insensitive_equal (l_as.feature_name)
 				then
 					l_as.feature_name.replace_text (new_feature_name, match_list)
 					has_modified := True
@@ -362,6 +364,7 @@ feature {NONE} -- Visitor implementation
 			end
 		end
 
+
 	process_break_as (l_as: BREAK_AS) is
 			-- Process breaks which could be comments.
 		do
@@ -371,6 +374,7 @@ feature {NONE} -- Visitor implementation
 			end
 			Precursor (l_as)
 		end
+
 
 	process_string_as (l_as: STRING_AS) is
 		do
@@ -389,6 +393,7 @@ feature {NONE} -- Visitor implementation
 			end
 			Precursor (l_as)
 		end
+
 
 feature {NONE} -- Implementation
 
@@ -429,6 +434,7 @@ invariant
 	old_feature_name_ok: old_feature_name /= Void and not old_feature_name.is_empty
 	old_feature_name_lower: old_feature_name.as_lower.is_equal (old_feature_name)
 	new_feature_name_ok: new_feature_name /= Void and not new_feature_name.is_empty
+	new_feature_name_lower: new_feature_name.as_lower.is_equal (new_feature_name)
 	recursive_descendants_not_void: recursive_descendants /= Void
 	type_a_generator_not_void: type_a_generator /= Void
 

@@ -6,7 +6,10 @@ class DEAD_HDLR
 inherit
 
 	RQST_HANDLER;
-	SHARED_DEBUGGER_MANAGER;
+	SHARED_DEBUG;
+	OBJECT_ADDR
+
+	IPC_SHARED_ENGINE
 
 create
 
@@ -23,17 +26,11 @@ feature
 
 	execute is
 			-- register termination of the controlled application
-		local
-			l_app: APPLICATION_EXECUTION
-			app_classic: APPLICATION_EXECUTION_CLASSIC
 		do
-			l_app := Debugger_manager.application
-			if l_app.is_running then
-				l_app.process_termination;
+			if Application.is_running then
+				Application.process_termination;
 			end
-			app_classic ?= l_app
-			check app_classic /= Void end
-			app_classic.request_ipc_end_of_debugging
+			Ipc_engine.end_of_debugging
 		end
 
 indexing

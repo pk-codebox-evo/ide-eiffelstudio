@@ -214,7 +214,7 @@ rt_public void send_info(EIF_PSTREAM sp, int code)
 	send_packet(sp, &rqst);
 }
 
-rt_public int send_sized_str(EIF_PSTREAM sp, char *buffer, int size)
+rt_public int send_str(EIF_PSTREAM sp, char *buffer)
            		/* The stream descriptor */
              	/* Where the string is held */
 {
@@ -223,6 +223,7 @@ rt_public int send_sized_str(EIF_PSTREAM sp, char *buffer, int size)
 	 */
 
 	Request pack;			/* The request */
+	size_t size;				/* Size of the string (without final null) */
 
 	/* Here is the protocol used to send the string: the size of the string
 	 * is sent as an opaque data structure (field op_size). If the length
@@ -233,6 +234,7 @@ rt_public int send_sized_str(EIF_PSTREAM sp, char *buffer, int size)
 	 */
 
 	Request_Clean (pack);
+	size = strlen(buffer);			/* Length of string */
 	pack.rq_type = EIF_OPAQUE;
 	CHECK("valid size", size <= INT32_MAX);
 	pack.rq_opaque.op_size = size;	/* Send length without final null */
@@ -243,9 +245,8 @@ rt_public int send_sized_str(EIF_PSTREAM sp, char *buffer, int size)
 
 	send_packet(sp, &pack);	/* Send the length */
 
-	if (size == 0) {					/* Null-length string */
+	if (size == 0)					/* Null-length string */
 		return 0;
-	}
 
 	/* Wait for the acknowledgment */
 #ifdef EIF_WINDOWS
@@ -286,19 +287,6 @@ rt_public int send_sized_str(EIF_PSTREAM sp, char *buffer, int size)
 	return 0;		/* Ok, string was sent */
 }
 
-rt_public int send_str(EIF_PSTREAM sp, char *buffer)
-           		/* The stream descriptor */
-             	/* Where the string is held */
-{
-	/* Send the string held in the buffer to the remote process and return
-	 * 0 if ok, -1 if the string was not sent.
-	 */
-
-	size_t size;				/* Size of the string (without final null) */
-	size = strlen(buffer);			/* Length of string */
-	return send_sized_str (sp, buffer, (int) size);
-}
-
 rt_public char *recv_str(EIF_PSTREAM sp, size_t *sizeptr)
            		/* The STREAM pointer */
              	/* Set to the size of the string if non null pointer */
@@ -326,10 +314,12 @@ rt_public char *recv_str(EIF_PSTREAM sp, size_t *sizeptr)
 	}
 
 	size = pack.rq_opaque.op_size;			/* Fetch string's length */
-	if (sizeptr) {*sizeptr = size; }		/* Fill in size pointer */
+	if (sizeptr)				/* Fill in size pointer */
+		*sizeptr = size;
 
 	if (size == 0) {						/* Nothing to be received */
-		if (sizeptr) { *sizeptr = 0; }		/* Fill in size with 0 */
+		if (sizeptr)			/* Fill in size with 0 */
+			*sizeptr = 0;
 		return (char *) 0;
 	}
 
@@ -342,12 +332,11 @@ rt_public char *recv_str(EIF_PSTREAM sp, size_t *sizeptr)
 	}
 
 #ifdef EIF_WINDOWS
-	if (-1 == net_recv(sp, buffer, size, TRUE))
+	if (-1 == net_recv(sp, buffer, size, TRUE)) 	/* Cannot receive string */
 #else
-	if (-1 == net_recv(sp, buffer, size)) 	
+	if (-1 == net_recv(sp, buffer, size)) 	/* Cannot receive string */
 #endif
 	{
-		/* Cannot receive string */
 		free(buffer);
 		return (char *) 0;
 	}
@@ -367,11 +356,10 @@ rt_public void trace_request(char *status, Request *rqst)
 
 	switch (rqst->rq_type) {
 	case EIF_OPAQUE:
-		sprintf(buf, "EIF_OPAQUE [%d, %d, %d, %d]",
+		sprintf(buf, "EIF_OPAQUE [%d, %d, %d]",
 			rqst->rq_opaque.op_type,
 			rqst->rq_opaque.op_cmd,
-			rqst->rq_opaque.op_size,
-			rqst->rq_opaque.op_info);
+			rqst->rq_opaque.op_size);
 		break;
 	case ACKNLGE:
 		switch (rqst->rq_ack.ak_type) {

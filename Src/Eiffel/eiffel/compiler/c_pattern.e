@@ -6,28 +6,19 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 
-class C_PATTERN
+class C_PATTERN 
 
 inherit
 
 	SHARED_WORKBENCH
 		redefine
 			is_equal
-		end
-
+		end;
 	HASHABLE
 		redefine
 			is_equal
-		end
-
+		end;
 	SHARED_NAMES_HEAP
-		export
-			{NONE} all
-		redefine
-			is_equal
-		end
-
-	SHARED_TYPE_I
 		export
 			{NONE} all
 		redefine
@@ -38,7 +29,7 @@ create
 
 	make
 
-feature
+feature 
 
 	result_type: TYPE_C;
 			-- Meta type of the result
@@ -188,16 +179,16 @@ feature -- Pattern generation
 			until
 				i > nb
 			loop
-				Result.put ("EIF_TYPED_VALUE", j)
+				Result.put (argument_types.item (i).c_string, j)
 				i := i + 1;
 				j := j + 1;
 			end;
 		end
 
-	generate_argument_declaration (buffer: GENERATION_BUFFER) is
+	generate_argument_declaration (nbtab: INTEGER; buffer: GENERATION_BUFFER) is
 			-- Generate argument declarations
 		local
-			i, nb: INTEGER;
+			i, j, nb: INTEGER;
 		do
 			from
 				i := 1;
@@ -205,13 +196,22 @@ feature -- Pattern generation
 			until
 				i > nb
 			loop
-				buffer.put_string ("EIF_TYPED_VALUE *arg")
-				buffer.put_integer (i)
-				buffer.put_character (';')
-				buffer.put_new_line
-				i := i + 1
-			end
-		end
+				from
+					j := 1
+				until
+					j > nbtab
+				loop
+					buffer.put_character ('%T');
+					j := j + 1;
+				end;
+				argument_types.item (i).generate (buffer);
+				buffer.put_string ("arg");
+				buffer.put_integer (i);
+				buffer.put_character (';');
+				buffer.put_new_line;
+				i := i + 1;
+			end;
+		end;
 
 	generate_pattern (id: INTEGER; buffer: GENERATION_BUFFER) is
 			-- Generate pattern
@@ -228,47 +228,32 @@ feature -- Pattern generation
 		local
 			f_name: STRING
 		do
-			f_name := "toc"
-			f_name.append_integer (id)
+			f_name := "toc";
+			f_name.append_integer (id);
 
 			buffer.generate_function_signature ("void", f_name, False, buffer,
-					<<"ptr">>, <<"fnptr">>)
-			buffer.indent
-			buffer.put_string ("EIF_REFERENCE Current;")
-			buffer.put_new_line
+					<<"ptr">>, <<"fnptr">>);
+			buffer.put_string ("%
+				%%TEIF_REFERENCE Current;%N");
 			if not result_type.is_void then
-				buffer.put_string ("	EIF_TYPED_VALUE result;")
-				buffer.put_new_line
-				buffer.put_string ("EIF_TYPED_VALUE *it;")
-				buffer.put_new_line
-			end
-			generate_argument_declaration (buffer)
-			generate_toc_pop (buffer)
-			generate_routine_call (buffer)
+				buffer.put_character ('%T');
+				result_type.generate (buffer);
+				buffer.put_string ("result;%N%Tstruct item *it;%N");
+			end;
+			generate_argument_declaration (1, buffer);
+			generate_toc_pop (buffer);
+			buffer.put_character ('%T');
+			generate_routine_call (buffer);
 			if not result_type.is_void then
-				buffer.put_string ("it = iget();")
-				buffer.put_new_line
-				if result_type.is_pointer then
-						-- Result might need to be boxed.
-					buffer.put_string (
-						"[
-							if (result.type != SK_REF) {
-									it->type = SK_REF;
-									it->it_ref = RTBU(result);
-								}
-								else
-									*it = result;
-						]"
-					)
-				else
-						-- Result of a basic type can be used as it is.
-					buffer.put_string ("*it = result;")
-				end
-				buffer.put_new_line
-			end
-			buffer.exdent
-			buffer.put_string ("}%N%N") -- ss MT
-		end
+				buffer.put_string ("%Tit = iget();%N");
+				buffer.put_string ("%Tit->type = ");
+				result_type.generate_sk_value (buffer);
+				buffer.put_string (";%N%Tit->");
+				result_type.generate_union (buffer);
+				buffer.put_string (" = result;%N");
+			end;
+			buffer.put_string ("}%N%N"); -- ss MT
+		end;
 
 	generate_toi_compound (id: INTEGER; buffer: GENERATION_BUFFER) is
 			-- Generate compound pattern from C code to the interpreter
@@ -280,11 +265,7 @@ feature -- Pattern generation
 			f_name := "toi";
 			f_name.append_integer (id);
 
-			if result_type.is_void then
-				result_string := result_type.c_string
-			else
-				result_string := "EIF_TYPED_VALUE"
-			end
+			result_string := result_type.c_string;
 
 			arg_types := argument_type_array
 
@@ -292,21 +273,18 @@ feature -- Pattern generation
 				(result_string, f_name, False, buffer,
 				 argument_name_array, arg_types)
 
-			buffer.put_string ("%TEIF_TYPED_VALUE *it;%N")
-			generate_toi_push (buffer)
-			buffer.put_string ("%Txinterp(IC);%N")
-			if result_type.is_pointer then
-					-- Mask type-specific bits of the type tag
-					-- because they are not expected on the C side.
-				buffer.put_string ("%Tit = opop();%N%Tit->")
-				result_type.generate_typed_tag (buffer)
-				buffer.put_string (";%N%Treturn *it;%N")
-			elseif not result_type.is_void then
-					-- Use basic type tag as is.
-				buffer.put_string ("%Treturn * opop();%N")
-			end
-			buffer.put_string ("}%N%N") -- ss MT
-		end
+			buffer.put_string ("%Tstruct item *it;%N");
+			generate_toi_push (buffer);
+			buffer.put_string ("%Txinterp(IC);%N");
+			if not result_type.is_void then
+				buffer.put_string ("%
+					%%Tit = opop();%N%
+					%%Treturn it->");
+				result_type.generate_union (buffer);
+				buffer.put_string (";%N");
+			end;
+			buffer.put_string ("}%N%N"); -- ss MT
+		end;
 
 	generate_toi_push (buffer: GENERATION_BUFFER) is
 			-- Generates stack pushing instruction for the patterns
@@ -322,30 +300,13 @@ feature -- Pattern generation
 				i > nb
 			loop
 				arg := argument_types.item (i);
-				if arg.is_pointer then
-						-- Reference value can be used as it is.
-					buffer.put_string ("%T*iget() = arg")
-					buffer.put_integer (i)
-				else
-						-- Basic value might need to be unboxed.
-					buffer.put_string ("%Tit = iget();%N");
-					buffer.put_string ("%Tit->type = ");
-					arg.generate_sk_value (buffer);
-					buffer.put_string (";%N%Tit->");
-					arg.generate_typed_field (buffer);
-					buffer.put_string (" = (arg");
-					buffer.put_integer (i);
-					buffer.put_string (".type == SK_REF)? * ")
-					arg.generate_access_cast (buffer)
-					buffer.put_string ("arg")
-					buffer.put_integer (i)
-					buffer.put_character ('.')
-					reference_c_type.generate_typed_field (buffer)
-					buffer.put_string (": arg")
-					buffer.put_integer (i)
-					buffer.put_character ('.')
-					arg.generate_typed_field (buffer)
-				end
+				buffer.put_string ("%Tit = iget();%N");
+				buffer.put_string ("%Tit->type = ");
+				arg.generate_sk_value (buffer);
+				buffer.put_string (";%N%Tit->");
+				arg.generate_union (buffer);
+				buffer.put_string (" = arg");
+				buffer.put_integer (i);
 				buffer.put_string (";%N");
 				i := i + 1;
 			end;
@@ -359,54 +320,57 @@ feature -- Pattern generation
 			-- Generate poping instructions for pattern from interpreter
 			-- to C code
 		local
-			i: INTEGER
+			i: INTEGER;
 		do
-			buffer.put_string ("Current = opop()->it_ref;")
-			buffer.put_new_line
+			buffer.put_string ("%TCurrent = opop()->it_ref;%N");
 			from
-				i := argument_count
+				i := argument_count;
 			until
 				i < 1
 			loop
-				buffer.put_string ("arg")
-				buffer.put_integer (i)
-				buffer.put_string (" = opop();")
-				buffer.put_new_line
-				i := i - 1
-			end
-		end
+				buffer.put_string ("%Targ");
+				buffer.put_integer (i);
+				buffer.put_string (" = opop()->");
+				argument_types.item (i).generate_union (buffer);
+				buffer.put_string (";%N");
+				i := i - 1;
+			end;
+		end;
 
 	generate_routine_call (buffer: GENERATION_BUFFER) is
 			-- Generate C routine call
 		local
-			i, nb: INTEGER
+			i, nb: INTEGER;
+			generate_test_macro: BOOLEAN;
 		do
 			if not result_type.is_void then
-				buffer.put_string ("result = ")
-			end
-			buffer.put_character ('(')
-			result_type.generate_function_cast (buffer, argument_type_array)
-			buffer.put_string ("ptr)(")
-			nb := argument_count
-			buffer.put_string ("Current")
+				buffer.put_string ("result = ");
+			end;
+			buffer.put_character ('(');
+			result_type.generate_function_cast (buffer, argument_type_array);
+			buffer.put_string ("ptr)(");
+			nb := argument_count;
+			buffer.put_string ("Current");
 			if nb > 0 then
-				buffer.put_character (',')
-			end
+				buffer.put_character (',');
+			end;
 			from
-				i := 1
+				i := 1;
 			until
 				i > nb
 			loop
-				buffer.put_string ("*arg")
-				buffer.put_integer (i)
+				buffer.put_string ("arg");
+				buffer.put_integer (i);
 				if i < nb then
-					buffer.put_character (',')
+					buffer.put_character (',');
 				end;
-				i := i + 1
-			end
-			buffer.put_string (");")
-			buffer.put_new_line
-		end
+				i := i + 1;
+			end;
+			if generate_test_macro then
+				buffer.put_character (')');
+			end;
+			buffer.put_string (");%N");
+		end;
 
 	trace is
 			-- Debug purpose
@@ -464,7 +428,7 @@ invariant
 	result_type_exists: result_type /= Void
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

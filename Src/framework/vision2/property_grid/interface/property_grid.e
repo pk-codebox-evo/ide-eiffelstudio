@@ -70,7 +70,7 @@ feature -- Access
 		end
 
 	current_section: EV_GRID_ROW
-	current_section_name: STRING_GENERAL
+	current_section_name: STRING
 			-- Current section, that will be used for insertion.
 
 feature -- Update
@@ -94,7 +94,7 @@ feature -- Update
 			enable_last_column_use_all_width
 			clear_description
 
-			sections.clear_all
+			sections.wipe_out
 			create expanded_section_store.make (5)
 			if not is_destroyed then
 				hide_horizontal_scroll_bar
@@ -111,7 +111,8 @@ feature -- Update
 			end
 		end
 
-	add_section (a_name: STRING_GENERAL) is
+
+	add_section (a_name: STRING) is
 			-- If there is no section with `a_name', add a new section with `a_name' and use this section for further additions of properties.
 			-- Else use the existing section.
 		require
@@ -119,20 +120,21 @@ feature -- Update
 			a_name_ok: a_name /= Void and then not a_name.is_empty
 		local
 			l_row: EV_GRID_ROW
-			l_item: EV_GRID_SPAN_LABEL_ITEM
+			l_item: EV_GRID_DRAWABLE_ITEM
 		do
-			sections.search (a_name)
-			if not sections.found then
+			if not sections.has (a_name) then
 				insert_new_row (row_count + 1)
 				l_row := row (row_count)
-				create l_item.make_master (1)
-				l_item.set_font (bold_font)
-				l_item.set_text (a_name)
+				create l_item
+				l_item.expose_actions.extend (agent redraw_text (?, l_item))
+				l_item.set_data (a_name)
 				l_item.activate_actions.extend (agent switch_expand_section (l_row, ?))
 				l_item.select_actions.extend (agent clear_description)
 				l_row.set_item (1, l_item)
 
-				create l_item.make_span (1)
+				create l_item
+				l_item.expose_actions.extend (agent redraw_text (?, l_item))
+				l_item.set_data (a_name)
 				l_item.activate_actions.extend (agent switch_expand_section (l_row, ?))
 				l_item.select_actions.extend (agent clear_description)
 				l_row.set_item (2, l_item)
@@ -180,7 +182,7 @@ feature -- Update
 			l_name_item.deselect_actions.extend (agent clear_description)
 			a_property.set_name_item (l_name_item)
 
-			if expanded_section_store.has_key (current_section_name) then
+			if expanded_section_store.has (current_section_name) then
 				if expanded_section_store.found_item and not current_section.is_expanded then
 					current_section.expand
 				elseif not expanded_section_store.found_item and current_section.is_expanded then
@@ -197,12 +199,10 @@ feature -- Update
 			description_field_set: description_field = a_field
 		end
 
-	set_expanded_section_store (a_store: HASH_TABLE [BOOLEAN, STRING_GENERAL]) is
+	set_expanded_section_store (a_store: HASH_TABLE [BOOLEAN, STRING]) is
 			-- Store for the expanded sections, will get updated if sections are expanded or collapsed.
 		require
 			a_store_not_void: a_store /= Void
-		local
-			l_section: EV_GRID_ROW
 		do
 			expanded_section_store := a_store
 			from
@@ -210,12 +210,11 @@ feature -- Update
 			until
 				a_store.after
 			loop
-				l_section := sections.item (a_store.key_for_iteration)
-				if l_section /= Void and then l_section.is_expandable then
+				if sections.has (a_store.key_for_iteration) and then sections.found_item.is_expandable then
 					if a_store.item_for_iteration then
-						l_section.expand
+						sections.found_item.expand
 					else
-						l_section.collapse
+						sections.found_item.collapse
 					end
 				end
 				a_store.forth
@@ -271,6 +270,25 @@ feature {NONE} -- Actions
 			end
 		end
 
+	redraw_text (a_drawable: EV_DRAWABLE; an_item: EV_GRID_DRAWABLE_ITEM) is
+			-- Draw column spanned text.
+		local
+			l_text: STRING
+		do
+			a_drawable.set_foreground_color (separator_color)
+			a_drawable.fill_rectangle (0, 0, a_drawable.width, a_drawable.height)
+			a_drawable.set_foreground_color (foreground_color)
+			a_drawable.set_font (bold_font)
+
+			if an_item.column.index = 1 then
+				l_text ?= an_item.data
+				a_drawable.draw_text_top_left (3, 3, l_text)
+			else
+				l_text ?= an_item.data
+				a_drawable.draw_text_top_left (3 - (column (1).width - an_item.row.item (1).horizontal_indent), 3, l_text)
+			end
+		end
+
 	switch_expand_section (a_section: EV_GRID_ROW; a_dummy: EV_POPUP_WINDOW) is
 			-- Expand/collapse `a_section'.
 		require
@@ -293,7 +311,7 @@ feature {NONE} -- Actions
 			a_property.activate
 		end
 
-	update_expanded_status (a_is_expanded: BOOLEAN; a_section: STRING_GENERAL) is
+	update_expanded_status (a_is_expanded: BOOLEAN; a_section: STRING) is
 			-- Update expanded status to `a_is_expanded' of `a_section'.
 		require
 			a_section_ok: a_section /= Void and then not a_section.is_empty
@@ -392,7 +410,7 @@ feature {NONE} -- Actions
 				elseif a_property.description.is_empty then
 					description_field.set_and_wrap_text (a_property.name)
 				else
-					description_field.set_and_wrap_text (a_property.name.as_string_32 + ": " + a_property.description)
+					description_field.set_and_wrap_text (a_property.name + ": " + a_property.description)
 				end
 			end
 		end
@@ -414,13 +432,13 @@ feature {NONE} -- Constants
 
 feature {NONE} -- Implementation
 
-	sections: HASH_TABLE [EV_GRID_ROW, STRING_GENERAL]
+	sections: HASH_TABLE [EV_GRID_ROW, STRING]
 			-- Property sections.
 
 	description_field: ES_LABEL
 			-- Place to put descriptions.
 
-	expanded_section_store: HASH_TABLE [BOOLEAN, STRING_GENERAL]
+	expanded_section_store: HASH_TABLE [BOOLEAN, STRING]
 			-- Expanded status of the sections.
 
 feature {NONE} -- Once

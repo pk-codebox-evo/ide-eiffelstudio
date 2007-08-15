@@ -11,9 +11,6 @@ class
 
 inherit
 	ES_GRID
-		redefine
-			on_key_pressed
-		end
 
 	EB_SHARED_PREFERENCES
 		undefine
@@ -36,20 +33,6 @@ inherit
 			default_create, copy, is_equal
 		end
 
-	EV_KEY_CONSTANTS
-		export
-			{NONE} all
-		undefine
-			default_create, copy, is_equal
-		end
-
-	EB_CONTEXT_MENU_HANDLER
-		export
-			{NONE} all
-		undefine
-			default_create, copy, is_equal
-		end
-
 create
 	make
 
@@ -60,54 +43,26 @@ feature {NONE} -- Initialization
 		require
 			a_search_tool_attached: a_search_tool /= Void
 		do
-			create {STRING_32}report_summary_string.make_empty
+			create report_summary_string.make_empty
 			search_tool := a_search_tool
 			default_create
 			enable_default_tree_navigation_behavior (True, True, True, True)
 			build_interface
-			set_configurable_target_menu_mode
-			set_configurable_target_menu_handler (agent context_menu_handler)
-			set_context_menu_factory (a_search_tool.develop_window.menus.context_menu_factory)
 		ensure
 			report_summary_string_not_void: report_summary_string /= Void
 			search_tool_set: search_tool = a_search_tool
 		end
 
-	context_menu_handler (a_menu: EV_MENU; a_target_list: ARRAYED_LIST [EV_PND_TARGET_DATA]; a_source: EV_PICK_AND_DROPABLE; a_pebble: ANY) is
-			-- Context menu handler
-		do
-			context_menu_factory.standard_compiler_item_menu (a_menu, a_target_list, a_source, a_pebble)
-		end
-
 feature -- Access
 
-	grid_head_class: STRING_GENERAL is
-		do
-			Result := interface_names.l_class
-		end
-
-	grid_head_line_number: STRING_GENERAL is
-		do
-			Result := interface_names.l_line
-		end
-
-	grid_head_found: STRING_GENERAL is
-		do
-			Result := interface_names.l_found
-		end
-
-	grid_head_context: STRING_GENERAL is
-		do
-			Result := interface_names.l_context
-		end
-
-	grid_head_file_location: STRING_GENERAL is
-		do
-			Result := interface_names.l_file_location
-		end
+	grid_head_class: STRING is				"Class"
+	grid_head_line_number: STRING is 		"Line"
+	grid_head_found: STRING is				"Found"
+	grid_head_context: STRING is			"Context"
+	grid_head_file_location: STRING is		"File location"
+			-- Grid header texts
 
 	search_tool: EB_MULTI_SEARCH_TOOL
-			-- The search tool
 
 feature {EB_MULTI_SEARCH_TOOL} -- Access
 
@@ -115,21 +70,19 @@ feature {EB_MULTI_SEARCH_TOOL} -- Access
 			-- List of header width.
 		once
 			create Result.make (4)
-			Result.extend (label_font.string_width (grid_head_class) + column_border_space + column_border_space + 40)
-			Result.extend (label_font.string_width (grid_head_found) + column_border_space + column_border_space + 10)
-			Result.extend (label_font.string_width (grid_head_context) + column_border_space + column_border_space + 10)
-			Result.extend (label_font.string_width (grid_head_file_location) + column_border_space + column_border_space + 10)
+			Result.extend (label_font.string_width (grid_head_class) + column_border_space + column_border_space)
+			Result.extend (label_font.string_width (grid_head_found) + column_border_space + column_border_space)
+			Result.extend (label_font.string_width (grid_head_context) + column_border_space + column_border_space)
+			Result.extend (label_font.string_width (grid_head_file_location) + column_border_space + column_border_space)
 		end
 
-	column_border_space: INTEGER is 8
-			-- Padding space for column content	
+		column_border_space: INTEGER is 8
+				-- Padding space for column content	
 
-	multi_search_performer: MSR is
-			-- Search performer from the search tool.
+		multi_search_performer: MSR is
+			--
 		do
 			Result := search_tool.multi_search_performer
-		ensure
-			Result_not_void: Result /= Void
 		end
 
 feature {EB_MULTI_SEARCH_TOOL} -- Redraw
@@ -191,7 +144,6 @@ feature {EB_MULTI_SEARCH_TOOL} -- Redraw
 						end
 						i := l_row_count
 						create l_grid_label_item.make_with_text (l_item.class_name)
-						l_grid_label_item.set_tooltip (l_item.class_name)
 						l_class_i ?= l_class_item.data
 						if l_class_i /= Void then
 							l_grid_label_item.set_pixmap (pixmap_from_class_i (l_class_i))
@@ -219,14 +171,13 @@ feature {EB_MULTI_SEARCH_TOOL} -- Redraw
 								l_new_row.set_data (l_text_item)
 							end
 							set_item (1,
-									l_row_count,
-									new_label_item (interface_names.l_line.as_string_32 + " " + l_text_item.line_number.out + " :"))
+														l_row_count,
+														new_label_item ("Line " + l_text_item.line_number.out + ":"))
 							set_item (2,
-									l_row_count,
-									new_label_item (replace_rnt_to_space (l_text_item.text)))
+														l_row_count,
+														new_label_item (replace_rnt_to_space (l_text_item.text)))
 							item (2, l_row_count).set_foreground_color (preferences.editor_data.operator_text_color)
 							create l_grid_drawable_item
-							l_grid_drawable_item.set_tooltip (l_text_item.context_text)
 							set_item (3, l_row_count, l_grid_drawable_item)
 							l_grid_drawable_item.expose_actions.extend (agent expose_drawable_action (?, l_item, row (l_row_count)))
 							l_grid_drawable_item.set_required_width (font.string_width (l_text_item.context_text))
@@ -244,7 +195,7 @@ feature {EB_MULTI_SEARCH_TOOL} -- Redraw
 									insert_new_row_parented (l_row_count, row (submatch_parent))
 									set_item (1,
 																l_row_count,
-																new_label_item (interface_names.l_capture.as_string_32 + " " +
+																new_label_item ("Capture " +
 																				l_text_item.captured_submatches.index.out +
 																				": " +
 																				l_text_item.captured_submatches.item))
@@ -283,13 +234,14 @@ feature {NONE} -- Interface
 			column (1).header_item.pointer_button_press_actions.extend (agent on_grid_header_click (1, ?, ?, ?, ?, ?, ?, ?, ?))
 			column (2).header_item.pointer_button_press_actions.extend (agent on_grid_header_click (2, ?, ?, ?, ?, ?, ?, ?, ?))
 
+			row_select_actions.extend (agent on_grid_row_selected)
 			set_item_pebble_function (agent grid_pebble_function)
 			set_accept_cursor (Cursors.cur_class)
 			set_deny_cursor (Cursors.cur_x_class)
 			set_minimum_width (100)
 		end
 
-	new_label_item (a_string: STRING_GENERAL): EV_GRID_LABEL_ITEM is
+	new_label_item (a_string: STRING): EV_GRID_LABEL_ITEM is
 			-- Create uniformed label item
 		require
 			string_attached: a_string /= Void
@@ -299,7 +251,6 @@ feature {NONE} -- Interface
 			create Result.make_with_text (a_string)
 			l_color := background_color
 			Result.set_foreground_color (row_text_color (l_color))
-			Result.set_tooltip (a_string)
 		ensure
 			new_item_not_void: Result /= Void
 		end
@@ -386,15 +337,48 @@ feature {NONE} -- Interface
 			end
 		end
 
-	report_summary_string: STRING_GENERAL
+	report_summary_string: STRING
 
 	adjust_grid_column_width is
 			-- Adjust grid column width to best fit visible area.
+		local
+			i: INTEGER
+			l_grid_width: INTEGER
+			col : EV_GRID_COLUMN
+			full_width: INTEGER
+			temp_width: INTEGER
+			l_width: INTEGER
+			l_required_width: ARRAYED_LIST [INTEGER]
 		do
-			safe_resize_column_to_content (column (1), True, False)
-			safe_resize_column_to_content (column (2), True, False)
-			safe_resize_column_to_content (column (3), True, False)
-			safe_resize_column_to_content (column (4), True, False)
+			if row_count /= 0 then
+				create l_required_width.make (column_count)
+				from
+					i := 1
+				until
+					i > column_count
+				loop
+					col := column (i)
+					l_required_width.extend (col.required_width_of_item_span (1, col.parent.row_count))
+					full_width := full_width + (header_width @ i).max (l_required_width @ i)
+					i := i + 1
+				end
+				l_grid_width := width
+				from
+					i := 1
+				until
+					i > column_count
+				loop
+					col := column (i)
+					temp_width := (header_width @ i).max (l_required_width @ i)
+					l_width := ((temp_width / full_width) * l_grid_width).floor
+					if l_width > temp_width then
+						l_width := temp_width
+					end
+					l_width := l_width-- + column_border_space
+					col.set_width (l_width)
+					i := i + 1
+				end
+			end
 		end
 
 feature {NONE} -- Stone
@@ -466,10 +450,26 @@ feature {EB_MULTI_SEARCH_TOOL} -- Implementation
 			performer_launched: multi_search_performer.is_search_launched
 		local
 			l_text_found, l_class_found: INTEGER
+			l_found_string: STRING
+			l_class_string: STRING
 		do
 			l_text_found := multi_search_performer.text_found_count
 			l_class_found := multi_search_performer.class_count
-			report_summary_string := ("   ").as_string_32 + interface_names.l_n_matches (l_text_found) + " " + interface_names.l_in_n_classes (l_class_found)
+			if l_text_found > 1 or l_text_found = 0 then
+				l_found_string := " matches in "
+			else
+				l_found_string := " match in "
+			end
+			if l_class_found > 1 or l_class_found = 0 then
+				l_class_string := " classes"
+			else
+				l_class_string := " class"
+			end
+			report_summary_string := "   " +
+										l_text_found.out +
+										l_found_string +
+										l_class_found.out +
+										l_class_string
 			search_tool.report_tool.set_summary (report_summary_string)
 		end
 
@@ -478,36 +478,18 @@ feature {EB_MULTI_SEARCH_TOOL} -- Implementation
 		local
 			l_row: EV_GRID_ROW
 			l_item: MSR_ITEM
-			l_text_item: MSR_TEXT_ITEM
-			l_start, l_end: INTEGER
-			l_class: CLASS_I
-			l_class_c: CLASS_C
-			l_compiled_line_stone: COMPILED_LINE_STONE
-			l_uncompiled_line_stone: UNCOMPILED_LINE_STONE
+			l_class_name: STRING
+			l_list: LIST [CLASS_I]
 		do
 			if a_item /= Void then
 				l_row := a_item.row
 				l_item ?= l_row.data
 				if l_item /= Void then
-					l_class ?= l_item.data
-					if l_class /= Void then
-						l_text_item ?= l_row.data
-						if l_text_item /= Void then
-							l_start := l_text_item.start_index_in_unix_text
-							l_end := l_text_item.end_index_in_unix_text + 1
-							l_class_c := l_class.compiled_representation
-							if l_class_c /= Void then
-								create l_compiled_line_stone.make_with_line (l_class_c, 1, True)
-								l_compiled_line_stone.set_selection ([l_start, l_end])
-								Result := l_compiled_line_stone
-							else
-								create l_uncompiled_line_stone.make_with_line (l_class, 1, True)
-								l_uncompiled_line_stone.set_selection ([l_start, l_end])
-								Result := l_uncompiled_line_stone
-							end
-						else
-							Result := stone_from_class_i (l_class)
-						end
+					create l_class_name.make_from_string (l_item.class_name)
+					l_class_name.to_upper
+					l_list := universe.classes_with_name (l_class_name)
+					if l_list /= Void and then not l_list.is_empty then
+						Result := stone_from_class_i (l_list.first)
 					end
 				end
 			end
@@ -527,7 +509,7 @@ feature {EB_MULTI_SEARCH_TOOL} -- Implementation
 				label_item ?= a_label_item
 				if label_item /= Void then
 					if text_height = 0 then
-						text_height := a_font.string_size (once "a").integer_item (2)
+						text_height := a_font.string_size ("a").integer_item (2)
 					end
 					client_height := label_item.height - label_item.top_border - label_item.bottom_border
 					vertical_text_offset_into_available_space := client_height - text_height
@@ -555,62 +537,29 @@ feature {EB_MULTI_SEARCH_TOOL} -- Implementation
 			until
 				i > a_row.count
 			loop
-				a_row.item (i).pointer_double_press_actions.extend (agent on_grid_row_double_clicked (?, ?, ?, ?, ?, ?, ?, ?, a_row))
+				a_row.item (i).pointer_button_press_actions.extend (agent on_grid_row_clicked (?, ?, ?, ?, ?, ?, ?, ?, a_row))
 				i := i + 1
 			end
 		end
 
-	on_grid_row_double_clicked (a, b, c : INTEGER; d, e, f: DOUBLE; g, h: INTEGER; a_row: EV_GRID_ROW) is
+	on_grid_row_clicked (a, b, c : INTEGER; d, e, f: DOUBLE; g, h: INTEGER; a_row: EV_GRID_ROW) is
 			-- A row is clicked by mouse pointer.
 		do
 			if not selected_rows.is_empty then
 				if selected_rows.first = a_row then
-					go_to_line_of_editor (a_row)
+					on_grid_row_selected (a_row)
 				end
 			end
 		end
 
-	on_key_pressed (a_key: EV_KEY) is
-			-- On key pressed.
-		local
-			l_selected_rows: ARRAYED_LIST [EV_GRID_ROW]
-		do
-			Precursor {ES_GRID}(a_key)
-			inspect a_key.code
-			when key_enter then
-				if not selected_rows.is_empty then
-					go_to_line_of_editor (selected_rows.first)
-				end
-			when key_home then
-				if row_count > 0 then
-					remove_selection
-					select_row (1)
-					l_selected_rows := selected_rows
-					if not l_selected_rows.is_empty then
-						l_selected_rows.first.ensure_visible
-					end
-				end
-			when key_end then
-				if row_count > 0 then
-					remove_selection
-					select_row (row_count)
-					l_selected_rows := selected_rows
-					if not l_selected_rows.is_empty then
-						l_selected_rows.first.ensure_visible
-					end
-				end
-			else
-			end
-		end
-
-	go_to_line_of_editor (a_row: EV_GRID_ROW) is
+	on_grid_row_selected (a_row: EV_GRID_ROW) is
 			-- Invoke when a row of the report grid selected
 		require
 			a_row_not_void: a_row /= Void
 		local
 			l_item: MSR_ITEM
 		do
-			search_tool.set_check_class_succeed (True)
+			search_tool.set_check_class_succeed (true)
 			if a_row.parent /= Void and then a_row.parent_row /= Void and then a_row.parent_row.is_expandable and then not a_row.parent_row.is_expanded then
 				a_row.parent_row.expand
 				adjust_grid_column_width
@@ -633,62 +582,59 @@ feature {EB_MULTI_SEARCH_TOOL} -- Implementation
 		local
 			l_text_item: MSR_TEXT_ITEM
 			l_editor: EB_EDITOR
-			l_saving_string: STRING_GENERAL
+			l_saving_string: STRING
 			l_start, l_end: INTEGER
 		do
-			search_tool.set_new_search_set (False)
-			if multi_search_performer.is_search_launched and then not multi_search_performer.off then
-				l_text_item ?= multi_search_performer.item
-			end
+			search_tool.set_new_search_set (false)
+			l_text_item ?= multi_search_performer.item
 			if l_text_item /= Void then
-				if search_tool.old_editor /= Void and then not search_tool.old_editor.is_recycled then
+				if search_tool.old_editor /= Void then
 					l_editor := search_tool.old_editor
 				else
 					l_editor := search_tool.editor
 				end
-				if l_editor /= Void then
-					if (not search_tool.is_item_source_changed (l_text_item)) then
-						l_start := l_text_item.start_index_in_unix_text
-						l_end := l_text_item.end_index_in_unix_text + 1
-						if l_end > l_start then
-							if l_editor.text_is_fully_loaded then
-								l_editor.select_region (l_start, l_end)
-							end
-						elseif l_end = l_start then
-							l_editor.text_displayed.cursor.go_to_position (l_end)
-							l_editor.deselect_all
+--				if old_editor /= editor implies (not is_item_source_changed (l_text_item)) then
+				if (not search_tool.is_item_source_changed (l_text_item)) then
+					l_start := l_text_item.start_index_in_unix_text
+					l_end := l_text_item.end_index_in_unix_text + 1
+					if l_end > l_start then
+						if l_editor.text_is_fully_loaded then
+							l_editor.select_region (l_start, l_end)
 						end
-						if l_editor.has_selection then
-							l_editor.show_selection (False)
-						end
-						if search_tool.saved_cursor /= 0 and then search_tool.saved_cursor = multi_search_performer.index then
-							search_tool.first_result_reached_actions.call ([True])
-						else
-							search_tool.first_result_reached_actions.call ([False])
-						end
-						if multi_search_performer.islast then
-							search_tool.bottom_reached_actions.call ([True])
-						else
-							search_tool.bottom_reached_actions.call ([False])
-						end
-						l_editor.refresh_now
-						search_tool.report_tool.set_summary (report_summary_string)
-						search_tool.report_tool.set_new_search_button_visible (False)
-						if not search_tool.report_cursor_recorded then
-							search_tool.save_current_cursor
-							search_tool.set_report_cursor_recorded (True)
-						end
+					elseif l_end = l_start then
+						l_editor.text_displayed.cursor.go_to_position (l_end)
+						l_editor.deselect_all
+					end
+					if l_editor.has_selection then
+						l_editor.show_selection (False)
+					end
+					if search_tool.saved_cursor /= 0 and then search_tool.saved_cursor = multi_search_performer.index then
+						search_tool.first_result_reached_actions.call ([True])
+					else
+						search_tool.first_result_reached_actions.call ([False])
+					end
+					if multi_search_performer.islast then
+						search_tool.bottom_reached_actions.call ([True])
 					else
 						search_tool.bottom_reached_actions.call ([False])
-						search_tool.first_result_reached_actions.call ([False])
-						if search_tool.is_customized or search_tool.is_whole_project_searched then
-							l_saving_string := interface_names.l_try_saving_file_and_searching
-						else
-							l_saving_string := interface_names.l_try_searching
-						end
-						search_tool.report_tool.set_summary (report_summary_string.as_string_32 + "   " + l_saving_string)
-						search_tool.report_tool.set_new_search_button_visible (True)
 					end
+					l_editor.refresh_now
+					search_tool.report_tool.set_summary (report_summary_string)
+					search_tool.report_tool.set_new_search_button_visible (False)
+					if not search_tool.report_cursor_recorded then
+						search_tool.save_current_cursor
+						search_tool.set_report_cursor_recorded (True)
+					end
+				else
+					search_tool.bottom_reached_actions.call ([False])
+					search_tool.first_result_reached_actions.call ([False])
+					if search_tool.is_customized or search_tool.is_whole_project_searched then
+						l_saving_string := " saving file and"
+					else
+						l_saving_string := ""
+					end
+					search_tool.report_tool.set_summary (report_summary_string + "   Item expires. Try" + l_saving_string + " searching again.")
+					search_tool.report_tool.set_new_search_button_visible (True)
 				end
 			else
 				search_tool.report_tool.set_summary (report_summary_string)
@@ -697,7 +643,7 @@ feature {EB_MULTI_SEARCH_TOOL} -- Implementation
 		end
 
 	select_current_row is
-			-- Select current row in the grid, and perform selecting in the editor.
+			-- Select current row in the grid
 		require
 			search_launched: multi_search_performer.is_search_launched
 		local
@@ -719,10 +665,6 @@ feature {EB_MULTI_SEARCH_TOOL} -- Implementation
 			end
 			if l_row_index > 0 and l_row_index <= row_count then
 				select_row (l_row_index)
-				l_selected_rows := selected_rows
-				if not l_selected_rows.is_empty then
-					go_to_line_of_editor (l_selected_rows @ 1)
-				end
 			end
 		end
 
@@ -733,7 +675,7 @@ feature {EB_MULTI_SEARCH_TOOL} -- Implementation
 			l_row: EV_GRID_ROW
 			loop_end: BOOLEAN
 		do
-			loop_end := False
+			loop_end := false
 			from
 				i := 1
 			until
@@ -742,7 +684,7 @@ feature {EB_MULTI_SEARCH_TOOL} -- Implementation
 				l_row := row (i)
 				if l_row.data /= Void and then l_row.data = a_data then
 					Result := l_row
-					loop_end := True
+					loop_end := true
 				end
 				i := i + 1
 			end
@@ -751,7 +693,6 @@ feature {EB_MULTI_SEARCH_TOOL} -- Implementation
 invariant
 	report_summary_string_not_void: report_summary_string /= Void
 	search_tool_set: search_tool /= Void
-
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"

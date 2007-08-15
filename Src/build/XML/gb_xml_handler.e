@@ -107,12 +107,7 @@ feature -- Basic operations
 			check
 				component_doc_void: component_document = Void
 			end
-				-- Check to see if a user create component file is available, if not
-				-- load up the default one from the delivery.
 			create file.make (component_filename)
-			if not file.exists then
-				create file.make (default_component_filename)
-			end
 			if file.exists then
 					-- Load the existing file into `component document'
 				create parser.make
@@ -152,7 +147,7 @@ feature -- Basic operations
 		do
 			create xml_store.make_with_components (components)
 			first_element ?= component_document.first
-			component_element := new_child_element (first_element, component_name, "")
+			component_element := new_child_element (first_element, component_name, "Component")
 			first_element.force_last (component_element)
 			new_element := create_widget_instance (component_element, an_object.type)
 			component_element.force_last (new_element)
@@ -172,11 +167,6 @@ feature -- Basic operations
 				component_doc_not_void: component_document /= Void
 			end
 			create file.make (component_filename)
-			if not file.exists then
-					-- If we have not yet saved a component file then we create one.
-				file.create_read_write
-				file.close
-			end
 			from
 			until
 				file.is_writable or cancelled
@@ -270,12 +260,23 @@ feature {GB_COMPONENT_SELECTOR_ITEM, GB_COMPONENT, GB_OBJECT} -- Implementation
 
 feature {NONE} -- Implementation
 
+	component_filename: FILE_NAME is
+			-- Location of component file.
+		do
+			create Result.make_from_string (eiffel_layout.eiffel_installation_dir_name)
+			Result.extend ("build")
+			Result.extend ("components")
+			Result.extend ("components.xml")
+		ensure
+			Result_exists: Result /= Void and not Result.is_empty
+		end
+
 	display_save_progress (total, written: INTEGER) is
 			-- Display current save progress as percentage of `total' based on `written',
 			-- unless Build is running in Wizard mode.
 		do
 			components.status_bar.set_status_text ("Saving : " + (((written / total) * 95).truncated_to_integer.out) + "%%")
-			environment.application.process_graphical_events
+			environment.application.process_events
 		end
 
 	pipe_callback: XM_TREE_CALLBACKS_PIPE is

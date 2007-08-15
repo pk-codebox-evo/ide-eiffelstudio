@@ -78,12 +78,6 @@ feature -- Access
 			no_description_attached_to_invariant: Result.is_equal ("")
 		end
 
-	class_i: CLASS_I is
-			-- CLASS_I object associated with current item
-		do
-			Result := class_c.lace_class
-		end
-
 	class_c: CLASS_C
 			-- Associated class with current feature
 
@@ -92,6 +86,8 @@ feature -- Access
 		do
 			check written_class.has_invariant end
 			Result := written_class.invariant_ast
+		ensure then
+			good_result: Result = written_class.invariant_ast
 		end
 
 	written_class: like class_c
@@ -103,16 +99,6 @@ feature -- Access
 			Result := feature_path_marker
 		ensure then
 			good_result: Result = feature_path_marker
-		end
-
-	e_feature: E_FEATURE is
-			-- Feature associated with Current
-		do
-			check
-				should_not_arrive_here: False
-			end
-		ensure then
-			result_not_attached: Result = Void
 		end
 
 feature -- Status report
@@ -137,6 +123,18 @@ feature -- Visit
 			-- Process `a_visitor'.
 		do
 			a_visitor.process_invariant (Current)
+		end
+
+feature{QL_CRITERION} -- Feature body
+
+	e_feature: E_FEATURE is
+			-- Feature associated with Current
+		do
+			check
+				should_not_arrive_here: False
+			end
+		ensure then
+			result_not_attached: Result = Void
 		end
 
 invariant
@@ -174,5 +172,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

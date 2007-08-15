@@ -11,14 +11,13 @@ deferred class
 inherit
 	EB_DEVELOPMENT_WINDOW_COMMAND
 		redefine
-			internal_recycle
+			recycle
 		end
 
 	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 		redefine
 			new_toolbar_item,
-			new_menu_item,
-			new_menu_item_unmanaged
+			new_menu_item
 		end
 
 	UNDO_REDO_OBSERVER
@@ -33,7 +32,7 @@ feature -- Execution
 	accelerator_execute is
 			-- Execute command if neccessary when called via an accelerator
 		do
-			if editor /= Void and then editor.has_focus and then is_sensitive then
+			if editor.has_focus and then is_sensitive then
 				execute
 			end
 		end
@@ -55,30 +54,13 @@ feature -- Basic operations
 			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND}
 		end
 
-	new_menu_item_unmanaged: EV_MENU_ITEM is
-			-- Create a new menu entry for this command.
-		do
-			start_observer
-			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND}
-		end
+feature -- recycle
 
-feature {NONE} -- recycle
-
-	internal_recycle is
+	recycle is
 			-- Recycle Current
-		local
-			l_editors: ARRAYED_LIST [EB_SMART_EDITOR]
 		do
 			if observer_started and target /= Void then
-				l_editors := target.editors_manager.editors
-				from
-					l_editors.start
-				until
-					l_editors.after
-				loop
-					l_editors.item.remove_history_observer (Current)
-					l_editors.forth
-				end
+				editor.remove_history_observer (Current)
 			end
 			Precursor {EB_DEVELOPMENT_WINDOW_COMMAND}
 		end
@@ -92,7 +74,7 @@ feature {NONE} -- Implementation / Observer pattern
 			-- Start observing the stack
 		do
 			if not observer_started then
-				target.editors_manager.add_history_observer (Current)
+				editor.add_history_observer (Current)
 				observer_started := True
 					-- Why should we destroy the command when destroying the window???
 					-- It is enough to destroy it when destroying the stack?!
@@ -105,7 +87,7 @@ feature {NONE} -- Implementation
 	editor: EB_EDITOR is
 			-- Editor corresponding to Current
 		do
-			Result := target.editors_manager.current_editor
+			Result := target.editor_tool.text_area
 		end
 
 --	undo_redo_stack: UNDO_REDO_STACK is

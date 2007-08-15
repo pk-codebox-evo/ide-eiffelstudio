@@ -40,7 +40,7 @@ feature -- Status report
 feature -- Metric calculation
 
 	value (a_scope: EB_METRIC_DOMAIN): QL_QUANTITY_DOMAIN is
-			-- Value of current metric calculated over `a_scope'
+			-- Calcualte current domain using `a_scope'.
 		local
 			l_value: DOUBLE
 		do
@@ -83,6 +83,17 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
+	variable_metric_uuid: LIST [UUID] is
+			-- 	UUID list of `varable_metric'
+		do
+			if variable_metric_uuid_internal = Void then
+				create {LINKED_LIST [UUID]} variable_metric_uuid_internal.make
+			end
+			Result := variable_metric_uuid_internal
+		ensure
+			result_attached: Result /= Void
+		end
+
 feature -- Process
 
 	process (a_visitor: EB_METRIC_VISITOR) is
@@ -112,8 +123,11 @@ feature{NONE} -- Implementation
 			else
 				a_metric.disable_filter_result
 			end
-			Result := a_metric.value_item (a_scope) * a_coefficient
+			Result := a_metric.value (a_scope).first.value * a_coefficient
 		end
+
+	variable_metric_uuid_internal: like variable_metric_uuid
+			-- Implementation of `variable_metric_uuid'
 
 invariant
 	coefficient_attached: coefficient /= Void
@@ -150,5 +164,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

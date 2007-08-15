@@ -11,9 +11,6 @@ class
 
 inherit
 	EV_APPLICATION_I
-		redefine
-			wait_for_input
-		end
 
  	WEL_APPLICATION
  		rename
@@ -63,8 +60,7 @@ feature {NONE} -- Initialization
 	make (an_interface: like interface) is
 			-- Create the application with `an_interface' interface.
 		local
-			l_result: INTEGER
-			l_process: POINTER
+			l_result: BOOLEAN
 		do
 			if {PLATFORM}.is_thread_capable then
 				create idle_action_mutex.make
@@ -81,7 +77,7 @@ feature {NONE} -- Initialization
 				-- we create any widgets. If this is not the case, then `themes_active' fails
 				-- during creation of the widgets, and those widgets created before a window
 				-- end up with a null theme handle.
-			silly_main_window.do_nothing
+			l_result := silly_main_window.is_inside
 			cwin_disable_xp_ghosting
 				-- Initialize the theme drawer to the correct version for
 				-- the current platform.
@@ -89,17 +85,16 @@ feature {NONE} -- Initialization
 			dispatcher.set_exception_callback (agent on_exception_action)
 
 			create theme_window.make
-			create reusable_message.make
 			create duplicated_message.make
 			set_capture_type ({EV_APPLICATION_IMP}.capture_heavy)
-			set_application_main_window (silly_main_window)
+		end
 
-				-- Get HANDLE to current process.
-				-- 0x2 stands for `DUPLICATE_SAME_ACCESS'.
-			l_process := {WEL_API}.get_current_process
-			l_result := {WEL_API}.duplicate_handle (l_process, l_process, l_process, $l_process, 0, False, 0x2)
-			check l_result_good: l_result /= 0 end
-			process_handle := l_process
+	launch  is
+			-- Start the event loop.
+		do
+			set_application_main_window (silly_main_window)
+			call_post_launch_actions
+			message_loop
 		end
 
 feature -- Access
@@ -107,13 +102,12 @@ feature -- Access
 	key_pressed (virtual_key: INTEGER): BOOLEAN is
 			-- Is `virtual_key' currently pressed?
 		do
-			Result := (cwin_get_keyboard_state (virtual_key) & 0xF000) = 0xF000
-		end
-
-	key_toggled (virtual_key: INTEGER): BOOLEAN is
-			-- Is `virtual_key' currently toggled?
-		do
-			Result := (cwin_get_keyboard_state (virtual_key) & 0x0001) = 0x0001
+			Result := cwin_get_keyboard_state (virtual_key) < 0
+				--| The high order bit of i will be set if the key is down.
+				--| If the high order bit of an INTEGER is set, then the
+				--| value is negative. The correct solution is
+				--|	Result := i & 0xF0000000 but this does not work with
+				--| 4.5. Julian.
 		end
 
 	ctrl_pressed: BOOLEAN is
@@ -135,12 +129,6 @@ feature -- Access
 			Result := key_pressed (vk_shift)
 		end
 
-	caps_lock_on: BOOLEAN is
-			-- Is the caps lock key currently on?
-		do
-			Result := key_toggled (vk_capital)
-		end
-
 feature -- Basic operation
 
 	process_graphical_events is
@@ -158,6 +146,24 @@ feature -- Basic operation
 			loop
 				process_message (msg)
 				msg.peek_paint_messages
+			end
+		end
+
+	process_events is
+			-- Process any pending events.
+			--| Pass control to the GUI toolkit so that it can
+			--| handle any events that may be in its queue.
+		local
+			msg: WEL_MSG
+		do
+			from
+				create msg.make
+				msg.peek_all
+			until
+				not msg.last_boolean_result
+			loop
+				process_message (msg)
+				msg.peek_all
 			end
 		end
 
@@ -253,8 +259,6 @@ feature {NONE} -- Implementation
 	Application_windows_id: ARRAYED_LIST [POINTER] is
 			-- All user created windows in the application.
 			--| For internal use only.
-		indexing
-			once_status: global
 		once
 			create Result.make (5)
 		ensure
@@ -508,17 +512,12 @@ feature -- Basic operation
 
 	destroy is
 			-- Destroy `Current' (End the application).
-		local
-			l_result: INTEGER
 		do
 			cwin_post_quit_message (0)
+			quit_requested := True
 			set_is_destroyed (True)
 			window_with_focus := Void
-			interface.destroy_actions.call (Void)
-				-- Destroy `process_handle'
-			l_result := {WEL_API}.close_handle (process_handle)
-			check l_result_ok: l_result /= 0 end
-			process_handle := default_pointer
+			interface.destroy_actions.call ([])
 		end
 
 feature -- Tooltips
@@ -563,32 +562,28 @@ feature {NONE} -- Implementation
 
 	message_loop is
 			-- Windows message loop.
-		do
-			-- Not applicable with Vision2
-		end
-
-	reusable_message: WEL_MSG
-			-- Reusable message object.
-
-	process_underlying_toolkit_event_queue is
-			-- Process event queue from underlying toolkit.
+			--| Redefined to add accelerator functionality.
 		local
 			msg: WEL_MSG
 		do
 			from
-				msg := reusable_message
-				msg.peek_all
-				user_events_processed_from_underlying_toolkit := False
+				create msg.make
 			until
-				not msg.last_boolean_result or else is_destroyed
+				quit_requested
 			loop
-				if not user_events_processed_from_underlying_toolkit then
-					user_events_processed_from_underlying_toolkit := msg.user_generated
-				end
-				process_message (msg)
 				msg.peek_all
+				if msg.last_boolean_result then
+					process_message (msg)
+				else
+					call_idle_actions
+					relinquish_cpu_slice
+				end
 			end
 		end
+
+	quit_requested: BOOLEAN
+			-- Has a Wm_quit message been processed?
+			-- Or has destroy been called?
 
 	process_message (msg: WEL_MSG) is
 			-- Dispatch `msg'.
@@ -600,7 +595,7 @@ feature {NONE} -- Implementation
 		do
 			if msg.last_boolean_result then
 				if msg.quit then
-					set_is_destroyed (True)
+					quit_requested := True
 				else
 					focused_window := window_with_focus
 					if focused_window /= Void and then focused_window.exists then
@@ -678,28 +673,39 @@ feature {NONE} -- Implementation
 			f10_accelerator_table_not_void: Result /= Void
 		end
 
+	process_events_until_stopped is
+			-- Process all events until 'stop_processing' is called.
+		local
+			msg: WEL_MSG
+		do
+			from
+				create msg.make
+				msg.peek_all
+				stop_processing_requested := False
+			until
+				stop_processing_requested
+			loop
+				msg.peek_all
+				if msg.last_boolean_result then
+					process_message (msg)
+				else
+					call_idle_actions
+					relinquish_cpu_slice
+				end
+			end
+		end
+
+	stop_processing is
+			--  Exit `process_events_until_stopped'.
+		do
+			stop_processing_requested := True
+		end
+
 	internal_capture_type: INTEGER_REF is
 			-- System wide once, in order to always get the
 			-- same value.
 		once
 			Create Result
-		end
-
-	process_handle: POINTER
-			-- HANDLE for current process.
-
-	wait_for_input (msec: INTEGER) is
-			-- Wait for at most `msec' milliseconds for an input.
-		local
-			l_result: INTEGER
-			l_process, l_null: POINTER
-		do
-			l_process := process_handle
-			if l_process /= l_null then
-				l_result := {WEL_API}.msg_wait_for_multiple_objects (1, $l_process, False, msec,
-					{WEL_QS_CONSTANTS}.qs_allinput | {WEL_QS_CONSTANTS}.qs_allpostmessage)
-				check l_result_ok: l_result /= -1 end
-			end
 		end
 
 feature -- Public constants
@@ -760,12 +766,28 @@ feature {NONE} -- Externals
 			"PostQuitMessage"
 		end
 
-	cwin_get_keyboard_state (virtual_key: INTEGER): INTEGER_16 is
+	cwin_get_keyboard_state (virtual_key: INTEGER): INTEGER is
 			-- `Result' is state of `virtual_key'.
 		external
-			"C [macro <windows.h>] (int): EIF_INTEGER_16"
+			"C [macro <windows.h>] (int): EIF_INTEGER"
 		alias
 			"GetKeyState"
+		end
+
+	cwin_send_message (hwnd: POINTER; msg: INTEGER; wparam, lparam: POINTER) is
+			-- SDK SendMessage (without the result)
+		external
+			"C [macro %"wel.h%"] (HWND, UINT, WPARAM, LPARAM)"
+		alias
+			"SendMessage"
+		end
+
+	cwin_post_message (hwnd: POINTER; msg: INTEGER; wparam, lparam: POINTER) is
+			-- SDK PostMessage (without the result)
+		external
+			"C [macro %"wel.h%"] (HWND, UINT, WPARAM, LPARAM)"
+		alias
+			"PostMessage"
 		end
 
 	frozen cwel_integer_to_pointer (i: INTEGER): POINTER is
@@ -793,7 +815,6 @@ feature {NONE} -- Externals
 invariant
 	idle_action_mutex_valid: {PLATFORM}.is_thread_capable implies idle_action_mutex /= Void
 	duplicated_message_not_void: duplicated_message /= Void
-	process_handle_valid: not is_destroyed implies process_handle /= default_pointer
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"

@@ -11,8 +11,7 @@ class
 inherit
 	EV_ANY_I
 		redefine
-			interface,
-			is_destroyed
+			interface
 		end
 
 	REFACTORING_HELPER
@@ -23,8 +22,7 @@ inherit
 	EV_DESELECTABLE_I
 		redefine
 			interface,
-			is_selectable,
-			is_destroyed
+			is_selectable
 		end
 
 	EV_GRID_ITEM_ACTION_SEQUENCES_I
@@ -45,7 +43,7 @@ feature {EV_ANY} -- Initialization
 	initialize is
 			-- Initialize `Current'.
 		do
-			hash_code := 0
+			hash_code := -1
 			set_is_initialized (True)
 		end
 
@@ -137,14 +135,6 @@ feature -- Access
 			Result := 0
 		end
 
-	is_displayed: BOOLEAN
-			-- Is `Current' visible on the screen?
-			-- `True' when parent displayed.
-			-- An item that is_displayed does not necessarily have to be visible on screen at that particular time.
-		do
-			Result := parent_i /= Void and then parent_i.is_displayed and then column_i.is_show_requested and then row_i.is_show_requested
-		end
-
 	width: INTEGER is
 			-- Width of `Current' in pixels.
 		require
@@ -178,10 +168,6 @@ feature -- Access
 	tooltip: STRING_32
 			-- Tooltip displayed on `Current'.
 			-- If `Result' is `Void' or `is_empty' then no tooltip is displayed.
-
-	hash_code: INTEGER
-		-- Used to uniquely identify grid item within `parent_i'.
-		-- Should be set to -1 if `Current' is not parented.
 
 feature -- Status setting
 
@@ -237,7 +223,7 @@ feature -- Status setting
 			end
 
 				-- Request that `Current' be redrawn
-			if parent_i /= Void and then not parent_i.is_destroyed then
+			if parent_i /= Void then
 				parent_i.redraw_item (Current)
 			end
 		end
@@ -383,12 +369,6 @@ feature -- Status report
 			Result := is_parented
 		end
 
-	is_destroyed: BOOLEAN is
-			-- Is `Current' destroyed?
-		do
-			Result := Precursor {EV_ANY_I} or (is_parented and then parent_i.is_destroyed)
-		end
-
 feature -- Element change
 
 	set_foreground_color (a_color: like foreground_color) is
@@ -508,7 +488,7 @@ feature {EV_GRID_I} -- Implementation
 			parent_i := Void
 			column_i := Void
 			row_i := Void
-			hash_code := 0
+			hash_code := -1
 		ensure
 			parent_i_unset: parent_i = Void
 			column_i_unset: column_i = Void
@@ -516,6 +496,10 @@ feature {EV_GRID_I} -- Implementation
 		end
 
 feature {EV_GRID_COLUMN_I, EV_GRID_I, EV_GRID_DRAWER_I, EV_GRID_ROW_I, EV_GRID_ITEM_I} -- Implementation
+
+	hash_code: INTEGER
+		-- Used to uniquely identify grid item within `parent_i'.
+		-- Should be set to -1 if `Current' is not parented.
 
 	parent_i: EV_GRID_I
 		-- Grid that `Current' resides in if any.

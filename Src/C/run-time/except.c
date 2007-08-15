@@ -1763,7 +1763,7 @@ rt_public void exclear(void)
 	 * "New level" pseudo-vector.
 	 */
 
-	while ((trace = extop(&eif_trace))) {
+	while (trace = extop(&eif_trace)) {
 		if (trace->ex_type == EN_ILVL) {
 			echlvl--;	/* Decrease exception level */
 		}
@@ -2061,12 +2061,8 @@ rt_public void eif_panic(char *msg)
 			reclaim ();
 			exit (2);
 			break;
-		case 2:
-			done = 3;
-			print_err_msg(stderr, "\n%s: FINAL PANIC: Cannot reclaim Eiffel objects -- Giving up...\n", egc_system_name);
-			exit (2);
 		default:
-				/* Yet another panic was raised, we can only exit now. */
+			print_err_msg(stderr, "\n%s: FINAL PANIC: Cannot reclaim Eiffel objects -- Giving up...\n", egc_system_name);
 			exit (2);
 			break;
 	}

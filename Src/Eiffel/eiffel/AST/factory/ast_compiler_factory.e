@@ -21,10 +21,7 @@ inherit
 			new_formal_dec_as,
 			new_integer_as,
 			new_integer_hexa_as,
-			new_integer_octal_as,
-			new_integer_binary_as,
 			new_external_lang_as,
-			new_vtgc1_error,
 			validate_integer_real_type
 		end
 
@@ -101,10 +98,10 @@ feature -- Access
 			end
 		end
 
-	new_class_type_as (n: ID_AS; g: TYPE_LIST_AS; attachment_mark: SYMBOL_AS): CLASS_TYPE_AS is
+	new_class_type_as (n: ID_AS; g: TYPE_LIST_AS): CLASS_TYPE_AS is
 		do
 			if n /= Void then
-				create Result.initialize (n, g, attachment_mark)
+				create Result.initialize (n, g)
 			end
 		end
 
@@ -186,7 +183,6 @@ feature -- Access
 					if feature_name.is_prefix or else feature_name.is_infix then
 							-- Infix and prefix features will be checked for VFFD(5,6) later
 					elseif alias_name /= Void then
-							-- TODO This code occurs in almost the same fashion in `{RENAMING_A}.adapt_alias_feature_name_properties'
 						vfav := Void
 						operator := alias_name.value
 						arguments := b.arguments
@@ -221,7 +217,7 @@ feature -- Access
 								feature_name.set_is_binary
 								if
 									is_semi_strict_id (feature_name.internal_alias_name_id) and then
-									system.current_class.original_class /= system.boolean_class
+									system.current_class.lace_class /= system.boolean_class
 								then
 										-- Semistrict operator alias name is declared in a class that is not BOOLEAN
 									create {VFAV4_SYNTAX} vfav.make (feature_name)
@@ -252,7 +248,7 @@ feature -- Access
 			end
 		end
 
-	new_formal_dec_as (f: FORMAL_AS; c: CONSTRAINT_LIST_AS; cf: EIFFEL_LIST [FEATURE_NAME]; c_as: SYMBOL_AS; ck_as, ek_as: KEYWORD_AS): FORMAL_CONSTRAINT_AS is
+	new_formal_dec_as (f: FORMAL_AS; c: TYPE_AS; cf: EIFFEL_LIST [FEATURE_NAME]; c_as: SYMBOL_AS; ck_as, ek_as: KEYWORD_AS): FORMAL_CONSTRAINT_AS is
 			-- New FORMAL_DECLARATION AST node
 		do
 			if f /= Void then
@@ -274,40 +270,6 @@ feature -- Access
 			if v /= Void then
 				create Result.make_from_hexa_string (t, s, v)
 			end
-		end
-
-	new_integer_octal_as (t: TYPE_AS; s: CHARACTER; v: STRING; buf: STRING; s_as: SYMBOL_AS; l, c, p, n: INTEGER): INTEGER_CONSTANT is
-			-- New INTEGER_AS node
-		do
-			if v /= Void then
-				create Result.make_from_octal_string (t, s, v)
-			end
-		end
-
-	new_integer_binary_as (t: TYPE_AS; s: CHARACTER; v: STRING; buf: STRING; s_as: SYMBOL_AS; l, c, p, n: INTEGER): INTEGER_CONSTANT is
-			-- New INTEGER_AS node
-		do
-			if v /= Void then
-				create Result.make_from_binary_string (t, s, v)
-			end
-		end
-
-feature -- Access for Erros
-
-	new_vtgc1_error (a_line, a_column: INTEGER_32; a_filename: STRING_8;  a_id: ID_AS; a_current: CURRENT_AS): VTGC1
-			-- Create new VTGC1 error.
-		local
-			l_location: LOCATION_AS
-		do
-			if a_id /= Void then
-				l_location := a_id
-			elseif a_current /= Void then
-				l_location := a_current
-			end
-			check l_location_not_void: l_location /= Void end
-			create Result
-			Result.set_class (system.current_class)
-			Result.set_location (l_location)
 		end
 
 feature {NONE} -- Validation
@@ -345,7 +307,7 @@ feature {NONE} -- Validation
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

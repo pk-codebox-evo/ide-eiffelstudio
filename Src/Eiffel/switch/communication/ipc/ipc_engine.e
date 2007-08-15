@@ -14,6 +14,8 @@ inherit
 			{NONE} all
 		end
 
+	EB_SHARED_PREFERENCES
+
 	IPC_REQUEST
 
 	THREAD_CONTROL
@@ -30,33 +32,19 @@ inherit
 			{NONE} all
 		end
 
-	SAFE_PATH_BUILDER
-		export
-			{NONE} all
-		end
-
 create
 	make
 
 feature {NONE} -- Initialization
 
-	make (dbg: like debugger_manager) is
-		require
-			dbg_not_void: dbg /= Void
+	make is
+		local
+			p: BOOLEAN_PREFERENCE
 		do
-			change_debugger_manager (dbg)
+			p := Preferences.debugger_data.close_classic_dbg_daemon_on_end_of_debugging_preference
+			set_close_ecdbgd_on_end_of_debugging_by_pref (p)
+			p.change_actions.extend (agent set_close_ecdbgd_on_end_of_debugging_by_pref)
 		end
-
-feature {APPLICATION_EXECUTION_CLASSIC} -- Change
-
-	change_debugger_manager (dbg: like debugger_manager) is
-		require
-			dbg_not_void: dbg /= Void
-		do
-			debugger_manager := dbg
-		end
-
-	debugger_manager: DEBUGGER_MANAGER
 
 feature -- Launching
 
@@ -79,12 +67,17 @@ feature -- Launching
 			if not ec_dbg_launched then
 				get_environment
 				if valid_ise_ecdbgd_executable then
-					cmd := safe_path (ise_ecdbgd_path)
+					create cmd.make_from_string (ise_ecdbgd_path)
+					if cmd.has (' ') then
+						cmd.prepend_character ('"')
+						cmd.append_character ('"')
+					end
+
 					create cs_cmd.make (cmd)
 					create cs_pname.make ("ecdbgd")
 
 					debug ("ipc")
-						io.put_string ("Launching ecdbgd : " + cmd + " (timeout=" + ise_timeout.out + ") %N")
+						io.put_string ("Launching ecDBDd : " + cmd + " (timeout=" + ise_timeout.out + ") %N")
 					end
 
 					r := c_launch_ecdbgd (cs_pname.item, cs_cmd.item, ise_timeout)
@@ -122,7 +115,7 @@ feature -- Launching
 		local
 			s: STRING_8
 		do
-			ise_timeout := Debugger_manager.classic_debugger_timeout
+			ise_timeout := Preferences.debugger_data.classic_debugger_timeout
 			if ise_timeout <= 0 then
 				s := Execution_environment.get (Ise_timeout_varname)
 				if s /= Void and then s.is_integer then
@@ -132,7 +125,7 @@ feature -- Launching
 				end
 			end
 
-			s := Debugger_manager.classic_debugger_location
+			s := Preferences.debugger_data.classic_debugger_location
 			if s = Void or else s.is_empty then
 				s := Execution_environment.get (Ise_ecdbgd_varname)
 			end
@@ -168,9 +161,7 @@ feature -- Launching
 					sleep (1_000_000) -- i.e: 1 ms
 					n := n + 1
 				end
-				check
-					not_is_ecdbgd_alive: not is_ecdbgd_alive
-				end
+				check not is_ecdbgd_alive end
 				--| it is not that critical to be sure ecdbgd is closed
 				--| but it should be very quick .. so let's check
 			end
@@ -197,26 +188,28 @@ feature -- Status
 			Result := ise_ecdbgd_path /= Void and then valid_executable (ise_ecdbgd_path)
 		end
 
-	close_ecdbgd_on_end_of_debugging: BOOLEAN is
-			-- Do we close the Eiffel debugger's daemon
-			-- when the debugging session is terminated ?
-		do
-			Result := Debugger_manager.classic_close_dbg_daemon_on_end_of_debugging
-		end
-
 feature -- Property
 
 	ec_dbg_launched: BOOLEAN
 			-- Is Eiffel debugger's daemon launched ?
 
+	close_ecdbgd_on_end_of_debugging: BOOLEAN
+			-- Do we close the Eiffel debugger's daemon
+			-- when the debugging session is terminated ?
+
 feature {NONE} -- ecdbgd status
 
-	ecdbgd_alive_checking_timer: DEBUGGER_TIMER
+	set_close_ecdbgd_on_end_of_debugging_by_pref (p: BOOLEAN_PREFERENCE) is
+		do
+			close_ecdbgd_on_end_of_debugging := p.value
+		end
+
+	ecdbgd_alive_checking_timer: EV_TIMEOUT
 
 	start_ecdbgd_alive_checking is
 		do
 			if ecdbgd_alive_checking_timer = Void then
-				ecdbgd_alive_checking_timer := debugger_manager.new_timer
+				create ecdbgd_alive_checking_timer
 				ecdbgd_alive_checking_timer.actions.extend (agent check_ecdbgd_alive)
 			end
 			ecdbgd_alive_checking_timer.set_interval (1000)
@@ -233,7 +226,7 @@ feature {NONE} -- ecdbgd status
 		local
 			retried: BOOLEAN
 			old_delay: INTEGER
-			dlg: EB_WARNING_DIALOG
+			dlg: EV_WARNING_DIALOG
 		do
 			if not retried then
 				if ecdbgd_alive_checking_timer /= Void then
@@ -247,12 +240,7 @@ feature {NONE} -- ecdbgd status
 					create dlg.make_with_text ("The Eiffel debugger daemon is dead,%N" +
 						"If you were debugging, the session is about to be terminated")
 					dlg.show
-					if dead_handler /= Void then
-							--| It occurs on linux, dead_handler is Void
-							--| it seems even if the debugger is stopped
-							--| the timeout still occurs ...
-						dead_handler.execute
-					end
+					dead_handler.execute
 				elseif ecdbgd_alive_checking_timer /= Void then
 					ecdbgd_alive_checking_timer.set_interval (old_delay)
 				end
@@ -267,6 +255,11 @@ feature {NONE} -- ecdbgd status
 		end
 
 feature {NONE} -- Implementation
+
+	Process_factory: PROCESS_FACTORY is
+		once
+			create Result
+		end
 
 	create_handler is
 		do

@@ -12,12 +12,11 @@ inherit
 	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 		redefine
 			new_toolbar_item,
-			new_sd_toolbar_item,
 			tooltext,
 			is_tooltext_important
 		end
 
-	SHARED_DEBUGGER_MANAGER
+	EB_SHARED_DEBUG_TOOLS
 
 	SHARED_EIFFEL_PROJECT
 
@@ -50,19 +49,19 @@ feature -- Status
 
 feature -- Access
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- What is printed in the customize dialog.
 		do
 			Result := interface_names.f_refactoring_pull
 		end
 
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Pop-up help on buttons.
 		do
 			Result := description
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text for toolbar button
 		do
 			Result := interface_names.b_refactoring_pull
@@ -75,14 +74,7 @@ feature -- Access
 			Result.drop_actions.extend (agent drop_feature (?))
 		end
 
-	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new toolbar button for `Current'.
-		do
-			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND} (display_text)
-			Result.drop_actions.extend (agent drop_feature (?))
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Menu entry corresponding to `Current'.
 		do
 			Result := tooltext
@@ -92,12 +84,6 @@ feature -- Access
 			-- Icon for `Current'.
 		do
 			Result := pixmaps.icon_pixmaps.refactor_feature_up_icon
-		end
-
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.refactor_feature_up_icon_buffer
 		end
 
 	Name: STRING is "RF_pull"
@@ -110,7 +96,7 @@ feature -- Events
 		local
 			feature_i: FEATURE_I
 			rf: ERF_FEATURE_PULL
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 		do
 			feature_i := fs.class_i.compiled_class.feature_of_feature_id (fs.e_feature.feature_id)
 			if feature_i /= Void and then fs.e_feature.associated_class.class_id = feature_i.written_in then
@@ -129,7 +115,7 @@ feature -- Execution
 			-- Execute.
 		local
 			fs: FEATURE_STONE
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 			window: EB_DEVELOPMENT_WINDOW
 		do
 			window := window_manager.last_focused_development_window

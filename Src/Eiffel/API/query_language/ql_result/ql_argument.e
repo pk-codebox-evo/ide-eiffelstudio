@@ -31,9 +31,9 @@ feature -- Access
 	scope: QL_SCOPE is
 			-- Scope of current
 		do
-			Result := argument_scope
+			Result := local_scope
 		ensure then
-			good_result: Result = argument_scope
+			good_result: Result = local_scope
 		end
 
 	path_name_marker: QL_PATH_MARKER is
@@ -109,5 +109,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

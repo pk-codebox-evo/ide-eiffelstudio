@@ -2,7 +2,7 @@
 	description: "Macros used by C code at run time."
 	date:		"$Date$"
 	revision:	"$Revision$"
-	copyright:	"Copyright (c) 1985-2007, Eiffel Software."
+	copyright:	"Copyright (c) 1985-2006, Eiffel Software."
 	license:	"GPL version 2 see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"Commercial license is available at http://www.eiffel.com/licensing"
 	copying: "[
@@ -52,11 +52,14 @@
 #include "eif_size.h"
 #include "eif_gen_conf.h"
 #include "eif_rout_obj.h"
+#if !defined CUSTOM || defined NEED_OPTION_H
 #include "eif_option.h"
+#endif
 #include "eif_bits.h"
 
 #ifdef WORKBENCH
 #include "eif_wbench.h"
+#include "eif_option.h"
 #endif
 
 #ifdef __cplusplus
@@ -110,7 +113,6 @@ RT_LNK void * eif_pointer_identity (void *);
 #if defined(ISE_GC) && defined(EIF_THREADS)
 RT_LNK int volatile eif_is_gc_collecting;
 RT_LNK void eif_synchronize_for_gc(void);
-RT_LNK int eif_is_in_eiffel_code(void);
 RT_LNK void eif_enter_eiffel_code(void);
 RT_LNK void eif_exit_eiffel_code(void);
 #define RTGC	if (eif_is_gc_collecting) eif_synchronize_for_gc()
@@ -118,14 +120,12 @@ RT_LNK void eif_exit_eiffel_code(void);
 #define EIF_EXIT_EIFFEL		eif_exit_eiffel_code()
 #define	EIF_ENTER_C			EIF_EXIT_EIFFEL
 #define	EIF_EXIT_C			EIF_ENTER_EIFFEL
-#define	EIF_IS_IN_EIFFEL_CODE		eif_is_in_eiffel_code()
 #else
 #define RTGC
 #define EIF_ENTER_EIFFEL
 #define EIF_EXIT_EIFFEL
 #define EIF_ENTER_C
 #define EIF_EXIT_C
-#define	EIF_IS_IN_EIFFEL_CODE		1
 #endif
 
 /* Function pointer call from C to Eiffel which makes sure that all arguments are correctly
@@ -177,7 +177,6 @@ RT_LNK void eif_exit_eiffel_code(void);
  *  RTXB(x,y) copies bit `x' to `y'
  *  RTMB(x,y) creates bit of length y bits from string value x
  *  RTEB(x,y) are bits `x' and `y' equal?
- *  RTBU(x) box a basic value stored in EIF_TYPED_VALUE and return EIF_REFERENCE
  */
 #define RTLN(x)				emalloc(x)
 #define RTLNS(x,y,z)		emalloc_size(x,y,z)
@@ -194,7 +193,6 @@ RT_LNK void eif_exit_eiffel_code(void);
 #define RTXB(x,y)			b_copy(x,y)
 #define RTEB(x,y)			b_equal(x,y)
 #define RTLX(x)				cr_exp(x)
-#define RTBU(x)				eif_box(x)
 #ifdef WORKBENCH
 #define RTLXI(x)			init_exp(x)
 #else
@@ -221,12 +219,8 @@ RT_LNK int fcount;
  */
 #define RTCL(x)		rtclone(x)
 #define RTCB(x)		b_clone(x)
-#define RTCCL(x)	((x && eif_is_expanded(HEADER(x)->ov_flags))? RTRCL(x): (x))
-#ifdef WORKBENCH
-#	define RTRCL(x)	((egc_twin(x)).it_r)
-#else
-#	define RTRCL(x)	egc_twin(x)
-#endif
+#define RTRCL(x)	egc_twin(x)
+#define RTCCL(x)	((x && eif_is_boxed_expanded(HEADER(x)->ov_flags))? RTRCL(x): (x))
 
 
 /* Macro used for object creation to get the proper creation type:
@@ -335,7 +329,7 @@ RT_LNK int fcount;
 	EIF_REFERENCE * volatile l = loc_set.st_top; \
 	RTYL
 #define RTLXD \
-	EIF_TYPED_ADDRESS * EIF_VOLATILE lv
+	struct item * EIF_VOLATILE lv
 #define RTLXL \
 	lv = cop_stack.st_top
 #define RTLXE \
@@ -539,19 +533,15 @@ RT_LNK int fcount;
 
 #define RTOTW(body_id)
 
-#define RTOTC(name, body_id, v)                                              \
+#define RTOTC(name, body_id, value)                                          \
 	RTOTDV(name)                                                         \
 	EIF_REFERENCE * PResult = MTOR(EIF_REFERENCE,OResult);               \
-	EIF_TYPED_VALUE r;                                                   \
-	r.type = SK_REF;                                                     \
 	if (PResult) {                                                       \
-		r.it_r = *PResult;                                           \
-		return r;                                                    \
+		return *PResult;                                             \
 	}                                                                    \
 	MTOP(EIF_REFERENCE, OResult, RTOC(0));                               \
 	MTOM(OResult);                                                       \
-	r.it_r = RTOTRR = v;                                                 \
-	return r;
+	return RTOTRR = value;
 
 #define RTOTOK
 
@@ -1112,7 +1102,7 @@ RT_LNK int fcount;
 			p = &(EIF_oms[(b)]); \
 			if (!(*p)) { \
 				EIF_REFERENCE * pm; \
-				pm = (EIF_REFERENCE *) eif_calloc (m, sizeof (EIF_REFERENCE *)); \
+				pm = eif_calloc (m, sizeof (EIF_REFERENCE *)); \
 				if (!pm) { \
 					enomem(); \
 				} \
@@ -1151,17 +1141,20 @@ RT_LNK int fcount;
 #define	RTST(c,d,i,n)	striparr(c,d,i,n);
 #define RTXA(x,y)		eif_xcopy(x, y)
 #define RTEQ(x,y)		eif_xequal((x),(y))
-#define RTCEQ(x,y)		(((x) && eif_is_boxed_expanded(HEADER(x)->ov_flags) && (y) && eif_is_boxed_expanded(HEADER(y)->ov_flags) && eif_gen_conf((int16) Dftype(x), (int16) Dftype(y)))? eif_xequal((x),(y)): (x)==(y))
+#define RTCEQ(x,y)		(((x) && eif_is_boxed_expanded(HEADER(x)->ov_flags) && (y) && eif_is_boxed_expanded(HEADER(y)->ov_flags) && eif_gen_conf((int16) Dftype(x), (int16) Dftype(y)))? egc_equal((x),(x),(y)): (x)==(y))
 #define RTIE(x)			((x) != (EIF_REFERENCE) 0 ? eif_is_nested_expanded(HEADER(x)->ov_flags) : 0)
 #define RTOF(x)			(HEADER(x)->ov_size & B_SIZE)
 #define RTEO(x)			((x) - RTOF(x))
 
 
-/* Old Macros for invariant check.
+
+/* Macros for invariant check.
+ *  RTSN saves global variable 'nstcall' within C stack
  *  RTIV(x,y) checks invariant before call on object 'x' if good flags 'y'
  *  RTVI(x,y) checks invariant after call on object 'x' if good flags 'y'
  *  RTCI(x) checks invariant after creation call on object 'x'
  */
+#define RTSN int EIF_VOLATILE is_nested = nstcall
 #ifdef WORKBENCH
 #define RTIV(x,y)		if (is_nested && ((y) & CK_INVARIANT)) chkinv(MTC x,0)
 #define RTVI(x,y)		if (is_nested && ((y) & CK_INVARIANT)) chkinv(MTC x,1)
@@ -1172,16 +1165,6 @@ RT_LNK int fcount;
 #define RTCI(x)			if (~in_assertion) chkinv(MTC x,1)
 #endif
 
-/* New Macros for invariant check.
- *  RTSN saves global variable 'nstcall' within C stack
- *  RTIV(x,y) checks invariant before call on object 'x' if good flags 'y'
- *  RTVI(x,y) checks invariant after call on object 'x' if good flags 'y'
- *  RTCI(x) checks invariant after creation call on object 'x'
- */
-#define RTSN int EIF_VOLATILE is_nested = nstcall
-#define RTIV2(x,y)		if (is_nested && ((y) & CK_INVARIANT)) chkinv(MTC x,0)
-#define RTVI2(x,y)		if (is_nested && ((y) & CK_INVARIANT)) chkinv(MTC x,1)
-#define RTCI2(x)			chkcinv(MTC x)
 
 
 /* Generic conformance
@@ -1205,40 +1188,22 @@ RT_LNK int fcount;
 
 
 
-#ifndef EIF_THREADS
-	RT_LNK int16 caller_assertion_level;	/*Saves information about the assertionlevel of the caller*/
-#endif
-
-
-/* Macros to cache assertion level in generated C routine.
- * RTDA declares integer used to save the assertion level
- * RTAL is the access to the saved assertion level variable.
- * RTAC Checks the assertion level of the caller.
- * RTSC saves assertion level of the current feature.
- * RTRS restores the caller_assertion_level.
- * WASC(x) Assertion level.
- * RTSA(x) saves assertion level for dynamic type 'x'
- */
-
-#define RTDA		struct eif_opt * EIF_VOLATILE opt; \
-		int16 saved_caller_assertion_level = caller_assertion_level
-#define RTAL		(~in_assertion & opt->assert_level)
-#define RTAC		(~in_assertion & saved_caller_assertion_level)
-#define RTSC		caller_assertion_level = RTAL & CK_SUP_REQUIRE
-#define RTRS		caller_assertion_level = saved_caller_assertion_level
-#define WASC(x)		eoption[x].assert_level	
-#ifdef WORKBENCH
-#define RTSA(x)		opt = eoption + x; check_options(opt, x)
-#else
-#define RTSA(x)		opt = eoption + x
-#endif
-
-
- /*
+/*
  * Macros for workbench
  */
 
 #ifdef WORKBENCH
+
+/* Macros to cache assertion level in generated C routine.
+ *  RTDA declares integer used to save the assertion level
+ *  RTSA(x) saves assertion level for dynamic type 'x'
+ *  RTAL is the access to the saved assertion level variable
+ */
+#define RTDA		struct eif_opt * EIF_VOLATILE opt
+#define RTSA(x)		opt = eoption + x; check_options(opt, x)
+#define RTAL		(~in_assertion & opt->assert_level)
+
+
 
 /* Macros used for feature call and various accesses to objects.
  *  RTWF(x,y,z) is a feature call
@@ -1272,6 +1237,7 @@ RT_LNK int fcount;
 #define RTWO(x)
 
 #define WDBG(x,y)			is_debug(x,y)				/* Debug option */
+#define WASC(x)				eoption[x].assert_level		/* Assertion level */
 
 #define WASL(x,y,z)			waslist(x,y,z)		/* Assertion list evaluation */
 #define WASF(x)				wasfree(x)			/* Free assertion list */

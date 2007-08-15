@@ -15,14 +15,12 @@ inherit
 			proceed_with_current_info
 		end
 
-	WIZARD_PROJECT_SHARED
-
 creation
 	make
 
 feature -- basic Operations
 
-	proceed_with_current_info is
+	proceed_with_current_info is 
 		do
 			Precursor
 			proceed_with_new_state(Create {WIZARD_PROJECT_NAME_AND_LOCATION_STATE}.make(wizard_information))
@@ -31,8 +29,16 @@ feature -- basic Operations
 	display_state_text is
 			-- Dispay the text for the current state.
 		do
-			title.set_text (interface_names.t_welcome_to_the_wizard)
-			message.set_text (interface_names.m_wizard_introduction)
+			title.set_text ("Welcome to the New Vision2%NApplication Wizard")
+			message.set_text (
+				"Using this wizard you can create a graphical application%N%
+				%based on the EiffelVision2 library.%N%
+				%%N%
+				%The generated application will run on any Windows system%N%
+				%as well as on any GTK supported platform (Linux, FreeBSD, ...)%N%
+				%%N%
+				%%N%
+				%To continue, click Next.")
 		end
 
 	pixmap_icon_location: FILE_NAME is

@@ -38,7 +38,7 @@ feature -- Status
 
 feature -- Element change
 
-	insert_interrupt_error (a_msg: STRING_GENERAL) is
+	insert_interrupt_error (a_msg: STRING) is
 			-- Insert an `interrup_error' so that current query language process
 			-- can be stopped.
 			-- `a_msg' contains a message.
@@ -115,5 +115,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

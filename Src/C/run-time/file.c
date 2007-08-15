@@ -77,12 +77,10 @@ doc:<file name="file.c" header="eif_file.h" version="$Id$" summary="Externals fo
 #include <assert.h>
 rt_private int err;  		/* for debugging - save errno value */
 rt_private char filnam[FILENAME_MAX +1];
-#ifndef HAS_UTIME
 struct utimbuf {
     time_t actime;      /* access time */
     time_t modtime;     /* modification time */
 };
-#endif
 #include <lib$routines.h>
 #include <descrip.h>
 #include <rmsdef.h>
@@ -753,17 +751,15 @@ rt_public EIF_INTEGER file_gs(FILE *f, char *s, EIF_INTEGER bound, EIF_INTEGER s
 	 * condition.
 	 */
 
-	if ((c == EOF) || (c == '\n')) {
+	if (c == EOF || c == '\n')
 #ifdef EIF_WINDOWS
-		if ((read > 0) && (*(s-1) == '\r')) {
+		if ((read > 0) && (*(s-1) == '\r'))
 			return read - 1;
-		} else {
+		else
 			return read;
-		}
 #else
 		return read;
 #endif
-	}
 	if (amount == -1)
 		return (read + 1);
 

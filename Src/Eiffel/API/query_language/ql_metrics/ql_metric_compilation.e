@@ -59,6 +59,12 @@ feature -- Setting
 			-- Nothing for a complilation metric
 		end
 
+	replace_delayed_domain_by (a_domain: QL_DOMAIN) is
+			-- Replace all delayed domains in `criterion' by `a_domain'.
+		do
+			-- Nothing for a complilation metric		
+		end
+
 	remove_criteria is
 			-- Remove all criteria
 		do
@@ -96,5 +102,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

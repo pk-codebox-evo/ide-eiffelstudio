@@ -13,9 +13,7 @@ inherit
 	EB_CONTEXT_DIAGRAM_COMMAND
 		redefine
 			new_toolbar_item,
-			new_sd_toolbar_item,
-			description,
-			menu_name
+			description
 		end
 
 create
@@ -82,7 +80,7 @@ feature -- Basic operations
 					loop
 						l_class ?= l_sel_figures.item.model
 						if l_class /= Void then
-							if l_class.class_i.is_compiled then
+							if l_class.class_i.compiled then
 								l_class_list.extend (l_class)
 								l_class_added := True
 							end
@@ -94,7 +92,7 @@ feature -- Basic operations
 					end
 				else
 					create explain_dialog.make_with_text (Interface_names.e_Diagram_add_class_figure_relations)
-					explain_dialog.show_modal_to_window (tool.develop_window.window)
+					explain_dialog.show_modal_to_window (tool.development_window.window)
 				end
 			end
 		end
@@ -232,6 +230,7 @@ feature -- Basic operations
 			tool.projector.full_project
 		end
 
+
 	add_and_position_classes (a_class_list: ARRAYED_LIST [ES_CLASS]; a_class_list_list: ARRAYED_LIST [ARRAYED_LIST [ES_CLASS]]) is
 			--
 		require
@@ -356,22 +355,9 @@ feature -- Basic operations
 			Result.drop_actions.extend (agent execute_with_class_list)
 		end
 
-	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new toolbar button for this command.
-			--
-			-- Call `recycle' on the result when you don't need it anymore otherwise
-			-- it will never be garbage collected.
-		do
-			create Result.make (Current)
-			initialize_sd_toolbar_item (Result, display_text)
-			Result.select_actions.extend (agent execute)
-			Result.drop_actions.extend (agent execute_with_class_stone)
-			Result.drop_actions.extend (agent execute_with_class_list)
-		end
-
 feature -- Access
 
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			inspect
@@ -405,23 +391,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			inspect
-				selected_implementation
-			when adds_suppliers then
-				Result := pixmaps.icon_pixmaps.class_supliers_icon_buffer
-			when adds_clients then
-				Result := pixmaps.icon_pixmaps.class_clients_icon_buffer
-			when adds_descendents then
-				Result := pixmaps.icon_pixmaps.class_descendents_icon_buffer
-			when adds_ancestors then
-				Result := pixmaps.icon_pixmaps.class_ancestors_icon_buffer
-			end
-		end
-
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Description for this command.
 		do
 			inspect
@@ -437,25 +407,16 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	menu_name: STRING_GENERAL is
-			-- Name on corresponding menu items
-		do
-			Result := description
-		end
-
 	Name: STRING is "Supplier_visibility"
 			-- Name of the command. Used to store the command in the
 			-- preferences.
 
-feature {EB_DIAGRAM_TOOL} -- Implementation
+feature {EB_CONTEXT_EDITOR} -- Implementation
 
 	selected_implementation: INTEGER
 		-- Implementation used for `Current', set in creation procedure.
 
-	adds_clients: INTEGER is 1
-	adds_suppliers: INTEGER is 2
-	adds_descendents: INTEGER is 3
-	adds_ancestors: INTEGER is 4;
+	adds_clients, adds_suppliers, adds_descendents, adds_ancestors: INTEGER is unique;
 		-- Constants used to define the behavior of `Current'.
 
 indexing

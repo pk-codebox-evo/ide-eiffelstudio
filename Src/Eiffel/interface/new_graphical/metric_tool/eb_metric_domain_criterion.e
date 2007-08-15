@@ -20,7 +20,8 @@ inherit
 	QL_SHARED
 
 create
-	make
+	make,
+	make_with_setting
 
 feature{NONE} -- Initialization
 
@@ -42,23 +43,17 @@ feature -- Access
 			-- QL_CRITERION representing current criterion
 		local
 			l_criterion_factory: QL_CRITERION_FACTORY
-			l_domain: like domain
 		do
 			l_criterion_factory := criterion_factory_table.item (a_scope)
-			l_domain := domain.actual_domain
-			if l_domain.is_empty then
-				Result := l_criterion_factory.criterion_with_name (name, [dummy_domain])
-			else
-				from
-					l_domain.start
-					Result := l_criterion_factory.criterion_with_name (name, [l_domain.item.domain (scope)])
-					l_domain.forth
-				until
-					l_domain.after
-				loop
-					Result := Result or l_criterion_factory.criterion_with_name (name, [l_domain.item.domain (scope)])
-					l_domain.forth
-				end
+			from
+				domain.start
+				Result := l_criterion_factory.criterion_with_name (name, [domain.item.domain (scope)])
+				domain.forth
+			until
+				domain.after
+			loop
+				Result := Result or l_criterion_factory.criterion_with_name (name, [domain.item.domain (scope)])
+				domain.forth
 			end
 			if is_negation_used then
 				Result := not Result
@@ -129,5 +124,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

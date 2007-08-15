@@ -74,7 +74,7 @@ feature -- Element change
 			manager.remove_observer (Current)
 		end
 
-feature {EB_DIAGRAM_TOOL} -- Save/Restore
+feature {EB_CONTEXT_EDITOR} -- Save/Restore
 
 	xml_node_name: STRING is
 			-- Name of the node returned by `xml_element'.
@@ -92,7 +92,7 @@ feature {EB_DIAGRAM_TOOL} -- Save/Restore
 			node.put_last (Xml_routines.xml_node (node, "SUPPLIER_DEPTH", model.supplier_depth.out))
 			node.put_last (Xml_routines.xml_node (node, "ALL_CLASSES_IN_CLUSTER", model.include_all_classes_of_cluster.out))
 			node.put_last (Xml_routines.xml_node (node, "ONLY_CLASSES_IN_CLUSTER", model.include_only_classes_of_cluster.out))
-			node.put_last (xml_routines.xml_node (node, "CENTER_CLASS_NAME", model.center_class.class_i.name))
+			node.put_last (xml_routines.xml_node (node, "CENTER_CLASS_NAME", model.center_class.class_i.name_in_upper))
 			node.put_last (xml_routines.xml_node (node, "CENTER_CLASS_GROUP_ID", model.center_class.group_id))
 
 			Result := Precursor {EIFFEL_WORLD} (node)
@@ -230,7 +230,7 @@ feature {NONE} -- Implementation
 			is_new_dropped := True
 			drop_x := context_editor.pointer_position.x
 			drop_y := context_editor.pointer_position.y
-			create dial.make_default (context_editor.develop_window)
+			create dial.make_default (context_editor.development_window)
 			l_cluster ?= model.center_class.class_i.group
 			check
 				l_cluster_not_void: l_cluster /= Void

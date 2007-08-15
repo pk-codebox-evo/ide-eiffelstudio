@@ -17,11 +17,6 @@ inherit
 			interface
 		end
 
-	EV_POSITIONED_I
-		redefine
-			interface
-		end
-
 	EV_SHARED_TRANSPORT_I
 
 	EV_PICK_AND_DROPABLE_ACTION_SEQUENCES_I
@@ -42,8 +37,6 @@ feature -- Access
 		do
 			Result := internal_pebble_positioning_enabled
 		end
-
-	configurable_target_menu_handler: PROCEDURE [ANY, TUPLE [menu: EV_MENU; target_list: ARRAYED_LIST [EV_PND_TARGET_DATA]; source: EV_PICK_AND_DROPABLE; source_pebble: ANY]]
 
 	accept_cursor: EV_POINTER_STYLE
 			-- Accept cursor set by user.
@@ -67,14 +60,6 @@ feature -- Access
 		end
 
 feature -- Status setting
-
-	show_configurable_target_menu (a_x, a_y: INTEGER)
-			-- Show the configurable target menu at position `a_x', `a_y' relative to `Current'.
-		do
-			if application_implementation.pick_and_drop_source = Void then
-				start_transport (a_x, a_y, 3, False, 0, 0, 0, screen_x + a_x, screen_y + a_y, True)
-			end
-		end
 
 	set_pebble_position (a_x, a_y: INTEGER) is
 			-- Set the initial position for pick and drop relative to `Current'.
@@ -125,22 +110,6 @@ feature -- Status setting
 			is_transport_disabled: not is_transport_enabled
 		end
 
-	reset_pebble_function
-			-- Reset any values created by calling `pebble_function'.
-		local
-			l_pebble_function: like pebble_function
-		do
-			l_pebble_function := pebble_function
-			if l_pebble_function /= Void then
-				l_pebble_function.clear_last_result
-				pebble := Void
-			end
-		ensure
-			pebble_function_preserved: pebble_function = old pebble_function
-			pebble_without_function: pebble_function = Void implies (pebble = old pebble)
-			pebble_with_function: pebble_function /= Void implies pebble = Void
-		end
-
 	enable_transport is
             		-- Activate pick/drag and drop mechanism.
 		require
@@ -174,25 +143,11 @@ feature -- Status setting
 		end
 
 	set_target_menu_mode is
-			-- Set transport mechanism to a target_menu.
+			-- Set transport mechanism to target_menu.
 		do
 			user_interface_mode := target_menu_mode
 		ensure
 			mode_is_target_menu: mode_is_target_menu
-		end
-
-	set_configurable_target_menu_mode is
-			-- Set transport mechanism to a configurable target_menu.
-		do
-			user_interface_mode := configurable_target_menu_mode
-		ensure
-			mode_is_target_menu: mode_is_configurable_target_menu
-		end
-
-	set_configurable_target_menu_handler (a_handler: like configurable_target_menu_handler)
-			-- Set Configurable Target Menu Handler to `a_handler'.
-		do
-			configurable_target_menu_handler := a_handler
 		end
 
 	set_accept_cursor (a_cursor: like accept_cursor) is
@@ -229,7 +184,7 @@ feature -- Status report
 	mode_is_pick_and_drop: BOOLEAN is
 			-- Is the transport mechanism pick and drop?
 		do
-			Result := user_interface_mode = pick_and_drop_mode or else user_interface_mode = configurable_target_menu_mode
+			Result := user_interface_mode = pick_and_drop_mode
 		end
 
 	mode_is_drag_and_drop: BOOLEAN is
@@ -239,15 +194,9 @@ feature -- Status report
 		end
 
 	mode_is_target_menu: BOOLEAN is
-			-- Is the transport mechanism a target menu?
+			-- Is the transport mechanism target menu?
 		do
 			Result := user_interface_mode = target_menu_mode
-		end
-
-	mode_is_configurable_target_menu: BOOLEAN is
-			-- Is the transport mechanism a configurable target menu?
-		do
-			Result := user_interface_mode = configurable_target_menu_mode
 		end
 
 feature {EV_ANY_I} -- Implementation
@@ -264,12 +213,11 @@ feature {EV_ANY_I} -- Implementation
 	pick_and_drop_mode: INTEGER_8 is 0
 	drag_and_drop_mode: INTEGER_8 is 1
 	target_menu_mode: INTEGER_8 is 2
-	configurable_target_menu_mode: INTEGER_8 is 3
 
 	start_transport (
-		a_x, a_y, a_button: INTEGER; a_press: BOOLEAN;
+		a_x, a_y, a_button: INTEGER;
 		a_x_tilt, a_y_tilt, a_pressure: DOUBLE;
-		a_screen_x, a_screen_y: INTEGER; a_menu_only: BOOLEAN)
+		a_screen_x, a_screen_y: INTEGER)
 	is
 			-- Start a pick and drop transport.
 		deferred
@@ -296,11 +244,9 @@ feature {EV_ANY_I} -- Implementation
 			real_target: EV_PICK_AND_DROPABLE
 			application: EV_APPLICATION_IMP
 		do
-			erase_rubber_band
+			draw_rubber_band
 			pointer_x := a_screen_x.to_integer_16
 			pointer_y := a_screen_y.to_integer_16
-			application_implementation.set_pnd_pointer_coords (a_screen_x, a_screen_y)
-			draw_rubber_band
 
 			target := pointed_target
 			real_target ?= target
@@ -384,30 +330,6 @@ feature {EV_ANY_I} -- Implementation
 			end
 		end
 
-	modify_widget_appearance (starting: BOOLEAN) is
-			-- Modify the appearence of widgets to reflect current
-			-- state of pick and drop and dropable targets.
-			-- If `starting' then the pick and drop is starting,
-			-- else it is ending.
-		local
-			window_imp: EV_WINDOW_IMP
-			windows: LINEAR [EV_WINDOW]
-		do
-			windows := application_implementation.windows
-			from
-				windows.start
-			until
-				windows.off
-			loop
-				window_imp ?= windows.item.implementation
-				check
-					window_implementation_not_void: window_imp /= Void
-				end
-				window_imp.update_for_pick_and_drop (starting)
-				windows.forth
-			end
-		end
-
 feature {EV_WIDGET, EV_WIDGET_I}
 
 	set_pointer_style (c: EV_POINTER_STYLE) is
@@ -431,12 +353,6 @@ feature {EV_WIDGET, EV_WIDGET_I}
 		end
 
 feature {EV_ANY_I} -- Implementation
-
-	application_implementation: EV_APPLICATION_I is
-			-- Application implementation object.
-		do
-			Result := environment.application.implementation
-		end
 
 	environment: EV_ENVIRONMENT is
 			-- Environment object.

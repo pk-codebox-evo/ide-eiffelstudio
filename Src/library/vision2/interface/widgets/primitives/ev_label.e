@@ -22,8 +22,7 @@ inherit
 	EV_PRIMITIVE
 		redefine
 			implementation,
-			is_in_default_state,
-			is_in_default_state_for_tabs
+			is_in_default_state
 		end
 
 	EV_TEXT_ALIGNABLE
@@ -51,12 +50,6 @@ feature {NONE} -- Contract support
 				Precursor {EV_TEXT_ALIGNABLE} and
 				Precursor {EV_FONTABLE} and is_center_aligned
 		end
-
-	is_in_default_state_for_tabs: BOOLEAN is
-		do
-			Result := not is_tabable_from and not is_tabable_to
-		end
-
 
 --feature -- Element change
 --

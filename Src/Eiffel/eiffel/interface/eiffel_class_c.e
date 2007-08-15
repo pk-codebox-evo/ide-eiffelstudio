@@ -13,7 +13,6 @@ inherit
 		rename
 			group as cluster, make as init_class_c
 		redefine
-			apply_msil_application_optimizations,
 			cluster, original_class,
 			is_eiffel_class_c,
 			eiffel_class_c,
@@ -22,7 +21,6 @@ inherit
 			melt_all, check_generics, check_generic_parameters,
 			check_creation_constraint_genericity,
 			check_constraint_genericity,
-			check_constraint_renaming,
 			feature_of_feature_id,
 			feature_with_rout_id
 		end
@@ -42,7 +40,7 @@ create
 
 feature -- Initialization
 
-	make (l: like original_class) is
+	make (l: CLASS_I) is
 			-- Creation of Current class
 		require
 			good_argument: l /= Void
@@ -52,10 +50,6 @@ feature -- Initialization
 		end
 
 feature -- Access
-
-	new_byte_code_needed: BOOLEAN
-			-- Should code be regenerated at degree 3 for all features to be generated in Current
-			-- even if they did not change?
 
 	original_class: EIFFEL_CLASS_I
 			-- Original class.
@@ -78,7 +72,7 @@ feature -- Access
 	inline_agent_table: HASH_TABLE [FEATURE_I, INTEGER]
 			-- Table of inline agents indexed by their alias names
 
-	remove_inline_agents_of_feature (body_id: INTEGER; a_removed: HASH_TABLE [FEATURE_I, INTEGER]) is
+	remove_inline_agents_of_feature (a_feature_i: FEATURE_I; a_removed: HASH_TABLE [FEATURE_I, INTEGER]) is
 			-- Removes all the inline agents of a given feature
 		local
 			l_feat: FEATURE_I
@@ -89,7 +83,7 @@ feature -- Access
 				inline_agent_table.after
 			loop
 				l_feat := inline_agent_table.item_for_iteration
-				if l_feat.enclosing_body_id = body_id then
+				if l_feat.enclosing_body_id = a_feature_i.body_index then
 					if a_removed /= Void then
 							-- for each removed inline-agent feature we safe its
 							-- routine id along with its inline_agent_nr
@@ -97,9 +91,8 @@ feature -- Access
 					end
 					inline_agent_table.remove (inline_agent_table.key_for_iteration)
 					system.execution_table.add_dead_function (l_feat.body_index)
-				else
-					inline_agent_table.forth
 				end
+				inline_agent_table.forth
 			end
 		end
 
@@ -127,29 +120,6 @@ feature -- Access
 					Result := feat.api_feature (class_id)
 				end
 			end
-		end
-
-feature -- Settings
-
-	set_new_byte_code_needed (v: like new_byte_code_needed) is
-			-- Set `new_byte_code_needed' with `v'.
-		do
-			new_byte_code_needed := v
-		ensure
-			new_byte_code_needed_set: new_byte_code_needed = v
-		end
-
-feature -- Status report
-
-	apply_msil_application_optimizations: BOOLEAN is
-			-- Should MSIL application optimizations be applied?
-		do
-				-- Optimizations will take place on non-deferfed classes that are tag with having optimizations
-				-- applied. Optimizations will be performed on finalize or precompile (because wb precompiles can be uses
-				-- as a single binary) and only when there are no descendants.
-			Result := (not is_deferred and not is_expanded and is_eiffel_class_c) and then lace_class.options.is_msil_application_optimize and then system.il_generation and then
-				(system.byte_context.final_mode or universe.compilation_modes.is_precompiling) and then
-				((descendants = Void or else descendants.is_empty) or internal_is_frozen)
 		end
 
 feature -- Action
@@ -302,8 +272,7 @@ feature -- Action
 						-- check if the directory for the system has been created
 					create l_dir_name.make_from_string (workbench.backup_subdirectory)
 
-						-- if this is the system of the application target, create an empty file with
-						-- the uuid to make it easier to find the application configuration file.
+						-- if this is the system of the application target, create an empty file with the uuid to make it easier to find the application configuration file.
 					l_system := lace_class.cluster.target.system
 					l_uuid := l_system.uuid.out
 					if l_system = l_system.application_target.system then
@@ -339,6 +308,7 @@ feature -- Action
 				end
 			end
 		end
+
 
 	end_of_pass1 (ast_b: CLASS_AS) is
 				-- End of the first pass after syntax analysis
@@ -495,11 +465,12 @@ feature -- Third pass: byte code production and type check
 			new_suppliers: like suppliers
 			feature_name_id: INTEGER
 			f_suppliers: FEATURE_DEPENDANCE
-			removed_features: SEARCH_TABLE [INTEGER]
+			removed_features: SEARCH_TABLE [FEATURE_I]
 			type_check_error: BOOLEAN
 			check_local_names_needed: BOOLEAN
 			byte_code_generated: BOOLEAN
 			inline_agent_byte_code: LINKED_LIST [BYTE_CODE]
+			old_inline_agents: HASH_TABLE [FEATURE_I, INTEGER]
 			old_inline_agent_table: like inline_agent_table
 
 				-- Invariant
@@ -550,8 +521,6 @@ feature -- Third pass: byte code production and type check
 				feat_table.after
 			loop
 				feature_i := feat_table.item_for_iteration
-				ast_context.set_written_class (feature_i.written_class)
-				ast_context.set_current_feature (feature_i)
 				type_checked := False
 
 				if feature_i.to_melt_in (Current) then
@@ -565,11 +534,8 @@ feature -- Third pass: byte code production and type check
 						feature_i.create_default_rescue (def_resc.feature_name_id)
 					end
 
-						-- For a changed feature written in the class or for all
-						-- features of the class when `new_byte_code_needed' is true
-						-- (This fixes test#incr279 for which some nodes needed to
-						-- be updated to reflect the change of generic parameters).
-					feature_changed := 	changed_features.has (feature_name_id) or new_byte_code_needed
+						-- For a feature written in the class
+					feature_changed := 	changed_features.has (feature_name_id)
 
 					if not feature_changed then
 							-- Force a change on all feature of current class if line
@@ -607,6 +573,8 @@ feature -- Third pass: byte code production and type check
 						feature_changed := True
 					end
 
+					ast_context.set_current_feature (feature_i)
+
 						-- No type check for constants and attributes.
 						-- [It is done in second pass.]
 					if feature_i.is_routine then
@@ -619,9 +587,9 @@ feature -- Third pass: byte code production and type check
 						then
 								-- Type check
 							Error_handler.mark
-							ast_context.old_inline_agents.wipe_out
-							remove_inline_agents_of_feature (feature_i.body_index, ast_context.old_inline_agents)
-
+							create old_inline_agents.make (1)
+							remove_inline_agents_of_feature (feature_i, old_inline_agents)
+							ast_context.set_old_inline_agents (old_inline_agents)
 							feature_checker.type_check_and_code (feature_i)
 							type_checked := True
 							type_check_error := Error_handler.new_error
@@ -690,6 +658,8 @@ feature -- Third pass: byte code production and type check
 						record_suppliers (feature_i, dependances)
 					end
 
+					ast_context.clear_feature_context
+
 					if
 						(feature_changed or else byte_code_generated)
 						and then not (type_check_error or else feature_i.is_deferred)
@@ -697,14 +667,8 @@ feature -- Third pass: byte code production and type check
 							-- Remember the melted feature information
 							-- if it is not deferred. If it is an external, then
 							-- we need to trigger a freeze.
-							-- If it is visible via CECIL, we need to trigger
-							-- freeze as well.
-						if
-							not system.is_freeze_requested and then
-							(feature_i.is_external or else
-							visible_level.is_visible (feature_i, class_id))
-						then
-							system.request_freeze
+						if feature_i.is_external then
+							system.set_freeze
 						end
 						add_feature_to_melted_set (feature_i)
 					end
@@ -713,13 +677,19 @@ feature -- Third pass: byte code production and type check
 
 					if not type_checked and then changed3 and then feature_i.is_routine then
 							-- Forced type check on the feature
+						ast_context.set_current_feature (feature_i)
 						feature_checker.type_check_only (feature_i, False)
 						check_local_names_needed := False
+						ast_context.clear_feature_context
 					elseif check_local_names_needed then
+						ast_context.set_current_feature (feature_i)
 						feature_i.check_local_names (feature_i.real_body)
+						ast_context.clear_feature_context
 					end
+
 				elseif not feature_i.is_routine then
 					if feature_i.body_index /= 0 then
+						ast_context.set_current_feature (feature_i)
 						if
 							feature_changed
 							or else
@@ -728,8 +698,9 @@ feature -- Third pass: byte code production and type check
 								and then propagators.changed_status_empty_intersection (f_suppliers.suppliers)))
 						then
 							error_handler.mark
-							ast_context.old_inline_agents.wipe_out
-							remove_inline_agents_of_feature (feature_i.body_index, ast_context.old_inline_agents)
+							create old_inline_agents.make (1)
+							remove_inline_agents_of_feature (feature_i, old_inline_agents)
+							ast_context.set_old_inline_agents (old_inline_agents)
 							feature_checker.type_check_and_code (feature_i)
 							type_checked := True
 							type_check_error := error_handler.new_error
@@ -756,14 +727,17 @@ feature -- Third pass: byte code production and type check
 						else
 							feature_checker.type_check_only (feature_i, False)
 						end
+						ast_context.clear_feature_context
 					end
 					record_suppliers (feature_i, dependances)
-				elseif is_full_class_checking then
-						-- We check inherited routines in the context of current class.
-					feature_checker.type_check_only (feature_i, class_id /= feature_i.written_in)
+				elseif feature_i.is_deferred and then class_id = feature_i.written_in then
+						-- Just type check it. See if VRRR or
+						-- VMRX error has occurred.
+					ast_context.set_current_feature (feature_i)
+					feature_checker.type_check_only (feature_i, False)
+					ast_context.clear_feature_context
 					record_suppliers (feature_i, dependances)
 				end
-				ast_context.clear_feature_context
 				feat_table.forth
 			end -- Main loop
 
@@ -783,8 +757,8 @@ feature -- Third pass: byte code production and type check
 					new_suppliers := suppliers.same_suppliers
 				end
 				if invariant_feature /= Void then
-					ast_context.old_inline_agents.wipe_out
-					remove_inline_agents_of_feature (invariant_feature.body_index, Void)
+					ast_context.set_old_inline_agents (Void)
+					remove_inline_agents_of_feature (invariant_feature, Void)
 				end
 				if f_suppliers /= Void then
 					new_suppliers.remove_occurrence (f_suppliers)
@@ -793,7 +767,8 @@ feature -- Third pass: byte code production and type check
 			else
 				invariant_changed := propagators.invariant_changed
 				if not (invariant_changed or else f_suppliers = Void) then
-					invariant_changed := not propagators.melted_empty_intersection (f_suppliers)
+					invariant_changed :=
+						not propagators.melted_empty_intersection (f_suppliers)
 				end
 
 				if not invariant_changed then
@@ -802,14 +777,14 @@ feature -- Third pass: byte code production and type check
 						-- line information on non-changed features.
 						-- This should also be done for IL code generation, otherwise
 						-- debug info is inconsistent.
-						-- We also do it if `new_byte_code_needed' has been set.
 					invariant_changed := invariant_feature /= Void and then
-						(System.line_generation or System.il_generation or new_byte_code_needed)
+						(System.line_generation or System.il_generation)
 				end
 				if invariant_changed then
 					if invariant_feature = Void then
 						create invariant_feature.make (Current)
-						invariant_feature.set_body_index (Body_index_counter.next_id)
+						invariant_feature.set_body_index
+											(Body_index_counter.next_id)
 						invariant_feature.set_feature_id (feature_id_counter.next)
 					end
 				end
@@ -822,8 +797,9 @@ feature -- Third pass: byte code production and type check
 					invar_clause := Inv_ast_server.item (class_id)
 					Error_handler.mark
 
-					ast_context.old_inline_agents.wipe_out
-					remove_inline_agents_of_feature (invariant_feature.body_index, ast_context.old_inline_agents)
+					create old_inline_agents.make (1)
+					remove_inline_agents_of_feature (invariant_feature, old_inline_agents)
+					ast_context.set_old_inline_agents (old_inline_agents)
 					feature_checker.invariant_type_check (invariant_feature, invar_clause, True)
 
 					if not Error_handler.new_error then
@@ -889,11 +865,12 @@ feature -- Third pass: byte code production and type check
 				until
 					removed_features.after
 				loop
-					body_index := removed_features.item_for_iteration
+					feature_i := removed_features.item_for_iteration
 
-					remove_inline_agents_of_feature (body_index, Void)
-					ast_context.old_inline_agents.wipe_out
+					remove_inline_agents_of_feature (feature_i, Void)
+					ast_context.set_old_inline_agents (Void)
 
+					body_index := feature_i.body_index
 					f_suppliers := dependances.item (body_index)
 					if f_suppliers /= Void then
 						if new_suppliers = Void then
@@ -1081,7 +1058,7 @@ feature -- Third pass: byte code production and type check
 			else
 				class_custom_attributes := Void
 			end
-			if System.root_type /= Void and then System.root_type.associated_class = Current then
+			if System.root_class /= Void and then System.root_class.compiled_class = Current then
 					-- We are processing the root class, let's figure out if there are some
 					-- assembly custom attributes.
 				if l_ast.assembly_custom_attributes /= Void then
@@ -1203,14 +1180,9 @@ feature -- Melting
 				feature_i := tbl.item_for_iteration
 					-- External feature and inherited one don't need to be melted.
 				if feature_i.to_generate_in (Current) then
-					if
-						not system.is_freeze_requested and then
-						(feature_i.is_external or else
-						visible_level.is_visible (feature_i, class_id))
-					then
+					if feature_i.is_external then
 							-- Feature is external, we need to trigger a freeze
-							-- or feature is used by CECIL, we need to trigger a freeze as well
-						system.request_freeze
+						system.set_freeze
 					end
 					add_feature_to_melted_set (feature_i)
 				end
@@ -1414,8 +1386,7 @@ feature {NONE} -- Class initialization
 			old_is_deferred: BOOLEAN
 			old_is_frozen: BOOLEAN
 			old_parents: like parents_classes
-			l_class: CLASS_C
-			l_eiffel_class: EIFFEL_CLASS_C
+			a_client: CLASS_C
 			changed_status, changed_frozen: BOOLEAN
 			is_exp, changed_generics, changed_expanded: BOOLEAN
 			gens: like generics
@@ -1500,10 +1471,10 @@ feature {NONE} -- Class initialization
 			else
 				is_external := ast_b.is_external
 			end
-			old_is_frozen := internal_is_frozen
-			internal_is_frozen := ast_b.is_frozen
+			old_is_frozen := is_frozen
+			is_frozen := ast_b.is_frozen
 
-			if (old_parents /= Void and then old_is_frozen /= internal_is_frozen) then
+			if (old_parents /= Void and then old_is_frozen /= is_frozen) then
 				changed_status := True
 				changed_frozen := True
 			end
@@ -1515,23 +1486,23 @@ feature {NONE} -- Class initialization
 				until
 					syntactical_clients.after
 				loop
-					l_class := syntactical_clients.item
+					a_client := syntactical_clients.item
 					if changed_expanded then
 							-- `changed' is set to True so that a complete
 							-- pass2 is done on the client. `feature_unit'
 							-- will find the type changes
-						if not l_class.changed then
-							l_class.set_changed (True)
+						if not a_client.changed then
+							a_client.set_changed (True)
 								-- The ast is in the temporary server
 								-- so Degree 4 can be done the same way
-							Degree_5.insert_changed_class (l_class)
+							Degree_5.insert_changed_class (a_client)
 						end
 					else
 						set_changed2 (True)
 					end
-					Degree_4.set_supplier_status_modified (l_class)
-					Degree_3.insert_new_class (l_class)
-					Degree_2.insert_new_class (l_class)
+					Degree_4.set_supplier_status_modified (a_client)
+					Degree_3.insert_new_class (a_client)
+					Degree_2.insert_new_class (a_client)
 					syntactical_clients.forth
 				end
 
@@ -1581,8 +1552,6 @@ feature {NONE} -- Class initialization
 				end
 			end
 			if changed_generics then
-				invalidate_caches_related_to_generics
-
 					-- Here we check `syntactical_clients' because we only need
 					-- to check that declarations are valid.
 				from
@@ -1590,33 +1559,27 @@ feature {NONE} -- Class initialization
 				until
 					syntactical_clients.after
 				loop
-					l_class := syntactical_clients.item
-					Workbench.add_class_to_recompile (l_class.original_class)
-					l_class.set_changed (True)
-					l_class.set_changed3a (True)
-					l_class.set_need_type_check (True)
-						-- The code below will force a recompilation of features written in
-						-- all syntactical clients whereas we only wanted to do that for `descendants'.
-						-- Unfortunately `descendants' is reset at degree 5 and thus we have to do it for
-						-- all syntactical clients.
-						-- We need to recompile the features because their code might still contain
-						-- reference to the former generics. This fixes eweasel test#incr279.
-					l_eiffel_class ?= l_class
-					if l_eiffel_class /= Void then
-						l_eiffel_class.set_new_byte_code_needed (True)
-					end
+					a_client := syntactical_clients.item
+					Workbench.add_class_to_recompile (a_client.original_class)
+					a_client.set_changed (True)
+					a_client.set_changed3a (True)
+					a_client.set_need_type_check (True)
 					syntactical_clients.forth
 				end
-
 					-- We need to reset its `types' so that they are recomputed.
 				remove_types
-
-					-- All the routines need to be regenerated.
-				set_new_byte_code_needed (True)
 
 					-- We need to get rid of content of `filters' since it may contain
 					-- incorrect data using Formals that are not there anymore.
 				filters.make
+
+				fixme ("[
+						Manu: 01/12/2004:
+						This is not complete. We also need to type check and regenerate
+						the byte code for all the routines of descendants classes as even
+						though they haven't changed their code may refer to the former
+						generic type.
+					]")
 			end
 
 			if changed_frozen then
@@ -1628,9 +1591,9 @@ feature {NONE} -- Class initialization
 				until
 					clients.after
 				loop
-					l_class := clients.item
-					Workbench.add_class_to_recompile (l_class.original_class)
-					l_class.set_changed (True)
+					a_client := clients.item
+					Workbench.add_class_to_recompile (a_client.original_class)
+					a_client.set_changed (True)
 					clients.forth
 				end
 					-- We need to reset its `types' so that they are recomputed.
@@ -1663,11 +1626,11 @@ feature {NONE} -- Class initialization
 				generic_name := generic_dec.name
 
 					-- First, check if the formal generic name is not the
-					-- a name of a class in the surrounding universe.
-				if Universe.class_named (generic_name.name, cluster) /= Void then
+					-- anme of a class in the surrounding universe.
+				if Universe.class_named (generic_name, cluster) /= Void then
 					create vcfg1
 					vcfg1.set_class (Current)
-					vcfg1.set_formal_name (generic_name.name)
+					vcfg1.set_formal_name (generic_name)
 					vcfg1.set_location (generic_name)
 					Error_handler.insert_error (Vcfg1)
 					error := True
@@ -1685,7 +1648,7 @@ feature {NONE} -- Class initialization
 						if next_dec.name.is_equal (generic_name) then
 							create vcfg2
 							vcfg2.set_class (Current)
-							vcfg2.set_formal_name (generic_name.name)
+							vcfg2.set_formal_name (generic_name)
 							vcfg2.set_location (generic_name)
 							Error_handler.insert_error (vcfg2)
 							error := True
@@ -1709,14 +1672,14 @@ feature {NONE} -- Class initialization
 					until
 						f_list.after
 					loop
-						if duplicate_name.has (f_list.item.internal_name.name) then
+						if duplicate_name.has (f_list.item.internal_name) then
 							create vgcp3
 							vgcp3.set_class (Current)
-							vgcp3.set_feature_name (f_list.item.internal_name.name)
+							vgcp3.set_feature_name (f_list.item.internal_name)
 							vgcp3.set_location (f_list.item.start_location)
 							Error_handler.insert_error (vgcp3)
 						else
-							duplicate_name.put (f_list.item.internal_name.name)
+							duplicate_name.put (f_list.item.internal_name)
 						end
 						f_list.forth
 					end
@@ -1744,10 +1707,10 @@ feature {NONE} -- Class initialization
 				generic_dec := l_area.item (i)
 				generic_name := generic_dec.name
 
-				if Universe.class_named (generic_name.name, cluster) /= Void then
+				if Universe.class_named (generic_name, cluster) /= Void then
 					create vcfg1
 					vcfg1.set_class (Current)
-					vcfg1.set_formal_name (generic_name.name)
+					vcfg1.set_formal_name (generic_name)
 					vcfg1.set_location (generic_name)
 					Error_handler.insert_error (Vcfg1)
 				end
@@ -1776,7 +1739,6 @@ feature {NONE} -- Class initialization
 					generic_dec_not_void: generic_dec /= Void
 				end
 				if generic_dec.has_constraint and then generic_dec.has_creation_constraint then
-						-- `check_constraint_genericity' has already been called in degree4
 					generic_dec.check_constraint_creation (Current)
 				end
 				i := i + 1
@@ -1785,38 +1747,26 @@ feature {NONE} -- Class initialization
 
 	check_constraint_genericity is
 			-- Check validity of constraint genericity
+		local
+			generic_dec: FORMAL_DEC_AS
+			constraint_type: TYPE_AS
+			l_area: SPECIAL [FORMAL_DEC_AS]
+			i, nb: INTEGER
 		do
 			Inst_context.set_group (cluster)
-			generics.do_all (
-				agent (a_generic_dec: FORMAL_DEC_AS)
-					do
-						a_generic_dec.constraints.do_all (
-							agent (a_constraint: CONSTRAINING_TYPE_AS)
-								local
-									l_constraint_type: TYPE_AS
-								do
-									l_constraint_type := a_constraint.type
-									if l_constraint_type /= Void then
-										type_a_checker.check_constraint_type (Current, l_constraint_type, error_handler)
-									end
-								end)
-					end)
-		end
-
-	check_constraint_renaming
-			-- Check validity of constraint renaming
-		do
-				Inst_context.set_group (cluster)
-			generics.do_all (
-				agent (a_generic_dec: FORMAL_DEC_AS)
-					local
-						l_formal_constraint_as: FORMAL_CONSTRAINT_AS
-					do
-						l_formal_constraint_as ?= a_generic_dec
-						if l_formal_constraint_as /= Void and then l_formal_constraint_as.has_constraint then
-							l_formal_constraint_as.check_constraint_renaming (Current)
-						end
-					end)
+			from
+				l_area := generics.area
+				nb := generics.count
+			until
+				i = nb
+			loop
+				generic_dec := l_area.item (i)
+				constraint_type := generic_dec.constraint
+				if constraint_type /= Void then
+					type_a_checker.check_constraint_type (Current, constraint_type, error_handler)
+				end
+				i := i + 1
+			end
 		end
 
 feature -- Supplier checking
@@ -1855,8 +1805,6 @@ feature -- Supplier checking
 	check_suppliers (supplier_list: SEARCH_TABLE [ID_AS]; a_light_suppliers: BOOLEAN) is
 			-- Check the supplier ids of the current parsed class
 			-- and add perhaps classes to the system.
-			--
-			-- `supplier_list' a list of suppliers to check.
 			-- `a_light_suppliers' indicates that we only record classes that are already compiled and in the system.
 		require
 			good_argument: not
@@ -1868,7 +1816,7 @@ feature -- Supplier checking
 				supplier_list.after
 			loop
 					-- Check supplier class_name `supplier_list.item_for_iteration' of the class
-				check_one_supplier (supplier_list.item_for_iteration.name, a_light_suppliers)
+				check_one_supplier (supplier_list.item_for_iteration, a_light_suppliers)
 				supplier_list.forth
 			end
 		end
@@ -1888,7 +1836,7 @@ feature -- Supplier checking
 			until
 				i = nb
 			loop
-				check_one_supplier (l_area.item (i).type.class_name.name, False)
+				check_one_supplier (l_area.item (i).type.class_name, False)
 				i := i + 1
 			end
 		end
@@ -1960,7 +1908,7 @@ feature -- Inline agents
 		require
 			valid_feature: a_feature /= Void
 		do
-			inline_agent_table.force (a_feature, a_feature.feature_name_id)
+			inline_agent_table.put (a_feature, a_feature.feature_name_id)
 		ensure
 			agent_added: inline_agent_table.has (a_feature.feature_name_id)
 		end
@@ -2128,12 +2076,9 @@ feature {NONE} -- Backup implementation
 			create l_dir.make (l_dir_name)
 			l_dir.create_directory
 
-				-- copy file using as target the eiffel class name, as in a cluster/library there
-				-- cannot be two classes with the same name, but you can have two classes with the same
-				-- file name.
+				-- copy file
 			create l_fname.make_from_string (l_dir_name)
-			l_fname.extend (a_class.name.as_lower)
-			l_fname.add_extension ("e")
+			l_fname.extend (a_class.file_name)
 			file_system.copy_file (a_class.full_file_name, l_fname)
 
 				-- if the class does override, also copy the overriden classes
@@ -2144,14 +2089,7 @@ feature {NONE} -- Backup implementation
 				until
 					l_over.after
 				loop
-						-- Compute actual location of cluster where overriden class is located.
-					create l_dir_name.make_from_string (workbench.backup_subdirectory)
-					l_dir_name.extend (l_over.item.group.target.system.uuid.out)
-					create l_dir.make (l_dir_name)
-					if not l_dir.exists then
-						l_dir.create_directory
-					end
-					copy_class (l_over.item, l_dir_name)
+					copy_class (l_over.item, a_location)
 					l_over.forth
 				end
 			end
@@ -2168,6 +2106,7 @@ feature {NONE} -- Backup implementation
 			l_fact: CONF_COMP_FACTORY
 			l_system: CONF_SYSTEM
 			l_vis: CONF_BACKUP_VISITOR
+			l_targets: HASH_TABLE [CONF_TARGET, STRING]
 		do
 				-- copy original configuration file
 			create l_file_name.make_from_string (a_location)
@@ -2181,6 +2120,9 @@ feature {NONE} -- Backup implementation
 			l_load.retrieve_configuration (l_file_name)
 			if not l_load.is_error then
 				l_system := l_load.last_system
+				l_targets:= l_system.targets
+				l_targets.start
+				l_system.set_application_target (l_targets.item_for_iteration)
 				create l_vis
 				l_vis.set_backup_directory (create {DIRECTORY_NAME}.make_from_string (a_location))
 				l_system.process (l_vis)

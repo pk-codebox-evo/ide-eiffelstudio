@@ -78,22 +78,19 @@ feature -- Status
 feature -- Access
 
 	file_name: STRING
-			-- Full path to the universe/system description.
-
-	directory_name: STRING
-			-- Full path to the universe/system description parent directory.
+			-- Full path to the universe/system description
 
 	target_name: STRING
-			-- Target to use. (optional, if only one target).
+			-- Target to use. (optional, if only one target)
 
 	project_path: STRING
-			-- Project path to use. (optional).
+			-- Project path to use. (optional)
 
 	date: INTEGER
-			-- Time stamp of file named `file_name'.
+			-- Time stamp of file named `file_name'
 
 	successful: BOOLEAN
-			-- Is the last compilation successful?.
+			-- Is the last compilation successful?
 
 	has_changed: BOOLEAN
 			-- Did configuraiton change?
@@ -194,13 +191,11 @@ feature -- Status setting
 
 	set_file_name (s: STRING) is
 			-- Assign `s' to `file_name'.
-			-- if s is relative, the file_name will be absolute.
-			-- Assign parent directory of file_name
+			-- if s is relative, the file_name will be absolut.
 		require
 			s_not_void: s /= Void
 		do
 			file_name := file_system.absolute_pathname (s)
-			directory_name := file_system.absolute_parent_directory (file_name)
 		end
 
 	set_target_name (s: STRING) is
@@ -266,8 +261,8 @@ feature -- Status setting
 				conf_system = Void or else
 				(universe.target = Void and universe.new_target = Void) or else
 				date_has_changed or else not successful or else
-				(universe.target /= Void and then universe.conf_system.deep_date_has_changed) or else
-				(universe.new_target /= Void and then universe.new_target.system.deep_date_has_changed)
+				(universe.target /= Void and then universe.target.date_has_changed) or else
+				(universe.new_target /= Void and then universe.new_target.date_has_changed)
 			then
 				has_changed := True
 				do_recompilation
@@ -313,12 +308,12 @@ feature -- Status setting
 		do
 			if a_user_file_enabled then
 				create l_user_factory
-				l_user_factory.load (conf_system.file_name)
+				l_user_factory.load (conf_system.uuid)
 				if l_user_factory.successful then
 					user_options := l_user_factory.last_options
 					if user_options = Void then
 							-- No user options yet.
-						create user_options.make (conf_system.file_name, target_name)
+						create user_options.make (conf_system.uuid, target_name)
 					end
 				else
 					create vd21
@@ -328,7 +323,7 @@ feature -- Status setting
 				end
 			else
 					-- Create fake options to avoid too many if statements below.
-				create user_options.make (conf_system.file_name, target_name)
+				create user_options.make (conf_system.uuid, target_name)
 			end
 
 				-- Update targets
@@ -389,20 +384,6 @@ feature {NONE} -- Implementation
 				vd00.set_error (l_load.last_error)
 				Error_handler.insert_error (vd00)
 				error_handler.raise_error
-			end
-
-				-- add warnings
-			if l_load.is_warning then
-				l_load.last_warnings.do_all (agent (a_warning: CONF_ERROR)
-					require
-						a_warning_not_void: a_warning /= Void
-					local
-						vd80: VD80
-					do
-						create vd80
-						vd80.set_warning (a_warning)
-						error_handler.insert_warning (vd80)
-					end)
 			end
 
 			conf_system := l_load.last_system
@@ -523,7 +504,7 @@ feature {NONE} -- Implementation
 			if universe.conf_system /= Void then
 				universe.conf_system.set_file_date
 			end
-			has_group_changed := is_force_new_target or else universe.conf_system = Void or l_old_target = Void or else l_old_target.system.deep_date_has_changed or not conf_system.is_group_equivalent (universe.conf_system)
+			has_group_changed := is_force_new_target or else universe.conf_system = Void or l_old_target = Void or else l_old_target.date_has_changed or not conf_system.is_group_equivalent (universe.conf_system)
 			if has_group_changed then
 					-- check if a precompile was modified
 				if l_old_target /= Void then
@@ -566,7 +547,7 @@ feature {NONE} -- Implementation
 				end
 
 					-- update dates of used config files
-				l_all_libs := l_old_target.system.all_libraries
+				l_all_libs := l_old_target.all_libraries
 				check
 					libraries_set: l_all_libs /= Void
 				end
@@ -586,19 +567,19 @@ feature {NONE} -- Implementation
 				system.set_msil_version (l_new_target.version.version)
 			end
 
-				-- set the new target
-			universe.set_new_target (l_new_target)
-
 			if has_group_changed then
 				parse_target (l_new_target)
+				universe.set_conf_system (conf_system)
 			end
+				-- set the new target
+			universe.set_new_target (l_new_target)
 
 			successful := True
 		ensure
 			new_target_ok: universe.new_target /= Void and then
-					universe.new_target.system.all_libraries /= Void and universe.new_target.system.application_target /= Void
+					universe.new_target.all_libraries /= Void and universe.new_target.application_target /= Void
 			old_target_ok: universe.target = old universe.target and universe.target /= Void implies
-					universe.target.system.application_target /= Void and universe.target.system.all_libraries /= Void
+					universe.target.application_target /= Void and universe.target.all_libraries /= Void
 		rescue
 			if Rescue_status.is_error_exception then
 					-- Reset `Workbench'
@@ -651,8 +632,8 @@ feature {NONE} -- Implementation
 			end
 			is_force_new_target := False
 		ensure
-			application_target_set: not is_error implies a_target.system.application_target /= Void
-			all_libraries_set: not is_error implies a_target.system.all_libraries /= Void
+			application_target_set: not is_error implies a_target.application_target /= Void
+			all_libraries_set: not is_error implies a_target.all_libraries /= Void
 			not_force_new_target: not is_force_new_target
 		end
 
@@ -897,7 +878,21 @@ feature {NONE} -- Implementation
 			end
 			if l_s /= Void and then (system.name = Void or else not system.name.is_equal (l_s)) then
 				system.set_name (l_s)
-				system.request_freeze
+				system.set_freeze
+			end
+
+			l_s := l_settings.item (s_full_type_checking)
+			if l_s /= Void then
+				if l_s.is_boolean then
+					system.set_full_type_checking (l_s.to_boolean)
+				else
+					create vd15
+					vd15.set_option_name (s_full_type_checking)
+					vd15.set_option_value (l_s)
+					Error_handler.insert_error (vd15)
+				end
+			else
+				system.set_full_type_checking (False)
 			end
 
 			l_s := l_settings.item (s_il_verifiable)
@@ -982,8 +977,7 @@ feature {NONE} -- Implementation
 			l_s := l_settings.item (s_metadata_cache_path)
 			if l_s = Void then
 				l_s := overridden_metadata_cache_path
-			end
-			if l_s /= Void then
+			else
 				l_s := l_factory.new_location_from_path (l_s, a_target).evaluated_directory
 			end
 				-- value can't change from a precompile or in a compiled system
@@ -1220,21 +1214,6 @@ feature {NONE} -- Implementation
 				Error_handler.insert_error (vd77)
 				Error_handler.raise_error
 			end
-
-				-- add warnings
-			if l_load.is_warning then
-				l_load.last_warnings.do_all (agent (a_warning: CONF_ERROR)
-					require
-						a_warning_not_void: a_warning /= Void
-					local
-						vd80: VD80
-					do
-						create vd80
-						vd80.set_warning (a_warning)
-						error_handler.insert_warning (vd80)
-					end)
-			end
-
 			l_system := l_load.last_system
 
 				-- check if we have a library target
@@ -1257,10 +1236,12 @@ feature {NONE} -- Implementation
 			l_target := universe.target
 			l_old_target := a_target
 			l_old_target.precompile.set_library_target (l_target)
-			l_old_target.system.set_all_libraries (l_target.system.all_libraries)
-			l_old_target.system.set_all_assemblies (l_target.system.all_assemblies)
+			l_old_target.set_all_libraries (l_target.all_libraries)
+			l_old_target.set_all_assemblies (l_target.all_assemblies)
 			l_old_target.system.set_application_target (l_old_target)
-			universe.set_old_target (l_old_target)
+			universe.set_new_target (l_old_target)
+
+			universe.new_target_to_target
 
 				-- Force a rebuild for the first compilation of a system using
 				-- a precompiled library.

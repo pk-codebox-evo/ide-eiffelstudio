@@ -19,10 +19,7 @@ inherit
 			hide,
 			set_focus,
 			record_state,
-			restore,
-			move_to_docking_zone,
-			move_to_tab_zone,
-			change_zone_split_area
+			restore
 		end
 
 create
@@ -93,10 +90,7 @@ feature -- Redefine.
 			-- Redefine
 		do
 			show
-			if zone /= Void then
-				zone.on_focus_in (a_content)
-			end
-			docking_manager.property.set_last_focus_content (content)
+			Precursor {SD_STATE} (a_content)
 		end
 
 	close is
@@ -109,7 +103,7 @@ feature -- Redefine.
 		end
 
 	stick (a_direction: INTEGER) is
-			-- Redefine. `a_direction' is useless. This feature used by SD_DOCKING_STATE and SD_CONTENT.set_auto_hide.
+			-- Redefine. `a_direction' is useless, it's only used for SD_DOCKING_STATE.
 		local
 			l_retried: BOOLEAN
 		do
@@ -118,26 +112,20 @@ feature -- Redefine.
 				internal_docking_manager.command.remove_auto_hide_zones (False)
 				internal_docking_manager.command.recover_normal_state
 
-				-- Hanlde the case that first call SD_AUTO_HIDE_STATE.hide, then SD_AUTO_HIDE_STATE.stick.
-				-- So we should insert the `tab_stub' which removed by `hide'.
-				if is_hide then
-					auto_hide_panel.tab_stubs.extend (tab_stub)
-				end
-
 				stick_zones (a_direction)
 
 				internal_docking_manager.command.remove_empty_split_area
 				internal_docking_manager.command.unlock_update
 			end
 		ensure then
-			tab_stubs_pruned: old not is_hide implies auto_hide_panel.tab_stubs.count < old auto_hide_panel.tab_stubs.count
+			tab_stubs_pruned: auto_hide_panel.tab_stubs.count < old auto_hide_panel.tab_stubs.count
 		rescue
 			internal_docking_manager.command.unlock_update
 			l_retried := True
 			retry
 		end
 
- 	change_title (a_title: STRING_GENERAL; a_content: SD_CONTENT) is
+ 	change_title (a_title: STRING; a_content: SD_CONTENT) is
 			-- Redefine
 		do
 			tab_stub.set_text (a_title)
@@ -148,16 +136,16 @@ feature -- Redefine.
 	change_pixmap (a_pixmap: EV_PIXMAP; a_content: SD_CONTENT) is
 			-- Redefine
 		do
-			tab_stub.on_expose (0, 0, tab_stub.width, tab_stub.height)
+			tab_stub.on_redraw (0, 0, tab_stub.width, tab_stub.height)
 		end
 
-	restore (a_data: SD_INNER_CONTAINER_DATA; a_container: EV_CONTAINER) is
+	restore (a_titles: ARRAYED_LIST [STRING]; a_container: EV_CONTAINER; a_direction: INTEGER) is
 			-- Redefine.
 		do
 			-- This class can created by make (not like SD_DOCKING_STATE, created by INTERNAL), so this routine do less work.
 			change_state (Current)
-			direction := a_data.direction
-			Precursor {SD_STATE} (a_data, a_container)
+			direction := a_direction
+			Precursor {SD_STATE} (a_titles, a_container, a_direction)
 		end
 
 	record_state is
@@ -194,25 +182,6 @@ feature -- Redefine.
 			end
 			l_docking_state.dock_at_top_level (a_multi_dock_area)
 			change_state (l_docking_state)
-
-			internal_close
-			internal_docking_manager.command.unlock_update
-		ensure then
-			state_changed: internal_content.state /= Current
-		end
-
-	change_zone_split_area (a_target_zone: SD_ZONE; a_direction: INTEGER) is
-			-- Redefine.
-		local
-			l_docking_state: SD_DOCKING_STATE
-		do
-			content.set_visible (True)
-			internal_docking_manager.command.lock_update (a_target_zone, False)
-			create l_docking_state.make (internal_content, a_direction, 0)
-			l_docking_state.change_zone_split_area (a_target_zone, a_direction)
-			change_state (l_docking_state)
-
-			internal_close
 			internal_docking_manager.command.unlock_update
 		ensure then
 			state_changed: internal_content.state /= Current
@@ -229,7 +198,6 @@ feature -- Redefine.
 					auto_hide_panel.tab_stubs.extend (tab_stub)
 				end
 				animation.show (True)
-				content.show_actions.call ([])
 				internal_docking_manager.command.unlock_update
 			end
 		ensure then
@@ -362,64 +330,6 @@ feature {NONE} -- Implementation functions.
 			-- Remove tab stub from the SD_AUTO_HIDE_PANEL
 			auto_hide_panel.tab_stubs.start
 			auto_hide_panel.tab_stubs.prune (tab_stub)
-		end
-
-	move_to_docking_zone (a_target_zone: SD_DOCKING_ZONE; a_first: BOOLEAN) is
-			-- Redefine
-			-- FIXIT: It's similiar to SD_DOCKING_STATE move_to_docking_zone, merge?
-		do
-			move_to_zone_internal (a_target_zone, a_first)
-		end
-
-	move_to_tab_zone (a_target_zone: SD_TAB_ZONE; a_index: INTEGER_32) is
-			-- Redefine
-			-- FIXIT: It's similiar to SD_DOCKING_STATE move_to_tab_zone, merge?
-		do
-			if a_index = 1 then
-				move_to_zone_internal (a_target_zone, True)
-			else
-				move_to_zone_internal (a_target_zone, False)
-			end
-
-			if a_index > 0 and a_index <= a_target_zone.contents.count then
-				a_target_zone.set_content_position (content, a_index)
-			end
-		end
-
-	move_to_zone_internal (a_target_zone: SD_ZONE; a_first: BOOLEAN) is
-			-- Move to `a_target_zone'
-		local
-			l_tab_state: SD_TAB_STATE
-			l_orignal_direction: INTEGER
-			l_docking_zone: SD_DOCKING_ZONE
-			l_tab_zone: SD_TAB_ZONE
-		do
-			if zone /= Void and then not zone.is_destroyed then
-				internal_docking_manager.command.lock_update (zone, False)
-			else
-				internal_docking_manager.command.lock_update (void, True)
-			end
-
-			internal_close
-			internal_docking_manager.zones.prune_zone_by_content (internal_content)
-
-			l_orignal_direction := a_target_zone.state.direction
-			l_docking_zone ?= a_target_zone
-			l_tab_zone ?= a_target_zone
-			if l_docking_zone /= Void then
-				create l_tab_state.make (internal_content, l_docking_zone, l_orignal_direction)
-			else
-				check only_allow_two_type_zone: l_tab_zone /= Void end
-				create l_tab_state.make_with_tab_zone (internal_content, l_tab_zone, l_orignal_direction)
-			end
-			if a_first then
-				l_tab_state.zone.set_content_position (internal_content, 1)
-			end
-			l_tab_state.set_direction (l_orignal_direction)
-			internal_docking_manager.command.remove_empty_split_area
-			change_state (l_tab_state)
-			internal_docking_manager.command.update_title_bar
-			internal_docking_manager.command.unlock_update
 		end
 
 feature {SD_AUTO_HIDE_ANIMATION} -- Internal issues.

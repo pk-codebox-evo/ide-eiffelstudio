@@ -10,11 +10,23 @@ indexing
 class EWB_PRECOMP
 
 inherit
+
 	EWB_COMP
 		redefine
 			name, help_message, abbreviation,
 			execute, perform_compilation,
 			save_project_again
+		end
+
+create
+	make
+
+feature -- Initialization
+
+	make (license_check: BOOLEAN) is
+			-- Set `licensed' to `license_check'
+		do
+			licensed := license_check
 		end
 
 feature -- Properties
@@ -24,7 +36,7 @@ feature -- Properties
 			Result := precompile_cmd_name
 		end;
 
-	help_message: STRING_32 is
+	help_message: STRING is
 		do
 			Result := precompile_help
 		end;
@@ -33,6 +45,9 @@ feature -- Properties
 		do
 			Result := precompile_abb
 		end;
+
+	licensed: BOOLEAN
+			-- Is this precompilation protected by a license?
 
 feature {NONE} -- Execution
 
@@ -46,13 +61,16 @@ feature {NONE} -- Execution
 					process_finish_freezing (False)
 				end
 			else
-				localized_print_error (ewb_names.there_is_already_project_compiled_in (eiffel_project.name))
+				io.error.put_string ("There is already a project compiled in %"");
+				io.error.put_string (Eiffel_project.name);
+				io.error.put_string ("%" %N%
+					%It needs to be deleted before a precompilation.%N");
 			end
 		end;
 
 	perform_compilation is
 		do
-			Eiffel_project.precompile (False)
+			Eiffel_project.precompile (licensed)
 		end;
 
 	save_project_again is
@@ -77,7 +95,7 @@ feature {NONE} -- Execution
 					if finished then
 						lic_die (-1)
 					else
-						Eiffel_project.save_precomp
+						Eiffel_project.save_precomp (licensed)
 					end;
 				else
 					Precursor {EWB_COMP}

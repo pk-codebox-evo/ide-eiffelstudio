@@ -41,11 +41,11 @@ feature -- Access
 
 	redo_count: INTEGER
 			-- Number of `redo_procedure' calls.
-
-	name: STRING_GENERAL
+	
+	name: STRING
 			-- Name.
-
-	set_name (a_name: like name) is
+	
+	set_name (a_name: STRING) is
 			-- Assign `a_name' to `name'.
 		require
 			a_name /= Void

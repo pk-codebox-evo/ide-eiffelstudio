@@ -67,6 +67,7 @@ feature -- Set operation
 			internal_union (Result, other)
 		end
 
+
 	intersect (other: like Current): like Current is
 			-- A new domain containing all the elements that are in both `Current' and `other'.
 		do
@@ -151,5 +152,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

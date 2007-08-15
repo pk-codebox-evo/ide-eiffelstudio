@@ -111,6 +111,7 @@ feature {NONE} -- Initialization
 			model := a_model
 			initialize
 
+
 			set_bon_icons
 			model.properties_changed_actions.extend (agent set_bon_icons)
 
@@ -831,6 +832,7 @@ feature {NONE} -- Implementation
 				ellipse.set_radius2 (as_integer (ellipse_radius_2))
 			end
 		end
+
 
 	set_ellipse_properties is
 			-- Set properties of ellipse.

@@ -42,7 +42,7 @@ inherit
 		end
 
 create
-	make_with_value, make_from_string, make_from_hexa_string, make_from_octal_string, make_from_binary_string, make_from_type
+	make_with_value, make_from_string, make_from_hexa_string, make_from_type
 
 feature {NONE} -- Initialization
 
@@ -58,7 +58,8 @@ feature {NONE} -- Initialization
 				value := (- v.as_integer_64).as_natural_64
 				has_minus := True
 			end
-			compute_type
+			default_type := integer_32_mask
+			types := integer_32_mask
 		ensure
 			is_initialized: is_initialized
 			has_integer: has_integer (32)

@@ -14,7 +14,7 @@ inherit
 		redefine
 			data,
 			set_data,
-			internal_recycle
+			recycle
 		end
 
 	EB_PIXMAPABLE_ITEM_PIXMAP_FACTORY
@@ -59,6 +59,7 @@ feature -- Initialization
 			set_data (a_cluster)
 			expand_actions.extend (agent load)
 		end
+
 
 feature -- Status report
 
@@ -127,8 +128,6 @@ feature -- Status setting
 --| FIXME XR: When clusters can be moved effectively, uncomment this line.
 --				drop_actions.extend (~on_cluster_drop)
 			end
-			set_configurable_target_menu_mode
-			set_configurable_target_menu_handler (agent context_menu_handler)
 			fake_load
 		ensure then
 			data = a_cluster
@@ -249,7 +248,7 @@ feature {EB_CLASSES_TREE_CLASS_ITEM} -- Interactivity
 					end
 				end
 				-- if we are an assembly show subfolders
-			elseif group.is_assembly or group.is_physical_assembly then
+			elseif group.is_assembly then
 				l_hash_set := data.sub_folders.item (path+"/")
 				if l_hash_set /= Void then
 					create subfolders.make (1, l_hash_set.count)
@@ -296,12 +295,12 @@ feature {EB_CLASSES_TREE_CLASS_ITEM} -- Interactivity
 			end
 
 				-- show assembly dependencies for assemblies if we are on not a subfolder
-			if path.is_empty and (data.is_assembly or data.is_physial_assembly) then
+			if path.is_empty and data.is_assembly then
 				show_groups (data.assemblies)
 			end
 
 				-- show classes for clusters and assemblies
-			if data.is_cluster or (data.is_assembly or data.is_physial_assembly) then
+			if data.is_cluster or data.is_assembly then
 				classes := data.sub_classes.item (path+"/")
 				if classes /= Void then
 					from
@@ -480,9 +479,9 @@ feature -- Interactivity
 			end
 		end
 
-feature {NONE} -- Recyclable
+feature -- Recyclable
 
-	internal_recycle is
+	recycle is
 			-- Recycle
 		do
 			Precursor {EB_CLASSES_TREE_ITEM}
@@ -557,39 +556,10 @@ feature {EB_CLASSES_TREE} -- Implementation
 
 feature {NONE} -- Implementation
 
-	physical_assembly_tooltip_text (a_assembly: CONF_PHYSICAL_ASSEMBLY): STRING is
-			-- Generate tooltip text for `a_assembly'.
-		local
-			l_tmp: STRING
-		do
-			create Result.make_empty
-			if a_assembly /= Void then
-				Result.append (a_assembly.assembly_name)
-				if not path.is_empty then
-					l_tmp := path.twin
-					l_tmp.replace_substring_all ("/", ".")
-					Result.append (l_tmp)
-				end
-				Result.append ("%N")
-				if a_assembly.assembly_culture /= Void then
-					Result.append (a_assembly.assembly_culture+"%N")
-				end
-				if a_assembly.assembly_version /= Void then
-					Result.append (a_assembly.assembly_version+"%N")
-				end
-				if a_assembly.assembly_public_key_token /= Void then
-					Result.append (a_assembly.assembly_public_key_token+"%N")
-				end
-			end
-		ensure
-			Result_not_void: Result /= Void
-		end
-
 	tooltip_text: STRING is
 			-- Generate tooltip text for `data' and `path'.
 		local
 			l_as: CONF_ASSEMBLY
-			l_phys_as: CONF_PHYSICAL_ASSEMBLY
 			l_lib: CONF_LIBRARY
 			l_tmp: STRING
 		do
@@ -597,13 +567,23 @@ feature {NONE} -- Implementation
 			if data.is_assembly then
 				l_as := data.actual_assembly
 				if l_as.classes_set then
-					l_phys_as ?= l_as.physical_assembly
-					Result.append (physical_assembly_tooltip_text (l_phys_as))
+					Result.append (l_as.assembly_name)
+					if not path.is_empty then
+						l_tmp := path.twin
+						l_tmp.replace_substring_all ("/", ".")
+						Result.append (l_tmp)
+					end
+					Result.append ("%N")
+					if l_as.assembly_culture /= Void then
+						Result.append (l_as.assembly_culture+"%N")
+					end
+					if l_as.assembly_version /= Void then
+						Result.append (l_as.assembly_version+"%N")
+					end
+					if l_as.assembly_public_key_token /= Void then
+						Result.append (l_as.assembly_public_key_token+"%N")
+					end
 				end
-				Result.append (data.actual_group.location.evaluated_path)
-			elseif data.is_physial_assembly then
-				l_phys_as ?= data
-				Result.append (physical_assembly_tooltip_text (l_phys_as))
 				Result.append (data.actual_group.location.evaluated_path)
 			elseif data.is_library then
 				l_lib := data.actual_library
@@ -630,6 +610,7 @@ feature {NONE} -- Implementation
 		ensure
 			Result_not_void: Result /= Void
 		end
+
 
 	double_press_action (a_x: INTEGER; a_y: INTEGER; a_button: INTEGER
 						 a_x_tilt: DOUBLE; a_y_tilt: DOUBLE; a_pressure: DOUBLE

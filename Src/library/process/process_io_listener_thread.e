@@ -26,8 +26,6 @@ feature -- Status setting
 	set_exit_signal is
 			-- Notify this thread that it should exit.
 			-- This feature is called when the launched process has exit.
-		require
-			thread_capable: {PLATFORM}.is_thread_capable
 		do
 			mutex.lock
 			should_exit_signal := True
@@ -35,9 +33,8 @@ feature -- Status setting
 		end
 
 	set_sleep_time (interval: INTEGER) is
-			-- Set `sleep_time' with `interval' in milliseconds.
+			--
 		require
-			thread_capable: {PLATFORM}.is_thread_capable
 			interval_positive: interval > 0
 		do
 			mutex.lock
@@ -51,8 +48,6 @@ feature -- Status reporting
 
 	should_thread_exit: BOOLEAN is
 			-- Should this thread exit?
-		require
-			thread_capable: {PLATFORM}.is_thread_capable
 		do
 			mutex.lock
 			Result := should_exit_signal
@@ -72,6 +67,7 @@ feature {NONE} -- Implementation
 
 	sleep_time: INTEGER
 			-- Time in milliseconds for this thread to sleep when waiting for data
+			--
 
 	initial_sleep_time: INTEGER is 10
 			-- Initial time in nanosecond for this thread to sleep when waiting for data

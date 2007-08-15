@@ -84,8 +84,8 @@ feature{NONE} -- Implementation
 		require
 			intrinsic_domain_exists: has_intrinsic_domain
 		local
-			l_minuend_domain: like intrinsic_domain
-			l_subtrahend_domain: like intrinsic_domain
+			l_minuend_domain: QL_DOMAIN
+			l_subtrahend_domain: QL_DOMAIN
 		do
 
 			if has_inclusive_intrinsic_domain then
@@ -150,5 +150,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

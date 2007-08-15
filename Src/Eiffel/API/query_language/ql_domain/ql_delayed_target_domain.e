@@ -29,9 +29,6 @@ inherit
 			item_type
 		end
 
-create
-	make
-
 feature{NONE} -- Type anchor
 
 	item_type: QL_TARGET;
@@ -68,5 +65,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

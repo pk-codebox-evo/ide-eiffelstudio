@@ -12,23 +12,18 @@ deferred class
 inherit
 	EB_METRIC_VISITABLE
 
-	EB_METRIC_SHARED
-
-	DEBUG_OUTPUT
-		rename
-			debug_output as name
-		end
-
 feature{NONE} -- Initialization
 
-	make (a_name: STRING; a_unit: like unit) is
-			-- Initialize `name' with `a_name' and `unit' with `a_unit.
+	make (a_name: STRING; a_unit: like unit; a_uuid: like uuid) is
+			-- Initialize `name' with `a_name', `unit' with `a_unit and `uuid' with `a_uuid'.
 		require
 			a_name_attached: a_name /= Void
 			a_unit_attached: a_unit /= Void
+			a_uuid_attached: a_uuid /= Void
 		do
 			set_name (a_name)
 			set_unit (a_unit)
+			set_uuid (a_uuid)
 		end
 
 feature -- Status report
@@ -71,6 +66,11 @@ feature -- Status report
 	should_result_be_filtered: BOOLEAN
 			-- Should result be filtered and only result items that are visible in the input domain are remained?
 
+	is_just_line_counting: BOOLEAN is
+			-- Is current metric a line counting metric?
+		do
+		end
+
 feature -- Access
 
 	name: STRING
@@ -89,23 +89,8 @@ feature -- Access
 	manager: EB_METRIC_MANAGER
 			-- Metric manager
 
-	direct_referenced_metrics: LIST [STRING] is
-			-- Name of metrics which are directly referenced by Current
-		local
-			l_reference_visitor: EB_METRIC_REFERENCED_METRIC_VISITOR
-		do
-			create l_reference_visitor.make
-			l_reference_visitor.search_referenced_metric (Current)
-			Result := l_reference_visitor.referenced_metric_name.twin
-		ensure
-			result_attached: Result /= Void
-		end
-
-	visitable_name: STRING_GENERAL is
-			-- Name of current visitable item
-		do
-			Result := metric_names.visitable_name (metric_names.t_metric, name)
-		end
+	uuid: UUID
+			-- UUID of current metric
 
 feature -- Setting
 
@@ -128,21 +113,13 @@ feature -- Setting
 feature -- Metric calculation
 
 	value (a_scope: EB_METRIC_DOMAIN): QL_QUANTITY_DOMAIN is
-			-- Value of current metric calculated over `a_scope'
+			-- Calcualte current domain using `a_scope'.
 		require
 			a_scope_attached: a_scope /= Void
 		deferred
 		ensure
 			result_attached: Result /= Void
 			result_valid: Result.count = 1
-		end
-
-	value_item (a_scope: EB_METRIC_DOMAIN): DOUBLE is
-			-- Value of current metric calculated over `a_scope'.
-		require
-			a_scope_attached: a_scope /= Void
-		do
-			Result := value (a_scope).first.value
 		end
 
 feature -- Setting
@@ -221,9 +198,20 @@ feature -- Setting
 			manager_set: manager = a_manager
 		end
 
+	set_uuid (a_uuid: like uuid) is
+			-- Set `uuid' with `a_uuid'.
+		require
+			a_uuid_attached: a_uuid /= Void
+		do
+			uuid := a_uuid
+		ensure
+			uuid_set: uuid = a_uuid
+		end
+
 invariant
 	name_attached: name /= Void
 	unit_attached: unit /= Void
+	uuid_attached: uuid /= Void
 
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"
@@ -256,5 +244,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

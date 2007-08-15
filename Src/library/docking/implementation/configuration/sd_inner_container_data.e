@@ -11,10 +11,10 @@ class
 
 feature -- Tab and Docking datas.
 
-	titles: ARRAYED_LIST [STRING_GENERAL]
+	titles: ARRAYED_LIST [STRING]
 			-- All titles. If it's a docking zone, there is only one title.
 
-	add_title (a_title: STRING_GENERAL) is
+	add_title (a_title: STRING) is
 			-- Add `a_title'.
 		require
 			a_title_not_void: a_title /= Void
@@ -25,25 +25,6 @@ feature -- Tab and Docking datas.
 			titles.extend (a_title)
 		ensure
 			added: titles.has (a_title)
-		end
-
-	set_titles (a_titles: like titles) is
-			-- Set `titles' with `a_titles'
-		do
-			titles := a_titles
-		ensure
-			set: titles = a_titles
-		end
-
-	selected_tab_index: INTEGER
-			-- If have multi contents (tab zone), remember the one is seleted.
-
-	set_selected_tab_index (a_int: INTEGER) is
-			-- Set `selected_tab_index'
-		do
-			selected_tab_index := a_int
-		ensure
-			set: selected_tab_index = a_int
 		end
 
 	split_position: INTEGER
@@ -118,20 +99,6 @@ feature -- Tab and Docking datas.
 			set: is_horizontal_split_area = a_value
 		end
 
-feature -- Minimized datas
-
-	is_minimized: BOOLEAN
-			-- If is SD_UPPER_ZONE, if it is minized?
-			-- This value maybe used by SD_MIDDLE_CONTAINER or SD_UPPER_ZONE.	
-
-	set_is_minimized (a_bool: BOOLEAN) is
-			-- Set `is_minimized'
-		do
-			is_minimized := a_bool
-		ensure
-			set: is_minimized = a_bool
-		end
-
 feature -- Floating datas.
 
 	set_screen_x (a_screen_x: INTEGER) is
@@ -174,10 +141,10 @@ feature -- Floating datas.
 
 feature -- Common properties
 
-	state: STRING_GENERAL
+	state: STRING
 			-- One generator type name of SD_STATE and it's descendents.
 
-	set_state (a_class_name: STRING_GENERAL) is
+	set_state (a_class_name: STRING) is
 			-- Set `state'.
 		do
 			state := a_class_name
@@ -190,8 +157,6 @@ feature -- Common properties
 
 	set_direction (a_direction: INTEGER) is
 			-- Set `direction'.
-		require
-			vaild: (create {SD_ENUMERATION}).is_direction_valid (a_direction)
 		do
 			direction := a_direction
 		ensure

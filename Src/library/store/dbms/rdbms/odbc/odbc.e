@@ -16,6 +16,8 @@ inherit
 			identifier_quoter,
 			qualifier_seperator,
 			parse,
+			put_column_name,
+			update_map_table_error,
 			user_name_ok,
 			hide_qualifier,
 			pre_immediate,
@@ -82,11 +84,10 @@ feature -- For DATABASE_FORMAT
 	date_to_str (object: DATE_TIME): STRING is
 			-- String representation in SQL of `object'
 		do
-				-- Format shall be {ts 'yyyy-mm-dd hh:mm:ss'}
-			create Result.make (30)
-			Result.append ("{ts '")
-			Result.append (object.formatted_out (once "yyyy-[0]mm-[0]dd [0]hh:[0]mi:[0]ss"))
-			Result.append ("'}")
+			create Result.make (1)
+			Result.from_c (odbc_date_to_str (object.year, object.month, object.day, object.hour, object.minute, object.second, 2))
+			Result.prepend ("{ts %'")
+			Result.append ("%'}")
 		end
 
 	string_format (object: STRING): STRING is
@@ -95,7 +96,6 @@ feature -- For DATABASE_FORMAT
 			if object /= Void and then not object.is_empty then
 				if not is_binary (object) then
 					Result := object.twin
-					Result.replace_substring_all ("\", "\\")
 					Result.replace_substring_all ("'", "''")
 					Result.precede ('%'')
 					Result.extend ('%'')
@@ -210,6 +210,47 @@ feature -- For DATABASE_SELECTION, DATABASE_CHANGE
 				is_error_updated := False
 				i := i + 1
 			end
+		end
+
+
+feature -- For DATABASE_STORE
+
+	put_column_name (repository: DATABASE_REPOSITORY [like Current]; map_table: ARRAY [INTEGER]; obj: ANY): STRING is
+		local
+			i, j: INTEGER
+			table: DB_TABLE
+		do
+			create Result.make (1)
+			Result.append (" (")
+			i := 0
+			table ?= obj
+			from
+				j := 1
+			until
+				j > repository.dimension
+			loop
+				if (map_table.item (j) > 0) then
+					if (i > 0) then
+						Result.append (", ")
+					end
+					if table /= Void then
+						if not (table.table_description.identity_column = j) then
+							Result.append (repository.column_name (j))
+							i := 1
+						end
+					else
+						Result.append (repository.column_name (j))
+						i := 1
+					end
+				end
+				j := j + 1
+ 			end
+			Result.append (") ")
+		end
+
+	update_map_table_error (uhandle: HANDLE; map_table: ARRAY [INTEGER]; ind: INTEGER) is
+		do
+			map_table.put (0, ind)
 		end
 
 feature -- DATABASE_STRING
@@ -393,10 +434,7 @@ feature -- For DATABASE_PROC
 			io.new_line
 		end
 
-	name_proc_lower: BOOLEAN is
-		do
-			Result := not sensitive_mixed
-		end
+	name_proc_lower: BOOLEAN is True
 
 	map_var_between: STRING is "@"
 
@@ -534,7 +572,7 @@ feature -- External
 			check
 				Result <= max_len
 			end
-			ar.resize (Result)
+
 			ar.set_count (Result)
 
 			from
@@ -551,25 +589,24 @@ feature -- External
 		local
 			l_area: MANAGED_POINTER
 			i: INTEGER
-			l_data, l_null: POINTER
 		do
-			Result := odbc_put_data (no_descriptor, index, $l_data)
-			ar.resize (Result)
-			ar.set_count (Result)
-			if Result > 0 then
-				create l_area.share_from_pointer (l_data, Result)
-				from
-					i := 1
-				until
-					i > Result
-				loop
-					ar.put (l_area.read_integer_8 (i - 1).to_character_8, i)
-					i := i + 1
-				end
+			create l_area.make (max_len)
+
+			Result := odbc_put_data (no_descriptor, index, l_area.item)
+
+			check
+				Result <= max_len
 			end
-			if l_data /= l_null then
-					-- `odbc_put_data' allocate some memory, we need to free it.
-				l_data.memory_free
+
+			ar.set_count (Result)
+
+			from
+				i := 1
+			until
+				i > Result
+			loop
+				ar.put (l_area.read_integer_8 (i - 1).to_character_8, i)
+				i := i + 1
 			end
 		end
 
@@ -759,9 +796,9 @@ feature -- External
 			odbc_begin
 		end
 
-	support_proc: BOOLEAN is
+	support_proc: INTEGER is
 		do
-			Result := odbc_support_proc = 1
+			Result := odbc_support_proc
 		end
 
 feature {NONE} -- External features
@@ -825,7 +862,7 @@ feature {NONE} -- External features
 			"C use %"odbc.h%""
 		end
 
-	odbc_put_data (no_descriptor: INTEGER; index: INTEGER; ar: TYPED_POINTER [POINTER]): INTEGER is
+	odbc_put_data (no_descriptor: INTEGER; index: INTEGER; ar: POINTER): INTEGER is
 		external
 			"C use %"odbc.h%""
 		end
@@ -1025,6 +1062,12 @@ feature {NONE} -- External features
 			"C use %"odbc.h%""
 		end
 
+	odbc_date_to_str (year, month, day, hour, minute, second, type: INTEGER): POINTER is
+		-- Get string format of the TIME (type=0), DATE (type=1) or TIMESTAMP (type=2)
+		external
+			"C use %"odbc.h%""
+		end
+
 	odbc_driver_name: POINTER is
 		external
 			"C use %"odbc.h%""
@@ -1067,7 +1110,6 @@ feature {NONE} -- External features
 			-- Append map variables name from to `s'.
 			-- Map variables are used for set input arguments.
 		require
-			uht_not_void: uht /= Void
 			arguments_mapped: not uht.is_empty
 		local
 			i,

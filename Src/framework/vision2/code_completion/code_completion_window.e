@@ -56,7 +56,7 @@ feature {NONE} -- Initialization
 			choice_list.virtual_position_changed_actions.extend (agent on_scroll)
 			choice_list.mouse_wheel_actions.extend (agent on_mouse_wheel)
 
-			make_with_shadow
+			default_create
 			enable_user_resize
 			option_bar_box := build_option_bar
 			create vbox
@@ -170,7 +170,7 @@ feature -- Status Setting
 			Precursor {EV_POPUP_WINDOW}
 			choice_list.set_focus
 			select_closest_match
-			ev_application.do_once_on_idle (agent resize_column_to_window_width)
+			ev_application.idle_actions.extend_kamikaze (agent resize_column_to_window_width)
 		end
 
 feature -- Query
@@ -360,7 +360,7 @@ feature {NONE} -- Events handling
 					i := i + 1
 				end
 			end
-			ev_application.do_once_on_idle (agent resize_column_to_window_width)
+			ev_application.idle_actions.extend_kamikaze (agent resize_column_to_window_width)
 		end
 
 	on_row_collapse (a_row: EV_GRID_ROW) is
@@ -368,7 +368,7 @@ feature {NONE} -- Events handling
 		require
 			a_row_not_void: a_row /= Void
 		do
-			ev_application.do_once_on_idle (agent resize_column_to_window_width)
+			ev_application.idle_actions.extend_kamikaze (agent resize_column_to_window_width)
 		end
 
 feature {NONE} -- Cursor movement
@@ -765,7 +765,7 @@ feature {NONE} -- Implementation
 		local
 			i, l_upper: INTEGER
 			l_name: NAME_FOR_COMPLETION
-			l_parents_inserted: ARRAYED_LIST [NAME_FOR_COMPLETION]
+			l_parents_inserted: HASH_TABLE [NAME_FOR_COMPLETION, NAME_FOR_COMPLETION]
 		do
 			create l_parents_inserted.make (a_names.count)
 			from
@@ -780,7 +780,7 @@ feature {NONE} -- Implementation
 				end
 				if not l_parents_inserted.has (l_name) then
 					Result := Result + 1
-					l_parents_inserted.extend (l_name)
+					l_parents_inserted.force (l_name, l_name)
 				end
 				i := i + 1
 			end
@@ -1055,7 +1055,7 @@ feature {NONE} -- Implementation
 	on_scroll (x, y: INTEGER) is
 			-- On vertical bar scroll
 		do
-			ev_application.do_once_on_idle (agent resize_column_to_window_width)
+			ev_application.idle_actions.extend_kamikaze (agent resize_column_to_window_width)
 		end
 
 	is_first_show: BOOLEAN

@@ -24,35 +24,36 @@ create
 
 feature{NONE} -- Initialization
 
-	make (a_name: STRING; a_unit: like unit) is
-			-- Initialize `name' with `a_name' and `unit' with `a_unit'.
+	make (a_name: STRING; a_unit: like unit; a_uuid: like uuid) is
+			-- Initialize `name' with `a_name', `unit' with `a_unit', and `uuid' with `a_uuid'.
 		do
-			Precursor (a_name, a_unit)
+			Precursor (a_name, a_unit, a_uuid)
 			numerator_metric_name := ""
-			numerator_coefficient := 1
-			denominator_coefficient := 1
 			denominator_metric_name := ""
 		end
 
-	make_with_numerator_and_denominator (a_name: STRING; a_unit: like unit; a_num_name: STRING; a_den_name: STRING; a_num_coefficient: like numerator_coefficient; a_den_coefficient: like denominator_coefficient) is
+	make_with_numerator_and_denominator (a_name: STRING; a_unit: like unit; a_uuid: like uuid; a_num_name: STRING; a_num_uuid: UUID; a_den_name: STRING; a_den_uuid: UUID) is
 			-- Initialize `name' with `a_name', `unit' with `a_unit', `uuid' with `a_uuid',
 			-- `numerator_metric_name' with `a_num_name' and `denominator_metric_name' with `a_den_name'.
 		require
 			a_name_attached: a_name /= Void
 			a_unit_attached: a_unit /= Void
+			a_uuit_attached: a_uuid /= Void
 			a_num_name_attached: a_num_name /= Void
 			a_den_name_attached: a_den_name /= Void
+			a_num_uuid_attached: a_num_uuid /= Void
+			a_den_uuid_attached: a_den_uuid /= Void
 		do
-			make (a_name, a_unit)
+			make (a_name, a_unit, a_uuid)
 			numerator_metric_name := a_num_name.twin
 			denominator_metric_name := a_den_name.twin
-			set_numerator_coefficient (a_num_coefficient)
-			set_denominator_coefficient (a_den_coefficient)
+			set_numerator_metric_uuid (a_num_uuid)
+			set_denominator_metric_uuid (a_den_uuid)
 		ensure
 			numerator_metric_name_set: numerator_metric_name /= Void and then numerator_metric_name.is_equal (a_num_name)
 			denominator_metric_name_set: denominator_metric_name /= Void and then denominator_metric_name.is_equal (a_den_name)
-			numerator_coefficient_set: numerator_coefficient = a_num_coefficient
-			denominator_coefficient_set: denominator_coefficient = a_den_coefficient
+			numerator_metric_uuid_set : numerator_metric_uuid = a_num_uuid
+			denominator_metric_uuid_set: denominator_metric_uuid = a_den_uuid
 		end
 
 feature -- Access
@@ -63,11 +64,11 @@ feature -- Access
 	denominator_metric_name: STRING
 			-- Name of denominator metric
 
-	numerator_coefficient: DOUBLE
-			-- Coefficient for numerator metric
+	numerator_metric_uuid: UUID
+			-- UUID of numerator metric
 
-	denominator_coefficient: DOUBLE
-			-- Coefficient for denominator metric
+	denominator_metric_uuid: UUID
+			-- UUID of denominator metric
 
 feature -- Setting
 
@@ -81,6 +82,16 @@ feature -- Setting
 			numerator_metric_name_set: numerator_metric_name /= Void and then numerator_metric_name.is_equal (a_name)
 		end
 
+	set_numerator_metric_uuid (a_uuid: UUID) is
+			-- Set `numerator_metric_uuid' with `a_uuid'.
+		require
+			a_uuid_attached: a_uuid /= Void
+		do
+			numerator_metric_uuid := a_uuid
+		ensure
+			numerator_metric_uuid_set: numerator_metric_uuid = a_uuid
+		end
+
 	set_denominator_metric_name (a_name: STRING) is
 			-- Set `denominator_metric_name' with `a_name'.
 		require
@@ -91,20 +102,14 @@ feature -- Setting
 			denominator_metric_name_set: denominator_metric_name /= Void and then denominator_metric_name.is_equal (a_name)
 		end
 
-	set_numerator_coefficient (a_coefficient: like numerator_coefficient) is
-			-- Set `numerator_coefficient' with `a_coefficient'.
+	set_denominator_metric_uuid (a_uuid: UUID) is
+			-- Set `denominator_metric_uuid' with `a_uuid'.
+		require
+			a_uuid_attached: a_uuid /= Void
 		do
-			numerator_coefficient := a_coefficient
+			denominator_metric_uuid := a_uuid
 		ensure
-			numerator_coefficient_set: numerator_coefficient = a_coefficient
-		end
-
-	set_denominator_coefficient (a_coefficient: like denominator_coefficient) is
-			-- Set `denominator_coefficient' with `a_coefficient'.
-		do
-			denominator_coefficient := a_coefficient
-		ensure
-			denominator_coefficient_set: denominator_coefficient = a_coefficient
+			denominator_metric_uuid_set: denominator_metric_uuid = a_uuid
 		end
 
 feature -- Status report
@@ -130,11 +135,11 @@ feature -- Process
 feature -- Metric calculation
 
 	value (a_scope: EB_METRIC_DOMAIN): QL_QUANTITY_DOMAIN is
-			-- Value of current metric calculated over `a_scope'
+			-- Calcualte current domain using `a_scope'.
 		local
 			l_num_metric: EB_METRIC
 			l_den_metric: EB_METRIC
-			l_den_value: DOUBLE
+			l_den_value: QL_QUANTITY_DOMAIN
 		do
 			l_num_metric := manager.metric_with_name (numerator_metric_name)
 			l_den_metric := manager.metric_with_name (denominator_metric_name)
@@ -145,16 +150,11 @@ feature -- Metric calculation
 				l_num_metric.disable_filter_result
 				l_den_metric.disable_filter_result
 			end
-			if denominator_coefficient =0.0 then
-				raise ("Divided by 0")
+			l_den_value := l_den_metric.value (a_scope)
+			if l_den_value.first.value = 0.0 then
+				raise ("Devided by 0")
 			else
-				l_den_value := l_den_metric.value_item (a_scope)
-				if l_den_value = 0.0 then
-					raise ("Divided by 0")
-				else
-					create Result.make
-					Result.extend (create {QL_QUANTITY}.make_with_value ((numerator_coefficient * (l_num_metric.value_item (a_scope))) /  (denominator_coefficient * l_den_value)))
-				end
+				Result := l_num_metric.value (a_scope) / l_den_value
 			end
 		end
 
@@ -193,5 +193,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

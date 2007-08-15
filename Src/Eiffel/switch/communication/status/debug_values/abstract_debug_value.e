@@ -7,15 +7,10 @@ indexing
 	date: "$Date$";
 	revision: "$Revision $"
 
+
 deferred class ABSTRACT_DEBUG_VALUE
 
 inherit
-	COMPARABLE
-
-	ABSTRACT_DEBUG_VALUE_CONSTANTS
-		undefine
-			is_equal
-		end
 
 	SHARED_EIFFEL_PROJECT
 		export
@@ -29,10 +24,7 @@ inherit
 			is_equal
 		end
 
-	SHARED_DEBUGGER_MANAGER
-		undefine
-			is_equal
-		end
+	COMPARABLE
 
 	VALUE_TYPES
 		export
@@ -51,11 +43,6 @@ inherit
 			is_equal
 		end
 
-	COMPILER_EXPORTER
-		undefine
-			is_equal
-		end
-
 feature -- Properties
 
 	is_attribute: BOOLEAN;
@@ -69,7 +56,7 @@ feature -- Properties
 			-- which means whose information are not completly known
 			-- by the compiler
 
-feature {DEBUG_VALUE_EXPORTER} -- Internal Properties
+feature {NONE} -- Internal Properties
 
 	e_class: CLASS_C;
 			-- Class where attribute is defined
@@ -105,11 +92,6 @@ feature -- Change
 			static_class := cl
 		end
 
-	reset_children is
-			-- Reset internal data related to children
-		do
-		end
-
 feature -- Comparison
 
 	infix "<" (other: ABSTRACT_DEBUG_VALUE): BOOLEAN is
@@ -124,7 +106,43 @@ feature -- Output for debugger
 		do
 		end
 
-feature {DEBUG_VALUE_EXPORTER} -- Computed Value access
+feature -- Output
+
+	append_to (st: TEXT_FORMATTER; indent: INTEGER) is
+			-- Append `Current' to `st' printing the name, type
+			-- and its value.
+		require
+			valid_st: st /= Void;
+			valid_indent: indent >= 0;
+			valid_name: name /= Void
+		do
+			append_tabs (st, indent);
+			if is_attribute then
+				st.add_feature_name (name, e_class)
+			else
+				st.add_string (name)
+			end;
+			st.add (": ");
+			append_type_and_value (st);
+			st.add_new_line
+		end;
+
+feature {ABSTRACT_DEBUG_VALUE} -- Output
+
+	append_type_and_value (st: TEXT_FORMATTER) is
+			-- Append type and value of Current to `st'.
+		require
+			valid_st: st /= Void;
+			valid_name: name /= Void
+		deferred
+		end;
+
+feature {NONE} -- Computed Value access
+
+	append_value (st: TEXT_FORMATTER) is
+			-- Append only the value of Current to `st'.
+		deferred
+		end
 
 	output_value: STRING_32 is
 			-- A STRING representation of the value of `Current'.
@@ -174,14 +192,14 @@ feature -- Output
 			valid_kind: Result >= Immediate_value and then Result <= Error_message_value
 		end
 
-feature {DUMP_VALUE, CALL_STACK_ELEMENT, DBG_EVALUATOR_IMP, ABSTRACT_DEBUG_VALUE, IPC_REQUEST}
+feature {DUMP_VALUE, CALL_STACK_ELEMENT, SHARED_DEBUG}
 
 	set_hector_addr is
 			-- Convert the physical addresses received from the application
 			-- to hector addresses. (should be called only once just after
 			-- all the information has been received from the application.)
 		do
-		end
+		end;
 
 feature {ATTR_REQUEST, CALL_STACK_ELEMENT} -- Setting
 
@@ -195,7 +213,7 @@ feature {ATTR_REQUEST, CALL_STACK_ELEMENT} -- Setting
 			item_number = n
 		end
 
-feature {RECV_VALUE, CALL_STACK_ELEMENT, DEBUG_VALUE_EXPORTER, ABSTRACT_DEBUG_VALUE, APPLICATION_EXECUTION} -- Setting
+feature {RECV_VALUE, CALL_STACK_ELEMENT, DEBUG_VALUE_EXPORTER, ABSTRACT_DEBUG_VALUE, APPLICATION_EXECUTION_IMP} -- Setting
 
 	set_name (n: like name) is
 			-- Set `name' to `n'.
@@ -206,6 +224,24 @@ feature {RECV_VALUE, CALL_STACK_ELEMENT, DEBUG_VALUE_EXPORTER, ABSTRACT_DEBUG_VA
 		end
 
 feature {NONE} -- Implementation
+
+	append_tabs (st: TEXT_FORMATTER; indent: INTEGER) is
+			-- Append `indent' tabulation character to `st'.
+		require
+			st: st /= Void;
+			indent_positive: indent >= 0
+		local
+			i: INTEGER
+		do
+			from
+				i := 1
+			until
+				i > indent
+			loop
+				st.add_indent;
+				i := i + 1
+			end
+		end;
 
 	set_default_name is
 			-- Set the name to `default' in order to	
@@ -235,13 +271,6 @@ feature {NONE} -- Constants
 	Equal_sign_str: STRING is " = "
 
 	Is_unknown: STRING is " = Unknown"
-
-feature {DEBUGGER_TEXT_FORMATTER_VISITOR} -- Debug value type id
-
-	debug_value_type_id: INTEGER is
-		do
-			Result := abstract_debug_value_id
-		end
 
 invariant
 

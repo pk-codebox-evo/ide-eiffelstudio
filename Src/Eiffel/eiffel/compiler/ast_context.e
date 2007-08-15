@@ -57,7 +57,7 @@ feature -- Access
 	current_feature: FEATURE_I
 			-- Current analyzed feature.
 
-	locals: HASH_TABLE [LOCAL_INFO, INTEGER]
+	locals: HASH_TABLE [LOCAL_INFO, STRING]
 			-- Current local variables of the analyzed feature
 
 	supplier_ids: FEATURE_DEPENDANCE
@@ -72,13 +72,13 @@ feature -- Access
 	old_inline_agents: HASH_TABLE [FEATURE_I, INTEGER]
 			-- It the processed feature was allready presend, this table gives a mapping from
 			-- original inline_agent_nr to its features.
+
+	set_old_inline_agents (a_table: like old_inline_agents)
+			-- set `old_inline_agents' to `a_table'
 		do
-			if old_inline_agents_int = Void then
-				create old_inline_agents_int.make (0)
-			end
-			Result := old_inline_agents_int
+			old_inline_agents := a_table
 		ensure
-			Result /= Void
+			old_inline_agents_set: old_inline_agents = a_table
 		end
 
 	used_argument_names: SEARCH_TABLE [INTEGER]
@@ -213,8 +213,6 @@ feature -- Setting
 				-- Routine id
 			rout_id := current_feature.rout_id_set.first
 			byte_code.set_rout_id (rout_id)
-				-- Written_id
-			byte_code.set_written_class_id (current_class.class_id)
 				-- Pattern id
 			byte_code.set_pattern_id (current_feature.pattern_id)
 				-- Local variable declarations
@@ -255,6 +253,7 @@ feature -- Setting
 			current_inline_agent_body := body
 		end
 
+
 feature -- Managing the type stack
 
 	clear_all is
@@ -264,6 +263,7 @@ feature -- Managing the type stack
 			current_class := Void
 			current_class_type := Void
 			current_feature_table := Void
+			written_class := Void
 			clear_feature_context
 		end
 
@@ -275,7 +275,6 @@ feature -- Managing the type stack
 			locals.clear_all
 			last_conversion_info := Void
 			supplier_ids.wipe_out
-			written_class := Void
 		end;
 
 feature	-- Saving contexts
@@ -296,9 +295,6 @@ feature	-- Saving contexts
 		do
 			copy (context)
 		end
-
-feature {NONE} --Internals
-	old_inline_agents_int:  HASH_TABLE [FEATURE_I, INTEGER]
 
 invariant
 	locals_not_void: locals /= Void

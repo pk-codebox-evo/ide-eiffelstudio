@@ -107,6 +107,7 @@ feature -- Access
 			end
 		end
 
+
 feature {NONE} -- Implementation
 
 	Size_limit: INTEGER is 200

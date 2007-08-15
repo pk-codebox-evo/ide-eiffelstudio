@@ -19,7 +19,8 @@ inherit
 	SHARED_ERROR_HANDLER
 
 create
-	make
+
+	make, do_nothing
 
 feature -- Initialization
 
@@ -42,7 +43,7 @@ feature -- Properties
 			Result := finalize_cmd_name
 		end;
 
-	help_message: STRING_32 is
+	help_message: STRING is
 		do
 			Result := finalize_help
 		end;
@@ -60,12 +61,13 @@ feature {NONE} -- Execution
 			answer: STRING
 		do
 			if Eiffel_project.is_read_only then
-				localized_print_error (ewb_names.read_only_project_cannot_compile)
+				io.error.put_string ("Read-only project: cannot compile.%N")
 			elseif
 				command_line_io.confirmed
-						(ewb_names.finalizing_implies_some_c_compilation)
+						("Finalizing implies some C compilation and linking.%
+							%%NDo you want to do it now")
 			then
-				localized_print (ewb_names.arrow_keep_assertions.as_string_32 + ewb_names.yes_or_no + ": ")
+				io.put_string ("--> Keep assertions (y/n): ");
 				command_line_io.wait_for_return;
 				answer := io.last_string;
 				answer.to_lower;
@@ -82,7 +84,7 @@ feature {NONE} -- Execution
 			-- Execute Current batch command.
 		do
 			if Eiffel_project.is_read_only then
-				localized_print_error (ewb_names.read_only_project_cannot_compile)
+				io.error.put_string ("Read-only project: cannot compile.%N")
 			else
 				init;
 				if Eiffel_ace.file_name /= Void then

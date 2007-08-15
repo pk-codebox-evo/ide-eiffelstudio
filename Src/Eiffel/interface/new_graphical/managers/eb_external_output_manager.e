@@ -125,7 +125,7 @@ feature -- Basic Operations
 			end
 		end
 
-	display_state (s: STRING_GENERAL; warning: BOOLEAN) is
+	display_state (s: STRING; warning: BOOLEAN) is
 			-- Display process state `s' to external command output panel.
 			-- If `warning' is True, display in red color, otherwise in black color.
 		local
@@ -157,7 +157,7 @@ feature -- Basic Operations
 				eo ?= managed_output_tools.item
 				if eo /= Void then
 					if target_development_window /= Void then
-						if eo.develop_window = target_development_window then
+						if eo.owner_development_window = target_development_window then
 							eo.process_block_text (text)
 						end
 					else
@@ -196,6 +196,7 @@ feature -- Status reporting
 			-- Development windows where current external command is launcheds		
 
 feature -- Basic Operations / Information message
+
 
 	clear_formatter is
 		do
@@ -259,6 +260,7 @@ feature {NONE} -- Implementation
 	display_additional_info (st: TEXT_FORMATTER) is
 		do
 		end
+
 
 feature {NONE} -- Implementation
 

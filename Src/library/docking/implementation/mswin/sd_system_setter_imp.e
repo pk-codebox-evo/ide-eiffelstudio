@@ -13,38 +13,28 @@ inherit
 
 	EV_ANY_HANDLER
 
-	EV_SHARED_APPLICATION
-		export
-			{NONE} all
-		end
-
 feature -- Command
 
 	before_enable_capture is
 			-- Redefine
 		local
+			l_env: EV_ENVIRONMENT
 			l_app_imp: EV_APPLICATION_IMP
 		do
-			l_app_imp ?= ev_application.implementation
+			create l_env
+			l_app_imp ?= l_env.application.implementation
 			l_app_imp.set_capture_type ({EV_APPLICATION_IMP}.capture_normal)
 		end
 
 	after_disable_capture is
 			-- Redefine
 		local
+			l_env: EV_ENVIRONMENT
 			l_app_imp: EV_APPLICATION_IMP
 		do
-			l_app_imp ?= ev_application.implementation
+			create l_env
+			l_app_imp ?= l_env.application.implementation
 			l_app_imp.set_capture_type ({EV_APPLICATION_IMP}.capture_heavy)
-		end
-
-	is_remote_desktop: BOOLEAN is
-			-- Redefine
-		local
-			l_routine: WEL_WINDOWS_ROUTINES
-		do
-			create l_routine
-			Result := l_routine.is_terminal_service
 		end
 
 indexing

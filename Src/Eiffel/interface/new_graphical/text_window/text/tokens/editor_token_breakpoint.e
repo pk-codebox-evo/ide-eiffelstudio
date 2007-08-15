@@ -25,7 +25,7 @@ inherit
 			Pixmaps as Shared_pixmaps
 		end
 
-	SHARED_DEBUGGER_MANAGER
+	EB_SHARED_DEBUG_TOOLS
 
 	EB_EDITOR_TOKEN_IDS
 
@@ -99,9 +99,6 @@ feature -- Miscellaneous
  			if pebble /= Void then
 					-- The breakable marks are always displayed on the beginning of the line.
 				device.draw_pixmap (1, d_y, pixmap)
-				debug ("breakpoint")
-					device.draw_text_top_left (2, d_y, pebble.index.out)
-				end
 			end
 		end
 
@@ -129,12 +126,14 @@ feature -- Miscellaneous
 			index: INTEGER 	-- index in the pixmap array.
 							--  1 = not stopped version
 							--  2 = stopped version.
+			app_exec: APPLICATION_EXECUTION
 		do
+			app_exec := Eb_debugger_manager.application
+			status := app_exec.status
 			pebble_routine := pebble.routine
 			pebble_index := pebble.index
 
-			if debugger_manager.safe_application_is_stopped then
-				status := Debugger_manager.application_status
+			if status /= Void and then status.is_stopped then
 				if status.is_top (pebble_routine.body_index, pebble_index) then
 					index := 2
 				elseif status.is_at (pebble_routine.body_index, pebble_index) then
@@ -146,17 +145,16 @@ feature -- Miscellaneous
 				index := 1
 			end
 
-			inspect Debugger_manager.breakpoint_status (pebble_routine, pebble_index)
-
-			when {DEBUGGER_DATA}.breakpoint_not_set then
+			inspect app_exec.breakpoint_status (pebble_routine, pebble_index)
+			when 0 then
 				pixmaps := icon_group_bp_slot
-			when {DEBUGGER_DATA}.breakpoint_set then
+			when 1 then
 				pixmaps := icon_group_bp_enabled
-			when {DEBUGGER_DATA}.breakpoint_disabled then
+			when -1 then
 				pixmaps := icon_group_bp_disabled
-			when {DEBUGGER_DATA}.breakpoint_condition_set then
+			when 2 then
 				pixmaps := icon_group_bp_enabled_condition
-			when {DEBUGGER_DATA}.breakpoint_condition_disabled then
+			when -2 then
 				pixmaps := icon_group_bp_disabled_condition
 			end
 
@@ -233,6 +231,7 @@ feature {NONE} -- Implementation
 		ensure
 			result_not_void: Result /= Void
 		end
+
 
 invariant
 		breakpoint_is_first: previous = Void

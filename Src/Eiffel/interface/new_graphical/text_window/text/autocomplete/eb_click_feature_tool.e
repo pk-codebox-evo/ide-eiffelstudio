@@ -30,7 +30,7 @@ feature -- Initialization
 			current_class_c := feat.written_class
 			can_analyze_current_class := False
 			if current_class_c /= Void and then not Workbench.is_compiling then
-				current_class_i := current_class_c.original_class
+				current_class_i := current_class_c.lace_class
 				group := current_class_i.group
 				current_feature_name := feat.name
 				is_ready := False
@@ -140,7 +140,7 @@ feature -- Analysis preparation
 				elseif feature_name.is_prefix then
 					feature_name_image := "prefix"
 				else
-					feature_name_image := feature_name.internal_name.name
+					feature_name_image := feature_name.internal_name
 				end
 			else
 				feature_name_image := current_feature_name

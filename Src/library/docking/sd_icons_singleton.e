@@ -28,21 +28,11 @@ feature -- Icons
 			not_void: Result /= Void
 		end
 
-	unstick_buffer: EV_PIXEL_BUFFER is
-			-- Unstick icon pixel buffer
-		do
-		end
-
 	stick: 	EV_PIXMAP is
 			-- Stick icon pixmap.
 		deferred
 		ensure
 			not_void: Result /= Void
-		end
-
-	stick_buffer: EV_PIXEL_BUFFER is
-			-- Stick icon pixel buffer
-		do
 		end
 
 	minimize: EV_PIXMAP is
@@ -52,11 +42,6 @@ feature -- Icons
 			not_void: Result /= Void
 		end
 
-	minimize_buffer: EV_PIXEL_BUFFER is
-			-- Minimize icon pixel buffer
-		do
-		end
-
 	maximize: EV_PIXMAP is
 			-- Maximize icon pixmap.
 		deferred
@@ -64,21 +49,11 @@ feature -- Icons
 			not_void: Result /= Void
 		end
 
-	maximize_buffer: EV_PIXEL_BUFFER is
-			-- Maximize icon pixel buffer
-		do
-		end
-
 	normal: EV_PIXMAP is
-			-- Normal icon pixmap.
+			-- Minimize icon pixmap.
 		deferred
 		ensure
 			not_void: Result /= Void
-		end
-
-	normal_buffer: EV_PIXEL_BUFFER is
-			-- Normal icon pixel buffer
-		do
 		end
 
 	close: EV_PIXMAP is
@@ -86,11 +61,6 @@ feature -- Icons
 		deferred
 		ensure
 			not_void: Result /= Void
-		end
-
-	close_buffer: EV_PIXEL_BUFFER is
-			-- Close icon pixel buffer
-		do
 		end
 
 	tool_bar_separator_icon: EV_PIXMAP is
@@ -114,20 +84,11 @@ feature -- Icons
 			not_void: Result /= Void
 		end
 
-	hide_tab_indicator_buffer (a_hide_number: INTEGER): EV_PIXEL_BUFFER is
-			-- Hide tab indicator pixel buffer.
-		require
-			vaild: a_hide_number >= 0 and a_hide_number < 1000
+	hide_tab_indicator (a_hide_number: INTEGER): EV_PIXMAP is
+			-- Hide tab indicator.
 		deferred
 		ensure
 			not_void: Result /= Void
-		end
-
-	hide_tab_indicator (a_hide_number: INTEGER): EV_PIXMAP is
-			-- Hide tab indicator.
-			-- If `hide_tab_indicator_buffer' available, then docking library will not use this feature.
-			-- Because on Linux draw text on EV_PIXEL_BUFFER is not available now, then Smart Docking library will use this feature.
-		do
 		end
 
 	tool_bar_indicator: EV_PIXMAP is
@@ -135,11 +96,6 @@ feature -- Icons
 		deferred
 		ensure
 			not_void: Result /= Void
-		end
-
-	tool_bar_indicator_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer indicator for SD_TITLE_BAR, when there is nor enough space to show custom widget.
-		do
 		end
 
 feature -- Side indicators
@@ -337,17 +293,6 @@ feature -- Tool bars icons.
 		deferred
 		ensure
 			not_void: Result /= Void
-		end
-
-	tool_bar_dropdown_buffer: EV_PIXEL_BUFFER is
-			-- SD_TOOL_BAR_POPUP_BUTTON's dropdown icon.
-		local
-			l_rect: EV_RECTANGLE
-		do
-			-- We shift the dropdown arrow.
-			create l_rect.make (-1, -2, tool_bar_customize_indicator_buffer.width, tool_bar_customize_indicator_buffer.height)
-			create Result.make_with_size (tool_bar_customize_indicator_buffer.width, tool_bar_customize_indicator_buffer.height)
-			Result.draw_pixel_buffer_with_rect (tool_bar_customize_indicator_buffer, l_rect)
 		end
 
 feature -- Zone management icons.

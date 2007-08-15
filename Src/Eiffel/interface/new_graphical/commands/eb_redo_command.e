@@ -12,8 +12,7 @@ inherit
 	EB_UNDO_REDO_COMMAND
 		redefine
 			executable,
-			tooltext,
-			pixel_buffer
+			tooltext
 		end
 
 create
@@ -24,9 +23,7 @@ feature -- Status report
 	executable: BOOLEAN is
 			-- Is the operation possible?
 		do
-			if editor /= Void then
-				Result := editor.redo_is_possible
-			end
+			Result := editor.redo_is_possible
 		end
 
 feature -- Execution
@@ -34,14 +31,12 @@ feature -- Execution
 	execute is
 			-- Execute the undo/redo operation
 		do
-			if editor /= Void then
-				editor.redo
-			end
+			editor.redo
 		end
 
 feature {NONE} -- Implementation
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it appears in the menu (with & symbol).
 		do
 			Result := Interface_names.m_Redo
@@ -53,25 +48,19 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.general_redo_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.general_redo_icon_buffer
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.f_Redo
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text for the toolbar button.
 		do
 			Result := Interface_names.b_Redo
 		end
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Description for this command.
 		do
 			Result := Interface_names.e_Redo

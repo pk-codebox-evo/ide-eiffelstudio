@@ -12,55 +12,19 @@ inherit
 			initialize
 		end
 
-	EV_LAYOUT_CONSTANTS
-		export
-			{NONE} all
-		undefine
-			copy, default_create
-		end
-
-	EB_CONSTANTS
-		export
-			{NONE} all
-		undefine
-			copy, default_create
-		end
-
 feature {NONE} -- Initialization
 
 	initialize is
 			-- Initialize
-		local
-			l_vb: EV_VERTICAL_BOX
-			l_hb: EV_HORIZONTAL_BOX
 		do
 			Precursor
 
 			set_size (500, 500)
 
-			create l_vb
-			extend (l_vb)
-			l_vb.set_padding (default_padding_size)
-			l_vb.set_border_width (default_border_size)
-
 			create text_field
 			text_field.disable_word_wrapping
 			text_field.disable_edit
-			l_vb.extend (text_field)
-
-			create cancel_button.make_with_text_and_action (interface_names.b_cancel, agent
-				do
-					if process /= Void then
-						process.terminate_tree
-					end
-				end)
-			create l_hb
-			l_vb.extend (l_hb)
-			l_vb.disable_item_expand (l_hb)
-			l_hb.extend (create {EV_CELL})
-			l_hb.extend (cancel_button)
-			l_hb.disable_item_expand (cancel_button)
-			l_hb.extend (create {EV_CELL})
+			extend (text_field)
 
 			create mutex.make
 			create action_queue
@@ -83,20 +47,7 @@ feature {NONE} -- GUI elements
 	text_field: EV_TEXT
 			-- Text field to display the output.
 
-	cancel_button: EV_BUTTON
-			-- Button to cancel the action.
-
 feature -- Update
-
-	set_process (a_process: like process) is
-			-- Set `process' to `a_process'.
-		require
-			a_process_not_void: a_process /= Void
-		do
-			process := a_process
-		ensure
-			process_set: process = a_process
-		end
 
 	append_text (a_text: STRING) is
 			-- Append `a_text' to the displayed text.
@@ -137,9 +88,6 @@ feature {NONE} -- Implementation
 
 	mutex: MUTEX
 			-- Mutex for updating text from an other thread.
-
-	process: PROCESS
-			-- Process to terminate if the action is canceled.
 
 invariant
 	initialized: text_field /= Void and mutex /= Void and action_queue /= Void

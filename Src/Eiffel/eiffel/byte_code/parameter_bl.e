@@ -1,9 +1,7 @@
 indexing
-	description: "Enlarged parameter expression."
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
-	date: "$Date$"
-	revision: "$Revision$"
+-- Enlarged parameter expression
 
 class PARAMETER_BL
 
@@ -13,7 +11,7 @@ inherit
 		redefine
 			analyze, generate, unanalyze, register, set_register,
 			free_register, print_register, propagate, c_type
-		end
+		end;
 
 feature
 
@@ -30,6 +28,17 @@ feature
 			-- C type of the attachment target
 		do
 			Result := real_type (attachment_type).c_type;
+		end;
+
+	need_metamorphosis: BOOLEAN is
+			-- Do we need to issue a metamorphosis on the parameter?
+		local
+			target_type, source_type: TYPE_I;
+		do
+			target_type := real_type (attachment_type);
+			source_type := real_type (expression.type);
+			Result := not (target_type.is_none or target_type.is_expanded) and then
+				(source_type.is_expanded)
 		end;
 
 	propagate (r: REGISTRABLE) is
@@ -54,9 +63,7 @@ feature
 			-- Analyze expression
 		do
 			expression.analyze;
-			if is_compaund then
-				register := context.get_argument_register (c_type)
-			elseif expression.is_register_required (real_type (attachment_type)) then
+			if expression.is_register_required (real_type (attachment_type)) then
 				get_register
 			end
 		end
@@ -84,22 +91,18 @@ feature
 		end
 
 	print_register is
-			-- Print expression value that can be used as an argument to a routine.
+			-- Print expression value
 		local
 			target_type, source_type: TYPE_I;
 			l_basic: BASIC_I
 			target_ctype, source_ctype: TYPE_C;
 			cast_generated: BOOLEAN;
 			buf: GENERATION_BUFFER
-			r: REGISTER
 		do
 			buf := buffer
 			target_type := real_type (attachment_type);
 			source_type := real_type (expression.type);
-			if is_compaund then
-				r ?= register
-				context.print_argument_register (r, buf)
-			elseif target_type.is_none then
+			if target_type.is_none then
 				buf.put_string ("(EIF_REFERENCE) 0");
 			elseif register /= Void then
 				register.print_register
@@ -144,28 +147,15 @@ feature
 			end;
 		end;
 
-	print_immediate_register is
-			-- Print expression value for immediate use,
-			-- not for passing as an argument.
-		do
-			if register /= Void and then is_compaund then
-				register.print_register
-			else
-				print_register
-			end
-		end
-
 	fill_from (p: PARAMETER_B) is
 			-- Fill in node from parameter `b'
 		do
-			expression := p.expression.enlarged
-			internal_attachment_type := p.internal_attachment_type
-			is_formal := p.is_formal
-			parent := p.parent
-		end
+			expression := p.expression.enlarged;
+			attachment_type := p.attachment_type;
+		end;
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

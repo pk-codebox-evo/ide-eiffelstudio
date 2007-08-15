@@ -107,7 +107,7 @@ feature {NONE} -- Initialization
 			l_ev_vertical_box_1.set_border_width (default_border_size)
 			l_ev_vertical_box_1.set_padding_width (small_padding_size)
 			l_ev_vertical_box_1.extend (l_ev_frame_1)
-			l_ev_frame_1.set_text (interface_names.l_settings)
+			l_ev_frame_1.set_text ("Settings")
 			l_ev_frame_1.extend (l_ev_vertical_box_2)
 			l_ev_vertical_box_2.set_border_width (small_border_size)
 			l_ev_vertical_box_2.set_padding (small_padding_size)
@@ -151,7 +151,7 @@ feature {NONE} -- Initialization
 			l_ev_horizontal_box_1.disable_item_expand (stiffness_label)
 			l_ev_horizontal_box_1.disable_item_expand (l_ev_label_1)
 			l_ev_horizontal_box_1.disable_item_expand (l_ev_label_2)
-			stiffness_label.set_text (interface_names.l_stiffness)
+			stiffness_label.set_text ("Stiffness:")
 			stiffness_label.set_minimum_width (minimum_width_for_labels)
 			stiffness_label.align_text_left
 			l_ev_label_1.set_text ("0%%")
@@ -160,7 +160,7 @@ feature {NONE} -- Initialization
 			l_ev_horizontal_box_2.disable_item_expand (attraction_label)
 			l_ev_horizontal_box_2.disable_item_expand (l_ev_label_3)
 			l_ev_horizontal_box_2.disable_item_expand (l_ev_label_4)
-			attraction_label.set_text (interface_names.l_center_attraction)
+			attraction_label.set_text ("Center attraction:")
 			attraction_label.set_minimum_width (minimum_width_for_labels)
 			attraction_label.align_text_left
 			l_ev_label_3.set_text ("0%%")
@@ -169,7 +169,7 @@ feature {NONE} -- Initialization
 			l_ev_horizontal_box_3.disable_item_expand (repulsion_label)
 			l_ev_horizontal_box_3.disable_item_expand (l_ev_label_5)
 			l_ev_horizontal_box_3.disable_item_expand (l_ev_label_6)
-			repulsion_label.set_text (interface_names.l_repulsion)
+			repulsion_label.set_text ("Repulsion:")
 			repulsion_label.set_minimum_width (minimum_width_for_labels)
 			repulsion_label.align_text_left
 			l_ev_label_5.set_text ("0%%")
@@ -178,7 +178,7 @@ feature {NONE} -- Initialization
 			l_ev_horizontal_box_4.disable_item_expand (inheritance_label)
 			l_ev_horizontal_box_4.disable_item_expand (l_ev_label_7)
 			l_ev_horizontal_box_4.disable_item_expand (l_ev_label_8)
-			inheritance_label.set_text (interface_names.l_inheritance_stiffness)
+			inheritance_label.set_text ("Inheritance stiffness:")
 			inheritance_label.set_minimum_width (minimum_width_for_labels)
 			inheritance_label.align_text_left
 			l_ev_label_7.set_text ("0%%")
@@ -187,7 +187,7 @@ feature {NONE} -- Initialization
 			l_ev_horizontal_box_5.disable_item_expand (client_label)
 			l_ev_horizontal_box_5.disable_item_expand (l_ev_label_9)
 			l_ev_horizontal_box_5.disable_item_expand (l_ev_label_10)
-			client_label.set_text (interface_names.l_Clients_stiffness)
+			client_label.set_text ("Client stiffness:")
 			client_label.set_minimum_width (minimum_width_for_labels)
 			client_label.align_text_left
 			l_ev_label_9.set_text ("0%%")
@@ -195,9 +195,9 @@ feature {NONE} -- Initialization
 			l_ev_label_10.set_text ("100%%")
 			l_ev_vertical_box_3.disable_item_expand (l_ev_horizontal_box_6)
 			l_ev_horizontal_box_6.disable_item_expand (exit_button)
-			exit_button.set_text (interface_names.b_close)
+			exit_button.set_text ("Close")
 			set_default_width_for_button (exit_button)
-			set_title (interface_names.t_physics_setting)
+			set_title ("Physics settings")
 
 			user_initialization
 		end
@@ -206,7 +206,7 @@ feature -- Access
 
 	physics: EIFFEL_FORCE_LAYOUT
 
-	tool: EB_DIAGRAM_TOOL
+	tool: EB_CONTEXT_EDITOR
 
 feature {NONE} -- Implementation
 
@@ -290,36 +290,36 @@ feature {NONE} -- Implementation
 	update_stiffnes_label (a_value: INTEGER) is
 			-- Set text of stiffness label.
 		do
-			stiffness_label.set_text (interface_names.l_stiffness_value (a_value.out))
+			stiffness_label.set_text ("Stiffness (" + a_value.out + "%%)")
 		end
 
 	update_attraction_label (a_value: INTEGER) is
 			-- Set text of `attraction_label'.
 		do
-			attraction_label.set_text (interface_names.l_center_attraction_value (a_value.out))
+			attraction_label.set_text ("Center attraction (" + a_value.out + "%%)")
 		end
 
 	update_repulsion_label (a_value: INTEGER) is
 			-- Set text of `repulsion_label'.
 		do
-			repulsion_label.set_text (interface_names.l_repulsion_value (a_value.out))
+			repulsion_label.set_text ("Repulsion (" + a_value.out + "%%)")
 		end
 
 	update_inheritance_label (a_value: INTEGER) is
 			-- Set text of `inheritance_label'.
 		do
-			inheritance_label.set_text (interface_names.l_inheritance_stiffness_value (a_value.out))
+			inheritance_label.set_text ("Inheritance stiffness (" + a_value.out + "%%)")
 		end
 
 	update_client_label (a_value: INTEGER) is
 			-- Set text of `client_label'.
 		do
-			client_label.set_text (interface_names.l_Clients_stiffness_value (a_value.out))
+			client_label.set_text ("Client stiffness (" + a_value.out + "%%)")
 		end
 
 	minimum_width_for_labels: INTEGER is
 		once
-			Result := (create {EV_FONT}).string_width (interface_names.l_inheritance_stiffness_100) + 30
+			Result := (create {EV_FONT}).string_width ("Inheritance stiffness (100%%)") + 30
 		end
 
 	minimum_width_for_sliders: INTEGER is 150;

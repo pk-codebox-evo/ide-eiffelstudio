@@ -14,9 +14,10 @@ inherit
 	EV_RICH_TEXT_I
 		rename
 			last_load_successful as implementation_last_load_successful
+		undefine
+			selected_text
 		redefine
 			interface,
-			selected_text,
 			text_length
 		end
 
@@ -61,8 +62,7 @@ inherit
 			text_length,
 			wel_text_length,
 			set_background_color,
-			scroll_to_end,
-			selected_text
+			scroll_to_end
 		select
 			wel_line_index,
 			wel_current_line_number,
@@ -124,6 +124,7 @@ inherit
 			set_height,
 			set_width,
 			insert_text,
+			selected_text,
 			current_line_number,
 			on_en_change,
 			set_text_limit,
@@ -147,8 +148,7 @@ inherit
 			show,
 			destroy,
 			wel_make,
-			on_getdlgcode,
-			on_wm_dropfiles
+			on_getdlgcode
 		redefine
 			default_style,
 			default_ex_style,
@@ -158,8 +158,7 @@ inherit
 			rtf_stream_in,
 			on_erase_background,
 			enable_redraw,
-			on_en_change,
-			selected_text
+			on_en_change
 		end
 
 	WEL_CFM_CONSTANTS
@@ -226,7 +225,7 @@ feature {NONE} -- Initialization
 			set_text_limit (2560000)
 			set_options (Ecoop_set, Eco_autovscroll + Eco_autohscroll)
 			enable_all_notifications
-			{WEL_API}.send_message (wel_item, Em_settypographyoptions,
+			cwin_send_message (wel_item, Em_settypographyoptions,
 				to_wparam (to_advancedtypography), to_lparam (to_advancedtypography))
 
 				-- Connect events to `tab_positions' to update `Current' as values
@@ -249,9 +248,11 @@ feature {NONE} -- Initialization
 
 	default_style: INTEGER is
 			-- Default style used to create the control
+			-- (from WEL_RICH_EDIT)
+			-- (export status {NONE})
 		once
 			Result := Ws_visible + Ws_child + Ws_border + Ws_vscroll + Es_savesel +
-				Es_disablenoscroll + Es_multiline + es_autovscroll + Es_Wantreturn + ws_tabstop + es_nohidesel
+				Es_disablenoscroll + Es_multiline + es_autovscroll + Es_Wantreturn + ws_tabstop
 		end
 
 	default_ex_style: INTEGER is
@@ -305,7 +306,7 @@ feature -- Status report
 		do
 			create Result
 			char_imp ?= Result.implementation
-			{WEL_API}.send_message (wel_item, em_getcharformat, to_wparam (1), char_imp.item)
+			cwin_send_message (wel_item, em_getcharformat, to_wparam (1), char_imp.item)
 		ensure
 			result_not_void: Result /= Void
 		end
@@ -319,7 +320,7 @@ feature -- Status report
 		do
 			create char_format
 			Result ?= char_format.implementation
-			{WEL_API}.send_message (wel_item, em_getcharformat, to_wparam (1), Result.item)
+			cwin_send_message (wel_item, em_getcharformat, to_wparam (1), Result.item)
 		ensure
 			result_not_void: Result /= Void
 		end
@@ -367,7 +368,7 @@ feature -- Status report
 		do
 			create Result
 			imp ?= Result.implementation
-			{WEL_API}.send_message (wel_item, em_getparaformat, to_wparam (0), imp.item)
+			cwin_send_message (wel_item, em_getparaformat, to_wparam (0), imp.item)
 		ensure
 			result_not_void: Result /= Void
 		end
@@ -392,7 +393,7 @@ feature -- Status report
 				set_selection (start_index, end_index - 1)
 			end
 			create wel_character_format.make
-			{WEL_API}.send_message (wel_item, em_getcharformat, to_wparam (1), wel_character_format.item)
+			cwin_send_message (wel_item, em_getcharformat, to_wparam (1), wel_character_format.item)
 			mask := wel_character_format.mask
 			Result := flag_set (mask, cfm_color | cfm_bold | cfm_face | cfm_size | cfm_strikeout | cfm_underline | cfm_italic | cfm_offset | cfm_backcolor)
 			if not range_already_selected then
@@ -411,7 +412,7 @@ feature -- Status report
 		do
 			set_selection (start_index - 1, end_index - 1)
 			create wel_character_format.make
-			{WEL_API}.send_message (wel_item, em_getcharformat, to_wparam (1), wel_character_format.item)
+			cwin_send_message (wel_item, em_getcharformat, to_wparam (1), wel_character_format.item)
 			mask := wel_character_format.mask
 			Result := flag_set (mask, cfm_color | cfm_bold | cfm_face | cfm_size | cfm_strikeout | cfm_underline | cfm_italic | cfm_offset | cfm_backcolor)
 		end
@@ -506,7 +507,7 @@ feature -- Status report
 				set_selection (start_position - 1, end_position - 1)
 			end
 			create wel_paragraph_format.make
-			{WEL_API}.send_message (wel_item, em_getparaformat, to_wparam (0), wel_paragraph_format.item)
+			cwin_send_message (wel_item, em_getparaformat, to_wparam (0), wel_paragraph_format.item)
 			mask := wel_paragraph_format.mask
 			Result := flag_set (mask, Pfm_alignment | pfm_startindent| pfm_rightindent | pfm_spacebefore | pfm_spaceafter)
 			if not range_already_selected then
@@ -523,7 +524,7 @@ feature -- Status report
 		do
 			set_selection (start_position - 1, end_position - 1)
 			create wel_paragraph_format.make
-			{WEL_API}.send_message (wel_item, em_getparaformat, to_wparam (0), wel_paragraph_format.item)
+			cwin_send_message (wel_item, em_getparaformat, to_wparam (0), wel_paragraph_format.item)
 			mask := wel_paragraph_format.mask
 			Result := flag_set (mask, Pfm_alignment | pfm_startindent| pfm_rightindent | pfm_spacebefore | pfm_spaceafter)
 		end
@@ -548,7 +549,7 @@ feature -- Status report
 				set_selection (start_index - 1, end_index - 1)
 			end
 			create wel_character_format.make
-			{WEL_API}.send_message (wel_item, em_getcharformat, to_wparam (1), wel_character_format.item)
+			cwin_send_message (wel_item, em_getcharformat, to_wparam (1), wel_character_format.item)
 			mask := wel_character_format.mask
 			if flag_set (mask, cfm_face) then
 				flags := flags | {EV_CHARACTER_FORMAT_CONSTANTS}.font_family
@@ -609,7 +610,7 @@ feature -- Status report
 				set_selection (start_position - 1, end_position - 1)
 			end
 			create wel_paragraph_format.make
-			{WEL_API}.send_message (wel_item, em_getparaformat, to_wparam (0), wel_paragraph_format.item)
+			cwin_send_message (wel_item, em_getparaformat, to_wparam (0), wel_paragraph_format.item)
 
 			mask := wel_paragraph_format.mask
 			if flag_set (mask, pfm_alignment) then
@@ -737,27 +738,6 @@ feature -- Status report
 			else
 				-- If no wrapping we can calculate this the quick way.
 				Result := cwin_get_window_text_length (wel_item) - line_count + 1
-			end
-		end
-
-	selected_text: STRING_32 is
-			-- Text currently selected in `Current'.
-		local
-			i, nb: INTEGER
-		do
-				-- Get the text from WEL
-			Result := Precursor {WEL_RICH_EDIT}
-				-- Replace all %R with %N since that's what we have from Windows.
-			from
-				i := 1
-				nb := Result.count
-			until
-				i > nb
-			loop
-				if Result.item (i) = '%R' then
-					Result.put ('%N', i)
-				end
-				i := i + 1
 			end
 		end
 
@@ -1173,14 +1153,10 @@ feature -- Status setting
 			end
 
 			set_options (Ecoop_set, Eco_autovscroll + Eco_autohscroll)
-			{WEL_API}.send_message (wel_item, Em_settypographyoptions,
+			cwin_send_message (wel_item, Em_settypographyoptions,
 				to_wparam (to_advancedtypography), to_lparam (to_advancedtypography))
 			set_text_limit (2560000)
-			if private_font /= Void then
-				set_font (private_font)
-			else
-				set_default_font
-			end
+			set_default_font
 			if parent_imp /= Void then
 				parent_imp.notify_change (nc_minsize, Current)
 			end
@@ -1195,7 +1171,7 @@ feature -- Status setting
 				-- It appears that streaming rtf adds an extra new line character which we must now remove.
 			select_region (text_length, text_length)
 			check
-				selected_text_is_newline: selected_text.is_empty or selected_text.is_equal ("%N")
+				selected_text_is_newline: selected_text.is_equal ("%N")
 			end
 			delete_selection
 
@@ -1593,7 +1569,7 @@ feature {NONE} -- Implementation
 	enable_redraw is
 			-- Ensure `Current' is redrawn as required.
 		do
-			{WEL_API}.send_message (wel_item, wm_setredraw, to_wparam (1), to_lparam (0))
+			cwin_send_message (wel_item, wm_setredraw, to_wparam (1), to_lparam (0))
 			invalidate_without_background
 		end
 

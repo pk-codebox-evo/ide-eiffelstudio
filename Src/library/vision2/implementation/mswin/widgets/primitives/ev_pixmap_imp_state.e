@@ -12,22 +12,10 @@ deferred class
 inherit
 
 	EV_WIDGET_ACTION_SEQUENCES_IMP
-		export
-			{EV_PIXMAP_IMP_STATE}
-				all
-		end
 
 	EV_PICK_AND_DROPABLE_ACTION_SEQUENCES_IMP
-		export
-			{EV_PIXMAP_IMP_STATE}
-				all
-		end
 
 	EV_PIXMAP_ACTION_SEQUENCES_IMP
-		export
-			{EV_PIXMAP_IMP_STATE}
-				expose_actions_internal
-		end
 
 	WEL_COLOR_REF
 		rename
@@ -154,31 +142,6 @@ feature {NONE} -- Savings
 
 feature -- Misc.
 
-	copy_events_from_other (other: EV_PIXMAP_IMP_STATE) is
-			-- Copy all events from `other' to `Current'.
-			-- Note that `other' is EV_PIXMAP_I and not EV_PIXMAP_IMP,
-			-- as we need to use this in cases where `other' will
-			-- not conform to EV_PIXMAP_IMP.
-		do
-			expose_actions_internal := other.expose_actions_internal
-			focus_in_actions_internal := other.focus_in_actions_internal
-			focus_out_actions_internal := other.focus_out_actions_internal
-			key_press_actions_internal := other.key_press_actions_internal
-			key_press_string_actions_internal := other.key_press_string_actions_internal
-			key_release_actions_internal := other.key_release_actions_internal
-			pointer_button_press_actions_internal := other.pointer_button_press_actions_internal
-			pointer_button_release_actions_internal := other.pointer_button_release_actions_internal
-			pointer_double_press_actions_internal := other.pointer_double_press_actions_internal
-			pointer_enter_actions_internal := other.pointer_enter_actions_internal
-			pointer_leave_actions_internal := other.pointer_leave_actions_internal
-			pointer_motion_actions_internal := other.pointer_motion_actions_internal
-			resize_actions_internal := other.resize_actions_internal
-			conforming_pick_actions_internal := other.conforming_pick_actions_internal
-			drop_actions_internal := other.drop_actions_internal
-			pick_actions_internal := other.pick_actions_internal
-			pick_ended_actions_internal := other.pick_ended_actions_internal
-		end
-
 	raw_image_data: EV_RAW_IMAGE_DATA is
 			-- RGBA representation of `Current'.
 		local
@@ -277,15 +240,6 @@ feature -- Misc.
 			Result_not_void: Result /= Void
 		end
 
-	init_from_pixel_buffer (a_pixel_buffer: EV_PIXEL_BUFFER) is
-			-- Initialize from `a_pixel_buffer'
-		local
-			l_pixel_buffer: EV_PIXEL_BUFFER_IMP
-		do
-			l_pixel_buffer ?= a_pixel_buffer.implementation
-			l_pixel_buffer.draw_to_drawable (interface)
-		end
-
 feature -- Measurement
 
 	width: INTEGER is
@@ -382,15 +336,6 @@ feature {EV_POINTER_STYLE_IMP} -- Implementation
 				tmp_mask_bitmap.decrement_reference
 				tmp_mask_bitmap := Void
 			end
-		end
-
-feature {EV_ANY_I} -- Implementation
-
-	update_for_pick_and_drop (starting: BOOLEAN) is
-			-- Pick and drop status has changed so update appearance of
-			-- `Current' to reflect available targets.
-		do
-			-- Nothing to do here.
 		end
 
 feature {NONE} -- External

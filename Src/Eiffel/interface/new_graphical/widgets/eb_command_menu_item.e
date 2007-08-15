@@ -33,9 +33,9 @@ feature {NONE} -- Initialization
 			command.add_menu_item (Current)
 		end
 
-feature {NONE} -- Cleaning
+feature -- Cleaning
 
-	internal_recycle is
+	recycle is
 			-- To be called when the button has became useless.
 		do
 			command.remove_menu_item (Current)

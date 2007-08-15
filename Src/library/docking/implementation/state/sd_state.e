@@ -71,12 +71,7 @@ feature -- Properties
 		deferred
 		end
 
-	change_tab_tooltip (a_tooltip: STRING_GENERAL) is
-			-- Set notebook tab tooltip if possible.
-		do
-		end
-
-feature {SD_OPEN_CONFIG_MEDIATOR, SD_CONTENT}  -- Restore
+feature {SD_CONFIG_MEDIATOR, SD_CONTENT}  -- Restore
 
 	set_docking_manager (a_docking_manager: SD_DOCKING_MANAGER) is
 			-- Set `internal_docking_manager'.
@@ -88,14 +83,14 @@ feature {SD_OPEN_CONFIG_MEDIATOR, SD_CONTENT}  -- Restore
 			set: internal_docking_manager = a_docking_manager
 		end
 
-	restore (a_data: SD_INNER_CONTAINER_DATA; a_container: EV_CONTAINER) is
+	restore (a_titles: ARRAYED_LIST [STRING]; a_container: EV_CONTAINER; a_direction: INTEGER) is
 			-- `titles' is content name. `a_container' is zone parent.
 		require
-			more_than_one_title: content_count_valid (a_data.titles)
+			more_than_one_title: content_count_valid (a_titles)
 			a_container_not_void: a_container /= Void
 			a_container_not_full: not a_container.full
-			a_direction_valid: a_data.direction = {SD_ENUMERATION}.top or a_data.direction = {SD_ENUMERATION}.bottom
-				or a_data.direction = {SD_ENUMERATION}.left or a_data.direction = {SD_ENUMERATION}.right
+			a_direction_valid: a_direction = {SD_ENUMERATION}.top or a_direction = {SD_ENUMERATION}.bottom
+				or a_direction = {SD_ENUMERATION}.left or a_direction = {SD_ENUMERATION}.right
 		do
 			content.set_visible (True)
 		end
@@ -123,10 +118,6 @@ feature -- Commands
 				zone.on_focus_in (a_content)
 				docking_manager.property.set_last_focus_content (content)
 			end
-			if zone /= Void and then not zone.is_displayed then
-				-- Maybe current is hidden, we restore zones normal state in that dock area.
-				docking_manager.command.recover_normal_state_in_dock_area_of (zone)
-			end
 		end
 
 	show is
@@ -149,8 +140,6 @@ feature -- Commands
 			else
 				internal_docking_manager.command.lock_update (Void, True)
 			end
-
-			internal_docking_manager.command.recover_normal_state_in_dock_area_of (zone)
 
 			if content /= internal_docking_manager.zones.place_holder_content then
 				add_place_holder
@@ -178,28 +167,6 @@ feature -- Commands
 		do
 		end
 
-	minimize is
-			-- Minimize if possible
-		local
-			l_zone: SD_UPPER_ZONE
-		do
-			l_zone ?= zone
-			if l_zone /= Void and then not l_zone.is_minimized then
-				l_zone.on_minimize
-			end
-		end
-
-	set_split_proportion (a_proportion: REAL) is
-			-- Set parent splitter proportion to `a_proportion' if is possible.
-		local
-			l_parent: EV_SPLIT_AREA
-		do
-			l_parent ?= zone.parent
-			if l_parent /= Void then
-				l_parent.set_proportion (a_proportion)
-			end
-		end
-
 	change_zone_split_area (a_target_zone: SD_ZONE; a_direction: INTEGER) is
 			-- Change zone position to `a_target_zone''s parent at `a_direction'.
 		require
@@ -221,24 +188,9 @@ feature -- Commands
 		do
 		end
 
-	auto_hide_tab_with (a_target_content: SD_CONTENT) is
-			-- When `a_tartget_content' is auto hide state, `content''s auto hide tab dock at side of `a_target_content' auto hide tab.
-		require
-			a_target_content_not_void: a_target_content /= Void
-		local
-			l_auto_hide_state: SD_AUTO_HIDE_STATE
-		do
-			content.set_visible (True)
-			internal_docking_manager.command.lock_update (Void, True)
-			create l_auto_hide_state.make_with_friend (content, a_target_content)
-			content.change_state (l_auto_hide_state)
-			internal_docking_manager.command.unlock_update
-		end
-
 	on_normal_max_window is
 			-- Handle normal\max zone.
 		do
-			zone.on_normal_max_window
 		end
 
 feature -- Properties
@@ -288,7 +240,7 @@ feature -- Properties
 
 feature {SD_CONTENT} -- SD_CONTENT called functions.
 
-	change_title (a_title: STRING_GENERAL; a_content: SD_CONTENT) is
+	change_title (a_title: STRING; a_content: SD_CONTENT) is
 			-- Change title
 		require
 			a_title_not_void: a_title /= Void
@@ -332,7 +284,7 @@ feature  -- States report
 			Result := internal_content = Void
 		end
 
-	content_count_valid (a_titles: ARRAYED_LIST [STRING_GENERAL]): BOOLEAN is
+	content_count_valid (a_titles: ARRAYED_LIST [STRING]): BOOLEAN is
 			-- If `a_titles' vaild?
 		require
 			a_titles_not_void: a_titles /= Void
@@ -455,34 +407,6 @@ feature {NONE} -- Implementation
 			end
 		ensure
 			result_valid: Result >= a_spliter.minimum_split_position and Result <= a_spliter.maximum_split_position
-		end
-
-	restore_minimize is
-			-- Restore minimize state.
-		local
-			l_upper_zone: SD_UPPER_ZONE
-		do
-			l_upper_zone ?= internal_content.state.zone
-			if l_upper_zone /= Void then
-				l_upper_zone.minimize_for_restore
-			end
-		end
-
-	update_floating_zone_visible (a_zone: SD_ZONE; a_show_floating: BOOLEAN) is
-			-- When `restore' for docking and tab state, we should update parent floating zone visible.
-		require
-			not_void: a_zone /= Void
-		local
-			l_inner_container: SD_MULTI_DOCK_AREA
-			l_parent_floating_zone: SD_FLOATING_ZONE
-		do
-			l_inner_container := docking_manager.query.inner_container (a_zone)
-			l_parent_floating_zone := l_inner_container.parent_floating_zone
-			if l_parent_floating_zone /= Void and then not l_parent_floating_zone.is_displayed then
-				if a_show_floating then
-					l_parent_floating_zone.show
-				end
-			end
 		end
 
 	internal_content: SD_CONTENT

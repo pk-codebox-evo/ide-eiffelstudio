@@ -21,9 +21,6 @@ inherit
 		end
 
 	PREFERENCE_CONSTANTS
-		export
-			{NONE} all
-		end
 
 create
 	make,
@@ -108,7 +105,6 @@ feature {NONE} -- Implementation
 			l_preference ?= preference
 			create change_item_widget
 			change_item_widget.deactivate_actions.extend (agent update_changes)
-			change_item_widget.deactivate_actions.extend (agent refresh)
 			change_item_widget.set_text (l_preference.display_string)
 			change_item_widget.pointer_button_press_actions.force_extend (agent activate)
 		end
@@ -140,17 +136,10 @@ feature {NONE} -- Implementation
 			l_pref: SHORTCUT_PREFERENCE
 		do
 			l_pref ?= preference
+			valid_shortcut_text := False
 			if l_pref /= Void then
-				l_app := application
-				if
-					a_key.code = {EV_KEY_CONSTANTS}.key_enter
-					and then not l_app.ctrl_pressed
-					and then not l_app.shift_pressed
-					and then not l_app.alt_pressed
-				then
-					change_item_widget.deactivate
-				elseif l_pref.shortcut_keys.has (a_key.code) then
-					valid_shortcut_text := False
+				if l_pref.shortcut_keys.has (a_key.code) then
+					l_app := application
 					if l_app.ctrl_pressed or l_app.alt_pressed then
 						valid_shortcut_text := True
 						create l_string.make_empty

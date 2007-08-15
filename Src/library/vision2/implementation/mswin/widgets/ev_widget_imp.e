@@ -26,8 +26,7 @@ inherit
 		redefine
 			interface,
 			set_default_colors,
-			refresh_now,
-			create_file_drop_actions
+			refresh_now
 		end
 
 	EV_SIZEABLE_IMP
@@ -52,9 +51,6 @@ inherit
 		end
 
 	EV_WIDGET_ACTION_SEQUENCES_IMP
-		redefine
-			create_file_drop_actions
-		end
 
 	WEL_WINDOWS_ROUTINES
 		export
@@ -352,7 +348,7 @@ feature -- Status setting
 			-- in case it was set insensitive by the child.
 		do
 			if parent_imp /= Void then
-				parent_imp.interface.prune (interface)
+				parent_imp.interface.prune (Current.interface)
 			end
 			wel_destroy
 			set_is_destroyed (True)
@@ -702,6 +698,15 @@ feature {NONE} -- Implementation, mouse_button_events
 			on_button_double_click (x_pos, y_pos, 3)
 		end
 
+feature {EV_ANY_I} -- Implementation
+
+	update_for_pick_and_drop (starting: BOOLEAN) is
+			-- Pick and drop status has changed so update appearance of
+			-- `Current' to reflect available targets.
+		deferred
+		end
+
+
 feature {NONE} -- Implementation
 
 	default_process_message (msg: INTEGER; wparam, lparam: POINTER) is
@@ -897,8 +902,6 @@ feature {EV_DIALOG_IMP_COMMON} -- Implementation
 				end
 				if default_key_processing_handler /= Void and then not default_key_processing_handler.item ([key]) then
 					disable_default_processing
-				elseif is_tabable_from then
-					process_navigation_key (virtual_key)
 				end
 			end
 		end
@@ -945,55 +948,7 @@ feature {EV_DIALOG_IMP_COMMON} -- Implementation
 		do
 		end
 
-	tab_action (direction: BOOLEAN) is
-			-- Go to the next widget that takes the focus through to the tab
-			-- key. If `direction' it goes to the next widget otherwise,
-			-- it goes to the previous one.
-		local
-			l_null, hwnd: POINTER
-			window: WEL_WINDOW
-			l_top: like top_level_window_imp
-		do
-			l_top := top_level_window_imp
-			if l_top /= Void then
-				hwnd := next_dlgtabitem (l_top.wel_item, wel_item, direction)
-			end
-			if hwnd /= l_null then
-				window := window_of_item (hwnd)
-				if window /= Void then
-					window.set_focus
-				end
-			end
-		end
-
-	process_navigation_key (virtual_key: INTEGER) is
-			-- Process a tab or arrow key press to give the focus to the next
-			-- widget. Need to be called in the feature on_key_down when the
-			-- control needs to process this kind of keys.
-		do
-			if
-				virtual_key = ({WEL_INPUT_CONSTANTS}.Vk_tab) and then
-				flag_set (style, {WEL_WINDOW_CONSTANTS}.Ws_tabstop)
-			then
-				tab_action (not key_down ({WEL_INPUT_CONSTANTS}.Vk_shift))
-			end
-		end
-
-	is_tabable_from: BOOLEAN is
-			-- Can current widget be used as a starting point for key navigation
-		do
-			Result := True
-		end
-
 feature {NONE} -- Implementation
-
-	ignore_character_code (a_char_code: INTEGER): BOOLEAN
-			-- Should default processing for `a_char_code' be cancelled?
-		do
-				-- By default we ignore default processing for the Enter key.
-				-- This prevents unnecessary system beeps in some controls.
-			Result := a_char_code = 13
-		end
 
 	on_key_down (virtual_key, key_data: INTEGER) is
 			-- Executed when a key is pressed.
@@ -1022,23 +977,19 @@ feature {NONE} -- Implementation
 			-- Executed when a key is pressed.
 			--| Now outputs all displayable characters, previously
 			--| depended on process_standard_key returning a valid EV_KEY.
-		require
-			exists: exists
 		local
 			character_string: STRING_32
-			l_char: CHARACTER_32
 			l_key: EV_KEY
 			l_code: INTEGER
 		do
 			if character_code = 13 then
 					-- On Windows, the Enter key gives us "%R" but we need to
 					-- substitute this with "%N" which is the Eiffel newline character.
-				l_char := '%N'
+				character_string := "%N"
 			else
-				l_char := character_code.as_natural_32.to_character_32
+				create character_string.make(1)
+				character_string.append_character(character_code.as_natural_32.to_character_32)
 			end
-			create character_string.make(1)
-			character_string.append_character (l_char)
 			inspect character_code
 			when 8, 27, 127 then
 				-- Do not fire `key_press_string_actions' if Backspace, Esc or del
@@ -1052,40 +1003,31 @@ feature {NONE} -- Implementation
 				end
 			end
 			if default_key_processing_handler /= Void then
-				l_code := {WEL_API}.vk_key_scan (l_char)
+				l_code := {WEL_API}.vk_key_scan (character_string.item (1))
 				if l_code /= -1 and then valid_wel_code (l_code) then
 					create l_key.make_with_code (key_code_from_wel (l_code))
 					if not default_key_processing_handler.item ([l_key]) then
 						disable_default_processing
 					end
 				end
-			elseif not has_focus or ignore_character_code (character_code) then
-					-- When we loose the focus or press return, we do not perform the
-					-- default processing since it causes a system beep.
-				disable_default_processing
 			end
 		end
 
 	on_mouse_wheel (delta, keys, x_pos, y_pos: INTEGER) is
 			-- Wm_mousewheel received.
 		local
-			l_ignore_default_processing: BOOLEAN
+			l_fired: BOOLEAN
 		do
 			if is_displayed then
-				if application_imp.pick_and_drop_source = Void then
-					if application_imp.mouse_wheel_actions_internal /= Void then
-						application_imp.mouse_wheel_actions_internal.call ([interface, delta // 120])
-						l_ignore_default_processing := True
-					end
-					if mouse_wheel_actions_internal /= Void then
-						mouse_wheel_actions_internal.call ([delta // 120])
-						l_ignore_default_processing := True
-					end
-				else
-					l_ignore_default_processing := True
+				if application_imp.mouse_wheel_actions_internal /= Void then
+					application_imp.mouse_wheel_actions_internal.call ([interface, delta // 120])
+					l_fired := True
 				end
-
-				if l_ignore_default_processing then
+				if mouse_wheel_actions_internal /= Void then
+					mouse_wheel_actions_internal.call ([delta // 120])
+					l_fired := True
+				end
+				if l_fired then
 						-- Only return 0 if the mouse wheel actions are not empty,
 						-- as this overrides intellipoint software if installed.
 					set_message_return_value (to_lresult (0))
@@ -1485,58 +1427,19 @@ feature -- Deferred features
 		deferred
 		end
 
-feature {NONE} -- Implementation
-
-	create_file_drop_actions: like file_drop_actions
-			-- Create and initialize
+	next_dlggroupitem (hdlg, hctl: POINTER; previous: BOOLEAN): POINTER is
+			-- Encapsulation of the SDK GetNextDlgGroupItem,
+			-- because we cannot do a deferred feature become an
+			-- external feature.
 		do
-			create Result
-			Result.not_empty_actions.extend (agent enable_drag_accept_files)
-			Result.empty_actions.extend (agent disable_drag_accept_files)
+			Result := cwin_get_next_dlggroupitem (hdlg, hctl, previous)
 		end
 
-	enable_drag_accept_files
-			-- Allow `Current' to be a file drag and drop target.
+	cwin_get_next_dlggroupitem (hdlg, hctl: POINTER; previous: BOOLEAN): POINTER is
+			-- Encapsulation of the SDK GetNextDlgGroupItem,
+			-- because we cannot do a deferred feature become an
+			-- external feature.
 		deferred
-		end
-
-	disable_drag_accept_files
-			-- Disallow `Current' from being a file drag and drop target.
-		deferred
-		end
-
-	on_wm_dropfiles (wparam: POINTER)
-			-- Wm_dropfile message
-		require
-			exists: exists
-		local
-			l_filecount, l_chars_copied: INTEGER_32
-			l_string: WEL_STRING
-			l_max_length: INTEGER_32
-			i: INTEGER_32
-			l_file_list: ARRAYED_LIST [STRING_32]
-		do
-			l_filecount := {WEL_API}.drag_query_file (wparam, -1, default_pointer, 0)
-			if l_filecount > 0 then
-				from
-					i := 0
-					l_max_length := 255
-					create l_string.make_empty (l_max_length)
-					create l_file_list.make_filled (l_filecount)
-				until
-					i = l_filecount
-				loop
-					l_chars_copied := {WEL_API}.drag_query_file (wparam, i, l_string.item, l_max_length)
-					l_file_list.put_i_th (l_string.substring (1, l_chars_copied), l_filecount - i)
-					i := i + 1
-				end
-				if file_drop_actions_internal /= Void then
-					file_drop_actions_internal.call ([l_file_list])
-				end
-				if application_imp.file_drop_actions_internal /= Void then
-					application_imp.file_drop_actions_internal.call ([interface, l_file_list])
-				end
-			end
 		end
 
 feature -- Feature that should be directly implemented by externals
@@ -1568,4 +1471,8 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
+
+
+
 end -- class EV_WIDGET_IMP
+

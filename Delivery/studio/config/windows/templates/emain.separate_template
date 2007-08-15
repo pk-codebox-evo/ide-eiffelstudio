@@ -15,12 +15,7 @@ extern "C" {
 
 extern void emain(int, char **);
 extern int main(int, char **, char **);
-extern void egc_init_plug (void);
-extern void egc_rcdt_init (void); 
-
-#ifndef GetEnvironmentStringsA 
- extern LPVOID WINAPI GetEnvironmentStringsA(void);
-#endif
+extern void egc_init_plug (void); 
 
 APIENTRY WinMain(HANDLE hInstance, HANDLE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
@@ -37,10 +32,9 @@ APIENTRY WinMain(HANDLE hInstance, HANDLE hPrevInstance, LPSTR lpCmdLine, int nC
 
 		/* Initialization of the command line which is going to be passed to eiffel */
 	get_argcargv (&argc, &argv);
-		/* We get ANSI version of environment variables */
-	eif_environ = (char **) GetEnvironmentStringsA();
+	eif_environ = (char **) GetEnvironmentStrings();
 	main(argc, argv, eif_environ);
-	FreeEnvironmentStringsA ((LPSTR) eif_environ);
+	FreeEnvironmentStrings ((LPTSTR) eif_environ);
 	return 0;
 }
 
@@ -65,12 +59,10 @@ int main (int argc, char ** argv, char ** envp)
 
 	eif_rtinit(argc, argv, envp);
 	if (egc_prof_enabled) initprf();
-	egc_rcdt_init();
 	emain(argc, argv);
 	reclaim();
 	exit(0);
 }
-	return 0;
 }
 
 #ifdef __cplusplus

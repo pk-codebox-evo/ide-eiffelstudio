@@ -16,7 +16,7 @@ inherit
 			is_tooltext_important
 		end
 
-	SHARED_DEBUGGER_MANAGER
+	EB_SHARED_DEBUG_TOOLS
 
 	SHARED_EIFFEL_PROJECT
 
@@ -49,19 +49,19 @@ feature -- Status
 
 feature -- Access
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- What is printed in the customize dialog.
 		do
 			Result := interface_names.f_refactoring_undo
 		end
 
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Pop-up help on buttons.
 		do
 			Result := description
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text for toolbar button
 		do
 			Result := interface_names.b_refactoring_undo
@@ -73,7 +73,7 @@ feature -- Access
 			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND} (display_text)
 		end
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Menu entry corresponding to `Current'.
 		do
 			Result := tooltext
@@ -85,12 +85,6 @@ feature -- Access
 			Result := pixmaps.icon_pixmaps.general_undo_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.general_undo_icon_buffer
-		end
-
 	Name: STRING is "RF_undo"
 			-- Name of `Current' to identify it.
 
@@ -99,7 +93,7 @@ feature -- Execution
 	execute is
 			-- Execute.
 		local
-			l_cd: EB_CONFIRMATION_DIALOG
+			l_cd: EV_CONFIRMATION_DIALOG
 		do
 			create l_cd.make_with_text_and_actions (interface_names.e_refactoring_undo_sure, <<agent manager.undo_last>>)
 			l_cd.show_modal_to_window (window_manager.last_focused_development_window.window)

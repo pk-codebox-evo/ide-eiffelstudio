@@ -11,10 +11,17 @@ class
 
 inherit
 	EIFFEL_LIST [ID_AS]
+	
+	SHARED_NAMES_HEAP
+		export
+			{NONE} all
+		undefine
+			copy, is_equal
+		end
 
 create
 	make
-
+	
 create {USE_LIST_AS}
 	make_filled
 
@@ -24,15 +31,18 @@ feature -- Array representaion
 			-- Array representation of list of files required by external.
 		local
 			i: INTEGER
+			l_names_heap: like Names_heap
 		do
 			from
 				create Result.make (1, count)
+				l_names_heap := Names_heap
 				i := 1
 				start
 			until
 				after
 			loop
-				Result.put (item.name_id, i)
+				l_names_heap.put (item)
+				Result.put (l_names_heap.found_item, i)
 				i := i + 1
 				forth
 			end

@@ -23,13 +23,11 @@ feature {NONE} --Initialization
 
 	make is
 			-- Initialize `Current'.
-		local
-			l_shortcut: SHORTCUT_PREFERENCE
 		do
 			Precursor {EB_MELT_PROJECT_COMMAND}
-			l_shortcut := preferences.misc_shortcut_data.shortcuts.item ("search_new_class_and_compile")
-			create accelerator.make_with_key_combination (l_shortcut.key, l_shortcut.is_ctrl, l_shortcut.is_alt, l_shortcut.is_shift)
-			set_referred_shortcut (l_shortcut)
+			accelerator := create {EV_ACCELERATOR}.make_with_key_combination (
+				create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_f8), False, True, False
+			)
 			accelerator.actions.extend (agent execute)
 		end
 
@@ -38,7 +36,7 @@ feature {NONE} -- Implementation
 	perform_compilation is
 			-- The actual compilation process.
 		do
-			eiffel_project.discover_melt
+			eiffel_project.melt
 		end
 
 feature {NONE} -- Attributes
@@ -46,19 +44,19 @@ feature {NONE} -- Attributes
 	name: STRING is "Discover_melt"
 			-- Name of the command.
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text for the toolbar button.
 		do
 			Result := Interface_names.b_discover_melt
 		end
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name used in menu entry
 		do
 			Result := Interface_names.m_discover_melt
 		end
 
-	description, tooltip: STRING_GENERAL is
+	description, tooltip: STRING is
 			-- String displayed as a tooltip and in the toolbar customization dialog.
 		do
 			Result := Interface_names.e_discover_melt

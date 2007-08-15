@@ -30,6 +30,7 @@ feature
 			end;
 		end;
 
+
 	is_polymorphic: BOOLEAN is True;
 			-- Is the attribute access polymorphic ?
 

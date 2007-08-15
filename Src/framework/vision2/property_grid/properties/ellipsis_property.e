@@ -16,12 +16,6 @@ inherit
 			update_text_on_deactivation
 		end
 
-	EV_UTILITIES
-		undefine
-			default_create,
-			copy
-		end
-
 feature {NONE} -- Initialization
 
 	initialize is
@@ -105,21 +99,8 @@ feature {NONE} -- Agents
 	focus_lost is
 			-- Check if no other element in the popup has the focus.
 		do
-			if {PLATFORM}.is_windows then
-				if not is_destroyed and then is_activated and then not has_focus and then is_parented then
-					deactivate
-				end
-			else
-					-- This is a hack for gtk Vision2 as focus out actions are fired
-					-- before focus in actions which means that no window has the focus
-					-- when focusing from one app window to the other and checking focus state
-					-- in the focus out actions.
-				(create {EV_ENVIRONMENT}).application.do_once_on_idle (agent do
-					if not is_destroyed and then is_activated and then not has_focus and then is_parented then
-						deactivate
-					end
-				end
-				)
+			if is_activated and then not has_focus and then is_parented then
+				deactivate
 			end
 		end
 
@@ -162,7 +143,7 @@ feature {NONE} -- Agents
 
 				is_activated := True
 			else
-				ellipsis_actions.call (Void)
+				ellipsis_actions.call ([])
 			end
 		ensure then
 			popup_window_set: popup_window /= Void
@@ -187,6 +168,7 @@ feature {NONE} -- Agents
 			not_activated: not is_activated
 		end
 
+
 feature {NONE} -- Implementation
 
 	ellipsis: EV_PIXMAP is
@@ -208,6 +190,21 @@ feature {NONE} -- Implementation
 			Result.set_mask (l_mask)
 		ensure
 			Result_set: Result /= Void
+		end
+
+	parent_window: EV_WINDOW is
+			-- Return the parent window (if any), where the property has been put.
+		local
+			l_parent: EV_CONTAINER
+		do
+			from
+				l_parent := parent
+			until
+				Result /= Void or l_parent = Void
+			loop
+				Result ?= l_parent
+				l_parent := l_parent.parent
+			end
 		end
 
 invariant

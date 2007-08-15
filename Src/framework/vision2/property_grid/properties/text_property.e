@@ -49,7 +49,16 @@ feature -- Access
 	displayed_value: STRING_32 is
 			-- Displayed format of the data.
 		do
-			Result := to_displayed_value (value)
+			if value /= Void then
+				if display_agent /= Void then
+					Result := display_agent.item ([value])
+				else
+					Result := value.out.twin
+					Result.replace_substring_all ("%N", "%%N")
+				end
+			else
+				create Result.make_empty
+			end
 		ensure
 			Result_not_void: Result /= Void
 		end
@@ -78,18 +87,8 @@ feature -- Update
 			-- Set `display_agent' to `an_agent'.
 		do
 			display_agent := an_agent
-				-- Ensure interface update using `display_agent'.
-			set_value (value)
 		ensure
 			display_agent_set: display_agent = an_agent
-		end
-
-	set_convert_to_data_agent (an_agent: like convert_to_data_agent) is
-			-- Set `convert_to_data_agent' to `an_agent'.
-		do
-			convert_to_data_agent := an_agent
-		ensure
-			convert_to_data_agent_set: convert_to_data_agent = an_agent
 		end
 
 feature {NONE} -- Agents
@@ -138,28 +137,11 @@ feature {NONE} -- Implementation
 
 	display_agent: FUNCTION [ANY, TUPLE [G], STRING_32]
 
-	to_displayed_value (a_value: like value): like displayed_value is
-		do
-			if a_value /= Void then
-				if display_agent /= Void then
-					Result := display_agent.item ([a_value])
-				else
-					Result := a_value.out.twin.as_string_32
-					Result.replace_substring_all ("%N", "%%N")
-				end
-			else
-				create Result.make_empty
-			end
-		ensure
-			Result_not_void: Result /= Void
-		end
-
-	convert_to_data_agent: FUNCTION [ANY, TUPLE [STRING_32], G]
-
 	convert_to_data (a_string: like displayed_value): like value is
 			-- Convert displayed data into data.
 		deferred
 		end
+
 
 feature {EV_ANY, EV_ANY_I, EV_GRID_DRAWER_I} -- Implementation
 

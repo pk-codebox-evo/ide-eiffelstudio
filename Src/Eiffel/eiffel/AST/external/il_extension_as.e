@@ -25,10 +25,10 @@ feature -- Initialization
 		do
 			type := a_type
 			sig := a_sig
-			base_class := a_class.name
+			base_class := a_class
 		ensure
 			type_set: type = a_type
-			base_class_set: equal (base_class, a_class.name)
+			base_class_set: base_class = a_class
 		end
 
 feature -- Properties
@@ -73,7 +73,7 @@ feature {NONE} -- Constants
 		ensure
 			result_not_null: Result > 0
 		end
-
+		
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"

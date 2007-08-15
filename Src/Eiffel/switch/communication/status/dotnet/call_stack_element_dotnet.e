@@ -9,8 +9,6 @@ class CALL_STACK_ELEMENT_DOTNET
 
 inherit
 	EIFFEL_CALL_STACK_ELEMENT
-		rename
-			current_object_value as current_object
 		redefine
 			make
 		end
@@ -36,6 +34,11 @@ inherit
 		end
 
 	SHARED_NAMES_HEAP
+		export
+			{NONE} all
+		end
+
+	SHARED_APPLICATION_EXECUTION
 		export
 			{NONE} all
 		end
@@ -572,7 +575,7 @@ feature {NONE} -- Implementation
 					if l_list /= Void and then not l_list.is_empty then
 						--| now the result value has been removed
 						--| let's get the real Local variables
-						local_decl_grps := local_decl_grps_from (rout)
+						local_decl_grps := rout.locals
 						if local_decl_grps /= Void then
 							l_old_group := inst_context.group
 							Inst_context.set_group (rout.associated_class.group)

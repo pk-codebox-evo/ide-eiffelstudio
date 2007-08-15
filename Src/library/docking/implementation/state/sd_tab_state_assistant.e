@@ -12,7 +12,6 @@ create
 	make
 
 feature {NONE} -- Initlization
-
 	make (a_tab_state: SD_TAB_STATE; a_docking_manager: SD_DOCKING_MANAGER) is
 			-- Creation method.
 		require
@@ -21,7 +20,6 @@ feature {NONE} -- Initlization
 		do
 			state := a_tab_state
 			internal_docking_manager := a_docking_manager
-			create internal_shared
 		ensure
 			set: state = a_tab_state
 			set: internal_docking_manager = a_docking_manager
@@ -38,7 +36,7 @@ feature {SD_TAB_STATE}  -- Implementation functions.
 			l_parent: EV_CONTAINER
 		do
 			internal_docking_manager.command.lock_update (state.zone, False)
-			create l_floating_state.make (a_x, a_y, internal_docking_manager, True)
+			create l_floating_state.make (a_x, a_y, internal_docking_manager)
 			l_floating_state.set_size (state.last_floating_width, state.last_floating_height)
 
 			if state.zone.is_drag_title_bar then
@@ -49,17 +47,12 @@ feature {SD_TAB_STATE}  -- Implementation functions.
 				l_parent := state.tab_zone.parent
 				state.tab_zone.prune (l_content, False)
 				internal_docking_manager.command.unlock_update
-				create l_docking_state.make (l_content, {SD_ENUMERATION}.left,  internal_shared.title_bar_height)
+				create l_docking_state.make (l_content, {SD_ENUMERATION}.left, {SD_SHARED}.title_bar_height)
 				l_docking_state.dock_at_top_level (l_floating_state.inner_container)
 				l_content.change_state (l_docking_state)
 				internal_docking_manager.command.lock_update (state.zone, False)
 				update_last_content_state (l_parent)
 			end
-			internal_docking_manager.query.inner_container_main.recover_normal_for_only_one
-			-- After floating, left minmized editor zone(s) in SD_MULTI_DOCK_AREA, then we
-			-- have to resize.
-			internal_docking_manager.command.resize (True)
-
 			internal_docking_manager.command.unlock_update
 		end
 
@@ -73,7 +66,7 @@ feature {SD_TAB_STATE}  -- Implementation functions.
 		local
 			l_new_split_area: EV_SPLIT_AREA
 			l_target_zone_parent: EV_CONTAINER
-			l_old_zone_parent_type: STRING_GENERAL
+			l_old_zone_parent_type: STRING
 			l_target_zone_parent_split_position: INTEGER
 			l_target_zone_parent_spliter: EV_SPLIT_AREA
 		do
@@ -152,12 +145,12 @@ feature {SD_TAB_STATE}  -- Implementation functions.
 						l_contents.item.user_widget.parent.prune (l_contents.item.user_widget)
 					end
 					create l_tab_state.make (l_contents.item, a_target_zone, l_orignal_direction)
+					l_contents.item.change_state (l_tab_state)
 					first_move_to_docking_zone := False
 				else
 					l_tab_zone ?= l_tab_state.zone
 					create l_tab_state.make_with_tab_zone (l_contents.item, l_tab_zone, l_orignal_direction)
 				end
-				l_contents.item.change_state (l_tab_state)
 				l_tab_state.set_direction (l_orignal_direction)
 				l_contents.forth
 			end
@@ -183,6 +176,7 @@ feature {SD_TAB_STATE}  -- Implementation functions.
 			-- Move one tab from a tab zone to a docking zone.
 		require
 			a_target_zone_not_void: a_target_zone /= Void
+			valid: a_index > 0
 		local
 			l_tab_state: SD_TAB_STATE
 			l_orignal_direction: INTEGER
@@ -209,12 +203,7 @@ feature {SD_TAB_STATE}  -- Implementation functions.
 
 			l_tab_state.set_direction (l_orignal_direction)
 			state.change_state (l_tab_state)
-
-			-- Maybe we are opening layout config, so the parent is Void.
-			if l_parent /= Void then
-				update_last_content_state (l_parent)
-			end
-
+			update_last_content_state (l_parent)
 		ensure
 --			has: a_target_zone.has (content)
 --			moved: a_target_zone.parent.has (internal_content.state.zone)
@@ -280,10 +269,7 @@ feature {SD_TAB_STATE}  -- Implementation functions.
 			l_docking_state.dock_at_top_level (a_multi_dock_area)
 			state.change_state (l_docking_state)
 
-			if l_parent /= Void then
-				update_last_content_state (l_parent)
-			end
-
+			update_last_content_state (l_parent)
 --			tab_zone.enable_on_select_tab
 		ensure
 			docked:
@@ -298,23 +284,14 @@ feature {SD_TAB_STATE}  -- Implementation functions.
 			l_split_position: INTEGER
 			l_split_area: EV_SPLIT_AREA
 			l_widget: EV_WIDGET
-			l_second_parent: EV_CONTAINER
 		do
-			-- `a_parent' may be void if calling by `close' from SD_TAB_STATE on Linux.
-			if a_parent /= Void and then state.tab_zone.count = 1 then
+			if state.tab_zone.count = 1 then
 				l_split_area ?= state.tab_zone.parent
 				if l_split_area /= Void then
 					l_split_position := l_split_area.split_position
 				end
-				l_second_parent := state.tab_zone.parent
 				internal_docking_manager.zones.prune_zone (state.tab_zone)
-				if a_parent.full then
-					-- If a tab want to dock at it's own tab area, then a_parent is full, we use l_second_parent (old tab_zone parent) instead.
-					create l_docking_state.make_for_tab_zone (state.tab_zone.last_content, l_second_parent, state.direction)
-				else
-					create l_docking_state.make_for_tab_zone (state.tab_zone.last_content, a_parent, state.direction)
-				end
-
+				create l_docking_state.make_for_tab_zone (state.tab_zone.last_content, a_parent, state.direction)
 				if state.zone.is_maximized then
 					l_docking_state.set_widget_main_area (state.zone.main_area_widget , state.zone.main_area, state.zone.internal_parent, state.zone.internal_parent_split_position)
 				end
@@ -326,10 +303,7 @@ feature {SD_TAB_STATE}  -- Implementation functions.
 					check l_widget /= Void end
 					l_split_area ?= l_widget.parent
 					check l_split_area /= Void end
-					if
-						l_split_area.full and then
-						(l_split_area.minimum_split_position <= l_split_position and l_split_area.maximum_split_position >= l_split_position)
-					then
+					if l_split_area.minimum_split_position <= l_split_position and l_split_area.maximum_split_position >= l_split_position then
 						l_split_area.set_split_position (l_split_position)
 					end
 				end
@@ -359,17 +333,13 @@ feature -- Query
 
 feature {NONE} -- Implementation
 
-	internal_shared: SD_SHARED
-			-- All singletons.
-
-	first_move_to_docking_zone: BOOLEAN
+	first_move_to_docking_zone: BOOLEAN;
 			-- When moving to a docking zone, first time is different.
 
 	internal_docking_manager: SD_DOCKING_MANAGER
 			-- Docking manager.
 
 invariant
-	not_void: internal_shared /= Void
 	not_void: state /= Void
 	not_void: internal_docking_manager /= Void
 

@@ -34,15 +34,6 @@ inherit
 		end
 
 	EB_METRIC_INTERFACE_PROVIDER
-		rename
-			load_metrics as load_metrics_for_system
-		undefine
-			default_create,
-			is_equal,
-			copy
-		end
-
-	EB_CONTEXT_MENU_HANDLER
 		undefine
 			default_create,
 			is_equal,
@@ -64,7 +55,6 @@ feature {NONE} -- Initialization
 			else
 				create selection_status.make (0)
 			end
-			create expansion_status.make (12)
 			create metric_name_list.make
 			create metric_name_row_table.make (30)
 			create input_cache.make (20)
@@ -72,7 +62,6 @@ feature {NONE} -- Initialization
 			create delayed_timeout.make (agent delayed_search_metric, 10)
 			default_create
 			enable_tooltip_contain_go_to_definition_message
-			set_should_unit_be_expanded (False)
 		ensure
 			is_selectable_set: is_selectable = a_selectable
 			metric_name_list_attached: metric_name_list /= Void
@@ -125,8 +114,6 @@ feature {NONE} -- Initialization
 			metric_grid_wrapper.set_sort_action (agent sort_agent)
 			metric_grid.key_press_actions.extend (agent on_key_pressed_for_metric_navigation (?, True))
 			metric_grid.key_press_string_actions.extend (agent on_key_string_pressed_for_metric_navigation (?, True))
-			metric_grid.set_focused_selection_color (preferences.editor_data.selection_background_color)
-			metric_grid.set_non_focused_selection_color (preferences.editor_data.focus_out_selection_background_color)
 
 			create move_unit_up_key_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_numpad_8), True, False, False)
 			create move_unit_down_key_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_numpad_2), True, False, False)
@@ -134,13 +121,12 @@ feature {NONE} -- Initialization
 			metric_grid.set_item_pebble_function (agent item_pebble_function)
 			metric_grid.enable_single_row_selection
 			metric_grid.row_select_actions.extend (agent on_row_selected)
-			metric_grid.register_shortcut (move_unit_up_key_shortcut, agent on_move_unit (True, False))
-			metric_grid.register_shortcut (move_unit_down_key_shortcut, agent on_move_unit (False, True))
+			metric_grid.add_key_action (agent on_move_unit (True, False), move_unit_up_key_index)
+			metric_grid.add_key_action (agent on_move_unit (False, True), move_unit_down_key_index)
+			metric_grid.add_key_shortcut (move_unit_up_key_index, move_unit_up_key_shortcut)
+			metric_grid.add_key_shortcut (move_unit_down_key_index, move_unit_down_key_shortcut)
 			metric_grid.item_drop_actions.extend (agent on_drop_unit)
 			metric_grid.set_item_veto_pebble_function (agent item_veto_pebble_function)
-
-			metric_grid.set_configurable_target_menu_mode
-			metric_grid.set_configurable_target_menu_handler (agent context_menu_handler)
 
 			tree_view_checkbox.remove_text
 			tree_view_checkbox.set_text (metric_names.t_group)
@@ -157,30 +143,18 @@ feature {NONE} -- Initialization
 			cached_key_field.set_tooltip (metric_names.f_press_esc_to_wipe_out)
 
 			move_unit_up_btn.set_pixmap (pixmaps.icon_pixmaps.general_move_up_icon)
-			move_unit_up_btn.set_tooltip (metric_names.f_move_unit_up.as_string_32 + metric_names.f_rearrange_unit)
+			move_unit_up_btn.set_tooltip (metric_names.f_move_unit_up + metric_names.f_rearrange_unit)
 			move_unit_up_btn.select_actions.extend (agent on_move_unit (True, False))
 
 			move_unit_down_btn.set_pixmap (pixmaps.icon_pixmaps.general_move_down_icon)
-			move_unit_down_btn.set_tooltip (metric_names.f_move_unit_down.as_string_32 + metric_names.f_rearrange_unit)
+			move_unit_down_btn.set_tooltip (metric_names.f_move_unit_down + metric_names.f_rearrange_unit)
 			move_unit_down_btn.select_actions.extend (agent on_move_unit (False, True))
-
-			metric_grid.row_deselect_actions.extend (agent on_row_deselected)
-			move_unit_up_btn.disable_sensitive
-			move_unit_down_btn.disable_sensitive
 		ensure then
 			metric_selected_actions_attached: metric_selected_actions /= Void
 			group_selected_actions_attached: group_selected_actions /= Void
 			delete_key_pressed_actions_attached: delete_key_pressed_actions /= Void
 			metric_table_attached: metric_table /= Void
 			double_click_actions_attached: double_click_actions /= Void
-		end
-
-	context_menu_handler (a_menu: EV_MENU; a_target_list: ARRAYED_LIST [EV_PND_TARGET_DATA]; a_source: EV_PICK_AND_DROPABLE; a_pebble: ANY) is
-			-- Context menu handler
-		do
-			if context_menu_factory /= Void then
-				context_menu_factory.metric_metric_selector_menu (a_menu, a_target_list, a_source, a_pebble, Current)
-			end
 		end
 
 feature -- Access
@@ -239,6 +213,18 @@ feature -- Access
 			end
 		end
 
+	selected_item_name: STRING is
+			-- Name of selected metric in `metric_grid'.
+			-- Void if no metric is selected
+		local
+			l_metric: EB_METRIC
+		do
+			l_metric := selected_metric
+			if l_metric /= Void then
+				Result := l_metric.name.twin
+			end
+		end
+
 	selected_metric: EB_METRIC is
 			-- Selected metric
 			-- Void if no metric is selected.
@@ -273,28 +259,9 @@ feature -- Status report
 			-- Should tooltip of metric contain "go to definition" message?
 			-- Default: True
 
-	should_unit_be_expanded: BOOLEAN
-			-- Should unit be expanded?
-			-- Default: False
-
-feature {EB_CONTEXT_MENU_FACTORY} -- Context menu handler
-
-	move_unit (a_unit: QL_METRIC_UNIT; a_up: BOOLEAN) is
-			-- Move a unit up/down.
-		require
-			a_unit_not_void: a_unit /= Void
-		local
-			l_target_unit: like sideward_unit
-			l_row: like row_by_data
-		do
-			l_row := row_by_data (a_unit)
-			if l_row /= Void then
-				l_target_unit := sideward_unit (l_row, a_up)
-				if l_target_unit /= Void then
-					change_unit_order (a_unit, l_target_unit, not a_up)
-				end
-			end
-		end
+	is_key_from_metric_grid: BOOLEAN;
+			-- Is key stroke from `metrc_grid'?
+			-- False indicates that key stroke is from `cached_key_field'.
 
 feature{NONE} -- Actions
 
@@ -311,14 +278,14 @@ feature{NONE} -- Actions
 			group_selected_actions.resume
 		end
 
-	on_selection_change (a_item: EV_GRID_CHECKABLE_LABEL_ITEM) is
+	on_selection_change (a_item: MA_GRID_CHECK_BOX_ITEM) is
 			-- Action to be performed when selection in `a_item' changes
 		local
 			l_metric: EB_METRIC
 		do
 			l_metric ?= a_item.data
 			check l_metric /= Void end
-			selection_status.force (a_item.is_checked, l_metric.name.as_lower)
+			selection_status.force (a_item.selected, l_metric.name.as_lower)
 		end
 
 	on_row_selected (a_row: EV_GRID_ROW) is
@@ -343,7 +310,7 @@ feature{NONE} -- Actions
 				move_unit_down_btn.disable_sensitive
 			else
 					-- A group row is selected.
-				group_selected_actions.call (Void)
+				group_selected_actions.call ([])
 				move_unit_up_btn.enable_sensitive
 				move_unit_down_btn.enable_sensitive
 			end
@@ -387,7 +354,7 @@ feature{NONE} -- Actions
 			l_code: INTEGER
 			l_metric: EB_METRIC
 			l_selected_rows: LIST [EV_GRID_ROW]
-			l_checkbox_item: EV_GRID_CHECKABLE_LABEL_ITEM
+			l_checkbox_item: MA_GRID_CHECK_BOX_ITEM
 		do
 			l_code := a_key.code
 			inspect
@@ -398,7 +365,7 @@ feature{NONE} -- Actions
 					if l_selected_rows /= Void then
 						l_checkbox_item ?= l_selected_rows.first.item (1)
 						if l_checkbox_item /= Void then
-							l_checkbox_item.set_is_checked (not l_checkbox_item.is_checked)
+							l_checkbox_item.set_selected (not l_checkbox_item.selected)
 						end
 					end
 				end
@@ -471,7 +438,10 @@ feature{NONE} -- Actions
 			l_row: EV_GRID_ROW
 			l_source_unit: QL_METRIC_UNIT
 			l_dest_unit: QL_METRIC_UNIT
+			l_start_index: INTEGER
+			l_end_index: INTEGER
 			l_grid: like metric_grid
+			done: BOOLEAN
 		do
 			l_grid := metric_grid
 			l_selected_rows := l_grid.selected_rows
@@ -479,7 +449,29 @@ feature{NONE} -- Actions
 				l_row := l_selected_rows.first
 				l_source_unit ?= l_row.data
 				if l_source_unit /= Void then
-					l_dest_unit := sideward_unit (l_row, a_up)
+					if a_up then
+						from
+							l_start_index := l_row.index - 1
+							l_end_index := 1
+						until
+							l_start_index < l_end_index or done
+						loop
+							l_dest_unit ?= l_grid.row (l_start_index).data
+							done := l_dest_unit /= Void
+							l_start_index := l_start_index - 1
+						end
+					else
+						from
+							l_start_index := l_row.index + 1
+							l_end_index := l_grid.row_count
+						until
+							l_start_index > l_end_index or done
+						loop
+							l_dest_unit ?= l_grid.row (l_start_index).data
+							done := l_dest_unit /= Void
+							l_start_index := l_start_index + 1
+						end
+					end
 					if l_dest_unit /= Void then
 						change_unit_order (l_source_unit, l_dest_unit, a_after)
 					end
@@ -487,29 +479,19 @@ feature{NONE} -- Actions
 			end
 		end
 
-	on_drop_unit (a_item: EV_GRID_ITEM; a_unit: QL_METRIC_UNIT) is
-			-- Action to be performed when `a_unit' is dropped on `a_item'
-		require
-			a_item_attached: a_item /= Void
-			a_unit_attached: a_unit /= Void
-		local
-			l_dest_unit: QL_METRIC_UNIT
-		do
-			l_dest_unit ?= a_item.row.data
-			if l_dest_unit /= Void and then a_unit /= l_dest_unit then
-				change_unit_order (a_unit, l_dest_unit, True)
+		on_drop_unit (a_item: EV_GRID_ITEM; a_unit: QL_METRIC_UNIT) is
+				-- Action to be performed when `a_unit' is dropped on `a_item'
+			require
+				a_item_attached: a_item /= Void
+				a_unit_attached: a_unit /= Void
+			local
+				l_dest_unit: QL_METRIC_UNIT
+			do
+				l_dest_unit ?= a_item.row.data
+				if l_dest_unit /= Void and then a_unit /= l_dest_unit then
+					change_unit_order (a_unit, l_dest_unit, True)
+				end
 			end
-		end
-
-	on_row_deselected (a_row: EV_GRID_ROW) is
-			-- Action to be performed when `a_row' is deselected
-		do
-			if metric_grid.selected_rows.is_empty then
-				move_unit_down_btn.disable_sensitive
-				move_unit_up_btn.disable_sensitive
-				metric_selected_actions.call ([Void])
-			end
-		end
 
 feature -- setting
 
@@ -562,14 +544,6 @@ feature -- setting
 			invalid_metric_selection_disabled: not should_invalid_metric_be_selected
 		end
 
-	set_should_unit_be_expanded (b: BOOLEAN) is
-			-- Set `should_unit_be_expanded' with `b'.
-		do
-			should_unit_be_expanded := b
-		ensure
-			should_unit_be_expanded_set: should_unit_be_expanded = b
-		end
-
 feature -- Basic operations
 
 	select_metric (a_name: STRING) is
@@ -601,9 +575,7 @@ feature -- Basic operations
 								l_row.parent_row.expand
 							end
 							l_row.enable_select
-							if l_row.is_displayed then
-								l_row.ensure_visible
-							end
+							l_row.ensure_visible
 							done := True
 						end
 					end
@@ -700,7 +672,6 @@ feature -- Metric management
 			l_unit: QL_METRIC_UNIT
 			l_unit_row_list: like unit_row_list
 		do
-			store_expansion_status
 			l_unit_row_list := unit_row_list
 			l_unit_row_list.wipe_out
 			if metric_grid.row_count > 0 then
@@ -719,16 +690,13 @@ feature -- Metric management
 					if l_metric_list /= Void and then not l_metric_list.is_empty then
 						metric_grid.insert_new_row (metric_grid.row_count + 1)
 						l_row := metric_grid.row (metric_grid.row_count)
-						create l_item.make_with_text (unit_name_table.item (l_unit))
+						create l_item.make_with_text (displayed_name (l_unit.name))
 						l_item.set_pixmap (l_unit_list.item.pixmap)
 						l_row.set_item (1, l_item)
 						l_row.set_data (l_unit)
 						l_unit_row_list.extend (l_row)
 						l_metric_list.do_all (agent load_metric (?, l_row))
-						if
-							l_row.is_expandable and then
-							(should_unit_be_expanded or else (expansion_status.has (l_unit) and then expansion_status.item (l_unit)))
-						then
+						if l_row.is_expandable then
 							l_row.expand
 						end
 					end
@@ -763,18 +731,18 @@ feature -- Metric management
 			l_grid_item: EV_GRID_LABEL_ITEM
 			l_grid_row: EV_GRID_ROW
 			l_font: EV_FONT
-			l_tooltip: STRING_GENERAL
-			l_validity: EB_METRIC_ERROR
+			l_tooltip: STRING
+			l_vadility: EB_METRIC_ERROR
 			l_red: EV_COLOR
-			l_check_item: EV_GRID_CHECKABLE_LABEL_ITEM
+			l_check_item: MA_GRID_CHECK_BOX_ITEM
 		do
 			metric_name_list.extend (a_metric.name)
 			create l_grid_item.make_with_text (a_metric.name)
 			create l_font
 			l_red := (create {EV_STOCK_COLORS}).red
 			l_grid_item.set_font (l_font)
-			l_validity := metric_manager.metric_validity (a_metric.name)
-			if l_validity /= Void then
+			l_vadility := metric_manager.metric_vadility (a_metric.name)
+			if l_vadility /= Void then
 				l_grid_item.set_foreground_color (l_red)
 			end
 			l_tooltip := metric_tooltip (a_metric, should_tooltip_contain_go_to_definition_message)
@@ -787,22 +755,27 @@ feature -- Metric management
 			if metric_grid.is_tree_enabled then
 				a_row.insert_subrow (a_row.subrow_count + 1)
 				l_grid_row := a_row.subrow (a_row.subrow_count)
-			else
-				l_grid_row := a_row
-			end
-			l_grid_row.set_item (metric_column_index, l_grid_item)
-			metric_name_row_table.force (l_grid_row.index, a_metric.name)
-			l_grid_row.set_data (a_metric)
-			if is_selectable then
-				create l_check_item
-				if selection_status.item (a_metric.name.as_lower) then
-					l_check_item.set_is_checked (True)
-				else
-					l_check_item.set_is_checked (False)
+				metric_name_row_table.force (l_grid_row.index, a_metric.name)
+				l_grid_row.set_data (a_metric)
+				l_grid_row.set_item (metric_column_index, l_grid_item)
+				if is_selectable then
+					create l_check_item.make_with_boolean (selection_status.item (a_metric.name.as_lower))
+					l_check_item.initialize_for_tree
+					l_check_item.selected_changed_actions.extend (agent on_selection_change)
+					l_check_item.set_data (a_metric)
+					l_grid_row.set_item (1, l_check_item)
 				end
-				l_check_item.checked_changed_actions.extend (agent on_selection_change)
-				l_check_item.set_data (a_metric)
-				l_grid_row.set_item (1, l_check_item)
+			else
+				a_row.set_item (metric_column_index, l_grid_item)
+				a_row.set_data (a_metric)
+				metric_name_row_table.force (a_row.index, a_metric.name)
+				if is_selectable then
+					create l_check_item.make_with_boolean (selection_status.item (a_metric.name.as_lower))
+					l_check_item.initialize_for_tree
+					l_check_item.selected_changed_actions.extend (agent on_selection_change)
+					l_check_item.set_data (a_metric)
+					a_row.set_item (1, l_check_item)
+				end
 			end
 		end
 
@@ -816,12 +789,16 @@ feature{NONE} -- Implementation/Sorting
 		do
 			metric_selected_actions.block
 			group_selected_actions.block
-			metric_table := metric_manager.ordered_metrics (agent metric_order_tester (?, ?, current_sort_order), not tree_view_checkbox.is_selected)
+			metric_table := metric_manager.ordered_metrics (mapped_sorting_order, not tree_view_checkbox.is_selected)
 			setup_selection_status
 			load_metric_in_grid
 			try_to_selected_last_metric
 			metric_selected_actions.resume
 			group_selected_actions.resume
+		end
+
+	metric_order_tester (a_metric, b_metric: EB_METRIC; a_order: INTEGER): BOOLEAN is
+		do
 		end
 
 	current_sort_order: INTEGER is
@@ -843,7 +820,7 @@ feature{NONE} -- Implementation/Sorting
 			l_new_tbl: like selection_status
 			l_name: STRING
 		do
-			l_metric_tbl := metric_manager.ordered_metrics (agent metric_order_tester (?, ?, current_sort_order), True)
+			l_metric_tbl := metric_manager.ordered_metrics (mapped_sorting_order, True)
 			l_metrics := l_metric_tbl.item (no_unit)
 			l_old_tbl := selection_status.twin
 			l_new_tbl := selection_status
@@ -896,17 +873,17 @@ feature {NONE} -- Implementation
 			end
 		end
 
---	mapped_sorting_order: INTEGER is
---			-- Mapped sorting order for `metric_grid'
---		do
---			if current_sort_order = ascending_order then
---				Result := metric_manager.ascending_order
---			elseif current_sort_order = descending_order then
---				Result := metric_manager.descending_order
---			elseif current_sort_order = topology_order then
---				Result := metric_manager.topological_order
---			end
---		end
+	mapped_sorting_order: INTEGER is
+			-- Mapped sorting order for `metric_grid'
+		do
+			if current_sort_order = ascending_order then
+				Result := metric_manager.ascending_order
+			elseif current_sort_order = descending_order then
+				Result := metric_manager.descending_order
+			elseif current_sort_order = topology_order then
+				Result := metric_manager.topological_order
+			end
+		end
 
 	select_metrics (a_predefined: BOOLEAN; a_select: BOOLEAN) is
 			-- Selected metrics:
@@ -919,7 +896,7 @@ feature {NONE} -- Implementation
 			l_row: EV_GRID_ROW
 			l_grid: like metric_grid
 			l_metric: EB_METRIC
-			l_check_item: EV_GRID_CHECKABLE_LABEL_ITEM
+			l_check_item: MA_GRID_CHECK_BOX_ITEM
 		do
 			from
 				i := 1
@@ -929,18 +906,22 @@ feature {NONE} -- Implementation
 				i > c
 			loop
 				l_row := l_grid.row (i)
-				l_metric ?= l_row.data
-				if l_metric /= Void then
+				if l_row.data /= Void then
 					l_check_item ?= l_row.item (1)
-					check l_check_item /= Void end
+					l_metric ?= l_row.data
+					check
+						l_check_item /= Void
+						l_metric /= Void
+					end
 					if l_metric.is_predefined = a_predefined then
 						if a_select then
 							if metric_manager.is_metric_valid (l_metric.name) or else should_invalid_metric_be_selected then
-								l_check_item.set_is_checked (a_select)
+								l_check_item.set_selected (a_select)
 							end
 						else
-							l_check_item.set_is_checked (a_select)
+							l_check_item.set_selected (a_select)
 						end
+
 					end
 				end
 				i := i + 1
@@ -1115,99 +1096,13 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	sideward_unit (a_row: EV_GRID_ROW; a_upper: BOOLEAN): QL_METRIC_UNIT is
-			-- Upper unit of `a_source_unit' if `a_upper', vice verser.
-		require
-			a_row_not_void: a_row /= Void
-		local
-			l_start_index: INTEGER
-			l_end_index: INTEGER
-			l_grid: like metric_grid
-			done: BOOLEAN
-		do
-			l_grid := metric_grid
-			if a_upper then
-				from
-					l_start_index := a_row.index - 1
-					l_end_index := 1
-				until
-					l_start_index < l_end_index or done
-				loop
-					Result ?= l_grid.row (l_start_index).data
-					done := Result /= Void
-					l_start_index := l_start_index - 1
-				end
-			else
-				from
-					l_start_index := a_row.index + 1
-					l_end_index := l_grid.row_count
-				until
-					l_start_index > l_end_index or done
-				loop
-					Result ?= l_grid.row (l_start_index).data
-					done := Result /= Void
-					l_start_index := l_start_index + 1
-				end
-			end
-		end
-
-	row_by_data (a_data: ANY): EV_GRID_ROW is
-			-- Get first row by `a_data' in `metric_grid'.
-		require
-			a_data_not_void: a_data /= Void
-		local
-			l_grid: like metric_grid
-			i, l_count: INTEGER
-		do
-			from
-				l_grid := metric_grid
-				l_count := l_grid.row_count
-				i := 1
-			until
-				i > l_count or Result /= Void
-			loop
-				if l_grid.row (i).data = a_data then
-					Result := l_grid.row (i)
-				end
-				i := i + 1
-			end
-		end
-
-	store_expansion_status is
-			-- Store expansion status of every unit in Current selector into `expansion_status'.
-		local
-			l_unit_rows: like unit_row_list
-			l_row: EV_GRID_ROW
-			l_expansion_status: like expansion_status
-			l_unit: QL_METRIC_UNIT
-		do
-			l_expansion_status := expansion_status
-			l_expansion_status.wipe_out
-			if tree_view_checkbox.is_selected then
-				l_unit_rows := unit_row_list
-				from
-					l_unit_rows.start
-				until
-					l_unit_rows.after
-				loop
-					l_row := l_unit_rows.item
-					if l_row /= Void and then l_row.parent = metric_grid then
-						l_unit ?= l_row.data
-						if l_unit /= Void then
-							l_expansion_status.put (l_row.is_expandable and then l_row.is_expanded, l_unit)
-						end
-					end
-					l_unit_rows.forth
-				end
-			end
-		end
-
-	expansion_status: HASH_TABLE [BOOLEAN, QL_METRIC_UNIT]
-			-- Expansion status for every unit lised in Current selector.
-			-- Indexed by metric unit. If value is True, means that the grid row for that unit is expaned
-			-- when last time expansion status is checked.
-
 feature{NONE} -- Key shortcuts
+
+	move_unit_up_key_index: INTEGER is 128
+			-- Key shortcut index for moving unit up
+
+	move_unit_down_key_index: INTEGER is 129
+			-- Key shortcut index for moving unit down
 
 	move_unit_up_key_shortcut: ES_KEY_SHORTCUT
 			-- Key shortcut for moving unit up
@@ -1227,7 +1122,6 @@ invariant
 	input_cache_attached: input_cache /= Void
 	unit_row_list_attached: unit_row_list /= Void
 	delayed_timeout_attached: delayed_timeout /= Void
-	expansion_status_attached: expansion_status /= Void
 
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"
@@ -1260,6 +1154,7 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end -- class EB_METRIC_SELECTOR
 

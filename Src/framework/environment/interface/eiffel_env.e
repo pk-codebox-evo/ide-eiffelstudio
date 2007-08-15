@@ -20,24 +20,18 @@ feature -- Status update
 			l_dir: DIRECTORY
 		do
 			temp := get_environment (ise_eiffel_env)
-
 			create p
 			if (temp = Void) or else temp.is_empty then
-				if platform.is_unix then
-						-- on unix we asume that the unix layout is used
-					is_unix_layout := True
-				else
-					io.error.put_string (p.Workbench_name)
-					io.error.put_string (": the environment variable $"+ise_eiffel_env+" is not set.%N")
-					(create {EXCEPTIONS}).die (-1)
-				end
+				io.error.put_string (p.Workbench_name)
+				io.error.put_string (": the environment variable $"+ise_eiffel_env+" is not set.%N")
+				(create {EXCEPTIONS}).die (-1)
 			else
 				create l_file.make (temp)
 				if not l_file.exists or not l_file.is_directory then
 					io.error.put_string ("WARNING: the environment variable $"+ise_eiffel_env+" points to a non-existing directory.%N")
 				else
 						-- put it into the environment for backward compatibility
-					environment.put (eiffel_installation_dir_name, ise_eiffel_env)
+					environment.put (temp, ise_eiffel_env)
 				end
 			end
 
@@ -55,25 +49,19 @@ feature -- Status update
 
 			temp := get_environment (ise_platform_env)
 			if (temp = Void) or else temp.is_empty then
-				if is_unix_layout then
-					is_valid_environment := True
-					environment.put (unix_layout_platform, ise_platform_env)
-				else
-					io.error.put_string (p.Workbench_name)
-					io.error.put_string (": the environment variable $"+ise_platform_env+" is not set%N")
-					(create {EXCEPTIONS}).die (-1)
-				end
+				io.error.put_string (p.Workbench_name)
+				io.error.put_string (": the environment variable $"+ise_platform_env+" is not set%N")
+				(create {EXCEPTIONS}).die (-1)
 			else
 					-- we have now a valid environment, although we may have some warnings
 				is_valid_environment := True
-				if not is_unix_layout then
 				create l_file.make (bin_path)
-					if not l_file.exists or not l_file.is_directory then
-						io.error.put_string ("WARNING: the path $"+ise_eiffel_env+"/studio/spec/$"+ise_platform_env+"/bin points to a non-existing directory.%N")
-					end
+				if not l_file.exists or not l_file.is_directory then
+					io.error.put_string ("WARNING: the path $"+ise_eiffel_env+"/studio/spec/$"+ise_platform_env+"/bin points to a non-existing directory.%N")
+				else
+						-- put it into the environment for backward compatibility
+					environment.put (temp, ise_platform_env)
 				end
-					-- put it into the environment for backward compatibility
-				environment.put (temp, ise_platform_env)
 			end
 
 				-- we are finished with the checks, the rest is some default setup
@@ -91,7 +79,7 @@ feature -- Status update
 				-- Make sure to define ISE_LIBRARY if not defined.
 			temp := get_environment (ise_library_env)
 			if temp = Void then
-				environment.put (lib_path, ise_library_env)
+				environment.put (eiffel_installation_dir_name, ise_library_env)
 			else
 				environment.put (temp, ise_library_env)
 			end
@@ -129,13 +117,10 @@ feature -- Status report
 			"EIF_IS_WORKBENCH"
 		end
 
-	is_unix_layout: BOOLEAN
-			-- Is eiffelstudio installed in the unix layout?
-
 feature -- Version
 
-	Major_version: NATURAL_16 is 6
-	Minor_version: NATURAL_16 is 1
+	Major_version: NATURAL_16 is 5
+	Minor_version: NATURAL_16 is 7
 
 feature -- Access
 
@@ -146,38 +131,6 @@ feature -- Access
 			result_ok: Result /= Void and then not Result.is_empty
 		end
 
-	product_name: STRING is "Eiffel"
-			-- Name of the product.
-
-	product_version_name: STRING is
-			-- Versioned name of the product.
-		once
-			if is_unix_layout then
-				Result := product_name + major_version.out + "." + minor_version.out
-				Result.to_lower
-			else
-				Result := product_name + major_version.out + minor_version.out
-			end
-		end
-
-	environment_info: STRING is
-			-- Information about the environment.
-		do
-			create Result.make (100)
-			if is_unix_layout then
-				Result.append ("Base Path = " + unix_layout_base_path)
-			else
-				Result.append ("$ISE_EIFFEL = " + eiffel_installation_dir_name + "%N")
-				Result.append ("$ISE_LIBRARY = " + eiffel_library + "%N")
-				Result.append ("$ISE_PLATFORM = " + eiffel_platform)
-				if platform.is_windows then
-					Result.append ("%N$ISE_C_COMPILER = " + eiffel_c_compiler)
-				end
-			end
-		ensure
-			Result_not_void: Result /= Void
-		end
-
 feature -- Preferences
 
 	Eiffel_preferences: STRING is
@@ -186,14 +139,15 @@ feature -- Preferences
 			fname: FILE_NAME
 		once
 			if platform.is_windows then
-				Result := "HKEY_CURRENT_USER\Software\ISE\" + product_version_name + "\"+application_name+"\Preferences"
-				if is_workbench then
-					Result.append ("_wkbench")
-				end
+				Result := "HKEY_CURRENT_USER\Software\ISE\Eiffel" +
+					major_version.out + minor_version.out + "\"+application_name+"\Preferences"
 			else
 				create fname.make_from_string (eiffel_home)
-				fname.set_file_name (application_name + "rc" + major_version.out + minor_version.out)
+				fname.set_file_name ("."+application_name+"rc" + major_version.out + minor_version.out)
 				Result := fname
+			end
+			if is_workbench then
+				Result.append ("_wkbench")
 			end
 		end
 
@@ -202,8 +156,8 @@ feature -- Preferences
 		require
 			is_valid_environment: is_valid_environment
 		do
-			create Result.make_from_string (shared_application_path)
-			Result.extend ("eifinit")
+			create Result.make_from_string (Eiffel_installation_dir_name)
+			Result.extend_from_array (<<"eifinit", short_studio_name>>)
 			Result.set_file_name ("default")
 			Result.add_extension ("xml")
 		ensure
@@ -213,8 +167,8 @@ feature -- Preferences
 	platform_preferences: FILE_NAME is
 			-- Platform specific preferences.
 		do
-			create Result.make_from_string (shared_application_path)
-			Result.extend_from_array (<<"eifinit", "spec", Platform_abstraction>>)
+			create Result.make_from_string (Eiffel_installation_dir_name)
+			Result.extend_from_array (<<"eifinit", short_studio_name, "spec", Platform_abstraction>>)
 			Result.set_file_name ("default")
 			Result.add_extension ("xml")
 		ensure
@@ -277,19 +231,13 @@ feature -- Access: Environment variables
 
 	Eiffel_home: DIRECTORY_NAME is
 			-- Name of directory containing Eiffel specific data.
-		local
-			l_dir_name: STRING
 		once
 			create Result.make_from_string (Home)
 			if platform.is_windows then
-				l_dir_name := "EiffelSoftware"
+				Result.extend ("EiffelSoftware")
 			else
-				l_dir_name := ".es"
+				Result.extend (".es")
 			end
-			if is_workbench then
-				l_dir_name.append ("_wkbench")
-			end
-			Result.extend (l_dir_name)
 		ensure
 			result_not_void: Result /= Void
 		end
@@ -313,30 +261,10 @@ feature -- Access: file name
 
 	Eiffel_installation_dir_name: DIRECTORY_NAME is
 			-- Installation of ISE Eiffel name.
-		require
-			not_unix_layout: not is_unix_layout
-		local
-			l_name: STRING
 		once
-			l_name := get_environment (ise_eiffel_env)
-			if is_workbench and then (create {DIRECTORY}.make (l_name + "_wkbench")).exists then
-				l_name.append ("_wkbench")
-			end
-			create Result.make_from_string (l_name)
+			create Result.make_from_string (get_environment (ise_eiffel_env))
 		ensure
-			result_not_void_or_empty: is_valid_environment implies
-				(Result /= Void and then not Result.is_empty)
-		end
-
-	Bin_path: DIRECTORY_NAME is
-		require
-			not_unix_layout: not is_unix_layout
-			is_valid_environment: is_valid_environment
-		do
-			Result := Studio_path.twin
-			Result.extend_from_array (<<"spec", Eiffel_platform, "bin">>)
-		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: is_valid_environment implies Result /= Void and not Result.is_empty
 		end
 
 	Eiffel_library: DIRECTORY_NAME is
@@ -346,7 +274,7 @@ feature -- Access: file name
 		once
 			create Result.make_from_string (get_environment (ise_library_env))
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	Eiffel_precomp: DIRECTORY_NAME is
@@ -356,24 +284,18 @@ feature -- Access: file name
 		do
 			create Result.make_from_string (get_environment (ise_precomp_env))
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	Eiffel_precomp_mode (a_is_dotnet: BOOLEAN): DIRECTORY_NAME
 			-- Retrieve precomp location.
 		require
 			is_valid_environment: is_valid_environment
-		local
-			l_dn_name: STRING
 		do
-			Result := lib_path.twin
+			Result := eiffel_installation_dir_name.twin
 			Result.extend_from_array (<<"precomp", "spec">>)
 			if a_is_dotnet then
-					-- Append '-dotnet' to platform name
-				create l_dn_name.make (eiffel_platform.count + 7)
-				l_dn_name.append (eiffel_platform)
-				l_dn_name.append ("-dotnet")
-				Result.extend (l_dn_name)
+				Result.extend ("dotnet")
 			else
 				Result.extend (eiffel_platform)
 			end
@@ -381,132 +303,15 @@ feature -- Access: file name
 			result_ok: Result /= Void and then not Result.is_empty
 		end
 
-	Runtime_include_path: DIRECTORY_NAME is
-			-- Include path for the runtime.
+	Studio_path: DIRECTORY_NAME is
+			-- Location of studio
 		require
 			is_valid_environment: is_valid_environment
 		once
-			if is_unix_layout then
-				Result := unix_layout_base_path.twin
-				Result.extend_from_array (<<"include", product_version_name>>)
-			else
-				Result := studio_path.twin
-				Result.extend_from_array (<<"spec", eiffel_platform, "include">>)
-			end
+			Result := eiffel_installation_dir_name.twin
+			Result.extend (short_studio_name)
 		ensure
-			Result_ok: Result /= Void and then not Result.is_empty
-		end
-
-	docking_data_name: STRING is
-			-- Docking config data folder name
-		once
-			if not is_workbench then
-				Result := "docking_"
-			else
-				Result := "docking_wb_"
-			end
-			Result.append_integer (major_version)
-			Result.append_integer (minor_version)
-		end
-
-	Standard_tools_layout_name: STRING is
-			-- Standard tools layout name
-		once
-			if not is_workbench then
-				Result := "standard_layout.wb"
-			else
-				Result := "standard_layout_wb.wb"
-			end
-		end
-
-	Standard_tools_debug_layout_name: STRING is
-			-- Standard tools debug layout name
-		once
-			if not is_workbench then
-				Result := "standard_debug_layout.wb"
-			else
-				Result := "standard_debug_layout_wb.wb"
-			end
-		end
-
-	Runtime_lib_path: DIRECTORY_NAME is
-			-- Library path for the runtime.
-		require
-			is_valid_environment: is_valid_environment
-		once
-			if is_unix_layout then
-				Result := unix_layout_base_path.twin
-				Result.extend (unix_layout_lib_dir)
-			else
-				Result := studio_path.twin
-				Result.extend_from_array (<<"spec", eiffel_platform, "lib">>)
-			end
-		ensure
-			Result_ok: Result /= Void and then not Result.is_empty
-		end
-
-	Shared_path: DIRECTORY_NAME is
-			-- Location of shared files (platform independent).
-		require
-			is_valid_environment: is_valid_environment
-		once
-			if is_unix_layout then
-				Result := unix_layout_base_path.twin
-				Result.extend_from_array (<<"share", product_version_name>>)
-			else
-				create Result.make_from_string (eiffel_installation_dir_name)
-			end
-		ensure
-			Result_not_void: Result /= Void
-		end
-
-	Lib_path: DIRECTORY_NAME is
-			-- Location of libs files (platform dependent).
-		require
-			is_valid_environment: is_valid_environment
-		once
-			if is_unix_layout then
-				Result := unix_layout_base_path.twin
-				Result.extend_from_array (<<unix_layout_lib_dir, product_version_name>>)
-			else
-				create Result.make_from_string (eiffel_installation_dir_name)
-			end
-		ensure
-			Result_not_void: Result /= Void
-		end
-
-	Shared_application_path: DIRECTORY_NAME is
-			-- Location of shared files specific for the current application (platform independent).
-		require
-			is_valid_environment: is_valid_environment
-		once
-			Result := shared_path.twin
-				-- Patrickr, 11/01/06 hack for backwards compatibility, the application is ec but
-				-- the directory is studio
-			if not is_unix_layout and application_name.is_equal ("ec") then
-				Result.extend (short_studio_name)
-			else
-				Result.extend (application_name)
-			end
-		ensure
-			shared_application_path_not_void: Result /= Void
-		end
-
-	Lib_application_path: DIRECTORY_NAME is
-			-- Location of lib files specific for the current application (platform dependent).
-		require
-			is_valid_environment: is_valid_environment
-		once
-			Result := lib_path.twin
-				-- Patrickr, 11/01/06 hack for backwards compatibility, the application is ec but
-				-- the directory is studio
-			if not is_unix_layout and application_name.is_equal ("ec") then
-				Result.extend (short_studio_name)
-			else
-				Result.extend (application_name)
-			end
-		ensure
-			lib_application_path_not_void: Result /= Void
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	Help_path: DIRECTORY_NAME is
@@ -514,10 +319,10 @@ feature -- Access: file name
 		require
 			is_valid_environment: is_valid_environment
 		once
-			Result := shared_application_path.twin
+			Result := Studio_path.twin
 			Result.extend ("help")
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	Templates_path: DIRECTORY_NAME is
@@ -528,17 +333,30 @@ feature -- Access: file name
 			Result := Help_path.twin
 			Result.extend ("defaults")
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	Config_path: DIRECTORY_NAME is
 		require
 			is_valid_environment: is_valid_environment
 		once
-			Result := shared_application_path.twin
+			Result := Studio_path.twin
 			Result.extend ("config")
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
+		end
+
+	Config_eif: FILE_NAME is
+		require
+			windows: platform.is_windows
+			is_valid_environment: is_valid_environment
+		once
+			create Result.make_from_string (Config_path)
+			Result.extend_from_array (<<eiffel_platform, eiffel_c_compiler>>)
+			Result.set_file_name ("config")
+			Result.add_extension ("eif")
+		ensure
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	Generation_templates_path: DIRECTORY_NAME is
@@ -549,17 +367,17 @@ feature -- Access: file name
 			Result := Config_path.twin
 			Result.extend_from_array (<<Eiffel_platform, "templates">>)
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	Bitmaps_path: DIRECTORY_NAME is
 		require
 			is_valid_environment: is_valid_environment
 		once
-			Result := shared_application_path.twin
+			Result := Studio_path.twin
 			Result.extend ("bitmaps")
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	Cursor_path: DIRECTORY_NAME is
@@ -569,7 +387,7 @@ feature -- Access: file name
 			Result := Bitmaps_path.twin
 			Result.extend ("cursor")
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	Assemblies_path: DIRECTORY_NAME is
@@ -577,10 +395,20 @@ feature -- Access: file name
 		require
 			is_valid_environment: is_valid_environment
 		once
-			Result := lib_path.twin
+			Result := eiffel_installation_dir_name.twin
 			Result.extend_from_array (<<"dotnet", "assemblies">>)
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
+		end
+
+	Default_class_file: FILE_NAME is
+		require
+			is_valid_environment: is_valid_environment
+		once
+			create Result.make_from_string (Templates_path)
+			Result.set_file_name (Default_class_filename)
+		ensure
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	Default_config_name: FILE_NAME is
@@ -590,7 +418,7 @@ feature -- Access: file name
 			create Result.make_from_string (Templates_path)
 			Result.set_file_name (Default_config_file)
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	Library_path: DIRECTORY_NAME is
@@ -600,7 +428,7 @@ feature -- Access: file name
 			Result := Eiffel_library.twin
 			Result.extend (library_directory_name)
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	Error_path: DIRECTORY_NAME is
@@ -610,52 +438,44 @@ feature -- Access: file name
 			Result := help_path.twin
 			Result.extend ("errors")
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
-		end
-
-	built_ins_path (a_is_platform_neutral, a_is_dotnet: BOOLEAN): DIRECTORY_NAME is
-			-- Directory where implementation for `built_ins' are found.
-		require
-			is_valid_environment: is_valid_environment
-		do
-			Result := studio_path.twin
-			Result.extend ("built_ins")
-			if a_is_platform_neutral then
-				Result.extend ("neutral")
-			else
-				if a_is_dotnet then
-					Result.extend ("dotnet")
-				else
-					Result.extend ("classic")
-				end
-			end
-		ensure
-			built_ins_path_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	Docs_path: DIRECTORY_NAME is
 		require
 			is_valid_environment: is_valid_environment
 		once
-			if is_unix_layout then
-				Result := unix_layout_base_path.twin
-				Result.extend_from_array (<<"share", "doc", product_version_name>>)
-			else
-				Result := eiffel_installation_dir_name.twin
-			end
+			Result := Eiffel_installation_dir_name.twin
 			Result.extend ("docs")
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
+		end
+
+	Bin_path: DIRECTORY_NAME is
+		require
+			is_valid_environment: is_valid_environment
+		local
+			l_p: STRING
+		do
+			l_p := get_environment (ec_folder_env)
+			if l_p /= Void then
+				create Result.make_from_string (l_p)
+			else
+				Result := Studio_path.twin
+				Result.extend_from_array (<<"spec", Eiffel_platform, "bin">>)
+			end
+		ensure
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	filter_path: DIRECTORY_NAME is
 		require
 			is_valid_environment: is_valid_environment
 		once
-			Result := shared_application_path.twin
+			Result := studio_path.twin
 			Result.extend ("filters")
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	profile_path: DIRECTORY_NAME is
@@ -663,25 +483,10 @@ feature -- Access: file name
 		require
 			is_valid_environment: is_valid_environment
 		once
-			Result := shared_application_path.twin
+			Result := studio_path.twin
 			Result.extend ("profiler")
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
-		end
-
-	language_path: DIRECTORY_NAME is
-			-- Location of the .mo files
-		require
-			is_valid_environment: is_valid_environment
-		once
-			if is_unix_layout then
-				Result := unix_layout_share_path.twin
-				Result.extend_from_array (<< unix_layout_locale_dir, product_version_name >>)
-			else
-				Result := shared_path.twin
-				Result.extend (short_studio_name)
-				Result.extend_from_array (<<"lang", "mo_files">>)
-			end
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	predefined_metrics_file: FILE_NAME is
@@ -689,11 +494,11 @@ feature -- Access: file name
 		require
 			is_valid_environment: is_valid_environment
 		once
-			create Result.make_from_string (shared_application_path)
+			create Result.make_from_string (studio_path)
 			Result.extend ("metrics")
 			Result.set_file_name ("predefined_metrics.xml")
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	New_project_wizards_path: DIRECTORY_NAME is
@@ -701,10 +506,10 @@ feature -- Access: file name
 		require
 			is_valid_environment: is_valid_environment
 		once
-			Result := lib_application_path.twin
+			Result := studio_path.twin
 			Result.extend_from_array (<<"wizards", "new_projects">>)
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	precompilation_wizard_resources_directory: DIRECTORY_NAME is
@@ -714,7 +519,7 @@ feature -- Access: file name
 			create Result.make_from_string (Eiffel_installation_dir_name)
 			Result.extend_from_array (<<short_studio_name, "wizards", "others", "precompile">>)
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	compiler_configuration: FILE_NAME is
@@ -723,12 +528,12 @@ feature -- Access: file name
 		require
 			is_valid_environment: is_valid_environment
 		do
-			create Result.make_from_string (shared_application_path)
-			Result.extend ("eifinit")
+			create Result.make_from_string (Eiffel_installation_dir_name)
+			Result.extend_from_array (<<"eifinit", short_studio_name>>)
 			Result.set_file_name ("general")
 			Result.add_extension ("cfg")
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	msil_culture_name: FILE_NAME is
@@ -737,11 +542,11 @@ feature -- Access: file name
 			is_windows: Platform.is_windows
 			is_valid_environment: is_valid_environment
 		once
-			create Result.make_from_string (shared_application_path)
-			Result.extend_from_array (<<"eifinit", "spec", Platform_abstraction>>)
+			create Result.make_from_string (Eiffel_installation_dir_name)
+			Result.extend_from_array (<<"eifinit", short_studio_name, "spec", Platform_abstraction>>)
 			Result.set_file_name ("culture")
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	tmp_directory: DIRECTORY_NAME is
@@ -749,20 +554,6 @@ feature -- Access: file name
 		once
 			create Result.make
 			Result.set_directory ("tmp")
-		ensure
-			Result_ok: Result /= Void and then not Result.is_empty
-		end
-
-	borland_directory: DIRECTORY_NAME is
-			-- Location of the borland directory
-		require
-			has_borland: has_borland
-			not_unix_layout: not is_unix_layout
-		once
-			create Result.make_from_string (eiffel_installation_dir_name)
-			Result.extend ("BCC55")
-		ensure
-			Result_ok: Result /= Void and then not Result.is_empty
 		end
 
 feature -- Access: command name
@@ -779,54 +570,34 @@ feature -- Access: command name
 				Result.add_extension (executable_suffix)
 			end
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
+
+--	Ise_eac_browser_name: FILE_NAME is
+--			-- Filename of EAC Browser application
+--		once
+--			create Result.make_from_string (bin_path)
+--			Result.set_file_name ("eac_browser.exe")
+--		end
 
 	Freeze_command_name: FILE_NAME is
 		require
 			is_valid_environment: is_valid_environment
 		once
-			if is_unix_layout then
-				create Result.make_from_string (unix_layout_base_path)
-				Result.extend ("bin")
-			else
-				create Result.make_from_string (bin_path)
-			end
+			create Result.make_from_string (bin_path)
 			Result.set_file_name (Finish_freezing_script)
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
-		end
-
-	docking_standard_layout_path: FILE_NAME is
-			-- Path of standard docking layout.
-		local
-			l_dir: DIRECTORY
-		do
-			create Result.make_from_string (eiffel_home)
-			Result.extend_from_array (<<docking_data_name>>)
-			create l_dir.make (Result)
-			if not l_dir.exists then
-				l_dir.create_dir
-				if not l_dir.is_closed then
-					l_dir.close
-				end
-			end
-		ensure
-			folder_exist: (create {DIRECTORY}.make (Result)).exists
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	Prelink_command_name: FILE_NAME is
 		require
 			is_valid_environment: is_valid_environment
 		once
-			if is_unix_layout then
-				create Result.make_from_string (lib_application_path)
-			else
-				create Result.make_from_string (bin_path)
-			end
+			create Result.make_from_string (bin_path)
 			Result.set_file_name ("prelink")
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	ec_command_name: FILE_NAME is
@@ -834,15 +605,10 @@ feature -- Access: command name
 		require
 			is_valid_environment: is_valid_environment
 		once
-			if is_unix_layout then
-				create Result.make_from_string (unix_layout_base_path)
-				Result.extend ("bin")
-			else
-				create Result.make_from_string (bin_path)
-			end
+			create Result.make_from_string (bin_path)
 			Result.set_file_name (ec_name)
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	Estudio_command_name: FILE_NAME is
@@ -850,20 +616,13 @@ feature -- Access: command name
 		require
 			is_valid_environment: is_valid_environment
 		once
-			if is_unix_layout then
-				create Result.make_from_string (unix_layout_base_path)
-				Result.extend ("bin")
-				Result.set_file_name ("estudio" + major_version.out + "." + minor_version.out)
-			else
-				create Result.make_from_string (bin_path)
-				Result.set_file_name ("estudio")
-			end
-
+			create Result.make_from_string (bin_path)
+			Result.set_file_name ("estudio")
 			if not platform.is_unix then
 				Result.add_extension (executable_suffix)
 			end
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	Ecdbgd_command_name: FILE_NAME is
@@ -871,17 +630,13 @@ feature -- Access: command name
 		require
 			is_valid_environment: is_valid_environment
 		once
-			if is_unix_layout then
-				create Result.make_from_string (lib_application_path)
-			else
-				create Result.make_from_string (bin_path)
-			end
+			create Result.make_from_string (bin_path)
 			Result.set_file_name ("ecdbgd")
 			if not platform.is_unix then
 				Result.add_extension (executable_suffix)
 			end
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	Emake_command_name: FILE_NAME is
@@ -889,17 +644,13 @@ feature -- Access: command name
 		require
 			is_valid_environment: is_valid_environment
 		once
-			if is_unix_layout then
-				create Result.make_from_string (lib_application_path)
-			else
-				create Result.make_from_string (bin_path)
-			end
+			create Result.make_from_string (bin_path)
 			Result.set_file_name ("emake")
 			if not platform.is_unix then
 				Result.add_extension (executable_suffix)
 			end
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 	Quick_finalize_command_name: FILE_NAME is
@@ -907,48 +658,13 @@ feature -- Access: command name
 		require
 			is_valid_environment: is_valid_environment
 		once
-			if is_unix_layout then
-				create Result.make_from_string (lib_application_path)
-			else
-				create Result.make_from_string (bin_path)
-			end
+			create Result.make_from_string (bin_path)
 			Result.set_file_name ("quick_finalize")
 			if not platform.is_unix then
 				Result.add_extension (executable_suffix)
 			end
 		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
-		end
-
-	compile_library_command_name: FILE_NAME is
-			-- Complete path to `compile_library.bat'.
-		require
-			is_valid_environment: is_valid_environment
-			is_windows: platform.is_windows
-		once
-			create Result.make_from_string (bin_path)
-			Result.set_file_name ("compile_library")
-			Result.add_extension ("bat")
-		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
-		end
-
-	x2c_command_name: FILE_NAME is
-			-- Complete path to `x2c'.
-		require
-			is_valid_environment: is_valid_environment
-		once
-			if is_unix_layout then
-				create Result.make_from_string (lib_application_path)
-			else
-				create Result.make_from_string (bin_path)
-			end
-			Result.set_file_name ("x2c")
-			if not platform.is_unix then
-				Result.add_extension (executable_suffix)
-			end
-		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
+			result_not_void_or_empty: Result /= Void and not Result.is_empty
 		end
 
 feature -- Access: names
@@ -959,9 +675,6 @@ feature -- Access: names
 			if Result = Void then
 				create Result.make (6)
 				Result.append ("ec")
-				if is_unix_layout then
-					Result.append (major_version.out.as_lower + "." + minor_version.out.as_lower)
-				end
 				if Platform.is_windows then
 					Result.append (".exe")
 				end
@@ -972,12 +685,10 @@ feature -- Access: names
 			-- Name of post-eiffel compilation processing to launch
 			-- C code.
 		once
-			create Result.make_from_string ("finish_freezing")
-			if is_unix_layout then
-				Result.append (major_version.out.as_lower + "." + minor_version.out.as_lower)
-			end
 			if Platform.is_windows then
-				Result.append (".exe")
+				Result := "finish_freezing.exe"
+			else
+				Result := "finish_freezing"
 			end
 		end
 
@@ -989,25 +700,15 @@ feature -- Status
 			Result := Platform.is_windows and then Eiffel_c_compiler.is_equal ("bcb")
 		end
 
+	is_unix_layout: BOOLEAN
+			-- Is eiffelstudio installed in the unix layout?
+
 feature -- Environment access
 
 	get_environment (a_var: STRING): STRING is
 			-- Get `a_var' from the environment, taking into account the `application_name' to lookup the defaults.
 		do
 			Result := environment.get_from_application (a_var, application_name)
-		end
-
-feature -- Environment update
-
-	set_environment (a_value, a_var: STRING) is
-			-- Update environment variable `a_key' to be `a_value'.
-		require
-			a_var_ok: a_var /= Void and then not a_var.is_empty and then not a_var.has ('%U')
-			a_value_ok: a_value /= Void and then not a_value.has ('%U')
-		do
-			environment.put (a_value, a_var)
-		ensure
-			value_updated: get_environment (a_var) /= Void implies get_environment (a_var).is_equal (a_value)
 		end
 
 feature -- IL environment
@@ -1045,6 +746,8 @@ feature -- Version limitation
 
 feature -- File constants
 
+	Default_class_filename: STRING is "default.cls"
+
 	Default_config_file: STRING is "default.ecf"
 
 	library_directory_name: STRING is "library"
@@ -1078,6 +781,9 @@ feature -- Environment constants
 	ec_name_env: STRING is "EC_NAME"
 		-- ec executable name.
 
+	ec_folder_env: STRING is "EC_FOLDER"
+		-- Location of the binaries.
+
 feature -- Constants
 
 	Executable_suffix: STRING is
@@ -1093,20 +799,6 @@ feature -- Constants
 	platform: PLATFORM_CONSTANTS
 		once
 			create Result
-		end
-
-feature {NONE} -- Implementation
-
-	Studio_path: DIRECTORY_NAME is
-			-- Location of studio
-		require
-			not_unix_layout: not is_unix_layout
-			is_valid_environment: is_valid_environment
-		once
-			Result := eiffel_installation_dir_name.twin
-			Result.extend (short_studio_name)
-		ensure
-			result_not_void_or_empty: Result /= Void and then not Result.is_empty
 		end
 
 feature {NONE} -- Environment access
@@ -1132,45 +824,6 @@ feature {NONE} -- Environment access
 			retried := True
 			retry
 		end
-
-feature {NONE} -- Configuration of layout
-
-	unix_layout_base_path: DIRECTORY_NAME
-			-- Base for the unix layout. e.g. "/usr" or "/usr/local"
-		once
-			create Result.make
-			Result.set_directory ("usr")
-			Result.extend ("local")
-		ensure
-			Result_not_void: Result /= Void
-		end
-
-	unix_layout_share_path: DIRECTORY_NAME
-			-- share for the unix layout. e.g. "/usr/share"
-		once
-			create Result.make_from_string ("/usr/share") -- Comment to finde line for replacement UNIX_BASE_PATH
-		ensure
-			Result_not_void: Result /= Void
-		end
-
-	unix_layout_lib_dir: STRING is
-			-- Directory name for lib. e.g. "lib" or "lib64"
-		once
-			create Result.make_from_string ("lib") -- Comment to finde line for replacement UNIX_LIB_NAME
-		ensure
-			Result_not_void: Result /= Void
-		end
-
-	unix_layout_locale_dir: STRING is
-			-- Directory name for lib. e.g. "locale"
-		once
-			create Result.make_from_string ("locale") -- Comment to finde line for replacement UNIX_LIB_NAME
-		ensure
-			Result_not_void: Result /= Void
-		end
-
-	unix_layout_platform: STRING is "unix";
-			-- Platform to use for the unix layout.
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

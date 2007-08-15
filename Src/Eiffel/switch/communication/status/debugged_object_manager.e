@@ -1,5 +1,5 @@
 indexing
-	description: "Objects that manages DEBUGGED_OBJECT instances."
+	description: "Objects that ..."
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
 	author: ""
@@ -9,32 +9,26 @@ indexing
 class
 	DEBUGGED_OBJECT_MANAGER
 
-create {DEBUGGER_MANAGER}
+inherit
+	SHARED_APPLICATION_EXECUTION
+
+create {SHARED_DEBUGGED_OBJECT_MANAGER}
 	make
 
 feature {NONE}-- Creation
 
-	make (dbg_manager: DEBUGGER_MANAGER) is
+	make is
 		do
-			debugger_manager := dbg_manager
-			if dbg_manager.is_dotnet_project then
-				set_dotnet_system
-			end
-			caching_enabled := False
+			is_dotnet := Application.is_dotnet
 		end
+
+	is_dotnet: BOOLEAN
 
 feature -- Reset
 
 	reset is
 		do
 			last_debugged_object := Void
-		end
-
-feature -- Settings
-
-	set_dotnet_system is
-		do
-			is_dotnet := True
 		end
 
 feature -- Query
@@ -79,6 +73,16 @@ feature -- Query
 			Result := dobj.sorted_attributes
 		end
 
+	object_at_address_is_special (addr: STRING): BOOLEAN is
+		require
+			address_not_void: addr /= Void
+		local
+			dobj: DEBUGGED_OBJECT
+		do
+			dobj := debugged_object (addr, 0, 0)
+			Result := dobj.is_special
+		end
+
 	object_at_address_has_attributes (addr: STRING): BOOLEAN is
 		require
 			address_not_void: addr /= Void
@@ -107,42 +111,45 @@ feature -- Last debugged object
 
 	last_sp_lower, last_sp_upper: INTEGER
 
-	debugger_manager: DEBUGGER_MANAGER
-
-feature -- status
-
-	is_valid_object_address (addr: STRING): BOOLEAN is
-		require
-			application_is_executing: debugger_manager.application_is_executing
-		do
-			Result := debugger_manager.application.is_valid_object_address (addr)
-		end
-
-	is_dotnet: BOOLEAN
-
 feature -- debugged object creation
 
 	classic_debugged_object_with_class (addr: STRING; a_compiled_class: CLASS_C): DEBUGGED_OBJECT_CLASSIC is
 		require
-			not is_dotnet
+			Application.is_classic
 		do
 			create Result.make_with_class (addr, a_compiled_class)
 		end
 
-	caching_enabled: BOOLEAN
+	fakedebugged_object (addr: STRING; sp_lower, sp_upper: INTEGER): DEBUGGED_OBJECT is
+		require
+			non_void_addr: addr /= Void
+			valid_addr: application.is_valid_object_address (addr)
+			valid_bounds: sp_lower >= 0 and (sp_upper >= sp_lower or else sp_upper = -1)
+		do
+			if is_dotnet then
+				create {DEBUGGED_OBJECT_DOTNET} Result.make (addr, sp_lower, sp_upper)
+			else
+				create {DEBUGGED_OBJECT_CLASSIC} Result.make (addr, sp_lower, sp_upper)
+			end
+			last_debugged_object := Result
+			last_sp_lower := sp_lower
+			last_sp_upper := sp_upper		
+		end
+		
+	caching_enabled: BOOLEAN is False
 
 	debugged_object (addr: STRING; sp_lower, sp_upper: INTEGER): DEBUGGED_OBJECT is
 		require
 			non_void_addr: addr /= Void
-			valid_addr: is_valid_object_address (addr)
+			valid_addr: application.is_valid_object_address (addr)
 			valid_bounds: sp_lower >= 0 and (sp_upper >= sp_lower or else sp_upper = -1)
 		do
 			debug ("debugger_caching")
 				print (generator + " : debugged_object for " + addr + " [" + sp_lower.out + ":" + sp_upper.out + "]%N")
 			end
 			if
-				caching_enabled and then
-				last_debugged_object /= Void
+				caching_enabled and then 
+				last_debugged_object /= Void 
 				and then last_debugged_object.object_address.is_equal (addr)
 			then
 				debug ("debugger_caching")
@@ -165,8 +172,8 @@ feature -- debugged object creation
 				elseif last_sp_lower /= sp_lower or last_sp_upper /= sp_upper then
 					debug ("debugger_caching")
 						print (generator + " : slices already included into reused debugged object %N")
-						print (generator + " : ["
-								+ sp_lower.out + ":" + sp_upper.out
+						print (generator + " : [" 
+								+ sp_lower.out + ":" + sp_upper.out 
 								+ "] included into ["
 								+ last_sp_lower.out + ":" + last_sp_upper.out
 								+"] %N")

@@ -21,11 +21,6 @@ inherit
 			{NONE} all
 		end
 
-	EB_CONSTANTS
-		export
-			{NONE} all
-		end
-
 create
 	make
 
@@ -34,7 +29,7 @@ feature {NONE} -- Initialization
 	make is
 			-- Create check
 		do
-			error_message := interface_names.l_compilation_was_not_successful
+			error_message := "Compilation was not successful."
 		end
 
 feature -- Basic operation

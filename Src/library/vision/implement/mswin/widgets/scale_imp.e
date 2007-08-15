@@ -524,7 +524,7 @@ feature {NONE} -- Implementation
 		do
 		end
 
-	class_name: STRING_32 is
+	class_name: STRING is
 			-- Class name
 		once
 			Result := "EvisionScale"

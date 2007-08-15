@@ -21,6 +21,8 @@ inherit
 
 	EB_SHARED_WINDOW_MANAGER
 
+	EB_SHARED_DEBUG_TOOLS
+
 	EB_SHARED_PREFERENCES
 
 create
@@ -28,15 +30,12 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_manager: like debugger_manager)
+	make is
 			-- Initialize `Current'.
-		local
-			l_shortcut: SHORTCUT_PREFERENCE
 		do
-			debugger_manager := a_manager
-			l_shortcut := preferences.misc_shortcut_data.shortcuts.item ("stop_application")
-			create accelerator.make_with_key_combination (l_shortcut.key, l_shortcut.is_ctrl, l_shortcut.is_alt, l_shortcut.is_shift)
-			set_referred_shortcut (l_shortcut)
+			create accelerator.make_with_key_combination (
+				create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.Key_f5),
+				False, False, True)
 			accelerator.actions.extend (agent execute)
 		end
 
@@ -45,29 +44,26 @@ feature -- Formatting
 	execute is
 			-- Pause the execution.
 		do
-			if debugger_manager.application_is_executing then
+			if eb_debugger_manager.application_is_executing then
 				ask_and_kill
 			end
 		end
 
 feature {NONE} -- Attributes
 
-	debugger_manager: DEBUGGER_MANAGER
-			-- Manager in charge of all debugging operations.
-
-	description: STRING_GENERAL is
+	description: STRING is
 			-- What appears in the customize dialog box.
 		do
 			Result := tooltip
 		end
 
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip displayed on `Current's buttons.
 		do
 			Result := Interface_names.e_Exec_kill
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text displayed on `Current's buttons.
 		do
 			Result := Interface_names.b_Exec_kill
@@ -76,7 +72,7 @@ feature {NONE} -- Attributes
 	name: STRING is "Exec_quit"
 			-- Name of the command.
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Menu entry corresponding to `Current'.
 		do
 			Result := Interface_names.m_Debug_kill
@@ -88,38 +84,28 @@ feature {NONE} -- Attributes
 			Result := pixmaps.icon_pixmaps.debug_stop_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.debug_stop_icon_buffer
-		end
-
 feature {NONE} -- Implementation
 
 	ask_and_kill is
 			-- Pop up a discardable confirmation dialog before killing the application.
 		local
-			cd: EB_DISCARDABLE_CONFIRMATION_DIALOG
-			l_window: EB_WINDOW
+			cd: STANDARD_DISCARDABLE_CONFIRMATION_DIALOG
 		do
 			create cd.make_initialized (2, preferences.dialog_data.confirm_kill_string,
 					Interface_names.l_Confirm_kill, Interface_names.l_Do_not_show_again,
 					preferences.preferences)
 			cd.set_ok_action (agent kill)
 			cd.show_modal_to_window (window_manager.last_focused_development_window.window)
-			l_window := window_manager.last_focused_window
-			if l_window /= Void then
-				l_window.show
-			end
+			window_manager.last_focused_window.raise
 		end
 
 	kill is
 			-- Effectively kill the application.
 		require
-			valid_application: debugger_manager.application_is_executing
+			valid_application: eb_debugger_manager.application_is_executing
 		do
-			if debugger_manager.application_is_executing then
-				debugger_manager.application.kill
+			if eb_debugger_manager.application_is_executing then
+				eb_debugger_manager.Application.kill
 			end
 		end
 

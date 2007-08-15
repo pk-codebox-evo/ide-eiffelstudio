@@ -16,8 +16,6 @@ inherit
 	ARRAY [TYPE_I]
 		rename
 			make as array_make
-		redefine
-			put
 		end
 
 	SHARED_WORKBENCH
@@ -37,19 +35,6 @@ feature -- Initialization
 			n_valid: n >= 0
 		do
 			array_make (1, n)
-		end
-
-feature -- Setters
-
-	put (v: like item; i: INTEGER_32) is
-			--
-		do
-			if not v.is_formal then
-				Precursor (v,i)
-			else
-				Precursor (v,i)
-			end
-
 		end
 
 feature -- Comparison
@@ -137,15 +122,12 @@ feature -- C code generation
 			buffer_not_void: buffer /= Void
 		local
 			i: INTEGER
-			l_cast: STRING
 		do
 			from
 				i := lower
-				l_cast := "(int32) "
 			until
 				i > upper
 			loop
-				buffer.put_string (l_cast)
 				item (i).generate_cecil_value (buffer)
 				buffer.put_string (",%N")
 				i := i + 1

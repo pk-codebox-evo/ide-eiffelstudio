@@ -1,6 +1,6 @@
 indexing
 	description: "Facility to find seperators in date or time strings"
-	legal: "See notice at end of class."
+	legal: "See notice at end of class." 
 	status: "See notice at end of class."
 	date: "$Date$"
 	revision: "$Revision$"
@@ -18,7 +18,7 @@ inherit
 		export
 			{NONE} all
 		end
-
+		
 	ANY
 
 feature {NONE} -- Constants
@@ -28,9 +28,9 @@ feature {NONE} -- Constants
 feature {NONE} -- Implementation
 
 	substrg, substrg2: STRING
-
+	
 	find_separator (s: STRING; i: INTEGER): INTEGER is
-			-- Position of the next separator in `s' starting at
+			-- Position of the next separator in `s' starting at 
 			-- `i'-th character.
 			-- ":", "/", "-", ",", " ", "."
 		require
@@ -43,11 +43,11 @@ feature {NONE} -- Implementation
 			sep_found: BOOLEAN
 		do
 			Result := s.count + 1
-			from
+			from 
 				j := 1
 			invariant
 				inside_bounds: Result >= i and Result <= s.count + 1
-			until
+			until 
 				j > Separator_characters.count
 			loop
 				pos := s.index_of (Separator_characters @ j, 1)
@@ -72,14 +72,12 @@ feature {NONE} -- Implementation
 					j > s.count or else (s @ j) /= ch
 				loop
 					j := j + 1
-					if j <= s.count then
-							-- Ensure the `mi' does not get seen to be a separator
-						if ch = 'm' and then (s @ j) = 'i' then
-							ch := s @ j
-						elseif ch = 'h' and then (s @ j = '1') and (s.valid_index (j + 1) and then s.item (j + 1) = '2') then
-							j := j + 1
-							ch := s @ j
-						end
+						-- Ensure the `mi' does not get seen to be a separator
+					if ch = 'm' and then (s @ j) = 'i' then
+						ch := s @ j
+					elseif ch = 'h' and then (s @ j = '1') and (s.valid_index (j + 1) and then s.item (j + 1) = '2') then
+						j := j + 1
+						ch := s @ j
 					end
 				end
 				Result := (j - 1) * -1
@@ -87,7 +85,7 @@ feature {NONE} -- Implementation
 		ensure
 			not_zero: Result /= 0
 		end
-
+		
 	extract_substrings (s: STRING; pos1, pos2: INTEGER) is
 			-- Extract `substrg' and `substrg2' from `s' and specified by the
 			-- range `pos1'..`pos2'.

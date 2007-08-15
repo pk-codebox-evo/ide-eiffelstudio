@@ -72,4 +72,5 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+end -- class WEL_RICH_EDIT_BUFFER_SAVER
+

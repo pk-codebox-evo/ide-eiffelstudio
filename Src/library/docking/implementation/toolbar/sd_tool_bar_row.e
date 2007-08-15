@@ -19,8 +19,8 @@ inherit
 			prune as prune_fixed
 		export
 			{NONE} all
-			{ANY} has, parent, count, prunable, is_destroyed
-			{SD_TOOL_BAR_ZONE, SD_TOOL_BAR} set_item_size, width, screen_x
+			{ANY} has, parent, count, prunable
+			{SD_TOOL_BAR_ZONE} set_item_size
 			{SD_TOOL_BAR_HOT_ZONE, SD_TOOL_BAR_CONTENT} destroy
 		end
 
@@ -29,19 +29,15 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_manager: SD_DOCKING_MANAGER; a_vertical: BOOLEAN) is
+	make (a_vertical: BOOLEAN) is
 			-- Creation method
-		require
-			not_void: a_manager /= Void
 		do
 			default_create
 			create internal_shared
 			create internal_zones.make_default
 			create internal_positioner.make (Current)
 			is_vertical := a_vertical
-			docking_manager := a_manager
 		ensure
-			set: docking_manager = a_manager
 			set: is_vertical = a_vertical
 		end
 
@@ -59,18 +55,18 @@ feature -- Command
 			extend_fixed (a_zone.tool_bar)
 
 			if is_vertical then
-				if a_zone.tool_bar.minimum_width > internal_shared.tool_bar_size then
-					a_zone.tool_bar.set_minimum_width (internal_shared.tool_bar_size)
+				if a_zone.tool_bar.minimum_width > {SD_SHARED}.tool_bar_size then
+					a_zone.tool_bar.set_minimum_width ({SD_SHARED}.tool_bar_size)
 				end
-				set_item_width (a_zone.tool_bar, internal_shared.tool_bar_size)
+				set_item_width (a_zone.tool_bar, {SD_SHARED}.tool_bar_size)
 			else
-				if a_zone.tool_bar.minimum_height > internal_shared.tool_bar_size then
-					a_zone.tool_bar.set_minimum_height (internal_shared.tool_bar_size)
+				if a_zone.tool_bar.minimum_height > {SD_SHARED}.tool_bar_size then
+					a_zone.tool_bar.set_minimum_height ({SD_SHARED}.tool_bar_size)
 				end
-				set_item_height (a_zone.tool_bar, internal_shared.tool_bar_size)
+				set_item_height (a_zone.tool_bar, {SD_SHARED}.tool_bar_size)
 			end
 
-			set_item_position_fixed (a_zone.tool_bar, 0, 0)
+			set_item_position_fixed (a_zone.tool_bar, 1, 1)
 			if internal_shared.tool_bar_docker_mediator_cell.item /= Void then
 				if is_vertical then
 					internal_positioner.position_resize_on_extend (a_zone, to_relative_position (internal_shared.tool_bar_docker_mediator_cell.item.screen_y))
@@ -106,13 +102,8 @@ feature -- Command
 		local
 			l_relative_position: INTEGER
 		do
-			-- We have to check if `internal_positioner' is dragging for GTK since key press actions may
-			-- not be called immediately.
-			-- See bug#13196.			
-			if internal_positioner.is_dragging then
-				l_relative_position := to_relative_position (a_screen_position)
-				internal_positioner.on_pointer_motion (l_relative_position)
-			end
+			l_relative_position := to_relative_position (a_screen_position)
+			internal_positioner.on_pointer_motion (l_relative_position)
 		end
 
 	set_item_position_relative (a_widget: EV_WIDGET; a_relative_x_y: INTEGER) is
@@ -238,39 +229,6 @@ feature -- Query
 		do
 			Result := internal_positioner.internal_sizer.is_enough_max_space (True)
 		end
-
-	hidden_items: ARRAYED_LIST [SD_TOOL_BAR_ITEM] is
-			-- All hideen items in row.
-		local
-			l_tool_bars: DS_ARRAYED_LIST [SD_TOOL_BAR_ZONE]
-			l_temp_items: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
-		do
-			create Result.make (1)
-			-- Prepare all hiden items in Current row.
-			l_tool_bars := zones
-			from
-				l_tool_bars.start
-			until
-				l_tool_bars.after
-			loop
-				-- We can't just call `append' to insert items, because we want to reverse items order.
-				from
-					l_temp_items := l_tool_bars.item_for_iteration.assistant.hide_tool_bar_items
-					l_temp_items.finish
-				until
-					l_temp_items.before
-				loop
-					Result.extend (l_temp_items.item)
-					l_temp_items.back
-				end
-				l_tool_bars.forth
-			end
-		ensure
-			not_void: Result /= Void
-		end
-
-	docking_manager: SD_DOCKING_MANAGER
-			-- Docking manger.
 
 feature {SD_TOOL_BAR_ROW_POSITIONER} -- Implementation
 

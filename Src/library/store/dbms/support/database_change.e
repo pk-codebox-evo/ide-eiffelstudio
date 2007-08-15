@@ -23,7 +23,7 @@ inherit
 			is_equal, out, copy
 		end
 
-	SQL_SCAN [G]
+	SQL_SCAN
 
 create -- Creation procedure
 
@@ -80,7 +80,7 @@ feature -- Element change
 					if is_ok then
 						db_spec.start_order (temp_descriptor)
 						if is_ok then
-							db_spec.results_order (temp_descriptor).do_nothing
+							handle.status.set (db_spec.results_order (temp_descriptor))
 						end
 					end
 					db_spec.terminate_order (temp_descriptor)

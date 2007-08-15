@@ -39,7 +39,6 @@ feature {NONE}-- Initialization
 			create l_ev_cell_1
 			create domain_type_toolbar
 			create add_application_scope_btn
-			create add_input_scope_btn
 			create add_delayed_scope_btn
 			create separator_toolbar
 			create l_ev_tool_bar_separator_1
@@ -65,7 +64,6 @@ feature {NONE}-- Initialization
 			toolbar_area.extend (l_ev_cell_1)
 			toolbar_area.extend (domain_type_toolbar)
 			domain_type_toolbar.extend (add_application_scope_btn)
-			domain_type_toolbar.extend (add_input_scope_btn)
 			domain_type_toolbar.extend (add_delayed_scope_btn)
 			toolbar_area.extend (separator_toolbar)
 			separator_toolbar.extend (l_ev_tool_bar_separator_1)
@@ -102,6 +100,10 @@ feature {NONE}-- Initialization
 			toolbar_area.disable_item_expand (remove_all_toolbar)
 			
 			set_all_attributes_using_constants
+			
+				-- Connect events.
+				-- Close the application when an interface close
+				-- request is recieved on `Current'. i.e. the cross is clicked.
 
 				-- Call `user_initialization'.
 			user_initialization
@@ -114,11 +116,11 @@ feature -- Access
 	address_manager_toolbar, domain_type_toolbar,
 	separator_toolbar, add_item_toolbar, remove_item_toolbar, remove_all_toolbar: EV_TOOL_BAR
 	open_address_manager_btn,
-	add_application_scope_btn, add_input_scope_btn, add_delayed_scope_btn, add_item_btn,
-	remove_item_btn, remove_all_btn: EV_TOOL_BAR_BUTTON
-	main_area, domain_type_area, domain_selector_area,
-	toolbar_area: EV_HORIZONTAL_BOX
-	domain_area, domain_manage_area: EV_VERTICAL_BOX
+	add_application_scope_btn, add_delayed_scope_btn, add_item_btn, remove_item_btn,
+	remove_all_btn: EV_TOOL_BAR_BUTTON
+	main_area, domain_type_area, domain_selector_area, toolbar_area: EV_HORIZONTAL_BOX
+	domain_area,
+	domain_manage_area: EV_VERTICAL_BOX
 
 feature {NONE} -- Implementation
 

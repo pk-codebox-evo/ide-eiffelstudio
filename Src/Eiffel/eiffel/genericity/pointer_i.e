@@ -62,8 +62,7 @@ feature
 	c_string: STRING is "EIF_POINTER"
 			-- String generated for the type.
 
-	typed_field: STRING is "it_p"
-			-- Value field of a C structure corresponding to this type
+	union_tag: STRING is "parg"
 
 	hash_code: INTEGER is
 			-- Hash code for current type
@@ -77,11 +76,11 @@ feature
 			Result := Sk_pointer
 		end
 
-	generate_typed_tag (buffer: GENERATION_BUFFER) is
-			-- Generate tag of C structure "EIF_TYPED_VALUE" associated
+	generate_union (buffer: GENERATION_BUFFER) is
+			-- Generate discriminant of C structure "item" associated
 			-- to the current C type in `buffer'.
 		do
-			buffer.put_string ("type = SK_POINTER")
+			buffer.put_string ("it_ptr")
 		end
 
 	generate_sk_value (buffer: GENERATION_BUFFER) is
@@ -104,7 +103,7 @@ feature
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

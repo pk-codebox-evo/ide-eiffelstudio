@@ -17,8 +17,7 @@ inherit
 		redefine
 			on_menu_command,
 			default_process_message,
-			class_requires_icon,
-			default_style
+			class_requires_icon
 		end
 
 	EV_MENU_CONTAINER_IMP
@@ -31,26 +30,15 @@ create
 
 feature {NONE} -- Initialization
 
-	make_with_menu (a_menu: EV_MENU_ITEM_LIST_IMP; a_window: WEL_WINDOW) is
+	make_with_menu (a_menu: EV_MENU_ITEM_LIST_IMP) is
 			-- Initialize with `a_menu'.
 		require
 			a_menu_not_void: a_menu /= Void
 		do
-			if a_window /= Void then
-				default_style := ws_childwindow
-				make_child (a_window, "EV_POPUT_MENU_HANDLER")
-			else
-				default_style := ws_overlappedwindow
-				make_top ("EV_POPUP_MENU_HANDLER")
-			end
+			make_top ("EV_POPUP_MENU_HANDLER")
 			menu_item_list := a_menu
 			set_menu (menu_item_list)
 		end
-
-feature -- Default creation values
-
-	default_style: INTEGER_32
-			-- Default style.
 
 feature {NONE} -- Implementation
 

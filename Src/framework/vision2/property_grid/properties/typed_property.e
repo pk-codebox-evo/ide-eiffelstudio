@@ -73,10 +73,11 @@ feature -- Update
 		do
 			if refresh_action /= Void then
 				change_value_actions.block
-				set_value (refresh_action.item (Void))
+				set_value (refresh_action.item ([]))
 				change_value_actions.resume
 			end
 		end
+
 
 feature -- Event handling
 
@@ -97,7 +98,7 @@ feature {NONE} -- Agents
 	on_use_inherited is
 			-- Called if we have to use the inherited value.
 		do
-			use_inherited_actions.call (Void)
+			use_inherited_actions.call ([])
 			refresh
 		end
 
@@ -107,23 +108,26 @@ feature {NONE} -- Agents
 			force_inherit_actions.call ([value])
 		end
 
+
 feature -- Update
 
 	is_valid_value (a_value: like value): BOOLEAN is
 			-- Is `a_value' a correct value for `data'?
 		do
+			Result := True
 			if not equal (value, a_value) then
 				Result := validate_value_actions.for_all (agent {FUNCTION [ANY, TUPLE [like value], BOOLEAN]}.item ([a_value]))
-			else
-				Result := True
 			end
 		end
 
 	set_value (a_value: like value) is
 			-- Set `data' to `a_value' and propagate the change if it the new value is different from the old.
+		local
+			l_changed: BOOLEAN
 		do
-			if not equal (value, a_value) then
-				value := a_value
+			l_changed := not equal (value, a_value)
+			value := a_value
+			if l_changed then
 				change_value_actions.call ([a_value])
 			end
 		end

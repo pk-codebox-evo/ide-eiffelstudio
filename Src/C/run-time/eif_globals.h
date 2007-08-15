@@ -97,7 +97,7 @@ typedef struct tag_eif_globals		/* Structure containing all global variables to 
 #ifdef WORKBENCH
 		/* debug.c */
 	struct dbinfo d_data_cx;			/* Global debugger information */
-	struct c_opstack cop_stack_cx;
+	struct opstack cop_stack_cx;
 
 		/* interp.c */
 	unsigned char *IC_cx;				/* Interpreter Counter (like PC on a CPU) */
@@ -111,7 +111,6 @@ typedef struct tag_eif_globals		/* Structure containing all global variables to 
 		/* hector.c */
 	struct stack hec_stack_cx;		/* Indirection table "hector stack" for references passed to C*/
 #endif
-	int16 caller_assertion_level_cx;	/* Assertion level of the caller */
 } eif_global_context_t;
 
 
@@ -186,7 +185,6 @@ rt_private eif_global_context_t * eif_thr_getspecific (EIF_TSD_TYPE global_key) 
 #define IC					(eif_globals->IC_cx)			/* rt_public */
 #endif
 
-#define caller_assertion_level (eif_globals->caller_assertion_level_cx)	/* rt_public*/
 #define nstcall				(eif_globals->nstcall_cx)			/* rt_public */
 
 #define EIF_once_values		(eif_globals->EIF_once_values_cx)	/* rt_public */

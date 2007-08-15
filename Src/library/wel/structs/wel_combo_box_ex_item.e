@@ -340,4 +340,8 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+
+
+
+end -- class WEL_COMBO_BOX_EX_ITEM
+

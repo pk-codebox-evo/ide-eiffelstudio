@@ -12,9 +12,7 @@ class
 inherit
 	EB_CONTEXT_DIAGRAM_COMMAND
 		redefine
-			new_toolbar_item,
-			new_sd_toolbar_item,
-			menu_name
+			new_toolbar_item
 		end
 
 create
@@ -42,17 +40,17 @@ feature -- Basic operations
 				end
 			else
 				create explain_dialog.make_with_text (Interface_names.e_Diagram_hole)
-				explain_dialog.show_modal_to_window (tool.develop_window.window)
+				explain_dialog.show_modal_to_window (tool.development_window.window)
 				warned := True
 			end
 			if clu /= Void then
 				create clu_s.make (clu)
 				if clu_s.is_valid then
-					tool.develop_window.tools.set_stone (clu_s)
+					tool.tool.set_stone (clu_s)
 				end
 			elseif not warned then
 				create explain_dialog.make_with_text (Warning_messages.W_does_not_have_enclosing_cluster)
-				explain_dialog.show_modal_to_window (tool.develop_window.window)
+				explain_dialog.show_modal_to_window (tool.development_window.window)
 			end
 		end
 
@@ -62,7 +60,7 @@ feature -- Basic operations
 			if a_stone.is_valid then
 				was_dropped := True
 				tool.set_is_rebuild_world_needed (True)
-			tool.launch_stone (a_stone)
+				tool.tool.launch_stone (a_stone)
 			end
 		end
 
@@ -72,7 +70,7 @@ feature -- Basic operations
 			if a_stone.is_valid then
 				was_dropped := True
 				tool.set_is_rebuild_world_needed (True)
-			tool.launch_stone (a_stone)
+				tool.tool.launch_stone (a_stone)
 			end
 		end
 
@@ -86,18 +84,6 @@ feature -- Basic operations
 			Result.set_pebble_function (agent pebble)
 		end
 
-	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new toolbar button for this command.
-		do
-			Result := Precursor (display_text)
-			Result.drop_actions.extend (agent execute_with_class_stone)
-			Result.drop_actions.extend (agent execute_with_cluster_stone)
-			Result.drop_actions.set_veto_pebble_function (agent veto_pebble_fucntion)
-				-- Fixme: when EB_SD_COMMAND_TOOL_BAR_BUTTON supports `pebble',
-				-- we should uncomment following code.
---			Result.set_pebble_function (agent pebble)
-		end
-
 feature {NONE} -- Implementation
 
 	pebble (x, y: INTEGER): STONE is
@@ -109,7 +95,7 @@ feature {NONE} -- Implementation
 			tbi: EB_COMMAND_TOOL_BAR_BUTTON
 		do
 			if not was_dropped then
-				Result := tool.last_stone
+				Result := tool.tool.stone
 				check
 					internal_managed_toolbar_items /= Void
 					not internal_managed_toolbar_items.is_empty
@@ -134,8 +120,9 @@ feature {NONE} -- Implementation
 			class_stone: CLASSI_STONE
 		do
 			cluster_stone ?= a_any
-			Result := cluster_stone /= Void
-			if not Result then
+			if cluster_stone /= Void then
+				Result := not cluster_stone.group.is_assembly
+			else
 				class_stone ?= a_any
 				Result := class_stone /= Void
 			end
@@ -149,22 +136,10 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.diagram_target_cluster_or_class_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.diagram_target_cluster_or_class_icon_buffer
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.F_retarget_diagram
-		end
-
-	menu_name: STRING_GENERAL is
-			-- Name on corresponding menu items
-		do
-			Result := interface_names.m_center_diagram
 		end
 
 	name: STRING is "Center_diagram"

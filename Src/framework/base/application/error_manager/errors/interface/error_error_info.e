@@ -27,11 +27,7 @@ feature -- Access
 			-- Error description
 		do
 			if internal_description = Void then
-				if has_context then
-					Result := string_formatter.format (dollar_description, context)
-				else
-					Result := dollar_description
-				end
+				Result := string_formatter.format (dollar_description, context)
 				internal_description := Result
 			end
 			Result := internal_description

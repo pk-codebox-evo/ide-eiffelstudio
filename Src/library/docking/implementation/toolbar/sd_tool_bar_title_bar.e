@@ -32,10 +32,9 @@ feature {NONE} -- Initialization
 		do
 			create l_shared
 			tool_bar.set_background_color (l_shared.tool_bar_title_bar_color)
-			l_font := l_shared.tool_bar_font
+			l_font := drawing_area.font
 			l_font.set_weight ({EV_FONT_CONSTANTS}.Weight_bold)
 			drawing_area.set_font (l_font)
-			l_font.set_weight ({EV_FONT_CONSTANTS}.Weight_regular)
 
 			drawing_area.expose_actions.extend (agent on_drawing_area_expose)
 
@@ -45,14 +44,13 @@ feature {NONE} -- Initialization
 			customize.select_actions.extend (agent on_custom_selected)
 			create close_request_actions
 			create custom_actions
-			tool_bar.compute_minimum_size
+
+			tool_bar.set_row_height (l_shared.floating_title_bar_height)
+			tool_bar.compute_minmum_size
 
 			customize.set_pixmap (l_shared.icons.tool_bar_floating_customize)
-			customize.set_tooltip (l_shared.interface_names.tooltip_toolbar_tail_indicator)
 			close.set_pixmap (l_shared.icons.tool_bar_floating_close)
-			close.set_tooltip (l_shared.interface_names.tooltip_toolbar_floating_close)
-			tool_bar.compute_minimum_size
-			set_minimum_height (l_shared.title_bar_height)
+			tool_bar.compute_minmum_size
 		end
 
 	init_pointer_double_press_actions is
@@ -120,26 +118,26 @@ feature {NONE} -- Implementation
 
 			drawing_area.set_foreground_color ((create {EV_STOCK_COLORS}).white)
 			if content /= Void then
-				drawing_area.draw_ellipsed_text_top_left (2, l_shared.title_bar_text_start_y, content.title, drawing_area.width)
+				drawing_area.draw_ellipsed_text_top_left (2, 1, content.title, drawing_area.width)
 			end
 		end
 
 	on_pointer_double_press is
 			-- Handle pointer double press actions.
 		do
-			pointer_double_press_actions.call (Void)
+			pointer_double_press_actions.call ([])
 		end
 
 	on_close_selected is
 			-- Handle user press X button.
 		do
-			close_request_actions.call (Void)
+			close_request_actions.call ([])
 		end
 
 	on_custom_selected is
 			-- Handle user press down arrow button.
 		do
-			custom_actions.call (Void)
+			custom_actions.call ([])
 		end
 
 invariant

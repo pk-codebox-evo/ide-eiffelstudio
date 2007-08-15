@@ -181,7 +181,7 @@ indexing
 		The selection colors may be modified via `set_focused_selection_color' and
 		`set_non_focused_selection_color'.
 
-		Separators between items may be enabled on the grid via `enable_column_separators'
+		Seperators between items may be enabled on the grid via `enable_column_separators'
 		and `enable_row_separators' which ensure a single line is drawn between each row
 		and column in `separator_color'. Use `set_separator_color' to modify this color.
 
@@ -822,7 +822,7 @@ feature -- Access
 		do
 			Result := implementation.viewable_width
 		ensure
-			viewable_width_valid: is_displayed implies viewable_width >= 0 and viewable_width <= width
+			viewable_width_valid: viewable_width >= 0 and viewable_width <= width
 		end
 
 	viewable_height: INTEGER is
@@ -833,7 +833,7 @@ feature -- Access
 		do
 			Result := implementation.viewable_height
 		ensure
-			viewable_height_valid: is_displayed implies viewable_height >= 0 and viewable_height <= height
+			viewable_height_valid: viewable_height >= 0 and viewable_height <= height
 		end
 
 	viewable_x_offset: INTEGER is
@@ -2333,13 +2333,9 @@ feature -- Removal
 			not_destroyed: not is_destroyed
 			valid_lower_index: lower_index >= 1 and lower_index <= row_count
 			valid_upper_index: upper_index >= lower_index and upper_index <= row_count
-			valid_final_row_in_tree_structure: (is_tree_enabled and then
-			highest_parent_row_within_bounds (lower_index, upper_index) /= Void implies
-				upper_index = highest_parent_row_within_bounds (lower_index,
-				upper_index).index + highest_parent_row_within_bounds (lower_index,
-				upper_index).subrow_count_recursive) or
-				            (is_tree_enabled and then highest_parent_row_within_bounds
-				(lower_index, upper_index) = Void implies row (upper_index).subrow_count = 0)
+			valid_final_row_in_tree_structure: is_tree_enabled and then highest_parent_row_within_bounds (lower_index, upper_index) /= Void implies
+				upper_index = highest_parent_row_within_bounds (lower_index, upper_index).index +
+				highest_parent_row_within_bounds (lower_index, upper_index).subrow_count_recursive
 		do
 			implementation.remove_rows (lower_index, upper_index)
 		ensure
@@ -2379,18 +2375,6 @@ feature -- Measurements
 			not_destroyed: not is_destroyed
 		do
 			Result := implementation.row_count
-		ensure
-			result_not_negative: Result >= 0
-		end
-
-	visible_row_count: INTEGER is
-			-- Number of visible rows in `Current'. When `is_tree_enabled',
-			-- a number of rows may be within a collapsed parent row, so these
-			-- are ignored.
-		require
-			not_destroyed: not is_destroyed
-		do
-			Result := implementation.visible_row_count
 		ensure
 			result_not_negative: Result >= 0
 		end

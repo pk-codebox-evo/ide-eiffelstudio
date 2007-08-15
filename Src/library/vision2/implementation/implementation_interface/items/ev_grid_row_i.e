@@ -754,9 +754,6 @@ feature -- Status setting
 			parented: parent /= Void
 		do
 			if is_show_requested then
-				if is_locked then
-					locked_row.widget.hide
-				end
 				is_show_requested := False
 				if parent_i /= Void then
 					parent_i.adjust_non_displayed_row_count (1)
@@ -776,13 +773,7 @@ feature -- Status setting
 			parented: parent /= Void
 		do
 			if not is_show_requested then
-				if is_locked then
-					locked_row.widget.show
-				end
 				is_show_requested := True
-				if is_locked then
-					locked_row.widget.show
-				end
 				if parent_i /= Void then
 					parent_i.adjust_non_displayed_row_count (-1)
 					parent_i.set_vertical_computation_required (index)
@@ -794,14 +785,9 @@ feature -- Status setting
 	is_show_requested: BOOLEAN
 			-- May `Current' be displayed?
 			-- Will return `False' if `hide' has been called on `Current'.
-
-	is_displayed: BOOLEAN
-			-- Is `Current' visible on the screen?
-			-- `True' when show requested and parent displayed.
-			-- A row that is_displayed does not necessarily have to be visible on screen at that particular time.
-		do
-			Result := is_show_requested and then parent_i /= Void and then parent_i.is_displayed
-		end
+			-- A row that `is_show_requested' does not necessarily have to be visible on screen at that particular time.
+			-- For example, its `parent_row' (if any) may not be expanded or visible, or the position of `Current' may not
+			-- be within the visible area of `parent'.
 
 feature {EV_GRID_ROW, EV_ANY_I}-- Element change
 
@@ -810,7 +796,6 @@ feature {EV_GRID_ROW, EV_ANY_I}-- Element change
 			-- If `a_item' is `Void', the current item (if any) is removed.
 		require
 			i_positive: i > 0
-			a_item_not_parented: a_item /= Void implies a_item.parent = Void
 			is_parented: parent /= Void
 			valid_tree_structure: a_item /= Void and parent.is_tree_enabled and parent_row /= Void implies i >= parent_row.index_of_first_item
 			is_index_valid_for_item_insertion_if_subrow: a_item /= Void and then interface.is_part_of_tree_structure implies interface.is_index_valid_for_item_setting_if_tree_node (i)
@@ -1393,9 +1378,7 @@ feature {EV_ANY_I, EV_GRID_ROW, EV_GRID_DRAWER_I} -- Implementation
 			-- functionality implemented by `Current'.
 
 invariant
---	We currently cannot hold this invariant during expand/collapse, thus
---	it is commented until we find a better way to express it:
---	no_subrows_implies_not_expanded: parent /= Void and then subrow_count = 0 implies not is_expanded
+	no_subrows_implies_not_expanded: parent /= Void and then subrow_count = 0 implies not is_expanded
 	subrows_not_void: is_initialized implies subrows /= Void
 	hash_code_valid: is_initialized implies ((parent = Void and then hash_code = -1) or else (parent /= Void and then hash_code > 0))
 

@@ -12,7 +12,6 @@ inherit
 	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 		redefine
 			mini_pixmap,
-			mini_pixel_buffer,
 			tooltext
 		end
 
@@ -29,30 +28,21 @@ feature -- Basic operations
 			-- Pop up cluster wizard.
 		local
 			dial: EB_CREATE_CLUSTER_DIALOG
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 		do
-			if Workbench.is_in_stable_state then
-				create dial.make_default (target)
-				dial.call_default
+			if Workbench.is_already_compiled then
+				if
+					not Workbench.is_compiling or else
+					Workbench.last_reached_degree <= 5
+				then
+					create dial.make_default (target)
+					dial.call_default
+				else
+					create wd.make_with_text (Warning_messages.w_Unsufficient_compilation (3))
+					wd.show_modal_to_window (target.window)
+				end
 			else
-				create wd.make_with_text (Warning_messages.w_Unsufficient_compilation (6))
-				wd.show_modal_to_window (target.window)
-			end
-		end
-
-	execute_stone (a_stone: CLUSTER_STONE) is
-			-- Pop cluster wizard initialized with location of `a_stone'.
-		require
-			a_stone_not_void: a_stone /= Void
-		local
-			dial: EB_CREATE_CLUSTER_DIALOG
-			wd: EB_WARNING_DIALOG
-		do
-			if Workbench.is_in_stable_state then
-				create dial.make_default (target)
-				dial.call_stone (a_stone)
-			else
-				create wd.make_with_text (Warning_messages.w_Unsufficient_compilation (6))
+				create wd.make_with_text (Warning_messages.w_Project_not_compiled)
 				wd.show_modal_to_window (target.window)
 			end
 		end
@@ -65,15 +55,9 @@ feature -- Access
 			Result := pixmaps.mini_pixmaps.new_cluster_icon
 		end
 
-	mini_pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixmap representing the command for mini toolbars.
-		do
-			Result := pixmaps.mini_pixmaps.new_cluster_icon_buffer
-		end
-
 feature {NONE} -- Implementation
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it appears in the menu (with & symbol).
 		do
 			Result := Interface_names.m_Create_new_cluster
@@ -85,25 +69,19 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.new_cluster_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.new_cluster_icon_buffer
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.f_Create_new_cluster
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text for the toolbar button.
 		do
 			Result := Interface_names.b_Create_new_cluster
 		end
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Description for this command.
 		do
 			Result := Interface_names.f_Create_new_cluster
@@ -146,4 +124,5 @@ indexing
 		]"
 
 end -- class EB_NEW_CLUSTER_COMMAND
+
 

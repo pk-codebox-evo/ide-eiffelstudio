@@ -15,12 +15,12 @@ inherit
 			{NONE} all
 		end
 
-	EV_ANY_HANDLER
+	INSTALLATION_LOCATOR
 		export
 			{NONE} all
 		end
 
-	EIFFEL_LAYOUT
+	EV_ANY_HANDLER
 		export
 			{NONE} all
 		end
@@ -93,14 +93,19 @@ feature -- Basic operation
 			file: RAW_FILE
 		do
 			create Result
-			create file_name.make_from_string (eiffel_layout.bitmaps_path)
-			file_name.extend ("png")
-			file_name.extend (a_name + "." + "png")
-			create file.make (file_name.out)
-			if file.exists then
-				Result.set_with_named_file (file_name.out)
+			if installation_location /= Void then
+				create file_name.make_from_string (installation_location)
+				file_name.extend ("bitmaps")
+				file_name.extend (image_extension)
+				file_name.extend (a_name + "." + image_extension)
+				create file.make (file_name.out)
+				if file.exists then
+					Result.set_with_named_file (file_name.out)
+				else
+					Missing_files.extend (a_name + "." + image_extension)
+				end
 			else
-				Missing_files.extend (a_name + "." + "png")
+				missing_files.extend (a_name + "." + image_extension)
 			end
 		end
 

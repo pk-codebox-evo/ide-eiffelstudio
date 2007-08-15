@@ -18,6 +18,7 @@ inherit
 			registry_name
 		end
 
+
 create
 	make, 
 	make_from_string

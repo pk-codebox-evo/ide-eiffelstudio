@@ -14,21 +14,12 @@ inherit
 		redefine
 			menu_name,
 			pixmap,
-			pixel_buffer,
-			on_shown,
-			attach_to_docking_manager,
-			mini_toolbar,
-			build_mini_toolbar,
-			build_docking_content,
-			internal_recycle,
-			show
+			on_shown
 		end
-
-	EB_VETO_FACTORY
 
 	EB_RECYCLABLE
 
-	EB_SHARED_DEBUGGER_MANAGER
+	EB_SHARED_DEBUG_TOOLS
 		export
 			{NONE} all
 		end
@@ -44,13 +35,6 @@ inherit
 		end
 
 	SHARED_WORKBENCH
-		export
-			{NONE} all
-		end
-
-	EB_SHARED_WINDOW_MANAGER
-
-	EB_CONSTANTS
 		export
 			{NONE} all
 		end
@@ -76,17 +60,13 @@ feature {NONE} -- Initialization
 			grid.enable_tree
 			grid.enable_single_row_selection
 			grid.enable_border
-			grid.enable_partial_dynamic_content
-			grid.set_dynamic_content_function (agent computed_grid_item)
-			grid.enable_default_tree_navigation_behavior (True, True, True, True)
-			grid.key_press_actions.extend (agent key_pressed_on_grid)
 
 			grid.set_column_count_to (3)
-			grid.column (1).set_title (interface_names.l_data)
-			grid.column (2).set_title (interface_names.l_status)
-			grid.column (3).set_title (interface_names.l_details)
+			grid.column (1).set_title ("Data")
+			grid.column (2).set_title ("Details")
+			grid.column (3).set_title ("Condition")
 
---			grid.pointer_double_press_actions.force_extend (agent on_row_double_clicked)
+			grid.pointer_double_press_actions.force_extend (agent on_row_double_clicked)
 			grid.set_auto_resizing_column (1, True)
 			grid.set_auto_resizing_column (2, True)
 			grid.set_auto_resizing_column (3, True)
@@ -97,17 +77,10 @@ feature {NONE} -- Initialization
 			grid.set_item_accept_cursor_function (agent on_item_pebble_accept_cursor)
 			grid.set_item_deny_cursor_function (agent on_item_pebble_deny_cursor)
 
-			grid.drop_actions.extend (agent on_stone_dropped)
-			grid.drop_actions.set_veto_pebble_function (agent can_drop_debuggable_feature_or_class)
-
 			box.extend (grid)
 
 			grid.build_delayed_cleaning
 			grid.set_delayed_cleaning_action (agent clean_breakpoints_info)
-
-			grid.set_configurable_target_menu_mode
-			grid.set_configurable_target_menu_handler (agent (develop_window.menus.context_menu_factory).standard_compiler_item_menu)
-
 			widget := box
 		end
 
@@ -115,59 +88,50 @@ feature {NONE} -- Initialization
 			-- Build the associated tool bar
 		local
 			scmd: EB_STANDARD_CMD
-			tb: SD_TOOL_BAR_BUTTON
-			dbgm: EB_DEBUGGER_MANAGER
+			tb: EV_TOOL_BAR_BUTTON
 		do
-			create mini_toolbar.make
+			create mini_toolbar
 
 			create scmd.make
 			scmd.set_mini_pixmap (pixmaps.mini_pixmaps.general_toogle_icon)
-			scmd.set_mini_pixel_buffer (pixmaps.mini_pixmaps.general_toogle_icon_buffer)
-			scmd.set_tooltip (interface_names.f_display_breakpoints)
+			scmd.set_tooltip ("Display breakpoints separated by status")
 			scmd.enable_sensitive
-			tb := scmd.new_mini_sd_toolbar_item
+			tb := scmd.new_mini_toolbar_item
 			scmd.add_agent (agent toggle_breakpoint_layout_mode (tb))
 			mini_toolbar.extend (tb)
 			toggle_layout_cmd := scmd
 
-			dbgm := Eb_debugger_manager
-
-			if dbgm.enable_bkpt /= Void then
-				enable_bkpt_button := dbgm.enable_bkpt.new_mini_sd_toolbar_item
+			if eb_debugger_manager.enable_bkpt /= Void then
+				enable_bkpt_button := eb_debugger_manager.enable_bkpt.new_mini_toolbar_item
 				mini_toolbar.extend (enable_bkpt_button)
 			end
-			if dbgm.disable_bkpt /= Void then
-				disable_bkpt_button := dbgm.disable_bkpt.new_mini_sd_toolbar_item
+			if eb_debugger_manager.disable_bkpt /= Void then
+				disable_bkpt_button := eb_debugger_manager.disable_bkpt.new_mini_toolbar_item
 				mini_toolbar.extend (disable_bkpt_button)
 			end
-			if dbgm.clear_bkpt /= Void then
-				clear_bkpt_button := dbgm.clear_bkpt.new_mini_sd_toolbar_item
+			if eb_debugger_manager.clear_bkpt /= Void then
+				clear_bkpt_button := eb_debugger_manager.clear_bkpt.new_mini_toolbar_item
 				mini_toolbar.extend (clear_bkpt_button)
 			end
-
-			mini_toolbar.compute_minimum_size
-		ensure then
+		ensure
 			mini_toolbar_exists: mini_toolbar /= Void
 		end
 
-	build_docking_content (a_docking_manager: SD_DOCKING_MANAGER) is
+	build_explorer_bar_item (explorer_bar: EB_EXPLORER_BAR) is
+			-- Build the associated explorer bar item and
+			-- Add it to `explorer_bar'
 		do
-			Precursor {EB_TOOL} (a_docking_manager)
-			check content_not_void : content /= Void end
-			content.drop_actions.extend (agent on_stone_dropped)
-			content.drop_actions.set_veto_pebble_function (agent can_drop_debuggable_feature_or_class)
-		end
+			if mini_toolbar = Void then
+				build_mini_toolbar
+			end
+			create {EB_EXPLORER_BAR_ITEM} explorer_bar_item.make_with_mini_toolbar (explorer_bar, widget, title, True, mini_toolbar)
 
-feature {EB_DEVELOPMENT_WINDOW_BUILDER} -- Initialization
-
-	attach_to_docking_manager (a_docking_manager: SD_DOCKING_MANAGER) is
-			-- Attach to docking manager
-		do
-			build_docking_content (a_docking_manager)
-
-			check not_already_has: not a_docking_manager.has_content (content) end
-			a_docking_manager.contents.extend (content)
-			check friend_created: develop_window.tools.breakpoints_tool /= Void end
+			explorer_bar_item.set_menu_name (menu_name)
+			if pixmap /= Void then
+				explorer_bar_item.set_pixmap (pixmap)
+			end
+			explorer_bar_item.show_actions.extend (agent on_bar_item_shown)
+			explorer_bar.add (explorer_bar_item)
 		end
 
 feature -- Properties
@@ -177,25 +141,19 @@ feature -- Properties
 
 feature -- Access
 
-	mini_toolbar: SD_TOOL_BAR
+	mini_toolbar: EV_TOOL_BAR
 			-- Associated mini toolbar.
 
 	widget: EV_WIDGET
 			-- Widget representing Current.
 
-	title: STRING_GENERAL is
+	title: STRING is
 			-- Title of the tool.
 		do
 			Result := Interface_names.t_Breakpoints_tool
 		end
 
-	title_for_pre: STRING is
-			-- Title for prefence, STRING_8
-		do
-			Result := Interface_names.to_Breakpoints_tool
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it may appear in a menu.
 		do
 			Result := Interface_names.m_Breakpoints_tool
@@ -207,42 +165,13 @@ feature -- Access
 			Result := pixmaps.icon_pixmaps.tool_breakpoints_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer as it may appear in toolbars and menus.
-		do
-			Result := pixmaps.icon_pixmaps.tool_breakpoints_icon_buffer
-		end
-
 feature {NONE} -- Commands
 
 	toggle_layout_cmd: EB_STANDARD_CMD
-			-- Toggle layout command
 
 feature -- Events
 
-	on_stone_dropped (a_stone: STONE) is
-			--	Stone dropped
-		local
-			fs: FEATURE_STONE
-			cs: CLASSC_STONE
-		do
-			fs ?= a_stone
-			if fs /= Void then
-				if not debugger_manager.is_breakpoint_set (fs.e_feature, 1) then
-					debugger_manager.enable_first_breakpoint_of_feature (fs.e_feature)
-					debugger_manager.notify_breakpoints_changes
-				end
-			else
-				cs ?= a_stone
-				if cs /= Void then
-					debugger_manager.enable_first_breakpoints_in_class (cs.e_class)
-					debugger_manager.notify_breakpoints_changes
-				end
-			end
-		end
-
 	on_item_pebble_function (gi: EV_GRID_ITEM): STONE is
-			-- Handle item pebble function
 		do
 			if gi /= Void then
 				Result ?= gi.data
@@ -250,7 +179,6 @@ feature -- Events
 		end
 
 	on_item_pebble_accept_cursor (gi: EV_GRID_ITEM): EV_POINTER_STYLE is
-			-- Handle item pebble accpet cursor
 		local
 			st: STONE
 		do
@@ -261,7 +189,6 @@ feature -- Events
 		end
 
 	on_item_pebble_deny_cursor (gi: EV_GRID_ITEM): EV_POINTER_STYLE is
-			-- Handle item pebble deny cursor
 		local
 			st: STONE
 		do
@@ -271,47 +198,32 @@ feature -- Events
 			end
 		end
 
---	on_row_double_clicked is
---		do
---		end
-
-	refresh is
-			-- Class has changed in `development_window'.
+	on_row_double_clicked is
 		local
-			r: INTEGER
-			bp: BREAKPOINT
+			row: EV_GRID_ROW
 		do
-			if grid.row_count = 0 then
-				update
-			else
-				from
-					r := grid.row_count
-				until
-					r = 0
-				loop
-					bp ?= grid.row (r).data
-					if bp /= Void then
-						grid.row (r).clear
-					end
-					r := r - 1
-				end
+			row := grid.single_selected_row
+			if row /= Void then
 			end
 		end
 
+	refresh is
+			-- Class has changed in `development_window'.
+		do
+			update
+		end
+
 	synchronize	is
-			-- Synchronize
 		do
 			update
 		end
 
 	on_project_loaded is
-			-- Handle project loaded actions
 		do
 			update
 		end
 
 	on_shown is
-			-- Handle show actions
 		do
 			update
 		end
@@ -319,34 +231,42 @@ feature -- Events
 	update is
 			-- Refresh `Current's display.
 		do
-			grid.request_delayed_clean
-			refresh_breakpoints_info
+			if eb_debugger_manager.application_initialized then
+				grid.request_delayed_clean
+				refresh_breakpoints_info
+			end
 		end
 
-	show is
-			-- Show tool.
+	change_manager_and_explorer_bar (a_manager: EB_TOOL_MANAGER; an_explorer_bar: EB_EXPLORER_BAR) is
+			-- Change the window and explorer bar `Current' is in.
+		require
+			a_manager_exists: a_manager /= Void
+			an_explorer_bar_exists: an_explorer_bar /= Void
 		do
-			Precursor {EB_TOOL}
-			if grid.is_displayed and grid.is_sensitive then
-				grid.set_focus
-			end
-			refresh
+				-- Link with the manager and the explorer.
+			set_manager (a_manager)
+			change_attach_explorer (an_explorer_bar)
 		end
 
 feature -- Memory management
 
-	enable_bkpt_button: EB_SD_COMMAND_TOOL_BAR_BUTTON
-			-- Enable breakpoint button
+	enable_bkpt_button: EB_COMMAND_TOOL_BAR_BUTTON
 
-	disable_bkpt_button: EB_SD_COMMAND_TOOL_BAR_BUTTON
-			-- Disable breakpoint button
+	disable_bkpt_button: EB_COMMAND_TOOL_BAR_BUTTON
 
-	clear_bkpt_button: EB_SD_COMMAND_TOOL_BAR_BUTTON
-			-- Clear breakpoint button
+	clear_bkpt_button: EB_COMMAND_TOOL_BAR_BUTTON
 
-	internal_recycle is
+	recycle is
 			-- Recycle `Current', but leave `Current' in an unstable state,
 			-- so that we know whether we're still referenced or not.
+		do
+			if explorer_bar_item /= Void then
+				unattach_from_explorer_bar
+			end
+			reset_tool
+		end
+
+	reset_tool is
 		do
 			enable_bkpt_button.recycle
 			disable_bkpt_button.recycle
@@ -355,16 +275,14 @@ feature -- Memory management
 			toggle_layout_cmd := Void
 			Preferences.debug_tool_data.row_highlight_background_color_preference.change_actions.prune_all (set_row_highlight_bg_color_agent)
 			set_row_highlight_bg_color_agent := Void
-			Precursor {EB_TOOL}
+			manager := Void
 		end
 
 feature {NONE} -- Grid layout Implementation
 
 	grid_layout_manager: ES_GRID_LAYOUT_MANAGER
-			-- Grid layout manager
 
 	record_grid_layout is
-			-- Record grid layout
 		do
 			if grid_layout_manager = Void then
 				create grid_layout_manager.make (grid, "Breakpoints")
@@ -373,7 +291,6 @@ feature {NONE} -- Grid layout Implementation
 		end
 
 	restore_grid_layout is
-			-- Restore grid layout
 		do
 			if grid_layout_manager /= Void then
 				grid_layout_manager.restore
@@ -382,14 +299,14 @@ feature {NONE} -- Grid layout Implementation
 
 feature {NONE} -- Implementation
 
-	toggle_breakpoint_layout_mode (tt: SD_TOOL_BAR_BUTTON) is
-			-- Toggle `breakpoints_separated_by_status' mode
+	toggle_breakpoint_layout_mode (tt: EV_TOOLTIPABLE) is
+			-- toggle `breakpoints_separated_by_status' mode
 		do
 			breakpoints_separated_by_status := not breakpoints_separated_by_status
 			if breakpoints_separated_by_status then
-				tt.set_tooltip (interface_names.f_display_all_breakpoints_together)
+				tt.set_tooltip ("Display breakpoints separated by status")
 			else
-				tt.set_tooltip (interface_names.f_display_breakpoints_sep_by_status)
+				tt.set_tooltip ("All breakpoints together")
 			end
 			refresh_breakpoints_info
 		end
@@ -412,7 +329,7 @@ feature {NONE} -- Implementation
 			lab: EV_GRID_LABEL_ITEM
 			f_list: LIST[E_FEATURE]
 			col: EV_COLOR
-			bpm: BREAKPOINTS_MANAGER
+			app_exec: APPLICATION_EXECUTION
 		do
 			if shown then
 				class_color := preferences.editor_data.class_text_color
@@ -420,43 +337,43 @@ feature {NONE} -- Implementation
 				condition_color := preferences.editor_data.string_text_color
 
 				col := preferences.editor_data.comments_text_color
-				bpm := Debugger_manager
+				app_exec := eb_debugger_manager.application
 				grid.call_delayed_clean
-				if not bpm.has_breakpoints then
+				if not app_exec.has_breakpoints then
 					grid.insert_new_row (1)
-					create lab.make_with_text (interface_names.l_no_break_point)
+					create lab.make_with_text ("No breakpoints")
 					lab.set_foreground_color (col)
 					grid.set_item (1, 1, lab)
 				else
 					if not breakpoints_separated_by_status then
-						if bpm.has_breakpoints then
-							f_list := bpm.features_with_breakpoint_set
+						if app_exec.has_breakpoints then
+							f_list := app_exec.features_with_breakpoint_set
 							insert_bp_features_list (f_list, Void, True, True)
 						end
 					else
-						if bpm.has_enabled_breakpoints then
+						if app_exec.has_enabled_breakpoints then
 							row := grid.extended_new_row
 							row.set_background_color (bg_separator_color)
-							create lab.make_with_text (interface_names.l_enabled)
+							create lab.make_with_text ("Enabled")
 							lab.set_foreground_color (col)
 							row.set_item (1, lab)
 							row.set_item (2, create {EV_GRID_ITEM})
 							row.set_item (3, create {EV_GRID_ITEM})
 
-							f_list := bpm.features_with_breakpoint_set
+							f_list := app_exec.features_with_breakpoint_set
 							insert_bp_features_list (f_list, row, True, False)
 							row.expand
 						end
-						if bpm.has_disabled_breakpoints then
+						if app_exec.has_disabled_breakpoints then
 							row := grid.extended_new_row
 							row.set_background_color (bg_separator_color)
-							create lab.make_with_text (interface_names.l_disabled)
+							create lab.make_with_text ("Disabled")
 							lab.set_foreground_color (col)
 							row.set_item (1, lab)
 							row.set_item (2, create {EV_GRID_ITEM})
 							row.set_item (3, create {EV_GRID_ITEM})
 
-							f_list := bpm.features_with_breakpoint_set
+							f_list := app_exec.features_with_breakpoint_set
 							insert_bp_features_list (f_list, row, False, True)
 							row.expand
 						end
@@ -478,14 +395,15 @@ feature {NONE} -- Impl bp
 			lab: EV_GRID_LABEL_ITEM
 			subrow: EV_GRID_ROW
 
-			table: HASH_TABLE [PART_SORTED_TWO_WAY_LIST [E_FEATURE], INTEGER]
+			table: HASH_TABLE [PART_SORTED_TWO_WAY_LIST[E_FEATURE], INTEGER]
 			stwl: PART_SORTED_TWO_WAY_LIST [E_FEATURE]
 			f: E_FEATURE
 			c: CLASS_C
 			bp_list: LIST [INTEGER]
 			has_bp: BOOLEAN
+--			cs: CLASSI_STONE
 			cs: CLASSC_STONE
-			bpm: BREAKPOINTS_MANAGER
+			app_exec: APPLICATION_EXECUTION
 		do
 				--| Prepare data .. mainly sorting
 			from
@@ -506,7 +424,7 @@ feature {NONE} -- Impl bp
 			end
 
 				--| Process insertion
-			bpm := Debugger_manager
+			app_exec := debugger_manager.application
 			from
 				table.start
 				r := 1
@@ -524,18 +442,18 @@ feature {NONE} -- Impl bp
 				loop
 					f := stwl.item
 					if display_enabled and display_disabled then
-						bp_list := bpm.breakpoints_set_for (f)
+						bp_list := app_exec.breakpoints_set_for (f)
 					elseif display_enabled then
-						bp_list := bpm.breakpoints_enabled_for (f)
+						bp_list := app_exec.breakpoints_enabled_for (f)
 					else
-						bp_list := bpm.breakpoints_disabled_for (f)
+						bp_list := app_exec.breakpoints_disabled_for (f)
 					end
 					has_bp := not bp_list.is_empty
 					stwl.forth
 				end
 
 				if has_bp then
-					create lab.make_with_text (c.name_in_upper)
+					create lab.make_with_text (c.name_in_upper) --c.lace_class
 					lab.set_foreground_color (class_color)
 					create cs.make (c)
 					lab.set_data (cs)
@@ -553,7 +471,6 @@ feature {NONE} -- Impl bp
 					sr := 1
 					subrow.set_item (1, lab)
 					subrow.set_item (2, create {EV_GRID_ITEM})
-					subrow.item (2).pointer_button_release_actions.force_extend (agent on_class_item_right_clicked (c, subrow, ?,?,?))
 					subrow.set_item (3, create {EV_GRID_ITEM})
 
 					from
@@ -574,7 +491,6 @@ feature {NONE} -- Impl bp
 		end
 
 	insert_feature_bp_detail (f: E_FEATURE; a_row: EV_GRID_ROW; display_enabled, display_disabled: BOOLEAN) is
-			-- Insert features breakpoints details.
 		require
 			f /= Void
 			a_row /= Void
@@ -589,15 +505,15 @@ feature {NONE} -- Impl bp
 			i: INTEGER
 			fs: FEATURE_STONE
 			bp: BREAKPOINT
-			bpm: BREAKPOINTS_MANAGER
+			app_exec: APPLICATION_EXECUTION
 		do
-			bpm := Debugger_manager
+			app_exec := eb_debugger_manager.application
 			if display_enabled and display_disabled then
-				bp_list := bpm.breakpoints_set_for (f)
+				bp_list := app_exec.breakpoints_set_for (f)
 			elseif display_enabled then
-				bp_list := bpm.breakpoints_enabled_for (f)
+				bp_list := app_exec.breakpoints_enabled_for (f)
 			elseif display_disabled then
-				bp_list := bpm.breakpoints_disabled_for (f)
+				bp_list := app_exec.breakpoints_disabled_for (f)
 			end
 			if not bp_list.is_empty then
 				sr := a_row.subrow_count + 1
@@ -623,145 +539,71 @@ feature {NONE} -- Impl bp
 					bp_list.after
 				loop
 					i := bp_list.item
-					if bpm.is_breakpoint_set (f, i) then
-						bp := bpm.breakpoint (f, i)
+
+					if app_exec.is_breakpoint_set (f, i) then
+						bp := app_exec.debug_info.breakpoint (f, i)
 						if not first_bp then
 							s.append_string (", ")
 						else
 							first_bp := False
 						end
-						s.append_string (i.out)
-						subrow.subrow (ir).set_data (bp)
+						create lab.make_with_text ("offset " + i.out)
+						create fs.make (f)
+						lab.set_data (fs)
+						subrow.subrow (ir).set_item (1, lab)
+						if bp.is_enabled then
+							create lab.make_with_text (" enabled")
+							if bp.has_condition then
+								lab.set_pixmap (breakable_icons.bp_enabled_conditional_icon)
+							else
+								lab.set_pixmap (breakable_icons.bp_enabled_icon)
+							end
+						elseif bp.is_disabled then
+							create lab.make_with_text (" disabled")
+							if bp.has_condition then
+								lab.set_pixmap (breakable_icons.bp_disabled_conditional_icon)
+							else
+								lab.set_pixmap (breakable_icons.bp_disabled_icon)
+							end
+						else
+							create lab.make_with_text (" error")
+						end
+						lab.pointer_button_press_actions.force_extend (agent on_line_cell_right_clicked (f, i, lab, ?, ?, ?))
+						subrow.subrow (ir).set_item (2, lab)
 
+						s.append_string (i.out)
 						if bp.has_condition then
 							if bp.is_disabled then
 								s.append_string (Disabled_conditional_bp_symbol)
 							else
 								s.append_string (Conditional_bp_symbol)
 							end
-						elseif bp.is_disabled then
-							s.append_string (Disabled_bp_symbol)
+							create lab.make_with_text (bp.condition.expression)
+							lab.set_tooltip (lab.text)
+							lab.set_font (condition_font)
+							subrow.subrow (ir).set_item (3, lab)
+						else
+							if bp.is_disabled then
+								s.append_string (Disabled_bp_symbol)
+							else
+								subrow.subrow (ir).set_item (3, create {EV_GRID_ITEM})
+							end
 						end
 					else
-						create lab.make_with_text (interface_names.l_error_with_line (f.name, i.out))
+						create lab.make_with_text ("Error with " + f.name + " line " + i.out)
 						subrow.subrow (ir).set_item (2, lab)
 					end
-
 					ir := ir + 1
 					bp_list.forth
 				end
 				create lab.make_with_text (s)
 				subrow.set_item (2, lab)
-				lab.pointer_button_release_actions.force_extend (agent on_feature_item_right_clicked (f, subrow, ?,?,?))
 				subrow.set_item (3, create {EV_GRID_ITEM})
 				subrow.ensure_expandable
 			end
 		end
 
-	computed_grid_item (c, r: INTEGER): EV_GRID_ITEM is
-			-- Computed grid item corresponding to `c,r'.
-		local
-			row: EV_GRID_ROW
-		do
-			row := grid.row (r)
-			compute_bp_row (row)
-			Result := row.item (c)
-		end
-
-	compute_bp_row (a_row: EV_GRID_ROW) is
-			-- Compute `a_row' 's grid items
-		require
-			a_row_not_void: a_row /= Void
-		local
-			f: E_FEATURE
-			s: STRING_GENERAL
-			t: STRING
-			lab: EV_GRID_LABEL_ITEM
-			i: INTEGER
-			fs: FEATURE_STONE
-			bp: BREAKPOINT
-		do
-			bp ?= a_row.data
-			if bp /= Void then
-				f := bp.routine
-				i := bp.breakable_line_number
-
-				create lab.make_with_text (interface_names.l_offset_is (i.out))
-				create fs.make (f)
-				lab.set_data (fs)
-				a_row.set_item (1, lab)
-				if bp.is_enabled then
-					s := interface_names.l_space_enabled.twin
-					if bp.hits_count > 0 then
-						s.append (" (")
-						s.append (interface_names.l_hit_count_is (bp.hits_count))
-						s.append (")")
-					end
-					create lab.make_with_text (s)
-					if bp.has_condition then
-						lab.set_pixmap (breakable_icons.bp_enabled_conditional_icon)
-					else
-						lab.set_pixmap (breakable_icons.bp_enabled_icon)
-					end
-				elseif bp.is_disabled then
-					create lab.make_with_text (interface_names.l_space_disabled)
-					if bp.has_condition then
-						lab.set_pixmap (breakable_icons.bp_disabled_conditional_icon)
-					else
-						lab.set_pixmap (breakable_icons.bp_disabled_icon)
-					end
-				else
-					create lab.make_with_text (interface_names.l_space_error)
-				end
-				debug ("breakpoint")
-					t := bp.routine.associated_class.name_in_upper + "." + bp.routine.name + "#" + bp.breakable_line_number.out
-					if debugger_manager.application_is_executing then
-						if bp.is_set_for_application then
-							t.append_string ("Application: set")
-						else
-							t.append_string ("Application: not set")
-						end
-					end
-					if bp.hits_count > 0 then
-						t.append_character ('%N')
-						t.append_string_general (Interface_names.l_current_hit_count)
-						t.append_integer (bp.hits_count)
-					end
-					if bp.has_condition then
-						t.append_character ('%N')
-						t.append_string_general (interface_names.l_condition)
-						t.append_string (": " + bp.condition.expression)
-					end
-					if bp.has_message then
-						t.append_character ('%N')
-						t.append_string_general (interface_names.l_print_message)
-						t.append_string (bp.message)
-					end
-					if bp.continue_execution then
-						t.append_character ('%N')
-						t.append_string_general (interface_names.l_continue_execution)
-					end
-					lab.set_tooltip (t)
-				end
-
-				lab.pointer_button_release_actions.force_extend (agent on_line_cell_right_clicked (f, i, lab, ?, ?, ?))
-				a_row.set_item (2, lab)
-
-				if bp.has_condition then
-					create lab.make_with_text (bp.condition.expression)
-					lab.set_tooltip (lab.text)
-					lab.set_font (condition_font)
-					a_row.set_item (3, lab)
-				else
-					if not bp.is_disabled then
-						a_row.set_item (3, create {EV_GRID_ITEM})
-					end
-				end
-			end
-		end
-
 	on_line_cell_right_clicked (f: E_FEATURE; i: INTEGER; gi: EV_GRID_ITEM; x, y, button: INTEGER) is
-			-- Handle a cell right click actions.
 		require
 			f /= Void
 			i > 0
@@ -777,109 +619,13 @@ feature {NONE} -- Impl bp
 			end
 		end
 
-	on_class_item_right_clicked	(c: CLASS_C; r: EV_GRID_ROW; x, y, button: INTEGER) is
-		require
-			c /= Void
-			r /= Void
-		local
-			m: EV_MENU
-			mi: EV_MENU_ITEM
-			bpm: BREAKPOINTS_MANAGER
-		do
-			grid.remove_selection
-			r.enable_select
-			if button = 3 then
-				bpm := Debugger_manager
-				create m
-				create mi.make_with_text (interface_names.m_add_first_breakpoints_in_class)
-				mi.select_actions.extend (agent bpm.enable_first_breakpoints_in_class (c))
-				mi.select_actions.extend (agent window_manager.synchronize_all_about_breakpoints)
-				m.extend (mi)
-				create mi.make_with_text (Interface_names.m_enable_stop_points)
-				mi.select_actions.extend (agent bpm.enable_breakpoints_in_class (c))
-				mi.select_actions.extend (agent window_manager.synchronize_all_about_breakpoints)
-				m.extend (mi)
-				create mi.make_with_text (Interface_names.m_disable_stop_points)
-				mi.select_actions.extend (agent bpm.disable_breakpoints_in_class (c))
-				mi.select_actions.extend (agent window_manager.synchronize_all_about_breakpoints)
-				m.extend (mi)
-				create mi.make_with_text (Interface_names.m_clear_breakpoints)
-				mi.select_actions.extend (agent bpm.remove_breakpoints_in_class (c))
-				mi.select_actions.extend (agent window_manager.synchronize_all_about_breakpoints)
-				m.extend (mi)
-				m.show
-			end
-		end
-
-	on_feature_item_right_clicked	(f: E_FEATURE; r: EV_GRID_ROW; x, y, button: INTEGER) is
-		require
-			f /= Void
-			r /= Void
-		local
-			m: EV_MENU
-			mi: EV_MENU_ITEM
-			bpm: BREAKPOINTS_MANAGER
-		do
-			grid.remove_selection
-			r.enable_select
-			if button = 3 then
-				bpm := Debugger_manager
-				create m
-				create mi.make_with_text (interface_names.m_add_first_breakpoints_in_feature)
-				mi.select_actions.extend (agent bpm.enable_first_breakpoint_of_feature (f))
-				mi.select_actions.extend (agent window_manager.synchronize_all_about_breakpoints)
-				m.extend (mi)
-				create mi.make_with_text (Interface_names.m_enable_stop_points)
-				mi.select_actions.extend (agent bpm.enable_breakpoints_in_feature (f))
-				mi.select_actions.extend (agent window_manager.synchronize_all_about_breakpoints)
-				m.extend (mi)
-				create mi.make_with_text (Interface_names.m_disable_stop_points)
-				mi.select_actions.extend (agent bpm.disable_breakpoints_in_feature (f))
-				mi.select_actions.extend (agent window_manager.synchronize_all_about_breakpoints)
-				m.extend (mi)
-				create mi.make_with_text (Interface_names.m_clear_breakpoints)
-				mi.select_actions.extend (agent bpm.remove_breakpoints_in_feature (f))
-				mi.select_actions.extend (agent window_manager.synchronize_all_about_breakpoints)
-
-				m.extend (mi)
-				m.show
-			end
-		end
-
-	key_pressed_on_grid (a_key: EV_KEY) is
-			--
-		local
-			l_selected_rows: LIST [EV_GRID_ROW]
-			l_row: EV_GRID_ROW
-			l_bp: BREAKPOINT
-			bp_stone: BREAKABLE_STONE
-		do
-			if a_key.code = {EV_KEY_CONSTANTS}.key_enter then
-				l_selected_rows := grid.selected_rows
-				if not l_selected_rows.is_empty then
-					l_row := l_selected_rows.first
-					l_bp ?= l_row.data
-					if l_bp /= Void then
-						create bp_stone.make_from_breakpoint (l_bp)
-						bp_stone.display_bkpt_menu
-					end
-				end
-			end
-		end
-
 feature {NONE} -- Implementation, cosmetic
 
 	Disabled_bp_symbol: STRING is "-"
-			-- Disable breakpoint symbol.
-
 	Conditional_bp_symbol: STRING is "*"
-			-- Conditional breakpoint symbol.
-
 	Disabled_conditional_bp_symbol: STRING is "*-"
-			-- Disable conditional breakpoint symbol.
 
 	Breakable_icons: ES_PIXMAPS_12X12 is
-			-- Breakable icons.
 		local
 			l_shared: EB_SHARED_PIXMAPS
 		once
@@ -890,35 +636,27 @@ feature {NONE} -- Implementation, cosmetic
 		end
 
 	bg_separator_color: EV_COLOR is
-			-- Background separator color.
 		once
 			create Result.make_with_8_bit_rgb (220, 220, 240)
 		end
 
 	class_color: EV_COLOR
-			-- Class color
 	feature_color: EV_COLOR
-			-- Feature color
 	condition_color: EV_COLOR
-			-- Condition color
 	condition_font: EV_FONT is
-			-- Condition font
 		once
 			create Result
 			Result.set_shape ({EV_FONT_CONSTANTS}.shape_italic)
 		end
 
 	set_row_highlight_bg_color_agent : PROCEDURE [ANY, TUPLE]
-			-- Set row highlight background color agent.
 
 	set_row_highlight_bg_color (v: COLOR_PREFERENCE) is
-			-- Set row highlight background color.
 		do
 			row_highlight_bg_color := v.value
 		end
 
 	row_highlight_bg_color: EV_COLOR;
-			-- Row highlight background color.
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

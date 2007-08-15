@@ -28,7 +28,7 @@ feature -- Evaluate
 				Result := True
 				l_pos := 1
 			until
-				l_pos > l_cnt or not Result
+				l_pos > l_cnt or Result
 			loop
 				l_char := l_text.item (l_pos)
 				if not (l_char.is_space or l_char = '%R' or l_char = '%N') then
@@ -70,5 +70,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

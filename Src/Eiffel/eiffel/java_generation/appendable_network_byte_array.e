@@ -255,6 +255,8 @@ feature {ANY}
 			put_float_from_real (f, position);
 			position := new_position
 		end
+			
+
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
@@ -289,4 +291,8 @@ indexing
 		]"
 
 end -- class JVM_BYTE_CODE
+
+
+
+
 

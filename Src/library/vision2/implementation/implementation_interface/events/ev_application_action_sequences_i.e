@@ -59,6 +59,7 @@ feature {EV_ANY_I} -- Implementation
 	idle_actions_internal: EV_NOTIFY_ACTION_SEQUENCE
 			-- Implementation of once per object `idle_actions'.
 
+
 feature -- Event handling
 
 	pick_actions: EV_PND_ACTION_SEQUENCE is
@@ -147,22 +148,7 @@ feature -- Event handling
 			not_void: Result /= Void
 		end
 
-	file_drop_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [widget: EV_WIDGET; file_list: LIST [STRING_32]]]
-			-- Actions to be performed when an OS file drop is performed on `Current'.
-			-- `widget' is the widget on which the file(s) where dropped on to.
-			-- `file_list' is a list of the file paths being dropped on to `widget'.
-			-- In order for `file_drop_actions' to be called an agent has to be already
-			-- present in the `file_drop_actions' of `widget' otherwise a drop is disallowed.
-		do
-			if file_drop_actions_internal = Void then
-				create file_drop_actions_internal
-			end
-			Result := file_drop_actions_internal
-		ensure
-			not_void: Result /= Void
-		end
-
-	uncaught_exception_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EXCEPTION]] is
+	uncaught_exception_actions: ACTION_SEQUENCE [TUPLE [EXCEPTION]] is
 		-- Actions to be performed when an
 		-- action sequence called via callback
 		-- from the underlying toolkit raises an
@@ -178,23 +164,20 @@ feature -- Event handling
 
 feature {EV_ANY_I} -- Implementation
 
-	create_pnd_motion_actions: like pnd_motion_actions is
+	create_pnd_motion_actions: EV_PND_MOTION_ACTION_SEQUENCE is
 			-- Create a pnd motion action sequence.
 		deferred
 		end
 
-	pnd_motion_actions_internal: like pnd_motion_actions
+	pnd_motion_actions_internal: EV_PND_MOTION_ACTION_SEQUENCE
 		-- Implementation of once per object `pnd_motion_actions'.
 
-	file_drop_actions_internal: like file_drop_actions
-		-- Implementation of once per object `file_drop_actions'.
-
-	uncaught_exception_actions_internal: like uncaught_exception_actions
+	uncaught_exception_actions_internal: ACTION_SEQUENCE [TUPLE [EXCEPTION]]
 		-- Implementation of once per object `uncaught_exception_actions'.
 
 feature
 
-	pointer_motion_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER]] is
+	pointer_motion_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER]] is
 			-- Actions to be performed when screen pointer moves.
 		do
 			if pointer_motion_actions_internal = Void then
@@ -208,17 +191,17 @@ feature
 
 feature {EV_ANY_I} -- Implementation
 
-	create_pointer_motion_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER]] is
+	create_pointer_motion_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER]] is
 			-- Create a pointer_motion action sequence.
 		deferred
 		end
 
-	pointer_motion_actions_internal: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER]]
+	pointer_motion_actions_internal: ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER]]
 			-- Implementation of once per object `pointer_motion_actions'.
 
 feature -- Event handling
 
-	pointer_button_press_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]] is
+	pointer_button_press_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]] is
 			-- Actions to be performed when screen pointer button is pressed.
 		do
 			if pointer_button_press_actions_internal = Void then
@@ -232,17 +215,17 @@ feature -- Event handling
 
 feature {EV_ANY_I} -- Implementation
 
-	create_pointer_button_press_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]] is
+	create_pointer_button_press_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]] is
 			-- Create a pointer_button_press action sequence.
 		deferred
 		end
 
-	pointer_button_press_actions_internal: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]]
+	pointer_button_press_actions_internal: ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]]
 			-- Implementation of once per object `pointer_button_press_actions'.
 
 feature -- Event handling
 
-	pointer_double_press_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]] is
+	pointer_double_press_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]] is
 			-- Actions to be performed when screen pointer is double clicked.
 		do
 			if pointer_double_press_actions_internal = Void then
@@ -256,17 +239,17 @@ feature -- Event handling
 
 feature {EV_ANY_I} -- Implementation
 
-	create_pointer_double_press_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]] is
+	create_pointer_double_press_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]] is
 			-- Create a pointer_double_press action sequence.
 		deferred
 		end
 
-	pointer_double_press_actions_internal: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]]
+	pointer_double_press_actions_internal: ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]]
 			-- Implementation of once per object `pointer_double_press_actions'.
 
 feature -- Event handling
 
-	pointer_button_release_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]] is
+	pointer_button_release_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]] is
 			-- Actions to be performed when screen pointer button is released.
 		do
 			if pointer_button_release_actions_internal = Void then
@@ -280,17 +263,17 @@ feature -- Event handling
 
 feature {EV_ANY_I} -- Implementation
 
-	create_pointer_button_release_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]] is
+	create_pointer_button_release_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]] is
 			-- Create a pointer_button_release action sequence.
 		deferred
 		end
 
-	pointer_button_release_actions_internal: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]]
+	pointer_button_release_actions_internal: ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER, INTEGER, INTEGER]]
 			-- Implementation of once per object `pointer_button_release_actions'.
 
 feature -- Event handling
 
-	mouse_wheel_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER]] is
+	mouse_wheel_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER]] is
 			-- Actions to be performed when mouse wheel is rotated.
 		do
 			if mouse_wheel_actions_internal = Void then
@@ -303,17 +286,17 @@ feature -- Event handling
 
 feature {EV_ANY_I} -- Implementation
 
-	create_mouse_wheel_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER]] is
+	create_mouse_wheel_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER]] is
 			-- Create a mouse_wheel action sequence.
 		deferred
 		end
 
-	mouse_wheel_actions_internal: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER]]
+	mouse_wheel_actions_internal: ACTION_SEQUENCE [TUPLE [EV_WIDGET, INTEGER]]
 			-- Implementation of once per object `mouse_wheel_actions'.
 
 feature -- Event handling
 
-	key_press_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, EV_KEY]] is
+	key_press_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, EV_KEY]] is
 			-- Actions to be performed when a keyboard key is pressed.
 		do
 			if key_press_actions_internal = Void then
@@ -327,17 +310,17 @@ feature -- Event handling
 
 feature {EV_ANY_I} -- Implementation
 
-	create_key_press_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, EV_KEY]] is
+	create_key_press_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, EV_KEY]] is
 			-- Create a key_press action sequence.
 		deferred
 		end
 
-	key_press_actions_internal: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, EV_KEY]]
+	key_press_actions_internal: ACTION_SEQUENCE [TUPLE [EV_WIDGET, EV_KEY]]
 			-- Implementation of once per object `key_press_actions'.
 
 feature -- Event handling
 
-	key_press_string_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, STRING_32]] is
+	key_press_string_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, STRING_32]] is
 			-- Actions to be performed when a keyboard press generates a displayable character.
 		do
 			if key_press_string_actions_internal = Void then
@@ -350,17 +333,17 @@ feature -- Event handling
 
 feature {EV_ANY_I} -- Implementation
 
-	create_key_press_string_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, STRING_32]] is
+	create_key_press_string_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, STRING_32]] is
 			-- Create a key_press_string action sequence.
 		deferred
 		end
 
-	key_press_string_actions_internal: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, STRING_32]]
+	key_press_string_actions_internal: ACTION_SEQUENCE [TUPLE [EV_WIDGET, STRING_32]]
 			-- Implementation of once per object `key_press_string_actions'.
 
 feature -- Event handling
 
-	key_release_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, EV_KEY]] is
+	key_release_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, EV_KEY]] is
 			-- Actions to be performed when a keyboard key is released.
 		do
 			if key_release_actions_internal = Void then
@@ -374,17 +357,17 @@ feature -- Event handling
 
 feature {EV_ANY_I} -- Implementation
 
-	create_key_release_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, EV_KEY]] is
+	create_key_release_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET, EV_KEY]] is
 			-- Create a key_release action sequence.
 		deferred
 		end
 
-	key_release_actions_internal: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET, EV_KEY]]
+	key_release_actions_internal: ACTION_SEQUENCE [TUPLE [EV_WIDGET, EV_KEY]]
 			-- Implementation of once per object `key_release_actions'.
 
 feature -- Event handling
 
-	focus_in_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET]] is
+	focus_in_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET]] is
 			-- Actions to be performed when getting focus.
 		do
 			if focus_in_actions_internal = Void then
@@ -398,17 +381,17 @@ feature -- Event handling
 
 feature {EV_ANY_I} -- Implementation
 
-	create_focus_in_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET]] is
+	create_focus_in_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET]] is
 			-- Create a focus_in action sequence.
 		deferred
 		end
 
-	focus_in_actions_internal: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET]]
+	focus_in_actions_internal: ACTION_SEQUENCE [TUPLE [EV_WIDGET]]
 			-- Implementation of once per object `focus_in_actions'.
 
 feature -- Event handling
 
-	focus_out_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET]] is
+	focus_out_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET]] is
 			-- Actions to be performed when losing focus.
 		do
 			if focus_out_actions_internal = Void then
@@ -422,12 +405,12 @@ feature -- Event handling
 
 feature {EV_ANY_I} -- Implementation
 
-	create_focus_out_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET]] is
+	create_focus_out_actions: ACTION_SEQUENCE [TUPLE [EV_WIDGET]] is
 			-- Create a focus_out action sequence.
 		deferred
 		end
 
-	focus_out_actions_internal: EV_LITE_ACTION_SEQUENCE [TUPLE [EV_WIDGET]];
+	focus_out_actions_internal: ACTION_SEQUENCE [TUPLE [EV_WIDGET]];
 			-- Implementation of once per object `focus_out_actions'.
 
 feature -- Event handling

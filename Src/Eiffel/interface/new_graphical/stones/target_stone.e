@@ -9,8 +9,12 @@ class
 inherit
 	STONE
 		redefine
-			is_valid,
-			stone_name
+			is_valid
+		end
+
+	EB_CONSTANTS
+		export
+			{NONE} all
 		end
 
 	SHARED_EIFFEL_PROJECT
@@ -61,7 +65,7 @@ feature -- Access
 			Result := target.name
 		end
 
-	header: STRING_GENERAL is
+	header: STRING is
 			-- String to describe Current
 			-- (as it may be described in the title of a development window).
 		do
@@ -76,26 +80,6 @@ feature -- Access
 			Result := stone_signature
 		end
 
-	stone_name: STRING_GENERAL is
-			-- Name of Current stone
-		do
-			if is_valid then
-				Result := target.name.twin
-			else
-				Result := Precursor
-			end
-		end
-
-	set_is_delayed_application_target (b: BOOLEAN) is
-			-- Set `is_delayed_application_target' with `b'.
-		do
-			is_delayed_application_target := b
-		ensure
-			is_delayed_application_target_set: is_delayed_application_target = b
-		end
-
-feature -- Status report
-
 	is_valid: BOOLEAN is
 			-- Is `Current' a valid stone?
 		local
@@ -104,9 +88,5 @@ feature -- Status report
 			l_target := eiffel_universe.conf_system.targets.item (target.name)
 			Result := target = l_target
 		end
-
-	is_delayed_application_target: BOOLEAN
-			-- Does current stone represents a delayed application target?		
-			-- Used by metric tool
 
 end

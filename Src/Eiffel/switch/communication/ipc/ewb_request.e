@@ -13,7 +13,8 @@ class EWB_REQUEST
 inherit
 
 	IPC_REQUEST
-	SHARED_DEBUGGER_MANAGER
+	SHARED_DEBUG
+	EXEC_MODES
 
 create
 
@@ -31,26 +32,22 @@ feature -- Update
 
 	send_breakpoints is
 			-- send new breakpoints to the application
-		require
-			application_is_executing: debugger_manager.application_is_executing
 		local
 			bpts: BREAK_LIST
-			app: APPLICATION_EXECUTION
 			status: APPLICATION_STATUS
 			curr_callstack_depth: INTEGER
 		do
 			debug("debugger_trace_breakpoint")
 				io.put_string("sending new breakpoint to the application%N")
 			end
-			bpts := Debugger_manager.breakpoints
-			app := Debugger_manager.application
-			status := app.status
+			bpts := debug_info.breakpoints
+			status := Application.status
 
 				-- remove breakpoint that are now useless.
-			Debugger_manager.update_debugger_data
+			debug_info.update
 
-			inspect app.execution_mode
-			when {EXEC_MODES}.No_stop_points then
+			inspect Application.execution_mode
+			when No_stop_points then
 					-- remove all breakpoints set by the application.
 					-- without changing their status under bench
 				debug("debugger_trace_breakpoint")
@@ -59,11 +56,11 @@ feature -- Update
 				end
 				clear_application_breakpoints_table
 
-			when {EXEC_MODES}.User_stop_points then
+			when User_stop_points then
 					-- Execution with no stop points set.
 				update_breakpoints(bpts)
 
-			when {EXEC_MODES}.step_into then
+			when step_into then
 					-- Execution with all breakable points set
 					-- the flag 'step_into' is set, so that application
 					-- know it must stop to the next breakable statement
@@ -71,7 +68,7 @@ feature -- Update
 				update_breakpoints(bpts)
 				send_rqst_3_integer (Rqst_break, 0, Break_set_stepinto,	0) -- as far as they are useless, body_id & offset are set to zero
 
-			when {EXEC_MODES}.step_by_step then
+			when step_by_step then
 					-- Execution will stop to next breakable point where the callstack depth is
 					-- the same than the current one
 				update_breakpoints(bpts)
@@ -88,7 +85,7 @@ feature -- Update
 					end
 				end
 
-			when {EXEC_MODES}.Out_of_routine then
+			when Out_of_routine then
 					-- Execution will stop to next breakable point where the callstack depth is
 					-- equal to the current one - 1
 				update_breakpoints(bpts)
@@ -136,7 +133,7 @@ feature {NONE} -- Implementation
 		do
 			send_rqst_0 (rqst_clear_breakpoints)
 
-			bpts := Debugger_manager.breakpoints
+			bpts := debug_info.breakpoints
 			from
 				bpts.start
 			until

@@ -13,6 +13,7 @@ inherit
 
 	SHARED_CONFIGURE_RESOURCES
 
+
 feature -- Initialisation
 
 	make is

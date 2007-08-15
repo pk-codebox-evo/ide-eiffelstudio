@@ -43,7 +43,6 @@ inherit
 			on_mouse_move,
 			on_key_down,
 			on_key_up,
-			on_char,
 			on_desactivate,
 			on_kill_focus,
 			on_set_cursor
@@ -67,9 +66,9 @@ inherit
 			on_kill_focus,
 			set_foreground_color,
 			set_background_color,
+			tooltip_window,
 			destroy,
-			propagate_key_event_to_toplevel_window,
-			set_tooltip
+			propagate_key_event_to_toplevel_window
 		end
 
 	WEL_DROP_DOWN_COMBO_BOX_EX
@@ -130,8 +129,7 @@ inherit
 			on_sys_key_down,
 			on_sys_key_up,
 			default_process_message,
-			on_getdlgcode,
-			on_wm_dropfiles
+			on_getdlgcode
 		redefine
 			on_cbn_editchange,
 			on_cbn_selchange,
@@ -185,42 +183,6 @@ feature {NONE} -- Initialization
 			Precursor {EV_TEXT_COMPONENT_IMP}
 			Precursor {EV_LIST_ITEM_LIST_IMP}
 			initialize_pixmaps
- 			text_alignment := {EV_TEXT_ALIGNMENT_CONSTANTS}.ev_text_alignment_left
- 		end
-
-feature -- Alignment
-
-	text_alignment: INTEGER
-			-- Current text alignment. Possible value are
-			--	* Text_alignment_left
-			--	* Text_alignment_right
-			--	* Text_alignment_center
-
-	align_text_center
-			-- Display text centered.
-		do
-			text_alignment := {EV_TEXT_ALIGNMENT_CONSTANTS}.ev_text_alignment_center
-			if is_editable then
-				text_field.align_text_center
-			end
-		end
-
-	align_text_right
-			-- Display text right aligned.
-		do
-			text_alignment := {EV_TEXT_ALIGNMENT_CONSTANTS}.ev_text_alignment_right
-			if is_editable then
-				text_field.align_text_right
-			end
-		end
-
-	align_text_left
-			-- Display text left aligned.
-		do
-			text_alignment := {EV_TEXT_ALIGNMENT_CONSTANTS}.ev_text_alignment_left
-			if is_editable then
-				text_field.align_text_left
-			end
 		end
 
 feature -- Access
@@ -303,7 +265,7 @@ feature -- Status report
 				-- starting and ending character positions of the
 				-- current selection in the edit control
 		do
-			wel_sel := {WEL_API}.send_message_result (edit_item, Em_getsel, to_wparam (0), to_lparam (0))
+			wel_sel := cwin_send_message_result (edit_item, Em_getsel, to_wparam (0), to_lparam (0))
 			start_pos := cwin_hi_word (wel_sel)
 			end_pos := cwin_lo_word (wel_sel)
 
@@ -317,9 +279,9 @@ feature -- Status report
 		local
 			sel_end: INTEGER
 		do
-			--Result := cwin_hi_word ({WEL_API}.send_message_result (edit_item, Em_getsel, to_wparam (0), to_lparam (0)))
+			--Result := cwin_hi_word (cwin_send_message_result (edit_item, Em_getsel, to_wparam (0), to_lparam (0)))
 			fixme (once "Replace sel_end's type by INTEGER_32, as $sel_end has to be a pointer to a DWORD.")
-			{WEL_API}.send_message (edit_item, Em_getsel, to_wparam (0), $sel_end)
+			cwin_send_message (edit_item, Em_getsel, to_wparam (0), $sel_end)
 			Result := sel_end
 		end
 
@@ -391,18 +353,7 @@ feature -- Status setting
 	internal_set_caret_position (pos: INTEGER) is
 			-- Set the caret position to `pos'.
 		do
-			{WEL_API}.send_message (edit_item, Em_setsel, to_wparam (pos), to_lparam (pos))
-		end
-
-	set_tooltip (a_tooltip: STRING_GENERAL) is
-			-- Assign `a_tooltip' to tooltip.
-		do
-				-- We need to set the tooltip on all the components of the combobox.
-			Precursor {EV_TEXT_COMPONENT_IMP} (a_tooltip)
-			if is_editable then
-				text_field.set_tooltip (a_tooltip)
-			end
-			combo.set_tooltip (a_tooltip)
+			cwin_send_message (edit_item, Em_setsel, to_wparam (pos), to_lparam (pos))
 		end
 
 feature -- Basic operation
@@ -410,32 +361,32 @@ feature -- Basic operation
 	deselect_all is
 			-- Unselect the currently selected text.
 		do
-			{WEL_API}.send_message (edit_item, Em_setsel, to_wparam (-1), to_lparam (0))
+			cwin_send_message (edit_item, Em_setsel, to_wparam (-1), to_lparam (0))
 		end
 
 	delete_selection is
 			-- Delete the current selection.
 		do
-			{WEL_API}.send_message (edit_item, Wm_clear, to_wparam (0), to_lparam (0))
+			cwin_send_message (edit_item, Wm_clear, to_wparam (0), to_lparam (0))
 		end
 
 	cut_selection is
 			-- Cut the current selection to the clipboard.
 		do
-			{WEL_API}.send_message (edit_item, Wm_cut, to_wparam (0), to_lparam (0))
+			cwin_send_message (edit_item, Wm_cut, to_wparam (0), to_lparam (0))
 		end
 
 	copy_selection is
 			-- Copy the current selection to the clipboard.
 		do
-			{WEL_API}.send_message (edit_item, Wm_copy, to_wparam (0), to_lparam (0))
+			cwin_send_message (edit_item, Wm_copy, to_wparam (0), to_lparam (0))
 		end
 
 	clip_paste is
 			-- Paste the contents of the clipboard to the current
 			-- caret position.
 		do
-			{WEL_API}.send_message (edit_item, Wm_paste, to_wparam (0), to_lparam (0))
+			cwin_send_message (edit_item, Wm_paste, to_wparam (0), to_lparam (0))
 		end
 
 	replace_selection (txt: STRING_GENERAL) is
@@ -449,7 +400,7 @@ feature -- Basic operation
 			wel_str: WEL_STRING
 		do
 			create wel_str.make (txt)
-			{WEL_API}.send_message (edit_item, Em_replacesel, to_wparam (0), wel_str.item)
+			cwin_send_message (edit_item, Em_replacesel, to_wparam (0), wel_str.item)
 		end
 
 feature {EV_LIST_ITEM_IMP} -- Pixmap handling
@@ -700,21 +651,15 @@ feature {NONE} -- Implementation
 		local
 			sensitive: BOOLEAN
 			s_item: EV_LIST_ITEM
-			l_tooltip: like tooltip
 		do
 			if is_editable then
 				sensitive := is_sensitive
 				s_item := selected_item
-				l_tooltip := tooltip
-				set_tooltip ("")
-				text_field := Void
 				recreate_combo_box (Cbs_dropdownlist)
 
 					-- Remove the text field and create a combo.
+				text_field := Void
 				create combo.make_with_combo (Current)
-				if private_font /= Void then
-					set_font (private_font)
-				end
 				if not sensitive then
 					disable_sensitive
 				end
@@ -723,18 +668,6 @@ feature {NONE} -- Implementation
 				end
 				if foreground_color_imp /= Void then
 					set_foreground_color (foreground_color)
-				end
-
-					-- Restore tooltip
-				set_tooltip (l_tooltip)
-
-					-- Restore alignment
-				inspect text_alignment
-				when {EV_TEXT_ALIGNMENT_CONSTANTS}.ev_text_alignment_left then align_text_left
-				when {EV_TEXT_ALIGNMENT_CONSTANTS}.ev_text_alignment_center then align_text_center
-				when {EV_TEXT_ALIGNMENT_CONSTANTS}.ev_text_alignment_right then align_text_right
-				else
-					check False end
 				end
 			end
 		end
@@ -744,20 +677,15 @@ feature {NONE} -- Implementation
 		local
 			sensitive: BOOLEAN
 			s_item: EV_LIST_ITEM
-			l_tooltip: like tooltip
 		do
 			if not is_editable then
 				sensitive := is_sensitive
 				s_item := selected_item
-				l_tooltip := tooltip
 				recreate_combo_box (Cbs_dropdown)
 
 					-- Remove the combo and create a text field.
 				create combo.make_with_combo (Current)
-				create text_field.make_with_combo (Current)
-				if private_font /= Void then
-					set_font (private_font)
-				end
+ 	 			create text_field.make_with_combo (Current)
 				if not sensitive then
 					disable_sensitive
 				end
@@ -766,18 +694,6 @@ feature {NONE} -- Implementation
 				end
 				if foreground_color_imp /= Void then
 					set_foreground_color (foreground_color)
-				end
-
-					-- Restore tooltip
-				set_tooltip (l_tooltip)
-
-					-- Restore alignment
-				inspect text_alignment
-				when {EV_TEXT_ALIGNMENT_CONSTANTS}.ev_text_alignment_left then align_text_left
-				when {EV_TEXT_ALIGNMENT_CONSTANTS}.ev_text_alignment_center then align_text_center
-				when {EV_TEXT_ALIGNMENT_CONSTANTS}.ev_text_alignment_right then align_text_right
-				else
-					check False end
 				end
 			end
 		end
@@ -866,7 +782,7 @@ feature {NONE} -- Implementation
 	set_background_color (color: EV_COLOR) is
 			-- Make `color' the new `background_color'.
 		do
-			Precursor {EV_TEXT_COMPONENT_IMP} (color)
+			precursor {EV_TEXT_COMPONENT_IMP} (color)
 			if is_displayed then
 				if is_editable then
 					text_field.invalidate
@@ -882,6 +798,13 @@ feature {NONE} -- Implementation
 			set_default_minimum_size
 		end
 
+	tooltip_window: WEL_WINDOW is
+			-- `Result' is WEL_WINDOW of `Current' used
+			-- to trigger tooltip events.
+		do
+			Result := window_of_item (text_field.item)
+		end
+
 feature {EV_INTERNAL_COMBO_FIELD_IMP, EV_INTERNAL_COMBO_BOX_IMP}
 	-- WEL Implementation
 
@@ -894,7 +817,7 @@ feature {EV_INTERNAL_COMBO_FIELD_IMP, EV_INTERNAL_COMBO_BOX_IMP}
 			found: BOOLEAN
 			s1, s2: STRING_32
 		do
-			process_navigation_key (virtual_key)
+			process_tab_key (virtual_key)
 			Precursor {EV_TEXT_COMPONENT_IMP} (virtual_key, key_data)
 			if virtual_key = Vk_return then
 				-- If return pressed, select item with matching text.
@@ -1038,22 +961,20 @@ feature {NONE} -- WEL Implementation
 			-- Hilight the text between `start_pos' and `end_pos'.
 			-- Both `start_pos' and `end_pos' are selected.
 		do
-			if is_editable then
-				text_field.set_selection (start_pos, end_pos)
-			end
+			text_field.set_selection (start_pos, end_pos)
 		end
 
 	wel_selection_start: INTEGER is
 			-- Zero based index of the first character selected.
 		do
-			Result := cwin_lo_word ({WEL_API}.send_message_result (edit_item,
+			Result := cwin_lo_word (cwin_send_message_result (edit_item,
 				Em_getsel, to_wparam (0), to_lparam (0)))
 		end
 
 	wel_selection_end: INTEGER is
 			-- Zero based index of the last character selected.
 		do
-			Result := cwin_hi_word ({WEL_API}.send_message_result (edit_item,
+			Result := cwin_hi_word (cwin_send_message_result (edit_item,
 				Em_getsel, to_wparam (0), to_lparam (0)))
 		end
 
@@ -1070,7 +991,7 @@ feature {EV_ANY_I} -- Implementation
 
 invariant
 	combo_not_void: is_initialized implies combo /= Void
-	text_field_not_void: text_field /= Void implies is_editable
+	text_field_not_void: (is_initialized and then is_editable) implies text_field /= Void
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"
@@ -1083,4 +1004,8 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+
+
+
+end -- class EV_COMBO_BOX_IMP
+

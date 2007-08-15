@@ -31,10 +31,6 @@ feature {NONE} -- Initialization
 		do
 			create l_parser.make
 			l_parser.execute (agent start (l_parser))
-			if not l_parser.successful then
-					-- Finish process with an invalid parameter error code.
-				(create {EXCEPTIONS}).die (0x57)
-			end
 		end
 
 	start (a_parser: ARGUMENT_PARSER) is
@@ -50,7 +46,6 @@ feature {NONE} -- Initialization
 			l_cache_writer: CACHE_WRITER
 			l_writer: like writer
 			l_error: BOOLEAN
-			l_receiver: SYSTEM_OBJECT
 		do
 			if a_parser.use_specified_cache then
 				create l_manager.make_with_path (a_parser.cache_path)
@@ -66,11 +61,6 @@ feature {NONE} -- Initialization
 
 			l_writer := writer
 
-			l_writer.put_string ("Using runtime directory: ")
-			l_writer.put_string ({RUNTIME_ENVIRONMENT}.get_runtime_directory)
-			l_writer.new_line
-			l_writer.new_line
-
 			if a_parser.add_assemblies then
 				l_assemblies := a_parser.assemblies
 				l_references := a_parser.reference_paths
@@ -78,7 +68,6 @@ feature {NONE} -- Initialization
 				l_info_only := a_parser.add_information_only
 
 				create l_resolver.make (l_assemblies)
-				l_resolver.add_resolve_path ({RUNTIME_ENVIRONMENT}.get_runtime_directory)
 				if not l_references.is_empty then
 					l_references.do_all (agent (a_resolver: AR_RESOLVER; a_path: STRING)
 						require
@@ -91,14 +80,6 @@ feature {NONE} -- Initialization
 				end
 				resolve_subscriber.subscribe ({APP_DOMAIN}.current_domain, l_resolver)
 				assembly_loader.set_resolver (l_resolver)
-
-					-- Preload assemblies
-				from l_assemblies.start until l_assemblies.after loop
-					l_receiver := assembly_loader.load_from (l_assemblies.item)
-					l_assemblies.forth
-				end
-
-					-- Consume assemblies
 				from l_assemblies.start until l_assemblies.after loop
 					l_assembly := l_assemblies.item
 					{SYSTEM_DLL_TRACE}.write_line ({SYSTEM_STRING}.format ("Requesting consumption of assembly '{0}'.", l_assembly), "Info")
@@ -174,13 +155,10 @@ feature {NONE} -- Output
 			l_sindex: STRING
 			l_prefix: STRING
 			l_is_empty: BOOLEAN
-			l_cp: CACHE_PATH
-			l_corrupted: ARRAYED_LIST [CONSUMED_ASSEMBLY]
-			l_partial_count, l_full_count, l_awaiting_count: INTEGER
 			l_count: INTEGER
 			i: INTEGER
 		do
-			l_assemblies := a_manager.cache_reader.assemblies
+			l_assemblies := a_manager.cache_reader.consumed_assemblies
 			l_is_empty := l_assemblies.is_empty
 			if not l_is_empty then
 				l_is_empty := l_assemblies.for_all (agent (a_item: CONSUMED_ASSEMBLY): BOOLEAN
@@ -194,9 +172,6 @@ feature {NONE} -- Output
 			l_writer.put_string ("Displaying contents of Eiffel Assembly Cache%N")
 			l_writer.put_string (a_manager.cache_reader.absolute_consume_path)
 			l_writer.put_string (":%N")
-
-			create l_cp
-			create l_corrupted.make (0)
 
 			if not l_is_empty then
 				l_count := l_assemblies.count
@@ -241,85 +216,14 @@ feature {NONE} -- Output
 								else
 									l_writer.put_string (once "full")
 								end
-								if {SYSTEM_DIRECTORY}.exists (l_cp.absolute_assembly_path_from_consumed_assembly (l_assembly)) then
-									if not {SYSTEM_FILE}.exists (l_cp.absolute_type_mapping_path (l_assembly)) then
-										l_writer.put_string (once ", corrupted! - Missing .NET type name mapping information.")
-										l_corrupted.extend (l_assembly)
-									elseif not {SYSTEM_FILE}.exists (l_cp.absolute_assembly_mapping_path_from_consumed_assembly (l_assembly)) then
-										l_writer.put_string (once ", corrupted! - Missing reference assembly information.")
-										l_corrupted.extend (l_assembly)
-									elseif not l_assembly.has_info_only and then not {SYSTEM_FILE}.exists (l_cp.absolute_type_path (l_assembly)) then
-										l_writer.put_string (once ", corrupted! - Missing class member name mapping information.")
-										l_corrupted.extend (l_assembly)
-									else
-										if l_assembly.has_info_only then
-											l_partial_count := l_partial_count + 1
-										else
-											l_full_count := l_full_count + 1
-										end
-									end
-								else
-									l_writer.put_string (once ", corrupted! - No cache folder.")
-									l_corrupted.extend (l_assembly)
-								end
 							else
 								l_writer.put_string (once "not consumed")
-								l_awaiting_count := l_awaiting_count + 1
 							end
 							l_writer.new_line
 						end
 					end
 					i := i + 1
 				end
-
-				if a_verbose then
-						-- Add two spaces to justify text to cach information
-					l_sindex.append ("  ")
-
-					check summary_count_filled: l_count = (l_full_count + l_partial_count + l_awaiting_count + l_corrupted.count) end
-
-						-- Output summary
-					l_writer.new_line
-					l_writer.put_string ("Content Summary")
-					l_writer.new_line
-					l_writer.put_string (l_sindex)
-					l_writer.put_string ("Fully consumed      : ")
-					l_writer.put_integer (l_full_count)
-					l_writer.new_line
-					l_writer.put_string (l_sindex)
-					l_writer.put_string ("Partially consumed  : ")
-					l_writer.put_integer (l_partial_count)
-					l_writer.new_line
-					l_writer.put_string (l_sindex)
-					l_writer.put_string ("Awaiting consumption: ")
-					l_writer.put_integer (l_awaiting_count)
-					if not l_corrupted.is_empty then
-						l_writer.new_line
-						l_writer.put_string (l_sindex)
-						l_writer.put_string ("Corrupted           : ")
-						l_writer.put_integer (l_corrupted.count)
-						l_writer.new_line
-						l_writer.new_line
-						l_writer.put_string ("Cache contains corrupted entries!")
-						from l_corrupted.start until l_corrupted.after loop
-							l_writer.new_line
-							l_writer.put_string (l_sindex)
-							l_writer.put_string ("Entry: ")
-							l_writer.put_character ('{')
-							l_writer.put_string (l_assembly.unique_id)
-							l_writer.put_string ("} - ")
-							l_writer.put_string (l_assembly.name)
-							l_writer.put_string (once ", ")
-							l_writer.put_string (l_assembly.version)
-							l_writer.put_string (once ", ")
-							l_writer.put_string (l_assembly.culture)
-							l_writer.put_string (once ", ")
-							l_writer.put_string (l_assembly.key)
-							l_corrupted.forth
-						end
-					end
-				end
-				l_writer.new_line
 			else
 				l_writer.put_string ("No consumed assemblies found in cache.")
 				l_writer.new_line

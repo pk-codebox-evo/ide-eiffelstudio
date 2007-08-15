@@ -231,13 +231,9 @@ feature -- Basic operations
 					else
 						add_data_choice (a_text, a_text)
 					end
-					if last.is_selectable then
-						last.enable_select
-					end
+					last.enable_select
 				else
-					if it.is_selectable then
-						it.enable_select
-					end
+					it.enable_select
 				end
 			else
 				if a_text /= Void and then not a_text.is_empty then
@@ -259,13 +255,9 @@ feature -- Basic operations
 			it := item_by_data (i)
 			if it = Void then
 				add_data_choice (i, i.out)
-				if last.is_selectable then
-					last.enable_select
-				end
+				last.enable_select
 			else
-				if it.is_selectable then
-					it.enable_select
-				end
+				it.enable_select
 			end
 		end
 
@@ -280,13 +272,9 @@ feature -- Basic operations
 			it := item_by_data (True)
 			if it = Void then
 				add_boolean_choice (True)
-				if last.is_selectable then
-					last.enable_select
-				end
+				last.enable_select
 			else
-				if it.is_selectable then
-					it.enable_select
-				end
+				it.enable_select
 			end
 		end
 
@@ -301,13 +289,9 @@ feature -- Basic operations
 			it := item_by_data (False)
 			if it = Void then
 				add_boolean_choice (False)
-				if last.is_selectable then
-					last.enable_select
-				end
+				last.enable_select
 			else
-				if it.is_selectable then
-					it.enable_select
-				end
+				it.enable_select
 			end
 		end
 

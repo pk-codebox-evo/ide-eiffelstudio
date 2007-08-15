@@ -11,8 +11,7 @@ class
 inherit
 	EV_LIST_ITEM_I
 		redefine
-			interface,
-			reset_pebble_function
+			interface
 		end
 
 	EV_ITEM_ACTION_SEQUENCES_IMP
@@ -62,29 +61,11 @@ feature -- PND
 			end
 		end
 
-	able_to_transport (a_button: INTEGER_32): BOOLEAN
-			-- Is `Current' able to initiate transport with `a_button'.
+	able_to_transport (a_button: INTEGER): BOOLEAN is
+			-- Is the row able to transport data with `a_button' click.
+			-- (export status {EV_MULTI_COLUMN_LIST_IMP})
 		do
-			Result := (mode_is_drag_and_drop and then a_button = 1) or (mode_is_pick_and_drop and then a_button = 3 and then not mode_is_configurable_target_menu)
-		end
-
-	ready_for_pnd_menu (a_button: INTEGER_32; a_press: BOOLEAN): BOOLEAN
-			-- Will `Current' display a menu with button `a_button'.
-		do
-			Result := ((mode_is_target_menu or else mode_is_configurable_target_menu) and a_button = 3) and then not a_press
-		end
-
-	reset_pebble_function is
-			--Reset pebble_function.
-		local
-			l_parent_imp: like parent_imp
-		do
-			l_parent_imp := parent_imp
-			if l_parent_imp /= Void then
-				l_parent_imp.reset_pebble_function
-			else
-				Precursor
-			end
+			Result := is_transport_enabled and ((a_button = 1 and mode_is_drag_and_drop) or (a_button = 3 and (mode_is_pick_and_drop or mode_is_target_menu)))
 		end
 
 	draw_rubber_band is
@@ -116,9 +97,9 @@ feature -- PND
 		end
 
 	start_transport (
-        	a_x, a_y, a_button: INTEGER; a_press: BOOLEAN
+        	a_x, a_y, a_button: INTEGER;
         	a_x_tilt, a_y_tilt, a_pressure: DOUBLE;
-        	a_screen_x, a_screen_y: INTEGER; a_menu_only: BOOLEAN) is
+        	a_screen_x, a_screen_y: INTEGER) is
 		do
 			check
 				do_not_call: False
@@ -223,117 +204,6 @@ feature -- Element change
 
 	pixmap: EV_PIXMAP
 
-feature -- Measurement
-
-	x_position: INTEGER is
-			-- Horizontal offset relative to parent `x_position' in pixels.
-		local
-			l_h_adjust: POINTER
-			l_parent_imp: like parent_imp
-			l_list_imp: EV_LIST_IMP
-		do
-			-- Return parents horizontal scrollbar offset.
-			l_parent_imp := parent_imp
-			if l_parent_imp /= Void then
-				l_list_imp ?= l_parent_imp
-				if l_list_imp /= Void then
-						--| FIXME Combo box list needs to be attained somehow
-					l_h_adjust := {EV_GTK_EXTERNALS}.gtk_scrolled_window_get_hadjustment (l_list_imp.scrollable_area)
-					if l_h_adjust /= default_pointer then
-						Result := - {EV_GTK_EXTERNALS}.gtk_adjustment_struct_value (l_h_adjust).rounded
-					end
-				end
-			end
-		end
-
-	y_position: INTEGER is
-			-- Vertical offset relative to parent `y_position' in pixels.
-		local
-			l_v_adjust: POINTER
-			l_parent_imp: like parent_imp
-			l_list_imp: EV_LIST_IMP
-		do
-			-- Return parents horizontal scrollbar offset.
-			l_parent_imp := parent_imp
-			if l_parent_imp /= Void then
-				Result := (l_parent_imp.index_of (interface, 1) - 1) * l_parent_imp.row_height
-				l_list_imp ?= l_parent_imp
-				if l_list_imp /= Void then
-						--| FIXME Combo box list needs to be attained somehow
-					l_v_adjust := {EV_GTK_EXTERNALS}.gtk_scrolled_window_get_hadjustment (l_list_imp.scrollable_area)
-					if l_v_adjust /= default_pointer then
-						Result := Result - {EV_GTK_EXTERNALS}.gtk_adjustment_struct_value (l_v_adjust).rounded
-					end
-				end
-			end
-		end
-
-	screen_x: INTEGER is
-			-- Horizontal offset relative to screen.
-		local
-			l_parent_imp: like parent_imp
-		do
-			l_parent_imp := parent_imp
-			if l_parent_imp /= Void then
-				Result := l_parent_imp.screen_x + x_position
-			end
-		end
-
-	screen_y: INTEGER is
-			-- Vertical offset relative to screen.
-		local
-			l_parent_imp: like parent_imp
-		do
-			l_parent_imp := parent_imp
-			if l_parent_imp /= Void then
-				Result := l_parent_imp.screen_y + y_position
-			end
-		end
-
-	width: INTEGER is
-			-- Horizontal size in pixels.
-		local
-			l_parent_imp: like parent_imp
-		do
-			l_parent_imp := parent_imp
-			if l_parent_imp /= Void then
-				Result := l_parent_imp.width
-			end
-		end
-
-	height: INTEGER is
-			-- Vertical size in pixels.
-		local
-			l_parent_imp: like parent_imp
-		do
-			l_parent_imp := parent_imp
-			if l_parent_imp /= Void then
-				Result := l_parent_imp.height
-			end
-		end
-
-	minimum_width: INTEGER is
-			-- Minimum horizontal size in pixels.
-		local
-			l_parent_imp: like parent_imp
-		do
-			l_parent_imp := parent_imp
-			if l_parent_imp /= Void then
-				Result := l_parent_imp.minimum_width
-			end
-		end
-
-	minimum_height: INTEGER is
-			-- Minimum vertical size in pixels.
-		local
-			l_parent_imp: like parent_imp
-		do
-			l_parent_imp := parent_imp
-			if l_parent_imp /= Void then
-				Result := l_parent_imp.row_height
-			end
-		end
-
 feature {NONE} -- Implementation
 
 	internal_text: STRING_32
@@ -350,13 +220,6 @@ feature {NONE} -- Implementation
 		end
 
 feature {EV_LIST_ITEM_LIST_IMP} -- Implementation
-
-	update_for_pick_and_drop (starting: BOOLEAN)
-			-- Pick and drop status has changed so update appearance of
-			-- `Current' to reflect available targets.
-		do
-			-- Do nothing
-		end
 
 	internal_tooltip: STRING_32
 		-- Tooltip used for `Current'.

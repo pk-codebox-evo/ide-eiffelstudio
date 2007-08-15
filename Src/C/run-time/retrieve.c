@@ -2,7 +2,7 @@
 	description: "Eiffel retrieve mechanism."
 	date:		"$Date$"
 	revision:	"$Revision$"
-	copyright:	"Copyright (c) 1985-2007, Eiffel Software."
+	copyright:	"Copyright (c) 1985-2006, Eiffel Software."
 	license:	"GPL version 2 see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"Commercial license is available at http://www.eiffel.com/licensing"
 	copying: "[
@@ -1037,7 +1037,6 @@ rt_public EIF_REFERENCE portable_retrieve(int (*char_read_function)(char *, int)
 			break;
 		case RECOVERABLE_STORE_5_3:
 		case INDEPENDENT_STORE_5_5:
-		case INDEPENDENT_STORE_6_0:
 			rt_init_retrieve(retrieve_read_with_compression, char_read_function, RETRIEVE_BUFFER_SIZE);
 			rt_kind = RECOVERABLE_STORE;
 			rt_kind_version = rt_type;
@@ -1116,7 +1115,6 @@ rt_public EIF_REFERENCE portable_retrieve(int (*char_read_function)(char *, int)
 		case INDEPENDENT_STORE_5_0:
 		case RECOVERABLE_STORE_5_3:
 		case INDEPENDENT_STORE_5_5:
-		case INDEPENDENT_STORE_6_0:
 			independent_retrieve_reset ();
 			break;
 	}
@@ -1243,9 +1241,9 @@ rt_private struct htable *create_hash_table (int32 count, int size)
 			eif_rt_xmalloc (sizeof (struct htable), C_T, GC_OFF);
 	if (result == NULL)
 		xraise (EN_MEM);
-	if (ht_create (result, count, size) == -1) {
+	if (ht_create (result, count, size) == -1)
 		xraise (EN_MEM);
-	}
+	ht_zero (result);
 	return result;
 }
 
@@ -1457,18 +1455,13 @@ rt_public EIF_REFERENCE rt_nmake(long int objectCount)
 
 	REQUIRE ("Positive count", objectCount > 0);
 
-#ifdef ISE_GC
-			/* Stop the GC for efficient retrieval. */
-		rt_g_data.status |= GC_STOP;
-#endif
-
 	excatch(&exenv);	/* Record pseudo execution vector */
 	if (setjmp(exenv)) {
 		rt_clean();				/* Clean data structure */
 		RTXSC;					/* Restore stack contexts */
 #ifdef ISE_GC
-		rt_g_data.status = g_status;	/* If a crash occurs, since we disable the GC, 
-										 * we need to make sure to restore the status
+		rt_g_data.status = g_status;		/* If a crash occurs, since we may disable the GC in the
+										 * code below, we need to make sure to restore the status
 										 * to what it originally was. */
 #endif
 		ereturn(MTC_NOARG);				/* Propagate exception */
@@ -1524,6 +1517,11 @@ rt_public EIF_REFERENCE rt_nmake(long int objectCount)
 			}
 		}
 		
+#ifdef ISE_GC
+			/* Stop in the garbage collector because we have now an unstable
+			 * object. */
+		rt_g_data.status |= GC_STOP;
+#endif /* ISE_GC */
 
 			/* Record the new object in hector table */
 		new_hector = hrecord(newadd);
@@ -1543,12 +1541,12 @@ rt_public EIF_REFERENCE rt_nmake(long int objectCount)
 			 */
 		rt_update2(oldadd, newadd, newadd);
 
-	}
-	expop(&eif_stack);
 #ifdef ISE_GC
 			/* Restore garbage collector status */
 		rt_g_data.status = g_status;
-#endif
+#endif /* ISE_GC */
+	}
+	expop(&eif_stack);
 	return newadd;
 }
 
@@ -1584,18 +1582,13 @@ rt_public EIF_REFERENCE grt_nmake(long int objectCount)
 
 	REQUIRE ("Positive count", objectCount > 0);
 
-#ifdef ISE_GC
-			/* Stop the GC for efficient retrieval. */
-		rt_g_data.status |= GC_STOP;
-#endif
-
 	excatch(&exenv);	/* Record pseudo execution vector */
 	if (setjmp(exenv)) {
 		rt_clean();				/* Clean data structure */
 		RTXSC;					/* Restore stack contexts */
 #ifdef ISE_GC
-		rt_g_data.status = g_status;	/* If a crash occurs, since we disable the GC,
-										 * we need to make sure to restore the status
+		rt_g_data.status = g_status;		/* If a crash occurs, since we may disable the GC in the
+										 * code below, we need to make sure to restore the status
 										 * to what it originally was. */
 #endif
 		ereturn(MTC_NOARG);				/* Propagate exception */
@@ -1626,7 +1619,7 @@ rt_public EIF_REFERENCE grt_nmake(long int objectCount)
 			uint32 count, elm_size;
 			rt_uint_ptr nb_byte;
 			if (flags & EO_TUPLE) {
-				spec_size = sizeof(EIF_TYPED_VALUE);
+				spec_size = sizeof(EIF_TYPED_ELEMENT);
 			} else {
 				uint32 dgen, spec_type;
 
@@ -1704,6 +1697,12 @@ rt_public EIF_REFERENCE grt_nmake(long int objectCount)
 			}
 		}
 
+#ifdef ISE_GC
+			/* Stop in the garbage collector because we have know an unstable
+			 * object. */
+		rt_g_data.status |= GC_STOP;
+#endif /* ISE_GC */
+
 			/* Record the new object in hector table */
 		new_hector = hrecord(newadd);
 		nb_recorded++;
@@ -1720,12 +1719,13 @@ rt_public EIF_REFERENCE grt_nmake(long int objectCount)
 			 */
 		rt_update2(oldadd, newadd, newadd);
 
-	}
-	expop(&eif_stack);
 #ifdef ISE_GC
 			/* Restore garbage collector status */
 		rt_g_data.status = g_status;
-#endif
+#endif /* ISE_GC */
+	}
+	expop(&eif_stack);
+
 	return newadd;
 }
 
@@ -1766,18 +1766,13 @@ rt_public EIF_REFERENCE irt_nmake(long int objectCount)
 
 	REQUIRE ("Positive count", objectCount > 0);
 
-#ifdef ISE_GC
-			/* Stop the GC for efficient retrieval. */
-		rt_g_data.status |= GC_STOP;
-#endif
-
 	excatch(&exenv);	/* Record pseudo execution vector */
 	if (setjmp(exenv)) {
 		rt_clean();				/* Clean data structure */
 		RTXSC;					/* Restore stack contexts */
 #ifdef ISE_GC
-		rt_g_data.status = g_status;	/* If a crash occurs, since we disable the GC,
-										 * we need to make sure to restore the status
+		rt_g_data.status = g_status;		/* If a crash occurs, since we may disable the GC in the
+										 * code below, we need to make sure to restore the status
 										 * to what it originally was. */
 #endif
 		ereturn(MTC_NOARG);				/* Propagate exception */
@@ -1807,7 +1802,7 @@ rt_public EIF_REFERENCE irt_nmake(long int objectCount)
 		if (flags & EO_SPEC) {
 			uint32 count, elm_size;
 			if (flags & EO_TUPLE) {
-				spec_size = sizeof(EIF_TYPED_VALUE);
+				spec_size = sizeof(EIF_TYPED_ELEMENT);
 			} else {
 				uint32 dgen, spec_type;
 
@@ -1877,6 +1872,12 @@ rt_public EIF_REFERENCE irt_nmake(long int objectCount)
 			}
 		}
 		
+#ifdef ISE_GC
+			/* Stop in the garbage collector because we have know an unstable
+			 * object. */
+		rt_g_data.status |= GC_STOP;
+#endif /* ISE_GC */
+
 			/* Record the new object in hector table */
 		new_hector = hrecord(newadd);
 		nb_recorded++;
@@ -1893,12 +1894,12 @@ rt_public EIF_REFERENCE irt_nmake(long int objectCount)
 			 */
 		rt_update2(oldadd, newadd, newadd);
 
+#ifdef ISE_GC
+			/* Restore garbage collector status */
+		rt_g_data.status = g_status;
+#endif /* ISE_GC */
 	}
 	expop(&eif_stack);
-#ifdef ISE_GC
-		/* Restore garbage collector status */
-	rt_g_data.status = g_status;
-#endif
 	return newadd;
 }
 
@@ -2029,18 +2030,13 @@ rt_public EIF_REFERENCE rrt_nmake (long int objectCount)
 
 	REQUIRE ("Positive count", objectCount > 0);
 
-#ifdef ISE_GC
-			/* Stop the GC for efficient retrieval. */
-		rt_g_data.status |= GC_STOP;
-#endif
-
 	excatch (&exenv);	/* Record pseudo execution vector */
 	if (setjmp (exenv)) {
 		rt_clean ();			/* Clean data structure */
 		RTXSC;					/* Restore stack contexts */
 #ifdef ISE_GC
-		rt_g_data.status = g_status;	/* If a crash occurs, since we disable the GC,
-										 * we need to make sure to restore the status
+		rt_g_data.status = g_status;		/* If a crash occurs, since we may disable the GC in the
+										 * code below, we need to make sure to restore the status
 										 * to what it originally was. */
 #endif
 		ereturn (MTC_NOARG);	/* Propagate exception */
@@ -2062,7 +2058,7 @@ rt_public EIF_REFERENCE rrt_nmake (long int objectCount)
 		EIF_REFERENCE oldadd;
 		type_descriptor *conv;
 
-			/* Read address in storing system and object flags (w/dynamic type) */
+		/* Read address in storing system and object flags (w/dynamic type) */
 		ridr_multi_any ((char *) &oldadd, 1);
 		ridr_norm_int (&flags);
 		crflags = rt_id_read_cid (flags);
@@ -2107,6 +2103,12 @@ rt_public EIF_REFERENCE rrt_nmake (long int objectCount)
 				xraise(EN_MEM);
 			}
 		}
+
+#ifdef ISE_GC
+			/* Stop in the garbage collector because we have now an unstable
+			 * object. */
+		rt_g_data.status |= GC_STOP;
+#endif
 
 #ifdef RECOVERABLE_DEBUG
 		if (newadd == NULL)
@@ -2171,12 +2173,12 @@ rt_public EIF_REFERENCE rrt_nmake (long int objectCount)
 			newadd = eif_access (new_hector);
 		}
 
-	}
-	expop (&eif_stack);
 #ifdef ISE_GC
 			/* Restore garbage collector status */
 		rt_g_data.status = g_status;
 #endif
+	}
+	expop (&eif_stack);
 	return newadd;
 }
 
@@ -2320,10 +2322,6 @@ rt_private void rt_update2(EIF_REFERENCE old, EIF_REFERENCE new_obj, EIF_REFEREN
 	rt_uint_ptr size;				/* New object size */
 	/* struct rt_struct *rt_info;*/ /* %%ss unused */
 
-#ifdef ISE_GC
-	REQUIRE ("No GC", rt_g_data.status & GC_STOP);
-#endif
-
 #ifndef NDEBUG
 	nb_references = -1;
 #endif
@@ -2340,14 +2338,14 @@ rt_private void rt_update2(EIF_REFERENCE old, EIF_REFERENCE new_obj, EIF_REFEREN
 		o_ref = RT_SPECIAL_INFO_WITH_ZONE(new_obj, zone);
 		count = RT_SPECIAL_COUNT_WITH_INFO(o_ref);
 		if (flags & EO_TUPLE) {
-			EIF_TYPED_VALUE * l_item = (EIF_TYPED_VALUE *) new_obj;
-				/* Don't forget that first element of TUPLE is the BOOLEAN
-				 * `object_comparison' attribute. */
+			EIF_TYPED_ELEMENT * l_item = (EIF_TYPED_ELEMENT *) new_obj;
+				/* Don't forget that first element of TUPLE is just a placeholder
+				 * to avoid offset computation from Eiffel code */
 			l_item++;
 			count--;
 			for (; count > 0; count--, l_item++) {
 				if
-					(eif_is_reference_tuple_item(l_item) &&
+					((eif_tuple_item_type(l_item) == EIF_REFERENCE_CODE) &&
 					(eif_reference_tuple_item(l_item)))
 				{
 						/* Update reference value to new value in retrieved system */
@@ -2420,10 +2418,6 @@ rt_private void rt_subupdate (EIF_REFERENCE old, EIF_REFERENCE reference, EIF_RE
 	struct rt_struct *rt_info;
 	rt_uint_ptr key = ((rt_uint_ptr) reference) - 1;
 	EIF_REFERENCE supplier;
-
-#ifdef ISE_GC
-	REQUIRE ("No GC", rt_g_data.status & GC_STOP);
-#endif
 
 	rt_info = (struct rt_struct *) ht_first(rt_table, key);
 	if (rt_info->rt_status == DROPPED) {
@@ -2538,6 +2532,9 @@ rt_private void read_header(char rt_type)
 	char vis_name[512];
 	char * temp_buf;
 	jmp_buf exenv;
+#ifdef ISE_GC
+	volatile char g_status = rt_g_data.status;
+#endif
 	RTXD;
 
 	errno = 0;
@@ -2546,6 +2543,11 @@ rt_private void read_header(char rt_type)
 	if (setjmp(exenv)) {
 		rt_clean();				/* Clean data structure */
 		RTXSC;					/* Restore stack contexts */
+#ifdef ISE_GC
+		rt_g_data.status = g_status;		/* If a crash occurs, since we may disable the GC in the
+										 * code below, we need to make sure to restore the status
+										 * to what it originally was. */
+#endif
 		ereturn(MTC_NOARG);				/* Propagate exception */
 	}
 	r_buffer = (char*) eif_rt_xmalloc (bsize * sizeof (char), C_T, GC_OFF);
@@ -2694,6 +2696,9 @@ rt_private void iread_header(EIF_CONTEXT_NOARG)
 	char att_name[512];
 	int * volatile attrib_order = NULL;
 	jmp_buf exenv;
+#ifdef ISE_GC
+	volatile char g_status = rt_g_data.status;
+#endif
 	RTXD;
 
 	errno = 0;
@@ -2702,6 +2707,11 @@ rt_private void iread_header(EIF_CONTEXT_NOARG)
 	if (setjmp(exenv)) {
 		rt_clean();				/* Clean data structure */
 		RTXSC;					/* Restore stack contexts */
+#ifdef ISE_GC
+		rt_g_data.status = g_status;		/* If a crash occurs, since we may disable the GC in the
+										 * code below, we need to make sure to restore the status
+										 * to what it originally was. */
+#endif
 		ereturn(MTC_NOARG);				/* Propagate exception */
 	}
 
@@ -3364,6 +3374,9 @@ rt_private void iread_header_new (EIF_CONTEXT_NOARG)
 	int old_count, nb_lines, i;
 	int bsize = 1024;
 	jmp_buf exenv;
+#ifdef ISE_GC
+	volatile char g_status = rt_g_data.status;
+#endif
 	RTXD;
 
 	errno = 0;
@@ -3372,6 +3385,11 @@ rt_private void iread_header_new (EIF_CONTEXT_NOARG)
 	if (setjmp (exenv)) {
 		rt_clean ();			/* Clean data structure */
 		RTXSC;					/* Restore stack contexts */
+#ifdef ISE_GC
+		rt_g_data.status = g_status;		/* If a crash occurs, since we may disable the GC in the
+										 * code below, we need to make sure to restore the status
+										 * to what it originally was. */
+#endif
 		ereturn (MTC_NOARG);	/* Propagate exception */
 	}
 
@@ -3941,6 +3959,9 @@ rt_private void rread_header (EIF_CONTEXT_NOARG)
 	EIF_GET_CONTEXT
 	int16 ohead, old_max_types, type_count, i;
 	jmp_buf exenv;
+#ifdef ISE_GC
+	volatile char g_status = rt_g_data.status;
+#endif
 	RTXD;
 
 	errno = 0;
@@ -3949,6 +3970,11 @@ rt_private void rread_header (EIF_CONTEXT_NOARG)
 	if (setjmp (exenv)) {
 		rt_clean ();			/* Clean data structure */
 		RTXSC;					/* Restore stack contexts */
+#ifdef ISE_GC
+		rt_g_data.status = g_status;		/* If a crash occurs, since we may disable the GC in the
+										 * code below, we need to make sure to restore the status
+										 * to what it originally was. */
+#endif
 		ereturn (MTC_NOARG);	/* Propagate exception */
 	}
 
@@ -4085,7 +4111,7 @@ rt_public size_t retrieve_read_with_compression (void)
 	char* dcmps_out_ptr = (char *)0;
 	char* pdcmps_in_size = (char *)0;
 	int dcmps_in_size = 0;
-	unsigned long dcmps_out_size = 0;
+	int dcmps_out_size = 0;
 	char cmps_head [EIF_CMPS_HEAD_SIZE];
 	char* ptr = (char *)0;
 	int read_size = 0;
@@ -4121,7 +4147,7 @@ rt_public size_t retrieve_read_with_compression (void)
 					(unsigned long*)&dcmps_out_size);
 	
 	CHECK("dcmps_out_size_positive", dcmps_out_size > 0);
-	return (size_t) dcmps_out_size;
+	return dcmps_out_size;
 }
 
 /*
@@ -4224,7 +4250,7 @@ rt_private void gen_object_read (EIF_REFERENCE object, EIF_REFERENCE parent, uin
 			count = RT_SPECIAL_COUNT_WITH_INFO(o_ptr);
 
 			if (flags & EO_TUPLE) {
-				buffer_read(object, count * sizeof(EIF_TYPED_VALUE));
+				buffer_read(object, count * sizeof(EIF_TYPED_ELEMENT));
 			} else if (!(flags & EO_REF)) {			/* Special of simple types */
 				uint32 dgen;
 				dgen = special_generic_type (o_type);
@@ -4409,7 +4435,7 @@ rt_private void object_read (EIF_REFERENCE object, EIF_REFERENCE parent, uint32 
 #endif
 					break;
 				case SK_POINTER:
-					ridr_multi_ptr (object + attrib_offset, 1);
+					ridr_multi_any (object + attrib_offset, 1);
 					if (eif_discard_pointer_values) {
 						*(EIF_POINTER *) (object + attrib_offset) = NULL;
 					}
@@ -4474,7 +4500,7 @@ rt_private void object_read (EIF_REFERENCE object, EIF_REFERENCE parent, uint32 
 						ridr_multi_bit ((struct bit *)object, count, elem_size);
 						break;
 					case SK_POINTER:
-						ridr_multi_ptr (object, count);
+						ridr_multi_any (object, count);
 						if (eif_discard_pointer_values) {
 							memset (object, 0, count * sizeof(EIF_POINTER));
 						}
@@ -4744,7 +4770,7 @@ rt_private EIF_REFERENCE object_rread_attributes (
 				}
 				break;
 			case SK_POINTER:
-				ridr_multi_ptr ((char *) &value.vptr, 1);
+				ridr_multi_any ((char *) &value.vptr, 1);
 				if (attr_address != NULL) {
 					if (! eif_discard_pointer_values)
 						*(EIF_POINTER *) attr_address = value.vptr;
@@ -4945,7 +4971,7 @@ rt_private EIF_REFERENCE object_rread_special (
 				break;
 
 			case SK_POINTER:
-				ridr_multi_ptr (addr, count);
+				ridr_multi_any (addr, count);
 				if (eif_discard_pointer_values)
 					memset (addr, 0, count * sizeof (EIF_POINTER));
 				break;
@@ -4974,51 +5000,28 @@ rt_private void object_rread_tuple (EIF_REFERENCE object, uint32 count)
 	RT_GET_CONTEXT
 
 	EIF_REFERENCE addr, trash = NULL;
-	EIF_TYPED_VALUE *l_item;
+	EIF_TYPED_ELEMENT *l_item;
 	char l_type;
-
-	REQUIRE ("TUPLE object", (!object) || (HEADER(object)->ov_flags & EO_TUPLE));
 
 	if (object != NULL)
 		addr = object;
 	else {
-		trash = (EIF_REFERENCE) eif_rt_xmalloc (count * sizeof (EIF_TYPED_VALUE), C_T, GC_OFF);
+		trash = (EIF_REFERENCE) eif_rt_xmalloc (count * sizeof (EIF_TYPED_ELEMENT), C_T, GC_OFF);
 		if (!trash) {
 			xraise(EN_MEM);
 		}
 		addr = trash;
 	}
 
-	l_item = (EIF_TYPED_VALUE *) addr;
-		/* Don't forget that first element of TUPLE is the BOOLEAN
-		 * `object_comparison' attribute. Version prior to INDEPENDENT_STORE_6_0 did
-		 * not store it, so we simply skip it and leave it to its default value, i.e. False */
-	if (rt_kind_version < INDEPENDENT_STORE_6_0) {
-		l_item++;
-		count--;
-	}
+	l_item = (EIF_TYPED_ELEMENT *) addr;
+		/* Don't forget that first element of TUPLE is just a placeholder
+		 * to avoid offset computation from Eiffel code */
+	l_item++;
+	count--;
 	if (rt_kind_version >= INDEPENDENT_STORE_5_5) {
 		for (; count > 0; count--, l_item++) {
 			ridr_multi_char(&l_type, 1);
-#ifdef EIF_ASSERTIONS
-			switch (eif_tuple_item_sk_type(l_item)) {
-				case SK_BOOL:    CHECK("Same type", l_type == EIF_BOOLEAN_CODE); break;
-				case SK_CHAR:    CHECK("Same type", l_type == EIF_CHARACTER_CODE); break;
-				case SK_WCHAR:   CHECK("Same type", l_type == EIF_WIDE_CHAR_CODE); break;
-				case SK_INT8:    CHECK("Same type", l_type == EIF_INTEGER_8_CODE); break;
-				case SK_INT16:   CHECK("Same type", l_type == EIF_INTEGER_16_CODE); break;
-				case SK_INT32:   CHECK("Same type", l_type == EIF_INTEGER_32_CODE); break;
-				case SK_INT64:   CHECK("Same type", l_type == EIF_INTEGER_64_CODE); break;
-				case SK_UINT8:   CHECK("Same type", l_type == EIF_NATURAL_8_CODE); break;
-				case SK_UINT16:  CHECK("Same type", l_type == EIF_NATURAL_16_CODE); break;
-				case SK_UINT32:  CHECK("Same type", l_type == EIF_NATURAL_32_CODE); break;
-				case SK_UINT64:  CHECK("Same type", l_type == EIF_NATURAL_64_CODE); break;
-				case SK_REAL32:  CHECK("Same type", l_type == EIF_REAL_32_CODE); break;
-				case SK_REAL64:  CHECK("Same type", l_type == EIF_REAL_64_CODE); break;
-				case SK_REF:     CHECK("Same type", l_type == EIF_REFERENCE_CODE); break;
-				case SK_POINTER: CHECK("Same type", l_type == EIF_POINTER_CODE); break;
-			}
-#endif
+			CHECK("Same type", l_type == eif_tuple_item_type(l_item));
 			switch (l_type) {
 				case EIF_REFERENCE_CODE: ridr_multi_any ((char*) &eif_reference_tuple_item(l_item), 1); break;
 				case EIF_BOOLEAN_CODE: ridr_multi_char (&eif_boolean_tuple_item(l_item), 1); break;
@@ -5033,7 +5036,7 @@ rt_private void object_rread_tuple (EIF_REFERENCE object, uint32 count)
 				case EIF_INTEGER_16_CODE: ridr_multi_int16 (&eif_integer_16_tuple_item(l_item), 1); break;
 				case EIF_INTEGER_32_CODE: ridr_multi_int32 (&eif_integer_32_tuple_item(l_item), 1); break;
 				case EIF_INTEGER_64_CODE: ridr_multi_int64 (&eif_integer_64_tuple_item(l_item), 1); break;
-				case EIF_POINTER_CODE: ridr_multi_ptr ((char *) &eif_pointer_tuple_item(l_item), 1); break;
+				case EIF_POINTER_CODE: ridr_multi_any ((char *) &eif_pointer_tuple_item(l_item), 1); break;
 				case EIF_WIDE_CHAR_CODE: ridr_multi_int32 (&eif_wide_character_tuple_item(l_item), 1); break;
 				default:
 					eise_io ("Recoverable retrieve: unsupported tuple element type.");
@@ -5052,7 +5055,7 @@ rt_private void object_rread_tuple (EIF_REFERENCE object, uint32 count)
 				case OLD_EIF_INTEGER_16_CODE: ridr_multi_int16 (&eif_integer_16_tuple_item(l_item), 1); break;
 				case OLD_EIF_INTEGER_32_CODE: ridr_multi_int32 (&eif_integer_32_tuple_item(l_item), 1); break;
 				case OLD_EIF_INTEGER_64_CODE: ridr_multi_int64 (&eif_integer_64_tuple_item(l_item), 1); break;
-				case OLD_EIF_POINTER_CODE: ridr_multi_ptr ((char *) &eif_pointer_tuple_item(l_item), 1); break;
+				case OLD_EIF_POINTER_CODE: ridr_multi_any ((char *) &eif_pointer_tuple_item(l_item), 1); break;
 				case OLD_EIF_WIDE_CHAR_CODE: ridr_multi_int32 (&eif_wide_character_tuple_item(l_item), 1); break;
 				default:
 					eise_io ("Recoverable retrieve: unsupported tuple element type.");

@@ -34,7 +34,9 @@ feature -- Final mode
 			-- Insert units of Current in the history
 			-- controler (routine table construction)
 		local
+			new_unit: ENTRY
 			feature_i: FEATURE_I
+			rout_id: INTEGER
 		do
 			from
 				start
@@ -43,7 +45,10 @@ feature -- Final mode
 			loop
 				feature_i := item_for_iteration
 				if feature_i.has_entry then
-					History_control.add_new (feature_i, id, key_for_iteration)
+					rout_id := key_for_iteration
+					new_unit := feature_i.new_entry (rout_id)
+					new_unit.set_class_id (id)
+					History_control.add_new (new_unit, rout_id)
 				end
 				forth
 			end
@@ -51,42 +56,32 @@ feature -- Final mode
 
 feature -- Incrementality
 
-	equiv (other: like Current; c: CLASS_C): BOOLEAN is
+	equiv (other: like Current): BOOLEAN is
 			-- Incrementality test on the select table in second pass.
 		require
 			good_argument: other /= Void
 		local
 			f2: FEATURE_I
-			is_freeze_requested: BOOLEAN
 		do
-			is_freeze_requested := system.is_freeze_requested
-				-- At least the counts should be the same.
-			from
-				start
-				Result := other.count = count
-			until
-				after or else (not Result and then is_freeze_requested)
-			loop
-				f2 := other.item (key_for_iteration)
-				if f2 = Void then
-					Result := False
-					if not is_freeze_requested and then c.visible_level.is_visible (item_for_iteration, c.class_id) then
-							-- Remove references to the old feature in CECIL data.
-						system.request_freeze
-					end
-				else
-					check
-						item_for_iteration.feature_name.is_equal (f2.feature_name)
-					end
-					if not item_for_iteration.select_table_equiv (f2) then
+			if other.count = count then
+					-- At least the counts should be the same.
+				from
+					start
+					Result := True
+				until
+					after or else not Result
+				loop
+					f2 := other.item (key_for_iteration)
+					if f2 = Void then
 						Result := False
-						if not is_freeze_requested and then c.visible_level.is_visible (f2, c.class_id) then
-								-- Regenerate C code for visible feature so that it can be accessed via CECIL.
-							system.request_freeze
+					else
+						check
+							item_for_iteration.feature_name.is_equal (f2.feature_name)
 						end
+						Result := item_for_iteration.select_table_equiv (f2);
 					end
+					forth
 				end
-				forth
 			end
 		end
 

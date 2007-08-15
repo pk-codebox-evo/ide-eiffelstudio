@@ -132,6 +132,7 @@ feature -- Saving
 			end
 		end
 
+
 feature -- Output
 
 	xml_trace (identation: STRING): STRING is

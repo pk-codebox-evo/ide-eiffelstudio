@@ -1,2 +1,2 @@
-%ISE_LIBRARY%\library\gobo\bin\gelex --version
-%ISE_LIBRARY%\library\gobo\bin\gelex -z editor_basic_scanner.l
+%EIFFEL_SRC%\library\gobo\bin\gelex --version
+%EIFFEL_SRC%\library\gobo\bin\gelex -z editor_basic_scanner.l

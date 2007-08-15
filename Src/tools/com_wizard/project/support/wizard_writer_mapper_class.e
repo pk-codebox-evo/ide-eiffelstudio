@@ -34,7 +34,6 @@ feature {NONE} -- Initialization
 		do
 			make
 			id := Ce_counter
-			is_ec := False
 			initialize
 		end
 	

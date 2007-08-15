@@ -14,8 +14,7 @@ inherit
 	EV_COMBO_BOX_I
 		undefine
 			wipe_out,
-			call_pebble_function,
-			reset_pebble_function
+			call_pebble_function
 		redefine
 			interface
 		end
@@ -26,14 +25,9 @@ inherit
 			create_focus_out_actions,
 			needs_event_box,
 			pre_pick_steps,
-			post_drop_steps,
 			call_pebble_function,
-			reset_pebble_function,
 			enable_transport,
-			hide_border,
-			pebble_source,
-			ready_for_pnd_menu,
-			able_to_transport
+			hide_border
 		redefine
 			initialize,
 			make,
@@ -75,7 +69,7 @@ feature {NONE} -- Initialization
 	needs_event_box: BOOLEAN is
 			-- Does `a_widget' need an event box?
 		do
-			Result := True
+			Result := False
 		end
 
 	make (an_interface: like interface) is
@@ -92,10 +86,12 @@ feature {NONE} -- Initialization
 			{EV_GTK_EXTERNALS}.gtk_box_pack_start (a_vbox, container_widget, False, False, 0)
 			entry_widget := {EV_GTK_EXTERNALS}.gtk_combo_box_get_entry (container_widget)
 
+
 				-- Alter focus chain so that button cannot be selected via the keyboard.
 			a_focus_list := {EV_GTK_EXTERNALS}.g_list_append (default_pointer, entry_widget)
 			{EV_GTK_EXTERNALS}.gtk_container_set_focus_chain (container_widget, a_focus_list)
 			{EV_GTK_EXTERNALS}.g_list_free (a_focus_list)
+
 
 				-- This is a hack, remove when the toggle button can be retrieved via the API.
 			real_signal_connect (container_widget, once "realize", agent (app_implementation.gtk_marshal).on_combo_box_toggle_button_event (internal_id, 1), Void)
@@ -146,7 +142,6 @@ feature {NONE} -- Initialization
 			a_cs: EV_GTK_C_STRING
 		do
 			Precursor {EV_LIST_ITEM_LIST_IMP}
-			align_text_left
 			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_combo_box_set_model (container_widget, list_store)
 
 				-- Set widget name so that the style can be used as set in EV_GTK_DEPENDENT_APPLICATION_IMP
@@ -173,7 +168,6 @@ feature {NONE} -- Initialization
 			set_minimum_width_in_characters (4)
 
 			real_signal_connect (container_widget, once "changed", agent (app_implementation.gtk_marshal).on_pnd_deferred_item_parent_selection_change (internal_id), Void)
-			initialize_tab_behavior
 		end
 
 	insert_i_th (v: like item; i: INTEGER) is

@@ -15,7 +15,7 @@ deferred class
 	SD_ZONE_NAVIGATION_DIALOG_IMP
 
 inherit
-	EV_POPUP_WINDOW
+	EV_SHADOW_DIALOG
 		redefine
 			initialize, is_in_default_state
 		end
@@ -31,7 +31,7 @@ feature {NONE}-- Initialization
 		do
 			create l_shared
 
-			Precursor {EV_POPUP_WINDOW}
+			Precursor {EV_SHADOW_DIALOG}
 
 				-- Create all widgets.
 			create internal_vertical_box_top_top
@@ -55,7 +55,6 @@ feature {NONE}-- Initialization
 			extend (internal_vertical_box_top_top)
 			internal_vertical_box_top_top.extend (internal_vertical_box_top)
 			internal_vertical_box_top.extend (internal_label_box)
-			internal_vertical_box_top.disable_item_expand (internal_label_box)
 			create l_vertical_box
 			internal_label_box.extend (l_vertical_box)
 			l_vertical_box.extend (internal_tools_label)
@@ -77,7 +76,6 @@ feature {NONE}-- Initialization
 			internal_files_box.extend (files_column)
 			internal_files_box.disable_item_expand (files_column)
 			internal_vertical_box_top.extend (internal_info_box_border)
-			internal_vertical_box_top.disable_item_expand (internal_info_box_border)
 			internal_info_box_border.extend (internal_info_box)
 			internal_info_box.extend (full_title)
 			internal_info_box.extend (description)
@@ -103,7 +101,7 @@ feature {NONE}-- Initialization
 			internal_font.set_height_in_points (8)
 			internal_font.preferred_families.extend ("Microsoft Sans Serif")
 			internal_tools_label.set_font (internal_font)
-			internal_tools_label.set_text (l_shared.interface_names.Zone_navigation_left_column_name)
+			internal_tools_label.set_text (l_shared.Zone_navigation_left_column_name)
 			create internal_font
 			internal_font.set_family ({EV_FONT_CONSTANTS}.Family_sans)
 			internal_font.set_weight ({EV_FONT_CONSTANTS}.Weight_bold)
@@ -111,7 +109,7 @@ feature {NONE}-- Initialization
 			internal_font.set_height_in_points (8)
 			internal_font.preferred_families.extend ("Microsoft Sans Serif")
 			internal_files_label.set_font (internal_font)
-			internal_files_label.set_text (l_shared.interface_names.Zone_navigation_right_column_name)
+			internal_files_label.set_text (l_shared.Zone_navigation_right_column_name)
 			internal_info_box.disable_item_expand (full_title)
 			internal_info_box.disable_item_expand (description)
 			internal_info_box.disable_item_expand (detail)
@@ -168,7 +166,7 @@ feature {NONE} -- Constant setting
 			-- Set all attributes relying on string constants to the current
 			-- value of the associated constant.
 		local
-			s: STRING_GENERAL
+			s: STRING
 		do
 			from
 				string_constant_set_procedures.start
@@ -283,8 +281,8 @@ feature {NONE} -- Constant setting
 			set_attributes_using_color_constants
 		end
 
-	string_constant_set_procedures: ARRAYED_LIST [PROCEDURE [ANY, TUPLE [STRING_GENERAL]]]
-	string_constant_retrieval_functions: ARRAYED_LIST [FUNCTION [ANY, TUPLE [], STRING_GENERAL]]
+	string_constant_set_procedures: ARRAYED_LIST [PROCEDURE [ANY, TUPLE [STRING]]]
+	string_constant_retrieval_functions: ARRAYED_LIST [FUNCTION [ANY, TUPLE [], STRING]]
 	integer_constant_set_procedures: ARRAYED_LIST [PROCEDURE [ANY, TUPLE [INTEGER]]]
 	integer_constant_retrieval_functions: ARRAYED_LIST [FUNCTION [ANY, TUPLE [], INTEGER]]
 	pixmap_constant_set_procedures: ARRAYED_LIST [PROCEDURE [ANY, TUPLE [EV_PIXMAP]]]

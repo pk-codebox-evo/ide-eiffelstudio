@@ -216,9 +216,9 @@ void xt_remove_work_proc (EIF_POINTER id)
 
 	XtRemoveWorkProc (ws->id);
 #ifdef EIF_VMS
-	eif_rt_xfree (id);
+	xfree (id);
 #else
-	eif_rt_xfree (ws);
+	xfree (ws);
 #endif
 }
 

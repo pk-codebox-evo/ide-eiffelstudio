@@ -153,7 +153,6 @@ feature
 			rout_table: ROUT_TABLE
 			internal_name: STRING
 			inline_ext: INLINE_EXTENSION_I
-			return_type_string: STRING
 		do
 			check
 				final_mode: context.final_mode
@@ -174,14 +173,7 @@ feature
 					-- The call is polymorphic, so generate access to the
 					-- routine table. The dereferenced function pointer has
 					-- to be enclosed in parenthesis.
-				table_name := Encoder.routine_table_name (routine_id)
-
-				if system.seed_of_routine_id (routine_id).type.type_i.is_formal and then l_type_i.is_basic then
-						-- Feature returns a reference that need to be used as a basic one.
-					buf.put_character ('*')
-					type_c.generate_access_cast (buf)
-					type_c := reference_c_type
-				end
+				table_name := Encoder.table_name (routine_id)
 
 				buf.put_character ('(');
 				type_c.generate_function_cast (buf, argument_types)
@@ -251,12 +243,7 @@ feature
 							-- Remember extern routine declaration if not written in same class. But no need
 							-- doing this for an inline C/C++ since the code of the inline routine will be
 							-- generated again.
-						if context.workbench_mode then
-							return_type_string := "EIF_TYPED_VALUE"
-						else
-							return_type_string := type_c.c_string
-						end
-						Extern_declarations.add_routine_with_signature (return_type_string,
+						Extern_declarations.add_routine_with_signature (type_c,
 								internal_name, local_argument_types)
 					end
 
@@ -287,6 +274,7 @@ feature
 				Eiffel_table.is_polymorphic (routine_id, typ.type_id, True) < 0)
 		end
 
+
 	generate_end (gen_reg: REGISTRABLE; class_type: CL_TYPE_I) is
 			-- Generate final portion of C code.
 		local
@@ -294,7 +282,6 @@ feature
 			macro_ext: MACRO_EXTENSION_I
 			struct_ext: STRUCT_EXTENSION_I
 			c_ext: C_EXTENSION_I
-			l_built_in: BUILT_IN_EXTENSION_I
 			buf: GENERATION_BUFFER
 			l_type: TYPE_I
 			l_args: like argument_types
@@ -325,9 +312,6 @@ feature
 				elseif extension.is_cpp then
 					cpp_ext ?= extension
 					cpp_ext.generate_access (external_name, parameters, l_type)
-				elseif extension.is_built_in then
-					l_built_in ?= extension
-					l_built_in.generate_access (external_name, written_in, gen_reg, parameters, l_type)
 				else
 					c_ext ?= extension
 					check
@@ -397,7 +381,6 @@ feature
 			expr_b: PARAMETER_B;
 			l_encapsulated: BOOLEAN
 		do
-			multi_constraint_static := e.multi_constraint_static
 			is_static_call := e.is_static_call
 			static_class_type := e.static_class_type
 			written_in := e.written_in
@@ -439,7 +422,7 @@ feature
 	allocates_memory: BOOLEAN is True;
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

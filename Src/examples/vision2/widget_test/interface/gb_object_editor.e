@@ -96,6 +96,7 @@ feature -- Initialization
 			
 			
 			register_type_change_agent (agent set_type (?))
+			is_initialized := True
 		end
 		
 	is_in_default_state: BOOLEAN is True

@@ -217,4 +217,8 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+
+
+
+end -- class WEL_TOOLTIP_TEXT
+

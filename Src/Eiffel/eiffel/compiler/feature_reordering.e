@@ -48,15 +48,6 @@ feature --Access
 			frozen_age := a_frozen_age
 		end
 
-	is_valid_for (a_feature: FEATURE_I): BOOLEAN is
-		do
-			if open_map.count = 0 then
-				Result := True
-			else
-				Result := open_map.last <= a_feature.argument_count + 1
-			end
-		end
-
 feature --Compare
 
 	hash_code: INTEGER is
@@ -138,5 +129,6 @@ indexing
 			 Website http://www.eiffel.com
 			 Customer support http://support.eiffel.com
 		]"
+
 
 end

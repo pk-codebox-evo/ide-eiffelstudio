@@ -17,6 +17,7 @@ inherit
 			disable_sensitive,
 			propagate_foreground_color,
 			propagate_background_color,
+			update_for_pick_and_drop,
 			on_size,
 			next_tabstop_widget
 		end
@@ -172,6 +173,14 @@ feature {EV_ANY_I} -- WEL Implementation
 			end
 			if Result = Void then
 				Result := next_tabstop_widget_from_parent (start_widget, search_pos, forwards)
+			end
+		end
+
+	update_for_pick_and_drop (starting: BOOLEAN) is
+			-- Pick and drop status has changed so notify `item_imp'.
+		do
+			if item_imp /= Void then
+				item_imp.update_for_pick_and_drop (starting)
 			end
 		end
 

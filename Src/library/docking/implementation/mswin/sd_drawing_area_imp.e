@@ -18,11 +18,6 @@ inherit
 			interface
 		end
 
-	EV_SHARED_APPLICATION
-		export
-			{NONE} all
-		end
-
 create
 	make
 
@@ -31,10 +26,12 @@ feature {NONE} -- Implementation
 	update_for_pick_and_drop (a_starting: BOOLEAN) is
 			-- Redefine
 		local
+			l_env: EV_ENVIRONMENT
 			l_app_imp: EV_APPLICATION_IMP
 			l_src: EV_PICK_AND_DROPABLE_IMP
 		do
-			l_app_imp ?= ev_application.implementation
+			create l_env
+			l_app_imp ?= l_env.application.implementation
 			check not_void: l_app_imp /= Void end
 			l_src := l_app_imp.pick_and_drop_source
 			-- Sometime l_src maybe void ?

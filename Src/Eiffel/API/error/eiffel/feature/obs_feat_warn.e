@@ -13,15 +13,14 @@ inherit
 
 	OBS_CLASS_WARN
 		redefine
-			trace_primary_context, build_explain, code, help_file_name, is_defined,
-			print_single_line_error_message_extended
+			build_explain, code, help_file_name, is_defined
 		end;
 
 feature -- Properties
 
 	code: STRING is
 		do
-			Result := "Obsolete Call"
+			Result := "Obsolete call"
 		end;
 
 	help_file_name: STRING is
@@ -48,20 +47,6 @@ feature -- Access
 		end
 
 feature -- Output
-
-	trace_primary_context (a_text_formatter: TEXT_FORMATTER) is
-			-- Build the primary context string so errors can be navigated to
-		do
-			if a_feature = Void then
-				Precursor (a_text_formatter)
-			else
-				a_text_formatter.add_group (associated_class.group, associated_class.group.name)
-				a_text_formatter.add (".")
-				associated_class.append_name (a_text_formatter)
-				a_text_formatter.add (".")
-				a_feature.append_name (a_text_formatter)
-			end
-		end
 
 	build_explain (a_text_formatter: TEXT_FORMATTER) is
 		local
@@ -92,16 +77,6 @@ feature -- Output
 			end
 			a_text_formatter.add_multiline_string (m, 1)
 			a_text_formatter.add_new_line
-		end
-
-feature {NONE} -- Output
-
-	print_single_line_error_message_extended (a_text_formatter: TEXT_FORMATTER) is
-			-- Displays single line help in `a_text_formatter'.
-		do
-			a_text_formatter.add (" Call to feature `")
-			obsolete_feature.append_name (a_text_formatter)
-			a_text_formatter.add ("'.")
 		end
 
 feature -- Setting

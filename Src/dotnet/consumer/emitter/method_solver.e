@@ -70,33 +70,22 @@ feature -- Access
 	starting_resolution_name: STRING is
 			-- .NET Name used to perform overloading resolution
 		do
-			Result := internal_start_name
-			if Result = Void then
-				Result := dotnet_name
-				if is_get_property and then Result.substring_index ("get_", 1) = 1 then
-					Result.remove_head (4)
-				elseif is_conversion_operator then
-					if internal_method.get_parameters.item (0).parameter_type.equals_type (internal_method.reflected_type) then
-						Result := to_conversion_name.twin
-						Result.append (
-							formatted_variable_type_name (referenced_type_from_type (
-								internal_method.return_type).name))
-					else
-						Result := from_conversion_name.twin
-						Result.append (
-							formatted_variable_type_name (referenced_type_from_type (
-								internal_method.get_parameters.item (0).parameter_type).name))
-					end
+			Result := dotnet_name
+			if is_get_property and then Result.substring_index ("get_", 1) = 1 then
+				Result.remove_head (4)
+			elseif is_conversion_operator then
+				if internal_method.get_parameters.item (0).parameter_type.equals_type (internal_method.reflected_type) then
+					Result := to_conversion_name.twin
+					Result.append (
+						formatted_variable_type_name (referenced_type_from_type (
+							internal_method.return_type).name))
+				else
+					Result := from_conversion_name.twin
+					Result.append (
+						formatted_variable_type_name (referenced_type_from_type (
+							internal_method.get_parameters.item (0).parameter_type).name))
 				end
-				if is_com_interface_member then
-					Result.append (com_member_suffix)
-				end
-				internal_start_name := Result
 			end
-		ensure
-			result_attached: Result /= Void
-			not_result_is_empty: not Result.is_empty
-			internal_start_name_set: internal_start_name = Result
 		end
 
 	eiffel_name: STRING
@@ -110,54 +99,6 @@ feature -- Access
 
 	is_conversion_operator: BOOLEAN
 			-- Is Current a conversion operator?
-
-	is_com_interface_member: BOOLEAN is
-			-- Is member from a COM interface	
-		local
-			l_source_type: SYSTEM_TYPE
-		do
-			l_source_type := internal_method.declaring_type
-			Result := l_source_type.is_interface and l_source_type.is_import
-		end
-
-	com_member_suffix: STRING is
-			-- A COM member's suffix
-		require
-			is_com_interface_member: is_com_interface_member
-		local
-			l_type: SYSTEM_TYPE
-			l_name: SYSTEM_STRING
-			l_count, i: INTEGER
-			l_stop: BOOLEAN
-		do
-			l_type := internal_method.declaring_type
-			l_name := l_type.name
-			Result ?= suffix_table.item (l_name)
-			if Result = Void then
-				if l_type.get_interfaces.count > 0 then
-						-- Only version if a COM interface inherits another interface.
-						-- There is no need to check if the inherited interfaces are COM interfaces, becasue they should be. If not
-						-- then the COM binary will no load.
-					l_count := l_name.length - 1
-					from i := l_count until i < 0 or l_stop loop
-						if l_name.chars (i).is_digit then
-							i := i - 1
-						else
-							l_stop := True
-							i := i + 1
-						end
-					end
-					if i <= l_count then
-						create Result.make_from_cil ({SYSTEM_STRING}.concat_string_string ("_", l_name.substring (i)))
-					else
-						create Result.make_empty
-					end
-				else
-					create Result.make_empty
-				end
-				suffix_table.add (l_name, Result)
-			end
-		end
 
 feature -- Element Settings
 
@@ -188,19 +129,6 @@ feature {METHOD_SOLVER, OVERLOAD_SOLVER} -- Implementation
 
 	internal_method: METHOD_INFO
 			-- Method to be consumed
-
-feature {NONE} -- Implementation
-
-	suffix_table: HASHTABLE is
-			--
-		once
-			create Result.make (100)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	internal_start_name: STRING
-			-- Cached version of `starting_resolution_name'
 
 feature {NONE} -- Constants
 

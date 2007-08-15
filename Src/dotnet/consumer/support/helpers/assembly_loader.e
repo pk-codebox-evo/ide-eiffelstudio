@@ -97,9 +97,8 @@ feature -- Basic operations
 				l_asms := loaded_assemblies
 				if not l_asms.contains (l_path) then
 						-- Loads assembly in reflection only mode.
-					l_asms.set_item (l_path, Result)
 					Result := dotnet_load_from (l_path)
-					l_asms.set_item (l_path, Result)
+					l_asms.add (l_path, Result)
 				else
 					Result ?= l_asms.item (l_path)
 				end
@@ -135,7 +134,6 @@ feature -- Basic operations
 		require
 			a_name_attached: a_name /= Void
 		local
-			l_name: SYSTEM_STRING
 			l_asms: like loaded_assemblies
 			l_resolver: like resolver
 			l_fn: STRING
@@ -144,9 +142,8 @@ feature -- Basic operations
 		do
 			if not retried_again then
 				l_asms := loaded_assemblies
-				l_name := a_name.full_name
-				if l_asms.contains (l_name) then
-					Result ?= l_asms.item (l_name)
+				if l_asms.contains (a_name) then
+					Result ?= l_asms.item (a_name)
 				else
 					l_resolver := resolver
 					retried := l_resolver = Void
@@ -154,18 +151,15 @@ feature -- Basic operations
 							-- Use resolver to find best path possible	
 						l_fn := l_resolver.resolve_by_assembly_name ({APP_DOMAIN}.current_domain, a_name)
 						if l_fn /= Void then
-							l_asms.set_item (l_fn, Result)
 							Result := load_from (l_fn)
-							l_asms.set_item (l_fn, Result)
 						end
 						retried := True
 					end
 					if Result = Void and retried then
 							-- Fail safe.
-						l_asms.set_item (l_name, Result)
-						Result := dotnet_load (l_name)
-						l_asms.set_item (l_name, Result)
+						Result := dotnet_load (a_name.to_string)
 					end
+					l_asms.add (a_name, Result)
 				end
 			end
 		rescue
@@ -270,13 +264,10 @@ feature {NONE} -- Implementation
 
 	loaded_assemblies: HASHTABLE is
 			-- Table of loaded assemblies
-		local
-			l_comparer: CONSUMER_STRING_COMPARER
 		do
 			Result := internal_loaded_assemblies
 			if Result = Void then
-				create l_comparer.make (True)
-				create Result.make (30, l_comparer, l_comparer)
+				create Result.make (30)
 				internal_loaded_assemblies := Result
 			end
 		ensure

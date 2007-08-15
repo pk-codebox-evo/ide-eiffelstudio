@@ -43,30 +43,11 @@ feature -- Properties
 			Result := actual_type.conformance_type
 		end
 
-	has_attached_mark: BOOLEAN is
-			-- Is type explicitly marked as attached?
-		do
-			Result := attachment_bits & has_attached_mark_mask /= 0
-		end
-
-	has_detachable_mark: BOOLEAN is
-			-- Is type explicitly marked as attached?
-		do
-			Result := attachment_bits & has_detachable_mark_mask /= 0
-		end
-
-	has_associated_class: BOOLEAN is
-			-- Does Current have an associated class?
-		do
-			Result := actual_type /= Void and then
-				actual_type.has_associated_class
-		end
+	is_like: BOOLEAN is True
+			-- Is the type anchored one ?
 
 	has_like: BOOLEAN is True
 			-- Does the type have anchored type in its definition ?
-
-	is_like: BOOLEAN is True
-			-- Is the type anchored one ?
 
 	is_loose: BOOLEAN is True
 			-- Does type depend on formal generic parameters and/or anchors?
@@ -107,12 +88,19 @@ feature -- Properties
 			Result := actual_type /= Void
 		end
 
+feature -- Access
+
 	same_as (other: TYPE_A): BOOLEAN is
 			-- Is the current type the same as `other' ?
 		deferred
 		end
 
-feature -- Access
+	has_associated_class: BOOLEAN is
+			-- Does Current have an associated class?
+		do
+			Result := actual_type /= Void and then
+				actual_type.has_associated_class
+		end
 
 	associated_class: CLASS_C is
 			-- Associated class
@@ -126,22 +114,6 @@ feature -- Primitives
 			-- Assign `a' to `actual_type'.
 		do
 			actual_type := a
-		end
-
-	set_attached_mark is
-			-- Set class type declaration as having an explicit attached mark.
-		do
-			attachment_bits := has_attached_mark_mask
-		ensure
-			has_attached_mark
-		end
-
-	set_detachable_mark is
-			-- Set class type declaration as having an explicit detachable mark.
-		do
-			attachment_bits := has_detachable_mark_mask
-		ensure
-			has_detachable_mark
 		end
 
 	instantiation_in (type: TYPE_A written_id: INTEGER): TYPE_A is
@@ -196,19 +168,8 @@ feature -- Primitives
 			Result := actual_type.meta_type
 		end
 
-feature {NONE} -- Attachment properties
-
-	attachment_bits: NATURAL_8
-			-- Associated attachment flags
-
-	has_detachable_mark_mask: NATURAL_8 is 1
-			-- Mask in `attachment_bits' that tells whether the type has an explicit detachanble mark
-
-	has_attached_mark_mask: NATURAL_8 is 2;
-			-- Mask in `attachment_bits' that tells whether the type has an explicit attached mark
-
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

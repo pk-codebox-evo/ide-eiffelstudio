@@ -38,6 +38,7 @@ inherit
 	EV_GAUGE_IMP
 		redefine
 			on_key_down,
+			on_char,
 			on_size,
 			interface,
 			initialize,
@@ -62,8 +63,7 @@ inherit
 			pointer_motion_actions,
 			resize_actions,
 			tooltip_window,
-			on_set_focus,
-			set_tooltip
+			on_set_focus
 		end
 
 	WEL_CONTROL_WINDOW
@@ -107,7 +107,6 @@ inherit
 			on_set_focus,
 			on_key_up,
 			on_key_down,
-			on_char,
 			on_mouse_move,
 			on_mouse_wheel,
 			on_set_cursor,
@@ -117,9 +116,9 @@ inherit
 			on_sys_key_up,
 			default_process_message,
 			text_length,
-			on_getdlgcode,
-			on_wm_dropfiles
+			on_getdlgcode
 		redefine
+			on_char,
 			on_wm_vscroll,
 			class_name,
 			on_erase_background,
@@ -173,28 +172,6 @@ feature {NONE} -- Initialization
 		ensure then
 			text_field_not_void: internal_text_field /= Void
 			arrows_not_void: internal_arrows_control /= Void
-		end
-
-feature -- Alignment
-
-	text_alignment: INTEGER
-		do
-			Result := internal_text_field.text_alignment
-		end
-
-	align_text_center
-		do
-			internal_text_field.align_text_center
-		end
-
-	align_text_right
-		do
-			internal_text_field.align_text_right
-		end
-
-	align_text_left
-		do
-			internal_text_field.align_text_left
 		end
 
 feature {EV_ANY_I} -- Access
@@ -277,12 +254,6 @@ feature -- Setting
 			-- Set focus to Current, ie its internal associated text field.
 		do
 			internal_text_field.set_focus
-		end
-
-	set_tooltip (a_tooltip: STRING_GENERAL) is
-		do
-			Precursor {EV_GAUGE_IMP} (a_tooltip)
-			internal_arrows_control.set_tooltip (a_tooltip)
 		end
 
 feature {NONE} -- Access
@@ -689,6 +660,17 @@ feature {NONE} -- Implementation
 		-- not changing, ie reached its maximum. We only want to call the
 		-- change actions when the value really does change.
 
+	on_char (character_code, key_data: INTEGER) is
+			-- Wm_char message
+			-- Avoid an unconvenient `bip' when the user
+			-- tab to another control.
+		do
+			Precursor {EV_GAUGE_IMP} (character_code, key_data)
+			if not has_focus then
+				disable_default_processing
+			end
+		end
+
 	on_wm_vscroll (wparam, lparam: POINTER) is
 			-- Wm_vscroll message.
 			-- Here, we know it's a spin button.
@@ -767,6 +749,15 @@ feature {NONE} -- Feature that should be directly implemented by externals
 			-- external feature.
 		do
 			Result := internal_text_field.next_dlgtabitem (hdlg, hctl, previous)
+		end
+
+	cwin_get_next_dlggroupitem (hdlg, hctl: POINTER; previous: BOOLEAN): POINTER is
+			-- Encapsulation of the SDK GetNextDlgGroupItem,
+			-- because we cannot do a deferred feature become an
+			-- external feature.
+		do
+			Result := internal_text_field.cwin_get_next_dlggroupitem (hdlg, hctl,
+				previous)
 		end
 
 	class_name: STRING_32 is

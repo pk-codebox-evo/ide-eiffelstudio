@@ -103,7 +103,7 @@ feature -- Typing
 				-- Unlike the parent version, each time a new SPECIAL derivation
 				-- is added we need to freeze so that we call the right version of
 				-- `put' and `item'.
-			system.request_freeze
+			system.set_freeze
 			if already_compiled then
 					-- Melt all the code written in the associated class of the new class type
 				melt_all
@@ -158,7 +158,7 @@ feature -- Code generation
 				gen_param := gen_type.meta_generic.item (1)
 				if gen_param.is_char then
 					char_i ?= gen_param
-					if char_i.is_character_32 then
+					if char_i.is_wide then
 						wchar_dtype := dtype
 					else
 						char_dtype := dtype

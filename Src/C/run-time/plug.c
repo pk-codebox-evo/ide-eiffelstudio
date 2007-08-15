@@ -2,7 +2,7 @@
 	description: "A set of routines to plug the run-time in the generated C code."
 	date:		"$Date$"
 	revision:	"$Revision$"
-	copyright:	"Copyright (c) 1985-2007, Eiffel Software."
+	copyright:	"Copyright (c) 1985-2006, Eiffel Software."
 	license:	"GPL version 2 see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"Commercial license is available at http://www.eiffel.com/licensing"
 	copying: "[
@@ -47,7 +47,7 @@ doc:<file name="plug.c" header="eif_plug.h" version="$Id$" summary="Set of routi
 #include "eif_option.h"
 #endif
 #include "rt_macros.h"
-#include "rt_except.h"
+#include "eif_except.h"
 #include "eif_local.h"
 #include "rt_interp.h"
 #if !defined CUSTOM || defined NEED_HASHIN_H
@@ -77,7 +77,6 @@ doc:		<synchronization>Per thread data.</synchronization>
 doc:	</attribute>
 */
 rt_public int nstcall = 0;
-rt_public int16 caller_assertion_level = 0;
 #endif /* EIF_THREADS */
 
 rt_private void recursive_chkinv(int dtype, EIF_REFERENCE obj, int where);		/* Internal invariant control loop */
@@ -104,21 +103,11 @@ rt_public EIF_REFERENCE argarr(int argc, char **argv)
 	typres = eif_typeof_array_of ((int16)egc_str_dtype);
 	array = emalloc((uint32)typres);		/* If we return, it succeeded */
 	RT_GC_PROTECT(array); 		/* Protect address in case it moves */
-	nstcall = 0;					/* Turn invariant checking off */
 #ifdef WORKBENCH
 	discard_breakpoints(); /* prevent the debugger from stopping in the following 2 functions */
-	{
-		EIF_TYPED_VALUE u_lower;
-		EIF_TYPED_VALUE u_upper;
-		u_lower.type = SK_INT32;
-		u_lower.it_i4 = 0;
-		u_upper.type = SK_INT32;
-		u_upper.it_i4 = argc-1;
-		(egc_arrmake)(array, u_lower, u_upper);	/* Call the `make' routine of ARRAY */
-	}
-#else
-	(egc_arrmake)(array, (EIF_INTEGER) 0, argc-1);	/* Call the `make' routine of ARRAY */
 #endif
+	nstcall = 0;					/* Turn invariant checking off */
+	(egc_arrmake)(array, (EIF_INTEGER) 0, argc-1);	/* Call the `make' routine of ARRAY */
 	sp = *(EIF_REFERENCE *) array;			/* Get the area of the ARRAY */
 	RT_GC_PROTECT (sp);		/* Protect the area */
 
@@ -198,19 +187,8 @@ rt_public EIF_REFERENCE striparr(EIF_REFERENCE curr, int dtype, char **items, lo
 	typres = eif_typeof_array_of(egc_any_dtype);
 	array = emalloc((uint32)typres);	/* If we return, it succeeded */
 	nstcall = 0;
-#ifdef WORKBENCH
-	{
-		EIF_TYPED_VALUE u_lower;
-		EIF_TYPED_VALUE u_upper;
-		u_lower.type = SK_INT32;
-		u_lower.it_i4 = 1;
-		u_upper.type = SK_INT32;
-		u_upper.it_i4 = stripped_nbr;
-		(egc_arrmake)(array, u_lower, u_upper); /* Call feature `make' in class ARRAY[ANY] */
-	}
-#else
-	(egc_arrmake)(array, (EIF_INTEGER) 1, stripped_nbr); /* Call feature `make' in class ARRAY[ANY] */
-#endif
+	(egc_arrmake)(array, (EIF_INTEGER) 1, stripped_nbr);	
+								/* Call feature `make' in class ARRAY[ANY] */
 
 	sp = *(EIF_REFERENCE *) array;		/* Get the area of the ARRAY */
 
@@ -336,7 +314,7 @@ rt_public EIF_REFERENCE makestr_with_hash (register char *s, register size_t len
 	discard_breakpoints(); /* prevent the debugger from stopping in the following 2 functions */
 #endif
 	nstcall = 0;
-	RT_STRING_MAKE(string, (EIF_INTEGER) len);		/* Call feature `make' in class STRING */
+	(egc_strmake)(string, (EIF_INTEGER) len);		/* Call feature `make' in class STRING */
 	RT_STRING_SET_HASH_CODE(string, a_hash);
 	RT_STRING_SET_COUNT(string, len);
 #ifdef WORKBENCH
@@ -380,7 +358,7 @@ rt_public EIF_REFERENCE makestr_with_hash_as_old (register char *s, register siz
 	discard_breakpoints(); /* prevent the debugger from stopping in the following 2 functions */
 #endif
 	nstcall = 0;
-	RT_STRING_MAKE(string, (EIF_INTEGER) len);		/* Call feature `make' in class STRING */
+	(egc_strmake)(string, (EIF_INTEGER) len);		/* Call feature `make' in class STRING */
 	RT_STRING_SET_HASH_CODE(string, a_hash);
 	RT_STRING_SET_COUNT(string, len);
 #ifdef WORKBENCH
@@ -469,6 +447,7 @@ rt_public void chkinv (EIF_REFERENCE obj, int where)
 	recursive_chkinv(MTC dtype, obj, where);	/* Recurive invariant check */
 }
 
+#ifdef WORKBENCH
 rt_public void chkcinv(EIF_REFERENCE obj)
 {
 	/* Check invariant of `obj' after creation. */
@@ -476,6 +455,7 @@ rt_public void chkcinv(EIF_REFERENCE obj)
 	if (~in_assertion & (WASC(Dtype(obj))) & CK_INVARIANT) {
 		chkinv(MTC obj,1);}
 }
+#endif
 
 rt_private void recursive_chkinv(int dtype, EIF_REFERENCE obj, int where)
 		  
@@ -488,21 +468,13 @@ rt_private void recursive_chkinv(int dtype, EIF_REFERENCE obj, int where)
 	struct cnode *node = esystem + dtype;
 	int *cn_parents;
 	int p_type;
-	jmp_buf exenv;
 
 	if (dtype <= 0) return;		/* ANY does not have invariants */
 
-	if ((char) 0 != inv_mark_tablep[dtype]) {/* Already checked */
+	if ((char) 0 != inv_mark_tablep[dtype])	/* Already checked */
 		return;
-	} else {
+	else
 		inv_mark_tablep[dtype] = (char) 1;	/* Mark as checked */
-	}
-
-	excatch(&exenv);	/* Record pseudo execution vector */
-	if (setjmp(exenv)) {
-		RT_GC_WEAN(obj);	/* Remove protection. This fixes eweasel test#melt076 and possibly others. */
-		ereturn();			/* Propagate exception */
-	}
 
 	RT_GC_PROTECT(obj);	/* Automatic protection of `obj' */
 	cn_parents = node->cn_parents;	/* Recursion on parents first. */
@@ -525,7 +497,7 @@ rt_private void recursive_chkinv(int dtype, EIF_REFERENCE obj, int where)
 #else
 	{
 		BODY_INDEX body_id;
-		EIF_TYPED_VALUE *last;
+		struct item *last;
 
 		CBodyId(body_id,INVARIANT_ID,dtype);
 		if (body_id != INVALID_ID) {
@@ -545,11 +517,8 @@ rt_private void recursive_chkinv(int dtype, EIF_REFERENCE obj, int where)
 	}
 #endif
 
-		/* No more propection for `obj' */
+	/* No more propection for `obj' */
 	RT_GC_WEAN(obj);
-
-		/* Restore exception stack. */
-	expop(&eif_stack);
 }
 
 /*

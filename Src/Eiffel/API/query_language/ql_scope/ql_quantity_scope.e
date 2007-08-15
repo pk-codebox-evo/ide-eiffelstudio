@@ -65,7 +65,7 @@ feature -- Access
 	delayed_domain: QL_DELAYED_QUANTITY_DOMAIN is
 			-- An empty delayed domain whose scope is same as current scope
 		do
-			create Result.make
+			create Result
 		end
 
 feature{NONE} -- Implementation
@@ -104,5 +104,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

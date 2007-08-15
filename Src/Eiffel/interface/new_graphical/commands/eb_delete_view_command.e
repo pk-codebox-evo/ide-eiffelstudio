@@ -34,12 +34,12 @@ feature -- Basic operations
 	execute is
 			-- Display `confirmation' and remove current view if OK pressed.
 		local
-			dial: EB_CONFIRMATION_DIALOG
+			dial: EV_CONFIRMATION_DIALOG
 		do
 			if is_sensitive then
 				dial := confirmation
 				dial.disable_user_resize
-				dial.show_modal_to_window (tool.develop_window.window)
+				dial.show_modal_to_window (tool.development_window.window)
 			end
 		end
 
@@ -51,19 +51,13 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.general_delete_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.general_delete_icon_buffer
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.f_diagram_delete_view
 		end
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name for the menu entry.
 		do
 			Result := Interface_names.m_diagram_delete_view
@@ -73,7 +67,7 @@ feature {NONE} -- Implementation
 			-- Name of the command. Used to store the command in the
 			-- preferences.
 
-	confirmation: EB_CONFIRMATION_DIALOG is
+	confirmation: EV_CONFIRMATION_DIALOG is
 			-- Associated widget.
 		do
 			create Result.make_with_text_and_actions (

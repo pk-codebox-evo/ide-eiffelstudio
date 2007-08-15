@@ -560,7 +560,7 @@ feature {NONE} -- Implementation
 			l_project_file: PROJECT_EIFFEL_FILE
 			l_options: USER_OPTIONS
 			l_pixmap: EV_PIXMAP
-			l_tooltip: STRING_GENERAL
+			l_tooltip: STRING
 			l_last_location, l_last_target: STRING
 			l_targets: DS_ARRAYED_LIST [STRING]
 			l_force_clean: BOOLEAN
@@ -581,7 +581,7 @@ feature {NONE} -- Implementation
 				if not l_conf.is_error then
 					last_state.has_system_error := False
 					last_state.system := l_conf.last_system
-					read_user_options (l_conf.last_system.file_name)
+					read_user_options (l_conf.last_system.uuid)
 					if not has_error then
 						l_options := last_state.options
 					end
@@ -833,15 +833,15 @@ feature {NONE} -- Implementation
 			location_combo.change_actions.resume
 		end
 
-	read_user_options (a_file_path: STRING) is
-			-- Read user data for project of path `a_file_path'.
+	read_user_options (a_uuid: UUID) is
+			-- Read user data for project of UUID `a_uuid'.
 		require
-			a_file_path_not_void: a_file_path /= Void
+			a_uuid_not_void: a_uuid /= Void
 		local
 			l_factory: USER_OPTIONS_FACTORY
 		do
 			create l_factory
-			l_factory.load (a_file_path)
+			l_factory.load (a_uuid)
 			if l_factory.successful then
 				last_state.options := l_factory.last_options
 			else
@@ -910,39 +910,21 @@ feature {NONE} -- Actions
 			l_load: CONF_LOAD
 			l_system: CONF_SYSTEM
 			l_window: CONFIGURATION_WINDOW
-			l_wd: EB_WARNING_DIALOG
-			l_ed: EB_ERROR_DIALOG
+			l_wd: EV_WARNING_DIALOG
 			l_row: like last_selected_row
 		do
 			create l_fact
 			create l_load.make (l_fact)
 			l_load.retrieve_configuration (selected_path)
 			if l_load.is_error then
-				create l_ed.make_with_text (l_load.last_error.out)
-				l_ed.set_buttons (<<interface_names.b_ok>>)
-				l_ed.show_modal_to_window (parent_window)
+				create l_wd.make_with_text (l_load.last_error.out)
+				l_wd.show_modal_to_window (parent_window)
 			else
-					-- display warnings
-				if l_load.is_warning then
-					create l_wd.make_with_text (l_load.last_warning_messages)
-					l_wd.show_modal_to_window (parent_window)
-				end
-
 				l_system := l_load.last_system
-				create l_window.make (l_system, l_fact, Void, pixmaps, agent (preferences.misc_data).external_editor_cli)
-
-				l_window.set_size (preferences.dialog_data.project_settings_width, preferences.dialog_data.project_settings_height)
-				l_window.set_position (preferences.dialog_data.project_settings_position_x, preferences.dialog_data.project_settings_position_y)
-				l_window.set_split_position (preferences.dialog_data.project_settings_split_position)
-
+				l_system.targets.start
+				l_system.set_application_target (l_system.targets.item_for_iteration)
+				create l_window.make (l_system, l_fact, create {DS_ARRAYED_LIST [STRING]}.make_default)
 				l_window.show_modal_to_window (parent_window)
-
-				preferences.dialog_data.project_settings_width_preference.set_value (l_window.width)
-				preferences.dialog_data.project_settings_height_preference.set_value (l_window.height)
-				preferences.dialog_data.project_settings_position_x_preference.set_value (l_window.x_position)
-				preferences.dialog_data.project_settings_position_y_preference.set_value (l_window.y_position)
-				preferences.dialog_data.project_settings_split_position_preference.set_value (l_window.split_position)
-
 				l_row := last_selected_row
 				last_selected_row := Void
 				on_project_selected (l_row)
@@ -999,6 +981,7 @@ feature {NONE} -- Actions
 			l_is_ecf := l_filename.count >= 4 and then
 				l_filename.substring_index (config_extension, 1) = l_filename.count - 2 and then
 				l_filename.item (l_filename.count - 3) = '.'
+
 
 				-- Try to see if we can load the project.
 				-- If not, it is either an incorrect configuration file
@@ -1101,9 +1084,7 @@ feature {NONE} -- Actions
 	on_action_selected is
 			-- Update interface when action changed.
 		do
-			if not is_empty and has_selected_item then
-				update_project (projects_list.selected_rows.first, False, False, True)
-			end
+			update_project (projects_list.selected_rows.first, False, False, True)
 		end
 
 	on_target_selected (a_row: EV_GRID_ROW) is

@@ -14,11 +14,6 @@ inherit
 			{NONE} all
 		end
 
-	SHARED_BENCH_NAMES
-		export
-			{NONE} all
-		end
-
 create
 	make
 
@@ -42,7 +37,7 @@ feature -- Status Report
 			Result := internal_show_successful
 		end
 
-	last_error_message: STRING_GENERAL is
+	last_error_message: STRING is
 			-- Last error message, if any
 		do
 			Result := internal_error_message
@@ -56,7 +51,7 @@ feature -- Basic Operations
 			hh_handler.show (Url_prefix + a_help_context.url)
 			internal_show_successful := hh_handler.last_show_successful
 			if not internal_show_successful then
-				internal_error_message := Warnings.w_help_topic_could_not_be_displayed
+				internal_error_message := Generic_error_message
 			end
 		end
 
@@ -65,17 +60,19 @@ feature {NONE} -- Implementation
 	internal_show_successful: BOOLEAN
 			-- Was last call to `show' successful?
 
-	internal_error_message: STRING_GENERAL
+	internal_error_message: STRING
 			-- Last error message, if any
 
 	hh_handler: EB_HTML_HELP_HANDLER
 			-- Control content of Microsoft HTML Help
 
+	Generic_error_message: STRING is "Could not display the help topic, please check your Eiffel installation."
+			-- Error message displayed when topic could not be displayed
+
 	Url_prefix: STRING is
 			-- URL prefix for $EiffelGraphicalCompiler$ help files
 		once
-			Result := eiffel_layout.docs_path.string
-			Result.append ("\eiffel.chm::")
+			Result := eiffel_layout.Eiffel_installation_dir_name + "\docs\eiffel.chm::"
 		end
 
 indexing

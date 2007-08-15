@@ -25,17 +25,6 @@ feature -- Initialization
 			properly_set: button = a_button
 		end
 
-	set_sd_button (a_button: like sd_button) IS
-			-- Set `a_button' to `sd_button'.
-		require
-			not_void: a_button /= Void
-		do
-			sd_button := a_button
-			sd_button.select_actions.extend (agent execute)
-		ensure
-			set: sd_button = a_button
-		end
-
 	set_menu_item (a_menu_item: like menu_item) is
 			-- Set `menu_item' to `a_menu_item'.
 		require
@@ -56,9 +45,6 @@ feature -- Status setting
 			if button /= Void then
 				button.enable_sensitive
 			end
-			if sd_button /= Void then
-				sd_button.enable_sensitive
-			end
 			if menu_item /= Void then
 				menu_item.enable_sensitive
 			end
@@ -71,9 +57,6 @@ feature -- Status setting
 			if button /= Void then
 				button.disable_sensitive
 			end
-			if sd_button /= Void then
-				sd_button.disable_sensitive
-			end
 			if menu_item /= Void then
 				menu_item.disable_sensitive
 			end
@@ -83,9 +66,6 @@ feature -- Access
 
 	button: EV_TOOL_BAR_BUTTON
 			-- Button on the toolbar.
-
-	sd_button: SD_TOOL_BAR_BUTTON
-			-- Button on toolbar.
 
 	menu_item: EV_MENU_ITEM;
 			-- Menu entry in the menu.

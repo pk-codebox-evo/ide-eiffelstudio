@@ -11,21 +11,6 @@ class
 inherit
 	SD_SYSTEM_COLOR
 
-	EV_BUTTON_IMP
-	-- Inherit for export features.
-		rename
-			make as make_not_use
-		export
-			{NONE} all
-		redefine
-			base_make_called
-		end
-
-	EV_SHARED_APPLICATION
-		export
-			{NONE} all
-		end
-
 create
 	make
 
@@ -35,12 +20,8 @@ feature {NONE} -- Implementation
 			-- Creation metod
 		local
 			l_err: WEL_ERROR
-			l_app_imp: EV_APPLICATION_IMP
 		do
-			l_app_imp ?= ev_application.implementation
-			check not_void: l_app_imp /= Void end
-			theme_drawer := l_app_imp.theme_drawer
-
+			create {EV_XP_THEME_DRAWER_IMP} theme_drawer
 			create l_err
 			l_err.reset_last_error_code
 			if l_err.last_error_code /= 0 then
@@ -49,13 +30,10 @@ feature {NONE} -- Implementation
 			create wel_color
 		end
 
-	base_make_called: BOOLEAN is True
-			-- Not breaking the invariant in EV_ANY_I.
-
 feature -- Querys
 
 	default_background_color: EV_COLOR is
-			-- Redefine
+			--
 		local
 			l_colors: EV_STOCK_COLORS
 		do
@@ -64,7 +42,7 @@ feature -- Querys
 		end
 
 	active_border_color: EV_COLOR is
-			-- Redefine
+			-- Redefine.
 		local
 			l_pointer: POINTER
 		do
@@ -117,20 +95,6 @@ feature -- Querys
 			l_pointer: POINTER
 		do
 			Result := theme_drawer.theme_color (l_pointer, {WEL_COLOR_CONSTANTS}.color_btntext)
-		end
-
-feature -- Font
-
-	tool_bar_font: EV_FONT is
-			-- Redefine
-		local
-			l_imp: EV_FONT_IMP
-			l_shared_font: WEL_SHARED_FONTS
-		do
-			create Result
-			create l_shared_font
-			l_imp ?= Result.implementation
-			l_imp.set_by_wel_font (l_shared_font.menu_font)
 		end
 
 feature {NONE}  -- Implementation

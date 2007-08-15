@@ -19,6 +19,7 @@ feature -- Properties
 
 	subcode: INTEGER is 8
 
+ 
 	creation_feature: E_FEATURE;
 			-- Creation feature involved
 

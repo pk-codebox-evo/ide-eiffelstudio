@@ -44,6 +44,11 @@ inherit
 		end
 
 	EV_PIXMAP_ACTION_SEQUENCES_IMP
+		redefine
+			needs_event_box,
+			interface,
+			destroy
+		end
 
 create
 	make
@@ -76,8 +81,7 @@ feature {NONE} -- Initialization
 			set_pixmap (gdkpix, gdkmask)
 				-- Initialize the Graphical Context
 			gc := {EV_GTK_EXTERNALS}.gdk_gc_new (gdkpix)
-			{EV_GTK_EXTERNALS}.gdk_gc_set_foreground (gc, fg_color)
-			{EV_GTK_EXTERNALS}.gdk_gc_set_background (gc, bg_color)
+			{EV_GTK_EXTERNALS}.gdk_gc_set_foreground (gc, l_app_imp.fg_color)
 			init_default_values
 			clear
 		end
@@ -133,15 +137,6 @@ feature {NONE} -- Initialization
 					clear
 				end
 			end
-		end
-
-	init_from_pixel_buffer (a_pixel_buffer: EV_PIXEL_BUFFER) is
-			-- Initialize from `a_pixel_buffer'
-		local
-			l_pixel_buffer_imp: EV_PIXEL_BUFFER_IMP
-		do
-			l_pixel_buffer_imp ?= a_pixel_buffer.implementation
-			set_pixmap_from_pixbuf (l_pixel_buffer_imp.gdk_pixbuf)
 		end
 
 feature -- Drawing operations
@@ -267,7 +262,7 @@ feature -- Element change
 				if oldmask /= loc_default_pointer then
 					mask := {EV_GTK_EXTERNALS}.gdk_pixmap_new (oldmask, a_width, a_height, Monochrome_color_depth)
 					maskgc := {EV_GTK_EXTERNALS}.gdk_gc_new (mask)
-					{EV_GTK_EXTERNALS}.gdk_gc_set_foreground (maskgc, bg_color)
+					{EV_GTK_EXTERNALS}.gdk_gc_set_foreground (maskgc, app_implementation.bg_color)
 					{EV_GTK_EXTERNALS}.gdk_draw_rectangle (mask, maskgc, 1, 0, 0, a_width, a_height)
 					{EV_GTK_DEPENDENT_EXTERNALS}.gdk_draw_drawable (mask, maskgc, oldmask, 0, 0, 0, 0, l_width, l_height)
 					{EV_GTK_EXTERNALS}.gdk_gc_unref (maskgc)
@@ -440,16 +435,6 @@ feature {EV_STOCK_PIXMAPS_IMP, EV_PIXMAPABLE_IMP, EV_PIXEL_BUFFER_IMP} -- Implem
 					-- If a stock pixmap can be found then set it, else do nothing.
 				set_pixmap_from_pixbuf (stock_pixbuf)
 				{EV_GTK_EXTERNALS}.object_unref (stock_pixbuf)
-			end
-		end
-
-feature {EV_INTERMEDIARY_ROUTINES} -- Implementation
-
-	call_expose_actions (a_x, a_y, a_width, a_height: INTEGER) is
-			-- Call the expose actions for the drawing area.
-		do
-			if expose_actions_internal /= Void then
-				expose_actions_internal.call ([a_x, a_y, a_width, a_height])
 			end
 		end
 

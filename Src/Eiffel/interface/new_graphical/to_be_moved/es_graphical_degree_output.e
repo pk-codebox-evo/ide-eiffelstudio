@@ -61,7 +61,7 @@ feature {NONE} -- Implementation
 	flush_output is
 			-- Flush any pending messages to the display.
 		do
-			ev_application.process_events
+			process_events_and_idle
 		end
 
 	put_new_compilation is

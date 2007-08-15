@@ -30,12 +30,8 @@ feature {NONE} -- Implementation
 	convert_to_data (a_string: like displayed_value): like value is
 			-- Convert displayed data into data.
 		do
-			if convert_to_data_agent /= Void then
-				Result := convert_to_data_agent.item ([a_string])
-			else
-				if a_string.is_boolean then
-					Result := a_string.to_boolean
-				end
+			if a_string.is_boolean then
+				Result := a_string.to_boolean
 			end
 		end
 

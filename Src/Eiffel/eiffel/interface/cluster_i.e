@@ -9,17 +9,14 @@ class
 	CLUSTER_I
 
 inherit
-	CONF_CLUSTER
-		rename
-			name as cluster_name,
-			parent as parent_cluster,
-			children as sub_clusters
-		redefine
-			parent_cluster,
-			sub_clusters
+	SHARED_ERROR_HANDLER
+		export
+			{NONE} all
+		undefine
+			is_equal
 		end
 
-	SHARED_ERROR_HANDLER
+	SHARED_RESCUE_STATUS
 		export
 			{NONE} all
 		undefine
@@ -33,10 +30,31 @@ inherit
 			is_equal
 		end
 
+	CONF_CLUSTER
+		rename
+			name as cluster_name,
+			parent as parent_cluster,
+			children as sub_clusters
+		redefine
+			classes,
+			parent_cluster,
+			sub_clusters
+		end
+
 create {CONF_COMP_FACTORY}
 	make
 
 feature -- Attributes
+
+	path: STRING is
+			-- Path to the cluster (without environment variables and trailing \ or /)
+		do
+			Result := location.evaluated_directory
+		end
+
+	classes: HASH_TABLE [EIFFEL_CLASS_I, STRING]
+			-- Classes available in the cluster: key is the declared
+			-- name and entry is the class
 
 	parent_cluster: CLUSTER_I
 			-- Parent cluster of Current cluster
@@ -53,63 +71,28 @@ feature -- Access
 			Result := cluster_name.as_upper
 		end
 
-	actual_namespace: STRING is
-			-- Associated full namespace of current cluster.
-		local
-			l_local_namespace: STRING
+feature -- Formatting
+
+	format (a_text_formatter: TEXT_FORMATTER) is
+			-- Output name of Current in `a_text_formatter'.
+			-- (from ASSEMBLY_INFO)
+		require -- from ASSEMBLY_INFO
+			st_not_void: a_text_formatter /= Void
 		do
-
-			if is_precompile then
-				Result := internal_actual_namespace
-			else
-
-				if parent_cluster /= Void then
-						-- Start with parent cluster namespace
-					Result := parent_cluster.actual_namespace
-				else
-						-- Use target namespace
-					Result := target.options.local_namespace
-				end
-
-				if Result = Void then
-					create Result.make_empty
-				else
-					Result := Result.twin
-				end
-
-					-- Add cluster name/namespace part
-				l_local_namespace := options.local_namespace
-				if l_local_namespace = Void or else l_local_namespace.is_empty then
-					if target.setting_use_cluster_name_as_namespace then
-						if not Result.is_empty then
-							Result.append_character ('.')
-						end
-						Result.append (cluster_name)
-					end
-				else
-					if not Result.is_empty then
-						Result.append_character ('.')
-					end
-					Result.append (l_local_namespace)
-				end
-
-				internal_actual_namespace := Result
-			end
-		ensure
-			result_not_void: Result /= Void
+			a_text_formatter.add_string (path)
 		end
 
 feature -- Type anchors
 
-	class_anchor: CLASS_I;
+	class_anchor: CLASS_I is
 			-- Type of classes one can insert in Current
+		do
+		end
 
-feature {NONE} -- Internal implementation cache
+invariant
+	path_not_void: path /= Void
 
-	internal_actual_namespace: like actual_namespace
-			-- Cached version of `actual_namespace'
-
-;indexing
+indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"

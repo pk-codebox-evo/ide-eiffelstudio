@@ -9,14 +9,6 @@ indexing
 deferred class
 	CODE_COMPLETABLE
 
-inherit
-	ANY
-
-	EV_SHARED_APPLICATION
-		export
-			{NONE} all
-		end
-
 feature {NONE} -- Initialization
 
 	initialize_code_complete is
@@ -214,7 +206,7 @@ feature -- Basic operation
 			-- Prepare auto complete and show choice window directly.
 		do
 			if possibilities_provider /= Void then
-				precompletion_actions.call (Void)
+				precompletion_actions.call ([])
 				prepare_auto_complete
 				if possibilities_provider.completion_possible then
 					block_focus_out_actions
@@ -478,6 +470,15 @@ feature {NONE} -- Timer
 
 	completion_timeout: EV_TIMEOUT
 			-- Timeout for showing completion list
+
+	ev_application: EV_APPLICATION is
+			-- The application
+		local
+			l_env: EV_ENVIRONMENT
+		once
+			create l_env
+			Result := l_env.application
+		end
 
 	default_timer_interval: INTEGER is 1500
 

@@ -1,6 +1,6 @@
 indexing
 
-	description:
+	description: 
 		"Displays warning and error messages from Error handler%
 		%during a compilation."
 	legal: "See notice at end of class."
@@ -8,29 +8,7 @@ indexing
 	date: "$Date$";
 	revision: "$Revision $"
 
-deferred class
-	ERROR_DISPLAYER
-
-feature -- Basic operations
-
-	clear_display
-			-- Clears display of any stored error or warning information.
-		do
-			clear_warnings
-			clear_errors
-		end
-
-	clear_errors
-			-- Clears display of any stored error information.
-		do
-			--| Not implemented for refactoring compatibility
-		end
-
-	clear_warnings
-			-- Clears display of any stored warning information.
-		do
-			--| Not implemented for refactoring compatibility
-		end
+deferred class ERROR_DISPLAYER
 
 feature -- Output
 
@@ -40,9 +18,7 @@ feature -- Output
 			non_void_handler: handler /= Void;
 			not_empty_warnings: not handler.warning_list.is_empty
 		deferred
-		ensure then
-			warnings_list_unmoved: handler.warning_list.cursor.is_equal (old handler.warning_list.cursor)
-		end
+		end;
 
 	trace_errors (handler: ERROR_HANDLER) is
 			-- Display error messages from `handler'.
@@ -50,9 +26,7 @@ feature -- Output
 			non_void_handler: handler /= Void;
 			not_empty_errors: not handler.error_list.is_empty
 		deferred
-		ensure then
-			warnings_list_unmoved: handler.error_list.cursor.is_equal (old handler.error_list.cursor)
-		end
+		end;
 
 	force_display is
 			-- Make sure the user can see the messages we send.

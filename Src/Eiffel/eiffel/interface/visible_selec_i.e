@@ -1,14 +1,14 @@
 indexing
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
-class VISIBLE_SELEC_I
+class VISIBLE_SELEC_I 
 
 inherit
 
 	VISIBLE_I
 		redefine
 			trace, generate_cecil_table, has_visible, mark_visible,
-			is_visible
+			is_visible, make_byte_code
 		end
 
 	SHARED_SERVER
@@ -16,8 +16,8 @@ inherit
 	SHARED_CECIL
 
 	COMPILER_EXPORTER
-
-feature
+	
+feature 
 
 	visible_features: SEARCH_TABLE [STRING];
 			-- Visible features
@@ -29,7 +29,7 @@ feature
 		end;
 
 	is_visible (feat: FEATURE_I; class_id: INTEGER): BOOLEAN is
-			-- Is feature name `feat_name' visible in context
+			-- Is feature name `feat_name' visible in context 
 			-- of class `class_id'?
 		do
 			Result := visible_features.has (feat.feature_name);
@@ -37,7 +37,7 @@ feature
 
 	mark_visible (remover: REMOVER; feat_table: FEATURE_TABLE) is
 			-- Mark visible features from `feat_table'.
-		local
+		local	
 			a_feature: FEATURE_I;
 		do
 			from
@@ -58,16 +58,41 @@ feature
 	has_visible: BOOLEAN is True
 			-- Has the current object some visible features ?
 
-	generate_cecil_table (a_class: CLASS_C; generated_wrappers: DS_HASH_SET [STRING]) is
+	generate_cecil_table (a_class: CLASS_C) is
 			-- Generate cecil table
 		local
+			types: TYPE_LIST;
 			buffer: GENERATION_BUFFER
 		do
 			buffer := generation_buffer
-			prepare_table (a_class.feature_table)
+			prepare_table (a_class.feature_table);
+
 				-- Generation
-			cecil_routine_table.generate (buffer, a_class, generated_wrappers)
-		end
+			cecil_routine_table.generate_name_table (buffer, a_class.class_id);
+			if byte_context.final_mode then
+				from
+					types := a_class.types;
+					types.start
+				until
+					types.after
+				loop
+					cecil_routine_table.generate_final (buffer, types.item);
+					types.forth
+				end;
+			elseif a_class.is_precompiled then
+				cecil_routine_table.generate_precomp_workbench (buffer, a_class.class_id);
+			else
+				cecil_routine_table.generate_workbench (buffer, a_class.class_id);
+			end;
+		end;
+
+	make_byte_code (ba: BYTE_ARRAY; feat_table: FEATURE_TABLE) is
+			-- Produce byte code for current visible clause
+		do
+			prepare_table (feat_table);
+
+			cecil_routine_table.make_byte_code (ba);
+		end;
 
 	prepare_table (feat_table: FEATURE_TABLE) is
 			-- Prepate cecil table.
@@ -117,7 +142,7 @@ feature
 				visible_features.forth;
 			end;
 		end;
-
+				
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"

@@ -8,8 +8,10 @@ indexing
 class
 	EB_DIALOG_CONSTANTS
 
-inherit
-	EB_CONSTANTS
+--inherit
+--	EB_DIALOG_CONSTANTS_IMP
+
+-- Perform any constant redefinitions in this class.
 
 feature -- Dummy
 
@@ -19,17 +21,11 @@ feature -- Dummy
 
 feature -- Access
 
-	close_string: STRING_GENERAL is
+	close_string: STRING is "Close"
 			-- `Result' is STRING constant named `close_string'.
-		do
-			Result := interface_names.b_close
-		end
 
-	save_string: STRING_GENERAL is
+	save_string: STRING is "Save"
 			-- `Result' is STRING constant named `save_string'.
-		do
-			Result := interface_names.b_save
-		end
 
 	small_padding: INTEGER is 4
 			-- `Result' is INTEGER constant named small_padding.

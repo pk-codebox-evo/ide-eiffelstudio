@@ -10,7 +10,7 @@ class
 	EB_METRIC_CRITERION_ROW
 
 inherit
-	EVS_GRID_ROW
+	EB_GRID_ROW
 
 	QL_SHARED_NAMES
 
@@ -21,17 +21,6 @@ inherit
 	EB_METRIC_SHARED
 
 	EB_METRIC_INTERFACE_PROVIDER
-
-	EB_METRIC_ITERATOR
-		redefine
-			process_domain_criterion,
-			process_caller_callee_criterion,
-			process_supplier_client_criterion,
-			process_text_criterion,
-			process_path_criterion,
-			process_value_criterion,
-			process_nary_criterion
-		end
 
 create
 	make
@@ -96,36 +85,72 @@ feature -- Loading
 			l_nary_cri: EB_METRIC_NARY_CRITERION
 			l_row: EB_METRIC_CRITERION_ROW
 			l_cursor: CURSOR
+			l_domain_criterion, l_domain_criterion2: EB_METRIC_DOMAIN_CRITERION
+			l_caller_criterion, l_caller_criterion2: EB_METRIC_CALLER_CALLEE_CRITERION
+			l_text_criterion, l_text_criterion2: EB_METRIC_TEXT_CRITERION
+			l_path_criterion: EB_METRIC_PATH_CRITERION
 		do
 				-- Load current row.
 			initialize_row (a_row)
-			if a_original_criterion /= Void then
-				set_original_criterion (a_original_criterion)
-				retrieve_data (a_criterion)
-			end
-
 			if a_criterion.is_normal_criterion then
-				create {EB_METRIC_NORMAL_CRITERION_GRID_ITEM} property_manager.make
-			elseif a_criterion.is_caller_callee_criterion then
-				create {EB_METRIC_CALLER_CALLEE_CRITERION_GRID_ITEM} property_manager.make
-			elseif a_criterion.is_supplier_client_criterion then
-				create {EB_METRIC_CLIENT_SUPPLIER_CRITERION_GRID_ITEM} property_manager.make
-			elseif a_criterion.is_value_criterion then
-				create {EB_METRIC_VALUE_CRITERION_GRID_ITEM} property_manager.make
+				create {EB_METRIC_NORMAL_CRITERION_PROPERTY_MANAGER} property_manager.make (grid)
+			elseif a_criterion.is_caller_criterion then
+				l_caller_criterion ?= a_criterion
+				create {EB_METRIC_CALLER_CRITERION_MANAGER} property_manager.make (grid)
+				if a_original_criterion /= Void then
+					if a_original_criterion.is_domain_criterion then
+						l_domain_criterion ?= a_original_criterion
+						l_caller_criterion.set_domain (l_domain_criterion.domain)
+					elseif a_original_criterion.is_caller_criterion then
+						l_caller_criterion2 ?= a_original_criterion
+						l_caller_criterion.set_domain (l_caller_criterion2.domain)
+						if l_caller_criterion2.only_current_version then
+							l_caller_criterion.enable_only_current_version
+						else
+							l_caller_criterion.disable_only_current_version
+						end
+					end
+				end
 			elseif a_criterion.is_domain_criterion then
-				create {EB_METRIC_DOMAIN_CRITERION_GRID_ITEM} property_manager.make
+				create {EB_METRIC_DOMAIN_PROPERTY_MANAGER} property_manager.make (grid)
+				l_domain_criterion ?= a_criterion
+				if a_original_criterion /= Void and then a_original_criterion.is_domain_criterion then
+					l_domain_criterion2 ?= a_original_criterion
+					l_domain_criterion.set_domain (l_domain_criterion2.domain)
+				end
 			elseif a_criterion.is_path_criterion then
-				create {EB_METRIC_PATH_CRITERION_GRID_ITEM} property_manager.make
+				create {EB_METRIC_PATH_CRITERION_PROPERTY_MANAGER} property_manager.make (grid)
+				l_path_criterion ?= a_criterion
+				if a_original_criterion /= Void and then (a_original_criterion.is_text_criterion or a_original_criterion.is_path_criterion) then
+					l_text_criterion2 ?= a_original_criterion
+					l_path_criterion.set_path (l_text_criterion2.text)
+				end
 			elseif a_criterion.is_text_criterion then
-				create {EB_METRIC_TEXT_CRITERION_GRID_ITEM} property_manager.make
-			elseif a_criterion.is_external_command_criterion then
-				create {EB_METRIC_COMMAND_CRITERION_GRID_ITEM} property_manager.make
+				create {EB_METRIC_TEXT_CRITERION_PROPERTY_MANAGER} property_manager.make (grid)
+				l_text_criterion ?= a_criterion
+				if a_original_criterion /= Void and then (a_original_criterion.is_text_criterion or a_original_criterion.is_path_criterion) then
+					l_text_criterion2 ?= a_original_criterion
+					l_text_criterion.set_text (l_text_criterion2.text)
+					if l_text_criterion2.is_text_criterion then
+						if l_text_criterion2.is_case_sensitive then
+							l_text_criterion.enable_case_sensitive
+						else
+							l_text_criterion.disable_case_sensitive
+						end
+						if l_text_criterion2.is_identical_comparison_used then
+							l_text_criterion.enable_identical_comparison
+						else
+							l_text_criterion.disable_identical_comparison
+						end
+					else
+						l_text_criterion.disable_case_sensitive
+						l_text_criterion.disable_identical_comparison
+					end
+				end
 			end
-			property_manager.change_value_actions.extend (agent (grid.change_actions).call (Void))
-			property_manager.change_value_actions.extend (agent resize_grid)
-
-			property_manager.load_criterion (a_criterion)
-			property_item := property_manager.grid_item
+			property_manager.change_actions.extend (agent (grid.change_actions).call ([]))
+			property_manager.load_properties (a_criterion)
+			property_item := property_manager.property_item
 			bind (a_row)
 				-- Load subrows.
 			l_nary_cri ?= a_criterion
@@ -208,6 +233,22 @@ feature -- Status report
 					  a_name.is_case_insensitive_equal (query_language_names.ql_cri_or)
 		end
 
+	is_domain_criterion (a_name: STRING; a_scope: QL_SCOPE): BOOLEAN is
+			-- Does `a_name' of scope `a_scope' represent a domain criteiron?
+		require
+			a_name_attached: a_name /= Void
+			a_scope_attached: a_scope /= Void
+		local
+			l_cri_factory: like criterion_factory
+			l_criterion: EB_METRIC_CRITERION
+		do
+			l_cri_factory := criterion_factory
+			if l_cri_factory.has_criterion (a_name, a_scope) then
+				l_criterion := l_cri_factory.metric_criterion (a_scope, a_name)
+				Result := l_criterion.is_domain_criterion
+			end
+		end
+
 	is_in_default_state: BOOLEAN
 			-- Is current row in default state?
 			-- Default state means that current row is empty row from the start.
@@ -228,6 +269,14 @@ feature -- Basic operation
 			set_grid_row (a_row)
 		ensure
 			binded_to_grid: is_binded_to_grid
+		end
+
+	colors: EV_STOCK_COLORS is
+			-- Color factory
+		once
+			create Result
+		ensure
+			result_attached: Result /= Void
 		end
 
 	resize_grid is
@@ -255,7 +304,7 @@ feature -- Access
 		local
 			l_provider: EB_METRIC_CRITERION_PROVIDER
 			l_shortcut_pref: SHORTCUT_PREFERENCE
-			l_tooltip: STRING_32
+			l_tooltip: STRING
 		do
 			if criterion_item_internal = Void then
 				create criterion_item_internal
@@ -301,7 +350,7 @@ feature -- Access
 				Result := criterion_factory.metric_criterion (scope, criterion_name)
 				Result.set_is_negation_used (is_negation_used)
 				check property_manager /= Void end
-				property_manager.store_criterion (Result)
+				property_manager.store_properties (Result)
 
 					-- Store subrows.
 				l_nary_metric ?= Result
@@ -337,7 +386,7 @@ feature -- Access
 	subrows: LIST [EB_METRIC_CRITERION_ROW]
 			-- Subrows of current row
 
-	property_manager: EB_METRIC_CRITERION_GRID_ITEM [EB_METRIC_CRITERION]
+	property_manager: EB_METRIC_CRITERION_PROPERTY_MANAGER
 			-- Property manager
 
 feature -- Setting
@@ -448,14 +497,14 @@ feature{NONE} -- Actions
 					end
 					grid.resize_column (1, 0)
 				end
-				grid.change_actions.call (Void)
+				grid.change_actions.call ([])
 			end
 		end
 
 	on_property_item_deactivated is
 			-- Action to be performed when `property_item' deactivated.
 		do
-			grid.change_actions.call (Void)
+			grid.change_actions.call ([])
 		end
 
 feature{NONE} -- Implementation
@@ -502,6 +551,12 @@ feature{NONE} -- Implementation
 			if a_row.subrow_count_recursive > 0 then
 				grid.remove_rows (a_row.index + 1, a_row.index + a_row.subrow_count_recursive)
 			end
+--			from
+--			until
+--				a_row.subrow_count = 0
+--			loop
+--				a_row.parent.remove_row (a_row.subrow (a_row.subrow_count).index)
+--			end
 		ensure
 			no_subrow_exists: a_row.subrow_count_recursive = 0
 		end
@@ -715,133 +770,6 @@ feature{NONE} -- Implementation
 			end
 		end
 
-feature{NONE} -- Criterion Data Retriever
-
-	original_criterion: EB_METRIC_CRITERION
-			-- Original criterion from which data is retrieved
-
-	set_original_criterion (a_criterion: like original_criterion) is
-			-- Set `origianl_criterion' with `a_criterion'.
-		do
-			original_criterion := a_criterion
-		ensure
-			original_criterion_set: original_criterion = a_criterion
-		end
-
-	retrieve_data (a_criterion: EB_METRIC_CRITERION) is
-			-- Retrieve data from `original_criterion' and store it in `a_criterion'.
-		require
-			a_acriterion_attached: a_criterion /= Void
-		do
-			if original_criterion /= Void then
-				a_criterion.process (Current)
-			end
-		end
-
-	process_domain_criterion (a_criterion: EB_METRIC_DOMAIN_CRITERION) is
-			-- Process `a_criterion'.
-		local
-			l_domain_criterion: EB_METRIC_DOMAIN_CRITERION
-		do
-			l_domain_criterion ?= original_criterion
-			if l_domain_criterion /= Void then
-				a_criterion.set_domain (l_domain_criterion.domain)
-			end
-		end
-
-	process_caller_callee_criterion (a_criterion: EB_METRIC_CALLER_CALLEE_CRITERION) is
-			-- Process `a_criterion'.
-		local
-			l_caller_callee_criterion: EB_METRIC_CALLER_CALLEE_CRITERION
-			l_domain_criterion: EB_METRIC_DOMAIN_CRITERION
-		do
-			l_caller_callee_criterion ?= original_criterion
-			if l_caller_callee_criterion /= Void then
-				a_criterion.set_domain (l_caller_callee_criterion.domain)
-				if l_caller_callee_criterion.only_current_version then
-					a_criterion.enable_only_current_version
-				else
-					a_criterion.disable_only_current_version
-				end
-			else
-				l_domain_criterion ?= original_criterion
-				if l_domain_criterion /= Void then
-					a_criterion.set_domain (l_domain_criterion.domain)
-				end
-			end
-		end
-
-	process_supplier_client_criterion (a_criterion: EB_METRIC_SUPPLIER_CLIENT_CRITERION) is
-			-- Process `a_criterion'.
-		local
-			l_supplier_client_cri: EB_METRIC_SUPPLIER_CLIENT_CRITERION
-			l_domain_cri: EB_METRIC_DOMAIN_CRITERION
-		do
-			l_supplier_client_cri ?= original_criterion
-			if l_supplier_client_cri /= Void then
-				a_criterion.set_domain (l_supplier_client_cri.domain)
-				a_criterion.set_indirect_referenced_class_retrieved (l_supplier_client_cri.indirect_referenced_class_retrieved)
-				a_criterion.set_normal_referenced_class_retrieved (l_supplier_client_cri.normal_referenced_class_retrieved)
-				a_criterion.set_only_syntactically_referencedd_class_retrieved (l_supplier_client_cri.only_syntactically_referencedd_class_retrieved)
-			else
-				l_domain_cri ?= original_criterion
-				if l_domain_cri /= Void then
-					a_criterion.set_domain (l_domain_cri.domain)
-				end
-			end
-		end
-
-	process_text_criterion (a_criterion: EB_METRIC_TEXT_CRITERION) is
-			-- Process `a_criterion'.
-		local
-			l_text_cri: EB_METRIC_TEXT_CRITERION
-		do
-			l_text_cri ?= original_criterion
-			if l_text_cri /= Void then
-				a_criterion.set_text (a_criterion.text)
-				a_criterion.set_matching_strategy (l_text_cri.matching_strategy)
-				if l_text_cri.is_case_sensitive then
-					a_criterion.enable_case_sensitive
-				else
-					a_criterion.disable_case_sensitive
-				end
-			end
-		end
-
-	process_path_criterion (a_criterion: EB_METRIC_PATH_CRITERION) is
-			-- Process `a_criterion'.
-		local
-			l_path_cri: EB_METRIC_PATH_CRITERION
-		do
-			l_path_cri ?= original_criterion
-			if l_path_cri /= Void then
-				a_criterion.set_path (l_path_cri.path)
-			end
-		end
-
-	process_value_criterion (a_criterion: EB_METRIC_VALUE_CRITERION) is
-			-- Process `a_criterion'.
-		local
-			l_value_cri: EB_METRIC_VALUE_CRITERION
-			l_domain_cri: EB_METRIC_DOMAIN_CRITERION
-		do
-			l_value_cri ?= original_criterion
-			if l_value_cri /= Void then
-				a_criterion.set_domain (l_value_cri.domain)
-				a_criterion.set_value_tester (l_value_cri.value_tester)
-			else
-				l_domain_cri ?= original_criterion
-				if l_domain_cri /= Void then
-					a_criterion.set_domain (l_domain_cri.domain)
-				end
-			end
-		end
-
-	process_nary_criterion (a_criterion: EB_METRIC_NARY_CRITERION) is
-			-- Process `a_criterion'.
-		do
-		end
-
 invariant
 	grid_attached: grid /= Void
 	scope_attached: scope /= Void
@@ -879,5 +807,6 @@ indexing
 			 Website http://www.eiffel.com
 			 Customer support http://support.eiffel.com
 		]"
+
 
 end

@@ -85,7 +85,7 @@ feature {NONE} -- Initialization
 			internal_vertical_box.extend (extend_button)
 			internal_vertical_box.extend (wipe_out_button)
 			extend (internal_vertical_box)
-			Precursor {EV_FRAME}
+			is_initialized := True
 		end
 
 feature -- Status report

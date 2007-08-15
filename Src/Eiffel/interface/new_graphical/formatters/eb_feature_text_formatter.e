@@ -11,12 +11,9 @@ deferred class
 
 inherit
 	EB_FEATURE_INFO_FORMATTER
-		undefine
-			internal_recycle,
+		redefine
 			is_editor_formatter
 		end
-
-	EB_EDITOR_FORMATTER
 
 	SHARED_EIFFEL_PROJECT
 
@@ -30,7 +27,7 @@ feature -- Access
 			if editor = Void or else feature_cmd = Void then
 				Result := empty_widget
 			else
-				Result := editor.widget
+				Result := internal_widget
 			end
 		end
 
@@ -42,6 +39,12 @@ feature -- Access
 
 	feature_cmd: E_FEATURE_CMD
 			-- Feature command that is used to generate text output (especially in files).
+
+	is_editor_formatter: BOOLEAN is
+			-- Is current formatter use an editor to display information?
+		do
+			Result := True
+		end
 
 feature -- Status setting
 
@@ -64,7 +67,15 @@ feature -- Status setting
 			else
 				associated_feature := Void
 				feature_cmd := Void
-				ensure_display_in_widget_owner
+				if
+					selected and then
+					not widget.is_displayed
+				then
+					if widget_owner /= Void then
+						widget_owner.set_widget (widget)
+					end
+					display_header
+				end
 			end
 		end
 
@@ -80,7 +91,15 @@ feature -- Status setting
 			end
 			must_format := True
 			format
-			ensure_display_in_widget_owner
+			if
+				selected and then
+				not widget.is_displayed
+			then
+				if widget_owner /= Void then
+					widget_owner.set_widget (widget)
+				end
+				display_header
+			end
 		ensure
 			feature_set: a_feature = associated_feature
 			cmd_created_if_possible: (a_feature = Void) = (feature_cmd = Void)
@@ -101,14 +120,17 @@ feature -- Formatting
 	format is
 			-- Refresh `widget'.
 		local
-			l_msg: STRING_32
+			l_msg: STRING
 		do
-			if displayed and then selected and then feature_cmd /= Void and then actual_veto_format_result then
+			if
+				displayed and then
+				selected and then
+				feature_cmd /= Void
+			then
 				editor.disable_feature_click
 				display_temp_header
 				setup_viewpoint
 				generate_text
-				editor.set_focus
 				if not last_was_error then
 					if has_breakpoints then
 						editor.enable_has_breakable_slots
@@ -124,6 +146,12 @@ feature -- Formatting
 						l_msg.append (trace)
 					end
 					editor.put_string (l_msg)
+					if not l_msg.is_empty and then l_msg.item (l_msg.count) /= '%N' then
+						editor.put_new_line
+					end
+						-- We have to call `refresh_now' because the text would only appear if
+						-- something causes an explicit refresh (e.g. moving a window).
+					editor.refresh_now
 				end
 				display_header
 			end

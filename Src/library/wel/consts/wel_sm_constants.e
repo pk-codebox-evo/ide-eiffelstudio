@@ -100,8 +100,6 @@ feature -- Access
 
 	Sm_dbcsenabled: INTEGER is 42
 
-	Sm_mousewheelpresent: INTEGER is 75
-
 	Sm_cmetrics: INTEGER is 76
 
 	Sm_xvirtualscreen: INTEGER is 76
@@ -112,9 +110,7 @@ feature -- Access
 
 	Sm_cyvirtualscreen: INTEGER is 79
 
-	Sm_immenabled: INTEGER is 82
-
-	Sm_remotesession: INTEGER is 0x1000;
+	Sm_immenabled: INTEGER is 82;
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"

@@ -13,12 +13,12 @@ inherit
 	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 		redefine
 			mini_pixmap,
-			mini_pixel_buffer,
-			new_mini_toolbar_item,
-			new_mini_sd_toolbar_item
+			new_mini_toolbar_item
 		end
 
 	EB_SHARED_PREFERENCES
+
+	SHARED_DEBUG
 
 	EB_SHARED_WINDOW_MANAGER
 		export
@@ -30,7 +30,10 @@ inherit
 			{NONE} all
 		end
 
-	EB_SHARED_DEBUGGER_MANAGER
+	SHARED_DEBUGGED_OBJECT_MANAGER
+		export
+			{NONE} all
+		end
 
 create
 	make
@@ -41,24 +44,19 @@ feature -- Initialization
 			-- Initialize `Current' and associate it with `tool'.
 		do
 			tool := a_tool
+			for_tool := True
 		end
 
 feature -- Access
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Menu name for `Current'.
 		once
-			Result := Interface_names.m_Set_slice_size
+			Result := Interface_names.m_Set_slice_size + "New"
 		end
 
 	pixmap: EV_PIXMAP is
 			-- Pixmaps representing the command.
-		do
-			--| No big pixmap is required for this command.
-		end
-
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
 		do
 			--| No big pixmap is required for this command.
 		end
@@ -69,22 +67,24 @@ feature -- Access
 			Result := pixmaps.mini_pixmaps.debugger_set_sizes_icon
 		end
 
-	mini_pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixmap representing the command for mini toolbars.
-		do
-			Result := pixmaps.mini_pixmaps.debugger_set_sizes_icon_buffer
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := description
 		end
 
+feature -- Measurement
+
 feature -- Status report
 
 	tool: ES_OBJECTS_GRID_MANAGER
-			-- Object tool `Current' is associated with. `Void' if not `for_tool'.
+			-- Object tool `Current' is associated with. `Void' iff not `for_tool'.
+
+	pretty_dlg: EB_PRETTY_PRINT_DIALOG
+			-- Dialog `Current' is associated with. `Void' iff `for_tool'.
+
+	for_tool: BOOLEAN
+			-- Is `Current' associated with an object tool or with a pretty print dialog?
 
 	name: STRING is
 			-- Name of the command.
@@ -92,7 +92,7 @@ feature -- Status report
 			Result := Interface_names.l_Set_slice_limits + "New"
 		end
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Description of the command.
 		once
 			Result := Interface_names.l_Set_slice_limits_desc
@@ -103,23 +103,13 @@ feature -- Execution
 	execute is
 			-- Change the default slice limits through a dialog box.
 		do
-			get_slice_limits_on_global
-
-			debugger_manager.set_slices (slice_min, slice_max)
-			debugger_manager.set_displayed_string_size (displayed_string_size)
-			if set_as_default_requested then
-				set_as_default_requested := False
-				preferences.debugger_data.min_slice_preference.set_value (debugger_manager.min_slice)
-				preferences.debugger_data.max_slice_preference.set_value (debugger_manager.max_slice)
-				preferences.debugger_data.default_displayed_string_size_preference.set_value (debugger_manager.displayed_string_size)
-			end
-
-			debug ("debugger_interface")
-				io.put_string ("Messages are displayed%N")
-			end
-			if refresh_tools_requested then
-				refresh_tools_requested := False
-				eb_debugger_manager.refresh_objects_grids
+			if for_tool then
+				get_slice_limits_on_global
+				min_slice_ref.set_item (slice_min)
+				max_slice_ref.set_item (slice_max)
+				debug ("debugger_interface")
+					io.put_string ("Messages are displayed%N")
+				end
 			end
 		end
 
@@ -129,16 +119,6 @@ feature -- Basic operations
 			-- Create a new mini toolbar button for this command.
 		do
 			Result := Precursor
-			Result.drop_actions.extend (agent drop_feature_on_object_stone)
-			Result.drop_actions.extend (agent drop_object_stone)
-			Result.drop_actions.set_veto_pebble_function (agent is_resizable (?))
-		end
-
-	new_mini_sd_toolbar_item: EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new mini toolbar button for this command.
-		do
-			Result := Precursor
-			Result.drop_actions.extend (agent drop_feature_on_object_stone)
 			Result.drop_actions.extend (agent drop_object_stone)
 			Result.drop_actions.set_veto_pebble_function (agent is_resizable (?))
 		end
@@ -146,37 +126,42 @@ feature -- Basic operations
 	is_resizable (st: ANY): BOOLEAN is
 			-- Is the object represented by `st' droppable, i.e. SPECIAL?
 		local
-			obj_grid_item: like object_grid_line_for
+			obj_grid_item: ES_OBJECTS_GRID_LINE
 			conv_obj: OBJECT_STONE
-			conv_fost: FEATURE_ON_OBJECT_STONE
-		do
-			conv_obj ?= st
-			if conv_obj = Void then
-				conv_fost ?= st
-				if conv_fost /= Void then
-					conv_obj := conv_fost.object_stone
-				end
-			end
-			obj_grid_item := object_grid_line_for (conv_obj)
-			Result := obj_grid_item /= Void and then obj_grid_item.object_is_special_value
-		end
-
-	object_grid_line_for (ost: OBJECT_STONE): ES_OBJECTS_GRID_OBJECT_LINE is
-			-- Object grid line related to `ost if any.
-		local
+			nat_dv: EIFNET_DEBUG_NATIVE_ARRAY_VALUE
 			l_item: EV_ANY
 			l_addr: STRING
 		do
-			if ost /= Void then
-				l_item := ost.ev_item
-				if l_item /= Void then
-					Result ?= l_item.data
-				end
-				if Result = Void then
-					l_addr := ost.object_address
-					if tool /= Void	and l_addr /= Void then
-						Result := tool.objects_grid_object_line (l_addr)
+			if for_tool then
+				conv_obj ?= st
+				if conv_obj /= Void then
+					l_item ?= conv_obj.ev_item
+					if l_item /= Void then
+						obj_grid_item ?= l_item.data
 					end
+					if obj_grid_item = Void and then tool /= Void and then conv_obj.object_address /= Void then
+						check
+							tool /= Void
+							-- XR: This shouldn't happen (no toolbar button for
+							-- this command in the pretty print dialog!)
+						end
+						l_addr := conv_obj.object_address
+						if l_addr /= Void then
+							obj_grid_item := tool.objects_grid_item (l_addr)
+						end
+					end
+					Result := obj_grid_item /= Void and then obj_grid_item.object_is_special_value
+				end
+			else
+				l_addr := pretty_dlg.current_object.object_address
+				if Application.is_dotnet then
+						--| not working in case of not registered object
+					if application.imp_dotnet.know_about_kept_object (l_addr) then
+						nat_dv ?= Application.imp_dotnet.kept_object_item (l_addr)
+					end
+					Result := nat_dv /= Void
+				else
+					Result := debugged_object_manager.object_at_address_is_special (l_addr)
 				end
 			end
 		end
@@ -185,24 +170,13 @@ feature -- Obsolete
 
 feature -- Inapplicable
 
-feature {NONE} -- Properties
+feature {EB_PRETTY_PRINT_DIALOG}
 
 	slice_min: INTEGER
 			-- Minimum index of displayed attributes in special objects.
 
 	slice_max: INTEGER
 			-- Maximum index of displayed attributes in special objects.
-
-	displayed_string_size: INTEGER
-			-- Size of string to be retrieved from the application
-			-- when debugging
-
-	refresh_tools_requested: BOOLEAN
-			-- Tool's refreshing is requested.
-
-	set_as_default_requested: BOOLEAN
-			-- Set values as default ?
-			-- (i.e: in preferences)
 
 feature {NONE} -- Implementation
 
@@ -214,7 +188,7 @@ feature {NONE} -- Implementation
 			-- Did the user really enter new min/max values in the dialog box?
 			-- Valid after each call to get_slice_limits.
 
-	get_slice_limits_on_target (obj_grid_item: ES_OBJECTS_GRID_OBJECT_LINE) is
+	get_slice_limits_on_target (obj_grid_item: ES_OBJECTS_GRID_LINE) is
 		do
 			get_slice_limits (False, obj_grid_item)
 		end
@@ -224,7 +198,7 @@ feature {NONE} -- Implementation
 			get_slice_limits (True, Void)
 		end
 
-	get_slice_limits (def: BOOLEAN; obj: ES_OBJECTS_GRID_OBJECT_LINE) is
+	get_slice_limits (def: BOOLEAN; obj: ES_OBJECTS_GRID_LINE) is
 			-- Display a dialog box to enter new slice limits
 			-- as default values if `def',
 			-- as object specific values otherwise,
@@ -236,15 +210,14 @@ feature {NONE} -- Implementation
 			dial: EV_DIALOG
 			label: EV_LABEL
 			cb_disp_str_limit: EV_CHECK_BUTTON
-			cb_refresh, cb_set_as_default: EV_CHECK_BUTTON
 			tf_disp_str_size: EV_TEXT_FIELD
 			tf_minf: EV_TEXT_FIELD
 			tf_maxf: EV_TEXT_FIELD
-			resetb, okb, cancelb: EV_BUTTON
+			okb: EV_BUTTON
+			cancelb: EV_BUTTON
 			maincont: EV_VERTICAL_BOX
 			vbox: EV_VERTICAL_BOX
 			hbox: EV_HORIZONTAL_BOX
-			w: EV_WINDOW
 		do
 				-- Build the dialog.
 			create dial
@@ -276,7 +249,7 @@ feature {NONE} -- Implementation
 				maincont.extend (create {EV_HORIZONTAL_SEPARATOR})
 
 					--| String display size
-				create cb_disp_str_limit.make_with_text (Interface_names.l_no_limit)
+				create cb_disp_str_limit.make_with_text ("no limit")
 				create tf_disp_str_size
 
 				tf_disp_str_size.set_minimum_width (Cst_field_label_width)
@@ -297,17 +270,19 @@ feature {NONE} -- Implementation
 				maincont.extend (create {EV_HORIZONTAL_SEPARATOR})
 
 					--| Set Value
-				if debugger_manager.displayed_string_size = -1 then
-					tf_disp_str_size.set_text (preferences.debugger_data.default_displayed_string_size.out)
+				if application.displayed_string_size = -1 then
+					tf_disp_str_size.set_text (preferences.misc_data.default_displayed_string_size.out)
+					tf_disp_str_size.disable_sensitive
 					cb_disp_str_limit.enable_select
 				else
-					tf_disp_str_size.set_text (debugger_manager.displayed_string_size.out)
+					tf_disp_str_size.set_text (application.displayed_string_size.out)
+					tf_disp_str_size.enable_sensitive
 					cb_disp_str_limit.disable_select
 				end
-				on_cb_disp_str_limit_cb (cb_disp_str_limit, tf_disp_str_size)
 				cb_disp_str_limit.select_actions.extend (agent on_cb_disp_str_limit_cb (cb_disp_str_limit, tf_disp_str_size))
 
-				get_current_values
+				slice_min := min_slice_ref.item
+				slice_max := max_slice_ref.item
 			else
 				if obj /= Void then
 						-- A special value is available, that's an easy one!
@@ -324,36 +299,21 @@ feature {NONE} -- Implementation
 				end
 			end
 
-			if def then
-				create cb_set_as_default.make_with_text (interface_names.l_set_as_default)
-				cb_set_as_default.disable_select
-
-				create cb_refresh.make_with_text (interface_names.l_refresh_tools)
-				cb_refresh.enable_select
-			end
-
 				--| Text field for min/max box
-			create tf_minf
-			create tf_maxf
+			create tf_minf.make_with_text (slice_min.out)
+			create tf_maxf.make_with_text (slice_max.out)
 
 			tf_minf.return_actions.extend (agent tf_maxf.set_focus)
 			tf_minf.return_actions.extend (agent tf_maxf.select_all)
-			tf_maxf.return_actions.extend (agent check_and_get_limits_from_fields (cb_set_as_default, cb_disp_str_limit, tf_disp_str_size, tf_minf, tf_maxf, cb_refresh, dial))
+			tf_maxf.return_actions.extend (agent check_and_get_limits_from_fields (cb_disp_str_limit, tf_disp_str_size, tf_minf, tf_maxf, dial))
 
 			if tf_disp_str_size /= Void then
 				tf_disp_str_size.return_actions.extend (agent tf_minf.set_focus)
 			end
 
-				--| Set values
-			update_fields (cb_disp_str_limit, tf_disp_str_size, tf_minf, tf_maxf)
-
 				--| Buttons.
-			create resetb.make_with_text (Interface_names.l_restore_defaults)
-			resetb.select_actions.extend (agent restore_default_values)
-			resetb.select_actions.extend (agent update_fields (cb_disp_str_limit, tf_disp_str_size, tf_minf, tf_maxf))
-
 			create okb.make_with_text (Interface_names.b_Ok)
-			okb.select_actions.extend (agent check_and_get_limits_from_fields (cb_set_as_default, cb_disp_str_limit, tf_disp_str_size, tf_minf, tf_maxf, cb_refresh, dial))
+			okb.select_actions.extend (agent check_and_get_limits_from_fields (cb_disp_str_limit, tf_disp_str_size, tf_minf, tf_maxf, dial))
 
 			create cancelb.make_with_text (Interface_names.b_Cancel)
 			cancelb.select_actions.extend (agent dial.destroy)
@@ -385,28 +345,9 @@ feature {NONE} -- Implementation
 				--| Separator
 			maincont.extend (create {EV_HORIZONTAL_SEPARATOR})
 
-				--| Refresh current tool ?
-			if cb_set_as_default /= Void or cb_refresh /= Void then
-				if cb_set_as_default /= Void then
-					create hbox
-					hbox.set_padding (Layout_constants.Default_padding_size)
-					extend_no_expand (hbox, cb_set_as_default)
-					extend_no_expand (maincont, hbox)
-				end
-				if cb_refresh /= Void then
-					create hbox
-					hbox.set_padding (Layout_constants.Default_padding_size)
-					extend_no_expand (hbox, cb_refresh)
-					extend_no_expand (maincont, hbox)
-				end
-				maincont.extend (create {EV_HORIZONTAL_SEPARATOR})
-			end
-
 				--| Buttons box
 			create hbox
 			hbox.set_padding (Layout_constants.Default_padding_size)
-			hbox.extend (create {EV_CELL})
-			extend_button (hbox, resetb)
 			hbox.extend (create {EV_CELL})
 			extend_button (hbox, okb)
 			extend_button (hbox, cancelb)
@@ -423,11 +364,11 @@ feature {NONE} -- Implementation
 			debug ("debugger_interface")
 				io.put_string ("displaying the dialog%N")
 			end
-			w := tool.parent_window
-			if w = Void then
-				w := window_manager.last_focused_development_window.window
+			if for_tool then
+				dial.show_modal_to_window (window_manager.last_focused_development_window.window)
+			else
+				dial.show_modal_to_window (pretty_dlg.dialog)
 			end
-			dial.show_modal_to_window (w)
 		end
 
 	on_cb_disp_str_limit_cb (cb_disp_str_limit: EV_CHECK_BUTTON; tf_disp_str_size: EV_TEXT_FIELD) is
@@ -444,32 +385,36 @@ feature {NONE} -- Implementation
 
 feature {ES_OBJECTS_GRID_LINE} -- Dropping action
 
-	drop_feature_on_object_stone (st: FEATURE_ON_OBJECT_STONE) is
-		require
-			st_not_void: st /= Void
-		local
-			objst: OBJECT_STONE
-		do
-			objst := st.object_stone
-			if objst /= Void then
-				drop_object_stone (objst)
-			end
-		end
-
 	drop_object_stone (st: OBJECT_STONE) is
 			-- Change the slice limits for the object
 			-- represented by `st' in the object tool managed objects.
 		require
 			st_not_void: st /= Void
 		local
-			obj_grid_item: like object_grid_line_for
+			l_item: EV_ANY
+			l_st_addr: STRING
+			obj_grid_item: ES_OBJECTS_GRID_LINE
 			spec_cap: INTEGER
 		do
 			debug ("debugger_interface")
 				io.put_string ("dropped stone%N")
 			end
 
-			obj_grid_item := object_grid_line_for (st)
+			l_item := st.ev_item
+			if l_item /= Void then
+				obj_grid_item ?= l_item.data
+			end
+			if obj_grid_item = Void and then tool /= Void and then st.object_address /= Void then
+				check
+					tool /= Void
+					-- XR: This shouldn't happen (no toolbar button for
+					-- this command in the pretty print dialog!)
+				end
+				l_st_addr := st.object_address
+				if l_st_addr /= Void then
+					obj_grid_item := tool.objects_grid_item (l_st_addr)
+				end
+			end
 			if obj_grid_item /= Void and then obj_grid_item.object_is_special_value then
 				debug ("debugger_interface")
 					io.put_string ("Objects grid item found%N")
@@ -489,7 +434,7 @@ feature {ES_OBJECTS_GRID_LINE} -- Dropping action
 
 feature {NONE} -- Implementation
 
-	internal_set_limits (lower, upper: INTEGER; disp_str_size: INTEGER) is
+	internal_set_limits (lower, upper: INTEGER) is
 			-- Change limits to `lower, upper' values.
 		local
 			nmin, nmax: INTEGER
@@ -502,51 +447,10 @@ feature {NONE} -- Implementation
 
 			slice_min := nmin
 			slice_max := nmax
-
-			if disp_str_size = -1 or disp_str_size > 0 then
-				displayed_string_size := disp_str_size
-			end
-
 			get_effective := True
 		end
 
-	get_current_values is
-			-- Get current values
-		do
-			slice_min := debugger_manager.min_slice
-			slice_max := debugger_manager.max_slice
-			displayed_string_size := debugger_manager.displayed_string_size
-		end
-
-	restore_default_values	is
-			-- Restore default values
-		do
-			slice_min := preferences.debugger_data.min_slice
-			slice_max := preferences.debugger_data.max_slice
-			displayed_string_size := preferences.debugger_data.default_displayed_string_size
-		end
-
-	update_fields (cb_disp_str_limit: EV_CHECK_BUTTON; tf_disp_str_size: EV_TEXT_FIELD;
-				tf_minf: EV_TEXT_FIELD; tf_maxf: EV_TEXT_FIELD) is
-			--
-		do
-			if tf_disp_str_size /= Void then
-				if displayed_string_size = -1 then
-					tf_disp_str_size.set_text (preferences.debugger_data.default_displayed_string_size.out)
-					cb_disp_str_limit.enable_select
-				else
-					tf_disp_str_size.set_text (displayed_string_size.out)
-					cb_disp_str_limit.disable_select
-				end
-			end
-			tf_minf.set_text (slice_min.out)
-			tf_maxf.set_text (slice_max.out)
-		end
-
-	check_and_get_limits_from_fields (cb_set_as_default, cb_disp_str_limit: EV_CHECK_BUTTON; tf_disp_str_size: EV_TEXT_FIELD;
-				tf_minf: EV_TEXT_FIELD; tf_maxf: EV_TEXT_FIELD;
-				cb_refresh: EV_CHECK_BUTTON;
-				dial: EV_DIALOG) is
+	check_and_get_limits_from_fields (cb_disp_str_limit: EV_CHECK_BUTTON; tf_disp_str_size: EV_TEXT_FIELD; tf_minf: EV_TEXT_FIELD; tf_maxf: EV_TEXT_FIELD; dial: EV_DIALOG) is
 			-- Set `slice_min' and `slice_max' according to the values entered
 			-- in `tf_minf' and `tf_maxf'.
 		require
@@ -556,7 +460,7 @@ feature {NONE} -- Implementation
 			str1, str2, str3: STRING
 			i: INTEGER
 			disp_size: INTEGER
-			errd: EB_WARNING_DIALOG
+			errd: EV_WARNING_DIALOG
 			ok: BOOLEAN
 		do
 			ok := True
@@ -596,9 +500,10 @@ feature {NONE} -- Implementation
 				ok := False
 			end
 			if ok then
-				set_as_default_requested := cb_set_as_default /= Void and then cb_set_as_default.is_selected
-				refresh_tools_requested := cb_refresh /= Void and then cb_refresh.is_selected
-				internal_set_limits (str2.to_integer, str3.to_integer, disp_size)
+				if disp_size = -1 or disp_size > 0 then
+					application.set_displayed_string_size (disp_size) --str1.to_integer)
+				end
+				internal_set_limits (str2.to_integer, str3.to_integer)
 				dial.destroy
 			end
 		end
@@ -635,4 +540,4 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end -- class ES_OBJECTS_GRID_SLICES_CMD
+end -- class EB_SET_SLICE_SIZE_CMD

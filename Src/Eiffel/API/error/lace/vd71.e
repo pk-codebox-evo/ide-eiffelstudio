@@ -28,6 +28,7 @@ feature {NONE} -- Initialization
 			error := an_error
 		end
 
+
 feature -- Properties
 
 	error: CONF_ERROR

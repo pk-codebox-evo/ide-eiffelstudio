@@ -10,25 +10,15 @@ class
 	EB_METRIC_DELAYED_DOMAIN_ITEM
 
 inherit
-	EB_DELAYED_DOMAIN_ITEM
-		undefine
-			string_representation
-		redefine
-			domain
-		end
-
 	EB_METRIC_DOMAIN_ITEM
-		undefine
+		redefine
+			is_delayed_item,
 			is_valid,
 			is_equal,
-			is_delayed_item,
-			is_real_delayed_item,
-			is_input_domain_item
-		redefine
 			string_representation
 		end
 
-	EB_METRIC_SHARED
+	EB_METRIC_INTERFACE_PROVIDER
 		undefine
 			is_equal
 		end
@@ -36,50 +26,44 @@ inherit
 create
 	make
 
-feature -- Access
+feature -- Status report
 
-	string_representation: STRING is
-			-- Text of current item
+	is_delayed_item: BOOLEAN is True
+			-- Is current a delayed item?
+
+	is_valid: BOOLEAN is True
+			-- Does current represent a valid domain item?
+
+	is_equal (other: like Current): BOOLEAN is
+			-- Is `other' attached to an object considered
+			-- equal to current object?
 		do
-			if not is_valid or else not id.is_empty then
-				Result := Precursor
-			else
-				Result := metric_names.te_input_domain
+			if Current.same_type (other) then
+				Result := True
 			end
 		end
+
+feature -- Access
 
 	domain (a_scope: QL_SCOPE): QL_DOMAIN is
 			-- New query lanaguage domain representing current item
 		do
-			if is_external_ql_domain_enabled then
-				Result := external_ql_domain
+			Result := a_scope.delayed_domain
+		end
+
+	string_representation: STRING is
+			-- Text of current item
+		do
+			if not is_valid then
+				Result := Precursor
 			else
-				Result := a_scope.delayed_domain
+				Result := metric_names.t_input_domain
 			end
 		end
 
-feature{EB_METRIC_VALUE_CRITERION, EB_METRIC_METRIC_VALUE_RETRIEVER, EB_METRIC_COMPONENT_HELPER} -- Access
-
-	external_ql_domain: QL_DOMAIN
-			-- QL domain used instead a delayed domain
-
-feature{EB_METRIC_VALUE_CRITERION, EB_METRIC_METRIC_VALUE_RETRIEVER, EB_METRIC_COMPONENT_HELPER} -- Status report
-
-	is_external_ql_domain_enabled: BOOLEAN is
-			-- Should `domain' return `external_ql_domain'?
-			-- Note: This is used to calculate value criterion.
+	query_language_item: QL_ITEM is
+			-- Query language item representation of current domain item
 		do
-			Result := external_ql_domain /= Void
-		end
-
-feature{EB_METRIC_VALUE_CRITERION, EB_METRIC_METRIC_VALUE_RETRIEVER, EB_METRIC_COMPONENT_HELPER} -- Setting
-
-	set_external_ql_domain (a_domain: like external_ql_domain) is
-			-- Set `external_ql_domain' with `a_domain'.
-		do
-			external_ql_domain := a_domain
-		ensure
-			external_ql_domain_set: external_ql_domain = a_domain
 		end
 
 feature -- Process
@@ -121,5 +105,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

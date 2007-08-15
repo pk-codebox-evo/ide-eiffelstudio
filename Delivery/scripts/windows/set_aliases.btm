@@ -1,24 +1,19 @@
 REM Define some user parameters here
 
 REM The file where all output is stored
-set INSTALL_LOG=c:\work\61dev_deliv\install.log
+set INSTALL_LOG=c:\work\57dev_deliv\install.log
 REM NB: The following directory is where a new version of ec.exe will be finalized.
-set FINALIZATION_DIR=c:\work\61dev_deliv
+set FINALIZATION_DIR=c:\work\57dev_deliv
 REM NB: The following directory must contain document.exe
-set DOCUMENT_DIR=c:\work\Deliv_61
+set DOCUMENT_DIR=c:\work\Deliv_57
 REM Tag to export files in SVN at ETHZ
-set DEFAULT_ORIGO_SVN=https://eiffelsoftware.origo.ethz.ch/svn/es/trunk
+set DEFAULT_ORIGO_SVN=https://eiffelsoftware.origo.ethz.ch/svn/es/branches/Eiffel_57
 REM Tag to export files in SVN at ISE
-set DEFAULT_ISE_SVN=svn://%USERNAME%@svn.ise/ise_svn/trunk
+set DEFAULT_ISE_SVN=svn://%USERNAME%@svn.ise/ise_svn/branches/Eiffel_57
 REM NB: The following directory will be erased!
 set TMP_EIFFEL_SRC=c:\work\tmpdev
-iff not defined ORIGO_SVN_REVISION then
-	set ORIGO_SVN_REVISION=HEAD
-endiff
 REM Where the new delivery is set up. Warning: if it exists, the directory will be erased!
-set INSTALL_DIR=c:\work\InstalledEiffel61
-set STUDIO_DIR=%INSTALL_DIR\EiffelStudio
-set STUDIO_NAME=Eiffel61
+set INSTALL_DIR=c:\work\InstalledEiffel57
 
 REM Check for Windows 64 bits.
 iff "%ISE_PLATFORM%" == "win64" then
@@ -35,7 +30,7 @@ alias fullrd del /syeqxz >>& %INSTALL_LOG
 REM Remove a file
 alias fullrf del /yqze
 REM Retrieve a file from the old delivery and put it in the new one
-alias quick_move `iff "%2" == "" then & copy %ISE_EIFFEL\%1 %STUDIO_DIR\%1 >>& %INSTALL_LOG & else & copy %1 %ISE_EIFFEL\%2 %STUDIO_DIR\%2 >>& %INSTALL_LOG & endiff`
+alias quick_move `iff "%2" == "" then & copy %ISE_EIFFEL\%1 %INSTALL_DIR\%1 >>& %INSTALL_LOG & else & copy %1 %ISE_EIFFEL\%2 %INSTALL_DIR\%2 >>& %INSTALL_LOG & endiff`
 REM Create a directory if it doesn't exist already
 alias safe_md `iff not isdir %1 then & iff exist %1 then & fullrf %1 & endiff & md %1 & endiff`
 REM Save current path into TMP_PATH
@@ -50,17 +45,14 @@ REM Clean exit
 alias cancel `echo Exiting... & echo Total time used: & echo %@TIMER[2] & set PATH=%OLD_PATH & cdd %INIT_DIR & set EIFFEL_SRC=%OLD_EIFFEL_SRC & set ISE_LIBRARY=%OLD_ISE_LIBRARY & set ISE_SRC=%OLD_ISE_SRC & iff defined TMP_ISE_EIFFEL then & set ISE_EIFFEL=%TMP_ISE_EIFFEL & set TMP_ISE_EIFFEL= & endiff & *cancel`
 
 REM CVS Commands: checkout, export
-alias co `call  %INIT_DIR\svn_command.bat co %$ >>& %INSTALL_LOG`
-alias exprt `call %INIT_DIR\svn_command.bat --force export %$ >>& %INSTALL_LOG`
-alias exprtfile `call %INIT_DIR\svn_command.bat cat %$` 
+alias co `call svn co %$ >>& %INSTALL_LOG`
+alias exprt `call svn export %$ >>& %INSTALL_LOG`
+alias exprtfile `call svn cat %$` 
+alias revert `call svn -R revert . >>& %INSTALL_LOG`
 
 REM C Compilation
-alias default_make `save_path & call compile_library.bat msc >>& %INSTALL_LOG & cd %TMP_PATH`
-iff defined WIN64 then
-alias all_makes default_make
-else
-alias all_makes `save_path & call compile_library.bat msc >>& %INSTALL_LOG & cd %TMP_PATH & call compile_library.bat mingw >>& %INSTALL_LOG & cd %TMP_PATH`
-endiff
+alias default_make `if exist make_msc.bat (save_path & call make_msc.bat >>& %INSTALL_LOG & cd %TMP_PATH)`
+alias all_makes `save_path & iff exist make_msc.bat then & call make_msc.bat >>& %INSTALL_LOG & endiff & iff exist make_bcb.bat then & cd %TMP_PATH & call make_bcb.bat >>& %INSTALL_LOG & endiff & cd %TMP_PATH`
 
 REM Eiffel Compilation
 REM Remove a project from the current directory, if any
@@ -71,7 +63,7 @@ REM Melt at the Eiffel level only
 alias melt `ec -local -config %$ >>& %INSTALL_LOG`
 alias freeze `ec -local -freeze -c_compile -config %$ >>& %INSTALL_LOG`
 REM Move up the generated finalized exe (its name is the parameter) and delete the compiled files
-alias cleanup_dotnet_eiffel `if exist EIFGENs\%1\F_code\%2 move EIFGENs\%1\F_code\%2 .  & if exist EIFGENs\%1\F_code\lib*.dll move EIFGENs\%1\F_code\lib*.dll . & if exist EIFGENs\%1\F_code\Assemblies move EIFGENs\%1\F_code\Assemblies\*.dll . &  clean_project`
+alias cleanup_dotnet_eiffel `if exist EIFGENs\%1\F_code\%2 move EIFGENs\%1\F_code\%2 .  & if exist EIFGENs\%1\F_code\lib%2 move EIFGENs\%1\F_code\lib%2 . & clean_project`
 alias cleanup_eiffel `if exist EIFGENs\%1\F_code\%2 move EIFGENs\%1\F_code\%2 . & clean_project`
 
 REM Tests....

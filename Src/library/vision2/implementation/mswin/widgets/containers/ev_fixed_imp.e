@@ -12,9 +12,7 @@ class
 inherit
 	EV_FIXED_I
 		redefine
-			interface,
-			extend_with_position_and_size,
-			set_item_position_and_size
+			interface
 		end
 
 	EV_WIDGET_LIST_IMP
@@ -31,8 +29,6 @@ inherit
 	EV_WEL_CONTROL_CONTAINER_IMP
 		rename
 			make as ev_wel_control_container_make
-		undefine
-			on_wm_dropfiles
 		redefine
 			top_level_window_imp,
 			default_style,
@@ -59,51 +55,12 @@ feature {NONE} -- Initialization
 
 feature -- Status setting
 
-	extend_with_position_and_size (a_widget: EV_WIDGET; a_x, a_y, a_width, a_height: INTEGER)
-			-- Add `a_widget' to `Current' with a position of `a_x', a_y' and a dimension of `a_width' and `a_height'.
-		local
-			v_imp: EV_WIDGET_IMP
-			wel_win: WEL_WINDOW
-		do
-				-- Add `a_widget' to `Current'.
-			a_widget.implementation.on_parented
-			v_imp ?= a_widget.implementation
-			ev_children.go_i_th (count + 1)
-			ev_children.put_left (v_imp)
-			wel_win ?= Current
-			v_imp.wel_set_parent (wel_win)
-			v_imp.set_top_level_window_imp (top_level_window_imp)
-			new_item_actions.call ([a_widget])
-			if index = count then
-				index := index + 1
-			end
-
-				-- Set size and position.
-			v_imp.ev_move (a_x, a_y)
-			v_imp.parent_ask_resize (a_width, a_height)
-			v_imp.invalidate
-			notify_change (nc_minsize, Current)
-		end
-
-	set_item_position_and_size (a_widget: EV_WIDGET; a_x, a_y, a_width, a_height: INTEGER)
-			-- Assign `a_widget' with a position of `a_x' and a_y', and a dimension of `a_width' and `a_height'.
-		local
-			wel_win: EV_WIDGET_IMP
-		do
-			wel_win ?= a_widget.implementation
-			wel_win.ev_move (a_x, a_y)
-			wel_win.parent_ask_resize (a_width, a_height)
-			wel_win.invalidate
-			notify_change (Nc_minsize, wel_win)
-		end
-
 	set_item_position (a_widget: EV_WIDGET; an_x, a_y: INTEGER) is
 			-- Set `a_widget.x_position' to `an_x'.
 			-- Set `a_widget.y_position' to `a_y'.
 		local
 			wel_win: EV_WIDGET_IMP
 		do
-			application_implementation.erase_rubber_band
 			wel_win ?= a_widget.implementation
 			check
 				wel_win_not_void: wel_win /= Void
@@ -246,11 +203,17 @@ feature {NONE} -- Implementation
 			-- we integrate the changes immediatly, otherwise, we postpone
 			-- them.
 			-- Use the constants defined in EV_SIZEABLE_IMP
+		local
+			widget_imp: EV_WIDGET_IMP
 		do
 			if not child_cell.is_user_min_height_set or else not child_cell.is_user_min_width_set then
 				Precursor {EV_WIDGET_LIST_IMP} (type, child)
 			else
-				child.parent_ask_resize (child.child_cell.width, child.child_cell.height)
+				widget_imp ?= child
+				check
+					widget_imp_not_void: widget_imp /= Void
+				end
+				widget_imp.parent_ask_resize (child.width, child.height)
 			end
 		end
 

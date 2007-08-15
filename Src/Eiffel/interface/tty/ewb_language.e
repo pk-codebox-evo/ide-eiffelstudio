@@ -32,27 +32,25 @@ feature -- Creation
 
 feature {NONE} -- Help message
 
-	help_message: STRING_32 is
+	help_message: STRING is
 		local
 			i: INTEGER
-			l_str: STRING_32
 		do
-			l_str := language_help.twin
-			l_str.append ("%N%T%T%T%T");
+			Result := language_help.twin
+			Result.append ("%N%T%T%T%T");
 			from
 				i := 1;
-				l_str.extend ('[');
+				Result.extend ('[');
 			until
 				i > language_names.count
 			loop
-				l_str.append (language_names.item (i));
+				Result.append (language_names.item (i));
 				i := i + 1;
 				if i <= language_names.count then
-					l_str.extend (',');
+					Result.extend (',');
 				end;
 			end;
-			l_str.extend (']');
-			Result := l_str
+			Result.extend (']');
 		end;
 
 feature {NONE} -- Execute

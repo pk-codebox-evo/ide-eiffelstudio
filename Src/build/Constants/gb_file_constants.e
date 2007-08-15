@@ -18,31 +18,11 @@ inherit
 
 feature -- Generation constants
 
-	Default_component_filename: FILE_NAME
-			-- Location of component file.
-		once
-			create Result.make_from_string (eiffel_layout.shared_application_path)
-			Result.extend ("components")
-			Result.set_file_name ("components")
-			Result.add_extension ("xml")
-		ensure
-			Result_ok: Result /= Void and then not Result.is_empty
-		end
-
-	Component_filename: FILE_NAME
-			-- Location of component file.
-		once
-			create Result.make_from_string (eiffel_layout.Eiffel_home)
-			Result.set_file_name ("esbuilder_components")
-			Result.add_extension ("xml")
-		ensure
-			Result_ok: Result /= Void and then not Result.is_empty
-		end
-
 	template_file_location: FILE_NAME is
 			-- Location of templates.
 		do
-			create Result.make_from_string (eiffel_layout.shared_application_path)
+			create Result.make_from_string (eiffel_layout.eiffel_installation_dir_name)
+			Result.extend ("build")
 			Result.extend ("templates")
 		end
 
@@ -109,18 +89,6 @@ feature -- XML saving
 
 	xml_format: STRING is "<?xml version=%"1.0%" encoding=%"UTF-8%"?>";
 		-- XML format type, included at start of `document'.
-
-feature -- Preferences
-
-	default_xml_file: FILE_NAME is
-			-- General system level resource specification XML file.			
-		do
-			create Result.make_from_string (eiffel_layout.shared_application_path)
-			Result.extend ("config")
-			Result.extend ("default.xml")
-		ensure
-			result_not_empty: Result /= Void
-		end
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

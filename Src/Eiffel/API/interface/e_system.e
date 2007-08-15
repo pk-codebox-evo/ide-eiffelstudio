@@ -41,7 +41,7 @@ feature -- Access
 	root_class_name: STRING is
 			-- Root class name
 		do
-			Result := System.root_type_name
+			Result := System.root_class_name
 		end;
 
 	name: STRING is
@@ -55,6 +55,12 @@ feature -- Access
 		do
 			Result := System.root_cluster
 		end
+
+	statistics: SYSTEM_STATISTICS is
+			-- Statistics of the Eiffel System
+		do
+			create Result.make
+		end;
 
 	document_path: DIRECTORY_NAME is
 			-- Path specified for the documents directory for classes.
@@ -205,7 +211,7 @@ feature -- Access
 			Result := workbench.system /= Void and then workbench.System.is_precompiled
 		end;
 
-feature {COMPILER_EXPORTER}
+feature {COMPILER_EXPORTER, CALL_STACK_ELEMENT, ABSTRACT_REFERENCE_VALUE, EXPANDED_VALUE, ATTR_REQUEST, APPLICATION_STATUS}
 
 	valid_dynamic_id (i: INTEGER): BOOLEAN is
 			-- Is the class_type dynamic id `i' valid?

@@ -38,7 +38,6 @@ feature {NONE} -- Initialization
 			default_create
 			set_title (a_title)
 		ensure
-				-- On some platform we cannot change the title.
 			title_assigned: title.is_equal (a_title)
 			cloned: title /= a_title
 		end

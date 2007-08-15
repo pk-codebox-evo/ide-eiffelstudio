@@ -2,7 +2,7 @@
 	description: "Interpreter declarations and definitions."
 	date:		"$Date$"
 	revision:	"$Revision$"
-	copyright:	"Copyright (c) 1985-2007, Eiffel Software."
+	copyright:	"Copyright (c) 1985-2006, Eiffel Software."
 	license:	"GPL version 2 see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"Commercial license is available at http://www.eiffel.com/licensing"
 	copying: "[
@@ -240,8 +240,6 @@ extern struct opstack op_stack;               /* Operational stack */
 #define BC_CCLONE		(unsigned char) 146
 #define BC_CEQUAL		(unsigned char) 147
 
-#define BC_NOTUSED_148		(unsigned char) 148
-
 /* Object reattachment */
 #define BC_BOX			(unsigned char) 149
 
@@ -249,8 +247,8 @@ extern struct opstack op_stack;               /* Operational stack */
 #define BC_UINT16			(unsigned char) 151
 #define BC_UINT32			(unsigned char) 152
 #define BC_UINT64			(unsigned char) 153
-#define BC_FLOOR			(unsigned char) 154
-#define BC_CEIL				(unsigned char) 155
+#define BC_NOTUSED_154		(unsigned char) 154
+#define BC_NOTUSED_155		(unsigned char) 155
 #define BC_NOTUSED_156		(unsigned char) 156
 #define BC_NOTUSED_157		(unsigned char) 157
 #define BC_NOTUSED_158		(unsigned char) 158
@@ -270,30 +268,21 @@ extern struct opstack op_stack;               /* Operational stack */
 
 #define MAX_CODE                169    /* Maximum legal byte code */
 
-
-	/* Structure to get and set variable value in the debugger */
-typedef struct tag_EIF_DEBUG_VALUE {
-	EIF_TYPED_VALUE value; /* Value of the requested item   */
-	void * address;        /* Address of the requested item */
-} EIF_DEBUG_VALUE;
-
-
-extern void metamorphose_top(struct stochunk * scur, EIF_TYPED_VALUE * volatile stop); /* Converts the top-level item on the operational stack from a basic type to a reference type */
+extern void metamorphose_top(); /* Converts the top-level item on the operational stack from a basic type to a reference type */
 
 extern void call_disp(uint32 dtype, char *object);				/* Function to call dispose routines */ 
 extern void xiinv(unsigned char *icval, int where);			/* Invariant interpreter */
 extern void xinitint(void);										/* Initialize the interpreter */
-extern EIF_TYPED_VALUE *otop(void);									/* Top of the stack */
-extern void ivalue(EIF_DEBUG_VALUE * value, int code, uint32 num, uint32 start);	/* Value request from current routine */
-extern void sync_registers(struct stochunk *stack_cur, EIF_TYPED_VALUE *stack_top);		/* Resynchronize registers on routine */
+extern struct item *otop(void);									/* Top of the stack */
+extern struct item *ivalue(int code, uint32 num, uint32 start);	/* Value request from current routine */
+extern void sync_registers(struct stochunk *stack_cur, struct item *stack_top);		/* Resynchronize registers on routine */
 
 extern void idump(FILE *fd, char *start);
 extern void opstack_reset(struct opstack *stk);
 
-extern void dynamic_eval(int fid, int stype, int dtype, int is_precompiled, int is_basic_type, int is_static_call, int is_inline_agent);	/* Dynamic evaluation of a feature */
-extern EIF_TYPED_VALUE * dynamic_eval_dbg(int fid, int stype, int dtype, int is_precompiled, int is_basic_type, int is_static_call, EIF_TYPED_VALUE* previous_otop, int* exception_occured); /* Dynamic evaluation of a feature. Exceptions are caught*/
+extern void dynamic_eval(int fid, int stype, int is_precompiled, int is_basic_type, int is_inline_agent);	/* Dynamic evaluation of a feature */
+extern struct item * dynamic_eval_dbg(int fid, int stype, int is_precompiled, int is_basic_type, struct item* previous_otop, int* exception_occured); /* Dynamic evaluation of a feature. Exceptions are caught*/
 
-extern short get_compound_id (EIF_REFERENCE, short);
 
 #ifdef __cplusplus
 }

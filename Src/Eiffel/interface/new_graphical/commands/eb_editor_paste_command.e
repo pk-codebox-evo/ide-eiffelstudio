@@ -12,50 +12,16 @@ inherit
 	EB_CLIPBOARD_COMMAND
 		redefine
 			executable,
-			tooltext,
-			pixel_buffer,
-			mini_pixmap,
-			mini_pixel_buffer
+			tooltext
 		end
 
 	EB_DEVELOPMENT_WINDOW_COMMAND
 		redefine
-			make,
-			executable,
-			internal_recycle
-		end
-
-	EB_EDITOR_COMMAND
-		rename
-			make as make_editor
-		redefine
-			internal_recycle,
-			executable,
-			mini_pixmap,
-			mini_pixel_buffer,
-			tooltext
+			executable
 		end
 
 create
 	make
-
-feature {NONE} -- Initialization
-
-	make (a_target: like target) is
-			-- Initialization
-		do
-			Precursor {EB_DEVELOPMENT_WINDOW_COMMAND}(a_target)
-			make_editor
-			name := "Editor_paste"
-			description := Interface_names.e_Paste
-			tooltext := interface_names.b_paste
-			tooltip := interface_names.f_paste
-			pixel_buffer := pixmaps.icon_pixmaps.general_paste_icon_buffer
-			pixmap := pixmaps.icon_pixmaps.general_paste_icon
-			menu_name := interface_names.m_paste
-			add_agent (agent execute_command)
-			set_needs_editable (True)
-		end
 
 feature -- Status report
 
@@ -66,38 +32,57 @@ feature -- Status report
 			Result := is_sensitive
 		end
 
-feature {NONE} -- Implementation
+feature -- Execution
 
-	execute_command is
+	execute is
 			-- Execute the copy/copy/paste operation
-		local
-			l_editor: like editor
 		do
 				--| FIXME ARNAUD: waiting for Vision2 clipboard.
-			l_editor := editor
-			if l_editor /= Void and then not l_editor.is_recycled and then l_editor.number_of_lines /= 0 then
-				l_editor.run_if_editable (agent l_editor.paste)
-			end
+			editor.paste
+		end
+
+feature {NONE} -- Implementation
+
+	menu_name: STRING is
+			-- Name as it appears in the menu (with & symbol).
+		do
+			Result := Interface_names.m_Paste
+		end
+
+	pixmap: EV_PIXMAP is
+			-- Pixmap representing the command.
+		do
+			Result := pixmaps.icon_pixmaps.general_paste_icon
+		end
+
+	tooltip: STRING is
+			-- Tooltip for the toolbar button.
+		do
+			Result := Interface_names.f_Paste
+		end
+
+	tooltext: STRING is
+			-- Text for the toolbar button.
+		do
+			Result := Interface_names.b_Paste
 		end
 
 	editor: EB_EDITOR is
 			-- Editor corresponding to Current
 		do
-			Result := target.ui.current_editor
+			Result := target.current_editor
 		end
 
-	tooltext: STRING_GENERAL
-
-	mini_pixmap: EV_PIXMAP
-
-	mini_pixel_buffer: EV_PIXEL_BUFFER
-
-	internal_recycle is
-			-- Internal recycle
+	description: STRING is
+			-- Description for current command
 		do
-			Precursor {EB_DEVELOPMENT_WINDOW_COMMAND}
-			Precursor {EB_EDITOR_COMMAND}
+			Result := Interface_names.e_Paste
 		end
+
+	name: STRING is "Editor_paste";
+			-- Name of the command. Used to store the command in the
+			-- preferences.
+
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

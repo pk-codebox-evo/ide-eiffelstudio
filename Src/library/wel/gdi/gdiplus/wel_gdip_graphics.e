@@ -68,13 +68,13 @@ feature -- Command
 			create l_dest_rect.make (a_dest_x, a_dest_y, a_dest_x + a_image.width, a_image.height)
 			create l_src_rect.make (0, 0, a_image.width, a_image.height)
 
-			draw_image_with_dest_rect_src_rect (a_image, l_dest_rect, l_src_rect)
+			draw_image_with_src_rect_dest_rect (a_image, l_dest_rect, l_src_rect)
 
 			l_dest_rect.dispose
 			l_src_rect.dispose
 		end
 
-	draw_image_with_dest_rect_src_rect (a_image: WEL_GDIP_IMAGE; a_dest_rect, a_src_rect: WEL_RECT) is
+	draw_image_with_src_rect_dest_rect (a_image: WEL_GDIP_IMAGE; a_dest_rect, a_src_rect: WEL_RECT) is
 			-- Draw `a_image' at `a_dest_rect' from `a_src_dest'
 		require
 			not_void: a_image /= Void
@@ -100,70 +100,6 @@ feature -- Command
 			else
 				c_gdip_draw_image_rect_rect_i (gdi_plus_handle, item, a_image.item, a_dest_rect.x, a_dest_rect.y, a_dest_rect.width, a_dest_rect.height, a_src_rect.x, a_src_rect.y, a_src_rect.width, a_src_rect.height, a_unit, a_image_attributes.item, l_null_pointer, l_null_pointer, $l_result)
 			end
-			check ok: l_result = {WEL_GDIP_STATUS}.ok end
-		end
-
-	draw_string (a_string: STRING_GENERAL; a_length: INTEGER; a_font: WEL_GDIP_FONT; a_x, a_y: REAL) is
-			-- Draw `a_length' characters of `a_string' with `a_font' at `a_x',`a_y' position.
-		require
-			not_void: a_string /= Void
-			valid: a_length >= 0
-			not_void: a_font /= Void
-			valid: a_x >= 0 and a_y >= 0
-		local
-			l_rect_f: WEL_GDIP_RECT_F
-			l_format: WEL_GDIP_STRING_FORMAT
-			l_brush: WEL_GDIP_BRUSH
-			l_color: WEL_GDIP_COLOR
-			l_system_color: WEL_SYSTEM_COLORS
-			l_wel_color_ref: WEL_COLOR_REF
-		do
-			create l_rect_f.make_with_size (a_x, a_y, 0, 0)
-			create l_format.make
-			create l_system_color
-			l_wel_color_ref := l_system_color.system_color_btntext
-			create l_color.make_from_argb (255, l_wel_color_ref.red, l_wel_color_ref.green, l_wel_color_ref.blue)
-			create l_brush.make_solid (l_color)
-			draw_string_with_length_font_rect_format_brush (a_string, a_length, a_font, l_rect_f, l_format, l_brush)
-		end
-
-	draw_string_with_length_font_rect_format_brush (a_string: STRING_GENERAL; a_length: INTEGER; a_font: WEL_GDIP_FONT; a_rect_f: WEL_GDIP_RECT_F; a_format: WEL_GDIP_STRING_FORMAT; a_brush: WEL_GDIP_BRUSH) is
-			-- Draw string with arguments.
-		require
-			not_void: a_string /= Void
-			valid: a_length >= 0
-			not_void: a_font /= Void
-			not_void: a_rect_f /= Void
-		local
-			l_result: INTEGER
-			l_wel_string: WEL_STRING
-		do
-			create l_wel_string.make (a_string)
-			c_gdip_draw_string (gdi_plus_handle, item, l_wel_string.item, a_length, a_font.item, a_rect_f.item, a_format.item, a_brush.item, $l_result)
-		end
-
-feature -- Query
-
-	dc: WEL_MEMORY_DC  is
-			-- Get a gdi DC.
-		local
-			l_pointer: POINTER
-			l_result: INTEGER
-		do
-			l_pointer := c_gdip_get_dc (gdi_plus_handle, item, $l_result)
-			check ok: l_result = {WEL_GDIP_STATUS}.ok end
-			create {WEL_MEMORY_DC} Result.make_by_pointer (l_pointer)
-		ensure
-			not_void: Result /= Void
-		end
-
-	release_dc (a_dc: WEL_DC) is
-			-- Release `a_dc' which was created by previous calling of `dc'.
-		local
-			l_result: INTEGER
-		do
-			c_gdip_release_dc (gdi_plus_handle, item, a_dc.item, $l_result)
-			check ok: l_result = {WEL_GDIP_STATUS}.ok end
 		end
 
 feature -- Destroy
@@ -209,7 +145,7 @@ feature {NONE} -- C externals
 		end
 
 	c_gdip_get_image_graphics_context (a_gdiplus_handle: POINTER; a_image: POINTER; a_result_status: TYPED_POINTER [INTEGER]): POINTER is
-			-- Get gdi+ graphics from `a_image'
+			-- Get `a_result_graphics' from `a_image'
 		require
 			a_gdiplus_handle_not_null: a_gdiplus_handle /= default_pointer
 		external
@@ -233,56 +169,6 @@ feature {NONE} -- C externals
 			}
 			]"
 		end
-
-	c_gdip_get_dc (a_gdiplus_handle: POINTER; a_graphics: POINTER; a_result_status: TYPED_POINTER [INTEGER]): POINTER is
-			-- Get gdi HDC related with Current.
-		require
-			a_gdiplus_handle_not_null: a_gdiplus_handle /= default_pointer
-		external
-			"C inline use %"wel_gdi_plus.h%""
-		alias
-			"[
-			{
-				static FARPROC GdipGetDC = NULL;
-				HDC *l_result = NULL;
-				*(EIF_INTEGER *) $a_result_status = 1;
-				
-				if (!GdipGetDC) {
-					GdipGetDC = GetProcAddress ((HMODULE) $a_gdiplus_handle, "GdipGetDC");
-				}
-				if (GdipGetDC) {
-					*(EIF_INTEGER *) $a_result_status = (FUNCTION_CAST_TYPE (GpStatus, WINGDIPAPI, (GpGraphics* , HDC *)) GdipGetDC)
-								((GpImage *) $a_graphics,
-								(HDC *) &l_result);
-				}				
-				return (EIF_POINTER) l_result;
-			}
-			]"
-		end
-
-	c_gdip_release_dc (a_gdiplus_handle: POINTER; a_graphics: POINTER; a_dc: POINTER; a_result_status: TYPED_POINTER [INTEGER]) is
-				-- Release gdi HDC which was created by `c_gdip_get_dc'.
-			require
-				a_gdiplus_handle_not_null: a_gdiplus_handle /= default_pointer
-			external
-				"C inline use %"wel_gdi_plus.h%""
-			alias
-				"[
-				{
-					static FARPROC GdipReleaseDC = NULL;
-					*(EIF_INTEGER *) $a_result_status = 1;
-					
-					if (!GdipReleaseDC) {
-						GdipReleaseDC = GetProcAddress ((HMODULE) $a_gdiplus_handle, "GdipReleaseDC");
-					}
-					if (GdipReleaseDC) {
-						*(EIF_INTEGER *) $a_result_status = (FUNCTION_CAST_TYPE (GpStatus, WINGDIPAPI, (GpGraphics* , HDC)) GdipReleaseDC)
-									((GpImage *) $a_graphics,
-									(HDC) $a_dc);
-					}				
-				}
-				]"
-			end
 
 	c_gdip_delete_graphics (a_gdiplus_handle: POINTER; a_graphics: POINTER; a_result_status: TYPED_POINTER [INTEGER]) is
 			-- Delete `a_graphics' gdi+ object.
@@ -374,46 +260,6 @@ feature {NONE} -- C externals
 				}
 			}
 			]"
-		end
-
-	c_gdip_draw_string (a_gdiplus_handle: POINTER; a_graphics: POINTER; a_wchar_string: POINTER; a_length: INTEGER; a_font: POINTER; a_gp_rect_f: POINTER; a_gp_string_format: POINTER; a_gp_brush: POINTER; a_result_status: TYPED_POINTER [INTEGER]) is
-			-- Draw `a_wchar_string' on `a_graphics'.
-		require
-			a_gdiplus_handle_not_null: a_gdiplus_handle /= default_pointer
-			a_graphics_not_null: a_graphics /= default_pointer
-		external
-			"C inline use %"wel_gdi_plus.h%""
-		alias
-			"[
-			{
-				static FARPROC GdipDrawString = NULL;
-				*(EIF_INTEGER *) $a_result_status = 1;
-
-				if (!GdipDrawString) {
-					GdipDrawString = GetProcAddress ((HMODULE) $a_gdiplus_handle, "GdipDrawString");
-				}
-				if (GdipDrawString) {
-					*(EIF_INTEGER *) $a_result_status = (FUNCTION_CAST_TYPE (GpStatus, WINGDIPAPI, (GpGraphics *, GDIPCONST WCHAR *, INT, GDIPCONST GpFont *, GDIPCONST RectF *, GDIPCONST GpStringFormat *, GDIPCONST GpBrush *)) GdipDrawString)
-								((GpGraphics *) $a_graphics,
-								(GDIPCONST WCHAR *) $a_wchar_string,
-								(INT) $a_length,
-								(GDIPCONST GpFont *) $a_font,
-								(GDIPCONST RectF *) $a_gp_rect_f,
-								(GDIPCONST GpStringFormat *) $a_gp_string_format,
-								(GDIPCONST GpBrush *) $a_gp_brush);
-				}
-			}
-			]"
-		end
-
-feature -- Obsolete
-
-	draw_image_with_src_rect_dest_rect (a_image: WEL_GDIP_IMAGE; a_dest_rect, a_src_rect: WEL_RECT) is
-			-- Draw `a_image' at `a_dest_rect' from `a_src_dest'
-		obsolete
-			"Use draw_image_with_dest_rect_src_rect instead"
-		do
-			draw_image_with_dest_rect_src_rect (a_image, a_dest_rect, a_src_rect)
 		end
 
 indexing

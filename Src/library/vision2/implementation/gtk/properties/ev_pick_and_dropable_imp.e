@@ -93,6 +93,7 @@ feature {NONE} -- Implementation
 	enable_capture is
 			-- Grab all the mouse and keyboard events.
 		local
+			i: INTEGER
 			l_interface: EV_WIDGET
 			l_grab_widget: POINTER
 		do
@@ -112,10 +113,21 @@ feature {NONE} -- Implementation
 				l_interface ?= interface
 				app_implementation.set_captured_widget (l_interface)
 				{EV_GTK_EXTERNALS}.gtk_grab_add (event_widget)
-				if app_implementation.focused_popup_window /= top_level_window_imp then
-					grab_keyboard_and_mouse
-				end
-				app_implementation.disable_debugger
+--				top_level_window_imp.grab_keyboard_and_mouse
+				App_implementation.disable_debugger
+				i := {EV_GTK_EXTERNALS}.gdk_pointer_grab (
+					{EV_GTK_EXTERNALS}.gtk_widget_struct_window (event_widget),
+					1,
+					{EV_GTK_EXTERNALS}.gdk_button_release_mask_enum |
+					{EV_GTK_EXTERNALS}.gdk_button_press_mask_enum |
+					{EV_GTK_EXTERNALS}.gdk_pointer_motion_mask_enum |
+					{EV_GTK_EXTERNALS}.gdk_pointer_motion_hint_mask_enum
+					,
+					null,
+					null,
+					0
+				)
+				i := {EV_GTK_EXTERNALS}.gdk_keyboard_grab ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (event_widget), True, 0)
 			end
 		end
 
@@ -125,67 +137,23 @@ feature {NONE} -- Implementation
 		do
 			if has_capture then
 				{EV_GTK_EXTERNALS}.gtk_grab_remove (event_widget)
-				if app_implementation.focused_popup_window /= top_level_window_imp then
-					release_keyboard_and_mouse
-				end
+				{EV_GTK_EXTERNALS}.gdk_pointer_ungrab (
+					0 -- guint32 time
+				)
+				{EV_GTK_EXTERNALS}.gdk_keyboard_ungrab (0) -- guint32 time
+				App_implementation.enable_debugger
 				App_implementation.set_captured_widget (Void)
 			end
-			App_implementation.enable_debugger
 		end
 
 	has_capture: BOOLEAN is
 			-- Does Current have the keyboard and mouse event capture?
 		do
-			Result := App_implementation.captured_widget = interface or else app_implementation.pick_and_drop_source = Current
-		end
-
-	grab_keyboard_and_mouse is
-			-- Perform a global mouse and keyboard grab.
-		local
-			i: INTEGER
-			l_gdk_window: POINTER
-		do
-			App_implementation.disable_debugger
-			l_gdk_window := {EV_GTK_EXTERNALS}.gtk_widget_struct_window (event_widget)
-			i := {EV_GTK_EXTERNALS}.gdk_pointer_grab (
-				l_gdk_window,
-				1,
-				{EV_GTK_EXTERNALS}.gdk_button_release_mask_enum |
-				{EV_GTK_EXTERNALS}.gdk_button_press_mask_enum |
-				{EV_GTK_EXTERNALS}.gdk_pointer_motion_mask_enum |
-				{EV_GTK_EXTERNALS}.gdk_pointer_motion_hint_mask_enum
-				,
-				null,
-				null,
-				0
-			)
-			i := {EV_GTK_EXTERNALS}.gdk_keyboard_grab (l_gdk_window, True, 0)
-		end
-
-	release_keyboard_and_mouse is
-			-- Release mouse and keyboard grab.
-		do
-			{EV_GTK_EXTERNALS}.gdk_pointer_ungrab (
-				0 -- guint32 time
-			)
-			{EV_GTK_EXTERNALS}.gdk_keyboard_ungrab (0) -- guint32 time
-			app_implementation.enable_debugger
+			Result := {EV_GTK_EXTERNALS}.gtk_object_struct_flags (event_widget) & {EV_GTK_EXTERNALS}.GTK_HAS_GRAB_ENUM = {EV_GTK_EXTERNALS}.GTK_HAS_GRAB_ENUM or else
+			{EV_GTK_EXTERNALS}.gtk_object_struct_flags (c_object) & {EV_GTK_EXTERNALS}.GTK_HAS_GRAB_ENUM = {EV_GTK_EXTERNALS}.GTK_HAS_GRAB_ENUM
 		end
 
 feature -- Implementation
-
-	draw_rubber_band  is
-			-- Erase previously drawn rubber band.
-			-- Draw a rubber band between initial pick point and cursor.
-		do
-			app_implementation.draw_rubber_band
-		end
-
-	erase_rubber_band  is
-			-- Erase previously drawn rubber band.
-		do
-			app_implementation.erase_rubber_band
-		end
 
 	enable_transport is
 			-- Activate pick/drag and drop mechanism.
@@ -224,7 +192,6 @@ feature -- Implementation
 				end
 				App_implementation.set_x_y_origin (pick_x + (a_screen_x - a_x), pick_y + (a_screen_y - a_y))
 			end
-			modify_widget_appearance (True)
 		end
 
 	is_dockable: BOOLEAN is
@@ -242,7 +209,7 @@ feature -- Implementation
 			-- Is `Current' able to initiate transport with `a_button'.
 		do
 			Result := (mode_is_drag_and_drop and then a_button = 1 and then not is_dockable) or
-				(mode_is_pick_and_drop and then a_button = 3 and then not mode_is_configurable_target_menu)
+				(mode_is_pick_and_drop and then a_button = 3)
 		end
 
 	on_mouse_button_event (
@@ -254,34 +221,65 @@ feature -- Implementation
 			-- Handle mouse button events.
 		local
 			app_imp: EV_APPLICATION_IMP
+			l_cursor: EV_POINTER_STYLE
 			l_top_level_window_imp: EV_WINDOW_IMP
 			l_call_events: BOOLEAN
 			l_dockable_source: EV_DOCKABLE_SOURCE_IMP
 			l_current: ANY
-			l_press: BOOLEAN
 		do
-			l_press := a_type /= {EV_GTK_EXTERNALS}.gdk_button_release_enum
+			l_call_events := True
 			app_imp := app_implementation
-			l_call_events := not app_imp.is_in_transport
 			l_top_level_window_imp := top_level_window_imp
 			if l_top_level_window_imp /= Void then
-				if not app_imp.is_in_transport then
-					if a_type = {EV_GTK_EXTERNALS}.gdk_button_press_enum and then is_dockable and then a_button = 1 then
+				if a_type = {EV_GTK_EXTERNALS}.gdk_button_press_enum and then not app_imp.is_in_transport then
+					if is_dockable and then a_button = 1 then
 						l_dockable_source ?= Current
 						l_dockable_source.start_dragable_filter (a_type, a_x, a_y, a_button, a_x_tilt, a_y_tilt, a_pressure, a_screen_x, a_screen_y)
-					elseif (a_type = {EV_GTK_EXTERNALS}.gdk_button_release_enum and then able_to_transport (a_button)) or else ready_for_pnd_menu (a_button, l_press) then
-						start_transport (a_x, a_y, a_button, l_press, a_x_tilt, a_y_tilt, a_pressure, a_screen_x, a_screen_y, False)
-						l_call_events := pebble = Void
-							-- If a pick and drop has initiated then we dont want button events firing.
+						l_call_events := False
+					elseif able_to_transport (a_button) then
+							-- Retrieve/calculate pebble
+						call_pebble_function (a_x, a_y, a_screen_x, a_screen_y)
+						if pebble /= Void then
+							if
+								able_to_transport (a_button)
+							then
+								pre_pick_steps (a_x, a_y, a_screen_x, a_screen_y)
+								if drop_actions_internal /= Void and then drop_actions_internal.accepts_pebble (pebble) then
+										-- Set correct accept cursor if `Current' accepts its own pebble.
+									if accept_cursor /= Void then
+										l_cursor := accept_cursor
+									else
+										l_cursor := default_accept_cursor
+									end
+								else
+										-- Set correct deny cursor
+									if deny_cursor /= Void then
+										l_cursor := deny_cursor
+									else
+										l_cursor := default_deny_cursor
+									end
+								end
+								internal_set_pointer_style (l_cursor)
+								enable_capture
+								l_call_events := False
+							elseif ready_for_pnd_menu (a_button) then
+								app_imp.target_menu (pebble).show
+								l_call_events := False
+							end
+						end
 					end
 				else
 					l_current := Current
-					if a_type = {EV_GTK_EXTERNALS}.gdk_button_release_enum and then app_imp.pick_and_drop_source = l_current then
+					if a_type = {EV_GTK_EXTERNALS}.gdk_button_press_enum and then app_imp.pick_and_drop_source = l_current then
 						end_transport (a_x, a_y, a_button, a_x_tilt, a_y_tilt, a_pressure, a_screen_x, a_screen_y)
+						l_call_events := False
 					end
 					l_dockable_source ?= l_current
 					if l_dockable_source /= Void and then a_type = {EV_GTK_EXTERNALS}.gdk_button_release_enum then
 						if l_dockable_source.awaiting_movement or else app_imp.docking_source = l_current then
+							if app_imp.docking_source = l_current then
+								l_call_events := False
+							end
 							l_dockable_source.end_dragable (a_x, a_y, a_button, a_x_tilt, a_y_tilt, a_pressure, a_screen_x, a_screen_y)
 						end
 					end
@@ -292,67 +290,22 @@ feature -- Implementation
 			end
 		end
 
-
 	start_transport (
-			a_x, a_y, a_button: INTEGER; a_press: BOOLEAN
+			a_x, a_y, a_button: INTEGER;
 			a_x_tilt, a_y_tilt, a_pressure: DOUBLE;
-			a_screen_x, a_screen_y: INTEGER; a_menu_only: BOOLEAN)
+			a_screen_x, a_screen_y: INTEGER)
 		is
 			-- Initialize a pick and drop transport.
-		local
-			l_configure_agent: PROCEDURE [ANY, TUPLE]
-			l_pebble: like pebble
 		do
-			call_pebble_function (a_x, a_y, a_screen_x, a_screen_y)
-			l_pebble := pebble
-			reset_pebble_function
-				-- We reset the pebble function immediately to avoid any 'memory leak' from calling the pebble function
-				-- It is then re-set in the configure agent.
-			if l_pebble /= Void then
-				l_configure_agent := agent (a_pebble: like pebble; a_start_x, a_start_y, a_start_screen_x, a_start_screen_y: INTEGER)
-				local
-					l_cursor: EV_POINTER_STYLE
-				do
-					pebble := a_pebble
-					enable_capture
-					pre_pick_steps (a_start_x, a_start_y, a_start_screen_x, a_start_screen_y)
-					if drop_actions_internal /= Void and then drop_actions_internal.accepts_pebble (a_pebble) then
-							-- Set correct accept cursor if `Current' accepts its own pebble.
-						if accept_cursor /= Void then
-							l_cursor := accept_cursor
-						else
-							l_cursor := default_accept_cursor
-						end
-					else
-							-- Set correct deny cursor
-						if deny_cursor /= Void then
-							l_cursor := deny_cursor
-						else
-							l_cursor := default_deny_cursor
-						end
-					end
-					internal_set_pointer_style (l_cursor)
-				end (l_pebble, a_x, a_y, a_screen_x, a_screen_y)
-			end
-
-			if ready_for_pnd_menu (a_button, a_press) then
-				app_implementation.create_target_menu (a_x, a_y, a_screen_x, a_screen_y, pebble_source, l_pebble, l_configure_agent, a_menu_only)
-			elseif l_configure_agent /= Void then
-				l_configure_agent.call (Void)
+			check
+				do_not_call: False
 			end
 		end
 
-	pebble_source: EV_PICK_AND_DROPABLE
-			-- Source of `pebble', used for widgets with deferred PND implementation
-			-- such as EV_TREE and EV_MULTI_COLUMN_LIST.
-		do
-			Result := interface
-		end
-
-	ready_for_pnd_menu (a_button: INTEGER; a_press: BOOLEAN): BOOLEAN is
+	ready_for_pnd_menu (a_button: INTEGER): BOOLEAN is
 			-- Will `Current' display a menu with button `a_button'.
 		do
-			Result := ((mode_is_target_menu or else mode_is_configurable_target_menu) and a_button = 3) and then not a_press
+			Result := mode_is_target_menu and a_button = 3
 		end
 
 	end_transport (a_x, a_y, a_button: INTEGER; a_x_tilt, a_y_tilt, a_pressure: DOUBLE; a_screen_x, a_screen_y: INTEGER) is
@@ -365,22 +318,22 @@ feature -- Implementation
 			disable_capture
 			app_imp := app_implementation
 			erase_rubber_band
-			modify_widget_appearance (False)
 			if not is_destroyed then
 				if pointer_style /= Void then
 					internal_set_pointer_style (pointer_style)
 				else
 						-- Reset the cursors.
-					{EV_GTK_EXTERNALS}.gdk_window_set_cursor ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object), default_pointer)
+					{EV_GTK_EXTERNALS}.gdk_window_set_cursor ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (visual_widget), NULL)
 				end
 			end
+
 				-- Make sure 'in_transport' returns False before firing any drop actions.
 			App_imp.on_drop (pebble)
 
 				-- Call appropriate action sequences
 			l_pebble_tuple := [pebble]
 			if
-				able_to_transport (a_button) or else ready_for_pnd_menu (a_button, False)
+				able_to_transport (a_button)
 			then
 				target := pointed_target
 				if target /= Void and then target.drop_actions.accepts_pebble (pebble) then
@@ -404,7 +357,46 @@ feature -- Implementation
 			-- Steps to perform once an attempted drop has happened.
 		do
 			App_implementation.set_x_y_origin (0, 0)
-			reset_pebble_function
+			if pebble_function /= Void then
+				pebble_function.clear_last_result
+				pebble := Void
+			end
+		end
+
+	draw_rubber_band is
+			-- Draw a segment between initial pick point and `destination'.
+		local
+			app_imp: EV_APPLICATION_IMP
+		do
+			app_imp := app_implementation
+			if rubber_band_is_drawn then
+					-- Undraw previous rubber band if any
+				pnd_screen.draw_segment (app_imp.x_origin, app_imp.y_origin, app_imp.old_pointer_x, app_imp.old_pointer_y)
+			end
+			App_imp.set_old_pointer_x_y_origin (pointer_x, pointer_y)
+			pnd_screen.draw_segment (app_imp.x_origin, app_imp.y_origin, app_imp.old_pointer_x, app_imp.old_pointer_y)
+			rubber_band_is_drawn := True
+		end
+
+	erase_rubber_band is
+			-- Erase previously drawn rubber band.
+		local
+			app_imp: EV_APPLICATION_IMP
+		do
+			app_imp := app_implementation
+			if rubber_band_is_drawn then
+				pnd_screen.draw_segment (app_imp.x_origin, app_imp.y_origin, app_imp.old_pointer_x, app_imp.old_pointer_y)
+				rubber_band_is_drawn := False
+			end
+		end
+
+	pnd_screen: EV_SCREEN is
+			-- Screen object used for drawing PND transport line
+		once
+			create Result
+			Result.enable_dashed_line_style
+			Result.set_foreground_color ((create {EV_STOCK_COLORS}).white)
+			Result.set_invert_mode
 		end
 
 	real_pointed_target: EV_PICK_AND_DROPABLE is

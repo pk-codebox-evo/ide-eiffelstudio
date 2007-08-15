@@ -8,7 +8,7 @@ indexing
 class
 	EB_CONSTANTS
 
-feature {EB_TOOL} -- Resources
+feature {NONE} -- Resources
 
 	Pixmaps: EB_SHARED_PIXMAPS is
 		once
@@ -23,13 +23,13 @@ feature {EB_TOOL} -- Resources
 	Interface_names: INTERFACE_NAMES is
 			-- All names used in the interface
 		once
-			Result := (create {SHARED_BENCH_NAMES}).names
+			create Result
 		end
 
 	Warning_messages: WARNING_MESSAGES is
 			-- All warnings used in the interface
 		once
-			Result := (create {SHARED_BENCH_NAMES}).warnings
+			create Result
 		end
 
 	Layout_constants: EV_LAYOUT_CONSTANTS is

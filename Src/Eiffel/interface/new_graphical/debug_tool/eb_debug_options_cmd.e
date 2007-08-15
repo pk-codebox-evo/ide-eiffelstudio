@@ -59,6 +59,12 @@ feature -- Formatting
 					else
 						argument_dialog.update
 					end
+					if not argument_dialog.is_displayed then
+						argument_dialog.show
+					end
+					if argument_dialog.is_minimized then
+						argument_dialog.restore
+					end
 					argument_dialog.raise
 				end
 			end
@@ -69,16 +75,10 @@ feature -- Properties
 	debugger_manager: EB_DEBUGGER_MANAGER
 			-- Manager in charge of all debugging operations.
 
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for `Current'.
 		do
-			Result := interface_names.b_Debugging_options
-		end
-
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer which representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.debug_run_icon_buffer
+			Result := "Debugging options"
 		end
 
 	pixmap: EV_PIXMAP is
@@ -87,27 +87,20 @@ feature -- Properties
 			Result := pixmaps.icon_pixmaps.tool_config_icon
 		end
 
-	name: STRING is
+	name: STRING is "Debugging_options"
 			-- Name of the command.
-		do
-			Result := "Debugging_options"
-		end
 
-	menu_name: STRING_GENERAL is
-			-- Menu name
-		do
-			Result := interface_names.m_debugging_options
-		end
+	menu_name: STRING is "De&bugging Options"
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Default text displayed in toolbar button
 		do
-			Result := interface_names.b_Debugging_options
+			Result := "Debugging options"
 		end
 
 feature {NONE} -- Attributes
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- What appears in the customize dialog box.
 		do
 			Result := tooltip

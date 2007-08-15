@@ -10,7 +10,6 @@ inherit
 	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 		redefine
 			mini_pixmap,
-			mini_pixel_buffer,
 			tooltext
 		end
 
@@ -32,21 +31,29 @@ feature -- Basic operations
 			-- Pop up cluster wizard.
 		local
 			dial: CREATE_ASSEMBLY_DIALOG
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 			l_factory: CONF_COMP_FACTORY
 		do
-			if Workbench.is_in_stable_state then
-				create l_factory
-				create dial.make (universe.target, l_factory)
-				dial.show_modal_to_window (target.window)
-				if dial.is_ok then
-					universe.target.system.store
-					lace.reset_date_stamp
-					system.force_rebuild
-					manager.refresh
+			if Workbench.is_already_compiled then
+				if
+					not Workbench.is_compiling or else
+					Workbench.last_reached_degree <= 5
+				then
+					create l_factory
+					create dial.make (universe.target, l_factory)
+					dial.show_modal_to_window (target.window)
+					if dial.is_ok then
+						universe.target.system.store
+						lace.reset_date_stamp
+						system.force_rebuild
+						manager.refresh
+					end
+				else
+					create wd.make_with_text (Warning_messages.w_Unsufficient_compilation (5))
+					wd.show_modal_to_window (target.window)
 				end
 			else
-				create wd.make_with_text (Warning_messages.w_Unsufficient_compilation (6))
+				create wd.make_with_text (Warning_messages.w_Project_not_compiled)
 				wd.show_modal_to_window (target.window)
 			end
 		end
@@ -59,21 +66,9 @@ feature -- Access
 			Result := pixmaps.mini_pixmaps.new_assembly_icon
 		end
 
-	mini_pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command for mini toolbars.
-		do
-			Result := pixmaps.mini_pixmaps.new_assembly_icon_buffer
-		end
-
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command for mini toolbars.
-		do
-			Result := pixmaps.mini_pixmaps.new_assembly_icon_buffer
-		end
-
 feature {NONE} -- Implementation
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it appears in the menu (with & symbol).
 		do
 			Result := Interface_names.m_Create_new_assembly
@@ -85,19 +80,19 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.new_reference_icon
 		end
 
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.f_Create_new_assembly
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text for the toolbar button.
 		do
 			Result := Interface_names.b_Create_new_assembly
 		end
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Description for this command.
 		do
 			Result := Interface_names.f_create_new_assembly

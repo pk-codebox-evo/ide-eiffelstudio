@@ -10,7 +10,7 @@ frozen class
 
 inherit
 	SYSTEM_OBJECT
-
+	
 	CALLBACK_INTERFACE
 
 	CACHE_ERRORS

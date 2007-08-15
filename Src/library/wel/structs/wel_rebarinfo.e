@@ -99,12 +99,12 @@ feature {NONE} -- Externals
 			"C [macro %"rebarinfo.h%"]"
 		end
 
-	cwel_rebarinfo_get_cbsize (ptr: POINTER): INTEGER is
+	cwel_rebarinfo_get_cbsize (ptr: POINTER) is
 		external
 			"C [macro %"rebarinfo.h%"]"
 		end
 
-	cwel_rebarinfo_get_himl (ptr: POINTER): POINTER is
+	cwel_rebarinfo_get_himl (ptr: POINTER) is
 		external
 			"C [macro %"rebarinfo.h%"]"
 		end
@@ -120,4 +120,8 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+
+
+
+end -- class WEL_REBARINFO
+

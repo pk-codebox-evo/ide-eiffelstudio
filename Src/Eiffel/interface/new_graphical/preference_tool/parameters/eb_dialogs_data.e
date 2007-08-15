@@ -104,12 +104,6 @@ feature {EB_SHARED_PREFERENCES} -- Value
 			Result := confirm_ignore_all_breakpoints_preference.value
 		end
 
-	confirm_always_compile_before_executing: BOOLEAN is
-			-- Should we display a dialog when asked for execution ?
-		do
-			Result := confirm_always_compile_before_executing_preference.value
-		end
-
 	confirm_convert_project: BOOLEAN is
 			-- Should we display a dialog before converting an old project?
 		do
@@ -157,12 +151,6 @@ feature {EB_SHARED_PREFERENCES} -- Value
 			--
 		do
 			Result := confirm_kill_preference.value
-		end
-
-	confirm_kill_and_restart: BOOLEAN is
-			--
-		do
-			Result := confirm_kill_and_restart_preference.value
 		end
 
 	already_editing_class: BOOLEAN is
@@ -266,9 +254,6 @@ feature {EB_SHARED_PREFERENCES} -- Preference
 			-- Should we display a dialog when clicking on "Run application without
 			-- stopping at breakpoints"?
 
-	confirm_always_compile_before_executing_preference: BOOLEAN_PREFERENCE
-			-- Should we display a dialog when asked for execution ?
-
 	confirm_convert_project_preference: BOOLEAN_PREFERENCE
 			-- Should we display a dialog before converting an old project?
 
@@ -293,7 +278,6 @@ feature {EB_SHARED_PREFERENCES} -- Preference
 	generate_homonyms_preference: BOOLEAN_PREFERENCE
 	stop_execution_when_compiling_preference: BOOLEAN_PREFERENCE
 	confirm_kill_preference: BOOLEAN_PREFERENCE
-	confirm_kill_and_restart_preference: BOOLEAN_PREFERENCE
 	already_editing_class_preference: BOOLEAN_PREFERENCE
 	executing_command_preference: BOOLEAN_PREFERENCE
 
@@ -301,7 +285,6 @@ feature {EB_SHARED_PREFERENCES} -- Preference
 	last_opened_dynamic_lib_directory_preference: STRING_PREFERENCE
 --	last_opened_file_directory_preference: STRING_PREFERENCE
 	last_opened_metric_browse_archive_directory_preference: STRING_PREFERENCE
-	last_imported_metric_definition_directory_preference: STRING_PREFERENCE
 
 	last_saved_dynamic_lib_directory_preference: STRING_PREFERENCE
 	last_saved_call_stack_directory_preference: STRING_PREFERENCE
@@ -322,7 +305,6 @@ feature {EB_SHARED_PREFERENCES} -- Preference
 	starting_dialog_height_preference: INTEGER_PREFERENCE
 	open_project_dialog_width_preference: INTEGER_PREFERENCE
 	open_project_dialog_height_preference: INTEGER_PREFERENCE
-	discard_target_scope_customized_formatter_preference: BOOLEAN_PREFERENCE
 
 feature -- Preference strings
 
@@ -338,7 +320,6 @@ feature -- Preference strings
 	confirm_finalize_assertions_string: STRING is "interface.dialogs.confirm_finalize_assertions"
 	confirm_clear_breakpoints_string: STRING is "interface.dialogs.confirm_clear_breakpoints"
 	confirm_ignore_all_breakpoints_string: STRING is "interface.dialogs.confirm_ignore_all_breakpoints"
-	confirm_always_compile_before_executing_string: STRING is "interface.dialogs.confirm_always_compile_before_executing"
 	confirm_convert_project_string: STRING is "interface.dialogs.confirm_convert_project"
 	confirm_build_precompile_string: STRING is "interface.dialogs.confirm_build_precompile"
 	confirm_replace_all_string: STRING is "interface.dialogs.confirm_replace_all"
@@ -351,7 +332,6 @@ feature -- Preference strings
 	generate_homonyms_string: STRING is "interface.dialogs.generate_homonyms"
 	stop_execution_when_compiling_string: STRING is "interface.dialogs.stop_execution_when_compiling"
 	confirm_kill_string: STRING is "interface.dialogs.confirm_kill"
-	confirm_kill_and_restart_string: STRING is "interface.dialogs.confirm_kill_and_restart"
 	already_editing_class_string: STRING is "interface.dialogs.already_editing_class"
 	executing_command_string: STRING is "interface.dialogs.executing_command"
 	file_open_and_save_dialogs_remember_last_directory_string: STRING is "interface.dialogs.file_open_and_save_dialogs_remember_last_directory"
@@ -360,7 +340,6 @@ feature -- Preference strings
 	last_opened_dynamic_lib_directory_string: STRING is "interface.dialogs.last_opened_dynamic_lib_directory"
 --	last_opened_file_directory_preference_string: STRING is "interface.dialogs.last_opened_file_directory"
 	last_opened_metric_browse_archive_directory_preference_string: STRING is "interface.dialogs.last_opened_metric_browse_archive_directory"
-	last_imported_metric_definition_directory_preference_string: STRING is "interface.dialogs.last_imported_metric_definition_directory"
 
 	last_saved_dynamic_lib_directory_preference_string: STRING is "interface.dialogs.last_saved_dynamic_lib_directory"
 	last_saved_call_stack_directory_preference_string: STRING is "interface.dialogs.last_saved_call_stack_directory"
@@ -380,7 +359,6 @@ feature -- Preference strings
 	starting_dialog_height_preference_string: STRING is "interface.dialogs.starting_dialog_height"
 	open_project_dialog_width_preference_string: STRING is "interface.dialogs.open_project_dialog_width"
 	open_project_dialog_height_preference_string: STRING is "interface.dialogs.open_project_dialog_height"
-	discard_target_scope_customized_formatter_string: STRING is "interface.dialogs.discard_target_scope_customized_formatter"
 
 feature {NONE} -- Implementation
 
@@ -401,7 +379,6 @@ feature {NONE} -- Implementation
 			confirm_finalize_assertions_preference := l_manager.new_boolean_preference_value (l_manager, confirm_finalize_assertions_string, True)
 			confirm_clear_breakpoints_preference := l_manager.new_boolean_preference_value (l_manager, confirm_clear_breakpoints_string, True)
 			confirm_ignore_all_breakpoints_preference := l_manager.new_boolean_preference_value (l_manager, confirm_ignore_all_breakpoints_string, True)
-			confirm_always_compile_before_executing_preference := l_manager.new_boolean_preference_value (l_manager, confirm_always_compile_before_executing_string, True)
 			confirm_convert_project_preference := l_manager.new_boolean_preference_value (l_manager, confirm_convert_project_string, True)
 			confirm_build_precompile_preference := l_manager.new_boolean_preference_value (l_manager, confirm_build_precompile_string, True)
 			confirm_remove_metric_preference := l_manager.new_boolean_preference_value (l_manager, confirm_remove_metric_string, True)
@@ -413,7 +390,6 @@ feature {NONE} -- Implementation
 			generate_homonyms_preference := l_manager.new_boolean_preference_value (l_manager, generate_homonyms_string, True)
 			stop_execution_when_compiling_preference := l_manager.new_boolean_preference_value (l_manager, stop_execution_when_compiling_string, True)
 			confirm_kill_preference := l_manager.new_boolean_preference_value (l_manager, confirm_kill_string, True)
-			confirm_kill_and_restart_preference := l_manager.new_boolean_preference_value (l_manager, confirm_kill_and_restart_string, True)
 			already_editing_class_preference := l_manager.new_boolean_preference_value (l_manager, already_editing_class_string, True)
 			executing_command_preference := l_manager.new_boolean_preference_value (l_manager, executing_command_string, True)
 			confirm_replace_all_preference := l_manager.new_boolean_preference_value (l_manager, confirm_replace_all_string, True)
@@ -422,7 +398,6 @@ feature {NONE} -- Implementation
 			last_opened_dynamic_lib_directory_preference := l_manager.new_string_preference_value (l_manager, last_opened_dynamic_lib_directory_string, "")
 --			last_opened_file_directory_preference := l_manager.new_string_preference_value (l_manager, last_opened_file_directory_preference_string, "")
 			last_opened_metric_browse_archive_directory_preference := l_manager.new_string_preference_value (l_manager, last_opened_metric_browse_archive_directory_preference_string, "")
-			last_imported_metric_definition_directory_preference := l_manager.new_string_preference_value (l_manager, last_imported_metric_definition_directory_preference_string, "")
 			last_saved_dynamic_lib_directory_preference := l_manager.new_string_preference_value (l_manager, last_saved_dynamic_lib_directory_preference_string, "")
 			last_saved_call_stack_directory_preference := l_manager.new_string_preference_value (l_manager, last_saved_call_stack_directory_preference_string, "")
 			last_saved_debugger_exception_directory_preference := l_manager.new_string_preference_value (l_manager, last_saved_debugger_exception_directory_preference_string, "")
@@ -441,7 +416,6 @@ feature {NONE} -- Implementation
 			starting_dialog_height_preference := l_manager.new_integer_preference_value (l_manager, starting_dialog_height_preference_string, 500)
 			open_project_dialog_width_preference := l_manager.new_integer_preference_value (l_manager, open_project_dialog_width_preference_string, 500)
 			open_project_dialog_height_preference := l_manager.new_integer_preference_value (l_manager, open_project_dialog_height_preference_string, 300)
-			discard_target_scope_customized_formatter_preference := l_manager.new_boolean_preference_value (l_manager, discard_target_scope_customized_formatter_string, True)
 		end
 
 	preferences: PREFERENCES
@@ -456,7 +430,6 @@ invariant
 	confirm_finalize_assertions_preference_not_void: confirm_finalize_assertions_preference /= Void
 	confirm_clear_breakpoints_preference_not_void: confirm_clear_breakpoints_preference /= Void
 	confirm_ignore_all_breakpoints_preference_not_void: confirm_ignore_all_breakpoints_preference /= Void
-	confirm_always_compile_before_executing_preference_not_void: confirm_always_compile_before_executing_preference /= Void
 	confirm_convert_project_preference_not_void: confirm_convert_project_preference /= Void
 	confirm_build_precompile_preference_not_void: confirm_build_precompile_preference /= Void
 	acknowledge_not_loaded_preference_not_void: acknowledge_not_loaded_preference /= Void

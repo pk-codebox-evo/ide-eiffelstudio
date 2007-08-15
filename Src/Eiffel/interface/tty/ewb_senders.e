@@ -28,7 +28,7 @@ feature -- Access
 			Result := callers_cmd_name
 		end
 
-	help_message: STRING_32 is
+	help_message: STRING is
 			-- Help message for current command
 		do
 			Result := callers_help
@@ -96,7 +96,9 @@ feature {NONE} -- Implementation
 			-- after successfully retrieving the feature_i
 		do
 			create Result
-			Result.set_all_callers (to_show_all_callers)
+			if to_show_all_callers then
+				Result.set_all_callers
+			end
 			if is_assigners_only then
 				Result.set_flag ({DEPEND_UNIT}.is_in_assignment_flag)
 			elseif is_creators_only then
@@ -112,13 +114,13 @@ feature {NONE} -- Implementation
 			feature_name := command_line_io.last_input
 			command_line_io.get_filter_name
 			filter_name := command_line_io.last_input
-			command_line_io.get_option_value (ewb_names.all_senders, preferences.feature_tool_data.show_all_callers)
+			command_line_io.get_option_value ("All senders", preferences.feature_tool_data.show_all_callers)
 			to_show_all_callers := command_line_io.last_input.to_boolean
-			command_line_io.get_option_value (ewb_names.only_assigners, False)
+			command_line_io.get_option_value ("Only assigners", False)
 			if command_line_io.last_input.to_boolean then
 				set_assigners_only
 			else
-				command_line_io.get_option_value (ewb_names.only_creators, False)
+				command_line_io.get_option_value ("Only creators", False)
 				if command_line_io.last_input.to_boolean then
 					set_creators_only
 				else

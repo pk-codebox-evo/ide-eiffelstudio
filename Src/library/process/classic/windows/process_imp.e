@@ -38,29 +38,20 @@ create
 feature{NONE} -- Initialization
 
 	make (a_exec_name: STRING; args: LIST[STRING]; a_working_directory: STRING) is
-		local
-			l_arg: STRING
 		do
 			create arguments.make
 			create command_line.make_from_string (a_exec_name)
 
-			if args /= Void and then not args.is_empty then
+			if args /= Void then
 				from
 					args.start
 				until
 					args.after
 				loop
-					l_arg := args.item
-					if l_arg /= Void and then not l_arg.is_empty then
-						command_line.append_character (' ')
-						if separated_words (l_arg).count > 1 then
-							command_line.append_character ('"')
-							command_line.append (l_arg)
-							command_line.append_character ('"')
-						else
-							command_line.append (l_arg)
-						end
-					end
+					command_line.append (" %"")
+					command_line.append (args.item)
+					command_line.append ("%"")
+					arguments.extend (args.item)
 					args.forth
 				end
 			end
@@ -311,9 +302,9 @@ feature{PROCESS_IO_LISTENER_THREAD} -- Interprocess IO
 			succ: BOOLEAN
 			bytes_avail: INTEGER
 		do
-			succ := cwin_peek_named_pipe (child_process.std_error, default_pointer, 0, default_pointer, $bytes_avail, default_pointer)
+			succ := cwin_peek_named_pipe (child_process.std_output, default_pointer, 0, default_pointer, $bytes_avail, default_pointer)
 			if succ and bytes_avail > 0 then
-				error_file_handle.read_stream (child_process.std_error, buffer_size.min (bytes_avail))
+				error_file_handle.read_stream (child_process.std_output, buffer_size.min (bytes_avail))
 				succ := error_file_handle.last_read_successful
 				if succ then
 					last_error_bytes := error_file_handle.last_read_bytes

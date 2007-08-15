@@ -89,8 +89,7 @@ inherit
 			on_sys_key_down,
 			on_sys_key_up,
 			default_process_message,
-			on_getdlgcode,
-			on_wm_dropfiles
+			on_getdlgcode
 		redefine
 			on_hdn_begin_track,
 			on_hdn_track,
@@ -141,8 +140,6 @@ feature {NONE} -- Initialization
 			Precursor {EV_PRIMITIVE_IMP}
 			Precursor {EV_ITEM_LIST_IMP}
 			set_default_font
-			disable_tabable_from
-			disable_tabable_to
 		end
 
 feature -- Status report
@@ -249,7 +246,7 @@ feature {EV_HEADER_ITEM_IMP} -- Implementation
 			font_imp: EV_FONT_IMP
 			margin: INTEGER
 		do
-			margin := {WEL_API}.send_message_result_integer (wel_item, hdm_get_bitmap_margin, cwel_integer_to_pointer (0), cwel_integer_to_pointer (0))
+			margin := cwin_send_message_result_integer (wel_item, hdm_get_bitmap_margin, cwel_integer_to_pointer (0), cwel_integer_to_pointer (0))
 			l_text := header_item.text
 			if not l_text.is_empty then
 				if private_font /= Void then

@@ -26,7 +26,7 @@ feature -- Access
 
 feature -- Access
 
-	text: STRING_GENERAL is
+	text: STRING is
 			-- The error message.
 		deferred
 		end
@@ -34,7 +34,7 @@ feature -- Access
 	out: STRING is
 			-- Output
 		do
-			Result := text.as_string_8
+			Result := text
 		end
 
 indexing
@@ -68,5 +68,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

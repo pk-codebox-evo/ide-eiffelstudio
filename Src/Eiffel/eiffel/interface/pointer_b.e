@@ -21,7 +21,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make (l: like original_class; a_is_typed_pointer: like is_typed_pointer) is
+	make (l: CLASS_I; a_is_typed_pointer: like is_typed_pointer) is
 			-- Creation of POINTER_B instance where `is_typed_pointer' is initialized
 			-- with `a_is_typed_pointer'.
 		do
@@ -76,8 +76,7 @@ feature -- Validity
 		local
 			skelet: SKELETON
 			special_error: SPECIAL_ERROR
-			l_feat: FEATURE_I
-			l_proc: PROCEDURE_I
+			l_feat: PROCEDURE_I
 			l_attr: ATTRIBUTE_I
 		do
 			if not is_typed_pointer then
@@ -88,37 +87,28 @@ feature -- Validity
 					create special_error.make (typed_pointer_case_1, Current)
 					Error_handler.insert_error (special_error)
 				end
-
-					-- Check for `to_pointer' query.
-				l_feat := feature_table.item_id ({PREDEFINED_NAMES}.to_pointer_name_id)
-				if l_feat = Void or else not l_feat.has_return_value then
-					create special_error.make (typed_pointer_case_3, Current)
+				skelet := types.first.skeleton
+				if
+					skelet.count /= 1 or else
+					not skelet.first.type_i.same_as (pointer_type.type_i)
+				then
+					create special_error.make (typed_pointer_case_2, Current)
 					Error_handler.insert_error (special_error)
 				else
-					l_attr ?= l_feat
-					if l_attr /= Void then
-							-- We are compiling for Eiffel Software implementation
-						skelet := types.first.skeleton
-						if
-							skelet.count /= 1 or else
-							not skelet.first.type_i.same_as (pointer_type.type_i)
-						then
-							create special_error.make (typed_pointer_case_2, Current)
-							Error_handler.insert_error (special_error)
-						else
-						end
-					else
+						-- Check it is indeed called `pointer_item'.
+					l_attr ?= feature_table.item ("pointer_item")
+					if l_attr = Void then
 						create special_error.make (typed_pointer_case_3, Current)
 						Error_handler.insert_error (special_error)
 					end
 				end
 
 					-- Check for a procedure `set_item'.
-				l_proc ?= feature_table.item_id ({PREDEFINED_NAMES}.set_item_name_id)
+				l_feat ?= feature_table.item_id (names_heap.set_item_name_id)
 				if
-					l_proc = Void or else
-					l_proc.argument_count /= 1 or else
-					not l_proc.arguments.i_th (1).actual_type.same_as (pointer_type)
+					l_feat = Void or else
+					l_feat.argument_count /= 1 or else
+					not l_feat.arguments.i_th (1).actual_type.same_as (pointer_type)
 				then
 					create special_error.make (typed_pointer_case_4, Current)
 					Error_handler.insert_error (special_error)

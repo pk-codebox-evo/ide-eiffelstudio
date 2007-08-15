@@ -16,7 +16,7 @@ inherit
 
 feature -- Assembler
 
-	normal_to_deferred_feature_as (a_feature_as: FEATURE_AS; a_list: LEAF_AS_LIST): FEATURE_AS is
+	normal_to_deferred_feature_as (a_feature_as: FEATURE_AS): FEATURE_AS is
 			-- Make a normal feature as to a deferred feature as,
 			-- replacing body, removing locals and resecue.
 		require
@@ -24,23 +24,13 @@ feature -- Assembler
 		local
 			new_feature_as: FEATURE_AS
 			l_routine_body: ROUTINE_AS
-			l_index: INTEGER
 		do
 			new_feature_as := a_feature_as
 			l_routine_body ?= new_feature_as.body.content
 			check
 				l_routine_body_not_void: l_routine_body /= Void
 			end
-			if a_list /= Void then
-				if l_routine_body.routine_body /= Void then
-					l_index := l_routine_body.routine_body.first_token (a_list).index
-					l_routine_body.set_routine_body (deferred_content_with_index (l_index))
-				else
-					l_routine_body.set_routine_body (deferred_content)
-				end
-			else
-				l_routine_body.set_routine_body (deferred_content)
-			end
+			l_routine_body.set_routine_body (deferred_content)
 			l_routine_body.set_locals (Void)
 			l_routine_body.set_rescue_clause (Void)
 			Result := new_feature_as
@@ -110,7 +100,7 @@ feature -- Assembler
 				l_id.set_index (f_name.internal_name.index)
 				create {FEAT_NAME_ID_AS} f_name.initialize (l_id)
 			end
-			if l_frozen_keyword /= Void then
+			if target_feature.is_frozen then
 				f_name.set_frozen_keyword (l_frozen_keyword)
 			end
 			create eiffel_list.make (1);
@@ -120,6 +110,7 @@ feature -- Assembler
 		ensure
 			result_not_void: Result /= Void
 		end
+
 
 feature {NONE} -- Implementation
 
@@ -135,19 +126,6 @@ feature {NONE} -- Implementation
 			Result := l_routine_as.routine_body
 		ensure
 			result_not_void: Result /= Void
-		end
-
-	deferred_content_with_index (a_index: INTEGER): ROUT_BODY_AS
-			-- Deffered content with index of the first token set.
-		local
-			l_deferred: DEFERRED_AS
-		do
-			l_deferred ?= deferred_content.twin
-			check
-				l_deferred_not_void: l_deferred /= Void
-			end
-			l_deferred.set_index (a_index)
-			Result := l_deferred
 		end
 
 indexing

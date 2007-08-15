@@ -10,10 +10,10 @@ indexing
 deferred class EIFFEL_ERROR
 
 inherit
+
 	ERROR
 		redefine
-			trace, is_defined, has_associated_file,
-			trace_primary_context
+			trace, is_defined, has_associated_file
 		end
 
 feature -- Properties
@@ -53,10 +53,6 @@ feature -- Access
 
 feature -- Output
 
-	build_explain (a_text_formatter: TEXT_FORMATTER) is
-		do
-		end
-
 	trace (a_text_formatter: TEXT_FORMATTER) is
 		do
 			print_error_message (a_text_formatter);
@@ -64,19 +60,11 @@ feature -- Output
 			class_c.append_signature (a_text_formatter, False);
 			a_text_formatter.add_new_line;
 			build_explain (a_text_formatter)
-		end
+		end;
 
-	trace_primary_context (a_text_formatter: TEXT_FORMATTER) is
-			-- Build the primary context string so errors can be navigated to
+	build_explain (a_text_formatter: TEXT_FORMATTER) is
 		do
-			if class_c = Void then
-				Precursor {ERROR} (a_text_formatter)
-			else
-				a_text_formatter.add_group (class_c.group, class_c.group.name)
-				a_text_formatter.add (".")
-				class_c.append_name (a_text_formatter)
-			end
-		end
+		end;
 
 feature {COMPILER_EXPORTER}
 

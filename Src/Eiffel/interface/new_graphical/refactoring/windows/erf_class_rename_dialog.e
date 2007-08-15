@@ -80,6 +80,7 @@ feature {NONE} -- Initialization
 			f_top.extend (vb_top)
 			vb.extend (f_top)
 
+
 			create f_middle
 			create fvb
 			fvb.set_padding (Layout_constants.small_padding_size)
@@ -180,13 +181,13 @@ feature -- Access
 
 feature -- Element change
 
-	set_name (a_name: STRING_GENERAL) is
+	set_name (a_name: STRING) is
 			-- Assign `a_name' to `name'.
 		require
 			a_name_not_void: a_name /= Void
 			a_name_not_empty: not a_name.is_empty
 		do
-			current_name.set_text (interface_names.l_class_name (a_name))
+			current_name.set_text (interface_names.l_class_name + a_name)
 			if a_name.is_empty then
 				name_field.remove_text
 			else
@@ -233,6 +234,7 @@ feature -- Element change
 			f_middle.disable_sensitive
 		end
 
+
 feature {NONE} -- Implementation
 
 	on_show is
@@ -240,6 +242,7 @@ feature {NONE} -- Implementation
 		do
 			name_field.set_focus
 		end
+
 
 	comments_button, strings_button: EV_CHECK_BUTTON
 	rename_file_button: EV_CHECK_BUTTON

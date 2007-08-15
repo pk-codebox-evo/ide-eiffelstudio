@@ -2,7 +2,7 @@
 	description: "Private runtime global variables handling."
 	date:		"$Date$"
 	revision:	"$Revision$"
-	copyright:	"Copyright (c) 1985-2007, Eiffel Software."
+	copyright:	"Copyright (c) 1985-2006, Eiffel Software."
 	license:	"GPL version 2 see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"Commercial license is available at http://www.eiffel.com/licensing"
 	copying: "[
@@ -125,13 +125,13 @@ typedef struct tag_rt_globals
 		/* interp.c */
 #ifdef WORKBENCH
 	struct opstack op_stack_cx;			/* Operational stack */
-	EIF_TYPED_VALUE **iregs_cx;				/* Interpreter registers */
+	struct item **iregs_cx;				/* Interpreter registers */
 	int iregsz_cx;						/* Size of 'iregs' array (bytes) */
 	uint32 argnum_cx;					/* Number of arguments */
 	uint32 locnum_cx;					/* Number of locals */
 	unsigned long tagval_cx;			/* Records number of interpreter's call */
 	struct stochunk *saved_scur_cx; 	/* current feature context */
-	EIF_TYPED_VALUE *saved_stop_cx;			/* current feature context */
+	struct item *saved_stop_cx;			/* current feature context */
 	char *inv_mark_table_cx;			/* Marking table to avoid checking the same invariant several times */
 #endif
 
@@ -189,10 +189,6 @@ typedef struct tag_rt_globals
 	size_t idrf_buffer_size_cx;
 	IDRF idrf_cx;
 	int (*run_idr_read_func_cx) (IDR *);
-#ifdef EIF_64_BITS
-	struct htable *idr_ref_table_cx;
-	rt_uint_ptr idr_ref_table_counter_cx;
-#endif
 
 		/* store.c */
 	long object_count_cx;
@@ -417,10 +413,6 @@ rt_private rt_global_context_t * rt_thr_getspecific (RT_TSD_TYPE global_key) {
 #define idrf_buffer_size	(rt_globals->idrf_buffer_size_cx)
 #define idrf				(rt_globals->idrf_cx)
 #define run_idr_read_func	(rt_globals->run_idr_read_func_cx)
-#ifdef EIF_64_BITS
-#define idr_ref_table		(rt_globals->idr_ref_table_cx)
-#define idr_ref_table_counter		(rt_globals->idr_ref_table_counter_cx)
-#endif
 
 	/* store.c */
 #define object_count					(rt_globals->object_count_cx)

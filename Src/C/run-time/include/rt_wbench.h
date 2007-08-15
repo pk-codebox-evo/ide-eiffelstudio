@@ -57,18 +57,18 @@ extern "C" {
 	{ \
 		struct rout_info info; \
 		struct desc_info *desc; \
-		info = eorg_table[(y)]; \
-		desc = (desc_tab[info.origin])[(z)]; \
-		(x) = (desc[info.offset]).offset; \
+		info = eorg_table[(y)] ;\
+		desc = (desc_tab[info.origin])[(z)] ;\
+		(x) = (desc[info.offset]).info ;\
 	}	
 
 #define CBodyId(x,y,z)	\
 	{ \
 		struct rout_info info; \
 		struct desc_info *desc; \
-		info = eorg_table[(y)]; \
-		desc = (desc_tab[info.origin])[(z)]; \
-		(x) = (desc[info.offset]).body_index; \
+		info = eorg_table[(y)] ;\
+		desc = (desc_tab[info.origin])[(z)] ;\
+		(x) = (desc[info.offset]).info ;\
 	}	
 
 #define CGENFeatType(t,x,y,z) \

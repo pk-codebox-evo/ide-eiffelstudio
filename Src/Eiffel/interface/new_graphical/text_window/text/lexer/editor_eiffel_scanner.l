@@ -23,10 +23,7 @@ create
 %option outfile="editor_eiffel_scanner.e"
 
 D		([0-9])
-B		([0-1])
-O		([0-7])
 H		([0-9A-Fa-f])
-A		([0-9A-Za-z])
 
 %%
 
@@ -406,9 +403,7 @@ A		([0-9A-Za-z])
 ----------/** Eiffel integers **/-----------------------------------------------
 
 {D}(({D}|_)*{D})?			|
-0[xX]{H}(({H}|_)*{H})?			|
-0[cC]{O}(({O}|_)*{O})?			|
-0[bB]{B}(({B}|_)*{B})?			{
+0[xX]{H}(({H}|_)*{H})?	{
 						-- Eiffel Integer
 						if not in_comments then
 							create {EDITOR_TOKEN_NUMBER} curr_token.make(text)
@@ -417,13 +412,8 @@ A		([0-9A-Za-z])
 						end
 						update_token_list
 						}
-
-
-0[xX]{A}(({A}|_)*{A})?			|
-0[cC]{A}(({A}|_)*{A})?			|
-0[bB]{A}(({A}|_)*{A})?			|
-{D}(({A}|_)*{A})?			{
-						-- Bad Eiffel Integer
+[0-9_]+					{
+							-- Eiffel Integer Error (considered as text)
 						if not in_comments then
 							create {EDITOR_TOKEN_TEXT} curr_token.make(text)
 						else

@@ -10,9 +10,6 @@ deferred class
 
 inherit
 	EB_GRAPHICAL_COMMAND
-		redefine
-			update
-		end
 
 	EB_TOOLBARABLE
 		redefine
@@ -26,29 +23,19 @@ feature -- Access
 		deferred
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer which representing the command.
-		deferred
-		end
-
 	mini_pixmap: EV_PIXMAP is
 			-- Pixmap representing the command for mini toolbars.
 		do
 		end
 
-	mini_pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command for mini toolbars.
-		do
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		deferred
 		ensure
 			valid_result: Result /= Void
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text displayed on the toolbar button.
 		do
 			Result := ""
@@ -59,7 +46,7 @@ feature -- Access
 	has_text: BOOLEAN is
 			-- Does `Current' show text when displayed
 		do
-			Result := tooltext /= Void and then not tooltext.is_empty
+			Result := tooltext /= Void and then not tooltext.is_equal ("")
 		end
 
 	is_tooltext_important: BOOLEAN is
@@ -91,7 +78,6 @@ feature -- Status setting
 			-- Set `is_sensitive' to True.
 		local
 			toolbar_items: like internal_managed_toolbar_items
-			sd_toolbar_items: like internal_managed_sd_toolbar_items
 		do
 			if not is_sensitive then
 				is_sensitive := True
@@ -106,18 +92,6 @@ feature -- Status setting
 						toolbar_items.forth
 					end
 				end
-
-				sd_toolbar_items := internal_managed_sd_toolbar_items
-				if sd_toolbar_items /= Void then
-					from
-						sd_toolbar_items.start
-					until
-						sd_toolbar_items.after
-					loop
-						sd_toolbar_items.item.enable_sensitive
-						sd_toolbar_items.forth
-					end
-				end
 			end
 		end
 
@@ -125,7 +99,6 @@ feature -- Status setting
 			-- Set `is_sensitive' to True.
 		local
 			toolbar_items: like internal_managed_toolbar_items
-			sd_toolbar_items: like internal_managed_sd_toolbar_items
 		do
 			if is_sensitive then
 				toolbar_items := internal_managed_toolbar_items
@@ -139,34 +112,15 @@ feature -- Status setting
 						toolbar_items.forth
 					end
 				end
-
-				sd_toolbar_items := internal_managed_sd_toolbar_items
-				if sd_toolbar_items /= Void then
-					from
-						sd_toolbar_items.start
-					until
-						sd_toolbar_items.after
-					loop
-						sd_toolbar_items.item.disable_sensitive
-						sd_toolbar_items.forth
-					end
-				end
-
 				is_sensitive := False
 			end
-		end
-
-	update (a_window: EV_WINDOW) is
-			-- Update `accelerator' and interfaces according to `referred_shortcut'.
-		do
-			Precursor {EB_GRAPHICAL_COMMAND} (a_window)
-			update_tooltips
 		end
 
 feature -- Basic operations
 
 	new_toolbar_item (display_text: BOOLEAN): EB_COMMAND_TOOL_BAR_BUTTON is
 			-- Create a new toolbar button for this command.
+			--
 			-- Call `recycle' on the result when you don't need it anymore otherwise
 			-- it will never be garbage collected.
 		do
@@ -175,20 +129,10 @@ feature -- Basic operations
 			Result.select_actions.extend (agent execute)
 		end
 
-	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new docking tool bar button for this command.
-		do
-			create Result.make (Current)
-			initialize_sd_toolbar_item (Result, display_text)
-			Result.select_actions.extend (agent execute)
-		end
-
 	new_mini_toolbar_item: EB_COMMAND_TOOL_BAR_BUTTON is
 			-- Create a new mini toolbar button for this command.
 		require
 			mini_pixmap_not_void: mini_pixmap /= Void
-		local
-			l_tt: like tooltip
 		do
 			create Result.make (Current)
 			Result.set_pixmap (mini_pixmap)
@@ -197,38 +141,7 @@ feature -- Basic operations
 			else
 				Result.disable_sensitive
 			end
-			l_tt := tooltip.twin
-			if shortcut_available then
-				l_tt.append (opening_parenthesis)
-				l_tt.append (shortcut_string)
-				l_tt.append (closing_parenthesis)
-			end
-			Result.set_tooltip (l_tt)
-			Result.select_actions.extend (agent execute)
-		end
-
-	new_mini_sd_toolbar_item: EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new mini toolbar button for this command.
-		require
-			mini_pixmap_not_void: mini_pixmap /= Void
-		local
-			l_tt: like tooltip
-		do
-			create Result.make (Current)
-			Result.set_pixmap (mini_pixmap)
-			Result.set_pixel_buffer (mini_pixel_buffer)
-			if is_sensitive then
-				Result.enable_sensitive
-			else
-				Result.disable_sensitive
-			end
-			l_tt := tooltip.twin
-			if shortcut_available then
-				l_tt.append (opening_parenthesis)
-				l_tt.append (shortcut_string)
-				l_tt.append (closing_parenthesis)
-			end
-			Result.set_tooltip (l_tt)
+			Result.set_tooltip (tooltip)
 			Result.select_actions.extend (agent execute)
 		end
 
@@ -237,7 +150,7 @@ feature {NONE} -- Implementation
 	initialize_toolbar_item (a_item: EB_COMMAND_TOOL_BAR_BUTTON; display_text: BOOLEAN) is
 			-- Initialize `a_item'
 		local
-			l_tt: STRING_GENERAL
+			tt: STRING
 		do
 			if display_text and then has_text then
 				a_item.set_text (tooltext)
@@ -248,13 +161,13 @@ feature {NONE} -- Implementation
 			else
 				a_item.disable_sensitive
 			end
-			l_tt := tooltip.twin
-			if shortcut_available then
-				l_tt.append (opening_parenthesis)
-				l_tt.append (shortcut_string)
-				l_tt.append (closing_parenthesis)
+			tt := tooltip.twin
+			if accelerator /= Void then
+				tt.append (opening_parenthesis)
+				tt.append (accelerator.out)
+				tt.append (closing_parenthesis)
 			end
-			a_item.set_tooltip (l_tt)
+			a_item.set_tooltip (tt)
 		end
 
 feature {EB_COMMAND_TOOL_BAR_BUTTON} -- Implementation
@@ -265,35 +178,6 @@ feature {EB_COMMAND_TOOL_BAR_BUTTON} -- Implementation
 			managed_toolbar_items.extend (a_toolbar_item)
 		ensure
 			managed_toolbar_items_has_item: managed_toolbar_items.has (a_toolbar_item)
-		end
-
-	initialize_sd_toolbar_item (a_item: EB_SD_COMMAND_TOOL_BAR_BUTTON; display_text: BOOLEAN) is
-			-- Initialize `a_item'
-		local
-			l_tt: STRING_GENERAL
-		do
-			if display_text and then has_text then
-				a_item.set_text (tooltext)
-			end
-			a_item.set_pixmap (pixmap)
-			if pixel_buffer /= Void then
-				a_item.set_pixel_buffer (pixel_buffer)
-			end
-			a_item.set_description (description)
-			if is_sensitive then
-				a_item.enable_sensitive
-			else
-				a_item.disable_sensitive
-			end
-			if shortcut_available then
-				l_tt := tooltip.twin
-				l_tt.append (opening_parenthesis)
-				l_tt.append (shortcut_string)
-				l_tt.append (closing_parenthesis)
-				a_item.set_tooltip (l_tt)
-			else
-				a_item.set_tooltip (tooltip)
-			end
 		end
 
 	remove_toolbar_item (a_toolbar_item: like new_toolbar_item) is
@@ -307,10 +191,6 @@ feature {EB_COMMAND_TOOL_BAR_BUTTON} -- Implementation
 			managed_toolbar_items_not_has_item: not managed_toolbar_items.has (a_toolbar_item)
 		end
 
-feature {EB_COMMAND_TOOL_BAR_BUTTON, EB_SD_COMMAND_TOOL_BAR_BUTTON} -- Implementation
-
-	internal_managed_sd_toolbar_items: ARRAYED_LIST [like new_sd_toolbar_item]
-
 	managed_toolbar_items: ARRAYED_LIST [like new_toolbar_item] is
 			-- Toolbar items associated with this command.
 		do
@@ -322,54 +202,7 @@ feature {EB_COMMAND_TOOL_BAR_BUTTON, EB_SD_COMMAND_TOOL_BAR_BUTTON} -- Implement
 			managed_toolbar_items_not_void: Result /= Void
 		end
 
-feature {EB_SD_COMMAND_TOOL_BAR_BUTTON, EB_DEBUGGER_MANAGER} -- Implementaiton
-
-	managed_sd_toolbar_items: ARRAYED_LIST [like new_sd_toolbar_item] is
-			-- Managed Smart Docking lib tool bar items.
-		do
-			if internal_managed_sd_toolbar_items = Void then
-				create internal_managed_sd_toolbar_items.make (1)
-			end
-			Result := internal_managed_sd_toolbar_items
-		end
-
-feature {NONE} -- Implementation
-
-	update_tooltips is
-			-- Update tooltips when shortcut is changed.
-		local
-			l_items: like managed_toolbar_items
-			l_sd_items: like managed_sd_toolbar_items
-			l_tt: STRING_GENERAL
-		do
-			if tooltip /= Void then
-				l_tt := tooltip.twin
-				if shortcut_available then
-					l_tt.append (opening_parenthesis)
-					l_tt.append (shortcut_string)
-					l_tt.append (closing_parenthesis)
-				end
-				from
-					l_items := managed_toolbar_items
-					l_items.start
-				until
-					l_items.after
-				loop
-					l_items.item.set_tooltip (l_tt)
-					l_items.forth
-				end
-				from
-					l_sd_items := managed_sd_toolbar_items
-					l_sd_items.start
-				until
-					l_sd_items.after
-				loop
-					l_sd_items.item.set_description (description)
-					l_sd_items.item.set_tooltip (l_tt)
-					l_sd_items.forth
-				end
-			end
-		end
+feature {NONE} -- Implementaiton
 
 	internal_managed_toolbar_items: ARRAYED_LIST [like new_toolbar_item]
 

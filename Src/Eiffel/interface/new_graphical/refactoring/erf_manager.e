@@ -11,14 +11,12 @@ class
 inherit
 	EB_SHARED_PREFERENCES
 		rename
-			preferences as eb_preferences
+			preferences AS eb_preferences
 		end
 
 	EB_SHARED_WINDOW_MANAGER
 
 	ERF_SHARED_LOGGER
-
-	EB_CONSTANTS
 
 create
 	make
@@ -81,7 +79,7 @@ feature -- Element change
 		local
 			compiler_check: ERF_COMPILATION_SUCCESSFUL
 			l_actions: LIST [ERF_ACTION]
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 		do
 			disable_sensitive
 			window_manager.on_refactoring_start
@@ -106,7 +104,7 @@ feature -- Element change
 			compiler_check.execute
 			if not compiler_check.success then
 				redo_last
-				create wd.make_with_text (compiler_check.error_message.as_string_32+" " + interface_names.l_undo_not_possible)
+				create wd.make_with_text (compiler_check.error_message+" Undo not possible.")
 				wd.show_modal_to_window (window_manager.last_focused_development_window.window)
 			end
 
@@ -190,6 +188,8 @@ feature -- Element change
 			destroy_redo
 		end
 
+
+
 feature -- Basic operation
 
 	execute_refactoring (a_refactoring: ERF_REFACTORING) is
@@ -202,16 +202,11 @@ feature -- Basic operation
 			if a_refactoring.success then
 				destroy_redo
 			end
-			window_manager.for_all_development_windows (agent (a_window: EB_DEVELOPMENT_WINDOW)
-				do
-					if a_window.editors_manager.current_editor /= Void then
-						a_window.editors_manager.current_editor.reload
-					end
-				end)
 			window_manager.on_refactoring_end
 			enable_sensitive
 			logger.refactoring_end
 		end
+
 
 feature {NONE} -- Implementation
 
@@ -223,6 +218,7 @@ feature {NONE} -- Implementation
 
 	redo_stack: LINKED_STACK [ LIST [ERF_ACTION]]
 			--  The stack of list of commands where all undone actions have to be registered for them to be redoable.
+
 
 	destroy_undo is
 			-- Destroy the undo informations

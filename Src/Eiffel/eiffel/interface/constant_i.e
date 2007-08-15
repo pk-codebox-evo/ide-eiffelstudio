@@ -196,14 +196,9 @@ feature -- C code generation
 		local
 			type_c: TYPE_C
 			internal_name: STRING
-			return_type_name: STRING
 			local_byte_context: BYTE_CONTEXT
 			local_is_once: BOOLEAN
 			header_buffer: GENERATION_BUFFER
-			rout_ids: like rout_id_set
-			rout_id: INTEGER
-			basic_i: BASIC_I
-			i: INTEGER
 		do
 			if used then
 				local_byte_context := byte_context
@@ -233,12 +228,7 @@ feature -- C code generation
 				end
 
 					-- Generation of function's header
-				if byte_context.workbench_mode then
-					return_type_name := once "EIF_TYPED_VALUE"
-				else
-					return_type_name := type_c.c_string
-				end
-				buffer.generate_function_signature (return_type_name,
+				buffer.generate_function_signature (type_c.c_string,
 						internal_name, True, local_byte_context.header_buffer,
 						<<"Current">>, <<"EIF_REFERENCE">>)
 
@@ -263,101 +253,19 @@ feature -- C code generation
 					value.generate (buffer)
 					buffer.put_character (')')
 				else
-					if byte_context.workbench_mode then
-						buffer.put_string ("EIF_TYPED_VALUE r;")
-						buffer.put_new_line
-						buffer.put_string ("r.")
-						type_c.generate_typed_tag (buffer)
-						buffer.put_character (';')
-						buffer.put_new_line
-						buffer.put_string ("r.")
-						type_c.generate_typed_field (buffer)
-						buffer.put_string (" = ")
-					else
-						buffer.put_string ("return ")
-					end
+					buffer.put_string ("return ")
 					type_c.generate_cast (buffer)
 					value.generate (buffer)
-					if byte_context.workbench_mode then
-						buffer.put_character (';')
-						buffer.put_new_line
-						buffer.put_string ("return r")
-					end
 				end
+				buffer.put_new_line
 				buffer.exdent
 				buffer.put_string (";%N}%N")
-				if byte_context.final_mode then
-							-- Generate generic wrappers if required.
-					from
-						rout_ids := rout_id_set
-						i := rout_ids.count
-					until
-						i <= 0
-					loop
-						rout_id := rout_ids.item (i)
-						if system.seed_of_routine_id (rout_id).has_formal then
-								-- Generate generic wrapper.
-							if local_is_once then
-								buffer.generate_function_signature
-									("EIF_REFERENCE", internal_name + "1", True,
-									 Byte_context.header_buffer, <<"Current">>, <<"EIF_REFERENCE">>)
-								buffer.indent
-								if System.has_multithreaded then
-									buffer.put_string ("RTOUC (")
-									buffer.put_integer (local_byte_context.thread_relative_once_index (body_index))
-								else
-									buffer.put_string ("RTOSC (")
-									buffer.put_integer (body_index)
-								end
-								buffer.put_character (',')
-								value.generate (buffer)
-								buffer.put_character (')')
-							else
-								buffer.generate_pure_function_signature
-									("EIF_REFERENCE", internal_name + "1", True,
-									 Byte_context.header_buffer, <<"Current">>, <<"EIF_REFERENCE">>)
-								buffer.put_character ('{')
-								buffer.put_new_line
-								buffer.indent
-								if type_c.is_pointer then
-									buffer.put_string ("return ")
-								else
-									buffer.put_string ("EIF_REFERENCE Result;")
-									buffer.put_new_line
-									type_c.generate (buffer)
-									buffer.put_string ("r = ")
-								end
-								type_c.generate_cast (buffer)
-								value.generate (buffer)
-								if not type_c.is_pointer then
-									buffer.put_character (';')
-									buffer.put_new_line
-									basic_i ?= type_c
-									basic_i.metamorphose (create {NAMED_REGISTER}.make ("Result", reference_c_type), create {NAMED_REGISTER}.make ("r", type_c), buffer)
-									buffer.put_character (';')
-									buffer.put_new_line
-									buffer.put_string ("return Result")
-								end
-							end
-							buffer.put_character (';')
-							buffer.put_new_line
-							buffer.exdent
-							buffer.put_character ('}')
-							buffer.put_new_line
-							buffer.put_new_line
-							byte_context.clear_feature_data
-								-- Only 1 wrapper is generated.
-							i := 1
-						end
-						i := i - 1
-					end
-				end
 			elseif not System.is_used (Current) then
 				System.removed_log_file.add (class_type, feature_name)
 			end
 		end
 
-	access_for_feature (access_type: TYPE_I; static_type: TYPE_I; is_qualified: BOOLEAN): ACCESS_B is
+	access_for_feature (access_type: TYPE_I; static_type: TYPE_I): ACCESS_B is
 			-- Byte code access for constant. Dynamic binding if
 			-- `static_type' is Void, otherwise static binding on `static_type'.
 		local
@@ -366,7 +274,7 @@ feature -- C code generation
 		do
 			if is_once then
 					-- Cannot hardwire string constants, ever.
-				Result := Precursor (access_type, static_type, is_qualified)
+				Result := Precursor {ENCAPSULATED_I} (access_type, static_type)
 			else
 				if extension /= Void then
 					create external_b
@@ -381,7 +289,7 @@ feature -- C code generation
 				else
 						-- Constants are hardwired in final mode
 					create constant_b.make (value)
-					constant_b.set_access (Precursor (access_type, static_type, is_qualified))
+					constant_b.set_access (Precursor {ENCAPSULATED_I} (access_type, static_type))
 					Result := constant_b
 				end
 			end
@@ -449,6 +357,8 @@ feature -- Byte code generation
 
 				-- Local count
 			ba.append_short_integer (0)
+				-- No argument clone
+			ba.append (Bc_no_clone_arg)
 				-- Feature name
 			ba.append_raw_string (feature_name)
 				-- Type where the feature is written in
@@ -527,13 +437,13 @@ feature {NONE} -- Implementation
 	new_api_feature: E_CONSTANT is
 			-- API feature creation
 		do
-			create Result.make (feature_name_id, alias_name, has_convert_mark, feature_id)
+			create Result.make (feature_name, alias_name, has_convert_mark, feature_id)
 			Result.set_type (type, assigner_name)
 			Result.set_value (value.string_value)
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

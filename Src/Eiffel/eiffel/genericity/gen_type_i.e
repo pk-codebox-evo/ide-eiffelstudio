@@ -20,8 +20,7 @@ inherit
 			generate_cid_array,
 			generate_cid_init,
 			generate_gen_type_il,
-			internal_generic_derivation,
-			generic_il_type_name,
+			generic_derivation,
 			generate_cid,
 			has_actual,
 			has_formal,
@@ -116,40 +115,12 @@ feature -- Status Report
 			-- Are all the base classes still in the system ?
 		local
 			l_base_class: like base_class
-			g: TYPE_I
-			h: TYPE_I
-			i: INTEGER
-			m: like meta_generic
-			t: like true_generics
 		do
 			l_base_class := base_class
 			Result := l_base_class /= Void and then
 				(l_base_class.generics /= Void and then
 					l_base_class.generics.count = meta_generic.count) and then
 				meta_generic.is_consistent
-			if Result then
-					-- Ensure that `true_generics' are consistent and
-					-- the reattachment semantics for `meta_generics' and `true_generics' matches
-				from
-					m := meta_generic
-					t := true_generics
-					i := t.count
-				until
-					i <= 0
-				loop
-					g := t.item (i)
-					h := m.item (i)
-					if
-						not g.is_consistent or else
-						h.is_expanded and then g.is_reference or else
-						g.is_expanded and then h.is_reference
-					then
-						Result := False
-						i := 1
-					end
-					i := i - 1
-				end
-			end
 		end
 
 	is_valid (a_class: CLASS_C): BOOLEAN is
@@ -440,27 +411,16 @@ feature -- Status Report
 			end
 		end
 
-	generic_il_type_name: STRING is
-			-- Associated name to for naming in generic derivation.
-		do
-			Result := il_type_name (Void)
-		end
-
-	internal_generic_derivation (a_level: INTEGER): like Current is
+	generic_derivation: like Current is
 			-- Precise generic derivation of current type.
 		local
-			c: like cr_info
 			i, count: INTEGER
 			l_meta, meta_gen: like meta_generic
 			l_true, true_gen: like true_generics
 			l_type: TYPE_I
 		do
 			from
-					-- Remove creation information.
-				c := cr_info
-				cr_info := Void
 				Result := duplicate
-				cr_info := c
 				l_meta := meta_generic
 				l_true := true_generics
 				meta_gen := Result.meta_generic
@@ -474,7 +434,7 @@ feature -- Status Report
 				if l_type.is_reference then
 					meta_gen.put (reference_c_type, i)
 				else
-					meta_gen.put (l_type.internal_generic_derivation (a_level + 1), i)
+					meta_gen.put (l_type.generic_derivation, i)
 				end
 
 				l_type := l_true.item (i)
@@ -483,13 +443,13 @@ feature -- Status Report
 				else
 						-- We have an expanded type
 					if l_type.is_true_expanded and then not system.il_generation then
-						true_gen.put (create {FORMAL_I}.make (False, False, i), i)
+						true_gen.put (create {FORMAL_I}.make (True, False, i), i)
 					else
 							-- We have a basic type, as an optimization, we
 							-- store the basic type data, rather than a formal
 							-- generic paramter to save some time at run-time
 							-- when computing the dynamic type.
-						true_gen.put (l_type.internal_generic_derivation (a_level + 1), i)
+						true_gen.put (l_type.generic_derivation, i)
 					end
 				end
 				i := i + 1
@@ -525,114 +485,10 @@ feature {NONE} -- Generic conformance
 			make_gen_type_byte_code (ba, True)
 		end
 
-feature {GEN_TYPE_I} -- Generic conformance
-
-	enumerate_interfaces_recursively (processor: PROCEDURE [ANY, TUPLE [CLASS_TYPE]]; n: INTEGER) is
-			-- Enumerate all class types for which an object of this type can be attached to
-			-- using `n' as an upper bound for generic parameters that can be changed.
-		require
-			processor_attached: processor /= Void
-			valid_n: 1 <= n and n <= meta_generic.count
-		local
-			gen_type: GEN_TYPE_I
-			parameter: TYPE_I
-			other_parameter: TYPE_I
-			cl_type: CL_TYPE_I
-			types: TYPE_LIST
-			cursor: ARRAYED_LIST_CURSOR
-			i: INTEGER
-		do
-				-- Enumerate types where expanded parameters are replaced with reference ones.
-				-- Take into account only registered generic derivations.
-			if n > 4  then
-					-- It's faster to scan registered class types rather than to generate conforming ones.
-				from
-					types := base_class.types
-					cursor := types.cursor
-					types.start
-				until
-					types.after
-				loop
-					cl_type := types.item.type
-						-- Check only types that differ from current one.
-					if cl_type /= Current then
-						gen_type ?= cl_type
-						check
-							gen_type_attached: gen_type /= Void
-						end
-							-- Ensure the type is reference.
-						if gen_type.is_reference then
-							from
-								i := meta_generic.count
-							until
-								i <= 0
-							loop
-								parameter := meta_generic.item (i)
-								other_parameter := gen_type.meta_generic.item (i)
-								if
-									parameter.same_as (other_parameter) or else
-									parameter.is_expanded and then other_parameter.same_as (reference_c_type)
-								then
-										-- Continue processing.
-								else
-										-- Types differ. Stop processing.
-									i := 0
-								end
-								i := i - 1
-							end
-							if i = 0 then
-								processor.call ([types.item])
-							end
-						end
-					end
-					types.forth
-				end
-				types.go_to (cursor)
-			else
-				from
-					i := n
-				until
-					i <= 0
-				loop
-					parameter := true_generics [i]
-					if parameter.is_expanded then
-						gen_type := duplicate
-						gen_type.set_reference_mark
-						cl_type ?= parameter
-						check
-							cl_type_attached: cl_type /= Void
-						end
-						gen_type.true_generics [i] := cl_type.reference_type
-						gen_type.meta_generic [i] := reference_c_type
-						if base_class.types.has_type (gen_type) then
-							processor.call ([gen_type.associated_class_type])
-						end
-						if i > 1 then
-							gen_type.enumerate_interfaces_recursively (processor, i - 1)
-						end
-					end
-					i := i - 1
-				end
-			end
-		end
-
 feature -- Generic conformance
 
-	enumerate_interfaces (processor: PROCEDURE [ANY, TUPLE [CLASS_TYPE]]) is
-			-- Enumerate all class types for which an object of this type can be attached to.
-		require
-			processor_attached: processor /= Void
-		do
-			-- TODO:
-			-- 1. Rule out generic types with too many generic parameters to
-			-- avoid explosure of artificially introduced types.
-			-- 2. Ensure generated code works as expected.
-			-- 3. Remove validity rule that prevents reattaching derivations
-			-- with expanded parameters to derivations with reference parameters.
-			enumerate_interfaces_recursively (processor, meta_generic.count)
-		end
-
 	generate_cid (buffer : GENERATION_BUFFER; final_mode, use_info : BOOLEAN) is
+
 		local
 			i, up : INTEGER
 		do

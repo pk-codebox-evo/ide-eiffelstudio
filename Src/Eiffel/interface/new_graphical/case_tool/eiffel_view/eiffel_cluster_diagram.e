@@ -428,7 +428,7 @@ feature {NONE} -- Implementation
 			drop_y := context_editor.pointer_position.y
 			is_dropped_on_diagram := True
 			clf := top_cluster_at (Current, drop_x, drop_y)
-			create dial.make_default (context_editor.develop_window)
+			create dial.make_default (context_editor.development_window)
 			if clf /= Void then
 				l_cluster ?= clf.model.group
 				if l_cluster /= Void then
@@ -559,7 +559,7 @@ feature {NONE} -- Implementation
 	window_status_bar: EB_DEVELOPMENT_WINDOW_STATUS_BAR is
 			-- Status bar of window
 		do
-			Result := context_editor.develop_window.status_bar
+			Result := context_editor.development_window.status_bar
 		ensure
 			Result_not_void: Result /= Void
 		end
@@ -784,7 +784,7 @@ feature {NONE} -- Implementation
 						until
 							l_array_undo.after
 						loop
-							l_array_undo.item.call (Void)
+							l_array_undo.item.call ([])
 							l_array_undo.forth
 						end
 					end
@@ -890,60 +890,42 @@ feature {NONE} -- Implementation
 		local
 			l_cluster: CONF_CLUSTER
 			l_lib: CONF_LIBRARY
-			l_as: CONF_ASSEMBLY
-			l_phys_as: CONF_PHYSICAL_ASSEMBLY
-			l_assemblies: ARRAYED_LIST [CONF_ASSEMBLY]
+			l_libs: ARRAYED_LIST [CONF_LIBRARY]
 		do
 			l_cluster ?= a_cluster
 			l_lib ?= a_cluster
-			l_as ?= a_cluster
-			l_phys_as ?= a_cluster
 			if l_cluster /= Void then
 				if l_cluster.parent /= Void then
 					Result := model.cluster_from_interface (l_cluster.parent)
 				else
-					Result := library_usage_parents (l_cluster.target)
+					create Result.make (5)
+					l_libs := l_cluster.target.used_in_libraries
+					if l_libs /= Void then
+						from
+							l_libs.start
+						until
+							l_libs.after
+						loop
+							Result.append (model.cluster_from_interface (l_libs.item))
+							l_libs.forth
+						end
+					end
 				end
 			elseif l_lib /= Void then
-				Result := library_usage_parents (l_lib.target)
-			elseif l_as /= Void then
-				Result := library_usage_parents (l_as.target)
-			elseif l_phys_as /= Void then
 				create Result.make (5)
-				from
-					l_assemblies := l_phys_as.assemblies
-					l_assemblies.start
-				until
-					l_assemblies.after
-				loop
-					Result.append (model.cluster_from_interface (l_assemblies.item))
-					l_assemblies.forth
+				l_libs := l_lib.target.used_in_libraries
+				if l_libs /= Void then
+					from
+						l_libs.start
+					until
+						l_libs.after
+					loop
+						Result.append (model.cluster_from_interface (l_libs.item))
+						l_libs.forth
+					end
 				end
 			else
 				check error: False end
-			end
-		ensure
-			Result_not_void: Result /= Void
-		end
-
-	library_usage_parents (a_target: CONF_TARGET): ARRAYED_LIST [ES_CLUSTER] is
-			-- Return groups because of library usage of `a_target'.
-		require
-			a_target_not_void: a_target /= Void
-		local
-			l_libs: ARRAYED_LIST [CONF_LIBRARY]
-		do
-			create Result.make (5)
-			l_libs := a_target.system.used_in_libraries
-			if l_libs /= Void then
-				from
-					l_libs.start
-				until
-					l_libs.after
-				loop
-					Result.append (model.cluster_from_interface (l_libs.item))
-					l_libs.forth
-				end
 			end
 		ensure
 			Result_not_void: Result /= Void
@@ -973,7 +955,7 @@ feature {NONE} -- Implementation
 						check
 							l_item_not_void: l_item /= Void
 						end
-						if context_editor.ignore_excluded_figures or else not context_editor.is_excluded_in_preferences (l_item.name) then
+						if context_editor.ignore_excluded_figures or else not context_editor.is_excluded_in_preferences (l_item.name_in_upper) then
 							create new_class.make (l_item)
 							a_cluster.extend (new_class)
 							model.add_node_relations (new_class)
@@ -1000,7 +982,7 @@ feature {NONE} -- Implementation
 						new_class := a_cluster.node_of (l_item)
 						if new_class = Void then
 							l_item ?= l_classes.item_for_iteration
-							if context_editor.ignore_excluded_figures or else not context_editor.is_excluded_in_preferences (l_item.name) then
+							if context_editor.ignore_excluded_figures or else not context_editor.is_excluded_in_preferences (l_item.name_in_upper) then
 								create new_class.make (l_item)
 								model.add_node (new_class)
 								model.add_node_relations (new_class)
@@ -1008,7 +990,7 @@ feature {NONE} -- Implementation
 							end
 						else
 							l_item := new_class.class_i
-							if context_editor.ignore_excluded_figures or else not context_editor.is_excluded_in_preferences (l_item.name) then
+							if context_editor.ignore_excluded_figures or else not context_editor.is_excluded_in_preferences (l_item.name_in_upper) then
 								if not new_class.is_needed_on_diagram then
 									new_class.enable_needed_on_diagram
 									enable_all_links (new_class)
@@ -1048,7 +1030,7 @@ feature {NONE} -- Implementation
 			if l_cc_stone /= Void or l_cluster_stone /= Void or l_class_stone /= Void then
 				Result := True
 				if l_cluster_stone /= Void then
-					if l_cluster_stone.group.is_assembly or l_cluster_stone.group.is_physical_assembly then
+					if l_cluster_stone.group.is_assembly then
 						Result := False
 					end
 				end
@@ -1092,7 +1074,7 @@ feature {NONE} -- Implementation
 			l_array_redo, l_array_undo: ARRAYED_LIST [PROCEDURE [ANY, TUPLE]]
 			remove_classes: LIST [TUPLE [EIFFEL_CLASS_FIGURE, INTEGER, INTEGER]]
 			remove_links: LIST [ES_ITEM]
-			l_string: STRING_GENERAL
+			l_string: STRING
 		do
 			l_clusters := model.top_level_clusters
 			create l_array_redo.make (5)

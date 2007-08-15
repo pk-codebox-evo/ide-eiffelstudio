@@ -13,28 +13,56 @@ class
 	ES_GRID_ROW_CONTROLLER
 inherit
 	EV_GRID_HELPER
-
+		redefine
+			default_create
+		end
+		
 	EV_SHARED_APPLICATION
 		undefine
-			copy
+			copy, default_create
 		end
 
 create
 	default_create
 
+feature {NONE} -- Initialization
+
+	default_create is
+			-- Initialize `Current'.
+		do
+			create expand_actions
+			create collapse_actions
+		end
+
 feature -- Change
 
 	reset_row_actions is
 		do
-			expand_action := Void
-			collapse_action := Void
+			expand_actions.wipe_out
+			collapse_actions.wipe_out
 		end
 
-feature -- Properties
+feature -- Access
 
 	data: ANY
 
-feature -- Settings
+	pebble: ANY is
+		do
+		end
+		
+	pnd_accept_cursor: EV_POINTER_STYLE is
+		require
+			pebble /= Void
+		do
+		end
+
+	pnd_deny_cursor: EV_POINTER_STYLE is
+		require
+			pebble /= Void
+		do
+		end
+
+feature -- Change
 
 	set_data (v: like data) is
 		do
@@ -43,115 +71,25 @@ feature -- Settings
 			data = v
 		end
 
-feature -- Pebble
-
-	item_pebble_details (i: INTEGER): TUPLE [pebble: ANY; accept_cursor: EV_POINTER_STYLE; deny_cursor: EV_POINTER_STYLE] is
-		do
-		end
-
-	item_pebble (i: INTEGER): ANY is
-		local
-			t: like item_pebble_details
-		do
-			t := item_pebble_details (i)
-			if t /= Void then
-				Result := t.pebble
-			end
-		end
-
-	item_pnd_accept_cursor (i: INTEGER): EV_POINTER_STYLE is
-		require
-			item_pebble (i) /= Void
-		local
-			t: like item_pebble_details
-		do
-			t := item_pebble_details (i)
-			if t /= Void then
-				Result := t.accept_cursor
-			end
-		end
-
-	item_pnd_deny_cursor (i: INTEGER): EV_POINTER_STYLE is
-		require
-			item_pebble (i) /= Void
-		local
-			t: like item_pebble_details
-		do
-			t := item_pebble_details (i)
-			if t /= Void then
-				Result := t.deny_cursor
-			end
-		end
-
-	pebble: ANY is
-		do
-			Result := item_pebble (0)
-		end
-
-	pnd_accept_cursor: EV_POINTER_STYLE is
-		require
-			pebble /= Void
-		do
-			Result := item_pnd_accept_cursor (0)
-		end
-
-	pnd_deny_cursor: EV_POINTER_STYLE is
-		require
-			pebble /= Void
-		do
-			Result := item_pnd_deny_cursor (0)
-		end
-
-feature -- Change
-
-	set_expand_action (a: like expand_action) is
-		do
-			expand_action := a
-		end
-
-	set_collapse_action (a: like collapse_action) is
-		do
-			collapse_action := a
-		end
-
-	set_key_pressed_action (a: like key_pressed_action) is
-		do
-			key_pressed_action := a
-		end
-
 feature -- Actions
 
-	call_expand_action (r: EV_GRID_ROW) is
+	call_expand_actions (r: EV_GRID_ROW) is
 		do
-			if expand_action /= Void then
-				expand_action.call ([r])
-			end
+			expand_actions.call ([r])
 		end
 
-	call_collapse_action (r: EV_GRID_ROW) is
+	expand_actions: EV_GRID_ROW_ACTION_SEQUENCE
+
+	call_collapse_actions (r: EV_GRID_ROW) is
 		do
-			if collapse_action /= Void then
-				collapse_action.call ([r])
-			end
+			collapse_actions.call ([r])
 		end
 
-	call_key_pressed_action (k: EV_KEY) is
-		do
-			if key_pressed_action /= Void then
-				key_pressed_action.call ([k])
-			end
-		end
+	collapse_actions: EV_GRID_ROW_ACTION_SEQUENCE
 
-feature {NONE} -- Implementation
-
-	expand_action: PROCEDURE [ANY, TUPLE [EV_GRID_ROW]]
-			-- Action to be perform on row expanded.
-
-	collapse_action: PROCEDURE [ANY, TUPLE [EV_GRID_ROW]];
-			-- Action to be perform on row collapsed.
-
-	key_pressed_action: PROCEDURE [ANY, TUPLE [EV_KEY]];
-			-- Action to be perform on key pressed.
+invariant
+	collapse_actions /= Void
+	expand_actions /= Void
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

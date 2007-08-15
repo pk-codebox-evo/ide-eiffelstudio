@@ -7,7 +7,7 @@ indexing
 
 class
 	ES_PIXMAPS_CURSORS
-	
+
 inherit
 	EIFFEL_LAYOUT
 		export
@@ -26,7 +26,7 @@ feature {NONE} -- Initialization
 			not_a_name_is_empty: not a_name.is_empty
 		local
 			l_file: FILE_NAME
-			l_warn: EB_WARNING_DIALOG
+			l_warn: EV_WARNING_DIALOG
 			retried: BOOLEAN
 		do
 			if not retried then
@@ -61,7 +61,7 @@ feature -- Access
 	width: INTEGER is 17
 			-- Matrix width
 
-	height: INTEGER is 4
+	height: INTEGER is 3
 			-- Matrix height
 
 	frozen context_cluster_cursor: EV_PIXMAP is
@@ -592,126 +592,6 @@ feature -- Access
 			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (10, 3))
 		end
 
-	frozen metrics_generic_cursor: EV_PIXMAP is
-			-- Access to 'generic' pixmap.
-		once
-			Result := raw_buffer.sub_pixmap (pixel_rectangle (11, 3))
-		end
-
-	frozen metrics_generic_cursor_cursor_buffer: EV_PIXEL_BUFFER is
-			-- Access to 'generic' pixmap pixel buffer.
-		once
-			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (11, 3))
-		end
-
-	frozen metrics_feature_cursor: EV_PIXMAP is
-			-- Access to 'feature' pixmap.
-		once
-			Result := raw_buffer.sub_pixmap (pixel_rectangle (12, 3))
-		end
-
-	frozen metrics_feature_cursor_cursor_buffer: EV_PIXEL_BUFFER is
-			-- Access to 'feature' pixmap pixel buffer.
-		once
-			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (12, 3))
-		end
-
-	frozen metrics_local_cursor: EV_PIXMAP is
-			-- Access to 'local' pixmap.
-		once
-			Result := raw_buffer.sub_pixmap (pixel_rectangle (13, 3))
-		end
-
-	frozen metrics_local_cursor_cursor_buffer: EV_PIXEL_BUFFER is
-			-- Access to 'local' pixmap pixel buffer.
-		once
-			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (13, 3))
-		end
-
-	frozen metrics_assertion_cursor: EV_PIXMAP is
-			-- Access to 'assertion' pixmap.
-		once
-			Result := raw_buffer.sub_pixmap (pixel_rectangle (14, 3))
-		end
-
-	frozen metrics_assertion_cursor_cursor_buffer: EV_PIXEL_BUFFER is
-			-- Access to 'assertion' pixmap pixel buffer.
-		once
-			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (14, 3))
-		end
-
-	frozen metrics_line_cursor: EV_PIXMAP is
-			-- Access to 'line' pixmap.
-		once
-			Result := raw_buffer.sub_pixmap (pixel_rectangle (15, 3))
-		end
-
-	frozen metrics_line_cursor_cursor_buffer: EV_PIXEL_BUFFER is
-			-- Access to 'line' pixmap pixel buffer.
-		once
-			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (15, 3))
-		end
-
-	frozen metrics_disabled_generic_cursor: EV_PIXMAP is
-			-- Access to 'generic' pixmap.
-		once
-			Result := raw_buffer.sub_pixmap (pixel_rectangle (16, 3))
-		end
-
-	frozen metrics_disabled_generic_cursor_cursor_buffer: EV_PIXEL_BUFFER is
-			-- Access to 'generic' pixmap pixel buffer.
-		once
-			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (16, 3))
-		end
-
-	frozen metrics_disabled_feature_cursor: EV_PIXMAP is
-			-- Access to 'feature' pixmap.
-		once
-			Result := raw_buffer.sub_pixmap (pixel_rectangle (17, 3))
-		end
-
-	frozen metrics_disabled_feature_cursor_cursor_buffer: EV_PIXEL_BUFFER is
-			-- Access to 'feature' pixmap pixel buffer.
-		once
-			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (17, 3))
-		end
-
-	frozen metrics_disabled_local_cursor: EV_PIXMAP is
-			-- Access to 'local' pixmap.
-		once
-			Result := raw_buffer.sub_pixmap (pixel_rectangle (1, 4))
-		end
-
-	frozen metrics_disabled_local_cursor_cursor_buffer: EV_PIXEL_BUFFER is
-			-- Access to 'local' pixmap pixel buffer.
-		once
-			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (1, 4))
-		end
-
-	frozen metrics_disabled_assertion_cursor: EV_PIXMAP is
-			-- Access to 'assertion' pixmap.
-		once
-			Result := raw_buffer.sub_pixmap (pixel_rectangle (2, 4))
-		end
-
-	frozen metrics_disabled_assertion_cursor_cursor_buffer: EV_PIXEL_BUFFER is
-			-- Access to 'assertion' pixmap pixel buffer.
-		once
-			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (2, 4))
-		end
-
-	frozen metrics_disabled_line_cursor: EV_PIXMAP is
-			-- Access to 'line' pixmap.
-		once
-			Result := raw_buffer.sub_pixmap (pixel_rectangle (3, 4))
-		end
-
-	frozen metrics_disabled_line_cursor_cursor_buffer: EV_PIXEL_BUFFER is
-			-- Access to 'line' pixmap pixel buffer.
-		once
-			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (3, 4))
-		end
-
 		
 feature {NONE} -- Query
 
@@ -721,7 +601,7 @@ feature {NONE} -- Query
 			a_x_positive: a_x > 0
 			a_x_small_enough: a_x <= 17
 			a_y_positive: a_y > 0
-			a_y_small_enough: a_y <= 4
+			a_y_small_enough: a_y <= 3
 		local
 			l_x_offset: INTEGER
 			l_y_offset: INTEGER

@@ -12,9 +12,7 @@ inherit
 	EB_CONTEXT_DIAGRAM_COMMAND
 		redefine
 			new_toolbar_item,
-			new_sd_toolbar_item,
-			initialize,
-			menu_name
+			initialize
 		end
 
 create
@@ -86,13 +84,6 @@ feature -- Basic operations
 			Result.drop_actions.extend (agent execute_with_cluster_stone)
 		end
 
-	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new toolbar button for this command.
-		do
-			Result := Precursor (display_text)
-			Result.drop_actions.extend (agent execute_with_cluster_stone)
-		end
-
 feature {NONE} -- Implementation
 
 	include_all_classes (a_cluster_fig: EIFFEL_CLUSTER_FIGURE) is
@@ -112,7 +103,7 @@ feature {NONE} -- Implementation
 			if not tool.cluster_graph.last_included_classes.is_empty then
 				a_cluster_fig.reset_user_size
 				tool.world.update
-				tool.layout.set_spacing ({EB_DIAGRAM_TOOL}.default_bon_horizontal_spacing, {EB_DIAGRAM_TOOL}.default_bon_vertical_spacing)
+				tool.layout.set_spacing ({EB_CONTEXT_EDITOR}.default_bon_horizontal_spacing, {EB_CONTEXT_EDITOR}.default_bon_vertical_spacing)
 				tool.layout.layout_cluster_only (a_cluster_fig)
 
 				a_cluster_fig.set_port_position (port_x, port_y)
@@ -122,28 +113,17 @@ feature {NONE} -- Implementation
 			end
 		end
 
+
 	pixmap: EV_PIXMAP is
 			-- Pixmaps representing the command.
 		do
 			Result := pixmaps.icon_pixmaps.diagram_fill_cluster_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.diagram_fill_cluster_icon_buffer
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.f_diagram_fill_cluster
-		end
-
-	menu_name: STRING_GENERAL is
-			-- Name on corresponding menu items
-		do
-			Result := interface_names.m_include_all_classes
 		end
 
 	name: STRING is "Cluster_filling";

@@ -88,7 +88,8 @@ feature
 			set_max_locals (max_locals + jvm_type_to_stack_size (eiffel_type_id_to_jvm_type_id (a_type_id)))
 			return_jvm_type_id := eiffel_type_id_to_jvm_type_id (a_type_id)
 		end
-
+			
+			
 feature
 	
 	emit (file: RAW_FILE) is
@@ -218,7 +219,8 @@ feature {NONE}
 				i := i + 1
 				count := count + 1
 			end
-
+			
+			
 			if
 				count > 0
 			then
@@ -288,9 +290,11 @@ feature {ANY} -- Basic Operations
 			create post_code_byte_code.make
 			post_code_byte_code.set_constant_pool (constant_pool)
 			post_code_byte_code.append_uint_16_from_int (0) -- Handlers count
-
+			
+			
 			post_code_byte_code.append_uint_16_from_int (attributes_count) -- Attributes count
-
+			
+			
 			Precursor
 		end
 			
@@ -348,7 +352,8 @@ feature -- Code generation statistics
 			
 	has_code_generation_started: BOOLEAN
 			-- has `start_code_generation' been called?
-
+			
+			
 	return_index: INTEGER
 			-- index of (jvm) local variable slot where the result will
 			-- be stored
@@ -453,4 +458,5 @@ indexing
 		]"
 
 end
+
 

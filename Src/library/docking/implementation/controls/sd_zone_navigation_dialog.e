@@ -11,16 +11,6 @@ class
 
 inherit
 	SD_ZONE_NAVIGATION_DIALOG_IMP
-		redefine
-			show
-		end
-
-	EV_SHARED_APPLICATION
-		export
-			{NONE} all
-		undefine
-			default_create, copy
-		end
 
 create
 	make
@@ -34,7 +24,7 @@ feature {NONE} -- Initialization
 		do
 			create internal_shared
 			is_shift_pressed := a_is_shift_pressed
-			make_with_shadow
+			default_create
 			internal_docking_manager := a_docking_manager
 
 			add_all_content_label
@@ -85,12 +75,6 @@ feature {NONE} -- Initialization
 			l_font := full_title.font
 			l_font.set_weight ({EV_FONT_CONSTANTS}.weight_bold)
 			full_title.set_font (l_font)
-
-
-			-- We have to do it like this, otherwise when press tab key (executing next_tabstop_widget in EV_WIDGET_IMP on Windows), there will be stack overflow.
-			-- The reason of the stack overflow maybe is: the `parent' of `wel_window' is not correct.
-			internal_files_label.enable_tabable_to
-			internal_tools_label.enable_tabable_to
 		end
 
 	init_background (a_color: EV_COLOR) is
@@ -114,10 +98,9 @@ feature {NONE} -- Initialization
 			-- Add all content label to Current.
 		local
 			l_contents: ARRAYED_LIST [SD_CONTENT]
-			l_content: SD_CONTENT
-			l_label: SD_TOOL_BAR_WIDTH_BUTTON
+			l_label: SD_TOOL_BAR_RADIO_BUTTON
 			l_pass_first_editor, l_pass_second_editor: BOOLEAN
-			l_first_label, l_last_label, l_first_tool_label, l_last_tool_label: SD_TOOL_BAR_RADIO_BUTTON
+			l_first_label, l_last_label: SD_TOOL_BAR_RADIO_BUTTON
 			l_tools_count, l_files_count: INTEGER
 		do
 			l_contents := internal_docking_manager.property.contents_by_click_order
@@ -128,27 +111,21 @@ feature {NONE} -- Initialization
 			until
 				l_contents.after
 			loop
-				l_content := l_contents.item
 				create l_label.make
 				l_label.set_wrap (True)
-				l_label.set_maximum_width (internal_max_item_width)
-				l_label.set_data (l_content)
+				l_label.set_data (l_contents.item)
 
 				l_label.select_actions.extend (agent select_label_and_destroy (l_label))
-				l_label.set_pixmap (l_content.pixmap)
-				l_label.set_text (l_content.short_title)
-				if l_content.type = {SD_ENUMERATION}.tool and l_content.is_visible then
+				l_label.set_pixmap (l_contents.item.pixmap)
+				l_label.set_text (l_contents.item.short_title)
+				if l_contents.item.type = {SD_ENUMERATION}.tool and l_contents.item.is_visible then
 					if l_tools_count > {SD_SHARED}.zone_navigation_column_count then
 						l_tools_count := 1
 						add_new_column (False)
 					end
 					tools_column.extend (l_label)
 					l_tools_count := l_tools_count + 1
-					if l_first_tool_label = Void then
-						l_first_tool_label := l_label
-					end
-					l_last_tool_label := l_label
-				elseif l_content.type = {SD_ENUMERATION}.editor and l_content.is_visible then
+				elseif l_contents.item.type = {SD_ENUMERATION}.editor and l_contents.item.is_visible then
 					if l_files_count > {SD_SHARED}.zone_navigation_column_count then
 						l_files_count := 1
 						add_new_column (True)
@@ -165,32 +142,18 @@ feature {NONE} -- Initialization
 					end
 					l_last_label := l_label
 				else
-					check only_three_type: l_content.is_visible implies l_content.type = {SD_ENUMERATION}.place_holder end
+					check only_three_type: l_contents.item.is_visible implies l_contents.item.type = {SD_ENUMERATION}.place_holder end
 				end
 
 				l_contents.forth
 			end
-
-			if l_first_label = Void then
-				-- There is no editor label
-				if l_last_tool_label /= Void and then is_shift_pressed then
-					focus_label (l_last_tool_label)
-				elseif l_first_tool_label /= Void then
-					focus_label (l_first_tool_label)
-				end
-				if l_first_tool_label = Void then
-					-- There is no label at all.
-					disable_sensitive
+			if not is_shift_pressed then
+				if l_pass_first_editor and then not l_pass_second_editor then
+					on_label_enable_focus_color (l_first_label)
 				end
 			else
-				if l_pass_first_editor and then not l_pass_second_editor then
-					focus_label (l_first_label)
-				elseif is_shift_pressed then
-					focus_label (l_last_label)
-				end
+				on_label_enable_focus_color (l_last_label)
 			end
-
-			init_focued_lable := selected_label
 
 			set_all_items_wrap
 
@@ -202,25 +165,20 @@ feature {NONE} -- Initialization
 		local
 			l_maximum, l_temp: INTEGER
 		do
-			if is_sensitive then
-				l_maximum := compute_all_sizes_imp (all_files_column)
-				l_temp := compute_all_sizes_imp (all_tools_column)
-				if l_maximum < l_temp then
-					l_maximum := l_temp
-				end
-				set_columns_minimum_width (all_files_column, l_maximum)
-				set_columns_minimum_width (all_tools_column, l_maximum)
-
-				set_scroll_area_item_size (internal_files_box, scroll_area_files)
-				set_scroll_area_item_size (internal_tools_box, scroll_area_tools)
-			else
-				-- There is no label to show at all.
-
+			l_maximum := compute_all_sizes_imp (all_files_column)
+			l_temp := compute_all_sizes_imp (all_tools_column)
+			if l_maximum < l_temp then
+				l_maximum := l_temp
 			end
+			set_columns_minimum_width (all_files_column, l_maximum)
+			set_columns_minimum_width (all_tools_column, l_maximum)
+
+			set_scroll_area_item_size (internal_files_box, scroll_area_files)
+			set_scroll_area_item_size (internal_tools_box, scroll_area_tools)
 		end
 
 	set_scroll_area_item_size (a_box: EV_BOX; a_scroll_area: EV_SCROLLABLE_AREA) is
-			-- Set scroll area item minimum size.
+			--
 		require
 			not_void: a_box /= Void
 			not_void: a_scroll_area /= Void
@@ -260,18 +218,15 @@ feature {NONE} -- Initialization
 			-- Result is maximum size
 		require
 			not_void: a_columns /= Void
-		local
-			l_tool_bar: SD_TOOL_BAR
 		do
 			from
 				a_columns.start
 			until
 				a_columns.after
 			loop
-				l_tool_bar := a_columns.item
-				l_tool_bar.compute_minimum_size
-				if Result < l_tool_bar.minimum_width then
-					Result := l_tool_bar.minimum_width
+				a_columns.item.compute_minmum_size
+				if Result < a_columns.item.minimum_width then
+					Result := a_columns.item.minimum_width
 				end
 				a_columns.forth
 			end
@@ -366,16 +321,15 @@ feature {NONE} -- Initialization
 			Result := l_a_column.width
 		end
 
-feature -- Command
-
-	show is
-			-- Redefine
-		do
-			Precursor {SD_ZONE_NAVIGATION_DIALOG_IMP}
-			focus_label (init_focued_lable)
-		end
-
 feature {NONE} -- Agents
+
+	on_label_enable_focus_color (a_label: SD_TOOL_BAR_RADIO_BUTTON) is
+			-- Handle a_label focus color enabled.
+		require
+			a_label_not_void: a_label /= Void
+		do
+			a_label.enable_select
+		end
 
 	on_key_release (a_key: EV_KEY) is
 			-- Handle key release.
@@ -383,12 +337,7 @@ feature {NONE} -- Agents
 			inspect
 				a_key.code
 			when {EV_KEY_CONSTANTS}.key_ctrl then
-				if is_sensitive then
-					select_label_and_destroy (selected_label)
-				else
-					destroy
-					ev_application.do_once_on_idle (agent (internal_docking_manager.main_window).set_focus)
-				end
+				select_label_and_destroy (selected_label)
 			when {EV_KEY_CONSTANTS}.key_shift then
 				is_shift_pressed := False
 			else
@@ -447,9 +396,6 @@ feature {NONE} -- Implementation query
 
 feature {NONE} -- Implementation command
 
-	init_focued_lable: SD_TOOL_BAR_TOGGLE_BUTTON
-			-- The first focused label setted by `add_all_content_label'
-
 	focus_label (a_label: SD_TOOL_BAR_TOGGLE_BUTTON) is
 			-- Enable a_label's focus color.
 		require
@@ -461,24 +407,7 @@ feature {NONE} -- Implementation command
 			l_left_in, l_right_in: BOOLEAN
 			l_is_selected_label_in_files: BOOLEAN
 			l_maximum_scroll_position: REAL
-			l_all_items: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
-			l_toggle: SD_TOOL_BAR_TOGGLE_BUTTON
 		do
-			from
-				-- Although toggle button will disable other buttons in the same tool bar,
-				-- but it can't diable buttoons in other tool bars.
-				l_all_items := all_items
-				l_all_items.start
-			until
-				l_all_items.after
-			loop
-				l_toggle ?= l_all_items.item
-				if l_toggle /= Void then
-					l_toggle.disable_select
-				end
-				l_all_items.forth
-			end
-
 			a_label.enable_select
 			set_text_info (a_label)
 
@@ -506,22 +435,19 @@ feature {NONE} -- Implementation command
 			not_void: a_item /= Void
 		local
 			l_content: SD_CONTENT
-			l_env: EV_ENVIRONMENT
 		do
 			l_content ?= a_item.data
 			check not_void: l_content /= Void end
 			full_title.set_text (l_content.long_title)
-			if l_content.description = Void then
-				description.set_text (internal_shared.interface_names.Zone_navigation_no_description_available)
+			if  l_content.description = Void then
+				description.set_text ("No description available.")
 			else
 				description.set_text (l_content.description)
 			end
 			if l_content.detail = Void then
-				detail.set_text (internal_shared.interface_names.Zone_navigation_no_detail_available)
+				detail.set_text ("No detail available.")
 			else
-				-- We have to do it in idle actions, otherwise dialog minimum height will not correct.
-				create l_env
-				l_env.application.do_once_on_idle (agent check_before_set_text (l_content.detail.as_string_8))
+				detail.set_text (l_content.detail)
 			end
 		end
 
@@ -545,15 +471,11 @@ feature {NONE} -- Implementation command
 		local
 			l_content: SD_CONTENT
 		do
-			if a_label /= Void then
-				l_content ?= a_label.data
-				check not_void: l_content /= Void end
-			end
+			l_content ?= a_label.data
+			check not_void: l_content /= Void end
 			-- If we call set_focus immediately, destroy will make Current get focus.
 			destroy
-			if l_content /= Void then
-				l_content.set_focus
-			end
+			l_content.set_focus
 		end
 
 	find_label_at_right_side: SD_TOOL_BAR_RADIO_BUTTON is
@@ -584,15 +506,10 @@ feature {NONE} -- Implementation command
 				-- In the last column, we should go to other part
 				l_result_index := l_selected_index \\ {SD_SHARED}.zone_navigation_column_count
 				l_side_list := all_items_in_part (not l_selected_item_in_files)
-				if l_side_list.count > 0 then
-					if l_result_index > l_side_list.count then
-						l_result_index := l_side_list.count
-					end
-					Result ?= l_side_list.i_th (l_result_index)
-				else
-					Result ?= l_current_list.i_th (l_result_index)
+				if l_result_index > l_side_list.count then
+					l_result_index := l_side_list.count
 				end
-
+				Result ?= l_side_list.i_th (l_result_index)
 			end
 		ensure
 			not_void: Result /= Void
@@ -624,26 +541,14 @@ feature {NONE} -- Implementation command
 			else
 				-- In the first column, we should go to other part
 				l_side_list := all_items_in_part (not l_selected_item_in_files)
-
-				if l_side_list.count > 0 then
-					-- Go to the right side of the other list
-					l_balance := l_side_list.count \\ {SD_SHARED}.zone_navigation_column_count
-					l_result_index := l_side_list.count - {SD_SHARED}.zone_navigation_column_count + ({SD_SHARED}.zone_navigation_column_count - l_balance) + l_selected_index
-					if l_result_index > l_side_list.count then
-						l_result_index := l_side_list.count
-					end
-
-					Result ?= l_side_list.i_th (l_result_index)
-				else
-					l_balance := l_current_list.count \\ {SD_SHARED}.zone_navigation_column_count
-					l_result_index := l_current_list.count - {SD_SHARED}.zone_navigation_column_count + ({SD_SHARED}.zone_navigation_column_count - l_balance) + l_selected_index
-					if l_result_index > l_current_list.count then
-						l_result_index := l_current_list.count
-					end
-
-					Result ?= l_current_list.i_th (l_result_index)
+				-- Go to the right side of the other list
+				l_balance := l_side_list.count \\ {SD_SHARED}.zone_navigation_column_count
+				l_result_index := l_side_list.count - {SD_SHARED}.zone_navigation_column_count + ({SD_SHARED}.zone_navigation_column_count - l_balance) + l_selected_index
+				if l_result_index > l_side_list.count then
+					l_result_index := l_side_list.count
 				end
 
+				Result ?= l_side_list.i_th (l_result_index)
 			end
 		ensure
 			not_void: Result /= Void
@@ -729,12 +634,7 @@ feature {NONE} -- Implementation command
 						Result ?= l_items.i_th (l_items.index - 1)
 					else
 						l_list := all_items_in_part (not is_seleted_label_in_files)
-						if not l_list.is_empty then
-							Result ?= l_list.last
-						else
-							Result ?= l_items.last
-						end
-
+						Result ?= l_list.last
 					end
 				end
 				l_items.back
@@ -765,12 +665,7 @@ feature {NONE} -- Implementation command
 						Result ?= l_items.i_th (l_items.index + 1)
 					else
 						l_list := all_items_in_part (not is_seleted_label_in_files)
-						if not l_list.is_empty then
-							Result ?= l_list.first
-						else
-							Result ?= l_items.first
-						end
-
+						Result ?= l_list.first
 					end
 				end
 				l_items.forth
@@ -816,8 +711,6 @@ feature {NONE} -- Implementation command
 
 	selected_label: SD_TOOL_BAR_RADIO_BUTTON is
 			-- Current selected label
-		require
-			has_label: is_sensitive
 		local
 			l_items: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
 			l_item: SD_TOOL_BAR_RADIO_BUTTON
@@ -874,14 +767,6 @@ feature {NONE} -- Implementation command
 			not_void: Result /= Void
 		end
 
-	check_before_set_text (a_tip: STRING) is
-			-- call `set_text' if possible.
-		do
-			if not is_destroyed then
-				set_text (a_tip)
-			end
-		end
-
 	is_seleted_label_in_files: BOOLEAN
 			-- If selected label in files group?
 			-- Oterwise it's in tools group.
@@ -897,102 +782,6 @@ feature {NONE} -- Implementation command
 
 	internal_max_height: INTEGER is 300
 			-- Max height
-
-	internal_max_item_width: INTEGER is 161
-			-- Max width of a tool bar item which represent a SD_CONTENT.
-
-feature {NONE} -- Copied from Eiffel Build project GB_TIP_OF_THE_DAY_DIALOG
-
-	set_text (tip: STRING) is
-			-- Display `tip' as a wrapped text within `detail'.
-			-- Replace all '%N' characters as spaces.
-		local
-			counter: INTEGER
-			font: EV_FONT
-			current_width: INTEGER
-			last_string: STRING
-			temp_string: STRING
-			modified_tip: STRING
-			lines: ARRAYED_LIST [STRING]
-			start_pos: INTEGER
-			output: STRING
-			maximum_string_width: INTEGER
-			all_space_indexes: ARRAYED_LIST [INTEGER]
-		do
-			create all_space_indexes.make (20)
-			create lines.make (4)
-			font := detail.font
-			modified_tip := tip.twin
-			modified_tip.replace_substring_all ("%N", " ")
-			modified_tip.append_character (' ')
-			maximum_string_width := width - 25
-
-				-- Set up all space indexes which stores the index of each space in the
-				-- text, as these are the wrapping criterion.
-				-- Note that if a word is contained that is longer than the width of the label,
-				-- this will probable lead to problems. No attempt to prevent this is made in the code.
-			from
-				counter := 1
-			until
-				counter > modified_tip.count
-			loop
-				if modified_tip.item (counter).is_equal(Operating_environment.directory_separator) then
-					all_space_indexes.extend (counter)
-				end
-				counter := counter + 1
-			end
-
-				-- Perform calculations to determine where wrapping must occur.
-			from
-				start_pos := 1
-				counter := 1
-			until
-				counter > all_space_indexes.count or counter < 1
-			loop
-				from
-					current_width := 0
-				until
-					current_width > maximum_string_width or
-					counter > all_space_indexes.count or counter < 1
-				loop
-
-					temp_string := modified_tip.substring (start_pos, all_space_indexes.i_th (counter) - 1)
-					current_width := font.string_width (temp_string)
-					if current_width <= maximum_string_width then
-						last_string := temp_string
-						counter := counter + 1
-					else
-						counter := counter - 1
-					end
-				end
-				if all_space_indexes.valid_index (counter) then
-					start_pos := all_space_indexes.i_th (counter) + 1
-				end
-				if lines.count = 0 and last_string = Void and counter = 0 then
-					-- Only one line which can't be wrapped
-					lines.extend (temp_string)
-				else
-					lines.extend (last_string)
-				end
-			end
-
-			-- Now create and set the text on the label
-			output := ""
-			from
-				lines.start
-			until
-				lines.off
-			loop
-				output.append (lines.item)
-				if lines.index < lines.count then
-					output.append_character (Operating_environment.directory_separator)
-					output.append_character ('%N')
-				end
-				lines.forth
-			end
-
-			detail.set_text (output)
-		end
 
 invariant
 	internal_docking_manager_not_void: internal_docking_manager /= Void

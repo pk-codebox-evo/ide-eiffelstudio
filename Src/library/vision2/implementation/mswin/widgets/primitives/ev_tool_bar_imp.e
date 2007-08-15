@@ -19,12 +19,12 @@ inherit
 			on_right_button_down, on_left_button_down, on_middle_button_down,
  			on_left_button_up, on_left_button_double_click,
  			on_middle_button_double_click, on_right_button_double_click,
- 			minimum_width, minimum_height, pnd_press, escape_pnd, update_for_pick_and_drop
+ 			minimum_width, minimum_height, pnd_press, escape_pnd
 		redefine
 			parent_imp, wel_move_and_resize, on_mouse_move, on_key_down,
 			destroy, interface, initialize, on_left_button_double_click,
 			x_position, y_position, disable_sensitive, enable_sensitive,
-			is_dockable_source, show, hide, is_show_requested
+			update_for_pick_and_drop, is_dockable_source, show, hide, is_show_requested
 		end
 
 	EV_SIZEABLE_CONTAINER_IMP
@@ -73,8 +73,7 @@ inherit
 			on_kill_focus, on_desactivate, on_set_focus, on_set_cursor,
 			on_char, show, hide, on_size, x_position, y_position,
 			on_sys_key_down, default_process_message, on_sys_key_up,
-			on_mouse_wheel, on_getdlgcode, on_erase_background,
-			on_wm_dropfiles
+			on_mouse_wheel, on_getdlgcode, on_erase_background
 		redefine
 			wel_set_parent, wel_resize, wel_move, wel_move_and_resize,
  			on_left_button_double_click, default_style, background_brush,
@@ -145,9 +144,8 @@ feature {NONE} -- Initialization
 			remove_item_actions.extend (agent remove_radio_button)
 
 			-- On Windows, we only can set ex style of toolbar this way.
-			l_prev_ex_style := {WEL_API}.send_message_result_integer (wel_item, tb_setextendedstyle, to_wparam (0), to_lparam (tbstyle_ex_mixedbuttons | tbstyle_ex_drawddarrows ))
-			disable_tabable_from
-			disable_tabable_to
+			l_prev_ex_style := cwin_send_message_result_integer (wel_item, tb_setextendedstyle, to_wparam (0), to_lparam (tbstyle_ex_mixedbuttons | tbstyle_ex_drawddarrows ))
+
 		end
 
 feature -- Access
@@ -302,7 +300,7 @@ feature -- Status setting
 			-- in case it was set insensitive by the child.
 		do
 			if parent_imp /= Void then
-				parent_imp.interface.prune (interface)
+				parent_imp.interface.prune (Current.interface)
 			end
 			bar.destroy
 			if default_imagelist /= Void then
@@ -550,7 +548,7 @@ feature -- Basic operation
 	internal_get_index (button: EV_TOOL_BAR_ITEM_IMP): INTEGER is
 			-- Retrieve the current index of `button'.
 		do
-			Result := {WEL_API}.send_message_result_integer (
+			Result := cwin_send_message_result_integer (
 				wel_item, Tb_commandtoindex, to_wparam (button.id), to_lparam (0))
 		end
 
@@ -606,7 +604,7 @@ feature -- Basic operation
 				-- Flag `is_in_reset_button' to `True', preventing resizing occurring.
 			is_in_reset_button := True
 
-			if is_displayed and then application_imp.locked_window = Void then
+			if application_imp.locked_window = Void then
 				locked_in_here := True
 				lock_window_update
 			end
@@ -731,6 +729,23 @@ feature -- Basic operation
 				pt.x, pt.y])
 			end
 		end
+
+feature {EV_ANY_I}
+
+	update_for_pick_and_drop (starting: BOOLEAN) is
+			-- Pick and drop status has changed so update appearence of
+			-- all children.
+		do
+			from
+				ev_children.start
+			until
+				ev_children.off
+			loop
+				ev_children.item.update_for_pick_and_drop (starting)
+				ev_children.forth
+			end
+		end
+
 
 feature {EV_INTERNAL_TOOL_BAR_IMP} -- Click action event
 
@@ -995,7 +1010,7 @@ feature {NONE} -- WEL Implementation
 	on_key_down (virtual_key, key_data: INTEGER) is
 			-- A key has been pressed
 		do
-			process_navigation_key (virtual_key)
+			process_tab_key (virtual_key)
 			Precursor {EV_PRIMITIVE_IMP} (virtual_key, key_data)
 		end
 
@@ -1165,7 +1180,7 @@ feature {EV_DOCKABLE_SOURCE_I} -- Implementation
 			disable_default_processing
 		end
 
-feature {EV_TOOL_BAR_ITEM_IMP} -- Implementation
+feature {NONE} -- Implementation
 
 	child_x (button: EV_TOOL_BAR_BUTTON): INTEGER is
 			-- `Result' is relative xcoor of `button' to `parent_imp'.
@@ -1178,59 +1193,20 @@ feature {EV_TOOL_BAR_ITEM_IMP} -- Implementation
 			Result := button_rectangle.left
 		end
 
-	child_y (button: EV_TOOL_BAR_BUTTON): INTEGER is
-			-- `Result' is relative ycoor of `button' to `parent_imp'.
-		local
-			button_rectangle: WEL_RECT
-			but: EV_TOOL_BAR_BUTTON_IMP
-		do
-			but ?= button.implementation
-			button_rectangle := button_rect (internal_get_index (but))
-			Result := button_rectangle.top
-		end
-
-	child_x_absolute (button: EV_TOOL_BAR_BUTTON): INTEGER is
-			-- `Result' is absolute xcoor of `button'.	
-		local
-			button_rectangle: WEL_RECT
-			but: EV_TOOL_BAR_BUTTON_IMP
-		do
-			but ?= button.implementation
-			button_rectangle := button_rect (internal_get_index (but))
-			Result := screen_x + button_rectangle.left
-		end
-
 	child_y_absolute (button: EV_TOOL_BAR_BUTTON): INTEGER is
 			-- `Result' is absolute ycoor of `button'.	
 		local
 			button_rectangle: WEL_RECT
+			window_rectangle: WEL_RECT
 			but: EV_TOOL_BAR_BUTTON_IMP
+			b: EV_INTERNAL_TOOL_BAR_IMP
 		do
 			but ?= button.implementation
 			button_rectangle := button_rect (internal_get_index (but))
-			Result := screen_y + button_rectangle.top
-		end
-
-	child_width (button: EV_TOOL_BAR_BUTTON): INTEGER is
-			-- `Result' is width of `button'.
-		local
-			button_rectangle: WEL_RECT
-			but: EV_TOOL_BAR_BUTTON_IMP
-		do
-			but ?= button.implementation
-			button_rectangle := button_rect (internal_get_index (but))
-			Result := button_rectangle.width
-		end
-
-	child_height (button: EV_TOOL_BAR_BUTTON): INTEGER is
-			-- `Result' is height of `button'.
-		local
-			button_rectangle: WEL_RECT
-			but: EV_TOOL_BAR_BUTTON_IMP
-		do
-			but ?= button.implementation
-			button_rectangle := button_rect (internal_get_index (but))
-			Result := button_rectangle.height
+			window_rectangle := window_rect
+			b := bar
+			Result := b.window_rect.top +
+			((b.window_rect.height - button_rectangle.height)//2) - 1
 		end
 
 feature {EV_ANY_I}

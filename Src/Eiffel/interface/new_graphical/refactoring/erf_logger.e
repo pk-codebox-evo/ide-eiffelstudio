@@ -24,6 +24,7 @@ feature {NONE} -- Initialization
 			create class_actions.make (1)
 		end
 
+
 feature
 
 	start_actions: ARRAYED_LIST [PROCEDURE [ANY, TUPLE]]
@@ -45,7 +46,7 @@ feature -- Trigger events
 			until
 				start_actions.after
 			loop
-				start_actions.item.call (Void)
+				start_actions.item.call ([])
 				start_actions.forth
 			end
 		end
@@ -58,7 +59,7 @@ feature -- Trigger events
 			until
 				end_actions.after
 			loop
-				end_actions.item.call (Void)
+				end_actions.item.call ([])
 				end_actions.forth
 			end
 		end

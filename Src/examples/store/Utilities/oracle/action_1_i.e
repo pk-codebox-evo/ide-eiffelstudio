@@ -14,7 +14,7 @@ class ACTION_1_I inherit
 	ACTION_1
 
 create
-
+        
 	make
 
 feature
@@ -25,11 +25,11 @@ feature
 			new_selection: DB_SELECTION
 			tuple: DB_TUPLE
 			table_name: STRING
-		do
+		do      
 			create tuple.copy (selection.cursor)
 			table_name ?= tuple.item (1)
 			if table_name /= Void then
-				io.putstring ("-- Column(s) for table ")
+				io.putstring ("-- Column(s) for table ") 
 				io.putstring (table_name)
 				io.new_line
 				create new_selection.make
@@ -37,9 +37,7 @@ feature
 				new_selection.set_action (my_action)
 				new_selection.set_map_name (table_name, "table_name")
 				new_selection.query (select_string)
-				if new_selection.is_ok then
-					new_selection.load_result
-				end
+				new_selection.load_result
 				new_selection.unset_map_name ("table_name")
 				new_selection.terminate
 			end

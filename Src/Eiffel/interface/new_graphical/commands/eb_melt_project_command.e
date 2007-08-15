@@ -30,6 +30,11 @@ inherit
 			{NONE} all
 		end
 
+	SHARED_RESCUE_STATUS
+		export
+			{NONE} all
+		end
+
 	SHARED_CONFIGURE_RESOURCES
 		export
 			{NONE} all
@@ -62,8 +67,6 @@ inherit
 			{NONE} all
 		end
 
-	EB_SHARED_DEBUGGER_MANAGER
-
 create
 	make
 
@@ -71,12 +74,10 @@ feature {NONE} -- Initialization
 
 	make is
 			-- Initialize default values.
-		local
-			l_shortcut: SHORTCUT_PREFERENCE
 		do
-			l_shortcut := preferences.misc_shortcut_data.shortcuts.item ("compile")
-			create accelerator.make_with_key_combination (l_shortcut.key, l_shortcut.is_ctrl, l_shortcut.is_alt, l_shortcut.is_shift)
-			set_referred_shortcut (l_shortcut)
+			create accelerator.make_with_key_combination (
+				create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.Key_f7),
+				False, False, False)
 			accelerator.actions.extend (agent execute)
 		end
 
@@ -112,6 +113,7 @@ feature {NONE} -- Compilation implementation
 			if not Eiffel_project.is_compiling then
 				reset_debugger
 				Window_manager.on_compile
+				output_manager.clear
 				perform_compilation
 				display_eiffel_compilation_status
 				if Eiffel_project.successful then
@@ -141,10 +143,10 @@ feature {NONE} -- Compilation implementation
 			-- Display status of eiffel compilation.
 		do
 			if Workbench.successful then
-				output_manager.add_string (Interface_names.ee_compilation_succeeded)
+				output_manager.add_string (Interface_names.E_compilation_succeeded)
 				output_manager.add_new_line
 			else
-				output_manager.add_string (Interface_names.ee_compilation_failed)
+				output_manager.add_string (Interface_names.e_compilation_failed)
 				output_manager.add_new_line
 			end
 		end
@@ -152,19 +154,7 @@ feature {NONE} -- Compilation implementation
 	tool_resynchronization is
 			-- Resynchronize class, feature and system tools.
 			-- Clear the format_context buffers.
-		local
-			l_win: EB_DEVELOPMENT_WINDOW
-			l_mediator: SD_DOCKER_MEDIATOR
 		do
-			l_win := window_manager.last_created_window
-			if l_win /= Void then
-				l_mediator := l_win.docking_manager.docker_mediator
-				if l_mediator /= Void then
-					-- If end user is dragging a zone for docking, we cancel it.
-					l_mediator.cancel_tracing_pointer
-				end
-			end
-
 				-- Clear the format_context buffers.
 			clear_format_tables
 			window_manager.display_message_and_percentage (Interface_names.d_Resynchronizing_tools, 0)
@@ -178,7 +168,6 @@ feature {NONE} -- Compilation implementation
 			end
 			output_manager.scroll_to_end
 			Eb_debugger_manager.on_compile_stop
-			metric_manager.on_compile_stop
 
 			if dynamic_lib_window_is_valid and then dynamic_lib_window.is_visible then
 				dynamic_lib_window.refresh
@@ -248,17 +237,11 @@ feature -- Execution
 
 	execute is
 			-- Recompile the project, start C compilation if necessarry.
-		local
-			l_content: SD_CONTENT
 		do
 			if is_sensitive then
 				if process_manager.is_c_compilation_running then
 					process_manager.confirm_process_termination (agent go_on_compile, Void, window_manager.last_focused_development_window.window)
 				else
-					l_content := window_manager.last_focused_development_window.tools.output_tool.content
-					if preferences.development_window_data.output_tool_prompted then
-						l_content.set_focus
-					end
 					go_on_compile
 				end
 			end
@@ -272,7 +255,7 @@ feature -- Execution
 			until
 				not process_manager.is_c_compilation_running
 			loop
-				ev_application.process_events
+				process_events_and_idle
 			end
 		end
 
@@ -281,7 +264,6 @@ feature -- Execution
 		do
 			output_manager.clear
 			execute_with_c_compilation_flag (True)
-			window_manager.last_focused_development_window.tools.output_tool.update_pixmap
 		end
 
 feature {NONE} -- Execution
@@ -290,8 +272,8 @@ feature {NONE} -- Execution
 			-- Recompile the project and start C compilation if `c_compilation_enabled'
 			-- is True.
 		local
-			wd: EB_WARNING_DIALOG
-			cd: EB_DISCARDABLE_CONFIRMATION_DIALOG
+			wd: EV_WARNING_DIALOG
+			cd: STANDARD_DISCARDABLE_CONFIRMATION_DIALOG
 		do
 			start_c_compilation := c_compilation_enabled
 			if c_compilation_enabled then
@@ -347,14 +329,14 @@ feature {NONE} -- Execution
 			-- user so and ask for a confirmation.
 			-- If confirmation successful then compile.
 		local
-			cd: EB_DISCARDABLE_CONFIRMATION_DIALOG
+			cd: STANDARD_DISCARDABLE_CONFIRMATION_DIALOG
 		do
 			if
 				not Debugger_manager.application_is_executing
 			then
 				compile_and_run
 			else
-				create cd.make_initialized (2, preferences.dialog_data.stop_execution_when_compiling_string, interface_names.e_Exec_recompile, Interface_names.L_do_not_show_again, preferences.preferences)
+				create cd.make_initialized (2, preferences.dialog_data.stop_execution_when_compiling_string, "Recompiling project will end current run.", Interface_names.L_do_not_show_again, preferences.preferences)
 				cd.set_ok_action (agent compile_and_run)
 				cd.show_modal_to_window (window_manager.last_focused_development_window.window)
 			end
@@ -379,7 +361,7 @@ feature {NONE} -- Execution
 
 feature {NONE} -- Implementation
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text displayed in toolbar
 		do
 			Result := Interface_names.b_Compile
@@ -391,7 +373,7 @@ feature {NONE} -- Implementation
 			Result := tooltext.is_equal (Interface_names.b_Compile)
 		end
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it appears in the menu (with & symbol).
 		do
 			Result := Interface_names.m_Melt_new
@@ -403,19 +385,13 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.project_melt_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.project_melt_icon_buffer
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.f_Melt
 		end
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Description for the command.
 		do
 			Result := Interface_names.f_Melt

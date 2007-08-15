@@ -9,11 +9,7 @@ class
 	EB_TOGGLE_LINE_NUMBERS_COMMAND
 
 inherit
-
-	EB_EDITOR_COMMAND
-		redefine
-			make
-		end
+	EB_MENUABLE_COMMAND
 
 	EB_SHARED_PREFERENCES
 		export
@@ -28,7 +24,6 @@ feature -- Initialization
 	make is
 			-- New command
 		do
-			Precursor {EB_EDITOR_COMMAND}
 			initialize
 		end
 
@@ -36,24 +31,24 @@ feature -- Execution
 
 	initialize is
 			-- Initialize
-		local
-			l_shortcut: SHORTCUT_PREFERENCE
 		do
-			menu_name := Interface_names.m_line_numbers
-			l_shortcut := preferences.editor_data.shortcuts.item ("toggle_line_number_visibility")
-			create accelerator.make_with_key_combination (l_shortcut.key, l_shortcut.is_ctrl, l_shortcut.is_alt, l_shortcut.is_shift)
+			create accelerator.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_l), True, False, False)
 			accelerator.actions.extend (agent execute)
-			execute_agents.extend (agent execute_toggle)
-			set_referred_shortcut (l_shortcut)
 			enable_sensitive
 		end
 
-	execute_toggle is
+	execute is
 			-- Execute the command.
 		do
-			if is_sensitive then
-				preferences.editor_data.show_line_numbers_preference.set_value (not preferences.editor_data.show_line_numbers)
-			end
+			preferences.editor_data.show_line_numbers_preference.set_value (not preferences.editor_data.show_line_numbers)
+		end
+
+feature {NONE} -- Implementation
+
+	menu_name: STRING is
+			-- Name as it appears in the menu (with & symbol).
+		do
+			Result := Interface_names.m_line_numbers
 		end
 
 indexing

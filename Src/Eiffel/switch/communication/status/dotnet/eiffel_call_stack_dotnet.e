@@ -25,6 +25,10 @@ inherit
 		undefine
 			is_equal, copy
 		end;
+	SHARED_APPLICATION_EXECUTION
+		undefine
+			is_equal, copy
+		end
 
 	EIFNET_EXPORTER
 		undefine
@@ -75,45 +79,70 @@ feature -- Properties
 	error_occurred: BOOLEAN;
 			-- Did an error occurred when retrieving the eiffel stack?
 
+feature -- Output
+
+	display_stack (st: TEXT_FORMATTER) is
+			-- Display callstack in `st'.
+		local
+			stack_num, i: INTEGER
+		do
+			debug ("DEBUGGER_TRACE"); io.error.put_string ("%TEIFFEL_CALL_STACK: Displaying stack %N"); end
+			st.add_new_line;
+			st.add_string ("Call stack:");
+			st.add_new_line;
+			st.add_new_line;
+			st.process_call_stack_item (0, false) -- For padding
+			st.add_string ("Object");
+			st.add_column_number (14);
+			st.add_string ("Class");
+			st.add_column_number (26);
+			st.add_string ("Routine");
+			st.add_new_line;
+			st.process_call_stack_item (0, false) -- For padding
+			st.add_string ("------");
+			st.add_column_number (14);
+			st.add_string ("-----");
+			st.add_column_number (26);
+			st.add_string ("-------");
+			st.add_new_line;
+
+			debug ("DEBUGGER_TRACE"); io.error.put_string ("%TEIFFEL_CALL_STACK: getting stack number %N"); end
+			stack_num := Application.current_execution_stack_number;
+
+			debug ("DEBUGGER_TRACE"); io.error.put_string ("%TEIFFEL_CALL_STACK: processing %N"); end
+			from
+				start;
+				i := 1
+			until
+				after
+			loop
+				if i = stack_num then
+					st.process_call_stack_item (i, true)
+				else
+					st.process_call_stack_item (i, false)
+				end;
+				item.display_feature (st);
+				st.add_new_line;
+				forth;
+				i := i + 1;
+			end;
+			st.add_new_line
+			debug ("DEBUGGER_TRACE"); io.error.put_string ("%TEIFFEL_CALL_STACK: end displaying call stack %N"); end
+		end;
+
 feature {NONE} -- Initialization
 
 	make (n: INTEGER; tid: INTEGER) is
 			-- Fill `where' with the `n' first call stack elements.
 			-- `where' is left empty if there is an error.
 			-- Retrieve the whole call stack if `n' = -1.
-		do
-			debug ("DEBUGGER_TRACE_CALLBACK")
-				io.error.put_string ("  @-> " + generator + ".make : starting%N")
-			end
-			make_empty (tid)
-			reload (n)
-		end
-
-	make_empty (tid: INTEGER) is
-			-- Initialize only the first call stack element.
-		do
-			debug ("DEBUGGER_TRACE"); io.error.put_string ("%TEIFFEL_CALL_STACK: Creating Empty Eiffel Stack%N"); end
-			thread_id := tid
-			error_occurred := False
-			list_make
-		end
-
-feature -- Properties
-
-	thread_id: INTEGER
-			-- Thread ID related to `Current'.
-
-feature {APPLICATION_STATUS} -- Restricted access
-
-	reload (n: INTEGER) is
-			--
 		local
-			call: CALL_STACK_ELEMENT
+			call	: CALL_STACK_ELEMENT
 			eiffel_cse: CALL_STACK_ELEMENT_DOTNET
 			external_cse: EXTERNAL_CALL_STACK_ELEMENT
-			level: INTEGER
+			level	: INTEGER
 
-			l_thread: ICOR_DEBUG_THREAD
+			l_active_thread: ICOR_DEBUG_THREAD
 			l_enum_chain: ICOR_DEBUG_CHAIN_ENUM
 			l_chain: ICOR_DEBUG_CHAIN
 			l_enum_frames: ICOR_DEBUG_FRAME_ENUM
@@ -134,7 +163,7 @@ feature {APPLICATION_STATUS} -- Restricted access
 
 			l_class_type: CLASS_TYPE
 
-			l_feature_i: FEATURE_I
+			l_feature_i : FEATURE_I
 			l_line_number: INTEGER
 			l_il_offset: INTEGER
 
@@ -143,17 +172,19 @@ feature {APPLICATION_STATUS} -- Restricted access
 			l_stack_drv: EIFNET_DEBUG_REFERENCE_VALUE
 			l_hexaddress: STRING
 			l_extra_info: STRING
-			tid: INTEGER
 		do
-			clean
-			wipe_out
+			debug ("DEBUGGER_TRACE_CALLBACK")
+				io.error.put_string ("  @-> " + generator + ".make : starting%N")
+			end
+			error_occurred := False
+			list_make
 
-			tid := thread_id
 			level := 1
-			l_thread := Eifnet_debugger.icor_debug_thread_by_id (tid)
-			if l_thread /= Void then
-				l_enum_chain := l_thread.enumerate_chains
-				if l_thread.last_call_succeed and then l_enum_chain.get_count > 0 then
+
+			l_active_thread := Eifnet_debugger.icor_debug_thread
+			if l_active_thread /= Void then
+				l_enum_chain := l_active_thread.enumerate_chains
+				if l_active_thread.last_call_succeed and then l_enum_chain.get_count > 0 then
 					l_enum_chain.reset
 					l_chains := l_enum_chain.next (l_enum_chain.get_count)
 					from
@@ -290,12 +321,18 @@ feature {APPLICATION_STATUS} -- Restricted access
 					l_enum_chain.clean_on_dispose
 				end
 			end
-
-			is_loaded := True
 			debug ("DEBUGGER_TRACE_CALLBACK")
 				io.error.put_string ("  @-> " + generator + ".make : finished%N")
 			end
 		end
+
+--	dummy_make is
+--			-- Initialize only the first call stack element.
+--		do
+--			debug ("DEBUGGER_TRACE"); io.error.put_string ("%TEIFFEL_CALL_STACK: Creating dummy Eiffel Stack%N"); end
+--			error_occurred := False
+--			list_make
+--		end
 
 feature -- cleaning
 

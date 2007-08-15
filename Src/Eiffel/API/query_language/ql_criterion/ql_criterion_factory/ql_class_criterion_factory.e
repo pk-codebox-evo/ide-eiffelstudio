@@ -12,10 +12,10 @@ class
 inherit
 	QL_CRITERION_FACTORY
 		redefine
-			criterion_type,
-			item_type,
-			simple_criterion_type
+			criterion_type
 		end
+
+	QL_SHARED_CLASS_RELATION
 
 create
 	make
@@ -62,7 +62,9 @@ feature{NONE} -- Initialization
 			agent_table.put (agent new_heir_is_criterion, c_parent_is)
 			agent_table.put (agent new_indirect_heir_is_criterion, c_indirect_parent_is)
 			agent_table.put (agent new_supplier_criterion, c_client_is)
+			agent_table.put (agent new_indirect_supplier_criterion, c_indirect_client_is)
 			agent_table.put (agent new_client_criterion, c_supplier_is)
+			agent_table.put (agent new_indirect_client_criterion, c_indirect_supplier_is)
 
 			agent_table.put (agent new_name_is_criterion, c_name_is)
 			agent_table.put (agent new_text_contain_criterion, c_text_contain)
@@ -72,8 +74,6 @@ feature{NONE} -- Initialization
 			agent_table.put (agent new_top_indexing_has_tag_criterion, c_top_indexing_has_tag)
 			agent_table.put (agent new_bottom_indexing_has_tag_criterion, c_bottom_indexing_has_tag)
 			agent_table.put (agent new_indexing_has_tag_criterion, c_indexing_has_tag)
-			agent_table.put (agent new_value_criterion, c_value_of_metric_is)
-			agent_table.put (agent new_value_criterion, c_is_satisfied_by)
 
 			create name_table.make (45)
 			name_table.put (c_false, query_language_names.ql_cri_false)
@@ -97,7 +97,7 @@ feature{NONE} -- Initialization
 			name_table.put (c_is_always_compiled, query_language_names.ql_cri_is_always_compiled)
 			name_table.put (c_is_partial, query_language_names.ql_cri_is_partial)
 			name_table.put (c_is_read_only, query_language_names.ql_cri_is_read_only)
-			name_table.put (c_is_overriden, query_language_names.ql_cri_is_overridden)
+			name_table.put (c_is_overriden, query_language_names.ql_cri_is_overriden)
 			name_table.put (c_is_overrider, query_language_names.ql_cri_is_overrider)
 			name_table.put (c_is_visible, query_language_names.ql_cri_is_visible)
 
@@ -112,7 +112,9 @@ feature{NONE} -- Initialization
 			name_table.put (c_heir_is, query_language_names.ql_cri_heir_is)
 			name_table.put (c_indirect_heir_is, query_language_names.ql_cri_indirect_heir_is)
 			name_table.put (c_supplier_is, query_language_names.ql_cri_supplier_is)
+			name_table.put (c_indirect_supplier_is, query_language_names.ql_cri_indirect_supplier_is)
 			name_table.put (c_client_is, query_language_names.ql_cri_client_is)
+			name_table.put (c_indirect_client_is, query_language_names.ql_cri_indirect_client_is)
 
 			name_table.put (c_name_is, query_language_names.ql_cri_name_is)
 			name_table.put (c_text_contain, query_language_names.ql_cri_text_contain)
@@ -122,22 +124,13 @@ feature{NONE} -- Initialization
 			name_table.put (c_top_indexing_has_tag, query_language_names.ql_cri_top_indexing_has_tag)
 			name_table.put (c_bottom_indexing_has_tag, query_language_names.ql_cri_bottom_indexing_has_tag)
 			name_table.put (c_indexing_has_tag, query_language_names.ql_cri_indexing_has_tag)
-
-			name_table.put (c_value_of_metric_is, query_language_names.ql_cri_value_of_metric_is)
-			name_table.put (c_is_satisfied_by, query_language_names.ql_cri_is_satisfied_by)
-
 		end
+
 
 feature{NONE} -- Implementation
 
 	criterion_type: QL_CLASS_CRITERION
 			-- Criterion anchor type
-
-	item_type: QL_CLASS
-			-- Item anchor type
-
-	simple_criterion_type: QL_SIMPLE_CLASS_CRITERION
-			-- Simple criterion type
 
 feature{NONE} -- New criterion
 
@@ -325,72 +318,72 @@ feature{NONE} -- New criterion
 			result_attached: Result /= Void
 		end
 
-	new_name_is_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_CLASS_NAME_IS_CRI is
+	new_name_is_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_CLASS_NAME_IS_CRI is
 			-- New {QL_CLASS_NAME_IS_CRI} criterion.
 		require
 			a_name_attached: a_name /= Void
 		do
-			create Result.make_with_setting (a_name, a_case_sensitive, a_matching_strategy)
+			create Result.make_with_setting (a_name, a_case_sensitive, a_identical)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_top_indexing_has_tag_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_CLASS_TOP_INDEXING_HAS_TAG_CRI is
+	new_top_indexing_has_tag_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_CLASS_TOP_INDEXING_HAS_TAG_CRI is
 			-- New {QL_CLASS_NAME_IS_CRI} criterion.
 		require
 			a_name_attached: a_name /= Void
 		do
-			create Result.make_with_setting (a_name, a_case_sensitive, a_matching_strategy)
+			create Result.make_with_setting (a_name, a_case_sensitive, a_identical)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_bottom_indexing_has_tag_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_CLASS_BOTTOM_INDEXING_HAS_TAG_CRI is
+	new_bottom_indexing_has_tag_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_CLASS_BOTTOM_INDEXING_HAS_TAG_CRI is
 			-- New {QL_CLASS_NAME_IS_CRI} criterion.
 		require
 			a_name_attached: a_name /= Void
 		do
-			create Result.make_with_setting (a_name, a_case_sensitive, a_matching_strategy)
+			create Result.make_with_setting (a_name, a_case_sensitive, a_identical)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_indexing_has_tag_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_CLASS_INDEXING_HAS_TAG_CRI is
+	new_indexing_has_tag_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_CLASS_INDEXING_HAS_TAG_CRI is
 			-- New {QL_CLASS_NAME_IS_CRI} criterion.
 		require
 			a_name_attached: a_name /= Void
 		do
-			create Result.make_with_setting (a_name, a_case_sensitive, a_matching_strategy)
+			create Result.make_with_setting (a_name, a_case_sensitive, a_identical)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_top_indexing_contain_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_CLASS_TOP_INDEXING_CONTAIN_CRI is
+	new_top_indexing_contain_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_CLASS_TOP_INDEXING_CONTAIN_CRI is
 			-- New {QL_CLASS_NAME_IS_CRI} criterion.
 		require
 			a_name_attached: a_name /= Void
 		do
-			create Result.make_with_setting (a_name, a_case_sensitive, a_matching_strategy)
+			create Result.make_with_setting (a_name, a_case_sensitive, a_identical)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_bottom_indexing_contain_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_CLASS_BOTTOM_INDEXING_CONTAIN_CRI is
+	new_bottom_indexing_contain_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_CLASS_BOTTOM_INDEXING_CONTAIN_CRI is
 			-- New {QL_CLASS_NAME_IS_CRI} criterion.
 		require
 			a_name_attached: a_name /= Void
 		do
-			create Result.make_with_setting (a_name, a_case_sensitive, a_matching_strategy)
+			create Result.make_with_setting (a_name, a_case_sensitive, a_identical)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_indexing_contain_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_CLASS_INDEXING_CONTAIN_CRI is
+	new_indexing_contain_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_CLASS_INDEXING_CONTAIN_CRI is
 			-- New {QL_CLASS_NAME_IS_CRI} criterion.
 		require
 			a_name_attached: a_name /= Void
 		do
-			create Result.make_with_setting (a_name, a_case_sensitive, a_matching_strategy)
+			create Result.make_with_setting (a_name, a_case_sensitive, a_identical)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -405,22 +398,22 @@ feature{NONE} -- New criterion
 			result_attached: Result /= Void
 		end
 
-	new_path_is_criterion (a_path: STRING): QL_CLASS_PATH_IN_CRI is
+	new_path_is_criterion (a_path: STRING): QL_CLASS_PATH_IS_CRI is
 			-- New {QL_CLASS_PATH_IS_CRI} criterion.
 		require
 			a_path_attached: a_path /= Void
 		do
-			create Result.make_with_flag (a_path, False)
+			create Result.make (a_path)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_text_contain_criterion (a_text: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_CLASS_TEXT_CONTAIN_CRI is
+	new_text_contain_criterion (a_text: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_CLASS_TEXT_CONTAIN_CRI is
 			-- New {QL_CLASS_TEXT_CONTAIN_CRI} criterion.
 		require
 			a_text_attached: a_text /= Void
 		do
-			create Result.make_with_setting (a_text, a_case_sensitive, a_matching_strategy)
+			create Result.make_with_setting (a_text, a_case_sensitive, a_identical)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -430,7 +423,7 @@ feature{NONE} -- New criterion
 		require
 			a_domain_attached: a_domain /= Void
 		do
-			create Result.make (a_domain, {QL_CLASS_ANCESTOR_RELATION_CRI}.ancestor_type)
+			create Result.make (a_domain, class_ancestor_relation)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -440,7 +433,7 @@ feature{NONE} -- New criterion
 		require
 			a_domain_attached: a_domain /= Void
 		do
-			create Result.make (a_domain, {QL_CLASS_ANCESTOR_RELATION_CRI}.proper_ancestor_type)
+			create Result.make (a_domain, class_proper_ancestor_relation)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -450,7 +443,7 @@ feature{NONE} -- New criterion
 		require
 			a_domain_attached: a_domain /= Void
 		do
-			create Result.make (a_domain, {QL_CLASS_ANCESTOR_RELATION_CRI}.parent_type)
+			create Result.make (a_domain, class_parent_relation)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -460,7 +453,7 @@ feature{NONE} -- New criterion
 		require
 			a_domain_attached: a_domain /= Void
 		do
-			create Result.make (a_domain, {QL_CLASS_ANCESTOR_RELATION_CRI}.indirect_parent_type)
+			create Result.make (a_domain, class_indirect_parent_relation)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -470,7 +463,7 @@ feature{NONE} -- New criterion
 		require
 			a_domain_attached: a_domain /= Void
 		do
-			create Result.make (a_domain, {QL_CLASS_DESCENDANT_RELATION_CRI}.descendant_type)
+			create Result.make (a_domain, class_descendant_relation)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -480,7 +473,7 @@ feature{NONE} -- New criterion
 		require
 			a_domain_attached: a_domain /= Void
 		do
-			create Result.make (a_domain, {QL_CLASS_DESCENDANT_RELATION_CRI}.proper_descendant_type)
+			create Result.make (a_domain, class_proper_descendant_relation)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -490,7 +483,7 @@ feature{NONE} -- New criterion
 		require
 			a_domain_attached: a_domain /= Void
 		do
-			create Result.make (a_domain, {QL_CLASS_DESCENDANT_RELATION_CRI}.heir_type)
+			create Result.make (a_domain, class_heir_relation)
 		ensure
 			result_attached: Result /= Void
 		end
@@ -500,100 +493,98 @@ feature{NONE} -- New criterion
 		require
 			a_domain_attached: a_domain /= Void
 		do
-			create Result.make (a_domain, {QL_CLASS_DESCENDANT_RELATION_CRI}.indirect_heir_type)
+			create Result.make (a_domain, class_indirect_heir_relation)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_supplier_criterion (a_domain: QL_DOMAIN; a_indirect: BOOLEAN; a_normal: BOOLEAN; a_syntactical: BOOLEAN): QL_CLASS_SUPPLIER_RELATION_CRI is
+	new_supplier_criterion (a_domain: QL_DOMAIN): QL_CLASS_SUPPLIER_RELATION_CRI is
 			-- New {QL_CLASS_SUPPLIER_RELATION_CRI} criterion.
 		require
 			a_domain_attached: a_domain /= Void
 		do
-			create Result.make (a_domain, a_normal, a_syntactical, a_indirect)
+			create Result.make (a_domain, class_supplier_relation)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_client_criterion (a_domain: QL_DOMAIN; a_indirect: BOOLEAN; a_normal: BOOLEAN; a_syntactical: BOOLEAN): QL_CLASS_CLIENT_RELATION_CRI is
+	new_indirect_supplier_criterion (a_domain: QL_DOMAIN): QL_CLASS_SUPPLIER_RELATION_CRI is
+			-- New {QL_CLASS_SUPPLIER_RELATION_CRI} criterion.
+		require
+			a_domain_attached: a_domain /= Void
+		do
+			create Result.make (a_domain, class_indirect_supplier_relation)
+		ensure
+			result_attached: Result /= Void
+		end
+
+	new_client_criterion (a_domain: QL_DOMAIN): QL_CLASS_CLIENT_RELATION_CRI is
 			-- New {QL_CLASS_CLIENT_RELATION_CRI} criterion.
 		require
 			a_domain_attached: a_domain /= Void
 		do
-			create Result.make (a_domain, a_normal, a_syntactical, a_indirect)
+			create Result.make (a_domain, class_client_relation)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_contain_ast_criterion (a_ast_type_list: STRING; a_and_relation: BOOLEAN; a_check_detail: BOOLEAN): QL_SIMPLE_CLASS_CRITERION is
-			-- New {QL_SIMPLE_CLASS_CRITERION} criterion.
+	new_indirect_client_criterion (a_domain: QL_DOMAIN): QL_CLASS_CLIENT_RELATION_CRI is
+			-- New {QL_CLASS_CLIENT_RELATION_CRI} criterion.
 		require
-			a_ast_type_list_attached: a_ast_type_list /= Void
-		local
-			l_visitor: QL_AST_VISITOR
+			a_domain_attached: a_domain /= Void
 		do
-			create l_visitor.make (ast_index_list_from_string (a_ast_type_list), a_and_relation)
-			create Result.make (agent l_visitor.is_code_structure_item_satisfied ({QL_CLASS}?), True)
+			create Result.make (a_domain, class_indirect_client_relation)
 		ensure
 			result_attached: Result /= Void
-		end
-
-	new_value_criterion (a_evaluate_value_func: FUNCTION [ANY, TUPLE [QL_ITEM], BOOLEAN]): like simple_criterion_type is
-			-- New value criterion
-		require
-			a_evaluate_value_func_attached: a_evaluate_value_func /= Void
-		do
-			create Result.make (agent value_criterion_evalaute_agent ({QL_CLASS}?, a_evaluate_value_func), False)
 		end
 
 feature -- Criterion index
 
-	c_false: INTEGER is 1
-	c_has_bottom_indexing: INTEGER is 2
-	c_has_indexing: INTEGER is 3
-	c_has_invariant: INTEGER is 4
-	c_has_top_indexing: INTEGER is 5
-	c_is_compiled: INTEGER is 6
-	c_is_deferred: INTEGER is 7
-	c_is_effective: INTEGER is 8
-	c_is_enum: INTEGER is 9
-	c_is_expanded: INTEGER is 10
-	c_is_external: INTEGER is 11
-	c_is_frozen: INTEGER is 12
-	c_is_generic: INTEGER is 13
-	c_is_obsolete: INTEGER is 14
-	c_is_precompiled: INTEGER is 15
-	c_true: INTEGER is 16
-	c_name_is: INTEGER is 17
-	c_top_indexing_has_tag: INTEGER is 18
-	c_bottom_indexing_has_tag: INTEGER is 19
-	c_indexing_has_tag: INTEGER is 20
-	c_top_indexing_contain: INTEGER is 21
-	c_bottom_indexing_contain: INTEGER is 22
-	c_indexing_contain: INTEGER is 23
-	c_path_in: INTEGER is 24
-	c_path_is: INTEGER is 25
-	c_text_contain: INTEGER is 26
-	c_ancestor_is: INTEGER is 27
-	c_proper_ancestor_is: INTEGER is 28
-	c_parent_is: INTEGER is 29
-	c_indirect_parent_is: INTEGER is 30
-	c_descendant_is: INTEGER is 31
-	c_proper_descendant_is: INTEGER is 32
-	c_heir_is: INTEGER is 33
-	c_indirect_heir_is: INTEGER is 34
-	c_supplier_is: INTEGER is 35
-	c_client_is: INTEGER is 36
-	c_is_valid: INTEGER is 37
-	c_is_always_compiled: INTEGER is 38
-	c_is_partial: INTEGER is 39
-	c_is_read_only: INTEGER is 40
-	c_is_overriden: INTEGER is 41
-	c_is_overrider: INTEGER is 42
-	c_is_visible: INTEGER is 43
-	c_contain_ast: INTEGER is 44
-	c_value_of_metric_is: INTEGER is 45
-	c_is_satisfied_by: INTEGER is 46
+	c_false,
+	c_has_bottom_indexing,
+	c_has_indexing,
+	c_has_invariant,
+	c_has_top_indexing,
+	c_is_compiled,
+	c_is_deferred,
+	c_is_effective,
+	c_is_enum,
+	c_is_expanded,
+	c_is_external,
+	c_is_frozen,
+	c_is_generic,
+	c_is_obsolete,
+	c_is_precompiled,
+	c_true,
+	c_name_is,
+	c_top_indexing_has_tag,
+	c_bottom_indexing_has_tag,
+	c_indexing_has_tag,
+	c_top_indexing_contain,
+	c_bottom_indexing_contain,
+	c_indexing_contain,
+	c_path_in,
+	c_path_is,
+	c_text_contain,
+	c_ancestor_is,
+	c_proper_ancestor_is,
+	c_parent_is,
+	c_indirect_parent_is,
+	c_descendant_is,
+	c_proper_descendant_is,
+	c_heir_is,
+	c_indirect_heir_is,
+	c_supplier_is,
+	c_indirect_supplier_is,
+	c_client_is,
+	c_indirect_client_is,
+	c_is_valid,
+	c_is_always_compiled,
+	c_is_partial,
+	c_is_read_only,
+	c_is_overriden,
+	c_is_overrider,
+	c_is_visible: INTEGER is unique;
 
 feature{NONE} -- Implementation/Evaluate agent
 
@@ -825,6 +816,8 @@ feature{NONE} -- Implementation/Evaluate agent
 			Result := a_item.is_visible
 		end
 
+
+
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"
         license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
@@ -856,5 +849,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

@@ -18,7 +18,10 @@ create
 
 feature -- Access
 
-	effective_evaluate_routine (a_addr: STRING; a_target: DUMP_VALUE; f, realf: FEATURE_I; ctype: CLASS_TYPE; orig_class: CLASS_C; params: LIST [DUMP_VALUE]; is_static_call: BOOLEAN) is
+	last_once_available: BOOLEAN is False
+	last_once_failed: BOOLEAN is False
+
+	effective_evaluate_function (a_addr: STRING; a_target: DUMP_VALUE; f, realf: FEATURE_I; ctype: CLASS_TYPE; orig_class: CLASS_C; params: LIST [DUMP_VALUE]) is
 		do
 		end
 	effective_evaluate_once (f: FEATURE_I) is
@@ -33,7 +36,9 @@ feature -- Access
 		do
 		end
 
-	create_empty_instance_of (a_type_i: CL_TYPE_I) is
+	associated_reference_basic_class_type (cl: CLASS_C): CLASS_TYPE is
+			-- Associated _REF classtype for type `cl'
+			-- (export status {DBG_EVALUATOR})
 		do
 		end
 

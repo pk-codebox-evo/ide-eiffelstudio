@@ -22,17 +22,16 @@ class
 	QL_CLASS_ANCESTOR_RELATION_CRI
 
 inherit
-	QL_CLASS_INHERITANCE_CRI
-		rename
-			inheritance_relation as ancestor_relation,
-			is_inheritance_relation_valid as is_ancestor_relation_valid
+	QL_CLASS_HIERARCHY_CRI
 		redefine
+			relation_type,
 			intrinsic_domain,
 			reset,
+			finder_agent_table,
 			is_satisfied_by_internal
 		end
 
-	QL_SHARED
+	QL_SHARED_CLASS_RELATION
 
 create
 	make
@@ -45,7 +44,6 @@ feature{QL_DOMAIN} -- Intrinsic domain
 			l_list: like candidate_class_list
 			l_class: QL_CLASS
 			l_class_c: CLASS_C
-			l_generator: like used_in_domain_generator
 		do
 			if not is_criterion_domain_evaluated then
 				initialize_domain
@@ -53,7 +51,6 @@ feature{QL_DOMAIN} -- Intrinsic domain
 			create Result.make
 			l_list := candidate_class_list
 			source_domain.clear_cache
-			l_generator := used_in_domain_generator
 			from
 				l_list.start
 			until
@@ -63,39 +60,32 @@ feature{QL_DOMAIN} -- Intrinsic domain
 				l_class := query_class_item (l_class_c.lace_class.config_class)
 				l_class.set_data (related_classes (l_class_c.class_id))
 				Result.extend (l_class)
-				l_generator.increase_internal_counter (l_class)
 				l_list.forth
 			end
 		end
 
 feature -- Access
 
-	ancestor_type: INTEGER is 1
-	proper_ancestor_type: INTEGER is 2
-	parent_type: INTEGER is 3
-	indirect_parent_type: INTEGER is 4
-			-- Different types of ancestor relationship
-			-- If we have the following inheritance tree:
-			--				A
-			--			  /	  \
-			--           B     C
-			--			  \   /
-			--				D
-			-- Then:
-			--  1. A, B, C, D are ancestors of D
-			--  2. A, B, C are proper ancestors of D
-			--  3. B, C are parents of D
-			--  4. A are indirect parent of D
+	relation_type: QL_CLASS_INHERITANCE_RELATION
+			-- Type of class relation
 
 feature -- Status report
 
-	is_ancestor_relation_valid (a_relation: INTEGER): BOOLEAN is
-			-- Is `a_relation' a valid ancestor relation?			
+	is_relation_type_valid (a_type: like relation_type): BOOLEAN is
+			-- Is `a_type' a valid type according to current criterion?
 		do
-			Result := a_relation = ancestor_type or
-					  a_relation = proper_ancestor_type or
-					  a_relation = parent_type or
-					  a_relation = indirect_parent_type
+			Result :=
+				a_type = class_ancestor_relation or
+				a_type = class_proper_ancestor_relation or
+				a_type = class_parent_relation or
+				a_type = class_indirect_parent_relation
+		ensure then
+			good_result:
+				Result implies (
+					a_type = class_ancestor_relation or
+					a_type = class_proper_ancestor_relation or
+					a_type = class_parent_relation or
+					a_type = class_indirect_parent_relation)
 		end
 
 feature{NONE} -- Implementation
@@ -104,6 +94,11 @@ feature{NONE} -- Implementation
 			-- Reset internal structure
 		do
 			Precursor
+			if processed_classes = Void then
+				create processed_classes.make (100)
+			else
+				processed_classes.wipe_out
+			end
 			if candidate_class_table = Void then
 				create candidate_class_table.make (100)
 			else
@@ -214,23 +209,27 @@ feature{NONE} -- Implementation
 
 feature{NONE} -- Implementation
 
-	finder_agent: PROCEDURE [ANY, TUPLE [CLASS_C]] is
-			-- Finder used to find result for current criterion
+	finder_agent_table: HASH_TABLE [PROCEDURE [ANY, TUPLE [CLASS_C]], QL_CLASS_INHERITANCE_RELATION] is
+			-- Table for finders of certain kind of class ancestor (including ancestor, proper ancestor,
+			-- parent, indirect parent) relation.
+			-- Key is class ancestor relation, value is the finder agent associated to the relation.
 		do
-			inspect
-				ancestor_relation
-			when ancestor_type then
-				Result := agent find_ancestor_classes
-			when proper_ancestor_type then
-				Result := agent find_proper_ancestor_classes
-			when parent_type then
-				Result := agent find_parent_classes
-			when indirect_parent_type then
-				Result := agent find_indirect_parent_classes
-			else
-				check False end
+			if internal_finder_agent_table = Void then
+				create internal_finder_agent_table.make (4)
+				internal_finder_agent_table.put (agent find_ancestor_classes, class_ancestor_relation)
+				internal_finder_agent_table.put (agent find_proper_ancestor_classes, class_proper_ancestor_relation)
+				internal_finder_agent_table.put (agent find_parent_classes, class_parent_relation)
+				internal_finder_agent_table.put (agent find_indirect_parent_classes, class_indirect_parent_relation)
 			end
+			Result := internal_finder_agent_table
 		end
+
+	internal_finder_agent_table: like finder_agent_table
+			-- Implementation of `finder_agent_table'
+
+	processed_classes: DS_HASH_SET [INTEGER]
+			-- Flag structure to indicate whether or not a class has been processed
+			-- Item of this set is `class_id' of a compiled class
 
 	candidate_class_table: HASH_TABLE [LIST [CLASS_C], INTEGER]
 			-- Table of candidate classes with extra information
@@ -300,5 +299,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

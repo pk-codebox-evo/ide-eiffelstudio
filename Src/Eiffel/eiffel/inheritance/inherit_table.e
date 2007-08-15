@@ -424,9 +424,6 @@ end;
 				-- Process paterns of origin features
 			process_pattern (resulting_table);
 
-				-- Ensure a wrapper is generated for attributes of a formal generic type.
-			mark_generic_attribute_seeds (resulting_table)
-
 -- Line removed by Frederic Deramat 15/04/92.
 --
 --    *** resulting_table.process_polymorphism (feature_table); ***
@@ -590,19 +587,19 @@ end;
 			-- Check all the renamings made in the table of
 			-- inherited features
 		local
-			l: like linear_representation
+			inh_feat: INHERIT_FEAT
 		do
 			from
-				l := linear_representation
-				l.start
+				start;
 			until
-				l.after
+				after
 			loop
+				inh_feat := item_for_iteration
 					-- Check the renamings on one name
-				l.item.check_renamings
-				l.forth
-			end
-		end
+				inh_feat.check_renamings;
+				forth
+			end;
+		end;
 
 	analyze is
 			-- Analyze inherited features: the renamings must have
@@ -811,6 +808,8 @@ end;
 				if feature_i.is_origin then
 						-- An old feature from a previous compilation was
 						-- an origin. Keep the current routine id.
+						-- Make sure an attribute has a negative routine id
+						-- otherwise a positive one
 					new_rout_id_set := feature_i.rout_id_set;
 					check
 						rout_id_set_exists: new_rout_id_set /= Void;
@@ -951,14 +950,14 @@ end;
 			vffd4: VFFD4;
 			external_i: EXTERNAL_I;
 		do
-			feature_name_id := feat.internal_name.name_id
+			feature_name_id := feat.internal_name_id;
 debug ("ACTIVITY")
 	io.error.put_string ("FEATURE_UNIT on ");
-	io.error.put_string (feat.internal_name.name);
+	io.error.put_string (feat.internal_name);
 	io.error.put_new_line;
 end;
 
-			Result := feature_i_generator.new_feature (yacc_feature, feature_name_id, a_class)
+			Result := feature_i_generator.new_feature (yacc_feature, a_class)
 			Result.set_feature_name_id (feature_name_id, feat.internal_alias_name_id)
 			Result.set_written_in (a_class.class_id)
 			Result.set_is_frozen (feat.is_frozen)
@@ -973,14 +972,8 @@ end;
 					-- Unique value processing
 				unique_feature ?= Result;
 				create integer_value.make_with_value (
-					Tmp_ast_server.unique_values_item (a_class.class_id).item (Result.feature_name.string_representation))
-				if integer_value.valid_type (unique_feature.type) then
-					integer_value.set_real_type (unique_feature.type)
-				else
-						-- The value cannot be represented using specified integer type.
-					error_handler.insert_error (create {VQUI2}.make (a_class, Result.feature_name, Result.type))
-				end
-				unique_feature.set_value (integer_value)
+					Tmp_ast_server.unique_values_item (a_class.class_id).item (Result.feature_name))
+				unique_feature.set_value (integer_value);
 			elseif Result.is_c_external then
 					-- Track new externals introduced in the class. Freeze is taken care by
 					-- EXTERNALS.is_equivalent queried by SYSTEM_I.
@@ -998,9 +991,6 @@ end;
 
 						-- Found a feature of same name and written in the
 						-- same class.
-					check
-						has_body: body_server.server_has (body_index)
-					end
 					old_description := Body_server.server_item (body_index)
 					if old_description = Void then
 							-- This should not happen, but if it does.
@@ -1031,7 +1021,7 @@ end;
 							-- the external encapsulation and have the melted code call the
 							-- tiny external encapsulation.
 						if feature_i.is_external then
-							System.request_freeze
+							System.set_freeze
 						end
 					else
 						is_the_same := old_description.is_body_equiv (yacc_feature) and
@@ -1129,9 +1119,7 @@ end;
 			assert_prop_list := Void;
 
 			clear_all
-			if capacity > 200 then
-				extend_tbl_make (default_size)
-			end
+			extend_tbl_make (default_size)
 			create inherited_features.make (default_size)
 		end;
 
@@ -1487,6 +1475,7 @@ end;
 					old_invar_clause := Inv_ast_server.server_item (class_id);
 					invar_clause := Tmp_ast_server.invariant_item (class_id);
 
+
 						-- Incrementality test on invariant clause
 					if invar_clause = Void then
 						invariant_changed := old_invar_clause /= Void
@@ -1567,32 +1556,6 @@ feature {NONE} -- Implementation
 			end
 		end
 
-		mark_generic_attribute_seeds (resulting_table: FEATURE_TABLE) is
-				-- Mark attributes that are seeds of generic types to generate
-				-- wrappers for them.
-			require
-				resulting_table_attached: resulting_table /= Void
-			local
-				f: FEATURE_I
-				a: ATTRIBUTE_I
-			do
-				from
-					resulting_table.start
-				until
-					resulting_table.after
-				loop
-					f := resulting_table.item_for_iteration
-					if f.is_attribute and then f.is_origin and then f.rout_id_set.count = 1 and then f.has_formal then
-						a ?= f
-						check
-							a_attached: a /= Void
-						end
-						a.set_generate_in (f.written_in)
-					end
-					resulting_table.forth
-				end
-			end
-
 feature {NONE} -- Temporary body index
 
 	external_body_index: INTEGER is
@@ -1605,7 +1568,7 @@ feature {NONE} -- Temporary body index
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

@@ -27,11 +27,6 @@ inherit
 			{NONE} all
 		end
 
-	PLATFORM
-		export
-			{NONE} all
-		end
-
 create {SOCKET}
 
 	create_from_descriptor
@@ -370,8 +365,8 @@ feature -- Output
 			socket_exists: exists
 			opened_for_write: is_open_write
 		do
-			socket_buffer.put_integer_8_be (i, 0)
-			put_managed_pointer (socket_buffer, 0, integer_8_bytes)
+			integer_buffer.put_integer_8_be (i, 0)
+			put_managed_pointer (integer_buffer, 0, 1)
 		end
 
 	put_integer_16 (i: INTEGER_16) is
@@ -380,8 +375,8 @@ feature -- Output
 			socket_exists: exists
 			opened_for_write: is_open_write
 		do
-			socket_buffer.put_integer_16_be (i, 0)
-			put_managed_pointer (socket_buffer, 0, integer_16_bytes)
+			integer_buffer.put_integer_16_be (i, 0)
+			put_managed_pointer (integer_buffer, 0, 2)
 		end
 
 	put_integer_64 (i: INTEGER_64) is
@@ -390,8 +385,8 @@ feature -- Output
 			socket_exists: exists
 			opened_for_write: is_open_write
 		do
-			socket_buffer.put_integer_64_be (i, 0)
-			put_managed_pointer (socket_buffer, 0, integer_64_bytes)
+			integer_buffer.put_integer_64_be (i, 0)
+			put_managed_pointer (integer_buffer, 0, 8)
 		end
 
 	put_natural_8 (i: NATURAL_8) is
@@ -400,8 +395,8 @@ feature -- Output
 			socket_exists: exists
 			opened_for_write: is_open_write
 		do
-			socket_buffer.put_natural_8_be (i, 0)
-			put_managed_pointer (socket_buffer, 0, natural_8_bytes)
+			integer_buffer.put_natural_8_be (i, 0)
+			put_managed_pointer (integer_buffer, 0, 1)
 		end
 
 	put_natural_16 (i: NATURAL_16) is
@@ -410,8 +405,8 @@ feature -- Output
 			socket_exists: exists
 			opened_for_write: is_open_write
 		do
-			socket_buffer.put_natural_16_be (i, 0)
-			put_managed_pointer (socket_buffer, 0, natural_16_bytes)
+			integer_buffer.put_natural_16_be (i, 0)
+			put_managed_pointer (integer_buffer, 0, 2)
 		end
 
 	put_natural, put_natural_32 (i: NATURAL_32) is
@@ -420,8 +415,8 @@ feature -- Output
 			socket_exists: exists
 			opened_for_write: is_open_write
 		do
-			socket_buffer.put_natural_32_be (i, 0)
-			put_managed_pointer (socket_buffer, 0, natural_32_bytes)
+			integer_buffer.put_natural_32_be (i, 0)
+			put_managed_pointer (integer_buffer, 0, 4)
 		end
 
 	put_natural_64 (i: NATURAL_64) is
@@ -430,8 +425,8 @@ feature -- Output
 			socket_exists: exists
 			opened_for_write: is_open_write
 		do
-			socket_buffer.put_natural_64_be (i, 0)
-			put_managed_pointer (socket_buffer, 0, natural_64_bytes)
+			integer_buffer.put_natural_64_be (i, 0)
+			put_managed_pointer (integer_buffer, 0, 8)
 		end
 
 	put_boolean, putbool (b: BOOLEAN) is
@@ -557,9 +552,11 @@ feature -- Input
 		require else
 			socket_exists: exists;
 			opened_for_read: is_open_read
+		local
+			l_read: INTEGER
 		do
-			read_to_managed_pointer (socket_buffer, 0, real_32_bytes)
-			last_real := socket_buffer.read_real_32_be (0)
+			last_real := c_read_float (descriptor, $l_read)
+			bytes_read := l_read
 		end;
 
 	read_double, readdouble is
@@ -568,9 +565,11 @@ feature -- Input
 		require else
 			socket_exists: exists;
 			opened_for_read: is_open_read
+		local
+			l_read: INTEGER
 		do
-			read_to_managed_pointer (socket_buffer, 0, real_64_bytes)
-			last_double := socket_buffer.read_real_64_be (0)
+			last_double := c_read_double (descriptor, $l_read)
+			bytes_read := l_read
 		end;
 
 	read_character, readchar is
@@ -579,9 +578,11 @@ feature -- Input
 		require else
 			socket_exists: exists;
 			opened_for_read: is_open_read
+		local
+			l_read: INTEGER
 		do
-			read_to_managed_pointer (socket_buffer, 0, character_bytes)
-			last_character := socket_buffer.read_character (0)
+			last_character := c_read_char (descriptor, $l_read)
+			bytes_read := l_read
 		end;
 
 	read_boolean, readbool is
@@ -608,9 +609,11 @@ feature -- Input
 		require else
 			socket_exists: exists;
 			opened_for_read: is_open_read
+		local
+			l_read: INTEGER
 		do
-			read_to_managed_pointer (socket_buffer, 0, integer_32_bytes)
-			last_integer := socket_buffer.read_integer_32_be (0)
+			last_integer := c_read_int (descriptor, $l_read)
+			bytes_read := l_read
 		end;
 
 	read_integer_8 is
@@ -620,8 +623,8 @@ feature -- Input
 			socket_exists: exists
 			opened_for_read: is_open_read
 		do
-			read_to_managed_pointer (socket_buffer, 0, integer_8_bytes)
-			last_integer_8 := socket_buffer.read_integer_8_be (0)
+			read_to_managed_pointer (integer_buffer, 0, 1)
+			last_integer_8 := integer_buffer.read_integer_8_be (0)
 		end
 
 	read_integer_16 is
@@ -631,8 +634,8 @@ feature -- Input
 			socket_exists: exists
 			opened_for_read: is_open_read
 		do
-			read_to_managed_pointer (socket_buffer, 0, integer_16_bytes)
-			last_integer_16 := socket_buffer.read_integer_16_be (0)
+			read_to_managed_pointer (integer_buffer, 0, 2)
+			last_integer_16 := integer_buffer.read_integer_16_be (0)
 		end
 
 	read_integer_64 is
@@ -642,8 +645,8 @@ feature -- Input
 			socket_exists: exists
 			opened_for_read: is_open_read
 		do
-			read_to_managed_pointer (socket_buffer, 0, integer_64_bytes)
-			last_integer_64 := socket_buffer.read_integer_64_be (0)
+			read_to_managed_pointer (integer_buffer, 0, 8)
+			last_integer_64 := integer_buffer.read_integer_64_be (0)
 		end
 
 	read_natural_8 is
@@ -653,8 +656,8 @@ feature -- Input
 			socket_exists: exists
 			opened_for_read: is_open_read
 		do
-			read_to_managed_pointer (socket_buffer, 0, natural_8_bytes)
-			last_natural_8 := socket_buffer.read_natural_8_be (0)
+			read_to_managed_pointer (integer_buffer, 0, 1)
+			last_natural_8 := integer_buffer.read_natural_8_be (0)
 		end
 
 	read_natural_16 is
@@ -664,8 +667,8 @@ feature -- Input
 			socket_exists: exists
 			opened_for_read: is_open_read
 		do
-			read_to_managed_pointer (socket_buffer, 0, natural_16_bytes)
-			last_natural_16 := socket_buffer.read_natural_16_be (0)
+			read_to_managed_pointer (integer_buffer, 0, 2)
+			last_natural_16 := integer_buffer.read_natural_16_be (0)
 		end
 
 	read_natural, read_natural_32 is
@@ -675,8 +678,8 @@ feature -- Input
 			socket_exists: exists
 			opened_for_read: is_open_read
 		do
-			read_to_managed_pointer (socket_buffer, 0, natural_32_bytes)
-			last_natural := socket_buffer.read_natural_32_be (0)
+			read_to_managed_pointer (integer_buffer, 0, 4)
+			last_natural := integer_buffer.read_natural_32_be (0)
 		end
 
 	read_natural_64 is
@@ -686,8 +689,8 @@ feature -- Input
 			socket_exists: exists
 			opened_for_read: is_open_read
 		do
-			read_to_managed_pointer (socket_buffer, 0, natural_64_bytes)
-			last_natural_64 := socket_buffer.read_natural_64_be (0)
+			read_to_managed_pointer (integer_buffer, 0, 8)
+			last_natural_64 := integer_buffer.read_natural_64_be (0)
 		end
 
 	read_stream, readstream (nb_char: INTEGER) is
@@ -1012,16 +1015,16 @@ feature -- socket options
 
 feature {NONE} -- Externals
 
-	socket_buffer: MANAGED_POINTER is
-			-- Buffer used to read/write basic types.
+	integer_buffer: MANAGED_POINTER is
+			-- Buffer used to read INTEGER_64, INTEGER_16, INTEGER_8
 		do
-			if internal_socket_buffer = Void then
-				create internal_socket_buffer.make (16)
+			if internal_integer_buffer = Void then
+				create internal_integer_buffer.make (16)
 			end
-			Result := internal_socket_buffer
+			Result := internal_integer_buffer
 		end
 
-	internal_socket_buffer: MANAGED_POINTER
+	internal_integer_buffer: MANAGED_POINTER
 			-- Internal integer buffer
 
 	c_socket (add_family, a_type, protoc: INTEGER): INTEGER is

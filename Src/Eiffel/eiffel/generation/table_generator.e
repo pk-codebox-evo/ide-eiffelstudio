@@ -55,6 +55,7 @@ feature -- Access
 	Size_limit: INTEGER is 20000;
 			-- Limit of size for each generated file
 
+
 	new_file: INDENT_FILE is
 			-- New file for generation
 		local
@@ -77,14 +78,29 @@ feature -- Access
 		deferred
 		end; -- init_file
 
-	update_size (value: INTEGER) is
-			-- Prepare `current_buffer' for writing a table with `value' number of entries.
+	generate (table: POLY_TABLE [ENTRY]) is
+			-- Generation of `table'.
 		require
-			value_not_negative: value >= 0
+			current_buffer_exists: current_buffer /= Void;
+			good_argument: table /= Void;
 		do
-			update
-			size := size + value
-		end
+			update;
+			size := size + table.final_table_size;
+			table.generate (current_buffer);
+		end;
+
+	generate_type_table (table: POLY_TABLE [ENTRY]) is
+			-- Generation of associated type table of `table'
+			-- in final mode.
+		require
+			current_buffer_exists: current_buffer /= Void;
+			good_argument: table /= Void;
+			has_type_table: table.has_type_table;
+		do
+			update;
+			size := size + table.final_table_size;
+			table.generate_type_table (current_buffer);
+		end;
 
 	update is
 			-- Update current file

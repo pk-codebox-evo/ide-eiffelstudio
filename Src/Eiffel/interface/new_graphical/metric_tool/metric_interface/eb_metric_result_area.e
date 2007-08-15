@@ -10,11 +10,7 @@ class
 	EB_METRIC_RESULT_AREA
 
 inherit
-	EV_VERTICAL_BOX
-		redefine
-			initialize,
-			is_in_default_state
-		end
+	EB_METRIC_RESULT_AREA_IMP
 
 	EB_CONSTANTS
 		undefine
@@ -65,6 +61,13 @@ inherit
 			default_create
 		end
 
+	EB_RECYCLABLE
+		undefine
+			is_equal,
+			copy,
+			default_create
+		end
+
 	EB_METRIC_PANEL
 		undefine
 			is_equal,
@@ -83,35 +86,22 @@ feature {NONE} -- Initialization
 			a_tool_attached: a_tool /= Void
 		do
 			metric_tool := a_tool
-			install_agents (metric_tool)
-			install_metric_history_agent
 			on_unit_order_change_agent := agent on_unit_order_change
 			default_create
 			set_is_up_to_date (True)
-			set_has_last_result_been_displayed (True)
 		ensure
 			metric_tool_attached: metric_tool = a_tool
 		end
 
-	initialize is
-			-- Initialize `Current'.
+	user_initialization is
+			-- Called by `initialize'.
+			-- Any custom user initialization that
+			-- could not be performed in `initialize',
+			-- (due to regeneration of implementation class)
+			-- can be added here.
 		local
 			l_text: EV_TEXT
 		do
-			Precursor {EV_VERTICAL_BOX}
-				-- Create all widgets.
-			create metric_result_area
-			create archive_result_area
-			create dummy_area
-			create dummy_text
-
-				-- Build widget structure.
-			extend (metric_result_area)
-			extend (archive_result_area)
-			extend (dummy_area)
-			dummy_text.disable_edit
-			dummy_text.set_text (metric_names.l_no_result_available)
-			dummy_area.extend (dummy_text)
 			create metric_result.make (metric_tool, Current)
 			create archive_result.make (metric_tool, Current)
 			metric_result_area.extend (metric_result)
@@ -122,10 +112,10 @@ feature {NONE} -- Initialization
 			dummy_text.set_background_color (l_text.background_color)
 			dummy_area.show
 
-			append_drop_actions (
-				<<dummy_text>>,
-				metric_tool
-			)
+				-- Delete following in docking EiffelStudio.			
+			dummy_text.drop_actions.extend (agent drop_cluster)
+			dummy_text.drop_actions.extend (agent drop_class)
+			dummy_text.drop_actions.extend (agent drop_feature)
 		end
 
 feature -- Access
@@ -136,14 +126,13 @@ feature -- Access
 	archive_result: EB_METRIC_ARCHIVE_RESULT_AREA
 			-- Area to display metric archive comparison result
 
+feature -- Access
+
 	last_metric: EB_METRIC
 			-- Last calculated metric	
 
 	last_value: DOUBLE
 			-- Last calculated value
-
-	last_metric_calculation_time: DATE_TIME
-			-- Last calculation time for `last_metric'
 
 	last_source_domain: EB_METRIC_DOMAIN
 			-- Last source domain	
@@ -157,253 +146,152 @@ feature -- Access
 	last_current_archive: LIST [EB_METRIC_ARCHIVE_NODE]
 			-- Last current archive
 
-	is_last_metric_result_from_history: BOOLEAN
-			-- Is last metric result from history panel?
-
-	is_last_result_filtered: BOOLEAN
-			-- Is result filtered when last metric is calculated?
-
 feature -- Status report
-
-	has_last_result_been_displayed: BOOLEAN
-			-- Has last metric value/archive display requirest been fullfilled?
-
-	should_refresh_metric_result: BOOLEAN
-			-- Should metric detailed result be refreshed due to Eiffel compilation?
 
 	should_metric_result_be_displayed: BOOLEAN
 			-- Should metric result be displayed instead of archive result?
 
-	should_archive_result_be_displayed: BOOLEAN is
-			-- Should archive result be displayed instead of metric result?
-		do
-			Result := not should_metric_result_be_displayed
-		end
+feature -- Setting
 
-	set_has_last_result_been_displayed (b: BOOLEAN) is
-			-- Set `has_last_result_been_displayed' with `b'.
+	enable_metric_result_display is
+			-- Enable metric result display.
 		do
-			has_last_result_been_displayed := b
-		ensure
-			has_last_result_been_displayed_set: has_last_result_been_displayed = b
-		end
-
-	set_should_refresh_metric_result (b: BOOLEAN) is
-			-- Set `should_refresh_metric_result' with `b'.
-		do
-			should_refresh_metric_result := b
-		ensure
-			should_refresh_metric_result_set: should_refresh_metric_result = b
-		end
-
-feature -- Actions
-
-	on_display_metric_value (a_metric: like last_metric; a_value: like last_value; a_source_domain: like last_source_domain; a_domain: like last_result_domain; a_time: like last_metric_calculation_time; a_from_history: BOOLEAN; a_filtered: BOOLEAN) is
-			-- Switch current panel to display metric evaluation `a_value' for `a_metric' calculated against `a_source_domain'.
-			-- `a_domain' is the detailed metric result. `a_domain' can be Void.
-			-- `a_time' is when `a_metric' was calculated.
-			-- `a_from_history' mean if current result is from history panel.
-			-- `a_filtered' indicates if result was filtered.
-		require
-			a_metric_attached: a_metric /= Void
-			a_source_domain_attached: a_source_domain /= Void
-			a_time_attached: a_time /= Void
-		do
-			last_reference_archive := Void
-			last_current_archive := Void
-			last_metric := a_metric
-			last_value := a_value
-			last_source_domain := a_source_domain
-			last_result_domain := a_domain
-			last_metric_calculation_time := a_time
 			should_metric_result_be_displayed := True
-			set_has_last_result_been_displayed (False)
-			set_is_up_to_date (False)
-			is_last_metric_result_from_history := a_from_history
-			is_last_result_filtered := a_filtered
-			update_ui
-		end
-
-	on_display_archive_value (a_current_archive: like last_current_archive; a_referenced_archive: like last_reference_archive) is
-			-- Switch current panel to display metric archive from `a_current_archive 'and `a_referenced_archive'.
-		require
-			archive_valid: not (a_current_archive = Void and then a_referenced_archive = Void)
-		do
 			last_result_domain := Void
 			last_metric := Void
 			last_source_domain := Void
 			last_value := 0
-			last_current_archive := a_current_archive
-			last_reference_archive := a_referenced_archive
+		end
+
+	enable_archive_result_display is
+			-- Enable archive result display.
+		do
 			should_metric_result_be_displayed := False
-			set_has_last_result_been_displayed (False)
-			set_is_up_to_date (False)
-			update_ui
+			last_reference_archive := Void
+			last_current_archive := Void
 		end
 
-	on_send_metric_to_history is
-			-- Action to be performed to send last calculated metric to history
+	set_last_metric (a_metric: like last_metric) is
+			-- Set `last_metric' with `a_metric'.
 		require
-			last_metric_attached: last_metric /= Void
-			last_source_domain_attached: last_source_domain /= Void
+			a_metric_attached: a_metric /= Void
 		do
-			metric_tool.on_send_metric_value_in_history (
-				create{EB_METRIC_ARCHIVE_NODE}.make (last_metric.name, metric_type_id (last_metric), last_metric_calculation_time, last_value, last_source_domain, uuid_gen.generate_uuid.out, is_last_result_filtered),
-				Current
-			)
+			last_metric := a_metric
+		ensure
+			last_metric_set: last_metric = a_metric
 		end
 
-feature -- Basic operations
-
-	force_drop_stone (a_stone: STONE) is
-			-- Force to drop `a_stone' in `domain_selector'.
+	set_last_value (a_value: like last_value) is
+			-- Set `last_value' with `a_value'.
 		do
+			last_value := a_value
+		ensure
+			last_value_set: last_value = a_value
 		end
 
-feature {NONE} -- Recycle
-
-	internal_recycle is
-			-- To be called when the button has became useless.
+	set_last_source_domain (a_source_domain: like last_source_domain) is
+			-- Set `last_source_domain' with `a_source_domain'.
+		require
+			a_source_domain_attached: a_source_domain /= Void
 		do
-			metric_result.recycle
-			uninstall_agents (metric_tool)
-			metric_tool.send_metric_value_in_history_actions.prune_all (on_metric_sent_to_history_agent)
-			uninstall_metric_history_agent
+			last_source_domain := a_source_domain
+		ensure
+			last_source_domain_set: last_source_domain = a_source_domain
 		end
 
-feature{NONE} -- Actions
-
-	on_project_loaded is
-			-- Action to be performed when project loaded
+	set_last_result_domain (a_result_domain: like last_result_domain) is
+			-- Set `last_result_domain' with `a_result_domain'.
 		do
+			last_result_domain := a_result_domain
+		ensure
+			last_result_domain_set: last_result_domain = a_result_domain
 		end
 
-	on_project_unloaded is
-			-- Action to be performed when project unloaded
+	set_last_reference_archive (a_reference_archive: like last_reference_archive) is
+			-- Set `last_reference_archive' with `a_reference_archive'.
 		do
+			last_reference_archive := a_reference_archive
+		ensure
+			last_reference_archive_set: last_reference_archive = a_reference_archive
 		end
 
-	on_compile_start is
-			-- Action to be performed when Eiffel compilation starts
+	set_last_current_archive (a_current_archive: like last_current_archive) is
+			-- Set `last_current_archive' with `a_current_archive'.
 		do
-			set_is_up_to_date (False)
-			update_ui
+			last_current_archive := a_current_archive
+		ensure
+			last_current_archive_set: last_current_archive = a_current_archive
 		end
 
-	on_compile_stop is
-			-- Action to be performed when Eiffel compilation stops
-		do
-			set_should_refresh_metric_result (True)
-			set_is_up_to_date (False)
-			update_ui
-		end
-
-	on_metric_evaluation_start (a_data: ANY) is
-			-- Action to be performed when metric evaluation starts
-			-- `a_data' can be the metric tool panel from which metric evaluation starts.
+	set_stone (a_stone: STONE) is
+			-- Notify that `a_stone' has been dropped on Current.
 		do
 		end
 
-	on_metric_evaluation_stop (a_data: ANY) is
-			-- Action to be performed when metric evaluation stops
-			-- `a_data' can be the metric tool panel from which metric evaluation stops.
+feature -- Synchronization
+
+	synchronize_when_compile_start is
+			-- Synchronize when Eiffel compilation starts.
 		do
 		end
 
-	on_archive_calculation_start (a_data: ANY) is
-			-- Action to be performed when metric archive calculation starts
-			-- `a_data' can be the metric tool panel from which metric archive calculation starts.
+	synchronize_when_compile_stop is
+			-- Synchronize when Eiffel compilation stops.
 		do
+			if metric_result.is_displayed then
+				metric_result.refresh_grid
+				metric_result.update_warning_area.show
+			end
 		end
 
-	on_archive_calculation_stop (a_data: ANY) is
-			-- Action to be performed when metric archive calculation stops
-			-- `a_data' can be the metric tool panel from which metric archive calculation stops.
-		do
-		end
+feature -- Actions
 
-	on_metric_loaded is
-			-- Action to be performed when metrics loaded in `metric_manager'
+	on_select is
+			-- Action to be performed when current is selected
 		do
-			set_is_metric_reloaded (True)
-		end
-
-	on_history_recalculation_start (a_data: ANY) is
-			-- Action to be performed when archive history recalculation starts
-			-- `a_data' can be the metric tool panel from which metric history recalculation starts.
-		do
-			set_is_up_to_date (False)
-			update_ui
-		end
-
-	on_history_recalculation_stop (a_data: ANY) is
-			-- Action to be performed when archive history recalculation stops
-			-- `a_data' can be the metric tool panel from which metric history recalculation stops.
-		do
-			set_is_up_to_date (False)
-			update_ui
-		end
-
-	on_metric_sent_to_history (a_archive: EB_METRIC_ARCHIVE_NODE; a_panel: ANY) is
-			-- Action to be performed when metric calculation information contained in `a_archive' has been sent to history
-		do
-			set_is_up_to_date (False)
-			update_ui
-		end
-
-	on_metric_renamed (a_old_name, a_new_name: STRING) is
-			-- Action to be performed when a metric with `a_old_name' has been renamed to `a_new_name'.
-		do
-		end
-
-feature{NONE} -- UI Update
-
-	update_ui is
-			-- Update interface
-		do
-			if is_selected and then not is_up_to_date then
-				if not has_last_result_been_displayed then
-					if should_metric_result_be_displayed then
-						metric_result_area.show
-						dummy_area.hide
-						archive_result_area.hide
-						metric_result.update_warning_area.hide
-						metric_result.load_metric_result (last_metric, last_source_domain, last_value, last_result_domain)
-					else
-						metric_result_area.hide
-						dummy_area.hide
-						archive_result_area.show
-						archive_result.load_archives (last_reference_archive, last_current_archive)
-					end
-					set_has_last_result_been_displayed (True)
-				end
-				if should_refresh_metric_result then
-					metric_result.refresh_grid
-					if last_metric /= Void then
-						metric_result.update_warning_area.show
-					end
-					set_should_refresh_metric_result (False)
-				end
+			if not is_selected then
+				set_is_selected (True)
+			end
+			if not is_up_to_date then
 				if should_metric_result_be_displayed then
-					if last_metric_value_historyed or else is_last_metric_result_from_history then
-						metric_result.send_to_history_btn.disable_sensitive
-					else
-						metric_result.send_to_history_btn.enable_sensitive
-					end
+					metric_result_area.show
+					dummy_area.hide
+					archive_result_area.hide
+					metric_result.update_warning_area.hide
+					metric_result.load_metric_result (last_metric, last_source_domain, last_value, last_result_domain)
+				else
+					metric_result_area.hide
+					dummy_area.hide
+					archive_result_area.show
+					archive_result.load_archives (last_reference_archive, last_current_archive)
 				end
 				set_is_up_to_date (True)
 			end
 		end
 
-feature{NONE} -- Implementation
+feature -- Recycle
 
-	dummy_text: EV_TEXT
-	metric_result_area, archive_result_area, dummy_area: EV_VERTICAL_BOX
-
-	is_in_default_state: BOOLEAN is
-			-- Is `Current' in its default state.
+	recycle is
+			-- To be called when the button has became useless.
 		do
-			Result := True
+			metric_result.recycle
+		end
+
+feature -- Update
+
+	update (a_observable: QL_OBSERVABLE; a_data: ANY) is
+			-- Notification from `a_observable' indicating that `a_data' changed.
+		local
+			l_start: BOOLEAN_REF
+		do
+			l_start ?= a_data
+			if l_start /= Void then
+				if l_start.item then
+					synchronize_when_compile_start
+				else
+					synchronize_when_compile_stop
+				end
+			end
 		end
 
 invariant
@@ -441,6 +329,7 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end -- class EB_METRIC_RESULT_AREA
 

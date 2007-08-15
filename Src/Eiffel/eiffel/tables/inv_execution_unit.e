@@ -25,8 +25,7 @@ feature
 		do
 			assoc := class_type.associated_class
 			Result := assoc /= Void and then assoc.has_invariant and then
-				assoc.invariant_feature.body_index = body_index and then
-				System.class_type_of_id (type_id) = class_type
+				assoc.invariant_feature.body_index = body_index
 		end
 
 indexing

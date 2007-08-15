@@ -15,10 +15,11 @@ inherit
 	REFERENCE_VALUE
 		redefine
 			make_attribute,
-			set_hector_addr,
+			set_hector_addr, append_to,
+			append_type_and_value,
 			type_and_value, expandable,
-			children, kind, output_value, dump_value,
-			debug_value_type_id
+			children, kind, append_value,
+			output_value, dump_value
 		end
 
 create {DEBUG_VALUE_EXPORTER}
@@ -44,15 +45,91 @@ feature -- Property
 			--| FIXME JFIAT 2004/05/27 : used to be declared SORTED_TWO_WAY_LIST
 			--| should we change that back ?
 
+feature -- Output
+
+	append_to (st: TEXT_FORMATTER; indent: INTEGER) is
+			-- Append `Current' to `st' with `indent' tabs the left margin.
+		local
+			ec: CLASS_C;
+			l_cursor: DS_LINEAR_CURSOR [ABSTRACT_DEBUG_VALUE]
+		do
+			append_tabs (st, indent);
+			st.add_feature_name (name, e_class)
+			st.add_string (": expanded ");
+			ec := dynamic_class;
+			if ec /= Void then
+				ec.append_name (st);
+				st.add_new_line;
+				append_tabs (st, indent + 1);
+				st.add_string ("-- begin sub-object --");
+				st.add_new_line;
+				from
+					l_cursor := attributes.new_cursor
+					l_cursor.start
+				until
+					l_cursor.after
+				loop
+					l_cursor.item.append_to (st, indent + 2);
+					l_cursor.forth
+				end;
+				append_tabs (st, indent + 1);
+				st.add_string ("-- end sub-object --");
+				st.add_new_line
+			else
+				Any_class.append_name (st);
+				st.add_string (" = Unknown")
+			end
+		end;
+
 feature -- Access
 
 	dump_value: DUMP_VALUE is
 			-- Dump_value corresponding to `Current'.
 		do
-			Result := Debugger_manager.Dump_value_factory.new_expanded_object_value (address, dynamic_class)
+			create Result.make_expanded_object (address, dynamic_class)
 		end
 
+feature {ABSTRACT_DEBUG_VALUE} -- Output
+
+	append_type_and_value (st: TEXT_FORMATTER) is
+		local
+			ec: CLASS_C;
+		do
+			ec := dynamic_class
+			if ec /= Void then
+				ec.append_name (st)
+			end
+		end;
+
 feature {NONE} -- Output
+
+	append_value (st: TEXT_FORMATTER) is
+			-- Append value of `Current' to `st' with `indent' tabs the left margin.
+		local
+			ec: CLASS_C
+			l_cursor: DS_LINEAR_CURSOR [ABSTRACT_DEBUG_VALUE]
+		do
+			ec := dynamic_class;
+			if ec /= Void then
+				st.add_string ("-- begin sub-object --");
+				st.add_new_line;
+				from
+					l_cursor := attributes.new_cursor
+					l_cursor.start
+				until
+					l_cursor.after
+				loop
+					l_cursor.item.append_to (st, 2);
+					l_cursor.forth
+				end;
+				append_tabs (st, 1);
+				st.add_string ("-- end sub-object --");
+				st.add_new_line
+			else
+				Any_class.append_name (st);
+				st.add_string (" = Unknown")
+			end
+		end;
 
 	output_value: STRING_32 is
 			-- Return a string representing `Current'.
@@ -122,14 +199,7 @@ feature {NONE} -- Implementation
 				l_cursor.item.set_hector_addr;
 				l_cursor.forth
 			end;
-		end
-
-feature {DEBUGGER_TEXT_FORMATTER_VISITOR} -- Debug value type id
-
-	debug_value_type_id: INTEGER is
-		do
-			Result := expanded_value_id
-		end
+		end;
 
 invariant
 

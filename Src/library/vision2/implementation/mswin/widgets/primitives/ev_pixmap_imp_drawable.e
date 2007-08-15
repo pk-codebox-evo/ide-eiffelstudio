@@ -31,14 +31,12 @@ inherit
 			{EV_PIXMAP_IMP_WIDGET} wel_drawing_mode
 		redefine
 			interface,
-			initialize,
 			destroy,
 			sub_pixmap
 		end
 
 create
-	make_with_simple,
-	make_with_pixel_buffer
+	make_with_simple
 
 feature {NONE} -- Initialization
 
@@ -48,14 +46,12 @@ feature {NONE} -- Initialization
 		do
 				-- Create this new implementation using the
 				-- same interface as other.
-			set_state_flag (base_make_called_flag, True)
+			set_base_make_called (True)
 
 			promote_from_simple (other)
 
 				-- Initialize the drawable part.
 			initialize -- from EV_DRAWABLE_IMP
-
-			copy_tab_status (other)
 
 				-- Select the palette if needed.
 			if dc.palette_selected then
@@ -67,13 +63,7 @@ feature {NONE} -- Initialization
 
 				-- Is_initialized should be set to True
 				-- when the bridge pattern is linked.
-			set_state_flag (is_initialized_flag, False)
-		end
-
-	make_with_pixel_buffer (a_dc: WEL_MEMORY_DC) is
-			-- Creation method for EV_PIXEL_BUFFER specially
-		do
-			dc := a_dc
+			set_is_initialized (False)
 		end
 
 	promote_from_simple (other: EV_PIXMAP_IMP) is
@@ -132,31 +122,36 @@ feature {NONE} -- Initialization
 			other.safe_destroy
 		end
 
-	copy_tab_status (other: EV_PIXMAP_IMP) is
-			-- Retrieve all common attributes between `other'
-			-- and `Current' & make `Current' have the same
-			-- attributes than `other'.
-		require
-			other_not_void: other /= Void
+	copy_events_from_other (other: EV_PIXMAP_I) is
+			-- Copy all events from `other' to `Current'.
+			-- Note that `other' is EV_PIXMAP_I and not EV_PIXMAP_IMP,
+			-- as we need to use this in cases where `other' will
+			-- not conform to EV_PIXMAP_IMP.
 		do
-				-- Update navigation attribute
-			if other.is_tabable_from then
-				enable_tabable_from
-			else
-				disable_tabable_from
-			end
-			if other.is_tabable_to then
-				enable_tabable_to
-			else
-				disable_tabable_to
-			end
+			expose_actions_internal := other.expose_actions_internal
+			focus_in_actions_internal := other.focus_in_actions_internal
+			focus_out_actions_internal := other.focus_out_actions_internal
+			key_press_actions_internal := other.key_press_actions_internal
+			key_press_string_actions_internal := other.key_press_string_actions_internal
+			key_release_actions_internal := other.key_release_actions_internal
+			pointer_button_press_actions_internal := other.pointer_button_press_actions_internal
+			pointer_button_release_actions_internal := other.pointer_button_release_actions_internal
+			pointer_double_press_actions_internal := other.pointer_double_press_actions_internal
+			pointer_enter_actions_internal := other.pointer_enter_actions_internal
+			pointer_leave_actions_internal := other.pointer_leave_actions_internal
+			pointer_motion_actions_internal := other.pointer_motion_actions_internal
+			resize_actions_internal := other.resize_actions_internal
+			conforming_pick_actions_internal := other.conforming_pick_actions_internal
+			drop_actions_internal := other.drop_actions_internal
+			pick_actions_internal := other.pick_actions_internal
+			pick_ended_actions_internal := other.pick_ended_actions_internal
 		end
+
 
 	adapt_from_simple (other: EV_PIXMAP_IMP) is
 			-- Adapt the current implementation to `other'.
 		do
 			promote_from_simple (other)
-			copy_tab_status (other)
 
 				-- Reset the drawable part.
 			internal_initialized_pen := False
@@ -229,13 +224,6 @@ feature {NONE} -- Initialization
 			-- Initialize from `a_pointer_style'
 		do
 			check should_not_be_called: False end
-		end
-
-	initialize is
-		do
-			Precursor {EV_DRAWABLE_IMP}
-			disable_tabable_from
-			disable_tabable_to
 		end
 
 feature {NONE} -- Saving
@@ -493,41 +481,6 @@ feature -- Element change
 			s_dc.release
 		end
 
-feature -- Navigation
-
-	internal_tabable_info: NATURAL_8
-			-- Storage for `is_tabable_from' and `is_tabable_to'.
-
-	is_tabable_to: BOOLEAN is
-		do
-			Result := internal_tabable_info.bit_test (1)
-		end
-
-	is_tabable_from: BOOLEAN is
-		do
-			Result := internal_tabable_info.bit_test (2)
-		end
-
-	enable_tabable_from is
-		do
-			internal_tabable_info := internal_tabable_info.set_bit (True, 2)
-		end
-
-	disable_tabable_from is
-		do
-			internal_tabable_info := internal_tabable_info.set_bit (False, 2)
-		end
-
-	enable_tabable_to is
-		do
-			internal_tabable_info := internal_tabable_info.set_bit (True, 1)
-		end
-
-	disable_tabable_to is
-		do
-			internal_tabable_info := internal_tabable_info.set_bit (False, 1)
-		end
-
 feature {
 		EV_PIXMAP_IMP,
 		EV_PIXMAP_IMP_DRAWABLE,
@@ -707,13 +660,6 @@ feature {NONE} -- Private Implementation
 
 feature -- Delegated features
 
-	create_file_drop_actions: like file_drop_actions
-			-- Create `file_drop_actions'
-		do
-			promote_to_widget
-			Result := interface.implementation.create_file_drop_actions
-		end
-
 	widget_imp_at_pointer_position: EV_WIDGET_IMP is
 			-- `Result' is widget implementation at current
 			-- cursor position.
@@ -872,13 +818,11 @@ feature -- Delegated features
 			a_x: INTEGER
 			a_y: INTEGER
 			a_button: INTEGER
-			a_press: BOOLEAN
 			a_x_tilt: DOUBLE
 			a_y_tilt: DOUBLE
 			a_pressure: DOUBLE
 			a_screen_x: INTEGER
 			a_screen_y: INTEGER
-			a_menu_only: BOOLEAN
 		) is
 			-- Start a pick and drop transport.
 		do
@@ -887,13 +831,11 @@ feature -- Delegated features
 				a_x,
 				a_y,
 				a_button,
-				a_press,
 				a_x_tilt,
 				a_y_tilt,
 				a_pressure,
 				a_screen_x,
-				a_screen_y,
-				a_menu_only
+				a_screen_y
 				)
 		end
 

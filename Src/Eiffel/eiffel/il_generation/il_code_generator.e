@@ -147,10 +147,9 @@ feature -- Local variable info generation
 feature -- Object creation
 
 	create_object (a_type_id: INTEGER) is
-			-- Create non-generic object of `a_type_id'.
+			-- Create object of `a_type_id'.
 		require
 			valid_type_id: a_type_id > 0
-			type_not_generic: -- not class_types.item (a_type_id).is_generic
 		deferred
 		end
 
@@ -170,12 +169,13 @@ feature -- Object creation
 		deferred
 		end
 
-	create_expanded_object (t: CL_TYPE_I) is
-			-- Create an object of expanded type `t'.
+	initialize_expanded_variable (variable_class_type: CLASS_TYPE) is
+			-- Initialize an expanded variable of type `variable_class_type' assuming
+			-- that its address is currently on the evaluation stack.
 		require
-			t_attached: t /= Void
-			t_is_expanded: t.is_expanded
-			t_is_internal: not t.is_external
+			variable_class_type_not_void: variable_class_type /= Void
+			variable_class_type_is_expanded: variable_class_type.is_expanded
+			variable_class_type_is_internal: not variable_class_type.is_external
 		deferred
 		end
 
@@ -201,11 +201,6 @@ feature -- Variables access
 	generate_current_as_reference is
 			-- Generate access to `Current' in its reference form.
 			-- (I.e. box value type object if required.)
-		deferred
-		end
-
-	generate_current_as_basic is
-			-- Load `Current' as a basic value.
 		deferred
 		end
 
@@ -287,27 +282,11 @@ feature -- Variables access
 		end
 
 	generate_metamorphose (type_i: TYPE_I) is
-			-- Generate `metamorphose', ie boxing an expanded type `type_i'.
+			-- Generate `metamorphose', ie boxing a basic type of `type_i' into its
+			-- corresponding reference type.
 		require
 			type_i_not_void: type_i /= Void
 			type_is_expanded: type_i.is_expanded
-		deferred
-		end
-
-	generate_external_metamorphose (type_i: TYPE_I) is
-			-- Generate `metamorphose', ie boxing an expanded type `type_i'
-			-- using an associated external type (if any).
-		require
-			type_i_not_void: type_i /= Void
-			type_is_expanded: type_i.is_expanded
-		deferred
-		end
-
-	generate_eiffel_metamorphose (a_type: TYPE_I) is
-			-- Generate a metamorphose of `a_type' into a _REF type.
-		require
-			a_type_not_void: a_type /= Void
-			a_type_is_basic: a_type.is_basic
 		deferred
 		end
 
@@ -317,22 +296,6 @@ feature -- Variables access
 		require
 			type_i_not_void: type_i /= Void
 			type_is_expanded: type_i.is_expanded
-		deferred
-		end
-
-	generate_external_unmetamorphose (type_i: CL_TYPE_I) is
-			-- Generate `unmetamorphose', ie unboxing an external reference to a basic type of `type_i'.
-			-- Load content of address resulting from unbox operation.
-		require
-			type_i_attached: type_i /= Void
-			type_is_expanded: type_i.is_expanded
-		deferred
-		end
-
-	generate_creation (cl_type_i: CL_TYPE_I) is
-			-- Generate IL code for a hardcoded creation type `cl_type_i'.
-		require
-			cl_type_i_attached: cl_type_i /= Void
 		deferred
 		end
 
@@ -396,22 +359,6 @@ feature -- Addresses
 		deferred
 		end
 
-	generate_load_from_address_as_object (a_type: TYPE_I) is
-			-- Load value of non-built-in `a_type' type from address pushed on stack.
-		require
-			type_not_void: a_type /= Void
-			type_is_expanded: a_type.is_expanded
-		deferred
-		end
-
-	generate_load_from_address_as_basic (a_type: TYPE_I) is
-			-- Load value of a basic type `a_type' from address of an Eiffel object pushed on stack.
-		require
-			type_not_void: a_type /= Void
-			type_is_basic: a_type.is_basic
-		deferred
-		end
-
 feature -- Assignments
 
 	generate_is_true_instance_of (type_i: TYPE_I) is
@@ -423,13 +370,6 @@ feature -- Assignments
 
 	generate_is_instance_of (type_i: TYPE_I) is
 			-- Generate `Isinst' byte code instruction.
-		require
-			type_i_not_void: type_i /= Void
-		deferred
-		end
-
-	generate_is_instance_of_external (type_i: CL_TYPE_I) is
-			-- Generate `Isinst' byte code instruction for external variant of the type `type_i'.
 		require
 			type_i_not_void: type_i /= Void
 		deferred
@@ -618,7 +558,7 @@ feature -- Array manipulation
 		deferred
 		end
 
-	generate_array_initialization (array_type: CL_TYPE_I; actual_generic: CLASS_TYPE) is
+	generate_array_initialization (actual_generic: CLASS_TYPE) is
 			-- Initialize native array with actual parameter type
 			-- `actual_generic' on the top of the stack.
 		require
@@ -686,16 +626,6 @@ feature -- Assertions
 
 	generate_in_assertion_status is
 			-- Generate value of `in_assertion' on stack.
-		deferred
-		end
-
-	generate_save_supplier_precondition is
-			-- Generate code to save the current supplier precondition in a local.
-		deferred
-		end
-
-	generate_restore_supplier_precondition is
-			-- Restores the supplier precondition flag using the local.
 		deferred
 		end
 
@@ -1073,6 +1003,14 @@ feature -- Line info
 
 feature -- Convenience
 
+	implemented_type (implemented_in: INTEGER; current_type: CL_TYPE_I): CL_TYPE_I is
+			-- Return static_type_id of class that defined `feat'.
+		require
+			valid_implemented_in: implemented_in > 0
+			current_type_not_void: current_type /= Void
+		deferred
+		end
+
 	generate_call_on_void_target_exception is
 			-- Generate call on void target exception.
 		deferred
@@ -1110,6 +1048,12 @@ feature -- Generic conformance
 
 	generate_none_type_instance is
 			-- Generate a NONE_TYPE instance.
+		deferred
+		end
+
+	assign_computed_type is
+			-- Given elements on stack, compute associated type and set it to
+			-- newly created object.
 		deferred
 		end
 

@@ -14,7 +14,7 @@ frozen class
 
 inherit
 	SYSTEM_OBJECT
-
+	
 	AR_RESOLVER
 		rename
 			make as resolver_make,
@@ -37,59 +37,43 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_paths: LIST [STRING]) is
+	make (a_file_names: like look_up_file_names) is
 			-- Initialize instance
 		require
-			a_paths_attached: a_paths /= Void
-			a_paths_contains_attached_items: not a_paths.has (Void)
+			a_file_names: a_file_names /= Void
+			not_a_file_names_is_empty: not a_file_names.is_empty
 		do
 			resolver_make
-			common_initialization (a_paths)
+			common_initialization (a_file_names)
+		ensure
+			look_up_file_names_set: look_up_file_names = a_file_names
 		end
 
-	make_with_name (a_paths: LIST [STRING]; a_name: like friendly_name) is
+	make_with_name (a_file_names: LIST [STRING]; a_name: like friendly_name) is
 			-- Initialize instance and set `friendly_name' with `a_name'
 		require
-			a_paths_attached: a_paths /= Void
-			a_paths_contains_attached_items: not a_paths.has (Void)
+			a_file_names: a_file_names /= Void
+			not_a_file_names_is_empty: not a_file_names.is_empty
 			a_name_not_void: a_name /= Void
 		do
 			resolver_make_with_name (a_name)
-			common_initialization (a_paths)
+			common_initialization (a_file_names)
 		ensure
 			friendly_name_set: friendly_name = a_name
+			look_up_file_names_set: look_up_file_names = a_file_names
 		end
 
-	common_initialization (a_paths: LIST [STRING]) is
+	common_initialization (a_file_names: like look_up_file_names) is
 			-- Additional initialization.
 		require
-			a_paths_attached: a_paths /= Void
-			a_paths_contains_attached_items: not a_paths.has (Void)
-		local
-			l_paths: ARRAYED_LIST [STRING]
+			a_file_names: a_file_names /= Void
+			not_a_file_names_is_empty: not a_file_names.is_empty
 		do
-			if a_paths.count > 0 then
-				create l_paths.make (a_paths.count)
-				l_paths.append (a_paths)
-				from l_paths.start until l_paths.after loop
-					if {SYSTEM_DIRECTORY}.exists (l_paths.item) then
-							-- Not a file but a directory, so add it to the list of resolve paths.
-						add_resolve_path (l_paths.item)
-						l_paths.remove
-					else
-						l_paths.forth
-					end
-				end
-				look_up_file_names := l_paths
-			else
-				look_up_file_names := a_paths
-			end
 			create names_table.make (13)
 			names_table.compare_objects
+			look_up_file_names := a_file_names
 		ensure
-			names_table_attached: names_table /= Void
-			names_table_compares_objects: names_table.object_comparison
-			look_up_file_names_attached: look_up_file_names /= Void
+			look_up_file_names_set: look_up_file_names = a_file_names
 		end
 
 feature -- Resolution
@@ -107,10 +91,7 @@ feature -- Resolution
 			until
 				look_up_file_names.after or Result /= Void
 			loop
-				l_name := Void
-				if {SYSTEM_FILE}.exists (look_up_file_names.item) then
-					l_name := get_assembly_name (look_up_file_names.item)
-				end
+				l_name := get_assembly_name (look_up_file_names.item)
 				if l_name /= Void then
 					if does_name_match (l_name, a_name, a_version, a_culture, a_key) then
 						Result := look_up_file_names.item

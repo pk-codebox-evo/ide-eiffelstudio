@@ -2,7 +2,7 @@
 	description: "Routines for Request Internal Data Representation."
 	date:		"$Date$"
 	revision:	"$Revision$"
-	copyright:	"Copyright (c) 1985-2007, Eiffel Software."
+	copyright:	"Copyright (c) 1985-2006, Eiffel Software."
 	license:	"GPL version 2 see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"Commercial license is available at http://www.eiffel.com/licensing"
 	copying: "[
@@ -54,7 +54,7 @@ rt_private bool_t idr_Acknlge(IDR *idrs, void *ext);
 rt_private bool_t idr_Where(IDR *idrs, void *ext);
 rt_private bool_t idr_Stop(IDR *idrs, void *ext);
 rt_private bool_t idr_Dumped(IDR *idrs, void *ext);
-rt_private bool_t idr_Item (IDR *idrs, EIF_TYPED_VALUE *ext);
+rt_private bool_t idr_Item (IDR *idrs, struct item *ext);
 rt_private bool_t idr_Notif(IDR *idrs, void *ext);
 rt_private bool_t idr_void(IDR *idrs, void *ext);
 
@@ -119,8 +119,6 @@ rt_private struct idr_discrim u_Request[] = {
 	{ SET_IPC_PARAM, idr_Opaque },
 	{ CLEAR_BREAKPOINTS, idr_void },
 	{ DBG_EXCEPTION_TRACE, idr_Opaque },
-	{ APPLICATION_ENV, idr_void },
-	{ NEW_INSTANCE, idr_Opaque },
 };
 
 /*
@@ -146,8 +144,7 @@ rt_private bool_t idr_Opaque(IDR *idrs, void *ext)
 	Opaque *opa = (Opaque *) ext;
 	return idr_int(idrs, &opa->op_type) &&
 			idr_int(idrs, &opa->op_cmd) &&
-			idr_rt_uint_ptr(idrs, &opa->op_size) &&
-			idr_int(idrs, &opa->op_info);
+			idr_rt_uint_ptr(idrs, &opa->op_size);
 }
 
 rt_private bool_t idr_Acknlge(IDR *idrs, void *ext)
@@ -208,9 +205,9 @@ rt_private bool_t idr_Dumped (IDR *idrs, void *ext)
 {
 	Dump *dum = (Dump *)ext;
 	static struct ex_vect *last_exv;
-	static EIF_TYPED_VALUE *last_exi;
+	static struct item *last_exi;
 	struct ex_vect *exv;
-	EIF_TYPED_VALUE *exi;
+	struct item *exi;
 
 	if (!idr_int (idrs, &dum->dmp_type))
 		return FALSE;
@@ -256,9 +253,9 @@ rt_private bool_t idr_Dumped (IDR *idrs, void *ext)
 			last_exi = NULL;
 		}
 		if (!exi){
-			exi = (EIF_TYPED_VALUE *) malloc (sizeof (EIF_TYPED_VALUE));
+			exi = (struct item *) malloc (sizeof (struct item));
 			last_exi = exi;
-			memset (exi, 0, sizeof (EIF_TYPED_VALUE));
+			memset (exi, 0, sizeof (struct item));
 			dum -> dmpu.dmpu_item = exi;
 		}
 		if (!exi) {
@@ -274,7 +271,7 @@ rt_private bool_t idr_Dumped (IDR *idrs, void *ext)
 }
 
 
-rt_private bool_t idr_Item (IDR *idrs, EIF_TYPED_VALUE *ext)
+rt_private bool_t idr_Item (IDR *idrs, struct item *ext)
 {
 	if (idrs->i_op == IDR_ENCODE) {
 		memcpy (idrs->i_ptr, &ext->type, sizeof(EIF_INTEGER_32));

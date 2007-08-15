@@ -21,20 +21,14 @@ inherit
 
 	EV_TEXTABLE_IMP
 		redefine
-			interface
+			interface,
+			process_gdk_event
 		end
 
 	EV_PIXMAPABLE_IMP
 		redefine
-			interface
-		end
-
-	EV_ANY_IMP
-		redefine
 			interface,
-			needs_event_box,
-			process_gdk_event,
-			destroy
+			process_gdk_event
 		end
 
 create
@@ -188,12 +182,6 @@ feature -- Status setting
 
 feature -- PND
 
-	update_for_pick_and_drop (starting: BOOLEAN)
-			-- Pick and drop status has changed so update appearance of
-			-- `Current' to reflect available targets.
-		do
-		end
-
 	enable_transport is
 			-- Enable PND transport
 		do
@@ -235,9 +223,9 @@ feature -- PND
 		end
 
 	start_transport (
-        	a_x, a_y, a_button: INTEGER; a_press: BOOLEAN;
+        	a_x, a_y, a_button: INTEGER;
         	a_x_tilt, a_y_tilt, a_pressure: DOUBLE;
-        	a_screen_x, a_screen_y: INTEGER; a_menu_only: BOOLEAN) is
+        	a_screen_x, a_screen_y: INTEGER) is
         	-- Start PND transport (not needed)
 		do
 			check
@@ -261,38 +249,6 @@ feature -- PND
 			check
 				do_not_call: False
 			end
-		end
-
-feature -- Measurement
-
-	x_position: INTEGER is
-			-- Horizontal offset relative to parent `x_position' in pixels.
-		do
-		end
-
-	y_position: INTEGER is
-			-- Vertical offset relative to parent `y_position' in pixels.
-		do
-		end
-
-	screen_x: INTEGER is
-			-- Horizontal offset relative to screen.
-		do
-		end
-
-	screen_y: INTEGER is
-			-- Vertical offset relative to screen.
-		do
-		end
-
-	height: INTEGER is
-			-- Height in pixels.
-		do
-		end
-
-	minimum_height: INTEGER is
-			-- Minimum vertical size in pixels.
-		do
 		end
 
 feature {EV_GTK_DEPENDENT_INTERMEDIARY_ROUTINES} -- Event handling

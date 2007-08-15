@@ -11,13 +11,7 @@ class
 inherit
 	SD_NOTEBOOK_TAB_DRAWER_I
 		redefine
-			make,
-			draw_pixmap_text_selected,
-			draw_pixmap_text_unselected,
-			expose_selected,
-			expose_unselected,
-			expose_hot,
-			draw_focus_rect
+			make
 		end
 
 	EV_BUTTON_IMP
@@ -30,15 +24,7 @@ inherit
 			pixmap as pixmap_not_use,
 			set_pixmap as set_pixmap_not_use,
 			width as width_not_use,
-			height as height_not_use,
-			draw_focus_rect as wel_draw_focus_rect
-		export
-			{NONE} all
-		redefine
-			base_make_called
-		end
-
-	EV_SHARED_APPLICATION
+			height as height_not_use
 		export
 			{NONE} all
 		end
@@ -50,20 +36,25 @@ feature{NONE} -- Initlization
 
 	make is
 			-- Creation method
+		local
+			l_env: EV_ENVIRONMENT
 		do
 			Precursor {SD_NOTEBOOK_TAB_DRAWER_I}
 			init_theme
-			ev_application.theme_changed_actions.extend (agent init_theme)
+			create l_env
+			l_env.application.theme_changed_actions.extend (agent init_theme)
 		end
 
 	init_theme is
 			-- Initialize theme drawer.
 		local
+			l_env: EV_ENVIRONMENT
 			l_app_imp: EV_APPLICATION_IMP
 			l_tool_bar: EV_TOOL_BAR
 			l_wel_tool_bar: WEL_TOOL_BAR
 		do
-			l_app_imp ?= ev_application.implementation
+			create l_env
+			l_app_imp ?= l_env.application.implementation
 			check not_void: l_app_imp /= Void end
 			l_app_imp.update_theme_drawer
 			theme_drawer := l_app_imp.theme_drawer
@@ -77,15 +68,11 @@ feature{NONE} -- Initlization
 			theme_data := theme_drawer.open_theme_data (l_wel_tool_bar.item, "Tab")
 		end
 
-	base_make_called: BOOLEAN is True
-			-- Not breaking the invariant.
-
 feature -- Commands
 
 	expose_unselected (a_width: INTEGER; a_tab_info: SD_NOTEBOOK_TAB_INFO) is
 			-- Redefine
 		do
-			Precursor {SD_NOTEBOOK_TAB_DRAWER_I}(a_width, a_tab_info)
 			expose_unselected_or_hot (a_width, a_tab_info, False)
 		end
 
@@ -99,7 +86,6 @@ feature -- Commands
 			l_bitmap: WEL_BITMAP
 			l_bitmap_dc: WEL_MEMORY_DC
 		do
-			Precursor {SD_NOTEBOOK_TAB_DRAWER_I}(a_width, a_tab_info)
 			start_draw
 
 			l_pixmap_imp ?= buffer_pixmap.implementation
@@ -108,7 +94,7 @@ feature -- Commands
 			l_bitmap := l_bitmap_dc.bitmap
 
 			l_brush := internal_background_brush
-			create l_wel_rect.make (0, 0, a_width, buffer_pixmap.height + 1)
+			create l_wel_rect.make (0, 0, a_width, buffer_pixmap.height)
 
 			if theme_data /= default_pointer then
 				draw_xp_selected_tab (l_bitmap_dc, l_bitmap, a_tab_info, l_wel_rect, l_brush)
@@ -122,35 +108,12 @@ feature -- Commands
 			draw_pixmap_text_selected (buffer_pixmap, 0, a_width)
 
 			end_draw
-
-			if internal_tab.parent.has_focus then
-				internal_tab.draw_focus_rect
-			end
 		end
 
 	expose_hot (a_width: INTEGER; a_tab_info: SD_NOTEBOOK_TAB_INFO) is
 			-- Redefine
 		do
-			Precursor {SD_NOTEBOOK_TAB_DRAWER_I}(a_width, a_tab_info)
 			expose_unselected_or_hot (a_width, a_tab_info, True)
-		end
-
-	draw_focus_rect (a_rect: EV_RECTANGLE) is
-			-- Redefine
-		local
-			l_rect: WEL_RECT
-
-			l_wel_window: WEL_WINDOW
-			l_dc: WEL_WINDOW_DC
-		do
-			l_wel_window ?= internal_tab.parent.implementation
-			check not_void: l_wel_window /= Void end
-			create l_dc.make (l_wel_window)
-			l_dc.get
-
-			create l_rect.make (a_rect.left, a_rect.top, a_rect.right, a_rect.bottom)
-			wel_draw_focus_rect (l_dc, l_rect)
-			l_dc.dispose
 		end
 
 feature{NONE} -- Implementation
@@ -497,85 +460,7 @@ feature{NONE} -- Implementation
 			end
 		end
 
-	draw_pixmap_text_unselected (a_pixmap: EV_DRAWABLE; a_start_x, a_width: INTEGER) is
-			-- Redefine
-		local
-			l_font: EV_FONT
-		do
-			a_pixmap.set_foreground_color (internal_shared.tab_text_color)
-			l_font := internal_shared.tool_bar_font
-			a_pixmap.set_font (l_font)
-			if is_top_side_tab then
-				-- Draw pixmap
-				a_pixmap.draw_pixmap (a_start_x + start_x_pixmap_internal, start_y_position + gap_height + 1, pixmap)
-				a_pixmap.draw_ellipsed_text_top_left (a_start_x + start_x_text_internal, gap_height + start_y_position_text, text, close_clipping_width (a_width))
-			else
-				-- Draw pixmap
-				a_pixmap.draw_pixmap (a_start_x + start_x_pixmap_internal, start_y_position, pixmap)
-				-- Draw text
-				a_pixmap.draw_ellipsed_text_top_left (a_start_x + start_x_text_internal, start_y_position_bottom, text, text_clipping_width (a_width))
-			end
-			draw_close_button (a_pixmap, internal_shared.icons.close)
-		end
-
-	draw_pixmap_text_selected (a_pixmap: EV_DRAWABLE; a_start_x, a_width: INTEGER) is
-			-- Redefine
-		local
-			l_font: EV_FONT
-		do
-			if a_pixmap.height > 0 then
-				-- Draw text
-				a_pixmap.set_foreground_color (internal_shared.tab_text_color)
-				if a_width - start_x_text_internal >= 0 then
-					l_font := internal_shared.tool_bar_font
-					l_font.set_weight ({EV_FONT_CONSTANTS}.weight_bold)
-					a_pixmap.set_font (l_font)
-					if is_top_side_tab then
-						a_pixmap.draw_ellipsed_text_top_left (a_start_x + start_x_text_internal, start_y_position_text + gap_height - 1, text, close_clipping_width (a_width))
-					else
-						a_pixmap.draw_ellipsed_text_top_left (a_start_x + start_x_text_internal, 1 + start_y_position_bottom, text, text_clipping_width (a_width))
-					end
-					l_font.set_weight ({EV_FONT_CONSTANTS}.weight_regular)
-				end
-				-- Draw pixmap
-				if is_draw_pixmap then
-					if is_top_side_tab then
-						a_pixmap.draw_pixmap (a_start_x + start_x_pixmap_internal, start_y_position + gap_height, pixmap)
-					else
-						a_pixmap.draw_pixmap (a_start_x + start_x_pixmap_internal, start_y_position + 1, pixmap)
-					end
-				end
-
-				draw_close_button (a_pixmap, internal_shared.icons.close)
-			end
-		end
-
 feature {NONE} -- Attributes
-
-	gap_height: INTEGER is 2
-	 		-- Redefine
-
-	start_y_position: INTEGER is
-	 		-- Redefine
-	 	do
-			if pixmap /= Void then
-				Result := (height / 2 - pixmap.height / 2).floor
-			else
-				Result := start_y_position_text
-			end
-	 	end
-
-	start_y_position_bottom: INTEGER is
-			-- Start y drawing bottom text position.
-		once
-			Result := internal_shared.tool_bar_font.height // 8 + 2
-		end
-
-	start_y_position_text: INTEGER is
-			-- Start y drawing top text positioion.
-		once
-			Result := internal_shared.tool_bar_font.height // 8 + 3
-		end
 
 	theme_drawer: EV_THEME_DRAWER_IMP
 			-- Theme drawer

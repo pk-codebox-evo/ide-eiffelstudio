@@ -26,10 +26,15 @@ inherit
 			make,
 			default_wm_decorations,
 			is_displayed,
-			call_window_state_event
+			initialize
 		end
 
 	EV_TITLED_WINDOW_ACTION_SEQUENCES_IMP
+		export {EV_GTK_DEPENDENT_INTERMEDIARY_ROUTINES}
+			minimize_actions_internal,
+			maximize_actions_internal,
+			restore_actions_internal
+		end
 
 create
 	make
@@ -43,40 +48,69 @@ feature {NONE} -- Initialization
 			set_c_object ({EV_GTK_EXTERNALS}.gtk_window_new ({EV_GTK_EXTERNALS}.gtk_window_toplevel_enum))
 		end
 
-feature {EV_GTK_DEPENDENT_INTERMEDIARY_ROUTINES, EV_APPLICATION_IMP} -- Implementation
-
-	call_window_state_event (a_changed_mask, a_new_state: INTEGER) is
-			-- Handle either minimize, maximize or restore event for `Current'.
+	initialize is
+			-- Setup accelerators for window
 		local
-			l_call_restore: BOOLEAN
+			app_imp: like app_implementation
 		do
-			if a_changed_mask & {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_iconified_enum = {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_iconified_enum then
-				if a_new_state & {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_iconified_enum = {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_iconified_enum then
+			app_imp := app_implementation
+			Precursor {EV_WINDOW_IMP}
+			signal_connect (c_object, app_imp.window_state_event_string, agent (app_imp.gtk_marshal).window_state_intermediary (internal_id, ? , ?), Void, False)
+		end
+
+feature {EV_GTK_DEPENDENT_INTERMEDIARY_ROUTINES} -- Implementation
+
+	call_window_state_event (a_window_state: INTEGER) is
+			-- Call either minimize, maximize or restore actions for window
+		do
+			if a_window_state = {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_iconified_enum then
+				if not is_minimized then
 					is_minimized := True
 					is_maximized := False
 					if minimize_actions_internal /= Void then
 						minimize_actions_internal.call (Void)
 					end
-				else
-					l_call_restore := True
 				end
-			elseif a_changed_mask & {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_maximized_enum = {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_maximized_enum then
-				if a_new_state & {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_maximized_enum = {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_maximized_enum then
+			elseif a_window_state = {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_maximized_enum then
+				if not is_maximized then
 					is_maximized := True
 					is_minimized := False
 					if maximize_actions_internal /= Void then
 						maximize_actions_internal.call (Void)
 					end
-				else
-					l_call_restore := True
 				end
-			end
-			if l_call_restore then
-				is_minimized := False
+
+			else
 				is_maximized := False
+				is_minimized := False
 				if restore_actions_internal /= Void then
 					restore_actions_internal.call (Void)
 				end
+			end
+		end
+
+	call_accelerators (a_v2_key_value, accel_mods: INTEGER) is
+			-- Call the accelerator matching v2 key `a_v2_key_value' with a control mask of `accel_mods'
+		local
+			acc: EV_ACCELERATOR
+			acc_imp: EV_ACCELERATOR_IMP
+			i: INTEGER
+		do
+			from
+				i := 1
+			until
+				i > accelerators_internal.count
+			loop
+				acc ?= accelerators_internal.i_th (i)
+				if acc /= Void then
+					acc_imp ?= acc.implementation
+					if acc_imp.key.code = a_v2_key_value and then acc_imp.modifier_mask = accel_mods then
+						if acc_imp.actions /= Void then
+							acc_imp.actions.call (Void)
+						end
+					end
+				end
+				i := i + 1
 			end
 		end
 
@@ -117,12 +151,7 @@ feature -- Status setting
 	raise is
 			-- Request that window be displayed above all other windows.
 		do
-			if not is_show_requested then
-				show
-			elseif is_minimized then
-				restore
-			end
-			{EV_GTK_EXTERNALS}.gdk_window_raise ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object))
+			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_window_present (c_object)
 		end
 
 	lower is
@@ -134,17 +163,15 @@ feature -- Status setting
 	minimize is
 			-- Display iconified/minimised.
 		do
-			is_minimized := True
-			is_maximized := False
 			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_window_iconify (c_object)
+			call_window_state_event ({EV_GTK_EXTERNALS}.gdk_window_state_iconified_enum)
 		end
 
 	maximize is
 			-- Display at maximum size.
 		do
-			is_maximized := True
-			is_minimized := False
 			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_window_maximize (c_object)
+			call_window_state_event ({EV_GTK_EXTERNALS}.gdk_window_state_maximized_enum)
 		end
 
 	restore is
@@ -153,7 +180,7 @@ feature -- Status setting
 			if is_maximized then
 				is_maximized := False
 				{EV_GTK_DEPENDENT_EXTERNALS}.gtk_window_unmaximize (c_object)
-			elseif is_minimized then
+			else
 				is_minimized := False
 				{EV_GTK_DEPENDENT_EXTERNALS}.gtk_window_deiconify (c_object)
 			end

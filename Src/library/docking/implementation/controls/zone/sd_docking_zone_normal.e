@@ -18,7 +18,6 @@ inherit
 			on_focus_out,
 			on_normal_max_window,
 			update_user_widget,
-			update_mini_tool_bar_size,
 			set_non_focus_selection_color
 		end
 create
@@ -86,7 +85,7 @@ feature -- Command
 			window.set_show_stick (a_show)
 		end
 
-	set_title (a_title: STRING_GENERAL) is
+	set_title (a_title: STRING) is
 			-- Set title.
 		do
 			window.title_bar.set_title (a_title)
@@ -116,22 +115,13 @@ feature -- Command
 
 	stick is
 			-- Stick window.
-		local
-			l_enum: SD_ENUMERATION
-			l_direction: INTEGER
 		do
-			create l_enum
-			if l_enum.is_direction_valid (internal_content.state.direction) then
-				l_direction := internal_content.state.direction
-			else
-				l_direction := {SD_ENUMERATION}.left
-			end
-			internal_content.state.stick (l_direction)
+			internal_content.state.stick ({SD_ENUMERATION}.left)
 		end
 
 feature -- Query
 
-	title: STRING_GENERAL is
+	title: STRING is
 			-- Redefine
 		do
 			Result := window.title_bar.title
@@ -154,7 +144,7 @@ feature {NONE} -- Implementation
 	resize_bar: SD_RESIZE_BAR
 			-- Resize bar at the side.
 
-	window: SD_PANEL
+	window: SD_WINDOW
 			-- Window.
 
 	on_focus_out is
@@ -177,12 +167,6 @@ feature {NONE} -- Implementation
 			-- Redefine
 		do
 			window.set_user_widget (content.user_widget)
-		end
-
-	update_mini_tool_bar_size is
-			-- Redefine
-		do
-			window.title_bar.update_fixed_size
 		end
 
 invariant

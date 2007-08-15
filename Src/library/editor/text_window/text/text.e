@@ -38,11 +38,6 @@ inherit
 
 	SHARED_EDITOR_DATA
 
-	EV_SHARED_APPLICATION
-		export
-			{NONE} all
-		end
-
 create
 	make
 
@@ -365,7 +360,7 @@ feature {NONE} -- Text Loading
 				reading_text_finished := True
 				on_text_loaded
 			end
-			ev_application.add_idle_action (finish_reading_string_agent)
+			ev_application.idle_actions.extend (finish_reading_string_agent)
 		end
 
 	finish_reading_string is
@@ -442,13 +437,13 @@ feature {NONE} -- Text Loading
 			-- Stop text processing done during idle actions.
 		do
 			text_being_processed := False
-			ev_application.remove_idle_action (finish_reading_string_agent)
+			ev_application.idle_actions.prune_all (finish_reading_string_agent)
 		end
 
 	after_reading_idle_action is
 			-- action performed on idle when text reading is finished.
 		do
-			ev_application.remove_idle_action (finish_reading_string_agent)
+			ev_application.idle_actions.prune_all (finish_reading_string_agent)
 			text_being_processed := False
 			on_text_fully_loaded
 		end
@@ -478,6 +473,14 @@ feature {NONE} -- Private Constants
 
 	internal_tabulation_size: INTEGER
 		-- Size of tabulation
+
+feature {NONE} -- Implementation
+
+	ev_application: EV_APPLICATION is
+			-- Current application
+		once
+			Result := (create {EV_ENVIRONMENT}).application
+		end
 
 feature -- Memory management
 

@@ -57,13 +57,6 @@ inherit
 			default_create
 		end
 
-	EV_SHARED_APPLICATION
-		export
-			{NONE} all
-		undefine
-			default_create
-		end
-
 feature -- Initialization
 
 	default_create is
@@ -82,8 +75,6 @@ feature {NONE} -- Initialization
 			-- could not be performed in `initialize',
 			-- (due to regeneration of implementation class)
 			-- can be added here.
-		local
-			l_parent: EV_HORIZONTAL_BOX
 		do
 				-- First display the first line...
 			first_line_displayed := 1
@@ -96,15 +87,7 @@ feature {NONE} -- Initialization
 			main_vbox.set_background_color (editor_preferences.normal_background_color)
 			inner_hbox.set_background_color (editor_preferences.normal_background_color)
 
-				-- Create the margin and associate it with `margin_container'.
 			create margin.make_with_panel (Current)
-			l_parent ?= margin_container.parent
-			check l_parent_not_void: l_parent /= Void end
-			l_parent.prune (margin_container)
-			margin_container := margin.margin_viewport
-			l_parent.put_front (margin_container)
-			l_parent.disable_item_expand (margin_container)
-
 			editor_drawing_area.set_minimum_size (buffered_drawable_width, buffered_drawable_height)
 
 				-- Viewport Events
@@ -168,9 +151,6 @@ feature -- Access
 	file_name: FILE_NAME
 			-- Name of the currently opened file, if any.
 
-	size_of_file_when_loaded: INTEGER
-			-- Number of bytes in current file when it was loaded.
-
 	date_of_file_when_loaded: INTEGER
 			-- Date of current file when it was loaded.
 
@@ -191,12 +171,6 @@ feature -- Access
 
 	icons: EDITOR_ICONS
 			-- Editor icons
-
-	is_offset_valid: BOOLEAN is
-			-- If viewport offset vaild?
-		do
-			Result := editor_viewport.y_offset >= 0
-		end
 
 feature -- Status Setting
 
@@ -261,15 +235,9 @@ feature -- Status Setting
 
 	setup_editor (first_line_to_display: INTEGER) is
 			-- Update `Current' to display at line `first_line_to_display' on current text.
-		local
-			l_line: INTEGER
 		do
-			if vertical_scrollbar.value_range.has (first_line_to_display) then
-				l_line := first_line_to_display
-			else
-				l_line := 1
-			end
-			first_line_displayed := l_line
+			first_line_displayed := first_line_to_display
+			vertical_scrollbar.set_value (1)
 
 				-- Setup the scroll bars.
 			vertical_scrollbar.enable_sensitive
@@ -398,7 +366,7 @@ feature -- Query
 			-- Has the content of the editor changed since it was
 			-- loaded or saved?
 		do
-			Result := text_displayed.is_modified
+			Result := text_displayed.changed
 		end
 
 	line_numbers_enabled: BOOLEAN
@@ -426,14 +394,13 @@ feature -- File Properties
 			retried: BOOLEAN
 		do
 			if not retried then
+				Result := True
 				if file_loaded and file_exists then
-					Result := date_of_file_when_loaded = file_date_ticks and
-						size_of_file_when_loaded = file_size
+					Result := date_of_file_when_loaded = file_date_ticks
 				end
 				file_date_already_checked := True
 			else
-					-- If a failure occur, we are not up to date.
-				Result := False
+				Result := True
 			end
 		rescue
 			retried := True
@@ -452,13 +419,19 @@ feature -- Status setting
 	        -- Refresh line number display in Current and update display
 		do
 			if has_margin then
-				margin_container.show
+				if margin_container.is_empty then
+					-- One of line numbers or breakpoints must be visible
+					margin_container.put (margin.widget)
+				end
 			else
-				margin_container.hide
+				if not margin_container.is_empty then
+					-- Nothing needs displaying so just prune
+					margin_container.prune (margin.widget)
+				end
 			end
 			refresh_now
 	   	ensure
-			widget_displayed: has_margin = margin_container.is_show_requested
+	   		widget_displayed: has_margin implies not margin_container.is_empty
 	   	end
 
 	enable_line_numbers is
@@ -491,7 +464,7 @@ feature -- Status setting
 	set_focus is
 			-- Give the focus to the editor area.
 		do
-			if is_initialized and then not editor_drawing_area.is_destroyed and then editor_drawing_area.is_displayed and then editor_drawing_area.is_sensitive then
+			if not editor_drawing_area.is_destroyed and then editor_drawing_area.is_displayed and then editor_drawing_area.is_sensitive then
 				if reference_window /= Void then
 					if reference_window.has_focus then
 						editor_drawing_area.set_focus
@@ -518,9 +491,8 @@ feature -- Basic Operations
 			-- Update display without waiting for next idle
 		do
 			refresh
-			margin.margin_area.flush
+			margin.refresh_now
 			editor_drawing_area.flush
-			in_scroll := False
 		end
 
 	clear_window is
@@ -544,56 +516,48 @@ feature -- Basic Operations
 		end
 
 	redraw_current_screen is
-			-- Redraw the current screen. Do not scroll or move the cursor, just redraw.
+			-- Redraw the current screen.  Do not scroll or move the cursor, just redraw.
 		do
 			set_first_line_displayed (first_line_displayed, True)
 		end
 
 	load_file (a_filename: STRING) is
-			-- Load contents of `a_filename'
+	        -- Load contents of `a_filename'
 		require
 			filename_not_void: a_filename /= Void
 		local
-			l_file: RAW_FILE
-			l_doc_type: STRING
-			l_date: like date_of_file_when_loaded
-			l_size: like size_of_file_when_loaded
-		do
-			editor_drawing_area.disable_sensitive
-				-- Check the document type of the file to load.
-			l_doc_type := a_filename.substring (a_filename.last_index_of ('.', a_filename.count) + 1, a_filename.count)
-			if l_doc_type /= Void and then known_document_type (l_doc_type) then
+		    l_file: RAW_FILE
+		    l_doc_type: STRING
+  	   	do
+  	   		editor_drawing_area.disable_sensitive
+  	   			-- Check the document type of the file to load.
+  	   		l_doc_type := a_filename.substring (a_filename.last_index_of ('.', a_filename.count) + 1, a_filename.count)
+  	   		if l_doc_type /= Void and then known_document_type (l_doc_type) then
 				set_current_document_class (get_class_from_type (l_doc_type))
 			else
-				set_current_document_class (default_document_class)
-			end
+			    set_current_document_class (default_document_class)
+  	   		end
 
-			create l_file.make (a_filename)
-			if l_file.exists then
-				l_file.open_read
-					-- Record date when opening the file since if the file
-					-- has changed after the close operation we won't read it again.
-				l_date := l_file.date
-				l_size := l_file.count
-				if l_file.is_empty then
-					load_text ("")
-				else
-					l_file.read_stream (l_file.count)
-					load_text (l_file.last_string)
-				end
-				l_file.close
-			else
-				load_text ("File: " + a_filename + "%Ndoes not exist.")
-			end
-			create file_name.make_from_string (a_filename)
-			date_of_file_when_loaded := l_date
-			size_of_file_when_loaded := l_size
-		end
+  	   		create l_file.make (a_filename)
+  	   		if l_file.exists then
+  	   		    l_file.open_read
+  	   		    if l_file.is_empty then
+  	   		    	load_text ("")
+  	   		    else
+	  	   		    l_file.read_stream (l_file.count)
+	  	   		    load_text (l_file.last_string)
+  	   		    end
+  	   		    l_file.close
+  	   		    create file_name.make_from_string (a_filename)
+  	   		    date_of_file_when_loaded := l_file.date
+  	   		else
+  	   			reset
+  	   			load_text ("")
+  	   		end
+  	  	end
 
 	load_text (s: STRING) is
-			-- Display `s'.	
-		local
-			l_line: INTEGER
+			-- Display `s'.			
 		do
 				-- Reset the editor state
 			reset
@@ -609,13 +573,8 @@ feature -- Basic Operations
 			text_displayed.set_first_read_block_size (number_of_lines_in_block)
 			text_displayed.load_string (s)
 
-				-- Setup the editor to load first page and display proper first line.
-			if first_line_displayed > 0 and then first_line_displayed <= number_of_lines then
-				l_line := first_line_displayed
-			else
-				l_line := 1
-			end
-			setup_editor (l_line)
+				-- Setup the editor to load first page
+			setup_editor (1)
 		end
 
 	on_font_changed is
@@ -652,9 +611,7 @@ feature -- Basic Operations
 		do
 			is_checking_modifications := True
 
-			if not file_exists then
-				reload
-			elseif not file_is_up_to_date then
+			if not file_is_up_to_date then
 				if changed or not editor_preferences.automatic_update then
 						-- File has not changed in panel and is not up to date.  However, user does want auto-update so prompt for reload.
 					create dialog.make_with_text ("This file has been modified by another editor.")
@@ -705,7 +662,7 @@ feature -- Graphical interface
 			Result := internal_reference_window
 		end
 
-	show_warning_message (a_message: STRING_GENERAL) is
+	show_warning_message (a_message: STRING) is
 			-- show `a_message' in a dialog window		
 		local
 			wd: EV_WARNING_DIALOG
@@ -818,7 +775,9 @@ feature {NONE} -- Scroll bars Management
 				else
 					horizontal_scrollbar.show
 					horizontal_scrollbar_needs_updating := True
-					ev_application.add_idle_action (update_scroll_agent)
+					if not ev_application.idle_actions.has (update_scroll_agent) then
+						ev_application.idle_actions.extend (update_scroll_agent)
+					end
 				end
 			elseif horizontal_scrollbar.is_show_requested then
 				horizontal_scrollbar.value_range.resize_exactly (0, 1)
@@ -826,7 +785,9 @@ feature {NONE} -- Scroll bars Management
 				horizontal_scrollbar.hide
 				horizontal_scrollbar_needs_updating := True
 				set_offset (0)
-				ev_application.add_idle_action (update_scroll_agent)
+				if not ev_application.idle_actions.has (update_scroll_agent) then
+					ev_application.idle_actions.extend (update_scroll_agent)
+				end
 			elseif horizontal_scrollbar_needs_updating and then not platform_is_windows then
 				horizontal_scrollbar_needs_updating := False
 			else
@@ -860,12 +821,16 @@ feature {NONE} -- Scroll bars Management
 					else
 						scroll_vbox.show
 						vertical_scrollbar_needs_updating := True
-						ev_application.add_idle_action (update_scroll_agent)
+						if not ev_application.idle_actions.has (update_scroll_agent) then
+							ev_application.idle_actions.extend (update_scroll_agent)
+						end
 					end
 				elseif scroll_vbox.is_show_requested then
 					scroll_vbox.hide
 					vertical_scrollbar_needs_updating := True
-					ev_application.add_idle_action (update_scroll_agent)
+					if not ev_application.idle_actions.has (update_scroll_agent) then
+						ev_application.idle_actions.extend (update_scroll_agent)
+					end
 				elseif vertical_scrollbar_needs_updating and then not platform_is_windows then
 					vertical_scrollbar_needs_updating := False
 				else
@@ -931,7 +896,9 @@ feature {NONE} -- Scroll bars Management
 					end
 				end
 			end
-			ev_application.remove_idle_action (update_scroll_agent)
+			if ev_application.idle_actions.has (update_scroll_agent) then
+				ev_application.idle_actions.prune_all (update_scroll_agent)
+			end
 		end
 
 	update_width is
@@ -1024,9 +991,7 @@ feature {NONE} -- Scroll bars Management
 				l_offset := (maximum_top_line_index).min (
 					first_line_displayed - scrolling_quantum * delta)
 			end
-			if vertical_scrollbar.value_range.has (l_offset) then
-				set_first_line_displayed (l_offset, True)
-			end
+			set_first_line_displayed (l_offset, True)
 		end
 
 	scrolling_quantum: INTEGER is
@@ -1402,6 +1367,12 @@ feature {MARGIN} -- Implementation
 	in_resize: BOOLEAN
 			-- Are we a call to on_resize that was not triggered by the function itself.
 
+	ev_application: EV_APPLICATION is
+			-- Current application.
+		once
+			Result := (create {EV_ENVIRONMENT}).application
+		end
+
 	update_scroll_agent: PROCEDURE [like Current, TUPLE]
 			-- Agent for scrollbar display updates.
 
@@ -1436,7 +1407,9 @@ feature -- Memory management
 				-- Cannot use current anymore.
 			is_initialized := False
 
-			ev_application.remove_idle_action (update_scroll_agent)
+			if ev_application.idle_actions.has (update_scroll_agent) then
+				ev_application.idle_actions.prune_all (update_scroll_agent)
+			end
 
 				-- Remove `refresh_line_number_agent' from `change_actions' for `show_line_numbers'.
 			editor_preferences.show_line_numbers_preference.change_actions.prune_all (refresh_line_number_agent)
@@ -1525,19 +1498,9 @@ feature -- Implementation
 			l_file: RAW_FILE
 		do
 			create l_file.make (file_name.string)
-			Result := l_file.date
-		end
-
-	file_size: INTEGER is
-			-- Retrieve file count
-		require
-			file_loaded: file_loaded
-			file_exists: file_exists
-		local
-			l_file: RAW_FILE
-		do
-			create l_file.make (file_name.string)
-			Result := l_file.count
+			if l_file.exists then
+				Result := l_file.date
+			end
 		end
 
 	file_exists: BOOLEAN is
@@ -1561,7 +1524,6 @@ feature -- Implementation
 		do
 			text_displayed.set_changed (True, False)
 			date_of_file_when_loaded := file_date_ticks
-			size_of_file_when_loaded := file_size
 		end
 
 feature {NONE} -- Implementation
@@ -1578,7 +1540,7 @@ feature {NONE} -- Implementation
 
 
 invariant
-	offset_view: is_offset_valid
+	offset_view: editor_viewport.y_offset >= 0
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"

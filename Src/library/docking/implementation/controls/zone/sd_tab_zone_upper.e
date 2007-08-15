@@ -27,9 +27,6 @@ inherit
 		end
 
 	SD_UPPER_ZONE
-		redefine
-			show_notebook_contents
-		end
 
 create
 	make
@@ -46,8 +43,6 @@ feature {NONE} -- Initlization
 			internal_notebook.minimize_actions.extend (agent on_minimize)
 			internal_notebook.tab_double_click_actions.extend (agent on_normal_max_window)
 			internal_notebook.drag_tab_area_actions.extend (agent on_drag_title_bar)
-
-			set_minimum_height (internal_shared.tab_zone_upper_minimum_height)
 		end
 
 feature -- Query
@@ -70,17 +65,6 @@ feature -- Command
 			-- Redefine.
 		do
 			 internal_notebook.set_show_maximized (a_max)
-		end
-
-	show_notebook_contents (a_is_show: BOOLEAN) is
-			-- Redefine
-		do
-			Precursor {SD_UPPER_ZONE}(a_is_show)
-			if a_is_show then
-				internal_notebook.enable_widget_expand
-			else
-				internal_notebook.disable_widget_expand
-			end
 		end
 
 feature {NONE} -- Implementation

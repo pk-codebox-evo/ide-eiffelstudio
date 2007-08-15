@@ -116,7 +116,10 @@ feature -- Dynamic Library file
 					def_buffer.put_string("LIBRARY ")
 					def_buffer.put_string(system_name)
 					def_buffer.put_string(".dll%N")
-					def_buffer.put_string("%NEXPORTS%N")
+					def_buffer.put_string("DESCRIPTION ")
+					def_buffer.put_string(system_name.as_upper)
+					def_buffer.put_string(".DLL%N")
+					def_buffer.put_string("%NEXPORTS%N%N")
 
 					-- generation of everything
 				from
@@ -173,6 +176,7 @@ feature -- Dynamic Library file
 									buffer.put_string("> ")
 
 									buffer.put_string ("%N ***************************/")
+
 
 									-- GENERATION OF THE C-CODE
 
@@ -291,6 +295,7 @@ feature -- Dynamic Library file
 											argument_names.forth
 										end
 									end
+
 
 										-- CALCULATE THE MAIN OBJECT.
 									buffer.put_string ("%N%T")
@@ -411,10 +416,6 @@ feature -- Plug and Makefile file
 			root_feat: FEATURE_I
 			rcorigin: INTEGER
 			rcoffset: INTEGER
-
-			l_create_type: CREATE_TYPE
-			l_creation_type: CL_TYPE_I
-			l_gen_type: GEN_TYPE_I
 		do
 				-- Clear buffer for current generation
 			buffer := generation_buffer
@@ -539,11 +540,12 @@ feature -- Plug and Makefile file
 									%long *eif_lower_table = (long *)0;%N")
 			end
 
+
 			if final_mode then
 				init_name :=
-					Encoder.routine_table_name (system.routine_id_counter.initialization_rout_id).twin
+					Encoder.table_name (system.routine_id_counter.initialization_rout_id).twin
 				exp_init_name :=
-					Encoder.routine_table_name (system.routine_id_counter.creation_rout_id).twin
+					Encoder.table_name (system.routine_id_counter.creation_rout_id).twin
 
 				buffer.put_string ("extern char *(*")
 				buffer.put_string (init_name)
@@ -552,7 +554,7 @@ feature -- Plug and Makefile file
 				buffer.put_string (exp_init_name)
 				buffer.put_string ("[])();%N")
 
-				dispose_name := Encoder.routine_table_name (system.routine_id_counter.dispose_rout_id).twin
+				dispose_name := Encoder.table_name (system.routine_id_counter.dispose_rout_id).twin
 				buffer.put_string ("extern char *(*")
 				buffer.put_string (dispose_name)
 				buffer.put_string ("[])();%N%N")
@@ -576,38 +578,22 @@ feature -- Plug and Makefile file
 			buffer.put_string (";%N")
 
 				-- Pointer on `equal' of class ANY
-			if final_mode then
-				buffer.put_string ("%Tegc_equal = (EIF_BOOLEAN (*)(EIF_REFERENCE, EIF_REFERENCE, EIF_REFERENCE)) ")
-			else
-				buffer.put_string ("%Tegc_equal = (EIF_TYPED_VALUE (*)(EIF_REFERENCE, EIF_TYPED_VALUE, EIF_TYPED_VALUE)) ")
-			end
+			buffer.put_string ("%Tegc_equal = (EIF_BOOLEAN (*)(EIF_REFERENCE, EIF_REFERENCE, EIF_REFERENCE)) ")
 			buffer.put_string (equal_name)
 			buffer.put_string (";%N")
 
 				-- Pointer on `twin' of class ANY
-			if final_mode then
-				buffer.put_string ("%Tegc_twin = (EIF_REFERENCE (*)(EIF_REFERENCE)) ")
-			else
-				buffer.put_string ("%Tegc_twin = (EIF_TYPED_VALUE (*)(EIF_REFERENCE)) ")
-			end
+			buffer.put_string ("%Tegc_twin = (EIF_REFERENCE (*)(EIF_REFERENCE)) ")
 			buffer.put_string (twin_name)
 			buffer.put_string (";%N")
 
 				-- Pointer on creation feature of class STRING
-			if final_mode then
-				buffer.put_string ("%Tegc_strmake = (void (*)(EIF_REFERENCE, EIF_INTEGER)) ")
-			else
-				buffer.put_string ("%Tegc_strmake = (void (*)(EIF_REFERENCE, EIF_TYPED_VALUE)) ")
-			end
+			buffer.put_string ("%Tegc_strmake = (void (*)(EIF_REFERENCE, EIF_INTEGER)) ")
 			buffer.put_string (str_make_name)
 			buffer.put_string (";%N")
 
 				-- Pointer on creation feature of class ARRAY[ANY]
-			if final_mode then
-				buffer.put_string ("%Tegc_arrmake = (void (*)(EIF_REFERENCE, EIF_INTEGER, EIF_INTEGER)) ")
-			else
-				buffer.put_string ("%Tegc_arrmake = (void (*)(EIF_REFERENCE, EIF_TYPED_VALUE, EIF_TYPED_VALUE)) ")
-			end
+			buffer.put_string ("%Tegc_arrmake = (void (*)(EIF_REFERENCE, EIF_INTEGER, EIF_INTEGER)) ")
 			buffer.put_string (arr_make_name)
 			buffer.put_string (";%N")
 
@@ -622,7 +608,7 @@ feature -- Plug and Makefile file
 				string_cl.types.first.skeleton.generate_offset (buffer, internal_hash_code_feat.feature_id, False)
 				buffer.put_string (";%N")
 			else
-				buffer.put_string ("%Tegc_strset = (void (*)(EIF_REFERENCE, EIF_TYPED_VALUE)) ")
+				buffer.put_string ("%Tegc_strset = (void (*)(EIF_REFERENCE, EIF_INTEGER)) ")
 				buffer.put_string (set_count_name)
 				buffer.put_string (";%N")
 			end
@@ -632,7 +618,7 @@ feature -- Plug and Makefile file
 				if final_mode then
 					buffer.put_string ("%Tegc_routdisp_fl = (void (*)(EIF_REFERENCE, EIF_POINTER, EIF_POINTER, EIF_POINTER, EIF_REFERENCE, EIF_BOOLEAN, EIF_INTEGER)) ")
 				else
-					buffer.put_string ("%Tegc_routdisp_wb = (void (*)(EIF_REFERENCE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE)) ")
+					buffer.put_string ("%Tegc_routdisp_wb = (void (*)(EIF_REFERENCE, EIF_POINTER, EIF_POINTER, EIF_POINTER, EIF_INTEGER, EIF_INTEGER, EIF_REFERENCE, EIF_BOOLEAN, EIF_BOOLEAN, EIF_BOOLEAN, EIF_BOOLEAN, EIF_REFERENCE, EIF_INTEGER)) ")
 				end
 				buffer.put_string (set_rout_disp_name)
 				buffer.put_string (";%N")
@@ -680,13 +666,10 @@ feature -- Plug and Makefile file
 			buffer.put_string ("%Tegc_partab = egc_partab_init;%N")
 			buffer.put_string ("%Tegc_partab_size = egc_partab_size_init;%N")
 
-			if not final_mode or else system.keep_assertions then
-				buffer.put_string ("%Tegc_foption = egc_foption_init;%N")
-			end
-
 			if not final_mode then
 				buffer.put_string ("%Tegc_frozen = egc_frozen_init;%N")
 				buffer.put_string ("%Tegc_fpatidtab = egc_fpatidtab_init;%N");
+				buffer.put_string ("%Tegc_foption = egc_foption_init;%N")
 				buffer.put_string ("%Tegc_address_table = egc_address_table_init;%N")
 				buffer.put_string ("%Tegc_fpattern = egc_fpattern_init;%N")
 
@@ -748,8 +731,7 @@ feature -- Plug and Makefile file
 			buffer.put_string (";%N%N")
 
 			if not final_mode then
-				check system.root_type /= Void end
-				root_cl := System.root_type.associated_class
+				root_cl := System.root_class.compiled_class
 				if not Compilation_modes.is_precompiling and then System.root_creation_name /= Void then
 					root_feat := root_cl.feature_table.item (System.root_creation_name)
 					has_argument := root_feat.has_arguments
@@ -762,7 +744,8 @@ feature -- Plug and Makefile file
 
 				buffer.put_string ("%Tegc_rcorigin = ")
 				buffer.put_integer (rcorigin)
-				buffer.put_string (";%N%Tegc_rcdt = 0")
+				buffer.put_string (";%N%Tegc_rcdt = ")
+				buffer.put_type_id (root_cl.types.first.type_id)
 				buffer.put_string (";%N%Tegc_rcoffset = ")
 				buffer.put_integer (rcoffset)
 				buffer.put_string (";%N%Tegc_rcarg = ")
@@ -783,48 +766,6 @@ feature -- Plug and Makefile file
 				buffer.put_new_line
 			end
 
-			buffer.put_string ("}%N%N")
-
-				-- Declaration and definition of the egc_rcdt_init function.
-			buffer.put_string ("void egc_rcdt_init (void)%N{")
-			buffer.indent
-			buffer.put_new_line
-			buffer.put_string ("if (egc_rcdt == 0) {")
-			buffer.put_new_line
-			l_creation_type := system.root_type.type_i
-			l_gen_type ?= l_creation_type
-			if l_gen_type /= Void then
-				context.set_buffer (buffer)
-				buffer.indent
-				buffer.put_new_line
-					-- Because generic object creation requires a context object,
-					-- we simply create a temporary one of type ANY, used to
-					-- create an instance of our generic type.
-				buffer.put_string ("EIF_REFERENCE l_root_obj, Current = RTLN(")
-				buffer.put_type_id (system.any_class.compiled_class.types.first.type_id)
-				buffer.put_string (");")
-				buffer.put_new_line
-					-- Go ahead an create our generic type.
-				create l_create_type.make (l_creation_type)
-				l_create_type.generate_start (buffer)
-				l_create_type.generate_gen_type_conversion
-				buffer.put_string ("l_root_obj = ")
-				l_create_type.generate
-				buffer.put_string (";")
-				buffer.put_new_line
-				l_create_type.generate_end (buffer)
-					-- Set `egc_rcdt' to the right dynamic type
-				buffer.put_string ("egc_rcdt = Dftype(l_root_obj);")
-				buffer.exdent
-			else
-				buffer.put_string ("%T%Tegc_rcdt = ")
-				buffer.put_type_id (l_creation_type.type_id)
-				buffer.put_character (';')
-			end
-			buffer.put_new_line
-			buffer.put_character ('}')
-			buffer.exdent
-			buffer.put_new_line
 			buffer.put_string ("}%N%N")
 
 			buffer.end_c_specific_code
@@ -909,7 +850,7 @@ feature -- Plug and Makefile file
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

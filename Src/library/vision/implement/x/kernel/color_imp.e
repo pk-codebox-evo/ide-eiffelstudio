@@ -131,7 +131,7 @@ feature -- Status setting
 	set_name (a_name: STRING) is
 			-- Set color name to `a_name'.
 		do
-			name := a_name.twin;
+			name := clone (a_name);
 			dispose;
 			update_widgets
 		end; 

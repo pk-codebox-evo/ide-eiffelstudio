@@ -4,21 +4,20 @@ md %INSTALL_DIR\releases
 md %INSTALL_DIR\releases\enterprise_version
 md %INSTALL_DIR\releases\gpl_version
 
+mkdir %INSTALL_DIR\releases\lib
+mkdir %INSTALL_DIR\releases\lib\bcb
+mkdir %INSTALL_DIR\releases\lib\msc
+
 remtrace Compile the run-times
 iff not defined WIN64 then
-	remtrace Compile a run-time for MinGW
-	cdd %EIFFEL_SRC\C
+	remtrace Compile a run-time for Borland
+	cdd %EIFFEL_SRC
+	cd C
 	call configure clean >>& %INSTALL_LOG
-	call configure win32 g >>& %INSTALL_LOG
+	call configure win32 b >>& %INSTALL_LOG
 	cd %EIFFEL_SRC
-	copy C\run-time\LIB\*.a %STUDIO_DIR\studio\spec\%ISE_PLATFORM\lib\mingw
-
-	remtrace Compile a dynamic run-time for MinGW
-	cdd %EIFFEL_SRC\C
-	call configure clean >>& %INSTALL_LOG
-	call configure win32 g dll >>& %INSTALL_LOG
-	cd %EIFFEL_SRC
-	copy C\run-time\LIB\*dll* %STUDIO_DIR\studio\spec\%ISE_PLATFORM\lib\mingw
+	fullrf C\run-time\LIB\ebench.lib
+	copy C\run-time\LIB\*.lib %INSTALL_DIR\releases\lib\bcb
 endiff
 
 remtrace Compile a dynamic run-time for Microsoft
@@ -34,8 +33,9 @@ else
 	endiff
 endiff
 cd %EIFFEL_SRC
+fullrf C\run-time\LIB\ebench.lib
 fullrf C\run-time\LIB\*.exp
-copy C\run-time\LIB\*dll* %STUDIO_DIR\studio\spec\%ISE_PLATFORM\lib\msc
+copy C\run-time\LIB\*dll* %INSTALL_DIR\releases\lib\msc
 cd %EIFFEL_SRC
 
 remtrace Compile a run-time for Microsoft
@@ -51,31 +51,24 @@ else
 	endiff
 endiff
 cd %EIFFEL_SRC
-copy C\run-time\LIB\*.lib %STUDIO_DIR\studio\spec\%ISE_PLATFORM\lib\msc
+fullrf C\run-time\LIB\ebench.lib
+copy C\run-time\LIB\*.lib %INSTALL_DIR\releases\enterprise_version\lib\msc
 iff not defined WIN64 then
-	copy C\desc\ise_desc.dll %STUDIO_DIR\studio\spec\%ISE_PLATFORM\lib\msc
-	copy C\desc\ise_desc.lib %STUDIO_DIR\studio\spec\%ISE_PLATFORM\lib\msc
+	copy C\desc\ise_desc.dll %INSTALL_DIR\releases\enterprise_version\lib\msc
+	copy C\desc\ise_desc.lib %INSTALL_DIR\releases\enterprise_version\lib\msc
+endiff
+
+copy C\run-time\LIB\*.lib %INSTALL_DIR\releases\lib\msc
+iff not defined WIN64 then
+	copy C\desc\ise_desc.dll %INSTALL_DIR\releases\lib\msc
+	copy C\desc\ise_desc.lib %INSTALL_DIR\releases\lib\msc
 endiff
 
 
 remtrace Copy the header files
-copy %EIFFEL_SRC\C\run-time\*.h %STUDIO_DIR\studio\spec\%ISE_PLATFORM\include
-copy %EIFFEL_SRC\C\eif_confmagic.h %STUDIO_DIR\studio\spec\%ISE_PLATFORM\include
+copy %EIFFEL_SRC\C\run-time\*.h %INSTALL_DIR\studio\spec\%ISE_PLATFORM\include
+copy %EIFFEL_SRC\C\eif_confmagic.h %INSTALL_DIR\studio\spec\%ISE_PLATFORM\include
 cd %EIFFEL_SRC
-
-remtrace Copy the configuration file
-iff not defined WIN64 then
-	copy %EIFFEL_SRC\C\CONFIGS\windows-x86-msc %STUDIO_DIR\studio\config\%ISE_PLATFORM\msc\config.sh
-	copy %EIFFEL_SRC\C\CONFIGS\windows-x86-mingw %STUDIO_DIR\studio\config\%ISE_PLATFORM\mingw\config.sh
-else
-	copy %EIFFEL_SRC\C\CONFIGS\windows-x86-64-msc %STUDIO_DIR\studio\config\%ISE_PLATFORM\msc\config.sh
-endiff
-
-remtrace Copy the MSYS part
-copy %EIFFEL_SRC\C\shell\bin\rt_converter.exe %STUDIO_DIR\studio\spec\%ISE_PLATFORM\bin\
-copy %EIFFEL_SRC\C\shell\bin\sed.exe %STUDIO_DIR\studio\spec\%ISE_PLATFORM\bin\
-copy %EIFFEL_SRC\C\shell\bin\msys-1.0.dll %STUDIO_DIR\studio\spec\%ISE_PLATFORM\bin\
-safe_md %STUDIO_DIR\studio\spec\%ISE_PLATFORM\etc
 
 remtrace Then the C libraries
 cd %EIFFEL_SRC\C_library
@@ -89,17 +82,13 @@ cd %EIFFEL_SRC\C_library\zlib
 default_make
 
 REM These directories should already have been created by make_delivery. Whatever...
-safe_md %STUDIO_DIR\studio\spec
-safe_md %STUDIO_DIR\studio\spec\%ISE_PLATFORM
-safe_md %STUDIO_DIR\studio\spec\%ISE_PLATFORM\bin
+safe_md %INSTALL_DIR\studio\spec
+safe_md %INSTALL_DIR\studio\spec\%ISE_PLATFORM
+safe_md %INSTALL_DIR\studio\spec\%ISE_PLATFORM\bin
 
 remtrace CLI writer
-cd %EIFFEL_SRC\framework\cli_writer\Clib
-default_make 
-
-remtrace CLI debugger
-cd %EIFFEL_SRC\framework\cli_debugger\Clib
-default_make
+cd %EIFFEL_SRC\Eiffel\library\cli_writer\Clib
+call nmake
 
 remtrace Compiling .NET components
 cdd %INIT_DIR
@@ -119,7 +108,7 @@ iff defined BUILD_ENTERPRISE_ONLY then
 
 	remtrace Enterprise edition
 	cdd %EIFFEL_SRC\Eiffel\API\constants
-	bash %INIT_DIR\set_version.sh %EIFFEL_SRC 0000 system_constants.e
+	bash %INIT_DIR\set_version.sh %DEFAULT_ORIGO_SVN 0000 system_constants.e
 	sed -e "s/Version_type_name:\ STRING\ is\ \"GPL\ Edition\"/Version_type_name:\ STRING\ is\ \"Enterprise\ Edition\"/g" system_constants.e >> new_system_constants.e
 	move new_system_constants.e system_constants.e
 	cdd %FINALIZATION_DIR
@@ -135,7 +124,7 @@ else
 	iff not defined NO_NEW_EC then
 		remtrace GPL edition
 		cdd %EIFFEL_SRC\Eiffel\API\constants
-		bash %INIT_DIR\set_version.sh %EIFFEL_SRC 0000 system_constants.e
+		bash %INIT_DIR\set_version.sh %DEFAULT_ORIGO_SVN 0000 system_constants.e
 		cdd %FINALIZATION_DIR
 		copy %EIFFEL_SRC\Eiffel\Ace\*.* .
 		clean_project
@@ -174,7 +163,7 @@ iff not exist finish_freezing.exe then
 	remtrace Could not finalize a new finish_freezing
 	CANCEL
 endiff
-move finish_freezing.exe %STUDIO_DIR\studio\spec\%ISE_PLATFORM\bin
+move finish_freezing.exe %INSTALL_DIR\studio\spec\%ISE_PLATFORM\bin
 
 remtrace Recompile emake
 cdd %EIFFEL_SRC\tools\eiffel_make
@@ -185,7 +174,7 @@ iff not exist emake.exe then
 	remtrace Could not finalize a new emake
 	CANCEL
 endiff
-move emake.exe %STUDIO_DIR\studio\spec\%ISE_PLATFORM\bin
+move emake.exe %INSTALL_DIR\studio\spec\%ISE_PLATFORM\bin
 
 remtrace Recompile quick_finalize
 cdd %EIFFEL_SRC\tools\quick_finalize
@@ -196,7 +185,7 @@ iff not exist quick_finalize.exe then
 	remtrace Could not finalize a new quick_finalize
 	CANCEL
 endiff
-move quick_finalize.exe %STUDIO_DIR\studio\spec\%ISE_PLATFORM\bin
+move quick_finalize.exe %INSTALL_DIR\studio\spec\%ISE_PLATFORM\bin
 
 remtrace Put ecdbgd.exe in the new delivery
 REM It should already have been compiled by the configure of the run-time.
@@ -205,7 +194,7 @@ iff not exist ecdbgd.exe then
 	remtrace Could not finalize a new ecdbgd
 	CANCEL
 endiff
-move ecdbgd.exe %STUDIO_DIR\studio\spec\%ISE_PLATFORM\bin
+move ecdbgd.exe %INSTALL_DIR\studio\spec\%ISE_PLATFORM\bin
 
 remtrace Put x2c.exe in the new delivery
 REM It should already have been compiled by the configure of the run-time.
@@ -214,7 +203,7 @@ iff not exist x2c.exe then
 	remtrace Could not finalize a new x2c
 	CANCEL
 endiff
-move x2c.exe %STUDIO_DIR\studio\spec\%ISE_PLATFORM\bin
+move x2c.exe %INSTALL_DIR\studio\spec\%ISE_PLATFORM\bin
 
 remtrace Recompile h2e
 cdd %EIFFEL_SRC\library\wel\extra
@@ -225,7 +214,7 @@ iff not exist h2e.exe then
 	remtrace Could not finalize a new h2e
 	CANCEL
 endiff
-move h2e.exe %STUDIO_DIR\studio\spec\%ISE_PLATFORM\bin
+move h2e.exe %INSTALL_DIR\studio\spec\%ISE_PLATFORM\bin
 
 
 remtrace Recompile estudio.exe
@@ -237,12 +226,26 @@ iff not exist estudio.exe then
 	remtrace Could not finalize a new estudio
 	CANCEL
 endiff
-move estudio.exe %STUDIO_DIR\studio\spec\%ISE_PLATFORM\bin
+move estudio.exe %INSTALL_DIR\studio\spec\%ISE_PLATFORM\bin
 
 remtrace get GDI+ for platforms that don't have it
 cdd %EIFFEL_SRC\tools
 co %DEFAULT_ISE_SVN/Src/tools/gdiplus gdiplus
 move gdiplus\gdiplus.dll %INSTALL_DIR\releases
+
+remtrace Recompile Custom actions for installation program
+cdd %EIFFEL_SRC
+cd tools
+co %DEFAULT_ISE_SVN/Src/tools/setup setup
+cd %EIFFEL_SRC\tools\setup\studio
+clean_project
+finalize setup.ecf
+cleanup_eiffel setup setup.dll
+iff not exist setup.dll then
+	remtrace Couldnt generate setup.dll
+	CANCEL
+endiff
+move setup.dll %INIT_DIR\install\Binary
 
 remtrace Recompiling EiffelBuild
 cdd %INIT_DIR
@@ -250,7 +253,7 @@ call make_build.btm
 
 remtrace Recompiling Vision2 tour
 cdd %INIT_DIR
-call make_vision2_demo.btm
+call make_vision2_tour.btm
 
 remtrace Recompile Legacy++
 cdd %EIFFEL_SRC\tools\legacy\PCCTS
@@ -263,56 +266,4 @@ iff not exist legacy.exe then
 	remtrace Couldnt generate legacy.exe
 	CANCEL
 endiff
-move legacy.exe %STUDIO_DIR\studio\spec\%ISE_PLATFORM\bin
-
-remtrace Compiling Gobo tools
-safe_md %STUDIO_DIR\library\gobo\spec
-safe_md %STUDIO_DIR\library\gobo\spec\%ISE_PLATFORM
-safe_md %STUDIO_DIR\library\gobo\spec\%ISE_PLATFORM\bin
-cdd %EIFFEL_SRC\library\gobo\src
-clean_project
-remtrace geant
-finalize geant.ecf geant
-cleanup_eiffel geant geant.exe
-move geant.exe %STUDIO_DIR\library\gobo\spec\%ISE_PLATFORM\bin
-
-remtrace gec
-finalize gec.ecf gec
-cleanup_eiffel gec gec.exe
-move gec.exe %STUDIO_DIR\library\gobo\spec\%ISE_PLATFORM\bin
-
-remtrace gelex
-finalize gelex.ecf gelex
-cleanup_eiffel gelex gelex.exe
-move gelex.exe %STUDIO_DIR\library\gobo\spec\%ISE_PLATFORM\bin
-
-remtrace gelint
-finalize gelint.ecf gelint
-cleanup_eiffel gelint gelint.exe
-move gelint.exe %STUDIO_DIR\library\gobo\spec\%ISE_PLATFORM\bin
-
-remtrace gepp
-finalize gepp.ecf gepp
-cleanup_eiffel gepp gepp.exe
-move gepp.exe %STUDIO_DIR\library\gobo\spec\%ISE_PLATFORM\bin
-
-remtrace getest
-finalize getest.ecf getest
-cleanup_eiffel getest getest.exe
-move getest.exe %STUDIO_DIR\library\gobo\spec\%ISE_PLATFORM\bin
-
-remtrace gexace
-finalize gexace.ecf gexace
-cleanup_eiffel gexace gexace.exe
-move gexace.exe %STUDIO_DIR\library\gobo\spec\%ISE_PLATFORM\bin
-
-remtrace gexslt
-finalize gexslt.ecf gexslt
-cleanup_eiffel gexslt gexslt.exe
-move gexslt.exe %STUDIO_DIR\library\gobo\spec\%ISE_PLATFORM\bin
-
-remtrace geyacc
-finalize geyacc.ecf geyacc
-cleanup_eiffel geyacc geyacc.exe
-move geyacc.exe %STUDIO_DIR\library\gobo\spec\%ISE_PLATFORM\bin
-
+move legacy.exe %INSTALL_DIR\studio\spec\%ISE_PLATFORM\bin

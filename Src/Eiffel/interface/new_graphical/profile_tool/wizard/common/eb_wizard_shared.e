@@ -12,8 +12,6 @@ class
 inherit
 	EV_LAYOUT_CONSTANTS
 
-	EB_CONSTANTS
-
 feature -- Access
 
 	first_window: EB_WIZARD_WINDOW is

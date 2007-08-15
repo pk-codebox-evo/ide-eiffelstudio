@@ -129,9 +129,9 @@ feature -- PND
 		end
 
 	start_transport (
-        	a_x, a_y, a_button: INTEGER; a_press: BOOLEAN
+        	a_x, a_y, a_button: INTEGER;
         	a_x_tilt, a_y_tilt, a_pressure: DOUBLE;
-        	a_screen_x, a_screen_y: INTEGER; a_menu_only: BOOLEAN) is
+        	a_screen_x, a_screen_y: INTEGER) is
 		do
 			check
 				do_not_call: False
@@ -183,84 +183,6 @@ feature -- Element Change
 	tooltip: STRING_32
 			-- Tooltip displayed on `Current'.
 
-feature -- Measurement
-
-	x_position: INTEGER is
-			-- Horizontal offset relative to parent `x_position' in pixels.
-		local
-			l_h_adjust: POINTER
-		do
-			-- Return parents horizontal scrollbar offset.
-			if parent_imp /= Void then
-				l_h_adjust := {EV_GTK_EXTERNALS}.gtk_scrolled_window_get_hadjustment (parent_imp.scrollable_area)
-				if l_h_adjust /= default_pointer then
-					Result := - {EV_GTK_EXTERNALS}.gtk_adjustment_struct_value (l_h_adjust).rounded
-				end
-			end
-		end
-
-	y_position: INTEGER is
-			-- Vertical offset relative to parent `y_position' in pixels.
-		local
-			l_v_adjust: POINTER
-		do
-			if parent_imp /= Void then
-				Result := (index - 1) * parent_imp.interface.row_height
-				l_v_adjust := {EV_GTK_EXTERNALS}.gtk_scrolled_window_get_vadjustment (parent_imp.scrollable_area)
-				if l_v_adjust /= default_pointer then
-					Result := Result - {EV_GTK_EXTERNALS}.gtk_adjustment_struct_value (l_v_adjust).rounded
-				end
-			end
-		end
-
-	screen_x: INTEGER is
-			-- Horizontal offset relative to screen.
-		do
-			if parent_imp /= Void then
-				Result := parent_imp.screen_x + x_position
-			end
-		end
-
-	screen_y: INTEGER is
-			-- Vertical offset relative to screen.
-		do
-			if parent_imp /= Void then
-				Result := parent_imp.screen_y + y_position
-			end
-		end
-
-	width: INTEGER is
-			-- Horizontal size in pixels.
-		do
-			if parent_imp /= Void then
-				Result := parent_imp.width
-			end
-		end
-
-	height: INTEGER is
-			-- Vertical size in pixels.
-		do
-			if parent_imp /= Void then
-				Result := parent_imp.interface.row_height
-			end
-		end
-
-	minimum_width: INTEGER is
-			-- Minimum horizontal size in pixels.
-		do
-			if parent_imp /= Void then
-				Result := parent_imp.minimum_width
-			end
-		end
-
-	minimum_height: INTEGER is
-			-- Minimum vertical size in pixels.
-		do
-			if parent_imp /= Void then
-				Result := parent_imp.interface.row_height
-			end
-		end
-
 feature {NONE} -- Implementation
 
 	on_item_added_at (an_item: STRING_GENERAL; item_index: INTEGER) is
@@ -293,10 +215,12 @@ feature {EV_MULTI_COLUMN_LIST_IMP} -- Implementation
 			pebble := Void
 		end
 
-	able_to_transport (a_button: INTEGER_32): BOOLEAN
-			-- Is `Current' able to initiate transport with `a_button'.
+	able_to_transport (a_button: INTEGER): BOOLEAN is
+			-- Is the row able to transport data with `a_button' click.
 		do
-			Result := (mode_is_drag_and_drop and then a_button = 1) or (mode_is_pick_and_drop and then a_button = 3 and then not mode_is_configurable_target_menu)
+			Result := is_transport_enabled and
+			((a_button = 1 and mode_is_drag_and_drop) or
+			(a_button = 3 and (mode_is_pick_and_drop or mode_is_target_menu)))
 		end
 
 	real_pointed_target: EV_PICK_AND_DROPABLE is
@@ -304,20 +228,7 @@ feature {EV_MULTI_COLUMN_LIST_IMP} -- Implementation
 			check do_not_call: False end
 		end
 
-	ready_for_pnd_menu (a_button: INTEGER_32; a_press: BOOLEAN): BOOLEAN
-			-- Will `Current' display a menu with button `a_button'.
-		do
-			Result := ((mode_is_target_menu or else mode_is_configurable_target_menu) and a_button = 3) and then not a_press
-		end
-
 feature {EV_ANY_I} -- Implementation
-
-	update_for_pick_and_drop (starting: BOOLEAN)
-			-- Pick and drop status has changed so update appearance of
-			-- `Current' to reflect available targets.
-		do
-			-- Do nothing
-		end
 
 	set_list_iter (a_iter: EV_GTK_TREE_ITER_STRUCT) is
 			-- Set `list_iter' to `a_iter'

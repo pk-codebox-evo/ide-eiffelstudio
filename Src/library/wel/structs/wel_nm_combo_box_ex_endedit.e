@@ -120,4 +120,8 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+
+
+
+end -- class WEL_NM_COMBO_BOX_EX_ENDEDIT
+

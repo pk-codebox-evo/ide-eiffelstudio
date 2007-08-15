@@ -26,13 +26,6 @@ inherit
 			is_in_default_state
 		end
 
-	EB_CONSTANTS
-		undefine
-			default_create,
-			is_equal,
-			copy
-		end
-
 feature {NONE} -- Initialization
 
 	initialize is
@@ -43,7 +36,7 @@ feature {NONE} -- Initialization
 			Precursor {EV_HORIZONTAL_BOX}
 
 			create vb
-			create exclude_label.make_with_text (interface_names.l_exclude_colon)
+			create exclude_label.make_with_text ("Exclude:")
 			exclude_label.align_text_left
 			vb.extend (exclude_label)
 			vb.disable_item_expand (exclude_label)
@@ -69,7 +62,7 @@ feature {NONE} -- Initialization
 			disable_item_expand (vb)
 
 			create vb
-			create include_label.make_with_text (interface_names.l_include_colon)
+			create include_label.make_with_text ("Include:")
 			include_label.align_text_left
 			vb.extend (include_label)
 			vb.disable_item_expand (include_label)

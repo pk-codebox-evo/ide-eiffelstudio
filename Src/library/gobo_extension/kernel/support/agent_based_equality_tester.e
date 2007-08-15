@@ -11,13 +11,10 @@ class
 inherit
 	KL_EQUALITY_TESTER [G]
 		redefine
-			test, is_equal
+			test
 		end
 
 	KL_PART_COMPARATOR [G]
-		redefine
-			is_equal
-		end
 
 create
 	make
@@ -30,6 +27,7 @@ feature {NONE} -- Initialization
 			an_action_not_void: an_action /= Void
 		do
 			action := an_action
+			create evaluation_tuple
 		ensure
 			action_set: action = an_action
 		end
@@ -50,25 +48,28 @@ feature -- Status report
 			elseif u = Void then
 				Result := False
 			else
-				Result := action.item ([v, u])
+				evaluation_tuple.put (v, 1)
+				evaluation_tuple.put (u, 2)
+				Result := action.item (evaluation_tuple)
 			end
-		end
-
-feature -- Comparison
-
-	is_equal (other: like Current): BOOLEAN
-		do
-			Result := action.is_equal (other.action)
 		end
 
 	less_than (u, v: G): BOOLEAN is
 			-- Is `u' considered less than `v'?
 		do
-			Result := action.item ([u ,v])
+			evaluation_tuple.put (u, 1)
+			evaluation_tuple.put (v, 2)
+			Result := action.item (evaluation_tuple)
 		end
+
+feature {NONE} -- Implementation
+
+	evaluation_tuple: TUPLE [G, G]
+			-- To avoid useless creation of TUPLE objects.
 
 invariant
 	action_not_void: action /= Void
+	evaluation_tuple_not_void: evaluation_tuple /= Void
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"

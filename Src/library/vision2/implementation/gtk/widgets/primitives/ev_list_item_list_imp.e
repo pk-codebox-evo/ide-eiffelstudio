@@ -12,21 +12,15 @@ inherit
 	EV_LIST_ITEM_LIST_I
 		redefine
 			call_pebble_function,
-			reset_pebble_function,
 			interface
 		end
 
 	EV_PRIMITIVE_IMP
 		redefine
 			call_pebble_function,
-			reset_pebble_function,
 			initialize,
 			interface,
-			pre_pick_steps,
-			post_drop_steps,
-			ready_for_pnd_menu,
-			pebble_source,
-			able_to_transport
+			pre_pick_steps
 		end
 
 	EV_ITEM_LIST_IMP [EV_LIST_ITEM]
@@ -159,58 +153,12 @@ feature -- Status report
 						)
 					end
 				end
-				modify_widget_appearance (True)
 			end
-
-	post_drop_steps (a_button: INTEGER)  is
-			-- Steps to perform once an attempted drop has happened.
-		do
-			Precursor (a_button)
-			accept_cursor := temp_accept_cursor
-			deny_cursor := temp_deny_cursor
-
-			temp_accept_cursor := Void
-			temp_deny_cursor := Void
-
-			pnd_row_imp := Void
-		end
 
 	row_height: INTEGER is
-			-- Height of rows in `Current'
+			-- Default height of rows
 		do
-			--| FIXME Implement correctly.
 			Result := 10
-		end
-
-	pebble_source: EV_PICK_AND_DROPABLE
-			-- Source of pebble, used for widgets with deferred PND implementation
-			-- such as EV_TREE and EV_MULTI_COLUMN_LIST.
-		do
-			if pnd_row_imp /= Void then
-				Result := pnd_row_imp.interface
-			else
-				Result := Precursor
-			end
-		end
-
-	able_to_transport (a_button: INTEGER): BOOLEAN is
-			-- Is list or row able to transport PND data using `a_button'.
-		do
-			if pnd_row_imp /= Void then
-				Result := pnd_row_imp.able_to_transport (a_button)
-			else
-				Result := Precursor (a_button)
-			end
-		end
-
-	ready_for_pnd_menu (a_button: INTEGER_32; a_press: BOOLEAN): BOOLEAN
-			-- Is list or row able to display PND menu using `a_button'
-		do
-			if pnd_row_imp /= Void then
-				Result := pnd_row_imp.ready_for_pnd_menu (a_button, a_press)
-			else
-				Result := Precursor (a_button, a_press)
-			end
 		end
 
 	pnd_row_imp: EV_LIST_ITEM_IMP
@@ -237,18 +185,6 @@ feature -- Status report
 				pebble_function.call ([a_x, a_y]);
 				pebble := pebble_function.last_result
 			end
-		end
-
-	reset_pebble_function
-			-- Reset `pebble_function'.
-		do
-			if pebble_function /= Void then
-				pebble_function.clear_last_result
-			end
-			pebble := temp_pebble
-			pebble_function := temp_pebble_function
-			temp_pebble := Void
-			temp_pebble_function := Void
 		end
 
 feature -- Status setting

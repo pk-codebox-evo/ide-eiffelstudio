@@ -13,66 +13,42 @@ feature -- Status setting
 
 	enable_select is
 			-- Make `Current' selected.
-		local
-			l_string: STRING_GENERAL
 		do
 			if current_button /= Void then
 				if not current_button.is_selected then
 					current_button.select_actions.block
-					current_button.enable_select
+					current_button.toggle
 					current_button.select_actions.resume
 				end
-				l_string := tooltip.twin
-				if not shortcut_string.is_empty then
-					l_string.append (" (")
-					l_string.append (shortcut_string.as_string_32)
-					l_string.append (")")
-				end
-				current_button.set_tooltip (l_string)
+				current_button.set_tooltip (tooltip + shortcut_string)
 			end
 		end
 
 	disable_select is
 			-- Make `Current' deselected.
-		local
-			l_string: STRING_GENERAL
 		do
 			if current_button /= Void then
 				if current_button.is_selected then
 					current_button.select_actions.block
-					current_button.disable_select
+					current_button.toggle
 					current_button.select_actions.resume
 				end
-				l_string := tooltip.twin
-				if not shortcut_string.is_empty then
-					l_string.append (" (")
-					l_string.append (shortcut_string.as_string_32)
-					l_string.append (")")
-				end
-				current_button.set_tooltip (l_string)
+				current_button.set_tooltip (tooltip + shortcut_string)
 			end
 		end
 
 feature -- Access
 
-	current_button: EB_SD_COMMAND_TOOL_BAR_TOGGLE_BUTTON is
+	current_button: EB_COMMAND_TOGGLE_TOOL_BAR_BUTTON is
 		deferred
 		end
 
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 		deferred
 		end
 
-	menu_name: STRING_GENERAL is
-			-- Name on corresponding menu items
-		do
-			Result := tooltip
-		end
-
-	shortcut_string: STRING_GENERAL is
+	shortcut_string: STRING is
 		deferred
-		ensure
-			Result_not_void: Result /= Void
 		end
 
 indexing

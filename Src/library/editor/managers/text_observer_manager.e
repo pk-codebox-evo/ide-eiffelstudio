@@ -13,7 +13,7 @@ create
 	make
 
 feature -- Initialization
-
+	
 	make is
 		-- Initialize `Current'.
 		do
@@ -26,7 +26,7 @@ feature -- Initialization
 
 feature -- Status report
 
-	is_modified: BOOLEAN
+	changed: BOOLEAN
 			-- Has the text been modified since it was opened?
 
 	is_notifying: BOOLEAN
@@ -40,10 +40,10 @@ feature -- Status setting
 	set_changed (value: BOOLEAN; directly_edited: BOOLEAN) is
 			-- Assign `value' to `changed'
 		do
-			if value and not is_modified then
+			if value and not changed then
 				on_text_edited (directly_edited)
 			end
-			is_modified := value
+			changed := value
 		end
 
 feature -- Operations
@@ -99,7 +99,7 @@ feature -- Operations
 		local
 			found: BOOLEAN
 		do
-			from
+			from 
 				edition_observer_list.start
 				found := False
 			until
@@ -110,9 +110,9 @@ feature -- Operations
 					edition_observer_list.remove
 				else
 					edition_observer_list.forth
-				end
+				end 
 			end
-			from
+			from 
 				selection_observer_list.start
 				found := False
 			until
@@ -123,9 +123,9 @@ feature -- Operations
 					selection_observer_list.remove
 				else
 					selection_observer_list.forth
-				end
+				end 
 			end
-			from
+			from 
 				lines_observer_list.start
 				found := False
 			until
@@ -136,7 +136,7 @@ feature -- Operations
 					lines_observer_list.remove
 				else
 					lines_observer_list.forth
-				end
+				end 
 			end
 		end
 
@@ -154,7 +154,7 @@ feature -- Operations
 				post_notify_actions.item.call ([Current])
 				post_notify_actions.forth
 			end
-		end
+		end		
 
 feature {NONE} -- Updates
 
@@ -168,10 +168,10 @@ feature {NONE} -- Updates
 		do
 			tmp_is_notifying := is_notifying
 			is_notifying := True
-			is_modified := True
+			changed := True
 			if not edition_observer_list.is_empty then
 				l_cur := edition_observer_list.cursor
-				from
+				from 
 					edition_observer_list.start
 				until
 					edition_observer_list.after
@@ -195,9 +195,9 @@ feature {NONE} -- Updates
 			l_cur: CURSOR
 		do
 			is_notifying := True
-			is_modified := False
+			changed := False
 			l_cur := edition_observer_list.cursor
-			from
+			from 
 				edition_observer_list.start
 			until
 				edition_observer_list.after
@@ -240,9 +240,9 @@ feature {NONE} -- Updates
 			l_cur: CURSOR
 		do
 			is_notifying := True
-			is_modified := False
+			changed := False
 			l_cur := edition_observer_list.cursor
-			from
+			from 
 				edition_observer_list.start
 			until
 				edition_observer_list.after
@@ -264,7 +264,7 @@ feature {NONE} -- Updates
 		do
 			is_notifying := True
 			l_cur := edition_observer_list.cursor
-			from
+			from 
 				edition_observer_list.start
 			until
 				edition_observer_list.after
@@ -300,12 +300,13 @@ feature {NONE} -- Updates
 			execute_post_notify_actions
 		end
 
+
 	on_text_block_loaded (was_first_block: BOOLEAN) is
 			-- Notify observers that a new block of text has just been loaded.
 			-- `first_block' is True if the block was the first one
 		do
 			is_notifying := True
-			from
+			from 
 				lines_observer_list.start
 			until
 				lines_observer_list.after
@@ -321,7 +322,7 @@ feature {NONE} -- Updates
 			-- Notify observers that a selection has just begun.
 		do
 			is_notifying := True
-			from
+			from 
 				selection_observer_list.start
 			until
 				selection_observer_list.after
@@ -337,7 +338,7 @@ feature {NONE} -- Updates
 			-- Notify observers that the selection has just been disabled.
 		do
 			is_notifying := True
-			from
+			from 
 				selection_observer_list.start
 			until
 				selection_observer_list.after
@@ -353,7 +354,7 @@ feature {NONE} -- Updates
 			-- Notify observers that a line has just been modified.
 		do
 			is_notifying := True
-			from
+			from 
 				lines_observer_list.start
 			until
 				lines_observer_list.after
@@ -369,7 +370,7 @@ feature {NONE} -- Updates
 			-- Notify observers that a line has just been removed.
 		do
 			is_notifying := True
-			from
+			from 
 				lines_observer_list.start
 			until
 				lines_observer_list.after
@@ -385,7 +386,7 @@ feature {NONE} -- Updates
 			-- Notify observers that a line has just been removed.
 		do
 			is_notifying := True
-			from
+			from 
 				lines_observer_list.start
 			until
 				lines_observer_list.after
@@ -401,7 +402,7 @@ feature {NONE} -- Updates
 			-- Notify observers that a line has just been inserted.
 		do
 			is_notifying := True
-			from
+			from 
 				lines_observer_list.start
 			until
 				lines_observer_list.after

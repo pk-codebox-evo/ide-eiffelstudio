@@ -24,15 +24,16 @@ feature {NONE} -- Initialisation
 			ok_action := agent close_request_actions.call
 		end
 
+
 feature {NONE} -- Deferred Constants
 
-	check_button_label: STRING_GENERAL is
+	check_button_label: STRING is
 			-- Label for `check_button'.
 		do
 			Result := Interface_names.l_Dont_ask_me_again
 		end
 
-	warning_message_label: STRING_GENERAL is
+	warning_message_label: STRING is
 			-- Label for the confirmation message.
 		do
 			Result := Interface_names.l_Text_loading

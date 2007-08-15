@@ -11,11 +11,14 @@ deferred class
 inherit
 	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 
+	EB_RECYCLABLE
+
 	EB_TARGET_COMMAND
 		rename
 			target as tool
 		redefine
-			tool, make, internal_recycle
+			tool,
+			make
 		end
 
 feature {NONE} -- Initialization
@@ -30,31 +33,47 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	tool: EB_DIAGRAM_TOOL
+	tool: EB_CONTEXT_EDITOR
 			-- Associated with `Current'.
 
 	history: EB_HISTORY_DIALOG
 			-- History of undoable commands.
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name on corresponding menu items
 		do
 			Result := "Diagram command"
 		end
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Description for this command.
 		do
 			Result := tooltip
 		end
 
-feature {NONE} -- Removal
+	shortcut_string: STRING is
+			-- String discribing shortcut combination for `Current'.
+		do
+			if accelerator = Void then
+				Result := ""
+			else
+				Result := " (" + accelerator.out + ")"
+			end
+		ensure
+			Result_exists: Result /= Void
+		end
 
-	internal_recycle is
+feature -- Removal
+
+	recycle is
 			-- Recycle code.
 		do
-			Precursor {EB_TARGET_COMMAND}
+			if accelerator /= Void then
+				accelerator.actions.wipe_out
+				accelerator := Void
+			end
 			history := Void
+			tool := Void
 
 				-- No need to wipe out the content, because it should
 				-- have been done by the users of menu and toolbar items.
@@ -95,4 +114,5 @@ indexing
 		]"
 
 end -- class EB_CONTEXT_DIAGRAM_COMMAND
+
 

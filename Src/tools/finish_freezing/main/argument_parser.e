@@ -24,7 +24,6 @@ feature {NONE} -- Initialization
 		do
 			Precursor {ARGUMENT_OPTION_PARSER} (a_cs, a_usage_on_error)
 			set_use_separated_switch_values (True)
-			set_show_switch_arguments_inline (True)
 		end
 
 feature -- Access
@@ -54,34 +53,20 @@ feature -- Access
 			Result := has_option (generate_only_switch)
 		end
 
+	silent: BOOLEAN is
+			-- Indicates if ui should be surpressed
+		require
+			successful: successful
+		once
+			Result := has_option (silent_switch)
+		end
+
 	force_32bit_code_generation: BOOLEAN is
 			-- Indicates if 32 bit code should be generated
 		require
 			successful: successful
 		once
 			Result := has_option (x86_switch)
-		end
-
-	max_processors: NATURAL_8 is
-			-- Maximum number of processors to utilize
-		require
-			successful: successful
-			has_max_processors: has_max_processors
-		local
-			l_value: ARGUMENT_NATURAL_OPTION
-		once
-			l_value ?= option_of_name (nproc_switch)
-			Result := l_value.natural_8_value
-		ensure
-			result_positive: Result > 0
-		end
-
-	is_for_library: BOOLEAN is
-			-- Is `finish_freezing' launched to compile the C code for an Eiffel library?
-		require
-			successful: successful
-		do
-			Result := has_option (library_switch)
 		end
 
 feature -- Query
@@ -94,13 +79,6 @@ feature -- Query
 			Result := has_option (location_switch)
 		end
 
-	has_max_processors: BOOLEAN is
-			-- Indicates if user specified a number of processors
-		require
-			successful: successful
-		once
-			Result := has_option (nproc_switch)
-		end
 
 feature {NONE} -- Usage
 
@@ -122,23 +100,19 @@ feature {NONE} -- Usage
 			create Result.make (4)
 			Result.extend (create {ARGUMENT_DIRECTORY_SWITCH}.make (location_switch, "Alternative location to compile C code in.", True, False, "directory", "Location to compile C code in", False))
 			Result.extend (create {ARGUMENT_SWITCH}.make (generate_only_switch, "Informs tool to only generate a Makefile.", True, False))
-			Result.extend (create {ARGUMENT_NATURAL_SWITCH}.make_with_range (nproc_switch, "Maximum number of processors to use", True, False, "n", "Number of processors", False, 1, {NATURAL_16}.max_value))
 			Result.extend (create {ARGUMENT_SWITCH}.make (x86_switch, "Generate 32bit lib DLLs for .NET projects.", True, False))
 			Result.extend (create {ARGUMENT_SWITCH}.make (silent_switch, "Supresses confirmation dialog", True, True))
-			Result.extend (create {ARGUMENT_SWITCH}.make (library_switch, "Compile the C code of an Eiffel library", True, True))
+			Result.extend (create {ARGUMENT_SWITCH}.make (library_switch, "Does nothing, for UNIX compatibility only", True, True))
 		end
 
 feature {NONE} -- Switches
 
 	location_switch: STRING is "location"
 	generate_only_switch: STRING is "generate_only"
+	silent_switch: STRING is "silent"
 	library_switch: STRING is "library"
-	nproc_switch: STRING is "nproc"
-	x86_switch: STRING is "x86"
+	x86_switch: STRING is "x86";
 			-- Argument switches
-
-	silent_switch: STRING is "silent";
-			-- Obsolete switch be kept for backward compatibility
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

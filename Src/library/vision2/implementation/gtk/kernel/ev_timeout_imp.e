@@ -10,18 +10,14 @@ class
 
 inherit
 	EV_TIMEOUT_I
-		export
-			{EV_INTERMEDIARY_ROUTINES}
-				is_destroyed
 		redefine
 			interface
 		end
 
-	IDENTIFIED
-		undefine
-			is_equal,
-			copy
+	EV_ANY_IMP
 		redefine
+			interface,
+			destroy,
 			dispose
 		end
 
@@ -32,15 +28,17 @@ feature -- Initialization
 
 	make (an_interface: like interface) is
 			-- Call base make only.
+		local
+			l_null: POINTER
 		do
 			base_make (an_interface)
+			set_c_object ({EV_GTK_EXTERNALS}.gtk_label_new (l_null))
 		end
 
 	initialize is
 			-- Initialize `Current'.
 		do
 			timeout_agent_internal := agent (App_implementation.gtk_marshal).on_timeout_intermediary (object_id)
-			on_timeout_agent := agent on_timeout
 			set_is_initialized (True)
 		end
 
@@ -62,8 +60,8 @@ feature -- Access
 
 			if an_interval > 0 then
 				timeout_connection_id :=
-					{EV_GTK_CALLBACK_MARSHAL}.c_ev_gtk_callback_marshal_timeout_connect (
-						an_interval.max (20), timeout_agent_internal
+					App_implementation.gtk_marshal.c_ev_gtk_callback_marshal_timeout_connect (
+						an_interval, timeout_agent_internal
 					)
 			end
 		end
@@ -73,18 +71,7 @@ feature {EV_INTERMEDIARY_ROUTINES, EV_ANY_I} -- Implementation
 	interface: EV_TIMEOUT
 		-- Interface object.
 
-	app_implementation: EV_APPLICATION_IMP is
-			-- Return the instance of EV_APPLICATION_IMP.
-		once
-			Result ?= (create {EV_ENVIRONMENT}).application.implementation
-		end
-
-	on_timeout_agent: PROCEDURE [EV_TIMEOUT_IMP, TUPLE]
-		-- Reusable timeout for adding to idle actions.
-
 feature {NONE} -- Implementation
-
-	timeout_object: POINTER
 
 	timeout_connection_id: INTEGER
 		-- GTK handle on timeout connection.
@@ -98,7 +85,7 @@ feature {EV_ANY_I} -- Implementation
 			-- Render `Current' unusable.
 		do
 			set_interval (0)
-			set_is_destroyed (True)
+			Precursor {EV_ANY_IMP}
 		end
 
 feature {NONE} -- Implementation
@@ -109,7 +96,7 @@ feature {NONE} -- Implementation
 			if timeout_connection_id > 0 then
 				{EV_GTK_EXTERNALS}.gtk_timeout_remove (timeout_connection_id)
 			end
-			Precursor
+			Precursor {EV_ANY_IMP}
 		end
 
 indexing

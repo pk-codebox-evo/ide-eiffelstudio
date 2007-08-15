@@ -18,8 +18,6 @@ inherit
 
 	FAKE_AST_ASSEMBLER
 
-	SHARED_SERVER
-
 feature -- Properties
 
 	ast: FEATURE_AS
@@ -248,10 +246,10 @@ feature {NONE} -- Implementation
 			feature_as, new_feature_as: FEATURE_AS
 			select_table: SELECT_TABLE;
 			adapter: like Current
-			l_match_list: LEAF_AS_LIST
 		do
 			select_table := format_reg.target_feature_table.origin_table;
-			s_feat := format_reg.current_feature_table.item_id (old_name.internal_name.name_id)
+			s_feat := format_reg.current_feature_table.item
+						(old_name.internal_name);
 			if s_feat /= Void then
 				rout_id := s_feat.rout_id_set.first;
 				t_feat := select_table.item (rout_id);
@@ -271,11 +269,10 @@ feature {NONE} -- Implementation
 					then
 						if t_feat.is_deferred and then not s_feat.is_deferred then
 								-- If target feature is undefined, we give it a deferred body.
-							l_match_list := match_list_server.item (t_feat.written_in)
 							create adapter;
 							feature_as := t_feat.body
 							new_feature_as := replace_name_from_feature (feature_as.deep_twin, feature_as.feature_names.first, target_feature)
-							new_feature_as := normal_to_deferred_feature_as (new_feature_as, l_match_list)
+							new_feature_as := normal_to_deferred_feature_as (new_feature_as)
 							adapter.replicate_feature (source_feature,
 											t_feat, new_feature_as, format_reg);
 						else
@@ -297,7 +294,7 @@ feature {NONE} -- Implementation
 		local
 			feat: FEATURE_I
 		do
-			feat := format_reg.target_feature_table.item_id (name.internal_name.name_id);
+			feat := format_reg.target_feature_table.item (name.internal_name);
 			if feat = Void then
 					-- Newly added feature which hasn't been compiled
 				register_uncompiled_feature (format_reg)

@@ -26,7 +26,7 @@ create
 
 feature {NONE} -- Initlization
 
-	make (a_screen_x, a_screen_y: INTEGER; a_docking_manager: SD_DOCKING_MANAGER; a_visible: BOOLEAN) is
+	make (a_screen_x, a_screen_y: INTEGER; a_docking_manager: SD_DOCKING_MANAGER) is
 			-- Creation method.
 		require
 			a_docking_manager_not_void: a_docking_manager /= Void
@@ -34,9 +34,7 @@ feature {NONE} -- Initlization
 			create internal_shared
 			internal_docking_manager := a_docking_manager
 			create internal_zone.make (Current)
-			if a_visible then
-				internal_zone.show
-			end
+			internal_zone.show
 			internal_zone.set_position (a_screen_x, a_screen_y)
 			internal_docking_manager.command.add_inner_container (internal_zone.inner_container)
 		ensure
@@ -109,7 +107,7 @@ feature -- Redefine.
 			-- Redefine.
 		local
 			l_zones: ARRAYED_LIST [SD_ZONE]
-			l_tab_zone, l_tab_zone_source: SD_TAB_ZONE
+			l_tab_zone: SD_TAB_ZONE
 		do
 			internal_docking_manager.command.lock_update (a_target_zone, False)
 
@@ -119,11 +117,6 @@ feature -- Redefine.
 			until
 				l_zones.after
 			loop
-				l_tab_zone_source ?= l_zones.item
-				if l_tab_zone_source /= Void then
-					l_tab_zone_source.set_drag_title_bar (True)
-				end
-
 				if l_tab_zone = Void then
 					l_zones.item.state.move_to_docking_zone (a_target_zone, a_first)
 					l_tab_zone ?= a_target_zone.content.state.zone
@@ -135,10 +128,6 @@ feature -- Redefine.
 						l_zones.item.state.move_to_tab_zone (l_tab_zone, 0)
 					end
 				end
-
-				if l_tab_zone_source /= Void then
-					l_tab_zone_source.set_drag_title_bar (False)
-				end
 				l_zones.forth
 			end
 			internal_docking_manager.command.update_title_bar
@@ -149,7 +138,6 @@ feature -- Redefine.
 			-- Redefine.
 		local
 			l_zones: ARRAYED_LIST [SD_ZONE]
-			l_tab_zone_source: SD_TAB_ZONE
 		do
 			internal_docking_manager.command.lock_update (zone, False)
 			l_zones := inner_container.zones
@@ -158,16 +146,7 @@ feature -- Redefine.
 			until
 				l_zones.after
 			loop
-				l_tab_zone_source ?= l_zones.item
-				if l_tab_zone_source /= Void then
-					l_tab_zone_source.set_drag_title_bar (True)
-				end
-				
 				l_zones.item.state.move_to_tab_zone (a_target_zone, 0)
-
-				if l_tab_zone_source /= Void then
-					l_tab_zone_source.set_drag_title_bar (False)
-				end
 				l_zones.forth
 			end
 

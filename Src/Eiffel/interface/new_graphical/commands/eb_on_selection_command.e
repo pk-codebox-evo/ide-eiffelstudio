@@ -14,16 +14,16 @@ inherit
 	EB_STANDARD_CMD
 		rename
 			make as make_standard,
-			internal_recycle as recycle_std
+			recycle as recycle_std
 		redefine
 			executable
 		end
 
 	EB_DEVELOPMENT_WINDOW_COMMAND
 		redefine
-			executable, make, internal_recycle, target
+			executable, make, recycle
 		select
-			internal_recycle
+			recycle
 		end
 
 	TEXT_OBSERVER
@@ -36,7 +36,7 @@ create
 
 feature {NONE} -- initialization
 
-	make (a_target: like target) is
+	make (a_target: EB_DEVELOPMENT_WINDOW) is
 			-- creation function
 		do
 			make_standard
@@ -56,12 +56,6 @@ feature -- Status setting
 			-- Tell the command it requires the editor to be editable.
 		do
 			needs_editable := ed
-		end
-
-	set_is_for_main_editors (a_b: BOOLEAN) is
-			-- Set `is_for_main_editor' with `a_b'.
-		do
-			is_for_main_editor := a_b
 		end
 
 	update_status is
@@ -86,9 +80,6 @@ feature -- Status report
 
 	needs_editable: BOOLEAN
 			-- Does the command require the editor to be editable?
-
-	is_for_main_editor: BOOLEAN
-			-- Is the command only for the main editors?
 
 feature -- Observer pattern
 
@@ -120,9 +111,7 @@ feature -- Observer pattern
 			update_status
 		end
 
-feature {NONE} -- Recyclable
-
-	internal_recycle is
+	recycle is
 			-- Recycle
 		do
 			Precursor {EB_DEVELOPMENT_WINDOW_COMMAND}
@@ -130,9 +119,6 @@ feature {NONE} -- Recyclable
 		end
 
 feature {NONE} -- Implementation
-
-	target: EB_DEVELOPMENT_WINDOW
-		-- Target of `Current'.
 
 	has_selection: BOOLEAN
 			-- Is a text loaded?

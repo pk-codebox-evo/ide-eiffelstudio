@@ -21,6 +21,11 @@ inherit
 			{NONE} all
 		end
 
+	SHARED_NAMES_HEAP
+		export
+			{NONE} all
+		end
+
 	SHARED_STATELESS_VISITOR
 		export
 			{NONE} all
@@ -28,7 +33,7 @@ inherit
 
 feature -- Access
 
-	local_table (a_class: CLASS_C; a_feature: FEATURE_I; a_node: BODY_AS): HASH_TABLE [LOCAL_INFO, INTEGER] is
+	local_table (a_class: CLASS_C; a_feature: FEATURE_I; a_node: BODY_AS): HASH_TABLE [LOCAL_INFO, STRING] is
 			-- Local table.
 		require
 			a_class_not_void: a_class /= Void
@@ -54,7 +59,7 @@ feature {NONE} -- Implementation: access
 	current_feature: FEATURE_I
 			-- Associated feature if any to compute locals
 
-	last_locals: HASH_TABLE [LOCAL_INFO, INTEGER]
+	last_locals: HASH_TABLE [LOCAL_INFO, STRING]
 			-- Last computed table
 
 feature {NONE} -- Settings
@@ -110,7 +115,7 @@ feature {NONE} -- Implementation
 						i := i + 1
 						l_local_info.set_position (i)
 						l_local_info.set_type (l_solved_type)
-						last_locals.put (l_local_info, l_id_list.item)
+						last_locals.put (l_local_info, Names_heap.item (l_id_list.item))
 						l_id_list.forth
 					end
 					l_locals.forth
@@ -120,7 +125,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	empty_local_table: HASH_TABLE [LOCAL_INFO, INTEGER] is
+	empty_local_table: HASH_TABLE [LOCAL_INFO, STRING] is
 			-- Empty local table
 		once
 			create Result.make (0)

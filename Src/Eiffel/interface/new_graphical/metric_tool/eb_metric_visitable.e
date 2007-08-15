@@ -9,35 +9,6 @@ indexing
 deferred class
 	EB_METRIC_VISITABLE
 
-feature -- Access
-
-	visitable_name: STRING_GENERAL is
-			-- Name of current visitable item
-		deferred
-		ensure
-			result_attached: Result /= Void
-		end
-
-	identical_new_instance: like Current is
-			-- Identical new instance of Current.
-			-- Void if error occurs.
-		local
-			l_callback: EB_METRIC_LOAD_DEFINITION_CALLBACKS
-			l_xml_generator: EB_METRIC_XML_WRITER [like Current]
-			l_document: XM_DOCUMENT
-		do
-			create l_xml_generator.make
-			l_document := l_xml_generator.xml_document (Current)
-
-			create l_callback.make_with_factory (create{EB_LOAD_METRIC_DEFINITION_FACTORY})
-			l_callback.set_is_for_whole_file (False)
-
-			l_document.process_to_events (l_callback)
-			if not l_callback.has_error then
-				Result ?= l_callback.first_parsed_node
-			end
-		end
-
 feature -- Process
 
 	process (a_visitor: EB_METRIC_VISITOR) is
@@ -78,5 +49,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

@@ -1,8 +1,8 @@
 indexing
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
-class SELECTION_LIST
-
+class SELECTION_LIST 
+	
 inherit
 	SORTED_TWO_WAY_LIST [INHERIT_INFO]
 
@@ -38,7 +38,7 @@ inherit
 
 create
 	make
-
+	
 create {SELECTION_LIST}
 	make_sublist
 
@@ -149,7 +149,7 @@ end;
 			not is_empty
 		do
 			Result := 	first.a_feature.code_id
-						=
+						= 
 						last.a_feature.code_id;
 		end;
 
@@ -194,12 +194,12 @@ end;
 					instantiator := info.parent.parent_type;
 				end;
 				written_type := written_type.instantiation_in (instantiator, written_id);
-				Result := written_type.is_safe_equivalent (to_compair);
+				Result := written_type.is_deep_equal (to_compair);
 				forth;
 			end;
 			go_to (old_cursor);
 		end;
-
+	
 	unselect (new_t, old_t: FEATURE_TABLE; select_table: SELECT_TABLE) is
 			-- Process first unselected feature
 		require
@@ -225,8 +225,10 @@ end;
 			nb				: INTEGER
 			new_rout_id		: INTEGER
 			rid				: INTEGER
-			attribute_i: ATTRIBUTE_I
-		do
+			--cond			: BOOLEAN
+			--written_type	: TYPE_A
+			--old_pos		: INTEGER
+		do		
 			id := new_t.feat_tbl_id;
 			info := first;
 			a_feature := info.a_feature;
@@ -236,7 +238,7 @@ end;
 			a_feature := a_feature.unselected (id);
 				-- Process new routine id set
 			create rout_id_set.make
-			feature_name_id := a_feature.feature_name_id;
+			feature_name_id := a_feature.feature_name_id;	
 debug ("REPLICATION", "ACTUAL_REPLICATION")
 	io.error.put_string ("unselecting :");
 	io.error.put_string (a_feature.feature_name);
@@ -275,17 +277,12 @@ end;
 				end;
 				i := i + 1;
 			end
-
-				-- Insertion into the routine info table
-			System.rout_info_table.put (new_rout_id, System.current_class);
+				
+				-- Insertion into thwe routine info table
+			System.rout_info_table.put (new_rout_id, System.current_class);	
 			a_feature.set_rout_id_set (rout_id_set);
 			a_feature.set_is_selected (False);
 			a_feature.set_is_origin (True);
-			attribute_i ?= a_feature
-			if attribute_i /= Void and then attribute_i.type.type_i.is_formal then
-					-- A wrapper has to be generated.
-				attribute_i.set_generate_in (system.current_class.class_id)
-			end
 			select_table.put (a_feature, new_rout_id);
 			new_t.replace (a_feature, feature_name_id);
 
@@ -316,7 +313,7 @@ feature -- Conceptual Replication
 	detect_replication (parent_list: PARENT_LIST; new_t: FEATURE_TABLE) is
 			-- Detect conceptual replication. The only routines left under the
 			-- same routine_id will have different feature names. Hence, all
-			-- these features will be replicated.
+			-- these features will be replicated. 
 		require
 			require_replication: count > 1
 		local

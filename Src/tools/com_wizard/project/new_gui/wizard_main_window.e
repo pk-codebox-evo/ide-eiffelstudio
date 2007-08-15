@@ -46,17 +46,7 @@ inherit
 			is_equal
 		end
 
-create
-	make
-
 feature {NONE} -- Initialization
-
-	make is
-			-- Properly initialize current.
-		do
-			initialize_checker
-			default_create
-		end
 
 	user_initialization is
 			-- called by `initialize'.
@@ -74,6 +64,7 @@ feature {NONE} -- Initialization
 			notebook.item_tab (generation_options_outter_box).set_pixmap (settings_png)
 			notebook.item_tab (output_box).set_pixmap (output_png)
 
+			initialize_checker
 			close_request_actions.extend (agent on_exit)
 			com_project_box.hide
 			destination_folder_box.setup ("Generate files into:", "destination_key", "Browse for destination folder", agent destination_folder_validity)
@@ -495,6 +486,7 @@ feature {NONE} -- Implementation
 			l_success := not a_folder.is_empty
 			if l_success then
 				create Result.make_success (feature {WIZARD_VALIDITY_STATUS_IDS}.Destination_folder)
+				output_box.disable_eiffelstudio_button
 				environment.set_destination_folder (a_folder)
 			else
 				create Result.make_error (feature {WIZARD_VALIDITY_STATUS_IDS}.Destination_folder)
@@ -693,6 +685,12 @@ feature {NONE} -- Private Access
 			-- Forbidden symols for registry key name,
 		once
 			Result := <<'*', '?', ':', '<', '>', '|', '\', '"'>>
+		end
+
+	Ev_application: EV_APPLICATION is
+			-- Vision2 application
+		once
+			Result := (create {EV_ENVIRONMENT}).application
 		end
 
 indexing

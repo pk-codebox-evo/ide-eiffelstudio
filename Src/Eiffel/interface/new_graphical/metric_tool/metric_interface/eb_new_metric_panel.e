@@ -33,6 +33,13 @@ inherit
 			default_create
 		end
 
+	QL_OBSERVER
+		undefine
+			is_equal,
+			copy,
+			default_create
+		end
+
 	EB_METRIC_PANEL
 		undefine
 			is_equal,
@@ -61,6 +68,13 @@ inherit
 			default_create
 		end
 
+	EB_RECYCLABLE
+		undefine
+			is_equal,
+			copy,
+			default_create
+		end
+
 create
 	make
 
@@ -72,41 +86,11 @@ feature {NONE} -- Initialization
 			a_tool_attached: a_tool /= Void
 		do
 			metric_tool := a_tool
-			install_agents (metric_tool)
 			on_unit_order_change_agent := agent on_unit_order_change
-			create basic_metric_definition_area.make (metric_tool, Current, new_mode, class_unit)
-			create linear_metric_definition_area.make (metric_tool, Current, new_mode, class_unit)
-			create ratio_metric_definition_area.make (metric_tool, Current, new_mode, ratio_unit)
-			basic_metric_definition_area.change_actions.extend (agent on_metric_changed)
-			linear_metric_definition_area.change_actions.extend (agent on_metric_changed)
-			ratio_metric_definition_area.change_actions.extend (agent on_metric_changed)
 			default_create
-			create metric_editor_table.make (3)
-			metric_editor_table.put (basic_metric_definition_area, basic_metric_type)
-			metric_editor_table.put (linear_metric_definition_area, linear_metric_type)
-			metric_editor_table.put (ratio_metric_definition_area, ratio_metric_type)
-			set_is_metric_reloaded (True)
-
-			append_drop_actions (
-				<<
-					no_metric_area,
-					toolbar_area,
-					metric_definition_area,
-					definer_area_cell,
-					definer_cell,
-					definer_area,
-					basic_metric_definition_area.criterion_definition_empty_area,
-					basic_metric_definition_area.expression_lbl_empty_area
-				>>,
-				metric_tool
-			)
 		ensure
 			metric_tool_set: metric_tool = a_tool
 		end
-
-	metric_editor_table: HASH_TABLE [EB_METRIC_EDITOR, INTEGER]
-			-- Table of metric editor
-			-- Key is metric type index, value is metric editor
 
 	user_initialization is
 			-- Called by `initialize'.
@@ -120,12 +104,11 @@ feature {NONE} -- Initialization
 				agent (a_metric: EB_METRIC)
 					do
 						if remove_metric_btn.is_sensitive then
-							remove_current_metric
+							remove_metric
 						end
 					end
 			)
 			metric_selector.disable_tooltip_contain_go_to_definition_message
-			metric_selector.set_context_menu_factory (metric_tool.develop_window.menus.context_menu_factory)
 			metric_selector_area.extend (metric_selector)
 
 				-- Initialize toolbar
@@ -165,89 +148,61 @@ feature {NONE} -- Initialization
 			send_current_to_new_btn.select_actions.extend (agent on_copy_current_metric_to_a_new_metric)
 			send_current_to_new_btn.set_tooltip (metric_names.f_create_new_metric_using_current_data)
 
-			import_btn.set_pixmap (pixmaps.icon_pixmaps.metric_export_to_file_icon)
-			import_btn.set_tooltip (metric_names.f_import_metrics)
-			import_btn.select_actions.extend (agent on_import_metrics)
+				-- Delete following in docking EiffelStudio.
+			no_metric_area.drop_actions.extend (agent drop_cluster)
+			no_metric_area.drop_actions.extend (agent drop_class)
+			no_metric_area.drop_actions.extend (agent drop_feature)
+			toolbar_area.drop_actions.extend (agent drop_cluster)
+			toolbar_area.drop_actions.extend (agent drop_class)
+			toolbar_area.drop_actions.extend (agent drop_feature)
+			empty_lbl.drop_actions.extend (agent drop_cluster)
+			empty_lbl.drop_actions.extend (agent drop_class)
+			empty_lbl.drop_actions.extend (agent drop_feature)
+			metric_definition_area.drop_actions.extend (agent drop_cluster)
+			metric_definition_area.drop_actions.extend (agent drop_class)
+			metric_definition_area.drop_actions.extend (agent drop_feature)
 
 			select_metric_lbl.set_text (metric_names.t_select_metric)
+			empty_lbl.set_text ("   ")
 			preferences.metric_tool_data.unit_order_preference.change_actions.extend (on_unit_order_change_agent)
 		end
 
-feature -- Access
-
-	metric_selector: EB_METRIC_SELECTOR
-			-- Metric selector
-
 feature -- Status report
+
+	is_valid_metric_type (a_type: INTEGER): BOOLEAN is
+			-- Is `a_type' a valid metric type?
+		do
+			Result := a_type = basic_metric_type or a_type = linear_metric_type or a_type = ratio_metric_type
+		end
 
 	is_metric_changed: BOOLEAN
 			-- Is definition of current metric changed?
 
+	is_current_metric_editor_reusable (a_type: INTEGER): BOOLEAN is
+			-- Is `current_metric_editor' reusable for metric of type `a_type'?
+		require
+			a_type_valid: is_valid_metric_type (a_type)
+		do
+			if current_metric_editor /= Void then
+				Result :=
+					(current_metric_editor.is_basic_metric_editor and then a_type = basic_metric_type) or
+					(current_metric_editor.is_linear_metric_editor and then a_type = linear_metric_type) or
+					(current_metric_editor.is_ratio_metric_editor and then a_type = ratio_metric_type)
+			end
+		end
+
 feature -- Basic operations
 
-	set_is_metric_changed (b: BOOLEAN) is
-			-- Set `is_metric_changed' with `b'.
+	synchronize_when_compile_start is
+			-- Synchronize when Eiffel compilation starts.
 		do
-			is_metric_changed := b
-		ensure
-			is_metric_changed_set: is_metric_changed = b
+			disable_sensitive
 		end
 
-	load_metric_definition (a_metric: EB_METRIC; a_type: INTEGER; a_unit: QL_METRIC_UNIT; a_new: BOOLEAN) is
-			-- Load `a_metric' definition whose type is `a_type' and unit is `a_unit'.
-			-- `a_new' is True indicates that we are creating a new metric.
-		require
-			a_type_valid: is_metric_type_valid (a_type)
-			a_new_valid: not a_new implies a_metric /= Void
-			a_unit_attached: a_unit /= Void
-		local
-			l_mode: INTEGER
-			l_uuid_generator: UUID_GENERATOR
-			l_editor: EB_METRIC_EDITOR
+	synchronize_when_compile_stop is
+			-- Synchronize when Eiffel compilation stops.
 		do
-				-- Decide editor mode: read-only, edit or new.
-			if a_new then
-				l_mode := new_mode
-				set_is_metric_changed (True)
-			else
-				if a_metric.is_predefined then
-					l_mode := readonly_mode
-				else
-					l_mode := edit_mode
-				end
-			end
-			original_metric := a_metric
-
-				-- Refresh metric definition area.
-			l_editor := current_metric_editor
-			current_metric_editor := metric_editor_table.item (a_type)
-			if l_editor /= current_metric_editor then
-				metric_definition_area.wipe_out
-				metric_definition_area.extend (current_metric_editor.widget)
-			end
-			if original_metric /= Void then
-				current_metric_editor.initialize_editor (a_metric, l_mode, a_unit)
-			else
-				create l_uuid_generator
-				current_metric_editor.initialize_editor (a_metric, l_mode, a_unit)
-			end
-			set_is_up_to_date (False)
-			update_ui
-		end
-
-	force_drop_stone (a_stone: STONE) is
-			-- Force to drop `a_stone' in `domain_selector'.
-		do
-		end
-
-	clone_and_load_metric (a_metric: EB_METRIC) is
-			-- Clone and load `a_metric'
-		require
-			a_metric_not_void: a_metric /= Void
-		do
-			metric_selector.remove_selection
-			a_metric.set_name (metric_manager.next_metric_name_with_unit (a_metric.unit))
-			load_metric_definition (a_metric, metric_type_id (a_metric), a_metric.unit, True)
+			enable_sensitive
 		end
 
 feature -- Actions
@@ -261,7 +216,10 @@ feature -- Actions
 			l_editor := current_metric_editor
 			if l_editor /= Void then
 				l_metric := l_editor.metric
-				clone_and_load_metric (l_metric)
+				l_metric.set_name (metric_manager.next_metric_name_with_unit (l_metric.unit))
+				metric_selector.remove_selection
+				metric_selector.remove_selection
+				load_metric_definition (l_metric, metric_type_id (l_metric), l_metric.unit, True)
 			end
 		end
 
@@ -270,19 +228,16 @@ feature -- Actions
 		local
 			l_menu: EV_MENU
 		do
-			l_menu := new_metric_menu (False)
+			l_menu := new_metric_menu
 			l_menu.show_at (new_metric_toolbar, 0, new_metric_toolbar.height - 3)
 		end
 
 	on_metric_selected (a_metric: EB_METRIC) is
 			-- Action to be performed when a metric is selected
+		require
+			a_metric_attached: a_metric /= Void
 		do
-			if a_metric /= Void then
-				set_is_metric_changed (False)
-				load_metric_definition (a_metric, metric_type_id (a_metric), a_metric.unit, False)
-				set_is_up_to_date (False)
-				update_ui
-			end
+			load_metric_definition (a_metric, metric_type (a_metric), a_metric.unit, False)
 		end
 
 	on_save_metric is
@@ -290,9 +245,9 @@ feature -- Actions
 		local
 			l_old_metric: EB_METRIC
 			l_new_metric: EB_METRIC
-			l_dlg: EB_ERROR_DIALOG
+			l_dlg: EV_ERROR_DIALOG
 			l_ok: BOOLEAN
-			l_message: STRING_32
+			l_message: STRING
 		do
 			check current_metric_editor /= Void end
 			l_old_metric := original_metric
@@ -306,7 +261,7 @@ feature -- Actions
 				metric_manager.has_metric (l_new_metric.name)
 			then
 				l_ok := False
-				l_message := metric_names.t_metric_with_name_already_exists (l_new_metric.name)
+				l_message := metric_names.t_metric_with_name + " %"" + l_new_metric.name + "%" " + metric_names.t_metric_exists
 			elseif
 				current_metric_editor.mode = {EB_METRIC_EDITOR}.edit_mode and then
 				l_old_metric /= Void and then
@@ -314,18 +269,13 @@ feature -- Actions
 				metric_manager.has_metric (l_new_metric.name)
 			then
 				l_ok := False
-				l_message := metric_names.t_metric_with_name_already_exists (l_new_metric.name)
+				l_message := metric_names.t_metric_with_name + " %"" + l_new_metric.name + "%" " + metric_names.t_metric_exists
 			end
 			if l_ok then
 				metric_manager.save_metric (l_new_metric, current_metric_editor.mode = {EB_METRIC_EDITOR}.new_mode, l_old_metric)
-				original_metric := l_new_metric
 				metric_tool.store_metrics
-				set_is_metric_changed (False)
-				if current_metric_editor /= Void then
-					current_metric_editor.initialize_editor (l_new_metric, {EB_METRIC_EDITOR}.edit_mode, l_new_metric.unit)
-				end
-				set_is_up_to_date (False)
-				update_ui
+				metric_selector.set_last_selected_metric (l_new_metric.name)
+				metric_tool.load_metrics (True, metric_names.t_saving_metrics)
 			else
 				create l_dlg.make_with_text (l_message + "%N" + metric_names.t_metric_not_saved)
 				l_dlg.set_buttons (<<metric_names.t_ok>>)
@@ -333,11 +283,38 @@ feature -- Actions
 			end
 		end
 
+	on_select is
+			-- Action to be performed when current is selected
+		do
+			if not is_selected then
+				set_is_selected (True)
+			end
+			if not is_up_to_date then
+				metric_selector.load_metrics (True)
+				metric_selector.try_to_selected_last_metric
+				if metric_selector.selected_metric = Void then
+					metric_definition_area.wipe_out
+					metric_definition_area.extend (no_metric_frame)
+					save_metric_btn.disable_sensitive
+					remove_metric_btn.disable_sensitive
+					current_metric_editor := Void
+				end
+				if last_update_request = compilation_start_update_request then
+						-- This is an update when Eiffel compilation starts.
+					synchronize_when_compile_start
+				else
+						-- This is an update when Eiffel compilation stops.
+					synchronize_when_compile_stop
+				end
+				set_is_up_to_date (True)
+			end
+		end
+
 	on_create_new_metric (a_type: INTEGER; a_unit: QL_METRIC_UNIT) is
 			-- Action to be performed when create a new metric of type `a_type' and unit `a_unit'.
 			-- For metric type information, see `basic_metric_type', `linear_metric_type' and `ratio_metric_type'.
 		require
-			a_type_valid: is_metric_type_valid (a_type)
+			a_type_valid: is_valid_metric_type (a_type)
 			a_unit_attached: a_unit /= Void
 		do
 			metric_selector.remove_selection
@@ -347,7 +324,7 @@ feature -- Actions
 	on_remove_metric is
 			-- Action to be performed when user wants to remove selected metric
 		local
-			l_dlg: EB_DISCARDABLE_CONFIRMATION_DIALOG
+			l_dlg: STANDARD_DISCARDABLE_CONFIRMATION_DIALOG
 		do
 			check
 				original_metric /= Void
@@ -355,25 +332,38 @@ feature -- Actions
 			end
 			create l_dlg.make_initialized (
 				2, preferences.dialog_data.confirm_remove_metric_string,
-				metric_names.t_remove_metric (current_metric_editor.name_area.name),
+				metric_names.t_remove_metric +  "%"" + current_metric_editor.name_area.name.twin + "%"?",
 				metric_names.t_discard_remove_prompt,
 				preferences.preferences
 			)
-			l_dlg.set_ok_action (agent remove_current_metric)
+			l_dlg.set_ok_action (agent remove_metric)
 			l_dlg.show_modal_to_window (metric_tool_window)
+		end
+
+	remove_metric is
+			-- Remove current editing metric.
+		do
+			check
+				original_metric /= Void
+				current_metric_editor /= Void
+			end
+			metric_manager.remove_metric (original_metric.name)
+			metric_tool.store_metrics
+			metric_selector.select_first_metric
+			metric_tool.load_metrics (True, metric_names.t_removing_metrics)
 		end
 
 	on_group_selected is
 			-- Action to be performed when a group in `metric_selector' is selected
 		do
+			remove_metric_btn.disable_sensitive
 		end
 
 	on_metric_changed is
 			-- Action to be performed when definition or description of current metric changes
 		do
-			set_is_metric_changed (True)
-			set_is_up_to_date (False)
-			update_ui
+			is_metric_changed := True
+			save_metric_btn.enable_sensitive
 		ensure
 			definition_changed: is_metric_changed
 		end
@@ -381,40 +371,147 @@ feature -- Actions
 	on_reload_metrics is
 			-- Action to be performed when reload metrics
 		do
-			metric_tool.load_metrics_and_display_error (True, metric_names.t_loading_metrics)
+			metric_tool.load_metrics (True, metric_names.t_loading_metrics)
+			metric_tool.check_metric_validation
 		end
 
 	on_open_user_defined_metric_file is
 			-- Action to be performed to open user defined metric file in specified external editor
 		local
 			l_cmd_exec: COMMAND_EXECUTOR
+			l_cmd_string: STRING
 		do
 			if metric_manager.is_userdefined_metric_file_exist then
-				create l_cmd_exec
-				l_cmd_exec.execute (preferences.misc_data.external_editor_cli (metric_manager.userdefined_metrics_file, 1))
+				l_cmd_string := preferences.misc_data.external_editor_command.twin
+				if not l_cmd_string.is_empty then
+					l_cmd_string.replace_substring_all ("$target", metric_manager.userdefined_metrics_file)
+					l_cmd_string.replace_substring_all ("$line", "0")
+					create l_cmd_exec
+					l_cmd_exec.execute (l_cmd_string)
+				end
 			end
 		end
 
-	on_import_metrics is
-			-- Action to be performed to import metric definitions from file.
+feature -- Basic operations
+
+	load_metric_definition (a_metric: EB_METRIC; a_type: INTEGER; a_unit: QL_METRIC_UNIT; a_new: BOOLEAN) is
+			-- Load `a_metric' definition whose type is `a_type' and unit is `a_unit'.
+			-- `a_new' is True indicates that we are creating a new metric.
+		require
+			a_type_valid: is_valid_metric_type (a_type)
+			a_new_valid: not a_new implies a_metric /= Void
+			a_unit_attached: a_unit /= Void
 		local
-			l_import_dlg: EB_METRIC_IMPORT_DIALOG
+			l_mode: INTEGER
+			l_uuid_generator: UUID_GENERATOR
 		do
-			create l_import_dlg.make (metric_tool)
-			l_import_dlg.show_modal_to_window (metric_tool_window)
-			if l_import_dlg.should_metric_be_refreshed then
-				on_reload_metrics
+				-- Decide editor mode: read-only, edit or new.
+			if a_new then
+				l_mode := new_mode
+			else
+				if a_metric.is_predefined then
+					l_mode := readonly_mode
+				else
+					l_mode := edit_mode
+				end
+			end
+			is_metric_changed := (l_mode = new_mode)
+
+				-- Synchronize interface.
+			inspect
+				l_mode
+			when new_mode then
+				save_metric_btn.enable_sensitive
+				remove_metric_btn.disable_sensitive
+			when readonly_mode then
+				save_metric_btn.disable_sensitive
+				remove_metric_btn.disable_sensitive
+			when edit_mode then
+				save_metric_btn.disable_sensitive
+				remove_metric_btn.enable_sensitive
+			end
+			original_metric := a_metric
+				-- Refresh metric definition area.
+			if not is_current_metric_editor_reusable (a_type) then
+				current_metric_editor := new_metric_editor (a_type)
+				current_metric_editor.change_actions.extend (agent on_metric_changed)
+				metric_definition_area.wipe_out
+				metric_definition_area.extend (current_metric_editor.widget)
+			end
+			if original_metric /= Void then
+				current_metric_editor.initialize_editor (a_metric, l_mode, a_unit, original_metric.uuid)
+			else
+				create l_uuid_generator
+				current_metric_editor.initialize_editor (a_metric, l_mode, a_unit, l_uuid_generator.generate_uuid)
 			end
 		end
 
-	on_metric_sent_to_history (a_archive: EB_METRIC_ARCHIVE_NODE; a_panel: ANY) is
-			-- Action to be performed when metric calculation information contained in `a_archive' has been sent to history
+	metric_type (a_metric: EB_METRIC): INTEGER is
+			-- Type name of `a_metric'
+		require
+			a_metric_attached: a_metric /= Void
 		do
+			if a_metric.is_basic then
+				Result := basic_metric_type
+			elseif a_metric.is_linear then
+				Result := linear_metric_type
+			elseif a_metric.is_ratio then
+				Result := ratio_metric_type
+			end
 		end
 
-feature {EB_CONTEXT_MENU_FACTORY} -- Implemetation
+	set_stone (a_stone: STONE) is
+			-- Notify that `a_stone' has been dropped on Current.
+		do
+			if current_metric_editor /= Void then
+				current_metric_editor.set_stone (a_stone)
+			end
+		end
 
-	new_metric_menu (a_context_menu: BOOLEAN): EV_MENU is
+feature -- Notification
+
+	update (a_observable: QL_OBSERVABLE; a_data: ANY) is
+			-- Notification from `a_observable' indicating that `a_data' changed.
+		local
+			l_data: BOOLEAN_REF
+		do
+			set_is_up_to_date (False)
+			if a_data /= Void then
+				l_data ?= a_data
+				check l_data /= Void end
+				if l_data /= Void then
+					if l_data.item then
+							-- This is an update when Eiffel compilation starts.
+						set_last_update_request (compilation_start_update_request)
+					else
+							-- This is an update when Eiffel compilation stops.
+						set_last_update_request (compilation_stop_update_request)
+					end
+				end
+			end
+			if is_selected then
+				on_select
+			end
+		end
+
+feature -- Access
+
+	metric_selector: EB_METRIC_SELECTOR
+			-- Metric selector
+
+feature{NONE} -- Access
+
+	new_basic_metric_panel: EB_BASIC_METRIC_DEFINITION_AREA
+
+	current_metric_editor: EB_METRIC_EDITOR
+			-- Current metric editor
+
+	original_metric: EB_METRIC
+			-- Current metric
+
+feature{NONE} -- Implementation
+
+	new_metric_menu: EV_MENU is
 			-- Menu for creating new metrics
 		local
 			l_submenu: EV_MENU
@@ -423,16 +520,16 @@ feature {EB_CONTEXT_MENU_FACTORY} -- Implemetation
 			l_type: INTEGER_REF
 			l_new_menu: like new_metric_menu
 		do
-			if new_metric_menu_internal = Void or a_context_menu then
+			if new_metric_menu_internal = Void then
 				l_unit_list := unit_list (False)
 
 				create l_new_menu
-				create l_submenu.make_with_text (displayed_name (metric_names.l_basic_metric))
+				create l_submenu.make_with_text (displayed_name (metric_names.t_basic) + " metric")
 				l_submenu.set_data (basic_metric_type)
 				l_submenu.set_pixmap (pixmaps.icon_pixmaps.metric_basic_icon)
 				l_new_menu.extend (l_submenu)
 
-				create l_submenu.make_with_text (displayed_name (metric_names.l_linear_metric))
+				create l_submenu.make_with_text (displayed_name (metric_names.t_linear) + " metric")
 				l_submenu.set_data (linear_metric_type)
 				l_submenu.set_pixmap (pixmaps.icon_pixmaps.metric_linear_icon)
 				l_new_menu.extend (l_submenu)
@@ -449,20 +546,14 @@ feature {EB_CONTEXT_MENU_FACTORY} -- Implemetation
 						l_unit_list.after
 					loop
 						l_submenu ?= l_new_menu.item
-						create l_menu_item.make_with_text_and_action (unit_name_table.item (l_unit_list.item.l_unit), agent on_create_new_metric (l_type.item, l_unit_list.item.l_unit))
-						if a_context_menu then
-							l_menu_item.select_actions.extend (agent (metric_tool.metric_notebook).select_item (metric_tool.new_metric_panel))
-						end
+						create l_menu_item.make_with_text_and_action (displayed_name (l_unit_list.item.l_unit.name), agent on_create_new_metric (l_type.item, l_unit_list.item.l_unit))
 						l_menu_item.set_pixmap (l_unit_list.item.l_pixmap)
 						l_submenu.extend (l_menu_item)
 						l_unit_list.forth
 					end
 					l_new_menu.forth
 				end
-				create l_menu_item.make_with_text_and_action (displayed_name (metric_names.l_ratio_metric), agent on_create_new_metric (ratio_metric_type, ratio_unit))
-				if a_context_menu then
-					l_menu_item.select_actions.extend (agent (metric_tool.metric_notebook).select_item (metric_tool.new_metric_panel))
-				end
+				create l_menu_item.make_with_text_and_action (displayed_name (ratio_unit.name + " metric"), agent on_create_new_metric (ratio_metric_type, ratio_unit))
 				l_menu_item.set_pixmap (pixmaps.icon_pixmaps.metric_ratio_icon)
 				l_new_menu.extend (l_menu_item)
 				new_metric_menu_internal := l_new_menu
@@ -472,34 +563,31 @@ feature {EB_CONTEXT_MENU_FACTORY} -- Implemetation
 			result_attached: Result /= Void
 		end
 
-	remove_metric_by_context_menu (a_metric: EB_METRIC) is
-			-- Remove metric by context menu.
+	new_metric_editor (a_type: INTEGER): like current_metric_editor is
+			-- New metric editor for metric of type `a_type'
 		require
-			a_metric_not_void: a_metric /= Void
-		local
-			l_dlg: EB_DISCARDABLE_CONFIRMATION_DIALOG
+			a_type_valid: is_valid_metric_type (a_type)
 		do
-			check
-				original_metric /= Void
-				current_metric_editor /= Void
+			if a_type = basic_metric_type then
+				if basic_metric_definition_area = Void then
+					create basic_metric_definition_area.make (metric_tool, Current)
+				end
+				Result := basic_metric_definition_area
+			elseif a_type = linear_metric_type then
+				if linear_metric_defintion_area = Void then
+					create linear_metric_defintion_area.make (metric_tool, Current)
+				end
+				result := linear_metric_defintion_area
+			elseif a_type = ratio_metric_type then
+				if ratio_metric_definition_area = Void then
+					create ratio_metric_definition_area.make (metric_tool, Current)
+				end
+				Result := ratio_metric_definition_area
 			end
-			create l_dlg.make_initialized (
-				2, preferences.dialog_data.confirm_remove_metric_string,
-				metric_names.t_remove_metric (a_metric.name),
-				metric_names.t_discard_remove_prompt,
-				preferences.preferences
-			)
-			l_dlg.set_ok_action (agent remove_metric (a_metric))
-			l_dlg.show_modal_to_window (metric_tool_window)
+			Result.attach_metric_selector (metric_selector)
+		ensure
+			result_attached: Result /= Void
 		end
-
-feature{NONE} -- Implementation
-
-	current_metric_editor: EB_METRIC_EDITOR
-			-- Current metric editor
-
-	original_metric: EB_METRIC
-			-- Current metric
 
 	new_metric_menu_internal: like new_metric_menu
 			-- Implementation of `new_metric_menu_internal'
@@ -507,224 +595,22 @@ feature{NONE} -- Implementation
 	basic_metric_definition_area: EB_BASIC_METRIC_DEFINITION_AREA
 			-- Internal basic metric definition area
 
-	linear_metric_definition_area: EB_LINEAR_METRIC_DEFINITION_AREA
+	linear_metric_defintion_area: EB_LINEAR_METRIC_DEFINITION_AREA
 			-- Internal linear metric definition area
 
 	ratio_metric_definition_area: EB_RATIO_METRIC_DEFINITION_AREA
-			-- Internal ratio metric definition area
+			-- Internal ratio metric definition area			
 
-	remove_current_metric is
-			-- Remove current editing metric.
-		do
-			remove_metric (original_metric)
-			current_metric_editor := Void
-			original_metric := Void
-		end
+feature -- Recycle
 
-	remove_metric (a_metric: EB_METRIC) is
-			-- Remove `a_metric'.
-		require
-			a_metric_not_void: a_metric /= Void
-		do
-			check
-				original_metric /= Void
-				current_metric_editor /= Void
-			end
-			metric_manager.remove_metric (a_metric.name)
-			metric_tool.store_metrics
---			metric_tool.load_metrics (True, metric_names.t_removing_metrics)
-			metric_selector.select_first_metric
-		end
-
-feature {NONE} -- Recycle
-
-	internal_recycle is
+	recycle is
 			-- To be called when the button has became useless.
 		do
 			preferences.metric_tool_data.unit_order_preference.change_actions.prune_all (on_unit_order_change_agent)
-			uninstall_agents (metric_tool)
-		end
-
-feature{NONE} -- Actions
-
-	on_project_loaded is
-			-- Action to be performed when project loaded
-		do
-			set_is_up_to_date (False)
-			update_ui
-		end
-
-	on_project_unloaded is
-			-- Action to be performed when project unloaded
-		do
-			set_is_up_to_date (False)
-			update_ui
-		end
-
-	on_compile_start is
-			-- Action to be performed when Eiffel compilation starts
-		do
-			set_is_up_to_date (False)
-			update_ui
-		end
-
-	on_compile_stop is
-			-- Action to be performed when Eiffel compilation stops
-		do
-			set_is_up_to_date (False)
-			set_is_metric_reloaded (True)
-			update_ui
-		end
-
-	on_metric_evaluation_start (a_data: ANY) is
-			-- Action to be performed when metric evaluation starts
-			-- `a_data' can be the metric tool panel from which metric evaluation starts.
-		do
-			set_is_up_to_date (False)
-			update_ui
-		end
-
-	on_metric_evaluation_stop (a_data: ANY) is
-			-- Action to be performed when metric evaluation stops
-			-- `a_data' can be the metric tool panel from which metric evaluation stops.
-		do
-			set_is_up_to_date (False)
-			update_ui
-		end
-
-	on_archive_calculation_start (a_data: ANY) is
-			-- Action to be performed when metric archive calculation starts
-			-- `a_data' can be the metric tool panel from which metric archive calculation starts.
-		do
-			set_is_up_to_date (False)
-			update_ui
-		end
-
-	on_archive_calculation_stop (a_data: ANY) is
-			-- Action to be performed when metric archive calculation stops
-			-- `a_data' can be the metric tool panel from which metric archive calculation stops.
-		do
-			set_is_up_to_date (False)
-			update_ui
-		end
-
-	on_metric_loaded is
-			-- Action to be performed when metrics loaded in `metric_manager'
-		do
-			set_is_metric_reloaded (True)
-			set_is_up_to_date (False)
-			update_ui
-		end
-
-	on_history_recalculation_start (a_data: ANY) is
-			-- Action to be performed when archive history recalculation starts
-			-- `a_data' can be the metric tool panel from which metric history recalculation starts.
-		do
-			set_is_up_to_date (False)
-			update_ui
-		end
-
-	on_history_recalculation_stop (a_data: ANY) is
-			-- Action to be performed when archive history recalculation stops
-			-- `a_data' can be the metric tool panel from which metric history recalculation stops.
-		do
-			set_is_up_to_date (False)
-			update_ui
-		end
-
-	on_metric_renamed (a_old_name, a_new_name: STRING) is
-			-- Action to be performed when a metric with `a_old_name' has been renamed to `a_new_name'.
-		do
-		end
-
-feature{NONE} -- UI Update
-
-	update_ui is
-			-- Update interface
-		local
-			l_metric: EB_METRIC
-			l_mode: INTEGER
-		do
-			if is_selected and then not is_up_to_date then
-				if (not is_project_loaded) or is_eiffel_compiling or is_archive_calculating or is_history_recalculationg_running or is_metric_evaluating then
-					disable_sensitive
-				else
-					enable_sensitive
-					metric_tool.load_metrics_and_display_error (False, metric_names.t_loading_metrics)
-					if not metric_tool.is_metric_validation_checked.item then
-						metric_tool.check_metric_validation (metric_tool.develop_window)
-					end
-					if is_metric_reloaded then
-						set_is_metric_reloaded (False)
-						metric_selector.load_metrics (False)
-						if current_metric_editor /= Void then
-							l_mode := current_metric_editor.mode
-							inspect
-								l_mode
-							when {EB_METRIC_EDITOR}.new_mode then
-								l_metric := current_metric_editor.metric
-								metric_selector.remove_selection
-								current_metric_editor.initialize_editor (l_metric, l_mode, l_metric.unit)
-							when {EB_METRIC_EDITOR}.readonly_mode then
-								if metric_manager.has_metric (original_metric.name) then
-									metric_selector.select_metric (original_metric.name)
-								else
-									metric_definition_area.wipe_out
-									metric_definition_area.extend (no_metric_frame)
-									current_metric_editor := Void
-									original_metric := Void
-								end
-							when {EB_METRIC_EDITOR}.edit_mode then
-								if metric_manager.has_metric (original_metric.name) then
-									if is_metric_changed then
-										metric_selector.metric_selected_actions.block
-										metric_selector.select_metric (original_metric.name)
-										metric_selector.metric_selected_actions.resume
-										l_metric := current_metric_editor.metric
-										original_metric := metric_selector.selected_metric
-										current_metric_editor.initialize_editor (l_metric, l_mode, l_metric.unit)
-									else
-										metric_selector.select_metric (original_metric.name)
-									end
-								else
-									metric_definition_area.wipe_out
-									metric_definition_area.extend (no_metric_frame)
-									current_metric_editor := Void
-									original_metric := Void
-									set_is_metric_changed (False)
-								end
-							end
-						end
-					end
-					if current_metric_editor /= Void then
-						if is_metric_changed then
-							save_metric_btn.enable_sensitive
-							send_current_to_new_btn.disable_sensitive
-						else
-							save_metric_btn.disable_sensitive
-							send_current_to_new_btn.enable_sensitive
-						end
-						if current_metric_editor.mode = {EB_METRIC_EDITOR}.edit_mode then
-							remove_metric_btn.enable_sensitive
-						else
-							remove_metric_btn.disable_sensitive
-						end
-					else
-						save_metric_btn.disable_sensitive
-						remove_metric_btn.disable_dockable
-						send_current_to_new_btn.disable_sensitive
-					end
-				end
-				set_is_up_to_date (True)
-			end
 		end
 
 invariant
 	metric_tool_attached: metric_tool /= Void
-	basic_metric_definition_area_attached: basic_metric_definition_area /= Void
-	linear_metric_defintion_area_attached: linear_metric_definition_area /= Void
-	ratio_metric_definition_area_attached: ratio_metric_definition_area /= Void
-	metric_editor_table_attached: metric_editor_table /= Void
 
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"
@@ -757,6 +643,7 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end -- class EB_NEW_METRIC_PANEL
 

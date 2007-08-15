@@ -11,8 +11,10 @@ class
 	EV_HEADER_ITEM_ACTION_SEQUENCE
 
 inherit
-	EV_ACTION_SEQUENCE [TUPLE [item: EV_HEADER_ITEM]]
-
+	EV_ACTION_SEQUENCE [TUPLE [EV_HEADER_ITEM]]
+	-- EV_ACTION_SEQUENCE [TUPLE [a_column: INTEGER]]
+	-- (ETL3 TUPLE with named parameters)
+	
 create
 	default_create
 

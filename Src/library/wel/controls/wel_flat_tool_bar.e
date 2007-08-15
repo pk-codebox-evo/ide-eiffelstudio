@@ -1,14 +1,10 @@
 indexing
-	description	: "[
-		Enhancement of the toolbar. This toolbar appears flat
-		and use imagelist to store bitmaps - when available.
-		
-		Note: The common controls dll (WEL_COMMON_CONTROLS_DLL) 
-		needs to be loaded to use this control.
-	]"
+	description	: "Enhancement of the toolbar. This toolbar appears flat %
+				  %and use imagelist to store bitmaps - when available   "
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
-
+	note		: "The common controls dll (WEL_COMMON_CONTROLS_DLL)     %
+				  %needs to be loaded to use this control.               "
 	date		: "$Date$"
 	revision	: "$Revision$"
 
@@ -21,7 +17,7 @@ inherit
 			make,
 			default_style,
 			set_bitmap_size,
-			add_bitmaps
+			add_bitmaps	
 		end
 
 	WEL_ILC_CONSTANTS
@@ -52,7 +48,7 @@ feature -- Access
 
 	bitmaps_width: INTEGER
 			-- 16 by default
-
+	
 	bitmaps_height: INTEGER
 			-- 15 by default
 
@@ -120,22 +116,22 @@ feature -- Status report
 		end
 
 	find_button (a_x, a_y: INTEGER): INTEGER is
-			-- Determines where a point lies in a toolbar control.
+			-- Determines where a point lies in a toolbar control. 
 			--
 			-- Returns an integer value. If the return value is zero or a positive value,
-			-- it is the zero-based index of the nonseparator item in which the point lies.
+			-- it is the zero-based index of the nonseparator item in which the point lies. 
 			-- If the return value is negative, the point does not lie within a button.
-			-- The absolute value of the return value is the index of a separator item
-			-- or the nearest nonseparator item.
+			-- The absolute value of the return value is the index of a separator item 
+			-- or the nearest nonseparator item. 
 		local
 			coordinates: WEL_POINT
 		do
 			create coordinates.make(a_x, a_y)
-			Result := {WEL_API}.send_message_result_integer (item, Tb_hittest, to_wparam (0), coordinates.item)
+			Result := cwin_send_message_result_integer (item, Tb_hittest, to_wparam (0), coordinates.item)
 		end
-
+	
 	get_max_width: INTEGER is
-			-- Retrieves the total width of all of the visible buttons and separators in the toolbar.
+			-- Retrieves the total width of all of the visible buttons and separators in the toolbar. 
 		require
 			function_supported: comctl32_version >= version_471
 		do
@@ -143,7 +139,7 @@ feature -- Status report
 		end
 
 	get_max_height: INTEGER is
-			-- Retrieves the common height of all of the visible buttons and separators in the toolbar.
+			-- Retrieves the common height of all of the visible buttons and separators in the toolbar. 
 		require
 			function_supported: comctl32_version >= version_471
 		do
@@ -158,7 +154,7 @@ feature -- Status report
 			error_code: POINTER
 		do
 			create Result
-			error_code := {WEL_API}.send_message_result (item, Tb_getmaxsize, to_wparam (0), Result.item)
+			error_code := cwin_send_message_result (item, Tb_getmaxsize, to_wparam (0), Result.item)
 			check
 				no_error: error_code /= default_pointer
 			end
@@ -220,7 +216,7 @@ feature -- Element change
 					-- We retrieve the bitmap from the icon.
 				a_bitmap := a_icon.get_icon_info.color_bitmap
 				create a_toolbar_bitmap.make_from_bitmap (a_bitmap)
-				last_bitmap_index := {WEL_API}.send_message_result_integer (item, Tb_addbitmap,
+				last_bitmap_index := cwin_send_message_result_integer (item, Tb_addbitmap,
 					to_wparam (1), a_toolbar_bitmap.item)
 			end
 		end
@@ -240,7 +236,7 @@ feature -- Element change
 
 					-- Insert the bitmap into the image lists.
 				disabled_image_list.add_icon(an_icon)
-
+					
 					-- Update the position
 				last_disabled_bitmap_index := disabled_image_list.last_position
 			else
@@ -263,7 +259,7 @@ feature -- Element change
 
 					-- Insert the bitmap into the image lists.
 				hot_image_list.add_icon(an_icon)
-
+					
 					-- Update the position
 				last_hot_bitmap_index := hot_image_list.last_position
 			else
@@ -292,7 +288,7 @@ feature -- Element change
 			else
 					-- We build a "toolbar bitmap".
 				create a_toolbar_bitmap.make_from_bitmap(a_bitmap)
-				last_bitmap_index := {WEL_API}.send_message_result_integer (item, Tb_addbitmap,
+				last_bitmap_index := cwin_send_message_result_integer (item, Tb_addbitmap,
 					to_wparam (1), a_toolbar_bitmap.item)
 			end
 		end
@@ -312,7 +308,7 @@ feature -- Element change
 
 					-- Insert the bitmap into the image lists.
 				disabled_image_list.add_bitmap(a_bitmap)
-
+					
 					-- Update the position
 				last_disabled_bitmap_index := disabled_image_list.last_position
 			else
@@ -335,7 +331,7 @@ feature -- Element change
 
 					-- Insert the bitmap into the image lists.
 				hot_image_list.add_bitmap(a_bitmap)
-
+					
 					-- Update the position
 				last_hot_bitmap_index := hot_image_list.last_position
 			else
@@ -368,7 +364,7 @@ feature -- Element change
 			else
 					-- We build a "toolbar bitmap".
 				create a_toolbar_bitmap.make_from_bitmap(a_bitmap)
-				last_bitmap_index := {WEL_API}.send_message_result_integer (item, Tb_addbitmap,
+				last_bitmap_index := cwin_send_message_result_integer (item, Tb_addbitmap,
 					to_wparam (1), a_toolbar_bitmap.item)
 			end
 		end
@@ -441,7 +437,7 @@ feature -- Resizing
 				setup_disabled_image_list(True)
 			else
 					-- Plain Win95 version
-				{WEL_API}.send_message (item, Tb_setbitmapsize, to_wparam (0), cwin_make_long (a_width, a_height))
+				cwin_send_message (item, Tb_setbitmapsize, to_wparam (0), cwin_make_long (a_width, a_height))
 			end
 		end
 
@@ -450,7 +446,7 @@ feature -- Resizing
 		require
 			function_supported: comctl32_version >= version_470
 		do
-			Result := cwin_lo_word({WEL_API}.send_message_result (item, Tb_getbuttonsize,
+			Result := cwin_lo_word(cwin_send_message_result (item, Tb_getbuttonsize,
 				to_wparam (0), to_lparam (0)))
 		end
 
@@ -459,7 +455,7 @@ feature -- Resizing
 		require
 			function_supported: comctl32_version >= version_470
 		do
-			Result := cwin_hi_word({WEL_API}.send_message_result (item, Tb_getbuttonsize,
+			Result := cwin_hi_word(cwin_send_message_result (item, Tb_getbuttonsize,
 				to_wparam (0), to_lparam (0)))
 		end
 
@@ -498,7 +494,7 @@ feature -- Obsolete
 				last_bitmap_index := default_image_list.last_position
 			else
 					-- Plain Win95 version
-				last_bitmap_index := {WEL_API}.send_message_result_integer (item, Tb_addbitmap,
+				last_bitmap_index := cwin_send_message_result_integer (item, Tb_addbitmap,
 					to_wparam (bitmap_count), tb_bitmap.item)
 			end
 		end
@@ -511,7 +507,7 @@ feature {NONE} -- Implementation
 		do
 			if (overwrite and default_image_list /= Void) or ((not overwrite) and default_image_list = Void) then
 				create default_image_list.make(bitmaps_width, bitmaps_height, Ilc_colorddb, True)
-				{WEL_API}.send_message (item, Tb_setimagelist, to_wparam (0), default_image_list.item)
+				cwin_send_message (item, Tb_setimagelist, to_wparam (0), default_image_list.item)
 			end
 		end
 
@@ -521,7 +517,7 @@ feature {NONE} -- Implementation
 		do
 			if (overwrite and disabled_image_list /= Void) or ((not overwrite) and disabled_image_list = Void) then
 				create disabled_image_list.make(bitmaps_width, bitmaps_height, Ilc_colorddb, True)
-				{WEL_API}.send_message (item, Tb_setdisabledimagelist, to_wparam (0), disabled_image_list.item)
+				cwin_send_message (item, Tb_setdisabledimagelist, to_wparam (0), disabled_image_list.item)
 			end
 		end
 
@@ -531,7 +527,7 @@ feature {NONE} -- Implementation
 		do
 			if (overwrite and hot_image_list /= Void) or ((not overwrite) and hot_image_list = Void) then
 				create hot_image_list.make(bitmaps_width, bitmaps_height, Ilc_colorddb, True)
-				{WEL_API}.send_message (item, Tb_sethotimagelist, to_wparam (0), hot_image_list.item)
+				cwin_send_message (item, Tb_sethotimagelist, to_wparam (0), hot_image_list.item)
 			end
 		end
 
@@ -539,7 +535,7 @@ feature {NONE} -- Implementation
 			-- Default style used to create the control
 		once
 			Result := Ws_visible + Ws_child + Tbstyle_tooltips
-
+	
 				-- Add the flat style if available.
 			if comctl32_version >= version_470 then
 				Result := Result + Tbstyle_flat

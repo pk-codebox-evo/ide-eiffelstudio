@@ -3,7 +3,7 @@ indexing
 	legal: "See notice at end of class."
 	status: "See notice at end of class.";
 	date		: "$Date$";
-	revision	: "$Revision$"
+	revision	: "$Revision $"
 
 class E_FEATURE
 
@@ -40,40 +40,29 @@ inherit
 			is_equal
 		end
 
-	SHARED_NAMES_HEAP
-		undefine
-			is_equal
-		end
-
 feature -- Initialization
 
-	make (n: like name_id; a: like alias_name; c: like has_convert_mark; i: INTEGER) is
+	make (n: like name; a: like alias_name; c: like has_convert_mark; i: INTEGER) is
 			-- Initialize feature with name `n' with
 			-- identification `i'.
 		require
-			valid_n: n >= 0
+			valid_n: n /= Void
 			positive_i: i >= 0
 		do
-			name_id := n
+			name := n
 			alias_name := a
 			has_convert_mark := c
 			feature_id := i
 		ensure
-			name_id_set: name_id = n
+			name_set: name = n
 			alias_name_set: alias_name = a
 			feature_id_set: feature_id = i
 		end
 
 feature -- Properties
 
-	name_id: INTEGER
-			-- Name id in the names heap.
-
-	name: STRING is
+	name: STRING;
 			-- Final name of the feature
-		do
-			Result := names_heap.item (name_id)
-		end
 
 	alias_name: STRING
 			-- Alias name of the feature (if any)
@@ -221,17 +210,6 @@ feature -- Properties
 			Result := arguments /= Void
 		end
 
-	has_rescue_clause: BOOLEAN is
-			-- Has rescue clause ?
-		local
-			f: like associated_feature_i
-		do
-			f := associated_feature_i
-			if f /= Void then
-				Result := f.has_rescue_clause
-			end
-		end
-
 	arguments: E_FEATURE_ARGUMENTS is
 			-- Argument types
 		do
@@ -294,21 +272,22 @@ feature -- Access
 			ris: ROUT_ID_SET
 			rout_id: INTEGER
 		do
-			if an_ancestor.is_valid and then an_ancestor.has_feature_table then
-				ris := rout_id_set
-				if ris /= Void then
-					from
-						n := ris.lower
-						nb := ris.count
-					until
-						n > nb or else Result /= Void
-					loop
-						rout_id := ris.item (n)
-						if rout_id > 0 then
-							Result := an_ancestor.feature_with_rout_id (rout_id)
-						end
-						n := n + 1
+			ris := rout_id_set
+			if ris /= Void then
+				from
+					n := ris.lower
+					nb := ris.count
+				until
+					n > nb or else Result /= Void
+				loop
+					rout_id := ris.item (n)
+					if
+						rout_id /= 0 and then an_ancestor.is_valid
+						and then an_ancestor.has_feature_table
+					then
+						Result := an_ancestor.feature_with_rout_id (rout_id)
 					end
+					n := n + 1
 				end
 			end
 		end
@@ -349,27 +328,23 @@ feature -- Access
 
 	is_debuggable: BOOLEAN is
 			-- Is feature debuggable?
-		local
-			cl: CLASS_C
 		do
-			if
-				(body_index /= 0) and then
-				(not is_attribute) and then
-				(not is_constant) and then
-				(not is_deferred) and then
-				(not is_unique)
-			then
-				cl := written_class
-				Result := cl /= Void and then cl.is_debuggable
-			end
-		ensure
-			debuggable_if: Result implies
-				(body_index /= 0) and then
+			Result := (body_index /= 0) and then
+				(not is_external) and then
 				(not is_attribute) and then
 				(not is_constant) and then
 				(not is_deferred) and then
 				(not is_unique) and then
-				(written_class /= Void and then written_class.is_debuggable)
+				written_class.is_debuggable
+		ensure
+			debuggable_if: Result implies
+				(body_index /= 0) and then
+				(not is_external) and then
+				(not is_attribute) and then
+				(not is_constant) and then
+				(not is_deferred) and then
+				(not is_unique) and then
+				written_class.is_debuggable
 		end;
 
 	text (a_text_formatter: TEXT_FORMATTER): BOOLEAN is
@@ -465,7 +440,7 @@ feature -- Access
 			end
 			if Result = Void and Tmp_ast_server.has (written_in) then
 				class_ast := Tmp_ast_server.item (written_in)
-				Result := class_ast.feature_with_name (name_id)
+				Result := class_ast.feature_with_name (name)
 			end
 
 			if Result = Void then
@@ -484,7 +459,7 @@ feature -- Access
 	hash_code: INTEGER is
 			-- Hash code
 		do
-			Result := name_id
+			Result := name.hash_code
 		end;
 
 	callees (a_flag: INTEGER_8): LINKED_LIST [TUPLE [class_c: CLASS_C; feature_name: STRING]] is
@@ -712,7 +687,7 @@ feature -- Output
 					end
 					a_text_formatter.process_symbol_text (Ti_colon)
 					a_text_formatter.add_space
-					orig_type.ext_append_to (a_text_formatter, associated_class)
+					orig_type.ext_append_to (a_text_formatter, Current)
 					if not args.after then
 						a_text_formatter.process_symbol_text (Ti_semi_colon)
 						a_text_formatter.add_space
@@ -730,7 +705,7 @@ feature -- Output
 			if not is_procedure then
 				a_text_formatter.process_symbol_text (Ti_colon)
 				a_text_formatter.add_space
-				type.ext_append_to (a_text_formatter, associated_class)
+				type.ext_append_to (a_text_formatter, Current)
 			end
 		end
 
@@ -863,7 +838,7 @@ feature -- Output
 			Result := associated_class.has_types
 			if Result then
 				Result := (is_constant and is_once) or
-					(not is_attribute and then
+					(not is_external and then not is_attribute and then
 					not is_constant and then not is_deferred and then not is_unique)
 			end
 		end;

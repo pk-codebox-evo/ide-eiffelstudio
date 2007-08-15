@@ -28,13 +28,13 @@ inherit
 			client_area,
 			show,
 			hide,
+			has_focus,
 			internal_enable_border,
 			internal_disable_border,
+			on_mouse_button_event,
+			set_size,
 			grab_keyboard_and_mouse,
-			release_keyboard_and_mouse,
-			allow_resize,
-			forbid_resize,
-			on_focus_changed
+			release_keyboard_and_mouse
 		end
 
 create
@@ -52,23 +52,15 @@ feature {NONE} -- Initialization
 	initialize is
 			-- Initialize `Current'.
 		do
+			{EV_GTK_EXTERNALS}.gtk_window_set_skip_pager_hint (c_object, True)
+			{EV_GTK_EXTERNALS}.gtk_window_set_skip_taskbar_hint (c_object, True)
 			client_area := {EV_GTK_EXTERNALS}.gtk_event_box_new
 			{EV_GTK_EXTERNALS}.gtk_widget_show (client_area)
 			{EV_GTK_EXTERNALS}.gtk_container_add (c_object, client_area)
-
-			if not override_redirect then
---				{EV_GTK_EXTERNALS}.gtk_window_set_type_hint (c_object, {EV_GTK_ENUMS}.gdk_window_type_hint_popup_menu_enum)
-				{EV_GTK_EXTERNALS}.gtk_window_set_skip_taskbar_hint (c_object, True)
-			end
-
-
 			Precursor {EV_WINDOW_IMP}
 
 				-- This completely disconnects the window from the window manager.
-			if override_redirect then
-				{EV_GTK_EXTERNALS}.gdk_window_set_override_redirect ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object), True)
-			end
-
+			{EV_GTK_EXTERNALS}.gdk_window_set_override_redirect ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object), True)
 			disable_border
 			disable_user_resize
 			set_background_color ((create {EV_STOCK_COLORS}).black)
@@ -77,27 +69,12 @@ feature {NONE} -- Initialization
 
 feature {EV_ANY_I} -- Implementation
 
-	override_redirect: BOOLEAN is True
-
-	on_focus_changed (a_has_focus: BOOLEAN) is
-			-- Called from focus intermediary agents when focus for `Current' has changed.
-			-- if `a_has_focus' then `Current' has just received focus.
-		do
-			if override_redirect then
-				if a_has_focus then
-					app_implementation.set_focused_popup_window (Current)
-				else
-					app_implementation.set_focused_popup_window (Void)
-				end
-			end
-			Precursor {EV_WINDOW_IMP} (a_has_focus)
-		end
-
 	grab_keyboard_and_mouse is
 			-- Perform a global mouse and keyboard grab.
 		do
 			if not is_disconnected_from_window_manager then
-				Precursor
+				Precursor;
+				{EV_GTK_EXTERNALS}.gtk_grab_add (c_object)
 			end
 		end
 
@@ -105,22 +82,40 @@ feature {EV_ANY_I} -- Implementation
 			-- Release mouse and keyboard grab.
 		do
 			if not is_disconnected_from_window_manager then
-				Precursor
+				Precursor;
+				{EV_GTK_EXTERNALS}.gtk_grab_remove (c_object)
 			end
 		end
 
 feature {NONE} -- implementation
 
-	allow_resize
-			-- Allow user resizing of `Current'.
+	set_size (a_width, a_height: INTEGER)
 		do
-			internal_enable_border
+			Precursor (a_width, a_height)
+			if is_displayed then
+				{EV_GTK_EXTERNALS}.gtk_widget_set_minimum_size (c_object, default_width.max (internal_minimum_width), default_height.max (internal_minimum_height))
+			end
 		end
 
-	forbid_resize
-			-- Forbid user resizing of `Current'.
+	on_mouse_button_event (a_type: INTEGER_32; a_x, a_y, a_button: INTEGER_32; a_x_tilt, a_y_tilt, a_pressure: REAL_64; a_screen_x, a_screen_y: INTEGER_32) is
 		do
-			-- Nothing needed at present as user cannot current resize the popup window.
+			Precursor (a_type, a_x, a_y, a_button, a_x_tilt, a_y_tilt, a_pressure, a_screen_x, a_screen_y)
+			if a_type = {EV_GTK_EXTERNALS}.gdk_button_press_enum then
+				if
+					a_screen_x >= x_position and then
+					a_screen_x <= (x_position + width) and then
+					a_screen_y >= y_position and then
+					a_screen_y <= (y_position + height)
+				then
+					grab_keyboard_and_mouse
+				else
+						-- Emulate WM handling when clicking off window.
+					if has_focus then
+						release_keyboard_and_mouse
+					end
+					{EV_GTK_EXTERNALS}.gtk_window_set_focus (c_object, default_pointer)
+				end
+			end
 		end
 
 	border_width: INTEGER is 1
@@ -138,54 +133,29 @@ feature {NONE} -- implementation
 			{EV_GTK_EXTERNALS}.gtk_container_set_border_width (c_object, 0)
 		end
 
-feature {EV_APPLICATION_IMP} -- Implementation
-
 	show is
 			-- Map the Window to the screen.
 		do
+			{EV_GTK_EXTERNALS}.gtk_widget_set_minimum_size (c_object, default_width.max (minimum_width), default_height.max (minimum_height))
 			Precursor
-			if override_redirect then
-				if not has_focus then
-					grab_keyboard_and_mouse
-				end
-			end
+			grab_keyboard_and_mouse
 		end
 
 	hide is
 			-- Unmap the Window from the screen.
 		do
-			if override_redirect then
-				if has_focus then
-					release_keyboard_and_mouse
-						-- We reset the focused popup window here in case hide is called as part of destroy
-						-- in which case the focus out event will not be called.
-					if is_in_destroy then
-						app_implementation.set_focused_popup_window (Void)
-					end
-				end
+			if has_focus then
+				release_keyboard_and_mouse
 			end
 			Precursor;
+			{EV_GTK_EXTERNALS}.gtk_widget_set_minimum_size (c_object, internal_minimum_width, internal_minimum_height)
 		end
 
-	handle_mouse_button_event (a_type: INTEGER_32; a_button: INTEGER_32; a_screen_x, a_screen_y: INTEGER_32) is
-			-- A mouse event has occurred.
+	has_focus: BOOLEAN is
+			-- Does Current have the keyboard focus?
 		do
-			if override_redirect then
-				if a_type = {EV_GTK_EXTERNALS}.gdk_button_press_enum then
-					if
-						a_screen_x >= x_position and then
-						a_screen_x <= (x_position + width) and then
-						a_screen_y >= y_position and then
-						a_screen_y <= (y_position + height)
-					then
-						grab_keyboard_and_mouse
-					else
-							-- Emulate WM handling when clicking off window.
-						if has_focus then
-							release_keyboard_and_mouse
-						end
-					end
-				end
+			if not is_disconnected_from_window_manager then
+				Result := {EV_GTK_EXTERNALS}.gtk_grab_get_current = c_object
 			end
 		end
 

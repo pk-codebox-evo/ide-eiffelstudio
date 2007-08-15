@@ -53,10 +53,10 @@ feature{NONE} -- Initialization
 			a_parent_valid: a_parent.is_class and then a_parent.is_compiled a_parent.is_valid_domain_item
 		do
 			internal_ast := a_ast
-			set_name (a_ast.name.name)
+			set_name (a_ast.name)
 			set_parent (a_parent)
 		ensure
-			name_set: name.is_case_insensitive_equal (a_ast.name.name)
+			name_set: name.is_case_insensitive_equal (a_ast.name)
 			parent_set: parent = a_parent
 		end
 
@@ -132,7 +132,7 @@ feature -- Access
 				until
 					l_list.after or l_ast /= Void
 				loop
-					l_item_name := l_list.item.name.name
+					l_item_name := l_list.item.name
 					if l_item_name.is_case_insensitive_equal (l_name) then
 						l_ast := l_list.item
 					end
@@ -143,16 +143,6 @@ feature -- Access
 			Result := internal_ast
 		ensure then
 			good_result: Result = internal_ast
-		end
-
-	class_i: CLASS_I is
-			-- CLASS_I object associated with current item
-		local
-			l_class: QL_CLASS
-		do
-			l_class ?= parent
-			check l_class /= Void end
-			Result := l_class.class_i
 		end
 
 	class_c: CLASS_C is
@@ -300,5 +290,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

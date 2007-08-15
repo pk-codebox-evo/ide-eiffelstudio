@@ -11,8 +11,7 @@ class
 inherit
 	EV_TREE_NODE_I
 		redefine
-			interface,
-			reset_pebble_function
+			interface
 		end
 
 	EV_ITEM_LIST_IMP [EV_TREE_NODE]
@@ -82,106 +81,6 @@ feature -- Status report
 			a_tree_path := {EV_GTK_DEPENDENT_EXTERNALS}.gtk_tree_model_get_path (par_tree.tree_store, list_iter.item)
 			Result := {EV_GTK_DEPENDENT_EXTERNALS}.gtk_tree_view_row_expanded (par_tree.tree_view, a_tree_path)
 			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_tree_path_free (a_tree_path)
-		end
-
-feature -- Measurement
-
-	x_position: INTEGER is
-			-- Horizontal offset relative to parent `x_position' in pixels.
-		local
-			l_h_adjust: POINTER
-			l_tree_imp: like parent_tree_imp
-		do
-			-- Return parents horizontal scrollbar offset.
-			l_tree_imp := parent_tree_imp
-			if l_tree_imp /= Void then
-				l_h_adjust := {EV_GTK_EXTERNALS}.gtk_scrolled_window_get_hadjustment (l_tree_imp.scrollable_area)
-				if l_h_adjust /= default_pointer then
-					Result := - {EV_GTK_EXTERNALS}.gtk_adjustment_struct_value (l_h_adjust).rounded
-				end
-			end
-		end
-
-	y_position: INTEGER is
-			-- Vertical offset relative to parent `y_position' in pixels.
-		local
-			l_v_adjust: POINTER
-			l_tree_imp: like parent_tree_imp
-		do
-			l_tree_imp := parent_tree_imp
-			if l_tree_imp /= Void then
-				Result := (index - 1) * l_tree_imp.row_height
-				l_v_adjust := {EV_GTK_EXTERNALS}.gtk_scrolled_window_get_vadjustment (l_tree_imp.scrollable_area)
-				if l_v_adjust /= default_pointer then
-					Result := Result - {EV_GTK_EXTERNALS}.gtk_adjustment_struct_value (l_v_adjust).rounded
-				end
-			end
-		end
-
-	screen_x: INTEGER is
-			-- Horizontal offset relative to screen.
-		local
-			l_tree_imp: like parent_tree_imp
-		do
-			l_tree_imp := parent_tree_imp
-			if l_tree_imp /= Void then
-				Result := l_tree_imp.screen_x + x_position
-			end
-		end
-
-	screen_y: INTEGER is
-			-- Vertical offset relative to screen.
-		local
-			l_tree_imp: like parent_tree_imp
-		do
-			l_tree_imp := parent_tree_imp
-			if l_tree_imp /= Void then
-				Result := l_tree_imp.screen_y + y_position
-			end
-		end
-
-	width: INTEGER is
-			-- Horizontal size in pixels.
-		local
-			l_tree_imp: like parent_tree_imp
-		do
-			l_tree_imp := parent_tree_imp
-			if l_tree_imp /= Void then
-				Result := l_tree_imp.width
-			end
-		end
-
-	height: INTEGER is
-			-- Vertical size in pixels.
-		local
-			l_tree_imp: like parent_tree_imp
-		do
-			l_tree_imp := parent_tree_imp
-			if l_tree_imp /= Void then
-				Result := l_tree_imp.row_height
-			end
-		end
-
-	minimum_width: INTEGER is
-			-- Minimum horizontal size in pixels.
-		local
-			l_tree_imp: like parent_tree_imp
-		do
-			l_tree_imp := parent_tree_imp
-			if l_tree_imp /= Void then
-				Result := l_tree_imp.minimum_width
-			end
-		end
-
-	minimum_height: INTEGER is
-			-- Minimum vertical size in pixels.
-		local
-			l_tree_imp: like parent_tree_imp
-		do
-			l_tree_imp := parent_tree_imp
-			if l_tree_imp /= Void then
-				Result := l_tree_imp.row_height
-			end
 		end
 
 feature {EV_ANY_I} -- Status setting
@@ -291,9 +190,9 @@ feature -- PND
 		end
 
 	start_transport (
-        	a_x, a_y, a_button: INTEGER; a_press: BOOLEAN
+        	a_x, a_y, a_button: INTEGER;
         	a_x_tilt, a_y_tilt, a_pressure: DOUBLE;
-        	a_screen_x, a_screen_y: INTEGER; a_menu_only: BOOLEAN) is
+        	a_screen_x, a_screen_y: INTEGER) is
         	-- Start PND transport (not needed)
 		do
 			check
@@ -345,32 +244,20 @@ feature -- PND
 			end
 		end
 
-	reset_pebble_function is
-			--Reset pebble_function.
-		local
-			l_parent_tree_imp: like parent_tree_imp
-		do
-			l_parent_tree_imp := parent_tree_imp
-			if l_parent_tree_imp /= Void then
-				l_parent_tree_imp.reset_pebble_function
-			else
-				Precursor
-			end
-		end
-
 feature {EV_TREE_IMP} -- Implementation
 
-	able_to_transport (a_button: INTEGER): BOOLEAN is
-			-- Is `Current' able to initiate transport with `a_button'.
+	set_pebble_void is
+			-- Resets pebble from Tree_Imp.
 		do
-			Result := (mode_is_drag_and_drop and then a_button = 1) or
-				(mode_is_pick_and_drop and then a_button = 3 and then not mode_is_configurable_target_menu)
+			pebble := Void
 		end
 
-	ready_for_pnd_menu (a_button: INTEGER; a_press: BOOLEAN): BOOLEAN is
-			-- Will `Current' display a menu with button `a_button'.
+	able_to_transport (a_button: INTEGER): BOOLEAN is
+			-- Is the row able to transport data with `a_button' click.
 		do
-			Result := ((mode_is_target_menu or else mode_is_configurable_target_menu) and a_button = 3) and then not a_press
+			Result := is_transport_enabled and
+			((a_button = 1 and mode_is_drag_and_drop) or
+			(a_button = 3 and (mode_is_pick_and_drop or mode_is_target_menu)))
 		end
 
 feature {EV_ANY_I} -- Implementation
@@ -431,13 +318,6 @@ feature {EV_TREE_IMP, EV_TREE_NODE_IMP} -- Implementation
 		end
 
 feature {EV_TREE_IMP, EV_TREE_NODE_IMP} -- Implementation
-
-	update_for_pick_and_drop (starting: BOOLEAN)
-			-- Pick and drop status has changed so update appearance of
-			-- `Current' to reflect available targets.
-		do
-			-- Do nothing
-		end
 
 	ensure_expandable is
 			-- Ensure `Current' is displayed as expandable.

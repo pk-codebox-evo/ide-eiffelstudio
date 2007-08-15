@@ -29,11 +29,11 @@ feature {NONE}-- Initialization
 			create metric_grid_area
 			create l_ev_horizontal_box_1
 			create cached_key_field
+			create l_ev_cell_1
 			create metric_selection_toolbar
 			create select_predefined_btn
 			create select_userdefined_btn
 			create l_ev_tool_bar_separator_1
-			create l_ev_cell_1
 			create move_unit_toolbar
 			create move_unit_up_btn
 			create move_unit_down_btn
@@ -45,11 +45,11 @@ feature {NONE}-- Initialization
 			extend (metric_grid_area)
 			extend (l_ev_horizontal_box_1)
 			l_ev_horizontal_box_1.extend (cached_key_field)
+			l_ev_horizontal_box_1.extend (l_ev_cell_1)
 			l_ev_horizontal_box_1.extend (metric_selection_toolbar)
 			metric_selection_toolbar.extend (select_predefined_btn)
 			metric_selection_toolbar.extend (select_userdefined_btn)
 			metric_selection_toolbar.extend (l_ev_tool_bar_separator_1)
-			l_ev_horizontal_box_1.extend (l_ev_cell_1)
 			l_ev_horizontal_box_1.extend (move_unit_toolbar)
 			move_unit_toolbar.extend (move_unit_up_btn)
 			move_unit_toolbar.extend (move_unit_down_btn)
@@ -82,6 +82,10 @@ feature {NONE}-- Initialization
 			disable_item_expand (l_ev_horizontal_box_1)
 			
 			set_all_attributes_using_constants
+			
+				-- Connect events.
+				-- Close the application when an interface close
+				-- request is recieved on `Current'. i.e. the cross is clicked.
 
 				-- Call `user_initialization'.
 			user_initialization

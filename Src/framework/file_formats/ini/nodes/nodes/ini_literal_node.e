@@ -60,4 +60,5 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
+
 end -- class {INI_LITERAL_NODE}

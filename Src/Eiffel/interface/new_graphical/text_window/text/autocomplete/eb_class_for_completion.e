@@ -21,13 +21,6 @@ inherit
 			grid_item
 		end
 
-	EB_SHARED_EDITOR_TOKEN_UTILITY
-		undefine
-			out,
-			copy,
-			is_equal
-		end
-
 create
 	make
 
@@ -71,26 +64,27 @@ feature -- Access
 			-- Text for tooltip of Current.  The tooltip shall display information which is not included in the
 			-- actual output of Current.
 		do
-			Result := out.twin
+			Result := Current.out.twin
 		end
 
-	grid_item : EB_GRID_EDITOR_TOKEN_ITEM is
+	grid_item : EB_GRID_CLASS_ITEM is
 			-- Corresponding grid item
 		local
 			l_class: CLASS_C
-			l_style: like just_class_name_style
+			l_c_style: EB_GRID_JUST_NAME_CLASS_STYLE
+			l_nc_style: EB_GRID_JUST_NAME_NONCOMPILED_CLASS_STYLE
 		do
 			l_class := associated_class.compiled_representation
-			l_style := just_class_name_style
 			if l_class /= Void then
-				l_style.set_class_c (l_class)
+				create l_c_style
+				create {EB_GRID_COMPILED_CLASS_ITEM}Result.make (l_class, l_c_style)
 			else
-				l_style.set_class_i (associated_class)
+				create l_nc_style
+				create {EB_GRID_NONCOMPILED_CLASS_ITEM}Result.make (associated_class, l_nc_style)
 			end
-			create Result
-			Result.set_overriden_fonts (label_font_table, label_font_height)
-			Result.set_pixmap (icon)
-			Result.set_text_with_tokens (l_style.text)
+			Result.set_tooltip_display_function (agent display_colorized_tooltip)
+			Result.enable_pixmap
+			Result.set_overriden_fonts (label_font_table)
 		end
 
 feature {NONE} -- Implementation

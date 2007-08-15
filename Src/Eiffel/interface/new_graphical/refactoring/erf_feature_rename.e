@@ -66,6 +66,8 @@ feature {ERF_CHK_FEATURE_RENAME} -- Element Change from check
 			recursive_descendants_set: recursive_descendants = a_recursive_descendants
 		end
 
+
+
 feature {NONE} -- Implementation
 
 	preferences: ERF_FEATURE_RENAME_PREFERENCES
@@ -97,7 +99,7 @@ feature {NONE} -- Implementation
 			dialog: ERF_FEATURE_RENAME_DIALOG
         do
 			create dialog
-			dialog.set_name (feature_i.feature_name)
+			dialog.set_name (feature_i.feature_name.as_upper)
 			dialog.disable_user_resize
 			if preferences.update_comments then
 				dialog.enable_update_comments
@@ -109,7 +111,7 @@ feature {NONE} -- Implementation
 			retry_ask_run_settings := dialog.ok_pressed
 
 				-- get the settings
-			preferences.set_new_feature_name (dialog.name)
+			preferences.set_new_feature_name (dialog.name.as_upper)
 			preferences.set_update_comments (dialog.comments)
 			preferences.set_update_strings (dialog.strings)
 

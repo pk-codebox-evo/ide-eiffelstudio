@@ -98,8 +98,7 @@ inherit
 			on_sys_key_down,
 			on_sys_key_up,
 			on_notify,
-			default_process_message,
-			on_wm_dropfiles
+			default_process_message
 		redefine
 			has_focus,
 			default_ex_style,
@@ -266,20 +265,6 @@ feature -- Status setting
 			set_maximum_height (32000)
 		end
 
-	disable_user_resize is
-			-- Forbid the resize of the window.
-		do
-			user_can_resize := False
-			forbid_resize
-		end
-
-	enable_user_resize is
-			-- Allow the resize of the window.
-		do
-			user_can_resize := True
-			allow_resize
-		end
-
 	forbid_resize is
 			-- Forbid the resize of `Current'.
 		local
@@ -415,6 +400,22 @@ feature -- Element change
 				menu_bar := Void
 				unset_menu
 				compute_minimum_height
+			end
+		end
+
+feature -- Basic operations
+
+	block is
+			-- Wait until `Current' is closed by the user.
+		local
+			app: EV_APPLICATION
+		do
+			app := Environment.application
+
+				-- Wait until window is closed.
+			from until is_destroyed or else not is_displayed loop
+				app.process_events
+				app.sleep (100)
 			end
 		end
 
@@ -967,7 +968,6 @@ feature {EV_ANY_I} -- Implementation
 			an_item_imp: EV_ITEM_IMP
 			sensitive: EV_SENSITIVE
 			combo_field: EV_INTERNAL_COMBO_FIELD_IMP
-			l_pebble_function: FUNCTION [ANY, TUPLE, ANY]
 		do
 			create wel_point.make (0, 0)
 			wel_point.set_cursor_position
@@ -987,17 +987,15 @@ feature {EV_ANY_I} -- Implementation
 						--| button matches the type of transport of `widget_imp'.
 					if (button_pressed = 1 and widget_imp.mode_is_drag_and_drop) or
 						(button_pressed = 3 and (widget_imp.mode_is_pick_and_drop or widget_imp.mode_is_target_menu)) then
+							-- This feature may get called more then once, so we only
+							-- perform the pebble query the first time, before the
+							-- transport has started.
 						if application_imp.pick_and_drop_source = Void then
-							l_pebble_function := widget_imp.pebble_function
 							widget_imp.call_pebble_function (wel_point.x - widget_imp.screen_x,
 								wel_point.y - widget_imp.screen_y, wel_point.x, wel_point.y)
 						end
 						if widget_imp.pebble /= Void then
 							Result := widget_imp
-						end
-						if l_pebble_function /= Void then
-								-- We clear the result of the pebble function call, if any, to avoid side effects.
-							widget_imp.reset_pebble_function
 						end
 						item_list_imp ?= widget_imp
 						if item_list_imp /= Void then
@@ -1005,9 +1003,8 @@ feature {EV_ANY_I} -- Implementation
 								- item_list_imp.screen_x, wel_point.y - item_list_imp.screen_y)
 							if an_item_imp /= Void then
 										--| FIXME we need to pass the relative coordinates to `query_pebble_function'.
-								l_pebble_function := an_item_imp.pebble_function
-								an_item_imp.call_pebble_function (0, 0, wel_point.x, wel_point.y)
-								if an_item_imp.pebble /= Void then
+									an_item_imp.call_pebble_function (0, 0, wel_point.x, wel_point.y)
+								if an_item_imp.pebble /= Void then--or pebble_result /= Void then
 										-- If the cursor is over an item and the item is a
 										-- pick and drop target then we set the target id to that of the
 										-- item, as the items are conceptually 'above' the list and so
@@ -1018,10 +1015,6 @@ feature {EV_ANY_I} -- Implementation
 									if sensitive = Void or (sensitive /= Void and then sensitive.is_sensitive) then
 										Result := an_item_imp
 									end
-								end
-								if l_pebble_function /= Void then
-										-- We clear the result of the pebble function call, if any, to avoid side effects.
-									an_item_imp.reset_pebble_function
 								end
 							end
 						end
@@ -1099,7 +1092,7 @@ feature {EV_ANY_I} -- Implementation
 
 						-- We don't send message to ourself
 						if l_tool_window /= Void and then l_imp.wel_item /= wel_item and wel_item /= lparam then
-							{WEL_API}.send_message (l_imp.wel_item, wm_ncactivate, to_wparam (l_keep_alive), to_lparam (-1))
+							cwin_send_message (l_imp.wel_item, wm_ncactivate, to_wparam (l_keep_alive), to_lparam (-1))
 						end
 						l_windows.forth
 					end
@@ -1120,8 +1113,7 @@ feature {EV_ANY_I} -- Implementation
 				-- The `Wm_ncactive' message is sent by windows when the
 				-- non client area of Current needs to be changed to indicate an
 				-- active or non active state (Blue or Grey as default).
-			inspect msg
-			when wm_ncactivate then
+			if msg = Wm_ncactivate then
 				if lparam.to_integer_32 = -1 then
 					-- This is a message send by ourself.
 					-- Windows will never sent wm_ncactive with lparam -1
@@ -1152,14 +1144,18 @@ feature {EV_ANY_I} -- Implementation
 
 					Result := on_wm_ncactivate (hwnd, wparam, lparam)
 				end
-			when Wm_activate then
+			elseif msg = Wm_activate then
 				window_on_wm_activate (wparam, lparam)
-			when Wm_initmenupopup then
+			elseif msg = Wm_initmenupopup then
 				create a_menu.make_by_pointer (wparam)
 				on_menu_opened (a_menu)
-			when Wm_enteridle then
-					--| This message is sent when `Current' has a modal dialog as a child.
-				application_imp.process_event_queue (False)
+			elseif msg = Wm_enteridle then
+					--| FIXME This message is sent when `Current' has a modal dialog
+					--| as a child. This message is only sent once, and not repeatedly as
+					--| we require for the idle actions.
+				if application_imp.idle_actions /= Void then
+					application_imp.idle_actions.call (Void)
+				end
 				fire_dialog_show_actions (lparam)
 			else
 				Result := Precursor {WEL_FRAME_WINDOW} (hwnd, msg, wparam, lparam)
@@ -1264,11 +1260,9 @@ feature {EV_ANY_I} -- Implementation
 
 	move_to_foreground is
 			-- Move `Current' to foreground.
-		local
-			l_result: BOOLEAN
 		do
 			override_movement := False
-			l_result := {WEL_API}.set_window_pos (wel_item, Hwnd_top, 0, 0, 0, 0,
+			cwin_set_window_pos (wel_item, Hwnd_top, 0, 0, 0, 0,
 				Swp_nosize + Swp_nomove)
 		end
 
@@ -1470,6 +1464,14 @@ feature {NONE} -- Implementation for switch non-parented and parented windows
 		end
 
 feature {NONE} -- Features that should be directly implemented by externals
+
+	cwin_get_next_dlggroupitem (hdlg, hctl: POINTER; previous: BOOLEAN): POINTER is
+			-- SDK GetNextDlgGroupItem
+		external
+			"C [macro <wel.h>] (HWND, HWND, BOOL): HWND"
+		alias
+			"GetNextDlgGroupItem"
+		end
 
 	cwin_get_next_dlgtabitem (hdlg, hctl: POINTER; previous: BOOLEAN): POINTER is
 			-- SDK GetNextDlgGroupItem

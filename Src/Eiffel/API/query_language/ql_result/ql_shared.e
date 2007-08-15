@@ -46,14 +46,6 @@ feature -- Access
 			Result := criterion_factory_table.item (a_scope).criterion_with_name (a_name, a_argu)
 		end
 
-	metric_factory: QL_METRIC_FACTORY is
-			-- Metric factory
-		once
-			create Result
-		ensure
-			result_attached: Result /= Void
-		end
-
 feature -- Domain
 
 	system_target_domain: QL_TARGET_DOMAIN is
@@ -74,14 +66,6 @@ feature -- Domain
 
 	empty_assertion_name: STRING is "#";
 			-- Name for an empty assertion
-
-	dummy_domain: QL_DOMAIN is
-			-- Dummy domain
-		do
-			create {QL_QUANTITY_DOMAIN} Result.make
-		ensure
-			result_attached: Result /= Void
-		end
 
 feature -- Criterion factory
 
@@ -215,5 +199,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

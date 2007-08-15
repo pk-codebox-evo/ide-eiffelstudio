@@ -40,10 +40,13 @@ create
 
 feature {NONE} -- Initialization
 
-	needs_event_box: BOOLEAN = False
+	needs_event_box: BOOLEAN is
 			-- Does `a_widget' need an event box?
+		do
+			Result := False
+		end
 
-	is_dockable: BOOLEAN = False
+	is_dockable: BOOLEAN is False
 
 	make (an_interface: like interface) is
 			-- Create a menu.
@@ -51,7 +54,7 @@ feature {NONE} -- Initialization
 			base_make (an_interface)
 			set_c_object ({EV_GTK_DEPENDENT_EXTERNALS}.gtk_image_menu_item_new)
 			pixmapable_imp_initialize
-			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_image_menu_item_set_image (menu_item, pixmap_box)
+			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_image_menu_item_set_image (c_object, pixmap_box)
 		end
 
 	initialize is
@@ -60,59 +63,34 @@ feature {NONE} -- Initialization
 			box: POINTER
 		do
 			Precursor {EV_ITEM_IMP}
-			real_signal_connect_after (menu_item, once "activate", agent (App_implementation.gtk_marshal).menu_item_activate_intermediary (c_object), Void)
+			real_signal_connect_after (visual_widget, once "activate", agent (App_implementation.gtk_marshal).menu_item_activate_intermediary (c_object), Void)
 			textable_imp_initialize
 
 			box := {EV_GTK_EXTERNALS}.gtk_hbox_new (False, 0)
-			{EV_GTK_EXTERNALS}.gtk_container_add (menu_item, box)
+			{EV_GTK_EXTERNALS}.gtk_container_add (c_object, box)
 			{EV_GTK_EXTERNALS}.gtk_widget_show (box)
 
 			if pixmap_box = default_pointer then
 				pixmapable_imp_initialize
 				{EV_GTK_EXTERNALS}.gtk_box_pack_start (box, pixmap_box, False, True, 0)
 			end
-			{EV_GTK_EXTERNALS}.gtk_box_pack_start (box, text_label, False, True, 0)
-
-			accel_label := {EV_GTK_EXTERNALS}.gtk_label_new (default_pointer)
-				-- We right align accelerator text.
-			{EV_GTK_EXTERNALS}.gtk_misc_set_alignment (accel_label, 1.0, 0.5)
-			{EV_GTK_EXTERNALS}.gtk_misc_set_padding (accel_label, 0, 0)
-			{EV_GTK_EXTERNALS}.gtk_box_pack_start (box, accel_label, True, True, 2)
-			{EV_GTK_EXTERNALS}.gtk_label_set_justify (accel_label, {EV_GTK_EXTERNALS}.gtk_justify_right_enum)
+			{EV_GTK_EXTERNALS}.gtk_box_pack_start (box, text_label, True, True, 0)
 		end
-
-		accel_label: POINTER
 
 feature -- Element change
 
 	set_text (a_text: STRING_GENERAL) is
 			-- Assign `a_text' to `text'.
 		local
-			l_split_text: STRING_32
-			l_split_list: LIST [STRING_32]
-			a_cs: EV_GTK_C_STRING
+--			tab_mod: INTEGER
 		do
-			l_split_text := a_text.to_string_32.twin
-			l_split_list := l_split_text.split ('%T')
-			if l_split_list.count = 2 then
-				Precursor {EV_TEXTABLE_IMP} (l_split_list @ 1)
-				real_text := a_text
-				a_cs :=  "            " + l_split_list @ 2
-				{EV_GTK_EXTERNALS}.gtk_widget_show (accel_label)
-			else
-				Precursor {EV_TEXTABLE_IMP} (a_text)
-				a_cs := ""
-				{EV_GTK_EXTERNALS}.gtk_widget_hide (accel_label)
-			end
-			{EV_GTK_EXTERNALS}.gtk_label_set_text (accel_label, a_cs.item)
-		end
-
-feature {EV_MENU_ITEM_LIST_IMP} -- Implementation
-
-	menu_item: POINTER
-			-- Pointer to the GtkMenuItem widget.
-		do
-			Result := c_object
+--			tab_mod := temp_string.count \\ 8
+--			if tab_mod < 4 then
+--				temp_string.replace_substring_all ("%T", "%T%T%T")
+--			else
+--				temp_string.replace_substring_all ("%T", "%T%T")
+--			end
+			Precursor {EV_TEXTABLE_IMP} (a_text)
 		end
 
 feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
@@ -130,7 +108,7 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 				end
 				{EV_GTK_EXTERNALS}.gtk_menu_shell_deactivate (p_imp.list_widget)
 			end
-			{EV_GTK_EXTERNALS}.gtk_menu_item_deselect (menu_item)
+			{EV_GTK_EXTERNALS}.gtk_menu_item_deselect (c_object)
 			if select_actions_internal /= Void then
 				select_actions_internal.call (Void)
 			end

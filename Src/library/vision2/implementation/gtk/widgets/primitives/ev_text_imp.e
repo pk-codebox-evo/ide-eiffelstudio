@@ -33,7 +33,9 @@ inherit
 
 	EV_FONTABLE_IMP
 		redefine
-			interface
+			interface,
+			visual_widget,
+			dispose
 		end
 
 create
@@ -471,8 +473,6 @@ feature -- Basic operation
 			a_iter: EV_GTK_TEXT_ITER_STRUCT
 			i: INTEGER
 			l_success: BOOLEAN
-			a_mark_name: EV_GTK_C_STRING
-			a_mark: POINTER
 		do
 			create a_iter.make
 			if has_word_wrapping then
@@ -488,25 +488,17 @@ feature -- Basic operation
 			else
 				{EV_GTK_DEPENDENT_EXTERNALS}.gtk_text_buffer_get_iter_at_line (text_buffer, a_iter.item, a_line - 1)
 			end
-			a_mark_name := "scroll_to_line"
-			a_mark := {EV_GTK_DEPENDENT_EXTERNALS}.gtk_text_buffer_create_mark (text_buffer, a_mark_name.item, a_iter.item, True)
-			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_text_view_scroll_to_mark (text_view, a_mark, 0.0, True, 0.0, 0.0)
-			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_text_buffer_delete_mark (text_buffer, a_mark)
+			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_text_view_scroll_to_iter (text_view, a_iter.item,  0.0, False, 0.0, 0.0)
 		end
 
 	scroll_to_end is
 			-- Scroll to the last line position of `Current'.
 		local
 			a_iter: EV_GTK_TEXT_ITER_STRUCT
-			a_mark_name: EV_GTK_C_STRING
-			a_mark: POINTER
 		do
 			create a_iter.make
 			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_text_buffer_get_end_iter (text_buffer, a_iter.item)
-			a_mark_name := "scroll_to_end"
-			a_mark := {EV_GTK_DEPENDENT_EXTERNALS}.gtk_text_buffer_create_mark (text_buffer, a_mark_name.item, a_iter.item, True)
-			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_text_view_scroll_to_mark (text_view, a_mark, 0.0, True, 0.0, 1.0)
-			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_text_buffer_delete_mark (text_buffer, a_mark)
+			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_text_view_scroll_to_iter (text_view, a_iter.item,  0.0, False, 0.0, 0.0)
 		end
 
 	enable_word_wrapping is

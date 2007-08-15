@@ -140,9 +140,6 @@ feature -- Element change
 
 	set_id_with_window (a_window: WEL_WINDOW) is
 			-- Set `id' with `a_window'.
-		require
-			a_window_not_void: a_window /= Void
-			a_window_exists: a_window.exists
 		do
 			cwel_toolinfo_set_uid (item, a_window.item)
 		ensure
@@ -326,4 +323,8 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+
+
+
+end -- class WEL_TOOL_INFO
+

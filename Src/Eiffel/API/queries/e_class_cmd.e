@@ -24,6 +24,8 @@ inherit
 
 	QL_SHARED
 
+	QL_SHARED_CLASS_RELATION
+
 	QL_UTILITY
 
 feature -- Initialization

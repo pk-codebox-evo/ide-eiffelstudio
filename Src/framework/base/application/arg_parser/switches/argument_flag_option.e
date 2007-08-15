@@ -19,17 +19,20 @@ create {ARGUMENT_FLAG_SWITCH}
 
 feature {NONE} -- Initialization
 
-	make (a_value: like value; a_flags: LIST [CHARACTER]; a_cs: BOOLEAN; a_switch: like switch) is
+	make (a_name: like name; a_value: like value; a_flags: LIST [CHARACTER]; a_cs: BOOLEAN; a_switch: like switch) is
 			-- Initializes option with a name, an associated value and a list of available flags.
 		require
+			a_name_attached: a_name /= Void
+			not_a_name_is_empty: not a_name.is_empty
 			a_value_attached: a_value /= Void
 			a_flags_attached: a_flags /= Void
 			a_switch_attached: a_switch /= Void
 		do
-			make_with_value (a_value, a_switch)
+			make_with_value (a_name, a_value, a_switch)
 			flags := a_flags
 			case_sensitive := a_cs
 		ensure
+			name_set: name = a_name
 			value_set: value = a_value
 			flags_set: flags = a_flags
 			case_sensitive_set: case_sensitive = a_cs
@@ -56,7 +59,7 @@ feature -- Query
 			if has_value then
 				c := a_flag
 				Result := flags.has (a_flag)
-				if not Result and then not case_sensitive then
+				if not case_sensitive then
 					c := a_flag
 					if c.is_alpha then
 						if c.is_lower then
@@ -69,8 +72,8 @@ feature -- Query
 				end
 			end
 		ensure
-			has_flag: (case_sensitive and (Result = flags.has (a_flag))) or else
-				(not case_sensitive and (Result = (flags.has (a_flag.as_lower) or flags.has (a_flag.as_upper))))
+			has_flag: (case_sensitive and Result = flags.has (a_flag)) or else
+				(not case_sensitive and Result = (Result = flags.has (a_flag.as_lower) or Result = flags.has (a_flag.as_upper)))
 		end
 
 invariant

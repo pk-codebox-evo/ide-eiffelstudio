@@ -95,8 +95,6 @@ feature -- Basic operation
 		local
 			l_item : MSR_TEXT_ITEM
 			class_i: CLASS_I
-			editors_manager: EB_EDITORS_MANAGER
-			l_editors: ARRAYED_LIST [EB_SMART_EDITOR]
 			l_string: STRING
 			l_text: SMART_TEXT
 		do
@@ -104,12 +102,10 @@ feature -- Basic operation
 			if l_item /= Void then
 				class_i ?= l_item.data
 				if class_i /= Void then
-					editors_manager := search_tool.develop_window.editors_manager
-					l_editors := editors_manager.editor_editing (class_i)
-					if not l_editors.is_empty then
-						editor := l_editors @ 1
-					end
-					if not l_editors.is_empty and search_tool.check_class_succeed and not search_tool.is_item_source_changed (l_item) then
+					if is_class_i_editing (class_i) and
+							search_tool.check_class_succeed and not
+							search_tool.is_item_source_changed (l_item)
+					then
 						l_text ?= editor.text_displayed
 						check
 							l_text_is_smart_text: l_text /= Void
@@ -156,17 +152,13 @@ feature {NONE} -- Implementation
 	item_replaced is
 			-- One item replaced when replacing all.
 		do
-			if smart_text /= Void then
-				smart_text.history_item_bind
-			end
+			smart_text.history_item_bind
 		end
 
 	all_item_replaced is
 			-- Replace all is done.
 		do
-			if smart_text /= Void then
-				smart_text.history_item_unbind
-			end
+			smart_text.history_item_unbind
 		end
 
 	one_cluster_item_replaced (a_item: MSR_TEXT_ITEM) is
@@ -192,7 +184,7 @@ feature {NONE} -- Implementation
 		do
 			class_i ?= a_item.data
 			if class_i /= Void then
-				Result := not (search_tool.develop_window.editors_manager.is_class_editing (class_i.file_name))
+				Result := not (is_class_i_editing (class_i))
 			end
 		end
 
@@ -204,22 +196,21 @@ feature {NONE} -- Implementation
 			l: LIST [EB_DEVELOPMENT_WINDOW]
 			unchanged_editor, changed_editor: EB_DEVELOPMENT_WINDOW
 			l_editor: EB_SMART_EDITOR
-			l_app: like ev_application
 		do
 			l := window_manager.development_windows_with_class (a_class.name)
 			if not l.is_empty then
 				from
-					l_app := ev_application
 					l.start
 				until
 					l.after
 				loop
+					l_editor := l.item.editor_tool.text_area
 					from
-						l_editor := l.item.editors_manager.current_editor
+						process_events_and_idle
 					until
 						editor.text_is_fully_loaded
 					loop
-						l_app.process_events
+						ev_application.idle_actions.call ([])
 					end
 					if l_editor.is_editable then
 						if l.item.changed then
@@ -249,25 +240,25 @@ feature {NONE} -- Implementation
 		do
 			if a_item /= Void then
 				l_class ?= a_item.data
-				if l_class /= Void then
-					Result := not l_class.is_read_only
+				check
+					l_class_not_void: l_class /= Void
 				end
+				Result := not l_class.is_read_only
 			end
 		end
 
 	editor : EB_EDITOR
-			-- Current editor
 
 	smart_text: SMART_TEXT is
 			-- Smart text in editor.
 		do
-			if editor /= Void then
-				Result ?= editor.text_displayed
+			Result ?= editor.text_displayed
+			check
+				is_smart_text: Result /= Void
 			end
 		end
 
 	search_tool: EB_MULTI_SEARCH_TOOL;
-			-- Search tool
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

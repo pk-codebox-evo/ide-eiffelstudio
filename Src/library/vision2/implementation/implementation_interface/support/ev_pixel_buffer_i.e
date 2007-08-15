@@ -25,26 +25,10 @@ feature -- Initialization
 		deferred
 		end
 
-	make_with_pixmap (a_pixmap: EV_PIXMAP) is
-			-- Create with `a_pixmap''s image data.
-		require
-			not_void: a_pixmap /= Void
-		deferred
-		end
-
 feature -- Command
 
 	set_with_named_file (a_file_name: STRING) is
-			-- Load pixel data from `a_file_name'.
-		require
-			a_file_name_valid: a_file_name /= Void and then not a_file_name.is_empty
-		deferred
-		end
-
-	save_to_named_file (a_file_name: STRING) is
-			-- Save pixel data to file `a_file_name'.
-		require
-			a_file_name_valid: a_file_name /= Void and then not a_file_name.is_empty
+			-- Load pixel datas from a_file_name'.
 		deferred
 		end
 
@@ -80,16 +64,6 @@ feature -- Command
 			is_locked := False
 		end
 
-	draw_pixel_buffer_with_rect (a_pixel_buffer: EV_PIXEL_BUFFER; a_rect: EV_RECTANGLE) is
-			-- Draw `a_pixel_buffer' at `a_rect'.
-		deferred
-		end
-
-	draw_text (a_text: STRING_GENERAL; a_font: EV_FONT; a_point: EV_COORDINATE) is
-			-- Draw `a_text' with `a_font' at `a_rect'.
-		deferred
-		end
-
 feature -- Query
 
 	is_locked: BOOLEAN
@@ -121,15 +95,6 @@ feature {NONE} -- Implementation
 
 	interface: EV_PIXEL_BUFFER;
 		-- Interface object for `Current'.
-
-feature -- Obsolete
-
-	draw_pixel_buffer (a_pixel_buffer: EV_PIXEL_BUFFER; a_rect: EV_RECTANGLE) is
-			-- Draw `a_pixel_buffer' at `a_rect'.
-		obsolete
-			"Use draw_pixel_buffer_with_rect instead"
-		deferred
-		end
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"

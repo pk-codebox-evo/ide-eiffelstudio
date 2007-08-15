@@ -52,7 +52,7 @@ feature {EV_GRID_LABEL_ITEM} -- Status Report
 			recompute_text_dimensions
 			Result := internal_text_width
 		ensure
-			result_non_negative: Result >= 0
+			result_non_negative: result >= 0
 		end
 
 	text_height: INTEGER is
@@ -63,7 +63,7 @@ feature {EV_GRID_LABEL_ITEM} -- Status Report
 			recompute_text_dimensions
 			Result := internal_text_height
 		ensure
-			result_non_negative: Result >= 0
+			result_non_negative: result >= 0
 		end
 
 feature {EV_GRID_LABEL_ITEM} -- Implementation
@@ -136,7 +136,6 @@ feature {EV_GRID_DRAWER_I} -- Implementation
 	perform_redraw (an_x, a_y, a_width, a_height, an_indent: INTEGER; drawable: EV_PIXMAP) is
 			-- Redraw `Current'.
 		local
-			l_interface: like interface
 			back_color: EV_COLOR
 			l_pixmap: EV_PIXMAP
 			pixmap_width: INTEGER
@@ -155,15 +154,15 @@ feature {EV_GRID_DRAWER_I} -- Implementation
 				-- Update the dimensions of the text if required.
 
 				-- Retrieve properties from interface
-			l_interface := interface
 			focused := parent_i.drawables_have_focus
-			left_border := l_interface.left_border
-			right_border := l_interface.right_border
-			top_border := l_interface.top_border
-			bottom_border := l_interface.bottom_border
+			left_border := interface.left_border
+			right_border := interface.right_border
+			top_border := interface.top_border
+			bottom_border := interface.bottom_border
 
 				-- Retrieve properties from interface.
-			l_pixmap := l_interface.pixmap
+			l_pixmap := interface.pixmap
+			spacing_used := interface.spacing
 
 				-- Now calculate the area to be used for displaying the text and pixmap
 				-- by subtracting the borders from the complete area.
@@ -175,7 +174,8 @@ feature {EV_GRID_DRAWER_I} -- Implementation
 			if l_pixmap /= Void then
 				pixmap_width := l_pixmap.width
 				pixmap_height := l_pixmap.height
-				spacing_used := l_interface.spacing
+			else
+				spacing_used := 0
 			end
 
 			space_remaining_for_text := client_width - pixmap_width - spacing_used
@@ -183,10 +183,10 @@ feature {EV_GRID_DRAWER_I} -- Implementation
 
 				-- Note in the following text positioning calculations, we subtract 1 from
 				-- the calculation as this accounts for the 0-based drawing positions.
-			if l_interface.text /= Void and space_remaining_for_text > 0 then
-				if l_interface.is_left_aligned then
+			if interface.text /= Void and space_remaining_for_text > 0 then
+				if interface.is_left_aligned then
 					text_offset_into_available_space := 0
-				elseif l_interface.is_right_aligned then
+				elseif interface.is_right_aligned then
 					text_offset_into_available_space := space_remaining_for_text - internal_text_width - 1
 				else
 					text_offset_into_available_space := space_remaining_for_text - internal_text_width - 1
@@ -198,9 +198,9 @@ feature {EV_GRID_DRAWER_I} -- Implementation
 					-- when the width of the column is not enough to display all of the contents
 				text_offset_into_available_space := text_offset_into_available_space.max (0)
 
-				if l_interface.is_top_aligned then
+				if interface.is_top_aligned then
 					vertical_text_offset_into_available_space := 0
-				elseif l_interface.is_bottom_aligned then
+				elseif interface.is_bottom_aligned then
 					vertical_text_offset_into_available_space := space_remaining_for_text_vertical - internal_text_height - 1
 				else
 					vertical_text_offset_into_available_space := space_remaining_for_text_vertical - internal_text_height - 1
@@ -213,20 +213,20 @@ feature {EV_GRID_DRAWER_I} -- Implementation
 					-- when the height of the row is not enough to display the text fully.
 				vertical_text_offset_into_available_space := vertical_text_offset_into_available_space.max (0)
 			end
+			text_x := left_border + pixmap_width + spacing_used + text_offset_into_available_space
+			text_y := top_border + vertical_text_offset_into_available_space
 			pixmap_x := left_border
 			pixmap_y := top_border + (client_height - pixmap_height) // 2
-			text_x := pixmap_x + pixmap_width + spacing_used + text_offset_into_available_space
-			text_y := top_border + vertical_text_offset_into_available_space
 
 
-			if l_interface.layout_procedure /= Void then
+			if interface.layout_procedure /= Void then
 				grid_label_item_layout.set_pixmap_x (pixmap_x)
 				grid_label_item_layout.set_pixmap_y (pixmap_y)
 				grid_label_item_layout.set_text_x (text_x)
 				grid_label_item_layout.set_text_y (text_y)
-				grid_label_item_layout.set_grid_label_item (l_interface)
+				grid_label_item_layout.set_grid_label_item (interface)
 				grid_label_item_layout.set_has_text_pixmap_overlapping (True)
-				l_interface.layout_procedure.call ([l_interface, grid_label_item_layout])
+				interface.layout_procedure.call ([interface, grid_label_item_layout])
 				text_x := grid_label_item_layout.text_x
 				text_y := grid_label_item_layout.text_y
 				pixmap_x := grid_label_item_layout.pixmap_x
@@ -251,7 +251,7 @@ feature {EV_GRID_DRAWER_I} -- Implementation
 				end
 
 					-- Calculate the area that must be selected in `Current'.
-				if l_interface.is_full_select_enabled then
+				if interface.is_full_select_enabled then
 					selection_x := 0
 					selection_width := a_width
 					selection_y := 0
@@ -288,16 +288,16 @@ feature {EV_GRID_DRAWER_I} -- Implementation
 					drawable.draw_pixmap (pixmap_x + an_indent, pixmap_y, l_pixmap)
 				end
 
-				if l_interface.font /= Void then
-					drawable.set_font (l_interface.font)
+				if interface.font /= Void then
+					drawable.set_font (interface.font)
 				else
 					drawable.set_font (internal_default_font)
 				end
 
-				if l_interface.text /= Void and space_remaining_for_text > 0 and space_remaining_for_text < internal_text_width then
-					drawable.draw_ellipsed_text_top_left (text_x + an_indent, text_y, l_interface.text, space_remaining_for_text)
+				if interface.text /= Void and space_remaining_for_text > 0 and space_remaining_for_text < internal_text_width then
+					drawable.draw_ellipsed_text_top_left (text_x + an_indent, text_y, interface.text, space_remaining_for_text)
 				else
-					drawable.draw_text_top_left (text_x + an_indent, text_y, l_interface.text)
+					drawable.draw_text_top_left (text_x + an_indent, text_y, interface.text)
 				end
 				drawable.remove_clip_area
 				drawable.set_copy_mode
@@ -326,6 +326,9 @@ indexing
 			 Website http://www.eiffel.com
 			 Customer support http://support.eiffel.com
 		]"
+
+
+
 
 end
 

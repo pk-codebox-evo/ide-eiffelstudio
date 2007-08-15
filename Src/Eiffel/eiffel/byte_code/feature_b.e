@@ -120,9 +120,6 @@ feature -- Access
 			-- Assign `p' to `parameters'.
 		do
 			parameters := p
-			if p /= Void then
-				p.do_all (agent {PARAMETER_B}.set_parent (Current))
-			end
 		end
 
 	set_type (t: TYPE_I) is
@@ -192,7 +189,7 @@ feature -- Access
 			if f = Void then
 					-- Process feature as an internal routine.
 				if context.final_mode then
-					create feature_bl.make
+					create feature_bl
 				else
 					create {FEATURE_BW} feature_bl.make
 				end
@@ -325,7 +322,7 @@ feature -- Inlining
 				precursor_type ?= real_type (precursor_type)
 			end
 			if parameters /= Void then
-				set_parameters (parameters.pre_inlined_code)
+				parameters := parameters.pre_inlined_code
 			end
 		end
 
@@ -374,7 +371,7 @@ feature -- Inlining
 						-- feature (descendant of STD_BYTE_CODE)
 					inliner.set_current_feature_inlined
 					context_class_type := system.class_type_of_id (entry.type_id)
-					written_class_type := context_class_type.type.implemented_type (f.written_in).associated_class_type
+					written_class_type := context_class_type.associated_class.implemented_type (f.written_in, context_class_type.type).associated_class_type
 					context_class_type := written_class_type
 						-- Create inlined byte node.
 					if cl_type.base_class.is_special then
@@ -414,6 +411,7 @@ feature -- Inlining
 			true_gen		: ARRAY [TYPE_I]
 			real_target_type: TYPE_A
 			actual_type		: TYPE_A
+			constraint		: TYPE_A
 			formal_a		: FORMAL_A
 			nb_generics, i	: INTEGER
 			l_formal_dec: FORMAL_CONSTRAINT_AS
@@ -449,7 +447,8 @@ feature -- Inlining
 						if actual_type.is_expanded then
 							m.put (actual_type.type_i, i)
 						else
-							m.put (reference_c_type, i)
+							constraint := written_class.constraint (i)
+							m.put (constraint.type_i, i)
 						end
 						true_gen.put (actual_type.type_i, i)
 						i := i + 1
@@ -461,7 +460,7 @@ feature -- Inlining
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

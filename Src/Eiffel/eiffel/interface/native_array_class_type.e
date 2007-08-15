@@ -200,11 +200,8 @@ feature -- IL code generation
 					il_generator.generate_generic_array_creation (l_formal)
 					il_generator.generate_check_cast (Void, array_type)
 				else
-					if cl_type.is_basic then
-						generic_type_id := cl_type.external_id
-					end
 					il_generator.generate_array_creation (generic_type_id)
-					il_generator.generate_array_initialization (array_type, generic_type)
+					il_generator.generate_array_initialization (generic_type)
 				end
 
 			when count_name_id then

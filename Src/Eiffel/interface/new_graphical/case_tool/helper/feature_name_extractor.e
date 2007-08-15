@@ -19,7 +19,7 @@ feature -- Access
 		require
 			a_feature_not_void: a_feature /= Void
 		do
-			Result := a_feature.feature_name.name.twin
+			Result := a_feature.feature_name.twin
 		ensure
 			Result_not_void: Result /= Void
 		end
@@ -35,7 +35,7 @@ feature -- Access
 			l_feature_names := a_feature.feature_names
 			create {ARRAYED_LIST [STRING]} Result.make (l_feature_names.count)
 			if l_feature_names.count = 1 then
-				Result.extend (a_feature.feature_name.name.twin)
+				Result.extend (a_feature.feature_name.twin)
 			else
 				str := l_feature_names.first.visual_name.twin
 				from
@@ -105,6 +105,7 @@ feature -- Access
 			Result_not_void: Result /= Void
 		end
 
+
 feature {NONE} -- Implementation
 
 	suppliers_name_compiled (a_type: TYPE_A): STRING is
@@ -155,7 +156,7 @@ feature {NONE} -- Implementation
 			Result := ""
 			ct ?= a_type
 			if ct /= Void then
-				Result.append (supplier_name (class_i_by_name (ct.class_name.name)))
+				Result.append (supplier_name (class_i_by_name (ct.class_name)))
 				g := ct.generics
 				if g /= Void then
 					Result.append (" [ ")

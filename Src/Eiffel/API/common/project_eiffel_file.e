@@ -66,20 +66,15 @@ feature -- Store/Retrieval
 			-- (Note: error cannot be invalid_precompilation)
 		do
 			Result ?= retrieved_object
-			if Result = Void and then not has_error then
-					-- An error was not detected, that is to say we were able
-					-- to retrieve something which is not of type PRECOMP_INFO.
-					-- Let's generate an error.
-				error_value := corrupt_value
-			end
 		ensure
 			valid_result: not has_error implies Result /= Void
 		end;
 
-	store (a_project: ANY; a_precompilation_id: INTEGER) is
+	store (a_project: ANY; a_version: STRING; a_precompilation_id: INTEGER) is
 			-- Store `a_project' for version `a_version' and `a_precompilation_id'.
 		require
 			a_project_not_void: a_project /= Void
+			a_version_not_void: a_version /= Void
 		local
 			l_writer: SED_MEDIUM_READER_WRITER
 			l_serializer: SED_INDEPENDENT_SERIALIZER
@@ -93,12 +88,12 @@ feature -- Store/Retrieval
 				create l_serializer.make (l_writer)
 				l_serializer.set_is_for_fast_retrieval (True)
 				l_writer.write_header
-				l_writer.write_string_8 (version_number)
+				l_writer.write_string_8 (a_version)
 				l_writer.write_integer_32 (a_precompilation_id)
 					-- The following information is not used on retrieval, but may help
 					-- users finding out which version of the Eiffel compiler and from where
 					-- this Eiffel compiler was coming from.
-				l_writer.write_string_8 (eiffel_layout.ec_command_name)
+				l_writer.write_string_8 (eiffel_layout.eiffel_installation_dir_name)
 				l_writer.write_string_8 (compiler_version_number.version.out)
 
 				if is_c_storable then
@@ -229,12 +224,12 @@ feature {NONE} -- Implementation
 	error_value: INTEGER
 			-- Error value
 
-	ok_value: INTEGER is 1
-	corrupt_value: INTEGER is 2
-	invalid_precompilation_value: INTEGER is 3
-	incompatible_value: INTEGER is 4
-	interrupt_value: INTEGER is 5
-	cannot_store_value: INTEGER is 6
+	ok_value,
+	corrupt_value,
+	invalid_precompilation_value,
+	incompatible_value,
+	interrupt_value,
+	cannot_store_value: INTEGER is unique
 			-- Error values
 
 	retrieved_object: ANY is

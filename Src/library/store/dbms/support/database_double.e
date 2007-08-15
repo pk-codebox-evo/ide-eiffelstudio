@@ -5,11 +5,15 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 
-class
+class 
 	DATABASE_DOUBLE [G -> DATABASE create default_create end]
 
 inherit
+
 	DB_TYPE
+		redefine
+			eiffel_name
+		end
 
 	HANDLE_SPEC [G]
 
@@ -20,11 +24,19 @@ feature -- Status report
 		do
 			Result := db_spec.sql_name_double
 		end
+	
+	eiffel_name: STRING is
+			-- Eiffel type name for double
+		once
+			Result := "DOUBLE"
+		ensure then
+			Result.is_equal ("DOUBLE")
+		end
 
-	eiffel_ref: ANY is
+	eiffel_ref: DOUBLE_REF is
 			-- Shared double reference
 		once
-			Result := {REAL_64} 0.0
+			create Result
 		end
 
 indexing

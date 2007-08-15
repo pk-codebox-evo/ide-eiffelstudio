@@ -55,7 +55,6 @@ feature{QL_DOMAIN} -- Intrinsic domain
 			l_user_data_list: like user_data_list
 			l_feature_list: like feature_list
 			l_feature: QL_FEATURE
-			l_generator: like used_in_domain_generator
 		do
 			if not is_criterion_domain_evaluated then
 				initialize_domain
@@ -63,7 +62,6 @@ feature{QL_DOMAIN} -- Intrinsic domain
 			source_domain.clear_cache
 			l_user_data_list := user_data_list
 			l_feature_list := feature_list
-			l_generator := used_in_domain_generator
 			create Result.make
 			from
 				l_feature_list.start
@@ -73,7 +71,6 @@ feature{QL_DOMAIN} -- Intrinsic domain
 				l_feature := query_feature_item (l_feature_list.item)
 				l_feature.set_data (l_user_data_list.i_th (l_feature_list.index))
 				Result.extend (l_feature)
-				l_generator.increase_internal_counter (l_feature)
 				l_feature_list.forth
 			end
 		end
@@ -94,11 +91,9 @@ feature{NONE} -- Implementation
 		local
 			descendants: ARRAYED_LIST [CLASS_C]
 			desc_c: CLASS_C
-			l_used_in_domain_generator: like used_in_domain_generator
 		do
 			descendants := e_class.descendants
 			classes.extend (e_class)
-			l_used_in_domain_generator := used_in_domain_generator
 			from
 				descendants.start
 			until
@@ -108,7 +103,6 @@ feature{NONE} -- Implementation
 				if not classes.has (desc_c) then
 					record_descendants (classes, desc_c)
 				end
-				l_used_in_domain_generator.increase_internal_counter (Void)
 				descendants.forth
 			end
 		end
@@ -202,6 +196,7 @@ feature{NONE} -- Implementation
 			result_attached: Result /= Void
 		end
 
+
 feature{NONE} -- Evaluate
 
 	is_satisfied_by_internal (a_item: QL_FEATURE): BOOLEAN is
@@ -215,8 +210,9 @@ feature{NONE} -- Evaluate
 
 invariant
 	feature_item_attached: criterion_domain /= Void
-	list_count_valid:
-		(feature_list /= Void and then user_data_list /= Void) implies (feature_list.count = user_data_list.count)
+	user_data_list_attached: user_data_list /= Void
+	feature_list_attached: feature_list /= Void
+	feature_list_and_user_data_list_valid: feature_list.count = user_data_list.count
 
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"
@@ -249,5 +245,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

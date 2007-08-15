@@ -60,16 +60,8 @@ feature -- Access
 					boolean_type, character_type, integer_type, real_32_type,
 					real_64_type, pointer_type
 				then
-					Result := basic_type_table.has_key (feat.feature_name_id)
+					Result := basic_type_table.has (feat.feature_name_id)
 					function_type := basic_type_table.found_item
-					if function_type = out_type then
-							-- {REAL_32}.out and {REAL_64}.out are processed
-							-- as non-built-in to avoid issues with locale settings.
-							-- {CHARACTER_32}.out is processed as non-built-in since it shows
-							-- an hexadecimal representation of the character.
-						Result := not target_type.is_real_32 and then not target_type.is_real_64 and then
-							not target_type.is_character_32
-					end
 
 				else
 					if target_type.is_enum then
@@ -124,7 +116,6 @@ feature -- IL code generation
 			f_type: INTEGER
 			long: INTEGER_I
 			nat: NATURAL_I
-			typed_pointer_i: TYPED_POINTER_I
 		do
 			f_type := function_type
 			inspect f_type
@@ -282,12 +273,7 @@ feature -- IL code generation
 
 			when generator_type then
 				il_generator.pop
-				typed_pointer_i ?= type
-				if typed_pointer_i /= Void then
-					il_generator.put_manifest_string ("POINTER")
-				else
-					il_generator.put_manifest_string (type.name)
-				end
+				il_generator.put_manifest_string (type.name)
 
 			when from_integer_to_enum_type then
 					-- Argument value becomes the enum value, we discard
@@ -653,6 +639,7 @@ feature {NONE} -- IL code generation
 			il_generator.generate_local_assignment (l_result)
 			il_generator.branch_to (l_end)
 
+
 				-- Generate case where boolean value is False:
 				-- `item & ~(a_type) 1 << n'
 			il_generator.mark_label (l_else)
@@ -707,6 +694,7 @@ feature {NONE} -- IL code generation
 			il_generator.generate_binary_operator (il_or, a_type.is_natural)
 			il_generator.generate_local_assignment (l_result)
 			il_generator.branch_to (l_end)
+
 
 				-- Generate case where boolean value is False:
 				-- `item & ~(a_type) 1 << n'

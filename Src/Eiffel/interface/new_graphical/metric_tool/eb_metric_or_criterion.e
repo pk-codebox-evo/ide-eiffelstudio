@@ -61,8 +61,8 @@ feature -- Process
 feature -- Status report
 
 	is_or_criterion: BOOLEAN is True;
-			-- Is current an "or" criterion?	
-			
+			-- Is current an "or" criterion?		
+
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"
         license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
@@ -94,5 +94,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

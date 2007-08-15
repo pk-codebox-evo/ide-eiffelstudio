@@ -53,9 +53,9 @@ feature {NONE} -- Initialization
 			build_menu
 		end
 
-feature {NONE} -- Element change
+feature -- Element change
 
-	internal_recycle is
+	recycle is
 			-- To be called when the object is no more used.
 		do
 			history_manager.remove_observer (Current)
@@ -128,11 +128,7 @@ feature -- Observer pattern
 				-- Create a new entry for `a_item' in the menu.
 			create menu_item
 			menu_item.select_actions.extend (agent history_manager.go_i_th (index_item))
-			if an_item /= Void then
-				menu_item.set_text (an_item.history_name)
-			else
-				menu_item.set_text ("")
-			end
+			menu_item.set_text (an_item.history_name)
 			menu_item.set_data (index_item)
 			extend (menu_item)
 		end

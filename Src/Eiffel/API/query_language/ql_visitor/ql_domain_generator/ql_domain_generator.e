@@ -49,6 +49,7 @@ indexing
 					And there is a criterion named "is_visible" to filter these items.
 					For example of the invisible items, see comment of `is_visible' in {QL_CLASS}.
 
+
 					-----------------------------------------------------------------------------------------------------------------
 
 					Generation feedback and optimization
@@ -203,6 +204,20 @@ feature -- Setting
 			distinct_item_disabled: not is_distinct_required
 		end
 
+	replace_delayed_domain_by (a_domain: QL_DOMAIN) is
+			-- Replace all delayed domains in `criterion' by `a_domain'.
+		local
+			l_criterion: like criterion
+			l_replacer: like delayed_domain_replacer
+		do
+			l_criterion := criterion
+			if l_criterion /= Void then
+				l_replacer := delayed_domain_replacer
+				l_replacer.set_new_domain (a_domain)
+				l_replacer.replace (l_criterion)
+			end
+		end
+
 feature -- Status report
 
 	is_fill_domain_enabled: BOOLEAN
@@ -263,7 +278,7 @@ feature -- Domain visit
 			then
 					-- Evaluate result domain using optimization.
 				is_temp_domain_used := False
-				l_criterion.intrinsic_domain.content.do_all (agent on_item_satisfied_by_criterion ({like item_type}?, False))
+				l_criterion.intrinsic_domain.content.do_all (agent on_item_satisfied_by_criterion ({QL_ITEM}?, False))
 			else
 					-- Evaluate result domain without optimization.
 				is_temp_domain_used := True
@@ -468,11 +483,57 @@ feature{NONE} -- Implementation
 			end
 		end
 
+	process_line_from_code_item (a_item: QL_CODE_STRUCTURE_ITEM) is
+			-- Find out all possible QL_LINE items from `a_item'.
+		local
+			l_lines: LIST [STRING]
+			l_class_text: STRING
+			l_index: INTEGER
+			l_count: INTEGER
+			l_line: QL_LINE
+			l_cur_line: STRING
+			l_new_line_char: CHARACTER
+		do
+			if a_item.is_compiled or else a_item.is_class then
+				l_new_line_char := '%N'
+				l_class_text := a_item.text
+				l_lines := l_class_text.split (l_new_line_char)
+				if not l_lines.is_empty then
+					if l_lines.last.is_empty then
+						l_lines.finish
+						l_lines.remove
+					end
+				end
+				from
+					l_lines.start
+					l_index := 1
+					l_count := l_lines.count - 1
+				until
+					l_index > l_count
+				loop
+					l_cur_line := l_lines.item
+					l_cur_line.append_character (l_new_line_char)
+					create l_line.make_with_text (l_index, l_cur_line, a_item)
+					evaluate_item (l_line)
+					l_lines.forth
+					l_index := l_index + 1
+				end
+					-- Special case for last line: check if last line is not ended with a new-line character,
+				l_cur_line := l_lines.last
+				if l_class_text.item (l_class_text.count) = l_new_line_char then
+					l_cur_line.append_character (l_new_line_char)
+				end
+				create l_line.make_with_text (l_index, l_cur_line, a_item)
+				evaluate_item (l_line)
+			end
+		end
+
 	process_feature_from_class (a_class: QL_CLASS; a_real_feature_action: PROCEDURE [ANY, TUPLE [QL_REAL_FEATURE]]; a_invariant_action: PROCEDURE [ANY, TUPLE [QL_INVARIANT]]) is
 			-- Iterate through features in `a_class' and call `a_real_feature_action' for every real feature,
 			-- call `a_invariant_action' for every invariant feature.
 		require
 			a_class_attached: a_class /= Void
+			a_class_is_compiled: a_class.is_compiled
 			a_real_feature_action_attached: a_real_feature_action /= Void
 			a_invariant_action_attached: a_invariant_action /= Void
 		local
@@ -483,41 +544,39 @@ feature{NONE} -- Implementation
 			l_parents: LINKED_LIST [CLASS_C]
 			l_inv_ast: INVARIANT_AS
 		do
-			if a_class.is_compiled then
-				l_class_c := a_class.class_c
-					-- Find real features.
-					-- All immediate and inherited real features are inserted.
-				l_feature_table := l_class_c.api_feature_table
-				from
-					l_feature_table.start
-				until
-					l_feature_table.after
-				loop
-					create l_real_feature.make_with_parent (l_feature_table.item_for_iteration, a_class)
-					a_real_feature_action.call ([l_real_feature])
-					l_feature_table.forth
-				end
-					-- Find invariant.
-					-- First find immediate invariant
-				if l_class_c.has_invariant then
-					create l_invariant.make_with_parent (l_class_c, l_class_c, a_class)
+			l_class_c := a_class.class_c
+				-- Find real features.
+				-- All immediate and inherited real features are inserted.
+			l_feature_table := l_class_c.api_feature_table
+			from
+				l_feature_table.start
+			until
+				l_feature_table.after
+			loop
+				create l_real_feature.make_with_parent (l_feature_table.item_for_iteration, a_class)
+				a_real_feature_action.call ([l_real_feature])
+				l_feature_table.forth
+			end
+				-- Find invariant.
+				-- First find immediate invariant
+			if l_class_c.has_invariant then
+				create l_invariant.make_with_parent (l_class_c, l_class_c, a_class)
+				a_invariant_action.call ([l_invariant])
+			end
+				-- Then the inherited invariants.
+			from
+				create l_parents.make
+				record_ancestors_of_class (l_class_c, l_parents)
+				l_parents.start
+			until
+				l_parents.after
+			loop
+				l_inv_ast := l_parents.item.invariant_ast
+				if l_inv_ast /= Void then
+					create l_invariant.make_with_parent (l_class_c, l_parents.item, a_class)
 					a_invariant_action.call ([l_invariant])
 				end
-					-- Then the inherited invariants.
-				from
-					create l_parents.make
-					record_ancestors_of_class (l_class_c, l_parents)
-					l_parents.start
-				until
-					l_parents.after
-				loop
-					l_inv_ast := l_parents.item.invariant_ast
-					if l_inv_ast /= Void then
-						create l_invariant.make_with_parent (l_class_c, l_parents.item, a_class)
-						a_invariant_action.call ([l_invariant])
-					end
-					l_parents.forth
-				end
+				l_parents.forth
 			end
 		end
 
@@ -580,6 +639,12 @@ feature{NONE} -- Implementation
 			l_domain.content.do_all (agent evaluate_item)
 		end
 
+	delayed_domain_replacer: QL_DELAYED_DOMAIN_REPLACER is
+			-- Delayed domain replacer
+		once
+			create Result
+		end
+
 feature{QL_DOMAIN_GENERATOR, QL_CRITERION} -- Action
 
 	on_item_satisfied_by_criterion (a_item: like item_type; a_interval_actions_applied: BOOLEAN) is
@@ -636,5 +701,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

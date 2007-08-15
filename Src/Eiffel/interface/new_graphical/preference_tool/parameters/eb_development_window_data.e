@@ -8,7 +8,8 @@ indexing
 deferred class
 	EB_DEVELOPMENT_WINDOW_DATA
 
-feature {EB_DEVELOPMENT_WINDOW_DATA, EB_SHARED_PREFERENCES, EB_DEVELOPMENT_WINDOW_BUILDER, EB_DEVELOPMENT_WINDOW_DIRECTOR} -- Value
+
+feature {EB_DEVELOPMENT_WINDOW_DATA, EB_SHARED_PREFERENCES} -- Value
 
 	width: INTEGER is
 			-- Width for the development window
@@ -40,8 +41,23 @@ feature {EB_DEVELOPMENT_WINDOW_DATA, EB_SHARED_PREFERENCES, EB_DEVELOPMENT_WINDO
 		deferred
 		end
 
-	is_force_debug_mode: BOOLEAN is
-			-- Is the development window force debug mode?
+	left_panel_use_explorer_style: BOOLEAN is
+			-- Should there be only one tool in the left panel?
+		deferred
+		end
+
+	left_panel_width: INTEGER is
+			-- Width for the left panel.
+		deferred
+		end
+
+	left_panel_layout: ARRAY [STRING] is
+			-- Layout of the left panel of the window.
+		deferred
+		end
+
+	right_panel_layout: ARRAY [STRING] is
+			-- Layout of the left panel of the window.
 		deferred
 		end
 
@@ -120,13 +136,6 @@ feature -- Element change
 			states_set: is_maximized = a_maximized and is_minimized = a_minimized
 		end
 
-	save_force_debug_mode (a_bool: BOOLEAN) is
-			-- Save if `is_force_debug_mode'
-		deferred
-		ensure
-			mode_set: is_force_debug_mode = a_bool
-		end
-
 	save_position (a_x, a_y: INTEGER) is
 			-- Save the position of the window.
 			-- Call `commit_save' to have the changes actually saved.
@@ -136,14 +145,34 @@ feature -- Element change
 			y_set: a_y = y_position
 		end
 
+	save_left_panel_width (a_width: INTEGER) is
+			-- Save the width of the left panel of the window.
+			-- Call `commit_save' to have the changes actually saved.
+		deferred
+		ensure
+			width_set: a_width = left_panel_width
+		end
+
+	save_left_panel_layout (a_layout: ARRAY [STRING]) is
+			-- Save the layout of the left panel of the window.
+			-- Call `commit_save' to have the changes actually saved.
+		deferred
+		end
+
+	save_right_panel_layout (a_layout: ARRAY [STRING]) is
+			-- Save the layout of the left panel of the window.
+			-- Call `commit_save' to have the changes actually saved.
+		deferred
+		end
+
 feature -- Basic operations
 
-	retrieve_general_toolbar (command_pool: LIST [EB_TOOLBARABLE_COMMAND]): ARRAYED_SET [SD_TOOL_BAR_ITEM] is
+	retrieve_general_toolbar (command_pool: LIST [EB_TOOLBARABLE_COMMAND]): EB_TOOLBAR is
 			-- Retreive the general toolbar using the available commands in `command_pool'
 		deferred
 		end
 
-	retrieve_refactoring_toolbar (command_pool: LIST [EB_TOOLBARABLE_COMMAND]): ARRAYED_SET [SD_TOOL_BAR_ITEM] is
+	retrieve_refactoring_toolbar (command_pool: LIST [EB_TOOLBARABLE_COMMAND]): EB_TOOLBAR is
 			-- Retreive the refactoring toolbar using the available commands in `command_pool'
 		deferred
 		end

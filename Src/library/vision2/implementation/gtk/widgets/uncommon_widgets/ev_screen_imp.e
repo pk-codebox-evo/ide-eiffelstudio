@@ -51,7 +51,7 @@ feature -- Status report
 	pointer_position: EV_COORDINATE is
 			-- Position of the screen pointer.
 		local
-			l_display_data: TUPLE [a_window: POINTER; a_x: INTEGER; a_y: INTEGER; a_mask: NATURAL_32]
+			l_display_data: TUPLE [a_window: POINTER; a_x: INTEGER; a_y: INTEGER; a_mask: INTEGER]
 		do
 			l_display_data := app_implementation.retrieve_display_data
 			create Result.set (l_display_data.a_x, l_display_data.a_y)
@@ -186,20 +186,6 @@ feature -- Basic operation
 			end
 		end
 
-	fake_pointer_wheel_up is
-			-- Simulate the user rotating the mouse wheel up.
-		do
-				--| Mouse pointer button number 4 relates to mouse wheel up
-			fake_pointer_button_press (4)
-		end
-
-	fake_pointer_wheel_down is
-			-- Simulate the user rotating the mouse wheel down.
-		do
-				--| Mouse pointer button number 5 relates to mouse wheel up
-			fake_pointer_button_press (5)
-		end
-
 	fake_key_press (a_key: EV_KEY) is
 			-- Fake key `a_key' press.
 		local
@@ -274,6 +260,7 @@ feature -- Measurement
 feature {NONE} -- Externals (XTEST extension)
 
 	frozen x_keysym_to_keycode (a_display: POINTER; a_keycode: INTEGER): INTEGER is
+			-- (from EV_C_GTK)
 		external
 			"C: EIF_INTEGER| <X11/Xlib.h>"
 		alias
@@ -281,6 +268,7 @@ feature {NONE} -- Externals (XTEST extension)
 		end
 
 	frozen x_test_fake_button_event (a_display: POINTER; a_button: INTEGER; a_is_press: BOOLEAN; a_delay: INTEGER): BOOLEAN is
+			-- (from EV_C_GTK)
 		external
 			"C: EIF_BOOL| <X11/extensions/XTest.h>"
 		alias
@@ -288,6 +276,7 @@ feature {NONE} -- Externals (XTEST extension)
 		end
 
 	frozen x_test_fake_key_event (a_display: POINTER; a_keycode: INTEGER; a_is_press: BOOLEAN; a_delay: INTEGER): BOOLEAN is
+			-- (from EV_C_GTK)
 		external
 			"C: EIF_BOOL| <X11/extensions/XTest.h>"
 		alias
@@ -295,6 +284,7 @@ feature {NONE} -- Externals (XTEST extension)
 		end
 
 	frozen x_test_fake_motion_event (a_display: POINTER; a_scr_num, a_x, a_y, a_delay: INTEGER): BOOLEAN is
+			-- (from EV_C_GTK)
 		external
 			"C: EIF_BOOL| <X11/extensions/XTest.h>"
 		alias
@@ -302,6 +292,7 @@ feature {NONE} -- Externals (XTEST extension)
 		end
 
 	frozen x_test_query_extension (a_display, a_event_base, a_error_base, a_major_version, a_minor_version: POINTER): BOOLEAN is
+			-- (from EV_C_GTK)
 		external
 			"C: EIF_BOOL| <X11/extensions/XTest.h>"
 		alias

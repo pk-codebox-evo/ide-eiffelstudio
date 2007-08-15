@@ -12,8 +12,7 @@ inherit
 	LIKE_TYPE_A
 		redefine
 			is_like_current, has_associated_class,
-			type_i, associated_class, conform_to, is_valid,
-			evaluated_type_in_descendant, instantiated_in
+			type_i, associated_class, conform_to, is_valid
 		end
 
 	SHARED_NAMES_HEAP
@@ -88,23 +87,14 @@ feature -- Comparison
 			-- Is `other' equivalent to the current object ?
 		do
 			Result := anchor_name_id = other.anchor_name_id and then
-				is_like_current = other.is_like_current and then
-				has_attached_mark = other.has_attached_mark and then
-				has_detachable_mark = other.has_detachable_mark
+				is_like_current = other.is_like_current
 		end
 
 feature -- Output
 
-	ext_append_to (st: TEXT_FORMATTER; c: CLASS_C) is
+	ext_append_to (st: TEXT_FORMATTER; f: E_FEATURE) is
 			-- Append Current type to `st'.
 		do
-			if has_attached_mark then
-				st.process_symbol_text (ti_exclamation)
-				st.add_space
-			elseif has_detachable_mark then
-				st.process_symbol_text (ti_question)
-				st.add_space
-			end
 			st.process_keyword_text (ti_Like_keyword, Void)
 			st.add_space
 			st.add (anchor)
@@ -112,14 +102,7 @@ feature -- Output
 
 	dump: STRING is
 		do
-			create Result.make_empty
-			if has_attached_mark then
-				Result.append_character ('!')
-				Result.append_character (' ')
-			elseif has_detachable_mark then
-				Result.append_character ('?')
-				Result.append_character (' ')
-			end
+			create Result.make (0)
 			Result.append ("like ")
 			Result.append (anchor)
 		end
@@ -132,11 +115,7 @@ feature {NONE} -- Implementation
 			l_other: like Current
 		do
 			l_other ?= other
-			if l_other /= Void then
-				Result := anchor_name_id = l_other.anchor_name_id and then
-					has_attached_mark = l_other.has_attached_mark and then
-					has_detachable_mark = l_other.has_detachable_mark
-			end
+			Result := l_other /= Void and then anchor_name_id = l_other.anchor_name_id
 		end
 
 	create_info: CREATE_INFO is
@@ -153,14 +132,6 @@ feature {NONE} -- Implementation
 		do
 		end
 
-	instantiated_in (class_type: TYPE_A): like Current is
-		do
-		end
-
-	evaluated_type_in_descendant (a_ancestor, a_descendant: CLASS_C; a_feature: FEATURE_I): like Current is
-		do
-		end
-
 	type_i: TYPE_I is
 			-- C type
 		do
@@ -170,11 +141,13 @@ feature {NONE} -- Implementation
 			-- String constant for `Current'.
 
 invariant
+
 	non_void_anchor: anchor /= Void
-	is_like_current_implies_current_anchor: is_like_current implies anchor.is_equal (Like_current)
+	is_like_current_implies_current_anchor: is_like_current
+				implies anchor.is_equal (Like_current)
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

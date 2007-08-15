@@ -14,11 +14,7 @@ inherit
 			make as tool_make
 		redefine
 			menu_name,
-			pixmap,
-			attach_to_docking_manager,
-			build_docking_content,
-			internal_recycle,
-			show
+			pixmap
 		end
 
 create
@@ -26,7 +22,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_manager: EB_DEVELOPMENT_WINDOW; a_favorites_manager: EB_FAVORITES_MANAGER) is
+	make (a_manager: EB_TOOL_MANAGER; a_favorites_manager: EB_FAVORITES_MANAGER) is
 			-- Make a new favorites tool.
 		require
 			a_manager_exists: a_manager /= Void
@@ -42,31 +38,16 @@ feature {NONE} -- Initialization
 			-- The widget has already been created, so do nothing.
 		end
 
-	build_docking_content (a_docking_manager: SD_DOCKING_MANAGER) is
-			-- Build docking content.
-		local
-			l_tree: EB_FAVORITES_TREE
+	build_explorer_bar_item (explorer_bar: EB_EXPLORER_BAR) is
+			-- Build the associated explorer bar item and
+			-- Add it to `explorer_bar'
 		do
-			Precursor {EB_TOOL}(a_docking_manager)
-			l_tree := favorites_manager.widget
-			content.drop_actions.extend (agent l_tree.remove_class_stone)
-			content.drop_actions.extend (agent l_tree.remove_feature_stone)
-			content.drop_actions.extend (agent l_tree.remove_folder)
-			content.drop_actions.extend (agent l_tree.add_stone)
-			content.drop_actions.extend (agent l_tree.add_folder)
-			content.drop_actions.extend (agent on_drop)
-		end
-
-feature {EB_DEVELOPMENT_WINDOW_BUILDER} -- Initialization
-
-	attach_to_docking_manager (a_docking_manager: SD_DOCKING_MANAGER) is
-			-- Attach to docking manager
-		do
-			build_docking_content (a_docking_manager)
-
-			check not_already_has: not a_docking_manager.has_content (content) end
-			a_docking_manager.contents.extend (content)
-			check friend_created: develop_window.tools.breakpoints_tool  /= Void end
+			create explorer_bar_item.make (explorer_bar, widget, title, True)
+			explorer_bar_item.set_menu_name (menu_name)
+			if pixmap /= Void then
+				explorer_bar_item.set_pixmap (pixmap)
+			end
+			explorer_bar.add (explorer_bar_item)
 		end
 
 feature -- Access
@@ -77,19 +58,13 @@ feature -- Access
 			Result := favorites_manager.widget
 		end
 
-	title: STRING_GENERAL is
+	title: STRING is
 			-- Title of the tool
 		do
-			Result := Interface_names.t_favorites_tool
+			Result := Interface_names.t_Favorites_tool
 		end
 
-	title_for_pre: STRING is
-			-- Title for prefence, STRING_8
-		do
-			Result := Interface_names.to_Favorites_tool
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it may appear in a menu.
 		do
 			Result := Interface_names.m_Favorites_tool
@@ -101,38 +76,22 @@ feature -- Access
 			Result := pixmaps.icon_pixmaps.tool_favorites_icon
 		end
 
-feature -- Command
-
-	show is
-			-- Show tool.
-		local
-			w: EV_WIDGET
-		do
-			Precursor {EB_TOOL}
-			w := favorites_manager.widget
-			if w /= Void and then w.is_displayed and then w.is_sensitive then
-				favorites_manager.widget.set_focus
-			end
-		end
-
 feature -- Memory management
 
-	internal_recycle is
+	recycle is
 			-- Recycle `Current', but leave `Current' in an unstable state,
 			-- so that we know whether we're still referenced or not.
 		do
+			if explorer_bar_item /= Void then
+				explorer_bar_item.recycle
+				explorer_bar_item := Void
+			end
 			favorites_manager.recycle
 			favorites_manager := Void
-			Precursor {EB_TOOL}
+			manager := Void
 		end
 
 feature {NONE} -- Implementation
-
-	on_drop (a_stone: STONE) is
-			-- Set focus to content.
-		do
-			content.set_focus
-		end
 
 	favorites_manager: EB_FAVORITES_MANAGER;
 			-- Associated favorites manager.

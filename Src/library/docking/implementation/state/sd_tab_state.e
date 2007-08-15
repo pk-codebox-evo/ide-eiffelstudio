@@ -22,15 +22,11 @@ inherit
 			content,
 			change_title,
 			change_pixmap,
-			change_tab_tooltip,
 			close,
 			content_count_valid,
 			is_dock_at_top,
 			hide,
-			show,
 			has,
-			set_last_floating_width,
-			set_last_floating_height,
 			restore
 		end
 create
@@ -65,17 +61,7 @@ feature {NONE} -- Initlization
 			tab_zone := internal_shared.widget_factory.tab_zone (a_content, a_target_zone)
 			internal_docking_manager.zones.add_zone (tab_zone)
 
-			-- Sometimes, `l_parent' maybe void, don't know the reason yet.
-			-- Maybe the calling of the actions have been delayed?
-			if l_parent /= Void then
-				l_parent.extend (tab_zone)
-			end
-
-			-- We should copy maximized informations from `a_target_zone'
-			if a_target_zone.is_maximized then
-				tab_zone.set_max (True)
-				tab_zone.set_widget_main_area (a_target_zone.main_area_widget, a_target_zone.main_area, a_target_zone.internal_parent, a_target_zone.internal_parent_split_position)
-			end
+			l_parent.extend (tab_zone)
 
 			create l_target_zone_tab_state.make_with_tab_zone (a_target_zone.content, tab_zone, direction)
 			l_target_zone_tab_state.set_last_floating_height (a_target_zone.state.last_floating_height)
@@ -139,7 +125,7 @@ feature {NONE} -- Initlization
 
 feature -- Redefine
 
-	restore (a_data: SD_INNER_CONTAINER_DATA; a_container: EV_CONTAINER) is
+	restore (a_titles: ARRAYED_LIST [STRING]; a_container: EV_CONTAINER; a_direction: INTEGER) is
 			-- Redefine.
 		local
 			l_content: SD_CONTENT
@@ -147,65 +133,42 @@ feature -- Redefine
 			l_first_tab: BOOLEAN
 			l_docking_state: SD_DOCKING_STATE
 			l_third_time: BOOLEAN
-			l_tab_zone: SD_TAB_ZONE
-			l_titles: ARRAYED_LIST [STRING_GENERAL]
-			l_selected_index: INTEGER
 		do
-			direction := a_data.direction
-			l_titles := a_data.titles
-			l_selected_index := a_data.selected_tab_index
+			direction := a_direction
 			create internal_shared
 			from
-				l_titles.start
+				a_titles.start
 				l_first_tab := True
 			until
-				l_titles.after
+				a_titles.after
 			loop
-				l_content := internal_docking_manager.query.content_by_title_for_restore (l_titles.item)
+				l_content := internal_docking_manager.query.content_by_title_for_restore (a_titles.item)
 				if l_content /= Void then
 					if l_first_tab then
 						internal_content := l_content
-						Precursor {SD_STATE} (a_data, a_container)
-						create l_docking_state.make_for_tab_zone (l_content, a_container, a_data.direction)
+						Precursor {SD_STATE} (a_titles, a_container, a_direction)
+						create l_docking_state.make_for_tab_zone (l_content, a_container, a_direction)
 						l_content.change_state (l_docking_state)
 
-						l_docking_state.set_direction (a_data.direction)
+						l_docking_state.set_direction (a_direction)
 						l_first_tab := False
 					elseif not l_third_time then
 	 					create l_tab_state.make (l_content, l_docking_state.zone, direction)
 	 					l_content.set_visible (True)
 						l_content.change_state (l_tab_state)
-						l_tab_state.set_direction (a_data.direction)
+						l_tab_state.set_direction (a_direction)
 						l_third_time := True
 					elseif l_third_time then
 						create l_tab_state.make_with_tab_zone (l_content, l_tab_state.zone, direction)
 						l_content.set_visible (True)
 						l_content.change_state (l_tab_state)
-						l_tab_state.set_direction (a_data.direction)
+						l_tab_state.set_direction (a_direction)
 					end
 				end
-				l_titles.forth
+				a_titles.forth
 			end
+--			update_last_content_state
 
-			-- At least found one content?
-			if internal_content /= Void then
-				l_tab_zone ?= internal_content.state.zone
-				-- `l_tab_zone' maybe void (zone is docking zone), because `l_content' can't be found.
-				if l_tab_zone /= Void then
-					if l_tab_zone.contents.count >= l_selected_index then
-						l_tab_zone.select_item (l_tab_zone.contents.i_th (l_selected_index), False)
-					end
-				end
-
-				if a_data.is_minimized then
-					restore_minimize
-				end
-
-				is_set_width_after_restore := True
-				is_set_height_after_restore := True
-
-				update_floating_zone_visible (internal_content.state.zone, a_data.is_visible)
-			end
 		ensure then
 			restored:
 		end
@@ -219,11 +182,8 @@ feature -- Redefine
 			else
 				assistant.dock_tab_at_top_level (a_multi_dock_area)
 			end
-
 			internal_docking_manager.command.remove_empty_split_area
 			internal_docking_manager.command.update_title_bar
-			internal_docking_manager.query.inner_container_main.update_middle_container
-			internal_docking_manager.command.resize (True)
 			internal_docking_manager.command.unlock_update
 		ensure then
 			is_dock_at_top: old a_multi_dock_area.full implies is_dock_at_top (a_multi_dock_area)
@@ -257,9 +217,6 @@ feature -- Redefine
 			l_auto_hide_panel:= internal_docking_manager.query.auto_hide_panel (direction)
 			l_auto_hide_panel.set_tab_group (l_contents)
 			l_auto_hide_panel.select_tab_by_content (internal_content)
-			-- We have to clear last focus content. Otherwise, when user select it in ctrl + tab dialog, it will not appear.
-			-- See bug#13101
-			internal_docking_manager.property.set_last_focus_content (Void)
 			internal_docking_manager.command.unlock_update
 		ensure then
 			pruned: not internal_docking_manager.zones.has_zone (tab_zone)
@@ -269,14 +226,11 @@ feature -- Redefine
 			-- Redefine.
 		local
 			l_parent: EV_CONTAINER
-			l_state_void: SD_STATE_VOID
 		do
 			internal_docking_manager.command.lock_update (zone, False)
 			l_parent := tab_zone.parent
 			tab_zone.prune (internal_content, True)
 			assistant.update_last_content_state (l_parent)
-			create l_state_void.make (content)
-			change_state (l_state_void)
 			internal_docking_manager.command.remove_empty_split_area
 			internal_docking_manager.command.unlock_update
 		end
@@ -295,9 +249,8 @@ feature -- Redefine
 				l_docking_state.change_zone_split_area (a_target_zone, a_direction)
 				change_state (l_docking_state)
 				internal_docking_manager.command.lock_update (zone, False)
-				if l_parent /= Void then
-					assistant.update_last_content_state (l_parent)
-				end
+				assistant.update_last_content_state (l_parent)
+				internal_docking_manager.command.unlock_update
 				internal_docking_manager.command.unlock_update
 			else
 				if floating_zone /= Void then
@@ -307,12 +260,9 @@ feature -- Redefine
 
 				assistant.change_zone_split_area_to_docking_zone (a_target_zone, a_direction)
 				internal_docking_manager.command.update_title_bar
+				internal_docking_manager.command.unlock_update
 			end
 
-			-- We have to `remove_empty_split_area' here, see bug#12330
-			internal_docking_manager.command.remove_empty_split_area
-			internal_docking_manager.query.inner_container_main.update_middle_container
-			internal_docking_manager.command.unlock_update
 		ensure then
 			parent_changed:
 		end
@@ -399,21 +349,6 @@ feature -- Redefine
 			change_state (l_state)
 		end
 
-	show is
-			-- Redefine
-		local
-			l_state_void: SD_STATE_VOID
-		do
-			if not content.is_visible then
-				-- Current was SD_TAB_STATE before open_config (SD_CONFIG_MEDIATOR),
-				-- after open_config, client programmers will call this fucntion sometimes.
-				-- We use default void state behavior here.				
-				create l_state_void.make (content)
-				change_state (l_state_void)
-				l_state_void.show
-			end
-		end
-
 	set_user_widget (a_widget: EV_WIDGET) is
 			-- Redefine
 		do
@@ -422,7 +357,7 @@ feature -- Redefine
 
 feature {SD_CONTENT} -- Redefine
 
-	change_title (a_title: STRING_GENERAL; a_content: SD_CONTENT) is
+	change_title (a_title: STRING; a_content: SD_CONTENT) is
 			-- Redefine.
 		do
 			tab_zone.set_title (a_title, a_content)
@@ -434,83 +369,15 @@ feature {SD_CONTENT} -- Redefine
 			tab_zone.set_pixmap (a_pixmap, a_content)
 		end
 
-	change_tab_tooltip (a_text: STRING_GENERAL) is
-			-- Redefine.
-		do
-			zone.change_tab_tooltip (content, a_text)
-		end
-
-feature {SD_OPEN_CONFIG_MEDIATOR, SD_STATE} -- Redefine
-
-	set_last_floating_width (a_int: INTEGER) is
-			-- Redefine
-		local
-			l_contents: ARRAYED_LIST [SD_CONTENT]
-			l_state: SD_TAB_STATE
-		do
-			if is_set_width_after_restore then
-				-- We must query zone from `content' but not query zone directly, because when restore `change_state' called.
-				l_state ?= content.state
-				-- Maybe `l_state' is docking state, because some SD_CONTENT can't be found during `restore'				
-				if l_state /= Void then
-					from
-						l_contents := l_state.zone.contents
-						l_contents.start
-					until
-						l_contents.after
-					loop
-						l_contents.item.state.set_last_floating_width (a_int)
-						l_contents.forth
-					end
-				end
-				is_set_width_after_restore := False
-			end
-
-			Precursor {SD_STATE}(a_int)
-		ensure then
-			flag_cleared: is_set_width_after_restore = False
-		end
-
-	set_last_floating_height (a_int: INTEGER) is
-			-- Redefine
-		local
-			l_contents: ARRAYED_LIST [SD_CONTENT]
-			l_state: SD_TAB_STATE
-		do
-			if is_set_height_after_restore then
-				-- We must query zone from `content' but not query zone directly, because when restore `change_state' called.
-				l_state ?= content.state
-				-- Maybe `l_state' is docking state, because some SD_CONTENT can't be found during `restore'
-				if l_state /= Void then
-					from
-						l_contents := l_state.zone.contents
-						l_contents.start
-					until
-						l_contents.after
-					loop
-						l_contents.item.state.set_last_floating_height (a_int)
-						l_contents.forth
-					end
-				end
-				is_set_height_after_restore := False
-			end
-
-			Precursor {SD_STATE}(a_int)
-		ensure then
-			flag_cleared: is_set_height_after_restore = False
-		end
-
-	is_set_width_after_restore, is_set_height_after_restore: BOOLEAN
-			-- Is set `last_floating_width' and `last_floating_height' after restore?
-
 feature -- Properties redefine.
 
 	content: SD_CONTENT is
 			-- Redefine.
 		do
+--			Result := tab_zone.content
 			Result := internal_content
 		ensure then
-			not_void: not internal_docking_manager.property.is_opening_config implies Result /= Void
+			not_void: Result /= Void
 		end
 
 	zone: SD_TAB_ZONE is
@@ -523,7 +390,7 @@ feature -- Properties redefine.
 
 feature -- Query
 
-	content_count_valid (a_titles: ARRAYED_LIST [STRING_GENERAL]): BOOLEAN is
+	content_count_valid (a_titles: ARRAYED_LIST [STRING]): BOOLEAN is
 		do
 			Result := a_titles.count > 1
 		end

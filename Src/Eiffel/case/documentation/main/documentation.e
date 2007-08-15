@@ -9,6 +9,7 @@ class
 	DOCUMENTATION
 
 inherit
+
 	SHARED_EIFFEL_PROJECT
 
 	SHARED_ERROR_HANDLER
@@ -196,7 +197,11 @@ feature -- Actions
 									l_classes.after
 								loop
 									l_class := l_classes.item_for_iteration
-									filter.set_context_group (l_class.group)
+									if l_class.is_class_assembly then
+										filter.set_context_group (Void)
+									else
+										filter.set_context_group (l_class.group)
+									end
 									if l_class.is_compiled then
 										deg.put_case_class_message (l_class)
 										deg.flush_output
@@ -258,7 +263,7 @@ feature -- Actions
 			end
 		end
 
-	generated_class_formats_string: STRING_32 is
+	generated_class_formats_string: STRING is
 			-- To display when user is wasting time watching slow progressing.
 		local
 			af: LINEAR [INTEGER]
@@ -302,7 +307,7 @@ feature -- Actions
 		require
 			root_directory /= Void
 		local
-			d: KL_DIRECTORY
+			d: DIRECTORY
 			fi: FILE_NAME
 			l_string: STRING
 		do
@@ -311,7 +316,7 @@ feature -- Actions
 			fi.extend (l_string)
 			create d.make (fi)
 			if not d.exists then
-				d.recursive_create_directory
+				d.create_dir
 			end
 		end
 
@@ -630,15 +635,15 @@ feature -- Access
 
 	relative_to_base (rel_filename: STRING): STRING is
 			-- Path of `rel_filename' relative to documentation root dir.
+		local
+			fn: EB_FILE_NAME
 		do
-			create Result.make_from_string (base_path)
-			if not base_path.is_empty then
-				Result.append_character (operating_environment.directory_separator)
+			create fn.make_from_string (base_path)
+			if filter.file_separator /= '%U' then
+				fn.set_separator (filter.file_separator)
 			end
-			Result.append (rel_filename)
-			if filter.file_separator /= Void and then filter.file_separator.is_equal ("%U") then
-				Result.replace_substring_all (operating_environment.directory_separator.out, filter.file_separator.as_string_8)
-			end
+			fn.extend (rel_filename)
+			Result := fn
 		end
 
 feature {EB_DIAGRAM_HTML_GENERATOR, DOCUMENTATION_ROUTINES} -- Access
@@ -660,13 +665,8 @@ feature {EB_DIAGRAM_HTML_GENERATOR, DOCUMENTATION_ROUTINES} -- Access
 			a_cluster_not_void: a_cluster /= Void
 		local
 			l_string: STRING
-			l_sep: STRING_32
 		do
-			l_sep := filter.file_separator
-			if l_sep = Void then
-				l_sep := operating_environment.directory_separator.out
-			end
-			l_string := path_representation (l_sep, "..", a_cluster, True)
+			l_string := path_representation (filter.file_separator.out, "..", a_cluster, True)
 			create Result.make_from_string (l_string)
 		end
 

@@ -69,8 +69,7 @@ feature -- Basic operatioin
 	launch is
 			-- Launch searching.
 		local
-			classes: HASH_TABLE [CONF_CLASS, STRING]
-			l_class: CLASS_I
+			classes: HASH_TABLE [CLASS_I, STRING]
 			subcluster: ARRAYED_LIST [CLUSTER_I]
 			l_cluster: CLUSTER_I
 			l_cluster_strategy: MSR_SEARCH_CLUSTER_STRATEGY
@@ -120,24 +119,21 @@ feature -- Basic operatioin
 					until
 						classes.after
 					loop
-						l_class ?= classes.item_for_iteration
-						if l_class /= Void then
-							create class_strategy.make (keyword,
-													surrounding_text_range_internal,
-													l_class,
-													only_compiled_class_searched)
-							if case_sensitive then
-								class_strategy.set_case_sensitive
-							else
-								class_strategy.set_case_insensitive
-							end
-							class_strategy.set_regular_expression_used (is_regular_expression_used)
-							class_strategy.set_whole_word_matched (is_whole_word_matched)
-							class_strategy.launch
-							if class_strategy.is_launched then
-								item_matched_internal.finish
-								item_matched_internal.merge_right (class_strategy.item_matched)
-							end
+						create class_strategy.make (keyword,
+												surrounding_text_range_internal,
+												classes.item_for_iteration,
+												only_compiled_class_searched)
+						if case_sensitive then
+							class_strategy.set_case_sensitive
+						else
+							class_strategy.set_case_insensitive
+						end
+						class_strategy.set_regular_expression_used (is_regular_expression_used)
+						class_strategy.set_whole_word_matched (is_whole_word_matched)
+						class_strategy.launch
+						if class_strategy.is_launched then
+							item_matched_internal.finish
+							item_matched_internal.merge_right (class_strategy.item_matched)
 						end
 						classes.forth
 					end
@@ -147,7 +143,7 @@ feature -- Basic operatioin
 				check
 					l_libary_not_void: l_library /= Void
 				end
-				if l_library.library_target /= Void and is_subgroup_searched then
+				if l_library.library_target /= Void then
 					l_clusters := l_library.library_target.clusters
 				end
 				if l_clusters /= Void then
@@ -166,9 +162,7 @@ feature -- Basic operatioin
 							l_group_strategy.set_case_insensitive
 						end
 						l_group_strategy.set_regular_expression_used (is_regular_expression_used)
-							-- We already get flat clusters of the library target.
-							-- So subcluster searching is not needed.
-						l_group_strategy.set_subgroup_searched (False)
+						l_group_strategy.set_subgroup_searched (is_subgroup_searched)
 						l_group_strategy.set_whole_word_matched (is_whole_word_matched)
 						l_group_strategy.launch
 						item_matched.append (l_group_strategy.item_matched)

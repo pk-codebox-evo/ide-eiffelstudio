@@ -11,8 +11,6 @@ class
 inherit
 	EB_SHARED_OUTPUT_TOOLS
 
-	SHARED_EIFFEL_PROJECT
-
 feature -- Access
 
 	has_modified_classes: BOOLEAN is False;

@@ -61,13 +61,13 @@ feature -- Access
 			-- `name' can be empty for an assertion that has no tag attached to it.
 		do
 			if ast.tag = Void then
-				Result := query_language_names.ql_no_tag
+				Result := ""
 			else
-				Result := ast.tag.name
+				Result := ast.tag.out
 			end
 		ensure then
-			good_result: (ast.tag = Void implies Result.is_equal (query_language_names.ql_no_tag)) and
-						 (ast.tag /= Void implies Result.is_equal (ast.tag.name))
+			good_result: (ast.tag = Void implies Result.is_equal ("")) and
+						 (ast.tag /= Void implies Result.is_equal (ast.tag))
 		end
 
 	path_name: STRING is
@@ -133,6 +133,7 @@ feature -- Access
 		ensure then
 			good_result: Result = assertion_path_marker
 		end
+
 
 feature -- Status report
 
@@ -272,5 +273,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

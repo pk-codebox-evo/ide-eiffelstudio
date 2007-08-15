@@ -41,7 +41,6 @@ using System.Collections;
 using System.Text;
 using System.Reflection;
 using EiffelSoftware.Runtime.CA;
-using EiffelSoftware.Runtime.Enums;
 using EiffelSoftware.Runtime.Types;
 
 namespace EiffelSoftware.Runtime {
@@ -78,18 +77,19 @@ feature -- Access
 		// (type of which it is a direct instance)
 	{
 		string Result = null;
-		RT_CLASS_TYPE l_type;
+		RT_GENERIC_TYPE l_gen_type;
 		EIFFEL_TYPE_INFO l_current = Current as EIFFEL_TYPE_INFO;
 
 		if (Current == null) {
 			generate_call_on_void_target_exception ();
 		} else if (l_current != null) {
-			l_type = l_current.____type ();
-			if (l_type == null) {
-					// Not a generic class.
-				l_type = new RT_CLASS_TYPE (Type.GetTypeHandle (Current));
+			l_gen_type = l_current.____type ();
+			if (l_gen_type == null) {
+					// Not a generic class, we extract stored name.
+				Result = l_current.____class_name ();
+			} else {
+				Result = l_gen_type.type_name ();
 			}
-			Result = l_type.type_name ();
 		} else {
  			Result = Current.GetType().FullName;
 		}

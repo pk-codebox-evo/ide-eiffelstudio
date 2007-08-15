@@ -357,7 +357,8 @@ feature {NONE}
 				end
 			end
 		end
-
+			
+			
 feature
 	eiffel_type_id_to_jvm_type_id (eiffel: INTEGER) : INTEGER is
 			-- takes an eiffel type id (as supplied by the parser front
@@ -403,4 +404,9 @@ indexing
 		]"
 
 end -- class JVM_NAME_CONVERTER
+
+
+
+
+
 

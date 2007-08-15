@@ -239,6 +239,7 @@ feature -- C Code generation
 			buf.put_character (')')
 		end
 
+
 	tuple_element_name: STRING is
 			-- String representation of TUPLE element type.
 		do

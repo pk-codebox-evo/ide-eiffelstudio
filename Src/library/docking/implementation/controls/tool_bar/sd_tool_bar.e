@@ -10,29 +10,22 @@ class
 
 inherit
 	SD_DRAWING_AREA
-		rename
-			has_capture as has_capture_vision2,
-			enable_capture as enable_capture_vision2,
-			disable_capture as disable_capture_vision2
 		export
 			{NONE} all
 			{ANY} width, height, minimum_width, minimum_height,
 				 set_background_color, background_color, screen_x,
 				  screen_y, hide, show, is_displayed,parent,
 					pointer_motion_actions, pointer_button_release_actions,
-					x_position, y_position, destroy, out,
-					set_minimum_width, set_minimum_height, is_destroyed
+					enable_capture, disable_capture, has_capture,
+					x_position, y_position, destroy,
+					set_minimum_width, set_minimum_height
 			{SD_TOOL_BAR_DRAWER_I, SD_TOOL_BAR_ZONE, SD_TOOL_BAR} implementation, draw_pixmap, clear_rectangle
 			{SD_TOOL_BAR_ITEM, SD_TOOL_BAR} tooltip, set_tooltip, remove_tooltip, font
-			{SD_TOOL_BAR_DRAGGING_AGENTS, SD_TOOL_BAR_DOCKER_MEDIATOR, SD_TOOL_BAR, SD_TOOL_BAR_ITEM} set_pointer_style
+			{SD_TOOL_BAR_DRAGGING_AGENTS, SD_TOOL_BAR_DOCKER_MEDIATOR, SD_TOOL_BAR} set_pointer_style
 			{SD_TOOL_BAR_ZONE, SD_TOOL_BAR} expose_actions, pointer_button_press_actions, pointer_double_press_actions,
 							redraw_rectangle
-			{SD_NOTEBOOK_HIDE_TAB_DIALOG} key_press_actions, focus_out_actions, set_focus, has_focus
-			{SD_TOOL_BAR_DRAWER_IMP} draw_ellipsed_text_top_left
-			{SD_TOOL_BAR} is_initialized
 		redefine
-			update_for_pick_and_drop,
-			initialize
+			update_for_pick_and_drop
 		end
 
 create
@@ -44,16 +37,6 @@ feature {NONE} -- Initlization
 			-- Creation method
 		do
 			default_create
-		end
-
-feature {SD_TOOL_BAR} -- Internal initlization
-
-	initialize is
-			-- Initlialize
-		do
-			Precursor {SD_DRAWING_AREA}
-
-			create internal_shared
 			internal_row_height := standard_height
 			create internal_items.make (1)
 			expose_actions.extend (agent on_expose)
@@ -67,9 +50,28 @@ feature {SD_TOOL_BAR} -- Internal initlization
 
 			drop_actions.extend (agent on_drop_action)
 			drop_actions.set_veto_pebble_function (agent on_veto_pebble_function)
-			set_pebble_function (agent on_pebble_function)
 
-			set_background_color (internal_shared.default_background_color)
+			create internal_shared
+		end
+
+feature -- Properties
+
+	set_row_height (a_height: INTEGER) is
+			-- Set `row_height'
+		require
+			valid: a_height > 0
+		do
+			internal_row_height := a_height
+		ensure
+			set: is_row_height_set (a_height)
+		end
+
+	row_height: INTEGER is
+			-- Height of row.
+		do
+			Result := internal_row_height
+		ensure
+			valid: is_row_height_valid (Result)
 		end
 
 feature -- Command
@@ -82,8 +84,6 @@ feature -- Command
 		do
 			internal_items.extend (a_item)
 			a_item.set_tool_bar (Current)
-
-			is_need_calculate_size := True
 		ensure
 			has: has (a_item)
 			is_parent_set: is_parent_set (a_item)
@@ -100,7 +100,6 @@ feature -- Command
 			internal_items.go_i_th (a_index)
 			internal_items.put_left (a_item)
 			a_item.set_tool_bar (Current)
-			is_need_calculate_size := True
 		end
 
 	prune (a_item: SD_TOOL_BAR_ITEM) is
@@ -108,17 +107,16 @@ feature -- Command
 		do
 			internal_items.prune_all (a_item)
 			a_item.set_tool_bar (Void)
-			is_need_calculate_size := True
 		ensure
 			pruned: not has (a_item)
 			parent_void: a_item.tool_bar = Void
 		end
 
-	compute_minimum_size is
-			-- Compute `minmum_width' and `minimum_height'.
+	compute_minmum_size is
+			-- Compute `minmum_width' and `minmum_height'.
 		local
-			l_minimum_width: INTEGER
-			l_minimum_height: INTEGER
+			l_minmum_width: INTEGER
+			l_minmum_height: INTEGER
 			l_item: SD_TOOL_BAR_ITEM
 			l_items: like internal_items
 			l_separator: SD_TOOL_BAR_SEPARATOR
@@ -128,7 +126,7 @@ feature -- Command
 				l_items := items
 				l_items.start
 				if l_items.count > 0 then
-					l_minimum_height := row_height
+					l_minmum_height := row_height
 				end
 			until
 				l_items.after
@@ -136,66 +134,32 @@ feature -- Command
 				l_item := l_items.item
 				l_separator ?= l_item
 				if l_items.index = l_items.count or l_item.is_wrap then
-					-- Minimum width only make sence in this case.
+					-- Minmum width only make sence in this case.
 					if l_separator /= Void then
 						-- It's a separator, we should calculate the item before
 						if l_item_before /= Void then
 							l_item := l_item_before
 						end
 					end
-					if l_minimum_width < l_item.rectangle.right then
-						l_minimum_width := l_item.rectangle.right
+					if l_minmum_width < l_item.rectangle.right then
+						l_minmum_width := l_item.rectangle.right
 					end
 				end
 				if l_items.index = l_items.count then
-					l_minimum_height := l_item.rectangle.bottom
+					l_minmum_height := l_items.item.rectangle.bottom
 				end
 
 				l_item_before := l_items.item
 				l_items.forth
 			end
 			debug ("docking")
-				print ("%NSD_TOOL_BAR compute minimum size minimum_width is: " + l_minimum_width.out)
-				print ("%NSD_TOOL_BAR compute minimum size minimum_height is: " + l_minimum_height.out)
+				print ("%NSD_TOOL_BAR compute minimum size minimum_width is: " + l_minmum_width.out)
+				print ("%NSD_TOOL_BAR compute minimum size minimum_height is: " + l_minmum_height.out)
 				print ("%N             items.count: " + l_items.count.out)
 			end
 
-			set_minimum_width (l_minimum_width)
-			set_minimum_height (l_minimum_height)
-		end
-
-	update_size is
-			-- Update `tool_bar' size if Current width changed.
-		local
-			l_tool_bar_row: SD_TOOL_BAR_ROW
-			l_parent: EV_CONTAINER
-			l_floating_zone: SD_FLOATING_TOOL_BAR_ZONE
-			l_old_size: INTEGER
-		do
-			l_tool_bar_row ?= parent
-			if l_tool_bar_row /= Void then
-				-- After `compute_minimum_size', `l_tool_bar_row' size will changed, we record it here.
-				-- Otherwise it will cause bug#13164.
-				l_old_size := l_tool_bar_row.size
-			end
-			compute_minimum_size
-			if l_tool_bar_row /= Void then
-				l_tool_bar_row.set_item_size (Current, minimum_width, minimum_height)
-				l_tool_bar_row.on_resize (l_old_size)
-			else
-				-- If Current is in a SD_FLOATING_TOOL_BAR_ZONE which is a 3 level parent.
-				l_parent := parent
-				if l_parent /= Void then
-					l_parent := l_parent.parent
-					if l_parent /= Void then
-						l_parent := l_parent.parent
-						l_floating_zone ?= l_parent
-						if l_floating_zone /= Void then
-							l_floating_zone.set_size (l_floating_zone.minimum_width, l_floating_zone.minimum_height)
-						end
-					end
-				end
-			end
+			set_minimum_width (l_minmum_width)
+			set_minimum_height (l_minmum_height)
 		end
 
 	wipe_out is
@@ -204,71 +168,12 @@ feature -- Command
 			internal_items.wipe_out
 		end
 
-	enable_capture is
-			-- Enable capture
-		do
-			enable_capture_vision2
-		end
-
-	disable_capture is
-			-- Disable capture
-		do
-			disable_capture_vision2
-		end
-
-feature {SD_TOOL_BAR_TITLE_BAR, SD_TITLE_BAR} -- Special setting
-
-	prefered_height: INTEGER is
-			-- Prefered tool bar height.
-		local
-			l_item: SD_TOOL_BAR_ITEM
-			l_items: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
-			l_height: INTEGER
-			l_separator: SD_TOOL_BAR_SEPARATOR
-		do
-			from
-				l_items := items
-				l_items.start
-			until
-				l_items.after
-			loop
-				l_item := l_items.item
-				l_separator ?= l_item
-				-- We ignore separator
-				if l_separator = Void then
-					if l_item.pixmap /= Void then
-						l_height := l_item.pixmap.height + 2 * padding_width
-					elseif l_item.pixel_buffer /= Void then
-						l_height := l_item.pixel_buffer.height + 2 * padding_width
-					end
-
-					if Result < l_height then
-						Result := l_height
-					end
-				end
-
-				l_items.forth
-			end
-		end
-
 feature -- Query
 
 	items: like internal_items is
-			-- Visible items
+			-- `internal_items''s snapshot.
 		do
 			Result := internal_items.twin
-		ensure
-			not_void: Result /= Void
-		end
-
-	all_items: like internal_items is
-			-- All items
-		do
-			if content /= Void then
-				Result := content.items.twin
-			else
-				Result := items
-			end
 		ensure
 			not_void: Result /= Void
 		end
@@ -279,71 +184,14 @@ feature -- Query
 			Result := internal_items.has (a_item)
 		end
 
+	border_width: INTEGER is 4
+			-- Border width.
+
 	padding_width: INTEGER is 4
 			-- Padding width.
 
-	standard_height: INTEGER is
+	standard_height: INTEGER is 23
 			-- Standard tool bar height.
-		once
-			Result := internal_shared.tool_bar_size
-		end
-
-	row_height: INTEGER is
-			-- Height of row.
-		local
-			l_font_height, l_pixmap_height: INTEGER
-		do
-			if is_need_calculate_size then
-				is_need_calculate_size := False
-				l_pixmap_height := prefered_height
-				if not items_have_texts then
-					Result := l_pixmap_height
-				else
-					l_font_height := standard_height
-					if l_font_height >= l_pixmap_height then
-						Result := l_font_height
-					else
-						Result := l_pixmap_height
-					end
-				end
-				internal_row_height := Result
-			else
-				Result := internal_row_height
-			end
-		ensure
-			valid: is_row_height_valid (Result)
-		end
-
-	items_have_texts: BOOLEAN is
-			-- If any item has text?
-		local
-			l_items: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
-			l_button: SD_TOOL_BAR_BUTTON
-		do
-			from
-				l_items := internal_items
-				l_items.start
-			until
-				l_items.after or Result
-			loop
-				l_button ?= l_items.item
-				if l_button /= Void then
-					if l_button.text /= Void then
-						Result := True
-					end
-				end
-
-				l_items.forth
-			end
-		end
-
-	has_capture: BOOLEAN is
-			-- If current has capture?
-			-- We rename `has_capture' from ancestor, because we want remove the postcondition (bridge_ok) in
-			-- SD_WIDGET_TOOL_BAR.
-		do
-			Result := has_capture_vision2
-		end
 
 feature -- Contract support
 
@@ -398,19 +246,12 @@ feature -- Contract support
 
 feature {SD_TOOL_BAR_DRAWER_IMP, SD_TOOL_BAR_ITEM, SD_TOOL_BAR} -- Internal issues
 
-	need_calculate_size is
-			-- Set if need recalculate `row_height'.
-		do
-			is_need_calculate_size := True
-		end
-
 	item_x (a_item: SD_TOOL_BAR_ITEM): INTEGER is
 			-- Relative x position of `a_item'.
 		require
 			has: has (a_item)
 		local
 			l_stop: BOOLEAN
-			l_item: SD_TOOL_BAR_ITEM
 			l_items: like internal_items
 			l_separator: SD_TOOL_BAR_SEPARATOR
 		do
@@ -421,15 +262,14 @@ feature {SD_TOOL_BAR_DRAWER_IMP, SD_TOOL_BAR_ITEM, SD_TOOL_BAR} -- Internal issu
 			until
 				l_items.after or l_stop
 			loop
-				l_item := l_items.item
-				if l_item /= a_item then
-					if l_item.is_wrap then
+				l_separator ?= l_items.item
+				if l_items.item /= a_item then
+					if l_items.item.is_wrap then
 						Result := start_x
 					else
-						Result := Result + l_item.width
+						Result := Result + l_items.item.width
 					end
 				else
-					l_separator ?= l_item
 					l_stop := True
 					if l_separator /= Void and then l_separator.is_wrap then
 						Result := start_x
@@ -445,7 +285,6 @@ feature {SD_TOOL_BAR_DRAWER_IMP, SD_TOOL_BAR_ITEM, SD_TOOL_BAR} -- Internal issu
 			has: has (a_item)
 		local
 			l_stop: BOOLEAN
-			l_item: SD_TOOL_BAR_ITEM
 			l_separator: SD_TOOL_BAR_SEPARATOR
 			l_items: like internal_items
 		do
@@ -456,11 +295,10 @@ feature {SD_TOOL_BAR_DRAWER_IMP, SD_TOOL_BAR_ITEM, SD_TOOL_BAR} -- Internal issu
 			until
 				l_items.after or l_stop
 			loop
-				l_item := l_items.item
-				l_separator ?= l_item
-				if l_item /= a_item then
-					if l_item.is_wrap then
-						Result := Result + l_item.height
+				l_separator ?= l_items.item
+				if l_items.item /= a_item then
+					if l_items.item.is_wrap then
+						Result := Result + l_items.item.height
 					end
 					if l_separator /= Void and then l_separator.is_wrap then
 						Result := Result + l_separator.width
@@ -468,7 +306,7 @@ feature {SD_TOOL_BAR_DRAWER_IMP, SD_TOOL_BAR_ITEM, SD_TOOL_BAR} -- Internal issu
 				else
 					l_stop := True
 					if l_separator /= Void and then l_separator.is_wrap then
-						Result := Result + l_item.height
+						Result := Result + l_items.item.height
 					end
 				end
 				l_items.forth
@@ -480,7 +318,6 @@ feature {SD_TOOL_BAR_DRAWER_IMP, SD_TOOL_BAR_ITEM, SD_TOOL_BAR} -- Internal issu
 		local
 			l_items: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
 			l_rect: EV_RECTANGLE
-			l_item: SD_TOOL_BAR_ITEM
 		do
 			if width /= 0 and height /= 0 then
 				from
@@ -489,14 +326,12 @@ feature {SD_TOOL_BAR_DRAWER_IMP, SD_TOOL_BAR_ITEM, SD_TOOL_BAR} -- Internal issu
 				until
 					l_items.after
 				loop
-					-- item's tool bar query maybe Void, because it's hidden when not enough space to display.
-					l_item := l_items.item
-					if l_item.is_need_redraw and l_item.tool_bar /= Void then
-						l_rect := l_item.rectangle
+					if l_items.item.is_need_redraw then
+						l_rect := l_items.item.rectangle
 						drawer.start_draw (l_rect)
-						redraw_item (l_item)
+						redraw_item (l_items.item)
 						drawer.end_draw
-						l_item.disable_redraw
+						l_items.item.disable_redraw
 					end
 					l_items.forth
 				end
@@ -539,17 +374,20 @@ feature {NONE} -- Agents
 			-- Handle expose actions.
 		local
 			l_items: like internal_items
-			l_rect: EV_RECTANGLE
+
+			l_colors: EV_STOCK_COLORS
 		do
-			create l_rect.make (a_x, a_y, a_width, a_height)
-			drawer.start_draw (l_rect)
+			create l_colors
+			set_background_color (l_colors.default_background_color)
+
+			drawer.start_draw (create {EV_RECTANGLE}.make (a_x, a_y, a_width, a_height))
 			from
 				l_items := items
 				l_items.start
 			until
 				l_items.after
 			loop
-				if l_items.item.has_rectangle (l_rect) then
+				if l_items.item.has_rectangle (create {EV_RECTANGLE}.make (a_x, a_y, a_width, a_height)) then
 					redraw_item (l_items.item)
 				end
 				l_items.forth
@@ -561,31 +399,19 @@ feature {NONE} -- Agents
 			-- Handle pointer motion actions.
 		local
 			l_items: like internal_items
-			l_item: SD_TOOL_BAR_ITEM
-			l_platform: PLATFORM
-			l_capture_enabled: BOOLEAN
 		do
-			-- Special handing for GTK.
-			-- Because on GTK, pointer leave actions doesn't have same behavior as Windows implementation.
-			-- This will cause `pointer_entered' flag not same between Windows and Gtk after pressed at SD_TOOL_BAR_RESIZABLE_ITEM end area.
-			create l_platform
-			if not l_platform.is_windows then
-				l_capture_enabled := has_capture
-			end
-
-			if pointer_entered or l_capture_enabled then
+			if pointer_entered then
 				from
 					l_items := items
 					l_items.start
 				until
 					l_items.after
 				loop
-					l_item := l_items.item
-					l_item.on_pointer_motion (a_x, a_y)
-					l_item.on_pointer_motion_for_tooltip (a_x, a_y)
-					if l_item.is_need_redraw then
-						drawer.start_draw (l_item.rectangle)
-						redraw_item (l_item)
+					l_items.item.on_pointer_motion (a_x, a_y)
+					l_items.item.on_pointer_motion_for_tooltip (a_x, a_y)
+					if l_items.item.is_need_redraw then
+						drawer.start_draw (l_items.item.rectangle)
+						redraw_item (l_items.item)
 						drawer.end_draw
 					end
 					l_items.forth
@@ -597,33 +423,25 @@ feature {NONE} -- Agents
 			-- Handle pointer press actions.
 		local
 			l_items: like internal_items
-			l_item: SD_TOOL_BAR_ITEM
 		do
 			debug ("docking")
 				print ("%NSD_TOOL_BAR on_pointer_press")
 			end
-			-- We only handle press/release occurring in the widget (i.e. we ignore the one outside of the widget).			
-			-- Otherwise it will cause bug#12549.
-			if a_screen_x >= screen_x and a_screen_x <= screen_x + width and
-				a_screen_y >= screen_y  and a_screen_y <= screen_y + height then
-
-				if a_button = {EV_POINTER_CONSTANTS}.left then
-					enable_capture
-					from
-						l_items := items
-						l_items.start
-					until
-						l_items.after
-					loop
-						l_item := l_items.item
-						l_item.on_pointer_press (a_x, a_y)
-						if l_item.is_need_redraw then
-							drawer.start_draw (l_item.rectangle)
-							redraw_item (l_item)
-							drawer.end_draw
-						end
-						l_items.forth
+			if a_button = 1 then
+				enable_capture
+				from
+					l_items := items
+					l_items.start
+				until
+					l_items.after
+				loop
+					l_items.item.on_pointer_press (a_x, a_y)
+					if l_items.item.is_need_redraw then
+						drawer.start_draw (l_items.item.rectangle)
+						redraw_item (l_items.item)
+						drawer.end_draw
 					end
+					l_items.forth
 				end
 			end
 		end
@@ -648,33 +466,24 @@ feature {NONE} -- Agents
 			-- Handle pointer release actions.
 		local
 			l_items: like internal_items
-			l_item: SD_TOOL_BAR_ITEM
 		do
-			-- We only handle press/release occurring in the widget (i.e. we ignore the one outside of the widget).			
-			-- Otherwise it will cause bug#12549.
-			if a_screen_x >= screen_x and a_screen_x <= screen_x + width and
-				a_screen_y >= screen_y  and a_screen_y <= screen_y + height then
 
-				if a_button = {EV_POINTER_CONSTANTS}.left then
-					disable_capture
-					internal_pointer_pressed := False
-					from
-						l_items := items
-						l_items.start
-					until
-						l_items.after
-					loop
-						l_item := l_items.item
-						l_item.on_pointer_release (a_x, a_y)
-						if l_item.is_displayed and then l_item.is_need_redraw and then l_item.tool_bar /= Void and then not l_item.tool_bar.is_destroyed then
-							--| FIXME According to LarryL, if l_item.is_displayed is False, then the toolbar is Void, this appears to not be the case in
-							--| some circumstances so the protection has been added.
-							drawer.start_draw (l_item.rectangle)
-							redraw_item (l_item)
-							drawer.end_draw
-						end
-						l_items.forth
+			if a_button = 1 then
+				disable_capture
+				internal_pointer_pressed := False
+				from
+					l_items := items
+					l_items.start
+				until
+					l_items.after
+				loop
+					l_items.item.on_pointer_release (a_x, a_y)
+					if l_items.item.is_need_redraw then
+						drawer.start_draw (l_items.item.rectangle)
+						redraw_item (l_items.item)
+						drawer.end_draw
 					end
+					l_items.forth
 				end
 			end
 		end
@@ -694,7 +503,6 @@ feature {NONE} -- Agents
 			-- Handle pointer leave actions.
 		local
 			l_items: like internal_items
-			l_item: SD_TOOL_BAR_ITEM
 		do
 			from
 				l_items := items
@@ -702,11 +510,10 @@ feature {NONE} -- Agents
 			until
 				l_items.after
 			loop
-				l_item := l_items.item
-				l_item.on_pointer_leave
-				if l_item.is_need_redraw then
-					drawer.start_draw (l_item.rectangle)
-					redraw_item (l_item)
+				l_items.item.on_pointer_leave
+				if l_items.item.is_need_redraw then
+					drawer.start_draw (l_items.item.rectangle)
+					redraw_item (l_items.item)
 					drawer.end_draw
 				end
 				l_items.forth
@@ -721,11 +528,9 @@ feature {NONE} -- Agents
 		local
 			l_screen: EV_SCREEN
 			l_item: SD_TOOL_BAR_ITEM
-			l_pointer_position: EV_COORDINATE
 		do
 			create l_screen
-			l_pointer_position := l_screen.pointer_position
-			l_item := item_at_position (l_pointer_position.x, l_pointer_position.y)
+			l_item := item_at_position (l_screen.pointer_position.x, l_screen.pointer_position.y)
 			if l_item /= Void then
 				l_item.drop_actions.call ([a_any])
 			end
@@ -736,60 +541,17 @@ feature {NONE} -- Agents
 		local
 			l_screen: EV_SCREEN
 			l_item: SD_TOOL_BAR_ITEM
-			l_pointer_position: EV_COORDINATE
-			l_stock_pixmap: EV_STOCK_PIXMAPS
 		do
 			create l_screen
-			l_pointer_position := l_screen.pointer_position
-			if is_item_position_valid (l_pointer_position.x, l_pointer_position.y)  then
-				l_item := item_at_position (l_pointer_position.x, l_pointer_position.y)
+			if is_item_position_valid (l_screen.pointer_position.x, l_screen.pointer_position.y)  then
+				l_item := item_at_position (l_screen.pointer_position.x, l_screen.pointer_position.y)
 				if l_item /= Void then
 					Result := l_item.drop_actions.accepts_pebble (a_any)
-					create l_stock_pixmap
-					if l_item.accept_cursor /= Void then
-						set_accept_cursor (l_item.accept_cursor)
-					else
-						set_accept_cursor (l_stock_pixmap.standard_cursor)
-					end
-					if l_item.deny_cursor /= Void then
-						set_deny_cursor (l_item.deny_cursor)
-					else
-						set_deny_cursor (l_stock_pixmap.no_cursor)
-					end
 				end
 			end
 		end
 
-	on_pebble_function: ANY is
-			-- Handle pebble function event.
-		local
-			l_item: SD_TOOL_BAR_ITEM
-			l_screen: EV_SCREEN
-			l_position: EV_COORDINATE
-		do
-			create l_screen
-			l_position := l_screen.pointer_position
-			if is_item_position_valid (l_position.x, l_position.y) then
-				l_item := item_at_position (l_position.x, l_position.y)
-			end
-			if l_item /= Void and then l_item.pebble_function /= Void then
-				l_item.pebble_function.call ([])
-				Result := l_item.pebble_function.last_result
-			end
-		end
-
-feature {SD_TOOL_BAR, SD_TOOL_BAR_ZONE} -- Implementation
-
-	set_content (a_content: like content) is
-			-- Set `content' with `a_content'.
-		do
-			content := a_content
-		ensure
-			content_set: content = a_content
-		end
-
-	content: SD_TOOL_BAR_CONTENT
-			-- Related tool bar content
+feature {SD_TOOL_BAR} -- Implementation
 
 	redraw_item (a_item: SD_TOOL_BAR_ITEM) is
 			-- Redraw `a_item'.
@@ -853,27 +615,23 @@ feature {SD_TOOL_BAR, SD_TOOL_BAR_ZONE} -- Implementation
 			in_position: is_item_position_valid (a_screen_x, a_screen_y)
 		local
 			l_x, l_y: INTEGER
-			l_items: like internal_items
 		do
 			from
 				l_x := a_screen_x - screen_x
 				l_y := a_screen_y - screen_y
-				l_items := internal_items
-				l_items.start
+				internal_items.start
 			until
-				l_items.after or Result /= Void
+				internal_items.after or Result /= Void
 			loop
-				Result := l_items.item
-				if not Result.rectangle.has_x_y (l_x, l_y) then
-					Result := Void
+				if internal_items.item.rectangle.has_x_y (l_x, l_y) then
+					Result := internal_items.item
 				end
-				l_items.forth
+				internal_items.forth
 			end
 		end
 
 	pointer_entered: BOOLEAN
 			-- Has pointer enter actions been called?
-			-- The reason why have this flag see `on_pointer_enter''s comments.
 
 	internal_shared: SD_SHARED
 			-- All singletons.
@@ -886,9 +644,6 @@ feature {SD_TOOL_BAR, SD_TOOL_BAR_ZONE} -- Implementation
 
 	internal_start_y: INTEGER
 			-- Y postion start to draw buttons.
-
-	is_need_calculate_size: BOOLEAN
-			-- Need recalcualte current `row_height'? Because some thing changed?
 
 invariant
 	not_void: items /= Void

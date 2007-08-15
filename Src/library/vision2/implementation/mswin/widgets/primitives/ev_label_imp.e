@@ -96,10 +96,9 @@ inherit
 			on_sys_key_down,
 			on_sys_key_up,
 			default_process_message,
-			on_getdlgcode,
-			on_wm_dropfiles
+			on_getdlgcode
 		redefine
-			default_style, on_erase_background
+			default_style
 		end
 
 	WEL_ODS_CONSTANTS
@@ -108,11 +107,6 @@ inherit
 		end
 
 	WEL_DT_CONSTANTS
-		export
-			{NONE} all
-		end
-
-	WEL_SHARED_METRICS
 		export
 			{NONE} all
 		end
@@ -136,8 +130,6 @@ feature {NONE} -- Initialization
 			-- Initialize `Current'.
 		do
 			set_default_font
-			disable_tabable_from
-			disable_tabable_to
 			Precursor {EV_PRIMITIVE_IMP}
 		end
 
@@ -189,17 +181,11 @@ feature -- Element change
 
 	set_font (ft: EV_FONT) is
 			-- Make `ft' new font of `Current'.
-		local
-			l_text: like text
 		do
-				-- Optimization, instead of computing the `private_font' in `internal_font'
-				-- we go directly and let the precursor version do it for us. This saves
-				-- a comparison and a useless creation of `private_font'.
-			if private_font = Void or else not internal_font.is_equal (ft) then
+			if not internal_font.is_equal (ft) then
 				Precursor {EV_FONTABLE_IMP} (ft)
-				l_text := text
-				if not l_text.is_empty then
-					accomodate_text (l_text)
+				if not text.is_empty then
+					accomodate_text (text)
 				end
 				invalidate
 			end
@@ -270,6 +256,7 @@ feature {NONE} -- WEL Implementation
    			-- Default style used to create `Current'.
    		do
  			Result := Ws_visible | Ws_child | Ss_notify | Ss_ownerdraw
+ 			--	| Ws_clipchildren | Ws_clipsiblings
  		end
 
 feature {EV_CONTAINER_IMP} -- WEL Implementation
@@ -277,104 +264,81 @@ feature {EV_CONTAINER_IMP} -- WEL Implementation
 	on_draw_item (draw_item_struct: WEL_DRAW_ITEM_STRUCT) is
 			-- Process `Wm_drawitem' message.
 		local
-			l_draw_dc: WEL_CLIENT_DC
-			l_mem_dc: WEL_DC
-			l_draw_flags: INTEGER
-			l_draw_text_rect: WEL_RECT
-			l_rect: WEL_RECT
-			l_draw_font: WEL_FONT
-			l_font_imp: EV_FONT_IMP
-			l_bk_brush: WEL_BRUSH
-			l_wel_color: WEL_COLOR_REF
-			l_color_imp: EV_COLOR_IMP
-			l_bitmap: WEL_BITMAP
-			l_is_remote: BOOLEAN
+			draw_dc: WEL_CLIENT_DC
+			draw_flags: INTEGER
+			draw_rect: WEL_RECT
+			draw_item_struct_rect: WEL_RECT
+			draw_font: WEL_FONT
+			font_imp: EV_FONT_IMP
+			theme_drawer: EV_THEME_DRAWER_IMP
+			bk_brush: WEL_BRUSH
+			color_imp: EV_COLOR_IMP
 		do
-			l_wel_color := wel_background_color
-			create l_bk_brush.make_solid (l_wel_color)
+			theme_drawer := application_imp.theme_drawer
+			create bk_brush.make_solid (wel_background_color)
 
 				-- Assign local variable for faster access
-			l_draw_dc := draw_item_struct.dc
-			l_rect := draw_item_struct.rect_item
+			draw_dc := draw_item_struct.dc
+			draw_item_struct_rect := draw_item_struct.rect_item
 
 			if internal_text /= Void then
-				l_is_remote := metrics.is_remote_session
-				if l_is_remote then
-					l_mem_dc := l_draw_dc
-				else
-					create {WEL_MEMORY_DC} l_mem_dc.make_by_dc (l_draw_dc)
-					create l_bitmap.make_compatible (l_draw_dc, l_rect.width, l_rect.height)
-					l_mem_dc.select_bitmap (l_bitmap)
-					l_bitmap.dispose
+					-- Retrieve the font used to draw the text
+				draw_font := private_wel_font
+				if draw_font = Void then
+					font_imp ?= internal_font.implementation
+					draw_font := font_imp.wel_font
 				end
 
 					-- Set the flag for the forthcoming call to
 					-- `draw_text'.
 				inspect text_alignment
 				when {EV_TEXT_ALIGNMENT_CONSTANTS}.Ev_text_alignment_center then
-					l_draw_flags := Dt_center
+					draw_flags := Dt_center
 				when {EV_TEXT_ALIGNMENT_CONSTANTS}.Ev_text_alignment_left then
-					l_draw_flags := Dt_left
+					draw_flags := Dt_left
 				when {EV_TEXT_ALIGNMENT_CONSTANTS}.Ev_text_alignment_right then
-					l_draw_flags := Dt_right
+					draw_flags := Dt_right
 				else
 					check
 						Unexpected_alignment: False
 					end
 				end
-				l_draw_flags := l_draw_flags | Dt_expandtabs | dt_vcenter
+				draw_flags := draw_flags | Dt_expandtabs | dt_vcenter
 
 				-- Compute the bounding rectangle where the text need
 				-- to be displayed.
 
-				create l_draw_text_rect.make (
-					l_rect.left, l_rect.top + (l_rect.height - text_height) // 2,
-					l_rect.right, l_rect.bottom)
+				create draw_rect.make (
+					draw_item_struct_rect.left, draw_item_struct_rect.top +
+						(draw_item_struct_rect.height - text_height) // 2,
+					draw_item_struct_rect.right, draw_item_struct_rect.bottom)
+
 
 					-- Need to first clear the area to the background color of `parent_imp'
-				application_imp.theme_drawer.draw_widget_background (Current, l_mem_dc, l_rect, l_bk_brush)
+				theme_drawer.draw_widget_background (Current, draw_dc, draw_item_struct_rect, bk_brush)
 
-					-- Retrieve the font used to draw the text
-				l_draw_font := private_wel_font
-				if l_draw_font = Void then
-					l_font_imp ?= internal_font.implementation
-					l_draw_font := l_font_imp.wel_font
-				end
-					 -- Draw the text
-				l_mem_dc.select_font (l_draw_font)
-				l_color_imp ?= foreground_color.implementation
-				l_mem_dc.set_text_color (l_color_imp)
+					-- Draw the text
+				draw_dc.select_font (draw_font)
+				color_imp ?= foreground_color.implementation
+				draw_dc.set_text_color (color_imp)
 
-					-- Set transparent because the background is drawn according to the label's set background color
-					-- or notebook theme.
-				l_mem_dc.set_background_transparent
+
+--				draw_dc.text_out (draw_item_struct_rect.x, draw_item_struct_rect.y + text_height, internal_text)
 
 				if not is_sensitive then
-						-- Label is disabled
-					l_mem_dc.draw_disabled_text (internal_text, l_draw_text_rect, l_draw_flags)
+					-- Label is disabled
+					draw_dc.draw_disabled_text (internal_text, draw_rect,
+						draw_flags)
 				else
-						-- Label is NOT disabled
-					l_mem_dc.draw_text (internal_text, l_draw_text_rect, l_draw_flags)
+					-- Label is NOT disabled
+					draw_dc.draw_text (internal_text, draw_rect,
+						draw_flags)
 				end
-				if not l_is_remote then
-					l_draw_dc.bit_blt (l_rect.left, l_rect.top, l_rect.width, l_rect.height, l_mem_dc,
-							0, 0, {WEL_RASTER_OPERATIONS_CONSTANTS}.Srccopy)
-				end
-				l_mem_dc.unselect_all
-				l_mem_dc.delete
+				draw_dc.unselect_font
 			else
-				application_imp.theme_drawer.draw_widget_background (Current, l_draw_dc, l_rect, l_bk_brush)
+				theme_drawer.draw_widget_background (Current, draw_dc, draw_item_struct_rect, bk_brush)
 			end
-			l_bk_brush.delete
-		end
-
-	on_erase_background (paint_dc: WEL_PAINT_DC; invalid_rect: WEL_RECT) is
-			-- Wm_erase_background message has been received by Windows.
-			-- We must override the default processing, as if we do not, then
-			-- Windows will draw the background for us, even though it is not needed.
-			-- This causes flicker.
-		do
-			disable_default_processing
+			bk_brush.delete
 		end
 
 feature {NONE} -- Implementation

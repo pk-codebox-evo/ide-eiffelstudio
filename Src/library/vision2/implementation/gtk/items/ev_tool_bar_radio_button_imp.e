@@ -25,6 +25,8 @@ inherit
 		end
 
 	EV_RADIO_PEER_IMP
+		undefine
+			visual_widget
 		redefine
 			interface,
 			widget_object
@@ -51,7 +53,7 @@ feature -- Status setting
 			if not is_selected then
 				{EV_GTK_EXTERNALS}.gtk_toggle_tool_button_set_active (visual_widget, True)
 			end
-		end
+		end	
 
 feature -- Status report
 

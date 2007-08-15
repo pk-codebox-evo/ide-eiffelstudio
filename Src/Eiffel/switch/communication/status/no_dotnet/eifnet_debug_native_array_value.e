@@ -13,10 +13,8 @@ inherit
 	ABSTRACT_SPECIAL_VALUE
 
 	EIFNET_ABSTRACT_DEBUG_VALUE
-		rename
-			reset_children as reset_items
 		undefine
-			address, sorted_children, reset_items
+			address, append_to, sorted_children
 		end
 
 feature -- Access
@@ -31,6 +29,19 @@ feature -- Access
 		do
 		end
 
+feature -- Output
+
+	append_type_and_value (a_text_formatter: TEXT_FORMATTER) is
+		do
+		end;
+
+feature {ABSTRACT_DEBUG_VALUE} -- Output
+
+	append_value (a_text_formatter: TEXT_FORMATTER) is
+			-- Append only the value of Current to `st'.
+		do
+		end;
+
 feature -- Output	
 
 	children: DS_LIST [ABSTRACT_DEBUG_VALUE] is
@@ -40,6 +51,11 @@ feature -- Output
 		end
 
 	get_items (a_slice_min, a_slice_max: INTEGER) is
+			-- Get Items for attributes
+		do
+		end
+
+	fill_items (a_slice_min, a_slice_max: INTEGER) is
 			-- Get Items for attributes
 		do
 		end

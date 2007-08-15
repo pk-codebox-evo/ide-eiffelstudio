@@ -43,7 +43,7 @@ inherit
 			clear_general
 		end
 
-	EB_SHARED_DEBUGGER_MANAGER
+	EB_SHARED_DEBUG_TOOLS
 		export
 			{NONE} all
 		end
@@ -83,9 +83,7 @@ feature -- Basic Operations / Generic purpose
 			until
 				managed_output_tools.after
 			loop
-				if managed_output_tools.item.is_general then
-					managed_output_tools.item.force_display
-				end
+				managed_output_tools.item.force_display
 				managed_output_tools.forth
 			end
 		end
@@ -131,6 +129,32 @@ feature -- Basic Operations / Generic purpose
 			end
 		end
 
+	process_errors (errors: LINKED_LIST [ERROR]) is
+			-- Print `errors' on all output tools.
+		do
+			from
+				managed_output_tools.start
+			until
+				managed_output_tools.after
+			loop
+				managed_output_tools.item.process_errors (errors)
+				managed_output_tools.forth
+			end
+		end
+
+	process_warnings (warnings: LINKED_LIST [ERROR]) is
+			-- Print `warnings' on all output tools.
+		do
+			from
+				managed_output_tools.start
+			until
+				managed_output_tools.after
+			loop
+				managed_output_tools.item.process_warnings (warnings)
+				managed_output_tools.forth
+			end
+		end
+
 feature -- Basic Operations / Information message
 
 	display_system_info is
@@ -139,8 +163,10 @@ feature -- Basic Operations / Information message
 			l_error: BOOLEAN
 		do
 			force_display
-			clear_general
-			start_processing (true)
+			if Workbench.is_already_compiled then
+				clear_general
+			end
+			start_processing (false)
 			if Workbench.is_already_compiled then
 				l_error := structured_system_info (Current)
 			else
@@ -154,6 +180,14 @@ feature -- Basic Operations / Information message
 			end
 		end
 
+	display_welcome_info is
+			-- Display information on how to launch $EiffelGraphicalCompiler$.
+		do
+			start_processing (false)
+			welcome_info (Current)
+			end_processing
+		end
+
 	display_application_status is
 			-- Display the status of the application, or "Not running" if
 			-- the application is not running.
@@ -161,9 +195,10 @@ feature -- Basic Operations / Information message
 			l_error: BOOLEAN
 		do
 				-- Build the text
+			clear_general
 			start_processing (true)
-			if Debugger_manager.application_is_executing then
-				Eb_debugger_manager.text_formatter_visitor.append_status (Debugger_manager.application_status, Current)
+			if eb_debugger_manager.application_is_executing then
+				eb_debugger_manager.Application.status.display_status (Current)
 			else
 				add ("System not launched")
 				add_new_line
@@ -182,24 +217,24 @@ feature -- Basic Operations / Information message
 		local
 			enabled_bps: BOOLEAN
 			disabled_bps: BOOLEAN
-			bpm: BREAKPOINTS_MANAGER
+			app_exec: APPLICATION_EXECUTION
 		do
 				-- Build text.
 			clear_general
 			start_processing (true)
-			bpm := Debugger_manager
-			if  not bpm.has_breakpoints then
+			app_exec := eb_debugger_manager.application
+			if  not app_exec.has_breakpoints then
 				add ("No breakpoints.")
 				add_new_line
 			else
-				enabled_bps := bpm.has_enabled_breakpoints
-				disabled_bps := bpm.has_disabled_breakpoints
+				enabled_bps := app_exec.has_enabled_breakpoints
+				disabled_bps := app_exec.has_disabled_breakpoints
 
 				if enabled_bps then
 					add ("Enabled breakpoints:")
 					add_new_line
 					add_new_line
-					display_filtered_breakpoints (Current, bpm.features_with_breakpoint_set, True)
+					display_filtered_breakpoints (Current, app_exec.features_with_breakpoint_set, True)
 					if disabled_bps then
 						add_new_line
 						add ("-------------")
@@ -211,7 +246,7 @@ feature -- Basic Operations / Information message
 					add ("Disabled breakpoints:")
 					add_new_line
 					add_new_line
-					display_filtered_breakpoints (Current, bpm.features_with_breakpoint_set, False)
+					display_filtered_breakpoints (Current, app_exec.features_with_breakpoint_set, False)
 				end
 			end
 			add_new_line
@@ -249,13 +284,13 @@ feature -- Basic Operations / Compiler messages
 	trace_warnings (handler: ERROR_HANDLER) is
 			-- Display warnings messages from `handler'.
 		do
-			--| See {ES_ERROR_DISPLAYER}
+			process_warnings (handler.warning_list)
 		end
 
 	trace_errors (handler: ERROR_HANDLER) is
 			-- Display error messages from `handler'.
 		do
-			--| See {ES_ERROR_DISPLAYER}
+			process_errors (handler.error_list)
 		end
 
 feature -- Element change
@@ -291,13 +326,13 @@ feature -- Element change
 
 feature {NONE} -- Text formatter
 
-	add (s: STRING_GENERAL) is
+	add (s: STRING) is
 			-- Add basic text.
 		do
 			process_basic_text (s)
 		end
 
-	add_string (s: STRING_GENERAL) is
+	add_string (s: STRING) is
 			-- Add string text.
 		do
 			process_string_text (s, Void)
@@ -309,7 +344,7 @@ feature {NONE} -- Text formatter
 			process_new_line
 		end
 
-	process_basic_text (text: STRING_GENERAL) is
+	process_basic_text (text: STRING) is
 			-- Process default basic text `t'.
 		do
 			from
@@ -324,7 +359,7 @@ feature {NONE} -- Text formatter
 			end
 		end
 
-	process_quoted_text (text: STRING_GENERAL) is
+	process_quoted_text (text: STRING) is
 			-- Process the quoted `text' within a comment.
 		do
 			from
@@ -339,7 +374,7 @@ feature {NONE} -- Text formatter
 			end
 		end
 
-	process_comment_text (text: STRING_GENERAL; url: STRING_GENERAL) is
+	process_comment_text (text: STRING; url: STRING) is
 			-- Process comment text.
 			-- `url' is possible url, which can be void if none.
 		do
@@ -355,7 +390,7 @@ feature {NONE} -- Text formatter
 			end
 		end
 
-	process_class_name_text (text: STRING_GENERAL; a_class: CLASS_I; a_quote: BOOLEAN) is
+	process_class_name_text (text: STRING; a_class: CLASS_I; a_quote: BOOLEAN) is
 			-- Process class name of `a_class'.
 		do
 			from
@@ -370,7 +405,7 @@ feature {NONE} -- Text formatter
 			end
 		end
 
-	process_cluster_name_text (text: STRING_GENERAL; a_cluster: CLUSTER_I; a_quote: BOOLEAN) is
+	process_cluster_name_text (text: STRING; a_cluster: CLUSTER_I; a_quote: BOOLEAN) is
 			-- Process cluster name of `a_cluster'.
 		do
 			from
@@ -385,7 +420,7 @@ feature {NONE} -- Text formatter
 			end
 		end
 
-	process_target_name_text (text: STRING_GENERAL; a_target: CONF_TARGET) is
+	process_target_name_text (text: STRING; a_target: CONF_TARGET) is
 			-- Process target name text `text'.
 		do
 			from
@@ -400,7 +435,7 @@ feature {NONE} -- Text formatter
 			end
 		end
 
-	process_feature_name_text (text: STRING_GENERAL; a_class: CLASS_C) is
+	process_feature_name_text (text: STRING; a_class: CLASS_C) is
 			-- Process feature name text `text'.
 		do
 			from
@@ -415,7 +450,7 @@ feature {NONE} -- Text formatter
 			end
 		end
 
-	process_feature_text (text: STRING_GENERAL; a_feature: E_FEATURE; a_quote: BOOLEAN) is
+	process_feature_text (text: STRING; a_feature: E_FEATURE; a_quote: BOOLEAN) is
 			-- Process feature text `text'.
 		do
 			from
@@ -535,7 +570,7 @@ feature {NONE} -- Text formatter
 			end
 		end
 
-	process_filter_item (text: STRING_GENERAL; is_before: BOOLEAN) is
+	process_filter_item (text: STRING; is_before: BOOLEAN) is
 			-- Process filter text `t'.
 		do
 			from
@@ -550,7 +585,7 @@ feature {NONE} -- Text formatter
 			end
 		end
 
-	process_symbol_text (text: STRING_GENERAL) is
+	process_symbol_text (text: STRING) is
 			-- Process symbol text.
 		do
 			from
@@ -565,7 +600,7 @@ feature {NONE} -- Text formatter
 			end
 		end
 
-	process_keyword_text (text: STRING_GENERAL; a_feature: E_FEATURE) is
+	process_keyword_text (text: STRING; a_feature: E_FEATURE) is
 			-- Process keyword text.
 			-- `a_feature' is possible feature.
 		do
@@ -581,7 +616,7 @@ feature {NONE} -- Text formatter
 			end
 		end
 
-	process_operator_text (text: STRING_GENERAL; a_feature: E_FEATURE) is
+	process_operator_text (text: STRING; a_feature: E_FEATURE) is
 			-- Process operator text.
 			-- `a_feature' can be void.
 		do
@@ -597,7 +632,7 @@ feature {NONE} -- Text formatter
 			end
 		end
 
-	process_address_text (a_address, a_name: STRING_GENERAL; a_class: CLASS_C) is
+	process_address_text (a_address, a_name: STRING; a_class: CLASS_C) is
 			-- Process address text.
 		do
 			from
@@ -612,7 +647,7 @@ feature {NONE} -- Text formatter
 			end
 		end
 
-	process_error_text (text: STRING_GENERAL; a_error: ERROR) is
+	process_error_text (text: STRING; a_error: ERROR) is
 			-- Process error text.
 		do
 			from
@@ -627,7 +662,7 @@ feature {NONE} -- Text formatter
 			end
 		end
 
-	process_cl_syntax (text: STRING_GENERAL; a_syntax_message: SYNTAX_MESSAGE; a_class: CLASS_C) is
+	process_cl_syntax (text: STRING; a_syntax_message: SYNTAX_MESSAGE; a_class: CLASS_C) is
 			-- Process class syntax text.
 		do
 			from
@@ -656,7 +691,7 @@ feature {NONE} -- Implementation
 			i: INTEGER
 			bp_list: LIST [INTEGER]
 			first_bp, has_bp: BOOLEAN
-			bpm: BREAKPOINTS_MANAGER
+			app_exec: APPLICATION_EXECUTION
 		do
 			from
 				create table.make (5)
@@ -674,7 +709,7 @@ feature {NONE} -- Implementation
 				stwl.extend (f)
 				routine_list.forth
 			end
-			bpm := Debugger_manager
+			app_exec := eb_debugger_manager.application
 			from
 				table.start
 			until
@@ -690,9 +725,9 @@ feature {NONE} -- Implementation
 				loop
 					f := stwl.item
 					if display_enabled then
-						bp_list := bpm.breakpoints_enabled_for (f)
+						bp_list := app_exec.breakpoints_enabled_for (f)
 					else
-						bp_list := bpm.breakpoints_disabled_for (f)
+						bp_list := app_exec.breakpoints_disabled_for (f)
 					end
 					has_bp := not bp_list.is_empty
 					stwl.forth
@@ -708,9 +743,9 @@ feature {NONE} -- Implementation
 					loop
 						f := stwl.item
 						if display_enabled then
-							bp_list := bpm.breakpoints_enabled_for (f)
+							bp_list := app_exec.breakpoints_enabled_for (f)
 						else
-							bp_list := bpm.breakpoints_disabled_for (f)
+							bp_list := app_exec.breakpoints_disabled_for (f)
 						end
 						if not bp_list.is_empty then
 							a_text_formatter.add_indent
@@ -728,8 +763,8 @@ feature {NONE} -- Implementation
 								else
 									first_bp := False
 								end
-								if bpm.is_breakpoint_set (f, i) then
-									a_text_formatter.add_breakpoint_index (f, i, bpm.has_conditional_stop (f, i))
+								if app_exec.is_breakpoint_set (f, i) then
+									a_text_formatter.add_breakpoint_index (f, i, app_exec.has_conditional_stop (f, i))
 								end
 								bp_list.forth
 							end

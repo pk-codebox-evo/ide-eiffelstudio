@@ -20,11 +20,6 @@ inherit
 			default_create, is_equal, copy
 		end
 
-	EB_CONTEXT_MENU_HANDLER
-		undefine
-			default_create, is_equal, copy
-		end
-
 create
 	make
 
@@ -46,12 +41,11 @@ feature {NONE} -- Initialization
 			drop_actions.extend (agent remove_class)
 			drop_actions.extend (agent remove_folder)
 
+
 			if an_item.is_class then
 					-- ...or a class.
 				conv_class ?= an_item
-				if conv_class.associated_class_stone /= Void then
-					set_pebble (conv_class.associated_class_stone)
-				end
+				set_pebble (conv_class.associated_class_stone)
 				if conv_class.associated_class_i /= Void then
 					set_pixmap (pixmap_from_class_i (conv_class.associated_class_i))
 				else
@@ -80,16 +74,6 @@ feature {NONE} -- Initialization
 			end
 			set_accept_cursor (an_item.mouse_cursor)
 			set_deny_cursor (an_item.Xmouse_cursor)
-			set_configurable_target_menu_mode
-			set_configurable_target_menu_handler (agent context_menu_handler)
-		end
-
-	context_menu_handler (a_menu: EV_MENU; a_target_list: ARRAYED_LIST [EV_PND_TARGET_DATA]; a_source: EV_PICK_AND_DROPABLE; a_pebble: ANY) is
-			-- Context menu handler
-		do
-			if context_menu_factory /= Void then
-				context_menu_factory.favorites_menu (a_menu, a_target_list, a_source, a_pebble, Current)
-			end
 		end
 
 feature -- Status setting

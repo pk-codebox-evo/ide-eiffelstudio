@@ -18,7 +18,9 @@ inherit
 			copy,
 			default_create
 		redefine
-			metric
+			metric,
+			expression_generator,
+			is_linear_metric_editor
 		end
 
 	EB_CONSTANTS
@@ -47,27 +49,17 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_tool: like metric_tool; a_panel: like metric_panel; a_mode: INTEGER; a_unit: QL_METRIC_UNIT) is
+	make (a_tool: like metric_tool; a_panel: like metric_panel) is
 			-- Initialize `metric' with `a_metric' mode with `a_mode' and `unit' with `a_unit'.
 		require
 			a_tool_attached: a_tool /= Void
-			a_mode_valid: is_mode_valid (a_mode)
-			a_unit_attached: a_unit /= Void
 		do
 			set_metric_tool (a_tool)
 			set_metric_panel (a_panel)
+			create expression_generator.make
 			create change_actions
 			default_create
-			set_mode (a_mode)
-			set_unit (a_unit)
 			setup_editor
-			append_drop_actions (
-				<<linear_lbl_empty_area,
-				  linear_definition_empty_area,
-				  expression_lbl_empty_area
-				>>,
-				metric_tool
-			)
 		ensure
 			metric_tool_set: metric_tool = a_tool
 			metric_panel_set: metric_panel = a_panel
@@ -98,20 +90,23 @@ feature {NONE} -- Initialization
 			metric_grid.key_press_string_actions.extend (agent on_key_string_pressed)
 			metric_grid.set_item_veto_pebble_function (agent item_veto_pebble_function)
 			metric_grid.item_drop_actions.extend (agent on_item_drop)
-			metric_grid.register_shortcut (move_up_shortcut, agent on_up)
-			metric_grid.register_shortcut (move_down_shortcut, agent on_down)
-			metric_grid.register_shortcut (del_key_shortcut, agent on_remove_metric)
+			metric_grid.add_key_action (agent on_up, move_up_key_index)
+			metric_grid.add_key_action (agent on_down, move_down_key_index)
+			metric_grid.add_key_action (agent on_remove_metric, del_key_index)
+			metric_grid.add_key_shortcut (del_key_index, del_key_shortcut)
+			metric_grid.add_key_shortcut (move_up_key_index, move_up_shortcut)
+			metric_grid.add_key_shortcut (move_down_key_index, move_down_shortcut)
 			grid_area.extend (metric_grid)
 
 			up_btn.remove_text
 			up_btn.set_pixmap (pixmaps.icon_pixmaps.general_move_up_icon)
 			up_btn.select_actions.extend (agent on_up)
-			up_btn.set_tooltip (metric_names.f_move_row_up.as_string_32 + " (" + move_up_shortcut.out + ")")
+			up_btn.set_tooltip (metric_names.f_move_row_up + " (" + move_up_shortcut.out + ")")
 
 			down_btn.remove_text
 			down_btn.set_pixmap (pixmaps.icon_pixmaps.general_move_down_icon)
 			down_btn.select_actions.extend (agent on_down)
-			down_btn.set_tooltip (metric_names.f_move_row_down.as_string_32 + " (" + move_down_shortcut.out + ")")
+			down_btn.set_tooltip (metric_names.f_move_row_down + " (" + move_down_shortcut.out + ")")
 
 			remove_metric_btn.remove_text
 			remove_metric_btn.set_pixmap (pixmaps.icon_pixmaps.general_remove_icon)
@@ -119,22 +114,36 @@ feature {NONE} -- Initialization
 			remove_all_metric_btn.set_pixmap (pixmaps.icon_pixmaps.general_reset_icon)
 			remove_all_metric_btn.select_actions.extend (agent on_remove_all_metrics)
 			remove_metric_btn.select_actions.extend (agent on_remove_metric)
-			remove_metric_btn.set_tooltip (metric_names.f_del_row.as_string_32 + " (" + del_key_shortcut.out + ")")
+			remove_metric_btn.set_tooltip (metric_names.f_del_row + " (" + del_key_shortcut.out + ")")
 			remove_all_metric_btn.set_tooltip (metric_names.f_clear_rows)
 
-			expression_lbl.set_text (metric_names.t_expression)
 			create l_text
 			expression_text.set_background_color (l_text.background_color)
 
 			attach_non_editable_warning_to_text (metric_names.t_text_not_editable, expression_text, metric_tool_window)
-			metric_definition_lbl.set_text (metric_names.t_metric_definition.as_string_32 + ":")
+			metric_definition_lbl.set_text (metric_names.t_metric_definition + ":")
 
+				-- Delete following in docking EiffelStudio.
+			linear_lbl_empty_area.drop_actions.extend (agent metric_panel.drop_cluster)
+			linear_lbl_empty_area.drop_actions.extend (agent metric_panel.drop_class)
+			linear_lbl_empty_area.drop_actions.extend (agent metric_panel.drop_feature)
+			linear_definition_empty_area.drop_actions.extend (agent metric_panel.drop_cluster)
+			linear_definition_empty_area.drop_actions.extend (agent metric_panel.drop_class)
+			linear_definition_empty_area.drop_actions.extend (agent metric_panel.drop_feature)
+			expression_lbl_empty_area.drop_actions.extend (agent metric_panel.drop_cluster)
+			expression_lbl_empty_area.drop_actions.extend (agent metric_panel.drop_class)
+			expression_lbl_empty_area.drop_actions.extend (agent metric_panel.drop_feature)
 		ensure then
 			del_key_shortcut_attached: del_key_shortcut /= Void
 			ctrl_up_shortcut_attached: move_up_shortcut /= Void
 			ctrl_down_shortcut_attached: move_down_shortcut /= Void
 			metric_grid_attached: metric_grid /= Void
 		end
+
+feature -- Status report
+
+	is_linear_metric_editor: BOOLEAN is True
+			-- Is current a linear metric editor?
 
 feature -- Setting
 
@@ -150,7 +159,7 @@ feature -- Setting
 			load_metric_name_and_description (a_metric, mode = readonly_mode)
 			if a_metric = Void then
 					-- For new metric				
-				load_variable_metric (create {EB_METRIC_LINEAR}.make (metric_manager.next_metric_name_with_unit (unit), unit))
+				load_variable_metric (create {EB_METRIC_LINEAR}.make (metric_manager.next_metric_name_with_unit (unit), unit, uuid))
 			else
 				load_variable_metric (a_metric)
 			end
@@ -171,9 +180,28 @@ feature -- Setting
 			toolbar_area.disable_sensitive
 		end
 
+	attach_metric_selector (a_metric_selector: like metric_selector) is
+			-- Set `metric_selector' with `a_metric_selector'.
+		do
+			metric_selector := a_metric_selector
+		end
+
+	detach_metric_selector is
+			-- Detach `metric_selector'.
+		do
+			if metric_selector /= Void then
+				metric_selector := Void
+			end
+		end
+
+	set_stone (a_stone: STONE) is
+			-- Notify that `a_stone' is dropped on Current.
+		do
+		end
+
 feature -- Access
 
-	data_in_row (a_row: EV_GRID_ROW): TUPLE [criterion_name: STRING; coefficient: STRING] is
+	data_in_row (a_row: EV_GRID_ROW): TUPLE [criterion_name: STRING; coefficient: STRING; uuid: UUID] is
 			-- Data in `a_row'
 		require
 			a_row_attached: a_row /= Void
@@ -181,6 +209,7 @@ feature -- Access
 		local
 			l_metric_item: EV_GRID_LABEL_ITEM
 			l_coefficient_item: EV_GRID_EDITABLE_ITEM
+			l_uuid: UUID
 		do
 			if a_row.data /= Void then
 				l_coefficient_item ?= a_row.item (1)
@@ -189,7 +218,9 @@ feature -- Access
 					l_coefficient_item /= Void
 					l_metric_item /= Void
 				end
-				Result := [l_metric_item.text.out, l_coefficient_item.text.out]
+				l_uuid ?= l_metric_item.data
+				check l_uuid /= Void end
+				Result := [l_metric_item.text.out, l_coefficient_item.text.out, l_uuid]
 			end
 		end
 
@@ -200,9 +231,9 @@ feature -- Access
 			l_coefficient_list: ARRAYED_LIST [DOUBLE]
 			l_index: INTEGER
 			l_count: INTEGER
-			l_data: TUPLE [metric: STRING; coefficient: STRING]
+			l_data: TUPLE [metric: STRING; coefficient: STRING; uuid: UUID]
 		do
-			create Result.make (name_area.name, unit)
+			create Result.make (name_area.name, unit, uuid)
 			Result.set_description (name_area.description)
 			create l_criterion_list.make (metric_grid.row_count - 1)
 			create l_coefficient_list.make (metric_grid.row_count - 1)
@@ -220,6 +251,7 @@ feature -- Access
 					else
 						Result.coefficient.extend (0)
 					end
+					Result.variable_metric_uuid.extend (l_data.uuid)
 				end
 				l_index := l_index + 1
 			end
@@ -240,14 +272,18 @@ feature -- Access
 	metric_grid: ES_GRID
 			-- Grid to display current metric
 
+	expression_generator: EB_METRIC_LINEAR_EXPRESSION_GENERATOR
+			-- Expression generator
+
 feature{NONE} -- Implementation/Actions
 
-	load_metric_in_row (a_name: STRING; a_coefficient: STRING; a_row: EV_GRID_ROW) is
+	load_metric_in_row (a_name: STRING; a_coefficient: STRING; a_uuid: UUID; a_row: EV_GRID_ROW) is
 			-- Load metric named `a_name' with `a_coefficient' in `a_row'.
 		require
 			a_name_attached: a_name /= Void
 			a_row_attached: a_row /= Void
 			a_row_parented: a_row.parent /= Void
+			a_uuid_attached: a_uuid /= Void
 		local
 			l_coefficient_item: EV_GRID_EDITABLE_ITEM
 			l_metric_item: EV_GRID_COMBO_ITEM
@@ -258,7 +294,7 @@ feature{NONE} -- Implementation/Actions
 				-- Setup variable metric item.
 			create l_metric_item.make_with_text (a_name)
 			l_metric_item.set_foreground_color (color_of_metric (a_name))
-			if metric_manager.has_metric (a_name) and then metric_manager.metric_with_name (a_name).unit = unit then
+			if metric_manager.has_metric (a_name) then
 				l_metric := metric_manager.metric_with_name (a_name)
 				l_metric_item.set_pixmap (pixmap_from_metric (l_metric))
 			else
@@ -267,6 +303,7 @@ feature{NONE} -- Implementation/Actions
 			bind_metric_item_menu (l_metric_item)
 			l_metric_item.pointer_double_press_actions.extend (agent on_pointer_press_on_variable_metric_item (l_metric_item, ?, ?, ?, ?, ?, ?, ?, ?))
 			l_metric_item.deactivate_actions.extend (agent on_variable_metric_deactivate (l_metric_item))
+			l_metric_item.set_data (a_uuid)
 				-- Setup coefficient item.
 			l_coefficient_item.pointer_double_press_actions.force_extend (agent l_coefficient_item.activate)
 			l_coefficient_item.deactivate_actions.extend (agent on_change)
@@ -303,7 +340,7 @@ feature{NONE} -- Implementation/Actions
 				l_row_index := l_row.index
 				metric_grid.insert_new_row (l_row_index)
 				l_row := metric_grid.row (l_row_index)
-				load_metric_in_row (l_metric.name, "1", l_row)
+				load_metric_in_row (l_metric.name, "1", l_metric.uuid, l_row)
 				metric_grid.remove_selection
 				l_row.enable_select
 				on_change
@@ -311,15 +348,17 @@ feature{NONE} -- Implementation/Actions
 		end
 
 	on_add_variable_metric (a_item: EV_GRID_LABEL_ITEM) is
-			-- Action to be performed to add a metric into current linear definition area
+			-- Action to be performed to add selected metric in `metric_selector' into current linear definition area
 		require
 			a_item_attached: a_item /= Void
 			a_item_parented: a_item.parent /= Void
+			metric_selector_attached: metric_selector /= Void
 		local
 			l_row: EV_GRID_ROW
 			l_row_index: INTEGER
 			l_metric: EB_METRIC
 			l_metric_name: STRING
+			l_uuid: UUID
 		do
 			l_row_index := a_item.row.index
 			metric_grid.insert_new_row (l_row_index)
@@ -327,9 +366,11 @@ feature{NONE} -- Implementation/Actions
 			l_metric_name := a_item.text
 			if metric_manager.has_metric (l_metric_name) then
 				l_metric := metric_manager.metric_with_name (l_metric_name)
+				l_uuid := l_metric.uuid
 			else
+				l_uuid := metric_manager.uuid_generator.generate_uuid
 			end
-			load_metric_in_row (l_metric_name, "1", l_row)
+			load_metric_in_row (l_metric_name, "1", l_uuid, l_row)
 			a_item.set_text ("...")
 			metric_grid.set_focus
 			metric_grid.remove_selection
@@ -373,7 +414,7 @@ feature{NONE} -- Implementation/Actions
 			l_row: EV_GRID_ROW
 			l_new_row: EV_GRID_ROW
 			l_index: INTEGER
-			l_data: TUPLE [metric: STRING; coefficient: STRING]
+			l_data: TUPLE [metric: STRING; coefficient: STRING; uuid: UUID]
 		do
 			if not metric_grid.selected_rows.is_empty then
 				l_row := metric_grid.selected_rows.first
@@ -382,7 +423,7 @@ feature{NONE} -- Implementation/Actions
 					metric_grid.insert_new_row (l_index - 1)
 					l_new_row := metric_grid.row (l_index - 1)
 					l_data := data_in_row (l_row)
-					load_metric_in_row (l_data.metric, l_data.coefficient, l_new_row)
+					load_metric_in_row (l_data.metric, l_data.coefficient, l_data.uuid, l_new_row)
 					metric_grid.remove_selection
 					l_new_row.enable_select
 					metric_grid.remove_row (l_row.index)
@@ -397,7 +438,7 @@ feature{NONE} -- Implementation/Actions
 			l_row: EV_GRID_ROW
 			l_new_row: EV_GRID_ROW
 			l_index: INTEGER
-			l_data: TUPLE [metric: STRING; coefficient: STRING]
+			l_data: TUPLE [metric: STRING; coefficient: STRING; uuid: UUID]
 		do
 			if not metric_grid.selected_rows.is_empty then
 				l_row := metric_grid.selected_rows.first
@@ -406,7 +447,7 @@ feature{NONE} -- Implementation/Actions
 					metric_grid.insert_new_row (l_index + 2)
 					l_new_row := metric_grid.row (l_index + 2)
 					l_data := data_in_row (l_row)
-					load_metric_in_row (l_data.metric, l_data.coefficient, l_new_row)
+					load_metric_in_row (l_data.metric, l_data.coefficient, l_data.uuid, l_new_row)
 					metric_grid.remove_selection
 					l_new_row.enable_select
 					metric_grid.remove_row (l_row.index)
@@ -418,9 +459,9 @@ feature{NONE} -- Implementation/Actions
 	on_change is
 			-- Action to be performed when definition of current linear metric changes
 		do
-			rich_text_output.wipe_out
-			expression_generator.generate_output (metric)
-			rich_text_output.load_expression (expression_text)
+			expression_generator.set_metric (metric)
+			expression_generator.generate_expression
+			expression_generator.load_expression (expression_text)
 			on_definition_change
 		end
 
@@ -451,7 +492,7 @@ feature{NONE} -- Implementation/Actions
 				l_coefficient_item /= Void
 				l_uuid /= Void
 			end
-			load_metric_in_row (a_item.text, l_coefficient_item.text, l_row)
+			load_metric_in_row (a_item.text, l_coefficient_item.text, l_uuid, l_row)
 			metric_grid.remove_selection
 			metric_grid.set_focus
 			l_row.enable_select
@@ -522,6 +563,7 @@ feature{NONE} -- Implementation
 			l_row: EV_GRID_ROW
 			l_variable_metric_list: LIST [STRING]
 			l_coefficient_list: LIST [DOUBLE]
+			l_uuid_list: LIST [UUID]
 		do
 			if metric_grid.row_count > 0 then
 				metric_grid.remove_rows (1, metric_grid.row_count)
@@ -529,16 +571,19 @@ feature{NONE} -- Implementation
 			from
 				l_variable_metric_list := a_metric.variable_metric
 				l_coefficient_list := a_metric.coefficient
+				l_uuid_list := a_metric.variable_metric_uuid
 				l_variable_metric_list.start
 				l_coefficient_list.start
+				l_uuid_list.start
 			until
 				a_metric.variable_metric.after
 			loop
 				metric_grid.insert_new_row (metric_grid.row_count + 1)
 				l_row := metric_grid.row (metric_grid.row_count)
-				load_metric_in_row (l_variable_metric_list.item, l_coefficient_list.item.out, l_row)
+				load_metric_in_row (l_variable_metric_list.item, l_coefficient_list.item.out, l_uuid_list.item, l_row)
 				l_variable_metric_list.forth
 				l_coefficient_list.forth
+				l_uuid_list.forth
 			end
 
 				-- Insert new line.
@@ -579,7 +624,7 @@ feature{NONE} -- Implementation
 			l_metric_name_array: ARRAY [STRING]
 			l_index: INTEGER
 		do
-			l_metric_table := metric_manager.ordered_metrics (agent metric_order_tester (?, ?, ascending_order), False)
+			l_metric_table := metric_manager.ordered_metrics (metric_manager.ascending_order, False)
 			l_metric_list := l_metric_table.item (unit)
 			if l_metric_list /= Void and then not l_metric_list.is_empty then
 				create l_metric_name_array.make (1, l_metric_list.count)
@@ -619,7 +664,7 @@ feature{NONE} -- Implementation
 			l_manager: like metric_manager
 		do
 			l_manager := metric_manager
-			if l_manager.is_metric_calculatable (a_name) and then l_manager.metric_with_name (a_name).unit = unit then
+			if l_manager.has_metric (a_name) and then l_manager.is_metric_valid (a_name) then
 				Result := (black_color)
 			else
 				Result := (red_color)
@@ -629,6 +674,15 @@ feature{NONE} -- Implementation
 		end
 
 feature -- Key shortcuts
+
+	del_key_index: INTEGER is 1
+			-- Key index to delete a criterion
+
+	move_up_key_index: INTEGER is 2
+			-- Key index for move a criterion up
+
+	move_down_key_index: INTEGER is 3
+			-- Key index for move a criterion down
 
 	del_key_shortcut: ES_KEY_SHORTCUT
 			-- Del key

@@ -53,8 +53,6 @@ feature {NONE} -- Initialization
 			private_width := 1
 			private_height := 1
 			private_bitmap_id := -1
-			disable_tabable_from
-			disable_tabable_to
 			set_is_initialized (True)
 		end
 
@@ -341,41 +339,6 @@ feature  -- Measurement
 		do
 			update_content
 			Result := private_height
-		end
-
-feature -- Navigation
-
-	internal_tabable_info: NATURAL_8
-			-- Storage for `is_tabable_from' and `is_tabable_to'.
-
-	is_tabable_to: BOOLEAN is
-		do
-			Result := internal_tabable_info.bit_test (1)
-		end
-
-	is_tabable_from: BOOLEAN is
-		do
-			Result := internal_tabable_info.bit_test (2)
-		end
-
-	enable_tabable_from is
-		do
-			internal_tabable_info := internal_tabable_info.set_bit (True, 2)
-		end
-
-	disable_tabable_from is
-		do
-			internal_tabable_info := internal_tabable_info.set_bit (False, 2)
-		end
-
-	enable_tabable_to is
-		do
-			internal_tabable_info := internal_tabable_info.set_bit (True, 1)
-		end
-
-	disable_tabable_to is
-		do
-			internal_tabable_info := internal_tabable_info.set_bit (False, 1)
 		end
 
 feature {EV_ANY_I} -- Delegated features
@@ -943,13 +906,11 @@ feature {EV_ANY_I} -- Delegated features
 			a_x: INTEGER
 			a_y: INTEGER
 			a_button: INTEGER
-			a_press: BOOLEAN
 			a_x_tilt: DOUBLE
 			a_y_tilt: DOUBLE
 			a_pressure: DOUBLE
 			a_screen_x: INTEGER
 			a_screen_y: INTEGER
-			a_menu_only: BOOLEAN
 		) is
 			-- Start a pick and drop transport.
 		do
@@ -958,13 +919,11 @@ feature {EV_ANY_I} -- Delegated features
 				a_x,
 				a_y,
 				a_button,
-				a_press,
 				a_x_tilt,
 				a_y_tilt,
 				a_pressure,
 				a_screen_x,
-				a_screen_y,
-				a_menu_only
+				a_screen_y
 				)
 		end
 
@@ -1256,7 +1215,6 @@ feature {EV_PIXMAP_I, EV_PIXMAP_IMP_STATE} -- Duplication
 				if private_palette /= Void then
 					private_palette.increment_reference
 				end
-				copy_events_from_other (other_simple_imp)
 				update_needed := other_simple_imp.update_needed
 			else
 				other_imp ?= other_interface.implementation
@@ -1271,19 +1229,7 @@ feature {EV_PIXMAP_I, EV_PIXMAP_IMP_STATE} -- Duplication
 				end
 				private_width := private_bitmap.width
 				private_height := private_bitmap.height
-				copy_events_from_other (other_imp)
 				update_needed := False
-			end
-				-- Update navigation attribute
-			if other_interface.is_tabable_from then
-				enable_tabable_from
-			else
-				disable_tabable_from
-			end
-			if other_interface.is_tabable_to then
-				enable_tabable_to
-			else
-				disable_tabable_to
 			end
 		end
 
@@ -1335,12 +1281,6 @@ feature {EV_ANY_I} -- Implementation
 		end
 
 feature {NONE} -- Implementation
-
-	create_file_drop_actions: like file_drop_actions
-			-- Create `file_drop_actions'
-		do
-			create Result
-		end
 
 	update_fields(
 		error_code		: INTEGER -- Loadpixmap_error_xxxx
@@ -1410,6 +1350,7 @@ feature {NONE} -- Implementation
 						-- We keep the palette
 					private_palette := dib.palette
 					private_palette.enable_reference_tracking
+					private_palette.increment_reference
 
 					dib.dispose
 					dib := Void

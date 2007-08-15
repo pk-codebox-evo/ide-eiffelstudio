@@ -22,8 +22,6 @@ inherit
 
 	EV_SHARED_APPLICATION
 
-	EB_EDITOR_TOKEN_IDS
-
 create {NONE}
 
 feature {NONE} -- Initialization
@@ -49,89 +47,85 @@ feature -- New line
 
 feature -- Text processing
 
-	process_basic_text (t: STRING_GENERAL) is
+	process_basic_text (t: STRING) is
 			-- Process default basic text `t'.
 		local
 			tok: EDITOR_TOKEN_TEXT
 			l_pos, l_previous: INTEGER
-			l_str: STRING_32
 		do
-			l_str := t.as_string_32
-			l_pos := l_str.index_of (new_line_32, 1)
+			l_pos := t.index_of ('%N', 1)
 			if l_pos > 0 then
 				from
 					l_previous := 1
 				until
 					l_pos = 0
 				loop
-					add (l_str.substring (l_previous, l_pos -1))
+					add (t.substring (l_previous, l_pos -1))
 					add_new_line
 					l_previous := l_pos + 1
-					l_pos := l_str.index_of (new_line_32, l_previous)
+					l_pos := t.index_of ('%N', l_previous)
 				end
 				if l_previous < t.count then
-					add (l_str.substring (l_previous, l_str.count))
+					add (t.substring (l_previous, t.count))
 				end
 			else
-				create tok.make (l_str.as_string_8)
+				create tok.make (t)
 				last_line.append_token (tok)
 			end
 		end
 
-	process_string_text (t: STRING_GENERAL; url: STRING_GENERAL) is
+	process_string_text (t: STRING; url: STRING) is
 			-- Process default basic text `t'.
 		local
-			tok: EDITOR_TOKEN_STRING
+			tok: EDITOR_TOKEN_TEXT
 			l_pos, l_previous: INTEGER
 			stone: URL_STONE
-			l_t: STRING_32
 		do
-			l_t := t.as_string_32
-			l_pos := l_t.index_of (new_line_32, 1)
+			l_pos := t.index_of ('%N', 1)
 			if l_pos > 0 then
 				from
 					l_previous := 1
 				until
 					l_pos = 0
 				loop
-					add_string (l_t.substring (l_previous, l_pos -1))
+					add_string (t.substring (l_previous, l_pos -1))
 					add_new_line
 					l_previous := l_pos + 1
-					l_pos := l_t.index_of (new_line_32, l_previous)
+					l_pos := t.index_of ('%N', l_previous)
 				end
-				if l_previous < l_t.count then
-					add (l_t.substring (l_previous, l_t.count))
+				if l_previous < t.count then
+					add (t.substring (l_previous, t.count))
 				end
 			else
-				create tok.make (t.as_string_8)
+				create tok.make (t)
 				if url /= Void then
-					create stone.make (url.as_string_8)
+					create stone.make (url)
 					tok.set_pebble (stone)
 				end
 				last_line.append_token (tok)
 			end
 		end
 
-	process_comment_text (t: STRING_GENERAL; url: STRING_GENERAL) is
+	process_comment_text (t: STRING; url: STRING) is
 			-- Process comment text.
 		local
 			tok: EDITOR_TOKEN_COMMENT
 			stone: URL_STONE
 		do
-			create tok.make (t.as_string_8)
+			create tok.make (t)
 			if url /= Void then
-				create stone.make (url.as_string_8)
+				create stone.make (url)
 				tok.set_pebble (stone)
 			end
 			last_line.append_token (tok)
 		end
 
-	process_quoted_text (t: STRING_GENERAL) is
+	process_quoted_text (t: STRING) is
 			-- Process the quoted `t' within a comment.
 		local
 			tok: EDITOR_TOKEN_COMMENT
 		do
-			create tok.make (text_quoted (t).as_string_8)
+			create tok.make (text_quoted (t))
 			last_line.append_token (tok)
 		end
 
@@ -152,22 +146,22 @@ feature -- Text processing
 			end
 		end
 
-	process_symbol_text (t: STRING_GENERAL) is
+	process_symbol_text (t: STRING) is
 			-- Process symbol text.
 		local
 			tok: EDITOR_TOKEN_OPERATOR
 		do
-			create tok.make (t.as_string_8)
+			create tok.make (t)
 			last_line.append_token (tok)
 		end
 
-	process_keyword_text (text: STRING_GENERAL; a_feature: E_FEATURE) is
+	process_keyword_text (text: STRING; a_feature: E_FEATURE) is
 			-- Process keyword text.
 		local
 			tok: EDITOR_TOKEN_KEYWORD
 			stone: FEATURE_STONE
 		do
-			create tok.make (text.as_string_8)
+			create tok.make (text)
 			if a_feature /= Void then
 				create stone.make (a_feature)
 				tok.set_pebble (stone)
@@ -175,7 +169,7 @@ feature -- Text processing
 			last_line.append_token (tok)
 		end
 
-	process_cluster_name_text (text: STRING_GENERAL; a_cluster: CLUSTER_I; a_quote: BOOLEAN) is
+	process_cluster_name_text (text: STRING; a_cluster: CLUSTER_I; a_quote: BOOLEAN) is
 			-- Process class name text `t'.
 		local
 			tok: EDITOR_TOKEN_CLUSTER
@@ -183,9 +177,9 @@ feature -- Text processing
 			l_text: STRING
 		do
 			if a_quote then
-				l_text := text_quoted (text).as_string_8
+				l_text := text_quoted (text)
 			else
-				l_text := text.as_string_8
+				l_text := text
 			end
 			create tok.make (l_text)
 			create stone.make (a_cluster)
@@ -193,7 +187,7 @@ feature -- Text processing
 			last_line.append_token (tok)
 		end;
 
-	process_class_name_text (text: STRING_GENERAL; a_class: CLASS_I; a_quote: BOOLEAN) is
+	process_class_name_text (text: STRING; a_class: CLASS_I; a_quote: BOOLEAN) is
 			-- Process class name text `t'.
 		local
 			tok: EDITOR_TOKEN_CLASS
@@ -203,9 +197,9 @@ feature -- Text processing
 			l_text: STRING
 		do
 			if a_quote then
-				l_text := text_quoted (text).as_string_8
+				l_text := text_quoted (text)
 			else
-				l_text := text.as_string_8
+				l_text := text
 			end
 			create tok.make (l_text)
 			if a_class /= Void then
@@ -221,19 +215,21 @@ feature -- Text processing
 			last_line.append_token (tok)
 		end
 
-	process_target_name_text (text: STRING_GENERAL; a_target: CONF_TARGET) is
+	process_target_name_text (text: STRING; a_target: CONF_TARGET) is
 			-- Process target name text `text'.
 		local
+			l_text: STRING
 			tok: EDITOR_TOKEN_TARGET
 			l_stone: TARGET_STONE
 		do
-			create tok.make (text.as_string_8)
+			l_text := text
+			create tok.make (l_text)
 			create l_stone.make (a_target)
 			tok.set_pebble (l_stone)
 			last_line.append_token (tok)
 		end
 
-	process_feature_text (text: STRING_GENERAL; a_feature: E_FEATURE; a_quote: BOOLEAN) is
+	process_feature_text (text: STRING; a_feature: E_FEATURE; a_quote: BOOLEAN) is
 		do
 			process_feature_text_internal (text, a_feature, a_quote)
 		end
@@ -249,16 +245,14 @@ feature -- Text processing
 			last_line.append_token (tok)
 		end
 
-	process_feature_name_text (text: STRING_GENERAL; a_class: CLASS_C) is
+	process_feature_name_text (text: STRING; a_class: CLASS_C) is
 		local
 			tok: EDITOR_TOKEN_FEATURE
 			stone: FEATURE_NAME_STONE
 		do
-			create tok.make (text.as_string_8)
-			if a_class /= Void then
-				create stone.make (text.as_string_8, a_class)
-				tok.set_pebble (stone)
-			end
+			create tok.make (text)
+			create stone.make (text, a_class)
+			tok.set_pebble (stone)
 			last_line.append_token (tok)
 		end
 
@@ -285,137 +279,137 @@ feature -- Text processing
 			process_new_line
 		end
 
-	process_operator_text (t: STRING_GENERAL; a_feature: E_FEATURE) is
+	process_operator_text (t: STRING; a_feature: E_FEATURE) is
 			-- Process operator text.
 		do
 			process_operator_text_internal (t, a_feature)
 		end
 
-	process_address_text (a_address, a_name: STRING_GENERAL; a_class: CLASS_C) is
+	process_address_text (a_address, a_name: STRING; a_class: CLASS_C) is
 			-- Process address text.
 		local
 			tok: EDITOR_TOKEN_OBJECT
 			stone: OBJECT_STONE
 		do
-			create tok.make (a_address.as_string_8)
-			create stone.make (a_address.as_string_8, a_name.as_string_8, a_class)
+			create tok.make (a_address)
+			create stone.make (a_address, a_name, a_class)
 			tok.set_pebble (stone)
 			last_line.append_token (tok)
 		end
 
-	process_error_text (t: STRING_GENERAL; a_error: ERROR) is
+	process_error_text (t: STRING; a_error: ERROR) is
 			-- Process error text.
 		local
 			tok: EDITOR_TOKEN_ERROR_CODE
 			stone: ERROR_STONE
 		do
-			create tok.make (t.as_string_8)
+			create tok.make (t)
 			create stone.make (a_error)
 			tok.set_pebble (stone)
 			last_line.append_token (tok)
 		end
 
-	process_feature_error (text: STRING_GENERAL; a_feature: E_FEATURE; a_line: INTEGER) is
+	process_feature_error (text: STRING; a_feature: E_FEATURE; a_line: INTEGER) is
 			-- Process error text.
 		local
 			tok: EDITOR_TOKEN_FEATURE
 			stone: FEATURE_ERROR_STONE
 		do
-			create tok.make (text.as_string_8)
+			create tok.make (text)
 			create stone.make (a_feature, a_line)
 			tok.set_pebble (stone)
 			last_line.append_token (tok)
 		end
 
-	process_cl_syntax (text: STRING_GENERAL; a_syntax_message: SYNTAX_MESSAGE; a_class: CLASS_C) is
+	process_cl_syntax (text: STRING; a_syntax_message: SYNTAX_MESSAGE; a_class: CLASS_C) is
 			-- Process class syntax text.
 		local
 			tok: EDITOR_TOKEN_CLASS
 			stone: CL_SYNTAX_STONE
 		do
-			create tok.make (text.as_string_8)
+			create tok.make (text)
 			create stone.make (a_syntax_message, a_class)
 			tok.set_pebble (stone)
 			last_line.append_token (tok)
 		end
 
-	process_assertion_tag_text (t: STRING_GENERAL) is
+	process_assertion_tag_text (t: STRING) is
 			-- Process string text `t'.
 		local
 			tok: EDITOR_TOKEN_TAG
 		do
-			create tok.make (t.as_string_8)
+			create tok.make (t)
 			tok.set_indexing (False)
 			last_line.append_token (tok)
 		end
 
-	process_indexing_tag_text (t: STRING_GENERAL) is
+	process_indexing_tag_text (t: STRING) is
 			-- Process string text `t'.
 		local
 			tok: EDITOR_TOKEN_TAG
 		do
-			create tok.make (t.as_string_8)
+			create tok.make (t)
 			tok.set_indexing (True)
 			last_line.append_token (tok)
 		end
 
-	process_generic_text (t: STRING_GENERAL) is
+	process_generic_text (t: STRING) is
 			-- Process string text `t'.
 		local
 			tok: EDITOR_TOKEN_GENERIC
 		do
-			create tok.make (t.as_string_8)
+			create tok.make (t)
 			last_line.append_token (tok)
 		end
 
-	process_character_text (t: STRING_GENERAL) is
+	process_character_text (t: STRING) is
 			-- Process string text `t'.
 		local
 			tok: EDITOR_TOKEN_CHARACTER
 		do
-			create tok.make (t.as_string_8)
+			create tok.make (t)
 			last_line.append_token (tok)
 		end
 
-	process_local_text (t: STRING_GENERAL) is
+	process_local_text (t: STRING) is
 			-- Process string text `t'.
 		local
 			tok: EDITOR_TOKEN_LOCAL
 		do
-			create tok.make (t.as_string_8)
+			create tok.make (t)
 			last_line.append_token (tok)
 		end
 
-	process_number_text (t: STRING_GENERAL) is
+	process_number_text (t: STRING) is
 			-- Process string text `t'.
 		local
 			tok: EDITOR_TOKEN_NUMBER
 		do
-			create tok.make (t.as_string_8)
+			create tok.make (t)
 			last_line.append_token (tok)
 		end
 
-	process_reserved_word_text (t: STRING_GENERAL) is
+	process_reserved_word_text (t: STRING) is
 			-- Process string text `t'.
 		local
 			tok: EDITOR_TOKEN_RESERVED
 		do
-			create tok.make (t.as_string_8)
+			create tok.make (t)
 			last_line.append_token (tok)
 		end
 
-	process_filter_item (text: STRING_GENERAL; a_before: BOOLEAN) is
+	process_filter_item (text: STRING; a_before: BOOLEAN) is
 			-- Process information on filter `text'.
 		do
 		end
 
-	process_feature_dec_item (text: STRING_GENERAL; is_before: BOOLEAN) is
+	process_feature_dec_item (text: STRING; is_before: BOOLEAN) is
 			-- Process feature dec information.
 		local
 			tok: EDITOR_TOKEN_FEATURE_START
 		do
 			if is_before then
-				create tok.make (text.as_string_8)
+				create tok.make (text)
 				tok.set_text_color_feature
 				last_line.append_token (tok)
 			end
@@ -426,124 +420,36 @@ feature -- Text processing
 		do
 		end
 
-	process_ast (a_name: STRING; a_ast: AST_EIFFEL; a_written_class: CLASS_C; a_appearance: TUPLE [a_font_id: INTEGER; a_text_color_id: INTEGER; a_background_color_id: INTEGER]; a_for_feature_invocation: BOOLEAN; a_cursor, a_x_cursor: EV_POINTER_STYLE) is
-			-- Process `a_ast' from `a_written_class'.
-			-- `a_name' is displayed name for `a_ast'.
-			-- `a_appearance' is new appearance (font, text color and background color) associated with `a_name', if Void, default values will be used.
-			-- If `a_for_feature_invocation' is True, mark stone contained in `a_name' as for feature invocation.
-			-- If `a_cursor' is not Void , it will be used as cursor for generated text.
-			-- If `a_x_cursor' is not Void , it will be used as X cursor for generated text.
-		require
-			a_name_attached: a_name /= Void
-		local
-			l_ast_token: EDITOR_TOKEN_AST
-			l_stone: AST_STONE
-		do
-			if a_appearance /= Void then
-				create l_ast_token.make_with_appearance (a_name, a_appearance)
-			else
-				create l_ast_token.make (a_name)
-			end
-			if a_ast /= Void and then a_written_class /= Void then
-				create l_stone.make (a_written_class, a_ast)
-				l_stone.set_is_for_feature_invocation (a_for_feature_invocation)
-				if a_cursor /= Void then
-					l_stone.set_stone_cursor (a_cursor)
-				end
-				if a_x_cursor /= Void then
-					l_stone.set_x_stone_cursor (a_x_cursor)
-				end
-				l_ast_token.set_pebble (l_stone)
-			end
-			last_line.append_token (l_ast_token)
-		end
-
-	process_warning (a_warning_message: STRING; a_appearance: TUPLE [a_font_id: INTEGER; a_text_color_id: INTEGER; a_background_color_id: INTEGER]) is
-			-- Process warning message `a_warning_message' with appearance `a_appearance'.
-		require
-			a_warning_message_attached: a_warning_message /= Void
-		do
-			process_ast (a_warning_message, Void, Void, a_appearance, False, Void, Void)
-		end
-
-	process_compiled_line (a_name: STRING; a_line_number: INTEGER; a_class_c: CLASS_C; a_selected: BOOLEAN) is
-			-- Process `a_name' which represents a line of a class.
-		require
-			a_name_attached: a_name /= Void
-			a_line_number_positive: a_line_number > 0
-			a_class_c_attached: a_class_c /= Void
-		local
-			l_token: EDITOR_TOKEN_AST
-		do
-			create l_token.make_with_appearance (a_name, [editor_font_id, line_number_text_color_id, string_background_color_id])
-			l_token.set_pebble (create {COMPILED_LINE_STONE}.make_with_line (a_class_c, a_line_number, a_selected))
-			last_line.append_token (l_token)
-		end
-
-	process_uncompiled_line (a_name: STRING; a_line_number: INTEGER; a_class_i: CLASS_I; a_selected: BOOLEAN) is
-			-- Process `a_name' which represents a line of a class.
-		require
-			a_name_attached: a_name /= Void
-			a_line_number_positive: a_line_number > 0
-			a_class_i_attached: a_class_i /= Void
-		local
-			l_token: EDITOR_TOKEN_AST
-		do
-			create l_token.make_with_appearance (a_name, [editor_font_id, line_number_text_color_id, string_background_color_id])
-			l_token.set_pebble (create {UNCOMPILED_LINE_STONE}.make_with_line (a_class_i, a_line_number, a_selected))
-			last_line.append_token (l_token)
-		end
-
 	add_new_line is
 			-- Add new line.
 		do
 			process_new_line
 		end
 
-	add (s: STRING_GENERAL) is
+	add (s: STRING) is
 			-- Add basic string.
 		do
 			process_basic_text (s)
 		end
 
-	add_string (s: STRING_GENERAL) is
+	add_string (s: STRING) is
 			-- Add string.
 		do
 			process_string_text (s, Void)
 		end
 
-	process_folder_text (a_folder_name: STRING; a_path: STRING; a_group: CONF_GROUP) is
-			-- Process folder text.
-			-- `a_folder_name' is the name of the folder,
-			-- `a_path' is the path in which `a_folder_name' exist, so for example,
-			-- for path "/abc/def", "def" is the folder name, while "/abc/def" is the path.
-			-- `a_group' is the group where this folder is located.
-		require
-			a_folder_name_attached: a_folder_name /= Void
-			a_path_attached: a_path /= Void
-			a_group_attached: a_group /= Void
-		local
-			l_token: EDITOR_TOKEN_AST
-		do
-			create l_token.make_with_appearance (a_folder_name, [editor_font_id, folder_text_color_id, folder_background_color_id])
-			l_token.set_pebble (create {CLUSTER_STONE}.make_subfolder (a_group, a_path, a_folder_name))
-			last_line.append_token (l_token)
-		end
-
 feature {NONE} -- Initialisations and File status
-
-	new_line_32: CHARACTER is '%N'
 
 	eol_reached: BOOLEAN;
 
-	process_feature_text_internal (text: STRING_GENERAL; a_feature: E_FEATURE; a_quote: BOOLEAN) is
+	process_feature_text_internal (text: STRING; a_feature: E_FEATURE; a_quote: BOOLEAN) is
 		local
 			tok: EDITOR_TOKEN_FEATURE
 			feature_start: EDITOR_TOKEN_FEATURE_START
 			stone: FEATURE_STONE
 			feature_start_found: BOOLEAN
 			editor_tok: EDITOR_TOKEN
-			l_text: STRING_32
+			l_text: STRING
 		do
 			if a_quote then
 				l_text := text_quoted (text)
@@ -581,7 +487,7 @@ feature {NONE} -- Initialisations and File status
 			end
 		end
 
-	process_operator_text_internal (t: STRING_GENERAL; a_feature: E_FEATURE) is
+	process_operator_text_internal (t: STRING; a_feature: E_FEATURE) is
 			-- Process operator text.
 		local
 			tok: EDITOR_TOKEN
@@ -590,9 +496,7 @@ feature {NONE} -- Initialisations and File status
 			feature_start_found: BOOLEAN
 			editor_tok: EDITOR_TOKEN
 		do
-			if a_feature /= Void then
-				create stone.make (a_feature)
-			end
+			create stone.make (a_feature)
 			from
 				last_line.start
 			until
@@ -612,7 +516,7 @@ feature {NONE} -- Initialisations and File status
 				if editor_tok.next /= Void then
 					editor_tok.next.set_previous_token (editor_tok.previous)
 				end
-				create feature_start.make (t.as_string_8)
+				create feature_start.make (t)
 				feature_start.set_pebble (stone)
 				if is_keyword (t) then
 					feature_start.set_text_color_feature
@@ -622,9 +526,9 @@ feature {NONE} -- Initialisations and File status
 				last_line.append_token (feature_start)
 			else
 				if is_keyword (t) then
-					create {EDITOR_TOKEN_KEYWORD} tok.make (t.as_string_8)
+					create {EDITOR_TOKEN_KEYWORD}tok.make (t)
 				else
-					create {EDITOR_TOKEN_OPERATOR} tok.make (t.as_string_8)
+					create {EDITOR_TOKEN_OPERATOR}tok.make (t)
 				end
 				tok.set_pebble (stone)
 				last_line.append_token (tok)

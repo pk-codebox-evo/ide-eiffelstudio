@@ -10,11 +10,7 @@ class
 	EB_METRIC_ARCHIVE_RESULT_AREA
 
 inherit
-	EV_VERTICAL_BOX
-		redefine
-			initialize,
-			is_in_default_state
-		end
+	EB_METRIC_ARCHIVE_RESULT_AREA_IMP
 
 	EVS_GRID_TWO_WAY_SORTING_ORDER
 		undefine
@@ -70,33 +66,20 @@ feature {NONE} -- Initialization
 			metric_panel_set: metric_panel = a_panel
 		end
 
-	initialize is
-			-- Initialize Current.
+	user_initialization is
+			-- Called by `initialize'.
+			-- Any custom user initialization that
+			-- could not be performed in `initialize',
+			-- (due to regeneration of implementation class)
+			-- can be added here.
 		local
-			l_title_lbl: EV_LABEL
-			l_hor: EV_HORIZONTAL_BOX
-			l_cell: EV_CELL
 			l_name_sort_info: EVS_GRID_TWO_WAY_SORTING_INFO [EB_METRIC_ARCHIVE_RESULT_ROW]
 			l_type_sort_info: EVS_GRID_TWO_WAY_SORTING_INFO [EB_METRIC_ARCHIVE_RESULT_ROW]
 			l_reference_sort_info: EVS_GRID_TWO_WAY_SORTING_INFO [EB_METRIC_ARCHIVE_RESULT_ROW]
 			l_current_sort_info: EVS_GRID_TWO_WAY_SORTING_INFO [EB_METRIC_ARCHIVE_RESULT_ROW]
 			l_difference_sort_info: EVS_GRID_TWO_WAY_SORTING_INFO [EB_METRIC_ARCHIVE_RESULT_ROW]
 			l_ratio_sort_info: EVS_GRID_TWO_WAY_SORTING_INFO [EB_METRIC_ARCHIVE_RESULT_ROW]
-
 		do
-			create l_title_lbl.make_with_text (metric_names.t_archive_comparison_result)
-			l_title_lbl.align_text_left
-			create l_hor
-			create l_cell
-
-			Precursor {EV_VERTICAL_BOX}
-			set_padding (3)
-			l_hor.extend (l_title_lbl)
-			l_hor.extend (l_cell)
-			l_hor.disable_item_expand (l_title_lbl)
-			extend (l_hor)
-			disable_item_expand (l_hor)
-
 				-- Setup `result_grid'.
 			create result_grid
 			result_grid.set_column_count_to (6)
@@ -126,18 +109,16 @@ feature {NONE} -- Initialization
 			grid_wrapper.enable_auto_sort_order_change
 			grid_wrapper.set_item_text_function (agent text_of_grid_item)
 			grid_wrapper.enable_copy
-			extend (grid_wrapper.component_widget)
+			grid_area.extend (grid_wrapper.component_widget)
+			title_lbl.set_text (metric_names.t_archive_comparison_result)
 
-			append_drop_actions (
-				<<result_grid,
-				  l_cell
-				>>,
-				metric_tool
-			)
+				-- Delete following in docking EiffelStudio.
+			result_grid.drop_actions.extend (agent metric_panel.drop_cluster)
+			result_grid.drop_actions.extend (agent metric_panel.drop_class)
+			result_grid.drop_actions.extend (agent metric_panel.drop_feature)
 			drop_actions.extend (agent metric_panel.drop_cluster)
 			drop_actions.extend (agent metric_panel.drop_class)
 			drop_actions.extend (agent metric_panel.drop_feature)
-
 		end
 
 feature -- Load archive
@@ -304,7 +285,7 @@ feature -- Load archive
 		require
 			nodes_valid: not (ref_node = Void and then cur_node = Void)
 		local
-			l_type_name: STRING_32
+			l_type_name: STRING
 		do
 			if ref_node = Void then
 				create Result.make (cur_node.metric_name, name_of_metric_type (cur_node.metric_type), 0, False, cur_node.value, True, cur_node.calculated_time)
@@ -508,12 +489,6 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	is_in_default_state: BOOLEAN is
-			-- Is `Current' in its default state.
-		do
-			Result := True
-		end
-
 invariant
 	result_grid_attached: result_grid /= Void
 	grid_wrapper_attached: grid_wrapper /= Void
@@ -550,6 +525,7 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end -- class EB_METRIC_ARCHIVE_RESULT_AREA
 

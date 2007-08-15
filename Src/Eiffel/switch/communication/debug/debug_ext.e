@@ -33,16 +33,6 @@ feature
 	send_rqst_3 (code: INTEGER; info1: INTEGER; info2: INTEGER; info3: POINTER) is
 		external
 			"C"
-		end
-
-	send_rqst_4 (code: INTEGER; info1: INTEGER; info2: INTEGER; info3: POINTER; info4: INTEGER) is
-		external
-			"C"
-		end
-
-	send_rqst_4_integer (code: INTEGER; info1: INTEGER; info2: INTEGER; info3: INTEGER; info4: INTEGER) is
-		do
-			send_rqst_4 (code, info1, info2, integer_to_pointer (info3), info4)
 		end;
 
 	send_rqst_3_integer (code: INTEGER; info1: INTEGER; info2: INTEGER; info3: INTEGER) is
@@ -50,63 +40,33 @@ feature
 			send_rqst_3 (code, info1, info2, integer_to_pointer (info3))
 		end
 
-	send_integer_8_value (value: INTEGER_8) is
-		external
-			"C"
-		end
-
-	send_integer_16_value (value: INTEGER_16) is
-		external
-			"C"
-		end
-
-	send_integer_32_value (value: INTEGER_32) is
+	send_integer_value (value: INTEGER) is
 		external
 			"C"
 		end
 
 	send_integer_64_value (value: INTEGER_64) is
-		external
-			"C"
-		end
-
-	send_natural_8_value (value: NATURAL_8) is
-		external
-			"C"
-		end
-
-	send_natural_16_value (value: NATURAL_16) is
-		external
-			"C"
-		end
-
-	send_natural_32_value (value: NATURAL_32) is
-		external
-			"C"
-		end
-
-	send_natural_64_value (value: NATURAL_64) is
 			--
 		external
 			"C"
 		end
 
-	send_real_32_value (value: REAL_32) is
+	send_real_value (value: REAL) is
 		external
 			"C"
 		end
 
-	send_real_64_value (value: REAL_64) is
+	send_double_value (value: DOUBLE) is
 		external
 			"C"
 		end
 
-	send_char_8_value (value: CHARACTER_8) is
+	send_char_value (value: CHARACTER) is
 		external
 			"C"
 		end
 
-	send_char_32_value (value: CHARACTER_32) is
+	send_wchar_value (value: WIDE_CHARACTER) is
 		external
 			"C"
 		end
@@ -134,29 +94,6 @@ feature
 			"C signature (EIF_REFERENCE)"
 		end
 
-	send_ack_ok is
-		external
-			"C"
-		alias
-			"ewb_send_ack_ok"
-		end;
-
-	send_string_content (s: STRING_GENERAL) is
-		local
-			c_string: C_STRING
-		do
-			create c_string.make (s)
-			c_send_str (c_string.item)
-		end
-
-	send_string_content_with_size (s: STRING_GENERAL; a_size: INTEGER) is
-		local
-			c_string: C_STRING
-		do
-			create c_string.make (s)
-			c_send_sized_str (c_string.item, a_size)
-		end
-
 	recv_ack: BOOLEAN is
 		external
 			"C"
@@ -168,11 +105,6 @@ feature
 		end;
 
 	c_twrite (data: POINTER; size: INTEGER) is
-		external
-			"C"
-		end;
-
-	c_send_sized_str (str: POINTER; size: INTEGER) is
 		external
 			"C"
 		end;
@@ -209,7 +141,7 @@ feature {NONE} -- Implementation
 			($Result).memory_copy ($a, Boolean_bytes)
 		end
 
-	to_character_8 (s: STRING): CHARACTER_8 is
+	to_character (s: STRING): CHARACTER is
 			-- Convert binary character enclosed in `s' into an CHARACTER.
 		require
 			s_not_void: s /= Void
@@ -221,7 +153,7 @@ feature {NONE} -- Implementation
 			($Result).memory_copy ($a, Character_bytes);
 		end
 
-	to_character_32 (s: STRING): CHARACTER_32 is
+	to_wide_char (s: STRING): WIDE_CHARACTER is
 			-- Convert binary wide_char enclosed in `s' into an WIDE_CHARACTER.
 		require
 			s_not_void: s /= Void
@@ -305,7 +237,7 @@ feature {NONE} -- Implementation
 			($Result).memory_copy ($a, Integer_16_bytes)
 		end
 
-	to_integer_32 (s: STRING): INTEGER_32 is
+	to_integer (s: STRING): INTEGER is
 			-- Convert binary integer enclosed in `s' into an INTEGER.
 		require
 			s_not_void: s /= Void
@@ -341,7 +273,7 @@ feature {NONE} -- Implementation
 			($Result).memory_copy ($a, Pointer_bytes)
 		end
 
-	to_real_32 (s: STRING): REAL_32 is
+	to_real (s: STRING): REAL is
 			-- Convert binary double enclosed in `s' into a DOUBLE.
 		require
 			s_not_void: s /= Void
@@ -353,7 +285,7 @@ feature {NONE} -- Implementation
 			($Result).memory_copy ($a, Real_bytes)
 		end
 
-	to_real_64 (s: STRING): REAL_64 is
+	to_double (s: STRING): DOUBLE is
 			-- Convert binary double enclosed in `s' into a DOUBLE.
 		require
 			s_not_void: s /= Void
@@ -364,6 +296,7 @@ feature {NONE} -- Implementation
 			a := s.area;
 			($Result).memory_copy ($a, Double_bytes)
 		end
+
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

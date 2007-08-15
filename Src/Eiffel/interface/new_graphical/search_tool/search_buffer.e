@@ -102,6 +102,7 @@ feature {NONE} -- Implementation
 				line_count := line_count + 1
 			end
 		end			
+				
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

@@ -95,17 +95,11 @@ feature -- Access
 			valid_result: Result >= 0 and Result <= count
 		end
 
-	is_show_requested: BOOLEAN
-		-- May `Current' be displayed when its `parent' is?
-		-- Will return False if `hide' has been called on `Current'.
 
 	is_displayed: BOOLEAN
-			-- Is `Current' visible on the screen?
-			-- `True' when show requested and parent displayed.
-			-- A column that `is_displayed' does not necessarily have to be visible on screen at that particular time.
-		do
-			Result := is_show_requested and then parent_i /= Void and then parent_i.is_displayed
-		end
+		-- May `Current' be displayed when its `parent' is?
+		-- Will return False if `hide' has been called on `Current'.
+		-- A column that `is_displayed' does not necessarily have to be visible on screen at that particular time.
 
 	title: STRING_32 is
 			-- Title of Current column. Empty if none.
@@ -257,7 +251,6 @@ feature -- Status setting
 				locked_column.drawing_area.set_pebble_function (agent parent_i.user_pebble_function_intermediary_locked (?, ?, locked_column))
 			end
 			locked_column.drawing_area.drop_actions.set_veto_pebble_function (agent parent_i.veto_pebble_function_intermediary)
-			locked_column.drawing_area.drop_actions.extend (agent parent_i.drop_action_intermediary)
 		ensure
 			is_locked: is_locked
 			locked_position_set: locked_position = a_position
@@ -280,7 +273,7 @@ feature -- Status setting
 		do
 			parent.hide_column (index)
 		ensure
-			not_is_displayed: not is_show_requested
+			not_is_displayed: not is_displayed
 		end
 
 	show is
@@ -291,7 +284,7 @@ feature -- Status setting
 		do
 			parent.show_column (index)
 		ensure
-			is_displayed: is_show_requested
+			is_displayed: is_displayed
 		end
 
 	ensure_visible is
@@ -475,7 +468,6 @@ feature -- Element change
 			-- If `a_item' is `Void', the current item (if any) is removed.
 		require
 			i_positive: i > 0
-			a_item_not_parented: a_item /= Void implies a_item.parent = Void
 			is_parented: parent /= Void
 			valid_tree_structure_on_insertion: a_item /= Void and parent.is_tree_enabled and parent.row (i).parent_row /= Void implies index >= parent.row (i).parent_row.index_of_first_item
 			item_may_be_added_to_tree_node: a_item /= Void and parent.row (i).is_part_of_tree_structure implies parent.row (i).is_index_valid_for_item_setting_if_tree_node (index)
@@ -523,19 +515,11 @@ feature -- Element change
 		require
 			width_non_negative: a_width >= 0
 			is_parented: parent /= Void
-		local
-			l_width: INTEGER
 		do
-			l_width := width
-			if a_width /= l_width then
-				header_item.set_width (a_width)
-				parent_i.header.item_resize_end_actions.call ([header_item])
-					-- We need to recompute content of grid next time
-				parent_i.set_horizontal_computation_required (index)
-				parent_i.redraw
-				if is_locked then
-					parent_i.reposition_locked_column (Current)
-				end
+			header_item.set_width (a_width)
+			parent_i.header.item_resize_end_actions.call ([header_item])
+			if is_locked then
+				parent_i.reposition_locked_column (Current)
 			end
 		ensure
 			width_set: width = a_width
@@ -605,7 +589,7 @@ feature {EV_GRID_I} -- Implementation
 			end
 			clear
 			disable_select
-			set_is_show_requested (False)
+			set_is_displayed (False)
 			unparent
 		ensure
 			parent_i_unset: parent_i = Void
@@ -620,12 +604,12 @@ feature {EV_GRID_I} -- Implementation
 			set_is_destroyed (True)
 		end
 
-	set_is_show_requested (a_displayed: BOOLEAN) is
-			-- Set `is_show_requested' to `a_displayed'.
+	set_is_displayed (a_displayed: BOOLEAN) is
+			-- Set `is_displayed' to `a_displayed'.
 		do
-			is_show_requested := a_displayed
+			is_displayed := a_displayed
 		ensure
-			is_displayed_set: is_show_requested = a_displayed
+			is_displayed_set: is_displayed = a_displayed
 		end
 
 feature {NONE} -- Implementation

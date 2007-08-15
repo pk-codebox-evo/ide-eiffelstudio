@@ -24,7 +24,7 @@ inherit
 			is_equal, out, copy
 		end
 
-	SQL_SCAN [G]
+	SQL_SCAN
 
 create -- Creation procedure
 
@@ -135,27 +135,16 @@ feature -- Status setting
 			end
 		end
 
-	set_ht (table: like ht) is
+	set_ht (table: HASH_TABLE [ANY, STRING]) is
 			-- Obtain bind variables table.
 			-- Set `ht' with `table'.
-		require
+		require else
 			table_exists: table /= Void
 		do
 			ht := table
-		ensure
+		ensure then
 			ht = table
 		end
-
-	set_ht_order (table: like ht_order) is
-			--
-		require
-			table_not_void: table /= Void
-		do
-			ht_order := table
-		ensure
-			ht_order_set: ht_order = table
-		end
-
 
 feature -- Status report
 

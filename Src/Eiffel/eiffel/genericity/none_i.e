@@ -6,7 +6,7 @@ class NONE_I
 inherit
 	TYPE_I
 		redefine
-			is_none, is_void, is_bit, is_basic,
+			is_none, is_void, is_bit, is_basic, 
 			is_reference, same_as,
 			description, sk_value, generate_cecil_value, hash_code,
 			generated_id,
@@ -91,8 +91,7 @@ feature
 	c_string: STRING is "EIF_REFERENCE"
 			-- String generated for the type.
 
-	typed_field: STRING is "it_r"
-			-- Value field of a C structure corresponding to this type
+	union_tag: STRING is "rarg"
 
 	hash_code: INTEGER is
 			-- Hash code for current type
@@ -111,11 +110,11 @@ feature
 			Result := Sk_ref
 		end
 
-	generate_typed_tag (buffer: GENERATION_BUFFER) is
-			-- Generate tag of C structure "EIF_TYPED_VALUE" associated
+	generate_union (buffer: GENERATION_BUFFER) is
+			-- Generate discriminant of C structure "item" associated
 			-- to the current C type in `buffer'.
 		do
-			buffer.put_string ("type = SK_REF")
+			buffer.put_string ("it_ref")
 		end
 
 	generate_sk_value (buffer: GENERATION_BUFFER) is
@@ -123,7 +122,7 @@ feature
 		do
 			buffer.put_string ("SK_REF")
 		end
-
+	
 	type_a: NONE_A is
 		do
 			create Result
@@ -146,14 +145,14 @@ feature -- Generic conformance
 feature -- Generic conformace for IL
 
 	generate_gen_type_il (il_generator: IL_CODE_GENERATOR; use_info: BOOLEAN) is
-			-- `use_info' is true iff we generate code for a
+			-- `use_info' is true iff we generate code for a 
 			-- creation instruction.
 		do
 			il_generator.generate_none_type_instance
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

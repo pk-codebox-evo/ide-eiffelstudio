@@ -102,7 +102,7 @@ feature {NONE} -- Initialization
 				-- Build the widgets
 			create cluster_entry
 			create folder_entry
-			create cluster_list.make_without_targets (a_target.menus.context_menu_factory)
+			create cluster_list.make_without_targets
 			create recursive_box.make_with_text (Interface_names.l_All)
 			create name_label.make_with_text (Interface_names.L_cluster_name)
 			create path_label.make_with_text (Interface_names.l_Path)
@@ -190,19 +190,6 @@ feature -- Basic operations
 			internal_call (default_cluster_name)
 		end
 
-	call_stone (a_stone: CLUSTER_STONE) is
-			-- Display dialog give `a_stone' as default place.
-		require
-			a_stone_not_void: a_stone /= Void
-		do
-			default_cluster_name := "new_cluster_" + new_cluster_counter.item.out
-			is_default_cluster_name_set := True
-			new_cluster_counter.put (new_cluster_counter.item + 1)
-			cluster_list.show_stone (a_stone)
-			cluster_entry.set_text (default_cluster_name)
-			show_modal_to_window (target.window)
-		end
-
 	call (cluster_n: STRING) is
 			-- Display the dialog.
 			-- Give `cluster_n' as the default cluster name in it.
@@ -275,9 +262,8 @@ feature {NONE} -- Implementation
 			l_folder: EB_CLASSES_TREE_FOLDER_ITEM
 			l_hdr: EB_CLASSES_TREE_HEADER_ITEM
 			clu: EB_SORTED_CLUSTER
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 		do
-			is_top_level := False
 			if cluster_list.selected_item /= Void then
 				l_hdr ?= cluster_list.selected_item
 				if l_hdr /= Void then
@@ -319,7 +305,7 @@ feature {NONE} -- Implementation
 			dir: DIRECTORY
 			test_file: RAW_FILE
 			base_name: STRING
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 			in_recursive: BOOLEAN
 			l_clu: CONF_CLUSTER
 		do
@@ -350,7 +336,7 @@ feature {NONE} -- Implementation
 					check group_not_void: group /= Void end
 					if group.is_cluster then
 						l_clu ?= group
-						in_recursive := l_clu /= Void and then l_clu.is_recursive and then (original_path = Void or else original_path.is_empty)
+						in_recursive := l_clu /= Void and then l_clu.is_recursive
 					end
 				end
 				if aok and not in_recursive then
@@ -428,7 +414,7 @@ feature {NONE} -- Implementation
 			current_state_is_valid: aok
 		local
 			cn: STRING
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 		do
 			cn := cluster_name
 			aok := not cn.is_empty and then (create {EIFFEL_SYNTAX_CHECKER}).is_valid_group_name (cn)
@@ -446,7 +432,7 @@ feature {NONE} -- Implementation
 		local
 			cp: STRING
 			icp: STRING
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 			l_loc: CONF_DIRECTORY_LOCATION
 		do
 			cp := folder_entry.text

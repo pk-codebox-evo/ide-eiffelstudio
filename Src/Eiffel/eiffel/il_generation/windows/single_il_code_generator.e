@@ -59,7 +59,7 @@ feature -- IL Generation
 			local_feature_processor: PROCEDURE [ANY, TUPLE [FEATURE_I, FEATURE_I, CLASS_TYPE, BOOLEAN]];
 			inherited_feature_processor: PROCEDURE [ANY, TUPLE [FEATURE_I, FEATURE_I, CLASS_TYPE]];
 			type_feature_processor: PROCEDURE [ANY, TUPLE [TYPE_FEATURE_I]]
-			inline_agent_processor: PROCEDURE [CIL_CODE_GENERATOR, TUPLE [FEATURE_I]])
+			generate_inline_agents: BOOLEAN)
 		is
 			-- Generate IL code for feature in `class_c'.
 		local
@@ -84,8 +84,8 @@ feature -- IL Generation
 			generate_il_type_features (class_c, class_type, class_c.anchored_features)
 
 				-- Generate features for inline agents.
-			if class_c.is_eiffel_class_c then
-				generate_il_inline_agents (class_c.eiffel_class_c, inline_agent_processor)
+			if class_c.is_eiffel_class_c and then generate_inline_agents then
+				generate_il_inline_agents (class_c.eiffel_class_c, class_type)
 			end
 
 			class_interface := class_type.class_interface
@@ -114,7 +114,7 @@ feature -- IL Generation
 				agent generate_local_feature,
 				agent generate_inherited_feature,
 				agent generate_type_feature,
-				agent generate_feature_code (?, True))
+				True)
 				-- Generate class invariant and internal run-time features.
 			generate_class_features (class_c, class_type)
 
@@ -153,7 +153,7 @@ feature {NONE} -- Implementation
 		require
 			class_type_not_void: class_type /= Void
 		local
-			parents: ARRAYED_LIST [CLASS_INTERFACE]
+			parents: SEARCH_TABLE [CLASS_INTERFACE]
 			l_interface: CLASS_INTERFACE
 			l_cl_type: CLASS_TYPE
 		do
@@ -163,7 +163,7 @@ feature {NONE} -- Implementation
 			until
 				parents.after
 			loop
-				l_interface := parents.item
+				l_interface := parents.item_for_iteration
 				l_cl_type := l_interface.class_type
 				if l_cl_type.associated_class = class_type.associated_class.main_parent then
 					processed_tbl.put (l_cl_type.static_type_id)
@@ -180,7 +180,7 @@ feature {NONE} -- Implementation
 		require
 			class_interface_not_void: class_interface /= Void
 		local
-			parents: ARRAYED_LIST [CLASS_INTERFACE]
+			parents: SEARCH_TABLE [CLASS_INTERFACE]
 			l_interface: CLASS_INTERFACE
 			l_cl_type: CLASS_TYPE
 		do
@@ -190,7 +190,7 @@ feature {NONE} -- Implementation
 			until
 				parents.after
 			loop
-				l_interface := parents.item
+				l_interface := parents.item_for_iteration
 				l_cl_type := l_interface.class_type
 
 				if not processed_tbl.has (l_cl_type.static_type_id) then
@@ -290,7 +290,7 @@ feature {NONE} -- Implementation
 					-- Generate local definition of `inh_feat' which
 					-- calls static definition.
 				rout_id := inh_feat.rout_id_set.first
-				if rout_ids_tbl.has_key (rout_id) then
+				if rout_ids_tbl.has (rout_id) then
 					feat := rout_ids_tbl.found_item
 					generate_method_impl (feat, class_type, inh_feat)
 				else
@@ -359,7 +359,7 @@ feature {NONE} -- Implementation
 					-- Generate local definition of `inh_feat' which
 					-- calls static definition.
 				rout_id := inh_feat.rout_id_set.first
-				if rout_ids_tbl.has_key (rout_id) then
+				if rout_ids_tbl.has (rout_id) then
 						-- This is where we should do a MethodImpl on the inherited
 						-- implementation and not on the interface.
 					feat := rout_ids_tbl.found_item
@@ -464,8 +464,8 @@ feature {NONE} -- Implementation
 							-- This static feature is defined in parent which explains the search
 							-- made below to find in which parent's type.
 						generate_feature_il (feat,
-							current_class_type.type.implemented_type
-								(feat.written_in).associated_class_type.implementation_id,
+							implemented_type (feat.written_in,
+							current_class_type.type).associated_class_type.implementation_id,
 							feat.written_feature_id)
 					end
 				else
@@ -548,8 +548,8 @@ feature {NONE} -- Implementation
 					generate_feature_standard_twin (feat)
 				else
 					generate_feature_il (feat,
-						current_class_type.type.implemented_type
-							(feat.written_in).implementation_id,
+						implemented_type (feat.written_in,
+							current_class_type.type).implementation_id,
 						feat.written_feature_id)
 				end
 
@@ -563,8 +563,8 @@ feature {NONE} -- Implementation
 					valid: is_single_class and then inh_feat = Void
 				end
 				generate_feature_il (feat,
-					current_class_type.type.implemented_type
-						(feat.written_in).associated_class_type.implementation_id,
+					implemented_type (feat.written_in,
+						current_class_type.type).associated_class_type.implementation_id,
 						feat.written_feature_id)
 			end
 		end

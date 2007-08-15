@@ -594,9 +594,10 @@ void initprf(void)
 			enomem();
 
 			/* Create H table */
-		if (ht_create(class_table, 10, sizeof(struct feat_table))) {
+		if (!ht_create(class_table, 10, sizeof(struct feat_table)))
+			ht_zero(class_table);		/* Lucky! */
+		else
 			eraise("Hashtable creation failure", EN_FATAL);
-		}
 
 		prof_stack_init();		/* Initialize stack */
 
@@ -650,7 +651,7 @@ void exitprf(void)
 
 #ifdef WORKBENCH
 		char *meltpath = (char *) 0;			/* directory of .UPDT */
-		meltpath = (char*) getenv ("MELT_PATH");
+		meltpath = (char*) eif_getenv ("MELT_PATH");
 		if (meltpath != NULL) {
 			chdir (meltpath);
 		} else {
@@ -1025,9 +1026,8 @@ void prof_stack_free(void)
 
 	if(egc_prof_enabled) {
 		EIF_GET_CONTEXT
-		st_reset (prof_stack);						/* Free memory used by chunks */
+		eif_rt_xfree((char *)(prof_stack->st_cur));	/* Free memory used by chunk */
 		eif_rt_xfree((char *)prof_stack);			/* Free memory used by stack */
-		prof_stack = NULL;							/* Mark `prof_stack' as clean. */
 	}
 }
 
@@ -1089,7 +1089,9 @@ void update_class_table(struct prof_info *item)
 				enomem(MTC_NOARG);	/* Bad Luck */
 
 				/* Create H table internal structures */
-			if(ht_create(f_t->htab, 10, sizeof(struct prof_info))) {
+			if(!ht_create(f_t->htab, 10, sizeof(struct prof_info)))
+				ht_zero(f_t->htab);	/* Zero it out */
+			else {
 					/* Something is wrotten */
 				eraise("Hashtable creation failure", EN_FATAL);
 			}

@@ -57,7 +57,6 @@ feature -- Generation
 			l_res: CONF_EXTERNAL_RESOURCE
 			l_res_added: SEARCH_TABLE [STRING]
 			l_loc: CONF_FILE_LOCATION
-			l_fn: STRING
 		do
 			from
 				last_resource_offset := 0
@@ -69,15 +68,7 @@ feature -- Generation
 				l_res := resources.item
 				if l_res.is_enabled (universe.conf_state) then
 					create l_loc.make (l_res.location, universe.target)
-
 					l_name := l_loc.evaluated_path
-					l_fn := l_loc.original_file
-					if l_fn.is_case_insensitive_equal (l_loc.evaluated_file) then
-							-- Ensure the resource name case is preserved
-						l_name.keep_head (l_name.count - l_fn.count)
-						l_name.append (l_fn)
-					end
-
 					if not l_res_added.has (l_name) then
 						l_res_added.force (l_name)
 						nb := l_name.count
@@ -134,7 +125,6 @@ feature {NONE} -- Implementation
 			l_cmd: STRING
 			l_launch: WEL_PROCESS_LAUNCHER
 			l_exec: EXECUTION_ENVIRONMENT
-			l_dir: STRING
 			l_virc: VIRC
 		do
 			create l_env.make (System.clr_runtime_version)
@@ -147,8 +137,7 @@ feature {NONE} -- Implementation
 					create l_launch
 					create l_exec
 					l_cmd := l_rc + " %"" + a_resource + "%" %"" + a_target + "%""
-					l_dir := (create {KL_WINDOWS_FILE_SYSTEM}.make).dirname (a_resource)
-					l_launch.launch (l_cmd, l_dir, Void)
+					l_launch.launch (l_cmd, l_exec.current_working_directory, Void)
 					if l_launch.last_process_result /= 0 then
 						create l_virc.make_failed (a_resource)
 					end
@@ -240,7 +229,7 @@ feature {NONE} -- Implementation
 			create l_platform
 			create l_data.make (l_raw_file.count + l_platform.integer_32_bytes)
 			l_data.put_integer_32_le (l_raw_file.count, 0)
-			l_raw_file.read_to_managed_pointer (l_data, l_platform.integer_32_bytes, l_raw_file.count)
+			l_raw_file.read_data (l_data.item + l_platform.integer_32_bytes, l_raw_file.count)
 			l_raw_file.close
 			l_resources.extend (l_data)
 

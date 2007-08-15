@@ -10,10 +10,8 @@ class
 
 inherit
 	EB_CONTEXT_DIAGRAM_COMMAND
-		undefine
-			menu_name
 		redefine
-			new_sd_toolbar_item,
+			new_toolbar_item,
 			description,
 			initialize
 		end
@@ -54,7 +52,7 @@ feature -- Basic operations
 			end
 		end
 
-	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_TOGGLE_BUTTON is
+	new_toolbar_item (display_text: BOOLEAN): EB_COMMAND_TOGGLE_TOOL_BAR_BUTTON is
 			-- Create a new toolbar button for this command.
 			--
 			-- Call `recycle' on the result when you don't need it anymore otherwise
@@ -63,15 +61,15 @@ feature -- Basic operations
 			create Result.make (Current)
 			current_button := Result
 			if tool.world.is_inheritance_links_shown then
-				Result.enable_select
+				Result.toggle
 			end
-			initialize_sd_toolbar_item (Result, display_text)
+			initialize_toolbar_item (Result, display_text)
 			Result.select_actions.extend (agent execute)
 		end
 
 feature -- Access
 
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			if current_button.is_selected then
@@ -89,13 +87,7 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.diagram_inheritance_link_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.diagram_inheritance_link_icon_buffer
-		end
-
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Description for this command.
 		do
 			Result := Interface_names.l_diagram_inheritance_visibility
@@ -105,9 +97,9 @@ feature {NONE} -- Implementation
 			-- Name of the command. Used to store the command in the
 			-- preferences.
 
-feature {EB_DIAGRAM_TOOL} -- Implementation
+feature {EB_CONTEXT_EDITOR} -- Implementation
 
-	current_button: EB_SD_COMMAND_TOOL_BAR_TOGGLE_BUTTON;
+	current_button: EB_COMMAND_TOGGLE_TOOL_BAR_BUTTON;
 			-- Current toggle button.
 
 indexing
@@ -143,4 +135,5 @@ indexing
 		]"
 
 end -- class EB_TOGGLE_INHERIT_COMMAND
+
 

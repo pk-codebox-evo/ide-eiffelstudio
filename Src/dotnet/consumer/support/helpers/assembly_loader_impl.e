@@ -16,16 +16,12 @@ feature {NONE}
 			a_name_attached: a_name /= Void
 			not_a_name_is_empty: a_name.length > 0
 		local
-			l_not_found: FILE_NOT_FOUND_EXCEPTION
 			retried: BOOLEAN
 		do
 			if not retried then
 				Result := {ASSEMBLY}.load (a_name)
 			else
-				l_not_found ?= {ISE_RUNTIME}.last_exception
-				if l_not_found = Void then
-					Result := {ASSEMBLY}.reflection_only_load (a_name)
-				end
+				Result := {ASSEMBLY}.reflection_only_load (a_name)
 			end
 		rescue
 			if not retried then
@@ -40,16 +36,12 @@ feature {NONE}
 			a_path_attached: a_path /= Void
 			not_a_path_is_empty: a_path.length > 0
 		local
-			l_not_found: FILE_NOT_FOUND_EXCEPTION
 			retried: BOOLEAN
 		do
 			if not retried then
 				Result := {ASSEMBLY}.load_from (a_path)
 			else
-				l_not_found ?= {ISE_RUNTIME}.last_exception
-				if l_not_found = Void then
-					Result := {ASSEMBLY}.reflection_only_load_from (a_path)
-				end
+				Result := {ASSEMBLY}.reflection_only_load_from (a_path)
 			end
 		rescue
 			if not retried then

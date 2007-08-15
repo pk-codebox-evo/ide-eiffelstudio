@@ -35,8 +35,7 @@ feature {NONE} -- Agents
 	show_dialog is
 			-- Show text editor.
 		require
-			parented: is_parented
-			parent_window: parent_window (parent) /= Void
+			parent_window: parent_window /= Void
 			popup_window: popup_window /= Void
 			activated: is_activated
 		local
@@ -45,7 +44,7 @@ feature {NONE} -- Agents
 			l_dir: DIRECTORY
 		do
 			update_text_on_deactivation
-			l_parent := parent_window (parent)
+			l_parent := parent_window
 			is_dialog_open := True
 			create l_dial
 			if value /= Void and then not value.is_empty then

@@ -16,12 +16,10 @@ inherit
 			change_zone_split_area,
 			move_to_docking_zone,
 			move_to_tab_zone,
-			auto_hide_tab_with,
 			restore,
 			zone,
 			change_title,
 			change_pixmap,
-			change_tab_tooltip,
 			show,
 			hide,
 			record_state
@@ -81,34 +79,23 @@ feature {SD_TAB_STATE_ASSISTANT} -- Initlization
 
 feature -- Redefine.
 
-	restore (a_data: SD_INNER_CONTAINER_DATA; a_container: EV_CONTAINER) is
+	restore (a_titles: ARRAYED_LIST [STRING]; a_container: EV_CONTAINER; a_direction: INTEGER) is
 			-- Redefine.
 		local
 			l_content: SD_CONTENT
-			l_titles: ARRAYED_LIST [STRING_GENERAL]
 		do
 			create internal_shared
-			l_titles := a_data.titles
-			l_titles.start
-			l_content := internal_docking_manager.query.content_by_title_for_restore (l_titles.item)
+			a_titles.start
+			l_content := internal_docking_manager.query.content_by_title_for_restore (a_titles.item)
 
 			-- If we don't find SD_CONTENT, ignore it.
 			if l_content /= Void then
 				internal_content := l_content
-				Precursor {SD_STATE} (a_data, a_container)
+				Precursor {SD_STATE} (a_titles, a_container, a_direction)
 				make (l_content, {SD_ENUMERATION}.left, 1)
 				a_container.extend (zone)
 				change_state (Current)
-				direction := a_data.direction
-			end
-
-			if a_data.is_minimized then
-				restore_minimize
-			end
-
-			-- When SD_OPEN_CONFIG_MEDIATOR.open_inner_container_data, `zone' maybe void.
-			if zone /= Void then
-				update_floating_zone_visible (zone, a_data.is_visible)
+				direction := a_direction
 			end
 		end
 
@@ -123,7 +110,7 @@ feature -- Redefine.
 			end
 		end
 
-	change_title (a_title: STRING_GENERAL; a_content: SD_CONTENT) is
+	change_title (a_title: STRING; a_content: SD_CONTENT) is
 			-- Redefine.
 		do
 			zone.set_title (a_title)
@@ -145,7 +132,6 @@ feature -- Redefine.
 			l_new_container: EV_SPLIT_AREA
 			l_retried: BOOLEAN
 			l_called: BOOLEAN
-			l_main_container: SD_MULTI_DOCK_AREA
 		do
 			if not l_retried then
 				internal_docking_manager.command.lock_update (zone, False)
@@ -156,7 +142,6 @@ feature -- Redefine.
 				record_state
 				if zone.parent /= Void then
 					zone.parent.prune (zone)
-					l_main_container := internal_docking_manager.query.inner_container (zone)
 				end
 
 				internal_docking_manager.command.lock_update (Void, True)
@@ -198,29 +183,22 @@ feature -- Redefine.
 				end
 				internal_docking_manager.command.remove_empty_split_area
 				internal_docking_manager.command.update_title_bar
-				internal_docking_manager.query.inner_container_main.update_middle_container
-				if l_main_container /= Void then
-					l_main_container.update_visible
-				end
-				internal_docking_manager.command.resize (True)
 				internal_docking_manager.command.unlock_update
 				internal_docking_manager.command.unlock_update
 			end
 		ensure then
 			is_dock_at_top: old a_multi_dock_area.full implies is_dock_at_top (a_multi_dock_area)
 		rescue
-			if not l_retried then
+			internal_docking_manager.command.unlock_update
+			if l_called then
 				internal_docking_manager.command.unlock_update
-				if l_called then
-					internal_docking_manager.command.unlock_update
-				end
-				l_retried := True
-				retry
 			end
+			l_retried := True
+			retry
 		end
 
-	stick (a_direction: INTEGER) is
-				-- Redefine.
+stick (a_direction: INTEGER) is
+			-- Redefine.
 		local
 			l_auto_hide_state: SD_AUTO_HIDE_STATE
 			l_width_height: INTEGER
@@ -233,14 +211,10 @@ feature -- Redefine.
 			internal_docking_manager.zones.prune_zone (zone)
 
 			-- Change state.
-			create l_auto_hide_state.make_with_size (internal_content, a_direction, l_width_height)
+			create l_auto_hide_state.make_with_size (internal_content, direction, l_width_height)
 			l_auto_hide_state.set_width_height (l_width_height)
 			change_state (l_auto_hide_state)
 			internal_docking_manager.query.inner_container_main.remove_empty_split_area
-			internal_docking_manager.query.inner_container_main.update_middle_container
-			-- We have to clear last focus content. Otherwise, when user select it in ctrl + tab dialog, it will not appear.
-			-- See bug#13101
-			internal_docking_manager.property.set_last_focus_content (Void)
 			internal_docking_manager.command.unlock_update
 		ensure then
 			state_changed: content.state /= Current
@@ -257,7 +231,7 @@ feature -- Redefine.
 				l_orignal_multi_dock_area.parent_floating_zone.set_position (a_x, a_y)
 			else
 				internal_docking_manager.command.lock_update (zone, False)
-				create l_floating_state.make (a_x, a_y, internal_docking_manager, True)
+				create l_floating_state.make (a_x, a_y, internal_docking_manager)
 				l_floating_state.set_size (last_floating_width, last_floating_height)
 				dock_at_top_level (l_floating_state.inner_container)
 				l_floating_state.update_title_bar
@@ -266,11 +240,8 @@ feature -- Redefine.
 				internal_docking_manager.command.unlock_update
 			end
 			internal_docking_manager.command.update_title_bar
-
-			internal_docking_manager.query.inner_container_main.recover_normal_for_only_one
-			-- After floating, left minmized editor zones in SD_MULTI_DOCK_AREA, then we
-			-- have to resize.
-			internal_docking_manager.command.resize (True)
+		ensure then
+--			floated: old zone.parent /= zone.parent
 		end
 
 	change_zone_split_area (a_target_zone: SD_ZONE; a_direction: INTEGER) is
@@ -285,26 +256,24 @@ feature -- Redefine.
 				if zone.parent /= Void then
 					zone.parent.prune (zone)
 				end
+
 				internal_docking_manager.command.lock_update (a_target_zone, False)
 				l_called := True
 
 				change_zone_split_area_to_zone (a_target_zone, a_direction)
 				internal_docking_manager.command.update_title_bar
-				internal_docking_manager.query.inner_container_main.update_middle_container
 				internal_docking_manager.command.unlock_update
 				internal_docking_manager.command.unlock_update
 			end
 		ensure then
 			parent_changed: old zone.parent /= zone.parent
 		rescue
-			if not l_retried then
+			internal_docking_manager.command.unlock_update
+			if l_called then
 				internal_docking_manager.command.unlock_update
-				if l_called then
-					internal_docking_manager.command.unlock_update
-				end
-				l_retried := True
-				retry
 			end
+			l_retried := True
+			retry
 		end
 
 	move_to_docking_zone (a_target_zone: SD_DOCKING_ZONE; a_first: BOOLEAN) is
@@ -331,59 +300,20 @@ feature -- Redefine.
 			state_changed: content.state /= Current
 		end
 
-	auto_hide_tab_with (a_target_content: SD_CONTENT) is
-			-- Redefine
-		do
-			if zone /= Void then
-				internal_docking_manager.command.lock_update (zone, False)
-				internal_docking_manager.command.recover_normal_state
-				internal_docking_manager.command.remove_auto_hide_zones (False)
-				internal_docking_manager.zones.prune_zone (zone)
-				internal_docking_manager.command.remove_empty_split_area
-				internal_docking_manager.command.update_title_bar
-				internal_docking_manager.command.unlock_update
-			end
-			Precursor {SD_STATE} (a_target_content)
-		end
-
 	show is
 			-- Redefine.
 		local
 			l_multi_dock_area: SD_MULTI_DOCK_AREA
-			l_state_void: SD_STATE_VOID
-			l_platform: PLATFORM
-			l_floating_zone: SD_FLOATING_ZONE
-			l_is_main_container: BOOLEAN
+
 		do
-			l_multi_dock_area := internal_docking_manager.query.inner_container (zone)
-			l_is_main_container :=  l_multi_dock_area /= Void and then internal_docking_manager.query.is_main_inner_container (l_multi_dock_area)
-
-			docking_manager.command.recover_normal_state_in_dock_area_of (zone)
-
 			zone.show
 			show_all_split_parent (zone)
 			docking_manager.command.resize (False)
 
-			if not l_is_main_container then
-				l_floating_zone := l_multi_dock_area.parent_floating_zone
-				create l_platform
-				if not l_platform.is_windows then
-					-- On GTK, windows size will not be remembered after hide.
-					l_floating_zone.set_width (last_floating_width)
-					l_floating_zone.set_height (last_floating_height)
-				end
-				l_floating_zone.show
+			l_multi_dock_area := internal_docking_manager.query.inner_container (zone)
+			if l_multi_dock_area /= Void and then not internal_docking_manager.query.is_main_inner_container (l_multi_dock_area) then
+				l_multi_dock_area.parent_floating_zone.show
 				l_multi_dock_area.update_title_bar
-			else
-				l_multi_dock_area.update_middle_container
-			end
-
-			if not zone.is_displayed then
-				-- `parent_floating_zone' doesn't exist on screen anymore, it was destroyed when open_config (from SD_CONFIG_MEDIATOR),
-				-- and current content doesn't have layout information restored when open_config, so let it use SD_STATE_VOID's default behavior.
-				create l_state_void.make (content)
-				change_state (l_state_void)
-				l_state_void.show
 			end
 		end
 
@@ -394,25 +324,17 @@ feature -- Redefine.
 			l_spliter: EV_SPLIT_AREA
 		do
 			Precursor {SD_STATE}
-			if not zone.is_displayed or zone.is_maximized then
-				internal_docking_manager.command.recover_normal_state_in_dock_area_of (zone)
-			end
-
 			zone.hide
 			l_spliter ?= zone.parent
-			if l_spliter /= Void and then l_spliter.is_displayed then
-				if l_spliter.full and then (not l_spliter.first.is_displayed and not l_spliter.second.is_displayed) then
+			if l_spliter /= Void then
+				if not l_spliter.first.is_displayed and not l_spliter.second.is_displayed then
 					l_spliter.hide
 				end
 			end
 
 			l_multi_dock_area := internal_docking_manager.query.inner_container (zone)
-			if l_multi_dock_area /= Void then
-				if not internal_docking_manager.query.is_main_inner_container (l_multi_dock_area) then
-					l_multi_dock_area.update_title_bar
-				else
-					l_multi_dock_area.update_middle_container
-				end
+			if l_multi_dock_area /= Void and then not internal_docking_manager.query.is_main_inner_container (l_multi_dock_area) then
+				l_multi_dock_area.update_title_bar
 			end
 			docking_manager.command.resize (False)
 		end
@@ -421,21 +343,6 @@ feature -- Redefine.
 			-- Redefine
 		do
 			zone.update_user_widget
-		end
-
-	change_tab_tooltip (a_text: STRING_GENERAL) is
-			-- Redefine
-		local
-			l_upper: SD_DOCKING_ZONE_UPPER
-			l_tab: SD_NOTEBOOK_TAB
-		do
-			l_upper ?= zone
-			if l_upper /= Void then
-				l_tab := l_upper.notebook.tab_by_content (content)
-				if l_tab /= Void then
-					l_tab.set_tool_tip (a_text)
-				end
-			end
 		end
 
 	zone: SD_DOCKING_ZONE

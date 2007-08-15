@@ -31,7 +31,7 @@ feature -- Init
 
 feature -- Access
 
-	enabled: BOOLEAN
+	exception_handling_enabled: BOOLEAN
 
 	ignoring_external_exception: BOOLEAN
 
@@ -56,7 +56,7 @@ feature -- Access
 			wildcard_matcher: KMP_WILD
 		do
 			Result := True --| By default we stop on exception
-			if enabled then
+			if exception_handling_enabled then
 				if ignoring_external_exception then
 					en := once "EiffelSoftware.Runtime.*" --EIFFEL_EXCEPTION"
 					if has_wildcards (en) then
@@ -113,7 +113,7 @@ feature -- Access
 			es: INTEGER
 		do
 			Result := True --| By default we stop on exception			
-			if enabled then
+			if exception_handling_enabled then
 				if ignoring_external_exception then
 					inspect
 						except_code
@@ -180,12 +180,12 @@ feature -- Change
 
 	enable_exception_handling is
 		do
-			enabled := True
+			exception_handling_enabled := True
 		end
 
 	disable_exception_handling is
 		do
-			enabled := False or ignoring_external_exception
+			exception_handling_enabled := False or ignoring_external_exception
 		end
 
 	wipe_out is

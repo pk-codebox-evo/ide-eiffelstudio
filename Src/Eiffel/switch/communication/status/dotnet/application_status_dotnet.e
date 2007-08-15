@@ -12,6 +12,7 @@ class
 inherit
 	APPLICATION_STATUS
 		redefine
+			display_status,
 			current_call_stack_element,
 			current_call_stack,
 			update_on_stopped_state,
@@ -23,8 +24,6 @@ inherit
 	SHARED_EIFNET_DEBUGGER
 
 	SHARED_EIFNET_DEBUG_VALUE_FACTORY
-
-	IL_DEBUG_INFO_RECORDER_EXPORTER
 
 create {APPLICATION_EXECUTION}
 	make
@@ -105,6 +104,8 @@ feature -- Update
 
 	exception_class_name: STRING is
 			-- Exception class name
+		require
+			exception_occurred: exception_occurred
 		do
 			Result := Eifnet_debugger.exception_class_name
 		end
@@ -130,9 +131,9 @@ feature -- Update
 		require else
 			exception_occurred: exception_occurred
 		do
-			Result := exception_to_string
+			Result := Eifnet_debugger.exception_message
 			if Result = Void then
-				Result := Eifnet_debugger.exception_message
+				Result := exception_to_string
 			end
 		end
 
@@ -140,7 +141,7 @@ feature -- Update
 			-- Update data once the application is really stopped
 		do
 			if exception_occurred and is_stopped then
-				exception_tag := Eifnet_debugger.exception_message
+				exception_tag := exception_message
 			else
 				exception_tag := Void
 			end
@@ -163,6 +164,24 @@ feature -- Changes
 		do
 			is_evaluating := b
 			Eifnet_debugger.info.set_is_evaluating (b) -- For optimization purpose
+		end
+
+feature -- Output
+
+	display_status (st: TEXT_FORMATTER) is
+			-- Display status of debugged system
+		do
+			check
+				il_generation: Eiffel_system.System.il_generation
+			end
+
+			if not is_stopped then
+				st.add_string ("System is running")
+				st.add_new_line
+			end
+			st.add_new_line
+			-- NOTA jfiat [2004/07/02] : maybe we could display more information
+			-- for instance if we run with or without break points
 		end
 
 feature -- Thread info
@@ -231,11 +250,11 @@ feature -- Call stack related
 
 feature {NONE} -- CallStack Impl
 
-	new_callstack_with (a_tid: INTEGER; a_stack_max_depth: INTEGER): like current_call_stack is
-			-- Get Eiffel Callstack with a maximum depth of `a_stack_max_depth'
-			-- for thread `a_tid'.
+	new_current_callstack_with (a_stack_max_depth: INTEGER): like current_call_stack is
+			-- Create Eiffel Callstack with a maximum depth of `a_stack_max_depth'
 		do
-			create Result.make (a_stack_max_depth, a_tid)
+			clean_current_call_stack
+			create Result.make (a_stack_max_depth, current_thread_id)
 		end
 
 	current_call_stack_element: CALL_STACK_ELEMENT is
@@ -271,32 +290,32 @@ feature -- Reason for stopping
 
 	set_reason_as_break is
 		do
-			set_reason ({APPLICATION_STATUS_CONSTANTS}.Pg_break)
+			set_reason ({IPC_SHARED}.Pg_break)
 		end
 
 	set_reason_as_interrupt is
 		do
-			set_reason ({APPLICATION_STATUS_CONSTANTS}.Pg_interrupt)
+			set_reason ({IPC_SHARED}.Pg_interrupt)
 		end
 
 	set_reason_as_raise is
 		do
-			set_reason ({APPLICATION_STATUS_CONSTANTS}.Pg_raise)
+			set_reason ({IPC_SHARED}.Pg_raise)
 		end
 
 	set_reason_as_viol is
 		do
-			set_reason ({APPLICATION_STATUS_CONSTANTS}.Pg_viol)
+			set_reason ({IPC_SHARED}.Pg_viol)
 		end
 
 	set_reason_as_new_breakpoint is
 		do
-			set_reason ({APPLICATION_STATUS_CONSTANTS}.Pg_new_breakpoint)
+			set_reason ({IPC_SHARED}.Pg_new_breakpoint)
 		end
 
 	set_reason_as_step is
 		do
-			set_reason ({APPLICATION_STATUS_CONSTANTS}.Pg_step)
+			set_reason ({IPC_SHARED}.Pg_step)
 		end
 
 indexing

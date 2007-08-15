@@ -35,19 +35,18 @@ feature {NONE} -- Initialization
 		do
 			window := w
 			default_create
-			set_text (compiler_version_number.version)
+			set_text (Major_version_number.out + "." + Minor_version_number.out + "." +Build_version_number.out)
 
 				--| Memory tool
-			create menu_item.make_with_text_and_action ("Memory Analyzer", agent launch_memory_tool)
+			create menu_item.make_with_text ("Memory Analyzer")
+			menu_item.select_actions.extend (agent launch_memory_tool)
 			extend (menu_item)
 
 				--| UUID Generator
-			create menu_item.make_with_text_and_action ("UUID generator", agent launch_uuid_tool)
+			create menu_item.make_with_text ("UUID generator")
+			menu_item.select_actions.extend (agent launch_uuid_tool)
 			extend (menu_item)
 
-				--| Recompile backups
-			create menu_item.make_with_text_and_action ("Replay Backup", agent launch_replay_backup_tool)
-			extend (menu_item)
 		end
 
 feature {NONE} -- Actions
@@ -65,21 +64,15 @@ feature {NONE} -- Actions
 				l_path := l_env.get ("EIFFEL_SRC")
 				if l_path = Void then
 					create l_dlg.make_with_text ("EIFFEL_SRC not defined.")
-					if window /= Void then
-						l_dlg.show_modal_to_window (window)
-					else
-						l_dlg.show
-					end
+					l_dlg.show
 				else
 					create l_dir.make_from_string (l_path)
 					l_dir.extend_from_array (<<"library", "memory_analyzer" >>)
 					create ma_window.make (l_dir)
-					ma_window.close_request_actions.extend (agent ma_window.hide)
-					ma_window.show
+					ma_window.close_request_actions.extend (agent handle_close_window)
 				end
-			else
-				ma_window.show
 			end
+			ma_window.show
 		end
 
 	launch_uuid_tool is
@@ -118,27 +111,19 @@ feature {NONE} -- Actions
 			tf.set_text (uuid_gene.generate_uuid.out)
 		end
 
-	launch_replay_backup_tool is
-			-- Launch tool that enables us to replay precisely a backup.
-		do
-			replay_window.window.raise
-		end
-
 feature {NONE} -- Implementation
+
+	handle_close_window is
+			-- Handle user press window action.
+		do
+			ma_window.destroy
+		end
 
 	window: EV_WINDOW
 			-- Main development window.
 
 	ma_window: MA_WINDOW;
 			-- Memory analyzer window.
-
-	replay_window: REPLAY_BACKUP_WINDOW is
-			-- Replace backup window
-		once
-			create Result.make
-		ensure
-			replay_window_not_void: Result /= Void
-		end
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

@@ -6,7 +6,7 @@
 			]"
 	date:		"$Date$"
 	revision:	"$Revision$"
-	copyright:	"Copyright (c) 1985-2007, Eiffel Software."
+	copyright:	"Copyright (c) 1985-2006, Eiffel Software."
 	license:	"GPL version 2 see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"Commercial license is available at http://www.eiffel.com/licensing"
 	copying: "[
@@ -199,8 +199,6 @@ struct gacstat {
 	double sys_time;		/* Average kernel time used by last plsc() */
 	double cpu_itime;		/* CPU time between two collections */
 	double sys_itime;		/* Average kernel time between collections */
-	double cpu_total_time;	/* Total CPU time since beginning of application */
-	double sys_total_time;	/* Total CPU time since beginning of application */
 };
 
 /*
@@ -227,84 +225,47 @@ struct stchunk {
 	/*	interp.h & debug.h */
 	/*---------------------*/
 
-typedef union tag_EIF_VALUE {
-	EIF_BOOLEAN    b;  /* SK_BOOL    - boolean                  */
-	EIF_CHARACTER  c1; /* SK_CHAR    - character                */
-	EIF_WIDE_CHAR  c4; /* SK_WCHAR   - unicode character        */
-	EIF_INTEGER_8  i1; /* SK_INT8    - 8 bits integer           */
-	EIF_INTEGER_16 i2; /* SK_INT16   - 16 bits integer          */
-	EIF_INTEGER_32 i4; /* SK_INT32   - 32 bits integer          */
-	EIF_INTEGER_64 i8; /* SK_INT64   - 64 bits integer          */
-	EIF_NATURAL_8  n1; /* SK_UINT8   - 8 bits unsigned integer  */
-	EIF_NATURAL_16 n2; /* SK_UINT16  - 16 bits unsigned integer */
-	EIF_NATURAL_32 n4; /* SK_UINT32  - 32 bits unsigned integer */
-	EIF_NATURAL_64 n8; /* SK_UINT64  - 64 bits unsigned integer */
-	EIF_REAL_32    r4; /* SK_REAL32  - 32 bits real             */
-	EIF_REAL_64    r8; /* SK_REAL64  - 64 bits real             */
-	EIF_REFERENCE  r;  /* SK_REF     - reference                */
-	EIF_POINTER    p;  /* SK_POINTER - pointer                  */
-} EIF_VALUE;
-	
-typedef struct tag_EIF_TYPED_VALUE {
-	EIF_VALUE item; /* Associated value                     */
-	uint32 type;    /* Type of item (SK_BOOL, SK_CHAR, ...) */
-} EIF_TYPED_VALUE;
+	/* Stack data structures for features */
+struct item {
+	uint32 type;				/* Type of the item (SK_INT, SK_BOOL, SK_DOUBLE, ...) */
+	union {
+		/* values (melted feature) */
+		EIF_CHARACTER itu_char;		/* SK_CHAR, SK_BOOL - a character value */
+		EIF_INTEGER_8 itu_int8;		/* SK_INT8 = a 8 bits integer value */
+		EIF_WIDE_CHAR itu_wchar;	/* SK_WCHAR - a unicode character value */
+		EIF_INTEGER_16 itu_int16;	/* SK_INT16 = a 16 bits integer value */
+		EIF_INTEGER_32 itu_int32;	/* SK_INT32 - a 32 bits integer value */
+		EIF_REAL_32 itu_real32;		/* SK_REAL32 - a real value */
+		EIF_REAL_64 itu_real64;		/* SK_REAL64 - a double value */
+		EIF_INTEGER_64 itu_int64;	/* SK_INT64 - a 64 bits integer value */
+		EIF_NATURAL_8 itu_uint8;	/* SK_UINT8 - 8 bits unsigned integer value */
+		EIF_NATURAL_16 itu_uint16;	/* SK_UINT16 - 16 bits unsigned integer value */
+		EIF_NATURAL_32 itu_uint32;	/* SK_UINT32 - 32 bits unsigned integer value */
+		EIF_NATURAL_64 itu_uint64;	/* SK_UINT64 - 64 bits unsigned integer value */
+		EIF_REFERENCE itu_ref;		/* SK_REF / SK_STRING - a reference value */
+		EIF_REFERENCE itu_bit;		/* SK_BIT - a bit reference value */
+		EIF_POINTER itu_ptr;		/* SK_POINTER - a routine pointer */
+	} itu;
 
-/* Shortcuts to access typed value */
-#define it_b  item.b
-#define it_c1 item.c1
-#define it_c4 item.c4
-#define it_i1 item.i1
-#define it_i2 item.i2
-#define it_i4 item.i4
-#define it_i8 item.i8
-#define it_n1 item.n1
-#define it_n2 item.n2
-#define it_n4 item.n4
-#define it_n8 item.n8
-#define it_r4 item.r4
-#define it_r8 item.r8
-#define it_r  item.r
-#define it_p  item.p
+	/* address (frozen feature) - should not be part of the union since we are filling */
+	/* the union from the address in the function 'ivalue' */
+	void *it_addr;			/* SK_INT, SK_CHAR, ... - address where value can be found */
+};
 
-
-	/* Stack data structures for frozen features */
-typedef struct tag_EIF_TYPED_ADDRESS {
-	void *it_addr;			/* Address of associated value */
-	uint32 type;			/* Type of item (SK_INT, SK_BOOL, SK_DOUBLE, ...) */
-} EIF_TYPED_ADDRESS;
-
-
-	/* Stack used by the interpreter (byte code operational stack) */
+	/* Stack used by the interpreter (operational stack) */
 struct stochunk {
 	struct stochunk *sk_next;	/* Next chunk in stack */
 	struct stochunk *sk_prev;	/* Previous chunk in stack */
-	EIF_TYPED_VALUE *sk_arena;	/* Arena where objects are stored */
-	EIF_TYPED_VALUE *sk_end;	/* Pointer to first element beyond the chunk */
+	struct item *sk_arena;		/* Arena where objects are stored */
+	struct item *sk_end;		/* Pointer to first element beyond the chunk */
 };
 
 struct opstack {
 	struct stochunk *st_hd;		/* Head of chunk list */
 	struct stochunk *st_tl;		/* Tail of chunk list */
 	struct stochunk *st_cur;	/* Current chunk in use (where top is) */
-	EIF_TYPED_VALUE *st_top;	/* Top (pointer to next free location) */
-	EIF_TYPED_VALUE *st_end;	/* First element beyond current chunk */
-};
-
-	/* Stack used by the interpreter (C code operational stack) */
-struct c_stochunk {
-	struct c_stochunk *sk_next;	/* Next chunk in stack */
-	struct c_stochunk *sk_prev;	/* Previous chunk in stack */
-	EIF_TYPED_ADDRESS *sk_arena;	/* Arena where objects are stored */
-	EIF_TYPED_ADDRESS *sk_end;	/* Pointer to first element beyond the chunk */
-};
-
-struct c_opstack {
-	struct c_stochunk *st_hd;		/* Head of chunk list */
-	struct c_stochunk *st_tl;		/* Tail of chunk list */
-	struct c_stochunk *st_cur;	/* Current chunk in use (where top is) */
-	EIF_TYPED_ADDRESS *st_top;	/* Top (pointer to next free location) */
-	EIF_TYPED_ADDRESS *st_end;	/* First element beyond current chunk */
+	struct item *st_top;		/* Top (pointer to next free location) */
+	struct item *st_end;		/* First element beyond current chunk */
 };
 
 
@@ -430,10 +391,6 @@ struct dbinfo {
 	uint32 db_callstack_depth;			/* number of routines on the eiffel stack */
 	uint32 db_callstack_depth_stop;		/* depth from which we must stop (step-by-step, stepinto..) */
 	char db_stepinto_mode;				/* is stepinto activated ? */
-	char db_discard_breakpoints;		/* when set, discard all breakpoints. (not used for run-no-stop)*/
-                                        /* and after the end of the root creation. it avoids the    	*/
-                                        /* application to stop after its end when garbage collector 	*/
-                                        /* destroys objects                                         	*/
 };
 
 /* List of offset. It tells where the breakpoint inside a feature are */
@@ -454,6 +411,10 @@ struct db_bpinfo {
 
 /* Debugger information (global to all threads) */
 struct dbglobalinfo {
+	char db_discard_breakpoints;		/* when set, discard all breakpoints. used for run-no-stop, */
+										/* and after the end of the root creation. it avoids the    */
+										/* application to stop after its end when garbage collector */
+										/* destroys objects                                         */
 	struct db_bpinfo **db_bpinfo;		/* breakpoints hash table */
 };
 

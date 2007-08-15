@@ -11,7 +11,7 @@ inherit
 	GEN_TYPE_A
 		redefine
 			good_generics, error_generics, check_constraints,
-			is_tuple, conform_to, type_i, process, valid_generic
+			is_tuple, conform_to, type_i, process
 		end
 
 create
@@ -30,31 +30,6 @@ feature -- Properties
 	is_tuple: BOOLEAN is True
 
 feature {COMPILER_EXPORTER} -- Primitives
-
-	valid_generic (type: CL_TYPE_A): BOOLEAN is
-			-- Check generic parameters
-		local
-			i, nb: INTEGER
-			l_tuple: TUPLE_TYPE_A
-			l_tuple_generics: like generics
-		do
-			l_tuple ?= type
-			if l_tuple /= Void then
-				from
-					i := 1
-					l_tuple_generics := l_tuple.generics
-					nb := generics.count
-					Result := nb <= l_tuple_generics.count
-				until
-					i > nb or else not Result
-				loop
-					Result := l_tuple_generics.item (i).conform_to (generics.item (i))
-					i := i + 1
-				end
-			else
-				Result := Precursor {GEN_TYPE_A} (type)
-			end
-		end
 
 	conform_to (other: TYPE_A): BOOLEAN is
 			-- Does Current conform to `other'?
@@ -153,7 +128,7 @@ feature {COMPILER_EXPORTER} -- Primitives
 			end
 		end
 
-	check_constraints (context_class: CLASS_C; a_context_feature: FEATURE_I;  a_check_creation_readiness: BOOLEAN) is
+	check_constraints (context_class: CLASS_C) is
 			-- Check the constrained genericity validity rule
 		local
 			i, count: INTEGER
@@ -168,10 +143,7 @@ feature {COMPILER_EXPORTER} -- Primitives
 				i > count
 			loop
 				gen_param := generics.item (i)
-					-- Creation readiness check is set to false because:
-					--  * one cannot inherit from TUPLE
-					--  * there is no expanded entity
-				gen_param.check_constraints (context_class, a_context_feature, False)
+				gen_param.check_constraints (context_class)
 				i := i + 1
 			end
 		end

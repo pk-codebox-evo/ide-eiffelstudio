@@ -53,6 +53,8 @@ inherit
 	EV_BUTTON_ACTION_SEQUENCES_IMP
 		export
 			{EV_INTERMEDIARY_ROUTINES} select_actions_internal
+		redefine
+			interface
 		end
 
 create
@@ -90,7 +92,6 @@ feature {NONE} -- Initialization
 			{EV_GTK_EXTERNALS}.gtk_widget_show (hbox)
 			{EV_GTK_EXTERNALS}.gtk_container_add (box, hbox)
 			{EV_GTK_EXTERNALS}.gtk_container_add (hbox, pixmap_box)
-			{EV_GTK_EXTERNALS}.gtk_misc_set_padding (text_label, 4, 0)
 			{EV_GTK_EXTERNALS}.gtk_container_add (hbox, text_label)
 			{EV_GTK_EXTERNALS}.gtk_widget_show (box)
 		ensure
@@ -201,10 +202,9 @@ feature {NONE} -- implementation
 		end
 
 	foreground_color_pointer: POINTER is
-			-- Pointer to fg color for `Current'.
 		do
 			Result := {EV_GTK_EXTERNALS}.gtk_style_struct_text (
-				{EV_GTK_EXTERNALS}.gtk_rc_get_style (text_label)
+				{EV_GTK_EXTERNALS}.gtk_widget_struct_style (text_label)
 			)
 		end
 

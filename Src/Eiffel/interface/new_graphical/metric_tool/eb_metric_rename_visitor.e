@@ -10,13 +10,7 @@ class
 	EB_METRIC_RENAME_VISITOR
 
 inherit
-	EB_METRIC_ITERATOR
-		redefine
-			process_linear_metric,
-			process_ratio_metric,
-			process_value_criterion,
-			process_metric_value_retriever
-		end
+	EB_METRIC_VISITOR
 
 create
 	make
@@ -44,7 +38,6 @@ feature -- Process
 		require
 			a_metric_attached: a_metric /= Void
 		do
-			replace_name (a_metric.name, agent a_metric.set_name)
 			a_metric.process (Current)
 		end
 
@@ -57,6 +50,11 @@ feature -- Access
 			-- New metric name
 
 feature{NONE} -- Process
+
+	process_basic_metric (a_basic_metric: EB_METRIC_BASIC) is
+			-- Process `a_basic_metric'.
+		do
+		end
 
 	process_linear_metric (a_linear_metric: EB_METRIC_LINEAR) is
 			-- Process `a_linear_metric'.
@@ -72,7 +70,9 @@ feature{NONE} -- Process
 				until
 					l_variable_metric.after
 				loop
-					replace_name (l_variable_metric.item, agent l_variable_metric.replace)
+					if l_variable_metric.item.is_case_insensitive_equal (old_metric_name) then
+						l_variable_metric.replace (new_metric_name.twin)
+					end
 					l_variable_metric.forth
 				end
 				l_variable_metric.go_to (l_cursor)
@@ -82,34 +82,100 @@ feature{NONE} -- Process
 	process_ratio_metric (a_ratio_metric: EB_METRIC_RATIO) is
 			-- Process `a_ratio_metric'.
 		do
-			replace_name (a_ratio_metric.numerator_metric_name, agent a_ratio_metric.set_numerator_metric_name)
-			replace_name (a_ratio_metric.denominator_metric_name, agent a_ratio_metric.set_denominator_metric_name)
+			if a_ratio_metric.denominator_metric_name.is_case_insensitive_equal (old_metric_name) then
+				a_ratio_metric.set_numerator_metric_name (new_metric_name)
+			end
+			if a_ratio_metric.denominator_metric_name.is_case_insensitive_equal (old_metric_name) then
+				a_ratio_metric.set_denominator_metric_name (new_metric_name)
+			end
 		end
 
-	process_value_criterion (a_criterion: EB_METRIC_VALUE_CRITERION) is
+	process_criterion (a_criterion: EB_METRIC_CRITERION) is
 			-- Process `a_criterion'.
 		do
-			replace_name (a_criterion.metric_name, agent a_criterion.set_metric_name)
 		end
 
-	process_metric_value_retriever (a_item: EB_METRIC_METRIC_VALUE_RETRIEVER) is
+	process_domain_criterion (a_criterion: EB_METRIC_DOMAIN_CRITERION) is
+			-- Process `a_criterion'.
+		do
+		end
+
+	process_caller_criterion (a_criterion: EB_METRIC_CALLER_CALLEE_CRITERION) is
+			-- Process `a_criterion'.
+		do
+		end
+
+	process_text_criterion (a_criterion: EB_METRIC_TEXT_CRITERION) is
+			-- Process `a_criterion'.
+		do
+		end
+
+	process_path_criterion (a_criterion: EB_METRIC_PATH_CRITERION) is
+			-- Process `a_criterion'.
+		do
+		end
+
+	process_normal_criterion (a_criterion: EB_METRIC_NORMAL_CRITERION) is
+			-- Process `a_criterion'.
+		do
+		end
+
+	process_nary_criterion (a_criterion: EB_METRIC_NARY_CRITERION) is
+			-- Process `a_criterion'.
+		do
+			process_list (a_criterion.operands)
+		end
+
+	process_and_criterion (a_criterion: EB_METRIC_AND_CRITERION) is
+			-- Process `a_criterion'.
+		do
+			process_nary_criterion (a_criterion)
+		end
+
+	process_or_criterion (a_criterion: EB_METRIC_OR_CRITERION) is
+			-- Process `a_criterion'.
+		do
+			process_nary_criterion (a_criterion)
+		end
+
+	process_domain_item (a_item: EB_METRIC_DOMAIN_ITEM) is
 			-- Process `a_item'.
 		do
-			replace_name (a_item.metric_name, agent a_item.set_metric_name)
 		end
 
-feature{NONE} -- Implementation
-
-	replace_name (a_old_name: STRING; a_name_setter: PROCEDURE [ANY, TUPLE [STRING]]) is
-			-- If `a_old_name' is considered to be the same as `old_metric_name',
-			-- invoke `a_name_setter' to set `new_metric_name'.
-		require
-			a_old_name_attached: a_old_name /= Void
-			a_name_setter_attached: a_name_setter /= Void
+	process_application_target_domain_item (a_item: EB_METRIC_TARGET_DOMAIN_ITEM) is
+			-- Process `a_item'.
 		do
-			if a_old_name.is_case_insensitive_equal (old_metric_name) then
-				a_name_setter.call ([new_metric_name.twin])
-			end
+		end
+
+	process_group_domain_item (a_item: EB_METRIC_GROUP_DOMAIN_ITEM) is
+			-- Process `a_item'.
+		do
+		end
+
+	process_folder_domain_item (a_item: EB_METRIC_FOLDER_DOMAIN_ITEM) is
+			-- Process `a_item'.
+		do
+		end
+
+	process_class_domain_item (a_item: EB_METRIC_CLASS_DOMAIN_ITEM) is
+			-- Process `a_item'.
+		do
+		end
+
+	process_feature_domain_item (a_item: EB_METRIC_FEATURE_DOMAIN_ITEM) is
+			-- Process `a_item'.
+		do
+		end
+
+	process_delayed_domain_item (a_item: EB_METRIC_DELAYED_DOMAIN_ITEM) is
+			-- Process `a_item'.
+		do
+		end
+
+	process_metric_archive_node (a_item: EB_METRIC_ARCHIVE_NODE) is
+			-- Process `a_item'.
+		do
 		end
 
 invariant
@@ -147,5 +213,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

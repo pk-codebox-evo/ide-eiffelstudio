@@ -37,7 +37,7 @@ feature {NONE} -- Initialization
 
 feature {NONE} -- Help message
 
-	real_help_message: STRING_32 is
+	real_help_message: STRING is
 		once
 			Result := featurename_help;
 		end;

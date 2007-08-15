@@ -14,7 +14,6 @@ inherit
 	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 		redefine
 			mini_pixmap,
-			mini_pixel_buffer,
 			tooltext
 		end
 
@@ -40,25 +39,19 @@ feature -- Access
 	pixmap: EV_PIXMAP
 			-- Icon for tool bar button representing `Current'.
 
-	pixel_buffer: EV_PIXEL_BUFFER
-			-- Icon for tool bar button representing `Current'.
-
 	mini_pixmap: EV_PIXMAP
 			-- Icon for mini tool bar button representing `Current'.
 
-	mini_pixel_buffer: EV_PIXEL_BUFFER
-			-- Icon for mini tool bar button representing `Current'.
-
-	tooltip: STRING_GENERAL
+	tooltip: STRING
 			-- Help text displayed when associated buttons are focused.
 
-	tooltext: STRING_GENERAL
+	tooltext: STRING
 			-- Text displayed on toolbar button.
 
-	description: STRING_GENERAL
+	description: STRING
 			-- Help text displayed in the customize tool bar dialog.
 
-	menu_name: STRING_GENERAL
+	menu_name: STRING
 			-- Menu entry corresponding to `Current'.
 
 	name: STRING
@@ -74,15 +67,7 @@ feature -- Status setting
 			pixmap := new_p
 		end
 
-	set_pixel_buffer (a_buffer: EV_PIXEL_BUFFER) is
-			-- Define pixel buffer associated with `Current'.
-		require
-			a_buffer_not_void: a_buffer /= Void
-		do
-			pixel_buffer := a_buffer
-		end
-
-	set_tooltip (s: like tooltip) is
+	set_tooltip (s: STRING) is
 			-- Define a new tooltip for `Current', and possibly a new description.
 		do
 			tooltip := s
@@ -91,13 +76,13 @@ feature -- Status setting
 			end
 		end
 
-	set_tooltext (s: like tooltext) is
+	set_tooltext (s: STRING) is
 			-- Define a new tooltext for `Current' that is displayed
 		do
 			tooltext := s
 		end
 
-	set_description (s: like description) is
+	set_description (s: STRING) is
 			-- Define a new description for `Current', and possibly a new tooltip.
 		do
 			description := s
@@ -115,13 +100,13 @@ feature -- Status setting
 			end
 		end
 
-	set_menu_name (s: like menu_name) is
+	set_menu_name (s: STRING) is
 			-- Define a new menu name for `Current'.
 		do
 			menu_name := s
 		end
 
-	set_name (s: like name) is
+	set_name (s: STRING) is
 			-- Define a new name for `Current'.
 		do
 			name := s
@@ -139,12 +124,6 @@ feature -- Status setting
 			mini_pixmap := p
 		end
 
-	set_mini_pixel_buffer (p: EV_PIXEL_BUFFER)
-			-- Define the pixel buffer displayed on mini buttons associated to `Current'.
-		do
-			mini_pixel_buffer := p
-		end
-
 feature -- Basic operations
 
 	execute is
@@ -160,9 +139,9 @@ feature -- Basic operations
 			end
 		end
 
-feature {NONE} -- Recyclable
+feature -- Recyclable
 
-	internal_recycle is
+	recycle is
 			-- Recycle
 		do
 			execute_agents.wipe_out

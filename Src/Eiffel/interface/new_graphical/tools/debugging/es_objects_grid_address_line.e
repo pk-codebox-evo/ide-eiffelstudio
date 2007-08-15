@@ -11,13 +11,13 @@ class
 
 inherit
 
-	ES_OBJECTS_GRID_OBJECT_LINE
+	ES_OBJECTS_GRID_LINE
 		rename
 			data as object_address,
 			set_data as set_object_address
 		redefine
 			object_address,
-			reset
+			recycle
 		end
 
 create
@@ -33,7 +33,7 @@ feature {NONE}
 		do
 			make_with_grid (g)
 			object_dynamic_class := dtype
-			object_is_special_value := object_dynamic_class.is_special or object_dynamic_class.is_native_array
+			object_is_special_value := object_dynamic_class.is_special
 			set_object_address (add)
 		end
 
@@ -58,7 +58,7 @@ feature {NONE}
 
 feature -- Recycling
 
-	reset is
+	recycle is
 			-- Recycle data
 			-- in order to free special data (for instance dotnet references)
 		do
@@ -79,29 +79,29 @@ feature -- Properties
 
 	object_spec_capacity: INTEGER is
 		do
-			Result := debugger_manager.object_manager.special_object_capacity_at_address (object_address)
+			Result := debugged_object_manager.special_object_capacity_at_address (object_address)
 		end
 
 feature -- Query
 
 	has_attributes_values: BOOLEAN is
 		do
-			if is_valid_object_address (object_address) then
-				Result := debugger_manager.object_manager.object_at_address_has_attributes (object_address)
+			if application.is_valid_object_address (object_address) then
+				Result := debugged_object_manager.object_at_address_has_attributes (object_address)
 			end
 		end
 
 	sorted_attributes_values: DS_LIST [ABSTRACT_DEBUG_VALUE] is
 		do
-			if is_valid_object_address (object_address) then
-				Result := debugger_manager.object_manager.sorted_attributes_at_address (object_address, object_spec_lower, object_spec_upper)
+			if application.is_valid_object_address (object_address) then
+				Result := debugged_object_manager.sorted_attributes_at_address (object_address, object_spec_lower, object_spec_upper)
 			end
 		end
 
-	sorted_once_routines: LIST [E_FEATURE] is
+	sorted_once_functions: LIST [E_FEATURE] is
 		do
 			if object_dynamic_class /= Void then
-				Result := object_dynamic_class.once_routines
+				Result := object_dynamic_class.once_functions
 			end
 		end
 
@@ -120,7 +120,7 @@ feature -- Query
 			if last_dump_value = Void then
 				get_last_dump_value
 			end
-			Result := last_dump_value.generating_type_representation (generating_type_evaluation_enabled)
+			Result := last_dump_value.generating_type_representation
 		end
 
 	get_last_dump_value is
@@ -134,7 +134,7 @@ feature -- Query
 		do
 			Result := internal_associated_dump_value
 			if Result = Void then
-				Result := debugger_manager.application.dump_value_at_address_with_class (object_address, object_dynamic_class)
+				Result := Application.dump_value_at_address_with_class (object_address, object_dynamic_class)
 				internal_associated_dump_value := Result
 			end
 		end
@@ -161,8 +161,8 @@ feature -- Graphical changes
 					set_pixmap (icons [reference_value])
 				end
 				row.ensure_expandable
-				set_expand_action (agent on_row_expand)
-				set_collapse_action (agent on_row_collapse)
+				expand_actions.extend (agent on_row_expand)
+				collapse_actions.extend (agent on_row_collapse)
 				if display then
 					row.expand
 				end

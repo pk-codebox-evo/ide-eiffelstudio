@@ -1,5 +1,7 @@
 indexing
-	description: "Describe an OO model and the keys for each classes."
+
+	description:
+		"Describe an OO model and the keys for each classes."
 	legal: "See notice at end of class.";
 	status: "See notice at end of class.";
 	date: "$Date$";
@@ -37,7 +39,7 @@ feature -- *To define*
 		end;
 
 feature
-
+		
 	keys: KEYS is
 			-- Keys of the model.
 		once
@@ -56,7 +58,7 @@ feature
 		end;
 
 	register_key (field_name, table_name: STRING) is
-			-- Register `field_name' key for
+			-- Register `field_name' key for 
 			-- the table `table_name'.
 		require
 			field_name_not_void: field_name /= Void;

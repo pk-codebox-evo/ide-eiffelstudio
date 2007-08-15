@@ -245,16 +245,13 @@ feature -- Access: tokens
 			-- Token for `ISE.Runtime.in_assertion' and `ISE.Runtime.set_in_assertion'
 			-- static members that holds status of assertion checking.
 
-	ise_caller_supplier_precondition_token: INTEGER
-			-- Token for `ISE.Runtime.caller_supplier_precondition'
-
 	ise_assertion_tag_token: INTEGER
 			-- Token for `ISE.Runtime.assertion_tag' static field that holds
 			-- message for exception being thrown.
 
-	ise_get_type_token: INTEGER
-			-- Token for `ISE.Runtime.EIFFEL_TYPE_INFO.____type' feature that
-			-- returns generic type information of a class.
+	ise_set_type_token: INTEGER
+			-- Token for `ISE.Runtime.EIFFEL_TYPE_INFO.____set_type' feature that
+			-- assign type information of a class.
 
 	ise_check_invariant_token: INTEGER
 			-- Token for `ISE.Runtime.ise_check_invariant' feature that
@@ -280,10 +277,8 @@ feature -- Access: tokens
 	ise_assertion_level_attr_ctor_token,
 	ise_interface_type_attr_ctor_token,
 	ise_eiffel_consumable_attr_ctor_token,
-	ise_eiffel_class_type_mark_attr_ctor_token,
 	type_handle_class_token,
-	ise_assertion_level_enum_token,
-	ise_class_type_mark_enum_token: INTEGER
+	ise_assertion_level_enum_token: INTEGER
 			-- Token for run-time types used in code generation.
 
 feature {NONE} -- Custom attributes: access
@@ -644,9 +639,6 @@ feature -- Access: signatures
 			-- Precomputed signature of a feature with no arguments and no return type.
 			-- Used to define default constructors and other features with same signature.
 
-	generic_ctor_sig: MD_METHOD_SIGNATURE
-			-- Precomputed signature of a constructor of generic type.
-
 	method_sig: MD_METHOD_SIGNATURE
 			-- Permanent signature for features.
 
@@ -749,7 +741,6 @@ feature {NONE} -- Implementations: signatures
 			valid_type: a_type /= Void
 		local
 			l_native_array_type: NATIVE_ARRAY_TYPE_I
-			c: CL_TYPE_I
 		do
 			if a_is_by_ref then
 				a_sig.set_type ({MD_SIGNATURE_CONSTANTS}.Element_type_byref, 0)
@@ -763,22 +754,8 @@ feature {NONE} -- Implementations: signatures
 					set_signature_type (a_sig, l_native_array_type.true_generics.item (1))
 				else
 					if a_type.is_expanded then
-							-- Correctly process classes mapped to built-in .NET types.
-						c ?= a_type
-						if
-							c /= Void and then
-							il_code_generator.il_module (c.associated_class_type) /= Current and then
-							assembly_token (c.associated_class_type) = mscorlib_token and then
-							il_code_generator.external_class_mapping.has (c.base_class.external_class_name)
-						then
-							c := il_code_generator.external_class_mapping.item (c.base_class.external_class_name)
-						end
-						if c /= Void and then c.is_basic then
-							a_sig.set_type (c.element_type, 0)
-						else
-							a_sig.set_type (a_type.element_type,
-								actual_class_type_token (a_type.implementation_id))
-						end
+						a_sig.set_type (a_type.element_type,
+							actual_class_type_token (a_type.implementation_id))
 					else
 						a_sig.set_type (a_type.element_type,
 							actual_class_type_token (a_type.static_type_id))
@@ -839,13 +816,6 @@ feature -- Code generation
 			initialize_tokens
 			initialize_runtime_type_class_mappings
 
-				-- Create signature of constructor of generic type.
-			create generic_ctor_sig.make
-			generic_ctor_sig.set_method_type ({MD_SIGNATURE_CONSTANTS}.Has_current)
-			generic_ctor_sig.set_parameter_count (1)
-			generic_ctor_sig.set_return_type ({MD_SIGNATURE_CONSTANTS}.Element_type_void, 0)
-			generic_ctor_sig.set_type ({MD_SIGNATURE_CONSTANTS}.Element_type_class, ise_generic_type_token)
-
 			uni_string.set_string (module_name)
 
 			if is_assembly_module then
@@ -897,46 +867,41 @@ feature -- Code generation
 			a_class_type_not_void: a_class_type /= Void
 			positive_feature_id: a_feature_id > 0
 		local
-			l_entry_type_token: INTEGER
-			l_root_creator_token: INTEGER
+			entry_type_token: INTEGER
 			l_sig: like method_sig
 			l_type_id: INTEGER
 			l_nb_args: INTEGER
-			l_creation_type: CREATE_TYPE
 		do
 			l_type_id := a_class_type.implementation_id
 
-			l_entry_type_token := md_emit.define_type (
+			entry_type_token := md_emit.define_type (
 				create {UNI_STRING}.make ("MAIN"), {MD_TYPE_ATTRIBUTES}.Ansi_class |
 					{MD_TYPE_ATTRIBUTES}.Auto_layout | {MD_TYPE_ATTRIBUTES}.public,
 				object_type_token, Void)
 
-				-- First we create a static function which takes one argument: In our case an instance of class ANY.
-				-- This function then creates the root object and calls the creation feature.
 			l_sig := method_sig
 			l_sig.reset
 			l_sig.set_method_type ({MD_SIGNATURE_CONSTANTS}.Default_sig)
-			l_sig.set_parameter_count (1)
+			l_sig.set_parameter_count (0)
 			l_sig.set_return_type ({MD_SIGNATURE_CONSTANTS}.Element_type_void, 0)
-			l_sig.set_type ({MD_SIGNATURE_CONSTANTS}.Element_type_class, ise_eiffel_type_info_type_token)
 
-			l_root_creator_token := md_emit.define_method (create {UNI_STRING}.make ("create_and_call_root_object"),
-				l_entry_type_token, {MD_METHOD_ATTRIBUTES}.Public |
+			entry_point_token := md_emit.define_method (create {UNI_STRING}.make ("Main"),
+				entry_type_token, {MD_METHOD_ATTRIBUTES}.Public |
 				{MD_METHOD_ATTRIBUTES}.Hide_by_signature |
 				{MD_METHOD_ATTRIBUTES}.Static, l_sig,
 				{MD_METHOD_ATTRIBUTES}.Managed)
 
 			if is_debug_info_enabled then
-				il_code_generator.define_custom_attribute (l_root_creator_token,
+				il_code_generator.define_custom_attribute (entry_point_token,
 					debugger_step_through_ctor_token, empty_ca)
-				il_code_generator.define_custom_attribute (l_root_creator_token,
+				il_code_generator.define_custom_attribute (entry_point_token,
 					debugger_hidden_ctor_token, empty_ca)
 			end
 
-			il_code_generator.start_new_body (l_root_creator_token)
+			il_code_generator.start_new_body (entry_point_token)
 
 				-- Initialize assertions for runtime in workbench mode.
-			if not System.in_final_mode or else System.keep_assertions then
+			if not System.in_final_mode then
 				il_code_generator.put_type_token (l_type_id)
 				il_code_generator.internal_generate_external_call (ise_runtime_token, 0,
 					Runtime_class_name, "assertion_initialize",
@@ -945,8 +910,7 @@ feature -- Code generation
 			end
 
 				-- Create root object and call creation procedure.
-			create l_creation_type.make (system.root_type.type_i)
-			l_creation_type.generate_il
+			il_code_generator.method_body.put_newobj (constructor_token (creation_type.implementation_id), 0)
 			if creation_type.is_expanded then
 					-- Box expanded object.
 				il_code_generator.generate_metamorphose (creation_type.type)
@@ -973,46 +937,8 @@ feature -- Code generation
 				il_code_generator.method_body.put_call ({MD_OPCODES}.Call,
 					implementation_feature_token (l_type_id, a_feature_id), l_nb_args, False)
 			end
-			il_code_generator.generate_return (false)
-			method_writer.write_current_body
-
-				-- Now create the actual static main routine.
-			l_sig.reset
-			l_sig.set_method_type ({MD_SIGNATURE_CONSTANTS}.Default_sig)
-			l_sig.set_parameter_count (0)
-			l_sig.set_return_type ({MD_SIGNATURE_CONSTANTS}.Element_type_void, 0)
-
-			entry_point_token := md_emit.define_method (create {UNI_STRING}.make ("Main"),
-				l_entry_type_token, {MD_METHOD_ATTRIBUTES}.Public |
-				{MD_METHOD_ATTRIBUTES}.Hide_by_signature |
-				{MD_METHOD_ATTRIBUTES}.Static, l_sig,
-				{MD_METHOD_ATTRIBUTES}.Managed)
-
-			if is_debug_info_enabled then
-				il_code_generator.define_custom_attribute (entry_point_token,
-					debugger_step_through_ctor_token, empty_ca)
-				il_code_generator.define_custom_attribute (entry_point_token,
-					debugger_hidden_ctor_token, empty_ca)
-			end
-
-			il_code_generator.start_new_body (entry_point_token)
-
-				-- Initialize assertions for runtime in workbench mode.
-			if not System.in_final_mode or else System.keep_assertions then
-				il_code_generator.put_type_token (l_type_id)
-				il_code_generator.internal_generate_external_call (ise_runtime_token, 0,
-					Runtime_class_name, "assertion_initialize",
-					{SHARED_IL_CONSTANTS}.static_type, <<type_handle_class_name>>,
-					Void, False)
-			end
-
-				-- Dummy ANY object for context in case `system.root_type' is generic.
-			(create {CREATE_TYPE}.make (system.any_class.compiled_class.types.first.type)).generate_il
-
-				-- Call the routine which creates and calls creation feature on root object.
-			il_code_generator.method_body.put_static_call (	l_root_creator_token, 1, False)
-
 			il_code_generator.generate_return (False)
+
 			method_writer.write_current_body
 		end
 
@@ -1061,7 +987,7 @@ feature -- Metadata description
 		require
 			is_generated: is_generated
 			class_type_not_void: class_type /= Void
-			external_class_type: class_type.is_external or else class_type.is_basic
+			not_external_class_type: class_type.is_external
 		local
 			class_c: CLASS_C
 			l_native_array: NATIVE_ARRAY_CLASS_TYPE
@@ -1081,18 +1007,18 @@ feature -- Metadata description
 				create l_sig.make
 				set_signature_type (l_sig, class_type.type)
 				l_type_token := md_emit.define_type_spec (l_sig)
-				name := class_type.associated_class.external_class_name.twin
-				class_mapping.put (l_type_token, class_type.external_id)
+				name := class_type.full_il_type_name
+				class_mapping.put (l_type_token, class_type.static_type_id)
 				il_code_generator.external_class_mapping.put (class_type.type, name)
 				internal_external_token_mapping.put (l_type_token, name)
 			else
-				name := class_type.associated_class.external_class_name.twin
+				name := class_type.full_il_type_name
 				l_external_class ?= class_c
 				if l_external_class /= Void and then l_external_class.is_nested then
 					l_nested_parent_class := l_external_class.enclosing_class
 					create l_uni_string.make (l_nested_parent_class.types.first.full_il_type_name)
 					l_nested_parent_class_token := md_emit.define_type_ref (l_uni_string,
-						external_assembly_token (l_nested_parent_class.types.first))
+						assembly_token (l_nested_parent_class.types.first))
 					l_uni_string.set_string (name.substring (
 						name.index_of ('+', 1) + 1, name.count))
 					l_type_token := md_emit.define_type_ref (l_uni_string,
@@ -1100,9 +1026,9 @@ feature -- Metadata description
 				else
 					create l_uni_string.make (name)
 					l_type_token := md_emit.define_type_ref (l_uni_string,
-						external_assembly_token (class_type))
+						assembly_token (class_type))
 				end
-				class_mapping.put (l_type_token, class_type.external_id)
+				class_mapping.put (l_type_token, class_type.static_type_id)
 
 				il_code_generator.external_class_mapping.put (class_type.type, name)
 				internal_external_token_mapping.put (l_type_token, name)
@@ -1123,61 +1049,57 @@ feature -- Metadata description
 			l_attributes: INTEGER
 			l_uni_string: UNI_STRING
 		do
-			if class_mapping.item (class_type.static_type_id) = 0 then
+			class_c := class_type.associated_class
+			l_name := class_type.full_il_type_name
+			create l_uni_string.make (l_name)
 
-				class_c := class_type.associated_class
-				l_name := class_type.full_il_type_name
-				create l_uni_string.make (l_name)
+			if
+				class_type.is_precompiled or
+				il_code_generator.il_module (class_type) /= Current
+			then
+				l_type_token := md_emit.define_type_ref (l_uni_string, assembly_token (class_type))
+			else
+				update_parents (class_type, class_c, True)
 
-				if
-					class_type.is_precompiled or
-					il_code_generator.il_module (class_type) /= Current
-				then
-					l_type_token := md_emit.define_type_ref (l_uni_string, assembly_token (class_type))
+				l_attributes := {MD_TYPE_ATTRIBUTES}.Public |
+					{MD_TYPE_ATTRIBUTES}.Auto_layout |
+					{MD_TYPE_ATTRIBUTES}.Ansi_class
+
+				if class_type.is_generated_as_single_type then
+					l_attributes := l_attributes | {MD_TYPE_ATTRIBUTES}.Is_class |
+						{MD_TYPE_ATTRIBUTES}.Serializable
+					if class_c.is_deferred then
+						l_attributes := l_attributes | {MD_TYPE_ATTRIBUTES}.abstract
+					end
+					if class_c.is_frozen or class_type.is_expanded then
+						l_attributes := l_attributes | {MD_TYPE_ATTRIBUTES}.Sealed
+					end
+
+					single_parent_mapping.put (single_inheritance_parent_id,
+						class_type.implementation_id)
 				else
-					update_parents (class_type, class_c, True)
-
-					l_attributes := {MD_TYPE_ATTRIBUTES}.Public |
-						{MD_TYPE_ATTRIBUTES}.Auto_layout |
-						{MD_TYPE_ATTRIBUTES}.Ansi_class
-
-					if class_type.is_generated_as_single_type then
-						l_attributes := l_attributes | {MD_TYPE_ATTRIBUTES}.Is_class |
-							{MD_TYPE_ATTRIBUTES}.Serializable
-						if class_c.is_deferred then
-							l_attributes := l_attributes | {MD_TYPE_ATTRIBUTES}.abstract
-						end
-						if class_c.is_frozen or class_type.is_expanded then
-							l_attributes := l_attributes | {MD_TYPE_ATTRIBUTES}.Sealed
-						end
-
-						single_parent_mapping.put (single_inheritance_parent_id,
-							class_type.implementation_id)
-					else
-						l_attributes := l_attributes | {MD_TYPE_ATTRIBUTES}.Is_interface |
-							{MD_TYPE_ATTRIBUTES}.Abstract
-					end
-
-					l_type_token := md_emit.define_type (l_uni_string, l_attributes,
-						single_inheritance_token, last_parents)
-
-					if not il_code_generator.is_single_module then
-						class_type.set_last_type_token (l_type_token)
-					end
-
-					if
-						is_debug_info_enabled and then
-						internal_dbg_documents.item (class_c.class_id) = Void
-					then
-						l_uni_string.set_string (class_c.file_name)
-						internal_dbg_documents.put (dbg_writer.define_document (l_uni_string,
-							language_guid, vendor_guid, document_type_guid), class_c.class_id)
-					end
+					l_attributes := l_attributes | {MD_TYPE_ATTRIBUTES}.Is_interface |
+						{MD_TYPE_ATTRIBUTES}.Abstract
 				end
 
-				class_mapping.put (l_type_token, class_type.static_type_id)
+				l_type_token := md_emit.define_type (l_uni_string, l_attributes,
+					single_inheritance_token, last_parents)
 
+				if not il_code_generator.is_single_module then
+					class_type.set_last_type_token (l_type_token)
+				end
+
+				if
+					is_debug_info_enabled and then
+					internal_dbg_documents.item (class_c.class_id) = Void
+				then
+					l_uni_string.set_string (class_c.file_name)
+					internal_dbg_documents.put (dbg_writer.define_document (l_uni_string,
+						language_guid, vendor_guid, document_type_guid), class_c.class_id)
+				end
 			end
+
+			class_mapping.put (l_type_token, class_type.static_type_id)
 		end
 
 	generate_implementation_class_mapping (class_type: CLASS_TYPE) is
@@ -1263,12 +1185,11 @@ feature -- Metadata description
 			id: INTEGER
 			i: INTEGER
 			l_parents: ARRAY [INTEGER]
-			parent_count: CELL [INTEGER]
 			l_parent_class: CLASS_C
 			l_single_inheritance_parent_id: like single_inheritance_parent_id
 			l_has_an_eiffel_parent: BOOLEAN
+			reference_type_a: CL_TYPE_A
 			interface_class_type: CLASS_TYPE
-			gen_type: GEN_TYPE_I
 		do
 			parents := class_c.parents
 			from
@@ -1334,10 +1255,12 @@ feature -- Metadata description
 							-- the associated interface.
 						if class_type.is_expanded then
 								-- For expanded types we use interface of the reference counterpart.
+							reference_type_a := class_type.type.type_a
+							reference_type_a.set_reference_mark
 							check
-								has_reference_class_type: class_c.types.has_type (class_type.type.reference_type)
+								has_reference_class_type: class_c.types.has_type (reference_type_a.type_i)
 							end
-							interface_class_type := class_c.types.search_item (class_type.type.reference_type)
+							interface_class_type := class_c.types.search_item (reference_type_a.type_i)
 						else
 								-- For reference types the corresponding interface is used.
 							interface_class_type := class_type
@@ -1370,48 +1293,17 @@ feature -- Metadata description
 				else
 					if class_type.is_expanded then
 							-- For expanded types we use interface of the reference counterpart.
+						reference_type_a := class_type.type.type_a
+						reference_type_a.set_reference_mark
 						check
-							has_reference_class_type: class_c.types.has_type (class_type.type.reference_type)
+							has_reference_class_type: class_c.types.has_type (reference_type_a.type_i)
 						end
-						interface_class_type := class_c.types.search_item (class_type.type.reference_type)
+						interface_class_type := class_c.types.search_item (reference_type_a.type_i)
 						l_parents.force (actual_class_type_token (interface_class_type.static_type_id), i)
 						i := i + 1
-						if class_c.is_generic then
-							gen_type ?= interface_class_type.type
-							create parent_count.put (i)
-							gen_type.enumerate_interfaces (
-								agent (c: CLASS_TYPE; p: ARRAY [INTEGER]; k: CELL [INTEGER])
-									local
-										j: INTEGER
-									do
-										j := k.item
-										k.put (j + 1)
-										p.force (actual_class_type_token (c.static_type_id), j)
-									end
-								(?, l_parents, parent_count)
-							)
-							i := parent_count.item
-						end
-					else
-						if not for_interface then
-							l_parents.force (actual_class_type_token (class_type.static_type_id), i)
-							i := i + 1
-						elseif class_c.is_generic then
-							gen_type ?= class_type.type
-							create parent_count.put (i)
-							gen_type.enumerate_interfaces (
-								agent (c: CLASS_TYPE; p: ARRAY [INTEGER]; k: CELL [INTEGER])
-									local
-										j: INTEGER
-									do
-										j := k.item
-										k.put (j + 1)
-										p.force (actual_class_type_token (c.static_type_id), j)
-									end
-								(?, l_parents, parent_count)
-							)
-							i := parent_count.item
-						end
+					elseif not for_interface then
+						l_parents.force (actual_class_type_token (class_type.static_type_id), i)
+						i := i + 1
 					end
 				end
 				l_parents.force (0, i)
@@ -1455,9 +1347,6 @@ feature -- Metadata description
 			l_arg_count: INTEGER
 			l_method_body: MD_METHOD_BODY
 			l_tokens: HASH_TABLE [INTEGER, INTEGER]
-			l_field_sig: like field_sig
-			l_parent_type_id: INTEGER
-			l_class_type: CLASS_TYPE
 		do
 				-- Do not use `uni_string' as it might be used by `xxx_class_type_token'.
 			create l_uni_string.make (".ctor")
@@ -1482,72 +1371,23 @@ feature -- Metadata description
 
 				il_code_generator.start_new_body (l_meth_token)
 				l_method_body := il_code_generator.method_body
-				l_arg_count := signature.parameter_count
 
-				il_code_generator.generate_current
-				if class_type.is_expanded then
-						-- Zero out all the data.
-					l_method_body.put_opcode_mdtoken ({MD_OPCODES}.initobj, actual_class_type_token (class_type.implementation_id))
-				else
+				if not class_type.is_expanded then
 						-- Call constructor from super-class for reference type
+					il_code_generator.generate_current
+					l_arg_count := signature.parameter_count
 					if external_token = 0 then
-						l_parent_type_id := single_parent_mapping.item (class_type.implementation_id)
-						if il_code_generator.class_types.item (l_parent_type_id).is_generic then
-								-- Pass an argument that keeps Eiffel run-time type information
-								-- to the parent constructor.
-							il_code_generator.generate_argument (l_arg_count + 1)
-							l_method_body.put_call ({MD_OPCODES}.Call, constructor_token (l_parent_type_id), 1, False)
-						else
-							l_method_body.put_call ({MD_OPCODES}.Call, constructor_token (l_parent_type_id), 0, False)
-						end
+						l_method_body.put_call ({MD_OPCODES}.Call,
+							constructor_token (single_parent_mapping.item (class_type.implementation_id)), 0, False)
 					else
-						if l_class.is_generic then
-								-- Avoid passing an argument that keeps Eiffel run-time type information
-								-- to an external constructor.
-							put_args_on_stack (l_arg_count - 1)
-							l_method_body.put_call ({MD_OPCODES}.Call, external_token, l_arg_count - 1, False)
-						else
-							put_args_on_stack (l_arg_count)
-							l_method_body.put_call ({MD_OPCODES}.Call, external_token, l_arg_count, False)
-						end
+						put_args_on_stack (l_arg_count, l_method_body)
+						l_method_body.put_call ({MD_OPCODES}.Call, external_token, l_arg_count, False)
 					end
 					if eiffel_token /= 0 then
 						il_code_generator.generate_current
-						if l_class.is_generic and then not l_class.parents_classes.first.is_generic then
-								-- Avoid passing an argument that keeps Eiffel run-time type information
-								-- to a non-generic parent constructor.
-							put_args_on_stack (l_arg_count - 1)
-							l_method_body.put_call ({MD_OPCODES}.Callvirt, eiffel_token, l_arg_count - 1, False)
-						else
-							put_args_on_stack (l_arg_count)
-							l_method_body.put_call ({MD_OPCODES}.Callvirt, eiffel_token, l_arg_count, False)
-						end
+						put_args_on_stack (l_arg_count, l_method_body)
+						l_method_body.put_call ({MD_OPCODES}.Callvirt, eiffel_token, l_arg_count, False)
 					end
-				end
-
-					-- Record type information if required.
-				if class_type.is_generic then
-					il_code_generator.generate_current
-					il_code_generator.generate_argument (l_arg_count)
-						-- Set signature of `$$____type' field.
-					l_field_sig := field_sig
-					l_field_sig.reset
-					l_field_sig.set_type ({MD_SIGNATURE_CONSTANTS}.Element_type_class,
-						ise_generic_type_token)
-						-- Find class type that declares `$$____type' field.
-					l_class_type := class_type
-					if not l_class_type.is_expanded and then l_class_type.associated_class.is_single then
-						from
-						until
-							l_class_type.associated_class.has_external_main_parent
-						loop
-							l_class_type := il_code_generator.class_types.item (single_parent_mapping.item (l_class_type.implementation_id))
-						end
-					end
-						-- Do not use `uni_string' as it might be used by `xxx_class_type_token'.
-					l_method_body.put_opcode_mdtoken ({MD_OPCODES}.Stfld,
-						md_emit.define_member_ref (create {UNI_STRING}.make ("$$____type"),
-						actual_class_type_token (l_class_type.implementation_id), l_field_sig))
 				end
 
 				if il_code_generator.is_initialization_required (class_type) then
@@ -1561,7 +1401,7 @@ feature -- Metadata description
 				method_writer.write_current_body
 
 			end
-			if signature = default_sig or else signature = generic_ctor_sig then
+			if signature = default_sig then
 				internal_constructor_token.put (l_meth_token, class_type.implementation_id)
 			end
 			if feature_id /= 0 then
@@ -1574,8 +1414,11 @@ feature -- Metadata description
 			end
 		end
 
-	put_args_on_stack (a_count: INTEGER) is
+
+	put_args_on_stack (a_count: INTEGER; a_body: MD_METHOD_BODY) is
 			-- Put arguments on stack
+		require
+			attached_body: a_body /= Void
 		local
 			i: INTEGER
 		do
@@ -1584,7 +1427,24 @@ feature -- Metadata description
 			until
 				i > a_count
 			loop
-				il_code_generator.generate_argument (i)
+				inspect i
+				when 0 then
+					check
+						already_defined: False
+					end
+				when 1 then
+					a_body.put_opcode ({MD_OPCODES}.ldarg_1)
+				when 2 then
+					a_body.put_opcode ({MD_OPCODES}.ldarg_2)
+				when 3 then
+					a_body.put_opcode ({MD_OPCODES}.ldarg_3)
+				else
+					if i <= 255 then
+						a_body.put_opcode_integer_8 ({MD_OPCODES}.ldarg_s, i.to_integer_8)
+					else
+						a_body.put_opcode_integer_16 ({MD_OPCODES}.ldarg, i.to_integer_16)
+					end
+				end
 				i := i + 1
 			end
 		end
@@ -1596,11 +1456,7 @@ feature -- Metadata description
 			class_type_not_void: class_type /= Void
 			class_type_can_be_created: not class_type.associated_class.is_interface
 		do
-			if class_type.is_generic then
-				define_constructor (class_type, generic_ctor_sig, is_reference, 0, 0, 0)
-			else
-				define_constructor (class_type, default_sig, is_reference, 0, 0, 0)
-			end
+			define_constructor (class_type, default_sig, is_reference, 0, 0, 0)
 		end
 
 	define_constructors (class_type: CLASS_TYPE; is_reference: BOOLEAN) is
@@ -1623,7 +1479,6 @@ feature -- Metadata description
 			i: INTEGER
 			l_constructors: LIST [STRING]
 			l_eiffel_constructor: BOOLEAN
-			l_is_generic: BOOLEAN
 		do
 			l_class := class_type.associated_class
 
@@ -1636,7 +1491,6 @@ feature -- Metadata description
 				if l_class.ast.top_indexes /= Void then
 					l_constructors := l_class.ast.top_indexes.dotnet_constructors
 				end
-				l_is_generic := l_class.is_generic
 				from
 					i := l_creators.lower
 					l_creators_count := l_creators.upper
@@ -1648,15 +1502,11 @@ feature -- Metadata description
 						l_feature_attached: l_feature /= Void
 					end
 					l_eiffel_constructor := l_constructors /= Void and then l_constructors.has (l_creators [i])
-					if l_feature.is_il_external or else l_eiffel_constructor then
+					if l_feature.is_il_external or l_eiffel_constructor then
 						if l_feature.has_arguments then
 							create l_sig.make
 							l_sig.set_method_type ({MD_SIGNATURE_CONSTANTS}.has_current)
-							if l_is_generic then
-								l_sig.set_parameter_count (l_feature.argument_count + 1)
-							else
-								l_sig.set_parameter_count (l_feature.argument_count)
-							end
+							l_sig.set_parameter_count (l_feature.argument_count)
 							l_sig.set_return_type ({MD_SIGNATURE_CONSTANTS}.element_type_void, 0)
 							from
 								l_feat_arg := l_feature.arguments
@@ -1668,11 +1518,6 @@ feature -- Metadata description
 								set_signature_type (l_sig, l_type_i)
 								l_feat_arg.forth
 							end
-							if l_is_generic then
-								l_sig.set_type ({MD_SIGNATURE_CONSTANTS}.Element_type_class, ise_generic_type_token)
-							end
-						elseif l_is_generic then
-							l_sig := generic_ctor_sig
 						else
 							l_sig := default_sig
 						end
@@ -1713,6 +1558,9 @@ feature -- Metadata description
 		ensure
 			valid_result: Result /= Void
 		end
+
+
+
 
 feature -- Local saving
 
@@ -1899,11 +1747,7 @@ feature -- Mapping between Eiffel compiler and generated tokens
 				l_argument_count := l_feature.argument_count
 				create l_meth_sig.make
 				l_meth_sig.set_method_type ({MD_SIGNATURE_CONSTANTS}.Has_current)
-				if l_class_type.is_generic and then not l_class_type.is_external then
-					l_meth_sig.set_parameter_count (l_argument_count + 1)
-				else
-					l_meth_sig.set_parameter_count (l_argument_count)
-				end
+				l_meth_sig.set_parameter_count (l_argument_count)
 				l_meth_sig.set_return_type (
 					{MD_SIGNATURE_CONSTANTS}.Element_type_void, 0)
 				if l_argument_count > 0 then
@@ -1917,9 +1761,6 @@ feature -- Mapping between Eiffel compiler and generated tokens
 						il_code_generator.set_signature_type (l_meth_sig, l_type_i)
 						l_arguments.forth
 					end
-				end
-				if l_class_type.is_generic and then not l_class_type.is_external then
-					l_meth_sig.set_type ({MD_SIGNATURE_CONSTANTS}.Element_type_class, ise_generic_type_token)
 				end
 				define_constructor (l_class_type, l_meth_sig, True, 0, 0, a_feature_id)
 				l_tokens := internal_constructors [a_type_id]
@@ -1984,13 +1825,8 @@ feature -- Mapping between Eiffel compiler and generated tokens
 					generate_external_class_mapping (l_class_type)
 				elseif a_type_id = l_class_type.static_type_id then
 					generate_interface_class_mapping (l_class_type)
-				elseif a_type_id = l_class_type.implementation_id then
-					generate_implementation_class_mapping (l_class_type)
 				else
-					check
-						a_type_id = l_class_type.external_id
-					end
-					generate_external_class_mapping (l_class_type)
+					generate_implementation_class_mapping (l_class_type)
 				end
 				Result := l_class_mapping.item (a_type_id)
 			end
@@ -2027,7 +1863,7 @@ feature -- Mapping between Eiffel compiler and generated tokens
 			l_major, l_minor, l_build, l_revision: INTEGER
 			l_key_token: MD_PUBLIC_KEY_TOKEN
 		do
-			if defined_assemblies.has_key (a_name) then
+			if defined_assemblies.has (a_name) then
 				Result := defined_assemblies.found_item
 			else
 				if a_name.is_equal ("mscorlib") then
@@ -2051,7 +1887,7 @@ feature -- Mapping between Eiffel compiler and generated tokens
 						l_ass_info.set_revision_number (l_revision.to_natural_16)
 					end
 
-					if a_key /= Void and then not a_key.is_equal ("null") then
+					if a_key /= Void then
 						create l_key_token.make_from_string (a_key)
 					end
 
@@ -2539,23 +2375,8 @@ feature -- Mapping between Eiffel compiler and generated tokens
 			Result := internal_assemblies.item (a_class_type.implementation_id)
 			if Result = 0 then
 					-- Assembly token has not yet been computed.
-				find_and_insert_assembly_token (a_class_type, False)
+				find_and_insert_assembly_token (a_class_type)
 				Result := internal_assemblies.item (a_class_type.implementation_id)
-			end
-		end
-
-	external_assembly_token (a_class_type: CLASS_TYPE): INTEGER is
-			-- Given `a_class_type' find its associated assembly token
-			-- using an external type counterpart (if any).
-		require
-			is_generated: is_generated
-			a_class_type_not_void: a_class_type /= Void
-		do
-			Result := internal_assemblies.item (a_class_type.external_id)
-			if Result = 0 then
-					-- Assembly token has not yet been computed.
-				find_and_insert_assembly_token (a_class_type, True)
-				Result := internal_assemblies.item (a_class_type.external_id)
 			end
 		end
 
@@ -2577,18 +2398,15 @@ feature -- Mapping between Eiffel compiler and generated tokens
 			end
 		end
 
-	find_and_insert_assembly_token (a_class_type: CLASS_TYPE; is_used_as_external: BOOLEAN) is
+	find_and_insert_assembly_token (a_class_type: CLASS_TYPE) is
 			-- Given `a_class_type' find out which assembly defines it and updates
 			-- `internal_assemblies' accordingly. Create assembly reference
 			-- as they are needed.
 		require
 			is_generated: is_generated
 			a_class_not_void: a_class_type /= Void
-			not_inserted: (is_used_as_external or else internal_assemblies.item (a_class_type.implementation_id) = 0) and
-				(is_used_as_external implies internal_assemblies.item (a_class_type.external_id) = 0)
+			not_inserted: internal_assemblies.item (a_class_type.implementation_id) = 0
 		local
-			l_token: INTEGER
-			l_id: INTEGER
 			l_indexes: INDEXING_CLAUSE_AS
 			l_info: ARRAY [STRING]
 			l_name, l_key_string, l_culture, l_version_string: STRING
@@ -2599,17 +2417,19 @@ feature -- Mapping between Eiffel compiler and generated tokens
 		do
 			l_native_array ?= a_class_type
 			if l_native_array /= Void then
-				l_token := assembly_token (l_native_array.deep_il_element_type.associated_class_type)
-			elseif a_class_type.is_generated and then not is_used_as_external then
+				internal_assemblies.put (
+					assembly_token (l_native_array.deep_il_element_type.associated_class_type),
+					a_class_type.implementation_id)
+			elseif a_class_type.is_generated then
 					-- We need to find in which module it is being defined. If no `module_ref'
 					-- token is found for this module, we need to create one for Current module.
 					--FIXME: I'm not sure what to do when `a_class_type' is defined in current
 					-- module.
-				l_token := module_reference_token (il_code_generator.il_module (a_class_type))
+				internal_assemblies.put (
+					module_reference_token (il_code_generator.il_module (a_class_type)), a_class_type.implementation_id)
 			else
 				if
 					not a_class_type.is_external and then
-					not is_used_as_external and then
 					a_class_type.is_precompiled
 				then
 					l_precompiled_assembly := a_class_type.assembly_info
@@ -2643,17 +2463,12 @@ feature -- Mapping between Eiffel compiler and generated tokens
 						end
 					end
 				end
-				l_token := define_assembly_reference (l_name, l_version_string, l_culture, l_key_string)
+				internal_assemblies.put (
+					define_assembly_reference (l_name, l_version_string, l_culture, l_key_string),
+					a_class_type.implementation_id)
 			end
-			if is_used_as_external then
-				l_id := a_class_type.external_id
-			else
-				l_id := a_class_type.implementation_id
-			end
-			internal_assemblies.put (l_token, l_id)
 		ensure
-			updated:  (is_used_as_external or else internal_assemblies.item (a_class_type.implementation_id) /= 0) and
-				(is_used_as_external implies internal_assemblies.item (a_class_type.external_id) /= 0)
+			updated: internal_assemblies.item (a_class_type.implementation_id) /= 0
 		end
 
 	defined_assemblies: HASH_TABLE [INTEGER, STRING]
@@ -2997,10 +2812,9 @@ feature {NONE} -- Once per modules being generated.
 		do
 				-- Define `ise_runtime_token'.
 			create l_ass_info.make
-			l_ass_info.set_major_version (6)
-			l_ass_info.set_minor_version (0)
-			l_ass_info.set_build_number (6)
-			l_ass_info.set_revision_number (9104)
+			l_ass_info.set_major_version (5)
+			l_ass_info.set_minor_version (7)
+			l_ass_info.set_build_number (414)
 
 			create l_pub_key.make_from_array (
 				<<0xDE, 0xF2, 0x6F, 0x29, 0x6E, 0xFE, 0xF4, 0x69>>)
@@ -3102,23 +2916,25 @@ feature {NONE} -- Once per modules being generated.
 			ise_generic_conformance_token := md_emit.define_type_ref (
 				create {UNI_STRING}.make (Generic_conformance_class_name), ise_runtime_token)
 
-				-- Define `ise_get_type_token'.
+				-- Define `ise_set_type_token'.
 			l_meth_sig.reset
 			l_meth_sig.set_method_type ({MD_SIGNATURE_CONSTANTS}.Has_current)
-			l_meth_sig.set_parameter_count (0)
-			l_meth_sig.set_return_type ({MD_SIGNATURE_CONSTANTS}.Element_type_class,
+			l_meth_sig.set_parameter_count (1)
+			l_meth_sig.set_return_type ({MD_SIGNATURE_CONSTANTS}.Element_type_void, 0)
+			l_meth_sig.set_type ({MD_SIGNATURE_CONSTANTS}.Element_type_class,
 				ise_generic_type_token)
 
-			ise_get_type_token := md_emit.define_member_ref (
-				create {UNI_STRING}.make ("____type"),
+			ise_set_type_token := md_emit.define_member_ref (
+				create {UNI_STRING}.make ("____set_type"),
 				ise_eiffel_type_info_type_token, l_meth_sig)
 
 				-- Define `ise_check_invariant_token'.
 			l_meth_sig.reset
 			l_meth_sig.set_method_type ({MD_SIGNATURE_CONSTANTS}.Default_sig)
-			l_meth_sig.set_parameter_count (1)
+			l_meth_sig.set_parameter_count (2)
 			l_meth_sig.set_return_type ({MD_SIGNATURE_CONSTANTS}.Element_type_void, 0)
 			l_meth_sig.set_type ({MD_SIGNATURE_CONSTANTS}.Element_type_object, 0)
+			l_meth_sig.set_type ({MD_SIGNATURE_CONSTANTS}.Element_type_boolean, 0)
 			ise_check_invariant_token := md_emit.define_member_ref (
 				create {UNI_STRING}.make ("check_invariant"), ise_runtime_type_token, l_meth_sig)
 
@@ -3166,18 +2982,6 @@ feature {NONE} -- Once per modules being generated.
 			ise_eiffel_name_attr_generic_ctor_token := md_emit.define_member_ref (uni_string,
 				l_ise_eiffel_name_attr_token, l_meth_sig)
 
-				-- Definition of `.ctor' for CLASS_TYPE_MARK_ATTRIBUTE
-			l_meth_sig.reset
-			l_meth_sig.set_method_type ({MD_SIGNATURE_CONSTANTS}.Has_current)
-			l_meth_sig.set_parameter_count (1)
-			l_meth_sig.set_return_type ({MD_SIGNATURE_CONSTANTS}.Element_type_void, 0)
-			l_meth_sig.set_type ({MD_SIGNATURE_CONSTANTS}.Element_type_valuetype,
-				md_emit.define_type_ref
-					(create {UNI_STRING}.make (Class_type_mark_enum_class_name), ise_runtime_token))
-
-			ise_eiffel_class_type_mark_attr_ctor_token := md_emit.define_member_ref
-				(uni_string, md_emit.define_type_ref
-					(create {UNI_STRING}.make (class_type_mark_attribute_name), ise_runtime_token), l_meth_sig)
 
 				-- Definition of `.ctor' for ASSERTION_LEVEL_ATTRIBUTE
 			ise_assertion_level_enum_token := md_emit.define_type_ref (
@@ -3246,7 +3050,7 @@ feature {NONE} -- Implementation
 
 			il_code_generator.create_object (l_arg_type.implementation_id)
 			il_code_generator.generate_feature_access (
-				l_arg_type.type.implemented_type (l_root.origin_class_id),
+				il_code_generator.implemented_type (l_root.origin_class_id, l_arg_type.type),
 				l_root.origin_feature_id, 0, True, True)
 		end
 
@@ -3295,7 +3099,6 @@ feature {NONE} -- Cleaning
 			class_mapping := Void
 			dbg_writer := Void
 			default_sig := Void
-			generic_ctor_sig := Void
 			defined_assemblies.wipe_out
 			defined_assemblies := Void
 			field_sig := Void

@@ -38,6 +38,7 @@ feature -- Target of generation
 		do
 		end
 
+
 feature -- Generation Structure
 
 	generate_key (final_mode: BOOLEAN) is
@@ -892,6 +893,7 @@ feature -- Unary operator generation
 			-- Generate 'not' operator.
 		do
 		end
+
 
 	generate_bitwise_not is
 			-- Generate `bitwise not' operator

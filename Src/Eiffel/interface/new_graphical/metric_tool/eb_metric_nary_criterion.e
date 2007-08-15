@@ -14,8 +14,7 @@ inherit
 		rename
 			make as old_make
 		redefine
-			is_parameter_valid,
-			is_nary_criterion
+			is_parameter_valid
 		end
 
 feature{NONE} -- Initialization
@@ -63,9 +62,6 @@ feature -- Status report
 			end
 		end
 
-	is_nary_criterion: BOOLEAN is True
-			-- Is current a nary criterion?
-
 invariant
 	operands_attached: operands /= Void
 
@@ -100,5 +96,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

@@ -5,24 +5,18 @@ indexing
 	date		: "$Date$"
 	revision	: "$Revision$"
 
-class
-	EB_CLEAR_STOP_POINTS_COMMAND
+class EB_CLEAR_STOP_POINTS_COMMAND
 
 inherit
 	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 		redefine
-			new_toolbar_item,
-			new_sd_toolbar_item,
-			new_mini_toolbar_item,
-			new_mini_sd_toolbar_item,
-			mini_pixmap,
-			mini_pixel_buffer,
+			new_toolbar_item, new_mini_toolbar_item, mini_pixmap,
 			tooltext
 		end
-
+	
 	EB_VETO_FACTORY
 
-	SHARED_DEBUGGER_MANAGER
+	EB_SHARED_DEBUG_TOOLS
 
 	SHARED_EIFFEL_PROJECT
 
@@ -34,19 +28,19 @@ inherit
 
 feature -- Access
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- What is printed in the customize dialog.
 		do
 			Result := Interface_names.f_Clear_breakpoints
 		end
 
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Pop-up help on buttons.
 		do
 			Result := description
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text for toolbar button
 		do
 			Result := Interface_names.b_bkpt_remove
@@ -54,16 +48,6 @@ feature -- Access
 
 	new_toolbar_item (display_text: BOOLEAN): EB_COMMAND_TOOL_BAR_BUTTON is
 			-- Create a new toolbar button for `Current'.
-		do
-			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND} (display_text)
-			Result.drop_actions.extend (agent drop_breakable (?))
-			Result.drop_actions.extend (agent drop_feature (?))
-			Result.drop_actions.extend (agent drop_class (?))
-			Result.drop_actions.set_veto_pebble_function (agent can_drop_debuggable_feature_or_class)
-		end
-
-	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new docking toolbar button for `Current'.
 		do
 			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND} (display_text)
 			Result.drop_actions.extend (agent drop_breakable (?))
@@ -82,17 +66,7 @@ feature -- Access
 			Result.drop_actions.set_veto_pebble_function (agent can_drop_debuggable_feature_or_class)
 		end
 
-	new_mini_sd_toolbar_item: EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new toolbar button for `Current'.
-		do
-			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND}
-			Result.drop_actions.extend (agent drop_breakable (?))
-			Result.drop_actions.extend (agent drop_feature (?))
-			Result.drop_actions.extend (agent drop_class (?))
-			Result.drop_actions.set_veto_pebble_function (agent can_drop_debuggable_feature_or_class)
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Menu entry corresponding tp `Current'.
 		do
 			Result := Interface_names.m_Clear_breakpoints
@@ -104,22 +78,10 @@ feature -- Access
 			Result := pixmaps.icon_pixmaps.breakpoints_delete_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.breakpoints_delete_icon_buffer
-		end
-
 	mini_pixmap: EV_PIXMAP is
 			-- Icon for `Current'.
 		do
 			Result := pixmaps.mini_pixmaps.general_delete_icon
-		end
-
-	mini_pixel_buffer: EV_PIXEL_BUFFER is
-			-- Icon for `Current'.
-		do
-			Result := pixmaps.mini_pixmaps.general_delete_icon_buffer
 		end
 
 	name: STRING is "Clear_bkpt"
@@ -134,15 +96,15 @@ feature -- Events
 			f: E_FEATURE
 			body_index: INTEGER
 			id: EV_INFORMATION_DIALOG
-			bpm: BREAKPOINTS_MANAGER
+			app_exec: APPLICATION_EXECUTION
 		do
 			f := bs.routine
 			if f.is_debuggable then
 				body_index := bs.body_index
 				index := bs.index
-				bpm := Debugger_manager
-				bpm.remove_breakpoint (f, index)
-				if bpm.error_in_bkpts then
+				app_exec := Debugger_manager.application
+				app_exec.remove_breakpoint (f, index)
+				if app_exec.error_in_bkpts then
 					create id.make_with_text (Warning_messages.w_Feature_is_not_compiled)
 					id.show_modal_to_window (window_manager.last_focused_development_window.window)
 				end
@@ -156,14 +118,14 @@ feature -- Events
 		local
 			f: E_FEATURE
 			id: EV_INFORMATION_DIALOG
-			bpm: BREAKPOINTS_MANAGER
+			app_exec: APPLICATION_EXECUTION
 		do
 			f := fs.e_feature
-			bpm := Debugger_manager
-			if f /= Void and then f.is_debuggable and then bpm.has_breakpoint_set (f) then
-				bpm.remove_breakpoints_in_feature (f)
+			app_exec := Debugger_manager.application
+			if f /= Void and then f.is_debuggable and then app_exec.has_breakpoint_set (f) then
+				app_exec.remove_breakpoints_in_feature (f)
 
-				if bpm.error_in_bkpts then
+				if app_exec.error_in_bkpts then
 					create id.make_with_text (Warning_messages.w_Feature_is_not_compiled)
 					id.show_modal_to_window (window_manager.last_focused_development_window.window)
 				end
@@ -177,14 +139,14 @@ feature -- Events
 		local
 			id: EV_INFORMATION_DIALOG
 			conv_fst: FEATURE_STONE
-			bpm: BREAKPOINTS_MANAGER
+			app_exec: APPLICATION_EXECUTION
 		do
 			conv_fst ?= cs
 			if conv_fst = Void then
-				bpm := Debugger_manager
-				bpm.remove_breakpoints_in_class (cs.e_class)
+				app_exec := Debugger_manager.application
+				app_exec.remove_breakpoints_in_class (cs.e_class)
 
-				if bpm.error_in_bkpts then
+				if app_exec.error_in_bkpts then
 					create id.make_with_text (Warning_messages.w_Feature_is_not_compiled)
 					id.show_modal_to_window (window_manager.last_focused_development_window.window)
 				end
@@ -198,11 +160,11 @@ feature -- Execution
 	execute is
 			-- Execute with confirmation dialog.
 		local
-			cd: EB_DISCARDABLE_CONFIRMATION_DIALOG
-			bpm: BREAKPOINTS_MANAGER
+			cd: STANDARD_DISCARDABLE_CONFIRMATION_DIALOG
+			app_exec: APPLICATION_EXECUTION
 		do
-			bpm := Debugger_manager
-			if bpm.has_breakpoints then
+			app_exec := Debugger_manager.application
+			if app_exec.has_breakpoints then
 				create cd.make_initialized (
 					2, preferences.dialog_data.confirm_clear_breakpoints_string,
 					Warning_messages.w_Clear_breakpoints, Interface_names.l_Dont_ask_me_again,
@@ -234,11 +196,11 @@ feature {NONE} -- Implementation
 			-- Execute with confirmation dialog.
 		local
 			id: EV_INFORMATION_DIALOG
-			bpm: BREAKPOINTS_MANAGER
+			app_exec: APPLICATION_EXECUTION
 		do
-			bpm := Debugger_manager
-			bpm.clear_breakpoints
-			if bpm.error_in_bkpts then
+			app_exec := Debugger_manager.application
+			app_exec.clear_debugging_information
+			if app_exec.error_in_bkpts then
 				create id.make_with_text (Warning_messages.w_Feature_is_not_compiled)
 				id.show_modal_to_window (window_manager.last_focused_development_window.window)
 			end

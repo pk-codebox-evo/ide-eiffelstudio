@@ -1,5 +1,5 @@
 indexing
-	description	: "Tool to view the properties of a system/cluster/class"
+	description	: "Tool to view the favorites"
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
 	date		: "$Date$"
@@ -9,19 +9,12 @@ class
 	EB_PROPERTIES_TOOL
 
 inherit
-	EB_STONABLE_TOOL
+	EB_TOOL
 		rename
 			make as tool_make
-		undefine
-			layout_constants
 		redefine
 			menu_name,
-			pixmap,
-			pixel_buffer,
-			build_docking_content,
-			show,
-			internal_recycle,
-			is_stone_valid
+			pixmap
 		end
 
 	EB_CLUSTER_MANAGER_OBSERVER
@@ -52,34 +45,20 @@ inherit
 			{NONE} all
 		end
 
-	CONF_GUI_INTERFACE_CONSTANTS
-		export
-			{NONE} all
-		end
-
 create
 	make
 
 feature {NONE} -- Initialization
 
-	make (a_manager: EB_DEVELOPMENT_WINDOW) is
+	make (a_manager: EB_TOOL_MANAGER) is
 			-- Make a new properties tool.
 		require
 			a_manager_exists: a_manager /= Void
 		do
-			set_pixmaps (pixmaps)
 			tool_make (a_manager)
 			cluster_manager.extend (Current)
 			create {CONF_COMP_FACTORY} conf_factory
 			window := a_manager.window
-		end
-
-	build_docking_content (a_docking_manager: SD_DOCKING_MANAGER) is
-			-- Build docking content
-		do
-			Precursor {EB_STONABLE_TOOL}(a_docking_manager)
-			content.drop_actions.extend (agent set_stone)
-			content.drop_actions.set_veto_pebble_function (agent dropable)
 		end
 
 	build_interface is
@@ -90,31 +69,34 @@ feature {NONE} -- Initialization
 			create properties
 			widget.extend (properties)
 
-			properties.drop_actions.extend (agent set_stone)
+			properties.drop_actions.extend (agent add_stone)
 			properties.drop_actions.set_veto_pebble_function (agent dropable)
+		end
+
+	build_explorer_bar_item (explorer_bar: EB_EXPLORER_BAR) is
+			-- Build the associated explorer bar item and
+			-- Add it to `explorer_bar'
+		do
+			create explorer_bar_item.make (explorer_bar, widget, title, True)
+			explorer_bar_item.set_menu_name (menu_name)
+			if pixmap /= Void then
+				explorer_bar_item.set_pixmap (pixmap)
+			end
+			explorer_bar.add (explorer_bar_item)
 		end
 
 feature -- Access
 
-	conf_factory: CONF_PARSE_FACTORY
-			-- Factory to create new nodes.
-
 	widget: EV_VERTICAL_BOX
 			-- Widget representing Current
 
-	title: STRING_GENERAL is
+	title: STRING is
 			-- Title of the tool
 		do
 			Result := Interface_names.t_Properties_tool
 		end
 
-	title_for_pre: STRING is
-			-- Title for prefence, STRING_8
-		do
-			Result := Interface_names.to_properties_tool
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it may appear in a menu.
 		do
 			Result := Interface_names.m_Properties_tool
@@ -126,37 +108,18 @@ feature -- Access
 			Result := pixmaps.icon_pixmaps.tool_properties_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer
-		do
-			Result := pixmaps.icon_pixmaps.project_settings_system_icon_buffer
-		end
-
-feature -- Status report
-
-	is_stone_valid (a_stone: like stone): BOOLEAN is
-			-- Is stone valid to set?
-		do
-			Result := a_stone /= Void and then a_stone.is_valid
-		end
-
-feature -- Command
-
-	show is
-			-- Show tool.
-		do
-			Precursor {EB_STONABLE_TOOL}
-			properties.set_focus
-		end
-
 feature -- Memory management
 
-	internal_recycle is
+	recycle is
 			-- Recycle `Current', but leave `Current' in an unstable state,
 			-- so that we know whether we're still referenced or not.
 		do
+			if explorer_bar_item /= Void then
+				explorer_bar_item.recycle
+				explorer_bar_item := Void
+			end
 			cluster_manager.remove_observer (Current)
-			Precursor {EB_STONABLE_TOOL}
+			manager := Void
 		end
 
 feature {NONE} -- External changes to classes/clusters
@@ -173,10 +136,12 @@ feature {NONE} -- External changes to classes/clusters
 			refresh
 		end
 
-feature {EB_STONE_CHECKER, EB_CONTEXT_MENU_FACTORY} -- Actions
+feature {EB_DEVELOPMENT_WINDOW} -- Actions
 
-	set_stone (a_stone: STONE) is
+	add_stone (a_stone: STONE) is
 			-- Add `a_stone'.
+		require
+			a_stone_ok: a_stone /= Void and then a_stone.is_valid
 		local
 			l_gs: CLUSTER_STONE
 			l_cs: CLASSI_STONE
@@ -186,7 +151,7 @@ feature {EB_STONE_CHECKER, EB_CONTEXT_MENU_FACTORY} -- Actions
 			l_writable: BOOLEAN
 			l_app_sys: CONF_SYSTEM
 			l_class_options, l_inh_options: CONF_OPTION
-			l_name_prop: STRING_PROPERTY
+			l_name_prop: STRING_PROPERTY [STRING]
 			l_extends: BOOLEAN
 			l_debugs: SEARCH_TABLE [STRING]
 		do
@@ -221,8 +186,8 @@ feature {EB_STONE_CHECKER, EB_CONTEXT_MENU_FACTORY} -- Actions
 			if l_gs /= Void or l_cs /= Void then
 				if l_gs /= Void then
 					l_group := l_gs.group
-					if l_group.is_cluster and l_group.is_used_in_library then
-						l_group := l_group.target.system.lowest_used_in_library
+					if l_group.is_cluster and l_group.is_used_library then
+						l_group := l_group.target.lowest_used_in_library
 					end
 					current_system := l_group.target.system
 					properties.reset
@@ -231,11 +196,11 @@ feature {EB_STONE_CHECKER, EB_CONTEXT_MENU_FACTORY} -- Actions
 					properties.set_expanded_section_store (group_section_expanded_status)
 				elseif l_cs /= Void then
 					l_group := l_cs.class_i.group
-					if l_group.is_used_in_library then
-						l_group := l_group.target.system.lowest_used_in_library
+					if l_group.is_used_library then
+						l_group := l_group.target.lowest_used_in_library
 					end
 					current_system := l_group.target.system
-					l_class_options := l_group.changeable_class_options (l_cs.class_i.config_class)
+					l_class_options := l_group.changeable_class_options (l_cs.class_name)
 					create l_inh_options
 					l_inh_options.merge (l_class_options)
 					l_inh_options.merge (l_group.options)
@@ -253,8 +218,7 @@ feature {EB_STONE_CHECKER, EB_CONTEXT_MENU_FACTORY} -- Actions
 					l_name_prop.set_value (l_cs.file_name)
 					l_name_prop.enable_readonly
 					properties.add_property (l_name_prop)
-					add_misc_option_properties (l_class_options, l_inh_options, True)
-					add_dotnet_option_properties (l_class_options, l_inh_options, True, l_group.target.setting_msil_generation)
+					add_misc_option_properties (l_class_options, l_inh_options, True, l_group.target.setting_msil_generation)
 					add_assertion_option_properties (l_class_options, l_inh_options, True)
 					add_warning_option_properties (l_class_options, l_inh_options, True)
 					add_debug_option_properties (l_class_options, l_inh_options, True)
@@ -262,10 +226,10 @@ feature {EB_STONE_CHECKER, EB_CONTEXT_MENU_FACTORY} -- Actions
 				else
 					check should_not_reach: False end
 				end
-				l_lib_use := l_group.target.system.used_in_libraries
+				l_lib_use := l_group.target.used_in_libraries
 				if l_lib_use /= Void then
-					l_app_sys := l_group.target.system.application_target.system
-					l_writable := l_group.target.system = l_group.target.system.application_target.system
+					l_app_sys := l_group.target.application_target.system
+					l_writable := l_group.target.system = l_group.target.application_target.system
 					from
 						l_lib_use.start
 					until
@@ -299,7 +263,7 @@ feature {EB_STONE_CHECKER, EB_CONTEXT_MENU_FACTORY} -- Actions
 			end
 
 			properties.unlock_update
-		ensure then
+		ensure
 			stone_set: stone = a_stone
 		end
 
@@ -326,7 +290,7 @@ feature {NONE} -- Implementation
 	stone: STONE
 			-- Stone we display properties for.
 
-	group_section_expanded_status: HASH_TABLE [BOOLEAN, STRING_GENERAL] is
+	group_section_expanded_status: HASH_TABLE [BOOLEAN, STRING] is
 			-- Expanded status of sections of groups.
 		once
 			create Result.make (5)
@@ -337,7 +301,7 @@ feature {NONE} -- Implementation
 			Result.force (False, conf_interface_names.section_advanced)
 		end
 
-	class_section_expanded_status: HASH_TABLE [BOOLEAN, STRING_GENERAL] is
+	class_section_expanded_status: HASH_TABLE [BOOLEAN, STRING] is
 			-- Expanded status of sections of class options.
 		once
 			create Result.make (4)
@@ -347,7 +311,7 @@ feature {NONE} -- Implementation
 			Result.force (False, conf_interface_names.section_debug)
 		end
 
-	target_section_expanded_status: HASH_TABLE [BOOLEAN, STRING_GENERAL] is
+	target_section_expanded_status: HASH_TABLE [BOOLEAN, STRING] is
 			-- Expanded status of sections of targets.
 		once
 			create Result.make (5)
@@ -369,7 +333,7 @@ feature {NONE} -- Implementation
 				end
 				is_storing := True
 				current_system.store
-				develop_window.cluster_manager.refresh
+				manager.cluster_manager.refresh
 				if a_has_group_changed then
 					system.force_rebuild
 				end
@@ -385,7 +349,7 @@ feature {NONE} -- Implementation
 					properties.set_focus
 				end
 				if stone /= Void and then stone.is_valid then
-					set_stone (stone)
+					add_stone (stone)
 				else
 					properties.reset
 				end

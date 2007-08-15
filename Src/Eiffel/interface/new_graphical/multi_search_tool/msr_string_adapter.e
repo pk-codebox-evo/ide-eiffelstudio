@@ -31,6 +31,7 @@ feature -- Element change
 		do
 			real_string := a_string
 		end
+		
 
 feature -- Access
 

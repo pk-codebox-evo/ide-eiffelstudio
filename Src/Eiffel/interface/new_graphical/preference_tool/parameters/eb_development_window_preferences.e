@@ -25,16 +25,11 @@ feature {EB_PREFERENCES} -- Initialization
 		do
 			preferences := a_preferences
 			initialize_preferences
-
-			-- Update default value for docking library.
-			on_auto_hide_animation_speed_changed
-			on_show_all_applicable_docking_indicators_changed
 		ensure
 			preferences_not_void: preferences /= Void
 		end
 
-feature {EB_SHARED_PREFERENCES, EB_DEVELOPMENT_WINDOW_SESSION_DATA,
-		 EB_DEVELOPMENT_WINDOW_DIRECTOR, EB_DEVELOPMENT_WINDOW_BUILDER} -- Value
+feature {EB_SHARED_PREFERENCES, EB_DEVELOPMENT_WINDOW_SESSION_DATA} -- Value
 
 	width: INTEGER is
 			-- Width for the development window
@@ -69,10 +64,29 @@ feature {EB_SHARED_PREFERENCES, EB_DEVELOPMENT_WINDOW_SESSION_DATA,
 	is_minimized: BOOLEAN
 			-- Is the development window minimized?
 
-	is_force_debug_mode: BOOLEAN
-			-- Is the development window force debug mode?
+
+	left_panel_use_explorer_style: BOOLEAN is
+			-- Should there be only one tool in the left panel?
 		do
-			Result := is_force_debug_mode_preference.value
+			Result := left_panel_use_explorer_style_preference.value
+		end
+
+	left_panel_width: INTEGER is
+			-- Width for the left panel.
+		do
+			Result := left_panel_width_preference.value
+		end
+
+	left_panel_layout: ARRAY [STRING] is
+			-- Layout of the left panel of the window.
+		do
+			Result := left_panel_layout_preference.value
+		end
+
+	right_panel_layout: ARRAY [STRING] is
+			-- Layout of the left panel of the window.
+		do
+			Result := right_panel_layout_preference.value
 		end
 
 	show_general_toolbar: BOOLEAN is
@@ -183,6 +197,12 @@ feature {EB_SHARED_PREFERENCES, EB_DEVELOPMENT_WINDOW_SESSION_DATA,
 			Result := class_completion_preference.value
 		end
 
+	dock_tracking: BOOLEAN is
+			--
+		do
+			Result := dock_tracking_preference.value
+		end
+
 	last_browsed_cluster_directory: STRING is
 			--
 		do
@@ -192,11 +212,6 @@ feature {EB_SHARED_PREFERENCES, EB_DEVELOPMENT_WINDOW_SESSION_DATA,
 	context_unified_stone: BOOLEAN is
 		do
 			Result := context_unified_stone_preference.value
-		end
-
-	link_tools: BOOLEAN is
-		do
-			Result := link_tools_preference.value
 		end
 
 	graphical_output_disabled: BOOLEAN is
@@ -209,23 +224,6 @@ feature {EB_SHARED_PREFERENCES, EB_DEVELOPMENT_WINDOW_SESSION_DATA,
 			Result := c_output_panel_prompted_preference.value
 		end
 
-	auto_hide_animation_speed: INTEGER is
-			-- The speed of auto hide zone animation in milliseconds. 0 to disable animation effect.
-		do
-			Result := auto_hide_animation_speed_preference.value
-		end
-
-	show_all_applicable_docking_indicators: BOOLEAN is
-			-- If we need to show all feedback indicators when dragging a zone?
-		do
-			Result := show_all_applicable_docking_indicators_preference.value
-		end
-
-	output_tool_prompted: BOOLEAN is
-			-- If show up output tool if start compiling?
-		do
-			Result := output_tool_prompted_preference.value
-		end
 
 feature {EB_SHARED_PREFERENCES} -- Preference
 
@@ -250,11 +248,20 @@ feature {EB_SHARED_PREFERENCES} -- Preference
 	y_position_preference: INTEGER_PREFERENCE
 			-- Y position for development windows
 
-	is_force_debug_mode_preference: BOOLEAN_PREFERENCE
-			-- Is the development window force debug mode?
-
 	is_maximized_preference: BOOLEAN_PREFERENCE
 			-- Is the development window maximized?
+
+	left_panel_use_explorer_style_preference: BOOLEAN_PREFERENCE
+			-- Should there be only one tool in the left panel?
+
+	left_panel_width_preference: INTEGER_PREFERENCE
+			-- Width for the left panel.
+
+	left_panel_layout_preference: ARRAY_PREFERENCE
+			-- Layout of the left panel of the window.
+
+	right_panel_layout_preference: ARRAY_PREFERENCE
+			-- Layout of the left panel of the window.
 
 	show_general_toolbar_preference: BOOLEAN_PREFERENCE
 			-- Show the general toolbar (New, Save, Cut, ...)?
@@ -300,11 +307,11 @@ feature {EB_SHARED_PREFERENCES} -- Preference
 
 	class_completion_preference: BOOLEAN_PREFERENCE
 
+	dock_tracking_preference: BOOLEAN_PREFERENCE
+
 	last_browsed_cluster_directory_preference: STRING_PREFERENCE
 
 	context_unified_stone_preference: BOOLEAN_PREFERENCE
-
-	link_tools_preference: BOOLEAN_PREFERENCE
 
 	graphical_output_disabled_preference: BOOLEAN_PREFERENCE
 
@@ -312,16 +319,6 @@ feature {EB_SHARED_PREFERENCES} -- Preference
 
 	c_output_panel_prompted_preference: BOOLEAN_PREFERENCE
 			-- Should C output panel prompt out when c compilation starts?
-
-	auto_hide_animation_speed_preference: INTEGER_PREFERENCE
-			-- The speed of auto hide zone animation in milliseconds if `auto_hide_zone_use_animation_preference' True.
-			-- 0 to disable animation effect.
-
-	show_all_applicable_docking_indicators_preference: BOOLEAN_PREFERENCE
-			-- If we need to show all feedback indicators when dragging a zone?
-
-	output_tool_prompted_preference: BOOLEAN_PREFERENCE
-			-- If show up output tool if start compiling?
 
 feature -- Element change
 
@@ -354,10 +351,28 @@ feature -- Element change
 			preferences.save_preference (y_position_preference)
 		end
 
-	save_force_debug_mode (a_bool: BOOLEAN) is
-			-- Save if `is_force_debug_mode'
+	save_left_panel_width (a_width: INTEGER) is
+			-- Save the width of the left panel of the window.
+			-- Call `commit_save' to have the changes actually saved.
 		do
-			is_force_debug_mode_preference.set_value (a_bool)
+			left_panel_width_preference.set_value (a_width)
+			preferences.save_preference (left_panel_width_preference)
+		end
+
+	save_left_panel_layout (a_layout: ARRAY [STRING]) is
+			-- Save the layout of the left panel of the window.
+			-- Call `commit_save' to have the changes actually saved.
+		do
+			left_panel_layout_preference.set_value (a_layout)
+			preferences.save_preference (left_panel_width_preference)
+		end
+
+	save_right_panel_layout (a_layout: ARRAY [STRING]) is
+			-- Save the layout of the left panel of the window.
+			-- Call `commit_save' to have the changes actually saved.
+		do
+			right_panel_layout_preference.set_value (a_layout)
+			preferences.save_preference (right_panel_layout_preference)
 		end
 
 	save_completion_list_size (a_width, a_height: INTEGER) is
@@ -371,16 +386,16 @@ feature -- Element change
 
 feature -- Basic operations
 
-	retrieve_general_toolbar (command_pool: LIST [EB_TOOLBARABLE_COMMAND]): ARRAYED_SET [SD_TOOL_BAR_ITEM] is
+	retrieve_general_toolbar (command_pool: LIST [EB_TOOLBARABLE_COMMAND]): EB_TOOLBAR is
 			-- Retreive the general toolbar using the available commands in `command_pool'
 		do
-			Result := retrieve_toolbar_items (command_pool, general_toolbar_layout)
+			Result := retrieve_toolbar (command_pool, general_toolbar_layout)
 		end
 
-	retrieve_refactoring_toolbar (command_pool: LIST [EB_TOOLBARABLE_COMMAND]): ARRAYED_SET [SD_TOOL_BAR_ITEM] is
+	retrieve_refactoring_toolbar (command_pool: LIST [EB_TOOLBARABLE_COMMAND]): EB_TOOLBAR is
 			-- Retreive the refactoring toolbar using the available commands in `command_pool'
 		do
-			Result := retrieve_toolbar_items (command_pool, refactoring_toolbar_layout)
+			Result := retrieve_toolbar (command_pool, refactoring_toolbar_layout)
 		end
 
 feature {NONE} -- Preference Strings
@@ -389,7 +404,6 @@ feature {NONE} -- Preference Strings
 	height_string: STRING is "interface.development_window.height"
 	x_position_string: STRING is "interface.development_window.x_position"
 	y_position_string: STRING is "interface.development_window.y_position"
-	is_force_debug_mode_string: STRING is "interface.development_window.is_force_debug_mode"
 	is_maximized_string: STRING is "interface.development_window.is_maximized"
 	left_panel_use_explorer_style_string: STRING is "interface.development_window.left_panel_use_explorer_style"
 	left_panel_width_string: STRING is "interface.development_window.window_left_panel_width"
@@ -412,15 +426,12 @@ feature {NONE} -- Preference Strings
 	progress_bar_color_preference_string: STRING is "interface.development_window.progress_bar_color"
 	ctrl_right_click_receiver_string: STRING is "interface.development_window.ctrl_right_click_receiver"
 	class_completion_string: STRING is "interface.development_window.class_completion"
+	dock_tracking_string: STRING is "interface.development_window.dock_tracking"
 	last_browsed_cluster_directory_string: STRING is "interface.development_window.last_browsed_cluster_directory"
 	context_unified_stone_string: STRING is "interface.development_window.unified_stone"
-	link_tools_string: STRING is "interface.development_window.link_tools"
 	graphical_output_disabled_string: STRING is "interface.development_window.graphical_output_disabled"
 	use_animated_icons_string: STRING is "interface.development_window.use_animated_icons"
 	c_output_panel_prompted_string: STRING is "interface.development_window.c_output_panel_prompted"
-	auto_hide_animation_speed_string: STRING is "interface.development_window.auto_hide_animation_speed"
-	show_all_applicable_docking_indicators_string: STRING is "interface.development_window.show_all_applicable_docking_indicators"
-	output_tool_prompted_string: STRING is "interface.development_window.output_tool_prompted"
 
 	estudio_dbg_menu_allowed_string: STRING is "interface.development_window.estudio_dbg_menu_allowed"
 	estudio_dbg_menu_accelerator_allowed_string: STRING is "interface.development_window.estudio_dbg_menu_accelerator_allowed"
@@ -439,8 +450,11 @@ feature {NONE} -- Implementation
 			height_preference := l_manager.new_integer_preference_value (l_manager, height_string, 500)
 			x_position_preference := l_manager.new_integer_preference_value (l_manager, x_position_string, 10)
 			y_position_preference := l_manager.new_integer_preference_value (l_manager, y_position_string, 10)
-			is_force_debug_mode_preference := l_manager.new_boolean_preference_value (l_manager, is_force_debug_mode_string, False)
 			is_maximized_preference := l_manager.new_boolean_preference_value (l_manager, is_maximized_string, False)
+			left_panel_use_explorer_style_preference := l_manager.new_boolean_preference_value (l_manager, left_panel_use_explorer_style_string, True)
+			left_panel_width_preference := l_manager.new_integer_preference_value (l_manager, left_panel_width_string, 100)
+			left_panel_layout_preference := l_manager.new_array_preference_value (l_manager, left_panel_layout_string, <<"Features", "visible", "0", "0", "0", "100", "Clusters", "visible", "0", "0", "0", "100">>)
+			right_panel_layout_preference := l_manager.new_array_preference_value (l_manager, right_panel_layout_string, <<"Search", "visible", "0", "0", "0", "200", "Editor", "visible", "0", "0", "0", "200", "Context", "visible", "0", "0", "0", "200">>)
 			general_toolbar_layout_preference := l_manager.new_array_preference_value (l_manager, general_toolbar_layout_string, <<"New_window__visible;New_editor__hidden;New_context_window__hidden;Open_file__hidden;New_class__visible;New_feature__visible;Save_file__visible;Open_shell__visible;Separator;Undo__visible;Redo__visible;Separator;Editor_cut__visible;Editor_copy__visible;Editor_paste__visible;Separator;Clusters__visible;Features__visible;Search__visible;Context__visible;Separator;Send_to_context__visible;New_cluster__hidden;Remove_class_cluster__hidden;Favorites__hidden;Windows__hidden;Toggle_stone__hidden;Raise_all__hidden;Minimize_all__hidden;Print__hidden;Properties__hidden;">>)
 			show_general_toolbar_preference := l_manager.new_boolean_preference_value (l_manager, show_general_toolbar_string, True)
 			show_text_in_general_toolbar_preference := l_manager.new_boolean_preference_value (l_manager, show_text_in_general_toolbar_string, False)
@@ -456,26 +470,21 @@ feature {NONE} -- Implementation
 			completion_list_height_preference := l_manager.new_integer_preference_value (l_manager, completion_list_height_string, 100)
 			completion_list_width_preference := l_manager.new_integer_preference_value (l_manager, completion_list_width_string, 80)
 			progress_bar_color_preference := l_manager.new_color_preference_value (l_manager, progress_bar_color_preference_string, create {EV_COLOR}.make_with_8_bit_rgb (0, 0, 128))
-			ctrl_right_click_receiver_preference := l_manager.new_array_preference_value (l_manager, ctrl_right_click_receiver_string, <<"[new_tab_editor];new_window;current_editor;context;external">>)
+			ctrl_right_click_receiver_preference := l_manager.new_array_preference_value (l_manager, ctrl_right_click_receiver_string, <<"[new_window];editor;context;new_editor;new_context;external">>)
 			ctrl_right_click_receiver_preference.set_is_choice (True)
 			class_completion_preference := l_manager.new_boolean_preference_value (l_manager, class_completion_string, True)
+			dock_tracking_preference := l_manager.new_boolean_preference_value (l_manager, dock_tracking_string, True)
 			last_browsed_cluster_directory_preference := l_manager.new_string_preference_value (l_manager, last_browsed_cluster_directory_string, "")
 			context_unified_stone_preference := l_manager.new_boolean_preference_value (l_manager, context_unified_stone_string, False)
-			link_tools_preference := l_manager.new_boolean_preference_value (l_manager, link_tools_string, True)
 			graphical_output_disabled_preference := l_manager.new_boolean_preference_value (l_manager, graphical_output_disabled_string, False)
 			use_animated_icons_preference := l_manager.new_boolean_preference_value (l_manager, use_animated_icons_string, True)
 			c_output_panel_prompted_preference := l_manager.new_boolean_preference_value (l_manager, c_output_panel_prompted_string, False)
-			auto_hide_animation_speed_preference := l_manager.new_integer_preference_value (l_manager, auto_hide_animation_speed_string, 50)
-			show_all_applicable_docking_indicators_preference := l_manager.new_boolean_preference_value (l_manager, show_all_applicable_docking_indicators_string, True)
-			output_tool_prompted_preference := l_manager.new_boolean_preference_value (l_manager, output_tool_prompted_string, False)
 
 			estudio_dbg_menu_allowed_preference := l_manager.new_boolean_preference_value (l_manager, estudio_dbg_menu_allowed_string, True)
 			estudio_dbg_menu_accelerator_allowed_preference := l_manager.new_boolean_preference_value (l_manager, estudio_dbg_menu_accelerator_allowed_string, True)
 			estudio_dbg_menu_enabled_preference := l_manager.new_boolean_preference_value (l_manager, estudio_dbg_menu_enabled_string, False)
 			estudio_dbg_menu_enabled_preference.set_hidden (not estudio_dbg_menu_allowed_preference.value)
 			estudio_dbg_menu_enabled_preference.change_actions.extend (agent update_estudio_dbg_menu)
-			auto_hide_animation_speed_preference.change_actions.extend (agent on_auto_hide_animation_speed_changed)
-			show_all_applicable_docking_indicators_preference.change_actions.extend (agent on_show_all_applicable_docking_indicators_changed)
 		end
 
 	preferences: PREFERENCES
@@ -491,32 +500,17 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	on_auto_hide_animation_speed_changed is
-			-- Handle change actions of `auto_hide_animation_speed_preference'.
-		local
-			l_shared: SD_SHARED
-		do
-			create l_shared
-			l_shared.set_auto_hide_tab_slide_timer_interval (auto_hide_animation_speed)
-		end
-
-	on_show_all_applicable_docking_indicators_changed is
-			-- Handle change actions of `show_all_applicable_docking_indicators_preference'.
-		local
-			l_shared: SD_SHARED
-		do
-			create l_shared
-			l_shared.set_show_all_feedback_indicator (show_all_applicable_docking_indicators)
-		end
-
 invariant
 	preferences_not_void_not_void: preferences /= Void
 	width_preference_not_void: width_preference /= Void
 	height_preference_not_void: height_preference /= Void
 	x_position_preference_not_void: x_position_preference /= Void
 	y_position_preference_not_void: y_position_preference /= Void
-	is_force_debug_mode_preference_not_void: is_force_debug_mode_preference /= Void
 	is_maximized_preference_not_void: is_maximized_preference /= Void
+	left_panel_use_explorer_style_preference_not_void: left_panel_use_explorer_style_preference /= Void
+	left_panel_width_preference_not_void: left_panel_width_preference /= Void
+	left_panel_layout_preference_not_void: left_panel_layout_preference /= Void
+	right_panel_layout_preference_not_void: right_panel_layout_preference /= Void
 	show_general_toolbar_preference_not_void: show_general_toolbar_preference /= Void
 	show_refactoring_toolbar_preference_not_void: show_refactoring_toolbar_preference /= Void
 	show_text_in_general_toolbar_preference_not_void: show_text_in_general_toolbar_preference /= Void
@@ -566,4 +560,5 @@ indexing
 		]"
 
 end -- class EB_DEVELOPMENT_WINDOW_PREFERENCES
+
 

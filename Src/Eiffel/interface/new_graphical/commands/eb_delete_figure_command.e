@@ -12,8 +12,6 @@ inherit
 	EB_CONTEXT_DIAGRAM_COMMAND
 		redefine
 			new_toolbar_item,
-			new_sd_toolbar_item,
-			menu_name,
 			description
 		end
 
@@ -26,8 +24,49 @@ feature -- Basic operations
 			-- Display information about `Current'.
 		do
 			create explain_dialog.make_with_text (Interface_names.e_Diagram_delete_figure)
-			explain_dialog.show_modal_to_window (tool.develop_window.window)
+			explain_dialog.show_modal_to_window (tool.development_window.window)
 		end
+
+feature -- Access
+
+	new_toolbar_item (display_text: BOOLEAN): EB_COMMAND_TOOL_BAR_BUTTON is
+			-- Create a new toolbar button for this command.
+		do
+			Result := Precursor (display_text)
+			Result.drop_actions.extend (agent execute_with_class_stone)
+			Result.drop_actions.extend (agent execute_with_cluster_stone)
+			Result.drop_actions.extend (agent execute_with_link_midpoint)
+			Result.drop_actions.extend (agent execute_with_inheritance_stone)
+			Result.drop_actions.extend (agent execute_with_client_stone)
+			Result.drop_actions.extend (agent execute_with_class_list)
+		end
+
+	pixmap: EV_PIXMAP is
+			-- Pixmap representing the command.
+		do
+			Result := pixmaps.icon_pixmaps.general_reset_icon
+		end
+
+	tooltip: STRING is
+			-- Tooltip for the toolbar button.
+		do
+			Result := Interface_names.f_diagram_remove
+		end
+
+	description: STRING is
+			-- Description for this command.
+		do
+			Result := Interface_names.l_diagram_remove
+		end
+
+	name: STRING is "Delete_hole"
+			-- Name of the command. Used to store the command in the
+			-- preferences.
+
+	explain_dialog: EB_INFORMATION_DIALOG
+			-- Dialog explaining how to use `Current'.
+			
+feature {NONE} -- Implementation
 
 	execute_with_class_stone (a_stone: CLASSI_FIGURE_STONE) is
 			-- Remove `a_stone' from diagram.
@@ -81,168 +120,6 @@ feature -- Basic operations
 				[<<agent remove_class_list (a_stone.classes), agent tool.restart_force_directed, agent l_world.update_cluster_legend>>],
 				[<<agent reinclude_class_list (a_stone.classes, undo_list), agent tool.restart_force_directed, agent l_world.update_cluster_legend>>])
 		end
-
-	execute_with_cluster_stone (a_stone: CLUSTER_FIGURE_STONE) is
-			-- Remove `a_stone' from diagram.
-			-- (And its relations.)
-		local
-			l_world: EIFFEL_WORLD
-			es_cluster: ES_CLUSTER
-			cluster_fig: EIFFEL_CLUSTER_FIGURE
-			l_projector: EIFFEL_PROJECTOR
-			remove_links: LIST [ES_ITEM]
-			remove_classes: LIST [TUPLE [EIFFEL_CLASS_FIGURE, INTEGER, INTEGER]]
-			cf: EIFFEL_CLASS_FIGURE
-		do
-			l_world := tool.world
-			es_cluster := a_stone.source.model
-			cluster_fig := a_stone.source
-			if cluster_fig /= Void then
-				l_projector := tool.projector
-
-				remove_links := es_cluster.needed_links
-				remove_classes := classes_to_remove_in_cluster (es_cluster)
-				from
-					remove_classes.start
-				until
-					remove_classes.after
-				loop
-					cf ?= remove_classes.item.item (1)
-					remove_links.append (cf.model.needed_links)
-					remove_classes.forth
-				end
-
-				history.do_named_undoable (
-						interface_names.t_diagram_erase_cluster_cmd (es_cluster.name),
-						[<<agent l_world.remove_cluster_virtual (cluster_fig, remove_links, remove_classes), agent tool.restart_force_directed, agent l_world.update_cluster_legend>>],
-						[<<agent l_world.reinclude_cluster (cluster_fig, remove_links, remove_classes), agent tool.restart_force_directed, agent l_world.update_cluster_legend>>])
-			end
-		end
-
-
-	execute_with_link_midpoint (a_stone: EG_EDGE) is
-			-- Remove `a_stone' from diagram.
-		local
-			line: EIFFEL_LINK_FIGURE
-			old_edges, new_edges: LIST [EG_EDGE]
-			l_projector: EIFFEL_PROJECTOR
-		do
-			line ?= a_stone.corresponding_line
-			if line /= Void then
-				old_edges := line.edges
-				new_edges := old_edges.twin
-				if new_edges.has (a_stone) then
-					new_edges.prune_all (a_stone)
-					a_stone.hide
-					l_projector := tool.projector
-					history.do_named_undoable (
-						interface_names.t_diagram_delete_midpoint_cmd,
-						[<<agent line.reset, agent line.retrieve_edges (new_edges), agent l_projector.full_project>>],
-						[<<agent line.reset, agent line.retrieve_edges (old_edges), agent l_projector.full_project>>])
-				end
-			end
-		end
-
-	execute_with_inheritance_stone (a_stone: INHERIT_STONE) is
-			-- Remove `a_stone' from diagram.
-		local
-			l_item: ES_ITEM
-			fig: EIFFEL_INHERITANCE_FIGURE
-			l_projector: EIFFEL_PROJECTOR
-		do
-			fig := a_stone.source
-			l_item ?= fig.model
-			if l_item /= Void then
-				l_projector := tool.projector
-				history.do_named_undoable (
-					interface_names.t_diagram_delete_inheritance_link_cmd (fig.model.ancestor.name, fig.model.descendant.name),
-					[<<agent l_item.disable_needed_on_diagram, agent l_projector.full_project>>],
-					[<<agent l_item.enable_needed_on_diagram, agent l_projector.full_project>>])
-			end
-		end
-
-	execute_with_client_stone (a_stone: CLIENT_STONE) is
-			-- Remove `a_stone' from diagram.
-		local
-			l_item: ES_ITEM
-			fig: EIFFEL_CLIENT_SUPPLIER_FIGURE
-			l_projector: EIFFEL_PROJECTOR
-		do
-			fig := a_stone.source
-			l_item ?= fig.model
-			if l_item /= Void then
-				l_projector := tool.projector
-				history.do_named_undoable (
-					interface_names.t_diagram_delete_client_link_cmd (fig.model.name),
-					[<<agent l_item.disable_needed_on_diagram, agent l_projector.full_project>>],
-					[<<agent l_item.enable_needed_on_diagram, agent l_projector.full_project>>])
-			end
-		end
-
-feature -- Access
-
-	new_toolbar_item (display_text: BOOLEAN): EB_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new toolbar button for this command.
-		do
-			Result := Precursor (display_text)
-			Result.drop_actions.extend (agent execute_with_class_stone)
-			Result.drop_actions.extend (agent execute_with_cluster_stone)
-			Result.drop_actions.extend (agent execute_with_link_midpoint)
-			Result.drop_actions.extend (agent execute_with_inheritance_stone)
-			Result.drop_actions.extend (agent execute_with_client_stone)
-			Result.drop_actions.extend (agent execute_with_class_list)
-		end
-
-	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new toolbar button for this command.
-		do
-			Result := Precursor (display_text)
-			Result.drop_actions.extend (agent execute_with_class_stone)
-			Result.drop_actions.extend (agent execute_with_cluster_stone)
-			Result.drop_actions.extend (agent execute_with_link_midpoint)
-			Result.drop_actions.extend (agent execute_with_inheritance_stone)
-			Result.drop_actions.extend (agent execute_with_client_stone)
-			Result.drop_actions.extend (agent execute_with_class_list)
-		end
-
-	pixmap: EV_PIXMAP is
-			-- Pixmap representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.general_reset_icon
-		end
-
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.general_reset_icon_buffer
-		end
-
-	tooltip: STRING_GENERAL is
-			-- Tooltip for the toolbar button.
-		do
-			Result := Interface_names.f_diagram_remove
-		end
-
-	description: STRING_GENERAL is
-			-- Description for this command.
-		do
-			Result := Interface_names.l_diagram_remove
-		end
-
-	name: STRING is "Delete_hole"
-			-- Name of the command. Used to store the command in the
-			-- preferences.
-
-	menu_name: STRING_GENERAL is
-			-- Name on corresponding menu items
-		do
-			Result := interface_names.m_remove_from_diagram
-		end
-
-	explain_dialog: EB_INFORMATION_DIALOG
-			-- Dialog explaining how to use `Current'.
-
-feature {NONE} -- Implementation
 
 	remove_class_list (a_list: LIST [EIFFEL_CLASS_FIGURE]) is
 			-- Remove all classes in `a_list'.
@@ -302,6 +179,43 @@ feature {NONE} -- Implementation
 			tool.projector.full_project
 		end
 
+	execute_with_cluster_stone (a_stone: CLUSTER_FIGURE_STONE) is
+			-- Remove `a_stone' from diagram.
+			-- (And its relations.)
+		local
+			l_world: EIFFEL_WORLD
+			es_cluster: ES_CLUSTER
+			cluster_fig: EIFFEL_CLUSTER_FIGURE
+			l_projector: EIFFEL_PROJECTOR
+			remove_links: LIST [ES_ITEM]
+			remove_classes: LIST [TUPLE [EIFFEL_CLASS_FIGURE, INTEGER, INTEGER]]
+			cf: EIFFEL_CLASS_FIGURE
+		do
+			l_world := tool.world
+			es_cluster := a_stone.source.model
+			cluster_fig := a_stone.source
+			if cluster_fig /= Void then
+				l_projector := tool.projector
+
+				remove_links := es_cluster.needed_links
+				remove_classes := classes_to_remove_in_cluster (es_cluster)
+				from
+					remove_classes.start
+				until
+					remove_classes.after
+				loop
+					cf ?= remove_classes.item.item (1)
+					remove_links.append (cf.model.needed_links)
+					remove_classes.forth
+				end
+
+				history.do_named_undoable (
+						interface_names.t_diagram_erase_cluster_cmd (es_cluster.name),
+						[<<agent l_world.remove_cluster_virtual (cluster_fig, remove_links, remove_classes), agent tool.restart_force_directed, agent l_world.update_cluster_legend>>],
+						[<<agent l_world.reinclude_cluster (cluster_fig, remove_links, remove_classes), agent tool.restart_force_directed, agent l_world.update_cluster_legend>>])
+			end
+		end
+
 	classes_to_remove_in_cluster (a_cluster: ES_CLUSTER): LIST [TUPLE [EIFFEL_CLASS_FIGURE, INTEGER, INTEGER]] is
 			-- All class figures in `a_cluster' that are needed on diagram plus ther positions.
 		local
@@ -327,6 +241,64 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	execute_with_link_midpoint (a_stone: EG_EDGE) is
+			-- Remove `a_stone' from diagram.
+		local
+			line: EIFFEL_LINK_FIGURE
+			old_edges, new_edges: LIST [EG_EDGE]
+			l_projector: EIFFEL_PROJECTOR
+		do
+			line ?= a_stone.corresponding_line
+			if line /= Void then
+				old_edges := line.edges
+				new_edges := old_edges.twin
+				if new_edges.has (a_stone) then
+					new_edges.prune_all (a_stone)
+					a_stone.hide
+					l_projector := tool.projector
+					history.do_named_undoable (
+						interface_names.t_diagram_delete_midpoint_cmd,
+						[<<agent line.reset, agent line.retrieve_edges (new_edges), agent l_projector.full_project>>],
+						[<<agent line.reset, agent line.retrieve_edges (old_edges), agent l_projector.full_project>>])
+				end
+			end
+		end
+
+	execute_with_inheritance_stone (a_stone: INHERIT_STONE) is
+			-- Remove `a_stone' from diagram.
+		local
+			l_item: ES_ITEM
+			fig: EIFFEL_INHERITANCE_FIGURE
+			l_projector: EIFFEL_PROJECTOR
+		do
+			fig := a_stone.source
+			l_item ?= fig.model
+			if l_item /= Void then
+				l_projector := tool.projector
+				history.do_named_undoable (
+					interface_names.t_diagram_delete_inheritance_link_cmd (fig.model.ancestor.name, fig.model.descendant.name),
+					[<<agent l_item.disable_needed_on_diagram, agent l_projector.full_project>>],
+					[<<agent l_item.enable_needed_on_diagram, agent l_projector.full_project>>])
+			end
+		end
+
+	execute_with_client_stone (a_stone: CLIENT_STONE) is
+			-- Remove `a_stone' from diagram.
+		local
+			l_item: ES_ITEM
+			fig: EIFFEL_CLIENT_SUPPLIER_FIGURE
+			l_projector: EIFFEL_PROJECTOR
+		do
+			fig := a_stone.source
+			l_item ?= fig.model
+			if l_item /= Void then
+				l_projector := tool.projector
+				history.do_named_undoable (
+					interface_names.t_diagram_delete_client_link_cmd (fig.model.name),
+					[<<agent l_item.disable_needed_on_diagram, agent l_projector.full_project>>],
+					[<<agent l_item.enable_needed_on_diagram, agent l_projector.full_project>>])
+			end
+		end
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

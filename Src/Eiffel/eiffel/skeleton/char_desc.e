@@ -58,7 +58,8 @@ feature -- Access
 				Result := Char_c_type
 			end
 		end
-
+			
+		
 feature -- Code generation
 
 	generate_code (buffer: GENERATION_BUFFER) is

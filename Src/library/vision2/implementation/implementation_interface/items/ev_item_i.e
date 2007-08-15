@@ -1,5 +1,5 @@
-indexing
-	description:
+indexing	
+	description: 
 		"Eiffel Vision item. Implementation interface."
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
@@ -7,7 +7,7 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 
-deferred class
+deferred class 
 	EV_ITEM_I
 
 inherit
@@ -30,7 +30,7 @@ feature -- Access
 		do
 			if parent_imp /= Void then
 				Result ?= parent_imp.interface
-				check
+				check 
 					parent_not_void: Result /= Void
 				end
 			end
@@ -43,12 +43,6 @@ feature -- Access
 		end
 
 feature {EV_ANY_I} -- Implementation
-
-	update_for_pick_and_drop (starting: BOOLEAN) is
-			-- Pick and drop status has changed so update appearance of
-			-- `Current' to reflect available targets.
-		deferred
-		end
 
 	interface: EV_ITEM;
 			-- Provides a common user interface to platform dependent

@@ -30,11 +30,6 @@ inherit
 			{NONE} all
 		end
 
-	REFACTORING_HELPER
-		export
-			{NONE} all
-		end
-
 feature -- Status report
 
 	feature_clause_export_status (a_class: CLASS_C; a_clause: FEATURE_CLAUSE_AS): EXPORT_I is
@@ -83,24 +78,14 @@ feature {NONE} -- Implementation
 		local
 			l_export_set: EXPORT_SET_I
 			l_client_i: CLIENT_I
-			l_clients: CLASS_LIST_AS
-			l_lst: ARRAYED_LIST [STRING]
 		do
-			if l_as.clients.count = 1 and then ("NONE").is_equal (l_as.clients.first.name) then
+			if l_as.clients.count = 1 and then ("NONE").is_equal (l_as.clients.first) then
 			   last_export_status := export_none
 			else
-				fixme ("temporary fix to get a string list")
-				from
-					l_clients := l_as.clients
-					create l_lst.make (l_clients.count)
-					l_clients.start
-				until
-					l_clients.after
-				loop
-					l_lst.extend (l_clients.item.name)
-					l_clients.forth
-				end
-				create l_client_i.make (l_lst, current_class.class_id)
+				create l_client_i
+				l_client_i.set_clients (l_as.clients)
+					-- Current class in second pass...
+				l_client_i.set_written_in (current_class.class_id)
 				create l_export_set.make
 				l_export_set.compare_objects
 				l_export_set.put (l_client_i)
@@ -116,7 +101,7 @@ feature {NONE} -- Implementation
 				last_export_status := export_all
 			end
 		end
-
+		
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"

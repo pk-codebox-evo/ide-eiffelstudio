@@ -9,16 +9,16 @@ indexing
 class
 	EB_SHARED_PREFERENCES
 
-feature {ES} -- Initialization
+feature {ES, ES_GRAPHIC} -- Initialization
 
-	initialize_preferences (a_preferences: PREFERENCES; gui_mode, dbg_mode: BOOLEAN) is
+	initialize_preferences (a_preferences: PREFERENCES; gui_mode: BOOLEAN) is
 		require
 			preferences_not_void: a_preferences /= Void
 			not_initialized: not preferences_initialized
 		local
 			l_prefs: like preferences
 		once
-			create l_prefs.make (a_preferences, gui_mode, dbg_mode)
+			create l_prefs.make (a_preferences, gui_mode)
 			preferences_cell.put (l_prefs)
 		ensure
 			preferences_not_void: preferences /= Void
@@ -28,7 +28,7 @@ feature {ES} -- Initialization
 feature -- Access
 
 	preferences: EB_PREFERENCES is
-			-- All preferences for `ec'.
+			-- All preferences for EiffelStudio.				
 		require
 			initialized: preferences_initialized
 		once

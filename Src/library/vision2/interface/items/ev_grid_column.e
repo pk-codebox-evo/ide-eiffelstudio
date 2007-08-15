@@ -43,25 +43,14 @@ feature -- Access
 		end
 
 	is_displayed: BOOLEAN is
-			-- Is `Current' visible on the screen?
-			-- `True' when show requested and parent displayed.
-			-- A column that `is_show_requested' does not necessarily have to be visible on screen at that particular time.
-		require
-			not_destroyed: not is_destroyed
-		do
-			Result := implementation.is_displayed
-		ensure
-			bridge_ok: Result = implementation.is_displayed
-		end
-
-	is_show_requested: BOOLEAN is
-			-- Will `Current' be displayed when its parent is?
-			-- See also `is_displayed'.
+			-- May `Current' be displayed when its `parent' is?
+			-- Will return False if `hide' has been called on `Current'.
+			-- A column that `is_displayed' does not necessarily have to be visible on screen at that particular time.
 		require
 			not_destroyed: not is_destroyed
 			is_parented: parent /= Void
 		do
-			Result := implementation.is_show_requested
+			Result := implementation.is_displayed
 		end
 
 	title: STRING_32 is
@@ -244,7 +233,7 @@ feature -- Status setting
 		do
 			implementation.hide
 		ensure
-			not_is_show_requested: not is_show_requested
+			not_is_displayed: not is_displayed
 		end
 
 	show is
@@ -256,7 +245,7 @@ feature -- Status setting
 		do
 			implementation.show
 		ensure
-			is_show_requested: is_show_requested
+			is_displayed: is_displayed
 		end
 
 	ensure_visible is
@@ -264,7 +253,7 @@ feature -- Status setting
 		require
 			not_destroyed: not is_destroyed
 			parented: parent /= Void
-			is_displayed: is_displayed
+			shown: is_displayed
 		do
 			implementation.ensure_visible
 		ensure
@@ -291,7 +280,7 @@ feature -- Status setting
 		require
 			not_destroyed: not is_destroyed
 			parented: parent /= Void
-			is_show_requested: is_show_requested
+			shown: is_displayed
 		do
 			set_width (required_width_of_item_span (1, parent.row_count))
 		ensure
@@ -331,7 +320,6 @@ feature -- Element change
 		require
 			not_destroyed: not is_destroyed
 			i_positive: i > 0
-			a_item_not_parented: a_item /= Void implies a_item.parent = Void
 			is_parented: parent /= Void
 			item_may_be_added_to_tree_node: a_item /= Void and parent.row (i).is_part_of_tree_structure implies parent.row (i).is_index_valid_for_item_setting_if_tree_node (index)
 			item_may_be_removed_from_tree_node: a_item = Void and then parent.row (i).is_part_of_tree_structure implies parent.row (i).is_index_valid_for_item_removal_if_tree_node (index)

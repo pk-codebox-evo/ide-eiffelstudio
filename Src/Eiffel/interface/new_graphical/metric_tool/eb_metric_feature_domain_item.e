@@ -10,34 +10,86 @@ class
 	EB_METRIC_FEATURE_DOMAIN_ITEM
 
 inherit
-	EB_FEATURE_DOMAIN_ITEM
+	EB_METRIC_DOMAIN_ITEM
 		redefine
-			associated_class_domain_item,
-			written_class_domain_item
+			is_feature_item,
+			is_valid,
+			string_representation
 		end
 
-	EB_METRIC_DOMAIN_ITEM
+	QL_SHARED_SCOPES
 		undefine
-			is_valid,
-			is_feature_item
+			is_equal
 		end
 
 create
 	make
 
+feature -- Status report
+
+	is_feature_item: BOOLEAN is True
+			-- Is current a feature item?
+
+	is_valid: BOOLEAN is
+			-- Does current represent a valid domain item?
+		do
+			Result := feature_of_id (id) /= Void
+		end
+
 feature -- Access
 
-	associated_class_domain_item: EB_METRIC_CLASS_DOMAIN_ITEM is
-			-- Class item for associated class of current feature
+	domain (a_scope: QL_SCOPE): QL_DOMAIN is
+			-- New query lanaguage domain representing current item
 		do
-			create Result.make (id_of_class (e_feature.associated_class.lace_class.config_class))
+			Result := ql_feature.wrapped_domain
 		end
 
-	written_class_domain_item: EB_METRIC_CLASS_DOMAIN_ITEM is
-			-- Class item for written class of current feature
+	string_representation: STRING is
+			-- Text of current item
+		local
+			l_feature_name: STRING
 		do
-			create Result.make (id_of_class (e_feature.written_class.lace_class.config_class))
+			if feature_of_id (id) /= Void then
+				Result := ql_feature.name
+			else
+				l_feature_name := last_feature_name
+				if l_feature_name /= Void and then not l_feature_name.is_empty then
+					Result := l_feature_name.twin
+				else
+					Result := Precursor
+				end
+			end
 		end
+
+	ql_feature: QL_FEATURE is
+			-- QL_FEATURE object representing current item
+		require
+			valid: is_valid
+		local
+			l_e_feature: E_FEATURE
+		do
+			l_e_feature := feature_of_id (id)
+			check l_e_feature /= Void end
+			Result := query_feature_item_from_e_feature (l_e_feature)
+		ensure
+			result_attached: Result /= Void
+		end
+
+	class_domain_item: EB_METRIC_CLASS_DOMAIN_ITEM is
+			-- Class domain item for associated class of current feature
+		require
+			valid: is_valid
+		do
+			create Result.make (id_of_class (ql_feature.class_c.lace_class.config_class))
+		ensure
+			result_attached: Result /= Void
+		end
+
+	query_language_item: QL_ITEM is
+			-- Query language item representation of current domain item
+		do
+			Result := ql_feature
+		end		
 
 feature -- Process
 
@@ -78,5 +130,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

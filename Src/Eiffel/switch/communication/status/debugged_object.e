@@ -8,28 +8,16 @@ indexing
 deferred class DEBUGGED_OBJECT
 
 inherit
-
+	
 	SHARED_ABSTRACT_DEBUG_VALUE_SORTER
-		export
-			{NONE} all
-		end
-
-	SHARED_DEBUGGER_MANAGER
+	
+	SHARED_APPLICATION_EXECUTION
 
 	SHARED_EIFFEL_PROJECT
-		export
-			{NONE} all
-		end
 
 	SHARED_WORKBENCH
-		export
-			{NONE} all
-		end
 
 	COMPILER_EXPORTER
-		export
-			{NONE} all
-		end
 
 feature {NONE} -- Creation
 
@@ -43,7 +31,7 @@ feature {NONE} -- Creation
 			-- of the inspected special object)
 		require
 			non_void_addr: addr /= Void;
-			valid_addr: is_valid_object_address (addr);
+			valid_addr: Application.is_valid_object_address (addr);
 			valid_bounds: sp_lower >= 0 and (sp_upper >= sp_lower or else
 					sp_upper = -1)
 		deferred
@@ -51,21 +39,7 @@ feature {NONE} -- Creation
 			set: addr = object_address
 		end
 
-feature -- Helpers
-
-	is_valid_object_address (addr: STRING): BOOLEAN is
-		require
-			application_is_executing: debugger_manager.application_is_executing
-		do
-			Result := debugger_manager.application.is_valid_object_address (addr)
-		end
-
 feature {DEBUGGED_OBJECT_MANAGER} -- Refreshing
-
-	reset is
-			-- Reset internal data
-		deferred
-		end
 
 	refresh (sp_lower, sp_upper: INTEGER) is
 		require

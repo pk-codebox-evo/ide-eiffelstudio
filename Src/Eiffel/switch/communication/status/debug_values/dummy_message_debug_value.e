@@ -11,11 +11,8 @@ class
 
 inherit
 	ABSTRACT_DEBUG_VALUE
-		redefine
-			debug_value_type_id
-		end
 
-create {RECV_VALUE, ATTR_REQUEST, CALL_STACK_ELEMENT, DEBUG_VALUE_EXPORTER, ES_OBJECTS_GRID_LINE, APPLICATION_EXECUTION}
+create {RECV_VALUE, ATTR_REQUEST, CALL_STACK_ELEMENT, DEBUG_VALUE_EXPORTER, ES_OBJECTS_GRID_LINE, APPLICATION_EXECUTION_IMP}
 	make_with_name
 
 feature {NONE} -- Initialization
@@ -41,7 +38,7 @@ feature -- change
 
 feature -- Access
 
-	message: STRING_GENERAL
+	message: STRING
 			-- Information message to display in object tool
 
 	display_message: STRING_32 is
@@ -67,11 +64,35 @@ feature -- Access
 		do
 			s := display_message
 			if s /= Void then
-				Result := Debugger_manager.Dump_value_factory.new_manifest_string_value (display_message.as_string_8, dynamic_class)
+				create Result.make_manifest_string (display_message.as_string_8, dynamic_class)
+			end
+		end
+
+feature {ABSTRACT_DEBUG_VALUE} -- Output
+
+	append_type_and_value (st: TEXT_FORMATTER) is
+			-- Append type and value of Current to `st'.
+		local
+			s: STRING_GENERAL
+		do
+			s := display_message
+			if s /= Void then
+				st.add_string (s.as_string_8)
 			end
 		end
 
 feature {NONE} -- Output
+
+	append_value (st: TEXT_FORMATTER) is
+			-- Append only the value of Current to `st'.
+		local
+			s: STRING_GENERAL
+		do
+			s := display_message
+			if s /= Void then
+				st.add_string (s.as_string_8)
+			end
+		end
 
 	output_value: STRING_32 is
 			-- A STRING representation of the value of `Current'.
@@ -106,13 +127,6 @@ feature -- Output
 			-- Used to display the corresponding icon.
 		once
 			Result := Error_message_value
-		end
-
-feature {DEBUGGER_TEXT_FORMATTER_VISITOR} -- Debug value type id
-
-	debug_value_type_id: INTEGER is
-		do
-			Result := dummy_message_debug_value_id
 		end
 
 indexing

@@ -51,23 +51,23 @@ feature {EV_ANY_HANDLER} -- Initialization
 			--| Must be called exactly once during creation.
 		do
 			check
-				application_exists: application_exists
-			end
-			create_implementation
-			check
-				not_already_called: not implementation.get_state_flag ({EV_ANY_I}.interface_default_create_called_flag)
+				not_already_called: not default_create_called
 					--| Calling default_create twice is not
 					--| allowed. This means that reusing
 					--| objects is not allowed unless a
 					--| special purpose feature is provided.
 			end
-			implementation.set_state_flag ({EV_ANY_I}.interface_default_create_called_flag, True)
+			check
+				application_exists: application_exists
+			end
+			default_create_called := True
+			create_implementation
 			implementation.initialize
 			initialize
 		ensure then
 			is_coupled: implementation /= Void
 			is_initialized: is_initialized
-			default_create_called: default_create_called
+			default_create_called_set: default_create_called
 			is_in_default_state: is_in_default_state
 		end
 
@@ -143,8 +143,6 @@ feature {EV_ANY, EV_ANY_I} -- Implementation
 			new_implementation.set_interface(Current)
 			implementation := new_implementation
 			implementation.enable_initialized
-			implementation.set_state_flag ({EV_ANY_I}.interface_default_create_called_flag, True)
-			implementation.set_state_flag ({EV_ANY_I}.interface_is_initialized_flag, True)
 			temp := {ISE_RUNTIME}.check_assert (temp)
 		end
 
@@ -170,10 +168,13 @@ feature {EV_ANY} -- Implementation
 		require
 			not_already_initialized: not is_initialized
 		do
-			implementation.set_state_flag ({EV_ANY_I}.interface_is_initialized_flag, True)
+			is_initialized := True
 		ensure
 			is_initialized: is_initialized
 		end
+
+	is_initialized: BOOLEAN
+			-- Has `Current' been initialized properly?
 
 feature -- Duplication
 
@@ -210,14 +211,10 @@ feature {NONE} -- Contract support
 			Result := True
 		end
 
-feature {EV_ANY} -- Contract support
+	default_create_called: BOOLEAN
+			-- Has `default_create' been called?
 
-	action_sequence_call_counter: NATURAL_32
-			-- Call counter for `{EV_LITE_ACTION_SEQUENCE}.call', used to determine
-			-- if calls have been made as a result of a routine executing.
-		do
-			Result := (create {EV_ENVIRONMENT}).application.action_sequence_call_counter
-		end
+feature {EV_ANY} -- Contract support
 
 	is_usable: BOOLEAN is
 			-- Is `Current' usable?
@@ -230,18 +227,6 @@ feature {EV_ANY} -- Contract support
 			-- manipulation of widgets before an application is created.
 		do
 			Result := (create {EV_ENVIRONMENT}).application /= Void
-		end
-
-	default_create_called: BOOLEAN
-			-- Has `default_create' been called on `Current'?
-		do
-			Result := implementation.get_state_flag ({EV_ANY_I}.interface_default_create_called_flag)
-		end
-
-	is_initialized: BOOLEAN
-			-- Has `Current' been initialized properly?
-		do
-			Result := implementation.get_state_flag ({EV_ANY_I}.interface_is_initialized_flag)
 		end
 
 invariant

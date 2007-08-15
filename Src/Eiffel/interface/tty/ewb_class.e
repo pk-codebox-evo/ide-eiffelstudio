@@ -66,15 +66,16 @@ feature {NONE} -- Execution
 			if at_pos = 0 then
 				class_list := Eiffel_universe.classes_with_name (class_name);
 				if class_list.is_empty then
+					io.error.put_string (class_name);
 					if (create {EIFFEL_SYNTAX_CHECKER}).is_valid_class_name (class_name) then
-						localized_print_error (ewb_names.class_is_not_in_the_universe (class_name))
+						io.error.put_string (" is not in the universe%N")
 					else
-						localized_print_error (ewb_names.class_is_not_a_valid_class_name (class_name))
+						io.error.put_string (" is not a valid class name%N")
 					end
 				elseif class_list.count = 1 then
 					class_i := class_list.first
 				else
-					localized_print_error (ewb_names.several_class_has_the_same_name)
+					io.error.put_string ("Several classes have the same name:%N")
 					from class_list.start until class_list.after loop
 						class_i := class_list.item;
 						io.error.put_character ('%T');
@@ -98,14 +99,20 @@ feature {NONE} -- Execution
 				end
 				cluster := Eiffel_universe.cluster_of_name (cluster_name);
 				if cluster = Void then
-					localized_print_error (ewb_names.cluster_does_not_exit (cluster_name))
+					io.error.put_string ("Cluster ");
+					io.error.put_string (cluster_name);
+					io.error.put_string (" does not exist.");
+					io.error.put_new_line
 				else
-					class_i ?= cluster.classes.item (class_name);
+					class_i := cluster.classes.item (class_name);
 					if class_i = Void then
+						io.error.put_string (class_name);
 						if (create {EIFFEL_SYNTAX_CHECKER}).is_valid_class_name (class_name) then
-							localized_print_error (ewb_names.class_is_not_in_cluster (class_name))
+							io.error.put_string (" is not in cluster ");
+							io.error.put_string (cluster_name);
+							io.error.put_new_line
 						else
-							localized_print_error (ewb_names.class_is_not_a_valid_class_name (class_name))
+							io.error.put_string (" is not a valid class name%N")
 						end
 					end
 				end
@@ -114,7 +121,8 @@ feature {NONE} -- Execution
 				if want_compiled_class (class_i) then
 					e_class := class_i.compiled_class;
 					if e_class = Void then
-						localized_print_error (ewb_names.class_is_not_in_the_system (class_name))
+						io.error.put_string (class_name);
+						io.error.put_string (" is not in the system%N");
 					else
 						process_compiled_class (e_class);
 					end;
@@ -132,7 +140,7 @@ feature {NONE} -- Execution
 			-- (Do nothing by default).
 		require
 			valid_e_class: e_class /= Void;
-			want_compiled_class: want_compiled_class (e_class.original_class)
+			want_compiled_class: want_compiled_class (e_class.lace_class)
 		do
 		end;
 

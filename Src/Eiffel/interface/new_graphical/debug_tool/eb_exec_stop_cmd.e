@@ -19,27 +19,21 @@ inherit
 
 	EB_CONSTANTS
 
-	EB_SHARED_WINDOW_MANAGER
+	EB_SHARED_DEBUG_TOOLS
 
-	EB_SHARED_PREFERENCES
-		export
-			{NONE} all
-		end
+	EB_SHARED_WINDOW_MANAGER
 
 create
 	make
 
 feature {NONE} -- Initialization
 
-	make (a_manager: like debugger_manager)
+	make is
 			-- Initialize `Current'.
-		local
-			l_shortcut: SHORTCUT_PREFERENCE
 		do
-			debugger_manager := a_manager
-			l_shortcut := preferences.misc_shortcut_data.shortcuts.item ("pause_application")
-			create accelerator.make_with_key_combination (l_shortcut.key, l_shortcut.is_ctrl, l_shortcut.is_alt, l_shortcut.is_shift)
-			set_referred_shortcut (l_shortcut)
+			create accelerator.make_with_key_combination (
+				create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.Key_f5),
+				True, False, True)
 			accelerator.actions.extend (agent execute)
 		end
 
@@ -49,31 +43,28 @@ feature -- Formatting
 			-- Pause the execution.
 		do
 			if
-				debugger_manager.application_is_executing and then
-				not debugger_manager.application_is_stopped
+				eb_debugger_manager.application_is_executing and then
+				not eb_debugger_manager.application_is_stopped
 			then
-				debugger_manager.application.interrupt
+				eb_debugger_manager.application.interrupt
 			end
 		end
 
 feature {NONE} -- Attributes
 
-	debugger_manager: DEBUGGER_MANAGER
-			-- Manager in charge of all debugging operations.	
-
-	description: STRING_GENERAL is
+	description: STRING is
 			-- What appears in the customize dialog box.
 		do
 			Result := tooltip
 		end
 
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip displayed on `Current's buttons.
 		do
 			Result := Interface_names.e_Exec_stop
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text displayed on `Current's buttons.
 		do
 			Result := Interface_names.b_Exec_stop
@@ -82,7 +73,7 @@ feature {NONE} -- Attributes
 	name: STRING is "Exec_stop"
 			-- Name of the command.
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Menu entry corresponding to `Current'.
 		do
 			Result := Interface_names.m_Debug_interrupt_new
@@ -92,12 +83,6 @@ feature {NONE} -- Attributes
 			-- Pixmap representing `Current' on buttons.
 		do
 			Result := pixmaps.icon_pixmaps.debug_pause_icon
-		end
-
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.debug_pause_icon_buffer
 		end
 
 indexing

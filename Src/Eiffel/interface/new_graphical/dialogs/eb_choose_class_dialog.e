@@ -37,15 +37,15 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_context_menu_factory: EB_CONTEXT_MENU_FACTORY) is
+	make is
 			-- Initialize the dialog.
 		do
 			default_create
 			set_title (Interface_names.t_Choose_class)
-			prepare (a_context_menu_factory)
+			prepare
 		end
 
-	prepare (a_context_menu_factory: EB_CONTEXT_MENU_FACTORY) is
+	prepare is
 			-- Create the controls and setup the layout
 		local
 			buttons_box: EV_VERTICAL_BOX
@@ -67,7 +67,7 @@ feature {NONE} -- Initialization
 
 				-- Create the controls.
 			create class_name_entry.make
-			create classes_tree.make_without_targets (a_context_menu_factory)
+			create classes_tree.make_without_targets
 			classes_tree.set_minimum_width (Layout_constants.dialog_unit_to_pixels(200))
 			classes_tree.set_minimum_height (Layout_constants.dialog_unit_to_pixels(300))
 
@@ -124,10 +124,8 @@ feature {NONE} -- Vision2 events
 			selected_class_name := class_name_entry.text.as_upper
 			selected := not selected_class_name.is_empty
 			if selected then -- User typed a class name.
-				if eiffel_universe.target /= Void then
-					loclist := Eiffel_universe.classes_with_name (selected_class_name.as_upper)
-				end
-				if loclist /= Void and then loclist.is_empty then -- No class has such a name.
+				loclist := Eiffel_universe.classes_with_name (selected_class_name)
+				if loclist.is_empty then -- No class has such a name.
 					class_name_entry.set_text (Interface_names.l_Unknown_class_name)
 					class_name_entry.set_focus
 					class_name_entry.select_all

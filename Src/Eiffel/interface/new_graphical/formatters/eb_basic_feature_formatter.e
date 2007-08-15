@@ -44,13 +44,7 @@ feature -- Properties
 			Result.put (pixmaps.icon_pixmaps.view_editor_feature_icon, 2)
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representation of the command.
-		once
-			Result := pixmaps.icon_pixmaps.view_editor_feature_icon_buffer
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Identifier of `Current' in menus.
 		do
 			Result := Interface_names.m_Showtext_new
@@ -61,12 +55,15 @@ feature -- Formatting
 	format is
 			-- Refresh `widget'.
 		do
-			if selected and then associated_feature /= Void and then displayed and then actual_veto_format_result then
+			if
+				selected and then
+				associated_feature /= Void and then
+				displayed
+			then
 				editor.set_feature_for_click (associated_feature.written_feature)
 				editor.enable_feature_click
 				display_temp_header
 				generate_text
-				editor.set_focus
 				if last_was_error then
 					editor.clear_window
 					editor.put_string (Warning_messages.W_formatter_failed)
@@ -82,6 +79,7 @@ feature -- Formatting
 			end
 		end
 
+
 feature -- Status setting
 
 	set_associated_feature (a_feature: E_FEATURE) is
@@ -95,10 +93,10 @@ feature {NONE} -- Properties
 	feature_cmd: E_SHOW_ROUTINE_FLAT
 			-- Just needed for compatibility, do not use.
 
-	capital_command_name: STRING_GENERAL is
+	command_name: STRING is
 			-- Name of the command.
 		do
-			Result := interface_names.l_Basic_text
+			Result := Interface_names.l_Basic_text
 		end
 
 	post_fix: STRING is "txt"

@@ -50,7 +50,7 @@ feature {NONE} -- Implementation
 
 	process_bit_const_as (l_as: BIT_CONST_AS) is
 		do
-			create {BIT_VALUE_I} last_value.make (l_as.value.name)
+			create {BIT_VALUE_I} last_value.make (l_as.value)
 		end
 
 	process_bool_as (a_bool: BOOL_AS) is

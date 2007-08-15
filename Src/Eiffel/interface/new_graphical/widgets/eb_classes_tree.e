@@ -43,6 +43,8 @@ inherit
 		end
 
 	EB_RECYCLABLE
+		export
+			{NONE} all
 		undefine
 			default_create, is_equal, copy
 		end
@@ -65,11 +67,10 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_context_menu_factory: EB_CONTEXT_MENU_FACTORY) is
+	make is
 			-- Initialize the tree of clusters.
 		do
 			default_create
-			context_menu_factory := a_context_menu_factory
 			prepare
 			manager.extend (Current)
 --| FIXME XR: When clusters can be moved for real, uncomment this line.
@@ -81,10 +82,10 @@ feature {NONE} -- Initialization
 			has_targets := True
 		end
 
-	make_without_targets (a_context_menu_factory: EB_CONTEXT_MENU_FACTORY) is
+	make_without_targets is
 			-- Create a tree where targets of system are not shown.
 		do
-			make (a_context_menu_factory)
+			make
 			has_targets := False
 		end
 
@@ -98,15 +99,11 @@ feature {NONE} -- Initialization
 			-- Remove and replace contents of `Current'.
 		local
 			l_target: CONF_TARGET
-			l_env: EV_ENVIRONMENT
-			l_locked: BOOLEAN
 		do
-			create l_env
-			if window /= Void and l_env.application.locked_window = Void then
+			if window /= Void then
 					-- Lock update of window, so rebuilding of `Current'
-					-- is hidden.			
+					-- is hidden.
 				window.lock_update
-				l_locked := True
 			end
 
 				-- Remove all items, ready for rebuilding.
@@ -121,38 +118,18 @@ feature {NONE} -- Initialization
 					-- sort clusters
 				create cluster_header.make (interface_names.l_class_tree_clusters, pixmaps.icon_pixmaps.top_level_folder_clusters_icon)
 				build_group_tree (manager.clusters, cluster_header)
-				cluster_header.set_pebble (create {DATA_STONE}.make (groups_from_sorted_clusters (manager.clusters, True), agent is_group_valid))
-				if context_menu_factory /= Void then
-					cluster_header.set_configurable_target_menu_mode
-					cluster_header.set_configurable_target_menu_handler (agent context_menu_factory.clusters_data_menu)
-				end
 
 					-- sort overrides
 				create override_header.make (interface_names.l_class_tree_overrides, pixmaps.icon_pixmaps.top_level_folder_overrides_icon)
 				build_group_tree (manager.overrides, override_header)
-				override_header.set_pebble (create {DATA_STONE}.make (groups_from_sorted_clusters (manager.overrides, False), agent is_group_valid))
-				if context_menu_factory /= Void then
-					override_header.set_configurable_target_menu_mode
-					override_header.set_configurable_target_menu_handler (agent context_menu_factory.clusters_data_menu)
-				end
 
 					-- sort libraries
 				create library_header.make (interface_names.l_class_tree_libraries, pixmaps.icon_pixmaps.top_level_folder_library_icon)
 				build_group_tree (manager.libraries, library_header)
-				library_header.set_pebble (create {DATA_STONE}.make (groups_from_sorted_clusters (manager.libraries, False), agent is_group_valid))
-				if context_menu_factory /= Void then
-					library_header.set_configurable_target_menu_mode
-					library_header.set_configurable_target_menu_handler (agent context_menu_factory.libraries_data_menu)
-				end
 
 					-- sort assemblies
 				create assembly_header.make (interface_names.l_class_tree_assemblies, pixmaps.icon_pixmaps.top_level_folder_references_icon)
 				build_group_tree (manager.assemblies, assembly_header)
-				assembly_header.set_pebble (create {DATA_STONE}.make (groups_from_sorted_clusters (manager.assemblies, False), agent is_group_valid))
-				if context_menu_factory /= Void then
-					assembly_header.set_configurable_target_menu_mode
-					assembly_header.set_configurable_target_menu_handler (agent context_menu_factory.assemblies_data_menu)
-				end
 
 					-- targets
 				if has_targets then
@@ -164,7 +141,7 @@ feature {NONE} -- Initialization
 					-- `store_expanded_state'				
 			end
 
-			if window /= Void and l_locked then
+			if window /= Void then
 					-- Unlock update of window as `Current' has
 					-- been rebuilt.
 				window.unlock_update
@@ -351,9 +328,9 @@ feature -- Observer pattern
 			wipe_out
 		end
 
-feature {NONE} -- Memory management
+feature -- Memory management
 
-	internal_recycle is
+	recycle is
 			-- Recycle `Current', but leave `Current' in an unstable state,
 			-- so that we know whether we're still referenced or not.
 		local
@@ -371,7 +348,6 @@ feature {NONE} -- Memory management
 				end
 				forth
 			end
-			set_configurable_target_menu_handler (Void)
 			window := Void
 		end
 
@@ -575,7 +551,7 @@ feature {NONE} -- Implementation
 			conv_cluster: EB_CLASSES_TREE_FOLDER_ITEM
 			titem: EV_TREE_NODE
 			testfile: RAW_FILE
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 		do
 			titem := selected_item
 			if
@@ -632,7 +608,7 @@ feature {NONE} -- Implementation
 					l_next_group := Void
 				end
 				if l_next_group = Void then
-					l_next_group := l_group.target.system.lowest_used_in_library
+					l_next_group := l_group.target.lowest_used_in_library
 				end
 				l_group := l_next_group
 			end
@@ -672,7 +648,7 @@ feature {NONE} -- Implementation
 					folder_list := override_header
 				elseif clusteri.is_cluster then
 					folder_list := cluster_header
-				elseif clusteri.is_assembly or clusteri.is_physical_assembly then
+				elseif clusteri.is_assembly then
 					folder_list := assembly_header
 				elseif clusteri.is_library then
 					folder_list := library_header
@@ -794,106 +770,11 @@ feature {NONE} -- Implementation
 	has_targets: BOOLEAN
 			-- Is tree showing targets?
 
-	groups_from_sorted_clusters (a_sorted_clusters: DS_LIST [EB_SORTED_CLUSTER]; a_recursive: BOOLEAN): LIST [CONF_GROUP] is
-			-- List of groups from `a_sorted_clusters'.
-			-- If `a_recursive' is True, retrieve groups recursively.
-		local
-			l_group_set: DS_HASH_SET [CONF_GROUP]
-			l_set_cursor: DS_HASH_SET_CURSOR [CONF_GROUP]
-			l_list_cursor: DS_LIST_CURSOR [EB_SORTED_CLUSTER]
-		do
-			create {LINKED_LIST [CONF_GROUP]} Result.make
-			if a_sorted_clusters /= Void then
-				create l_group_set.make (10)
-				l_list_cursor := a_sorted_clusters.new_cursor
-				from
-					l_list_cursor.start
-				until
-					l_list_cursor.after
-				loop
-					find_groups (l_list_cursor.item, l_group_set, a_recursive)
-					l_list_cursor.forth
-				end
-
-				l_set_cursor := l_group_set.new_cursor
-				from
-					l_set_cursor.start
-				until
-					l_set_cursor.after
-				loop
-					Result.extend (l_set_cursor.item)
-					l_set_cursor.forth
-				end
-			end
-		ensure
-			result_attached: Result /= Void
-		end
-
-	find_groups (a_source: EB_SORTED_CLUSTER; a_group_set: DS_HASH_SET [CONF_GROUP]; a_recursive: BOOLEAN) is
-			-- Find groups from `a_source' and store them in `a_group_set'.
-			-- If `a_recursive' is True, search for groups recursively.
-		require
-			a_source_attached: a_source /= Void
-			a_group_set_attached: a_group_set /= Void
-		local
-			l_group: CONF_GROUP
-			l_children: DS_LINKED_LIST [EB_SORTED_CLUSTER]
-			l_cursor: DS_LINKED_LIST_CURSOR [EB_SORTED_CLUSTER]
-		do
-			l_group := a_source.actual_group
-			if l_group /= Void and then not a_group_set.has (l_group) then
-				a_group_set.force_last (l_group)
-				if a_recursive then
-					create l_children.make
-					safe_append_list (l_children, a_source.clusters)
-					safe_append_list (l_children, a_source.overrides)
-					safe_append_list (l_children, a_source.libraries)
-					safe_append_list (l_children, a_source.assemblies)
-					l_cursor := l_children.new_cursor
-					from
-						l_cursor.start
-					until
-						l_cursor.after
-					loop
-						find_groups (l_cursor.item, a_group_set, a_recursive)
-						l_cursor.forth
-					end
-				end
-			end
-		end
-
-	safe_append_list (a_source: DS_LIST [EB_SORTED_CLUSTER]; a_dest: DS_LIST [EB_SORTED_CLUSTER]) is
-			-- If `a_dest' is not Void, append it to `a_source'.
-		require
-			a_source_attached: a_source /= Void
-		do
-			if a_dest /= Void then
-				a_source.append_last (a_dest)
-			end
-		end
-
-	is_group_valid (a_data: ANY): BOOLEAN is
-			-- Does `a_data' contain valid groups information?
-		local
-			l_groups: LIST [CONF_GROUP]
-		do
-			if a_data = Void then
-				Result := True
-			else
-				l_groups ?= a_data
-				if l_groups /= Void then
-					Result := l_groups.for_all (agent (a_group: CONF_GROUP): BOOLEAN do Result := a_group /= Void and then a_group.is_valid end)
-				end
-			end
-		end
-
 feature {EB_CLASSES_TREE_ITEM} -- Protected Properties
-
-	context_menu_factory: EB_CONTEXT_MENU_FACTORY
-			-- Context menu factory
 
 	classes_double_click_agents: LINKED_LIST [PROCEDURE [ANY, TUPLE [INTEGER, INTEGER, INTEGER, DOUBLE, DOUBLE, DOUBLE, INTEGER, INTEGER]]];
 			-- Agents associated to double-clicks on classes.
+
 
 invariant
 	classes_double_click_agents_not_void: classes_double_click_agents /= Void

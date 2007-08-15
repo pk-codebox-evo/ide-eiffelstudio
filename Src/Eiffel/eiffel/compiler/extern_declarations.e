@@ -79,10 +79,10 @@ feature -- Settings
 			r_name.append_character ('(')
 			r_name.append_character (')')
 			r_name.append_character (';')
-			routines.put (type.c_string, r_name)
+			routines.put (type, r_name)
 		end
 
-	add_routine_with_signature (type: STRING; rout_name: STRING; argument_types: ARRAY [STRING]) is
+	add_routine_with_signature (type: TYPE_C; rout_name: STRING; argument_types: ARRAY [STRING]) is
 			-- Add one routine of name `rout_name' and C type `type' and with argument types
 			-- `arguments_types
 		require
@@ -156,7 +156,7 @@ feature -- Settings
 		require
 			buffer_not_void: buffer /= Void
 		local
-			local_routines: like routines
+			local_routines: HASH_TABLE [TYPE_C, STRING]
 			local_routine_tables: SEARCH_TABLE [STRING]
 			local_attribute_tables: SEARCH_TABLE [STRING]
 			local_type_tables: SEARCH_TABLE [STRING]
@@ -170,8 +170,7 @@ feature -- Settings
 				local_routines.after
 			loop
 				buffer.put_string ("%Nextern ")
-				buffer.put_string (local_routines.item_for_iteration)
-				buffer.put_character (' ')
+				local_routines.item_for_iteration.generate (buffer)
 				buffer.put_string (local_routines.key_for_iteration)
 				local_routines.forth
 			end
@@ -254,7 +253,7 @@ feature {NONE} -- Attributes
 	type_tables: SEARCH_TABLE [STRING]
 			-- Type table name
 
-	routines: HASH_TABLE [STRING, STRING]
+	routines: HASH_TABLE [TYPE_C, STRING]
 			-- Routine names
 
 	onces_table: HASH_TABLE [TYPE_C, INTEGER];

@@ -8,14 +8,6 @@ indexing
 class
 	SD_AUTO_HIDE_ANIMATION
 
-inherit
-	ANY
-
-	EV_SHARED_APPLICATION
-		export
-			{NONE} all
-		end
-
 create
 	make
 
@@ -76,16 +68,13 @@ feature {SD_AUTO_HIDE_STATE} -- Command
 			-- Show internal widgets.
 		local
 			l_rect: EV_RECTANGLE
+			l_env: EV_ENVIRONMENT
 			l_zone: SD_AUTO_HIDE_ZONE
 		do
 			if not internal_docking_manager.zones.has_zone_by_content (state.content) then
 				state.set_width_height (state.max_size_by_zone (state.width_height))
 				create l_zone.make (state.content, state.direction)
 				state.set_zone (l_zone)
-
-				-- This for Linux, to make sure no flashing when showing the zone.
-				l_zone.hide
-
 				-- Before add the zone to the fixed area, first clear the other zones in the area except the main_container.
 				internal_docking_manager.command.remove_auto_hide_zones (False)
 
@@ -102,8 +91,9 @@ feature {SD_AUTO_HIDE_STATE} -- Command
 				if internal_shared.auto_hide_tab_slide_timer_interval /= 0 then
 					create internal_close_timer.make_with_interval ({SD_SHARED}.Auto_hide_delay)
 					internal_close_timer.actions.extend (agent on_timer_for_close)
-					ev_application.pointer_motion_actions.extend (agent on_pointer_motion)
-					internal_motion_procedure := ev_application.pointer_motion_actions.last
+					create l_env
+					l_env.application.pointer_motion_actions.extend (agent on_pointer_motion)
+					internal_motion_procudure := l_env.application.pointer_motion_actions.last
 					-- First, put the zone in a fixed, make a animation here.
 
 					create internal_moving_timer
@@ -117,7 +107,6 @@ feature {SD_AUTO_HIDE_STATE} -- Command
 					else
 						internal_docking_manager.fixed_area.set_item_x_position (state.zone, internal_final_position)
 					end
-					state.zone.show
 				end
 
 			end
@@ -142,15 +131,18 @@ feature {SD_AUTO_HIDE_STATE} -- Command
 
 	remove_close_timer is
 			-- Remove close timer.
+		local
+			l_env: EV_ENVIRONMENT
 		do
 			if internal_close_timer /= Void then
 				internal_close_timer.actions.wipe_out
 				internal_close_timer.destroy
 				internal_close_timer := Void
 
-				ev_application.pointer_motion_actions.start
-				ev_application.pointer_motion_actions.prune (internal_motion_procedure)
-				internal_motion_procedure := Void
+				create l_env
+				l_env.application.pointer_motion_actions.start
+				l_env.application.pointer_motion_actions.prune (internal_motion_procudure)
+				internal_motion_procudure := Void
 				debug ("docking")
 					io.put_string ("%N SD_AUTO_HIDE_STATE on_pointer_motion actions pruned")
 				end
@@ -294,9 +286,6 @@ feature {NONE} -- Implementation functions
 					internal_docking_manager.fixed_area.set_item_y_position (state.zone, state.zone.y_position - internal_show_step)
 				end
 			end
-			if not state.zone.is_displayed then
-				state.zone.show
-			end
 		end
 
 	internal_close_moving is
@@ -339,7 +328,7 @@ feature {NONE} -- Implementation
 	pointer_outside: BOOLEAN
 			-- If pointer outside tab stub and zone?
 
-	internal_motion_procedure: PROCEDURE [ANY, TUPLE [EV_WIDGET, INTEGER, INTEGER]]
+	internal_motion_procudure: PROCEDURE [ANY, TUPLE [EV_WIDGET, INTEGER, INTEGER]]
 			-- Motion procedure for animation.
 
 	internal_show_step: INTEGER is 20

@@ -10,21 +10,6 @@ class
 
 feature -- Externals
 
-	frozen gdk_keyval_to_unicode (a_keyval: NATURAL_32): NATURAL_32 is
-		external
-			"C (guint): guint | <gtk/gtk.h>"
-		end
-
-	frozen gdk_window_set_accept_focus (a_window: POINTER; a_accept: BOOLEAN)
-		external
-			"C signature (GdkWindow*, gboolean) use <gtk/gtk.h>"
-		end
-
-	frozen gdk_window_get_state (a_window: POINTER): INTEGER
-		external
-			"C signature (GdkWindow*): GdkWindowState use <gtk/gtk.h>"
-		end
-
 	frozen gdk_region_intersect (a_region1, a_region2: POINTER) is
 		external
 			"C signature (GdkRegion*, GdkRegion*) use <gtk/gtk.h>"
@@ -53,11 +38,6 @@ feature -- Externals
 	frozen gdk_region_rectangle (a_rect: POINTER): POINTER
 		external
 			"C signature (GdkRectangle*): GdkRegion* use <gtk/gtk.h>"
-		end
-
-	frozen gtk_window_set_type_hint (a_window: POINTER; a_hint: INTEGER) is
-		external
-			"C signature (GtkWindow*, GdkWindowTypeHint) use <gtk/gtk.h>"
 		end
 
 	frozen gtk_window_set_accept_focus (a_window: POINTER; a_focus: BOOLEAN) is
@@ -561,20 +541,6 @@ feature -- Externals
 			"calloc (sizeof(GtkStockItem), 1)"
 		end
 
-	frozen c_gtk_allocation_struct_allocate: POINTER is
-		external
-			"C [macro <gtk/gtk.h>]"
-		alias
-			"calloc (sizeof(GtkAllocation), 1)"
-		end
-
-	frozen c_gtk_requisition_struct_allocate: POINTER is
-		external
-			"C [macro <gtk/gtk.h>]"
-		alias
-			"calloc (sizeof(GtkRequisition), 1)"
-		end
-
 	frozen g_signal_handler_disconnect (a_instance: POINTER; handler_id: INTEGER) is
 		external
 			"C inline use <gtk/gtk.h>"
@@ -647,11 +613,6 @@ feature -- Externals
 	frozen gtk_entry_set_has_frame (a_entry: POINTER; has_frame: BOOLEAN) is
 		external
 			"C signature (GtkEntry*, gboolean) use <gtk/gtk.h>"
-		end
-
-	frozen gtk_entry_set_alignment (a_entry: POINTER; a_alignment: REAL_32)
-		external
-			"C signature (GtkEntry*, gfloat) use <gtk/gtk.h>"
 		end
 
 	frozen gtk_file_chooser_set_current_folder (a_dialog: POINTER; a_folder: POINTER) is
@@ -2475,11 +2436,6 @@ feature -- Externals
 			"C signature (GdkPixbuf*, GdkPixbuf*, int, int, int, int, double, double, double, double, GdkInterpType, int) use <gtk/gtk.h>"
 		end
 
-	frozen gdk_pixbuf_copy_area (src: POINTER; src_x, src_y, a_width, a_height: INTEGER; dest: POINTER; dest_x, dest_y: INTEGER) is
-		external
-			"C signature (GdkPixbuf*, int, int, int, int, GdkPixbuf*, int, int) use <gtk/gtk.h>"
-		end
-
 	frozen gtk_widget_render_icon (a_widget, a_stock_id: POINTER; a_icon_size: INTEGER; a_detail: POINTER): POINTER is
 		external
 			"C signature (GtkWidget*, gchar*, GtkIconSize, gchar*): GdkPixbuf* use <gtk/gtk.h>"
@@ -3339,11 +3295,6 @@ feature -- Externals
 	frozen gtk_text_view_scroll_to_iter (a_text_view: POINTER; a_text_iter: POINTER; within_margin: DOUBLE; use_align: BOOLEAN; xalign: DOUBLE; yalign: DOUBLE) is
 		external
 			"C signature (GtkTextView*, GtkTextIter*, gdouble, gboolean, gdouble, gdouble) use <gtk/gtk.h> "
-		end
-
-	frozen gtk_text_view_scroll_to_mark (a_text_view: POINTER; a_text_mark: POINTER; within_margin: DOUBLE; use_align: BOOLEAN; xalign: DOUBLE; yalign: DOUBLE) is
-		external
-			"C signature (GtkTextView*, GtkTextMark*, gdouble, gboolean, gdouble, gdouble) use <gtk/gtk.h> "
 		end
 
 	frozen gtk_text_view_get_iter_location (a_text_view, a_text_iter, a_rectangle: POINTER) is

@@ -14,6 +14,7 @@ indexing
 	date		: "$Date$"
 	revision	: "$Revision$"
 
+
 class
 	EB_TOOLBAR
 
@@ -27,13 +28,13 @@ inherit
 
 	EB_RECYCLER
 		rename
-			destroy as internal_recycle
+			destroy as recycle
 		undefine
 			is_equal, copy, default_create
 		redefine
-			internal_recycle
+			recycle
 		select
-			internal_recycle
+			recycle
 		end
 
 	EB_RECYCLER
@@ -264,9 +265,9 @@ feature -- Conversion
 			Result ?= loc_parent
 		end
 
-feature {NONE} -- Memory management
+feature -- Memory management
 
-	internal_recycle is
+	recycle is
 			-- Recycle `Current', but leave `Current' in an unstable state,
 			-- so that we know whether we're still referenced or not.
 		do

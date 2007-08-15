@@ -13,8 +13,7 @@ inherit
 
 	FILED_STONE
 		redefine
-			is_valid, synchronized_stone, same_as,
-			stone_name
+			is_valid, synchronized_stone, same_as
 		end
 
 	SHARED_EIFFEL_PROJECT
@@ -78,51 +77,12 @@ feature -- Properties
 
 	stone_signature: STRING is
 		do
-			Result := class_i.name
+			Result := class_i.name_in_upper
 		end
 
-	history_name: STRING_GENERAL is
+	history_name: STRING is
 		do
-			Result := Interface_names.s_Class_stone.as_string_32 + stone_signature
-		end
-
-	header: STRING_GENERAL is
-			-- Display class name, class' cluster and class location in
-			-- window title bar.
-		do
-			Result := interface_names.l_classi_header (stone_signature, class_i.group.name, class_i.file_name)
-		end
-
-	synchronized_stone: CLASSI_STONE is
-			-- Clone of `Current' after a recompilation
-			-- (May be Void if not valid anymore. It may also
-			-- be a classc_stone if the class is compiled now)
-		do
-			if class_i /= Void and then class_i.is_valid then
-				if class_i.is_compiled then
-					create {CLASSC_STONE} Result.make (class_i.compiled_class)
-				else
-					create {CLASSI_STONE} Result.make (class_i)
-				end
-			end
-		end
-
-	stone_name: STRING_GENERAL is
-			-- Name of Current stone
-		do
-			if is_valid then
-				Result := class_i.name.twin
-			else
-				Result := Precursor
-			end
-		end
-
-feature -- Status report
-
-	is_valid: BOOLEAN is
-			-- Is `Current' a valid stone?
-		do
-			Result := class_i /= Void and class_i.is_valid
+			Result := Interface_names.s_Class_stone + stone_signature
 		end
 
 	same_as (other: STONE): BOOLEAN is
@@ -135,12 +95,47 @@ feature -- Status report
 				and then equal (class_i.config_class.overriden_by, convcur.class_i.config_class.overriden_by)
 		end
 
-feature {NONE} -- Implementation
+feature -- Access
+
+	header: STRING is
+			-- Display class name, class' cluster and class location in
+			-- window title bar.
+		do
+			create Result.make (20)
+			Result.append (stone_signature)
+			Result.append ("  in cluster ")
+			Result.append (class_i.group.name)
+			Result.append ("  (not in system)")
+			Result.append ("  located in ")
+			Result.append (class_i.file_name)
+		end
+
+	is_valid: BOOLEAN is
+			-- Is `Current' a valid stone?
+		do
+			Result := class_i /= Void and class_i.is_valid
+		end
+
+	synchronized_stone: CLASSI_STONE is
+			-- Clone of `Current' after a recompilation
+			-- (May be Void if not valid anymore. It may also
+			-- be a classc_stone if the class is compiled now)
+		do
+			if class_i /= Void and then class_i.is_valid then
+				if class_i.compiled then
+					create {CLASSC_STONE} Result.make (class_i.compiled_class)
+				else
+					create {CLASSI_STONE} Result.make (class_i)
+				end
+			end
+		end
+
+feature -- Implementation
 
 	actual_class_i: CLASS_I;
 
 invariant
-	actual_class_i_not_void: class_i /= Void
+	actual_class_i_not_void: actual_class_i /= Void
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

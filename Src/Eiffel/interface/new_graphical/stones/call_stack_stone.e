@@ -31,8 +31,7 @@ inherit
 			header,
 			stone_signature,
 			origin_text,
-			history_name,
-			stone_name
+			history_name
 		redefine
 			stone_cursor,
 			X_stone_cursor,
@@ -42,6 +41,8 @@ inherit
 		select
 			is_valid
 		end
+
+	SHARED_APPLICATION_EXECUTION
 
 create
 	make
@@ -58,16 +59,14 @@ feature {NONE} -- Initialization
 			f: E_FEATURE
 		do
 			level_number := level_num
-			if debugger_manager.application_is_executing then
-				curr_cs := debugger_manager.application_status.current_call_stack
-				if curr_cs /= Void then
-					elem ?= curr_cs.i_th (level_num)
-					if elem /= Void then
-						obj_make (elem.object_address, " ", elem.dynamic_class)
-						f := elem.routine
-						if f /= Void then
-							feature_make (f)
-						end
+			curr_cs := Application.status.current_call_stack
+			if curr_cs /= Void then
+				elem ?= curr_cs.i_th (level_num)
+				if elem /= Void then
+					obj_make (elem.object_address, " ", elem.dynamic_class)
+					f := elem.routine
+					if f /= Void then
+						feature_make (f)
 					end
 				end
 			end
@@ -117,16 +116,14 @@ feature -- Access
 			ecs: EIFFEL_CALL_STACK
 			cs: CALL_STACK_ELEMENT
 		do
-			if
-				fvalid
-				and then Precursor {OBJECT_STONE}
-				and then debugger_manager.safe_application_is_stopped
-			then
-				ecs := debugger_manager.application_status.current_call_stack
-				if ecs /= Void and then ecs.count >= level_number then
+			Result := fvalid and then Precursor {OBJECT_STONE}
+					and then Application.status.current_call_stack.count >= level_number
+			if Result then
+				ecs := Application.status.current_call_stack
+				if ecs /= Void then
 					cs := ecs.i_th (level_number)
-					Result := cs /= Void and then cs.is_eiffel_call_stack_element
 				end
+				Result := cs /= Void and then cs.is_eiffel_call_stack_element
 			end
 		end
 

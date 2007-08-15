@@ -9,8 +9,6 @@ frozen class
 	FROZEN_EIFFEL_PARSER
 
 inherit
-	SYSTEM_OBJECT
-
 	EIFFEL_PARSER
 
 create

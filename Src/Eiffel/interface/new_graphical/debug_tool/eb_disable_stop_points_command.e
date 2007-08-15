@@ -12,18 +12,13 @@ class
 inherit
 	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 		redefine
-			new_toolbar_item,
-			new_sd_toolbar_item,
-			new_mini_toolbar_item,
-			new_mini_sd_toolbar_item,
-			mini_pixmap,
-			mini_pixel_buffer,
+			new_toolbar_item, new_mini_toolbar_item, mini_pixmap,
 			tooltext
 		end
 
 	EB_VETO_FACTORY
 
-	SHARED_DEBUGGER_MANAGER
+	EB_SHARED_DEBUG_TOOLS
 
 	SHARED_EIFFEL_PROJECT
 
@@ -33,19 +28,19 @@ inherit
 
 feature -- Access
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- What is printed in the customize dialog.
 		do
 			Result := Interface_names.f_Disable_stop_points
 		end
 
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Pop-up help on buttons.
 		do
 			Result := description
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text for the toolbar button.
 		do
 			Result := Interface_names.b_bkpt_disable
@@ -53,16 +48,6 @@ feature -- Access
 
 	new_toolbar_item (display_text: BOOLEAN): EB_COMMAND_TOOL_BAR_BUTTON is
 			-- Create a new toolbar button for `Current'.
-		do
-			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND} (display_text)
-			Result.drop_actions.extend (agent drop_breakable (?))
-			Result.drop_actions.extend (agent drop_feature (?))
-			Result.drop_actions.extend (agent drop_class (?))
-			Result.drop_actions.set_veto_pebble_function (agent can_drop_debuggable_feature_or_class)
-		end
-
-	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new docking toolbar button for `Current'.
 		do
 			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND} (display_text)
 			Result.drop_actions.extend (agent drop_breakable (?))
@@ -81,17 +66,7 @@ feature -- Access
 			Result.drop_actions.set_veto_pebble_function (agent can_drop_debuggable_feature_or_class)
 		end
 
-	new_mini_sd_toolbar_item: EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new toolbar button for `Current'.
-		do
-			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND}
-			Result.drop_actions.extend (agent drop_breakable (?))
-			Result.drop_actions.extend (agent drop_feature (?))
-			Result.drop_actions.extend (agent drop_class (?))
-			Result.drop_actions.set_veto_pebble_function (agent can_drop_debuggable_feature_or_class)
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Menu entry corresponding to `Current'.
 		do
 			Result := Interface_names.m_Disable_stop_points
@@ -103,22 +78,10 @@ feature -- Access
 			Result := pixmaps.icon_pixmaps.breakpoints_disable_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.breakpoints_disable_icon_buffer
-		end
-
 	mini_pixmap: EV_PIXMAP is
 			-- Icon for `Current'.
 		do
 			Result := pixmaps.mini_pixmaps.breakpoints_disable_icon
-		end
-
-	mini_pixel_buffer: EV_PIXEL_BUFFER is
-			-- Icon for `Current'.
-		do
-			Result := pixmaps.mini_pixmaps.breakpoints_disable_icon_buffer
 		end
 
 	name: STRING is "Disable_bkpt"
@@ -130,17 +93,17 @@ feature -- Execution
 			-- Disable all stop points.
 		local
 			wd: EV_INFORMATION_DIALOG
-			bpm: BREAKPOINTS_MANAGER
+			app_exec: APPLICATION_EXECUTION
 		do
-			bpm := Debugger_manager
-			if bpm.has_breakpoints then
-				bpm.disable_all_breakpoints
+			app_exec := eb_debugger_manager.application
+			if app_exec.has_breakpoints then
+				app_exec.disable_all_breakpoints
 
-				if bpm.error_in_bkpts then
+				if app_exec.error_in_bkpts then
 					create wd.make_with_text (Warning_messages.w_Feature_is_not_compiled)
 					wd.show_modal_to_window (window_manager.last_focused_development_window.window)
 				end
-				Debugger_manager.notify_breakpoints_changes
+				Eb_debugger_manager.notify_breakpoints_changes
 			end
 		end
 
@@ -153,20 +116,20 @@ feature -- Update
 			f: E_FEATURE
 			body_index: INTEGER
 			wd: EV_INFORMATION_DIALOG
-			bpm: BREAKPOINTS_MANAGER
+			app_exec: APPLICATION_EXECUTION
 		do
 			f := bs.routine
 			if f.is_debuggable then
 				index := bs.index
 				body_index := bs.body_index
-				bpm := Debugger_manager
-				bpm.disable_breakpoint (f, index)
+				app_exec := eb_debugger_manager.application
+				app_exec.disable_breakpoint (f, index)
 
-				if bpm.error_in_bkpts then
+				if app_exec.error_in_bkpts then
 					create wd.make_with_text (Warning_messages.w_Feature_is_not_compiled)
 					wd.show_modal_to_window (window_manager.last_focused_development_window.window)
 				end
-				Debugger_manager.notify_breakpoints_changes
+				Eb_debugger_manager.notify_breakpoints_changes
 			end
 		end
 
@@ -175,18 +138,18 @@ feature -- Update
 		local
 			f: E_FEATURE
 			wd: EV_INFORMATION_DIALOG
-			bpm: BREAKPOINTS_MANAGER
+			app_exec: APPLICATION_EXECUTION
 		do
 			f := fs.e_feature
-			bpm := Debugger_manager
-			if f /= Void and then f.is_debuggable and then bpm.has_breakpoint_set(f) then
-				bpm.disable_breakpoints_in_feature (f)
+			app_exec := eb_debugger_manager.application
+			if f /= Void and then f.is_debuggable and then app_exec.has_breakpoint_set(f) then
+				app_exec.disable_breakpoints_in_feature (f)
 
-				if bpm.error_in_bkpts then
+				if app_exec.error_in_bkpts then
 					create wd.make_with_text (Warning_messages.w_Feature_is_not_compiled)
 					wd.show_modal_to_window (window_manager.last_focused_development_window.window)
 				end
-				Debugger_manager.notify_breakpoints_changes
+				Eb_debugger_manager.notify_breakpoints_changes
 			end
 		end
 
@@ -207,18 +170,18 @@ feature -- Update
 		local
 			wd: EV_INFORMATION_DIALOG
 			conv_fst: FEATURE_STONE
-			bpm: BREAKPOINTS_MANAGER
+			app_exec: APPLICATION_EXECUTION
 		do
 			conv_fst ?= cs
 			if conv_fst = Void then
-				bpm := Debugger_manager
-				bpm.disable_breakpoints_in_class (cs.e_class)
+				app_exec := eb_debugger_manager.application
+				app_exec.disable_breakpoints_in_class (cs.e_class)
 
-				if bpm.error_in_bkpts then
+				if app_exec.error_in_bkpts then
 					create wd.make_with_text (Warning_messages.w_Feature_is_not_compiled)
 					wd.show_modal_to_window (window_manager.last_focused_development_window.window)
 				end
-				Debugger_manager.notify_breakpoints_changes
+				Eb_debugger_manager.notify_breakpoints_changes
 			end
 		end
 

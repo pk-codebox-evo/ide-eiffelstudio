@@ -1,20 +1,15 @@
 indexing
-	description:
-		"[
-			Eiffel Vision table. Ms windows implementation
-			
-			Note: This class doesn't inherit from
-			EV_INVISIBLE_CONTAINER_IMP because the children are
-			of type EV_TABLE_CHILD_IMP and not EV_WIDGET_IMP.
-			Yet, the implementation of the following features
-			are the same : set_insensitive, default_style and
-			background brush.
-			
-			Note2: The spacing is put at the end of every cell.
-		]"
+	description: 
+		"Eiffel Vision table. Ms windows implementation"
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
-
+	note: "This class doesn't inherit from%
+		% EV_INVISIBLE_CONTAINER_IMP because the children are%
+		% of type EV_TABLE_CHILD_IMP and not EV_WIDGET_IMP.%
+		% Yet, the implementation of the following features%
+		% are the same : set_insensitive, default_style and%
+		% background brush."
+	note2:" The spacing is put at the end of every cell."
 	date: "$Date$";
 	revision: "$Revision$"
 
@@ -32,7 +27,7 @@ inherit
 			set_item_span,
 			set_item_position_and_span
 		end
-
+		
 	EV_CONTAINER_IMP
 		redefine
 			disable_sensitive,
@@ -46,12 +41,10 @@ inherit
 			destroy,
 			next_tabstop_widget
 		end
-
+		
 	EV_WEL_CONTROL_CONTAINER_IMP
 		rename
 			make as ev_wel_control_container_make
-		undefine
-			on_wm_dropfiles
 		redefine
 			top_level_window_imp
 		end
@@ -73,7 +66,7 @@ feature {NONE} -- Initialization
 				-- Ensure that `internal_item_list' is
 				-- not `Void'.
 			rebuild_internal_item_list
-		end
+		end	
 
 	initialize is
 			-- Initialize `Current'. Precusor and create new_item_actions.
@@ -114,7 +107,7 @@ feature {EV_ANY_I} -- Access
 
 	row_spacing: INTEGER
 			-- Spacing betwwen two rows in pixels.
-
+			
 	item_column_position (widget: EV_WIDGET): INTEGER is
 			-- `Result' is column coordinate of `widget'.
 		local
@@ -127,7 +120,7 @@ feature {EV_ANY_I} -- Access
 			end
 			Result := find_widget_child (widget_imp).left_attachment + 1
 		end
-
+		
 	item_row_position (widget: EV_WIDGET): INTEGER is
 			-- `Result' is row coordinate of `widget'.
 		local
@@ -140,7 +133,7 @@ feature {EV_ANY_I} -- Access
 			end
 			Result := find_widget_child (widget_imp).top_attachment + 1
 		end
-
+		
 	item_column_span (widget: EV_WIDGET): INTEGER is
 			-- `Result' is number of columns taken by `widget'.
 		local
@@ -155,7 +148,7 @@ feature {EV_ANY_I} -- Access
 			widget_child := find_widget_child (widget_imp)
 			Result := widget_child.right_attachment - widget_child.left_attachment
 		end
-
+	
 	item_row_span (widget: EV_WIDGET): INTEGER is
 			-- `Result' is number of rows taken by `widget'.
 		local
@@ -179,7 +172,7 @@ feature {EV_TABLE_I} -- Status report
 	is_control_in_window (hwnd_control: POINTER): BOOLEAN is
 			-- Is the control of handle `hwnd_control'
 			-- located inside `Current'?
-		local
+		local	
 			loc_cursor: CURSOR
 		do
 			if hwnd_control = wel_item then
@@ -263,7 +256,7 @@ feature {EV_ANY_I} -- Status settings
 			is_homogeneous := False
 			notify_change (Nc_minsize, Current)
 		end
-
+	
 	set_row_spacing (value: INTEGER) is
 			-- Make `value' the new `row_spacing'.
 		do
@@ -307,7 +300,7 @@ feature {EV_ANY_I} -- Status settings
 				valid_child: child_imp /= Void
 			end
 				-- Set the parent of `child_imp'.
-			child_imp.set_parent (interface)
+			child_imp.set_parent (Current.interface)
 				-- Create `table_child' to hold `child_imp'.
 			create table_child.make (child_imp, Current)
 				-- Add the table child to `ev_children'.
@@ -331,7 +324,7 @@ feature {EV_ANY_I} -- Status settings
 			notify_change (Nc_minsize, Current)
 		end
 
-
+	
 	remove (v: EV_WIDGET) is
 			-- Remove `v' from `Current' if present.
 		local
@@ -358,7 +351,7 @@ feature {EV_ANY_I} -- Status settings
 				-- Call on_orphaned.
 			widget_imp.on_orphaned
 		end
-
+		
 	set_item_position (v: EV_WIDGET; a_column, a_row: INTEGER) is
 			-- Move `v' to position `a_column', `a_row'.
 		local
@@ -375,7 +368,7 @@ feature {EV_ANY_I} -- Status settings
 				(a_row - 1, a_column - 1, table_child.bottom_attachment - table_child.top_attachment + a_row - 1, table_child.right_attachment - table_child.left_attachment + a_column - 1)
 			notify_change (Nc_minsize, Current)
 		end
-
+		
 	set_item_span (v: EV_WIDGET; column_span, row_span: INTEGER) is
 			-- Resize `v' to occupy `column_span' columns and `row_span' rows.
 		local
@@ -390,9 +383,9 @@ feature {EV_ANY_I} -- Status settings
 			table_child := find_widget_child (child_imp)
 			table_child.set_attachment
 				(table_child.top_attachment, table_child.left_attachment, table_child.top_attachment + row_span, table_child.left_attachment + column_span)
-			notify_change (Nc_minsize, Current)
+			notify_change (Nc_minsize, Current)		
 		end
-
+		
 	set_item_position_and_span (v: EV_WIDGET; a_column, a_row, column_span, row_span: INTEGER) is
 			-- Move `v' to `a_column', `a_row', and resize to occupy `column_span' columns and `row_span' rows.
 			local
@@ -413,7 +406,7 @@ feature {EV_ANY_I} -- Status settings
 				table_child := find_widget_child (child_imp)
 				table_child.set_attachment
 				(a_row - 1, a_column - 1, a_row + row_span - 1, a_column + column_span - 1)
-
+				
 					-- Now actually perform the repositioning.
 				set_item_position (v, a_column, a_row)
 				set_item_span (v, column_span, row_span)
@@ -522,7 +515,7 @@ feature {NONE} -- Resize Implementation
 				adjust_children (columns_value, rows_value, originator)
 			end
 		end
-
+		
 	adjust_minimums_homogeneous (minimums: ARRAYED_LIST [INTEGER]) is
 			-- Adapt `minimums' so all values are equivalent to maximum value
 			-- of `minimums'.
@@ -539,7 +532,7 @@ feature {NONE} -- Resize Implementation
 				minimums.forth
 			end
 		end
-
+		
 	maximum_value (values: ARRAYED_LIST [INTEGER]): INTEGER is
 			-- `Result' is maximum integer value in `values'.
 		do
@@ -584,8 +577,8 @@ feature {NONE} -- Basic operations for implementation
 						mw := tchild.widget.minimum_width
 						if mw > minimums.i_th (right) then
 							minimums.put_i_th (mw, right)
-						end
-
+						end	
+						
 					end
 					list.forth
 				end
@@ -649,7 +642,7 @@ feature {NONE} -- Basic operations for implementation
 						mh := tchild.widget.minimum_height
 						if mh > minimums.i_th (bottom) then
 							minimums.put_i_th (mh, bottom)
-						end
+						end	
 					end
 					list.forth
 				end
@@ -717,13 +710,13 @@ feature {NONE} -- Basic operations for implementation
 						mh := tchild.widget.minimum_height
 						if mh > minrow.i_th (bottom) then
 							minrow.put_i_th (mh, bottom)
-						end
+						end	
 					end
 					if (right - tchild.left_attachment = 1) then
 						mw := tchild.widget.minimum_width
 						if mw > mincol.i_th (right) then
 							mincol.put_i_th (mw, right)
-						end
+						end	
 					end
 					list.forth
 				end
@@ -755,7 +748,7 @@ feature {NONE} -- Basic operations for implementation
 						-- Note that `sum_rows_minimum' does not correctly sum when homogeneous,
 						-- as the values are still the non - homogeneous transformed values.
 						-- Therefore, we compute directly.
-					ev_set_minimum_size (maximum_value (columns_minimum) * columns_minimum.count + border_width * 2 + column_spacing * (columns_minimum.count - 1), maximum_value (rows_minimum) * rows_minimum.count + border_width * 2 + row_spacing * (rows_minimum.count - 1))
+					ev_set_minimum_size (maximum_value (columns_minimum) * columns_minimum.count + border_width * 2 + column_spacing * (columns_minimum.count - 1), maximum_value (rows_minimum) * rows_minimum.count + border_width * 2 + row_spacing * (rows_minimum.count - 1))	
 				else
 					sum_rows_minimums
 					sum_columns_minimums
@@ -773,17 +766,24 @@ feature {NONE} -- Implementation
 			-- in case it was set insensitive by the child.
 		do
 			if parent_imp /= Void then
-				parent_imp.interface.prune (interface)
+				parent_imp.interface.prune (Current.interface)
 			end
 			internal_array.discard_items
 			wel_destroy
 			set_is_destroyed (True)
 		end
 
+	update_for_pick_and_drop (starting: BOOLEAN) is
+			-- Pick and drop status has changed so notify children.
+		do
+			--| FIXME Propagate to  children.
+		end
+		
+
 	compute_values
 		(minimums: ARRAYED_LIST [INTEGER]; new_size, total_sum, spacing: INTEGER
 		): ARRAYED_LIST [INTEGER] is
-			-- Recalculate values depending on the options and the minimums.
+			-- Recalculate values depending on the options and the minimums. 
 		local
 			rate, total_rest, mark: INTEGER
 			total_size, count1: INTEGER
@@ -795,7 +795,7 @@ feature {NONE} -- Implementation
 				Result.put_i_th (new_size - border_width , 2)
 			else
 				create Result.make_filled (count1 + 1)
-
+				
 				total_size := new_size - border_width * 2
 				rate := (total_size - total_sum) // count1
 				total_rest := (total_size - total_sum) \\ count1
@@ -846,7 +846,7 @@ feature {NONE} -- Implementation
 
 	rest (total_rest: INTEGER): INTEGER is
 				-- Give the rest we must add to the current child of
-				-- ev_children when the size of the parent is not a
+				-- ev_children when the size of the parent is not a 
 				-- multiple of the number of children.
 		do
 			if total_rest > 0 then
@@ -919,13 +919,13 @@ feature {NONE} -- Implementation
 						right := tchild.right_attachment + 1
 						bottom := tchild.bottom_attachment + 1
 						top := tchild.top_attachment + 1
-
+						
 						if (bottom - top > 1) and (rows_value @ bottom - rows_value @ top + ((bottom - top - 1) * row_spacing) >= tchild.widget.minimum_height) then
 							row_spacing_to_add := (bottom - top - 1) * row_spacing
 						else
 							row_spacing_to_add := 0
 						end
-
+						
 						if (right - left > 1) and (columns_value @ right - columns_value @ left + ((right - left - 1) * column_spacing) > tchild.widget.minimum_width) then
 							column_spacing_to_add := (right - left - 1) * column_spacing
 						else
@@ -968,7 +968,7 @@ feature {NONE} -- Implementation
 			-- We can then use this to see if the rows need to be enlarged
 			-- to fit a multiple spanned widget.
 			length := last - first
-			cur := minimums.cursor
+			cur := minimums.cursor	
 			from
 				minimums.go_i_th (first + 1)
 			until
@@ -988,7 +988,7 @@ feature {NONE} -- Implementation
 				clone_min := minimums.twin
 
 					-- Reduce step by the total values contained in `minimums'
-					-- between the `first' + 1 and `last'.
+					-- between the `first' + 1 and `last'. 
 				from
 					clone_min.go_i_th (first + 1)
 				until
@@ -1006,7 +1006,7 @@ feature {NONE} -- Implementation
 				until
 					minimums.index = last + 1
 				loop
-					if total_rest > 0 then
+					if total_rest > 0 then 
 						minimums.replace (minimums.item + step + 1)
 						total_rest := total_rest - 1
 					else
@@ -1070,21 +1070,21 @@ feature {NONE} -- Implementation
 			end
 			columns_sum := sum
 		end
-
+		
 	adjust_tab_ordering (ordered_widgets: ARRAYED_LIST [WEL_WINDOW]; widget_depths: ARRAYED_LIST [INTEGER]; depth: INTEGER) is
 			-- Adjust tab ordering of children in `Current'.
 			-- used when `Current' is a child of an EV_DIALOG_IMP_MODAL
-			-- or an EV_DIALOG_IMP_MODELESS. When
+			-- or an EV_DIALOG_IMP_MODELESS. When 
 		do
 			--| FIXME implement.
 		end
-
+		
 	index_of_child (child: EV_WIDGET_IMP): INTEGER is
 			-- `Result' is 1 based index of `child' within `Current'.
 		do
 			Result := interface.index_of (child.interface, 1)
 		end
-
+		
 	next_tabstop_widget (start_widget: EV_WIDGET; search_pos: INTEGER; forwards: BOOLEAN): EV_WIDGET_IMP is
 			-- Return the next widget that may by tabbed to as a result of pressing the tab key from `start_widget'.
 			-- `search_pos' is the index where searching must start from for containers, and `forwards' determines the

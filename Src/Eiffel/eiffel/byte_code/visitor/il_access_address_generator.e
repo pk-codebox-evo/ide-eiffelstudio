@@ -41,6 +41,7 @@ feature -- Access
 	il_generator: IL_CODE_GENERATOR
 			-- Actual IL code generator.
 
+
 feature {NONE} -- Implementation
 
 	process_argument_b (a_node: ARGUMENT_B) is
@@ -57,7 +58,7 @@ feature {NONE} -- Implementation
 			l_cl_type ?= a_node.context_type
 			il_generator.generate_current
 			il_generator.generate_attribute_address (
-				l_cl_type.implemented_type (a_node.written_in),
+				il_generator.implemented_type (a_node.written_in, l_cl_type),
 				context.real_type (a_node.type), a_node.attribute_id)
 		end
 

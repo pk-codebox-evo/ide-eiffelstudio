@@ -10,49 +10,55 @@ class
 	MARGIN_WIDGET
 
 inherit
+	MARGIN_WIDGET_IMP
+		rename
+			initialized_cell as constants_initialized_cell
+		redefine
+			default_create
+		end
+
 	TEXT_OBSERVER
 		export
 			{NONE} all
 		undefine
+			default_create,
 			copy,
 			is_equal
 		end
 
 	SHARED_EDITOR_DATA
 		undefine
+			default_create,
 			copy,
 			is_equal
-		end
-
-	EV_SHARED_APPLICATION
-		export
-			{NONE} all
 		end
 
 create
 	make_with_panel
 
-feature {NONE}-- Initialization
+feature -- Initialization
+
+	default_create is
+			--
+		do
+			create widget
+			initialize
+		end
 
 	make_with_panel (a_text_panel: like text_panel) is
 			-- Associate an text panel/editor
 		require
 			text_panel_not_void: a_text_panel /= Void
 		do
-				-- Create all widgets.
-			create margin_viewport
-			create margin_area
-
-				-- Build_widget_structure.
-			margin_viewport.extend (margin_area)
-			margin_area.set_minimum_width (1)
-			margin_area.set_minimum_height (1)
-
-				-- Call `user_initialization'.
-			user_initialization
-
-				-- Associate panel.
+			default_create
 			set_text_panel (a_text_panel)
+		end
+
+	user_initialization is
+			--
+		do
+			margin_area.expose_actions.extend (agent on_repaint)
+			update_width_cell
 		end
 
 	set_text_panel (a_text_panel: like text_panel) is
@@ -64,15 +70,6 @@ feature {NONE}-- Initialization
 			a_text_panel.text_displayed.add_lines_observer (Current)
 			a_text_panel.text_displayed.add_edition_observer (Current)
 			margin_area.set_minimum_size (buffered_drawable_width, buffered_drawable_height)
-				-- Set focus to `text_panel' anytime we receives the focus since from
-				-- the user point of view the margin and the editor are one.
-			margin_area.focus_in_actions.extend (agent text_panel.set_focus)
-		end
-
-	user_initialization is
-		do
-			margin_area.expose_actions.extend (agent on_repaint)
-			update_width_cell
 		end
 
 feature -- Access
@@ -97,7 +94,7 @@ feature -- Status setting
 			-- If `a_width' is greater than `width', assign `a_width' to `width'
 			-- update display if necessary.
 		do
-			margin_viewport.set_minimum_width (a_width)
+			widget.set_minimum_width (a_width)
 		end
 
 	synch_with_panel is
@@ -112,21 +109,12 @@ feature -- Graphical Interface
 	text_panel: TEXT_PANEL
 			-- The text panel/editor to which Current is anchored
 
-	margin_viewport: EV_VIEWPORT
-	margin_area: EV_DRAWING_AREA
-
 feature -- Basic operations
-
-	show is
-			-- Show `Current'.
-		do
-			margin_viewport.show
-		end
 
 	destroy is
 			-- Destroy
 		do
-			margin_viewport.destroy
+			widget.destroy
 			if margin_area /= Void then
 				margin_area.destroy
 				margin_area := Void
@@ -409,6 +397,12 @@ feature {TEXT_PANEL} -- Display functions
  			ev_application.sleep (50)
  			margin_area.set_background_color (editor_preferences.margin_background_color)
  		end
+
+	ev_application: EV_APPLICATION is
+			-- Current application.
+		once
+			Result := (create {EV_ENVIRONMENT}).application
+		end
 
 	on_paint: BOOLEAN
 

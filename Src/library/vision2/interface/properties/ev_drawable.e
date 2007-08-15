@@ -389,8 +389,6 @@ feature -- Drawing operations
 		require
 			not_destroyed: not is_destroyed
 			points_not_void: points /= Void
-			points_contains_no_void_items: not points.has (Void)
-			points_contains_first_and_last: points.count >= 2
 		do
 			implementation.draw_polyline (points, is_closed)
 		end
@@ -444,8 +442,6 @@ feature -- Drawing operations (filled)
 		require
 			not_destroyed: not is_destroyed
 			points_not_void: points /= Void
-			points_contains_no_void_items: not points.has (Void)
-			points_contains_first_and_last: points.count >= 2
 		do
 			implementation.fill_polygon (points)
 		end

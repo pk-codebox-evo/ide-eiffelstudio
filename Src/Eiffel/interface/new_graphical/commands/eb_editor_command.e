@@ -29,12 +29,6 @@ feature -- Status setting
 			needs_editable := ed
 		end
 
-	set_is_for_main_editors (a_b: BOOLEAN) is
-			-- Set `is_for_main_editor' with `a_b'.
-		do
-			is_for_main_editor := a_b
-		end
-
 	update_status is
 			-- Enable or disable `Current'.
 		do
@@ -57,9 +51,6 @@ feature -- Status report
 
 	needs_editable: BOOLEAN
 			-- Does the command require the editor to be editable?
-
-	is_for_main_editor: BOOLEAN
-			-- Is the command only for the main editors?
 
 feature -- observer pattern
 

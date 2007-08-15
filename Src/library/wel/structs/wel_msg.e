@@ -43,13 +43,13 @@ feature -- Access
 			Result := cwel_msg_get_message (item)
 		end
 
-	wparam: POINTER is
+	wparam: INTEGER is
 			-- Additional information about `message'
 		do
 			Result := cwel_msg_get_wparam (item)
 		end
 
-	lparam: POINTER is
+	lparam: INTEGER is
 			-- Additional information about `message'
 		do
 			Result := cwel_msg_get_lparam (item)
@@ -73,7 +73,7 @@ feature -- Element change
 			message_set: message = a_message
 		end
 
-	set_wparam (a_wparam: POINTER) is
+	set_wparam (a_wparam: INTEGER) is
 			-- Set `wparam' with `a_wparam'.
 		do
 			cwel_msg_set_wparam (item, a_wparam)
@@ -81,7 +81,7 @@ feature -- Element change
 			wparam_set: wparam = a_wparam
 		end
 
-	set_lparam (a_lparam: POINTER) is
+	set_lparam (a_lparam: INTEGER) is
 			-- Set `lparam' with `a_lparam'.
 		do
 			cwel_msg_set_lparam (item, a_lparam)
@@ -90,32 +90,6 @@ feature -- Element change
 		end
 
 feature -- Status report
-
-	user_generated: BOOLEAN
-			-- Is `Current' the result of a user-generated action, ie: mouse move or button click?
-		do
-			Result := True
-			inspect
-				cwel_msg_get_message (item)
-			when wm_mousemove  then
-			when wm_mousewheel then
-			when wm_lbuttondown then
-			when wm_lbuttonup then
-			when wm_lbuttondblclk then
-			when wm_mbuttondown then
-			when wm_mbuttonup then
-			when wm_mbuttondblclk then
-			when wm_rbuttondown then
-			when wm_rbuttonup then
-			when wm_rbuttondblclk then
-			when wm_keydown then
-			when wm_keyup then
-			when wm_syskeydown then
-			when wm_syskeyup then
-			else
-				Result := False
-			end
-		end
 
 	last_boolean_result: BOOLEAN
 			-- Last result of `get', `get_all', `translate',
@@ -319,12 +293,12 @@ feature {NONE} -- Externals
 			"C [macro <msg.h>]"
 		end
 
-	cwel_msg_set_lparam (ptr: POINTER; value: POINTER) is
+	cwel_msg_set_lparam (ptr: POINTER; value: INTEGER) is
 		external
 			"C [macro <msg.h>]"
 		end
 
-	cwel_msg_set_wparam (ptr: POINTER; value: POINTER) is
+	cwel_msg_set_wparam (ptr: POINTER; value: INTEGER) is
 		external
 			"C [macro <msg.h>]"
 		end
@@ -339,12 +313,12 @@ feature {NONE} -- Externals
 			"C [macro <msg.h>]"
 		end
 
-	cwel_msg_get_wparam (ptr: POINTER): POINTER is
+	cwel_msg_get_wparam (ptr: POINTER): INTEGER is
 		external
 			"C [macro <msg.h>]"
 		end
 
-	cwel_msg_get_lparam (ptr: POINTER): POINTER is
+	cwel_msg_get_lparam (ptr: POINTER): INTEGER is
 		external
 			"C [macro <msg.h>]"
 		end
@@ -360,4 +334,8 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+
+
+
+end -- class WEL_MSG
+

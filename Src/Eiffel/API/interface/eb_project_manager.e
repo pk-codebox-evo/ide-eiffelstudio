@@ -10,7 +10,7 @@ class
 	EB_PROJECT_MANAGER
 
 inherit
-	SHARED_DEBUGGER_MANAGER
+	EB_SHARED_DEBUG_TOOLS
 
 	EB_SHARED_INTERFACE_TOOLS
 
@@ -21,8 +21,6 @@ feature -- Initialization
 
 	make (a_project: E_PROJECT) is
 			-- Associate `Current' with `a_project'.
-		require
-			a_project_not_void: a_project /= Void
 		do
 			project := a_project
 			create load_agents.make (10)
@@ -31,8 +29,6 @@ feature -- Initialization
 			create edition_agents.make (10)
 			create compile_start_agents.make (10)
 			create compile_stop_agents.make (10)
-		ensure
-			project_set: project = a_project
 		end
 
 feature -- Access
@@ -104,7 +100,7 @@ feature -- Basic operations
 			l_load_agents: like load_agents
 		do
 				-- Load application context (command line and breakpoints)
-			Debugger_manager.load_debugger_data
+			Debugger_manager.load_debug_info
 			is_project_loaded := True
 
 			from
@@ -154,7 +150,7 @@ feature -- Basic operations
 			is_project_loaded := False
 			is_created := False
 				-- Save breakpoint status and command line.
-			Debugger_manager.save_debugger_data
+			Debugger_manager.save_debug_info
 
 			from
 					-- We need to twin the list as items may be removed as a result or iteration.
@@ -199,18 +195,10 @@ feature -- Basic operations
 			end
 
 			if is_successful then
-				if Debugger_manager.has_breakpoints then
-					Degree_output.put_resynchronizing_breakpoints_message
-					Debugger_manager.resynchronize_breakpoints
-				end
-
 					-- Save breakpoint status and command line.
-				Debugger_manager.save_debugger_data
+				Debugger_manager.save_debug_info
 			end
 		end
-
-invariant
-	project_not_void: project /= Void
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

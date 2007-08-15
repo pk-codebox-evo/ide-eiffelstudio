@@ -19,7 +19,7 @@ feature -- Low level factories
 		do
 			create Result
 			if type_prefix /= Void then
-				id.set_name (type_prefix + id.name)
+				id.prepend (type_prefix)
 			end
 			Result.initialize (id, is_struct, nb_pointer, is_byref)
 		ensure

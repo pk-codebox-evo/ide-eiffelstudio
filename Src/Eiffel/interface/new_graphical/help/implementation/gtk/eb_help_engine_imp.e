@@ -33,7 +33,7 @@ feature -- Status Report
 	last_show_successful: BOOLEAN
 			-- Was last call to `show' successful?
 
-	last_error_message: STRING_GENERAL
+	last_error_message: STRING
 			-- Last error message, if any
 
 feature -- Basic Operations
@@ -49,8 +49,10 @@ feature -- Basic Operations
 			cmd := preferences.misc_data.internet_browser_preference.string_value
 			if cmd.is_empty then
 				last_show_successful := False
+				last_error_message := warning_messages.w_No_internet_browser_selected
 			elseif cmd.substring_index ("$url", 1) <= 0 then
 				last_show_successful := False
+				last_error_message := Warning_messages.w_No_url_to_replace
 			else
 				cmd.append_character (' ')
 				root := eiffel_layout.docs_path.twin
@@ -67,13 +69,8 @@ feature -- Basic Operations
 					last_show_successful := True
 				else
 					last_show_successful := False
-
+					last_error_message := Warning_messages.w_Page_not_exist
 				end
-			end
-			if last_show_successful then
-				last_error_message := Void
-			else
-				last_error_message := Warning_messages.w_help_topic_could_not_be_displayed
 			end
 		end
 

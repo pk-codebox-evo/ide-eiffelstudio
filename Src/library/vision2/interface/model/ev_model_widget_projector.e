@@ -284,7 +284,7 @@ feature {NONE} -- Event implementation
 			event_fig: EV_MODEL
 			p: BOOLEAN
 			w_x, w_y: INTEGER
-			action: EV_LITE_ACTION_SEQUENCE [TUPLE]
+			action: ACTION_SEQUENCE [TUPLE]
 		do
 			w_x := x + area_x
 			w_y := y + area_y
@@ -325,7 +325,7 @@ feature {NONE} -- Event implementation
 			event_fig: EV_MODEL
 			p: BOOLEAN
 			w_x, w_y: INTEGER
-			action: EV_LITE_ACTION_SEQUENCE [TUPLE]
+			action: ACTION_SEQUENCE [TUPLE]
 		do
 			w_x := x + area_x
 			w_y := y + area_y
@@ -362,7 +362,7 @@ feature {NONE} -- Event implementation
 			event_fig: EV_MODEL
 			p: BOOLEAN
 			w_x, w_y: INTEGER
-			action: EV_LITE_ACTION_SEQUENCE [TUPLE]
+			action: ACTION_SEQUENCE [TUPLE]
 		do
 			w_x := x + area_x
 			w_y := y + area_y
@@ -425,7 +425,7 @@ feature {NONE} -- Event implementation
 			event_fig: EV_MODEL
 			same_fig: EV_MODEL
 			p: BOOLEAN
-			action: EV_LITE_ACTION_SEQUENCE [TUPLE]
+			action: ACTION_SEQUENCE [TUPLE]
 		do
 			if current_figure /= new_current_figure then
 				if
@@ -496,7 +496,7 @@ feature {NONE} -- Event implementation
 			event_fig: EV_MODEL
 			p: BOOLEAN
 			w_x, w_y: INTEGER
-			action: EV_LITE_ACTION_SEQUENCE [TUPLE]
+			action: ACTION_SEQUENCE [TUPLE]
 		do
 			w_x := x + area_x
 			w_y := y + area_y
@@ -542,10 +542,10 @@ feature {NONE} -- Event implementation
 			mouse_move (a_x, a_y, 0.0, 0.0, 0.0, 0, 0)
 			fig := current_figure
 			if fig = Void or else ev_application.ctrl_pressed then
-				Result := world.real_pebble (a_x, a_y)
+				Result := world.real_pebble
 			elseif fig.is_sensitive then
 				from until Result /= Void or fig = Void loop
-					Result := fig.real_pebble (a_x, a_y)
+					Result := fig.real_pebble
 					if Result = Void then
 						fig := fig.group
 					end

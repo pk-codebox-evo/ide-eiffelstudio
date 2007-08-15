@@ -1,14 +1,12 @@
 ########################################################################
-# Makefile.VMS generated from Makefile.SH on Fri Nov 18 08:54:49 PST 1994
-# .../C/bench/Makefile.VMS
+# Makefile generated from Makefile.SH on Fri Nov 18 08:54:49 PST 1994
 # hand edited for C/bench on VMS
-# $Id$
-########################################################################
+
 SHELL = /bin/sh
 JMAKE = jmake
-#TOP = [-]
-CURRENT = bench
-#DIR = [.bench]
+TOP = [-]
+CURRENT = [.platform
+DIR = $(CURRENT)]
 
 ########################################################################
 # Parameters set by Configure -- edit config.sh if changes are needed
@@ -28,9 +26,8 @@ SED = /bin/sed
 ########################################################################
 # Automatically generated parameters -- do not edit
 
-SOURCES =  \$(LSRC) \$(PSTORE)
-#OBJECTS =  $(LOBJ)
-OBJECTS =  $(FOBJ) $(WOBJ) $(MT_FOBJ) $(MT_WOBJ) bytedump.o meltdump.o
+SOURCES =  $(LSRC)
+OBJECTS =  $(LOBJ)
 
 ########################################################################
 # New suffixes and associated building rules -- edit with care
@@ -54,115 +51,51 @@ all :: .FORCE_DEPEND
 ########################################################################
 # Start of Jmakefile
 
+# define vms specific symbols for compiling, etc.
+#include $(TOP)makeinc.vms
+include [-]makeinc.vms
+# to compile for debugging, say	    make <target> "DEBUG_CFLAGS=/debug/noopt"
+# to compile for distribution, say  make <target> "DEBUG_CFLAGS="
+#                              or   make <target> "DEBUG_CFLAGS=/opt"
+
+LIBRUN = ../run-time
+
 #DPFLAGS = /prefix=all/incl=([-],[-.run-time])
 #CINCLUDES = /incl=($(TOP),[-.run-time],[-.run-time.include],[-.minilzo])
-#CINCLUDES = /incl=($(DECC_INCLUDES),[-.run-time],[-.run-time.include],[-.minilzo],[-.idrs])
-CINCLUDES = [-.run-time],[-.run-time.include],[-.minilzo],[-.idrs]
-#CDEFINES = BENCH_TEST
-
+CINCLUDES = /incl=($(DECC_INCLUDES),[-.run-time],[-.run-time.include],[-.minilzo],[-.idrs])
 # Presumably, these modules are used only by es3
 DPFLAGS = $(CINCLUDES)$(CDEFINES)
-#CFLAGS = $(DECC_FLAGS)$(DPFLAGS)
+CFLAGS = $(DECC_FLAGS)$(DPFLAGS)
 
-# define vms specific symbols for compiling, etc.
-include EIFFEL_SRC:[C]makeinc.VMS
+LSRC = pstore.c pretrieve.c date.c encode.c offset.c byte.c
 
-
-# Files used to build the daemon
-LSRC = byte.c date.c encode.c offset.c minilzo.c
-PSTORE = pstore.c pretrieve.c
-
-# Derived object file names
-FOBJ = \
-	byte.obj \
-	date.obj \
-	encode.obj \
-	offset.obj \
-	minilzo.obj \
-	pstore.obj \
-	pretrieve.obj 
-
-MT_FOBJ = \
-	MTbyte.obj \
-	MTdate.obj \
-	MTencode.obj \
-	MToffset.obj \
-	MTminilzo.obj \
-	MTpstore.obj \
-	MTpretrieve.obj 
-
-WOBJ = \
-	byte.obj \
-	date.obj \
-	encode.obj \
-	offset.obj \
-	minilzo.obj \
-	wpstore.obj \
-	wpretrieve.obj 
-
-MT_WOBJ = \
-	MTbyte.obj \
-	MTdate.obj \
-	MTencode.obj \
-	MToffset.obj \
-	MTminilzo.obj \
-	MTwpstore.obj \
-	MTwpretrieve.obj 
+LOBJ = $(patsubst %.c,%.obj,$(LSRC))
+DEPEND = makefile
+$(LOBJ) :: $(DEPEND)		# make objects depend on this makefile 
 
 
-
-#WOBJ = byte.obj date.obj encode.obj offset.obj minilzo.obj pstore.obj_wk pretrieve.obj_wk
-#MT_FOBJ = MTbyte.obj MTdate.obj MTencode.obj MToffset.obj MTminilzo.obj MTpstore.obj MTpretrieve.obj 
-#MT_WOBJ = MTbyte.obj MTdate.obj MTencode.obj MToffset.obj MTminilzo.obj MTwpstore.obj MTwpretrieve.obj 
-#LOBJ = $(FOBJ) $(WOBJ) $(MT_FOBJ) $(MT_WOBJ)
-#DEPENDENCIES = $(TOP)/eif_config.h $(TOP)/eif_portable.h $(TOP)/eif_confmagic.h $(MAKEFILE_DEPENDENCIES) 
-#$(LOBJ) : $(DEPENDENCIES)	# make objects depend on local Makefile
-
-$(OBJECTS) : $(EXTRA_DEPENDENCIES)
-
-
+#THISLIB = platform.olb
 THISLIB = compiler.olb
-MTLIB = MTcompiler.olb
-WKLIB = WKcompiler.olb
-#LIBS = $(THISLIB) $(MTLIB) $(WKLIB)
+LIBS = $(THISLIB)
 
-#all :: $(LIBS)
+all :: $(LIBS)
 complete : FORCE all
 FORCE:
 
-#LISTINGS = $(patsubst %.obj,%.lis,$(LOBJ))
-LISTINGS = $(patsubst %.obj,%.lis,$(FOBJ)) # $(patsubst %.obj_wk,%.lis_wk,$(WOBJ)) $(patsubst %.obj,%.lis,$(MT_FOBJ)) $(patsubst %.obj,%.lis,$(MT_WOBJ)) 
-$(LISTINGS) : $(EXTRA_DEPENDENCIES) 
-listings : $(LISTINGS)
-#	@write sys$$output "listings = $(LISTINGS)"
-#	@write sys$$output "Dependents: $^"
+LISTINGS = $(patsubst %.obj,%.lis,$(LOBJ)) $(patsubst %.obj,%.lis,$(LOBJ_CS))
+listings : $(DEPEND) $(LISTINGS)
+#listings : $(patsubst %.obj,%.lis,$(LOBJ)) $(patsubst %.obj,%.lis,$(LOBJ_CS))
+	@write sys$$output "listings = $(LISTINGS)"
 
+local_realclean::
+#	$(RM) libplatform.a
+	$(RM) *.obj;* # , $(THISLIB);*
 
-local_realclean ::
-	-$(RM) *.obj*;*,*.olb;*
-	if f$$search("*.dia") .nes. "" then $(RM) *.dia;*
-
-
-all :: $(THISLIB)
-$(THISLIB) : $(FOBJ)
+#$(THISLIB) :: $(LOBJ)
+$(THISLIB) :: $(LOBJ) # $(DEPEND)
+#	libr/create $@ $(LOBJ)
+#	libr/create $@ $(patsubst %.obj,%.obj$(COMMA),$(LOBJ)) nl:
 	libr/create $@ $^
-	@-purge/nolog *.obj*
-	@-if f$$search("*.dia") .nes. "" then purge/nolog *.dia
-
-
-all :: $(MTLIB) # MTcompiler.olb
-$(MTLIB) : $(MT_FOBJ)
-	libr/create $@ $^
-	@-purge/nolog *.obj*
-	@-if f$$search("*.dia") .nes. "" then purge/nolog *.dia
-
-#all :: $(WKLIB)
-$(WKLIB) : $(WOBJ)
-	libr/create $@ $^
-	@-purge/nolog $^
-	@-if f$$search("*.dia") .nes. "" then purge/nolog *.dia
-
-.SUFFIXES : .obj_wk
 
 
 depend:: ../mkdep
@@ -193,7 +126,7 @@ clobber: local_clobber
 
 local_clean::
 #	$(RM) core *~ *.o
-	-$(RM) *.obj*;*,*.dia;*,*.olb;*
+	-$(RM) *.obj;*,*.dia;*,*.olb;*
 
 local_realclean:: local_clean
 
@@ -220,12 +153,6 @@ tags::
 local_clobber::
 	$(RM) tags
 
-
-show ::
-	@write sys$$output "$(CURRENT): $$(LOBJ) = $(LOBJ)"
-	@write sys$$output "$(CURRENT): $$(WOBJ) = $(WOBJ)"
-	@write sys$$output "$(CURRENT): $$(LISTINGS) = $(LISTINGS)"
-
 ########################################################################
 # Empty rules for directories with no sub-directories -- do not edit
 
@@ -248,7 +175,6 @@ Makefiles.SH::
 ########################################################################
 # Dependencies generated by make depend
 # DO NOT DELETE THIS LINE -- make depend relies on it
-minilzo.obj : minilzo.c minilzo.h lzoconf.h 
 names.obj :  names.c
 names.obj : [-]eif_portable.h
 names.obj : [-]eif_confmagic.h

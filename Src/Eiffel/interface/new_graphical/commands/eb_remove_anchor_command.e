@@ -13,9 +13,7 @@ inherit
 	EB_CONTEXT_DIAGRAM_COMMAND
 		redefine
 			new_toolbar_item,
-			new_sd_toolbar_item,
-			description,
-			menu_name
+			description
 		end
 
 create
@@ -27,8 +25,22 @@ feature -- Basic operations
 			-- Perform operation.
 		do
 			create explain_dialog.make_with_text (Interface_names.e_diagram_remove_anchor)
-			explain_dialog.show_modal_to_window (tool.develop_window.window)
+			explain_dialog.show_modal_to_window (tool.development_window.window)
 		end
+
+	new_toolbar_item (display_text: BOOLEAN): EB_COMMAND_TOOL_BAR_BUTTON is
+			-- Create a new toolbar button for this command.
+			--
+			-- Call `recycle' on the result when you don't need it anymore otherwise
+			-- it will never be garbage collected.
+		do
+			Result := Precursor (display_text)
+			Result.drop_actions.extend (agent execute_with_class)
+			Result.drop_actions.extend (agent execute_with_class_list)
+			Result.drop_actions.extend (agent execute_with_cluster)
+		end
+
+feature {NONE} -- Implementation
 
 	execute_with_class (a_stone: CLASSI_FIGURE_STONE) is
 			-- Set `is_fixed' to false for class in `a_stone'.
@@ -85,32 +97,6 @@ feature -- Basic operations
 			end
 		end
 
-	new_toolbar_item (display_text: BOOLEAN): EB_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new toolbar button for this command.
-			--
-			-- Call `recycle' on the result when you don't need it anymore otherwise
-			-- it will never be garbage collected.
-		do
-			Result := Precursor (display_text)
-			Result.drop_actions.extend (agent execute_with_class)
-			Result.drop_actions.extend (agent execute_with_class_list)
-			Result.drop_actions.extend (agent execute_with_cluster)
-		end
-
-	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new toolbar button for this command.
-			--
-			-- Call `recycle' on the result when you don't need it anymore otherwise
-			-- it will never be garbage collected.
-		do
-			Result := Precursor (display_text)
-			Result.drop_actions.extend (agent execute_with_class)
-			Result.drop_actions.extend (agent execute_with_class_list)
-			Result.drop_actions.extend (agent execute_with_cluster)
-		end
-
-feature {NONE} -- Implementation
-
 	explain_dialog: EB_INFORMATION_DIALOG
 			-- Dialog explaining how to use `Current'.
 
@@ -120,26 +106,14 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.diagram_remove_anchor_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.diagram_remove_anchor_icon_buffer
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := interface_names.f_diagram_remove_anchor
 		end
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Description for this command.
-		do
-			Result := Interface_names.l_diagram_remove_anchor
-		end
-
-	menu_name: STRING_GENERAL is
-			-- Name on corresponding menu items
 		do
 			Result := Interface_names.l_diagram_remove_anchor
 		end

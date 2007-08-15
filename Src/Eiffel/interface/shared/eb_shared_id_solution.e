@@ -76,7 +76,7 @@ feature -- Access (Target)
 				else
 					create l_uuid
 					if l_uuid.is_valid_uuid (uuid) then
-						l_target := universe.target.system.all_libraries.item (create {UUID}.make_from_string (uuid))
+						l_target := universe.target.all_libraries.item (create {UUID}.make_from_string (uuid))
 					end
 				end
 			end
@@ -93,30 +93,13 @@ feature -- Access (Group)
 	id_of_group (a_group: CONF_GROUP): STRING is
 			-- Identifier of `a_group'
 			-- target_uuid + name_sep + group_name
-			-- Assembly: assembly + name_sep + ph + name_sep + assemblyID
 		require
 			a_group_not_void: a_group /= Void
-		local
-			l_phys_as: CONF_PHYSICAL_ASSEMBLY
 		do
-			if a_group.is_physical_assembly then
-				create Result.make (50)
-				l_phys_as ?= a_group
-				check
-					assembly: l_phys_as /= Void
-				end
-				Result.append (encode (assembly_prefix))
-				Result.extend (name_sep)
-					-- We need a place holder to keep the same section number with other types of group.
-				Result.append (encode (place_holder_string))
-				Result.extend (name_sep)
-				Result.append (l_phys_as.guid)
-			else
-				create Result.make (50)
-				Result.append (id_of_target (a_group.target))
-				Result.extend (name_sep)
-				Result.append (encode (a_group.name))
-			end
+			create Result.make (50)
+			Result.append (id_of_target (a_group.target))
+			Result.extend (name_sep)
+			Result.append (encode (a_group.name))
 		ensure
 			result_not_void: Result /= Void
 		end
@@ -128,27 +111,14 @@ feature -- Access (Group)
 		local
 			group_name: STRING
 			l_target: CONF_TARGET
-			l_ass_id: STRING
 		do
 			last_group_name := Void
-			strings := a_id.split (name_sep)
+			l_target := target_of_id (a_id)
 			if strings.count >= group_id_sections then
-				if decode (strings.i_th (1)).is_equal (assembly_prefix) then
-					l_ass_id := decode (strings.i_th (group_id_sections))
-					Result := universe.target.system.all_assemblies.item (l_ass_id)
-					if Result /= Void then
-						last_group_name := Result.name
-					end
-				end
-			end
-			if Result = Void then
-				l_target := target_of_id (a_id)
-				if strings.count >= group_id_sections then
-					group_name := decode (strings.i_th (group_id_sections))
-					last_group_name := group_name
-					if l_target /= Void then
-						Result := l_target.groups.item (group_name)
-					end
+				group_name := decode (strings.i_th (group_id_sections))
+				last_group_name := group_name
+				if l_target /= Void then
+					Result := l_target.groups.item (group_name)
 				end
 			end
 		end
@@ -218,7 +188,7 @@ feature -- Access (Class)
 			a_id_not_void: a_id /= Void
 		local
 			class_name: STRING
-			l_group: CONF_GROUP
+			l_group: CONF_CLUSTER
 		do
 			last_class_name := Void
 			l_group ?= group_of_id (a_id)
@@ -249,7 +219,7 @@ feature -- Access (Feature)
 				last_feature_name := l_feature_name
 				if l_class /= Void then
 					l_class_c := l_class.compiled_representation
-					if l_class_c /= Void and then l_class_c.has_feature_table then
+					if l_class_c /= Void then
 						Result := l_class_c.feature_with_name (l_feature_name)
 					end
 				end
@@ -270,115 +240,6 @@ feature -- Access (Feature)
 			Result.append (encode (a_feature.name))
 		ensure
 			result_not_void: Result /= Void
-		end
-
-feature -- ID modification
-
-	substitute_target_uuid (a_id: STRING; a_target_uuid: STRING): STRING is
-			-- Substitute uuid of `a_id' to `a_target_uuid'.
-		require
-			a_id_not_void: a_id /= Void
-			a_target_uuid_not_void: a_target_uuid /= Void
-		local
-			l_strings: like last_split_strings
-		do
-			if last_id = Void or else not last_id.is_equal (a_id) then
-				last_id := a_id
-				last_split_strings := a_id.split (name_sep)
-			end
-			check
-				last_split_strings_not_void: last_split_strings /= Void
-			end
-			l_strings := last_split_strings
-			if not decode (l_strings.i_th (1)).is_equal (assembly_prefix) then
-				if l_strings.count >= target_id_sections then
-					create Result.make (40)
-					Result.append (encode (a_target_uuid))
-					from
-						l_strings.go_i_th (target_id_sections)
-					until
-						l_strings.after
-					loop
-						Result.extend (name_sep)
-						Result.append (l_strings.item)
-						l_strings.forth
-					end
-				end
-			end
-		end
-
-	substitute_target_name (a_id: STRING; a_target_name: STRING): STRING is
-			-- Substitute target name of `a_id' to `a_target_name'.
-		require
-			a_id_not_void: a_id /= Void
-			a_target_name_not_void: a_target_name /= Void
-		local
-			l_strings: like last_split_strings
-		do
-			if last_id = Void or else not last_id.is_equal (a_id) then
-				last_id := a_id
-				last_split_strings := a_id.split (name_sep)
-			end
-			check
-				last_split_strings_not_void: last_split_strings /= Void
-			end
-			l_strings := last_split_strings
-			if not decode (l_strings.i_th (1)).is_equal (assembly_prefix) then
-				if last_split_strings.count >= target_id_sections then
-					create Result.make (40)
-					Result.append (l_strings.first)
-					from
-						l_strings.go_i_th (target_id_sections)
-					until
-						l_strings.after
-					loop
-						Result.extend (name_sep)
-						if l_strings.index = target_id_sections then
-							Result.append (encode (a_target_name))
-						else
-							Result.append (l_strings.item)
-						end
-						l_strings.forth
-					end
-				end
-			end
-		end
-
-	substitute_group (a_id: STRING; a_group_name: STRING): STRING is
-			-- Substitute group name of `a_id' to `a_group_name'.
-		require
-			a_id_not_void: a_id /= Void
-			a_group_name_not_void: a_group_name /= Void
-		local
-			l_strings: like last_split_strings
-		do
-			if last_id = Void or else not last_id.is_equal (a_id) then
-				last_id := a_id
-				last_split_strings := a_id.split (name_sep)
-			end
-			check
-				last_split_strings_not_void: last_split_strings /= Void
-			end
-			l_strings := last_split_strings
-			if not decode (l_strings.i_th (1)).is_equal (assembly_prefix) then
-				if last_split_strings.count >= group_id_sections then
-					create Result.make (40)
-					Result.append (l_strings.first)
-					from
-						l_strings.go_i_th (target_id_sections)
-					until
-						l_strings.after
-					loop
-						Result.extend (name_sep)
-						if l_strings.index = group_id_sections then
-							Result.append (encode (a_group_name))
-						else
-							Result.append (l_strings.item)
-						end
-						l_strings.forth
-					end
-				end
-			end
 		end
 
 feature -- UUID generation
@@ -415,14 +276,6 @@ feature {NONE} -- Access
 			Result := class_id_sections + 1
 		end
 
-feature {NONE} -- Implementation
-
-	last_id: STRING
-			-- Last id modified
-
-	last_split_strings: LIST [STRING]
-			-- Last split strings from `last_id'
-
 feature {NONE} -- Implementation. Encoding/Decoding
 
 	name_sep: CHARACTER is '@'
@@ -430,19 +283,9 @@ feature {NONE} -- Implementation. Encoding/Decoding
 
 	escape_char: CHARACTER is '%%'
 
-	place_holder_string: STRING is "ph"
+	name_sep_code: NATURAL_32 is 0x26
 
-	assembly_prefix: STRING is "assembly"
-
-	name_sep_code: NATURAL_32 is
-		once
-			Result := name_sep.natural_32_code
-		end
-
-	escape_char_code: NATURAL_32 is
-		once
-			Result := escape_char.natural_32_code
-		end
+	escape_char_code: NATURAL_32 is 0x25
 
 	hex_strings: ARRAY [STRING] is
 		once

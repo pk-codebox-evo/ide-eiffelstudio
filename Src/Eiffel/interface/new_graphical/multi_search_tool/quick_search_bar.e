@@ -47,7 +47,7 @@ inherit
 			copy
 		end
 
-	EB_CONSTANTS
+	INTERFACE_NAMES
 		export
 			{NONE} all
 		undefine
@@ -66,9 +66,9 @@ feature {NONE} -- Initialization
 		require
 			a_option_manager_not_void: a_option_manager /= Void
 		do
+			default_create
 			option_manager := a_option_manager
 			option_manager.add_observer (Current)
-			default_create
 		end
 
 	user_initialization is
@@ -78,30 +78,17 @@ feature {NONE} -- Initialization
 			-- (due to regeneration of implementation class)
 			-- can be added here.
 		do
-			next_button.set_tooltip (interface_names.b_next)
-			previous_button.set_tooltip (interface_names.b_previous)
-			match_case_button.set_text (interface_names.l_match_case)
-			match_case_button.set_tooltip (interface_names.f_match_case_question)
-			regular_expression_button.set_text (interface_names.l_regexp)
-			regular_expression_button.set_tooltip (interface_names.f_use_regular_expression_question)
-			advanced_button.set_tooltip (interface_names.f_advanced_search)
-			close_button.set_tooltip (interface_names.f_close)
-			l_ev_label_1.set_text (interface_names.t_find)
-
 			next_button.set_pixmap (icon_pixmaps.general_arrow_down_icon)
-			next_button.set_pixel_buffer (icon_pixmaps.general_arrow_down_icon_buffer)
 			previous_button.set_pixmap (icon_pixmaps.general_arrow_up_icon)
-			previous_button.set_pixel_buffer (icon_pixmaps.general_arrow_up_icon_buffer)
 			advanced_button.set_pixmap (icon_pixmaps.tool_advanced_search_icon)
-			advanced_button.set_pixel_buffer (icon_pixmaps.tool_advanced_search_icon_buffer)
 			create first_reached_pixmap
 			create bottom_reached_pixmap
 			first_reached_pixmap.set_minimum_size (icon_pixmaps.search_first_reached_icon.width,
 													icon_pixmaps.search_first_reached_icon.height)
 			bottom_reached_pixmap.set_minimum_size (icon_pixmaps.search_first_reached_icon.width,
 														icon_pixmaps.search_first_reached_icon.height)
-			first_reached_pixmap.set_tooltip (interface_names.t_first_match_reached)
-			bottom_reached_pixmap.set_tooltip (interface_names.t_bottom_reached)
+			first_reached_pixmap.set_tooltip (t_first_match_reached)
+			bottom_reached_pixmap.set_tooltip (t_bottom_reached)
 			message_box.extend (first_reached_pixmap)
 			message_box.extend (bottom_reached_pixmap)
 			first_reached_pixmap.hide
@@ -109,7 +96,6 @@ feature {NONE} -- Initialization
 			first_reached_pixmap.expose_actions.extend (agent on_pixmap_expose (?, ?, ?, ?, first_reached_pixmap, icon_pixmaps.search_first_reached_icon))
 			bottom_reached_pixmap.expose_actions.extend (agent on_pixmap_expose (?, ?, ?, ?, bottom_reached_pixmap, icon_pixmaps.search_bottom_reached_icon))
 			close_button.set_pixmap (icon_pixmaps.general_close_icon)
-			close_button.set_pixel_buffer (icon_pixmaps.general_close_icon_buffer)
 			keyword_field.change_actions.extend (agent trigger_sensibility)
 			match_case_button.select_actions.extend (agent check_button_changed (match_case_button))
 			regular_expression_button.select_actions.extend (agent check_button_changed (regular_expression_button))
@@ -168,9 +154,9 @@ feature -- Status change
 			end
 		end
 
-feature {NONE} -- Recyclable
+feature -- Recyclable
 
-	internal_recycle is
+	recycle is
 			-- Recycle
 		do
 			option_manager.remove_observer (Current)
@@ -339,7 +325,7 @@ feature {NONE} -- Implementation
 			-- Any widget loses focus.
 		do
 			if lose_focus /= Void then
-				ev_application.do_once_on_idle (agent lose_focus.call ([Void]))
+				ev_application.idle_actions.extend_kamikaze (agent lose_focus.call ([Void]))
 			end
 		end
 
@@ -422,7 +408,7 @@ feature {NONE} -- Implementation
 		end
 
 invariant
-	option_manager_not_void: not is_recycled implies option_manager /= Void
+	option_manager_not_void: option_manager /= Void
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

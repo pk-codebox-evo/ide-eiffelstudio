@@ -23,11 +23,6 @@ inherit
 			{ANY} supported_filters
 		end
 
-	EB_CONSTANTS
-		export
-			{NONE} all
-		end
-
 create
 	make
 
@@ -61,7 +56,7 @@ feature -- Initialization
 
 			if has_browse_button then
 					-- Create the browse button
-				create browse_button.make_with_text(interface_names.b_browse)
+				create browse_button.make_with_text("Browse...")
 				browse_button.select_actions.extend (browse_button_action)
 
 				create textfield_box
@@ -204,14 +199,12 @@ feature -- Settings
 			end
 		end
 
-	set_label_string_and_size (a_string: STRING_GENERAL; a_size: INTEGER) is
+	set_label_string_and_size (a_string: STRING; a_size: INTEGER) is
 			-- Set the label text to `a_string' and the minimum width for
 			-- the label to `a_size'.
 		require
 			valid_string: a_string /= Void and then not a_string.is_empty
 			valid_size: a_size >= 0
-		local
-			l_str: STRING_32
 		do
 			if generated then
 				if label = Void then
@@ -222,23 +215,17 @@ feature -- Settings
 						label.disable_sensitive
 					end
 				end
-				create l_str.make_from_string (" ")
-				l_str.append_string_general (a_string)
-				l_str.append (":")
-				label.set_text (l_str)
+				label.set_text (" "+a_string+":")
 				if a_size > 0 then
 					label.set_minimum_width (a_size)
 				end
 			else
-				create l_str.make_from_string (" ")
-				l_str.append_string_general (a_string)
-				l_str.append (":")
-				label_string := l_str
+				label_string := " "+a_string+":"
 				label_size := a_size
 			end
 		end
 
-	set_label_string (a_string: STRING_GENERAL) is
+	set_label_string (a_string: STRING) is
 			-- Set the label text to `a_string'.
 		require
 			valid_string: a_string /= Void and then not a_string.is_empty

@@ -24,6 +24,7 @@ feature -- Output
 
 	build_explain (st: TEXT_FORMATTER) is
 		do
+			st.add_new_line
 			st.add (error.out)
 			st.add_new_line
 		end;
@@ -37,6 +38,8 @@ feature -- Setting
 		do
 			error := an_error
 		end
+
+
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

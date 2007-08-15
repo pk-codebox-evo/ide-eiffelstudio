@@ -11,7 +11,7 @@ deferred class
 
 feature -- Access
 
-	name: STRING_GENERAL is
+	name: STRING is
 			-- Name of the command. Use to store the command in the
 			-- preferences.
 		deferred
@@ -24,19 +24,14 @@ feature -- Basic operations
 		deferred
 		end
 
-	new_sd_toolbar_item (a_display_text: BOOLEAN): SD_TOOL_BAR_ITEM is
-			-- Create a new docking tool bar item for Current
-		deferred
-		end
-
-feature {EB_CUSTOMIZABLE_LIST_ITEM, EB_CUSTOM_TOOLBAR_LIST, ES_TOOLBAR_PREFERENCE} -- Implementation
+feature {EB_CUSTOMIZABLE_LIST_ITEM, EB_CUSTOM_TOOLBAR_LIST} -- Implementation
 
 	pixmap: EV_PIXMAP is
 			-- Pixmaps representing the item.
 		deferred
 		end
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Description of the command as it appears in the
 			-- "customize" dialog.
 		deferred

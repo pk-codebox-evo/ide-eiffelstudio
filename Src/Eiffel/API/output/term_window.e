@@ -13,13 +13,11 @@ inherit
 
 	OUTPUT_WINDOW
 
-	SHARED_LOCALE
-
 feature -- Output
 
-	put_string (s: STRING_GENERAL) is
+	put_string (s: STRING) is
 		do
-			localized_print_error (s)
+			io.error.put_string (s)
 		end;
 
 	put_new_line is
@@ -27,9 +25,9 @@ feature -- Output
 			io.error.put_new_line
 		end;
 
-	put_char (c: CHARACTER_32) is
+	put_char (c: CHARACTER) is
 		do
-			localized_print_error (create {STRING_32}.make_filled (c, 1))
+			io.error.put_character (c)
 		end;
 
 indexing

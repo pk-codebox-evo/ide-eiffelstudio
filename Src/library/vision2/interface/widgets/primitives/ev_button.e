@@ -23,8 +23,7 @@ inherit
 	EV_PRIMITIVE
 		redefine
 			implementation,
-			is_in_default_state,
-			default_identifier_name
+			is_in_default_state
 		end
 
 	EV_TEXT_ALIGNABLE
@@ -70,19 +69,6 @@ feature {NONE} -- Initialization
 		ensure
 			text_assigned: text.is_equal (a_text)
 			select_actions_has_an_action: select_actions.has (an_action)
-		end
-
-feature -- Access
-
-	default_identifier_name: STRING is
-			-- Default `identifier_name' if no specific name is set.
-		do
-			if text.is_empty then
-				Result := Precursor {EV_PRIMITIVE}
-			else
-				Result := text.as_lower
-				Result.prune_all ('.')
-			end
 		end
 
 feature {EV_DIALOG_I, EV_WINDOW} -- Default push button handling

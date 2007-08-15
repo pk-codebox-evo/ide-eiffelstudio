@@ -15,6 +15,14 @@ inherit
 			interface
 		end
 
+	EV_ANY_IMP
+		undefine
+			needs_event_box,
+			destroy
+		redefine
+			interface
+		end
+
 feature {NONE} -- Initialization
 
 	textable_imp_initialize is
@@ -23,7 +31,6 @@ feature {NONE} -- Initialization
 			text_label := {EV_GTK_EXTERNALS}.gtk_label_new (default_pointer)
 			{EV_GTK_EXTERNALS}.gtk_widget_show (text_label)
 			{EV_GTK_EXTERNALS}.gtk_misc_set_alignment (text_label, 0.0, 0.5)
-			{EV_GTK_EXTERNALS}.gtk_misc_set_padding (text_label, 2, 0)
 		end
 
 feature -- Access
@@ -105,10 +112,6 @@ feature -- Element change
 
 feature {EV_ANY_IMP} -- Implementation
 
-	app_implementation: EV_APPLICATION_IMP
-		deferred
-		end
-
 	text_label: POINTER
 			-- GtkLabel containing `text'.
 
@@ -165,7 +168,7 @@ feature {EV_ANY_I} -- Implementation
 	interface: EV_TEXTABLE
 
 invariant
-	text_label_not_void: is_usable implies text_label /= default_pointer
+	text_label_not_void: is_usable implies text_label /= NULL
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"

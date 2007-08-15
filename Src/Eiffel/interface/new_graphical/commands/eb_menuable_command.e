@@ -10,9 +10,6 @@ deferred class
 
 inherit
 	EB_GRAPHICAL_COMMAND
-		redefine
-			update
-		end
 
 	EB_SHARED_WINDOW_MANAGER
 		export
@@ -21,7 +18,7 @@ inherit
 
 feature -- Access
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it appears in the menu (with '&' symbol).
 		deferred
 		ensure
@@ -72,57 +69,25 @@ feature -- Status setting
 			end
 		end
 
-	update (a_window: EV_WINDOW) is
-			-- Update `accelerator' and interfaces according to `referred_shortcut'.
-		local
-			l_items: like managed_menu_items
-			l_name: like menu_name
-		do
-			Precursor {EB_GRAPHICAL_COMMAND} (a_window)
-			l_name := menu_name.twin
-			if shortcut_available then
-				l_name.append (tabulation)
-				l_name.append (shortcut_string)
-			end
-			from
-				l_items := managed_menu_items
-				l_items.start
-			until
-				l_items.after
-			loop
-				l_items.item.set_text (l_name)
-				l_items.forth
-			end
-		end
-
 feature -- Basic operations
 
 	new_menu_item: EB_COMMAND_MENU_ITEM is
-			-- New menu item, managed, recycling needed.
+			--
 		do
 			create Result.make (Current)
 			initialize_menu_item (Result)
 			Result.select_actions.extend (agent execute)
 		end
 
-	new_menu_item_unmanaged: EV_MENU_ITEM is
-			-- New menu item, unmanaged.
-			-- Command name, pixmap and shortcut text are never updated.
-		do
-			create Result
-			initialize_menu_item (Result)
-			Result.select_actions.extend (agent execute)
-		end
-
-	initialize_menu_item (a_menu_item: EV_MENU_ITEM) is
+	initialize_menu_item (a_menu_item: EB_COMMAND_MENU_ITEM) is
 			-- Initialize `a_menu_item'
 		local
-			mname: STRING_GENERAL
+			mname: STRING
 		do
 			mname := menu_name.twin
-			if shortcut_available then
+			if accelerator /= Void then
 				mname.append (Tabulation)
-				mname.append (shortcut_string)
+				mname.append (accelerator.out)
 			end
 			a_menu_item.set_text (mname)
 			if is_sensitive then

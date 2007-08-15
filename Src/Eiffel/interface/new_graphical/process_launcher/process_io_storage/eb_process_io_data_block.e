@@ -27,6 +27,7 @@ feature -- State reporting
 		deferred
 		end
 
+
 	count: INTEGER is
 		-- Length of stored data in bytes.
 		deferred

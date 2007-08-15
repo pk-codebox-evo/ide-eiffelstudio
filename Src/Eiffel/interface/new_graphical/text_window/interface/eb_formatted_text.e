@@ -17,7 +17,7 @@ feature -- Properties
 		deferred
 		end
 
-	text: STRING_32 is
+	text: STRING is
 			-- Text of window
 		deferred
 		ensure
@@ -47,6 +47,7 @@ feature -- Access
 			-- Widget representing text window
 		deferred
 		end
+
 
 	position: INTEGER is
 			-- Cursor position of text
@@ -109,6 +110,7 @@ feature -- Status setting
 		deferred
 		end
 
+
 	reset is
 			-- Reset the contents of the text window.
 		do
@@ -134,6 +136,7 @@ feature -- Update
 --			valid_stone: a_stone /= Void
 --		do
 --		end
+
 
 feature {NONE} -- Command arguments
 

@@ -107,11 +107,6 @@ feature {NONE} -- Implementation
 				l_lib := conf_factory.new_library ("wel", l_file_loc, l_target)
 				l_target.add_library (l_lib)
 			end
-			if not l_libs.has ("time") then
-				l_file_loc := conf_factory.new_location_from_full_path ("$ISE_LIBRARY\library\time\time.ecf", l_target)
-				l_lib := conf_factory.new_library ("time", l_file_loc, l_target)
-				l_target.add_library (l_lib)
-			end
 			if not l_libs.has ("com") then
 				l_file_loc := conf_factory.new_location_from_full_path ("$ISE_LIBRARY\library\com\com.ecf", l_target)
 				l_lib := conf_factory.new_library ("com", l_file_loc, l_target)
@@ -140,19 +135,17 @@ feature {NONE} -- Implementation
 				-- external includes
 			l_dir := l_dest_dir.twin
 			l_dir.extend_from_array (<<client, include>>)
-			l_target.add_external_include (conf_factory.new_external_include (quote_path (l_dir), l_target))
+			l_target.add_external_include (conf_factory.new_external_include (l_dir))
 			l_dir := l_dest_dir.twin
 			l_dir.extend_from_array (<<common, include>>)
-			l_target.add_external_include (conf_factory.new_external_include (quote_path (l_dir), l_target))
+			l_target.add_external_include (conf_factory.new_external_include (l_dir))
 			l_dir := l_dest_dir.twin
 			l_dir.extend_from_array (<<server, include>>)
-			l_target.add_external_include (conf_factory.new_external_include (quote_path (l_dir), l_target))
+			l_target.add_external_include (conf_factory.new_external_include (l_dir))
 
 				-- external libs
-			add_libs (l_target, client, False)
-			add_libs (l_target, client, True)
-			add_libs (l_target, server, False)
-			add_libs (l_target, server, True)
+			add_libs (l_target, client)
+			add_libs (l_target, server)
 
 				-- store it
 			create l_fn.make_from_string (environment.destination_folder)
@@ -186,7 +179,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	add_libs (a_target: CONF_TARGET; a_folder: STRING; a_multi_threaded: BOOLEAN) is
+	add_libs (a_target: CONF_TARGET; a_folder: STRING) is
 			-- Add libraries of `a_folder' to `a_target'.
 		require
 			a_target_not_void: a_target /= Void
@@ -195,26 +188,18 @@ feature {NONE} -- Implementation
 			l_dir: STRING
 			l_ex_obj: CONF_EXTERNAL_OBJECT
 			l_cond: CONF_CONDITION
-			l_lib_name: STRING
 		do
 			if not is_empty_clib_folder (a_folder) then
-				if a_multi_threaded then
-					l_lib_name := "ecom-mt.lib"
-				else
-					l_lib_name := "ecom.lib"
-				end
 				create l_dir.make (50)
 				l_dir := environment.destination_folder + a_folder + "\Clib\$(ISE_C_COMPILER)\"
-				l_ex_obj := conf_factory.new_external_object (quote_path (l_dir + l_lib_name), a_target)
+				l_ex_obj := conf_factory.new_external_object (l_dir + "ecom_final.lib")
 				create l_cond.make
 				l_cond.add_build (conf_constants.build_finalize)
-				l_cond.set_multithreaded (a_multi_threaded)
 				l_ex_obj.add_condition (l_cond)
 				a_target.add_external_object (l_ex_obj)
-				l_ex_obj := conf_factory.new_external_object (quote_path (l_dir + "w" + l_lib_name), a_target)
+				l_ex_obj := conf_factory.new_external_object (l_dir + "ecom.lib")
 				create l_cond.make
 				l_cond.add_build (conf_constants.build_workbench)
-				l_cond.set_multithreaded (a_multi_threaded)
 				l_ex_obj.add_condition (l_cond)
 				a_target.add_external_object (l_ex_obj)
 			end
@@ -261,29 +246,12 @@ feature {NONE} -- Implementation
 			Result := l_directory.is_empty
 		end
 
-	quote_path (a_path: STRING): STRING is
-			-- Added quotations marks around path `a_path' and returns the new result
-		require
-			a_path_attached: a_path /= Void
-			not_a_path_is_empty: not a_path.is_empty
-		do
-			create Result.make (a_path.count + 2)
-			Result.append_character ('%"')
-			Result.append (a_path)
-			Result.append_character ('%"')
-		ensure
-			result_attached: Result /= Void
-			not_result_is_empty: not Result.is_empty
-			result_starts_with_quote: Result.item (1) = '%"'
-			result_ends_with_quote: Result.item (Result.count) = '%"'
-		end
-
 	Def_file_extension: STRING is ".def"
 			-- DLL definition file extension
 
 feature {NONE} -- Onces
 
-	conf_factory: CONF_PARSE_FACTORY is
+	conf_factory: CONF_FACTORY is
 			-- Configuration factory.
 		once
 			create Result

@@ -121,7 +121,6 @@ feature -- Resolution
 			l_cursor: CURSOR
 			l_paths: like resolve_paths
 			l_file_name: FILE_NAME
-			l_file_path: STRING
 			l_name: ASSEMBLY_NAME
 		do
 			debug ("trace")
@@ -154,23 +153,18 @@ feature -- Resolution
 					debug ("trace")
 						{SYSTEM_DLL_TRACE}.write_line_string ("Looking for '" + l_file_name + "'.")
 					end
-					l_file_path := l_file_name.string
-					if {SYSTEM_FILE}.exists (l_file_path) then
+					if (create {RAW_FILE}.make (l_file_name)).exists then
 						debug ("trace")
-							{SYSTEM_DLL_TRACE}.write_line_string ("Matching '" + l_file_path + "'.")
+							{SYSTEM_DLL_TRACE}.write_line_string ("Matching '" + l_file_name + "'.")
 						end
-						if {SYSTEM_FILE}.exists (l_file_path) then
-							l_name := get_assembly_name (l_file_path)
-						else
-							l_name := Void
-						end
+						l_name := get_assembly_name (l_file_name)
 						if l_name /= Void then
 							if does_name_match (l_name, a_name, a_version, a_culture, a_key) then
 								debug ("trace")
-									{SYSTEM_DLL_TRACE}.write_line_string ("Attempting to load '" + l_file_path + "'.")
+									{SYSTEM_DLL_TRACE}.write_line_string ("Attempting to load '" + l_file_name + "'.")
 								end
 
-								Result := l_file_path
+								Result := l_file_name
 							end
 						end
 					end
@@ -505,7 +499,7 @@ feature {NONE} -- Implementation
 		require
 			a_path_not_void: a_path /= Void
 			not_a_path_is_empty: not a_path.is_empty
-			a_path_exists: {SYSTEM_FILE}.exists (a_path)
+			a_path_exists: (create {RAW_FILE}.make (a_path)).exists
 		local
 			retried: BOOLEAN
 		do
@@ -526,7 +520,7 @@ feature {NONE} -- Implementation
 		require
 			a_path_not_void: a_path /= Void
 			not_a_path_is_empty: not a_path.is_empty
-			a_path_exists: {SYSTEM_FILE}.exists (a_path)
+			a_path_exists: (create {RAW_FILE}.make (a_path)).exists
 		local
 			retried: BOOLEAN
 		do

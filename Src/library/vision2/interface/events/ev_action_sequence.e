@@ -11,7 +11,7 @@ deferred class
 	EV_ACTION_SEQUENCE [EVENT_DATA -> TUPLE create default_create end]
 
 inherit
-	EV_LITE_ACTION_SEQUENCE [EVENT_DATA]
+	ACTION_SEQUENCE [EVENT_DATA]
 		undefine
 			new_filled_list
 		end
@@ -21,6 +21,13 @@ feature -- Element change
 	force_extend (an_item: PROCEDURE [ANY, TUPLE]) is
 			-- Extend without checking type of `an_item'.
 		deferred
+		end
+
+	extend_kamikaze (an_item: like item) is
+			-- Extend `an_item' and remove it again after it is called.
+		do
+			extend (an_item)
+			prune_when_called (an_item)
 		end
 
 indexing

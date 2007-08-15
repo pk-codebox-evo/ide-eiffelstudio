@@ -16,13 +16,7 @@ inherit
 		redefine
 			is_valid,
 			synchronized_stone,
-			same_as,
-			stone_name
-		end
-
-	EB_SHARED_ID_SOLUTION
-		export
-			{NONE} all
+			same_as
 		end
 
 create
@@ -82,16 +76,15 @@ feature -- Access
 			Result := group.name.twin
 		end
 
-	header: STRING_GENERAL is
+	header: STRING is
 		do
-			Result := history_name.twin
-			Result.append (Interface_names.l_Located_in (group.location.evaluated_path))
+			Result := history_name + Interface_names.l_Located_in + group.location.evaluated_path
 		end
 
-	history_name: STRING_GENERAL is
+	history_name: STRING is
 			-- What represents `Current' in the history.
 		do
-			Result := Interface_names.s_Cluster_stone.as_string_32 + stone_signature
+			Result := Interface_names.s_Cluster_stone + stone_signature
 		end
 
 	stone_cursor: EV_POINTER_STYLE is
@@ -99,75 +92,32 @@ feature -- Access
 			-- when widget at cursor position is compatible with Current stone
 		do
 			Result := Cursors.cur_Cluster
-			if group.is_cluster then
-				Result := cursors.cur_cluster
-			elseif group.is_library then
-				Result := cursors.cur_library
-			elseif group.is_assembly then
-				Result := cursors.cur_assembly
-			end
-		ensure then
-			result_attached: Result /= Void
 		end
 
 	x_stone_cursor: EV_POINTER_STYLE is
 			-- Cursor associated with Current stone during transport
 			-- when widget at cursor position is not compatible with Current stone
 		do
-			Result := Cursors.cur_Cluster
-			if group.is_cluster then
-				Result := cursors.cur_x_cluster
-			elseif group.is_library then
-				Result := cursors.cur_x_library
-			elseif group.is_assembly then
-				Result := cursors.cur_x_assembly
-			end
-		ensure then
-			result_attached: Result /= Void
+			Result := Cursors.cur_X_cluster
 		end
+
+ 	is_valid: BOOLEAN is
+ 			-- Does `Current' represent a valid cluster?
+ 		do
+ 			if Eiffel_project.initialized and then group /= Void then
+ 				Result := group.is_valid
+ 			end
+ 		end
 
  	synchronized_stone: STONE is
  			-- Return a valid stone representing the same object after a recompilation.
- 		local
- 			l_group: like group
  		do
  			if is_valid then
  				Result := Current
  			else
- 				if group /= Void then
- 						-- Try to find a equivalent valid group.
- 					l_group := group_of_id (id_of_group (group))
- 					if l_group /= Void then
- 						check
- 							l_group_valid: l_group.is_valid
- 						end
-		 				if path /= Void then
-		 					create {CLUSTER_STONE}Result.make_subfolder (l_group, path, folder_name)
-		 				else
-		 					create {CLUSTER_STONE}Result.make (l_group)
-		 				end
- 					end
- 				end
+ 				Result := Void
  			end
  		end
-
-	stone_name: STRING_GENERAL is
-			-- Name of Current stone
-		do
-			if is_valid then
-				if not path.is_empty then
-						-- For a folder
-					Result := folder_name.twin
-				else
-						-- For a group
-					Result := group.name.twin
-				end
-			else
-				Result := Precursor
-			end
-		end
-
-feature -- Status report
 
  	same_as (other: STONE): BOOLEAN is
  			-- Does `other' and `Current' represent the same cluster?
@@ -186,14 +136,6 @@ feature -- Status report
 			l_clus ?= group
 			Result := l_clus /= Void
 		end
-
- 	is_valid: BOOLEAN is
- 			-- Does `Current' represent a valid cluster?
- 		do
- 			if Eiffel_project.initialized and then group /= Void then
- 				Result := group.is_valid
- 			end
- 		end
 
 feature {NONE} -- Implementation
 

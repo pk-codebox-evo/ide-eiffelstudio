@@ -137,6 +137,7 @@ feature -- Basic Operations
 					cursor.make_from_character_pos (char_num, line_number, Current)
 					history.record_delete_selection (removed)
 					set_selection_cursor (cursor)
+
 				end
 				disable_selection
 				ignore_cursor_moves := False
@@ -1892,8 +1893,7 @@ feature {TEXT_CURSOR}
 		end
 
 invariant
--- Commented because while doing a modification it does not hold.
---	undo_enabled: changed = undo_is_possible
+	changed = undo_is_possible
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"

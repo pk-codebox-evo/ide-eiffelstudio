@@ -13,10 +13,8 @@ inherit
 	EB_CONTEXT_DIAGRAM_COMMAND
 		redefine
 			new_toolbar_item,
-			new_sd_toolbar_item,
 			description,
-			initialize,
-			menu_name
+			initialize
 		end
 
 create
@@ -42,7 +40,7 @@ feature -- Basic operations
 		do
 			if is_sensitive then
 				create dialog.make (tool.force_directed_layout, tool)
-				dialog.show_modal_to_window (tool.develop_window.window)
+				dialog.show_modal_to_window (tool.development_window.window)
 			end
 		end
 
@@ -57,20 +55,9 @@ feature -- Basic operations
 			Result.select_actions.extend (agent execute)
 		end
 
-	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new toolbar button for this command.
-			--
-			-- Call `recycle' on the result when you don't need it anymore otherwise
-			-- it will never be garbage collected.
-		do
-			create Result.make (Current)
-			initialize_sd_toolbar_item (Result, display_text)
-			Result.select_actions.extend (agent execute)
-		end
-
 feature -- Access
 
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.f_diagram_force_settings
@@ -84,20 +71,8 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.diagram_physics_settings_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.diagram_physics_settings_icon_buffer
-		end
-
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Description for this command.
-		do
-			Result := Interface_names.f_diagram_force_settings
-		end
-
-	menu_name: STRING_GENERAL is
-			-- Name on corresponding menu items
 		do
 			Result := Interface_names.f_diagram_force_settings
 		end

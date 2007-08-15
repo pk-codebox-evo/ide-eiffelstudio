@@ -56,7 +56,7 @@ feature -- Analyzis
 	analyze is
 			-- Builds a proper context (for C code).
 		local
-			workbench_mode, keep_assertions: BOOLEAN
+			workbench_mode: BOOLEAN
 			type_i: TYPE_I
 			feat: FEATURE_I
 			have_precond, have_postcond, has_invariant: BOOLEAN
@@ -64,7 +64,6 @@ feature -- Analyzis
 			old_exp: UN_OLD_BL
 		do
 			workbench_mode := context.workbench_mode
-			keep_assertions := workbench_mode or else context.system.keep_assertions
 			feat := Context.current_feature
 			inh_assert := Context.inherited_assertion
 			inh_assert.init
@@ -82,13 +81,15 @@ feature -- Analyzis
 				-- Let's check if some invariants are going to be generated.
 				-- It is important to know for `compute_need_gc_hooks' which will
 				-- not try to optimize GC hooks if we are checking invariants.
-			has_invariant := keep_assertions
+			has_invariant := context.workbench_mode or else context.assertion_level.check_invariant
 
 				-- Compute presence or not of pre/postconditions
 			if Context.origin_has_precondition then
-				have_precond := (precondition /= Void or else inh_assert.has_precondition) and then keep_assertions
+				have_precond := (precondition /= Void or else inh_assert.has_precondition) and then
+						(workbench_mode or else context.assertion_level.check_precond)
 			end
-			have_postcond := (postcondition /= Void or else inh_assert.has_postcondition) and then keep_assertions
+			have_postcond := (postcondition /= Void or else inh_assert.has_postcondition) and then
+					(workbench_mode or else context.assertion_level.check_postcond)
 
 				-- Check if we need GC hooks for current body.
 			Context.compute_need_gc_hooks (have_precond or have_postcond or has_invariant)
@@ -228,26 +229,11 @@ feature -- Analyzis
 			extern: BOOLEAN
 			buf: GENERATION_BUFFER
 			l_is_once: BOOLEAN
-			return_type_name: STRING
 			args: like argument_names
 			i: INTEGER
-			j: INTEGER
-			keep: BOOLEAN
-			seed: FEATURE_I
-			rout_id_set: ROUT_ID_SET
-			seed_type: TYPE_I
-			seed_arguments: FEAT_ARG
-			seed_types: ARRAY [STRING]
-			routine_id: INTEGER
-			t: TYPE_I
-			basic_i: BASIC_I
-			suffix: STRING
-			suffixes: LIST [STRING]
-			inline_agent_feature: FEATURE_I
 		do
 			buf := buffer
 			l_is_once := is_once
-			keep := context.workbench_mode or else context.system.keep_assertions
 
 				-- Generate the header "int foo(Current, args)"
 			type_c := real_type (result_type).c_type
@@ -290,13 +276,8 @@ feature -- Analyzis
 				extern := False
 			end
 			args := argument_names
-			if not type_c.is_void and then context.workbench_mode then
-				return_type_name := once "EIF_TYPED_VALUE"
-			else
-				return_type_name := type_c.c_string
-			end
 			buf.generate_function_signature
-				(return_type_name, name, extern,
+				(type_c.c_string, name, extern,
 				 Context.header_buffer, args, argument_types)
 
 				-- Starting body of C routine
@@ -309,9 +290,6 @@ feature -- Analyzis
 
 				-- Declare variables required for once routines.
 			generate_once_data (internal_name)
-
-				-- Ensure the arguments are of the expected type
-			generate_argument_checks
 
 				-- Clone expanded parameters.
 			generate_expanded_initialization
@@ -347,8 +325,8 @@ feature -- Analyzis
 				-- Allocate memory for once manifest strings if required
 			context.generate_once_manifest_string_allocation (once_manifest_string_count)
 
-				-- Generate the saving of the assertion level
-			if keep then
+				-- Generate the saving of the workbench mode assertion level
+			if context.workbench_mode then
 				generate_save_assertion_level
 			end
 
@@ -393,12 +371,6 @@ feature -- Analyzis
 				-- Now the postcondition
 			generate_postcondition
 
-				-- Restore the caller_assertion_level
-			if keep then
-				buf.put_string ("RTRS;")
-				buf.put_new_line
-			end
-
 			if not type_c.is_void then
 					-- Function returns something. This can be done
 					-- by inner returns, so have some mercy
@@ -427,18 +399,6 @@ feature -- Analyzis
 				buf.put_string ("#undef Result")
 				buf.put_new_line
 			end
-			if context.workbench_mode then
-				from
-					i := argument_count
-				until
-					i <= 0
-				loop
-					buf.put_string ("#undef arg")
-					buf.put_integer (i)
-					buf.put_new_line
-					i := i - 1
-				end
-			end
 
 				-- Leave a blank line after function definition
 			buf.put_string ("}%N%N")
@@ -453,7 +413,7 @@ feature -- Analyzis
 			if l_is_once and then context.is_once_call_optimized then
 					-- Generate optimized stub for once routine.
 				buf.generate_function_signature
-					(return_type_name, internal_name, True,
+					(type_c.c_string, internal_name, True,
 					 Context.header_buffer, args, argument_types)
 				buf.indent
 				if not type_c.is_void then
@@ -475,159 +435,6 @@ feature -- Analyzis
 				end
 				buf.exdent
 				buf.put_string ("));%N}%N%N")
-			end
-
-				-- Generate generic wrappers if required.
-			if context.final_mode then
-				from
-					if context.current_feature.is_inline_agent then
-						inline_agent_feature := context.current_feature
-					end
-					rout_id_set := context.generic_wrapper_ids (body_index)
-					if rout_id_set /= Void then
-						rout_id_set := rout_id_set.twin
-						rout_id_set.merge (context.current_feature.rout_id_set)
-					else
-						rout_id_set := context.current_feature.rout_id_set
-					end
-					j := rout_id_set.count
-				until
-					j <= 0
-				loop
-					routine_id := rout_id_set.item (j)
-					if inline_agent_feature = Void then
-						seed := system.seed_of_routine_id (	routine_id)
-					else
-						seed := inline_agent_feature
-					end
-					if seed.has_formal then
-							-- Generate generic wrapper.
-						suffix := seed.generic_fingerprint
-						if suffixes = Void then
-							create {LINKED_LIST [STRING]} suffixes.make
-							suffixes.compare_objects
-						end
-						if not suffixes.has (suffix) then
-							suffixes.force (suffix)
-							seed_arguments := seed.arguments
-							seed_type := seed.type.type_i
-							create seed_types.make (1, args.count)
-							i := 1
-							if generate_current then
-								seed_types.put ("EIF_REFERENCE", 1)
-								i := 2
-							end
-							if seed_arguments /= Void then
-								from
-									seed_arguments.start
-								until
-									seed_arguments.after
-								loop
-									t := seed_arguments.item.type_i
-									if t.is_formal then
-											-- Formal is passed as a reference.
-										seed_types.put ("EIF_REFERENCE", i)
-									else
-										if t.is_anchored then
-												-- "like Current" is passed as a reference.
-											type_c := reference_c_type
-										else
-											type_c := t.c_type
-										end
-										seed_types.put (type_c.c_string, i)
-									end
-									i := i + 1
-									seed_arguments.forth
-								end
-							end
-							if seed_type.is_anchored then
-									-- "like Current" is passed as a reference.
-								type_c := reference_c_type
-							else
-								type_c := seed_type.c_type
-							end
-							buf.generate_pure_function_signature
-								(type_c.c_string, internal_name + suffix, True,
-								 Context.header_buffer, args, seed_types)
-							buf.put_character ('{')
-							buf.put_new_line
-							buf.indent
-							if not seed_type.is_void then
-								if type_c.is_pointer then
-									basic_i ?= real_type (result_type)
-								else
-									basic_i := Void
-								end
-								if basic_i = Void then
-									buf.put_string ("return ")
-									if not type_c.is_pointer and then real_type (result_type).c_type.is_pointer then
-											-- "Unbox" result value.
-										buf.put_string ("/* Should not get here */ ")
-										buf.put_character ('*')
-										type_c.generate_access_cast (buf)
-									end
-								else
-										-- "Box" result value.
-									context.mark_result_used
-									type_c.generate (buf)
-									context.result_register.print_register
-									buf.put_character (';')
-									buf.put_new_line
-									basic_i.c_type.generate (buf)
-									buf.put_string ("r = ")
-								end
-							end
-							buf.put_string (internal_name)
-							buf.put_string (" (")
-							from
-								if seed_arguments /= Void then
-									seed_arguments.start
-								end
-								i := 1
-							until
-								i > args.count
-							loop
-								if i > 1 then
-									buf.put_character (',')
-									t := seed_arguments.item.type_i
-									if t.is_formal then
-										if not real_type (arguments.item (i - 1)).c_type.is_pointer then
-												-- "Unbox" argument value.
-											buf.put_character ('*')
-											real_type (arguments.item (i - 1)).c_type.generate_access_cast (buf)
-										end
-										buf.put_string (args.item (i))
-									elseif not t.is_anchored and then not t.c_type.is_pointer and then real_type (arguments.item (i - 1)).c_type.is_pointer then
-											-- "Box" argument value.
-										buf.put_string ("/* Should not get here */ ")
-										reference_c_type.generate_cast (buf)
-										buf.put_character ('0')
-									else
-										buf.put_string (args.item (i))
-									end
-									seed_arguments.forth
-								else
-									buf.put_string (args.item (i))
-								end
-								i := i + 1
-							end
-							buf.put_string (gc_rparan_semi_c)
-							buf.put_new_line
-							if not seed_type.is_void and then basic_i /= Void then
-								basic_i.metamorphose (context.result_register, create {NAMED_REGISTER}.make ("r", basic_i.c_type), buf)
-								buf.put_character (';')
-								buf.put_new_line
-								buf.put_string ("return ")
-								context.result_register.print_register
-								buf.put_character (';')
-								buf.put_new_line
-							end
-							buf.exdent
-							buf.put_string ("}%N%N")
-						end
-					end
-					j := j - 1
-				end
 			end
 
 			Context.inherited_assertion.wipe_out
@@ -682,34 +489,26 @@ end
 	generate_return_exp is
 			-- Generate the return expression
 		local
-			type_c: TYPE_C
+			type_i: TYPE_I
 			buf: GENERATION_BUFFER
 		do
 				-- Do not forget to remove the GC hooks before returning
 				-- if they have already been generated. For instance, when
 				-- generating return for a once function, hooks have not
 				-- been generated.
+			type_i := real_type (result_type)
 			if not result_type.is_void then
-				type_c := real_type (result_type).c_type
 				buf := buffer
-				if context.workbench_mode then
-						-- Note: in workbench, we always return the result. It may
-						--       have been changed by the user (see class EDIT_ITEM)
-					buf.put_string ("{ EIF_TYPED_VALUE r; r.")
-					type_c.generate_typed_tag (buf)
-					buf.put_string ("; r.")
-					type_c.generate_typed_field (buf)
-					buf.put_string (" = Result; return r; }")
+				buf.put_string ("return ")
+					-- If Result was used, generate it. Otherwise, its value
+					-- is simply the initial one (i.e. generic 0).
+					-- Note: in workbench, we always return the result. It may
+					--       have been changed by the user (see class EDIT_ITEM)
+				if context.workbench_mode or else context.result_used then
+					buf.put_string ("Result;")
 				else
-					buf.put_string ("return ")
-						-- If Result was used, generate it. Otherwise, its value
-						-- is simply the initial one (i.e. generic 0).
-					if context.result_used then
-						buf.put_string ("Result;")
-					else
-						type_c.generate_cast (buf)
-						buf.put_string ("0;")
-					end
+					type_i.c_type.generate_cast (buf)
+					buf.put_string ("0;")
 				end
 				buf.put_new_line
 			end
@@ -988,6 +787,7 @@ end
 			end
 		end
 
+
 	generate_save_locals is
 			-- Push the addresses of the local variables on the local variable stack.
 		local
@@ -1211,18 +1011,20 @@ end
 				end
 				buf.put_new_line
 			end
-			if wkb_mode or else context.system.keep_assertions then
-					-- Generate the int local variable saving the global `nstcall'.
+				-- Generate the int local variable saving the global `nstcall'.
+			if wkb_mode or else context.assertion_level.check_invariant then
 				buf.put_string ("RTSN;")
 				buf.put_new_line
-					-- Generate local variable for assertion level of the current object.
-				buf.put_string ("RTDA;")
 			end
-
-			buf.put_new_line
-			if wkb_mode and then has_rescue then
-				buf.put_string ("RTDT;")
+			if wkb_mode then
+					-- Generate local variable for saving the workbench
+					-- mode assertion level of the current object.
+				buf.put_string ("RTDA;")
 				buf.put_new_line
+				if has_rescue then
+					buf.put_string ("RTDT;")
+					buf.put_new_line
+				end
 			end
 				-- The local variable array is then declared, based on the
 				-- number of reference variable which need to be placed under
@@ -1246,56 +1048,6 @@ end
 
 				-- Separate declarations and body with a blank line
 			buf.put_new_line
-		end
-
-	generate_argument_checks is
-			-- Generate checks that ensure that arguments are of the expected type.
-		local
-			i: INTEGER
-			types: like arguments
-			c_type: TYPE_C
-			buf: like buffer
-		do
-			if context.workbench_mode then
-				i := argument_count
-				if i > 0 then
-					from
-						buf := buffer
-						types := arguments
-					until
-						i <= 0
-					loop
-						c_type := context.real_type (types [i]).c_type
-						if not c_type.is_pointer then
-								-- The argument type is not reference, so it might be boxed.
-							buf.put_string ("if (arg")
-							buf.put_integer (i)
-							buf.put_string ("x.type == SK_REF) arg")
-							buf.put_integer (i)
-							buf.put_string ("x.")
-							c_type.generate_typed_field (buf)
-							buf.put_string (" = * ")
-							c_type.generate_access_cast (buf)
-							buf.put_string (" arg")
-							buf.put_integer (i)
-							buf.put_string ("x.")
-							reference_c_type.generate_typed_field (buf)
-							buf.put_character (';')
-							buf.put_new_line
-						end
-						buf.left_margin
-						buf.put_string ("#define arg")
-						buf.put_integer (i)
-						buf.put_string (" arg")
-						buf.put_integer (i)
-						buf.put_string ("x.")
-						c_type.generate_typed_field (buf)
-						buf.put_new_line
-						buf.restore_margin
-						i := i - 1
-					end
-				end
-			end
 		end
 
 	generate_result_declaration (may_need_volatile: BOOLEAN) is
@@ -1360,14 +1112,20 @@ end
 			if Context.origin_has_precondition then
 				have_assert := (precondition /= Void or else
 								inh_assert.has_precondition) and then
-						(workbench_mode or else context.system.keep_assertions)
+					(workbench_mode or else context.assertion_level.check_precond)
 			end
 			generate_invariant_before
 			if have_assert then
 				buf := buffer
-				buf.put_string ("if (RTAL & CK_REQUIRE | RTAC) {")
-				buf.put_new_line
-				buf.indent
+				if workbench_mode then
+					buf.put_string ("if (RTAL & CK_REQUIRE) {")
+					buf.put_new_line
+					buf.indent
+				else
+					buf.put_string ("if (~in_assertion) {")
+					buf.put_new_line
+					buf.indent
+				end
 
 				if inh_assert.has_precondition then
 					inh_assert.generate_precondition
@@ -1400,23 +1158,34 @@ end
 			workbench_mode := context.workbench_mode
 			inh_assert := Context.inherited_assertion
 			have_assert := (postcondition /= Void or else inh_assert.has_postcondition) and then
-					(workbench_mode or else context.system.keep_assertions)
+					(workbench_mode or else context.assertion_level.check_postcond)
 			if have_assert then
 				buf := buffer
 				context.set_assertion_type (In_postcondition)
-				buf.put_string ("if (RTAL & CK_ENSURE) {")
-				buf.put_new_line
-				buf.indent
-
+				if workbench_mode then
+					buf.put_string ("if (RTAL & CK_ENSURE) {")
+					buf.put_new_line
+					buf.indent
+				else
+					buf.put_string ("if (~in_assertion) {")
+					buf.put_new_line
+					buf.indent
+				end
 				if inh_assert.has_postcondition then
 					inh_assert.generate_postcondition
 				end
 				if postcondition /= Void then
 					postcondition.generate
 				end
-				buf.exdent
-				buf.put_character ('}')
-				buf.put_new_line
+				if workbench_mode then
+					buf.exdent
+					buf.put_character ('}')
+					buf.put_new_line
+				else
+					buf.exdent
+					buf.put_character ('}')
+					buf.put_new_line
+				end
 			end
 			generate_invariant_after
 		end
@@ -1424,6 +1193,8 @@ end
 	generate_save_assertion_level is
 			-- Generate the instruction for saving the workbench mode
 			-- assertion level of the current object.
+		require
+			workbench_mode: context.workbench_mode
 		local
 			buf: GENERATION_BUFFER
 		do
@@ -1432,20 +1203,18 @@ end
 			context.generate_current_dtype
 			buf.put_string (gc_rparan_semi_c)
 			buf.put_new_line
-			buf.put_string ("RTSC;")
-			buf.put_new_line
 		end
 
 	generate_invariant_before is
 			-- Generate invariant check at the entry of the routine.
 		do
-			generate_invariant ("RTIV2")
+			generate_invariant ("RTIV")
 		end
 
 	generate_invariant_after is
 			-- Generate invariant check at the end of the routine.
 		do
-			generate_invariant ("RTVI2")
+			generate_invariant ("RTVI")
 		end
 
 	generate_invariant (tag: STRING) is
@@ -1454,11 +1223,17 @@ end
 			buf: GENERATION_BUFFER
 		do
 			buf := buffer
-			if context.workbench_mode or else context.system.keep_assertions then
+			if context.workbench_mode then
 				buf.put_string (tag)
 				buf.put_character ('(')
 				context.current_register.print_register
 				buf.put_string (", RTAL);")
+				buf.put_new_line
+			elseif context.assertion_level.check_invariant then
+				buf.put_string (tag)
+				buf.put_character ('(')
+				context.current_register.print_register
+				buf.put_string (gc_rparan_semi_c)
 				buf.put_new_line
 			end
 		end
@@ -1812,6 +1587,9 @@ feature -- Byte code generation
 			if have_assert then
 				ba.write_forward
 			end
+
+				-- Generate the hook corresponding to the final end.
+			generate_melted_end_debugger_hook (ba)
 		end
 
 feature -- Array optimization
@@ -1988,7 +1766,7 @@ feature {NONE} -- Convenience
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

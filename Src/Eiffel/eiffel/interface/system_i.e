@@ -21,8 +21,6 @@ inherit
 
 	SYSTEM_DOCUMENTATION
 
-	SYSTEM_EXPORT
-
 	SHARED_EXPANDED_CHECKER
 	SHARED_TYPEID_TABLE
 	SHARED_TABLE
@@ -61,16 +59,6 @@ inherit
 		end
 
 	CONF_ACCESS
-
-	SHARED_EIFFEL_PARSER
-		export
-			{NONE} all
-		end
-
-	SHARED_STATELESS_VISITOR
-		export
-			{NONE} all
-		end
 
 create
 	make
@@ -217,7 +205,7 @@ feature -- Properties
 			-- Has the system to be frozen again ?
 		do
 			Result := (not Lace.compile_all_classes or else il_generation)
-					and then (is_freeze_requested or else Compilation_modes.is_freezing)
+					and then (private_freeze or else Compilation_modes.is_freezing)
 		end
 
 	freezing_occurred: BOOLEAN
@@ -486,10 +474,10 @@ feature -- Properties
 				-- The root class could be part of the precompiled library, so
 				-- we need to make sure that its `is_in_system' flag is set.
 			if
-				root_cluster.classes_set and then root_type.associated_class.original_class.is_compiled and then
-				root_type.associated_class.is_precompiled
+				root_cluster.classes_set and then root_class.is_compiled and then
+				root_class.compiled_class.is_precompiled
 			then
-				root_type.associated_class.record_precompiled_class_in_system
+				root_class.compiled_class.record_precompiled_class_in_system
 			end
 		end
 
@@ -984,7 +972,7 @@ end
 			if automatic_backup then
 				create l_file_name.make_from_string (workbench.backup_subdirectory)
 				l_file_name.set_file_name (backup_info)
-				create l_file.make_open_append (l_file_name)
+				create l_file.make_open_write (l_file_name)
 			end
 			l_classes := l_vis_build.removed_classes
 			from
@@ -999,31 +987,13 @@ end
 				end
 				l_class_i.compiled_class.recompile_syntactical_clients
 				if automatic_backup then
-					l_file.put_string ("REMOVED: " +
-						l_class_i.name + " " +
-						l_class_i.group.target.system.uuid.out + " " +
-						l_class_i.group.name + "%N")
+					l_file.put_string (l_class_i.name+": "+l_class_i.group.name+": "+l_class_i.file_name+"%N")
 				end
 				remove_class (l_class_i.compiled_class)
 				real_removed_classes.force (l_class_i)
 				l_classes.forth
 			end
-
 			if automatic_backup then
-					-- Process classes that are not in the override.
-				l_classes := l_vis_build.removed_classes_from_override
-				from
-					l_classes.start
-				until
-					l_classes.after
-				loop
-					l_class_i ?= l_classes.item_for_iteration
-					l_file.put_string ("OVERRIDE_REMOVED: " +
-						l_class_i.name + " " +
-						l_class_i.group.target.system.uuid.out + " " +
-						l_class_i.group.name + "%N")
-					l_classes.forth
-				end
 				l_file.close
 			end
 
@@ -1059,10 +1029,6 @@ end
 			end
 
 			is_force_rebuild := False
-		rescue
-				-- An exception occur during system analysis, we should force a rebuild
-				-- at next compilation. This addresses bug#12911.
-			is_force_rebuild := True
 		end
 
 	check_unique_class_names is
@@ -1084,7 +1050,7 @@ end
 				l_class := l_classes.item_for_iteration
 				l_name := l_class.name
 				if not l_class.config_class.does_override then
-					if not l_table.has_key (l_name) then
+					if not l_table.has (l_name) then
 						l_table.force (l_class, l_name)
 					else
 						is_force_rebuild := True
@@ -1097,7 +1063,7 @@ end
 			end
 		end
 
-	recheck_partly_removed (a_classes: ARRAYED_LIST [EQUALITY_TUPLE [TUPLE [conf_class: CONF_CLASS; system: CONF_SYSTEM]]] ) is
+	recheck_partly_removed (a_classes: ARRAYED_LIST [TUPLE [conf_class: CONF_CLASS; system: CONF_SYSTEM]] ) is
 			-- Recheck clients of classes that have been removed from one place but still exists in another.
 		require
 			a_classes_not_void: a_classes /= Void
@@ -1112,8 +1078,8 @@ end
 			until
 				a_classes.after
 			loop
-				l_system := a_classes.item.item.system
-				l_class_i ?= a_classes.item.item.conf_class
+				l_system := a_classes.item.system
+				l_class_i ?= a_classes.item.conf_class
 				check
 					correct_class: l_class_i /= Void and then l_class_i.is_compiled
 				end
@@ -1138,9 +1104,7 @@ end
 	update_root_class is
 			-- Update/recheck the root class.
 		require
-			universe_not_void: universe /= Void
 			target_not_void: universe.target /= Void
-			roout_not_void: universe.target.root /= Void
 		local
 			l_target: CONF_TARGET
 			l_classes_i: LIST [CLASS_I]
@@ -1150,27 +1114,15 @@ end
 			vd20: VD20
 			vd29: VD29
 			l_class: CLASS_I
-			l_root_type_name: STRING
 		do
 			l_target := universe.target
 				-- update root class/feature
 			l_root := l_target.root
-			l_root_type_name := l_root.class_type_name.as_upper
-
-			type_parser.parse_from_string ("type " + l_root_type_name)
-			root_class_type_as ?= type_parser.type_node
-
-			if root_class_type_as = Void then
-				-- Error: syntactically not a valid type
-				-- should already be captured by the config system
-				check false end
-			else
-
-				system.set_root_type_name (l_root_type_name)
+			if l_root /= Void then
+				system.set_root_class_name (l_root.class_name.as_upper)
 
 				if l_root.cluster_name = Void then
-
-					l_classes_i := universe.classes_with_name (root_class_type_as.class_name.name.as_upper)
+					l_classes_i := universe.classes_with_name (l_root.class_name.as_upper)
 						-- remove overriding classes
 					from
 						l_classes_i.start
@@ -1185,14 +1137,14 @@ end
 					end
 					if l_classes_i.count = 0 then
 						create vd20
-						vd20.set_class_name (l_root.class_type_name.as_upper)
+						vd20.set_class_name (l_root.class_name.as_upper)
 						Error_handler.insert_error (vd20)
 						Error_handler.raise_error
 					elseif l_classes_i.count > 1 then
 						create vd29
 						vd29.set_cluster (l_classes_i.first.group)
 						vd29.set_second_cluster_name (l_classes_i.last.group.name)
-						vd29.set_root_class_name (l_root.class_type_name.as_upper)
+						vd29.set_root_class_name (l_root.class_name.as_upper)
 						Error_handler.insert_error (vd29)
 						Error_handler.raise_error
 					else
@@ -1207,10 +1159,10 @@ end
 						Error_handler.raise_error
 					else
 							-- do a class_named because this checks for VSCN errors
-						l_class := universe.class_named (root_class_type_as.class_name.name.as_upper, l_group)
-						if l_class = Void or else l_group.classes.item (root_class_type_as.class_name.name.as_upper) /= l_class.config_class then
+						l_class := universe.class_named (root_class_name, l_group)
+						if l_class = Void or else l_group.classes.item (root_class_name) /= l_class.config_class then
 							create vd20
-							vd20.set_class_name (l_root.class_type_name.as_upper)
+							vd20.set_class_name (l_root.class_name.as_upper)
 							Error_handler.insert_error (vd20)
 							Error_handler.raise_error
 						end
@@ -1219,75 +1171,12 @@ end
 
 				system.set_root_cluster (l_group)
 				system.set_creation_name (l_root.feature_name)
-
-				root_class ?= root_cluster.classes.item (root_class_type_as.class_name.name.as_upper)
-				if root_class = Void then
-					create vd20
-					vd20.set_class_name (l_root.class_type_name.as_upper)
-					Error_handler.insert_error (vd20)
-					Error_handler.raise_error
-				else
-					if not root_class.is_compiled then
-						Workbench.change_class (root_class)
-					end
-				end
 			end
 		ensure
 			root_class_set: root_class /= Void
 			root_cluster_set: root_cluster /= Void
 		end
 
-	compute_root_type is
-			-- Computes the root type
-		require
-			root_class_not_void: root_class /= Void
-		local
-			l_vsrt1: VSRT1
-			l_vsrt2: VSRT2
-			l_vd20: VD20
-		do
-			if root_class.is_compiled then
-				root_type ?= type_a_generator.evaluate_type_if_possible (root_class_type_as, root_class.compiled_class)
-			else
-						create l_vd20
-						l_vd20.set_class_name (root_class.name.as_upper)
-						Error_handler.insert_error (l_vd20)
-						Error_handler.raise_error
-			end
-
-			if 	root_type = Void or else
-				root_type.is_loose
-			then
-				-- Throw an error: type is not valid.
-				create l_vsrt2
-				l_vsrt2.set_class (root_class.compiled_class)
-				l_vsrt2.set_root_type_name (root_type_name)
-				l_vsrt2.set_group_name (root_class.group.name)
-				Error_handler.insert_error (l_vsrt2)
-				Error_handler.raise_error
-			end
-			if not root_type.has_generics and root_type.associated_class.is_generic then
-				create l_vsrt1
-				l_vsrt1.set_class (root_type.associated_class)
-				l_vsrt1.set_root_type (system.root_type)
-					-- Need duplication otherwise we would change the original FEATURE_I
-					-- object while displaying the error.
-				Error_handler.insert_error (l_vsrt1)
-				Error_handler.raise_error
-			end
-		ensure
-			root_type_set: root_type /= Void
-		end
-
-	root_class_type: CLASS_TYPE is
-			-- CLASS_TYPE of root type		
-		do
-			check
-					-- Should be ensured by semantic analysis.
-				class_type_exists: root_type.type_i.has_associated_class_type
-			end
-			Result := root_type.type_i.associated_class_type
-		end
 
 	init_recompilation is
 			-- Initialization before a recompilation.
@@ -1365,7 +1254,7 @@ end
 				then
 					mark_only_used_precompiled_classes
 				end
-				if not root_class.is_compiled then
+				if root_class.compiled_class = Void then
 						-- If root_class is not compiled (i.e. root class has
 						-- changed since last compilaton), insert it in the
 						-- changed_classes.
@@ -1505,18 +1394,6 @@ feature {NONE} -- Implementation: predefined routine IDs
 
 	internal_special_make_id: INTEGER
 			-- Once per compilation value of routine id of `make' from SPECIAL.
-
-feature -- Feature declaration
-
-	seed_of_routine_id (routine_id: INTEGER): FEATURE_I is
-			-- Seed with the given `routine_id'
-		require
-			valid_routine_id: routine_id > 0 and then routine_id_counter.is_feature_routine_id (routine_id) -- and `routine_id' is used
-		do
-			Result := class_of_id (rout_info_table.item (routine_id).origin).feature_of_rout_id (routine_id)
-		ensure
-			result_attached: Result /= Void
-		end
 
 feature -- Recompilation
 
@@ -1662,7 +1539,7 @@ feature -- Recompilation
 			if Compilation_modes.is_precompiling and il_generation then
 					-- For a precompiled library we require a freeze in non-IL
 					-- code generation.
-				is_freeze_requested := True
+				private_freeze := True
 			end
 
 			if first_compilation then
@@ -1734,10 +1611,10 @@ end
 					not Compilation_modes.is_precompiling and
 					not Lace.compile_all_classes
 				then
-						-- The root class is not deferred
+						-- The root class is not generic
 					root_class_c := root_class.compiled_class
 					current_class := root_class_c
-					root_class_c.check_that_root_class_is_not_deferred
+					root_class_c.check_non_genericity_of_root_class
 					current_class := Void
 						-- Remove useless classes i.e classes without
 						-- syntactical clients
@@ -1783,13 +1660,6 @@ end
 					reset_melted_conformance_table
 				end
 
-					-- Compute the root type
-				compute_root_type
-
-					-- We need to clean `instantiator' of all the types that do not make sense
-					-- anymore (see eweasel test#incr282).
-				instantiator.clean
-
 					-- Inheritance analysis: `Degree_4' is sorted by class
 					-- topological ids so the parent come first the heirs after.
 				process_degree_4
@@ -1802,12 +1672,13 @@ end
 					create d1.make_now
 				end
 
+
 				if
 					not Compilation_modes.is_precompiling and
 					not Lace.compile_all_classes
 				then
-						-- `root_class_c' cannot be used here as `root_type.associated_class' might be changed
-					root_type.associated_class.check_root_class_creators
+						-- `root_class_c' cannot be used here as `root_class.compiled_class' might be changed
+					root_class.compiled_class.check_root_class_creators
 				end
 
 					-- Byte code production and type checking
@@ -1825,7 +1696,7 @@ end
 					not Compilation_modes.is_precompiling and
 					not Lace.compile_all_classes
 				then
-					is_freeze_requested := is_freeze_requested or else not externals.is_equivalent
+					private_freeze := private_freeze or else not externals.is_equivalent
 				end
 
 					-- Process the type system
@@ -1897,7 +1768,7 @@ end
 					-- We may need to update `System.creation_name'
 					-- when it is not set explicitly and defaults to
 					-- a redeclaration of "ANY.default_create"
-				root_type.associated_class.check_root_class_creators
+				root_class.compiled_class.check_root_class_creators
 			end
 
 			if System.il_generation then
@@ -1908,7 +1779,7 @@ end
 			if not il_generation and then freeze then
 				Degree_output.put_freezing_message
 				freeze_system
-				is_freeze_requested := False
+				private_freeze := False
 				debug ("Timing")
 					create d2.make_now
 					print ("Degree -1 duration: ")
@@ -2233,13 +2104,18 @@ end
 
 				-- Processing of root class if any to make it easy to find
 				-- it in generated C code
-			instantiator.dispatch (root_type, root_type.associated_class)
+			if
+				root_class /= Void and then root_class.is_compiled and then
+				not root_class.compiled_class.has_types
+			then
+				root_class.compiled_class.init_types
+			end
 
 				-- Initialize types of non-generic classes which haven't been initialized yet.
 			Degree_2.initialize_non_generic_types
 
 				-- Compute the types.
-			instantiator.process
+			Instantiator.process
 		end
 
 	process_conformance_table_for_type (set_or_reset_action: PROCEDURE [ANY, TUPLE [CLASS_TYPE]]) is
@@ -2356,7 +2232,6 @@ end
 			melted_file: RAW_FILE
 			file_name: FILE_NAME
 			l_name: STRING
-			l_ba: BYTE_ARRAY
 		do
 debug ("ACTIVITY")
 	io.error.put_string ("Updating name.eif%N")
@@ -2388,6 +2263,30 @@ end
 			if not empty then
 				file_pointer := melted_file.file_pointer
 
+					-- Update the root class info
+				a_class := root_class.compiled_class
+				dtype := a_class.types.first.type_id - 1
+				if root_creation_name /= Void then
+					root_feat := a_class.feature_table.item (root_creation_name)
+					if root_feat /= Void then
+						if root_feat.has_arguments then
+							has_argument := 1
+						end
+						rout_id := root_feat.rout_id_set.first
+						rout_info := rout_info_table.item (rout_id)
+						rcorigin := rout_info.origin
+						rcoffset := rout_info.offset
+					else
+						rcorigin := - 1
+					end
+				else
+					rcorigin := -1
+				end
+				write_int (file_pointer, rcorigin)
+				write_int (file_pointer, dtype)
+				write_int (file_pointer, rcoffset)
+				write_int (file_pointer, has_argument)
+
 					-- Write first the number of dynamic types now available
 				write_int (file_pointer, type_id_counter.value)
 					-- Write the number of classes now available
@@ -2411,39 +2310,6 @@ end
 				make_update_descriptors (melted_file)
 					-- End mark
 				write_int (file_pointer, -1)
-
-					-- Update the root class info
-			    a_class := root_type.associated_class
-				dtype := root_class_type.type_id - 1
-				if root_creation_name /= Void then
-					root_feat := a_class.feature_table.item (root_creation_name)
-					if root_feat /= Void then
-						if root_feat.has_arguments then
-							has_argument := 1
-						end
-						rout_id := root_feat.rout_id_set.first
-						rout_info := rout_info_table.item (rout_id)
-						rcorigin := rout_info.origin
-						rcoffset := rout_info.offset
-					else
-						rcorigin := - 1
-					end
-				else
-					rcorigin := -1
-				end
-				write_int (file_pointer, rcorigin)
-
-					-- Generate type ID for ANY
-				write_int (file_pointer, any_class.compiled_class.types.first.type.type_id - 1)
-					-- Generate data to create the root full dynamic type ID.
-				create l_ba.make
-				byte_context.init (root_class_type)
-				root_type.type_i.make_full_type_byte_code (l_ba)
-					-- Write number of bytes in byte array.
-				l_ba.character_array.store (melted_file)
-
-				write_int (file_pointer, rcoffset)
-				write_int (file_pointer, has_argument)
 			end
 
 			melted_file.close
@@ -2641,8 +2507,7 @@ end
 		local
 			class_array: ARRAY [CLASS_C]
 			i, nb: INTEGER
-			l_class: CLASS_C
-			l_eiffel_class: EIFFEL_CLASS_C
+			a_class: CLASS_C
 		do
 				-- Reinitialization of control flags of the topological
 				-- sort.
@@ -2653,19 +2518,15 @@ end
 			class_array := classes
 			nb := class_counter.count
 			from i := 1 until i > nb loop
-				l_class := class_array.item (i)
-				if l_class /= Void then
-					l_class.set_changed (False)
-					l_class.set_changed2 (False)
-					l_class.set_changed3a (False)
-					l_class.set_need_type_check (False)
+				a_class := class_array.item (i)
+				if a_class /= Void then
+					a_class.set_changed (False)
+					a_class.set_changed2 (False)
+					a_class.set_changed3a (False)
+					a_class.set_need_type_check (False)
 					-- FIXME: changed4, changed5, changed6
-					l_class.changed_features.clear_all
-					l_class.propagators.wipe_out
-					l_eiffel_class ?= l_class
-					if l_eiffel_class /= Void then
-						l_eiffel_class.set_new_byte_code_needed (False)
-					end
+					a_class.changed_features.clear_all
+					a_class.propagators.wipe_out
 				end
 				i := i + 1
 			end
@@ -2716,7 +2577,7 @@ feature -- IL code generation
 				remover_off := old_remover_off
 
 				if not in_final_mode then
-					is_freeze_requested := False
+					private_freeze := False
 				end
 			end
 			il_generator.deploy
@@ -2776,27 +2637,24 @@ feature {NONE} -- IL generation
 								l_name := l_name.as_lower
 							end
 
-							if not l_types.item.is_external and then not l_types.item.is_basic then
-								if l_table.has (l_name) then
-										-- This name has already been inserted, we
-										-- record it in `l_conflicts' to report an error later.
-										-- This need not to be done for external class types.
-									if l_conflicts.has (l_name) then
-											-- An error has already been processed on this type,
-											-- get list of classes involved to add current `l_class'.
-										l_list := l_conflicts.item (l_name)
-									else
-											-- No error on `l_name', we create a new list.
-										create l_list.make (2)
-										l_conflicts.put (l_list, l_name)
-									end
-										-- Add classes involved in error.
-									l_list.force (l_class)
-									l_list.force (l_table.item (l_name))
+							if l_table.has (l_name) then
+									-- This name has already been inserted, we
+									-- record it in `l_conflicts' to report an error later.
+								if l_conflicts.has (l_name) then
+										-- An error has already been processed on this type,
+										-- get list of classes involved to add current `l_class'.
+									l_list := l_conflicts.item (l_name)
 								else
-										-- Mark `l_class' as being processed.
-									l_table.put (l_class, l_name)
+										-- No error on `l_name', we create a new list.
+									create l_list.make (2)
+									l_conflicts.put (l_list, l_name)
 								end
+									-- Add classes involved in error.
+								l_list.force (l_class)
+								l_list.force (l_table.item (l_name))
+							else
+									-- Mark `l_class' as being processed.
+								l_table.put (l_class, l_name)
 							end
 						end
 						l_types.forth
@@ -2824,7 +2682,7 @@ feature -- Freeezing
 	freeze_system is
 			-- Worrkbench C code generation
 		require
-			root_type.associated_class.original_class.is_compiled
+			root_class.is_compiled
 		do
 			Eiffel_project.terminate_c_compilation
 			freezing_occurred := True
@@ -2900,7 +2758,7 @@ end
 			generate_init_file
 
 			deg_output.display_degree_output (degree_message, 4, 10)
-			generate_option_file (True)
+			generate_option_file
 			address_table.generate (False)
 
 			deg_output.display_degree_output (degree_message, 3, 10)
@@ -2951,7 +2809,7 @@ feature -- Final mode generation
 	finalize_system (keep_assert: BOOLEAN) is
 			-- Finalized generation.
 		require
-			root_class_compiled: root_type.associated_class.original_class.is_compiled
+			root_class_compiled: root_class.is_compiled
 		local
 			old_remover_off: BOOLEAN
 			old_exception_stack_managed: BOOLEAN
@@ -2959,6 +2817,7 @@ feature -- Final mode generation
 			deg_output: DEGREE_OUTPUT
 			retried: BOOLEAN
 			d1, d2: DATE_TIME
+			l_assertions: CONF_ASSERTIONS
 			l_type_id_mapping: ARRAY [INTEGER]
 		do
 			eiffel_project.terminate_c_compilation
@@ -2981,13 +2840,8 @@ feature -- Final mode generation
 
 					-- Set the generation mode in final mode
 				byte_context.set_final_mode
-
-				if il_generation then
-					create l_type_id_mapping.make (0, static_type_id_counter.count)
-					process_optimized_single_types (False, l_type_id_mapping)
-				end
-
-				keep_assertions := keep_assert
+				l_assertions := universe.target.options.assertions
+				keep_assertions := keep_assert and then l_assertions /= Void and then l_assertions.has_assertions
 				set_is_precompile_finalized (is_precompiled)
 
 				if il_generation then
@@ -3036,7 +2890,6 @@ feature -- Final mode generation
 					inlining_on := inlining_on and not remover_off
 					array_optimization_on := array_optimization_on and not remover_off
 
-					byte_context.clear_system_data
 					process_degree_minus_2
 					debug ("Timing")
 						create d2.make_now
@@ -3074,6 +2927,7 @@ feature -- Final mode generation
 						-- Generation of C files associated to the classes of
 						-- the system.
 					Eiffel_table.start_degree_minus_3 (History_control.max_rout_id)
+					byte_context.clear_system_data
 					byte_context.compute_expanded_descendants
 					process_degree_minus_3
 
@@ -3115,11 +2969,7 @@ feature -- Final mode generation
 					-- Clean `finalization_needed' tag from all CLASS_C
 				clean_finalization_tag
 				if l_type_id_mapping /= Void then
-					if il_generation then
-						process_optimized_single_types (True, l_type_id_mapping)
-					else
-						process_dynamic_types (True, l_type_id_mapping)
-					end
+					process_dynamic_types (True, l_type_id_mapping)
 				end
 				private_finalize := False
 			end
@@ -3193,6 +3043,7 @@ feature {NONE} -- Implementation
 				if a_depth = 0 then
 					unref_classes.prune_all (eif_class.original_class)
 				end
+
 
 				eif_class.remove_c_generated_files
 
@@ -3492,7 +3343,7 @@ feature -- Dead code removal
 
 				-- First, inspection of the Eiffel code
 			if root_creation_name /= Void then
-				l_class := root_type.associated_class
+				l_class := root_class.compiled_class
 				root_feat := l_class.feature_table.item (root_creation_name)
 				remover.record (root_feat, l_class)
 			end
@@ -3631,6 +3482,7 @@ feature -- Dead code removal
 			l_class := integer_64_class.compiled_class
 			remover.record (l_class.feature_table.item_id ({PREDEFINED_NAMES}.set_item_name_id), l_class)
 
+
 debug ("DEAD_CODE")
 			remover.dump_alive
 			remover.dump_marked
@@ -3702,11 +3554,6 @@ feature -- Generation
 				-- Generate init file
 			deg_output.display_degree_output (degree_message, 1, 10)
 			generate_init_file
-
-				-- Generate option file
-			if keep_assertions then
-				generate_option_file (False)
-			end
 
 				-- Generate makefile
 			deg_output.display_degree_output (degree_message, 0, 10)
@@ -3807,48 +3654,6 @@ feature -- Generation
 			end
 		end
 
-	process_optimized_single_types (is_restoring: BOOLEAN; a_backup: ARRAY [INTEGER]) is
-			-- Modifies the implementation ids of all class marked as now being single genereation types.
-			--
-			-- The purpose of this routine is to temporarly set an applicable type's implementation id to
-			-- a static id. This is require for finalizing and optimizing .NET types, where non-single types
-			-- may be generated a single types during finalization.			
-		require
-			is_finalizing: compilation_modes.is_finalizing
-			il_generation: il_generation
-			a_backup_not_void: a_backup /= Void
-			a_backup_valid_for_restoring: is_restoring implies
-				(a_backup.lower >= 0 and a_backup.upper <= static_type_id_counter.count)
-		local
-			i, l_count: INTEGER
-			l_types: like class_types
-			l_type: CLASS_TYPE
-		do
-			if is_restoring then
-				l_types := class_types
-				l_count := l_types.count
-				from i := 1 until i = l_count loop
-					l_type := l_types[i]
-					if l_type /= Void and then not l_type.is_precompiled and then not l_type.is_external and then l_type.is_generated_as_single_type then
-						l_type.set_implementation_id (a_backup[i])
-					end
-					i := i + 1
-				end
-			else
-				l_types := class_types
-				l_count := l_types.count
-				from i := 1 until i = l_count loop
-					l_type := l_types[i]
-					if l_type /= Void and then not l_type.is_precompiled and then not l_type.is_external  and then l_type.is_generated_as_single_type then
-						a_backup.put (l_type.implementation_id, i)
-							-- Set implementation id to static id for .NET types that have been marked a single.
-						l_type.set_implementation_id (l_type.static_type_id)
-					end
-					i := i + 1
-				end
-			end
-		end
-
 	reset_type_id (class_type: CLASS_TYPE; an_id: INTEGER) is
 			-- Assign a new dynamic type id to `class_type'.
 		require
@@ -3925,31 +3730,17 @@ feature -- Generation
 				used.after
 			loop
 				l_rout_id := used.item_for_iteration
-				table := Tmp_poly_server.item (l_rout_id)
-				if table.is_routine_table then
-					l_table_name := Encoder.routine_table_name (l_rout_id)
-						-- Declare initialization routine for table
-					l_header_buf.put_string ("extern void ")
-					l_header_buf.put_string (l_table_name)
-					l_header_buf.put_string ("_init(void);")
-					l_header_buf.put_new_line
-						-- Call the routine
-					l_buf.put_string (l_table_name)
-					l_buf.put_string ("_init();")
-					l_buf.put_new_line
-				end
-				if table.is_attribute_table then
-					l_table_name := Encoder.attribute_table_name (l_rout_id)
-						-- Declare initialization routine for table
-					l_header_buf.put_string ("extern void ")
-					l_header_buf.put_string (l_table_name)
-					l_header_buf.put_string ("_init(void);")
-					l_header_buf.put_new_line
-						-- Call the routine
-					l_buf.put_string (l_table_name)
-					l_buf.put_string ("_init();")
-					l_buf.put_new_line
-				end
+				l_table_name := Encoder.table_name (l_rout_id)
+					-- Declare initialization routine for table
+				l_header_buf.put_string ("extern void ")
+				l_header_buf.put_string (l_table_name)
+				l_header_buf.put_string ("_init(void);")
+				l_header_buf.put_new_line
+
+					-- Call the routine
+				l_buf.put_string (l_table_name)
+				l_buf.put_string ("_init();")
+				l_buf.put_new_line
 				used.forth
 			end
 				-- Initialize then table used for finding out
@@ -3985,7 +3776,7 @@ feature -- Generation
 				l_rout_ids.after
 			loop
 				l_rout_id := l_rout_ids.item
-				l_table_name := Encoder.routine_table_name (l_rout_id)
+				l_table_name := Encoder.table_name (l_rout_id)
 					-- Declare initialization routine for table
 				l_header_buf.put_string ("extern void ")
 				l_header_buf.put_string (l_table_name)
@@ -4000,7 +3791,7 @@ feature -- Generation
 			end
 
 			l_buf.exdent
-			l_buf.put_string ("}")
+			l_buf.put_string ("};")
 			l_buf.put_new_line
 
 			l_buf.end_c_specific_code
@@ -4112,6 +3903,7 @@ feature -- Generation
 
 			buffer.start_c_specific_code
 
+
 			from
 				i := 1;
 				max_id := 0;
@@ -4209,18 +4001,9 @@ feature -- Generation
 							buffer.put_string ("extern char *cl")
 							buffer.put_integer (j)
 							buffer.put_string ("[];%N")
-							from
-								types := a_class.types
-								types.start
-							until
-								types.after
-							loop
-								id := types.item.type_id
-								buffer.put_string ("extern uint32 cr")
-								buffer.put_integer (id)
-								buffer.put_string ("[];%N")
-								types.forth
-							end
+							buffer.put_string ("extern uint32 cr")
+							buffer.put_integer (j)
+							buffer.put_string ("[];%N")
 						end
 						if not a_class.skeleton.is_empty then
 							from
@@ -4450,7 +4233,6 @@ end
 			cecil_file, header_file: INDENT_FILE
 			buffer, header_buffer: GENERATION_BUFFER
 			l_has_visible: BOOLEAN
-			generated_wrappers: DS_HASH_SET [STRING]
 		do
 				-- Clear buffers for current generation
 			buffer := generation_buffer
@@ -4468,7 +4250,6 @@ end
 
 			buffer.start_c_specific_code
 
-			create generated_wrappers.make_equal (10)
 			class_array := classes
 			nb := class_counter.count
 			from i := 1 until i > nb loop
@@ -4476,8 +4257,7 @@ end
 				if a_class /= Void then
 					if a_class.has_visible then
 						l_has_visible := True
-						set_current_class (a_class)
-						a_class.generate_cecil (generated_wrappers)
+						a_class.generate_cecil
 					end
 				end
 				i := i + 1
@@ -4633,7 +4413,8 @@ end
 						rout_entry.set_type_id (i)
 						rout_entry.set_type (l_void)
 						rout_entry.set_written_type_id (
-							class_type.type.implemented_type (l_class.creation_feature.written_in).type_id)
+							l_class.implemented_type (l_class.creation_feature.written_in,
+								class_type.type).type_id)
 						rout_entry.set_body_index (l_class.creation_feature.body_index)
 						rout_table.extend (rout_entry)
 					end
@@ -4773,8 +4554,8 @@ feature -- Pattern table generation
 
 			final_mode := byte_context.final_mode
 
-			root_cl := root_type.associated_class
-			cl_type := root_class_type
+			root_cl := root_class.compiled_class
+			cl_type := root_cl.types.first
 			dtype := cl_type.type_id - 1
 
 			if not Compilation_modes.is_precompiling and then root_creation_name /= Void then
@@ -4812,8 +4593,12 @@ feature -- Pattern table generation
 --											%%Textern char *root_obj;%N%
 --											%#endif%N")
 
-			buffer.put_string ("%Troot_obj = RTLNSMART(")
-			buffer.put_string ("egc_rcdt")
+			buffer.put_string ("%Troot_obj = RTLN(")
+			if final_mode then
+				buffer.put_integer (dtype)
+			else
+				buffer.put_string ("egc_rcdt")
+			end
 			buffer.put_string (");%N")
 
 			if final_mode then
@@ -4827,20 +4612,11 @@ feature -- Pattern table generation
 					buffer.put_string (");%N")
 				end
 			else
-				buffer.put_string (
-					"[
-						if (egc_rcorigin != -1) {
-							if (egc_rcarg) {
-								EIF_TYPED_VALUE u_args;
-								u_args.type = SK_REF;
-								u_args.it_r = argarr(argc, argv);
-								(FUNCTION_CAST(void, (EIF_REFERENCE, EIF_TYPED_VALUE)) RTWPF(egc_rcorigin, egc_rcoffset, Dtype(root_obj)))(root_obj, u_args);
-							} else {
-								(FUNCTION_CAST(void, (EIF_REFERENCE)) RTWPF(egc_rcorigin, egc_rcoffset, Dtype(root_obj)))(root_obj);
-							}
-						}
-					]"
-				)
+				buffer.put_string ("%Tif (egc_rcorigin != -1) {%N%
+					%%T%Tif (egc_rcarg) {%N%
+					%%T%T%T(FUNCTION_CAST(void, (EIF_REFERENCE, EIF_REFERENCE)) RTWPF(egc_rcorigin, egc_rcoffset, egc_rcdt))(root_obj, argarr(argc, argv));%N%
+					%%T%T} else {%N%
+					%%T%T%T(FUNCTION_CAST(void, (EIF_REFERENCE)) RTWPF(egc_rcorigin, egc_rcoffset, egc_rcdt))(root_obj);%N%T%T}%N%T}%N")
 			end
 
 			buffer.put_string ("%N}%N")
@@ -4863,6 +4639,7 @@ feature -- Pattern table generation
 					end
 					i := i + 1
 				end
+
 
 				buffer.put_string ("%Nvoid egc_tabinit_init(void)%N{%N")
 				from
@@ -4900,6 +4677,8 @@ feature -- Pattern table generation
 			-- Module initialization routine 'egc_system_mod_init_init'
 
 			-- Declarations
+
+
 
 			from
 				i  := 1
@@ -4998,9 +4777,9 @@ feature -- Workbench routine info table file generation
 			end
 		end
 
-feature --option file generation
+feature --Workbench option file generation
 
-	generate_option_file (is_workbench_mode: BOOLEAN) is
+	generate_option_file is
 			-- Generate compialtion option file
 		local
 			class_array: ARRAY [CLASS_C]
@@ -5060,11 +4839,7 @@ feature --option file generation
 			buffer.put_string ("};%N")
 			buffer.end_c_specific_code
 
-			if is_workbench_mode then
-				create option_file.make_c_code_file (workbench_file_name (Eoption, dot_c, 1));
-			else
-				create option_file.make_c_code_file (final_file_name (Eoption, dot_c, 1));
-			end
+			create option_file.make_c_code_file (workbench_file_name (Eoption, dot_c, 1));
 			buffer.put_in_file (option_file)
 			option_file.close
 		end
@@ -5148,14 +4923,19 @@ feature -- Conveniences
 			is_precompile_finalized_set: is_precompile_finalized = b
 		end
 
-	root_class: CLASS_I
-			-- Base class of `root_type'.
-
-	root_type: CL_TYPE_A
-			-- Computed type of specified root type.
-
-	root_class_type_as: CLASS_TYPE_AS
-			-- Root class type as specified in config system (possibly invalid).
+	root_class: CLASS_I is
+			-- Root class of the system
+		require
+			root_cluster /= Void
+			root_class_name /= Void
+		do
+			if root_cluster.classes_set then
+				Result ?= root_cluster.classes.item (root_class_name)
+			end
+		ensure
+			Computed_Result_not_void: root_cluster.classes_set implies Result /= Void
+			Not_computed_void: not root_cluster.classes_set implies Result = Void
+		end
 
 feature -- Precompilation
 
@@ -5281,7 +5061,7 @@ feature {NONE} -- External features
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

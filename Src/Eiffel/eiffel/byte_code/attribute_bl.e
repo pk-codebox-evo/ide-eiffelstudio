@@ -175,7 +175,7 @@ end
 			if array_index >= 0 then
 					-- The access is polymorphic, which means the offset
 					-- is not a constant and has to be computed.
-				table_name := Encoder.attribute_table_name (routine_id)
+				table_name := Encoder.table_name (routine_id)
 
 					-- Generate following dispatch:
 					-- table [Actual_offset - base_offset]
@@ -219,7 +219,6 @@ end
 			attribute_id := a.attribute_id
 			type := a.type
 			routine_id := a.routine_id
-			multi_constraint_static := a.multi_constraint_static
 		end
 
 indexing

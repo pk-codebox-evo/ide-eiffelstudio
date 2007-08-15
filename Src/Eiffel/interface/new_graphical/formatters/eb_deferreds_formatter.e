@@ -24,13 +24,7 @@ feature -- Properties
 			Result.put (pixmaps.icon_pixmaps.class_features_deferred_icon, 2)
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Graphical representation of the command.
-		once
-			Result := pixmaps.icon_pixmaps.class_features_deferred_icon_buffer
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Identifier of `Current' in menus.
 		do
 			Result := Interface_names.m_Showdeferreds
@@ -38,7 +32,7 @@ feature -- Properties
 
 feature {NONE} -- Properties
 
-	capital_command_name: STRING_GENERAL is
+	command_name: STRING is
 			-- Name of the command.
 		do
 			Result := Interface_names.l_Deferreds

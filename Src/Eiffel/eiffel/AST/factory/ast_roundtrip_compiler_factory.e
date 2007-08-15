@@ -17,8 +17,6 @@ inherit
 		undefine
 			new_integer_as,
 			new_integer_hexa_as,
-			new_integer_octal_as,
-			new_integer_binary_as,
 			new_feature_as,
 			new_bits_as,
 			new_class_as,
@@ -30,15 +28,12 @@ inherit
 			new_real_value,
 			new_external_lang_as,
 			new_formal_dec_as,
-			new_vtgc1_error,
 			validate_integer_real_type
 		end
 
 	AST_COMPILER_FACTORY
 		undefine
 			create_match_list,
-			backup_match_list_count,
-			resume_match_list_count,
 			new_keyword_as,
 			new_symbol_as,
 			new_current_as,
@@ -64,8 +59,6 @@ inherit
 			new_prefix_keyword_as,
 			new_integer_as,
 			new_integer_hexa_as,
-			new_integer_octal_as,
-			new_integer_binary_as,
 			new_real_as,
 			new_filled_bit_id_as,
 			new_string_as,
@@ -91,7 +84,7 @@ feature -- Roundtrip
 				create Result.make_from_string (t, s, v)
 				Result.set_position (l, c, p, n)
 				Result.set_sign_symbol (s_as)
-				increase_match_list_count
+				match_list_count := match_list_count + 1
 				Result.set_index (match_list_count)
 				extend_match_list_with_stub (create{LEAF_STUB_AS}.make (buf.string, l, c, p, n))
 			end
@@ -104,33 +97,7 @@ feature -- Roundtrip
 				create Result.make_from_hexa_string (t, s, v)
 				Result.set_position (l, c, p, n)
 				Result.set_sign_symbol (s_as)
-				increase_match_list_count
-				Result.set_index (match_list_count)
-				extend_match_list_with_stub (create{LEAF_STUB_AS}.make (buf.string, l, c, p, n))
-			end
-		end
-
-	new_integer_octal_as (t: TYPE_AS; s: CHARACTER; v: STRING; buf: STRING; s_as: SYMBOL_AS; l, c, p, n: INTEGER): INTEGER_CONSTANT is
-			-- New INTEGER_AS node
-		do
-			if v /= Void then
-				create Result.make_from_octal_string (t, s, v)
-				Result.set_position (l, c, p, n)
-				Result.set_sign_symbol (s_as)
-				increase_match_list_count
-				Result.set_index (match_list_count)
-				extend_match_list_with_stub (create{LEAF_STUB_AS}.make (buf.string, l, c, p, n))
-			end
-		end
-
-	new_integer_binary_as (t: TYPE_AS; s: CHARACTER; v: STRING; buf: STRING; s_as: SYMBOL_AS; l, c, p, n: INTEGER): INTEGER_CONSTANT is
-			-- New INTEGER_AS node
-		do
-			if v /= Void then
-				create Result.make_from_binary_string (t, s, v)
-				Result.set_position (l, c, p, n)
-				Result.set_sign_symbol (s_as)
-				increase_match_list_count
+				match_list_count := match_list_count + 1
 				Result.set_index (match_list_count)
 				extend_match_list_with_stub (create{LEAF_STUB_AS}.make (buf.string, l, c, p, n))
 			end

@@ -510,7 +510,7 @@ feature {EV_ANY_I, EV_POPUP_MENU_HANDLER} -- Implementation
 			-- Will not alter state of radio_menu_items.
 		do
 				-- Remove item at `pos' - 1 from `Current'
-			remove_position (pos - 1)
+			delete_position (pos - 1)
 
 				-- Insert item at `pos' - 1.
 			quick_insert_item (an_item, pos)
@@ -522,70 +522,67 @@ feature {EV_ANY_I, EV_POPUP_MENU_HANDLER} -- Implementation
 		require
 			a_menu_not_void: a_menu /= Void
 		local
-			l_menu_item: EV_MENU_ITEM_IMP
-			l_comparator: PREDICATE [ANY, TUPLE [EV_MENU_ITEM_IMP]]
+			cur: CURSOR
+			sub_menu: EV_MENU_IMP
+			wel_menu: WEL_MENU
 		do
-			l_comparator := agent (a_menu_item: EV_MENU_ITEM_IMP; a_wel_menu: WEL_MENU): BOOLEAN
-				local
-					l_menu: EV_MENU_IMP
-				do
-					l_menu ?= a_menu_item
-					if l_menu /= Void then
-						Result := l_menu.wel_item = a_wel_menu.item
-					end
-				end (?, a_menu)
-			l_menu_item := menu_item_from_comparator (l_comparator)
-			if l_menu_item /= Void and then l_menu_item.select_actions_internal /= Void then
-				l_menu_item.select_actions_internal.call (Void)
-			end
-		end
-
-	menu_item_clicked (a_id: INTEGER) is
-			-- Call `on_activate' for menu item with `a_id'.
-		local
-			l_menu_item: EV_MENU_ITEM_IMP
-			l_comparator: PREDICATE [ANY, TUPLE [EV_MENU_ITEM_IMP]]
-		do
-			l_comparator := agent (a_menu_item: EV_MENU_ITEM_IMP; a_item_id: INTEGER): BOOLEAN
-				do
-					Result := a_menu_item.id = a_item_id
-				end (?, a_id)
-			l_menu_item := menu_item_from_comparator (l_comparator)
-			if l_menu_item /= Void then
-				l_menu_item.on_activate
-				if item_select_actions_internal /= Void then
-					item_select_actions_internal.call ([l_menu_item.interface])
-				end
-			end
-		end
-
-	menu_item_from_comparator (a_comparator: PREDICATE [ANY, TUPLE [EV_MENU_ITEM_IMP]]): EV_MENU_ITEM_IMP
-			-- Retrieve menu item using comparator predicate `a_comparator'.
-		require
-			a_comparator_not_void: a_comparator /= Void
-		local
-			i: INTEGER
-			l_count: INTEGER
-			l_sub_menu: EV_MENU_IMP
-			l_menu_item: EV_MENU_ITEM_IMP
-		do
+			cur := ev_children.cursor
 			from
-				i := 1
-				l_count := count
+				ev_children.start
 			until
-				Result /= Void or else i > l_count
+				ev_children.after
 			loop
-				l_menu_item := ev_children @ i
-				if l_menu_item /= Void then
-					l_sub_menu ?= l_menu_item
-					if l_sub_menu /= Void then
-						Result := l_sub_menu.menu_item_from_comparator (a_comparator)
-					end
-					if Result = Void and then a_comparator.item ([l_menu_item]) then
-						Result := l_menu_item
+				sub_menu ?= ev_children.item
+				if sub_menu /= Void then
+					wel_menu := sub_menu
+					if wel_menu.item = a_menu.item then
+						if sub_menu.select_actions_internal /= Void then
+							sub_menu.select_actions_internal.call (Void)
+						end
+					else
+						sub_menu.menu_opened (a_menu)
 					end
 				end
-				i := i + 1
+				if not ev_children.off then
+					ev_children.forth
+				end
+			end
+			if ev_children.valid_cursor (cur) then
+				ev_children.go_to (cur)
+			end
+		end
+
+	menu_item_clicked (an_id: INTEGER) is
+			-- Call `on_activate' for menu item with `an_id'.
+		local
+			cur: CURSOR
+			sub_menu: EV_MENU_IMP
+			menu_item: EV_MENU_ITEM_IMP
+		do
+			cur := ev_children.cursor
+			from
+				ev_children.start
+			until
+				ev_children.after
+			loop
+				menu_item := ev_children.item
+				if menu_item /= Void then
+					sub_menu ?= menu_item
+					if sub_menu /= Void then
+						sub_menu.menu_item_clicked (an_id)
+					elseif menu_item.id = an_id then
+						menu_item.on_activate
+						if item_select_actions_internal /= Void then
+							item_select_actions_internal.call ([menu_item.interface])
+						end
+					end
+				end
+				if not ev_children.off then
+					ev_children.forth
+				end
+			end
+			if ev_children.valid_cursor (cur) then
+				ev_children.go_to (cur)
 			end
 		end
 

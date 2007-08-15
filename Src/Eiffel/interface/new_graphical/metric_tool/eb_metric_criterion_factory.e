@@ -44,7 +44,7 @@ feature -- Access
 			not_a_name_is_empty: not a_name.is_empty
 			criterion_exists: has_criterion (a_name, a_scope)
 		do
-			Result := criterion_table.item (a_scope).item (a_name).item (Void)
+			Result := criterion_table.item (a_scope).item (a_name).item ([])
 		ensure
 			result_attached: Result /= Void
 		end
@@ -76,7 +76,7 @@ feature -- Access
 
 	criteria_with_scope (a_scope: QL_SCOPE): LIST [EB_METRIC_CRITERION] is
 			-- List of criterion of type `a_scope'
-			-- Can be Void if there is no criterion of `a_scope' registered in `criterion_table'.
+			-- Can be Void is there is no criterion of `a_scope' registered in `criterion_table'.
 		local
 			l_table: HASH_TABLE [FUNCTION [ANY, TUPLE, EB_METRIC_CRITERION], STRING]
 		do
@@ -179,18 +179,6 @@ feature{NONE} -- Implementation
 			result_attached: Result /= Void
 		end
 
-	new_supplier_client_criterion (a_scope: QL_SCOPE; a_name: STRING): EB_METRIC_CRITERION is
-			-- New metric criterion whose `type' is `a_scope' and `name' is `a_name'
-		require
-			a_scope_attached: a_scope /= Void
-			a_name_attached: a_name /= Void
-			not_a_name_is_empty: not a_name.is_empty
-		do
-			create {EB_METRIC_SUPPLIER_CLIENT_CRITERION}Result.make (a_scope, a_name)
-		ensure
-			result_attached: Result /= Void
-		end
-
 	new_nary_criterion (a_scope: QL_SCOPE; a_name: STRING): EB_METRIC_CRITERION is
 			-- New metric criterion whose `type' is `a_scope' and `name' is `a_name'
 		require
@@ -207,29 +195,6 @@ feature{NONE} -- Implementation
 			result_attached: Result /= Void
 		end
 
-	new_value_criterion (a_scope: QL_SCOPE; a_name: STRING): EB_METRIC_VALUE_CRITERION is
-			-- New value criterion whose `type' is `a_scope' and `name' is `a_name'
-		require
-			a_scope_attached: a_scope /= Void
-			a_name_attached: a_name /= Void
-			not_a_name_is_empty: not a_name.is_empty
-		do
-			create Result.make (a_scope, a_name)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	new_external_command_criterion (a_scope: QL_SCOPE; a_name: STRING): EB_METRIC_EXTERNAL_COMMAND_CRITERION is
-			-- New external command criterion whose `type' is `a_scope' and `name' is `a_name'
-		require
-			a_scope_attached: a_scope /= Void
-			a_name_attached: a_name /= Void
-			not_a_name_is_empty: not a_name.is_empty
-		do
-			create Result.make (a_scope, a_name)
-		ensure
-			result_attached: Result /= Void
-		end
 
 feature{NONE} -- Initialization
 
@@ -248,10 +213,6 @@ feature{NONE} -- Initialization
 
 			l_hash_table.put (agent new_nary_criterion (target_scope, query_language_names.ql_cri_and), query_language_names.ql_cri_and)
 			l_hash_table.put (agent new_nary_criterion (target_scope, query_language_names.ql_cri_or), query_language_names.ql_cri_or)
-
-			l_hash_table.put (agent new_value_criterion (target_scope, query_language_names.ql_cri_value_of_metric_is), query_language_names.ql_cri_value_of_metric_is)
-
-			l_hash_table.put (agent new_external_command_criterion (target_scope, query_language_names.ql_cri_is_satisfied_by), query_language_names.ql_cri_is_satisfied_by)
 		end
 
 	initialize_group_criteria is
@@ -276,10 +237,6 @@ feature{NONE} -- Initialization
 
 			l_hash_table.put (agent new_nary_criterion (group_scope, query_language_names.ql_cri_and), query_language_names.ql_cri_and)
 			l_hash_table.put (agent new_nary_criterion (group_scope, query_language_names.ql_cri_or), query_language_names.ql_cri_or)
-
-			l_hash_table.put (agent new_value_criterion (group_scope, query_language_names.ql_cri_value_of_metric_is), query_language_names.ql_cri_value_of_metric_is)
-
-			l_hash_table.put (agent new_external_command_criterion (group_scope, query_language_names.ql_cri_is_satisfied_by), query_language_names.ql_cri_is_satisfied_by)
 		end
 
 	initialize_class_criteria is
@@ -312,7 +269,7 @@ feature{NONE} -- Initialization
 			l_hash_table.put (agent new_normal_criterion (class_scope, query_language_names.ql_cri_is_always_compiled), query_language_names.ql_cri_is_always_compiled)
 			l_hash_table.put (agent new_normal_criterion (class_scope, query_language_names.ql_cri_is_partial), query_language_names.ql_cri_is_partial)
 			l_hash_table.put (agent new_normal_criterion (class_scope, query_language_names.ql_cri_is_read_only), query_language_names.ql_cri_is_read_only)
-			l_hash_table.put (agent new_normal_criterion (class_scope, query_language_names.ql_cri_is_overridden), query_language_names.ql_cri_is_overridden)
+			l_hash_table.put (agent new_normal_criterion (class_scope, query_language_names.ql_cri_is_overriden), query_language_names.ql_cri_is_overriden)
 			l_hash_table.put (agent new_normal_criterion (class_scope, query_language_names.ql_cri_is_overrider), query_language_names.ql_cri_is_overrider)
 
 			l_hash_table.put (agent new_path_criterion (class_scope, query_language_names.ql_cri_path_in), query_language_names.ql_cri_path_in)
@@ -326,8 +283,10 @@ feature{NONE} -- Initialization
 			l_hash_table.put (agent new_domain_criterion (class_scope, query_language_names.ql_cri_proper_descendant_is), query_language_names.ql_cri_proper_descendant_is)
 			l_hash_table.put (agent new_domain_criterion (class_scope, query_language_names.ql_cri_heir_is), query_language_names.ql_cri_heir_is)
 			l_hash_table.put (agent new_domain_criterion (class_scope, query_language_names.ql_cri_indirect_heir_is), query_language_names.ql_cri_indirect_heir_is)
-			l_hash_table.put (agent new_supplier_client_criterion (class_scope, query_language_names.ql_cri_supplier_is), query_language_names.ql_cri_supplier_is)
-			l_hash_table.put (agent new_supplier_client_criterion (class_scope, query_language_names.ql_cri_client_is), query_language_names.ql_cri_client_is)
+			l_hash_table.put (agent new_domain_criterion (class_scope, query_language_names.ql_cri_supplier_is), query_language_names.ql_cri_supplier_is)
+			l_hash_table.put (agent new_domain_criterion (class_scope, query_language_names.ql_cri_indirect_supplier_is), query_language_names.ql_cri_indirect_supplier_is)
+			l_hash_table.put (agent new_domain_criterion (class_scope, query_language_names.ql_cri_client_is), query_language_names.ql_cri_client_is)
+			l_hash_table.put (agent new_domain_criterion (class_scope, query_language_names.ql_cri_indirect_client_is), query_language_names.ql_cri_indirect_client_is)
 
 			l_hash_table.put (agent new_name_criterion (class_scope, query_language_names.ql_cri_name_is), query_language_names.ql_cri_name_is)
 			l_hash_table.put (agent new_name_criterion (class_scope, query_language_names.ql_cri_text_contain), query_language_names.ql_cri_text_contain)
@@ -341,9 +300,6 @@ feature{NONE} -- Initialization
 			l_hash_table.put (agent new_nary_criterion (class_scope, query_language_names.ql_cri_and), query_language_names.ql_cri_and)
 			l_hash_table.put (agent new_nary_criterion (class_scope, query_language_names.ql_cri_or), query_language_names.ql_cri_or)
 
-			l_hash_table.put (agent new_value_criterion (class_scope, query_language_names.ql_cri_value_of_metric_is), query_language_names.ql_cri_value_of_metric_is)
-
-			l_hash_table.put (agent new_external_command_criterion (class_scope, query_language_names.ql_cri_is_satisfied_by), query_language_names.ql_cri_is_satisfied_by)
 		end
 
 	initialize_generic_criteria is
@@ -368,9 +324,6 @@ feature{NONE} -- Initialization
 			l_hash_table.put (agent new_nary_criterion (generic_scope, query_language_names.ql_cri_and), query_language_names.ql_cri_and)
 			l_hash_table.put (agent new_nary_criterion (generic_scope, query_language_names.ql_cri_or), query_language_names.ql_cri_or)
 
-			l_hash_table.put (agent new_value_criterion (generic_scope, query_language_names.ql_cri_value_of_metric_is), query_language_names.ql_cri_value_of_metric_is)
-
-			l_hash_table.put (agent new_external_command_criterion (generic_scope, query_language_names.ql_cri_is_satisfied_by), query_language_names.ql_cri_is_satisfied_by)
 		end
 
 	initialize_feature_criteria is
@@ -396,7 +349,6 @@ feature{NONE} -- Initialization
 			l_hash_table.put (agent new_normal_criterion (feature_scope, query_language_names.ql_cri_is_constant), query_language_names.ql_cri_is_constant)
 			l_hash_table.put (agent new_normal_criterion (feature_scope, query_language_names.ql_cri_is_creator), query_language_names.ql_cri_is_creator)
 			l_hash_table.put (agent new_normal_criterion (feature_scope, query_language_names.ql_cri_is_deferred), query_language_names.ql_cri_is_deferred)
-			l_hash_table.put (agent new_normal_criterion (feature_scope, query_language_names.ql_cri_is_effective), query_language_names.ql_cri_is_effective)
 			l_hash_table.put (agent new_normal_criterion (feature_scope, query_language_names.ql_cri_is_exported), query_language_names.ql_cri_is_exported)
 			l_hash_table.put (agent new_normal_criterion (feature_scope, query_language_names.ql_cri_is_external), query_language_names.ql_cri_is_external)
 			l_hash_table.put (agent new_normal_criterion (feature_scope, query_language_names.ql_cri_is_feature), query_language_names.ql_cri_is_feature)
@@ -418,6 +370,7 @@ feature{NONE} -- Initialization
 			l_hash_table.put (agent new_normal_criterion (feature_scope, query_language_names.ql_cri_true), query_language_names.ql_cri_true)
 			l_hash_table.put (agent new_normal_criterion (feature_scope, query_language_names.ql_cri_is_from_any), query_language_names.ql_cri_is_from_any)
 
+
 			l_hash_table.put (agent new_name_criterion (feature_scope, query_language_names.ql_cri_name_is), query_language_names.ql_cri_name_is)
 			l_hash_table.put (agent new_name_criterion (feature_scope, query_language_names.ql_cri_text_contain), query_language_names.ql_cri_text_contain)
 
@@ -437,9 +390,6 @@ feature{NONE} -- Initialization
 			l_hash_table.put (agent new_nary_criterion (feature_scope, query_language_names.ql_cri_and), query_language_names.ql_cri_and)
 			l_hash_table.put (agent new_nary_criterion (feature_scope, query_language_names.ql_cri_or), query_language_names.ql_cri_or)
 
-			l_hash_table.put (agent new_value_criterion (feature_scope, query_language_names.ql_cri_value_of_metric_is), query_language_names.ql_cri_value_of_metric_is)
-
-			l_hash_table.put (agent new_external_command_criterion (feature_scope, query_language_names.ql_cri_is_satisfied_by), query_language_names.ql_cri_is_satisfied_by)
 		end
 
 	initialize_argument_criteria is
@@ -462,9 +412,6 @@ feature{NONE} -- Initialization
 			l_hash_table.put (agent new_nary_criterion (argument_scope, query_language_names.ql_cri_and), query_language_names.ql_cri_and)
 			l_hash_table.put (agent new_nary_criterion (argument_scope, query_language_names.ql_cri_or), query_language_names.ql_cri_or)
 
-			l_hash_table.put (agent new_value_criterion (argument_scope, query_language_names.ql_cri_value_of_metric_is), query_language_names.ql_cri_value_of_metric_is)
-
-			l_hash_table.put (agent new_external_command_criterion (argument_scope, query_language_names.ql_cri_is_satisfied_by), query_language_names.ql_cri_is_satisfied_by)
 		end
 
 	initialize_local_criteria is
@@ -488,9 +435,6 @@ feature{NONE} -- Initialization
 			l_hash_table.put (agent new_nary_criterion (local_scope, query_language_names.ql_cri_and), query_language_names.ql_cri_and)
 			l_hash_table.put (agent new_nary_criterion (local_scope, query_language_names.ql_cri_or), query_language_names.ql_cri_or)
 
-			l_hash_table.put (agent new_value_criterion (local_scope, query_language_names.ql_cri_value_of_metric_is), query_language_names.ql_cri_value_of_metric_is)
-
-			l_hash_table.put (agent new_external_command_criterion (local_scope, query_language_names.ql_cri_is_satisfied_by), query_language_names.ql_cri_is_satisfied_by)
 		end
 
 	initialize_assertion_criteria is
@@ -522,9 +466,6 @@ feature{NONE} -- Initialization
 			l_hash_table.put (agent new_nary_criterion (assertion_scope, query_language_names.ql_cri_and), query_language_names.ql_cri_and)
 			l_hash_table.put (agent new_nary_criterion (assertion_scope, query_language_names.ql_cri_or), query_language_names.ql_cri_or)
 
-			l_hash_table.put (agent new_value_criterion (assertion_scope, query_language_names.ql_cri_value_of_metric_is), query_language_names.ql_cri_value_of_metric_is)
-
-			l_hash_table.put (agent new_external_command_criterion (assertion_scope, query_language_names.ql_cri_is_satisfied_by), query_language_names.ql_cri_is_satisfied_by)
 		end
 
 	initialize_line_criteria is
@@ -538,7 +479,6 @@ feature{NONE} -- Initialization
 			l_hash_table.put (agent new_normal_criterion (line_scope, query_language_names.ql_cri_false), query_language_names.ql_cri_false)
 			l_hash_table.put (agent new_normal_criterion (line_scope, query_language_names.ql_cri_is_blank), query_language_names.ql_cri_is_blank)
 			l_hash_table.put (agent new_normal_criterion (line_scope, query_language_names.ql_cri_is_comment), query_language_names.ql_cri_is_comment)
-			l_hash_table.put (agent new_normal_criterion (line_scope, query_language_names.ql_cri_is_implementation_comment), query_language_names.ql_cri_is_implementation_comment)
 			l_hash_table.put (agent new_normal_criterion (line_scope, query_language_names.ql_cri_is_compiled), query_language_names.ql_cri_is_compiled)
 			l_hash_table.put (agent new_normal_criterion (line_scope, query_language_names.ql_cri_true), query_language_names.ql_cri_true)
 
@@ -548,9 +488,6 @@ feature{NONE} -- Initialization
 			l_hash_table.put (agent new_nary_criterion (line_scope, query_language_names.ql_cri_and), query_language_names.ql_cri_and)
 			l_hash_table.put (agent new_nary_criterion (line_scope, query_language_names.ql_cri_or), query_language_names.ql_cri_or)
 
-			l_hash_table.put (agent new_value_criterion (line_scope, query_language_names.ql_cri_value_of_metric_is), query_language_names.ql_cri_value_of_metric_is)
-
-			l_hash_table.put (agent new_external_command_criterion (line_scope, query_language_names.ql_cri_is_satisfied_by), query_language_names.ql_cri_is_satisfied_by)
 		end
 
 invariant
@@ -587,5 +524,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

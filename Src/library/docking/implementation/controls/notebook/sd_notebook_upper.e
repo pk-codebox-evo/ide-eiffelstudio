@@ -50,34 +50,20 @@ feature {NONE} -- Initlization
 			internal_top_box.extend (custom_area)
 			internal_top_box.disable_item_expand (custom_area)
 
-			create internal_tool_bar.make
-			create internal_minimize_all_button.make
+			create internal_tool_bar
+			create internal_minimize_all_button
 			internal_minimize_all_button.set_pixmap (internal_shared.icons.minimize)
-			if internal_shared.icons.minimize_buffer /= Void then
-				internal_minimize_all_button.set_pixel_buffer (internal_shared.icons.minimize_buffer)
-			end
-			internal_minimize_all_button.set_tooltip (internal_shared.interface_names.tooltip_mini_toolbar_minimize)
-			create internal_minimize_button.make
+			create internal_minimize_button
 			internal_minimize_button.set_pixmap (internal_shared.icons.minimize)
-			if internal_shared.icons.minimize_buffer /= Void then
-				internal_minimize_button.set_pixel_buffer (internal_shared.icons.minimize_buffer)
-			end
-			internal_minimize_button.set_tooltip (internal_shared.interface_names.tooltip_mini_toolbar_minimize)
-			create internal_normal_max_button.make
+			create internal_normal_max_button
 			internal_normal_max_button.set_pixmap (internal_shared.icons.maximize)
-			if internal_shared.icons.maximize_buffer /= Void then
-				internal_normal_max_button.set_pixel_buffer (internal_shared.icons.maximize_buffer)
-			end
-			internal_normal_max_button.set_tooltip (internal_shared.interface_names.tooltip_mini_toolbar_maximize)
 
 -- FIXIT: Currently minimize functionality not works good, so we hide this button now.
 --			internal_tool_bar.extend (internal_minimize_all_button)
 			internal_tool_bar.extend (internal_minimize_button)
 			internal_tool_bar.extend (internal_normal_max_button)
-			internal_tool_bar.compute_minimum_size
 
 			internal_top_box.extend (internal_tool_bar)
-
 			internal_top_box.disable_item_expand (internal_tool_bar)
 
 			internal_tab_box.tab_box.pointer_double_press_actions.force_extend (agent on_normal_max_window)
@@ -120,25 +106,6 @@ feature -- Query
 	is_maximized: BOOLEAN
 			-- If Current is maximized?
 
-	is_in_close_area: BOOLEAN is
-			-- If pointer position in tab close button area?
-		do
-			from
-				internal_tabs.start
-			until
-				internal_tabs.after or Result
-			loop
-				Result := internal_tabs.item.is_pointer_in_close_area
-				internal_tabs.forth
-			end
-		end
-
-	in_normal_maximize_area: BOOLEAN is
-			-- If pointer position in normal/maximize button area?
-		do
-			Result := internal_minimize_button.state = {SD_TOOL_BAR_ITEM_STATE}.hot
-		end
-
 feature -- Command
 
 	set_mini_tool_bar (a_widget: EV_WIDGET) is
@@ -174,16 +141,8 @@ feature -- Command
 		do
 			if a_maximized then
 				internal_normal_max_button.set_pixmap (internal_shared.icons.normal)
-				if internal_shared.icons.normal_buffer /= Void then
-					internal_normal_max_button.set_pixel_buffer (internal_shared.icons.normal_buffer)
-				end
-				internal_normal_max_button.set_tooltip (internal_shared.interface_names.tooltip_mini_toolbar_restore)
 			else
 				internal_normal_max_button.set_pixmap (internal_shared.icons.maximize)
-				if internal_shared.icons.maximize_buffer /= Void then
-					internal_normal_max_button.set_pixel_buffer (internal_shared.icons.maximize_buffer)
-				end
-				internal_normal_max_button.set_tooltip (internal_shared.interface_names.tooltip_mini_toolbar_maximize)
 			end
 			is_maximized := a_maximized
 		end
@@ -193,16 +152,8 @@ feature -- Command
 		do
 			if not a_minimized then
 				internal_minimize_button.set_pixmap (internal_shared.icons.minimize)
-				if internal_shared.icons.minimize_buffer /= Void then
-					internal_minimize_button.set_pixel_buffer (internal_shared.icons.minimize_buffer)
-				end
-				internal_minimize_button.set_tooltip (internal_shared.interface_names.tooltip_mini_toolbar_minimize)
 			else
 				internal_minimize_button.set_pixmap (internal_shared.icons.normal)
-				if internal_shared.icons.normal_buffer /= Void then
-					internal_minimize_button.set_pixel_buffer (internal_shared.icons.normal_buffer)
-				end
-				internal_minimize_button.set_tooltip (internal_shared.interface_names.tooltip_mini_toolbar_restore)
 			end
 		end
 
@@ -211,16 +162,8 @@ feature -- Command
 		do
 			if a_is_minimize then
 				internal_minimize_all_button.set_pixmap (internal_shared.icons.minimize)
-				if internal_shared.icons.minimize_buffer /= Void then
-					internal_minimize_all_button.set_pixel_buffer (internal_shared.icons.minimize_buffer)
-				end
-				internal_minimize_all_button.set_tooltip (internal_shared.interface_names.tooltip_mini_toolbar_minimize)
 			else
 				internal_minimize_all_button.set_pixmap (internal_shared.icons.normal)
-				if internal_shared.icons.normal_buffer /= Void then
-					internal_minimize_all_button.set_pixel_buffer (internal_shared.icons.normal_buffer)
-				end
-				internal_minimize_all_button.set_tooltip (internal_shared.interface_names.tooltip_mini_toolbar_restore)
 			end
 		end
 
@@ -249,19 +192,19 @@ feature {NONE}  -- Agents
 	on_normal_max_window is
 			-- Handle normal max window.
 		do
-			normal_max_actions.call (Void)
+			normal_max_actions.call ([])
 		end
 
 	on_minimize is
 			-- Handle minimize actions.
 		do
-			minimize_actions.call (Void)
+			minimize_actions.call ([])
 		end
 
 	on_minimize_all is
 			-- Handle minimize all actions.
 		do
-			minimize_all_actions.call (Void)
+			minimize_all_actions.call ([])
 		end
 
 	on_tab_area_pointer_press (a_x: INTEGER_32; a_y: INTEGER_32; a_button: INTEGER_32; a_x_tilt: REAL_64; a_y_tilt: REAL_64; a_pressure: REAL_64; a_screen_x: INTEGER_32; a_screen_y: INTEGER_32) is
@@ -312,16 +255,16 @@ feature {NONE}  -- Implementation
 	internal_button_box: EV_HORIZONTAL_BOX
 			-- Box which contain `custom_area' and `internal_tool_bar'
 
-	internal_tool_bar: SD_TOOL_BAR
+	internal_tool_bar: EV_TOOL_BAR
 			-- Tool bar has `internal_normal_max_button', `internal_close_button'.
 
-	internal_minimize_button: SD_TOOL_BAR_BUTTON
+	internal_minimize_button: EV_TOOL_BAR_BUTTON
 			-- Minimize button.
 
-	internal_normal_max_button: SD_TOOL_BAR_BUTTON
+	internal_normal_max_button: EV_TOOL_BAR_BUTTON
 			-- Normal\max button
 
-	internal_minimize_all_button: SD_TOOL_BAR_BUTTON
+	internal_minimize_all_button: EV_TOOL_BAR_BUTTON
 			-- Minimize all button.
 			-- Which is normally for minimized all editors
 invariant

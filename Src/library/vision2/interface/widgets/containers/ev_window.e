@@ -29,8 +29,7 @@ inherit
 			implementation,
 			initialize,
 			is_in_default_state,
-			has,
-			identifier_path_separator
+			has
 		end
 
 	EV_POSITIONABLE
@@ -43,13 +42,6 @@ inherit
 	EV_WINDOW_ACTION_SEQUENCES
 		redefine
 			implementation
-		end
-
-	EV_SHARED_APPLICATION
-		export
-			{NONE} all
-		undefine
-			copy, default_create, is_equal
 		end
 
 create
@@ -182,18 +174,6 @@ feature -- Status report
 			not_destroyed: not is_destroyed
 		do
 			Result := implementation.is_border_enabled
-		end
-
-feature -- Command
-
-	destroy_and_exit_if_last is
-			-- Destroy current window and destroy instance of EV_APPLICATION if
-			-- no more top level windows remain in the system.
-		do
-			destroy
-			if ev_application.windows.is_empty then
-				ev_application.destroy
-			end
 		end
 
 feature -- Status setting
@@ -376,7 +356,7 @@ feature -- Status setting
 			implementation.show_relative_to_window (a_parent)
 		end
 
-feature {EV_ANY, EV_ANY_I, EV_ANY_HANDLER} -- Implementation
+feature {EV_ANY, EV_ANY_I} -- Implementation
 
 	implementation: EV_WINDOW_I
 			-- Responsible for interaction with native graphics toolkit.
@@ -410,14 +390,6 @@ feature {NONE} -- Implementation
 			-- See `{EV_ANY}.create_implementation'.
 		do
 			create {EV_WINDOW_IMP} implementation.make (Current)
-		end
-
-feature {EV_IDENTIFIABLE} -- Implementation
-
-	identifier_path_separator: CHARACTER is
-			-- Character used to separate path to children.
-		once
-			Result := ':'
 		end
 
 invariant

@@ -13,7 +13,7 @@ class FILTER_PARSER
 
 feature {NONE} -- Formats
 
-	format_table: HASH_TABLE [CELL2 [STRING_32, STRING_32], STRING_32];
+	format_table: HASH_TABLE [CELL2 [STRING, STRING], STRING];
 			-- User-specified formats
 
 	escape_characters: ARRAY [STRING];
@@ -26,13 +26,13 @@ feature {NONE} -- Formats
 			filename_not_void: filename /= Void;
 			not_filename_empty: not filename.is_empty
 		local
-			construct, before, after: STRING_32;
-			construct_list: LINKED_LIST [STRING_32];
+			construct, before, after: STRING;
+			construct_list: LINKED_LIST [STRING];
 			in_construct, in_before: BOOLEAN;
-			new_format: CELL2 [STRING_32, STRING_32];
+			new_format: CELL2 [STRING, STRING];
 			normal_format: BOOLEAN;
-			escape_char: CHARACTER_32;
-			escape: STRING_32
+			escape_char: CHARACTER;
+			escape: STRING
 		do
 			create filter_file.make (filename);
 			if filter_file.exists and then filter_file.is_readable then

@@ -9,12 +9,11 @@ class
 	GB_SHARED_PREFERENCES
 
 inherit
-	EIFFEL_LAYOUT
-		export
-			{NONE} all
-		end
+	ANY
 
-	GB_FILE_CONSTANTS
+	EIFFEL_LAYOUT
+		export {NONE} all
+	end
 
 feature -- Initialization
 
@@ -41,6 +40,17 @@ feature -- Access
 			initialized: preferences_initialized
 		once
 			Result := preferences_cell.item
+		end
+
+	default_xml_file: FILE_NAME is
+			-- General system level resource specification XML file.			
+		do
+			create Result.make_from_string (eiffel_layout.eiffel_installation_dir_name)
+			Result.extend ("build")
+			Result.extend ("config")
+			Result.extend ("default.xml")
+		ensure
+			result_not_empty: Result /= Void
 		end
 
 feature -- Query

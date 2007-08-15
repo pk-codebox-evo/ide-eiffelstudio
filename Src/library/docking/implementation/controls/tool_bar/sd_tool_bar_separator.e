@@ -24,12 +24,12 @@ feature {NONE} -- Initlization
 		local
 			l_shared: SD_SHARED
 		do
-			create l_shared
 			state := {SD_TOOL_BAR_ITEM_STATE}.normal
 			is_sensitive := True
 			is_displayed := True
-			description := l_shared.interface_names.separator
+			description := "Separator"
 			name := generating_type
+			create l_shared
 			pixmap := l_shared.icons.tool_bar_separator_icon
 		end
 
@@ -82,7 +82,7 @@ feature -- Redefine querys
 	rectangle: EV_RECTANGLE is
 			-- Redefine
 		do
-			if tool_bar /= Void and then is_wrap then
+			if is_wrap then
 				create Result.make (0, tool_bar.item_y (Current), tool_bar.minimum_width, width)
 			else
 				Result := Precursor {SD_TOOL_BAR_ITEM}

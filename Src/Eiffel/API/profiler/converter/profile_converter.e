@@ -279,7 +279,7 @@ end
 					function_name := token_string
 					function_name.right_adjust
 
-					if functions.has_key (function_name) then
+					if functions.has (function_name) then
 						e_function := functions.found_item
 						is_eiffel := True
 						is_c := False
@@ -855,13 +855,19 @@ feature {NONE} -- Attributes
 
 feature {NONE} -- Constants
 
-	String_token: INTEGER is 1
-	Number_token: INTEGER is 2
-	Real_token: INTEGER is 3
-	Index_token: INTEGER is 4
-	Newline_token: INTEGER is 5
-	Whitespace_token: INTEGER is 6
-	Error_token: INTEGER is 7;
+	String_token: INTEGER is unique
+
+	Number_token: INTEGER is unique
+
+	Real_token: INTEGER is unique
+
+	Index_token: INTEGER is unique
+
+	Newline_token: INTEGER is unique
+
+	Whitespace_token: INTEGER is unique
+
+	Error_token: INTEGER is unique;
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

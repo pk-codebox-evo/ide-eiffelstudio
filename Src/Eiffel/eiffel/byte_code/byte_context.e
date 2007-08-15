@@ -6,19 +6,10 @@ indexing
 class BYTE_CONTEXT
 
 inherit
-
 	SHARED_C_LEVEL
 		export
 			{NONE} all
-			{REGISTER}
-				c_nb_types
 		end
-
-	SHARED_TYPE_I
-		export
-			{NONE} all
-		end
-
 	ASSERT_TYPE
 	SHARED_ARRAY_BYTE
 	SHARED_SERVER
@@ -34,7 +25,7 @@ feature -- Initialization
 	make is
 			-- Initialization
 		do
-			create register_server.make (c_nb_types * 2)
+			create register_server.make (True)
 			create local_vars.make (1, 50)
 			create local_index_table.make (10)
 			create associated_register_table.make (10)
@@ -46,7 +37,6 @@ feature -- Initialization
 			create once_manifest_string_table.make (100)
 			create {LINKED_STACK [PAIR [CLASS_TYPE, CLASS_TYPE]]} class_type_stack.make
 			create generated_inlines.make (5)
-			create generic_wrappers.make (0)
 		end
 
 feature -- Access
@@ -154,9 +144,6 @@ feature -- Access
 	assertion_type: INTEGER
 			-- Type of assertion being generated
 
-	saved_supplier_precondition: INTEGER
-			-- Number of the saved_supplier_precondition local.
-
 	origin_has_precondition: BOOLEAN
 			-- Is Current feature have origin feature with precondition?
 			-- (This is used for cases where the origin of the
@@ -252,12 +239,6 @@ feature -- Setting
 			-- Assign `a' to `assertion_type'
 		do
 			assertion_type := a
-		end
-
-	set_saved_supplier_precondition (s: INTEGER) is
-			-- Assign `s' to `saved_supplier_precondition'
-		do
-			saved_supplier_precondition := s
 		end
 
 feature -- Code generation
@@ -778,7 +759,7 @@ feature {NONE} -- Setting: once manifest strings
 			once_manifest_string_count_set: once_manifest_string_count = number
 		end
 
-feature -- Registers
+feature -- Access
 
 	Current_register: REGISTRABLE is
 			-- An instance of Current register for local var index computation
@@ -810,182 +791,8 @@ feature -- Registers
 			create {RESULT_BL} Result.make (dummy)
 		end
 
-	get_argument_register (t: TYPE_C): REGISTER is
-			-- Get a new temporary register of type `t' to hold an argument
-			-- to passed to during a feature call
-		require
-			t_attached: t /= Void
-			valid_t: not t.is_void
-		do
-			create Result.make_with_level (t.level + (c_nb_types - 1))
-		ensure
-			Result_attached: Result /= Void
-		end
-
-	print_argument_register (r: REGISTER; buf: like buffer) is
-			-- Print a name of a register `r' to `buf'
-		require
-			r_attached: r /= Void
-			buf_attached: buf /= Void
-		do
-			put_register_name (r.level, r.regnum, buf)
-			buf.put_character ('x')
-		end
-
-feature {BYTE_CONTEXT, REGISTER} -- Registers
-
 	register_server: REGISTER_SERVER
 			-- Register number server
-
-feature {REGISTER} -- Registers
-
-	register_name (t: INTEGER; n: INTEGER): STRING is
-			-- Name of a temporary register number `n' of type `t'.
-		require
-			valid_t: 0 < t and t <= (c_nb_types - 1) * 2
-			positive_n: n > 0
-		do
-			Result := register_names [t].twin
-			Result.append_integer (n)
-		end
-
-	register_type (t: INTEGER): TYPE_C is
-			-- Type of register identified by `t'.
-		require
-			valid_t: 0 < t and t <= (c_nb_types - 1) * 2
-		local
-			i: INTEGER
-		do
-			i := t
-			if i >= c_nb_types then
-				i := i - (c_nb_types - 1)
-			end
-			inspect i
-			when c_uint8 then
-				Result := uint8_c_type
-			when c_uint16 then
-				Result := uint16_c_type
-			when c_uint32 then
-				Result := uint32_c_type
-			when c_uint64 then
-				Result := uint64_c_type
-			when c_int8 then
-				Result := int8_c_type
-			when c_int16 then
-				Result := int16_c_type
-			when c_int32 then
-				Result := int32_c_type
-			when c_int64 then
-				Result := int64_c_type
-			when c_ref then
-				Result := reference_c_type
-			when c_real32 then
-				Result := real32_c_type
-			when c_real64 then
-				Result := real64_c_type
-			when c_char then
-				Result := char_c_type
-			when c_wide_char then
-				Result := wide_char_c_type
-			when c_pointer then
-				Result := pointer_c_type
-			end
-		end
-
-feature {NONE} -- Registers: implementation
-
-	put_register_name (t: INTEGER; n: INTEGER; buf: like buffer) is
-			-- Put name of a temporary register number `n' of type `t' into `buf'.
-		require
-			valid_t: 0 < t and t <= (c_nb_types - 1) * 2
-			positive_n: n > 0
-			buf_attached: buf /= Void
-		do
-			buf.put_string (register_names [t])
-			buf.put_integer (n)
-		end
-
-	register_names: ARRAY [STRING] is
-			-- Names of registers indexed by their level
-		once
-				-- `c_void' is not used.
-			create Result.make (1, (c_nb_types - 1) * 2)
-				-- Simple registers.
-			Result.put ("ti1_", c_int8)
-			Result.put ("ti2_", c_int16)
-			Result.put ("ti4_", c_int32)
-			Result.put ("ti8_", c_int64)
-			Result.put ("tu1_", c_uint8)
-			Result.put ("tu2_", c_uint16)
-			Result.put ("tu4_", c_uint32)
-			Result.put ("tu8_", c_uint64)
-			Result.put ("tr4_", c_real32)
-			Result.put ("tr8_", c_real64)
-			Result.put ("tc", c_char)
-			Result.put ("tw", c_wide_char)
-			Result.put ("tp", c_pointer)
-			Result.put ("tr", c_ref)
-				-- Registers for passing typed arguments.
-			Result.put ("ui1_", c_nb_types - 1 + c_int8)
-			Result.put ("ui2_", c_nb_types - 1 + c_int16)
-			Result.put ("ui4_", c_nb_types - 1 + c_int32)
-			Result.put ("ui8_", c_nb_types - 1 + c_int64)
-			Result.put ("uu1_", c_nb_types - 1 + c_uint8)
-			Result.put ("uu2_", c_nb_types - 1 + c_uint16)
-			Result.put ("uu4_", c_nb_types - 1 + c_uint32)
-			Result.put ("uu8_", c_nb_types - 1 + c_uint64)
-			Result.put ("ur4_", c_nb_types - 1 + c_real32)
-			Result.put ("ur8_", c_nb_types - 1 + c_real64)
-			Result.put ("uc", c_nb_types - 1 + c_char)
-			Result.put ("uw", c_nb_types - 1 + c_wide_char)
-			Result.put ("up", c_nb_types - 1 + c_pointer)
-			Result.put ("ur", c_nb_types - 1 + c_ref)
-		end
-
-	register_sk_value (t: INTEGER): STRING is
-			-- SK value associated with a register type `t'
-		require
-			valid_t: 0 < t and t <= (c_nb_types - 1) * 2
-		do
-			Result := register_sk_values [t]
-		end
-
-	register_sk_values: ARRAY [STRING] is
-			-- SK values of registers indexed by their level
-		once
-			create Result.make (1, (c_nb_types - 1) * 2)
-			Result.put ("SK_INT8", c_int8)
-			Result.put ("SK_INT16", c_int16)
-			Result.put ("SK_INT32", c_int32)
-			Result.put ("SK_INT64", c_int64)
-			Result.put ("SK_UINT8", c_uint8)
-			Result.put ("SK_UINT16", c_uint16)
-			Result.put ("SK_UINT32", c_uint32)
-			Result.put ("SK_UINT64", c_uint64)
-			Result.put ("SK_REAL32", c_real32)
-			Result.put ("SK_REAL64", c_real64)
-			Result.put ("SK_CHAR", c_char)
-			Result.put ("SK_WCHAR", c_wide_char)
-			Result.put ("SK_POINTER", c_pointer)
-			Result.put ("SK_REF", c_ref)
-				-- Registers for passing typed arguments.
-			Result.put ("SK_INT8", c_nb_types - 1 + c_int8)
-			Result.put ("SK_INT16", c_nb_types - 1 + c_int16)
-			Result.put ("SK_INT32", c_nb_types - 1 + c_int32)
-			Result.put ("SK_INT64", c_nb_types - 1 + c_int64)
-			Result.put ("SK_UINT8", c_nb_types - 1 + c_uint8)
-			Result.put ("SK_UINT16", c_nb_types - 1 + c_uint16)
-			Result.put ("SK_UINT32", c_nb_types - 1 + c_uint32)
-			Result.put ("SK_UINT64", c_nb_types - 1 + c_uint64)
-			Result.put ("SK_REAL32", c_nb_types - 1 + c_real32)
-			Result.put ("SK_REAL64", c_nb_types - 1 + c_real64)
-			Result.put ("SK_CHAR", c_nb_types - 1 + c_char)
-			Result.put ("SK_WCHAR", c_nb_types - 1 + c_wide_char)
-			Result.put ("SK_POINTER", c_nb_types - 1 + c_pointer)
-			Result.put ("SK_REF", c_nb_types - 1 + c_ref)
-		end
-
-feature -- Access
 
 	has_chained_prec: BOOLEAN is
 			-- Feature has chained preconditions?
@@ -995,7 +802,7 @@ feature -- Access
 				and then
 					(	workbench_mode
 						or else
-						system.keep_assertions)
+						assertion_level.check_precond)
 		end
 
 	has_rescue: BOOLEAN is
@@ -1012,19 +819,33 @@ feature -- Access
 	has_postcondition: BOOLEAN is
 			-- Do we have to generate any postcondition ?
 		do
-			Result := workbench_mode or else System.keep_assertions
+			Result :=	workbench_mode
+						or else
+						(	assertion_level.check_postcond
+							and
+							(	byte_code.postcondition /= Void
+								or else
+								inherited_assertion.has_postcondition
+							)
+						)
 		end
 
 	has_precondition: BOOLEAN is
 			-- Do we have to generate any precondition ?
 		do
-			Result := workbench_mode or else System.keep_assertions
+			Result := 	workbench_mode
+						or else
+						(
+							assertion_level.check_precond
+							and
+							byte_code.precondition /= Void
+						)
 		end
 
 	has_invariant: BOOLEAN is
 			-- Do we have to generate invariant checks ?
 		do
-			Result := workbench_mode or else System.keep_assertions
+			Result := workbench_mode or assertion_level.check_invariant
 		end
 
 	assertion_level: ASSERTION_I is
@@ -1053,11 +874,8 @@ feature -- Access
 			debug ("to_implement")
 				to_implement ("Move this feature to TYPE_I with a redefinition in FORMAL_I.")
 			end
-			from
-				Result := type
-			until
-				not Result.is_formal or Result.is_multi_constrained
-			loop
+			Result := type
+			if Result.is_formal then
 				context_type_i := context_type.type
 				formal ?= Result
 				check
@@ -1067,16 +885,12 @@ feature -- Access
 				Result := context_type_i.meta_generic.item (formal_position)
 				reference_i ?= Result
 				if reference_i /= Void then
-					if formal.type_a.is_multi_constrained (context_type.type.base_class) then
-						create {MULTI_FORMAL_I} Result.make (formal.is_reference, formal.is_expanded, formal.position, -1)
-					else
-						Result := context_type_i.base_class.constrained_type (formal_position).type_i
-					end
+					Result := context_type_i.base_class.constraint (formal_position).type_i
 				end
 			end
 		ensure
 			result_not_void: Result /= Void
-			result_not_formal: not Result.is_formal or Result.is_multi_constrained
+			result_not_formal: not Result.is_formal
 		end
 
 	real_type_in (type: TYPE_I; context_type: CLASS_TYPE): TYPE_I is
@@ -1091,40 +905,7 @@ feature -- Access
 			Result := constrained_type_in (type, context_type).instantiation_in (context_type)
 		ensure
 			result_not_void: Result /= Void
-			result_not_formal: not Result.is_formal or Result.is_multi_constrained
-		end
-
-	real_type_in_fixed (type: TYPE_I; context_type: CLASS_TYPE): TYPE_I is
-			-- Type `type' as seen in `context_type'
-		require
-			type_not_void: type /= Void
-			context_type_not_void: context_type /= Void
-		local
-			l_formal: FORMAL_A
-			l_type_set: TYPE_SET_A
-		do
-			Result := real_type_in (type, context_type)
-				-- Avoid instantiating types if possible
-			if false then
-
-			debug ("to_implement")
-				to_implement ("Move this feature to TYPE_I and descendants.")
-			end
-			l_formal ?= type.type_a
-			if l_formal /= Void and then l_formal.is_multi_constrained (context_type.associated_class) then
-					l_type_set := l_formal.constraints (class_type.associated_class)
-					if l_type_set.has_expanded then
-						Result := l_type_set.expanded_representative.type_i
-					else
-						create {MULTI_FORMAL_I} Result.make (type.is_reference, l_type_set.has_expanded, l_formal.position, -1)
-					end
-			else
-				Result := constrained_type_in (type, context_type).instantiation_in (context_type)
-			end
-			end
-		ensure
-			result_not_void: Result /= Void
-			result_not_formal: not Result.is_formal or Result.is_multi_constrained
+			result_not_formal: not Result.is_formal
 		end
 
 	real_type (type: TYPE_I): TYPE_I is
@@ -1136,7 +917,6 @@ feature -- Access
 		local
 			cl_type_i: CL_TYPE_I
 		do
-			fixme ("Check that all callers are aware that they can get back a MULTI_FORMAL_I.")
 				-- Avoid instantiating types if possible
 			cl_type_i ?= type
 			if cl_type_i /= Void and then cl_type_i.is_standalone then
@@ -1156,21 +936,7 @@ feature -- Access
 			end
 		ensure
 			result_not_void: Result /= Void
-			result_not_formal: not Result.is_formal or Result.is_multi_constrained
-		end
-
-	real_type_fixed (type: TYPE_I): TYPE_I is
-			-- Type `type' written in `class_type' as seen in `context_class_type'
-			-- Fixed means that the possible return of a MULTI_FORMAL_I is checked and valid.
-		require
-			type_not_void: type /= Void
-			class_type_not_void: class_type /= Void
-			context_class_type_not_void: context_class_type /= Void
-		do
-			Result := real_type (type)
-		ensure
-			result_not_void: Result /= Void
-			result_not_formal: not Result.is_formal or Result.is_multi_constrained
+			result_not_formal: not Result.is_formal
 		end
 
 	creation_type (type: TYPE_I): TYPE_I is
@@ -1248,8 +1014,8 @@ feature -- Access
 				-- Decide whether once routines can be optimized so that their results
 				-- can be retrieved directly from memory without making actual calls.
 			if
-				workbench_mode or else assertion_level.is_precondition or else
-				assertion_level.is_invariant or else assertion_level.is_postcondition
+				workbench_mode or else assertion_level.check_precond or else
+				assertion_level.check_invariant or else assertion_level.check_postcond
 			then
 				fixme ("[
 					Even with precondition and postcondition checks turned on there is a possibility that
@@ -1274,7 +1040,7 @@ feature -- Access
 			new_written_class_type_not_void: new_written_class_type /= Void
 			context_class_type_not_void: context_class_type /= Void
 			class_type_not_void: class_type /= Void
-			is_ancestor: -- new_context_cl_type.type_a.is_conformant_to (new_written_class_type.type.type_a)
+			is_ancestor: -- new_context_class_type.type.type_a.is_conformant_to (new_written_class_type.type.type_a)
 		do
 			class_type_stack.put (create {PAIR [CLASS_TYPE, CLASS_TYPE]}.make (context_class_type, class_type))
 			context_class_type := new_context_class_type
@@ -1340,7 +1106,7 @@ feature -- Access
 		do
 			Result := not (	workbench_mode
 							or else
-							assertion_level.is_precondition)
+							assertion_level.check_precond)
 		end
 
 	add_dt_current is
@@ -1695,9 +1461,9 @@ feature -- Access
 			i, j, nb_vars: INTEGER
 		do
 			from
-				i := (c_nb_types - 1) * 2
+				i := 1
 			until
-				i <= 0
+				i > C_nb_types
 			loop
 				from
 					j := 1
@@ -1708,7 +1474,7 @@ feature -- Access
 					generate_tmp_var (i, j)
 					j := j + 1
 				end
-				i := i - 1
+				i := i + 1
 			end
 		end
 
@@ -1717,52 +1483,69 @@ feature -- Access
 			-- whose C type is `ctype'.
 		local
 			buf: GENERATION_BUFFER
-			value_type: TYPE_C
-			variable_type: STRING
-			is_generic: BOOLEAN
+			l_type, l_name: STRING
 		do
-			buf := buffer
+			buf :=buffer
 
 				-- First get type and name of temporary local.
-			value_type := register_type (ctype)
-			if ctype >= c_nb_types 	then
-					-- This is a register to hold generic argument value
-				is_generic := True
-				variable_type := once "EIF_TYPED_VALUE"
-			else
-				variable_type := value_type.c_string
+			inspect
+				ctype
+			when c_uint8 then
+				l_type := once "EIF_NATURAL_8"
+				l_name := once "tu8_"
+			when c_uint16 then
+				l_type := once "EIF_NATURAL_16"
+				l_name := once "tu16_"
+			when c_uint32 then
+				l_type := once "EIF_NATURAL_32"
+				l_name := once "tu32_"
+			when c_uint64 then
+				l_type := once "EIF_NATURAL_64"
+				l_name := once "tu64_"
+			when C_int8 then
+				l_type := once "EIF_INTEGER_8"
+				l_name := once "ti8_"
+			when C_int16 then
+				l_type := once "EIF_INTEGER_16"
+				l_name := once "ti16_"
+			when C_int32 then
+				l_type := once "EIF_INTEGER_32"
+				l_name := once "ti32_"
+			when C_int64 then
+				l_type := once "EIF_INTEGER_64"
+				l_name := once "ti64_"
+			when C_ref then
+				l_type := once "EIF_REFERENCE"
+				l_name := once "tp"
+			when C_real32 then
+				l_type := once "EIF_REAL_32"
+				l_name := once "tr32_"
+			when C_char then
+				l_type := once "EIF_CHARACTER"
+				l_name := once "tc"
+			when C_wide_char then
+				l_type := once "EIF_WIDE_CHAR"
+				l_name := once "twc"
+			when C_real64 then
+				l_type := once "EIF_REAL_64"
+				l_name := once "tr64_"
+			when C_pointer then
+				l_type := once "EIF_POINTER"
+				l_name := once "ta"
 			end
-			buf.put_string (variable_type)
+			buf.put_string (l_type)
 			buf.put_character (' ')
-			if has_rescue and then not is_generic then
+			if has_rescue then
 				buf.put_string (once " EIF_VOLATILE ")
 			end
-			put_register_name (ctype, num, buf)
-			if is_generic then
-					-- Record register type and zero pointer value for GC.
-				buf.put_string (once "x = {0, ")
-				buf.put_string (register_sk_value (ctype))
-				buf.put_string ("};")
-				buf.left_margin
-				buf.put_new_line
-				buf.put_string ("#undef ")
-				put_register_name (ctype, num, buf)
-				buf.put_new_line
-				buf.put_string ("#define ")
-				put_register_name (ctype, num, buf)
-				buf.put_character (' ')
-				put_register_name (ctype, num, buf)
-				buf.put_string ("x.")
-				value_type.generate_typed_field (buf)
-				buf.restore_margin
-			else
-				if ctype = c_ref then
-						-- Because it is a reference we absolutely need to initialize it
-						-- to its default value, otherwise it would mess up the GC local tracking.
-					buf.put_string (once " = NULL")
-				end
-				buf.put_character (';')
+			buf.put_string (l_name)
+			buf.put_integer (num)
+			if ctype = c_ref then
+					-- Because it is a reference we absolutely need to initialize it
+					-- to its default value, otherwise it would mess up the GC local tracking.
+				buf.put_string (once " = NULL")
 			end
+			buf.put_character (';')
 			buf.put_new_line
 		end
 
@@ -1978,13 +1761,11 @@ feature -- Clearing
 			onces.wipe_out
 			once_manifest_string_count_table.wipe_out
 			class_type_stack.wipe_out
-			generic_wrappers.wipe_out
 			expanded_descendants := Void
 		ensure
 			global_onces_is_empty: global_onces.is_empty
 			onces_is_empty: onces.is_empty
 			once_manifest_string_count_table_is_empty: once_manifest_string_count_table.is_empty
-			generic_wrappers_is_empty: generic_wrappers.is_empty
 			has_no_expanded_descendants_information: not has_expanded_descendants_information
 		end
 
@@ -2106,38 +1887,6 @@ feature -- Descendants information
 			expanded_descendants_is_filled: expanded_descendants.count >= system.class_types.count
 		end
 
-feature -- Generic code generation
-
-	record_wrapper (body_index: INTEGER; routine_id: INTEGER) is
-			-- Ensure the wrapper of the routine `body_index' is generated
-			--  for the polymorphic table `routine_id'
-		require
-			final_mode: final_mode
-		local
-			r: ROUT_ID_SET
-		do
-			generic_wrappers.search (body_index)
-			if generic_wrappers.found then
-				r := generic_wrappers.found_item
-			else
-				create r.make
-				generic_wrappers.put (r, body_index)
-			end
-			r.put (routine_id)
-		end
-
-	generic_wrapper_ids (body_index: INTEGER): ROUT_ID_SET is
-			-- Routine IDs of generic wrappers for a feature with `body_index' (if any)
-		do
-			Result := generic_wrappers.item (body_index)
-		end
-
-feature {NONE} -- Generic code generation
-
-	generic_wrappers: HASH_TABLE [ROUT_ID_SET, INTEGER]
-			-- Set of routine IDs identified by the body index
-			-- for which a wrapper has to be generated
-
 feature {NONE} -- Implementation
 
 	class_type_stack: STACK [PAIR [CLASS_TYPE, CLASS_TYPE]]
@@ -2155,7 +1904,7 @@ invariant
 	class_type_stack_not_void: class_type_stack /= Void
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

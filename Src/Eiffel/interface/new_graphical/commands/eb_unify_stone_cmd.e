@@ -33,7 +33,7 @@ feature -- Initialization
 
 feature -- Status report
 
-	description: STRING_GENERAL is
+	description: STRING is
 		do
 			Result := Interface_names.e_Toggle_stone_management
 		end
@@ -47,19 +47,10 @@ feature -- Status report
 			else
 				Result := pixmaps.icon_pixmaps.context_link_icon
 			end
+
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			if window.unified_stone then
-				Result := pixmaps.icon_pixmaps.context_unlink_icon_buffer
-			else
-				Result := pixmaps.icon_pixmaps.context_link_icon_buffer
-			end
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 		do
 			if window.unified_stone then
 				Result := Interface_names.e_Separate_stone
@@ -68,13 +59,13 @@ feature -- Status report
 			end
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text displayed on the toolbar button.
 		do
 			Result := Interface_names.b_Toggle_stone_management
 		end
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 		do
 			if window.unified_stone then
 				Result := Interface_names.m_Separate_stone
@@ -166,9 +157,9 @@ feature -- Basic operations
 			Result.enable_sensitive
 		end
 
-feature {NONE} -- Recyclable
+feature -- Recyclable
 
-	internal_recycle is
+	recycle is
 			-- Recycle
 		do
 			window := Void

@@ -20,30 +20,25 @@ create
 
 feature -- Initialization
 
-	make (a_dlg: SD_TOOL_BAR_CUSTOMIZE_DIALOG; v: SD_TOOL_BAR_ITEM) is
-			-- Creation method
+	make (v: SD_TOOL_BAR_ITEM) is
 		require
-			not_void: v /= Void
-			not_void: a_dlg /= Void
+			v_non_void: v /= Void
 		local
-			l_sep: SD_TOOL_BAR_SEPARATOR
+			command: SD_TOOL_BAR_BUTTON
 		do
 			make_with_text (v.description)
 			set_pixmap (v.pixmap)
 			data := v
-			l_sep ?= v
-			if l_sep = Void then
+			command ?= v
+			if command /= Void then
 				is_separator := False
 			else
 				is_separator := True
 			end -- if
 			set_pebble (Current)
 			drop_actions.extend (agent add_to_parent_list)
-			drop_actions.set_veto_pebble_function (agent a_dlg.veto_pebble_function)
-			dialog := a_dlg
 		ensure
 			v_either_separator_or_command: data /= Void
-			set: dialog = a_dlg
 		end
 
 feature -- Interactivity
@@ -66,7 +61,7 @@ feature -- Interactivity
 				elseif from_pool and then (not to_pool) then
 					parent.start
 					parent.search (Current)
-					parent.put_right (create {SD_CUSTOMIZABLE_LIST_ITEM}.make (dialog, create {SD_TOOL_BAR_SEPARATOR}.make))
+					parent.put_right (create {SD_CUSTOMIZABLE_LIST_ITEM}.make (create {SD_TOOL_BAR_SEPARATOR}.make))
 				elseif (not from_pool) and then to_pool then
 					an_item.parent.start
 					an_item.parent.prune (an_item)
@@ -90,9 +85,6 @@ feature -- Access
 		do
 			Result ?= parent
 		end
-
-	dialog: SD_TOOL_BAR_CUSTOMIZE_DIALOG
-			-- Dialog which current belong to.
 
 feature -- Status report
 

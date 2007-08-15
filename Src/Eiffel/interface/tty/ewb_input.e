@@ -33,31 +33,29 @@ feature -- Creation
 
 feature {NONE} -- Help message
 
-	help_message: STRING_32 is
+	help_message: STRING is
 		local
 			i: INTEGER
-			l_str: STRING_32
 		do
-			l_str := input_help.twin
-			l_str.append ("%N%T%T%T%T");
+			Result := input_help.twin
+			Result.append ("%N%T%T%T%T");
 			if filenames.count = 0 then
-				l_str.append ("[last_output]");
+				Result.append ("[last_output]");
 			else
 				from
 					i := 1;
-					l_str.extend ('[');
+					Result.extend ('[');
 				until
 					i > filenames.count
 				loop
-					l_str.append (filenames.item (i));
+					Result.append (filenames.item (i));
 					i := i + 1
 					if i <= filenames.count then
-						l_str.extend (' ');
+						Result.extend (' ');
 					end;
 				end;
-				l_str.extend (']');
+				Result.extend (']');
 			end;
-			Result := l_str
 		end;
 
 feature {NONE} -- Execute
@@ -78,7 +76,7 @@ feature {NONE} -- Execute
 					if filenames.count = 1 then
 						command_arguments.force ("last_output", 1);
 					else
-						localized_print (ewb_names.arrow_filenames)
+						io.put_string ("--> Filename(s): ");
 						command_line_io.get_name;
 					end;
 					i := 1;

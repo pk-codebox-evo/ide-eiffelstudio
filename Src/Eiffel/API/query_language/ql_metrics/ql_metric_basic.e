@@ -64,7 +64,7 @@ feature -- Value
 			l_basic_scope: QL_METRIC_BASIC_SCOPE_INFO
 		do
 			if value_initialize_function /= Void then
-				internal_value := value_initialize_function.item (Void)
+				internal_value := value_initialize_function.item ([])
 			else
 				internal_value := 0.0
 			end
@@ -173,6 +173,31 @@ feature -- Setting
 					l_generator.scope = a_criterion.scope
 				then
 					l_generator.set_criterion (a_criterion)
+					l_processed_generators.extend (l_generator)
+				end
+				l_basic_scope_table.forth
+			end
+		end
+
+	replace_delayed_domain_by (a_domain: QL_DOMAIN) is
+			-- Replace all delayed domains in `criterion' by `a_domain'.
+		local
+			l_basic_scope_table: like basic_scope_table
+			l_generator: QL_DOMAIN_GENERATOR
+			l_processed_generators: ARRAYED_LIST [QL_DOMAIN_GENERATOR]
+		do
+			l_basic_scope_table := basic_scope_table
+			from
+				create l_processed_generators.make (l_basic_scope_table.count)
+				l_basic_scope_table.start
+			until
+				l_basic_scope_table.after
+			loop
+				l_generator := l_basic_scope_table.item_for_iteration.domain_generator
+				if
+					not l_processed_generators.has (l_generator)
+				then
+					l_generator.replace_delayed_domain_by (a_domain)
 					l_processed_generators.extend (l_generator)
 				end
 				l_basic_scope_table.forth
@@ -325,5 +350,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

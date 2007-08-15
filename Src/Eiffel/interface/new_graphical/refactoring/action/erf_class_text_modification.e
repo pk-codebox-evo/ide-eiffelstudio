@@ -40,11 +40,6 @@ inherit
 
 	COMPILER_EXPORTER
 
-	SHARED_NAMES_HEAP
-		export
-			{NONE} all
-		end
-
 create
 	make
 
@@ -139,7 +134,7 @@ feature -- Highlevel element change
 				create last_export.make_empty
 				create last_code.make_empty
 				create last_comment.make_empty
-				l_feature := ast.feature_with_name (names_heap.id_of (a_name))
+				l_feature := ast.feature_with_name (a_name)
 				if l_feature /= Void then
 					last_code := l_feature.text (match_list)
 					from
@@ -177,7 +172,7 @@ feature -- Highlevel element change
 		do
 			compute_ast
 			if not is_parse_error then
-				l_feature := ast.feature_with_name (names_heap.id_of (a_name))
+				l_feature := ast.feature_with_name (a_name)
 				if l_feature /= Void then
 					l_names := l_feature.feature_names
 					if l_names.count = 1 then
@@ -253,7 +248,7 @@ feature -- Highlevel element change
 						l_parents.after
 					loop
 						l_inherit := l_parents.item
-						if a_class_name.is_case_insensitive_equal (l_inherit.type.class_name.name) then
+						if a_class_name.is_case_insensitive_equal (l_inherit.type.class_name) then
 							l_name := a_feature_name
 
 								-- if we rename it, we have to use the new name
@@ -356,7 +351,7 @@ feature -- Highlevel element change
 
 							-- if we redefine it and we aren't the implementer
 							-- => add undefine
-						if l_found and not a_implements.is_case_insensitive_equal (l_inherit.type.class_name.name) then
+						if l_found and not a_implements.is_case_insensitive_equal (l_inherit.type.class_name) then
 							create l_parent_modifier.make (l_inherit, match_list)
 							l_parent_modifier.extend ({ERT_PARENT_AS_MODIFIER}.undefine_clause, a_feature_name)
 							l_parent_modifier.apply
@@ -388,6 +383,7 @@ feature -- Load/Save file
 			ast := Void
 			match_list := Void
 		end
+
 
 feature {NONE} -- Implementation
 

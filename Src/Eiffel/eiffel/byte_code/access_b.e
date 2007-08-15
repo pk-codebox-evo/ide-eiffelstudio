@@ -42,24 +42,14 @@ feature -- Access
 				Result := context.context_class_type.type
 			elseif is_message then
 				Result := context.real_type (parent.target.type)
-				if Result.is_multi_constrained then
-					check has_multi_constraint_static: has_multi_constraint_static end
-					Result := context.real_type (multi_constraint_static)
-				end
 			else
 				a_parent := parent.parent
 				if a_parent = Void then
 					Result := context.context_class_type.type
 				else
 					Result := context.real_type (a_parent.target.type)
-					if Result.is_multi_constrained then
-						check has_multi_constraint_static: has_multi_constraint_static end
-						Result := context.real_type (multi_constraint_static)
-					end
 				end
 			end
-		ensure
-			not_result_is_multiconstraint_formal: not Result.is_multi_constrained
 		end
 
 	enlarged: ACCESS_B is
@@ -441,6 +431,9 @@ feature -- Code generation
 		local
 			p: like parameters
 			i, j, nb: INTEGER
+			expr: EXPR_B
+			param: PARAMETER_B
+			type_c: TYPE_C
 		do
 			p := parameters
 			if p = Void then
@@ -455,7 +448,16 @@ feature -- Code generation
 				until
 					i > nb
 				loop
-					Result.put (p [i].target_type_name, j)
+					expr := p @ i
+					param ?= expr
+						-- FIXME
+					if param = Void then
+						type_c := real_type (expr.type).c_type
+					else
+						type_c := real_type (param.attachment_type).c_type
+					end
+					Result.put (type_c.c_string, j)
+
 					i := i +1
 					j := j +1
 				end
@@ -507,28 +509,6 @@ feature -- Array optimization
 			-- Array description
 			-- argument:<0; Result:0; local:>0
 		do
-		end
-
-feature -- Multi constraint suport
-
-	set_multi_constraint_static (a_type: TYPE_I) is
-				-- `formal_multi_constraint_static' to `a_type'
-			do
-				multi_constraint_static := a_type
-			ensure
-				multi_constraint_static_set: multi_constraint_static = a_type
-			end
-
-	multi_constraint_static: TYPE_I;
-				-- Static type of recipient of access message.
-				--| In the multi constraint there is more then one recipient for a message.
-				--| `multi_constraint_static' states to which type out of the type set exactly it should be sent.
-
-	has_multi_constraint_static: BOOLEAN is
-			-- Does current access send it's message to a multi constraint?
-			-- If true it means that this message is sent to the type represented by `multi_constraint_static'
-		do
-			Result := multi_constraint_static /= Void
 		end
 
 feature -- Inlining

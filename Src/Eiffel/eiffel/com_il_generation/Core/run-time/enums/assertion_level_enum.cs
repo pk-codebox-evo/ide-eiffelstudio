@@ -51,8 +51,7 @@ public enum ASSERTION_LEVEL_ENUM
 	require = 0x1,
 	ensure = 0x2,
 	loop = 0x8,
-	invariant = 0x10,
-	supplier_precond = 0x20
+	invariant = 0x10
 }
 
 } // class ASSERTION_LEVEL_ENUM

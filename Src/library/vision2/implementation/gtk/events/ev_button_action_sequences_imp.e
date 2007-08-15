@@ -13,32 +13,27 @@ deferred class
 inherit
 	EV_BUTTON_ACTION_SEQUENCES_I
 
+	EV_ANY_IMP
+		undefine
+			needs_event_box,
+			dispose,
+			destroy
+		end
+
 feature -- Event handling
 
 	create_select_actions: EV_NOTIFY_ACTION_SEQUENCE is
 			-- Create a select action sequence.
 			-- Attach to GTK "clicked" signal.
-		local
-			l_app_imp: EV_APPLICATION_IMP
 		do
 			create Result
-			l_app_imp := app_implementation
-			l_app_imp.gtk_marshal.signal_connect (visual_widget, l_app_imp.clicked_event_string, agent (l_app_imp.gtk_marshal).button_select_intermediary (c_object), Void, False)
+			signal_connect (visual_widget, App_implementation.clicked_event_string, agent (App_implementation.gtk_marshal).button_select_intermediary (c_object), Void, False)
 		end
 
-feature {NONE}
-
-	c_object: POINTER
-		deferred
-		end
-
-	visual_widget: POINTER
-		deferred
-		end
-
-	app_implementation: EV_APPLICATION_IMP
-		deferred
-		end
+--	Gtk_signal_clicked: INTEGER is
+--		once
+--			Result := C.gtk_signal_name ("clicked")
+--		end
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"

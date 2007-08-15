@@ -5,14 +5,15 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 
-class ATTR_TABLE [G -> ATTR_ENTRY]
+class ATTR_TABLE
 
 inherit
-
-	POLY_TABLE [G]
+	POLY_TABLE [ATTR_ENTRY]
+		rename
+			writer as Attr_generator
 		redefine
-			is_attribute_table, tmp_poly_table
-		end
+			final_table_size, tmp_poly_table
+		end;
 
 	SHARED_GENERATOR
 		undefine
@@ -27,22 +28,13 @@ inherit
 create
 	make
 
-feature -- Status report
-
-	is_attribute_table: BOOLEAN is
-			-- Is the current table an attribute table ?
-		do
-			Result := True
-		end
-
 feature
 
-	new_entry (f: FEATURE_I; c: INTEGER): ENTRY is
-			-- New entry corresponding to `f' in class of class ID `c'
+	final_table_size: INTEGER is
+			-- Table size
 		do
-			Result := f.new_attr_entry
-			Result.set_class_id (c)
-		end
+			Result := max_type_id - min_type_id + 1;
+		end;
 
 	is_polymorphic (type_id: INTEGER): BOOLEAN is
 			-- Is the table polymorphic from entry indexed by `type_id' to
@@ -81,10 +73,8 @@ feature
 			end
 		end;
 
-	generate (writer: TABLE_GENERATOR) is
+	generate (buffer: GENERATION_BUFFER) is
 			-- Generation of the attribute table in buffer "eattr*.x".
-		require
-			writer_attached: writer /= Void
 		local
 			i, j, nb, index, l_start, l_end: INTEGER
 			entry: ATTR_ENTRY
@@ -93,18 +83,13 @@ feature
 			l_table_name: STRING
 			l_generate_entry: BOOLEAN
 			l_class_type: CLASS_TYPE
-			buffer: GENERATION_BUFFER
-			final_table_size: INTEGER
 		do
-			final_table_size := max_type_id - min_type_id + 1
-			writer.update_size (final_table_size)
-			buffer := writer.current_buffer
 				-- We generate a compact table initialization, that is to say if two or more
 				-- consecutives rows are identical we will generate a loop to fill the rows
 			from
 					-- Private table
 				buffer.put_string ("long ")
-				l_table_name := Encoder.attribute_table_name (rout_id)
+				l_table_name := Encoder.table_name (rout_id)
 				buffer.put_string (l_table_name)
 				buffer.put_string ("[")
 				buffer.put_integer (final_table_size)
@@ -217,15 +202,6 @@ feature {NONE} -- Implementation
 				buffer.put_character (';')
 				buffer.put_character ('}')
 				buffer.put_new_line
-			end
-		end
-
-	write is
-			-- Generate table using writer.
-		do
-			generate (Attr_generator)
-			if has_type_table and then not has_one_type then
-				generate_type_table (Attr_generator)
 			end
 		end
 

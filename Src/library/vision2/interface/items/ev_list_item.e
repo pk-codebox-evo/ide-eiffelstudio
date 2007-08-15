@@ -1,5 +1,5 @@
-indexing
-	description:
+indexing	
+	description: 
 		"[
 			Item for use in EV_LIST and EV_COMBO_BOX.
 		]"
@@ -9,15 +9,14 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 
-class
+class 
 	EV_LIST_ITEM
 
 inherit
 	EV_ITEM
 		redefine
 			is_in_default_state,
-			implementation,
-			default_identifier_name
+			implementation
 		end
 
 	EV_TEXTABLE
@@ -50,23 +49,11 @@ inherit
 		redefine
 			implementation
 		end
-
+		
 create
 	default_create,
 	make_with_text
-
-feature -- Access
-
-	default_identifier_name: STRING is
-			-- Default `identifier_name' if no specific name is set.
-		do
-			if parent = Void then
-				Result := Precursor {EV_ITEM}
-			else
-				Result := "#" + parent.index_of (Current, 1).out
-			end
-		end
-
+	
 feature -- Obsolete
 
 	align_text_left is
@@ -76,7 +63,7 @@ feature -- Obsolete
 			not_destroyed: not is_destroyed
 		do
 		end
-
+	
 	align_text_center is
 			-- Display text center aligned
 		obsolete "Was not implemented on all platforms."
@@ -84,7 +71,7 @@ feature -- Obsolete
 			not_destroyed: not is_destroyed
 		do
 		end
-
+		
 	align_text_right is
 			-- Display text right aligned
 		obsolete "Was not implemented on all platforms."
@@ -99,14 +86,14 @@ feature {NONE} -- Contract support
 			-- Is `Current' in its default state?
 		do
 			Result := Precursor {EV_ITEM} and precursor {EV_TEXTABLE} and
-				Precursor {EV_DESELECTABLE} and precursor {EV_DESELECTABLE}
+				Precursor {EV_DESELECTABLE} and precursor {EV_DESELECTABLE} 
 		end
 
 feature {EV_ANY, EV_ANY_I} -- Implementation
 
 	implementation: EV_LIST_ITEM_I
 			-- Responsible for interaction with native graphics toolkit.
-
+			
 feature {NONE} -- Implementation
 
 	create_implementation is

@@ -26,6 +26,8 @@ feature {NONE} -- Initialization
 			any_group_format_generated := True
 			any_class_format_generated := True
 			any_feature_format_generated := True
+			create class_sorter.make (create {KL_COMPARABLE_COMPARATOR [CONF_CLASS]}.make)
+			create group_sorter.make (create {KL_COMPARABLE_COMPARATOR [CONF_GROUP]}.make)
 		end
 
 	make_all is
@@ -195,35 +197,36 @@ feature -- Status report
 	is_class_in_group (a_class: CLASS_I): BOOLEAN is
 			-- Does `a_class' belongs to one of the group in `groups'.
 		local
-			l_phys_as: CONF_PHYSICAL_ASSEMBLY
-			l_assemblies: ARRAYED_LIST [CONF_ASSEMBLY]
+--			l_group: CONF_GROUP
+--			l_cursor: DS_ARRAYED_LIST_CURSOR [CONF_GROUP]
 			l_index: INTEGER
 		do
+--			from
+--				l_cursor := groups.new_cursor
+--				l_cursor.start
+--			until
+--				l_cursor.after or Result
+--			loop
+--				l_group := l_cursor.item
+--				if l_group.classes_set then
+--					Result := l_group.class_by_name (a_class.name, False).has (a_class.config_class)
+--					if Result then
+--						found_group := l_group
+--					end
+--				end
+--				l_cursor.forth
+--			end
+--			if not Result then
+--				found_group := Void
+--			end
 			l_index := classes.index
 			classes.start
 			classes.search_forth (a_class.config_class)
 			if not classes.after then
 				Result := True
 				found_group := classes.item_for_iteration.group
-					-- if the class is in the list of classes there has to be a group that is included
 				if not groups.has (found_group) then
-					if found_group.is_physical_assembly then
-						l_phys_as ?= found_group
-						check
-							assembly: l_phys_as /= Void
-						end
-						from
-							l_assemblies := l_phys_as.assemblies
-							l_assemblies.start
-						until
-							groups.has (found_group) or l_assemblies.after
-						loop
-							found_group := l_assemblies.item
-							l_assemblies.forth
-						end
-					else
-						found_group := found_group.target.system.lowest_used_in_library
-					end
+					found_group := found_group.target.lowest_used_in_library
 				end
 			else
 				found_group := Void
@@ -259,6 +262,8 @@ feature {NONE} -- Implementation
 			group_not_void: group /= Void
 		local
 			cl: HASH_TABLE [CONF_CLASS, STRING]
+			l_cluster: CONF_CLUSTER
+			l_subclusters: ARRAYED_LIST [CONF_CLUSTER]
 			l_class_i: CLASS_I
 		do
 			create Result.make (100)
@@ -278,6 +283,20 @@ feature {NONE} -- Implementation
 					end
 					cl.forth
 				end
+				if group.is_cluster then
+					l_cluster ?= group
+					l_subclusters := l_cluster.children
+					if l_subclusters /= Void then
+						from
+							l_subclusters.start
+						until
+							l_subclusters.after
+						loop
+							Result.append_last (unsorted_classes_in_group (l_subclusters.item))
+							l_subclusters.forth
+						end
+					end
+				end
 			end
 		ensure
 			unsorted_classes_in_group_not_void: Result /= Void
@@ -285,21 +304,11 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Implementation: Access
 
-	class_sorter: DS_QUICK_SORTER [CONF_CLASS] is
+	class_sorter: DS_QUICK_SORTER [CONF_CLASS]
 			-- Sorter object for classes.
-		once
-			create Result.make (create {KL_COMPARABLE_COMPARATOR [CONF_CLASS]}.make)
-		ensure
-			Result_not_void: Result /= Void
-		end
 
-	group_sorter: DS_QUICK_SORTER [CONF_GROUP] is
+	group_sorter: DS_QUICK_SORTER [CONF_GROUP]
 			-- Sorter object for groups.
-		once
-			create Result.make (create {KL_COMPARABLE_COMPARATOR [CONF_GROUP]}.make)
-		ensure
-			Result_not_void: Result /= Void
-		end
 
 	classes_internal: DS_ARRAYED_LIST [CONF_CLASS]
 			-- Classes internal
@@ -309,6 +318,8 @@ feature {NONE} -- Implementation: Access
 
 invariant
 	groups_not_void: groups /= Void
+	class_sorter_not_void: class_sorter /= Void
+	group_sorter_not_void: group_sorter /= Void
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

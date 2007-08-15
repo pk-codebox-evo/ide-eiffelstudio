@@ -15,38 +15,12 @@ feature -- Status
 		do
 			Result := cwin_get_last_error_code
 		end
-
+		
 	display_last_error is
 			-- Display string corresponding to last
 			-- error in a message dialog box.
-		local
-			l_str: STRING_32
-			l_msg_box: WEL_MSG_BOX
 		do
-			l_str := text_for_error_code (last_error_code)
-			l_str.append ("%NGetLastError returned " + last_error_code.out + "%N")
-			create l_msg_box.make
-			l_msg_box.information_message_box (Void, l_str, "WEL_ERROR Dialog")
-		end
-
-	text_for_error_code (a_error_code: INTEGER): STRING_32 is
-			-- Text corresponding to `a_error_code'.
-		require
-			a_error_code_non_negative: a_error_code >= 0
-		local
-			l_str: WEL_STRING
-			l_ptr, l_null: POINTER
-		do
-			l_ptr := cwin_error_text (a_error_code)
-			if l_ptr /= l_null then
-				create l_str.share_from_pointer (l_ptr)
-				Result := l_str.string
-				cwin_local_free (l_ptr)
-			else
-				Result := ""
-			end
-		ensure
-			text_for_error_code_not_void: Result /= Void
+			cwin_display_last_error
 		end
 
 feature -- Setting
@@ -73,45 +47,38 @@ feature {NONE} -- Implementation
 			-- The GetLastError function retrieves the calling thread's
 			-- last-error code value. The last-error code is maintained
 			-- on a per-thread basis. Multiple threads do not overwrite
-			-- each other's last-error code.
+			-- each other's last-error code. 
 		external
 			"C [macro <windows.h>]"
 		alias
 			"GetLastError()"
 		end
 
-	cwin_local_free (a_ptr: POINTER) is
-			-- Free `a_ptr' using LocalFree.
-		external
-			"C inline use <windows.h>"
-		alias
-			"LocalFree((HLOCAL) $a_ptr);"
-		end
-
-	cwin_error_text (a_code: INTEGER): POINTER is
-			-- Get text from error `a_code'. It is up to the caller to free
-			-- the returned buffer using `cwin_local_free'.
+	cwin_display_last_error is
+			-- Display GetLastError in a message box.
 		external
 			"C inline use <windows.h>, <tchar.h>"
 		alias
 			"[
 			{
-			LPVOID result;
+			LPVOID lpMsgBuf;
+			TCHAR szBuf[5120]; DWORD dw = GetLastError();
 			FormatMessage( 
 				FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 				NULL,
-				$a_code,
+				dw,
 				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-				(LPTSTR) &result,
+				(LPTSTR) &lpMsgBuf,
 				0,
 				NULL 
 				);
-			return result;
+			_stprintf(szBuf, L"%s\nGetLastError returned %u\n", lpMsgBuf, dw);
+			MessageBox( NULL, szBuf, L"EV_DIALOG_IMP Error", MB_OK | MB_ICONINFORMATION );
+			LocalFree( lpMsgBuf );
 			}
 			]"
 		end
-
-
+		
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"
 	license:	"Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"

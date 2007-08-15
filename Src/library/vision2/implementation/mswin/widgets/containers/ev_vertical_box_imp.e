@@ -54,18 +54,20 @@ feature -- Status setting
 			notify_change (Nc_minsize, Current)
 		end
 
-feature {NONE} -- Basic operation
+feature {NONE} -- Basic operation 
 
 	on_size (size_type, a_width, a_height: INTEGER) is
 		do
 			Precursor (size_type, a_width, a_height)
-			set_children_height (client_height + 2 * border_width, True)
+			set_children_height (a_height, True)
 		end
 
-	ev_apply_new_size (a_x_position, a_y_position, a_width, a_height: INTEGER; repaint: BOOLEAN) is
+	ev_apply_new_size (a_x_position, a_y_position,
+				a_width, a_height: INTEGER; repaint: BOOLEAN) is
 		do
-			ev_move_and_resize (a_x_position, a_y_position, a_width, a_height, repaint)
-			set_children_height (client_height + 2 * border_width, False)
+			ev_move_and_resize
+				(a_x_position, a_y_position, a_width, a_height, repaint)
+			set_children_height (a_height, False)
 		end
 
 	set_children_height (a_height: INTEGER; originator: BOOLEAN) is
@@ -83,7 +85,7 @@ feature {NONE} -- Basic operation
 		do
 			if childvisible_nb /= 0 then
 				lchild := ev_children
-				expandable := non_expandable_children
+				expandable := non_expandable_children 
 				cur := lchild.cursor
 				cwidth := client_width
 				bwidth := border_width

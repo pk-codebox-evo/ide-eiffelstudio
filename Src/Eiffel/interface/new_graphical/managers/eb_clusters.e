@@ -41,6 +41,11 @@ inherit
 			default_create
 		end
 
+	LACE_AST_FACTORY
+		undefine
+			default_create
+		end
+
 	CONF_ACCESS
 		undefine
 			default_create
@@ -88,20 +93,7 @@ feature -- Initialization
 					l_cls.forth
 				end
 				clusters := create_groups (l_cls_lst)
-				from
-					l_cls := l_target.overrides
-					create l_cls_lst.make (l_cls.count)
-					l_cls.start
-				until
-					l_cls.after
-				loop
-					l_cluster := l_cls.item_for_iteration
-					if l_cluster.parent = Void and l_cluster.classes_set then
-						l_cls_lst.force (l_cluster, l_cluster.name)
-					end
-					l_cls.forth
-				end
-				overrides := create_groups (l_cls_lst)
+				overrides := create_groups (l_target.overrides)
 				l_libs := l_target.libraries
 				if l_target.precompile /= Void and l_target.precompile.classes_set then
 					l_libs.force (l_target.precompile, l_target.precompile.name)
@@ -159,6 +151,7 @@ feature -- Observer Pattern
 				observer_list.forth
 			end
 		end
+
 
 	on_class_added (a_class: CLASS_I) is
 			-- `a_class' has been added.
@@ -361,7 +354,7 @@ feature -- Element change
 			old_file: RAW_FILE
 			new_file: RAW_FILE
 			input: STRING
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 			retried: BOOLEAN
 			fname: FILE_NAME
 			tdirsrc, tdirdes: KL_DIRECTORY
@@ -416,14 +409,14 @@ feature -- Element change
 								if old_group /= new_cluster then
 										-- Remove `a_class' from the old_group
 									old_group.classes.remove (a_class.name)
-									l_lib_usage := old_group.target.system.used_in_libraries
+									l_lib_usage := old_group.target.used_in_libraries
 									if l_lib_usage /= Void then
 										from
 											l_lib_usage.start
 										until
 											l_lib_usage.after
 										loop
-											l_lib_usage.item.classes.remove (a_class.name)
+											l_lib_usage.item.classes.remove (a_class.renamed_name)
 											l_lib_usage.forth
 										end
 									end
@@ -434,7 +427,7 @@ feature -- Element change
 										create l_classes.make (1)
 										new_cluster.set_classes (l_classes)
 									end
-									new_cluster.classes.force (a_class, a_class.name)
+									new_cluster.classes.force (a_class, a_class.renamed_name)
 
 										-- force a rebuild to handle the rest
 									system.force_rebuild
@@ -519,7 +512,7 @@ feature -- Element change
 			a_group_not_void: a_group /= Void
 			a_path_not_void: a_path /= Void
 		local
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 		do
 			if not error_in_config then
 				remove_group_from_config (a_group, a_path)
@@ -543,7 +536,6 @@ feature -- Element change
 			l_clu: CLUSTER_I
 			l_sys: CONF_SYSTEM
 			l_fact: CONF_COMP_FACTORY
-			l_over, l_over_parent: OVERRIDE_I
 		do
 			create l_fact
 			error_in_config := False
@@ -552,32 +544,16 @@ feature -- Element change
 			else
 				l_target := a_parent.target
 			end
-			if a_parent /= Void and then a_parent.is_override then
-				l_over := l_fact.new_override (a_name, l_fact.new_location_from_path (a_path, l_target), l_target)
-				last_added_cluster := l_over
-			else
-				last_added_cluster := l_fact.new_cluster (a_name, l_fact.new_location_from_path (a_path, l_target), l_target)
-			end
+			last_added_cluster := l_fact.new_cluster (a_name, l_fact.new_location_from_path (a_path, l_target), l_target)
 				-- create empty class list, so that the folder can be displayed
 			last_added_cluster.set_classes (create {HASH_TABLE [EIFFEL_CLASS_I, STRING]}.make (0))
 			last_added_cluster.set_classes_by_filename (create {HASH_TABLE [EIFFEL_CLASS_I, STRING]}.make (0))
 
 			if a_parent /= Void and then a_parent.is_cluster then
-				if a_parent.is_override then
-					l_over_parent ?= a_parent
-					l_over.set_parent (l_over_parent)
-					l_over_parent.add_child (l_over)
-				else
-					l_clu ?= a_parent
-					last_added_cluster.set_parent (l_clu)
-					l_clu.add_child (last_added_cluster)
-				end
+				l_clu ?= a_parent
+				last_added_cluster.set_parent (l_clu)
 			end
-			if l_over /= Void then
-				l_target.add_override (l_over)
-			else
-				l_target.add_cluster (last_added_cluster)
-			end
+			l_target.add_cluster (last_added_cluster)
 			l_sys := l_target.system
 			l_sys.store
 			error_in_config := not l_sys.store_successful
@@ -615,6 +591,7 @@ feature {NONE} -- Implementation
 		ensure
 			Result_not_void: Result /= Void
 		end
+
 
 	name: STRING is "Clusters"
 			-- Name of the item.
@@ -745,7 +722,7 @@ feature {NONE} -- Implementation
 					l_next_group := Void
 				end
 				if l_next_group = Void then
-					l_next_group := l_group.target.system.lowest_used_in_library
+					l_next_group := l_group.target.lowest_used_in_library
 				end
 				l_group := l_next_group
 			end
@@ -766,7 +743,7 @@ feature {NONE} -- Implementation
 					parent_cluster_sons := overrides
 				elseif clusteri.is_cluster then
 					parent_cluster_sons := clusters
-				elseif clusteri.is_assembly or clusteri.is_physical_assembly then
+				elseif clusteri.is_assembly then
 					parent_cluster_sons := assemblies
 				elseif clusteri.is_library then
 					parent_cluster_sons := libraries
@@ -781,7 +758,7 @@ feature {NONE} -- Implementation
 				elseif parent_cluster.is_library then
 					if clusteri.is_cluster then
 						parent_cluster_sons := parent_cluster.clusters
-					elseif clusteri.is_assembly or clusteri.is_physical_assembly then
+					elseif clusteri.is_assembly then
 						parent_cluster_sons := parent_cluster.assemblies
 					elseif clusteri.is_library then
 						parent_cluster_sons := parent_cluster.libraries

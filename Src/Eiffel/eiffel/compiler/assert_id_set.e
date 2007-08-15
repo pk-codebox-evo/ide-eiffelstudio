@@ -19,6 +19,7 @@ inherit
 
 create
 	make
+	
 
 feature {NONE} -- Initialization
 

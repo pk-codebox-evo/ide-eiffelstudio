@@ -16,8 +16,8 @@ inherit
 			new_class_partial,
 			new_cluster,
 			new_override,
-			new_physical_assembly,
-			new_assertions
+			new_assembly,
+			new_assembly_from_gac
 		end
 
 feature
@@ -25,19 +25,19 @@ feature
 	new_class (a_file_name: STRING; a_group: CLUSTER_I; a_path: STRING): EIFFEL_CLASS_I is
 			-- Create a `CONF_CLASS' object.
 		do
-			create Result.make (a_file_name, a_group, a_path, Current)
+			create Result.make (a_file_name, a_group, a_path)
 		end
 
 	new_class_assembly (a_name, a_dotnet_name: STRING; an_assembly: ASSEMBLY_I; a_position: INTEGER): EXTERNAL_CLASS_I is
 			-- Create a `CONF_CLASS_ASSEMBLY' object.
 		do
-			create Result.make_assembly_class (a_name, a_dotnet_name, an_assembly, a_position, Current)
+			create Result.make_assembly_class (a_name, a_dotnet_name, an_assembly, a_position)
 		end
 
 	new_class_partial (a_partial_classes: ARRAYED_LIST [STRING]; a_group: CLUSTER_I; a_base_location: CONF_DIRECTORY_LOCATION): PARTIAL_EIFFEL_CLASS_I is
 			-- Create a `CONF_CLASS_PARTIAL' object.
 		do
-			create Result.make_from_partial (a_partial_classes, a_group, a_base_location, Current)
+			create Result.make_from_partial (a_partial_classes, a_group, a_base_location)
 		end
 
 	new_cluster (a_name: STRING; a_directory: CONF_DIRECTORY_LOCATION; a_target: CONF_TARGET): CLUSTER_I is
@@ -52,18 +52,20 @@ feature
 			create Result.make (a_name, a_directory, a_target)
 		end
 
-	new_physical_assembly (a_consumed: CONSUMED_ASSEMBLY; a_cache_path: DIRECTORY_NAME; a_target: CONF_TARGET): ASSEMBLY_I is
-			-- Create a `CONF_PHYSICAL_ASSEMBLY' object.
+	new_assembly (a_name: STRING; a_file: STRING; a_target: CONF_TARGET): ASSEMBLY_I is
+			-- Create a `CONF_ASSEMBLY' object.
+		local
+			l_location: CONF_FILE_LOCATION
 		do
-			create Result.make_from_consumed (a_consumed, a_cache_path, a_target)
+			l_location := new_location_from_full_path (a_file, a_target)
+			create Result.make (a_name, l_location, a_target)
 		end
 
-	new_assertions: ASSERTION_I is
-			-- Create a `CONF_ASSERTIONS' object.
+	new_assembly_from_gac (a_name, an_assembly_name, an_assembly_version, an_assembly_culture, an_assembly_key: STRING; a_target: CONF_TARGET): ASSEMBLY_I is
+			-- Create a `CONF_ASSEMBLY' object from gac.
 		do
-			create Result
+			create Result.make_from_gac (a_name, an_assembly_name, an_assembly_version, an_assembly_culture, an_assembly_key, a_target)
 		end
-
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"

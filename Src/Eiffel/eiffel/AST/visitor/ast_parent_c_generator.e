@@ -102,17 +102,17 @@ feature {NONE} -- Implementation
 				loop
 					l_rename_pair := l_as.renaming.item
 					l_old_name := l_rename_pair.old_name
-					old_name_id := l_old_name.internal_name.name_id
+					old_name_id := l_old_name.internal_name_id
 					if l_renaming_c.has (old_name_id) then
 						create l_vhrc2
 						l_vhrc2.set_class (current_class)
 						l_vhrc2.set_parent (last_parent_c.parent)
-						l_vhrc2.set_feature_name (l_old_name.internal_name.name)
+						l_vhrc2.set_feature_name (l_old_name.internal_name)
 						l_vhrc2.set_location (l_old_name.start_location)
 						Error_handler.insert_error (l_vhrc2)
 					else
 						l_new_name := l_rename_pair.new_name
-						l_renaming_c.put (create {RENAMING}.make (l_new_name.internal_name.name_id, l_new_name.internal_alias_name_id, l_new_name.has_convert_mark), old_name_id)
+						l_renaming_c.put (create {RENAMING}.make (l_new_name.internal_name_id, l_new_name.internal_alias_name_id, l_new_name.has_convert_mark), old_name_id)
 					end
 
 					l_as.renaming.forth
@@ -152,7 +152,7 @@ feature {NONE} -- Implementation
 			until
 				l_as.features.after
 			loop
-				l_feature_name_id := l_as.features.item.internal_name.name_id
+				l_feature_name_id := l_as.features.item.internal_name_id
 				if not l_export_adapt.has (l_feature_name_id) then
 					l_export_adapt.put (l_export_status, l_feature_name_id)
 				else
@@ -199,7 +199,7 @@ feature {NONE} -- Implementation
 			until
 				clause.after
 			loop
-				feature_name_id := clause.item.internal_name.name_id
+				feature_name_id := clause.item.internal_name_id
 				if Result.has (feature_name_id) then
 						-- Twice the same name in a parent clause
 					inspect
@@ -212,8 +212,8 @@ feature {NONE} -- Implementation
 						create {VMSS3} l_vdrs3
 					end
 					l_vdrs3.set_class (current_class)
-					l_vdrs3.set_parent_name (l_as.type.class_name.name)
-					l_vdrs3.set_feature_name (clause.item.internal_name.name)
+					l_vdrs3.set_parent_name (l_as.type.class_name)
+					l_vdrs3.set_feature_name (clause.item.internal_name)
 					l_vdrs3.set_location (clause.item.start_location)
 					Error_handler.insert_error (l_vdrs3)
 				else

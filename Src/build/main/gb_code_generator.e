@@ -420,8 +420,10 @@ feature {NONE} -- Implementation
 			-- as `file_name'. `template_file_name' is full path, but `file_name' is
 			-- just name of ace file.
 		local
+			temp_string: STRING
 			ace_file_name: FILE_NAME
 			ace_template_file, ace_output_file: PLAIN_TEXT_FILE
+			i, j: INTEGER
 			l_uuid: UUID_GENERATOR
 		do
 			ace_template_file := open_text_file_for_read (template_file_name)
@@ -1350,12 +1352,10 @@ feature {NONE} -- Implementation
 			parameters: STRING
 			feature_implementation: STRING
 			children: ARRAYED_LIST [GB_GENERATED_INFO]
-			l_generate_close_actions: BOOLEAN
 		do
 			create children.make (10)
 			info.all_children_recursive (children)
 			children.extend (info)
-			l_generate_close_actions := True
 			from
 				children.start
 			until
@@ -1391,9 +1391,6 @@ feature {NONE} -- Implementation
 
 							-- Adjust event names that have been renamed in Vision2 interface
 						renamed_action_sequence_name := modified_action_sequence_name (generated_info.type, action_sequence_info)
-						if action_sequence_info.name.is_equal ("close_request_actions") then
-							l_generate_close_actions := False
-						end
 
 							-- If there are no arguments to the action sequence then generate no open arguments.
 						if action_sequence.count = 0 then
@@ -1449,21 +1446,15 @@ feature {NONE} -- Implementation
 				children.forth
 			end
 
-			if
-				l_generate_close_actions and then
-				(generated_info.type.is_equal (ev_window_string) or
-				generated_info.type.is_equal (ev_titled_window_string))
-			then
-					-- Now we must connect the close event of the window if no `close_actions' have been added by user
-					-- and we are handling a window.
-				add_event_connection ("%T-- Close the application when an interface close")
-				add_event_connection ("%T-- request is recieved on `Current'. i.e. the cross is clicked.")
-				if info.generate_as_client then
-					add_event_connection (Client_window_string + ".close_request_actions.extend (agent " + Client_window_string + ".destroy_and_exit_if_last)")
-				else
-					add_event_connection ("close_request_actions.extend (agent destroy_and_exit_if_last)")
-				end
-			end
+				-- Now we must connect the close event of the window:
+			add_event_connection ("%T-- Close the application when an interface close")
+			add_event_connection ("%T-- request is recieved on `Current'. i.e. the cross is clicked.")
+--			if System_status.current_document_info.generate_as_client then
+--				add_event_connection (Client_window_string + ".close_request_actions.extend (agent ((create {EV_ENVIRONMENT}).application).destroy)")
+--			else
+--				add_event_connection ("close_request_actions.extend (agent ((create {EV_ENVIRONMENT}).application).destroy)")
+--			end
+			--| FIXME only generate for main window.
 		end
 
 	locals: HASH_TABLE [ARRAYED_LIST [STRING], STRING]
@@ -1744,7 +1735,7 @@ feature {NONE} -- Implementation
 			if progress_bar /= Void then
 				create env
 				progress_bar.set_proportion (value)
-				env.application.process_graphical_events
+				env.application.process_events
 			end
 		end
 

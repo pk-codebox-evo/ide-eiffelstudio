@@ -10,17 +10,17 @@ class
 	EB_SHOW_TOOLBAR_COMMAND
 
 inherit
-	EB_TARGET_COMMAND
+	EB_SHOW_WIDGET_COMMAND
 		rename
 			make as command_make
 		redefine
-			target
+			enable_visible,
+			disable_visible
 		end
 
 	EB_MENUABLE_COMMAND
 		redefine
-			new_menu_item,
-			initialize_menu_item
+			new_menu_item
 		end
 
 create
@@ -28,46 +28,26 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_target: SD_TOOL_BAR_CONTENT; a_menu_name: STRING_GENERAL) is
+	make (a_target: like target; a_menu_name: STRING) is
 			-- Initialize Current with target `a_target' and `menu_name' set to `a_menu_name'.
-		require
-			not_void: a_target /= Void
 		do
+			command_make (a_target)
 			menu_name := a_menu_name
 			name := a_menu_name
-			target := a_target
-		ensure
-			set: target = a_target
 		end
-
-feature -- Access
-
-	is_visible: BOOLEAN
-			-- Is current target visible?
 
 feature -- Status setting
-
-	execute is
-			-- toggle between show and hide.
-		do
-			if is_visible then
-				disable_visible
-			else
-				enable_visible
-			end
-		end
 
 	enable_visible is
 			-- Set `is_visible' to True.
 		local
-			menu_items: like managed_menu_items
+			menu_items: like internal_managed_menu_items
 			citem: EB_COMMAND_CHECK_MENU_ITEM
 		do
-			if not is_visible and not is_recycled then
+			if not is_visible then
 				is_visible := True
 				target.show
-
-				menu_items := managed_menu_items
+				menu_items := internal_managed_menu_items
 				if menu_items /= Void then
 					from
 						menu_items.start
@@ -89,11 +69,11 @@ feature -- Status setting
 	disable_visible is
 			-- Set `is_visible' to True.
 		local
-			menu_items: like managed_menu_items
+			menu_items: like internal_managed_menu_items
 			citem: EB_COMMAND_CHECK_MENU_ITEM
 		do
-			if is_visible and not is_recycled then
-				menu_items := managed_menu_items
+			if is_visible then
+				menu_items := internal_managed_menu_items
 				if menu_items /= Void then
 					from
 						menu_items.start
@@ -122,44 +102,22 @@ feature -- Basic operations
 				-- Create the menu item
 			create Result.make (Current)
 			initialize_menu_item (Result)
+			Result.enable_sensitive
+			if is_visible then
+				Result.enable_select
+			else
+				Result.disable_select
+			end
 			Result.select_actions.extend (agent execute)
-		end
-
-	initialize_menu_item (a_item: EV_MENU_ITEM) is
-			-- Init `a_item'.
-		local
-			l_item: like new_menu_item
-		do
-			Precursor {EB_MENUABLE_COMMAND}(a_item)
-			a_item.enable_sensitive
-			l_item ?= a_item
-			if l_item /= Void then
-				if is_visible then
-					l_item.enable_select
-				else
-					l_item.disable_select
-				end
-			end
-			if pixmap /= Void then
-				a_item.set_pixmap (pixmap)
-			end
 		end
 
 feature -- Access
 
-	menu_name: STRING_GENERAL
+	menu_name: STRING
 			-- Name as it appears in the menu.
 
-	name: STRING_GENERAL
+	name: STRING;
 			-- Name for the command.
-
-	pixmap: EV_PIXMAP
-			-- Pixmap	
-
-feature {NONE} -- Implementation
-
-	target: SD_TOOL_BAR_CONTENT;
-			-- Tool bar content managed.
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

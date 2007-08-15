@@ -100,8 +100,9 @@ feature -- Query
 			end
 			create Result
 			Result.set_text_with_tokens (l_items)
+			Result.set_spacing (layout_constants.Tiny_padding_size)
 			Result.set_pixmap (icon)
-			Result.set_overriden_fonts (label_font_table, label_font_height)
+			Result.set_overriden_fonts (label_font_table)
 		end
 
 feature -- Element change

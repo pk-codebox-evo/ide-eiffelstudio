@@ -48,6 +48,7 @@ feature{NONE} -- Initialization
 			e_feature_set: e_feature = a_feature
 		end
 
+
 	make_with_parent (a_feature: like e_feature; a_parent: like parent) is
 			-- Initialize `class_item' with `a_class' and `parent' with `a_parent'
 		require
@@ -94,12 +95,6 @@ feature -- Access
 
 	e_feature: E_FEATURE
 			-- Feature associated with Current
-
-	class_i: CLASS_I is
-			-- CLASS_I object associated with current item
-		do
-			Result := class_c.lace_class
-		end
 
 	class_c: CLASS_C is
 			-- Associated class with current feature
@@ -201,5 +196,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

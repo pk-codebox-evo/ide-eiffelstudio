@@ -41,7 +41,7 @@ inherit
 feature -- Access
 
 	name: STRING is
-			-- Class name
+			-- Final class name, after all renaming, prefix.
 		deferred
 		end
 
@@ -53,23 +53,11 @@ feature -- Access
 	group: CONF_PHYSICAL_GROUP is
 			-- Group this class belongs to.
 		deferred
-		ensure
-			group_not_void: Result /= Void
 		end
 
 	options: CONF_OPTION is
 			-- Options of this class.
 		deferred
-		ensure
-			options_not_void: Result /= Void
-		end
-
-	target: CONF_TARGET is
-			-- Target in which current class is being defined.
-		do
-			Result := group.target
-		ensure
-			target_not_void: Result /= Void
 		end
 
 	config_class: CONF_CLASS is
@@ -82,7 +70,7 @@ feature -- Access
 		deferred
 		end
 
-	visible: EQUALITY_TUPLE [TUPLE [class_renamed: STRING; features: EQUALITY_HASH_TABLE [STRING, STRING]]] is
+	visible: TUPLE [class_renamed: STRING; features: EQUALITY_HASH_TABLE [STRING, STRING]] is
 			-- The visible features.
 		deferred
 		end
@@ -105,10 +93,28 @@ feature -- Access
 
 	assertion_level: ASSERTION_I is
 			-- Assertion checking level
+		local
+			l_a: CONF_ASSERTIONS
 		do
-			Result ?= options.assertions
-		ensure
-			Result_not_void: Result /= Void
+			create Result.make_no
+			l_a := options.assertions
+			if l_a /= Void then
+				if l_a.is_check then
+					Result.enable_check
+				end
+				if l_a.is_invariant then
+					Result.enable_invariant
+				end
+				if l_a.is_loop then
+					Result.enable_loop
+				end
+				if l_a.is_postcondition then
+					Result.enable_ensure
+				end
+				if l_a.is_precondition then
+					Result.enable_require
+				end
+			end
 		end
 
 	trace_level: OPTION_I is
@@ -178,7 +184,7 @@ feature -- Access
 			l_feat, l_ren_feat: STRING
 		do
 			if visible /= Void then
-				l_vis := visible.item.features
+				l_vis := visible.features
 				if l_vis = Void then
 					Result := create {VISIBLE_EXPORT_I}
 				else
@@ -209,19 +215,7 @@ feature -- Access
 			end
 		end
 
-	is_full_class_checking: BOOLEAN is
-			-- Is full class being checked, i.e. including inherited features?
-		do
-			Result := options.is_full_class_checking
-		end
-
-	is_cat_call_detection: BOOLEAN is
-			-- Is cat-call detection enabled, i.e. all feature calls are checked for potential cat-calls?
-		do
-			Result := options.is_cat_call_detection
-		end
-
-	is_compiled: BOOLEAN is
+	is_compiled, compiled: BOOLEAN is
 			-- Is the class already compiled ?
 		do
 			Result := compiled_class /= Void
@@ -239,15 +233,25 @@ feature -- Access
 		deferred
 		end
 
+	exists: BOOLEAN is
+		local
+			file: RAW_FILE
+		do
+			create file.make (file_name)
+			Result := file.exists
+		end
+
 	is_external_class: BOOLEAN is
 			-- Is class defined outside current system.
 		do
 		end
 
-	is_void_safe: BOOLEAN is
-			-- Does class use void-safe constructs?
+	date_has_changed: BOOLEAN is
+		local
+			l_date: INTEGER
 		do
-				-- False by default
+			l_date := file_modified_date (file_name)
+			Result := (l_date = -1) or (l_date /= date)
 		end
 
 	file_date: INTEGER is
@@ -292,6 +296,7 @@ feature -- Access
 			end
 		end
 
+
 feature {NONE} -- Access
 
 	internal_namespace: STRING
@@ -309,34 +314,52 @@ feature -- Status report
 			compiled_class: is_compiled
 		local
 			l_path: STRING
-			l_cluster: CLUSTER_I
+			l_namespace: STRING
 		do
 			if compiled_class.is_precompiled then
 				Result := internal_namespace
 			else
-				l_cluster ?= group
-				if l_cluster /= Void then
-					Result := l_cluster.actual_namespace.twin
+					-- We need to clone as the result maybe used for string operation and we do not
+					-- want it to change some internal data from Current.
+				l_namespace := options.namespace
+				if l_namespace /= Void then
+					l_namespace := l_namespace.twin
 				end
 
-				if Result = Void then
-					create Result.make_empty
-				end
-
-				if target.setting_use_all_cluster_name_as_namespace then
-					l_path := path.twin
-					l_path.replace_substring_all ("/", ".")
-					if l_path.item (1) = '.' then
-						l_path.remove_head (1)
+				if
+					not System.use_all_cluster_as_namespace and then
+					not System.use_cluster_as_namespace
+				then
+						-- Simply use given namespace if any.
+					Result := l_namespace
+				else
+						-- Now either one or both of `System.use_cluster_as_namespace' or
+						-- `System.use_all_cluster_as_namespace' is True.
+					if l_namespace /= Void then
+						Result := l_namespace
+					else
+						Result := ""
 					end
-					if not l_path.is_empty then
+					if system.use_cluster_as_namespace then
 						if not Result.is_empty then
 							Result.append_character ('.')
 						end
+						Result.append (group.name)
+					end
+
+					if System.use_all_cluster_as_namespace then
+						l_path := path.twin
+						l_path.replace_substring_all ("/", ".")
 						Result.append (l_path)
+						if Result.item (1) = '.' then
+							Result.remove_head (1)
+						end
 					end
 				end
 
+				if Result = Void then
+					Result := ""
+				end
 				internal_namespace := Result
 			end
 		ensure
@@ -349,6 +372,18 @@ feature -- Status report
 			l_name: STRING
 		do
 			l_name := actual_namespace
+		end
+
+	name_in_upper: STRING is
+			-- Class name in upper case.
+		do
+			Result := name
+			if Result = Void then
+				Result := "Name not yet set"
+			end
+		ensure then
+			result_not_void: Result /= Void
+			result_not_empty: not Result.is_empty
 		end
 
 	file_name: FILE_NAME is
@@ -405,7 +440,80 @@ feature {COMPILER_EXPORTER} -- Compiled class
 		require
 			name_exists: name /= Void
 			not_override: not config_class.does_override
-		deferred
+		local
+			local_system: SYSTEM_I
+		do
+			local_system := system
+			if Current = local_system.boolean_class then
+				create {BOOLEAN_B} Result.make (Current)
+
+			elseif Current = local_system.character_8_class then
+				create {CHARACTER_B} Result.make (Current, False)
+
+			elseif Current = local_system.character_32_class then
+				create {CHARACTER_B} Result.make (Current, True)
+
+			elseif Current = local_system.natural_8_class then
+				create {NATURAL_B} Result.make (Current, 8)
+
+			elseif Current = local_system.natural_16_class then
+				create {NATURAL_B} Result.make (Current, 16)
+
+			elseif Current = local_system.natural_32_class then
+				create {NATURAL_B} Result.make (Current, 32)
+
+			elseif Current = local_system.natural_64_class then
+				create {NATURAL_B} Result.make (Current, 64)
+
+			elseif Current = local_system.integer_8_class then
+				create {INTEGER_B} Result.make (Current, 8)
+
+			elseif Current = local_system.integer_16_class then
+				create {INTEGER_B} Result.make (Current, 16)
+
+			elseif Current = local_system.integer_32_class then
+				create {INTEGER_B} Result.make (Current, 32)
+
+			elseif Current = local_system.integer_64_class then
+				create {INTEGER_B} Result.make (Current, 64)
+
+			elseif Current = local_system.real_32_class then
+				create {REAL_32_B} Result.make (Current)
+
+			elseif Current = local_system.real_64_class then
+				create {REAL_64_B} Result.make (Current)
+
+			elseif Current = local_system.pointer_class then
+				create {POINTER_B} Result.make (Current, False)
+
+			elseif Current = local_system.typed_pointer_class then
+				create {POINTER_B} Result.make (Current, True)
+
+			elseif Current = local_system.special_class then
+				create {SPECIAL_B} Result.make (Current)
+
+			elseif Current = local_system.array_class then
+				create {ARRAY_CLASS_B} Result.make (Current)
+
+			elseif Current = local_system.string_8_class then
+				create {STRING_CLASS_B} Result.make (Current)
+
+			elseif Current = local_system.tuple_class then
+				create {TUPLE_CLASS_B} Result.make (Current)
+
+			elseif Current = local_system.native_array_class then
+				create {NATIVE_ARRAY_B} Result.make (Current)
+
+			elseif Current = local_system.type_class then
+				create {TYPE_CLASS_C} Result.make (Current)
+
+			else
+				if is_external_class then
+					create {EXTERNAL_CLASS_C} Result.make (Current)
+				else
+					create {EIFFEL_CLASS_C} Result.make (Current)
+				end
+			end
 		ensure
 			Result_exists: Result /= Void
 		end
@@ -461,10 +569,11 @@ feature {NONE} -- Implementation
 invariant
 	file_name_not_void: file_name /= Void
 	name_not_void: name /= Void
+	options_not_void: options /= Void
 	compiled_class_connection: is_compiled implies compiled_class.original_class = Current
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

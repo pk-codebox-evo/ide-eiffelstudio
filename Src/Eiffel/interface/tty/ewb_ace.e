@@ -6,7 +6,7 @@ indexing
 	revision: "$Revision $"
 
 class
-	EWB_ACE
+	EWB_ACE 
 
 inherit
 	EWB_CMD

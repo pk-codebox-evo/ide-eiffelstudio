@@ -22,7 +22,7 @@ feature -- Basic Operations
 	display is
 			-- Display Current State
 		do
-			first_window.set_final_state (b_finish)
+			first_window.set_final_state ("Finish")
 			build
 		end
 
@@ -53,7 +53,7 @@ feature -- Access
 
 	is_final_state: BOOLEAN is TRUE
 
-	final_message: STRING_GENERAL is
+	final_message: STRING is
 		deferred
 		end
 

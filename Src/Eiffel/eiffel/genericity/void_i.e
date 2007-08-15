@@ -27,13 +27,13 @@ feature -- Status report
 		do
 			Result := {MD_SIGNATURE_CONSTANTS}.Element_type_void
 		end
-
+		
 	tuple_code: INTEGER_8 is
 			-- Code for Void.
 		do
 			-- Nothing
 		end
-
+		
 feature
 
 	level: INTEGER is
@@ -78,13 +78,8 @@ feature
 
 	name, c_string: STRING is "void"
 			-- String generated for the type.
-
-	typed_field: STRING is
-			-- Value field of a C structure corresponding to this type
-		do
-		ensure then
-			False
-		end
+			
+	union_tag: STRING is "rarg"
 
 	hash_code: INTEGER is
 			-- Hash code for current type
@@ -98,8 +93,8 @@ feature
 			Result := Sk_void
 		end
 
-	generate_typed_tag (buffer: GENERATION_BUFFER) is
-			-- Generate tag of C structure "EIF_TYPED_VALUE" associated
+	generate_union (buffer: GENERATION_BUFFER) is
+			-- Generate discriminant of C structure "item" associated
 			-- to the current C type in `buffer'.
 		do
 		ensure then
@@ -118,7 +113,7 @@ feature
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

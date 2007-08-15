@@ -13,19 +13,12 @@ inherit
 	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 		redefine
 			new_toolbar_item,
-			new_sd_toolbar_item,
-			tooltext,
-			pixel_buffer
+			tooltext
 		end
 
 	EB_SHARED_WINDOW_MANAGER
 
 	EB_CONSTANTS
-
-	EB_SHARED_PREFERENCES
-		export
-			{NONE} all
-		end
 
 create
 	make_with_style
@@ -36,16 +29,14 @@ feature {NONE} -- Initialization
 			-- Initialize default values.
 		require
 			valid_style: s = editor_style or s = default_style or s = context_style
-		local
-			l_shortcut: MANAGED_SHORTCUT
 		do
 			is_sensitive := True
 			style := s
 			if s = default_style then
-				l_shortcut := preferences.misc_shortcut_data.shortcuts.item ("new_window")
-				create accelerator.make_with_key_combination (l_shortcut.key, l_shortcut.is_ctrl, l_shortcut.is_alt, l_shortcut.is_shift)
+				create accelerator.make_with_key_combination (
+					create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.Key_n),
+					True, False, False)
 				accelerator.actions.extend (agent execute)
-				set_referred_shortcut (l_shortcut)
 			end
 		end
 
@@ -88,14 +79,6 @@ feature -- Basic operations
 			Result.drop_actions.set_veto_pebble_function (agent is_storable)
 		end
 
-	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new toolbar button for this command.
-		do
-			Result := Precursor (display_text)
-			Result.drop_actions.extend (agent execute_with_stone (?))
-			Result.drop_actions.set_veto_pebble_function (agent is_storable)
-		end
-
 feature -- Access
 
 	style: INTEGER
@@ -110,7 +93,7 @@ feature -- Access
 
 feature {NONE} -- Implementation
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it appears in the menu (with & symbol).
 		do
 			inspect style
@@ -136,26 +119,13 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			inspect style
-			when default_style then
-				Result := pixmaps.icon_pixmaps.new_window_icon_buffer
-			when editor_style then
-				Result := pixmaps.icon_pixmaps.new_editor_icon_buffer
-			when context_style then
-				-- No pixel buffer for this case.
-			end
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := description
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text for the toolbar button.
 		do
 			inspect style
@@ -172,16 +142,12 @@ feature {NONE} -- Implementation
 			-- Can `st' be dropped?
 		local
 			conv_st: STONE
-			tar_st: TARGET_STONE
 		do
-			tar_st ?= st
-			if tar_st = Void then
-				conv_st ?= st
-				Result := conv_st /= Void and then conv_st.is_storable and then conv_st.is_valid
-			end
+			conv_st ?= st
+			Result := conv_st /= Void and then conv_st.is_storable and then conv_st.is_valid
 		end
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Description for this commane
 		do
 			inspect style

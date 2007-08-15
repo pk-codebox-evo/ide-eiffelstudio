@@ -42,24 +42,23 @@ feature -- Agents
 	on_drag_area_pressed (a_x: INTEGER; a_y: INTEGER; a_button: INTEGER; a_x_tilt: DOUBLE; a_y_tilt: DOUBLE; a_pressure: DOUBLE; a_screen_x: INTEGER; a_screen_y: INTEGER) is
 			-- Handle drag area pressed.
 		do
-			if a_button = {EV_POINTER_CONSTANTS}.left and is_in_drag_area (a_screen_x, a_screen_y) then
+			if a_button = 1 and is_in_drag_area (a_screen_x, a_screen_y) then
 				internal_pointer_pressed := True
 				internal_docker_mediator := Void
 				internal_shared.set_tool_bar_docker_mediator (Void)
 
 				setter.before_enable_capture
-				-- Following `enable_capture' will cancel pointer double press actions of SD_TOOL_BAR_TITLE_BAR on GTK.				
 				zone.tool_bar.enable_capture
 			end
 		ensure
-			pointer_press_set: a_button = {EV_POINTER_CONSTANTS}.left and is_in_drag_area (a_screen_x, a_screen_y) implies internal_pointer_pressed = True
-			docker_mediaot_void: a_button = {EV_POINTER_CONSTANTS}.left and is_in_drag_area (a_screen_x, a_screen_y) implies internal_docker_mediator = Void
+			pointer_press_set: a_button = 1 and is_in_drag_area (a_screen_x, a_screen_y) implies internal_pointer_pressed = True
+			docker_mediaot_void: a_button = 1 and is_in_drag_area (a_screen_x, a_screen_y) implies internal_docker_mediator = Void
 		end
 
 	on_drag_area_release (a_x: INTEGER; a_y: INTEGER; a_button: INTEGER; a_x_tilt: DOUBLE; a_y_tilt: DOUBLE; a_pressure: DOUBLE; a_screen_x: INTEGER; a_screen_y: INTEGER) is
 			-- Handle drag area release.
 		do
-			if a_button = {EV_POINTER_CONSTANTS}.left and is_in_drag_area (a_screen_x, a_screen_y) then
+			if a_button = 1 and is_in_drag_area (a_screen_x, a_screen_y) then
 				internal_pointer_pressed := False
 				internal_docker_mediator := Void
 				internal_shared.set_tool_bar_docker_mediator (Void)
@@ -67,8 +66,8 @@ feature -- Agents
 				setter.after_disable_capture
 			end
 		ensure
-			pointer_press_set: a_button = {EV_POINTER_CONSTANTS}.left and is_in_drag_area (a_screen_x, a_screen_y) implies internal_pointer_pressed = False
-			docker_mediaot_void: a_button = {EV_POINTER_CONSTANTS}.left and is_in_drag_area (a_screen_x, a_screen_y) implies internal_docker_mediator = Void
+			pointer_press_set: a_button = 1 and is_in_drag_area (a_screen_x, a_screen_y) implies internal_pointer_pressed = False
+			docker_mediaot_void: a_button = 1 and is_in_drag_area (a_screen_x, a_screen_y) implies internal_docker_mediator = Void
 		end
 
 	on_drag_area_motion (a_x: INTEGER; a_y: INTEGER; a_x_tilt: DOUBLE; a_y_tilt: DOUBLE; a_pressure: DOUBLE; a_screen_x: INTEGER; a_screen_y: INTEGER) is
@@ -81,13 +80,11 @@ feature -- Agents
 			if internal_docker_mediator = Void then
 				if zone.drag_area_rectangle.has_x_y (a_x, a_y) then
 					zone.tool_bar.set_pointer_style (l_pixmaps.sizeall_cursor)
-					setted := True
-				elseif setted then
+				else
 					zone.tool_bar.set_pointer_style (l_pixmaps.standard_cursor)
-					setted := False
 				end
 			end
-			if internal_pointer_pressed then
+			if internal_pointer_pressed and (zone.drag_area_rectangle.has_x_y (a_x, a_y) or zone.is_floating) then
 				if internal_docker_mediator = Void then
 					-- Capture is alreadyed enable when `on_drag_area_pressed'
 					zone.tool_bar.set_pointer_style (l_pixmaps.sizeall_cursor)
@@ -101,12 +98,6 @@ feature -- Agents
 					else
 						l_offset_x := a_screen_x - zone.tool_bar.screen_x
 						l_offset_y := a_screen_y - zone.tool_bar.screen_y
-						if l_offset_x < 0 then
-							l_offset_x := 0
-						end
-						if l_offset_y < 0 then
-							l_offset_y := 0
-						end
 					end
 					internal_docker_mediator.set_offset (zone.is_floating, l_offset_x, l_offset_y)
 					internal_docker_mediator.cancel_actions.extend (agent on_cancel)
@@ -114,8 +105,7 @@ feature -- Agents
 			end
 		ensure
 			capture_enable: internal_pointer_pressed and (zone.drag_area_rectangle.has_x_y (a_x, a_y) or zone.is_floating)
-				implies internal_docker_mediator /= Void
-			-- We can't not guaranntee caller have capture on GTK, since we disable it temporty when floating from docking(or docking from floating).
+				implies zone.tool_bar.has_capture and internal_docker_mediator /= Void
 		end
 
 	on_drag_area_pointer_double_press (a_x: INTEGER; a_y: INTEGER; a_button: INTEGER; a_x_tilt: DOUBLE; a_y_tilt: DOUBLE; a_pressure: DOUBLE; a_screen_x: INTEGER; a_screen_y: INTEGER) is
@@ -178,26 +168,23 @@ feature {NONE} -- Implementation functions
 	on_pointer_release (a_x: INTEGER; a_y: INTEGER; a_button: INTEGER; a_x_tilt: DOUBLE; a_y_tilt: DOUBLE; a_pressure: DOUBLE; a_screen_x: INTEGER; a_screen_y: INTEGER) is
 			-- Handle pointer release.
 		do
-			if internal_docker_mediator /= Void and a_button = {EV_POINTER_CONSTANTS}.left then
+			if internal_docker_mediator /= Void then
 				internal_docker_mediator.apply_change (a_screen_x, a_screen_y)
 				on_cancel
 			end
 		ensure
-			disable_capture: (internal_docker_mediator /= Void and a_button = {EV_POINTER_CONSTANTS}.left) implies not zone.tool_bar.has_capture
-			not_pointer_pressed: a_button = {EV_POINTER_CONSTANTS}.left and internal_docker_mediator /= Void implies not internal_pointer_pressed
-			cleared: a_button = {EV_POINTER_CONSTANTS}.left implies internal_shared.tool_bar_docker_mediator_cell.item = Void
+			disable_capture: not zone.tool_bar.has_capture
+			not_pointer_pressed: internal_docker_mediator /= Void implies not internal_pointer_pressed
+			cleared: internal_shared.tool_bar_docker_mediator_cell.item = Void
 		end
 
 feature {NONE} -- Implementation attributes
 
 	setter: SD_SYSTEM_SETTER is
-			-- System setter singleton.
+			--
 		once
 			create {SD_SYSTEM_SETTER_IMP} Result
 		end
-
-	setted: BOOLEAN
-		-- If pointer style setted?
 
 	internal_shared: SD_SHARED
 			-- All singletons.

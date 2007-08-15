@@ -101,6 +101,7 @@ feature -- Status report
 
 feature -- Basic operations
 
+
 	replace is
 			-- Launch replacement, one time. Other items are freshed.
 		require

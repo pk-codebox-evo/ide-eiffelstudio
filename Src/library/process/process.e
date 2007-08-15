@@ -3,7 +3,7 @@ indexing
 		Interface of a multi-platform process launcher(on Win32, .Net and Unix/Linux)
 		Instance of this class is not guaranteed to be thread safe.
 		Usage:
-			1. Use {PROCESS_FACTORY} to get new PROCESS object.
+			1. Use `PROCESS_FACTORY' to get new PROCESS object.
 			2. Invoke IO redirection features to redirect io to certain devices. By default,
 			   IO of launched process is not redirected.
 			3. Invoke `launch' to launch process.
@@ -26,7 +26,6 @@ feature {NONE} -- Initialization
 			-- Apply Void to `args' if no argument is necessary.
 		require
 			a_exec_name_not_void: a_exec_name /= Void
-			thread_capable: {PLATFORM}.is_thread_capable
 		deferred
 		ensure
 			command_line_not_void: command_line /= Void
@@ -43,7 +42,6 @@ feature {NONE} -- Initialization
 		require
 			command_line_not_void: cmd_line /= Void
 			command_line_not_empty: not cmd_line.is_empty
-			thread_capable: {PLATFORM}.is_thread_capable
 		deferred
 		ensure
 			command_line_not_void: command_line /= Void
@@ -250,7 +248,6 @@ feature -- Control
 	launch is
 			-- Launch process.
 		require
-			thread_capable: {PLATFORM}.is_thread_capable
 			process_not_running: not is_running
 			input_redirection_valid: is_input_redirection_valid (input_direction)
 			output_redirection_valid: is_output_redirection_valid (output_direction)
@@ -264,7 +261,6 @@ feature -- Control
 			-- `terminate' executes asynchronously. After calling `terminate', call `wait_to_exit' or `wait_to_exit_with_timeout'
 			-- to wait for process to exit.
 		require
-			thread_capable: {PLATFORM}.is_thread_capable
 			process_launched: launched
 			process_not_terminated: not force_terminated
 		deferred
@@ -278,7 +274,6 @@ feature -- Control
 			-- Note: on Unix, this feature can terminate whole process tree only when `is_launched_in_new_process_group' is set to True
 			-- before new process is launched.
 		require
-			thread_capable: {PLATFORM}.is_thread_capable
 			process_launched: launched
 			process_not_terminated: not force_terminated
 		deferred
@@ -288,7 +283,6 @@ feature -- Control
 			-- Wait until process has exited.
 			-- Note: child processes of launched process are not guaranteed to have exited after `wait_for_exit' returns.
 		require
-			thread_capable: {PLATFORM}.is_thread_capable
 			process_launched: launched
 		deferred
 		ensure
@@ -301,7 +295,6 @@ feature -- Control
 			-- Note: child processes of launched process are not guaranteed to have exited even `wait_for_exit_with_timeout' returns
 			-- with True.
 		require
-			thread_capable: {PLATFORM}.is_thread_capable
 			process_launched: launched
 			a_timeout_positive: a_timeout > 0
 		deferred
@@ -312,9 +305,8 @@ feature -- Interprocess data transmission
 	put_string (s: STRING) is
 			-- Send `s' into launched process as its input data.
 		require
-			thread_capable: {PLATFORM}.is_thread_capable
 			input_redirect_to_stream: input_direction = {PROCESS_REDIRECTION_CONSTANTS}.to_stream
-			process_launched: launched
+			process_running : is_running
 			string_not_void: s /= Void
 		deferred
 		end
@@ -524,7 +516,7 @@ feature {NONE} -- Actions
 		-- Agent called when process launched
 		do
 			if on_start_handler /= Void then
-				on_start_handler.call (Void)
+				on_start_handler.call ([])
 			end
 		end
 
@@ -532,7 +524,7 @@ feature {NONE} -- Actions
 			-- Agent called when process has been terminated
 		do
 			if on_terminate_handler /= Void then
-				on_terminate_handler.call (Void)
+				on_terminate_handler.call ([])
 			end
 		end
 
@@ -540,7 +532,7 @@ feature {NONE} -- Actions
 			-- Agent called when process has exited
 		do
 			if on_exit_handler /= Void then
-				on_exit_handler.call (Void)
+				on_exit_handler.call ([])
 			end
 		end
 
@@ -548,7 +540,7 @@ feature {NONE} -- Actions
 			-- Agent called when process launch failed
 		do
 			if on_fail_launch_handler /= Void then
-				on_fail_launch_handler.call (Void)
+				on_fail_launch_handler.call ([])
 			end
 		end
 
@@ -556,7 +548,7 @@ feature {NONE} -- Actions
 			-- Agent called when process launch succeeded
 		do
 			if on_successful_launch_handler /= Void then
-				on_successful_launch_handler.call (Void)
+				on_successful_launch_handler.call ([])
 			end
 		end
 
@@ -819,135 +811,6 @@ feature{NONE} -- Implementation
 			-- {POINTER} representation of `environment_variable_table'
 			-- Return `default_pointer' if `environment_variable_table' is Void or empty.
 		deferred
-		end
-
-	is_separator (a_char: CHARACTER): BOOLEAN is
-			-- Is `a_char' a separator for argument in command line?
-		do
-			Result := a_char = ' '
-		end
-
-	separated_words (a_cmd: STRING): LIST [STRING] is
-			-- Break shell command held in 'a_cmd' into words and
-			-- return retrieved word list.
-		require
-			a_cmd_attached: a_cmd /= Void
-		local
-			l_in_simple: BOOLEAN
-			l_in_quote: BOOLEAN
-			l_was_closing_quote: BOOLEAN
-			l_was_backslash: BOOLEAN
-			l_current_word: STRING
-			l_pos: INTEGER
-			l_pos_all: INTEGER
-			l_length: INTEGER
-			l_char: CHARACTER
-			l_should_process: BOOLEAN
-		do
-			create {LINKED_LIST [STRING]} Result.make
-			if not a_cmd.is_empty then
-				create l_current_word.make (128)
-				from
-					l_length := a_cmd.count
-					l_pos := 1
-					l_pos_all := 1
-					l_char := a_cmd.item (l_pos_all)
-				until
-					l_pos_all > l_length or else l_char = '%U'
-				loop
-					l_should_process := True
-					if l_in_simple then
-						if l_was_backslash then
-							l_was_backslash := False
-							if l_char = '\' then
-								l_should_process := False
-							elseif l_char = '%'' then
-								check not l_current_word.is_empty end
-								l_current_word.put (l_char, l_current_word.count)
-								l_should_process := False
-							end
-						end
-						if l_should_process then
-							if l_char = '%'' then
-								l_in_simple := False
-								l_was_closing_quote := True
-								l_should_process := False
-							end
-						end
-					elseif l_in_quote then
-						if l_was_backslash then
-							l_was_backslash := False
-							check not l_current_word.is_empty end
-							l_current_word.put (l_char, l_current_word.count)
-							l_should_process := False
-						end
-						if l_should_process then
-							if l_char = '"' then
-								l_in_quote := False
-								l_was_closing_quote := True
-								l_should_process := False
-							end
-						end
-					end
-					if l_should_process then
-						inspect
-							l_char
-						when '\' then
-							l_was_backslash := True
-							l_current_word.append_character (l_char)
-							l_pos := l_pos + 1
-							l_char := a_cmd.item (l_pos)
-						when '%'' then
-							l_in_simple := True
-						when '"' then
-							if not l_in_simple then
-								l_in_quote := True
-							else
-								if platform.is_windows then
-									if not l_in_quote then
-										l_current_word.append_character (l_char)
-										l_pos := l_pos + 1
-									else
-										l_in_quote := False
-										l_should_process := False
-									end
-								else
-									l_current_word.append_character (l_char)
-									l_pos := l_pos + 1
-								end
-							end
-						else
-							if l_in_simple or l_in_quote then
-								l_current_word.append_character (l_char)
-								l_pos := l_pos + 1
-							elseif is_separator (l_char) then
-								if l_pos > 1 or else l_was_closing_quote then
-									Result.extend (l_current_word.twin)
-									l_current_word.wipe_out
-									l_pos := 1
-									l_was_closing_quote := False
-									l_was_backslash := False
-								end
-							else
-								l_current_word.append_character (l_char)
-								l_pos := l_pos + 1
-							end
-						end
-					end
-					if l_should_process then
-						l_was_closing_quote := False
-					end
-					l_pos_all := l_pos_all + 1
-					if l_pos_all <= l_length then
-						l_char := a_cmd.item (l_pos_all)
-					end
-				end
-				if l_pos > 1 then
-					Result.extend (l_current_word)
-				end
-			end
-		ensure
-			result_attached: Result /= Void
 		end
 
 end

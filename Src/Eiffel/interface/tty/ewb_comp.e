@@ -54,7 +54,7 @@ feature -- Properties
 			Result := melt_cmd_name
 		end;
 
-	help_message: STRING_32 is
+	help_message: STRING is
 		do
 			Result := melt_help
 		end;
@@ -74,7 +74,7 @@ feature -- Actions
 			can_always_be_compiled: True
 		do
 			if Eiffel_project.is_read_only then
-				localized_print_error (ewb_names.read_only_project_cannot_compile)
+				io.error.put_string ("Read-only project: cannot compile.%N")
 			elseif eiffel_project.initialized then
 				init;
 				if Eiffel_ace.file_name /= Void then
@@ -115,7 +115,11 @@ feature {NONE} -- Update
 			until
 				exit
 			loop
-				localized_print (ewb_names.specify_the_ace_file)
+				io.put_string ("Specify the Ace file: %N%
+								%C: Cancel%N%
+								%S: Specify file name%N%
+								%T: Copy template%N%N%
+								%Option: ");
 				io.read_line;
 				cmd := io.last_string;
 				exit := True;
@@ -129,7 +133,7 @@ feature {NONE} -- Update
 				when 'c' then
 					Eiffel_ace.set_file_name (Void)
 				when 's' then
-					localized_print (ewb_names.file_name_with_default)
+					io.put_string ("File name (`Ace.ace' is the default): ");
 					io.read_line;
 					file_name := io.last_string;
 					if not file_name.is_empty then
@@ -149,7 +153,7 @@ feature {NONE} -- Update
 					end;
 					check_ace_file (Eiffel_ace.file_name);
 				when 't' then
-					localized_print (ewb_names.file_name)
+					io.put_string ("File name: ");
 					io.read_line;
 					file_name := io.last_string;
 					if file_name.is_empty then
@@ -164,7 +168,7 @@ feature {NONE} -- Update
 						edit (Eiffel_ace.file_name);
 					end;
 				else
-					localized_print (ewb_names.invalid_choices)
+					io.put_string ("Invalid choice%N%N");
 					exit := False;
 				end;
 			end;
@@ -204,6 +208,7 @@ feature {NONE} -- Update
 			execute
 		end;
 
+
 feature {NONE} -- Output
 
 	process_finish_freezing (finalized_dir: BOOLEAN) is
@@ -212,7 +217,9 @@ feature {NONE} -- Output
 			if is_finish_freezing_called then
 				Eiffel_project.call_finish_freezing_and_wait (not finalized_dir)
 			else
-				localized_print_error (ewb_names.you_must_now_run (eiffel_layout.Finish_freezing_script))
+				io.error.put_string ("You must now run %"");
+				io.error.put_string (eiffel_layout.Finish_freezing_script);
+				io.error.put_string ("%" in:%N%T");
 				if finalized_dir then
 					io.error.put_string (project_location.final_path)
 				else
@@ -239,7 +246,7 @@ feature {NONE} -- Compilation
 	perform_compilation is
 			-- Melt eiffel project.
 		do
-			Eiffel_project.discover_melt
+			Eiffel_project.melt
 		end
 
 	save_project_again is
@@ -248,6 +255,7 @@ feature {NONE} -- Compilation
 			error: Eiffel_project.save_error
 		local
 			finished: BOOLEAN;
+			temp: STRING
 			file_name: FILE_NAME
 		do
 			from
@@ -256,7 +264,11 @@ feature {NONE} -- Compilation
 			loop
 				if Eiffel_project.save_error then
 					create file_name.make_from_string (project_location.project_file_name)
-					localized_print_error (ewb_names.error_could_not_write_to (file_name))
+					create temp.make (128);
+					temp.append ("Error: could not write to ");
+					temp.append (file_name);
+					temp.append ("%NPlease check permissions and disk space");
+					io.error.put_string (temp);
 					io.error.put_new_line;
 					finished := stop_on_error or else command_line_io.termination_requested;
 					if finished then
@@ -277,10 +289,12 @@ feature {NONE} -- Compilation
 			if
 				not (f.exists and then f.is_readable and then f.is_plain)
 			then
+				io.error.put_string ("Ace file `");
+				io.error.put_string (fn);
 				if f.exists then
-					localized_print_error (ewb_names.ace_file_cannot_be_read (fn))
+					io.error.put_string ("' cannot be read%N");
 				else
-					localized_print_error (ewb_names.ace_file_does_not_exist (fn))
+					io.error.put_string ("' does not exist%N");
 				end;
 				lic_die (-1)
 			end

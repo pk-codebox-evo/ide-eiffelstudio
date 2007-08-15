@@ -32,7 +32,7 @@ feature{NONE} -- Implementation
 				loop
 					l_tag := a_indexing_clause.item.tag
 					if l_tag /= Void then
-						Result := is_name_same_as (l_tag.name)
+						Result := is_name_same_as (l_tag.out)
 					end
 					a_indexing_clause.forth
 				end
@@ -83,5 +83,7 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
 
 end

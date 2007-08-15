@@ -12,8 +12,7 @@ class
 inherit
 	EB_FEATURE_CONTENT_FORMATTER
 		redefine
-			is_dotnet_formatter,
-			browser
+			is_dotnet_formatter
 		end
 
 create
@@ -29,36 +28,15 @@ feature -- Properties
 			Result.put (pixmaps.icon_pixmaps.feature_descendents_icon, 1)
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Graphical representation of the command.
-		once
-			Result := pixmaps.icon_pixmaps.feature_descendents_icon_buffer
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Identifier of `Current' in menus.
 		do
 			Result := Interface_names.m_Showfuture
 		end
 
-	browser: EB_FEATURE_BROWSER_GRID_VIEW
-			-- Browser		
-
-	displayer_generator: TUPLE [any_generator: FUNCTION [ANY, TUPLE, like displayer]; name: STRING] is
-			-- Generator to generate proper `displayer' for Current formatter
-		do
-			Result := [agent displayer_generators.new_feature_displayer, displayer_generators.feature_displayer]
-		end
-
-	sorting_status_preference: STRING_PREFERENCE is
-			-- Preference to store last sorting orders of Current formatter
-		do
-			Result := preferences.class_browser_data.feature_view_sorting_order_preference
-		end
-
 feature {NONE} -- Properties
 
-	capital_command_name: STRING_GENERAL is
+	command_name: STRING is
 			-- Name of the command.
 		do
 			Result := Interface_names.l_Routine_descendants
@@ -128,4 +106,5 @@ indexing
 		]"
 
 end -- class EB_ROUTINE_DESCENDANTS_FORMATTER
+
 

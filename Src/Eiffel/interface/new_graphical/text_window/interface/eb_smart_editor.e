@@ -27,11 +27,9 @@ inherit
 			initialize_customizable_commands,
 			basic_cursor_move,
 			text_displayed,
-			internal_recycle	,
+			recycle	,
 			file_loading_setup,
 			on_text_back_to_its_last_saved_state,
-			on_text_edited,
-			on_text_reset,
 			on_key_down,
 			make
 		end
@@ -62,10 +60,8 @@ create
 
 feature {NONE} -- Initialize
 
-	make (a_dev_window: EB_DEVELOPMENT_WINDOW) is
+	make(a_dev_window: EB_DEVELOPMENT_WINDOW) is
 			-- Initialize the editor.
-		require else
-			dev_window_not_void: a_dev_window /= Void
 		do
 			Precursor {EB_CLICKABLE_EDITOR} (a_dev_window)
 
@@ -84,17 +80,15 @@ feature -- Content change
 			-- `file_name' is left unchanged.
 		local
 			f_n: FILE_NAME
-			f_d, f_d_c, f_s: INTEGER
+			f_d, f_d_c: INTEGER
 		do
 			f_n := file_name
 			f_d := date_of_file_when_loaded
-			f_s := size_of_file_when_loaded
 			f_d_c := date_when_checked
 			load_text (s)
 			text_displayed.set_changed (True, False)
 			file_name := f_n
 			date_of_file_when_loaded := f_d
-			size_of_file_when_loaded := f_s
 			date_when_checked := f_d_c
 		end
 
@@ -126,17 +120,6 @@ feature -- Status report
 			-- Is the current class being explored by the click tool?
 		do
 			Result := text_displayed.exploring_current_class
-		end
-
-	is_text_loaded (a_stone: STONE): BOOLEAN is
-			-- If text loaded?
-		do
-			if is_text_loaded_called then
-				Result := a_stone = stone
-			else
-				-- Do this for initialization
-				is_text_loaded_called := True
-			end
 		end
 
 feature -- Status setting
@@ -177,7 +160,7 @@ feature -- Search
 			Result := text_displayed.found_feature
 		end
 
-feature {EB_COMMAND, EB_DEVELOPMENT_WINDOW, EB_DEVELOPMENT_WINDOW_MENU_BUILDER} -- Commands
+feature {EB_COMMAND, EB_DEVELOPMENT_WINDOW} -- Commands
 
 	complete_feature_name is
 			-- Complete feature name.
@@ -206,9 +189,6 @@ feature {EB_COMMAND, EB_DEVELOPMENT_WINDOW, EB_DEVELOPMENT_WINDOW_MENU_BUILDER} 
 	embed_in_block (keyword: STRING; pos_in_keyword: INTEGER) is
 			-- Embed selection or current line in block formed by `keyword' and "end".
 			-- Cursor is positioned to the `pos_in_keyword'-th character of `keyword'.
-		require
-			keyword_not_void: keyword /= Void
-			pos_in_keyword_valid: pos_in_keyword > 0 and then pos_in_keyword <= keyword.count
 		do
 			if is_editable and then not is_empty then
 				text_displayed.embed_in_block (keyword, pos_in_keyword)
@@ -224,7 +204,7 @@ feature -- Autocomplete
 			-- `after_save' must be True if current class text has just been saved
 			-- and False otherwise.
 		do
-			if dev_window.stone /= Void and then text_displayed.click_tool_enabled and then not text_displayed.text_being_processed then
+			if dev_window.stone /= Void and then text_displayed.click_tool_enabled then
 				text_displayed.update_click_list (dev_window.stone, after_save)
 				process_click_tool_error
 			end
@@ -248,25 +228,7 @@ feature {NONE} -- Text loading
 				text_displayed.update_click_list (dev_window.stone, True)
 				text_displayed.clear_syntax_error
 			end
-			set_title_saved (true)
 		end
-
-	on_text_reset is
-			-- Redefine
-		do
-			Precursor
-			set_title_saved (true)
-		end
-
-	on_text_edited (directly_edited: BOOLEAN) is
-			-- Redefine
-		do
-			Precursor (directly_edited)
-			set_title_saved (false)
-		end
-
-	is_text_loaded_called: BOOLEAN
-			-- If text loaded called?
 
 feature {EB_COMPLETION_CHOICE_WINDOW} -- Process Vision2 Events
 
@@ -416,10 +378,24 @@ feature {EB_COMPLETION_CHOICE_WINDOW} -- Process Vision2 Events
 		do
 			code := ev_key.code
 			switch_auto_point := auto_point and then not (code = Key_ctrl or code = Key_shift or code = Key_left_meta or code = Key_right_meta)
-			Precursor (ev_key)
-				-- if `auto_point' is true, user has called auto complete
-				-- we don't change the value. Else, its new value is set to False unless
-				-- only ctrl key was pressed
+			if code = Key_i then
+				if not shifted_key then
+					if is_editable then
+						embed_in_block ("if  then", 3)
+					end
+				end
+			elseif code = Key_d then
+				if not shifted_key then
+					if is_editable then
+						embed_in_block ("debug", 5)
+					end
+				end
+			else
+				Precursor (ev_key)
+					-- if `auto_point' is true, user has called auto complete
+					-- we don't change the value. Else, its new value is set to False unless
+					-- only ctrl key was pressed
+			end
 			auto_point := auto_point xor switch_auto_point
 		end
 
@@ -620,42 +596,6 @@ feature {EB_CODE_COMPLETION_WINDOW} -- automatic completion
 			end
 		end
 
-feature {EB_SAVE_FILE_COMMAND, EB_SAVE_ALL_FILE_COMMAND, EB_DEVELOPMENT_WINDOW} -- Docking title
-
-	set_title_saved (a_saved: BOOLEAN) is
-			-- Set '*' in the title base on `a_saved'.
-		local
-			l_title: STRING
-		do
-			if docking_content /= Void then
-				if docking_content.short_title /= Void then
-					l_title := docking_content.short_title.as_string_8
-				else
-					create l_title.make_empty
-				end
-				if not l_title.is_empty then
-					if l_title.item (1).code = ('*').code then
-						if a_saved then
-							l_title.keep_tail (l_title.count - 1)
-							docking_content.set_short_title (l_title)
-							docking_content.set_long_title (l_title)
-						end
-					else
-						if not a_saved then
-							l_title := "*" + l_title
-							docking_content.set_short_title (l_title)
-							docking_content.set_long_title (l_title)
-						end
-					end
-				else
-					if not a_saved then
-						docking_content.set_short_title ("*")
-						docking_content.set_long_title ("*")
-					end
-				end
-			end
-		end
-
 feature {NONE} -- Autocomplete implementation
 
 	on_key_down (ev_key: EV_KEY)is
@@ -778,18 +718,13 @@ feature {NONE} -- Implementation
 			create customizable_commands.make (11)
 			customizable_commands.put (agent complete_feature_name, "autocomplete")
 			customizable_commands.put (agent complete_class_name, "class_autocomplete")
+			customizable_commands.put (agent search, "show_search_panel")
 			customizable_commands.put (agent quick_search, "show_quick_search_bar")
 			customizable_commands.put (agent replace, "show_search_and_replace_panel")
 			customizable_commands.put (agent find_next_selection, "search_selection_forward")
 			customizable_commands.put (agent find_previous_selection, "search_selection_backward")
 			customizable_commands.put (agent find_next, "search_forward")
 			customizable_commands.put (agent find_previous, "search_backward")
-			customizable_commands.put (agent run_if_editable (agent comment_selection), "comment")
-			customizable_commands.put (agent run_if_editable (agent uncomment_selection), "uncomment")
-			customizable_commands.put (agent run_if_editable (agent set_selection_case (False)), "set_to_uppercase")
-			customizable_commands.put (agent run_if_editable (agent set_selection_case (True)), "set_to_lowercase")
-			customizable_commands.put (agent run_if_editable (agent embed_in_block ("if  then", 3)), "embed_if_clause")
-			customizable_commands.put (agent run_if_editable (agent embed_in_block ("debug", 5)), "embed_debug_clause")
 			customizable_commands.put (agent insert_customized_string (1), "customized_insertion_1")
 			customizable_commands.put (agent insert_customized_string (2), "customized_insertion_2")
 			customizable_commands.put (agent insert_customized_string (3), "customized_insertion_3")
@@ -816,7 +751,7 @@ feature {NONE} -- Implementation
 		do
 			if text_is_fully_loaded then
 				if retried then
-					show_warning_message (Warning_messages.w_Cannot_read_file (file_name).out)
+					show_warning_message (Warning_messages.w_Cannot_read_file (file_name))
 				else
 					deselect_all
 					syn_error := text_displayed.last_syntax_error
@@ -853,34 +788,19 @@ feature -- Text Loading
 
 	load_text (s: STRING) is
 			-- Load text represented by `s' in the editor.
-		local
-			l_d_class : DOCUMENT_CLASS
-			l_scanner: EDITOR_EIFFEL_SCANNER
-			l_stone: CLASSI_STONE
 		do
 			if (not load_without_save) and then changed then
 				load_without_save := True
 				dev_window.save_and (agent load_text (s))
 			else
-				l_d_class := get_class_from_type (once "e")
-				set_current_document_class (l_d_class)
-				l_scanner ?= l_d_class.scanner
-				if l_scanner /= Void then
-					text_displayed.set_lexer (l_scanner)
-					l_stone ?= stone
-					if l_stone /= Void then
-						l_scanner.set_current_class (l_stone.class_i.config_class)
-					end
-				end
-				text_displayed.set_current_document_class (get_class_from_type (once "e"))
 				Precursor {EB_CLICKABLE_EDITOR} (s)
 			end
 			load_without_save := False
 		end
 
-feature {NONE} -- Memory management
+feature -- Memory management
 
-	internal_recycle is
+	recycle is
 			-- Recycle `Current', but leave `Current' in an unstable state,
 			-- so that we know whether we're still referenced or not.
 		do
@@ -1344,6 +1264,7 @@ feature {NONE} -- Code completable implementation
 		do
 			text_displayed.complete_feature_call (completed, is_feature_signature, appended_character, remainder)
 		end
+
 
 	select_from_cursor_to_saved is
 			-- Select from cursor position to saved cursor position

@@ -11,18 +11,13 @@ class
 inherit
 	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 		redefine
-			new_toolbar_item,
-			new_sd_toolbar_item,
-			new_mini_toolbar_item,
-			new_mini_sd_toolbar_item,
-			mini_pixmap,
-			mini_pixel_buffer,
+			new_toolbar_item, new_mini_toolbar_item, mini_pixmap,
 			tooltext
 		end
 
 	EB_VETO_FACTORY
 
-	SHARED_DEBUGGER_MANAGER
+	EB_SHARED_DEBUG_TOOLS
 
 	SHARED_EIFFEL_PROJECT
 
@@ -32,19 +27,19 @@ inherit
 
 feature -- Access
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- What is printed in the customize dialog.
 		do
 			Result := Interface_names.f_Enable_stop_points
 		end
 
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Pop-up help on buttons.
 		do
 			Result := description
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text for the toolbar button.
 		do
 			Result := Interface_names.b_bkpt_enable
@@ -52,16 +47,6 @@ feature -- Access
 
 	new_toolbar_item (display_text: BOOLEAN): EB_COMMAND_TOOL_BAR_BUTTON is
 			-- Create a new toolbar button for `Current'.
-		do
-			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND} (display_text)
-			Result.drop_actions.extend (agent drop_breakable (?))
-			Result.drop_actions.extend (agent drop_feature (?))
-			Result.drop_actions.extend (agent drop_class (?))
-			Result.drop_actions.set_veto_pebble_function (agent can_drop_debuggable_feature_or_class)
-		end
-
-	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new docking toolbar button for `Current'.
 		do
 			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND} (display_text)
 			Result.drop_actions.extend (agent drop_breakable (?))
@@ -80,17 +65,7 @@ feature -- Access
 			Result.drop_actions.set_veto_pebble_function (agent can_drop_debuggable_feature_or_class)
 		end
 
-	new_mini_sd_toolbar_item: EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new mini toolbar button for `Current'.
-		do
-			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND}
-			Result.drop_actions.extend (agent drop_breakable (?))
-			Result.drop_actions.extend (agent drop_feature (?))
-			Result.drop_actions.extend (agent drop_class (?))
-			Result.drop_actions.set_veto_pebble_function (agent can_drop_debuggable_feature_or_class)
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Menu entry corresponding to `Current'.
 		do
 			Result := Interface_names.m_Enable_stop_points
@@ -102,22 +77,10 @@ feature -- Access
 			Result := pixmaps.icon_pixmaps.breakpoints_enable_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.breakpoints_enable_icon_buffer
-		end
-
 	mini_pixmap: EV_PIXMAP is
 			-- Icon for `Current'.
 		do
 			Result := pixmaps.mini_pixmaps.breakpoints_enable_icon
-		end
-
-	mini_pixel_buffer: EV_PIXEL_BUFFER is
-			-- Icon for `Current'.
-		do
-			Result := pixmaps.mini_pixmaps.breakpoints_enable_icon_buffer
 		end
 
 	name: STRING is "Enable_bkpt"
@@ -132,21 +95,21 @@ feature -- Update
 			f: E_FEATURE
 			body_index: INTEGER
 			wd: EV_INFORMATION_DIALOG
-			bpm: BREAKPOINTS_MANAGER
+			app_exec: APPLICATION_EXECUTION
 		do
 			f := bs.routine
 			if f.is_debuggable then
 				index := bs.index
 				body_index := bs.body_index
-				bpm := Debugger_manager
-				bpm.enable_breakpoint (f, index)
+				app_exec := eb_debugger_manager.application
+				app_exec.enable_breakpoint (f, index)
 
-				if bpm.error_in_bkpts then
+				if app_exec.error_in_bkpts then
 					create wd.make_with_text (Warning_messages.w_Feature_is_not_compiled)
 					wd.show_modal_to_window (window_manager.last_focused_development_window.window)
 				end
 
-				Debugger_manager.notify_breakpoints_changes
+				Eb_debugger_manager.notify_breakpoints_changes
 			end
 		end
 
@@ -161,22 +124,22 @@ feature -- Update
 			-- Process feature stone.
 		local
 			f: E_FEATURE
-			wd: EB_WARNING_DIALOG
-			bpm: BREAKPOINTS_MANAGER
+			wd: EV_WARNING_DIALOG
+			app_exec: APPLICATION_EXECUTION
 		do
 			f := fs.e_feature
 			if f.is_debuggable then
-				bpm := Debugger_manager
-				if bpm.has_disabled_breakpoints then
-					bpm.enable_breakpoints_in_feature (f)
+				app_exec := Eb_debugger_manager.application
+				if app_exec.has_disabled_breakpoints then
+					app_exec.enable_breakpoints_in_feature (f)
 				end
-				bpm.enable_first_breakpoint_of_feature (f)
+				app_exec.enable_first_breakpoint_of_feature (f)
 
-				if bpm.error_in_bkpts then
+				if app_exec.error_in_bkpts then
 					create wd.make_with_text (Warning_messages.w_Feature_is_not_compiled)
 					wd.show_modal_to_window (window_manager.last_focused_development_window.window)
 				end
-				Debugger_manager.notify_breakpoints_changes
+				Eb_debugger_manager.notify_breakpoints_changes
 			end
 		end
 
@@ -185,20 +148,20 @@ feature -- Update
 		local
 			wd: EV_INFORMATION_DIALOG
 			conv_fst: FEATURE_STONE
-			bpm: BREAKPOINTS_MANAGER
+			app_exec: APPLICATION_EXECUTION
 		do
 			conv_fst ?= cs
 				-- If a feature stone was dropped, it is handled by the drop_feature feature.
 			if conv_fst = Void then
-				bpm := Debugger_manager
-				bpm.enable_first_breakpoints_in_class (cs.e_class)
+				app_exec := eb_debugger_manager.application
+				app_exec.enable_first_breakpoints_in_class (cs.e_class)
 
-				if bpm.error_in_bkpts then
+				if app_exec.error_in_bkpts then
 					create wd.make_with_text (Warning_messages.w_Feature_is_not_compiled)
 					wd.show_modal_to_window (window_manager.last_focused_development_window.window)
 				end
 
-				Debugger_manager.notify_breakpoints_changes
+				Eb_debugger_manager.notify_breakpoints_changes
 			end
 		end
 
@@ -207,8 +170,8 @@ feature -- Execution
 	execute is
 			-- Enable all breakpoints in the application.
 		do
-			Debugger_manager.enable_all_breakpoints
-			Debugger_manager.notify_breakpoints_changes
+			Eb_debugger_manager.Application.enable_all_breakpoints
+			Eb_debugger_manager.notify_breakpoints_changes
 		end
 
 feature {NONE} -- Implementation
@@ -222,7 +185,7 @@ feature {NONE} -- Implementation
 --		local
 --			body_index: INTEGER
 		do
-			Debugger_manager.enable_breakpoints_in_feature (f)
+			Eb_debugger_manager.Application.enable_breakpoints_in_feature (f)
 --| FIXME ARNAUD
 --			body_index := f.body_index
 --			tool_supervisor.feature_tool_mgr.show_stoppoint (body_index, 1)

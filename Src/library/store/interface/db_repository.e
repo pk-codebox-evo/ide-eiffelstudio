@@ -28,7 +28,7 @@ create -- Creation procedure
 feature -- Status report
 
 	loaded: BOOLEAN
-			-- Is current repository data description
+			-- Is current repository data description 
 			-- retrieved from base?
 
 	repository_name: STRING
@@ -60,7 +60,6 @@ feature -- Initialization
 			-- Create repository with `name'.
 		require
 			name_exists: name /= Void
-			connected: is_connected
 		do
 			implementation := handle.database.db_repository
 			implementation.change_name (name)
@@ -153,7 +152,7 @@ feature {DB_STORE} -- Implementation
 			-- Handle reference to specific database implementation
 
 	ensure_name (new_name: STRING): BOOLEAN is
-		require
+		require 
 			not_void: new_name /= Void
 		local
 			tmp_string: STRING

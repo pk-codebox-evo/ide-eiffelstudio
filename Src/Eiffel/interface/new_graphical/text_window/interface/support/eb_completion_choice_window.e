@@ -450,6 +450,7 @@ feature {NONE} -- Implementation
 				matches := sorted_names.subarray (1, sorted_names.count)
 			end
 
+
 			if matches.is_empty then
 				current_index := 0
 			else

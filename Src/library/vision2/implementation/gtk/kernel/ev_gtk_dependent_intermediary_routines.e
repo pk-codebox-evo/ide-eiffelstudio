@@ -17,10 +17,12 @@ inherit
 
 	EV_GTK_KEY_CONVERSION
 
-feature -- Implementation
+feature {EV_ANY_I} -- Implementation
 
 	new_toolbar_item_select_actions_intermediary (a_object_id: INTEGER) is
 			-- Intermediary agent for toolbar button select action
+			-- (from EV_GTK_DEPENDENT_INTERMEDIARY_ROUTINES)
+			-- (export status {EV_ANY_I})
 		local
 			a_toolbar_button_imp: EV_TOOL_BAR_BUTTON_IMP
 			a_radio_button_imp: EV_TOOL_BAR_RADIO_BUTTON_IMP
@@ -90,6 +92,40 @@ feature -- Implementation
 			end
 		end
 
+	window_state_intermediary (a_object_id: INTEGER; n_args: INTEGER; args: POINTER) is
+			-- The window state of the window `a_object_id' has changed
+		local
+			gdk_event: POINTER
+			window_flags: INTEGER
+			titled_window_imp: EV_TITLED_WINDOW_IMP
+		do
+			titled_window_imp ?= eif_id_object (a_object_id)
+			gdk_event := {EV_GTK_DEPENDENT_EXTERNALS}.gtk_value_pointer (args)
+			window_flags := {EV_GTK_DEPENDENT_EXTERNALS}.gdk_event_window_state_struct_new_window_state (gdk_event)
+			if titled_window_imp /= Void and then not titled_window_imp.is_destroyed then
+				if window_flags & {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_iconified_enum = {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_iconified_enum then
+					--print ("Window minimized%N")
+					titled_window_imp.call_window_state_event ({EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_iconified_enum)
+				elseif window_flags & {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_maximized_enum = {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_maximized_enum then
+					--print ("Window maximized%N")
+					titled_window_imp.call_window_state_event ({EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_maximized_enum)
+				elseif window_flags & {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_above_enum = {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_above_enum then
+					--print ("Window above%N")
+				elseif window_flags & {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_below_enum = {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_below_enum then
+					--print ("Window below%N")
+				elseif window_flags & {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_sticky_enum = {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_sticky_enum then
+					--print ("Window sticky%N")
+				elseif window_flags & {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_fullscreen_enum = {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_fullscreen_enum then
+					--print ("Window fullscreen%N")
+				elseif window_flags & {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_withdrawn_enum = {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_withdrawn_enum then
+					--print ("Window withdrawn%N")
+				else
+					--print ("Window restored%N")
+					titled_window_imp.call_window_state_event ({EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_iconified_enum | {EV_GTK_DEPENDENT_EXTERNALS}.gdk_window_state_maximized_enum)
+				end
+			end
+		end
+
 	tree_row_expansion_change_intermediary (a_object_id: INTEGER; is_expanded: BOOLEAN; nargs: INTEGER; args: POINTER) is
 			-- Used for calling expansion actions for tree nodes
 		local
@@ -128,6 +164,21 @@ feature -- Implementation
 			end
 		end
 
+	scroll_wheel_translate (n: INTEGER; args: POINTER): TUPLE is
+			-- Transform scroll wheel event
+		local
+			scroll_event: POINTER
+			button_number: INTEGER
+		do
+			scroll_event := {EV_GTK_DEPENDENT_EXTERNALS}.gtk_value_pointer (args)
+			if {EV_GTK_DEPENDENT_EXTERNALS}.gdk_event_scroll_struct_scroll_direction (scroll_event) = {EV_GTK_DEPENDENT_EXTERNALS}.gdk_scroll_up_enum then
+				button_number := 4
+			else
+				button_number := 5
+			end
+			Result := [{EV_GTK_EXTERNALS}.GDK_BUTTON_PRESS_ENUM, 0, 0, button_number, 0.5, 0.5, 0.5, 0, 0]
+		end
+
 	page_switch_translate (n: INTEGER; args: POINTER): TUPLE is
 			-- Retrieve index of switched page.
 		local
@@ -154,7 +205,7 @@ feature -- Implementation
 			a_combo: EV_COMBO_BOX_IMP
 		do
 			a_combo ?= eif_id_object (a_object_id)
-			if a_combo /= Void and then a_combo.parent_imp /= Void and then not a_combo.is_destroyed then
+			if a_combo /= Void and then not a_combo.is_destroyed then
 				inspect
 					a_event_id
 				when 1 then

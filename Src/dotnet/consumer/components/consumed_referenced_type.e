@@ -8,6 +8,12 @@ indexing
 class
 	CONSUMED_REFERENCED_TYPE
 
+inherit
+	ANY
+		redefine
+			is_equal
+		end
+
 create
 	make
 
@@ -66,12 +72,12 @@ feature {NONE} -- Access
 	i: INTEGER
 			-- Internal data for `assembly_id'.
 
-feature -- Comparison
+feature {CONSUMED_ARGUMENT, OVERLOAD_SOLVER, CONSUMED_REFERENCED_TYPE, CONSUMED_TYPE} -- Comparison
 
-	same_as (other: CONSUMED_REFERENCED_TYPE): BOOLEAN is
+	is_equal (other: CONSUMED_REFERENCED_TYPE): BOOLEAN is
 			-- Only compare referenced types from same assembly as ids may change for other assemblies!
 		do
-			Result := other.assembly_id = assembly_id and other.name.is_equal (name) and
+			Result := other.name.is_equal (name) and other.assembly_id = assembly_id and
 				other.is_by_ref = is_by_ref
 		end
 

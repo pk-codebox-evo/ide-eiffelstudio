@@ -12,7 +12,6 @@ inherit
 	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
 		redefine
 			new_toolbar_item,
-			new_sd_toolbar_item,
 			tooltext
 		end
 
@@ -49,16 +48,6 @@ feature {NONE} -- Initialization
 feature -- Access
 
 	new_toolbar_item (display_text: BOOLEAN): EB_COMMAND_TOOL_BAR_BUTTON is
-			-- Redefine
-		do
-			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND} (display_text)
-			Result.pointer_button_press_actions.put_front (agent button_right_click_action)
-			Result.drop_actions.extend (agent on_drop)
-			Result.drop_actions.set_veto_pebble_function (agent dropable)
-		end
-
-	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Redefine
 		do
 			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND} (display_text)
 			Result.pointer_button_press_actions.put_front (agent button_right_click_action)
@@ -72,8 +61,7 @@ feature -- Basic operations
 			-- Open the Project configuration window.
 		local
 			rescued: BOOLEAN
-			ed: EB_ERROR_DIALOG
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 			l_debugs: SEARCH_TABLE [STRING]
 			l_sorted_debugs: DS_ARRAYED_LIST [STRING]
 			l_fact: CONF_COMP_FACTORY
@@ -88,23 +76,16 @@ feature -- Basic operations
 					config_windows.search (l_config)
 					if config_windows.found and then config_windows.found_item.is_show_requested then
 						configuration_window := config_windows.found_item
-						configuration_window.raise
+						configuration_window.bring_to_front
 					else
 						create l_fact
 						create l_load.make (l_fact)
 						l_load.retrieve_configuration (l_config)
 						if l_load.is_error then
-							create ed.make_with_text (l_load.last_error.out)
-							ed.set_buttons (<<interface_names.b_ok>>)
-							ed.show_modal_to_window (window_manager.
+							create wd.make_with_text (l_load.last_error.out)
+							wd.show_modal_to_window (window_manager.
 								last_focused_development_window.window)
 						else
-								-- display warnings
-							if l_load.is_warning then
-								create wd.make_with_text (l_load.last_warning_messages)
-								wd.show_modal_to_window (window_manager.
-									last_focused_development_window.window)
-							end
 								-- sort debugs
 							if workbench.system_defined then
 								l_debugs := system.debug_clauses
@@ -128,15 +109,12 @@ feature -- Basic operations
 							if configuration_window /= Void and then not configuration_window.is_canceled and configuration_window.conf_system.file_date = l_load.last_system.file_date then
 								configuration_window.set_debugs (l_sorted_debugs)
 							else
-								create configuration_window.make_for_target (l_load.last_system, lace.target_name , l_fact, l_sorted_debugs, pixmaps, agent (preferences.misc_data).external_editor_cli)
+								l_load.last_system.targets.start
+								l_load.last_system.set_application_target (l_load.last_system.targets.item_for_iteration)
+								create configuration_window.make (l_load.last_system, l_fact, l_sorted_debugs)
 							end
 
-							configuration_window.set_size (preferences.dialog_data.project_settings_width, preferences.dialog_data.project_settings_height)
-							configuration_window.set_position (preferences.dialog_data.project_settings_position_x, preferences.dialog_data.project_settings_position_y)
-							configuration_window.set_split_position (preferences.dialog_data.project_settings_split_position)
-
 --							configuration_window.show_modal_to_window (window_manager.last_focused_development_window.window)
-							configuration_window.hide_actions.extend (agent on_hide_window (configuration_window))
 							configuration_window.show
 						end
 					end
@@ -152,71 +130,58 @@ feature -- Basic operations
 
 feature {NONE} -- Actions
 
-	on_drop (a_stone: STONE) is
+	on_drop (a_stone: CLUSTER_STONE) is
 			-- If we have a group stone for an editable library, edit this library.
 		require
 			a_stone_not_void: a_stone /= Void
 		local
 			l_lib: CONF_LIBRARY
-			ed: EB_ERROR_DIALOG
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 			l_sorted_debugs: DS_ARRAYED_LIST [STRING]
 			l_fact: CONF_COMP_FACTORY
 			l_load: CONF_LOAD
 			l_config: STRING
-			l_stone: CLUSTER_STONE
 		do
-			l_stone ?= a_stone
-			if l_stone /= Void and then l_stone.group.is_library then
-				l_lib ?= l_stone.group
+			if a_stone.group.is_library then
+				l_lib ?= a_stone.group
 				check
 					library: l_lib /= Void
 				end
-				l_config := l_lib.library_target.system.file_name
-				config_windows.search (l_config)
-				if config_windows.found and then config_windows.found_item.is_show_requested then
-					configuration_window := config_windows.found_item
-					configuration_window.raise
-				else
-					create l_fact
-					create l_load.make (l_fact)
-					l_load.retrieve_configuration (l_config)
-					if l_load.is_error then
-						create ed.make_with_text (l_load.last_error.out)
-						ed.set_buttons (<<interface_names.b_ok>>)
-						ed.show_modal_to_window (window_manager.
-							last_focused_development_window.window)
+				if not l_lib.is_readonly then
+					l_config := l_lib.library_target.system.file_name
+					config_windows.search (l_config)
+					if config_windows.found and then config_windows.found_item.is_show_requested then
+						configuration_window := config_windows.found_item
+						configuration_window.bring_to_front
 					else
-							-- display warnings
-						if l_load.is_warning then
-							create wd.make_with_text (l_load.last_warning_messages)
+						create l_fact
+						create l_load.make (l_fact)
+						l_load.retrieve_configuration (l_config)
+						if l_load.is_error then
+							create wd.make_with_text (l_load.last_error.out)
 							wd.show_modal_to_window (window_manager.
 								last_focused_development_window.window)
+						else
+							create l_sorted_debugs.make_default
+							l_load.last_system.targets.start
+							l_load.last_system.set_application_target (l_load.last_system.targets.item_for_iteration)
+							create configuration_window.make (l_load.last_system, l_fact, l_sorted_debugs)
+--							configuration_window.show_modal_to_window (window_manager.last_focused_development_window.window)
+							configuration_window.show
 						end
-
-						create l_sorted_debugs.make_default
-						create configuration_window.make_for_target (l_load.last_system, lace.target_name,
-							l_fact, l_sorted_debugs, pixmaps, agent (preferences.misc_data).external_editor_cli)
-
-						configuration_window.set_size (preferences.dialog_data.project_settings_width, preferences.dialog_data.project_settings_height)
-						configuration_window.set_position (preferences.dialog_data.project_settings_position_x, preferences.dialog_data.project_settings_position_y)
-						configuration_window.set_split_position (preferences.dialog_data.project_settings_split_position)
-
-						configuration_window.hide_actions.extend (agent on_hide_window (configuration_window))
-						configuration_window.show
 					end
 				end
 			end
 		end
 
-	dropable (a_stone: STONE): BOOLEAN is
+	dropable (a_stone: CLUSTER_STONE): BOOLEAN is
 			-- Can `st' be dropped on `Current'?
-		local
-			l_stone: CLUSTER_STONE
+		require
+			a_stone_not_void: a_stone /= Void
 		do
-			l_stone ?= a_stone
-			Result := l_stone /= Void and then l_stone.group.is_library
+			Result := a_stone.group.is_library and then not a_stone.group.is_readonly
 		end
+
 
 feature {NONE} -- Implementation
 
@@ -239,31 +204,25 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.tool_config_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.tool_config_icon_buffer
-		end
-
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Description for command
 		do
 			Result := Interface_names.e_Project_settings
 		end
 
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for toolbar button
 		do
 			Result := Interface_names.e_Project_settings
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Tooltip for toolbar button
 		do
 			Result := Interface_names.b_Project_settings
 		end
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 		do
 			Result := Interface_names.m_System_new
 		end
@@ -272,25 +231,16 @@ feature {NONE} -- Implementation
 			-- Show the ace file in editor.
 		local
 			cmd_exec: COMMAND_EXECUTOR
+			cmd_string: STRING
 		do
 			if a_button = 3 and is_sensitive then
-				create cmd_exec
-				cmd_exec.execute (preferences.misc_data.external_editor_cli (eiffel_ace.lace.file_name, 1))
-			end
-		end
-
-	on_hide_window (a_window: CONFIGURATION_WINDOW) is
-			-- A configuration window was hidden, store layout values of `a_window' into the preferences, set changed if user pressed ok.
-		require
-			a_window_not_void: a_window /= Void
-		do
-			preferences.dialog_data.project_settings_width_preference.set_value (a_window.width)
-			preferences.dialog_data.project_settings_height_preference.set_value (a_window.height)
-			preferences.dialog_data.project_settings_position_x_preference.set_value (a_window.x_position)
-			preferences.dialog_data.project_settings_position_y_preference.set_value (a_window.y_position)
-			preferences.dialog_data.project_settings_split_position_preference.set_value (a_window.split_position)
-			if not a_window.is_canceled then
-				workbench.set_changed
+				cmd_string := preferences.misc_data.external_editor_command.twin
+				if not cmd_string.is_empty then
+					cmd_string.replace_substring_all ("$target", eiffel_ace.lace.file_name)
+					cmd_string.replace_substring_all ("$line", "0")
+					create cmd_exec
+					cmd_exec.execute (cmd_string)
+				end
 			end
 		end
 

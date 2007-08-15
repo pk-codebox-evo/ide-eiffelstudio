@@ -25,11 +25,6 @@ feature {NONE} -- Implementation
 
 feature -- Event handling
 
-	file_drop_actions: EV_LITE_ACTION_SEQUENCE [TUPLE [LIST [STRING_32]]] is
-			-- Actions to be performed when an OS file drop is performed on `Current'.
-		do
-			Result := implementation.file_drop_actions
-		end
 
 	pointer_motion_actions: EV_POINTER_MOTION_ACTION_SEQUENCE is
 			-- Actions to be performed when screen pointer moves.
@@ -39,6 +34,7 @@ feature -- Event handling
 			not_void: Result /= Void
 		end
 
+
 	pointer_button_press_actions: EV_POINTER_BUTTON_ACTION_SEQUENCE is
 			-- Actions to be performed when screen pointer button is pressed.
 		do
@@ -46,6 +42,7 @@ feature -- Event handling
 		ensure
 			not_void: Result /= Void
 		end
+
 
 	pointer_double_press_actions: EV_POINTER_BUTTON_ACTION_SEQUENCE is
 			-- Actions to be performed when screen pointer is double clicked.
@@ -55,6 +52,7 @@ feature -- Event handling
 			not_void: Result /= Void
 		end
 
+
 	pointer_button_release_actions: EV_POINTER_BUTTON_ACTION_SEQUENCE is
 			-- Actions to be performed when screen pointer button is released.
 		do
@@ -62,6 +60,7 @@ feature -- Event handling
 		ensure
 			not_void: Result /= Void
 		end
+
 
 	pointer_enter_actions: EV_NOTIFY_ACTION_SEQUENCE is
 			-- Actions to be performed when screen pointer enters widget.
@@ -71,6 +70,7 @@ feature -- Event handling
 			not_void: Result /= Void
 		end
 
+
 	pointer_leave_actions: EV_NOTIFY_ACTION_SEQUENCE is
 			-- Actions to be performed when screen pointer leaves widget.
 		do
@@ -78,7 +78,7 @@ feature -- Event handling
 		ensure
 			not_void: Result /= Void
 		end
-
+		
 	mouse_wheel_actions: EV_INTEGER_ACTION_SEQUENCE is
 			-- Actions to be performed when mouse wheel is rotated.
 		do
@@ -95,6 +95,7 @@ feature -- Event handling
 			not_void: Result /= Void
 		end
 
+
 	key_press_string_actions: EV_KEY_STRING_ACTION_SEQUENCE is
 			-- Actions to be performed when a keyboard press generates a displayable character.
 		do
@@ -103,6 +104,7 @@ feature -- Event handling
 			not_void: Result /= Void
 		end
 
+
 	key_release_actions: EV_KEY_ACTION_SEQUENCE is
 			-- Actions to be performed when a keyboard key is released.
 		do
@@ -110,6 +112,7 @@ feature -- Event handling
 		ensure
 			not_void: Result /= Void
 		end
+		
 
 	focus_in_actions: EV_NOTIFY_ACTION_SEQUENCE is
 			-- Actions to be performed when keyboard focus is gained.
@@ -119,6 +122,7 @@ feature -- Event handling
 			not_void: Result /= Void
 		end
 
+
 	focus_out_actions: EV_NOTIFY_ACTION_SEQUENCE is
 			-- Actions to be performed when keyboard focus is lost.
 		do
@@ -126,6 +130,7 @@ feature -- Event handling
 		ensure
 			not_void: Result /= Void
 		end
+
 
 	resize_actions: EV_GEOMETRY_ACTION_SEQUENCE is
 			-- Actions to be performed when size changes.
@@ -146,4 +151,8 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
+
+
+
 end
+

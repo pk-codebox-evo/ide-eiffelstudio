@@ -77,29 +77,25 @@ feature -- Execution
 		local
 			printer: EB_PRINTER
 			l_txt_gen: EB_PRINTER_TEXT_GENERATOR
-			l_editor: EB_CLICKABLE_EDITOR
 		do
-			l_editor := dev_window.editors_manager.current_editor
-			if l_editor /= Void then
-				create l_txt_gen.make (l_editor)
-				if not dev_window.is_empty then
-					create printer.make
-					printer.set_text (l_txt_gen.text_for_printing)
-					printer.set_window (dev_window.window)
-					printer.set_job_name (dev_window.stone.history_name)
-					if not use_external_editor then
-						printer.ask_and_print
-					else
-						printer.set_external_command (external_editor)
-						printer.print_via_command
-					end
+			create l_txt_gen.make (dev_window.editor_tool.text_area)
+			if not dev_window.is_empty then
+				create printer.make
+				printer.set_text (l_txt_gen.text_for_printing)
+				printer.set_window (dev_window.window)
+				printer.set_job_name (dev_window.stone.history_name)
+				if not use_external_editor then
+					printer.ask_and_print
+				else
+					printer.set_external_command (external_editor)
+					printer.print_via_command
 				end
 			end
 		end
 
 feature {NONE} -- Implementation
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it appears in the menu (with & symbol).
 		do
 			Result := Interface_names.m_Print
@@ -111,25 +107,19 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.general_print_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.general_print_icon_buffer
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.f_Print
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text for the toolbar button.
 		do
 			Result := Interface_names.b_Print
 		end
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.e_Print
@@ -155,9 +145,9 @@ feature {NONE} -- Implementation
 			end
 		end
 
-feature {NONE} -- Recyclable
+feature -- Recyclable
 
-	internal_recycle is
+	recycle is
 			-- Recycle
 		do
 			dev_window := Void
@@ -166,7 +156,6 @@ feature {NONE} -- Recyclable
 feature {NONE} -- implementation
 
 	saved: BOOLEAN
-			-- If saved?
 
 	save_to_file (a_text: STRING; a_filename: STRING) is
 			-- Save `a_text' in `a_filename'.
@@ -176,7 +165,7 @@ feature {NONE} -- implementation
 		local
 			char: CHARACTER
 			new_file: PLAIN_TEXT_FILE
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 		do
 			saved := False
 			if not a_filename.is_empty then

@@ -13,8 +13,6 @@ inherit
 		redefine
 			make,
 			make_hidden,
-			create_option,
-			create_value_option,
 			value_validator
 		end
 
@@ -26,12 +24,10 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_id: like id; a_desc: like description; a_optional: like optional; a_allow_mutliple: like allow_multiple; a_arg_name: like arg_name; a_arg_desc: like arg_description; a_val_optional: like is_value_optional) is
+	make (a_name: like name; a_desc: like description; a_optional: like optional; a_allow_mutliple: like allow_multiple; a_arg_name: like arg_name; a_arg_desc: like arg_description; a_val_optional: like is_value_optional) is
 			-- Initialize a new value option.
-			--
-			-- Note: To use long and short names set name `a_id' := "s|long"
 		do
-			Precursor {ARGUMENT_VALUE_SWITCH}(a_id, a_desc, a_optional, a_allow_mutliple, a_arg_name, a_arg_desc, a_val_optional)
+			Precursor {ARGUMENT_VALUE_SWITCH}(a_name, a_desc, a_optional, a_allow_mutliple, a_arg_name, a_arg_desc, a_val_optional)
 			min := {INTEGER_64}.min_value
 			max := {INTEGER_64}.max_value
 		ensure then
@@ -39,34 +35,29 @@ feature {NONE} -- Initialization
 			max_set: max = {INTEGER_64}.max_value
 		end
 
-	make_hidden (a_id: like id; a_desc: like description; a_optional: like optional; a_allow_mutliple: like allow_multiple; a_arg_name: like arg_name; a_arg_desc: like arg_description; a_val_optional: like is_value_optional) is
+	make_hidden (a_name: like name; a_desc: like description; a_optional: like optional; a_allow_mutliple: like allow_multiple; a_arg_name: like arg_name; a_arg_desc: like arg_description; a_val_optional: like is_value_optional) is
 			-- Initialize a new value option.
-			--
-			-- Note: To use long and short names set name `a_id' := "s|long"			
 		do
-			Precursor {ARGUMENT_VALUE_SWITCH}(a_id, a_desc, a_optional, a_allow_mutliple, a_arg_name, a_arg_desc, a_val_optional)
+			Precursor {ARGUMENT_VALUE_SWITCH}(a_name, a_desc, a_optional, a_allow_mutliple, a_arg_name, a_arg_desc, a_val_optional)
 		ensure then
 			min_set: min = {INTEGER_64}.min_value
 			max_set: max = {INTEGER_64}.max_value
 		end
 
-	make_with_range (a_id: like id; a_desc: like description; a_optional: like optional; a_allow_mutliple: like allow_multiple; a_arg_name: like arg_name; a_arg_desc: like arg_description; a_val_optional: like is_value_optional a_min: like min; a_max: like max) is
+	make_with_range (a_name: like name; a_desc: like description; a_optional: like optional; a_allow_mutliple: like allow_multiple; a_arg_name: like arg_name; a_arg_desc: like arg_description; a_val_optional: like is_value_optional a_min: like min; a_max: like max) is
 			-- Initialize a new value option.
-			--
-			-- Note: To use long and short names set name `a_id' := "s|long"
 		require
-			a_id_attached: a_id /= Void
-			not_a_id_is_empty: not a_id.is_empty
-			a_id_is_valid_id: is_valid_id (a_id)
+			a_name_attached: a_name /= Void
+			not_a_name_is_empty: not a_name.is_empty
 			a_desc_attached: a_desc /= Void
 			not_a_desc_is_empty: not a_desc.is_empty
 			a_min_less_than_max: a_min < a_max
 		do
-			make (a_id, a_desc, a_optional, a_allow_mutliple, a_arg_name, a_arg_desc, a_val_optional)
+			make (a_name, a_desc, a_optional, a_allow_mutliple, a_arg_name, a_arg_desc, a_val_optional)
 			min := a_min
 			max := a_max
 		ensure
-			id_set: id = a_id
+			name_set: name = a_name
 			description_set: description = a_desc
 			optional: optional = a_optional
 			arg_name_set: arg_name = a_arg_name
@@ -78,22 +69,19 @@ feature {NONE} -- Initialization
 			not_is_hidden: not is_hidden
 		end
 
-	make_hidden_with_range (a_id: like id; a_desc: like description; a_optional: like optional; a_allow_mutliple: like allow_multiple; a_arg_name: like arg_name; a_arg_desc: like arg_description; a_val_optional: like is_value_optional; a_min: like min; a_max: like max) is
+	make_hidden_with_range (a_name: like name; a_desc: like description; a_optional: like optional; a_allow_mutliple: like allow_multiple; a_arg_name: like arg_name; a_arg_desc: like arg_description; a_val_optional: like is_value_optional; a_min: like min; a_max: like max) is
 			-- Initialize a new value option.
-			--
-			-- Note: To use long and short names set name `a_id' := "s|long"
 		require
-			a_id_attached: a_id /= Void
-			not_a_id_is_empty: not a_id.is_empty
-			a_id_is_valid_id: is_valid_id (a_id)
+			a_name_attached: a_name /= Void
+			not_a_name_is_empty: not a_name.is_empty
 			a_desc_attached: a_desc /= Void
 			not_a_desc_is_empty: not a_desc.is_empty
 			a_min_less_than_max: a_min < a_max
 		do
-			make_with_range (a_id, a_desc, a_optional, a_allow_mutliple, a_arg_name, a_arg_desc, a_val_optional, a_min, a_max)
+			make_with_range (a_name, a_desc, a_optional, a_allow_mutliple, a_arg_name, a_arg_desc, a_val_optional, a_min, a_max)
 			is_hidden := True
 		ensure
-			name_set: name = a_id
+			name_set: name = a_name
 			description_set: description = a_desc
 			optional: optional = a_optional
 			arg_name_set: arg_name = a_arg_name
@@ -131,20 +119,6 @@ feature -- Element change
 		ensure
 			min_set: min = a_min
 			max_set: max = a_max
-		end
-
-feature {ARGUMENT_BASE_PARSER} -- Factory Functions
-
-	create_option: ARGUMENT_INTEGER_OPTION is
-			-- Creates a new argument option for switch
-		do
-			create Result.make_with_value (Void, Current)
-		end
-
-	create_value_option (a_value: STRING): ARGUMENT_INTEGER_OPTION is
-			-- Creates a new argument option given a value `a_value'
-		do
-			create Result.make_with_value (a_value, Current)
 		end
 
 invariant

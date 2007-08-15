@@ -14,7 +14,6 @@ inherit
 			c_type,
 			conforms_to_array,
 			created_in,
-			external_id,
 			full_type_byte_code_type_id,
 			generate_cid,
 			generate_cid_array,
@@ -23,7 +22,7 @@ inherit
 			generate_expanded_creation,
 			generate_expanded_initialization,
 			generated_id,
-			internal_generic_derivation,
+			generic_derivation,
 			instantiated_description,
 			instantiation_in,
 			is_expanded,
@@ -97,22 +96,12 @@ feature -- Access
 			Result := System.class_of_id (class_id)
 		end
 
-	internal_generic_derivation (a_level: INTEGER): CL_TYPE_I is
+	generic_derivation: CL_TYPE_I is
 			-- Precise generic derivation of current type.
 			-- That is to say given a type, it gives the associated TYPE_I
 			-- which can be used to search its associated CLASS_TYPE.
-		local
-			c: like cr_info
 		do
-			c := cr_info
-			if c = Void then
-				Result := Current
-			else
-					-- Remove creation information.
-				cr_info := Void
-				Result := twin
-				cr_info := c
-			end
+			Result := Current
 		end
 
 	type_a: CL_TYPE_A is
@@ -169,6 +158,7 @@ feature -- Access
 			-- Class name of current type.
 		local
 			l_class_c: like base_class
+			l_is_precompiled: BOOLEAN
 			l_cl_type: like associated_class_type
 			l_alias_name: STRING
 			l_dot_pos: INTEGER
@@ -177,15 +167,17 @@ feature -- Access
 			if is_external then
 				Result := l_class_c.external_class_name.twin
 			else
-				if l_class_c.is_precompiled then
+				l_is_precompiled := l_class_c.is_precompiled
+				if l_is_precompiled then
 						-- Reuse the name that was computed at precompilation time.
 					l_cl_type := associated_class_type
-					if l_cl_type.is_precompiled then
+					l_is_precompiled := l_cl_type.is_precompiled
+					if l_is_precompiled then
 						Result := l_cl_type.il_type_name (a_prefix)
 					end
 				end
-				if Result = Void then
-					if not has_no_mark or else is_basic or else l_class_c.external_class_name.is_equal (l_class_c.name) then
+				if not l_is_precompiled then
+					if l_class_c.external_class_name.is_equal (l_class_c.name) then
 						Result := internal_il_type_name (l_class_c.name.twin, a_prefix)
 					else
 							-- Special case when an external name has been specified.
@@ -288,12 +280,6 @@ feature -- Access
 			Result := associated_class_type.static_type_id
 		end
 
-	external_id: INTEGER is
-			-- External type id of `Current' (or `static_type_id' for pure Eiffel type).
-		do
-			Result := associated_class_type.external_id
-		end
-
 	sk_value: INTEGER is
 			-- Generate SK value associated to the current type.
 		do
@@ -308,34 +294,6 @@ feature -- Access
 			-- Hash code for current type
 		do
 			Result := Other_code + class_id
-		end
-
-feature -- Type evaluation
-
-	implemented_type (implemented_in: INTEGER): CL_TYPE_I is
-			-- Parent type that corresponds to the current one.
-		require
-			valid_implemented_in: implemented_in > 0
-		local
-			written_class: CLASS_C
-		do
-				-- If it is defined in current class, that's easy and we
-				-- return `current_type'. Otherwise we have to find the
-				-- correct CLASS_TYPE object where it is implemented.
-			if class_id = implemented_in then
-				Result := Current
-			else
-				written_class := System.class_of_id (implemented_in)
-					-- We go through the hierarchy only when `written_class'
-					-- is generic, otherwise for the most general case where
-					-- `written_class' is not generic it will take a long
-					-- time to go through the inheritance hierarchy.
-				if written_class.types.count > 1 then
-					Result := type_a.find_class_type (written_class).type_i
-				else
-					Result := written_class.types.first.type
-				end
-			end
 		end
 
 feature -- Status
@@ -434,7 +392,7 @@ feature -- Status
 				-- All Eiffel basic types are externals, and only basic types used
 				-- as reference are not external.
 			l_base_class := base_class
-			Result := l_base_class.is_external and then not l_base_class.is_basic
+			Result := is_basic or (not l_base_class.is_basic and l_base_class.is_external)
 		end
 
 	is_frozen: BOOLEAN is
@@ -533,7 +491,7 @@ feature -- Setting
 			-- Set `cr_info' to `cinfo'.
 		require
 			create_info_not_void: cinfo /= Void
-			not_expanded: not is_expanded or else cinfo.is_equal (create {CREATE_CURRENT})
+			not_expanded: not is_expanded
 		do
 			cr_info := cinfo
 		ensure
@@ -742,12 +700,10 @@ feature {NONE} -- Implementation
 			internal_il_base_type_name_not_empty: not Result.is_empty
 		end
 
-feature {CL_TYPE_A, TUPLE_CLASS_B, CIL_CODE_GENERATOR} -- Implementation: class type declaration marks
+feature {CL_TYPE_A, TUPLE_CLASS_B} -- Implementation: class type declaration marks
 
 	declaration_mark: NATURAL_8
 			-- Declaration mark associated with a class type (if any)
-
-feature {CL_TYPE_A, TUPLE_CLASS_B} -- Implementation: class type declaration marks
 
 	set_mark (mark: like declaration_mark) is
 			-- Set `declaration_mark' to the given value `mark'.

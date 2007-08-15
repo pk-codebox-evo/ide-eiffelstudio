@@ -38,7 +38,7 @@ feature {NONE} -- Initialization
 			a_name_ok: a_name /= Void
 		do
 			name := a_name
-			create {STRING_32}description.make_empty
+			create description.make_empty
 			default_create
 			pointer_button_press_actions.extend (agent check_right_click)
 		ensure
@@ -54,10 +54,10 @@ feature {NONE} -- Initialization
 
 feature  -- Access
 
-	name: STRING_GENERAL
+	name: STRING
 			-- Name of the property.
 
-	description: STRING_GENERAL
+	description: STRING
 			-- Description of the property.
 
 	is_inherited: BOOLEAN

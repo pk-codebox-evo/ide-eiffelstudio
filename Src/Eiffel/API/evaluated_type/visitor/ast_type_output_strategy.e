@@ -106,13 +106,6 @@ feature {TYPE_A} -- Visitors
 		local
 			l_class: CLASS_C
 		do
-			if a_type.has_attached_mark then
-				text_formatter.process_symbol_text (ti_exclamation)
-				text_formatter.add_space
-			elseif a_type.has_detachable_mark then
-				text_formatter.process_symbol_text (ti_question)
-				text_formatter.add_space
-			end
 			if a_type.has_expanded_mark then
 				text_formatter.process_keyword_text (ti_expanded_keyword, Void)
 				text_formatter.add_space
@@ -136,7 +129,7 @@ feature {TYPE_A} -- Visitors
 	process_formal_a (a_type: FORMAL_A) is
 			-- Process `a_type'.
 		do
-			text_formatter.process_generic_text (current_class.generics.i_th (a_type.position).name.name.as_upper)
+			text_formatter.process_generic_text (current_class.generics.i_th (a_type.position).name.as_upper)
 		end
 
 	process_gen_type_a (a_type: GEN_TYPE_A) is
@@ -179,13 +172,6 @@ feature {TYPE_A} -- Visitors
 	process_like_argument (a_type: LIKE_ARGUMENT) is
 			-- Process `a_type'.
 		do
-			if a_type.has_attached_mark then
-				text_formatter.process_symbol_text (ti_exclamation)
-				text_formatter.add_space
-			elseif a_type.has_detachable_mark then
-				text_formatter.process_symbol_text (ti_question)
-				text_formatter.add_space
-			end
 			text_formatter.process_keyword_text (ti_like_keyword, Void)
 			text_formatter.add_space
 			if current_feature /= Void and then current_feature.argument_count <= a_type.position then
@@ -199,13 +185,6 @@ feature {TYPE_A} -- Visitors
 	process_like_current (a_type: LIKE_CURRENT) is
 			-- Process `a_type'.
 		do
-			if a_type.has_attached_mark then
-				text_formatter.process_symbol_text (ti_exclamation)
-				text_formatter.add_space
-			elseif a_type.has_detachable_mark then
-				text_formatter.process_symbol_text (ti_question)
-				text_formatter.add_space
-			end
 			text_formatter.process_keyword_text (ti_like_keyword, Void)
 			text_formatter.add_space
 			text_formatter.process_keyword_text (ti_current, Void)
@@ -216,13 +195,6 @@ feature {TYPE_A} -- Visitors
 		local
 			l_feat: E_FEATURE
 		do
-			if a_type.has_attached_mark then
-				text_formatter.process_symbol_text (ti_exclamation)
-				text_formatter.add_space
-			elseif a_type.has_detachable_mark then
-				text_formatter.process_symbol_text (ti_question)
-				text_formatter.add_space
-			end
 			text_formatter.process_keyword_text (ti_like_keyword, Void)
 			text_formatter.add_space
 			l_feat := current_class.feature_with_rout_id (a_type.routine_id)
@@ -320,19 +292,6 @@ feature {TYPE_A} -- Visitors
 			process_cl_type_a (a_type)
 		end
 
-	process_renamed_type_a (a_type: RENAMED_TYPE_A [TYPE_A]) is
-			-- Process `a_type'.
-		do
-			a_type.type.append_to (text_formatter)
-			if a_type.has_renaming then
-				if a_type.has_associated_class then
-						a_type.renaming.append_to_with_pebbles (text_formatter, a_type.associated_class)
-				else
-					a_type.renaming.append_to (text_formatter)
-				end
-			end
-		end
-
 	process_tuple_type_a (a_type: TUPLE_TYPE_A) is
 			-- Process `a_type'.
 		do
@@ -368,7 +327,7 @@ feature {TYPE_A} -- Visitors
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

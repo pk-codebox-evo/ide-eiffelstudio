@@ -21,32 +21,20 @@ feature {NONE}  -- Initlization
 		require
 			not_void: a_widget /= Void
 		do
-			make_with_shadow
-			disable_user_resize
+			default_create
 			focus_out_actions.extend (agent on_focus_out)
-			create internal_shared
-			create {EV_VERTICAL_BOX} top_box
-			top_box.set_border_width (internal_shared.border_width)
-			top_box.set_background_color (internal_shared.border_color)
-			extend (top_box)
 
 			if a_widget.parent /= Void then
 				a_widget.parent.prune (a_widget)
 			end
-			top_box.extend (a_widget)
+			extend (a_widget)
 		end
-
-	top_box: EV_BOX
-			-- Top level box.
 
 	on_focus_out is
 			-- Handle focus out actions.
 		do
 			destroy
 		end
-
-	internal_shared: SD_SHARED;
-			-- ALl singletons.
 
 indexing
 	library:	"SmartDocking: Library of reusable components for Eiffel."

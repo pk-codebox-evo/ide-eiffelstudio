@@ -38,13 +38,11 @@ feature {NONE} -- Constants
 		do
 			create shared_eiffel
 			l_options := shared_eiffel.eiffel_ace.lace.user_options.target
-
 			if l_options /= Void and then (l_options.working_directory /= Void and then not l_options.working_directory.is_empty) then
 					-- If it contains some environment variables, they are translated.			
 				Result := (create {ENV_INTERP}).interpreted_string (l_options.working_directory)
 			else
-					--| Default working directory
-				Result := shared_eiffel.Eiffel_project.lace.directory_name
+				Result := shared_eiffel.Eiffel_project.project_location.location
 			end
 			Result := Result.twin
 			Result.right_adjust
@@ -68,20 +66,6 @@ feature {NONE} -- Constants
 			end
 		ensure
 			application_working_directory_not_void: Result /= Void
-		end
-
-	application_environment_variables: HASH_TABLE [STRING_32, STRING_32] is
-			-- Current environment selected for running application.
-		local
-			shared_eiffel: SHARED_EIFFEL_PROJECT
-			l_options: TARGET_USER_OPTIONS
-		do
-			create shared_eiffel
-			l_options := shared_eiffel.eiffel_ace.lace.user_options.target
-			if l_options /= Void and then (l_options.dbg_environment /= Void and then not l_options.dbg_environment.is_empty) then
-					-- If it contains some environment variables, they are translated.			
-				Result := l_options.dbg_environment.twin
-			end
 		end
 
 indexing

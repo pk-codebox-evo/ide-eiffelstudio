@@ -127,6 +127,7 @@ struct cnode {
 #define SK_UINT32	0x38000000			/* Simple unsigned integer 32 type */
 #define SK_UINT64	0x3c000000			/* Simple unsigned integer 64 type */
 #define SK_POINTER	0x40000000			/* Simple pointer type */
+#define SK_CHAR32	0x44000000			/* Simple 32 bits character type */
 #define SK_BMASK	0x00007fff			/* Bits number (coded on 15 bits) */
 #define SK_SIMPLE	0x7c000000			/* Mask to test for simple type */
 #define SK_REF		0xf8000000			/* Mask to test for reference type */
@@ -159,8 +160,7 @@ RT_LNK int scount;				/* Numner of dynamic types */
 
 #ifdef WORKBENCH
 struct desc_info {						/* Descriptor information */
-	BODY_INDEX body_index;					/* Body index */
-	BODY_INDEX offset;					/* Attribute offset */
+	BODY_INDEX info;					/* Body index or attribute offset */
 	int16 type;							/* Feature type */
 	int16 *gen_type;					/* Generics, if any */
 };
@@ -194,7 +194,7 @@ RT_LNK uint32 eif_nb_org_routines;
 #define INVARIANT_ID	1
 
 struct p_interface {
-	void (*toc)(fnptr);		/* Pattern from interpreter to C code */
+	void (*toc)();		/* Pattern from interpreter to C code */
 	fnptr toi;			/* Pattern from C code to interpreter */
 };
 

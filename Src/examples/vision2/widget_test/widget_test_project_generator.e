@@ -13,17 +13,16 @@ class
 	WIDGET_TEST_PROJECT_GENERATOR
 
 inherit
-	GENERATION_CONSTANTS
+	INSTALLATION_LOCATOR
 
-	EIFFEL_LAYOUT
-		export
-			{NONE} all
-		end
+	GENERATION_CONSTANTS
 
 feature -- Access
 
 	generate_project (directory: DIRECTORY; test_class_name: STRING; widget_type: STRING) is
 			-- Generate project based on `test_class_name'.
+		require
+			installation_directory_not_void: installation_location /= Void
 		local
 			project_name, test_name: STRING
 		do
@@ -46,7 +45,7 @@ feature {NONE} -- Implementation
 			filename: FILE_NAME
 			ace_text: STRING
 		do
-			create filename.make_from_string (eiffel_layout.shared_application_path)
+			create filename.make_from_string (installation_location)
 			filename.extend ("templates")
 			filename.extend ("template.ecf")
 			create ace_template_file.make_open_read (filename)
@@ -73,7 +72,7 @@ feature {NONE} -- Implementation
 			filename: FILE_NAME
 			application_text: STRING
 		do
-			create filename.make_from_string (eiffel_layout.shared_application_path)
+			create filename.make_from_string (installation_location)
 			filename.extend ("templates")
 			filename.extend ("application_template.e")
 			create application_template_file.make_open_read (filename)
@@ -98,7 +97,7 @@ feature {NONE} -- Implementation
 			filename: FILE_NAME
 			common_text: STRING
 		do
-			create filename.make_from_string (eiffel_layout.shared_application_path)
+			create filename.make_from_string (installation_location)
 			filename.extend ("templates")
 			filename.extend ("generation_only")
 			filename.extend (Common_test_file_name)
@@ -123,7 +122,7 @@ feature {NONE} -- Implementation
 			filename: FILE_NAME
 			test_text: STRING
 		do
-			create filename.make_from_string (eiffel_layout.shared_application_path)
+			create filename.make_from_string (installation_location)
 			filename.extend ("tests")
 			filename.extend (widget_type.as_lower)
 			filename.extend (test_name + ".e")
@@ -177,7 +176,8 @@ feature {NONE} -- Implementation
 						current_image_number := (string_to_process.substring (1, index_of_comma - 1)).to_integer
 						string_to_process := string_to_process.substring (index_of_comma + 1, string_to_process.count)
 					end
-					create file_name.make_from_string (eiffel_layout.bitmaps_path)
+					create file_name.make_from_string (installation_location)
+					file_name.extend ("bitmaps")
 					file_name.extend ("png")
 					file_name.extend ("image" + current_image_number.out + ".png")
 					create file.make (file_name)

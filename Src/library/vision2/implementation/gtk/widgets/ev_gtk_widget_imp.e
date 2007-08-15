@@ -12,6 +12,14 @@ deferred class
 inherit
 	EV_ANY_IMP
 
+feature {EV_GTK_DEPENDENT_INTERMEDIARY_ROUTINES} -- Implementation
+
+	on_key_event (a_key: EV_KEY; a_key_string: STRING_32; a_key_press: BOOLEAN; call_application_events: BOOLEAN) is
+			-- Used for key event actions sequences, redefined by descendants
+		do
+
+		end
+
 feature {EV_INTERMEDIARY_ROUTINES} -- Implementation
 
 	Gdk_events_mask: INTEGER is
@@ -98,42 +106,6 @@ feature {EV_ANY_I, EV_GTK_DEPENDENT_INTERMEDIARY_ROUTINES} -- Position retrieval
 
 feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 
-	x_position: INTEGER is
-			-- Horizontal offset relative to parent `x_position'.
-			-- Unit of measurement: screen pixels.
-		local
-			a_aux_info, l_null: POINTER
-			tmp_struct_x: INTEGER
-		do
-			Result := {EV_GTK_EXTERNALS}.gtk_allocation_struct_x ({EV_GTK_EXTERNALS}.gtk_widget_struct_allocation (c_object))
-			a_aux_info := aux_info_struct
-			if a_aux_info /= l_null then
-				tmp_struct_x := {EV_GTK_EXTERNALS}.gtk_widget_aux_info_struct_x (a_aux_info)
-				if tmp_struct_x >= 0 then
-					Result := tmp_struct_x
-				end
-			end
-			Result := Result.max (0)
-		end
-
-	y_position: INTEGER is
-			-- Vertical offset relative to parent `y_position'.
-			-- Unit of measurement: screen pixels.
-		local
-			a_aux_info, l_null: POINTER
-			tmp_struct_y: INTEGER
-		do
-			Result := {EV_GTK_EXTERNALS}.gtk_allocation_struct_y ({EV_GTK_EXTERNALS}.gtk_widget_struct_allocation (c_object))
-			a_aux_info := aux_info_struct
-			if a_aux_info /= l_null then
-				tmp_struct_y := {EV_GTK_EXTERNALS}.gtk_widget_aux_info_struct_y (a_aux_info)
-				if tmp_struct_y >= 0 then
-					Result := tmp_struct_y
-				end
-			end
-			Result := Result.max (0)
-		end
-
 	widget_imp_at_pointer_position: EV_WIDGET_IMP is
 			-- Widget implementation at current mouse pointer position (if any)
 		do
@@ -156,9 +128,11 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 			-- Minimum width that the widget may occupy.
 		local
 			gr: POINTER
+			a_cs: EV_GTK_C_STRING
 		do
 			if not is_destroyed then
-				{EV_GTK_EXTERNALS}.g_object_get_integer (c_object, width_request_string.item, $Result)
+				a_cs := width_request_string
+				{EV_GTK_EXTERNALS}.g_object_get_integer (c_object, a_cs.item, $Result)
 				if Result = -1 then
 					gr := reusable_requisition_struct.item
 					{EV_GTK_EXTERNALS}.gtk_widget_size_request (c_object, gr)
@@ -177,9 +151,11 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 			-- Minimum width that the widget may occupy.
 		local
 			gr: POINTER
+			a_cs: EV_GTK_C_STRING
 		do
 			if not is_destroyed then
-				{EV_GTK_EXTERNALS}.g_object_get_integer (c_object, height_request_string.item, $Result)
+				a_cs := height_request_string
+				{EV_GTK_EXTERNALS}.g_object_get_integer (c_object, a_cs.item, $Result)
 				if Result = -1 then
 					gr := reusable_requisition_struct.item
 					{EV_GTK_EXTERNALS}.gtk_widget_size_request (c_object, gr)
@@ -206,10 +182,7 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 		do
 			if a_pointer /= pointer_style then
 				pointer_style := a_pointer
-				if is_displayed or else previous_gdk_cursor /= default_pointer then
-					internal_set_pointer_style (a_pointer)
-						-- `internal_set_pointer_style' will get called in `on_widget_mapped'				
-				end
+				internal_set_pointer_style (a_pointer)
 			end
 		end
 
@@ -224,7 +197,7 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 				a_cursor_imp ?= a_cursor.implementation
 				a_cursor_ptr := a_cursor_imp.gdk_cursor_from_pointer_style
 			end
-			a_window := {EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object)
+			a_window := {EV_GTK_EXTERNALS}.gtk_widget_struct_window (visual_widget)
 			if a_window /= default_pointer then
 				{EV_GTK_EXTERNALS}.gdk_window_set_cursor (a_window, a_cursor_ptr)
 			end
@@ -253,17 +226,10 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 			-- Grab keyboard focus.
 		local
 			l_window, l_widget: POINTER
-			l_interface: EV_ANY
-			l_app_imp: like app_implementation
 		do
-			l_app_imp := app_implementation
 				-- If any previous widget has the capture then disable it.
-				-- If a Pick and Drop is occurring we leave the capture as is.
-			if l_app_imp.captured_widget /= Void and then not l_app_imp.is_in_transport then
-				l_interface := interface
-				if l_interface /= l_app_imp.captured_widget then
-					l_app_imp.captured_widget.disable_capture
-				end
+			if app_implementation.captured_widget /= Void then
+				app_implementation.captured_widget.disable_capture
 			end
 			if {EV_GTK_EXTERNALS}.gtk_is_window (c_object) then
 				l_window := c_object
@@ -286,7 +252,7 @@ feature {EV_ANY_I, EV_INTERMEDIARY_ROUTINES} -- Implementation
 		do
 			l_window := {EV_GTK_EXTERNALS}.gtk_widget_get_toplevel (c_object)
 				-- This will return `c_object' if not toplevel window is found in hierarchy.
-			if l_window /= default_pointer and then {EV_GTK_EXTERNALS}.gtk_widget_toplevel (l_window) and then {EV_GTK_EXTERNALS}.gtk_window_is_active (l_window) then
+			if l_window /= default_pointer and then {EV_GTK_EXTERNALS}.gtk_widget_toplevel (l_window) and then {EV_GTK_EXTERNALS}.gtk_window_has_toplevel_focus (l_window) then
 				l_widget := {EV_GTK_EXTERNALS}.gtk_window_get_focus (l_window)
 				if l_widget /= default_pointer then
 					l_widget_imp ?= app_implementation.eif_object_from_gtk_object (l_widget)
@@ -370,7 +336,7 @@ feature -- Status report
 
 feature {EV_ANY_I} -- Implementation
 
-	top_level_gtk_window_imp: EV_GTK_WINDOW_IMP is
+	top_level_window_imp: EV_WINDOW_IMP is
 			-- Window implementation that `Current' is contained within (if any)
 		local
 			wind_ptr: POINTER
@@ -381,18 +347,12 @@ feature {EV_ANY_I} -- Implementation
 			end
 		end
 
-	top_level_window_imp: EV_WINDOW_IMP is
-			-- Window implementation that `Current' is contained within (if any)
-		do
-			Result ?= top_level_gtk_window_imp
-		end
-
 	top_level_window: EV_WINDOW is
 			-- Window the current is contained within (if any)
 		local
 			a_window_imp: EV_WINDOW_IMP
 		do
-			a_window_imp ?= top_level_gtk_window_imp
+			a_window_imp := top_level_window_imp
 			if a_window_imp /= Void then
 				Result := a_window_imp.interface
 			end

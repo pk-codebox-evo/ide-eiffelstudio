@@ -32,6 +32,11 @@ inherit
 			{NONE} all
 		end
 
+	SHARED_RESCUE_STATUS
+		export
+			{NONE} all
+		end
+
 	REFACTORING_HELPER
 		export
 			{NONE} all
@@ -101,18 +106,8 @@ feature {NONE} -- Implementation: Access
 feature {NONE} -- Visitor implementation
 
 	process_like_id_as (l_as: LIKE_ID_AS) is
-		local
-			t: UNEVALUATED_LIKE_TYPE
 		do
-			create t.make (l_as.anchor.name)
-			if l_as.attachment_mark /= Void then
-				if l_as.attachment_mark.is_bang then
-					t.set_attached_mark
-				else
-					t.set_detachable_mark
-				end
-			end
-			last_type := t
+			create {UNEVALUATED_LIKE_TYPE} last_type.make (l_as.anchor)
 		end
 
 	process_like_cur_as (l_as: LIKE_CUR_AS) is
@@ -121,13 +116,6 @@ feature {NONE} -- Visitor implementation
 		do
 			create l_cur
 			l_cur.set_actual_type (current_class.actual_type)
-			if l_as.attachment_mark /= Void then
-				if l_as.attachment_mark.is_bang then
-					l_cur.set_attached_mark
-				else
-					l_cur.set_detachable_mark
-				end
-			end
 			last_type := l_cur
 		end
 
@@ -143,10 +131,10 @@ feature {NONE} -- Visitor implementation
 			l_actual_generic: ARRAY [TYPE_A]
 			i, count: INTEGER
 			l_has_error: BOOLEAN
-			l_type: CL_TYPE_A
+			l_type: TYPE_A
 		do
 				-- Lookup class in universe, it should be present.
-			l_class_i := universe.class_named (l_as.class_name.name, current_class.group)
+			l_class_i := universe.class_named (l_as.class_name, current_class.group)
 			if l_class_i /= Void and then l_class_i.is_compiled then
 				l_class_c := l_class_i.compiled_class
 				if l_as.generics /= Void then
@@ -173,18 +161,6 @@ feature {NONE} -- Visitor implementation
 				else
 					l_type := l_class_c.partial_actual_type (Void, l_as.is_expanded, l_as.is_separate)
 					last_type := l_type
-				end
-				if l_type /= Void then
-					if l_as.attachment_mark /= Void then
-						if l_as.attachment_mark.is_bang then
-							l_type.set_attached_mark
-							check l_type.is_attached end
-						else
-							l_type.set_detachable_mark
-						end
-					elseif current_class.lace_class.is_void_safe then
-						l_type.set_is_attached
-					end
 				end
 			else
 				check failure_enabled: is_failure_enabled end
@@ -263,11 +239,11 @@ feature {NONE} -- Visitor implementation
 
 	process_bits_symbol_as (l_as: BITS_SYMBOL_AS) is
 		do
-			create {UNEVALUATED_BITS_SYMBOL_A} last_type.make (l_as.bits_symbol.name)
+			create {UNEVALUATED_BITS_SYMBOL_A} last_type.make (l_as.bits_symbol)
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

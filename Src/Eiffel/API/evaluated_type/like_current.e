@@ -14,7 +14,7 @@ inherit
 			actual_type, associated_class, conform_to, conformance_type, convert_to,
 			generics, has_associated_class, instantiated_in,
 			is_basic, is_expanded, is_external, is_like_current, is_none, is_reference,
-			meta_type, set_actual_type, type_i, evaluated_type_in_descendant
+			meta_type, set_actual_type, type_i
 		end
 
 feature -- Visitor
@@ -32,14 +32,6 @@ feature -- Properties
 
 	conformance_type: TYPE_A
 			-- Type of the anchored type as specified in `set_actual_type'
-
-	has_associated_class: BOOLEAN is
-			-- Does Current have an associated class?
-		do
-			Result :=
-				conformance_type /= Void and then
-				conformance_type.has_associated_class
-		end
 
 	is_like_current: BOOLEAN is True
 			-- Is the current type an anchored type on Current ?
@@ -69,20 +61,21 @@ feature -- Properties
 	is_basic: BOOLEAN is False
 			-- Is the current actual type a basic one?
 
+feature -- Access
+
 	same_as (other: TYPE_A): BOOLEAN is
 			-- Is the current type the same as `other' ?
-		local
-			l: LIKE_CURRENT
 		do
-			if other.is_like_current then
-				l ?= other
-				Result :=
-					has_attached_mark = l.has_attached_mark and then
-					has_detachable_mark = l.has_detachable_mark
-			end
+			Result := other.is_like_current
 		end
 
-feature -- Access
+	has_associated_class: BOOLEAN is
+			-- Does Current have an associated class?
+		do
+			Result :=
+				conformance_type /= Void and then
+				conformance_type.has_associated_class
+		end
 
 	associated_class: CLASS_C is
 			-- Associated class
@@ -114,35 +107,20 @@ feature -- Output
 			actual_dump: STRING
 		do
 			actual_dump := conformance_type.dump
-			create Result.make (17 + actual_dump.count)
-			Result.append_character ('[')
-			if has_attached_mark then
-				Result.append_character ('!')
-				Result.append_character (' ')
-			elseif has_detachable_mark then
-				Result.append_character ('?')
-				Result.append_character (' ')
-			end
-			Result.append ("like Current] ")
+			create Result.make (15 + actual_dump.count)
+			Result.append ("[like Current] ")
 			Result.append (actual_dump)
 		end
 
-	ext_append_to (st: TEXT_FORMATTER; c: CLASS_C) is
+	ext_append_to (st: TEXT_FORMATTER; f: E_FEATURE) is
 		do
 			st.process_symbol_text (ti_L_bracket)
-			if has_attached_mark then
-				st.process_symbol_text (ti_exclamation)
-				st.add_space
-			elseif has_detachable_mark then
-				st.process_symbol_text (ti_question)
-				st.add_space
-			end
 			st.process_keyword_text (ti_Like_keyword, Void)
 			st.add_space
 			st.process_keyword_text (ti_Current, Void)
 			st.process_symbol_text (ti_R_bracket)
 			st.add_space
-			conformance_type.ext_append_to (st, c)
+			conformance_type.ext_append_to (st, f)
 		end
 
 feature {COMPILER_EXPORTER} -- Primitives
@@ -186,21 +164,6 @@ feature {COMPILER_EXPORTER} -- Primitives
 			Result := class_type
 		end
 
-	evaluated_type_in_descendant (a_ancestor, a_descendant: CLASS_C; a_feature: FEATURE_I): LIKE_CURRENT is
-		do
-			if a_ancestor /= a_descendant then
-				create Result
-				Result.set_actual_type (a_descendant.actual_type)
-				if has_attached_mark then
-					Result.set_attached_mark
-				elseif has_detachable_mark then
-					Result.set_detachable_mark
-				end
-			else
-				Result := Current
-			end
-		end
-
 	create_info: CREATE_CURRENT is
 			-- Byte code information for entity type creation
 		once
@@ -233,7 +196,7 @@ feature {COMPILER_EXPORTER} -- Primitives
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

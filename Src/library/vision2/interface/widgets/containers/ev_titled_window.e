@@ -101,8 +101,7 @@ feature -- Status report
 feature -- Status setting
 
 	raise is
-			-- Request that window be displayed above all other windows
-			-- (if `is_minimized', window is restored).
+			-- Request that window be displayed above all other windows.
 		require
 			not_destroyed: not is_destroyed
 		do
@@ -188,7 +187,7 @@ feature -- Element change
 			icon_pixmap_assigned: icon_pixmap.is_equal (an_icon)
 		end
 
-feature {EV_ANY, EV_ANY_I, EV_ANY_HANDLER} -- Implementation
+feature {EV_ANY, EV_ANY_I} -- Implementation
 
 	implementation: EV_TITLED_WINDOW_I
 			-- Responsible for interaction with native graphics toolkit.

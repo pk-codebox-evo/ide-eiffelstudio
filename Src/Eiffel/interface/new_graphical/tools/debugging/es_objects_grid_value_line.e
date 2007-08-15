@@ -11,20 +11,15 @@ class
 
 inherit
 
-	ES_OBJECTS_GRID_OBJECT_LINE
+	ES_OBJECTS_GRID_LINE
 		rename
 			data as object,
 			set_data as set_object
 		redefine
 			object,
 			reset_special_attributes_values,
-			reset,
-			get_items_stone_properties
-		end
-
-	SHARED_BENCH_NAMES
-		export
-			{NONE} all
+			recycle,
+			get_object_stone_properties
 		end
 
 create
@@ -58,7 +53,7 @@ feature {NONE}
 
 feature -- Recycling
 
-	reset is
+	recycle is
 			-- Recycle data
 			-- in order to free special data (for instance dotnet references)
 		do
@@ -81,51 +76,41 @@ feature -- Properties
 	object_dynamic_class: CLASS_C is
 		do
 			Result := object.dynamic_class
-			if Result = Void then
-				Result := object.static_class
-			end
 		end
 
 	object_spec_capacity: INTEGER
 
-feature {NONE} -- Object stone
+feature -- Object stone
 
-	get_items_stone_properties is
+	get_object_stone_properties is
+
 		local
 			cl: CLASS_C
+			fost: FEATURED_OBJECT_STONE
 			fst: FEATURE_STONE
-			fost: FEATURE_ON_OBJECT_STONE
-			objst: OBJECT_STONE
 			ostn: STRING
+			addr: STRING
 			feat: E_FEATURE
-			t: like internal_item_stone_data_i_th
 		do
 			Precursor
-			if related_line /= Void then
+			if internal_object_stone = Void and then related_line /= Void then
 				ostn := object_name
 				if ostn /= Void then
 					cl := related_line.object_dynamic_class
 					if cl /= Void then
 						feat := cl.feature_with_name (ostn)
 						if feat /= Void then
-								--| Note: `related_line.object_address' can be Void
-							create fost.make (related_line.object_address, feat)
-							t := internal_item_stone_data_i_th (0)
-							if t /= Void then
-								objst ?= t.stone
-								if objst /= Void then
-									fost.attach_object_stone (objst)
-								end
-							end
-							fst := fost
-
-							create t
-							t.stone := fst
-							t.accept_cursor := fst.stone_cursor
-							t.deny_cursor := fst.X_stone_cursor
-							internal_items_stone_data[col_name_index] := t
-							if internal_items_stone_data [0] = Void then
-								internal_items_stone_data [0] := t
+							addr := related_line.object_address
+							if addr /= Void then
+								create fost.make (addr, feat)
+								internal_object_stone_accept_cursor := fost.stone_cursor
+								internal_object_stone_deny_cursor := fost.X_stone_cursor
+								internal_object_stone := fost
+							else
+								create fst.make (feat)
+								internal_object_stone_accept_cursor := fst.stone_cursor
+								internal_object_stone_deny_cursor := fst.X_stone_cursor
+								internal_object_stone := fst
 							end
 						end
 					end
@@ -140,7 +125,7 @@ feature -- Related line if precised
 			related_line := v
 		end
 
-	related_line: ES_OBJECTS_GRID_OBJECT_LINE
+	related_line: ES_OBJECTS_GRID_LINE
 
 feature -- Query
 
@@ -165,7 +150,7 @@ feature -- Query
 			Result := object.sorted_children
 		end
 
-	sorted_once_routines: LIST [E_FEATURE] is
+	sorted_once_functions: LIST [E_FEATURE] is
 		local
 			l_class: CLASS_C
 		do
@@ -175,7 +160,7 @@ feature -- Query
 				--| ANSWER : because of external class in dotnet system
 				--| Should be fixed now by using SYSTEM_OBJECT for unknown type
 			else
-				Result := l_class.once_routines
+				Result := l_class.once_functions
 			end
 		end
 
@@ -204,54 +189,46 @@ feature -- Graphical changes
 				dv := object
 				if dv = Void then
 					last_dump_value := Void
-					set_name (debugger_names.l_no_object)
+					set_name ("No object")
 					set_value (Void)
 					set_type (Void)
 					set_address (Void)
 					set_pixmap (Icons @ (Void_value))
 				else --| dv /= Void |--
-					if title /= Void then
-						set_name (title)
-					else
-						set_name (dv.name)
-					end
+					set_name (dv.name)
 					set_address (dv.address)
 
 					last_dump_value := Void
 					if dv.kind = Error_message_value then
 						dmdv ?= dv
 						set_value (dmdv.display_message)
-						set_type (debugger_names.l_no_information)
+						set_type (once "Invalid data")
 						set_pixmap (Icons @ (dmdv.display_kind))
 					elseif dv.kind = Exception_message_value then
 						excdv ?= dv
 						if excdv.is_wrapper_mode then
-							set_title (debugger_names.l_exceptions_details)
+							set_title ("Exception's details ...")
 						end
 						set_value (excdv.display_tag)
 						gi := value_cell
 						if gi /= Void then
 							gi.set_tooltip (excdv.display_message)
 						end
-						set_type (debugger_names.l_exception_data)
+						set_type (once "Exception data")
 						set_pixmap (Icons @ (dv.kind))
 						if excdv.debug_value /= Void then
 							attach_debug_value_to_grid_row (grid_extended_new_subrow (row), excdv.debug_value, Void)
 						end
-					elseif dv.kind = Procedure_return_message_value then
-						set_value (interface_names.l_called)
-						set_type (once "")
-						set_pixmap (Icons @ (dv.kind))
 					else
 						last_dump_value := dv.dump_value
 						set_value (last_dump_value.output_for_debugger)
-						set_type (last_dump_value.generating_type_representation (generating_type_evaluation_enabled))
+						set_type (last_dump_value.generating_type_representation)
 
 						set_pixmap (Icons @ (dv.kind))
 						if dv.expandable then
 							row.ensure_expandable
-							set_expand_action (agent on_row_expand)
-							set_collapse_action (agent on_row_collapse)
+							expand_actions.extend (agent on_row_expand)
+							collapse_actions.extend (agent on_row_collapse)
 							if display then
 								row.expand
 							end

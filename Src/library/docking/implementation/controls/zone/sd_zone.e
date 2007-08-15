@@ -134,28 +134,6 @@ feature -- Command
 			set: content.state.last_floating_height = a_height
 		end
 
-	update_mini_tool_bar_size is
-			-- Update mini tool bar size since client programmers mini tool bar widget size changed.
-		do
-		end
-
-feature {SD_DOCKING_STATE, SD_TAB_STATE} -- Maximize state initlization
-
-	set_widget_main_area (a_widget: EV_WIDGET; a_main_area: SD_MULTI_DOCK_AREA; a_parent: EV_CONTAINER; a_split_position: INTEGER) is
-			-- Set widget and main area which used for normal window.
-		require
-			a_widget_not_void: a_widget /= Void
-			a_main_area_not_void: a_main_area /= Void
-			a_parent_not_void: a_parent /= Void
-		do
-			main_area_widget := a_widget
-			main_area := a_main_area
-			internal_parent := a_parent
-			internal_parent_split_position := a_split_position
-		ensure
-			set: main_area_widget = a_widget and main_area = a_main_area and internal_parent = a_parent and internal_parent_split_position = a_split_position
-		end
-
 feature -- Query
 
 	state: SD_STATE is
@@ -170,7 +148,7 @@ feature -- Query
 			-- Content which `Current' holded.
 		deferred
 		ensure
-			not_void: not is_floating_zone implies Result /= Void
+			not_void: Result /= Void
 		end
 
 	extend (a_content: SD_CONTENT) is
@@ -199,16 +177,7 @@ feature -- Query
 			Result := False
 		end
 
-	is_floating_zone: BOOLEAN is
-			-- If current an instance of SD_FLOATNG_ZONE?
-		local
-			l_floating_zone: SD_FLOATING_ZONE
-		do
-			l_floating_zone ?= Current
-			Result := l_floating_zone /= Void
-		end
-
-feature {SD_SAVE_CONFIG_MEDIATOR} -- Save config.
+feature {SD_CONFIG_MEDIATOR} -- Save config.
 
 	save_content_title (a_config_data: SD_INNER_CONTAINER_DATA) is
 			-- save content(s) title(s) to `a_config_data'.
@@ -228,7 +197,7 @@ feature {SD_DOCKING_MANAGER_ZONES} -- Focus out
 			if not internal_docking_manager.query.is_main_inner_container (l_multi_dock_area) then
 				l_multi_dock_area.parent_floating_zone.set_title_focus (False)
 			end
-			content.focus_out_actions.call (Void)
+			content.focus_out_actions.call ([])
 		end
 
 feature {SD_DOCKING_MANAGER, SD_DOCKING_MANAGER_AGENTS, SD_CONTENT, SD_STATE, SD_FLOATING_ZONE}  -- Focus in
@@ -240,14 +209,14 @@ feature {SD_DOCKING_MANAGER, SD_DOCKING_MANAGER_AGENTS, SD_CONTENT, SD_STATE, SD
 		local
 			l_multi_dock_area: SD_MULTI_DOCK_AREA
 		do
-			internal_docking_manager.zones.disable_all_zones_focus_color (Current)
+			internal_docking_manager.zones.disable_all_zones_focus_color
 			l_multi_dock_area := internal_docking_manager.query.inner_container (Current)
 			if not internal_docking_manager.query.is_main_inner_container (l_multi_dock_area) then
 				l_multi_dock_area.parent_floating_zone.set_title_focus (True)
 			end
 		end
 
-feature {SD_TAB_STATE_ASSISTANT, SD_TAB_STATE, SD_DOCKING_MANAGER_QUERY} -- Maximum issues.
+feature {SD_TAB_STATE_ASSISTANT} -- Maximum issues.
 
 	main_area_widget: EV_WIDGET
 			-- Other user widgets when `Current' is maximized.
@@ -266,7 +235,7 @@ feature {NONE} -- Implementation
 	on_close_request is
 			-- Handle close request actions.
 		do
-			content.close_request_actions.call (Void)
+			content.close_request_actions.call ([])
 		end
 
 	internal_docking_manager: SD_DOCKING_MANAGER

@@ -36,15 +36,7 @@ inherit
 			test
 		end
 
-convert
-	to_type_as: {TYPE_AS}
-
 feature -- Initialization/Checking
-
-	to_type_as: TYPE_AS
-	do
-
-	end
 
 	init_and_check_convert_tables (
 			a_class: CLASS_C;
@@ -87,7 +79,7 @@ feature -- Initialization/Checking
 					a_convertors.after or has_error
 				loop
 					l_feat := a_convertors.item
-					l_name_id := l_feat.feature_name.internal_name.name_id
+					l_name_id := l_feat.feature_name.internal_name_id
 					if l_processed.has (l_name_id) then
 							-- Routine specified twice in Convert_clause.
 						create l_vncp.make ("Routine specified twice in Convert_clause.")
@@ -135,9 +127,7 @@ feature -- Initialization/Checking
 									else
 											-- Check constrained genericity validity rule
 										l_named_type.reset_constraint_error_list
-										 	-- Check creation readyness because if we convert we need to create an object.
-										 	-- Pass `Void' for context feature as we don't have one.
-										l_named_type.check_constraints (a_class, Void, true)
+										l_named_type.check_constraints (a_class)
 										if not l_named_type.constraint_error_list.is_empty then
 											create l_vncp.make ("Invalid generic type.")
 											l_vncp.set_class (a_class)
@@ -400,25 +390,15 @@ feature -- Initialization/Checking
 			valid_context_class: a_context_class.generics.count >= a_formal.position
 			a_target_type_not_void: a_target_type /= Void
 		local
-			l_convert_ok, l_success: BOOLEAN
+			l_success: BOOLEAN
 			l_other: FORMAL_A
 			l_constraint: TYPE_A
-			l_constraints: TYPE_SET_A
 			l_cl_type: CL_TYPE_A
 		do
 			l_other ?= a_target_type
 			if l_other = Void then
-				if not a_formal.is_single_constraint_without_renaming (a_context_class) then
-						-- Multi constraint case, use TYPE_SET_A.
-					l_constraints := a_context_class.constraints (a_formal.position)
-					l_convert_ok := l_constraints.conform_to_type (a_target_type)
-				else
-						-- Single constraint, common case.
-					l_constraint := a_context_class.constraint (a_formal.position)
-					l_convert_ok := l_constraint.conform_to (a_target_type)
-				end
-
-				if l_convert_ok then
+				l_constraint := a_context_class.constraint (a_formal.position)
+				if l_constraint.conform_to (a_target_type) then
 						-- Constraint conform to target, we allow conversion.
 						-- It is a conversion and not a plain conformance because in case where
 						-- the formal generic is expanded it becomes a conversion.
@@ -483,15 +463,15 @@ feature {NONE} -- Implementation: checking
 			l_feat: FEATURE_I
 			l_vncp: VNCP
 		do
-			a_feat_tbl.search_id (a_convert_feat.feature_name.internal_name.name_id)
+			a_feat_tbl.search_id (a_convert_feat.feature_name.internal_name_id)
 			if a_feat_tbl.found then
 				l_feat := a_feat_tbl.found_item
-				if not l_feat.is_once or not l_feat.is_external then
+				if l_feat.is_routine and (not l_feat.is_once or not l_feat.is_external) then
 					if a_convert_feat.is_creation_procedure then
 							-- Check it is listed as part of creation procedures of current class.
 						if
 							a_class.creators = Void or else
-							not a_class.creators.has (a_convert_feat.feature_name.internal_name.name)
+							not a_class.creators.has (a_convert_feat.feature_name.internal_name)
 						then
 								-- Not a creation procedure.
 							create l_vncp.make ("Not a creation procedure.")
@@ -512,9 +492,9 @@ feature {NONE} -- Implementation: checking
 							end
 						end
 					else
-						if not l_feat.has_return_value or l_feat.argument_count /= 0 then
+						if not l_feat.is_function or l_feat.argument_count /= 0 then
 								-- Not a function without argument
-							create l_vncp.make ("Not a query without argument.")
+							create l_vncp.make ("Not a function without argument.")
 							l_vncp.set_class (a_class)
 							l_vncp.set_location (a_convert_feat.feature_name.start_location)
 							Error_handler.insert_error (l_vncp)
@@ -523,7 +503,7 @@ feature {NONE} -- Implementation: checking
 					end
 				else
 						-- Feature is not an Eiffel routine
-					create l_vncp.make ("Should not be a once nor an external.")
+					create l_vncp.make ("Should be a routine, not a once nor an external.")
 					l_vncp.set_class (a_class)
 					l_vncp.set_location (a_convert_feat.feature_name.start_location)
 					Error_handler.insert_error (l_vncp)
@@ -531,7 +511,7 @@ feature {NONE} -- Implementation: checking
 				end
 			else
 				create l_vncp.make ("Routine not found: " +
-					a_convert_feat.feature_name.internal_name.name)
+					a_convert_feat.feature_name.internal_name)
 				l_vncp.set_class (a_class)
 				l_vncp.set_location (a_convert_feat.feature_name.start_location)
 				Error_handler.insert_error (l_vncp)
@@ -554,19 +534,19 @@ feature {NONE} -- Implementation: checking
 			matching_class_and_feat_tbl: a_class = a_feat_tbl.associated_class
 			a_convert_feat_not_void: a_convert_feat /= Void
 			a_type_not_void: a_type /= Void
-			has_routine: a_feat_tbl.has_id (a_convert_feat.feature_name.internal_name.name_id)
+			has_routine: a_feat_tbl.has_id (a_convert_feat.feature_name.internal_name_id)
 			routine_valid:
-				valid_signature (a_feat_tbl.item_id (a_convert_feat.feature_name.internal_name.name_id))
+				valid_signature (a_feat_tbl.item_id (a_convert_feat.feature_name.internal_name_id))
 		local
 			l_feat: FEATURE_I
 			l_vncp: VNCP
 		do
 				-- Check conformance of `a_type' to signature of routine specified in
 				-- `a_convert_feat'.
-			l_feat := a_feat_tbl.item_id (a_convert_feat.feature_name.internal_name.name_id)
+			l_feat := a_feat_tbl.item_id (a_convert_feat.feature_name.internal_name_id)
 				-- FIXME: Manu 04/28/2003: we do not do yet apply convertibility to check
 				-- for conversion type validity, only conformance
-			if l_feat.has_return_value then
+			if l_feat.is_function then
 				if not l_feat.type.conform_to (a_type) then
 					create l_vncp.make ("Return type does not conform to SOURCE.")
 					l_vncp.set_class (a_class)
@@ -607,7 +587,6 @@ feature {NONE} -- Implementation: status report
 			b_not_void: b /= Void
 		local
 			l_convert: DS_HASH_TABLE [INTEGER, NAMED_TYPE_A]
-			l_type: NAMED_TYPE_A
 		do
 				-- First check if there are no conversion to `b' from `a'.
 			l_convert := a.convert_to
@@ -617,10 +596,7 @@ feature {NONE} -- Implementation: status report
 				until
 					l_convert.after or Result
 				loop
-					l_type := l_convert.key_for_iteration
-					if l_type.has_associated_class then
-						Result := l_type.associated_class = b
-					end
+					Result := l_convert.key_for_iteration.associated_class = b
 					l_convert.forth
 				end
 			end
@@ -636,10 +612,7 @@ feature {NONE} -- Implementation: status report
 					until
 						l_convert.after or Result
 					loop
-						l_type := l_convert.key_for_iteration
-						if l_type.has_associated_class then
-							Result := l_type.associated_class = a
-						end
+						Result := l_convert.key_for_iteration.associated_class = a
 						l_convert.forth
 					end
 				end
@@ -651,7 +624,7 @@ feature {NONE} -- Implementation: status report
 		require
 			a_feat_not_void: a_feat /= Void
 		do
-			if a_feat.has_return_value then
+			if a_feat.is_function then
 				Result := a_feat.argument_count = 0
 			else
 				Result := (a_feat.is_routine and (not a_feat.is_once or not a_feat.is_external))

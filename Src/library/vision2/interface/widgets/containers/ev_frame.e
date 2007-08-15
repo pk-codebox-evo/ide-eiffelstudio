@@ -16,7 +16,7 @@ indexing
 	keywords: "container, frame, box, border, bevel, outline, raised, lowered"
 	date: "$Date$"
 	revision: "$Revision$"
-
+	
 class
 	EV_FRAME
 
@@ -27,8 +27,7 @@ inherit
 			initialize
 		redefine
 			implementation,
-			is_in_default_state,
-			default_identifier_name
+			is_in_default_state
 		end
 
 	EV_TEXT_ALIGNABLE
@@ -36,7 +35,7 @@ inherit
 			implementation,
 			is_in_default_state
 		end
-
+		
 	EV_FONTABLE
 		redefine
 			implementation,
@@ -67,19 +66,6 @@ feature -- Access
 			bridge_ok: Result = implementation.style
 		end
 
-	default_identifier_name: STRING is
-			-- Default `identifier_name' if no specific name is set
-		do
-			if text.is_empty then
-				Result := Precursor {EV_CELL}
-			else
-				Result := text.twin
-				Result.to_lower
-				Result.prune_all ('.')
-				Result.prune_all (':')
-			end
-		end
-
 feature -- Element change
 
 	set_style (a_style: INTEGER) is
@@ -94,7 +80,7 @@ feature -- Element change
 		end
 
 feature {NONE} -- Contract support
-
+	
 	is_in_default_state: BOOLEAN is
 			-- Is `Current' in its default state?
 		do
@@ -107,7 +93,7 @@ feature {EV_ANY, EV_ANY_I} -- Implementation
 
 	implementation: EV_FRAME_I
 			-- Responsible for interaction with native graphics toolkit.
-
+			
 feature {NONE} -- Implementation
 
 	create_implementation is

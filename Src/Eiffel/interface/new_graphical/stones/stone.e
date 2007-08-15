@@ -2,11 +2,11 @@ indexing
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
 deferred class
-	STONE
+	STONE 
 
 inherit
 	EB_CONSTANTS
-
+	
 	EB_POSITIONABLE
 
 feature -- Properties
@@ -34,23 +34,23 @@ feature  -- Access
 			Result := Interface_names.h_No_help_available.twin
 		end
 
-	stone_signature: STRING is
+	stone_signature: STRING is 
 			-- Short string to describe Current
 			-- (basically the name of the stoned object).
-		deferred
+		deferred 
 		end
 
-	header: STRING_GENERAL is
+	header: STRING is 
 			-- String to describe Current
 			-- (as it may be described in the title of a development window).
-		deferred
+		deferred 
 		end
 
-	history_name: STRING_GENERAL is
+	history_name: STRING is 
 			-- Name used in the history list,
 			-- (By default, it is the stone_signature
 			-- and a string to describe the type of stone (Class, feature,...)).
-		deferred
+		deferred 
 		end
 
 	is_valid: BOOLEAN is
@@ -86,14 +86,6 @@ feature  -- Access
 				--| System level validity problems
 			o ?= other
 			Result := equal (Current, other)
-		end
-
-	stone_name: STRING_GENERAL is
-			-- Name of Current stone
-		do
-			Result := ""
-		ensure
-			result_attached: Result /= Void
 		end
 
 indexing

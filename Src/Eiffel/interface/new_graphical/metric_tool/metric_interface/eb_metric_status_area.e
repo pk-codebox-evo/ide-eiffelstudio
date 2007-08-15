@@ -54,7 +54,7 @@ feature{NONE} -- Initialization
 			create l_text
 			status_text.disable_edit
 			status_text.set_background_color (l_text.background_color)
-			status_lbl.set_text (metric_names.coloned_string (metric_names.t_status, True))
+			status_lbl.set_text (metric_names.t_status)
 			attach_non_editable_warning_to_text (metric_names.t_text_not_editable, status_text, metric_tool_window)
 			show_to_do_message_btn.set_pixmap (pixmaps.icon_pixmaps.command_error_info_icon)
 			show_to_do_message_btn.set_tooltip (metric_names.f_show_to_do_message)
@@ -63,33 +63,21 @@ feature{NONE} -- Initialization
 
 feature -- Setting
 
-	set_validity (a_error: EB_METRIC_ERROR) is
-			-- Set Current status area to display validity information contained in `a_error'.
-			-- `a_error' is Void means the metric is valid.
+	set_to_do_message (a_error: EB_METRIC_ERROR) is
+			-- Set to-do message with `a_error'.`to_do'.
 		local
-			l_text: EV_TEXT
-			l_message: STRING_32
+			l_to_do: STRING
+
 		do
-			error := a_error
-			if error = Void then
-					-- Valid case
-				create l_text
-				status_text.set_background_color (l_text.background_color)
-				status_text.set_text (metric_names.t_metric_valid)
-				status_pixmap.copy (pixmaps.icon_pixmaps.general_tick_icon)
-				show_to_do_message_btn.disable_sensitive
-				to_do_dialog.load_text (Void, "", "")
-			else
-					-- Invalid case
-				status_text.set_background_color (preferences.metric_tool_data.warning_background_color)
-				l_message := error.message_with_location.as_string_32
-				l_message.replace_substring_all ("%R", "")
-				l_message.replace_substring_all ("%N", " ")
-				status_text.set_text (l_message)
-				status_pixmap.copy (pixmaps.icon_pixmaps.general_error_icon)
-				show_to_do_message_btn.enable_sensitive
-				to_do_dialog.load_text (error.message, error.location, error.to_do)
+			if a_error /= Void then
+				l_to_do := a_error.to_do
 			end
+			if l_to_do /= Void then
+				to_do_message := l_to_do.twin
+			else
+				to_do_message := Void
+			end
+			on_open_to_do_dialog (False)
 		end
 
 feature{NONE} -- Actions
@@ -98,6 +86,12 @@ feature{NONE} -- Actions
 			-- Action to be performed to open a dialog to display help information about how to solve current metric definition error
 			-- If `a_force' is True, display `to_do_dialog', otherwise, don't display `to_do_dialog' if it is hidden.
 		do
+--			if to_do_message = Void then
+--				to_do_dialog.to_do_info_text.set_text ("")
+--			else
+--				to_do_dialog.to_do_info_text.set_text (to_do_message)
+--			end
+			to_do_dialog.load_text (to_do_message)
 			if not to_do_dialog.is_displayed and then a_force then
 				to_do_dialog.show_relative_to_window (metric_tool_window)
 			end
@@ -109,12 +103,14 @@ feature{NONE} -- Impelementation
 			-- Dialog to display help information about hwo to solve current metric definition error
 		once
 			create Result.make (metric_tool)
+			Result.set_title (metric_names.t_metric_definition_error_wizard)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	error: EB_METRIC_ERROR;
-			-- Error to be displayed
+	to_do_message: STRING;
+			-- To do message
+
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"
         license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
@@ -146,6 +142,7 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end -- class EB_METRIC_STATUS_AREA2
 

@@ -34,7 +34,7 @@ inherit
 		redefine
 			interface
 		end
-
+		
 	EV_DOCKABLE_SOURCE_I
 		redefine
 			interface
@@ -62,25 +62,8 @@ feature -- Element change
 			-- Make `pixmap' `Void'.
 		deferred
 		end
-
+		
 feature {EV_ANY, EV_ANY_I} -- Implementation
-
-	update_for_pick_and_drop (starting: BOOLEAN) is
-			-- Pick and drop status has changed so update appearance of
-			-- `Current' to reflect available targets.
-		do
-
-			if starting then
-				if not interface.drop_actions.accepts_pebble (application_implementation.pick_and_drop_source.pebble) then
-					enabled_before := is_sensitive
-					disable_sensitive_internal
-				end
-			else
-				if enabled_before then
-					enable_sensitive_internal
-				end
-			end
-		end
 
 	is_sensitive: BOOLEAN is
 			-- Is `Current' sensitive?
@@ -89,37 +72,13 @@ feature {EV_ANY, EV_ANY_I} -- Implementation
 
 feature {NONE} -- Implementation
 
-	enabled_before: BOOLEAN
-		-- Was `Current' enabled before `update_for_pick_and_drop' modified
-		-- the current state.
-
 	enable_sensitive is
-			 -- Enable `Current'.
+			-- Enable sensitivity to user input events.
 		deferred
 		end
 
 	disable_sensitive is
-			 -- Disable `Current'.
-		deferred
-		end
-
-	enable_sensitive_internal is
-			 -- Enable `Current'.
-			 -- This is a special version used internally by the code that updates
-			 -- the pick and drop so that `enabled_before' is not updated. In
-			 -- `enable_sensitive' which is called by a user, we must always updated the
-			 -- state of `enabled_before' so that if it is called during a pick and drop,
-			 -- this new state is respected at the end of the transport.
-		deferred
-		end
-
-	disable_sensitive_internal is
-			 -- Disable `Current'.
-			 -- This is a special version used internally by the code that updates
-			 -- the pick and drop so that `enabled_before' is not updated. In
-			 -- `disable_sensitive' which is called by a user, we must always updated the
-			 -- state of `enabled_before' so that if it is called during a pick and drop,
-			 -- this new state is respected at the end of the transport.
+			-- Disable sensitivity to user input events.
 		deferred
 		end
 

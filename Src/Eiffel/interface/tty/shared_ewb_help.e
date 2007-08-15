@@ -9,208 +9,199 @@ indexing
 
 class SHARED_EWB_HELP
 
-inherit
-	SHARED_LOCALE
-
 feature {NONE}
 
-	ace_help: STRING_GENERAL is do Result := locale.translation ("specify the Ace file (obsolete)") end
+	ace_help: STRING is "specify the Ace file (obsolete)"
 
-	ace_loop_help: STRING_GENERAL is do Result := locale.translation ("show the config file") end
+	ace_loop_help: STRING is "show the config file"
 
-	add_subquery_help: STRING_GENERAL is do Result := locale.translation ("add a subquery") end
+	add_subquery_help: STRING is "add a subquery"
 
-	ancestors_help: STRING_GENERAL is do Result := locale.translation ("show the ancestors of a class") end
+	ancestors_help: STRING is "show the ancestors of a class"
 
-	arguments_help: STRING_GENERAL is do Result := locale.translation ("set the arguments") end
+	arguments_help: STRING is "set the arguments"
 
-	aversions_help: STRING_GENERAL is do Result := locale.translation ("show the ancestor versions of a feature") end
+	aversions_help: STRING is "show the ancestor versions of a feature"
 
-	attributes_help: STRING_GENERAL is do Result := locale.translation ("show the attributes of a class") end
+	attributes_help: STRING is "show the attributes of a class"
 
-	batch_help: STRING_GENERAL is do Result := locale.translation ("launch the compilation without user request") end
+	batch_help: STRING is "launch the compilation without user request"
 
-	c_compile_help: STRING_GENERAL is do Result := locale.translation ("launch C compilation if needed") end
+	c_compile_help: STRING is "launch C compilation if needed"
 
-	config_help: STRING_GENERAL is do Result := locale.translation ("specify the config file") end
+	config_help: STRING is "specify the config file"
 
-	callers_help: STRING_GENERAL is do Result := locale.translation ("show the callers of a feature") end
+	callers_help: STRING is "show the callers of a feature"
 
-	callees_help: STRING_GENERAL is do Result := locale.translation ("show the callees of a feature") end
+	callees_help: STRING is "show the callees of a feature"
 
-	change_operator_help: STRING_GENERAL is do Result := locale.translation ("change the boolean operator") end
+	change_operator_help: STRING is "change the boolean operator"
 
-	class_help: STRING_GENERAL is do Result := locale.translation ("class formats and information") end
+	class_help: STRING is "class formats and information"
 
-	class_list_help: STRING_GENERAL is do Result := locale.translation ("show the classes in alphabetic order") end
+	class_list_help: STRING is "show the classes in alphabetic order"
 
-	clean_help: STRING_GENERAL is do Result := locale.translation ("delete existing project if any and perform a fresh compilation") end
+	clean_help: STRING is "delete existing project if any and perform a fresh compilation"
 
-	clients_help: STRING_GENERAL is do Result := locale.translation ("show the clients of a class") end
+	clients_help: STRING is "show the clients of a class"
 
-	cluster_hierarchy_help: STRING_GENERAL is do Result := locale.translation ("display the cluster hierarchy of the system") end
+	cluster_hierarchy_help: STRING is "display the cluster hierarchy of the system"
 
-	clusters_help: STRING_GENERAL is do Result := locale.translation ("show the system's classes, cluster by cluster") end
+	clusters_help: STRING is "show the system's classes, cluster by cluster"
 
-	compile_help: STRING_GENERAL is do Result := locale.translation ("compile or run the system") end
+	compile_help: STRING is "compile or run the system"
 
-	Convert_profile_help: STRING_GENERAL is do Result := locale.translation ("convert profiler output files") end
+	Convert_profile_help: STRING is "convert profiler output files"
 
-	Debug_help: STRING_GENERAL is do Result := locale.translation ("debug the system as a command loop") end
+	defaults_help: STRING is "reset all values to their defaults"
 
-	defaults_help: STRING_GENERAL is do Result := locale.translation ("reset all values to their defaults") end
+	deferred_help: STRING is "show the deferred features of a class"
 
-	deferred_help: STRING_GENERAL is do Result := locale.translation ("show the deferred features of a class") end
+	descendants_help: STRING is "show the descendants of a class"
 
-	descendants_help: STRING_GENERAL is do Result := locale.translation ("show the descendants of a class") end
+	Descendants_time_help: STRING is " output of time spent in descendants of a function"
 
-	Descendants_time_help: STRING_GENERAL is do Result := locale.translation (" output of time spent in descendants of a function") end
+	Documentation_help: STRING is "create documents from the system"
 
-	Documentation_help: STRING_GENERAL is do Result := locale.translation ("create documents from the system") end
+	dversions_help: STRING is "show the descendant versions of a feature"
 
-	dversions_help: STRING_GENERAL is do Result := locale.translation ("show the descendant versions of a feature") end
+	edit_ace_help: STRING is "edit the config file"
 
-	edit_ace_help: STRING_GENERAL is do Result := locale.translation ("edit the config file") end
+	edit_class_help: STRING is "edit the text of a class"
 
-	edit_class_help: STRING_GENERAL is do Result := locale.translation ("edit the text of a class") end
+	exported_help: STRING is "show the exported features of a class"
 
-	exported_help: STRING_GENERAL is do Result := locale.translation ("show the exported features of a class") end
+	externals_help: STRING is "show the external features of a class"
 
-	externals_help: STRING_GENERAL is do Result := locale.translation ("show the external features of a class") end
+	f_compile_help: STRING is "(re)compile the C code generated by finalize"
 
-	f_compile_help: STRING_GENERAL is do Result := locale.translation ("(re)compile the C code generated by finalize") end
+	feature_help: STRING is "feature formats and information"
 
-	feature_help: STRING_GENERAL is do Result := locale.translation ("feature formats and information") end
+	Featurename_help: STRING is " output of feature names"
 
-	Featurename_help: STRING_GENERAL is do Result := locale.translation (" output of feature names") end
+	file_help: STRING is "save the output to a file"
 
-	file_help: STRING_GENERAL is do Result := locale.translation ("save the output to a file") end
+	filter_help: STRING is "show a filtered form (troff, ...) of the class text"
 
-	filter_help: STRING_GENERAL is do Result := locale.translation ("show a filtered form (troff, ...) of the class text") end
+	finalize_help: STRING is "finalize the system (discard assertions by default)"
 
-	finalize_help: STRING_GENERAL is do Result := locale.translation ("finalize the system (discard assertions by default)") end
+	flat_help: STRING is "show the flat form of a class"
 
-	flat_help: STRING_GENERAL is do Result := locale.translation ("show the flat form of a class") end
+	flatshort_help: STRING is "show the flat-short form of a class"
 
-	flatshort_help: STRING_GENERAL is do Result := locale.translation ("show the flat-short form of a class") end
+	freeze_help: STRING is "freeze the system"
 
-	freeze_help: STRING_GENERAL is do Result := locale.translation ("freeze the system") end
+	Generate_help: STRING is "generate profile information for latest run"
 
-	Generate_help: STRING_GENERAL is do Result := locale.translation ("generate profile information for latest run") end
+	gui_help: STRING is "start the graphical environment"
 
-	gui_help: STRING_GENERAL is do Result := locale.translation ("start the graphical environment") end
+	help_help: STRING is "show this help message"
 
-	help_help: STRING_GENERAL is do Result := locale.translation ("show this help message") end
+	homonyms_help: STRING is "shown the homonyms of a feature"
 
-	homonyms_help: STRING_GENERAL is do Result := locale.translation ("shown the homonyms of a feature") end
+	implementers_help: STRING is "show the classes implementing a feature"
 
-	implementers_help: STRING_GENERAL is do Result := locale.translation ("show the classes implementing a feature") end
+	indexing_help: STRING is "show indexing clauses of classes"
 
-	indexing_help: STRING_GENERAL is do Result := locale.translation ("show indexing clauses of classes") end
+	Input_help: STRING is "specify input file (filename or last_output)"
 
-	Input_help: STRING_GENERAL is do Result := locale.translation ("specify input file (filename or last_output)") end
+	Language_help: STRING is "specify language (eiffel, c, cycles)"
 
-	Language_help: STRING_GENERAL is do Result := locale.translation ("specify language (eiffel, c, cycles)") end
+	loop_help: STRING is "run ec as a command loop"
 
-	library_help: STRING_GENERAL is do Result := locale.translation ("specify a library for single file compilation") end
+	loop_help_help: STRING is "show list of commands"
 
-	loop_help: STRING_GENERAL is do Result := locale.translation ("run ec as a command loop") end
+	overwrite_old_project_help: STRING is "overwrite any existing old project"
 
-	loop_help_help: STRING_GENERAL is do Result := locale.translation ("show list of commands") end
+	main_help: STRING is "go back to main menu"
 
-	overwrite_old_project_help: STRING_GENERAL is do Result := locale.translation ("overwrite any existing old project") end
+	melt_help: STRING is "melt the system"
 
-	main_help: STRING_GENERAL is do Result := locale.translation ("go back to main menu") end
+	modified_help: STRING is "show classes modified since last compilation"
 
-	melt_help: STRING_GENERAL is do Result := locale.translation ("melt the system") end
+	Number_of_calls_help: STRING is " output of number of calls to a feature"
 
-	modified_help: STRING_GENERAL is do Result := locale.translation ("show classes modified since last compilation") end
+	once_help: STRING is "show the once & constant features of a class"
 
-	Number_of_calls_help: STRING_GENERAL is do Result := locale.translation (" output of number of calls to a feature") end
+	parent_help: STRING is "go back to parent menu"
 
-	once_help: STRING_GENERAL is do Result := locale.translation ("show the once & constant features of a class") end
+	Percentage_help: STRING is " output of percentage of time spent in a feature"
 
-	parent_help: STRING_GENERAL is do Result := locale.translation ("go back to parent menu") end
+	precompile_help: STRING is "precompile the system"
 
-	Percentage_help: STRING_GENERAL is do Result := locale.translation (" output of percentage of time spent in a feature") end
+	finalize_precompile_help: STRING is "precompile and finalize the system"
 
-	precompile_help: STRING_GENERAL is do Result := locale.translation ("precompile the system") end
+	Profile_help: STRING is "information about a profiled run"
 
-	finalize_precompile_help: STRING_GENERAL is do Result := locale.translation ("precompile and finalize the system") end
+	project_path_help: STRING is "specify the compilation directory"
 
-	Profile_help: STRING_GENERAL is do Result := locale.translation ("information about a profiled run") end
+	project_help: STRING is "specify the project file to load (obsolete)"
 
-	project_path_help: STRING_GENERAL is do Result := locale.translation ("specify the compilation directory") end
+	queries_help: STRING is "manipulate subqueries"
 
-	project_help: STRING_GENERAL is do Result := locale.translation ("specify the project file to load (obsolete)") end
+	quick_melt_help: STRING is "quick melt the system"
 
-	queries_help: STRING_GENERAL is do Result := locale.translation ("manipulate subqueries") end
+	quit_help: STRING is "terminate session"
 
-	quick_melt_help: STRING_GENERAL is do Result := locale.translation ("quick melt the system") end
+	r_flat_help: STRING is "show the flat form of a feature"
 
-	quit_help: STRING_GENERAL is do Result := locale.translation ("terminate session") end
+	r_text_help: STRING is "show the text of a feature"
 
-	r_flat_help: STRING_GENERAL is do Result := locale.translation ("show the flat form of a feature") end
+	reactivate_subquery_help: STRING is "reactivate subquery"
 
-	r_text_help: STRING_GENERAL is do Result := locale.translation ("show the text of a feature") end
+	inactivate_subquery_help: STRING is "inactivate subquery"
 
-	reactivate_subquery_help: STRING_GENERAL is do Result := locale.translation ("reactivate subquery") end
+	routines_help: STRING is "show the routines of a class"
 
-	inactivate_subquery_help: STRING_GENERAL is do Result := locale.translation ("inactivate subquery") end
+	invariants_help: STRING is "show the invariants of a class"
 
-	routines_help: STRING_GENERAL is do Result := locale.translation ("show the routines of a class") end
+	creators_help: STRING is "show the creation procedures of a class"
 
-	invariants_help: STRING_GENERAL is do Result := locale.translation ("show the invariants of a class") end
+	run_help: STRING is "execute the system"
 
-	creators_help: STRING_GENERAL is do Result := locale.translation ("show the creation procedures of a class") end
+	run_prof_help: STRING is "run the query"
 
-	run_help: STRING_GENERAL is do Result := locale.translation ("execute the system") end
+	Self_sec_help: STRING is " output of time spent in a function itself"
 
-	run_prof_help: STRING_GENERAL is do Result := locale.translation ("run the query") end
+	short_help: STRING is "show the short form of a class"
 
-	Self_sec_help: STRING_GENERAL is do Result := locale.translation (" output of time spent in a function itself") end
+	show_subqueries_help: STRING is "show the list of queries"
 
-	single_file_compilation_help: STRING_GENERAL is do Result := locale.translation ("specify a class file for single file compilation") end
+	statistics_help: STRING is "show system statistics"
 
-	short_help: STRING_GENERAL is do Result := locale.translation ("show the short form of a class") end
+	stop_help: STRING is "stop on error"
 
-	show_subqueries_help: STRING_GENERAL is do Result := locale.translation ("show the list of queries") end
+	storage_help: STRING is "store in EiffelCase format"
 
-	statistics_help: STRING_GENERAL is do Result := locale.translation ("show system statistics") end
+	suppliers_help: STRING is "show the suppliers of a class"
 
-	stop_help: STRING_GENERAL is do Result := locale.translation ("stop on error") end
+	switches_help: STRING is "show the output switches"
 
-	storage_help: STRING_GENERAL is do Result := locale.translation ("store in EiffelCase format") end
+	system_help: STRING is "Config and cluster details"
 
-	suppliers_help: STRING_GENERAL is do Result := locale.translation ("show the suppliers of a class") end
+	text_help: STRING is "show the text of a class"
 
-	switches_help: STRING_GENERAL is do Result := locale.translation ("show the output switches") end
+	target_help: STRING is "specify the target"
 
-	system_help: STRING_GENERAL is do Result := locale.translation ("Config and cluster details") end
+	use_settings_help: STRING is "use settings for project location"
 
-	text_help: STRING_GENERAL is do Result := locale.translation ("show the text of a class") end
+	no_library_help: STRING is "do not convert clusters into libraries"
 
-	target_help: STRING_GENERAL is do Result := locale.translation ("specify the target") end
+	Total_sec_help: STRING is " output of time spent in both the function and its descendants"
 
-	use_settings_help: STRING_GENERAL is do Result := locale.translation ("use settings for project location") end
+	yank_help: STRING is "yank (save) output of last command to a file"
 
-	no_library_help: STRING_GENERAL is do Result := locale.translation ("do not convert clusters into libraries") end
+	w_compile_help: STRING is "(re)compile the C code generated by freeze"
 
-	Total_sec_help: STRING_GENERAL is do Result := locale.translation (" output of time spent in both the function and its descendants") end
+	flat_doc_help: STRING is "Generate flat form of all classes in system"
 
-	yank_help: STRING_GENERAL is do Result := locale.translation ("yank (save) output of last command to a file") end
+	flat_short_doc_help: STRING is "Generate flat/short form of all classes in system"
 
-	w_compile_help: STRING_GENERAL is do Result := locale.translation ("(re)compile the C code generated by freeze") end
+	short_doc_help: STRING is "Generate short form of all classes in system"
 
-	flat_doc_help: STRING_GENERAL is do Result := locale.translation ("Generate flat form of all classes in system") end
+	text_doc_help: STRING is "Generate text form of all classes in system"
 
-	flat_short_doc_help: STRING_GENERAL is do Result := locale.translation ("Generate flat/short form of all classes in system") end
-
-	short_doc_help: STRING_GENERAL is do Result := locale.translation ("Generate short form of all classes in system") end
-
-	text_doc_help: STRING_GENERAL is do Result := locale.translation ("Generate text form of all classes in system") end
-
-	version_help: STRING_GENERAL is do Result := locale.translation ("show compiler version number") end;
+	version_help: STRING is "show compiler version number";
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

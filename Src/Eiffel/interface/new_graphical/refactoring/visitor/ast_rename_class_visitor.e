@@ -1,5 +1,5 @@
 indexing
-	description: "Visitor that changes all occurrences of a class name to a new name."
+	description: "Visitor that changes all occurances of a class name to a new name."
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
 	date: "$Date$"
@@ -44,7 +44,7 @@ feature
 	process_class_type_as (l_as: CLASS_TYPE_AS) is
 			-- Process `l_as'.
 		do
-			if old_class_name.is_case_insensitive_equal (l_as.class_name.name) then
+			if old_class_name.is_case_insensitive_equal (l_as.class_name) then
 				l_as.class_name.replace_text (new_class_name, match_list)
 				has_modified := True
 			end
@@ -54,7 +54,7 @@ feature
 	process_class_as (l_as: CLASS_AS) is
 			-- Process `l_as'.
 		do
-			if old_class_name.is_case_insensitive_equal (l_as.class_name.name) then
+			if old_class_name.is_case_insensitive_equal (l_as.class_name) then
 				l_as.class_name.replace_text (new_class_name, match_list)
 				has_modified := True
 			end
@@ -74,7 +74,7 @@ feature
 				l_list.after
 			loop
 				l_item := l_list.item
-				if old_class_name.is_case_insensitive_equal (l_item.name) then
+				if old_class_name.is_case_insensitive_equal (l_item) then
 					l_item.replace_text (new_class_name, match_list)
 					has_modified := True
 				end
@@ -109,6 +109,7 @@ feature
 			end
 			Precursor (l_as)
 		end
+
 
 feature {NONE} -- Implementation
 

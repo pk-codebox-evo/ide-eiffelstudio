@@ -32,6 +32,11 @@ inherit
 			interface
 		end
 
+	EV_POSITIONED_I
+		redefine
+			interface
+		end
+
 	EV_WIDGET_ACTION_SEQUENCES_I
 
 	EV_HELP_CONTEXTABLE_I
@@ -206,7 +211,7 @@ feature -- Element change
 		deferred
 		ensure
 			minimum_width_assigned: is_usable implies
-				((a_minimum_width > 0 implies interface.minimum_width = a_minimum_width) or (a_minimum_width = 0 implies (interface.minimum_width <= 1)))
+				interface.minimum_width = a_minimum_width
 		end
 
 	set_minimum_height (a_minimum_height: INTEGER) is
@@ -216,7 +221,7 @@ feature -- Element change
 		deferred
 		ensure
 			minimum_height_assigned: is_usable implies
-				((a_minimum_height > 0 implies interface.minimum_height = a_minimum_height) or (a_minimum_height = 0 implies (interface.minimum_height <= 1)))
+				interface.minimum_height = a_minimum_height
 		end
 
 	set_minimum_size (a_minimum_width, a_minimum_height: INTEGER) is
@@ -228,9 +233,9 @@ feature -- Element change
 		deferred
 		ensure
 			minimum_width_assigned: is_usable implies
-				((a_minimum_width > 0 implies interface.minimum_width = a_minimum_width) or (a_minimum_width = 0 implies (interface.minimum_width <= 1)))
+				interface.minimum_width = a_minimum_width
 			minimum_height_assigned: is_usable implies
-				((a_minimum_height > 0 implies interface.minimum_height = a_minimum_height) or (a_minimum_height = 0 implies (interface.minimum_height <= 1)))
+				interface.minimum_height = a_minimum_height
 		end
 
 feature -- Measurement
@@ -268,12 +273,6 @@ feature {EV_ANY_I} -- Implementation
 		do
 		ensure
 			parent_void: parent = Void
-		end
-
-	update_for_pick_and_drop (starting: BOOLEAN) is
-			-- Pick and drop status has changed so update appearance of
-			-- `Current' to reflect available targets.
-		deferred
 		end
 
 feature {NONE} -- Implementation

@@ -20,7 +20,7 @@ inherit
 			is_equal, out, copy
 		end
 
-	SQL_SCAN [G]
+	SQL_SCAN
 		rename
 			make as scan_make,
 			put as string_put
@@ -41,7 +41,6 @@ feature -- Initialization
 		do
 			create ht.make (1)
 			create ht_order.make (1)
-			ht_order.compare_objects
 			create map_table.make (1, 10)
 			scan_make (size)
 		end
@@ -219,10 +218,11 @@ feature {NONE} -- Status setting
 							end
 							if idx > g then
 								db_spec.update_map_table_error (handle, map_table, ind)
+								ind := f + 1
 							else
 								map_table.put (idx, ind)
+								ind := ind + 1
 							end
-							ind := ind + 1
 --						else
 --							ind := ind + 1
 --						end

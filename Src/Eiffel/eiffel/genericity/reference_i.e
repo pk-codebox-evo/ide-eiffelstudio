@@ -26,7 +26,7 @@ feature -- Status report
 		do
 			Result := {MD_SIGNATURE_CONSTANTS}.Element_type_object
 		end
-
+		
 	tuple_code: INTEGER_8 is
 			-- Tuple code
 		do
@@ -83,8 +83,7 @@ feature
 	c_string: STRING is "EIF_REFERENCE"
 			-- String generated for the type.
 
-	typed_field: STRING is "it_r"
-			-- Value field of a C structure corresponding to this type
+	union_tag: STRING is "rarg"
 
 	hash_code: INTEGER is
 			-- Hash code for current type
@@ -97,12 +96,12 @@ feature
 		do
 			Result := Sk_ref
 		end
-
-	generate_typed_tag (buffer: GENERATION_BUFFER) is
-			-- Generate tag of C structure "EIF_TYPED_VALUE" associated
+	
+	generate_union (buffer: GENERATION_BUFFER) is
+			-- Generate discriminant of C structure "item" associated
 			-- to the current C type in `buffer'.
 		do
-			buffer.put_string ("type = SK_REF")
+			buffer.put_string ("it_ref")
 		end
 
 	generate_sk_value (buffer: GENERATION_BUFFER) is
@@ -115,9 +114,9 @@ feature
 		do
 			Result := System.any_class.compiled_class.actual_type
 		end
-
+	
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

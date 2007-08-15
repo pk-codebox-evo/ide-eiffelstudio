@@ -53,11 +53,6 @@ feature {NONE}  -- Initlization
 			internal_border_for_tab_area.set_border_color (internal_shared.border_color)
 			internal_border_for_tab_area.set_border_style ({SD_ENUMERATION}.top)
 			extend_vertical_box (internal_border_for_tab_area)
-			set_minimum_width ({SD_SHARED}.Notebook_minimum_width)
-
-			-- set_minimum_height is not needed on Windows.
-			-- But on Linux, if we don't set it, docking (not tabbed) zone minimum height will be 1 when zone is minimized.
-			set_minimum_height (internal_shared.notebook_tab_height + 3)
 
 			internal_border_for_tab_area.extend (internal_tab_box)
 			internal_tab_box.set_gap (False)
@@ -82,14 +77,10 @@ feature -- Command
 		do
 			if a_focus then
 				internal_border_box.set_background_color (internal_shared.focused_color)
-				if selected_item /= Void  then
-					notify_tab (tab_by_content (selected_item), True)
-				end
+				notify_tab (tab_by_content (selected_item), True)
 			else
 				internal_border_box.set_background_color (internal_shared.border_color)
-				if selected_item /= Void then
-					notify_tab (tab_by_content (selected_item), False)
-				end
+				notify_tab (tab_by_content (selected_item), False)
 			end
 		end
 
@@ -101,7 +92,7 @@ feature -- Command
 			end
 		end
 
-	set_item_text (a_content: SD_CONTENT; a_text: STRING_GENERAL) is
+	set_item_text (a_content: SD_CONTENT; a_text: STRING) is
 			-- Assign `a_text' to label of `an_item'.
 		require
 			has: has (a_content)
@@ -147,11 +138,8 @@ feature -- Command
 			notify_tab (tab_by_content (a_content), a_focus)
 			internal_tab_box.resize_tabs (internal_tab_box.tab_box_predered_width)
 
-			if not internal_docking_manager.property.is_opening_config then
-				a_content.show_actions.call ([])
-			end
 		ensure
-			selected: selected_item = a_content
+			selectd: selected_item = a_content
 		end
 
 	extend (a_content: SD_CONTENT) is
@@ -167,9 +155,8 @@ feature -- Command
 			internal_tabs.extend (l_tab)
 			l_tab.set_drop_actions (a_content.drop_actions)
 			l_tab.select_actions.extend (agent on_tab_selected (l_tab))
-			l_tab.close_actions.extend (agent (a_content.close_request_actions).call (Void))
+			l_tab.close_actions.extend (agent (a_content.close_request_actions).call ([]))
 			l_tab.drag_actions.extend (agent on_tab_dragging (?, ?, ?, ?, ?, ?, ?, l_tab))
-			l_tab.set_tool_tip (a_content.tab_tooltip)
 			internal_tab_box.extend (l_tab)
 
 			select_item (a_content, True)
@@ -188,9 +175,7 @@ feature -- Command
 			internal_contents.start
 			internal_contents.search (a_content)
 			internal_tabs.go_i_th (internal_contents.index)
-			if internal_tabs.item /= Void then
-				internal_tabs.item.destroy
-			end
+			internal_tabs.item.destroy
 			internal_tabs.remove
 
 			internal_contents.start
@@ -205,13 +190,11 @@ feature -- Command
 				end
 
 				select_item (internal_contents.item, a_focus)
-
 				if a_focus then
-					selection_actions.call (Void)
+					selection_actions.call ([])
 				end
 			end
 			internal_tab_box.resize_tabs (internal_tab_box.tab_box_predered_width)
-
 		ensure
 			pruned: not has (a_content)
 		end
@@ -279,7 +262,7 @@ feature -- Command
 			l_tab: SD_NOTEBOOK_TAB
 		do
 			debug ("docking")
-				print ("%NSD_NOTEBOOK set_content_position a_content is: " + a_content.unique_title.as_string_8 + " a_index is:" + a_index.out )
+				print ("%NSD_NOTEBOOK set_content_position a_content is: " + a_content.unique_title + " a_index is:" + a_index.out )
 			end
 			if contents.i_th (a_index) /= a_content then
 				l_tab := tab_by_content (a_content)
@@ -298,18 +281,6 @@ feature -- Command
 			end
 		ensure
 			set: contents.i_th (a_index) = a_content
-		end
-
-	disable_widget_expand is
-			-- Disable client programmers' widget expand
-		do
-			disable_item_expand (internal_border_box)
-		end
-
-	enable_widget_expand is
-			-- Enable client programmers' widget expand
-		do
-			enable_item_expand (internal_border_box)
 		end
 
 feature -- Query
@@ -334,18 +305,6 @@ feature -- Query
 			has: has_tab (a_tab)
 		do
 			Result := internal_tab_box.index_of (a_tab)
-		end
-
-	tab_by_content (a_content: SD_CONTENT): SD_NOTEBOOK_TAB is
-			-- Tab which associate with `a_widget'.
-		require
-			has: has (a_content)
-		do
-			internal_contents.start
-			internal_contents.search (a_content)
-			Result := internal_tabs.i_th (internal_contents.index)
-		ensure
-			not_void: Result /= Void
 		end
 
 	has (a_content: SD_CONTENT): BOOLEAN is
@@ -405,7 +364,7 @@ feature -- Query
 			Result := internal_tabs.item.pixmap
 		end
 
-	item_text (a_content: SD_CONTENT): STRING_GENERAL is
+	item_text (a_content: SD_CONTENT): STRING is
 			-- `a_content''s pixmap.
 		require
 			has: has (a_content)
@@ -472,7 +431,7 @@ feature {NONE}  -- Implementation
 		do
 			dragging_tab := a_tab
 			enable_capture
-			prepare_tabs_rects
+
 			debug ("docking")
 				print ("%NSD_NOTEBOOK on_tab_dragging enable capture")
 			end
@@ -486,7 +445,7 @@ feature {NONE}  -- Implementation
 		do
 			dragging_tab := Void
 			disable_capture
-			tabs_rects := Void
+
 
 			debug ("docking")
 				print ("%NSD_NOTEBOOK on_pointer_release disable capture    dragging_tab := Void? " + (dragging_tab = Void).out)
@@ -497,39 +456,39 @@ feature {NONE}  -- Implementation
 			-- Handle pointer motion.
 		local
 			l_in_tabs: BOOLEAN
-			l_index: INTEGER
+			l_tabs_snapshot: like internal_tabs
 		do
 			-- FIXIT: This function should not be called on GTK.
 			-- 		  So actually this if clause is should not needed.
-			if dragging_tab /= Void and tabs_rects /= Void then
+			if dragging_tab /= Void then
 				from
-					tabs_rects.start
+					l_tabs_snapshot := internal_tabs.twin
+					l_tabs_snapshot.start
 				until
-					tabs_rects.after or l_in_tabs
+					l_tabs_snapshot.after or l_in_tabs
 				loop
-					l_index := l_index + 1
-
-					if tabs_rects.item_for_iteration.has_x_y (a_screen_x, a_screen_y) then
-						l_in_tabs := True
-
-						-- Check if already swapped.
-						if l_index /= internal_tab_box.index_of (dragging_tab) then
+					if l_tabs_snapshot.item /= dragging_tab then
+						if tab_has_x_y (l_tabs_snapshot.item, a_screen_x, a_screen_y)  then
+							l_in_tabs := True
 							internal_docking_manager.command.lock_update (Current, False)
-							set_content_position (content_by_tab (dragging_tab), l_index)
-							internal_tab_box.set_tab_position (dragging_tab, l_index)
+
+							swap_tabs_and_contents (dragging_tab, l_tabs_snapshot.item)
+
+							internal_tab_box.swap (dragging_tab, l_tabs_snapshot.item)
 
 							-- Is already done by on_resize
+
 							internal_tab_box.resize_tabs (internal_tab_box.tab_box_predered_width)
 							internal_docking_manager.command.unlock_update
 						end
+					elseif tab_has_x_y (dragging_tab, a_screen_x, a_screen_y) then
+						l_in_tabs := True
 					end
-
-					tabs_rects.forth
+					l_tabs_snapshot.forth
 				end
 
 				if not l_in_tabs then
 					disable_capture
-					tabs_rects := Void
 					tab_drag_actions.call ([content_by_tab (dragging_tab), a_x, a_y, a_screen_x, a_screen_y])
 				end
 			end
@@ -540,28 +499,46 @@ feature {NONE}  -- Implementation
 		do
 			select_item (content_by_tab (a_tab), True)
 			notify_tab (a_tab, True)
-			selection_actions.call (Void)
+			selection_actions.call ([])
+		end
+
+	tab_by_content (a_content: SD_CONTENT): SD_NOTEBOOK_TAB is
+			-- Tab which associate with `a_widget'.
+		require
+			has: has (a_content)
+		do
+			internal_contents.start
+			internal_contents.search (a_content)
+			Result := internal_tabs.i_th (internal_contents.index)
+		ensure
+			not_void: Result /= Void
 		end
 
 	notify_tab (a_except: SD_NOTEBOOK_TAB; a_focus: BOOLEAN) is
 			-- Disable all tabs selection except `a_except'. Select `a_except'.
-		local
-			l_tab_item: SD_NOTEBOOK_TAB
 		do
 			from
 				internal_tabs.start
 			until
 				internal_tabs.after
 			loop
-				l_tab_item := internal_tabs.item
-				if l_tab_item = a_except then
-					l_tab_item.set_selected (True, a_focus)
+				if internal_tabs.item = a_except then
+					internal_tabs.item.set_selected (True, a_focus)
 				else
-					l_tab_item.set_selected (False, a_focus)
+					internal_tabs.item.set_selected (False, a_focus)
 				end
 
 				internal_tabs.forth
 			end
+		end
+
+	tab_has_x_y (a_tab: SD_NOTEBOOK_TAB; a_screen_x, a_screen_y: INTEGER): BOOLEAN is
+			-- If `a_tab' has `a_screen_x', `a_screen_y'?
+		local
+			l_rect: EV_RECTANGLE
+		do
+			create l_rect.make (a_tab.screen_x, a_tab.screen_y, a_tab.width, a_tab.height)
+			Result := l_rect.has_x_y (a_screen_x, a_screen_y)
 		end
 
 	swap_tabs_and_contents (a_tab_1, a_tab_2: SD_NOTEBOOK_TAB) is
@@ -572,49 +549,21 @@ feature {NONE}  -- Implementation
 			has: internal_tabs.has (a_tab_2) and internal_tab_box.has (a_tab_2)
 		local
 			l_index_1, l_index_2: INTEGER
-			l_index_1_valid, l_index_2_valid: BOOLEAN
 		do
 			l_index_1 := internal_tab_box.index_of (a_tab_1)
 			l_index_2 := internal_tab_box.index_of (a_tab_2)
-			l_index_1_valid := l_index_1 <= internal_tabs.count and l_index_1 /= 0
-			l_index_1_valid := l_index_2 <= internal_tabs.count and l_index_2 /= 0
-			if l_index_1_valid and l_index_2_valid then
-				internal_tabs.go_i_th (l_index_1)
-				internal_tabs.swap (l_index_2)
+			check index_valid: l_index_1 <= internal_tabs.count and l_index_1 /= 0 end
+			check index_valid: l_index_2 <= internal_tabs.count and l_index_2 /= 0 end
+			internal_tabs.go_i_th (l_index_1)
+			internal_tabs.swap (l_index_2)
 
-				internal_contents.go_i_th (l_index_1)
-				internal_contents.swap (l_index_2)
-			end
+			internal_contents.go_i_th (l_index_1)
+			internal_contents.swap (l_index_2)
 		ensure
 			not_changed: old internal_contents.count = internal_contents.count
+--			swapped: old internal_tab_box.index_of (a_tab_1) /= internal_tab_box.index_of (a_tab_1)
+--			swapped: old internal_tab_box.index_of (a_tab_2) /= internal_tab_box.index_of (a_tab_2)
 		end
-
-	prepare_tabs_rects is
-			-- Create `tabs_rects' base on current tabs position
-		local
-			l_tabs_snapshot: like internal_tabs
-			l_rect: EV_RECTANGLE
-			l_tab: SD_NOTEBOOK_TAB
-		do
-			if dragging_tab /= Void then
-				from
-					l_tabs_snapshot := internal_tabs.twin
-					create tabs_rects.make (l_tabs_snapshot.count)
-					l_tabs_snapshot.start
-				until
-					l_tabs_snapshot.after
-				loop
-					l_tab := l_tabs_snapshot.item
-					create l_rect.make (l_tab.screen_x, l_tab.screen_y, l_tab.width, l_tab.height)
-					tabs_rects.force (l_rect, l_tab)
-					l_tabs_snapshot.forth
-				end
-			end
-		end
-
-	tabs_rects: DS_HASH_TABLE [EV_RECTANGLE, SD_NOTEBOOK_TAB]
-			-- We remember orignal tab position each time before start dragging, otherwise
-			-- it will cause tab jumping if a tab is very narrow and a tab is very wide.
 
 	internal_contents: ARRAYED_LIST [SD_CONTENT]
 			-- All widgets in Current.

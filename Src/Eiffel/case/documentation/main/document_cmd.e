@@ -28,11 +28,14 @@ feature -- Initialization
 
 feature -- Access
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it appears in the menu (with '&' symbol).
 		do
 			Result := Interface_names.m_Generate_documentation
 		end
+
+	pixmap: EV_PIXMAP
+			-- Pixmap
 
 feature -- Execution
 
@@ -52,7 +55,7 @@ feature {NONE} -- Implementation
 			wizard_not_void: wizard /= Void
 		local
 			doc: DOCUMENTATION
-			dial: EB_WARNING_DIALOG
+			dial: EV_WARNING_DIALOG
 			retried: BOOLEAN
 			l_str: STRING
 		do
@@ -128,4 +131,4 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+end -- class DOCUMENT_CMD

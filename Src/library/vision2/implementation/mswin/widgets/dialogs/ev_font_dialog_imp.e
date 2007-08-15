@@ -27,15 +27,6 @@ inherit
 		rename
 			make as wel_make,
 			set_parent as wel_set_parent
-		redefine
-			activate
-		end
-
-	WEL_STANDARD_DIALOG_DISPATCHER
-		rename
-			standard_dialog_procedure as font_dialog_procedure
-		undefine
-			copy, is_equal
 		end
 
 create
@@ -55,8 +46,7 @@ feature {NONE} -- Implementation
 		do
 				-- We must set the style of `Current'.
 				-- Modifying the flags changes the appearence.
-			cwel_choose_font_set_lpfnhook (item, wel_standard_dialog_procedure)
-			set_flags (Cf_screenfonts + Cf_inittologfontstruct + Cf_noscriptsel + cf_enablehook)
+			set_flags (Cf_screenfonts + Cf_inittologfontstruct + Cf_noscriptsel)
 			set_is_initialized (True)
 		end
 
@@ -101,10 +91,7 @@ feature -- Access
 	title: STRING_32 is
 			-- Title of `Current'.
 		do
-			Result := internal_title
-			if Result = Void then
-				Result := "Font"
-			end
+			Result := "Font"
 		end
 
 feature -- Element change
@@ -112,9 +99,7 @@ feature -- Element change
 	set_title (new_title: STRING_GENERAL) is
 			-- Assign `new_title' to `title'.
 		do
-			internal_title := new_title.twin
-		ensure then
-			title_set: title.is_equal (new_title)
+			--|FIXME
 		end
 
 	set_font (a_font: EV_FONT) is
@@ -230,6 +215,7 @@ feature -- Element change
 			end
 		end
 
+
 feature {NONE} -- Implementation
 
 	destroy is
@@ -237,33 +223,6 @@ feature {NONE} -- Implementation
 		do
 			destroy_item
 			set_is_destroyed (True)
-		end
-
-	internal_title: STRING_32
-			-- Storage for `title'.
-
-	activate (a_parent: WEL_COMPOSITE_WINDOW) is
-			-- Activate current dialog
-		do
-			begin_activate
-			Precursor {WEL_CHOOSE_FONT_DIALOG} (a_parent)
-			end_activate
-		end
-
-	font_dialog_procedure (hdlg: POINTER; msg: INTEGER_32; wparam, lparam: POINTER): POINTER is
-			-- Hook for handling messages of the font dialog.
-		local
-			l_str: WEL_STRING
-		do
-			inspect msg
-			when {WEL_WM_CONSTANTS}.wm_initdialog then
-					-- Initialize the title of dialog properly.
-				if internal_title /= Void then
-					create l_str.make (internal_title)
-					{WEL_API}.set_window_text (hdlg, l_str.item)
-				end
-			else
-			end
 		end
 
 feature {EV_ANY_I}
@@ -280,6 +239,9 @@ indexing
 			 Website http://www.eiffel.com
 			 Customer support http://support.eiffel.com
 		]"
+
+
+
 
 end -- class EV_FONT_DIALOG_IMP
 

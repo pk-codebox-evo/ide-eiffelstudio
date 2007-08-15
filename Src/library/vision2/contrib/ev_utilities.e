@@ -25,14 +25,12 @@ feature -- Access
 			if window = Void then
 				if a_widget.parent /= Void then
 					Result := parent_window (a_widget.parent)
-				end
+				end	
 			else
 				Result := window
-			end
-		ensure
-			shown_implies_result_not_void: a_widget.is_displayed implies Result /= Void
+			end	
 		end
-
+		
 	parent_dialog (a_widget: EV_WIDGET): EV_DIALOG is
 			-- `Result' is top level dialog containing `a_widget' or
 			-- `Void' if none.
@@ -45,10 +43,10 @@ feature -- Access
 			if dialog = Void then
 				if a_widget.parent /= Void then
 					Result := parent_dialog (a_widget.parent)
-				end
+				end	
 			else
 				Result := dialog
-			end
+			end	
 		end
 
 indexing

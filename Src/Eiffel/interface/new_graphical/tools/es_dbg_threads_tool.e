@@ -13,14 +13,17 @@ inherit
 	EB_TOOL
 		redefine
 			menu_name,
-			pixmap,
-			pixel_buffer,
-			mini_toolbar,
-			internal_recycle,
-			show
+			pixmap
 		end
 
-	EB_SHARED_DEBUGGER_MANAGER
+	EB_RECYCLABLE
+
+	SHARED_APPLICATION_EXECUTION
+		export
+			{NONE} all
+		end
+
+	EB_SHARED_DEBUG_TOOLS
 		export
 			{NONE} all
 		end
@@ -34,11 +37,6 @@ inherit
 		redefine
 			update,
 			real_update
-		end
-
-	SHARED_BENCH_NAMES
-		export
-			{NONE} all
 		end
 
 create
@@ -64,10 +62,10 @@ feature {NONE} -- Initialization
 			grid.enable_single_row_selection
 			grid.enable_border
 			grid.set_column_count_to (4)
-			grid.column (1).set_title (debugger_names.t_id)
-			grid.column (2).set_title (debugger_names.t_name)
-			grid.column (3).set_title (debugger_names.t_priority)
-			grid.column (4).set_title (debugger_names.t_note)
+			grid.column (1).set_title ("Id")
+			grid.column (2).set_title ("Name")
+			grid.column (3).set_title ("Priority")
+			grid.column (4).set_title ("Note")
 
 			grid.pointer_double_press_item_actions.extend (agent on_item_double_clicked)
 			grid.set_auto_resizing_column (1, True)
@@ -79,6 +77,31 @@ feature {NONE} -- Initialization
 
 			grid.build_delayed_cleaning
 			widget := box
+		end
+
+--	build_mini_toolbar is
+--			-- Build the associated tool bar
+--		do
+--			create mini_toolbar
+--		ensure
+--			mini_toolbar_exists: mini_toolbar /= Void
+--		end
+
+	build_explorer_bar_item (explorer_bar: EB_EXPLORER_BAR) is
+			-- Build the associated explorer bar item and
+			-- Add it to `explorer_bar'
+		do
+--			if mini_toolbar = Void then
+--				build_mini_toolbar
+--			end
+--			create {EB_EXPLORER_BAR_ITEM} explorer_bar_item.make_with_mini_toolbar (explorer_bar, widget, title, False, mini_toolbar)
+
+			create {EB_EXPLORER_BAR_ITEM} explorer_bar_item.make (explorer_bar, widget, title, True)
+			explorer_bar_item.set_menu_name (menu_name)
+			if pixmap /= Void then
+				explorer_bar_item.set_pixmap (pixmap)
+			end
+			explorer_bar.add (explorer_bar_item)
 		end
 
 feature -- Properties
@@ -93,34 +116,23 @@ feature -- Access
 	widget: EV_WIDGET
 			-- Widget representing Current.
 
-	title: STRING_GENERAL is
+	title: STRING is
 			-- Title of the tool.
 		do
-			Result := Interface_names.t_Threads_tool
+			Result := "Threads" -- Interface_names.t_Call_stack_tool
 		end
 
-	title_for_pre: STRING is
-			-- Title for prefence, STRING_8
-		do
-			Result := Interface_names.to_Threads_tool
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it may appear in a menu.
 		do
-			Result := interface_names.m_threads_tool -- Interface_names.m_Call_stack_tool
+			Result := "Threads" -- Interface_names.m_Call_stack_tool
 		end
 
 	pixmap: EV_PIXMAP is
 			-- Pixmap as it may appear in toolbars and menus.
 		do
-			Result := pixmaps.icon_pixmaps.tool_threads_icon
-		end
-
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer as it may appear in toolbars and menus.
-		do
-			Result := pixmaps.icon_pixmaps.tool_threads_icon_buffer
+--| To be done.
+--			Result := Pixmaps.Icon_call_stack
 		end
 
 feature -- Status setting
@@ -167,7 +179,7 @@ feature -- Status setting
 		do
 				-- FIXME jfiat: check what happens if the application is not stopped ?
 			if Debugger_manager.application_current_thread_id /= tid then
-				Debugger_manager.change_current_thread_id (tid)
+				Debugger_manager.set_current_thread_id (tid)
 			end
 		end
 
@@ -183,20 +195,34 @@ feature -- Status setting
 		do
 			cancel_process_real_update_on_idle
 			request_clean_threads_info
-			if debugger_manager.application_is_executing then
-				l_status := debugger_manager.application_status
-				check l_status /= Void end
+			l_status := application.status
+			if l_status /= Void then
 				process_real_update_on_idle (l_status.is_stopped)
 			end
 		end
 
-	show is
-			-- Show tool.
+	change_manager_and_explorer_bar (a_manager: EB_TOOL_MANAGER; an_explorer_bar: EB_EXPLORER_BAR) is
+			-- Change the window and explorer bar `Current' is in.
+		require
+			a_manager_exists: a_manager /= Void
+			an_explorer_bar_exists: an_explorer_bar /= Void
 		do
-			Precursor {EB_TOOL}
-			if grid.is_displayed and grid.is_sensitive then
-				grid.set_focus
+			set_manager (a_manager)
+			change_attach_explorer (an_explorer_bar)
+		ensure
+			explorer_changed: explorer_bar_item.parent = an_explorer_bar
+		end
+
+feature -- Memory management
+
+	recycle is
+			-- Recycle `Current', but leave `Current' in an unstable state,
+			-- so that we know whether we're still referenced or not.
+		do
+			if explorer_bar_item /= Void then
+				unattach_from_explorer_bar
 			end
+			reset_tool
 		end
 
 	reset_tool is
@@ -205,15 +231,6 @@ feature -- Status setting
 			Preferences.debug_tool_data.row_highlight_background_color_preference.change_actions.prune_all (set_row_highlight_bg_color_agent)
 			notes_on_threads.wipe_out
 			clean_threads_info
-		end
-
-feature {NONE} -- Memory management
-
-	internal_recycle is
-			-- Recycle `Current', but leave `Current' in an unstable state,
-			-- so that we know whether we're still referenced or not.
-		do
-			reset_tool
 		end
 
 feature {NONE} -- Implementation
@@ -225,8 +242,8 @@ feature {NONE} -- Implementation
 			l_status: APPLICATION_STATUS
 		do
 			Precursor {DEBUGGING_UPDATE_ON_IDLE} (dbg_was_stopped)
-			if debugger_manager.application_is_executing then
-				l_status := debugger_manager.application_status
+			if Application.is_running then
+				l_status := application.status
 				if dbg_was_stopped then
 					l_status.update_on_stopped_state
 				end
@@ -246,8 +263,6 @@ feature {NONE} -- Implementation
 
 	refresh_threads_info is
 			-- Refresh thread info according to debugger data
-		require
-			application_is_executing: debugger_manager.application_is_executing
 		local
 			r: INTEGER
 			row: EV_GRID_ROW
@@ -261,7 +276,7 @@ feature {NONE} -- Implementation
 			prio: INTEGER
 		do
 			clean_threads_info
-			l_status := debugger_manager.application_status
+			l_status := Application.status
 			if l_status /= Void and then l_status.is_stopped then
 				arr := l_status.all_thread_ids
 				if arr /= Void and then not arr.is_empty then
@@ -274,12 +289,9 @@ feature {NONE} -- Implementation
 						if not arr.has (tid) then
 							if notes_on_threads.valid_key (tid) then
 								notes_on_threads.remove (tid)
-							else
-								notes_on_threads.forth
 							end
-						else
-							notes_on_threads.forth
 						end
+						notes_on_threads.forth
 					end
 					from
 						grid.insert_new_rows (arr.count, 1)
@@ -291,18 +303,9 @@ feature {NONE} -- Implementation
 						row := grid.row (r)
 						tid := arr.item
 						create lab.make_with_text ("0x" + tid.to_hex_string)
-						if tid = l_status.active_thread_id then
-							lab.set_font (active_thread_font)
-							lab.set_tooltip (debugger_names.t_debuggees_active_thread)
-						end
-
 						row.set_item (1, lab)
-
 						if tid = l_status.current_thread_id then
 							row.set_background_color (row_highlight_bg_color)
-							if row.is_displayed then
-								row.ensure_visible
-							end
 						end
 
 						s := l_status.thread_name (tid)
@@ -335,12 +338,12 @@ feature {NONE} -- Implementation
 					end
 				else
 					grid.insert_new_row (1)
-					create lab.make_with_text (debugger_names.t_no_information_about_thread)
+					create lab.make_with_text ("Sorry no information available on Threads for now")
 					grid.set_item (1, 1, lab)
 				end
 			else
 				grid.insert_new_row (1)
-				create lab.make_with_text (debugger_names.t_no_information_when_not_stopped)
+				create lab.make_with_text ("Sorry no information when the application is not stopped")
 				grid.set_item (1, 1, lab)
 			end
 			grid.request_columns_auto_resizing
@@ -369,19 +372,11 @@ feature {NONE} -- Implementation, cosmetic
 			-- when recycling.
 
 	set_row_highlight_bg_color (v: COLOR_PREFERENCE) is
-			-- set Background color for highlighted row.
 		do
 			row_highlight_bg_color := v.value
 		end
 
 	row_highlight_bg_color: EV_COLOR;
-			-- Background color for highlighted row.
-
-	active_thread_font: EV_FONT is
-		once
-			create Result
-			Result.set_weight ({EV_FONT_CONSTANTS}.weight_bold)
-		end
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

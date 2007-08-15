@@ -80,9 +80,6 @@ feature -- Access
 	rout_id: INTEGER
 			-- Routine id of the feature
 
-	written_class_id: INTEGER
-			-- Class ID where feature is written.
-
 	pattern_id: INTEGER
 			-- Pattern id of the feature
 
@@ -145,12 +142,6 @@ feature -- Access
 
 	custom_attributes: BYTE_LIST [BYTE_NODE]
 			-- Custom attributes if any.
-
-	interface_custom_attributes: BYTE_LIST [BYTE_NODE]
-			-- Interface custom attributes if any.
-
-	class_custom_attributes: BYTE_LIST [BYTE_NODE]
-			-- Class custom attributes if any.
 
 	property_custom_attributes: BYTE_LIST [BYTE_NODE]
 			-- Property custom attributes (if any)
@@ -234,14 +225,6 @@ feature -- Settings
 			rout_id := i
 		end
 
-	set_written_class_id (i: like written_class_id) is
-			-- Assign `i' to `rout_id'.
-		do
-			written_class_id := i
-		ensure
-			written_class_id_set: written_class_id = i
-		end
-
 	set_pattern_id (i: INTEGER) is
 			-- Assign `i' to `pattern_id'.
 		do
@@ -280,22 +263,6 @@ feature -- Settings
 			custom_attributes := cas
 		ensure
 			custom_attributes_set: custom_attributes = cas
-		end
-
-	set_class_custom_attributes (cas: like class_custom_attributes) is
-			-- Assign `cas' to `class_custom_attributes'.
-		do
-			class_custom_attributes := cas
-		ensure
-			class_custom_attributes_set: class_custom_attributes = cas
-		end
-
-	set_interface_custom_attributes (cas: like interface_custom_attributes) is
-			-- Assign `cas' to `interface_custom_attributes'.
-		do
-			interface_custom_attributes := cas
-		ensure
-			interface_custom_attributes_set: interface_custom_attributes = cas
 		end
 
 	set_property_custom_attributes (cas: like property_custom_attributes) is
@@ -401,9 +368,6 @@ feature -- Settings
 				loop
 					temp := "arg"
 					temp.append_integer (i)
-					if context.workbench_mode and then not system.il_generation then
-						temp.append_character ('x')
-					end
 					Result.put (temp, j)
 					i := i + 1
 					j := j + 1
@@ -416,13 +380,38 @@ feature -- Settings
 			end
 		end
 
+	generate_arguments is
+			-- Generate C arguments, if any, in the definition.
+		local
+			i, count: INTEGER
+			a: like argument_names
+			buf: GENERATION_BUFFER
+		do
+			from
+				a := argument_names
+				i := 1
+				count := a.count
+				buf := buffer
+				if i <= count then
+					buf.put_string (a @ i)
+					i := i + 1
+				end
+			until
+				i > count
+			loop
+				buf.put_string (gc_comma)
+				buf.put_string (a @ i)
+				i := i + 1
+			end
+		end
+
 	generate_current: BOOLEAN is True
 			-- Is Current included in argument generation?
 
 	argument_types: ARRAY [STRING] is
 			-- Declare C parameters, if any, as part of the definition.
 		local
-			type_name: STRING
+			arg: TYPE_I
 			i, j, count: INTEGER
 		do
 			if arguments /= Void then
@@ -440,12 +429,8 @@ feature -- Settings
 				until
 					i > count
 				loop
-					if context.workbench_mode then
-						type_name := once "EIF_TYPED_VALUE"
-					else
-						type_name := real_type (arguments.item (i)).c_type.c_string
-					end
-					Result.put (type_name, j)
+					arg := real_type (arguments.item (i))
+					Result.put (arg.c_type.c_string, j)
 					i := i + 1
 					j := j + 1
 				end
@@ -478,9 +463,15 @@ feature -- Settings
 				or else inh_assert.has_old_expression)
 			then
 				buf := buffer
-				buf.put_string ("if (RTAL & CK_ENSURE) {")
-				buf.put_new_line
-				buf.indent
+				if Context.workbench_mode then
+					buf.put_string ("if (RTAL & CK_ENSURE) {")
+					buf.put_new_line
+					buf.indent
+				else
+					buf.put_string ("if (~in_assertion) {");
+					buf.put_new_line
+					buf.indent
+				end
 				buf.put_string ("in_assertion = ~0;")
 				buf.put_new_line
 				if old_expressions /= Void then
@@ -642,22 +633,14 @@ feature -- Byte code generation
 				-- Compound byte code
 			make_body_code (ba, melted_generator)
 
+			ba.append (Bc_null)
+
 			if rescue_clause /= Void then
-					-- Jump to the end of the rescue clause in case of normal execution.
-				ba.append (bc_jmp)
-				ba.mark_forward2
-					-- Mark the start of the rescue clause.
 				ba.write_forward
 				ba.append (Bc_rescue)
 				melted_generator.generate (ba, rescue_clause)
 				ba.append (Bc_end_rescue)
-					-- Mark the end of the rescue clause.
-				ba.write_forward2
 			end
-
-				-- Generate the hook corresponding to the final end.
-			generate_melted_end_debugger_hook (ba)
-			ba.append (Bc_null)
 
 			from
 				Temp_byte_code_array.append_short_integer (local_list.count)
@@ -683,19 +666,21 @@ feature -- Byte code generation
 					i > nb
 				loop
 					formal_type := context.real_type (arguments.item (i))
-					if formal_type.is_bit then
-						Temp_byte_code_array.append_natural_8 ({SHARED_GEN_CONF_LEVEL}.bit_tuple_code_extension)
-						bit_i ?= formal_type
-						Temp_byte_code_array.append_integer(bit_i.size)
-					elseif formal_type.is_true_expanded then
-						Temp_byte_code_array.append_natural_8 ({SHARED_GEN_CONF_LEVEL}.expanded_tuple_code_extension)
-						formal_type.make_full_type_byte_code (Temp_byte_code_array)
-					else
-						Temp_byte_code_array.append_natural_8 (formal_type.tuple_code.as_natural_8)
+					if formal_type.is_true_expanded or else formal_type.is_bit
+					then
+						Temp_byte_code_array.append (Bc_clone_arg)
+						Temp_byte_code_array.append_short_integer (i)
+						if formal_type.is_bit then
+							bit_i ?= formal_type
+							Temp_byte_code_array.append_integer(bit_i.size)
+						else
+							formal_type.make_full_type_byte_code (Temp_byte_code_array)
+						end
 					end
 					i := i + 1
 				end
 			end
+			Temp_byte_code_array.append (Bc_no_clone_arg)
 
 			if r_type.is_true_expanded and then not r_type.is_bit then
 					-- Generate full type info.
@@ -737,7 +722,6 @@ end
 			l_old_expressions: like old_expressions
 			l_type: TYPE_I
 			l_il_generation: BOOLEAN
-			assert_chheck: BOOLEAN
 		do
 			from
 				position := 1
@@ -752,12 +736,11 @@ end
 			end
 			l_old_expressions := old_expressions
 			l_il_generation := System.il_generation
-			assert_chheck := context.workbench_mode or
-				context.system.keep_assertions
 			if
 				(not l_il_generation and then l_old_expressions /= Void) or else
 				(l_il_generation and then l_old_expressions /= Void and then
-				assert_chheck)
+				(context.workbench_mode or
+				context.class_type.associated_class.assertion_level.check_postcond))
 			then
 				from
 					nb := l_old_expressions.count
@@ -872,7 +855,7 @@ invariant
 	valid_once_manifest_string_count: once_manifest_string_count >= 0
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

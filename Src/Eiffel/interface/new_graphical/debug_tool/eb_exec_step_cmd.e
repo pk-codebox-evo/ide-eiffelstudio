@@ -25,15 +25,13 @@ create
 
 feature -- Initialization
 
-	make (a_manager: like eb_debugger_manager) is
+	make (a_manager: like debugger_manager) is
 			-- Initialize `Current'.
-		local
-			l_shortcut: SHORTCUT_PREFERENCE
 		do
 			Precursor (a_manager)
-			l_shortcut := preferences.misc_shortcut_data.shortcuts.item ("step_by_step")
-			create accelerator.make_with_key_combination (l_shortcut.key, l_shortcut.is_ctrl, l_shortcut.is_alt, l_shortcut.is_shift)
-			set_referred_shortcut (l_shortcut)
+			create accelerator.make_with_key_combination (
+				create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.Key_f10),
+				False, False, False)
 			accelerator.actions.extend (agent execute)
 		end
 
@@ -45,28 +43,22 @@ feature {NONE} -- Attributes
 			Result := pixmaps.icon_pixmaps.debug_step_over_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.debug_step_over_icon_buffer
-		end
-
 	name: STRING is "Exec_step"
 			-- Name of the command.
 
-	internal_tooltip: STRING_GENERAL is
+	internal_tooltip: STRING is
 			-- Tooltip displayed on `Current's buttons.
 		do
 			Result := Interface_names.e_Exec_step
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text displayed on `Current's buttons.
 		do
 			Result := Interface_names.b_Exec_step
 		end
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name used in menu entry
 		do
 			Result := Interface_names.m_Exec_step

@@ -12,8 +12,9 @@ class
 
 inherit
 	EV_ACTION_SEQUENCE [TUPLE]
-
-
+	-- EV_ACTION_SEQUENCE [TUPLE]		
+	-- (ETL3 TUPLE with named parameters)
+	
 create
 	default_create
 

@@ -1,13 +1,13 @@
 indexing
 
-	description:
+	description: 
 		"Freeze eiffel system."
 	legal: "See notice at end of class."
 	status: "See notice at end of class.";
 	date: "$Date$";
 	revision: "$Revision $"
 
-class EWB_FREEZE
+class EWB_FREEZE 
 
 inherit
 
@@ -24,7 +24,7 @@ feature -- Properties
 			Result := freeze_cmd_name
 		end;
 
-	help_message: STRING_32 is
+	help_message: STRING is
 		do
 			Result := freeze_help
 		end;
@@ -39,10 +39,11 @@ feature {NONE} -- Execution
 	loop_action is
 		do
 			if Eiffel_project.is_read_only then
-				localized_print_error (ewb_names.read_only_project_cannot_compile)
-			elseif
-				command_line_io.confirmed
-					(ewb_names.finalizing_implies_some_c_compilation)
+				io.error.put_string ("Read-only project: cannot compile.%N")
+			elseif 
+				command_line_io.confirmed 
+					("Freezing implies some C compilation and linking.%N%
+							%Do you want to do it now") 
 			then
 				execute
 			end
@@ -51,8 +52,8 @@ feature {NONE} -- Execution
 	execute is
 		do
 			if Eiffel_project.is_read_only then
-				localized_print_error (ewb_names.read_only_project_cannot_compile)
-			else
+				io.error.put_string ("Read-only project: cannot compile.%N")
+			else	
 				init;
 				if Eiffel_ace.file_name /= Void then
 					compile;

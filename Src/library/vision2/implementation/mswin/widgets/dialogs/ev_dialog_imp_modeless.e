@@ -130,8 +130,7 @@ feature {NONE} -- Implementation
 			then
 				parent_window.set_focus
 			end
-			promote_to_dialog_window
-			interface.implementation.hide
+			Precursor {EV_DIALOG_IMP_COMMON}
 		end
 
 	destroy is

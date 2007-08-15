@@ -13,8 +13,137 @@ indexing
 class
 	EB_FILE_DIALOG_CONSTANTS
 
-inherit
-	FILE_DIALOG_CONSTANTS
+feature -- Access
+
+	Eiffel_project_files_filter: STRING is "*.epr"
+
+	Eiffel_project_files_description: STRING is "Eiffel Project Files (*.epr)"
+
+	All_files_filter: STRING is "*.*"
+
+	All_files_description: STRING is "All Files (*.*)"
+
+	Text_files_filter: STRING is "*.txt"
+
+	Text_files_description: STRING is "Text Files (*.txt)"
+
+	Png_files_filter: STRING is "*.png"
+
+	Png_files_description: STRING is "PNG Files (*.png)"
+
+	Xml_files_filter: STRING is "*.xml"
+
+	Xml_files_description: STRING is "XML Files (*.xml)"
+
+	Config_files_filter: STRING is "*.ecf"
+
+	Config_files_description: STRING is "Eiffel Configuration Files (*.ecf)"
+
+	Ace_files_filter: STRING is "*.ace"
+
+	Ace_files_description: STRING is "Eiffel Ace Files (*.ace)"
+
+	Strong_name_key_files_filter: STRING is "*.snk"
+
+	Strong_name_key_files_description: STRING is "Strong Name Key Files (*.snk)"
+
+	Eiffel_class_files_filter: STRING is "*.e"
+
+	Eiffel_class_files_description: STRING is "Eiffel Class Files (*.e)"
+
+	Resx_files_filter: STRING is "*.resx"
+
+	Resx_files_description: STRING is "Resx Files (*.resx)"
+
+	Definition_files_filter: STRING is "*.def"
+
+	Definition_files_description: STRING is "Dynamic Library Definition (*.def)"
+
+	Dll_files_filter: STRING is "*.dll"
+
+	Dll_files_description: STRING is ".NET library (*.dll)"
+
+	Exe_files_filter: STRING is "*.exe"
+
+	Exe_files_description: STRING is ".NET Application (*.exe)"
+
+	All_assemblies_filter: STRING is "*.exe;*.dll"
+
+	All_assemblies_description: STRING is "All Assemblies (*.exe; *.dll)"
+
+	Profile_files_filter: STRING is "*.pfi"
+
+	Profile_files_description: STRING is "Profile files (*.pfi)"
+
+	supported_filters: ARRAYED_LIST [STRING] is
+			-- `Result' is list of all supported filters.
+		do
+			create Result.make (14)
+			Result.compare_objects
+			Result.extend (Eiffel_project_files_filter)
+			Result.extend (Config_files_filter)
+			Result.extend (All_files_filter)
+			Result.extend (Text_files_filter)
+			Result.extend (Png_files_filter)
+			Result.extend (Xml_files_filter)
+			Result.extend (Ace_files_filter)
+			Result.extend (Strong_name_key_files_filter)
+			Result.extend (Eiffel_class_files_filter)
+			Result.extend (Resx_files_filter)
+			Result.extend (Definition_files_filter)
+			Result.extend (Dll_files_filter)
+			Result.extend (Exe_files_filter)
+			Result.extend (All_assemblies_filter)
+			Result.extend (Profile_files_filter)
+		ensure
+			result_not_void: Result /= Void
+		end
+
+feature -- Status report
+
+	file_description_from_filter (a_filter: STRING): STRING is
+			-- For filter `a_filter', return corresponding file description.
+		require
+			supported_filter: supported_filters.has (a_filter)
+		do
+			if a_filter.is_equal (eiffel_project_files_filter) then
+				Result := eiffel_project_files_description
+			elseif a_filter.is_equal (all_files_filter) then
+				Result := all_files_description
+			elseif a_filter.is_equal (text_files_filter) then
+				Result := text_files_description
+			elseif a_filter.is_equal (png_files_filter) then
+				Result := png_files_description
+			elseif a_filter.is_equal (xml_files_filter) then
+				Result := xml_files_description
+			elseif a_filter.is_equal (config_files_filter) then
+				Result := config_files_description
+			elseif a_filter.is_equal (ace_files_filter) then
+				Result := ace_files_description
+			elseif a_filter.is_equal (strong_name_key_files_filter) then
+				Result := strong_name_key_files_description
+			elseif a_filter.is_equal (eiffel_class_files_filter) then
+				Result := eiffel_class_files_description
+			elseif a_filter.is_equal (resx_files_filter) then
+				Result := resx_files_description
+			elseif a_filter.is_equal (definition_files_filter) then
+				Result := definition_files_description
+			elseif a_filter.is_equal (dll_files_filter) then
+				Result := dll_files_description
+			elseif a_filter.is_equal (exe_files_filter) then
+				Result := exe_files_description
+			elseif a_filter.is_equal (all_assemblies_filter) then
+				Result := all_assemblies_description
+			elseif a_filter.is_equal (profile_files_filter) then
+				Result := profile_files_description
+			else
+				check
+					unhandled_file_type: False
+				end
+			end
+		ensure
+			result_not_void: Result /= Void
+		end
 
 feature -- Status setting
 

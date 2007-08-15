@@ -15,23 +15,18 @@ inherit
 			initialize, grid_menu, row_type
 		end
 
-	SHARED_DEBUGGER_MANAGER
+	EB_SHARED_DEBUG_TOOLS
 		undefine
 			default_create, copy
 		end
 
 	EB_EDITOR_TOKEN_GRID_SUPPORT
 		rename
-			on_pick_start_from_grid_pickable_item as evs_on_pebble_function
+			on_pick as on_pebble_function
 		undefine
 			default_create, copy
 		redefine
-			evs_on_pebble_function
-		end
-
-	EB_CONSTANTS
-		undefine
-			default_create, copy
+			on_pebble_function
 		end
 
 create
@@ -39,7 +34,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make_with_name (a_name: like name; a_id: STRING) is
+	make_with_name (a_name: STRING; a_id: STRING) is
 			-- Create current with a_name and a_tool
 		do
 			default_create
@@ -48,25 +43,10 @@ feature {NONE} -- Initialization
 			enable_multiple_row_selection
 			enable_border
 			enable_default_tree_navigation_behavior (True, False, True, True)
-
-			load_preferences
-		end
-
-	load_preferences is
-		local
-			bp: BOOLEAN_PREFERENCE
-		do
-			bp := preferences.debugger_data.generating_type_evaluation_enabled_preference
-			generating_type_evaluation_enabled := bp.value
-			bp.typed_change_actions.extend (agent (b: BOOLEAN)
-					do
-						generating_type_evaluation_enabled := b
-					end)
 		end
 
 	initialize is
 		do
-			make_with_grid (Current)
 			Precursor {ES_GRID}
 
 			col_pixmap_index := 1
@@ -84,8 +64,10 @@ feature {NONE} -- Initialization
 
 			row_expand_actions.extend (agent on_row_expand)
 			row_collapse_actions.extend (agent on_row_collapse)
-			set_item_pebble_function (agent on_pebble_function)
-			enable_grid_item_pnd_support
+
+--			set_item_pebble_function (agent on_pebble_function)
+			make_with_grid (Current)
+			enable_editor_token_pnd
 
 			set_item_accept_cursor_function (agent on_pnd_accept_cursor_function)
 			set_item_deny_cursor_function (agent on_pnd_deny_cursor_function)
@@ -94,6 +76,7 @@ feature {NONE} -- Initialization
 			enable_selection_on_single_button_click
 
 			create_kept_object_references
+
 		end
 
 feature {NONE} -- GRID Customization
@@ -104,10 +87,7 @@ feature {NONE} -- GRID Customization
 
 feature -- Properties
 
-	generating_type_evaluation_enabled: BOOLEAN
-			-- Is generating type representation evaluating {ANY}.generating_type ?
-
-	name: STRING_GENERAL
+	name: STRING
 			-- associated name to identify the related grid.
 
 	id: STRING
@@ -150,7 +130,7 @@ feature -- Number formatting
 
 	propagate_hexadecimal_mode (t: EV_GRID_ROW) is
 		local
-			l_eb_t: ES_OBJECTS_GRID_OBJECT_LINE
+			l_eb_t: ES_OBJECTS_GRID_LINE
 		do
 			l_eb_t ?= t.data
 			if l_eb_t /= Void then
@@ -160,36 +140,10 @@ feature -- Number formatting
 
 feature -- Change with preferences
 
-	set_columns_layout_from_string_preference (spref: STRING_PREFERENCE) is
-		require
-			default_columns_layout_not_void: default_columns_layout /= Void
-		local
-			s: STRING
-		do
-			s := spref.value
-			if s = Void or else s.is_empty then
-				set_columns_layout (1, default_columns_layout)
-				save_columns_layout_to_string_preference (spref)
-			else
-				set_columns_layout_from_string (spref.value)
-			end
-		end
-
-	save_columns_layout_to_string_preference (spref: STRING_PREFERENCE) is
-		local
-			s: STRING
-		do
-			s := columns_layout_to_string
-			if s /= Void then
-				spref.set_value (s)
-			end
-		end
-
-	set_columns_layout_from_string (s: STRING) is
-		require
-			s_valid: s /= Void and then not s.is_empty
+	set_columns_layout_from_string_preference (spref: STRING_PREFERENCE; dft_value: ARRAY [like column_layout]) is
 		local
 			dts: ARRAY [like column_layout]
+			s: STRING
 			sp: LIST [STRING]
 			i,n: INTEGER
 			l_id: INTEGER
@@ -199,8 +153,12 @@ feature -- Change with preferences
 			l_title: STRING
 			retried: BOOLEAN
 		do
-			if not retried then
-				sp := s.split (':')
+			s := spref.value
+			if retried or (s = Void or else s.is_empty) then
+				set_columns_layout ( 5, 1, dft_value)
+				save_columns_layout_to_string_preference (spref)
+			else
+				sp := s.split (';')
 				from
 					i := 0
 					n := sp.count // 5
@@ -220,129 +178,65 @@ feature -- Change with preferences
 					l_title      := sp.item
 					sp.forth
 
-					dts[i] :=  [l_id, l_displayed, l_autoresize, l_width, interface_names.find_translation (l_title), l_title]
+					dts[i] :=  [l_id, l_displayed, l_autoresize, l_width, l_title]
 					i := i + 1
 				end
-				set_columns_layout (1, dts)
-			elseif default_columns_layout /= Void then
-				set_columns_layout (col_pixmap_index, default_columns_layout)
+				set_columns_layout (5, 1, dts)
 			end
 		rescue
 			retried := True
 			retry
 		end
 
-	columns_layout_to_string: STRING is
+	save_columns_layout_to_string_preference (spref: STRING_PREFERENCE) is
 		local
 			t: like column_layout
 			i: INTEGER
-			sep: CHARACTER
+			s: STRING
 			retried: BOOLEAN
 		do
 			if not retried then
 				from
-					Result := ""
-					sep := ':'
+					s := ""
 					i := 1
 				until
 					i > column_count
 				loop
 					t := column_layout (i)
-					Result.append_string (t.col_index.out)
-					Result.append_character (sep)
-					Result.append_string (t.is_displayed.out)
-					Result.append_character (sep)
-					Result.append_string (t.has_auto_resizing.out)
-					Result.append_character (sep)
-					Result.append_string (t.width.out)
-					Result.append_character (sep)
-					Result.append_string (t.title_for_pre)
-					Result.append_character (sep)
+					s.append_string (t.col_index.out)
+					s.append_character (';')
+					s.append_string (t.is_displayed.out)
+					s.append_character (';')
+					s.append_string (t.has_auto_resizing.out)
+					s.append_character (';')
+					s.append_string (t.width.out)
+					s.append_character (';')
+					s.append_string (t.title)
+					s.append_character (';')
 					i := i + 1
 				end
-				Result.remove_tail (1)
+				s.remove_tail (1)
+				spref.set_value (s)
 			end
 		rescue
 			retried := True
 			retry
-		end
-
-feature -- Columns layout access
-
-	default_columns_layout: ARRAY [like column_layout]
-			-- Default columns layout		
-
-	columns_layout_to_array: like default_columns_layout is
-		local
-			i: INTEGER
-			retried: BOOLEAN
-		do
-			if not retried then
-				from
-					create Result.make (1, column_count)
-					i := 1
-				until
-					i > column_count
-				loop
-					Result[i] := column_layout (i)
-					i := i + 1
-				end
-			end
-		rescue
-			retried := True
-			retry
-		end
-
-	column_layout (c: INTEGER): TUPLE [col_index:INTEGER; is_displayed:BOOLEAN; has_auto_resizing:BOOLEAN; width:INTEGER; title:STRING_GENERAL; title_for_pre: STRING] is
-		require
-			c_positive: c > 0
-			c_not_greater_than_column_count: c <= column_count
-		local
-			col: EV_GRID_COLUMN
-			cindex: INTEGER
-			l_str: STRING
-		do
-			col := column (c)
-			if c = col_name_index then
-				cindex := Col_name_id
-			elseif c = col_value_index then
-				cindex := Col_value_id
-			elseif c = col_type_index then
-				cindex := Col_type_id
-			elseif c = col_address_index then
-				cindex := Col_address_id
-			elseif c = col_context_index then
-				cindex := Col_context_id
-			end
-			l_str ?= col.data
-			check
-				l_str_not_void: l_str /= Void
-			end
-			Result := [cindex, col.is_show_requested, column_has_auto_resizing (c), col.width, col.title, l_str]
 		end
 
 feature -- Change
 
-	set_default_columns_layout (d: like default_columns_layout) is
-			-- Set `default_columns_layout' value
-		require
-			d /= Void
-		do
-			default_columns_layout	:= d
-		end
-
 	set_columns_layout (
+				a_cols_count: INTEGER;
 				a_col_pixmap_index: INTEGER;
 				a_col_details: ARRAY [like column_layout] --| name, address, value, type, context
 				) is
 		require
-			a_col_details.count > 0
+			a_col_details.count = 5
+			a_cols_count >= a_col_details.count
 		local
 			i: INTEGER
 		do
-			if column_count < a_col_details.count then
-				set_column_count_to (a_col_details.count)
-			end
+			set_column_count_to (a_cols_count)
 			col_pixmap_index := a_col_pixmap_index
 
 			from
@@ -362,7 +256,7 @@ feature -- Change
 			a_pos_not_greater_than_column_count: a_pos <= column_count
 		local
 			c,w: INTEGER
-			s: STRING_GENERAL
+			s: STRING
 			col: EV_GRID_COLUMN
 		do
 			c := t.col_index
@@ -381,7 +275,6 @@ feature -- Change
 			end
 			col := column (a_pos)
 			w := t.width
-			col.set_data (t.title_for_pre)
 			if w > 0 then
 				s := t.title
 				col.set_title (s)
@@ -395,6 +288,29 @@ feature -- Change
 			set_auto_resizing_column (c, t.has_auto_resizing)
 		end
 
+	column_layout (c: INTEGER): TUPLE [col_index:INTEGER; is_displayed:BOOLEAN; has_auto_resizing:BOOLEAN; width:INTEGER; title:STRING] is
+		require
+			c_positive: c > 0
+			c_not_greater_than_column_count: c <= column_count
+		local
+			col: EV_GRID_COLUMN
+			cindex: INTEGER
+		do
+			col := column (c)
+			if c = col_name_index then
+				cindex := Col_name_id
+			elseif c = col_value_index then
+				cindex := Col_value_id
+			elseif c = col_type_index then
+				cindex := Col_type_id
+			elseif c = col_address_index then
+				cindex := Col_address_id
+			elseif c = col_context_index then
+				cindex := Col_context_id
+			end
+			Result := [cindex, col.is_displayed, column_has_auto_resizing (c), col.width, col.title.as_string_8]
+		end
+
 	set_slices_cmd (v: like slices_cmd) is
 		do
 			slices_cmd := v
@@ -402,7 +318,7 @@ feature -- Change
 
 feature {ES_OBJECTS_TOOL, ES_OBJECTS_GRID_MANAGER, ES_OBJECTS_GRID_LINE, ES_OBJECTS_GRID_SLICES_CMD} -- EiffelStudio specific
 
-	attach_debug_value_from_line_to_grid_row (a_row: EV_GRID_ROW; dv: ABSTRACT_DEBUG_VALUE; a_line: ES_OBJECTS_GRID_OBJECT_LINE; a_title: STRING_GENERAL) is
+	attach_debug_value_from_line_to_grid_row (a_row: EV_GRID_ROW; dv: ABSTRACT_DEBUG_VALUE; a_line: ES_OBJECTS_GRID_LINE; a_title: STRING_GENERAL) is
 		require
 			dv /= Void
 		local
@@ -418,32 +334,21 @@ feature {ES_OBJECTS_TOOL, ES_OBJECTS_GRID_MANAGER, ES_OBJECTS_GRID_LINE, ES_OBJE
 			litem.attach_to_row (a_row)
 		end
 
-	attach_debug_value_to_grid_row (a_row: EV_GRID_ROW; dv: ABSTRACT_DEBUG_VALUE; a_title: STRING_GENERAL) is
+	attach_debug_value_to_grid_row (a_row: EV_GRID_ROW; dv: ABSTRACT_DEBUG_VALUE; a_title: STRING) is
 		require
 			dv /= Void
 		do
 			attach_debug_value_from_line_to_grid_row (a_row, dv, Void, a_title)
 		end
 
-	attach_dump_value_to_grid_row (a_row: EV_GRID_ROW; a_dumpv: DUMP_VALUE; a_title: STRING_GENERAL) is
-		local
-			litem: ES_OBJECTS_GRID_ADDRESS_LINE
-		do
-			create litem.make_with_dump_value (a_dumpv, Current)
-			if a_title /= Void then
-				litem.set_title (a_title)
-			end
-			litem.attach_to_row (a_row)
-		end
-
-	object_line_from_row (a_row: EV_GRID_ROW): ES_OBJECTS_GRID_OBJECT_LINE is
+	object_line_from_row (a_row: EV_GRID_ROW): ES_OBJECTS_GRID_LINE is
 		require
 			a_row /= Void
 		do
 			Result ?= a_row.data
 		end
 
-	objects_grid_item (add: STRING): ES_OBJECTS_GRID_OBJECT_LINE is
+	objects_grid_item (add: STRING): ES_OBJECTS_GRID_LINE is
 		require
 			valid_address: add /= Void
 		do
@@ -457,8 +362,7 @@ feature {ES_OBJECTS_TOOL, ES_OBJECTS_GRID_MANAGER, ES_OBJECTS_GRID_LINE, ES_OBJE
 				)
 		end
 
-	objects_grid_item_function: FUNCTION [ANY, TUPLE [STRING], like objects_grid_item]
-			-- Function used to retrieve the objects_grid objects line related to `addr'.
+	objects_grid_item_function: FUNCTION [ANY, TUPLE [STRING], ES_OBJECTS_GRID_LINE]
 
 	set_objects_grid_item_function (fct: like objects_grid_item_function) is
 		do
@@ -470,13 +374,12 @@ feature -- Menu
 	grid_menu: EV_MENU is
 		local
 			mci: EV_CHECK_MENU_ITEM
-			mi: EV_MENU_ITEM
 		do
 			Result := Precursor
-			Result.set_text (interface_names.m_grid_name (name))
+			Result.set_text ("Grid %"" + name + "%"")
 
 			if layout_manager /= Void then
-				create mci.make_with_text (interface_names.m_keep_grid_layout)
+				create mci.make_with_text ("Keep grid layout")
 				if is_layout_managed then
 					mci.enable_select
 					mci.select_actions.extend (agent disable_layout_management)
@@ -486,86 +389,27 @@ feature -- Menu
 				Result.put_front (create {EV_MENU_SEPARATOR})
 				Result.put_front (mci)
 			end
-			if default_columns_layout /= Void then
-				Result.put_front (create {EV_MENU_SEPARATOR})
-				create mi.make_with_text_and_action ("Reset layout", agent set_columns_layout (col_pixmap_index ,default_columns_layout))
-				Result.put_front (mi)
-			end
 		end
 
 feature -- Query
 
-	grid_pnd_details_from_row_and_column (a_row: EV_GRID_ROW; a_col: EV_GRID_COLUMN):
-				TUPLE [pebble:ANY; accept_cursor: EV_POINTER_STYLE; deny_cursor: EV_POINTER_STYLE] is
-			-- Return pnd details which may be contained in `a_row' related to `a_col'.
+	grid_pebble_from_cell (a_cell: EV_GRID_ITEM): ANY is
+			-- Return pebble which may be contained in `a_cell'
+		do
+				--| Nota: At this point we could try to return
+				--| special stone depending of the clicked cell
+			Result := grid_pebble_from_row (a_cell.row)
+		end
+
+	grid_pebble_from_row (a_row: EV_GRID_ROW): ANY is
+			-- Return pebble which may be contained in `a_row'
 		local
 			ctler: ES_GRID_ROW_CONTROLLER
 		do
 			if a_row /= Void then
 				ctler ?= a_row.data
 				if ctler /= Void then
-					if a_col /= Void then
-						Result := ctler.item_pebble_details (a_col.index)
-					else
-						Result := ctler.item_pebble_details (0)
-					end
-				end
-			end
-		end
-
-	grid_pebble_from_cell (a_cell: EV_GRID_ITEM): ANY is
-			-- Return pebble which may be contained in `a_cell'.
-		require
-			a_cell_not_void: a_cell /= Void
-		do
-			Result := grid_pebble_from_row_and_column (a_cell.row, a_cell.column)
-		end
-
-	grid_pebble_from_row_and_column (a_row: EV_GRID_ROW; a_col: EV_GRID_COLUMN): ANY is
-			-- Return pebble which may be contained in `a_row' related to `a_col'.
-		local
-			t: like grid_pnd_details_from_row_and_column
-		do
-			t := grid_pnd_details_from_row_and_column (a_row, a_col)
-			if t /= Void then
-				Result := t.pebble
-			end
-		end
-
-	grid_accept_cursor_from_cell (a_cell: EV_GRID_ITEM): EV_POINTER_STYLE is
-			-- Return accept_cursor which may be contained in `a_row' related to `a_col'.
-		require
-			a_cell_not_void: a_cell /= Void
-		local
-			t: like grid_pnd_details_from_row_and_column
-			s: STONE
-		do
-			t := grid_pnd_details_from_row_and_column (a_cell.row, a_cell.column)
-			if t /= Void then
-				s ?= t.pebble
-				if s /= Void then
-					Result := s.stone_cursor
-				else
-					Result := t.accept_cursor
-				end
-			end
-		end
-
-	grid_deny_cursor_from_cell (a_cell: EV_GRID_ITEM): EV_POINTER_STYLE is
-			-- Return deny_cursor which may be contained in `a_row' related to `a_col'.
-		require
-			a_cell_not_void: a_cell /= Void
-		local
-			t: like grid_pnd_details_from_row_and_column
-			s: STONE
-		do
-			t := grid_pnd_details_from_row_and_column (a_cell.row, a_cell.column)
-			if t /= Void then
-				s ?= t.pebble
-				if s /= Void then
-					Result := s.x_stone_cursor
-				else
-					Result := t.deny_cursor
+					Result := ctler.pebble
 				end
 			end
 		end
@@ -579,45 +423,32 @@ feature {NONE} -- Actions implementation
 				and a_item /= Void
 			then
 				Result := grid_pebble_from_cell (a_item)
-			end
-		end
-
-	evs_on_pebble_function (a_item: EV_GRID_ITEM; a_grid_support: EB_EDITOR_TOKEN_GRID_SUPPORT) is
-		local
-			l_pebble: ANY
-		do
-			l_pebble := on_pebble_function (a_item)
-			if l_pebble = Void then
-				Precursor {EB_EDITOR_TOKEN_GRID_SUPPORT}(a_item, a_grid_support)
+				if Result = Void then
+					Result := Precursor {EB_EDITOR_TOKEN_GRID_SUPPORT}(a_item)
+				end
 			end
 		end
 
 	on_pnd_accept_cursor_function (a_item: EV_GRID_ITEM): EV_POINTER_STYLE is
+		local
+			ctler: ES_GRID_ROW_CONTROLLER
 		do
-			if
-				not ev_application.ctrl_pressed
-				and a_item /= Void
-			then
-				Result := grid_accept_cursor_from_cell (a_item)
-				if Result = Void then
-						--| FIXME: this is to behave correctly with  EVS_GRID_PND_SUPPORT
-						--| when the pebble in providing by EVS_GRID_PND_SUPPORT mechanism.
-					Result := implementation.accept_cursor
+			if a_item /= Void then
+				ctler ?= a_item.row.data
+				if ctler /= Void then
+					Result := ctler.pnd_accept_cursor
 				end
 			end
 		end
 
 	on_pnd_deny_cursor_function (a_item: EV_GRID_ITEM): EV_POINTER_STYLE is
+		local
+			ctler: ES_GRID_ROW_CONTROLLER
 		do
-			if
-				not ev_application.ctrl_pressed
-				and a_item /= Void
-			then
-				Result := grid_deny_cursor_from_cell (a_item)
-				if Result = Void then
-						--| FIXME: this is to behave correctly with  EVS_GRID_PND_SUPPORT
-						--| when the pebble in providing by EVS_GRID_PND_SUPPORT mechanism.					
-					Result := implementation.deny_cursor
+			if a_item /= Void then
+				ctler ?= a_item.row.data
+				if ctler /= Void then
+					Result := ctler.pnd_deny_cursor
 				end
 			end
 		end
@@ -629,7 +460,7 @@ feature {NONE} -- Actions implementation
 			if ab = 1 then
 				ei ?= a_item
 				if ei /= Void then
-					activate_grid_item (ei)
+					ei.activate
 				end
 			end
 		end
@@ -643,7 +474,7 @@ feature {NONE} -- Actions implementation
 		do
 			ctler ?= a_row.data
 			if ctler /= Void then
-				ctler.call_expand_action (a_row)
+				ctler.call_expand_actions (a_row)
 				process_columns_auto_resizing
 			end
 			request_columns_auto_resizing
@@ -658,7 +489,7 @@ feature {NONE} -- Actions implementation
 		do
 			ctler ?= a_row.data
 			if ctler /= Void then
-				ctler.call_collapse_action (a_row)
+				ctler.call_collapse_actions (a_row)
 			end
 			request_columns_auto_resizing
 		end
@@ -698,27 +529,6 @@ end
 			end
 		end
 
-feature {NONE} -- Grid items activation
-
-	activate_grid_item (ei: EV_GRID_ITEM) is
-		require
-			ei /= Void
-		do
-			if pre_activation_action /= Void then
-				pre_activation_action.call ([ei])
-			end
-			ei.activate
-		end
-
-	pre_activation_action: PROCEDURE [ANY, TUPLE [EV_GRID_ITEM]]
-
-feature -- Grid items activation change
-
-	set_pre_activation_action (v: like pre_activation_action) is
-		do
-			pre_activation_action := v
-		end
-
 feature {ES_OBJECTS_GRID_MANAGER} -- Keep object
 
 	create_kept_object_references is
@@ -731,17 +541,32 @@ feature {ES_OBJECTS_GRID_MANAGER} -- Keep object
 
 	clear_kept_object_references is
 		do
-			Debugger_manager.release_object_references (kept_object_references)
+			release_object_references (kept_object_references)
 			kept_object_references.wipe_out
 		end
 
+	release_object_references (kobjs: LIST [STRING]) is
+		local
+			st: APPLICATION_STATUS
+		do
+			if debugger_manager.application_is_executing then
+				st := debugger_manager.application.status
+				from
+					kobjs.start
+				until
+					kobjs.after
+				loop
+					st.release_object (kobjs.item)
+					kobjs.forth
+				end
+			end
+		end
+
 	keep_object_in_debugger_for_gui_need (add: STRING) is
-		require
-			application_is_executing: debugger_manager.application_is_executing
 		do
 			if not kept_object_references.has (add) then
 				Kept_object_references.extend (add)
-				Debugger_manager.application_status.keep_object (add)
+				debugger_manager.application.status.keep_object_for_gui (add)
 			end
 		end
 
@@ -913,20 +738,15 @@ feature -- Layout manager
 				layout_manager.record
 
 					--| Post recording
-				Debugger_manager.release_object_references (old_kept)
+				release_object_references (old_kept)
 			end
 		end
 
 	restore_layout is
-		local
-			retried: BOOLEAN
 		do
-			if not retried and is_layout_managed and layout_manager /= Void then
+			if is_layout_managed and layout_manager /= Void then
 				layout_manager.restore
 			end
-		rescue
-			retried := True
-			retry
 		end
 
 feature -- Graphical look
@@ -937,14 +757,14 @@ feature -- Graphical look
 			Result.set_shape ({EV_FONT_CONSTANTS}.shape_italic)
 		end
 
-	folder_label_item (s: STRING_GENERAL): EV_GRID_LABEL_ITEM is
+	folder_label_item (s: STRING): EV_GRID_LABEL_ITEM is
 		do
 			create Result
 			grid_cell_set_text (Result, s)
 			Result.set_foreground_color (folder_row_fg_color)
 		end
 
-	name_label_item (s: STRING_GENERAL): EV_GRID_LABEL_ITEM is
+	name_label_item (s: STRING): EV_GRID_LABEL_ITEM is
 		do
 			create Result
 			grid_cell_set_text (Result, s)
@@ -979,6 +799,7 @@ feature -- Graphical look
 		once
 			create Result.make_with_8_bit_rgb (255,210,210)
 		end
+
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

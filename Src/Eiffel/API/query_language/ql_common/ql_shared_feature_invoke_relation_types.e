@@ -9,42 +9,65 @@ indexing
 class
 	QL_SHARED_FEATURE_INVOKE_RELATION_TYPES
 
-feature -- Status_report
+inherit
+	QL_SHARED_NAMES
 
-	is_caller_type_valid (a_caller_type: INTEGER_8): BOOLEAN is
-			-- Is `a_caller_type' a valid caller type?
-		do
-			Result := a_caller_type = normal_caller_type or
-					  a_caller_type = assigner_caller_type or
-					  a_caller_type = creator_caller_type
+feature -- Feature caller types
+
+	normal_caller: QL_FEATURE_CALLER_TYPE is
+			-- Normal caller
+		once
+			create Result.make (query_language_names.ql_normal_feature_caller, 0)
+		ensure
+			result_attached: Result /= Void
+			good_result: Result.type = 0
 		end
 
-	is_callee_type_valid (a_callee_type: INTEGER_8): BOOLEAN is
-			-- Is `a_callee_type' a valid callee type?
-		do
-			Result := a_callee_type = normal_callee_type or
-					  a_callee_type = assigner_callee_type or
-					  a_callee_type = creator_callee_type
+	assigner_caller: QL_FEATURE_CALLER_TYPE is
+			-- Assigner caller
+		once
+			create Result.make (query_language_names.ql_assigner_feature_caller, {DEPEND_UNIT}.is_in_assignment_flag)
+		ensure
+			result_attached: Result /= Void
+			good_result: Result.type = {DEPEND_UNIT}.is_in_assignment_flag
 		end
 
-feature -- Access
-
-	normal_caller_type, normal_callee_type: INTEGER_8 is
-			-- Normal caller type
-		do
-			Result := 0
+	creator_caller: QL_FEATURE_CALLER_TYPE is
+			-- Creator caller
+		once
+			create Result.make (query_language_names.ql_creator_feature_caller, {DEPEND_UNIT}.is_in_creation_flag)
+		ensure
+			result_attached: Result /= Void
+			good_result: Result.type = {DEPEND_UNIT}.is_in_creation_flag
 		end
 
-	assigner_caller_type, assigner_callee_type: INTEGER_8 is
-			-- Assigner caller type
-		do
-			Result := {DEPEND_UNIT}.is_in_assignment_flag
+feature -- Feature callee types
+
+	normal_callee: QL_FEATURE_CALLEE_TYPE is
+			-- Normal callee
+		once
+			create Result.make (query_language_names.ql_normal_feature_callee, 0)
+		ensure
+			result_attached: Result /= Void
+			good_result: Result.type = 0
 		end
 
-	creator_caller_type, creator_callee_type: INTEGER_8 is
-		 	-- Creator caller
-		do
-			Result := {DEPEND_UNIT}.is_in_creation_flag
+	assigner_callee: QL_FEATURE_CALLEE_TYPE is
+			-- Assigner callee
+		once
+			create Result.make (query_language_names.ql_assigner_feature_callee, {DEPEND_UNIT}.is_in_assignment_flag)
+		ensure
+			result_attached: Result /= Void
+			good_result: Result.type = {DEPEND_UNIT}.is_in_assignment_flag
+		end
+
+	creator_callee: QL_FEATURE_CALLEE_TYPE is
+			-- Creator callee
+		once
+			create Result.make (query_language_names.ql_creator_feature_callee, {DEPEND_UNIT}.is_in_creation_flag)
+		ensure
+			result_attached: Result /= Void
+			good_result: Result.type = {DEPEND_UNIT}.is_in_creation_flag
 		end
 
 indexing
@@ -78,5 +101,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

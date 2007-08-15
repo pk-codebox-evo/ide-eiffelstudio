@@ -47,7 +47,7 @@ feature -- Initialization
 			square_container: EV_HORIZONTAL_BOX
 			pool_label: EV_LABEL
 			current_label: EV_LABEL
-			combo_strings: ARRAY [STRING_GENERAL]
+			combo_strings: ARRAY [STRING]
 			text_combo_box: EV_HORIZONTAL_BOX
 			text_combo_label: EV_LABEL
 			widget_minimum_width: INTEGER
@@ -84,6 +84,7 @@ feature -- Initialization
 			text_combo_box.disable_item_expand (text_combo_label)
 			text_combo_box.extend (text_combo)
 			text_combo.disable_edit
+
 
 			widget_minimum_width := text_combo_label.minimum_width
 

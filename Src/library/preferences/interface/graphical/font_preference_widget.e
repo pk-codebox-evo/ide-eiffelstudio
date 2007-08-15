@@ -52,7 +52,7 @@ feature {preference_view} -- commands
 
 			font_tool.ok_actions.extend (agent update_changes)
 			font_tool.cancel_actions.extend (agent cancel_changes)
-			caller.show_dialog_modal (font_tool)
+			font_tool.show_modal_to_window (caller.parent_window)
 		end
 
 feature {NONE} -- Commands

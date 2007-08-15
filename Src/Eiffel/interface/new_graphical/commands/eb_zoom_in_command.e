@@ -11,8 +11,7 @@ class
 inherit
 	EB_CONTEXT_DIAGRAM_COMMAND
 		redefine
-			initialize,
-			menu_name
+			initialize
 		end
 
 create
@@ -67,22 +66,10 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.diagram_zoom_in_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.diagram_zoom_in_icon_buffer
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.f_diagram_zoom_in
-		end
-
-	menu_name: STRING_GENERAL is
-			-- Name on corresponding menu items
-		do
-			Result := interface_names.f_diagram_zoom_in
 		end
 
 	name: STRING is "Zoom_in";

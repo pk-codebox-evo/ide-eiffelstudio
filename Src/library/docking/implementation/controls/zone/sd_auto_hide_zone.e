@@ -162,7 +162,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-feature {SD_AUTO_HIDE_STATE} -- For user docking
+feature {NONE} -- For user docking
 
 	on_focus_in (a_content: SD_CONTENT)is
 			-- Redefine.
@@ -180,7 +180,7 @@ feature {SD_AUTO_HIDE_STATE} -- For user docking
 
 feature -- Query
 
-	window: SD_PANEL
+	window: SD_WINDOW
 			-- Window.
 
 	has_focus: BOOLEAN is

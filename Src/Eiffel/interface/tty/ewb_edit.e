@@ -12,8 +12,6 @@ class EWB_EDIT
 inherit
 	EB_SHARED_PREFERENCES
 
-	SHARED_BATCH_NAMES
-
 feature -- Element change
 
 	edit (a_file: STRING) is
@@ -21,10 +19,23 @@ feature -- Element change
 		require
 			file_not_void: a_file /= Void
 		local
+			editor: STRING;
+			cmd: STRING;
 			cmd_exec: COMMAND_EXECUTOR
 		do
-			create cmd_exec
-			cmd_exec.execute (preferences.misc_data.external_editor_cli (a_file, 1))
+			editor := preferences.misc_data.external_editor_command
+			if editor /= Void then
+					-- Replace $target and $line
+				editor.replace_substring_all ("$target", a_file)
+				editor.replace_substring_all ("$line", "")
+
+				create cmd.make (0);
+				cmd.append (editor);
+				create cmd_exec;
+				cmd_exec.execute (cmd)
+			else
+				io.error.put_string ("The resource EDITOR is not set%N");
+			end;
 		end;
 
 indexing

@@ -2,7 +2,7 @@
 	description: "The byte code interpreter."
 	date:		"$Date$"
 	revision:	"$Revision$"
-	copyright:	"Copyright (c) 1985-2007, Eiffel Software."
+	copyright:	"Copyright (c) 1985-2006, Eiffel Software."
 	license:	"GPL version 2 see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"Commercial license is available at http://www.eiffel.com/licensing"
 	copying: "[
@@ -83,7 +83,7 @@ doc:<file name="interp.c" header="eif_interp.h" version="$Id$" summary="Byte cod
 #define REGISTER_SIZE	40			/* Reasonable size of register array */
 #define BIGGER_LIMIT	150			/* Number of calls before reducing size */
 #define SPECIAL_REG		4			/* Number or special registers */
-#define ITEM_SZ			sizeof(EIF_TYPED_VALUE)
+#define ITEM_SZ			sizeof(struct item)
 
 /* Accessing the register array 'iregs' (some values have hardcoded locations
  * for faster reference, others are computed via macros). I assume local
@@ -121,8 +121,8 @@ rt_shared struct opstack op_stack = { /* %%ss mt */
 	(struct stochunk *) 0,		/* st_hd */
 	(struct stochunk *) 0,		/* st_tl */
 	(struct stochunk *) 0,		/* st_cur */
-	(EIF_TYPED_VALUE *) 0,			/* st_top */
-	(EIF_TYPED_VALUE *) 0,			/* st_end */
+	(struct item *) 0,			/* st_top */
+	(struct item *) 0,			/* st_end */
 };
 
 /*
@@ -136,7 +136,7 @@ doc:	</attribute>
 rt_public unsigned char *IC = NULL;
 
 /*
-doc:	<attribute name="iregs" return_type="EIF_TYPED_VALUE **" export="private">
+doc:	<attribute name="iregs" return_type="struct item **" export="private">
 doc:		<summary>Interpreter registers. To speed-up access of the local parameters and variables, they are all gathered in a separate array (automagically resized). The value of Current comes first, then Result (whether it is needed or not), then all the arguments (number held in global argnum) and then the locals (number held in global locnum). They can be viewed as the interpreter's registers and are saved/backed upon each call. The 'argnum' and 'locnum' are also part of the interpreter's registers, but for faster access, they are copied to C global vars--RAM. Size of this structure is store in `iregsz'.</summary>
 doc:		<access>Read/Write</access>
 doc:		<thread_safety>Safe</thread_safety>
@@ -148,7 +148,7 @@ doc:		<access>Read/Write</access>
 doc:		<thread_safety>Safe</thread_safety>
 doc:		<synchronization>Private per thread data.</synchronization>
 doc:	</attribute>
-doc:	<attribute name="argnum" return_type="uint32" export="private">
+doc:	<attribute name="argnum" return_type="int" export="private">
 doc:		<summary>Number of arguments in `iregs'.</summary>
 doc:		<access>Read/Write</access>
 doc:		<thread_safety>Safe</thread_safety>
@@ -161,7 +161,7 @@ doc:		<thread_safety>Safe</thread_safety>
 doc:		<synchronization>Private per thread data.</synchronization>
 doc:	</attribute>
 */
-rt_private EIF_TYPED_VALUE **iregs = NULL;
+rt_private struct item **iregs = NULL;
 rt_private int iregsz = 0;	/* Size of 'iregs' array (bytes) */
 rt_private uint32 argnum = 0;		/* Number of arguments */
 rt_private uint32 locnum = 0;		/* Number of locals */
@@ -179,7 +179,7 @@ doc:		<access>Read/Write</access>
 doc:		<thread_safety>Safe</thread_safety>
 doc:		<synchronization>Private per thread data.</synchronization>
 doc:	</attribute>
-doc:	<attribute name="saved_stop" return_type="EIF_TYPED_VALUE *" export="private">
+doc:	<attribute name="saved_stop" return_type="struct item *" export="private">
 doc:		<summary>Current feature context. Used in conjonction for registers synchronization.</summary>
 doc:		<access>Read/Write</access>
 doc:		<thread_safety>Safe</thread_safety>
@@ -188,7 +188,7 @@ doc:	</attribute>
 */
 rt_private unsigned long tagval = 0L;
 rt_private struct stochunk *saved_scur = NULL;
-rt_private EIF_TYPED_VALUE *saved_stop = NULL;
+rt_private struct item *saved_stop = NULL;
 
 /*
 doc:	<attribute name="inv_mark_table" return_type="char *" export="private">
@@ -209,9 +209,9 @@ rt_private char *RT_UNKNOWN_TYPE_MSG = "unknown entity type";
 /* Monadic and diadic operator handling */
 rt_private void monadic_op(int code);				/* Execute a monadic operation */
 rt_private void diadic_op(int code);				/* Execute a diadic operation */
-rt_private void eif_interp_gt(EIF_TYPED_VALUE *first, EIF_TYPED_VALUE *second);	/* > operation */
-rt_private void eif_interp_lt(EIF_TYPED_VALUE *first, EIF_TYPED_VALUE *second);	/* < operation */
-rt_private void eif_interp_eq (EIF_TYPED_VALUE *f, EIF_TYPED_VALUE *s);			/* == operation */
+rt_private void eif_interp_gt(struct item *first, struct item *second);	/* > operation */
+rt_private void eif_interp_lt(struct item *first, struct item *second);	/* < operation */
+rt_private void eif_interp_eq (struct item *f, struct item *s);			/* == operation */
 
 /* Min and max operation */
 rt_private void eif_three_way_comparison (void);	/* Execute `three_way_comparison'. */
@@ -223,11 +223,11 @@ rt_private void eif_interp_bit_operations (void);	/* execute bit operations on i
 rt_private void eif_interp_basic_operations (void);	/* execute basic operations on basic types */
 
 /* Assertion checking */
-rt_private void icheck_inv(EIF_REFERENCE obj, struct stochunk *scur, EIF_TYPED_VALUE *stop, int where);				/* Invariant check */
-rt_private void irecursive_chkinv(int dtype, EIF_REFERENCE obj, struct stochunk *scur, EIF_TYPED_VALUE *stop, int where);		/* Recursive invariant check */
+rt_private void icheck_inv(EIF_REFERENCE obj, struct stochunk *scur, struct item *stop, int where);				/* Invariant check */
+rt_private void irecursive_chkinv(int dtype, EIF_REFERENCE obj, struct stochunk *scur, struct item *stop, int where);		/* Recursive invariant check */
 
 /* Getting constants */
-rt_shared short get_compound_id(EIF_REFERENCE obj, short dtype);			/* Get a compound type id */
+rt_private short get_compound_id(EIF_REFERENCE obj, short dtype);			/* Get a compound type id */
 rt_private int get_creation_type(void);		/* Get a creation type id */
 
 /* Interpreter interface */
@@ -238,10 +238,10 @@ rt_private void interpret(int flag, int where);	/* Run the interpreter */
 
 /* Dbg evaluation */
 rt_shared int dbg_store_exception_trace (char* trace);
-rt_public EIF_TYPED_VALUE * dynamic_eval_dbg(int fid_or_offset, int stype_or_origin, int dtype, int is_precompiled, int is_basic_type, int is_static_call, EIF_TYPED_VALUE* previous_otop, int* exception_occured);
+rt_public struct item * dynamic_eval_dbg(int fid, int stype, int is_precompiled, int is_basic_type, struct item* previous_otop, int* exception_occured);
 
 /* Feature call and/or access  */
-rt_public void dynamic_eval(int fid_or_offset, int stype_or_origin, int dtype, int is_precompiled, int is_basic_type, int is_static_call, int is_inline_agent);
+rt_public void dynamic_eval(int fid, int stype, int is_precompiled, int is_basic_type, int is_inline_agent);
 rt_private int icall(int fid, int stype, int ptype);					/* Interpreter dispatcher (in water) */
 rt_private int ipcall(int32 origin, int32 offset, int ptype);					/* Interpreter precomp dispatcher */
 rt_private void interp_access(int fid, int stype, uint32 type);			/* Access to an attribute */
@@ -249,26 +249,26 @@ rt_private void interp_paccess(int32 origin, int32 f_offset, uint32 type);			/* 
 rt_private void address(int32 aid);													/* Address of a routine */
 rt_private void assign(long offset, uint32 type);									/* Assignment in an attribute */
 rt_private void reverse_attribute(long offset, uint32 type);						/* Reverse assignment to attribute */
-rt_private void reverse_local(EIF_TYPED_VALUE * it, uint32 type);						/* Reverse assignment to local or result*/
+rt_private void reverse_local(struct item * it, uint32 type);						/* Reverse assignment to local or result*/
 
 /* Calling protocol */
-rt_private void put_once_result (EIF_TYPED_VALUE * ptr, long int rtype, MTOT OResult); /* Save local result to permanent once storage */
-rt_private void get_once_result (MTOT OResult, long int rtype, EIF_TYPED_VALUE *ptr);   /* Retrieve local result from permanent once storage */
-rt_private void init_var(EIF_TYPED_VALUE *ptr, long int type, EIF_REFERENCE current_ref); /* Initialize to 0 a variable entity */
+rt_private void put_once_result (struct item * ptr, long int rtype, MTOT OResult); /* Save local result to permanent once storage */
+rt_private void get_once_result (MTOT OResult, long int rtype, struct item *ptr);   /* Retrieve local result from permanent once storage */
+rt_private void init_var(struct item *ptr, long int type, EIF_REFERENCE current_ref); /* Initialize to 0 a variable entity */
 rt_private void init_registers(void);			/* Intialize registers in callee */
 rt_private void allocate_registers(void);		/* Allocate the register array */
-rt_shared void sync_registers(struct stochunk *stack_cur, EIF_TYPED_VALUE *stack_top); /* Resynchronize the register array */
+rt_shared void sync_registers(struct stochunk *stack_cur, struct item *stack_top); /* Resynchronize the register array */
 rt_private void pop_registers(void);						/* Remove local vars and arguments */
-rt_private void create_expanded_locals (struct stochunk * scur, EIF_TYPED_VALUE * stop); /* Initialize expanded locals and result (if required) */
+rt_private void create_expanded_locals (struct stochunk * scur, struct item * stop); /* Initialize expanded locals and result (if required) */
 
 /* Operational stack handling routines */
-rt_public EIF_TYPED_VALUE *opush(register EIF_TYPED_VALUE *val);	/* Push one value on op stack */
-rt_public EIF_TYPED_VALUE *opop(void);							/* Pop last item */
-rt_private EIF_TYPED_VALUE *stack_allocate(register int size);	/* Allocates first chunk */
+rt_public struct item *opush(register struct item *val);	/* Push one value on op stack */
+rt_public struct item *opop(void);							/* Pop last item */
+rt_private struct item *stack_allocate(register int size);	/* Allocates first chunk */
 rt_private int stack_extend(register int size);				/* Extend stack's size */
 rt_private void npop(register int nb_items);				/* Pop 'n' items */
-rt_public EIF_TYPED_VALUE *otop(void);							/* Pointer to value at the top */
-rt_private EIF_TYPED_VALUE *oitem(uint32 n);					/* Pointer to value at position `n' down the stack */
+rt_public struct item *otop(void);							/* Pointer to value at the top */
+rt_private struct item *oitem(uint32 n);					/* Pointer to value at position `n' down the stack */
 rt_private void stack_truncate(void);						/* Truncate stack if necessary */
 rt_private void wipe_out(register struct stochunk *chunk);	/* Remove unneeded chunk from stack */
 #ifdef DEBUG
@@ -290,7 +290,7 @@ rt_private void iinternal_dump(FILE *, char *);				/* Internal (compound) dumpin
 #define STACK_PRESERVE \
 	struct dcall * volatile dtop;				\
 	struct stdchunk * volatile dcur;			\
-	EIF_TYPED_VALUE * volatile stop;				\
+	struct item * volatile stop;				\
 	struct stochunk * volatile scur
 
 #define SAVE(x,y,z) \
@@ -323,17 +323,15 @@ rt_private void iinternal_dump(FILE *, char *);				/* Internal (compound) dumpin
 		}                                                             \
 	}
 
-rt_public void metamorphose_top(struct stochunk * scur, EIF_TYPED_VALUE * volatile stop)
+rt_public void metamorphose_top(struct stochunk * volatile scur, struct item * volatile stop)
 {
 	RT_GET_CONTEXT
 
 	EIF_REFERENCE new_obj = NULL;
 	uint32 head_type;
-	EIF_TYPED_VALUE * last;	/* Last pushed value */
+	struct item * last;	/* Last pushed value */
 	unsigned long stagval;
 	
-	if ((otop()->type & SK_HEAD) == SK_EXP)
-		return; /* Leave an expanded object as is. */
 	last = opop();
 	stagval = tagval;
 	head_type = last->type & SK_HEAD;
@@ -474,9 +472,9 @@ rt_public void xinitint(void)
 	/* Creation of the register array. */
 	RT_GET_CONTEXT
 
-	iregsz = REGISTER_SIZE * sizeof(EIF_TYPED_VALUE *);
-	iregs = (EIF_TYPED_VALUE **) cmalloc(iregsz);
-	if (iregs == (EIF_TYPED_VALUE **) 0)	/* Not enough room */
+	iregsz = REGISTER_SIZE * sizeof(struct item *);
+	iregs = (struct item **) cmalloc(iregsz);
+	if (iregs == (struct item **) 0)	/* Not enough room */
 		enomem(MTC_NOARG);
 }
 
@@ -494,17 +492,16 @@ rt_private void interpret(int flag, int where)
 	RT_GET_CONTEXT
 	EIF_GET_CONTEXT
 	int volatile code;			/* Current intepreted byte code */
-	EIF_TYPED_VALUE * volatile last;	/* Last pushed value */
+	struct item * volatile last;	/* Last pushed value */
 	long volatile offset;			/* Offset for jumps and al */
 	unsigned char * volatile string;		/* Strings for assertions tag */
 	int volatile type;						/* Often used to hold type values */
 	int volatile saved_assertion;
-	int16 volatile saved_caller_assertion_level = caller_assertion_level;	/* Saves the assertion level of the caller*/
 	unsigned char * volatile rescue;		/* Location of rescue clause */
 	jmp_buf exenv;							/* In case we have to setjmp() */
 	RTEX;									/* Routine's execution vector and debugger
 											   level depth */
-	EIF_TYPED_VALUE * volatile stop;			/* To save stack context */
+	struct item * volatile stop;			/* To save stack context */
 	struct stochunk * volatile scur;		/* Current chunk (stack context) */
 #ifdef ISE_GC
 	char ** volatile l_top;					/* Local top */
@@ -569,123 +566,33 @@ rt_private void interpret(int flag, int where)
 		argnum = get_int16(&IC);			/* Get the argument number */
 		locnum = get_int16(&IC);		/* Get the local number */
 		init_registers(MTC);		/* Initialize the registers */
-		caller_assertion_level = WASC(icur_dtype) & CK_SUP_REQUIRE;	/* Set the caller assertion level */
 
-		/* Argument normalization and expanded clone of arguments (if any). */
-		{
-			uint32 n;
-			for (n = 1; n <= argnum; n++) {
-				EIF_REFERENCE ref;
+		/* Expanded clone of arguments (if any) */
+		while (*IC++ != BC_NO_CLONE_ARG) {
+			EIF_REFERENCE ref;
 
-				last = arg(n);
-				ref = last->it_ref;
-				switch (get_uint8(&IC)) {
-				case EIF_EXPANDED_CODE_EXTENSION:
-					if (ref == NULL)
-						xraise(EN_VEXP);	/* Void assigned to expanded */
-					RT_GC_PROTECT(ref);
-					type = get_int16(&IC);
-					type = get_compound_id(MTC icurrent->it_ref, (short) type);
-					last->it_ref = RTLN(type);
-					RT_GC_WEAN(ref);
-					last->type = SK_EXP;
-					eif_std_ref_copy(ref, last->it_ref);
-					break;
-				case EIF_BIT_CODE_EXTENSION:
-					if (ref == NULL)
-						xraise(EN_VEXP);	/* Void assigned to expanded */
-					RT_GC_PROTECT(ref);
-					last->it_bit = RTLB(get_int32(&IC));
-					RT_GC_WEAN(ref);
-					b_copy(ref, last->it_bit);
-					break;
-				case EIF_REFERENCE_CODE:
-					break;
-				case EIF_BOOLEAN_CODE:
-					if ((last->type & SK_HEAD) == SK_REF) {
-						last -> it_bool = *(EIF_BOOLEAN *) ref;
-						last -> type = SK_BOOL;
-					}
-					break;
-				case EIF_CHARACTER_CODE:
-					if ((last->type & SK_HEAD) == SK_REF) {
-						last -> it_char = *(EIF_CHARACTER *) ref;
-						last -> type = SK_CHAR;
-					}
-					break;
-				case EIF_REAL_64_CODE:
-					if ((last->type & SK_HEAD) == SK_REF) {
-						last -> it_real64 = *(EIF_REAL_64 *) ref;
-						last -> type = SK_REAL64;
-					}
-					break;
-				case EIF_REAL_32_CODE:
-					if ((last->type & SK_HEAD) == SK_REF) {
-						last -> it_real32 = *(EIF_REAL_32 *) ref;
-						last -> type = SK_REAL32;
-					}
-					break;
-				case EIF_POINTER_CODE:
-					if ((last->type & SK_HEAD) == SK_REF) {
-						last -> it_ptr = *(EIF_POINTER *) ref;
-						last -> type = SK_POINTER;
-					}
-					break;
-				case EIF_INTEGER_8_CODE:
-					if ((last->type & SK_HEAD) == SK_REF) {
-						last -> it_int8 = *(EIF_INTEGER_8 *) ref;
-						last -> type = SK_INT8;
-					}
-					break;
-				case EIF_INTEGER_16_CODE:
-					if ((last->type & SK_HEAD) == SK_REF) {
-						last -> it_int16 = *(EIF_INTEGER_16 *) ref;
-						last -> type = SK_INT16;
-					}
-					break;
-				case EIF_INTEGER_32_CODE:
-					if ((last->type & SK_HEAD) == SK_REF) {
-						last -> it_int32 = *(EIF_INTEGER_32 *) ref;
-						last -> type = SK_INT32;
-					}
-					break;
-				case EIF_INTEGER_64_CODE:
-					if ((last->type & SK_HEAD) == SK_REF) {
-						last -> it_int64 = *(EIF_INTEGER_64 *) ref;
-						last -> type = SK_INT64;
-					}
-					break;
-				case EIF_NATURAL_8_CODE:
-					if ((last->type & SK_HEAD) == SK_REF) {
-						last -> it_uint8 = *(EIF_NATURAL_8 *) ref;
-						last -> type = SK_UINT8;
-					}
-					break;
-				case EIF_NATURAL_16_CODE:
-					if ((last->type & SK_HEAD) == SK_REF) {
-						last -> it_uint16 = *(EIF_NATURAL_16 *) ref;
-						last -> type = SK_UINT16;
-					}
-					break;
-				case EIF_NATURAL_32_CODE:
-					if ((last->type & SK_HEAD) == SK_REF) {
-						last -> it_uint32 = *(EIF_NATURAL_32 *) ref;
-						last -> type = SK_UINT32;
-					}
-					break;
-				case EIF_NATURAL_64_CODE:
-					if ((last->type & SK_HEAD) == SK_REF) {
-						last -> it_uint64 = *(EIF_NATURAL_64 *) ref;
-						last -> type = SK_UINT64;
-					}
-					break;
-				case EIF_WIDE_CHAR_CODE:
-					if ((last->type & SK_HEAD) == SK_REF) {
-						last -> it_wchar = *(EIF_WIDE_CHAR *) ref;
-						last -> type = SK_WCHAR;
-					}
-					break;
-				}
+			code = get_int16(&IC);		/* Get the argument number to clone */
+			last = arg(code);
+			ref = last->it_ref;
+			if (ref == NULL)
+				xraise(EN_VEXP);	/* Void assigned to expanded */
+			switch (last->type & SK_HEAD) {
+			case SK_REF:			/* Lovely comment */
+			case SK_EXP:
+				RT_GC_PROTECT(ref);
+				type = get_int16(&IC);
+				type = get_compound_id(MTC icurrent->it_ref, (short) type);
+				last->it_ref = RTLN(type);
+				RT_GC_WEAN(ref);
+				last->type = SK_EXP;
+				eif_std_ref_copy(ref, last->it_ref);
+				break;
+			case SK_BIT:
+				RT_GC_PROTECT(ref);
+				last->it_bit = RTLB(get_int32(&IC));
+				RT_GC_WEAN(ref);
+				b_copy(ref, last->it_bit);
+				break;
 			}
 		}
 
@@ -832,7 +739,7 @@ rt_private void interpret(int flag, int where)
 #endif
 		offset = get_int32(&IC);
 		pre_success = '\01';
-		if (!(~in_assertion & ((WASC(icur_dtype) & CK_REQUIRE) | saved_caller_assertion_level))) {
+		if (!(~in_assertion & WASC(icur_dtype) & CK_REQUIRE)) {
 				/* No precondition check? */
 			IC += offset; /* Skip preconditions */
 			goto enter_body; /* Start execution of a routine body. */
@@ -1549,7 +1456,7 @@ rt_private void interpret(int flag, int where)
 
 				stagval = tagval;
 				OLD_IC = IC;
-				ref = RTRCL (ref);
+				ref = egc_twin (ref);
 				IC = OLD_IC;
 				if (tagval != stagval)		/* previous call can call malloc which may
 								 * call the interpreter for creation
@@ -1577,7 +1484,7 @@ rt_private void interpret(int flag, int where)
 			if (ref && eif_is_boxed_expanded(HEADER(ref)->ov_flags)) {
 				unsigned char *OLD_IC;
 				OLD_IC = IC;
-				last->it_ref = RTRCL (ref);
+				last->it_ref = egc_twin (ref);
 				IC = OLD_IC;
 				if (tagval != stagval)		/* previous call can call malloc which may
 								 * call the interpreter for creation
@@ -1600,7 +1507,7 @@ rt_private void interpret(int flag, int where)
 
 	case BC_VOID:
 		{
-			EIF_TYPED_VALUE * last;
+			struct item * last;
 #ifdef DEBUG
 			dprintf(2)("BC_VOID\n");
 #endif
@@ -1826,7 +1733,7 @@ rt_private void interpret(int flag, int where)
 			EIF_REFERENCE new_obj;						/* New object */
 			unsigned long stagval;
 			EIF_BOOLEAN has_closed, is_precompiled, is_basic, is_target_closed, is_inline_agent;
-			EIF_TYPED_VALUE *aclosed_operands, *aopen_map;
+			struct item *aclosed_operands, *aopen_map;
 			int32 class_id, feature_id, open_count;
 			EIF_REFERENCE open_map, closed_operands;
 
@@ -1939,7 +1846,7 @@ rt_private void interpret(int flag, int where)
 			EIF_BOOLEAN is_ref, is_basic, is_expanded, is_bit;
 			uint32 elem_size = 0, bit_size = 0, i = 0;
 			uint32 flags = 0;
-			EIF_TYPED_VALUE *nb_item;
+			struct item *nb_item;
 			int16 exp_type;
 			uint32 nb = 0;
 
@@ -2009,7 +1916,7 @@ rt_private void interpret(int flag, int where)
 		dprintf(2)("BC_RANGE\n");
 #endif
 		{
-			EIF_TYPED_VALUE *lower, *upper;
+			struct item *lower, *upper;
 
 			upper = opop();				/* Get the upper bound */
 			lower = opop();				/* Get the lower bound */
@@ -2240,9 +2147,9 @@ rt_private void interpret(int flag, int where)
 		dprintf(2)("BC_ROTATE\n");
 #endif
 		{
-			EIF_TYPED_VALUE old;			/* Save old value before copying */
-			EIF_TYPED_VALUE prev;			/* Previous value to be copied */
-			EIF_TYPED_VALUE *new;			/* Where value is to be copied */
+			struct item old;			/* Save old value before copying */
+			struct item prev;			/* Previous value to be copied */
+			struct item *new;			/* Where value is to be copied */
 			struct opstack op_context;  /* To save stack's context */
 
 			code = get_int16(&IC) - 1;
@@ -2517,19 +2424,6 @@ rt_private void interpret(int flag, int where)
 		eif_interp_bit_operations();
 		break;
 
-	/* Real operations: ceil and floor */
-	case BC_CEIL:
-		last = otop();
-		CHECK("double_type", last->type == SK_REAL64)
-		last->it_double = ceil(last->it_double);
-		break;
-
-	case BC_FLOOR:
-		last = otop();
-		CHECK("double_type", last->type == SK_REAL64)
-		last->it_double = floor(last->it_double);
-		break;
-	
 	/*
 	 * Expanded comparison
  	 */
@@ -2632,7 +2526,7 @@ rt_private void interpret(int flag, int where)
 	 */
 	case BC_OBJECT_ADDR:
 		{
-		EIF_TYPED_VALUE * volatile pointed_object = NULL;
+		struct item * volatile pointed_object = NULL;
 	 	EIF_BOOLEAN is_attribute = EIF_FALSE;
 		uint32 value_offset = get_uint32(&IC);
 #ifdef DEBUG
@@ -2718,7 +2612,7 @@ rt_private void interpret(int flag, int where)
 #endif
 		{
 		uint32 ptr_pos, value_pos;
-		EIF_TYPED_VALUE *pointed_object;
+		struct item *pointed_object;
 
 		ptr_pos = get_uint32(&IC);
 		value_pos = get_uint32(&IC);
@@ -2783,14 +2677,12 @@ rt_private void interpret(int flag, int where)
 			EIF_REFERENCE sp_area;
 			short stype, dtype, feat_id;
 			unsigned long stagval;
-			int curr_pos;
-			EIF_TYPED_VALUE *it;
+			int curr_pos = 0;
+			struct item *it;
 			long elem_size;
 			unsigned char *OLD_IC;
  
 			if (code == BC_PARRAY) {
-				EIF_TYPED_VALUE u_lower;
-				EIF_TYPED_VALUE u_upper;
 				origin = get_int32(&IC);		/* Get the origin class id */
 				ooffset = get_int32(&IC);		/* Get the offset in origin */
 				dtype = get_int16(&IC);			/* Get the static type */
@@ -2804,14 +2696,8 @@ rt_private void interpret(int flag, int where)
 	 
 				new_obj = RTLN(dtype);			/* Create new object */
 				RT_GC_PROTECT(new_obj);   /* Protect new_obj */
-				u_lower.type = SK_INT32;
-				u_lower.it_i4 = 1;
-				u_upper.type = SK_INT32;
-				u_upper.it_i4 = nbr_of_items;
-				((void (*)(EIF_REFERENCE, EIF_TYPED_VALUE, EIF_TYPED_VALUE)) RTWPF(origin, ooffset, Dtype(new_obj))) (new_obj, u_lower, u_upper);
+				((void (*)()) RTWPF(origin, ooffset, Dtype(new_obj))) (new_obj, 1L, nbr_of_items);
 			} else {
-				EIF_TYPED_VALUE u_lower;
-				EIF_TYPED_VALUE u_upper;
 				stype = get_int16(&IC);			/* Get the static type */
 				dtype = get_int16(&IC);			/* Get the static type */
 
@@ -2825,11 +2711,7 @@ rt_private void interpret(int flag, int where)
 	 
 				new_obj = RTLN(dtype);			/* Create new object */
 				RT_GC_PROTECT(new_obj);   /* Protect new_obj */
-				u_lower.type = SK_INT32;
-				u_lower.it_i4 = 1;
-				u_upper.type = SK_INT32;
-				u_upper.it_i4 = nbr_of_items;
-				((void (*)(EIF_REFERENCE, EIF_TYPED_VALUE, EIF_TYPED_VALUE)) RTWF(stype, feat_id, Dtype(new_obj))) (new_obj, u_lower, u_upper);
+				((void (*)()) RTWF(stype, feat_id, Dtype(new_obj))) (new_obj, 1L, nbr_of_items);
 			}
 
 			IC = OLD_IC;
@@ -2839,15 +2721,11 @@ rt_private void interpret(int flag, int where)
 			sp_area = *(EIF_REFERENCE *) new_obj;
 			RT_GC_PROTECT(sp_area);
 
-				/* Take into account that elements are pushed
-				 * in first-to-last order */
-			curr_pos = nbr_of_items;
-			while (curr_pos > 0) {
+			while (curr_pos < nbr_of_items) {
 				/* Fill the special area with the expressions
 				* for the manifest array.
 				*/
 
-				curr_pos--;
 				it = opop();		/* Pop expression off stack */
 				switch (it->type & SK_HEAD) {
 					case SK_BOOL:
@@ -2876,6 +2754,7 @@ rt_private void interpret(int flag, int where)
 					default:
 						eif_panic(MTC RT_BOTCHED_MSG);
 				}
+				curr_pos++;
 			}
 			RT_GC_WEAN(sp_area);			/* Release protection of `sp_area' */
 			RT_GC_WEAN(new_obj);			/* and of `new_obj'. */
@@ -2889,7 +2768,7 @@ rt_private void interpret(int flag, int where)
 		{
 			int pos = get_int32(&IC);		/* Position of access. */
 			uint32 type = get_uint32(&IC);	/* SK_XX value of access. */
-			EIF_TYPED_VALUE *last;
+			struct item *last;
 
 			last = otop();
 			last->type = type;	/* Stored type of accessed tuple element. */
@@ -2918,7 +2797,7 @@ rt_private void interpret(int flag, int where)
 		{
 			int pos = get_int32(&IC);		/* Position of access. */
 			uint32 type = get_uint32(&IC);	/* SK_XX value of access. */
-			EIF_TYPED_VALUE *source, *tuple;
+			struct item *source, *tuple;
 
 			source = opop();
 			tuple = opop();
@@ -2959,7 +2838,7 @@ rt_private void interpret(int flag, int where)
 			short dtype;
 			unsigned long stagval;
 			int curr_pos = 1;	/* 1 because tuple starts at 1 */
-			EIF_TYPED_VALUE *it;
+			struct item *it;
 			unsigned char *OLD_IC;
 			EIF_BOOLEAN is_atomic;
  
@@ -3305,7 +3184,7 @@ rt_private void interpret(int flag, int where)
 		dprintf(2)("BC_REF_TO_PTR\n");
 #endif
 		{
-			EIF_TYPED_VALUE *my_last;
+			struct item *my_last;
 			my_last = otop();
 			my_last->type = SK_POINTER;
 				/* References and pointers are store as char * so no type
@@ -3333,7 +3212,6 @@ rt_private void interpret(int flag, int where)
 #ifdef DEBUG
 		dprintf(2)("BC_NULL\n");
 #endif
-		caller_assertion_level = saved_caller_assertion_level;
 		if (is_nested)		/* Nested feature call (dot notation) */
 			icheck_inv(MTC icurrent->it_ref, scur, stop, 1);	/* Invariant */
 		pop_registers();	/* Pop registers */
@@ -3368,7 +3246,6 @@ rt_private void interpret(int flag, int where)
 #ifdef DEBUG
 		dprintf(2)("BC_INV_NULL\n");
 #endif
-		caller_assertion_level = saved_caller_assertion_level;
 		pop_registers();	/* Pop registers */
 		return;
 
@@ -3505,7 +3382,7 @@ rt_private void interpret(int flag, int where)
 #undef EIF_VOLATILE
 #define EIF_VOLATILE
 
-rt_private void icheck_inv(EIF_REFERENCE obj, struct stochunk *scur, EIF_TYPED_VALUE *stop, int where)          
+rt_private void icheck_inv(EIF_REFERENCE obj, struct stochunk *scur, struct item *stop, int where)          
 					  		/* Current chunk (stack context) */
 							/* To save stack context */
 		  					/* Invariant after or before */
@@ -3529,7 +3406,7 @@ rt_private void icheck_inv(EIF_REFERENCE obj, struct stochunk *scur, EIF_TYPED_V
 	}
 }
 
-rt_private void irecursive_chkinv(int dtype, EIF_REFERENCE obj, struct stochunk *scur, EIF_TYPED_VALUE *stop, int where)
+rt_private void irecursive_chkinv(int dtype, EIF_REFERENCE obj, struct stochunk *scur, struct item *stop, int where)
 		  
 		  
 					  		/* Current chunk (stack context) */
@@ -3567,14 +3444,14 @@ rt_private void irecursive_chkinv(int dtype, EIF_REFERENCE obj, struct stochunk 
 	/* Invariant check */
 	{
 		BODY_INDEX body_id;
-		EIF_TYPED_VALUE *last;
+		struct item *last;
 
 		CBodyId(body_id,INVARIANT_ID,dtype);	
 		if (body_id != INVALID_ID) {
 			if (egc_frozen [body_id]) {		/* Frozen invariant */
 				unsigned long stagval = tagval;	/* Tag value backup */
 	
-				((void (*)(EIF_REFERENCE, int)) egc_frozen[body_id])(obj, where);
+				((void (*)()) egc_frozen[body_id])(obj, where);
 	
 				if (tagval != stagval)			/* Resynchronize registers */
 					sync_registers(MTC scur, stop);
@@ -3613,7 +3490,7 @@ rt_private void monadic_op(int code)
 {
 	/* Apply the operation 'code' to the value on top of the stack */
 
-	EIF_TYPED_VALUE *first;			/* First operand */
+	struct item *first;			/* First operand */
 
 	first = otop();				/* Item will get modified */
 
@@ -3677,8 +3554,8 @@ rt_private void diadic_op(int code)
 	 * that the last poped value remains uccorrupted in a non-freed chunk--RAM.
 	 */
 
-	EIF_TYPED_VALUE *second;		/* Second operand */
-	EIF_TYPED_VALUE *first;			/* First operand */
+	struct item *second;		/* Second operand */
+	struct item *first;			/* First operand */
 	
 #define f first
 #define s second
@@ -3907,7 +3784,7 @@ rt_private void diadic_op(int code)
 #undef f
 }
 
-rt_private void eif_interp_gt(EIF_TYPED_VALUE *f, EIF_TYPED_VALUE *s) {
+rt_private void eif_interp_gt(struct item *f, struct item *s) {
 	switch(f->type & SK_HEAD) {
 		case SK_CHAR: f->it_char = f->it_char > s->it_char; break;
 		case SK_WCHAR: f->it_char = f->it_wchar > s->it_wchar; break;
@@ -3926,7 +3803,7 @@ rt_private void eif_interp_gt(EIF_TYPED_VALUE *f, EIF_TYPED_VALUE *s) {
 	f->type = SK_BOOL;		/* Result is a boolean */
 }
 
-rt_private void eif_interp_lt(EIF_TYPED_VALUE *f, EIF_TYPED_VALUE *s) {
+rt_private void eif_interp_lt(struct item *f, struct item *s) {
 	switch(f->type & SK_HEAD) {
 		case SK_CHAR: f->it_char = f->it_char < s->it_char; break;
 		case SK_WCHAR: f->it_char = f->it_wchar < s->it_wchar; break;
@@ -3945,7 +3822,7 @@ rt_private void eif_interp_lt(EIF_TYPED_VALUE *f, EIF_TYPED_VALUE *s) {
 	f->type = SK_BOOL;		/* Result is a boolean */
 }
 
-rt_private void eif_interp_eq (EIF_TYPED_VALUE *f, EIF_TYPED_VALUE *s) {
+rt_private void eif_interp_eq (struct item *f, struct item *s) {
 	switch(f->type & SK_HEAD) {
 		case SK_BOOL:
 		case SK_CHAR: f->it_char = f->it_char == s->it_char; break;
@@ -3974,7 +3851,7 @@ rt_private void eif_interp_generator (void)
 	/* Execute the `generator' or `generating_type' function call for basic types
 	 * in melted code
 	 */
-	EIF_TYPED_VALUE *first;			/* First operand */
+	struct item *first;			/* First operand */
 	
 	first = otop();				/* First operand will be replace by result */
 	switch (first->type & SK_HEAD) {
@@ -4008,8 +3885,8 @@ rt_private void eif_interp_min_max (int code)
 #define EIF_MAX(a,b) ((a)>(b)? (a) : (b))
 #define EIF_MIN(a,b) ((a)<(b)? (a) : (b))
 
-	EIF_TYPED_VALUE *second;		/* Second operand */
-	EIF_TYPED_VALUE *first;			/* First operand */
+	struct item *second;		/* Second operand */
+	struct item *first;			/* First operand */
 	
 	second = opop();			/* Fetch second operand */
 	first = otop();				/* First operand will be replace by result */
@@ -4066,8 +3943,8 @@ rt_private void eif_three_way_comparison (void)
 {
 #define EIF_THREE_WAY_COMPARISON(a,b) ((a)<(b)? -1 : ((b)<(a) ? 1 : 0))
 
-	EIF_TYPED_VALUE *second;		/* Second operand */
-	EIF_TYPED_VALUE *first;			/* First operand */
+	struct item *second;		/* Second operand */
+	struct item *first;			/* First operand */
 	
 	second = opop();			/* Fetch second operand */
 	first = otop();				/* First operand will be replace by result */
@@ -4105,8 +3982,8 @@ rt_private void eif_interp_offset(void)
 	 * that the last poped value remains uccorrupted in a non-freed chunk--RAM.
 	 */
 
-	EIF_TYPED_VALUE *second;		/* Second operand */
-	EIF_TYPED_VALUE *first;			/* First operand */
+	struct item *second;		/* Second operand */
+	struct item *first;			/* First operand */
 	
 	second = opop();			/* Fetch second operand */
 	first = otop();				/* First operand will be replace by result */
@@ -4128,7 +4005,7 @@ rt_private void eif_interp_basic_operations (void)
 {
 	EIF_GET_CONTEXT
 	int code = *IC++;		/* Read current byte-code and advance IC */
-	EIF_TYPED_VALUE *first;		/* First operand */
+	struct item *first;		/* First operand */
 
 	switch (code) {
 			/* `max' and `min' function calls */
@@ -4202,9 +4079,9 @@ rt_private void eif_interp_bit_operations (void)
 
 	EIF_GET_CONTEXT
 	int code = *IC++;		/* Read current byte-code and advance IC */
-	EIF_TYPED_VALUE *third = (EIF_TYPED_VALUE *) 0;
-	EIF_TYPED_VALUE *second = (EIF_TYPED_VALUE *) 0;
-	EIF_TYPED_VALUE *first = (EIF_TYPED_VALUE *) 0;
+	struct item *third = (struct item *) 0;
+	struct item *second = (struct item *) 0;
+	struct item *first = (struct item *) 0;
 
 	if (code == BC_INT_SET_BIT || code == BC_INT_SET_BIT_WITH_MASK) {
 		third = opop();		/* Fetch third operand */
@@ -4332,10 +4209,9 @@ rt_private void eif_interp_bit_operations (void)
 /*
  * Function calling routines for debugger
  */
-rt_public EIF_TYPED_VALUE * dynamic_eval_dbg(int fid_or_offset, int stype_or_origin, int dtype, int is_precompiled, int is_basic_type, int is_static_call, EIF_TYPED_VALUE* previous_otop, int* exception_occured)
+rt_public struct item * dynamic_eval_dbg(int fid, int stype, int is_precompiled, int is_basic_type, struct item* previous_otop, int* exception_occured)
 						/* Feature ID or offset if the feature is precompiled */
-						/* Static type or origin if the feature is precompiled (entity where feature is applied) */
-						/* Dynamic type if needed on which call is being done. Mostly used for static calls in precompiled. */
+						/* Static type (entity where feature is applied) */
 						/* Is it an external or an Eiffel feature */
 						/* Precompiled ? (0=no, other=yes) */
 						/* Is the call performed on a basic type? (INTEGER...) */
@@ -4358,7 +4234,7 @@ rt_public EIF_TYPED_VALUE * dynamic_eval_dbg(int fid_or_offset, int stype_or_ori
 	RTED;
 	int				saved_debug_mode = debug_mode;
 	uint32			type = 0;			/* Dynamic type of the result */
-	EIF_TYPED_VALUE 	*result = NULL;		/* Result of the function (NULL if none) */
+	struct item 	*result = NULL;		/* Result of the function (NULL if none) */
 	uint32 EIF_VOLATILE db_cstack;
  	STACK_PRESERVE;
 	RTXD; /* declares the variables used to save the run-time stacks context */
@@ -4376,10 +4252,11 @@ rt_public EIF_TYPED_VALUE * dynamic_eval_dbg(int fid_or_offset, int stype_or_ori
 	excatch(&exenv);
 	if (setjmp(exenv)) {
 		*exception_occured = 1;
-		result = (EIF_TYPED_VALUE*) malloc (sizeof (EIF_TYPED_VALUE));
-		memset (result, 0, sizeof(EIF_TYPED_VALUE));
+		result = (struct item*) malloc (sizeof (struct item));
+		memset (result, 0, sizeof(struct item));	
 		result->type = SK_INT32;
 		result->it_int32 = dbg_store_exception_trace (stack_trace_str());
+		result->it_addr = NULL;
 		
 		RESTORE(op_stack,scur,stop);
 		RESTORE(db_stack,dcur,dtop);
@@ -4393,14 +4270,13 @@ rt_public EIF_TYPED_VALUE * dynamic_eval_dbg(int fid_or_offset, int stype_or_ori
 		return result;
 	}
 
-	dynamic_eval (fid_or_offset, stype_or_origin, dtype, is_precompiled, is_basic_type, is_static_call, 0);
+	dynamic_eval (fid, stype, is_precompiled, is_basic_type, 0);
 
-	if (otop()!=previous_otop) { /* a result has been pushed on the stack */
+	if (otop()!=previous_otop) {/* a result has been pushed on the stack */
 		result = opop(); 
 		type = result->type & SK_HEAD;
-		if ((type == SK_EXP || type == SK_REF) && (result->it_ref != NULL)) {
+		if ((type == SK_EXP || type == SK_REF) && (result->it_ref != NULL))
 			result->type = type | Dtype(result->it_ref);
-		}
 	}
 
 	debug_mode = saved_debug_mode;
@@ -4414,10 +4290,9 @@ rt_public EIF_TYPED_VALUE * dynamic_eval_dbg(int fid_or_offset, int stype_or_ori
 /*
  * Function calling routines
  */
-rt_public void dynamic_eval(int fid_or_offset, int stype_or_origin, int dtype, int is_precompiled, int is_basic_type, int is_static_call, int is_inline_agent)
+rt_public void dynamic_eval(int fid, int stype, int is_precompiled, int is_basic_type, int is_inline_agent)
 						/* Feature ID or offset if the feature is precompiled */
-						/* Static type or origin if the feature is precompiled (entity where feature is applied) */
-						/* Dynamic type if needed on which call is being done. Mostly used for static calls in precompiled. */
+						/* Static type (entity where feature is applied) */
 						/* Is it an external or an Eiffel feature */
 						/* Precompiled ? (0=no, other=yes) */
 						/* Is the call performed on a basic type? (INTEGER...) */
@@ -4434,7 +4309,7 @@ rt_public void dynamic_eval(int fid_or_offset, int stype_or_origin, int dtype, i
 	uint32 			pid = 0;			/* Pattern id of the frozen feature */
 	int32 			rout_id = 0;		/* routine id of the requested feature */
 	struct stochunk *previous_scur = saved_scur;
-	EIF_TYPED_VALUE *previous_stop = saved_stop;
+	struct item		*previous_stop = saved_stop;
 	uint32 EIF_VOLATILE db_cstack;
 	STACK_PRESERVE;
 	RTXD; /* declares the variables used to save the run-time stacks context */
@@ -4451,23 +4326,17 @@ rt_public void dynamic_eval(int fid_or_offset, int stype_or_origin, int dtype, i
 	}
 	
 	if (! is_precompiled) {
-		int stype = stype_or_origin;
-		rout_id = Routids(stype)[fid_or_offset];
-		if ((is_inline_agent) || (is_static_call)) {
-				/* For an inline agent or a static call, the call is always relative to
-				 * the type declaring the inline agent or the type target of the static call. */
+		rout_id = Routids(stype)[fid];
+		if (is_inline_agent) {
 			CBodyId(body_id,rout_id,RTUD(stype));
 		} else {
 			CBodyId(body_id,rout_id,Dtype(otop()->it_ref));		
 		}
 	} else {
-		int origin = stype_or_origin;
-		int offset = fid_or_offset;
-		CHECK("Not an inline agent", !is_inline_agent);
-		if (is_static_call) {
-			body_id = desc_tab[origin][RTUD(dtype)][offset].body_index;
+		if (is_inline_agent) {
+			body_id = desc_tab[stype][RTUD(stype)][fid].info;
 		} else {
-			body_id = desc_tab[origin][Dtype(otop()->it_ref)][offset].body_index;
+			body_id = desc_tab[stype][Dtype(otop()->it_ref)][fid].info;
 		}
 	}
 	excatch(&exenv);
@@ -4582,9 +4451,9 @@ rt_private int ipcall(int32 origin, int32 offset, int ptype)
 	uint32 pid;						/* Pattern id of the frozen feature */
 
 	if (ptype == -1)
-		body_id = desc_tab[origin][Dtype(otop()->it_ref)][offset].body_index;
+		body_id = desc_tab[origin][Dtype(otop()->it_ref)][offset].info;
 	else
-		body_id = desc_tab[origin][RTUD(ptype)][offset].body_index;
+		body_id = desc_tab[origin][RTUD(ptype)][offset].info;
 
 	OLD_IC = IC;				/* IC back up */
 	if (egc_frozen [body_id]) {		/* We are below zero Celsius, i.e. ice */
@@ -4623,7 +4492,7 @@ rt_private void interp_access(int fid, int stype, uint32 type)
 
 	EIF_REFERENCE current;							/* Current object */
 	/* struct ac_info *attrinfo;*/ /* Call info for attribute */ /* %%ss removed */
-	EIF_TYPED_VALUE *last;						/* Value on top of the stack */
+	struct item *last;						/* Value on top of the stack */
 	long offset;							/* Attribute offset */
 
 	last = otop();
@@ -4667,7 +4536,7 @@ rt_private void interp_paccess(int32 origin, int32 f_offset, uint32 type)
 
 	EIF_REFERENCE current;							/* Current object */
 	/* struct ac_info *attrinfo; */	/* Call info for attribute */ /* %%ss removed */
-	EIF_TYPED_VALUE *last;						/* Value on top of the stack */
+	struct item *last;						/* Value on top of the stack */
 	long offset;							/* Attribute offset */
 
 	last = otop();
@@ -4707,7 +4576,7 @@ rt_private void assign(long offset, uint32 type)
 	 * offset. */
 	
 	RT_GET_CONTEXT
-	EIF_TYPED_VALUE *last;				/* Value on top of the stack */
+	struct item *last;				/* Value on top of the stack */
 	EIF_REFERENCE ref;
 
 	last = opop();					/* Value to be assigned */
@@ -4767,7 +4636,7 @@ rt_private void reverse_attribute(long offset, uint32 type)
 	 * offset. */
 	
 	RT_GET_CONTEXT
-	EIF_TYPED_VALUE *last;				/* Value on top of the stack */
+	struct item *last;				/* Value on top of the stack */
 	EIF_REFERENCE ref;
 
 	last = opop();					/* Value to be assigned */
@@ -4820,11 +4689,11 @@ rt_private void reverse_attribute(long offset, uint32 type)
 	}
 }
 
-rt_private void reverse_local(EIF_TYPED_VALUE * it, uint32 type) {
+rt_private void reverse_local(struct item * it, uint32 type) {
 			/* pointer to local to assign to
 			 * type of object
 			 */
-	EIF_TYPED_VALUE *last;				/* Value on top of the stack */
+	struct item *last;				/* Value on top of the stack */
 
 	last = opop();					/* Value to be assigned */
 	if (EIF_IS_EXPANDED_TYPE(System(eif_cid_map[type]))) {
@@ -4877,7 +4746,7 @@ rt_private void address(int32 aid)
 	 * stack. The value of Current is removed and replaced with the address.
 	 */
 
-	EIF_TYPED_VALUE *last;				/* Built melted routine address */
+	struct item *last;				/* Built melted routine address */
 
 	last = iget();
 	last->type = SK_POINTER;
@@ -4885,7 +4754,7 @@ rt_private void address(int32 aid)
 	last->it_ptr = (EIF_POINTER) RTWPP(aid);
 }
 
-rt_shared short get_compound_id(EIF_REFERENCE Current, short dtype)
+rt_private short get_compound_id(EIF_REFERENCE Current, short dtype)
 {
 	/* Get array of short ints and convert it to a compound id. */
 	RT_GET_CONTEXT
@@ -4910,7 +4779,7 @@ rt_shared short get_compound_id(EIF_REFERENCE Current, short dtype)
 						*(gp - 1) = RTID(RTCA(arg(pos)->it_ref, -10));
 						break;
 			case LIKE_CURRENT_TYPE: /* like Current */
-						*(gp - 1) = RTID(Dftype(Current));
+						*(gp - 1) = RTID((icur_dftype));
 						break;
 			case LIKE_PFEATURE_TYPE: /* like feature - see BC_PCLIKE */
 						{
@@ -4920,7 +4789,7 @@ rt_shared short get_compound_id(EIF_REFERENCE Current, short dtype)
 							stype = get_int16(&IC);			/* Get static type of caller */
 							origin = get_int32(&IC);			/* Get the origin class id */
 							ooffset = get_int32(&IC);			/* Get the offset in origin */
-							*(gp - 1) = RTID(RTWPCT(stype, origin, ooffset, Current));
+							*(gp - 1) = RTID(RTWPCT(stype, origin, ooffset, icurrent->it_ref));
 						}
 						break;
 			case LIKE_FEATURE_TYPE: /* like feature - see BC_CLIKE */
@@ -4930,7 +4799,7 @@ rt_shared short get_compound_id(EIF_REFERENCE Current, short dtype)
 
 							code = get_int16(&IC);		/* Get the static type first */
 							offset = get_int32(&IC);	/* Get the feature id of the anchor */
-							*(gp - 1) = RTID(RTWCT(code, offset, Current));
+							*(gp - 1) = RTID(RTWCT(code, offset, icurrent->it_ref));
 						}
 						break;
 			default:
@@ -5027,7 +4896,7 @@ rt_private int get_creation_type (void)
  * Calling protocol
  */
 
-rt_private void init_var(EIF_TYPED_VALUE *ptr, long int type, EIF_REFERENCE current_ref)
+rt_private void init_var(struct item *ptr, long int type, EIF_REFERENCE current_ref)
 {
 	EIF_GET_CONTEXT
 
@@ -5063,7 +4932,7 @@ rt_private void init_var(EIF_TYPED_VALUE *ptr, long int type, EIF_REFERENCE curr
 	}
 }
 
-rt_private void put_once_result (EIF_TYPED_VALUE *ptr, long int rtype, MTOT OResult)
+rt_private void put_once_result (struct item *ptr, long int rtype, MTOT OResult)
 {
 	switch (rtype & SK_HEAD) 
 	{
@@ -5088,7 +4957,7 @@ rt_private void put_once_result (EIF_TYPED_VALUE *ptr, long int rtype, MTOT ORes
 	}
 }
 
-rt_private void get_once_result (MTOT OResult, long int rtype, EIF_TYPED_VALUE *ptr)
+rt_private void get_once_result (MTOT OResult, long int rtype, struct item *ptr)
 {
 	switch (rtype & SK_HEAD) 
 	{
@@ -5130,8 +4999,8 @@ rt_private void init_registers(void)
 	RT_GET_CONTEXT
 	EIF_GET_CONTEXT
 	uint32 n;				/* # of locals/arguments to be fetched */
-	EIF_TYPED_VALUE **reg;	/* Pointer in register array */
-	EIF_TYPED_VALUE *last;	/* Initialization of stack frame */
+	struct item **reg;	/* Pointer in register array */
+	struct item *last;	/* Initialization of stack frame */
 	struct opstack op_context;		/* To save stack's context */
 	EIF_REFERENCE current;					/* Saved value of current */
 
@@ -5202,12 +5071,12 @@ rt_private void allocate_registers(void)
 	RT_GET_CONTEXT
 	static int bigger = 0;			/* Records # of time array is bigger */
 	int size;				/* Size of iregs array */
-	EIF_TYPED_VALUE **new;	/* New location for array extension */
+	struct item **new;	/* New location for array extension */
 
 	size = nbregs * ITEM_SZ;				/* The size it should have */
 	if (size > iregsz) {					/* The array is not big enough */
-		new = (EIF_TYPED_VALUE **) crealloc((char *)iregs, size);
-		if (new == (EIF_TYPED_VALUE **) 0)		/* No room for extension */
+		new = (struct item **) crealloc((char *)iregs, size);
+		if (new == (struct item **) 0)		/* No room for extension */
 			enomem(MTC_NOARG);						/* This is a critical exception */
 		bigger = 0;
 		iregsz = size;
@@ -5218,8 +5087,8 @@ rt_private void allocate_registers(void)
 	) {
 		if (++bigger > BIGGER_LIMIT) {	/* Time to reduce length */
 			size = (REGISTER_SIZE * ITEM_SZ);
-			new = (EIF_TYPED_VALUE **) crealloc((char *)iregs, size);
-			if (new == (EIF_TYPED_VALUE **) 0)	/* Paranoid (can't happen?) */
+			new = (struct item **) crealloc((char *)iregs, size);
+			if (new == (struct item **) 0)	/* Paranoid (can't happen?) */
 				enomem(MTC_NOARG);				/* This is a critical exception */
 			iregsz = size;				/* Array has shrinked */
 			bigger = 0;					/* Reset overhead counter */
@@ -5228,7 +5097,7 @@ rt_private void allocate_registers(void)
 	}
 }
 
-rt_shared void sync_registers(struct stochunk *stack_cur, EIF_TYPED_VALUE *stack_top)
+rt_shared void sync_registers(struct stochunk *stack_cur, struct item *stack_top)
 						   		/* Saved current chunk of op stack */
 					   			/* Saved top of op stack */
 {
@@ -5241,7 +5110,7 @@ rt_shared void sync_registers(struct stochunk *stack_cur, EIF_TYPED_VALUE *stack
 
 	RT_GET_CONTEXT
 	uint32 n;				/* Loop index */
-	EIF_TYPED_VALUE **reg;	/* Address in register's array */
+	struct item **reg;	/* Address in register's array */
 	struct opstack op_context;		/* To save stack's context */
 	
 	memcpy (&op_context, &op_stack, sizeof(struct opstack));
@@ -5258,6 +5127,7 @@ rt_shared void sync_registers(struct stochunk *stack_cur, EIF_TYPED_VALUE *stack
 	 */
 	for (n = 0, reg = iregs + SPECIAL_REG - 1; n < SPECIAL_REG; n++, reg--) {
 		*reg = opop();
+		(*reg)->it_addr = &((*reg)->itu); /* synchronize the address of the value with its location */
 	}
 
 	locnum = ilocnum->it_uint32;		/* # of local variables */
@@ -5267,11 +5137,13 @@ rt_shared void sync_registers(struct stochunk *stack_cur, EIF_TYPED_VALUE *stack
 	/* Local variables also appear in reverse order */
 	for (n = 0, reg = iregs+locnum+SPECIAL_REG-1; n < locnum; n++, reg--) {
 		*reg = opop();
+		(*reg)->it_addr = &((*reg)->itu); /* synchronize the address of the value with its location */
 	}
 
 	/* Finally, arguments appear in reverse order */
 	for (n = 0, reg = iregs+locnum+SPECIAL_REG+argnum-1; n < argnum; n++, reg--) {
 		*reg = opop();
+		(*reg)->it_addr = &((*reg)->itu); /* synchronize the address of the value with its location */
 	}
 
 	memcpy (&op_stack, &op_context, sizeof(struct opstack));
@@ -5298,8 +5170,8 @@ rt_private void pop_registers(void)
 
 	RT_GET_CONTEXT
 	int nb_items;			/* Number of registers to be popped off */
-	EIF_TYPED_VALUE *result;			/* To save the result */
-	EIF_TYPED_VALUE saved_result;		/* Save value pointed to by iresult */
+	struct item *result;			/* To save the result */
+	struct item saved_result;		/* Save value pointed to by iresult */
 	
 	nb_items = opop()->it_int32;		/* This is the nummber of arguments */
 	nb_items += otop()->it_int32;	/* Add the number of locals */
@@ -5324,12 +5196,12 @@ rt_private void pop_registers(void)
 /* Initialize expanded locals and result (if required) */
 rt_private void create_expanded_locals (
 	struct stochunk * scur,		/* Current chunk (stack context) */
-	EIF_TYPED_VALUE * stop			/* To save stack context */
+	struct item * stop			/* To save stack context */
 )
 {
 	RT_GET_CONTEXT
 	uint32 i;
-	EIF_TYPED_VALUE * last;	/* Last pushed value */
+	struct item * last;	/* Last pushed value */
 	uint32 type;
 	unsigned long stagval;
 
@@ -5386,7 +5258,7 @@ rt_private void create_expanded_locals (
  * Operational stack handling.
  */
 
-rt_private EIF_TYPED_VALUE *stack_allocate(register int size)
+rt_private struct item *stack_allocate(register int size)
 				   					/* Initial size */
 {
 	/* The operational stack is created, with size 'size'.
@@ -5394,22 +5266,22 @@ rt_private EIF_TYPED_VALUE *stack_allocate(register int size)
 	 */
 
 	RT_GET_CONTEXT
-	EIF_TYPED_VALUE *arena;		/* Address for the arena */
+	struct item *arena;		/* Address for the arena */
 	struct stochunk *chunk;	/* Address of the chunk */
 
 	size *= ITEM_SZ;
 	size += sizeof(*chunk);
 	chunk = (struct stochunk *) cmalloc(size);
 	if (chunk == (struct stochunk *) 0)
-		return (EIF_TYPED_VALUE *) 0;		/* Malloc failed for some reason */
+		return (struct item *) 0;		/* Malloc failed for some reason */
 
 	op_stack.st_hd = chunk;						/* New stack (head of list) */
 	op_stack.st_tl = chunk;						/* One chunk for now */
 	op_stack.st_cur = chunk;					/* Current chunk */
-	arena = (EIF_TYPED_VALUE *) (chunk + 1);		/* Header of chunk */
+	arena = (struct item *) (chunk + 1);		/* Header of chunk */
 	op_stack.st_top = arena;					/* Empty stack */
 	chunk->sk_arena = arena;					/* Base address */
-	op_stack.st_end = chunk->sk_end = (EIF_TYPED_VALUE *)
+	op_stack.st_end = chunk->sk_end = (struct item *)
 		((char *) chunk + size);		/* First free location beyond stack */
 	chunk->sk_next = (struct stochunk *) 0;
 	chunk->sk_prev = (struct stochunk *) 0;
@@ -5420,21 +5292,21 @@ rt_private EIF_TYPED_VALUE *stack_allocate(register int size)
 /* Stack handling routine. The following code has been cut/paste from the one
  * found in garcol.c and local.c as of this day. Hence the similarities and the
  * possible differences. What changes basically is that instead of storing
- * (char *) elements, we now store (EIF_TYPED_VALUE) ones.
+ * (char *) elements, we now store (struct item) ones.
  */
 
-rt_public EIF_TYPED_VALUE *opush(register EIF_TYPED_VALUE *val)
+rt_public struct item *opush(register struct item *val)
 {
 	/* Push value 'val' on top of the operational stack. If it fails, raise
 	 * an "Out of memory" exception. If 'val' is a null pointer, simply
 	 * get a new cell at the top of the stack.
 	 */
 	RT_GET_CONTEXT
-	EIF_TYPED_VALUE *top = op_stack.st_top;	/* Top of stack */
+	struct item *top = op_stack.st_top;	/* Top of stack */
 	
-	if (top == (EIF_TYPED_VALUE *) 0)	{			/* No stack yet? */
+	if (top == (struct item *) 0)	{			/* No stack yet? */
 		top = stack_allocate(eif_stack_chunk);		/* Create one */
-		if (top == (EIF_TYPED_VALUE *) 0)	 		/* Could not create stack */
+		if (top == (struct item *) 0)	 		/* Could not create stack */
 			enomem(MTC_NOARG);							/* No more memory */
 	}
 
@@ -5460,7 +5332,7 @@ rt_public EIF_TYPED_VALUE *opush(register EIF_TYPED_VALUE *val)
 	}
 
 	op_stack.st_top = top + 1;			/* Points to next free location */
-	if (val != (EIF_TYPED_VALUE *) 0)		/* If value was provided */
+	if (val != (struct item *) 0)		/* If value was provided */
 		memcpy (top, val, ITEM_SZ);		/* Push it on the stack */
 
 	return top;				/* Address of allocated item */
@@ -5473,7 +5345,7 @@ rt_private int stack_extend(register int size)
 	 * 0 is returned in case of success. Otherwise, -1 is returned.
 	 */
 	RT_GET_CONTEXT
-	EIF_TYPED_VALUE *arena;		/* Address for the arena */
+	struct item *arena;		/* Address for the arena */
 	struct stochunk *chunk;	/* Address of the chunk */
 
 	size *= ITEM_SZ;
@@ -5483,13 +5355,13 @@ rt_private int stack_extend(register int size)
 		return -1;		/* Malloc failed for some reason */
 
 	SIGBLOCK;									/* Critical section */
-	arena = (EIF_TYPED_VALUE *) (chunk + 1);		/* Header of chunk */
+	arena = (struct item *) (chunk + 1);		/* Header of chunk */
 	chunk->sk_next = (struct stochunk *) 0;		/* Last chunk in list */
 	chunk->sk_prev = op_stack.st_tl;			/* Preceded by the old tail */
 	op_stack.st_tl->sk_next = chunk;			/* Maintain link w/previous */
 	op_stack.st_tl = chunk;						/* New tail */
 	chunk->sk_arena = arena;					/* Where items are stored */
-	chunk->sk_end = (EIF_TYPED_VALUE *)
+	chunk->sk_end = (struct item *)
 		((char *) chunk + size);				/* First item beyond chunk */
 	op_stack.st_top = arena;					/* New top */
 	op_stack.st_end = chunk->sk_end;			/* End of current chunk */
@@ -5499,15 +5371,15 @@ rt_private int stack_extend(register int size)
 	return 0;			/* Everything is ok */
 }
 
-rt_public EIF_TYPED_VALUE *opop(void)
+rt_public struct item *opop(void)
 {
 	/* Removes one item from the operational stack and return a pointer to
 	 * the removed item, which also happens to be the first free location.
 	 */
 	RT_GET_CONTEXT
-	EIF_TYPED_VALUE *top = op_stack.st_top;	/* Top of the stack */
+	struct item *top = op_stack.st_top;	/* Top of the stack */
 	struct stochunk *s;			/* To walk through stack chunks */
-	EIF_TYPED_VALUE *arena;			/* Base address of current chunk */
+	struct item *arena;			/* Base address of current chunk */
 
 	/* Optimization: try to update the top, hoping it will remain in the
 	 * same chunk. This avoids pointer manipulation (walking along the stack)
@@ -5544,9 +5416,9 @@ rt_private void npop(register int nb_items)
 	 * not do that in opop() because that would create an overhead...
 	 */
 	RT_GET_CONTEXT
-	EIF_TYPED_VALUE *top;			/* Current top of operational stack */
+	struct item *top;			/* Current top of operational stack */
 	struct stochunk *s;		/* To walk through stack chunks */
-	EIF_TYPED_VALUE *arena;		/* Base address of current chunk */
+	struct item *arena;		/* Base address of current chunk */
 	rt_int_ptr nb = nb_items;
 
 	/* Optimization: try to update the top, hoping it will remain in the
@@ -5606,7 +5478,7 @@ rt_private void npop(register int nb_items)
 		stack_truncate();			/* Eventually remove unused chunks */
 }
 
-rt_public EIF_TYPED_VALUE *otop(void)
+rt_public struct item *otop(void)
 	{
 	/* Returns a pointer to the top of the stack or a NULL pointer if
 	 * stack is empty. I assume a value has already been pushed (i.e. the
@@ -5614,7 +5486,7 @@ rt_public EIF_TYPED_VALUE *otop(void)
 	 */
 	
 	RT_GET_CONTEXT
-	EIF_TYPED_VALUE *last_item;		/* Address of last item stored */
+	struct item *last_item;		/* Address of last item stored */
 	struct stochunk *prev;		/* Previous chunk in stack */
 
 	if (op_stack.st_top==NULL)
@@ -5635,13 +5507,13 @@ rt_public EIF_TYPED_VALUE *otop(void)
 		return prev->sk_end - 1;			/* Last item of previous chunk */
 	}
 
-rt_private EIF_TYPED_VALUE *oitem(uint32 n)
+rt_private struct item *oitem(uint32 n)
 	{
 	/* Returns a pointer to the item at position `n' down the stack or a NULL pointer if */ 
 	/* stack is empty. It assumes a value has already been pushed (i.e. the stack has been created). */
 	RT_GET_CONTEXT
 	EIF_GET_CONTEXT
-	EIF_TYPED_VALUE	*access_item;	/* Address of item we try to access */
+	struct item		*access_item;	/* Address of item we try to access */
 	struct stochunk	*prev;			/* Previous chunk in stack */
 	struct stochunk	*curr;			/* Current chunk in stack */
 
@@ -5650,7 +5522,7 @@ rt_private EIF_TYPED_VALUE *oitem(uint32 n)
 		return access_item;
 
 	/* It seems the item is at the left edge of a chunk. Look for previous chunk then... */
-	prev = op_stack.st_cur;
+	prev = cop_stack.st_cur;
 
 	do
 		{
@@ -5675,7 +5547,7 @@ rt_private void stack_truncate(void)
 	 */
 
 	RT_GET_CONTEXT
-	EIF_TYPED_VALUE *top;		/* The current top of the stack */
+	struct item *top;		/* The current top of the stack */
 	struct stochunk *next;			/* Address of next chunk */
 
 	/* We know the program is running, because this function is only called
@@ -5739,7 +5611,7 @@ rt_shared void opstack_reset(struct opstack *stk)
  */
 
 /* VARARGS1 */
-rt_public void ivalue(EIF_DEBUG_VALUE * value, int code, uint32 num, uint32 start)
+rt_public struct item *ivalue(int code, uint32 num, uint32 start)
 		 		/* Request code */
 				/* Additional info for local and arguments */
 				/* start of operational stack (for frozen feature only - used by cresult, carg.. macros) */
@@ -5756,7 +5628,7 @@ rt_public void ivalue(EIF_DEBUG_VALUE * value, int code, uint32 num, uint32 star
 	EIF_GET_CONTEXT
 
 	struct ex_vect 	*exvect = eif_stack.st_top; /* get the execution vector */
-	EIF_TYPED_ADDRESS * result_item = NULL;
+	struct item 	*result_item = NULL;
 
 	if (egc_frozen[exvect->ex_bodyid] == NULL) {
 		/* if the feature is melted or super melted, 
@@ -5764,49 +5636,26 @@ rt_public void ivalue(EIF_DEBUG_VALUE * value, int code, uint32 num, uint32 star
 		 */
 		switch (code) {
 		case IV_LOCAL:								/* Nth local */
-			if (num > ilocnum->it_uint32) {
-				value -> value.type = SK_VOID;
-				value -> value.it_ptr = 0;
-				value -> address = (void *) 0;
-				return;
-			}
+			if (num > ilocnum->it_uint32)
+				return (struct item *) 0;			/* Out of range */
 			else if (num == ilocnum->it_uint32){		/* Off by one */
-				if (iresult->type != SK_VOID) {		/* If there is a result */
-					value -> value = * iresult; /* Then return it */
-					value -> address = & (iresult -> item);
-					return;
-				}
-				else {
-					value -> value.type = SK_VOID; /* Else signal out of range */
-					value -> value.it_ptr = 0;
-					value -> address = (void *) 0;
-					return;
-				}
+				if (iresult->type != SK_VOID)		/* If there is a result */
+					return iresult;					/* Then return it */
+				else
+					return (struct item *) 0;		/* Else signal out of range */
 			}
-			value -> value = * loc(num + 1); /* Locals from 1 to ilocnum */
-			value -> address = & (loc(num + 1)->item);
-			return;
+		return loc(num + 1);						/* Locals from 1 to ilocnum */
 
 		case IV_ARG:								/* Nth argument */
-			if (num >= iargnum->it_uint32) {
-				value -> value.type = SK_VOID; /* Out of range */
-				value -> value.it_ptr = 0;
-				value -> address = (void *) 0;
-				return;
-			}
-			value -> value = * arg(num + 1);		/* Arguments from 1 to iargnum */
-			value -> address = & (arg(num + 1) -> item);
-			return;
+			if (num >= iargnum->it_uint32)
+				return (struct item *) 0;			/* Out of range */
+			return arg(num + 1);					/* Arguments from 1 to iargnum */
 			
 		case IV_CURRENT:							/* Current */
-			value -> value = * icurrent;
-			value -> address = & (icurrent -> item);
-			return;
+			return icurrent;
 			
 		case IV_RESULT:								/* Result */
-			value -> value = * iresult;
-			value -> address = & (iresult -> item);
-			return;
+			return iresult;
 				
 		default:
 			eif_panic(MTC "illegal value request");
@@ -5855,40 +5704,33 @@ rt_public void ivalue(EIF_DEBUG_VALUE * value, int code, uint32 num, uint32 star
 		}
 		
 		/* transform the 'c_item' into an regular item (like the one used with melted features) */
-		if (result_item == (EIF_TYPED_ADDRESS *)0) {
-			value -> value.type = SK_VOID;
-			value -> value.it_ptr = 0;
-			value -> address = (void *) 0;
-		}
-		else {
-			value -> value.type = result_item -> type;
-			value -> address = result_item -> it_addr;
-			switch (value -> value.type & SK_HEAD) {
+		if (result_item != (struct item *)0) {
+			switch (result_item->type & SK_HEAD) {
 			case SK_BOOL:
-			case SK_CHAR: value->value.it_char = *((EIF_CHARACTER *)(value -> address)); break;
-			case SK_WCHAR: value->value.it_wchar = *((EIF_WIDE_CHAR *)(value -> address)); break;
-			case SK_UINT8: value->value.it_uint8 = *((EIF_NATURAL_8 *)(value -> address)); break;
-			case SK_UINT16: value->value.it_uint16 = *((EIF_NATURAL_16 *)(value -> address)); break;
-			case SK_UINT32: value->value.it_uint32 = *((EIF_NATURAL_32 *)(value -> address)); break;
-			case SK_UINT64: value->value.it_uint64 = *((EIF_NATURAL_64 *)(value -> address)); break;
-			case SK_INT8: value->value.it_int8 = *((EIF_INTEGER_8 *)(value -> address)); break;
-			case SK_INT16: value->value.it_int16 = *((EIF_INTEGER_16 *)(value -> address)); break;
-			case SK_INT32: value->value.it_int32 = *((EIF_INTEGER_32 *)(value -> address)); break;
-			case SK_INT64: value->value.it_int64 = *((EIF_INTEGER_64 *)(value -> address)); break;
-			case SK_REAL32: value->value.it_real32 = *((EIF_REAL_32 *)(value -> address)); break;
-			case SK_REAL64: value->value.it_real64 = *((EIF_REAL_64 *)(value -> address)); break;
-			case SK_POINTER: value->value.it_ptr = *((EIF_POINTER *)(value -> address)); break;
-			case SK_BIT: value->value.it_bit = *((EIF_REFERENCE *)(value -> address)); break;
+			case SK_CHAR: result_item->it_char = *((EIF_CHARACTER *)(result_item->it_addr)); break;
+			case SK_WCHAR: result_item->it_wchar = *((EIF_WIDE_CHAR *)(result_item->it_addr)); break;
+			case SK_UINT8: result_item->it_uint8 = *((EIF_NATURAL_8 *)(result_item->it_addr)); break;
+			case SK_UINT16: result_item->it_uint16 = *((EIF_NATURAL_16 *)(result_item->it_addr)); break;
+			case SK_UINT32: result_item->it_uint32 = *((EIF_NATURAL_32 *)(result_item->it_addr)); break;
+			case SK_UINT64: result_item->it_uint64 = *((EIF_NATURAL_64 *)(result_item->it_addr)); break;
+			case SK_INT8: result_item->it_int8 = *((EIF_INTEGER_8 *)(result_item->it_addr)); break;
+			case SK_INT16: result_item->it_int16 = *((EIF_INTEGER_16 *)(result_item->it_addr)); break;
+			case SK_INT32: result_item->it_int32 = *((EIF_INTEGER_32 *)(result_item->it_addr)); break;
+			case SK_INT64: result_item->it_int64 = *((EIF_INTEGER_64 *)(result_item->it_addr)); break;
+			case SK_REAL32: result_item->it_real32 = *((EIF_REAL_32 *)(result_item->it_addr)); break;
+			case SK_REAL64: result_item->it_real64 = *((EIF_REAL_64 *)(result_item->it_addr)); break;
+			case SK_POINTER: result_item->it_ptr = *((EIF_POINTER *)(result_item->it_addr)); break;
+			case SK_BIT: result_item->it_bit = *((EIF_REFERENCE *)(result_item->it_addr)); break;
 			case SK_EXP:
 			case SK_REF:
-				value->value.it_ref = *((EIF_REFERENCE *)(value -> address)); break;
+				result_item->it_ref = *((EIF_REFERENCE *)(result_item->it_addr)); break;
 			case SK_VOID:
 				/* nothing to do*/
 				break;
 			}
 		}
 	}
-	return;
+	return result_item;
 
 	/* NOT REACHED */
 }

@@ -34,11 +34,12 @@
 #include <sql.h>
 #include <sqlucode.h>
 #include "odbc.h"
-#include <ctype.h>
 
 
 void odbc_error_handler (HSTMT,int);
-void odbc_clear_error (void);
+void odbc_clear_error ();
+void odbc_disp_rec(int);
+void odbc_disp_c_type();
 void odbc_unhide_qualifier(char *);
 int	 odbc_c_type(int odbc_type);
 
@@ -78,11 +79,14 @@ rt_private char *error_message = NULL;
 rt_private char *warn_message = NULL;
 rt_private int error_number = 0;
 
-static int data_type = 0, size = 0, max_size = 0;
+static int tmp_int = 0;
+static int data_type = 0, size = 0, max_size = 0, * past_time = NULL;
+static char *tmp_st = NULL;
 char odbc_user_name[40];
 
 short odbc_tranNumber=0; /* number of transaction opened at present */
 
+rt_private int odbc_first_descriptor_available (void);
 rt_private void change_to_low(char *buf, int length);
 
 int is_null_data;
@@ -319,8 +323,15 @@ void odbc_exec_immediate (int no_desc, char *order)
 /*****************************************************************/
 void odbc_init_order (int no_desc, char *order, int argNum)
 {
+	ODBCSQLDA *dap=odbc_descriptor[no_desc];
+	//short colNum;
 	int i, j, is_as_primary = 0;
 	size_t order_count, buf_count;
+	//int type;
+	//SWORD indColName;
+	//SWORD tmpNullable;
+	//int bufSize;
+	//char *dataBuf;
 
 #define COMPARED_LENGTH	9
 
@@ -550,6 +561,7 @@ void odbc_start_order (int no_desc)
 	SQLSMALLINT indColName;
 	SQLSMALLINT tmpScale;
 	SQLSMALLINT tmpNullable;
+	int bufSize;
 	char *dataBuf;
 	// Added by Jacques. 5/14/98
 	SQLCHAR     szCatalog[DB_REP_LEN], szSchema[DB_REP_LEN];
@@ -574,7 +586,7 @@ void odbc_start_order (int no_desc)
 			SQLBindCol(hstmt, 9, SQL_C_SSHORT, &DecimalDigits, 0, &cbDecimalDigits);
 			SQLBindCol(hstmt, 10, SQL_C_SSHORT, &NumPrecRadix, 0, &cbNumPrecRadix);
 			SQLBindCol(hstmt, 11, SQL_C_SSHORT, &Nullable, 0, &cbNullable);
-			while(1) {
+			while(TRUE) {
 				rc = SQLFetch(hstmt);
 				if (rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO) {
 					odbc_error_handler(hstmt[no_desc],7);
@@ -687,6 +699,7 @@ void odbc_start_order (int no_desc)
 	SetVarNum(dap,i);
 	SetColNum(dap, colNum);
 
+	bufSize = 0;
 	for (i=0; i < colNum && !error_number; i++) {
 	/* fill in the describing information for each column, and calculate */
 	/* the total length of the data buffer                               */
@@ -711,14 +724,17 @@ void odbc_start_order (int no_desc)
 				//case SQL_C_DATE:
 				case SQL_C_TYPE_DATE:
 					SetDbColLength(dap, i, sizeof(DATE_STRUCT));
+					/*bufSize += sizeof(DATE_STRUCT) + 1; */
 					break;
 				//case SQL_C_TIME:
 				case SQL_C_TYPE_TIME:
 					SetDbColLength(dap, i, sizeof(TIME_STRUCT));
+					/*bufSize += sizeof(TIME_STRUCT) + 1; */
 					break;
 				//case SQL_C_TIMESTAMP:
 				case SQL_C_TYPE_TIMESTAMP:
 					SetDbColLength(dap, i, sizeof(TIMESTAMP_STRUCT));
+					/*bufSize += sizeof(TIMESTAMP_STRUCT) + 1; */
 					break;
 				case SQL_C_STINYINT:
 					SetDbColLength(dap, i, DB_SIZEOF_CHAR);
@@ -736,6 +752,7 @@ void odbc_start_order (int no_desc)
 					SetDbColLength(dap, i, DB_SIZEOF_DOUBLE);
 					break;
 				default:
+					/*bufSize += GetDbColLength(dap, i) + 1;*/
 					break;
 			}
 			type = GetDbColType(dap, i);
@@ -745,6 +762,7 @@ void odbc_start_order (int no_desc)
 					SetDbColLength(dap, i, DB_MAX_STRING_LEN);
 					break;
 			}
+			bufSize += GetDbColLength(dap, i) + 1;
 		}
 	}
 
@@ -761,12 +779,15 @@ void odbc_start_order (int no_desc)
 		return;
 	}
 
+	/* allocate the data  buffer, and then assign the data buffer to */
+	/* each database table field.                                    */
 	if (colNum) {
-			/* Allocate for each column the buffer that will hold its value. */
-		for (i=0; i<colNum; i++) {
-			ODBC_SAFE_ALLOC(dataBuf, (char *) malloc(GetDbColLength(dap, i) + 1));
-			SetDbColPtr(dap, i, dataBuf);
-		}
+		ODBC_SAFE_ALLOC(dataBuf, (char *) malloc(bufSize+2));
+	}
+	for (i=0; i<colNum; i++) {
+		SetDbColPtr(dap, i, dataBuf);
+		dataBuf += GetDbColLength(dap, i) + 1;
+
 	}
 
 	/* allocate buffer for INDICATORs of the output fields           */
@@ -792,18 +813,15 @@ void odbc_start_order (int no_desc)
 /*****************************************************************/
 void odbc_terminate_order (int no_des)
 {
-	int i;
+	//int i;
 	ODBCSQLDA *dap = odbc_descriptor[no_des];
 	int colNum;
 
 	if (dap != NULL) {
 		if (dap != (ODBCSQLDA *)(0x1)) {
 		colNum = GetColNum(dap);
-		if (colNum) {
-			for (i=0; i < colNum; i++) {
-				free(GetDbColPtr(dap,i));
-			}
-		}
+		if (colNum)
+			free(GetDbColPtr(dap,0));
 		free(dap);
 		free(odbc_indicator[no_des]);
 		odbc_indicator[no_des] = NULL;
@@ -879,42 +897,9 @@ int odbc_next_row (int no_des)
 	else {
 		for (i=0; i<colNum && error_number == 0; i++) {
 			odbc_indicator[no_des][i] = 0;
-			rc = SQLGetData(hstmt[no_des], i+1, GetDbCType(dap, i), GetDbColPtr(dap, i),
-				GetDbColLength(dap, i)+1, &(odbc_indicator[no_des][i]));
-			if (rc) {
-					/* Check if it failed because we did not have enough space to store the data. */
-				if (rc == SQL_SUCCESS_WITH_INFO) {
-					UCHAR tmpSQLSTATE[6];
-					if
-						(SQLGetDiagRec(SQL_HANDLE_STMT, hstmt[no_des], 1, tmpSQLSTATE,
-							NULL, NULL, 0, NULL) != SQL_NO_DATA)
-					{
-							/* If `tmpSQLSTATE' is 01004 then we just make our buffer bigger and
-							 * reissue the call. */
-						if
-							((tmpSQLSTATE[0] == '0') && (tmpSQLSTATE[1] == '1') && (tmpSQLSTATE[2] == '0') &&
-							(tmpSQLSTATE[3] == '0') && (tmpSQLSTATE[4] == '4'))
-						{
-							size_t additional_length = odbc_indicator[no_des][i];
-							size_t old_length = GetDbColLength(dap, i);
-							char *l_buffer = GetDbColPtr(dap,i);
-							ODBC_SAFE_ALLOC(l_buffer, (char *) realloc (l_buffer, old_length + additional_length));
-							SetDbColPtr(dap, i, l_buffer);
-							SetDbColLength(dap, i, old_length + additional_length);
-								/* Reissue the call, this time starting from the end of `l_buffer' since we want to get
-								 * the remaining data. */
-							rc = SQLGetData(hstmt[no_des], i+1, GetDbCType(dap, i), l_buffer + old_length,
-								additional_length, &(odbc_indicator[no_des][i]));
-								/* In addition of what we just retrieved, we need to add what we retrieved on the first call
-								 * to SQLGetData. */
-							odbc_indicator [no_des][i] += old_length;
-						}
-					}
-				}
-			}
-			if (rc) {
+			rc = SQLGetData(hstmt[no_des], i+1, GetDbCType(dap, i), GetDbColPtr(dap, i), GetDbColLength(dap, i)+1, &(odbc_indicator[no_des][i]));
+			if (rc)
 				odbc_error_handler(hstmt[no_des],9);
-			}
 		}
 		if (error_number)
 			return 1;
@@ -1026,6 +1011,7 @@ void odbc_set_parameter(int no_desc, int seri, int dir, int eifType, int collen,
 	UWORD seriNumber = seri;
 	SWORD direction = dir;
 	SDWORD len;
+	SQLINTEGER ns = SQL_NTS;
 
 	pcbValue[no_desc][seriNumber-1] = len = value_count;
 	rc = 0;
@@ -1237,6 +1223,45 @@ void odbc_set_owner(char *owner) {
 /*****************************************************************/
 void odbc_unset_catalog_flag(int no_desc) {
 	flag[no_desc] = ODBC_SQL;
+}
+
+/*****************************************************************/
+/*                                                               */
+/*                     ROUTINE  DESCRIPTION                      */
+/*                                                               */
+/* NAME: odbc_date_to_str(int y,m,d,hr,min,sec,fraction mode             */
+/* PARAMETER: mode -- 0: get time string                         */
+/*                 -- 1: get date string                         */
+/*                 -- others: get timestamp string               */
+/* DESCRIPTION:                                                  */
+/*   to change an Eiffel DATE data into a STRING in the following*/
+/* format: 'yyyy-mm-dd hh:mm:ss'                                 */
+/*                                                               */
+/*****************************************************************/
+char *odbc_date_to_str(int year, int month, int day, int hour, int minute, int sec, int type) {
+	int mo1,mo2,d1,d2,h1,h2,m1,m2,s1,s2;
+
+	mo1 = month / 10;
+	mo2 = month % 10;
+	d1 = day / 10;
+	d2 = day % 10;
+	h1 = hour / 10;
+	h2 = hour % 10;
+	m1 = minute / 10;
+	m2 = minute % 10;
+	s1 = sec / 10;
+	s2 = sec % 10;
+	switch (type) {
+		case ODBC_TIME: /* TIME type */
+			sprintf(odbc_date_string, "%d%d:%d%d:%d%d", h1,h2,m1,m2,s1,s2);
+			break;
+		case ODBC_DATE: /* DATE type */
+			sprintf(odbc_date_string, "%d-%d%d-%d%d", year,mo1,mo2,d1,d2);
+			break;
+		default: /* TIMESTAMP type */
+			sprintf(odbc_date_string, "%d-%d%d-%d%d %d%d:%d%d:%d%d", year,mo1,mo2,d1,d2,h1,h2,m1,m2,s1,s2);
+	}
+	return odbc_date_string;
 }
 
 /*****************************************************************/
@@ -1528,7 +1553,9 @@ int odbc_get_data_len (int no_des, int index)
 {
   int i = index - 1;
   int type = abs(GetDbCType(odbc_descriptor[no_des], i));
+  char *dataPtr = GetDbColPtr(odbc_descriptor[no_des],i);
   int length = GetDbColLength(odbc_descriptor[no_des], i);
+  //short tmp_short;
 
   switch (type)
     {
@@ -1592,19 +1619,22 @@ int odbc_get_col_type (int no_des, int index)
   return odbc_conv_type (GetDbColType(odbc_descriptor[no_des], i));
 }
 
-int odbc_put_data (int no_des, int index, char **result)
+int odbc_put_data (int no_des, int index, char *result)
 {
   int i = index -1;
   ODBCSQLDA * dap = odbc_descriptor[no_des];
   data_type = GetDbCType (dap, i);
 
   memcpy((char *)(&odbc_tmp_indicator), (char *)(&(odbc_indicator[no_des][i])), DB_SIZEOF_UDWORD);
-  if ((is_null_data = (odbc_tmp_indicator == SQL_NULL_DATA))) {
+  if (is_null_data = odbc_tmp_indicator == SQL_NULL_DATA) {
+  /* the retrived value is NULL, we use empty string to represent NULL */
+	result[0] = '\0';
 	return 0;
+
   }
 
-  *result = malloc(odbc_tmp_indicator);
-  memcpy(*result, GetDbColPtr(dap, i), odbc_tmp_indicator);
+  memcpy(result, GetDbColPtr(dap, i), odbc_tmp_indicator);
+  /*result[odbc_tmp_indicator] = '\0';*/
   return(odbc_tmp_indicator);
 }
 
@@ -1613,13 +1643,14 @@ int odbc_get_integer_data (int no_des, int index)
   int i  = index - 1;
   int result;
   ODBCSQLDA * dbp = odbc_descriptor[no_des];
+  int length = GetDbColLength(dbp, i);
   short sint;
   long  lint;
 
 	data_type = GetDbCType(dbp, i);
 
 	memcpy((char *)(&odbc_tmp_indicator), (char *)(&(odbc_indicator[no_des][i])), DB_SIZEOF_UDWORD);
-	if ((is_null_data = (odbc_tmp_indicator == SQL_NULL_DATA))) {
+	if (is_null_data = odbc_tmp_indicator == SQL_NULL_DATA) {
 	/* the retrieved value is NULL, we use 0 to be NULL value */
 		return 0;
 	}
@@ -1657,7 +1688,7 @@ int odbc_get_boolean_data (int no_des, int index)
   if (data_type == SQL_C_BIT)
     {
 	memcpy((char *)(&odbc_tmp_indicator), (char *)(&(odbc_indicator[no_des][i])), DB_SIZEOF_UDWORD);
-	if ((is_null_data = (odbc_tmp_indicator == SQL_NULL_DATA))) {
+	if (is_null_data = odbc_tmp_indicator == SQL_NULL_DATA) {
 	/* the retrived value is NULL, we use false to be NULL value */
 		return 0;
 	}
@@ -1684,7 +1715,7 @@ double odbc_get_float_data (int no_des, int index)
   if ( data_type == SQL_C_DOUBLE )
     {
 	memcpy((char *)(&odbc_tmp_indicator), (char *)(&(odbc_indicator[no_des][i])), DB_SIZEOF_UDWORD);
-	if ((is_null_data = (odbc_tmp_indicator == SQL_NULL_DATA))) {
+	if (is_null_data = odbc_tmp_indicator == SQL_NULL_DATA) {
 	/* the retrieved value is NULL, we use 0.0 to be NULL value and we indicate it*/
 		return 0.0;
 	}
@@ -1711,7 +1742,7 @@ float odbc_get_real_data (int no_des, int index)
   data_type = GetDbCType (dbp, i);
   if (data_type == SQL_C_FLOAT)  {
 	memcpy((char *)(&odbc_tmp_indicator), (char *)(&(odbc_indicator[no_des][i])), DB_SIZEOF_UDWORD);
-	if ((is_null_data = (odbc_tmp_indicator == SQL_NULL_DATA))) {
+	if (is_null_data = odbc_tmp_indicator == SQL_NULL_DATA) {
 	/* the retrieved value is NULL, we use 0.0 to be NULL value */
 		return 0.0;
 	}
@@ -1753,7 +1784,7 @@ int odbc_get_date_data (int no_des, int index)
   if (data_type == SQL_C_TYPE_DATE || data_type == SQL_C_TYPE_TIMESTAMP || data_type == SQL_C_TYPE_TIME)
     {
 	memcpy((char *)(&odbc_tmp_indicator), (char *)(&(odbc_indicator[no_des][i])), DB_SIZEOF_UDWORD);
-	if ((is_null_data = (odbc_tmp_indicator == SQL_NULL_DATA))) {
+	if (is_null_data = odbc_tmp_indicator == SQL_NULL_DATA) {
 	/* the retrived value is NULL, we use 01/01/1991 0:0:0 to be NULL value */
 		//odbc_date.year = 1991;
 		//odbc_date.month = 1;
@@ -1874,7 +1905,7 @@ void odbc_clear_error ()
 }
 
 void odbc_error_handler(HSTMT h_err_stmt, int code) {
-	SQLINTEGER nErr;
+	SDWORD nErr;
 	UCHAR msg[MAX_ERROR_MSG +1];
 	UCHAR tmpMsg[2 * MAX_ERROR_MSG];
 	SWORD cbMsg;
@@ -1909,7 +1940,7 @@ void odbc_error_handler(HSTMT h_err_stmt, int code) {
 		strcat(error_message, msg);
 		msg_number = 1;
 		while (SQLGetDiagRec(SQL_HANDLE_STMT, h_err_stmt, msg_number++, tmpSQLSTATE, &nErr, msg, sizeof(msg), &cbMsg) != SQL_NO_DATA) {
-		    sprintf(tmpMsg, "\n Native Err#=%d , SQLSTATE=%s, Error_Info='%s'",(int) nErr, tmpSQLSTATE, msg);
+		    sprintf(tmpMsg, "\n Native Err#=%d , SQLSTATE=%s, Error_Info='%s'",nErr, tmpSQLSTATE, msg);
 		    if (strlen(error_message) + strlen(tmpMsg) + 8 > ERROR_MESSAGE_SIZE) {
 			if (strlen(error_message) + 8 <= ERROR_MESSAGE_SIZE) {
 				strcat(error_message, "......");
@@ -1926,7 +1957,7 @@ void odbc_error_handler(HSTMT h_err_stmt, int code) {
 		strcat(warn_message, msg);
 		msg_number = 1;
 		while (SQLGetDiagRec(SQL_HANDLE_STMT, h_err_stmt, msg_number++, tmpSQLSTATE, &nErr, msg, sizeof(msg), &cbMsg) != SQL_NO_DATA) {
-		    sprintf(tmpMsg, "\n Native Err#=%d , SQLSTATE=%s, Error_Info='%s'",(int) nErr, tmpSQLSTATE, msg);
+		    sprintf(tmpMsg, "\n Native Err#=%d , SQLSTATE=%s, Error_Info='%s'",nErr, tmpSQLSTATE, msg);
 		    if (strlen(warn_message) + strlen(tmpMsg) + 8 > WARN_MESSAGE_SIZE) {
 			if (strlen(warn_message) + 8 <= WARN_MESSAGE_SIZE) {
 				strcat(warn_message, "......");
@@ -1997,6 +2028,96 @@ int odbc_c_type(int odbc_type) {
 		default:
 			return SQL_C_DEFAULT;
 	}
+}
+
+
+void odbc_disp_c_type() {
+	printf("SQL_C_CHAR = %d\n", SQL_C_CHAR);
+	printf("SQL_C_DATE = %d\n", SQL_C_DATE);
+	printf("SQL_C_TIME = %d\n", SQL_C_TIME);
+	printf("SQL_C_TIMESTAMP = %d\n", SQL_C_TIMESTAMP);
+	printf("SQL_C_BIT = %d\n", SQL_C_BIT);
+	printf("SQL_C_STINYINT = %d\n", SQL_C_STINYINT);
+	printf("SQL_C_SSHORT = %d\n", SQL_C_SSHORT);
+	printf("SQL_C_SLONG = %d\n", SQL_C_SLONG);
+	printf("SQL_C_FLOAT = %d\n", SQL_C_FLOAT);
+	printf("SQL_C_DOUBLE = %d\n", SQL_C_DOUBLE);
+	printf("SQL_C_BINARY = %d\n", SQL_C_BINARY);
+	printf("SQL_C_DEFAULT = %d\n", SQL_C_DEFAULT);
+	return;
+}
+
+void odbc_disp_rec(int no_des) {
+	int i=1,j, type;
+	//SWORD indColName;
+	//short colNum;
+	//SWORD tmpScale;
+	//SWORD tmpNullable;
+	//TIME_STRUCT *timeP;
+	//DATE_STRUCT *dateP;
+	//TIMESTAMP_STRUCT *stampP;
+	char buff[255];
+
+	ODBCSQLDA *dap = odbc_descriptor[no_des];
+
+	 printf("\n===================================================================\n");
+	 printf("In SQLDA, var#: %d, col#: %d \n",dap->sqln,dap->sqld);
+	 printf("In SQLDA, The columns are :\n");
+	 for(i=0; i<dap->sqld; i++) {
+
+		cut_tail_blank(dap->sqlvar[i].sqlname.sqlnamec);
+		printf(" %d: c_type=%d, type=%d, len=%d, ptr=%x, name='%s', ",i,dap->sqlvar[i].c_type, dap->sqlvar[i].sqltype,dap->sqlvar[i].sqllen,GetDbColPtr(dap,i),dap->sqlvar[i].sqlname.sqlnamec);
+		type = dap->sqlvar[i].c_type;
+		switch (type) {
+		//case SQL_C_TIME:
+		case SQL_C_TYPE_TIME:
+			j = odbc_get_date_data(no_des, i+1);
+			printf(" TIME = %d:%d:%d ", odbc_get_hour(), odbc_get_min(), odbc_get_sec());
+			break;
+		//case SQL_C_DATE:
+		case SQL_C_TYPE_DATE:
+			j = odbc_get_date_data(no_des, i+1);
+			printf(" DATE = %d/%d/%d ", odbc_get_month(), odbc_get_day(), odbc_get_year());
+			break;
+		//case SQL_C_TIMESTAMP:
+		case SQL_C_TYPE_TIMESTAMP:
+			j = odbc_get_date_data(no_des, i+1);
+			printf(" TIMESTAMP = %d:%d:%d  %d/%d/%d ", odbc_get_hour(), odbc_get_min(), odbc_get_sec(), odbc_get_month(), odbc_get_day(), odbc_get_year());
+
+			break;
+		case SQL_C_BIT:
+			printf(" data=%d ",odbc_get_boolean_data(no_des, i+1));
+			break;
+		case SQL_C_CHAR:
+			j = odbc_put_data(no_des, i+1, buff);
+			buff[j] = '\0';
+			printf(" data='%s' ", buff);
+			break;
+		case SQL_C_STINYINT:
+			printf(" data=%d ",odbc_get_integer_data(no_des, i+1));
+			break;
+		case SQL_C_SSHORT:
+			printf(" data=%d ",odbc_get_integer_data(no_des, i+1));
+			break;
+		case SQL_C_SLONG:
+			printf(" data=%d ",odbc_get_integer_data(no_des, i+1));
+			break;
+		case SQL_C_FLOAT:
+			printf(" data=%f ",odbc_get_real_data(no_des, i+1));
+			break;
+		case SQL_C_DOUBLE:
+			printf(" data=%f ",odbc_get_float_data(no_des, i+1));
+			break;
+		default:
+			printf("Error Datatype:%d ", type);
+		}
+		if (odbc_indicator[no_des][i])
+			printf(" **** indicator = %d \n", odbc_indicator[no_des][i]);
+		else
+			printf("\n");
+	 }
+	 printf("===================================================================\n");
+
 }
 
 

@@ -15,8 +15,6 @@ inherit
 		end
 
 	EV_PRIMITIVE_IMP
-		undefine
-			update_for_pick_and_drop
 		redefine
 			interface,
 			initialize,
@@ -44,6 +42,20 @@ feature {NONE} -- Implementation
 			-- Does `a_widget' need an event box?
 		do
 			Result := True
+		end
+
+	remove_i_th (i: INTEGER) is
+			-- Remove item at `i'-th position.
+		local
+			imp: EV_ITEM_IMP
+			item_ptr: POINTER
+		do
+			child_array.go_i_th (i)
+			imp ?= child_array.i_th (i).implementation
+			item_ptr := imp.c_object
+			{EV_GTK_EXTERNALS}.gtk_container_remove (list_widget, item_ptr)
+			child_array.remove
+			imp.set_item_parent_imp (Void)
 		end
 
 	make (an_interface: like interface) is
@@ -160,6 +172,7 @@ feature -- Implementation
 			tbb_imp: EV_TOOL_BAR_BUTTON_IMP
 			has_text, has_pixmap: BOOLEAN
 			i, a_style: INTEGER
+			pix_height: INTEGER
 		do
 			if parent_imp /= Void then
 				from
@@ -173,6 +186,7 @@ feature -- Implementation
 					end
 					if tbb_imp /= Void and then tbb_imp.internal_pixmap /= Void then
 						has_pixmap := True
+						pix_height := pix_height.max (tbb_imp.internal_pixmap.height)
 					end
 					i := i + 1
 				end
@@ -183,10 +197,14 @@ feature -- Implementation
 					else
 						a_style := {EV_GTK_DEPENDENT_EXTERNALS}.gtk_toolbar_both_horiz_enum
 					end
+					{EV_GTK_DEPENDENT_EXTERNALS}.gtk_widget_set_minimum_size (c_object, internal_minimum_width, internal_minimum_height)
 				elseif has_text then
 					a_style := {EV_GTK_DEPENDENT_EXTERNALS}.gtk_toolbar_text_enum
+					{EV_GTK_DEPENDENT_EXTERNALS}.gtk_widget_set_minimum_size (c_object, internal_minimum_width, internal_minimum_height)
 				else -- has_pixmap
 					a_style := {EV_GTK_DEPENDENT_EXTERNALS}.gtk_toolbar_icons_enum
+					{EV_GTK_DEPENDENT_EXTERNALS}.gtk_widget_set_minimum_size (c_object, internal_minimum_width, pix_height + (pix_height // 2))
+						-- Set height to be large enough to display pixmap in button.
 				end
 				{EV_GTK_DEPENDENT_EXTERNALS}.gtk_toolbar_set_style (visual_widget, a_style)
 			end
@@ -214,18 +232,11 @@ feature -- Implementation
 			-- Insert `v' at position `i'.
 		local
 			v_imp: EV_ITEM_IMP
-			r: EV_TOOL_BAR_RADIO_BUTTON_IMP
 		do
 			v_imp ?= v.implementation
 			v_imp.set_item_parent_imp (Current)
 			{EV_GTK_EXTERNALS}.gtk_toolbar_insert (visual_widget, v_imp.c_object, i - 1)
-
-			r ?= v_imp
-			if r /= Void then
-				{EV_GTK_EXTERNALS}.gtk_radio_tool_button_set_group (r.visual_widget, radio_group)
-				radio_group := r.radio_group
-			end
-
+			add_radio_button (v)
 			child_array.go_i_th (i)
 			child_array.put_left (v)
 			if parent_imp /= Void then
@@ -233,34 +244,18 @@ feature -- Implementation
 			end
 		end
 
-	remove_i_th (i: INTEGER) is
-			-- Remove item at `i'-th position.
+	add_radio_button (w: like item) is
+			-- Connect radio button to tool bar group.
+		require
+			w_not_void: w /= Void
 		local
-			imp: EV_ITEM_IMP
-			item_ptr: POINTER
 			r: EV_TOOL_BAR_RADIO_BUTTON_IMP
-			l_radio_group: POINTER
 		do
-			child_array.go_i_th (i)
-			imp ?= child_array.i_th (i).implementation
-
-			r ?= imp
+			r ?= w.implementation
 			if r /= Void then
-				-- We are removing a radio button from `Current' so we make sure the radio group is valid.
-				l_radio_group := {EV_GTK_EXTERNALS}.gtk_radio_tool_button_get_group (r.visual_widget)
-				check
-					radio_button_not_null: l_radio_group /= default_pointer
-				end
-				if {EV_GTK_EXTERNALS}.g_slist_length (l_radio_group) = 1 then
-					-- This is the last radio button in the group so we set `radio_group' to null.
-					radio_group := default_pointer
-				end
+				{EV_GTK_EXTERNALS}.gtk_radio_tool_button_set_group (r.visual_widget, radio_group)
+				radio_group := r.radio_group
 			end
-
-			item_ptr := imp.c_object
-			{EV_GTK_EXTERNALS}.gtk_container_remove (list_widget, item_ptr)
-			child_array.remove
-			imp.set_item_parent_imp (Void)
 		end
 
 feature {EV_TOOL_BAR_RADIO_BUTTON_IMP} -- Implementation

@@ -12,8 +12,7 @@ inherit
 	EB_HISTORY_COMMAND
 		redefine
 			executable,
-			mini_pixmap,
-			mini_pixel_buffer
+			mini_pixmap
 		end
 
 create
@@ -33,12 +32,6 @@ feature -- Access
 			Result := pixmaps.mini_pixmaps.general_next_icon
 		end
 
-	mini_pixel_buffer: EV_PIXEL_BUFFER is
-			-- Mini pixmap representing the command.
-		do
-			Result := pixmaps.mini_pixmaps.general_next_icon_buffer
-		end
-
 feature {NONE} -- Implementation
 
 	operate is
@@ -53,25 +46,19 @@ feature {NONE} -- Implementation
 			Result :=pixmaps.icon_pixmaps.view_next_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.view_next_icon_buffer
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it appears in the menu (with & symbol).
 		do
 			Result := Interface_names.m_History_forth
 		end
 
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.f_History_forth
 		end
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Description for this command.
 		do
 			Result := Interface_names.e_History_forth

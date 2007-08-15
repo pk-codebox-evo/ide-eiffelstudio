@@ -2,7 +2,7 @@
 	description: "Equality C externals."
 	date:		"$Date$"
 	revision:	"$Revision$"
-	copyright:	"Copyright (c) 1985-2007, Eiffel Software."
+	copyright:	"Copyright (c) 1985-2006, Eiffel Software."
 	license:	"GPL version 2 see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"Commercial license is available at http://www.eiffel.com/licensing"
 	copying: "[
@@ -92,17 +92,7 @@ rt_public EIF_BOOLEAN eif_xequal(EIF_REFERENCE ref1, EIF_REFERENCE ref2)
 			/* We don't care anymore about conformance, egc_equal expect
 			 * type to be equal, otherwise it returns False.
 			 */
-#ifdef WORKBENCH
-		EIF_TYPED_VALUE r1;
-		EIF_TYPED_VALUE r2;
-		r1.type = SK_REF;
-		r2.type = SK_REF;
-		r1.it_r = ref1;
-		r2.it_r = ref2;
-		return egc_equal(ref1, r1, r2).it_b;
-#else
 		return egc_equal(ref1, ref1, ref2);
-#endif
 	}
 
 	return EIF_FALSE;
@@ -291,14 +281,17 @@ rt_public EIF_BOOLEAN spiso(register EIF_REFERENCE target, register EIF_REFERENC
 	}
 
 	if (s_flags & EO_TUPLE) {
-		EIF_TYPED_VALUE * l_source = (EIF_TYPED_VALUE *) source;
-		EIF_TYPED_VALUE * l_target = (EIF_TYPED_VALUE *) target;
-			/* Don't forget that first element of TUPLE is the BOOLEAN
-			 * `object_comparison' attribute. */
+		EIF_TYPED_ELEMENT * l_source = (EIF_TYPED_ELEMENT *) source;
+		EIF_TYPED_ELEMENT * l_target = (EIF_TYPED_ELEMENT *) target;
+			/* Don't forget that first element of TUPLE is just a placeholder
+			 * to avoid offset computation from Eiffel code */
+		l_source++;
+		l_target++;
+		count--;
 		for (; count > 0; count--, l_source++, l_target++) {
 			if
-				(eif_is_reference_tuple_item(l_source) &&
-				eif_is_reference_tuple_item(l_target))
+				((eif_tuple_item_type(l_source) == EIF_REFERENCE_CODE) &&
+				(eif_tuple_item_type(l_target) == EIF_REFERENCE_CODE))
 			{
 				s_field = eif_reference_tuple_item (l_source);
 				t_field = eif_reference_tuple_item (l_target);
@@ -426,14 +419,17 @@ rt_private EIF_BOOLEAN rdeepiso(EIF_REFERENCE target,EIF_REFERENCE source)
 		count = RT_SPECIAL_COUNT_WITH_INFO(t_ref);
 
 		if (flags & EO_TUPLE) {
-			EIF_TYPED_VALUE * l_source = (EIF_TYPED_VALUE *) source;
-			EIF_TYPED_VALUE * l_target = (EIF_TYPED_VALUE *) target;
-				/* Don't forget that first element of TUPLE is the BOOLEAN
-				 * `object_comparison' attribute. */
+			EIF_TYPED_ELEMENT * l_source = (EIF_TYPED_ELEMENT *) source;
+			EIF_TYPED_ELEMENT * l_target = (EIF_TYPED_ELEMENT *) target;
+				/* Don't forget that first element of TUPLE is just a placeholder
+				 * to avoid offset computation from Eiffel code */
+			l_source++;
+			l_target++;
+			count--;
 			for (; count > 0; count--, l_source++, l_target++) {
 				if
-					(eif_is_reference_tuple_item(l_source) &&
-					eif_is_reference_tuple_item(l_target))
+					((eif_tuple_item_type(l_source) == EIF_REFERENCE_CODE) &&
+					(eif_tuple_item_type(l_target) == EIF_REFERENCE_CODE))
 				{
 					s_field = eif_reference_tuple_item (l_source);
 					t_field = eif_reference_tuple_item (l_target);

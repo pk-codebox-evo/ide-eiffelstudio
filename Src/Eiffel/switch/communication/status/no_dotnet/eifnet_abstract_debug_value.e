@@ -11,12 +11,24 @@ deferred class
 
 inherit
 	ABSTRACT_DEBUG_VALUE
-		undefine
-			debug_value_type_id
-		end
+
 
 feature -- Properties
 
+	icd_frame: ICOR_DEBUG_FRAME
+
+	icd_referenced_value: ICOR_DEBUG_VALUE
+			-- Original ICorDebugValue from Debugger
+			-- not dereferenced !
+			-- may be useful to ICorDebugEval::CallFunction ...
+			
+	icd_value: ICOR_DEBUG_VALUE
+			-- Value of object.
+			-- unreferenced, unboxed ...
+
+	icd_value_info: EIFNET_DEBUG_VALUE_INFO;
+			-- Value info of object.
+	
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"

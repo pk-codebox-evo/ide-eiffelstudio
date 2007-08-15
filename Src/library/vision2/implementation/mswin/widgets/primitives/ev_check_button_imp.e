@@ -63,14 +63,14 @@ feature -- Status setting
 	enable_select is
 			-- Make `is_selected' True.
 		do
-			{WEL_API}.send_message (wel_item, bm_setcheck, to_wparam (1), to_lparam (0))
+			cwin_send_message (wel_item, bm_setcheck, to_wparam (1), to_lparam (0))
 			Precursor {EV_TOGGLE_BUTTON_IMP}
 		end
 
 	disable_select is
 			-- Make `is_selected' False.
 		do
-			{WEL_API}.send_message (wel_item, bm_setcheck, to_wparam (0), to_lparam (0))
+			cwin_send_message (wel_item, bm_setcheck, to_wparam (0), to_lparam (0))
 			Precursor {EV_TOGGLE_BUTTON_IMP}
 		end
 

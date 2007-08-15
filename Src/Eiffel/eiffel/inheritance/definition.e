@@ -107,7 +107,7 @@ feature -- Checking
 			constant: CONSTANT_I
 			rout_id_set: ROUT_ID_SET
 			new_rout_id: INTEGER
-			inherited_features: LINKED_LIST [INHERIT_INFO]
+			attribute_list: LINKED_LIST [INHERIT_INFO]
 			stop: BOOLEAN
 			info: INHERIT_INFO
 		do
@@ -144,14 +144,14 @@ feature -- Checking
 						-- an attribute: new funciton if one precursor
 						-- is associated to a function
 					from
-						inherited_features := old_features.features
-						inherited_features.start
+						attribute_list := old_features.features
+						attribute_list.start
 					until
-						inherited_features.after or else stop
+						attribute_list.after or else stop
 					loop
-						attr_precursor ?= inherited_features.item.a_feature
+						attr_precursor ?= attribute_list.item.a_feature
 						stop :=  attr_precursor.generate_in /= 0
-						inherited_features.forth
+						attribute_list.forth
 					end
 					if stop then
 						l_attribute.set_generate_in (new_tbl.feat_tbl_id)
@@ -171,26 +171,6 @@ feature -- Checking
 					constant.set_generate_in (new_tbl.feat_tbl_id)
 						-- Remember to process a pattern for this function
 					pattern_list.extend (constant.feature_name_id)
-				end
-			end
-
-			if system.il_generation and then
-				(not new_feature.has_property_getter or else
-				not new_feature.has_property_setter)
-			then
-					-- Check if an inherited feature has a setter or a getter
-					-- and ensure a getter and a setter are generated for the current feature.
-				if
-					old_features.features.there_exists (agent {INHERIT_INFO}.has_property_getter) or else
-					old_features.deferred_features.there_exists (agent {INHERIT_INFO}.has_property_getter)
-				then
-					new_feature.set_has_property_getter (True)
-				end
-				if
-					old_features.features.there_exists (agent {INHERIT_INFO}.has_property_setter) or else
-					old_features.deferred_features.there_exists (agent {INHERIT_INFO}.has_property_setter)
-				then
-					new_feature.set_has_property_setter (True)
 				end
 			end
 

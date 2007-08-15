@@ -26,19 +26,19 @@ feature {NONE} -- Execution
 				index_str.is_integer
 			loop
 				if not first_time then
-					localized_print (ewb_names.index_must_be_an_integer)
+					io.put_string ("Index must be an integer.%N");
 				end;
 				if command_arguments.argument_count > 1 then
 					index_str := command_arguments.item (2);
 				else
-					localized_print (ewb_names.arrow_subquery_index)
+					io.put_string ("--> Subquery index: ");
 					command_line_io.get_name;
 					command_arguments := command_line_io.command_arguments;
 					index_str := command_arguments.item (1);
 				end;
 				if not index_str.is_integer then
-					localized_print (ewb_names.index_must_be_an_integer)
-					localized_print (ewb_names.arrow_subquery_index)
+					io.put_string ("Index must be an integer.%N");
+					io.put_string ("--> Subquery index: ");
 					command_line_io.get_name;
 					command_arguments := command_line_io.command_arguments;
 					index_str := command_arguments.item (1);
@@ -82,10 +82,10 @@ feature {NONE} -- Execution
 						end;
 					end;
 				else
-					localized_print (ewb_names.there_is_no_item_available)
+					io.put_string ("There is no items available at this index.%N")
 				end
 			else
-				localized_print (ewb_names.index_must_be_valid)
+				io.put_string ("Index must be valid.%N");
 			end;
 		end;
 
@@ -96,7 +96,7 @@ feature -- Properties
 			Result := reactivate_subquery_cmd_name;
 		end;
 
-	help_message: STRING_32 is
+	help_message: STRING is
 		once
 			Result := reactivate_subquery_help;
 		end;

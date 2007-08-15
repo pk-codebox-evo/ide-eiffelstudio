@@ -10,7 +10,7 @@ frozen class
 
 inherit
 	SYSTEM_OBJECT
-
+	
 	REFLECTION
 
 	NAME_FORMATTER
@@ -32,6 +32,7 @@ feature {NONE} -- Initialization
 			create method_table.make (20)
 			create eiffel_names.make (50)
 		end
+
 
 feature {NONE} -- Access
 
@@ -85,8 +86,7 @@ feature -- Basic Operations
 			first_method, method: METHOD_SOLVER
 			name: STRING
 			i, param_count: INTEGER
-			is_unique: BOOLEAN
-			number_of_methods_with_parameters: INTEGER
+			is_unique, same_param_count: BOOLEAN
 			eiffel_args: HASH_TABLE [STRING, STRING]
 		do
 			from
@@ -98,14 +98,13 @@ feature -- Basic Operations
 				method_list.start
 				first_method := method_list.item
 				param_count := first_method.arguments.count
-				number_of_methods_with_parameters := 0
 				from
 					method_list.forth
-					if
-						not method_list.after and then
-						not first_method.is_conversion_operator
-					then
-						number_of_methods_with_parameters := 1
+					if method_list.after then
+						same_param_count := False
+					else
+						same_param_count := method_list.item.arguments.count = param_count and then
+							not first_method.is_conversion_operator
 					end
 				until
 					method_list.after
@@ -114,30 +113,28 @@ feature -- Basic Operations
 					if method.is_conversion_operator then
 						name := formatted_feature_name (method.starting_resolution_name)
 					else
-							-- Check starting resolution name (com import assemblies have version number suffixed names)
-						name := formatted_feature_name (method.starting_resolution_name)
-						is_unique := is_unique_signature (method, method_list, 0)
-						if not is_unique then
-							number_of_methods_with_parameters := number_of_methods_with_parameters + 1
-							from
-								i := 1
-							until
-								is_unique or i > method.arguments.count
-							loop
-								name.append_character ('_')
-								name.append (
-									formatted_variable_type_name (method.arguments.item (i).type.name))
-								is_unique := is_unique_signature (method, method_list, i)
-								i := i + 1
-							end
+						same_param_count :=
+							same_param_count and method.arguments.count = param_count
+						from
+							name := formatted_feature_name (method.starting_resolution_name)
+							is_unique := is_unique_signature (method, method_list, 0)
+							i := 1
+						until
+							is_unique or i > method.arguments.count
+						loop
+							name.append_character ('_')
+							name.append (
+								formatted_variable_type_name (method.arguments.item (i).type.name))
+							is_unique := is_unique_signature (method, method_list, i)
+							i := i + 1
 						end
 					end
 					method.set_eiffel_name (unique_feature_name (name))
 					method_list.forth
 				end
-				if number_of_methods_with_parameters > 1 then
+				if same_param_count then
 					from
-						name := formatted_feature_name (first_method.starting_resolution_name)
+						name := formatted_feature_name (method.starting_resolution_name)
 						i := 1
 					until
 						i > param_count
@@ -197,8 +194,6 @@ feature -- Basic Operations
 			valid_list: method_list.has (method)
 			valid_index: index >= 0
 		local
-			l_name: STRING
-			l_item_name: STRING
 			meth: METHOD_SOLVER
 			count, i: INTEGER
 			cursor: CURSOR
@@ -212,25 +207,17 @@ feature -- Basic Operations
 					method_list.after or not Result
 				loop
 					meth := method_list.item
-					if meth /= method then
-						count := meth.arguments.count.min (method.arguments.count)
-						if count >= index then
-							if l_name = Void then
-								l_name := method.starting_resolution_name
-							end
-							l_item_name := meth.starting_resolution_name
-							if l_name.is_equal (l_item_name) then
-								from
-									i := index
-								until
-									i > count or not Result
-								loop
-									Result := method_list.item = method or i > 0 and then
-										not method_list.item.arguments.item (i).type.same_as
-											(method.arguments.item (i).type)
-									i := i + 1
-								end
-							end
+					count := meth.arguments.count.min (method.arguments.count)
+					if count >= index then
+						from
+							i := index
+						until
+							i > count or not Result
+						loop
+							Result := method_list.item = method or i > 0 and then
+								not method_list.item.arguments.item (i).type.is_equal
+									(method.arguments.item (i).type)
+							i := i + 1
 						end
 					end
 					method_list.forth

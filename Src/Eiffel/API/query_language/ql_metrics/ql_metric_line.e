@@ -58,13 +58,16 @@ feature{NONE} -- Implementation
 	basic_scope_table: HASH_TABLE [QL_METRIC_BASIC_SCOPE_INFO, QL_SCOPE] is
 			-- Table of domain generators per scope
 		do
-			if is_fill_domain_enabled or else criterion /= Void then
-					-- With a criterion specified or detailed result is going to be kept, calculate metric in normal way.
-				Result := normal_generator_table
-			else
-					-- We use a faster algorithm to count line otherwise.
+			if criterion = Void then
+					-- We use a faster algorithm to count line if no `criterion' is specified.
 				Result := fast_generator_table
+			else
+					-- With a criterion specified, calculate metric in normal way.
+				Result := normal_generator_table
 			end
+		ensure then
+			good_result: (criterion = Void implies Result = fast_generator_table) and
+						 (criterion /= Void implies Result = normal_generator_table)
 		end
 
 	fast_generator_table: like basic_scope_table
@@ -84,15 +87,14 @@ feature{NONE} -- Implementation
 			l_quantity_basic_scope: QL_METRIC_QUANTITY_BASIC_SCOPE_INFO
 		do
 			l_scopes := scopes
+				-- Setup `fast_generator_table'.
 			create fast_generator_table.make (l_scopes.count)
 			create normal_generator_table.make (l_scopes.count)
-
-				-- Setup `normal_generator_table'.
 			create l_line_basic_scope.make (Void)
 			l_line_basic_scope.set_metric (Current)
 			l_scopes.do_all (agent normal_generator_table.put (l_line_basic_scope, ?))
 
-				-- Setup `fast_generator_table'.				
+				-- Setup `normal_generator_table'.
 			create l_class_basic_scope.make (agent number_of_lines_in_code_structure ({QL_CLASS}?))
 			l_class_basic_scope.set_metric (Current)
 			create l_generic_basic_scope.make (agent number_of_lines_in_code_structure ({QL_GENERIC}?))
@@ -202,5 +204,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

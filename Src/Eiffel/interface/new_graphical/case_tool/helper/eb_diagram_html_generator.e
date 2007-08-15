@@ -81,6 +81,7 @@ feature {NONE} -- Access
 	projector: EIFFEL_PROJECTOR
 			-- Projector of generated diagram on `pixmap'.
 
+
 	world_cell: EIFFEL_FIGURE_WORLD_CELL
 
 	border: INTEGER is 5
@@ -139,7 +140,7 @@ feature {DOCUMENTATION} -- Basic operations
 			str: STRING
 			ptf: PLAIN_TEXT_FILE
 			minimum_pixmap: EV_PIXMAP
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 			layout: EIFFEL_INHERITANCE_LAYOUT
 		do
 			check
@@ -197,7 +198,7 @@ feature {DOCUMENTATION} -- Basic operations
 
 			minimum_pixmap := projector.world_as_pixmap (border)
 			if projector.is_world_too_large then
-				create wd.make_with_text (Warning_messages.W_cannot_generate_png.as_string_32+"%N"+cluster.name)
+				create wd.make_with_text (Warning_messages.W_cannot_generate_png+"%N"+cluster.name)
 				create minimum_pixmap.make_with_size (1, 1)
 			end
 			minimum_pixmap.save_to_named_file (png_format, png_file)
@@ -306,7 +307,7 @@ feature {NONE} -- Implementation
 				class_figures.after
 			loop
 				cf ?= class_figures.item
-				if cf.model.class_i.is_compiled and documentation.doc_universe.is_class_generated (cf.model.class_i) then
+				if cf.model.class_i.compiled and documentation.doc_universe.is_class_generated (cf.model.class_i) then
 					item_file := base_path.twin
 					path := documentation.relative_path (cf.model.class_i.group)
 					if path /= Void then

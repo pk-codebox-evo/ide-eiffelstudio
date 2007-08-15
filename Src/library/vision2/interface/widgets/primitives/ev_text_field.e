@@ -31,12 +31,6 @@ inherit
 			is_in_default_state
 		end
 
-	EV_TEXT_ALIGNABLE
-		redefine
-			implementation,
-			is_in_default_state
-		end
-
 	EV_TEXT_FIELD_ACTION_SEQUENCES
 		redefine
 			implementation

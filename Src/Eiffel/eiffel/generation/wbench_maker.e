@@ -8,7 +8,7 @@ class WBENCH_MAKER
 inherit
 	MAKEFILE_GENERATOR
 		redefine
-			generate_specific_defines, generate_precompile_objects
+			generate_specific_defines, generate_other_objects
 		end;
 
 create
@@ -228,18 +228,16 @@ feature
 	run_time: STRING is
 			-- Run time with which the application must be linked
 		do
-				-- We use " in case the path as spaces in it.
 			create Result.make (256)
 
 			if System.has_dynamic_runtime then
 				Result.append ("-L")
 			end
 
-			Result.append_character ('"')
 			Result.append (Lib_location)
 
 			if System.has_dynamic_runtime then
-				Result.append ("%" -l")
+				Result.append (" -l")
 			else
 				Result.append ("$prefix")
 			end
@@ -254,41 +252,28 @@ feature
 				Result.append ("$suffix")
 			end
 
-			if not System.has_dynamic_runtime then
-				Result.append_character ('"')
-			end
-
 			Result.append (boehm_library)
 		end;
 
-	generate_precompile_objects is
+	generate_other_objects is
 		local
 			precomp: like Precompilation_directories
 			dir: REMOTE_PROJECT_DIRECTORY
-			l_path: STRING
-			l_first: BOOLEAN
 		do
 			if System.uses_precompiled then
 				from
 					precomp := Precompilation_directories;
 					precomp.start
-					l_first := True
 				until
 					precomp.after
 				loop
 					dir := precomp.item_for_iteration;
 					if dir.has_precompiled_preobj then
-						if not l_first then
-							Make_file.put_character (' ');
-							Make_file.put_character (Continuation);
-							Make_file.put_new_line
-							Make_file.put_character ('%T')
-						else
-							l_first := False
-						end
-						l_path := dir.precompiled_preobj
-						safe_external_path (l_path, True)
-						Make_file.put_string (l_path);
+						Make_file.put_string ("%T%T");
+						Make_file.put_string (dir.precompiled_preobj);
+						Make_file.put_character (' ');
+						Make_file.put_character (Continuation);
+						Make_file.put_new_line
 					end;
 					precomp.forth
 				end

@@ -10,7 +10,7 @@ frozen class
 
 inherit
 	SYSTEM_OBJECT
-
+	
 	IDISPOSABLE
 
 create

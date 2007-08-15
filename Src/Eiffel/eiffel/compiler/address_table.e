@@ -12,7 +12,7 @@ inherit
 	HASH_TABLE [HASH_TABLE [ADDRESS_TABLE_ENTRY, INTEGER], INTEGER]
 		rename
 			make as make_hash_table,
-			has_key as has_table_of_class,
+			has as has_table_of_class,
 			item as table_of_class,
 			cursor as ht_cursor
 		export
@@ -45,11 +45,6 @@ inherit
 			is_equal, copy
 		end
 
-	SHARED_TYPE_I
-		undefine
-			is_equal, copy
-		end
-
 create {SYSTEM_I}
 	make
 
@@ -70,7 +65,7 @@ feature -- Access
 			feature_id_valid: feature_id > 0
 		do
 			if has_table_of_class (class_id) then
-				if found_item.has_key (feature_id) then
+				if found_item.has (feature_id) then
 					Result := found_item.found_item.has_dollar_op
 				end
 			end
@@ -102,7 +97,7 @@ feature -- Access
 		do
 			Result := has_table_of_class (a_class_id)
 			if Result then
-				Result := found_item.has_key (a_feature_id)
+				Result := found_item.has (a_feature_id)
 				if Result then
 					Result := found_item.found_item.has (make_reordering (a_is_target_closed, o_map))
 				end
@@ -130,7 +125,7 @@ feature -- Access
 		require
 			a_class_type_not_void: a_class_type /= Void
 			dollar_feature_valid: has_table_of_class (a_class_id) and then
-								  found_item.has_key (a_feature_id) and then
+								  found_item.has (a_feature_id) and then
 								  found_item.found_item.has_dollar_op and then
 								  found_item.found_item.dollar_ids.has (a_class_type.static_type_id)
 		local
@@ -176,7 +171,7 @@ feature -- Access
 							l_feature := l_class.eiffel_class_c.inline_agent_of_id (l_feature_id)
 						end
 						if l_feature = Void then
-							l_table_of_class.remove (l_feature_id)
+							item_for_iteration.remove (l_feature_id)
 						else
 							if l_table_entry.has_dollar_op then
 								from
@@ -201,8 +196,8 @@ feature -- Access
 								l_table_entry.item_for_iteration.set_frozen_age (new_frozen_age)
 								l_table_entry.forth
 							end
-							l_table_of_class.forth
 						end
+						l_table_of_class.forth
 					end
 				end
 				forth
@@ -226,7 +221,7 @@ feature -- Register
 			if not has_dollar_operator (a_class_id, a_feature_id) then
 				l_table_entry := force_new_table_entry (a_class_id, a_feature_id)
 				l_table_entry.set_has_dollar_op
-				System.request_freeze
+				System.set_freeze
 			end
 		ensure
 			has_dollar_operator (a_class_id, a_feature_id)
@@ -317,79 +312,72 @@ feature -- Generation
 				class_id := key_for_iteration
 				a_class := System.class_of_id (class_id)
 				System.set_current_class (a_class)
-				if a_class /= Void then
-					if (final_mode implies (not a_class.is_precompiled or else a_class.is_in_system)) then
-						l_table_of_class := item_for_iteration
-						from
-							l_table_of_class.start
-						until
-							l_table_of_class.after
-						loop
-							feature_id := l_table_of_class.key_for_iteration
-							table_entry := l_table_of_class.item_for_iteration
+				if
+					a_class /= Void and then
+					(final_mode implies (not a_class.is_precompiled or else a_class.is_in_system))
+				then
+					l_table_of_class := item_for_iteration
+					from
+						l_table_of_class.start
+					until
+						l_table_of_class.after
+					loop
+						feature_id := l_table_of_class.key_for_iteration
+						table_entry := l_table_of_class.item_for_iteration
 
-							a_feature := a_class.feature_table.feature_of_feature_id (feature_id)
-							if a_feature = Void and then a_class.is_eiffel_class_c then
-									-- maybe its an inline agent
-								a_feature := a_class.eiffel_class_c.inline_agent_of_id (feature_id)
-							end
-							if a_feature = Void then
-									-- Remove invalid entry or feature which has been converted
-									-- from a routine to an attribute.
-								l_table_of_class.remove (feature_id)
-							else
-									-- Feature exists
-								if a_feature.used then
-										-- Feature is not dead code removed
-
-		debug ("DOLLAR")
-		io.put_string ("ADDRESS_TABLE.generate_feature ")
-		io.put_string (a_class.name)
-		io.put_character (' ')
-		io.put_string (a_feature.feature_name)
-		io.put_new_line
-		end
-									if table_entry.has_dollar_op then
-										generate_feature (a_class, a_feature, final_mode, buffer, False, False, Void, False)
-									end
-
-									from
-										table_entry.start
-									until
-										table_entry.after
-									loop
-										l_reordering := table_entry.item_for_iteration
-										if l_reordering.is_valid_for (a_feature) then
-											l_reordering.set_frozen_age (new_frozen_age)
-											generate_feature (a_class, a_feature, final_mode, buffer, True,
-															  l_reordering.is_target_closed, l_reordering.open_map, True)
-											if final_mode then
-												generate_feature (a_class, a_feature, final_mode, buffer, True,
-																  l_reordering.is_target_closed, l_reordering.open_map, False)
-											end
-											table_entry.forth
-										else
-											table_entry.forth
-											table_entry.remove (l_reordering)
-										end
-									end
-								end
-								l_table_of_class.forth
-							end
+						a_feature := a_class.feature_table.feature_of_feature_id (feature_id)
+						if a_feature = Void and then a_class.is_eiffel_class_c then
+								-- maybe its an inline agent
+							a_feature := a_class.eiffel_class_c.inline_agent_of_id (feature_id)
 						end
-						if l_table_of_class.is_empty then
-							-- None of the features are valid
-							remove (class_id)
+						if a_feature = Void then
+								-- Remove invalid entry or feature which has been converted
+								-- from a routine to an attribute.
+							l_table_of_class.remove (feature_id)
 						else
-							forth
+								-- Feature exists
+							if a_feature.used then
+									-- Feature is not dead code removed
+
+debug ("DOLLAR")
+	io.put_string ("ADDRESS_TABLE.generate_feature ")
+	io.put_string (a_class.name)
+	io.put_character (' ')
+	io.put_string (a_feature.feature_name)
+	io.put_new_line
+end
+								if table_entry.has_dollar_op then
+									generate_feature (a_class, a_feature, final_mode, buffer, False, False, Void, False)
+								end
+
+								from
+									table_entry.start
+								until
+									table_entry.after
+								loop
+									l_reordering := table_entry.item_for_iteration
+									l_reordering.set_frozen_age (new_frozen_age)
+									generate_feature (a_class, a_feature, final_mode, buffer, True,
+													  l_reordering.is_target_closed, l_reordering.open_map, True)
+									if final_mode then
+										generate_feature (a_class, a_feature, final_mode, buffer, True,
+														  l_reordering.is_target_closed, l_reordering.open_map, False)
+									end
+									table_entry.forth
+								end
+							end
 						end
-					else
-						forth
+						l_table_of_class.forth
+					end
+					if l_table_of_class.is_empty then
+						-- None of the features are valid
+						remove (class_id)
 					end
 				else
 						-- Remove the invalid entry
 					remove (class_id)
 				end
+				forth
 			end
 
 			create cecil_file.make_c_code_file (x_gen_file_name (final_mode, Ececil));
@@ -468,14 +456,12 @@ feature -- Generation helpers
 			Result := s_type.type_i.c_type
 		end
 
-	arg_types (context_type: CLASS_TYPE; args: FEAT_ARG; is_for_agent: BOOLEAN; seed: FEATURE_I): ARRAY [STRING] is
+	arg_types (context_type: CLASS_TYPE; args: FEAT_ARG): ARRAY [STRING] is
 			-- Generate declaration of the argument types.
 		require
 			arg_non_void: args /= Void
 		local
 			i, nb: INTEGER
-			t: STRING
-			type_i: TYPE_I
 		do
 			from
 				i := 1
@@ -485,21 +471,7 @@ feature -- Generation helpers
 			until
 				i > nb
 			loop
-				if is_for_agent and then system.byte_context.workbench_mode then
-					t := "EIF_TYPED_VALUE"
-				elseif seed /= Void then
-					type_i := seed.arguments.i_th (i).type_i
-					if type_i.is_anchored then
-						t := "EIF_REFERENCE"
-					elseif type_i.is_formal then
-						t := "EIF_REFERENCE"
-					else
-						t := type_i.c_type.c_string
-					end
-				else
-					t := solved_type (context_type, args.i_th (i)).c_string
-				end
-				Result.put (t, i + 1)
+				Result.put (solved_type (context_type, args.i_th (i)).c_string, i + 1)
 				i := i + 1
 			end
 		end
@@ -602,40 +574,6 @@ feature {NONE} -- Generation
 			end
 		end
 
-	generate_workbench_arg_list (buffer: GENERATION_BUFFER; current_name: STRING; context_type: CLASS_TYPE; args: FEAT_ARG) is
-			-- Generate declaration of `n' arguments.
-		local
-			i: INTEGER
-			n: INTEGER
-			arg_type: TYPE_C
-		do
-			buffer.put_string (current_name)
-			if args /= Void then
-				from
-					i := 1
-					n := args.count
-				until
-					i > n
-				loop
-					arg_type := solved_type (context_type, args.i_th (i))
-					buffer.put_string (", ((u [")
-					buffer.put_integer (i - 1)
-					buffer.put_string ("].")
-					arg_type.generate_typed_tag (buffer)
-					buffer.put_string ("), (u [")
-					buffer.put_integer (i - 1)
-					buffer.put_string ("].")
-					arg_type.generate_typed_field (buffer)
-					buffer.put_string (" = arg")
-					buffer.put_integer (i)
-					buffer.put_string ("), u [")
-					buffer.put_integer (i - 1)
-					buffer.put_string ("])")
-					i := i + 1
-				end
-			end
-		end
-
 	generate_feature (a_class: CLASS_C; a_feature: FEATURE_I; final_mode: BOOLEAN; buffer: GENERATION_BUFFER;
 					  is_for_agent, is_target_closed: BOOLEAN; omap: ARRAYED_LIST [INTEGER];
 					  a_oargs_encapsulated: BOOLEAN) is
@@ -654,53 +592,18 @@ feature {NONE} -- Generation
 			has_arguments, is_function: BOOLEAN
 			return_type: TYPE_A
 			return_type_string: STRING
-			agent_type_string: STRING
 			c_return_type: TYPE_C
-			feature_return_type: TYPE_C
 			a_types: like arg_types
-			agent_types: like arg_types
 			function_name: STRING
 			cursor: CURSOR
 			l_current_name: STRING
 			l_is_implemented: BOOLEAN
 			l_type: CLASS_TYPE
-			seed: FEATURE_I
-			reference_arg: ARRAY [BOOLEAN]
-			reference_arg_count: INTEGER
-			formal_arg: ARRAY [BOOLEAN]
-			formal_arg_count: NATURAL_32
-			has_creation: BOOLEAN
-			names: ARRAY [STRING]
-			basic_i: BASIC_I
-			i: INTEGER
 		do
 			feature_id := a_feature.feature_id
 			rout_id := a_feature.rout_id_set.first
-			if is_for_agent and then not a_feature.is_inline_agent then
-				seed := system.seed_of_routine_id (rout_id)
-				if not seed.has_formal and then final_mode then
-					seed := Void
-				end
-			end
 			if a_feature.has_arguments then
 				has_arguments := True
-				if seed /= Void then
-						-- Mark all arguments that are on the positions of formal generics.
-					from
-						args := seed.arguments
-						i := args.count
-						create reference_arg.make (1, i)
-						create formal_arg.make (1, i)
-					until
-						i <= 0
-					loop
-						if args.i_th (i).type_i.is_formal then
-							formal_arg.put (True, i)
-							formal_arg_count := formal_arg_count + 1
-						end
-						i := i - 1
-					end
-				end
 				args := a_feature.arguments
 				args_count := args.count
 			end
@@ -709,10 +612,10 @@ feature {NONE} -- Generation
 
 			if is_for_agent then
 				if is_target_closed or omap.is_empty then
-					l_current_name := "closed [1]." + reference_c_type.typed_field
+					l_current_name := "closed [1].element.rarg"
 				else
 					if a_oargs_encapsulated then
-						l_current_name := "open [1]." + reference_c_type.typed_field
+						l_current_name := "open [1].element.rarg"
 					else
 						l_current_name := "op_1"
 					end
@@ -742,167 +645,32 @@ feature {NONE} -- Generation
 
 				c_return_type := solved_type (l_type, return_type)
 				return_type_string := c_return_type.c_string
-				agent_type_string := return_type_string
-				feature_return_type := c_return_type
-				if not c_return_type.is_void then
-					if is_for_agent and then not final_mode then
-						return_type_string := "EIF_TYPED_VALUE"
-						agent_type_string := return_type_string
-					elseif seed /= Void and then seed.type.is_formal then
-						feature_return_type := reference_c_type
-						return_type_string := feature_return_type.c_string
-					end
-				end
-
-				has_creation := False
-				if formal_arg_count > 0 then
-						-- Figure out all the reference arguments that are not at the positions
-						-- of formal generics.
-					from
-						reference_arg_count := 0
-						i := args_count
-					until
-						i <= 0
-					loop
-						if solved_type (l_type, args.i_th (i)).is_pointer then
-							reference_arg.put (True, i)
-							reference_arg_count := reference_arg_count + 1
-						else
-							reference_arg.put (False, i)
-							if formal_arg [i] then
-								has_creation := True
-								reference_arg_count := reference_arg_count + 1
-							end
-						end
-						i := i - 1
-					end
-				end
 
 				if has_arguments then
-					a_types := arg_types (l_type, args, is_for_agent, seed)
+					a_types := arg_types (l_type, args)
 				else
 					a_types := <<"EIF_REFERENCE">>
 				end
 
 				if is_for_agent then
-					if has_arguments then
-						agent_types := arg_types (l_type, args, True, Void)
-					else
-						agent_types := a_types
-					end
-					generate_signature_for_agent (buffer, agent_types, a_types,
-						agent_type_string, return_type_string, function_name, omap, a_oargs_encapsulated)
+					generate_signature_for_agent (buffer, a_types, return_type_string,
+												  function_name, omap, a_oargs_encapsulated)
 				else
 					buffer.generate_pure_function_signature
 						(return_type_string, function_name, True, buffer,
 						arg_names (args_count), a_types)
 				end
-				buffer.put_string ("{")
-				buffer.put_new_line
-				buffer.indent
-				if not final_mode and then args_count > 0 then
-						-- Declare structure to be used for passing arguments.
-					buffer.put_string ("EIF_TYPED_VALUE u [")
-					buffer.put_integer (args_count)
-					buffer.put_string ("];")
-					buffer.put_new_line
-				end
-				if is_for_agent then
-					if final_mode and then has_creation then
-						if is_function then
-							buffer.put_string (agent_type_string)
-							buffer.put_string (" Result;")
-							buffer.put_new_line
-						end
-						from
-							i := args_count
-						until
-							i <= 0
-						loop
-							if formal_arg [i] and then not reference_arg [i] then
-									-- A variable to keep a boxed value is required.
-								buffer.put_string ("EIF_REFERENCE arg")
-								buffer.put_integer (i)
-								buffer.put_string (" = (EIF_REFERENCE) 0;")
-								buffer.put_new_line
-							end
-							i := i - 1
-						end
-						buffer.put_string ("	GTCX")
-						buffer.put_new_line
-						buffer.put_string ("RTLD;")
-						buffer.put_new_line
-						buffer.put_string ("RTLI (")
-						buffer.put_integer (reference_arg_count + 1)
-						buffer.put_string (");")
-						buffer.put_new_line
-						buffer.put_string ("RTLR(0,")
-						buffer.put_string (l_current_name)
-						buffer.put_string (");")
-						buffer.put_new_line
-						from
-							names := agent_arg_names (l_type, args, omap, a_oargs_encapsulated)
-							i := args_count
-						until
-							i <= 0
-						loop
-							if reference_arg [i] then
-									-- Mark for GC.
-								buffer.put_string ("RTLR(")
-								buffer.put_integer (reference_arg_count)
-								buffer.put_character (',')
-								buffer.put_string (names [i + 1])
-								buffer.put_string (");")
-								buffer.put_new_line
-								reference_arg_count := reference_arg_count - 1
-							elseif formal_arg [i] then
-									-- Mark for GC.
-								buffer.put_string ("RTLR(")
-								buffer.put_integer (reference_arg_count)
-								buffer.put_string (",arg")
-								buffer.put_integer (i)
-								buffer.put_string (");")
-								buffer.put_new_line
-								reference_arg_count := reference_arg_count - 1
-							end
-							i := i - 1
-						end
-						from
-							i := args_count
-						until
-							i <= 0
-						loop
-							if formal_arg [i] and then not reference_arg [i] then
-									-- Box expanded object.
-								basic_i ?= args.i_th (i).instantiated_in (l_type.type.type_a).type_i
-								basic_i.metamorphose (create {NAMED_REGISTER}.make ("arg" + i.out, reference_c_type), create {NAMED_REGISTER}.make (names [i + 1], basic_i), buffer)
-								buffer.put_character (';')
-								buffer.put_new_line
-							end
-							i := i - 1
-						end
-						if system.keep_assertions then
-								-- We need to check the invariant in an agent call, thus `nstcall' needs to be set.
-							buffer.put_string ("nstcall = 1;")
-							buffer.put_new_line
-						end
-					elseif not final_mode or else system.keep_assertions then
-							-- We need to check the invariant in an agent call, thus `nstcall' needs to be set.
-						buffer.put_string ("GTCX%Nnstcall = 1;")
-						buffer.put_new_line
-					end
+				if is_for_agent and not final_mode then
+						-- We need to check the invariant in an agent call, thus `nstcall' needs to be set.
+						-- We do not do it in final mode, because invariants are not checked in finalized
+						-- mode in general, except after a creation.
+					buffer.put_string ("{%N%TGTCX%N%Tnstcall = 1;%N%T")
+				else
+					buffer.put_string ("{%N%T")
 				end
 
 				if is_function then
-					if final_mode and then has_creation then
-						buffer.put_string ("Result = ")
-					else
-						buffer.put_string ("return ")
-					end
-					if final_mode and then seed /= Void and then seed.type.type_i.is_formal and then not c_return_type.is_pointer then
-						buffer.put_character ('*')
-						c_return_type.generate_access_cast (buffer)
-					end
+					buffer.put_string ("return ")
 				end
 
 				if
@@ -912,96 +680,69 @@ feature {NONE} -- Generation
 					is_for_agent
 				then
 					buffer.put_string ("f_ptr (")
-					if has_creation then
-						buffer.put_string (l_current_name)
-						from
-							i := 1
-						until
-							i > args_count
-						loop
-							buffer.put_string (gc_comma)
-							if formal_arg [i] and then not reference_arg [i] then
-								buffer.put_string ("arg")
-								buffer.put_integer (i)
-							else
-								buffer.put_string (names [i + 1])
-							end
-							i := i + 1
-						end
-					else
-						generate_arg_list_for_rout (buffer, l_type, args, final_mode, omap, a_oargs_encapsulated)
-					end
-				elseif a_feature.is_inline_agent then
-					buffer.put_character ('(')
-					c_return_type.generate_function_cast (buffer, a_types)
-					function_name := Encoder.feature_name (l_type.static_type_id, a_feature.body_index)
-					buffer.put_string (function_name)
-					buffer.put_string (")(")
-					extern_declarations.add_routine_with_signature (return_type_string,
-						function_name, a_types)
-
-					check
-						is_for_agent
-					end
-
-					generate_arg_list_for_rout (buffer, l_type, args, final_mode, omap, a_oargs_encapsulated)
+					generate_arg_list_for_rout (buffer, arg_tags (l_type, args), omap, a_oargs_encapsulated)
 				else
-					if final_mode then
-						l_is_implemented :=
-							generate_final_c_body (buffer, a_feature, l_current_name, feature_return_type, l_type, a_types)
+					if a_feature.is_inline_agent then
+						buffer.put_character ('(')
+						c_return_type.generate_function_cast (buffer, a_types)
+						function_name := Encoder.feature_name (l_type.static_type_id, a_feature.body_index)
+						buffer.put_string (function_name)
+						buffer.put_string (")(")
+						extern_declarations.add_routine_with_signature (c_return_type,
+							function_name, a_types)
+
+						check
+							is_for_agent
+						end
+
+						generate_arg_list_for_rout (buffer, arg_tags (l_type, args), omap, a_oargs_encapsulated)
 					else
-						l_is_implemented := True
-						generate_workbench_c_body (buffer, a_feature, l_current_name, c_return_type, l_type, a_types)
-					end
-					if l_is_implemented then
-						if final_mode and then has_creation then
-							buffer.put_string (l_current_name)
-							from
-								i := 1
-							until
-								i > args_count
-							loop
-								buffer.put_string (gc_comma)
-								if formal_arg [i] and then not reference_arg [i] then
-									buffer.put_string ("arg")
-									buffer.put_integer (i)
-								else
-									buffer.put_string (names [i + 1])
-								end
-								i := i + 1
-							end
-						elseif is_for_agent then
-							generate_arg_list_for_rout (buffer, l_type, args, final_mode, omap, a_oargs_encapsulated)
-						elseif final_mode then
-							generate_arg_list (buffer, l_current_name, args_count)
+						if final_mode then
+							l_is_implemented :=
+								generate_final_c_body (buffer, a_feature, l_current_name, c_return_type, l_type, a_types)
 						else
-							generate_workbench_arg_list (buffer, l_current_name, l_type, args)
+							l_is_implemented := True
+							generate_workbench_c_body (buffer, a_feature, l_current_name, c_return_type, l_type, a_types)
+						end
+						if l_is_implemented then
+							if is_for_agent then
+								generate_arg_list_for_rout (buffer, arg_tags (l_type, args), omap, a_oargs_encapsulated)
+							else
+								generate_arg_list (buffer, l_current_name, args_count)
+							end
 						end
 					end
 				end
-				buffer.put_character (')')
-				if not c_return_type.is_void then
-					if not final_mode and then not is_for_agent then
-						buffer.put_character ('.')
-						c_return_type.generate_typed_field (buffer)
-					end
-				end
-				buffer.put_string (";")
-				buffer.put_new_line
+				buffer.put_string (");%N")
 
-				if final_mode and then has_creation then
-					buffer.put_string ("RTLE;")
-					buffer.put_new_line
-					if is_function then
-						buffer.put_string ("return Result;")
-						buffer.put_new_line
-					end
-				end
-				buffer.exdent
-				buffer.put_string ("}%N%N")
+				buffer.put_string ("%N}%N%N")
 
 				types.go_to (cursor)
 				types.forth
+			end
+		end
+
+	arg_tags (context_type: CLASS_TYPE; args: FEAT_ARG): ARRAY [STRING] is
+			-- Generate union tag names for the argument types.
+		require
+			context_type_non_void: context_type /= Void
+		local
+			i, nb: INTEGER
+		do
+			if args /= Void then
+				nb := args.count + 1
+			else
+				nb := 1
+			end
+			create Result.make (1, nb)
+			Result.put ("rarg", 1)
+			from
+				i := 1
+			until
+				i = nb
+			loop
+				Result.put (solved_type (context_type, args.i_th (i)).union_tag, i + 1)
+				i := i + 1
 			end
 		end
 
@@ -1033,7 +774,7 @@ feature {NONE} -- Generation
 			else
 				l_type_id := a_type.type_id
 				if l_entry.is_polymorphic (l_type_id) then
-					l_table_name := Encoder.routine_table_name (l_rout_id)
+					l_table_name := Encoder.table_name (l_rout_id)
 					c_return_type.generate_function_cast (buffer, a_types)
 					buffer.put_string (l_table_name)
 					buffer.put_string ("[Dtype(")
@@ -1051,10 +792,10 @@ feature {NONE} -- Generation
 					l_rout_table.goto_implemented (l_type_id)
 					if l_rout_table.is_implemented then
 						c_return_type.generate_function_cast (buffer, a_types)
-						l_function_name := l_rout_table.feature_name + system.seed_of_routine_id (l_rout_id).generic_fingerprint
+						l_function_name := l_rout_table.feature_name
 						buffer.put_string (l_function_name)
 						buffer.put_string (")(")
-						extern_declarations.add_routine_with_signature (c_return_type.c_string,
+						extern_declarations.add_routine_with_signature (c_return_type,
 							l_function_name, a_types)
 					else
 							-- Function pointer associated to a deferred feature
@@ -1076,22 +817,10 @@ feature {NONE} -- Generation
 		local
 			l_rout_id: INTEGER
 			l_rout_info: ROUT_INFO
-			l_types: ARRAY [STRING]
-			i: INTEGER
 		do
 			buffer.put_character ('(')
 			l_rout_id := a_feature.rout_id_set.first
-			create l_types.make (1, a_types.count)
-			l_types [1] := a_types [1]
-			from
-				i := l_types.count
-			until
-				i < 2
-			loop
-				l_types [i] := "EIF_TYPED_VALUE"
-				i := i - 1
-			end
-			c_return_type.generate_function_cast (buffer, l_types)
+			c_return_type.generate_function_cast (buffer, a_types)
 
 			if
 				Compilation_modes.is_precompiling or else
@@ -1115,20 +844,13 @@ feature {NONE} -- Generation
 			buffer.put_string ("))(")
 		end
 
-	generate_arg_list_for_rout (a_buf: GENERATION_BUFFER; a_type: CLASS_TYPE; a_args: FEAT_ARG; final_mode: BOOLEAN;
+	generate_arg_list_for_rout (a_buf: GENERATION_BUFFER; a_tags : ARRAY [STRING];
 								a_omap: ARRAYED_LIST [INTEGER]; a_oargs_encapsulated: BOOLEAN) is
 			-- Generate declaration of `n' arguments for routine objects.
 		local
-			n: INTEGER
 			i, j, k, o: INTEGER
 			sep: STRING
-			arg_type: TYPE_C
 		do
-			if a_args = Void then
-				n := 1
-			else
-				n := a_args.count + 1
-			end
 			from
 				i := 1
 				j := 1
@@ -1141,42 +863,21 @@ feature {NONE} -- Generation
 				end
 				sep := ", "
 			until
-				i > n
+				i > a_tags.count
 			loop
 				if i > 1 then
-					arg_type := solved_type (a_type, a_args.i_th (i - 1))
 					a_buf.put_string (sep)
-				else
-					arg_type := reference_c_type
 				end
 				if i = o then
 					if a_oargs_encapsulated then
 						a_buf.put_string ("open [")
 						a_buf.put_string (k.out)
-						a_buf.put_string ("]")
-						if i <=1 or else final_mode then
-							a_buf.put_character ('.')
-							arg_type.generate_typed_field (a_buf)
-						end
+						a_buf.put_string ("].element.")
+						a_buf.put_string (a_tags.item (i))
 						k := k + 1
-					elseif i <=1 or else final_mode then
-						a_buf.put_string ("op_")
-						a_buf.put_String (o.out)
 					else
-						a_buf.put_string ("((u [")
-						a_buf.put_integer (i - 2)
-						a_buf.put_string ("].")
-						arg_type.generate_typed_tag (a_buf)
-						a_buf.put_string ("), (u [")
-						a_buf.put_integer (i - 2)
-						a_buf.put_string ("].")
-						arg_type.generate_typed_field (a_buf)
-						a_buf.put_string (" = ")
 						a_buf.put_string ("op_")
 						a_buf.put_String (o.out)
-						a_buf.put_string ("), u [")
-						a_buf.put_integer (i - 2)
-						a_buf.put_string ("])")
 					end
 					a_omap.forth
 					if not a_omap.after then
@@ -1187,81 +888,16 @@ feature {NONE} -- Generation
 				else
 					a_buf.put_string ("closed [")
 					a_buf.put_integer (j)
-					a_buf.put_string ("]")
-					if i <=1 or else final_mode then
-						a_buf.put_character ('.')
-						arg_type.generate_typed_field (a_buf)
-					end
+					a_buf.put_string ("].element.")
+					a_buf.put_string (a_tags.item (i))
 					j := j + 1
 				end
 				i := i + 1
 			end
 		end
 
-	agent_arg_names (a_type: CLASS_TYPE; a_args: FEAT_ARG;
-								a_omap: ARRAYED_LIST [INTEGER]; a_oargs_encapsulated: BOOLEAN): ARRAY [STRING] is
-			-- Generate declaration of `n' arguments for routine objects.
-		local
-			n: INTEGER
-			i, j, k, o: INTEGER
-			name: STRING
-			arg_type: TYPE_C
-		do
-			if a_args = Void then
-				n := 1
-			else
-				n := a_args.count + 1
-			end
-			create Result.make (1, n)
-			from
-				i := 1
-				j := 1
-				k := 1
-				a_omap.start
-				if not a_omap.after then
-					o := a_omap.item
-				else
-					o := {INTEGER}.max_value
-				end
-			until
-				i > n
-			loop
-				if i = 1 then
-					arg_type := reference_c_type
-				else
-					arg_type := solved_type (a_type, a_args.i_th (i - 1))
-				end
-				if i = o then
-					if a_oargs_encapsulated then
-						name := "open ["
-						name.append_integer (k)
-						name.append_string ("].")
-						name.append_string (arg_type.typed_field)
-						k := k + 1
-					else
-						name := "op_"
-						name.append_integer (o)
-					end
-					a_omap.forth
-					if not a_omap.after then
-						o := a_omap.item
-					else
-						o := {INTEGER}.max_value
-					end
-				else
-					name := "closed ["
-					name.append_integer (j)
-					name.append_string ("].")
-					name.append_string (arg_type.typed_field)
-					j := j + 1
-				end
-				Result [i] := name
-				i := i + 1
-			end
-		end
-
-	generate_signature_for_agent (a_buf: GENERATION_BUFFER; a_agent_types: like arg_types; a_types: like arg_types;
-								  a_agent_type, a_return_type, a_name: STRING; a_omap: ARRAYED_LIST [INTEGER];
+	generate_signature_for_agent (a_buf: GENERATION_BUFFER; a_types: like arg_types;
+								  a_return_type, a_name: STRING; a_omap: ARRAYED_LIST [INTEGER];
 								  a_oargs_encapsulated: BOOLEAN) is
 			--
 		local
@@ -1280,17 +916,17 @@ feature {NONE} -- Generation
 			tmp_buffer.clear_all
 			tmp_buffer.put_string (a_return_type)
 			tmp_buffer.put_string ("(*f_ptr) (")
-			tmp_buffer.put_string_array (a_types)
+			tmp_buffer.put_array (a_types)
 			tmp_buffer.put_string (")")
 			l_arg_types.put (tmp_buffer.as_string, 1)
 				-- The name of the pointer is embedded in its type
 			l_arg_names.put ("", 1)
 
-			l_arg_types.put ("EIF_TYPED_VALUE *", 2)
+			l_arg_types.put ("EIF_TYPED_ELEMENT *", 2)
 			l_arg_names.put ("closed", 2)
 
 			if a_oargs_encapsulated then
-				l_arg_types.put ("EIF_TYPED_VALUE *", 3)
+				l_arg_types.put ("EIF_TYPED_ELEMENT *", 3)
 				l_arg_names.put ("open", 3)
 			else
 				from
@@ -1300,14 +936,14 @@ feature {NONE} -- Generation
 					a_omap.after
 				loop
 					o := a_omap.item
-					l_arg_types.put (a_agent_types.item (o), i)
+					l_arg_types.put (a_types.item (o), i)
 					l_arg_names.put ("op_" + o.out, i)
 
 					i := i + 1
 					a_omap.forth
 				end
 			end
-			a_buf.generate_pure_function_signature (a_agent_type, a_name, True, a_buf, l_arg_names, l_arg_types)
+			a_buf.generate_pure_function_signature (a_return_type, a_name, True, a_buf, l_arg_names, l_arg_types)
 		end
 
 	tmp_buffer: GENERATION_BUFFER is
@@ -1351,7 +987,7 @@ feature {NONE}	--implementation
 	new_frozen_age: INTEGER;
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

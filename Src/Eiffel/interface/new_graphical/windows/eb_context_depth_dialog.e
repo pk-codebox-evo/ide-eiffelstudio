@@ -49,9 +49,9 @@ feature {NONE} -- Initialization
 			Layout_constants.set_default_width_for_button (ok_button)
 			create cancel_button.make_with_text_and_action (Interface_names.b_Cancel, agent cancel_action)
 			Layout_constants.set_default_width_for_button (cancel_button)
-			create frm.make_with_text (interface_names.l_include)
-			create frm2.make_with_text (interface_names.l_up_to_depth_of)
-			create frm3.make_with_text (interface_names.l_view)
+			create frm.make_with_text ("Include")
+			create frm2.make_with_text ("Up to depth of")
+			create frm3.make_with_text ("View")
 			create hb
 			hb.set_padding (Layout_constants.Small_padding_size)
 			create hb2
@@ -74,9 +74,9 @@ feature {NONE} -- Initialization
 			create vb_cluster
 			vb_cluster.set_padding (Layout_constants.Small_padding_size)
 
-			create cb_only.make_with_text (interface_names.l_only_classes_in_same_cluster)
+			create cb_only.make_with_text ("Only classes in same cluster")
 			vb_cluster.extend (cb_only)
-			create cb_all.make_with_text (interface_names.l_all_classes_in_same_cluster)
+			create cb_all.make_with_text ("All classes in same cluster")
 			vb_cluster.extend (cb_all)
 
 			hb_cluster.extend (create {EV_CELL})
@@ -88,17 +88,17 @@ feature {NONE} -- Initialization
 			vb_include.extend (sep)
 			vb_include.disable_item_expand (sep)
 
-			create l.make_with_text (interface_names.first_character_as_upper (interface_names.l_Ancestors))
+			create l.make_with_text ("Ancestors")
 			vb.extend (create {EV_CELL})
 			vb.extend (l)
 
-			create l.make_with_text (interface_names.first_character_as_upper (interface_names.l_Descendants))
+			create l.make_with_text ("Descendants")
 			vb.extend (l)
 
-			create l.make_with_text (interface_names.first_character_as_upper (interface_names.l_clients))
+			create l.make_with_text ("Clients")
 			vb.extend (l)
 
-			create l.make_with_text (interface_names.first_character_as_upper (interface_names.l_suppliers))
+			create l.make_with_text ("Suppliers")
 			vb.extend (l)
 
 			hb.extend (vb)
@@ -126,13 +126,13 @@ feature {NONE} -- Initialization
 			hb.extend (frm2)
 			main_vb.extend (frm)
 
-			create l.make_with_text (interface_names.l_apply_changes_to_view_named)
+			create l.make_with_text ("Apply changes to view named: ")
 			hb_view.extend (l)
 			create view_selector.make_default
 			hb_view.extend (view_selector)
 			vb_view.extend (create {EV_CELL})
 			vb_view.extend (hb_view)
-			create l.make_with_text (interface_names.l_select_another_view)
+			create l.make_with_text ("Select another view if you want to save current placement.")
 			vb_view.extend (l)
 			vb_view.extend (create {EV_CELL})
 			frm3.extend (vb_view)
@@ -173,9 +173,9 @@ feature {NONE} -- Initialization
 			Layout_constants.set_default_width_for_button (ok_button)
 			create cancel_button.make_with_text_and_action (Interface_names.b_Cancel, agent cancel_action)
 			Layout_constants.set_default_width_for_button (cancel_button)
-			create frm.make_with_text (interface_names.l_include)
-			create frm2.make_with_text (interface_names.l_up_to_depth_of)
-			create frm3.make_with_text (interface_names.l_view)
+			create frm.make_with_text ("Include")
+			create frm2.make_with_text ("Up to depth of")
+			create frm3.make_with_text ("View")
 			create hb
 			hb.set_padding (Layout_constants.Small_padding_size)
 			create hb2
@@ -194,11 +194,11 @@ feature {NONE} -- Initialization
 			create vb_include
 			vb_include.set_padding (Layout_constants.Small_padding_size)
 
-			create l.make_with_text (interface_names.l_super_cluster)
+			create l.make_with_text ("Super-clusters")
 			vb.extend (create {EV_CELL})
 			vb.extend (l)
 
-			create l.make_with_text (interface_names.l_subclusters)
+			create l.make_with_text ("Sub-clusters")
 			vb.extend (l)
 
 			hb.extend (vb)
@@ -218,13 +218,13 @@ feature {NONE} -- Initialization
 			hb.extend (frm2)
 			main_vb.extend (frm)
 
-			create l.make_with_text (interface_names.l_apply_changes_to_view_named)
+			create l.make_with_text ("Apply changes to view named: ")
 			hb_view.extend (l)
 			create view_selector.make_default
 			hb_view.extend (view_selector)
 			vb_view.extend (create {EV_CELL})
 			vb_view.extend (hb_view)
-			create l.make_with_text (interface_names.l_select_another_view)
+			create l.make_with_text ("Select another view if you want to save current placement.")
 			vb_view.extend (l)
 			vb_view.extend (create {EV_CELL})
 			frm3.extend (vb_view)

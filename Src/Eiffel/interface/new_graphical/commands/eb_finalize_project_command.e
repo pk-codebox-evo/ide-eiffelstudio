@@ -13,7 +13,7 @@ inherit
 		redefine
 			c_code_directory, launch_c_compilation,
 			confirm_and_compile,
-			menu_name, pixmap, pixel_buffer, tooltip,
+			menu_name, pixmap, tooltip,
 			finalization_error, perform_compilation,
 			name,
 			make, description, tooltext
@@ -26,12 +26,10 @@ feature {NONE} -- Initialization
 
 	make is
 			-- Initialize default values.
-		local
-			l_shortcut: SHORTCUT_PREFERENCE
 		do
-			l_shortcut := preferences.misc_shortcut_data.shortcuts.item ("finalize")
-			create accelerator.make_with_key_combination (l_shortcut.key, l_shortcut.is_ctrl, l_shortcut.is_alt, l_shortcut.is_shift)
-			set_referred_shortcut (l_shortcut)
+			create accelerator.make_with_key_combination (
+				create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.Key_f7),
+				True, False, True)
 			accelerator.actions.extend (agent execute)
 		end
 
@@ -86,7 +84,7 @@ feature {NONE} -- Implementation
 			-- Ask for confirmation if the assertion are to be kept, and
 			-- finalize thereafter.
 		local
-			cd: EB_DISCARDABLE_CONFIRMATION_DIALOG
+			cd: STANDARD_DISCARDABLE_CONFIRMATION_DIALOG
 		do
 			create cd.make_initialized (
 				3, preferences.dialog_data.confirm_finalize_string,
@@ -123,13 +121,13 @@ feature {NONE} -- Implementation
 
 feature {NONE} -- Implementation
 
-	description: STRING_GENERAL is
+	description: STRING is
 			-- Description for the command.
 		do
 			Result := Interface_names.f_Finalize
 		end
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it appears in the menu (with & symbol).
 		do
 			Result := Interface_names.m_Finalize_new
@@ -141,19 +139,13 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.project_finalize_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command
-		do
-			Result := pixmaps.icon_pixmaps.project_finalize_icon_buffer
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.f_Finalize
 		end
 
-	tooltext: STRING_GENERAL is
+	tooltext: STRING is
 			-- Text for the toolbar button.
 		do
 			Result := Interface_names.b_Finalize

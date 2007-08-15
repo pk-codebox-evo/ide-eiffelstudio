@@ -68,6 +68,8 @@ feature {NONE} -- Access
 		do
 			Precursor {EB_FAVORITES_FOLDER} (a_name, a_parent)
 			get_class_i
+
+			item_list_make (5)
 		end
 
 	make_from_class_stone (a_stone: CLASSI_STONE; a_parent: EB_FAVORITES_ITEM_LIST) is
@@ -163,12 +165,10 @@ feature {NONE} -- Implementation
 		local
 			loc_list: LIST [CLASS_I]
 		do
-			if eiffel_universe.target /= Void then
-				loc_list := Eiffel_universe.classes_with_name (name)
-			end
+			loc_list := Eiffel_universe.classes_with_name (name)
 
 				-- Return the first element of the list.
-			if loc_list /= Void and then not loc_list.is_empty then
+			if not loc_list.is_empty then
 				associated_class_i := loc_list.first
 			end
 		end

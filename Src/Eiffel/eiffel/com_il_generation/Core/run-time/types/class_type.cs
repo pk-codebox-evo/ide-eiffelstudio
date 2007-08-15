@@ -40,7 +40,6 @@ indexing
 	
 using System;
 using EiffelSoftware.Runtime.CA;
-using EiffelSoftware.Runtime.Enums;
 
 namespace EiffelSoftware.Runtime.Types {
 
@@ -143,29 +142,7 @@ feature -- Status Report
 		// Name of object's generating type who has Current as an EIFFEL_DERIVATION
 		// (type of which it is a direct instance)
 	{
-		String Result;
-		Object [] l_ca;
-
-		Result = class_name ();
-
-		l_ca = Type.GetTypeFromHandle (type).GetCustomAttributes
-			(typeof (EIFFEL_CLASS_TYPE_MARK_ATTRIBUTE), false);
-
-		if (l_ca != null && l_ca.Length == 1) {
-			switch (((EIFFEL_CLASS_TYPE_MARK_ATTRIBUTE) l_ca [0]).mark)
-			{
-				case CLASS_TYPE_MARK_ENUM.expanded_mark:
-					Result = "expanded " + Result;
-					break;
-				case CLASS_TYPE_MARK_ENUM.reference_mark:
-					Result = "reference " + Result;
-					break;
-				case CLASS_TYPE_MARK_ENUM.separate_mark:
-					Result = "separate " + Result;
-					break;
-			}
-		}
-		return Result;
+		return class_name ();
 	}
 
 /*

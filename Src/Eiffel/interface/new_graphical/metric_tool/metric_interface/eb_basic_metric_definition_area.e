@@ -18,7 +18,9 @@ inherit
 			copy,
 			default_create
 		redefine
-			metric
+			metric,
+			expression_generator,
+			is_basic_metric_editor
 		end
 
 	EB_CONSTANTS
@@ -61,30 +63,18 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_tool: like metric_tool; a_panel: like metric_panel; a_mode: INTEGER; a_unit: QL_METRIC_UNIT) is
+	make (a_tool: like metric_tool; a_panel: like metric_panel) is
 			-- Initialize `metric' with `a_metric' mode with `a_mode' and `unit' with `a_unit'.
 		require
 			a_tool_attached: a_tool /= Void
-			a_mode_valid: is_mode_valid (a_mode)
-			a_unit_attached: a_unit /= Void
 		do
+			create expression_generator.make
 			create change_actions_internal
 			create change_actions
 			set_metric_tool (a_tool)
 			set_metric_panel (a_panel)
 			default_create
-
-			set_mode (a_mode)
-			set_unit (a_unit)
 			setup_editor
-
-			append_drop_actions (
-				<<criterion_definition_empty_area,
-				  lbl_empty_area,
-				  expression_lbl_empty_area
-				>>,
-				metric_tool
-			)
 		ensure
 			change_actions_attached: change_actions_internal /= Void
 			metric_tool_set: metric_tool = a_tool
@@ -104,8 +94,6 @@ feature {NONE} -- Initialization
 			create combination_grid.make
 			combination_grid_container.extend (combination_grid)
 			combination_grid.change_actions.extend (agent on_change)
-			combination_grid.set_configurable_target_menu_mode
-			combination_grid.set_configurable_target_menu_handler (agent (metric_tool.develop_window.menus.context_menu_factory).standard_compiler_item_menu)
 
 				-- Setup combination toolbar
 			remove_criterion_btn.remove_text
@@ -131,34 +119,41 @@ feature {NONE} -- Initialization
 			expression_lbl.set_text (metric_names.t_expression)
 			create l_text
 			expression_text.set_background_color (l_text.background_color)
-
-				-- Register key shortcuts.
+			combination_grid.add_key_action (agent on_move (True), move_up_key_index)
+			combination_grid.add_key_action (agent on_move (False), move_down_key_index)
+			combination_grid.add_key_action (agent on_remove_criterion, del_key_index)
+			combination_grid.add_key_action (agent on_indent (True), and_criterion_key_index)
+			combination_grid.add_key_action (agent on_indent (False), or_criterion_key_index)
 			create del_key_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_delete), False, False, False)
 			create move_row_up_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_numpad_subtract), True, False, False)
 			create move_row_down_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_numpad_add), True, False, False)
 			create and_indent_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_numpad_6), True, False, False)
 			create or_indent_shortcut.make_with_key_combination (create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_numpad_3), True, False, False)
-			combination_grid.register_shortcut (move_row_up_shortcut, agent on_move (True))
-			combination_grid.register_shortcut (move_row_down_shortcut, agent on_move (False))
-			combination_grid.register_shortcut (del_key_shortcut, agent on_remove_criterion)
-			combination_grid.register_shortcut (and_indent_shortcut, agent on_indent (True))
-			combination_grid.register_shortcut (or_indent_shortcut, agent on_indent (False))
-			combination_grid.item_select_actions.extend (agent on_item_selected)
-			combination_grid.item_deselect_actions.extend (agent on_item_deselected)
-			indent_and_btn.disable_sensitive
-			indent_or_btn.disable_sensitive
-			remove_criterion_btn.disable_sensitive
-			up_btn.disable_sensitive
-			down_btn.disable_sensitive
-
-			up_btn.set_tooltip (metric_names.f_move_row_up.as_string_32 + " (" + move_row_up_shortcut.out + ")")
-			down_btn.set_tooltip (metric_names.f_move_row_down.as_string_32 + " (" + move_row_down_shortcut.out + ")")
-			remove_criterion_btn.set_tooltip (metric_names.f_del_row.as_string_32 + " (" + del_key_shortcut.out + ")")
-			indent_and_btn.set_tooltip (metric_names.f_indent_with_and_criterion.as_string_32 + " (" + and_indent_shortcut.out + ")")
-			indent_or_btn.set_tooltip (metric_names.f_indent_with_or_criterion.as_string_32 + " (" + or_indent_shortcut.out + ")")
+			combination_grid.add_key_shortcut (del_key_index, del_key_shortcut)
+			combination_grid.add_key_shortcut (move_up_key_index, move_row_up_shortcut)
+			combination_grid.add_key_shortcut (move_down_key_index, move_row_down_shortcut)
+			combination_grid.add_key_shortcut (and_criterion_key_index, and_indent_shortcut)
+			combination_grid.add_key_shortcut (or_criterion_key_index, or_indent_shortcut)
+			up_btn.set_tooltip (metric_names.f_move_row_up + " (" + move_row_up_shortcut.out + ")")
+			down_btn.set_tooltip (metric_names.f_move_row_down + " (" + move_row_down_shortcut.out + ")")
+			remove_criterion_btn.set_tooltip (metric_names.f_del_row + " (" + del_key_shortcut.out + ")")
+			indent_and_btn.set_tooltip (metric_names.f_indent_with_and_criterion + " (" + and_indent_shortcut.out + ")")
+			indent_or_btn.set_tooltip (metric_names.f_indent_with_or_criterion + " (" + or_indent_shortcut.out + ")")
 
 			criterion_lbl.set_text (metric_names.t_metric_criterion_definition)
 			attach_non_editable_warning_to_text (metric_names.t_text_not_editable, expression_text, metric_tool_window)
+
+				-- Delete following in docking EiffelStudio.
+			criterion_definition_empty_area.drop_actions.extend (agent metric_panel.drop_cluster)
+			criterion_definition_empty_area.drop_actions.extend (agent metric_panel.drop_class)
+			criterion_definition_empty_area.drop_actions.extend (agent metric_panel.drop_feature)
+			lbl_empty_area.drop_actions.extend (agent metric_panel.drop_cluster)
+			lbl_empty_area.drop_actions.extend (agent metric_panel.drop_class)
+			lbl_empty_area.drop_actions.extend (agent metric_panel.drop_feature)
+			expression_lbl_empty_area.drop_actions.extend (agent metric_panel.drop_cluster)
+			expression_lbl_empty_area.drop_actions.extend (agent metric_panel.drop_class)
+			expression_lbl_empty_area.drop_actions.extend (agent metric_panel.drop_feature)
+
 		ensure then
 			del_key_shortcut_attached: del_key_shortcut /= Void
 			ctrl_up_shortcut_attached: move_row_up_shortcut /= Void
@@ -167,13 +162,24 @@ feature {NONE} -- Initialization
 			alt_right_shortcut_attached: or_indent_shortcut /= Void
 		end
 
+feature -- Status report
+
+	is_basic_metric_editor: BOOLEAN is True
+			-- Is current a basic metric editor?
+
 feature -- Setting
 
 	set_mode (a_mode: INTEGER) is
 			-- Set `mode' with `a_mode'.
 		do
 			mode := a_mode
-			synchronize_button_status
+			if mode = readonly_mode then
+				remove_criterion_btn.disable_sensitive
+				remove_all_criterion_btn.disable_sensitive
+			else
+				remove_criterion_btn.enable_sensitive
+				remove_all_criterion_btn.enable_sensitive
+			end
 		end
 
 	load_metric_definition (a_metric: like metric) is
@@ -228,12 +234,37 @@ feature -- Setting
 			combination_toolbar_area.disable_sensitive
 		end
 
+	attach_metric_selector (a_metric_selector: like metric_selector) is
+			-- Set `metric_selector' with `a_metric_selector'.
+		do
+			metric_selector := a_metric_selector
+		end
+
+	detach_metric_selector is
+			-- Detach `metric_selector'.
+		do
+			metric_selector := Void
+		end
+
+	set_stone (a_stone: STONE) is
+			-- Notify that `a_stone' is dropped on Current.
+		local
+			l_selected_items: LIST [EV_GRID_ITEM]
+		do
+			if mode /= readonly_mode then
+				l_selected_items := combination_grid.selected_items
+				if not l_selected_items.is_empty then
+					combination_grid.on_item_drop (l_selected_items.first, a_stone)
+				end
+			end
+		end
+
 feature -- Access
 
 	metric: EB_METRIC_BASIC is
 			-- Metric in current editor
 		do
-			create Result.make (name_area.name, unit)
+			create Result.make (name_area.name, unit, uuid)
 			Result.set_description (name_area.description)
 			Result.set_criteria (combination_grid.criterion)
 		end
@@ -333,95 +364,37 @@ feature{NONE} -- Actions
 			l_criterion: EB_METRIC_CRITERION
 		do
 			l_criterion := combination_grid.criterion
-			rich_text_output.wipe_out
-			if l_criterion /= Void then
-				expression_generator.generate_output (l_criterion)
-			end
-			rich_text_output.load_expression (expression_text)
+			expression_generator.set_criterion (l_criterion)
+			expression_generator.generate_expression
+			expression_generator.load_expression (expression_text)
 			change_actions_internal.call ([l_criterion])
 			on_definition_change
 		end
 
-	on_add_domain_item (a_domain_item_retrieval_agent: FUNCTION [ANY, TUPLE, EB_METRIC_DOMAIN_ITEM]) is
-			-- Action to be performed to add domain item retrieved from `a_domain_item_retrieval_agent'
-			-- into current selected domain grid item
-		require
-			a_domain_item_retrieval_agent_attached: a_domain_item_retrieval_agent /= Void
-		local
-			l_domain: EB_METRIC_DOMAIN
-		do
-			if current_selected_grid_domain_item /= Void and then current_selected_grid_domain_item.is_parented then
-				create l_domain.make
-				l_domain.extend (a_domain_item_retrieval_agent.item (Void))
-				current_selected_grid_domain_item.set_domain (l_domain)
-				on_change
-			end
-		end
-
-	on_clear_defined_domain is
-			-- Action to be performed to clear currently defined domain in `current_selected_grid_domain_item'.
-		local
-			l_domain: EB_METRIC_DOMAIN
-		do
-			if current_selected_grid_domain_item /= Void and then current_selected_grid_domain_item.is_parented then
-				create l_domain.make
-				current_selected_grid_domain_item.set_domain (l_domain)
-				on_change
-			end
-		end
-
-	on_item_selected (a_item: EV_GRID_ITEM) is
-			-- Action to be performed when `a_item' is selected.
-		do
-			synchronize_button_status
-		end
-
-	on_item_deselected (a_item: EV_GRID_ITEM) is
-			-- Action to be performed when `a_item' is deselected.
-		do
-			synchronize_button_status
-		end
-
-feature{NONE} -- Implementation
+feature{NONE} -- Implementation/Access
 
 	combination_grid: EB_METRIC_CRITERION_GRID
 			-- Criterion combination grid
 
-	current_selected_grid_domain_item: EB_METRIC_GRID_DOMAIN_ITEM [ANY]
-			-- Current selected grid domain item
-
-	synchronize_button_status is
-			-- Synchronize button status
-		local
-			l_criterion_row: EB_METRIC_CRITERION_ROW
-			l_items: LIST [EV_GRID_ITEM]
-			l_item: EV_GRID_ITEM
-			l_item_selected: BOOLEAN
-		do
-			if mode /= readonly_mode then
-				l_items := combination_grid.selected_items
-				if l_items.count = 1 then
-					l_item := l_items.first
-					l_criterion_row ?= l_item.row.data
-					l_item_selected := l_criterion_row /= Void and then not l_criterion_row.is_empty_row
-				end
-			end
-			if l_item_selected then
-				indent_and_btn.enable_sensitive
-				indent_or_btn.enable_sensitive
-				remove_criterion_btn.enable_sensitive
-				up_btn.enable_sensitive
-				down_btn.enable_sensitive
-			else
-				indent_and_btn.disable_sensitive
-				indent_or_btn.disable_sensitive
-				remove_criterion_btn.disable_sensitive
-				up_btn.disable_sensitive
-				down_btn.disable_sensitive
-			end
-		end
+	expression_generator: EB_METRIC_CRITERION_EXPRESSION_GENERATOR
+			-- Criterion expression generator
 
 feature -- Key shortcuts
+
+	del_key_index: INTEGER is 1
+			-- Key index to delete a criterion
+
+	move_up_key_index: INTEGER is 2
+			-- Key index for move a criterion up
+
+	move_down_key_index: INTEGER is 3
+			-- Key index for move a criterion down
+
+	and_criterion_key_index: INTEGER is 4
+			-- Key index for and criterion
+
+	or_criterion_key_index: INTEGER is 5
+			-- Key index for or criterion
 
 	del_key_shortcut: ES_KEY_SHORTCUT
 			-- Del key
@@ -479,6 +452,7 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end -- class EB_BASIC_METRIC_DEFINITION_AREA
 

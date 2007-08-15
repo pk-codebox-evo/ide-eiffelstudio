@@ -329,4 +329,8 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+
+
+
+end -- class WEL_MDI_CREATE_STRUCT
+

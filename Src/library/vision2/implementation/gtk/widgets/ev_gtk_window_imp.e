@@ -12,16 +12,26 @@ deferred class
 inherit
 	EV_GTK_WIDGET_IMP
 		redefine
+			width,
+			height,
 			show,
 			screen_x,
-			screen_y,
-			x_position,
-			y_position,
-			width,
-			height
+			screen_y
 		end
 
-	EV_GTK_KEY_CONVERSION
+feature {NONE} -- Agent functions.
+
+	key_event_translate_agent: FUNCTION [EV_GTK_CALLBACK_MARSHAL, TUPLE [INTEGER, POINTER], TUPLE] is
+			-- Translation agent used for key events
+		once
+			Result := agent (App_implementation.gtk_marshal).key_event_translate
+		end
+
+	set_focus_event_translate_agent: FUNCTION [EV_GTK_CALLBACK_MARSHAL, TUPLE [INTEGER, POINTER], TUPLE] is
+			-- Translation agent used for set-focus events
+		once
+			Result := agent (App_implementation.gtk_marshal).set_focus_event_translate
+		end
 
 feature {NONE} -- Implementation
 
@@ -31,19 +41,41 @@ feature {NONE} -- Implementation
 			-- Return Void
 		end
 
+	width: INTEGER is
+			-- Horizontal size measured in pixels.
+		do
+			if default_width /= -1 then
+				Result := default_width
+			else
+				Result := Precursor
+			end
+		end
+
+	height: INTEGER is
+			-- Vertical size measured in pixels.
+		do
+			if default_height /= -1 then
+				Result := default_height
+			else
+				Result := Precursor
+			end
+		end
+
 	set_blocking_window (a_window: EV_WINDOW) is
 			-- Set as transient for `a_window'.
+		local
+			win_imp: EV_WINDOW_IMP
+			l_window: POINTER
 		do
 			if not is_destroyed then
 				if a_window /= Void then
-					internal_blocking_window ?= a_window.implementation
-					internal_blocking_window.add_transient_child (Current)
+					win_imp ?= a_window.implementation
+					l_window := win_imp.c_object
+					internal_blocking_window := win_imp
 				else
-					if internal_blocking_window /= Void then
-						internal_blocking_window.remove_transient_child (Current)
-						internal_blocking_window := Void
-					end
+					internal_blocking_window := Void
 				end
+				{EV_GTK_EXTERNALS}.gtk_window_set_transient_for (c_object, l_window)
 			else
 				internal_blocking_window := Void
 			end
@@ -90,41 +122,31 @@ feature {NONE} -- Implementation
 		local
 			l_width, l_height: INTEGER
 		do
-				-- Set constraints so that resize does not break existing minimum sizing.
-			l_width := a_width.max (minimum_width)
-			l_height := a_height.max (minimum_height)
-			{EV_GTK_EXTERNALS}.gtk_window_resize (c_object, l_width, l_height)
+			default_width := a_width
+			default_height := a_height
+				-- Both resizes are needed otherwise the original position gets reset on show.
+
+			l_width := minimum_width.max (a_width)
+			l_height := minimum_height.max (a_height)
+
+			{EV_GTK_EXTERNALS}.gdk_window_resize ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object), l_width, l_height)
 			{EV_GTK_EXTERNALS}.gtk_window_set_default_size (c_object, l_width, l_height)
-
-				-- Set configure_event_pending to True so that dimensions are updated immediately.
-			configure_event_pending := True
-
-				-- If user cannot resize window then we recall `forbid_resize' which will update the dimensions.
-			if is_displayed and then not user_can_resize then
-				forbid_resize
-			end
 		end
 
-	width: INTEGER
-			-- Width of `Current'.
+	default_width, default_height: INTEGER
+			-- Default width and height for the window if set, -1 otherwise.
+			-- (see. `gtk_window_set_default_size' for more information)
+
+	x_position: INTEGER is
+			-- X coordinate of `Current'
 		do
-			if configure_event_pending then
-				{EV_GTK_EXTERNALS}.gtk_window_get_default_size (c_object, $Result, default_pointer)
-				Result := Result.max (minimum_width)
-			else
-				Result := Precursor
-			end
+			Result := screen_x
 		end
 
-	height: INTEGER
-			-- Height of `Current'.
+	y_position: INTEGER is
+			-- Y coordinate of `Current'
 		do
-			if configure_event_pending then
-				{EV_GTK_EXTERNALS}.gtk_window_get_default_size (c_object, default_pointer, $Result)
-				Result := Result.max (minimum_height)
-			else
-				Result := Precursor
-			end
+			Result := screen_y
 		end
 
 	set_x_position (a_x: INTEGER) is
@@ -144,12 +166,13 @@ feature {NONE} -- Implementation
 			-- Set vertical offset to parent to `a_y'.
 		do
 			{EV_GTK_EXTERNALS}.gtk_window_move (c_object, a_x, a_y)
+			positioned_by_user := True
 		end
 
-	configure_event_pending: BOOLEAN
-		-- Has `Current' experienced a configure event?
+	positioned_by_user: BOOLEAN
+		-- Has `Current' been positioned by the user?
 
-	x_position, screen_x: INTEGER is
+	screen_x: INTEGER is
 			-- Horizontal position of the window on screen,
 		local
 			temp_y: INTEGER
@@ -157,7 +180,7 @@ feature {NONE} -- Implementation
 			{EV_GTK_EXTERNALS}.gtk_window_get_position (c_object, $Result, $temp_y)
 		end
 
-	y_position, screen_y: INTEGER is
+	screen_y: INTEGER is
 			-- Vertical position of the window on screen,
 		local
 			temp_x: INTEGER
@@ -195,8 +218,6 @@ feature {NONE} -- Implementation
 				is_modal := False
 				set_blocking_window (Void)
 				{EV_GTK_EXTERNALS}.gtk_widget_hide (c_object)
-					-- Force an immediate hide so that the event loop is not relied upon to unmap `Current'.
-				{EV_GTK_EXTERNALS}.gdk_window_hide ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (c_object))
 			end
 		end
 
@@ -223,8 +244,8 @@ feature {NONE} -- Implementation
 						-- This is a hack in case parent window was minimized and restored
 						-- by the modal dialog, when closed the window managed would restore the
 						-- focus to the previously focused window which may or may not be `l_window_imp',
-						-- this leads to odd behavior when closing the modal dialog so we always raise the window.
-					{EV_GTK_EXTERNALS}.gdk_window_raise ({EV_GTK_EXTERNALS}.gtk_widget_struct_window (l_window_imp.c_object))
+						-- this leads to odd behavior when closing the modal dialog so we always present the window.
+					{EV_GTK_EXTERNALS}.gtk_window_present (l_window_imp.c_object)
 				end
 			end
 		end
@@ -250,7 +271,7 @@ feature -- Basic operations
 			until
 				blocking_condition
 			loop
-				l_app_imp.process_event_queue (True)
+				l_app_imp.event_loop_iteration (True)
 			end
 		end
 
@@ -260,137 +281,7 @@ feature -- Basic operations
 			Result := is_destroyed or else not is_show_requested or else app_implementation.is_destroyed
 		end
 
-feature {EV_INTERMEDIARY_ROUTINES, EV_APPLICATION_IMP}
-
-	user_can_resize: BOOLEAN is
-			-- Can `Current' be resized by the user?
-		deferred
-		end
-
-	on_key_event (a_key: EV_KEY; a_key_string: STRING_32; a_key_press: BOOLEAN) is
-			-- `a_key' has either been pressed or released
-		deferred
-		end
-
-	process_key_event (a_key_event: POINTER)
-			-- Translation routine used for key events
-		local
-			keyval: NATURAL_32
-			a_key_string: STRING_32
-			a_key: EV_KEY
-			a_key_press: BOOLEAN
-			l_app_imp: like app_implementation
-			l_accel_list: EV_ACCELERATOR_LIST
-			l_window_imp: EV_WINDOW_IMP
-			a_focus_widget: EV_WIDGET_IMP
-			l_block_events: BOOLEAN
-			l_tab_controlable: EV_TAB_CONTROLABLE_I
-			l_char: CHARACTER_32
-			l_any: ANY
-			l_accel: EV_ACCELERATOR
-			l_accel_imp: EV_ACCELERATOR_IMP
-			l_unicode_value: NATURAL_32
-		do
-			l_app_imp := app_implementation
-				-- Perform translation on key values from gdk.
-			keyval := {EV_GTK_EXTERNALS}.gdk_event_key_struct_keyval (a_key_event)
-			if keyval > 0 and then valid_gtk_code (keyval) then
-				create a_key.make_with_code (key_code_from_gtk (keyval))
-			end
-			if {EV_GTK_EXTERNALS}.gdk_event_key_struct_type (a_key_event) = {EV_GTK_EXTERNALS}.gdk_key_press_enum then
-				l_window_imp ?= Current
-					-- Call accelerators if present.
-				if a_key /= Void and then l_window_imp /= Void then
-					l_accel_list := l_window_imp.accelerators_internal
-					if l_accel_list /= Void and then not l_accel_list.is_empty then
-						l_accel := l_accel_list @ 1
-						if l_accel /= Void then
-							l_accel_imp ?= l_accel.implementation
-								-- We retrieve an accelerator implementation object to generate an accelerator id for hash table lookup.
-							l_accel := l_window_imp.accel_list.item (l_accel_imp.generate_accel_id (a_key, l_app_imp.ctrl_pressed, l_app_imp.alt_pressed, l_app_imp.shift_pressed))
-							if l_accel /= Void then
-								l_app_imp.do_once_on_idle (agent (l_accel.actions).call (Void))
-							end
-						end
-					end
-				end
-				a_key_press := True
-				if keyval > 0 then
-					l_unicode_value := {EV_GTK_EXTERNALS}.gdk_keyval_to_unicode (keyval)
-					if l_unicode_value > 0 then
-						create a_key_string.make (0)
-						a_key_string.append_character (l_unicode_value.to_character_32)
-					end
-				end
-				if a_key_string /= Void and then a_key_string.valid_index (1) then
-					l_char := a_key_string @ 1
-					if l_char.is_character_8 then
-						if not l_char.to_character_8.is_printable and then l_char.code <= 127 then
-							a_key_string := Void
-								-- Non displayable characters
-						end
-					end
-				end
-				if a_key /= Void and then a_key.out.count /= 1 and then not a_key.is_numpad then
-					inspect a_key.code
-					when {EV_KEY_CONSTANTS}.key_space then
-						a_key_string := once " "
-					when {EV_KEY_CONSTANTS}.key_enter then
-						a_key_string := once "%N"
-					when {EV_KEY_CONSTANTS}.key_tab then
-						a_key_string := once "%T"
-					else
-						a_key_string := Void
-					end
-				end
-			end
-
-			a_focus_widget ?= l_app_imp.eif_object_from_gtk_object ({EV_GTK_EXTERNALS}.gtk_window_struct_focus_widget (c_object))
-			l_any := Current
-			if a_focus_widget = Void then
-					-- If the focus widget is not available then set it to the current window.
-				a_focus_widget ?= l_any
-			end
-			if a_focus_widget /= Void and then a_focus_widget.is_sensitive and then a_focus_widget.has_focus then
-				if a_key /= Void then
-					if a_focus_widget.default_key_processing_handler /= Void then
-						l_block_events := not a_focus_widget.default_key_processing_handler.item ([a_key])
-					end
-					if not l_block_events then
-						l_tab_controlable ?= a_focus_widget
-						if l_tab_controlable /= Void and then not l_tab_controlable.is_tabable_from then
-							l_block_events := a_key.is_arrow or else a_key.code = {EV_KEY_CONSTANTS}.key_tab
-						end
-					end
-					if not l_block_events then
-						{EV_GTK_EXTERNALS}.gtk_main_do_event (a_key_event)
-					end
-				end
-				if l_app_imp.pick_and_drop_source /= Void and then a_key_press and then a_key /= Void and then (a_key.code = {EV_KEY_CONSTANTS}.key_escape or a_key.code = {EV_KEY_CONSTANTS}.key_alt) then
-					l_app_imp.pick_and_drop_source.end_transport (0, 0, 0, 0, 0, 0, 0, 0)
-				else
-					if a_key_press then
-						if a_key /= Void and then l_app_imp.key_press_actions_internal /= Void then
-							l_app_imp.key_press_actions_internal.call ([a_focus_widget.interface, a_key])
-						end
-						if a_key_string /= Void and then l_app_imp.key_press_string_actions_internal /= Void then
-							l_app_imp.key_press_string_actions_internal.call ([a_focus_widget.interface, a_key_string])
-						end
-					else
-						if a_key /= Void and then l_app_imp.key_release_actions_internal /= Void then
-							l_app_imp.key_release_actions_internal.call ([a_focus_widget.interface, a_key])
-						end
-					end
-					if a_focus_widget /= l_any then
-						on_key_event (a_key, a_key_string, a_key_press)
-					end
-					a_focus_widget.on_key_event (a_key, a_key_string, a_key_press)
-				end
-			else
-					-- Execute the gdk event as normal.
-				{EV_GTK_EXTERNALS}.gtk_main_do_event (a_key_event)
-			end
-		end
+feature {EV_INTERMEDIARY_ROUTINES}
 
 	call_close_request_actions is
 			-- Call the close request actions.
@@ -401,19 +292,8 @@ feature {EV_ANY_I} -- Implementation
 
 	forbid_resize is
 			-- Forbid the resize of the window.
-		local
-			l_geometry: POINTER
-			l_width, l_height: INTEGER
 		do
-			l_geometry := {EV_GTK_EXTERNALS}.c_gdk_geometry_struct_allocate
-			l_width := width
-			l_height := height
-			{EV_GTK_EXTERNALS}.set_gdk_geometry_struct_max_width (l_geometry, l_width)
-			{EV_GTK_EXTERNALS}.set_gdk_geometry_struct_max_height (l_geometry, l_height)
-			{EV_GTK_EXTERNALS}.set_gdk_geometry_struct_min_width (l_geometry, l_width)
-			{EV_GTK_EXTERNALS}.set_gdk_geometry_struct_min_height (l_geometry, l_height)
-			{EV_GTK_EXTERNALS}.gtk_window_set_geometry_hints (c_object, NULL, l_geometry, {EV_GTK_EXTERNALS}.Gdk_hint_max_size_enum | {EV_GTK_EXTERNALS}.gdk_hint_min_size_enum)
-			l_geometry.memory_free
+			{EV_GTK_EXTERNALS}.gtk_window_set_policy (c_object, 0, 0, 0)
 		end
 
 indexing

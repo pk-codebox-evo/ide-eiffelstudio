@@ -38,13 +38,6 @@ inherit
 			default_create
 		end
 
-	SHARED_BENCH_NAMES
-		export
-			{NONE} all
-		undefine
-			default_create
-		end
-
 feature -- Access
 
 	world: EIFFEL_WORLD
@@ -96,10 +89,10 @@ feature -- Access
 							put_cluster_not_exist_warning (group_id)
 						end
 					else
-						xml_routines.display_error_message (warnings.w_class_attribute_expected (class_name, group_id))
+						xml_routines.display_error_message ("class " + class_name + " " + group_id_string + " attribute expected")
 					end
 				else
-					xml_routines.display_error_message (warnings.w_class_attributes_expected (name_string, class_id_string))
+					xml_routines.display_error_message ("class? " + name_string + ", " + class_id_string + " attributes expected")
 				end
 			elseif node_name.is_equal (xml_cluster_figure_node_name) then
 				group_id := node.attribute_by_name (group_id_string).value
@@ -112,7 +105,7 @@ feature -- Access
 						put_cluster_not_exist_warning (group_id)
 					end
 				else
-					xml_routines.display_error_message (warnings.w_cluster_attribute_expected (group_id_string, cluster_id_string))
+					xml_routines.display_error_message ("cluster? " + group_id_string + ", " + cluster_id_string + " attribute expected")
 				end
 			elseif node_name.is_equal (xml_client_supplier_figure_node_name) or else node_name.is_equal (xml_inheritance_figure_node_name) then
 				source_name := node.attribute_by_name (source_string).value
@@ -131,10 +124,10 @@ feature -- Access
 							end
 						end
 					else
-						xml_routines.display_error_message (warnings.w_target_name_attribute_expected)
+						xml_routines.display_error_message ("TARGET name attribute expected")
 					end
 				else
-					xml_routines.display_error_message (warnings.w_source_name_attribute_expected)
+					xml_routines.display_error_message ("SOURCE name attribute expected")
 				end
 			end
 		end
@@ -166,14 +159,12 @@ feature {NONE} -- Implementation
 		local
 			l_output_manager: EB_OUTPUT_MANAGER
 		do
-			if world /= Void and then world.context_editor /= Void then
-				l_output_manager := world.context_editor.develop_window.output_manager
-				l_output_manager.add_indexing_string (names.l_Loading_diagram)
-				l_output_manager.add_new_line
-				l_output_manager.add_indent
-				l_output_manager.add_string (names.l_class_is_not_in_anymore (class_name, group_id))
-				l_output_manager.add_new_line
-			end
+			l_output_manager := world.context_editor.development_window.output_manager
+			l_output_manager.add_indexing_string ("Loading diagram:")
+			l_output_manager.add_new_line
+			l_output_manager.add_indent
+			l_output_manager.add_string ("Class " + class_name + " is not in " + group_id + " anymore.")
+			l_output_manager.add_new_line
 		end
 
 	put_cluster_not_exist_warning (cluster_name: STRING) is
@@ -181,14 +172,12 @@ feature {NONE} -- Implementation
 		local
 			l_output_manager: EB_OUTPUT_MANAGER
 		do
-			if world /= Void and then world.context_editor /= Void then
-				l_output_manager := world.context_editor.develop_window.output_manager
-				l_output_manager.add_indexing_string (names.l_Loading_diagram)
-				l_output_manager.add_new_line
-				l_output_manager.add_indent
-				l_output_manager.add_string (names.l_cluster_is_not_in_the_system_anymore (cluster_name))
-				l_output_manager.add_new_line
-			end
+			l_output_manager := world.context_editor.development_window.output_manager
+			l_output_manager.add_indexing_string ("Loading diagram:")
+			l_output_manager.add_new_line
+			l_output_manager.add_indent
+			l_output_manager.add_string ("Cluster " + cluster_name + " is not in the system anymore.")
+			l_output_manager.add_new_line
 		end
 
 indexing

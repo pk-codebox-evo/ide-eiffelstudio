@@ -12,34 +12,13 @@ inherit
 		redefine
 			is_equal
 		end
-
 	SHARED_WORKBENCH
 		redefine
 			is_equal
 		end
-
 	SHARED_TEXT_ITEMS
 		redefine
 			is_equal
-		end
-
-create
-	make
-
-feature {NONE} -- Initialization
-
-	make (c: like clients; i: like written_in) is
-			-- Initialize current with `c' and `i'.
-		require
-			c_not_void: c /= Void
-			i_positive: i > 0
-		do
-			c.compare_objects
-			clients := c
-			written_in := i
-		ensure
-			clients_set: clients = c
-			written_in_set: written_in = i
 		end
 
 feature -- Access
@@ -49,6 +28,29 @@ feature -- Access
 
 	clients: LIST [STRING]
 			-- Client list
+
+feature -- Settings
+
+	set_written_in (i: INTEGER) is
+			-- Assign `i' to `written_in'.
+		require
+			valid_i: i > 0
+		do
+			written_in := i
+		ensure
+			written_in_set: written_in = i
+		end
+
+	set_clients (c: like clients) is
+			-- Assign `c' to `clients'.
+		require
+			c_not_void: c /= Void
+		do
+			c.compare_objects
+			clients := c
+		ensure
+			clients_set: clients = c
+		end
 
 feature -- Comparison
 
@@ -200,6 +202,7 @@ feature -- formatter
 			end
 		end
 
+
 	format (ctxt: TEXT_FORMATTER_DECORATOR) is
 		local
 			temp: STRING
@@ -227,11 +230,6 @@ feature -- formatter
 				end
 			end
 		end
-
-invariant
-	clients_not_void: clients /= Void
-	clients_compare_objects: clients.object_comparison
-	written_in_positive: written_in > 0
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

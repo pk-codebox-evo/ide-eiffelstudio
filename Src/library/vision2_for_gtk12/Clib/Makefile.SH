@@ -18,7 +18,7 @@ SHELL = /bin/sh
 AR = ar rc
 CC = $cc
 CTAGS = ctags
-INCLUDE = -I$rt_include
+INCLUDE = -I\$(ISE_EIFFEL)/studio/spec/\$(ISE_PLATFORM)/include
 CFLAGS = $optimize $ccflags $large -g `gtk-config --cflags` \$(INCLUDE)
 MTCFLAGS = $optimize $mtccflags $large -g `gtk-config --cflags` \$(INCLUDE)
 SHAREDLINK = $sharedlink
@@ -30,7 +30,6 @@ RANLIB = $ranlib
 RM = $rm -f
 MV = $mv
 MKDIR = $mkdir -p
-PLATFORM = $ISE_PLATFORM
 
 ########################################################################
 # New suffixes and associated building rules -- edit with care
@@ -45,8 +44,8 @@ OBJECTS = gtk_eiffel.o
 ALL_OBJECTS = $(OBJECTS) $(MT_OBJECTS)
 
 all: $(ALL_OBJECTS)
-	$(MKDIR) ../../../spec/$(PLATFORM)/lib
-	$(MV) $? ../../../spec/$(PLATFORM)/lib
+	$(MKDIR) ../../../spec/$(ISE_PLATFORM)/lib
+	$(MV) $? ../../../spec/$(ISE_PLATFORM)/lib
 	$(MAKE) clobber
 
 MTgtk_eiffel.o: gtk_eiffel.c

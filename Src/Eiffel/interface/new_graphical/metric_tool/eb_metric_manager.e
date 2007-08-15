@@ -10,6 +10,8 @@ class
 	EB_METRIC_MANAGER
 
 inherit
+	QL_OBSERVABLE
+
 	QL_SHARED_UNIT
 
 	SHARED_WORKBENCH
@@ -21,16 +23,6 @@ inherit
 			{NONE} all
 		end
 
-	SHARED_BENCH_NAMES
-
-	EB_METRIC_ACTION_SEQUENCES
-
-	SHARED_FLAGS
-
-	EB_XML_DOCUMENT_HELPER [EB_METRIC]
-
-	EB_METRIC_XML_CONSTANTS
-
 create
 	make
 
@@ -40,7 +32,7 @@ feature{NONE} -- Initialization
 			-- Initialize.
 		do
 			create {LINKED_LIST [EB_METRIC]} metrics.make
-			create metrics_validity.make (100)
+			create metrics_vadility.make (100)
 		end
 
 feature -- Setting
@@ -61,16 +53,13 @@ feature -- Validation
 		local
 			l_cursor: CURSOR
 		do
-			if a_force then
-				metrics_validity.wipe_out
-			end
 			l_cursor := metrics.cursor
 			from
 				metrics.start
 			until
 				metrics.after
 			loop
-				if not is_metric_validity_checked (metrics.item.name) then
+				if a_force or not is_metric_vadility_checked (metrics.item.name) then
 					check_validation_for_metric (metrics.item.name)
 				end
 				metrics.forth
@@ -85,35 +74,11 @@ feature -- Validation
 			a_name_attached: a_name /= Void
 			metric_exists: has_metric (a_name)
 		local
-			l_validator: EB_METRIC_VALIDITY_VISITOR
-			l_error_table: HASH_TABLE [EB_METRIC_ERROR, STRING]
-			l_validity_table: like metrics_validity
+			l_validator: EB_METRIC_VADILITY_VISITOR
 		do
 			create l_validator.make (Current)
-			l_validator.check_metric_validity (metric_with_name_internal (a_name), False)
-			l_error_table := l_validator.error_table
-			l_validity_table := metrics_validity
-			from
-				l_error_table.start
-			until
-				l_error_table.after
-			loop
-				set_metric_validity (l_error_table.key_for_iteration, l_error_table.item_for_iteration)
-				l_error_table.forth
-			end
-		end
-
-feature{EB_METRIC_VALIDITY_VISITOR} -- Validity setting
-
-	set_metric_validity (a_metric_name: STRING; a_validity: EB_METRIC_ERROR) is
-			-- Set validity of metric named `a_metric_name' with `a_validity'.
-		require
-			a_metric_name_attached: a_metric_name /= Void
-			metric_exists: has_metric (a_metric_name)
-		do
-			metrics_validity.force (a_validity, a_metric_name)
-		ensure
-			metrc_validity_set: metric_validity (a_metric_name) = a_validity
+			l_validator.process_metric (metric_with_name (a_name))
+			metrics_vadility.force (l_validator.last_error, a_name)
 		end
 
 feature -- Status report
@@ -139,7 +104,7 @@ feature -- Status report
 			until
 				l_metrics.after or Result
 			loop
-				Result := is_metric_name_equal (l_metrics.item.name, a_name)
+				Result := l_metrics.item.name.is_case_insensitive_equal (a_name)
 				l_metrics.forth
 			end
 			l_metrics.go_to (l_cursor)
@@ -151,18 +116,17 @@ feature -- Status report
 			a_name_attached: a_name /= Void
 			metric_exists: has_metric (a_name)
 		do
-			if not is_metric_validity_checked (a_name) then
+			if not is_metric_vadility_checked (a_name) then
 				check_validation_for_metric (a_name)
 			end
-			Result := metric_validity (a_name) = Void
+			Result := metric_vadility (a_name) = Void
 		end
 
-	is_metric_calculatable (a_name: STRING): BOOLEAN is
-			-- Is metric named `a_name' calculatable (i.e., metric exists and is valid)?
-		require
-			a_name_attached: a_name /= Void
+	is_valid_order (a_order: INTEGER): BOOLEAN is
+			-- Is `a_order' is valid sorting order?
+			-- For information of sorting order, see `ascending_order', `descending_order' and `topological_order'.
 		do
-			Result := has_metric (a_name) and then is_metric_valid (a_name)
+			Result := a_order = ascending_order or a_order = descending_order or a_order = topological_order
 		end
 
 	is_metric_loaded: BOOLEAN
@@ -177,57 +141,16 @@ feature -- Status report
 			Result := l_file.exists
 		end
 
-	is_metric_name_equal (a_metric_name, b_metric_name: STRING): BOOLEAN is
-			-- Are `a_metric_name' and `b_metric_name' equal?
-		require
-			a_metric_name_attached: a_metric_name /= Void
-			b_metric_name_attached: b_metric_name /= Void
-		local
-			l_a_name, l_b_name: STRING
+	is_last_predefined_metric_load_successful: BOOLEAN is
+			-- Is last predefined metric loading successful?
 		do
-			l_a_name := a_metric_name.twin
-			l_a_name.left_adjust
-			l_a_name.right_adjust
-			l_b_name := b_metric_name.twin
-			l_b_name.left_adjust
-			l_b_name.right_adjust
-			Result := l_a_name.is_case_insensitive_equal (l_b_name)
+			Result := last_predefined_metric_load_error = Void
 		end
 
-	is_eiffel_compiling: BOOLEAN
-			-- Is eiffel compiling?
-
-	is_metric_evaluating: BOOLEAN
-			-- Is metric being evaluated?
-
-	is_archive_calculating: BOOLEAN
-			-- Is metric archive being calculated?
-
-	is_project_loaded: BOOLEAN
-			-- Is a project loaded?	
-
-	is_history_recalculation_running: BOOLEAN
-			-- Is metric history recalculation running?
-
-	is_metric_name_valid (a_name: STRING): BOOLEAN is
-			-- Is `a_name' a valid metric name?
+	is_last_userdefined_metric_load_successful: BOOLEAN is
+			-- Is last userdefined metric loading successful?
 		do
-			Result := a_name /= Void and then
-					  (not a_name.is_empty) and then
-					  a_name.item (1).is_graph and then
-					  a_name.item (a_name.count).is_graph
-		end
-
-	has_archive_been_loaded: BOOLEAN
-			-- Has archive history been loaded from `archive_history_file' into `archvie_history'?
-
-	is_metric_validity_checked (a_name: STRING): BOOLEAN is
-			-- Is validity of metric named `a_name' checked?
-		require
-			a_name_attached: a_name /= Void
-			metric_exists: has_metric (a_name)
-		do
-			Result := metrics_validity.has (a_name)
+			Result := last_userdefined_metric_load_error = Void
 		end
 
 feature -- Access
@@ -246,20 +169,6 @@ feature -- Access
 			good_result: Result /= Void and then not Result.is_empty
 		end
 
-	archive_history_file: STRING is
-			-- File to store metric history
-		require
-			system_defined: workbench.system_defined and then workbench.is_already_compiled
-		local
-			l_file_name: FILE_NAME
-		do
-			create l_file_name.make_from_string (userdefined_metrics_path)
-			l_file_name.set_file_name ("history.xml")
-			Result := l_file_name.out
-		ensure
-			good_result: Result /= Void and then not Result.is_empty
-		end
-
 	userdefined_metrics_path: STRING is
 			-- File path where `userdefined_metric_file' is located, not including the trailing directory separator
 		require
@@ -267,7 +176,7 @@ feature -- Access
 		local
 			l_file_name: FILE_NAME
 		do
-			create l_file_name.make_from_string (project_location.data_path)
+			create l_file_name.make_from_string (project_location.path)
 			l_file_name.extend ("metrics")
 			Result :=  l_file_name.out
 		ensure
@@ -279,6 +188,30 @@ feature -- Access
 
 	metrics: LIST [EB_METRIC]
 			-- List of registered metrics
+
+	metrics_with_unit (a_unit: QL_METRIC_UNIT): LIST [EB_METRIC] is
+			-- List of registered metrics whose unit is `a_unit'
+		local
+			l_metrics: like metrics
+			l_cursor: CURSOR
+		do
+			l_metrics := metrics.twin
+			l_cursor := l_metrics.cursor
+			from
+				l_metrics.start
+			until
+				l_metrics.after
+			loop
+				if l_metrics.item.unit /= a_unit then
+					l_metrics.remove
+				else
+					l_metrics.forth
+				end
+			end
+			l_metrics.go_to (l_cursor)
+		ensure
+			result_attached: Result /= Void
+		end
 
 	metric_with_name (a_name: STRING): EB_METRIC is
 			-- Metric whose name is `a_name'
@@ -296,7 +229,7 @@ feature -- Access
 			until
 				l_metrics.after or Result /= Void
 			loop
-				if is_metric_name_equal (l_metrics.item.name, a_name) then
+				if l_metrics.item.name.is_case_insensitive_equal (a_name) then
 					Result := l_metrics.item
 				else
 					l_metrics.forth
@@ -305,11 +238,11 @@ feature -- Access
 			l_metrics.go_to (l_cursor)
 		end
 
-	ordered_metrics (a_metric_order_tester: FUNCTION [ANY, TUPLE [EB_METRIC, EB_METRIC], BOOLEAN]; a_flat: BOOLEAN): HASH_TABLE [LIST [EB_METRIC], QL_METRIC_UNIT] is
-			-- All metrics in order retrieved by `a_metric_order_tester'.
+	ordered_metrics (a_order: INTEGER; a_flat: BOOLEAN): HASH_TABLE [LIST [EB_METRIC], QL_METRIC_UNIT] is
+			-- All metrics in `a_order'
 			-- If `a_flat' is True, DO NOT sort metrics according to unit, and all sorted metrics will be in a list with the key `no_unit'.
 		require
-			a_metric_order_tester_attached: a_metric_order_tester /= Void
+			a_order_valid: is_valid_order (a_order)
 		local
 			l_ordered_metrics: HASH_TABLE [DS_ARRAYED_LIST [EB_METRIC], QL_METRIC_UNIT]
 			l_metric_list: DS_ARRAYED_LIST [EB_METRIC]
@@ -353,8 +286,9 @@ feature -- Access
 
 				-- Sort metrics in the same unit and store result.
 			create {HASH_TABLE [ARRAYED_LIST [EB_METRIC], QL_METRIC_UNIT]} Result.make (l_ordered_metrics.count)
-			create l_agent_sorter.make (a_metric_order_tester)
+			create l_agent_sorter.make (agent metric_order_tester)
 			create l_sorter.make (l_agent_sorter)
+			current_sort_order := a_order
 			if a_flat then
 				l_sorter.sort (l_metric_list)
 				create l_list.make_from_array (l_metric_list.to_array)
@@ -375,16 +309,16 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
-	metric_validity (a_name: STRING): EB_METRIC_ERROR is
-			-- Validity status of metric named `a_name'
+	metric_vadility (a_name: STRING): EB_METRIC_ERROR is
+			-- Vadility status of metric named `a_name'
 		require
 			a_name_attached: a_name /= Void
 			metric_exists: has_metric (a_name)
 		do
-			if not is_metric_validity_checked (a_name) then
+			if not is_metric_vadility_checked (a_name) then
 				check_validation_for_metric (a_name)
 			end
-			Result := metrics_validity.item (a_name)
+			Result := metrics_vadility.item (a_name)
 		end
 
 	units: LIST [QL_METRIC_UNIT] is
@@ -428,93 +362,91 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
-	metrics_from_file (a_file_name: STRING): LIST [EB_METRIC] is
-			-- Metrics defined in file named `a_file_name'
-			-- If error occurs when opening the file or loading metric definitions,
-			-- result will be Void and the actual error will be in `last_error'.
-		require
-			a_file_name_attached: a_file_name /= Void
-			not_a_file_name_is_empty: not a_file_name.is_empty
-		local
-			l_callback: EB_METRIC_LOAD_DEFINITION_CALLBACKS
-			l_tuple: TUPLE [l_metrics: LIST [EB_METRIC]; l_error: EB_METRIC_ERROR]
-		do
-			clear_last_error
-			create l_callback.make_with_factory (create{EB_LOAD_METRIC_DEFINITION_FACTORY})
-			l_tuple := items_from_file (a_file_name, l_callback, agent (l_callback.metrics).linear_representation, agent l_callback.last_error, agent create_last_error (metric_names.err_file_not_readable (a_file_name)))
-			if not has_error then
-				last_error := l_tuple.l_error
-				if not has_error then
-					Result := l_tuple.l_metrics
-				else
-					Result := Void
-					backup_file (a_file_name)
-				end
-			end
-		end
+	last_predefined_metric_load_error: EB_METRIC_ERROR
+			-- Error information when load predefined metric definition the last time
+			-- Void if no error occurred.
 
-	create_last_error (a_error_message: STRING_GENERAL) is
-			-- Create `last_error' to contain message `a_error_message'.
-		require
-			a_error_message_attached: a_error_message /= Void
-		do
-			create last_error.make (a_error_message)
-		ensure
-			has_error: has_error
-		end
+	last_userdefined_metric_load_error: EB_METRIC_ERROR
+			-- Error information when load userdefined metric definition the last time
+			-- Void if no error occurred.			
 
-	archive_history: EB_METRIC_ARCHIVE
-			-- Archive history
+feature -- Access/Sorting order
 
-	on_compile_start_agent: PROCEDURE [ANY, TUPLE] is
-			-- Agent for `on_compile_start'
-		do
-			if on_compile_start_agent_internal = Void then
-				on_compile_start_agent_internal := agent on_compile_start
-			end
-			Result := on_compile_start_agent_internal
-		end
+	ascending_order: INTEGER is 1
+			-- Ascending order
+
+	descending_order: INTEGER is 2
+			-- Descending order
+
+	topological_order: INTEGER is 3
+			-- Topological order, i.e., valid metrics come first in ascending order , and then invalid metrics in ascending order.
 
 feature -- Metric management
 
 	load_metrics is
 			-- Load predefined and user-defined metrics.
 		local
-			l_final_error: STRING_GENERAL
-			l_err_loading_predefined: EB_METRIC_ERROR
-			l_err_loading_userdefined: EB_METRIC_ERROR
+			l_file: RAW_FILE
+			l_error: like last_error
+			l_error_str: STRING
 		do
 			if workbench.system_defined and then workbench.is_already_compiled then
 				clear_last_error
+				block
 				metrics.wipe_out
-				metrics_validity.wipe_out
+				metrics_vadility.wipe_out
 					-- Load predefined metrics.
-				load_metric_definitions (eiffel_layout.predefined_metrics_file, True)
-				l_err_loading_predefined := last_error
-
-					-- Load user-defined metrics.
-				clear_last_error
-				load_metric_definitions (userdefined_metrics_file, False)
-				l_err_loading_userdefined := last_error
-
-					-- Setup final error message.
-				if l_err_loading_predefined /= Void then
-					l_final_error :=  metric_names.err_loading_predefined_metrics (l_err_loading_predefined.message_with_location.twin).twin
-				end
-				if l_err_loading_userdefined /= Void then
-					if l_final_error /= Void then
-						l_final_error.append ("%N")
-						l_final_error.append (metric_names.err_loading_userdefined_metrics (l_err_loading_userdefined.message_with_location.twin))
-					else
-						l_final_error := metric_names.err_loading_userdefined_metrics (l_err_loading_userdefined.message_with_location.twin)
+				create l_file.make (eiffel_layout.predefined_metrics_file)
+				if not l_file.exists then
+					create {EB_METRIC_ERROR_FILE} l_error.make ("Could not open file", eiffel_layout.predefined_metrics_file)
+				else
+					load_metric_definitions (eiffel_layout.predefined_metrics_file, True)
+					if last_error /= Void then
+						l_error := last_error
 					end
 				end
-				if l_final_error /= Void then
-					create last_error.make (l_final_error)
+				if last_error /= Void then
+					last_predefined_metric_load_error := last_error
+				else
+					last_predefined_metric_load_error := Void
 				end
 
+					-- Load user-defined metrics.
+				create l_file.make (userdefined_metrics_file)
+				if l_file.exists then
+					if l_file.is_readable  then
+						load_metric_definitions (userdefined_metrics_file, False)
+					else
+						create {EB_METRIC_ERROR_FILE} l_error.make ("Could not open file", userdefined_metrics_file)
+					end
+				else
+					last_userdefined_metric_load_error := Void
+				end
+				if not has_error and then l_error /= Void then
+					last_error := l_error
+				end
+				if last_error /= Void then
+					last_userdefined_metric_load_error := last_error
+				else
+					last_userdefined_metric_load_error := Void
+				end
+				if not is_last_predefined_metric_load_successful or not is_last_userdefined_metric_load_successful then
+					create l_error_str.make (256)
+					if not is_last_predefined_metric_load_successful then
+						l_error_str.append ("When loading predefined metrics: ")
+						l_error_str.append (last_predefined_metric_load_error.out)
+						l_error_str.append ("%NPredefined metrics not loaded.%N")
+					end
+					if not is_last_userdefined_metric_load_successful then
+						l_error_str.append ("When loading user-defined metrics: ")
+						l_error_str.append (last_userdefined_metric_load_error.out)
+						l_error_str.append ("%NUser-defined metrics not loaded.%N")
+					end
+					create {EB_METRIC_ERROR_PARSE} last_error.make_with_no_title (l_error_str)
+				end
 				is_metric_loaded := True
-				metric_loaded_actions.call (Void)
+				resume
+				notify (Void)
 			end
 		end
 
@@ -527,27 +459,22 @@ feature -- Metric management
 			not_a_file_name_is_empty: not a_file_name.is_empty
 		local
 			l_loaded_metrics: like metrics
-			l_file: RAW_FILE
 		do
-			create l_file.make (a_file_name)
-			if l_file.exists then
-				if l_file.is_readable then
-					l_loaded_metrics := metrics_from_file (a_file_name)
-					if not has_error then
-							-- Check metric name crash.
-							-- If some metric in `loaded_metrics' has the same name as a metric in `metrics',
-							-- no metric will be registered in `metrics'. All metrics in `l_loaded_metrics' will be ignored.
-						check_name_crash (l_loaded_metrics)
+			block
+			l_loaded_metrics := metrics_from_file (a_file_name)
+			if not has_error then
+					-- Check metric name crash.
+					-- If some metric in `loaded_metrics' has the same name as a metric in `metrics',
+					-- no metric will be registered in `metrics'. All metrics in `l_loaded_metrics' will be ignored.
+				check_name_crash (l_loaded_metrics)
 
-							-- Registered metrics in `l_loaded_metrics' into `metrics'
-						if not has_error then
-							l_loaded_metrics.do_all (agent register_metric (?, a_predefined))
-						end
-					end
-				else
-					create last_error.make (metric_names.err_file_not_readable (a_file_name))
+					-- Registered metrics in `l_loaded_metrics' into `metrics'
+				if not has_error then
+					l_loaded_metrics.do_all (agent register_metric (?, a_predefined))
 				end
 			end
+			resume
+			notify (last_error)
 		end
 
 	store_metric_definitions (a_file_name: STRING) is
@@ -557,13 +484,35 @@ feature -- Metric management
 			a_file_name_attached: a_file_name /= Void
 			not_a_file_name_is_empty: not a_file_name.is_empty
 		local
-			l_userdefined_metrics: LINKED_LIST [EB_METRIC]
-			l_xml_generator: EB_METRIC_XML_WRITER [EB_METRIC]
+			l_file: PLAIN_TEXT_FILE
+			l_xml_generator: EB_METRIC_XML_WRITER
+			l_retried: BOOLEAN
 		do
-			create l_xml_generator.make
-			create l_userdefined_metrics.make
-			metrics.do_if (agent l_userdefined_metrics.extend, agent (a_metric: EB_METRIC): BOOLEAN do Result := not a_metric.is_predefined end)
-			store_xml (xml_document_for_items (n_metric, l_userdefined_metrics, agent l_xml_generator.xml_element), a_file_name, agent create_last_error (metric_names.err_file_not_writable (a_file_name)))
+			if not l_retried then
+				clear_last_error
+				create l_file.make_create_read_write (a_file_name)
+				create l_xml_generator.make
+				l_file.put_string ("<metric>%N")
+				from
+					metrics.start
+				until
+					metrics.after
+				loop
+					if not metrics.item.is_predefined then
+						l_xml_generator.set_indent (1)
+						l_xml_generator.clear_text
+						l_xml_generator.process_metric (metrics.item)
+						l_file.put_string (l_xml_generator.text)
+					end
+					metrics.forth
+				end
+				l_file.put_string ("</metric>%N")
+				l_file.close
+			end
+		rescue
+			create{EB_METRIC_ERROR_FILE} last_error.make ("Could not write file", a_file_name)
+			l_retried := True
+			retry
 		end
 
 	store_userdefined_metrics is
@@ -573,7 +522,6 @@ feature -- Metric management
 			l_retried: BOOLEAN
 		do
 			if not l_retried then
-				workbench.create_data_directory
 				create l_folder.make (userdefined_metrics_path)
 				if not l_folder.exists then
 					l_folder.create_dir
@@ -582,7 +530,7 @@ feature -- Metric management
 			end
 		rescue
 			l_retried := True
-			create last_error.make (metric_names.err_directory_creation_fail (userdefined_metrics_path))
+			create{EB_METRIC_ERROR_FILE} last_error.make ("Could not create directory", userdefined_metrics_path)
 			retry
 		end
 
@@ -593,8 +541,11 @@ feature -- Metric management
 			a_metric_attached: a_metric /= Void
 			a_metric_not_exist: not has_metric (a_metric.name)
 		do
+			block
 			register_metric (a_metric, a_predefined)
 			check_validation (True)
+			resume
+			notify (last_error)
 		end
 
 	remove_metric (a_name: STRING) is
@@ -602,20 +553,19 @@ feature -- Metric management
 		require
 			a_name_attached: a_name /= Void
 			metric_exists:has_metric (a_name)
+			metric_not_predefined: not metric_with_name (a_name).is_predefined
 		local
 			l_metrics: like metrics
 			done: BOOLEAN
 		do
-			check
-				metric_not_predefined: not metric_with_name_internal (a_name).is_predefined
-			end
+			block
 			l_metrics := metrics
 			from
 				l_metrics.start
 			until
 				l_metrics.after or done
 			loop
-				if is_metric_name_equal (l_metrics.item.name, a_name) then
+				if l_metrics.item.name.is_case_insensitive_equal (a_name) then
 					l_metrics.item.set_metric_manager (Void)
 					l_metrics.remove
 					done := True
@@ -624,6 +574,8 @@ feature -- Metric management
 				end
 			end
 			check_validation (True)
+			resume
+			notify (last_error)
 		ensure
 			metric_removed: not has_metric (a_name)
 		end
@@ -634,18 +586,15 @@ feature -- Metric management
 			a_name_attached: a_name /= Void
 			metric_exists:has_metric (a_name)
 			a_metric_attached: a_metric /= Void
-			no_name_crash: not is_metric_name_equal (a_name, a_metric.name) implies not has_metric (a_metric.name)
+			metric_not_predefined: not metric_with_name (a_name).is_predefined
+			no_name_crash: not a_name.is_case_insensitive_equal (a_metric.name) implies not has_metric (a_metric.name)
 		local
 			l_renamer: EB_METRIC_RENAME_VISITOR
-			l_should_rename: BOOLEAN
 		do
-			check
-				metric_not_predefined: not metric_with_name_internal (a_name).is_predefined
-			end
+			block
 			remove_metric (a_name)
-				-- Metric name changes.			
-			l_should_rename := not is_metric_name_equal (a_name, a_metric.name)
-			if l_should_rename then
+				-- Metric name changes.
+			if not a_name.is_case_insensitive_equal (a_metric.name) then
 				create l_renamer.make (a_name, a_metric.name)
 				from
 					metrics.start
@@ -660,9 +609,8 @@ feature -- Metric management
 			end
 			insert_metric (a_metric, False)
 			check_validation (True)
-			if l_should_rename then
-				metric_renamed_actions.call ([a_name, a_metric.name])
-			end
+			resume
+			notify (last_error)
 		end
 
 	save_metric (a_metric: EB_METRIC; a_new: BOOLEAN; a_old_metric: EB_METRIC) is
@@ -675,71 +623,15 @@ feature -- Metric management
 						 not a_new implies a_old_metric /= Void
 			no_name_crash: a_new implies not has_metric (a_metric.name)
 		do
+			block
 			if a_new then
 				metrics.extend (a_metric)
 				a_metric.set_metric_manager (Current)
 			else
 				update_metric (a_old_metric.name, a_metric)
 			end
-		end
-
-	load_archive_history is
-			-- Load archive history from `archive_history_file' into `archive_history'.
-		local
-			l_file_name: RAW_FILE
-		do
-			clear_last_error
-			create archive_history.make
-			create l_file_name.make (archive_history_file)
-			if l_file_name.exists and then l_file_name.is_readable then
-				archive_history.load_archive (archive_history_file)
-				archive_history.mark_archive_as_old
-				if archive_history.has_error then
-					last_error := archive_history.last_error
-					archive_history.clear_last_error
-				end
-			end
-			set_has_archive_been_loaded (True)
-		end
-
-	store_archive_history is
-			-- Store `archive_history' in `archive_history_file'.
-		require
-			archive_history_loaded: has_archive_been_loaded
-		local
-			l_retried: BOOLEAN
-			l_folder: DIRECTORY
-		do
-			if not l_retried then
-				if archive_history.count > 0 then
-					workbench.create_data_directory
-					create l_folder.make (userdefined_metrics_path)
-					if not l_folder.exists then
-						l_folder.create_dir
-					end
-					clear_last_error
-					archive_history.clear_last_error
-					archive_history.store_archive (archive_history_file, agent archive_history.create_last_error (metric_names.err_file_not_writable (archive_history_file)))
-					if archive_history.has_error then
-						last_error := archive_history.last_error
-					end
-				end
-			end
-		rescue
-			l_retried := True
-			create last_error.make (metric_names.err_directory_creation_fail (userdefined_metrics_path))
-			retry
-		end
-
-	terminate_evaluation is
-			-- Terminate every running evaluation including metric evaluation, archive evaluation and history recalculation.
-		local
-			l_generator: QL_TARGET_DOMAIN_GENERATOR
-		do
-			if is_metric_evaluating or is_archive_calculating or is_history_recalculation_running then
-				create l_generator
-				l_generator.error_handler.insert_interrupt_error ("")
-			end
+			resume
+			notify (last_error)
 		end
 
 feature -- Metric archive
@@ -752,14 +644,13 @@ feature -- Metric archive
 			a_file_name_attached: a_file_name /= Void
 			not_a_file_name_is_empty: not a_file_name.is_empty
 		local
-			l_archive: EB_METRIC_ARCHIVE
+			l_callback: EB_METRIC_LOAD_ARCHIVE_CALLBACKS
 		do
 			clear_last_error
-			create l_archive.make
-			l_archive.load_archive (a_file_name)
-			last_error := l_archive.last_error
+			create l_callback.make_with_factory (create{EB_LOAD_METRIC_DEFINITION_FACTORY})
+			parse_file (a_file_name, l_callback)
 			if not has_error then
-				last_loaded_metric_archive := l_archive.archive
+				last_loaded_metric_archive := l_callback.archive.twin
 			else
 				last_loaded_metric_archive := Void
 			end
@@ -772,144 +663,58 @@ feature -- Metric archive
 			not_a_file_name_is_empty: not a_file_name.is_empty
 			a_archive_attached: a_archive /= Void
 		local
-			l_archive: EB_METRIC_ARCHIVE
+			l_file: PLAIN_TEXT_FILE
+			l_retried: BOOLEAN
+			l_xml_generator: EB_METRIC_XML_WRITER
 		do
-			clear_last_error
-			create l_archive.make
-			a_archive.do_all (agent l_archive.insert_archive_node)
-			l_archive.store_archive (a_file_name, agent l_archive.create_last_error (metric_names.err_file_not_writable (a_file_name)))
-			last_error := l_archive.last_error
-		end
+			if not l_retried then
+				clear_last_error
 
-feature -- Setting
-
-	set_is_eiffel_compiling (b: BOOLEAN) is
-			-- Set `is_eiffel_compiling' with `b'.
-		do
-			is_eiffel_compiling := b
-		ensure
-			is_eiffel_compiling_set: is_eiffel_compiling = b
-		end
-
-	set_is_archive_calculating (b: BOOLEAN) is
-			-- Set `is_archive_calculating' with `b'.
-		do
-			is_archive_calculating := b
-		ensure
-			is_archive_calculating_set: is_archive_calculating = b
-		end
-
-	set_is_metric_evaluating (b: BOOLEAN) is
-			-- Set `is_metric_evaluating' with `b'.
-		do
-			is_metric_evaluating := b
-		ensure
-			is_metric_evaluating_set: is_metric_evaluating = b
-		end
-
-	set_is_project_loaded (b: BOOLEAN) is
-			-- Set `is_project_loaded' with `b'.
-		do
-			is_project_loaded := b
-		ensure
-			is_project_loaded_set: is_project_loaded = b
-		end
-
-	set_is_history_recalculation_running (b: BOOLEAN) is
-			-- Set `is_history_recalculation_running' with `b'.
-		do
-			is_history_recalculation_running := b
-		ensure
-			is_history_recalculation_running_set: is_history_recalculation_running = b
-		end
-
-	set_has_archive_been_loaded (b: BOOLEAN) is
-			-- Set `has_archive_been_loaded' with `b'.
-		do
-			has_archive_been_loaded := b
-		ensure
-			has_archive_been_loaded_set: has_archive_been_loaded = b
-		end
-
-feature -- Actions
-
-	on_project_loaded is
-			-- A new project has been loaded.
-		do
-			set_is_project_loaded (True)
-			project_load_actions.call (Void)
-		end
-
-	on_project_unloaded is
-			-- Current project has been closed.
-		do
-			set_is_project_loaded (False)
-			project_unload_actions.call (Void)
-		end
-
-	on_compile_start is
-			-- Action to be performed when Eiffel compilation starts
-		do
-			set_is_eiffel_compiling (True)
-			compile_start_actions.call (VOid)
-		end
-
-	on_compile_stop is
-			-- Action to be performed when Eiffel compilation stops
-		do
-			set_is_eiffel_compiling (False)
-			compile_stop_actions.call (Void)
-		end
-
-	on_metric_evaluation_starts (a_data: ANY) is
-			-- Action to be performed when metric evaluation starts
-			-- `a_data' can be the metric tool panel from which metric evaluation starts.
-		do
-			set_is_metric_evaluating (True)
-			metric_evaluation_start_actions.call ([a_data])
-		end
-
-	on_metric_evaluation_stops (a_data: ANY) is
-			-- Action to be performed when metric evaluation stops
-			-- `a_data' can be the metric tool panel from which metric evaluation stops.
-		do
-			set_is_metric_evaluating (False)
-			metric_evaluation_stop_actions.call ([a_data])
-		end
-
-	on_archive_calculation_starts (a_data: ANY) is
-			-- Action to be performed when metric archive calculation starts
-			-- `a_data' can be the metric tool panel from which metric archive calculation starts.
-		do
-			set_is_archive_calculating (True)
-			archive_calculation_start_actions.call ([a_data])
-		end
-
-	on_archive_calculation_stops (a_data: ANY) is
-			-- Action to be performed when metric archive calculation stops
-			-- `a_data' can be the metric tool panel from which metric archive calculation stops.
-		do
-			set_is_archive_calculating (False)
-			archive_calculation_stop_actions.call ([a_data])
-		end
-
-	on_history_recalculation_starts (a_data: ANY) is
-			-- Action to be performed when metric history recalculation starts
-			-- `a_data' can be the metric tool panel from which metric history recalculation starts.
-		do
-			set_is_history_recalculation_running (True)
-			history_recalculation_start_actions.call ([a_data])
-		end
-
-	on_history_recalculation_stops (a_data: ANY) is
-			-- Action to be performed when metric history recalculation stops
-			-- `a_data' can be the metric tool panel from which metric history recalculation stops.
-		do
-			set_is_history_recalculation_running (False)
-			history_recalculation_stop_actions.call ([a_data])
+				create l_file.make_create_read_write (a_file_name)
+				create l_xml_generator.make
+				l_file.put_string ("<metric_archive>%N")
+				l_xml_generator.set_indent (1)
+				l_xml_generator.clear_text
+				l_xml_generator.process_list (a_archive)
+				l_file.put_string (l_xml_generator.text)
+				l_file.put_string ("</metric_archive>%N")
+				l_file.close
+			end
+		rescue
+			l_retried := True
+			create{EB_METRIC_ERROR_FILE} last_error.make ("Could not write file", a_file_name)
 		end
 
 feature{NONE} -- Implementation
+
+	parse_file (a_file: STRING; a_callback: EB_LOAD_METRIC_CALLBACKS) is
+			-- Parse `a_file' using `a_callbacks'.
+		require
+			a_file_ok: a_file /= Void and then not a_file.is_empty
+			a_callback_not_void: a_callback /= Void
+		local
+			l_file: KL_TEXT_INPUT_FILE
+			l_test_file: PLAIN_TEXT_FILE
+			l_parser: XM_PARSER
+			l_ns_cb: XM_NAMESPACE_RESOLVER
+		do
+			create {XM_EIFFEL_PARSER} l_parser.make
+			create l_ns_cb.set_next (a_callback)
+			l_parser.set_callbacks (l_ns_cb)
+
+			create l_file.make (a_file)
+			create l_test_file.make (a_file)
+			l_file.open_read
+			if l_file.exists and then l_file.is_open_read then
+				l_parser.parse_from_stream (l_file)
+				l_file.close
+				if a_callback.has_error then
+					last_error := a_callback.last_error
+				end
+			else
+				create {EB_METRIC_ERROR_FILE} last_error.make ("Could not open file", a_file)
+			end
+		end
 
 	register_metric (a_metric: EB_METRIC; a_predefined: BOOLEAN) is
 			-- Register `a_metric' in `metrics'.
@@ -925,12 +730,69 @@ feature{NONE} -- Implementation
 			metric_registered: has_metric (a_metric.name) and a_metric.manager = Current and (a_predefined implies a_metric.is_predefined)
 		end
 
+	is_metric_vadility_checked (a_name: STRING): BOOLEAN is
+			-- Is vadility of metric named `a_name' checked?
+		require
+			a_name_attached: a_name /= Void
+			metric_exists: has_metric (a_name)
+		do
+			Result := metrics_vadility.has (a_name)
+		end
+
+	metrics_from_file (a_file_name: STRING): LIST [EB_METRIC] is
+			-- Metrics defined in file named `a_file_name'
+			-- If error occurs when opening the file or loading metric definitions,
+			-- result will be Void and the actual error will be in `last_error'.
+		require
+			a_file_name_attached: a_file_name /= Void
+			not_a_file_name_is_empty: not a_file_name.is_empty
+		local
+			l_callback: EB_METRIC_LOAD_DEFINITION_CALLBACKS
+		do
+			clear_last_error
+			create l_callback.make_with_factory (create{EB_LOAD_METRIC_DEFINITION_FACTORY})
+			parse_file (a_file_name, l_callback)
+			if not has_error then
+				Result := l_callback.metrics
+			end
+		end
+
 feature{NONE} -- Implementation
 
-	metrics_validity: HASH_TABLE [EB_METRIC_ERROR, STRING]
-			-- Table of metric validity.
+	metrics_vadility: HASH_TABLE [EB_METRIC_ERROR, STRING]
+			-- Table of metric vadility.
 			-- Key is name of metric, value is the error message.
 			-- Value is Void indicates that the metric is valid.
+
+	metric_order_tester (a_metric, b_metric: EB_METRIC): BOOLEAN is
+			-- Tester to decide the order of `a_metric' and `b_metric'.
+		require
+			a_metric_attached: a_metric /= Void
+			b_metric_attached: b_metric /= Void
+		local
+			l_metric_a_valid: BOOLEAN
+			l_metric_b_valid: BOOLEAN
+		do
+			if current_sort_order = topological_order then
+				l_metric_a_valid := is_metric_valid (a_metric.name)
+				l_metric_b_valid := is_metric_valid (b_metric.name)
+				if l_metric_a_valid and then not l_metric_b_valid then
+					Result := True
+				elseif not l_metric_a_valid and then l_metric_b_valid then
+				else
+					Result := a_metric.name.as_lower < b_metric.name.as_lower
+				end
+			else
+				if current_sort_order = ascending_order then
+					Result := a_metric.name.as_lower < b_metric.name.as_lower
+				else
+					Result := a_metric.name.as_lower > b_metric.name.as_lower
+				end
+			end
+		end
+
+	current_sort_order: INTEGER
+			-- Current sort order for metrics
 
 	check_name_crash (a_metric_list: like metrics) is
 			-- Check if there is a metric in `a_metric_list' which will cause name crash with metrics in `metrics'.
@@ -947,7 +809,7 @@ feature{NONE} -- Implementation
 				l_metric := a_metric_list.item
 				check l_metric /= Void end
 				if has_metric (l_metric.name) then
-					create last_error.make (metric_names.err_duplicated_metric_name (l_metric.name))
+					create{EB_METRIC_ERROR_EXIST} last_error.make (l_metric.name)
 				end
 				a_metric_list.forth
 			end
@@ -998,37 +860,9 @@ feature{NONE} -- Implementation
 			result_attached: Result /= Void
 		end
 
-	metric_with_name_internal (a_name: STRING): EB_METRIC is
-			-- Metric whose name is `a_name'
-			-- Void if no metric whose name is `a_name' in `metrics'.
-		require
-			a_name_attached: a_name /= Void
-		local
-			l_metrics: like metrics
-			l_cursor: CURSOR
-		do
-			l_metrics := metrics
-			l_cursor := l_metrics.cursor
-			from
-				l_metrics.start
-			until
-				l_metrics.after or Result /= Void
-			loop
-				if is_metric_name_equal (l_metrics.item.name, a_name) then
-					Result := l_metrics.item
-				else
-					l_metrics.forth
-				end
-			end
-			l_metrics.go_to (l_cursor)
-		end
-
-	on_compile_start_agent_internal: like on_compile_start_agent
-			-- Implementation of `on_compile_start_agent'
-
 invariant
 	metrics_attached: metrics /= Void
-	metrics_validity_attached: metrics_validity /= Void
+	metrics_vadility_attached: metrics_vadility /= Void
 
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"
@@ -1061,5 +895,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

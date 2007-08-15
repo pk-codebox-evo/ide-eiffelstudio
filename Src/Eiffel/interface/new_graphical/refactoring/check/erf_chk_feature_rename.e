@@ -99,7 +99,7 @@ feature {NONE} -- Implementation
 			if not is_undefined and not is_renamed then
 				l_feature := a_class.feature_with_name (new_name.as_lower)
 				if l_feature /= Void then
-					error_message := interface_names.l_descending_class_already_has_feature (a_class.name.as_upper)
+					error_message := "The descending class " + a_class.name.as_upper + " already has another feature with the new name."
 					success := false
 				end
 			end
@@ -199,6 +199,8 @@ feature {NONE} -- Implementation
 			end
 		end
 
+
+
 	feature_i: FEATURE_I
 			-- The feature that gets renamed.
 
@@ -238,6 +240,7 @@ feature {NONE} -- Implementation
 feature {NONE} -- Implementation constants
 
 	Chunk: INTEGER is 100
+
 
 invariant
 	feature_i_not_void: feature_i /= Void

@@ -11,7 +11,7 @@ class
 inherit
 	LIKE_TYPE_A
 		redefine
-			update_dependance, evaluated_type_in_descendant
+			update_dependance
 		end
 
 	SHARED_NAMES_HEAP
@@ -84,13 +84,9 @@ feature -- Access
 			other_like_feat: LIKE_FEATURE
 		do
 			other_like_feat ?= other
-			if other_like_feat /= Void then
-				Result :=
-					other_like_feat.routine_id = routine_id and then
-					other_like_feat.feature_id = feature_id and then
-					other_like_feat.has_attached_mark = has_attached_mark and then
-					other_like_feat.has_detachable_mark = has_detachable_mark
-			end
+			Result := 	other_like_feat /= Void
+					and then other_like_feat.routine_id = routine_id
+					and then other_like_feat.feature_id = feature_id
 		end
 
 	update_dependance (feat_depend: FEATURE_DEPENDANCE) is
@@ -115,33 +111,18 @@ feature -- Output
 			s: STRING
 		do
 			s := actual_type.dump
-			create Result.make (20 + s.count)
-			Result.append_character ('[')
-			if has_attached_mark then
-				Result.append_character ('!')
-				Result.append_character (' ')
-			elseif has_detachable_mark then
-				Result.append_character ('?')
-				Result.append_character (' ')
-			end
-			Result.append ("like " + feature_name +"] ")
+			create Result.make (18 + s.count)
+			Result.append ("[like " + feature_name +"] ")
 			Result.append (s)
 		end
 
-	ext_append_to (st: TEXT_FORMATTER; c: CLASS_C) is
+	ext_append_to (st: TEXT_FORMATTER; f: E_FEATURE) is
 		local
 			ec: CLASS_C
 			l_feat: E_FEATURE
 		do
 			ec := Eiffel_system.class_of_id (class_id)
 			st.process_symbol_text (ti_l_bracket)
-			if has_attached_mark then
-				st.process_symbol_text (ti_exclamation)
-				st.add_space
-			elseif has_detachable_mark then
-				st.process_symbol_text (ti_question)
-				st.add_space
-			end
 			st.process_keyword_text (ti_like_keyword, Void)
 			st.add_space
 			if ec.has_feature_table then
@@ -155,38 +136,19 @@ feature -- Output
 			st.process_symbol_text (ti_r_bracket)
 			st.add_space
 			if is_valid then
-				actual_type.ext_append_to (st, c)
+				actual_type.ext_append_to (st, f)
 			end
 		end
 
 feature -- Primitives
 
 	instantiation_in (type: TYPE_A; written_id: INTEGER): LIKE_FEATURE is
-			-- Instantiation of Current in the context of `type',
+			-- Instantiation of Current in the context of `class_type',
 			-- assuming that Current is written in class of id `written_id'.
 		do
 			Result := twin
 			Result.set_actual_type
 							(actual_type.instantiation_in (type, written_id))
-		end
-
-	evaluated_type_in_descendant (a_ancestor, a_descendant: CLASS_C; a_feature: FEATURE_I): LIKE_FEATURE is
-		local
-			l_anchor: FEATURE_I
-		do
-			if a_ancestor /= a_descendant then
-				l_anchor := a_descendant.feature_of_rout_id (routine_id)
-				check l_anchor_not_void: l_anchor /= Void end
-				create Result.make (l_anchor, a_descendant.class_id)
-				Result.set_actual_type (l_anchor.type.actual_type)
-				if has_attached_mark then
-					Result.set_attached_mark
-				elseif has_detachable_mark then
-					Result.set_detachable_mark
-				end
-			else
-				Result := Current
-			end
 		end
 
 	create_info: CREATE_FEAT is
@@ -204,13 +166,11 @@ feature -- Comparison
 				class_id = other.class_id and then
 				feature_id = other.feature_id and then
 				equivalent (actual_type, other.actual_type) and then
-				feature_name_id = other.feature_name_id and then
-				other.has_attached_mark = has_attached_mark and then
-				other.has_detachable_mark = has_detachable_mark
+				feature_name_id = other.feature_name_id
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

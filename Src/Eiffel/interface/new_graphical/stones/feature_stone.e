@@ -15,8 +15,7 @@ inherit
 		redefine
 			is_valid, synchronized_stone,
 			history_name, same_as, origin_text, header, stone_signature,
-			file_name, stone_cursor, x_stone_cursor,
-			stone_name
+			file_name, stone_cursor, x_stone_cursor
 		end
 
 	SHARED_EIFFEL_PROJECT
@@ -25,8 +24,6 @@ inherit
 		export
 			{NONE} all
 		end
-
-	SHARED_TEXT_ITEMS
 
 create
 	make
@@ -101,23 +98,15 @@ feature -- Access
 			end
 		end
 
-	history_name: STRING_GENERAL is
+	history_name: STRING is
 			-- Name used in the history list
 		do
-			Result := interface_names.l_from (Interface_names.s_feature_stone.as_string_32 + feature_name, e_class.class_signature)
+			create Result.make (0)
+			Result.append (Interface_names.s_feature_stone)
+			Result.append (feature_name)
+			Result.append (" from ")
+			Result.append (e_class.class_signature)
 		end
-
-	stone_name: STRING_GENERAL is
-			-- Name of Current stone
-		do
-			if is_valid then
-				Result := class_i.name + ti_dot + feature_name
-			else
-				Result := Precursor
-			end
-		end
-
-feature -- Status report
 
 	same_as (other: STONE): BOOLEAN is
 			-- Is `other' the same stone?
@@ -127,12 +116,6 @@ feature -- Status report
 		do
 			fns ?= other
 			Result := fns /= Void and then same_feature (e_feature, fns.e_feature)
-		end
-
-	is_valid: BOOLEAN is
-			-- Is `Current' a valid stone?
-		do
-			Result := e_feature /= Void and then Precursor {CLASSC_STONE}
 		end
 
 feature -- dragging
@@ -184,12 +167,12 @@ feature -- dragging
 			Result := e_feature.feature_signature
 		end
 
-	header: STRING_GENERAL is
+	header: STRING is
 			-- Name for the stone.
 		local
 			a_base_name: STRING
 		do
-			create {STRING_32}Result.make (20)
+			create Result.make (20)
 			Result.append ("{")
 			Result.append (e_class.name_in_upper)
 			Result.append ("}.")
@@ -197,7 +180,9 @@ feature -- dragging
 			if class_i /= Void then
 				a_base_name := class_i.file_name
 				if a_base_name /= Void then
-					Result.append (interface_names.l_located_in (a_base_name))
+					Result.append (" (located in ")
+					Result.append (a_base_name)
+					Result.append (")")
 				end
 			end
 		end
@@ -221,6 +206,12 @@ feature -- dragging
 		do
 			update
 			Result := internal_start_line_number
+		end
+
+	is_valid: BOOLEAN is
+			-- Is `Current' a valid stone?
+		do
+			Result := e_feature /= Void and then Precursor {CLASSC_STONE}
 		end
 
 	update is

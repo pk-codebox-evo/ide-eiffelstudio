@@ -29,11 +29,6 @@ inherit
 			out, copy, is_equal
 		end
 
-	EB_SHARED_EDITOR_TOKEN_UTILITY
-		undefine
-			out, copy, is_equal
-		end
-
 create
 	make
 
@@ -42,11 +37,8 @@ create {EB_FEATURE_FOR_COMPLETION}
 
 feature {NONE} -- Initialization
 
-	make (a_feature: E_FEATURE; a_name: STRING; a_name_is_ambiguated: BOOLEAN) is
+	make (a_feature: E_FEATURE; a_name: STRING) is
 			-- Create and initialize a new completion feature using `a_feature'
-			-- `a_name' is either an ambiguated name when `a_name_is_ambiguated',
-			-- or a fixed name when not `a_name_is_ambiguated'.
-			-- When `a_name' is Void, `a_name_is_ambiguated' is discarded.
 		require
 			a_feature_not_void: a_feature /= Void
 		local
@@ -78,18 +70,12 @@ feature {NONE} -- Initialization
 			insert_name_internal.append (name)
 			insert_name_internal.append (feature_signature)
 
-			if a_name_is_ambiguated then
-				create full_insert_name_internal.make (associated_feature.name.count + feature_signature.count)
-				full_insert_name_internal.append (associated_feature.name)
-				full_insert_name_internal.append (feature_signature)
-			else
-				full_insert_name_internal := insert_name_internal
-			end
-			name_is_ambiguated := a_name_is_ambiguated
+			create full_insert_name_internal.make (associated_feature.name.count + feature_signature.count)
+			full_insert_name_internal.append (associated_feature.name)
+			full_insert_name_internal.append (feature_signature)
 		ensure
 			associated_feature_set: associated_feature = a_feature
 			return_type_set: return_type = a_feature.type
-			name_is_ambiguated_set: name_is_ambiguated = a_name_is_ambiguated
 		end
 
 feature -- Access
@@ -119,7 +105,7 @@ feature -- Access
 			-- Text for tooltip of Current.  The tooltip shall display information which is not included in the
 			-- actual output of Current.
 		do
-			create Result.make (count + feature_signature.count + completion_type.count)
+			create Result.make (Current.count + feature_signature.count + completion_type.count)
 			Result.append (Current)
 			Result.append (feature_signature)
 			Result.append (completion_type)
@@ -131,7 +117,7 @@ feature -- Access
 			if internal_completion_type = Void then
 				if return_type /= Void then
 					token_writer.new_line
-					return_type.ext_append_to (token_writer, associated_feature.associated_class)
+					return_type.ext_append_to (token_writer, associated_feature)
 					Result := token_writer.last_line.image
 				else
 					create Result.make_empty
@@ -142,38 +128,29 @@ feature -- Access
 			end
 		end
 
-	grid_item: EB_GRID_EDITOR_TOKEN_ITEM is
+	grid_item: EB_GRID_FEATURE_ITEM is
 			-- Grid item
 		local
-			l_style: like feature_style
+			l_f: QL_REAL_FEATURE
+			l_class: QL_CLASS
+			l_style: EB_GRID_FEATURE_ITEM_STYLE
 		do
-			l_style := feature_style
-
+			l_class := query_class_item_from_class_c (associated_feature.associated_class)
+			create l_f.make_with_parent (associated_feature, l_class)
 			if not show_signature and then not show_type then
-				l_style.disable_argument
-				l_style.disable_return_type
+				create {EB_GRID_JUST_NAME_FEATURE_STYLE}l_style
 			elseif show_signature and then not show_type then
-				l_style.enable_argument
-				l_style.disable_return_type
+				create {EB_NAME_SIGNATURE_FEATURE_STYLE}l_style
 			elseif show_type and then not show_signature then
-				l_style.enable_return_type
-				l_style.disable_argument
+				create {EB_NAME_TYPE_FEATURE_STYLE}l_style
 			elseif show_type and then show_signature then
-				l_style.enable_argument
-				l_style.enable_return_type
+				create {EB_GRID_FULL_FEATURE_STYLE}l_style
 			end
-			if show_disambiguated_name and name_is_ambiguated then
-				l_style.disable_use_overload_name
-			else
-				l_style.enable_use_overload_name
-			end
-			l_style.set_e_feature (associated_feature)
-			l_style.set_overload_name (name)
-			create Result
-
-			Result.set_overriden_fonts (label_font_table, label_font_height)
-			Result.set_pixmap (icon)
-			Result.set_text_with_tokens (l_style.text)
+			l_style.use_overload_name (not show_disambiguated_name)
+			create Result.make_overload (l_f, l_style, name)
+			Result.set_tooltip_display_function (agent display_colorized_tooltip)
+			Result.enable_pixmap
+			Result.set_overriden_fonts (label_font_table)
 		end
 
 feature -- Query
@@ -189,7 +166,7 @@ feature -- Comparison
 	begins_with (s: STRING): BOOLEAN is
 			-- Does this feature name begins with `s'?
 		do
-			if show_disambiguated_name and name_is_ambiguated then
+			if show_disambiguated_name then
 				Result := Precursor {EB_NAME_FOR_COMPLETION} (s)
 			else
 				if name_matcher = Void then
@@ -197,18 +174,6 @@ feature -- Comparison
 				end
 				Result := name_matcher.prefix_string (s, name)
 			end
-		end
-
-feature -- Setting
-
-	set_insert_name (a_name: like insert_name) is
-			-- Set `insert_name' with `a_name'.
-		require
-			a_name_attached: a_name /= Void
-		do
-			insert_name_internal := a_name.twin
-		ensure
-			insert_name_set: insert_name /= Void and then insert_name.is_equal (a_name)
 		end
 
 feature {NONE} -- Implementation
@@ -243,20 +208,6 @@ feature {NONE} -- Implementation
 	insert_name_internal: STRING
 
 	full_insert_name_internal: STRING
-
-	name_is_ambiguated: BOOLEAN
-			-- Is this name ambiguated. If not we always use the received name rather than the feature name.
-
-	feature_style: EB_FEATURE_EDITOR_TOKEN_STYLE is
-			-- Feature style to generate text for `associated_feature'.
-		once
-			create Result
-			Result.disable_class
-			Result.disable_comment
-			Result.disable_value_for_constant
-		ensure
-			result_attached: Result /= Void
-		end
 
 invariant
 	associated_feature_not_void: associated_feature /= Void

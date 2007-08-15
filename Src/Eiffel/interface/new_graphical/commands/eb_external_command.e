@@ -78,7 +78,6 @@ feature {NONE} -- Initialization
 					-- Automatically add `Current' to the list of commands.
 				commands.put (Current, index)
 			end
-
 			enable_sensitive
 			external_output_manager.synchronize_command_list (Current)
 		end
@@ -109,7 +108,6 @@ feature {NONE} -- Initialization
 					-- Automatically add `Current' to the list of commands.
 				commands.put (Current, index)
 			end
-
 			enable_sensitive
 			write_to_preference
 			external_output_manager.synchronize_command_list (Current)
@@ -147,7 +145,6 @@ feature {NONE} -- Initialization
 				is_valid
 			then
 				commands.put (Current, index)
-
 				enable_sensitive
 			end
 		end
@@ -189,13 +186,281 @@ feature -- Basic operations
 
 feature{NONE} -- Command substitution
 
-	show_warning_dialog (msg: STRING_GENERAL) is
+	substitute_command (cmd: STRING; sub_str: STRING; hdr: PROCEDURE [ANY, TUPLE]) is
+			-- if `cmd' has substring `sub_str', call agent handler `hdr'.
+		require
+			cmd_not_void: cmd /= Void
+			sub_str_not_void: sub_str /= Void
+			hdr_not_void: hdr /= Void
+		local
+			l_str: STRING
+			l_index: INTEGER
+			s_index: INTEGER
+		do
+			l_str := cmd.as_lower
+			s_index := 1
+			l_index := l_str.substring_index (sub_str, s_index)
+			if l_index > 0 then
+				from
+
+				until
+					l_index = 0
+				loop
+					l_str.replace_substring (sub_str, l_index, l_index + sub_str.count - 1)
+					cmd.replace_substring (sub_str, l_index, l_index + sub_str.count - 1)
+					s_index := l_index + sub_str.count
+					l_index := l_str.substring_index (sub_str, s_index)
+				end
+				hdr.call ([cmd, sub_str])
+			end
+		end
+
+	sub_string_list: ARRAYED_LIST [STRING] is
+			-- List of string used for command substitution.
+		once
+			create Result.make (7)
+			Result.extend ("$class_name")
+			Result.extend ("$file_name")
+			Result.extend ("$directory_name")
+			Result.extend ("$w_code")
+			Result.extend ("$f_code")
+			Result.extend ("$group_path")
+			Result.extend ("$line")
+		end
+
+	sub_action_list: ARRAYED_LIST [ PROCEDURE [ANY, TUPLE]] is
+			-- List of actions used for command substitution
+		once
+			create Result.make (7)
+			Result.extend (agent on_substitute_class_name)
+			Result.extend (agent on_substitute_file_name)
+			Result.extend (agent on_substitute_directory_name)
+			Result.extend (agent on_substitute_w_code)
+			Result.extend (agent on_substitute_f_code)
+			Result.extend (agent on_substitute_group_path)
+			Result.extend (agent on_substitute_line)
+		end
+
+	sub_class_name: INTEGER is 1
+	sub_file_name: INTEGER is 2
+	sub_directory_name: INTEGER is 3
+	sub_w_code: INTEGER is 4
+	sub_f_code: INTEGER is 5
+	sub_group_path: INTEGER is 6
+	sub_line: INTEGER is 7
+
+	show_warning_dialog (msg: STRING) is
 			-- Show a warning dialog to display `msg'.
 		local
-			wdlg: EB_WARNING_DIALOG
+			wdlg: EV_WARNING_DIALOG
 		do
 			create wdlg.make_with_text (msg)
 			wdlg.show_modal_to_window (window_manager.last_focused_development_window.window)
+		end
+
+	on_substitute_group_path (cmd: STRING; sub_str: STRING) is
+			-- If `cmd' has substring (case insensitive' `sub_str',
+			-- call an agent to substitute it.
+		require
+			is_command_ok_is_true: is_command_ok = True
+			cmd_attached: cmd /= Void
+			sub_str_attached: sub_str /= Void
+		local
+			cv_cst: CLASSI_STONE
+			dev: EB_DEVELOPMENT_WINDOW
+			l_dir: STRING
+		do
+			dev := Window_manager.last_focused_development_window
+			if dev /= Void then
+				cv_cst ?= dev.stone
+				if cv_cst /= Void then
+					l_dir := cv_cst.class_i.group.location.evaluated_directory
+					cmd.replace_substring_all (sub_string_list.i_th (sub_group_path), l_dir)
+				else
+					set_is_command_ok (False)
+					show_warning_dialog (Warning_messages.w_Command_needs_directory)
+				end
+			else
+				set_is_command_ok (False)
+			end
+		end
+
+	on_substitute_class_name (cmd: STRING; sub_str: STRING) is
+			-- If `cmd' has substring (case insensitive) `sub_str',
+			-- call an agent to substitute it.
+		require
+			is_command_ok_is_true: is_command_ok = True
+			cmd_attached: cmd /= Void
+			sub_str_attached: sub_str /= Void
+		local
+			cn: STRING
+			dev: EB_DEVELOPMENT_WINDOW
+		do
+			dev := Window_manager.last_focused_development_window
+			if dev /= Void then
+				cn := dev.class_name
+				if cn = Void or else cn.is_empty then
+					set_is_command_ok (False)
+					show_warning_dialog (Warning_messages.w_Command_needs_class)
+				else
+					cmd.replace_substring_all (sub_string_list.i_th (sub_class_name), cn)
+				end
+			else
+				set_is_command_ok (False)
+			end
+		end
+
+	on_substitute_file_name (cmd: STRING; sub_str: STRING) is
+			-- If `cmd' has substring (case insensitive) `sub_str',
+			-- call an agent to substitute it.
+		require
+			is_command_ok_is_true: is_command_ok = True
+			cmd_attached: cmd /= Void
+			sub_str_attached: sub_str /= Void
+		local
+			cv_cst: CLASSI_STONE
+			dev: EB_DEVELOPMENT_WINDOW
+		do
+			dev := Window_manager.last_focused_development_window
+			if dev /= Void then
+				cv_cst ?= dev.stone
+				if cv_cst /= Void then
+					cmd.replace_substring_all (sub_string_list.i_th (sub_file_name), cv_cst.class_i.file_name)
+				else
+					set_is_command_ok (False)
+					show_warning_dialog (Warning_messages.w_Command_needs_file)
+				end
+			else
+				set_is_command_ok (False)
+			end
+		end
+
+	on_substitute_directory_name (cmd: STRING; sub_str: STRING) is
+			-- If `cmd' has substring (case insensitive) `sub_str',
+			-- call an agent to substitute it.
+		require
+			is_command_ok_is_true: is_command_ok = True
+			cmd_attached: cmd /= Void
+			sub_str_attached: sub_str /= Void
+		local
+			cv_cst: CLASSI_STONE
+			dev: EB_DEVELOPMENT_WINDOW
+			l_dir: STRING
+			l_path: STRING
+		do
+			dev := Window_manager.last_focused_development_window
+			if dev /= Void then
+				cv_cst ?= dev.stone
+				if cv_cst /= Void then
+					l_dir := cv_cst.class_i.group.location.evaluated_directory
+					l_path := cv_cst.class_i.config_class.path
+					l_path.replace_substring_all ("/", operating_environment.directory_separator.out)
+					l_dir.append (l_path)
+					cmd.replace_substring_all (sub_string_list.i_th (sub_directory_name), l_dir)
+				else
+					set_is_command_ok (False)
+					show_warning_dialog (Warning_messages.w_Command_needs_directory)
+				end
+			else
+				set_is_command_ok (False)
+			end
+		end
+
+	on_substitute_w_code (cmd: STRING; sub_str: STRING) is
+			-- If `cmd' has substring (case insensitive) `sub_str',
+			-- call an agent to substitute it.
+		require
+			is_command_ok_is_true: is_command_ok = True
+			cmd_attached: cmd /= Void
+			sub_str_attached: sub_str /= Void
+		do
+			if workbench.system_defined then
+				cmd.replace_substring_all (sub_string_list.i_th (sub_w_code), project_location.workbench_path)
+			else
+				show_warning_dialog (Warning_messages.w_no_system_defined)
+				set_is_command_ok (False)
+			end
+		end
+
+	on_substitute_f_code (cmd: STRING; sub_str: STRING) is
+			-- If `cmd' has substring (case insensitive) `sub_str',
+			-- call an agent to substitute it.
+		require
+			is_command_ok_is_true: is_command_ok = True
+			cmd_attached: cmd /= Void
+			sub_str_attached: sub_str /= Void
+		do
+			if workbench.system_defined then
+				cmd.replace_substring_all (sub_string_list.i_th (sub_f_code), project_location.final_path)
+			else
+				show_warning_dialog (Warning_messages.w_no_system_defined)
+				set_is_command_ok (False)
+			end
+		end
+
+	on_substitute_line (cmd: STRING; sub_str: STRING) is
+			-- If `cmd' has substring (case insensitive) `sub_str',
+			-- call an agent to substitute it.
+		require
+			is_command_ok_is_true: is_command_ok = True
+			cmd_attached: cmd /= Void
+			sub_str_attached: sub_str /= Void
+		local
+			dev: EB_DEVELOPMENT_WINDOW
+			l_editor_tool: EB_EDITOR_TOOL
+			l_text_area: EB_SMART_EDITOR
+		do
+			dev := Window_manager.last_focused_development_window
+			if dev /= Void then
+				l_editor_tool := dev.editor_tool
+				if l_editor_tool /= Void then
+					l_text_area := l_editor_tool.text_area
+					if l_text_area /= Void and then not l_text_area.is_empty then
+						cmd.replace_substring_all (sub_string_list.i_th (sub_line), l_text_area.cursor_y_position.out)
+					end
+				end
+			else
+				set_is_command_ok (False)
+			end
+		end
+
+	is_command_ok: BOOLEAN is
+			-- Is command valid (when string substitution is needed)?
+		do
+			Result := command_ok_cell.item
+		end
+
+	set_is_command_ok (b: BOOLEAN) is
+			-- Set `is_command_ok' with `b'.
+		do
+			command_ok_cell.put (b)
+		end
+
+feature{NONE}
+
+	command_ok_cell: CELL [BOOLEAN] is
+			-- Cell to store Value of `is_command_ok'
+		once
+			create Result.put (False)
+		end
+
+	prepare_command (cmd: STRING; dir: STRING) is
+			-- Prepare external command `cmd', do stirng substitution if needed.
+		do
+			from
+				set_is_command_ok (True)
+				sub_string_list.start
+				sub_action_list.start
+			until
+				sub_string_list.after or sub_action_list.after or not is_command_ok
+			loop
+				substitute_command (cmd, sub_string_list.item, sub_action_list.item)
+				if is_command_ok then
+					substitute_command (dir, sub_string_list.item, sub_action_list.item)
+				end
+				sub_string_list.forth
+				sub_action_list.forth
+			end
 		end
 
 feature -- Execution
@@ -210,18 +475,12 @@ feature -- Execution
 			wd: STRING
 			args: LIST [STRING]
 			use_argument: BOOLEAN
-			msg: STRING_32
+			msg: STRING
 			ok: BOOLEAN
-
-			l_scanner: EB_COMMAND_SCANNER
-			l_replacer: EB_TEXT_REPLACER
-			l_factory: EB_EXTERNAL_COMMAND_TEXT_FRAGMENT_FACTORY
-			l_fragments: LINKED_LIST [EB_TEXT_FRAGMENT]
 		do
 			if external_launcher.launched and then not external_launcher.has_exited then
 				show_warning_dialog (interface_names.e_external_command_is_running)
 			else
-				ok := True
 				create cl.make (external_command.count + 20)
 				if working_directory /= Void then
 					create wd.make (working_directory.count + 20)
@@ -232,78 +491,62 @@ feature -- Execution
 				cl.append (external_command)
 				external_launcher.set_original_command_name (cl)
 
-					-- Substitute placeholders in execute command `cl'.
-				create l_factory
-				create l_scanner.make (l_factory, create {YY_BUFFER}.make (cl))
-				create l_replacer
-				create l_fragments.make
-
-				l_scanner.scan
-				l_fragments.append (l_scanner.text_fragments)
-				l_replacer.text_fragments.append (l_scanner.text_fragments)
-				l_replacer.prepare_replacement
-				cl := l_replacer.new_text (cl)
-
-					-- Substitute placeholders in specified working directory `dir'.
-				l_scanner.wipe_text_fragments
-				l_scanner.reset
-				l_scanner.set_input_buffer (create {YY_BUFFER}.make (wd))
-				l_scanner.scan
-				l_fragments.append (l_scanner.text_fragments)
-				l_replacer.text_fragments.wipe_out
-				l_replacer.text_fragments.append (l_scanner.text_fragments)
-				l_replacer.prepare_replacement
-				wd := l_replacer.new_text (wd)
-
-				create exec
-				if working_directory /= Void and then not working_directory.is_empty then
-					od := exec.current_working_directory
-					exec.change_working_directory (working_directory)
-					if exec.return_code /= 0 then
-						create msg.make (100)
-						msg.append (interface_names.e_working_directory_invalid (working_directory))
-						msg.append ("%N")
-						msg.append (interface_names.e_external_command_not_launched)
-						show_warning_dialog (msg)
-						ok := False
-					end
-					exec.change_working_directory (od)
-				end
+				prepare_command (cl, wd)
+				ok := is_command_ok
 				if ok then
-					if platform_constants.is_windows then
-						cmdexe := Execution_environment.get ("COMSPEC")
-						if cmdexe /= Void then
-								-- This allows the use of `dir' etc.
-							external_launcher.prepare_command_line (cmdexe + " /c %""+cl+"%"", Void, wd)
-							use_argument := False
-						else
-							external_launcher.prepare_command_line (cl, Void, wd)
-							use_argument := False
+					create exec
+					if working_directory /= Void and then not working_directory.is_empty then
+						od := exec.current_working_directory
+						exec.change_working_directory (working_directory)
+						if exec.return_code /= 0 then
+							create msg.make (100)
+							msg.append (interface_names.e_working_directory_invalid)
+							msg.append_character ('%"')
+							msg.append (working_directory)
+							msg.append ("%".%N")
+							msg.append (interface_names.e_external_command_not_launched)
+							show_warning_dialog (msg)
+							ok := False
 						end
-					else
-						create {ARRAYED_LIST [STRING]}args.make (2)
-						args.extend ("-c")
-						args.extend ("%'%'"+cl+"%'%'")
-						external_launcher.prepare_command_line ("/bin/sh", args, wd)
-						use_argument := True
+						exec.change_working_directory (od)
 					end
-					external_launcher.set_hidden (True)
-					external_launcher.finished_actions.extend_kamikaze (agent l_fragments.do_all (agent (a_fragment: EB_TEXT_FRAGMENT) do a_fragment.safe_dispose_after_replacement end))
-					external_launcher.launch (True, use_argument)
+					if ok then
+						if platform_constants.is_windows then
+							cmdexe := Execution_environment.get ("COMSPEC")
+							if cmdexe /= Void then
+									-- This allows the use of `dir' etc.
+								external_launcher.prepare_command_line (cmdexe + " /c %""+cl+"%"", Void, wd)
+								use_argument := False
+							else
+								external_launcher.prepare_command_line (cl, Void, wd)
+								use_argument := False
+							end
+						else
+							create {ARRAYED_LIST [STRING]}args.make (2)
+							args.extend ("-c")
+							args.extend ("%'%'"+cl+"%'%'")
+							external_launcher.prepare_command_line ("/bin/sh", args, wd)
+							use_argument := True
+						end
+						external_launcher.set_hidden (True)
+						external_launcher.launch (True, use_argument)
+					end
 				end
 			end
 		end
 
 feature -- Properties
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Representation of `Current' in menus.
 		do
-			create {STRING_32}Result.make (name.count + 15)
-			Result.append (("&").as_string_32)
-			Result.append (index.out.as_string_32)
-			Result.append ((" ").as_string_32)
-			Result.append (interface_names.escaped_string_for_menu_item (name).as_string_32)
+			create Result.make (name.count + 15)
+			Result.append_character ('&')
+			Result.append (index.out)
+			Result.append_character (' ')
+			Result.append (interface_names.escaped_string_for_menu_item (name))
+			Result.append (Tabulation)
+			Result.append ((create {EB_EXTERNAL_COMMANDS_EDITOR}.make).accelerators.item (index).out)
 		end
 
 	name: STRING
@@ -317,6 +560,9 @@ feature -- Properties
 
 	working_directory: STRING
 			-- Working director where the corresponding external command is invoked.
+
+	last_call_output: STRING
+			-- Output of the last invocation of command.
 
 feature -- Status setting
 
@@ -348,18 +594,6 @@ feature -- Status setting
 			old_index := -1
 			write_to_preference
 			external_output_manager.synchronize_command_list (Current)
-		end
-
-	setup_managed_shortcut (l_accelerators: ARRAY [EV_ACCELERATOR]) is
-			-- Setup `accelerator' and `managed_shortcut'
-		require
-			l_accelerators_not_void: l_accelerators /= Void
-		local
-			l_shortcut: SHORTCUT_PREFERENCE
-		do
-			l_shortcut := preferences.external_command_data.shortcuts.item ("shortcut_" + index.out)
-			set_referred_shortcut (l_shortcut)
-			set_accelerator (l_accelerators.item (index))
 		end
 
 feature{EB_EXTERNAL_OUTPUT_TOOL} -- Status setting
@@ -469,7 +703,7 @@ feature {NONE} -- Implementation
 	create_directory_dialog is
 			--
 		do
-			create dir_dlg.make_with_title (interface_names.t_select_working_directory)
+			create dir_dlg.make_with_title ("Select working directory")
 			dir_dlg.ok_actions.extend (agent on_directory_dialog_ok)
 			dir_dlg.show_modal_to_window (dialog)
 		end
@@ -509,7 +743,7 @@ feature {NONE} -- Implementation
 
 			create hb1.default_create
 			create working_directory_field
-			create wd.make_with_text (interface_names.l_working_directory.as_string_32 + ": ")
+			create wd.make_with_text ("Working directory:")
 			wd.align_text_left
 			create dir_btn.default_create
 			dir_btn.set_pixmap (pixmaps.icon_pixmaps.general_open_icon)
@@ -586,7 +820,7 @@ feature {NONE} -- Implementation
 			-- User pressed OK in `dialog'.
 			-- Try to update `Current's status.
 		local
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 			ix: INTEGER
 		do
 			ix := index_field.value

@@ -71,11 +71,9 @@ feature -- Code generation
 			name: STRING
 			i: INTEGER
 			put_eif_test: BOOLEAN
-			arg_types: ARRAY [STRING]
 		do
 			name := inline_byte_code.generated_c_feature_name
-			arg_types := inline_byte_code.argument_types
-			force_inline_def (inline_byte_code.result_type, name, arg_types)
+			force_inline_def (inline_byte_code.result_type, name, inline_byte_code.argument_types)
 			name := inline_name (name)
 
 			l_buffer := Context.buffer
@@ -100,9 +98,7 @@ feature -- Code generation
 				if i > 1 then
 					l_buffer.put_string (", ")
 				end
-				l_buffer.put_character ('(')
-				l_buffer.put_string (arg_types.item (i))
-				l_buffer.put_string (") arg" + i.out)
+				l_buffer.put_string ("arg" + i.out)
 				i := i + 1
 			end
 			if put_eif_test then
@@ -280,12 +276,8 @@ feature {NONE} -- Implementation
 					end
 				end
 
-					-- Replace `$$_result_type' if used by return type of current inlined function.
+					-- Replace `$$_result_type' if used by return type of current inlined function
 				l_code.replace_substring_all ("$$_result_type", a_ret_type.c_type.c_string)
-				if not a_ret_type.is_void then
-						-- Replace `$$_result_value' if used by return value field of current inlined function.
-					l_code.replace_substring_all ("$$_result_value", a_ret_type.c_type.typed_field)
-				end
 
 					-- FIXME: Manu 03/26/2003:
 					-- When verbatim strings are used, on Windows we get a %R%N which

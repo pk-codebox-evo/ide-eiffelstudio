@@ -35,11 +35,6 @@ inherit
 			{NONE} all
 		end
 
-	SHARED_LOCALE
-		export
-			{NONE} all
-		end
-
 feature {NONE} -- Initialization
 
 	make (a_location: DIRECTORY_NAME) is
@@ -120,8 +115,6 @@ feature {NONE} -- Implementation
 			wizard_command.append (wizard_exec_filename)
 			wizard_command.append (" ")
 			wizard_command.append ("%""+location+"%"")
-			wizard_command.append (" ")
-			wizard_command.append (locale.info.id.name.out)
 			wizard_command.append (" -callback %""+callback_filename+"%"")
 			launch (wizard_command)
 			wait_for_finish (callback_filename)
@@ -183,7 +176,7 @@ feature {NONE} -- Implementation
 				i >= 10
 			loop
 				ev_application.sleep (10)
-				ev_application.process_events
+				process_events_and_idle
 				i := i + 1
 			end
 		end

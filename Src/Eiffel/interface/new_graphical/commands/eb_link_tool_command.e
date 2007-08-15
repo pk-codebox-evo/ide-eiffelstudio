@@ -10,17 +10,13 @@ class
 
 inherit
 	EB_CONTEXT_DIAGRAM_COMMAND
-		undefine
-			menu_name
 		redefine
-			new_sd_toolbar_item,
+			new_toolbar_item,
+			menu_name,
 			initialize
 		end
 
 	EB_CONTEXT_DIAGRAM_TOGGLE_COMMAND
-		redefine
-			menu_name
-		end
 
 create
 	make
@@ -43,7 +39,6 @@ feature -- Basic operations
 		local
 			l_all_saved_edges: like all_saved_edges
 			l_world: EIFFEL_WORLD
-			l_string: STRING_GENERAL
 		do
 			if is_sensitive then
 				l_all_saved_edges := all_saved_edges
@@ -65,9 +60,7 @@ feature -- Basic operations
 						[<<agent l_world.disable_right_angles, agent l_world.remove_right_angles, agent disable_select>>],
 						[<<agent l_world.enable_right_angles, agent l_world.apply_right_angles, agent enable_select>>])
 				end
-				l_string := tooltip.twin
-				l_string.append (shortcut_string.as_string_32)
-				current_button.set_tooltip (l_string)
+				current_button.set_tooltip (tooltip + shortcut_string)
 			end
 		end
 
@@ -103,16 +96,16 @@ feature -- Basic operations
 					link_tool_dialog.set_maximum_size (link_tool_dialog.width, link_tool_dialog.height)
 				end
 
-				link_tool_dialog.show_relative_to_window (tool.develop_window.window)
+				link_tool_dialog.show_relative_to_window (tool.development_window.window)
 			end
 		end
 
-	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_TOGGLE_BUTTON is
-			-- Create a new sd toolbar button for this command.
+	new_toolbar_item (display_text: BOOLEAN): EB_COMMAND_TOGGLE_TOOL_BAR_BUTTON is
+			-- Create a new toolbar button for this command.
 		do
 			create Result.make (Current)
 			current_button := Result
-			initialize_sd_toolbar_item (Result, display_text)
+			initialize_toolbar_item (Result, display_text)
 			Result.select_actions.extend (agent execute)
 			Result.drop_actions.extend (agent execute_with_link_stone)
 		end
@@ -195,7 +188,7 @@ feature {EB_LINK_TOOL_DIALOG} -- Implementation
 
 feature -- Access
 
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			if current_button.is_selected then
@@ -216,13 +209,7 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.diagram_force_right_angles_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.diagram_force_right_angles_icon_buffer
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name of the menu entry
 		do
 			Result := Interface_names.m_diagram_link_tool
@@ -282,9 +269,9 @@ feature {NONE} -- Implementation
 			end
 		end
 
-feature {EB_DIAGRAM_TOOL} -- Implementation
+feature {EB_CONTEXT_EDITOR} -- Implementation
 
-	current_button: EB_SD_COMMAND_TOOL_BAR_TOGGLE_BUTTON;
+	current_button: EB_COMMAND_TOGGLE_TOOL_BAR_BUTTON;
 			-- Current toggle button.
 
 indexing

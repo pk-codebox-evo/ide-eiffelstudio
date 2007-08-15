@@ -20,24 +20,15 @@ inherit
 			default_create
 		end
 
-	EB_SHARED_PREFERENCES
-		export
-			{NONE} all
-		undefine
-			default_create
-		end
-
 feature {NONE} -- Initialization
 
 	 default_create is
 	 		-- Make and initialize command.
-	 	local
-	 		l_shortcut: SHORTCUT_PREFERENCE
 	 	do
 	 		Precursor
-			l_shortcut := preferences.misc_shortcut_data.shortcuts.item ("cancel")
-			create accelerator.make_with_key_combination (l_shortcut.key, l_shortcut.is_ctrl, l_shortcut.is_alt, l_shortcut.is_shift)
-			set_referred_shortcut (l_shortcut)
+			accelerator := create {EV_ACCELERATOR}.make_with_key_combination (
+				create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_pause), True, False, False
+			)
 			accelerator.actions.extend (agent execute)
 		end
 
@@ -51,7 +42,7 @@ feature -- Execution
 
 feature {NONE} -- Implementation
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it appears in the menu (with & symbol).
 		do
 			Result := interface_names.B_cancel

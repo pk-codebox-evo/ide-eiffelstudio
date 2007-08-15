@@ -177,13 +177,14 @@ feature -- Command
 			window_not_void: w /= Void
 		local
 			acc: like accelerator
-			l_shortcut: EB_FIXED_SHORTCUT
 		do
 			if not w.is_destroyed then
 				acc := accelerator (w, False)
 				if acc = Void then
-					l_shortcut := preferences.misc_shortcut_data.debug_menu_shortcut
-					create acc.make_with_key_combination (l_shortcut.key, l_shortcut.is_ctrl, l_shortcut.is_alt, l_shortcut.is_shift)
+					create acc.make_with_key_combination (
+							create {EV_KEY}.make_with_code ({EV_KEY_CONSTANTS}.key_d) ,
+							True, True, False
+						)
 					acc.actions.extend (agent update_menu (w))
 		    		add_details_for (w, Void, acc)
 					w.accelerators.extend (acc)
@@ -199,7 +200,18 @@ feature -- Command
 			if not w.is_destroyed then
 				acc := accelerator (w, True)
 	    		if acc /= Void then
-					w.accelerators.prune_all (acc)
+	    			from
+	    				w.accelerators.start
+	    			until
+	    				w.accelerators.after
+	    			loop
+	    				if w.accelerators.item = acc then
+	    					w.accelerators.remove
+	    				else
+	    					w.accelerators.forth
+	    				end
+	    			end
+--					w.accelerators.prune_all (acc)
 	    		end
 			end
 		end
@@ -224,8 +236,6 @@ feature -- Command
 
 	add_menu (w: EB_VISION_WINDOW) is
 			-- Add menu to menu bar then change the preference.
-		require
-			w_not_void: w /= Void
 		local
 			m: like menu
 		do

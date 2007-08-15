@@ -252,10 +252,9 @@ feature
 
 	generate_current is
 		do
-			buffer.put_string ("((EIF_TYPED_VALUE *)")
+			buffer.put_string ("((EIF_TYPED_ELEMENT *)")
 			arguments.print_register
-			buffer.put_string (")[1].")
-			reference_c_type.generate_typed_field (buffer)
+			buffer.put_string (")[1].element.rarg")
 		end
 
 	generate_precalc_routine_address is
@@ -269,10 +268,7 @@ feature
 			l_feat: FEATURE_I
 			l_c_return_type: TYPE_C
 			l_args: ARRAY [STRING_8]
-			l_seed: FEATURE_I
-			l_return_type_string: STRING
 		do
-			buffer.put_string ("(EIF_POINTER)")
 			buffer.put_character ('(')
 			if is_inline_agent or context.workbench_mode then
 				buffer.put_string ("0),")
@@ -288,7 +284,7 @@ feature
 				else
 					l_type_id := l_class_type.type_id
 					if l_entry.is_polymorphic (l_type_id) then
-						l_table_name := Encoder.routine_table_name (rout_id)
+						l_table_name := Encoder.table_name (rout_id)
 						buffer.put_string (l_table_name)
 						buffer.put_string ("[Dtype((")
 						generate_current
@@ -304,28 +300,18 @@ feature
 						l_rout_table.goto_implemented (l_type_id)
 
 						l_feat := l_class_type.associated_class.feature_of_feature_id (feature_id)
-						l_seed := system.seed_of_routine_id (rout_id)
-						if l_seed.type.type_i.is_formal then
-							l_c_return_type := reference_c_type
-						else
-							l_c_return_type := system.address_table.solved_type (l_class_type, l_feat.type)
-						end
-						if context.workbench_mode then
-							l_return_type_string := "EIF_TYPED_VALUE"
-						else
-							l_return_type_string := l_c_return_type.c_string
-						end
+						l_c_return_type := system.address_table.solved_type (l_class_type, l_feat.type)
 						if l_rout_table.is_implemented then
-							l_function_name := l_rout_table.feature_name + system.seed_of_routine_id (rout_id).generic_fingerprint
+							l_function_name := l_rout_table.feature_name
 							buffer.put_string (l_function_name)
 							buffer.put_string ("),")
 							if l_feat.has_arguments then
-								l_args := system.address_table.arg_types (l_class_type, l_feat.arguments, True, l_seed)
+								l_args := system.address_table.arg_types (l_class_type, l_feat.arguments)
 							else
 								l_args := <<"EIF_REFERENCE">>
 							end
 							extern_declarations.add_routine_with_signature (
-								l_return_type_string, l_function_name, l_args)
+								l_c_return_type, l_function_name, l_args)
 						else
 								-- Function pointer associated to a deferred feature
 								-- without any implementation. We mark `l_is_implemented'
@@ -340,7 +326,7 @@ feature
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

@@ -13,9 +13,6 @@ inherit
 	SHARED_CONFIGURE_RESOURCES
 
 	EB_RADIO_COMMAND_FEEDBACK
-		redefine
-			update
-		end
 
 	EB_SHARED_WINDOW_MANAGER
 
@@ -27,26 +24,12 @@ inherit
 
 	EB_RECYCLABLE
 
-feature -- Initialization
-
-	make (a_manager: like manager) is
-			-- Create a formatter associated with `a_manager'.
-		do
-			manager := a_manager
-			command_name := capital_command_name.twin
-			command_name := interface_names.string_general_as_left_adjusted (command_name)
-			command_name := interface_names.string_general_as_lower (command_name)
-			create post_execution_action
-		ensure
-			valid_capital_command_name: valid_string (capital_command_name)
-		end
-
 feature -- Properties
 
 	manager: EB_STONABLE
 			-- What sends and receives stones.
 
-	output_line: EV_LABEL
+	output_line: EV_TEXTABLE
 			-- Where status information should be printed.
 
 	widget: EV_WIDGET is
@@ -57,103 +40,31 @@ feature -- Properties
 	stone: STONE
 			-- Stone representing Current
 
+	is_editor_formatter: BOOLEAN is
+			-- Is current formatter use an editor to display information?
+		do
+		end
+
 	viewpoints: CLASS_VIEWPOINTS
 			-- Class view points
 
 	post_execution_action: EV_NOTIFY_ACTION_SEQUENCE
 			-- Called after execution
 
-	empty_widget: EV_WIDGET is
-			-- Widget displayed when no information can be displayed.
+feature -- Initialization
+
+	make (a_manager: like manager) is
+			-- Create a formatter associated with `a_manager'.
 		do
-			if internal_empty_widget = Void then
-				new_empty_widget
-			end
-			Result := internal_empty_widget
-		end
-
-	command_name: STRING_GENERAL
-			-- Command name
-
-	element_name: STRING is
-			-- name of associated element in current formatter.
-			-- For exmaple, if a class stone is associated to current, `element_name' would be the class name.
-			-- Void if element is not retrievable.
-		deferred
-		end
-
-	name: STRING_GENERAL is
-			-- Name of Current formatter
-		do
-			Result := command_name.twin
+			manager := a_manager
+			capital_command_name := command_name.twin
+			capital_command_name.left_adjust
+				-- Set the first character to upper case.
+			capital_command_name.put ((capital_command_name @ 1) - 32, 1)
+			create post_execution_action
 		ensure
-			result_attached: Result /= Void
+			valid_capital_command_name: valid_string (capital_command_name)
 		end
-
-	displayer_generator: TUPLE [any_generator: FUNCTION [ANY, TUPLE, like displayer]; name: STRING] is
-			-- Generator to generate proper `displayer' for Current formatter
-		deferred
-		ensure
-			result_attached: Result /= Void
-			result_valid: Result.any_generator /= Void and then (Result.name /= Void and then not Result.name.is_empty)
-		end
-
-	control_bar: ARRAYED_LIST [SD_TOOL_BAR_ITEM] is
-			-- Possible area to display a tool bar
-		deferred
-		end
-
-	displayer: EB_FORMATTER_DISPLAYER is
-			-- Displayer used to display Result of Current formatter
-		deferred
-		end
-
-	veto_format_function: FUNCTION [ANY, TUPLE, BOOLEAN]
-			-- Function to veto format.
-			-- If not Void, it's invoked before `format'. And if returned value is True,
-			-- format will go on, if returned value is False, format is vetoed.
-			-- If Void, format will go on.
-
-feature -- Displayer factory
-
-	displayer_generators: EB_FORMATTER_DISPLAYERS is
-			-- Displayer generators
-		once
-			create Result
-		ensure
-			result_attached: Result /= Void
-		end
-
-feature -- Status report
-
-	is_dotnet_formatter: BOOLEAN is
-			-- Is Current able to format .NET class texts?
-		deferred
-		end
-
-	is_valid: BOOLEAN is
-			-- Is Current formatter valid?
-		do
-			Result := True
-		end
-
-	is_customized_fomatter: BOOLEAN is
-			-- Is Current a customized formatter?
-		do
-		end
-
-	is_editor_formatter: BOOLEAN is
-			-- Is Current formatter based on an editor?
-		do
-		end
-
-	is_browser_formatter: BOOLEAN is
-			-- Is Current formatter based on a browser?
-		do
-		end
-
-	should_displayer_be_recycled: BOOLEAN
-			-- Should `displayer' be recycled in `internal_recycle'?
 
 feature -- Setting
 
@@ -183,6 +94,16 @@ feature -- Setting
 			manager := a_manager
 		end
 
+	set_editor (an_editor: EB_CLICKABLE_EDITOR) is
+			-- Set `editor' to `an_editor'.
+			-- Used to share an editor between several formatters.
+		require
+			an_editor_non_void: an_editor /= Void
+		do
+			editor := an_editor
+			internal_widget := an_editor.widget
+		end
+
 	set_viewpoints (a_viewpoints: like viewpoints) is
 			-- Viewpoints of current formatting
 		do
@@ -191,82 +112,9 @@ feature -- Setting
 			viewpoints_is_set: viewpoints = a_viewpoints
 		end
 
-	set_veto_format_function (a_function: like veto_format_function) is
-			-- Set `veto_format_function' with `a_function'.
-		do
-			veto_format_function := a_function
-		ensure
-			veto_format_function_set: veto_format_function = a_function
-		end
-
 	set_focus is
 			-- Set focus to current formatter.
 		deferred
-		end
-
-	reset_display is
-			-- Clear all graphical output.
-		deferred
-		end
-
-	synchronize is
-			-- Check validity of Current formatter.
-			-- Update UI according to validity of Current formatter if displayed.
-		do
-			if is_valid then
-				enable_sensitive
-				widget.enable_sensitive
-			else
-				disable_sensitive
-				widget.disable_sensitive
-			end
-		end
-
-	update (a_window: EV_WINDOW) is
-			-- Update `accelerator' and interfaces according to `referred_shortcut'.
-		local
-			mname: STRING_GENERAL
-			tt: STRING_GENERAL
-		do
-			Precursor {EB_RADIO_COMMAND_FEEDBACK} (a_window)
-			if menu_item /= Void then
-				mname := menu_name.twin
-				if shortcut_available then
-					mname.append (tabulation)
-					mname.append (shortcut_string)
-				end
-				menu_item.set_text (mname)
-			end
-			tt := capital_command_name.twin
-			if shortcut_available then
-				tt.append (opening_parenthesis)
-				tt.append (shortcut_string)
-				tt.append (closing_parenthesis)
-			end
-			if button /= Void then
-				button.set_tooltip (tt)
-			end
-			if sd_button /= Void then
-				sd_button.set_tooltip (tt)
-				sd_button.set_description (capital_command_name)
-			end
-		end
-
-	ensure_display_in_widget_owner is
-			-- If Current is selected, ensure Current is displayed in `widget_owner' if `widget_owner' is attached.
-		do
-			if selected and then widget_owner /= Void then
-				widget_owner.ensure_formatter_display (Current)
-				display_header
-			end
-		end
-
-	set_should_displayer_be_recycled (b: BOOLEAN) is
-			-- Set `should_displayer_be_recycled' with `b'.
-		do
-			should_displayer_be_recycled := b
-		ensure
-			should_displayer_be_recycled_set: should_displayer_be_recycled = b
 		end
 
 feature -- Formatting
@@ -279,129 +127,20 @@ feature -- Formatting
 	last_was_error: BOOLEAN
 			-- Did an error occur during the last attempt to format?
 
-	set_must_format (b: BOOLEAN) is
-			-- Set `must_format' with `b'.
-		do
-			must_format := b
-		ensure
-			must_format_set: must_format = b
-		end
-
 feature -- Interface
-
-	symbol: ARRAY [EV_PIXMAP] is
-			-- Pixmaps for the default button (1 is color, 2 is grey, if any).
-		deferred
-		end
-
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representation.
-		deferred
-		end
-
-	new_standalone_menu_item: EV_RADIO_MENU_ITEM is
-			-- Create a new menu item.
-		local
-			mname: STRING_GENERAL
-		do
-			mname := menu_name.twin
-			if shortcut_available then
-				mname.append (Tabulation)
-				mname.append (shortcut_string)
-			end
-			create Result.make_with_text (mname)
-			Result.set_pixmap (symbol @ 1)
-		ensure
-			new_standalone_menu_item_not_void: Result /= Void
-		end
-
-	new_menu_item: EV_RADIO_MENU_ITEM
-			-- Create a new menu item for `Current'.
-		do
-			Result := new_standalone_menu_item
-			set_menu_item (Result)
-		ensure
-			new_menu_item_not_void: Result /= Void
-		end
-
-	new_button: EV_TOOL_BAR_RADIO_BUTTON is
-			-- Create a new tool bar button representing `Current'.
-		local
-			tt: STRING_GENERAL
-		do
-			create Result
-			Result.set_pixmap (symbol @ 1)
-			tt := capital_command_name.twin
-			if shortcut_available then
-				tt.append (Opening_parenthesis)
-				tt.append (shortcut_string)
-				tt.append (Closing_parenthesis)
-			end
-			Result.set_tooltip (tt)
-			set_button (Result)
-			Result.drop_actions.extend (agent execute_with_stone)
-			Result.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
-		end
-
-	new_sd_button: SD_TOOL_BAR_RADIO_BUTTON is
-			-- Create a new tool bar button representing `Current'
-		local
-			tt: STRING_GENERAL
-		do
-			create Result.make
-			Result.set_pixmap (symbol @ 1)
-			Result.set_pixel_buffer (pixel_buffer)
-			tt := capital_command_name.twin
-			if shortcut_available then
-				tt.append (Opening_parenthesis)
-				tt.append (shortcut_string)
-				tt.append (Closing_parenthesis)
-			end
-			Result.set_tooltip (tt)
-			Result.set_name (generating_type)
-			Result.set_description (capital_command_name)
-			set_sd_button (Result)
-			Result.drop_actions.extend (agent execute_with_stone)
-			Result.drop_actions.set_veto_pebble_function (agent veto_pebble_function)
-		end
-
-feature -- Pop up
-
-	popup is
-			-- Make `widget' visible.
-		do
-			if widget_owner /= Void then
-				widget_owner.ensure_formatter_display (Current)
-				widget_owner.force_display
-			end
-			display_header
-			if not popup_actions.is_empty then
-				popup_actions.call (Void)
-			end
-		end
-
-	widget_owner: EB_FORMATTER_BASED_TOOL
-			-- Container of `widget'.
-
-	set_widget_owner (new_owner: like widget_owner) is
-			-- Set `widget_owner' to `new_owner'.
-		do
-			widget_owner := new_owner
-		end
-
-feature -- Actions
 
 	on_shown is
 			-- `Widget's parent is displayed.
 		do
 			internal_displayed := True
-			ensure_display_in_widget_owner
-			synchronize
-			if is_valid then
-				format
-			else
-				reset_display
+			if
+				widget_owner /= Void and then
+				selected
+			then
+				widget_owner.set_widget (widget)
+				display_header
 			end
+			format
 		end
 
 	on_hidden is
@@ -410,13 +149,66 @@ feature -- Actions
 			internal_displayed := False
 		end
 
-	execute_with_stone (a_stone: STONE) is
-			-- Notify `manager' of the dropping of `stone'.
+	symbol: ARRAY [EV_PIXMAP] is
+			-- Pixmaps for the default button (1 is color, 2 is grey, if any).
+		deferred
+		end
+
+	new_menu_item: EV_RADIO_MENU_ITEM is
+			-- Create a new menu item for `Current'.
+		local
+			mname: STRING
 		do
-			manager.set_stone (a_stone)
-			if not selected then
-				execute
+			mname := menu_name.twin
+			if accelerator /= Void then
+				mname.append (Tabulation)
+				mname.append (accelerator.out)
 			end
+			create Result.make_with_text (mname)
+			set_menu_item (Result)
+		end
+
+	new_button: EV_TOOL_BAR_RADIO_BUTTON is
+			-- Create a new tool bar button representing `Current'.
+		local
+			tt: STRING
+		do
+			create Result
+			Result.set_pixmap (symbol @ 1)
+			tt := capital_command_name.twin
+			if accelerator /= Void then
+				tt.append (Opening_parenthesis)
+				tt.append (accelerator.out)
+				tt.append (Closing_parenthesis)
+			end
+			Result.set_tooltip (tt)
+			set_button (Result)
+		end
+
+feature -- Pop up
+
+	popup is
+			-- Make `widget' visible.
+		do
+			if widget_owner /= Void then
+				if widget_owner.last_widget /= widget then
+					widget_owner.set_widget (widget)
+				end
+				widget_owner.force_display
+			end
+			display_header
+			if not popup_actions.is_empty then
+				popup_actions.call ([])
+			end
+		end
+
+	widget_owner: WIDGET_OWNER
+			-- Container of `widget'.
+
+	set_widget_owner (new_owner: WIDGET_OWNER) is
+			-- Set `widget_owner' to `new_owner'.
+		do
+			widget_owner := new_owner
 		end
 
 feature -- Commands
@@ -428,13 +220,12 @@ feature -- Commands
 			popup
 			fresh_old_formatter
 			format
-			post_execution_action.call (Void)
+			post_execution_action.call ([])
 		end
 
 	save_in_file is
 			-- Save output format into a file.
-		do
---|FIXME XR: To be implemented.		
+		deferred
 		end
 
 	display_header is
@@ -442,7 +233,6 @@ feature -- Commands
 		do
 			if output_line /= Void then
 				output_line.set_text (header)
-				output_line.refresh_now
 			end
 			if cur_wid = Void then
 				--| Do nothing.
@@ -488,6 +278,20 @@ feature -- Loacation
 			end
 		end
 
+	go_to_position is
+			-- Save manager position and go to position in `editor' if possible.
+		do
+			save_manager_position
+			if
+				selected and then
+				stone /= Void and then
+				stone.pos_container = current and then
+				stone.position > 0
+			then
+				editor.display_line_at_top_when_ready (stone.position)
+			end
+		end
+
 feature -- Agents
 
 	popup_actions: ACTION_SEQUENCE [TUPLE] is
@@ -527,20 +331,19 @@ feature {NONE} -- Location
 
 	setup_viewpoint is
 			-- Setup viewpoint for formatting.
-		deferred
+		do
+			if viewpoints /= Void then
+				editor.text_displayed.set_context_group (viewpoints.current_viewpoint)
+			end
 		end
 
-feature {NONE} -- Recyclable
+feature -- Recyclable
 
-	internal_recycle is
+	recycle is
 			-- Recycle
 		do
 			manager := Void
-			if should_displayer_be_recycled then
-				if displayer /= Void then
-					displayer.recycle
-				end
-			end
+			editor := Void
 		end
 
 feature {NONE} -- Implementation
@@ -551,6 +354,9 @@ feature {NONE} -- Implementation
 	cur_wid: EV_WIDGET
 			-- Widget on which the hourglass cursor was set.
 
+	editor: EB_CLICKABLE_EDITOR
+			-- Output editor.
+
 	displayed: BOOLEAN is
 			-- Is `widget' displayed?
 		do
@@ -559,6 +365,9 @@ feature {NONE} -- Implementation
 
 	internal_displayed: BOOLEAN
 			-- Is `widget's parent visible?
+
+	internal_widget: EV_WIDGET
+			-- Widget corresponding to `editor's text area.
 
 	must_format: BOOLEAN
 			-- Is a call to `format' really necessary?
@@ -587,29 +396,22 @@ feature {NONE} -- Implementation
 
 			if output_line /= Void then
 				output_line.set_text (temp_header)
-				output_line.refresh_now
 			end
 		end
 
-	header: STRING_GENERAL is
+	header: STRING is
 			-- Text displayed in the ouput_line when current formatter is displayed.
 		deferred
 		end
 
-	temp_header: STRING_GENERAL is
+	temp_header: STRING is
 			-- Text displayed in the ouput_line when current formatter is working.
 		deferred
 		end
 
 	file_name: FILE_NAME is
-			-- Name of the file in which displayed information may be stored
-		require
-			element_name_attached: element_name /= Void
-		do
-			create Result.make_from_string (element_name)
-			Result.add_extension (post_fix)
-		ensure
-			result_attached: Result /= Void
+			-- Name of the file where formatted output may be saved.
+		deferred
 		end
 
 	post_fix: STRING is
@@ -631,49 +433,8 @@ feature {NONE} -- Implementation
 	line_numbers_allowed: BOOLEAN is deferred end
 		-- Does it make sense to show line numbers in Current?
 
-	popup_actions_internal: like popup_actions
+	popup_actions_internal: like popup_actions;
 			-- Implementation of `popup_actions'
-
-	internal_empty_widget: EV_WIDGET
-			-- Widget displayed when no information can be displayed.	
-
-	new_empty_widget is
-			-- Initialize a default empty_widget.
-		local
-			l_frame: EV_FRAME
-		do
-			create l_frame
-			l_frame.set_style ({EV_FRAME_CONSTANTS}.Ev_frame_lowered)
-			l_frame.set_background_color ((create {EV_STOCK_COLORS}).white)
-			internal_empty_widget := l_frame
-			if widget_owner /= Void then
-				internal_empty_widget.drop_actions.extend (agent widget_owner.drop_stone)
-			else
-				internal_empty_widget.drop_actions.extend (agent execute_with_stone)
-			end
-		end
-
-	retrieve_sorting_order is
-			-- Retrieve last recored sorting order.
-		do
-		end
-
-	actual_veto_format_result: BOOLEAN is
-			-- Actual veto format result.
-			-- i.e., if `veto_format_function' is Void, always allow format to go on.
-		do
-			if veto_format_function /= Void then
-				Result := veto_format_function.item (Void)
-			else
-				Result := True
-			end
-		end
-
-	veto_pebble_function (a_any: ANY): BOOLEAN is
-			-- Veto pebble function
-		do
-			Result := actual_veto_format_result
-		end
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

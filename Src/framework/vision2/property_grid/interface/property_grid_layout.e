@@ -7,7 +7,7 @@ class
 	PROPERTY_GRID_LAYOUT
 
 inherit
-	SHARED_BENCH_NAMES
+	EV_DIALOG_CONSTANTS
 
 feature {NONE} -- Button constants
 
@@ -68,19 +68,19 @@ feature {NONE} -- Colors
 
 feature {NONE} -- Text
 
-	force_inheritance: STRING_GENERAL is do Result := names.l_force_inheritance	end
-	use_inherited: STRING_GENERAL is do Result := names.l_use_inherited	end
-	up_button_text: STRING_GENERAL is do Result := names.b_Up_text	end
-	down_button_text: STRING_GENERAL is do Result := names.b_Down_text	end
-	change_button_text: STRING_GENERAL is do Result := names.b_change	end
+	force_inheritance: STRING is "Force inheritance on child elements."
+	use_inherited: STRING is "Use inherited value."
 
-	dialog_title (a_name: STRING_GENERAL): STRING_GENERAL is
+	up_button_text: STRING is "Up"
+	down_button_text: STRING is "Down"
+	plus_button_text: STRING is "+"
+	minus_button_text: STRING is "-"
+	change_button_text: STRING is "Change"
+
+	dialog_title (a_name: STRING): STRING is
 		do
-			Result := names.t_dialog_title (a_name)
+			Result := "Edit "+a_name
 		end
-
-	plus_button_text: STRING_GENERAL is do Result := "+"	end
-	minus_button_text: STRING_GENERAL is do Result := "-"	end
 
 feature -- Update set default global settings.
 
@@ -96,5 +96,6 @@ feature {NONE} -- Onces for global setting of layout values.
 		once
 			create Result
 		end
+
 
 end

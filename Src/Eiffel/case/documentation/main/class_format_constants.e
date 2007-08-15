@@ -8,27 +8,24 @@ indexing
 class
 	CLASS_FORMAT_CONSTANTS
 
-inherit
-	SHARED_BATCH_NAMES
-
 feature -- Constants
 
-	cf_Chart: INTEGER is 1
+	cf_Chart: INTEGER is unique
 			-- Chart format. Textual descriptions of ancestors, constraints, etc.
 
-	cf_Diagram: INTEGER is 2
+	cf_Diagram: INTEGER is unique
 			-- Diagram format. Graphical view.
 
-	cf_Clickable: INTEGER is 3
+	cf_Clickable: INTEGER is unique
 			-- Clickable format.
 
-	cf_Flat: INTEGER is 4
+	cf_Flat: INTEGER is unique
 			-- Flat format.
 
-	cf_Short: INTEGER is 5
+	cf_Short: INTEGER is unique
 			-- Short format.
 
-	cf_Flatshort: INTEGER is 6
+	cf_Flatshort: INTEGER is unique
 			-- Flat/short format.
 
 feature -- Access
@@ -37,6 +34,14 @@ feature -- Access
 			-- `cf_Chart' |..| `cf_Flatshort'.
 		do
 			Result := cf_Chart |..| cf_Flatshort
+		end
+
+feature -- Contract support
+
+	valid_class_format (i: INTEGER): BOOLEAN is
+			-- Is `i' one of the cf_* values?
+		do
+			Result := all_class_formats.has (i)
 		end
 
 indexing

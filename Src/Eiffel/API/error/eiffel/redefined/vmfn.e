@@ -25,6 +25,7 @@ feature -- Properties
 	inherited_feature: E_FEATURE;
 			-- Inherited feature
 
+
 	code: STRING is "VMFN";
 			-- Error code
 feature -- Access

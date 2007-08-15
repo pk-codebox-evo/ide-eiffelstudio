@@ -68,9 +68,9 @@ feature -- Observer pattern
 			manager.refresh
 		end
 
-feature {NONE} -- Recyclable
+feature -- Recyclable
 
-	internal_recycle is
+	recycle is
 			-- Recycle
 		do
 			development_window := Void

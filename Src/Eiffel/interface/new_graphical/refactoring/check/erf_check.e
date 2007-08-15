@@ -8,9 +8,6 @@ indexing
 deferred class
 	ERF_CHECK
 
-inherit
-	EB_CONSTANTS
-
 feature -- Basic operation
 
 	execute is
@@ -20,12 +17,13 @@ feature -- Basic operation
 			ok_or_error_message: not success implies error_message /= Void and not error_message.is_empty
 		end
 
+
 feature -- Status report
 
     success: BOOLEAN
             -- Did the check succeed?
 
-	error_message: STRING_GENERAL;
+	error_message: STRING;
 			-- The description for the problem if `success' is false.
 
 indexing

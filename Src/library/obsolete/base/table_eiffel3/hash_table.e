@@ -73,7 +73,7 @@ feature -- Access
 			control := old_control
 		end
 
-	has, has_key (key: H): BOOLEAN is
+	has (key: H): BOOLEAN is
 			-- Is there an item in the table with key `key'?
 		require
 			valid_key: valid_key (key)
@@ -487,9 +487,6 @@ feature -- Removal
 				keys.put (dkey, position)
 				content.put (dead_item, position)
 				deleted_marks.put (True, position)
-				if position = iteration_position then
-					forth
-				end
 				control := Removed_constant
 				count := count - 1
 				found_item := dead_item
@@ -747,4 +744,11 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
+
+
+
+
 end -- class HASH_TABLE
+
+
+

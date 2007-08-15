@@ -22,7 +22,7 @@ feature {NONE} -- Execute
 			else
 				extra_help
 				from
-					localized_print (ewb_names.arrow_subquery)
+					io.put_string ("--> Subquery: ")
 					command_line_io.get_name
 					command_arguments := command_line_io.command_arguments;
 					create query_parser
@@ -30,7 +30,7 @@ feature {NONE} -- Execute
 					command_arguments.argument_count = 3 and then query_parser.parse (query_string (command_arguments), Current)
 						--| Guillaume - 09/26/97
 				loop
-					localized_print (ewb_names.arrow_subquery)
+					io.put_string ("--> Subquery: ")
 					command_line_io.get_name
 					command_arguments := command_line_io.command_arguments
 				end
@@ -78,7 +78,7 @@ feature -- Properties
 			Result := add_subquery_cmd_name;
 		end;
 
-	help_message: STRING_32 is
+	help_message: STRING is
 		once
 			Result := add_subquery_help;
 		end;
@@ -109,7 +109,15 @@ feature {NONE} -- Implementation
 	extra_help is
 			-- Prints some extra help on this command.
 		do
-			localized_print (ewb_names.a_subquery_has_the_following_form)
+			io.put_string ("A subquery has the following form: ");
+			io.put_string ("attribute operator value%N%N");
+			io.put_string ("attribute is one of: featurename, calls, total, self, descendants, percentage%N");
+			io.put_string ("operator is one of: < > <= >= = /= in%N");
+			io.put_string ("value is one of: integer (for calls), string_with_wildcards (for featurename)%N");
+			io.put_string ("%T%T real (for other attributes) or a bounded_value%N");
+			io.put_string ("%T%T%TA string_with_wildcards is a string containing%N%T%T%T'*' or '?'%N");
+			io.put_string ("%T%T%TA bounded_value is a value followed by '-' followed by%N%T%T%Ta value%N");
+			io.put_string ("%T%T%T%TNo strings are allowed here.%N");
 		end;
 
 feature {NONE} -- Attributes

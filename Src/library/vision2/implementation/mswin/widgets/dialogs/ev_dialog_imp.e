@@ -337,7 +337,7 @@ feature {NONE} -- Implementation
 			awaiting_movement := other_imp.awaiting_movement
 			background_color_imp := other_imp.background_color_imp
 			background_pixmap_imp := other_imp.background_pixmap_imp
-			set_state_flag (base_make_called_flag, other_imp.base_make_called)
+			set_base_make_called (other_imp.base_make_called)
 			child_cell := other_imp.child_cell
 			close_request_actions_internal := other_imp.close_request_actions_internal
 			commands := other_imp.commands
@@ -360,6 +360,8 @@ feature {NONE} -- Implementation
 			internal_icon_name := other_imp.internal_icon_name
 			internal_non_sensitive := other_imp.internal_non_sensitive
 			internal_pebble_positioning_enabled := other_imp.internal_pebble_positioning_enabled
+			internal_pick_x := other_imp.internal_pick_x
+			internal_pick_y := other_imp.internal_pick_y
 			internal_title := other_imp.internal_title
 			internal_width := other_imp.internal_width
 			is_closeable := other_imp.is_closeable
@@ -433,7 +435,7 @@ feature {NONE} -- Implementation
 					-- Simulate a click on the default_cancel_button
 				process_standard_key_press (vk_escape)
 					-- Do not actually close the window.
-				if not is_destroyed and then close_request_actions_internal /= Void then
+				if close_request_actions_internal /= Void then
 					close_request_actions_internal.call (Void)
 				end
 				set_default_processing (False)

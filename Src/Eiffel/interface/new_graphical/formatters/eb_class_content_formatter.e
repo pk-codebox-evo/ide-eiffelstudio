@@ -10,21 +10,12 @@ deferred class
 	EB_CLASS_CONTENT_FORMATTER
 
 inherit
-	EB_BROWSER_FORMATTER
-		rename
-			internal_recycle as browser_formatter_recycle
-		end
-
 	EB_CLASS_INFO_FORMATTER
-		undefine
-			retrieve_sorting_order,
-			is_browser_formatter
 		redefine
 			line_numbers_allowed,
 			widget,
-			internal_recycle
-		select
-			internal_recycle
+			empty_widget,
+			recycle
 		end
 
 	REFACTORING_HELPER
@@ -36,8 +27,7 @@ feature -- Formatting
 	format is
 			-- Refresh `widget'.
 		do
-			if associated_class /= Void and then selected and then displayed and then actual_veto_format_result then
-				retrieve_sorting_order
+			if associated_class /= Void and then selected and then displayed then
 				display_temp_header
 				if not widget.is_displayed then
 					widget.show
@@ -50,6 +40,9 @@ feature -- Formatting
 
 feature -- Access
 
+	browser: EB_CLASS_BROWSER_GRID_VIEW [ANY]
+			-- Browser where information gets displayed
+
 	widget: EV_WIDGET is
 			-- Graphical representation of the information provided.
 		do
@@ -60,6 +53,23 @@ feature -- Access
 			end
 		end
 
+	empty_widget: EV_WIDGET is
+			-- Widget displayed when no information can be displayed.
+		local
+			def: EV_STOCK_COLORS
+			l_frame: EV_FRAME
+			l_cell: EV_CELL
+		do
+			create def
+			create l_frame
+			l_frame.set_style ({EV_FRAME_CONSTANTS}.Ev_frame_lowered)
+			create l_cell
+			l_cell.extend (l_frame)
+			Result := l_cell
+			l_frame.set_background_color (def.White)
+			l_frame.drop_actions.extend (agent on_class_drop)
+		end
+
 feature -- Setting
 
 	reset_display is
@@ -68,6 +78,16 @@ feature -- Setting
 			if browser /= Void then
 				browser.reset_display
 			end
+		end
+
+	set_browser (a_browser: like browser) is
+			-- Set `browser' with `a_browser'.
+		require
+			a_browser_attached: a_browser /= Void
+		do
+			browser := a_browser
+		ensure
+			browser_set: browser = a_browser
 		end
 
 	set_stone (new_stone: CLASSI_STONE) is
@@ -84,7 +104,15 @@ feature -- Setting
 			else
 				associated_class := Void
 				reset_display
-				ensure_display_in_widget_owner
+				if
+					selected and then
+					not widget.is_displayed
+				then
+					if widget_owner /= Void then
+						widget_owner.set_widget (widget)
+					end
+					display_header
+				end
 			end
 		end
 
@@ -97,14 +125,14 @@ feature -- Setting
 			end
 			must_format := True
 			format
-			ensure_display_in_widget_owner
+			if selected then
+				if widget_owner /= Void then
+					widget_owner.set_widget (widget)
+				end
+				display_header
+			end
 		ensure
 			class_set: (a_class /= Void and then a_class.has_feature_table) implies (a_class = associated_class)
-		end
-
-	setup_viewpoint is
-			-- Setup viewpoint for formatting.
-		do
 		end
 
 feature -- Status report
@@ -123,23 +151,19 @@ feature -- Status report
 		do
 		end
 
-	is_inheritance_formatter: BOOLEAN is
-			-- Is current a class inheritance (ancestor/descendant) formatter?
+	is_class_hierarchy_formatter: BOOLEAN is
+			-- Is current a class hierarchy formatter?
 		do
 		end
 
-	is_reference_formatter: BOOLEAN is
-			-- Is current a class reference (supplier/client) formatter?
-		do
-		end
+feature -- Recyclable
 
-feature {NONE} -- Recyclable
-
-	internal_recycle is
+	recycle is
 			-- Recyclable
 		do
 			Precursor {EB_CLASS_INFO_FORMATTER}
-			browser_formatter_recycle
+			browser.recycle
+			browser := Void
 		end
 
 feature{NONE} -- Implementation

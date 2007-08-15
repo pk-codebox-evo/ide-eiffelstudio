@@ -15,8 +15,7 @@ inherit
 			interface,
 			initialize,
 			call_pebble_function,
-			append,
-			reset_pebble_function
+			append
 		end
 
 	EV_PRIMITIVE_IMP
@@ -35,9 +34,7 @@ inherit
 			call_pebble_function,
 			visual_widget,
 			needs_event_box,
-			on_pointer_motion,
-			pebble_source,
-			reset_pebble_function
+			on_pointer_motion
 		end
 
 	EV_ITEM_LIST_IMP [EV_TREE_NODE]
@@ -66,6 +63,9 @@ feature {NONE} -- Initialization
 		do
 			Result := True
 		end
+
+	scrollable_area: POINTER
+		-- Pointer to the GtkScrolledWindow widget used for scrolling the tree view
 
 	make (an_interface: like interface) is
 			-- Create an empty Tree.
@@ -170,9 +170,6 @@ feature {NONE} -- Initialization
 			real_signal_connect (a_selection, "changed", agent (app_implementation.gtk_marshal).on_pnd_deferred_item_parent_selection_change (internal_id), Void)
 
 			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_tree_selection_set_mode (a_selection, {EV_GTK_EXTERNALS}.gtk_selection_browse_enum)
-
-			{EV_GTK_DEPENDENT_EXTERNALS}.gtk_tree_view_set_enable_search (tree_view, False)
-
 			initialize_pixmaps
 		end
 
@@ -314,17 +311,6 @@ feature -- Status report
 
 feature -- Implementation
 
-	pebble_source: EV_PICK_AND_DROPABLE
-			-- Source of `pebble', used for widgets with deferred PND implementation
-			-- such as EV_TREE and EV_MULTI_COLUMN_LIST.
-		do
-			if pnd_row_imp /= Void then
-				Result := pnd_row_imp.interface
-			else
-				Result := Precursor
-			end
-		end
-
 	ensure_item_visible (an_item: EV_TREE_NODE) is
 			-- Ensure `an_item' is visible in `Current'.
 			-- Tree nodes may be expanded to achieve this.
@@ -351,19 +337,20 @@ feature -- Implementation
 			-- Is list or row able to transport PND data using `a_button'.
 		do
 			if pnd_row_imp /= Void then
-				Result := pnd_row_imp.able_to_transport (a_button)
+				Result := (pnd_row_imp.mode_is_drag_and_drop and a_button = 1) or
+				(pnd_row_imp.mode_is_pick_and_drop and a_button = 3)
 			else
 				Result := Precursor (a_button)
 			end
 		end
 
-	ready_for_pnd_menu (a_button: INTEGER; a_press: BOOLEAN): BOOLEAN is
+	ready_for_pnd_menu (a_button: INTEGER): BOOLEAN is
 			-- Is list or row able to display PND menu using `a_button'
 		do
 			if pnd_row_imp /= Void then
-				Result := pnd_row_imp.ready_for_pnd_menu (a_button, a_press)
+				Result := pnd_row_imp.mode_is_target_menu and then a_button = 3
 			else
-				Result := Precursor (a_button, a_press)
+				Result := mode_is_target_menu and then a_button = 3
 			end
 		end
 
@@ -423,7 +410,7 @@ feature -- Implementation
 		do
 			pnd_row_imp := item_from_coords (a_x, a_y)
 
-			if pnd_row_imp /= Void and then not (pnd_row_imp.able_to_transport (a_button) or pnd_row_imp.mode_is_configurable_target_menu) then
+			if pnd_row_imp /= Void and then not pnd_row_imp.able_to_transport (a_button) then
 				pnd_row_imp := Void
 			end
 			Precursor (
@@ -513,28 +500,29 @@ feature -- Implementation
 					)
 				end
 			end
-			modify_widget_appearance (True)
-		end
-
-	reset_pebble_function
-			-- Reset `pebble_function'.
-		do
-			if pebble_function /= Void then
-				pebble_function.clear_last_result
-			end
-			pebble := temp_pebble
-			pebble_function := temp_pebble_function
-			temp_pebble := Void
-			temp_pebble_function := Void
 		end
 
 	post_drop_steps (a_button: INTEGER)  is
 			-- Steps to perform once an attempted drop has happened.
 		do
-			Precursor (a_button)
+			App_implementation.set_x_y_origin (0, 0)
+--			last_pointed_target := Void
+
+			if pebble_function /= Void then
+				if pnd_row_imp /= Void then
+					pnd_row_imp.set_pebble_void
+				else
+					temp_pebble := Void
+				end
+			end
+
 			accept_cursor := temp_accept_cursor
 			deny_cursor := temp_deny_cursor
+			pebble := temp_pebble
+			pebble_function := temp_pebble_function
 
+			temp_pebble := Void
+			temp_pebble_function := Void
 			temp_accept_cursor := Void
 			temp_deny_cursor := Void
 
@@ -726,9 +714,6 @@ feature {NONE} -- Implementation
 		end
 
 feature {EV_ANY_I} -- Implementation
-
-	scrollable_area: POINTER
-		-- Pointer to the GtkScrolledWindow widget used for scrolling the tree view
 
 	interface: EV_TREE;
 

@@ -12,9 +12,7 @@ class
 inherit
 	QL_CRITERION_FACTORY
 		redefine
-			criterion_type,
-			item_type,
-			simple_criterion_type
+			criterion_type
 		end
 create
 	make
@@ -32,9 +30,6 @@ feature{NONE} -- Initialization
 			agent_table.put (agent new_true_criterion, c_true)
 			agent_table.put (agent new_name_is_criterion, c_name_is)
 			agent_table.put (agent new_text_contain_criterion, c_text_contain)
-			agent_table.put (agent new_value_criterion, c_value_of_metric_is)
-			agent_table.put (agent new_is_implementation_comment_criterion, c_is_implementation_comment)
-			agent_table.put (agent new_value_criterion, c_is_satisfied_by)
 
 			create name_table.make (10)
 			name_table.put (c_false, query_language_names.ql_cri_false)
@@ -44,21 +39,12 @@ feature{NONE} -- Initialization
 			name_table.put (c_true, query_language_names.ql_cri_true)
 			name_table.put (c_name_is, query_language_names.ql_cri_name_is)
 			name_table.put (c_text_contain, query_language_names.ql_cri_text_contain)
-			name_table.put (c_value_of_metric_is, query_language_names.ql_cri_value_of_metric_is)
-			name_table.put (c_is_implementation_comment, query_language_names.ql_cri_is_implementation_comment)
-			name_table.put (c_is_satisfied_by, query_language_names.ql_cri_is_satisfied_by)
 		end
 
 feature{NONE} -- Implementation
 
 	criterion_type: QL_LINE_CRITERION
 			-- Criterion anchor type
-
-	item_type: QL_LINE
-			-- Item anchor type
-
-	simple_criterion_type: QL_SIMPLE_LINE_CRITERION
-			-- Simple criterion type
 
 feature{NONE} -- New criterion
 
@@ -102,55 +88,35 @@ feature{NONE} -- New criterion
 			result_attached: Result /= Void
 		end
 
-	new_name_is_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_LINE_NAME_IS_CRI is
+	new_name_is_criterion (a_name: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_LINE_NAME_IS_CRI is
 			-- New {QL_LINE_NAME_IS_CRI} criterion.
 		require
 			a_name_attached: a_name /= Void
 		do
-			create Result.make_with_setting (a_name, a_case_sensitive, a_matching_strategy)
+			create Result.make_with_setting (a_name, a_case_sensitive, a_identical)
 		ensure
 			result_attached: Result /= Void
 		end
 
-	new_text_contain_criterion (a_text: STRING; a_case_sensitive: BOOLEAN; a_matching_strategy: INTEGER): QL_LINE_TEXT_CONTAIN_CRI is
+	new_text_contain_criterion (a_text: STRING; a_case_sensitive: BOOLEAN; a_identical: BOOLEAN): QL_LINE_TEXT_CONTAIN_CRI is
 			-- New {QL_LINE_TEXT_CONTAIN_CRI} criterion.
 		require
 			a_text_attached: a_text /= Void
 		do
-			create Result.make_with_setting (a_text, a_case_sensitive, a_matching_strategy)
-		ensure
-			result_attached: Result /= Void
-		end
-
-	new_value_criterion (a_evaluate_value_func: FUNCTION [ANY, TUPLE [QL_ITEM], BOOLEAN]): like simple_criterion_type is
-			-- New value criterion
-		require
-			a_evaluate_value_func_attached: a_evaluate_value_func /= Void
-		do
-			create Result.make (agent value_criterion_evalaute_agent ({QL_LINE}?, a_evaluate_value_func), False)
-		end
-
-	new_is_implementation_comment_criterion: QL_LINE_IS_COMMENT_CRI is
-			-- New implementation comment criterion
-		do
-			create Result
-			Result.set_is_for_implementation_comment (True)
+			create Result.make_with_setting (a_text, a_case_sensitive, a_identical)
 		ensure
 			result_attached: Result /= Void
 		end
 
 feature -- Criterion index
 
-	c_false: INTEGER is 1
-	c_is_blank: INTEGER is 2
-	c_is_comment: INTEGER is 3
-	c_is_compiled: INTEGER is 4
-	c_true: INTEGER is 5
-	c_name_is: INTEGER is 6
-	c_text_contain: INTEGER is 7
-	c_value_of_metric_is: INTEGER is 8
-	c_is_implementation_comment: INTEGER is 9
-	c_is_satisfied_by: INTEGER is 10
+	c_false,
+	c_is_blank,
+	c_is_comment,
+	c_is_compiled,
+	c_true,
+	c_name_is,
+	c_text_contain: INTEGER is unique
 
 feature{NONE} -- Implementation
 
@@ -214,5 +180,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

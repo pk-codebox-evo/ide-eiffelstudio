@@ -25,17 +25,8 @@ typedef void GpImage;
 typedef void GpGraphics;
 typedef void GpPen;
 typedef void GpImageAttributes;
-typedef void GpFont;
-typedef void GpFontFamily;
-typedef void GpFontCollection;
-typedef void GpStringFormat;
-typedef void GpBrush;
-typedef void GpSolidFill;
-typedef GUID CLSID;
-typedef void  EncoderParameters;
 
 typedef INT PixelFormat;
-typedef unsigned short UINT16;
 
 #define  WINGDIPAPI __stdcall
 
@@ -46,10 +37,6 @@ typedef unsigned short UINT16;
 typedef struct {
 	int X, Y, Width, Height;
 } GpRect;
-
-typedef struct {
-	float X, Y, Width, Height;
-} RectF;
 
 typedef struct {   
 	unsigned int Width;
@@ -89,7 +76,7 @@ typedef enum Status
     PropertyNotSupported = 20
 } GpStatus;
 
-typedef enum
+typedef enum Unit
 {
     UnitWorld, 
     UnitDisplay,
@@ -98,7 +85,7 @@ typedef enum
     UnitInch,      
     UnitDocument,   
     UnitMillimeter  
-} GpUnit, Unit;
+} GpUnit;
 
 typedef enum ColorAdjustTypeEnum
 {
@@ -132,6 +119,8 @@ typedef float REAL;
 #define    PixelFormat32bppRGB        (9 | (32 << 8) | PixelFormatGDI)
 #define    PixelFormat32bppARGB       (10 | (32 << 8) | PixelFormatAlpha | PixelFormatGDI | PixelFormatCanonical)
 #define    PixelFormat32bppPARGB      (11 | (32 << 8) | PixelFormatAlpha | PixelFormatPAlpha | PixelFormatGDI)
+
+typedef float REAL;
 
 #endif // !_GDIPLUS_H
 
@@ -183,41 +172,3 @@ typedef ImageAbort DrawImageAbort;
 
 #endif // !_GDIPLUSTYPES_H
 
-#ifndef GUID_DEFINED
-#define GUID_DEFINED
-#if defined(__midl)
-typedef struct {
-    unsigned long  Data1;
-    unsigned short Data2;
-    unsigned short Data3;
-    byte           Data4[ 8 ];
-} GUID;
-#else
-typedef struct _GUID {
-    unsigned long  Data1;
-    unsigned short Data2;
-    unsigned short Data3;
-    unsigned char  Data4[ 8 ];
-} GUID;
-#endif
-#endif
-
-#ifndef ImageCodecInfoDefined
-#define ImageCodecInfoDefined
-typedef struct _ImageCodecInfo
-{
-    CLSID Clsid;
-    GUID  FormatID;
-    const WCHAR* CodecName;
-    const WCHAR* DllName;
-    const WCHAR* FormatDescription;
-    const WCHAR* FilenameExtension;
-    const WCHAR* MimeType;
-    DWORD Flags;
-    DWORD Version;
-    DWORD SigCount;
-    DWORD SigSize;
-    const BYTE* SigPattern;
-    const BYTE* SigMask;
-} ImageCodecInfo;
-#endif

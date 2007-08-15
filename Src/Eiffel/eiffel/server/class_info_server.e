@@ -8,8 +8,6 @@ indexing
 class CLASS_INFO_SERVER
 
 inherit
-	ANY
-
 	SHARED_SERVER
 		export
 			{NONE} all
@@ -60,6 +58,7 @@ feature
 				Result.set_class_id (tmp_class.class_id)
 			end
 		end;
+
 
 	server_item (an_id: INTEGER): CLASS_INFO is
 			-- Feature table of id `an_id'. Look first in the temporary

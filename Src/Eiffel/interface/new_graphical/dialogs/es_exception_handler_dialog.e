@@ -41,13 +41,12 @@ feature {NONE} -- Initialization
 			grid.row_select_actions.extend (agent row_selected)
 			grid.row_deselect_actions.extend (agent row_deselected)
 
-			handling_checkbox.set_text ("Filter exceptions ?")
+			handling_checkbox.set_text ("Exception handling enabled ?")
 			handling_checkbox.select_actions.extend (agent on_handling_changed)
 
 			handling_external_checking.select_actions.extend (agent on_external_handling_changed)
 			set_default_cancel_button (cancel_button)
 			set_icon_pixmap (pixmaps.icon_pixmaps.general_dialog_icon)
-
 		end
 
 feature -- Properties
@@ -76,15 +75,20 @@ feature -- Access
 				end
 				exceptions_handling.forth
 			end
+			if exception_handler.exception_handling_enabled then
+				handling_checkbox.enable_select
+			else
+				handling_checkbox.disable_select
+			end
 			if exception_handler.ignoring_external_exception then
 				handling_external_checking.enable_select
 			else
 				handling_external_checking.disable_select
 			end
-			if exception_handler.enabled then
-				handling_checkbox.enable_select
+			if exception_handler.ignoring_external_exception then
+				handling_external_checking.enable_select
 			else
-				handling_checkbox.disable_select
+				handling_external_checking.disable_select
 			end
 		end
 

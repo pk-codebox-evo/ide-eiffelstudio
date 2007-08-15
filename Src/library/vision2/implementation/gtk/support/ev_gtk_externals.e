@@ -9,25 +9,6 @@ inherit
 
 feature
 
-	frozen set_gtk_allocation_struct_width (a_c_struct: POINTER; a_width: INTEGER)
-		external
-			"C [struct <gtk/gtk.h>] (GtkAllocation, gint)"
-		alias
-			"width"
-		end
-
-	frozen set_gtk_allocation_struct_height (a_c_struct: POINTER; a_height: INTEGER)
-		external
-			"C [struct <gtk/gtk.h>] (GtkAllocation, gint)"
-		alias
-			"height"
-		end
-
-	frozen gtk_widget_size_allocate (a_widget: POINTER; a_allocation: POINTER)
-		external
-			"C (GtkWidget*, GtkAllocation*) | <gtk/gtk.h>"
-		end
-
 	frozen g_module_supported: BOOLEAN
 		external
 			"C signature (): gboolean use <gmodule.h>"
@@ -107,7 +88,7 @@ feature
 		alias
 			"[
 				#if GTK_MAJOR_VERSION == 2
-					return (EIF_POINTER) gdk_x11_screen_get_window_manager_name ((GdkScreen*) $a_screen);
+					return gdk_x11_screen_get_window_manager_name ((GdkScreen*) $a_screen);
 				#else
 					return "unknown";
 				#endif
@@ -304,20 +285,6 @@ feature
 			"y"
 		end
 
-	frozen set_gtk_fixed_child_struct_x (a_c_struct: POINTER; a_x: INTEGER) is
-		external
-			"C [struct <gtk/gtk.h>] (GtkFixedChild, gint)"
-		alias
-			"x"
-		end
-
-	frozen set_gtk_fixed_child_struct_y (a_c_struct: POINTER; a_y: INTEGER) is
-		external
-			"C [struct <gtk/gtk.h>] (GtkFixedChild, gint)"
-		alias
-			"y"
-		end
-
 	frozen gtk_win_pos_mouse_enum: INTEGER is
 		external
 			"C inline use <gtk/gtk.h>"
@@ -358,25 +325,11 @@ feature
 			"GTK_WIDGET_SET_FLAGS"
 		end
 
-	frozen gtk_widget_flags (a_widget: POINTER): INTEGER is
-		external
-			"C macro use <gtk/gtk.h>"
-		alias
-			"GTK_WIDGET_FLAGS"
-		end
-
 	frozen gtk_widget_unset_flags (a_widget: POINTER; a_flag: INTEGER) is
 		external
 			"C [macro <gtk/gtk.h>]"
 		alias
 			"GTK_WIDGET_UNSET_FLAGS"
-		end
-
-	frozen gtk_widget_is_sensitive (a_widget: POINTER): BOOLEAN is
-		external
-			"C [macro <gtk/gtk.h>]"
-		alias
-			"GTK_WIDGET_IS_SENSITIVE"
 		end
 
 	frozen gtk_widget_no_window (a_wid: POINTER): BOOLEAN is
@@ -385,6 +338,7 @@ feature
 		alias
 			"GTK_WIDGET_NO_WINDOW"
 		end
+
 
 	frozen c_gdk_color_struct_size: INTEGER is
 		external
@@ -688,32 +642,26 @@ feature
 			"GTK_IS_MENU"
 		end
 
-	frozen gdk_control_mask_enum: NATURAL_32 is
+
+	frozen gdk_control_mask_enum: INTEGER is
 		external
 			"C inline use <gtk/gtk.h>"
 		alias
 			"GDK_CONTROL_MASK"
 		end
 
-	frozen gdk_mod1_mask_enum: NATURAL_32 is
+	frozen gdk_mod1_mask_enum: INTEGER is
 		external
 			"C inline use <gtk/gtk.h>"
 		alias
 			"GDK_MOD1_MASK"
 		end
 
-	frozen gdk_shift_mask_enum: NATURAL_32 is
+	frozen gdk_shift_mask_enum: INTEGER is
 		external
 			"C inline use <gtk/gtk.h>"
 		alias
 			"GDK_SHIFT_MASK"
-		end
-
-	frozen gdk_lock_mask_enum: NATURAL_32 is
-		external
-			"C inline use <gtk/gtk.h>"
-		alias
-			"GDK_LOCK_MASK"
 		end
 
 	frozen gdk_button_press_enum: INTEGER is
@@ -1078,20 +1026,6 @@ feature
 			"C inline use <gtk/gtk.h>"
 		alias
 			"GDK_HINT_MAX_SIZE"
-		end
-
-	frozen gdk_hint_min_size_enum: INTEGER is
-		external
-			"C inline use <gtk/gtk.h>"
-		alias
-			"GDK_HINT_MIN_SIZE"
-		end
-
-	frozen gdk_hint_resize_inc_enum: INTEGER is
-		external
-			"C inline use <gtk/gtk.h>"
-		alias
-			"GDK_HINT_RESIZE_INC"
 		end
 
 	frozen gtk_realized_enum: INTEGER is
@@ -8014,11 +7948,6 @@ feature
 			"C (GtkWindow*, gint, gint) | <gtk/gtk.h>"
 		end
 
-	frozen gtk_window_get_default_size (a_window: POINTER; a_width: POINTER; a_height: POINTER) is
-		external
-			"C (GtkWindow*, EIF_INTEGER_32*, EIF_INTEGER_32*) | <gtk/gtk.h>"
-		end
-
 	frozen gtk_window_set_focus (a_window: POINTER; a_focus: POINTER) is
 		external
 			"C (GtkWindow*, GtkWidget*) | <gtk/gtk.h>"
@@ -8058,6 +7987,7 @@ feature
 		external
 			"C (GtkWindow*, gchar*, gchar*) | <gtk/gtk.h>"
 		end
+
 
 	frozen gdk_color_struct_blue (a_c_struct: POINTER): INTEGER is
 		external
@@ -8101,32 +8031,11 @@ feature
 			"size"
 		end
 
-	frozen gdk_event_crossing_struct_mode (a_c_struct: POINTER): INTEGER
-		external
-			"C [struct <gtk/gtk.h>] (GdkEventCrossing): EIF_INTEGER"
-		alias
-			"mode"
-		end
-
-	frozen gdk_event_focus_struct_in (a_c_struct: POINTER): INTEGER
-		external
-			"C [struct <gtk/gtk.h>] (GdkEventFocus): EIF_INTEGER"
-		alias
-			"in"
-		end
-
 	frozen gdk_event_any_struct_send_event (a_c_struct: POINTER): INTEGER is
 		external
 			"C [struct <gtk/gtk.h>] (GdkEventAny): EIF_INTEGER"
 		alias
 			"send_event"
-		end
-
-	frozen gdk_event_any_struct_window (a_c_struct: POINTER): POINTER is
-		external
-			"C [struct <gtk/gtk.h>] (GdkEventAny): EIF_POINTER"
-		alias
-			"window"
 		end
 
 	frozen gdk_event_any_struct_type (a_c_struct: POINTER): INTEGER is
@@ -8150,13 +8059,6 @@ feature
 			"window"
 		end
 
-	frozen gdk_event_scroll_struct_window (a_c_struct: POINTER): POINTER is
-		external
-			"C [struct <gtk/gtk.h>] (GdkEventScroll): EIF_REFERENCE"
-		alias
-			"window"
-		end
-
 	frozen gdk_event_button_struct_send_event (a_c_struct: POINTER): INTEGER is
 		external
 			"C [struct <gtk/gtk.h>] (GdkEventButton): EIF_INTEGER"
@@ -8164,9 +8066,9 @@ feature
 			"send_event"
 		end
 
-	frozen gdk_event_button_struct_state (a_c_struct: POINTER): NATURAL_32 is
+	frozen gdk_event_button_struct_state (a_c_struct: POINTER): INTEGER is
 		external
-			"C [struct <gtk/gtk.h>] (GdkEventButton): EIF_NATURAL_32"
+			"C [struct <gtk/gtk.h>] (GdkEventButton): EIF_INTEGER"
 		alias
 			"state"
 		end
@@ -8185,13 +8087,6 @@ feature
 			"type"
 		end
 
-	frozen gdk_event_scroll_struct_type (a_c_struct: POINTER): INTEGER is
-		external
-			"C [struct <gtk/gtk.h>] (GdkEventScroll): EIF_INTEGER"
-		alias
-			"type"
-		end
-
 	frozen gdk_event_button_struct_x (a_c_struct: POINTER): DOUBLE is
 		external
 			"C [struct <gtk/gtk.h>] (GdkEventButton): EIF_DOUBLE"
@@ -8206,13 +8101,6 @@ feature
 			"x_root"
 		end
 
-	frozen gdk_event_scroll_struct_x_root (a_c_struct: POINTER): DOUBLE is
-		external
-			"C [struct <gtk/gtk.h>] (GdkEventScroll): EIF_DOUBLE"
-		alias
-			"x_root"
-		end
-
 	frozen gdk_event_button_struct_y (a_c_struct: POINTER): DOUBLE is
 		external
 			"C [struct <gtk/gtk.h>] (GdkEventButton): EIF_DOUBLE"
@@ -8223,13 +8111,6 @@ feature
 	frozen gdk_event_button_struct_y_root (a_c_struct: POINTER): DOUBLE is
 		external
 			"C [struct <gtk/gtk.h>] (GdkEventButton): EIF_DOUBLE"
-		alias
-			"y_root"
-		end
-
-	frozen gdk_event_scroll_struct_y_root (a_c_struct: POINTER): DOUBLE is
-		external
-			"C [struct <gtk/gtk.h>] (GdkEventScroll): EIF_DOUBLE"
 		alias
 			"y_root"
 		end
@@ -8339,9 +8220,9 @@ feature
 			"send_event"
 		end
 
-	frozen gdk_event_key_struct_state (a_c_struct: POINTER): NATURAL_32 is
+	frozen gdk_event_key_struct_state (a_c_struct: POINTER): INTEGER is
 		external
-			"C [struct <gtk/gtk.h>] (GdkEventKey): EIF_NATURAL_32"
+			"C [struct <gtk/gtk.h>] (GdkEventKey): EIF_INTEGER"
 		alias
 			"state"
 		end
@@ -8388,9 +8269,9 @@ feature
 			"send_event"
 		end
 
-	frozen gdk_event_motion_struct_state (a_c_struct: POINTER): NATURAL_32 is
+	frozen gdk_event_motion_struct_state (a_c_struct: POINTER): INTEGER is
 		external
-			"C [struct <gtk/gtk.h>] (GdkEventMotion): EIF_NATURAL_32"
+			"C [struct <gtk/gtk.h>] (GdkEventMotion): EIF_INTEGER"
 		alias
 			"state"
 		end

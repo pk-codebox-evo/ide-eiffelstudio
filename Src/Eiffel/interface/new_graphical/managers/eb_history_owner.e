@@ -16,9 +16,9 @@ inherit
 
 	EB_RECYCLER
 		rename
-			destroy as internal_recycle
+			destroy as recycle
 		redefine
-			internal_recycle
+			recycle
 		end
 
 feature -- Access
@@ -31,15 +31,13 @@ feature -- Access
 	history_manager: EB_HISTORY_MANAGER
 			-- Manager for history. It encapsulates the history.
 
-feature {NONE} -- Removal
+feature -- Removal
 
-	internal_recycle is
+	recycle is
 			-- Free references to `Current'.
 		do
 			Precursor {EB_RECYCLER}
-			if history_manager /= Void then
-				history_manager.recycle
-			end
+			history_manager.recycle
 		end
 
 feature -- Status setting
@@ -50,18 +48,6 @@ feature -- Status setting
 			set_stone (a_stone)
 		end
 
-	set_history_moving_cancelled (a_cancel: BOOLEAN) is
-			-- Set `history_moving_cancelled' with `a_cancel'.
-		do
-			history_moving_cancelled := a_cancel
-		ensure
-			set: history_moving_cancelled = a_cancel
-		end
-
-feature -- Status report
-
-	history_moving_cancelled: BOOLEAN;
-			-- Is history moving cancelled?
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"

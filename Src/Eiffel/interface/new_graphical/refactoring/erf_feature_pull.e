@@ -72,6 +72,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
+
 	refactor is
 			-- Do the refactoring changes.
 		require else
@@ -146,6 +147,7 @@ feature {NONE} -- Implementation
 				end
 			end
 		end
+
 
     ask_run_settings is
             -- Ask for the settings, that are run specific.

@@ -28,6 +28,7 @@ inherit
 			initialize,
 			enable_sensitive,
 			disable_sensitive,
+			update_for_pick_and_drop,
 			on_set_cursor,
 			next_tabstop_widget
 		end
@@ -35,8 +36,6 @@ inherit
 	EV_WEL_CONTROL_CONTAINER_IMP
 		rename
 			make as ev_wel_control_container_make
-		undefine
-			on_wm_dropfiles
 		redefine
 			top_level_window_imp
 		end
@@ -91,19 +90,22 @@ feature {EV_ANY_I} -- Status Setting
 			Precursor {EV_CONTAINER_IMP}
 		end
 
-feature {NONE} -- Implementation
+feature {EV_ANY_I} -- Implementation
 
-	split_position: INTEGER is
-			--
+	update_for_pick_and_drop (starting: BOOLEAN) is
+			-- Pick and drop status has changed so notify `first_imp' and `second_imp'.
 		do
-			if first /= Void and second /= Void then
-				Result := internal_split_position.max (minimum_split_position).min (maximum_split_position)
-			else
-				Result := internal_split_position
+			if first_imp /= Void then
+				first_imp.update_for_pick_and_drop (starting)
+			end
+			if second_imp /= Void then
+				second_imp.update_for_pick_and_drop (starting)
 			end
 		end
 
-	internal_split_position: INTEGER
+feature {NONE} -- Implementation
+
+	split_position: INTEGER
 		-- Position of the splitter in pixels.
 		-- For a vertical split area, the position is the top of the splitter.
 		-- For a horizontal split area, the position is the left
@@ -162,7 +164,7 @@ feature {NONE} -- Implementation
 			-- Assign `a_position' to split position and layout the
 			-- widgets accordingly.
 		do
-			internal_split_position := a_position
+			split_position := a_position
 			layout_widgets (True)
 		end
 
@@ -215,8 +217,8 @@ feature {NONE} -- Implementation
 	update_split_position is
 			-- Set splitter to a valid position and redraw if necessary.
 		do
-			internal_split_position := internal_split_position.max (minimum_split_position)
-			internal_split_position := internal_split_position.min (maximum_split_position)
+			split_position := split_position.max (minimum_split_position)
+			split_position := split_position.min (maximum_split_position)
 		end
 
 feature {NONE} -- Implementation

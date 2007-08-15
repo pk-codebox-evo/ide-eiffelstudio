@@ -13,8 +13,7 @@ inherit
 	EB_FEATURE_CONTENT_FORMATTER
 		redefine
 			is_dotnet_formatter,
-			format,
-			browser
+			format
 		end
 
 	EB_SHARED_PREFERENCES
@@ -32,36 +31,15 @@ feature -- Properties
 			Result.put (pixmaps.icon_pixmaps.feature_homonyms_icon, 2)
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Graphical representation of the command.
-		once
-			Result := pixmaps.icon_pixmaps.feature_homonyms_icon_buffer
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Identifier of `Current' in menus.
 		do
 			Result := Interface_names.m_Showhomonyms
 		end
 
-	browser: EB_FEATURE_BROWSER_GRID_VIEW
-			-- Browser
-
-	displayer_generator: TUPLE [any_generator: FUNCTION [ANY, TUPLE, like displayer]; name: STRING] is
-			-- Generator to generate proper `displayer' for Current formatter
-		do
-			Result := [agent displayer_generators.new_feature_displayer, displayer_generators.feature_displayer]
-		end
-
-	sorting_status_preference: STRING_PREFERENCE is
-			-- Preference to store last sorting orders of Current formatter
-		do
-			Result := preferences.class_browser_data.feature_view_sorting_order_preference
-		end
-
 feature {NONE} -- Properties
 
-	capital_command_name: STRING_GENERAL is
+	command_name: STRING is
 			-- Name of the command.
 		do
 			Result := Interface_names.l_Homonyms
@@ -81,25 +59,22 @@ feature -- Formatting
 	format is
 			-- Refresh `widget'.
 		local
-			cf: EB_DISCARDABLE_CONFIRMATION_DIALOG
+			cf: STANDARD_DISCARDABLE_CONFIRMATION_DIALOG
 		do
-			if associated_feature /= Void and then selected and then displayed and then actual_veto_format_result then
-				retrieve_sorting_order
+			if associated_feature /= Void and then selected and then displayed then
 				display_temp_header
 				setup_viewpoint
 				confirmed := False
 				create cf.make_initialized (2, preferences.dialog_data.generate_homonyms_string, Interface_names.l_homonym_confirmation, Interface_names.L_do_not_show_again, preferences.preferences)
 				cf.set_ok_action (agent confirm_generate)
 				cf.show_modal_to_window (Window_manager.last_focused_development_window.window)
-				if not widget.is_displayed then
-					widget.show
-				end
 				if confirmed then
 					last_was_error := False
 					rebuild_browser
 					generate_result
-				else
-					browser.update (Void, Void)
+				end
+				if not widget.is_displayed then
+					widget.show
 				end
 				display_header
 			end
@@ -122,7 +97,7 @@ feature {NONE} -- Implementation
 	criterion: QL_CRITERION is
 			-- Criterion of current formatter
 		do
-			create {QL_FEATURE_NAME_IS_CRI}Result.make_with_setting (associated_feature.name, False, {QL_NAME_CRITERION}.identity_matching_strategy)
+			create {QL_FEATURE_NAME_IS_CRI}Result.make_with_setting (associated_feature.name, False, True)
 		end
 
 	rebuild_browser is
@@ -169,4 +144,5 @@ indexing
 		]"
 
 end -- class EB_HOMONYMS_FORMATTER
+
 

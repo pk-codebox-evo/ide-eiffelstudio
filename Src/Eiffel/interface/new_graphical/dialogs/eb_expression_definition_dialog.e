@@ -22,12 +22,12 @@ inherit
 			{NONE} all
 		end
 
-	EB_SHARED_DEBUGGER_MANAGER
+	EB_SHARED_DEBUG_TOOLS
 		export
 			{NONE} all
 		end
 
-	EIFFEL_SYNTAX_CHECKER
+	SHARED_DEBUGGED_OBJECT_MANAGER
 		export
 			{NONE} all
 		end
@@ -83,8 +83,8 @@ feature {NONE} -- Initialization
 			-- Initialize `Current' and force the creation of an object-related expression.
 			-- `oa' is the address of the object.
 		require
-			application_stopped: Debugger_manager.safe_application_is_stopped
-			valid_address: oa /= Void and then Debugger_manager.application.is_valid_object_address (oa)
+			application_stopped: eb_debugger_manager.application_is_executing and then eb_debugger_manager.application_is_stopped
+			valid_address: oa /= Void and then eb_debugger_manager.application.is_valid_object_address (oa)
 		do
 			stick_with_current_object := True
 			make
@@ -99,8 +99,8 @@ feature {NONE} -- Initialization
 			-- `oa' is the address of the object.
 			-- `on' is a name for this object
 		require
-			application_stopped: Debugger_manager.safe_application_is_stopped
-			valid_address: oa /= Void and then Debugger_manager.application.is_valid_object_address (oa)
+			application_stopped: eb_debugger_manager.application_is_executing and then eb_debugger_manager.application_is_stopped
+			valid_address: oa /= Void and then eb_debugger_manager.application.is_valid_object_address (oa)
 			valid_object_name: on /= Void and then not on.is_empty
 		do
 			stick_with_current_object := True
@@ -114,8 +114,8 @@ feature {NONE} -- Initialization
 
 	make_with_expression_on_object	(oa: STRING; a_exp: STRING) is
 		require
-			application_stopped: Debugger_manager.safe_application_is_stopped
-			valid_address: oa /= Void and then Debugger_manager.application.is_valid_object_address (oa)
+			application_stopped: eb_debugger_manager.application_is_executing and then eb_debugger_manager.application_is_stopped
+			valid_address: oa /= Void and then eb_debugger_manager.application.is_valid_object_address (oa)
 			valid_expression: a_exp /= Void and then not a_exp.is_empty
 		do
 			make_with_object (oa)
@@ -127,8 +127,8 @@ feature {NONE} -- Initialization
 			-- `oa' is the address of the object.
 			-- `on' is a name for this object
 		require
-			application_stopped: Debugger_manager.safe_application_is_stopped
-			valid_address: oa /= Void and then Debugger_manager.application.is_valid_object_address (oa)
+			application_stopped: eb_debugger_manager.application_is_executing and then eb_debugger_manager.application_is_stopped
+			valid_address: oa /= Void and then eb_debugger_manager.application.is_valid_object_address (oa)
 			valid_object_name: on /= Void and then not on.is_empty
 		do
 			stick_with_current_object := True
@@ -170,11 +170,6 @@ feature {NONE} -- Initialization
 				object_name_field.set_text (expr.name)
 			end
 			modified_expression := expr
-			if expr.keep_assertion_checking then
-				keep_assertion_checking_cb.enable_select
-			else
-				keep_assertion_checking_cb.disable_select
-			end
 		end
 
 feature {NONE} -- Graphical initialization and changes
@@ -215,6 +210,8 @@ feature {NONE} -- Graphical initialization and changes
 			create address_field
 			create object_name_field
 
+
+
 			setup_completion_possibilities_providers
 
 			class_field.disable_sensitive
@@ -222,15 +219,18 @@ feature {NONE} -- Graphical initialization and changes
 			object_name_field.change_actions.extend (agent on_object_name_changed)
 			expression_field.change_actions.extend (agent on_expression_changed)
 			expression_field.focus_in_actions.extend (agent on_expression_focus)
-			if not debugger_manager.safe_application_is_stopped then
+			if
+				not eb_debugger_manager.application_is_executing
+				or else not eb_debugger_manager.application_is_stopped
+			then
 				on_object_radio.disable_sensitive
 				as_object_radio.disable_sensitive
 				address_field.disable_sensitive
 			end
 
 				--| Create the labels.
-			create cn_l.make_with_text (Interface_names.l_Class_name (""))
-			create oa_l.make_with_text (Interface_names.l_Address_colon)
+			create cn_l.make_with_text (Interface_names.l_Class_name)
+			create oa_l.make_with_text (Interface_names.l_Address)
 
 				--| Create and set up the buttons.
 			create ok_button.make_with_text (Interface_names.b_Ok)
@@ -274,6 +274,7 @@ feature {NONE} -- Graphical initialization and changes
 			object_box.extend (hb)
 			vb.extend (object_box)
 
+
 				--| class context
 			create class_box
 			class_box.extend (class_radio)
@@ -306,23 +307,13 @@ feature {NONE} -- Graphical initialization and changes
 			expression_frame.extend (vb)
 
 				--| 2,2) Object name frame.
-			create object_name_frame.make_with_text (Interface_names.l_name)
+			create object_name_frame.make_with_text ("Name") --Interface_names.l_Expression)
 			create vb
 			vb.set_border_width (Layout_constants.small_border_size)
 			vb.extend (object_name_field)
 			object_name_frame.extend (vb)
 
-				--| 3) assertion settings
-			create keep_assertion_checking_cb.make_with_text (interface_names.b_eval_keep_assertion_checking)
-			keep_assertion_checking_cb.disable_select
-			create hb
-			hb.extend (create {EV_CELL})
-			hb.extend (keep_assertion_checking_cb)
-			hb.disable_item_expand (keep_assertion_checking_cb)
-			cnt.extend (hb)
-			cnt.disable_item_expand (hb)
-
-				--| 4) Buttons.
+				--| 3) Buttons.
 			create hb
 			hb.set_padding (Layout_constants.default_padding_size)
 			hb.extend (create {EV_CELL})
@@ -337,6 +328,7 @@ feature {NONE} -- Graphical initialization and changes
 			dialog.extend (cnt)
 
 				--| Finish setting up the dialog.
+			dialog.set_minimum_width (dialog.minimum_width.max (2 * sz))
 			dialog.set_width (dialog.minimum_width.max (3 * sz))
 			dialog.set_default_push_button (ok_button)
 			dialog.set_default_cancel_button (cb)
@@ -365,18 +357,6 @@ feature {NONE} -- Graphical initialization and changes
 		end
 
 feature -- Access
-
-	set_edit_expression_title is
-			-- Set Edit expression title
-		do
-			dialog.set_title (Interface_names.t_Edit_expression)
-		end
-
-	set_new_expression_mode is
-			-- Set New expression title
-		do
-			dialog.set_title (Interface_names.t_New_expression)
-		end
 
 	callback: PROCEDURE [ANY, TUPLE]
 			-- Callback that should be called after the dialog is closed.
@@ -511,15 +491,15 @@ feature {NONE} -- Event handling
 			l_list: LIST [CLASS_I]
 		do
 			if class_radio.is_selected then
-				l_class_name := class_field.text.as_string_8
+				l_class_name := class_field.text
 				l_class_name.left_adjust
 				l_class_name.right_adjust
 				l_class_name.to_upper
-				if is_valid_class_name (l_class_name) then
+				if not l_class_name.is_empty then
 					l_list := eiffel_universe.compiled_classes_with_name (l_class_name)
 					if l_list /= Void and then not l_list.is_empty then
 						l_class_c := l_list.first.compiled_class
-						create expression_field_provider.make (l_class_c, Void)
+						create expression_field_provider.make (l_class_c, Void, True)
 						expression_field.set_completion_possibilities_provider (expression_field_provider)
 						expression_field_provider.set_code_completable (expression_field)
 					else
@@ -538,52 +518,29 @@ feature {NONE} -- Event handling
 		local
 			o: DEBUGGED_OBJECT
 			cl_i: LIST [CLASS_I]
-			ci: CLASS_I
 			cl: CLASS_C
 			t: STRING
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 			oe: STRING_32
 			do_not_close_dialog: BOOLEAN
+			app_exec: APPLICATION_EXECUTION
 		do
 			if modified_expression = Void then
 				if class_radio.is_selected then
 						-- We try to create an expression related to a class.
-					t := class_field.text.as_string_8
-					t.left_adjust
-					t.right_adjust
-					t.to_upper
-					if is_valid_class_name (t) then
-							--| First find the class given in `class_field'.
-						cl_i := Eiffel_universe.classes_with_name (t)
-						if cl_i.is_empty then
-							ci := Eiffel_universe.class_named (t, eiffel_system.root_cluster)
-							if ci /= Void then
-								cl := ci.compiled_class
-							end
-						elseif not cl_i.is_empty then
-							from
-								cl_i.start
-							until
-								cl_i.after or cl /= Void
-							loop
-								ci := cl_i.item
-								if ci /= Void then
-									cl := ci.compiled_class
-								end
-								cl_i.forth
-							end
+					t := class_field.text.as_string_8.as_upper
+						--| First find the class given in `class_field'.
+					cl_i := Eiffel_universe.classes_with_name (t)
+					if not cl_i.is_empty then
+						from
+							cl_i.start
+						until
+							cl_i.after or cl /= Void
+						loop
+							cl := cl_i.item.compiled_class
+							cl_i.forth
 						end
-					end
-					if ci = Void then
-						set_focus (class_field)
-						create wd.make_with_text (Warning_messages.w_Cannot_find_class (t))
-						wd.show_modal_to_window (dialog)
-					else
-						if cl = Void then
-							set_focus (class_field)
-							create wd.make_with_text (Warning_messages.w_Not_a_compiled_class (t))
-							wd.show_modal_to_window (dialog)
-						else
+						if cl /= Void then
 								--| Now we have the class, create the expression.
 							create new_expression.make_with_class (cl, expression_field.text)
 							if new_expression.syntax_error_occurred then
@@ -591,7 +548,15 @@ feature {NONE} -- Event handling
 								create wd.make_with_text (Warning_messages.w_Syntax_error_in_expression (expression_field.text.as_string_8))
 								wd.show_modal_to_window (dialog)
 							end
+						else
+							set_focus (class_field)
+							create wd.make_with_text (Warning_messages.w_Not_a_compiled_class (t))
+							wd.show_modal_to_window (dialog)
 						end
+					else
+						set_focus (class_field)
+						create wd.make_with_text (Warning_messages.w_Cannot_find_class (t))
+						wd.show_modal_to_window (dialog)
 					end
 				elseif on_object_radio.is_selected or as_object_radio.is_selected then
 						-- We try to create an expression related to a class.
@@ -604,12 +569,12 @@ feature {NONE} -- Event handling
 						t := t.substring (3, t.count)
 					end
 					t.prepend ("0x")
-
+					app_exec := eb_debugger_manager.application
 					if
-						Debugger_manager.safe_application_is_stopped
-						and then Debugger_manager.application.is_valid_object_address (t)
+						app_exec.is_running and then app_exec.is_stopped
+						and then app_exec.is_valid_object_address (t)
 					then
-						o := debugger_manager.object_manager.debugged_object (t, 0, 0)
+						o := debugged_object_manager.debugged_object (t, 0, 0)
 						if as_object_radio.is_selected then
 							create new_expression.make_as_object (o.dtype , o.object_address)
 							new_expression.set_name (object_name_field.text)
@@ -621,8 +586,7 @@ feature {NONE} -- Event handling
 							create wd.make_with_text (Warning_messages.w_Syntax_error_in_expression (expression_field.text))
 							wd.show_modal_to_window (dialog)
 						else
-							check debugger_manager.application_status /= Void end
-							Debugger_manager.application_status.keep_object (t)
+							app_exec.status.keep_object (t)
 						end
 					else
 						set_focus (address_field)
@@ -661,9 +625,6 @@ feature {NONE} -- Event handling
 				end
 				new_expression := modified_expression
 			end
-			if new_expression /= Void then
-				new_expression.set_keep_assertion_checking (keep_assertion_checking_cb.is_selected)
-			end
 			if
 				not do_not_close_dialog
 				and then new_expression /= Void
@@ -694,20 +655,12 @@ feature {NONE} -- Code completion.
 			expression_field_attached: expression_field /= Void
 			class_field_attached: class_field /= Void
 		do
-			create expression_field_provider.make (Void, Void)
-			expression_field_provider.set_dynamic_context_functions (
-											agent eb_debugger_manager.current_debugging_class_c,
-											agent eb_debugger_manager.current_debugging_feature_as)
-
+			create expression_field_provider.make (Void, Void, false)
 			expression_field_provider.set_code_completable (expression_field)
 			expression_field.set_completion_possibilities_provider (expression_field_provider)
 
 			if class_provider = Void then
-				create class_provider.make (Void, Void)
-				class_provider.set_dynamic_context_functions (
-											agent eb_debugger_manager.current_debugging_class_c,
-											agent eb_debugger_manager.current_debugging_feature_as)
-
+				create class_provider.make (Void, Void, false)
 				class_provider.set_use_all_classes_in_universe (True)
 				class_field.set_completing_feature (false)
 				class_field.set_completion_possibilities_provider (class_provider)
@@ -731,9 +684,6 @@ feature {NONE} -- Widgets
 
 	expression_frame, object_name_frame: EV_FRAME
 			-- Container for expression or object name zones.
-
-	keep_assertion_checking_cb: EV_CHECK_BUTTON
-			-- Do we eval with assertion checking on ?
 
 	context_box, object_box, class_box: EV_VERTICAL_BOX
 			-- Container for current feature/object address/class zones.
@@ -769,6 +719,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
+
 	modified_expression: EB_EXPRESSION
 			-- Expression that is being edited, if any.
 
@@ -794,7 +745,7 @@ feature {NONE} -- Implementation
 			-- Widget that should be given the focus when the dialog is displayed.
 
 invariant
-	dialog_not_void: dialog /= Void
+	invariant_clause: True -- Your invariant here
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

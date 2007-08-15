@@ -12,45 +12,8 @@ feature -- Properties
 
 	is_freezing, is_finalizing,
 	is_precompiling, is_quick_melt,
-	is_override_scan, is_discover: BOOLEAN
+	is_override_scan: BOOLEAN
 			-- Type of compilation.
-
-feature -- Access
-
-	string_representation: STRING is
-			-- Normalized output for current compilation mode.
-		do
-			if is_precompiling then
-				if is_finalizing then
-					Result := precompile_finalize_type
-				else
-					Result := precompile_type
-				end
-			elseif is_quick_melt then
-				Result := quick_melt_type
-			elseif is_override_scan then
-				Result := override_scan_type
-			elseif is_discover then
-				Result := discover_type
-			elseif is_freezing then
-				Result := freeze_type
-			elseif is_finalizing then
-				Result := finalize_type
-			else
-				Result := "Unknown"
-			end
-			Result := Result.twin
-		ensure
-			string_representation_not_void: Result /= Void
-		end
-
-	precompile_type: STRING is "Precompile"
-	precompile_finalize_type: STRING is "Precompile+Finalize"
-	quick_melt_type: STRING is "Quick_melt"
-	override_scan_type: STRING is "Override_scan"
-	discover_type: STRING is "Discover"
-	freeze_type: STRING is "Freeze"
-	finalize_type: STRING is "Finalize"
 
 feature -- Update
 
@@ -84,14 +47,6 @@ feature -- Update
 			is_precompiling := b
 		end
 
-	set_is_discover is
-			-- Set `is_discover' to `True'.
-		do
-			is_discover := True
-		ensure
-			is_discover: is_discover
-		end
-
 feature -- Setting
 
 	reset_modes is
@@ -101,7 +56,6 @@ feature -- Setting
 			is_freezing := False
 			is_finalizing := False
 			is_precompiling := False
-			is_discover := False
 		end
 
 indexing

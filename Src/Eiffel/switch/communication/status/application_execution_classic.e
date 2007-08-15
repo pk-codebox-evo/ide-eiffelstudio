@@ -1,28 +1,23 @@
 indexing
-	description	: "Controls execution of classic debugged application."
+	description	: "Controls execution of debugged application."
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
 	date		: "$Date$"
 	revision	: "$Revision $"
 
-class
-	APPLICATION_EXECUTION_CLASSIC
+class APPLICATION_EXECUTION_CLASSIC
 
 inherit
-	APPLICATION_EXECUTION
+
+	APPLICATION_EXECUTION_IMP
 		redefine
-			status,
-			is_valid_object_address,
-			update_critical_stack_depth,
-			can_not_launch_system_message,
 			recycle,
-			clean_on_process_termination,
-			make_with_debugger
+			make,
+			apply_critical_stack_depth,
+			can_not_launch_system_message
 		end
 
 	OBJECT_ADDR
-		rename
-			is_dotnet as is_dotnet_platform
 		export
 			{NONE} all
 		end
@@ -32,78 +27,50 @@ inherit
 			{NONE} all
 		end
 
+	IPC_SHARED_ENGINE
+		export
+			{NONE} all
+		end
+
 	COMPILER_EXPORTER
 
-	DEBUG_VALUE_EXPORTER
+create {APPLICATION_EXECUTION}
+	make
 
-	EB_CONSTANTS
+feature {APPLICATION_EXECUTION} -- Initialization
 
-	VALUE_TYPES
-
-create {DEBUGGER_MANAGER}
-	make_with_debugger
-
-feature {NONE} -- Initialization
-
-	make_with_debugger (dbg: like debugger_manager) is
-		local
-			l_ipc: like ipc_engine
+	make is
+			--
 		do
-			Precursor {APPLICATION_EXECUTION} (dbg)
-			check debugger_manager_not_void: debugger_manager /= Void end
-			l_ipc := ipc_engine
-			if l_ipc = Void then
-				create l_ipc.make (debugger_manager)
-				ipc_engine_cell.put (l_ipc)
-			else
-				l_ipc.change_debugger_manager (debugger_manager)
-			end
-		end
-
-feature {NONE} -- IPC implementation
-
-	ipc_engine: IPC_ENGINE is
-			-- IPC engine, used to control the ecdbgd debugger daemon.
-		do
-			Result := Ipc_engine_cell.item
-		end
-
-	Ipc_engine_cell: CELL [IPC_ENGINE] is
-			-- cell containing `ipc_engine'.
-		once
-			create Result
-		end
-
-feature -- recycling data
-
-	recycle is
-		do
-			once_request.recycle
 			Precursor
 		end
 
-feature {DEAD_HDLR, RUN_REQUEST} -- Status
-
-	build_status is
+	recycle is
 		do
-			create status.make (Current)
+			Precursor
+			once_request.recycle
 		end
 
 feature -- Properties
 
-	status: APPLICATION_STATUS_CLASSIC
-			-- Status of the running dotnet application
+	status: APPLICATION_STATUS_CLASSIC is
+			-- Status of the running application
+		do
+			Result ?= Application.status
+		end
+
+feature {APPLICATION_EXECUTION} -- Properties
 
 	is_valid_object_address (addr: STRING): BOOLEAN is
 			-- Is object address `addr' valid?
 			-- (i.e Does bench know about it)
 		do
-			Result := Precursor (addr) and then is_object_kept (addr)
+			Result := is_object_kept (addr)
 		end
 
 feature -- Execution
 
-	run_with_env_string (app, args, cwd: STRING; env: STRING_GENERAL) is
+	run (args, cwd: STRING) is
 			-- Run application with arguments `args' in directory `cwd'.
 			-- If `is_running' is false after the
 			-- execution of this routine, it means that
@@ -111,26 +78,19 @@ feature -- Execution
 			-- due to the time_out (see `eiffel_timeout_message').
 			-- Before running the application you must check
 			-- to see if the debugged information is up to date.
-		require else
-			cwd_not_void: cwd /= Void
-			env_not_void: env /= Void
 		local
+			app: STRING
 			l_status: APPLICATION_STATUS
-			l_env_s8: STRING_8
 		do
-			ipc_engine.launch_ec_dbg
-			if ipc_engine.ec_dbg_launched then
-				run_request.set_application_name (app)
-				run_request.set_arguments (args)
-				run_request.set_working_directory (cwd)
-				if env /= Void then
-					fixme ("[
-						Try to use UNICODE for environment variables in debugger. 
-						But for now the classic debugger would not allow that.
-						]")
-					l_env_s8 := env.as_string_8
+			Ipc_engine.launch_ec_dbg
+			if Ipc_engine.ec_dbg_launched then
+				app := Eiffel_system.application_name (True)
+				if args /= Void then
+					app.extend (' ')
+					app.append (args)
 				end
-				run_request.set_environment_variables (l_env_s8)
+				run_request.set_application_name (app)
+				run_request.set_working_directory (cwd)
 				run_request.set_ipc_timeout (ipc_engine.ise_timeout)
 				run_request.send
 				l_status := status
@@ -145,16 +105,42 @@ feature -- Execution
 		do
 			cont_request.send_breakpoints
 			status.set_is_stopped (False)
-			cont_request.send_rqst_3_integer (Rqst_resume, Resume_cont, debugger_manager.interrupt_number, debugger_manager.critical_stack_depth)
+			cont_request.send_rqst_3_integer (Rqst_resume, Resume_cont, Application.interrupt_number, application.critical_stack_depth)
 		end
 
 	interrupt is
 			-- Send an interrupt to the application
 			-- which will stop at the next breakable line number
 		do
-			ewb_request.make (Rqst_interrupt)
-			ewb_request.send
+			quit_request.make (Rqst_interrupt)
+			quit_request.send
 		end
+
+	disable_assertion_check is
+			-- Send a message to the application to disable assertion checking
+		local
+			s: STRING
+		do
+			quit_request.make (Rqst_set_assertion_check)
+			quit_request.send_integer (0)
+			s := c_tread
+			if s /= Void and then s.is_boolean then
+				last_assertion_check := s.to_boolean
+			end
+		end
+
+	restore_assertion_check is
+			-- Send a message to the application to restore the previous assertion check status
+		local
+			s: STRING
+		do
+			quit_request.make (Rqst_set_assertion_check)
+			quit_request.send_integer (last_assertion_check.to_integer)
+			s := c_tread
+		end
+
+	last_assertion_check: BOOLEAN
+			-- Last assertion check value when it had been disabled by `disable_assertion_check'.
 
 	notify_newbreakpoint is
 			-- Send an interrupt to the application
@@ -162,15 +148,15 @@ feature -- Execution
 			-- in order to record the new breakpoint(s) before
 			-- automatically resuming its execution.
 		do
-			ewb_request.make (Rqst_new_breakpoint)
-			ewb_request.send
+			quit_request.make (Rqst_new_breakpoint)
+			quit_request.send
 		end
 
 	kill is
 			-- Ask the application to terminate itself.
 		do
-			ewb_request.make (Rqst_kill)
-			ewb_request.send
+			quit_request.make (Rqst_kill)
+			quit_request.send
 
 				-- Don't wait until the next event loop to
 				-- to process the actual termination of the application.
@@ -178,52 +164,30 @@ feature -- Execution
 				-- the application until the application is dead.
 			from
 			until
-				ewb_request.recv_dead
+				quit_request.recv_dead
 			loop
 				debug ("ipc")
 					print (generator + ".kill -> quit_request.recv_dead ? %N")
 				end
 			end
 
-			process_termination
+			Application.process_termination
 
 			Ipc_engine.end_of_debugging
 		ensure then
-			app_is_not_running: not is_running
+			app_is_not_running: not Application.is_running
 		end
 
-	clean_on_process_termination is
+	process_termination is
 			-- Process the termination of the executed
 			-- application. Also execute the `termination_command'.
 		do
-			Precursor {APPLICATION_EXECUTION}
 			release_all_objects
-		end
-
-	request_ipc_end_of_debugging is
-			-- Request ipc engine end of debugging
-		do
-			Ipc_engine.end_of_debugging
-		end
-
-feature {NONE} -- Assertion change Implementation
-
-	impl_check_assert (b: BOOLEAN): BOOLEAN is
-			-- `check_assert (b)' on debuggee
-		local
-			s: STRING
-		do
-			ewb_request.make (Rqst_set_assertion_check)
-			ewb_request.send_integer (b.to_integer)
-			s := c_tread
-			if s /= Void and then s.is_boolean then
-				Result := s.to_boolean
-			end
 		end
 
 feature -- Change
 
-	update_critical_stack_depth (d: INTEGER) is
+	apply_critical_stack_depth (d: INTEGER) is
 			-- Call stack depth at which we warn the user against a possible stack overflow.
 			-- -1 never warns the user.
 		do
@@ -261,17 +225,12 @@ feature -- Query
 						odv.set_name (l_feat.feature_name)
 					else
 						create err_dv.make_with_name  (l_feat.feature_name)
-						err_dv.set_message (debugger_names.m_Could_not_retrieve_once_information)
-						odv := err_dv
+						err_dv.set_message ("Could not retrieve information (once is being called or once failed)")
 					end
 				else
 					create err_dv.make_with_name  (l_feat.feature_name)
-					err_dv.set_message (debugger_names.m_Not_yet_called)
-					if l_feat.is_function then
-						err_dv.set_display_kind (Void_value)
-					else
-						err_dv.set_display_kind (Procedure_return_message_value)
-					end
+					err_dv.set_message (Interface_names.l_Not_yet_called)
+					err_dv.set_display_kind (Void_value)
 					odv := err_dv
 				end
 				Result.put (odv, i)
@@ -282,8 +241,7 @@ feature -- Query
 
 	dump_value_at_address_with_class (a_addr: STRING; a_cl: CLASS_C): DUMP_VALUE is
 		do
-			Result := Debugger_manager.Dump_value_factory.new_object_value (a_addr, a_cl)
-
+			create Result.make_object (a_addr, a_cl)
 		end
 
 	debug_value_at_address_with_class (a_addr: STRING; a_cl: CLASS_C): ABSTRACT_DEBUG_VALUE is
@@ -294,13 +252,13 @@ feature -- Query
 			check False end
 		end
 
---feature {RUN_REQUEST} -- Implementation
---
---	invoke_launched_command (successful: BOOLEAN) is
---			-- Process after the launch of the application according
---			-- to `successful' and the execute `application_launch_command'.
---		do
---		end
+feature {RUN_REQUEST} -- Implementation
+
+	invoke_launched_command (successful: BOOLEAN) is
+			-- Process after the launch of the application according
+			-- to `successful' and the execute `application_launch_command'.
+		do
+		end
 
 feature {APPLICATION_EXECUTION} -- Launching status
 
@@ -309,30 +267,23 @@ feature {APPLICATION_EXECUTION} -- Launching status
 		local
 			env_var_str: STRING_8
 		do
-			Result := debugger_names.w_Cannot_launch_system.as_string_8
-
 			if ipc_engine.is_vms then
 				env_var_str := "logical name"
 			else
 				env_var_str := "environment variable"
 			end
-			Result.append_character ('%N')
+
+			Result := "Could not launch system.%N"
 			if not ipc_engine.valid_ise_ecdbgd_executable then
-				Result.append_string_general (
-						debugger_names.w_Cannot_find_valid_ecdbgd (
-								ipc_engine.ise_ecdbgd_path,
-								env_var_str,
-								ipc_engine.ise_ecdbgd_varname
-							)
-					)
+				Result.append ("The Eiffel debugger is not found or not executable%N")
+				Result.append ("  current path = "+ ipc_engine.ise_ecdbgd_path + " %N")
+				Result.append ("%NYou can change this value in the preferences%N")
+				Result.append (" or restart after setting the " + env_var_str + " " + ipc_engine.ise_ecdbgd_varname + "%N")
 			else
-				Result.append_string_general (
-						debugger_names.w_Cannot_launch_in_allotted_time (
-								ipc_engine.ise_timeout,
-								env_var_str,
-								ipc_engine.ise_timeout_varname
-							)
-					)
+				Result.append ("The system could not be launched in allotted time:%N")
+				Result.append ("%NYour current timeout is " + ipc_engine.ise_timeout.out + " seconds %N")
+				Result.append ("%NYou can change this value in the preferences%N")
+				Result.append (" or restart after setting the " + env_var_str + " " + ipc_engine.ise_timeout_varname + "%N")
 			end
 		end
 
@@ -343,7 +294,7 @@ feature {APPLICATION_STATUS}
 			create Result.make
 		end
 
-	ewb_request: EWB_REQUEST is
+	quit_request: EWB_REQUEST is
 		once
 			create Result.make (Rqst_quit)
 		end
@@ -357,10 +308,6 @@ feature {APPLICATION_STATUS}
 		once
 			create Result.make (Rqst_cont)
 		end
-
-invariant
-
-	ipc_engine_not_void: ipc_engine /= Void
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
@@ -394,4 +341,5 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+end -- class APPLICATION_EXECUTION_CLASSIC
+

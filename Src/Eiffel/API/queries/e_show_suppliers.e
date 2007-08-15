@@ -7,6 +7,7 @@ indexing
 	date: "$Date$";
 	revision: "$Revision $"
 
+
 class E_SHOW_SUPPLIERS
 
 inherit
@@ -50,7 +51,7 @@ feature -- Output
 		do
 			create {QL_CLASS_SUPPLIER_RELATION_CRI}Result.make (
 				query_class_item_from_class_c (current_class).wrapped_domain,
-				True, False, False)
+				class_supplier_relation)
 		ensure then
 			result_attached: Result /= Void
 		end

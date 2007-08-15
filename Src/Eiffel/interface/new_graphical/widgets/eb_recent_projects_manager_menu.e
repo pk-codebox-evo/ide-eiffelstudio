@@ -78,9 +78,9 @@ feature {EB_RECENT_PROJECTS_MANAGER} -- Observer pattern
 			end
 		end
 
-feature {NONE} -- Recycle
+feature -- Recycle
 
-	internal_recycle is
+	recycle is
 			-- To be called when the object is no more used.
 		do
 			recent_projects_manager.remove_observer (Current)

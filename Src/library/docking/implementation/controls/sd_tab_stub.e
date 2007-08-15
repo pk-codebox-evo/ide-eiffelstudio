@@ -38,7 +38,7 @@ feature {NONE} -- Initlization
 			end
 			content := a_content
 			create internal_drawing_area
-			internal_drawing_area.expose_actions.extend (agent on_expose)
+			internal_drawing_area.expose_actions.extend (agent on_redraw)
 
 			extend (internal_box)
 			internal_box.extend (internal_drawing_area)
@@ -54,7 +54,7 @@ feature {NONE} -- Initlization
 			init_separator (a_direction)
 			set_text (a_content.short_title)
 
-			on_expose (0, 0, internal_drawing_area.width, internal_drawing_area.height)
+			on_redraw (0, 0, internal_drawing_area.width, internal_drawing_area.height)
 
 			create pointer_press_actions
 			create delay_timer
@@ -102,7 +102,7 @@ feature {NONE} -- Initlization
 
 feature -- Query
 
-	text: STRING_GENERAL is
+	text: STRING is
 			-- Title.
 		do
 			Result := internal_text
@@ -143,13 +143,13 @@ feature -- Query
 
 feature -- Command
 
-	set_text (a_text: STRING_GENERAL) is
+	set_text (a_text: STRING) is
 			-- Set `title'.
 		do
 			internal_text := a_text
-			set_text_size (internal_shared.tool_bar_font.string_width (a_text))
+			set_text_size (internal_drawing_area.font.string_width (a_text))
 			update_size_internal
-			on_expose (0, 0, internal_drawing_area.width, internal_drawing_area.height)
+			on_redraw (0, 0, internal_drawing_area.width, internal_drawing_area.height)
 		ensure
 			set: internal_text = a_text
 		end
@@ -214,13 +214,11 @@ feature -- Properties
 	set_show_text (a_show: BOOLEAN) is
 			-- If `a_show' True, show title. Vice visa.
 		do
-			if not internal_shared.show_all_tab_stub_text then
-				is_show_text := a_show
-			end
+			is_show_text := a_show
 			update_size_internal
-			on_expose (0, 0, internal_drawing_area.width, internal_drawing_area.height)
+			on_redraw (0, 0, internal_drawing_area.width, internal_drawing_area.height)
 		ensure
-			set: not internal_shared.show_all_tab_stub_text implies is_show_text = a_show
+			set: is_show_text = a_show
 		end
 
 	is_show_text: BOOLEAN
@@ -250,7 +248,7 @@ feature {SD_DOCKING_MANAGER_AGENTS} -- Agents
 			internal_docking_manager.command.unlock_update
 			if is_group_auto_hide_zone_showing then
 				-- We must show immediately
-				pointer_enter_actions.call (Void)
+				pointer_enter_actions.call ([])
 			else
 				delay_timer.actions.extend_kamikaze (agent on_delay_timer)
 				delay_timer.set_interval ({SD_SHARED}.auto_hide_tab_stub_show_delay)
@@ -260,7 +258,7 @@ feature {SD_DOCKING_MANAGER_AGENTS} -- Agents
 	on_pointer_press (a_x: INTEGER_32; a_y: INTEGER_32; a_button: INTEGER_32; a_x_tilt: REAL_64; a_y_tilt: REAL_64; a_pressure: REAL_64; a_screen_x: INTEGER_32; a_screen_y: INTEGER_32) is
 			-- Handle pointer press actions
 		do
-			pointer_press_actions.call (Void)
+			pointer_press_actions.call ([])
 		end
 
 	on_delay_timer is
@@ -275,14 +273,14 @@ feature {SD_DOCKING_MANAGER_AGENTS} -- Agents
 			create l_rect.make (screen_x, screen_y, width, height)
 			if l_rect.has_x_y (l_point.x, l_point.y) then
 				-- If pointer still in current area
-				pointer_enter_actions.call (Void)
+				pointer_enter_actions.call ([])
 			end
 			delay_timer.set_interval (0)
 		end
 
 feature {SD_AUTO_HIDE_STATE} -- Expose handling
 
-	on_expose (a_x: INTEGER; a_y: INTEGER; a_width: INTEGER; a_height: INTEGER) is
+	on_redraw (a_x: INTEGER; a_y: INTEGER; a_width: INTEGER; a_height: INTEGER) is
 			-- Handle redraw.
 		local
 			l_imp: EV_DRAWING_AREA_IMP
@@ -293,7 +291,6 @@ feature {SD_AUTO_HIDE_STATE} -- Expose handling
 			internal_drawing_area.draw_pixmap (start_x_pixmap_internal, start_y_pixmap_internal, content.pixmap)
 			if is_show_text then
 				internal_drawing_area.set_foreground_color ((create {EV_STOCK_COLORS}).black)
-				internal_drawing_area.set_font (internal_shared.tool_bar_font)
 				if not is_vertical then
 					internal_drawing_area.draw_text_top_left (start_x_text_internal, start_y_text_internal, internal_text)
 				else
@@ -349,7 +346,7 @@ feature {NONE} -- Implementation
 			if not is_vertical then
 				Result := Result + padding_width
 			else
-				Result := Result + (width / 2 - content.pixmap.width / 2).floor
+				Result := Result + 1
 			end
 		end
 
@@ -361,39 +358,24 @@ feature {NONE} -- Implementation
 			end
 			if is_vertical then
 				Result := Result + padding_width // 2
-			else
-				Result := (height / 2 - content.pixmap.height / 2).floor
 			end
 		end
 
 	start_x_text_internal: INTEGER is
 			-- Start x position when `on_draw' draw text.
-		local
-			l_platform: PLATFORM
 		do
 			if not is_vertical then
 				Result := start_x_pixmap_internal + content.pixmap.width + padding_width
 			else
-				create l_platform
-				if l_platform.is_windows then
-					Result := (width / 2 - internal_shared.tool_bar_font.height / 2).floor + 3
-				else
-					Result := (width / 2 + internal_shared.tool_bar_font.height / 2).floor - 8
-				end
+				Result := start_x_pixmap_internal + padding_width
 			end
 		end
 
 	start_y_text_internal: INTEGER is
 			-- Start y position when `on_draw' draw text.
-		local
-			l_platform: PLATFORM
 		do
 			if not is_vertical then
-				create l_platform
-				Result := (height / 2 - internal_shared.tool_bar_font.height / 2).floor - 1
-				if l_platform.is_windows then
-					Result := Result - 1
-				end
+				Result := start_y_pixmap_internal - 2 + padding_width // 2
 			else
 				Result := start_y_pixmap_internal + content.pixmap.height + padding_width // 2
 			end
@@ -417,7 +399,7 @@ feature {NONE} -- Implementation
 	internal_drawing_area: EV_DRAWING_AREA
 			-- Drawing area draw `internal_pixmap'.
 
-	internal_text: STRING_GENERAL
+	internal_text: STRING
 			-- Text on `internal_drawing_area'.
 
 	internal_shared: SD_SHARED

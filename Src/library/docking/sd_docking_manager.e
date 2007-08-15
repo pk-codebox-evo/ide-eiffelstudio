@@ -45,20 +45,8 @@ feature {NONE} -- Initialization
 
 			contents.extend (zones.place_holder_content)
 			zones.place_holder_content.set_top ({SD_ENUMERATION}.top)
-
-			if not internal_shared.is_set_show_all_feedback_indicator_called.item then
-				-- We don't override client programmers' setting.
-				internal_shared.set_show_all_feedback_indicator (True)
-			end
-
-			if not internal_shared.is_set_show_tab_stub_text_called.item then
-				-- We don't override client programmers' setting.
-				internal_shared.set_show_tab_stub_text (True)
-			end
-
-			if {PLATFORM}.is_windows then
-				set_main_area_background_color ((create {EV_STOCK_COLORS}).grey)
-			end
+			internal_shared.set_show_all_feedback_indicator (True)
+			set_main_area_background_color ((create {EV_STOCK_COLORS}).grey)
 
 			create {SD_DEPENDENCY_CHECKER_IMP} l_checker
 			l_checker.check_dependency (main_window)
@@ -142,7 +130,7 @@ feature -- Query
 			Result := property.last_focus_content
 		end
 
-	is_title_unique (a_title: STRING_GENERAL): BOOLEAN is
+	is_title_unique (a_title: STRING): BOOLEAN is
 			-- If `a_title' unique in all contents `unique_title's ?
 		require
 			a_title: a_title /= Void
@@ -150,132 +138,73 @@ feature -- Query
 			Result := query.is_title_unique (a_title)
 		end
 
-	is_locked: BOOLEAN
-			-- If tool type zone can be docked?
-
-	is_editor_locked: BOOLEAN
-			-- If editor type zone can be docked?
-
-	docker_mediator: SD_DOCKER_MEDIATOR is
-			-- Manager for user dragging events.
-			-- Maybe Void if user is not dragging.
-		do
-			Result := property.docker_mediator
-		end
-
-	is_config_data_valid (a_file_name: STRING): BOOLEAN is
-			 -- Is config data located at `a_file_name' valid?
-		local
-			l_data: SD_CONFIG_DATA
-			l_file: RAW_FILE
-			l_config_mediator: SD_OPEN_CONFIG_MEDIATOR
-		do
-			create l_file.make (a_file_name)
-			if l_file.exists then
-				create l_config_mediator.make (Current)
-				l_data := l_config_mediator.config_data_from_file (a_file_name)
-				if l_data /= Void then
-					Result := True
-				end
-			end
-		end
-
 feature -- Command
 
-	save_config (a_file: STRING_GENERAL) is
+	save_config (a_file: STRING) is
 			-- Save current docking config.
 		require
 			a_file_not_void: a_file /= Void
 		local
-			l_config: SD_SAVE_CONFIG_MEDIATOR
+			l_config: SD_CONFIG_MEDIATOR
 		do
 			create l_config.make (Current)
 			l_config.save_config (a_file)
 		end
 
-	save_editors_config (a_file: STRING_GENERAL) is
+	save_editors_config (a_file: STRING) is
 			-- Save main window editor config.
 		require
 			not_void: a_file /= Void
 		local
-			l_config: SD_SAVE_CONFIG_MEDIATOR
+			l_config: SD_CONFIG_MEDIATOR
 		do
 			create l_config.make (Current)
 			l_config.save_editors_config (a_file)
 		end
 
-	save_tools_config (a_file: STRING_GENERAL) is
+	save_tools_config (a_file: STRING) is
 			-- Save tools config
 		require
 			not_void: a_file /= Void
 		local
-			l_config: SD_SAVE_CONFIG_MEDIATOR
+			l_config: SD_CONFIG_MEDIATOR
 		do
 			create l_config.make (Current)
 			l_config.save_tools_config (a_file)
 		end
 
-	save_tools_config_with_name (a_file: STRING_GENERAL; a_name: STRING_GENERAL) is
-			-- Save tools config
-		require
-			not_void: a_file /= Void
-		local
-			l_config: SD_SAVE_CONFIG_MEDIATOR
-		do
-			create l_config.make (Current)
-			l_config.save_tools_config_with_name (a_file, a_name)
-		end
-
-	open_config (a_file: STRING_GENERAL): BOOLEAN is
+	open_config (a_file: STRING): BOOLEAN is
 			-- Open a docking config from a_named_file.
 		require
 			a_file_not_void: a_file /= Void
-			a_file_readable: is_file_readable (a_file)
+			a_file_exist: file_exist (a_file)
 		local
-			l_config: SD_OPEN_CONFIG_MEDIATOR
+			l_config: SD_CONFIG_MEDIATOR
 		do
 			create l_config.make (Current)
 			Result := l_config.open_config (a_file)
 		end
 
-	open_editors_config (a_file: STRING_GENERAL) is
+	open_editors_config (a_file: STRING) is
 			-- Open main window editor config.
 		local
-			l_config: SD_OPEN_CONFIG_MEDIATOR
+			l_config: SD_CONFIG_MEDIATOR
 		do
 			create l_config.make (Current)
 			l_config.open_editors_config (a_file)
 		end
 
-	open_tools_config (a_file: STRING_GENERAL): BOOLEAN is
+	open_tools_config (a_file: STRING): BOOLEAN is
 			-- Save tools contents config.
 		local
-			l_config: SD_OPEN_CONFIG_MEDIATOR
+			l_config: SD_CONFIG_MEDIATOR
 		do
 			create l_config.make (Current)
 			Result := l_config.open_tools_config (a_file)
 		end
 
-	open_maximized_tool_config (a_file: STRING_GENERAL) is
-			-- Open maximized tool config data.
-		local
-			l_config: SD_OPEN_CONFIG_MEDIATOR
-		do
-			create l_config.make (Current)
-			l_config.open_maximized_tool_data (a_file)
-		end
-
-	open_tool_bar_item_config (a_file: STRING_GENERAL) is
-			-- Open maximized tool config data.
-		local
-			l_config: SD_OPEN_CONFIG_MEDIATOR
-		do
-			create l_config.make (Current)
-			l_config.open_tool_bar_item_data (a_file)
-		end
-
 	set_main_area_background_color (a_color: EV_COLOR) is
-			-- Set main area (editors' area) background color.
+			-- Set main area background color.
 		require
 			a_color_not_void: a_color /= Void
 		do
@@ -285,104 +214,25 @@ feature -- Command
 			set: query.inner_container_main.background_color.is_equal (a_color)
 		end
 
-	main_area_drop_action: EV_PND_ACTION_SEQUENCE is
-			-- Main area (editor area) drop acitons.
-			-- This actions will be called if there is no editor zone and end user drop
-			-- a stone to the void editor area.
+	destory is
+			-- Destory all underline objects.
 		do
-			Result := property.main_area_drop_actions
-		ensure
-			not_void: Result /= Void
-		end
-
-	update_mini_tool_bar_size (a_content: SD_CONTENT) is
-			-- After mini tool bar widget size changes, update mini tool bar size to best
-			-- fit new size of mini tool bar widget.
-			-- `a_content' can be void if not known.
-		do
-			command.update_mini_tool_bar_size (a_content)
-		end
-
-	propagate_accelerators is
-			-- Proprogate `main_window' accelerators to all floating zones.
-		do
-			command.propagate_accelerators
-		end
-
-	close_editor_place_holder is
-			-- Close editors place holder zone.
-		do
-			zones.place_holder_content.close
-		end
-
-	lock is
-			-- Set `is_locked' to `True'.
-		do
-			is_locked := True
-		ensure
-			locked: is_locked = True
-		end
-
-	unlock is
-			-- Set `is_locked' to `False'.
-		do
-			is_locked := False
-		ensure
-			unlocked: is_locked = False
-		end
-
-	lock_editor is
-			-- Set `is_editor_locked' to `True'.
-		do
-			is_editor_locked := True
-		ensure
-			locked: is_editor_locked = True
-		end
-
-	unlock_editor is
-			-- Set `is_editor_locked' to `False'
-		do
-			is_editor_locked := False
-		ensure
-			unlocked: is_editor_locked = False
-		end
-
-	destroy is
-			-- Destroy all underline objects.
-		local
-			l_floating_zones: ARRAYED_LIST [SD_FLOATING_ZONE]
-		do
-			internal_shared.docking_manager_list.prune_all (Current)
-			property.destroy
 			agents.destroy
-			tool_bar_manager.destroy
-			contents.wipe_out
-
-			-- We have to destroy floating zones for Linux implementation, on Windows not needed.
-			from
-				l_floating_zones := query.floating_zones
-				l_floating_zones.start
-			until
-				l_floating_zones.after
-			loop
-				l_floating_zones.item.destroy
-				l_floating_zones.forth
-			end
 		end
 
 feature -- Contract support
 
-	is_file_readable (a_file_name: STRING_GENERAL): BOOLEAN is
-			-- Does `a_file_name' exist?
+	file_exist (a_file_name: STRING): BOOLEAN is
+			-- If `a_file_name' exist?
 		local
 			l_file: RAW_FILE
 		do
-			create l_file.make (a_file_name.as_string_8)
-			Result := l_file.exists and then l_file.is_readable
+			create l_file.make_open_read (a_file_name)
+			Result := l_file.exists
 		end
 
 	window_valid (a_window: EV_WINDOW): BOOLEAN is
-			-- Is `a_window' already managed?
+			-- If `a_widnow' already managed?
 		local
 			l_list: ARRAYED_LIST [SD_DOCKING_MANAGER]
 		do
@@ -403,20 +253,19 @@ feature -- Contract support
 		end
 
 	container_valid (a_container: EV_CONTAINER; a_window: EV_WINDOW): BOOLEAN is
-			-- Is `a_container' in `a_window' or `a_container' in `a_window'?
+			-- If `a_container' is `a_window' or `a_container' in `a_window'?
 		do
 			Result := a_window.has_recursive (a_container) or a_container = a_window
 		end
 
 feature {SD_TOOL_BAR_HOT_ZONE, SD_FLOATING_TOOL_BAR_ZONE, SD_CONTENT, SD_STATE,
-		SD_DOCKER_MEDIATOR, SD_OPEN_CONFIG_MEDIATOR, SD_SAVE_CONFIG_MEDIATOR,
-		SD_HOT_ZONE, SD_ZONE, SD_TOOL_BAR_DOCKER_MEDIATOR,
-	 	SD_TOOL_BAR_MANAGER, SD_AUTO_HIDE_PANEL, SD_TOOL_BAR_ZONE, SD_WIDGET_TOOL_BAR,
-	  	SD_TAB_STUB, SD_MULTI_DOCK_AREA, SD_DOCKING_MANAGER_AGENTS, SD_TOOL_BAR_HIDDEN_ITEM_DIALOG,
+		SD_DOCKER_MEDIATOR, SD_CONFIG_MEDIATOR, SD_HOT_ZONE, SD_ZONE, SD_TOOL_BAR_DOCKER_MEDIATOR,
+	 	SD_TOOL_BAR_MANAGER, SD_AUTO_HIDE_PANEL, SD_TOOL_BAR_ZONE,
+	  	SD_TAB_STUB, SD_MULTI_DOCK_AREA, SD_DOCKING_MANAGER_AGENTS,
 	  	SD_DOCKING_MANAGER_COMMAND, SD_DOCKING_MANAGER_ZONES, SD_AUTO_HIDE_ANIMATION,
 	  	SD_DOCKING_MANAGER_QUERY, SD_NOTEBOOK, SD_ZONE_NAVIGATION_DIALOG,
 	  	SD_TAB_STATE_ASSISTANT, SD_TOOL_BAR_HOT_ZONE, SD_TOOL_BAR_ZONE_ASSISTANT,
-		SD_DEBUG_ACCESS, SD_UPPER_ZONE, SD_DOCKING_MANAGER_PROPERTY, SD_TOOL_BAR_CONTENT} -- Library internals querys.
+		SD_DEBUG_ACCESS, SD_UPPER_ZONE} -- Library internals querys.
 
 	query: SD_DOCKING_MANAGER_QUERY
 			-- Manager helper Current for querys.
@@ -434,13 +283,11 @@ feature {SD_TOOL_BAR_HOT_ZONE, SD_FLOATING_TOOL_BAR_ZONE, SD_CONTENT, SD_STATE,
 			-- Manager help Current for zones issues.
 
 feature {SD_TOOL_BAR_HOT_ZONE, SD_CONTENT, SD_STATE, SD_DOCKER_MEDIATOR,
-	 SD_OPEN_CONFIG_MEDIATOR, SD_HOT_ZONE, SD_ZONE, SD_DEBUG_ACCESS, SD_TOOL_BAR_DOCKER_MEDIATOR,
+	 SD_CONFIG_MEDIATOR, SD_HOT_ZONE, SD_ZONE, SD_DEBUG_ACCESS, SD_TOOL_BAR_DOCKER_MEDIATOR,
 	 SD_TOOL_BAR_MANAGER, SD_AUTO_HIDE_PANEL, SD_DOCKING_MANAGER, SD_DOCKING_MANAGER_AGENTS,
 	 SD_DOCKING_MANAGER_QUERY, SD_DOCKING_MANAGER_COMMAND, SD_TOOL_BAR_ZONE_ASSISTANT,
 	 SD_DOCKING_MANAGER_ZONES, SD_NOTEBOOK_TAB_AREA, SD_NOTEBOOK_TAB, SD_AUTO_HIDE_ANIMATION,
-	 SD_FLOATING_TOOL_BAR_ZONE, SD_TOOL_BAR_HIDDEN_ITEM_DIALOG, SD_DOCKING_MANAGER_PROPERTY,
-	 SD_ZONE_NAVIGATION_DIALOG, SD_SAVE_CONFIG_MEDIATOR}
-	 	 -- Library internal attributes.
+	 SD_FLOATING_TOOL_BAR_ZONE, SD_TOOL_BAR_HIDDEN_ITEM_DIALOG} -- Library internal attributes.
 
 	tool_bar_container: SD_TOOL_BAR_CONTAINER
 			-- Container for tool bars on four sides.
@@ -460,7 +307,8 @@ feature {SD_TOOL_BAR_HOT_ZONE, SD_CONTENT, SD_STATE, SD_DOCKER_MEDIATOR,
 	main_container: SD_MAIN_CONTAINER
 			-- Container has four tab stub areas in four side and main area in center.
 
-feature {SD_DOCKING_MANAGER_AGENTS, SD_DOCKING_MANAGER_QUERY, SD_DOCKING_MANAGER_COMMAND} -- Implementation
+feature {SD_DOCKING_MANAGER_AGENTS, SD_DOCKING_MANAGER_QUERY,
+	SD_DOCKING_MANAGER_COMMAND} -- Implementation
 
 	internal_viewport: EV_VIEWPORT
 			-- The viewport which contain `fixed_area'.
@@ -468,10 +316,7 @@ feature {SD_DOCKING_MANAGER_AGENTS, SD_DOCKING_MANAGER_QUERY, SD_DOCKING_MANAGER
 	internal_shared: SD_SHARED
 			-- All singletons
 
-	internal_auto_hide_panel_left,
-	internal_auto_hide_panel_right,
-	internal_auto_hide_panel_top,
-	internal_auto_hide_panel_bottom: SD_AUTO_HIDE_PANEL
+	internal_auto_hide_panel_left, internal_auto_hide_panel_right, internal_auto_hide_panel_top, internal_auto_hide_panel_bottom: SD_AUTO_HIDE_PANEL
 			-- Auto hide panels
 
 invariant
@@ -481,7 +326,6 @@ invariant
 	internal_main_container_not_void: main_container /= Void
 	internal_inner_container_not_void: inner_containers /= Void and inner_containers.count >= 1
 	internal_contents_not_void: contents /= Void
-	tool_bar_manager_not_void: tool_bar_manager /= Void
 
 indexing
 	library:	"SmartDocking: Library of reusable components for Eiffel."

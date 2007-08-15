@@ -26,23 +26,19 @@ feature {NONE} -- Initlization
 			name := generating_type
 			create select_actions
 			create pointer_button_press_actions
-			create internal_shared
 		end
 
 feature -- Properties
 
-	set_text (a_text: STRING_GENERAL) is
+	set_text (a_text: STRING) is
 			-- Set `text', can set Void text.
 		do
 			text := a_text
-			if tool_bar /= Void then
-				tool_bar.update_size
-			end
 		ensure
 			set: text = a_text
 		end
 
-	text: STRING_GENERAL
+	text: STRING
 			-- Text shown on item.
 
 	set_tooltip (a_tip: like tooltip) is
@@ -55,7 +51,7 @@ feature -- Properties
 			set: tooltip =  a_tip
 		end
 
-	tooltip: STRING_GENERAL
+	tooltip: STRING
 			-- Tooltip shown on item.
 
 feature -- Command
@@ -90,22 +86,20 @@ feature -- Query
 
 	width: INTEGER is
 			-- Redefine
+		local
+			l_shared: SD_SHARED
 		do
 			Result := {SD_TOOL_BAR}.padding_width
-			if text /= Void and then not text.is_empty then
+			if text /= Void then
 				if tool_bar /= Void then
-					Result := Result + {SD_TOOL_BAR}.padding_width + text_width
+					create l_shared
+					Result := Result + {SD_TOOL_BAR}.padding_width + l_shared.tool_bar_font.string_width (text)
 				end
 			end
-			Result := Result + icon_width + {SD_TOOL_BAR}.padding_width
-		end
-
-	text_width: INTEGER is
-			-- Width of text
-		do
-			if text /= Void then
-				Result := internal_shared.tool_bar_font.string_width (text)
+			if pixmap /= Void then
+				Result := Result + pixmap.width
 			end
+			Result := Result + {SD_TOOL_BAR}.padding_width
 		end
 
 	select_actions: EV_NOTIFY_ACTION_SEQUENCE
@@ -150,40 +144,13 @@ feature {SD_TOOL_BAR, SD_TOOL_BAR_DRAWER, SD_TOOL_BAR_DRAWER_IMP} -- Internal is
 		require
 			has_parent: tool_bar /= Void
 		do
-			if tool_bar /= Void then
-				create Result.make_with_position (tool_bar.item_x (Current) + {SD_TOOL_BAR}.padding_width,  tool_bar.item_y (Current) + pixmap_y_position)
-				if state = {SD_TOOL_BAR_ITEM_STATE}.pressed then
-					Result.set_x (Result.x + 1)
-					Result.set_y (Result.y + 1)
-				end
-			else
-				create Result
+			create Result.make_with_position (tool_bar.item_x (Current) + {SD_TOOL_BAR}.padding_width,  tool_bar.item_y (Current) + {SD_TOOL_BAR}.border_width)
+			if state = {SD_TOOL_BAR_ITEM_STATE}.pressed then
+				Result.set_x (Result.x + 1)
+				Result.set_y (Result.y + 1)
 			end
 		ensure
 			not_void: Result /= Void
-		end
-
-	pixmap_y_position: INTEGER is
-			-- Pixmap positon relative to Current.
-			-- This feature not be used on Windows temporary.
-		local
-			l_has_text: BOOLEAN
-		do
-			if tool_bar /= Void then
-				l_has_text := tool_bar.items_have_texts
-			end
-
-			if (pixel_buffer /= Void or pixmap /= Void) and l_has_text then
-				Result := (tool_bar.standard_height / 2).ceiling
-				if pixel_buffer /= Void then
-					Result := Result - (pixel_buffer.height / 2).floor
-				else
-					-- pixmap not void
-					Result := Result - (pixmap.height / 2).floor
-				end
-			else
-				Result := tool_bar.padding_width
-			end
 		end
 
 	text_rectangle: EV_RECTANGLE is
@@ -192,33 +159,26 @@ feature {SD_TOOL_BAR, SD_TOOL_BAR_DRAWER, SD_TOOL_BAR_DRAWER_IMP} -- Internal is
 			has_parent: tool_bar /= Void
 		local
 			l_left, l_top, l_width, l_height: INTEGER
-			l_platform: PLATFORM
 		do
-			if tool_bar /= Void then
-				l_left := text_left
-				l_width := text_width
-
-				l_top := tool_bar.item_y (Current) + internal_shared.tool_bar_border_width - 1
-
-				create l_platform
-				if l_platform.is_windows then
-					l_top := l_top - internal_shared.tool_bar_font.height // 3 + 1
-				end
-
-				l_height := tool_bar.row_height - internal_shared.tool_bar_border_width
-
-				create Result.make (l_left, l_top, l_width, l_height)
-
-				if state = {SD_TOOL_BAR_ITEM_STATE}.pressed then
-					if Result.right >= Result.left + 1 then
-						Result.set_left (Result.left + 1)
-					end
-					if Result.bottom >= Result.top + 1 then
-						Result.set_top (Result.top + 1)
-					end
-				end
+			l_left := tool_bar.item_x (Current)
+			if pixmap /= Void then
+				l_left := l_left + {SD_TOOL_BAR}.padding_width + pixmap.width + {SD_TOOL_BAR}.padding_width
 			else
-				create Result
+				l_left := l_left + {SD_TOOL_BAR}.padding_width
+			end
+			l_width := tool_bar.font.string_width (text)
+			l_top := tool_bar.item_y (Current) + {SD_TOOL_BAR}.border_width
+			l_height := tool_bar.row_height - 2 * {SD_TOOL_BAR}.border_width
+
+			create Result.make (l_left, l_top, l_width, l_height)
+
+			if state = {SD_TOOL_BAR_ITEM_STATE}.pressed then
+				if Result.right >= Result.left + 1 then
+					Result.set_left (Result.left + 1)
+				end
+				if Result.bottom >= Result.top + 1 then
+					Result.set_top (Result.top + 1)
+				end
 			end
 		ensure
 			not_void: Result /= Void
@@ -229,23 +189,19 @@ feature {SD_TOOL_BAR} -- Agents
 	on_pointer_motion (a_relative_x, a_relative_y: INTEGER) is
 			-- Redefine
 		do
-			-- Tool bar maybe void when CPU is busy on GTK.
-			-- See bug#13102.
-			if tool_bar /= Void then
-				if has_position (a_relative_x, a_relative_y) and is_sensitive then
-					if state = {SD_TOOL_BAR_ITEM_STATE}.normal then
-						state := {SD_TOOL_BAR_ITEM_STATE}.hot
-						is_need_redraw := True
-					else
-						is_need_redraw := False
-					end
+			if has_position (a_relative_x, a_relative_y) and is_sensitive then
+				if state = {SD_TOOL_BAR_ITEM_STATE}.normal then
+					state := {SD_TOOL_BAR_ITEM_STATE}.hot
+					is_need_redraw := True
 				else
-					if state /= {SD_TOOL_BAR_ITEM_STATE}.normal then
-						state := {SD_TOOL_BAR_ITEM_STATE}.normal
-						is_need_redraw := True
-					else
-						is_need_redraw := False
-					end
+					is_need_redraw := False
+				end
+			else
+				if state /= {SD_TOOL_BAR_ITEM_STATE}.normal then
+					state := {SD_TOOL_BAR_ITEM_STATE}.normal
+					is_need_redraw := True
+				else
+					is_need_redraw := False
 				end
 			end
 		end
@@ -253,15 +209,11 @@ feature {SD_TOOL_BAR} -- Agents
 	on_pointer_motion_for_tooltip (a_relative_x, a_relative_y: INTEGER) is
 			-- Redefine
 		do
-			-- Tool bar maybe void when CPU is busy on GTK.
-			-- See bug#13102.
-			if tool_bar /= Void then
-				if has_position (a_relative_x, a_relative_y) then
-					if tooltip /= Void and not tooltip.as_string_32.is_equal (tool_bar.tooltip.as_string_32) then
-						tool_bar.set_tooltip (tooltip)
-					elseif tooltip = Void then
-						tool_bar.remove_tooltip
-					end
+			if has_position (a_relative_x, a_relative_y) then
+				if tooltip /= Void and not tooltip.is_equal (tool_bar.tooltip) then
+					tool_bar.set_tooltip (tooltip)
+				elseif tooltip = Void then
+					tool_bar.remove_tooltip
 				end
 			end
 		end
@@ -293,11 +245,11 @@ feature {SD_TOOL_BAR} -- Agents
 	on_pointer_release (a_relative_x, a_relative_y: INTEGER) is
 			-- Redefine
 		do
-			if tool_bar /= Void and has_position (a_relative_x, a_relative_y) then
+			if has_position (a_relative_x, a_relative_y) then
 				if state = {SD_TOOL_BAR_ITEM_STATE}.pressed then
 					state := {SD_TOOL_BAR_ITEM_STATE}.hot
 					is_need_redraw := True
-					select_actions.call (Void)
+					select_actions.call ([])
 				else
 					is_need_redraw := False
 				end
@@ -344,42 +296,11 @@ feature{SD_TOOL_BAR} -- Implementation
 			end
 		end
 
-	icon_width: INTEGER is
-			-- Width of icons which is `pixel_buffer' or `pixmap'.
-		do
-			if pixel_buffer /= Void then
-				Result := pixel_buffer.width
-			elseif pixmap /= Void then
-				Result := pixmap.width
-			end
-		end
-
-	text_left: INTEGER is
-			-- Text left start position
-		do
-			Result := tool_bar.item_x (Current)
-			Result := Result + width_before_text
-		end
-
-	width_before_text: INTEGER is
-			-- Width before text left side
-		do
-			if pixmap /= Void then
-				Result := {SD_TOOL_BAR}.padding_width + icon_width + {SD_TOOL_BAR}.padding_width
-			else
-				Result := {SD_TOOL_BAR}.padding_width
-			end
-		end
-
 	internal_sensitive_before: BOOLEAN
 			-- Before pick and drop is Current sensitive?
 
-	internal_shared: SD_SHARED
-			-- All singletons.
-
 invariant
 	not_void: select_actions /= Void
-	not_void: internal_shared /= Void
 
 indexing
 	library:	"SmartDocking: Library of reusable components for Eiffel."

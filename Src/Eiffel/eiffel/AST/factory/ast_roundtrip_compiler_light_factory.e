@@ -20,8 +20,6 @@ inherit
 		undefine
 			new_integer_as,
 			new_integer_hexa_as,
-			new_integer_octal_as,
-			new_integer_binary_as,
 			new_feature_as,
 			new_bits_as,
 			new_class_as,
@@ -33,7 +31,6 @@ inherit
 			new_real_value,
 			new_external_lang_as,
 			new_formal_dec_as,
-			new_vtgc1_error,
 			validate_integer_real_type,
 			new_line_pragma
 		end
@@ -41,8 +38,6 @@ inherit
 	AST_COMPILER_FACTORY
 		undefine
 			create_match_list,
-			backup_match_list_count,
-			resume_match_list_count,
 			new_keyword_as,
 			new_symbol_as,
 			new_current_as,
@@ -92,7 +87,7 @@ feature -- Roundtrip
 				create Result.make_from_string (t, s, v)
 				Result.set_position (l, c, p, n)
 				Result.set_sign_symbol (s_as)
-				increase_match_list_count
+				match_list_count := match_list_count + 1
 				Result.set_index (match_list_count)
 			end
 		end
@@ -104,7 +99,7 @@ feature -- Roundtrip
 				create Result.make_from_hexa_string (t, s, v)
 				Result.set_position (l, c, p, n)
 				Result.set_sign_symbol (s_as)
-				increase_match_list_count
+				match_list_count := match_list_count + 1
 				Result.set_index (match_list_count)
 			end
 		end

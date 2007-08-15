@@ -40,6 +40,7 @@ feature -- Change value
 			-- Set the new feature name.
 		require
 			a_name_not_void: a_name /= void
+			name_in_upper: a_name.as_upper.is_equal (a_name)
 		do
 			new_feature_name_preference.set_value (a_name)
 		end
@@ -55,6 +56,7 @@ feature -- Change value
 		do
 			update_strings_preference.set_value (a_value)
 		end
+
 
 feature {NONE} -- Preference
 

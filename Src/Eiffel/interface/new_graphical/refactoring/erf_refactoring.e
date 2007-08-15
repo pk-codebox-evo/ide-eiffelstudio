@@ -24,11 +24,6 @@ inherit
 			{NONE} all
 		end
 
-	EB_CONSTANTS
-		export
-			{NONE} all
-		end
-
 feature {ERF_REFACTORING} -- Initialization
 
 	make (an_undo_stack: STACK [LIST [ERF_ACTION]]; a_preference: PREFERENCES) is
@@ -48,6 +43,7 @@ feature -- Status
 	success: BOOLEAN
 			-- Was the last refactoring successful?
 
+
 feature -- Access
 
 	preferences: ERF_PREFERENCES
@@ -60,8 +56,8 @@ feature -- Basic actions
 		local
 			all_checks_ok: BOOLEAN
 			compiler_check: ERF_COMPILATION_SUCCESSFUL
-			wd: EB_WARNING_DIALOG
-			qd: EB_QUESTION_DIALOG
+			wd: EV_WARNING_DIALOG
+			qd: EV_QUESTION_DIALOG
 			evcsts: EV_DIALOG_CONSTANTS
 		do
 			success := False
@@ -102,11 +98,11 @@ feature -- Basic actions
 						if not success then
 								-- success, because, now the user can choose to keep the changes or if he rollbacks, success will be set to False
 							success := True
-							create qd.make_with_text (compiler_check.error_message.as_string_32+" " + interface_names.l_rollback_question)
+							create qd.make_with_text (compiler_check.error_message+" Rollback?")
 							create evcsts
-							qd.button (interface_names.b_yes).select_actions.extend (agent rollback)
-							qd.button (interface_names.b_no).select_actions.extend (agent commit)
-							qd.button (interface_names.b_cancel).hide
+							qd.button (evcsts.ev_yes).select_actions.extend (agent rollback)
+							qd.button (evcsts.ev_no).select_actions.extend (agent commit)
+							qd.button (evcsts.ev_cancel).hide
 							qd.show_modal_to_window (window_manager.last_focused_development_window.window)
 						else
 							commit
@@ -151,7 +147,7 @@ feature {NONE} -- Implementation convenience
 	descendant_classes (a_class: CLASS_I): DS_HASH_SET [CLASS_I] is
 			-- Get all descendant classes of `a_class'.
 		require
-			compiled_class: a_class.is_compiled
+			compiled_class: a_class.compiled
 		local
 			descendants: ARRAYED_LIST [CLASS_C]
 			descendant_class: CLASS_C
@@ -182,7 +178,7 @@ feature {NONE} -- Implementation convenience
 	client_classes (a_class: CLASS_I): DS_HASH_SET [CLASS_I] is
 			-- Get all client classes of `a_class'.
 		require
-			compiled_class: a_class.is_compiled
+			compiled_class: a_class.compiled
 		local
 			clients: ARRAYED_LIST [CLASS_C]
 		do
@@ -203,7 +199,7 @@ feature {NONE} -- Implementation convenience
 	recursive_client_classes (a_class: CLASS_I): DS_HASH_SET [CLASS_I] is
 			-- Get all client classes of `a_class' or a descendant of `a_class'.
 		require
-			compiled_class: a_class.is_compiled
+			compiled_class: a_class.compiled
 		local
 			descendants: DS_HASH_SET [CLASS_I]
 		do
@@ -226,7 +222,7 @@ feature {NONE} -- Implementation convenience
 	usage_classes (a_class: CLASS_I): DS_HASH_SET [CLASS_I] is
 			-- Get all classes that somehow use `a_class' directly or indirectly.
 		require
-			compiled_class: a_class.is_compiled
+			compiled_class: a_class.compiled
 		do
 			create Result.make (100)
 			Result.force (a_class)
@@ -268,6 +264,7 @@ feature {NONE} -- undo handling
 			undo_stack.put (current_actions)
 		end
 
+
 feature {NONE} -- Implementation
 
 	refactor is
@@ -300,7 +297,7 @@ feature {NONE} -- Implementation
 		require
 			c_not_void: c /= Void
 		local
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 		do
 			c.execute
 			Result := c.success

@@ -116,76 +116,67 @@ feature -- Basic operations
 	create_window is
 			-- Create a new development window and update `last_created_window'.
 		local
-			l_director: EB_DEVELOPMENT_WINDOW_DIRECTOR
-			l_window: EB_DEVELOPMENT_WINDOW
+			a_window: EB_DEVELOPMENT_WINDOW
 		do
-			create l_director.make
-			l_director.construct
-			l_window := l_director.develop_window
-			initialize_window (l_window, True)
+				--| FIXME IEK Remove next line when session handling is fully integrated.
+			store_last_focused_window
+			create a_window.make
+			initialize_window (a_window)
 		end
 
-	create_window_from_session_data (a_dev_window: EB_DEVELOPMENT_WINDOW; a_session_data: EB_DEVELOPMENT_WINDOW_SESSION_DATA) is
+	create_window_from_session_data (a_session_data: EB_DEVELOPMENT_WINDOW_SESSION_DATA) is
 			-- Create a new window using `a_session_data'
 		require
 			a_session_data_not_void: a_session_data /= Void
 		local
-			l_window: EB_DEVELOPMENT_WINDOW
-			l_director: EB_DEVELOPMENT_WINDOW_DIRECTOR
+			a_window: EB_DEVELOPMENT_WINDOW
 		do
-			create l_director.make
-			l_director.construct_with_session_data (a_dev_window, a_session_data)
-			l_window := l_director.develop_window
-			initialize_window (l_window, False)
+			create a_window.make_with_session_data (a_session_data)
+			initialize_window (a_window)
 		end
 
 	create_editor_window is
 			-- Create a new editor window and update `last_created_window'.
 		local
-			l_window: EB_DEVELOPMENT_WINDOW
-			l_director: EB_DEVELOPMENT_WINDOW_DIRECTOR
+			a_window: EB_DEVELOPMENT_WINDOW
 		do
-			create l_director.make
-			l_director.construct_as_editor
-			l_window := l_director.develop_window
-			initialize_window (l_window, True)
+				--| FIXME IEK Remove next line when session handling is fully integrated.
+			store_last_focused_window
+			create a_window.make_as_editor
+			initialize_window (a_window)
 		end
 
 	create_context_window is
 			-- Create a new context window and update `last_created_window'.
 		local
-			l_window: EB_DEVELOPMENT_WINDOW
-			l_director: EB_DEVELOPMENT_WINDOW_DIRECTOR
+			a_window: EB_DEVELOPMENT_WINDOW
 		do
-			create l_director.make
-			l_director.construct_as_context_tool
-			l_window := l_director.develop_window
-			initialize_window (l_window, True)
+				--| FIXME IEK Remove next line when session handling is fully integrated.
+			store_last_focused_window
+			create a_window.make_as_context_tool
+			initialize_window (a_window)
 		end
 
-	initialize_window (a_window: EB_DEVELOPMENT_WINDOW; a_new_window: BOOLEAN) is
+	initialize_window (a_window: EB_DEVELOPMENT_WINDOW) is
 			-- Initialize `a_window'.
-			-- If `a_window' is not `a_new_window', we ignore window title.
 		require
 			a_window_not_void: a_window /= Void
 		do
 			managed_windows.extend (a_window)
-			if a_window.stone = Void and then a_new_window then
+			if a_window.stone = Void then
 					-- Set the title if a stone hasn't already been set by session manager.
 				a_window.set_title (new_title)
 			end
-			if a_new_window then
-				notify_observers (a_window, Notify_added_window)
-			else
-				notify_observers (a_window, Notify_changed_window)
-			end
+			notify_observers (a_window, Notify_added_window)
 			last_created_window := a_window
 
-				-- Show the window if not already shown
-			if not a_window.is_visible then
-				a_window.show
-			end
+				-- Show the window
+			a_window.show
 			a_window.give_focus
+
+				-- Update the splitters (can't be done before window is visible
+				-- otherwise it does not work).
+			a_window.update_splitters
 		end
 
 	create_dynamic_lib_window is
@@ -202,6 +193,7 @@ feature -- Basic operations
 
 				-- Show the window
 			dynamic_lib_window.show
+			dynamic_lib_window.raise
 			dynamic_lib_window.give_focus
 		ensure
 			valid_dynamic_lib_window: dynamic_lib_window_is_valid
@@ -214,25 +206,34 @@ feature -- Access
 		require
 			cl_name_not_void: cl_name /= Void
 		local
+			name_query: STRING
+			name_item: STRING
 			a_dev: EB_DEVELOPMENT_WINDOW
-			l_index: INTEGER
+			cur: CURSOR
 		do
 			create {ARRAYED_LIST [EB_DEVELOPMENT_WINDOW]} Result.make (managed_windows.count)
+
+			name_query := cl_name.as_upper
+
 			from
-				l_index := managed_windows.index
+				cur := managed_windows.cursor
 				managed_windows.start
 			until
 				managed_windows.after
 			loop
 				a_dev ?= managed_windows.item
 				if a_dev /= Void then
-					if a_dev.editors_manager.is_class_editing (cl_name) then
-						Result.extend (a_dev)
+					name_item := a_dev.class_name
+					if name_item /= Void then
+						name_item := name_item.as_upper
+						if name_item.is_equal (name_query) then
+							Result.extend (a_dev)
+						end
 					end
 				end
 				managed_windows.forth
 			end
-			managed_windows.go_i_th (l_index)
+			managed_windows.go_to (cur)
 		ensure
 			not_void: Result /= Void
 		end
@@ -258,10 +259,10 @@ feature -- Status report
 			-- number of visible development windows
 		local
 			a_dev: EB_DEVELOPMENT_WINDOW
-			l_index: INTEGER
+			cur: CURSOR
 		do
 			from
-				l_index := managed_windows.index
+				cur := managed_windows.cursor
 				managed_windows.start
 			until
 				managed_windows.after
@@ -272,7 +273,7 @@ feature -- Status report
 				end
 				managed_windows.forth
 			end
-			managed_windows.go_i_th (l_index)
+			managed_windows.go_to (cur)
 		end
 
 	has_active_development_windows: BOOLEAN is
@@ -285,33 +286,60 @@ feature -- Status report
 			-- Are there any window having been modified and not yet saved?
 		local
 			a_dev: EB_DEVELOPMENT_WINDOW
-			l_index: INTEGER
+			cur: CURSOR
 		do
 			from
-				l_index := managed_windows.index
+				cur := managed_windows.cursor
 				managed_windows.start
 			until
 				Result or else managed_windows.after
 			loop
 				a_dev ?= managed_windows.item
 				if a_dev /= Void then
-					Result := a_dev.any_editor_changed
+					Result := a_dev.changed
 				end
 				managed_windows.forth
 			end
 			if not Result then
 				Result := (dynamic_lib_window_is_valid and then dynamic_lib_window.changed)
 			end
-			managed_windows.go_i_th (l_index)
+			managed_windows.go_to (cur)
+		end
+
+	is_class_opened (cl_name: STRING): BOOLEAN is
+			-- Return True if the class is already opened in a development window.
+			-- return False otherwise.
+		local
+			name_query: STRING
+			name_item: STRING
+			a_dev: EB_DEVELOPMENT_WINDOW
+			cur: CURSOR
+		do
+			name_query := cl_name.as_upper
+
+			from
+				cur := managed_windows.cursor
+				managed_windows.start
+			until
+				Result or else managed_windows.after
+			loop
+				a_dev ?= managed_windows.item
+				if a_dev /= Void then
+					name_item := a_dev.class_name.as_upper
+					Result := name_item.is_equal (name_query)
+				end
+				managed_windows.forth
+			end
+			managed_windows.go_to (cur)
 		end
 
 	development_window_from_window (a_window: EV_WINDOW): EB_DEVELOPMENT_WINDOW is
 			-- Return the development window whose widget is `a_window'.
 		local
-			l_index: INTEGER
+			cur: CURSOR
 		do
 			from
-				l_index := managed_windows.index
+				cur := managed_windows.cursor
 				managed_windows.start
 			until
 				managed_windows.after or else
@@ -325,7 +353,7 @@ feature -- Status report
 				end
 				managed_windows.forth
 			end
-			managed_windows.go_i_th (l_index)
+			managed_windows.go_to (cur)
 		end
 
 	last_focused_development_window: EB_DEVELOPMENT_WINDOW is
@@ -347,14 +375,11 @@ feature -- Status report
 	last_focused_window: EB_WINDOW is
 			-- Return the window which last had the keyboard focus.
 			-- Return Void if no window is focused.
-		local
-			l_list: ARRAYED_LIST [EB_WINDOW]
 		do
 			if not focused_windows.is_empty then
 				Result := focused_windows.last
 			elseif not managed_windows.is_empty then
-				l_list := managed_windows.twin
-				Result := l_list.last
+				Result := managed_windows.last
 			end
 		end
 
@@ -363,10 +388,10 @@ feature -- Status report
 		local
 			conv_dev: EB_DEVELOPMENT_WINDOW
 			found: BOOLEAN
-			l_index: INTEGER
+			cur: CURSOR
 		do
 			from
-				l_index := managed_windows.index
+				cur := managed_windows.cursor
 				managed_windows.start
 			until
 				managed_windows.after or found
@@ -376,18 +401,37 @@ feature -- Status report
 				managed_windows.forth
 			end
 			Result := conv_dev
-			managed_windows.go_i_th (l_index)
+			managed_windows.go_to (cur)
 		end
 
 feature -- Actions on a given window
 
-	show_window (a_window: EB_WINDOW)  is
-			-- Show the window.
+	show_window (a_window: EB_WINDOW) is
+			-- Show the window
 		do
-				-- We call `raise' since it takes care of really showing the window
-				-- in case it is hidden or minimized.
-			a_window.window.raise
+			a_window.window.show
 			notify_observers (a_window, Notify_shown_window)
+		end
+
+	raise_window (a_window: EB_WINDOW)  is
+			-- Show the window and set the focus to it.
+		local
+			real_window: EV_TITLED_WINDOW
+		do
+			real_window := a_window.window
+
+				-- Show the window if not already done.
+			if not real_window.is_show_requested then
+				show_window (a_window)
+			end
+
+				-- Restore the window is it was minimized.
+			if real_window.is_minimized then
+				real_window.restore
+			end
+
+				-- Raise the window.
+			real_window.raise
 		end
 
 	hide_window (a_window: EB_WINDOW) is
@@ -490,7 +534,7 @@ feature -- Actions on all windows
 	raise_all is
 			-- Raise all windows.
 		do
-			for_all (agent show_window)
+			for_all (agent raise_window)
 		end
 
 	close_all is
@@ -548,6 +592,7 @@ feature -- Actions on all windows
 			else
 				for_all (agent for_all (agent c_compilation_stop_action))
 			end
+
 			for_all (agent synchronize_action)
 		end
 
@@ -581,10 +626,10 @@ feature -- Actions on all windows
 			end
 		end
 
-	display_message (m: STRING_GENERAL) is
+	display_message (m: STRING) is
 			-- Display a message in status bars of all development windows.
 		require
-			one_line_message: m /= Void and then (not m.has_code (('%N').natural_32_code) and not m.has_code (('%R').natural_32_code))
+			one_line_message: m /= Void and then (not m.has ('%N') and not m.has ('%R'))
 		local
 			l_managed_windows: like managed_windows
 			cv_dev: EB_DEVELOPMENT_WINDOW
@@ -635,7 +680,7 @@ feature -- Actions on all windows
 			end
 		end
 
-	display_c_compilation_progress (mess: STRING_GENERAL) is
+	display_c_compilation_progress (mess: STRING) is
 			-- Display `mess' in status bars of all development windows.
 		require
 			mess_not_void: mess /= Void
@@ -674,10 +719,10 @@ feature -- Actions on all windows
 			-- Call `p' on all development windows.
 		local
 			cv_dev: EB_DEVELOPMENT_WINDOW
-			l_index: INTEGER
+			cur: CURSOR
 		do
 			from
-				l_index := managed_windows.index
+				cur := managed_windows.cursor
 				managed_windows.start
 			until
 				managed_windows.after
@@ -688,26 +733,12 @@ feature -- Actions on all windows
 				end
 				managed_windows.forth
 			end
-			if managed_windows.valid_index (l_index) then
-				managed_windows.go_i_th (l_index)
+			if managed_windows.valid_cursor (cur) then
+				managed_windows.go_to (cur)
 			end
 		end
 
-feature {EB_SHORTCUT_MANAGER} -- Actions on all windows
-
-	refresh_commands is
-			-- Refresh all windows commands.
-		do
-			for_all (agent refresh_commands_action)
-		end
-
-	refresh_external_commands is
-			-- Only refresh external commands
-		do
-			for_all (agent refresh_external_commands_action)
-		end
-
-feature {EB_WINDOW, EB_DEVELOPMENT_WINDOW_BUILDER} -- Events
+feature {EB_WINDOW} -- Events
 
 	set_focused_window (w: EB_WINDOW) is
 			-- Tell `Current' `w' has been given the focus.
@@ -737,8 +768,8 @@ feature {NONE} -- Exit implementation
 	confirm_and_quit is
 			-- If a compilation is under way, do not exit.
 		local
-			wd: EB_WARNING_DIALOG
-			qd: EB_QUESTION_DIALOG
+			wd: EV_WARNING_DIALOG
+			qd: EV_QUESTION_DIALOG
 			evcsts: EV_DIALOG_CONSTANTS
 		do
 			if Eiffel_project.initialized and then Eiffel_project.is_compiling then
@@ -749,8 +780,8 @@ feature {NONE} -- Exit implementation
 				Exit_application_cmd.set_already_confirmed (True)
 				create qd.make_with_text (Interface_names.L_exit_warning)
 				create evcsts
-				qd.button (interface_names.b_yes).select_actions.extend (agent save_and_quit)
-				qd.button (interface_names.b_no).select_actions.extend (agent quit)
+				qd.button (evcsts.ev_yes).select_actions.extend (agent save_and_quit)
+				qd.button (evcsts.ev_no).select_actions.extend (agent quit)
 				qd.show_modal_to_window (last_focused_development_window.window)
 			else
 				quit
@@ -796,7 +827,7 @@ feature -- Events
 			retried: BOOLEAN
 		do
 			if not retried then
-				create fn.make_from_string (project_location.target_path)
+				create fn.make_from_string (project_location.location)
 				fn.set_file_name ("preferences.wb")
 				create pref.make (fn)
 				if pref.exists then
@@ -825,7 +856,7 @@ feature -- Events
 			retried: BOOLEAN
 		do
 			if not retried then
-				create fn.make_from_string (project_location.target_path)
+				create fn.make_from_string (project_location.location)
 				fn.set_file_name ("preferences.wb")
 				create pref.make (fn)
 				if pref.exists then
@@ -854,13 +885,11 @@ feature -- Events
 			l_session: ES_SESSION
 			retried: BOOLEAN
 			l_managed_windows: like managed_windows
-			l_dl_window: EB_DYNAMIC_LIB_WINDOW
-			l_dev_window: EB_DEVELOPMENT_WINDOW
 		do
 			if not retried then
 					-- Attempt to load the 'session.wb' file from the project directory.
 					-- If load fails then do nothing.
-				create fn.make_from_string (project_location.target_path)
+				create fn.make_from_string (project_location.location)
 				fn.set_file_name ("session.wb")
 				create l_raw_file.make (fn)
 				if l_raw_file.exists then
@@ -874,53 +903,26 @@ feature -- Events
 						-- Recreate previous session from retrieved session data.
 					if l_session /= Void then
 							-- Remove any existing managed windows.
+						l_managed_windows := managed_windows.twin
 
 						from
-							l_managed_windows := managed_windows.twin
-							l_managed_windows.start
+							i := 1
 						until
-							l_managed_windows.after
+							i > l_managed_windows.count
 						loop
-							if l_managed_windows.item /= Void then
-								l_dl_window ?= l_managed_windows
-								if l_dl_window /= Void then
-									destroy_window (l_dl_window)
-								end
+							if l_managed_windows [i] /= Void then
+								destroy_window (l_managed_windows [i])
 							end
-							l_managed_windows.forth
-						end
-
-						from
-							l_managed_windows := managed_windows.twin
-							if l_managed_windows.valid_cursor_index (l_session.window_session_data.count + 1) then
-								l_managed_windows.go_i_th (l_session.window_session_data.count + 1)
-							else
-								l_managed_windows.go_i_th (l_managed_windows.index + 1)
-							end
-							-- Only destroy extra windows
-						until
-							l_managed_windows.after
-						loop
-							destroy_window (l_managed_windows.item)
-							l_managed_windows.forth
+							i := i + 1
 						end
 
 						from
 							window_count := l_session.window_session_data.count
 							i := 1
-							l_managed_windows.start
 						until
 							i > window_count
 						loop
-							if not l_managed_windows.after then
-								l_dev_window ?= l_managed_windows.item
-								check l_dev_window /= Void end
-								create_window_from_session_data (l_dev_window, l_session.window_session_data.i_th (i))
-								l_managed_windows.forth
-							else
-								create_window_from_session_data (Void, l_session.window_session_data.i_th (i))
-							end
-
+							create_window_from_session_data (l_session.window_session_data.i_th (i))
 							i := i + 1
 						end
 					end
@@ -946,13 +948,13 @@ feature -- Events
 					-- If save cannot be made then do nothing.
 				create l_session
 				for_all_development_windows (agent {EB_DEVELOPMENT_WINDOW}.save_layout_to_session (l_session))
-				create fn.make_from_string (project_location.target_path)
+				create fn.make_from_string (project_location.location)
 				fn.set_file_name ("session.wb")
 				create l_raw_file.make_open_write (fn)
 				create l_writer.make (l_raw_file)
 				l_writer.set_for_writing
 				create l_sed_facilities
-				l_sed_facilities.independent_store (l_session, l_writer, False)
+				l_sed_facilities.basic_store (l_session, l_writer, False)
 				l_raw_file.close
 			end
 		rescue
@@ -973,7 +975,7 @@ feature -- Events
 			discover_melt_cmd.disable_sensitive
 			refactoring_manager.disable_sensitive
 			for_all (agent c_compilation_start_action)
-			compile_start_actions.call (Void)
+			compile_start_actions.call ([])
 		end
 
 	on_refactoring_start is
@@ -1000,6 +1002,7 @@ feature -- Events
 			for_all (agent c_compilation_stop_action)
 		end
 
+
 	on_c_compilation_start is
 			-- Freezing or finalizing has been launched.
 			-- Update the display accordingly, ie gray out all forbidden commands.
@@ -1008,7 +1011,6 @@ feature -- Events
 			Finalize_project_cmd.disable_sensitive
 			terminate_c_compilation_cmd.enable_sensitive
 			for_all (agent c_compilation_start_action)
-			run_workbench_cmd.disable_sensitive
 			if process_manager.is_finalizing_running then
 				run_finalized_cmd.disable_sensitive
 			end
@@ -1021,8 +1023,8 @@ feature -- Events
 			Freeze_project_cmd.enable_sensitive
 			Finalize_project_cmd.enable_sensitive
 			terminate_c_compilation_cmd.disable_sensitive
+			run_finalized_cmd.enable_sensitive
 			for_all (agent c_compilation_stop_action)
-			run_workbench_cmd.enable_sensitive
 			run_finalized_cmd.enable_sensitive
 		end
 
@@ -1049,7 +1051,6 @@ feature -- Events
 					Finalize_project_cmd.disable_sensitive
 					Precompilation_cmd.enable_sensitive
 					Run_project_cmd.disable_sensitive
-					Run_workbench_cmd.disable_sensitive
 					Run_finalized_cmd.disable_sensitive
 					override_scan_cmd.disable_sensitive
 					discover_melt_cmd.disable_sensitive
@@ -1059,7 +1060,6 @@ feature -- Events
 					Finalize_project_cmd.enable_sensitive
 					Precompilation_cmd.disable_sensitive
 					Run_project_cmd.enable_sensitive
-					Run_workbench_cmd.enable_sensitive
 					Run_finalized_cmd.enable_sensitive
 					override_scan_cmd.enable_sensitive
 					discover_melt_cmd.enable_sensitive
@@ -1081,7 +1081,7 @@ feature -- Events
 			end
 			load_favorites
 				-- Recreate window configuration from last session of project if any.
-			load_session
+			--load_session
 			Manager.on_project_loaded
 			for_all (agent load_project_action)
 		end
@@ -1092,7 +1092,7 @@ feature -- Events
 			Manager.on_project_unloaded
 			save_favorites
 				-- Make development window session data persistent for future reloading.
-			save_session
+			--save_session
 			for_all (agent unload_project_action)
 			Melt_project_cmd.disable_sensitive
 			Freeze_project_cmd.disable_sensitive
@@ -1102,7 +1102,6 @@ feature -- Events
 			Export_cmd.disable_sensitive
 			Document_cmd.disable_sensitive
 			Run_project_cmd.disable_sensitive
-			Run_workbench_cmd.disable_sensitive
 			Run_finalized_cmd.disable_sensitive
 			override_scan_cmd.disable_sensitive
 			discover_melt_cmd.disable_sensitive
@@ -1149,18 +1148,6 @@ feature {NONE} -- Implementation
 			notify_observers (a_window, Notify_changed_window)
 		end
 
-	refresh_commands_action (a_window: EB_WINDOW)  is
-			-- Action to be performed on `item' in `refresh_all_commands'.
-		do
-			a_window.refresh_all_commands
-		end
-
-	refresh_external_commands_action (a_window: EB_WINDOW)  is
-			-- Action to be performed on `item' in `refresh_external_commands'.
-		do
-			a_window.refresh_external_commands
-		end
-
 	synchronize_breakpoints_action (a_window: EB_WINDOW) is
 			-- Action to synchronize `a_window' regarding the breakpoints data.
 		local
@@ -1168,7 +1155,7 @@ feature {NONE} -- Implementation
 		do
 			conv_dev ?= a_window
 			if conv_dev /= Void then
-				conv_dev.tools.breakpoints_tool.synchronize
+				conv_dev.breakpoints_tool.synchronize
 			end
 		end
 
@@ -1196,12 +1183,35 @@ feature {NONE} -- Implementation
 			-- Create a backup file of the text contained in `a_window'.
 		local
 			conv_dev: EB_DEVELOPMENT_WINDOW
+			tmp_name: FILE_NAME
+			tmp_file: RAW_FILE
+			retried: BOOLEAN
 		do
-			conv_dev ?= a_window
-			if conv_dev /= Void then
-				conv_dev.editors_manager.backup_all
-				not_backuped := not_backuped + conv_dev.editors_manager.not_backuped
+			if not retried then
+				conv_dev ?= a_window
+				if
+					conv_dev /= Void and then
+					conv_dev.file_name /= Void and then
+					conv_dev.changed
+				then
+					tmp_name := conv_dev.file_name.twin
+					tmp_name.add_extension ("swp")
+					create tmp_file.make (tmp_name)
+					if
+						not tmp_file.exists and then
+						tmp_file.is_creatable
+					then
+						tmp_file.open_append
+						tmp_file.put_string (conv_dev.text)
+						tmp_file.close
+					end
+				end
+			else
+				not_backuped := not_backuped + 1
 			end
+		rescue
+			retried := True
+			retry
 		end
 
 	quick_refresh_action (a_window: EB_WINDOW)  is
@@ -1229,23 +1239,44 @@ feature {NONE} -- Implementation
 	raise_unsaved_action (a_window: EB_WINDOW) is
 			-- Action to be performed on `item' in `raise_non_saved'.
 		local
+			a_textable_window: EB_TEXTABLE_WINDOW
 			a_dev: EB_DEVELOPMENT_WINDOW
 		do
-			a_dev ?= a_window
-			if a_dev /= Void and then a_dev.changed then
-				a_window.show
+			a_textable_window ?= a_window
+			if a_textable_window /= Void and then
+			   a_textable_window.text_area.changed
+			then
+				a_window.raise
+			else
+				a_dev ?= a_window
+				if
+					a_dev /= Void
+				and then
+					a_dev.changed
+				then
+					a_window.raise
+				end
 			end
 		end
 
 	save_action (a_window: EB_WINDOW) is
 			-- Action to be performed on `item' in `save_all'.
 		local
-			l_dev_window: EB_DEVELOPMENT_WINDOW
+			a_textable_window: EB_TEXTABLE_WINDOW
+			a_dev_window: EB_DEVELOPMENT_WINDOW
 			conv_dll: EB_DYNAMIC_LIB_WINDOW
 		do
-			l_dev_window ?= a_window
-			if l_dev_window /= Void and then l_dev_window.any_editor_changed then
-				l_dev_window.save_all
+			a_textable_window ?= a_window
+			if a_textable_window /= Void and then
+			   a_textable_window.text_area.changed
+			then
+				a_textable_window.save_text
+			end
+			a_dev_window ?= a_window
+			if a_dev_window /= Void and then
+			   a_dev_window.changed
+			then
+				a_dev_window.save_text
 			end
 			conv_dll ?= a_window
 			if conv_dll /= Void and then conv_dll.changed then
@@ -1260,7 +1291,7 @@ feature {NONE} -- Implementation
 		do
 			a_dev_window ?= a_window
 			if a_dev_window /= Void and then
-			   	a_dev_window.editors_manager.changed
+			   a_dev_window.changed
 			then
 				a_dev_window.save_before_compiling
 			end
@@ -1273,7 +1304,7 @@ feature {NONE} -- Implementation
 		do
 			a_dev_window ?= a_window
 			if a_dev_window /= Void then
-				a_dev_window.agents.on_project_created
+				a_dev_window.on_project_created
 			end
 		end
 
@@ -1284,7 +1315,7 @@ feature {NONE} -- Implementation
 		do
 			a_dev_window ?= a_window
 			if a_dev_window /= Void then
-				a_dev_window.agents.on_project_loaded
+				a_dev_window.on_project_loaded
 			end
 		end
 
@@ -1295,7 +1326,7 @@ feature {NONE} -- Implementation
 		do
 			a_dev_window ?= a_window
 			if a_dev_window /= Void then
-				a_dev_window.agents.on_project_unloaded
+				a_dev_window.on_project_unloaded
 			end
 		end
 
@@ -1306,7 +1337,7 @@ feature {NONE} -- Implementation
 		do
 			a_dev_window ?= a_window
 			if a_dev_window /= Void then
-				a_dev_window.agents.on_c_compilation_starts
+				a_dev_window.on_c_compilation_starts
 			end
 		end
 
@@ -1317,16 +1348,17 @@ feature {NONE} -- Implementation
 		do
 			a_dev_window ?= a_window
 			if a_dev_window /= Void then
-				a_dev_window.agents.on_c_compilation_stops
+				a_dev_window.on_c_compilation_stops
 			end
 		end
+
 
 	for_all (action: PROCEDURE [ANY, TUPLE]) is
 			-- Iterate `action' on every managed window.
 		local
-			l_index: INTEGER
+			saved_cursor: CURSOR
 		do
-			l_index := managed_windows.index
+			saved_cursor := managed_windows.cursor
 			from
 				managed_windows.start
 			until
@@ -1335,12 +1367,12 @@ feature {NONE} -- Implementation
 				action.call ([managed_windows.item])
 				managed_windows.forth
 			end
-			if managed_windows.valid_index (l_index) then
-				managed_windows.go_i_th (l_index)
+			if managed_windows.valid_cursor (saved_cursor) then
+				managed_windows.go_to (saved_cursor)
 			end
 		end
 
-feature {EB_WINDOW_MANAGER_OBSERVER, EB_WINDOW, EB_DEVELOPMENT_WINDOW_BUILDER} -- Observer pattern
+feature {EB_WINDOW_MANAGER_OBSERVER, EB_WINDOW} -- Observer pattern
 
 	add_observer (an_observer: EB_WINDOW_MANAGER_OBSERVER) is
 			-- Add `an_observer' to the list of observers for Current.
@@ -1410,28 +1442,26 @@ feature {EB_WINDOW} -- Implementation / Observer pattern
 	observers: ARRAYED_LIST [EB_WINDOW_MANAGER_OBSERVER]
 			-- All observers for Current.
 
-feature {EB_C_COMPILER_LAUNCHER, EB_WINDOW_MANAGER_LIST, EB_WINDOW_MANAGER_MENU, EB_EXEC_FORMAT_CMD, EB_EXTERNAL_COMMANDS_EDITOR} -- Implementation
+feature {EB_C_COMPILER_LAUNCHER, EB_WINDOW_MANAGER_LIST, EB_WINDOW_MANAGER_MENU, EB_EXEC_FORMAT_CMD} -- Implementation
 
-	managed_windows: ARRAYED_SET [EB_WINDOW]
+	managed_windows: ARRAYED_LIST [EB_WINDOW]
 			-- Managed windows.
 
-feature {EB_DEVELOPMENT_WINDOW} -- Implementation
+feature {NONE} -- Implementation
 
-	new_title: STRING_GENERAL is
+	new_title: STRING is
 			-- Find an empty titled not yet used.
 		local
-			l_index: INTEGER
-			empty_title: STRING_GENERAL
-			window_titles: ARRAYED_LIST [STRING_GENERAL]
+			saved_cursor: CURSOR
+			empty_title: STRING
+			window_titles: ARRAYED_LIST [STRING]
 			i: INTEGER
-			l_found: BOOLEAN
-			l_str: STRING_GENERAL
 		do
 				-- Remember the title of all windows.
 			create window_titles.make (managed_windows.count)
 			window_titles.compare_objects
 
-			l_index :=	managed_windows.index
+			saved_cursor := managed_windows.cursor
 			from
 				managed_windows.start
 			until
@@ -1440,24 +1470,18 @@ feature {EB_DEVELOPMENT_WINDOW} -- Implementation
 				window_titles.extend (managed_windows.item.title)
 				managed_windows.forth
 			end
-			managed_windows.go_i_th (l_index)
+			managed_windows.go_to (saved_cursor)
 
 				-- Look for a title not yet used.
-			empty_title := Interface_names.t_Empty_development_window.twin
-			empty_title.append (" #")
+			empty_title := Interface_names.t_Empty_development_window + " #"
 			from
 				i := 1
 			until
-				l_found
+				not window_titles.has (empty_title + i.out)
 			loop
-				l_str := empty_title.twin
-				l_str.append (i.out)
-				if not window_titles.has (l_str) then
-					l_found := True
-				end
 				i := i + 1
 			end
-			Result := l_str
+			Result := empty_title + i.out
 		end
 
 	stop_ev_application is

@@ -20,6 +20,7 @@ inherit
 	COMPILER_EXPORTER
 	SHARED_GEN_CONF_LEVEL
 
+
 	DEBUG_OUTPUT
 		export
 			{NONE} all
@@ -56,16 +57,6 @@ feature -- Access
 				end
 				Result := System.system_object_class.compiled_class.types.first.implementation_id
 			end
-		ensure
-			valid_result: Result > 0
-		end
-
-	external_id: INTEGER is
-			-- External type id of `Current' (or `static_type_id' for pure Eiffel type).
-		require
-			il_generation: System.il_generation
-		do
-			Result := System.system_object_class.compiled_class.types.first.external_id
 		ensure
 			valid_result: Result > 0
 		end
@@ -115,12 +106,12 @@ feature -- Access
 			Result_not_void: Result /= Void
 		end
 
-	frozen generic_derivation: CL_TYPE_I is
+	generic_derivation: TYPE_I is
 			-- Precise generic derivation of current type.
 			-- That is to say given a type, it gives the associated TYPE_I
 			-- which can be used to search its associated CLASS_TYPE.
 		do
-			Result ?= internal_generic_derivation (0)
+			Result := Current
 		ensure
 			cleaned_not_void: Result /= Void
 		end
@@ -173,7 +164,7 @@ feature -- Access
 		require
 			in_il_generation: system.il_generation
 		do
-			Result := name
+			Result := il_type_name (Void)
 		ensure
 			il_type_name_not_void: Result /= Void
 			il_type_name_not_empty: not Result.is_empty
@@ -248,21 +239,9 @@ feature -- Status report
 		end
 
 	is_char: BOOLEAN is
-			-- Is the type a char type?
+			-- Is the type a char type ?
 		do
 			-- Do nothing
-		end
-
-	is_character_8: BOOLEAN is
-			-- Is the type a CHARACTER_8 type?
-		do
-
-		end
-
-	is_character_32: BOOLEAN is
-			-- Is the type a CHARACTER_32 type?
-		do
-
 		end
 
 	is_real_32: BOOLEAN is
@@ -284,12 +263,6 @@ feature -- Status report
 		end
 
 	is_formal: BOOLEAN is
-			-- Is the type a formal type ?
-		do
-			-- Do nothing
-		end
-
-	is_multi_constrained: BOOLEAN is
 			-- Is the type a formal type ?
 		do
 			-- Do nothing
@@ -593,18 +566,6 @@ feature {NONE} -- Debug output
 			-- Output displayed in debugger.
 		do
 			Result := name
-		end
-
-feature {TYPE_I} -- Implementation
-
-	internal_generic_derivation (a_level: INTEGER): TYPE_I is
-			-- Precise generic derivation of current type.
-			-- That is to say given a type, it gives the associated TYPE_I
-			-- which can be used to search its associated CLASS_TYPE.
-		do
-			Result := Current
-		ensure
-			cleaned_not_void: Result /= Void
 		end
 
 indexing

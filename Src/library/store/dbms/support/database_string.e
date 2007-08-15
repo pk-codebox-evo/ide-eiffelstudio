@@ -5,10 +5,11 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 
-class
+class 
 	DATABASE_STRING [G -> DATABASE create default_create end]
 
 inherit
+
 	DB_TYPE
 
 	HANDLE_SPEC [G]
@@ -20,11 +21,11 @@ feature -- Status report
 		do
 			Result := db_spec.sql_name_string
 		end
-
-	eiffel_ref: ANY is
+	
+	eiffel_ref: STRING is
 			-- Shared string reference
 		once
-			create {STRING} Result.make (0)
+			create Result.make (0)
 		end
 
 indexing
@@ -38,4 +39,9 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
+
+
+
 end -- class DATABASE_STRING
+
+

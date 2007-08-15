@@ -133,7 +133,6 @@ feature -- Basic Oprtations
 			l_paths.compare_objects
 
 			create l_files.make (30)
-			l_files.extend ({RUNTIME_ENVIRONMENT}.get_runtime_directory)
 			l_files.append (l_paths)
 
 			if a_references /= Void then
@@ -152,6 +151,7 @@ feature -- Basic Oprtations
 			end
 
 			create l_resolver.make (l_files)
+			l_resolver.add_resolve_path ({RUNTIME_ENVIRONMENT}.get_runtime_directory)
 			resolve_subscriber.subscribe ({APP_DOMAIN}.current_domain, l_resolver)
 
 			create l_processed.make (l_paths.count * 3)

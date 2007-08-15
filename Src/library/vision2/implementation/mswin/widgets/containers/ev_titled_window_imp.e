@@ -138,12 +138,6 @@ feature -- Status setting
 		local
 			l_bool: BOOLEAN
 		do
-			if not is_show_requested then
-				show
-			end
-			if is_minimized then
-				restore
-			end
 			l_bool := {WEL_API}.set_foreground_window (wel_item)
 		end
 

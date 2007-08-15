@@ -27,7 +27,7 @@ inherit
 			{NONE} all
 		end
 
-	FILE_DIALOG_CONSTANTS
+	EB_FILE_DIALOG_CONSTANTS
 		export
 			{NONE} all
 		end
@@ -100,6 +100,7 @@ feature -- Basic Operation
 
 			information.set_runtime_information_type (profiler_list.text)
 		end
+
 
 feature {NONE} -- Implementation
 

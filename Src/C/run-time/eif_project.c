@@ -41,11 +41,17 @@
 doc:<file name="eif_project.c" header="eif_project.h" version="$Id$" summary="Declarations for runtime variables called by run-time and initialized by compiler C generated code">
 */
 
-#ifdef __VMS 	/* EIF_VMS is not defined yet */
-#pragma module EIF_PROJECT	// force uppercase module name
+#ifdef __VMS
+#pragma module EIF_PROJECT  /* force uppercase module name */
 #endif
 
 #include "eif_project.h"
+
+#ifdef EIF_VMS
+/* The first one is to upcase the module name, but why the second? */
+/*#pragma message disable EXTRAMODULE */
+#pragma module EIF_PROJECT
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,11 +94,7 @@ doc:		<synchronization>None</synchronization>
 doc:		<eiffel_classes>STRING</eiffel_classes>
 doc:	</attribute>
 */
-#ifdef WORKBENCH
-rt_public void (*egc_strmake)(EIF_REFERENCE, EIF_TYPED_VALUE);
-#else
-rt_public void (*egc_strmake)(EIF_REFERENCE, EIF_INTEGER);
-#endif
+rt_public void (*egc_strmake)(EIF_REFERENCE, EIF_INTEGER); 
 
 #ifdef WORKBENCH
 /*
@@ -103,7 +105,7 @@ doc:		<synchronization>None</synchronization>
 doc:		<eiffel_classes>STRING</eiffel_classes>
 doc:	</attribute>
 */
-rt_public void (*egc_strset)(EIF_REFERENCE, EIF_TYPED_VALUE);
+rt_public void (*egc_strset)(EIF_REFERENCE, EIF_INTEGER); 
 #else
 
 /*
@@ -135,11 +137,7 @@ doc:		<synchronization>None</synchronization>
 doc:		<eiffel_classes>ARRAY [ANY]</eiffel_classes>
 doc:	</attribute>
 */
-#ifdef WORKBENCH
-rt_public void (*egc_arrmake)(EIF_REFERENCE, EIF_TYPED_VALUE, EIF_TYPED_VALUE);
-#else
-rt_public void (*egc_arrmake)(EIF_REFERENCE, EIF_INTEGER, EIF_INTEGER);
-#endif
+rt_public void (*egc_arrmake)(EIF_REFERENCE, EIF_INTEGER, EIF_INTEGER);	
 
 /*
 doc:	<attribute name="egc_routdisp" return_type="fnptr" export="public">
@@ -161,8 +159,8 @@ doc:		<synchronization>None</synchronization>
 doc:		<eiffel_classes>ROUTINE, PROCEDURE, FUNCTION, PREDICATE</eiffel_classes>
 doc:	</attribute>
 */
-rt_public void (*egc_routdisp_wb)(EIF_REFERENCE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE,
-                                  EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE, EIF_TYPED_VALUE);
+rt_public void (*egc_routdisp_wb)(EIF_REFERENCE, EIF_POINTER, EIF_POINTER, EIF_POINTER, EIF_INTEGER, EIF_INTEGER,
+							      EIF_REFERENCE, EIF_BOOLEAN, EIF_BOOLEAN, EIF_BOOLEAN, EIF_BOOLEAN, EIF_REFERENCE,	EIF_INTEGER); 
 
 #else
 /*
@@ -195,10 +193,12 @@ rt_public int egc_bit_dtype;
 rt_public uint32 egc_sp_bool;
 rt_public uint32 egc_sp_char;
 rt_public uint32 egc_sp_wchar;
-rt_public uint32 egc_sp_uint8;
-rt_public uint32 egc_sp_uint16;
-rt_public uint32 egc_sp_uint32;
-rt_public uint32 egc_sp_uint64;
+/* Note remove initialization to -1 when compiler will generate
+ * their initialization. */
+rt_public uint32 egc_sp_uint8 = -1;
+rt_public uint32 egc_sp_uint16 = -1;
+rt_public uint32 egc_sp_uint32 = -1;
+rt_public uint32 egc_sp_uint64 = -1;
 rt_public uint32 egc_sp_int8;
 rt_public uint32 egc_sp_int16;
 rt_public uint32 egc_sp_int32;
@@ -208,10 +208,10 @@ rt_public uint32 egc_sp_real64;
 rt_public uint32 egc_sp_pointer;
 rt_public uint32 egc_sp_ref;
 
-rt_public int egc_uint8_ref_dtype;	
-rt_public int egc_uint16_ref_dtype;	
-rt_public int egc_uint32_ref_dtype;	
-rt_public int egc_uint64_ref_dtype;	
+rt_public int egc_uint8_ref_dtype = -1;	
+rt_public int egc_uint16_ref_dtype = -1;	
+rt_public int egc_uint32_ref_dtype = -1;	
+rt_public int egc_uint64_ref_dtype = -1;	
 rt_public int egc_int8_ref_dtype;	
 rt_public int egc_int16_ref_dtype;	
 rt_public int egc_int32_ref_dtype;	
@@ -223,10 +223,10 @@ rt_public int egc_char_ref_dtype;
 rt_public int egc_wchar_ref_dtype;	
 rt_public int egc_point_ref_dtype;	
 
-rt_public int egc_uint8_dtype;
-rt_public int egc_uint16_dtype;	
-rt_public int egc_uint32_dtype;	
-rt_public int egc_uint64_dtype;	
+rt_public int egc_uint8_dtype = -1;
+rt_public int egc_uint16_dtype = -1;	
+rt_public int egc_uint32_dtype = -1;	
+rt_public int egc_uint64_dtype = -1;	
 rt_public int egc_int8_dtype;	
 rt_public int egc_int16_dtype;	
 rt_public int egc_int32_dtype;	
@@ -246,13 +246,13 @@ rt_public struct eif_par_types **egc_partab;
 rt_public int egc_partab_size;
 rt_public void (*egc_system_mod_init) (void);	
 rt_public int egc_type_of_gc;
-rt_public struct eif_opt *egc_foption;	
 
 
 #ifdef WORKBENCH
 
 rt_public fnptr *egc_frozen;			
 rt_public int *egc_fpatidtab;		
+rt_public struct eif_opt *egc_foption;	
 rt_public fnptr *egc_address_table;	
 rt_public struct p_interface *egc_fpattern;
 rt_public void (*egc_einit)(void);	
@@ -270,13 +270,8 @@ rt_public long *egc_fnbref ;
 rt_public long *egc_fsize;
 #endif
 
-#ifdef WORKBENCH
-	rt_public EIF_TYPED_VALUE (*egc_equal)(EIF_REFERENCE, EIF_TYPED_VALUE, EIF_TYPED_VALUE); /* {ANY}.equal */
-	rt_public EIF_TYPED_VALUE (*egc_twin)(EIF_REFERENCE); /* {ANY}.twin */
-#else
-	rt_public EIF_BOOLEAN   (*egc_equal)(EIF_REFERENCE, EIF_REFERENCE, EIF_REFERENCE); /* {ANY}.equal */
-	rt_public EIF_REFERENCE (*egc_twin)(EIF_REFERENCE); /* {ANY}.twin */
-#endif
+rt_public EIF_BOOLEAN   (*egc_equal)(EIF_REFERENCE, EIF_REFERENCE, EIF_REFERENCE); /* {ANY}.equal */
+rt_public EIF_REFERENCE (*egc_twin)(EIF_REFERENCE); /* {ANY}.twin */
 
 rt_public int32 egc_rcdt;				/* E1/einit.c */
 rt_public int32 egc_rcorigin;			/* E1/einit.c */

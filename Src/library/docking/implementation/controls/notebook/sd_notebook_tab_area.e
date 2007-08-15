@@ -29,8 +29,6 @@ feature {NONE}  -- Initlization
 		require
 			a_notebook_not_void: a_notebook /= Void
 			a_docking_manager_not_void: a_docking_manager /= Void
-		local
-			l_veto_function: FUNCTION [ANY, TUPLE [ANY], BOOLEAN]
 		do
 			default_create
 			create internal_shared
@@ -38,10 +36,12 @@ feature {NONE}  -- Initlization
 			internal_notebook := a_notebook
 			internal_docking_manager := a_docking_manager
 
-			create internal_tool_bar.make
+			if internal_docking_manager.tab_drop_actions.count > 0 then
+				drop_actions.extend (agent on_drop_actions)
+			end
 
+			create internal_tool_bar.make
 			create internal_auto_hide_indicator.make
-			internal_auto_hide_indicator.set_tooltip (internal_shared.interface_names.tooltip_notebook_hidden_tab_indicator)
 
 			create tab_box.make
 			extend_horizontal_box (tab_box)
@@ -51,20 +51,12 @@ feature {NONE}  -- Initlization
 			disable_item_expand (internal_tool_bar)
 			internal_tool_bar.hide
 			internal_tool_bar.extend (internal_auto_hide_indicator)
-			internal_tool_bar.compute_minimum_size
+			internal_auto_hide_indicator.set_pixmap (internal_shared.icons.hide_tab_indicator (0))
+			internal_tool_bar.compute_minmum_size
 			internal_auto_hide_indicator.select_actions.extend (agent on_tab_hide_indicator_selected)
 
 			set_minimum_width (0)
-			set_minimum_height (internal_shared.notebook_tab_height + 3)
-
-			if internal_docking_manager.tab_drop_actions.count > 0 then
-				drop_actions.extend (agent on_drop_actions)
-
-				l_veto_function := internal_docking_manager.tab_drop_actions.veto_pebble_function
-				if l_veto_function /= Void then
-					drop_actions.set_veto_pebble_function (l_veto_function)
-				end
-			end
+			set_minimum_height (internal_shared.zone_minmum_height + 3)
 		ensure
 			set: internal_docking_manager = a_docking_manager
 			set: internal_notebook = a_notebook
@@ -97,9 +89,7 @@ feature -- Command
 			-- Hide/show tabs base on space.
 		local
 			l_tabs, l_all_tabs: ARRAYED_LIST [SD_NOTEBOOK_TAB]
-			l_tab_item: SD_NOTEBOOK_TAB
 			l_tab_before: SD_NOTEBOOK_TAB
-			l_tab_item_info, l_tab_before_info: SD_NOTEBOOK_TAB_INFO
 		do
 			if a_width >= 0 then
 				ignore_resize := True
@@ -113,6 +103,7 @@ feature -- Command
 					l_tabs.after
 				loop
 					l_tabs.item.hide
+
 					l_tabs.forth
 				end
 
@@ -121,31 +112,28 @@ feature -- Command
 				until
 					l_all_tabs.after
 				loop
-					l_tab_item := l_all_tabs.item
-					if not l_tabs.has (l_tab_item) then
-						l_tab_item.show
-						l_tab_item_info	:= l_tab_item.info
+					if not l_tabs.has (l_all_tabs.item) then
+						l_all_tabs.item.show
 						if l_tab_before = Void then
-							l_tab_item_info.set_tab_before (False)
-							l_tab_item_info.set_tab_after (False)
+							l_all_tabs.item.info.set_tab_before (False)
+							l_all_tabs.item.info.set_tab_after (False)
 						else
-							l_tab_before_info	:= l_tab_before.info
-							l_tab_before_info.set_tab_after (True)
-							if l_tab_item.is_selected then
-								l_tab_before_info.set_tab_after_selected (True)
+							l_tab_before.info.set_tab_after (True)
+							if l_all_tabs.item.is_selected then
+								l_tab_before.info.set_tab_after_selected (True)
 							else
-								l_tab_before_info.set_tab_after_selected (False)
+								l_tab_before.info.set_tab_after_selected (False)
 							end
-							l_tab_item_info.set_tab_before (True)
+							l_all_tabs.item.info.set_tab_before (True)
 							if l_tab_before.is_selected then
-								l_tab_item_info.set_tab_before_selected (True)
+								l_all_tabs.item.info.set_tab_before_selected (True)
 							else
-								l_tab_item_info.set_tab_before_selected (False)
+								l_all_tabs.item.info.set_tab_before_selected (False)
 							end
-							l_tab_item_info.set_tab_after (False)
+							l_all_tabs.item.info.set_tab_after (False)
 						end
-						l_tab_item_info.set_tab_after (False)
-						l_tab_before := l_tab_item
+						l_all_tabs.item.info.set_tab_after (False)
+						l_tab_before := l_all_tabs.item
 						ignore_resize := True
 					end
 					l_all_tabs.forth
@@ -185,9 +173,8 @@ feature -- Command
 			-- `a_width' is tab areas' width, not include other EV_TOOL_BAR.
 		do
 			if is_displayed then
-				if not ignore_resize and a_width /= last_resize_width then
+				if not ignore_resize then
 					resize_tabs (a_width)
-					last_resize_width := a_width
 					debug ("docking")
 						print ("%N SD_NOTEBOOK_TAB_AREA on_resize")
 					end
@@ -269,20 +256,16 @@ feature {NONE}  -- Implementation functions
 			l_dialog: SD_NOTEBOOK_HIDE_TAB_DIALOG
 			l_tabs: like all_tabs
 			l_helper: SD_POSITION_HELPER
-			l_tabs_invisible: like internal_tabs_not_shown
 		do
 			create l_dialog.make (internal_notebook)
-			check
-				internal_tabs_not_shown_not_void: internal_tabs_not_shown /= Void
-			end
+
 			from
-				l_tabs_invisible := internal_tabs_not_shown
-				l_tabs_invisible.finish
+				internal_tabs_not_shown.start
 			until
-				l_tabs_invisible.before
+				internal_tabs_not_shown.after
 			loop
-				l_dialog.extend_hide_tab (l_tabs_invisible.item)
-				l_tabs_invisible.back
+				l_dialog.extend_hide_tab (internal_tabs_not_shown.item)
+				internal_tabs_not_shown.forth
 			end
 
 			from
@@ -299,7 +282,7 @@ feature {NONE}  -- Implementation functions
 			end
 			l_dialog.init
 			create l_helper.make
-			l_helper.set_dialog_position (l_dialog, internal_tool_bar.screen_x, internal_tool_bar.screen_y, internal_tool_bar.height)
+			l_helper.set_dialog_position (l_dialog, internal_tool_bar.screen_x, internal_tool_bar.screen_y)
 			l_dialog.show
 		end
 
@@ -317,11 +300,8 @@ feature {NONE}  -- Implementation functions
 			l_total_width: INTEGER
 			l_enough: BOOLEAN
 			l_tabs: like all_tabs
-			l_tab: SD_NOTEBOOK_TAB
-			l_tabs_invisible: like internal_tabs_not_shown
 		do
 			create internal_tabs_not_shown.make (1)
-			l_tabs_invisible := internal_tabs_not_shown
 			if not is_empty then
 				l_total_width := total_prefered_width
 				if l_total_width > a_width then
@@ -332,11 +312,11 @@ feature {NONE}  -- Implementation functions
 					until
 						l_tabs.before or l_enough
 					loop
-						l_tab := l_tabs.item
-						if not l_tab.is_selected then
+
+						if not l_tabs.item.is_selected then
 							if l_total_width > a_width then
-								l_tabs_invisible.extend (l_tab)
-								l_total_width := l_total_width - l_tab.prefered_size
+								internal_tabs_not_shown.extend (l_tabs.item)
+								l_total_width := l_total_width - l_tabs.item.prefered_size
 							else
 								l_enough := True
 							end
@@ -361,28 +341,16 @@ feature {NONE}  -- Implementation functions
 			l_tabs: ARRAYED_LIST [SD_NOTEBOOK_TAB]
 --			l_tabs: like all_tabs -- FIXIT: If uselike, then 'l_tabs.item.set_enough_space' will not clickable.
 			l_only_tab: SD_NOTEBOOK_TAB
-			l_platform: PLATFORM
 		do
 			l_tabs := all_tabs
 			if internal_tabs_not_shown.count > 0 then
-				create l_platform
-				if l_platform.is_windows then
-					internal_auto_hide_indicator.set_pixel_buffer (internal_shared.icons.hide_tab_indicator_buffer (internal_tabs_not_shown.count))
-				else
-					-- We use EV_PIXMAP instead of EV_PIXEL_BUFFER on Linux, because draw_text is not available for Linux.
-					internal_auto_hide_indicator.set_pixmap (internal_shared.icons.hide_tab_indicator (internal_tabs_not_shown.count))
-					internal_auto_hide_indicator.update
-				end
-
-				internal_tool_bar.compute_minimum_size
+				internal_auto_hide_indicator.set_pixmap (internal_shared.icons.hide_tab_indicator (internal_tabs_not_shown.count))
+				internal_tool_bar.compute_minmum_size
 				internal_tool_bar.show
 				if l_tabs.count - 1 = internal_tabs_not_shown.count then
 					-- Only show one tab now.
 					l_only_tab := find_only_tab_shown
-					if
-						a_width - internal_tool_bar.width >= 0
-						and a_width - internal_tool_bar.width < l_only_tab.prefered_size
-					then
+					if a_width - internal_tool_bar.width >= 0 and a_width - internal_tool_bar.width < l_only_tab.prefered_size then
 						l_only_tab.set_width_not_enough_space (a_width - internal_tool_bar.width)
 					end
 				end
@@ -430,7 +398,6 @@ feature {NONE}  -- Implementation functions
 			only_show_one_tab: all_tabs.count - 1 = internal_tabs_not_shown.count
 		local
 			l_tabs, l_result: like all_tabs
-			l_tab: SD_NOTEBOOK_TAB
 		do
 			l_tabs := all_tabs
 			l_result := all_tabs
@@ -439,14 +406,13 @@ feature {NONE}  -- Implementation functions
 			until
 				l_tabs.after
 			loop
-				l_tab := l_tabs.item
 				from
 					internal_tabs_not_shown.start
 				until
 					internal_tabs_not_shown.after
 				loop
-					if internal_tabs_not_shown.item = l_tab then
-						l_result.prune_all (l_tab)
+					if internal_tabs_not_shown.item = l_tabs.item then
+						l_result.prune_all (l_tabs.item)
 					end
 					internal_tabs_not_shown.forth
 				end
@@ -458,16 +424,7 @@ feature {NONE}  -- Implementation functions
 			not_void: Result /= Void
 		end
 
-feature {SD_NOTEBOOK_TAB_BOX} -- Internal attributes
-
-	internal_notebook: SD_NOTEBOOK
-			-- Notebook which Current belong to.
-
 feature {NONE}  -- Implementation attributes
-
-	last_resize_width: INTEGER
-			-- We have to remember last width in `on_resize', otherwise there will be infinite loop.
-			-- See bug#13065.
 
 	internal_one_not_enough_space: BOOLEAN
 			-- If current space not enough to draw selected tab?
@@ -483,6 +440,9 @@ feature {NONE}  -- Implementation attributes
 
 	internal_tabs_not_shown: ARRAYED_LIST [SD_NOTEBOOK_TAB]
 			-- Tabs not shown which be not shown.
+
+	internal_notebook: SD_NOTEBOOK
+			-- Notebook which Current belong to.
 
 	internal_docking_manager: SD_DOCKING_MANAGER
 			-- Docking manager which Current belong to.

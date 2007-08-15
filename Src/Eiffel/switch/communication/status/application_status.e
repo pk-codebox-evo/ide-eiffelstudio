@@ -12,31 +12,41 @@ deferred class APPLICATION_STATUS
 
 inherit
 
-	APPLICATION_STATUS_CONSTANTS
+	SHARED_DEBUG
+		export
+			{NONE} all
+		end
 
 	SHARED_EIFFEL_PROJECT
 		export
 			{NONE} all
 		end
 
-	COMPILER_EXPORTER
+	IPC_SHARED
+		export
+			{NONE} all
+			{ANY} Pg_break, Pg_interrupt,
+				Pg_raise, Pg_viol
+		end
+	SHARED_APPLICATION_EXECUTION
+		export
+			{NONE} all
+		end
+
+--creation {APPLICATION_STATUS_EXPORTER}
+--
+--	do_nothing
 
 feature {NONE} -- Initialization
 
-	make (app: like application) is
+	make is
 			-- Create Current
 		do
 			debug ("debugger_trace")
 				print (generator + ".make %N")
 			end
-			application := app
 			initialize
 		end
-
-feature -- Properties
-
-	application: APPLICATION_EXECUTION
-			-- Attached Application execution object.
 
 feature {NONE} -- Initialization
 
@@ -44,7 +54,7 @@ feature {NONE} -- Initialization
 			-- Initialize Current
 		do
 			create_kept_objects
-			clear_callstack_data
+			reset_call_stack_list
 		end
 
 feature -- Objects kept from session to session
@@ -121,9 +131,14 @@ feature -- Objects kept from session to session
 			end
 		end
 
+	keep_object_for_gui	(add: STRING) is
+		do
+			keep_object (add)
+		end
+
 feature -- Call Stack List management
 
-	clear_callstack_data is
+	reset_call_stack_list is
 			-- Reset `call_stack_list' or create it
 		do
 			if call_stack_list = Void then
@@ -131,56 +146,24 @@ feature -- Call Stack List management
 			else
 				call_stack_list.wipe_out
 			end
-			current_thread_id := 0
-			active_thread_id := 0
-			current_call_stack := Void
-			dynamic_class := Void
-			origin_class := Void
-			e_feature := Void
-			reason := 0
-			body_index := 0
-			break_index := 0
-			exception_code := 0
-			exception_tag := Void
 		end
 
 feature -- Callstack
 
-	force_reload_current_call_stack is
-			-- reload the call stack from application (after having edited an
-			-- object for example to make sure the modification was successful).
-		do
-			get_callstack (current_thread_id, stack_max_depth, True)
-		end
-
 	reload_current_call_stack is
 			-- reload the call stack from application (after having edited an
 			-- object for example to make sure the modification was successful).
+		local
+			ecs: like current_call_stack
 		do
-			get_callstack (current_thread_id, stack_max_depth, False)
+				-- re-create the call stack
+			ecs := new_current_callstack_with (stack_max_depth)
+			set_call_stack (current_thread_id, ecs)
 		end
 
 feature {NONE} -- CallStack Impl
 
-	get_callstack (a_tid: INTEGER; a_stack_max_depth: INTEGER; always_reload: BOOLEAN) is
-			-- Get Eiffel Callstack with a maximum depth of `a_stack_max_depth'
-			-- for thread `a_tid'.
-		local
-			ecs: like current_call_stack
-		do
-			ecs := call_stack (a_tid)
-			if ecs /= Void then
-				check ecs.thread_id = current_thread_id end
-				if always_reload or not ecs.is_loaded  then
-					ecs.reload (a_stack_max_depth)
-				end
-			else
-				ecs := new_callstack_with (a_tid, a_stack_max_depth)
-				set_call_stack (a_tid, ecs)
-			end
-		end
-
-	new_callstack_with (a_tid: INTEGER; a_stack_max_depth: INTEGER): like current_call_stack is
+	new_current_callstack_with (a_stack_max_depth: INTEGER): like current_call_stack is
 		deferred
 		end
 
@@ -208,7 +191,7 @@ feature -- Values
 			-- (first, second...)
 
 	reason: INTEGER
-			-- Reason for the application being stopped
+			-- Reason for the applicaiton being stopped
 
 	object_address: STRING
 			-- Address of object in which we are stopped
@@ -233,20 +216,13 @@ feature -- Values
 		end
 
 	exception_code: INTEGER
-			-- Exception code (if any).
+			-- Exception code if any
 
 	exception_tag: STRING_32
-			-- Exception tag (if any).
+			-- Exception tag if any
 
 	exception_message: STRING_32 is
-			-- Exception message (if any).
-		require
-			exception_occurred: exception_occurred
-		deferred
-		end
-
-	exception_class_name: STRING is
-			-- Exception class name (if any).
+			-- Exception message if any
 		require
 			exception_occurred: exception_occurred
 		deferred
@@ -291,33 +267,13 @@ feature -- Call Stack element related
 		local
 			i: INTEGER
 		do
-			i := application.current_execution_stack_number
+			i := Application.current_execution_stack_number
 			if current_call_stack.valid_index (i) then
 				Result := current_call_stack.i_th (i)
 			end
 		end
 
-feature -- Process related access
-
-	process_id: INTEGER
-
-feature -- Process related change
-
-	set_process_id (pid: INTEGER) is
-			-- Set process id
-		require
-			id_valid: pid > 0
-		do
-			debug ("DEBUGGER_TRACE")
-				print (generator + ".set_process_id (" + pid.out + " ~ 0x" + pid.to_hex_string + ") %N")
-			end
-			process_id := pid
-		end
-
 feature -- Thread related access
-
-	active_thread_id: INTEGER
-			-- Thread ID when the execution was paused.
 
 	current_thread_id: INTEGER
 			-- Thread ID of the Current call stack.
@@ -347,7 +303,6 @@ feature -- Thread related change
 				--| Update in case the current call stack's object changed
 			get_current_call_stack
 		end
-
 	has_thread_id (tid: INTEGER): BOOLEAN is
 		do
 			Result := all_thread_ids /= Void and then all_thread_ids.has (tid)
@@ -355,17 +310,6 @@ feature -- Thread related change
 	refresh_current_thread_id is
 			-- Get fresh value of Thread ID from debugger
 		deferred
-		end
-
-	set_active_thread_id (tid: INTEGER) is
-			-- Set active thread id
-		require
-			id_valid: has_thread_id (tid)
-		do
-			debug ("DEBUGGER_TRACE")
-				print (generator + ".set_active_thread_id (" + tid.out + " ~ 0x" + tid.to_hex_string + ") %N")
-			end
-			active_thread_id := tid
 		end
 
 	set_current_thread_id (tid: INTEGER) is
@@ -387,6 +331,15 @@ feature -- Thread related change
 		do
 			--| Mainly use for Classical debugger purpose
 		end
+
+--	set_thread_ids (a: ARRAY [INTEGER]) is
+--			-- set thread's ids with `a'
+--		require
+--			a_not_empty: a /= Void and then not a.is_empty
+--		do
+--			create all_thread_ids.make_from_array (a)
+--			refresh_threads_information
+--		end
 
 	add_thread_id (tid: INTEGER) is
 		require
@@ -445,6 +398,13 @@ feature {NONE} -- Call stack implementation
 
 feature -- Access
 
+	class_name: STRING is
+			-- Class name of object in which we are currently
+			-- stopped
+		do
+			Result := dynamic_class.name
+		end
+
 	valid_reason: BOOLEAN is
 			-- Is the reason valid for stopping of execution?
 		do
@@ -481,7 +441,6 @@ feature -- Access
 					current_execution_stack_number := Application.current_execution_stack_number
 					stack_elem ?= l_ccs.i_th (Application.current_execution_stack_number)
 					Result := stack_elem /= Void
-							and then stack_elem.routine /= Void
 							and then f_body_index = stack_elem.body_index
 							and then index = stack_elem.break_index
 				end
@@ -501,7 +460,6 @@ feature -- Access
 				if l_ccs /= Void and then not l_ccs.is_empty then
 					stack_elem ?= l_ccs.i_th (1)
 					Result := stack_elem /= Void
-							and then stack_elem.routine /= Void
 							and then f_body_index = stack_elem.body_index
 							and then index = stack_elem.break_index
 				end
@@ -539,7 +497,7 @@ feature -- Setting
 			if b and then not is_stopped then
 					--| When we switch from running to stopped state
 					--| we reset the call stack list
-				clear_callstack_data
+				reset_call_stack_list
 			end
 			is_stopped := b
 		end
@@ -561,6 +519,117 @@ feature -- Setting
 			valid_n: n = -1 or n > 0
 		do
 			stack_max_depth := n
+		end
+
+feature -- Output
+
+	display_status (st: TEXT_FORMATTER) is
+			-- Display the status of the running application.
+		local
+			c, oc: CLASS_C
+			cs: CALL_STACK_ELEMENT
+			stack_num: INTEGER
+			ccs: EIFFEL_CALL_STACK
+		do
+			if not is_stopped then
+				st.add_string ("System is running")
+				st.add_new_line
+			else -- Application is stopped.
+				-- Print object address.
+				st.add_string ("Stopped in object [")
+				c := dynamic_class
+				st.add_address (object_address, e_feature.name, c)
+				st.add_string ("]")
+				st.add_new_line
+					-- Print class name.
+				st.add_indent
+				st.add_string ("Class: ")
+				c.append_name (st)
+				st.add_new_line
+					-- Print routine name.
+				st.add_indent
+				st.add_string ("Feature: ")
+				if e_feature /= Void then
+					oc := origin_class
+					e_feature.append_name (st)
+					if oc /= c then
+						st.add_string (" (From ")
+						oc.append_name (st)
+						st.add_string (")")
+					end
+				else
+					st.add_string ("Void")
+				end
+				st.add_new_line
+					-- Print the reason for stopping.
+				st.add_indent
+				st.add_string ("Reason: ")
+				inspect reason
+				when Pg_break then
+					st.add_string ("Stop point reached")
+					st.add_new_line
+				when Pg_interrupt then
+					st.add_string ("Execution interrupted")
+					st.add_new_line
+				when Pg_raise then
+					st.add_string ("Explicit exception pending")
+					st.add_new_line
+					display_exception (st)
+				when Pg_viol then
+					st.add_string ("Implicit exception pending")
+					st.add_new_line
+					display_exception (st)
+				when Pg_new_breakpoint then
+					st.add_string ("New breakpoint(s) to commit")
+					st.add_new_line
+					display_exception (st)
+				when Pg_step then
+					st.add_string ("Step completed")
+					st.add_new_line
+				else
+					st.add_string ("Unknown")
+					st.add_new_line
+				end
+				ccs := current_call_stack
+				if not ccs.is_empty then
+					stack_num := Application.current_execution_stack_number
+					cs := ccs.i_th (stack_num)
+					cs.display_arguments (st)
+					cs.display_locals (st)
+					ccs.display_stack (st)
+				end
+			end
+		end
+
+	display_exception (st: TEXT_FORMATTER) is
+			-- Display exception in `st'.
+		require
+			non_void_st: st /= Void
+			valid_code: exception_code > 0
+		local
+			e: EXCEPTIONS
+			m: STRING
+		do
+			st.add_indent
+			st.add_indent
+			st.add_string ("Code: ")
+			st.add_int (exception_code)
+			st.add_string (" (")
+			create e
+			m := e.meaning (exception_code)
+			if m = Void then
+				m := "Undefined"
+			end
+			st.add_string (m)
+			st.add_string (")")
+			st.add_new_line
+			st.add_indent
+			st.add_indent
+			st.add_string ("Tag: ")
+			if exception_tag /= Void then
+				st.add_string (exception_tag.as_string_8)
+			end
+			st.add_new_line
 		end
 
 indexing

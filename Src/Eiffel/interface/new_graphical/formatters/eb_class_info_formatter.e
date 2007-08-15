@@ -12,26 +12,29 @@ deferred class
 inherit
 	EB_FORMATTER
 		redefine
-			veto_pebble_function
+			new_button
 		end
 
 	SHARED_FORMAT_INFO
+
+feature -- Access
+
+	new_button: EV_TOOL_BAR_RADIO_BUTTON is
+			-- Create a new toolbar button and associate it with `Current'.
+		do
+			Result := Precursor
+			Result.drop_actions.extend (agent on_class_drop)
+		end
 
 feature -- Properties
 
 	associated_class: CLASS_C
 			-- Class about which information is displayed.
 
-	element_name: STRING is
-			-- name of associated element in current formatter.
-			-- For exmaple, if a class stone is associated to current, `element_name' would be the class name.
-		do
-			if associated_class /= Void then
-				Result := associated_class.name.twin
-			end
+	is_dotnet_formatter: BOOLEAN is
+			-- Is Current able to format .NET class texts?
+		deferred
 		end
-
-feature -- Status report
 
 	is_dotnet_mode: BOOLEAN
 			-- Is Current class a .NET class? 		
@@ -46,34 +49,79 @@ feature -- Status setting
 			mode_is_flag: is_dotnet_mode = a_flag
 		end
 
+feature -- Formatting
+
+	save_in_file is
+			-- Save output format to a file.
+		require else
+			class_non_void: associated_class /= Void
+		do
+--|FIXME XR: To be implemented.
+		end
+
 feature {NONE} -- Implementation
 
-	veto_pebble_function (a_any: ANY): BOOLEAN is
-			-- Veto pebble function
-		local
-			l_classi_stone: CLASSI_STONE
-		do
-			l_classi_stone ?= a_any
-			if l_classi_stone /= Void then
-				Result := Precursor {EB_FORMATTER}(a_any)
-			end
+	reset_display is
+			-- Clear all graphical output.
+		deferred
 		end
 
-	temp_header: STRING_GENERAL is
+	file_name: FILE_NAME is
+			-- Name of the file in which displayed information may be stored.
+		require else
+			class_non_void: associated_class /= Void
+		do
+			create Result.make_from_string (associated_class.name)
+			Result.add_extension (post_fix)
+		end
+
+	temp_header: STRING is
 			-- Temporary header displayed during the format processing.
 		do
-			check associated_class /= Void end
-			Result := interface_names.l_working_formatter (command_name, associated_class.name, True)
+			Result := Interface_names.l_Working_formatter.twin
+			Result.append (command_name)
+			Result.append (Interface_names.l_Of_class)
+			if associated_class /= Void then
+				Result.append (associated_class.name)
+			else
+
+			end
+
+			Result.append (Interface_names.l_Three_dots)
 		end
 
-	header: STRING_GENERAL is
+	header: STRING is
 			-- Header displayed when current formatter is selected.
 		do
 			if associated_class /= Void then
-				Result := interface_names.l_Header_class (capital_command_name, associated_class.name_in_upper)
+				Result := capital_command_name.twin
+				Result.append (Interface_names.l_Of_class)
+				Result.append (associated_class.name_in_upper)
 			else
 				Result := Interface_names.l_Not_in_system_no_info
 			end
+		end
+
+feature {NONE} -- Properties
+
+	on_class_drop (cs: CLASSI_STONE) is
+			-- Notify `manager' of the dropping of `cs'.
+		do
+			if not selected then
+				execute
+			end
+			manager.set_stone (cs)
+		end
+
+	empty_widget: EV_WIDGET is
+			-- Widget displayed when no information can be displayed.
+		local
+			def: EV_STOCK_COLORS
+		do
+			create def
+			create {EV_CELL} Result
+			Result.set_background_color (def.White)
+			Result.drop_actions.extend (agent on_class_drop)
 		end
 
 indexing

@@ -12,7 +12,7 @@ class
 inherit
 	LACE_WARNING
 		redefine
-			build_explain, print_single_line_error_message
+			build_explain
 		end;
 
 feature -- Properties
@@ -24,30 +24,10 @@ feature -- Output
 
 	build_explain (st: TEXT_FORMATTER) is
 		do
-				-- No need to add a line, there is already one inserted by `print_short_help'.
+			st.add_new_line
 			st.add (warning.out)
 			st.add_new_line;
 		end;
-
-feature {NONE} -- Output
-
-	print_single_line_error_message (a_text_formatter: TEXT_FORMATTER) is
-			-- Displays single line help in `a_text_formatter'.
-		local
-			l_text: STRING_8
-			l_lines: LIST [STRING_8]
-		do
-			Precursor (a_text_formatter)
-
-			l_text := warning.out
-			l_text.prune_all_trailing ('%N')
-			l_lines := l_text.split ('%N')
-			if not l_lines.is_empty then
-				l_text := l_lines.last
-				a_text_formatter.add_space
-				a_text_formatter.add (l_text)
-			end
-		end
 
 feature {SYSTEM_I, LACE_I} -- Setting
 

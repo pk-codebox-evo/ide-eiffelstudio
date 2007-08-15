@@ -25,7 +25,8 @@ create
 
 feature {NONE} -- Initialization
 
-	make (precomp_dirs: HASH_TABLE [REMOTE_PROJECT_DIRECTORY, INTEGER]) is
+	make (precomp_dirs: HASH_TABLE [REMOTE_PROJECT_DIRECTORY, INTEGER];
+			check_license: BOOLEAN) is
 			-- Create a new structure containing precompilation info.
 		require
 			precomp_dirs_not_void: precomp_dirs /= Void
@@ -38,6 +39,7 @@ feature {NONE} -- Initialization
 			end
 			compiler_version := Version_number;
 			compilation_id := System.compilation_id
+			licensed := check_license
 			name := System.name
 		end
 
@@ -48,6 +50,9 @@ feature -- Access
 
 	compiler_version: STRING
 			-- Compiler version
+
+	licensed: BOOLEAN
+			-- Is this precompilation protected by a license?
 
 	name: STRING;
 			-- Name of the precompiled system

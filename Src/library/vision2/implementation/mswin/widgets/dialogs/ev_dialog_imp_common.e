@@ -29,6 +29,7 @@ inherit
 			show_relative_to_window
 		redefine
 			interface, process_message,
+			wel_move_and_resize,
 			wel_destroy_window,
 			on_wm_command,
 			forbid_resize, allow_resize,
@@ -74,10 +75,11 @@ inherit
 			on_show, on_char, on_left_button_down,
 			on_get_min_max_info, on_left_button_double_click, destroy,
 			on_sys_key_up, on_wm_command, on_activate, on_wm_setting_change,
-			is_displayed, on_wm_dropfiles
+			is_displayed
 		redefine
 			setup_dialog,
-			process_message
+			process_message,
+			wel_move_and_resize
 		end
 
 	WEL_ID_CONSTANTS
@@ -235,7 +237,7 @@ feature {NONE} -- Implementation
 			awaiting_movement := other_imp.awaiting_movement
 			background_color_imp := other_imp.background_color_imp
 			background_pixmap_imp := other_imp.background_pixmap_imp
-			set_state_flag (base_make_called_flag, other_imp.base_make_called)
+			set_base_make_called (other_imp.base_make_called)
 			child_cell := other_imp.child_cell
 			close_request_actions_internal := other_imp.close_request_actions_internal
 			commands := other_imp.commands
@@ -258,6 +260,8 @@ feature {NONE} -- Implementation
 			internal_icon_name := other_imp.internal_icon_name
 			internal_non_sensitive := other_imp.internal_non_sensitive
 			internal_pebble_positioning_enabled := other_imp.internal_pebble_positioning_enabled
+			internal_pick_x := other_imp.internal_pick_x
+			internal_pick_y := other_imp.internal_pick_y
 			internal_title := other_imp.internal_title
 			internal_width := other_imp.internal_width
 			is_closeable := other_imp.is_closeable
@@ -319,7 +323,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	post_creation_update_actions: EV_LITE_ACTION_SEQUENCE [TUPLE []]
+	post_creation_update_actions: ACTION_SEQUENCE [TUPLE []]
 		-- Action sequence to be fired after dialog is created and during initialization from
 		-- within `setup_dialog'. When we create a dialog, Windows calls us back with the
 		-- handle to the new dialog and upon receiving this, we call `setup_dialog'.
@@ -507,19 +511,10 @@ feature {NONE} -- Implementation
 	process_message (hwnd: POINTER; msg: INTEGER; wparam, lparam: POINTER): POINTER is
 			-- Process all message plus `WM_INITDIALOG'.
 		do
-			inspect msg
-			when Wm_initdialog then
+			if msg = Wm_initdialog then
 				setup_dialog
-			when wm_ctlcolordialog then
+			elseif msg = wm_ctlcolordialog then
 				on_wm_ctlcolordialog (wparam, lparam)
-			when wm_close then
-					-- Simulate a click on the default_cancel_button
-				process_standard_key_press (vk_escape)
-					-- Do not actually close the window.
-				if not is_destroyed and then close_request_actions_internal /= Void then
-					close_request_actions_internal.call (Void)
-				end
-				set_default_processing (False)
 			else
 				Result := Precursor {EV_TITLED_WINDOW_IMP} (hwnd, msg, wparam, lparam)
 			end
@@ -538,6 +533,20 @@ feature {NONE} -- Implementation
 			--| doesn't seem to make much difference to GDI count, is it necessary?
 			--| If it is determined that it is required, uncomment.
 			---background_brush.delete
+		end
+
+	wel_move_and_resize (a_x, a_y, a_width, a_height: INTEGER; repaint: BOOLEAN) is
+			-- Move the window to `a_x', `a_y' position and
+			-- resize it with `a_width', `a_height'.
+		do
+			move_absolute (a_x, a_y)
+			wel_resize (a_width, a_height)
+			if repaint then
+					-- We don't want the background to be erased (it's done by
+					-- the dialog box)
+				cwin_invalidate_rect (wel_item, default_pointer, False)
+				cwin_update_window (wel_item)
+			end
 		end
 
 	on_wm_ncdestroy is

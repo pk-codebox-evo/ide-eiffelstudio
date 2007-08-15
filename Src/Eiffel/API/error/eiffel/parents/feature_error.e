@@ -10,7 +10,7 @@ deferred class FEATURE_ERROR
 inherit
 	EIFFEL_ERROR
 		redefine
-			trace, is_defined, file_name, trace_primary_context
+			trace, is_defined, file_name
 		end
 
 feature -- Properties
@@ -70,8 +70,7 @@ feature -- Output
 			a_text_formatter.add ("Class: ")
 			class_c.append_signature (a_text_formatter, False)
 			a_text_formatter.add_new_line
-				-- Display source class only if different.
-			if written_class /= Void and then class_c /= written_class then
+			if written_class /= Void then
 				a_text_formatter.add ("Source class: ")
 				written_class.append_signature (a_text_formatter, False)
 				a_text_formatter.add_new_line
@@ -83,14 +82,14 @@ feature -- Output
 				elseif feature_name /= Void then
 					a_text_formatter.add_feature_error (e_feature, feature_name, line)
 				else
-					a_text_formatter.add ("inheritance or invariant clause")
+					a_text_formatter.add ("invariant")
 				end
 			elseif e_feature /= Void then
 				e_feature.append_name (a_text_formatter)
 			elseif feature_name /= Void then
 				a_text_formatter.add (feature_name)
 			else
-				a_text_formatter.add ("inheritance or invariant clause")
+				a_text_formatter.add ("invariant")
 			end
 			a_text_formatter.add_new_line
 			build_explain (a_text_formatter)
@@ -102,16 +101,6 @@ feature -- Output
 				end
 			end
 			a_text_formatter.set_context_group (l_group)
-		end
-
-	trace_primary_context (a_text_formatter: TEXT_FORMATTER) is
-			-- Build the primary context string so errors can be navigated to
-		do
-			Precursor {EIFFEL_ERROR} (a_text_formatter)
-			if e_feature /= Void then
-				a_text_formatter.add (".")
-				e_feature.append_name (a_text_formatter)
-			end
 		end
 
 feature {COMPILER_EXPORTER} -- Implementation

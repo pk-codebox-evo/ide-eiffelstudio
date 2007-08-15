@@ -131,6 +131,7 @@ feature -- Access
 			first_item_equal_selected: Result.first.is_equal (selected_class)
 		end
 
+
 feature -- Element change
 
 	set_classes (a_classes: LIST [CLASS_C]) is
@@ -176,6 +177,7 @@ feature -- Element change
 			class_list.do_all (agent {EV_LIST_ITEM}.enable_select)
 		end
 
+
 feature {NONE} -- Implementation
 
 	class_list: EV_LIST
@@ -184,7 +186,7 @@ feature {NONE} -- Implementation
 	on_ok_pressed is
 			-- The user pressed OK.
 		local
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 		do
 			if selected_class /= Void then
 				ok_pressed := True
@@ -207,6 +209,7 @@ feature {NONE} -- Implementation
 		do
 			class_list.set_focus
 		end
+
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

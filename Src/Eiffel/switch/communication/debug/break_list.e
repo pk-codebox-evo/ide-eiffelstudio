@@ -14,7 +14,7 @@ class
 	BREAK_LIST
 
 inherit
-	HASH_TABLE [BREAKPOINT, BREAKPOINT_KEY]
+	HASH_TABLE [BREAKPOINT, BREAKPOINT]
 		rename
 			make as ht_make
 		end
@@ -22,57 +22,12 @@ inherit
 create
 	make
 
-create {DEBUGGER_DATA}
-	make_copy_for_saving
-
-feature {NONE} -- Initialization
+feature -- Initialization
 
 	make is
 			-- Create an empty list of break points.
 		do
 			ht_make (50)
-		end
-
-	make_copy_for_saving (lst: like Current) is
-		local
-			bp: BREAKPOINT
-		do
-			ht_make (lst.count)
-			from
-				lst.start
-			until
-				lst.after
-			loop
-				create bp.make_copy_for_saving (lst.item_for_iteration)
-				put (bp, bp)
-				lst.forth
-			end
-		end
-
-feature {DEBUGGER_DATA} -- Update after loading
-
-	reload is
-			-- Reload after loading breakpoints
-		do
-			from
-				start
-			until
-				after
-			loop
-				item_for_iteration.reload
-				forth
-			end
-		end
-
-feature -- Element factory
-
-	new_breakpoint (bpk: BREAKPOINT_KEY): BREAKPOINT is
-			-- Real breakpoint from `bpk'.
-		do
-			Result ?= bpk
-			if Result = Void then
-				create Result.make (bpk.routine, bpk.breakable_line_number)
-			end
 		end
 
 feature -- Element change
@@ -84,7 +39,7 @@ feature -- Element change
 		require else
 			bp_exists: bp /= Void
 		do
-			if not has_key (bp) then
+			if not has (bp) then
 				put (bp, bp)
 			else
 				found_item.enable
@@ -103,6 +58,21 @@ feature -- Element change
 			loop
 				add_breakpoint (other.item_for_iteration)
 				other.forth
+			end
+		end
+
+feature -- Query
+
+	has_enabled_breakpoints: BOOLEAN is
+			-- Does this breakpoints list contains at least one enabled bp ?
+		do
+			from
+				start
+			until
+				after or Result
+			loop
+				Result := item_for_iteration.is_enabled
+				forth
 			end
 		end
 

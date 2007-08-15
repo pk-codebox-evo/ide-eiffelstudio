@@ -111,36 +111,23 @@ feature -- Access
 
 	foreground_color: EV_COLOR is
 			-- Color used to draw primitives.
-		local
-			l_red, l_green, l_blue: INTEGER
 		do
 			if internal_foreground_color /= Void then
-				l_red := internal_foreground_color.red_8_bit
-				l_green := internal_foreground_color.green_8_bit
-				l_blue := internal_foreground_color.blue_8_bit
+				Result := internal_foreground_color
 			else
-					-- We default to black
+				create Result.make_with_rgb (0, 0, 0)
 			end
-			create Result.make_with_8_bit_rgb (l_red, l_green, l_blue)
 		end
 
 	background_color: EV_COLOR is
 			-- Color used for erasing of canvas.
 			-- Default: white.
-		local
-			l_red, l_green, l_blue: INTEGER
 		do
 			if internal_background_color /= Void then
-				l_red := internal_background_color.red_8_bit
-				l_green := internal_background_color.green_8_bit
-				l_blue := internal_background_color.blue_8_bit
+				Result := internal_background_color
 			else
-					-- We default to white
-				l_red := 255
-				l_green := 255
-				l_blue := 255
+				create Result.make_with_rgb (1.0, 1.0, 1.0)
 			end
-			create Result.make_with_8_bit_rgb (l_red, l_green, l_blue)
 		end
 
 	line_width: INTEGER is
@@ -219,13 +206,8 @@ feature -- Element change
 		local
 			color_struct: POINTER
 		do
-			if internal_background_color = Void then
-				create internal_background_color.make_with_8_bit_rgb (255, 255, 255)
-			end
-			if not internal_background_color.is_equal (a_color) then
-				internal_background_color.set_red_with_8_bit (a_color.red_8_bit)
-				internal_background_color.set_green_with_8_bit (a_color.green_8_bit)
-				internal_background_color.set_blue_with_8_bit (a_color.blue_8_bit)
+			if internal_background_color /= a_color then
+				internal_background_color := a_color
 				color_struct := App_implementation.reusable_color_struct
 				{EV_GTK_EXTERNALS}.set_gdk_color_struct_red (color_struct, a_color.red_16_bit)
 				{EV_GTK_EXTERNALS}.set_gdk_color_struct_green (color_struct, a_color.green_16_bit)
@@ -239,13 +221,8 @@ feature -- Element change
 		local
 			color_struct: POINTER
 		do
-			if internal_foreground_color = Void then
-				create internal_foreground_color
-			end
-			if not internal_foreground_color.is_equal (a_color) then
-				internal_foreground_color.set_red_with_8_bit (a_color.red_8_bit)
-				internal_foreground_color.set_green_with_8_bit (a_color.green_8_bit)
-				internal_foreground_color.set_blue_with_8_bit (a_color.blue_8_bit)
+			if internal_foreground_color /= a_color then
+				internal_foreground_color := a_color
 				color_struct := App_implementation.reusable_color_struct
 				{EV_GTK_EXTERNALS}.set_gdk_color_struct_red (color_struct, a_color.red_16_bit)
 				{EV_GTK_EXTERNALS}.set_gdk_color_struct_green (color_struct, a_color.green_16_bit)
@@ -574,7 +551,7 @@ feature -- Drawing operations
 					y,
 					a_width,
 					a_height,
-					(a_start_angle * a_radians + 0.5).truncated_to_integer,
+					(a_start_angle * a_radians + 0.5).truncated_to_integer ,
 					(an_aperture * a_radians + 0.5).truncated_to_integer
 				)
 				update_if_needed
@@ -590,86 +567,21 @@ feature -- Drawing operations
 	draw_full_pixmap (x, y: INTEGER; a_pixmap: EV_PIXMAP; x_src, y_src, src_width, src_height: INTEGER) is
 		local
 			pixmap_imp: EV_PIXMAP_IMP
---			l_src_rect, l_dest_rect, l_src_intersection_rect, l_dest_intersection_rect: EV_RECTANGLE
---			l_adjusted_x, l_adjusted_y: INTEGER
---			l_adjusted_x_src, l_adjusted_y_src, l_adjusted_src_width, l_adjusted_src_height: INTEGER
 		do
 			if drawable /= default_pointer then
-
---					-- Find adjusted values for source rectangle.
---				create l_dest_rect.make (0, 0, a_pixmap.width, a_pixmap.height)
---				create l_src_rect.make (x_src, y_src, src_width, src_height)
---				l_src_intersection_rect := l_src_rect.intersection (l_dest_rect)
---				l_adjusted_x_src := l_src_intersection_rect.x
---				l_adjusted_y_src := l_src_intersection_rect.y
---				l_adjusted_src_width := l_src_intersection_rect.width
---				l_adjusted_src_height := l_src_intersection_rect.height
---				l_adjusted_x := x - x_src.min (0)
---				l_adjusted_y := y - y_src.min (0)
-
---				if l_adjusted_src_width > 0 and then l_adjusted_src_height > 0 then
---						-- Optimize destination rectangle.
---					l_dest_rect.move_and_resize (0, 0, width, height)
---					l_src_rect.move_and_resize (
---						l_adjusted_x,
---						l_adjusted_y,
---						l_adjusted_src_width,
---						l_adjusted_src_height
---					)
---					l_dest_intersection_rect := l_src_rect.intersection (l_dest_rect)
-
---					l_adjusted_x := l_dest_intersection_rect.x
---					l_adjusted_y := l_dest_intersection_rect.y
---						-- If destination origin is negative then adjust the source origin to take this in to account.
---					if l_adjusted_x < 0 then
---						l_adjusted_x_src := l_adjusted_x_src - l_adjusted_x
---					end
---					if l_adjusted_y_src < 0 then
---						l_adjusted_y_src := l_adjusted_y_src - l_adjusted_y
---					end
---					l_adjusted_src_width := l_dest_intersection_rect.width
---					l_adjusted_src_height := l_dest_intersection_rect.height
-
---					if l_dest_intersection_rect.width > 0 and then l_dest_intersection_rect.height > 0 then
-						pixmap_imp ?= a_pixmap.implementation
---						if pixmap_imp.mask /= default_pointer then
---							{EV_GTK_EXTERNALS}.gdk_gc_set_clip_mask (gc, pixmap_imp.mask)
---							{EV_GTK_EXTERNALS}.gdk_gc_set_clip_origin (gc, l_adjusted_x - l_adjusted_x_src, l_adjusted_y - l_adjusted_y_src)
---						end
---						{EV_GTK_DEPENDENT_EXTERNALS}.gdk_draw_drawable (
---							drawable,
---							gc,
---							pixmap_imp.drawable,
---							l_adjusted_x_src,
---							l_adjusted_y_src,
---							l_adjusted_x,
---							l_adjusted_y,
---							l_adjusted_src_width,
---							l_adjusted_src_height
---						)
-
-						if pixmap_imp.mask /= default_pointer then
-							{EV_GTK_EXTERNALS}.gdk_gc_set_clip_mask (gc, pixmap_imp.mask)
-							{EV_GTK_EXTERNALS}.gdk_gc_set_clip_origin (gc, x - x_src, y - y_src)
-						end
-						{EV_GTK_DEPENDENT_EXTERNALS}.gdk_draw_drawable (
-							drawable,
-							gc,
-							pixmap_imp.drawable,
-							x_src,
-							y_src,
-							x,
-							y,
-							src_width,
-							src_height
-						)
-						update_if_needed
-						if pixmap_imp.mask /= default_pointer then
-							{EV_GTK_EXTERNALS}.gdk_gc_set_clip_mask (gc, default_pointer)
-							{EV_GTK_EXTERNALS}.gdk_gc_set_clip_origin (gc, 0, 0)
-						end
---					end
---				end
+				pixmap_imp ?= a_pixmap.implementation
+				if pixmap_imp.mask /= default_pointer then
+					{EV_GTK_EXTERNALS}.gdk_gc_set_clip_mask (gc, pixmap_imp.mask)
+					{EV_GTK_EXTERNALS}.gdk_gc_set_clip_origin (gc, x - x_src, y - y_src)
+				end
+				{EV_GTK_DEPENDENT_EXTERNALS}.gdk_draw_drawable (drawable, gc,
+					pixmap_imp.drawable,
+					x_src, y_src, x, y, src_width, src_height)
+				update_if_needed
+				if pixmap_imp.mask /= default_pointer then
+					{EV_GTK_EXTERNALS}.gdk_gc_set_clip_mask (gc, default_pointer)
+					{EV_GTK_EXTERNALS}.gdk_gc_set_clip_origin (gc, 0, 0)
+				end
 			end
 		end
 
@@ -874,6 +786,7 @@ feature {NONE} -- Implemention
 			pts_exists: pts /= Void
 		local
 			i, j, array_count: INTEGER
+			a_coord: EV_COORDINATE
 			l_area: SPECIAL [INTEGER]
 			l_coord_area: SPECIAL [EV_COORDINATE]
 		do
@@ -882,17 +795,15 @@ feature {NONE} -- Implemention
 				create Result.make (1, array_count * 2)
 				l_coord_area := pts.area
 				l_area := Result.area
-				i := array_count - 1
-				j := array_count * 2 - 1
-					-- Iterate backwards as comparing against zero generates faster C code.
+				i := 0
 			until
-				i < 0
+				i = array_count
 			loop
-				l_area [j] := (l_coord_area @ i).y
-				j := j - 1
-				l_area [j] := (l_coord_area @ i).x
-				i := i - 1
-				j := j - 1
+				a_coord := l_coord_area @ i
+				j := i * 2
+				l_area.put (a_coord.x, j)
+				l_area.put (a_coord.y, j + 1)
+				i := i + 1
 			end
 		ensure
 			Result_exists: Result /= Void
@@ -956,27 +867,6 @@ feature {EV_GTK_DEPENDENT_APPLICATION_IMP, EV_ANY_I} -- Implementation
 		end
 
 feature {NONE} -- Implementation
-
-	fg_color: POINTER is
-			-- Default allocated background color.
-		local
-			a_success: BOOLEAN
-		once
-			Result := {EV_GTK_EXTERNALS}.c_gdk_color_struct_allocate
-			a_success := {EV_GTK_EXTERNALS}.gdk_colormap_alloc_color ({EV_GTK_EXTERNALS}.gdk_rgb_get_cmap, Result, False, True)
-		end
-
-	bg_color: POINTER is
-			-- Default allocate foreground color.
-		local
-			a_success: BOOLEAN
-		once
-			Result := {EV_GTK_EXTERNALS}.c_gdk_color_struct_allocate
-			{EV_GTK_EXTERNALS}.set_gdk_color_struct_red (Result, 65535)
-			{EV_GTK_EXTERNALS}.set_gdk_color_struct_green (Result, 65535)
-			{EV_GTK_EXTERNALS}.set_gdk_color_struct_blue (Result, 65535)
-			a_success := {EV_GTK_EXTERNALS}.gdk_colormap_alloc_color ({EV_GTK_EXTERNALS}.gdk_rgb_get_cmap, Result, False, True)
-		end
 
 	draw_mask_on_pixbuf (a_pixbuf_ptr, a_mask_ptr: POINTER) is
 		external

@@ -26,8 +26,7 @@ inherit
 			enable_sensitive,
 			wel_set_text,
 			dispose,
-			destroy,
-			load_bounds_rect
+			destroy
 		end
 
 	EV_MENU_ITEM_LIST_IMP
@@ -115,7 +114,7 @@ feature {EV_ANY_I} -- Basic operations
 			if count > 0 then
 				create wel_point.make (0, 0)
 				wel_point.set_cursor_position
-				create l_popup.make_with_menu (Current, wel_point.window_at)
+				create l_popup.make_with_menu (Current)
 				show_track (wel_point.x, wel_point.y, l_popup)
 					-- If we do not process events now, the fact we remove the
 					-- menu from `l_popup' will prevent the action to be executed.
@@ -169,18 +168,14 @@ feature {EV_ANY_I} -- Basic operations
 		do
 			if count > 0 then
 				create wel_point.make (a_x, a_y)
-				if a_widget /= Void then
-					wel_win ?= a_widget.implementation
-				end
+				wel_win ?= a_widget.implementation
 				if wel_win /= Void then
+					create wel_point.make (a_x, a_y)
 					wel_point.client_to_screen (wel_win)
 				else
-						-- If no Window found, we still try to locate the window below the current
-						-- coordinate. That way the window won't loose its focus due to EV_POPUP_MENU_HANDLER
-						-- creating a top window.
-					wel_win ?= wel_point.window_at
+					create wel_point.make (0, 0)
 				end
-				create l_popup.make_with_menu (Current, wel_win)
+				create l_popup.make_with_menu (Current)
 				show_track (wel_point.x, wel_point.y, l_popup)
 					-- If we do not process events now, the fact we remove the
 					-- menu from `l_popup' will prevent the action to be executed.
@@ -323,6 +318,16 @@ feature {NONE} -- Implementation
 			--| FIXME to be implemented for pick-and-dropable.
 		end
 
+	screen_x: INTEGER is
+			-- Horizontal offset of `Current' relative to screen.
+		do
+		end
+
+	screen_y: INTEGER is
+			-- Vertical offset of `Current' relative to screen.
+		do
+		end
+
 	dragable_press (a_x, a_y, a_button, a_screen_x, a_screen_y: INTEGER) is
 			-- Process `a_button' to start/stop the drag/pick and
 			-- drop mechanism.
@@ -370,22 +375,6 @@ feature {NONE} -- Implementation
 			interface.wipe_out
 			Precursor {EV_MENU_ITEM_IMP}
 			destroy_item
-		end
-
-	load_bounds_rect is
-			-- Load rect struct which holds boundary information
-		local
-			menu_bar: EV_MENU_BAR_IMP
-		do
-			menu_bar ?= parent_imp
-
-			if menu_bar /= Void and then menu_bar.parent_imp /= Void then
-				if {WEL_API}.get_menu_item_rect (menu_bar.parent_imp.wel_item, menu_bar.wel_item, menu_bar.index_of (interface, 1)-1, bounds_rect.item) = 0 then
-					bounds_rect.set_rect (0, 0, 0, 0)
-				end
-			else
-				Precursor {EV_MENU_ITEM_IMP}
-			end
 		end
 
 feature {EV_ANY_I} -- Implementation

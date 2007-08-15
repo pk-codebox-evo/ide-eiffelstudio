@@ -12,15 +12,13 @@ inherit
 	EB_TOOLBARABLE_COMMAND
 		redefine
 			disable_sensitive,
-			enable_sensitive,
-			update
+			enable_sensitive
 		end
 
 	EB_MENUABLE_COMMAND
 		redefine
 			disable_sensitive,
 			enable_sensitive,
-			update,
 			initialize_menu_item
 		end
 
@@ -29,13 +27,12 @@ feature -- Status setting
 	enable_sensitive is
 			-- Set `is_sensitive' to True.
 		local
-			menu_items: like managed_menu_items
-			toolbar_items: like managed_toolbar_items
-			l_sd_toolbar_items: like managed_sd_toolbar_items
+			menu_items: like internal_managed_menu_items
+			toolbar_items: like internal_managed_toolbar_items
 		do
 			if not is_sensitive then
 					-- Enable menu items
-				menu_items := managed_menu_items
+				menu_items := internal_managed_menu_items
 				if menu_items /= Void then
 					from
 						menu_items.start
@@ -48,7 +45,7 @@ feature -- Status setting
 				end
 
 					-- Enable toolbar item
-				toolbar_items := managed_toolbar_items
+				toolbar_items := internal_managed_toolbar_items
 				if toolbar_items /= Void then
 					from
 						toolbar_items.start
@@ -60,18 +57,6 @@ feature -- Status setting
 					end
 				end
 
-				l_sd_toolbar_items := managed_sd_toolbar_items
-				if l_sd_toolbar_items /= Void then
-					from
-						l_sd_toolbar_items.start
-					until
-						l_sd_toolbar_items.after
-					loop
-						l_sd_toolbar_items.item.enable_sensitive
-						l_sd_toolbar_items.forth
-					end
-				end
-
 				is_sensitive := True
 			end
 		end
@@ -79,13 +64,12 @@ feature -- Status setting
 	disable_sensitive is
 			-- Set `is_sensitive' to True.
 		local
-			menu_items: like managed_menu_items
-			toolbar_items: like managed_toolbar_items
-			l_sd_tool_bar_items: like managed_sd_toolbar_items
+			menu_items: like internal_managed_menu_items
+			toolbar_items: like internal_managed_toolbar_items
 		do
 			if is_sensitive then
 					-- Disable menu items
-				menu_items := managed_menu_items
+				menu_items := internal_managed_menu_items
 				if menu_items /= Void then
 					from
 						menu_items.start
@@ -98,7 +82,7 @@ feature -- Status setting
 				end
 
 					-- Disable toolbar item
-				toolbar_items := managed_toolbar_items
+				toolbar_items := internal_managed_toolbar_items
 				if toolbar_items /= Void then
 					from
 						toolbar_items.start
@@ -109,33 +93,13 @@ feature -- Status setting
 						toolbar_items.forth
 					end
 				end
-
-				l_sd_tool_bar_items := managed_sd_toolbar_items
-				if l_sd_tool_bar_items /= Void then
-					from
-						l_sd_tool_bar_items.start
-					until
-						l_sd_tool_bar_items.after
-					loop
-						l_sd_tool_bar_items.item.disable_sensitive
-						l_sd_tool_bar_items.forth
-					end
-				end
-
 				is_sensitive := False
 			end
 		end
 
-	update (a_window: EV_WINDOW) is
-			-- Update `accelerator' and interfaces according to `referred_shortcut'.
-		do
-			Precursor {EB_MENUABLE_COMMAND} (a_window)
-			update_tooltips
-		end
-
 feature {NONE} -- Implementation
 
-	initialize_menu_item (a_menu_item: EV_MENU_ITEM) is
+	initialize_menu_item (a_menu_item: EB_COMMAND_MENU_ITEM) is
 			-- Create a new menu entry for this command.
 		do
 			Precursor {EB_MENUABLE_COMMAND} (a_menu_item)

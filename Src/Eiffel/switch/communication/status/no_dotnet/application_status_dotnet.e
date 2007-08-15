@@ -17,9 +17,7 @@ create
 
 feature -- Class stack creation
 
-	new_callstack_with (a_tid: INTEGER; a_stack_max_depth: INTEGER): like current_call_stack is
-			-- Get Eiffel Callstack with a maximum depth of `a_stack_max_depth'
-			-- for thread `a_tid'.
+	new_current_callstack_with (a_stack_max_depth: INTEGER): EIFFEL_CALL_STACK is
 		do
 		end
 
@@ -35,6 +33,7 @@ feature -- Values
 
 	exception_debug_value: ABSTRACT_DEBUG_VALUE	 is do end
 
+	exception_to_string,
 	exception_module_name,
 	exception_class_name: STRING is do end
 

@@ -32,11 +32,6 @@ inherit
 			{NONE} all
 		end
 
-	SHARED_TYPE_I
-		export
-			{NONE} all
-		end
-
 	PROJECT_CONTEXT
 		export
 			{NONE} all
@@ -223,7 +218,7 @@ feature -- Generation
 				generate_entry_point
 
 					-- Generate resources if any
-				l_res := universe.conf_system.all_external_resource
+				l_res := universe.target.all_external_resource
 				if not l_res.is_empty then
 					cil_generator.generate_resources (l_res)
 				end
@@ -275,23 +270,20 @@ feature -- Generation
 			l_precomp: REMOTE_PROJECT_DIRECTORY
 			l_viop: VIOP
 			l_use_optimized_precomp: BOOLEAN
-			l_assemblies: HASH_TABLE [CONF_PHYSICAL_ASSEMBLY_INTERFACE, STRING]
-			l_as: CONF_PHYSICAL_ASSEMBLY
+			l_assemblies: HASH_TABLE [CONF_ASSEMBLY, STRING]
+			l_as: CONF_ASSEMBLY
 			l_state: CONF_STATE
 		do
 			if not retried then
 					-- Copy referenced local assemblies
 				l_state := universe.conf_state
 				from
-					l_assemblies := universe.conf_system.all_assemblies
+					l_assemblies := universe.target.all_assemblies
 					l_assemblies.start
 				until
 					l_assemblies.after
 				loop
-					l_as ?= l_assemblies.item_for_iteration
-					check
-						physical_assembly: l_as /= Void
-					end
+					l_as := l_assemblies.item_for_iteration
 					if l_as.is_enabled (l_state) and then not l_as.is_in_gac then
 						copy_to_local (l_as.location.build_path ("", l_as.location.original_file))
 						l_has_local := True
@@ -400,7 +392,7 @@ feature {NONE} -- Type description
 	compute_root_class is
 			-- Initialize `root_class_routine' with CLASS_C instance that defines
 			-- creation routine of current system.
-			--| In most cases `System.root_type.associated_class' is equal to
+			--| In most cases `System.root_class.compiled_class' is equal to
 			--| `root_class_routine', but when creation routine is inherited, this
 			--| is not true.
 			--| `root_class_routine' is used to find out which module needs to be
@@ -409,8 +401,8 @@ feature {NONE} -- Type description
 			l_feat: FEATURE_I
 			l_root_class: CLASS_C
 		do
-			if System.root_type /= Void and then System.root_creation_name /= Void then
-				l_root_class := System.root_type.associated_class
+			if System.root_class /= Void and then System.root_creation_name /= Void then
+				l_root_class := System.root_class.compiled_class
 				l_feat := l_root_class.feature_table.item (System.root_creation_name)
 				root_class_routine := l_feat.written_class
 			end
@@ -453,7 +445,6 @@ feature {NONE} -- Type description
 			i, nb: INTEGER
 			types: TYPE_LIST
 			cl_type: CLASS_TYPE
-			gen_type: GEN_TYPE_I
 			l_class_counted: BOOLEAN
 		do
 			from
@@ -493,32 +484,6 @@ feature {NONE} -- Type description
 							end
 
 							types.forth
-						end
-						if class_c.is_generic and then not class_c.is_external then
-								-- Add all possible generic derivations of the same class
-								-- where expanded parameters are replaced with reference ones
-								-- to the list of interfaces a type conforms to.
-							from
-								types.start
-							until
-								types.after
-							loop
-								cl_type := types.item
-								gen_type ?= cl_type.type
-								gen_type.enumerate_interfaces (
-									agent (c: CLASS_TYPE; p: ARRAYED_LIST [CLASS_INTERFACE])
-										local
-											ci: CLASS_INTERFACE
-										do
-											ci := c.class_interface
-											if not p.has (ci) then
-												p.extend (ci)
-											end
-										end
-									(?, cl_type.class_interface.parents)
-								)
-								types.forth
-							end
 						end
 					else
 							-- Step is needed as namespace of a precompiled class should be set.
@@ -853,11 +818,11 @@ feature {NONE} -- Type description
 				System.root_creation_name /= Void
 			then
 					-- Update the root class info
-				a_class := system.root_type.associated_class
-				root_class_type := system.root_class_type
+				a_class := system.root_class.compiled_class
+				root_class_type := a_class.actual_type.type_i.associated_class_type
 				root_feat := a_class.feature_table.item (System.root_creation_name)
-				l_decl_type := root_class_type.type.implemented_type (root_feat.written_in)
-				context.init (root_class_type)
+				l_decl_type := cil_generator.implemented_type (root_feat.written_in,
+					root_class_type.type)
 				cil_generator.define_entry_point (
 					root_class_type,
 					l_decl_type.associated_class_type,
@@ -1150,7 +1115,7 @@ feature {NONE} -- Progression
 		do
 				-- We force generation of basic classes even if only the reference version
 				-- will be generated.
-			Result := (a_class /= Void and then (a_class.is_basic and then not a_class.is_typed_pointer or not a_class.is_external))
+			Result := (a_class /= Void and then (a_class.is_basic or not a_class.is_external))
 				and then (is_finalizing or else a_class.degree_minus_1_needed)
 		end
 

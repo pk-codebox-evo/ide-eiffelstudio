@@ -29,7 +29,7 @@ feature -- Metrics
 		require
 			a_unit_attached: a_unit /= Void
 		do
-			Result := metric_creator_table.item (a_unit).item (Void)
+			Result := metric_creator_table.item (a_unit).item ([])
 		ensure
 			a_unit_attached: a_unit /= Void
 		end
@@ -246,5 +246,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

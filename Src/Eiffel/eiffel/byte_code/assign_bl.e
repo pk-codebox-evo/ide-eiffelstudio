@@ -121,13 +121,13 @@ feature
 				and not context.has_invariant
 		end
 
-	No_simple_op: INTEGER is 1
+	No_simple_op: INTEGER is Unique
 			-- There is no simple operation assignment.
 
-	Left_simple_op: INTEGER is 2
+	Left_simple_op: INTEGER is Unique
 			-- The left part of the source is affected by a simple operation.
 
-	Right_simple_op: INTEGER is 3
+	Right_simple_op: INTEGER is Unique
 			-- The right part of the source is affected by a simple operation.
 
 	analyze_simple_assignment is
@@ -193,13 +193,9 @@ feature
 				analyze_simple_assignment
 			end
 			create saved_context.make_from_context (context)
-			target_type := target.type
-
-			check not target_type.is_multi_constrained end
-			target_type := context.real_type_fixed (target_type)
-
+			target_type := context.real_type (target.type)
 			if simple_op_assignment = No_simple_op then
-				source_type := context.real_type_fixed (source.type)
+				source_type := context.real_type (source.type)
 				if target.is_predefined then
 					result_used := target.is_result
 						-- We won't attempt a propagation of the target if the
@@ -227,7 +223,7 @@ feature
 								-- Case: p := p.right in a list and p becomes
 								-- void...
 							if not ((context.workbench_mode or else
-								context.assertion_level.is_invariant) and
+								context.assertion_level.check_invariant) and
 								source.used (target))
 							then
 								source.propagate (target)
@@ -351,19 +347,19 @@ feature
 			end
 		end
 
-	Simple_assignment: INTEGER is 4
+	Simple_assignment: INTEGER is unique
 			-- Simple assignment wanted
 
-	Metamorphose_assignment: INTEGER is 5
+	Metamorphose_assignment: INTEGER is unique
 			-- Metamorphose of source is necessary
 
-	Unmetamorphose_assignment: INTEGER is 6
+	Unmetamorphose_assignment: INTEGER is unique
 			-- Metamorphose of source is necessary
 
-	Clone_assignment: INTEGER is 7
+	Clone_assignment: INTEGER is unique
 			-- Clone of source is needed
 
-	Copy_assignment: INTEGER is 8
+	Copy_assignment: INTEGER is unique
 			-- Copy source into target, raise exception if source is Void
 
 	source_print_register is
@@ -436,7 +432,8 @@ feature
 			buf := buffer
 			if how = Metamorphose_assignment then
 				basic_source_type ?= context.real_type (source.type)
-				basic_source_type.metamorphose (register, source, buf)
+				basic_source_type.metamorphose
+					(register, source, buf, context.workbench_mode)
 				buf.put_character (';')
 				buf.put_new_line
 			elseif how = Clone_assignment then

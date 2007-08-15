@@ -14,8 +14,7 @@ inherit
 		redefine
 			current_call_stack,
 			switch_to_current_thread_id,
-			exception_description,
-			thread_name, thread_priority
+			exception_description
 		end
 
 	IPC_SHARED
@@ -58,7 +57,7 @@ feature {APPLICATION_STATUS_EXPORTER} -- Initialization
 				break_index := offs
 
 					-- create the call stack
-				create ccs.make_empty (current_thread_id)
+				create ccs.dummy_make
 				set_call_stack (current_thread_id, ccs)
 
 --				stack_num := Application.current_execution_stack_number
@@ -73,9 +72,11 @@ feature {APPLICATION_STATUS_EXPORTER} -- Initialization
 				Application.continue_ignoring_kept_objects
 			end
 		ensure
-			valid_break_index: (break_index > 0) or (break_index = 0 implies (
-					reason = Pg_new_breakpoint or reason = Pg_raise or reason = pg_viol or
-					(e_feature /= Void and then e_feature.is_external)))
+			valid_break_index: (break_index = 0 implies (
+					reason = Pg_new_breakpoint
+					or reason = Pg_raise
+					or (e_feature /= Void and then e_feature.is_external))
+					) or (break_index > 0)
 			valid_efeature: e_feature = Void implies (reason = Pg_new_breakpoint)
 		end
 
@@ -96,11 +97,10 @@ feature -- Access
 
 feature {NONE} -- CallStack Impl
 
-	new_callstack_with (a_tid: INTEGER; a_stack_max_depth: INTEGER): like current_call_stack is
-			-- Get Eiffel Callstack with a maximum depth of `a_stack_max_depth'
-			-- for thread `a_tid'.
+	new_current_callstack_with (a_stack_max_depth: INTEGER): like current_call_stack is
+			-- Create Eiffel Callstack with a maximum depth of `a_stack_max_depth'
 		do
-			create Result.make (a_stack_max_depth, a_tid)
+			create Result.make (a_stack_max_depth, current_thread_id)
 		end
 
 feature -- Values
@@ -135,28 +135,12 @@ feature -- Values
 			Result.append (Precursor {APPLICATION_STATUS})
 		end
 
-	exception_class_name: STRING is
-		do
-			--| For now, exception are not object on classic Eiffel system
-		end
-
 	current_call_stack: EIFFEL_CALL_STACK_CLASSIC
 
 	refresh_current_thread_id is
 		do
 			-- FIXME jfiat: for now Classic system do not support thread selection
 			-- TODO
-		end
-
-feature -- Threads related access
-
-	thread_name (id: like current_thread_id): STRING is
-		do
-
-		end
-
-	thread_priority (id: like current_thread_id): INTEGER is
-		do
 		end
 
 indexing

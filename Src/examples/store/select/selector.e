@@ -1,20 +1,19 @@
 indexing
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
-	date: "$Date$"
-	revision: "$Revision$"
-
 class SELECTOR
 
 inherit
+
 	ACTION
-		redefine
+		redefine 
 			execute
 		end
 
 	RDB_HANDLE
 
 create
+
 	make
 
 feature {NONE}
@@ -24,100 +23,96 @@ feature {NONE}
 	base_update: DB_CHANGE
 
 	repository: DB_REPOSITORY
-
+	
 	session_control: DB_CONTROL
 
 	data_file: PLAIN_TEXT_FILE
 
 	book: BOOK2
-
-feature
+	
+feature 
 
 	make is
-		do
-			io.putstring ("Database user authentication:%N")
-			perform_login
-
-				-- Initialization of the Relational Database:
-				-- This will set various informations to perform a correct
-				-- connection to the Relational database
-			set_base
-
-				-- An Eiffel object is created. It will be stored in the DB,
-				-- through the repository
-			create book.make
-
-				-- Create usefull classes
-				-- 'session_control' provides informations control access and
-				--  the status of the database.
-				-- 'base_selection' provides a SELECT query mechanism.
-			create session_control.make
-			create base_selection.make
-			create base_update.make
-
-				-- Start session: establishes connection to database
-			session_control.connect
-			if not session_control.is_connected then
-				session_control.raise_error
-					-- Something went wrong, and the connection failed
-				io.putstring ("Can't connect to database.%N")
-			else
-					-- A 'repository' is used to store objects, and to access
-					-- them as Eiffel objects, or DB tuples.
-					-- The table used to store Eiffel book objects will be called
-					-- "DB_BOOK".
-				create repository.make (Table_name)
-
-					--  The Eiffel program is now connected to the database
-					-- Try to load table from the DB
-				repository.load
-				if not repository.exists then
-						-- There is no existing objects in the DB
-					io.putstring ("Loading and updating database ...%N")
-						-- Load some from file
-					load_data
-					repository.load
-				end
-					-- Ask the user for a SELECT statement, and execute it
-				make_selection
-					-- Terminate session
-				session_control.disconnect
-			end
-		end
-
-feature {NONE}
-
-	perform_login is
 		local
 			tmp_string: STRING
 		do
-			if db_spec.database_handle_name.is_case_insensitive_equal ("odbc") then
-				io.putstring ("Data Source Name: ")
-				io.readline
-				set_data_source(io.laststring.twin)
-			end
-
-				-- Ask for user's name and password
+			-- Ask for user's name and password
+			io.putstring ("Database user authentication:%N")
 			io.putstring ("Name: ")
 			io.readline
 			tmp_string := io.laststring.twin
 			io.putstring ("Password: ")
 			io.readline
 
-				-- Set user's name and password
+			-- Set user's name and password
 			login (tmp_string, io.laststring)
+
+			-- Initialization of the Relational Database:
+			-- This will set various informations to perform a correct
+			-- connection to the Relational database
+			set_base
+			-- A 'repository' is used to store objects, and to access
+			-- them as Eiffel objects, or DB tuples.
+			-- The table used to store Eiffel book objects will be called
+			-- "DB_BOOK".
+			create repository.make (Table_name)
+
+			-- Create usefull classes
+			-- 'session_control' provides informations control access and 
+			--  the status of the database.
+			-- 'base_selection' provides a SELECT query mechanism.
+			create session_control.make
+			create base_selection.make
+			create base_update.make
+
+			-- An Eiffel object is created. It will be stored in the DB, 
+			-- through the repository
+			create book.make
+
+			-- Start session: establishes connection to database
+			session_control.connect
+
+			if not session_control.is_connected then
+
+				session_control.raise_error
+				-- Something went wrong, and the connection failed
+				io.putstring ("Can't connect to database.%N")
+
+			else
+				--  The Eiffel program is now connected to the database
+
+				-- Try to load table from the DB
+				repository.load
+
+				if not repository.exists then
+					-- There is no existing objects in the DB
+					io.putstring ("Loading and updating database ...%N")
+					-- Load some from file
+					load_data
+
+					repository.load
+				end
+			
+				-- Ask the user for a SELECT statement, and execute it
+				make_selection
+	
+				-- Terminate session
+				session_control.disconnect
+			end
 		end
+
+feature {NONE}
 
 	load_data is
 			-- Create table in database with same structure as 'book'
 			-- and load data from file 'data.sql'.
 		do
-				-- Create the table for book-objects.
-				-- The name of this table has already been set to "DB_BOOK"
+			-- Create the table for book-objects.
+			-- The name of this table has already been set to "DB_BOOK"
 			repository.allocate (book)
 			session_control.begin
 
-			from
+			from 
 				create data_file.make_open_read (Data_file_name)
 			until
 				data_file.end_of_file
@@ -126,13 +121,13 @@ feature {NONE}
 				if not data_file.end_of_file then
 					io.putstring (data_file.laststring)
 					io.new_line
-						-- Insert objects in the table "DB_BOOK"
+					-- Insert objects in the table "DB_BOOK"
 					base_update.modify (data_file.laststring.twin)
 				end
 			end
 			data_file.close
 
-				-- Commit work
+			-- Commit work
 			session_control.commit
 		end
 
@@ -140,7 +135,7 @@ feature {NONE}
 			-- Select books whose author's name match
 			-- a specific name.
 			-- The name must be written in upper-case letters, and
-			-- enclosed in '%' (This caracter is used by SQL to match
+			-- enclosed in '%' (This caracter is used by SQL to match 
 			-- any string of zero or more character)
 
 		local
@@ -150,7 +145,7 @@ feature {NONE}
 				io.putstring ("Author? ('exit' to terminate):")
 				io.readline
 			until
-					-- Terminate?
+				-- Terminate?
 				io.laststring.is_equal ("exit")
 			loop
 				author := io.laststring.twin
@@ -159,23 +154,23 @@ feature {NONE}
 				io.new_line
 				io.new_line
 
-					-- A mapped Eiffel object (author) is referred to by a key name
-					-- "author_name" which can be used in a SQL statement prepended with ':'
+				-- A mapped Eiffel object (author) is referred to by a key name
+				-- "author_name" which can be used in a SQL statement prepended with ':'
 				base_selection.set_map_name (author, "author_name")
 
 
-					-- Set action to be executed after each 'load_result' iteration step.
-					-- 'init' and 'execute' method of the current class are to be used.
+				-- Set action to be executed after each 'load_result' iteration step.
+				-- 'init' and 'execute' method of the current class are to be used.
 				base_selection.set_action (Current)
 
-					-- Query database.
-					-- The reference ":author_name" will be changed to the value of
-					-- the Eiffel object referred to by the key "author_name".
+				-- Query database.
+				-- The reference ":author_name" will be changed to the value of
+				-- the Eiffel object referred to by the key "author_name".
 				base_selection.query (Select_author)
-					-- Iterate through resulting data, and display them
+				-- Iterate through resulting data, and display them
 				base_selection.load_result
 
-					-- Delete "author_name" from the map table
+				-- Delete "author_name" from the map table
 				base_selection.unset_map_name ("author_name")
 
 				base_selection.terminate
@@ -185,13 +180,14 @@ feature {NONE}
 				io.readline
 			end
 		end
-
+	
 	execute is
-			-- This method is also  used by the class RDB_SELECTION, and is executed after each
-			-- iteration step of 'load_result', it provides some facilities to control, manage, and/or
-			-- display data resulting of a query.
-			-- In this example, it converts a tuple in an eiffel object of type 'book' and
-			-- display it using a method of its own class.
+
+		-- This method is also  used by the class RDB_SELECTION, and is executed after each
+		-- iteration step of 'load_result', it provides some facilities to control, manage, and/or
+		-- display data resulting of a query.
+		-- In this example, it converts a tuple in an eiffel object of type 'book' and
+		-- display it using a method of its own class.
 		do
 			base_selection.object_convert (book)
 			base_selection.cursor_to_object
@@ -208,10 +204,7 @@ feature {NONE}
 		"DB_BOOK"
 
 	Data_file_name: STRING is
-		once
-			create Result.make_from_string ("data.sql.")
-			Result.append (db_spec.database_handle_name.as_lower)
-		end
+		"data.sql";
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"
@@ -224,4 +217,7 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
+
 end -- class SELECTOR
+
+

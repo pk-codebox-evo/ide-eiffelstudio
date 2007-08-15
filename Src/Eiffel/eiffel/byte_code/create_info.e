@@ -88,28 +88,33 @@ feature -- Generic conformance
 			Result := False
 		end
 
-	generate_start (buffer: GENERATION_BUFFER) is
-			-- Generate new block if necessary.
+	generate_start (node: BYTE_NODE) is
+			-- Generate new block if necessary for
+			-- `node'.
 		require
-			buffer_not_void: buffer /= Void
+			node_exists: node /= Void
 		do
 			if is_generic then
-				buffer.generate_block_open
+				-- We need a new C block with new locals.
+				node.generate_block_open
 			end
 		end
 
-	generate_end (buffer: GENERATION_BUFFER) is
-			-- Close new block if necessary.
+	generate_end (node: BYTE_NODE) is
+			-- Close new block if necessary for `node'.
 		require
-			buffer_not_void: buffer /= Void
+			node_exists: node /= Void
 		do
 			if is_generic then
-				buffer.generate_block_close
+				node.generate_block_close
 			end
 		end
 
-	generate_gen_type_conversion is
-			-- Generate the conversion of a type array into an id.
+	generate_gen_type_conversion (node: BYTE_NODE) is
+			-- Generate the conversion of a type array into an id
+			-- for `node'.
+		require
+			node_exists: node /= Void
 		deferred
 		end
 

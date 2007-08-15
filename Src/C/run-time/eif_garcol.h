@@ -2,7 +2,7 @@
 	description: "Declarations for garbage collector routines."
 	date:		"$Date$"
 	revision:	"$Revision$"
-	copyright:	"Copyright (c) 1985-2007, Eiffel Software."
+	copyright:	"Copyright (c) 1985-2006, Eiffel Software."
 	license:	"GPL version 2 see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"Commercial license is available at http://www.eiffel.com/licensing"
 	copying: "[
@@ -84,7 +84,6 @@ RT_LNK struct stack oms_set;	/* Once manifest strings */
  */
 #define eif_is_nested_expanded(flags) (((flags) & (EO_EXP | EO_REF)) == (EO_EXP))
 #define eif_is_boxed_expanded(flags)  (((flags) & (EO_EXP | EO_REF)) == (EO_EXP | EO_REF))
-#define eif_is_expanded(flags)        (((flags) & (EO_EXP)) == (EO_EXP))
 
 /* Exported data-structure declarations */
 RT_LNK EIF_REFERENCE root_obj;	/* Address of `root' object */	

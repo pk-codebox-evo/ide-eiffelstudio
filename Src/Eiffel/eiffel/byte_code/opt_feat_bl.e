@@ -6,16 +6,13 @@ class OPT_FEAT_BL
 inherit
 
 	OPT_FEAT_B
-		rename
-			make as make_opt_feat
 		undefine
 			is_polymorphic, free_register, has_call,
 			allocates_memory,
 			generate_on, basic_register, generate_access,
 			register, analyze_on, set_register,
 			is_feature_call, generate_special_feature, set_parent,
-			generate_parameters_list, generate_access_on_type,
-			need_invariant, set_need_invariant
+			generate_parameters_list, generate_access_on_type
 		redefine
 			parent, is_feature_special, generate_end,
 			generate_metamorphose_end, analyze
@@ -27,8 +24,6 @@ inherit
 		redefine
 			fill_from, parent, check_dt_current, is_feature_special,
 			generate_end, generate_metamorphose_end, analyze
-		select
-			make_node
 		end
 
 feature
@@ -37,13 +32,12 @@ feature
 
 	fill_from (f: OPT_FEAT_B) is
 		do
-			multi_constraint_static := f.multi_constraint_static
-			type := f.type
+			type := f.type;
 			routine_id := f.routine_id
-			set_parameters (f.parameters)
-			array_desc := f.array_desc.enlarged
+			parameters := f.parameters;
+			array_desc := f.array_desc.enlarged;
 			is_item := f.is_item
-			access_area := f.access_area
+			access_area := f.access_area;
 			precursor_type := f.precursor_type
 			enlarge_parameters
 		end
@@ -164,7 +158,7 @@ feature -- Code generation
 			generate_end (gen_reg, class_type)
 		end
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

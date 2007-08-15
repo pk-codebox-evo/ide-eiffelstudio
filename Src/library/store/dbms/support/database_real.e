@@ -5,11 +5,15 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 
-class
+class 
 	DATABASE_REAL [G -> DATABASE create default_create end]
 
 inherit
+
 	DB_TYPE
+		redefine
+			eiffel_name
+		end
 
 	HANDLE_SPEC [G]
 
@@ -20,11 +24,19 @@ feature -- Status report
 		do
 			Result := db_spec.sql_name_real
 		end
+	
+	eiffel_name: STRING is
+			-- Eiffel type name for real
+		once
+			Result := "REAL"
+		ensure then
+			Result.is_equal ("REAL")
+		end
 
-	eiffel_ref: ANY is
+	eiffel_ref: REAL_REF is
 			-- Shared real reference
 		once
-			Result := {REAL_32} 0.0
+			create Result
 		end
 
 indexing

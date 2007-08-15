@@ -18,15 +18,15 @@ feature {EWB_SWITCHES_CMD} -- Help message
 	show_enabled: BOOLEAN
 		-- Should number of calls be shown?
 
-	help_message: STRING_32 is
+	help_message: STRING is
 		local
 			current_value: STRING
 		do
 			if show_enabled then
-				Result := ewb_names.disable
+				Result := "disable"
 				current_value := "[enabled]";
 			else
-				Result := ewb_names.enable
+				Result := "enable"
 				current_value := "[disabled]";
 			end;
 			Result.append (real_help_message);
@@ -63,7 +63,7 @@ feature {NONE} -- Execution
 
 feature -- Output strings
 
-	real_help_message: STRING_GENERAL is
+	real_help_message: STRING is
 			-- Used in help_message.
 		deferred
 		end

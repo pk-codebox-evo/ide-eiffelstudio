@@ -38,10 +38,6 @@ feature {NONE} -- Initlization
 			internal_content := a_content
 			internal_docking_manager := internal_content.docking_manager
 			extend (a_content)
-
-			-- Not breaking the invariant
-			create internal_shared_not_used
-			create internal_shared
 		ensure
 			set: internal_content = a_content
 		end
@@ -58,7 +54,7 @@ feature -- Command
 		do
 		end
 
-	set_title (a_title: STRING_GENERAL) is
+	set_title (a_title: STRING) is
 			-- Do nothing.
 		do
 		end
@@ -78,7 +74,7 @@ feature -- Query
 			 Result := a_content = internal_docking_manager.zones.place_holder_content
 		end
 
-	title: STRING_GENERAL is
+	title: STRING is
 			-- Title
 		local
 			l_shared: SD_SHARED

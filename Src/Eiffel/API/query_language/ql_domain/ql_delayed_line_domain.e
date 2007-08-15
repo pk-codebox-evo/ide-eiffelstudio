@@ -26,13 +26,11 @@ inherit
 			item_type
 		end
 
-create
-	make
-
 feature{NONE} -- Type anchor
 
 	item_type: QL_LINE;
 			-- Anchor type for items in current domain
+
 
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"
@@ -65,5 +63,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

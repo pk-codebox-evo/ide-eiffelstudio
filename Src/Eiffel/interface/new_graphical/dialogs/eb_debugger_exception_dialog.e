@@ -42,12 +42,13 @@ inherit
 			default_create, copy
 		end
 
+
 create
 	make, default_create --, make_with_window
 
 feature {NONE} -- Initialization
 
-	make (a_exception_tag, a_exception_message: STRING_GENERAL) is
+	make (a_exception_tag, a_exception_message: STRING_32) is
 			-- Create Current with Exception message
 		do
 			default_create
@@ -82,18 +83,8 @@ feature -- Show
 
 	show_modal_to_window (w: EV_WINDOW) is
 			-- Show modal to window
-		require
-			w_not_void: w /= Void
 		do
 			window.show_modal_to_window (w)
-		end
-
-	show_relative_to_window (w: EV_WINDOW) is
-			-- Show relative to window
-		require
-			w_not_void: w /= Void
-		do
-			window.show_relative_to_window (w)
 		end
 
 feature -- Details
@@ -101,33 +92,24 @@ feature -- Details
 	set_title_and_label (t,l: STRING_GENERAL) is
 			-- Set the title and the label of the window
 		require
-			title_not_void: t /= Void
-			label_not_void: l /= Void
+			t /= Void
+			l /= Void
 		do
 			window.set_title (t)
 			label.set_text (l)
 		end
 
-	set_exception_tag (t: STRING_GENERAL) is
+	set_exception_tag (t: STRING_32) is
 			-- Set tag and refresh display
 		do
-			if t /= Void then
-				tag := t.as_string_32
-			else
-				tag := Void
-			end
+			tag := t
 			display_exception_tag_and_message
 		end
 
-	set_exception_message (t: STRING_GENERAL) is
+	set_exception_message (t: STRING_32) is
 			-- Set message and refresh display
 		do
-			if t /= Void then
-				message := t.as_string_32
-			else
-				message := Void
-			end
-
+			message := t
 			display_exception_tag_and_message
 		end
 
@@ -152,25 +134,18 @@ feature -- Details
 			message_text.set_text (s)
 			message_text.disable_edit
 			message_text.set_background_color ((create {EV_STOCK_COLORS}).white)
-			if s.count > 0 then
-				save_button.enable_sensitive
-			else
-				save_button.disable_sensitive
-			end
 		end
 
-	set_details (d: STRING_GENERAL) is
+	set_details (d: STRING_32) is
 			-- Add additional details
-		require
-			d_not_void: d /= Void
 		local
-			s32: STRING_32
+			s: STRING_32
 		do
-			s32 := d.twin.as_string_32
-			if s32.occurrences ('%R') > 0 then
-				s32.prune_all ('%R')
+			s := d.twin
+			if s.occurrences ('%R') > 0 then
+				s.prune_all ('%R')
 			end
-			details_text.set_text (s32)
+			details_text.set_text (s)
 			details_box.show
 		end
 
@@ -185,8 +160,8 @@ feature {NONE} -- Initialization
 		do
 			window.set_size (400, 400)
 			set_title_and_label (
-					interface_names.l_debugger_exception_message,
-					interface_names.l_exception_message_from_debugger
+					"Debugger :: Exception message",
+					"Exception message from debugger"
 					)
 
 			details_box.hide
@@ -205,12 +180,28 @@ feature {NONE} -- Implementation
 	save_exception_message is
 			-- Save exception trace into a file
 		local
-			l_save_tool: EB_SAVE_STRING_TOOL
+			sfd: EB_FILE_SAVE_DIALOG
+			text_file: PLAIN_TEXT_FILE
+			retried: BOOLEAN
+			l_pref: STRING_PREFERENCE
 		do
-			create l_save_tool.make (window)
-			l_save_tool.set_text (message_text.text)
-			l_save_tool.set_title (Interface_names.e_Save_exception_into)
-			l_save_tool.save
+			if not retried then
+				l_pref := preferences.dialog_data.last_saved_debugger_exception_directory_preference
+				if l_pref.value = Void or else l_pref.value.is_empty then
+					l_pref.set_value (eiffel_layout.eiffel_projects_directory)
+				end
+				create sfd.make_with_preference (l_pref)
+				set_dialog_filters_and_add_all (sfd, <<text_files_filter>>)
+				sfd.show_modal_to_window (window)
+				if not sfd.file_name.is_empty then
+					create text_file.make_open_write (sfd.file_name)
+					text_file.put_string (message_text.text)
+					text_file.close
+				end
+			end
+		rescue
+			retried := True
+			retry
 		end
 
 	close_dialog is

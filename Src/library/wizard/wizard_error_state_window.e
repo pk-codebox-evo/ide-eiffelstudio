@@ -15,13 +15,13 @@ inherit
 			build,
 			proceed_with_current_info
 		end
-
+			
 feature -- Initialization
 
 	build is
 		do
 			Precursor {WIZARD_FINAL_STATE_WINDOW}
-			first_window.set_final_state (b_abort)
+			first_window.set_final_state ("Abort")
 		end
 
 feature -- basic Operations

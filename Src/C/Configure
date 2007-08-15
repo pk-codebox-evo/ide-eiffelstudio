@@ -203,11 +203,6 @@ byteorder=''
 cc=''
 gccversion=''
 ccflags=''
-rt_version=''
-rt_include=''
-rt_lib=''
-rt_templates=''
-x2c=''
 cppflags=''
 ldflags=''
 lkflags=''
@@ -6635,22 +6630,6 @@ sed='$sed'
 spitshell='$spitshell'
 
 #Compiler/Preprocessor
-if [ -n "\$ISE_VERSION" ]; then
-    rt_version=\$ISE_VERSION
-else
-	rt_version='$rt_version'	
-fi
-if [ -n "\$ISE_EIFFEL" ]; then
-    rt_include=\$ISE_EIFFEL/studio/spec/\$ISE_PLATFORM/include
-    rt_lib=\$ISE_EIFFEL/studio/spec/\$ISE_PLATFORM/lib
-    rt_templates=\$ISE_EIFFEL/studio/config/\$ISE_PLATFORM/templates
-    x2c=\$ISE_EIFFEL/studio/spec/\$ISE_PLATFORM/bin/x2c
-else
-    rt_include=\$ISE_PREFIX/include/eiffel\$rt_version
-    rt_lib=\$ISE_PREFIX/\$ISE_LIB_NAME/eiffel\$rt_version
-    rt_templates=\$ISE_PREFIX/share/eiffel\$rt_version/ec/config/\$ISE_PLATFORM/templates
-    x2c=\$ISE_PREFIX/\$ISE_LIB_NAME/eiffel\$rt_version/ec/x2c
-fi
 add_log='$add_log'
 binary_format='$binary_format'
 if [ -n "\$CC" ]; then
@@ -6675,13 +6654,11 @@ else
 fi
 cpp_stuff='$cpp_stuff'
 defvoidused='$defvoidused'
-#Check value for next 6 
+#Check value for next 4
 eif_sgi='$eif_sgi'
 eif_solaris='$eif_solaris'
 eif_windows='$eif_windows'
 eif_64_bits=''
-eif_os=''
-eif_arch=''
 Mcc='$Mcc'
 d_tls='$d_tls'
 #Check value for next 2
@@ -6710,7 +6687,7 @@ if [ -n "\$MAKE" ]; then
 	make='\$MAKE'
 else
 	make='$make'
-fi
+end
 mkdep='$mkdep'
 mkdir='$mkdir'
 mtldflags="\$ldflags"

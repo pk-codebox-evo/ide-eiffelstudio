@@ -11,21 +11,10 @@ class
 
 inherit
 	EB_OUTPUT_TOOL
-		export
-			{EB_EXTERNAL_OUTPUT_MANAGER}
-				develop_window
-		undefine
-			Ev_application
 		redefine
-			make_with_tool,
-			clear, internal_recycle, scroll_to_end,set_focus,
-			quick_refresh_editor,quick_refresh_margin, is_general,
-			build_docking_content,
-			attach_to_docking_manager,
-			pixmap,
-			title,
-			title_for_pre,
-			show
+			make,  drop_breakable, drop_class, drop_feature, drop_cluster,
+			clear, recycle, scroll_to_end,set_focus,
+			quick_refresh_editor,quick_refresh_margin, is_general
 		end
 
 	EB_SHARED_PIXMAPS
@@ -34,61 +23,28 @@ inherit
 
 	SHARED_PLATFORM_CONSTANTS
 
-	EB_TEXT_OUTPUT_TOOL
+	EB_SHARED_PREFERENCES
+		export
+			{NONE} all
+		end
 
 	EB_CONSTANTS
+
+	EB_TEXT_OUTPUT_TOOL
 
 create
 	make
 
 feature{NONE} -- Initialization
 
-	make_with_tool is
+	make (a_tool: EB_DEVELOPMENT_WINDOW; m: EB_CONTEXT_TOOL) is
 			-- Create a new external output tool.
 		do
-			initialization (develop_window)
+			owner := a_tool
+			initialization (a_tool)
 			widget := main_frame
 			external_output_manager.extend (Current)
-		end
-
-	build_docking_content (a_docking_manager: SD_DOCKING_MANAGER) is
-			-- Build docking content
-		local
-			l_constants: EB_CONSTANTS
-		do
-			Precursor {EB_OUTPUT_TOOL} (a_docking_manager)
-			content.drop_actions.extend (agent drop_class)
-			content.drop_actions.extend (agent drop_feature)
-			create l_constants
-			content.set_long_title (title)
-			content.set_short_title (title)
-		end
-
-	pixmap: EV_PIXMAP is
-			-- Pixmap
-		local
-			l_constants: EB_CONSTANTS
-		do
-			create l_constants
-			Result := l_constants.pixmaps.icon_pixmaps.tool_external_output_icon
-		end
-
-	title: STRING_GENERAL is
-			-- Pixmap
-		local
-			l_constants: EB_CONSTANTS
-		do
-			create l_constants
-			Result := l_constants.interface_names.l_tab_external_output
-		end
-
-	title_for_pre: STRING is
-			-- Title
-		local
-			l_constants: EB_CONSTANTS
-		do
-			create l_constants
-			Result := l_constants.interface_names.to_external_ouput_tool
+			stone_manager := m
 		end
 
 	initialization (a_tool: EB_DEVELOPMENT_WINDOW) is
@@ -103,26 +59,23 @@ feature{NONE} -- Initialization
 			l_ev_horizontal_box_7: EV_HORIZONTAL_BOX
 			l_ev_vertical_box_1: EV_VERTICAL_BOX
 			l_ev_vertical_box_2: EV_VERTICAL_BOX
-			l_locale_text: EV_LABEL
-			l_cell: EV_CELL
 
 			l_ev_cmd_lbl: EV_LABEL
 			l_ev_output_lbl: EV_LABEL
 			l_ev_input_lbl: EV_LABEL
 			l_ev_empty_lbl: EV_LABEL
-			cmd_toolbar: SD_TOOL_BAR
-			output_toolbar: SD_TOOL_BAR
-			clear_output_toolbar: SD_TOOL_BAR
-			input_toolbar: SD_TOOL_BAR
-			tbs: SD_TOOL_BAR_SEPARATOR
-			l_del_tool_bar: SD_TOOL_BAR
-			l_provider: EB_EXTERNAL_CMD_COMPLETION_PROVIDER
+			cmd_toolbar: EV_TOOL_BAR
+			output_toolbar: EV_TOOL_BAR
+			clear_output_toolbar: EV_TOOL_BAR
+			input_toolbar: EV_TOOL_BAR
+			tbs: EV_TOOL_BAR_SEPARATOR
+			l_del_tool_bar: EV_TOOL_BAR
 		do
-			create del_cmd_btn.make
-			create tbs.make
-			create cmd_toolbar.make
-			create output_toolbar.make
-			create input_toolbar.make
+			create del_cmd_btn
+			create tbs.default_create
+			create cmd_toolbar
+			create output_toolbar
+			create input_toolbar
 			create main_frame
 			create l_ev_empty_lbl
 			create l_ev_vertical_box_2
@@ -137,36 +90,25 @@ feature{NONE} -- Initialization
 			create l_ev_horizontal_box_5
 			create l_ev_horizontal_box_6
 			create l_ev_horizontal_box_7
-			create terminate_btn.make
-			create run_btn.make
+			create terminate_btn
+			create run_btn
 			create cmd_lst
-			create l_provider.make (Void)
-			l_provider.set_code_completable (cmd_lst)
-			cmd_lst.set_completion_possibilities_provider (l_provider)
-			create edit_cmd_detail_btn.make
-			create hidden_btn.make
+			create edit_cmd_detail_btn
+			create hidden_btn
 			create state_label.make_with_text (l_no_command_is_running)
-			create send_input_btn.make
+			create send_input_btn
 			create input_field
-			create save_output_btn.make
-			create clear_output_btn.make
-			create clear_output_toolbar.make
-			create toolbar.make
-			create l_del_tool_bar.make
-
-			create l_locale_text.make_with_text (interface_names.l_locale)
+			create save_output_btn
+			create clear_output_btn
+			create clear_output_toolbar
+			create toolbar
+			create l_del_tool_bar
 
 			l_ev_empty_lbl.set_minimum_height (State_bar_height)
 			l_ev_empty_lbl.set_minimum_width (State_bar_height * 2)
 			l_ev_horizontal_box_7.extend (l_ev_empty_lbl)
 			l_ev_horizontal_box_7.disable_item_expand (l_ev_empty_lbl)
 			output_toolbar.extend (save_output_btn)
-
-			save_output_btn.set_tooltip (f_save_output_button)
-			save_output_btn.set_pixmap (pixmaps.icon_pixmaps.general_save_icon)
-			save_output_btn.set_pixel_buffer (pixmaps.icon_pixmaps.general_save_icon_buffer)
-			save_output_btn.select_actions.extend (agent on_save_output_to_file)
-
 			clear_output_toolbar.extend (clear_output_btn)
 			l_ev_horizontal_box_7.extend (output_toolbar)
 			l_ev_horizontal_box_7.disable_item_expand (output_toolbar)
@@ -186,19 +128,10 @@ feature{NONE} -- Initialization
 			l_ev_horizontal_box_1.extend (l_ev_horizontal_box_2)
 			l_ev_horizontal_box_2.extend (l_ev_cmd_lbl)
 			l_ev_horizontal_box_2.extend (cmd_lst)
-			create l_cell
-			l_cell.set_minimum_width (5)
-			l_ev_horizontal_box_2.extend (l_cell)
-			l_ev_horizontal_box_2.disable_item_expand (l_cell)
-			l_ev_horizontal_box_2.extend (l_locale_text)
-			l_ev_horizontal_box_2.disable_item_expand (l_locale_text)
-			l_ev_horizontal_box_2.extend (locale_combo)
-			locale_combo.set_minimum_width (200)
-			l_ev_horizontal_box_2.disable_item_expand (locale_combo)
 			l_ev_horizontal_box_2.set_padding_width (5)
 			l_ev_horizontal_box_5.extend (cmd_toolbar)
-			l_ev_horizontal_box_5.extend (toolbar)
-			l_ev_horizontal_box_5.disable_item_expand (toolbar)
+			l_ev_horizontal_box_5.extend (toolbar.widget)
+			l_ev_horizontal_box_5.disable_item_expand (toolbar.widget)
 			l_ev_horizontal_box_5.extend (l_del_tool_bar)
 			l_ev_horizontal_box_5.disable_item_expand (cmd_toolbar)
 			cmd_toolbar.extend (run_btn)
@@ -206,8 +139,8 @@ feature{NONE} -- Initialization
 			cmd_toolbar.extend (tbs)
 			cmd_toolbar.extend (edit_cmd_detail_btn)
 
-			edit_external_commands_cmd_btn := a_tool.commands.edit_external_commands_cmd.new_sd_toolbar_item (False)
-			toolbar.extend (edit_external_commands_cmd_btn)
+			toolbar.extend (a_tool.edit_external_commands_cmd)
+			toolbar.update_toolbar
 
 			l_del_tool_bar.extend (del_cmd_btn)
 			l_ev_horizontal_box_2.extend (l_ev_horizontal_box_5)
@@ -229,12 +162,10 @@ feature{NONE} -- Initialization
 			l_ev_vertical_box_1.set_border_width (4)
 
 			del_cmd_btn.set_pixmap (pixmaps.icon_pixmaps.general_delete_icon)
-			del_cmd_btn.set_pixel_buffer (pixmaps.icon_pixmaps.general_delete_icon_buffer)
 			del_cmd_btn.set_tooltip (f_delete_command)
 			del_cmd_btn.select_actions.extend (agent on_delete_command)
 
 			clear_output_btn.set_pixmap (icon_pixmaps.general_reset_icon)
-			clear_output_btn.set_pixel_buffer (icon_pixmaps.general_reset_icon_buffer)
 			clear_output_btn.set_tooltip (f_clear_output)
 			clear_output_btn.select_actions.extend (agent on_clear_output_window)
 
@@ -244,7 +175,6 @@ feature{NONE} -- Initialization
 			output_text.disable_edit
 
 			terminate_btn.set_pixmap (pixmaps.icon_pixmaps.debug_stop_icon)
-			terminate_btn.set_pixel_buffer (pixmaps.icon_pixmaps.debug_stop_icon_buffer)
 			output_text.drop_actions.extend (agent drop_class)
 			output_text.drop_actions.extend (agent drop_feature)
 			output_text.drop_actions.extend (agent drop_cluster)
@@ -256,34 +186,29 @@ feature{NONE} -- Initialization
 			edit_cmd_detail_btn.set_text ("")
 			edit_cmd_detail_btn.set_tooltip (f_edit_cmd_detail_button)
 			edit_cmd_detail_btn.set_pixmap (pixmaps.icon_pixmaps.general_save_icon)
-			edit_cmd_detail_btn.set_pixel_buffer (pixmaps.icon_pixmaps.general_save_icon_buffer)
 
 			state_label.set_minimum_height (State_bar_height)
 			state_label.align_text_right
+
 			state_label.drop_actions.extend (agent drop_class)
 			state_label.drop_actions.extend (agent drop_feature)
 			state_label.drop_actions.extend (agent drop_cluster)
 			state_label.drop_actions.extend (agent drop_breakable)
 
 			run_btn.set_pixmap (pixmaps.icon_pixmaps.debug_run_icon)
-			run_btn.set_pixel_buffer (pixmaps.icon_pixmaps.debug_run_icon_buffer)
 			run_btn.set_tooltip (f_start_command_button)
 			run_btn.select_actions.extend (agent on_run_process)
 
 			cmd_lst.key_press_actions.extend (agent on_external_cmd_list_key_down (?))
 			cmd_lst.change_actions.extend (agent on_cmd_lst_text_change)
-			cmd_lst.focus_in_actions.extend (agent on_focus_in_in_cmd_lst)
 			cmd_lst.set_text ("")
-			check not_void: cmd_lst.choices /= Void end
-			cmd_lst.choices.focus_in_actions.extend (agent on_focus_in_completion_window)
 
---			cmd_lst.drop_actions.extend (agent drop_class)
---			cmd_lst.drop_actions.extend (agent drop_feature)
+			cmd_lst.drop_actions.extend (agent drop_class)
+			cmd_lst.drop_actions.extend (agent drop_feature)
 			cmd_lst.drop_actions.extend (agent drop_cluster)
 			cmd_lst.drop_actions.extend (agent drop_breakable)
 
 			edit_cmd_detail_btn.set_pixmap (pixmaps.icon_pixmaps.general_add_icon)
-			edit_cmd_detail_btn.set_pixel_buffer (pixmaps.icon_pixmaps.general_add_icon_buffer)
 			edit_cmd_detail_btn.select_actions.extend (agent on_edit_command_detail)
 
 			input_field.key_press_actions.extend (agent on_key_pressed_in_input_field (?))
@@ -294,9 +219,13 @@ feature{NONE} -- Initialization
 			input_field.drop_actions.extend (agent drop_breakable)
 
 			send_input_btn.set_pixmap (icon_pixmaps.general_send_enter_icon)
-			send_input_btn.set_pixel_buffer (icon_pixmaps.general_send_enter_icon_buffer)
 			send_input_btn.set_tooltip (f_send_input_button)
 			send_input_btn.select_actions.extend (agent on_send_input_btn_pressed)
+
+			output_toolbar.disable_vertical_button_style
+			save_output_btn.set_tooltip (f_save_output_button)
+			save_output_btn.set_pixmap (pixmaps.icon_pixmaps.general_save_icon)
+			save_output_btn.select_actions.extend (agent on_save_output_to_file)
 
 			l_ev_cmd_lbl.set_text (l_command)
 			l_ev_output_lbl.set_text (l_output)
@@ -320,24 +249,6 @@ feature{NONE} -- Initialization
 			else
 				synchronize_on_process_starts ("")
 			end
-
-			output_toolbar.compute_minimum_size
-			clear_output_toolbar.compute_minimum_size
-			input_toolbar.compute_minimum_size
-			cmd_toolbar.compute_minimum_size
-			toolbar.compute_minimum_size
-			l_del_tool_bar.compute_minimum_size
-			cmd_lst.drop_actions.extend (agent on_stone_dropped_at_cmd_list)
-		end
-
-feature -- Docking
-
-	attach_to_docking_manager (a_docking_manager: SD_DOCKING_MANAGER) is
-			-- Attach to docking manager
-		do
-			build_docking_content (a_docking_manager)
-			check not_already_has: not a_docking_manager.has_content (content) end
-			a_docking_manager.contents.extend (content)
 		end
 
 feature -- Basic operation
@@ -352,10 +263,10 @@ feature -- Basic operation
 			hidden_btn.disable_sensitive
 			cmd_lst.disable_sensitive
 			del_cmd_btn.disable_sensitive
-			develop_window.commands.Edit_external_commands_cmd.disable_sensitive
+			owner.Edit_external_commands_cmd.disable_sensitive
 			save_output_btn.disable_sensitive
 			if external_output_manager.target_development_window /= Void then
-				if develop_window = external_output_manager.target_development_window then
+				if owner = external_output_manager.target_development_window then
 					send_input_btn.enable_sensitive
 					terminate_btn.enable_sensitive
 					input_field.enable_sensitive
@@ -384,12 +295,12 @@ feature -- Basic operation
 			edit_cmd_detail_btn.enable_sensitive
 			hidden_btn.enable_sensitive
 			cmd_lst.enable_sensitive
-			develop_window.commands.Edit_external_commands_cmd.enable_sensitive
+			owner.Edit_external_commands_cmd.enable_sensitive
 			save_output_btn.enable_sensitive
 			input_field.disable_sensitive
 			send_input_btn.disable_sensitive
 			terminate_btn.disable_sensitive
-			if develop_window = external_output_manager.target_development_window then
+			if owner_development_window = external_output_manager.target_development_window then
 				if cmd_lst.is_displayed then
 					cmd_lst.set_focus
 				end
@@ -412,19 +323,66 @@ feature -- Basic operation
 			cmd_lst.set_text (name)
 		end
 
+	recycle is
+			-- To be called before destroying this objects
+		do
+			recycle_widgets
+			external_output_manager.prune (Current)
+			toolbar.recycle
+			toolbar := Void
+			widget.destroy
+			widget := Void
+			text_area := Void
+			owner := Void
+			stone_manager := Void
+		end
+
+	recycle_widgets is
+			--
+		do
+			cmd_lst.destroy
+			terminate_btn.destroy
+			run_btn.destroy
+			state_label.destroy
+			main_frame.destroy
+			edit_cmd_detail_btn.destroy
+			hidden_btn.destroy
+			input_field.destroy
+			send_input_btn.destroy
+			save_output_btn.destroy
+			clear_output_btn.destroy
+			del_cmd_btn.destroy
+
+			terminate_btn := Void
+			run_btn := Void
+			state_label := Void
+			main_frame := Void
+			cmd_lst := Void
+			edit_cmd_detail_btn := Void
+			hidden_btn := Void
+			input_field := Void
+			send_input_btn := Void
+			save_output_btn := Void
+			clear_output_btn := Void
+			del_cmd_btn := Void
+		end
+
 	scroll_to_end is
 			-- Scroll the console to the bottom.
 		do
-			output_text.scroll_to_line (output_text.line_count)
+			output_text.scroll_to_end
 		end
 
 	set_focus is
-			-- Give the focus to the editor.		
-		local
-			l_env: EV_ENVIRONMENT
+			-- Give the focus to the editor.
 		do
-			create l_env
-			l_env.application.do_once_on_idle (agent set_focus_on_idle)
+			if cmd_lst.is_displayed and then cmd_lst.is_sensitive then
+				cmd_lst.set_focus
+			else
+				if input_field.is_displayed and then input_field.is_sensitive then
+					input_field.set_focus
+				end
+			end
 		end
 
 	quick_refresh_editor is
@@ -452,7 +410,7 @@ feature -- Basic operation
 		do
 			if cmd_lst.is_sensitive then
 				str := cmd_lst.text
-				ms := develop_window.commands.Edit_external_commands_cmd.commands
+				ms := owner.Edit_external_commands_cmd.commands
 				cmd_lst.wipe_out
 				from
 					i := ms.lower
@@ -484,24 +442,39 @@ feature -- Basic operation
 			end
 		end
 
---	process_block_text (text_block: EB_PROCESS_IO_DATA_BLOCK) is
---			-- Print `text_block' on `output_text'.
---		local
---			str: STRING
---		do
---			str ?= text_block.data
---			if str /= Void then
---				output_text.append_text (source_encoding.convert_to (destination_encoding, str))
---			end
---		end
-
-	show is
-			-- Show tool.
+	process_block_text (text_block: EB_PROCESS_IO_DATA_BLOCK) is
+			-- Print `text_block' on `output_text'.
+		local
+			str: STRING
 		do
-			Precursor {EB_OUTPUT_TOOL}
-			if widget /= Void and then widget.is_displayed and then widget.is_sensitive then
-				set_focus
+			str ?= text_block.data
+			if str /= Void then
+				output_text.append_text (str)
 			end
+		end
+
+	drop_breakable (st: BREAKABLE_STONE) is
+			-- Inform `Current's manager that a stone concerning breakpoints has been dropped.
+		do
+			Precursor (st)
+		end
+
+	drop_class (st: CLASSI_STONE) is
+			-- Drop `st' in the context tool and pop the `class info' tab.
+		do
+			Precursor (st)
+		end
+
+	drop_feature (st: FEATURE_STONE) is
+			-- Drop `st' in the context tool and pop the `feature info' tab.
+		do
+			Precursor (st)
+		end
+
+	drop_cluster (st: CLUSTER_STONE) is
+			-- Drop `st' in the context tool.
+		do
+			Precursor (st)
 		end
 
 feature{NONE} -- Actions
@@ -535,18 +508,15 @@ feature{NONE} -- Actions
 				if eb /= Void then
 					edit_cmd_detail_btn.set_tooltip (f_edit_cmd_detail_button)
 					edit_cmd_detail_btn.set_pixmap (pixmaps.icon_pixmaps.view_editor_icon)
-					edit_cmd_detail_btn.set_pixel_buffer (pixmaps.icon_pixmaps.view_editor_icon_buffer)
 				else
 					edit_cmd_detail_btn.set_tooltip (f_new_cmd_detail_button)
 					edit_cmd_detail_btn.set_pixmap (icon_pixmaps.general_add_icon)
-					edit_cmd_detail_btn.set_pixel_buffer (icon_pixmaps.general_add_icon_buffer)
 				end
 			else
 				run_btn.disable_sensitive
 				del_cmd_btn.disable_sensitive
 				edit_cmd_detail_btn.set_tooltip (f_new_cmd_detail_button)
 				edit_cmd_detail_btn.set_pixmap (icon_pixmaps.general_add_icon)
-				edit_cmd_detail_btn.set_pixel_buffer (icon_pixmaps.general_add_icon_buffer)
 			end
 		end
 
@@ -556,35 +526,31 @@ feature{NONE} -- Actions
 		local
 			str: STRING
 			ec: EB_EXTERNAL_COMMAND
-			warn_dlg: EB_WARNING_DIALOG
+			warn_dlg: EV_WARNING_DIALOG
 		do
 			ec := corresponding_external_command
 			if ec /= Void then
 					-- If external command indicated by text in command list box
 					-- exists, pop up an edit dialog and let user edit this command.
-				ec.edit_properties (develop_window.window)
-				ec.setup_managed_shortcut (develop_window.commands.edit_external_commands_cmd.accelerators)
-				shortcut_manager.update_external_commands
+				ec.edit_properties (owner.window)
 			else
 					-- If user has just input a new external command,
 					-- first check whether we have room for this command.
-				if develop_window.commands.edit_external_commands_cmd.menus.count = 10 then
+				if owner.edit_external_commands_cmd.menus.count = 10 then
 					create warn_dlg.make_with_text (interface_names.e_external_command_list_full)
-					warn_dlg.show_modal_to_window (develop_window.window)
+					warn_dlg.show_modal_to_window (owner.window)
 				else
 						-- If we have room for this command, pop up a new command
 						-- dialog and let user add this new command.
 					create str.make_from_string (cmd_lst.text)
 					str.left_adjust
 					str.right_adjust
-					create ec.make_from_new_command_line (develop_window.window, str)
-					ec.setup_managed_shortcut (develop_window.commands.edit_external_commands_cmd.accelerators)
-					shortcut_manager.update_external_commands
+					create ec.make_from_new_command_line (owner.window, str)
 				end
 			end
 			on_cmd_lst_text_change
-			develop_window.commands.edit_external_commands_cmd.refresh_list_from_outside
-			develop_window.commands.edit_external_commands_cmd.update_menus_from_outside
+			owner.edit_external_commands_cmd.refresh_list_from_outside
+			owner.edit_external_commands_cmd.update_menus_from_outside
 		end
 
 	on_run_process is
@@ -632,38 +598,29 @@ feature{NONE} -- Actions
 	on_send_input_btn_pressed is
 			-- Agent called when user pressed `send_input_btn'
 		local
+			str: STRING
 			found: BOOLEAN
-			l_text: STRING_32
-			l_input_text: STRING
-			l_string: STRING_GENERAL
 		do
-			l_text := input_field.text.twin
-			l_text.append ("%N")
-			if source_encoding /= Void then
-				l_string := utf16_to_console_encoding (source_encoding, l_text)
-			end
-			if l_string = Void then
-					-- Conversion fails.
-				l_input_text := l_text.as_string_8
+			if input_field.text /= Void then
+				create str.make_from_string (input_field.text)
 			else
-				l_input_text := l_string.as_string_8
+				str :=""
 			end
-			on_input_to_process (l_input_text)
-
-			if not l_text.is_empty then
+			on_input_to_process (str + "%N")
+			if not str.is_empty then
 				from
 					input_field.start
 					found := False
 				until
 					input_field.after or found
 				loop
-					if l_text.is_equal (input_field.item.text) then
+					if str.is_equal (input_field.item.text) then
 						found := True
 					end
 					input_field.forth
 				end
 				if not found then
-					input_field.put_front (create {EV_LIST_ITEM}.make_with_text (l_text))
+					input_field.put_front (create {EV_LIST_ITEM}.make_with_text (str))
 					if input_field.count > 10 then
 						input_field.go_i_th (input_field.count)
 						input_field.remove
@@ -681,41 +638,15 @@ feature{NONE} -- Actions
 			end
 		end
 
-	on_focus_in_in_cmd_lst is
-			-- Agent called when focus goes to `input_field'
-		local
-			l_env: EV_ENVIRONMENT
-		do
-			create l_env
-			l_env.application.do_once_on_idle (agent on_idle_action_for_cmd_lst)
-		end
-
-	on_idle_action_for_cmd_lst is
-			-- Handle focus issue of `cmd_lst' in idle action.
-		do
-			if last_focus_at_completion_window then
-				last_focus_at_completion_window := False
-				if cmd_lst /= Void and then not cmd_lst.is_destroyed then
-					cmd_lst.set_caret_position (cmd_lst.text.count + 1)
-				end
-			end
-		end
-
-	on_focus_in_completion_window is
-			-- Agent called when focus goes to completion window.
-		do
-			last_focus_at_completion_window := True
-		end
-
 	on_save_output_to_file is
 			-- Called when user press Save output button.
 		local
 			save_tool: EB_SAVE_STRING_TOOL
 		do
 			if process_manager.is_external_command_running then
-				show_warning_dialog (Warning_messages.w_cannot_save_when_external_running, develop_window.window)
+				show_warning_dialog (Warning_messages.w_cannot_save_when_external_running, owner.window)
 			else
-				create save_tool.make_and_save (output_text.text, develop_window.window)
+				create save_tool.make_and_save (output_text.text, owner.window)
 			end
 		end
 
@@ -732,9 +663,9 @@ feature{NONE} -- Actions
 		do
 			comm := corresponding_external_command
 			if comm /= Void then
-				develop_window.commands.edit_external_commands_cmd.commands.put (Void, comm.index)
-				develop_window.commands.edit_external_commands_cmd.refresh_list_from_outside
-				develop_window.commands.edit_external_commands_cmd.update_menus_from_outside
+				owner.edit_external_commands_cmd.commands.put (Void, comm.index)
+				owner.edit_external_commands_cmd.refresh_list_from_outside
+				owner.edit_external_commands_cmd.update_menus_from_outside
 				cmd_lst.set_text ("")
 				external_output_manager.synchronize_command_list (Void)
 			else
@@ -742,43 +673,13 @@ feature{NONE} -- Actions
 			end
 		end
 
-	on_stone_dropped_at_cmd_list (a_pebble: ANY) is
-			-- Action to be performed when `a_pebble' is dropped at `cmd_lst'
-		local
-			l_classi_stone: CLASSI_STONE
-			l_feature_stone: FEATURE_STONE
-			l_group_stone: CLUSTER_STONE
-			l_done: BOOLEAN
-			l_new_text: STRING
-		do
-			l_feature_stone ?= a_pebble
-			if l_feature_stone /= Void then
-				l_new_text := "{" + l_feature_stone.class_name + "}." + l_feature_stone.feature_name
-				l_done := True
-			end
-			if not l_done then
-				l_classi_stone ?= a_pebble
-				if l_classi_stone /= Void then
-					l_new_text := "{" + l_classi_stone.class_name + "}"
-					l_done := True
-				end
-			end
-			if not l_done then
-				l_group_stone ?= a_pebble
-				if l_group_stone /= Void then
-					l_new_text := l_group_stone.group.location.evaluated_path
-				end
-			end
-			if l_new_text /= Void then
-				if cmd_lst.has_selection then
-					cmd_lst.delete_selection
-					cmd_lst.remove_selection
-				end
-				cmd_lst.insert_text (l_new_text)
-			end
-		end
-
 feature -- Status reporting
+
+	owner_development_window: EB_DEVELOPMENT_WINDOW is
+			-- Development window which `Current' is belonged to
+		do
+			Result := owner
+		end
 
 	corresponding_external_command: EB_EXTERNAL_COMMAND is
 			-- If external command indicated by text in command list box
@@ -798,9 +699,9 @@ feature -- Status reporting
 					i := 0
 					done := False
 				until
-					i >= develop_window.commands.edit_external_commands_cmd.commands.count or done
+					i >= owner.edit_external_commands_cmd.commands.count or done
 				loop
-					e_cmd ?= develop_window.commands.edit_external_commands_cmd.commands.item (i)
+					e_cmd ?= owner.edit_external_commands_cmd.commands.item (i)
 					if e_cmd /= Void then
 						if e_cmd.external_command.is_equal (str) then
 							done := True
@@ -820,7 +721,7 @@ feature -- Status reporting
 
 feature -- State setting
 
-	display_state (s: STRING_GENERAL; warning: BOOLEAN) is
+	display_state (s: STRING; warning: BOOLEAN) is
 			-- Display state `s' in state bar of this output tool
 			-- If this is a `warning' state, display in red color,
 			-- otherwise in black color.
@@ -835,67 +736,27 @@ feature -- State setting
 
 feature{NONE}
 
-	show_warning_dialog (msg: STRING_GENERAL; a_window: EV_WINDOW) is
+	show_warning_dialog (msg: STRING; a_window: EV_WINDOW) is
 			-- Show a warning dialog containing message `msg' in `a_window'.
 		require
 			msg_not_void: msg /= Void
 			msg_not_empty: not msg.is_empty
 			a_window_not_void: a_window /= Void
 		local
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 		do
 			create wd.make_with_text (msg)
 			wd.show_modal_to_window (a_window)
 		end
 
-feature {NONE} -- Recycle
+feature{NONE} -- Implementation
 
-	internal_recycle is
-			-- To be called before destroying this objects
-		do
-			recycle_widgets
-			external_output_manager.prune (Current)
-			toolbar.destroy
-			toolbar := Void
-			widget.destroy
-			widget := Void
-			text_area := Void
-			develop_window := Void
-		end
+	toolbar: EB_TOOLBAR
 
-	recycle_widgets is
-			-- Recycle widgets.
-		do
-			cmd_lst.destroy
-			state_label.destroy
-			main_frame.destroy
-			input_field.destroy
-
-			terminate_btn := Void
-			run_btn := Void
-			state_label := Void
-			main_frame := Void
-			cmd_lst := Void
-			edit_cmd_detail_btn := Void
-			hidden_btn := Void
-			input_field := Void
-			send_input_btn := Void
-			save_output_btn := Void
-			clear_output_btn := Void
-			del_cmd_btn := Void
-			edit_external_commands_cmd_btn.recycle
-			edit_external_commands_cmd_btn := Void
-		end
-
-feature {NONE} -- Implementation
-
-	toolbar: SD_TOOL_BAR
-			-- Tool bar.
-
-	terminate_btn: SD_TOOL_BAR_BUTTON
+	terminate_btn: EV_TOOL_BAR_BUTTON
 			-- Button to terminate running process
 
-	run_btn: SD_TOOL_BAR_BUTTON
+	run_btn: EV_TOOL_BAR_BUTTON
 			-- Button to launch process
 
 	state_label: EV_LABEL
@@ -903,66 +764,29 @@ feature {NONE} -- Implementation
 
 	main_frame: EV_VERTICAL_BOX
 
-	cmd_lst: EB_EXTERNAL_CMD_COMBO_BOX
+	cmd_lst: EV_COMBO_BOX
 			-- List of external commands.
 
-	edit_cmd_detail_btn: SD_TOOL_BAR_BUTTON
+	edit_cmd_detail_btn: EV_TOOL_BAR_BUTTON
 			-- Button to open new/edit external command dialog.
 
-	hidden_btn: SD_TOOL_BAR_TOGGLE_BUTTON
+	hidden_btn: EV_TOOL_BAR_TOGGLE_BUTTON
 			-- Button to set whether or not external command should be run hidden.
 
 	input_field: EV_COMBO_BOX
 			-- Text field where user can type data.
 
-	send_input_btn: SD_TOOL_BAR_BUTTON
+	send_input_btn: EV_TOOL_BAR_BUTTON
 			-- Button to send data into launched process.
 
-	save_output_btn: SD_TOOL_BAR_BUTTON
+	save_output_btn: EV_TOOL_BAR_BUTTON
 			-- Button to save output from process to file.
 
-	clear_output_btn: SD_TOOL_BAR_BUTTON
+	clear_output_btn: EV_TOOL_BAR_BUTTON
 			-- Button to clear output window.
 
-	del_cmd_btn: SD_TOOL_BAR_BUTTON
+	del_cmd_btn: EV_TOOL_BAR_BUTTON;
 			-- Button to delete an already stored external command
-
-	edit_external_commands_cmd_btn: EB_SD_COMMAND_TOOL_BAR_BUTTON;
-			-- Button to recycle
-
-	last_focus_at_completion_window: BOOLEAN
-		-- Did last focus stayed in code completation window?
-
-	set_focus_on_idle is
-			-- Set focus on idle actions.
-		local
-			l_env: EV_ENVIRONMENT
-			l_container: EV_CONTAINER
-			l_focused_already: BOOLEAN
-			l_widget: EV_WIDGET
-		do
-			create l_env
-			l_container ?= widget
-			if l_container /= Void then
-				if not l_env.application.is_destroyed then
-					l_widget := l_env.application.focused_widget
-				end
-				if not l_container.is_destroyed and then l_container.has_recursive (l_widget) then
-					-- If out tool has focus already, then we don't need set focus again later.
-					l_focused_already := True
-				end
-			end
-
-			if not l_focused_already then
-				if cmd_lst.is_displayed and then cmd_lst.is_sensitive then
-					cmd_lst.set_focus
-				else
-					if input_field.is_displayed and then input_field.is_sensitive then
-						input_field.set_focus
-					end
-				end
-			end
-		end
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

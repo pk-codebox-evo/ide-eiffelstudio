@@ -10,8 +10,6 @@ deferred class
 
 inherit
 	EV_ITEM_IMP
-		undefine
-			update_for_pick_and_drop
 		redefine
 			interface
 		end

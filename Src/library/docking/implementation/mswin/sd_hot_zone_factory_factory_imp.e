@@ -19,11 +19,9 @@ feature -- Hot zone factory
 			l_version: WEL_WINDOWS_VERSION
 			l_shared: SD_SHARED
 			l_line_drawer: SD_LINE_DRAWER
-			l_system: SD_SYSTEM_SETTER
 		do
 			create l_version
-			create {SD_SYSTEM_SETTER_IMP} l_system
-			if l_version.is_windows_2000_compatible and then not l_system.is_remote_desktop then
+			if l_version.is_windows_2000_compatible and then not is_terminal_service then
 				create {SD_HOT_ZONE_TRIANGLE_FACTORY} Result
 			else
 				create {SD_HOT_ZONE_OLD_FACTORY} Result
@@ -32,6 +30,31 @@ feature -- Hot zone factory
 				l_line_drawer.reset_screen
 			end
 		end
+
+feature -- Implementation
+
+	is_terminal_service: BOOLEAN is
+			-- If window in terminal service (Remote Desktop)?
+		require
+			after_2000: (create {WEL_WINDOWS_VERSION}).is_windows_2000_compatible
+		do
+			c_is_terminal_service ($Result)
+		end
+
+	c_is_terminal_service (a_result: TYPED_POINTER [BOOLEAN]) is
+			-- If window in terminal service (Remote Desktop)?
+		external
+			"C inline use <Windows.h>"
+		alias
+			"[
+			{
+				// This is not defined in VC6
+				// define SM_REMOTESESSION  0x1000
+				*(EIF_BOOLEAN *) $a_result = GetSystemMetrics(0x1000);
+			}
+			]"
+		end
+
 indexing
 	library:	"SmartDocking: Library of reusable components for Eiffel."
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"

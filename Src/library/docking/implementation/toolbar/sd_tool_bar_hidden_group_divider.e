@@ -72,7 +72,8 @@ feature -- Query
 			set: max_width_allowed > 0
 		local
 			l_group_count: INTEGER
-			l_group_info: ARRAYED_LIST [ARRAYED_LIST [INTEGER]]
+			l_group_info: SD_TOOL_BAR_GROUP_INFO
+			l_one_group: DS_HASH_TABLE [INTEGER, INTEGER]
 			l_stop: BOOLEAN
 		do
 			from
@@ -80,20 +81,28 @@ feature -- Query
 			until
 				l_group_count > internal_items.count or l_stop
 			loop
+
 				if algorithm.maximum_group_width (l_group_count) <= max_width_allowed then
 					l_stop := True
-					l_group_info := algorithm.best_grouping_when (l_group_count).deep_twin
+					l_group_info := algorithm.best_grouping
 					from
 						l_group_info.start
 					until
 						l_group_info.after
 					loop
-						if l_group_info.index /= 1 and internal_items.valid_index (l_group_info.item.first - 1) then
-							internal_items.i_th (l_group_info.item.first - 1).set_wrap (True)
-						else
-							internal_items.i_th (l_group_info.index).set_wrap (False)
+						l_one_group := l_group_info.item
+						from
+							l_one_group.start
+						until
+							l_one_group.after
+						loop
+							if not l_one_group.is_last then
+								internal_items.i_th (l_one_group.key_for_iteration).set_wrap (False)
+							else
+								internal_items.i_th (l_one_group.key_for_iteration).set_wrap (True)
+							end
+							l_one_group.forth
 						end
-
 						l_group_info.forth
 					end
 				end
@@ -104,7 +113,7 @@ feature -- Query
 
 feature {NONE}	-- Implementation
 
-	algorithm: 	SD_HUFFMAN_ALGORITHM
+	algorithm: 	SD_TOOL_BAR_GROUP_ALGORITHM
 			-- Grouping algorithm.
 
 	internal_items: ARRAYED_LIST [SD_TOOL_BAR_ITEM]

@@ -28,6 +28,7 @@ feature -- Value
 			Result := old_class_name_preference.value
 		end
 
+
 	new_class_name: STRING is
 			-- The new name of the class.
 		do
@@ -39,6 +40,7 @@ feature -- Value
 		do
 			Result := all_classes_preference.value
 		end
+
 
 	update_comments: BOOLEAN is
 			-- Should the occurance of the class name in comments be changed?
@@ -95,6 +97,7 @@ feature -- Change value
 		do
 			update_strings_preference.set_value (a_value)
 		end
+
 
 feature {NONE} -- Preference
 

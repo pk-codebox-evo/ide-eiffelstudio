@@ -1,13 +1,14 @@
 TOP = ..
-DIR = $dir_sep
 OUTDIR = .
 INDIR = .
 CC = $cc
 OUTPUT_CMD = $output_cmd
 JCFLAGS = $(CFLAGS) $ccflags $optimize
 JMTCFLAGS = $(CFLAGS) $mtccflags $optimize
-CFLAGS = -I$(TOP) -I$(TOP)$(DIR)run-time -I$(TOP)$(DIR)run-time$(DIR)include -I$(TOP)$(DIR)ipc$(DIR)shared
+CFLAGS = -I$(TOP) -I$(TOP)\run-time -I$(TOP)\run-time\include -I$(TOP)\ipc\shared
 MAKE = $make
+MV = ren
+RM = del
 
 OBJECTS = names.$obj commands.$obj
 

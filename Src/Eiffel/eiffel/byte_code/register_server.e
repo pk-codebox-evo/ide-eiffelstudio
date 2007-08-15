@@ -1,11 +1,9 @@
 indexing
-	descrption: "Register server that distributes register numbers."
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
-	date: "$Date$"
-	revision: "$Revision$"
+-- Register server (distributes register numbers)
 
-class REGISTER_SERVER
+class REGISTER_SERVER 
 
 inherit
 	ANY
@@ -20,120 +18,124 @@ inherit
 			{NONE} all
 		end
 
-create {BYTE_CONTEXT}
+create
 
 	make
 
-feature {NONE} -- Creation
+	
+feature 
 
-	make (n: INTEGER) is
-			-- Create a new instance to manage `n' different register types.
-		require
-			n_positive: n > 0
+	make (b: BOOLEAN) is
+			-- `b' is false if creation comes from `duplicate'
+		do
+			if b then
+				init;
+			end;
+		end;
+
+	init is
+			-- Initialize array
 		local
-			i: INTEGER
+			i: INTEGER;
+			reg: REGISTER_MANAGER;
 		do
-			create managers.make (1, n)
+			create registers.make (1, C_nb_types);
 			from
-				i := n
+				i := 1;
 			until
-				i <= 0
+				i > C_nb_types
 			loop
-				managers.put (create {REGISTER_MANAGER}.make, i)
-				i := i - 1
-			end
-		ensure
-			count_set: count = n
-		end
-
-feature -- Status report
-
-	count: INTEGER is
-			-- Number of register types
+				create reg.make
+				registers.put (reg, i);
+				i := i + 1;
+			end;
+		end;
+	
+	registers: ARRAY [REGISTER_MANAGER];
+			-- The available registers (one entry per C type)
+	
+	
+	set_registers (r: like registers) is
+			-- Assign `r' to `registers'
 		do
-			Result := managers.count
-		end
-
-	needed_registers_by_clevel (clevel: INTEGER): INTEGER is
-			-- Number of needed registers for C type level `clevel'
-		require
-			valid_clevel: 0 < clevel and clevel <= count
-		do
-			Result := managers.item (clevel).needed_registers
-		end
-
-feature -- Duplication
+			registers := r;
+		end;
 
 	duplicate: like Current is
 			-- Duplicate of the current instance
 		local
-			m: like managers
-			i: INTEGER
+			reg: like registers;
+			i: INTEGER;
 		do
-			Result := twin
-			m := managers.twin
-			Result.set_registers (m)
+			create Result.make (false);
+			create reg.make (1, C_nb_types);
+			Result.set_registers (reg);
 			from
-				i := m.count
+				i := 1;
 			until
-				i <= 1
+				i > C_nb_types
 			loop
-				i := i - 1
-				m.put (m.item (i).duplicate, i)
-			end
-		end
-
-feature -- Modification
-
+				reg.put (registers.item (i).duplicate, i);
+				i := i + 1;
+			end;
+		end;
+	
 	clear_all is
 			-- Clear current data structure
 		local
-			i: INTEGER
+			i, count: INTEGER;
 		do
 			from
-				i := count
+				i := registers.lower;
+				count := registers.count;
 			until
-				i <= 0
+				i > count
 			loop
-				managers.item (i).clear_all
-				i := i - 1
-			end
-		end
+				registers.item (i).clear_all;
+				i := i + 1;
+			end;
+		end;
 
-	get_register (ctype: INTEGER): INTEGER is
+	get_register (ctype: TYPE_C): INTEGER is
 			-- First free register of type `ctype'
 		do
-			Result := managers.item (ctype).get_register
-		end
+			Result := registers.item (ctype.level).get_register;
+debug
+io.error.put_string ("get register #");
+io.error.put_integer (Result);
+io.error.put_string (" of type ");
+io.error.put_string (ctype.generator);
+io.error.put_new_line;
+end;
+		end;
 
-	free_register (ctype: INTEGER; n: INTEGER) is
+	free_register (ctype: TYPE_C; n: INTEGER) is
 			-- Free register number `n' of type `ctype'
 		do
-			managers.item (ctype).free_register (n)
-		end
+debug
+io.error.put_string ("free register #");
+io.error.put_integer (n);
+io.error.put_string (" of type ");
+io.error.put_string (ctype.generator);
+io.error.put_new_line;
+end;
+			registers.item (ctype.level).free_register (n);
+		end;
 
-feature {NONE} -- Implementation
-
-	managers: ARRAY [REGISTER_MANAGER];
-			-- The available registers (one entry per C type)
-
-feature {REGISTER_SERVER} -- Modification
-
-	set_registers (r: like managers) is
-			-- Assign `r' to `registers'.
-		require
-			r_attached: r /= Void
+	needed_registers (ctype: TYPE_C): INTEGER is
+			-- Number of needed registers for C type `ctype'
 		do
-			managers := r
-		ensure
-			managers_set: managers = r
-		end
+			Result := registers.item (ctype.level).needed_registers;
+		end;
 
-invariant
-	managers_attached: managers /= Void
+	needed_registers_by_clevel (clevel: INTEGER): INTEGER is
+			-- Number of needed registers for C type level `clevel'
+		do
+			Result := registers.item (clevel).needed_registers;
+		end;
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

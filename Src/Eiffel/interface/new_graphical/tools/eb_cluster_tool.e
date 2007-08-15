@@ -15,13 +15,7 @@ inherit
 			make as tool_make
 		redefine
 			menu_name,
-			pixmap,
-			pixel_buffer,
-			mini_toolbar,
-			build_mini_toolbar,
-			build_docking_content,
-			internal_recycle,
-			show
+			pixmap
 		end
 
 	EB_SHARED_MANAGERS
@@ -38,52 +32,50 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_manager: EB_DEVELOPMENT_WINDOW) is
+	make (a_manager: EB_TOOL_MANAGER; a_window: EB_DEVELOPMENT_WINDOW) is
 			-- Make a new cluster tool.
 		require
 			a_manager_exists: a_manager /= Void
+			a_window_exists: a_window /= Void
 		do
-			window := a_manager
+			window := a_window
 			tool_make (a_manager)
 		end
 
 	build_interface is
 			-- Build all the tool's widgets.
 		do
-			create widget.make (window.menus.context_menu_factory)
+			create widget.make
 			widget.associate_with_window (window)
 		end
 
 	build_mini_toolbar is
 			-- Build associated tool bar
 		local
-			sep: SD_TOOL_BAR_SEPARATOR
-			but: SD_TOOL_BAR_BUTTON
+			sep: EV_TOOL_BAR_SEPARATOR
+			but: EV_TOOL_BAR_BUTTON
 		do
 			create show_current_class_cluster_cmd.make
 			show_current_class_cluster_cmd.set_tooltip (Interface_names.e_Show_class_cluster)
 			show_current_class_cluster_cmd.set_mini_pixmap (pixmaps.mini_pixmaps.general_search_icon)
-			show_current_class_cluster_cmd.set_mini_pixel_buffer (pixmaps.mini_pixmaps.general_search_icon_buffer)
 			show_current_class_cluster_cmd.set_name ("Show_class_cluster")
 			show_current_class_cluster_cmd.add_agent (agent show_current_class_cluster)
 			show_current_class_cluster_cmd.set_menu_name (Interface_names.m_Show_class_cluster)
 
-			create mini_toolbar.make
-			mini_toolbar.extend (window.commands.new_cluster_cmd.new_mini_sd_toolbar_item)
-			mini_toolbar.extend (window.commands.new_library_cmd.new_mini_sd_toolbar_item)
+			create mini_toolbar
+			mini_toolbar.extend (window.new_cluster_cmd.new_mini_toolbar_item)
+			mini_toolbar.extend (window.new_library_cmd.new_mini_toolbar_item)
 			if eiffel_layout.default_il_environment.is_dotnet_installed then
-				mini_toolbar.extend (window.commands.new_assembly_cmd.new_mini_sd_toolbar_item)
+				mini_toolbar.extend (window.new_assembly_cmd.new_mini_toolbar_item)
 			end
-			mini_toolbar.extend (window.commands.new_class_cmd.new_mini_sd_toolbar_item)
-			mini_toolbar.extend (window.commands.delete_class_cluster_cmd.new_mini_sd_toolbar_item)
-			create sep.make
+			mini_toolbar.extend (window.new_class_cmd.new_mini_toolbar_item)
+			mini_toolbar.extend (window.delete_class_cluster_cmd.new_mini_toolbar_item)
+			create sep
 			mini_toolbar.extend (sep)
-			but := show_current_class_cluster_cmd.new_mini_sd_toolbar_item
+			but := show_current_class_cluster_cmd.new_mini_toolbar_item
 			but.drop_actions.extend (agent show_class)
 			but.drop_actions.extend (agent show_group)
 			mini_toolbar.extend (but)
-
-			mini_toolbar.compute_minimum_size
 
 			widget.refresh
 			if not widget.is_empty and Workbench.is_already_compiled then
@@ -91,21 +83,31 @@ feature {NONE} -- Initialization
 			else
 				show_current_class_cluster_cmd.disable_sensitive
 			end
-		ensure then
+		ensure
 			toolbar_exists: mini_toolbar /= Void
 		end
 
-	build_docking_content (a_docking_manager: SD_DOCKING_MANAGER) is
+	build_explorer_bar_item (explorer_bar: EB_EXPLORER_BAR) is
+			-- Build the associated explorer bar item and
+			-- Add it to `explorer_bar'.
 		do
-			Precursor {EB_TOOL} (a_docking_manager)
-			check content_not_void : content /= Void end
-			content.drop_actions.extend (agent show_class)
-			content.drop_actions.extend (agent show_group)
+			if mini_toolbar = Void then
+				build_mini_toolbar
+			end
+
+			create {EB_EXPLORER_BAR_ITEM} explorer_bar_item.make_with_mini_toolbar (
+				explorer_bar, widget, title, True, mini_toolbar
+			)
+			explorer_bar_item.set_menu_name (menu_name)
+			if pixmap /= Void then
+				explorer_bar_item.set_pixmap (pixmap)
+			end
+			explorer_bar.add (explorer_bar_item)
 		end
 
 feature -- Access
 
-	mini_toolbar: SD_TOOL_BAR
+	mini_toolbar: EV_TOOL_BAR
 			-- Bar containing a button for a new cluster and class.
 
 	widget: EB_CLASSES_TREE
@@ -114,19 +116,13 @@ feature -- Access
 	window: EB_DEVELOPMENT_WINDOW
 			-- development window `Current' is in.
 
-	title: STRING_GENERAL is
+	title: STRING is
 			-- title of the tool.
 		do
 			Result := Interface_names.t_Cluster_tool
 		end
 
-	title_for_pre: STRING is
-			-- Title for prefence, STRING_8
-		do
-			Result := Interface_names.to_cluster_tool
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- name as it may appear in a menu.
 		do
 			Result := Interface_names.m_Cluster_tool
@@ -138,25 +134,8 @@ feature -- Access
 			Result := pixmaps.icon_pixmaps.tool_clusters_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer
-		do
-			Result := pixmaps.icon_pixmaps.tool_clusters_icon_buffer
-		end
-
 	show_current_class_cluster_cmd: EB_STANDARD_CMD
 			-- Command that highlights currently edited object in the cluster tree.
-
-feature -- Command
-
-	show is
-			-- Show tool.
-		do
-			Precursor {EB_TOOL}
-			if widget.is_displayed then
-				widget.set_focus
-			end
-		end
 
 feature -- Status setting
 
@@ -197,48 +176,43 @@ feature -- Status setting
 			show_current_class_cluster_cmd.disable_sensitive
 		end
 
-feature {NONE} -- Memory management
+feature -- Memory management
 
-	internal_recycle is
+	recycle is
 			-- Recycle `Current', but leave `Current' in an unstable state,
 			-- so that we know whether we're still referenced or not.
 		do
+			if explorer_bar_item /= Void then
+				explorer_bar_item.recycle
+			end
 			show_current_class_cluster_cmd.recycle
 			show_current_class_cluster_cmd := Void
 			widget.recycle
 			widget := Void
 			window := Void
-			Precursor {EB_TOOL}
+			manager := Void
 		end
 
-feature -- Implementation
+feature {NONE} -- Implementation
 
 	show_class (st: CLASSI_STONE) is
 			-- Display the class relative to `st' in the cluster tree.
 		do
 			widget.show_class (st.class_i)
-			if content /= Void and then content.is_visible then
-				content.set_focus
-			end
 		end
 
 	show_group (st: CLUSTER_STONE) is
 			-- Display the class relative to `st' in the cluster tree.
 		do
 			widget.show_subfolder (st.group, st.path)
-			if content /= Void and then content.is_visible then
-				content.set_focus
-			end
 		end
-
-feature {NONE} -- Implementation
 
 	show_current_class_cluster is
 			-- Highlight currently edited object in the cluster tree.
 		local
 			conv_class: CLASSI_STONE
 			conv_cluster: CLUSTER_STONE
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 			retried: BOOLEAN
 		do
 			if not retried then

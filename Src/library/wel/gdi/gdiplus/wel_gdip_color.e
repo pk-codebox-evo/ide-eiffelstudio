@@ -9,15 +9,12 @@ class
 	WEL_GDIP_COLOR
 
 create
-	make_from_argb,
-	make_from_rgb
+	make_from_argb
 
 feature {NONE} -- Initlization
 
 	make_from_argb (a_alpha, a_red, a_green, a_blue: INTEGER) is
 			-- Creation method
-			-- The minimum value for `a_alpha' is 0 which means total transparent.
-			-- The maximum value for `a_alpha' is 255 which means opaque.
 		require
 			alpha_valid: is_channel_valid (a_alpha)
 			red_valid: is_channel_valid (a_red)
@@ -25,16 +22,6 @@ feature {NONE} -- Initlization
 			blue_valid: is_channel_valid (a_blue)
 		do
 			item :=  ((((((a_red |<< 0x10) | (a_green |<< 0x8)) | a_blue) | (a_alpha |<< 0x18))) & 0xffffffff)
-		end
-
-	make_from_rgb (a_red, a_green, a_blue: INTEGER) is
-			-- Creation method
-		require
-			red_valid: is_channel_valid (a_red)
-			green_valid: is_channel_valid (a_green)
-			blue_valid: is_channel_valid (a_blue)
-		do
-			make_from_argb (255, a_red, a_green, a_blue)
 		end
 
 feature -- Query
@@ -48,8 +35,7 @@ feature -- Query
 feature {WEL_GDIP_ANY} -- Implementation
 
 	item: INTEGER_64;
-			-- Color data.
-
+	
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"
 	license:	"Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"

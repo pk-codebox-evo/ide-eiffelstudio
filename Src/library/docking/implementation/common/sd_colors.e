@@ -8,14 +8,6 @@ indexing
 class
 	SD_COLORS
 
-inherit
-	ANY
-
-	EV_SHARED_APPLICATION
-		export
-			{NONE} all
-		end
-
 create
 	make
 
@@ -23,8 +15,11 @@ feature {NONE} -- Initialization
 
 	make is
 			-- Creation method
+		local
+			l_env: EV_ENVIRONMENT
 		do
-			ev_application.theme_changed_actions.put_front (agent init_colors)
+			create l_env
+			l_env.application.theme_changed_actions.put_front (agent init_colors)
 			init_colors
 
 			create internal_shared
@@ -44,7 +39,7 @@ feature {NONE} -- Initialization
 
 			default_background_color_cell.put (l_system_color.default_background_color)
 			create l_helper
-			non_focused_color_lightness_cell.put (l_helper.color_with_lightness (default_background_color, {SD_SHARED}.Auto_hide_panel_lightness).twin)
+			non_focused_color_lightness_cell.put (l_helper.build_color_with_lightness (default_background_color, {SD_SHARED}.Auto_hide_panel_lightness))
 
 			focused_color_cell.put (l_system_color.focused_selection_color)
 			focused_title_text_color_cell.put (l_system_color.focused_title_text_color)

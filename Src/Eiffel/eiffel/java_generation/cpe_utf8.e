@@ -64,7 +64,8 @@ feature -- Access
 feature {NONE} -- Implementation
 						
 	bc: JVM_BYTE_CODE
-
+						
+						
 invariant
 						
 	content_not_void: content /= Void
@@ -103,4 +104,8 @@ indexing
 		]"
 
 end
+
+
+
+
 

@@ -71,24 +71,20 @@ feature -- Status setting
 	on_text_reset is
 			-- Disable `Current'.
 		do
-			if not is_recycled then
-				if target.is_empty then
-					disable_sensitive
-				else
-					enable_sensitive
-				end
+			if target.is_empty then
+				disable_sensitive
+			else
+				enable_sensitive
 			end
 		end
 
 	on_text_back_to_its_last_saved_state is
 			-- Disable `Current'.
 		do
-			if not is_recycled then
-				if target.is_empty then
-					disable_sensitive
-				else
-					enable_sensitive
-				end
+			if target.is_empty then
+				disable_sensitive
+			else
+				enable_sensitive
 			end
 		end
 
@@ -149,7 +145,7 @@ feature {EB_SAVE_FILE_COMMAND} -- Implementation
 
 feature {NONE} -- Implementation
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name as it appears in the menu (with & symbol).
 		do
 			Result := Interface_names.m_Export_to

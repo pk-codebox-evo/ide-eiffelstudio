@@ -12,8 +12,7 @@ inherit
 		undefine
 			has_associated_file,
 			is_defined,
-			trace,
-			trace_primary_context
+			trace
 		end
 
 	FEATURE_ERROR

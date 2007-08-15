@@ -10,14 +10,12 @@ class
 	EB_CALLERS_FORMATTER
 
 inherit
-	EB_FEATURE_CONTENT_FORMATTER
+	EB_FEATURE_TEXT_FORMATTER
 		rename
 			make as feature_formatter_make
 		redefine
-			browser,
-			is_dotnet_formatter,
-			result_data,
-			generate_result
+			feature_cmd,
+			is_dotnet_formatter
 		end
 
 	EB_SHARED_PREFERENCES
@@ -64,24 +62,10 @@ feature -- Properties
 			end
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representation of the command.
-		do
-			inspect
-				flag
-			when {DEPEND_UNIT}.is_in_assignment_flag then
-				Result := pixmaps.icon_pixmaps.feature_assigners_icon_buffer
-			when {DEPEND_UNIT}.is_in_creation_flag then
-				Result := pixmaps.icon_pixmaps.feature_creators_icon_buffer
-			else
-				Result := pixmaps.icon_pixmaps.feature_callers_icon_buffer
-			end
-		end
-
 	feature_cmd: E_SHOW_CALLERS
 			-- Feature command that can generate the information.
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Identifier of `Current' in menus.
 		do
 			inspect flag
@@ -97,27 +81,12 @@ feature -- Properties
  	flag: INTEGER_8
  			-- Flag for type of callers.
 
- 	browser: EB_CLASS_BROWSER_CALLER_CALLEE_VIEW
- 			-- Browser
-
-	displayer_generator: TUPLE [any_generator: FUNCTION [ANY, TUPLE, like displayer]; name: STRING] is
-			-- Generator to generate proper `displayer' for Current formatter
-		do
-			Result := [agent displayer_generators.new_feature_caller_displayer, displayer_generators.feature_caller_displayer]
-		end
-
-	sorting_status_preference: STRING_PREFERENCE is
-			-- Preference to store last sorting orders of Current formatter
-		do
-			Result := preferences.class_browser_data.caller_sorting_order_preference
-		end
-
 feature {NONE} -- Properties
 
 	internal_symbol: like symbol
 			-- Once per object storage for `symbol.
 
-	capital_command_name: STRING_GENERAL is
+	command_name: STRING is
 			-- Name of the command.
 		do
 			inspect flag
@@ -151,38 +120,20 @@ feature {NONE} -- Properties
 
 feature {NONE} -- Implementation
 
-	has_breakpoints: BOOLEAN is False
+	create_feature_cmd is
+			-- Create `feature_cmd'.
+		require else
+			associated_feature_non_void: associated_feature /= Void
+		do
+			create feature_cmd.make (editor.text_displayed, associated_feature)
+			if preferences.feature_tool_data.show_all_callers then
+				feature_cmd.set_all_callers
+			end
+			feature_cmd.set_flag (flag)
+		end
+
+	has_breakpoints: BOOLEAN is False;
 			-- Should breakpoints be shown in Current?
-
-	result_data: QL_FEATURE_DOMAIN is
-			-- Result for Current formatter
-		local
-			l_worker: E_SHOW_CALLERS
-		do
-			create l_worker.make (create {EB_EDITOR_TOKEN_GENERATOR}.make, associated_feature)
-			l_worker.set_flag (flag)
-			l_worker.set_all_callers (preferences.feature_tool_data.show_all_callers)
-			l_worker.show_callers
-			Result := l_worker.features
-		end
-
-	criterion: QL_CRITERION is
-			-- Criterion of current formatter
-		do
-		end
-
-	rebuild_browser is
-			-- Rebuild `browser'.
-		do
-			browser.set_flag (flag)
-		end
-
-	generate_result is
-			-- Generate result for display
-		do
-			Precursor
-			browser.set_reference_type_name (command_name)
-		end
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

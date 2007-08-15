@@ -18,7 +18,7 @@ inherit
 			stone_signature, header, stone_cursor, x_stone_cursor
 		end
 
-	SHARED_DEBUGGER_MANAGER
+	SHARED_APPLICATION_EXECUTION
 
 create
 	make
@@ -74,10 +74,10 @@ feature -- Access
 			Result.append (object_address)
 		end
 
-	history_name: STRING_GENERAL is
+	history_name: STRING is
 			-- Name used in the history list
 		do
-			create {STRING_32}Result.make (0)
+			create Result.make (0)
 			Result.append (name)
 			Result.append (": ")
 			Result.append (dynamic_class.name_in_upper)
@@ -86,7 +86,7 @@ feature -- Access
 			Result.append ("]")
 		end
 
-	header: STRING_GENERAL is
+	header: STRING is
 		do
 			Result := history_name
 		end
@@ -119,13 +119,21 @@ feature -- Status report
 	is_valid: BOOLEAN is
 			-- Is `Current' a valid stone?
 		do
-			Result := Debugger_manager.safe_application_is_stopped
-					and then Debugger_manager.application.is_valid_object_address (object_address)
+			Result := Application.is_running and then
+					Application.is_stopped and then
+					Application.is_valid_object_address (object_address)
 		end
 
 	ev_item: EV_ANY
 			-- Graphical item representing `Current'
 			-- May be Void, even if `Current' is represented in an container widget.
+
+	tree_item: EV_TREE_ITEM is
+			-- Tree item representing `Current' in the object tree.
+			-- May be Void, even if `Current' is represented in the object tree.
+		do
+			Result ?= ev_item
+		end
 
 invariant
 

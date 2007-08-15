@@ -172,4 +172,8 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end
+
+
+
+end -- class WEL_TREE_VIEW_INSERT_STRUCT
+

@@ -10,16 +10,72 @@ class
 	EB_METRIC_GROUP_DOMAIN_ITEM
 
 inherit
-	EB_GROUP_DOMAIN_ITEM
-
 	EB_METRIC_DOMAIN_ITEM
-		undefine
+		redefine
+			is_group_item,
 			is_valid,
-			is_group_item
+			string_representation
 		end
 
 create
 	make
+
+feature -- Status report
+
+	is_group_item: BOOLEAN is True
+			-- Is current a group item?
+
+	is_valid: BOOLEAN is
+			-- Does current represent a valid domain item?
+		do
+			Result := group_of_id (id) /= Void
+		end
+
+feature -- Access
+
+	domain (a_scope: QL_SCOPE): QL_DOMAIN is
+			-- New query lanaguage domain representing current item
+		do
+			Result := ql_group.wrapped_domain
+		end
+
+	string_representation: STRING is
+			-- Text of current item
+		local
+			l_conf_group: CONF_GROUP
+			l_group_name: STRING
+		do
+			l_conf_group := group_of_id (id)
+			if l_conf_group /= Void then
+				Result := l_conf_group.name
+			else
+				l_group_name := last_group_name
+				if l_group_name /= Void and then not l_group_name.is_empty then
+					Result := l_group_name
+				else
+					Result := Precursor
+				end
+			end
+		end
+
+	ql_group: QL_GROUP is
+			-- Query language item of current
+		require
+			valid: is_valid
+		local
+			l_conf_group: CONF_GROUP
+		do
+			l_conf_group := group_of_id (id)
+			Result := query_group_item_from_conf_group (l_conf_group)
+		ensure
+			result_attached: Result /= Void
+		end
+
+	query_language_item: QL_ITEM is
+			-- Query language item representation of current domain item
+		do
+			Result := ql_group
+		end
 
 feature -- Process
 
@@ -60,5 +116,6 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
 
 end

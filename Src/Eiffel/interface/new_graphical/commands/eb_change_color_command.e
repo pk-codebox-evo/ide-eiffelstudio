@@ -11,9 +11,7 @@ class
 inherit
 	EB_CONTEXT_DIAGRAM_COMMAND
 		redefine
-			new_toolbar_item,
-			new_sd_toolbar_item,
-			menu_name
+			new_toolbar_item
 		end
 
 	BON_CONSTANTS
@@ -33,7 +31,7 @@ feature -- Basic operations
 		do
 			create change_color_dialog
 			change_color_dialog.set_color (bon_class_fill_color)
-			change_color_dialog.show_modal_to_window (tool.develop_window.window)
+			change_color_dialog.show_modal_to_window (tool.development_window.window)
 
 			create class_list.make (20)
 			create old_color_table.make (20)
@@ -71,17 +69,6 @@ feature -- Access
 			Result.drop_actions.extend (agent execute_with_cluster_stone)
 		end
 
-	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_BUTTON is
-			-- Create a new toolbar button for this command.
-		do
-			Result := Precursor (display_text)
-			Result.select_actions.wipe_out
-			Result.select_actions.extend (agent execute)
-			Result.drop_actions.extend (agent execute_with_stone)
-			Result.drop_actions.extend (agent execute_with_list)
-			Result.drop_actions.extend (agent execute_with_cluster_stone)
-		end
-
 feature {NONE} -- Implementation
 
 	execute_with_cluster_stone (a_stone: CLUSTER_FIGURE_STONE) is
@@ -95,7 +82,7 @@ feature {NONE} -- Implementation
 		do
 			create change_color_dialog
 			change_color_dialog.set_color (bon_class_fill_color)
-			change_color_dialog.show_modal_to_window (tool.develop_window.window)
+			change_color_dialog.show_modal_to_window (tool.development_window.window)
 
 			create class_list.make (1)
 			create old_color_table.make (1)
@@ -124,6 +111,7 @@ feature {NONE} -- Implementation
 				agent change_color_all (class_list, old_color_table))
 		end
 
+
 	execute_with_stone (a_stone: CLASSI_FIGURE_STONE) is
 			-- Create a development window and process `a_stone'.
 		require
@@ -135,7 +123,7 @@ feature {NONE} -- Implementation
 			if cf /= Void then
 				create change_color_dialog
 				change_color_dialog.set_color (cf.background_color)
-				change_color_dialog.show_modal_to_window (tool.develop_window.window)
+				change_color_dialog.show_modal_to_window (tool.development_window.window)
 				if not change_color_dialog.color.is_equal (cf.background_color) then
 					history.do_named_undoable (
 						Interface_names.t_Diagram_change_color_cmd,
@@ -155,7 +143,7 @@ feature {NONE} -- Implementation
 		do
 			create change_color_dialog
 			change_color_dialog.set_color (bon_class_fill_color)
-			change_color_dialog.show_modal_to_window (tool.develop_window.window)
+			change_color_dialog.show_modal_to_window (tool.development_window.window)
 
 			l_classes := a_list.classes
 			create old_color_table.make (l_classes.count)
@@ -247,13 +235,7 @@ feature {NONE} -- Implementation
 			Result := pixmaps.icon_pixmaps.diagram_choose_color_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.diagram_choose_color_icon_buffer
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.f_diagram_change_color
@@ -263,20 +245,14 @@ feature {NONE} -- Implementation
 			-- Name of the command. Used to store the command in the
 			-- preferences.
 
-	menu_name: STRING_GENERAL is
-			-- Name on corresponding menu items
-		do
-			Result := interface_names.m_change_color
-		end
-
 	change_color_dialog: EV_COLOR_DIALOG
 			-- Dialog that allows to choose a color.
 
 	default_colors: EV_STOCK_COLORS is
-			-- Eiffel Vision colors.
-		once
-			create Result
-		end
+		-- Eiffel Vision colors.
+	once
+		create Result
+	end
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

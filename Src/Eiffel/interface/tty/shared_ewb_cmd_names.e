@@ -52,8 +52,6 @@ feature {NONE}
 
 	Convert_profile_cmd_name: STRING is "convert"
 
-	debug_cmd_name: STRING is "debug"
-
 	Defaults_cmd_name: STRING is "defaults"
 
 	deferred_cmd_name: STRING is "deferred"
@@ -105,8 +103,6 @@ feature {NONE}
 	Input_cmd_name: STRING is "input"
 
 	Language_cmd_name: STRING is "language"
-
-	library_cmd_name: STRING is "library"
 
 	loop_cmd_name: STRING is "loop"
 
@@ -161,8 +157,6 @@ feature {NONE}
 	short_cmd_name: STRING is "short"
 
 	show_subqueries_cmd_name: STRING is "show"
-
-	single_file_compilation_cmd_name: STRING is "class_file.e"
 
 	statistics_cmd_name: STRING is "statistics"
 

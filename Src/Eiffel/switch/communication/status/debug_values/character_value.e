@@ -10,10 +10,9 @@ indexing
 class CHARACTER_VALUE
 
 inherit
-	DEBUG_BASIC_VALUE [CHARACTER]
+	DEBUG_VALUE [CHARACTER]
 		redefine
-			type_and_value, dump_value,
-			debug_value_type_id
+			append_type_and_value, append_value, type_and_value, dump_value
 		end
 
 	CHARACTER_ROUTINES
@@ -35,11 +34,27 @@ feature -- Access
 			val := value
 			cval ?= val
 			if cval /= Void then
-				Result := Debugger_manager.Dump_value_factory.new_character_value (cval.item, Dynamic_class)
+				create Result.make_character (cval.item, Dynamic_class)
 			end
 		end
 
+feature {ABSTRACT_DEBUG_VALUE} -- Output
+
+	append_type_and_value (st: TEXT_FORMATTER) is
+		do
+			dynamic_class.append_name (st)
+			st.add_string (" = ");
+			st.add_char ('%'');
+			st.add_string (char_text (value));
+			st.add_char ('%'')
+		end;
+
 feature {NONE} -- Output
+
+	append_value (st: TEXT_FORMATTER) is
+		do
+			st.add_string (char_text (value))
+		end;
 
 	type_and_value: STRING_32 is
 			-- Return a string representing `Current'.
@@ -58,13 +73,6 @@ feature {NONE} -- Constants
 	Equal_slash: STRING is " = /"
 	Slash_colon: STRING is "/ : %'"
 	Quote: STRING is "%'";
-
-feature {DEBUGGER_TEXT_FORMATTER_VISITOR} -- Debug value type id
-
-	debug_value_type_id: INTEGER is
-		do
-			Result := character_value_id
-		end
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

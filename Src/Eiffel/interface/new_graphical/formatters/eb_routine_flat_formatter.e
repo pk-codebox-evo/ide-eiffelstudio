@@ -12,7 +12,7 @@ class
 inherit
 	EB_FEATURE_TEXT_FORMATTER
 		redefine
-			set_editor_displayer,
+			set_editor,
 			feature_cmd,
 			generate_text,
 			set_stone,
@@ -23,21 +23,20 @@ inherit
 
 	SHARED_FORMAT_INFO
 
-	SHARED_DEBUGGER_MANAGER
+	EB_SHARED_DEBUG_TOOLS
 
 create
 	make
 
 feature -- Status setting
 
-	set_editor_displayer (a_displayer: like displayer) is
-			-- Set `displayer' with `a_displayer'.
+	set_editor (an_editor: EB_CLICKABLE_EDITOR) is
+			-- Set `editor' to `an_editor'.
+			-- Used to share an editor between several formatters.
 		do
-			Precursor {EB_FEATURE_TEXT_FORMATTER} (a_displayer)
-			if displayer /= Void then
-				displayer.editor.enable_has_breakable_slots
-				displayer.editor.drop_actions.extend (agent on_breakable_drop)
-			end
+			Precursor {EB_FEATURE_TEXT_FORMATTER} (an_editor)
+			an_editor.enable_has_breakable_slots
+			editor.drop_actions.extend (agent on_breakable_drop)
 		end
 
 	set_stone (new_stone: FEATURE_STONE) is
@@ -78,10 +77,11 @@ feature -- Formatting
 			if displayed and selected then
 				if associated_feature /= Void then
 					if
-						Debugger_manager.safe_application_is_stopped
-						and then Debugger_manager.application_status.current_call_stack /= Void
+						eb_debugger_manager.application_is_executing
+						and then eb_debugger_manager.application_is_stopped
+						and then eb_debugger_manager.application.status.current_call_stack /= Void
 					then
-						stel  ?= Debugger_manager.application_status.current_call_stack_element
+						stel  ?= eb_debugger_manager.application.status.current_call_stack_element
 						if
 							stel /= Void and then stel.routine /= Void
 							and then stel.routine.body_id_for_ast = associated_feature.body_index
@@ -111,13 +111,7 @@ feature -- Properties
 			Result.put (pixmaps.icon_pixmaps.view_clickable_feature_icon, 2)
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representation.
-		once
-			Result := pixmaps.icon_pixmaps.view_clickable_feature_icon_buffer
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Identifier of `Current' in menus.
 		do
 			Result := Interface_names.m_Showflat
@@ -125,10 +119,10 @@ feature -- Properties
 
 feature {NONE} -- Properties
 
-	capital_command_name: STRING_GENERAL is
+	command_name: STRING is
 			-- Name of the command.
 		do
-			Result := Interface_names.l_Flat_view
+			Result := Interface_names.l_Flat
 		end
 
 	post_fix: STRING is "rfl"

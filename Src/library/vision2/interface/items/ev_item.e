@@ -34,7 +34,7 @@ inherit
 			implementation,
 			is_in_default_state
 		end
-
+	
 	EV_ITEM_ACTION_SEQUENCES
 		redefine
 			implementation

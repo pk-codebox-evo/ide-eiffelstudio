@@ -9,13 +9,11 @@ deferred class
 	DOCUMENTATION_ROUTINES
 
 inherit
-	DOCUMENTATION_EXPORT
-
 	OUTPUT_ROUTINES
 
 	EB_SHARED_PREFERENCES
 
-	EIFFEL_PROJECT_FACILITIES
+	DOCUMENT_HELPER
 
 feature -- Status setting
 
@@ -117,8 +115,6 @@ feature -- Access
 			a_text_formatter_not_void: a_text_formatter /= Void
 		local
 			l_groups: HASH_TABLE [CONF_GROUP, STRING]
-			l_grp: CONF_GROUP
-			l_cluster: CONF_CLUSTER
 		do
 			a_text_formatter.process_filter_item (f_class_declaration, true)
 
@@ -134,16 +130,7 @@ feature -- Access
 			until
 				l_groups.after
 			loop
-				l_grp := l_groups.item_for_iteration
-				if l_grp.is_cluster then
-					l_cluster ?= l_grp
-					check cluster: l_cluster /= Void end
-					if l_cluster.parent = Void then
-						append_cluster_hierarchy_leaf (a_text_formatter, du, l_grp, 1)
-					end
-				else
-					append_cluster_hierarchy_leaf (a_text_formatter, du, l_grp, 1)
-				end
+				append_cluster_hierarchy_leaf (a_text_formatter, du, l_groups.item_for_iteration, 1)
 				l_groups.forth
 			end
 
@@ -419,9 +406,7 @@ feature -- Routines
 					until
 						invariants.after
 					loop
-						if invariants.item.tag /= Void then
-							s := invariants.item.tag.name
-						end
+						s := invariants.item.tag
 						if s /= Void and then not s.is_empty then
 							s := s.twin
 							s.replace_substring_all ("_", " ")
@@ -829,9 +814,7 @@ feature {NONE} -- Indexing clauses
 					indexes.after
 				loop
 					ii := indexes.item
-					if ii.tag /= Void then
-						t := ii.tag.name
-					end
+					t := ii.tag
 					if t = Void then
 						t := "description"
 							-- It is legal Eiffel syntax to omit first tag
@@ -849,12 +832,12 @@ feature {NONE} -- Indexing clauses
 			ic: HASH_TABLE [STRING, STRING]
 		do
 			ic := indexes_to_table (c.compiled_class.ast.top_indexes)
-			if ic.has_key (s) then
+			if ic.has (s) then
 				Result := ic.found_item
 			end
 			if Result = Void then
 				ic := indexes_to_table (c.compiled_class.ast.bottom_indexes)
-				if ic.has_key (s) then
+				if ic.has (s) then
 					Result := ic.found_item
 				end
 			end
@@ -929,7 +912,7 @@ feature {NONE} -- Implementation
 		do
 			if a_group.is_library then
 				Result := "Library"
-			elseif a_group.is_assembly or a_group.is_physical_assembly then
+			elseif a_group.is_assembly then
 				Result := "Assembly"
 			else
 				Result := "Cluster"

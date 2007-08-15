@@ -109,15 +109,9 @@ feature -- Access
 		do
 			create l_group_domain_generator
 			l_group_domain_generator.enable_fill_domain
-			Result ?= wrapped_domain.new_domain (l_group_domain_generator)
+			Result ?= Current.wrapped_domain.new_domain (l_group_domain_generator)
 		ensure
 			result_attached: Result /= Void
-		end
-
-	parent_with_real_path: QL_ITEM is
-			-- Parent item of Current with real path.
-			-- Real path means that every parent is physically determined.
-		do
 		end
 
 feature -- Status report
@@ -141,12 +135,12 @@ feature -- Status report
 			-- True as return value means every ancestors of current item is a valid domain item.
 		do
 			if parent = Void then
-				Result := True
+				Result := target = target.application_target
 			else
 				Result := parent.is_valid_domain_item
 			end
 		ensure then
-			good_result: (parent = Void implies Result) and
+			good_result: (parent = Void implies (Result = (target = target.application_target))) and
 						 (parent /= Void implies (Result = parent.is_valid_domain_item))
 		end
 
@@ -211,5 +205,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

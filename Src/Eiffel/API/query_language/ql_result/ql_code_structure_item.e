@@ -28,15 +28,8 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
-	class_i: CLASS_I is
-			-- CLASS_I object associated with current item
-		deferred
-		ensure
-			result_attached: Result /= Void
-		end
-
 	class_c: CLASS_C is
-			-- CLASS_C object associated with current item
+			-- CLASS_C object associated with current_item
 		require
 			class_compiled: is_compiled
 		deferred
@@ -79,13 +72,6 @@ feature -- Access
 			Result := ast.first_token (l_list).line
 		end
 
-	parent_with_real_path: QL_ITEM is
-			-- Parent item of Current with real path.
-			-- Real path means that every parent is physically determined.
-		do
-			Result := query_class_item_from_class_i (class_i)
-		end
-
 indexing
         copyright:	"Copyright (c) 1984-2006, Eiffel Software"
         license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
@@ -117,5 +103,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

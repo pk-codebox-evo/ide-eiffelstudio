@@ -16,37 +16,13 @@ inherit
 		end
 
 	COMPILER_EXPORTER
-
 	SHARED_SERVER
-		export
-			{NONE} all
-		end
-
 	SHARED_ERROR_HANDLER
-		export
-			{NONE} all
-		end
-
 	SHARED_GENERIC_CONSTRAINT
-		export
-			{NONE} all
-		end
-
 	SHARED_DEGREES
-		export
-			{NONE} all
-		end
-
 	SHARED_INHERITED
 		rename
 			Inherit_table as analyzer
-		export
-			{NONE} all
-		end
-
-	REFACTORING_HELPER
-		export
-			{NONE} all
 		end
 
 create
@@ -83,15 +59,12 @@ feature -- Processing
 			i, nb, j: INTEGER
 			classes: ARRAY [CLASS_C]
 			a_class: CLASS_C
-			l_error_count_before: INTEGER
 		do
 			Degree_output.put_start_degree (Degree_number, count)
 			classes := System.classes.sorted_classes
 
 				-- Check that the constraint class is a valid class.
 				-- I.e. we cannot have [G -> like t] or others.
-			reset_constraint_error_list
-
 			from i := 1 until nb = count loop
 				a_class := classes.item (i)
 				if a_class /= Void and then a_class.degree_4_needed then
@@ -99,9 +72,6 @@ feature -- Processing
 						if a_class.changed and then a_class.generics /= Void then
 							System.set_current_class (a_class)
 							a_class.check_constraint_genericity
-							if constraint_error_list /= Void and then not constraint_error_list.is_empty then
-								insert_class (a_class)
-							end
 						end
 					end
 					nb := nb + 1
@@ -114,23 +84,15 @@ feature -- Processing
 			Error_handler.checksum
 
 			nb := 0
-
-			empty_temp_remaining_validity_checking_list
-
 			from i := 1 until nb = count loop
 				a_class := classes.item (i)
 				if a_class /= Void and then a_class.degree_4_needed then
 					if not a_class.degree_4_processed then
 						j := j + 1
+
 						Degree_output.put_degree_4 (a_class, count - nb)
 						System.set_current_class (a_class)
-							-- Adds future checks to the `remaining_validity_checking_list'
 						process_class (a_class)
-						check
-							No_error: not Error_handler.has_error
-						end
-							-- We only merge the remaining checks if the class did not produce any other errors
-						merge_remaining_validity_checks_into_global_list
 						a_class.set_degree_4_processed
 					end
 					nb := nb + 1
@@ -140,7 +102,7 @@ feature -- Processing
 
 				-- Check now the validity on creation constraint, i.e. that the
 				-- specified creation procedures are indeed part of the constraint
-				-- class. This needs to be done at the end of Degree 4 because
+				-- class. This need to be done at the end of Degree 4 because
 				-- we need some feature tables.
 			nb := count
 			from i := 1 until nb = 0 loop
@@ -148,22 +110,12 @@ feature -- Processing
 				if a_class /= Void and then a_class.degree_4_needed then
 					if a_class.changed and then a_class.generics /= Void then
 						System.set_current_class (a_class)
-						l_error_count_before := error_handler.nb_errors
-						a_class.check_constraint_renaming
-							-- We only check the creation constraitns if the renaming was valid.
-						if error_handler.nb_errors = l_error_count_before then
-							a_class.check_creation_constraint_genericity
-						end
-
+						a_class.check_creation_constraint_genericity
 					end
 					nb := nb - 1
 				end
 				i := i + 1
 			end
-
-				-- We cannot go on here as the creation constraints are not guaranteed to be valid.
-				-- The remaining_validity_check_list will be kept. All checks will be done once we have no mroe errors.
-			error_handler.checksum
 
 				-- Check now that all the instances of a generic class are
 				-- valid for the creation constraint if there is one. The
@@ -328,8 +280,6 @@ feature {NONE} -- Processing
 					propagate_pass2 (a_class, False)
 				end
 			end
-		ensure
-			no_error: not Error_handler.has_error
 		end
 
 feature {INHERIT_TABLE} -- Propagation
@@ -435,9 +385,6 @@ feature {NONE} -- Propagation to Degree 4
 			-- the direct descendants. The feature table of `a_class'
 			-- has varied between two compilations, the feature tables
 			-- of the direct descendants must be recalculated.
-			--
-			-- `a_class': Feature table of its direct descendants will be rebuild
-			-- `real_pass2' states whether a descendants `changed2' flag will be set or not
 		require
 			a_class_not_void: a_class /= Void
 		local
@@ -642,4 +589,5 @@ indexing
 		]"
 
 end -- class DEGREE_4
+
 

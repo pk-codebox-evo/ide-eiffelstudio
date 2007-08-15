@@ -45,13 +45,6 @@ inherit
 			{NONE} all
 		end
 
-	EV_SHARED_APPLICATION
-		export
-			{NONE} all
-		end
-
-	EB_CONTEXT_MENU_HANDLER
-
 create
 	make
 
@@ -71,8 +64,6 @@ feature {NONE} -- Initialization
 			enable_accept_general_group
 				-- Create the widget.
 			build_interface
-
-			create label_changed_actions
 		end
 
 	build_interface is
@@ -81,118 +72,47 @@ feature {NONE} -- Initialization
 			hbox: like widget
 			vb: EV_VERTICAL_BOX
 			label: EV_LABEL
-			l_item: SD_TOOL_BAR_ITEM
-			l_hbox: EV_HORIZONTAL_BOX
-			l_font: EV_FONT
 		do
-			l_font := Default_font
-
-			create tool_bar_items.make (10)
-
 			create hbox
 			hbox.set_padding (Layout_constants.Small_border_size)
 
 			if mode then
 					-- Cluster label.
-				create label.make_with_text (interface_names.l_cluster)
-				label.set_font (l_font)
+				create label.make_with_text ("Cluster")
 				hbox.extend (label)
 				hbox.disable_item_expand (label)
 
 					-- Cluster selector.
 				create cluster_address
-				cluster_address.set_font (l_font)
-				cluster_address.set_minimum_width (Layout_constants.Dialog_unit_to_pixels (130))
+				cluster_address.set_minimum_width (130)
 				hbox.extend (cluster_address)
 			end
 
 				-- Class label.
-			create label.make_with_text (interface_names.l_class)
-			label.set_font (l_font)
-
-			if mode then
-				hbox.extend (label)
-				hbox.disable_item_expand (label)
-			else
-				create l_hbox
-				l_hbox.set_border_width (Layout_constants.Small_border_size)
-				l_hbox.extend (label)
-
-				create {SD_TOOL_BAR_WIDGET_ITEM} l_item.make (l_hbox)
-				l_item.set_description (interface_names.l_class_label)
-
-				l_item.set_name ("class label")
-
-				tool_bar_items.extend (l_item)
-			end
+			create label.make_with_text ("Class")
+			hbox.extend (label)
+			hbox.disable_item_expand (label)
 
 				-- Class selector.
 			create class_address
-			class_address.set_font (l_font)
-			class_address.set_minimum_width (Layout_constants.Dialog_unit_to_pixels (200))
+			class_address.set_minimum_width (Layout_constants.Dialog_unit_to_pixels(130))
+			hbox.extend (class_address)
 
-			if mode then
-				hbox.extend (class_address)
-			else
-				-- Then we build a `class_addre
-				create {SD_TOOL_BAR_RESIZABLE_ITEM} l_item.make (class_address)
-				l_item.set_description (interface_names.l_class_address)
-				l_item.set_name ("class address combo")
-
-				tool_bar_items.extend (l_item)
-			end
 				-- Feature label.
-			create label.make_with_text (interface_names.l_feature)
-			label.set_font (l_font)
+			create label.make_with_text ("Feature")
+			hbox.extend (label)
+			hbox.disable_item_expand (label)
 
-			if mode then
-				hbox.extend (label)
-				hbox.disable_item_expand (label)
-			else
-				create l_hbox
-				l_hbox.set_border_width (Layout_constants.Small_border_size)
-				l_hbox.extend (label)
-
-				create {SD_TOOL_BAR_WIDGET_ITEM} l_item.make (l_hbox)
-				l_item.set_description (interface_names.l_feature_label)
-
-				l_item.set_name ("feature label")
-
-				tool_bar_items.extend (l_item)
-			end
 				-- Feature selector
 			create feature_address
-			feature_address.set_font (l_font)
-			feature_address.set_minimum_width (Layout_constants.Dialog_unit_to_pixels (200))
+			feature_address.set_minimum_width (Layout_constants.Dialog_unit_to_pixels(90))
+			hbox.extend (feature_address)
 
-			if mode then
-				hbox.extend (feature_address)
-			else
-				create {SD_TOOL_BAR_RESIZABLE_ITEM} l_item.make (feature_address)
-				l_item.set_description (interface_names.l_feature_address)
-				l_item.set_name ("feature address combo")
-				tool_bar_items.extend (l_item)
-			end
 			if not mode then
 					-- View label
-				create label.make_with_text (interface_names.l_view)
-				label.set_font (l_font)
-
-				create l_hbox
-				l_hbox.set_border_width (Layout_constants.Small_border_size)
-				l_hbox.extend (label)
-
-				create {SD_TOOL_BAR_WIDGET_ITEM} l_item.make (l_hbox)
-
-				l_item.set_description (interface_names.l_view_label)
-				l_item.set_name ("view label")
-
-				tool_bar_items.extend (l_item)
-			end
-			if not mode then
-				build_viewpoints
-				view_points_combo.set_font (l_font)
-				parent_widget.set_view_points (view_points_combo)
+				create label.make_with_text ("View")
+				hbox.extend (label)
+				hbox.disable_item_expand (label)
 			end
 
 				-- Setup the widget.
@@ -235,30 +155,6 @@ feature {NONE} -- Initialization
 			lost_focus_action_enabled := True
 		end
 
-	build_viewpoints is
-			-- Build viewpoint selection list
-		local
-			l_label: EV_LABEL
-			l_view_points_widget: EV_HORIZONTAL_BOX
-			l_view_points_combo: EB_VIEWPOINT_COMBO_BOX
-		do
-			create l_view_points_widget
-			view_points_widget := l_view_points_widget
-			create l_label.make_with_text (parent_widget.interface_names.l_viewpoints_colon)
-			l_view_points_widget.extend (l_label)
-			l_view_points_widget.disable_item_expand (l_label)
-
-			create l_view_points_combo
-			view_points_combo := l_view_points_combo
-			l_view_points_combo.disable_sensitive
-			l_view_points_combo.select_actions.extend (agent parent_widget.on_viewpoint_changed)
-			l_view_points_combo.disable_edit
-			l_view_points_combo.set_minimum_width (120)
-
-			l_view_points_widget.extend (l_view_points_combo)
-			l_view_points_widget.disable_item_expand (l_view_points_combo)
-		end
-
 feature -- Access
 
 	parent: EB_HISTORY_OWNER
@@ -267,27 +163,8 @@ feature -- Access
 	widget: EV_HORIZONTAL_BOX
 			-- Vision2 widget representing the control.
 
-	tool_bar_items: ARRAYED_LIST [SD_TOOL_BAR_ITEM]
-			-- Tool bar items representing Current.
-
-	new_view_points_tool_bar_item: SD_TOOL_BAR_ITEM is
-			-- New view points docking widget
-		local
-			l_combo: EV_COMBO_BOX
-		do
-			l_combo := view_points_combo
-			if l_combo.parent /= Void then
-				l_combo.parent.prune (l_combo)
-			end
-			create {SD_TOOL_BAR_RESIZABLE_ITEM} Result.make (l_combo)
-			Result.set_name ("view combo")
-			Result.set_description (interface_names.l_viewpoints)
-		ensure
-			not_void: Result /= Void
-		end
-
-	header_info: EV_HORIZONTAL_BOX
-			-- Container for Cluser, Class and Feature selector.
+	header_info: EV_VIEWPORT
+			-- Box containing labels representing the history status.
 
 	cluster_label_text: STRING is
 			-- Name of the class as it appears in the cluster label.
@@ -322,7 +199,7 @@ feature -- Access
 			-- Void if none.
 
 	parent_widget: EB_DEVELOPMENT_WINDOW is
-			-- Development window.
+			--
 		require
 			not_context_mode: not mode
 		do
@@ -331,9 +208,6 @@ feature -- Access
 			result_not_void: Result /= Void
 		end
 
-	label_changed_actions: EV_NOTIFY_ACTION_SEQUENCE
-		-- Label text change actions.
-
 feature -- Status report
 
 	is_general_group_acceptable: BOOLEAN
@@ -341,7 +215,7 @@ feature -- Status report
 
 feature -- Element change
 
-	set_format_name (a_name: STRING_GENERAL) is
+	set_format_name (a_name: STRING) is
 			-- Set `format_name' to `a_name'.
 			-- `a_name' cannot be Void nor empty.
 		require
@@ -349,17 +223,10 @@ feature -- Element change
 			a_name_non_empty: not a_name.is_empty
 			-- `a_name' should be the name of a known formatter
 		local
-			l_str: STRING
-			name_copy: STRING_GENERAL
+			name_copy: STRING
 			found: BOOLEAN
 		do
-			if a_name.is_valid_as_string_8 then
-				l_str := a_name.as_string_8
-				l_str.to_lower
-				name_copy := l_str
-			else
-				name_copy := a_name.twin
-			end
+			name_copy := a_name.as_lower
 			from
 				known_formatters.start
 			until
@@ -381,18 +248,19 @@ feature -- Element change
 			new_formatters_non_void: new_formatters /= Void
 			for_development_window: not mode
 		local
-			l_but: SD_TOOL_BAR_BUTTON
+			but: EV_TOOL_BAR_BUTTON
 			l_cnt: INTEGER
 		do
-			create formatters_combo.make
+			create formatters_combo
 			known_formatters := new_formatters
 			from
 				l_cnt := 1
 			until
 				l_cnt > 5
 			loop
-				l_but := known_formatters.i_th (l_cnt).new_sd_button
-				tool_bar_items.extend (l_but)
+				but := known_formatters.i_th (l_cnt).new_button
+				but.drop_actions.set_veto_pebble_function (agent is_not_feature_stone (?))
+				formatters_combo.extend (but)
 				l_cnt := l_cnt + 1
 			end
 			widget.extend (formatters_combo)
@@ -412,7 +280,7 @@ feature -- Element change
 	viewpoints: EV_HORIZONTAL_BOX
 			-- Viewpoints combo box
 
-	formatters_combo: SD_TOOL_BAR
+	formatters_combo: EV_TOOL_BAR
 			-- Tool bar containing class format option buttons.
 
 	disable_formatters is
@@ -544,7 +412,8 @@ feature -- Observer management
 				cell := list.item
 				f ?= cell.item1
 				if f /= Void then
-					create nitem.make_with_text (interface_names.l_from (f.feature_name, f.class_i.name))
+					create nitem.make_with_text (
+						f.feature_name + l_From + f.class_i.name_in_upper)
 					nitem.set_data (cell.item2)
 					if f.e_feature /= Void then
 						nitem.set_pixmap (pixmap_from_e_feature (f.e_feature))
@@ -643,26 +512,9 @@ feature -- Observer management
 			on_update
 		end
 
-	on_new_tab_command is
-			-- Handle EB_NEW_TAB_EDITOR_COMMAND.
-		local
-			l_window: EB_DEVELOPMENT_WINDOW
-			l_editor: EB_SMART_EDITOR
-		do
-			if class_address.is_displayed and class_address.is_sensitive then
-				l_window := window_manager.last_focused_development_window
-				if l_window /= Void then
-					l_editor :=  l_window.editors_manager.current_editor
-					if l_editor /= Void and then not l_editor.file_loaded then
-						ev_application.do_once_on_idle (agent class_address.set_focus)
-					end
-				end
-			end
-		end
-
 feature -- Memory management
 
-	internal_recycle is
+	recycle is
 			-- Recycle `Current' and leave it in an unstable state,
 			-- so that we know whether we're not referenced any longer.
 		do
@@ -673,7 +525,7 @@ feature -- Memory management
 			parent := Void
 		end
 
-feature {EB_DEVELOPMENT_WINDOW, EB_DEVELOPMENT_WINDOW_DIRECTOR, EB_DEVELOPMENT_WINDOW_MAIN_BUILDER} -- Vision2 Controls
+feature {EB_DEVELOPMENT_WINDOW} -- Vision2 Controls
 
 	cluster_address: EV_COMBO_BOX
 			-- Cluster part of the address.
@@ -683,12 +535,6 @@ feature {EB_DEVELOPMENT_WINDOW, EB_DEVELOPMENT_WINDOW_DIRECTOR, EB_DEVELOPMENT_W
 
 	feature_address: EV_COMBO_BOX
 			-- Feature part of the address.
-
-	view_points_combo: EB_VIEWPOINT_COMBO_BOX
-			-- Combo box used to a select viewpoints
-
-	view_points_widget: EV_HORIZONTAL_BOX
-			-- Widget to contain viewpoints box
 
 feature -- Properties
 
@@ -713,6 +559,7 @@ feature -- Updating
 				feature_label.set_foreground_color (preferences.editor_data.feature_text_color)
 			end
 		end
+
 
 	on_project_created is
 			-- A new project has been loaded. Enable all controls.
@@ -782,13 +629,7 @@ feature -- Updating
 			end
 		end
 
-	hide_address_bar is
-			-- Hide address bar dialog.
-		do
-			address_dialog.hide
-		end
-
-feature {EB_DEVELOPMENT_WINDOW, EB_DEVELOPMENT_WINDOW_DIRECTOR} -- Execution
+feature {EB_DEVELOPMENT_WINDOW} -- Execution
 
 	execute_with_cluster is
 			-- The user just entered a new cluster name, process it.
@@ -832,7 +673,7 @@ feature {NONE} -- Execution
 		do
 			if pos /= 0 then
 				class_i := class_list.i_th (pos)
-				class_address.set_text (class_i.name)
+				class_address.set_text (class_i.name_in_upper)
 			end
 			class_list := Void
 			if choosing_class then
@@ -880,7 +721,7 @@ feature {NONE} -- Execution
 			-- Finish processing the class after the user chose it.
 		local
 			ctxt: STRING
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 			l_classc: CLASS_C
 		do
 			remove_error_message
@@ -934,7 +775,7 @@ feature {NONE} -- Execution
 				else
 					if not feature_address.text.is_empty then
 						display_error_message (
-							Warning_messages.w_not_a_compiled_class_line (class_i.name))
+							Warning_messages.w_not_a_compiled_class_line (class_i.name_in_upper))
 					end
 					parent.advanced_set_stone (create {CLASSI_STONE}.make (class_i))
 				end
@@ -1090,7 +931,6 @@ feature {NONE} -- Implementation
 					process_cluster_callback (1)
 				else
 					create choice.make_default (address_dialog, agent process_cluster_callback (?))
-					choice.destroy_actions.extend (agent one_lost_focus)
 					choice.set_title (Interface_names.t_Select_cluster)
 					choice.set_list (cluster_names, cluster_pixmaps)
 					choice.set_position (cluster_address.screen_x, cluster_address.screen_y + cluster_address.height)
@@ -1159,7 +999,6 @@ feature {NONE} -- Implementation
 					process_class_callback (1)
 				else
 					create choice.make_default (address_dialog, agent process_class_callback (?))
-					choice.destroy_actions.extend (agent one_lost_focus)
 					choice.set_title (Interface_names.t_Select_class)
 					choice.set_list (class_names, class_pixmaps)
 					choice.set_position (class_address.screen_x, class_address.screen_y + class_address.height)
@@ -1200,7 +1039,6 @@ feature {NONE} -- Implementation
 					process_feature_callback (1)
 				else
 					create choice.make_default (address_dialog, agent process_feature_callback (?))
-					choice.destroy_actions.extend (agent one_lost_focus)
 					choice.set_title (Interface_names.t_Select_feature)
 					choice.set_list (feature_names, feature_pixmaps)
 					choice.set_position (feature_address.screen_x, feature_address.screen_y + feature_address.height)
@@ -1226,52 +1064,46 @@ feature {NONE} -- open new class
 			matcher: KMP_WILD
 			matching: SORTED_TWO_WAY_LIST [CONF_GROUP]
 		do
-			if workbench.is_in_stable_state then
-				current_group := Void
-				fname := cluster_address.text
-				if fname /= Void then
-					fname.left_adjust
-					fname.right_adjust
-				end
-				if fname = Void or else fname.is_empty then
-					process_cluster
-				else
-					fname.to_lower
-					create matcher.make_empty
-					matcher.set_pattern (fname)
-					if not matcher.has_wild_cards then
-						if is_general_group_acceptable then
-							current_group := universe.group_of_name (fname)
-						else
-							current_group := Universe.cluster_of_name (fname)
-						end
-						process_cluster
-					elseif Universe.target /= Void then
-						from
-							if is_general_group_acceptable then
-								cl := Universe.groups
-							else
-								cl := Universe.target.clusters.linear_representation
-							end
-							cl.start
-							create matching.make
-						until
-							cl.after
-						loop
-							matcher.set_text (cl.item.name)
-							if matcher.pattern_matches then
-								matching.extend (cl.item)
-							end
-							cl.forth
-						end
-						matching.sort
-						group_list := matching
-						display_cluster_choice
-					end
-				end
+			current_group := Void
+			fname := cluster_address.text
+			if fname /= Void then
+				fname.left_adjust
+				fname.right_adjust
+			end
+			if fname = Void or else fname.is_empty then
+				process_cluster
 			else
-				if address_dialog /= Void and then address_dialog.is_displayed then
-					address_dialog.hide
+				fname.to_lower
+				create matcher.make_empty
+				matcher.set_pattern (fname)
+				if not matcher.has_wild_cards then
+					if is_general_group_acceptable then
+						current_group := universe.group_of_name (fname)
+					else
+						current_group := Universe.cluster_of_name (fname)
+					end
+					process_cluster
+				elseif Universe.target /= Void then
+					from
+						if is_general_group_acceptable then
+							cl := Universe.groups
+						else
+							cl := Universe.target.clusters.linear_representation
+						end
+						cl.start
+						create matching.make
+					until
+						cl.after
+					loop
+						matcher.set_text (cl.item.name)
+						if matcher.pattern_matches then
+							matching.extend (cl.item)
+						end
+						cl.forth
+					end
+					matching.sort
+					group_list := matching
+					display_cluster_choice
 				end
 			end
 		end
@@ -1285,102 +1117,96 @@ feature {NONE} -- open new class
 			cluster: CLUSTER_I
 			cluster_name: STRING
 			matcher: KMP_WILD
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 			l_classes: DS_HASH_SET [CLASS_I]
 		do
-			if workbench.is_in_stable_state then
-				class_i := Void
-				cname := class_address.text
-				if cname /= Void then
-					cname.left_adjust
-					cname.right_adjust
-				end
-				if cname = Void or else cname.is_empty then
-					if choosing_class then
-						process_class
-					else
-						process_feature_class
-					end
+			class_i := Void
+			cname := class_address.text
+			if cname /= Void then
+				cname.left_adjust
+				cname.right_adjust
+			end
+			if cname = Void or else cname.is_empty then
+				if choosing_class then
+					process_class
 				else
-					cname.to_upper
-					create matcher.make_empty
-					matcher.set_pattern (cname)
-					if not matcher.has_wild_cards then
-						at_pos := cname.index_of ('@', 1)
-						if at_pos = cname.count then
-							cname.keep_head (cname.count - 1)
-							class_address.set_text (cname)
-							at_pos := 0
-						end
-						if at_pos = 0 then
-							if universe.target = Void then
-								class_list := Void
-							else
-								class_list := Universe.classes_with_name (cname)
-							end
-							if class_list = Void or else class_list.is_empty then
-								class_list := Void
-								if choosing_class then
-									process_class
-								else
-									process_feature_class
-								end
-							elseif class_list.count = 1 then
-								class_i := class_list.first
-								if choosing_class then
-									process_class
-								else
-									process_feature_class
-								end
-							else
-								display_class_choice
-							end
-						else
-							cluster_name := cname.substring (at_pos + 1, cname.count)
-							if at_pos > 1 then
-								cname := cname.substring (1, at_pos - 1)
-							else
-								cname := ""
-							end
-							cluster := Universe.cluster_of_name (cluster_name)
-							if cluster = Void then
-								create wd.make_with_text (Warning_messages.w_Cannot_find_cluster (cluster_name))
-								wd.show_modal_to_window (window_manager.last_focused_development_window.window)
-								if class_address.is_displayed then
-									class_address.set_focus
-									class_address.select_region (at_pos + 1, class_address.text_length)
-								end
-							else
-								class_i ?= cluster.classes.item (cname)
-								if choosing_class then
-									process_class
-								else
-									process_feature_class
-								end
-							end
-						end
-					else
-						from
-							create sorted_classes.make
-							l_classes := universe.all_classes
-							l_classes.start
-						until
-							l_classes.after
-						loop
-							matcher.set_text (l_classes.item_for_iteration.name)
-							if matcher.pattern_matches then
-								sorted_classes.put_front (l_classes.item_for_iteration)
-							end
-							l_classes.forth
-						end
-						sorted_classes.sort
-						class_list := sorted_classes
-						display_class_choice
-					end
+					process_feature_class
 				end
 			else
-				if address_dialog /= Void and then address_dialog.is_displayed then
-					address_dialog.hide
+				cname.to_upper
+				create matcher.make_empty
+				matcher.set_pattern (cname)
+				if not matcher.has_wild_cards then
+					at_pos := cname.index_of ('@', 1)
+					if at_pos = cname.count then
+						cname.keep_head (cname.count - 1)
+						class_address.set_text (cname)
+						at_pos := 0
+					end
+					if at_pos = 0 then
+						if universe.target = Void then
+							class_list := Void
+						else
+							class_list := Universe.classes_with_name (cname)
+						end
+						if class_list = Void or else class_list.is_empty then
+							class_list := Void
+							if choosing_class then
+								process_class
+							else
+								process_feature_class
+							end
+						elseif class_list.count = 1 then
+							class_i := class_list.first
+							if choosing_class then
+								process_class
+							else
+								process_feature_class
+							end
+						else
+							display_class_choice
+						end
+					else
+						cluster_name := cname.substring (at_pos + 1, cname.count)
+						if at_pos > 1 then
+							cname := cname.substring (1, at_pos - 1)
+						else
+							cname := ""
+						end
+						cluster := Universe.cluster_of_name (cluster_name)
+						if cluster = Void then
+							create wd.make_with_text (Warning_messages.w_Cannot_find_cluster (cluster_name))
+							wd.show_modal_to_window (window_manager.last_focused_development_window.window)
+							if class_address.is_displayed then
+								class_address.set_focus
+								class_address.select_region (at_pos + 1, class_address.text_length)
+							end
+						else
+							class_i := cluster.classes.item (cname)
+							if choosing_class then
+								process_class
+							else
+								process_feature_class
+							end
+						end
+					end
+				else
+					from
+						create sorted_classes.make
+						l_classes := universe.all_classes
+						l_classes.start
+					until
+						l_classes.after
+					loop
+						matcher.set_text (l_classes.item_for_iteration.name)
+						if matcher.pattern_matches then
+							sorted_classes.put_front (l_classes.item_for_iteration)
+						end
+						l_classes.forth
+					end
+					sorted_classes.sort
+					class_list := sorted_classes
+					display_class_choice
 				end
 			end
 		end
@@ -1690,7 +1516,7 @@ feature {NONE} -- open new class
 			ccname: STRING
 		do
 			current_typed_class := Void
-			if Workbench.is_in_stable_state and enable_feature_complete then
+			if Workbench.system_defined and enable_feature_complete then
 				clist := system.classes
 				ccname := class_address.text
 				ccname.to_upper
@@ -1732,20 +1558,14 @@ feature {NONE} -- open new class
 			if not str.is_empty and then (str @ (str.count) /= ' ') then
 				last_caret_position := class_address.caret_position
 				class_address.change_actions.block
-					-- Remove white space from classname
 				str.left_adjust
 				str.right_adjust
-					-- Convert classname input to uppercase for classes
 				str.to_upper
-					-- Replace spaces with underscores for classes
-				str.replace_substring_all (" ", "_")
-					-- Replace dashes with underscores for classes
-				str.replace_substring_all ("-", "_")
 				nb := str.count
 				do_not_complete :=	last_key_was_delete or
 									not enable_complete or
 									last_caret_position /= nb + 1 or
-									not Workbench.is_in_stable_state
+									not Workbench.system_defined
 				if nb > 0 and not do_not_complete and last_key_was_backspace and had_selection then
 					str.keep_head (nb - 1)
 					nb := nb - 1
@@ -1809,14 +1629,12 @@ feature {NONE} -- open new class
 						index := index + 1
 					end
 					if current_found /= Void then
-						if not last_key_was_backspace then
-							current_found := current_found.as_upper
-							class_address.set_text (current_found)
-							if nb < current_found.count then
-								class_address.select_region (nb + 1, current_found.count)
-							else
-								class_address.set_caret_position (current_found.count + 1)
-							end
+						current_found := current_found.as_upper
+						class_address.set_text (current_found)
+						if nb < current_found.count then
+							class_address.select_region (nb + 1, current_found.count)
+						else
+							class_address.set_caret_position (current_found.count + 1)
 						end
 					elseif not (last_key_was_backspace and had_selection) then
 						str.to_upper
@@ -1925,13 +1743,11 @@ feature {NONE} -- open new class
 						list.forth
 					end
 					if current_found /= Void then
-						if not last_key_was_backspace then
-							cluster_address.set_text (current_found)
-							if nb < current_found.count then
-								cluster_address.select_region (nb + 1, current_found.count)
-							else
-								cluster_address.set_caret_position (current_found.count + 1)
-							end
+						cluster_address.set_text (current_found)
+						if nb < current_found.count then
+							cluster_address.select_region (nb + 1, current_found.count)
+						else
+							cluster_address.set_caret_position (current_found.count + 1)
 						end
 					elseif not (last_key_was_backspace and cluster_had_selection) then
 						cluster_address.set_text (str)
@@ -1953,24 +1769,21 @@ feature {NONE} -- open new class
 			-- The user typed a new key in the feature combo.
 			-- Try to complete the feature name.
 		local
-			str: STRING_32
+			str: STRING
 			nb, minc: INTEGER
 			j: INTEGER
 			list: FEATURE_TABLE
-			current_found: STRING_32
-			cname: STRING_32
+			current_found: STRING
+			cname: STRING
 			do_not_complete: BOOLEAN
 			last_caret_position: INTEGER
 			same_st, dif: BOOLEAN
-			str_area, current_area, other_area: SPECIAL [CHARACTER_32]
+			str_area, current_area, other_area: SPECIAL [CHARACTER]
 			truncated: BOOLEAN
 		do
 			feature_address.change_actions.block
 			str := feature_address.text
-
-			--|FIXME: The way used to decide if a name should be completed is bad.
---			if not str.is_empty and then not (str.substring_index (l_From, 1) > 0) then
-			if not str.is_empty and then not (str.substring_index (interface_names.l_from ("", ""), 1) > 0) then
+			if not str.is_empty and then not (str.substring_index (l_From, 1) > 0) then
 				last_caret_position := feature_address.caret_position
 					-- Only perform `left_adjust' so that we can type `infix "X"' in the combo box.
 				str.left_adjust
@@ -2043,13 +1856,11 @@ feature {NONE} -- open new class
 						list.forth
 					end
 					if current_found /= Void then
-						if not last_key_was_backspace then
-							feature_address.set_text (current_found)
-							if nb < current_found.count then
-								feature_address.select_region (nb + 1, current_found.count)
-							else
-								feature_address.set_caret_position (current_found.count + 1)
-							end
+						feature_address.set_text (current_found)
+						if nb < current_found.count then
+							feature_address.select_region (nb + 1, current_found.count)
+						else
+							feature_address.set_caret_position (current_found.count + 1)
 						end
 					elseif not (last_key_was_backspace and feature_had_selection) then
 						feature_address.set_text (str)
@@ -2126,6 +1937,15 @@ feature {NONE} -- Implementation of the clickable labels for `header_info'
 	address_dialog: EV_POPUP_WINDOW
 			-- Window that pops up in the context tool to change the stone centering.
 
+	is_not_feature_stone (st: ANY): BOOLEAN is
+			-- Is `st' not a feature stone?
+		local
+			fst: FEATURE_STONE
+		do
+			fst ?= st
+			Result := fst = Void
+		end
+
 	set_mode (for_context_tool: BOOLEAN) is
 			-- Define `Current's execution mode (generated parent_windows are different).
 		do
@@ -2185,14 +2005,6 @@ feature {NONE} -- Implementation of the clickable labels for `header_info'
 			highlight_label (feature_label)
 			unhighlight_label (feature_label)
 
-			cluster_label.set_configurable_target_menu_mode
-			class_label.set_configurable_target_menu_mode
-			feature_label.set_configurable_target_menu_mode
-
-			cluster_label.set_configurable_target_menu_handler (agent context_menu_handler)
-			class_label.set_configurable_target_menu_handler (agent context_menu_handler)
-			feature_label.set_configurable_target_menu_handler (agent context_menu_handler)
-
 			hb.set_padding (2)
 			hb.extend (cluster_label)
 			hb.extend (class_label)
@@ -2201,14 +2013,6 @@ feature {NONE} -- Implementation of the clickable labels for `header_info'
 			hb.disable_item_expand (class_label)
 			hb.disable_item_expand (feature_label)
 			header_info.extend (hb)
-		end
-
-	context_menu_handler (a_menu: EV_MENU; a_target_list: ARRAYED_LIST [EV_PND_TARGET_DATA]; a_source: EV_PICK_AND_DROPABLE; a_pebble: ANY) is
-			-- Context menu handler
-		do
-			if context_menu_factory /= Void then
-				context_menu_factory.standard_compiler_item_menu (a_menu, a_target_list, a_source, a_pebble)
-			end
 		end
 
 	update_labels is
@@ -2243,7 +2047,7 @@ feature {NONE} -- Implementation of the clickable labels for `header_info'
 					feature_label.set_minimum_width (maximum_label_width (text))
 					feature_label.set_text (text)
 					feature_label.set_pebble (create {FEATURE_STONE}.make (conv_f.e_feature))
-					text := conv_f.e_feature.associated_class.name
+					text := conv_f.e_feature.associated_class.name_in_upper
 					class_label.set_minimum_width (maximum_label_width (text))
 					class_label.set_text (text)
 					class_label.set_pebble (create {CLASSC_STONE}.make (conv_f.e_feature.associated_class))
@@ -2258,7 +2062,7 @@ feature {NONE} -- Implementation of the clickable labels for `header_info'
 						cluster_label.set_pebble (create {CLUSTER_STONE}.make (conv_class.group))
 						cluster_label.set_minimum_width (maximum_label_width (text))
 						cluster_label.set_text (text)
-						text := conv_class.class_i.name
+						text := conv_class.class_i.name_in_upper
 						l_class_c := conv_class.class_i.compiled_representation
 						if l_class_c /= Void then
 							class_label.set_pebble (create {CLASSC_STONE}.make (l_class_c))
@@ -2283,7 +2087,6 @@ feature {NONE} -- Implementation of the clickable labels for `header_info'
 					end
 				end
 			end
-			label_changed_actions.call (Void)
 		end
 
 	update_combos is
@@ -2306,7 +2109,7 @@ feature {NONE} -- Implementation of the clickable labels for `header_info'
 				if not mode then
 					conv_class ?= c_stone
 					if conv_class /= Void then
-						class_address.set_text (conv_class.class_i.name)
+						class_address.set_text (conv_class.class_i.name_in_upper)
 						conv_f ?= c_stone
 						if conv_f /= Void then
 							feature_address.set_text (conv_f.origin_name)
@@ -2321,13 +2124,13 @@ feature {NONE} -- Implementation of the clickable labels for `header_info'
 					conv_f ?= c_stone
 					if conv_f /= Void then
 						feature_address.set_text (conv_f.feature_name)
-						class_address.set_text (conv_f.e_feature.associated_class.name)
+						class_address.set_text (conv_f.e_feature.associated_class.name_in_upper)
 						cluster_address.set_text (conv_f.e_feature.associated_class.group.name)
 					else
 						conv_class ?= c_stone
 						if conv_class /= Void then
 							cluster_address.set_text (conv_class.group.name)
-							class_address.set_text (conv_class.class_i.name)
+							class_address.set_text (conv_class.class_i.name_in_upper)
 							feature_address.remove_text
 						else
 							cluster_address.remove_text
@@ -2344,7 +2147,7 @@ feature {NONE} -- Implementation of the clickable labels for `header_info'
 		require
 	   		for_context_tool: mode
 		do
-			pop_up_address_bar_at_position ((header_info.screen_x + header_info.width // 2) - address_dialog.width // 2, header_info.screen_y, 0)
+			pop_up_address_bar_at_position (header_info.screen_x, header_info.screen_y, 0)
 		end
 
 	button_action (combo: EV_COMBO_BOX; x, y, b: INTEGER; d1, d2, d3: DOUBLE; ax, ay: INTEGER) is
@@ -2366,19 +2169,18 @@ feature {NONE} -- Implementation of the clickable labels for `header_info'
 	one_lost_focus is
 			-- One of the widgets displayed in `address_dialog' has lost the focus.
 			-- If none now has the focus, hide `address_dialog'.
+		require
+			for_context_tool: mode
 		do
-			if mode then
-			-- Now it's for context tool, `address_dialog' exists.
-				if
-					lost_focus_action_enabled and then
-					(class_address = Void or else not class_address.has_focus) and then
-					(feature_address = Void or else not feature_address.has_focus) and then
-					(cluster_address = Void or else not cluster_address.has_focus) and then
-					(address_dialog = Void or else not address_dialog.has_focus) and then
-					(choice = Void or else (choice.is_destroyed or else not choice.is_show_requested))
-				then
-					address_dialog.hide
-				end
+			if
+				lost_focus_action_enabled and then
+				not class_address.has_focus and then
+				not feature_address.has_focus and then
+				not cluster_address.has_focus and then
+				not address_dialog.has_focus and then
+				(choice = Void or else (choice.is_destroyed or else not choice.is_show_requested))
+			then
+				address_dialog.hide
 			end
 		end
 
@@ -2391,12 +2193,8 @@ feature {NONE} -- Implementation of the clickable labels for `header_info'
 
 	Default_font: EV_FONT is
 			-- Font used to display labels.
-			-- FIXIT: We should use once routine instead of creating a EV_FONT every time? Because this is GDI object limitations on Windows.
-		local
-			l_shared: SD_SHARED -- FIXIT: After class EV_STOCK_FONTS added, we should use that instead of SD_SHARED.
 		do
-			create l_shared
-			Result := l_shared.tool_bar_font.twin
+			Result := create {EV_FONT}
 		end
 
 	highlight_label (lab: EV_LABEL) is
@@ -2409,7 +2207,7 @@ feature {NONE} -- Implementation of the clickable labels for `header_info'
 			lab.set_font (a_font)
 		end
 
-	maximum_label_width (a_text: STRING_GENERAL): INTEGER is
+	maximum_label_width (a_text: STRING): INTEGER is
 			-- Maximum width of a label when set with text `a_text'
 		require
 			a_text_not_void: a_text /= Void
@@ -2423,7 +2221,7 @@ feature {NONE} -- Implementation of the clickable labels for `header_info'
 			lab.set_font (Default_font)
 		end
 
-	display_error_message (a_message: STRING_GENERAL) is
+	display_error_message (a_message: STRING) is
 			-- Display error message `a_message'.
 		require
 			a_message_not_void: a_message /= Void
@@ -2462,27 +2260,26 @@ feature {NONE} -- Implementation of the clickable labels for `header_info'
 			Result := preferences.development_window_data.class_completion --, True
 		end
 
-	default_class_name: STRING_GENERAL is
+	default_class_name: STRING is
 			-- Default name for class
 		do
-			Result := interface_names.l_no_class_bra
+			Result := "(no_class)"
 		end
 
-	default_feature_name: STRING_GENERAL is
+	default_feature_name: STRING is
 			-- Default name for feature
 		do
-			Result := interface_names.l_no_feature_bra
+			Result := "(no_feature)"
 		end
 
-	default_cluster_name: STRING_GENERAL is
+	default_cluster_name: STRING is
 			-- Default name for cluster		
 		do
-			Result := interface_names.l_no_cluster_bra
+			Result := "(no_cluster)"
 		end
 
-	l_Space: STRING is " "
-
 	l_From: STRING is " from "
+	l_Space: STRING is " "
 
 	bold_ratio: DOUBLE is 1.19;
 

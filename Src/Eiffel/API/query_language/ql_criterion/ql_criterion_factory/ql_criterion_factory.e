@@ -136,12 +136,6 @@ feature{NONE} -- Implementation
 	criterion_type: QL_CRITERION
 			-- Criterion anchor type
 
-	item_type: QL_ITEM
-			-- Item anchor type
-
-	simple_criterion_type: QL_SIMPLE_CRITERION
-			-- Simple criterion type
-
 	agent_table: HASH_TABLE [like creation_function, INTEGER]
 			-- Agent table for create a criterion.
 			-- Key is agent index, value is that agent.
@@ -149,50 +143,6 @@ feature{NONE} -- Implementation
 	name_table: HASH_TABLE [INTEGER, STRING]
 			-- Name-index table
 			-- Key is agent index, value is name of the criterion that the agent creates
-
-	ast_index_list_from_string (a_text: STRING): LIST [INTEGER] is
-			-- A list of AST node indexes parsed from `a_text'
-			-- `a_text' is of the form: "ast_type1, ast_type2, ..., ast_typen".
-			-- For example, "if, inspect, loop, integer".
-		require
-			a_text_attached: a_text /= Void
-		local
-			l_str_list: LIST [STRING]
-			l_str: STRING
-			l_indexes: ARRAY [INTEGER]
-			l_ast_index_table: HASH_TABLE [ARRAY [INTEGER], STRING]
-		do
-			create {LINKED_LIST [INTEGER]} Result.make
-			l_str_list := a_text.split (',')
-			l_ast_index_table := query_language_names.ast_index_table
-			from
-				l_str_list.start
-			until
-				l_str_list.after
-			loop
-				l_str := l_str_list.item
-				l_str.left_adjust
-				l_str.right_adjust
-				if not l_str.is_empty then
-					l_indexes := l_ast_index_table.item (l_str)
-					if l_indexes /= Void then
-						l_indexes.do_all (agent Result.extend)
-					end
-				end
-				l_str_list.forth
-			end
-		ensure
-			result_attached: Result /= Void
-		end
-
-	value_criterion_evalaute_agent (a_item: QL_ITEM; a_evaluate_value_func: FUNCTION [ANY, TUPLE [QL_ITEM], BOOLEAN]): BOOLEAN is
-			-- Value agent for value criterion.
-		require
-			a_item_attached: a_item /= Void
-			a_evaluate_value_func_attached: a_evaluate_value_func /= Void
-		do
-			Result := a_evaluate_value_func.item ([a_item])
-		end
 
 invariant
 	agent_index_table_attached: agent_table /= Void
@@ -229,5 +179,8 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
+
 
 end

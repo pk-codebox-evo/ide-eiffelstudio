@@ -1,7 +1,6 @@
 indexing
-	description: "Lanucher that start ec executable."
-	legal: "See notice at end of class."
-	status: "See notice at end of class."
+	description: "Objects that ..."
+	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -38,9 +37,8 @@ create
 feature {NONE} -- Creation
 
 	make is
-			-- Creation method
 		local
-			l_layout: EC_EIFFEL_LAYOUT
+			l_layout: ESTUDIO_EIFFEL_LAYOUT
 		do
 			create l_layout
 				-- the user can define some variables on the command line so we do the check after we have handled this
@@ -53,13 +51,11 @@ feature {NONE} -- Creation
 		end
 
 	do_ec_launching is
-			-- Do ec launching
 		do
 			post_launch_actions.extend_kamikaze (agent launch_ec)
 		end
 
 	do_exit_launcher is
-			-- Do exit launcher
 		local
 			timeout: EV_TIMEOUT
 		do
@@ -70,14 +66,12 @@ feature {NONE} -- Creation
 		end
 
 	exit_launcher is
-			-- Exit launcher
 		do
 			Precursor
 			destroy
 		end
 
 	close_splasher (delay: INTEGER_32) is
-			-- Close splasher
 		local
 			timeout: EV_TIMEOUT
 		do
@@ -90,50 +84,9 @@ feature {NONE} -- Creation
 			end
 		end
 
-	new_splasher (t: STRING_GENERAL): SPLASH_DISPLAYER_I is
-			-- New splasher
-		local
-			l_advanced: EV_ADVANCED_SPLASH_DISPLAYER_I
+	new_splasher (t: STRING_GENERAL): EV_SPLASH_DISPLAYER is
 		do
-			create {EV_ADVANCED_SPLASH_DISPLAYER} l_advanced.make
-			if l_advanced.is_executable then
-				Result := l_advanced
-			else
-				create {EV_SPLASH_DISPLAYER} Result.make_with_text (t)
-			end
+			create Result.make_with_text (t)
 		end
 
-indexing
-	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
-	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
-	licensing_options:	"http://www.eiffel.com/licensing"
-	copying: "[
-			This file is part of Eiffel Software's Eiffel Development Environment.
-			
-			Eiffel Software's Eiffel Development Environment is free
-			software; you can redistribute it and/or modify it under
-			the terms of the GNU General Public License as published
-			by the Free Software Foundation, version 2 of the License
-			(available at the URL listed under "license" above).
-			
-			Eiffel Software's Eiffel Development Environment is
-			distributed in the hope that it will be useful,	but
-			WITHOUT ANY WARRANTY; without even the implied warranty
-			of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-			See the	GNU General Public License for more details.
-			
-			You should have received a copy of the GNU General Public
-			License along with Eiffel Software's Eiffel Development
-			Environment; if not, write to the Free Software Foundation,
-			Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
-		]"
-	source: "[
-			 Eiffel Software
-			 356 Storke Road, Goleta, CA 93117 USA
-			 Telephone 805-685-1006, Fax 805-685-6869
-			 Website http://www.eiffel.com
-			 Customer support http://support.eiffel.com
-		]"
-
 end
-

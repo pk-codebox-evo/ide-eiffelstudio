@@ -55,7 +55,7 @@ feature -- Basic operations
 			dial: EB_FILE_SAVE_DIALOG
 			test_file: RAW_FILE
 			error: INTEGER
-			wd: EB_WARNING_DIALOG
+			wd: EV_WARNING_DIALOG
 			l_pref: STRING_PREFERENCE
 		do
 			if is_sensitive then
@@ -72,7 +72,7 @@ feature -- Basic operations
 					else
 						dial.set_file_name (tool.cluster_graph.center_cluster.name + ".png")
 					end
-					dial.show_modal_to_window (tool.develop_window.window)
+					dial.show_modal_to_window (tool.development_window.window)
 					if not dial.file_name.is_empty then
 						error := 1
 						p := tool.projector.world_as_pixmap (5)
@@ -82,9 +82,9 @@ feature -- Basic operations
 							if test_file.is_writable then
 								test_file.close
 								create png_format
-								tool.develop_window.window.set_pointer_style (tool.Default_pixmaps.Wait_cursor)
+								tool.development_window.window.set_pointer_style (tool.Default_pixmaps.Wait_cursor)
 								p.save_to_named_file (png_format, png_file)
-								tool.develop_window.window.set_pointer_style (tool.Default_pixmaps.Standard_cursor)
+								tool.development_window.window.set_pointer_style (tool.Default_pixmaps.Standard_cursor)
 								error := 0
 							else
 								test_file.close
@@ -97,7 +97,7 @@ feature -- Basic operations
 					elseif error = 2 then
 						create wd.make_with_text (Warning_messages.W_cannot_generate_png)
 					end
-					wd.show_modal_to_window (tool.develop_window.window)
+					wd.show_modal_to_window (tool.development_window.window)
 				end
 			end
 		rescue
@@ -106,7 +106,7 @@ feature -- Basic operations
 			else
 				error := 1
 			end
-			tool.develop_window.window.set_pointer_style (tool.Default_pixmaps.Standard_cursor)
+			tool.development_window.window.set_pointer_style (tool.Default_pixmaps.Standard_cursor)
 			retry
 		end
 
@@ -116,19 +116,13 @@ feature -- Basic operations
 			Result := pixmaps.icon_pixmaps.diagram_export_to_png_icon
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.diagram_export_to_png_icon_buffer
-		end
-
-	tooltip: STRING_GENERAL is
+	tooltip: STRING is
 			-- Tooltip for the toolbar button.
 		do
 			Result := Interface_names.f_diagram_to_png
 		end
 
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Name for the menu entry.
 		do
 			Result := Interface_names.m_diagram_to_png
@@ -137,6 +131,7 @@ feature -- Basic operations
 	name: STRING is "Diagram_to_png";
 			-- Name of the command. Used to store the command in the
 			-- preferences.
+
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

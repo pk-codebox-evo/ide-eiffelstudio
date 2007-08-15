@@ -8,9 +8,9 @@ indexing
 class ROUT_ENTRY
 
 inherit
-	ATTR_ENTRY
+	ENTRY
 		redefine
-			 entry, is_attribute, update, used
+			update, is_attribute
 		end
 
 	SHARED_ID_TABLES
@@ -29,13 +29,9 @@ feature -- Access
 
 	pattern_id: INTEGER
 			-- Pattern id of the entry
-
-	written_in: INTEGER
-			-- Id of the class where the associated feature of the
-			-- unit is written in
-
-	is_attribute: BOOLEAN
-			-- Is the entry associated with an attribute?
+	
+	is_attribute: BOOLEAN is False
+			-- is the feature_i associated an attribute ?	
 
 feature -- Comparison
 
@@ -67,21 +63,17 @@ feature -- Settings
 			pattern_id := i
 		end
 
+feature -- previously in ROUT_UNIT
+
+	written_in: INTEGER
+			-- Id of the class where the associated feature of the
+			-- unit is written in
+
 	set_written_in (i: INTEGER) is
 			-- Assign `i' to `written_in'.
 		do
 			written_in := i
 		end
-
-	set_is_attribute is
-			-- Mark this entry an attribute.
-		do
-			is_attribute := True
-		ensure
-			is_attribute: is_attribute
-		end
-
-feature -- previously in ROUT_UNIT
 
 	written_class: CLASS_C is
 			-- Class where the feature is written in
@@ -89,12 +81,17 @@ feature -- previously in ROUT_UNIT
 			Result := System.class_of_id (written_in)
 		end
 
+	new_poly_table (routine_id: INTEGER): ROUT_TABLE is
+			-- New associated polymorhic table
+		do
+			create Result.make (routine_id)
+		end
+
 	entry (class_type: CLASS_TYPE): ROUT_ENTRY is
 			-- Entry for a routine
 		do
 			create Result
 			Result.set_type_id (class_type.type_id)
-			Result.set_feature_id (feature_id)
 			Result.set_type (feature_type (class_type))
 			Result.set_body_index (body_index)
 debug
@@ -106,16 +103,13 @@ io.error.put_string (written_class.name)
 io.error.put_new_line
 end
 			Result.set_written_type_id (written_class.meta_type (class_type).type_id)
-			if is_attribute then
-				Result.set_is_attribute
-			end
 		end
 
 feature -- update
 
 	update (class_type: CLASS_TYPE) is
 		do
-			Precursor (class_type)
+			Precursor {ENTRY} (class_type)
 			set_written_type_id (written_class.meta_type (class_type).type_id)
 		end
 
@@ -141,6 +135,17 @@ feature -- from ROUT_ENTRY
 			Result := Encoder.feature_name (written_class_type.static_type_id, body_index)
 		end
 
+	make_byte_code (ba: BYTE_ARRAY) is
+			-- Make byte code for current entry.
+		do
+				-- Dynamic type
+			ba.append_short_integer (type_id - 1)
+				-- Real body index
+			ba.append_short_integer (real_body_index - 1)
+				-- Pattern id
+			ba.append_short_integer (pattern_id)
+		end
+
 	written_class_type: CLASS_TYPE is
 		do
 			Result := System.class_type_of_id (written_type_id)
@@ -153,7 +158,7 @@ feature -- from ROUT_ENTRY
 		end
 
 indexing
-	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

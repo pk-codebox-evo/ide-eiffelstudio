@@ -33,13 +33,7 @@ feature -- Properties
 			Result.put (pixmaps.icon_pixmaps.view_contracts_icon, 2)
 		end
 
-	pixel_buffer: EV_PIXEL_BUFFER is
-			-- Graphical representation of the command.
-		once
-			Result := pixmaps.icon_pixmaps.view_contracts_icon_buffer
-		end
-
-	menu_name: STRING_GENERAL is
+	menu_name: STRING is
 			-- Identifier of `Current' in menus.
 		do
 			Result := Interface_names.m_Showshort
@@ -53,7 +47,7 @@ feature -- Properties
 
 feature {NONE} -- Properties
 
-	capital_command_name: STRING_GENERAL is
+	command_name: STRING is
 			-- Name of the command.
 		do
 			Result := Interface_names.l_Short
@@ -177,7 +171,12 @@ feature -- Status setting
 			class_cmd := Void
 			must_format := True
 			format
-			ensure_display_in_widget_owner
+			if selected then
+				if widget_owner /= Void then
+					widget_owner.set_widget (widget)
+				end
+				display_header
+			end
 		end
 
 indexing

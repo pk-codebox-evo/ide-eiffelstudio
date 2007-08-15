@@ -69,8 +69,16 @@ feature -- Access
 			-- Given a CONF_CLASS object, return a QL_CLASS object representing it.
 		require
 			a_conf_class_attached: a_conf_class /= Void
+		local
+			l_group: CONF_GROUP
+			l_path: LINKED_LIST [QL_ITEM]
 		do
-			create Result.make_with_parent (a_conf_class, conf_group_as_parent (a_conf_class.group, False))
+			l_group := a_conf_class.group
+			create l_path.make
+			find_path_from_conf_group (l_path, l_group)
+			check l_path.count >= 2 end
+			set_parents (l_path)
+			create Result.make_with_parent (a_conf_class, l_path.last)
 		ensure
 			result_attached: Result /= Void
 			result_valid: Result.is_valid_domain_item
@@ -80,8 +88,13 @@ feature -- Access
 			-- Given a CONF_GROUP object, return a QL_GROUP object representing it.
 		require
 			a_group_attached: a_group /= Void
+		local
+			l_list: LINKED_LIST [QL_ITEM]
 		do
-			Result ?= conf_group_as_parent (a_group, False)
+			create l_list.make
+			find_path_from_conf_group (l_list, a_group)
+			set_parents (l_list)
+			Result ?= l_list.last
 		ensure
 			result_attached: Result /= Void
 			result_valid: Result.is_valid_domain_item
@@ -103,8 +116,8 @@ feature -- Access
 				l_is_application_target_reached
 			loop
 				l_path.put_front (create {QL_TARGET}.make (l_target))
-				if l_target.system = l_target.system.application_target.system then
-					l_target := l_target.system.application_target
+				if l_target.system = l_target.application_target.system then
+					l_target := l_target.application_target
 					l_is_application_target_reached := True
 				else
 					check
@@ -113,9 +126,9 @@ feature -- Access
 					l_target := l_target.system.library_target
 				end
 				if not l_is_application_target_reached then
-					check l_target.system.lowest_used_in_library /= Void end
-					l_path.put_front (create {QL_GROUP}.make (l_target.system.lowest_used_in_library))
-					l_target := l_target.system.lowest_used_in_library.target
+					check l_target.lowest_used_in_library /= Void end
+					l_path.put_front (create {QL_GROUP}.make (l_target.lowest_used_in_library))
+					l_target := l_target.lowest_used_in_library.target
 				end
 			end
 			set_parents (l_path)
@@ -145,36 +158,11 @@ feature -- Type
 			result_attached: Result /= Void
 		end
 
-feature -- Equality tester
-
-	is_class_equal (a_class, b_class: QL_CLASS): BOOLEAN is
-			-- Does `a_class' equal to `b_class'?
-		require
-			a_class_attached: a_class /= Void
-			b_class_attached: b_class /= Void
-		do
-			Result := a_class.is_equal (b_class)
-		ensure
-			good_result: Result = a_class.is_equal (b_class)
-		end
-
-	is_feature_equal (a_feature, b_feature: QL_FEATURE): BOOLEAN is
-			-- Does `a_feature' equal to `b_feature'?
-		require
-			a_feature_attached: a_feature /= Void
-			b_feature_attached: b_feature /= Void
-		do
-			Result := a_feature.is_equal (b_feature)
-		ensure
-			good_result: Result = a_feature.is_equal (b_feature)
-		end
-
 feature{NONE} -- Implementation
 
-	find_path_from_conf_group (a_list: LINKED_LIST [QL_ITEM]; a_group: CONF_GROUP; a_stop_on_target: BOOLEAN) is
+	find_path_from_conf_group (a_list: LINKED_LIST [QL_ITEM]; a_group: CONF_GROUP) is
 			-- Find a path from `a_group' to current system target, and
 			-- save this path in `a_list'.
-			-- If `a_stop_on_target' is True, stop path building when we meet a target component.
 		require
 			a_list_attached: a_list /= Void
 			a_group_attached: a_group /= Void
@@ -182,6 +170,7 @@ feature{NONE} -- Implementation
 			l_cluster: CONF_CLUSTER
 			l_lib: CONF_LIBRARY
 			l_target: CONF_TARGET
+			l_is_application_target_reached: BOOLEAN
 		do
 			if a_list.is_empty then
 				a_list.extend (create{QL_GROUP}.make (a_group))
@@ -191,40 +180,40 @@ feature{NONE} -- Implementation
 			if a_group.is_cluster then
 				l_cluster ?= a_group
 				if l_cluster.parent /= Void then
-					find_path_from_conf_group (a_list, l_cluster.parent, False)
+					find_path_from_conf_group (a_list, l_cluster.parent)
 				else
 					l_target := a_group.target
-					if l_target.system = l_target.system.application_target.system then
-							-- We have reached current application target.
-						a_list.put_front (create{QL_TARGET}.make (l_target.system.application_target))
+					if l_target.system = l_target.application_target.system then
+						l_target := l_target.application_target
+						l_is_application_target_reached := True
 					else
-							-- We have reached a library target.
-						check library_target: l_target.system.library_target /= Void end
+						check
+							library_target: l_target.system.library_target /= Void
+						end
 						l_target := l_target.system.library_target
-						a_list.put_front (create{QL_TARGET}.make (l_target))
-						l_lib := l_target.system.lowest_used_in_library
-						check l_lib /= Void end
-						if not a_stop_on_target then
-							find_path_from_conf_group (a_list, l_lib, False)
+					end
+					a_list.put_front (create{QL_TARGET}.make (l_target))
+					if not l_is_application_target_reached then
+						l_lib := l_target.lowest_used_in_library
+						if l_lib /= Void  then
+							find_path_from_conf_group (a_list, l_lib)
 						end
 					end
 				end
-			elseif a_group.is_library or a_group.is_assembly or a_group.is_physical_assembly then
+			elseif a_group.is_library or a_group.is_assembly then
 				l_target := a_group.target
-				if l_target.system = l_target.system.application_target.system then
-						-- We have reached current application target.
-					l_target := l_target.system.application_target
-					a_list.put_front (create{QL_TARGET}.make (l_target))
+				if l_target.system = l_target.application_target.system then
+					l_target := l_target.application_target
 				else
-						-- We have reached a library target.
-					check library_target: l_target.system.library_target /= Void end
-					l_target := l_target.system.library_target
-					a_list.put_front (create{QL_TARGET}.make (l_target))
-					l_lib := l_target.system.lowest_used_in_library
-					check l_lib /= Void end
-					if not a_stop_on_target then
-						find_path_from_conf_group (a_list, l_lib, False)
+					check
+						library_target: l_target.system.library_target /= Void
 					end
+					l_target := l_target.system.library_target
+				end
+				a_list.put_front (create{QL_TARGET}.make (l_target))
+				l_lib := l_target.lowest_used_in_library
+				if l_lib /= Void  then
+					find_path_from_conf_group (a_list, l_lib)
 				end
 			end
 		end
@@ -251,22 +240,6 @@ feature{NONE} -- Implementation
 			end
 		end
 
-	conf_group_as_parent (a_group: CONF_GROUP; a_stop_on_target: BOOLEAN): QL_ITEM is
-			-- Return query language representation of `a_group'.
-			-- Result's parent is already setup.
-			-- If `a_stop_on_target' is True, stop path building when we meet a target component.			
-		require
-			a_group_attached: a_group /= Void
-		local
-			l_list: LINKED_LIST [QL_ITEM]
-		do
-			create l_list.make
-			find_path_from_conf_group (l_list, a_group, a_stop_on_target)
-			set_parents (l_list)
-			Result := l_list.last
-			l_list.wipe_out
-		end
-
 feature{NONE} -- Implementation
 
 	constrained_type (a_class_c: CLASS_C; a_type: TYPE_A): TYPE_A is
@@ -279,10 +252,6 @@ feature{NONE} -- Implementation
 		do
 			if a_type.is_formal then
 				l_formal_type ?= a_type
-					-- TODO FIXME: Adapt code to be aware of multi-constraint generics.
-				check
-					not_has_multi_constraints: not a_class_c.has_multi_constraints (l_formal_type.position)
-				end
 				Result := a_class_c.constraint (l_formal_type.position)
 			else
 				Result := a_type
@@ -320,5 +289,7 @@ indexing
                          Website http://www.eiffel.com
                          Customer support http://support.eiffel.com
                 ]"
+
+
 
 end

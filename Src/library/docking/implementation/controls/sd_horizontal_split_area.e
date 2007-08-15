@@ -12,22 +12,12 @@ class
 	SD_HORIZONTAL_SPLIT_AREA
 
 inherit
-	SD_MIDDLE_CONTAINER
-		undefine
-			is_in_default_state,
-			initialize,
-			copy
-		end
-
 	EV_HORIZONTAL_SPLIT_AREA
 		redefine
 			initialize
-		select
-			implementation,
-			may_contain
 		end
 
-feature {NONE} -- Implementation
+feature {NONE} -- Redefine
 
 	initialize is
 			-- Redefine
@@ -41,19 +31,7 @@ feature {NONE} -- Implementation
 			--             And it not care about whether if user is dragging the spliter.			
 			-- So we disable "set split position to 0.5 when double presses" on GTK.
 			if l_platform.is_windows then
-				pointer_double_press_actions.force_extend (agent set_half)
-			end
-		end
-
-	set_half is
-			-- Set splitter position to half.
-		local
-			l_half: INTEGER
-		do
-			-- We don't use `set_proportion (0.5)' because this feature calculation base on minimum and maximum splitter position.
-			l_half := width // 2
-			if l_half >= minimum_split_position and l_half <= maximum_split_position then
-				set_split_position (l_half)
+				pointer_double_press_actions.force_extend (agent set_proportion (0.5))
 			end
 		end
 
