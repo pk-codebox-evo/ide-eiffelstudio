@@ -20,6 +20,14 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
+	frozen fonts_and_colors: ES_COLORS
+			-- Shared access to EiffelStudio colors
+		once
+			create Result
+		ensure
+			result_attached: Result /= Void
+		end
+
 ;indexing
 	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
