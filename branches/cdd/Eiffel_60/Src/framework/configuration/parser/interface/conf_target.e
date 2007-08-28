@@ -377,6 +377,16 @@ feature -- Access queries
 			Result_not_void: Result /= Void
 		end
 
+	cdd: like internal_cdd is
+			--
+		do
+			if internal_cdd /= Void then
+				Result := internal_cdd
+			elseif extends /= Void then
+				Result := extends.cdd
+			end
+		end
+
 feature -- Access queries for settings
 
 	setting_boolean (a_name: STRING): BOOLEAN is
@@ -1201,6 +1211,16 @@ feature {CONF_ACCESS} -- Update, stored in configuration file
 			is_abstract_set: is_abstract = an_enabled
 		end
 
+	set_cdd (a_cdd: like cdd) is
+			-- Set `cdd' to `a_cdd'.
+		require
+			valid_cdd: a_cdd /= Void implies a_cdd.target = Current
+		do
+			internal_cdd := a_cdd
+		ensure
+			internal_cdd_set: internal_cdd = a_cdd
+		end
+
 feature {CONF_ACCESS} -- Update, in compiled only, not stored to configuration file
 
 	set_environ_variables (a_vars: like environ_variables) is
@@ -1364,6 +1384,9 @@ feature {CONF_VISITOR, CONF_ACCESS} -- Implementation, attributes that are store
 	internal_variables: EQUALITY_HASH_TABLE [STRING, STRING]
 			-- User defined variables of this target itself.
 
+	internal_cdd: CONF_CDD
+			-- CDD configuration of this target
+
 feature {NONE} -- Implementation
 
 	is_group_equal_check (a, b: HASH_TABLE [CONF_GROUP, STRING]): BOOLEAN is
@@ -1402,6 +1425,7 @@ invariant
 	internal_variables_not_void: internal_variables /= Void
 	internal_settings_not_void: internal_settings /= Void
 	environ_variables_not_void: environ_variables /= Void
+	internal_cdd_valid: internal_cdd /= Void implies internal_cdd.target = Current
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

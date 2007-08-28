@@ -185,6 +185,8 @@ feature -- Callbacks
 					process_debug_attributes
 				when t_assertions then
 					process_assertions_attributes
+				when t_cdd then
+					process_cdd_attributes
 				when t_warning then
 					process_warning_attributes
 				when t_renaming then
@@ -1541,6 +1543,53 @@ feature {NONE} -- Implementation attribute processing
 			end
 		end
 
+	process_cdd_attributes is
+			-- Proccess attributes of a cdd configuration tag.
+		require
+			current_target_not_void: current_target /= Void
+		local
+			l_attr: STRING
+			l_cdd_conf: CONF_CDD
+		do
+			l_cdd_conf := factory.new_cdd (current_target)
+			current_target.set_cdd (l_cdd_conf)
+			l_attr := current_attributes.item (at_enabled)
+			if l_attr /= Void then
+				if l_attr.is_boolean then
+					l_cdd_conf.set_is_enabled (l_attr.to_boolean)
+				else
+					set_parse_error_message (conf_interface_names.e_parse_incorrect_cdd_enabled)
+				end
+			end
+
+			l_attr := current_attributes.item (at_extracting)
+			if l_attr /= Void then
+				if l_attr.is_boolean then
+					l_cdd_conf.set_is_extracting (l_attr.to_boolean)
+				else
+					set_parse_error_message (conf_interface_names.e_parse_incorrect_cdd_extracting)
+				end
+			end
+
+			l_attr := current_attributes.item (at_cluster_name)
+			if l_attr /= Void then
+				if not l_attr.is_empty then
+					l_cdd_conf.set_cluster_name (l_attr)
+				else
+					set_parse_error_message (conf_interface_names.e_parse_incorrect_cdd_cluster_name)
+				end
+			end
+
+			l_attr := current_attributes.item (at_capture_replay)
+			if l_attr /= Void then
+				if l_attr.is_boolean then
+					l_cdd_conf.set_is_capture_replay_activated (l_attr.to_boolean)
+				else
+					set_parse_error_message (conf_interface_names.e_parse_incorrect_cdd_capture_replay)
+				end
+			end
+		end
+
 feature {NONE} -- Implementation content processing
 
 	process_description_content is
@@ -1668,6 +1717,7 @@ feature {NONE} -- Implementation state transitions
 				-- => assembly
 				-- => cluster
 				-- => override
+				-- => cdd
 			create l_trans.make (19)
 			l_trans.force (t_description, "description")
 			l_trans.force (t_root, "root")
@@ -1689,6 +1739,7 @@ feature {NONE} -- Implementation state transitions
 			l_trans.force (t_assembly, "assembly")
 			l_trans.force (t_cluster, "cluster")
 			l_trans.force (t_override, "override")
+			l_trans.force (t_cdd, "cdd")
 			Result.force (l_trans, t_target)
 
 				-- file_rule
@@ -1713,8 +1764,8 @@ feature {NONE} -- Implementation state transitions
 			l_trans.force (t_debug, "debug")
 			l_trans.force (t_assertions, "assertions")
 			l_trans.force (t_warning, "warning")
-			Result.force (l_trans, t_option)
 			Result.force (l_trans, t_class_option)
+			Result.force (l_trans, t_option)
 
 				-- (pre|post)_compile_action
 				-- => description
@@ -1825,7 +1876,7 @@ feature {NONE} -- Implementation state transitions
 				-- * name
 				-- * eifgen
 				-- * extends
-			create l_attr.make (4)
+			create l_attr.make (5)
 			l_attr.force (at_name, "name")
 			l_attr.force (at_eifgen, "eifgen")
 			l_attr.force (at_extends, "extends")
@@ -2003,6 +2054,18 @@ feature {NONE} -- Implementation state transitions
 			l_attr.force (at_supplier_precondition, "supplier_precondition")
 			Result.force (l_attr, t_assertions)
 
+				-- cdd
+				-- * enabled
+				-- * cluster_name
+				-- * extract
+				-- * capture_replay
+			create l_attr.make (4)
+			l_attr.force (at_enabled, "enabled")
+			l_attr.force (at_cluster_name, "cluster_name")
+			l_attr.force (at_extracting, "extracting")
+			l_attr.force (at_capture_replay, "capture_replay")
+			Result.force (l_attr, t_cdd)
+
 				-- build, platform
 				-- * value
 				-- * excluded_value
@@ -2124,6 +2187,8 @@ feature {NONE} -- Implementation constants
 	t_visible: INTEGER is 39
 	t_overrides: INTEGER is 40
 	t_mapping: INTEGER is 41
+		-- CDD tag
+	t_cdd: INTEGER is 60
 
 		-- Attribute states
 	at_abstract: INTEGER is 1000
@@ -2186,6 +2251,11 @@ feature {NONE} -- Implementation constants
 	at_use_application_options: INTEGER is 1057
 	at_full_class_checking: INTEGER is 1058
 	at_cat_call_detection: INTEGER is 1059
+
+		-- CDD attributes
+	at_cluster_name: INTEGER is 1100
+	at_extracting: INTEGER is 1101
+	at_capture_replay: INTEGER is 1102
 
 feature -- Assertions
 

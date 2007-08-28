@@ -778,6 +778,14 @@ feature -- Parse errors
 
 	e_parse_incorrect_description: STRING is "Invalid description tag.";
 
+	e_parse_incorrect_cdd_enabled: STRING is "Invalid cdd tag: attribute `enabled' can only have values `false' or `true'."
+
+	e_parse_incorrect_cdd_extracting: STRING is "Invalid cdd tag: attribute `extracting' can only have values `false' or `true'."
+
+	e_parse_incorrect_cdd_cluster_name: STRING is "Invalid cdd tag: attribute `cluster_name' can only consist of valid directory name characters."
+
+	e_parse_incorrect_cdd_capture_replay: STRING is "Invalid cdd tag: attribute `capture_replay' can only have values `false' or `true'."
+
 feature -- Boolean values
 
 	boolean_true: STRING_GENERAL is do Result := locale.translation ("True") end

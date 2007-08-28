@@ -259,6 +259,15 @@ feature
 			Result_not_void: Result /= Void
 		end
 
+	new_cdd (a_target: CONF_TARGET): CONF_CDD is
+			--
+		require
+			a_target_valid: a_target /= Void
+		do
+			create Result.make (a_target)
+		end
+
+
 	uuid_generator: UUID_GENERATOR is
 			-- UUID generator.
 		once
