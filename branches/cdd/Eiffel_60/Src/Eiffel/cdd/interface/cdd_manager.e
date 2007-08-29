@@ -60,55 +60,42 @@ feature {NONE} -- Initialization
 
 feature -- Access (CDD Status)
 
+	test_suite: CDD_TEST_SUITE
+			-- Test suite which is managed by `Current'
+
+	capturer: CDD_CAPTURER
+			-- Capturer for extracting new test cases
+
 	is_cdd_enabled: BOOLEAN is
 			-- Is testing currently enabled?
 		do
 			Result := test_suite /= Void
+		ensure
+			correct_result: Result = (test_suite /= Void)
 		end
 
 	is_capturing_enabled: BOOLEAN is
 			-- Is capturing currently enabled?
 		do
 			Result := is_cdd_enabled and then capturer /= Void
+		ensure
+			correct_result: Result = (is_cdd_enabled and then capturer /= Void)
 		end
-
-	test_suite: CDD_TEST_SUITE
-			-- Test suite which is managed by `Current'
-
-	capturer: CDD_CAPTURER
 
 	can_enable_cdd: BOOLEAN is
 			-- Can cdd support be enabled?
 		do
-			Result := not is_cdd_enabled and
-				not project.initialized and
-				not project.is_read_only and
+			Result := not is_cdd_enabled and then
+				not project.initialized and then
+				not project.is_read_only and then
 				not target.system.date_has_changed
 		end
 
 	can_disable_cdd: BOOLEAN is
 			-- Can cdd support be disabled?
 		do
-			Result := is_cdd_enabled and
+			Result := is_cdd_enabled and then
 				not target.system.date_has_changed
-		end
-
-	project: E_PROJECT is
-			-- Currently opened project
-		do
-			Result := eiffel_project
-		ensure
-			open_project_not_void: Result /= Void
-		end
-
-	target: CONF_TARGET is
-			-- Currently opened target of `project'
-		require
-			project_initialized: project.initialized
-		do
-			Result := eiffel_universe.target
-		ensure
-			not_void: Result /= Void
 		end
 
 	last_error: INTEGER
@@ -156,7 +143,7 @@ feature -- Status setting (CDD)
 				last_error := error_bad_root_cluster
 			else
 				create l_dirname.make_from_string (l_root.location.evaluated_directory)
-				l_dirname.extend (tests_cluster_name)
+				l_dirname.extend (default_cluster_name)
 				create l_dir.make (l_dirname)
 				l_dir.create_directory
 				if l_dir.exists then
@@ -166,12 +153,12 @@ feature -- Status setting (CDD)
 					target.add_library (l_lib)
 					if l_root.is_recursive then
 						create rule.make
-						rule.add_exclude (tests_cluster_name)
+						rule.add_exclude (default_cluster_name)
 						l_root.add_file_rule (rule)
 					end
 					create l_dirname.make_from_string (l_root.location.original_directory)
-					l_dirname.extend (tests_cluster_name)
-					eb_cluster_manager.add_cluster (tests_cluster_name, l_root, l_dirname)
+					l_dirname.extend (default_cluster_name)
+					eb_cluster_manager.add_cluster (default_cluster_name, l_root, l_dirname)
 					create test_suite.make_with_cluster (eb_cluster_manager.last_added_cluster)
 					eb_cluster_manager.add_observer (Current)
 					melt_project_cmd.execute
@@ -188,7 +175,7 @@ feature -- Status setting (CDD)
 			cdd_enabled: can_disable_cdd
 		do
 				-- TODO: make sure no execution is running....
-			target.remove_cluster (tests_cluster_name)
+			target.remove_cluster (default_cluster_name)
 			target.system.store
 			Discover_melt_cmd.execute
 			test_suite := Void
@@ -238,7 +225,7 @@ feature {EB_CLUSTERS} -- Status setting (Eiffel Project)
 		do
 			l_cdd_enabled := is_cdd_enabled
 			l_cpt_enabled := is_capturing_enabled
-			l_cluster := eiffel_universe.cluster_of_name (tests_cluster_name)
+			l_cluster := eiffel_universe.cluster_of_name (default_cluster_name)
 			if l_cluster /= Void and not is_cdd_enabled then
 				create test_suite.make_with_cluster (l_cluster)
 			end
@@ -273,6 +260,24 @@ feature -- Status change
 			-- Agents for redirecting all output from external processes
 
 feature {NONE} -- Implementation
+
+	project: E_PROJECT is
+			-- Currently opened project
+		do
+			Result := eiffel_project
+		ensure
+			open_project_not_void: Result /= Void
+		end
+
+	target: CONF_TARGET is
+			-- Currently opened target of `project'
+		require
+			project_initialized: project.initialized
+		do
+			Result := eiffel_universe.target
+		ensure
+			not_void: Result /= Void
+		end
 
 	conf_factory: CONF_FACTORY is
 			-- Factory for creating cdd library

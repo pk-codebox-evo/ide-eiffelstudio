@@ -11,7 +11,7 @@ feature -- Access
 
 feature -- Project constants
 
-	tests_cluster_name: STRING is "cdd_test_suite"
+	default_cluster_name: STRING is "cdd_test_suite"
 			-- Name of cdd cluster
 
 feature -- Error constants
