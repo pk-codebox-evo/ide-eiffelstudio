@@ -53,9 +53,13 @@ feature {NONE} -- Initialization
 			l_prj_manager: EB_PROJECT_MANAGER
 		do
 			l_prj_manager := eiffel_project.manager
-			l_prj_manager.load_agents.extend (agent check_for_existing_cdd_cluster)
-			l_prj_manager.compile_stop_agents.extend (agent check_for_existing_cdd_cluster)
+			l_prj_manager.load_agents.extend (agent refresh_status)
+			l_prj_manager.compile_stop_agents.extend (agent refresh_status)
 			eb_cluster_manager.add_observer (Current)
+
+			if l_prj_manager.initialized then
+				refresh_status
+			end
 		end
 
 feature -- Access (CDD Status)
@@ -74,7 +78,7 @@ feature -- Access (CDD Status)
 			correct_result: Result = (test_suite /= Void)
 		end
 
-	is_capturing_enabled: BOOLEAN is
+	is_extracting_enabled: BOOLEAN is
 			-- Is capturing currently enabled?
 		do
 			Result := is_cdd_enabled and then capturer /= Void
@@ -86,20 +90,15 @@ feature -- Access (CDD Status)
 			-- Can cdd support be enabled?
 		do
 			Result := not is_cdd_enabled and then
-				not project.initialized and then
-				not project.is_read_only and then
-				not target.system.date_has_changed
+				project.initialized and then
+				not project.is_read_only
 		end
 
 	can_disable_cdd: BOOLEAN is
 			-- Can cdd support be disabled?
 		do
-			Result := is_cdd_enabled and then
-				not target.system.date_has_changed
+			Result := is_cdd_enabled
 		end
-
-	last_error: INTEGER
-			-- Last error that occured
 
 feature -- Status setting (Application)
 
@@ -110,7 +109,7 @@ feature -- Status setting (Application)
 			l_file: KL_TEXT_OUTPUT_FILE
 			l_cse: EIFFEL_CALL_STACK_ELEMENT
 		do
-			if is_capturing_enabled then
+			if is_extracting_enabled then
 				capturer.capture_call_stack (an_application_status)
 			end
 		end
@@ -123,76 +122,106 @@ feature -- Status setting (Application)
 feature -- Status setting (CDD)
 
 	enable_cdd is
-			-- Try to create cdd cluster within project. On succeed recompile,
-			-- otherwise set `last_error' appropriately.
+			-- Enable cdd in system configuration. Also add cdd library
+			-- and exclude file rule to configuration.
 		require
 			not_enabled_yet: not is_cdd_enabled
 			can_enable: can_enable_cdd
 		local
-			l_dirname: DIRECTORY_NAME
-			l_dir: KL_DIRECTORY
 			l_loc: CONF_FILE_LOCATION
 			l_lib: CONF_LIBRARY
-			ed: EV_ERROR_DIALOG
-			l_root: CONF_CLUSTER
-			rule: CONF_FILE_RULE
+			l_rule: CONF_FILE_RULE
 		do
-			last_error := error_none
-			l_root ?= eiffel_system.root_cluster
-			if l_root = Void then
-				last_error := error_bad_root_cluster
-			else
-				create l_dirname.make_from_string (l_root.location.evaluated_directory)
-				l_dirname.extend (default_cluster_name)
-				create l_dir.make (l_dirname)
-				l_dir.create_directory
-				if l_dir.exists then
-					eb_cluster_manager.remove_observer (Current)
-					l_loc := conf_factory.new_location_from_full_path ("$ISE_LIBRARY\library\cdd\cdd.ecf", target)
-					l_lib := conf_factory.new_library ("cdd", l_loc, target)
-					target.add_library (l_lib)
-					if l_root.is_recursive then
-						create rule.make
-						rule.add_exclude (default_cluster_name)
-						l_root.add_file_rule (rule)
-					end
-					create l_dirname.make_from_string (l_root.location.original_directory)
-					l_dirname.extend (default_cluster_name)
-					eb_cluster_manager.add_cluster (default_cluster_name, l_root, l_dirname)
-					create test_suite.make_with_cluster (eb_cluster_manager.last_added_cluster)
-					eb_cluster_manager.add_observer (Current)
-					melt_project_cmd.execute
-				else
-					last_error := error_unable_to_create_dir
-				end
+			instantiate_cdd_configuration
+			cdd_conf.set_is_enabled (True)
+
+			if not target.libraries.has (library_name) then
+				l_loc := conf_factory.new_location_from_full_path ("$ISE_LIBRARY\library\cdd\cdd.ecf", target)
+				l_lib := conf_factory.new_library (library_name, l_loc, target)
+				target.add_library (l_lib)
 			end
+			add_file_rule
+			target.system.store
+			create test_suite.make
+		ensure
+			enabled: is_cdd_enabled
+			correct_config: cdd_conf.is_enabled
 		end
 
 	disable_cdd is
-			-- Try to remove cdd cluster from project but leave all
-			-- created directories and test cases.
+			-- Disable cdd in system configuration and store new configuration
 		require
 			cdd_enabled: can_disable_cdd
+		local
+			l_file_rules: ARRAYED_LIST [CONF_FILE_RULE]
 		do
-				-- TODO: make sure no execution is running....
-			target.remove_cluster (default_cluster_name)
+			instantiate_cdd_configuration
+			cdd_conf.set_is_enabled (False)
+			if target.libraries.has (library_name) then
+				target.remove_library (library_name)
+			end
+			remove_file_rule
 			target.system.store
-			Discover_melt_cmd.execute
 			test_suite := Void
 		ensure
 			cdd_disabled: not is_cdd_enabled
+			correct_config: not cdd_conf.is_enabled
 		end
 
-	enable_capturing is
-			-- Enable capturing mode.
+	enable_extracting is
+			-- Make cdd create new test cases automatically.
+			-- Enable extracting mode in system configuration and store it.
+		require
+			cdd_enabled: is_cdd_enabled
+			extracting_disabled: not is_extracting_enabled
 		do
-			--is_capturing_enabled := True
+			instantiate_cdd_configuration
+			cdd_conf.set_is_extracting (True)
+			target.system.store
+			create capturer.make
+		ensure
+			extracting_enabled: is_extracting_enabled
+			correct_config: cdd_conf.is_extracting
 		end
 
-	disable_capturing is
-			-- Disable capturing mode.
+	disable_extracting is
+			-- Stop cdd creating test cases automatically.
+			-- Disable capturing mode in system configuration and store it.
+		require
+			cdd_enabled: is_cdd_enabled
+			extracting_enabled: is_extracting_enabled
 		do
-			--is_capturing_enabled := False
+			instantiate_cdd_configuration
+			cdd_conf.set_is_extracting (False)
+			target.system.store
+			capturer := Void
+		ensure
+			extracting_disabled: not is_extracting_enabled
+			correct_config: not cdd_conf.is_extracting
+		end
+
+	enable_capture_replay is
+			-- Enable capture/replay mode and store it in system configuration.
+		require
+			cdd_enabled: is_cdd_enabled
+		do
+			instantiate_cdd_configuration
+			cdd_conf.set_is_capture_replay_activated (True)
+			target.system.store
+		ensure
+			correct_config: cdd_conf.is_capture_replay_activated
+		end
+
+	disable_capture_replay is
+			-- Disable capture/replay mode and store it in system configuration.
+		require
+			cdd_enabled: is_cdd_enabled
+		do
+			instantiate_cdd_configuration
+			cdd_conf.set_is_capture_replay_activated (False)
+			target.system.store
+		ensure
+			correct_config: not cdd_conf.is_capture_replay_activated
 		end
 
 	start_execution is
@@ -215,26 +244,33 @@ feature -- Status setting (CDD)
 
 feature {EB_CLUSTERS} -- Status setting (Eiffel Project)
 
-	check_for_existing_cdd_cluster is
-			-- Check if testing was enabled for this project before
-			-- Note: This is usually called when project is opened.
+	refresh_status is
+			-- Check configuration if cdd status has changed and update if so.
+			-- Note: This is usually called when project is opened or compiled.
 		local
 			l_cdd_enabled, l_cpt_enabled: BOOLEAN
 			l_cluster: CLUSTER_I
 			l_printer: CDD_TEST_CASE_PRINTER
 		do
-			l_cdd_enabled := is_cdd_enabled
-			l_cpt_enabled := is_capturing_enabled
-			l_cluster := eiffel_universe.cluster_of_name (default_cluster_name)
-			if l_cluster /= Void and not is_cdd_enabled then
-				create test_suite.make_with_cluster (l_cluster)
+			instantiate_cdd_configuration
+			if cdd_conf.is_enabled then
+				if not is_cdd_enabled then
+					enable_cdd
+				end
+				if cdd_conf.is_extracting and not is_extracting_enabled then
+					enable_extracting
+				end
+			else
+				if is_extracting_enabled then
+					disable_extracting
+				end
+				if is_cdd_enabled then
+					disable_cdd
+				end
 			end
-
-			if is_cdd_enabled and not is_capturing_enabled then
-				create l_printer.make_with_cluster (l_cluster)
-				create capturer.make
-				capturer.capture_observers.put_last (l_printer)
-			end
+		ensure
+			correct_status: cdd_conf.is_enabled = is_cdd_enabled and
+				cdd_conf.is_extracting = is_extracting_enabled
 		end
 
 	refresh is
@@ -261,6 +297,9 @@ feature -- Status change
 
 feature {NONE} -- Implementation
 
+	triggered_compilation: BOOLEAN
+			-- Has `Current' triggered a compilation?
+
 	project: E_PROJECT is
 			-- Currently opened project
 		do
@@ -279,12 +318,88 @@ feature {NONE} -- Implementation
 			not_void: Result /= Void
 		end
 
+	cdd_conf: CONF_CDD
+
+	instantiate_cdd_configuration is
+			-- Create cdd configuration with default parameters if
+			-- doesn't exists. Set `cdd_conf' to current
+			-- cdd configuration.
+		require
+			project_initialized: project.initialized
+		local
+			l_conf: CONF_CDD
+		do
+			l_conf := target.cdd
+			if l_conf = Void then
+				l_conf := conf_factory.new_cdd (target)
+				target.set_cdd (l_conf)
+			end
+			cdd_conf := l_conf
+		ensure
+			cdd_conf_valid: cdd_conf /= Void and then cdd_conf.target = target
+		end
+
 	conf_factory: CONF_FACTORY is
 			-- Factory for creating cdd library
 		once
 			create Result
 		end
 
+	add_file_rule is
+			-- If `a_file_rule' does not already contain, add
+			-- `tests_directory_name' as an exclude to `a_file_rule'.
+		require
+			project_initialized: project.initialized
+		local
+			l_rules: ARRAYED_LIST [CONF_FILE_RULE]
+			l_conf: CONF_FILE_RULE
+			l_found: BOOLEAN
+		do
+			from
+				l_rules := target.file_rule
+				l_rules.start
+			until
+				l_rules.after or l_found
+			loop
+				l_conf := l_rules.item
+				if l_conf.exclude.has (tests_directory_name) then
+					l_found := True
+				else
+					l_rules.forth
+				end
+			end
+			if not l_found then
+				if l_rules.is_empty then
+					l_conf := conf_factory.new_file_rule
+					l_rules.force (l_conf)
+				end
+				l_rules.first.add_exclude (tests_directory_name)
+			end
+		end
+
+	remove_file_rule is
+			-- Remove all excludes of `tests_directory_name' from `a_file_rule'.
+		require
+			project_initialized: project.initialized
+		local
+			l_rules: ARRAYED_LIST [CONF_FILE_RULE]
+			l_conf: CONF_FILE_RULE
+		do
+			from
+				l_rules := target.file_rule
+				l_rules.start
+			until
+				l_rules.after
+			loop
+				l_conf := l_rules.item
+				if l_conf.exclude.has (tests_directory_name) then
+					l_conf.exclude.remove (tests_directory_name)
+				end
+				l_rules.forth
+			end
+		end
+
+
 invariant
-	capturing_implies_cdd_enabled: is_capturing_enabled implies is_cdd_enabled
+	extracting_implies_cdd_enabled: is_extracting_enabled implies is_cdd_enabled
 end

@@ -30,9 +30,6 @@ feature -- Access
 	is_extracting: BOOLEAN
 			-- Shall CDD automatically extract test cases?
 
-	cluster_name: STRING
-			-- Name of the cluster containing test cases
-
 	is_capture_replay_activated: BOOLEAN
 			-- Shall capture/replay be activated in current target?
 
@@ -57,24 +54,6 @@ feature {CONF_ACCESS} -- Status setting
 			is_extracting_set: is_extracting = an_is_extracting
 		end
 
-	set_cluster_name (a_name: STRING) is
-			-- Set `cluster_name' to `a_name'.
-		require
-			a_name_valid: a_name /= Void and then not a_name.is_empty
-		do
-			cluster_name := a_name
-		ensure
-			cluster_name_set: cluster_name = a_name
-		end
-
-	remove_cluster_name is
-			-- Set `cluster_name' to Void.
-		do
-			cluster_name := Void
-		ensure
-			cluster_name_removed: cluster_name = Void
-		end
-
 	set_is_capture_replay_activated (an_is_capture_replay_activated: like is_capture_replay_activated) is
 			-- Set `is_capture_replay_activated' to `an_is_capture_replay_activated'.
 		do
@@ -83,31 +62,7 @@ feature {CONF_ACCESS} -- Status setting
 			is_capture_replay_activated_set: is_capture_replay_activated = an_is_capture_replay_activated
 		end
 
-feature -- Cursor movement
-
-feature -- Element change
-
-feature -- Removal
-
-feature -- Resizing
-
-feature -- Transformation
-
-feature -- Conversion
-
-feature -- Duplication
-
-feature -- Miscellaneous
-
-feature -- Basic operations
-
-feature -- Obsolete
-
-feature -- Inapplicable
-
-feature {NONE} -- Implementation
-
 invariant
-	invariant_clause: True -- Your invariant here
+	valid_target: target /= Void and then target.cdd = Current
 
 end

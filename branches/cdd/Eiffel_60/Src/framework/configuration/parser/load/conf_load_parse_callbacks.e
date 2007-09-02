@@ -1571,15 +1571,6 @@ feature {NONE} -- Implementation attribute processing
 				end
 			end
 
-			l_attr := current_attributes.item (at_cluster_name)
-			if l_attr /= Void then
-				if not l_attr.is_empty then
-					l_cdd_conf.set_cluster_name (l_attr)
-				else
-					set_parse_error_message (conf_interface_names.e_parse_incorrect_cdd_cluster_name)
-				end
-			end
-
 			l_attr := current_attributes.item (at_capture_replay)
 			if l_attr /= Void then
 				if l_attr.is_boolean then
@@ -2061,7 +2052,6 @@ feature {NONE} -- Implementation state transitions
 				-- * capture_replay
 			create l_attr.make (4)
 			l_attr.force (at_enabled, "enabled")
-			l_attr.force (at_cluster_name, "cluster_name")
 			l_attr.force (at_extracting, "extracting")
 			l_attr.force (at_capture_replay, "capture_replay")
 			Result.force (l_attr, t_cdd)
@@ -2253,9 +2243,8 @@ feature {NONE} -- Implementation constants
 	at_cat_call_detection: INTEGER is 1059
 
 		-- CDD attributes
-	at_cluster_name: INTEGER is 1100
-	at_extracting: INTEGER is 1101
-	at_capture_replay: INTEGER is 1102
+	at_extracting: INTEGER is 1100
+	at_capture_replay: INTEGER is 1101
 
 feature -- Assertions
 

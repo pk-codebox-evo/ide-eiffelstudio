@@ -378,12 +378,12 @@ feature -- Access queries
 		end
 
 	cdd: like internal_cdd is
-			--
+			-- CDD configuration
 		do
 			if internal_cdd /= Void then
 				Result := internal_cdd
 			elseif extends /= Void then
-				Result := extends.cdd
+				--Result := extends.cdd
 			end
 		end
 

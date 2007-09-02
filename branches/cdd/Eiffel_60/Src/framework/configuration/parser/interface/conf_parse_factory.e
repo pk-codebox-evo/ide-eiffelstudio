@@ -260,7 +260,7 @@ feature
 		end
 
 	new_cdd (a_target: CONF_TARGET): CONF_CDD is
-			--
+			-- New CDD_CONF instance for `a_target'.
 		require
 			a_target_valid: a_target /= Void
 		do

@@ -11,17 +11,26 @@ feature -- Access
 
 feature -- Project constants
 
+	library_name: STRING is "cdd"
+			-- Name for cdd library
+
+	tests_directory_name: STRING is "cdd_tests"
+			-- Name for directories containing cdd tests
+
 	default_cluster_name: STRING is "cdd_test_suite"
 			-- Name of cdd cluster
 
+feature -- TTY
+
+	confirm_enabling: STRING is "CDD is currently enabled, would you like to%Ncontinue having CDD enabled"
+
+	confirm_disabling: STRING is "CDD is currently disabled, would you like to%Nenable CDD"
+
+	confirm_extracting: STRING is "Shall test cases be automatically created in%Ncase of a runtime violation"
+
+	confirm_capture_replay: STRING is "Would you like to use capture/replay for%Nextracting and executing test cases%N(Warning: this tool is experimental)"
+
 feature -- Error constants
-
-	error_none,				-- No error occured
-	error_bad_root_cluster,	-- Root cluster is not a normal cluster
-	error_need_recompile,
-	error_unable_to_create_dir: INTEGER is unique
-			-- Error codes
-
 
 feature -- Status report
 

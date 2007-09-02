@@ -8,11 +8,11 @@ class
 	CDD_TEST_SUITE
 
 create
-	make_with_cluster
+	make
 
 feature {NONE} -- Initialization
 
-	make_with_cluster (a_cluster: like tests_cluster) is
+	make is
 			-- Initialize `Current'.
 		do
 

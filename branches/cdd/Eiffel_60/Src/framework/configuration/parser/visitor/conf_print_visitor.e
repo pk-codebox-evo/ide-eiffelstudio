@@ -122,6 +122,7 @@ feature -- Visit nodes
 			l_settings, l_variables: HASH_TABLE [STRING, STRING]
 			l_a_name, l_a_val: ARRAYED_LIST [STRING]
 			l_sort_lst: DS_ARRAYED_LIST [STRING]
+			l_cdd: CONF_CDD
 		do
 			current_target := a_target
 			append_text_indent ("<target name=%""+escape_xml (a_target.name)+"%"")
@@ -151,6 +152,21 @@ feature -- Visit nodes
 				end
 				append_tag ("root", Void, l_a_name, l_a_val)
 			end
+
+				-- Append CDD config
+			l_cdd := a_target.cdd
+			if l_cdd /= Void then
+				create l_a_name.make (3)
+				create l_a_val.make (3)
+				l_a_name.force ("enabled")
+				l_a_val.force (l_cdd.is_enabled.out.as_lower)
+				l_a_name.force ("extracting")
+				l_a_val.force (l_cdd.is_extracting.out.as_lower)
+				l_a_name.force ("capture_replay")
+				l_a_val.force (l_cdd.is_capture_replay_activated.out.as_lower)
+				append_tag ("cdd", Void, l_a_name, l_a_val)
+			end
+
 			l_version := a_target.internal_version
 			if l_version /= Void then
 				create l_a_name.make (8)
@@ -337,6 +353,7 @@ feature -- Visit nodes
 		ensure then
 			indent_back: indent = old indent
 		end
+
 
 feature {NONE} -- Implementation
 
@@ -1018,6 +1035,7 @@ feature {NONE} -- Implementation
 					end)
 			end
 		end
+
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

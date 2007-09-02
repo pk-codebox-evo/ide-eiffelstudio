@@ -1,6 +1,6 @@
 indexing
 	description: "Objects that provide a tty command for changing cdd status"
-	author: ""
+	author: "fivaa"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -8,77 +8,54 @@ class
 	EWB_CDD_STATUS
 
 inherit
+
 	EWB_CDD_CMD
 
-	CONF_ACCESS
+	SHARED_DEBUGGER_MANAGER
 
-	SHARED_EIFFEL_PROJECT
+	CDD_CONSTANTS
 
 feature -- Access
 
 	name: STRING is "Status"
 
-	help_message: STRING is "Enable/disable and/or configure CDD."
+	help_message: STRING is "Enable/disable and/or configure CDD"
 
 	abbreviation: CHARACTER is 's'
-
-
 
 feature -- Execution
 
 	execute is
-			--
+			-- Retrieve user input for configuring cdd.
+		require else
+			target_not_void: eiffel_universe.target /= Void
 		local
-			l_conf: CONF_CDD
+			l_manager: CDD_MANAGER
+			l_was_enabled, l_bool: BOOLEAN
 		do
-			l_conf := eiffel_universe.target.cdd
+			l_manager := debugger_manager.cdd_manager
+
 			io.new_line
-			if l_conf /= Void then
-				io.put_string ("Enabled: " + l_conf.is_enabled.out)
-				io.put_string ("%NExtracting: " + l_conf.is_extracting.out)
-				io.put_string ("%NCluster name: ")
-				if l_conf.cluster_name /= Void then
-					io.put_string (l_conf.cluster_name)
-				else
-					io.put_string ("none")
+			if l_manager.is_cdd_enabled then
+				if not command_line_io.confirmed_with_default (confirm_enabling, True) then
+					l_manager.disable_cdd
 				end
-				io.put_string ("%NCapture/Replay: " + l_conf.is_capture_replay_activated.out)
 			else
-				io.put_string ("No cdd configuration...")
+				if command_line_io.confirmed_with_default (confirm_disabling, True) then
+					l_manager.enable_cdd
+					if command_line_io.confirmed_with_default (confirm_extracting, True) then
+						l_manager.enable_extracting
+					else
+						l_manager.disable_extracting
+					end
+					if command_line_io.confirmed_with_default (confirm_capture_replay, False) then
+						l_manager.enable_capture_replay
+					else
+						l_manager.disable_capture_replay
+					end
+				end
 			end
-			io.new_line
 		end
 
-
-feature -- Status report
-
-feature -- Status setting
-
-feature -- Cursor movement
-
-feature -- Element change
-
-feature -- Removal
-
-feature -- Resizing
-
-feature -- Transformation
-
-feature -- Conversion
-
-feature -- Duplication
-
-feature -- Miscellaneous
-
-feature -- Basic operations
-
-feature -- Obsolete
-
-feature -- Inapplicable
-
-feature {NONE} -- Implementation
-
-invariant
-	invariant_clause: True -- Your invariant here
 
 end
