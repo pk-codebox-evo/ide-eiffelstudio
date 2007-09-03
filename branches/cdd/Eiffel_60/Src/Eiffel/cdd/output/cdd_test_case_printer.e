@@ -27,19 +27,30 @@ inherit
 			{NONE} all
 		end
 
+	CDD_CONSTANTS
+
+	EB_CLUSTER_MANAGER_OBSERVER
+		rename
+			manager as cluster_manager
+		end
+
+	SHARED_EIFFEL_PROJECT
+
+	SHARED_FLAGS
+
 create
-	make_with_cluster
+	make_with_target
 
 feature -- Initialization
 
-	make_with_cluster, set_cluster (a_cluster: like cluster) is
-			-- Set `a_cluster' to cluster
+	make_with_target, set_target (a_target: like target) is
+			-- Set `target' to `a_target'.
 		require
-			a_cluster_not_void: a_cluster /= Void
+			a_target_not_void: a_target /= Void
 		do
-			cluster := a_cluster
+			target := a_target
 		ensure
-			cluster_set: cluster = a_cluster
+			target_set: target = a_target
 		end
 
 feature -- Access
@@ -50,7 +61,7 @@ feature -- Access
 			Result := failed or else is_output_stream_valid
 		end
 
-	cluster: CLUSTER_I
+	target: CONF_TARGET
 			-- Cluster in which test cases will be created
 
 feature	-- Basic operations
@@ -60,41 +71,66 @@ feature	-- Basic operations
 			-- `a_cs_uuid' is an ID for the call stack and `a_cs_level' is the
 			-- index of the frame beeing captured.
 		local
-			l_class_name: STRING
-			an_output_file: KL_TEXT_OUTPUT_FILE
+			l_prefix: STRING
+			l_directory: KL_DIRECTORY
+			l_output_file: KL_TEXT_OUTPUT_FILE
+			i: INTEGER
 		do
 			failed := False
 			printed_objects := 0
-			l_class_name := new_class_name (a_class)
-			if l_class_name = Void then
-				failed := True
+
+			-- From here
+			current_cluster ?= a_class.group
+			if current_cluster /= Void and then not current_cluster.is_readonly then
+				create l_directory.make (current_cluster.location.build_path (tests_directory_name, ""))
+				if not l_directory.exists then
+					l_directory.create_directory
+					if not l_directory.exists then
+						failed := True
+					end
+				end
 			else
-				create an_output_file.make (cluster.location.build_path ("", l_class_name.as_lower + ".e"))
-				an_output_file.open_write
-				if not an_output_file.is_open_write then
+				failed := True
+			end
+
+			if not failed then
+				l_prefix := class_name_prefix + a_class.name + "_"
+				from
+					i := 1
+				until
+					l_output_file /= Void or i > 99
+				loop
+					create new_class_name.make_from_string (l_prefix)
+					if i < 10 then
+						new_class_name.append_character ('0')
+					end
+					new_class_name.append (i.out)
+					create l_output_file.make (current_cluster.location.build_path (tests_directory_name, new_class_name.as_lower + ".e"))
+					if l_output_file.exists then
+						l_output_file := Void
+					end
+					i := i + 1
+				end
+				if l_output_file = Void then
+					failed := True
+				end
+			end
+
+			if not failed then
+				l_output_file.open_write
+				if not l_output_file.is_open_write then
 					failed := True
 				else
-					initialize (an_output_file)
+					-- To here...
+					initialize (l_output_file)
 
 						-- Print test class headers
 					put_indexing (a_cs_uuid.out, a_cs_level)
-					put_class_header (l_class_name)
+					put_class_header
 
 					put_set_up (a_feature, is_creation_feature (a_feature))
 					put_access (a_class.name_in_upper, a_feature)
-
-					put_line ("feature -- Context%N")
-
-						-- Context
-					increase_indent
-					put_line ("context: ARRAY [TUPLE [STRING, STRING, BOOLEAN, ARRAY [STRING]]] is")
-					increase_indent
-					put_comment ("Context for executing test case")
-					put_comment ("NOTE: by definition first element is operand for calling `routine_under_test'")
-					put_line ("once")
-					increase_indent
-					put_line ("Result := <<")
-					increase_indent
+					put_context_header
 				end
 			end
 		end
@@ -136,6 +172,10 @@ feature	-- Basic operations
 
 	finish_capturing is
 			-- Set `output_stream' to `Void'.
+		local
+			l_tests_cluster: CONF_CLUSTER
+			l_cluster_list: LIST [CONF_CLUSTER]
+			l_directory: KL_DIRECTORY
 		do
 			if not failed then
 				decrease_indent
@@ -148,6 +188,28 @@ feature	-- Basic operations
 				output_stream.flush
 				output_stream.close
 				finish_printing
+
+				l_tests_cluster := eiffel_universe.cluster_of_name (current_cluster.cluster_name + cluster_name_suffix)
+				if l_tests_cluster = Void Then
+					create l_directory.make (current_cluster.location.build_path (tests_directory_name, ""))
+					l_cluster_list := eiffel_universe.cluster_of_location (l_directory.name)
+					if l_cluster_list.is_empty then
+						cluster_manager.add_cluster (current_cluster.cluster_name + cluster_name_suffix, current_cluster, l_directory.name)
+						l_tests_cluster := cluster_manager.last_added_cluster
+					else
+						l_tests_cluster := l_cluster_list.first
+					end
+				end
+					-- NOTE: seems to have problem with this call when using ec in console (with -loop option)
+				if is_gui then
+					cluster_manager.add_class_to_cluster (new_class_name.as_lower + ".e", l_tests_cluster, "")
+				end
+			else
+				if output_stream /= Void then
+					output_stream.close
+				end
+				output_stream := Void
+				failed := False
 			end
 		rescue
 			failed := True
@@ -159,39 +221,14 @@ feature {NONE} -- Implementation
 	failed: BOOLEAN
 			-- Has `Current' raised any exception since last call to `start_capturing'?
 
+	current_cluster: CLUSTER_I
+			-- Cluster which contains class under test
+
+	new_class_name: STRING
+			-- Class name of the new test case
+
 	printed_objects: INTEGER
 			-- Number of objects printed to context since last `start_capturing'
-
-	new_class_name (a_cud: CLASS_C): STRING is
-			-- New unique test class name for testing `a_cud' in `a_cluster'.
-			-- Note: Result is Void if there are already 99 test classes for `a_cud'.
-		require
-			a_cud_not_void: a_cud /= Void
-		local
-			l_prefix: STRING
-			l_file: KL_TEXT_INPUT_FILE
-			i: INTEGER
-		do
-			l_prefix := "CDD_TEST_" + a_cud.name + "_"
-			from
-				i := 1
-			until
-				Result /= Void or i > 99
-			loop
-				create Result.make_from_string (l_prefix)
-				if i < 10 then
-					Result.append_character ('0')
-				end
-				Result.append (i.out)
-				create l_file.make (cluster.location.build_path ("", Result.as_lower + ".e"))
-				if l_file.exists then
-					Result := Void
-				end
-				i := i + 1
-			end
-		ensure
-			not_empty: Result = Void or else not Result.is_empty
-		end
 
 	put_indexing (an_uuid: STRING; an_index: INTEGER) is
 			-- Append indexing clause using `an_uuid' for call
@@ -213,16 +250,15 @@ feature {NONE} -- Implementation
 			put_line ("")
 		end
 
-	put_class_header (a_class_name: STRING) is
+	put_class_header is
 			-- Append cdd test case class header with name `a_class_name' for testing `a_cut_name'.
 			-- The feature under test takes the arguments listed in `a_arg_list'.
 		require
 			initialized: is_initialized
-			a_class_name_not_empty: a_class_name /= Void and then not a_class_name.is_empty
 		do
 			put_line ("class")
 			increase_indent
-			put_line (a_class_name + "%N")
+			put_line (new_class_name + "%N")
 			decrease_indent
 			put_line ("inherit")
 			increase_indent
@@ -312,6 +348,26 @@ feature {NONE} -- Implementation
 			decrease_indent
 		end
 
+	put_context_header is
+			-- Print feature definition for context.
+		require
+			initialized: is_initialized
+		do
+			put_line ("feature -- Context%N")
+
+				-- Context
+			increase_indent
+			put_line ("context: ARRAY [TUPLE [STRING, STRING, BOOLEAN, ARRAY [STRING]]] is")
+			increase_indent
+			put_comment ("Context for executing test case")
+			put_comment ("NOTE: by definition first element is operand for calling `routine_under_test'")
+			put_line ("once")
+			increase_indent
+			put_line ("Result := <<")
+			increase_indent
+		end
+
+
 	put_access (a_cut_name: STRING; a_feature: E_FEATURE) is
 			-- Append class header text for `test_class_name'.
 		require
@@ -342,5 +398,9 @@ feature {NONE} -- Implementation
 		do
 			put_string ("%N%Nend -- class %N%N")
 		end
+
+invariant
+	initialized_implies_valid_class_name: is_initialized implies new_class_name /= Void
+	initialized_implies_cluster_not_void: is_initialized implies current_cluster /= Void
 
 end

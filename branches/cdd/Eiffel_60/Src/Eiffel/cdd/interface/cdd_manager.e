@@ -11,6 +11,12 @@ inherit
 
 	CDD_CONSTANTS
 
+	DEBUGGER_OBSERVER
+		redefine
+			on_application_stopped,
+			on_application_quit
+		end
+
 	EB_CLUSTER_MANAGER_OBSERVER
 		rename
 			manager as eb_cluster_manager,
@@ -100,22 +106,26 @@ feature -- Access (CDD Status)
 			Result := is_cdd_enabled
 		end
 
-feature -- Status setting (Application)
+feature {DEBUGGER_MANAGER} -- Status setting (Application)
 
-	on_application_stopped (an_application_status: APPLICATION_STATUS) is
+	on_application_stopped (a_dbg_manager: DEBUGGER_MANAGER) is
 			-- Check whether we want to create a new test case from the current
 			-- application status `an_application_status'.
-		local
-			l_file: KL_TEXT_OUTPUT_FILE
-			l_cse: EIFFEL_CALL_STACK_ELEMENT
+		require else
+			a_dbg_manager_not_void: a_dbg_manager /= Void
+			valid_app_status: a_dbg_manager.application_is_executing and
+				a_dbg_manager.application_is_stopped
 		do
 			if is_extracting_enabled then
-				capturer.capture_call_stack (an_application_status)
+				capturer.capture_call_stack (a_dbg_manager.application_status)
 			end
 		end
 
-	on_application_quit is
+	on_application_quit (a_dbg_manager: DEBUGGER_MANAGER) is
 			-- If `is_debugging' is true, notify test debugger that application is quit.
+		require else
+			a_dbg_manager_not_void: a_dbg_manager /= Void
+			valid_app_status: not a_dbg_manager.application_is_executing
 		do
 		end
 
@@ -179,6 +189,9 @@ feature -- Status setting (CDD)
 			cdd_conf.set_is_extracting (True)
 			target.system.store
 			create capturer.make
+				-- Arno: not sure where to hook up printer and log
+				-- observers for capturing
+			capturer.capture_observers.put_last (create {CDD_TEST_CASE_PRINTER}.make_with_target (target))
 		ensure
 			extracting_enabled: is_extracting_enabled
 			correct_config: cdd_conf.is_extracting
@@ -247,10 +260,6 @@ feature {EB_CLUSTERS} -- Status setting (Eiffel Project)
 	refresh_status is
 			-- Check configuration if cdd status has changed and update if so.
 			-- Note: This is usually called when project is opened or compiled.
-		local
-			l_cdd_enabled, l_cpt_enabled: BOOLEAN
-			l_cluster: CLUSTER_I
-			l_printer: CDD_TEST_CASE_PRINTER
 		do
 			instantiate_cdd_configuration
 			if cdd_conf.is_enabled then

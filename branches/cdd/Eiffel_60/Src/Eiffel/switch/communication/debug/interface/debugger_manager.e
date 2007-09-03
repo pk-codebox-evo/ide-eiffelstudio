@@ -41,6 +41,8 @@ feature {NONE} -- Initialization
 			create application_prelaunching_actions
 			create debugger_data.make
 			create implementation.make (Current)
+
+			add_observer (cdd_manager)
 		end
 
 	is_initialized: BOOLEAN

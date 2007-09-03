@@ -96,7 +96,7 @@ feature {NONE} -- Initialization
 
 
 				-- Invoke cdd manager so instance of it is created...
-			cdd_manager.do_nothing 
+			cdd_manager.do_nothing
 		end
 
 	initialize is
@@ -1647,8 +1647,6 @@ feature -- Debugging events
 			debug ("debugger_trace_synchro")
 				io.put_string (generator + ".on_application_just_stopped : done%N")
 			end
-
-			cdd_manager.on_application_stopped (application.status)
 		end
 
 	on_overflow_detected is

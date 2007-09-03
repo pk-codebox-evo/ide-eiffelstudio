@@ -17,6 +17,11 @@ feature -- Project constants
 	tests_directory_name: STRING is "cdd_tests"
 			-- Name for directories containing cdd tests
 
+	class_name_prefix: STRING is "CDD_TEST_"
+			-- Prefix for all test case class names
+
+	cluster_name_suffix: STRING is "_tests"
+
 	default_cluster_name: STRING is "cdd_test_suite"
 			-- Name of cdd cluster
 
