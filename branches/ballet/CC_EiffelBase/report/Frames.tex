@@ -49,7 +49,7 @@ Equation \ref{eq:Framing} states that a variable v depends only on locations in 
 	\label{eq:Framing}
 \end{equation}
 
-Independence of two variables can be expressed as disjointness of dynamic frames. Disjointness of frames is an important property. It is desired to establish and preserve disjointness. To preserve disjointness, dynamic frames usually frame themselfes.
+Independence of two variables can be expressed as disjointness of dynamic frames. Disjointness of frames is an important property. It is desired to establish and preserve disjointness. To preserve disjointness, dynamic frames usually frame themselves.
 
 \begin{equation}
 	f \; \text{\bf{frames}} \; x  \; \wedge \; g \; \text{\bf{frames}} \; y \; \wedge \; \text{\textit{disjoint}} [f;g] \; \wedge \; \Delta f \Rightarrow y' = y
@@ -81,7 +81,7 @@ feature -- Element change
 		deferred
 		ensure
 			model_updated: model |=| old model.extended (v)
-			model_correspondends: model.contains (v)
+			model_corresponds: model.contains (v)
 			confined representation
 		end
 \end{lstlisting}

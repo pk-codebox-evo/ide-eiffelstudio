@@ -63,7 +63,7 @@ feature -- Element change
 		deferred
 		ensure
 			model_updated: model |=| old model.extended (v)
-			model_correspondends: model.contains (v)
+			model_corresponds: model.contains (v)
 			confined representation
 		end
 \end{lstlisting}
