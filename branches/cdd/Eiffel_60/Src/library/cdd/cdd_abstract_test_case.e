@@ -50,8 +50,6 @@ feature -- Basic operations
 		require
 			set_up: is_set_up
 		deferred
-		ensure
-			not_set_up: not is_set_up
 		end
 
 feature -- Obsolete

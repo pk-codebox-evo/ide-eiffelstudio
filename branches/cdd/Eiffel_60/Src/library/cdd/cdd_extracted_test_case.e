@@ -37,7 +37,8 @@ feature -- Access
 	is_set_up: BOOLEAN is
 			-- Has the `context' and the `routine' been initialized yet?
 		do
-			Result := is_context_set_up and is_routine_set_up
+			Result := is_context_set_up and is_routine_set_up and then
+				routine_under_test.valid_operands (operands)
 		end
 
 feature -- Basic operations
@@ -49,7 +50,7 @@ feature -- Basic operations
 			set_up_context
 		end
 
-	test_feature_under_test is
+	run is
 			-- Call `routine_under_test'. This is the default
 			-- test feature of extracted test cases.
 		require
@@ -73,11 +74,8 @@ feature {NONE} -- Implementation (Access)
 
 	is_context_set_up: BOOLEAN is
 			-- Is test case set up?
-		local
-			i: INTEGER
-			l_id: STRING
 		do
-			Result := operands /= Void and then routine_under_test.valid_operands (operands)
+			Result := operands /= Void
 		end
 
 	is_routine_set_up: BOOLEAN is
@@ -142,8 +140,6 @@ feature {NONE} -- Object initialization
 
 	set_up_routine is
 			-- Set up `routine_under_test'.
-		require
-			context_set_up: is_context_set_up
 		deferred
 		ensure
 			routine_set_up: is_routine_set_up
@@ -162,7 +158,7 @@ feature {NONE} -- Object initialization
 		do
 				-- Create instance for each object in `context'
 			from
-				i := context.lower + 1
+				i := context.lower
 			until
 				i > context.upper
 			loop
