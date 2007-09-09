@@ -152,7 +152,7 @@ feature -- Status setting (CDD)
 			end
 			add_file_rule
 			target.system.store
-			create test_suite.make
+			create test_suite.make_with_target (target)
 		ensure
 			enabled: is_cdd_enabled
 			correct_config: cdd_conf.is_enabled
@@ -191,7 +191,7 @@ feature -- Status setting (CDD)
 			create capturer.make
 				-- Arno: not sure where to hook up printer and log
 				-- observers for capturing
-			capturer.capture_observers.put_last (create {CDD_TEST_CASE_PRINTER}.make_with_target (target))
+			capturer.capture_observers.put_last (create {CDD_TEST_CASE_PRINTER}.make (target, test_suite))
 		ensure
 			extracting_enabled: is_extracting_enabled
 			correct_config: cdd_conf.is_extracting
@@ -268,6 +268,8 @@ feature {EB_CLUSTERS} -- Status setting (Eiffel Project)
 				end
 				if cdd_conf.is_extracting and not is_extracting_enabled then
 					enable_extracting
+				elseif not cdd_conf.is_extracting and is_extracting_enabled then
+					disable_extracting
 				end
 			else
 				if is_extracting_enabled then
@@ -279,7 +281,7 @@ feature {EB_CLUSTERS} -- Status setting (Eiffel Project)
 			end
 		ensure
 			correct_status: cdd_conf.is_enabled = is_cdd_enabled and
-				cdd_conf.is_extracting = is_extracting_enabled
+				(is_cdd_enabled implies (cdd_conf.is_extracting = is_extracting_enabled))
 		end
 
 	refresh is

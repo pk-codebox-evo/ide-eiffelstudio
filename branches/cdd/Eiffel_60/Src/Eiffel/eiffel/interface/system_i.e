@@ -72,6 +72,8 @@ inherit
 			{NONE} all
 		end
 
+	CDD_CONSTANTS
+
 create
 	make
 
@@ -1058,6 +1060,9 @@ end
 				check_unique_class_names
 			end
 
+				-- Find cdd classes and add them to unref_classes
+			find_cdd_classes
+
 			is_force_rebuild := False
 		rescue
 				-- An exception occur during system analysis, we should force a rebuild
@@ -1421,6 +1426,28 @@ end
 			internal_default_rescue_id := -1
 			internal_default_create_id := -1
 			internal_special_make_id := - 1
+		end
+
+	find_cdd_classes is
+			-- Find classes with cdd class prefix and add them to
+			-- unref classes to make sure they are compiled.
+		local
+			l_classes: DS_HASH_SET [CLASS_I]
+			l_cursor: DS_HASH_SET_CURSOR [CLASS_I]
+		do
+			l_classes := universe.all_classes
+			from
+				l_cursor := l_classes.new_cursor
+				l_cursor.start
+			until
+				l_cursor.after
+			loop
+				if l_cursor.item.name.substring_index (class_name_prefix, 1) = 1 and
+					not unref_classes.has (l_cursor.item) then
+					add_unref_class (l_cursor.item)
+				end
+				l_cursor.forth
+			end
 		end
 
 feature -- ANY.default_rescue routine id

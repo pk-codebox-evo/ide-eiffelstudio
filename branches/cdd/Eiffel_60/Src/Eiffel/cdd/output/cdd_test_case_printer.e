@@ -36,21 +36,22 @@ inherit
 
 	SHARED_EIFFEL_PROJECT
 
-	SHARED_FLAGS
-
 create
-	make_with_target
+	make
 
 feature -- Initialization
 
-	make_with_target, set_target (a_target: like target) is
+	make (a_target: like target; a_test_suite: like test_suite) is
 			-- Set `target' to `a_target'.
 		require
 			a_target_not_void: a_target /= Void
+			a_test_suite_not_void: a_test_suite /= Void
 		do
 			target := a_target
+			test_suite := a_test_suite
 		ensure
 			target_set: target = a_target
+			test_suite_set: test_suite = a_test_suite
 		end
 
 feature -- Access
@@ -62,7 +63,10 @@ feature -- Access
 		end
 
 	target: CONF_TARGET
-			-- Cluster in which test cases will be created
+			-- Target in which test cases will be created
+
+	test_suite: CDD_TEST_SUITE
+			-- Test suite containing current test cases
 
 feature	-- Basic operations
 
@@ -195,15 +199,14 @@ feature	-- Basic operations
 					l_cluster_list := eiffel_universe.cluster_of_location (l_directory.name)
 					if l_cluster_list.is_empty then
 						cluster_manager.add_cluster (current_cluster.cluster_name + cluster_name_suffix, current_cluster, l_directory.name)
+						eiffel_system.system.set_config_changed (True)
 						l_tests_cluster := cluster_manager.last_added_cluster
 					else
 						l_tests_cluster := l_cluster_list.first
 					end
 				end
-					-- NOTE: seems to have problem with this call when using ec in console (with -loop option)
-				if is_gui then
-					cluster_manager.add_class_to_cluster (new_class_name.as_lower + ".e", l_tests_cluster, "")
-				end
+				cluster_manager.add_class_to_cluster (new_class_name.as_lower + ".e", l_tests_cluster, "")
+				eiffel_system.system.set_rebuild (True)
 			else
 				if output_stream /= Void then
 					output_stream.close
@@ -264,10 +267,6 @@ feature {NONE} -- Implementation
 			increase_indent
 			put_line ("CDD_EXTRACTED_TEST_CASE%N")
 			decrease_indent
-			put_line ("create")
-			increase_indent
-			put_line ("make%N")
-			decrease_indent
 		end
 
 	put_set_up (a_feature: E_FEATURE; an_is_creation_call: BOOLEAN) is
@@ -278,6 +277,9 @@ feature {NONE} -- Implementation
 		local
 			i: INTEGER
 			l_agent, l_class: STRING
+			l_is_fix: BOOLEAN
+			l_ops: DS_LINKED_LIST [STRING]
+			l_cursor: DS_LINKED_LIST_CURSOR [STRING]
 		do
 			put_line ("feature {NONE} -- Initialization%N")
 			increase_indent
@@ -287,20 +289,35 @@ feature {NONE} -- Implementation
 			put_line ("do")
 			increase_indent
 			l_class := a_feature.associated_class.name_in_upper
-			l_agent := "routine_under_test := agent "
-			if an_is_creation_call or a_feature.is_infix or a_feature.is_prefix then
-				if a_feature.argument_count > 0 then
-					l_agent.append ("(")
+			l_agent := "routine_under_test := agent"
+			l_is_fix := a_feature.is_infix or a_feature.is_prefix
+			if an_is_creation_call or l_is_fix then
+				create l_ops.make
+				if a_feature.argument_count > 0 or l_is_fix then
+					if l_is_fix then
+						l_ops.put_last (l_class)
+					end
 					from
 						i := 1
 					until
 						i > a_feature.argument_count
 					loop
-						l_agent.append ("an_arg" + i.out + ": " + a_feature.arguments.i_th (i).associated_class.name_in_upper)
-						if i < a_feature.argument_count then
+						l_ops.put_last (a_feature.arguments.i_th (i).associated_class.name_in_upper)
+						i := i + 1
+					end
+
+					create l_cursor.make (l_ops)
+					l_agent.append (" (")
+					from
+						l_cursor.start
+					until
+						l_cursor.after
+					loop
+						l_agent.append ("an_arg" + l_cursor.index.out + ": " + l_cursor.item)
+						if not l_cursor.is_last then
 							l_agent.append ("; ")
 						end
-						i := i + 1
+						l_cursor.forth
 					end
 					l_agent.append (")")
 				end
@@ -340,7 +357,7 @@ feature {NONE} -- Implementation
 				put_line ("end")
 				decrease_indent
 			else
-				put_line (l_agent + "{" + l_class + "}." + a_feature.name)
+				put_line (l_agent + " {" + l_class + "}." + a_feature.name)
 			end
 			decrease_indent
 			put_line ("end%N")
