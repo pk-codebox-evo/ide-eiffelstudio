@@ -41,17 +41,14 @@ create
 
 feature -- Initialization
 
-	make (a_target: like target; a_test_suite: like test_suite) is
+	make (a_target: like target) is
 			-- Set `target' to `a_target'.
 		require
 			a_target_not_void: a_target /= Void
-			a_test_suite_not_void: a_test_suite /= Void
 		do
 			target := a_target
-			test_suite := a_test_suite
 		ensure
 			target_set: target = a_target
-			test_suite_set: test_suite = a_test_suite
 		end
 
 feature -- Access
@@ -64,9 +61,6 @@ feature -- Access
 
 	target: CONF_TARGET
 			-- Target in which test cases will be created
-
-	test_suite: CDD_TEST_SUITE
-			-- Test suite containing current test cases
 
 feature	-- Basic operations
 
@@ -374,7 +368,7 @@ feature {NONE} -- Implementation
 
 				-- Context
 			increase_indent
-			put_line ("context: ARRAY [TUPLE [STRING, STRING, BOOLEAN, ARRAY [STRING]]] is")
+			put_line ("context: ARRAY [TUPLE [id: STRING; type: STRING; inv: BOOLEAN; attributes: ARRAY [STRING]]] is")
 			increase_indent
 			put_comment ("Context for executing test case")
 			put_comment ("NOTE: by definition first element is operand for calling `routine_under_test'")

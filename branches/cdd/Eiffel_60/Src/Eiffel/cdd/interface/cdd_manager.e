@@ -191,7 +191,7 @@ feature -- Status setting (CDD)
 			create capturer.make
 				-- Arno: not sure where to hook up printer and log
 				-- observers for capturing
-			capturer.capture_observers.put_last (create {CDD_TEST_CASE_PRINTER}.make (target, test_suite))
+			capturer.capture_observers.put_last (create {CDD_TEST_CASE_PRINTER}.make (target))
 		ensure
 			extracting_enabled: is_extracting_enabled
 			correct_config: cdd_conf.is_extracting
@@ -266,6 +266,7 @@ feature {EB_CLUSTERS} -- Status setting (Eiffel Project)
 				if not is_cdd_enabled then
 					enable_cdd
 				end
+				test_suite.refresh
 				if cdd_conf.is_extracting and not is_extracting_enabled then
 					enable_extracting
 				elseif not cdd_conf.is_extracting and is_extracting_enabled then
@@ -284,10 +285,10 @@ feature {EB_CLUSTERS} -- Status setting (Eiffel Project)
 				(is_cdd_enabled implies (cdd_conf.is_extracting = is_extracting_enabled))
 		end
 
-	refresh is
-			-- Refresh all CDD components.
-		do
-		end
+--	refresh is
+--			-- Refresh all CDD components.
+--		do
+--		end
 
 	remove_test_case_for_class (a_class: CLASS_I) is
 			-- Check if there is a test case for `a_class'. If this is

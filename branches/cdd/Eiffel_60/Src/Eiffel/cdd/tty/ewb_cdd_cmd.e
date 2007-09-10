@@ -15,6 +15,8 @@ inherit
 			{NONE} all
 		end
 
+	CDD_CONSTANTS
+
 feature -- Access
 
 	cdd_manager: CDD_MANAGER is

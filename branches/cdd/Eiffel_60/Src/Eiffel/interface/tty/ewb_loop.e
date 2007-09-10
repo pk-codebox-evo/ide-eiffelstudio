@@ -273,7 +273,7 @@ feature -- Initialization
 		once
 			create Result.make (1,3)
 			Result.add_entry (create {EWB_CDD_STATUS})
-			Result.add_entry (create {EWB_STRING}.make ("View", "View test cases", 'v', testing_menu))
+			Result.add_entry (create {EWB_CDD_VIEW})
 			Result.add_entry (create {EWB_STRING}.make ("Run", "Run test cases", 'r', testing_menu))
 		ensure
 			not_void: Result /= Void

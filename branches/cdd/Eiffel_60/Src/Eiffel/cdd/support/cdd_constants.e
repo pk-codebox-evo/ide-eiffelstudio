@@ -20,10 +20,16 @@ feature -- Project constants
 	class_name_prefix: STRING is "CDD_TEST_"
 			-- Prefix for all test case class names
 
+	abstract_extracted_class_name: STRING is "CDD_EXTRACTED_TEST_CASE"
+			-- Class name of the abstract extracted test case
+
 	cluster_name_suffix: STRING is "_tests"
 
 	default_cluster_name: STRING is "cdd_test_suite"
 			-- Name of cdd cluster
+
+	unknown_name: STRING is "<unknown>"
+			-- Replacement for unknown cluster/class/feature names
 
 feature -- TTY
 
