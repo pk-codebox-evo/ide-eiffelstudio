@@ -100,7 +100,8 @@ feature {NONE} -- Implementation
 			-- Arguments for calling `routine_under_test'
 
 	context: ARRAY [TUPLE [id: STRING; type: STRING; inv: BOOLEAN; attributes: ARRAY [STRING]]] is
-			-- Context of the captured test case
+			-- Context of the captured test case;
+			-- TODO: explain components.
 		deferred
 		ensure
 			not_void: Result /= Void
@@ -286,6 +287,7 @@ feature {NONE} -- Object initialization
 		end
 
 	set_attributes (an_object: ANY; an_attributes_list: ARRAY [STRING]) is
+			-- TODO: Missing header comment.
 		require
 			an_object_not_void: an_object /= Void
 			an_object_valid: not is_tuple (an_object) and not is_special (an_object)
@@ -385,7 +387,7 @@ feature {NONE} -- Object initialization
 		end
 
 	set_tuple_attributes (a_tuple: TUPLE; an_attribute_list: ARRAY [STRING]) is
-			--
+			-- TODO: Missing header comment
 		require
 			a_tuple_not_void: a_tuple /= Void
 			an_attributes_list_not_void: an_attribute_list /= Void
@@ -436,7 +438,7 @@ feature {NONE} -- Object initialization
 		end
 
 	set_special_attributes (a_special: SPECIAL [ANY]; an_attribute_list: ARRAY [STRING]) is
-			--
+			-- TODO: Missing header comment.
 		require
 			a_special_not_void: a_special /= Void
 			an_attributes_list_not_void: an_attribute_list /= Void
