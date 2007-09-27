@@ -12,7 +12,7 @@ class
 
 feature -- Access
 
-	unknown: NATURAL_8 = 0
+	none: NATURAL_8 = 0
 			-- Unknown category
 
 	internal_event: NATURAL_8 = 1
@@ -20,6 +20,15 @@ feature -- Access
 
 	compilation: NATURAL_8 = 2
 			-- A compilation/build
+
+	debugger: NATURAL_8 = 3
+			-- Eiffel debugger
+
+	editor: NATURAL_8 = 4
+			-- Text editor
+
+	refactoring: NATURAL_8 = 5
+			-- Refactoring engin
 
 ;indexing
 	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
