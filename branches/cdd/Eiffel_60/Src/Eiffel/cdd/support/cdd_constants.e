@@ -31,6 +31,9 @@ feature -- Project constants
 	unknown_name: STRING is "<unknown>"
 			-- Replacement for unknown cluster/class/feature names
 
+	max_reference_depth: INTEGER is 5
+			-- Max depth capturer will follow object references when extracting
+
 feature -- TTY
 
 	confirm_enabling: STRING is "CDD is currently enabled, would you like to%Ncontinue having CDD enabled"

@@ -220,7 +220,7 @@ feature {NONE} -- Implementation
 			last_sort_result.sort (l_ss)
 		ensure
 			last_sort_result_not_void: last_sort_result /= Void
-			last_sort_result_sorted: last_sort_result.sorted (create {DS_SHELL_SORTER [CDD_TEST_CASE]}.make (create {AGENT_BASED_EQUALITY_TESTER [CDD_TEST_CASE]}.make (a_comp)))
+			last_sort_result_sorted: not last_sort_result.sorted (create {DS_SHELL_SORTER [CDD_TEST_CASE]}.make (create {AGENT_BASED_EQUALITY_TESTER [CDD_TEST_CASE]}.make (a_comp)))
 		end
 
 invariant

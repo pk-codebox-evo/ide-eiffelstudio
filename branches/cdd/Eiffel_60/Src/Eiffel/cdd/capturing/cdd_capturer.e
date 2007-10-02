@@ -16,6 +16,8 @@ inherit
 			{NONE} all
 		end
 
+	CDD_CONSTANTS
+
 create
 	make
 
@@ -153,13 +155,13 @@ feature {NONE} -- Implementation (Capturing)
 				j := j + 1
 			end
 			l_type.append ("]")
-			put_object ("#operand", l_type, True, fetch_object_attributes (l_arguments, False))
+			put_object ("#operand", l_type, True, fetch_object_attributes (l_arguments, False, 0))
 
 				-- Start capturing objects
 			from until
 				object_queue.is_empty
 			loop
-				process_object (object_queue.item)
+				process_object (object_queue.item.object, object_queue.item.depth)
 				object_queue.remove
 			end
 
@@ -174,12 +176,14 @@ feature {NONE} -- Implementation (Capturing)
 			end
 		end
 
-	process_object (an_object: ABSTRACT_DEBUG_VALUE) is
-			--
+	process_object (an_object: ABSTRACT_DEBUG_VALUE; a_depth: INTEGER) is
+			-- Create context representation for `an_object'
+			-- and notify observers.
 		require
 			capturing: is_capturing
 			reference_value: is_reference_value (an_object)
 			object_already_added: object_map.has (an_object.address)
+			a_depth_not_negative: a_depth >= 0
 		local
 			l_class: EIFFEL_CLASS_C
 			l_id, l_type: STRING
@@ -196,16 +200,18 @@ feature {NONE} -- Implementation (Capturing)
 				check l_ref_adv_not_void: l_ref_adv /= Void end
 				l_attrs.put_first (l_ref_adv.dump_value.formatted_output)
 			elseif l_class.is_special or l_class.is_tuple then
-				l_attrs := fetch_object_attributes (an_object.children, False)
+				l_attrs := fetch_object_attributes (an_object.children, False, a_depth)
 			else
-				l_attrs := fetch_object_attributes (an_object.children, True)
+				l_attrs := fetch_object_attributes (an_object.children, True, a_depth)
 			end
 				-- TODO: replace boolean constant in feature call
 			put_object (l_id, l_type, True, l_attrs)
 		end
 
 	put_object (an_id, a_type: STRING; an_inv: BOOLEAN; some_attrs: DS_LIST [STRING]) is
-			--
+			-- Notify obervers that new object with id `an_id', type `a_type' and
+			-- attributes `an_attrs' has been added. `an_inv' determines whether the
+			-- invariant of the object should hold or not.
 		require
 			an_id_not_empty: an_id /= Void and then not an_id.is_empty
 			a_type_not_empty: a_type /= Void and then not a_type.is_empty
@@ -224,12 +230,13 @@ feature {NONE} -- Implementation (Capturing)
 			end
 		end
 
-	add_referenced_object (an_adv: ABSTRACT_DEBUG_VALUE) is
+	add_referenced_object (an_adv: ABSTRACT_DEBUG_VALUE; a_depth: INTEGER) is
 			-- Add `an_adv' to `object_map' and `object_queue'.
 		require
 			capturing: is_capturing
 			an_adv_valid: an_adv /= Void and is_reference_value (an_adv)
 			not_yet_added: not object_map.has (an_adv.address)
+			a_depth_not_negative: a_depth >= 0
 		local
 			l_new_id: STRING
 		do
@@ -239,13 +246,13 @@ feature {NONE} -- Implementation (Capturing)
 			current_object_id := current_object_id + 1
 			l_new_id := "#" + current_object_id.out
 			object_map.put (l_new_id, an_adv.address)
-			object_queue.put (an_adv)
+			object_queue.put ([an_adv, a_depth])
 		ensure
 			added_to_mapping: object_map.has (an_adv.address)
 			added_to_queue: object_queue.count = old object_queue.count + 1
 		end
 
-	fetch_object_attributes (an_attr_list: DS_LIST [ABSTRACT_DEBUG_VALUE]; an_use_attr_names: BOOLEAN): DS_LIST [STRING] is
+	fetch_object_attributes (an_attr_list: DS_LIST [ABSTRACT_DEBUG_VALUE]; an_use_attr_names: BOOLEAN; a_depth: INTEGER): DS_LIST [STRING] is
 			-- List of string representations for attributes in `an_attr_list'.
 			-- If `an_use_attr_name' is true, also provide the attributes names.
 		require
@@ -253,39 +260,43 @@ feature {NONE} -- Implementation (Capturing)
 			object_map_not_void: object_map /= Void
 			object_queue_not_void: object_queue /= Void
 			an_attr_list_not_void: an_attr_list /= Void
+			a_depth_not_negative: a_depth >= 0
 		local
 			l_cursor: DS_LIST_CURSOR [ABSTRACT_DEBUG_VALUE]
 			l_child: ABSTRACT_DEBUG_VALUE
 			l_value: STRING
 		do
 			create {DS_LINKED_LIST [STRING]} Result.make
-			from
-				l_cursor := an_attr_list.new_cursor
-				l_cursor.start
-			until
-				l_cursor.after
-			loop
-				l_child := l_cursor.item
-				l_value := attribute_value (l_child)
-				if an_use_attr_names then
-					Result.put_last (l_child.name)
+			if a_depth <= max_reference_depth then
+				from
+					l_cursor := an_attr_list.new_cursor
+					l_cursor.start
+				until
+					l_cursor.after
+				loop
+					l_child := l_cursor.item
+					l_value := attribute_value (l_child, a_depth + 1)
+					if an_use_attr_names then
+						Result.put_last (l_child.name)
+					end
+					Result.put_last (l_value)
+					l_cursor.forth
 				end
-				Result.put_last (l_value)
-				l_cursor.forth
 			end
 		end
 
-	attribute_value (an_adv: ABSTRACT_DEBUG_VALUE): STRING is
+	attribute_value (an_adv: ABSTRACT_DEBUG_VALUE; a_depth: INTEGER): STRING is
 			-- Value represented by `an_adv' if it is a basic type,
 			-- otherwise the mapped id for the object it is pointing to.
 			-- Is void in case `an_adv' represents a void or unhandled value.
 		require
 			capturing: is_capturing
+			a_depth_not_negative: a_depth >= 0
 		do
 			if is_reference_value (an_adv) then
 				if  an_adv.dynamic_class /= Void and then an_adv.dynamic_class.is_eiffel_class_c then
 					if not object_map.has (an_adv.address) then
-						add_referenced_object (an_adv)
+						add_referenced_object (an_adv, a_depth)
 					end
 					Result := object_map.item (an_adv.address)
 				end
@@ -303,8 +314,8 @@ feature {NONE} -- Implementation (Access)
 	object_map: DS_HASH_TABLE [STRING, STRING]
 			-- Hash table that maps object addresses to an id in the test case context
 
-	object_queue: DS_LINKED_QUEUE [ABSTRACT_DEBUG_VALUE]
-			-- Queue of objects which still need to printed in the context
+	object_queue: DS_LINKED_QUEUE [TUPLE [object: ABSTRACT_DEBUG_VALUE; depth: INTEGER]]
+			-- Queue of objects together with the reference depth still need to printed in the context
 
 	current_object_id: INTEGER
 			-- Counter for giving new objects an id.
