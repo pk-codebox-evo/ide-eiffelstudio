@@ -3,6 +3,7 @@
 	<target name="common">
 		<file_rule>
 			<exclude>/\.svn$</exclude>
+			<exclude>cdd_tests</exclude>
 		</file_rule>
 		<option trace="false" profile="false" debug="false" warning="true">
 			<assertions precondition="true" postcondition="true" check="true" supplier_precondition="true"/>
@@ -230,7 +231,7 @@
 			</condition>
 		</external_object>
 		<variable name="batch_framework" value="false"/>
-		<library name="cdd" location="$ISE_LIBRARY\library\cdd\cdd.ecf" readonly="false" />
+		<library name="cdd" location="$ISE_LIBRARY\library\cdd\cdd.ecf" readonly="false"/>
 		<library name="configuration_gui" location="$EIFFEL_SRC\framework\configuration\configuration_gui.ecf" readonly="false"/>
 		<library name="diff" location="$ISE_LIBRARY\library\diff\diff.ecf" readonly="false"/>
 		<library name="docking" location="$ISE_LIBRARY\library\docking\docking.ecf" readonly="false" use_application_options="true"/>
