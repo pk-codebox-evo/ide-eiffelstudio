@@ -1,5 +1,5 @@
 \echo "Compiling project..."
-ec -config tc_demo.ecf -target tc_demo -c_compile
+ec -config false_precondition.ecf -target false_precondition -c_compile
 echo "Running project..."
-ec -config tc_demo.ecf -target tc_demo -loop < input.txt
+ec -config false_precondition.ecf -target false_precondition -loop < input.txt
 echo "Done"
