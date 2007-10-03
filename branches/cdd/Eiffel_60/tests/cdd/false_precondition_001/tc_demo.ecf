@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<system xmlns="http://www.eiffel.com/developers/xml/configuration-1-2-0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.eiffel.com/developers/xml/configuration-1-2-0 http://www.eiffel.com/developers/xml/configuration-1-2-0.xsd" name="tc_demo" uuid="87597A85-0813-4584-86FD-A2A47D4A41D5">
+	<target name="tc_demo">
+		<root class="ROOT_CLASS" feature="make"/>
+		<cdd enabled="true" extracting="true" capture_replay="false"/>
+		<option warning="true">
+			<assertions precondition="true" postcondition="true" check="true" supplier_precondition="true"/>
+		</option>
+		<precompile name="base_pre" location="$ISE_PRECOMP\base.ecf"/>
+		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
+		<library name="cdd" location="\home\aleitner\src\cdd_trunk\Src\library\cdd\cdd.ecf"/>
+		<cluster name="root_cluster" location=".\" recursive="true">
+			<file_rule>
+				<exclude>/EIFGENs$</exclude>
+				<exclude>/.svn$</exclude>
+				<exclude>/CVS$</exclude>
+				<exclude>cdd_tests</exclude>
+			</file_rule>
+			<cluster name="root_cluster_tests" location="\home\aleitner\src\cdd_trunk\tests\cdd\false_precondition_001\cdd_tests\">
+				<cluster name="root_cluster_tests_tests" location="\home\aleitner\src\cdd_trunk\tests\cdd\false_precondition_001\cdd_tests\cdd_tests\"/>
+			</cluster>
+		</cluster>
+	</target>
+</system>
