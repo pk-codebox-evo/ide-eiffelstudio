@@ -8,17 +8,12 @@
 		</option>
 		<precompile name="base_pre" location="$ISE_PRECOMP\base.ecf"/>
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
-		<library name="cdd" location="\home\aleitner\src\cdd_trunk\Src\library\cdd\cdd.ecf"/>
 		<cluster name="root_cluster" location=".\" recursive="true">
 			<file_rule>
 				<exclude>/EIFGENs$</exclude>
 				<exclude>/.svn$</exclude>
 				<exclude>/CVS$</exclude>
-				<exclude>cdd_tests</exclude>
 			</file_rule>
-			<cluster name="root_cluster_tests" location="\home\aleitner\src\cdd_trunk\tests\cdd\false_precondition_001\cdd_tests\">
-				<cluster name="root_cluster_tests_tests" location="\home\aleitner\src\cdd_trunk\tests\cdd\false_precondition_001\cdd_tests\cdd_tests\"/>
-			</cluster>
 		</cluster>
 	</target>
 </system>
