@@ -331,6 +331,7 @@ feature {NONE} -- Implementation
 		end
 
 	cdd_conf: CONF_CDD
+			-- CDD Configuration instance
 
 	instantiate_cdd_configuration is
 			-- Create cdd configuration with default parameters if

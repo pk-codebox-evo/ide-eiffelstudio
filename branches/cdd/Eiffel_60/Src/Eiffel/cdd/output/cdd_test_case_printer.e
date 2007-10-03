@@ -192,7 +192,9 @@ feature	-- Basic operations
 					create l_directory.make (current_cluster.location.build_path (tests_directory_name, ""))
 					l_cluster_list := eiffel_universe.cluster_of_location (l_directory.name)
 					if l_cluster_list.is_empty then
-						cluster_manager.add_cluster (current_cluster.cluster_name + cluster_name_suffix, current_cluster, l_directory.name)
+						-- Note (Arno): first version prints absolute path to cluster
+						--cluster_manager.add_cluster (current_cluster.cluster_name + cluster_name_suffix, current_cluster, l_directory.name)
+						cluster_manager.add_cluster (current_cluster.cluster_name + cluster_name_suffix, current_cluster, current_cluster.location.original_directory + "\" + tests_directory_name)
 						eiffel_system.system.set_config_changed (True)
 						l_tests_cluster := cluster_manager.last_added_cluster
 					else
