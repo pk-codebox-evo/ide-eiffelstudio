@@ -107,7 +107,7 @@ feature {NONE} -- Implementation (Capturing)
 			l_class: CLASS_C
 			l_cursor: DS_LINKED_LIST_CURSOR [CDD_CAPTURE_OBSERVER]
 			l_arguments: DS_ARRAYED_LIST [ABSTRACT_DEBUG_VALUE]
-			i,j: INTEGER
+			i, j, l_ops_count: INTEGER
 			l_type: STRING
 		do
 			l_cursor := capture_observers.new_cursor
@@ -133,7 +133,11 @@ feature {NONE} -- Implementation (Capturing)
 				i := 1
 			end
 			create l_arguments.make (l_feature.argument_count + i)
-			l_type := "TUPLE ["
+			l_type := "TUPLE"
+			l_ops_count := i + l_feature.argument_count
+			if l_ops_count > 0 then
+				l_type.append (" [")
+			end
 			if i > 0 then
 				l_arguments.put_first (a_cse.current_object_value)
 				l_type.append (a_cse.dynamic_class.name_in_upper)
@@ -154,7 +158,9 @@ feature {NONE} -- Implementation (Capturing)
 				end
 				j := j + 1
 			end
-			l_type.append ("]")
+			if l_ops_count > 0 then
+				l_type.append ("]")
+			end
 			put_object ("#operand", l_type, True, fetch_object_attributes (l_arguments, False, 0))
 
 				-- Start capturing objects
