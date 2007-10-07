@@ -7,12 +7,23 @@ indexing
 deferred class
 	CDD_ABSTRACT_TEST_CASE
 
+inherit
+
+	HASHABLE
+
 feature -- Access
 
 	is_set_up: BOOLEAN is
 			-- Has `current' been set up yet?
 		deferred
 		end
+
+	hash_code: INTEGER is
+			-- Hash code value
+		do
+			Result := generating_type.hash_code
+		end
+
 
 feature -- Measurement
 
