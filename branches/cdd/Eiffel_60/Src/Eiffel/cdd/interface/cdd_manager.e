@@ -140,7 +140,8 @@ feature -- Status setting (CDD)
 		local
 			l_loc: CONF_FILE_LOCATION
 			l_lib: CONF_LIBRARY
-			l_rule: CONF_FILE_RULE
+			--l_rule: CONF_FILE_RULE
+			l_root_printer: CDD_ROOT_CLASS_PRINTER
 		do
 			instantiate_cdd_configuration
 			cdd_conf.set_is_enabled (True)
@@ -153,6 +154,7 @@ feature -- Status setting (CDD)
 			add_file_rule
 			target.system.store
 			create test_suite.make_with_target (target)
+			l_root_printer := create {CDD_ROOT_CLASS_PRINTER}.make (test_suite)
 		ensure
 			enabled: is_cdd_enabled
 			correct_config: cdd_conf.is_enabled

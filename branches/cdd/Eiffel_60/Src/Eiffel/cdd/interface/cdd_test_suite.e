@@ -10,8 +10,14 @@ class
 inherit
 
 	SHARED_EIFFEL_PROJECT
+		export
+			{NONE} all
+		end
 
 	CDD_CONSTANTS
+		export
+			{NONE} all
+		end
 
 create
 	make_with_target
