@@ -23,8 +23,6 @@ feature {NONE} -- Initialization
 			-- Set `test_suite' to `a_test_suite'.
 		require
 			a_test_suite_not_void: a_test_suite /= Void
-		local
-			l_sample: CDD_SAMPLE_ROOT_CLASS
 		do
 			test_suite := a_test_suite
 			internal_refresh_agent := agent print_root_class
