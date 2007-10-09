@@ -31,11 +31,8 @@ feature -- Execution
 			-- execute all test cases in `test_cases'.
 		local
 			l_class, l_feature: STRING
-			l_cursor: DS_HASH_TABLE_CURSOR [CDD_ABSTRACT_TEST_CASE, STRING]
-			l_features: DS_HASH_TABLE [PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]], STRING]
-			l_feature_cursor: DS_HASH_TABLE_CURSOR [PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]], STRING]
-			l_test_case: CDD_ABSTRACT_TEST_CASE
-			i, l_pos: INTEGER
+			l_cursor: DS_BILINEAR_CURSOR [STRING]
+			i: INTEGER
 		do
 			if command_line.argument_count > 0 then
 				from
@@ -43,51 +40,41 @@ feature -- Execution
 				until
 					i > command_line.argument_count
 				loop
-					l_class := command_line.argument (i)
-					l_pos := l_class.index_of ('.', 0)
-					if l_pos > 0 then
-						l_feature := l_class.substring (l_pos + 1, l_class.count)
-						l_class := l_class.substring (1, l_pos - 1)
-					else
-						l_feature := Void
-					end
-					if test_cases.has (l_class) then
-						l_test_case := test_cases.item (l_class)
-						if test_features.has (l_test_case) then
-							if l_feature /= Void then
-								l_features := test_features.item (l_test_case)
-								if l_features.has (l_feature) then
-
-								end
-							else
-								create l_feature_cursor.make (test_features.item (l_test_case))
-								from
-									l_feature_cursor.start
-								until
-									l_feature_cursor.after
-								loop
-									execute_test (l_test_case, l_feature_cursor.item)
-									l_feature_cursor.forth
-								end
-							end
-						end
-					end
+					evaluate_argument (command_line.argument (i))
 					i := i + 1
 				end
 			else
-				create l_cursor.make (test_cases)
+				l_cursor := test_setting.keys.new_cursor
 				from
 					l_cursor.start
 				until
 					l_cursor.after
 				loop
-					--execute_test_case (l_cursor.item)
+					execute_tests_for_class (l_cursor.item)
 					l_cursor.forth
 				end
 			end
 		end
 
 feature -- Access
+
+	test_setting: DS_HASH_TABLE [TUPLE [instance: CDD_ABSTRACT_TEST_CASE; test_features: DS_HASH_TABLE [PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]], STRING]], STRING] is
+			-- Main data structure containing an instance of all
+			-- classes representing a test case. Each instance comes
+			-- with a number of procedures pointing to actual test
+			-- features within the class. The operand of the
+			-- procedure is the instance of the test class
+			-- containing the test feature.
+		deferred
+		ensure
+			not_void: Result /= Void
+			valid_items: not Result.has (Void) and then
+				Result.for_all (agent (a_tuple: TUPLE [test_case: CDD_ABSTRACT_TEST_CASE; hash_table: DS_HASH_TABLE [PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]], STRING]]): BOOLEAN
+					do
+						Result := a_tuple.test_case /= Void and a_tuple.hash_table /= Void and then not a_tuple.hash_table.has (Void)
+					end)
+		end
+
 
 	test_cases: DS_HASH_TABLE [CDD_ABSTRACT_TEST_CASE, STRING] is
 			-- Hash table of all test cases where keys are the names
@@ -100,7 +87,7 @@ feature -- Access
 			not_void: Result /= Void
 		end
 
-	test_features: DS_HASH_TABLE [DS_HASH_TABLE [PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]], STRING], CDD_ABSTRACT_TEST_CASE] is
+	test_features: DS_HASH_TABLE [DS_HASH_TABLE [PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]], STRING], STRING] is
 			-- Double hash table with all callable features of all test cases. Keys are
 			-- the test case instances and the test feature names in `test_cases',
 			-- values are agents invoking a single test feature in the instance and
@@ -108,10 +95,10 @@ feature -- Access
 		deferred
 		ensure
 			not_void: Result /= Void
-			valid_keys: test_cases.for_all (
-				agent (a_tc: CDD_MANUAL_TEST_CASE; a_hash_table: like test_features): BOOLEAN
+			valid_keys: test_cases.keys.for_all (
+				agent (a_key: STRING; a_hash_table: like test_features): BOOLEAN
 					do
-						Result := a_hash_table.has (a_tc)
+						Result := a_hash_table.has (a_key)
 					end (?, Result))
 			valid_items: not Result.has_item (Void)
 			valid_items: Result.for_all (
@@ -150,6 +137,65 @@ feature -- Obsolete
 feature -- Inapplicable
 
 feature {NONE} -- Implementation
+
+	evaluate_argument (an_argument: STRING) is
+			-- If `an_argument' only consists of a class name, execute all tests
+			-- found for that class. If `an_argument' also contains a feature name,
+			-- only execute the corresponding test.
+		require
+			an_argument_valid: an_argument /= Void and then not an_argument.is_empty
+		local
+			l_class, l_feature: STRING
+			l_pos: INTEGER
+			l_features: DS_HASH_TABLE [PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]], STRING]
+			l_test_case: CDD_ABSTRACT_TEST_CASE
+		do
+			l_class := an_argument
+			l_pos := l_class.index_of ('.', 0)
+			if l_pos > 0 then
+				l_feature := l_class.substring (l_pos + 1, l_class.count)
+				l_class := l_class.substring (1, l_pos - 1)
+			else
+				l_feature := Void
+			end
+			if test_cases.has (l_class) then
+				if l_feature /= Void then
+					l_features := test_features.item (l_class)
+					if l_features.has (l_feature) then
+
+					end
+				else
+--					create l_feature_cursor.make (test_features.item (l_test_case))
+--					from
+--						l_feature_cursor.start
+--					until
+--						l_feature_cursor.after
+--					loop
+--						execute_test (l_test_case, l_feature_cursor.item)
+--						l_feature_cursor.forth
+--					end
+				end
+			end
+		end
+
+	execute_tests_for_class (a_class_name: STRING) is
+			-- Execute all tests found in `test_features' for class `a_class_name'.
+		require
+			a_class_name_not_void: a_class_name /= Void
+			a_class_name_valid: test_setting.has (a_class_name)
+		local
+			l_cursor: DS_HASH_TABLE_CURSOR [PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]], STRING]
+		do
+			create l_cursor.make (test_setting.item (a_class_name).test_features)
+			from
+				l_cursor.start
+			until
+				l_cursor.after
+			loop
+				--execute_test (a_class_name, l_cursor.item)
+				l_cursor.forth
+			end
+		end
 
 	execute_test (a_tc: CDD_ABSTRACT_TEST_CASE; a_feature: PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]]) is
 			-- Set up `a_tc' and call `a_feature' with `a_tc' as operand.

@@ -14,6 +14,9 @@ deferred class
 inherit
 
 	CDD_ABSTRACT_TEST_CASE
+		rename
+			tear_down as do_nothing
+		end
 
 feature
 
