@@ -75,39 +75,6 @@ feature -- Access
 					end)
 		end
 
-
-	test_cases: DS_HASH_TABLE [CDD_ABSTRACT_TEST_CASE, STRING] is
-			-- Hash table of all test cases where keys are the names
-			-- of each test class and the corresponding value is an
-			-- instance of that class.
-			-- Note: so far this list must be provided
-			-- by a descendant of this class
-		deferred
-		ensure
-			not_void: Result /= Void
-		end
-
-	test_features: DS_HASH_TABLE [DS_HASH_TABLE [PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]], STRING], STRING] is
-			-- Double hash table with all callable features of all test cases. Keys are
-			-- the test case instances and the test feature names in `test_cases',
-			-- values are agents invoking a single test feature in the instance and
-			-- taking the actual test case as an operand
-		deferred
-		ensure
-			not_void: Result /= Void
-			valid_keys: test_cases.keys.for_all (
-				agent (a_key: STRING; a_hash_table: like test_features): BOOLEAN
-					do
-						Result := a_hash_table.has (a_key)
-					end (?, Result))
-			valid_items: not Result.has_item (Void)
-			valid_items: Result.for_all (
-				agent (a_hash_table: DS_HASH_TABLE [PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]], STRING]): BOOLEAN
-					do
-						Result := not a_hash_table.has (Void)
-					end)
-		end
-
 feature -- Measurement
 
 feature -- Status report
@@ -147,8 +114,6 @@ feature {NONE} -- Implementation
 		local
 			l_class, l_feature: STRING
 			l_pos: INTEGER
-			l_features: DS_HASH_TABLE [PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]], STRING]
-			l_test_case: CDD_ABSTRACT_TEST_CASE
 		do
 			l_class := an_argument
 			l_pos := l_class.index_of ('.', 0)
@@ -158,23 +123,18 @@ feature {NONE} -- Implementation
 			else
 				l_feature := Void
 			end
-			if test_cases.has (l_class) then
+			if test_setting.has (l_class) then
 				if l_feature /= Void then
-					l_features := test_features.item (l_class)
-					if l_features.has (l_feature) then
-
+					if test_setting.item (l_class).test_features.has (l_feature) then
+						execute_test (l_class, l_feature)
+					else
+						-- No test feature for `l_feature' in `test_features'
 					end
 				else
---					create l_feature_cursor.make (test_features.item (l_test_case))
---					from
---						l_feature_cursor.start
---					until
---						l_feature_cursor.after
---					loop
---						execute_test (l_test_case, l_feature_cursor.item)
---						l_feature_cursor.forth
---					end
+					execute_tests_for_class (l_class)
 				end
+			else
+				-- No test case for class `l_class' in `test_settings'
 			end
 		end
 
@@ -184,47 +144,140 @@ feature {NONE} -- Implementation
 			a_class_name_not_void: a_class_name /= Void
 			a_class_name_valid: test_setting.has (a_class_name)
 		local
-			l_cursor: DS_HASH_TABLE_CURSOR [PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]], STRING]
+			l_cursor: DS_BILINEAR_CURSOR [STRING]
 		do
-			create l_cursor.make (test_setting.item (a_class_name).test_features)
+			l_cursor := test_setting.item (a_class_name).test_features.keys.new_cursor
 			from
 				l_cursor.start
 			until
 				l_cursor.after
 			loop
-				--execute_test (a_class_name, l_cursor.item)
+				execute_test (a_class_name, l_cursor.item)
 				l_cursor.forth
 			end
 		end
 
-	execute_test (a_tc: CDD_ABSTRACT_TEST_CASE; a_feature: PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]]) is
+	execute_test (a_tc_name, a_feature_name: STRING) is
 			-- Set up `a_tc' and call `a_feature' with `a_tc' as operand.
-			-- Print results any results on standard out.
+			-- Print results on standard out refering to `a_tc_name' and
+			-- `a_feature_name'.
+		require
+			a_tc_name_valid: a_tc_name /= Void and then test_setting.has (a_tc_name)
+			a_feature_name_valid: a_feature_name /= Void and then test_setting.item (a_tc_name).test_features.has (a_feature_name)
+		local
+			l_invalid: BOOLEAN
+			l_tc: CDD_ABSTRACT_TEST_CASE
 		do
-			safe_execute_test (a_tc, a_feature)
-			if has_failed then
-				-- Test case has produced some kind of error...
-				has_failed := True
+			l_tc := test_setting.item (a_tc_name).instance
+			safe_set_up_test (l_tc)
+			if not has_failed then
+				safe_execute_test (l_tc, test_setting.item (a_tc_name).test_features.item (a_feature_name))
 			else
-				-- Test case executed without any errors...
+				l_invalid := True
 			end
+			io.put_string (cdd_token)
+			io.put_string (a_tc_name)
+			io.put_character ('.')
+			io.put_string (a_feature_name)
+			io.put_character (':')
+			if has_failed then
+				if l_invalid then
+					io.put_string ("INV")
+				else
+					io.put_string ("FAIL|")
+					io.put_string (last_exception.out + "|")
+					io.put_string (last_class_name + "|")
+					io.put_string (last_recipient_name + "|")
+					io.put_string (last_tag_name + "|")
+				end
+				has_failed := False
+			else
+				io.put_string ("PASS")
+			end
+			io.put_string (cdd_token)
+			io.put_new_line
 		end
 
 	has_failed: BOOLEAN
 			-- Has last call of `safe_execute_test_case' caused a violation?
 
-	safe_execute_test (a_tc: CDD_ABSTRACT_TEST_CASE; a_feature: PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]]) is
-			-- Set up `a_tc' and call `a_feature' with `a_tc' as operand.
-			-- If any violation exception occurs, set `has_failed' to False.
+	last_exception: like exception
+			-- Code of last exception
+
+	last_tag_name: like tag_name
+			-- Tag of last exception
+
+	last_recipient_name: like recipient_name
+			-- Recipient name of last exception
+
+	last_class_name: like class_name
+			-- Name of class including recipient of last exception
+
+	safe_set_up_test (a_tc: CDD_ABSTRACT_TEST_CASE) is
+			-- Set up `a_tc'. If any violation occurs set
+			-- `has_failed' to False.
 		require
 			a_tc_not_void: a_tc /= Void
 		do
 			if not has_failed then
 				a_tc.set_up
 			end
+		ensure
+			not_failed_implies_set_up: not has_failed implies a_tc.is_set_up
 		rescue
-			has_failed := True
+			retrieve_exception_details
 			retry
 		end
+
+	safe_execute_test (a_tc: CDD_ABSTRACT_TEST_CASE; a_feature: PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]]) is
+			-- Call `a_feature' with `a_tc' as operand. If any
+			-- violation exception occurs set `has_failed' to False.
+		require
+			a_tc_not_void: a_tc /= Void
+			a_feature_not_void: a_feature /= Void
+		do
+			if not has_failed then
+				a_feature.call ([a_tc])
+			end
+		rescue
+			retrieve_exception_details
+			retry
+		end
+
+	retrieve_exception_details is
+			-- Set `has_failed' to True and retrieve informations for
+			-- `last_class_name', `last_recipient_name', `last_tag_name'
+			-- and `last_exception_name'.
+		require
+			exception_occured: valid_code (original_exception)
+		do
+			has_failed := True
+			last_exception := original_exception
+			last_class_name := original_class_name
+			last_recipient_name := original_recipient_name
+			last_tag_name := original_tag_name
+			if last_class_name = Void then
+				create last_class_name.make_empty
+			end
+			if last_recipient_name = Void then
+				create last_class_name.make_empty
+			end
+			if last_tag_name = Void then
+				create last_tag_name.make_empty
+			end
+		ensure
+			failed: has_failed
+		end
+
+
+	cdd_token: STRING is "###CDD###"
+			-- Token which will surround cdd related messages
+			-- on standard output
+
+invariant
+
+	has_failed_implies_last_class_name_not_void: has_failed implies last_class_name /= Void
+	has_failed_implies_last_recipient_name_not_void: has_failed implies last_recipient_name /= Void
+	has_failed_implies_last_tag_name_not_void: has_failed implies last_tag_name /= Void
 
 end
