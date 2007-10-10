@@ -13,6 +13,8 @@ deferred class
 
 inherit
 
+	CDD_REQUEST_PARSER
+
 	EXCEPTIONS
 		export
 			{NONE} all
@@ -23,7 +25,7 @@ inherit
 			{NONE} all
 		end
 
-feature -- Execution
+feature {NONE} -- Execution
 
 	execute is
 			-- If command line arguments are provided, only execute
@@ -34,27 +36,52 @@ feature -- Execution
 			l_cursor: DS_BILINEAR_CURSOR [STRING]
 			i: INTEGER
 		do
-			if command_line.argument_count > 0 then
-				from
-					i := 1
-				until
-					i > command_line.argument_count
-				loop
-					evaluate_argument (command_line.argument (i))
-					i := i + 1
-				end
-			else
-				l_cursor := test_setting.keys.new_cursor
-				from
-					l_cursor.start
-				until
-					l_cursor.after
-				loop
-					execute_tests_for_class (l_cursor.item)
-					l_cursor.forth
+			make
+			main_loop
+
+--			if command_line.argument_count > 0 then
+--				from
+--					i := 1
+--				until
+--					i > command_line.argument_count
+--				loop
+--					evaluate_argument (command_line.argument (i))
+--					i := i + 1
+--				end
+--			else
+--				l_cursor := test_setting.keys.new_cursor
+--				from
+--					l_cursor.start
+--				until
+--					l_cursor.after
+--				loop
+--					execute_tests_for_class (l_cursor.item)
+--					l_cursor.forth
+--				end
+--			end
+		end
+
+	main_loop is
+			-- Wait for requests on standard input. If request
+			-- is received, parse it.
+		local
+			l_input: STRING
+		do
+			from
+			until
+				should_quit or io.input.end_of_file
+			loop
+				io.input.read_line
+				l_input := io.input.last_string
+				if l_input = Void then
+					print_and_flush ("error: empty input%N")
+				else
+					set_input (l_input)
+					parse
 				end
 			end
 		end
+
 
 feature -- Access
 
@@ -99,9 +126,62 @@ feature -- Miscellaneous
 
 feature -- Basic operations
 
-feature -- Obsolete
+feature {NONE} -- Request handling
 
-feature -- Inapplicable
+	report_quit_request is
+			-- Resport a "quit" request.
+		do
+			print_and_flush ("will quit%N")
+		end
+
+	report_list_request is
+			-- Report a "list" request.
+		do
+			print_and_flush ("will list all test cases%N")
+		end
+
+	report_list_of_class_request (a_class_name: STRING) is
+			-- Report a "list" request with `a_class_name' as argument.
+		do
+			print_and_flush ("will list test cases for class " + a_class_name + "%N")
+		end
+
+	report_class_request (a_class_name: STRING) is
+			-- Resport a "class" request with `a_class_name' as argument.
+		do
+			print_and_flush ("will execute all test cases for " + a_class_name + "%N")
+		end
+
+	report_class_and_feature_request (a_class_name, a_feature_name: STRING) is
+			-- Report a "class and feature" request with `a_class_name'
+			-- and `a_feature_name' as arguments.
+		do
+			print_and_flush ("will execute test case " + a_feature_name + " in class " + a_class_name + "%N")
+		end
+
+feature {NONE} -- Error handling
+
+	report_error (a_reason: STRING) is
+			-- Report error `a_reason'.
+		do
+			print_and_flush (a_reason)
+		end
+
+feature {NONE} -- Control
+
+	should_quit: BOOLEAN
+			-- Should main loop quit?
+
+feature {NONE} -- Output
+
+	print_and_flush (a_text: STRING) is
+			-- Print `a_text' and flush output stream.
+		require
+			a_text_not_void: a_text /= Void
+		do
+			print (a_text)
+			io.output.flush
+		end
 
 feature {NONE} -- Implementation
 
