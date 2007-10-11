@@ -35,10 +35,6 @@ feature {NONE} -- Execution
 			-- If command line arguments are provided, only execute
 			-- test cases matching these arguments. Otherwise
 			-- execute all test cases in `test_cases'.
-		local
-			l_class, l_feature: STRING
-			l_cursor: DS_BILINEAR_CURSOR [STRING]
-			i: INTEGER
 		do
 			make
 			main_loop
@@ -70,10 +66,10 @@ feature -- Access
 
 	test_setting: DS_HASH_TABLE [TUPLE [instance: CDD_ABSTRACT_TEST_CASE; test_features: DS_HASH_TABLE [PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]], STRING]], STRING] is
 			-- Main data structure containing an instance of all
-			-- classes representing a test case. Each instance comes
+			-- types representing a test case. Each instance comes
 			-- with a number of procedures pointing to actual test
-			-- features within the class. The operand of the
-			-- procedure is the instance of the test class
+			-- features within the type. The operand of the
+			-- procedure is the instance of the test type
 			-- containing the test feature.
 		deferred
 		ensure
@@ -85,66 +81,66 @@ feature -- Access
 					end)
 		end
 
-	test_class_names: DS_BILINEAR [STRING] is
-			-- Names of all test classes
+	test_type_names: DS_BILINEAR [STRING] is
+			-- Names of all test types
 		do
 			Result := test_setting.keys
 		ensure
 			not_void: Result /= Void
 		end
 
-	test_feature_names (a_class_name: STRING): DS_BILINEAR [STRING] is
-			-- Feature names of all test features in class `a_class_name'
+	test_feature_names (a_type_name: STRING): DS_BILINEAR [STRING] is
+			-- Feature names of all test features in type `a_type_name'
 		require
-			a_class_name_valid: a_class_name /= Void and then has_test_class (a_class_name)
+			a_type_name_valid: a_type_name /= Void and then has_test_type (a_type_name)
 		do
-			Result := test_setting.item (a_class_name).test_features.keys
+			Result := test_setting.item (a_type_name).test_features.keys
 		ensure
 			not_void: Result /= Void
 		end
 
-	has_test_class (a_class_name: STRING): BOOLEAN is
-			-- Does `test_setting' contain a test class named `a_class_name'?
+	has_test_type (a_type_name: STRING): BOOLEAN is
+			-- Does `test_setting' contain a test type named `a_type_name'?
 		require
-			a_class_name_not_void: a_class_name /= Void
+			a_type_name_not_void: a_type_name /= Void
 		do
-			Result := test_setting.has (a_class_name)
+			Result := test_setting.has (a_type_name)
 		ensure
-			correct_result: Result = test_setting.has (a_class_name)
+			correct_result: Result = test_setting.has (a_type_name)
 		end
 
-	has_test_feature (a_class_name, a_feature_name: STRING): BOOLEAN is
+	has_test_feature (a_type_name, a_feature_name: STRING): BOOLEAN is
 			-- Does `test_setting' contain a test feature named
-			-- `a_feature_name' in class `a_class_name'?
+			-- `a_feature_name' in type `a_type_name'?
 		require
-			a_class_name_valid: a_class_name /= Void and then has_test_class (a_class_name)
+			a_type_name_valid: a_type_name /= Void and then has_test_type (a_type_name)
 			a_feature_name_not_void: a_feature_name /= Void
 		do
-			Result := test_setting.item (a_class_name).test_features.has (a_feature_name)
+			Result := test_setting.item (a_type_name).test_features.has (a_feature_name)
 		ensure
-			correct_result: Result = test_setting.item (a_class_name).test_features.has (a_feature_name)
+			correct_result: Result = test_setting.item (a_type_name).test_features.has (a_feature_name)
 		end
 
-	test_case (a_class_name: STRING): CDD_ABSTRACT_TEST_CASE is
-			-- Instance of `a_class_name'
+	test_case (a_type_name: STRING): CDD_ABSTRACT_TEST_CASE is
+			-- Instance of `a_type_name'
 		require
-			a_class_name_valid: a_class_name /= Void and then has_test_class (a_class_name)
+			a_type_name_valid: a_type_name /= Void and then has_test_type (a_type_name)
 		do
-			Result := test_setting.item (a_class_name).instance
+			Result := test_setting.item (a_type_name).instance
 		ensure
-			valid_result: Result /= Void and then Result = test_setting.item (a_class_name)
+			valid_result: Result /= Void and then Result = test_setting.item (a_type_name)
 		end
 
-	test_feature (a_class_name, a_feature_name: STRING): PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]] is
-			-- Procedure calling `a_feature_name' in class `a_class_name'
+	test_feature (a_type_name, a_feature_name: STRING): PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]] is
+			-- Procedure calling `a_feature_name' in type `a_type_name'
 		require
-			a_class_name_valid: a_class_name /= Void and then has_test_class (a_class_name)
-			a_feature_name_valid: a_feature_name /= Void and then has_test_feature (a_class_name, a_feature_name)
+			a_type_name_valid: a_type_name /= Void and then has_test_type (a_type_name)
+			a_feature_name_valid: a_feature_name /= Void and then has_test_feature (a_type_name, a_feature_name)
 		do
-			Result := test_setting.item (a_class_name).test_features.item (a_feature_name)
+			Result := test_setting.item (a_type_name).test_features.item (a_feature_name)
 		ensure
 			valid_result: Result /= Void and then
-				Result = test_setting.item (a_class_name).test_features.item (a_feature_name)
+				Result = test_setting.item (a_type_name).test_features.item (a_feature_name)
 		end
 
 feature {NONE} -- Parsing
@@ -155,8 +151,8 @@ feature {NONE} -- Parsing
 			-- any of the `report_and_set_error_*' routines on error.
 		do
 			Precursor
-			if not has_error and then not has_test_class (last_string) then
-				report_and_set_error_at_position ("`" + last_string + "' is not a valid class name.", position - last_string.count)
+			if not has_error and then not has_test_type (last_string) then
+				report_and_set_error_at_position ("`" + last_string + "' is not a valid type name.", position - last_string.count)
 			end
 		end
 
@@ -173,34 +169,34 @@ feature {NONE} -- Request handling
 		local
 			l_cursor: DS_BILINEAR_CURSOR [STRING]
 		do
-			test_class_names.do_all (agent report_list_of_class_request)
+			test_type_names.do_all (agent report_list_of_type_request)
 		end
 
-	report_list_of_class_request (a_class_name: STRING) is
-			-- Print a list of all test features in class `a_class_name'.
+	report_list_of_type_request (a_type_name: STRING) is
+			-- Print a list of all test features in type `a_type_name'.
 		do
-			print ("Test cases for " + a_class_name + ":%N")
-			test_feature_names (a_class_name).do_all (
+			print ("Test cases for " + a_type_name + ":%N")
+			test_feature_names (a_type_name).do_all (
 				agent (a_test_feature_name: STRING)
 					do
 						print ("%T" + a_test_feature_name + "%N")
 					end)
 		end
 
-	report_class_request (a_class_name: STRING) is
-			-- Execute all tests found in class `a_class_name'.
+	report_type_request (a_type_name: STRING) is
+			-- Execute all tests found in type `a_type_name'.
 		do
-			test_feature_names (a_class_name).do_all (agent execute_test (a_class_name, ?))
+			test_feature_names (a_type_name).do_all (agent execute_test (a_type_name, ?))
 		end
 
-	report_class_and_feature_request (a_class_name, a_feature_name: STRING) is
-			-- Execute test feature `a_feature_name' in class `a_class_name'.
-			-- If `a_class_name' does not contain such a feature, print error message.
+	report_type_and_feature_request (a_type_name, a_feature_name: STRING) is
+			-- Execute test feature `a_feature_name' in type `a_type_name'.
+			-- If `a_type_name' does not contain such a feature, print error message.
 		do
-			if has_test_feature (a_class_name, a_feature_name) then
-				execute_test (a_class_name, a_feature_name)
+			if has_test_feature (a_type_name, a_feature_name) then
+				execute_test (a_type_name, a_feature_name)
 			else
-				report_error (a_class_name + " does not contain a test feature `" + a_feature_name + "'")
+				report_error (a_type_name + " does not contain a test feature `" + a_feature_name + "'")
 			end
 		end
 
@@ -230,11 +226,11 @@ feature {NONE} -- Output
 
 feature -- Lexical validity
 
-	is_valid_type_name (a_class_name: STRING): BOOLEAN is
-			-- Is `a_class_name' a valid name for a class and
-			-- do we have a test case for `a_class_name'?
+	is_valid_type_name (a_type_name: STRING): BOOLEAN is
+			-- Is `a_type_name' a valid name for a type and
+			-- do we have a test case for `a_type_name'?
 		do
-			Result := Precursor (a_class_name) and has_test_class (a_class_name)
+			Result := Precursor (a_type_name) and has_test_type (a_type_name)
 		end
 
 feature {NONE} -- Implementation
@@ -244,7 +240,7 @@ feature {NONE} -- Implementation
 			-- Print results on standard out refering to `a_tc_name' and
 			-- `a_feature_name'.
 		require
-			a_tc_name_valid: a_tc_name /= Void and then has_test_class (a_tc_name)
+			a_tc_name_valid: a_tc_name /= Void and then has_test_type (a_tc_name)
 			a_feature_name_valid: a_feature_name /= Void and then has_test_feature (a_tc_name, a_feature_name)
 		local
 			l_invalid: BOOLEAN

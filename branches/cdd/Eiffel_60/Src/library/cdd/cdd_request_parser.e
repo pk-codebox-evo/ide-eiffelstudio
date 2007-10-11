@@ -1,5 +1,5 @@
 indexing
-	description: "Objects that ..."
+	description: "Parser for language understood by cdd interpreter"
 	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
@@ -10,11 +10,10 @@ deferred class
 feature {NONE} -- Initialization
 
 	make is
-			-- Create `last_string'.
+			-- Create new request parser.
 		do
 			create last_string.make (100)
 		end
-
 
 feature -- Access
 
@@ -63,7 +62,7 @@ feature -- Parsing
 			input: input /= Void
 			no_error: not has_error
 		local
-			l_class_name: STRING
+			l_type_name: STRING
 			l_feature_name: STRING
 		do
 			if end_of_input then
@@ -75,31 +74,32 @@ feature -- Parsing
 				else
 					if matches (quit_keyword) then
 						skip (quit_keyword.count)
+						skip_whitespace
 						if end_of_input then
 							report_quit_request
 						else
-							report_and_set_error_at_position ("Expected :" + quit_keyword + " request only.", position)
+							report_and_set_error_at_position ("Expected end of input.", position)
 						end
 					elseif matches (all_keyword) then
 						skip (all_keyword.count)
 						if end_of_input then
 							report_all_request
 						else
-							report_and_set_error_at_position ("Expected :" + all_keyword + " request only.", position)
+							report_and_set_error_at_position ("Expected end of input.", position)
 						end
 					elseif matches (list_keyword) then
 						skip (list_keyword.count)
 						if not end_of_input then
 							if not is_whitespace (item) then
-								report_and_set_error_at_position ("Expected :" + list_keyword + " request only.", position)
+								report_and_set_error_at_position ("Expected end of input.", position)
 							else
 								skip_whitespace
 								if not end_of_input then
 									parse_type_name
 									if not has_error then
-										report_and_set_error_at_position ("Expected :" + list_keyword + " request followed by valid class name.", position)
+										report_and_set_error_at_position ("Expected valid type name.", position)
 									else
-										report_list_of_class_request (last_string)
+										report_list_of_type_request (last_string)
 									end
 								else
 									report_list_request
@@ -115,7 +115,7 @@ feature -- Parsing
 			else
 				parse_type_name
 				if not has_error then
-					l_class_name := last_string.twin
+					l_type_name := last_string.twin
 					skip_whitespace
 					if not end_of_input then
 						if item = '.' then
@@ -123,13 +123,13 @@ feature -- Parsing
 							parse_identifier
 							if not has_error then
 								l_feature_name := last_string.twin
-								report_class_and_feature_request (l_class_name, l_feature_name)
+								report_type_and_feature_request (l_type_name, l_feature_name)
 							end
 						else
 							report_and_set_error_at_position ("Expected '.' but got " + item.out, position)
 						end
 					else
-						report_class_request (l_class_name)
+						report_type_request (l_type_name)
 					end
 				end
 			end
@@ -296,11 +296,11 @@ feature  {NONE}-- Request handling
 		deferred
 		end
 
-	report_list_of_class_request (a_class_name: STRING) is
-			-- Report a "list" request with `a_class_name' as argument.
+	report_list_of_type_request (a_type_name: STRING) is
+			-- Report a "list" request with `a_type_name' as argument.
 		require
-			a_class_name_not_void: a_class_name /= Void
-			a_class_name_valid: is_valid_type_name (a_class_name)
+			a_type_name_not_void: a_type_name /= Void
+			a_type_name_valid: is_valid_type_name (a_type_name)
 		deferred
 		end
 
@@ -309,20 +309,20 @@ feature  {NONE}-- Request handling
 		deferred
 		end
 
-	report_class_request (a_class_name: STRING) is
-			-- Resport a "class" request with `a_class_name' as argument.
+	report_type_request (a_type_name: STRING) is
+			-- Resport a "type" request with `a_type_name' as argument.
 		require
-			a_class_name_not_void: a_class_name /= Void
-			a_class_name_valid: is_valid_type_name (a_class_name)
+			a_type_name_not_void: a_type_name /= Void
+			a_type_name_valid: is_valid_type_name (a_type_name)
 		deferred
 		end
 
-	report_class_and_feature_request (a_class_name, a_feature_name: STRING) is
-			-- Report a "class and feature" request with `a_class_name'
+	report_type_and_feature_request (a_type_name, a_feature_name: STRING) is
+			-- Report a "type and feature" request with `a_type_name'
 			-- and `a_feature_name' as arguments.
 		require
-			a_class_name_not_void: a_class_name /= Void
-			a_class_name_valid: is_valid_type_name (a_class_name)
+			a_type_name_not_void: a_type_name /= Void
+			a_type_name_valid: is_valid_type_name (a_type_name)
 			a_feature_name_not_void: a_feature_name /= Void
 			a_feature_name_valid: is_valid_feature_name (a_feature_name)
 		deferred
@@ -372,24 +372,6 @@ feature -- Cursor movement
 			definition: position = old position + 1
 		end
 
-feature -- Element change
-
-feature -- Removal
-
-feature -- Resizing
-
-feature -- Transformation
-
-feature -- Conversion
-
-feature -- Duplication
-
-feature -- Miscellaneous
-
-feature -- Basic operations
-
-feature -- Obsolete
-
 feature {NONE} -- Constants
 
 	quit_keyword: STRING is "quit"
@@ -415,23 +397,23 @@ feature {NONE} -- Constants
 
 feature -- Lexical validity
 
-	is_valid_type_name (a_class_name: STRING): BOOLEAN is
-			-- Is `a_class_name' a valid name for a class?
+	is_valid_type_name (a_type_name: STRING): BOOLEAN is
+			-- Is `a_type_name' a valid name for a type?
 		require
-			a_class_name_not_void: a_class_name /= Void
+			a_type_name_not_void: a_type_name /= Void
 		local
 			i: INTEGER
 		do
-			Result := not a_class_name.is_empty
+			Result := not a_type_name.is_empty
 			from
 				i := 1
 			until
-				i > a_class_name.count or not Result
+				i > a_type_name.count or not Result
 			loop
-				if (a_class_name.item (i).is_alpha and then
-				a_class_name.item (i).is_upper) or
-				a_class_name.item (i).is_digit or
-				a_class_name.item (i) = '_' then
+				if (a_type_name.item (i).is_alpha and then
+				a_type_name.item (i).is_upper) or
+				a_type_name.item (i).is_digit or
+				a_type_name.item (i) = '_' then
 					i := i + 1
 				else
 					Result := False
@@ -483,16 +465,6 @@ feature {NONE} -- Implementation
 		ensure
 			definition: Result = input.item (position)
 		end
-
---	matches (a_string: STRING): BOOLEAN is
---			-- Does input at `position' match `a_string' case insensitive?
---		require
---			a_string_not_void: a_string /= Void
---		do
---			if a_string.count + position <= input.count then
---				Result := input.substring (position, position + a_string.count).is_case_insensitive_equal (a_string)
---			end
---		end
 
 	matches (a_string: STRING): BOOLEAN is
 			-- `True' only if the next characters in the input match
