@@ -62,7 +62,7 @@ feature -- Parsing
 			input: input /= Void
 			no_error: not has_error
 		local
-			l_type_name: STRING
+			l_class_name: STRING
 			l_feature_name: STRING
 		do
 			if end_of_input then
@@ -83,7 +83,7 @@ feature -- Parsing
 					elseif matches (all_keyword) then
 						skip (all_keyword.count)
 						if end_of_input then
-							report_all_request
+							report_execute_all_test_routines_request
 						else
 							report_and_set_error_at_position ("Expected end of input.", position)
 						end
@@ -95,27 +95,27 @@ feature -- Parsing
 							else
 								skip_whitespace
 								if not end_of_input then
-									parse_type_name
-									if not has_error then
-										report_and_set_error_at_position ("Expected valid type name.", position)
+									parse_identifier
+									if has_error then
+										report_and_set_error_at_position ("Expected valid class name.", position)
 									else
-										report_list_of_type_request (last_string)
+										report_list_of_class_request (last_string)
 									end
 								else
-									report_list_request
+									report_list_test_classes_request
 								end
 							end
 						else
-							report_list_request
+							report_list_test_classes_request
 						end
 					else
 						report_and_set_error_at_position ("Unknown meta request.", position)
 					end
 				end
 			else
-				parse_type_name
+				parse_identifier
 				if not has_error then
-					l_type_name := last_string.twin
+					l_class_name := last_string.twin
 					skip_whitespace
 					if not end_of_input then
 						if item = '.' then
@@ -123,46 +123,19 @@ feature -- Parsing
 							parse_identifier
 							if not has_error then
 								l_feature_name := last_string.twin
-								report_type_and_feature_request (l_type_name, l_feature_name)
+								report_execute_test_routine_request (l_class_name, l_feature_name)
 							end
 						else
 							report_and_set_error_at_position ("Expected '.' but got " + item.out, position)
 						end
 					else
-						report_type_request (l_type_name)
+						report_execute_test_class_request (l_class_name)
 					end
 				end
 			end
 		end
 
 feature {NONE} -- Parsing
-
-	parse_type_name is
-			-- Parse type name (e.g: "LINKED_LIST [STRING]") and
-			-- make resulting type name available via `last_string' or call
-			-- any of the `report_and_set_error_*' routines on error.
-		require
-			input: input /= Void
-			not_end_of_input: not end_of_input
-			no_error: not has_error
-		local
-			a_type_name: STRING
-		do
-			parse_identifier
-			if not has_error then
-				a_type_name := last_string.twin
-				skip_whitespace
-				if not end_of_input then
-					parse_optional_type_name_list_in_brackets
-					if not has_error then
-						a_type_name.append_string (last_string)
-					end
-				end
-				last_string := a_type_name
-			end
-		ensure
-			error_or_type_name: not has_error implies is_valid_type_name (last_string)
-		end
 
 	parse_identifier is
 			-- Parse next identifier ([A-Za-z][A-Za-z_0-9]*) and make it available via `last_string' or
@@ -176,78 +149,18 @@ feature {NONE} -- Parsing
 			if not is_letter (item) then
 				report_and_set_error_at_position ("Expected letter but got '" + item.out + "'.", position)
 			else
-				if
-					matches (void_keyword) or
-					matches (create_keyword) or
-					matches (true_keyword) or
-					matches (false_keyword)
-				then
-					report_and_set_error_at_position ("Expected identifier, but got keyword.", position)
-				else
-					from
-						last_string.append_character (item)
-						forth
-					until
-						end_of_input or else not is_letter_number_underscore (item)
-					loop
-						last_string.append_character (item)
-						forth
-					end
+				from
+					last_string.append_character (item)
+					forth
+				until
+					end_of_input or else not is_letter_number_underscore (item)
+				loop
+					last_string.append_character (item)
+					forth
 				end
 			end
 		ensure
-			error_or_type_name: not has_error implies is_valid_identifier (last_string)
-		end
-
-	parse_optional_type_name_list_in_brackets is
-			-- Parse an optional type name list in brackets (e.g: "[LINKED_LIST [STRING], ANY]") and
-			-- make resulting type name available via `last_string' or call
-			-- any of the `report_and_set_error_*' routines on error.
-		require
-			input: input /= Void
-			not_end_of_input: not end_of_input
-			no_error: not has_error
-		local
-			open_bracket: BOOLEAN
-			a_string: STRING
-		do
-			create a_string.make (last_string.capacity)
-			if
-				item = '['
-			then
-				from
-					open_bracket := True
-					a_string.append_character (' ')
-					a_string.append_character (item)
-					forth
-					skip_whitespace
-				until
-					not open_bracket or has_error or end_of_input
-				loop
-					parse_type_name
-					if not has_error then
-						a_string.append_string (last_string)
-						skip_whitespace
-						if end_of_input then
-							report_and_set_error_at_position ("Expected ']', or ',', not end of input", position)
-						else
-							if item = ']' then
-								open_bracket := False
-								a_string.append_character (item)
-								forth
-							elseif item = ',' then
-								a_string.append_character (item)
-								a_string.append_character (' ')
-								forth
-								skip_whitespace
-							else
-								report_and_set_error_at_position ("Expected ']', or ',', but got '" + item.out + "'.", position)
-							end
-						end
-					end
-				end
-			end
-			last_string := a_string
+			error_or_identifier: not has_error implies is_valid_identifier (last_string)
 		end
 
 feature {NONE} -- Error Reporting
@@ -291,46 +204,41 @@ feature  {NONE}-- Request handling
 		deferred
 		end
 
-	report_list_request is
-			-- Report a "list" request.
+	report_list_test_classes_request is
+			-- Report a request, that should list all test classes available.
 		deferred
 		end
 
-	report_list_of_type_request (a_type_name: STRING) is
-			-- Report a "list" request with `a_type_name' as argument.
+	report_list_of_class_request (a_class_name: STRING) is
+			-- Report a request, that should list all test routines of test class `a_class_name'.
 		require
-			a_type_name_not_void: a_type_name /= Void
-			a_type_name_valid: is_valid_type_name (a_type_name)
+			a_class_name_not_void: a_class_name /= Void
+			a_class_name_valid: is_valid_class_name (a_class_name)
 		deferred
 		end
 
-	report_all_request is
-			-- Report a "all" request.
+	report_execute_all_test_routines_request is
+			-- Report a request, that should execute all test routines from all test classes available.
 		deferred
 		end
 
-	report_type_request (a_type_name: STRING) is
-			-- Resport a "type" request with `a_type_name' as argument.
+	report_execute_test_class_request (a_class_name: STRING) is
+			-- Report a request, that should execute all test routines from test class `a_class_name'.
 		require
-			a_type_name_not_void: a_type_name /= Void
-			a_type_name_valid: is_valid_type_name (a_type_name)
+			a_class_name_not_void: a_class_name /= Void
+			a_class_name_valid: is_valid_class_name (a_class_name)
 		deferred
 		end
 
-	report_type_and_feature_request (a_type_name, a_feature_name: STRING) is
-			-- Report a "type and feature" request with `a_type_name'
-			-- and `a_feature_name' as arguments.
+	report_execute_test_routine_request (a_class_name, a_routine_name: STRING) is
+			-- Report a request, that should execute test routine `a_routine_name' from test class `a_test_class'.
 		require
-			a_type_name_not_void: a_type_name /= Void
-			a_type_name_valid: is_valid_type_name (a_type_name)
-			a_feature_name_not_void: a_feature_name /= Void
-			a_feature_name_valid: is_valid_feature_name (a_feature_name)
+			a_class_name_not_void: a_class_name /= Void
+			a_class_name_valid: is_valid_class_name (a_class_name)
+			a_routine_name_not_void: a_routine_name /= Void
+			a_routine_name_valid: is_valid_feature_name (a_routine_name)
 		deferred
 		end
-
-feature -- Status report
-
-feature -- Status setting
 
 feature -- Cursor movement
 
@@ -383,37 +291,25 @@ feature {NONE} -- Constants
 	all_keyword: STRING is "all"
 			-- Keyword for "all" request
 
-	void_keyword: STRING is "void"
-			-- 'void' keyword
-
-	true_keyword: STRING is "true"
-			-- 'true' keyword
-
-	false_keyword: STRING is "false"
-			-- 'false' keyword
-
-	create_keyword: STRING is "create"
-			-- 'create' keyword
-
 feature -- Lexical validity
 
-	is_valid_type_name (a_type_name: STRING): BOOLEAN is
-			-- Is `a_type_name' a valid name for a type?
+	is_valid_class_name (a_class_name: STRING): BOOLEAN is
+			-- Is `a_class_name' a valid name for a class?
 		require
-			a_type_name_not_void: a_type_name /= Void
+			a_class_name_not_void: a_class_name /= Void
 		local
 			i: INTEGER
 		do
-			Result := not a_type_name.is_empty
+			Result := not a_class_name.is_empty
 			from
 				i := 1
 			until
-				i > a_type_name.count or not Result
+				i > a_class_name.count or not Result
 			loop
-				if (a_type_name.item (i).is_alpha and then
-				a_type_name.item (i).is_upper) or
-				a_type_name.item (i).is_digit or
-				a_type_name.item (i) = '_' then
+				if (a_class_name.item (i).is_alpha and then
+				a_class_name.item (i).is_upper) or
+				a_class_name.item (i).is_digit or
+				a_class_name.item (i) = '_' then
 					i := i + 1
 				else
 					Result := False
