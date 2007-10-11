@@ -14,6 +14,10 @@ deferred class
 inherit
 
 	CDD_REQUEST_PARSER
+		redefine
+			is_valid_type_name,
+			parse_type_name
+		end
 
 	EXCEPTIONS
 		export
@@ -38,27 +42,6 @@ feature {NONE} -- Execution
 		do
 			make
 			main_loop
-
---			if command_line.argument_count > 0 then
---				from
---					i := 1
---				until
---					i > command_line.argument_count
---				loop
---					evaluate_argument (command_line.argument (i))
---					i := i + 1
---				end
---			else
---				l_cursor := test_setting.keys.new_cursor
---				from
---					l_cursor.start
---				until
---					l_cursor.after
---				loop
---					execute_tests_for_class (l_cursor.item)
---					l_cursor.forth
---				end
---			end
 		end
 
 	main_loop is
@@ -102,61 +85,123 @@ feature -- Access
 					end)
 		end
 
-feature -- Measurement
+	test_class_names: DS_BILINEAR [STRING] is
+			-- Names of all test classes
+		do
+			Result := test_setting.keys
+		ensure
+			not_void: Result /= Void
+		end
 
-feature -- Status report
+	test_feature_names (a_class_name: STRING): DS_BILINEAR [STRING] is
+			-- Feature names of all test features in class `a_class_name'
+		require
+			a_class_name_valid: a_class_name /= Void and then has_test_class (a_class_name)
+		do
+			Result := test_setting.item (a_class_name).test_features.keys
+		ensure
+			not_void: Result /= Void
+		end
 
-feature -- Status setting
+	has_test_class (a_class_name: STRING): BOOLEAN is
+			-- Does `test_setting' contain a test class named `a_class_name'?
+		require
+			a_class_name_not_void: a_class_name /= Void
+		do
+			Result := test_setting.has (a_class_name)
+		ensure
+			correct_result: Result = test_setting.has (a_class_name)
+		end
 
-feature -- Cursor movement
+	has_test_feature (a_class_name, a_feature_name: STRING): BOOLEAN is
+			-- Does `test_setting' contain a test feature named
+			-- `a_feature_name' in class `a_class_name'?
+		require
+			a_class_name_valid: a_class_name /= Void and then has_test_class (a_class_name)
+			a_feature_name_not_void: a_feature_name /= Void
+		do
+			Result := test_setting.item (a_class_name).test_features.has (a_feature_name)
+		ensure
+			correct_result: Result = test_setting.item (a_class_name).test_features.has (a_feature_name)
+		end
 
-feature -- Element change
+	test_case (a_class_name: STRING): CDD_ABSTRACT_TEST_CASE is
+			-- Instance of `a_class_name'
+		require
+			a_class_name_valid: a_class_name /= Void and then has_test_class (a_class_name)
+		do
+			Result := test_setting.item (a_class_name).instance
+		ensure
+			valid_result: Result /= Void and then Result = test_setting.item (a_class_name)
+		end
 
-feature -- Removal
+	test_feature (a_class_name, a_feature_name: STRING): PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]] is
+			-- Procedure calling `a_feature_name' in class `a_class_name'
+		require
+			a_class_name_valid: a_class_name /= Void and then has_test_class (a_class_name)
+			a_feature_name_valid: a_feature_name /= Void and then has_test_feature (a_class_name, a_feature_name)
+		do
+			Result := test_setting.item (a_class_name).test_features.item (a_feature_name)
+		ensure
+			valid_result: Result /= Void and then
+				Result = test_setting.item (a_class_name).test_features.item (a_feature_name)
+		end
 
-feature -- Resizing
+feature {NONE} -- Parsing
 
-feature -- Transformation
-
-feature -- Conversion
-
-feature -- Duplication
-
-feature -- Miscellaneous
-
-feature -- Basic operations
+	parse_type_name is
+			-- Parse type name (e.g: "LINKED_LIST [STRING]") and
+			-- make resulting type name available via `last_string' or call
+			-- any of the `report_and_set_error_*' routines on error.
+		do
+			Precursor
+			if not has_error and then not has_test_class (last_string) then
+				report_and_set_error_at_position ("`" + last_string + "' is not a valid class name.", position - last_string.count)
+			end
+		end
 
 feature {NONE} -- Request handling
 
 	report_quit_request is
-			-- Resport a "quit" request.
+			-- Set `should_quit' to True.
 		do
-			print_and_flush ("will quit%N")
+			should_quit := True
 		end
 
 	report_list_request is
-			-- Report a "list" request.
+			-- Print a list of all test cases and their test features.
+		local
+			l_cursor: DS_BILINEAR_CURSOR [STRING]
 		do
-			print_and_flush ("will list all test cases%N")
+			test_class_names.do_all (agent report_list_of_class_request)
 		end
 
 	report_list_of_class_request (a_class_name: STRING) is
-			-- Report a "list" request with `a_class_name' as argument.
+			-- Print a list of all test features in class `a_class_name'.
 		do
-			print_and_flush ("will list test cases for class " + a_class_name + "%N")
+			print ("Test cases for " + a_class_name + ":%N")
+			test_feature_names (a_class_name).do_all (
+				agent (a_test_feature_name: STRING)
+					do
+						print ("%T" + a_test_feature_name + "%N")
+					end)
 		end
 
 	report_class_request (a_class_name: STRING) is
-			-- Resport a "class" request with `a_class_name' as argument.
+			-- Execute all tests found in class `a_class_name'.
 		do
-			print_and_flush ("will execute all test cases for " + a_class_name + "%N")
+			test_feature_names (a_class_name).do_all (agent execute_test (a_class_name, ?))
 		end
 
 	report_class_and_feature_request (a_class_name, a_feature_name: STRING) is
-			-- Report a "class and feature" request with `a_class_name'
-			-- and `a_feature_name' as arguments.
+			-- Execute test feature `a_feature_name' in class `a_class_name'.
+			-- If `a_class_name' does not contain such a feature, print error message.
 		do
-			print_and_flush ("will execute test case " + a_feature_name + " in class " + a_class_name + "%N")
+			if has_test_feature (a_class_name, a_feature_name) then
+				execute_test (a_class_name, a_feature_name)
+			else
+				report_error (a_class_name + " does not contain a test feature `" + a_feature_name + "'")
+			end
 		end
 
 feature {NONE} -- Error handling
@@ -164,7 +209,7 @@ feature {NONE} -- Error handling
 	report_error (a_reason: STRING) is
 			-- Report error `a_reason'.
 		do
-			print_and_flush (a_reason)
+			print_and_flush ("error: " + a_reason + "%N")
 		end
 
 feature {NONE} -- Control
@@ -183,75 +228,32 @@ feature {NONE} -- Output
 			io.output.flush
 		end
 
+feature -- Lexical validity
+
+	is_valid_type_name (a_class_name: STRING): BOOLEAN is
+			-- Is `a_class_name' a valid name for a class and
+			-- do we have a test case for `a_class_name'?
+		do
+			Result := Precursor (a_class_name) and has_test_class (a_class_name)
+		end
+
 feature {NONE} -- Implementation
-
-	evaluate_argument (an_argument: STRING) is
-			-- If `an_argument' only consists of a class name, execute all tests
-			-- found for that class. If `an_argument' also contains a feature name,
-			-- only execute the corresponding test.
-		require
-			an_argument_valid: an_argument /= Void and then not an_argument.is_empty
-		local
-			l_class, l_feature: STRING
-			l_pos: INTEGER
-		do
-			l_class := an_argument
-			l_pos := l_class.index_of ('.', 0)
-			if l_pos > 0 then
-				l_feature := l_class.substring (l_pos + 1, l_class.count)
-				l_class := l_class.substring (1, l_pos - 1)
-			else
-				l_feature := Void
-			end
-			if test_setting.has (l_class) then
-				if l_feature /= Void then
-					if test_setting.item (l_class).test_features.has (l_feature) then
-						execute_test (l_class, l_feature)
-					else
-						-- No test feature for `l_feature' in `test_features'
-					end
-				else
-					execute_tests_for_class (l_class)
-				end
-			else
-				-- No test case for class `l_class' in `test_settings'
-			end
-		end
-
-	execute_tests_for_class (a_class_name: STRING) is
-			-- Execute all tests found in `test_features' for class `a_class_name'.
-		require
-			a_class_name_not_void: a_class_name /= Void
-			a_class_name_valid: test_setting.has (a_class_name)
-		local
-			l_cursor: DS_BILINEAR_CURSOR [STRING]
-		do
-			l_cursor := test_setting.item (a_class_name).test_features.keys.new_cursor
-			from
-				l_cursor.start
-			until
-				l_cursor.after
-			loop
-				execute_test (a_class_name, l_cursor.item)
-				l_cursor.forth
-			end
-		end
 
 	execute_test (a_tc_name, a_feature_name: STRING) is
 			-- Set up `a_tc' and call `a_feature' with `a_tc' as operand.
 			-- Print results on standard out refering to `a_tc_name' and
 			-- `a_feature_name'.
 		require
-			a_tc_name_valid: a_tc_name /= Void and then test_setting.has (a_tc_name)
-			a_feature_name_valid: a_feature_name /= Void and then test_setting.item (a_tc_name).test_features.has (a_feature_name)
+			a_tc_name_valid: a_tc_name /= Void and then has_test_class (a_tc_name)
+			a_feature_name_valid: a_feature_name /= Void and then has_test_feature (a_tc_name, a_feature_name)
 		local
 			l_invalid: BOOLEAN
 			l_tc: CDD_ABSTRACT_TEST_CASE
 		do
-			l_tc := test_setting.item (a_tc_name).instance
+			l_tc := test_case (a_tc_name)
 			safe_set_up_test (l_tc)
 			if not has_failed then
-				safe_execute_test (l_tc, test_setting.item (a_tc_name).test_features.item (a_feature_name))
+				safe_execute_test (l_tc, test_feature (a_tc_name, a_feature_name))
 			else
 				l_invalid := True
 			end
@@ -355,7 +357,6 @@ feature {NONE} -- Implementation
 			-- on standard output
 
 invariant
-
 	has_failed_implies_last_class_name_not_void: has_failed implies last_class_name /= Void
 	has_failed_implies_last_recipient_name_not_void: has_failed implies last_recipient_name /= Void
 	has_failed_implies_last_tag_name_not_void: has_failed implies last_tag_name /= Void

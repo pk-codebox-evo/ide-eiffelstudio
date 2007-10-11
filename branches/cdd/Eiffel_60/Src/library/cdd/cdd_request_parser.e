@@ -80,6 +80,13 @@ feature -- Parsing
 						else
 							report_and_set_error_at_position ("Expected :" + quit_keyword + " request only.", position)
 						end
+					elseif matches (all_keyword) then
+						skip (all_keyword.count)
+						if end_of_input then
+							report_all_request
+						else
+							report_and_set_error_at_position ("Expected :" + all_keyword + " request only.", position)
+						end
 					elseif matches (list_keyword) then
 						skip (list_keyword.count)
 						if not end_of_input then
@@ -113,7 +120,7 @@ feature -- Parsing
 					if not end_of_input then
 						if item = '.' then
 							forth
-							parse_type_name
+							parse_identifier
 							if not has_error then
 								l_feature_name := last_string.twin
 								report_class_and_feature_request (l_class_name, l_feature_name)
@@ -297,6 +304,11 @@ feature  {NONE}-- Request handling
 		deferred
 		end
 
+	report_all_request is
+			-- Report a "all" request.
+		deferred
+		end
+
 	report_class_request (a_class_name: STRING) is
 			-- Resport a "class" request with `a_class_name' as argument.
 		require
@@ -385,6 +397,9 @@ feature {NONE} -- Constants
 
 	list_keyword: STRING is "list"
 			-- Keyword for "list" request
+
+	all_keyword: STRING is "all"
+			-- Keyword for "all" request
 
 	void_keyword: STRING is "void"
 			-- 'void' keyword
