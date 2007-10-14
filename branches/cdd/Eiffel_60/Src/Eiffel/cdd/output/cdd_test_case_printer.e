@@ -187,22 +187,22 @@ feature	-- Basic operations
 				output_stream.close
 				finish_printing
 
-				l_tests_cluster := eiffel_universe.cluster_of_name (current_cluster.cluster_name + cluster_name_suffix)
-				if l_tests_cluster = Void Then
-					create l_directory.make (current_cluster.location.build_path (tests_directory_name, ""))
-					l_cluster_list := eiffel_universe.cluster_of_location (l_directory.name)
-					if l_cluster_list.is_empty then
-						-- Note (Arno): first version prints absolute path to cluster
-						--cluster_manager.add_cluster (current_cluster.cluster_name + cluster_name_suffix, current_cluster, l_directory.name)
-						cluster_manager.add_cluster (current_cluster.cluster_name + cluster_name_suffix, current_cluster, current_cluster.location.original_directory + "\" + tests_directory_name)
-						eiffel_system.system.set_config_changed (True)
-						l_tests_cluster := cluster_manager.last_added_cluster
-					else
-						l_tests_cluster := l_cluster_list.first
-					end
-				end
-				cluster_manager.add_class_to_cluster (new_class_name.as_lower + ".e", l_tests_cluster, "")
-				eiffel_system.system.set_rebuild (True)
+--				l_tests_cluster := eiffel_universe.cluster_of_name (current_cluster.cluster_name + cluster_name_suffix)
+--				if l_tests_cluster = Void Then
+--					create l_directory.make (current_cluster.location.build_path (tests_directory_name, ""))
+--					l_cluster_list := eiffel_universe.cluster_of_location (l_directory.name)
+--					if l_cluster_list.is_empty then
+--						-- Note (Arno): first version prints absolute path to cluster
+--						--cluster_manager.add_cluster (current_cluster.cluster_name + cluster_name_suffix, current_cluster, l_directory.name)
+--						cluster_manager.add_cluster (current_cluster.cluster_name + cluster_name_suffix, current_cluster, current_cluster.location.original_directory + "\" + tests_directory_name)
+--						eiffel_system.system.set_config_changed (True)
+--						l_tests_cluster := cluster_manager.last_added_cluster
+--					else
+--						l_tests_cluster := l_cluster_list.first
+--					end
+--				end
+--				cluster_manager.add_class_to_cluster (new_class_name.as_lower + ".e", l_tests_cluster, "")
+--				eiffel_system.system.set_rebuild (True)
 			else
 				if output_stream /= Void then
 					output_stream.close

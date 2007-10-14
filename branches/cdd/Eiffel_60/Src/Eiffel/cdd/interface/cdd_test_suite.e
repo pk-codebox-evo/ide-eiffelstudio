@@ -41,6 +41,9 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
+	target: CONF_TARGET
+			-- Target in which `Current' will look for test cases.
+
 	test_cases: DS_LINKED_LIST [CDD_TEST_CASE]
 			-- Sorted list with all test cases
 
@@ -166,8 +169,6 @@ feature -- Basic operations
 		end
 
 feature {NONE} -- Implementation
-
-	target: CONF_TARGET
 
 	has_test_case_with_property (a_prop: FUNCTION [ANY, TUPLE [CDD_TEST_CASE], BOOLEAN]): BOOLEAN is
 			-- Does `test_cases' contain an item, for which `a_prop' returns True?

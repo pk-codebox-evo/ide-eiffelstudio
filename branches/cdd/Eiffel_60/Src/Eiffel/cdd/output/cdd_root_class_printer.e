@@ -70,9 +70,8 @@ feature -- Basic operations
 			l_root: CONF_ROOT
 			l_root_class: CLASS_C
 		do
-			l_root := target.root
-
-			l_directory := target.project
+			--l_root := target.root
+			--l_directory := target.project
 		end
 
 feature -- Obsolete
@@ -86,7 +85,7 @@ feature {NONE} -- Implementation
 	put_indexing (an_uuid: STRING; an_index: INTEGER) is
 			-- Append indexing clause.
 		require
-			initialized: is_initialized
+			initialized: is_output_stream_valid
 			an_uuid_not_empty: an_uuid /= Void and then not an_uuid.is_empty
 			an_index_positive: an_index > 0
 		do
@@ -101,11 +100,11 @@ feature {NONE} -- Implementation
 	put_class_header is
 			-- Append cdd interpreter class header.
 		require
-			initialized: is_initialized
+			initialized: is_output_stream_valid
 		do
 			put_line ("class")
 			increase_indent
-			put_line ("CDD_" + target.name.as_upper + "_INTERPRETER%N")
+			--put_line ("CDD_" + target.name.as_upper + "_INTERPRETER%N")
 			decrease_indent
 			put_line ("inherit")
 			increase_indent
@@ -120,7 +119,7 @@ feature {NONE} -- Implementation
 	put_test_setting_header is
 			-- Append `test_setting' feature header.
 		require
-			initialized: is_initialized
+			initialized: is_output_stream_valid
 		do
 			put_line ("feature -- Access%N")
 
@@ -136,7 +135,7 @@ feature {NONE} -- Implementation
 	put_footer is
 			-- Append `test_setting' feature and class footer.
 		require
-			initialized: is_initialized
+			initialized: is_output_stream_valid
 		do
 			put_line ("%N")
 			decrease_indent
