@@ -154,7 +154,7 @@ feature -- Status setting (CDD)
 			add_file_rule
 			target.system.store
 			create test_suite.make_with_target (target)
-			l_root_printer := create {CDD_ROOT_CLASS_PRINTER}.make (test_suite)
+			create l_root_printer.make (test_suite)
 		ensure
 			enabled: is_cdd_enabled
 			correct_config: cdd_conf.is_enabled

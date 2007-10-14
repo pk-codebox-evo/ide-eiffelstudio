@@ -54,7 +54,7 @@ feature -- Initialization
 feature -- Access
 
 	is_initialized: BOOLEAN is
-			--
+			-- Can we currently write any class text?
 		do
 			Result := failed or else is_output_stream_valid
 		end
@@ -243,8 +243,6 @@ feature {NONE} -- Implementation
 			put_line ("call_stack_uuid: %"" + an_uuid + "%"")
 			put_line ("call_stack_index: " + an_index.out + "")
 			put_line ("author: %"CDD Tool%"")
-			put_line ("date: %"$Date$%"")
-			put_line ("revision: %"$Revision$%"")
 			decrease_indent
 			put_line ("")
 		end
@@ -408,6 +406,8 @@ feature {NONE} -- Implementation
 
 	put_class_footer is
 			-- Append class footer for test_class_name.
+		require
+			initialized: is_initialized
 		do
 			put_string ("%N%Nend -- class %N%N")
 		end
