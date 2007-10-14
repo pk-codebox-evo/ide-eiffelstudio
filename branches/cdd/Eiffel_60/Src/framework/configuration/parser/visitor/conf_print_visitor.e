@@ -313,7 +313,8 @@ feature -- Visit nodes
 			-- Visit `a_cluster'.
 		do
 				-- ignore subclusters, except if we are handling one.
-			if a_cluster.parent = Void or current_is_subcluster then
+				-- ignore automatically inserted cdd clusters
+			if a_cluster.is_cdd_cluster and (a_cluster.parent = Void or current_is_subcluster) then
 				current_is_subcluster := False
 				append_pre_group ("cluster", a_cluster)
 				append_attr_cluster (a_cluster)
@@ -1035,7 +1036,6 @@ feature {NONE} -- Implementation
 					end)
 			end
 		end
-
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

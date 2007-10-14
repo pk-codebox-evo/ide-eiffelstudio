@@ -42,6 +42,18 @@ feature
 			Result_not_void: Result /= Void
 		end
 
+	new_cdd_target (a_name: STRING; a_system: CONF_SYSTEM): CONF_TARGET is
+			-- Create a `CONF_TARGET' object.
+		require
+			a_name_ok: a_name /= Void and then not a_name.is_empty
+			a_system_not_void: a_system /= Void
+		do
+			create Result.make_cdd_target (a_name, a_system)
+		ensure
+			Result_valid: Result /= Void and then Result.is_cdd_target
+		end
+
+
 	new_location_from_path (a_path: STRING; a_target: CONF_TARGET): CONF_DIRECTORY_LOCATION is
 			-- Create a `CONF_LOCATION' object.
 			-- Create with `a_path' (without a filename).
@@ -245,6 +257,19 @@ feature
 			create Result.make (a_name, a_directory, a_target)
 		ensure
 			Result_not_void: Result /= Void
+		end
+
+	new_cdd_cluster (a_name: STRING; a_directory: CONF_DIRECTORY_LOCATION; a_target: CONF_TARGET): CONF_CLUSTER is
+			-- A new abstract cdd `CONF_CLUSTER'.
+		require
+			a_name_ok: a_name /= Void and then not a_name.is_empty
+			a_directory_not_void: a_directory /= Void
+			a_target_not_void: a_target /= Void
+		do
+			create Result.make_cdd_cluster (a_name, a_directory, a_target)
+		ensure
+			Result_valid: Result /= Void and then Result.is_cdd_cluster
+
 		end
 
 	new_override (a_name: STRING; a_directory: CONF_DIRECTORY_LOCATION; a_target: CONF_TARGET): CONF_OVERRIDE is
