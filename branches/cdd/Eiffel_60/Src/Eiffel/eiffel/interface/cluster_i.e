@@ -34,7 +34,7 @@ inherit
 		end
 
 create {CONF_COMP_FACTORY}
-	make
+	make, make_cdd_cluster
 
 feature -- Attributes
 

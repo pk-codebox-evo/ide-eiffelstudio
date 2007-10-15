@@ -229,13 +229,6 @@ feature -- Callbacks
 			l_group: CONF_GROUP
 			l_error: CONF_ERROR_GRUNDEF
 			l_e_ov: CONF_ERROR_OVERRIDE
-
-			l_clusters: HASH_TABLE [CONF_CLUSTER, STRING]
-			l_cluster: CONF_CLUSTER
-			l_dir: KL_DIRECTORY
-			l_loc: CONF_DIRECTORY_LOCATION
-			l_target: CONF_TARGET
-			l_root: CONF_ROOT
 		do
 			if not is_error then
 				current_content.left_adjust
@@ -310,27 +303,6 @@ feature -- Callbacks
 							overrides_list.forth
 						end
 					end
-						-- Add cdd clusters and tester target if cdd is enabled in `current_target'
---					if current_target.cdd /= Void and then current_target.cdd.is_enabled then
---						l_clusters := current_target.clusters
---						from
---							l_clusters.start
---						until
---							l_clusters.after
---						loop
---							create l_dir.make (l_clusters.item_for_iteration.location.build_path ("cdd_tests", ""))
---							if not l_dir.exists then
---								l_loc := factory.new_location_from_path (l_dir.name, current_target)
---								l_cluster := factory.new_cdd_cluster (l_clusters.key_for_iteration + "_tests", l_loc, current_target)
---								l_cluster.set_parent (l_clusters.item_for_iteration)
---								current_target.add_cluster (l_cluster)
---							end
---							l_clusters.forth
---						end
---						l_target := factory.new_cdd_target (current_target.name + "_tester", last_system)
---						last_system.add_target (l_target)
---						l_target.set_parent (current_target)
---					end
 
 					uses_list.clear_all
 					overrides_list.clear_all

@@ -69,7 +69,8 @@ feature	-- Basic operations
 			-- `a_cs_uuid' is an ID for the call stack and `a_cs_level' is the
 			-- index of the frame beeing captured.
 		local
-			l_prefix: STRING
+			l_cluster_name, l_prefix: STRING
+			l_loc: CONF_LOCATION
 			l_directory: KL_DIRECTORY
 			l_output_file: KL_TEXT_OUTPUT_FILE
 			i: INTEGER
@@ -77,18 +78,14 @@ feature	-- Basic operations
 			failed := False
 			printed_objects := 0
 
-			-- From here
-			current_cluster ?= a_class.group
-			if current_cluster /= Void and then not current_cluster.is_readonly then
-				create l_directory.make (current_cluster.location.build_path (tests_directory_name, ""))
+			l_cluster_name := tests_cluster_name (target)
+			l_loc := conf_factory.new_location_from_path (".\", target)
+			create l_directory.make (l_loc.build_path (l_cluster_name, ""))
+			if not l_directory.exists then
+				l_directory.create_directory
 				if not l_directory.exists then
-					l_directory.create_directory
-					if not l_directory.exists then
-						failed := True
-					end
+					failed := True
 				end
-			else
-				failed := True
 			end
 
 			if not failed then
@@ -103,7 +100,7 @@ feature	-- Basic operations
 						new_class_name.append_character ('0')
 					end
 					new_class_name.append (i.out)
-					create l_output_file.make (current_cluster.location.build_path (tests_directory_name, new_class_name.as_lower + ".e"))
+					create l_output_file.make (l_loc.build_path (l_cluster_name, new_class_name.as_lower + ".e"))
 					if l_output_file.exists then
 						l_output_file := Void
 					end
@@ -171,6 +168,7 @@ feature	-- Basic operations
 	finish_capturing is
 			-- Set `output_stream' to `Void'.
 		local
+			l_cluster_name: STRING
 			l_tests_cluster: CONF_CLUSTER
 			l_cluster_list: LIST [CONF_CLUSTER]
 			l_directory: KL_DIRECTORY
@@ -187,22 +185,24 @@ feature	-- Basic operations
 				output_stream.close
 				finish_printing
 
---				l_tests_cluster := eiffel_universe.cluster_of_name (current_cluster.cluster_name + cluster_name_suffix)
---				if l_tests_cluster = Void Then
---					create l_directory.make (current_cluster.location.build_path (tests_directory_name, ""))
---					l_cluster_list := eiffel_universe.cluster_of_location (l_directory.name)
---					if l_cluster_list.is_empty then
---						-- Note (Arno): first version prints absolute path to cluster
---						--cluster_manager.add_cluster (current_cluster.cluster_name + cluster_name_suffix, current_cluster, l_directory.name)
---						cluster_manager.add_cluster (current_cluster.cluster_name + cluster_name_suffix, current_cluster, current_cluster.location.original_directory + "\" + tests_directory_name)
---						eiffel_system.system.set_config_changed (True)
---						l_tests_cluster := cluster_manager.last_added_cluster
---					else
---						l_tests_cluster := l_cluster_list.first
---					end
---				end
---				cluster_manager.add_class_to_cluster (new_class_name.as_lower + ".e", l_tests_cluster, "")
---				eiffel_system.system.set_rebuild (True)
+
+				l_cluster_name := tests_cluster_name (target)
+				l_tests_cluster := eiffel_universe.cluster_of_name (l_cluster_name)
+				if l_tests_cluster = Void Then
+					create l_directory.make (target.system.directory)
+					l_cluster_list := eiffel_universe.cluster_of_location (l_directory.name)
+					if l_cluster_list.is_empty then
+						-- Note (Arno): first version prints absolute path to cluster
+						--cluster_manager.add_cluster (current_cluster.cluster_name + cluster_name_suffix, current_cluster, l_directory.name)
+						cluster_manager.add_cluster (l_cluster_name, Void, ".\" + l_cluster_name)
+						eiffel_system.system.set_config_changed (True)
+						l_tests_cluster := cluster_manager.last_added_cluster
+					else
+						l_tests_cluster := l_cluster_list.first
+					end
+				end
+				cluster_manager.add_class_to_cluster (new_class_name.as_lower + ".e", l_tests_cluster, "")
+				eiffel_system.system.set_rebuild (True)
 			else
 				if output_stream /= Void then
 					output_stream.close
@@ -219,9 +219,6 @@ feature {NONE} -- Implementation
 
 	failed: BOOLEAN
 			-- Has `Current' raised any exception since last call to `start_capturing'?
-
-	current_cluster: CLUSTER_I
-			-- Cluster which contains class under test
 
 	new_class_name: STRING
 			-- Class name of the new test case
@@ -412,8 +409,14 @@ feature {NONE} -- Implementation
 			put_string ("%N%Nend -- class %N%N")
 		end
 
+	conf_factory: CONF_FACTORY is
+			-- Factory for creating CONF_LOCATION
+		once
+			create Result
+		end
+
+
 invariant
 	initialized_implies_valid_class_name: is_initialized implies new_class_name /= Void
-	initialized_implies_cluster_not_void: is_initialized implies current_cluster /= Void
 
 end

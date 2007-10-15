@@ -169,6 +169,12 @@ feature -- Visit nodes
 			l_old_assemblies: HASH_TABLE [CONF_PHYSICAL_ASSEMBLY_INTERFACE, STRING]
 			l_retried: BOOLEAN
 			l_error_count: INTEGER
+
+			l_cluster_name: STRING
+			l_cluster: CONF_CLUSTER
+			l_dir: KL_DIRECTORY
+			l_loc: CONF_DIRECTORY_LOCATION
+			l_target: CONF_TARGET
 		do
 			if not l_retried then
 				if last_errors /= Void then
@@ -201,6 +207,25 @@ feature -- Visit nodes
 						old_libraries.remove (a_target.system.uuid)
 					end
 				end
+
+
+
+				-- Add cdd cluster and tester target if cdd is enabled in `current_target'
+				if a_target.cdd /= Void and then a_target.cdd.is_enabled then
+					create l_cluster_name.make_from_string ("cdd_" + a_target.name + "_tests")
+					l_loc := factory.new_location_from_path (".\" + l_cluster_name, a_target)
+					-- Note: ugly check whether directory exists
+
+					create l_dir.make (l_loc.build_path ("", ""))
+					if l_dir.exists then
+						l_cluster := factory.new_cdd_cluster (l_cluster_name, l_loc, a_target)
+						a_target.add_cluster (l_cluster)
+					end
+					l_target := factory.new_cdd_target (a_target.name + "_tester", a_target.system)
+					l_target.set_parent (a_target)
+					a_target.system.add_target (l_target)
+				end
+
 
 					-- process clusters first, because we need those information while processing libraries if we have circular dependencies
 				process_with_old (a_target.clusters, l_clusters)

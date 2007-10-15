@@ -35,6 +35,14 @@ feature {NONE} -- Implementation
 					an_application_status.exception_code = {EXCEP_CONST}.check_instruction)
 		end
 
+	tests_cluster_name (a_target: CONF_TARGET): STRING is
+			-- Name for cdd tests cluster for a target `a_target'.
+		require
+			a_target_not_void: a_target /= Void
+		do
+			Result := "cdd_" + a_target.name + "_tests"
+		end
+
 
 feature -- Measurement
 
