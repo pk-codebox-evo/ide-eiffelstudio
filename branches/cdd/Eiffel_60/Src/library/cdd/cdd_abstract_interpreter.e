@@ -14,9 +14,6 @@ deferred class
 inherit
 
 	CDD_REQUEST_PARSER
-		redefine
-			is_valid_class_name
-		end
 
 	EXCEPTIONS
 		export
@@ -196,16 +193,19 @@ feature {NONE} -- Request handling
 			-- Execute all tests in all test cases.
 		do
 			-- TODO: implement
+			check
+				todo: False
+			end
 		end
-
 
 	report_execute_test_class_request (a_class_name: STRING) is
 			-- Execute all tests found in class `a_class_name'.
 		do
 			if not has_test_class (a_class_name) then
 				report_and_set_error ("`" + a_class_name + "' is not a valid class name.")
+			else
+				test_feature_names (a_class_name).do_all (agent execute_test (a_class_name, ?))
 			end
-			test_feature_names (a_class_name).do_all (agent execute_test (a_class_name, ?))
 		end
 
 	report_execute_test_routine_request (a_class_name, a_feature_name: STRING) is
@@ -233,15 +233,6 @@ feature {NONE} -- Control
 
 	should_quit: BOOLEAN
 			-- Should main loop quit?
-
-feature -- Lexical validity
-
-	is_valid_class_name (a_class_name: STRING): BOOLEAN is
-			-- Is `a_class_name' a valid name for a class and
-			-- do we have a test case for `a_class_name'?
-		do
-			Result := Precursor (a_class_name) and has_test_class (a_class_name)
-		end
 
 feature {NONE} -- Implementation
 

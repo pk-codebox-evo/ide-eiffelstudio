@@ -306,10 +306,11 @@ feature -- Lexical validity
 			until
 				i > a_class_name.count or not Result
 			loop
-				if (a_class_name.item (i).is_alpha and then
-				a_class_name.item (i).is_upper) or
-				a_class_name.item (i).is_digit or
-				a_class_name.item (i) = '_' then
+				if
+					a_class_name.item (i).is_alpha or
+					a_class_name.item (i).is_digit or
+					a_class_name.item (i) = '_'
+				then
 					i := i + 1
 				else
 					Result := False
