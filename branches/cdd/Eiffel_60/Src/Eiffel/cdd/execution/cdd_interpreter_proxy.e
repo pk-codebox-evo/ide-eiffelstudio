@@ -42,7 +42,6 @@ feature {NONE} -- Initialization
 		do
 			create output_stream.make_empty
 			executable_file_name := an_executable_file_name
-			melt_path := file_system.dirname (executable_file_name)
 			create proxy_log_file.make (a_proxy_log_filename)
 			proxy_log_file.open_append
 			log_line ("-- A new proxy has been created.")
@@ -68,7 +67,13 @@ feature -- Status
 		end
 
 	is_ready: BOOLEAN
-			-- Is client ready for new commands?
+			-- Is interpreter ready for new commands?
+
+	is_executing_request: BOOLEAN
+			-- Is the interpreter currently executing a request?
+
+	is_jammed: BOOLEAN
+			-- Is interpreter in an unknown and unresponsive state?
 
 feature -- Access
 
@@ -80,6 +85,9 @@ feature -- Access
 			filename_not_void: Result /= Void
 			valid_filename: Result.is_equal (proxy_log_file.name)
 		end
+
+	last_result: CDD_TEST_EXECUTION
+			-- Execution results and log of last test case
 
 feature -- Settings
 
@@ -103,6 +111,8 @@ feature -- Execution
 		require
 			not_running: not is_running
 		do
+				-- $MELT_PATH needs to be set here in only to allow debugging.
+			execution_environment.set_variable_value ("MELT_PATH", file_system.dirname (executable_file_name))
 			launch_process
 			if is_running then
 				output_stream.string.wipe_out
@@ -120,9 +130,8 @@ feature -- Execution
 		require
 			is_running: is_launched
 		do
-			-- TODO: print (":quit")
+			output_stream.put_line (":quit")
 			flush_process
-			-- TODO: parse response
 			-- Give the `process' 50 milliseconds to terminate itself
 			process.wait_for_exit_with_timeout (50)
 			if not process.has_exited then
@@ -138,18 +147,45 @@ feature -- Execution
 		end
 
 	execute_test (a_class_name: STRING; a_routine_name: STRING) is
-			-- Execute test routien `a_routine_name' from class
-			-- `a_class_name' in interpreter.
-			-- TODO: Explain how result will be made available.
+			-- Triggers the execution of test routine `a_routine_name' from class
+			-- `a_class_name' in interpreter. This routine does not block. In particular
+			-- it does not wait to parse the result of the interpreter. In order to do that
+			-- invoke `process_result'.
 		require
 			is_launched: is_launched
 			is_ready: is_ready
+			not_executing_request: not is_executing_request
 			a_class_name_not_void: a_class_name /= Void
 			a_routine_name_not_void: a_routine_name /= Void
 		do
-			-- TODO: print request
+			output_stream.put_string (a_class_name)
+			output_stream.put_character ('.')
+			output_stream.put_line (a_routine_name)
 			flush_process
+			last_result := Void
+			is_executing_request := True
+			try_read_line_internal
+			try_read_line_internal
+		ensure
+			last_result_is_void: last_result = Void
+			is_executing_request: is_executing_request
+		end
+
+	process_result is
+			-- Process results from interpreter (if it is already available).
+			-- If the results are complete make them available via `last_result'.
+			-- If the results are not available set `last_result' to Void.
+		require
+			is_launched: is_launched
+			is_ready: is_ready
+			is_executing_request: is_executing_request
+		do
+			last_result := Void
+			sleep (10000)
+			try_read_line_internal
+			try_read_line_internal
 			-- TODO: parse response
+
 		end
 
 feature {NONE} -- Implementation
@@ -242,9 +278,6 @@ feature {NONE} -- Implementation
 	executable_file_name: STRING
 			-- File name of interpreter executable
 
-	melt_path: STRING
-			-- Path where melt file of test client resides
-
 	output_stream: KL_STRING_OUTPUT_STREAM
 			-- Output stream used by `request_printer'
 
@@ -301,9 +334,12 @@ invariant
 	process_not_void: is_running implies process /= Void
 	is_running_implies_reader: is_running implies (stdout_reader /= Void and stderr_reader /= Void)
 	executable_file_name_not_void: executable_file_name /= Void
-	melt_path_not_void: melt_path /= Void
 	not_running_implies_not_ready: not is_running implies not is_ready
+	not_running_implies_not_executing_request: not is_running implies not is_executing_request
+	executing_request_implies_running: is_executing_request implies is_running
 	is_ready_implies_is_running: is_ready implies is_running
+	is_ready_implies_not_is_executing_request: is_ready implies not is_executing_request
+	is_jammed_implies_is_running: is_jammed implies is_running
 	proxy_log_file_not_void: proxy_log_file /= Void
 
 end
