@@ -128,6 +128,7 @@ A		([0-9A-Za-z])
 [cC][hH][eE][cC][kK]					|
 [cC][lL][aA][sS][sS]					|
 [cC][oO][nN][vV][eE][rR][tT]			|
+[cC][oO][nN][fF][iI][nN][eE][dD]			|
 [cC][rR][eE][aA][tT][eE]				|
 [cC][rR][eE][aA][tT][iI][oO][nN]		|
 [cC][uU][rR][rR][eE][nN][tT]			|
@@ -156,6 +157,7 @@ A		([0-9A-Za-z])
 [lL][iI][kK][eE]						|
 [lL][oO][cC][aA][lL]					|
 [lL][oO][oO][pP]						|
+[mM][oO][dD][iI][fF][yY]				|
 [nN][oO][tT]							|
 [oO][bB][sS][oO][lL][eE][tT][eE]		|
 [oO][lL][dD]							|
@@ -175,6 +177,7 @@ A		([0-9A-Za-z])
 [sS][tT][rR][iI][pP]					|
 [tT][hH][eE][nN]						|
 [tT][rR][uU][eE]						|
+[uU][sS][eE]							|
 [uU][nN][dD][eE][fF][iI][nN][eE]		|
 [uU][nN][iI][qQ][uU][eE]				|
 [uU][nN][tT][iI][lL]					|

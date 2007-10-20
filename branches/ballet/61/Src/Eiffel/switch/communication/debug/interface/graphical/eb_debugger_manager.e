@@ -241,6 +241,10 @@ feature {NONE} -- Initialization
 			force_debug_mode_cmd.enable_sensitive
 			toolbarable_commands.extend (force_debug_mode_cmd)
 
+			create verify_cmd.make
+			verify_cmd.enable_sensitive
+			toolbarable_commands.extend (verify_cmd)
+
 			create options_cmd.make (Current)
 			toolbarable_commands.extend (options_cmd)
 			create step_cmd.make (Current)
@@ -395,6 +399,9 @@ feature -- Access
 
 	force_debug_mode_cmd: EB_FORCE_DEBUG_MODE_CMD
 			-- Force debug mode command.
+
+	verify_cmd: EB_VERIFY_COMMAND
+			-- Verify class command.
 
 feature -- tools
 
@@ -604,6 +611,13 @@ feature -- tools management
 			l_item := force_debug_mode_cmd.new_menu_item
 			Result.extend (l_item)
 			a_recycler.add_recyclable (l_item)
+
+			create sep
+			Result.extend (sep)
+
+			l_item := verify_cmd.new_menu_item
+			Result.extend (l_item)
+
 
 --| FIXME XR: TODO: Add:
 --| 3) edit feature, feature evaluation

@@ -19,6 +19,9 @@ create
 
 feature -- Query
 
+	verify_cmd: EB_VERIFY_COMMAND
+			-- Command to verify a class
+
 	new_tab_cmd: EB_NEW_TAB_EDITOR_COMMAND
 			-- Command to create a new tab.
 

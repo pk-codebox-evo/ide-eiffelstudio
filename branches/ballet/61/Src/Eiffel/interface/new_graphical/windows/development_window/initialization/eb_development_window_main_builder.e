@@ -84,6 +84,7 @@ feature -- Command
 			l_accel: EV_ACCELERATOR
 			l_toolbarable_commands: ARRAYED_LIST [EB_TOOLBARABLE_COMMAND]
 			l_new_tab_cmd: EB_NEW_TAB_EDITOR_COMMAND
+			l_verify_cmd: EB_VERIFY_COMMAND
 			l_save_cmd: EB_SAVE_FILE_COMMAND
 			l_save_as_cmd: EB_SAVE_FILE_AS_COMMAND
 			l_save_all_cmd: EB_SAVE_ALL_FILE_COMMAND
@@ -143,6 +144,9 @@ feature -- Command
 			create l_new_tab_cmd.make (develop_window)
 			develop_window.commands.set_new_tab_cmd (l_new_tab_cmd)
 			develop_window.commands.toolbarable_commands.extend (develop_window.commands.new_tab_cmd)
+
+			create l_verify_cmd.make
+			develop_window.commands.toolbarable_commands.extend (l_verify_cmd)
 
 			create l_save_cmd.make (develop_window)
 			develop_window.set_save_cmd (l_save_cmd)

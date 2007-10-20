@@ -24,6 +24,7 @@ feature -- Access
 			Result.put ("assign", "assign")
 			Result.put ("check", "check")
 			Result.put ("class", "class")
+			Result.put ("confined", "confined")
 			Result.put ("convert", "convert")
 			Result.put ("create", "create")
 			Result.put ("current", "current")
@@ -52,6 +53,7 @@ feature -- Access
 			Result.put ("like", "like")
 			Result.put ("local", "local")
 			Result.put ("loop", "loop")
+			Result.put ("modify", "modify")
 			Result.put ("not", "not")
 			Result.put ("obsolete", "obsolete")
 			Result.put ("old", "old")
@@ -71,6 +73,7 @@ feature -- Access
 			Result.put ("then", "then")
 			Result.put ("true", "true")
 			Result.put ("tuple", "tuple")
+			Result.put ("use", "use")
 			Result.put ("undefine", "undefine")
 			Result.put ("unique", "unique")
 			Result.put ("until", "until")
@@ -80,7 +83,7 @@ feature -- Access
 			Result.compare_objects
 		ensure
 			Result_not_void: Result /= Void
-			Result_count_is_61: Result.count = 61
+			Result_count_is_64: Result.count = 64
 		end
 		
 
