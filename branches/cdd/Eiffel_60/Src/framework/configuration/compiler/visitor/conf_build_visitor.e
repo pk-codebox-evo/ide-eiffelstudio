@@ -170,11 +170,10 @@ feature -- Visit nodes
 			l_retried: BOOLEAN
 			l_error_count: INTEGER
 
-			l_cluster_name: STRING
 			l_cluster: CONF_CLUSTER
 			l_dir: KL_DIRECTORY
 			l_loc: CONF_DIRECTORY_LOCATION
-			l_target: CONF_TARGET
+			l_cdd_target: CONF_TARGET
 		do
 			if not l_retried then
 				if last_errors /= Void then
@@ -208,24 +207,25 @@ feature -- Visit nodes
 					end
 				end
 
-
-
 				-- Add cdd cluster and tester target if cdd is enabled in `current_target'
-				if a_target.cdd /= Void and then a_target.cdd.is_enabled then
-					create l_cluster_name.make_from_string ("cdd_" + a_target.name + "_tests")
-					l_loc := factory.new_location_from_path (".\" + l_cluster_name, a_target)
-					-- Note: ugly check whether directory exists
-
+				if a_target.is_cdd_target then
+					l_cdd_target := a_target.extends
+				else
+					l_cdd_target := a_target
+				end
+				if (l_cdd_target /= Void and then l_cdd_target.cdd /= Void and then l_cdd_target.cdd.is_enabled) then
+					-- TODO: make sure cluster with this name does not exists yet
+					-- or any cluster pointing to ./cdd_tests/target.name does
+					-- not exists yet!
+					l_loc := factory.new_location_from_path (".\cdd_tests\" + l_cdd_target.name, a_target)
 					create l_dir.make (l_loc.build_path ("", ""))
-					if l_dir.exists then
-						l_cluster := factory.new_cdd_cluster (l_cluster_name, l_loc, a_target)
+
+					if l_dir.exists and not a_target.clusters.has (l_cdd_target.name + "_tests") then
+						l_cluster := factory.new_cdd_cluster (l_cdd_target.name + "_tests", l_loc, a_target)
+						l_cluster.set_recursive (True)
 						a_target.add_cluster (l_cluster)
 					end
-					l_target := factory.new_cdd_target (a_target.name + "_tester", a_target.system)
-					l_target.set_parent (a_target)
-					a_target.system.add_target (l_target)
 				end
-
 
 					-- process clusters first, because we need those information while processing libraries if we have circular dependencies
 				process_with_old (a_target.clusters, l_clusters)

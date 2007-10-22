@@ -286,15 +286,17 @@ feature -- Visit nodes
 	process_library (a_library: CONF_LIBRARY) is
 			-- Visit `a_library'.
 		do
-			append_pre_group ("library", a_library)
-			if namespace /= namespace_1_0_0 and then a_library.use_application_options then
-				append_text (" use_application_options=%"true%"")
+			if not a_library.is_cdd_library then
+				append_pre_group ("library", a_library)
+				if namespace /= namespace_1_0_0 and then a_library.use_application_options then
+					append_text (" use_application_options=%"true%"")
+				end
+				append_val_group (a_library)
+				if a_library.visible /= Void then
+					append_visible (a_library.visible)
+				end
+				append_post_group ("library")
 			end
-			append_val_group (a_library)
-			if a_library.visible /= Void then
-				append_visible (a_library.visible)
-			end
-			append_post_group ("library")
 		ensure then
 			indent_back: indent = old indent
 		end

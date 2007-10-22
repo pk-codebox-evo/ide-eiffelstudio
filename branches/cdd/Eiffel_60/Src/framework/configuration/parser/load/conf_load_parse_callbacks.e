@@ -229,6 +229,10 @@ feature -- Callbacks
 			l_group: CONF_GROUP
 			l_error: CONF_ERROR_GRUNDEF
 			l_e_ov: CONF_ERROR_OVERRIDE
+
+			l_cdd_target: CONF_TARGET
+			l_cdd_lib_loc: CONF_FILE_LOCATION
+			l_cdd_lib: CONF_LIBRARY
 		do
 			if not is_error then
 				current_content.left_adjust
@@ -301,6 +305,23 @@ feature -- Callbacks
 								overrides_list.item_for_iteration.do_all (agent {CONF_OVERRIDE}.add_override (l_group))
 							end
 							overrides_list.forth
+						end
+					end
+
+					-- TODO: add cdd target & library
+					if current_target.cdd /= Void and then current_target.cdd.is_enabled then
+						-- TODO: might not be sufficient to check if there is no target with that name
+						if not current_target.system.targets.has (current_target.name + "_tester") then
+							l_cdd_target := factory.new_cdd_target (current_target.name + "_tester", current_target.system)
+							l_cdd_target.set_parent (current_target)
+							l_cdd_target.set_root (factory.new_root (current_target.name + "_tests", "CDD_INTERPRETER", "execute", False))
+							current_target.system.add_target (l_cdd_target)
+						end
+
+						if not current_target.libraries.has ("cdd") then
+							l_cdd_lib_loc := factory.new_location_from_full_path ("$ISE_LIBRARY\library\cdd\cdd.ecf", current_target)
+							l_cdd_lib := factory.new_cdd_library ("cdd", l_cdd_lib_loc, current_target)
+							current_target.add_library (l_cdd_lib)
 						end
 					end
 
