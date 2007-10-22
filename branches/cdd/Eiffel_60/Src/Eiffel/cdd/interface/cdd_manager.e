@@ -146,12 +146,12 @@ feature -- Status setting (CDD)
 			instantiate_cdd_configuration
 			cdd_conf.set_is_enabled (True)
 
-			if not target.libraries.has (library_name) then
-				l_loc := conf_factory.new_location_from_full_path ("$ISE_LIBRARY\library\cdd\cdd.ecf", target)
-				l_lib := conf_factory.new_library (library_name, l_loc, target)
-				target.add_library (l_lib)
-			end
-			add_file_rule
+--			if not target.libraries.has (library_name) then
+--				l_loc := conf_factory.new_location_from_full_path ("$ISE_LIBRARY\library\cdd\cdd.ecf", target)
+--				l_lib := conf_factory.new_library (library_name, l_loc, target)
+--				target.add_library (l_lib)
+--			end
+--			add_file_rule
 			target.system.store
 			create test_suite.make_with_target (target)
 			create l_root_printer.make (test_suite)

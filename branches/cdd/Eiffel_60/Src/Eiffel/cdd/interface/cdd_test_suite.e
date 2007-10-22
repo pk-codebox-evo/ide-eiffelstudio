@@ -34,7 +34,6 @@ feature {NONE} -- Initialization
 			create add_test_case_actions
 			create remove_test_case_actions
 			create refresh_actions
-			refresh
 		ensure
 			target_set: target = a_target
 		end

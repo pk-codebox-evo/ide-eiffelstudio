@@ -34,7 +34,20 @@ inherit
 			manager as cluster_manager
 		end
 
+	CONF_ACCESS
+		export
+			{NONE} all
+		end
+
 	SHARED_EIFFEL_PROJECT
+		export
+			{NONE} all
+		end
+
+	KL_SHARED_FILE_SYSTEM
+		export
+			{NONE} all
+		end
 
 create
 	make
@@ -69,24 +82,51 @@ feature	-- Basic operations
 			-- `a_cs_uuid' is an ID for the call stack and `a_cs_level' is the
 			-- index of the frame beeing captured.
 		local
-			l_cluster_name, l_prefix: STRING
+			l_cluster_name, l_prefix, l_new_path: STRING
 			l_loc: CONF_LOCATION
-			l_directory: KL_DIRECTORY
 			l_output_file: KL_TEXT_OUTPUT_FILE
+			l_paths: DS_LINKED_LIST [STRING]
+			l_cluster: CONF_CLUSTER
+			l_fs: KL_FILE_SYSTEM
 			i: INTEGER
 		do
 			failed := False
 			printed_objects := 0
 
-			l_cluster_name := tests_cluster_name (target)
-			l_loc := conf_factory.new_location_from_path (".\", target)
-			create l_directory.make (l_loc.build_path (l_cluster_name, ""))
-			if not l_directory.exists then
-				l_directory.create_directory
-				if not l_directory.exists then
-					failed := True
-				end
+				-- Build path list in which test case shall be stored
+			create l_paths.make
+			from
+				l_cluster ?= a_class.group
+			until
+				l_cluster = Void
+			loop
+				l_paths.put_first (l_cluster.name)
+				l_cluster := l_cluster.parent
 			end
+			l_paths.put_first (target.name)
+			l_paths.put_first ("cdd_tests")
+
+				-- Create directories from path list
+			l_loc := conf_factory.new_location_from_path (".\", target)
+			l_fs := file_system
+			l_new_path := l_loc.build_path ("", "")
+			from
+				l_paths.start
+			until
+				l_paths.after or failed
+			loop
+				l_new_path := l_fs.pathname (l_new_path, l_paths.item_for_iteration)
+				if not l_fs.directory_exists (l_new_path) then
+					l_fs.create_directory (l_new_path)
+					if not l_fs.directory_exists (l_new_path) then
+						io.put_string ("%Tfailed%N")
+						failed := True
+					end
+				end
+				l_paths.forth
+			end
+
+			check new_path_not_void: l_new_path /= Void end
 
 			if not failed then
 				l_prefix := class_name_prefix + a_class.name + "_"
@@ -100,7 +140,7 @@ feature	-- Basic operations
 						new_class_name.append_character ('0')
 					end
 					new_class_name.append (i.out)
-					create l_output_file.make (l_loc.build_path (l_cluster_name, new_class_name.as_lower + ".e"))
+					create l_output_file.make (l_fs.pathname(l_new_path, new_class_name.as_lower + ".e"))
 					if l_output_file.exists then
 						l_output_file := Void
 					end
@@ -126,6 +166,15 @@ feature	-- Basic operations
 					put_set_up (a_feature, is_creation_feature (a_feature))
 					put_access (a_class.name_in_upper, a_feature)
 					put_context_header
+
+					--create new_class_path.make_from_string (l_new_path)
+					create new_class_path.make_empty
+					l_paths.remove_first
+					l_paths.remove_first
+					l_paths.do_all (agent (a_path, a_dir: STRING)
+						do
+							a_path.append ("/" + a_dir)
+						end (new_class_path, ?))
 				end
 			end
 		end
@@ -171,6 +220,7 @@ feature	-- Basic operations
 			l_cluster_name: STRING
 			l_tests_cluster: CONF_CLUSTER
 			l_cluster_list: LIST [CONF_CLUSTER]
+			l_loc: CONF_DIRECTORY_LOCATION
 			l_directory: KL_DIRECTORY
 		do
 			if not failed then
@@ -186,7 +236,7 @@ feature	-- Basic operations
 				finish_printing
 
 
-				l_cluster_name := tests_cluster_name (target)
+				l_cluster_name := target.name + "_tests"
 				l_tests_cluster := eiffel_universe.cluster_of_name (l_cluster_name)
 				if l_tests_cluster = Void Then
 					create l_directory.make (target.system.directory)
@@ -194,14 +244,23 @@ feature	-- Basic operations
 					if l_cluster_list.is_empty then
 						-- Note (Arno): first version prints absolute path to cluster
 						--cluster_manager.add_cluster (current_cluster.cluster_name + cluster_name_suffix, current_cluster, l_directory.name)
-						cluster_manager.add_cluster (l_cluster_name, Void, ".\" + l_cluster_name)
+
+						-- Note: need to replace {EB_CLUSTERS}.add_cluster with own routine
+						-- cluster_manager.add_cluster (l_cluster_name, Void, ".\" + l_cluster_name)
+						l_loc := conf_factory.new_location_from_path (".\cdd_tests\" + target.name, target)
+						l_tests_cluster := conf_factory.new_cdd_cluster (l_cluster_name, l_loc, target)
+						l_tests_cluster.set_recursive (True)
+						l_tests_cluster.set_classes (create {HASH_TABLE [EIFFEL_CLASS_I, STRING]}.make (0))
+						l_tests_cluster.set_classes_by_filename (create {HASH_TABLE [EIFFEL_CLASS_I, STRING]}.make (0))
+
+						target.add_cluster (l_tests_cluster)
 						eiffel_system.system.set_config_changed (True)
-						l_tests_cluster := cluster_manager.last_added_cluster
+						cluster_manager.refresh
 					else
 						l_tests_cluster := l_cluster_list.first
 					end
 				end
-				cluster_manager.add_class_to_cluster (new_class_name.as_lower + ".e", l_tests_cluster, "")
+				cluster_manager.add_class_to_cluster (new_class_name.as_lower + ".e", l_tests_cluster, new_class_path)
 				eiffel_system.system.set_rebuild (True)
 			else
 				if output_stream /= Void then
@@ -223,6 +282,9 @@ feature {NONE} -- Implementation
 	new_class_name: STRING
 			-- Class name of the new test case
 
+	new_class_path: STRING
+			-- Path to new class
+
 	printed_objects: INTEGER
 			-- Number of objects printed to context since last `start_capturing'
 
@@ -230,7 +292,7 @@ feature {NONE} -- Implementation
 			-- Append indexing clause using `an_uuid' for call
 			-- stack id and `an_index' for call stack index.
 		require
-			initialized: is_initialized
+			initialized_and_not_failed: is_initialized and not failed
 			an_uuid_not_empty: an_uuid /= Void and then not an_uuid.is_empty
 			an_index_positive: an_index > 0
 		do
@@ -248,7 +310,7 @@ feature {NONE} -- Implementation
 			-- Append cdd test case class header with name `a_class_name' for testing `a_cut_name'.
 			-- The feature under test takes the arguments listed in `a_arg_list'.
 		require
-			initialized: is_initialized
+			initialized_and_not_failed: is_initialized and not failed
 		do
 			put_line ("class")
 			increase_indent
@@ -263,7 +325,7 @@ feature {NONE} -- Implementation
 	put_set_up (a_feature: E_FEATURE; an_is_creation_call: BOOLEAN) is
 			-- Append class header text for 'test_class_name'
 		require
-			initialized: is_initialized
+			initialized_and_not_failed: is_initialized and not failed
 			a_feature_not_void: a_feature /= Void
 		local
 			i: INTEGER
@@ -359,7 +421,7 @@ feature {NONE} -- Implementation
 	put_context_header is
 			-- Print feature definition for context.
 		require
-			initialized: is_initialized
+			initialized_and_not_failed: is_initialized and not failed
 		do
 			put_line ("feature -- Context%N")
 
@@ -379,7 +441,7 @@ feature {NONE} -- Implementation
 	put_access (a_cut_name: STRING; a_feature: E_FEATURE) is
 			-- Append class header text for `test_class_name'.
 		require
-			initialized: is_initialized
+			initialized_and_not_failed: is_initialized and not failed
 			a_cut_name_not_empty: a_cut_name /= Void and then not a_cut_name.is_empty
 			a_feature_not_void: a_feature /= Void
 		local
@@ -404,12 +466,12 @@ feature {NONE} -- Implementation
 	put_class_footer is
 			-- Append class footer for test_class_name.
 		require
-			initialized: is_initialized
+			initialized_and_not_failed: is_initialized and not failed
 		do
 			put_string ("%N%Nend -- class %N%N")
 		end
 
-	conf_factory: CONF_FACTORY is
+	conf_factory: CONF_COMP_FACTORY is
 			-- Factory for creating CONF_LOCATION
 		once
 			create Result
@@ -417,6 +479,8 @@ feature {NONE} -- Implementation
 
 
 invariant
-	initialized_implies_valid_class_name: is_initialized implies new_class_name /= Void
-
+	initialized_and_not_failed_implies_valid_class_name:
+		(is_initialized and not failed) implies new_class_name /= Void
+	initialized_and_not_failed_implies_valid_path_:
+		(is_initialized and not failed) implies new_class_path /= Void
 end

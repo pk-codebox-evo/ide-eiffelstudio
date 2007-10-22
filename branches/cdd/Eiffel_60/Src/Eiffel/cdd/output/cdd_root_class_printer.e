@@ -65,11 +65,42 @@ feature -- Basic operations
 	print_root_class is
 			-- Print a new root class containing all test cases in `test_suite'.
 		local
-			l_directory: KL_DIRECTORY
+			l_loc: CONF_DIRECTORY_LOCATION
 			l_output_file: KL_TEXT_OUTPUT_FILE
-			l_root: CONF_ROOT
-			l_root_class: CLASS_C
+			l_failed: BOOLEAN
+			l_target: CONF_TARGET
+			l_cursor: DS_LINKED_LIST_CURSOR [CDD_TEST_CASE]
 		do
+			l_target := test_suite.target
+			l_loc := conf_factory.new_location_from_path (".\cdd_tests\" + l_target.name, l_target)
+			create l_output_file.make (l_loc.build_path ("", "cdd_interpreter.e"))
+			l_output_file.open_write
+			if l_output_file.is_open_write then
+				initialize (l_output_file)
+				put_indexing
+				put_class_header
+				put_test_setting_header
+				put_line ("create Result.make (" + test_suite.test_cases.count.out + ")")
+
+				from
+					l_cursor := test_suite.test_cases.new_cursor
+					l_cursor.start
+				until
+					l_cursor.after
+				loop
+					put_line ("create l_fht.make (1)")
+					put_feature_table (l_cursor.item.test_class)
+					put_line ("Result.put ([create {" + l_cursor.item.test_class.name_in_upper +
+						"}, l_fht], %"" + l_cursor.item.test_class.name_in_upper + "%")")
+					put_line ("")
+					l_cursor.forth
+				end
+
+				put_footer
+				l_output_file.close
+			end
+
+			--test_suite.target.loca
 			--l_root := target.root
 			--l_directory := target.project
 		end
@@ -82,12 +113,10 @@ feature {NONE} -- Implementation
 
 	internal_refresh_agent: PROCEDURE [like Current, TUPLE]
 
-	put_indexing (an_uuid: STRING; an_index: INTEGER) is
+	put_indexing is
 			-- Append indexing clause.
 		require
 			initialized: is_output_stream_valid
-			an_uuid_not_empty: an_uuid /= Void and then not an_uuid.is_empty
-			an_index_positive: an_index > 0
 		do
 			put_line ("indexing%N")
 			increase_indent
@@ -104,7 +133,7 @@ feature {NONE} -- Implementation
 		do
 			put_line ("class")
 			increase_indent
-			--put_line ("CDD_" + target.name.as_upper + "_INTERPRETER%N")
+			put_line ("CDD_INTERPRETER%N")
 			decrease_indent
 			put_line ("inherit")
 			increase_indent
@@ -128,6 +157,10 @@ feature {NONE} -- Implementation
 			put_line ("test_setting: HASH_TABLE [TUPLE [instance: CDD_ABSTRACT_TEST_CASE; test_features: HASH_TABLE [PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]], STRING]], STRING] is")
 			increase_indent
 			put_comment ("All test cases in this target")
+			put_line ("local")
+			increase_indent
+			put_line ("l_fht: HASH_TABLE [PROCEDURE [CDD_ABSTRACT_TEST_CASE, TUPLE [CDD_ABSTRACT_TEST_CASE]], STRING]")
+			decrease_indent
 			put_line ("once")
 			increase_indent
 		end
@@ -137,10 +170,47 @@ feature {NONE} -- Implementation
 		require
 			initialized: is_output_stream_valid
 		do
-			put_line ("%N")
+			decrease_indent
+			put_line ("end%N")
 			decrease_indent
 			put_string ("%N%Nend -- class %N%N")
 		end
+
+	put_feature_table (a_test_class: CLASS_C) is
+			-- Print class text for setting up feature hash table in `l_fht'
+			-- with all test features in `a_test_class'.
+		require
+			a_test_class_not_void: a_test_class /= Void
+		local
+			l_ft: FEATURE_TABLE
+			l_name, l_prefix: STRING
+		do
+			l_ft := a_test_class.feature_table
+			l_prefix := "test_"
+			from
+				l_ft.start
+			until
+				l_ft.after
+			loop
+				l_name := l_ft.item_for_iteration.feature_name
+				if l_name.count >= l_prefix.count and then
+					l_name.substring (1, l_prefix.count).is_case_insensitive_equal (l_prefix) then
+					put_line ("l_fht.put (agent {" + a_test_class.name_in_upper +
+						"}." + l_name + ", %"" + l_name + "%")")
+				end
+				l_ft.forth
+			end
+			put_line ("")
+		end
+
+	conf_factory: CONF_COMP_FACTORY is
+			-- Factory for creating location
+		once
+			create Result
+		ensure
+			not_void: Result /= Void
+		end
+
 
 invariant
 	test_suite_not_void: test_suite /= Void
