@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+
+<system name="frame_specification">
+
+	<description>
+		Describe your system here.
+	</description>
+
+	<root class="FRAME_SPECIFICATION" creation="make"/>
+
+	<cluster name="frame_specification" location="." />
+
+	<mount location="${GOBO}/library/kernel.xace"/>
+	<mount location="${BALLET}/library/mml/library.xace"/>
+
+</system>

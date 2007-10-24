@@ -1,0 +1,57 @@
+\chapter{Results and Conclusions}
+\label{sec:ResultsAndConclusions}
+
+\section{Usage of Frames and Models in Eiffel}
+\label{sec:UsageOfFramesAndModelsInEiffel}
+
+A part of this semester thesis was to experiment with the usage of Dynamic Frame Contracts and models in practice. An easy usage is of course necessary because developers should be encouraged to use these new mechanism. The usage would definitely not be easy if developers have to learn a new language or write too much just to give a complete specification.
+
+The usage of frames and Dynamic Frame Contracts in particular is rather simple. As stated before in Section \ref{sec:DynamicFramesInEiffel}, if a feature is a query, only a \emph{use} clause is necessary. If a feature is a command, both \emph{use} and \emph{modify} clauses are needed. Additionally, a command should provide in its \emph{ensure} clause the statement `\lstinline!confined! \emph{frame\_name}'. This is straight forward and not too much overhead to write and a part of the additional text could be done automatically using an improved feature creation wizard.
+
+When it comes to models, the developer himself has to think which model could be used to abstractly represent the class he is about to write. Additionally, for each feature model contracts have to be added and class invariants concerning its model have to be written. This is not straight forward and needs more thinking. But this has also positive aspects because the developer has to clearly specify what its class is about to do by defining a model for it.
+
+\section{Time measurements}
+\label{sec:Measurements}
+
+Two simple test cases have been created. The first test case creates an empty list and inserts 1'000 elements, the second test case does the same but inserts 100'000 elements. This is done for the original LINKED\_LIST class from the EiffelBase Library and for the new CC\_LINKED\_LIST class of the new library. The execution of these test runs has been measured using the unix `time' command. The test runs were done in \emph{finalized} mode of the Eiffel project. One time with all contracts enabled and one time without contracts at all. For testing, the following computer was used: Dell Inspiron 6400 notebook with Intel Core2Duo processor 1.8 GHz and 2 GB RAM on Ubuntu Linux 6.06 with a 2.6.15 kernel. In Table \ref{tab:TimeMeasurements1} and Table \ref{tab:TimeMeasurements2} the timing results for each test case are shown. Remark: the test case with 100'000 elements in the CC\_LINKED\_LIST class with all contracts enabled has been canceled after nearly three hours of computation (cf. Table \ref{tab:TimeMeasurements2}).
+
+\begin{table}
+	\caption{Time measurements of the test case with 1'000 elements.}
+	\centering
+	\begin{tabular}{|l|rr|rr|}
+		\hline
+		& \multicolumn{2}{|c|}{LINKED\_LIST} & \multicolumn{2}{|c|}{CC\_LINKED\_LIST} \\
+		\hline
+		Contracts & with & without & with & without \\
+		Time & 0m0.005s & 0m0.003s & 0m13.539s & 0m0.003s \\
+		\hline
+	\end{tabular}
+	\label{tab:TimeMeasurements1}
+\end{table}
+
+\begin{table}
+	\caption{Time measurements of the test case with 100'000 elements.}
+	\centering
+	\begin{tabular}{|l|rr|rr|}
+		\hline
+		& \multicolumn{2}{|c|}{LINKED\_LIST} & \multicolumn{2}{|c|}{CC\_LINKED\_LIST} \\
+		\hline
+		Contracts & with & without & with & without \\
+		Time & 0m0.603s & 0m0.045s & 162m11.846s (canceled) & 0m0.046s \\
+		\hline
+	\end{tabular}
+	\label{tab:TimeMeasurements2}
+\end{table}
+
+As can be seen by the results of Table \ref{tab:TimeMeasurements1} and Table \ref{tab:TimeMeasurements2}, the test runs without contracts using LINKED\_LIST and CC\_LINKED\_LIST take nearly the same time which was expected. In both test cases, the test runs using CC\_LINKED\_LIST with contracts take definitively more time because of the model contracts. Models, as stated already in Section \ref{sec:MML}, are immutable objects and therefore an operation on an immutable object does not change the object itself, but produce a new object based on the current object and the arguments. This leads to a massive computational overhead. In the first test case with 1'000 elements, the execution time using CC\_LINKED\_LIST is nearly 4'500 times larger if model contracts are enabled then if they are disabled. This also explains the cancellation of the second test case with 100'000 elements using CC\_LINKED\_LIST with contracts enabled.
+
+\section{Future Work}
+\label{sec:FutureWork}
+
+A major goal for the future is certainly to add more effective classes to the new EiffelBase Library with Complete Contracts to be able to use the library.
+
+Other suggestions for future investigation are listed below in random order:
+\begin{itemize}
+	\item Better integration into the Eiffel Studio IDE so that Dynamic Frame Contracts could be generated automatically.
+	\item Integrate a possibility to deactivate model contracts during runtime. Like in the \emph{finalizing} dialog where contracts in general can be enabled or disabled.
+\end{itemize}

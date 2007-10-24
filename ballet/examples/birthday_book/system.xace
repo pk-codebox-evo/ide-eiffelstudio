@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+
+<system name="root_class">
+	
+	<description>
+		Describe your system here.
+	</description>
+
+	<root class="ROOT_CLASS" creation="make"/>
+
+	<cluster name="root_cluster" location="."/>
+	<cluster name="flat_linked_list" location="${BALLET}/library/mml/example"/>
+
+	<mount location="${GOBO}/library/kernel.xace"/>
+	<mount location="${GOBO}/library/library.xace"/>
+	<mount location="${BALLET}/library/mml/library.xace"/>
+
+</system>

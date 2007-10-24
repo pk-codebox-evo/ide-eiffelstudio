@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="ISO-8859-1"?><system xmlns="http://www.eiffel.com/developers/xml/configuration-1-0-0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.eiffel.com/developers/xml/configuration-1-0-0 http://www.eiffel.com/developers/xml/configuration-1-0-0.xsd" name="integer" uuid="2CCC3761-FC63-4DB3-81A6-9428550340C6">
+	<target name="integer">
+		<root class="INTEGER_TEST" feature="make"/>
+		<option warning="true">
+			<assertions precondition="true" postcondition="false" check="false" invariant="false" loop="false"/>
+		</option>
+		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
+		<cluster name="root_cluster" location=".\" recursive="true">
+			<file_rule>
+				<exclude>EIFGENs</exclude>
+				<exclude>.svn</exclude>
+				<exclude>CVS</exclude>
+			</file_rule>
+		</cluster>
+	</target>
+</system>

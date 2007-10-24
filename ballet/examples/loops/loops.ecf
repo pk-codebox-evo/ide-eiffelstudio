@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="ISO-8859-1"?><system xmlns="http://www.eiffel.com/developers/xml/configuration-1-0-0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.eiffel.com/developers/xml/configuration-1-0-0 http://www.eiffel.com/developers/xml/configuration-1-0-0.xsd" name="loops" uuid="A013A6CA-433C-462F-B1D8-3BA95AB96396">
+	<target name="loops">
+		<root class="ROOT_CLASS" feature="make"/>
+		<option warning="true">
+			<assertions precondition="true" postcondition="true" check="true" invariant="true" loop="true"/>
+		</option>
+		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
+		<cluster name="root_cluster" location=".\" recursive="true">
+			<file_rule>
+				<exclude>EIFGENs</exclude>
+				<exclude>.svn</exclude>
+				<exclude>CVS</exclude>
+			</file_rule>
+		</cluster>
+	</target>
+</system>

@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+
+<system name="main">
+  
+  <description>
+    An example system with a BANK_ACCOUNT class that has a problem
+    with aliasing in the transfer command.
+  </description>
+  
+  <root class="MAIN" creation="make"/>
+  
+  <cluster name="root_cluster" location="."/>
+  
+  <mount location="${GOBO}/library/kernel.xace"/>
+  <mount location="${GOBO}/library/library.xace"/>
+  
+</system>

@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+
+<project name="model_no_frame">
+
+	<description>
+		Describe the project model_no_frame here.
+	</description>
+
+	<inherit>
+		<parent location="${GOBO}/misc/eiffel.eant">
+			<redefine target="init_system"/>
+		</parent>
+	</inherit>
+
+	<target name="init_system">
+		<set name="system" value="model_no_frame"/>
+		<set name="system_dir" value="."/>
+	</target>
+
+</project>

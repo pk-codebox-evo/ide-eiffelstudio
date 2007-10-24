@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+
+<project name="main">
+
+  <description>
+    A stack implemented by an array. ARRAYED_STACK is the pure stack,
+    ARRAYED_STACK_MML is the same stack containing MML contracts.
+  </description>
+  
+  <inherit>
+    <parent location="${GOBO}/misc/eiffel.eant">
+      <redefine target="init_system"/>
+    </parent>
+  </inherit>
+  
+  <target name="init_system">
+    <set name="system" value="main"/>
+    <set name="system_dir" value="."/>
+  </target>
+  
+</project>

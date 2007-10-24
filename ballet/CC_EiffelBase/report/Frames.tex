@@ -1,0 +1,87 @@
+\chapter{Frames}
+\label{sec:Frames}
+
+In this Chapter the \emph{frame problem} is introduced and a short overview over the topic of Frames and in particular Dynamic Frames is given. For more information see also \cite{Kassios06Dynamic, SchoellerDynamic, Schoeller06Eiffel0}.
+
+\section{Frame problem}
+\label{sec:FrameProblem}
+
+The \emph{frame problem}, the problem of how to formalize framing requirements, is a central issue in formal logic, first studied in the context of artificial intelligence in the 1960s. It was initially formulated as the problem of expressing a dynamical domain in logic without explicitly specifying which conditions are \emph{not} affected by an action. Artificial intelligence tries to model the logical thinking of a human being. For the brain it is fairly simple to connect many things logically. But for a computer or a robot, an infinite number of things has to be specified. The \emph{frame problem} is that specifying only which conditions are changed by an action do not allow, in logic, to conclude that all other conditions are not changed. To solve this problem one could write so called frame axioms which are logic formulas describing explicitly the non-effects of each action. But since most actions do not affect most properties this solution is not suitable for large systems.
+
+The \emph{frame problem} has then been taken up by philosophers. In philosophy, it is about rationality in general, whether it is possible to limit the scope of the reasoning required to derive the consequences on an action. In computer science the problem gained importance concerning program verification. Program verification tools are but logic tools which analyze a program. Knowing what the program should do, for example from a contract, and then decide if the program really does things right.
+
+A significant aspect of the behavior of any operation is what parts of the world it leaves unchanged. Usually, a specification for an operation is split into a functional requirement, which describes what changes the specified operation brings about and a framing requirement, which describes the frame of the operation, the part of the world which the operation is allowed to change. Anything outside the frame is left unchanged. In a modular setting, we don't know all the variables of the program at the time we specify a computation. There is no proper way to write a contract specifying that only some variables are changed but any other variable is left unchanged. One solution would be that such a statement is translated into a relational specification at the client side when all involved variables are known. But in the presence of pointers, this translation might be unsound. Independence of variables is important for guaranteeing absence of abstract aliasing. But the combination of two important features of object oriented programming, namely encapsulation and the support for pointers, makes the \emph{frame problem} really hard to solve because the combination introduces the possibility of aliasing.
+
+\section{Dynamic Frames}
+\label{sec:DynamicFrames}
+
+As stated above, the \emph{frame problem} in general is to specify which variables are affected by a computation and which are not. Existing solutions concerning the \emph{frame problem} guarantee the absence of abstract aliasing but for the price of more or less strong restrictions for the programmer. \cite{Kassios06Dynamic} introduced a formal theory that supports specification variables and pointers without programming restrictions. The specification language is strong enough to express the desired property that at the present state, the values of two variables are independent.
+
+For Kassios, a frame is nothing more than a specification variable whose value is a set of memory locations. The new contribution of Kassios is that the frame itself is part of the state. The frame is like a function depending on the state. It is not a constant but it is dynamic which means the set of memory locations can change. For example suppose we have a frame which frames a whole list of elements. If we insert a new element, it is automatically framed too and its memory address is added to the frame variable. The virtual address of the frame or the specification variable respectively can be itself part of the frame. Which in fact means that frames could frame themselves.
+
+Kassios introduced three new definitions or framing specifications which are defined below. The following notation is used: $f$ defines a frame, $v$ defines a specification variable, $v'$ defines the final value of a specification value, $x$ and $y$ define program variables, $\sigma$ defines a state, Used defines the set of used memory locations, Unused defines the set of unused memory locations. For more detailed explanations please cf. Section 2.2 in \cite{Kassios06Dynamic}.
+
+The first specification (Equation \ref{eq:Preservation}) is \emph{preservation} which is satisfied by every computation that does not touch frame f.
+
+\begin{equation}
+	\Xi f := \sigma' \triangleright f = \sigma \triangleright f
+	\label{eq:Preservation}
+\end{equation}
+
+The second specification (Equation \ref{eq:Modification}) is \emph{modification} which is satisfied by every computation that only touches region f or at most allocates new memory. That implies all allocated locations other than f are not touched.
+
+\begin{equation}
+	\Delta f := \Xi (\text{Used} \; \backslash \; f)
+	\label{eq:Modification}
+\end{equation}
+
+The third specification (Equation \ref{eq:SwingingPivot}) is the \emph{swinging pivot requirement} which does not allow the frame f to increase in any other way than allocation of new memory.
+
+\begin{equation}
+	\Lambda f := f' \subseteq f \cup \text{Unused}
+	\label{eq:SwingingPivot}
+\end{equation}
+
+Equation \ref{eq:Framing} states that a variable v depends only on locations in f. Leaving these locations untouched preserves the value of v.
+
+\begin{equation}
+	f \; \text{\bf{frames}} \; v := \forall \sigma' \cdot \Xi f \Rightarrow v' = v
+	\label{eq:Framing}
+\end{equation}
+
+Independence of two variables can be expressed as disjointness of dynamic frames. Disjointness of frames is an important property. It is desired to establish and preserve disjointness. To preserve disjointness, dynamic frames usually frame themselves.
+
+\begin{equation}
+	f \; \text{\bf{frames}} \; x  \; \wedge \; g \; \text{\bf{frames}} \; y \; \wedge \; \text{\textit{disjoint}} [f;g] \; \wedge \; \Delta f \Rightarrow y' = y
+	\label{eq:Disjoint}
+\end{equation}
+
+\begin{equation}
+	\text{\textit{disjoint}} [f;g] \; \wedge \; \Delta f \; \wedge \; \Lambda f \Rightarrow \text{\textit{disjoint}} [f';g']
+	\label{eq:Disjoint2}
+\end{equation}
+
+\section{Dynamic Frames in Eiffel}
+\label{sec:DynamicFramesInEiffel}
+
+Every feature in every class in the new base library uses new contract clauses. They are called \emph{use} and \emph{modify} and are used just like normal contracts. An example is given in Listing \ref{lst:put_feature_frames}.
+
+The \emph{use} clause specifies which frames are used (read) by calling this feature. In contrast, the \emph{modify} clause specifies which frames are possibly modified by calling this feature. If a feature is a query, only a \emph{use} clause is necessary. If a feature is a command, both \emph{use} and \emph{modify} clauses are needed. Additionally, a command should provide in its \emph{ensure} clause the statement `\lstinline!confined! \emph{frame\_name}'. This statement ensures the third of Kassios framing specifications (Equation \ref{eq:SwingingPivot}).
+
+\begin{lstlisting}[float,caption=put feature of the CC\_COLLECTION class.,label=lst:put_feature_frames]
+feature -- Element change
+	put (v: G) is
+			-- Ensure that structure includes `v'.
+		require
+			can_add_element: can_put (v)
+		use
+			use_own_representation: representation
+		modify
+			modify_own_representation: representation
+		deferred
+		ensure
+			model_updated: model |=| old model.extended (v)
+			model_corresponds: model.contains (v)
+			confined representation
+		end
+\end{lstlisting}

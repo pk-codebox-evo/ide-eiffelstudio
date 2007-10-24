@@ -1,0 +1,25 @@
+using System;
+
+public class Program
+{
+  static void Main(string[]! args)
+    requires forall{string s in args; s != null};
+  {
+	b = new IntegerStore(null);
+	a = new IntegerStore(b);
+	integerStoresAssign(a, b);
+  }
+
+  private static void integerStoresAssign(IntegerStore a, IntegerStore b)
+	requires a != null;
+	requires b != null;
+	requires a != b;
+	ensures a.value() == 4;
+    ensures b.value() == 5;
+  {
+	a.set_value(4);
+	b.set_value(5);
+  }
+  
+  public static IntegerStore a, b;
+}

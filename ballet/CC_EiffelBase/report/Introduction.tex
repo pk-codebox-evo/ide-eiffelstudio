@@ -1,0 +1,31 @@
+\pagenumbering{arabic} % change to normal numbers for the real chapters
+
+\chapter{Introduction}
+\label{sec:Introduction}
+
+\section{Motivation}
+\label{sec:Motivation}
+
+The contracts currently used in Eiffel (cf. \cite{Meyer92Eiffel, Meyer92Applying, Meyer97Object}) are strong under-specifications. There are always some properties when invoking Eiffel features that are not expressed through the contracts. This is specially true when it comes to express what does not change through feature invocation. This makes the formal verification of Eiffel impossible, as in the case of verification we have to assume the worst possible implementation that still satisfies the contract.
+
+To overcome these lacks, two approaches will be used to add full functional specifications to Eiffel: Frames and Models.
+\begin{itemize}
+\item Dynamic Frame Contracts (DFC) (cf. \cite{SchoellerDynamic}) enable us to talk about infinite sets of objects. They are contractual expressions describing the read effect and the write effect of a feature. With DFC we can solve the \emph{frame problem} (cf. Section \ref{sec:FrameProblem}) and exclude unwanted side effects.
+\item Models are mathematical structures which describe the abstract state of an object. These mathematical structures are built out of sets, relations, functions and sequences. The currently available library called MML (cf. \cite{Widmer04Reusable}, downloadable from \cite{MML}) provides this functionality. This model library is based on a typed set theory of finite sets.
+\end{itemize}
+
+This semester thesis is an effort to redevelop a major part of the EiffelBase Library to support Dynamic Frame Contracts and Models. The goal is to redesign and implement the LINKED\_LIST class in the EiffelBase Library and all supporting classes to allow full functional specifications and therefore formal verification. The redesign of the EiffelBase Library structure should lead to a cleaner and smoother Base Library.
+
+\section{Related Work}
+\label{sec:RelatedWork}
+
+Since the \emph{frame problem} (cf. Section \ref{sec:FrameProblem}) is a fairly old problem, a lot of ideas and solutions exist. Earlier solutions \cite{Mueller01Modular, Leino02Data, Leino04Object} impose several restrictions to the programmer. The newest solution by Kassios \cite{Kassios06Dynamic} proposes a formal theory without programming restrictions. Based on this solution, Schoeller et al. added Dynamic Frames to the Eiffel language (cf. \cite{SchoellerDynamic, Schoeller06Eiffel0}).
+
+The idea of using models for program specification is relatively old (cf. \cite{Hoare72Proof}). JML \cite{Leavens98Preliminary} provides models for the Java language. Spec\# \cite{Barnett04The} provides predefined sets and sequences for the C\# language. For Eiffel, the MML \cite{Widmer04Reusable, Schoeller03Strengthening, Schoeller06Making} has been developed.
+
+This semester thesis is the first approach to combine these two techniques (Dynamic Frames and Models) in one single design to allow full specifications and therefore formal verification.
+
+\section{Overview}
+\label{sec:Overview}
+
+In Chapter \ref{sec:Frames} we present a short overview over the concept of Frames. In Chapter \ref{sec:Models} a short introduction into the concept of Models is given. In Chapter \ref{sec:LibraryDesign} the redesigned and reimplemented Library is presented. In particular the new Library using DFCs and Models is introduced (Section \ref{sec:EiffelBaseWithCompleteContracts}) and differences to the original EiffelBase Library are emphasized (Section \ref{sec:DifferencesToEiffelBase}). Finally we present our results, conclusions and ideas for future work in Chapter \ref{sec:ResultsAndConclusions}.

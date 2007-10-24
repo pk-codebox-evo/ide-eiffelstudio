@@ -1,0 +1,16 @@
+- compilation does not always setup the byte_code tree correct (e.g. if one adds a use frame it is likely that everything is messed up - to go on the project seems to be CLEANED and compiled from scratch)
+- supplier side for frames: POGs need to be generated as assert-statements
+- generate POG for sideeffect-freeness of queries
+- BPL_BN_IMPLEMENTATION_WRITER has to be fixed
+- inherited FRAMES, confined keyword
+- TODOs in BPL_FEATURE_LIST_GENERATOR
+- models
+
+- typecheck "confined EXRR": EXPR should be (a subtype of) FRAME
+- confined is only allowed in postconditions in commands
+- ast_feature_checker_generator create meaningful error, if type of frame_specification is wrong
+
+- types which are declared in the background theory are detected only by the
+  class name -> we should handle cluster shadowing
+
+- generics do not work (e. g. attribute c: MY_CELL [STRING]), they crash ballet

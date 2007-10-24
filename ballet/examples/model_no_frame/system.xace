@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+
+<system name="model_no_frame">
+
+	<description>
+		Describe your system here.
+	</description>
+
+	<root class="MODEL_NO_FRAME" creation="make"/>
+
+	<cluster name="model_no_frame" location="."/>
+
+	<mount location="${GOBO}/library/kernel.xace"/>
+	<mount location="${GOBO}/library/library.xace"/>
+	<mount location="${BALLET}/library/mml/library.xace"/>
+
+</system>

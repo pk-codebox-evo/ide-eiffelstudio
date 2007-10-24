@@ -1,0 +1,113 @@
+\chapter{Models}
+\label{sec:Models}
+
+Reusable components should have precise specifications of their functionality. The creation of such precise specifications is a difficult but important task because precise specifications enable the client to understand the requirements for the usage of these components. An additional benefit for the component's creator is implementation hiding. Such a decoupling of different views on a component (author versus client) is needed for reuse and evolution of these components. \cite{Schoeller03Strengthening} gives an overview over the problem of creating precise specifications.
+
+The creation of specifications in general is error-prone and often components are under-specified or over-specified. If they are under-specified, they leave too much space for misleading assumptions. If they are over-specified, they possibly violate information hiding, making reuse and evolution nearly impossible. As already described in Section \ref{sec:FrameProblem}, the \emph{frame problem} is the best known specification problem because it is nearly impossible to clearly describe what has not changed during execution of a feature.
+
+Models are mathematical constructs that describe the abstract behavior of a data type without dealing with the actual implementation. Examples are sequences, sets, bags or relations. The idea was to enable precise specifications through the usage of models. Even Hoare in 1972 (cf. \cite{Hoare72Proof}) related program verification to abstract data types and models.
+
+\section{Mathematical Model Library (MML)}
+\label{sec:MML}
+
+The mathematical model library (MML) resulted from the Master Thesis of Tobias Widmer (cf. \cite{Widmer04Reusable}) and an improved version can be downloaded from \cite{MML}. This library introduced a way to make specifications complete by using pure mathematical models that describe the abstract behavior of data types.
+
+Models are represented by immutable objects. Immutable objects are objects that never change once they are created. Therefore the identity of such a model objects is defined through its state. That means that two objects that have the same state (and therefore have the same values) are considered equal. Operations on immutable objects do not change the object itself, but produce new objects based on the current object and the arguments.
+
+The MML is used in this semester thesis to create models in classes and to be able to write model contracts for features of the new base library.
+
+\section{Models in Eiffel}
+\label{sec:ModelsInEiffel}
+
+Every class in the new base library contains a special query that constructs the model from the current state of the instance. This query should be side-effect free and should only create the model object. This query is named \emph{model}.
+
+An example of such a \emph{model} query is given in Listing \ref{lst:container_model}. Here a bag is chosen as a model for a general container to contain its elements. The bag is created using a default implementation from the MML. Then all elements of the container are added to the bag object using an intermediate linear representation.
+
+\begin{lstlisting}[float,caption=model feature of the CC\_CONTAINER class.,label=lst:container_model]
+feature -- Model
+	model: MML_BAG [G] is
+			-- Model of a general container
+		use
+			use_own_representation: representation
+		local
+			linear: CC_LINEAR [G]
+		do
+			create {MML_DEFAULT_BAG [G]} Result.make_empty
+			linear := linear_representation
+
+			from
+				linear.start
+			until
+				linear.off
+			loop
+				Result := Result.extended (linear.item)
+				linear.forth
+			end
+		ensure
+			result_not_void: Result /= Void
+		end
+\end{lstlisting}
+
+Such a \emph{model} query is then used in contracts of features of this class. An example is given in Listing \ref{lst:put_feature_models} in the \emph{ensure} clause. 
+
+\begin{lstlisting}[float,caption=put feature of the CC\_COLLECTION class.,label=lst:put_feature_models]
+feature -- Element change
+	put (v: G) is
+			-- Ensure that structure includes `v'.
+		require
+			can_add_element: can_put (v)
+		use
+			use_own_representation: representation
+		modify
+			modify_own_representation: representation
+		deferred
+		ensure
+			model_updated: model |=| old model.extended (v)
+			model_corresponds: model.contains (v)
+			confined representation
+		end
+\end{lstlisting}
+
+\emph{Model} queries themselves can be built from several sub-models. An example is given in Listing \ref{lst:traversable_model}. Here the \emph{model} is built from a \emph{model\_sequence} which represents the sequence itself with all elements and a \emph{model\_cursor} which represents the current cursor position of the internal cursor. The final \emph{model} is a pair of \emph{model\_sequence} and \emph{model\_cursor}. Two traversable objects are therefore equal if and only if they contain the same elements in the same order and the internal cursor is at the same location.
+
+\begin{lstlisting}[float,caption=Model and sub-models from the CC\_TRAVERSABLE class.,label=lst:traversable_model]
+feature -- Model
+	model_sequence: MML_SEQUENCE [G] is
+			-- Model of a general traversable structure
+		use
+			use_own_representation: representation
+		local
+			linear: CC_LINEAR [G]
+		do
+			create {MML_DEFAULT_SEQUENCE [G]} Result.make_empty
+			linear := linear_representation
+
+			from
+				linear.start
+			until
+				linear.off
+			loop
+				Result := Result.extended (linear.item)
+				linear.forth
+			end
+		ensure
+			result_not_void: Result /= Void
+		end
+
+	model_cursor: INTEGER is
+			-- Model of a cursor for traversal
+		use
+			use_own_representation: representation
+		deferred
+		end
+
+	model: MML_PAIR [MML_SEQUENCE [G], INTEGER] is
+			-- Model of the traversable structure
+		use
+			use_own_representation: representation
+		do
+			create {MML_DEFAULT_PAIR [MML_SEQUENCE [G], INTEGER]} Result.make_from (model_sequence, model_cursor)
+		ensure
+			result_not_void: Result /= Void
+		end
+\end{lstlisting}

@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{07C4E3D1-6B67-4060-8A92-940DB82041ED}") = "integer_store", "integer_store\integer_store.sscproj", "{47F5E361-4D4F-45F8-899B-F05AEC12BFD2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|.NET = Debug|.NET
+		Release|.NET = Release|.NET
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{47F5E361-4D4F-45F8-899B-F05AEC12BFD2}.Debug|.NET.ActiveCfg = Debug|.NET
+		{47F5E361-4D4F-45F8-899B-F05AEC12BFD2}.Debug|.NET.Build.0 = Debug|.NET
+		{47F5E361-4D4F-45F8-899B-F05AEC12BFD2}.Release|.NET.ActiveCfg = Release|.NET
+		{47F5E361-4D4F-45F8-899B-F05AEC12BFD2}.Release|.NET.Build.0 = Release|.NET
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

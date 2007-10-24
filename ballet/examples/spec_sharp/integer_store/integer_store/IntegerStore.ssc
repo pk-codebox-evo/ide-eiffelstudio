@@ -1,0 +1,26 @@
+using System;
+using Microsoft.Contracts;
+
+public class IntegerStore{
+	public IntegerStore(IntegerStore an_other){
+		other = an_other;
+	}
+	
+	[Pure]
+	public int value(){
+		if(other == null)
+			return v;
+		else
+			return v + other.value();
+		
+	}
+	
+	public void set_value(int a_value){
+		if(other == null)
+			v = a_value;
+		else
+			v = a_value - other.value();
+	}
+	private int v;
+	private IntegerStore other;
+}

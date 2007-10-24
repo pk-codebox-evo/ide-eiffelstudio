@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="ISO-8859-1"?><system xmlns="http://www.eiffel.com/developers/xml/configuration-1-0-0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.eiffel.com/developers/xml/configuration-1-0-0 http://www.eiffel.com/developers/xml/configuration-1-0-0.xsd" name="frame_specification" uuid="F30C1C6D-DC67-4984-80DA-DF75718D60A0">
+	<target name="frame_specification">
+		<root class="FRAME_SPECIFICATION" feature="make"/>
+		<option trace="false" profile="false" debug="false" warning="true">
+			<assertions precondition="true" postcondition="true" check="true" invariant="true" loop="true"/>
+			<warning name="export_class_missing" enabled="false"/>
+			<warning name="old_verbatim_strings" enabled="false"/>
+			<warning name="syntax" enabled="false"/>
+			<warning name="vjrv" enabled="false"/>
+		</option>
+		<setting name="address_expression" value="false"/>
+		<setting name="array_optimization" value="false"/>
+		<setting name="check_vape" value="true"/>
+		<setting name="cls_compliant" value="true"/>
+		<setting name="console_application" value="true"/>
+		<setting name="dead_code_removal" value="true"/>
+		<setting name="dotnet_naming_convention" value="false"/>
+		<setting name="dynamic_runtime" value="false"/>
+		<setting name="exception_trace" value="false"/>
+		<setting name="il_verifiable" value="true"/>
+		<setting name="inlining" value="false"/>
+		<setting name="inlining_size" value="4"/>
+		<setting name="line_generation" value="false"/>
+		<setting name="msil_generation" value="false"/>
+		<setting name="msil_generation_type" value="exe"/>
+		<setting name="multithreaded" value="false"/>
+		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
+		<library name="time" location="$ISE_LIBRARY\library\time\time.ecf"/>
+		<cluster name="frame_specification" location=".\"/>
+		<cluster name="ise" location="${ISE_EIFFEL}\library\"/>
+		<cluster name="mml" location="${MML_HOME}\models\">
+			<cluster name="framework" location="${MML_HOME}\framework\"/>
+			<cluster name="implementation" location="${MML_HOME}\implementation\">
+				<cluster name="default" location="$|default\"/>
+			</cluster>
+		</cluster>
+	</target>
+</system>

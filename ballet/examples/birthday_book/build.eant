@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+
+<project name="root_class">
+
+	<description>
+		Describe the project birthday_book here.
+	</description>
+
+	<inherit>
+		<parent location="${GOBO}/misc/eiffel.eant">
+			<redefine target="init_system"/>
+		</parent>
+	</inherit>
+
+	<target name="init_system">
+		<set name="system" value="root_class"/>
+		<set name="system_dir" value="."/>
+	</target>
+
+</project>

@@ -1,0 +1,94 @@
+\documentclass[a4paper,12pt,twoside]{book}
+
+% math imports
+\usepackage{amsmath}
+%\usepackage{amssymb}
+%\usepackage{amstext}
+%\usepackage{amsthm}
+%\usepackage{amsfonts}
+
+% picture imports
+\usepackage{graphicx}
+\usepackage{color}
+\definecolor{lbcolor}{rgb}{0.85,0.85,0.85}
+
+% import for sourcecode 
+\usepackage[final]{listings}
+\lstloadlanguages{Eiffel}
+\lstset{language=Eiffel,tabsize=2,backgroundcolor=\color{lbcolor},frame=tb,breaklines=true,morekeywords={use,modify,confined}}
+
+% the actual document
+\begin{document}
+
+\pagenumbering{roman}
+
+% the titlepage
+\title{Complete Contracts for EiffelBase}
+\author{Marco Zietzling}
+
+\begin{titlepage}
+	\begin{flushleft}
+		\includegraphics[width=100pt]{pictures/SE.png}
+	\end{flushleft}
+
+	\vskip 50pt
+	\begin{center}
+		\Huge \textbf{Complete Contracts for EiffelBase}
+	\end{center}
+
+	\vskip 100pt
+	\begin{flushright}
+		\large \textbf{Marco Zietzling}\\
+		\vskip 10pt
+		02-906-998\\
+		Semester Thesis\\
+		Summer 2007\\
+	\end{flushright}
+	
+	\vskip 20pt
+	\begin{flushright}
+		\large Chair of Software Engineering\\
+		Department of Computer Science\\
+		ETH Z\"{u}rich
+	\end{flushright}
+		
+	\vskip 20pt
+	\begin{flushright}
+		\large Bernd Schoeller\\
+		Prof. Bertrand Meyer
+	\end{flushright}
+
+	\vskip 50pt
+	\begin{tabular*}{1.00\textwidth}{@{\extracolsep{\fill}}lr}
+		 \includegraphics[width=100pt]{pictures/ETH.png} &
+		 \includegraphics[width=100pt]{pictures/INF.png}
+	\end{tabular*}
+	\vfil
+\end{titlepage}
+
+% prolog
+\addtolength{\parskip}{0.5\baselineskip} % add extra spacing between paragraphs
+\include{Abstract}
+\include{Acknowledgments}
+
+% table of contents
+\addtolength{\parskip}{-0.5\baselineskip} % reset paragraph spacing
+\tableofcontents
+\cleardoublepage
+
+% chapters
+\addtolength{\parskip}{0.5\baselineskip} % add extra spacing between paragraphs
+\include{Introduction}
+\include{Frames}
+\include{Models}
+\include{LibraryDesign}
+\include{Conclusions}
+
+% epilog
+\addtolength{\parskip}{-0.5\baselineskip} % reset paragraph spacing
+\addcontentsline{toc}{chapter}{Bibliography}
+\bibliographystyle{alpha}
+\bibliography{References}
+
+% end of document
+\end{document}
