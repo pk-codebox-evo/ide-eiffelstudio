@@ -1,7 +1,0 @@
-class EV_SCROLLABLE_AREA
-
-inherit
-
-	CONTAINER
-
-end -- class EV_SCROLLABLE_AREA

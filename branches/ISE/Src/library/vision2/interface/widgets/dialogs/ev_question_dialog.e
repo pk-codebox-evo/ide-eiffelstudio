@@ -1,7 +1,0 @@
-class EV_QUESTION_DIALOG
-
-inherit
-
-	MESSAGE_DIALOG
-
-end -- class EV_QUESTION_DIALOG

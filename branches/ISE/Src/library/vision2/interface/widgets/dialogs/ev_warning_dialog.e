@@ -1,7 +1,0 @@
-class EV_WARNING_DIALOG
-
-inherit
-
-	MESSAGE_DIALOG
-
-end -- class EV_WARNING_DIALOG

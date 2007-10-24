@@ -1,7 +1,0 @@
-class EV_RADIO_MENU_ITEM
-
-inherit
-
-	CHECK_MENU_ITEM
-
-end -- class EV_RADIO_MENU_ITEM
