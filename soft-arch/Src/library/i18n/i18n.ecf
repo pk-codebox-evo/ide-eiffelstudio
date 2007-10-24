@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="ISO-8859-1"?><system xmlns="http://www.eiffel.com/developers/xml/configuration-1-0-0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.eiffel.com/developers/xml/configuration-1-0-0 http://www.eiffel.com/developers/xml/configuration-1-0-0.xsd" name="i18n" uuid="C95528D5-EEC8-4BA8-B8C2-00E7DAC723C8" library_target="i18n">
+	<target name="i18n">
+		<description>i18n: internationalize applications.</description>
+		<option>
+			<assertions precondition="true" postcondition="true" check="true" invariant="true" loop="true"/>
+		</option>
+		<file_rule>
+			<exclude>/\.svn</exclude>
+			<exclude>/documents$</exclude>
+			<exclude>/mo_files$</exclude>
+			<exclude>/po_files$</exclude>
+			<exclude>/EIFGENs$</exclude>
+			<exclude>/example$</exclude>
+			<exclude>/locale$</exclude>
+		</file_rule>
+		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf" readonly="True"/>
+		<library name="gobo" location="$ISE_LIBRARY\library\gobo.ecf" readonly="True"/>
+		<library name="time" location="$ISE_LIBRARY\library\time\time.ecf" readonly="True"/>
+		<library name="wel" location="$ISE_LIBRARY\library\wel\wel.ecf" readonly="True">
+			<condition>
+				<platform value="windows"/>
+			</condition>
+		</library>
+		<cluster name="i18n" location="." recursive="true"/>
+		<cluster name="locale" location="./locale" recursive="true">
+			<condition>
+				<platform value="unix"/>
+			</condition>
+			<file_rule>
+				<exclude>/imp_mswin$</exclude>
+				<exclude>/imp_macos$</exclude>
+			</file_rule>
+		</cluster>
+		<external_include location="$(ISE_LIBRARY)/C/run-time"/>
+		<cluster name="locale_mswin" location="./locale" recursive="true">
+			<condition><platform value="windows"/></condition>
+			<file_rule>
+				<exclude>/imp_unix$</exclude>
+				<exclude>/imp_macos$</exclude>
+			</file_rule>
+		</cluster>
+		<cluster name="locale_macos" location="./locale" recursive="true">
+			<condition><platform value="macintosh"/></condition>
+			<file_rule>
+				<exclude>/imp_unix$</exclude>
+				<exclude>/imp_mswin$</exclude>
+			</file_rule>
+		</cluster>
+	</target>
+</system>
