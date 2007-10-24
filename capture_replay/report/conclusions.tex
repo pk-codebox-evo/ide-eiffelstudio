@@ -1,0 +1,16 @@
+\chapter{Conclusions}
+In the following we will point out areas of future work for selective capture and replay for Eiffel and draw the conclusions of this thesis.
+
+
+\section{Future Work}
+A main target of future work on selective capture and replay for Eiffel must be to increase its performance. As pointed out before, it is necessary to change parts of the technique in order to reach an efficiency that can be compared with SCARPE.
+
+Another area for future work are the implementation's current limitations. There are some limitations that restrict its usage to well prepared examples, for example the missing instrumentation of attribute accesses and the missing support for manifest strings. Making the current available features more robust is another area of work, for example the object ID support can be further improved so that it works under all circumstances. This requires additional example applications and test cases.
+
+Native reflection support is crucial for the further success of selective capture and replay for Eiffel. The use of Erl-G is more to be seen as a workaround than a solution, because (a) there are some missing features, like access to selectively exported features and (b) it raises the necessary compile time of a project enabled for selective capture and replay to hours, making it necessary to have a dedicated machine to compile the projects. No developer will accept this increase of compile time on project he is working on, therefore selective capture and replay for Eiffel is doomed in productive environments, as long as there is no native reflection support in Eiffel. But native reflection support is something that this project can not influence, this feature must be provided by the language maintainers.
+
+
+\section{Conclusion}
+Our implementation of selective capture and replay for Eiffel shows that selective capture and replay is applicable to Eiffel. We found no fundamental problems, that could limit its implementation in Eiffel, neither for the implemented features nor the missing features.
+
+The performance measurements show that optimizing the current implementation alone will not result in an efficiency that is comparable to SCARPE. It is necessary to change some basic techniques of the approach, for example incorporating the presented single-sided instrumentation (\sectref{lbl:single-sided_instrumentation}).

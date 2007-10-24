@@ -1,0 +1,130 @@
+\documentclass[a4paper,twoside,openright,10pt]{report}
+%picture imports
+\usepackage{graphicx}
+\usepackage{color}
+ \usepackage{fancyhdr}
+\definecolor{lbcolor}{rgb}{0.85,0.85,0.85}
+\definecolor{classcolor}{rgb}{0,0.5,1}
+%sourcecode formatting
+\usepackage[final]{listings}
+\usepackage{url}
+
+\lstloadlanguages{Eiffel,bash,Java}
+%\newcommand{\eiffellisting}{\lstset{basicstyle=\small,language=OOSC2Eiffel,tabsize=2,backgroundcolor=\color{lbcolor},frame=tb,breaklines=true},morekeywords={require,local,end}}
+\newcommand{\eiffellisting}{\lstset{basicstyle=\small,language=OOSC2Eiffel,tabsize=2,backgroundcolor=\color{lbcolor},frame=tb,breaklines=true}}
+\newcommand{\bashlisting}{\lstset{basicstyle=\small\tt,language=bash,tabsize=2,backgroundcolor=\color{lbcolor},frame=tb,breaklines=true,morekeywords={svn,geant,mkdir,activate_estudio}}}
+\newcommand{\javalisting}{\lstset{basicstyle=\small,language=Java,tabsize=2,backgroundcolor=\color{lbcolor},frame=tb,breaklines=true}}
+
+
+\newcommand{\figref}[1]{Figure \ref{#1}}
+\newcommand{\listref}[1]{Listing \ref{#1}}
+\newcommand{\sectref}[1]{Section \ref{#1}}
+\newcommand{\tabref}[1]{Table \ref{#1}}
+\newcommand {\class}[1] {\textcolor{blue}{\textit{#1}}}
+\newcommand {\feature}[1]{\textit{#1}}
+\newcommand{\identifier}[1]{\textit{#1}}
+\newcommand{\keyword}[1] {\textcolor{blue}{\textbf{#1}}}	
+\newcommand{\inlinejava}[1]{\lstinline[language=Java,basicstyle=\tt,backgroundcolor=\color{white}]{#1}}
+\newcommand{\inlineeiffel}[1]{\lstinline[language=OOSC2Eiffel,basicstyle=\tt,backgroundcolor=\color{white}]{#1}}
+\pagenumbering{roman}
+
+\begin{document}
+
+%opening
+\title{Selective Capture and Replay for Eiffel}
+\author{Stefan Sieber}
+
+\begin{titlepage}
+	\begin{flushleft}
+		\includegraphics[width=100pt]{illustrations/SE.png}
+	\end{flushleft}
+
+	\vskip 50pt
+	\begin{center}
+		\Huge \textbf{Capture and Replay for Eiffel}
+	\end{center}
+
+	\vskip 100pt
+	\begin{flushright}
+		\large \textbf{Stefan Sieber}\\
+		\vskip 10pt
+		02-911-790\\
+		Master Thesis\\
+		Summer 2007\\
+	\end{flushright}
+	
+	\vskip 20pt
+	\begin{flushright}
+		\large Chair of Software Engineering\\
+		Department of Computer Science\\
+		ETH Z\"{u}rich
+	\end{flushright}
+		
+	\vskip 20pt
+	\begin{flushright}
+		\large Andreas Leitner\\
+		Prof. Bertrand Meyer
+	\end{flushright}
+
+	\vskip 50pt
+	\begin{tabular*}{1.00\textwidth}{@{\extracolsep{\fill}}lr}
+		 \includegraphics[width=100pt]{illustrations/ETH.png} &
+		 \includegraphics[width=100pt]{illustrations/INF.png}
+	\end{tabular*}
+	\vfil
+\end{titlepage}
+
+%prolog
+\addtolength{\parskip}{0.5\baselineskip} % add extra spacing between paragraphs
+\newpage
+\pagenumbering{roman}
+\include{abstract}
+\include{acknowledgments}
+
+% table of contents
+\addtolength{\parskip}{-0.5\baselineskip} % reset paragraph spacing
+\tableofcontents
+
+\newpage
+
+% chapters
+\pagenumbering{arabic}
+%configure headers:
+%XXX reenable fancyhdr, when fancyhdr.sty was found.
+% \pagestyle{fancy}%
+% \renewcommand{\headrulewidth}{0.3pt}
+% \renewcommand{\footrulewidth}{0pt}
+% \renewcommand{\chaptermark}[1]{\markboth{\MakeUppercase{#1}}{}}
+% \renewcommand{\sectionmark}[1]{\markright{\MakeUppercase{#1}}{}}
+% \fancyhf{}
+% \fancyhead[LE,RO]{\thepage}
+% \fancyhead[LO]{\rightmark}
+% \fancyhead[RE]{\leftmark}
+% \fancyfoot{}
+
+\addtolength{\parskip}{0.5\baselineskip} % add extra spacing between paragraphs
+\include{introduction}
+
+\include{related_work}
+
+\include{preliminaries}
+%-Eiffel compilation model (?)
+%-CDD (?)
+\include{eiffel_implementation}
+
+%Eiffel Vision Beispiel, mit unterschiedlichen observed sets
+
+\include{results}
+
+\include{conclusions}
+
+\appendix
+
+\include{appendix}
+
+\bibliographystyle{plain} 
+\bibliography{thesis}
+
+\end{document}
+
+
