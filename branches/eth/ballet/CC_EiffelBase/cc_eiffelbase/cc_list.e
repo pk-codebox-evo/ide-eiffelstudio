@@ -35,23 +35,17 @@ inherit
 			prune_all as prune_all_indexable,
 			item as i_th alias "[]",
 			put as put_i_th
-		export
-			{NONE}
-				model_indexable,
-				prune_all_indexable
 		redefine
 			is_equal
 		end
 
 	CC_CURSOR_STRUCTURE [G]
 		rename
-			model as model_cursor_structure,
+			model as model_container,
 			extend as extend_end,
 			put as put_end
-		export
-			{NONE}
-				model_cursor_structure
 		undefine
+			model_container,
 			prune_all
 		redefine
 			is_equal
@@ -192,7 +186,7 @@ feature -- Comparison
 			indices_unchanged:
 				index = old index and other.index = old other.index
 			true_implies_same_size: Result implies count = other.count
-			models_are_equal: Result = (model |=| other.model)
+			models_are_equal: Result = (model_sequence |=| other.model_sequence)
 		end
 
 feature -- Cursor movement
