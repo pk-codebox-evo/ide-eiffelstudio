@@ -324,7 +324,7 @@ feature -- Quantifiers
 			end
 		end
 
-feature{MML_ANY} -- Direct Access
+feature{MML_USER} -- Direct Access
 
 	as_array: ARRAY [G] is
 			-- All elements of the set as an array.
