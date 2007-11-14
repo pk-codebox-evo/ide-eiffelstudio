@@ -15,7 +15,9 @@ inherit
 
 create
 	make_from_element,
-	make_empty,
+	make_empty
+
+create{MML_USER}
 	make_from_array
 
 feature {NONE} -- Initialization
@@ -151,13 +153,13 @@ feature -- Properties
 	is_superset_of (other: MML_SET[G]) : BOOLEAN is
 			-- Is `other' a subset of `current'?
 		do
-			Result := other.for_all (agent contains(?))
+			Result := other.is_subset_of (Current)
 		end
 
 	is_subset_of (other: MML_SET[G]) : BOOLEAN is
 			-- Is `other' a superset of `current'?
 		do
-			Result := for_all (agent other.contains(?))
+			Result := for_all (agent other.contains (?))
 		end
 
 	is_proper_subset_of (other: MML_SET[G]) : BOOLEAN is
@@ -173,15 +175,6 @@ feature -- Properties
 		end
 
 feature -- Basic Operations
-
-	cartesian_product (other : MML_SET[ANY]) : MML_SET[MML_PAIR[G, ANY]] is
-			-- The cartesian product of `other' and `current'.
-			-- TypeCheat
-		do
-			check
-				not_implemented: false
-			end
-		end
 
 	intersected (other: MML_SET[G]): MML_SET[G] is
 			-- The intersection of `current' and `other'.
@@ -331,14 +324,6 @@ feature -- Quantifiers
 			end
 		end
 
-feature -- Partition
-
-	is_partitioned_by (other : MML_SET[MML_SET[G]]) : BOOLEAN is
-			-- Is `other' a partition of `current'?
-		do
-			Result := other.for_all (agent is_superset_of(?))
-		end
-
 feature{MML_ANY} -- Direct Access
 
 	as_array: ARRAY [G] is
@@ -365,6 +350,7 @@ feature{NONE} -- Implementation
 			-- Search for `needle' in a, using equal_value.
 			-- Return
 		do
+			last_found_index := 0
 			if a /= Void then
 				from
 					last_found_index := 1

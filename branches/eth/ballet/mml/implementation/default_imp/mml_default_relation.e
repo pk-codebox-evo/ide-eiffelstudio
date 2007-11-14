@@ -24,7 +24,9 @@ inherit
 
 create
 	make_empty,
-	make_from_element,
+	make_from_element
+
+create{MML_USER}
 	make_from_array
 
 feature -- Status Report

@@ -38,7 +38,7 @@ feature -- Status Report
 			-- Does `current' only contain identical elements?
 		deferred
 		ensure
-			definition_of_identity : equal_value (first, second)
+			definition_of_identity : Result = equal_value (first, second)
 		end
 
 feature -- Inversion

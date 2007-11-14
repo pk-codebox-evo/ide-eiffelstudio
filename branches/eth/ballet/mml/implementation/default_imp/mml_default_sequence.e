@@ -14,9 +14,11 @@ inherit
 		end
 
 create
-	make_from_array,
 	make_from_element,
 	make_empty
+
+create{MML_USER}
+	make_from_array
 
 feature {NONE} -- Constructors
 
@@ -144,15 +146,6 @@ feature {MML_COMPARISON} -- Comparison
 		end
 
 feature -- Basic Operations
-
-	cartesian_product (other: MML_SET [ANY]): MML_SET [MML_PAIR [MML_PAIR [INTEGER, G], ANY]] is
-			-- The cartesian product of `other' and `current'.
-			-- TypeCheat
-		do
-			check
-				not_implemented: false
-			end
-		end
 
 	difference (other: MML_SET [MML_PAIR [INTEGER, G]]): MML_RELATION [INTEGER, G] is
 			-- The symmetric difference of `current' and `other'.
@@ -482,14 +475,6 @@ feature -- Inversion
 			-- The inverse relation of `current'.
 		do
 			Result := as_default_relation.inversed
-		end
-
-feature -- Partition
-
-	is_partitioned_by (other: MML_SET [MML_SET [MML_PAIR [INTEGER, G]]]): BOOLEAN is
-			-- Is `other' a partition of `current'?
-		do
-			Result := as_default_relation.is_partitioned_by (other)
 		end
 
 feature -- Projections
