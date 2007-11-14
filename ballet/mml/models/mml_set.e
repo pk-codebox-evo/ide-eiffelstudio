@@ -98,7 +98,6 @@ feature -- Properties
 			other_not_void : other /= Void
 		deferred
 		ensure
-			-- definition_of_subset : Result = other.for_all (agent contains (?))
 			valid_cardinality : Result implies (count >= other.count)
 		end
 
@@ -108,7 +107,6 @@ feature -- Properties
 			other_not_void : other /= Void
 		deferred
 		ensure
-			-- definition_of_superset : Result = other.is_superset_of (Current)
 			valid_cardinality : Result implies (other.count >= count)
 		end
 
@@ -118,9 +116,6 @@ feature -- Properties
 			other_not_void : other /= Void
 		deferred
 		ensure
-			-- definition_of_proper_superset : Result = (is_subset_of (other) and not equal_value (Current,other))
-			-- all_elements_included : Result implies for_all (agent other.contains(?))
-			-- there_exists_element : Result implies other.there_exists (agent negated (?, agent contains (?)))
 			valid_cardinality : Result implies (other.count > count)
 		end
 
@@ -130,23 +125,10 @@ feature -- Properties
 			other_not_void : other /= Void
 		deferred
 		ensure
-			-- definition_of_proper_subset : Result = (is_superset_of (other) and not equal_value (Current,other))
-			-- all_elements_included : Result implies other.for_all (agent contains(?))
-			-- there_exists_element : Result implies there_exists (agent negated (?, agent other.contains(?)))
 			valid_cardinality : Result implies (other.count < count)
 		end
 
 feature -- Basic Operations
-
-	cartesian_product (other : MML_SET[ANY]) : MML_SET[MML_PAIR[G, ANY]] is
-			-- The cartesian product of `other' and `current'.
-			-- TypeCheat
-		require
-			other_not_void : other /= Void
-		deferred
-		ensure
-			definition_of_cartesian_product : Result.count = (count * other.count)
-		end
 
 	intersected (other: MML_SET[G]) : MML_SET[G] is
 			-- The intersection of `current' and `other'.
@@ -154,7 +136,6 @@ feature -- Basic Operations
 			other_not_void : other /= Void
 		deferred
 		ensure
-			-- definition_of_intersected : Result.for_all (agent anded (?, agent contains (?), agent other.contains (?)))
 			existing_subset : is_superset_of (Result)
 			other_subset : other.is_superset_of (Result)
 			valid_cardinality : Result.count <= count and Result.count <= other.count
@@ -195,7 +176,6 @@ feature -- Basic Operations
 		deferred
 		ensure
 			definition_of_extended : Result.contains (v)
-			-- other_members_remain : for_all (agent Result.is_member (?))
 			has_implies_same : contains (v) implies equal_value (Current,Result)
 			cardinality_increased: not contains (v) implies Result.count = count + 1
 		end
@@ -204,7 +184,6 @@ feature -- Basic Operations
 			-- The set `current' with `v' removed.
 		deferred
 		ensure
-			definition_of_pruned : not contains (v) implies equal_value (Current,Result.extended (v))
 			no_member_anymore : not Result.contains (v)
 			not_has_implies_same : not contains (v) implies equal_value (Current,Result)
 			cardinality_decreased: contains (v) implies Result.count = count - 1
@@ -217,8 +196,6 @@ feature -- Quantifiers
 		require
 			predicate_not_void: predicate /= Void
 		deferred
-		ensure
-			-- there_exists_for_all_relation: Result = (not for_all (agent negated (?,predicate)))
 		end
 
 	for_all (predicate: FUNCTION [ANY, TUPLE[G], BOOLEAN]): BOOLEAN is
@@ -226,25 +203,9 @@ feature -- Quantifiers
 		require
 			predicate_not_void: predicate /= Void
 		deferred
-		ensure
-			--	there_exists_for_all_relation: Result = (not there_exists (agent negated (?,predicate)))
 		end
 
-feature -- Partition
-
-	is_partitioned_by (other : MML_SET[MML_SET[G]]) : BOOLEAN is
-			-- Is `other' a partition of `current'?
-		require
-			other_not_void : other /= Void
-		deferred
-		ensure
-			-- all_supplied_sets_are_subsets : Result implies other.for_all (agent is_subset (?))
-		end
-
-feature{MML_ANY,
-		MML_CONVERSION,
-		MML_CONVERSION_2,
-		MML_COMPOSITION} -- Direct Access
+feature{MML_USER} -- Direct Access
 
 	as_array: ARRAY [G] is
 			-- All elements of the set as an array.

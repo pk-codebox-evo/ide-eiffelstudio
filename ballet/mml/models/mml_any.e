@@ -8,7 +8,7 @@ deferred class
 	MML_ANY
 
 inherit
-	MML_COMPARISON
+	MML_USER
 
 feature{MML_COMPARISON} -- Comparison
 

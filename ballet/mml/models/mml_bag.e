@@ -125,6 +125,8 @@ feature -- Properties
 
 	is_disjoint_from (other: MML_BAG[G]) : BOOLEAN is
 			-- Is the current bag disjoint from the bag `other' ?
+		require
+			not_void: other /= Void
 		deferred
 		ensure
 			definition_of_is_disjoint: Result = domain.is_disjoint_from(other.domain)

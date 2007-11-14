@@ -45,8 +45,10 @@ inherit
 
 create
 	make_empty,
-	make_from_array,
 	make_from_element
+
+create{MML_USER}
+	make_from_array
 
 feature -- Access
 
@@ -132,6 +134,7 @@ feature -- Conversion
 					end
 					i := i + 1
 				end
+				create {MML_DEFAULT_SEQUENCE[G]}Result.make_from_array (new_array)
 			end
 		end
 

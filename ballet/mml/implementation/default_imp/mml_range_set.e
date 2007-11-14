@@ -79,7 +79,7 @@ feature -- Access
 			Result := lower
 		end
 
-	item_where (predicate: FUNCTION [ANY, TUPLE [INTEGER], BOOLEAN]): INTEGER is
+	item_where (predicate: PREDICATE [ANY, TUPLE [INTEGER]]): INTEGER is
 			-- An arbitrary element of `current' which satisfies `predicate'?
 		local
 			i: INTEGER
@@ -216,15 +216,6 @@ feature -- Properties
 
 feature -- Basic Operations
 
-	cartesian_product (other: MML_SET [ANY]): MML_SET [MML_PAIR [INTEGER, ANY]] is
-			-- The cartesian product of `other' and `current'.
-			-- TypeCheat
-		do
-			check
-				not_implemented: false
-			end
-		end
-
 	intersected (other: MML_SET [INTEGER]): MML_SET [INTEGER] is
 			-- The intersection of `current' and `other'.
 		local
@@ -293,7 +284,7 @@ feature -- Basic Operations
 
 feature -- Quantifiers
 
-	there_exists (predicate: FUNCTION [ANY, TUPLE [INTEGER], BOOLEAN]): BOOLEAN is
+	there_exists (predicate: PREDICATE [ANY, TUPLE [INTEGER]]): BOOLEAN is
 			-- Does there exist an element in the set that satisfies `predicate' ?
 		local
 			i: INTEGER
@@ -308,7 +299,7 @@ feature -- Quantifiers
 			end
 		end
 
-	for_all (predicate: FUNCTION [ANY, TUPLE [INTEGER], BOOLEAN]): BOOLEAN is
+	for_all (predicate: PREDICATE [ANY, TUPLE [INTEGER]]): BOOLEAN is
 			-- Do all members of the set satisfy `predicate' ?
 		local
 			i: INTEGER
@@ -322,14 +313,6 @@ feature -- Quantifiers
 				Result := predicate.item([i])
 				i := i + 1
 			end
-		end
-
-feature -- Partition
-
-	is_partitioned_by (other: MML_SET [MML_SET [INTEGER]]): BOOLEAN is
-			-- Is `other' a partition of `current'?
-		do
-			Result := other.for_all (agent is_superset_of(?))
 		end
 
 feature {MML_ANY, MML_CONVERSION, MML_CONVERSION_2} -- Direct Access
