@@ -19,7 +19,8 @@ inherit
 			contains as set_contains,
 			for_all as set_for_all,
 			there_exists as set_there_exists,
-			as_array as set_as_array
+			as_array as set_as_array,
+			make_from_element as set_make_from_element
 		end
 
 feature -- Access

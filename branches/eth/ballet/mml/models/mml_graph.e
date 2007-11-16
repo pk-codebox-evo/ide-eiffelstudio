@@ -80,7 +80,4 @@ feature -- Basic Operations
 		deferred
 		end
 
-invariant
-	definition_of_graph : nodes.is_superset_of (edges.domain) and nodes.is_superset_of (edges.range)
-
 end -- class MML_GRAPH

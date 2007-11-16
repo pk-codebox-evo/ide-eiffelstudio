@@ -55,8 +55,6 @@ feature -- Generalized Operations
 	generalized_united : MML_SET[G] is
 			-- The generalized union of `current'.
 		deferred
-		ensure
-			-- definition_of_generalized_united : for_all (agent {MML_SET[G]}.for_all (agent Result.is_member (?)))
 		end
 
 	generalized_intersected : MML_SET[G] is
@@ -69,8 +67,6 @@ feature -- Disjointness
 	is_generalized_disjoint : BOOLEAN is
 			-- Is `current' disjoint?
 		deferred
-		ensure
-			definition_of_disjoint : Result = generalized_intersected.is_empty
 		end
 
 feature -- Partition
@@ -80,12 +76,6 @@ feature -- Partition
 		require
 			other_not_void : other /= Void
 		deferred
-		ensure
-			definition_of_partition : Result = (is_generalized_disjoint and equal_value(other,generalized_united))
 		end
 
-invariant
-	disjointness_implies_empty_intersection : is_generalized_disjoint implies generalized_intersected.is_empty
-	disjointness_implies_partition : is_generalized_disjoint implies is_generalized_partition (generalized_united)
-	definition_of_generalized_union : generalized_united.is_superset_of (generalized_intersected)
 end -- class MML_POWERSET

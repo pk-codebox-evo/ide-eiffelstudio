@@ -10,6 +10,15 @@ deferred class
 inherit
 	MML_ANY
 
+feature{NONE} -- Initialization
+
+	make_from_element (other : G) is
+			-- Create a new set containing the element `other'.
+		require
+			contains_void: (other = Void) implies may_contain_void
+		deferred
+		end
+
 feature -- Access
 
 	any_item : G is
@@ -21,7 +30,7 @@ feature -- Access
 			definition_of_any_element : contains (Result)
 		end
 
-	item_where (predicate: FUNCTION [ANY, TUPLE [G], BOOLEAN]) : G is
+	item_where (predicate: PREDICATE [ANY, TUPLE [G]]) : G is
 			-- An arbitrary element of `current' which satisfies `predicate'?
 		require
 			predicate_not_void : predicate /= Void
@@ -37,7 +46,6 @@ feature -- Conversion
 			-- The identity relation of `current'.
 		deferred
 		ensure
-			-- definition_of_identity_relation : Result.for_all (agent {MML_PAIR[G, G]}.is_identity)
 			same_domain_range : equal_value(Current,Result.domain) and equal_value(Current,Result.range)
 		end
 
@@ -53,7 +61,6 @@ feature -- Conversion
 			-- The set `current' as random sequence.
 		deferred
 		ensure
-			-- definition_of_random_sequence : Result.for_all (agent is_member (?)) and equal_value(Current,Result.range)
 			same_cardinality : Result.count = count
 		end
 
@@ -128,6 +135,11 @@ feature -- Properties
 			valid_cardinality : Result implies (other.count < count)
 		end
 
+	may_contain_void: BOOLEAN is
+			-- May this set contain the value `Void'?
+		deferred
+		end
+
 feature -- Basic Operations
 
 	intersected (other: MML_SET[G]) : MML_SET[G] is
@@ -136,8 +148,6 @@ feature -- Basic Operations
 			other_not_void : other /= Void
 		deferred
 		ensure
-			existing_subset : is_superset_of (Result)
-			other_subset : other.is_superset_of (Result)
 			valid_cardinality : Result.count <= count and Result.count <= other.count
 		end
 
@@ -145,10 +155,9 @@ feature -- Basic Operations
 			-- The union of `current' and `other'.
 		require
 			other_not_void : other /= Void
+			contains_void_consistent: other.may_contain_void implies may_contain_void
 		deferred
 		ensure
-			existing_elements : is_subset_of (Result)
-			other_elements : other.is_subset_of (Result)
 			valid_cardinality : Result.count >= count and Result.count >= other.count
 		end
 
@@ -166,6 +175,7 @@ feature -- Basic Operations
 			-- The symmetric difference of `current' and `other'.
 		require
 			other_not_void : other /= Void
+			contains_void_consistent: other.may_contain_void implies may_contain_void
 		deferred
 		ensure
 			definition_of_difference : equal_value(Result,(united (other).subtracted (intersected (other))))
@@ -173,6 +183,8 @@ feature -- Basic Operations
 
 	extended (v: G) : MML_SET[G] is
 			-- The set `current' extended with `v'.
+		require
+			void_allowed: (v = Void) implies may_contain_void
 		deferred
 		ensure
 			definition_of_extended : Result.contains (v)
@@ -191,14 +203,14 @@ feature -- Basic Operations
 
 feature -- Quantifiers
 
-	there_exists (predicate: FUNCTION [ANY, TUPLE[G], BOOLEAN]): BOOLEAN is
+	there_exists (predicate: PREDICATE [ANY, TUPLE[G]]): BOOLEAN is
 			-- Does there exist an element in the set that satisfies `predicate' ?
 		require
 			predicate_not_void: predicate /= Void
 		deferred
 		end
 
-	for_all (predicate: FUNCTION [ANY, TUPLE[G], BOOLEAN]): BOOLEAN is
+	for_all (predicate: PREDICATE [ANY, TUPLE[G]]): BOOLEAN is
 			-- Do all members of the set satisfy `predicate' ?
 		require
 			predicate_not_void: predicate /= Void
@@ -216,9 +228,6 @@ feature{MML_USER} -- Direct Access
 
 invariant
 	definition_of_empty_set : is_empty = (count = 0)
-
-	reflexive_subset_relation : is_superset_of (Current)
-	reflexive_superset_relation: is_subset_of (Current)
 
 	definition_of_union : equal_value (Current, united (Current))
 	definition_of_intersection : equal_value (Current,intersected (Current))

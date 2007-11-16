@@ -23,7 +23,7 @@ feature {MML_COMPARISON} -- Comparison
 	equals, infix "|=|" (other: MML_ANY): BOOLEAN is
 			-- Is `other' mathematically equivalent ?
 		local
-			other_set: MML_SET[INTEGER]
+			other_set: MML_SET[ANY]
 			i: INTEGER
 		do
 			other_set ?= other
@@ -118,7 +118,8 @@ feature -- Access
 	lifted : MML_POWERSET[INTEGER] is
 			-- The set `current' as power set.
 		do
-			create {MML_DEFAULT_POWERSET[INTEGER]}Result.make_from_element (Current)
+			create {MML_DEFAULT_POWERSET[INTEGER]}Result.make_empty
+			Result := Result.extended (Current)
 		end
 
 	randomly_ordered: MML_SEQUENCE [INTEGER] is
@@ -130,15 +131,16 @@ feature -- Access
 			if is_empty then
 				create {MML_DEFAULT_SEQUENCE[INTEGER]}Result.make_empty
 			else
-				create new_array.make(1,count)
+				create new_array.make (1,count)
 				from
 					i := 1
 				until
 					i > count
 				loop
-					new_array.put(lower+i-1,i)
+					new_array.put (lower+i-1,i)
 					i := i + 1
 				end
+				create {MML_DEFAULT_SEQUENCE[INTEGER]}Result.make_from_array (new_array)
 			end
 		end
 
@@ -182,24 +184,24 @@ feature -- Properties
 
 	is_superset_of (other: MML_SET [INTEGER]): BOOLEAN is
 			-- Is `other' a subset of `current'?
+		do
+			Result := other.is_superset_of (Current)
+		end
+
+	is_subset_of (other: MML_SET [INTEGER]): BOOLEAN is
+			-- Is `other' a superset of `current'?
 		local
 			i: INTEGER
 		do
+			Result := true
 			from
 				i := lower
-				Result := true
 			until
 				i > upper or not Result
 			loop
 				Result := other.contains(i)
 				i := i + 1
 			end
-		end
-
-	is_subset_of (other: MML_SET [INTEGER]): BOOLEAN is
-			-- Is `other' a superset of `current'?
-		do
-			Result := other.is_superset_of(Current)
 		end
 
 	is_proper_subset_of (other: MML_SET [INTEGER]): BOOLEAN is
@@ -212,6 +214,12 @@ feature -- Properties
 			-- Is `other' a proper subset of `current'?
 		do
 			Result := other.count < count and is_superset_of(other)
+		end
+
+	may_contain_void: BOOLEAN is
+			-- Range sets never contain void.
+		do
+			Result := False
 		end
 
 feature -- Basic Operations

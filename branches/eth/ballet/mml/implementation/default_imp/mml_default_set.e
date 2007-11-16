@@ -51,7 +51,7 @@ feature -- Access
 			Result := a.item (1)
 		end
 
-	item_where (predicate: FUNCTION [ANY, TUPLE [G], BOOLEAN]): G is
+	item_where (predicate: PREDICATE [ANY, TUPLE [G]]): G is
 			-- An arbitrary element of `current' which satisfies `predicate'?
 		local
 			i: INTEGER
@@ -107,13 +107,15 @@ feature -- Comparison
 	equals, infix "|=|" (other: MML_ANY): BOOLEAN is
 			-- Is `other' mathematically equivalent ?
 		local
-			as_set: MML_SET[G]
+			as_set: MML_SET[ANY]
+			myself: MML_SET[ANY]
 		do
 			as_set ?= other
 			if as_set = Void or else as_set.count /= count then
 				Result := false
 			else
-				Result := is_superset_of (as_set)
+				myself := Current
+				Result := myself.is_superset_of (as_set)
 			end
 		end
 
@@ -146,8 +148,20 @@ feature -- Properties
 
 	is_disjoint_from (other: MML_SET[G]) : BOOLEAN is
 			-- Is `other' disjoint from `current'?
+		local
+			i: INTEGER
 		do
-			Result := not there_exists (agent other.contains (?))
+			Result := True
+			if a /= Void then
+				from
+					i := 1
+				until
+					i > a.count or not Result
+				loop
+					Result := not other.contains (a.item (i))
+					i := i + 1
+				end
+			end
 		end
 
 	is_superset_of (other: MML_SET[G]) : BOOLEAN is
@@ -158,8 +172,20 @@ feature -- Properties
 
 	is_subset_of (other: MML_SET[G]) : BOOLEAN is
 			-- Is `other' a superset of `current'?
+		local
+			i: INTEGER
 		do
-			Result := for_all (agent other.contains (?))
+			Result := True
+			if a /= Void then
+				from
+					i := 1
+				until
+					i > a.count or not Result
+				loop
+					Result := other.contains (a.item (i))
+					i := i + 1
+				end
+			end
 		end
 
 	is_proper_subset_of (other: MML_SET[G]) : BOOLEAN is
@@ -172,6 +198,12 @@ feature -- Properties
 			-- Is `other' a proper subset of `current'?
 		do
 			Result := is_superset_of(other) and (other.count < count)
+		end
+
+	may_contain_void: BOOLEAN is
+			-- Default sets may contain `Void'.
+		do
+			Result := True
 		end
 
 feature -- Basic Operations
@@ -304,7 +336,7 @@ feature -- Basic Operations
 
 feature -- Quantifiers
 
-	there_exists (predicate: FUNCTION [ANY, TUPLE[G], BOOLEAN]): BOOLEAN is
+	there_exists (predicate: PREDICATE [ANY, TUPLE[G]]): BOOLEAN is
 			-- Does there exist an element in the set that satisfies `predicate' ?
 		do
 			if a = Void then
@@ -314,7 +346,7 @@ feature -- Quantifiers
 			end
 		end
 
-	for_all (predicate: FUNCTION [ANY, TUPLE[G], BOOLEAN]): BOOLEAN is
+	for_all (predicate: PREDICATE [ANY, TUPLE[G]]): BOOLEAN is
 			-- Do all members of the set satisfy `predicate' ?
 		do
 			if a = Void then

@@ -15,7 +15,8 @@ inherit
 			subtracted,
 			difference,
 			extended,
-			pruned
+			pruned,
+			may_contain_void
 		end
 	MML_RELATION[G,H]
 		undefine
@@ -23,8 +24,7 @@ inherit
 		end
 
 create
-	make_empty,
-	make_from_element
+	make_empty
 
 create{MML_USER}
 	make_from_array
@@ -56,6 +56,12 @@ feature -- Status Report
 				Result := equal_value (a.item(i).first,v1) and equal_value(a.item(i).second,v2)
 				i := i + 1
 			end
+		end
+
+	may_contain_void: BOOLEAN is
+			-- Relations may not contain `Void'.
+		do
+			Result := False
 		end
 
 feature -- Basic Operations
@@ -464,7 +470,7 @@ feature -- Inversion
 			new_pair: MML_DEFAULT_PAIR[H,G]
 			i: INTEGER
 		do
-			if count = 0 then
+			if is_empty then
 				create {MML_DEFAULT_RELATION[H,G]}Result.make_empty
 			else
 				create new_array.make(1,count)
