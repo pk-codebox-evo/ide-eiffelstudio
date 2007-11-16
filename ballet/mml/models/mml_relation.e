@@ -105,8 +105,6 @@ feature -- Projections
 	image_of (v: G) : MML_SET[H] is
 			-- The projected range set of `current' through `v'.
 		deferred
-		ensure then
-			image_in_range: range.is_superset_of (Result)
 		end
 
 	image (projection : MML_SET[G]) : MML_SET[H] is
@@ -114,15 +112,11 @@ feature -- Projections
 		require
 			projection_not_void : projection /= Void
 		deferred
-		ensure
-			image_in_range: range.is_superset_of (Result)
 		end
 
 	anti_image_of (v: H) : MML_SET[G] is
 			-- The projected domain set of `current' through `v'.
 		deferred
-		ensure
-			anti_image_in_domain: domain.is_superset_of (Result)
 		end
 
 	anti_image (projection : MML_SET[H]) : MML_SET[G] is
@@ -130,15 +124,11 @@ feature -- Projections
 		require
 			projection_not_void : projection /= Void
 		deferred
-		ensure then
-			anti_image_in_domain: domain.is_superset_of (Result)
 		end
 
 	domain_restricted_by (v: G): MML_RELATION[G,H] is
 			-- A relation with pairs of `current' having its first element equivalent to `v'.
 		deferred
-		ensure then
-			restriction_is_subset: is_superset_of (Result)
 		end
 
 	domain_restricted (restriction: MML_SET[G]): MML_RELATION [G,H] is
@@ -146,15 +136,11 @@ feature -- Projections
 		require
 			restriction_not_void : restriction /= Void
 		deferred
-		ensure then
-			restriction_is_subset: is_superset_of (Result)
 		end
 
 	range_restricted_by (v: H) : MML_RELATION [G,H] is
 			-- A relation with pairs of `current' having its second element equivalent to `v'.
 		deferred
-		ensure then
-			restriction_is_subset: is_superset_of (Result)
 		end
 
 	range_restricted (restriction : MML_SET[H]) : MML_RELATION [G,H] is
@@ -162,8 +148,6 @@ feature -- Projections
 		require
 			restriction_not_void : restriction /= Void
 		deferred
-		ensure then
-			restriction_is_subset: is_superset_of (Result)
 		end
 
 	domain_anti_restricted_by (v: G): MML_RELATION [G,H]  is
@@ -176,15 +160,11 @@ feature -- Projections
 		require
 			restriction_not_void : restriction /= Void
 		deferred
-		ensure then
-			restriction_is_subset: is_superset_of (Result)
 		end
 
 	range_anti_restricted_by (v: H) :MML_RELATION [G,H] is
 			-- A relation with pairs of `current' having its second element not equivalent `v'.
 		deferred
-		ensure then
-			restriction_is_subset: is_superset_of (Result)
 		end
 
 	range_anti_restricted (restriction : MML_SET[H]) :MML_RELATION [G,H]  is
@@ -192,8 +172,6 @@ feature -- Projections
 		require
 			restriction_not_void : restriction /= Void
 		deferred
-		ensure then
-			restriction_is_subset: is_superset_of (Result)
 		end
 
 	item (v: G): H is
@@ -212,7 +190,6 @@ feature -- Inversion
 			-- The inverse relation of `current'.
 		deferred
 		ensure
-			definition_of_inversed : equal_value(Result.domain,range) and equal_value(Result.range,domain)
 			same_cardinality : Result.count = count
 		end
 
@@ -222,4 +199,5 @@ invariant
 	definition_of_domain_range : inversed.domain.equals (range) and inversed.range.equals (domain)
 	definition_is_function: is_function implies domain.count = count
 	definition_is_injective: is_injective implies range.count = count
+	must_not_contain_void: may_contain_void = False
 end -- class MML_RELATION

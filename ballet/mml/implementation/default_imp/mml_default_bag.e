@@ -58,7 +58,7 @@ feature -- Access
 			Result := a.item(1).first
 		end
 
-	item_where (predicate: FUNCTION [ANY, TUPLE [G], BOOLEAN]): G is
+	item_where (predicate: PREDICATE [ANY, TUPLE [G]]): G is
 			-- Any arbitrary element of the bag `current' that satisfies `predicate'.
 		do
 			Result := domain.item_where (predicate)
@@ -448,13 +448,13 @@ feature -- Properties
 
 feature -- Quantifiers
 
-	for_all (predicate: FUNCTION [ANY, TUPLE [G], BOOLEAN]): BOOLEAN is
+	for_all (predicate: PREDICATE [ANY, TUPLE [G]]): BOOLEAN is
 			-- Do all members of the bag satisfy `predicate' ?
 		do
 			Result := domain.for_all (predicate)
 		end
 
-	there_exists (predicate: FUNCTION [ANY, TUPLE [G], BOOLEAN]): BOOLEAN is
+	there_exists (predicate: PREDICATE [ANY, TUPLE [G]]): BOOLEAN is
 			-- Does there exist an element in the bag that satisfies `predicate' ?
 		do
 			Result := domain.there_exists (predicate)

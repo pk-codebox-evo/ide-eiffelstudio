@@ -14,8 +14,8 @@ inherit
 		end
 
 create
-	make_from_element,
-	make_empty
+	make_empty,
+	make_from_element
 
 create{MML_USER}
 	make_from_array
@@ -32,7 +32,7 @@ feature {NONE} -- Constructors
 		end
 
 	make_from_element (other : G) is
-			-- Create a new set containing the element `other'.
+			-- Create a new sequence containing the element `other'.
 		do
 			create a.make(1,1)
 			a.put(other,1)
@@ -42,6 +42,14 @@ feature {NONE} -- Constructors
 			-- Create a new empty set.
 		do
 			a := Void
+		end
+
+	set_make_from_element (other : MML_PAIR[INTEGER,G]) is
+			-- Never called, as exported to none.
+		do
+			check
+				not_implemented: False
+			end
 		end
 
 feature -- Access
@@ -73,7 +81,7 @@ feature -- Access
 			Result := a.item(i)
 		end
 
-	set_item_where (predicate: FUNCTION [ANY, TUPLE [MML_PAIR [INTEGER, G]], BOOLEAN]): MML_PAIR [INTEGER, G] is
+	set_item_where (predicate: PREDICATE [ANY, TUPLE [MML_PAIR [INTEGER, G]]]): MML_PAIR [INTEGER, G] is
 			-- An arbitrary element of `current' which satisfies `predicate'?
 		local
 			i: INTEGER
@@ -713,7 +721,7 @@ feature -- Properties
 	is_superset_of (other: MML_SET [MML_PAIR [INTEGER, G]]): BOOLEAN is
 			-- Is `other' a subset of `current'?
 		do
-			Result := other.for_all(agent set_contains(?))
+			Result := as_default_relation.is_superset_of (other)
 		end
 
 	is_subsequence_of (other: MML_SEQUENCE [G]): BOOLEAN is
@@ -731,12 +739,18 @@ feature -- Properties
 	is_subset_of (other: MML_SET [MML_PAIR [INTEGER, G]]): BOOLEAN is
 			-- Is `other' a superset of `current'?
 		do
-			Result := other.is_superset_of(Current)
+			Result := as_default_relation.is_subset_of(other)
+		end
+
+	may_contain_void: BOOLEAN is
+			-- Sequences (when seen as sets) never contain `Void'.
+		do
+			Result := False
 		end
 
 feature -- Quantifiers
 
-	set_for_all (predicate: FUNCTION [ANY, TUPLE [MML_PAIR [INTEGER, G]], BOOLEAN]): BOOLEAN is
+	set_for_all (predicate: PREDICATE [ANY, TUPLE [MML_PAIR [INTEGER, G]]]): BOOLEAN is
 			-- Do all members of the set satisfy `predicate' ?
 		local
 			pair: MML_DEFAULT_PAIR[INTEGER,G]
@@ -754,7 +768,7 @@ feature -- Quantifiers
 			end
 		end
 
-	set_there_exists (predicate: FUNCTION [ANY, TUPLE [MML_PAIR [INTEGER, G]], BOOLEAN]): BOOLEAN is
+	set_there_exists (predicate: PREDICATE [ANY, TUPLE [MML_PAIR [INTEGER, G]]]): BOOLEAN is
 			-- Does there exist an element in the set that satisfies `predicate' ?
 		local
 			pair: MML_DEFAULT_PAIR[INTEGER,G]

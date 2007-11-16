@@ -49,7 +49,7 @@ feature -- Access
 			is_contained: contains (Result)
 		end
 
-	item_where (predicate: FUNCTION[ANY,TUPLE[G],BOOLEAN]): G is
+	item_where (predicate: PREDICATE [ANY,TUPLE[G]]): G is
 			-- Any arbitrary element of the bag `current' that satisfies `predicate'.
 		require
 			predicate_not_void: predicate /= Void
@@ -134,7 +134,7 @@ feature -- Properties
 
 feature -- Quantifiers
 
-	for_all (predicate: FUNCTION [ANY,TUPLE[G],BOOLEAN]): BOOLEAN is
+	for_all (predicate: PREDICATE [ANY,TUPLE[G]]): BOOLEAN is
 			-- Do all members of the bag satisfy `predicate' ?
 		require
 			predicate_not_void: predicate /= Void
@@ -143,7 +143,7 @@ feature -- Quantifiers
 			definition_of_for_all: Result = domain.for_all(predicate)
 		end
 
-	there_exists (predicate: FUNCTION [ANY,TUPLE[G],BOOLEAN]): BOOLEAN is
+	there_exists (predicate: PREDICATE [ANY,TUPLE[G]]): BOOLEAN is
 			-- Does there exist an element in the bag that satisfies `predicate' ?
 		require
 			predicate_not_void: predicate /= Void

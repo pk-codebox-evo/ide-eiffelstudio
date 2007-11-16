@@ -26,7 +26,8 @@ inherit
 			subtracted,
 			difference,
 			extended,
-			pruned
+			pruned,
+			may_contain_void
 		end
 
 create
@@ -90,6 +91,14 @@ feature -- Basic Operations
 		do
 			create converter
 			Result := converter.as_powerset(Precursor(v))
+		end
+
+feature -- Status query
+
+	may_contain_void: BOOLEAN is
+			-- Powersets may not contain `Void'.
+		do
+			Result := False
 		end
 
 feature -- Generalized Operations
