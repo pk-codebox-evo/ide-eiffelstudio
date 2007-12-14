@@ -4906,10 +4906,8 @@ rt_shared int epush(register struct stack *stk, register void *value)
 		 */
 		SIGBLOCK;							/* Critical section */
 		if (stk->st_cur == stk->st_tl) {	/* Reached last chunk */
-			if (-1 == st_extend(stk, eif_stack_chunk)) {
-				SIGRESUME;
+			if (-1 == st_extend(stk, eif_stack_chunk))
 				return -1;			/* Could not extend stack */
-			}
 			top = stk->st_top;		/* New top */
 		} else {
 			struct stchunk *current;		/* New current chunk */

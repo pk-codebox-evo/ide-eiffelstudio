@@ -204,7 +204,6 @@ feature
 				-- Generate feature written in `class_type' in `buffer'.
 		local
 			byte_code: BYTE_CODE
-			l_byte_context: like byte_context
 		do
 			if used then
 				generate_header (buffer);
@@ -214,14 +213,13 @@ feature
 				end
 					-- Generation of C code for an Eiffel feature written in
 					-- the associated class of the current type.
-				l_byte_context := byte_context
-				l_byte_context.set_byte_code (byte_code)
+				byte_context.set_byte_code (byte_code)
 					-- Generation of the C routine
-				l_byte_context.set_current_feature (Current)
+				byte_context.set_current_feature (Current)
 				byte_code.analyze
 				byte_code.set_real_body_id (real_body_id (class_type))
 				byte_code.generate
-				l_byte_context.clear_feature_data
+				byte_context.clear_feature_data
 			else
 				system.removed_log_file.add (class_type, feature_name)
 			end

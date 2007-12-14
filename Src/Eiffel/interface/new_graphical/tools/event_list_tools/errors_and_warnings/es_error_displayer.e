@@ -17,6 +17,11 @@ inherit
 			clear_warnings
 		end
 
+	EVENT_LIST_SERVICE_CONSUMER
+		export
+			{NONE}
+		end
+
 create
 	make
 
@@ -59,23 +64,17 @@ feature -- Basic operations
 
 	clear_errors
 			-- Clears display of any stored error information.
-		local
-			l_consumer: SERVICE_CONSUMER [EVENT_LIST_S]
 		do
-			create l_consumer
-			if l_consumer.is_service_available then
-				l_consumer.service.prune_event_items (error_context)
+			if is_event_list_service_available then
+				event_list_service.prune_event_items (error_context)
 			end
 		end
 
 	clear_warnings
 			-- Clears display of any stored warning information.
-		local
-			l_consumer: SERVICE_CONSUMER [EVENT_LIST_S]
 		do
-			create l_consumer
-			if l_consumer.is_service_available then
-				l_consumer.service.prune_event_items (warning_context)
+			if is_event_list_service_available then
+				event_list_service.prune_event_items (warning_context)
 			end
 		end
 
@@ -87,6 +86,7 @@ feature {NONE} -- Basic operations
 			-- `a_window': The EiffelStudio development window to display the errors and warnings tool for
 		require
 			a_window_attached: a_window /= Void
+			is_event_list_service_available: is_event_list_service_available
 		local
 			l_tool: ES_TOOL [EB_TOOL]
 		do
@@ -106,15 +106,13 @@ feature -- Output
 		local
 			l_warnings: LIST [ERROR]
 			l_cursor: CURSOR
-			l_consumer: SERVICE_CONSUMER [EVENT_LIST_S]
-			l_service: EVENT_LIST_S
+			l_service: like event_list_service
 			l_context: UUID
 		do
-			create l_consumer
-			if l_consumer.is_service_available then
+			if is_event_list_service_available then
 				l_warnings := handler.warning_list
 				if not l_warnings.is_empty then
-					l_service := l_consumer.service
+					l_service := event_list_service
 					l_context := warning_context
 					l_cursor := l_warnings.cursor
 					from l_warnings.start until l_warnings.after loop
@@ -132,15 +130,13 @@ feature -- Output
 			l_errors: LIST [ERROR]
 			l_error: ERROR
 			l_cursor: CURSOR
-			l_consumer: SERVICE_CONSUMER [EVENT_LIST_S]
-			l_service: EVENT_LIST_S
+			l_service: like event_list_service
 			l_context: UUID
 		do
-			create l_consumer
-			if l_consumer.is_service_available then
+			if is_event_list_service_available then
 				l_errors := handler.error_list
 				if not l_errors.is_empty then
-					l_service := l_consumer.service
+					l_service := event_list_service
 					l_context := error_context
 					l_cursor := l_errors.cursor
 					from l_errors.start until l_errors.after loop
@@ -161,7 +157,7 @@ feature -- Output
 	force_display is
 			-- Make sure the user can see the messages we send.
 		do
-			if (create {SERVICE_CONSUMER [EVENT_LIST_S]}).is_service_available then
+			if is_event_list_service_available then
 					-- Only force the display if the service is available, else there is
 					-- nothing to display in the window
 				window_manager.for_all_development_windows (agent show_errors_and_warnings_tool)
@@ -192,13 +188,14 @@ feature {NONE} -- Factory
 		require
 			a_error_attached: a_error /= Void
 		do
-			create {EVENT_LIST_ERROR_ITEM} Result.make ({ENVIRONMENT_CATEGORIES}.compilation, a_error.out, a_error)
+			create {EVENT_LIST_ERROR_ITEM}Result.make ({ENVIRONMENT_CATEGORIES}.compilation, a_error.out, a_error)
 		ensure
 			result_attached: Result /= Void
 			result_user_data_set: Result.data = a_error
 		end
 
 invariant
+	event_list_service_attached: is_event_list_service_available implies event_list_service /= Void
 	window_manager_attached: window_manager /= Void
 
 ;indexing

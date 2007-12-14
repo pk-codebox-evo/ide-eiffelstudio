@@ -2598,9 +2598,8 @@ feature -- C code generation
 			written_in_type: class_type.associated_class.class_id = generation_class_id
 			not_deferred: not is_deferred
 		local
-			l_byte_code: BYTE_CODE
+			byte_code: BYTE_CODE
 			tmp_body_index: INTEGER
-			l_byte_context: like byte_context
 		do
 			if used then
 					-- `generate' from BYTE_CODE will log the feature name
@@ -2608,26 +2607,25 @@ feature -- C code generation
 				generate_header (buffer)
 
 				tmp_body_index := body_index
-				l_byte_code := tmp_opt_byte_server.disk_item (tmp_body_index)
-				if l_byte_code = Void then
-					l_byte_code := byte_server.disk_item (tmp_body_index)
+				byte_code := tmp_opt_byte_server.disk_item (tmp_body_index)
+				if byte_code = Void then
+					byte_code := byte_server.disk_item (tmp_body_index)
 				end
 
 					-- Generation of C code for an Eiffel feature written in
 					-- the associated class of the current type.
-				l_byte_context := byte_context
-				l_byte_context.set_byte_code (l_byte_code)
+				byte_context.set_byte_code (byte_code)
 
 				if System.in_final_mode and then System.inlining_on then
-					l_byte_code := l_byte_code.inlined_byte_code
+					byte_code := byte_code.inlined_byte_code
 				end
 
 					-- Generation of the C routine
-				l_byte_context.set_current_feature (Current)
-				l_byte_code.analyze
-				l_byte_code.set_real_body_id (real_body_id (class_type))
-				l_byte_code.generate
-				l_byte_context.clear_feature_data
+				byte_context.set_current_feature (Current)
+				byte_code.analyze
+				byte_code.set_real_body_id (real_body_id (class_type))
+				byte_code.generate
+				byte_context.clear_feature_data
 
 			else
 				System.removed_log_file.add (class_type, feature_name)

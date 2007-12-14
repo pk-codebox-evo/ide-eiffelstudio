@@ -69,7 +69,7 @@ debug ("GELEX")
 end
 
 				classname := text
-				terminate
+				last_token := TE_ID
 
 when 4 then
 --|#line 44 "classname_finder.l"

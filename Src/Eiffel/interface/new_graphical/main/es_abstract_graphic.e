@@ -193,63 +193,15 @@ feature {NONE} -- Services
 		require
 			a_container_attached: a_container /= Void
 		do
-			a_container.add_service_with_activator ({EVENT_LIST_S}, agent create_event_list_service, False)
-			a_container.add_service_with_activator ({HELP_PROVIDERS_S}, agent setup_help_providers_service, False)
-			a_container.add_service_with_activator ({SESSION_MANAGER_S}, agent create_session_manager_service, False)
+			a_container.add_service_with_activator ({EVENT_LIST_SERVICE_S}, agent create_event_list_service, False)
 		end
 
 feature {NONE} -- Service factories
 
-	create_event_list_service: EVENT_LIST_S
+	create_event_list_service: EVENT_LIST_SERVICE_S
 			-- Creates the event list service
 		do
-			create {EVENT_LIST} Result.make
-		ensure
-			result_is_interface_usable: Result /= Void implies Result.is_interface_usable
-		end
-
-	create_session_manager_service: SESSION_MANAGER_S
-			-- Creates the session manager service
-		do
-			create {SESSION_MANAGER} Result
-		ensure
-			result_is_interface_usable: Result /= Void implies Result.is_interface_usable
-		end
-
-	create_help_providers_service: HELP_PROVIDERS_S
-			-- Creates the editor documents table service
-		do
-			create {HELP_PROVIDERS} Result.make
-		ensure
-			result_is_interface_usable: Result /= Void implies Result.is_interface_usable
-		end
-
-feature {NONE} -- Help registration
-
-	frozen setup_help_providers_service: HELP_PROVIDERS_S
-			-- Creates the editor documents table service
-		do
-			Result := create_help_providers_service
-			if {l_service: !HELP_PROVIDERS_S} Result then
-					-- Register all services.
-					-- Note: There is no need to perform any unregistering as the service should clean up all
-					--       help providers when the service is disposed of.
-				register_help_providers (l_service)
-			end
-		ensure
-			result_is_interface_usable: Result /= Void implies Result.is_interface_usable
-		end
-
-	register_help_providers (a_service: !HELP_PROVIDERS_S) is
-			-- Registers all help providers with the help providers service
-		require
-			a_service_is_interface_usable: a_service.is_interface_usable
-		local
-			l_kinds: HELP_PROVIDER_KINDS
-		do
-			create l_kinds
-
-			a_service.register_provider (l_kinds.wiki, {WIKI_HELP_PROVIDER})
+			create {EVENT_LIST_SERVICE}Result.make
 		end
 
 feature {NONE} -- Exception handling

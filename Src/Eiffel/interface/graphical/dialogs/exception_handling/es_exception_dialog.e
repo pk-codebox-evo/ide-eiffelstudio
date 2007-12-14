@@ -15,7 +15,7 @@ inherit
 		rename
 			make as make_prompt
 		redefine
-			on_before_initialize,
+			initialize,
 			build_prompt_interface,
 			internal_recycle,
 			standard_buttons,
@@ -23,6 +23,8 @@ inherit
 			standard_default_confirm_button,
 			standard_default_cancel_button
 		end
+
+-- inherit {NONE}
 
 	EB_SHARED_PREFERENCES
 		rename
@@ -56,9 +58,9 @@ feature {NONE} -- Initialize
 			dialog.enable_user_resize
 		end
 
-	on_before_initialize
-            -- Use to perform additional creation initializations, before the UI has been created.
-			-- Note: No user interface initialization should be done here! Use `build_dialog_interface' instead
+	initialize
+			-- Common initialization for any class attributes or other data structures.
+			-- Note: No user interface initialization should be done here! Use build_dialog_interface instead
 		do
 			Precursor {ES_ERROR_PROMPT}
 			create support_login.make

@@ -82,7 +82,6 @@ test non-conforming-inheritance-parent-incrementality noncon004 tcf pass
 test non-conforming-inheritance-is-not-selectable noncon005 tcf fail
 test non-conforming-parent-can-be-frozen noncon006 tcf pass
 test at-least-one-conforming-inheritance-path noncon007 tcf fail
-test non-conforming-inheritance-client-incrementality noncon008 tcf pass
 
 -- For testing only
 
@@ -757,7 +756,6 @@ test	invariant-check-melted-agent-callee melt076  tcf pass execution
 test	dollar-with-tuple		melt077  tcf pass execution
 test	dollar-with-expanded-attribute	melt078  tcf pass execution
 test	runtime-stack-corruption	melt079  tcf pass execution
-test	nan-comparison			melt080  tcf pass execution
 
 -- Freezing
 
@@ -1120,6 +1118,7 @@ test	expanded-creation-correctness	exec278 tcf fail execution expanded
 test	special-base-address		exec279 tcf fail execution expanded
 test	default-create-not-called	exec280 tcf pass execution
 test	not-equal-operator-failure	exec281 tcf pass execution expanded
+test	object-test-semantics		exec282 tcf pass execution object_test expanded
 
 
 -- Compiler termination (exception trace, panic, etc.)
@@ -1401,14 +1400,14 @@ test	string-incorrect-hash-code	lib006	 tcf pass library
 test	ptf-file-go			lib007	 tcf pass library
 test	ptf-file-move			lib008	 tcf pass library
 test	ptf-file-nextline		lib009	 tcf pass library
-test	ptf-file-file-append		lib010	 tcf pass library
+test	ptf-file-file-append		lib010	 tcf pass library manual
 test	ptf-file-position		lib011	 tcf pass library
 test	ptf-file-read-character		lib012	 tcf pass library
 test	ptf-file-read-stream		lib013	 tcf pass library
 test	ptf-file-recede			lib014	 tcf pass library
 test	ptf-file-start			lib015	 tcf pass library
 test	ptf-file-read-line		lib016	 tcf pass library
-test	ptf-file-back			lib017	 tcf pass library
+test	ptf-file-back			lib017	 tcf pass library manual
 test	ptf-file-close			lib018	 tcf pass library
 test	ptf-file-count			lib019	 tcf pass library
 test	ptf-file-create			lib020	 tcf pass library
@@ -1687,9 +1686,7 @@ test	generic-constraint-to-none	fixed133 tcf pass fixed
 test	roundtrip-test rdtp001 tcf pass fixed
 test	roundtrip-number-denoted-character rdtp002 tcf pass fixed
 
--- Tests for assertion monitoring
-test	supplier-preconditions assert001 tcf pass assertions execution
-test	use-application-options-assertions	assert002 tcf pass assertions execution
+test	supplier-preconditions assert001 tcf pass execution
 
 -- Multi Constraint Tests
 test	multi-constraint-basics							multicon001 tcf pass multiconstraint
@@ -1732,7 +1729,7 @@ test	multi-constraint-tuples							multicon037 tcf pass multiconstraint
 test	multi-constraint-tuples2						multicon038 tcf pass multiconstraint
 test	multi-constraint-rename-alias					multicon039 tcf pass multiconstraint
 test	multi-constraint-assigner						multicon040 tcf pass multiconstraint
-test	multi-constraint-recursive-generic				multicon041 tcf pass multiconstraint
+test	multi-constraint-recursive-generic				multicon041 tcf pass multiconstraint manual
 test	multi-constraint-rename-clause-crash			multicon042 tcf pass multiconstraint
 test	multi-constraint-order-affects-semantic			multicon043 tcf pass multiconstraint
 test	multi-constraint-rename-to-infix				multicon044 tcf pass multiconstraint
@@ -1762,18 +1759,6 @@ test	expanded-formal-multiconstraint2				expanded005 tcf pass expanded
 
 test	filename-classname-mismatch-warning	warn001	tcf pass warning
 
--- test for agents
-test	agent-optimization-failure		agent001 tcf pass agents
-
--- Tests for platform specific results
-test	print-large-pointer				platform001 tcf pass platform
-
--- Tests for attached types and void-safe constructs
-test	object-test-semantics						attach001 tcf pass execution object_test expanded
-test	like-current-object-test-no-defaults		attach003 tcf fail object_test attached_types
-test	object-test-with-local-use-failure			attach004 tcf pass object_test
-test	current-is_attached-no-defaults				attach005 tcf fail attached_types
-test	anchored-attached-type-failure-no-defaults	attach006 tcf fail attached_types anchored_types
 
 
 -- .NET specific test

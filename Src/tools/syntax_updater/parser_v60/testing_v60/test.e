@@ -23,7 +23,6 @@ feature -- Initialization
 			-- Button ID mask
 		once
 			Result := 0b1111
-			do_nothing!!Result
 		end
 
 	test_recursive (a_dir: DIRECTORY) is

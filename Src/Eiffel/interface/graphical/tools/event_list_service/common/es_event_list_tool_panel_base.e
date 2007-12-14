@@ -1,12 +1,13 @@
 indexing
 	description	: "[
 		An EiffelStudio base implementation for all tools implementing a derviation of an event list tool. The tool is based on the 
-		ecosystem event list service {EVENT_LIST_S}.
+		ecosystem event list service {EVENT_LIST_SERVICE_S}.
 	]"
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
 	date		: "$Date$"
 	revision	: "$Revision$"
+	author		: "Arnaud PICHERY [ aranud@mail.dotcom.fr ]"
 
 deferred class
 	ES_EVENT_LIST_TOOL_PANEL_BASE
@@ -21,21 +22,26 @@ inherit
 			internal_recycle
 		end
 
+	EVENT_LIST_SERVICE_CONSUMER
+		export
+			{NONE} all
+		end
+
 feature {NONE} -- Initialization
 
 	on_before_initialize
 			-- Use to perform additional creation initializations, before the UI has been created.
 		local
-			l_service: EVENT_LIST_S
+			l_service: EVENT_LIST_SERVICE_S
 		do
 			Precursor {ES_DOCKABLE_TOOL_PANEL}
 
 				-- Retrieve event list service
-			if event_list.is_service_available then
-				l_service := event_list.service
-				l_service.item_added_event.subscribe (agent on_event_added)
-				l_service.item_changed_event.subscribe (agent on_event_changed)
-				l_service.item_removed_event.subscribe (agent on_event_removed)
+			if is_event_list_service_available then
+				l_service := event_list_service
+				l_service.item_added_events.subscribe (agent on_event_added)
+				l_service.item_changed_events.subscribe (agent on_event_changed)
+				l_service.item_removed_events.subscribe (agent on_event_removed)
 			end
 		end
 
@@ -54,23 +60,23 @@ feature {NONE} -- Clean up
 	internal_recycle
 			-- Recycle tool.
 		local
-			l_agent: PROCEDURE [ANY, TUPLE [service: EVENT_LIST_S; event_item: EVENT_LIST_ITEM_I]]
-			l_service: EVENT_LIST_S
+			l_agent: PROCEDURE [ANY, TUPLE [service: EVENT_LIST_SERVICE_S; event_item: EVENT_LIST_ITEM_I]]
+			l_service: like event_list_service
 		do
-			if event_list.is_service_available then
-				l_service := event_list.service
+			if is_event_list_service_available then
+				l_service := event_list_service
 
 				l_agent := agent on_event_added
-				if l_service.item_added_event.is_subscribed (l_agent) then
-					l_service.item_added_event.unsubscribe (l_agent)
+				if l_service.item_added_events.is_subscribed (l_agent) then
+					l_service.item_added_events.unsubscribe (l_agent)
 				end
 				l_agent := agent on_event_removed
-				if l_service.item_removed_event.is_subscribed (l_agent) then
-					l_service.item_removed_event.unsubscribe (l_agent)
+				if l_service.item_removed_events.is_subscribed (l_agent) then
+					l_service.item_removed_events.unsubscribe (l_agent)
 				end
 				l_agent := agent on_event_changed
-				if l_service.item_changed_event.is_subscribed (l_agent) then
-					l_service.item_changed_event.unsubscribe (l_agent)
+				if l_service.item_changed_events.is_subscribed (l_agent) then
+					l_service.item_changed_events.unsubscribe (l_agent)
 				end
 			end
 			internal_grid_wrapper := Void
@@ -104,16 +110,6 @@ feature {NONE} -- Access
 		ensure
 			result_attached: Result /= Void
 			result_consistent: Result = Result
-		end
-
-feature {NONE} -- Helpers
-
-	frozen event_list: SERVICE_CONSUMER [EVENT_LIST_S]
-			-- Access to an event list service {EVENT_LIST_S} consumer
-		once
-			create Result
-		ensure
-			result_attached: Result /= Void
 		end
 
 feature -- Status report
@@ -234,9 +230,12 @@ feature {NONE} -- Basic operations
 		require
 			is_initialized: is_initialized
 			not_surpress_synchronization: not surpress_synchronization
+		local
+			l_service: like event_list_service
 		do
-			if event_list.is_service_available then
-				event_list.service.all_items.do_all (agent on_event_added (event_list.service, ?))
+			if is_event_list_service_available then
+				l_service := event_list_service
+				l_service.all_items.do_all (agent on_event_added (l_service, ?))
 			end
 		end
 
@@ -815,7 +814,7 @@ feature {NONE} -- Query
 
 feature {NONE} -- Events
 
-	on_event_added (a_service: EVENT_LIST_S; a_event_item: EVENT_LIST_ITEM_I)
+	on_event_added (a_service: EVENT_LIST_SERVICE_S; a_event_item: EVENT_LIST_ITEM_I)
 			-- Called when a event item is added to the event service.
 			--
 			-- `a_service': Event service where event was added.
@@ -875,7 +874,7 @@ feature {NONE} -- Events
 			item_count_small_enought: destory_old_items_automatically implies item_count <= maximum_item_count
 		end
 
-	on_event_removed (a_service: EVENT_LIST_S; a_event_item: EVENT_LIST_ITEM_I) is
+	on_event_removed (a_service: EVENT_LIST_SERVICE_S; a_event_item: EVENT_LIST_ITEM_I) is
 			-- Called after a event item has been removed from the service `a_service'
 			--
 			-- `a_service': Event service where the event was removed.
@@ -947,7 +946,7 @@ feature {NONE} -- Events
 			item_count_increased: is_initialized and then is_appliable_event (a_event_item) implies item_count = old item_count - 1
 		end
 
-	on_event_changed (a_service: EVENT_LIST_S; a_event_item: EVENT_LIST_ITEM_I)
+	on_event_changed (a_service: EVENT_LIST_SERVICE_S; a_event_item: EVENT_LIST_ITEM_I)
 			-- Called after a event item has been changed.
 			--
 			-- `a_service': Event service where the event was changed.
@@ -992,8 +991,6 @@ feature {NONE} -- Factory
 			Result.set_separator_color (colors.grid_line_color)
 			Result.enable_default_tree_navigation_behavior (True, True, True, True)
 			Result.disable_vertical_scrolling_per_item
-			Result.set_focused_selection_color (colors.grid_focus_selection_color)
-			Result.set_non_focused_selection_color (colors.grid_unfocus_selection_color)
 
 			Result.pointer_double_press_item_actions.extend (agent on_grid_events_item_pointer_double_press)
 		end

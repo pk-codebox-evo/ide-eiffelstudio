@@ -21,9 +21,6 @@ indexing
 deferred class
 	EB_RECYCLABLE
 
-inherit
-	USABLE_I
-
 feature -- Basic operations
 
 	frozen recycle is
@@ -323,14 +320,6 @@ feature -- Status report
 
 	is_recycled: BOOLEAN
 			-- Has current been recycled?
-
-	is_interface_usable: BOOLEAN
-			-- Dtermines if the interface was usable
-		do
-			Result := not is_recycled
-		ensure then
-			not_is_recycled: Result implies not is_recycled
-		end
 
 feature {EB_RECYCLABLE} -- Status report
 

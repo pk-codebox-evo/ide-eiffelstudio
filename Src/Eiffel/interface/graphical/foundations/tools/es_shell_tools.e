@@ -73,12 +73,12 @@ feature {NONE} -- Clean up
 			not_is_recycled: not is_recycled
 		local
 			l_requested_tools: like internal_requested_tools
-			l_cursor: DS_HASH_TABLE_CURSOR [ARRAY [ES_TOOL [EB_TOOL]], STRING_8]
+			l_cursor: DS_HASH_TABLE_CURSOR [ARRAY [ES_TOOL [EB_TOOL]], STRING]
 			l_tools: ARRAY [ES_TOOL [EB_TOOL]]
 			l_tool: ES_TOOL [EB_TOOL]
 			l_count, i: INTEGER
 			l_remove_indexes: DS_ARRAYED_LIST [INTEGER]
-			l_remove_keys: DS_ARRAYED_LIST [STRING_8]
+			l_remove_keys: DS_ARRAYED_LIST [STRING]
 			l_new_tools: ARRAY [ES_TOOL [EB_TOOL]]
 			l_index: INTEGER
 		do
@@ -233,7 +233,7 @@ feature {NONE} -- Access
 			result_contains_attached_items: not Result.has (Void)
 		end
 
-	requested_tools: DS_HASH_TABLE [ARRAY [ES_TOOL [EB_TOOL]], STRING_8] is
+	requested_tools: DS_HASH_TABLE [ARRAY [ES_TOOL [EB_TOOL]], STRING] is
 			-- Table of requested, and therefore created, tools.
 		do
 			if not is_recycled then
@@ -274,7 +274,7 @@ feature {NONE} -- Helpers
 
 feature -- Query
 
-	dynamic_tool_type (a_type: STRING_8): TYPE [ES_TOOL [EB_TOOL]]
+	dynamic_tool_type (a_type: STRING_32): TYPE [ES_TOOL [EB_TOOL]]
 			-- Retrieves a type object dynamically from a string representation of the type.
 			--
 			-- `a_type': A string representation of a type that implemented {ES_TOOL}. e.g. "MY_TOOL" => TYPE [MY_TOOL]
@@ -489,13 +489,12 @@ feature -- Query
 				end
 			end
 		ensure
-				-- Postcondition is far too complex to test when `a_active' is true.
-			result_positive: (not a_active and requested_tools.has (tool_id (a_type))) implies Result > 0
+			result_positive: requested_tools.has (tool_id (a_type)) implies Result > 0
 		end
 
 feature {NONE} -- Query
 
-	tool_id (a_type: TYPE [ES_TOOL [EB_TOOL]]): STRING_8
+	tool_id (a_type: TYPE [ES_TOOL [EB_TOOL]]): STRING_32
 			-- Retrieve tool identifier for a given type.
 			--
 			-- `a_type': Tool type to retrieve a ID for.
@@ -510,7 +509,7 @@ feature {NONE} -- Query
 			result_consistent: Result.is_equal (tool_id (a_type))
 		end
 
-	tool_id_from_tool (a_tool: ES_TOOL [EB_TOOL]): STRING_8
+	tool_id_from_tool (a_tool: ES_TOOL [EB_TOOL]): STRING_32
 			-- Retrieve tool identifier for a given tool.
 			--
 			-- `a_tool': Tool to retrieve a ID for.

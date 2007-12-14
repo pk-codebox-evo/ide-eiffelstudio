@@ -18,8 +18,6 @@ inherit
 			{NONE} all
 		end
 
-	USABLE_I
-
 feature {NONE} -- Clean Up
 
 	frozen unmake is
@@ -90,12 +88,6 @@ feature -- Status report
 	is_zombie: BOOLEAN
 			-- Has `Current' been disposed of?
 
-	is_interface_usable: BOOLEAN
-			-- Dtermines if the interface was usable
-		do
-			Result := not is_zombie
-		end
-
 feature {NONE} -- Status report
 
 	is_actively_disposing: BOOLEAN
@@ -121,9 +113,6 @@ feature {NONE} -- Implementation
 			-- Resets state when `safe_dispose' raises an exception.
 		do
 		end
-
-invariant
-	not_is_interface_usable: is_zombie implies not is_interface_usable
 
 ;indexing
 	copyright:	"Copyright (c) 1984-2007, Eiffel Software"

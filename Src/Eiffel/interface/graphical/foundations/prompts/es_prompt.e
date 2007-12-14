@@ -18,7 +18,6 @@ inherit
 			{NONE} set_is_modal, is_modal, icon
 		redefine
 			dialog_border_width,
-			is_size_and_position_remembered,
 			on_before_show,
 			on_handle_key
 		end
@@ -370,15 +369,6 @@ feature -- Element change
 			default_cancel_button_set: default_cancel_button = a_id
 		end
 
-feature {NONE} -- Status report
-
-	is_size_and_position_remembered: BOOLEAN
-			-- Indicates if the size and position information is remembered for the dialog
-		do
-				-- Prompts should not remember size and position information.
-			Result := False
-		end
-
 feature {NONE} -- Query
 
 	can_propagate_background_color_to_widget (a_widget: EV_WIDGET): BOOLEAN
@@ -663,7 +653,6 @@ feature {NONE} -- Constants
 invariant
 	prompt_sub_title_label_attached: prompt_sub_title_label /= Void
 	prompt_text_attached: prompt_text /= Void
-	not_is_size_and_position_remembered: not is_size_and_position_remembered
 
 ;indexing
 	copyright:	"Copyright (c) 1984-2007, Eiffel Software"

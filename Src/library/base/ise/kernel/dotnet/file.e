@@ -982,7 +982,7 @@ feature -- Cursor movement
 		local
 			i: INTEGER_64
 		do
-			i := internal_stream.seek (-abs_position.to_integer_64, {SEEK_ORIGIN}.end_)
+			i := internal_stream.seek (abs_position.to_integer_64, {SEEK_ORIGIN}.end_)
 		end
 
 	next_line is
@@ -1059,12 +1059,11 @@ feature -- Element change
 				st := internal_stream
 				ost := f.internal_stream
 				create buf.make (bs + 1)
-				rd := ost.read (buf, 0, bs)
 			until
-				rd = 0
+				f.after
 			loop
-				st.write (buf, 0, rd)
 				rd := ost.read (buf, 0, bs)
+				st.write (buf, 0, rd)
 			end
 				-- Close both files.
 			close
@@ -1144,11 +1143,19 @@ feature -- Element change
 
 	put_new_line, new_line is
 			-- Write a new line character at current position.
+		local
+			i: INTEGER
+			l_cnt: INTEGER
 		do
-			check
-				eiffel_newline_valid_count: eiffel_newline.count = 1
+			from 
+				i := 1
+				l_cnt := eiffel_newline.count
+			until
+				i > l_cnt
+			loop
+				internal_stream.write_byte (eiffel_newline.item (i).code.to_natural_8)				
+				i := i + 1
 			end
-			internal_stream.write_byte (eiffel_newline.item (1).code.to_natural_8)				
 		end
 
 	stamp (time: INTEGER) is

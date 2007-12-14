@@ -147,8 +147,6 @@ feature {NONE} -- Initialization
 			auto_recycle (shell_tools)
 			create ui.make (Current)
 			auto_recycle (ui)
-
-			window_id := next_window_id
 		end
 
 feature {EB_DEVELOPMENT_WINDOW_BUILDER} -- Initialization
@@ -173,15 +171,7 @@ feature {NONE} -- Clean up
 
 	internal_recycle is
 			-- Recycle all.
-		local
-			l_session_manager: SERVICE_CONSUMER [SESSION_MANAGER_S]
 		do
-				-- Persist session data
-			create l_session_manager
-			if l_session_manager.is_service_available then
-				l_session_manager.service.store_all
-			end
-
 			recycle_formatters
 			shortcut_manager.clear_actions (window)
 			agents.manager.remove_observer (agents)
@@ -275,43 +265,6 @@ feature -- Access
 			if class_stone /= Void and then class_stone.is_valid then
 				Result := class_stone.class_name
 			end
-		end
-
-	session_data: SESSION_I
-			-- Access to window session data for the current window
-		require
-			not_is_recycled: not is_recycled
-		local
-			l_consumer: SERVICE_CONSUMER [SESSION_MANAGER_S]
-		do
-			Result := internal_session_data
-			if Result = Void then
-				create l_consumer
-				if l_consumer.is_service_available then
-					Result := l_consumer.service.retrieve_per_window (Current, False)
-					internal_session_data := Result
-				end
-			end
-		ensure
-			result_attached: (create {SERVICE_CONSUMER [SESSION_MANAGER_S]}).is_service_available implies Result /= Void
-			result_is_interface_usable: Result.is_interface_usable
-			result_consistent: Result = session_data
-		end
-
-	frozen window_id: NATURAL_32
-			-- Unique window identifier, used to reference a window without having to hold a reference to it
-
-feature {NONE} -- Access
-
-	frozen window_id_counter: CELL [NATURAL_32]
-			-- Counter for generating unique window id's
-		indexing
-			once_status: global
-		once
-			create Result.put (1)
-		ensure
-			result_attached: Result /= Void
-			result_item_positive: Result.item > 0
 		end
 
 feature -- Querys
@@ -2510,28 +2463,6 @@ feature {EB_DEVELOPMENT_WINDOW_PART}
 			set: context_refreshing_timer = a_timer
 		end
 
-feature {NONE} -- Window management
-
-	frozen next_window_id: like window_id
-			-- Retrieve's the next window id in the sequence
-		do
-			Result := window_id_counter.item
-			window_id_counter.put (Result + 1)
-		ensure
-			window_manager.windows.for_all (agent (a_window: EB_DEVELOPMENT_WINDOW; a_id: like window_id): BOOLEAN
-				require
-					a_window_attached: a_window /= Void
-				do
-					Result := a_window.window_id /= a_id or else a_window = Current
-				end (?, Result))
-		end
-
-feature {NONE} -- Internal implementation cache
-
-	internal_session_data: like session_data
-			-- Cached version of `session_data'
-			-- Note: Do not use directly
-
 invariant
 	commands_attached: not is_recycled implies commands /= Void
 	menus_attached: not is_recycled implies menus /= Void
@@ -2539,7 +2470,6 @@ invariant
 	tools_attached: not is_recycled implies tools /= Void
 	dynamic_tools_attached: not is_recycled implies shell_tools /= Void
 	ui_attached: not is_recycled implies ui /= Void
-	window_id_positive: window_id > 0
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

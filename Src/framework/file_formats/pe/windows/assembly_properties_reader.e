@@ -235,7 +235,7 @@ feature {NONE} -- Externals
 	c_initialize_dispenser (a_dispenser: TYPED_POINTER [POINTER]): INTEGER is
 			-- Initializes metadata dispenser
 		external
-			"C++ inline use <cor.h>"
+			"C++ inline use %"strongname.h%""
 		alias
 			"[
 				IMetaDataDispenser* pDispenser = NULL;
@@ -256,7 +256,7 @@ feature {NONE} -- Externals
 	c_uninitialize (a_dispenser: TYPED_POINTER [POINTER]; a_cache: TYPED_POINTER [POINTER]) is
 			-- Uninitializes unmanaged COM resources
 		external
-			"C++ inline use <windows.h>"
+			"C++ inline use %"strongname.h%""
 		alias
 			"[
 				if (NULL != *$a_dispenser)
@@ -280,7 +280,7 @@ feature {NONE} -- Externals
 			not_a_dispenser_is_null: a_dispenser /= default_pointer
 			not_a_fn_is_null: a_fn /= default_pointer
 		external
-			"C++ inline use <cor.h>"
+			"C++ inline use %"strongname.h%""
 		alias
 			"[
 				IUnknown* pUnk = (IUnknown*)$a_dispenser;
@@ -311,7 +311,7 @@ feature {NONE} -- Externals
 		require
 			not_a_scope_is_null: a_scope /= default_pointer
 		external
-			"C++ inline use <windows.h>"
+			"C++ inline use %"strongname.h%""
 		alias
 			"[
 				if (NULL != *$a_scope) {
@@ -327,7 +327,7 @@ feature {NONE} -- Externals
 		require
 			not_a_scope_is_null: a_scope /= default_pointer
 		external
-			"C++ inline use <cor.h>"
+			"C++ inline use %"strongname.h%""
 		alias
 			"[
 				IMetaDataAssemblyImport* pMDA = (IMetaDataAssemblyImport*)$a_scope;
@@ -352,7 +352,10 @@ feature {NONE} -- Externals
 		require
 			strong_name_retriveable: strong_name_retriveable
 		external
-			"dllwin mscorsn.dll signature (LPCWSTR, BYTE**, ULONG*): EIF_BOOLEAN use <windows.h>"
+			"[
+				dllwin mscorsn.dll signature (LPCWSTR, BYTE**, ULONG*): EIF_BOOLEAN
+				use <StrongName.h>
+			]"
 		alias
 			"StrongNameTokenFromAssembly"
 		end
@@ -362,7 +365,10 @@ feature {NONE} -- Externals
 		require
 			strong_name_retriveable: strong_name_retriveable
 		external
-			"dllwin mscorsn.dll signature (BYTE*) use <windows.h>"
+			"[
+				dllwin mscorsn.dll signature (BYTE*)
+				use <StrongName.h>
+			]"
 		alias
 			"StrongNameFreeBuffer"
 		end
@@ -378,7 +384,10 @@ feature {NONE} -- Externals
 	c_create_cache (a_cache: TYPED_POINTER [POINTER]; a_reserved: INTEGER): INTEGER is
 			-- Retrieve the public portion of a key pair.
 		external
-			"dllwin fusion.dll signature (IAssemblyCache**, DWORD): HRESULT use <fusion.h>"
+			"[
+				dllwin fusion.dll signature (IAssemblyCache**, DWORD): HRESULT
+				use <fusion.h>
+			]"
 		alias
 			"CreateAssemblyCache"
 		end
@@ -389,7 +398,7 @@ feature {NONE} -- Externals
 			not_a_cache_is_null: a_cache /= default_pointer
 			not_a_name_is_null: a_name /= default_pointer
 		external
-			"C++ inline use <fusion.h>"
+			"C++ inline use %"fusion.h%""
 		alias
 			"[
 				IAssemblyCache* pCache = (IAssemblyCache*)$a_cache;

@@ -15,6 +15,7 @@ inherit
 		redefine
 			build_tool_interface,
 			row_item_text,
+			create_widget,
 			internal_recycle
 		end
 
@@ -87,6 +88,16 @@ feature {NONE} -- Query
 		end
 
 feature {NONE} -- Factory
+
+	create_widget: ES_GRID is
+			-- Create a new container widget upon request
+		do
+			Result := Precursor {ES_EVENT_LIST_TOOL_PANEL_BASE}
+
+				-- Set selection color to match editor selection color
+			Result.set_focused_selection_color (preferences.editor_data.selection_background_color)
+			Result.set_non_focused_selection_color (preferences.editor_data.focus_out_selection_background_color)
+		end
 
 	create_clickable_grid_item (a_line: EIFFEL_EDITOR_LINE): EB_GRID_EDITOR_TOKEN_ITEM
 			-- Create a new grid item to host the context of `a_lines'.

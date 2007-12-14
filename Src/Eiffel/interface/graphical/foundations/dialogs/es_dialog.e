@@ -1,9 +1,6 @@
 indexing
 	description: "[
 		A base dialog implementation for all dialogs resident in EiffelStudio.
-		
-		Note: Dialogs a becoming quite complex. As of 6.2 the dialogs now use the session manager service ({SESSION_MANAGER_S})
-		      to store size/position information. This can be vetoed by redefining `is_size_and_position_remembered' to return False.
 	]"
 	legal: "See notice at end of class."
 	status: "See notice at end of class.";
@@ -16,11 +13,7 @@ deferred class
 inherit
 	EB_RECYCLABLE
 
-inherit {NONE}
-	ES_HELP_PROVIDER
-		export
-			{NONE} all
-		end
+-- inherit {NONE}
 
 	ES_SHARED_DIALOG_BUTTONS
 
@@ -44,7 +37,7 @@ convert
 
 feature {NONE} -- Initialization
 
-	frozen make
+	make
 			-- Initialize dialog
 		local
 			l_init: BOOLEAN
@@ -54,12 +47,7 @@ feature {NONE} -- Initialization
 
 			is_modal := True
 
-				-- Create action lists
-			create show_actions
-			create close_actions
-			create button_actions.make_default
-
-			on_before_initialize
+			initialize
 			build_interface
 
 			dialog_result := default_button
@@ -70,8 +58,6 @@ feature {NONE} -- Initialization
 
 			is_initialized := True
 			is_initializing := l_init
-
-			on_after_initialized
 		ensure
 			is_initialized: is_initialized
 		end
@@ -88,51 +74,14 @@ feature {NONE} -- Initialization
 			development_window_set: development_window = a_window
 		end
 
-    on_before_initialize
-            -- Use to perform additional creation initializations, before the UI has been created.
+	initialize
+			-- Common initialization for any class attributes or other data structures.
 			-- Note: No user interface initialization should be done here! Use `build_dialog_interface' instead
 		do
-        end
-
-    on_after_initialized
-            -- Use to perform additional creation initializations, after the UI has been created.
-        require
-        	is_initialized: is_initialized
-        local
-        	l_sp_info: TUPLE [x, y, width, height: INTEGER]
-        	l_screen: EV_SCREEN
-        do
-       		bind_help_shortcut (dialog)
-
-			if is_size_and_position_remembered then
-	       		if session_manager.is_service_available then
-
-	       				-- Retrieve persisted session data size/position information
-	       			l_sp_info ?= session_data.value (dialog_session_id)
-	       			if l_sp_info /= Void then
-	       					-- Previous session data is available
-	       				create l_screen
-	       				if (l_sp_info.x >= 0 and then l_sp_info.x < l_screen.width) and (l_sp_info.y >= 0 and then l_sp_info.y < l_screen.height) then
-	       						-- Ensure dialog is not off-screen
-	       					dialog.set_position (l_sp_info.x, l_sp_info.y)
-	       				end
-	       				dialog.set_size (l_sp_info.width, l_sp_info.height)
-	       			end
-
-	       				-- Hook up close action to store session size/position data
-	       			register_action (close_actions, (agent (a_ia_session: SESSION_I)
-	       				do
-	       					if is_size_and_position_remembered then
-	       							-- Only persist data if a cancel button wasn't selected
-		       					if a_ia_session.is_interface_usable then
-		       							-- Store session data
-									a_ia_session.set_value ([dialog.x_position.max (0), dialog.y_position.max (0), dialog.width, dialog.height], dialog_session_id)
-		       					end
-	       					end
-	       				end (session_data)))
-	       		end
-			end
-        end
+			create show_actions
+			create close_actions
+			create button_actions.make_default
+		end
 
 feature {NONE} -- User interface initialization
 
@@ -353,29 +302,6 @@ feature {NONE} -- Access
 	frozen button_actions: DS_HASH_TABLE [TUPLE [action: like button_action; before_close: BOOLEAN], INTEGER]
 			-- Dialog button actions
 
-	frozen session_data: SESSION_I
-			-- Provides access to the environment session data
-		require
-			not_is_recycled: not is_recycled
-			is_session_manager_available: session_manager.is_service_available
-		do
-			Result := session_manager.service.retrieve (False)
-		ensure
-			result_attached: Result /= Void
-			result_is_interface_usable: Result.is_interface_usable
-		end
-
-	dialog_session_id: !STRING_8
-			-- Dialog session ID for storing size/position information
-		require
-			is_interface_usable: is_interface_usable
-		do
-			create Result.make (30)
-			Result.append (generating_type)
-		ensure
-			not_result_is_empty: not Result.is_empty
-		end
-
 feature {NONE} -- Helpers
 
 	frozen interface_names: INTERFACE_NAMES
@@ -413,14 +339,6 @@ feature {NONE} -- Helpers
 
 	frozen helpers: EVS_HELPERS
 			-- Helpers to extend the operations of EiffelVision2
-		once
-			create Result
-		ensure
-			result_attached: Result /= Void
-		end
-
-	frozen session_manager: SERVICE_CONSUMER [SESSION_MANAGER_S]
-			-- Access to the session manager service {SESSION_MANAGER_S} consumer
 		once
 			create Result
 		ensure
@@ -518,12 +436,6 @@ feature {NONE} -- Status report
 			-- Indicates if the dialog's shutdown has been vetoed
 			-- Note: See `veto_close' for more information
 
-	is_size_and_position_remembered: BOOLEAN
-			-- Indicates if the size and position information is remembered for the dialog
-		do
-			Result := session_manager.is_service_available
-		end
-
 feature -- Status setting
 
 	set_is_modal (a_modal: BOOLEAN)
@@ -606,10 +518,6 @@ feature {NONE} -- Query
 				Result := interface_names.b_ignore
 			when {ES_DIALOG_BUTTONS}.close_button then
 				Result := interface_names.b_close
-			when {ES_DIALOG_BUTTONS}.reset_button then
-				Result := interface_names.b_reset
-			when {ES_DIALOG_BUTTONS}.apply_button then
-				Result := interface_names.b_apply
 			end
 		ensure
 			result_attached: Result /= Void
@@ -803,31 +711,6 @@ feature -- Actions
 
 feature {NONE} -- Action handlers
 
-	on_before_show
-			-- Called prior to the dialog being shown
-		do
-			adjust_dialog_button_widths
-			dialog.set_default_cancel_button (dialog_window_buttons.item (default_cancel_button))
-			dialog.set_default_push_button (dialog_window_buttons.item (default_button))
-		end
-
-	on_close_requested (a_id: INTEGER)
-			-- Called when a dialog button is pressed and a close is requested.
-			-- Note: Redefine to veto a close request.
-			--
-			-- `a_id': A button id corrsponding to the button pressed to close the dialog.
-			--         Use {ES_DIALOG_BUTTONS} or `dialog_buttons' to determine the id's correspondance.
-		require
-			a_id_is_valid_button_id: dialog_buttons.is_valid_button_id (a_id)
-			buttons_has_a_id: buttons.has (a_id)
-			not_is_close_vetoed: not is_close_vetoed
-		do
-			dialog.hide
-			close_actions.call ([])
-		ensure
-			not_is_close_vetoed: not is_close_vetoed
-		end
-
 	on_dialog_button_pressed (a_id: INTEGER)
 			-- Called when a dialog button is pressed
 			--
@@ -852,6 +735,23 @@ feature {NONE} -- Action handlers
 				end
 			end
 			is_close_vetoed := False
+		ensure
+			not_is_close_vetoed: not is_close_vetoed
+		end
+
+	on_close_requested (a_id: INTEGER)
+			-- Called when a dialog button is pressed and a close is requested.
+			-- Note: Redefine to veto a close request.
+			--
+			-- `a_id': A button id corrsponding to the button pressed to close the dialog.
+			--         Use {ES_DIALOG_BUTTONS} or `dialog_buttons' to determine the id's correspondance.
+		require
+			a_id_is_valid_button_id: dialog_buttons.is_valid_button_id (a_id)
+			buttons_has_a_id: buttons.has (a_id)
+			not_is_close_vetoed: not is_close_vetoed
+		do
+			dialog.hide
+			close_actions.call ([])
 		ensure
 			not_is_close_vetoed: not is_close_vetoed
 		end
@@ -931,6 +831,14 @@ feature {NONE} -- Action handlers
 			end
 		end
 
+	on_before_show
+			-- Called prior to the dialog being shown
+		do
+			adjust_dialog_button_widths
+			dialog.set_default_cancel_button (dialog_window_buttons.item (default_cancel_button))
+			dialog.set_default_push_button (dialog_window_buttons.item (default_button))
+		end
+
 feature -- Conversion
 
 	to_dialog: EV_DIALOG
@@ -965,25 +873,12 @@ feature {NONE} -- Factory
 			is_initializing: is_initializing
 		local
 			l_container: EV_HORIZONTAL_BOX
-			l_tool_bar: SD_TOOL_BAR
 			l_buttons: like dialog_window_buttons
 			l_button: EV_BUTTON
 			l_ids: DS_SET_CURSOR [INTEGER]
 		do
 			create l_container
 			l_container.set_padding ({ES_UI_CONSTANTS}.dialog_button_horizontal_padding)
-
-			if help_providers.is_service_available then
-					-- Add a help button, if help is available
-				if {l_help_context: !HELP_CONTEXT_I} Current and then l_help_context.is_help_available then
-					create l_tool_bar.make
-					l_tool_bar.extend (create_help_button)
-					l_tool_bar.compute_minimum_size
-					l_container.extend (l_tool_bar)
-					l_container.disable_item_expand (l_tool_bar)
-				end
-			end
-
 			l_container.extend (create {EV_CELL})
 
 				-- Add buttons in the order in which they were originally set.
@@ -1053,38 +948,6 @@ feature {NONE} -- Factory
 			create Result.make_with_text (l_label)
 		ensure
 			result_attached: Result /= Void
-		end
-
-	create_help_button: SD_TOOL_BAR_BUTTON
-			-- Creates a help widget for use in the dialog button ribbon for recieving help
-		require
-			not_is_recyled: not is_recycled
-			is_initializing: is_initializing
-			help_providers_is_service_available: help_providers.is_service_available
-		local
-			l_pixmap: EV_PIXMAP
-			l_enable_help: BOOLEAN
-		do
-			create Result.make
-			Result.set_pixel_buffer (stock_pixmaps.command_system_info_icon_buffer)
-			Result.set_pixmap (stock_pixmaps.command_system_info_icon)
-
-			l_enable_help := True
-			if {l_context: !HELP_CONTEXT_I} Current then
-				l_enable_help := l_context.is_interface_usable and then help_providers.service.is_provider_available (l_context.help_provider)
-			end
-
-			if l_enable_help then
-				Result.set_tooltip ("Click to show the help documentation.")
-
-					-- Set click action
-				register_action (Result.select_actions, agent show_help)
-			else
-				Result.disable_sensitive
-				Result.set_tooltip ("No help provider is available to show help for this dialog!")
-			end
-		ensure
-			not_result_is_destroyed: Result /= Void implies not Result.is_destroyed
 		end
 
 feature {NONE} -- Internal implementation cache
