@@ -11,7 +11,7 @@ indexing
 	revision: "$Revision $"
 
 deferred class
-	ES_HELP_PROVIDER
+	ES_HELP_REQUEST_BINDER
 
 feature {NONE} -- Initialization
 

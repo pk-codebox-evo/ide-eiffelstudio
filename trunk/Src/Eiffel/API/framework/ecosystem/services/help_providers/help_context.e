@@ -27,7 +27,7 @@ feature -- Access
 			end
 		end
 
-	help_context_section: STRING_GENERAL
+	help_context_section: ?STRING_GENERAL
 			-- An optional sub-section in the help document, located using `help_context_id' to navigate to.
 		do
 			--| Dummy implementation descendents can override to support a sub-section.
@@ -35,7 +35,7 @@ feature -- Access
 
 feature {NONE} -- Access
 
-	help_context: STRING_GENERAL
+	help_context: ?STRING_GENERAL
 			-- A contextual identifer to link an associated help through.
 		require
 			is_interface_usable: is_interface_usable
