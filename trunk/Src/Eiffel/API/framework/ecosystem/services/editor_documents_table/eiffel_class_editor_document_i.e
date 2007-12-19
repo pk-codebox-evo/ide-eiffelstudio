@@ -18,7 +18,7 @@ feature -- Access
 	moniker: STRING_32
 			-- Document moniker
 		do
-			Result := class_i.file_name
+			Result := class_i.file_name.out.as_string_32
 		end
 
 	class_i: CLASS_I
