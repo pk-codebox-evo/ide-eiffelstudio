@@ -9,13 +9,37 @@ deferred class
 	VALIDITY_ERROR
 
 inherit
-	SYNTAX_ERROR
+	ERROR
 
-feature -- Access
+	SYNTAX_MESSAGE
 
-	code: STRING is
-			-- Code error
-		deferred
+feature {NONE} -- Initialization
+
+	make (s, e: INTEGER; f: like file_name; error_mssage: STRING) is
+			-- Create a new SYNTAX_ERROR.
+		require
+			f_not_void: f /= Void
+		do
+			set_position (s, e)
+			file_name := f
+		ensure
+			line_set: line = s
+			column_set: column = e
+			file_name_set: file_name = f
+		end
+
+feature -- Properties
+
+	file_name: STRING
+			-- Path to file where syntax issue happened
+
+	syntax_message: STRING is
+			-- Specific syntax message.
+			-- (By default, it is empty)
+		do
+			Result := ""
+		ensure
+			non_void_result: Result /= Void
 		end
 
 indexing
