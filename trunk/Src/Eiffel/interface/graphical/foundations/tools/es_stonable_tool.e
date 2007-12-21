@@ -20,12 +20,12 @@ inherit
 			set_stone
 		end
 
-feature {EB_TOOL, EB_DEVELOPMENT_WINDOW} -- Access
+feature -- Access
 
-	stone: STONE
+	stone: STONE assign set_stone
 			-- Last set stone
 
-feature {EB_TOOL, EB_DEVELOPMENT_WINDOW} -- Element change
+feature -- Element change
 
 	set_stone (a_stone: like stone)
 			-- Sets last stone.
@@ -35,6 +35,16 @@ feature {EB_TOOL, EB_DEVELOPMENT_WINDOW} -- Element change
 			stone := a_stone
 			if is_tool_instantiated then
 				panel.set_stone (a_stone)
+			end
+		end
+
+feature -- Synchronization
+
+	synchronize
+			-- Synchronizes any new data (compiled or other wise)
+		do
+			if is_tool_instantiated then
+				panel.synchronize
 			end
 		end
 
