@@ -30,15 +30,9 @@ feature -- File access
 		do
 		end
 
-feature -- Breakpoints access
+feature -- Events
 
-	resynchronize_breakpoints is
-			-- Resychronize the breakpoints (for instance after a compilation).
-		do
-		end
-
-	has_breakpoints: BOOLEAN is
-			-- Does the program have some breakpoints (enabled or disabled) ?
+	on_project_recompiled (is_successful: BOOLEAN) is
 		do
 		end
 
