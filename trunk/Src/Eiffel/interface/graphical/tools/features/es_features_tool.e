@@ -11,7 +11,12 @@ frozen class
 	ES_FEATURES_TOOL
 
 inherit
-	ES_TOOL [ES_FEATURES_TOOL_PANEL]
+	ES_STONABLE_TOOL [ES_FEATURES_TOOL_PANEL]
+
+	ES_FEATURES_TOOL_COMMANDER_I
+		undefine
+			out
+		end
 
 create {NONE}
 	default_create
@@ -45,6 +50,39 @@ feature -- Access
 			--       as well as in the {EB_MISC_SHORTCUT_DATA} class.
 		do
 			Result := "show_features_tool"
+		end
+
+feature -- Query
+
+	is_stone_usable (a_stone: STONE): BOOLEAN
+			-- Determines if a stone can be used by Current.
+			--
+			-- `a_stone': Stone to determine usablity.
+			-- `Result': True if the stone can be used, False otherwise.
+		do
+			Result := {l_stone: !CLASSC_STONE} a_stone
+		end
+
+feature -- Basic operations
+
+	select_feature_item (a_feature: ?E_FEATURE)
+			-- Selects a feature in the feature tree
+			--
+			-- `a_feature': The feature to select an assocated node in the feature tree.
+		do
+			if is_tool_instantiated then
+				panel.select_feature_item (a_feature)
+			end
+		end
+
+	select_feature_item_by_name (a_feature: !STRING_GENERAL)
+			-- Selects a feature in the feature tree, using a string name
+			--
+			-- `a_feature': The name of a feature to select an assocated node in the feature tree.
+		do
+			if is_tool_instantiated then
+				panel.select_feature_item_by_name (a_feature)
+			end
 		end
 
 feature {NONE} -- Factory
