@@ -18,7 +18,10 @@ feature -- Initialization
 
 	bar is
 			-- Fail with a postcondition violation.
+		require
+			precondition: True
 		do
+		
 		ensure
 			false_postcondition: False
 		end
