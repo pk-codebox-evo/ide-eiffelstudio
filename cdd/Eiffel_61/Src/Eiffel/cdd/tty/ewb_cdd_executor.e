@@ -31,7 +31,7 @@ feature -- Execution
 			l_executing: BOOLEAN
 			output_agent: PROCEDURE [ANY, TUPLE [STRING]]
 		do
-			if cdd_manager.is_project_initialized then
+			if cdd_manager.is_project_initialized and then not cdd_manager.project.universe.target.is_cdd_target then
 				l_executor := cdd_manager.background_executor
 
 					-- Create and register testing action handlers

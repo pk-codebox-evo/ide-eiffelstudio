@@ -243,10 +243,12 @@ feature {ANY} -- Cooperative multitasking
 	schedule_testing_restart is
 			-- Schedule that background testing starts a new as soon as possible.
 		do
-			if background_executor.has_next_step then
-				background_executor.cancel
+			if not target.is_cdd_target then
+				if background_executor.has_next_step then
+					background_executor.cancel
+				end
+				background_executor.start
 			end
-			background_executor.start
 		end
 
 	drive_background_tasks is

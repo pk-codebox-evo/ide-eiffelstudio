@@ -84,7 +84,7 @@ feature {NONE} -- Implementation
 					i := i + 1
 				end
 				localized_print (cs.item.tag + "%N")
-				if cs.item.test_routine /= Void then
+				if cs.item.is_leaf then
 					print_test_routine (cs.item.test_routine)
 				else
 					print_nodes (cs.item.children, a_level + 1)
