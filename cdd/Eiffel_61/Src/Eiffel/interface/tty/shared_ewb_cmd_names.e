@@ -198,7 +198,9 @@ feature {NONE}
 
 	text_doc_cmd_name: STRING is "Documentation (Text)"
 
-	version_cmd_name: STRING is "version";
+	version_cmd_name: STRING is "version"
+
+	testing_cmd_name: STRING is "Testing";
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

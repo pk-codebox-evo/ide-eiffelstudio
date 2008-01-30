@@ -786,6 +786,10 @@ feature -- Parse errors
 
 	e_parse_incorrect_description: STRING is "Invalid description tag.";
 
+	e_parse_incorrect_cdd_extracting: STRING is "Invalid cdd tag: attribute `extract' can only have values `false' or `true'."
+
+	e_parse_incorrect_cdd_executing: STRING is "Invalid cdd tag: attribute `execute' can only have values `false' or `true'."
+
 feature -- Boolean values
 
 	boolean_true: STRING_GENERAL is do Result := locale.translation ("True") end

@@ -56,6 +56,34 @@ feature -- Input/output
 			Result := ((c = 'Y') or (c = 'y'))
 		end
 
+	confirmed_with_default (a_message: STRING_GENERAL; a_default: BOOLEAN): BOOLEAN is
+			-- User input on question `a_message' where `a_default' is the result
+			-- value when the user does not enter anything.
+		local
+			c: CHARACTER
+		do
+			localized_print (a_message)
+			io.put_string (" [y/n]? (")
+			if a_default then
+				io.put_character ('y')
+			else
+				io.put_character ('n')
+			end
+			io.put_string (") ")
+			io.read_character
+			c := io.last_character
+			if c /= '%N' then
+				io.to_next_line
+			end
+			if c.as_lower = 'y' then
+				Result := True
+			elseif c.as_lower = 'n' then
+				Result := False
+			else
+				Result := a_default
+			end
+		end
+
 	wait_for_return is
 			-- Wait for an input. Set `has_failure' if nothing can be read.
 		local

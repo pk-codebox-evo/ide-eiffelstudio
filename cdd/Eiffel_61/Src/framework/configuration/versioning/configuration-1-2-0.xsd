@@ -68,6 +68,7 @@
 				maxOccurs="unbounded"/>
 			<xs:element name="override" type="override" minOccurs="0"
 				maxOccurs="unbounded"/>
+			<xs:element name="cdd" type="cdd" minOccurs="0"/>
 		</xs:sequence>
 		<xs:attribute name="name" type="xs:string" use="required"/>
 		<xs:attribute name="extends" type="xs:string" use="optional"/>
@@ -409,6 +410,11 @@
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
+
+	<xs:complexType name="cdd">
+                <xs:attribute name="extracting" type="xs:boolean" use="optional"/>
+		<xs:attribute name="executing" type="xs:boolean" use="optional"/>
+        </xs:complexType>
 
 	<xs:complexType name="overrides">
 		<xs:attribute name="group" type="xs:string" use="required"/>

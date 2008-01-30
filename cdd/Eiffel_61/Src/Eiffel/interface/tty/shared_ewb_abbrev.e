@@ -163,7 +163,9 @@ feature
 
 	Text_doc_abb: CHARACTER is 't'
 
-	Version_abb: CHARACTER is 'v';
+	Version_abb: CHARACTER is 'v'
+
+	testing_abb: CHARACTER is 't';
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

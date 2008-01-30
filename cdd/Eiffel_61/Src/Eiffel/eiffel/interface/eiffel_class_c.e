@@ -37,6 +37,11 @@ inherit
 			{NONE} all
 		end
 
+	CDD_ROUTINES
+		export
+			{NONE} all
+		end
+
 create
 	make
 
@@ -139,7 +144,31 @@ feature -- Settings
 			new_byte_code_needed_set: new_byte_code_needed = v
 		end
 
+	ignore_test_class is
+			-- Mark this class to be ignored for code generation.
+		require
+			is_test_class: is_test_class
+		do
+			is_ignored_test_class := True
+		ensure
+			is_igored_test_class: is_ignored_test_class
+		end
+
 feature -- Status report
+
+	is_test_class: BOOLEAN is
+			-- Is this class a test class?
+			-- Note: This is a CDD specific notion.
+		do
+			if parents /= Void then
+				Result := is_descendant_of_class (Current, "CDD_TEST_CASE")
+			else
+				Result := cluster.is_cdd_cluster
+			end
+		end
+
+	is_ignored_test_class: BOOLEAN
+			-- Is this a test class which should not be included in the interpreter, because it contains errors?
 
 	apply_msil_application_optimizations: BOOLEAN is
 			-- Should MSIL application optimizations be applied?
@@ -251,6 +280,7 @@ feature -- Action
 			l_uuid: STRING
 			l_system: CONF_SYSTEM
 		do
+			is_ignored_test_class := False
 			create file.make (file_name)
 			file.open_read
 
@@ -1937,7 +1967,16 @@ feature -- Supplier checking
 					-- We could not find class of name `cl_name', but it does not mean
 					-- that we actually need the class, as maybe, at the end of
 					-- the compilation, Current might not be needed anymore.
-				system.record_potential_vtct_error (Current, cl_name)
+					-- TODO: uncomment these lines again if compilation errors for tests are handled properly
+--				if is_test_class and not is_live_test_class (Current, universe.target) then
+--					-- Ignore errors in test case classes. (They shouldn't prevent the system from compiling)
+--					-- Warning: No other class must be depend on such errenous classes and their code must not
+--					-- be brought to execution.
+--					ignore_test_class
+--					system.remove_class (Current)
+--				else
+					system.record_potential_vtct_error (Current, cl_name)
+--				end
 			end
 		end
 

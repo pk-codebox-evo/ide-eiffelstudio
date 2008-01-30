@@ -49,7 +49,7 @@ feature -- Initialization
 		local
 			i: INTEGER
 		once
-			i := 2
+			i := 3
 			if eiffel_layout.Has_profiler then
 				i := i + 1
 			end
@@ -78,6 +78,10 @@ feature -- Initialization
 				Result.add_entry (
 					create {EWB_STRING}.make (profile_cmd_name, profile_help, profile_abb, profile_menu))
 			end
+
+				-- Insert CDD Menu
+			Result.add_entry (create {EWB_STRING}.make (testing_cmd_name, testing_help, testing_abb, testing_menu))
+
 			if eiffel_layout.has_documentation_generation then
 				Result.add_entry (
 					create {EWB_STRING}.make (documentation_cmd_name, documentation_help,
@@ -263,6 +267,18 @@ feature -- Initialization
 		ensure
 			queries_menu_not_void: Result /= Void
 		end
+
+	testing_menu: EWB_MENU is
+			-- Sub-menu containing cdd commands
+		once
+			create Result.make (1,3)
+			Result.add_entry (create {EWB_CDD_STATUS})
+			Result.add_entry (create {EWB_CDD_VIEW})
+			Result.add_entry (create {EWB_CDD_EXECUTOR})
+		ensure
+			not_void: Result /= Void
+		end
+
 
 feature -- Execution
 

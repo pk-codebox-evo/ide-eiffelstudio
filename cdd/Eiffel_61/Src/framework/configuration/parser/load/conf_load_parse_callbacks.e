@@ -185,6 +185,8 @@ feature -- Callbacks
 					process_debug_attributes
 				when t_assertions then
 					process_assertions_attributes
+				when t_cdd then
+					process_cdd_attributes
 				when t_warning then
 					process_warning_attributes
 				when t_renaming then
@@ -227,6 +229,8 @@ feature -- Callbacks
 			l_group: CONF_GROUP
 			l_error: CONF_ERROR_GRUNDEF
 			l_e_ov: CONF_ERROR_OVERRIDE
+
+			l_cdd_target: CONF_TARGET
 		do
 			if not is_error then
 				current_content.left_adjust
@@ -301,6 +305,15 @@ feature -- Callbacks
 							overrides_list.forth
 						end
 					end
+
+						-- Add cdd target
+					if not current_target.system.targets.has (current_target.name + "_tester") then
+						l_cdd_target := factory.new_cdd_target (current_target.name + "_tester", current_target.system)
+						l_cdd_target.set_parent (current_target)
+						l_cdd_target.set_root (factory.new_root (current_target.name + "_tests", "CDD_INTERPRETER", "execute", False))
+						current_target.system.add_target (l_cdd_target)
+					end
+
 					uses_list.clear_all
 					overrides_list.clear_all
 					group_list.clear_all
@@ -1557,6 +1570,36 @@ feature {NONE} -- Implementation attribute processing
 			end
 		end
 
+	process_cdd_attributes is
+			-- Proccess attributes of a cdd configuration tag.
+		require
+			current_target_not_void: current_target /= Void
+		local
+			l_attr: STRING
+			l_cdd_conf: CONF_CDD
+		do
+			l_cdd_conf := factory.new_cdd (current_target)
+			current_target.set_cdd (l_cdd_conf)
+
+			l_attr := current_attributes.item (at_extracting)
+			if l_attr /= Void then
+				if l_attr.is_boolean then
+					l_cdd_conf.set_is_extracting (l_attr.to_boolean)
+				else
+					set_parse_error_message (conf_interface_names.e_parse_incorrect_cdd_extracting)
+				end
+			end
+
+			l_attr := current_attributes.item (at_executing)
+			if l_attr /= Void then
+				if l_attr.is_boolean then
+					l_cdd_conf.set_is_executing (l_attr.to_boolean)
+				else
+					set_parse_error_message (conf_interface_names.e_parse_incorrect_cdd_executing)
+				end
+			end
+		end
+
 feature {NONE} -- Implementation content processing
 
 	process_description_content is
@@ -1684,6 +1727,7 @@ feature {NONE} -- Implementation state transitions
 				-- => assembly
 				-- => cluster
 				-- => override
+				-- => cdd
 			create l_trans.make (19)
 			l_trans.force (t_description, "description")
 			l_trans.force (t_root, "root")
@@ -1705,6 +1749,7 @@ feature {NONE} -- Implementation state transitions
 			l_trans.force (t_assembly, "assembly")
 			l_trans.force (t_cluster, "cluster")
 			l_trans.force (t_override, "override")
+			l_trans.force (t_cdd, "cdd")
 			Result.force (l_trans, t_target)
 
 				-- file_rule
@@ -1729,8 +1774,8 @@ feature {NONE} -- Implementation state transitions
 			l_trans.force (t_debug, "debug")
 			l_trans.force (t_assertions, "assertions")
 			l_trans.force (t_warning, "warning")
-			Result.force (l_trans, t_option)
 			Result.force (l_trans, t_class_option)
+			Result.force (l_trans, t_option)
 
 				-- (pre|post)_compile_action
 				-- => description
@@ -1841,7 +1886,7 @@ feature {NONE} -- Implementation state transitions
 				-- * name
 				-- * eifgen
 				-- * extends
-			create l_attr.make (4)
+			create l_attr.make (5)
 			l_attr.force (at_name, "name")
 			l_attr.force (at_eifgen, "eifgen")
 			l_attr.force (at_extends, "extends")
@@ -2025,6 +2070,16 @@ feature {NONE} -- Implementation state transitions
 			l_attr.force (at_supplier_precondition, "supplier_precondition")
 			Result.force (l_attr, t_assertions)
 
+				-- cdd
+				-- * enabled
+				-- * cluster_name
+				-- * extract
+				-- * capture_replay
+			create l_attr.make (4)
+			l_attr.force (at_extracting, "extract")
+			l_attr.force (at_executing, "execute")
+			Result.force (l_attr, t_cdd)
+
 				-- build, platform
 				-- * value
 				-- * excluded_value
@@ -2146,6 +2201,8 @@ feature {NONE} -- Implementation constants
 	t_visible: INTEGER is 39
 	t_overrides: INTEGER is 40
 	t_mapping: INTEGER is 41
+		-- CDD tag
+	t_cdd: INTEGER is 60
 
 		-- Attribute states
 	at_abstract: INTEGER is 1000
@@ -2211,6 +2268,10 @@ feature {NONE} -- Implementation constants
 	at_is_attached_by_default: INTEGER is 1060
 	at_is_void_safe: INTEGER is 1061
 
+		-- CDD attributes
+	at_extracting: INTEGER is 1100
+	at_executing: INTEGER is 1101
+
 feature -- Assertions
 
 	has_resolved_namespaces: BOOLEAN is True
@@ -2230,19 +2291,19 @@ indexing
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[
 			This file is part of Eiffel Software's Eiffel Development Environment.
-			
+
 			Eiffel Software's Eiffel Development Environment is free
 			software; you can redistribute it and/or modify it under
 			the terms of the GNU General Public License as published
 			by the Free Software Foundation, version 2 of the License
 			(available at the URL listed under "license" above).
-			
+
 			Eiffel Software's Eiffel Development Environment is
 			distributed in the hope that it will be useful,	but
 			WITHOUT ANY WARRANTY; without even the implied warranty
 			of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 			See the	GNU General Public License for more details.
-			
+
 			You should have received a copy of the GNU General Public
 			License along with Eiffel Software's Eiffel Development
 			Environment; if not, write to the Free Software Foundation,

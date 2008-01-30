@@ -212,6 +212,8 @@ feature {NONE}
 
 	version_help: STRING_GENERAL is do Result := locale.translation ("show compiler version number") end;
 
+	testing_help: STRING_GENERAL is do Result := locale.translation ("run tests or see testing results") end
+
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"

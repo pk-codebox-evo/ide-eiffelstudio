@@ -182,6 +182,26 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
+	cdd_tool: CDD_TOOL_PANEL
+			-- CDD tool
+		require
+			not_is_recycled: not is_recycled
+		do
+			Result ?= develop_window.shell_tools.tool ({CDD_TOOL}).panel
+		ensure
+			result_attached: Result /= Void
+		end
+
+	cdd_output_tool: CDD_TOOL_PANEL
+			-- CDD tool
+		require
+			not_is_recycled: not is_recycled
+		do
+			Result ?= develop_window.shell_tools.tool ({CDD_OUTPUT_TOOL}).panel
+		ensure
+			result_attached: Result /= Void
+		end
+
 	customizable_tools: ARRAYED_LIST [EB_TOOL] is
 			-- Access to list of tools that can be customized
 		local

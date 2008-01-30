@@ -29,7 +29,7 @@ feature -- Access
 			-- Tool icon pixmap
 			-- Note: Do not call `tool.icon' as it will create the tool unnecessarly!
 		do
-			Result := stock_pixmaps.tool_external_output_icon
+			Result := stock_pixmaps.windows_windows_icon
 		end
 
 	title: STRING_32
