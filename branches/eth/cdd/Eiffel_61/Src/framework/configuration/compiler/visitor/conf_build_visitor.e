@@ -213,14 +213,15 @@ feature -- Visit nodes
 				else
 					l_cdd_target := a_target
 				end
-				if l_cdd_target /= Void and then l_cdd_target.cdd /= Void then
-					l_loc := factory.new_location_from_path (".\cdd_tests\" + l_cdd_target.name, a_target)
-					create l_dir.make (l_loc.build_path ("", ""))
-					if l_dir.exists and not a_target.clusters.has (l_cdd_target.name + "_tests") then
-						l_cluster := factory.new_cdd_cluster (l_cdd_target.name + "_tests", l_loc, a_target)
-						l_cluster.set_recursive (True)
-						a_target.add_cluster (l_cluster)
-					end
+				check
+					sut_target_not_void: l_cdd_target /= Void
+				end
+				l_loc := factory.new_location_from_path (".\cdd_tests\" + l_cdd_target.name, a_target)
+				create l_dir.make (l_loc.build_path ("", ""))
+				if l_dir.exists and not a_target.clusters.has (l_cdd_target.name + "_tests") then
+					l_cluster := factory.new_cdd_cluster (l_cdd_target.name + "_tests", l_loc, a_target)
+					l_cluster.set_recursive (True)
+					a_target.add_cluster (l_cluster)
 				end
 
 					-- process clusters first, because we need those information while processing libraries if we have circular dependencies
