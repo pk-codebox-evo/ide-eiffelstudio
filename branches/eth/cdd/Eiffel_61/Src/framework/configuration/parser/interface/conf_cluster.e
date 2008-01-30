@@ -26,7 +26,7 @@ inherit
 	CONF_VISIBLE
 
 create {CONF_PARSE_FACTORY}
-	make
+	make, make_cdd_cluster
 
 feature {NONE} -- Initialization
 
@@ -40,6 +40,15 @@ feature {NONE} -- Initialization
 			create name_by_class_cache.make (50)
 		end
 
+	make_cdd_cluster (a_name: like name; a_location: like location; a_target: CONF_TARGET) is
+			-- Create a new cluster for including cdd test cases.
+		do
+			make (a_name, a_location, a_target)
+			is_cdd_cluster := True
+		ensure
+			is_cdd_cluster_set: is_cdd_cluster
+		end
+
 feature -- Status
 
 	is_cluster: BOOLEAN is
@@ -47,6 +56,9 @@ feature -- Status
 		once
 			Result := True
 		end
+
+	is_cdd_cluster: BOOLEAN
+			-- Is this a cluster for cdd test cases?
 
 feature -- Access, stored in configuration file
 

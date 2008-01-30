@@ -15,6 +15,7 @@ inherit
 			new_class_assembly,
 			new_class_partial,
 			new_cluster,
+			new_cdd_cluster,
 			new_override,
 			new_physical_assembly,
 			new_assertions
@@ -44,6 +45,12 @@ feature
 			-- Create a `CONF_CLUSTER' object.
 		do
 			create Result.make (a_name, a_directory, a_target)
+		end
+
+	new_cdd_cluster (a_name: STRING; a_directory: CONF_DIRECTORY_LOCATION; a_target: CONF_TARGET): CLUSTER_I is
+			-- Create a `CLUSTER_I' object representing an abstract cdd cluster.
+		do
+			create Result.make_cdd_cluster (a_name, a_directory, a_target)
 		end
 
 	new_override (a_name: STRING; a_directory: CONF_DIRECTORY_LOCATION; a_target: CONF_TARGET): OVERRIDE_I is

@@ -41,6 +41,8 @@ feature {NONE} -- Initialization
 			create application_prelaunching_actions
 			create debugger_data.make
 			create implementation.make (Current)
+
+			add_observer (cdd_manager)
 		end
 
 	is_initialized: BOOLEAN
@@ -1042,12 +1044,6 @@ feature -- Debugging events
 
 			was_executing := application_is_executing
 			if was_executing then
-				debugger_output_message (debugger_names.t_Application_exited)
-				debugger_status_message (debugger_names.t_Application_exited)
-
-					--| Observers
-				observers.do_all (agent {DEBUGGER_OBSERVER}.on_application_quit (Current))
-					--| Kept objects
 				application_status.clear_kept_objects
 			end
 
@@ -1059,6 +1055,15 @@ feature -- Debugging events
 
 			destroy_application
 			reset_class_c_data
+
+			if was_executing then
+				debugger_output_message (debugger_names.t_Application_exited)
+				debugger_status_message (debugger_names.t_Application_exited)
+
+					--| Observers
+				observers.do_all (agent {DEBUGGER_OBSERVER}.on_application_quit (Current))
+					--| Kept objects
+			end
 
 			on_debugging_terminated (was_executing)
 			debug ("debugger_trace_synchro")
@@ -1144,6 +1149,17 @@ feature {APPLICATION_EXECUTION} -- specific implementation
 		end
 
 	implementation: DEBUGGER_MANAGER_IMP;
+
+feature -- Implementation
+
+	cdd_manager: CDD_MANAGER is
+			-- Instance of cdd manager
+			-- NOTE: not sure yet where it is the best place to initiate this manager
+		once
+			create Result.make (Current, eiffel_project)
+		ensure
+			not_void: Result /= Void
+		end
 
 invariant
 

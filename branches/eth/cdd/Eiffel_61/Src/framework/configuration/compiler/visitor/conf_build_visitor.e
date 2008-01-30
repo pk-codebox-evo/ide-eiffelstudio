@@ -169,6 +169,11 @@ feature -- Visit nodes
 			l_old_assemblies: HASH_TABLE [CONF_PHYSICAL_ASSEMBLY_INTERFACE, STRING]
 			l_retried: BOOLEAN
 			l_error_count: INTEGER
+
+			l_cluster: CONF_CLUSTER
+			l_dir: KL_DIRECTORY
+			l_loc: CONF_DIRECTORY_LOCATION
+			l_cdd_target: CONF_TARGET
 		do
 			if not l_retried then
 				if last_errors /= Void then
@@ -199,6 +204,22 @@ feature -- Visit nodes
 					libraries.force (a_target, a_target.system.uuid)
 					if old_libraries /= Void then
 						old_libraries.remove (a_target.system.uuid)
+					end
+				end
+
+				-- Add cdd cluster and tester target if cdd is enabled in `current_target'
+				if a_target.is_cdd_target then
+					l_cdd_target := a_target.extends
+				else
+					l_cdd_target := a_target
+				end
+				if l_cdd_target /= Void and then l_cdd_target.cdd /= Void then
+					l_loc := factory.new_location_from_path (".\cdd_tests\" + l_cdd_target.name, a_target)
+					create l_dir.make (l_loc.build_path ("", ""))
+					if l_dir.exists and not a_target.clusters.has (l_cdd_target.name + "_tests") then
+						l_cluster := factory.new_cdd_cluster (l_cdd_target.name + "_tests", l_loc, a_target)
+						l_cluster.set_recursive (True)
+						a_target.add_cluster (l_cluster)
 					end
 				end
 

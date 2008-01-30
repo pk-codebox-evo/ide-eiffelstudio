@@ -122,112 +122,129 @@ feature -- Visit nodes
 			l_settings, l_variables: HASH_TABLE [STRING, STRING]
 			l_a_name, l_a_val: ARRAYED_LIST [STRING]
 			l_sort_lst: DS_ARRAYED_LIST [STRING]
+			l_cdd: CONF_CDD
 		do
-			current_target := a_target
-			append_text_indent ("<target name=%""+escape_xml (a_target.name)+"%"")
-			if a_target.extends /= Void then
-				text.append (" extends=%""+escape_xml (a_target.extends.name)+"%"")
-			end
-			if a_target.is_abstract then
-				text.append (" abstract=%"true%"")
-			end
-			append_text (">%N")
-			indent := indent + 1
-			append_description_tag (a_target.description)
-			l_root := a_target.internal_root
-			if l_root /= Void then
-				create l_a_name.make (4)
-				create l_a_val.make (4)
-				if l_root.is_all_root then
-					l_a_name.force ("all_classes")
-					l_a_val.force (l_root.is_all_root.out.as_lower)
-				else
-					l_a_name.force ("cluster")
-					l_a_val.force (l_root.cluster_name)
-					l_a_name.force ("class")
-					l_a_val.force (l_root.class_type_name)
-					l_a_name.force ("feature")
-					l_a_val.force (l_root.feature_name)
+				-- Note: Do not print target if it is a tester target for cdd
+			if not a_target.is_cdd_target then
+				current_target := a_target
+				append_text_indent ("<target name=%""+escape_xml (a_target.name)+"%"")
+				if a_target.extends /= Void then
+					text.append (" extends=%""+escape_xml (a_target.extends.name)+"%"")
 				end
-				append_tag ("root", Void, l_a_name, l_a_val)
-			end
-			l_version := a_target.internal_version
-			if l_version /= Void then
-				create l_a_name.make (8)
-				create l_a_val.make (8)
-				l_a_name.force ("major")
-				l_a_val.force (l_version.major.out)
-				l_a_name.force ("minor")
-				l_a_val.force (l_version.minor.out)
-				l_a_name.force ("release")
-				l_a_val.force (l_version.release.out)
-				l_a_name.force ("build")
-				l_a_val.force (l_version.build.out)
-				l_a_name.force ("company")
-				l_a_val.force (l_version.company)
-				l_a_name.force ("product")
-				l_a_val.force (l_version.product)
-				l_a_name.force ("trademark")
-				l_a_val.force (l_version.trademark)
-				l_a_name.force ("copyright")
-				l_a_val.force (l_version.copyright)
-				append_tag ("version", Void, l_a_name, l_a_val)
-			end
-			append_file_rule (a_target.internal_file_rule)
-			append_options (a_target.internal_options, Void)
-			from
-				l_settings := a_target.internal_settings
-				create l_sort_lst.make_from_array (l_settings.current_keys)
-				l_sort_lst.sort (create {DS_QUICK_SORTER [STRING]}.make (create {KL_COMPARABLE_COMPARATOR [STRING]}.make))
-				l_sort_lst.start
-			until
-				l_sort_lst.after
-			loop
-				create l_a_name.make (2)
-				l_a_name.force ("name")
-				l_a_name.force ("value")
-				create l_a_val.make (1)
-				l_a_val.force (l_sort_lst.item_for_iteration)
-				l_a_val.force (l_settings.item (l_sort_lst.item_for_iteration))
-				append_tag ("setting", Void, l_a_name, l_a_val)
-				l_sort_lst.forth
-			end
-			append_mapping (a_target.internal_mapping)
-			append_externals (a_target.internal_external_include, "include")
-			append_externals (a_target.internal_external_object, "object")
-			append_externals (a_target.internal_external_library, "library")
-			append_externals (a_target.internal_external_resource, "resource")
-			append_externals (a_target.internal_external_make, "make")
-			append_actions (a_target.internal_pre_compile_action, "pre")
-			append_actions (a_target.internal_post_compile_action, "post")
+				if a_target.is_abstract then
+					text.append (" abstract=%"true%"")
+				end
+				append_text (">%N")
+				indent := indent + 1
+				append_description_tag (a_target.description)
+				l_root := a_target.internal_root
+				if l_root /= Void then
+					create l_a_name.make (4)
+					create l_a_val.make (4)
+					if l_root.is_all_root then
+						l_a_name.force ("all_classes")
+						l_a_val.force (l_root.is_all_root.out.as_lower)
+					else
+						l_a_name.force ("cluster")
+						l_a_val.force (l_root.cluster_name)
+						l_a_name.force ("class")
+						l_a_val.force (l_root.class_type_name)
+						l_a_name.force ("feature")
+						l_a_val.force (l_root.feature_name)
+					end
+					append_tag ("root", Void, l_a_name, l_a_val)
+				end
 
-			from
-				l_variables := a_target.internal_variables
-				l_variables.start
-			until
-				l_variables.after
-			loop
-				create l_a_name.make (2)
-				l_a_name.force ("name")
-				l_a_name.force ("value")
-				create l_a_val.make (1)
-				l_a_val.force (l_variables.key_for_iteration)
-				l_a_val.force (l_variables.item_for_iteration)
-				append_tag ("variable", Void, l_a_name, l_a_val)
-				l_variables.forth
+					-- Append CDD config
+				l_cdd := a_target.cdd
+				if l_cdd /= Void and then not l_cdd.is_default then
+					create l_a_name.make (2)
+					create l_a_val.make (2)
+					l_a_name.force ("extract")
+					l_a_val.force (l_cdd.is_extracting_enabled.out.as_lower)
+					l_a_name.force ("execute")
+					l_a_val.force (l_cdd.is_executing_enabled.out.as_lower)
+					append_tag ("cdd", Void, l_a_name, l_a_val)
+				end
+
+				l_version := a_target.internal_version
+				if l_version /= Void then
+					create l_a_name.make (8)
+					create l_a_val.make (8)
+					l_a_name.force ("major")
+					l_a_val.force (l_version.major.out)
+					l_a_name.force ("minor")
+					l_a_val.force (l_version.minor.out)
+					l_a_name.force ("release")
+					l_a_val.force (l_version.release.out)
+					l_a_name.force ("build")
+					l_a_val.force (l_version.build.out)
+					l_a_name.force ("company")
+					l_a_val.force (l_version.company)
+					l_a_name.force ("product")
+					l_a_val.force (l_version.product)
+					l_a_name.force ("trademark")
+					l_a_val.force (l_version.trademark)
+					l_a_name.force ("copyright")
+					l_a_val.force (l_version.copyright)
+					append_tag ("version", Void, l_a_name, l_a_val)
+				end
+				append_file_rule (a_target.internal_file_rule)
+				append_options (a_target.internal_options, Void)
+				from
+					l_settings := a_target.internal_settings
+					create l_sort_lst.make_from_array (l_settings.current_keys)
+					l_sort_lst.sort (create {DS_QUICK_SORTER [STRING]}.make (create {KL_COMPARABLE_COMPARATOR [STRING]}.make))
+					l_sort_lst.start
+				until
+					l_sort_lst.after
+				loop
+					create l_a_name.make (2)
+					l_a_name.force ("name")
+					l_a_name.force ("value")
+					create l_a_val.make (1)
+					l_a_val.force (l_sort_lst.item_for_iteration)
+					l_a_val.force (l_settings.item (l_sort_lst.item_for_iteration))
+					append_tag ("setting", Void, l_a_name, l_a_val)
+					l_sort_lst.forth
+				end
+				append_mapping (a_target.internal_mapping)
+				append_externals (a_target.internal_external_include, "include")
+				append_externals (a_target.internal_external_object, "object")
+				append_externals (a_target.internal_external_library, "library")
+				append_externals (a_target.internal_external_resource, "resource")
+				append_externals (a_target.internal_external_make, "make")
+				append_actions (a_target.internal_pre_compile_action, "pre")
+				append_actions (a_target.internal_post_compile_action, "post")
+
+				from
+					l_variables := a_target.internal_variables
+					l_variables.start
+				until
+					l_variables.after
+				loop
+					create l_a_name.make (2)
+					l_a_name.force ("name")
+					l_a_name.force ("value")
+					create l_a_val.make (1)
+					l_a_val.force (l_variables.key_for_iteration)
+					l_a_val.force (l_variables.item_for_iteration)
+					append_tag ("variable", Void, l_a_name, l_a_val)
+					l_variables.forth
+				end
+
+				if a_target.internal_precompile /= Void then
+					a_target.internal_precompile.process (Current)
+				end
+
+				process_in_alphabetic_order (a_target.internal_libraries)
+				process_in_alphabetic_order (a_target.internal_assemblies)
+				process_in_alphabetic_order (a_target.internal_clusters)
+				process_in_alphabetic_order (a_target.internal_overrides)
+
+				indent := indent - 1
+				append_text_indent ("</target>%N")
 			end
-
-			if a_target.internal_precompile /= Void then
-				a_target.internal_precompile.process (Current)
-			end
-
-			process_in_alphabetic_order (a_target.internal_libraries)
-			process_in_alphabetic_order (a_target.internal_assemblies)
-			process_in_alphabetic_order (a_target.internal_clusters)
-			process_in_alphabetic_order (a_target.internal_overrides)
-
-			indent := indent - 1
-			append_text_indent ("</target>%N")
 		ensure then
 			indent_back: indent = old indent
 		end
@@ -297,7 +314,8 @@ feature -- Visit nodes
 			-- Visit `a_cluster'.
 		do
 				-- ignore subclusters, except if we are handling one.
-			if a_cluster.parent = Void or current_is_subcluster then
+				-- ignore automatically inserted cdd clusters
+			if not a_cluster.is_cdd_cluster and (a_cluster.parent = Void or current_is_subcluster) then
 				current_is_subcluster := False
 				append_pre_group ("cluster", a_cluster)
 				append_attr_cluster (a_cluster)
@@ -337,6 +355,7 @@ feature -- Visit nodes
 		ensure then
 			indent_back: indent = old indent
 		end
+
 
 feature {NONE} -- Implementation
 

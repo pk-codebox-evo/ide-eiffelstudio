@@ -16,6 +16,7 @@ inherit
 
 	COMPILER_EXPORTER
 	SHARED_ERROR_HANDLER
+	CDD_ROUTINES
 
 create
 	make

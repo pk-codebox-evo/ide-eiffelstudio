@@ -91,6 +91,8 @@ feature {NONE} -- Initialization
 			create {DEBUGGER_TEXT_FORMATTER_OUTPUT} text_formatter_visitor.make
 
 			window_manager.add_observer (Current)
+
+			ev_application.add_idle_action (agent cdd_manager.drive_background_tasks)
 		end
 
 	initialize is

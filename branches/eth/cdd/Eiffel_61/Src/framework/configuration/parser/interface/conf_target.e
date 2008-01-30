@@ -20,7 +20,7 @@ inherit
 	DEBUG_OUTPUT
 
 create {CONF_PARSE_FACTORY}
-	make
+	make, make_cdd_target
 
 feature {NONE} -- Initialization
 
@@ -55,6 +55,20 @@ feature {NONE} -- Initialization
 			system_set: system = a_system
 		end
 
+	make_cdd_target (a_name: STRING; a_system: CONF_SYSTEM) is
+			-- Create new abstract cdd target with `a_name'.
+		require
+			a_name_ok: a_name /= Void and not a_name.is_empty
+			a_system_not_void: a_system /= Void
+		do
+			make (a_name, a_system)
+			is_cdd_target := True
+		ensure
+			name_set: name /= Void and then name.is_equal (a_name.as_lower)
+			system_set: system = a_system
+			cdd_target: is_cdd_target
+		end
+
 feature -- Access, stored in configuration file
 
 	name: STRING
@@ -71,6 +85,9 @@ feature -- Access, stored in configuration file
 
 	is_abstract: BOOLEAN
 			-- Is this an abstract target? (i.e. cannot be used to compile the system).
+
+	is_cdd_target: BOOLEAN
+			-- Is this an abstract cdd tester target, e.g. not actually written in config file?
 
 feature -- Access, in compiled only, not stored to configuration file
 
@@ -375,6 +392,18 @@ feature -- Access queries
 			end
 		ensure
 			Result_not_void: Result /= Void
+		end
+
+	cdd: like internal_cdd is
+			-- CDD configuration
+		do
+			if internal_cdd /= Void then
+				Result := internal_cdd
+			elseif extends /= Void then
+				-- Note: following is dangerous since this might
+				-- change cdd configuration for parent target.
+				--Result := extends.cdd
+			end
 		end
 
 feature -- Access queries for settings
@@ -1208,6 +1237,16 @@ feature {CONF_ACCESS} -- Update, stored in configuration file
 			is_abstract_set: is_abstract = an_enabled
 		end
 
+	set_cdd (a_cdd: like cdd) is
+			-- Set `cdd' to `a_cdd'.
+		require
+			valid_cdd: a_cdd /= Void implies a_cdd.target = Current
+		do
+			internal_cdd := a_cdd
+		ensure
+			internal_cdd_set: internal_cdd = a_cdd
+		end
+
 feature {CONF_ACCESS} -- Update, in compiled only, not stored to configuration file
 
 	set_environ_variables (a_vars: like environ_variables) is
@@ -1371,6 +1410,9 @@ feature {CONF_VISITOR, CONF_ACCESS} -- Implementation, attributes that are store
 	internal_variables: EQUALITY_HASH_TABLE [STRING, STRING]
 			-- User defined variables of this target itself.
 
+	internal_cdd: CONF_CDD
+			-- CDD configuration of this target
+
 feature {NONE} -- Implementation
 
 	is_group_equal_check (a, b: HASH_TABLE [CONF_GROUP, STRING]): BOOLEAN is
@@ -1409,6 +1451,7 @@ invariant
 	internal_variables_not_void: internal_variables /= Void
 	internal_settings_not_void: internal_settings /= Void
 	environ_variables_not_void: environ_variables /= Void
+	internal_cdd_valid: internal_cdd /= Void implies internal_cdd.target = Current
 
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"

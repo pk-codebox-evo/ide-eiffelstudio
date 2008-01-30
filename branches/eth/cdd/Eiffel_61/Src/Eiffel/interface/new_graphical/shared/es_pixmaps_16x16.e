@@ -41,7 +41,7 @@ feature {NONE} -- Initialization
 				(create {ES_SHARED_PROMPT_PROVIDER}).prompts.show_warning_prompt ("Cannot read pixmap file:%N" + l_file + ".%N%NPlease make sure the installation is not corrupted.", Void, Void)
 
 					-- Fail safe, use blank pixmap
-				create raw_buffer.make_with_size ((33 * 16) + 1,(18 * 16) + 1)
+				create raw_buffer.make_with_size ((33 * 16) + 1,(19 * 16) + 1)
 			end
 		rescue
 			retried := True
@@ -4587,6 +4587,48 @@ feature -- Access
 			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (17, 18))
 		end
 
+feature -- CDD pixmaps
+
+	frozen cdd_test_icon: EV_PIXEL_BUFFER is
+		once
+			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (1, 19))
+		end
+
+	frozen cdd_test_unresolved_icon: EV_PIXEL_BUFFER is
+		once
+			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (2, 19))
+		end
+
+	frozen cdd_test_fail_icon: EV_PIXEL_BUFFER is
+		once
+			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (3, 19))
+		end
+
+	frozen cdd_test_pass_icon: EV_PIXEL_BUFFER is
+		once
+			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (4, 19))
+		end
+
+	frozen cdd_execute_icon: EV_PIXEL_BUFFER is
+		once
+			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (5, 19))
+		end
+
+	frozen cdd_new_test_icon: EV_PIXEL_BUFFER is
+		once
+			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (6, 19))
+		end
+
+	frozen cdd_extract_icon: EV_PIXEL_BUFFER is
+		once
+			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (7, 19))
+		end
+
+	frozen cdd_debug_icon: EV_PIXEL_BUFFER is
+		once
+			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (8, 19))
+		end
+
 feature {NONE} -- Query
 
 	frozen pixel_rectangle (a_x: INTEGER; a_y: INTEGER): EV_RECTANGLE is
@@ -4595,7 +4637,7 @@ feature {NONE} -- Query
 			a_x_positive: a_x > 0
 			a_x_small_enough: a_x <= 33
 			a_y_positive: a_y > 0
-			a_y_small_enough: a_y <= 18
+			a_y_small_enough: a_y <= 19
 		local
 			l_x_offset: INTEGER
 			l_y_offset: INTEGER

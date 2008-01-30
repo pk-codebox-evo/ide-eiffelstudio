@@ -48,6 +48,10 @@ inherit
 	SHARED_ARRAY_BYTE
 	SHARED_DECLARATIONS
 	SHARED_DEGREES
+		export
+			{CDD_MANAGER} all
+		end
+
 	SHARED_RESCUE_STATUS
 	COMPILER_EXPORTER
 	SHARED_EIFFEL_PROJECT
@@ -1068,6 +1072,9 @@ end
 				check_unique_class_names
 			end
 
+				-- Find cdd classes and add them to unref_classes
+			find_cdd_classes
+
 			is_force_rebuild := False
 		rescue
 				-- An exception occur during system analysis, we should force a rebuild
@@ -1421,6 +1428,29 @@ end
 					-- before! (Dino, that's an allusion to you, -- FRED)
 				original_body_index_table.copy (body_index_table)
 				Degree_1.wipe_out
+			end
+		end
+
+	find_cdd_classes is
+			-- Find classes with cdd class prefix and add them to
+			-- unref classes to make sure they are compiled.
+		local
+			l_classes: DS_HASH_SET [CLASS_I]
+			l_cursor: DS_HASH_SET_CURSOR [CLASS_I]
+		do
+			l_classes := universe.all_classes
+			from
+				l_cursor := l_classes.new_cursor
+				l_cursor.start
+			until
+				l_cursor.after
+			loop
+				if l_cursor.item.name.as_upper.has_substring ("TEST") and
+					not l_cursor.item.group.is_used_in_library and
+					not unref_classes.has (l_cursor.item) then
+						add_unref_class (l_cursor.item)
+				end
+				l_cursor.forth
 			end
 		end
 
@@ -3351,7 +3381,11 @@ feature {NONE} -- Implementation
 							-- A recursion may occur when removing a cluster
 						class_of_id (supplier.class_id) /= Void and then
 							-- removable
-						supplier.is_removable
+						supplier.is_removable and
+							-- Does not belong to `unref_classes'
+							-- NOTE (Arno): Without this, cdd test cases are
+							-- removed after executing them in the debugger
+						not unref_classes.has (supplier.original_class)
 					then
 							-- Recursively remove class.
 						internal_remove_class (supplier, a_depth + 1)
