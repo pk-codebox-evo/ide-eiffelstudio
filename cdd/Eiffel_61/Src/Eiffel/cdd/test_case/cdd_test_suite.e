@@ -222,7 +222,7 @@ feature {NONE} -- Implementation
 			test_class: CDD_TEST_CLASS
 			l_update: BOOLEAN
 		do
-			l_list := an_ancestor.descendants
+			l_list := an_ancestor.direct_descendants
 			from
 				l_list.start
 			until

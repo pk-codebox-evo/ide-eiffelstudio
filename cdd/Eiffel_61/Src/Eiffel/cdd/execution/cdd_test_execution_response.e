@@ -85,7 +85,7 @@ feature {ANY} -- Status
 			if not Result then
 				if test_response /= Void and then test_response.is_exceptional then
 					Result := test_response.exception.trace_depth = 1 and then
-								test_response.exception.exception_code = exceptions_.precondition
+								test_response.exception.exception_code = exceptions.precondition
 				end
 			end
 		end
