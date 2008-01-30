@@ -133,9 +133,6 @@ feature {NONE} -- Implementation
 	create_handler is do end
 			-- Still needed to ensure compatibility with old compiler.
 
-	cdd_manager: CDD_MANAGER is do end
-			-- TODO: remove
-
 indexing
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
