@@ -103,11 +103,8 @@ feature {NONE} -- Initialization
 			l_frame: EV_FRAME
 			l_label: EV_LABEL
 			l_label_weight: INTEGER
-
 			buttons_box: EV_HORIZONTAL_BOX
 			cancel_b: EV_BUTTON	-- Button to discard the class
-			bbox: EV_HORIZONTAL_BOX
-			sz: INTEGER
 			l_window: EB_DEVELOPMENT_WINDOW
 			l_factory: EB_CONTEXT_MENU_FACTORY
 		do
@@ -376,13 +373,9 @@ feature {NONE} -- Implementation
 			l_cluster: CONF_CLUSTER
 			l_universe: UNIVERSE_I
 			l_list: LIST [CLASS_I]
-			l_test_class: EIFFEL_CLASS_C
 			l_loc: CONF_DIRECTORY_LOCATION
 			l_target: CONF_TARGET
 			l_name: STRING
-			f_name: FILE_NAME
-			file: RAW_FILE -- Windows specific
-			base_name: STRING
 			wd: EB_WARNING_DIALOG
 			retried: BOOLEAN
 		do
@@ -722,7 +715,6 @@ feature {NONE} -- Implementation (Test class)
 		local
 			l_cursor: DS_LINEAR_CURSOR [CDD_TEST_CLASS]
 			l_names: DS_ARRAYED_LIST [STRING]
-			l_class: EIFFEL_CLASS_C
 			l_item: EV_LIST_ITEM
 		do
 			l_cursor := cdd_manager.test_suite.test_classes.new_cursor
@@ -774,7 +766,6 @@ feature {NONE} -- Implementation (Target)
 			-- `cluster_list' if class is selected.
 		local
 			l_item: EB_CLASSES_TREE_CLASS_ITEM
-			l_class: CLASS_C
 			l_ft: FEATURE_TABLE
 			l_feature: FEATURE_I
 			l_cs: CURSOR

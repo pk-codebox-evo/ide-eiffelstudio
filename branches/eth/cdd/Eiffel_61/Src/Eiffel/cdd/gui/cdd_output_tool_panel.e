@@ -5,11 +5,11 @@ indexing
 	revision: "$Revision$"
 
 class
-	CDD_OUTPUT_TOOL
+	CDD_OUTPUT_TOOL_PANEL
 
 inherit
 
-	EB_OUTPUT_TOOL
+	ES_OUTPUT_TOOL_PANEL
 		rename
 			title_for_pre as title
 		redefine
