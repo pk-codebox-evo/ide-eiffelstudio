@@ -213,9 +213,9 @@
 		<geant target="copy_library_to" arguments="uuid,${a_dir}" />
 		<geant target="copy_library_to" arguments="vision,${a_dir}" />
 		<geant target="copy_library_to" arguments="vision2,${a_dir}" />
-		<geant target="clean_folder" arguments="vision2${path_separator}implementation${path_separator}gtk" dir="$a_dir" unless="${is_unix}" />
-		<geant target="clean_folder" arguments="vision2${path_separator}implementation${path_separator}mswin" dir="$a_dir" unless="${is_windows}" />
-		<geant target="clean_folder" arguments="vision2${path_separator}implementation${path_separator}carbon" dir="$a_dir" />
+		<geant target="clean_folder" arguments="vision2${path_separator}implementation${path_separator}gtk" dir="$a_dir/library" unless="${is_unix}" />
+		<geant target="clean_folder" arguments="vision2${path_separator}implementation${path_separator}mswin" dir="$a_dir/library" unless="${is_windows}" />
+		<geant target="clean_folder" arguments="vision2${path_separator}implementation${path_separator}carbon" dir="$a_dir/library" />
 		<geant target="copy_library_to" arguments="vision2_extension,${a_dir}" />
 		<geant target="copy_library_to" arguments="web,${a_dir}" />
 		<geant target="copy_library_to" arguments="wel,${a_dir}" if="${is_windows}" />
@@ -815,12 +815,12 @@
 		</copy>
 
 		<geant target="copy_full_tree" arguments="studio\config\windows,${_TARGET_DELIV_DIR}\studio\config\${ISE_PLATFORM}" unless="${ISE_PLATFORM}=windows" />
-		<copy file="${EIFFEL_SRC}/C/config.sh" to_file="${_TARGET_DELIV_DIR}/studio/config/${ISE_PLATFORM}/${ISE_C_COMPILER}/config.sh" />
+		<geant target="copy_file" arguments="${EIFFEL_SRC}/C,${_TARGET_DELIV_DIR}/studio/config/${ISE_PLATFORM}/${ISE_C_COMPILER},config.sh" />
 
 		<!-- Unix tools -->
-		<copy file="${EIFFEL_SRC}/C/shell/bin/rt_converter${exe}" 	to_file="${_TARGET_DELIV_DIR}/studio/spec/${ISE_PLATFORM}/bin/rt_converter${exe}" />
-		<copy file="${EIFFEL_SRC}/C/shell/bin/sed${exe}" 			to_file="${_TARGET_DELIV_DIR}/studio/spec/${ISE_PLATFORM}/bin/sed${exe}" />
-		<copy file="${EIFFEL_SRC}/C/shell/bin/msys-1.0.dll" 		to_file="${_TARGET_DELIV_DIR}/studio/spec/${ISE_PLATFORM}/bin/msys-1.0.dll" />
+		<geant target="copy_exec_file" 	arguments="${EIFFEL_SRC}/C/shell/bin,${_TARGET_DELIV_DIR}/studio/spec/${ISE_PLATFORM}/bin,rt_converter${exe}" />
+		<geant target="copy_exec_file" 	arguments="${EIFFEL_SRC}/C/shell/bin,${_TARGET_DELIV_DIR}/studio/spec/${ISE_PLATFORM}/bin,sed${exe}" />
+		<geant target="copy_file" 	arguments="${EIFFEL_SRC}/C/shell/bin,${_TARGET_DELIV_DIR}/studio/spec/${ISE_PLATFORM}/bin,msys-1.0.dll" />
 		<mkdir directory="${_TARGET_DELIV_DIR}/studio/spec/${ISE_PLATFORM}/etc"  />
 	</target>
 
@@ -828,7 +828,8 @@
 		<copy to_directory="${_TARGET_DELIV_DIR}/studio/spec/${ISE_PLATFORM}/lib" dir="${EIFFEL_SRC}/C/run-time" >
 			<fileset include="@(lib*.*)" />
 		</copy>
-		<geant target="copy_file" arguments="${EIFFEL_SRC}/C,studio/spec/${ISE_PLATFORM}/include,config.sh" />
+		<geant target="copy_file" arguments="${EIFFEL_SRC}/C,${_TARGET_DELIV_DIR}/studio/spec/${ISE_PLATFORM}/include,config.sh" />
+
 		<geant target="copy_full_tree" arguments="studio/config/unix,${_TARGET_DELIV_DIR}/studio/config/${ISE_PLATFORM}" />
 		<geant target="copy_file" arguments="${EIFFEL_SRC}/C,${_TARGET_DELIV_DIR}/studio/config/${ISE_PLATFORM},config.sh" />
 		<geant target="link_file" arguments="../../unix/finish_freezing,finish_freezing" dir="studio/spec/$ISE_PLATFORM/bin" />
