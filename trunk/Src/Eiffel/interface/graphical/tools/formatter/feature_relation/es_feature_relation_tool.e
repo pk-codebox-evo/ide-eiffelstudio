@@ -13,6 +13,11 @@ frozen class
 inherit
 	ES_FORMATTER_TOOL [ES_FEATURES_RELATION_TOOL_PANEL]
 
+	ES_FEATURE_RELATION_TOOL_COMMANDER_I
+		undefine
+			out
+		end
+
 create {NONE}
 	default_create
 
@@ -47,10 +52,40 @@ feature -- Access
 			Result := "show_feature_relation_tool"
 		end
 
-	pop_feature_flat
-			-- Force the display of `Current' and select the flat form.
+	mode: NATURAL_8 assign set_mode
+			-- The feature relation tool's view mode.
+			-- See {ES_FEATURE_RELATION_TOOL_VIEW_MODES} for applicable values.
 		do
-			panel.pop_feature_flat
+			if is_tool_instantiated then
+				Result := panel.mode
+			else
+				Result := {ES_FEATURE_RELATION_TOOL_VIEW_MODES}.basic
+			end
+		end
+		
+feature -- Element change
+
+	set_mode (a_mode: like mode)
+			-- Sets the current view mode.
+			--
+			-- `a_mode': The view mode to set. See {ES_FEATURE_RELATION_TOOL_VIEW_MODES} for applicable values.
+		do
+				-- Setting a mode will force the creation of the tool, by design.
+			panel.set_mode (a_mode)
+		end
+
+	set_mode_with_stone (a_mode: like mode; a_stone: STONE)
+			-- Sets the current view mode and the stone to view using the mode.
+			--
+			-- `a_mode': The view mode to set.
+			-- `a_stone': The stone to set on the feature releation tool.
+		do
+				-- First clear the stone, for performance reasons
+			panel.set_stone (Void)
+
+				-- Now set the mode and stone.
+			set_mode (a_mode)
+			panel.set_stone (a_stone)
 		end
 
 feature -- Status report
