@@ -7,6 +7,12 @@ indexing
 class
 	CONF_CDD
 
+inherit
+	ANY
+		redefine
+			is_equal
+		end
+
 create {CONF_PARSE_FACTORY}
 	make
 
@@ -40,6 +46,15 @@ feature -- Status report
 			definition: Result = (is_executing_enabled and is_extracting_enabled)
 		end
 
+feature -- Comparison
+
+	is_equal (other: like Current): BOOLEAN is
+			-- Is `other' attached to an object considered
+			-- equal to current object?
+		do
+			Result := (is_extracting_enabled = other.is_extracting_enabled) and (is_executing_enabled = other.is_executing_enabled)
+		end
+
 feature -- Access
 
 	target: CONF_TARGET
@@ -53,7 +68,6 @@ feature {ANY} -- Status setting
 			not_extracting: not is_extracting_enabled
 		do
 			is_extracting_enabled := True
-			target.system.store
 		ensure
 			is_extracting_set: is_extracting_enabled
 		end
@@ -64,7 +78,6 @@ feature {ANY} -- Status setting
 			not_executing: not is_executing_enabled
 		do
 			is_executing_enabled := True
-			target.system.store
 		ensure
 			is_executing_set: is_executing_enabled
 		end

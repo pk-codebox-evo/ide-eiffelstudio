@@ -194,7 +194,8 @@ feature -- Status setting
 			extraction_disabled: not is_extracting_enabled
 		do
 			configuration.enable_extracting
-			status_update_actions.call ([status_udpate])
+			target.system.store
+			emit_manager_status_update
 		ensure
 			extracting_enabled: is_extracting_enabled
 		end
@@ -207,7 +208,8 @@ feature -- Status setting
 			extracting_enabled: is_extracting_enabled
 		do
 			configuration.disable_extracting
-			status_update_actions.call ([status_udpate])
+			target.system.store
+			emit_manager_status_update
 		ensure
 			extracting_disabled: not is_extracting_enabled
 		end
@@ -219,7 +221,8 @@ feature -- Status setting
 			executing_disabled: not is_executing_enabled
 		do
 			configuration.enable_executing
-			status_update_actions.call ([status_udpate])
+			target.system.store
+			emit_manager_status_update
 			schedule_testing_restart
 		ensure
 			executing_enabled: is_executing_enabled
@@ -233,7 +236,8 @@ feature -- Status setting
 			executing_enabled: is_executing_enabled
 		do
 			configuration.disable_executing
-			status_update_actions.call ([status_udpate])
+			target.system.store
+			emit_manager_status_update
 		ensure
 			executing_disabled: not is_executing_enabled
 		end
@@ -276,6 +280,9 @@ feature {EB_CLUSTERS} -- Status setting (Eiffel Project)
 					status_update_actions.call ([status_udpate])
 				end
 				test_suite.refresh
+					-- On recompiles the ecf file is loaded a new. It might have changed.
+					-- In order to update we emit a notifcation here.
+				emit_manager_status_update
 				if project.successful and not debug_executor.is_running then
 					schedule_testing_restart
 				end
@@ -312,6 +319,13 @@ feature -- Status change
 
 	output_actions: ACTION_SEQUENCE [TUPLE [STRING]]
 			-- Actions performed whenever there is some kind of textual output available
+
+	emit_manager_status_update is
+			-- Emit a notification to all subscribes of `status_update_actions' that the
+			-- state of the manager has changed.
+		do
+			status_update_actions.call ([status_udpate])
+		end
 
 feature {NONE} -- Implementation
 
