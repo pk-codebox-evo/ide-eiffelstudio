@@ -110,6 +110,7 @@
 	</target>
 	<target name="batch" extends="common">
 		<root class="ES" feature="make"/>
+		<setting name="executable_name" value="ecb"/>
 		<variable name="batch_preferences" value="true"/>
 		<variable name="batch_framework" value="true"/>
 		<library name="preferences_reg" location="$ISE_LIBRARY\library\preferences\preferences_reg.ecf" readonly="false">
