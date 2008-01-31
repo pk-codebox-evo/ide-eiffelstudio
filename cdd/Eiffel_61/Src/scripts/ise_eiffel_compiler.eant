@@ -118,9 +118,12 @@
 		</geant>
 		<exit code="1" if="${tmp_ok}=false" />
 
+		<unset name="ecname" /><!-- reset variable -->
 		<set name="ecname" value="${EC_NAME}" if="$EC_NAME" />
-		<set name="ecname" value="${ISE_EIFFEL}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}ec${exe}" unless="$EC_NAME" />
-		<set name="eccmd" value="${ecname} " />
+		<unset name="ecname" if="-${ecname}-=--" /><!-- unset if empty, and if $ecname is not set  -${ecname}- is -${ecname}- thus not egal to dash dash -->
+		<set name="ecname" value="${ISE_EIFFEL}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}ec${exe}" unless="$ecname" />
+
+		<set name="eccmd" value="${ecname}" />
 		<set name="eccmd" value="${eccmd} -config $a_ecf" />
 		<set name="eccmd" value="${eccmd} -target $a_target" />
 		<set name="eccmd" value="${eccmd} -project_path $a_comp_dir" />
