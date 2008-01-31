@@ -84,7 +84,7 @@
 		<!-- compilation related -->
 		<set name="_COMPILE_DIR" value="${cwd}"/>
 		<set name="_FORCE_CLEAN" value="false" unless="$_FORCE_CLEAN=true" />
-		<set name="_FORCE_BATCH" value="false" unless="$_FORCE_BATCH=true" />
+		<set name="_FORCE_BATCH" value="true" unless="$_FORCE_BATCH=true" />
 
 		<!-- source related -->
 		<!-- we support both location for Delivery, under Src, or under Trunk -->
