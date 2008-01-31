@@ -177,6 +177,7 @@
 			<cluster name="interface_shell" location="$|no_communication\shell\"/>
 			<cluster name="interface_switch" location="$|interface\batch_only\"/>
 		</cluster>
+		<cluster name="cdd_plugin_support" location="$EIFFEL_SRC\Eiffel\cdd\support" recursive="true" />
 		<override name="parser_override" location="$EIFFEL_SRC\Eiffel\eiffel\AST\parser_override\"/>
 	</target>
 	<target name="ecdpc" extends="batch">
