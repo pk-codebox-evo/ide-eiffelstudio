@@ -300,9 +300,9 @@ feature {NONE} -- Implementation (Basic functionality)
 			-- Update the state of toolbar buttons according to
 			-- the state of `cdd_manager'.
 		do
---			toggle_extraction_button.select_actions.block
---			toggle_execution_button.select_actions.block
---			toggle_filter_button.select_actions.block
+			toggle_extraction_button.select_actions.block
+			toggle_execution_button.select_actions.block
+			toggle_filter_button.select_actions.block
 			if cdd_manager.is_project_initialized then
 				debug_button.enable_sensitive
 				toggle_extraction_button.enable_sensitive
@@ -326,9 +326,9 @@ feature {NONE} -- Implementation (Basic functionality)
 				toggle_filter_button.disable_sensitive
 				new_test_routine_button.disable_sensitive
 			end
---			toggle_extraction_button.select_actions.resume
---			toggle_execution_button.select_actions.resume
---			toggle_filter_button.select_actions.resume
+			toggle_extraction_button.select_actions.resume
+			toggle_execution_button.select_actions.resume
+			toggle_filter_button.select_actions.resume
 		end
 
 

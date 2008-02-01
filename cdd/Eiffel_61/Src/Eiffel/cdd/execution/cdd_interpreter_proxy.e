@@ -167,31 +167,14 @@ feature -- Execution
 			not_executing_request: not is_executing_request
 			a_class_name_not_void: a_class_name /= Void
 			a_routine_name_not_void: a_routine_name /= Void
-		local
-			end_time: DATE_TIME
-			current_time: DATE_TIME
-			stream: KL_STRING_INPUT_STREAM
 		do
 			execute_test_async (a_class_name, a_routine_name)
 			from
-				create end_time.make_now
-				end_time.second_add (timeout)
-				create current_time.make_now
 			until
-				current_time > end_time or last_response /= Void
+				last_response /= Void
 			loop
 				process_response
 				sleep (3000)
-				current_time.make_now
-			end
-			-- TODO: this and the timeout bit must be moved to `process_response'
-			-- otherwise async test case execution doesn't abort via a time-out.
-			if last_response = Void then
-				-- This means a timeout occured, so let's take what we have anyways ...
-					create stream.make (response_buffer)
-					parser.parse (stream)
-					last_response := parser.last_response
-					is_executing_request := False
 			end
 		ensure
 			last_response_is_not_void: last_response /= Void
@@ -217,6 +200,8 @@ feature -- Execution
 			flush_process
 			is_executing_request := True
 			response_buffer.wipe_out
+			create execution_abort_time.make_now
+			execution_abort_time.second_add (timeout)
 		end
 
 	process_response is
@@ -226,21 +211,37 @@ feature -- Execution
 			is_executing_request: is_executing_request
 		local
 			stream: KL_STRING_INPUT_STREAM
+			current_time: DATE_TIME
 		do
-			try_read_line_internal
-			if last_string /= Void then
-				response_buffer.append_string (last_string)
-				response_buffer.append_character ('%N')
-				if last_string.is_equal ("done:") then
-					create stream.make (response_buffer)
-					parser.parse (stream)
-					last_response := parser.last_response
-					is_executing_request := False
+			create current_time.make_now
+			if current_time <= execution_abort_time then
+				try_read_line_internal
+				if last_string /= Void then
+					response_buffer.append_string (last_string)
+					response_buffer.append_character ('%N')
+					if last_string.is_equal ("done:") then
+						create stream.make (response_buffer)
+						parser.parse (stream)
+						last_response := parser.last_response
+						is_executing_request := False
+					end
 				end
+			else
+				check
+					no_response_yet: last_response = Void
+				end
+					-- This means a timeout occured, so let's take what we have anyways ...
+				create stream.make (response_buffer)
+				parser.parse (stream)
+				last_response := parser.last_response
+				is_executing_request := False
 			end
 		end
 
 feature {NONE} -- Implementation
+
+	execution_abort_time: DATE_TIME
+			-- Time at which we abort execution of interpreter due to timeout
 
 	parser: CDD_RESPONSE_PARSER
 			-- Response parser
@@ -257,7 +258,7 @@ feature {NONE} -- Implementation
 	stderr_reader: AUT_THREAD_SAFE_LINE_READER
 			-- Non blocking reader for client-stderr
 
-	timeout: INTEGER is 2
+	timeout: INTEGER is 8
 			-- Client timeout in seconds
 
 	flush_process is
