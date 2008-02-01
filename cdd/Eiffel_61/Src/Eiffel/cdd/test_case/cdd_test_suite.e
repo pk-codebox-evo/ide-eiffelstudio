@@ -95,6 +95,7 @@ feature {CDD_MANAGER} -- State change
 			create {DS_ARRAYED_LIST [CDD_TEST_ROUTINE_UPDATE]} status_updates.make_default
 			update_class_table
 			modified_classes.wipe_out
+			log.put_test_suite_status_message (current, "Refresh")
 		ensure
 			modified_classes_empty: modified_classes.is_empty
 		end
@@ -260,6 +261,9 @@ feature {NONE} -- Implementation
 						check
 							test_class_not_void: test_class /= Void
 						end
+								-- check for test case id, add one if not present
+						test_class.check_add_id
+
 						if l_update then
 							status_updates.append_last (test_class.status_updates)
 						end
@@ -269,6 +273,12 @@ feature {NONE} -- Implementation
 				end
 				l_list.forth
 			end
+		end
+
+	log: CDD_LOGGER is
+			-- CDD Logger
+		do
+			Result := cdd_manager.log
 		end
 
 invariant

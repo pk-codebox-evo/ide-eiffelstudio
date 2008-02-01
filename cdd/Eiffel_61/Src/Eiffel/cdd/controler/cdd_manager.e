@@ -32,6 +32,11 @@ inherit
 			{NONE} all
 		end
 
+	KL_SHARED_STREAMS
+		export
+			{NONE} all
+		end
+
 create
 	make
 
@@ -48,6 +53,7 @@ feature {NONE} -- Initialization
 			create status_update_actions
 			create output_actions
 			create test_suite.make (Current)
+			test_suite.test_routine_update_actions.force (agent log_routine_updates(?))
 			create background_executor.make (Current)
 			create debug_executor.make (Current)
 			create capturer.make (Current)
@@ -64,6 +70,7 @@ feature {NONE} -- Initialization
 
 			create cdd_breakpoints.make (debugger_manager, 30)
 			debugger_manager.application_prelaunching_actions.extend (agent cdd_breakpoints.update)
+
 		ensure
 			project_set: project = a_project
 		end
@@ -139,6 +146,43 @@ feature -- Access (Extraction)
 
 	printer: CDD_TEST_CASE_PRINTER
 			-- Printer for extracting test cases
+
+feature -- Access (Logging)
+
+	log_routine_updates (updates: DS_LINEAR [CDD_TEST_ROUTINE_UPDATE]) is
+			-- TODO: think about that. this used to prevent a premature initialisation of `log' which happens
+			-- by directly add the logging routine to the `test_routine_update_actions' of `test_suite'
+		require
+			project_is_initialized: is_project_initialized
+		do
+			log.put_test_routines_status_message (updates)
+		end
+
+	log: CDD_LOGGER is
+			-- Logger for cdd plugin
+		require
+			project_is_initialized: is_project_initialized
+		local
+			l_output_file: KL_TEXT_OUTPUT_FILE
+		once
+					-- NOTE: If logging is enabled, which currently is the case, the cdd_tests folder gets created (almost) immediately.
+			if not target.is_cdd_target then
+				create l_output_file.make (testing_directory.build_path ("", log_file_name))
+				l_output_file.recursive_open_append
+				if l_output_file.is_open_write then
+					create Result.make(l_output_file)
+				else
+						-- TODO: Think about that. Currently dev0 is provided
+					create Result.make (null_output_stream)
+				end
+			else
+					-- TODO: Think about that handling of logging for the tester target
+				create Result.make (null_output_stream)
+			end
+		ensure
+			logger_not_void: Result /= void
+		end
+
 
 feature {DEBUGGER_MANAGER} -- Status setting (Application)
 
@@ -278,6 +322,9 @@ feature {EB_CLUSTERS} -- Status setting (Eiffel Project)
 					degree_5_observer := agent add_updated_class
 					project.system.system.degree_5.process_actions.extend (degree_5_observer)
 					status_update_actions.call ([status_udpate])
+							-- NOTE: Under the assumption that this happens only once per "developping session"
+							-- a project opened message is emmited here (needs investigation...)
+					log.put_system_status_message (project.system.name, target.name, is_extracting_enabled, is_executing_enabled, "Initialized")
 				end
 				test_suite.refresh
 					-- On recompiles the ecf file is loaded a new. It might have changed.

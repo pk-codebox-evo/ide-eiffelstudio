@@ -360,7 +360,7 @@ feature {NONE} -- Implementation
 			create l_date.make_now_utc
 			output_stream.put_line ("date: %"$Date: " + l_date.formatted_out ("yyyy-[0]mm-[0]dd hh:[0]mi:[0]ss") + "%"")
 			output_stream.put_line ("author: %"EiffelStudio CDD Tool%"")
-			output_stream.put_line ("id: %"" + uuid_generator.generate_uuid.out + "%"")
+			output_stream.put_line ("cdd_id: %"" + uuid_generator.generate_uuid.out + "%"")
 			output_stream.put_line ("tag: %"created." + l_date.formatted_out ("yyyy-[0]mm-[0]dd") + "%"")
 			output_stream.dedent
 			output_stream.put_line ("")
