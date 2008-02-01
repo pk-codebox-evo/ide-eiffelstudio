@@ -94,6 +94,8 @@ feature -- Access
 			-- which has a name starting with `test_routine_prefix'.
 			-- This routine is updated whenever `test_routine_table' is.
 
+	cdd_id: UUID
+
 feature -- Element change
 
 	set_compiled_class (a_class: like compiled_class) is
@@ -107,6 +109,101 @@ feature -- Element change
 		ensure
 			compiled_class_set: compiled_class = a_class
 		end
+
+	check_add_id is
+			-- check if the eiffel class associated with `current' has an "id" in its indexing clause
+			-- If this is not the case try to add a newly generated "id"
+		local
+			l_ast: CLASS_AS
+			l_ilist: INDEXING_CLAUSE_AS
+			l_item: INDEX_AS
+			l_has_id: BOOLEAN
+			l_uuid: UUID
+			l_input_file: KL_TEXT_INPUT_FILE
+			l_output_file: KL_TEXT_OUTPUT_FILE
+			l_file_content: STRING
+			l_uuid_string: STRING
+			l_regex: RX_PCRE_REGULAR_EXPRESSION
+		do
+			l_ast := parsed_class
+			l_ilist := l_ast.top_indexes
+			create l_uuid.default_create
+			if l_ilist /= void then
+				from
+					l_ilist.start
+				until
+					l_ilist.after or else l_has_id
+				loop
+					l_item := l_ilist.item
+					l_has_id := l_item.tag.name.is_equal ("cdd_id") and then not l_item.index_list.is_empty
+					if l_has_id then
+						l_uuid_string := l_item.index_list.first.string_value
+						l_uuid_string.prune_all_leading ('%%')
+						l_uuid_string.prune_all_leading ('%"')
+						l_uuid_string.prune_all_trailing ('%"')
+						l_uuid_string.prune_all_trailing ('%%')
+						create cdd_id.make_from_string (l_uuid_string)
+					else
+						l_ilist.forth
+					end
+				end
+			end
+
+			if compiled_class /= void and then not l_has_id and then cdd_id = void then
+						-- First index entry with name "cdd_id" does not exist or is not valid, but the compiled class is around
+						-- Try to add a new id to the file
+						-- [and the cdd_id = void]: Double check if class already has uuid. This would be one generated in the corresponding file
+						-- but not yet recognized by the compiler.
+
+				create l_input_file.make (compiled_class.original_class.file_name.string)
+				if l_input_file.exists then
+					l_input_file.open_read
+				end
+				if l_input_file.is_open_read and then l_input_file.count > -1 then
+					l_input_file.read_string (l_input_file.count)
+					l_file_content := l_input_file.last_string
+					l_input_file.close
+				end
+
+				if l_file_content /= void and then not l_file_content.is_empty then
+					create l_regex.make
+					l_regex.set_caseless (true)
+					l_regex.set_multiline (true)
+					l_regex.set_dotall (true)
+
+							-- TODO: Triple check: it happens that the compilation of the tester target right after compilation of sut
+							-- does not recognize the updated file content (so the id is still not in the AST, even thoght it is in the file)
+							-- TODO: why does tester target handle testsuite at all?
+					l_regex.compile (".*indexing.*cdd_id.*:.*%"(.*)%"")
+					l_regex.match (l_file_content)
+
+					if l_regex.has_matched then
+						l_uuid_string := l_regex.captured_substring (1)
+						create cdd_id.make_from_string (l_regex.captured_substring (1))
+					else
+						cdd_id := uuid_generator.generate_uuid
+
+						if l_ilist = void or else l_ilist.is_empty then
+							l_regex.compile ("(^)(.*class)")
+							l_regex.match (l_file_content)
+							l_file_content := l_regex.replace ("\1\indexing%N%Tcdd_id: %"" + cdd_id.out + "%"%N%N\2\")
+						else
+							l_regex.compile ("(.*indexing)([ %T%N]+[a-zA-Z][a-zA-Z0-9_]*[ %T%N]*:[ %T%N]*%".*[^%%]%")(.*class)")--([ %T%N])(class)")
+							l_regex.match (l_file_content)
+							l_file_content := l_regex.replace ("\1\ \2\%N%Tcdd_id: %"" + cdd_id.out + "%"\3\")-- \5\")
+						end
+
+						create l_output_file.make (compiled_class.original_class.file_name.string)
+						l_output_file.open_write
+						if l_output_file.is_open_write then
+							l_output_file.put_string (l_file_content)
+							l_output_file.close
+						end
+					end
+				end
+			end
+		end
+
 
 feature -- Status changes
 
@@ -345,27 +442,29 @@ feature {NONE} -- Implementation
 		do
 			l_ast := parsed_class
 			l_ilist := l_ast.top_indexes
-			from
-				l_ilist.start
-			until
-				l_ilist.after
-			loop
-				l_item := l_ilist.item
-				if l_item.tag.name.is_equal ("tag") then
-					from
-						l_value_list := l_item.index_list
-						l_value_list.start
-					until
-						l_value_list.after
-					loop
-						v := l_value_list.item.string_value.twin
-						v.prune_all_leading ('"')
-						v.prune_all_trailing ('"')
-						class_tags.force (v)
-						l_value_list.forth
+			if l_ilist /= void then
+				from
+					l_ilist.start
+				until
+					l_ilist.after
+				loop
+					l_item := l_ilist.item
+					if l_item.tag.name.is_equal ("tag") then
+						from
+							l_value_list := l_item.index_list
+							l_value_list.start
+						until
+							l_value_list.after
+						loop
+							v := l_value_list.item.string_value.twin
+							v.prune_all_leading ('"')
+							v.prune_all_trailing ('"')
+							class_tags.force (v)
+							l_value_list.forth
+						end
 					end
+					l_ilist.forth
 				end
-				l_ilist.forth
 			end
 		end
 
@@ -427,6 +526,14 @@ feature {NONE} -- Implementation
 					class_tags.force (l_tag)
 				end
 			end
+		end
+
+	uuid_generator: UUID_GENERATOR is
+			-- UUID generator for creating uuid's
+		once
+			create Result
+		ensure
+			not_void: Result /= Void
 		end
 
 
