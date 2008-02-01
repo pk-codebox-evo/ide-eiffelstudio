@@ -376,11 +376,11 @@ feature {NONE} -- Object initialization
 							set_real_64_field (i, an_object, l_value.to_double)
 						end
 					when pointer_type then
-							-- in general pointer type attributes are not supported.
+							-- in general pointer type attributes are not supported (default initialisation).
 						set_pointer_field (i, an_object, create {POINTER}.default_create)
 					else
 						check attribute_type_not_supported: False end
-							-- Type we do not cover yet. I.e. Pointers
+							-- Type we do not cover yet.
 					end
 				else
 					-- Test case does not reflect this attribute
@@ -531,6 +531,8 @@ feature {NONE} -- Object initialization
 				l_d_special ?= a_special
 				check not_void: l_d_special /= Void end
 				l_type := double_type
+			elseif generic_dynamic_type (a_special, 1) = dynamic_type_from_string ("POINTER") then
+				l_type := pointer_type
 			else
 				l_type := reference_type
 			end
@@ -598,9 +600,13 @@ feature {NONE} -- Object initialization
 					if l_value.is_double then
 						l_d_special.put (l_value.to_double, i-1)
 					end
+				when pointer_type then
+						-- Do nothing. I.e. leave the tuple item at the default value.
 				else
-					check special_item_type_not_supported: False end
-					-- Type we do not cover yet. I.e. Pointers
+					check
+							-- Type we do not cover yet
+						special_item_type_not_supported: False
+					end
 				end
 				i := i + 1
 			end
