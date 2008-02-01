@@ -393,7 +393,7 @@ feature {NONE} -- Object initialization
 		end
 
 	set_tuple_attributes (a_tuple: TUPLE; an_attribute_list: ARRAY [STRING]) is
-			-- TODO: Missing header comment
+			-- Set items of `a_tuple' with values from `an_attribute_list'.
 		require
 			a_tuple_not_void: a_tuple /= Void
 			an_attributes_list_not_void: an_attribute_list /= Void
@@ -435,9 +435,13 @@ feature {NONE} -- Object initialization
 					a_tuple.put_real (l_value.to_real, i)
 				elseif a_tuple.is_double_item (i) and l_value.is_double then
 					a_tuple.put_double (l_value.to_double, i)
+				elseif a_tuple.is_pointer_item (i) then
+						-- Do nothing. I.e. leave the tuple item at the default value.
 				else
-					check tuple_item_type_not_supported: False end
-					-- Type we do not cover yet. I.e. Pointers
+					check
+							-- Type we do not cover yet. I.e. Pointers
+						tuple_item_type_not_supported: False
+					end
 				end
 				i := i + 1
 			end
