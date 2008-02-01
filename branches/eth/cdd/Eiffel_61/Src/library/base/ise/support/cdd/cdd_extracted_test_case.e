@@ -397,12 +397,22 @@ feature {NONE} -- Object initialization
 		require
 			a_tuple_not_void: a_tuple /= Void
 			an_attributes_list_not_void: an_attribute_list /= Void
+			an_attribute_list_valid: not (an_attribute_list.has (Void) or an_attribute_list.is_empty) and then
+				an_attribute_list.item (1).is_boolean
 		local
 			i: INTEGER
 			l_value: STRING
 		do
+				-- First item of `an_attribute_list' describes whether
+				-- `a_tuple' shall compare objects and not references
+			if an_attribute_list.item (1).to_boolean then
+				a_tuple.compare_objects
+			else
+				a_tuple.compare_references
+			end
+
 			from
-				i := 1
+				i := 2
 			until
 				i > a_tuple.count or i > an_attribute_list.count
 			loop
