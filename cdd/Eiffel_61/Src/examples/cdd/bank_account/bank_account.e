@@ -16,6 +16,7 @@ inherit
 feature -- Initalization
 
 	default_create is
+			-- Create new bank account with a balance of 300.
 		do
 			balance := 300
 		end
@@ -23,10 +24,12 @@ feature -- Initalization
 feature -- Access
 
 	balance: INTEGER
+			-- Current balance of account
 
 feature -- Basic operations
 
 	deposit (an_amount: INTEGER) is
+			-- Add `an_amount' money to `balance'.
 		do
 		ensure
 			balance_increased: balance > old balance
@@ -34,6 +37,7 @@ feature -- Basic operations
 		end
 
 	withdraw (an_amount: INTEGER) is
+			-- Substract `an_amount' money from `balance'.
 		do
 		ensure
 			balance_decreased: balance < old balance

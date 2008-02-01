@@ -139,7 +139,7 @@ feature {NONE} -- Implementation
 		end
 
 	update_balance_label is
-			--
+			-- Update balance label according to `bank_account'.
 		local
 			l_text: STRING
 		do
@@ -149,9 +149,7 @@ feature {NONE} -- Implementation
 		end
 
 	read_amount is
-			--
-		local
-			l_label: EV_LABEL
+			-- Read amount from label and store it in `last_amount'.
 		do
 			last_amount := 0
 			status_label.text.wipe_out
@@ -167,11 +165,12 @@ feature {NONE} -- Implementation
 feature -- Access
 
 	bank_account: BANK_ACCOUNT
+			-- Bank account
 
 feature {NONE} -- Bank account operations
 
 	deposit_amount is
-			--
+			-- Deposit `last_amount' in bank account.
 		do
 			read_amount
 			if last_amount /= 0 then
@@ -181,9 +180,7 @@ feature {NONE} -- Bank account operations
 		end
 
 	withdraw_amount is
-			--
-		local
-			l_amount: INTEGER
+			-- Withdra `last_amoun' from bank account.
 		do
 			read_amount
 			if last_amount /= 0 then
