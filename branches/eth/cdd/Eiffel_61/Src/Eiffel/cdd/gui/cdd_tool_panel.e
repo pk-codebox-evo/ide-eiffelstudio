@@ -572,7 +572,7 @@ feature {NONE} -- Implementation (Buttons)
 			l_dialog: CDD_CREATE_TEST_CLASS_DIALOG
 		do
 			create l_dialog.make (cdd_manager)
-			l_dialog.show_modal_to_window (develop_window)
+			l_dialog.show_modal_to_window (develop_window.window)
 		end
 
 	show_message (a_msg: STRING) is
