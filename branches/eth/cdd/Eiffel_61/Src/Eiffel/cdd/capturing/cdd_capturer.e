@@ -185,17 +185,22 @@ feature {NONE} -- Implementation (Capturing)
 			create object_queue.make
 			create object_map.make (20) -- Note: this value says how many objects we assume to reflect...
 
-			if not is_creation_feature (l_feature) then
+			if is_creation_feature (l_feature) then
 				i := 1
+			else
+				i := 2
 			end
+
 			create l_arguments.make (l_feature.argument_count + i)
 			l_type := "TUPLE"
 			l_ops_count := i + l_feature.argument_count
-			if l_ops_count > 0 then
+			if l_ops_count > 1 then
 				l_type.append (" [")
 			end
-			if i > 0 then
-				l_arguments.put_first (a_cse.current_object_value)
+					-- Add hidden 'object_comparison' field value for the operand tuple
+			l_arguments.put_first (create {DEBUG_BASIC_VALUE[BOOLEAN]}.make ({DEBUG_BASIC_VALUE[BOOLEAN]}.sk_bool, False))
+			if i > 1 then
+				l_arguments.put (a_cse.current_object_value, 2)
 				l_type.append (a_cse.current_object_value.dump_value.generating_type_representation (True))
 				if l_feature.argument_count > 0 then
 					l_type.append (", ")
@@ -214,7 +219,7 @@ feature {NONE} -- Implementation (Capturing)
 				end
 				j := j + 1
 			end
-			if l_ops_count > 0 then
+			if l_ops_count > 1 then
 				l_type.append ("]")
 			end
 			put_object ("#operand", l_type, True, fetch_object_attributes (l_arguments, False, 0))
@@ -311,7 +316,9 @@ feature {NONE} -- Implementation (Capturing)
 					end
 				end
 
-			elseif l_class.is_special or l_class.is_tuple then
+			elseif l_class.is_special then
+				l_attrs := fetch_object_attributes (an_object.children, False, a_depth)
+			elseif l_class.is_tuple then
 				l_attrs := fetch_object_attributes (an_object.children, False, a_depth)
 			else
 				l_attrs := fetch_object_attributes (an_object.children, True, a_depth)
