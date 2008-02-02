@@ -119,7 +119,7 @@
 		<geant target="_tpl_process_" arguments="ec_bench,clean,$cwd" />
 	</target>
 	<target name="compile_ec_bench" depend="init">
-		<geant target="_tpl_process_" arguments="ec_bench,compile,$cwd" />
+		<geant target="_tpl_process_" arguments="ec_bench,freeze,$cwd" />
 	</target>
 	<target name="finalize_ec_bench" depend="init">
 		<geant target="_tpl_process_" arguments="ec_bench,finalize,$cwd" />
@@ -130,7 +130,7 @@
 		<geant target="_tpl_process_" arguments="ec_batch,clean,$cwd" />
 	</target>
 	<target name="compile_ec_batch" depend="init">
-		<geant target="_tpl_process_" arguments="ec_batch,compile,$cwd" />
+		<geant target="_tpl_process_" arguments="ec_batch,freeze,$cwd" />
 	</target>
 	<target name="finalize_ec_batch" depend="init">
 		<geant target="_tpl_process_" arguments="ec_batch,finalize,$cwd" />
@@ -141,7 +141,7 @@
 		<geant target="_tpl_process_" arguments="ec_bench_unix,clean,$cwd" />
 	</target>
 	<target name="compile_ec_bench_unix" depend="init">
-		<geant target="_tpl_process_" arguments="ec_bench_unix,compile,$cwd" />
+		<geant target="_tpl_process_" arguments="ec_bench_unix,freeze,$cwd" />
 	</target>
 	<target name="finalize_ec_bench_unix" depend="init">
 		<geant target="_tpl_process_" arguments="ec_bench_unix,finalize,$cwd" />
@@ -152,7 +152,7 @@
 		<geant target="_tpl_process_" arguments="estudio,clean,$cwd" />
 	</target>
 	<target name="compile_estudio" depend="init">
-		<geant target="_tpl_process_" arguments="estudio,compile,$cwd" />
+		<geant target="_tpl_process_" arguments="estudio,freeze,$cwd" />
 	</target>
 	<target name="finalize_estudio" depend="init">
 		<geant target="_tpl_process_" arguments="estudio,finalize,$cwd" />
@@ -163,7 +163,7 @@
 		<geant target="_tpl_process_" arguments="finish_freezing,clean,$cwd" />
 	</target>
 	<target name="compile_finish_freezing" depend="init">
-		<geant target="_tpl_process_" arguments="finish_freezing,compile,$cwd" />
+		<geant target="_tpl_process_" arguments="finish_freezing,freeze,$cwd" />
 	</target>
 	<target name="finalize_finish_freezing" depend="init">
 		<geant target="_tpl_process_" arguments="finish_freezing,finalize,$cwd" />
@@ -174,7 +174,7 @@
 		<geant target="_tpl_process_" arguments="h2e,clean,$cwd" />
 	</target>
 	<target name="compile_h2e" depend="init">
-		<geant target="_tpl_process_" arguments="h2e,compile,$cwd" />
+		<geant target="_tpl_process_" arguments="h2e,freeze,$cwd" />
 	</target>
 	<target name="finalize_h2e" depend="init">
 		<geant target="_tpl_process_" arguments="h2e,finalize,$cwd" />
@@ -185,7 +185,7 @@
 		<geant target="_tpl_process_" arguments="quick_finalize,clean,$cwd" />
 	</target>
 	<target name="compile_quick_finalize" depend="init">
-		<geant target="_tpl_process_" arguments="quick_finalize,compile,$cwd" />
+		<geant target="_tpl_process_" arguments="quick_finalize,freeze,$cwd" />
 	</target>
 	<target name="finalize_quick_finalize" depend="init">
 		<geant target="_tpl_process_" arguments="quick_finalize,finalize,$cwd" />
@@ -196,7 +196,7 @@
 		<geant target="_tpl_process_" arguments="emake,clean,$cwd" />
 	</target>
 	<target name="compile_emake" depend="init">
-		<geant target="_tpl_process_" arguments="emake,compile,$cwd" />
+		<geant target="_tpl_process_" arguments="emake,freeze,$cwd" />
 	</target>
 	<target name="finalize_emake" depend="init">
 		<geant target="_tpl_process_" arguments="emake,finalize,$cwd" />
@@ -207,7 +207,7 @@
 		<geant target="_tpl_process_" arguments="dotnet_consumer,clean,$cwd" />
 	</target>
 	<target name="compile_dotnet_consumer" depend="init">
-		<geant target="_tpl_process_" arguments="dotnet_consumer,compile,$cwd" />
+		<geant target="_tpl_process_" arguments="dotnet_consumer,freeze,$cwd" />
 	</target>
 	<target name="finalize_dotnet_consumer" depend="init">
 		<geant target="_tpl_process_" arguments="dotnet_consumer,finalize,$cwd" />
@@ -218,7 +218,7 @@
 		<geant target="_tpl_process_" arguments="dotnet_emdc,clean,$cwd" />
 	</target>
 	<target name="compile_dotnet_emdc" depend="init">
-		<geant target="_tpl_process_" arguments="dotnet_emdc,compile,$cwd" />
+		<geant target="_tpl_process_" arguments="dotnet_emdc,freeze,$cwd" />
 	</target>
 	<target name="finalize_dotnet_emdc" depend="init">
 		<geant target="_tpl_process_" arguments="dotnet_emdc,finalize,$cwd" />
@@ -229,7 +229,7 @@
 		<geant target="_tpl_process_" arguments="esbuilder,clean,$cwd" />
 	</target>
 	<target name="compile_esbuilder" depend="init">
-		<geant target="_tpl_process_" arguments="esbuilder,compile,$cwd" />
+		<geant target="_tpl_process_" arguments="esbuilder,freeze,$cwd" />
 	</target>
 	<target name="finalize_esbuilder" depend="init">
 		<geant target="_tpl_process_" arguments="esbuilder,finalize,$cwd" />
@@ -240,7 +240,7 @@
 		<geant target="_tpl_process_" arguments="compile_all,clean,$cwd" />
 	</target>
 	<target name="compile_compile_all" depend="init">
-		<geant target="_tpl_process_" arguments="compile_all,compile,$cwd" />
+		<geant target="_tpl_process_" arguments="compile_all,freeze,$cwd" />
 	</target>
 	<target name="finalize_compile_all" depend="init">
 		<geant target="_tpl_process_" arguments="compile_all,finalize,$cwd" />
@@ -251,7 +251,7 @@
 		<geant target="_tpl_process_" arguments="es_cleaner,clean,$cwd" />
 	</target>
 	<target name="compile_es_cleaner" depend="init">
-		<geant target="_tpl_process_" arguments="es_cleaner,compile,$cwd" />
+		<geant target="_tpl_process_" arguments="es_cleaner,freeze,$cwd" />
 	</target>
 	<target name="finalize_es_cleaner" depend="init">
 		<geant target="_tpl_process_" arguments="es_cleaner,finalize,$cwd" />
@@ -306,7 +306,7 @@
 		<geant target="_tpl_process_" arguments="XYZ,clean,$cwd" />
 	</target>
 	<target name="compile_XYZ" depend="init">
-		<geant target="_tpl_process_" arguments="XYZ,compile,$cwd" />
+		<geant target="_tpl_process_" arguments="XYZ,freeze,$cwd" />
 	</target>
 	<target name="finalize_XYZ" depend="init">
 		<geant target="_tpl_process_" arguments="XYZ,finalize,$cwd" />
