@@ -331,7 +331,6 @@ feature {NONE} -- Implementation (Basic functionality)
 			toggle_filter_button.select_actions.resume
 		end
 
-
 	update_status (an_update: CDD_STATUS_UPDATE) is
 			-- Apopt widgets to `an_update'.
 		require
@@ -570,10 +569,10 @@ feature {NONE} -- Implementation (Buttons)
 	create_new_test_routine is
 			-- Show dialog for creating new test class
 		local
-			l_dialog: CDD_CREATE_TEST_ROUTINE_DIALOG
+			l_dialog: CDD_CREATE_TEST_CLASS_DIALOG
 		do
-			create l_dialog.make_default (develop_window.history_manager.target, cdd_manager)
-			l_dialog.call_default
+			create l_dialog.make (cdd_manager)
+			l_dialog.show_modal_to_window (develop_window)
 		end
 
 	show_message (a_msg: STRING) is
