@@ -2159,6 +2159,9 @@ feature {NONE} -- Implementation
 
 				--| Call stack tool (on right)
 			call_stack_tool.content.set_top ({SD_ENUMERATION}.right)
+			l_tool := l_dyna_tools.tool ({CDD_TOOL}).panel
+			l_tool.content.set_tab_with (call_stack_tool.content, True)
+
 
 				--| Objects tool			
 			objects_tool.content.set_top ({SD_ENUMERATION}.bottom)

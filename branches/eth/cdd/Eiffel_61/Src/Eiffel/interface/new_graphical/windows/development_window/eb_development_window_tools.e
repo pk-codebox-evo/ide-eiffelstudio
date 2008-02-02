@@ -192,7 +192,7 @@ feature -- Access
 			result_attached: Result /= Void
 		end
 
-	cdd_output_tool: CDD_TOOL_PANEL
+	cdd_output_tool: CDD_OUTPUT_TOOL_PANEL
 			-- CDD tool
 		require
 			not_is_recycled: not is_recycled
