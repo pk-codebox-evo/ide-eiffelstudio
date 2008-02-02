@@ -124,7 +124,7 @@
 		<set name="ecname" value="${ISE_EIFFEL}${path_separator}studio${path_separator}spec${path_separator}${ISE_PLATFORM}${path_separator}bin${path_separator}ec${exe}" unless="$ecname" />
 
 		<set name="eccmd" value="${ecname}" />
-		<set name="eccmd" value="${eccmd} -config $a_ecf" />
+		<set name="eccmd" value="ec -config $a_ecf" />
 		<set name="eccmd" value="${eccmd} -target $a_target" />
 		<set name="eccmd" value="${eccmd} -project_path $a_comp_dir" />
 		<set name="eccmd" value="${eccmd} -freeze " if="${a_compilation_mode}=freeze" />

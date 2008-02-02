@@ -303,7 +303,7 @@ feature {NONE} -- Implementation (Basic functionality)
 			toggle_extraction_button.select_actions.block
 			toggle_execution_button.select_actions.block
 			toggle_filter_button.select_actions.block
-			if cdd_manager.is_project_initialized then
+			if cdd_manager.is_project_initialized and then not cdd_manager.target.is_cdd_target then
 				debug_button.enable_sensitive
 				toggle_extraction_button.enable_sensitive
 				toggle_execution_button.enable_sensitive

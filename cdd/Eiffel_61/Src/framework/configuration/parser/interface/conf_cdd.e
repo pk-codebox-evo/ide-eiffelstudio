@@ -24,8 +24,10 @@ feature {NONE} -- Initialization
 			a_target_not_void: a_target /= Void
 		do
 			target := a_target
-			is_extracting_enabled := True
-			is_executing_enabled := True
+			if not target.is_cdd_target then
+				is_extracting_enabled := True
+				is_executing_enabled := True
+			end
 		ensure
 			defaults_set: is_default
 		end
@@ -66,6 +68,7 @@ feature {ANY} -- Status setting
 			-- Set `is_extracting' to True.
 		require
 			not_extracting: not is_extracting_enabled
+			not_cdd_target: not target.is_cdd_target
 		do
 			is_extracting_enabled := True
 		ensure
@@ -76,6 +79,7 @@ feature {ANY} -- Status setting
 			-- Set `is_executing' to True.
 		require
 			not_executing: not is_executing_enabled
+			not_cdd_target: not target.is_cdd_target
 		do
 			is_executing_enabled := True
 		ensure
@@ -120,5 +124,6 @@ feature {ANY} -- Status setting
 
 invariant
 	valid_target: target /= Void and then target.cdd = Current
+	cdd_target_cannot_be_tested: target.is_cdd_target implies (not is_executing_enabled and not is_extracting_enabled)
 
 end

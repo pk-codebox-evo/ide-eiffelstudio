@@ -110,9 +110,8 @@ feature -- Element change
 			compiled_class_set: compiled_class = a_class
 		end
 
-	check_add_id is
-			-- check if the eiffel class associated with `current' has an "id" in its indexing clause
-			-- If this is not the case try to add a newly generated "id"
+	ensure_cdd_id is
+			-- Ensure that eiffel class associated with `Current' has an indexing clause item named "cdd_id".
 		local
 			l_ast: CLASS_AS
 			l_ilist: INDEXING_CLAUSE_AS

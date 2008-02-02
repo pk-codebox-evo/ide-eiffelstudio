@@ -168,9 +168,6 @@ feature -- Basic operations
 			l_system: CONF_SYSTEM
 			l_list: DS_ARRAYED_LIST [CDD_TEST_ROUTINE]
 		do
-			if has_next_step then
-				cancel
-			end
 			if not filter.test_routines.is_empty then
 				root_class_printer.print_class (cdd_manager.testing_directory)
 				if root_class_printer.last_print_succeeded then

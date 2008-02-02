@@ -169,11 +169,6 @@ feature -- Visit nodes
 			l_old_assemblies: HASH_TABLE [CONF_PHYSICAL_ASSEMBLY_INTERFACE, STRING]
 			l_retried: BOOLEAN
 			l_error_count: INTEGER
-
-			l_cluster: CONF_CLUSTER
-			l_dir: KL_DIRECTORY
-			l_loc: CONF_DIRECTORY_LOCATION
-			l_cdd_target: CONF_TARGET
 		do
 			if not l_retried then
 				if last_errors /= Void then
@@ -207,22 +202,7 @@ feature -- Visit nodes
 					end
 				end
 
-				-- Add cdd cluster and tester target if cdd is enabled in `current_target'
-				if a_target.is_cdd_target then
-					l_cdd_target := a_target.extends
-				else
-					l_cdd_target := a_target
-				end
-				check
-					sut_target_not_void: l_cdd_target /= Void
-				end
-				l_loc := factory.new_location_from_path (".\cdd_tests\" + l_cdd_target.name, a_target)
-				create l_dir.make (l_loc.build_path ("", ""))
-				if l_dir.exists and not a_target.clusters.has (l_cdd_target.name + "_tests") then
-					l_cluster := factory.new_cdd_cluster (l_cdd_target.name + "_tests", l_loc, a_target)
-					l_cluster.set_recursive (True)
-					a_target.add_cluster (l_cluster)
-				end
+				add_cdd_cluster (a_target)
 
 					-- process clusters first, because we need those information while processing libraries if we have circular dependencies
 				process_with_old (a_target.clusters, l_clusters)
@@ -233,6 +213,7 @@ feature -- Visit nodes
 						l_old_pre := old_target.precompile
 						old_group := l_old_pre
 					end
+					add_cdd_cluster (l_pre.library_target)
 						-- did any configuration in the precompile change? => error
 					if
 						l_old_pre = Void or else not l_old_pre.is_enabled (state) or else
@@ -967,6 +948,33 @@ feature {NONE} -- Implementation
 			end
 		ensure
 			classes_added: not is_error implies current_classes.count = old current_classes.count + partial_classes.count
+		end
+
+feature {NONE} -- Implementation
+
+	add_cdd_cluster (a_target: CONF_TARGET) is
+			-- Add cdd cluster to `a_target'.
+		local
+			l_cluster: CONF_CLUSTER
+			l_dir: KL_DIRECTORY
+			l_loc: CONF_DIRECTORY_LOCATION
+			l_cdd_target: CONF_TARGET
+		do
+			if a_target.is_cdd_target then
+				l_cdd_target := a_target.extends
+			else
+				l_cdd_target := a_target
+			end
+			check
+				sut_target_not_void: l_cdd_target /= Void
+			end
+			l_loc := factory.new_location_from_path (".\cdd_tests\" + l_cdd_target.name, a_target)
+			create l_dir.make (l_loc.build_path ("", ""))
+			if l_dir.exists and not a_target.clusters.has (l_cdd_target.name + "_tests") then
+				l_cluster := factory.new_cdd_cluster (l_cdd_target.name + "_tests", l_loc, a_target)
+				l_cluster.set_recursive (True)
+				a_target.add_cluster (l_cluster)
+			end
 		end
 
 feature {NONE} -- contracts
