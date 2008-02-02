@@ -1058,6 +1058,9 @@ feature -- Window management
 			l_tool := tools.class_tool
 			l_tool.content.set_tab_with (tools.features_relation_tool.content, True)
 
+			l_tool := tools.cdd_output_tool
+			l_tool.content.set_tab_with (tools.features_relation_tool.content, True)
+
 			l_tool.content.set_split_proportion (0.6)
 
 			-- Right tools
@@ -1067,6 +1070,9 @@ feature -- Window management
 			l_tool.content.set_tab_with (tools.favorites_tool.content, True)
 			l_tool := tools.cluster_tool
 			l_tool.content.set_tab_with (tools.features_tool.content, True)
+			l_tool := tools.cdd_tool
+			l_tool.content.set_tab_with (tools.favorites_tool.content, True)
+
 			l_tool.content.set_split_proportion (0.73)
 
 			-- Auto hide tools
