@@ -176,20 +176,25 @@ feature -- Access (Logging)
 		local
 			l_output_file: KL_TEXT_OUTPUT_FILE
 		once
+				-- NOTE: the logger propably should not create a new directory
+				-- if there are not even tests in the test suite, since this
+				-- will also affect system such as libraries.
+			create Result.make (null_output_stream)
+
 					-- NOTE: If logging is enabled, which currently is the case, the cdd_tests folder gets created (almost) immediately.
-			if not target.is_cdd_target then
-				create l_output_file.make (testing_directory.build_path ("", log_file_name))
-				l_output_file.recursive_open_append
-				if l_output_file.is_open_write then
-					create Result.make(l_output_file)
-				else
-						-- TODO: Think about that. Currently dev0 is provided
-					create Result.make (null_output_stream)
-				end
-			else
-					-- TODO: Think about that handling of logging for the tester target
-				create Result.make (null_output_stream)
-			end
+--			if not target.is_cdd_target then
+--				create l_output_file.make (testing_directory.build_path ("", log_file_name))
+--				l_output_file.recursive_open_append
+--				if l_output_file.is_open_write then
+--					create Result.make(l_output_file)
+--				else
+--						-- TODO: Think about that. Currently dev0 is provided
+--					create Result.make (null_output_stream)
+--				end
+--			else
+--					-- TODO: Think about that handling of logging for the tester target
+--				create Result.make (null_output_stream)
+--			end
 		ensure
 			logger_not_void: Result /= void
 		end
