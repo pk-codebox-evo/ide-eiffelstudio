@@ -49,7 +49,7 @@ feature {NONE} -- Implementation
 			-- We use `0000' because it is replaced by the actual svn revision number
 			-- when doing a delivery.
 		do
-			Result := 0000
+			Result := 72160
 		end
 
 invariant

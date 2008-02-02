@@ -261,8 +261,9 @@ feature {NONE} -- Implementation
 						check
 							test_class_not_void: test_class /= Void
 						end
-								-- check for test case id, add one if not present
-						test_class.check_add_id
+								-- Make sure every test class has a unique id
+								-- TODO: Commented out due to bug in routine at the moment. Uncomment once bug is gone.
+						-- test_class.ensure_cdd_id
 
 						if l_update then
 							status_updates.append_last (test_class.status_updates)

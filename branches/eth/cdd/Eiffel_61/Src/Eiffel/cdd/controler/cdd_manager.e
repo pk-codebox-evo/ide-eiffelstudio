@@ -67,7 +67,6 @@ feature {NONE} -- Initialization
 			l_prj_manager.load_agents.extend (agent refresh_status)
 			l_prj_manager.compile_stop_agents.extend (agent refresh_status)
 			eb_cluster_manager.add_observer (Current)
-
 			create cdd_breakpoints.make (debugger_manager, 30)
 			debugger_manager.application_prelaunching_actions.extend (agent cdd_breakpoints.update)
 
@@ -90,6 +89,8 @@ feature -- Status report
 			is_project_initialized: is_project_initialized
 		do
 			Result := configuration.is_extracting_enabled
+		ensure
+			definition: Result = configuration.is_extracting_enabled
 		end
 
 	is_executing_enabled: BOOLEAN is
@@ -98,6 +99,8 @@ feature -- Status report
 			is_project_initialized: is_project_initialized
 		do
 			Result := configuration.is_executing_enabled
+		ensure
+			definition: Result = configuration.is_executing_enabled
 		end
 
 feature -- Access
@@ -113,6 +116,14 @@ feature -- Access
 
 	project: E_PROJECT
 			-- Project for which we manager tests
+
+	target: CONF_TARGET is
+			-- Currently opened target of `project'
+		require
+			project_initialized: is_project_initialized
+		do
+			Result := project.system.universe.target
+		end
 
 	last_updated_test_class: EIFFEL_CLASS_C
 			-- Test class which has last been processed in degree 5
@@ -236,6 +247,7 @@ feature -- Status setting
 		require
 			project_initialized: is_project_initialized
 			extraction_disabled: not is_extracting_enabled
+			not_cdd_target: not target.is_cdd_target
 		do
 			configuration.enable_extracting
 			target.system.store
@@ -263,6 +275,7 @@ feature -- Status setting
 		require
 			project_initialized: is_project_initialized
 			executing_disabled: not is_executing_enabled
+			not_cdd_target: not target.is_cdd_target
 		do
 			configuration.enable_executing
 			target.system.store
@@ -278,6 +291,7 @@ feature -- Status setting
 		require
 			project_initialized: is_project_initialized
 			executing_enabled: is_executing_enabled
+			not_cdd_target: not target.is_cdd_target
 		do
 			configuration.disable_executing
 			target.system.store
@@ -290,13 +304,13 @@ feature {ANY} -- Cooperative multitasking
 
 	schedule_testing_restart is
 			-- Schedule that background testing starts a new as soon as possible.
+		require
+			not_cdd_target: not target.is_cdd_target
 		do
-			if not target.is_cdd_target then
-				if background_executor.has_next_step then
-					background_executor.cancel
-				end
-				background_executor.start
+			if background_executor.has_next_step then
+				background_executor.cancel
 			end
+			background_executor.start
 		end
 
 	drive_background_tasks is
@@ -317,7 +331,7 @@ feature {EB_CLUSTERS} -- Status setting (Eiffel Project)
 			-- reiinitate background testing.
 			-- Note: This is usually called when project is opened or compiled.
 		do
-			if is_project_initialized then
+			if is_project_initialized and then not target.is_cdd_target then
 				if degree_5_observer = Void then
 					degree_5_observer := agent add_updated_class
 					project.system.system.degree_5.process_actions.extend (degree_5_observer)
@@ -406,14 +420,6 @@ feature {NONE} -- Implementation
 
 	capturer: CDD_CAPTURER
 			-- Capturer for extracting new test cases
-
-	target: CONF_TARGET is
-			-- Currently opened target of `project'
-		require
-			project_initialized: is_project_initialized
-		do
-			Result := project.system.universe.target
-		end
 
 	conf_factory: CONF_FACTORY is
 			-- Factory for creating cdd library
