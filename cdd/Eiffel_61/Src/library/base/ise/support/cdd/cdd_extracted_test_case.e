@@ -412,11 +412,11 @@ feature {NONE} -- Object initialization
 			end
 
 			from
-				i := 2
+				i := 1
 			until
-				i > a_tuple.count or i > an_attribute_list.count
+				i > a_tuple.count or i > (an_attribute_list.count - 1)
 			loop
-				l_value := an_attribute_list.item (i)
+				l_value := an_attribute_list.item (i + 1)
 				if a_tuple.is_reference_item (i) and object_map.valid_key (l_value) then
 					a_tuple.put_reference (object_map.item (l_value), i)
 				elseif a_tuple.is_boolean_item (i) and l_value.is_boolean then
