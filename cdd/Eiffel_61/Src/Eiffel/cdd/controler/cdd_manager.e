@@ -57,8 +57,8 @@ feature {NONE} -- Initialization
 			create background_executor.make (Current)
 			create debug_executor.make (Current)
 			create capturer.make (Current)
-			create printer.make (Current)
-			capturer.capture_observers.put_last (printer)
+			create test_case_printer.make (Current)
+			capturer.capture_observers.put_last (test_case_printer)
 
 			status_update_actions.extend (agent process_update)
 
@@ -155,7 +155,7 @@ feature -- Executors
 
 feature -- Access (Extraction)
 
-	printer: CDD_TEST_CASE_PRINTER
+	test_case_printer: CDD_TEST_CASE_PRINTER
 			-- Printer for extracting test cases
 
 feature -- Access (Logging)
@@ -179,22 +179,22 @@ feature -- Access (Logging)
 				-- NOTE: the logger propably should not create a new directory
 				-- if there are not even tests in the test suite, since this
 				-- will also affect system such as libraries.
-			create Result.make (null_output_stream)
+--			create Result.make (null_output_stream)
 
 					-- NOTE: If logging is enabled, which currently is the case, the cdd_tests folder gets created (almost) immediately.
---			if not target.is_cdd_target then
---				create l_output_file.make (testing_directory.build_path ("", log_file_name))
---				l_output_file.recursive_open_append
---				if l_output_file.is_open_write then
---					create Result.make(l_output_file)
---				else
---						-- TODO: Think about that. Currently dev0 is provided
---					create Result.make (null_output_stream)
---				end
---			else
---					-- TODO: Think about that handling of logging for the tester target
---				create Result.make (null_output_stream)
---			end
+			if not target.is_cdd_target and then target.system.library_target = void then
+				create l_output_file.make (testing_directory.build_path ("", log_file_name))
+				l_output_file.recursive_open_append
+				if l_output_file.is_open_write then
+					create Result.make(l_output_file)
+				else
+						-- TODO: Think about that. Currently dev0 is provided
+					create Result.make (null_output_stream)
+				end
+			else
+					-- TODO: Think about that handling of logging for the tester target
+				create Result.make (null_output_stream)
+			end
 		ensure
 			logger_not_void: Result /= void
 		end
@@ -257,6 +257,7 @@ feature -- Status setting
 			configuration.enable_extracting
 			target.system.store
 			emit_manager_status_update
+			log.put_system_status_message (project.system.name, target.name, is_extracting_enabled, is_executing_enabled, "Enable extraction")
 		ensure
 			extracting_enabled: is_extracting_enabled
 		end
@@ -271,6 +272,7 @@ feature -- Status setting
 			configuration.disable_extracting
 			target.system.store
 			emit_manager_status_update
+			log.put_system_status_message (project.system.name, target.name, is_extracting_enabled, is_executing_enabled, "Disable extraction")
 		ensure
 			extracting_disabled: not is_extracting_enabled
 		end
@@ -286,6 +288,7 @@ feature -- Status setting
 			target.system.store
 			emit_manager_status_update
 			schedule_testing_restart
+			log.put_system_status_message (project.system.name, target.name, is_extracting_enabled, is_executing_enabled, "Enable execution")
 		ensure
 			executing_enabled: is_executing_enabled
 		end
@@ -301,6 +304,7 @@ feature -- Status setting
 			configuration.disable_executing
 			target.system.store
 			emit_manager_status_update
+			log.put_system_status_message (project.system.name, target.name, is_extracting_enabled, is_executing_enabled, "Disable execution")
 		ensure
 			executing_disabled: not is_executing_enabled
 		end
@@ -447,7 +451,7 @@ invariant
 	executor_not_void: background_executor /= Void
 	debugger_not_void: debug_executor /= Void
 	capturer_not_void: capturer /= Void
-	printer_not_void: printer /= Void
+	printer_not_void: test_case_printer /= Void
 	status_update_actions_not_void: status_update_actions /= Void
 	output_actions_not_void: output_actions /= Void
 	last_updated_test_class_valid: (last_updated_test_class /= Void) implies

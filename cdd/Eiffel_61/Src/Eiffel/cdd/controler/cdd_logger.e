@@ -25,6 +25,9 @@ feature -- Initialisation
 			stream_writable: an_output_stream.is_open_write
 		do
 			output_stream := an_output_stream
+			create current_test_case_execution_element.default_create
+			current_test_case_execution_element.head := ""
+			current_test_case_execution_element.tail := ""
 		ensure
 			output_stream_set: output_stream = an_output_stream
 		end
@@ -41,7 +44,7 @@ feature -- Logging
 							  ) is
 			-- Write a system status message
 		do
-			log_message ("system", " project_name=%"" + empty_or_out(a_project_name) + "%" target_name=%"" + empty_or_out(a_target_name) + "%" is_extracting=%"" + empty_or_out(an_extracting_status) + "%" is_executing=%"" + empty_or_out(an_execution_status) + "%" message=%"" + empty_or_out (a_message) + "%"", void)
+			log_element ("system", " project_name=%"" + empty_or_out(a_project_name) + "%" target_name=%"" + empty_or_out(a_target_name) + "%" is_extracting=%"" + empty_or_out(an_extracting_status) + "%" is_executing=%"" + empty_or_out(an_execution_status) + "%" message=%"" + empty_or_out (a_message) + "%"", void)
 		end
 
 	put_test_suite_status_message(a_test_suite: CDD_TEST_SUITE; a_message: STRING) is
@@ -68,7 +71,7 @@ feature -- Logging
 				end
 			end
 
-			log_message ( "test_suite", l_message,  l_content)
+			log_element ( "test_suite", l_message,  l_content)
 		end
 
 
@@ -81,38 +84,88 @@ feature -- Logging
 		do
 			l_message := ""
 			l_content := ""
-			from
-				updates.start
-			until
-				updates.after
-			loop
-				l_message.wipe_out
-				l_content.wipe_out
-				inspect updates.item_for_iteration.code
-				when {CDD_TEST_ROUTINE_UPDATE}.add_code then
-					l_message.append_string ("action=%"add%"")
-				when {CDD_TEST_ROUTINE_UPDATE}.changed_code then
-					l_message.append_string ("action=%"change%"")
-				when {CDD_TEST_ROUTINE_UPDATE}.remove_code then
-					l_message.append_string ("action=%"remove%"")
-				else
-					check got_invalid_update_code: false end
-				end
-				l_routine := updates.item_for_iteration.test_routine
-				l_message.append_string (" name=%"" + empty_or_out(l_routine.test_class.cdd_id) + "--" + l_routine.test_class.test_class_name + "--" + l_routine.name + "%"")
-				if not l_routine.outcomes.is_empty then
-					l_content.append_string (l_routine.outcomes.last.out)
-				end
+			if updates = void then
+				log_element ("error", "message=%"!ROUTINE UPDATE ACTION WITH VOID UPDATE LIST!!%"", void)
+			else
+				from
+					updates.start
+				until
+					updates.after
+				loop
+					l_message.wipe_out
+					l_content.wipe_out
+					inspect updates.item_for_iteration.code
+					when {CDD_TEST_ROUTINE_UPDATE}.add_code then
+						l_message.append_string ("action=%"add%"")
+					when {CDD_TEST_ROUTINE_UPDATE}.changed_code then
+						l_message.append_string ("action=%"change%"")
+					when {CDD_TEST_ROUTINE_UPDATE}.remove_code then
+						l_message.append_string ("action=%"remove%"")
+					else
+						check got_invalid_update_code: false end
+					end
+					l_routine := updates.item_for_iteration.test_routine
+					l_message.append_string (" name=%"" + empty_or_out(l_routine.test_class.cdd_id) + "--" + l_routine.test_class.test_class_name + "--" + l_routine.name + "%"")
+					if not l_routine.outcomes.is_empty then
+						l_content.append_string (l_routine.outcomes.last.out)
+					end
 
-				log_message ("test_routine", l_message, l_content)
+					log_element ("test_routine", l_message, l_content)
 
-				updates.forth
+					updates.forth
+				end
 			end
+		end
+
+	put_interpreter_compilation_message (a_status: STRING) is
+			-- Write a background compilation status message to the log.
+		do
+			log_element ("interpreter_compiler", "status=%"" + a_status + "%"", void)
+		end
+
+	report_test_case_execution_start is
+			-- Start construction of `current_test_case_execution_element'.
+		local
+			l_time: DATE_TIME
+		do
+			create l_time.make_now
+			current_test_case_execution_element.head := "<test_suite_execution time=%"" + l_time.out + "%""
+			current_test_case_execution_element.tail := ""
+		end
+
+	report_test_case_execution (a_start_time: DATE_TIME; an_end_time: DATE_TIME; a_routine: CDD_TEST_ROUTINE) is
+			-- Add the execution of an individual test routine to the `current_test_case_execution_element'.
+		local
+			l_duration_sec: REAL_64
+		do
+			l_duration_sec := an_end_time.definite_duration (a_start_time).fine_seconds_count
+			current_test_case_execution_element.tail.append_string ("%T<test_case_execution  name=%"" + empty_or_out(a_routine.test_class.cdd_id) + "--" + a_routine.test_class.test_class_name + "--" + a_routine.name + "%"")
+			current_test_case_execution_element.tail.append_string (" duration = %"" + l_duration_sec.out + "%"/>%N")
+		end
+
+	report_test_case_execution_end is
+			-- finalize `current_test_case_execution_element' and write it to the log.
+		do
+			current_test_case_execution_element.head.append_string (" status=%"completed%">%N")
+			current_test_case_execution_element.tail.append_string ("</test_suite_execution>%N")
+			output_stream.put_string (current_test_case_execution_element.head)
+			output_stream.put_string (current_test_case_execution_element.tail)
+			output_stream.flush
+		end
+
+	report_test_case_execution_abort is
+			-- finalize `current_test_case_execution_element' and write it to the log.
+		do
+			current_test_case_execution_element.head.append_string (" status=%"aborted%">%N")
+			current_test_case_execution_element.tail.append_string ("</test_suite_execution>%N")
+			output_stream.put_string (current_test_case_execution_element.head)
+			output_stream.put_string (current_test_case_execution_element.tail)
+			output_stream.flush
 		end
 
 feature {NONE} -- Implementation
 
-	log_message (an_element_name: STRING; an_attrib_string: STRING; an_element_content: STRING) is
+	log_element (an_element_name: STRING; an_attrib_string: STRING; an_element_content: STRING) is
 			-- write a message to the log
 		local
 			l_time: DATE_TIME
@@ -139,6 +192,8 @@ feature {NONE} -- Implementation
 			end
 		end
 
+
+	current_test_case_execution_element: TUPLE[head: STRING; tail: STRING]
 
 	output_stream: KI_TEXT_OUTPUT_STREAM
 			-- All loging messages are written to this stream

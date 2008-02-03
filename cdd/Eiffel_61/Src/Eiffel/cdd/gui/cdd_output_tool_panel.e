@@ -107,7 +107,7 @@ feature {NONE} -- Implementation
 			when {CDD_STATUS_UPDATE}.printer_step_code then
 				l_formatter := text_area.text_displayed
 				l_formatter.process_basic_text ("Extracted new test class ")
-				l_class := debugger_manager.cdd_manager.printer.last_extracted_class
+				l_class := debugger_manager.cdd_manager.test_case_printer.last_extracted_class
 				l_formatter.process_class_name_text (l_class.name, l_class, False)
 				l_formatter.add_new_line
 			else

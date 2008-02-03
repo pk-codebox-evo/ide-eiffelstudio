@@ -178,6 +178,7 @@ feature -- Basic operations
 					cdd_manager.status_update_actions.call ([update_step])
 					l_target := test_suite.target
 					l_system := l_target.system
+					log.put_interpreter_compilation_message ("start")
 					compiler.run (l_system.directory, l_system.file_name, tester_target_name (l_target))
 				else
 					-- TODO: notify observers that printing the root class has failed
@@ -193,11 +194,13 @@ feature -- Basic operations
 			if is_compiling then
 				if compiler.is_running then
 					compiler.terminate
+					log.put_interpreter_compilation_message ("abort")
 				end
 				compiler := Void
 			else
 				if proxy.is_launched then
 					proxy.stop
+					log.report_test_case_execution_abort
 				end
 				proxy := Void
 			end
@@ -229,10 +232,13 @@ feature {NONE} -- Implementation (execution)
 				compiler.process_output
 			else
 				if compiler.was_successful then
+					log.put_interpreter_compilation_message ("success")
 					create proxy.make (interpreter_pathname, create {KL_TEXT_OUTPUT_FILE}.make (cdd_manager.testing_directory.build_path ("", "cdd_interpreter.log")))
+					log.report_test_case_execution_start
 					proxy.start
 					select_first_test_routine
 				else
+					log.put_interpreter_compilation_message ("error")
 					cdd_manager.status_update_actions.call ([create {CDD_STATUS_UPDATE}.make_with_code ({CDD_STATUS_UPDATE}.execution_error_code)])
 					test_routines_cursor := Void
 				end
@@ -247,9 +253,12 @@ feature {NONE} -- Implementation (execution)
 			is_executing: is_executing
 		local
 			l_list: DS_ARRAYED_LIST [CDD_TEST_ROUTINE_UPDATE]
+			l_time: DATE_TIME
 		do
 			if proxy.last_response /= Void then
 				current_test_routine.add_outcome (proxy.last_response)
+				create l_time.make_now
+				log.report_test_case_execution (current_routine_execution_start_time, l_time, current_test_routine)
 				if proxy.last_response.is_fail then
 					fail_count := fail_count + 1
 				elseif proxy.last_response.is_pass then
@@ -270,6 +279,7 @@ feature {NONE} -- Implementation (execution)
 			if test_routines_cursor.after then
 				proxy.stop
 				proxy := Void
+				log.report_test_case_execution_end
 				test_routines_cursor := Void
 				fail_count := 0
 				pass_count := 0
@@ -277,6 +287,7 @@ feature {NONE} -- Implementation (execution)
 			else
 				if proxy.is_ready then
 					cdd_manager.status_update_actions.call ([update_step])
+					create current_routine_execution_start_time.make_now
 					proxy.execute_test_async (current_test_routine.test_class.test_class_name, current_test_routine.name)
 				elseif proxy.is_executing_request then
 					proxy.process_response
@@ -351,6 +362,14 @@ feature {NONE} -- Implementation
 			create Result.make_with_code ({CDD_STATUS_UPDATE}.executor_step_code)
 		ensure
 			not_void: Result /= Void
+		end
+
+	current_routine_execution_start_time: DATE_TIME
+
+	log: CDD_LOGGER is
+			-- CDD logger
+		do
+			Result := cdd_manager.log
 		end
 
 invariant
