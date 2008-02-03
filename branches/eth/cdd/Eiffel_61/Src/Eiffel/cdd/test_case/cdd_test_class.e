@@ -121,12 +121,14 @@ feature -- Element change
 			l_input_file: KL_TEXT_INPUT_FILE
 			l_output_file: KL_TEXT_OUTPUT_FILE
 			l_file_content: STRING
-			l_uuid_string: STRING
-			l_regex: RX_PCRE_REGULAR_EXPRESSION
+			l_file_char_count: INTEGER
 		do
 			l_ast := parsed_class
 			l_ilist := l_ast.top_indexes
+
 			create l_uuid.default_create
+
+
 			if l_ilist /= void then
 				from
 					l_ilist.start
@@ -134,64 +136,67 @@ feature -- Element change
 					l_ilist.after or else l_has_id
 				loop
 					l_item := l_ilist.item
-					l_has_id := l_item.tag.name.is_equal ("cdd_id") and then not l_item.index_list.is_empty
-					if l_has_id then
-						l_uuid_string := l_item.index_list.first.string_value
-						l_uuid_string.prune_all_leading ('%%')
-						l_uuid_string.prune_all_leading ('%"')
-						l_uuid_string.prune_all_trailing ('%"')
-						l_uuid_string.prune_all_trailing ('%%')
-						create cdd_id.make_from_string (l_uuid_string)
-					else
-						l_ilist.forth
+					if l_item.tag.name.is_equal ("cdd_id") then
+						from
+							l_item.index_list.start
+						until
+							l_item.index_list.after or else l_has_id
+						loop
+							uuid_regex.match (l_item.index_list.item.string_value)
+							if uuid_regex.has_matched then
+								create cdd_id.make_from_string (uuid_regex.captured_substring (0))
+								l_has_id := True
+							else
+								l_item.index_list.forth
+							end
+						end
 					end
+
+					l_ilist.forth
 				end
 			end
 
-			if compiled_class /= void and then not l_has_id and then cdd_id = void then
-						-- First index entry with name "cdd_id" does not exist or is not valid, but the compiled class is around
-						-- Try to add a new id to the file
-						-- [and the cdd_id = void]: Double check if class already has uuid. This would be one generated in the corresponding file
-						-- but not yet recognized by the compiler.
+			if cdd_id = void and then compiled_class /= void then
+						-- If `Current' doesn't have a cdd_id yet, try to add one to the indexing clause of the class
+						-- associated with `current'. This is only possible `Current' knows its `compiled_class'
 
 				create l_input_file.make (compiled_class.original_class.file_name.string)
-				if l_input_file.exists then
+				l_file_char_count := -1
+				if l_input_file.exists and then l_input_file.is_closed then
+					l_file_char_count := l_input_file.count
 					l_input_file.open_read
 				end
-				if l_input_file.is_open_read and then l_input_file.count > -1 then
-					l_input_file.read_string (l_input_file.count)
+				if l_input_file.is_open_read and then l_file_char_count > -1 then
+					l_input_file.read_string (l_file_char_count)
 					l_file_content := l_input_file.last_string
 					l_input_file.close
 				end
 
 				if l_file_content /= void and then not l_file_content.is_empty then
-					create l_regex.make
-					l_regex.set_caseless (true)
-					l_regex.set_multiline (true)
-					l_regex.set_dotall (true)
-
-							-- TODO: Triple check: it happens that the compilation of the tester target right after compilation of sut
+							-- Double check: it happens that the compilation of the tester target right after compilation of sut
 							-- does not recognize the updated file content (so the id is still not in the AST, even thoght it is in the file)
-							-- TODO: why does tester target handle testsuite at all?
-					l_regex.compile (".*indexing.*cdd_id.*:.*%"(.*)%"")
-					l_regex.match (l_file_content)
+							-- TODO: why does tester target handle testsuite at all? Is this check necessary?
+					cdd_id_indexing_available_regex.match (l_file_content)
 
-					if l_regex.has_matched then
-						l_uuid_string := l_regex.captured_substring (1)
-						create cdd_id.make_from_string (l_regex.captured_substring (1))
+					if cdd_id_indexing_available_regex.has_matched then
+						create cdd_id.make_from_string (cdd_id_indexing_available_regex.captured_substring (1))
 					else
+								-- Insert "cdd_id" into indexing clause of file
 						cdd_id := uuid_generator.generate_uuid
-
 						if l_ilist = void or else l_ilist.is_empty then
-							l_regex.compile ("(^)(.*class)")
-							l_regex.match (l_file_content)
-							l_file_content := l_regex.replace ("\1\indexing%N%Tcdd_id: %"" + cdd_id.out + "%"%N%N\2\")
+							--l_regex.compile ("(.*class)")
+							header_indexing_available_regex.match (l_file_content)
+							if header_indexing_available_regex.has_matched then
+								l_file_content := header_indexing_available_regex.replace("\1\%N%Tcdd_id: %"" + cdd_id.out + "%"\2\")
+							else
+								l_file_content.prepend_string ("indexing%N%Tcdd_id: %"" + cdd_id.out + "%"%N%N")
+							end
 						else
-							l_regex.compile ("(.*indexing)([ %T%N]+[a-zA-Z][a-zA-Z0-9_]*[ %T%N]*:[ %T%N]*%".*[^%%]%")(.*class)")--([ %T%N])(class)")
-							l_regex.match (l_file_content)
-							l_file_content := l_regex.replace ("\1\ \2\%N%Tcdd_id: %"" + cdd_id.out + "%"\3\")-- \5\")
+							cdd_id_indexing_insertion_regex.match (l_file_content)
+							l_file_content := cdd_id_indexing_insertion_regex.replace ("\1\%N%Tcdd_id: %"" + cdd_id.out + "%"\2\")
 						end
 
+								-- TODO: currently the cdd_id is set even if its not possible to write it to the file again... is that ok?
 						create l_output_file.make (compiled_class.original_class.file_name.string)
 						l_output_file.open_write
 						if l_output_file.is_open_write then
@@ -218,6 +223,9 @@ feature {CDD_TEST_SUITE} -- Status change
 			status_updates.wipe_out
 			update_tags
 			update_test_routines
+
+					-- Make sure `current' has a valid "cdd_id" indexing clause
+			ensure_cdd_id
 		end
 
 feature {CDD_TEST_ROUTINE} -- Test routine properties
@@ -535,6 +543,39 @@ feature {NONE} -- Implementation
 			not_void: Result /= Void
 		end
 
+	uuid_regex: RX_PCRE_REGULAR_EXPRESSION is
+			-- Regular expression matching valid uuid's
+		once
+			create Result.make
+			Result.compile ("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")
+		end
+
+	cdd_id_indexing_available_regex: RX_PCRE_REGULAR_EXPRESSION is
+			-- Regular expression matching eiffel class files containing "cdd_id" indexing clause with valid uuid
+		once
+			create Result.make
+			Result.set_multiline (True)
+			Result.set_dotall (True)
+			Result.compile (".*indexing.*cdd_id.*:.*%".*([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}).*%".*class")
+		end
+
+	cdd_id_indexing_insertion_regex: RX_PCRE_REGULAR_EXPRESSION is
+			-- Regular expression matching eiffel class files for insertion of "cdd_id" indexing clause ("indexing" has to be available)
+		once
+			create Result.make
+			Result.set_multiline (True)
+			Result.set_dotall (True)
+			Result.compile ("(.*indexing.*[^%%]%")(.*[ %T%N]class[ %T%N])")
+		end
+
+	header_indexing_available_regex: RX_PCRE_REGULAR_EXPRESSION is
+			-- Regular expression matching eiffel class files containing a header indexing keyword
+		once
+			create Result.make
+			Result.set_multiline (True)
+			Result.set_dotall (True)
+			Result.compile ("(.*indexing)(.*[ %T%N]class[ %T%N])")
+		end
 
 invariant
 	test_class_name_not_void: test_class_name /= Void

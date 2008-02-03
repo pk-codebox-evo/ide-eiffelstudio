@@ -99,9 +99,9 @@ feature {NONE} -- Implementation (Capturing)
 			l_call_stack := a_status.current_call_stack
 			skip_library := False
 
-				-- Store all object addresses which
+				-- Remember all objects which
 				-- are target of some routine call
-				-- on the current call stack
+				-- in the current call stack.
 			from
 				l_call_stack.start
 			until

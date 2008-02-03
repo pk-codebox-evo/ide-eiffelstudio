@@ -280,6 +280,8 @@ feature {NONE} -- Object initialization
 				Result := create {SPECIAL [REAL]}.make (a_count)
 			elseif generic_dynamic_type_of_type (l_type, 1) = dynamic_type_from_string ("DOUBLE") then
 				Result := create {SPECIAL [DOUBLE]}.make (a_count)
+			elseif generic_dynamic_type_of_type (l_type, 1) = dynamic_type_from_string ("POINTER") then
+				Result := create {SPECIAL [POINTER]}.make (a_count)
 			else
 				check special_type_not_supported: False end
 				-- User defined expanded or type we do not support yet
