@@ -15,5 +15,13 @@ inherit
 
 	CDD_TEST_CASE
 
+feature -- Tests
+
+	test_1 is
+			-- Test something.
+		do
+			-- TODO: Implement your unit test
+			assert ("implemented", False)
+		end
 
 end
