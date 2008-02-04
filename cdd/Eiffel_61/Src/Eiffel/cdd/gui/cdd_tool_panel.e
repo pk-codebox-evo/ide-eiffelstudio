@@ -191,7 +191,6 @@ feature {NONE} -- Initialization
 				-- Build details view and related grid
 			create l_notebook
 
-
 			create details_text
 			details_text.set_font (preferences.editor_data.font)
 			details_text.disable_edit
