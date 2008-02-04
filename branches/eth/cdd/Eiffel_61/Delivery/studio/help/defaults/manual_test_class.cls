@@ -1,7 +1,8 @@
 indexing
 	description:
 		"[
-			This manual test class has been created by CDD.
+			This class contains test cases. 
+                     TODO: Put proper description of class here.
 			Visit http://dev.eiffel.com/CddBranch for more information.
 		]"
 	author: "EiffelStudio CDD Tool"
@@ -18,10 +19,12 @@ inherit
 feature -- Tests
 
 	test_1 is
-			-- Test something.
+			-- TODO: Put header comment here.
 		do
-			-- TODO: Implement your unit test
-			assert ("implemented", False)
+			-- TODO: Below is a sample test, replace with your own.
+                     check
+                        one_plus_one_is_two: 1 + 1 = 2
+                     end
 		end
 
 end
