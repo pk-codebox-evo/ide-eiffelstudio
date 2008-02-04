@@ -37,6 +37,11 @@ inherit
 			{NONE} all
 		end
 
+	SHARED_EXEC_ENVIRONMENT
+		export
+			{NONE} all
+		end
+
 create
 	make
 
@@ -80,7 +85,7 @@ feature -- Status report
 			-- Has `project' been initialized?
 			-- Note that CDD is not active without an initialized project.
 		do
-			Result := project.initialized and project.system_defined -- target /= Void
+			Result := project.initialized and project.system_defined and then target /= Void
 		end
 
 	is_extracting_enabled: BOOLEAN is
@@ -175,24 +180,27 @@ feature -- Access (Logging)
 			project_is_initialized: is_project_initialized
 		local
 			l_output_file: KL_TEXT_OUTPUT_FILE
+			l_tester_id_string: STRING
 		once
-				-- NOTE: the logger propably should not create a new directory
-				-- if there are not even tests in the test suite, since this
-				-- will also affect system such as libraries.
---			create Result.make (null_output_stream)
 
 					-- NOTE: If logging is enabled, which currently is the case, the cdd_tests folder gets created (almost) immediately.
+					-- To prevent modification of precompile systems for targets of a system containing a library target logging is disabled
+					-- automatically
 			if not target.is_cdd_target and then target.system.library_target = void then
-				create l_output_file.make (testing_directory.build_path ("", log_file_name))
+				l_tester_id_string := execution_environment.get (cdd_tester_id_evironment_variable)
+				if l_tester_id_string /= Void and then not l_tester_id_string.is_empty then
+					create l_output_file.make (testing_directory.build_path ("", l_tester_id_string + "_" + log_file_name))
+				else
+					create l_output_file.make (testing_directory.build_path ("", log_file_name))
+				end
 				l_output_file.recursive_open_append
 				if l_output_file.is_open_write then
 					create Result.make(l_output_file)
 				else
-						-- TODO: Think about that. Currently dev0 is provided
 					create Result.make (null_output_stream)
 				end
 			else
-					-- TODO: Think about that handling of logging for the tester target
+					-- No logging for cdd targets and library targets
 				create Result.make (null_output_stream)
 			end
 		ensure
