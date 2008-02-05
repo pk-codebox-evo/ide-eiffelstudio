@@ -167,11 +167,24 @@ feature -- Basic operations
 			l_target: CONF_TARGET
 			l_system: CONF_SYSTEM
 			l_list: DS_ARRAYED_LIST [CDD_TEST_ROUTINE]
+			l_comp: AGENT_BASED_EQUALITY_TESTER [CDD_TEST_ROUTINE]
 		do
 			if not filter.test_routines.is_empty then
 				root_class_printer.print_class (cdd_manager.testing_directory)
 				if root_class_printer.last_print_succeeded then
 					create l_list.make_from_linear (filter.test_routines)
+
+						-- Sort list for cdd test suite
+					create l_comp.make (agent (a_t1, a_t2: CDD_TEST_ROUTINE): BOOLEAN
+						do
+							if a_t1.test_class.test_class_name < a_t2.test_class.test_class_name then
+								Result := True
+							elseif a_t1.test_class.test_class_name.is_equal (a_t2.test_class.test_class_name) then
+								Result := a_t1.name < a_t2.name
+							end
+						end)
+					l_list.sort (create {DS_QUICK_SORTER [CDD_TEST_ROUTINE]}.make (l_comp))
+
 					test_routines_cursor := l_list.new_cursor
 					create compiler.make
 					compiler.set_output_handler (agent redirect_output)
