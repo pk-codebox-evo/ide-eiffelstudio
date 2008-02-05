@@ -21,7 +21,7 @@ feature {NONE} -- Initialization
 	make is
 			-- Create and map the first window: the system window.
 		local
-			compiler: ES
+			compiler: ES_BATCH
 			graphic_compiler: ES_GRAPHIC
 			--| uncomment the following line when profiling
 			--prof_setting: PROFILING_SETTING
