@@ -177,7 +177,7 @@ feature {CDD_CAPTURER} -- Basic operations
 			-- `an_id' is the associated id for reconstructing the state and `an_inv'
 			-- indicated if the object has to fulfill its invariants.
 		local
-			l_attrs: STRING
+			l_object: STRING
 			l_cursor: DS_LIST_CURSOR [STRING]
 		do
 			if not failed then
@@ -185,23 +185,29 @@ feature {CDD_CAPTURER} -- Basic operations
 					output_stream.put_string (",%N")
 				end
 				printed_objects := printed_objects + 1
-				create l_attrs.make_from_string ("<< ")
+				create l_object.make (100)
+				l_object.append ("[%"")
+				l_object.append (an_id)
+				l_object.append ("%", %"")
+				l_object.append (a_type)
+				l_object.append ("%", ")
+				l_object.append (an_inv.out)
+				l_object.append (", ")
+				l_object.append ("<< ")
 				l_cursor := some_attributes.new_cursor
 				from
 					l_cursor.start
 				until
 					l_cursor.after
 				loop
-					l_attrs.append ("%"" + l_cursor.item + "%"")
+					l_object.append ("%"" + l_cursor.item + "%"")
 					if not l_cursor.is_last then
-						l_attrs.append (", ")
+						l_object.append (", ")
 					end
 					l_cursor.forth
 				end
-				l_attrs.append (" >>")
-				output_stream.indent
-				output_stream.put_string ("[%"" + an_id + "%", %"" + a_type + "%", " + an_inv.out + ", " + l_attrs + "]")
-				output_stream.dedent
+				l_object.append (" >>]")
+				output_stream.put_line (l_object)
 			end
 		rescue
 			failed := True
@@ -220,7 +226,6 @@ feature {CDD_CAPTURER} -- Basic operations
 		do
 			if not failed then
 				output_stream.dedent
-				output_stream.put_new_line
 				output_stream.put_line (">>")
 				output_stream.dedent
 				output_stream.put_line ("end")
@@ -381,17 +386,6 @@ feature {NONE} -- Implementation
 			output_stream.put_new_line
 			output_stream.indent
 			output_stream.put_line ("CDD_EXTRACTED_TEST_CASE")
-			output_stream.indent
-			output_stream.put_line ("rename")
-			output_stream.indent
-			output_stream.put_line ("test as test_" + a_feature_name)
-			output_stream.dedent
-			output_stream.put_line ("redefine")
-			output_stream.indent
-			output_stream.put_line ("test_" + a_feature_name)
-			output_stream.dedent
-			output_stream.put_line ("end")
-			output_stream.dedent
 			output_stream.dedent
 			output_stream.put_new_line
 		end
@@ -450,17 +444,16 @@ feature {NONE} -- Implementation
 					end
 					l_agent.append (")")
 				end
-				if a_feature.has_return_value then
-					l_agent.append (": " + a_feature.type.dump)
-				else
-					l_agent.append (": " + l_class)
-				end
 				output_stream.put_line (l_agent)
 				output_stream.indent
+				output_stream.put_line ("local")
+				output_stream.indent
+				output_stream.put_line ("l_result: ANY")
+				output_stream.dedent
 				output_stream.put_line ("do")
 				output_stream.indent
 				if an_is_creation_call then
-					l_agent := "Result := create {" + l_class + "}." + a_feature.name
+					l_agent := "l_result := create {" + l_class + "}." + a_feature.name
 					if a_feature.argument_count > 0 then
 						l_agent.append (" (")
 						from
@@ -477,9 +470,9 @@ feature {NONE} -- Implementation
 						l_agent.append (")")
 					end
 				elseif a_feature.is_infix then
-					l_agent := "Result := an_arg1 " + a_feature.infix_symbol + " an_arg2"
+					l_agent := "l_result := an_arg1 " + a_feature.infix_symbol + " an_arg2"
 				else
-					l_agent := "Result := " + a_feature.prefix_symbol + "an_arg1"
+					l_agent := "l_result := " + a_feature.prefix_symbol + "an_arg1"
 				end
 				output_stream.put_line (l_agent)
 				output_stream.dedent
@@ -500,7 +493,7 @@ feature {NONE} -- Implementation
 			initialized_and_not_failed: is_initialized and not failed
 		do
 
-			output_stream.put_line ("feature -- Extracted data%N")
+			output_stream.put_line ("feature {NONE} -- Extracted data%N")
 
 				-- Context
 			output_stream.indent
@@ -533,7 +526,7 @@ feature {NONE} -- Implementation
 			output_stream.dedent
 			output_stream.put_line ("indexing")
 			output_stream.indent
-			output_stream.put_line ("tag: %"covers." + a_class.name_in_upper + "." +a_feature_name + "%"")
+			output_stream.put_line ("tag: %"covers." + a_class.name_in_upper + "." + a_feature_name + "%"")
 			if a_csindex > 9 then
 				output_stream.put_line ("tag: %"failure." + a_csid + "." + a_csindex.out + "%"")
 			else
@@ -542,7 +535,7 @@ feature {NONE} -- Implementation
 			output_stream.dedent
 			output_stream.put_line ("do")
 			output_stream.indent
-			output_stream.put_line ("Precursor {CDD_EXTRACTED_TEST_CASE}")
+			output_stream.put_line ("call_routine_under_test")
 			output_stream.dedent
 			output_stream.put_line ("end")
 			output_stream.dedent

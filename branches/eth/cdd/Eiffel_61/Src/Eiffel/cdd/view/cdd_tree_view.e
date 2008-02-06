@@ -177,11 +177,27 @@ feature {NONE} -- View definition
 			a_prefix_not_void: a_prefix /= Void
 		local
 			l_name, l_tag: STRING
+			l_regex: RX_PCRE_REGULAR_EXPRESSION
+			l_user_tags: DS_ARRAYED_LIST [STRING]
 			l_cursor: DS_LINEAR_CURSOR [STRING]
 			l_delta: INTEGER
 		do
 			if a_prefix.is_empty then
 				l_cursor := a_routine.tags.new_cursor
+				create l_regex.make
+				l_regex.compile ("^(name|covers|failure|outcome|type).")
+				create l_user_tags.make_default
+				from
+					l_cursor.start
+				until
+					l_cursor.after
+				loop
+					if not l_regex.matches (l_cursor.item) then
+						l_user_tags.force_last (l_cursor.item)
+					end
+					l_cursor.forth
+				end
+				l_cursor := l_user_tags.new_cursor
 			else
 				l_cursor := a_routine.tags_with_prefix (a_prefix).new_cursor
 			end
