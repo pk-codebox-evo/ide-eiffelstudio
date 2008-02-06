@@ -386,8 +386,9 @@ feature {EB_CLUSTERS} -- Status setting (Eiffel Project)
 			-- Check if there is a test case for `a_class'. If this is
 			-- the case, remove the test case.
 		do
-			-- TODO: remove corresponding test class from test
-			-- suite for `a_class' if it represents a cdd test class.
+			if test_suite.has_test_case_with_name (a_class.name) then
+				test_suite.remove_test_class (a_class.name)
+			end
 		end
 
 feature -- Status change

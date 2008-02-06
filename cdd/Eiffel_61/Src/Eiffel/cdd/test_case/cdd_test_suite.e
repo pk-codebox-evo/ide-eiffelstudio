@@ -52,12 +52,20 @@ feature -- Access
 			-- this list is updated whenever `test_class_table',
 			-- is updated.
 
+	has_test_case_with_name (a_name: STRING): BOOLEAN is
+			-- Do we have a test class with name `a_name'?
+		do
+			Result := test_class_table.has (a_name)
+		ensure
+			correct: Result = test_class_table.has (a_name)
+		end
+
 	has_test_case_for_class (a_class: EIFFEL_CLASS_C): BOOLEAN is
 			-- Do we have a test class for `a_class'?
 		require
 			a_class_not_void: a_class /= Void
 		do
-			test_class_table.search (a_class.name_in_upper)
+			test_class_table.search (a_class.name)
 			if test_class_table.found then
 				Result := test_class_table.found_item.compiled_class = a_class
 			end
@@ -83,6 +91,42 @@ feature -- Element change
 			test_routine_update_actions.call ([a_test_class.status_updates])
 		ensure
 			added: test_classes.has (a_test_class)
+		end
+
+	remove_test_class (a_name: STRING) is
+			-- Remove test class from `test_classes' with name `a_name'.
+		require
+			a_name_valid: has_test_case_with_name (a_name)
+		local
+			l_tc: CDD_TEST_CLASS
+			l_updates: DS_ARRAYED_LIST [CDD_TEST_ROUTINE_UPDATE]
+			l_cursor: DS_LINEAR_CURSOR [CDD_TEST_ROUTINE]
+			l_tccursor: DS_LIST_CURSOR [CDD_TEST_CLASS]
+		do
+			test_class_table.search (a_name)
+			check
+				found: test_class_table.found
+			end
+			l_tc := test_class_table.found_item
+			create l_updates.make (l_tc.test_routines.count)
+			from
+				l_cursor := l_tc.test_routines.new_cursor
+				l_cursor.start
+			until
+				l_cursor.after
+			loop
+				l_updates.put_last (create {CDD_TEST_ROUTINE_UPDATE}.make (l_cursor.item, {CDD_TEST_ROUTINE_UPDATE}.remove_code))
+				l_cursor.forth
+			end
+			l_tccursor := test_classes.new_cursor
+			l_tccursor.start
+			l_tccursor.search_forth (l_tc)
+			check
+				found: not l_tccursor.off
+			end
+			l_tccursor.remove
+			l_tccursor.go_after
+			test_routine_update_actions.call ([l_updates])
 		end
 
 feature {CDD_MANAGER} -- State change

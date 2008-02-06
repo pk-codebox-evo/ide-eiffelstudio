@@ -52,7 +52,7 @@ feature -- Logging
 		local
 			l_message: STRING
 			l_content: STRING
-			l_class_list: DS_ARRAYED_LIST[CDD_TEST_CLASS]
+			l_class_list: DS_ARRAYED_LIST [CDD_TEST_CLASS]
 		do
 			l_class_list := a_test_suite.test_classes
 			l_message := "number_of_test_classes=%"" + l_class_list.count.out + "%""

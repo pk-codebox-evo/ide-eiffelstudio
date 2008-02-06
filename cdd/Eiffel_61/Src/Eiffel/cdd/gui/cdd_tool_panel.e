@@ -76,7 +76,7 @@ feature {NONE} -- Initialization
 			filter_box.extend (l_item)
 			create l_item.make_with_text ("Unresolved%T%T%T(outcome.unresolved)")
 			filter_box.extend (l_item)
-			create l_item.make_with_text ("Extracted Test Cases%T(type.extracted)")
+			create l_item.make_with_text ("Extracted Test Cases%T%T(type.extracted)")
 			filter_box.extend (l_item)
 			create l_item.make_with_text ("Manual Test Cases%T%T(type.manual)")
 			filter_box.extend (l_item)
@@ -87,11 +87,12 @@ feature {NONE} -- Initialization
 			filter_box.return_actions.extend (agent update_filter)
 			filter_box.select_actions.extend (agent select_filter_text)
 			filter_box.drop_actions.extend (agent drop_class_on_filter)
+			filter_box.drop_actions.extend (agent drop_feature_on_filter)
+			filter_box.drop_actions.extend (agent drop_tag_on_filter)
 
 			create toggle_filter_button.make_with_text ("Restrict")
 			toggle_filter_button.select_actions.extend (agent toggle_filter)
 			toggle_filter_button.set_tooltip ("Only execute filtered test routines")
-			--l_button.set_pixmap (pixmaps.icon_pixmaps.debug_stop_icon)
 			if not cdd_manager.is_project_initialized then
 				toggle_filter_button.disable_sensitive
 			end
@@ -481,6 +482,15 @@ feature {NONE} -- Implementation (Grids)
 					if l_outcome.is_fail then
 						details_text.append_text ("%N%N%NStack trace:%N")
 						details_text.append_text (l_outcome.test_response.exception.exception_trace)
+					elseif l_outcome.has_bad_communication then
+						details_text.append_text ("%N%N%NOutput:%N%N")
+						if l_outcome.setup_response.is_bad then
+							details_text.append_text (l_outcome.setup_response.response_text)
+						elseif l_outcome.test_response.is_bad then
+							details_text.append_text (l_outcome.test_response.response_text)
+						elseif l_outcome.teardown_response.is_bad then
+							details_text.append_text (l_outcome.teardown_response.response_text)
+						end
 					end
 				end
 			end
@@ -654,6 +664,44 @@ feature {NONE} -- Filter / Tree view
 				l_list.put_first ("covers." + a_stone.class_i.name)
 			end
 			filter_box.set_text (l_list.first)
+			grid.tree_view.filtered_view.set_filters (l_list)
+		end
+
+	drop_feature_on_filter (a_stone: FEATURE_STONE) is
+			-- Set appropraite filter text for `a_stone'.
+		require
+			a_stone_not_void: a_stone /= Void
+		local
+			l_class: EIFFEL_CLASS_C
+			l_tag: STRING
+			l_list: DS_ARRAYED_LIST [STRING]
+		do
+			l_class ?= a_stone.e_class
+			create l_tag.make (20)
+			if l_class /= Void and then l_class.is_test_class then
+				l_tag.append ("name.")
+			else
+				l_tag.append ("covers.")
+			end
+			l_tag.append (a_stone.e_class.name)
+			l_tag.append_character ('.')
+			l_tag.append (a_stone.feature_name)
+			filter_box.set_text (l_tag)
+			create l_list.make (1)
+			l_list.put_last (l_tag)
+			grid.tree_view.filtered_view.set_filters (l_list)
+		end
+
+	drop_tag_on_filter (a_stone: CDD_FILTER_TAG_STONE) is
+			-- Set appropraite filter text for `a_stone'.
+		require
+			a_stone_not_void: a_stone /= Void
+		local
+			l_list: DS_ARRAYED_LIST [STRING]
+		do
+			filter_box.set_text (a_stone.tag)
+			create l_list.make (1)
+			l_list.put_last (a_stone.tag)
 			grid.tree_view.filtered_view.set_filters (l_list)
 		end
 

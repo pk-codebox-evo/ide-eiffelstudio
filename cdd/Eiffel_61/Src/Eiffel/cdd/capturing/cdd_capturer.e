@@ -495,7 +495,7 @@ feature {NONE} -- Implementation (Access)
 				end
 				if Result then
 					l_feature := a_cse.routine
-					if l_feature.is_external then
+					if l_feature.is_external or l_feature.is_inline_agent then
 						Result := False
 					elseif not l_feature.export_status.is_all then
 						Result := l_class.creation_feature = l_feature.associated_feature_i or

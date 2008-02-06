@@ -30,6 +30,8 @@ inherit
 			{NONE} all
 		undefine
 			default_create, copy
+		redefine
+			pebble_from_grid_item
 		end
 
 	EB_PIXMAPABLE_ITEM_PIXMAP_FACTORY
@@ -183,8 +185,18 @@ feature {NONE} -- Grid manipulation
 			-- Make `a_row' look like it is not selected.
 		require
 			a_row_not_void: a_row /= Void
+		local
+			l_node: CDD_TREE_NODE
 		do
+			l_node ?= a_row.data
 			a_row.set_background_color (preferences.editor_data.class_background_color)
+			if l_node /= Void and then l_node.is_leaf and then not l_node.test_routine.outcomes.is_empty then
+				if l_node.test_routine.outcomes.last.is_fail then
+					a_row.set_background_color (create {EV_COLOR}.make_with_8_bit_rgb (255, 230, 230))
+				elseif l_node.test_routine.outcomes.last.is_unresolved then
+					a_row.set_background_color (create {EV_COLOR}.make_with_8_bit_rgb (255, 250, 160))
+				end
+			end
 		end
 
 	change_focus is
@@ -334,9 +346,9 @@ feature {NONE} -- Dynamic grid items
 			l_node ?= grid.row (a_row).data
 			if l_node /= Void then
 				Result := new_token_item (l_node)
+				dehighlight_row (grid.row (a_row))
 			end
 		end
-
 
 	new_token_item (a_node: CDD_TREE_NODE): EB_GRID_EDITOR_TOKEN_ITEM is
 			-- New item for displaying in the tree
@@ -370,6 +382,20 @@ feature {NONE} -- Dynamic grid items
 					l_p2 := l_root.parent
 				end
 			end
+
+			inspect tree_view.view_code
+			when {CDD_TREE_VIEW}.covers_view_code then
+				l_tag := "covers." + l_tag
+			when {CDD_TREE_VIEW}.failure_view_code then
+				l_tag := "failure." + l_tag
+			when {CDD_TREE_VIEW}.name_view_code then
+				l_tag := "name." + l_tag
+			when {CDD_TREE_VIEW}.type_view_code then
+				l_tag := "type." + l_tag
+			else
+					-- do nothing: full tag will already be displayed
+			end
+
 			create Result
 			token_writer.new_line
 			l_universe := tree_view.filtered_view.test_suite.cdd_manager.project.universe
@@ -468,6 +494,8 @@ feature {NONE} -- Dynamic grid items
 			if token_writer.last_line.content.is_empty then
 				token_writer.process_basic_text (a_node.tag)
 			end
+			Result.set_data (l_tag)
+
 				-- Add tooltip and failing routine count if necessary
 			if not a_node.is_leaf then
 				Result.set_tooltip (l_tag)
@@ -486,6 +514,24 @@ feature {NONE} -- Dynamic grid items
 				end
 			end
 			Result.set_text_with_tokens (token_writer.last_line.content)
+		end
+
+feature {NONE} -- Pick and drop
+
+	pebble_from_grid_item (a_item: EV_GRID_ITEM): ANY is
+		local
+			l_tag: STRING
+		do
+			Result := Precursor (a_item)
+			if Result = Void then
+				if not ev_application.ctrl_pressed and a_item /= Void then
+					l_tag ?= a_item.data
+					if l_tag /= Void then
+						set_last_picked_item (a_item)
+						Result := create {CDD_FILTER_TAG_STONE}.make (l_tag)
+					end
+				end
+			end
 		end
 
 feature {NONE} -- Implementation
