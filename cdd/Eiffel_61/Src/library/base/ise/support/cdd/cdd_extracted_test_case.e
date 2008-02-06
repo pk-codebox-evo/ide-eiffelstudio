@@ -45,7 +45,7 @@ feature -- Basic operations
 			is_set_up: is_set_up
 		end
 
-	test is
+	call_routine_under_test is
 			-- Call `routine_under_test'. This is the default
 			-- test feature of extracted test cases.
 		require
