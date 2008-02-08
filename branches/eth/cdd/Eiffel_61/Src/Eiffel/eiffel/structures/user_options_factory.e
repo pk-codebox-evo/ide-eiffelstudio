@@ -206,6 +206,7 @@ feature {NONE} -- Implementation
 			Result := "mapping_"
 			Result.append (eiffel_layout.major_version.out)
 			Result.append (eiffel_layout.minor_version.out)
+			Result.append (eiffel_layout.edition)
 			Result.append (".info")
 		ensure
 			mapping_file_name_not_void: Result /= Void

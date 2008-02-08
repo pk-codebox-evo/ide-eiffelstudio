@@ -32,15 +32,15 @@
         <?define LicenseFile = "gpl.rtf"?>
       <?endif?>
       <?ifdef x64?>
-        <?define ProductGuid = "763CBACB-63D3-489d-A1B9-79273F8DD576" ?>
+        <?define ProductGuid = "7a6463b4-b764-4453-8d05-4611bc90afe8" ?>
       <?else?>
-        <?define ProductGuid = "C845D38E-4464-4e7c-91BD-0CF716729EFC" ?>
+        <?define ProductGuid = "22144f54-157f-4e4f-baa2-1dec28e3f886" ?>
       <?endif?>
-      <?define UpgradeGuid = "3E2ADCA8-CBA9-4c3f-BD39-91B8A077A939" ?>
+      <?define UpgradeGuid = "4ce88315-0119-43c3-b28f-969d96d63af0" ?>
       <?define Product = "EiffelStudio" ?>
       <?define ProductVersion = "6.1" ?>
-      <?define ProductDescription = "EiffelStudio 6.1 Integrated Development Environment (IDE) Installer" ?>
-      <?define ProductKey = "Eiffel61" ?>
+      <?define ProductDescription = "EiffelStudio 6.1 CDD Edition Integrated Development Environment (IDE) Installer" ?>
+      <?define ProductKey = "Eiffel61cdd" ?>
     <?else?>
       <?ifdef EiffelEnvision?>
         <?ifdef Enterprise?>
@@ -59,7 +59,7 @@
         <?define Product = "EiffelEnvision" ?>
         <?define ProductVersion = "2.8" ?>
         <?define ProductDescription = "EiffelEnvision 2.8 The Eiffel for .NET Language Package for Visual Studio .NET 2005" ?>
-        <?define ProductKey = "Eiffel61" ?>
+        <?define ProductKey = "Eiffel61cdd" ?>
       <?else?>
         <?define Edition = "Test"?>
         <?define LicenseFile = "gpl.rtf"?>
@@ -68,11 +68,11 @@
         <?define Product = "EiffelStudio" ?>
         <?define ProductVersion = "2.8" ?>
         <?define ProductDescription = "Test" ?>
-        <?define ProductKey = "Eiffel61" ?>
+        <?define ProductKey = "Eiffel61cdd" ?>
       <?endif?>
     <?endif?>
-    <?define ProductName = "$(var.Product) $(var.ProductVersion) ($(var.Platform)) $(var.Edition)" ?>
-    <?define InstallName = "$(var.Product) $(var.ProductVersion) $(var.Edition)" ?>
+    <?define ProductName = "$(var.Product) $(var.ProductVersion) CDD Edition ($(var.Platform)) $(var.Edition)" ?>
+    <?define InstallName = "$(var.Product) $(var.ProductVersion) CDD Edition $(var.Edition)" ?>
     
     <!-- END PRODUCT SPECIFIC -->
   <?endif?>

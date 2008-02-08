@@ -1,0 +1,19 @@
+-- EXPORTED FEATURE(s) OF THE SHARED LIBRARY
+-- SYSTEM : setup
+
+-- CLASS [COMMON_CUSTOM_ACTIONS]
+COMMON_CUSTOM_ACTIONS (default_create) : initialize_properties call_type __stdcall
+
+-- CLASS [COMPILER_CUSTOM_ACTIONS]
+COMPILER_CUSTOM_ACTIONS (default_create) : evaluate_c_compiler call_type __stdcall
+COMPILER_CUSTOM_ACTIONS (default_create) : show_c_compiler_how_to call_type __stdcall
+COMPILER_CUSTOM_ACTIONS (default_create) : can_perform_c_compilation call_type __stdcall
+COMPILER_CUSTOM_ACTIONS (default_create) : check_environment_variables
+
+-- CLASS [GDI_PLUS_CUSTOM_ACTIONS]
+GDI_PLUS_CUSTOM_ACTIONS (default_create) : is_gdi_plus_installed call_type __stdcall
+
+-- CLASS [STUDIO_CUSTOM_ACTIONS]
+STUDIO_CUSTOM_ACTIONS (default_create) : prepare_finalize_setup call_type __stdcall
+STUDIO_CUSTOM_ACTIONS (default_create) : finalize_setup call_type __stdcall
+

@@ -177,7 +177,7 @@ feature {NONE} -- Constant strings
 			Result.append (Interface_names.t_Project)
 			Result.append (" ")
 			Result.append_integer (compiler_version_number.major)
-			Result.append (" (")
+			Result.append (" CDD (")
 			Result.append (Version_number)
 			Result.append (")")
 			if Version_info /= Void and then not Version_info.is_empty then
