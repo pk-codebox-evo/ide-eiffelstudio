@@ -204,7 +204,7 @@ feature {AUXILIARY_FILES} -- Versioning
 
 	Version_tag: INTEGER is 0x026
 
-	Version_type_name: STRING is "GPL Edition (CDD)";
+	Version_type_name: STRING is "GPL Edition";
 			-- Name of version, e.g. GPL edition, Enterprise Edition,...
 			-- Default: "GPL Edition"
 

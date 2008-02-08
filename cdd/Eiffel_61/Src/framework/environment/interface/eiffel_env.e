@@ -137,6 +137,8 @@ feature -- Version
 	Major_version: NATURAL_16 is 6
 	Minor_version: NATURAL_16 is 1
 
+	Edition: STRING is "cdd"
+
 feature -- Access
 
 	application_name: STRING is
@@ -156,7 +158,7 @@ feature -- Access
 				Result := product_name + major_version.out + "." + minor_version.out
 				Result.to_lower
 			else
-				Result := product_name + major_version.out + minor_version.out
+				Result := product_name + major_version.out + minor_version.out + edition
 			end
 		end
 
@@ -407,6 +409,7 @@ feature -- Access: file name
 			end
 			Result.append_integer (major_version)
 			Result.append_integer (minor_version)
+			Result.append_string (edition)
 		end
 
 	Standard_tools_layout_name: STRING is
