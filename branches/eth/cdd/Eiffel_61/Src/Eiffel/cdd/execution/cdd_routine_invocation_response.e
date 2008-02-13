@@ -80,7 +80,6 @@ feature {ANY} -- Status
 
 feature {ANY} -- Access
 
-
 	exception: AUT_EXCEPTION
 			-- Exception thrown if any
 
