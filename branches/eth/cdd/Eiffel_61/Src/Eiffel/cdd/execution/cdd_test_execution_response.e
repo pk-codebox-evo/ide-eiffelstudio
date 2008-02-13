@@ -100,6 +100,30 @@ feature {ANY} -- Status report
 	has_timeout: BOOLEAN
 			-- Was the test case execution aborted due to a time-out?
 
+
+	matches_original_outcome (an_original_outcome: CDD_ORIGINAL_OUTCOME): BOOLEAN is
+			-- Does `current' match `an_original_outcome'?
+		require
+			an_original_outcome_not_void: an_original_outcome /= void
+		local
+			l_tag: STRING
+		do
+			if is_unresolved then
+				Result := False
+			elseif is_pass then
+				Result := an_original_outcome.is_passing
+			else
+					-- The parser returns multiline values with a trailing new line. This has to be removed for comparison.
+				l_tag := test_response.exception.exception_tag_name.twin
+				l_tag.prune_all_trailing ('%N')
+				Result := an_original_outcome.exception /= Void and then test_response.is_exceptional and then
+							(test_response.exception.exception_code = an_original_outcome.exception.exception_code) and then
+							(test_response.exception.exception_class_name.is_equal (an_original_outcome.exception.exception_class_name)) and then
+							(test_response.exception.exception_recipient_name.is_equal (an_original_outcome.exception.exception_recipient_name)) and then
+							(l_tag.is_equal (an_original_outcome.exception.exception_tag_name))
+			end
+		end
+
 feature {ANY} -- Access
 
 	setup_response: CDD_ROUTINE_INVOCATION_RESPONSE

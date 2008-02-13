@@ -139,7 +139,7 @@ feature {CDD_MANAGER} -- State change
 			create {DS_ARRAYED_LIST [CDD_TEST_ROUTINE_UPDATE]} status_updates.make_default
 			update_class_table
 			modified_classes.wipe_out
-			log.put_test_suite_status_message (current, "Refresh")
+			log.report_test_suite_status (current, "Refresh")
 		ensure
 			modified_classes_empty: modified_classes.is_empty
 		end

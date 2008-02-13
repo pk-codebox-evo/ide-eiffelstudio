@@ -28,8 +28,15 @@ inherit
 			{NONE} all
 		end
 
+	INTERNAL
+		rename
+			class_name as int_class_name
+		export
+			{NONE} all
+		end
+
 create
-	make_with_ast, make_with_class
+	make_with_ast, make_with_class, make_with_ast_and_outcomes
 
 feature {NONE} -- Initialization
 
@@ -58,6 +65,30 @@ feature {NONE} -- Initialization
 			initialize
 		ensure
 			compiled_class_set: compiled_class = a_class
+		end
+
+	make_with_ast_and_outcomes (an_ast: CLASS_AS; an_original_outcome_list: DS_LIST[CDD_ORIGINAL_OUTCOME]) is
+			-- Initialize `Current' with `an_ast' and set for each available test routine an original outcome and covered feature.
+		require
+			an_ast_not_void: an_ast /= Void
+			an_original_outcome_list_not_void: an_original_outcome_list /= void
+		do
+			make_with_ast (an_ast)
+			check
+				number_of_test_routines_equals_number_of_outcomes: test_routines.count = an_original_outcome_list.count
+			end
+
+			from
+				test_routines.start
+				an_original_outcome_list.start
+			until
+				test_routines.after or else
+				an_original_outcome_list.after
+			loop
+				test_routines.item_for_iteration.set_original_outcome (an_original_outcome_list.item_for_iteration)
+				test_routines.forth
+				an_original_outcome_list.forth
+			end
 		end
 
 	initialize is
@@ -227,6 +258,33 @@ feature {CDD_TEST_SUITE} -- Status change
 					-- Make sure `current' has a valid "cdd_id" indexing clause
 			ensure_cdd_id
 		end
+
+feature -- Status
+
+	is_extracted: BOOLEAN is
+			-- Is the class attached to `Current' an extracted test class?
+		require
+			has_compiled_class: compiled_class /= void
+		do
+			Result := is_extracted_test_class (compiled_class)
+		end
+
+	is_synthesized: BOOLEAN is
+			-- Is the class attached to `Current' a synthesized test class?
+		require
+			has_compiled_class: compiled_class /= void
+		do
+			Result := is_synthesized_test_class (compiled_class)
+		end
+
+	is_manual: BOOLEAN is
+			-- Is the class attached to `Current' a manual test class?
+		require
+			has_compiled_class: compiled_class /= void
+		do
+			Result := is_manual_test_class (compiled_class)
+		end
+
 
 feature {CDD_TEST_ROUTINE} -- Test routine properties
 
@@ -479,53 +537,24 @@ feature {NONE} -- Implementation
 			-- Add implicit tags for `Current' to `class_tags'.
 		local
 			l_tag: STRING
-			is_extracted_test_case: BOOLEAN
-			is_synthesized_test_case: BOOLEAN
-			is_manual_test_case: BOOLEAN
 		do
-			if compiled_class /= void and then compiled_class.parents_classes /= void then
-				from
-					compiled_class.parents_classes.start
-				until
-					compiled_class.parents_classes.after or is_extracted_test_case
-				loop
-					is_extracted_test_case := compiled_class.parents_classes.item.name_in_upper.is_equal (extracted_test_class_name)
-					compiled_class.parents_classes.forth
-				end
-
-				from
-					compiled_class.parents_classes.start
-				until
-					compiled_class.parents_classes.after or is_extracted_test_case or is_synthesized_test_case
-				loop
-					is_synthesized_test_case := compiled_class.parents_classes.item.name_in_upper.is_equal (synthesized_test_class_name)
-					compiled_class.parents_classes.forth
-				end
-
-				from
-					compiled_class.parents_classes.start
-				until
-					compiled_class.parents_classes.after or is_extracted_test_case or is_synthesized_test_case or is_manual_test_case
-				loop
-					is_manual_test_case := compiled_class.parents_classes.item.name_in_upper.is_equal (test_ancestor_class_name)
-				end
-
+			if compiled_class /= void then
 				if
-					is_extracted_test_case
+					is_extracted
 				then
 					create l_tag.make (20)
 					l_tag := "type."
 					l_tag.append ("extracted")
 					class_tags.force (l_tag)
 				elseif
-					is_synthesized_test_case
+					is_synthesized
 				then
 					create l_tag.make (20)
 					l_tag := "type."
 					l_tag.append ("synthesized")
 					class_tags.force (l_tag)
 				elseif
-					is_manual_test_case
+					is_manual
 				then
 					create l_tag.make (20)
 					l_tag := "type."
@@ -577,6 +606,17 @@ feature {NONE} -- Implementation
 			Result.compile ("(.*indexing)(.*[ %T%N]class[ %T%N])")
 		end
 
+feature {NONE} -- Assertion helpers
+
+	one_of (a: BOOLEAN; b: BOOLEAN; c: BOOLEAN): BOOLEAN
+		-- Is exactly one out of the three variables `a', `b', `c' true?
+		do
+			Result := (a xor b xor c) and not (a and b and c)
+		ensure
+			definition: (a xor b xor c) and not (a and b and c)
+		end
+
+
 invariant
 	test_class_name_not_void: test_class_name /= Void
 	compiled_class_xor_internal_parsed_class_not_void: (compiled_class /= Void) xor (internal_parsed_class /= Void)
@@ -592,5 +632,7 @@ invariant
 	status_updates_valid: not status_updates.has (Void)
 	class_tags_not_void: class_tags /= Void
 	class_tags_has_equality_tester: class_tags.equality_tester = case_insensitive_string_equality_tester
+
+	exactly_one_type: (compiled_class /= void) implies one_of (is_manual, is_synthesized, is_extracted)
 
 end

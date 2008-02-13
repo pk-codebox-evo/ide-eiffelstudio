@@ -410,6 +410,29 @@ feature -- Execution
 		deferred
 		end
 
+	cdd_current_exception_trace: STRING is
+		local
+			rto: like remote_rt_object
+			expr: DBG_EXPRESSION
+			dbgo: DEBUGGED_OBJECT
+			r: DUMP_VALUE
+		do
+			rto := remote_rt_object
+			if rto /= Void then
+				dbgo := debugger_manager.object_manager.debugged_object (rto.address, 0,0)
+				create expr.make_with_object (dbgo, "cdd_current_exception_trace")
+				if not expr.error_occurred then
+					expr.evaluate_with_settings (False)
+					if not expr.error_occurred then
+						r := expr.expression_evaluator.final_result_value
+						if r /= Void then
+							Result := r.truncated_string_representation (0, -1)
+						end
+					end
+				end
+			end
+		end
+
 feature -- RT_EXTENSION constants (note: maybe this should be in a RTDBG_CONSTANTS class)
 
 	Rtdbg_op_replay_record: INTEGER 	= 0	-- See eif_debug.h:RTDBG_OP_REPLAY_RECORD	+ {RT_EXTENSION}.Op_exec_replay_record 		

@@ -102,7 +102,15 @@ feature {NONE} -- Implementation
 		require
 			a_class_not_void: a_class /= Void
 		do
-			Result := is_descendant_of_class (a_class, test_ancestor_class_name) and not is_extracted_test_class (a_class)
+			Result := is_descendant_of_class (a_class, test_ancestor_class_name) and not is_extracted_test_class (a_class) and not is_synthesized_test_class (a_class)
+		end
+
+	is_synthesized_test_class (a_class: EIFFEL_CLASS_C): BOOLEAN is
+			-- Does `a_class' represent a manual test class?
+		require
+			a_class_not_void: a_class /= Void
+		do
+			Result := is_descendant_of_class (a_class, synthesized_test_class_name)
 		end
 
 	is_descendant_of_class (a_class: CLASS_C; a_class_name: STRING): BOOLEAN is
