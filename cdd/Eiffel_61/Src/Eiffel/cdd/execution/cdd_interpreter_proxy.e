@@ -234,6 +234,7 @@ feature -- Execution
 				create stream.make (response_buffer)
 				parser.parse (stream)
 				last_response := parser.last_response
+				last_response.set_timeout
 				is_executing_request := False
 			end
 		end
