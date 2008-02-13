@@ -36,6 +36,7 @@ feature {NONE} -- Initialization
 			test_class_set: test_class = a_test_class
 		end
 
+
 feature -- Status report
 
 	has_matching_tag (a_pattern: STRING): BOOLEAN is
@@ -64,6 +65,39 @@ feature -- Status report
 			end
 			cs.go_after
 		end
+
+	has_original_outcome: BOOLEAN is
+			-- Does original outcome exist for `current'?
+		do
+			Result := (original_outcome /= void)
+		ensure
+			definition: Result = (original_outcome /= void)
+		end
+
+	has_outcome:  BOOLEAN is
+			-- Does at least one outcome exist for `current'?
+		do
+			Result := not internal_outcomes.is_empty
+		ensure
+			definition: Result = not internal_outcomes.is_empty
+		end
+
+
+	is_reproducing: BOOLEAN is
+			-- Has testing routine attached to `current' been able to reproduce the `original_outcome'
+			-- with regards to the first test excution result?
+			-- NOTE: Result = True guarantees the correct reproducing, but Result = False in general
+			-- is to interpreted as "unknown" due to the fact that `original_outcome' might be void
+		require
+			outcome_available: has_outcome
+		do
+			Result := has_original_outcome and then outcomes.first.matches_original_outcome (original_outcome)
+		ensure
+			definition: Result = (has_original_outcome and then outcomes.first.matches_original_outcome (original_outcome))
+		end
+
+
+
 
 feature -- Access
 
@@ -97,6 +131,9 @@ feature -- Access
 			not_void: Result /= Void
 			not_has_void: not Result.has (Void)
 		end
+
+	original_outcome: CDD_ORIGINAL_OUTCOME
+			-- Original outcome upon extraction of the test case associated with `Current'
 
 	is_modified: BOOLEAN
 			-- Has `Current' updated its tags since last call to `update' or `add_outcome'?
@@ -132,6 +169,65 @@ feature -- Access
 			list_doesnt_have_void: not Result.has (Void)
 		end
 
+	status_string_verbose: STRING is
+			-- Verbose status message about `Current'
+		do
+			Result := "[STATUS]%N "
+
+			if has_original_outcome then
+				if has_outcome then
+					if is_reproducing then
+						Result.append_string ("Reproduces original failure")
+					else
+						Result.append_string ("Does NOT reproduce original failure")
+					end
+				else
+					Result.append_string ("Waiting for initial execution to verify if original failure can be reproduced")
+				end
+			else
+				if has_outcome then
+					Result.append_string ("Executed")
+				else
+					Result.append_string ("Has not been executed yet")
+				end
+			end
+			Result.append_string ("%N%N")
+
+			if has_outcome then
+				Result.append_string ("[LAST OUTCOME]%N")
+				Result.append_string (outcomes.last.out)
+				if outcomes.last.is_fail then
+					Result.append_string ("%N%NStack trace:%N")
+					Result.append_string (outcomes.last.test_response.exception.exception_trace)
+				elseif outcomes.last.has_bad_communication then
+					Result.append_string ("%N%NOutput:%N%N")
+					if outcomes.last.setup_response.is_bad then
+						Result.append_string (outcomes.last.setup_response.response_text)
+					elseif outcomes.last.test_response.is_bad then
+						Result.append_string (outcomes.last.test_response.response_text)
+					elseif outcomes.last.teardown_response.is_bad then
+						Result.append_string (outcomes.last.teardown_response.response_text)
+					end
+				end
+				Result.append_string ("%N%N")
+			end
+
+			if has_original_outcome then
+				Result.append_string ("[Original Outcome]%N")
+				if original_outcome.exception = Void then
+					Result.append_string ("Pass")
+				else
+					Result.append_string ("Exceptional:%N")
+					Result.append_string ("Exception code: "  + original_outcome.exception.exception_code.out + "%N")
+					Result.append_string ("Exception name: "  + original_outcome.exception.exception_name + "%N")
+					Result.append_string ("Exception class: "  + original_outcome.exception.exception_class_name + "%N")
+					Result.append_string ("Exception recipient: "  + original_outcome.exception.exception_recipient_name + "%N")
+					Result.append_string ("Exception tag: "  + original_outcome.exception.exception_tag_name + "%N")
+				end
+				Result.append_string ("%N%N%N")
+			end
+		end
+
 feature -- Element change
 
 	add_outcome (an_outcome: CDD_TEST_EXECUTION_RESPONSE) is
@@ -151,6 +247,16 @@ feature -- Element change
 			an_ast_not_void: an_ast /= Void
 		do
 			ast := an_ast
+		end
+
+	set_original_outcome (an_original_outcome: like original_outcome) is
+			-- Set `original_outcome' to `an_original_outcome'.
+		require
+			an_original_outcome_not_void: an_original_outcome /= Void
+		do
+			original_outcome := an_original_outcome
+		ensure
+			original_outcome_set: original_outcome = an_original_outcome
 		end
 
 feature {CDD_TEST_CLASS} -- Update
@@ -250,5 +356,6 @@ invariant
 	internal_outcomes_valid: internal_outcomes /= Void and then not internal_outcomes.has (Void)
 	internal_tags_valid: internal_tags /= Void and then not internal_tags.has (Void) and then
 		internal_tags.equality_tester = case_insensitive_string_equality_tester
+
 
 end

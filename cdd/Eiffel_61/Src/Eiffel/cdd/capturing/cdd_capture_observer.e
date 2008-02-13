@@ -16,7 +16,7 @@ feature -- Access
 
 feature -- Status setting
 
-	start (an_adv: ABSTRACT_DEBUG_VALUE; a_feature: E_FEATURE; a_class: CLASS_C; a_cs_uuid: STRING; a_cs_level: INTEGER) is
+	start (an_adv: ABSTRACT_DEBUG_VALUE; a_feature: E_FEATURE; a_class: CLASS_C; a_cs_uuid: INTEGER_32; a_cs_level: INTEGER; an_original_outcome: TUPLE[is_failing: BOOLEAN; exception: AUT_EXCEPTION]) is
 			-- Start capturing state for `a_feature' in `a_class'.
 			-- `a_cs_uuid' is an ID for the call stack.
 		require
@@ -24,7 +24,7 @@ feature -- Status setting
 			an_adv_not_void: an_adv /= Void
 			a_feature_not_void: a_feature /= Void
 			a_class_not_void: a_class /= Void
-			a_cs_uuid_not_void: a_cs_uuid /= Void
+			a_cs_id_positive: a_cs_uuid > 0
 			a_cs_level_positive: a_cs_level > 0
 		deferred
 		ensure

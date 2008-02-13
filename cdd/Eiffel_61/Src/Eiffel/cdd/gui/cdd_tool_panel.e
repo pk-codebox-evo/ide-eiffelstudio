@@ -459,7 +459,6 @@ feature {NONE} -- Implementation (Grids)
 		local
 			l_node: CDD_TREE_NODE
 			l_test_routine: CDD_TEST_ROUTINE
-			l_outcome: CDD_TEST_EXECUTION_RESPONSE
 			l_list: DS_ARRAYED_LIST [STRING]
 			l_regex: RX_PCRE_REGULAR_EXPRESSION
 			l_tag: STRING
@@ -474,24 +473,9 @@ feature {NONE} -- Implementation (Grids)
 				-- Update `details_text'
 			details_text.set_text ("")
 			if l_test_routine /= Void then
-				if l_test_routine.outcomes.is_empty then
-					details_text.append_text ("Test routine has not been executed yet")
-				else
-					l_outcome := l_test_routine.outcomes.last
-					details_text.append_text (l_outcome.out)
-					if l_outcome.is_fail then
-						details_text.append_text ("%N%N%NStack trace:%N")
-						details_text.append_text (l_outcome.test_response.exception.exception_trace)
-					elseif l_outcome.has_bad_communication then
-						details_text.append_text ("%N%N%NOutput:%N%N")
-						if l_outcome.setup_response.is_bad then
-							details_text.append_text (l_outcome.setup_response.response_text)
-						elseif l_outcome.test_response.is_bad then
-							details_text.append_text (l_outcome.test_response.response_text)
-						elseif l_outcome.teardown_response.is_bad then
-							details_text.append_text (l_outcome.teardown_response.response_text)
-						end
-					end
+				details_text.append_text (l_test_routine.status_string_verbose)
+				if details_text.valid_line_index (1) then
+					details_text.scroll_to_line (1)
 				end
 			end
 

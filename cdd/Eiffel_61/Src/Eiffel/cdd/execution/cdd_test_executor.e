@@ -191,7 +191,7 @@ feature -- Basic operations
 					cdd_manager.status_update_actions.call ([update_step])
 					l_target := test_suite.target
 					l_system := l_target.system
-					log.put_interpreter_compilation_message ("start")
+					log.report_interpreter_compilation_start
 					compiler.run (l_system.directory, l_system.file_name, tester_target_name (l_target))
 				else
 					-- TODO: notify observers that printing the root class has failed
@@ -207,7 +207,7 @@ feature -- Basic operations
 			if is_compiling then
 				if compiler.is_running then
 					compiler.terminate
-					log.put_interpreter_compilation_message ("abort")
+					log.report_interpreter_compilation_abort
 				end
 				compiler := Void
 			else
@@ -245,13 +245,13 @@ feature {NONE} -- Implementation (execution)
 				compiler.process_output
 			else
 				if compiler.was_successful then
-					log.put_interpreter_compilation_message ("success")
+					log.report_interpreter_compilation_end
 					create proxy.make (interpreter_pathname, create {KL_TEXT_OUTPUT_FILE}.make (cdd_manager.testing_directory.build_path ("", "cdd_interpreter.log")))
 					log.report_test_case_execution_start
 					proxy.start
 					select_first_test_routine
 				else
-					log.put_interpreter_compilation_message ("error")
+					log.report_interpreter_compilation_error
 					cdd_manager.status_update_actions.call ([create {CDD_STATUS_UPDATE}.make_with_code ({CDD_STATUS_UPDATE}.execution_error_code)])
 					test_routines_cursor := Void
 				end

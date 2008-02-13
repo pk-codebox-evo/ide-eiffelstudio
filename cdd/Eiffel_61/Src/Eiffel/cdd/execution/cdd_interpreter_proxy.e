@@ -259,7 +259,7 @@ feature {NONE} -- Implementation
 	stderr_reader: AUT_THREAD_SAFE_LINE_READER
 			-- Non blocking reader for client-stderr
 
-	timeout: INTEGER is 8
+	timeout: INTEGER is 5
 			-- Client timeout in seconds
 
 	flush_process is

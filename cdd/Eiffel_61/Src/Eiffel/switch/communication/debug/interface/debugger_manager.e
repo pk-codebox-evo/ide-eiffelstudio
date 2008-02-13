@@ -995,6 +995,8 @@ feature -- Debugging events
 	on_application_just_stopped is
 		require
 			app_is_executing: safe_application_is_stopped
+		local
+			s: STRING
 		do
 			incremente_debugging_operation_id
 			debugger_status_message (debugger_names.t_Paused)
@@ -1004,6 +1006,11 @@ feature -- Debugging events
 
 			if has_stopped_action then
 				stopped_actions.call ([Current])
+			end
+
+			s := application.cdd_current_exception_trace
+			if s /= Void then
+				print ("Exception trace = " + s + "%N")
 			end
 
 				--| Observers
