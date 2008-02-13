@@ -35,7 +35,7 @@ feature {NONE} -- Initialization
 			teardown_response_set: teardown_response = a_teardown_response
 		end
 
-feature {ANY} -- Status
+feature {ANY} -- Status report
 
 	is_pass: BOOLEAN is
 			-- Did the implementation under test pass the test case?
@@ -97,6 +97,9 @@ feature {ANY} -- Status
 				(setup_response.is_normal and then (test_response.is_bad or else teardown_response.is_bad)))
 		end
 
+	has_timeout: BOOLEAN
+			-- Was the test case execution aborted due to a time-out?
+
 feature {ANY} -- Access
 
 	setup_response: CDD_ROUTINE_INVOCATION_RESPONSE
@@ -127,6 +130,18 @@ feature {ANY} -- Access
 			text_not_void: Result /= Void
 		end
 
+feature -- Element change
+
+	set_timeout is
+			-- Set `has_timeout' to True.
+		require
+			requires_maintenance: requires_maintenance
+		do
+			has_timeout := True
+		ensure
+			has_timeout: has_timeout
+		end
+
 feature -- Output
 
 	out: STRING is
@@ -145,7 +160,9 @@ feature -- Output
 			end
 			if requires_maintenance then
 				Result.append ("%N%NRequires maintenance because of:%N%T")
-				if has_bad_communication then
+				if has_timeout then
+					Result.append ("time out")
+				elseif has_bad_communication then
 					Result.append ("bad communication")
 				elseif has_bad_context then
 					Result.append ("bad input")
@@ -173,5 +190,6 @@ invariant
 	one_of_fail_pass_unresolved: one_of (is_pass, is_fail, is_unresolved)
 	maintenance_implies_one_error: requires_maintenance implies (one_of (has_compile_error, has_bad_context, has_bad_communication))
 	not_requires_maintenance_implies_no_error: not requires_maintenance implies not (has_compile_error or has_bad_context or has_bad_communication)
+	timeout_requires_bad_communication: (has_timeout implies has_bad_communication) and (not has_bad_communication implies not has_timeout)
 
 end
