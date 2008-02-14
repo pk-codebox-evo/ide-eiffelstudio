@@ -120,6 +120,8 @@ feature {NONE} -- Implementation (Capturing)
 			l_dt: DT_DATE_TIME
 			l_call_stack_id: INTEGER_32
 		do
+			log.report_extraction_start
+
 			l_call_stack := a_status.current_call_stack
 
 				-- ** Setup general extraction structures which are persistent over all individual frame extractions ** --
@@ -182,6 +184,8 @@ feature {NONE} -- Implementation (Capturing)
 				-- ** Clean up general extraction data structures ** --
 
 			call_stack_target_objects.wipe_out
+
+			log.report_extraction_end
 		end
 
 	is_valid_call_stack_element (a_cse: CALL_STACK_ELEMENT; a_candidate_for_first_extraction_flag: BOOLEAN): BOOLEAN is
@@ -243,7 +247,10 @@ feature {NONE} -- Implementation (Capturing)
 
 			l_routine_invocation: CDD_ROUTINE_INVOCATION
 			l_context: DS_ARRAYED_LIST [TUPLE [id: STRING; type: STRING; inv: BOOLEAN; attributes: DS_LIST [STRING]]]
+
+			l_start_time: DATE_TIME
 		do
+			create l_start_time.make_now
 			l_feature := a_cse.routine
 			l_class := a_cse.dynamic_class
 			create l_context.make (20)
@@ -304,6 +311,8 @@ feature {NONE} -- Implementation (Capturing)
 
 			create l_routine_invocation.make (l_feature, a_cse.current_object_value.dump_value.generating_type_representation (True), l_context, a_call_stack_id, a_cs_level)
 			last_extracted_routine_invocations.force_last (l_routine_invocation)
+
+			log.report_extraction (l_start_time, create {DATE_TIME}.make_now, l_routine_invocation)
 
 			last_covered_class := l_feature.associated_class.original_class
 
@@ -537,6 +546,11 @@ feature {NONE} -- Implementation
 	cdd_manager: CDD_MANAGER
 			-- CDD manager
 
+	log: CDD_LOGGER is
+			-- Logger
+		do
+			Result := cdd_manager.log
+		end
 
 invariant
 	cdd_manager_not_void: cdd_manager /= Void

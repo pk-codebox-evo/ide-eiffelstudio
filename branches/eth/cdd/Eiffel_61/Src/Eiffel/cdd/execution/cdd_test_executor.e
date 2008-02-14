@@ -266,12 +266,10 @@ feature {NONE} -- Implementation (execution)
 			is_executing: is_executing
 		local
 			l_list: DS_ARRAYED_LIST [CDD_TEST_ROUTINE_UPDATE]
-			l_time: DATE_TIME
 		do
 			if proxy.last_response /= Void then
 				current_test_routine.add_outcome (proxy.last_response)
-				create l_time.make_now
-				log.report_test_case_execution (current_routine_execution_start_time, l_time, current_test_routine)
+				log.report_test_case_execution (current_routine_execution_start_time, create {DATE_TIME}.make_now, current_test_routine)
 				if proxy.last_response.is_fail then
 					fail_count := fail_count + 1
 				elseif proxy.last_response.is_pass then
