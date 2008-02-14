@@ -40,8 +40,16 @@ feature -- Logging (System)
 								a_message: STRING
 							  ) is
 			-- Write a system status message
+		local
+			l_attributes: STRING_8
 		do
-			log_element ("system", " project_name=%"" + empty_or_out (a_project_name) + "%" target_name=%"" + empty_or_out (a_target_name) + "%" is_extracting=%"" + empty_or_out (an_extracting_status) + "%" is_executing=%"" + empty_or_out (an_execution_status) + "%" message=%"" + empty_or_out (a_message) + "%"", Void)
+			l_attributes := ""
+			append_xml_attribute (l_attributes, "project_name", empty_or_out (a_project_name))
+			append_xml_attribute (l_attributes, "target_name", empty_or_out (a_target_name))
+			append_xml_attribute (l_attributes, "is_extracting", empty_or_out (an_extracting_status))
+			append_xml_attribute (l_attributes, "is_executing", empty_or_out (an_execution_status))
+			append_xml_attribute (l_attributes, "message", empty_or_out (a_message))
+			log_element ("system", l_attributes, Void)
 		end
 
 feature -- Logging (Test Suite)
@@ -51,6 +59,7 @@ feature -- Logging (Test Suite)
 		local
 			l_attributes: STRING
 			l_content: STRING
+			l_routine_status: STRING
 			l_class_list: DS_ARRAYED_LIST [CDD_TEST_CLASS]
 			l_class: CDD_TEST_CLASS
 			l_routine_list: DS_LIST [CDD_TEST_ROUTINE]
@@ -60,21 +69,22 @@ feature -- Logging (Test Suite)
 			l_number_of_synthesized_test_classes: INTEGER
 		do
 			l_class_list := a_test_suite.test_classes
-			l_attributes := "number_of_test_classes=%"" + l_class_list.count.out + "%""
+			l_attributes := ""
+			append_xml_attribute (l_attributes, "number_of_test_classes", l_class_list.count.out)
 			l_content := ""
 			if not l_class_list.is_empty then
 				l_class_list.start
 				l_class := l_class_list.item_for_iteration
-				l_content.append_string ("%T<test_class name=%"" + empty_or_out (l_class.cdd_id) + "--" + l_class.test_class_name + "%"")
-				l_content.append (" number_of_test_routines=%"" + l_class.test_routines.count.out + "%"")
-				l_content.append (" type=%"" + test_class_type_string (l_class) + "%" >%N")
-
+				l_content.append_string ("%T<test_class" + test_class_attribute_string (l_class) + " >%N")
 				l_routine_list := l_class.test_routines
 				if not l_routine_list.is_empty then
 					l_routine_list.start
 					l_routine  := l_routine_list.item_for_iteration
 					l_content.append ("%T%T<test_routine " + test_routine_attribute_string (l_routine) + ">%N")
-					l_content.append (l_routine.status_string_verbose)
+					l_routine_status := replace_xml_entities (l_routine.status_string_verbose)
+					l_routine_status.prune_all_leading ('%N')
+					l_routine_status.prune_all_trailing ('%N')
+					l_content.append ("%N" + l_routine_status + "%N")
 					l_content.append ("%T%T</test_routine>")
 					l_routine_list.forth
 					from
@@ -83,7 +93,10 @@ feature -- Logging (Test Suite)
 					loop
 						l_routine  := l_routine_list.item_for_iteration
 						l_content.append ("%N%T%T<test_routine " + test_routine_attribute_string (l_routine) + ">%N")
-						l_content.append (l_routine.status_string_verbose)
+						l_routine_status := replace_xml_entities (l_routine.status_string_verbose)
+						l_routine_status.prune_all_leading ('%N')
+						l_routine_status.prune_all_trailing ('%N')
+						l_content.append ("%N" + l_routine_status + "%N")
 						l_content.append ("%T%T</test_routine>")
 						l_routine_list.forth
 					end
@@ -102,16 +115,16 @@ feature -- Logging (Test Suite)
 					l_class_list.after
 				loop
 					l_class := l_class_list.item_for_iteration
-					l_content.append_string ("%N%T<test_class name=%"" + empty_or_out (l_class.cdd_id) + "--" + l_class.test_class_name + "%"")
-					l_content.append (" number_of_test_routines=%"" + l_class.test_routines.count.out + "%"")
-					l_content.append (" type=%"" + test_class_type_string (l_class) + "%" >%N")
-
+					l_content.append_string ("%N%T<test_class" + test_class_attribute_string (l_class) + " >%N")
 					l_routine_list := l_class.test_routines
 					if not l_routine_list.is_empty then
 						l_routine_list.start
 						l_routine  := l_routine_list.item_for_iteration
 						l_content.append ("%T%T<test_routine " + test_routine_attribute_string (l_routine) + ">%N")
-						l_content.append (l_routine.status_string_verbose)
+						l_routine_status := replace_xml_entities (l_routine.status_string_verbose)
+						l_routine_status.prune_all_leading ('%N')
+						l_routine_status.prune_all_trailing ('%N')
+						l_content.append ("%N" + l_routine_status + "%N")
 						l_content.append ("%T%T</test_routine>")
 						l_routine_list.forth
 						from
@@ -120,12 +133,15 @@ feature -- Logging (Test Suite)
 						loop
 							l_routine  := l_routine_list.item_for_iteration
 							l_content.append ("%N%T%T<test_routine " + test_routine_attribute_string (l_routine) + ">%N")
-							l_content.append (l_routine.status_string_verbose)
+							l_routine_status := replace_xml_entities (l_routine.status_string_verbose)
+							l_routine_status.prune_all_leading ('%N')
+							l_routine_status.prune_all_trailing ('%N')
+							l_content.append ("%N" + l_routine_status + "%N")
 							l_content.append ("%T%T</test_routine>")
 							l_routine_list.forth
 						end
 					end
-					l_content.append ("%N%T</test_class>")
+					l_content.append ("%N</test_class>")
 
 					if l_class.compiled_class /= Void then
 						l_number_of_manual_test_classes := l_number_of_manual_test_classes + l_class.is_manual.to_integer
@@ -136,10 +152,10 @@ feature -- Logging (Test Suite)
 					l_class_list.forth
 				end
 			end
-			l_attributes.append_string (" number_of_manual_test_cases=%"" + l_number_of_manual_test_classes.out + "%"")
-			l_attributes.append_string (" number_of_extracted_test_cases=%"" + l_number_of_extracted_test_classes.out + "%"")
-			l_attributes.append_string (" number_of_synthesized_test_cases=%"" + l_number_of_synthesized_test_classes.out + "%"")
-			l_attributes.append_string (" message=%"" + a_message + "%"")
+			append_xml_attribute (l_attributes, "number_of_manual_test_cases", l_number_of_manual_test_classes.out)
+			append_xml_attribute (l_attributes, "number_of_extracted_test_cases", l_number_of_extracted_test_classes.out)
+			append_xml_attribute (l_attributes, "number_of_synthesized_test_cases", l_number_of_synthesized_test_classes.out)
+			append_xml_attribute (l_attributes, "message", a_message)
 
 			log_element ( "test_suite", l_attributes,  l_content)
 		end
@@ -150,7 +166,8 @@ feature -- Logging (Interpreter Compiler)
 			-- Start construction of interpreter compilation message.
 		do
 			create current_interpreter_compilation_start.make_now
-			current_interpreter_compilation_element := ["", ""]
+		ensure
+			current_interpreter_compilation_start_not_void: current_interpreter_compilation_start /= Void
 		end
 
 	report_interpreter_compilation_end is
@@ -158,21 +175,52 @@ feature -- Logging (Interpreter Compiler)
 		local
 			l_time: DATE_TIME
 			l_duration_sec: REAL_64
+			l_attributes: STRING
 		do
 			create l_time.make_now
+
+				-- NOTE: In case `report_interpreter_compilation_start' has not been called before this,
+				-- the following handling will lead to a negative duration. This can be used as an error flag.
+			if current_interpreter_compilation_start = Void then
+				create current_interpreter_compilation_start.make_now
+			end
+
 			l_duration_sec := l_time.definite_duration (current_interpreter_compilation_start).fine_seconds_count
-			log_element ("interpreter_compilation", "status=%"completed%" duration=%"" + l_duration_sec.out + "%"", Void)
+			l_attributes := ""
+			append_xml_attribute (l_attributes, "status", "completed")
+			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
+			log_element ("interpreter_compilation", l_attributes, Void)
+
+			current_interpreter_compilation_start := Void
+		ensure
+			current_interpreter_compilation_start_reset: current_interpreter_compilation_start = Void
 		end
+
 
 	report_interpreter_compilation_abort is
 			-- Finish and write interpreter compilation message.
 		local
 			l_time: DATE_TIME
 			l_duration_sec: REAL_64
+			l_attributes: STRING
 		do
 			create l_time.make_now
+
+				-- NOTE: In case `report_interpreter_compilation_start' has not been called before this,
+				-- the following handling will lead to a negative duration. This can be used as an error flag.
+			if current_interpreter_compilation_start = Void then
+				create current_interpreter_compilation_start.make_now
+			end
+
 			l_duration_sec := l_time.definite_duration (current_interpreter_compilation_start).fine_seconds_count
-			log_element ("interpreter_compilation", "status=%"aborted%" duration=%"" + l_duration_sec.out + "%"", Void)
+			l_attributes := ""
+			append_xml_attribute (l_attributes, "status", "abort")
+			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
+			log_element ("interpreter_compilation", l_attributes, Void)
+
+			current_interpreter_compilation_start := Void
+		ensure
+			current_interpreter_compilation_start_reset: current_interpreter_compilation_start = Void
 		end
 
 	report_interpreter_compilation_error is
@@ -180,32 +228,244 @@ feature -- Logging (Interpreter Compiler)
 		local
 			l_time: DATE_TIME
 			l_duration_sec: REAL_64
+			l_attributes: STRING
 		do
 			create l_time.make_now
+
+				-- NOTE: In case `report_interpreter_compilation_start' has not been called before this,
+				-- the following handling will lead to a negative duration. This can be used as an error flag.
+			if current_interpreter_compilation_start = Void then
+				create current_interpreter_compilation_start.make_now
+			end
+
 			l_duration_sec := l_time.definite_duration (current_interpreter_compilation_start).fine_seconds_count
-			log_element ("interpreter_compilation", "status=%"error%" duration=%"" + l_duration_sec.out + "%"", Void)
+			l_attributes := ""
+			append_xml_attribute (l_attributes, "status", "error")
+			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
+			log_element ("interpreter_compilation", l_attributes, Void)
+
+			current_interpreter_compilation_start := Void
+		ensure
+			current_interpreter_compilation_start_reset: current_interpreter_compilation_start = Void
 		end
+
+feature {NONE} -- Implementation (Interpreter Compiler)
+
+	current_interpreter_compilation_start: DATE_TIME
+			-- Start time of current interpreter compilation
+
+feature -- Logging (SUT Compiler)
+
+	report_compilation_start is
+			-- Start construction of interpreter compilation message.
+		do
+			create current_sut_compilation_start.make_now
+		ensure
+			current_sut_compilation_start_not_void: current_sut_compilation_start /= Void
+		end
+
+	report_compilation_end is
+			-- Finish and write interpreter compilation message.
+		local
+			l_time: DATE_TIME
+			l_duration_sec: REAL_64
+			l_attributes: STRING
+		do
+			create l_time.make_now
+
+				-- NOTE: In case `report_compilation_start' has not been called before last call to `report_compilation_end',
+				-- the following handling will lead to a negative duration. This can be used as an error flag.
+			if current_sut_compilation_start = Void then
+				create current_sut_compilation_start.make_now
+			end
+
+			l_duration_sec := l_time.definite_duration (current_sut_compilation_start).fine_seconds_count
+			l_attributes := ""
+			append_xml_attribute (l_attributes, "status", "ended")
+			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
+			log_element ("sut_compilation", l_attributes, Void)
+
+			current_sut_compilation_start := Void
+		ensure
+			current_sut_compilation_start_reset: current_sut_compilation_start = Void
+		end
+
+feature {NONE} -- Implementation (SUT Compiler)
+
+	current_sut_compilation_start: DATE_TIME
+			-- Start time of current sut compilation
+
+feature -- Logging (Extraction - Capturing)
+
+	report_extraction_start is
+			-- Start construction of extraction message.
+		do
+			create current_test_case_extracting_start.make_now
+			current_test_case_extracting_element := ""
+			number_of_extracted_test_cases := 0
+		ensure
+			current_test_case_extracting_start_not_void: current_test_case_extracting_start /= Void
+		end
+
+	report_extraction (a_start_time: DATE_TIME; an_end_time: DATE_TIME; an_invocation: CDD_ROUTINE_INVOCATION) is
+			-- Add extraction element to content of `current_test_case_extracting_element'.
+		local
+			l_duration_sec: REAL_64
+			l_attributes: STRING
+		do
+			l_duration_sec := an_end_time.definite_duration (a_start_time).fine_seconds_count
+			l_attributes := ""
+			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
+			l_attributes.append_string (routine_invocation_attribute_string (an_invocation))
+			current_test_case_extracting_element.append_string ("%T<test_case_extraction" + l_attributes + "/>%N")
+			number_of_extracted_test_cases := number_of_extracted_test_cases + 1
+		end
+
+
+	report_extraction_end is
+			-- Finish and write extraction message.
+		local
+			l_time: DATE_TIME
+			l_duration_sec: REAL_64
+			l_attributes: STRING
+		do
+			create l_time.make_now
+
+				-- NOTE: In case `report_extraction_start' has not been called before this,
+				-- the following handling will lead to a negative duration and potentially corrupt content is wiped out.
+				-- This can be used as an error flag.
+			if current_test_case_extracting_start = Void then
+				create current_test_case_extracting_start.make_now
+				current_test_case_extracting_element := ""
+			end
+
+			l_duration_sec := l_time.definite_duration (current_test_case_extracting_start).fine_seconds_count
+			l_attributes := ""
+			append_xml_attribute (l_attributes, "number_of_extracted_test_cases", number_of_extracted_test_cases.out)
+			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
+
+			log_element ("test_case_extraction", l_attributes, current_test_case_extracting_element)
+
+			current_test_case_extracting_start := Void
+		ensure
+			current_test_case_extracting_start_reset: current_test_case_extracting_start = Void
+		end
+
+feature {NONE} -- Implementation (Extraction - Capturing)
+
+	current_test_case_extracting_element: STRING
+			-- Element describing the current test case extraction
+
+	current_test_case_extracting_start: DATE_TIME
+			-- Start time of current test case extraction
+
+	number_of_extracted_test_cases: INTEGER_32
+
+feature -- Logging (Extraction - Printing)
+
+	report_printing_start is
+			-- Start construction of test case printing message.
+		do
+			create current_test_case_printing_start.make_now
+			current_test_case_printing_element := ""
+			number_of_printed_test_cases := 0
+		ensure
+			current_test_case_printing_start_not_void: current_test_case_printing_start /= Void
+		end
+
+	report_printing (a_start_time: DATE_TIME; an_end_time: DATE_TIME; a_test_class: CDD_TEST_CLASS) is
+			-- Add test class printing element to content of `current_test_case_printing_element'.
+		local
+			l_duration_sec: REAL_64
+			l_attributes: STRING
+			l_routine: CDD_TEST_ROUTINE
+			l_routine_status: STRING
+			l_content: STRING
+		do
+			l_duration_sec := an_end_time.definite_duration (a_start_time).fine_seconds_count
+			l_attributes := ""
+			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
+			l_attributes.append_string (test_class_attribute_string (a_test_class))
+				-- Extracted test classes are supposed to have exactly one test routine, but we go for sure here
+			l_content := ""
+			if a_test_class.test_routines /= Void and then not a_test_class.test_routines.is_empty then
+				l_routine := a_test_class.test_routines.first
+				l_content.append ("%T%T<test_routine " + test_routine_attribute_string (l_routine) + ">%N")
+				l_routine_status := replace_xml_entities (l_routine.status_string_verbose)
+				l_routine_status.prune_all_leading ('%N')
+				l_routine_status.prune_all_trailing ('%N')
+				l_content.append ("%N" + l_routine_status + "%N")
+				l_content.append ("%T%T</test_routine>%N")
+			end
+			current_test_case_printing_element.append_string ("%T<test_routine_printing" + l_attributes + ">%N")
+			current_test_case_printing_element.append_string (l_content)
+			current_test_case_printing_element.append_string ("%T</test_routine_printing>%N")
+			number_of_printed_test_cases := number_of_printed_test_cases + 1
+		end
+
+
+	report_printing_end is
+			-- Finish and write test case printing message.
+		local
+			l_time: DATE_TIME
+			l_duration_sec: REAL_64
+			l_attributes: STRING
+		do
+			create l_time.make_now
+
+				-- NOTE: In case `report_extraction_start' has not been called before this,
+				-- the following handling will lead to a negative duration and potentially corrupt content is wiped out.
+				-- This can be used as an error flag.
+			if current_test_case_printing_start = Void then
+				create current_test_case_printing_start.make_now
+				current_test_case_printing_element := ""
+			end
+
+			l_duration_sec := l_time.definite_duration (current_test_case_printing_start).fine_seconds_count
+			l_attributes := ""
+			append_xml_attribute (l_attributes, "number_of_printed_test_cases", number_of_printed_test_cases.out)
+			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
+
+			log_element ("test_case_printing", l_attributes, current_test_case_printing_element)
+
+			current_test_case_printing_start := Void
+		ensure
+			current_test_case_printing_start_reset: current_test_case_printing_start = Void
+		end
+
+feature {NONE} -- Implementation (Extraction - Printing)
+
+	current_test_case_printing_element: STRING
+			-- Element describing the current printing of test cases
+
+	current_test_case_printing_start: DATE_TIME
+			-- Start time of current test case printing
+
+	number_of_printed_test_cases: INTEGER
+			-- Number of printed test cases
 
 feature -- Logging (Execution)
 
 	report_test_case_execution_start is
 			-- Start construction of `current_test_case_execution_element'.
-		local
-			l_time: DATE_TIME
 		do
-			create l_time.make_now
-			current_test_case_execution_element := ["", ""]
+			create current_test_case_execution_start.make_now
+			current_test_case_execution_element := ""
+		ensure
+			current_test_case_execution_start_not_void: current_test_case_execution_start /= Void
 		end
 
 	report_test_case_execution (a_start_time: DATE_TIME; an_end_time: DATE_TIME; a_routine: CDD_TEST_ROUTINE) is
 			-- Add the execution of an individual test routine to the `current_test_case_execution_element'.
 		local
 			l_duration_sec: REAL_64
+			l_attributes: STRING
 		do
 			l_duration_sec := an_end_time.definite_duration (a_start_time).fine_seconds_count
-			current_test_case_execution_element.content.append_string ("%T<test_case_execution")
-			current_test_case_execution_element.content.append_string (" duration = %"" + l_duration_sec.out + "%" ")
-			current_test_case_execution_element.content.append_string (test_routine_attribute_string (a_routine) + "/>%N")
+			l_attributes := ""
+			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
+			l_attributes.append_string (test_routine_attribute_string (a_routine))
+			current_test_case_execution_element.append_string ("%T<test_case_execution" + l_attributes + "/>%N")
 		end
 
 	report_test_case_execution_end is
@@ -213,11 +473,27 @@ feature -- Logging (Execution)
 		local
 			l_time: DATE_TIME
 			l_duration_sec: REAL_64
+			l_attributes: STRING
 		do
 			create l_time.make_now
-			l_duration_sec := l_time.definite_duration (current_interpreter_compilation_start).fine_seconds_count
-			current_test_case_execution_element.head.append_string (" status=%"completed%" duration=%"" + l_duration_sec.out + "%"")
-			log_element ("execution", current_test_case_execution_element.head, current_test_case_execution_element.content)
+
+				-- NOTE: In case `report_test_case_execution_start' has not been called before last call to `report_compilation_end',
+				-- the following handling will lead to a negative duration and potentially corrupt content is wiped out.
+				-- This can be used as an error flag.
+			if current_test_case_execution_start = Void then
+				create current_test_case_execution_start.make_now
+				current_test_case_execution_element := ""
+			end
+
+			l_duration_sec := l_time.definite_duration (current_test_case_execution_start).fine_seconds_count
+			l_attributes := ""
+			append_xml_attribute (l_attributes, "status", "completed")
+			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
+			log_element ("execution", l_attributes, current_test_case_execution_element)
+
+			current_test_case_execution_start := Void
+		ensure
+			current_test_case_execution_start_reset: current_test_case_execution_start = Void
 		end
 
 	report_test_case_execution_abort is
@@ -225,12 +501,36 @@ feature -- Logging (Execution)
 		local
 			l_time: DATE_TIME
 			l_duration_sec: REAL_64
+			l_attributes: STRING
 		do
 			create l_time.make_now
-			l_duration_sec := l_time.definite_duration (current_interpreter_compilation_start).fine_seconds_count
-			current_test_case_execution_element.head.append_string (" status=%"aborted%" duration=%"" + l_duration_sec.out + "%"")
-			log_element ("execution", current_test_case_execution_element.head, current_test_case_execution_element.content)
+
+				-- NOTE: In case `report_test_case_execution_start' has not been called before last call to `report_compilation_end',
+				-- the following handling will lead to a negative duration and potentially corrupt content is wiped out.
+				-- This can be used as an error flag.
+			if current_test_case_execution_start = Void then
+				create current_test_case_execution_start.make_now
+				current_test_case_execution_element := ""
+			end
+
+			l_duration_sec := l_time.definite_duration (current_test_case_execution_start).fine_seconds_count
+			l_attributes := ""
+			append_xml_attribute (l_attributes, "status", "aborted")
+			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
+			log_element ("execution", l_attributes, current_test_case_execution_element)
+
+			current_test_case_execution_start := Void
+		ensure
+			current_test_case_execution_start_reset: current_test_case_execution_start = Void
 		end
+
+feature {NONE} -- Implementation (Execution)
+
+	current_test_case_execution_element: STRING
+			-- Element describing current test case execution
+
+	current_test_case_execution_start: DATE_TIME
+			-- Start time of current test case execution
 
 feature {NONE} -- Implementation
 
@@ -238,13 +538,19 @@ feature {NONE} -- Implementation
 			-- write a message to the log
 		local
 			l_time: DATE_TIME
+			l_attributes: STRING
 		do
 			create l_time.make_now
-			output_stream.put_string ("<" + an_element_name + " time=%"" + l_time.out + "%" " + an_attrib_string)
+			l_attributes := ""
+			append_xml_attribute (l_attributes, "timestamp", l_time.out)
+			l_attributes.append_string(an_attrib_string)
+			output_stream.put_string ("<" + an_element_name + l_attributes)
 			if an_element_content = Void then
 				output_stream.put_string ("/>%N")
 			else
 				output_stream.put_string (">%N")
+				an_element_content.prune_all_leading ('%N')
+				an_element_content.prune_all_trailing ('%N')
 				output_stream.put_string (an_element_content)
 				output_stream.put_string ("%N</" + an_element_name + ">%N")
 			end
@@ -261,34 +567,61 @@ feature {NONE} -- Implementation
 			end
 		end
 
+	test_class_attribute_string (a_class: CDD_TEST_CLASS): STRING is
+			-- String containing XML attributes for `a_class'
+		do
+			Result := ""
+			append_xml_attribute (Result, "name", empty_or_out (a_class.cdd_id) + "--" + a_class.test_class_name)
+			append_xml_attribute (Result, "number_of_test_routines", a_class.test_routines.count.out)
+			if a_class.compiled_class /= Void then
+				append_xml_attribute (Result, "is_manual", a_class.is_manual.out)
+				append_xml_attribute (Result, "is_synthesized", a_class.is_synthesized.out)
+				append_xml_attribute (Result, "is_extracted", a_class.is_extracted.out)
+			end
+		ensure
+			result_not_void: Result /= Void
+		end
+
 	test_routine_attribute_string (a_routine: CDD_TEST_ROUTINE): STRING is
 			-- String containing xml-like attributes for `a_routine'
 		local
 			l_outcome: CDD_TEST_EXECUTION_RESPONSE
 		do
 			Result := ""
-			Result.append ( "name=%"" + empty_or_out (a_routine.test_class.cdd_id) + "--" + a_routine.test_class.test_class_name + "--" + a_routine.name + "%"")
-			Result.append (" type=%"" + test_class_type_string (a_routine.test_class) + "%"")
-			Result.append (" has_outcome=%"" + a_routine.has_outcome.out + "%"")
-			Result.append (" has_original_outcome=%"" + a_routine.has_original_outcome.out + "%"")
+			append_xml_attribute (Result, "name", empty_or_out (a_routine.test_class.cdd_id) + "--" + a_routine.test_class.test_class_name + "--" + a_routine.name)
+			append_xml_attribute (Result, "type", test_class_type_string (a_routine.test_class))
+			append_xml_attribute (Result, "has_outcome", a_routine.has_outcome.out)
+			append_xml_attribute (Result, "has_original_outcome", a_routine.has_original_outcome.out)
 			if a_routine.has_outcome and a_routine.has_original_outcome then
-				Result.append (" is_reproducing=%"" + a_routine.is_reproducing.out + "%"")
+				append_xml_attribute (Result, "is_reproducing", a_routine.is_reproducing.out)
 			else
-				Result.append (" is_reproducing=%"unknown%"")
+				append_xml_attribute (Result, "is_reproducing", "unknown")
 			end
 
 			if a_routine.has_outcome then
 				l_outcome := a_routine.outcomes.last
-				Result.append (" is_pass=%"" + l_outcome.is_pass.out + "%"")
-				Result.append (" is_fail=%"" + l_outcome.is_fail.out + "%"")
-				Result.append (" is_unresolved=%"" + l_outcome.is_unresolved.out + "%"")
-				Result.append (" requires_maintenance=%"" + l_outcome.requires_maintenance.out + "%"")
-				Result.append (" has_compile_error=%"" + l_outcome.has_compile_error.out + "%"")
-				Result.append (" has_bad_context=%"" + l_outcome.has_bad_context.out + "%"")
-				Result.append (" has_bad_communication=%"" + l_outcome.has_bad_communication.out + "%"")
-				Result.append (" has_timeout=%"" + l_outcome.has_timeout.out + "%"")
+				append_xml_attribute (Result, "is_pass", l_outcome.is_pass.out)
+				append_xml_attribute (Result, "is_fail", l_outcome.is_fail.out)
+				append_xml_attribute (Result, "is_unresolved", l_outcome.is_unresolved.out)
+				append_xml_attribute (Result, "requires_maintenance", l_outcome.requires_maintenance.out)
+				append_xml_attribute (Result, "has_compile_error", l_outcome.has_compile_error.out )
+				append_xml_attribute (Result, "has_bad_context", l_outcome.has_bad_context.out)
+				append_xml_attribute (Result, "has_bad_communication", l_outcome.has_bad_communication.out )
+				append_xml_attribute (Result, "has_timeout", l_outcome.has_timeout.out)
 			end
+		end
 
+	routine_invocation_attribute_string (an_invocation: CDD_ROUTINE_INVOCATION): STRING is
+			-- String containing xml-like attributes for `an_invocation'
+		do
+			Result := ""
+			append_xml_attribute (Result, "covered_class", an_invocation.target_class_type)
+			append_xml_attribute (Result, "covered_feature", an_invocation.represented_feature.name)
+			append_xml_attribute (Result, "is_creation_feature", an_invocation.is_creation_feature.out)
+			append_xml_attribute (Result, "call_stack_id", an_invocation.call_stack_id.out)
+			append_xml_attribute (Result, "call_stack_index", an_invocation.call_stack_index.out)
+			append_xml_attribute (Result, "nr_of_context_objects", an_invocation.context.count.out)
+			append_xml_attribute (Result, "is_once", an_invocation.represented_feature.is_once.out)
 		end
 
 	test_class_type_string (a_test_class: CDD_TEST_CLASS): STRING is
@@ -306,25 +639,53 @@ feature {NONE} -- Implementation
 					Result := "manual"
 				end
 			else
-				Result := ""
+				Result := "unknown"
 			end
 		ensure
 			Result_not_void: Result /= Void
 		end
 
+	append_xml_attribute (an_attribute_string, a_new_attribute_name, a_new_attribute_value: STRING_8) is
+			-- Appends to `an_attribute_string' a new XML attribute with name `a_new_attribute_name' and value `a_new_attribute_value'.
+		do
+			an_attribute_string.append (" " + a_new_attribute_name + "=%"" + a_new_attribute_value + "%"")
+		end
 
-	current_test_case_execution_element: TUPLE [head: STRING; content: STRING]
-	current_test_case_execution_start: DATE_TIME
-
-	current_interpreter_compilation_element: TUPLE [head: STRING; content: STRING]
-	current_interpreter_compilation_start: DATE_TIME
-
-	current_test_case_extracting_element: TUPLE [head: STRING; content: STRING]
-	current_test_case_extracting_start: DATE_TIME
-
-	current_test_case_printing_element: TUPLE [head: STRING; content: STRING]
-	current_test_case_printing_start: DATE_TIME
-
+	replace_xml_entities (a_string: STRING_8): STRING_8
+			-- New string equal to `a_string' except for replacement of characters
+			-- <, >, &, ', " by corresponding XML entity
+		require
+			a_string_not_void: a_string /= Void
+		local
+			i: INTEGER
+			c: CHARACTER
+		do
+			Result := ""
+			from
+				i := 1
+			until
+				i > a_string.count
+			loop
+				c := a_string.item (i)
+				inspect c
+				when '<' then
+					Result.append_string ("&lt;")
+				when '>' then
+					Result.append_string ("&gt;")
+				when '&' then
+					Result.append_string ("&amp;")
+				when '%'' then
+					Result.append_string ("&apos;")
+				when '%"' then
+					Result.append_string ("&quot;")
+				else
+					Result.append_character (c)
+				end
+				i := i + 1
+			end
+		ensure
+			Result_not_void: Result /= Void
+		end
 
 	output_stream: KI_TEXT_OUTPUT_STREAM
 			-- All loging messages are written to this stream

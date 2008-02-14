@@ -90,6 +90,10 @@ feature {NONE} -- Initialization
 			eb_cluster_manager.add_observer (Current)
 			create cdd_breakpoints.make (debugger_manager, 30)
 			debugger_manager.application_prelaunching_actions.extend (agent cdd_breakpoints.update)
+
+			l_prj_manager.compile_stop_agents.extend (agent log_sut_compile_start)
+			l_prj_manager.compile_start_agents.extend (agent log_sut_compile_stop)
+			l_prj_manager.close_agents.extend (agent log_project_closed)
 		ensure
 			project_set: project = a_project
 		end
@@ -284,7 +288,6 @@ feature {DEBUGGER_MANAGER} -- Status setting (Debugging)
 
 			l_file: KL_TEXT_OUTPUT_FILE
 			l_class_name: STRING
-			l_string: STRING -- foo for test
 		do
 				-- Before we extract any thing, make sure
 				--		* extraction is actually enabled
@@ -298,7 +301,6 @@ feature {DEBUGGER_MANAGER} -- Status setting (Debugging)
 				a_dbg_manager.application_status.exception_code /= {EXCEP_CONST}.developer_exception
 			then
 				l_status := a_dbg_manager.application_status
-				l_string := l_status.application.cdd_current_exception_trace
 				create l_exception.make (
 											l_status.exception_code,
 											l_status.current_call_stack_element.routine_name,
@@ -318,11 +320,13 @@ feature {DEBUGGER_MANAGER} -- Status setting (Debugging)
 				l_list := capturer.last_extracted_routine_invocations
 
 					-- Write the extracted routine invocations to disk
+				log.report_printing_start
 				from
 					l_list.start
 				until
 					l_list.after
 				loop
+					create current_test_class_print_start_time.make_now
 					create l_original_outcome.make_failing (l_list.item_for_iteration.represented_feature, l_exception)
 					l_file := test_class_file_for_original_outcome (l_original_outcome)
 					if l_file /= Void then
@@ -353,6 +357,7 @@ feature {DEBUGGER_MANAGER} -- Status setting (Debugging)
 					end
 					l_list.forth
 				end
+				log.report_printing_end
 
 				if l_routine_count > 0 then
 					schedule_testing_restart
@@ -459,6 +464,31 @@ feature {ANY} -- Basic Operations (Execution)
 
 feature -- Access (Logging)
 
+	log_sut_compile_start is
+			-- Delegates compiler started notification to logger.
+			-- This indirection prevents an untimely call to `log' (before `project_is_initialized').
+		do
+			log.report_compilation_start
+		end
+
+	log_sut_compile_stop is
+			-- Delegates compiler stopped notification to logger.
+			-- This indirection prevents an untimely call to `log' (before `project_is_initialized').
+		do
+			log.report_compilation_end
+		end
+
+	log_project_closed is
+			-- Delegates project closed notification to logger.
+			-- This indirection prevents an untimely call to `log' (before `project_is_initialized').
+		do
+			if is_project_initialized then
+				log.report_system_status (project.system.name, target.name, is_extracting_enabled, is_executing_enabled, "Exit")
+			end
+		end
+
+
+
 	log: CDD_LOGGER is
 			-- Logger for cdd plugin
 		require
@@ -491,6 +521,8 @@ feature -- Access (Logging)
 		ensure
 			logger_not_void: Result /= Void
 		end
+
+	current_test_class_print_start_time: DATE_TIME
 
 
 feature {NONE} -- Implementation (General)
@@ -708,6 +740,7 @@ feature {NONE} -- Implementation (Extraction)
 				l_outcome_list.put (an_outcome, 1)
 				create l_new_test_class.make_with_ast_and_outcomes (last_parsed_class, l_outcome_list)
 				test_suite.add_test_class (l_new_test_class)
+				log.report_printing (current_test_class_print_start_time, create {DATE_TIME}.make_now, l_new_test_class)
 			end
 		end
 
