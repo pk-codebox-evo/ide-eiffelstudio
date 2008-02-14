@@ -1008,10 +1008,11 @@ feature -- Debugging events
 				stopped_actions.call ([Current])
 			end
 
-			s := application.cdd_current_exception_trace
-			if s /= Void then
-				print ("Exception trace = " + s + "%N")
-			end
+				-- TODO remove this output completely when debugging of `cdd_current_exception_trace' done
+--			s := application.cdd_current_exception_trace
+--			if s /= Void then
+--				print ("Exception trace = " + s + "%N")
+--			end
 
 				--| Observers
 			observers.do_all (agent {DEBUGGER_OBSERVER}.on_application_stopped (Current))
