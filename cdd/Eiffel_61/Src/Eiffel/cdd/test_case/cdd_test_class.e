@@ -67,11 +67,11 @@ feature {NONE} -- Initialization
 			compiled_class_set: compiled_class = a_class
 		end
 
-	make_with_ast_and_outcomes (an_ast: CLASS_AS; an_original_outcome_list: DS_LIST[CDD_ORIGINAL_OUTCOME]) is
+	make_with_ast_and_outcomes (an_ast: CLASS_AS; an_original_outcome_list: DS_LIST [CDD_ORIGINAL_OUTCOME]) is
 			-- Initialize `Current' with `an_ast' and set for each available test routine an original outcome and covered feature.
 		require
 			an_ast_not_void: an_ast /= Void
-			an_original_outcome_list_not_void: an_original_outcome_list /= void
+			an_original_outcome_list_not_void: an_original_outcome_list /= Void
 		do
 			make_with_ast (an_ast)
 			check
@@ -160,7 +160,7 @@ feature -- Element change
 			create l_uuid.default_create
 
 
-			if l_ilist /= void then
+			if l_ilist /= Void then
 				from
 					l_ilist.start
 				until
@@ -187,9 +187,9 @@ feature -- Element change
 				end
 			end
 
-			if cdd_id = void and then compiled_class /= void then
+			if cdd_id = Void and then compiled_class /= Void then
 						-- If `Current' doesn't have a cdd_id yet, try to add one to the indexing clause of the class
-						-- associated with `current'. This is only possible `Current' knows its `compiled_class'
+						-- associated with `Current'. This is only possible `Current' knows its `compiled_class'
 
 				create l_input_file.make (compiled_class.original_class.file_name.string)
 				l_file_char_count := -1
@@ -203,7 +203,7 @@ feature -- Element change
 					l_input_file.close
 				end
 
-				if l_file_content /= void and then not l_file_content.is_empty then
+				if l_file_content /= Void and then not l_file_content.is_empty then
 							-- Double check: it happens that the compilation of the tester target right after compilation of sut
 							-- does not recognize the updated file content (so the id is still not in the AST, even thoght it is in the file)
 							-- TODO: why does tester target handle testsuite at all? Is this check necessary?
@@ -214,11 +214,10 @@ feature -- Element change
 					else
 								-- Insert "cdd_id" into indexing clause of file
 						cdd_id := uuid_generator.generate_uuid
-						if l_ilist = void or else l_ilist.is_empty then
-							--l_regex.compile ("(.*class)")
+						if l_ilist = Void or else l_ilist.is_empty then
 							header_indexing_available_regex.match (l_file_content)
 							if header_indexing_available_regex.has_matched then
-								l_file_content := header_indexing_available_regex.replace("\1\%N%Tcdd_id: %"" + cdd_id.out + "%"\2\")
+								l_file_content := header_indexing_available_regex.replace ("\1\%N%Tcdd_id: %"" + cdd_id.out + "%"\2\")
 							else
 								l_file_content.prepend_string ("indexing%N%Tcdd_id: %"" + cdd_id.out + "%"%N%N")
 							end
@@ -255,7 +254,7 @@ feature {CDD_TEST_SUITE} -- Status change
 			update_tags
 			update_test_routines
 
-					-- Make sure `current' has a valid "cdd_id" indexing clause
+					-- Make sure `Current' has a valid "cdd_id" indexing clause
 			ensure_cdd_id
 		end
 
@@ -264,7 +263,7 @@ feature -- Status
 	is_extracted: BOOLEAN is
 			-- Is the class attached to `Current' an extracted test class?
 		require
-			has_compiled_class: compiled_class /= void
+			has_compiled_class: compiled_class /= Void
 		do
 			Result := is_extracted_test_class (compiled_class)
 		end
@@ -272,7 +271,7 @@ feature -- Status
 	is_synthesized: BOOLEAN is
 			-- Is the class attached to `Current' a synthesized test class?
 		require
-			has_compiled_class: compiled_class /= void
+			has_compiled_class: compiled_class /= Void
 		do
 			Result := is_synthesized_test_class (compiled_class)
 		end
@@ -280,7 +279,7 @@ feature -- Status
 	is_manual: BOOLEAN is
 			-- Is the class attached to `Current' a manual test class?
 		require
-			has_compiled_class: compiled_class /= void
+			has_compiled_class: compiled_class /= Void
 		do
 			Result := is_manual_test_class (compiled_class)
 		end
@@ -507,7 +506,7 @@ feature {NONE} -- Implementation
 		do
 			l_ast := parsed_class
 			l_ilist := l_ast.top_indexes
-			if l_ilist /= void then
+			if l_ilist /= Void then
 				from
 					l_ilist.start
 				until
@@ -538,7 +537,7 @@ feature {NONE} -- Implementation
 		local
 			l_tag: STRING
 		do
-			if compiled_class /= void then
+			if compiled_class /= Void then
 				if
 					is_extracted
 				then
@@ -633,6 +632,6 @@ invariant
 	class_tags_not_void: class_tags /= Void
 	class_tags_has_equality_tester: class_tags.equality_tester = case_insensitive_string_equality_tester
 
-	exactly_one_type: (compiled_class /= void) implies one_of (is_manual, is_synthesized, is_extracted)
+	exactly_one_type: (compiled_class /= Void) implies one_of (is_manual, is_synthesized, is_extracted)
 
 end

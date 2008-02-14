@@ -67,13 +67,13 @@ feature {ANY} -- Basic operations
 		require
 			is_ready_for_printing: is_ready
 		local
-			l_cursor: DS_LIST_CURSOR[TUPLE [id: STRING; type: STRING; inv: BOOLEAN; attributes: DS_LIST [STRING]]]
+			l_cursor: DS_LIST_CURSOR [TUPLE [id: STRING; type: STRING; inv: BOOLEAN; attributes: DS_LIST [STRING]]]
 		do
 			if not has_last_print_failed then
 				put_indexing
-				put_class_header (a_test_class_name) -- (a_test_class_name: STRING) is
-				put_set_up (a_routine_invocation.target_class_type, a_routine_invocation.represented_feature, a_routine_invocation.is_creation_feature) -- (an_adv: ABSTRACT_DEBUG_VALUE; a_feature: E_FEATURE; an_is_creation_call: BOOLEAN) is
-				put_test_routine (a_routine_invocation.represented_feature, a_routine_invocation.call_stack_id, a_routine_invocation.call_stack_index) -- (a_class: CLASS_C; a_feature_name: STRING; a_csid: STRING; a_csindex: INTEGER) is
+				put_class_header (a_test_class_name)
+				put_set_up (a_routine_invocation.target_class_type, a_routine_invocation.represented_feature, a_routine_invocation.is_creation_feature)
+				put_test_routine (a_routine_invocation.represented_feature, a_routine_invocation.call_stack_id, a_routine_invocation.call_stack_index)
 				put_context_header
 				from
 					l_cursor := a_routine_invocation.context.new_cursor
@@ -82,7 +82,7 @@ feature {ANY} -- Basic operations
 				until
 					l_cursor.after
 				loop
-					put_object (l_cursor.item.id, l_cursor.item.type, l_cursor.item.inv, l_cursor.item.attributes) --(an_id, a_type: STRING; an_inv: BOOLEAN; some_attributes: DS_LIST [STRING]) is
+					put_object (l_cursor.item.id, l_cursor.item.type, l_cursor.item.inv, l_cursor.item.attributes)
 					l_cursor.forth
 				end
 				put_class_footer

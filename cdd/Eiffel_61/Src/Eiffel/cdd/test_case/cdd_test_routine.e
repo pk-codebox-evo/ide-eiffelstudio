@@ -22,7 +22,7 @@ create
 feature {NONE} -- Initialization
 
 	make (a_test_class: like test_class; an_ast: like ast) is
-			-- Initialize current.
+			-- Initialize `Current'.
 		require
 			a_test_class_not_void: a_test_class /= Void
 			an_ast_not_void: an_ast /= Void
@@ -67,15 +67,15 @@ feature -- Status report
 		end
 
 	has_original_outcome: BOOLEAN is
-			-- Does original outcome exist for `current'?
+			-- Does original outcome exist for `Current'?
 		do
-			Result := (original_outcome /= void)
+			Result := (original_outcome /= Void)
 		ensure
-			definition: Result = (original_outcome /= void)
+			definition: Result = (original_outcome /= Void)
 		end
 
 	has_outcome:  BOOLEAN is
-			-- Does at least one outcome exist for `current'?
+			-- Does at least one outcome exist for `Current'?
 		do
 			Result := not internal_outcomes.is_empty
 		ensure
@@ -84,7 +84,7 @@ feature -- Status report
 
 
 	is_reproducing: BOOLEAN is
-			-- Has testing routine attached to `current' been able to reproduce the `original_outcome'
+			-- Has testing routine attached to `Current' been able to reproduce the `original_outcome'
 			-- with regards to the first test excution result?
 			-- NOTE: Result = True guarantees the correct reproducing, but Result = False in general
 			-- is to interpreted as "unknown" due to the fact that `original_outcome' might be void
