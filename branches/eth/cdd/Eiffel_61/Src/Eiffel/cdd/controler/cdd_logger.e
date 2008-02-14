@@ -19,9 +19,9 @@ create
 feature -- Initialisation
 
 	make (an_output_stream: like output_stream) is
-			-- initialize `current'
+			-- initialize `Current'
 		require
-			stream_not_void: an_output_stream /= void
+			stream_not_void: an_output_stream /= Void
 			stream_writable: an_output_stream.is_open_write
 		do
 			output_stream := an_output_stream
@@ -32,7 +32,7 @@ feature -- Initialisation
 
 feature -- Logging (System)
 
-	report_system_status(
+	report_system_status (
 								a_project_name: STRING;
 								a_target_name: STRING;
 								an_extracting_status: BOOLEAN;
@@ -41,13 +41,13 @@ feature -- Logging (System)
 							  ) is
 			-- Write a system status message
 		do
-			log_element ("system", " project_name=%"" + empty_or_out(a_project_name) + "%" target_name=%"" + empty_or_out(a_target_name) + "%" is_extracting=%"" + empty_or_out(an_extracting_status) + "%" is_executing=%"" + empty_or_out(an_execution_status) + "%" message=%"" + empty_or_out (a_message) + "%"", void)
+			log_element ("system", " project_name=%"" + empty_or_out (a_project_name) + "%" target_name=%"" + empty_or_out (a_target_name) + "%" is_extracting=%"" + empty_or_out (an_extracting_status) + "%" is_executing=%"" + empty_or_out (an_execution_status) + "%" message=%"" + empty_or_out (a_message) + "%"", Void)
 		end
 
 feature -- Logging (Test Suite)
 
-	report_test_suite_status(a_test_suite: CDD_TEST_SUITE; a_message: STRING) is
-			-- Write a test suite status message
+	report_test_suite_status (a_test_suite: CDD_TEST_SUITE; a_message: STRING) is
+			-- Write a test suite status message.
 		local
 			l_attributes: STRING
 			l_content: STRING
@@ -73,7 +73,7 @@ feature -- Logging (Test Suite)
 				if not l_routine_list.is_empty then
 					l_routine_list.start
 					l_routine  := l_routine_list.item_for_iteration
-					l_content.append ("%T%T<test_routine " + test_routine_attribute_string(l_routine) + ">%N")
+					l_content.append ("%T%T<test_routine " + test_routine_attribute_string (l_routine) + ">%N")
 					l_content.append (l_routine.status_string_verbose)
 					l_content.append ("%T%T</test_routine>")
 					l_routine_list.forth
@@ -82,7 +82,7 @@ feature -- Logging (Test Suite)
 						l_routine_list.after
 					loop
 						l_routine  := l_routine_list.item_for_iteration
-						l_content.append ("%N%T%T<test_routine " + test_routine_attribute_string(l_routine) + ">%N")
+						l_content.append ("%N%T%T<test_routine " + test_routine_attribute_string (l_routine) + ">%N")
 						l_content.append (l_routine.status_string_verbose)
 						l_content.append ("%T%T</test_routine>")
 						l_routine_list.forth
@@ -90,7 +90,7 @@ feature -- Logging (Test Suite)
 				end
 				l_content.append ("%N</test_class>")
 
-				if l_class.compiled_class /= void then
+				if l_class.compiled_class /= Void then
 					l_number_of_manual_test_classes := l_number_of_manual_test_classes + l_class.is_manual.to_integer
 					l_number_of_extracted_test_classes := l_number_of_extracted_test_classes + l_class.is_extracted.to_integer
 					l_number_of_synthesized_test_classes := l_number_of_synthesized_test_classes + l_class.is_synthesized.to_integer
@@ -110,7 +110,7 @@ feature -- Logging (Test Suite)
 					if not l_routine_list.is_empty then
 						l_routine_list.start
 						l_routine  := l_routine_list.item_for_iteration
-						l_content.append ("%T%T<test_routine " + test_routine_attribute_string(l_routine) + ">%N")
+						l_content.append ("%T%T<test_routine " + test_routine_attribute_string (l_routine) + ">%N")
 						l_content.append (l_routine.status_string_verbose)
 						l_content.append ("%T%T</test_routine>")
 						l_routine_list.forth
@@ -119,7 +119,7 @@ feature -- Logging (Test Suite)
 							l_routine_list.after
 						loop
 							l_routine  := l_routine_list.item_for_iteration
-							l_content.append ("%N%T%T<test_routine " + test_routine_attribute_string(l_routine) + ">%N")
+							l_content.append ("%N%T%T<test_routine " + test_routine_attribute_string (l_routine) + ">%N")
 							l_content.append (l_routine.status_string_verbose)
 							l_content.append ("%T%T</test_routine>")
 							l_routine_list.forth
@@ -127,7 +127,7 @@ feature -- Logging (Test Suite)
 					end
 					l_content.append ("%N%T</test_class>")
 
-					if l_class.compiled_class /= void then
+					if l_class.compiled_class /= Void then
 						l_number_of_manual_test_classes := l_number_of_manual_test_classes + l_class.is_manual.to_integer
 						l_number_of_extracted_test_classes := l_number_of_extracted_test_classes + l_class.is_extracted.to_integer
 						l_number_of_synthesized_test_classes := l_number_of_synthesized_test_classes + l_class.is_synthesized.to_integer
@@ -241,7 +241,7 @@ feature {NONE} -- Implementation
 		do
 			create l_time.make_now
 			output_stream.put_string ("<" + an_element_name + " time=%"" + l_time.out + "%" " + an_attrib_string)
-			if an_element_content = void then
+			if an_element_content = Void then
 				output_stream.put_string ("/>%N")
 			else
 				output_stream.put_string (">%N")
@@ -267,7 +267,7 @@ feature {NONE} -- Implementation
 			l_outcome: CDD_TEST_EXECUTION_RESPONSE
 		do
 			Result := ""
-			Result.append ( "name=%"" + empty_or_out(a_routine.test_class.cdd_id) + "--" + a_routine.test_class.test_class_name + "--" + a_routine.name + "%"")
+			Result.append ( "name=%"" + empty_or_out (a_routine.test_class.cdd_id) + "--" + a_routine.test_class.test_class_name + "--" + a_routine.name + "%"")
 			Result.append (" type=%"" + test_class_type_string (a_routine.test_class) + "%"")
 			Result.append (" has_outcome=%"" + a_routine.has_outcome.out + "%"")
 			Result.append (" has_original_outcome=%"" + a_routine.has_original_outcome.out + "%"")
@@ -295,9 +295,9 @@ feature {NONE} -- Implementation
 			-- Return string representing type of test class.
 			-- Return empty string if type is not known (due to missing compiled class)
 		require
-			a_test_class_not_void: a_test_class /= void
+			a_test_class_not_void: a_test_class /= Void
 		do
-			if a_test_class.compiled_class /= void then
+			if a_test_class.compiled_class /= Void then
 				if a_test_class.is_extracted then
 					Result := "extracted"
 				elseif a_test_class.is_synthesized then
@@ -313,16 +313,16 @@ feature {NONE} -- Implementation
 		end
 
 
-	current_test_case_execution_element: TUPLE[head: STRING; content: STRING]
+	current_test_case_execution_element: TUPLE [head: STRING; content: STRING]
 	current_test_case_execution_start: DATE_TIME
 
-	current_interpreter_compilation_element: TUPLE[head: STRING; content: STRING]
+	current_interpreter_compilation_element: TUPLE [head: STRING; content: STRING]
 	current_interpreter_compilation_start: DATE_TIME
 
-	current_test_case_extracting_element: TUPLE[head: STRING; content: STRING]
+	current_test_case_extracting_element: TUPLE [head: STRING; content: STRING]
 	current_test_case_extracting_start: DATE_TIME
 
-	current_test_case_printing_element: TUPLE[head: STRING; content: STRING]
+	current_test_case_printing_element: TUPLE [head: STRING; content: STRING]
 	current_test_case_printing_start: DATE_TIME
 
 
@@ -330,6 +330,6 @@ feature {NONE} -- Implementation
 			-- All loging messages are written to this stream
 
 invariant
-	output_stream_not_void: output_stream /= void
+	output_stream_not_void: output_stream /= Void
 
 end

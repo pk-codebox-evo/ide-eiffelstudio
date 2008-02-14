@@ -102,9 +102,9 @@ feature {ANY} -- Status report
 
 
 	matches_original_outcome (an_original_outcome: CDD_ORIGINAL_OUTCOME): BOOLEAN is
-			-- Does `current' match `an_original_outcome'?
+			-- Does `Current' match `an_original_outcome'?
 		require
-			an_original_outcome_not_void: an_original_outcome /= void
+			an_original_outcome_not_void: an_original_outcome /= Void
 		local
 			l_tag: STRING
 		do

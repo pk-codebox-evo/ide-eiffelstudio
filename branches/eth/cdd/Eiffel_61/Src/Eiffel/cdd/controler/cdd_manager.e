@@ -471,7 +471,7 @@ feature -- Access (Logging)
 					-- NOTE: If logging is enabled, which currently is the case, the cdd_tests folder gets created (almost) immediately.
 					-- To prevent modification of precompile systems for targets of a system containing a library target logging is disabled
 					-- automatically.
-			if not target.is_cdd_target and then target.system.library_target = void then
+			if not target.is_cdd_target and then target.system.library_target = Void then
 				l_tester_id_string := execution_environment.get (cdd_tester_id_evironment_variable)
 				if l_tester_id_string /= Void and then not l_tester_id_string.is_empty then
 					create l_output_file.make (testing_directory.build_path ("", l_tester_id_string + "_" + log_file_name))
@@ -480,7 +480,7 @@ feature -- Access (Logging)
 				end
 				l_output_file.recursive_open_append
 				if l_output_file.is_open_write then
-					create Result.make(l_output_file)
+					create Result.make (l_output_file)
 				else
 					create Result.make (null_output_stream)
 				end
@@ -489,7 +489,7 @@ feature -- Access (Logging)
 				create Result.make (null_output_stream)
 			end
 		ensure
-			logger_not_void: Result /= void
+			logger_not_void: Result /= Void
 		end
 
 

@@ -22,15 +22,15 @@ feature {ANY} -- Initialisation
 
 	make (	a_feature: E_FEATURE;
 			a_target_class_type: STRING;
-			a_context: DS_LIST[TUPLE [id: STRING; type: STRING; inv: BOOLEAN; attributes: DS_LIST [STRING]]];
+			a_context: DS_LIST [TUPLE [id: STRING; type: STRING; inv: BOOLEAN; attributes: DS_LIST [STRING]]];
 			a_call_stack_id: INTEGER_32;
 			a_call_stack_index: INTEGER_32
 			) is
 			-- Initialize `Current'.
 		require
-			a_feature_not_void: a_feature /= void
-			a_target_class_type_valid: a_target_class_type /= void and then not a_target_class_type.is_empty
-			a_context_valid: a_context /= void and then not a_context.is_empty
+			a_feature_not_void: a_feature /= Void
+			a_target_class_type_valid: a_target_class_type /= Void and then not a_target_class_type.is_empty
+			a_context_valid: a_context /= Void and then not a_context.is_empty
 			a_call_stack_id_valid: a_call_stack_id > 0
 			a_call_stack_index_valid: a_call_stack_index > 0
 		do
@@ -50,7 +50,7 @@ feature {ANY} -- Access
 	target_class_type: STRING
 			-- The dynamic type of the target object for the feature call represented by `Current'
 
-	context: DS_LIST[TUPLE [id: STRING; type: STRING; inv: BOOLEAN; attributes: DS_LIST [STRING]]]
+	context: DS_LIST [TUPLE [id: STRING; type: STRING; inv: BOOLEAN; attributes: DS_LIST [STRING]]]
 			-- The context for the invocation of `represented_feature'
 
 	call_stack_id: INTEGER_32
@@ -75,9 +75,9 @@ feature -- Status setting
 feature {NONE} -- Implementation
 
 invariant
-	feature_not_void: represented_feature /= void
-	target_class_type_valid: target_class_type /= void and then not target_class_type.is_empty
-	context_valid: context /= void and then not context.is_empty
+	feature_not_void: represented_feature /= Void
+	target_class_type_valid: target_class_type /= Void and then not target_class_type.is_empty
+	context_valid: context /= Void and then not context.is_empty
 	call_stack_id_valid: call_stack_id > 0
 	call_stack_index_valid: call_stack_index > 0
 

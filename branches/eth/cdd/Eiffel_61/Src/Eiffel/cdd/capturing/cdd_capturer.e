@@ -46,9 +46,9 @@ feature {NONE} -- Initialization
 		do
 			cdd_manager := a_manager
 
-			create {DS_ARRAYED_LIST[CDD_ROUTINE_INVOCATION]} last_extracted_routine_invocations.make (10)
+			create {DS_ARRAYED_LIST [CDD_ROUTINE_INVOCATION]} last_extracted_routine_invocations.make (10)
 
-			create call_stack_target_objects.make(20)
+			create call_stack_target_objects.make (20)
 			call_stack_target_objects.set_equality_tester (case_insensitive_string_equality_tester)
 		ensure
 			cdd_manager_set: cdd_manager = a_manager
@@ -67,8 +67,8 @@ feature {ANY} -- Basic operations
 
 	extract_routine_invocations_for_failure (a_status: APPLICATION_STATUS) is
 			-- Extract routine invocations for each feature call on the call stack of `a_status'.
-			-- Make extracted routine invocations available in `last_extracted_routine_invocations'
-			-- Do not add any newly extracted routine invocations to cache
+			-- Make extracted routine invocations available in `last_extracted_routine_invocations'.
+			-- Do not add any newly extracted routine invocations to cache.
 		require
 			a_status_not_void: a_status /= Void
 			application_is_stopped: a_status.is_stopped
@@ -83,15 +83,15 @@ feature {ANY} -- Basic operations
 		end
 
 	extract_and_cache_routine_invocation_for_active_routine (a_status: APPLICATION_STATUS) is
-			-- Extract routine invocation for the active routine of `a_status'
-			-- Make extracted routine invocation available in `last_extracted_routine_invocations'
-			-- Add the newly extracted routine invocation to the cache
+			-- Extract routine invocation for the active routine of `a_status'.
+			-- Make extracted routine invocation available in `last_extracted_routine_invocations'.
+			-- Add the newly extracted routine invocation to the cache.
 		require
 			a_status_not_void: a_status /= Void
 			application_is_stopped: a_status.is_stopped
 			application_has_no_failure: not a_status.exception_occurred -- TODO Consider: This precondition implies
 																		-- that it is never allowed to cache "failure" states. It might be convenient to handle
-																		-- this inside the cashing procedures instead of disallowing the call itself
+																		-- this inside the cashing procedures instead of disallowing the call itself.
 		do
 			capture_stack_frames (a_status, 1, True)
 		ensure
@@ -198,11 +198,6 @@ feature {NONE} -- Implementation (Capturing)
 			l_class: EIFFEL_CLASS_C
 			l_feature: E_FEATURE
 		do
-				-- Objects for read-only
-				-- library calls are only extracted if they
-				-- are directly responsible for the exception.
-				-- Also
-
 				-- 1. `a_cse' has to be an eiffel call stack element (e.g. not an EXTERNAL_CALL_STACK_ELEMENT)
 			Result := a_cse.is_eiffel_call_stack_element
 			if Result then
@@ -247,7 +242,7 @@ feature {NONE} -- Implementation (Capturing)
 			l_type: STRING
 
 			l_routine_invocation: CDD_ROUTINE_INVOCATION
-			l_context: DS_ARRAYED_LIST[TUPLE [id: STRING; type: STRING; inv: BOOLEAN; attributes: DS_LIST [STRING]]]
+			l_context: DS_ARRAYED_LIST [TUPLE [id: STRING; type: STRING; inv: BOOLEAN; attributes: DS_LIST [STRING]]]
 		do
 			l_feature := a_cse.routine
 			l_class := a_cse.dynamic_class
@@ -271,7 +266,7 @@ feature {NONE} -- Implementation (Capturing)
 				l_type.append (" [")
 			end
 					-- Add hidden 'object_comparison' field value for the operand tuple
-			l_arguments.put_first (create {DEBUG_BASIC_VALUE[BOOLEAN]}.make ({DEBUG_BASIC_VALUE[BOOLEAN]}.sk_bool, False))
+			l_arguments.put_first (create {DEBUG_BASIC_VALUE [BOOLEAN]}.make ({DEBUG_BASIC_VALUE [BOOLEAN]}.sk_bool, False))
 			if i > 1 then
 				l_arguments.put (a_cse.current_object_value, 2)
 				l_type.append (a_cse.current_object_value.dump_value.generating_type_representation (True))
@@ -317,14 +312,14 @@ feature {NONE} -- Implementation (Capturing)
 			last_extracted_routine_invocations_not_empty: not last_extracted_routine_invocations.is_empty
 		end
 
-	process_object (an_object: ABSTRACT_DEBUG_VALUE; a_depth: INTEGER; a_result_container: DS_ARRAYED_LIST[TUPLE [id: STRING; type: STRING; inv: BOOLEAN; attributes: DS_LIST [STRING]]]) is
+	process_object (an_object: ABSTRACT_DEBUG_VALUE; a_depth: INTEGER; a_result_container: DS_ARRAYED_LIST [TUPLE [id: STRING; type: STRING; inv: BOOLEAN; attributes: DS_LIST [STRING]]]) is
 			-- Create context representation for `an_object'
 			-- and notify observers.
 		require
 			reference_value: is_reference_value (an_object)
 			object_already_added: object_map.has (an_object.address)
 			a_depth_not_negative: a_depth >= 0
-			a_result_container_not_void: a_result_container /= void
+			a_result_container_not_void: a_result_container /= Void
 		local
 			l_class: EIFFEL_CLASS_C
 			l_id, l_type: STRING
@@ -345,8 +340,8 @@ feature {NONE} -- Implementation (Capturing)
 				create {DS_ARRAYED_LIST [STRING]} l_attrs.make (1)
 				l_ref_adv ?= an_object
 				check l_ref_adv_not_void: l_ref_adv /= Void end
-				l_attrs.put_first (format_output_value(l_ref_adv.dump_value.truncated_string_representation (0, -1)))
-			elseif l_class.parents_classes.there_exists (agent (x: CLASS_C): BOOLEAN do Result := x.name_in_upper.is_equal("ROUTINE") end) then
+				l_attrs.put_first (format_output_value (l_ref_adv.dump_value.truncated_string_representation (0, -1)))
+			elseif l_class.parents_classes.there_exists (agent (x: CLASS_C): BOOLEAN do Result := x.name_in_upper.is_equal ("ROUTINE") end) then
 				l_attrs := fetch_object_attributes (an_object.children, True, a_depth)
 					-- find target class for agent
 				l_attrs.set_equality_tester (case_insensitive_string_equality_tester)
@@ -398,7 +393,7 @@ feature {NONE} -- Implementation (Capturing)
 				l_attrs := fetch_object_attributes (an_object.children, True, a_depth)
 			end
 
-			a_result_container.force_last ([l_id, l_type, not (an_object.address /= Void and then call_stack_target_objects.has(an_object.address)), l_attrs])
+			a_result_container.force_last ([l_id, l_type, not (an_object.address /= Void and then call_stack_target_objects.has (an_object.address)), l_attrs])
 		end
 
 	add_referenced_object (an_adv: ABSTRACT_DEBUG_VALUE; a_depth: INTEGER) is
@@ -474,7 +469,7 @@ feature {NONE} -- Implementation (Capturing)
 				end
 			elseif an_adv.kind = {VALUE_TYPES}.immediate_value then
 				if an_adv.dump_value.output_value (false) /= Void then
-					Result := format_output_value(an_adv.output_value)
+					Result := format_output_value (an_adv.output_value)
 				else
 					Result := ""
 				end
