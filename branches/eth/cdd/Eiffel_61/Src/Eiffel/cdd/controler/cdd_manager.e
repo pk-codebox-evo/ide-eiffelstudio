@@ -91,8 +91,8 @@ feature {NONE} -- Initialization
 			create cdd_breakpoints.make (debugger_manager, 30)
 			debugger_manager.application_prelaunching_actions.extend (agent cdd_breakpoints.update)
 
-			l_prj_manager.compile_stop_agents.extend (agent log_sut_compile_start)
-			l_prj_manager.compile_start_agents.extend (agent log_sut_compile_stop)
+			l_prj_manager.compile_start_agents.extend (agent log_sut_compile_start)
+			l_prj_manager.compile_stop_agents.extend (agent log_sut_compile_stop)
 			l_prj_manager.close_agents.extend (agent log_project_closed)
 		ensure
 			project_set: project = a_project
@@ -283,9 +283,7 @@ feature {DEBUGGER_MANAGER} -- Status setting (Debugging)
 			l_list: DS_LIST [CDD_ROUTINE_INVOCATION]
 			l_routine_count: INTEGER_32
 
-			l_exception: AUT_EXCEPTION
 			l_original_outcome: CDD_ORIGINAL_OUTCOME
-
 			l_file: KL_TEXT_OUTPUT_FILE
 			l_class_name: STRING
 		do
@@ -301,22 +299,7 @@ feature {DEBUGGER_MANAGER} -- Status setting (Debugging)
 				a_dbg_manager.application_status.exception_code /= {EXCEP_CONST}.developer_exception
 			then
 				l_status := a_dbg_manager.application_status
-				create l_exception.make (
-											l_status.exception_code,
-											l_status.current_call_stack_element.routine_name,
-											l_status.current_call_stack_element.class_name,
-											l_status.exception_tag,
---											l_status.application.cdd_current_exception_trace)
-					"-------------------------------------------------------------------------------%N" +
-					"This%N" +
-					"-------------------------------------------------------------------------------%N" +
-					"is @1%N" +
-					"dummy stack trace%N" +
-					"-------------------------------------------------------------------------------%N")
-
-
 				capturer.extract_routine_invocations_for_failure (l_status)
-
 				l_list := capturer.last_extracted_routine_invocations
 
 					-- Write the extracted routine invocations to disk
@@ -327,7 +310,7 @@ feature {DEBUGGER_MANAGER} -- Status setting (Debugging)
 					l_list.after
 				loop
 					create current_test_class_print_start_time.make_now
-					create l_original_outcome.make_failing (l_list.item_for_iteration.represented_feature, l_exception)
+					create l_original_outcome.make_failing (l_list.item_for_iteration.represented_feature, l_status)
 					l_file := test_class_file_for_original_outcome (l_original_outcome)
 					if l_file /= Void then
 						l_class_name := file_system.basename (l_file.name)
