@@ -101,7 +101,7 @@ feature -- Logging (Test Suite)
 						l_routine_list.forth
 					end
 				end
-				l_content.append ("%N</test_class>")
+				l_content.append ("%N%T</test_class>")
 
 				if l_class.compiled_class /= Void then
 					l_number_of_manual_test_classes := l_number_of_manual_test_classes + l_class.is_manual.to_integer
@@ -141,7 +141,7 @@ feature -- Logging (Test Suite)
 							l_routine_list.forth
 						end
 					end
-					l_content.append ("%N</test_class>")
+					l_content.append ("%N%T</test_class>")
 
 					if l_class.compiled_class /= Void then
 						l_number_of_manual_test_classes := l_number_of_manual_test_classes + l_class.is_manual.to_integer
@@ -180,15 +180,16 @@ feature -- Logging (Interpreter Compiler)
 			create l_time.make_now
 
 				-- NOTE: In case `report_interpreter_compilation_start' has not been called before this,
-				-- the following handling will lead to a negative duration. This can be used as an error flag.
+				-- a negative duration is inserted. This can be used as an error flag.
+			l_attributes := ""
 			if current_interpreter_compilation_start = Void then
-				create current_interpreter_compilation_start.make_now
+				append_xml_attribute (l_attributes, "duration", "-1")
+			else
+				l_duration_sec := l_time.definite_duration (current_interpreter_compilation_start).fine_seconds_count
+				append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
 			end
 
-			l_duration_sec := l_time.definite_duration (current_interpreter_compilation_start).fine_seconds_count
-			l_attributes := ""
 			append_xml_attribute (l_attributes, "status", "completed")
-			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
 			log_element ("interpreter_compilation", l_attributes, Void)
 
 			current_interpreter_compilation_start := Void
@@ -207,15 +208,16 @@ feature -- Logging (Interpreter Compiler)
 			create l_time.make_now
 
 				-- NOTE: In case `report_interpreter_compilation_start' has not been called before this,
-				-- the following handling will lead to a negative duration. This can be used as an error flag.
+				-- a negative duration is inserted. This can be used as an error flag.
+			l_attributes := ""
 			if current_interpreter_compilation_start = Void then
-				create current_interpreter_compilation_start.make_now
+				append_xml_attribute (l_attributes, "duration", "-1")
+			else
+				l_duration_sec := l_time.definite_duration (current_interpreter_compilation_start).fine_seconds_count
+				append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
 			end
 
-			l_duration_sec := l_time.definite_duration (current_interpreter_compilation_start).fine_seconds_count
-			l_attributes := ""
 			append_xml_attribute (l_attributes, "status", "abort")
-			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
 			log_element ("interpreter_compilation", l_attributes, Void)
 
 			current_interpreter_compilation_start := Void
@@ -233,15 +235,16 @@ feature -- Logging (Interpreter Compiler)
 			create l_time.make_now
 
 				-- NOTE: In case `report_interpreter_compilation_start' has not been called before this,
-				-- the following handling will lead to a negative duration. This can be used as an error flag.
+				-- a negative duration is inserted. This can be used as an error flag.
+			l_attributes := ""
 			if current_interpreter_compilation_start = Void then
-				create current_interpreter_compilation_start.make_now
+				append_xml_attribute (l_attributes, "duration", "-1")
+			else
+				l_duration_sec := l_time.definite_duration (current_interpreter_compilation_start).fine_seconds_count
+				append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
 			end
 
-			l_duration_sec := l_time.definite_duration (current_interpreter_compilation_start).fine_seconds_count
-			l_attributes := ""
 			append_xml_attribute (l_attributes, "status", "error")
-			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
 			log_element ("interpreter_compilation", l_attributes, Void)
 
 			current_interpreter_compilation_start := Void
@@ -275,14 +278,15 @@ feature -- Logging (SUT Compiler)
 
 				-- NOTE: In case `report_compilation_start' has not been called before last call to `report_compilation_end',
 				-- the following handling will lead to a negative duration. This can be used as an error flag.
+			l_attributes := ""
 			if current_sut_compilation_start = Void then
-				create current_sut_compilation_start.make_now
+				append_xml_attribute (l_attributes, "duration", "-1")
+			else
+				l_duration_sec := l_time.definite_duration (current_sut_compilation_start).fine_seconds_count
+				append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
 			end
 
-			l_duration_sec := l_time.definite_duration (current_sut_compilation_start).fine_seconds_count
-			l_attributes := ""
 			append_xml_attribute (l_attributes, "status", "ended")
-			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
 			log_element ("sut_compilation", l_attributes, Void)
 
 			current_sut_compilation_start := Void
@@ -317,7 +321,7 @@ feature -- Logging (Extraction - Capturing)
 			l_attributes := ""
 			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
 			l_attributes.append_string (routine_invocation_attribute_string (an_invocation))
-			current_test_case_extracting_element.append_string ("%T<test_case_extraction" + l_attributes + "/>%N")
+			current_test_case_extracting_element.append_string ("%T<extraction" + l_attributes + "/>%N")
 			number_of_extracted_test_cases := number_of_extracted_test_cases + 1
 		end
 
@@ -334,16 +338,16 @@ feature -- Logging (Extraction - Capturing)
 				-- NOTE: In case `report_extraction_start' has not been called before this,
 				-- the following handling will lead to a negative duration and potentially corrupt content is wiped out.
 				-- This can be used as an error flag.
+			l_attributes := ""
 			if current_test_case_extracting_start = Void then
-				create current_test_case_extracting_start.make_now
+				append_xml_attribute (l_attributes, "duration", "-1")
 				current_test_case_extracting_element := ""
+			else
+				l_duration_sec := l_time.definite_duration (current_test_case_extracting_start).fine_seconds_count
+				append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
 			end
 
-			l_duration_sec := l_time.definite_duration (current_test_case_extracting_start).fine_seconds_count
-			l_attributes := ""
 			append_xml_attribute (l_attributes, "number_of_extracted_test_cases", number_of_extracted_test_cases.out)
-			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
-
 			log_element ("test_case_extraction", l_attributes, current_test_case_extracting_element)
 
 			current_test_case_extracting_start := Void
@@ -413,19 +417,19 @@ feature -- Logging (Extraction - Printing)
 		do
 			create l_time.make_now
 
-				-- NOTE: In case `report_extraction_start' has not been called before this,
+				-- NOTE: In case `report_printing_start' has not been called before this,
 				-- the following handling will lead to a negative duration and potentially corrupt content is wiped out.
 				-- This can be used as an error flag.
+			l_attributes := ""
 			if current_test_case_printing_start = Void then
-				create current_test_case_printing_start.make_now
+				append_xml_attribute (l_attributes, "duration", "-1")
 				current_test_case_printing_element := ""
+			else
+				l_duration_sec := l_time.definite_duration (current_test_case_printing_start).fine_seconds_count
+				append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
 			end
 
-			l_duration_sec := l_time.definite_duration (current_test_case_printing_start).fine_seconds_count
-			l_attributes := ""
 			append_xml_attribute (l_attributes, "number_of_printed_test_cases", number_of_printed_test_cases.out)
-			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
-
 			log_element ("test_case_printing", l_attributes, current_test_case_printing_element)
 
 			current_test_case_printing_start := Void
@@ -480,15 +484,16 @@ feature -- Logging (Execution)
 				-- NOTE: In case `report_test_case_execution_start' has not been called before last call to `report_compilation_end',
 				-- the following handling will lead to a negative duration and potentially corrupt content is wiped out.
 				-- This can be used as an error flag.
+			l_attributes := ""
 			if current_test_case_execution_start = Void then
-				create current_test_case_execution_start.make_now
+				append_xml_attribute (l_attributes, "duration", "-1")
 				current_test_case_execution_element := ""
+			else
+				l_duration_sec := l_time.definite_duration (current_test_case_execution_start).fine_seconds_count
+				append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
 			end
 
-			l_duration_sec := l_time.definite_duration (current_test_case_execution_start).fine_seconds_count
-			l_attributes := ""
 			append_xml_attribute (l_attributes, "status", "completed")
-			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
 			log_element ("execution", l_attributes, current_test_case_execution_element)
 
 			current_test_case_execution_start := Void
@@ -508,15 +513,16 @@ feature -- Logging (Execution)
 				-- NOTE: In case `report_test_case_execution_start' has not been called before last call to `report_compilation_end',
 				-- the following handling will lead to a negative duration and potentially corrupt content is wiped out.
 				-- This can be used as an error flag.
+			l_attributes := ""
 			if current_test_case_execution_start = Void then
-				create current_test_case_execution_start.make_now
+				append_xml_attribute (l_attributes, "duration", "-1")
 				current_test_case_execution_element := ""
+			else
+				l_duration_sec := l_time.definite_duration (current_test_case_execution_start).fine_seconds_count
+				append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
 			end
 
-			l_duration_sec := l_time.definite_duration (current_test_case_execution_start).fine_seconds_count
-			l_attributes := ""
 			append_xml_attribute (l_attributes, "status", "aborted")
-			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
 			log_element ("execution", l_attributes, current_test_case_execution_element)
 
 			current_test_case_execution_start := Void

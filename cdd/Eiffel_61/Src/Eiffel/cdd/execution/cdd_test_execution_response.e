@@ -116,11 +116,12 @@ feature {ANY} -- Status report
 					-- The parser returns multiline values with a trailing new line. This has to be removed for comparison.
 				l_tag := test_response.exception.exception_tag_name.twin
 				l_tag.prune_all_trailing ('%N')
-				Result := an_original_outcome.exception /= Void and then test_response.is_exceptional and then
-							(test_response.exception.exception_code = an_original_outcome.exception.exception_code) and then
-							(test_response.exception.exception_class_name.is_equal (an_original_outcome.exception.exception_class_name)) and then
-							(test_response.exception.exception_recipient_name.is_equal (an_original_outcome.exception.exception_recipient_name)) and then
-							(l_tag.is_equal (an_original_outcome.exception.exception_tag_name))
+				Result := an_original_outcome.is_failing and then
+							(test_response.exception.exception_code = an_original_outcome.exception_code) and then
+							(test_response.exception.exception_recipient_name.is_equal (an_original_outcome.exception_recipient_name)) and then
+-- TODO investigate "strange" breakpoint index of AUT_EXCEPTION		(test_response.exception.exception_break_point_slot = an_original_outcome.exception_break_point_slot) and then
+							(test_response.exception.exception_class_name.is_equal (an_original_outcome.exception_class_name)) and then
+							(l_tag.is_equal (an_original_outcome.exception_tag_name))
 			end
 		end
 

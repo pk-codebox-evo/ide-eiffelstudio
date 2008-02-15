@@ -214,15 +214,15 @@ feature -- Access
 
 			if has_original_outcome then
 				Result.append_string ("[Original Outcome]%N")
-				if original_outcome.exception = Void then
+				if original_outcome.is_passing then
 					Result.append_string ("Pass")
 				else
 					Result.append_string ("Exceptional:%N")
-					Result.append_string ("Exception code: "  + original_outcome.exception.exception_code.out + "%N")
-					Result.append_string ("Exception name: "  + original_outcome.exception.exception_name + "%N")
-					Result.append_string ("Exception class: "  + original_outcome.exception.exception_class_name + "%N")
-					Result.append_string ("Exception recipient: "  + original_outcome.exception.exception_recipient_name + "%N")
-					Result.append_string ("Exception tag: "  + original_outcome.exception.exception_tag_name + "%N")
+					Result.append_string ("Exception code: "  + original_outcome.exception_code.out + "%N")
+					Result.append_string ("Exception name: "  + original_outcome.exception_name + "%N")
+					Result.append_string ("Exception class: "  + original_outcome.exception_class_name + "%N")
+					Result.append_string ("Exception recipient: "  + original_outcome.exception_recipient_name + "%N")
+					Result.append_string ("Exception tag: "  + original_outcome.exception_tag_name + "%N")
 				end
 				Result.append_string ("%N%N%N")
 			end
