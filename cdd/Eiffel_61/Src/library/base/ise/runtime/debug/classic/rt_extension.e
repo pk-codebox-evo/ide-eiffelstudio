@@ -220,15 +220,6 @@ feature {NONE} -- Object storage
 			t.ref := obj
 		end
 
-feature -- CDD helpers
-
-	cdd_current_exception_trace: STRING is
-			-- Current exception's trace if exception occurred.
-		do
-			Result := (create {EXCEPTIONS}).exception_trace
---			io.put_string (Result)
-		end
-
 invariant
 	no_attribute: (create {INTERNAL}).field_count (Current) = 0
 			-- Since this object is shared among threads,
