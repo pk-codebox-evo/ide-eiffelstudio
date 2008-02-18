@@ -13,6 +13,9 @@ class
 feature
 
 	execute (a_bp: BREAKPOINT; a_dm: DEBUGGER_MANAGER) is
+		require
+			a_bp_not_void: a_bp /= Void
+			a_dm_not_void: a_dm /= Void
 		deferred
 		end
 
