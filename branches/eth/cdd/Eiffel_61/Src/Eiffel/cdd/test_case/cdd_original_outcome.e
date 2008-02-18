@@ -10,7 +10,11 @@ class
 inherit
 
 	EXCEP_CONST
-		export {NONE} all end
+		export
+			{NONE} all
+		redefine
+			out
+		end
 
 create
 	make_passing,
@@ -136,6 +140,26 @@ feature -- Access
 			end
 		end
 
+	original_class_file_name: STRING_8
+			-- Original file name of the class containing the test routine associated with `Current'
+
+	out: STRING_8 is
+			-- String representation of `Current'
+		do
+			Result := "covers: {" + covered_feature.associated_class.name_in_upper + "}." + covered_feature.name + "%N"
+			if is_passing then
+				Result.append_string ("[normal]%N")
+			else
+				Result.append_string ("[exception]%N")
+				Result.append_string ("%Tcode: " + exception_code.out + "%N")
+				Result.append_string ("%Tname: " + exception_name + "%N")
+				Result.append_string ("%Ttag: " + exception_tag_name + "%N")
+				Result.append_string ("%Tfeature: " + exception_recipient_name + "@" + exception_break_point_slot.out + "%N")
+				Result.append_string ("%Tclass: " + exception_class_name + "%N")
+				Result.append_string ("Original failure stack trace:%N" + exception_trace + "%N")
+			end
+		end
+
 feature -- Status report
 
 	is_failing: BOOLEAN
@@ -147,6 +171,36 @@ feature -- Status report
 			Result := not is_failing
 		ensure
 			definition: Result = not is_failing
+		end
+
+	is_same (other: like Current): BOOLEAN is
+			-- Does `other' represent the same failure as `Current'?
+		do
+			Result :=	covered_feature.is_equal (other.covered_feature) and then
+						covered_feature.associated_class.name_in_upper.is_equal (other.covered_feature.associated_class.name_in_upper) and then
+						is_failing = other.is_failing and then
+						(is_failing implies	(exception_code = other.exception_code and then
+											exception_tag_name.is_equal (other.exception_tag_name) and then
+											exception_recipient_name.is_equal (other.exception_recipient_name) and then
+											exception_class_name.is_equal (other.exception_class_name)
+						))
+
+		end
+
+feature -- Basic Operations
+
+	set_original_class_file_name (a_name: STRING_8) is
+			-- set `original_class_file_name' to `a_name'
+		do
+			original_class_file_name := a_name
+		end
+
+	set_covered_feature (a_feature: E_FEATURE)is
+			-- Set `covered_feature' to `a_covered_feature'.
+		do
+			covered_feature := a_feature
+		ensure
+			covered_feature_set: covered_feature = a_feature
 		end
 
 invariant

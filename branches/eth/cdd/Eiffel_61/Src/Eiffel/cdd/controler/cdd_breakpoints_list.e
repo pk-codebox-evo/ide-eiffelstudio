@@ -73,8 +73,8 @@ feature -- Access
 feature -- Status
 
 	has_cdd_breakpoint (f: E_FEATURE): BOOLEAN is
-			-- Has CDD breakpoint associated to `f' ?
-			-- if found set the value to `found_item'.
+			-- Has at least one CDD breakpoint associated to `f' ?
+			-- if found set the value to `found_item' (not defined if feature entry or feature exit bp).
 		require
 			f_valid: f /= Void
 		local
@@ -105,86 +105,109 @@ feature -- Change
 			from
 				start
 			until
-				after
+				is_empty
 			loop
-				remove_cdd_breakpoint (item_for_iteration.routine)
-				forth
+				remove_cdd_breakpoints (item_for_iteration.routine)
+				start
 			end
 			Precursor
 		end
 
-	update is
-			-- Be sure CDD breakpoints are up to date
-			-- this should not be used since CDD breakpoints are added
-			-- just before launching the application
-		local
-			f_lst: ARRAYED_LIST [E_FEATURE]
-			k: BREAKPOINT_KEY
-			f: E_FEATURE
-			i: INTEGER
-		do
-			if not is_empty then
-				from
-					create f_lst.make (count)
-					start
-				until
-					after
-				loop
-					k := item_for_iteration
-					f := k.routine
-					i := f.first_breakpoint_slot_index
-					if i /= k.breakable_line_number then
-							--| We need to update this index
-						remove (key_for_iteration)
-						f_lst.force (item_for_iteration.routine)
-					else
-						forth
-					end
-				end
-				f_lst.do_all (agent add_cdd_breakpoint)
-			end
-		end
+--	update is
+--			-- Be sure CDD breakpoints are up to date
+--			-- this should not be used since CDD breakpoints are added
+--			-- just before launching the application
+--		local
+--			f_lst: ARRAYED_LIST [E_FEATURE]
+--			k: BREAKPOINT_KEY
+--			f: E_FEATURE
+--			i: INTEGER
+--		do
+--			if not is_empty then
+--				from
+--					create f_lst.make (count)
+--					start
+--				until
+--					after
+--				loop
+--					k := item_for_iteration
+--					f := k.routine
+--					i := f.first_breakpoint_slot_index
+--					if i /= k.breakable_line_number then
+--							--| We need to update this index
+--						remove (key_for_iteration)
+--						f_lst.force (item_for_iteration.routine)
+--					else
+--						forth
+--					end
+--				end
+--				f_lst.do_all (agent add_cdd_breakpoint)
+--			end
+--		end
 
-	add_cdd_breakpoint (f: E_FEATURE) is
-			-- Add CDD breakpoint for feature `f'
+	add_cdd_breakpoints (f: E_FEATURE) is
+			-- Add feature entry and feature exit CDD breakpoints for feature `f'
 		require
 			f_valid: f /= Void
 		local
 			k: like new_cdd_key
-			l: INTEGER
+			first: INTEGER
+			last: INTEGER
 		do
 if False then
 	--| If were are sure, we add those CDD breakpoints
 	--| only just before launching the application
 	--| (i.e: the compilation's data won't change, and thus the breakable index won't change too
-			k := new_cdd_key (f, l)
-			if not has (k) then
-				force (k, k)
-			end
+--			k := new_cdd_key (f, l)
+--			if not has (k) then
+--				force (k, k)
+--			end
 else
 	--| Safe solution, we always check if associated bp (if exist) is up to date.
-			l := f.first_breakpoint_slot_index
+	-- > For simplicity, existing breakpoints for feature `f' are removed and actual versions added
+
+				-- Remove breakpoints associated to feature `f'? (two at most!)
 			if has_cdd_breakpoint (f) then
-				check found_item_not_void: found_item /= Void end
-				if found_item.breakable_line_number /= l then
-					remove_cdd_breakpoint (f)
-					k := new_cdd_key (f, l)
-					force (k, k)
-				else
-					--| Already there, and up to date.
-				end
+				remove_cdd_breakpoints (f)
+			end
+
+			first := f.first_breakpoint_slot_index
+			last := f.number_of_breakpoint_slots
+
+			if first = last then
+					-- Only add one breakpoint representing both, feature entry and exit
+				k := new_cdd_key (f, first)
+				force (k, k)
 			else
-				k := new_cdd_key (f, l)
+					-- Add two breakpoints, one for feature entry and one for feature exit
+				k := new_cdd_key (f, first)
+				force (k, k)
+				k := new_cdd_key (f, last)
 				force (k, k)
 			end
+
+
+--			if has_cdd_breakpoint (f) then
+--				check found_item_not_void: found_item /= Void end
+--				if found_item.breakable_line_number /= l then
+--					remove_cdd_breakpoint (f)
+--					k := new_cdd_key (f, l)
+--					force (k, k)
+--				else
+--					--| Already there, and up to date.
+--				end
+--			else
+--				k := new_cdd_key (f, l)
+--				force (k, k)
+--			end
 end
 
 		ensure
 			has_cdd_breakpoint: has_cdd_breakpoint (f)
 		end
 
-	remove_cdd_breakpoint (f: E_FEATURE) is
-			-- Remove CDD breakpoint for feature `f'	
+	remove_cdd_breakpoints (f: E_FEATURE) is
+			-- Remove all CDD breakpoints for feature `f'	
 		require
 			has_cdd_breakpoint: has_cdd_breakpoint (f)
 		local
@@ -199,9 +222,9 @@ end
 				after
 			loop
 				if item_for_iteration.routine.is_equal (f) then
+					k := item_for_iteration
 					remove (key_for_iteration)
 						--| Make sure it will also be removed (if needed) from application.
-					k := item_for_iteration
 					check k.routine.is_equal (f) end
 					i := k.breakable_line_number
 					if manager.is_breakpoint_set (f, i) then
@@ -216,6 +239,8 @@ end
 					forth
 				end
 			end
+		ensure
+			not_has_cdd_breakpoint: not has_cdd_breakpoint (f)
 		end
 
 end

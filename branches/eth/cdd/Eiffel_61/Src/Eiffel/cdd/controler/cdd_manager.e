@@ -89,7 +89,8 @@ feature {NONE} -- Initialization
 			l_prj_manager.compile_stop_agents.extend (agent refresh_status)
 			eb_cluster_manager.add_observer (Current)
 			create cdd_breakpoints.make (debugger_manager, 30)
-			debugger_manager.application_prelaunching_actions.extend (agent cdd_breakpoints.update)
+			debugger_manager.application_prelaunching_actions.extend (agent prepare_debugging)
+			debugger_manager.application_quit_actions.extend (agent clean_up_after_debugging)
 
 			l_prj_manager.compile_start_agents.extend (agent log_sut_compile_start)
 			l_prj_manager.compile_stop_agents.extend (agent log_sut_compile_stop)
@@ -324,12 +325,13 @@ feature {DEBUGGER_MANAGER} -- Status setting (Debugging)
 						else
 							l_file.close
 
-							if False then
-								-- TODO: Insert handling of replaced class files (with regard to exsiting CDD_TEST_ROUTINE for replaced class)
-								-- Stuff below is completele obsolete
+							l_original_outcome.set_original_class_file_name (l_file.name)
+
+							if last_test_routines_to_replace /= Void and then not last_test_routines_to_replace.is_empty then
 									-- An existing test class has been replaced. Delete the outcomes of the corresponding
 									-- test routine in order to reset it to the "waiting for initial execution" status
-									-- old_test_routine.outcomes.wipe_out
+								last_test_routines_to_replace.first.outcomes.wipe_out
+								last_test_routines_to_replace.first.set_original_outcome (l_original_outcome)
 							else
 								ensure_system_contains_testing_cluster
 								add_test_class (l_file, l_original_outcome)
@@ -348,23 +350,117 @@ feature {DEBUGGER_MANAGER} -- Status setting (Debugging)
 			end
 		end
 
+	prepare_debugging is
+			-- Initialize and update all data structures needed during one debugging session.
+			-- TODO: Also add CDD breakpoints for features marked for extraction of passing routine invocations.
+		local
+			l_test_class: CDD_TEST_CLASS
+			l_test_routine: CDD_TEST_ROUTINE
+		do
+				-- Do nothing is extraction is disabled or a test case foreground debugging is running
+			if is_extracting_enabled and not debug_executor.is_running then
+
+					-- TODO: This basically is redundant and probably could be removed by less paranoid developers.
+					-- (Since the cache should be reset by `clean_up_after_debugging')
+				capturer.reset_cache
+
+					-- Generate list of test routines for reextraction and insert CDD breakpoints.
+				create {DS_ARRAYED_LIST [CDD_TEST_ROUTINE]} non_reproducing_test_routines.make (10)
+				from
+					test_suite.test_classes.start
+				until
+					test_suite.test_classes.after
+				loop
+					l_test_class := test_suite.test_classes.item_for_iteration
+
+					from
+						l_test_class.test_routines.start
+					until
+						l_test_class.test_routines.after
+					loop
+						l_test_routine := l_test_class.test_routines.item_for_iteration
+						if l_test_routine.has_original_outcome then
+							l_test_routine.update_original_outcome
+							if l_test_routine.is_automatic_reextraction_required then
+								non_reproducing_test_routines.force_last (l_test_routine)
+								if not cdd_breakpoints.has_cdd_breakpoint (l_test_routine.original_outcome.covered_feature) then
+									cdd_breakpoints.add_cdd_breakpoints (l_test_routine.original_outcome.covered_feature)
+								end
+							end
+						end
+						l_test_class.test_routines.forth
+					end
+
+					test_suite.test_classes.forth
+				end
+			end
+		end
+
+	clean_up_after_debugging is
+			-- Clean up data structures needed during one debugging session.
+		do
+			capturer.reset_cache
+			cdd_breakpoints.wipe_out
+			non_reproducing_test_routines := Void
+		end
+
+	on_routine_entry (a_status: APPLICATION_STATUS) is
+			-- Handle entry of top feature of call stack of `a_status'.
+		require
+			a_feature_not_void: a_status /= Void
+		do
+			capturer.cache_routine_invocation_for_active_routine (a_status)
+			-- It's called printf debugging: io.put_string ("WOOHOOO cdd breakpoint found for ENTRY feature " + a_status.e_feature.name + "%N")
+		end
+
+	on_routine_exit (a_status: APPLICATION_STATUS) is
+			-- Handle exit of top feature of call stack of `a_status'.
+		require
+			a_feature_not_void: a_status /= Void
+		local
+			a_cse: EIFFEL_CALL_STACK_ELEMENT
+		do
+			a_cse ?= a_status.current_call_stack_element
+			if a_cse /= Void then
+				capturer.pop_cached_routine_invocation (a_cse.routine)
+			end
+			-- It's called printf debugging: io.put_string ("WOOHOOO cdd breakpoint found for EXIT feature " + a_status.e_feature.name + "%N")
+		end
+
+
 feature {STOPPED_HDLR} -- Status setting (Debugging)
 
-	execution_paused_on_breakpoint (cse: CALL_STACK_ELEMENT_CLASSIC) is
+	execution_paused_on_breakpoint (a_status: APPLICATION_STATUS_CLASSIC) is
 			-- Execution paused on breakpoint
 		local
+			cse: CALL_STACK_ELEMENT_CLASSIC
 			f: E_FEATURE
 			i: INTEGER
 		do
+			cse := a_status.current_call_stack.i_th (1)
 			f := cse.routine
 			i := cse.break_index
-			if
-				i = f.first_breakpoint_slot_index and then
-				cdd_breakpoints.has_cdd_breakpoint (f)
-			then
-				--| We reached a CDD breakpoint
-				--| on routine `f'
-
+			if f.first_breakpoint_slot_index = f.number_of_breakpoint_slots then
+					-- This feature can do nothing, so we do nothing
+			elseif cdd_breakpoints.has_cdd_breakpoint (f) then
+				if
+					i = f.first_breakpoint_slot_index
+				then
+					--| We reached feature entry CDD breakpoint
+					--| on routine `f'
+					a_status.reload_current_call_stack
+					on_routine_entry (a_status)
+				elseif i = f.number_of_breakpoint_slots then
+					--| We reached feature exit CDD breakpoint
+					--| on routine `f'
+					a_status.reload_current_call_stack
+					on_routine_exit (a_status)
+				else
+						-- CDD breakpoints are corrupted !
+					check
+						corrupted_cdd_breakpoints: False
+					end
+				end
 			end
 		end
 
@@ -451,14 +547,18 @@ feature -- Access (Logging)
 			-- Delegates compiler started notification to logger.
 			-- This indirection prevents an untimely call to `log' (before `project_is_initialized').
 		do
-			log.report_compilation_start
+			if is_project_initialized then
+				log.report_compilation_start
+			end
 		end
 
 	log_sut_compile_stop is
 			-- Delegates compiler stopped notification to logger.
 			-- This indirection prevents an untimely call to `log' (before `project_is_initialized').
 		do
-			log.report_compilation_end
+			if is_project_initialized then
+				log.report_compilation_end
+			end
 		end
 
 	log_project_closed is
@@ -515,7 +615,7 @@ feature {NONE} -- Implementation (General)
 		require
 			an_update_not_void: an_update /= Void
 		do
-			-- semantics of capturer_extracted_code changed
+			-- semantics of capturer_extracted_code changed, currently there is nothing to do here
 --			if an_update.code = an_update.capturer_extracted_code then
 --				schedule_testing_restart
 --			end
@@ -584,76 +684,105 @@ feature {NONE} -- Implementation (Extraction)
 			if has_failed then
 				Result := Void
 			else
-				l_class := an_original_outcome.covered_feature.associated_class
-					-- Build path list in which test case shall be stored
-				create last_relative_class_path.make_empty
+					-- Look for non-reproducing test routines whith a matching original outcome
 				from
-					l_cluster ?= l_class.group
+					create {DS_ARRAYED_LIST [CDD_TEST_ROUTINE]} last_test_routines_to_replace.make (10)
+					non_reproducing_test_routines.start
 				until
-					l_cluster = Void
+					non_reproducing_test_routines.after
 				loop
-					last_relative_class_path := "/" + l_cluster.name + last_relative_class_path
-					l_cluster := l_cluster.parent
-				end
-
-					-- Create directories from path list
-				create l_dir.make (testing_directory.build_path (last_relative_class_path, ""))
-				if not l_dir.exists then
-					l_dir.recursive_create_directory
-					if not l_dir.exists then
-						has_failed := True
+					if
+						non_reproducing_test_routines.item_for_iteration.original_outcome.is_same (an_original_outcome)
+					then
+						last_test_routines_to_replace.force_last (non_reproducing_test_routines.item_for_iteration)
 					end
+
+					non_reproducing_test_routines.forth
 				end
 
-					-- Try to create the class file
-				if not has_failed then
-					l_prefix := class_name_prefix + l_class.name + "_"
+				if not last_test_routines_to_replace.is_empty then
+						-- Rewrite test class file of first test routine found
+					create Result.make (last_test_routines_to_replace.first.class_file_name)
+					Result.open_write
+				else
+						-- Generate a new class file
+					l_class := an_original_outcome.covered_feature.associated_class
+						-- Build path list in which test case shall be stored
+					create last_relative_class_path.make_empty
 					from
-						i := 1
+						l_cluster ?= l_class.group
 					until
-						l_output_file /= Void or i > max_test_cases_per_sut_class
+						l_cluster = Void
 					loop
-						create l_class_name.make_from_string (l_prefix)
-						create l_integer_string.make_filled ('0', max_test_cases_per_sut_class.out.count)
-						l_integer_string.replace_substring (i.out, (max_test_cases_per_sut_class.out.count - i.out.count) + 1, max_test_cases_per_sut_class.out.count)
-						l_class_name.append_string (l_integer_string)
-						l_tester_id_string := execution_environment.get (cdd_tester_id_evironment_variable)
-						if l_tester_id_string /= Void and then not l_tester_id_string.is_empty then
-							l_class_name.append_character ('_')
-							l_tester_id_string.to_upper
-							l_class_name.append_string (l_tester_id_string)
-						end
-
-						create l_output_file.make (testing_directory.build_path (last_relative_class_path, l_class_name.as_lower + ".e"))
-
-						if l_output_file.exists then
-							l_output_file := Void
-						end
-						i := i + 1
+						last_relative_class_path := "/" + l_cluster.name + last_relative_class_path
+						l_cluster := l_cluster.parent
 					end
-					if l_output_file = Void then
-						has_failed := True
-						Result := Void
-					end
-				end
 
-				if not has_failed then
-					l_output_file.open_write
-					if not l_output_file.is_open_write then
-						has_failed := True
-						Result := Void
-					else
-						Result := l_output_file
+						-- Create directories from path list
+					create l_dir.make (testing_directory.build_path (last_relative_class_path, ""))
+					if not l_dir.exists then
+						l_dir.recursive_create_directory
+						if not l_dir.exists then
+							has_failed := True
+						end
+					end
+
+						-- Try to create the class file
+					if not has_failed then
+						l_prefix := class_name_prefix + l_class.name + "_"
+						from
+							i := 1
+						until
+							l_output_file /= Void or i > max_test_cases_per_sut_class
+						loop
+							create l_class_name.make_from_string (l_prefix)
+							create l_integer_string.make_filled ('0', max_test_cases_per_sut_class.out.count)
+							l_integer_string.replace_substring (i.out, (max_test_cases_per_sut_class.out.count - i.out.count) + 1, max_test_cases_per_sut_class.out.count)
+							l_class_name.append_string (l_integer_string)
+							l_tester_id_string := execution_environment.get (cdd_tester_id_evironment_variable)
+							if l_tester_id_string /= Void and then not l_tester_id_string.is_empty then
+								l_class_name.append_character ('_')
+								l_tester_id_string.to_upper
+								l_class_name.append_string (l_tester_id_string)
+							end
+
+							create l_output_file.make (testing_directory.build_path (last_relative_class_path, l_class_name.as_lower + ".e"))
+
+							if l_output_file.exists then
+								l_output_file := Void
+							end
+							i := i + 1
+						end
+						if l_output_file = Void then
+							has_failed := True
+							Result := Void
+						end
+					end
+
+					if not has_failed then
+						l_output_file.open_write
+						if not l_output_file.is_open_write then
+							has_failed := True
+							Result := Void
+						else
+							Result := l_output_file
+						end
 					end
 				end
 			end
 		ensure
 			Resulting_file_writeable_if_exists: Result /= Void implies (Result.is_open_write)
-			Class_path_set_if_exists: Result /= Void implies last_relative_class_path /= Void
+			Class_path_set_or_test_routines_for_replacing_found_if_exists:
+												Result /= Void implies
+													((last_relative_class_path /= Void) or else
+													 (last_test_routines_to_replace /= Void and then
+													  not last_test_routines_to_replace.is_empty))
 		rescue
 			has_failed := True
 			Retry
 		end
+
+	last_test_routines_to_replace: DS_LIST [CDD_TEST_ROUTINE]
 
 	last_relative_class_path: STRING_8
 			-- Class path relative to testing directory for last file returned by `test_class_file_for_original_outcome'
@@ -726,6 +855,8 @@ feature {NONE} -- Implementation (Extraction)
 				log.report_printing (current_test_class_print_start_time, create {DATE_TIME}.make_now, l_new_test_class)
 			end
 		end
+
+	non_reproducing_test_routines: DS_LIST [CDD_TEST_ROUTINE]
 
 
 feature {NONE} -- Implementation (Extraction - Parsing)

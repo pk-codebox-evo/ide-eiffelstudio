@@ -193,7 +193,7 @@ feature -- Execution
 							--| Check if this is a Conditional Breakpoint
 						cse := l_status.current_call_stack.i_th (1)
 
-						debugger_manager.cdd_manager.execution_paused_on_breakpoint (cse)
+						debugger_manager.cdd_manager.execution_paused_on_breakpoint (l_status)
 
 						if
 							cse = Void
