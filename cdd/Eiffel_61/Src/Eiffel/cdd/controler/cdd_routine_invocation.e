@@ -59,6 +59,27 @@ feature {ANY} -- Access
 	call_stack_index: INTEGER_32
 			-- Index denoting the postition of `Current' in the original call stack denoted by `call_stack_id'
 
+feature -- Basic Operations
+
+	set_call_stack_id (an_id: INTEGER_32) is
+			-- Set `call_stack_id' to `an_id'.
+		require
+			an_id_is_valid: an_id > 0
+		do
+			call_stack_id := an_id
+		ensure
+			call_stack_id_set: call_stack_id = an_id
+		end
+
+	set_call_stack_index (an_index: INTEGER_32) is
+			-- Set `call_stack_index' to `an_index'.
+		require
+			an_index_is_valid: an_index > 0
+		do
+			call_stack_index := an_index
+		ensure
+			call_stack_index_set: call_stack_index = an_index
+		end
 
 feature -- Measurement
 

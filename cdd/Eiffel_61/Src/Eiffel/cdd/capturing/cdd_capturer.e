@@ -48,6 +48,8 @@ feature {NONE} -- Initialization
 
 			create {DS_ARRAYED_LIST [CDD_ROUTINE_INVOCATION]} last_extracted_routine_invocations.make (10)
 
+			create {DS_HASH_TABLE [DS_STACK [CDD_ROUTINE_INVOCATION], INTEGER_32]} cache.make (10)
+
 			create call_stack_target_objects.make (20)
 			call_stack_target_objects.set_equality_tester (case_insensitive_string_equality_tester)
 		ensure
@@ -82,7 +84,7 @@ feature {ANY} -- Basic operations
 			cache_did_not_change: True
 		end
 
-	extract_and_cache_routine_invocation_for_active_routine (a_status: APPLICATION_STATUS) is
+	cache_routine_invocation_for_active_routine (a_status: APPLICATION_STATUS) is
 			-- Extract routine invocation for the active routine of `a_status'.
 			-- Make extracted routine invocation available in `last_extracted_routine_invocations'.
 			-- Add the newly extracted routine invocation to the cache.
@@ -91,13 +93,27 @@ feature {ANY} -- Basic operations
 			application_is_stopped: a_status.is_stopped
 			application_has_no_failure: not a_status.exception_occurred -- TODO Consider: This precondition implies
 																		-- that it is never allowed to cache "failure" states. It might be convenient to handle
-																		-- this inside the cashing procedures instead of disallowing the call itself.
+																		-- this inside the cascing procedures instead of disallowing the call itself.
 		do
 			capture_stack_frames (a_status, 1, True)
+				-- NOTE: This procedure is used for putting stuff in the cache. It is essential that the resulting cache entry corresponds
+				-- to the feature on top of the call stack! Since this is not guaranteed (call stack frames get skipped if not `is_valid_call_stack_element'),
+				-- the implementation will have to be reconsidered.
+				-- BUT for now, since only cdd breakpoints for non-reproducing test cases exist, and these are corresponding to features which
+				-- create valid call stack elements, the top element of the stack should be valid and the above mentioned condition fullfilled.
+				-- TODO:
+				-- Completely remove the hardcoded restrictions for stack element extraction, instead introduce a predicate that can be set
+				-- by clients. In this way the client can use the extraction mechanisms transparently.
+				-- (for concrete design: CDD_MANAGER can set usual predicate when extracting test cases for failure state,
+				-- and set an "always true" predicate for caching extraction calls. This will be necessary if users can mark arbitrary routines
+				-- as "extract test case for passing routine invocation").
+				-- Also see the postconditions below marked with "see above".
 		ensure
 			last_extracted_routine_invocations_not_void: last_extracted_routine_invocations /= Void
 			exactly_one_routine_invocation_extracted: last_extracted_routine_invocations.count = 1
-			extracted_routine_invocation_is_in_cache: True
+			extracted_top_of_stack: last_extracted_routine_invocations.first.represented_feature.is_equal (a_status.e_feature) -- See Above
+				-- This condition is not possible because a_status.e_feature /= a_status.current_call_stack.top.routine!!
+			-- cache_entry_for_top_feature_exists: has_cached_routine_invocation (a_status.e_feature) -- See Above
 		end
 
 
@@ -122,6 +138,7 @@ feature {NONE} -- Implementation (Capturing)
 		do
 			log.report_extraction_start
 
+			current_application_status := a_status
 			l_call_stack := a_status.current_call_stack
 
 				-- ** Setup general extraction structures which are persistent over all individual frame extractions ** --
@@ -174,7 +191,7 @@ feature {NONE} -- Implementation (Capturing)
 				if is_valid_call_stack_element (l_call_stack.item, (i = 1)) then
 					l_cse ?= l_call_stack.item
 					check call_stack_element_not_void: l_cse /= Void end
-					capture_call_stack_element (l_cse, l_call_stack_id, i)
+					capture_call_stack_element (l_cse, l_call_stack_id, i, a_caching_enabled_flag)
 					i := i + 1
 				end
 				l_call_stack.forth
@@ -230,7 +247,7 @@ feature {NONE} -- Implementation (Capturing)
 			end
 		end
 
-	capture_call_stack_element (a_cse: EIFFEL_CALL_STACK_ELEMENT; a_call_stack_id: INTEGER_32; a_cs_level: INTEGER) is
+	capture_call_stack_element (a_cse: EIFFEL_CALL_STACK_ELEMENT; a_call_stack_id: INTEGER_32; a_cs_level: INTEGER; a_caching_enabled_flag: BOOLEAN) is
 			-- Capture state for `a_cse'. `a_call_stack_id' is the call stack's unique id.
 		require
 			a_cse_not_void: a_cse /= Void
@@ -249,68 +266,118 @@ feature {NONE} -- Implementation (Capturing)
 			l_context: DS_ARRAYED_LIST [TUPLE [id: STRING; type: STRING; inv: BOOLEAN; attributes: DS_LIST [STRING]]]
 
 			l_start_time: DATE_TIME
+			l_done: BOOLEAN
 		do
 			create l_start_time.make_now
 			l_feature := a_cse.routine
 			l_class := a_cse.dynamic_class
 			create l_context.make (20)
 
-				-- Add operands as first object of context
-			current_object_id := 1
-			create object_queue.make
-			create object_map.make (20) -- Note: this value says how many objects we assume to reflect...
+				-- If `a_caching_enabled_flag' = True, always do extract a new routine invocation (no cache look-up)
+				-- Otherwise extract only a new routine invocation if none is available in cache already
 
-			if is_creation_feature (l_feature) then
-				i := 1
-			else
-				i := 2
-			end
+			if not a_caching_enabled_flag  then
 
-			create l_arguments.make (l_feature.argument_count + i)
-			l_type := "TUPLE"
-			l_ops_count := i + l_feature.argument_count
-			if l_ops_count > 1 then
-				l_type.append (" [")
-			end
-					-- Add hidden 'object_comparison' field value for the operand tuple
-			l_arguments.put_first (create {DEBUG_BASIC_VALUE [BOOLEAN]}.make ({DEBUG_BASIC_VALUE [BOOLEAN]}.sk_bool, False))
-			if i > 1 then
-				l_arguments.put (a_cse.current_object_value, 2)
-				l_type.append (a_cse.current_object_value.dump_value.generating_type_representation (True))
-				if l_feature.argument_count > 0 then
-					l_type.append (", ")
+					-- NOTE: This ugly workaround handles invariant violation exceptions.
+					-- These are sometimes thrown after `on_routine_exit' of CDD_MANAGER is called.
+					-- In this case the corresponding routine_invocation has been popped already
+					-- and we resort to `last_popped_routine_invocation'
+				if
+					a_cse.level_in_stack = 1 and then -- For top element only
+					current_application_status.exception_occurred and then
+					current_application_status.exception_code = {EXCEP_CONST}.class_invariant and then
+					cdd_manager.cdd_breakpoints.has_cdd_breakpoint (a_cse.routine) and then -- There was prestate extracted at all
+					a_cse.break_index = a_cse.routine.number_of_breakpoint_slots
+							-- If the break slot for the exception is the very last breakpoint slot, the invariant exception was thrown
+							-- after the corresponding state was popped already
+				then
+					check
+						last_popped_available: last_popped_routine_invocation /= Void
+						last_popped_valid: last_popped_routine_invocation.represented_feature.is_equal (a_cse.routine)
+					end
+					l_routine_invocation := last_popped_routine_invocation
+					l_routine_invocation.set_call_stack_id (a_call_stack_id)
+					l_routine_invocation.set_call_stack_index (a_cs_level)
+					last_extracted_routine_invocations.force_last (l_routine_invocation)
+					l_done := True
+				elseif
+					has_cached_routine_invocation (l_feature)
+				then
+					l_routine_invocation := cached_routine_invocation (l_feature)
+						-- Remove the just "consumed" routine invocation
+					pop_cached_routine_invocation (l_feature)
+
+					l_routine_invocation.set_call_stack_id (a_call_stack_id)
+					l_routine_invocation.set_call_stack_index (a_cs_level)
+					last_extracted_routine_invocations.force_last (l_routine_invocation)
+					l_done := True
 				end
 			end
 
-			from
-				j := 1
-			until
-				j > l_feature.argument_count
-			loop
-				l_arguments.put (a_cse.arguments.i_th (j), j + i)
-				l_type.append (a_cse.arguments.i_th (j).dump_value.generating_type_representation (True))
-				if l_feature.argument_count > j then
-					l_type.append (", ")
+			if not l_done then
+					-- Extract new routine invocation
+
+					-- Add operands as first object of context
+				current_object_id := 1
+				create object_queue.make
+				create object_map.make (20) -- Note: this value says how many objects we assume to reflect...
+
+				if is_creation_feature (l_feature) then
+					i := 1
+				else
+					i := 2
 				end
-				j := j + 1
+
+				create l_arguments.make (l_feature.argument_count + i)
+				l_type := "TUPLE"
+				l_ops_count := i + l_feature.argument_count
+				if l_ops_count > 1 then
+					l_type.append (" [")
+				end
+						-- Add hidden 'object_comparison' field value for the operand tuple
+				l_arguments.put_first (create {DEBUG_BASIC_VALUE [BOOLEAN]}.make ({DEBUG_BASIC_VALUE [BOOLEAN]}.sk_bool, False))
+				if i > 1 then
+					l_arguments.put (a_cse.current_object_value, 2)
+					l_type.append (a_cse.current_object_value.dump_value.generating_type_representation (True))
+					if l_feature.argument_count > 0 then
+						l_type.append (", ")
+					end
+				end
+
+				from
+					j := 1
+				until
+					j > l_feature.argument_count
+				loop
+					l_arguments.put (a_cse.arguments.i_th (j), j + i)
+					l_type.append (a_cse.arguments.i_th (j).dump_value.generating_type_representation (True))
+					if l_feature.argument_count > j then
+						l_type.append (", ")
+					end
+					j := j + 1
+				end
+				if l_ops_count > 1 then
+					l_type.append ("]")
+				end
+
+				l_context.force_last (["#operand", l_type, True, fetch_object_attributes (l_arguments, False, 0)])
+
+
+					-- Start capturing objects
+				from until
+					object_queue.is_empty
+				loop
+					process_object (object_queue.item.object, object_queue.item.depth, l_context)
+					object_queue.remove
+				end
+
+				create l_routine_invocation.make (l_feature, a_cse.current_object_value.dump_value.generating_type_representation (True), l_context, a_call_stack_id, a_cs_level)
+				if a_caching_enabled_flag then
+					cache_routine_invocation (l_routine_invocation)
+				end
+
+				last_extracted_routine_invocations.force_last (l_routine_invocation)
 			end
-			if l_ops_count > 1 then
-				l_type.append ("]")
-			end
-
-			l_context.force_last (["#operand", l_type, True, fetch_object_attributes (l_arguments, False, 0)])
-
-
-				-- Start capturing objects
-			from until
-				object_queue.is_empty
-			loop
-				process_object (object_queue.item.object, object_queue.item.depth, l_context)
-				object_queue.remove
-			end
-
-			create l_routine_invocation.make (l_feature, a_cse.current_object_value.dump_value.generating_type_representation (True), l_context, a_call_stack_id, a_cs_level)
-			last_extracted_routine_invocations.force_last (l_routine_invocation)
 
 			log.report_extraction (l_start_time, create {DATE_TIME}.make_now, l_routine_invocation)
 
@@ -541,6 +608,77 @@ feature {NONE} -- Implementation (Capturing Data Structures)
 			-- prestate).
 
 
+feature {CDD_MANAGER} -- Caching
+
+	has_cached_routine_invocation (a_feature: E_FEATURE): BOOLEAN is
+			-- Does a routine invocation covering `a_feature' exist in cache?
+		require
+			a_feature_not_void: a_feature /= Void
+		local
+			l_stack: DS_STACK [CDD_ROUTINE_INVOCATION]
+		do
+			Result := cache.has (a_feature.feature_id)
+			if Result then
+				l_stack := cache.item (a_feature.feature_id)
+				Result := not l_stack.is_empty
+			end
+		end
+
+	cache_routine_invocation (a_routine_invocation: CDD_ROUTINE_INVOCATION) is
+			-- Add `a_routine_invocation' to cache.
+		require
+			a_routine_invocation_not_void: a_routine_invocation /= Void
+		local
+			l_stack: DS_STACK [CDD_ROUTINE_INVOCATION]
+		do
+			if cache.has (a_routine_invocation.represented_feature.feature_id) then
+				cache.item (a_routine_invocation.represented_feature.feature_id).put (a_routine_invocation)
+			else
+				create {DS_ARRAYED_STACK [CDD_ROUTINE_INVOCATION]} l_stack.make (10)
+				l_stack.put (a_routine_invocation)
+				cache.put_new (l_stack, a_routine_invocation.represented_feature.feature_id)
+			end
+		ensure
+			routine_invocation_inserted: has_cached_routine_invocation (a_routine_invocation.represented_feature)
+		end
+
+	cached_routine_invocation (a_feature: E_FEATURE): CDD_ROUTINE_INVOCATION is
+			-- Most recent cached routine invocation covering `a_feature'
+		require
+			cached_routine_invocation_available: has_cached_routine_invocation (a_feature)
+		do
+			Result := cache.item (a_feature.feature_id).item
+		ensure
+			result_not_void: Result /= Void
+		end
+
+	pop_cached_routine_invocation (a_feature: E_FEATURE) is
+			-- Pop cached routine invocation from `cache'.
+		require
+			cached_routine_invocation_available: has_cached_routine_invocation (a_feature)
+		do
+			last_popped_routine_invocation := cache.item (a_feature.feature_id).item
+			cache.item (a_feature.feature_id).remove
+		ensure
+			-- number_of_cached_entries_for_a_feature_decreased: <currently unexpressible>
+		end
+
+	reset_cache is
+			-- Wipe out all cached routine invocations.
+		do
+			cache.wipe_out
+			last_popped_routine_invocation := Void
+		ensure
+			cache_is_empty: cache.is_empty
+		end
+
+	cache: DS_TABLE [DS_STACK [CDD_ROUTINE_INVOCATION], INTEGER_32]
+			-- Cache for extracted test routines
+
+	last_popped_routine_invocation: CDD_ROUTINE_INVOCATION
+			-- Store for the last popped routine invocation
+			-- NOTE: this is a workaround for invariant exceptions, which can be thrown after last detectable point before routine exit
+
 feature {NONE} -- Implementation
 
 	cdd_manager: CDD_MANAGER
@@ -552,9 +690,14 @@ feature {NONE} -- Implementation
 			Result := cdd_manager.log
 		end
 
+	current_application_status: APPLICATION_STATUS
+		-- Currently handled application status.
+		-- NOTE the sole purpose of this attribute is to support the workaround for invariant exception prestates (see `capture_call_stack_element')
+
 invariant
 	cdd_manager_not_void: cdd_manager /= Void
 	last_extracted_routine_invocations_not_void: last_extracted_routine_invocations /= Void
 	call_stack_target_objects_not_void: call_stack_target_objects /= Void
+	cache_not_void: cache /= Void
 
 end

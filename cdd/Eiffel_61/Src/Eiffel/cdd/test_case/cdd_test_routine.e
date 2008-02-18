@@ -86,17 +86,46 @@ feature -- Status report
 	is_reproducing: BOOLEAN is
 			-- Has testing routine attached to `Current' been able to reproduce the `original_outcome'
 			-- with regards to the first test excution result?
-			-- NOTE: Result = True guarantees the correct reproducing, but Result = False in general
-			-- is to interpreted as "unknown" due to the fact that `original_outcome' might be void
 		require
 			outcome_available: has_outcome
+			original_outcome_available: has_original_outcome
 		do
-			Result := has_original_outcome and then outcomes.first.matches_original_outcome (original_outcome)
+			Result := outcomes.first.matches_original_outcome (original_outcome)
 		ensure
 			definition: Result = (has_original_outcome and then outcomes.first.matches_original_outcome (original_outcome))
 		end
 
+	is_automatic_reextraction_required: BOOLEAN is
+			-- Should the test routine attached to `Current' be automatically reextracted?
+		do
+			 	-- If not `has_outcome' or not `has_original_failure', there is no reason to for reextraction.
+			 Result := has_outcome and then has_original_outcome
 
+			 if Result then
+			 		-- Only non-reproducing test routines are candidates for reextraction
+			 	Result := not is_reproducing
+			 end
+
+			 if Result then
+			 		-- If the test routine was executed several times, reextraction is prevented if any of the executions
+			 		-- * did match the original outcome
+			 		-- * was passing
+			 	from
+			 		outcomes.start
+			 		outcomes.forth
+			 	until
+			 		outcomes.after or else not Result
+			 	loop
+			 		Result := not outcomes.item_for_iteration.matches_original_outcome (original_outcome) and then not outcomes.item_for_iteration.is_pass
+			 		outcomes.forth
+			 	end
+			 end
+
+			 if Result then
+			 		-- TODO: Test routines with passing original outcomes are never reextracted, since semantics are unclear
+			 	Result := not original_outcome.is_passing
+			 end
+		end
 
 
 feature -- Access
@@ -141,6 +170,18 @@ feature -- Access
 	hash_code: INTEGER
 			-- Hash code for using `Current' in a hash table
 
+	class_file_name: STRING_8 is
+			-- File name of the test class associated with `Current'
+		require
+			file_name_available: test_class.compiled_class /= Void or else has_original_outcome
+		do
+			if test_class.compiled_class /= Void then
+				Result := test_class.compiled_class.original_class.file_name.string
+			else
+				Result := original_outcome.original_class_file_name
+			end
+		end
+
 	tags_with_prefix (a_prefix: STRING): DS_ARRAYED_LIST [STRING] is
 			-- List of tags with prefix `a_prefix'
 		require
@@ -172,7 +213,7 @@ feature -- Access
 	status_string_verbose: STRING is
 			-- Verbose status message about `Current'
 		do
-			Result := "[STATUS]%N "
+			Result := ""
 
 			if has_original_outcome then
 				if has_outcome then
@@ -182,7 +223,7 @@ feature -- Access
 						Result.append_string ("Does NOT reproduce original failure")
 					end
 				else
-					Result.append_string ("Waiting for initial execution to verify if original failure can be reproduced")
+					Result.append_string ("Waiting for initial execution")
 				end
 			else
 				if has_outcome then
@@ -194,7 +235,7 @@ feature -- Access
 			Result.append_string ("%N%N")
 
 			if has_outcome then
-				Result.append_string ("[LAST OUTCOME]%N")
+				Result.append_string ("Last execution:%N")
 				Result.append_string (outcomes.last.out)
 				if outcomes.last.is_fail then
 					Result.append_string ("%N%NStack trace:%N")
@@ -213,18 +254,8 @@ feature -- Access
 			end
 
 			if has_original_outcome then
-				Result.append_string ("[Original Outcome]%N")
-				if original_outcome.is_passing then
-					Result.append_string ("Pass")
-				else
-					Result.append_string ("Exceptional:%N")
-					Result.append_string ("Exception code: "  + original_outcome.exception_code.out + "%N")
-					Result.append_string ("Exception name: "  + original_outcome.exception_name + "%N")
-					Result.append_string ("Exception class: "  + original_outcome.exception_class_name + "%N")
-					Result.append_string ("Exception recipient: "  + original_outcome.exception_recipient_name + "%N")
-					Result.append_string ("Exception tag: "  + original_outcome.exception_tag_name + "%N")
-				end
-				Result.append_string ("%N%N%N")
+				Result.append_string ("Original Outcome%N")
+				Result.append_string (original_outcome.out)
 			end
 		end
 
@@ -277,6 +308,22 @@ feature {CDD_TEST_CLASS} -- Update
 				is_modified := True
 			end
 		end
+
+feature {CDD_MANAGER} -- Update
+
+	update_original_outcome is
+			-- Update the information of `original_outcome' in order to reflect changes of system under test.
+			-- NOTE: This feature will set `original_outcome' to Void if `original_outcome.covered_feature' is no longer available!
+		require
+			has_original_outcome: original_outcome /= Void
+		do
+			if original_outcome.covered_feature.updated_version /= Void then
+				original_outcome.set_covered_feature (original_outcome.covered_feature.updated_version)
+			else
+				original_outcome := Void
+			end
+		end
+
 
 feature {NONE} -- Implementation
 
