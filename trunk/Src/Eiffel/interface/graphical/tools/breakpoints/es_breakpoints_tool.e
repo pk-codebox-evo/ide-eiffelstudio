@@ -11,12 +11,22 @@ frozen class
 	ES_BREAKPOINTS_TOOL
 
 inherit
-	ES_DEBUGGER_TOOL [ES_BREAKPOINTS_TOOL_PANEL]
+	ES_TOOL [ES_BREAKPOINTS_TOOL_PANEL]
 
 create {NONE}
 	default_create
 
 feature -- Access
+
+	frozen debugger_manager: EB_DEBUGGER_MANAGER
+			-- Debugger manager to use for tool creation
+		do
+			Result ?= window.debugger_manager
+		ensure
+			result_attached: Result /= Void
+		end
+
+feature -- Status
 
 	shown: BOOLEAN is
 			-- Is Current instantiated and shown on the screen?
