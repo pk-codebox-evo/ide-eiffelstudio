@@ -524,10 +524,14 @@ feature {ANY} -- Basic Operations (Execution)
 		require
 			not_cdd_target: not target.is_cdd_target
 		do
-			if background_executor.has_next_step then
+			if background_executor.has_next_step and then background_executor.is_compiling then
+				background_executor.schedule_restart_after_compilation
+			elseif background_executor.has_next_step then
 				background_executor.cancel
+				background_executor.start
+			else
+				background_executor.start
 			end
-			background_executor.start
 		end
 
 	drive_background_tasks is
@@ -585,7 +589,7 @@ feature -- Access (Logging)
 					-- To prevent modification of precompile systems for targets of a system containing a library target logging is disabled
 					-- automatically.
 			if not target.is_cdd_target and then target.system.library_target = Void then
-				l_tester_id_string := execution_environment.get (cdd_tester_id_evironment_variable)
+				l_tester_id_string := execution_environment.get (cdd_tester_id_environment_variable)
 				if l_tester_id_string /= Void and then not l_tester_id_string.is_empty then
 					create l_output_file.make (testing_directory.build_path ("", l_tester_id_string + "_" + log_file_name))
 				else
@@ -739,7 +743,7 @@ feature {NONE} -- Implementation (Extraction)
 							create l_integer_string.make_filled ('0', max_test_cases_per_sut_class.out.count)
 							l_integer_string.replace_substring (i.out, (max_test_cases_per_sut_class.out.count - i.out.count) + 1, max_test_cases_per_sut_class.out.count)
 							l_class_name.append_string (l_integer_string)
-							l_tester_id_string := execution_environment.get (cdd_tester_id_evironment_variable)
+							l_tester_id_string := execution_environment.get (cdd_tester_id_environment_variable)
 							if l_tester_id_string /= Void and then not l_tester_id_string.is_empty then
 								l_class_name.append_character ('_')
 								l_tester_id_string.to_upper

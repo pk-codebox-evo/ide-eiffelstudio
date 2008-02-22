@@ -58,8 +58,16 @@ feature -- Project constants
 			-- max amount of test cases that are generated per "original-class-name"
 
 	cdd_homepage_url: STRING is "http://dev.eiffel.com/CddBranch"
+			-- URL of CDD homepage
 
-	cdd_tester_id_evironment_variable: STRING is "CDD_TESTER_ID"
+	cdd_tester_id_environment_variable: STRING is "CDD_TESTER_ID"
+			-- Name of environment variable denoting an id used to produce more unique test class (file) and log file names
+
+	cdd_tester_timeout_environment_variable: STRING is "CDD_TESTER_TIMEOUT"
+			-- Name of environment variable denoting the timeout for the interpreter
+
+	default_interpreter_timeout: INTEGER is 10
+			-- Default timeout for the interpreter
 
 feature -- TTY
 
