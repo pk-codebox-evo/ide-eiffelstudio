@@ -111,11 +111,18 @@ feature -- Basic functionality
 
 					set_breakpoint_feature (a_test_routine)
 					l_dbg_data := debugger_manager.debugger_data
-					if l_dbg_data.is_breakpoint_set (breakpoint_feature, 1) and then l_dbg_data.is_breakpoint_enabled (breakpoint_feature, 1) then
-							-- Set to `Void' so breakpoint won't be disabled after debugging
-						breakpoint_feature := Void
+					if l_dbg_data.is_breakpoint_set (breakpoint_feature, 1) then
+						old_breakpoint_set := True
+						if l_dbg_data.is_breakpoint_enabled (breakpoint_feature, 1) then
+							old_breakpoint_enabled := True
+						else
+							old_breakpoint_enabled := False
+							l_dbg_data.enable_breakpoint (breakpoint_feature, 1)
+						end
 					else
 						l_dbg_data.enable_breakpoint (breakpoint_feature, 1)
+						old_breakpoint_set := False
+						old_breakpoint_enabled := False
 					end
 
 					run_project_cmd.execute
@@ -150,10 +157,15 @@ feature {NONE} -- Implementation
 			debugging: is_running
 			old_root_not_void: old_root /= Void
 		do
-			if breakpoint_feature /= Void then
-				debugger_manager.debugger_data.disable_breakpoint (breakpoint_feature, 1)
-				breakpoint_feature := Void
+			if not old_breakpoint_set then
+				debugger_manager.debugger_data.remove_breakpoint (breakpoint_feature, 1)
+			else
+				if not old_breakpoint_enabled then
+					debugger_manager.debugger_data.disable_breakpoint (breakpoint_feature, 1)
+				end
 			end
+			breakpoint_feature := Void
+
 			if debugger_manager.application_quit_actions.has (internal_reset_agent) then
 				debugger_manager.application_quit_actions.prune (internal_reset_agent)
 			end
@@ -244,6 +256,12 @@ feature {NONE} -- Implementation
 
 	old_root: CONF_ROOT
 			-- Old root class
+
+	old_breakpoint_set: BOOLEAN
+			-- Was there already a breakpoint when `Current' tried to add one?
+
+	old_breakpoint_enabled: BOOLEAN
+			-- Was an already existing breakpoint enabled when `Current' tried to add one?
 
 	breakpoint_feature: E_FEATURE
 			-- Feature for which a breakpoint has been set

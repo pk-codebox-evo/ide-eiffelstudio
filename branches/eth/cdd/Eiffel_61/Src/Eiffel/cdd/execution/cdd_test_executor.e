@@ -72,6 +72,9 @@ feature -- Status report
 			Result := proxy /= Void
 		end
 
+	is_restart_scheduled: BOOLEAN
+			-- Is an immediate restart after compilation scheduled?
+
 feature -- Access
 
 	cdd_manager: CDD_MANAGER
@@ -110,6 +113,10 @@ feature -- Access
 			not_void: Result /= Void
 			current_item: Result = test_routines_cursor.item
 		end
+
+	last_executed_test_routine: CDD_TEST_ROUTINE
+			-- Last test routine whose execution is finished
+
 
 	index: INTEGER is
 			-- Index of test routine currently beeing tested
@@ -163,9 +170,12 @@ feature -- Basic operations
 
 	start is
 			-- Start compiling and testing in background.
+		require else
+			executor_is_idle: not has_next_step -- This won't be checked during runs since Precursor has precondition "true"
 		local
 			l_target: CONF_TARGET
 			l_system: CONF_SYSTEM
+			l_project: E_PROJECT
 			l_list: DS_ARRAYED_LIST [CDD_TEST_ROUTINE]
 			l_comp: AGENT_BASED_EQUALITY_TESTER [CDD_TEST_ROUTINE]
 		do
@@ -186,13 +196,14 @@ feature -- Basic operations
 					l_list.sort (create {DS_QUICK_SORTER [CDD_TEST_ROUTINE]}.make (l_comp))
 
 					test_routines_cursor := l_list.new_cursor
-					create compiler.make
+					create compiler.make_edition ("cdd")
 					compiler.set_output_handler (agent redirect_output)
 					cdd_manager.status_update_actions.call ([update_step])
 					l_target := test_suite.target
 					l_system := l_target.system
+					l_project := cdd_manager.project
 					log.report_interpreter_compilation_start
-					compiler.run (l_system.directory, l_system.file_name, tester_target_name (l_target))
+					compiler.run_with_build_directory (l_system.directory, l_system.file_name, tester_target_name (l_target), l_project.name.string)
 				else
 					-- TODO: notify observers that printing the root class has failed
 				end
@@ -203,25 +214,31 @@ feature -- Basic operations
 
 	cancel is
 			-- Stop all running processes.
+			-- NOTE: Compilation is not allowed to be aborted!
+			-- Use `schedule_restart_after_compilation' for triggering `cancel'->`start' after compilation has ended when `is_compiling'
 		do
-			if is_compiling then
-				if compiler.is_running then
-					compiler.terminate
-					log.report_interpreter_compilation_abort
-				end
-				compiler := Void
-			else
+			if not is_compiling then
 				if proxy.is_launched then
 					proxy.stop
 					log.report_test_case_execution_abort
 				end
 				proxy := Void
+				test_routines_cursor.go_after
+				test_routines_cursor := Void
+				fail_count := 0
+				pass_count := 0
+				cdd_manager.status_update_actions.call ([update_step])
 			end
-			test_routines_cursor.go_after
-			test_routines_cursor := Void
-			fail_count := 0
-			pass_count := 0
-			cdd_manager.status_update_actions.call ([update_step])
+		end
+
+	schedule_restart_after_compilation is
+			-- Schedule an immediate restart after current compilation.
+		require
+			is_compiling: is_compiling
+		do
+			is_restart_scheduled := True
+		ensure
+			restart_is_scheduled: is_restart_scheduled = True
 		end
 
 	step is
@@ -244,19 +261,34 @@ feature {NONE} -- Implementation (execution)
 			if compiler.is_running then
 				compiler.process_output
 			else
-				if compiler.was_successful then
-					log.report_interpreter_compilation_end
-					create proxy.make (interpreter_pathname, create {KL_TEXT_OUTPUT_FILE}.make (cdd_manager.testing_directory.build_path ("", "cdd_interpreter.log")))
-					log.report_test_case_execution_start
-					proxy.start
-					select_first_test_routine
-				else
-					log.report_interpreter_compilation_error
-					cdd_manager.status_update_actions.call ([create {CDD_STATUS_UPDATE}.make_with_code ({CDD_STATUS_UPDATE}.execution_error_code)])
+				if is_restart_scheduled then
+					if compiler.was_successful then
+						log.report_interpreter_compilation_end
+					else
+						log.report_interpreter_compilation_error
+						compiler := Void
+					end
+					compiler := Void
 					test_routines_cursor := Void
+					fail_count := 0
+					pass_count := 0
+					is_restart_scheduled := False
+					start
+				else
+					if compiler.was_successful then
+						log.report_interpreter_compilation_end
+						create proxy.make (interpreter_pathname, create {KL_TEXT_OUTPUT_FILE}.make (cdd_manager.testing_directory.build_path ("", "cdd_interpreter.log")))
+						log.report_test_case_execution_start
+						proxy.start
+						select_first_test_routine
+					else
+						log.report_interpreter_compilation_error
+						cdd_manager.status_update_actions.call ([create {CDD_STATUS_UPDATE}.make_with_code ({CDD_STATUS_UPDATE}.execution_error_code)])
+						test_routines_cursor := Void
+					end
+					compiler := Void
+					cdd_manager.status_update_actions.call ([update_step])
 				end
-				compiler := Void
-				cdd_manager.status_update_actions.call ([update_step])
 			end
 		end
 
@@ -278,7 +310,7 @@ feature {NONE} -- Implementation (execution)
 				create l_list.make (1)
 				l_list.put_first (create {CDD_TEST_ROUTINE_UPDATE}.make (current_test_routine, {CDD_TEST_ROUTINE_UPDATE}.changed_code))
 				test_suite.test_routine_update_actions.call ([l_list])
-				cdd_manager.status_update_actions.call ([update_step])
+				last_executed_test_routine := current_test_routine
 				select_next_test_routine
 				if not proxy.is_ready then
 					check proxy.last_response.has_bad_communication end
@@ -295,6 +327,7 @@ feature {NONE} -- Implementation (execution)
 				fail_count := 0
 				pass_count := 0
 				cdd_manager.status_update_actions.call ([update_step])
+				last_executed_test_routine := Void
 			else
 				if proxy.is_ready then
 					cdd_manager.status_update_actions.call ([update_step])
@@ -328,7 +361,7 @@ feature {NONE} -- Implementation (execution)
 	interpreter_pathname: FILE_NAME is
 			-- Filename of compiled test suite
 		do
-			create Result.make_from_string (test_suite.target.system.directory)
+			create Result.make_from_string (cdd_manager.project.name.string)
 			Result.extend ("EIFGENs")
 			Result.extend (tester_target_name (test_suite.target))
 			Result.extend ("W_code")
@@ -396,5 +429,6 @@ invariant
 	is_executing_implies_test_routines_cursor_not_off: is_executing implies not test_routines_cursor.off
 	not_has_next_step_implies_fail_count_zero: (not has_next_step) implies (fail_count = 0)
 	not_has_next_step_implies_pass_count_zero: (not has_next_step) implies (pass_count = 0)
+	restart_scheduled_implies_is_compiling: is_restart_scheduled implies is_compiling
 
 end

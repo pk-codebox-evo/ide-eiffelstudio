@@ -7,6 +7,8 @@ indexing
 class CDD_INTERPRETER_PROXY
 
 inherit
+	CDD_CONSTANTS
+		export {NONE} all end
 
 	THREAD_CONTROL
 		export {NONE} all end
@@ -259,8 +261,23 @@ feature {NONE} -- Implementation
 	stderr_reader: AUT_THREAD_SAFE_LINE_READER
 			-- Non blocking reader for client-stderr
 
-	timeout: INTEGER is 5
+	timeout: INTEGER is
 			-- Client timeout in seconds
+		local
+			l_cdd_timeout_string: STRING
+		once
+			l_cdd_timeout_string := execution_environment.get (cdd_tester_timeout_environment_variable)
+			if
+				l_cdd_timeout_string /= Void and then
+				not l_cdd_timeout_string.is_empty and then
+				l_cdd_timeout_string.is_integer and then
+				l_cdd_timeout_string.to_integer > 0
+			then
+				Result := l_cdd_timeout_string.to_integer
+			else
+				Result := default_interpreter_timeout
+			end
+		end
 
 	flush_process is
 			-- Send content of `process_buffer' to process stdin.

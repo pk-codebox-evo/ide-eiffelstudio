@@ -343,8 +343,9 @@ feature {NONE} -- Implementation
 			output_stream.dedent
 			output_stream.put_line ("end")
 			output_stream.dedent
-			--output_stream.close
-			output_stream.put_line ("%N%Nend")
+			output_stream.dedent
+			output_stream.put_new_line
+			output_stream.put_line ("end")
 			output_stream.flush
 		end
 
