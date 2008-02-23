@@ -4,7 +4,7 @@ indexing
 -- Enlarged access to Result
 
 class
-	RESULT_BL 
+	RESULT_BL
 
 inherit
 	RESULT_B
@@ -17,22 +17,22 @@ inherit
 create
 	make
 
-feature 
+feature
 
 	parent: NESTED_BL;
 			-- Parent of access
 
-	type: TYPE_I;
+	type: TYPE_A
 			-- Result type
 
-	make (t: TYPE_I) is
+	make (t: like type) is
 			-- Initialization
 		require
 			good_argument: t /= Void
 		do
 			type := t;
 		end;
-	
+
 	set_parent (p: NESTED_BL) is
 			-- Set `parent' to `p'
 		do
@@ -63,7 +63,7 @@ feature
 	print_register is
 			-- Print "Result"
 		local
-			type_i: TYPE_I;
+			type_i: TYPE_A;
 		do
 			if context.result_used then
 					-- Once function have their result recorded into the GC,
