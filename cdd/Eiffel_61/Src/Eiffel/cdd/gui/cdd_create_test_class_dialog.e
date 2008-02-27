@@ -208,7 +208,7 @@ feature {NONE} -- Implementation
 			l_input.open_read
 			if l_input.is_open_read then
 				l_name := name_field.text
-				l_dir := cdd_manager.testing_directory
+				l_dir := cdd_manager.file_manager.testing_directory
 				l_filename := l_name.as_lower + ".e"
 				l_path := l_dir.build_path ("", l_filename)
 				create l_output.make (l_path)
@@ -225,7 +225,7 @@ feature {NONE} -- Implementation
 							l_output.put_new_line
 						end
 						l_output.close
-						
+
 							-- Add created class to system
 						l_universe := cdd_manager.project.universe
 						l_target := cdd_manager.test_suite.target

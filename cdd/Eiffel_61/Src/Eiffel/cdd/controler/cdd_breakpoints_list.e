@@ -16,7 +16,7 @@ inherit
 			make as ht_make
 		export
 			{NONE} all
-			{ANY} wipe_out, count
+			{ANY} wipe_out, count, is_empty
 		redefine
 			wipe_out
 		end
@@ -80,14 +80,13 @@ feature -- Status
 		local
 			i: like item_for_iteration
 		do
---			Result := has_breakpoint (new_cdd_key (f, f.first_breakpoint_slot_index))
 			from
 				start
 			until
 				Result or after
 			loop
 				i := item_for_iteration
-				if i.routine.is_equal (f) then
+				if i.routine.same_as (f) then
 					Result := True
 					found_item := i
 				end
@@ -171,7 +170,10 @@ else
 				remove_cdd_breakpoints (f)
 			end
 
-			first := f.first_breakpoint_slot_index
+				-- NOTE/TODO `first_breakpoint_slot_index' seems to be bugged or does not work like intended
+				-- Taking '1' as first index has dangers if precondition checking is disabled!!
+--			first := f.first_breakpoint_slot_index
+			first := 1
 			last := f.number_of_breakpoint_slots
 
 			if first = last then
@@ -186,7 +188,7 @@ else
 				force (k, k)
 			end
 
-
+			-- ORIGINAL VERSION BY JOCELYN:
 --			if has_cdd_breakpoint (f) then
 --				check found_item_not_void: found_item /= Void end
 --				if found_item.breakable_line_number /= l then
@@ -215,17 +217,16 @@ end
 			i: INTEGER
 			bp: BREAKPOINT
 		do
---			remove_breakpoint (new_cdd_key (f, f.first_breakpoint_slot_index))
 			from
 				start
 			until
 				after
 			loop
-				if item_for_iteration.routine.is_equal (f) then
+				if item_for_iteration.routine.same_as (f) then
 					k := item_for_iteration
 					remove (key_for_iteration)
 						--| Make sure it will also be removed (if needed) from application.
-					check k.routine.is_equal (f) end
+					check k.routine.same_as (f) end
 					i := k.breakable_line_number
 					if manager.is_breakpoint_set (f, i) then
 						--| Already managed by user breakpoints

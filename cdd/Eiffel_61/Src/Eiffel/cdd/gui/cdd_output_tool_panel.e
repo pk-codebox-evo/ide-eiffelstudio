@@ -105,11 +105,21 @@ feature {NONE} -- Implementation
 				l_class := debugger_manager.cdd_manager.capturer.last_covered_class
 				l_formatter.process_class_name_text (l_class.name, l_class, False)
 				l_formatter.add_new_line
-			when {CDD_STATUS_UPDATE}.printer_step_code then
+			when {CDD_STATUS_UPDATE}.printer_new_step_code then
 				l_formatter := text_area.text_displayed
 				l_formatter.process_basic_text ("Wrote test class to disk: ")
-				l_class := debugger_manager.cdd_manager.last_printed_class
+				l_class := debugger_manager.cdd_manager.file_manager.last_added_class
 				l_formatter.process_class_name_text (l_class.name, l_class, False)
+				l_formatter.add_new_line
+			when {CDD_STATUS_UPDATE}.printer_existing_step_code then
+				l_formatter := text_area.text_displayed
+				l_formatter.process_basic_text ("Wrote test class to disk (replacing old version): ")
+				l_class := debugger_manager.cdd_manager.last_replaced_class
+				if l_class /= Void then
+					l_formatter.process_class_name_text (l_class.name, l_class, False)
+				else
+					l_formatter.process_basic_text (debugger_manager.cdd_manager.last_replaced_class_name)
+				end
 				l_formatter.add_new_line
 			when {CDD_STATUS_UPDATE}.executor_step_code then
 				if debugger_manager.cdd_manager.background_executor.last_executed_test_routine /= Void then
