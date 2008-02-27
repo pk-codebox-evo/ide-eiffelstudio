@@ -96,7 +96,7 @@ feature -- Basic functionality
 			l_dbg_data: DEBUGGER_DATA
 		do
 			current_test_routine := a_test_routine
-			root_class_printer.print_root_class (cdd_manager.testing_directory, a_test_routine)
+			root_class_printer.print_root_class (cdd_manager.file_manager.testing_directory, a_test_routine)
 			if root_class_printer.last_print_succeeded then
 				l_root := conf_factory.new_root (Void, "CDD_ROOT_CLASS", "make", False)
 				is_running := True

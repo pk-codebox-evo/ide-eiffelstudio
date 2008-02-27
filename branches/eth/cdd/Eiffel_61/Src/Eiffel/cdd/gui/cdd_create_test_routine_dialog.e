@@ -411,7 +411,7 @@ feature {NONE} -- Implementation
 								l_cluster := l_cluster.parent
 							end
 						end
-						l_loc := cdd_manager.testing_directory
+						l_loc := cdd_manager.file_manager.testing_directory
 						create l_output_file.make (l_loc.build_path (l_new_class_path, file_name))
 						if l_output_file.exists then
 							create wd.make_with_text ("There exists a file with this name")

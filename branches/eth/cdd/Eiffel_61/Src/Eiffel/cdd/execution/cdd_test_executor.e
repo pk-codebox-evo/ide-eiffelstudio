@@ -180,7 +180,7 @@ feature -- Basic operations
 			l_comp: AGENT_BASED_EQUALITY_TESTER [CDD_TEST_ROUTINE]
 		do
 			if not filter.test_routines.is_empty then
-				root_class_printer.print_class (cdd_manager.testing_directory)
+				root_class_printer.print_class (cdd_manager.file_manager.testing_directory)
 				if root_class_printer.last_print_succeeded then
 					create l_list.make_from_linear (filter.test_routines)
 
@@ -277,7 +277,8 @@ feature {NONE} -- Implementation (execution)
 				else
 					if compiler.was_successful then
 						log.report_interpreter_compilation_end
-						create proxy.make (interpreter_pathname, create {KL_TEXT_OUTPUT_FILE}.make (cdd_manager.testing_directory.build_path ("", "cdd_interpreter.log")))
+--						create proxy.make (interpreter_pathname, create {KL_TEXT_OUTPUT_FILE}.make (cdd_manager.testing_directory.build_path ("", "cdd_interpreter.log")))
+						create proxy.make (interpreter_pathname, cdd_manager.file_manager.interpreter_log_file)
 						log.report_test_case_execution_start
 						proxy.start
 						select_first_test_routine
@@ -360,15 +361,24 @@ feature {NONE} -- Implementation (execution)
 
 	interpreter_pathname: FILE_NAME is
 			-- Filename of compiled test suite
+		local
+			l_executable_name: STRING_8
 		do
 			create Result.make_from_string (cdd_manager.project.name.string)
 			Result.extend ("EIFGENs")
 			Result.extend (tester_target_name (test_suite.target))
 			Result.extend ("W_code")
-			if operating_system.is_unix then
-				Result.extend (test_suite.target.system.name)
+
+			if not test_suite.target.setting_executable_name.is_empty then
+				l_executable_name := test_suite.target.setting_executable_name
 			else
-				Result.extend (test_suite.target.system.name + ".exe")
+				l_executable_name := test_suite.target.system.name
+			end
+
+			if operating_system.is_windows then
+				Result.extend (l_executable_name + ".exe")
+			else
+				Result.extend (l_executable_name)
 			end
 		ensure
 			filename_not_void: Result /= Void

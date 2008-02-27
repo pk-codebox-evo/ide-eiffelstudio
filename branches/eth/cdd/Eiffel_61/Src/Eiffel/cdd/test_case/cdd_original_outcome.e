@@ -176,14 +176,19 @@ feature -- Status report
 	is_same (other: like Current): BOOLEAN is
 			-- Does `other' represent the same failure as `Current'?
 		do
-			Result :=	covered_feature.is_equal (other.covered_feature) and then
-						covered_feature.associated_class.name_in_upper.is_equal (other.covered_feature.associated_class.name_in_upper) and then
-						is_failing = other.is_failing and then
-						(is_failing implies	(exception_code = other.exception_code and then
-											exception_tag_name.is_equal (other.exception_tag_name) and then
-											exception_recipient_name.is_equal (other.exception_recipient_name) and then
-											exception_class_name.is_equal (other.exception_class_name)
-						))
+			Result :=	covered_feature.same_as (other.covered_feature) and then
+						(
+						 (is_passing and then
+						  other.is_passing
+						 ) or else
+						 (is_failing and then
+						  other.is_failing and then
+						  exception_code = other.exception_code and then
+						  exception_tag_name.is_equal (other.exception_tag_name) and then
+						  exception_recipient_name.is_equal (other.exception_recipient_name) and then
+						  exception_class_name.is_equal (other.exception_class_name)
+						 )
+						)
 
 		end
 

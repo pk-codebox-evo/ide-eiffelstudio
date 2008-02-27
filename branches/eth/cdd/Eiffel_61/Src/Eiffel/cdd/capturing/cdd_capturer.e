@@ -45,13 +45,7 @@ feature {NONE} -- Initialization
 			a_manager_not_void: a_manager /= Void
 		do
 			cdd_manager := a_manager
-
 			create {DS_ARRAYED_LIST [CDD_ROUTINE_INVOCATION]} last_extracted_routine_invocations.make (10)
-
-			create {DS_HASH_TABLE [DS_STACK [CDD_ROUTINE_INVOCATION], INTEGER_32]} cache.make (10)
-
-			create call_stack_target_objects.make (20)
-			call_stack_target_objects.set_equality_tester (case_insensitive_string_equality_tester)
 		ensure
 			cdd_manager_set: cdd_manager = a_manager
 		end
@@ -65,97 +59,153 @@ feature {ANY} -- Access
 	last_covered_class: CLASS_I
 			-- Target class of last captured stack frame
 
+feature {ANY} -- Status Report
+
+	is_using_cache: BOOLEAN
+			-- Is `Current' using a cache for extraction operations?
+
+	is_cache_available: BOOLEAN is
+			-- Does `Current' have a cache to use?
+		do
+			Result := cache /= Void
+		end
+
+	is_last_extraction_successful: BOOLEAN
+			-- Is last extraction successful?
+			-- NOTE: only `extract_active_routine' can fail,
+			-- `extract_routine_invocations_for_failure' succeeds always (but is allowed to leave `last_extracted_routine_invocations' empty)
+
+feature {ANY} -- Status setting
+
+	set_use_cache (a_flag: BOOLEAN) is
+			-- Set `is_using_cache' to `a_flag'.
+		require
+			cache_available_if_enabled: a_flag implies is_cache_available
+		do
+			is_using_cache := a_flag
+		ensure
+			is_using_cache_flag_set: is_using_cache = a_flag
+		end
+
 feature {ANY} -- Basic operations
+
+	set_cache (a_cache: CDD_ROUTINE_INVOCATION_CACHE) is
+			-- Set `cache' to `a_cache'.
+		require
+			a_cache_not_void: a_cache /= Void
+		do
+			cache := a_cache
+		ensure
+			cache_set: cache = a_cache
+		end
+
+	unset_cache is
+			-- Set `cache' to Void
+		require
+			is_not_using_cache: not is_using_cache
+		do
+			cache := Void
+		ensure
+			cache_unset: cache = Void
+		end
 
 	extract_routine_invocations_for_failure (a_status: APPLICATION_STATUS) is
 			-- Extract routine invocations for each feature call on the call stack of `a_status'.
 			-- Make extracted routine invocations available in `last_extracted_routine_invocations'.
-			-- Do not add any newly extracted routine invocations to cache.
+			-- Ignore top of stack upon precondition violation and apply failure extraction conditions for extraction
+			-- of individual call stack elements.
+			-- In case `Current' `is_using_cache' take routine invocations from cache instead of extracting them.
+			-- Additionally, if `Current' `is_using_cache', pop all elements from cache which would have been used without
+			-- special handling because of a failure (-> for each element of the call stack, pop a corresponding routine invocation
+			-- from the stack if available, even if it is not used to replace actual extraction because of special failure extraction
+			-- conditions like "no failure extraction for read only library classes")
 		require
 			a_status_not_void: a_status /= Void
 			application_is_stopped: a_status.is_stopped
 			application_has_failure: a_status.exception_occurred
+		local
+			l_cse: EIFFEL_CALL_STACK_ELEMENT
 		do
+			last_extracted_routine_invocations.wipe_out
 			a_status.set_max_depth (-1)
 			a_status.force_reload_current_call_stack
-			capture_stack_frames (a_status, a_status.current_call_stack.count, False)
+			initialize_capturing (a_status)
+
+			if not current_call_stack.after then
+
+					-- If failure is a precondition, ignore first call stack element
+				if a_status.exception_code = {EXCEP_CONST}.precondition then
+					if is_using_cache then
+						l_cse ?= current_call_stack.item
+						if l_cse /= Void and then cache.has_cached_routine_invocation (l_cse.routine) then
+							cache.pop_cached_routine_invocation (l_cse.routine)
+						end
+					end
+					current_call_stack.forth
+				end
+
+					-- Capture routine invocations for failure
+				capture_stack_frames (a_status.current_call_stack.count, True)
+			end
+
+			clean_up
+			is_last_extraction_successful := True
 		ensure
 			last_extracted_routine_invocations_not_void: last_extracted_routine_invocations /= Void
-			cache_did_not_change: True
+			is_successful: is_last_extraction_successful
 		end
 
-	cache_routine_invocation_for_active_routine (a_status: APPLICATION_STATUS) is
-			-- Extract routine invocation for the active routine of `a_status'.
-			-- Make extracted routine invocation available in `last_extracted_routine_invocations'.
-			-- Add the newly extracted routine invocation to the cache.
+	extract_active_routine (a_status: APPLICATION_STATUS) is
+			-- Try to extract routine invocation for the active routine of `a_status' (top of current call stack).
+			-- If possible make extracted routine invocation available in `last_extracted_routine_invocations'.
 		require
 			a_status_not_void: a_status /= Void
 			application_is_stopped: a_status.is_stopped
-			application_has_no_failure: not a_status.exception_occurred -- TODO Consider: This precondition implies
-																		-- that it is never allowed to cache "failure" states. It might be convenient to handle
-																		-- this inside the cascing procedures instead of disallowing the call itself.
+		local
+			l_cse: EIFFEL_CALL_STACK_ELEMENT
 		do
-			capture_stack_frames (a_status, 1, True)
-				-- NOTE: This procedure is used for putting stuff in the cache. It is essential that the resulting cache entry corresponds
-				-- to the feature on top of the call stack! Since this is not guaranteed (call stack frames get skipped if not `is_valid_call_stack_element'),
-				-- the implementation will have to be reconsidered.
-				-- BUT for now, since only cdd breakpoints for non-reproducing test cases exist, and these are corresponding to features which
-				-- create valid call stack elements, the top element of the stack should be valid and the above mentioned condition fullfilled.
-				-- TODO:
-				-- Completely remove the hardcoded restrictions for stack element extraction, instead introduce a predicate that can be set
-				-- by clients. In this way the client can use the extraction mechanisms transparently.
-				-- (for concrete design: CDD_MANAGER can set usual predicate when extracting test cases for failure state,
-				-- and set an "always true" predicate for caching extraction calls. This will be necessary if users can mark arbitrary routines
-				-- as "extract test case for passing routine invocation").
-				-- Also see the postconditions below marked with "see above".
+			last_extracted_routine_invocations.wipe_out
+			l_cse ?= a_status.current_call_stack_element
+			if l_cse /= Void then
+				initialize_capturing (a_status)
+				capture_call_stack_element (l_cse, 1)
+				clean_up
+				is_last_extraction_successful := True
+			else
+				is_last_extraction_successful := False
+			end
 		ensure
 			last_extracted_routine_invocations_not_void: last_extracted_routine_invocations /= Void
-			exactly_one_routine_invocation_extracted: last_extracted_routine_invocations.count = 1
-			extracted_top_of_stack: last_extracted_routine_invocations.first.represented_feature.is_equal (a_status.e_feature) -- See Above
-				-- This condition is not possible because a_status.e_feature /= a_status.current_call_stack.top.routine!!
-			-- cache_entry_for_top_feature_exists: has_cached_routine_invocation (a_status.e_feature) -- See Above
+			exactly_one_routine_invocation_extracted_if_successful: is_last_extraction_successful implies (last_extracted_routine_invocations.count = 1)
+			extracted_top_of_stack_if_successful: is_last_extraction_successful implies
+														last_extracted_routine_invocations.first.represented_feature.same_as (a_status.e_feature)
 		end
 
 
 feature {NONE} -- Implementation (Capturing)
 
-	capture_stack_frames (a_status: APPLICATION_STATUS; a_count: INTEGER; a_caching_enabled_flag: BOOLEAN) is
-			-- Capture max `a_count' routine invocations for valid call stack elements
-			-- from top of call stack in `a_status'.
-			-- `a_caching_enabled_flag' determines if extracted routine invocations are put in cache.
-		require
-			a_status_not_void: a_status /= Void
-			a_status_valid: a_status.is_stopped
-			a_count_not_negative: a_count >= 0
-			a_status_valid_for_caching: a_caching_enabled_flag implies not a_status.exception_occurred
+	initialize_capturing (a_status: APPLICATION_STATUS) is
+			-- Initialize all data structures required by any capturing routines.
 		local
-			l_call_stack: EIFFEL_CALL_STACK
-			l_cse: EIFFEL_CALL_STACK_ELEMENT
-			i: INTEGER
-
 			l_dt: DT_DATE_TIME
-			l_call_stack_id: INTEGER_32
+			l_cse: EIFFEL_CALL_STACK_ELEMENT
 		do
-			log.report_extraction_start
-
 			current_application_status := a_status
-			l_call_stack := a_status.current_call_stack
-
-				-- ** Setup general extraction structures which are persistent over all individual frame extractions ** --
-
-			last_extracted_routine_invocations.wipe_out
+			current_call_stack := a_status.current_call_stack
 
 				-- Remember all objects which are target of some routine call in the current call stack.
 			from
-				l_call_stack.start
+				create current_call_stack_target_objects.make (20)
+				current_call_stack_target_objects.set_equality_tester (case_insensitive_string_equality_tester)
+				current_call_stack.start
 			until
-				l_call_stack.after
+				current_call_stack.after
 			loop
-				l_cse ?= l_call_stack.item
+				l_cse ?= current_call_stack.item
 				if l_cse /= Void and then l_cse.current_object_value /= Void and then l_cse.current_object_value.address /= Void then
-					call_stack_target_objects.force (l_cse.current_object_value.address)
+					current_call_stack_target_objects.force (l_cse.current_object_value.address)
 				end
-				l_call_stack.forth
+				current_call_stack.forth
 			end
 
 				-- TODO: Caching of debug values over multiple stack frame extractions (simply by extending and keeping "Object Map"?)
@@ -165,47 +215,74 @@ feature {NONE} -- Implementation (Capturing)
 				-- be used for sorting and displaying an arbitrary
 				-- date time format.
 			l_dt := system_clock.date_time_now
-			l_call_stack_id := l_dt.epoch_days (l_dt.year, l_dt.month, l_dt.day)*l_dt.seconds_in_day
-			l_call_stack_id := l_call_stack_id + l_dt.time.second_count
+			current_call_stack_id := l_dt.epoch_days (l_dt.year, l_dt.month, l_dt.day) * l_dt.seconds_in_day
+			current_call_stack_id := current_call_stack_id + l_dt.time.second_count
 
-
-				-- ** Extraction of stack frames ** --
-
-				-- Extract routine invocations for at most `a_count'
-				-- valid stack frames on the call stack,
-				-- beginning from the top.
-				-- A top stack frame having failed due to a precondition violation is ignored.
-			from
-				l_call_stack.start
-				if
-					(not l_call_stack.after) and then
-					a_status.exception_occurred and then
-					a_status.exception_code = {EXCEP_CONST}.precondition
-				then
-					l_call_stack.forth
-				end
-				i := 1
-			until
-				l_call_stack.after or i > a_count
-			loop
-				if is_valid_call_stack_element (l_call_stack.item, (i = 1)) then
-					l_cse ?= l_call_stack.item
-					check call_stack_element_not_void: l_cse /= Void end
-					capture_call_stack_element (l_cse, l_call_stack_id, i, a_caching_enabled_flag)
-					i := i + 1
-				end
-				l_call_stack.forth
-			end
-
-
-				-- ** Clean up general extraction data structures ** --
-
-			call_stack_target_objects.wipe_out
-
-			log.report_extraction_end
+				-- Set start for iteration over call stack
+			current_call_stack.start
+		ensure
+			application_status_initialized: current_application_status /= Void
+			call_stack_initialized: current_call_stack /= Void
+			call_stack_ready_for_extraction: current_call_stack.after or else
+												(not current_call_stack.is_empty and then (current_call_stack.item = current_call_stack.i_th (1)))
+			current_call_stack_id_initialized: current_call_stack_id > 0
+			current_call_stack_target_objects_initialized: current_call_stack_target_objects /= Void
 		end
 
-	is_valid_call_stack_element (a_cse: CALL_STACK_ELEMENT; a_candidate_for_first_extraction_flag: BOOLEAN): BOOLEAN is
+	clean_up is
+			-- Clean up capturing data structures
+		do
+			current_application_status := Void
+			current_call_stack := Void
+			current_call_stack_target_objects := Void
+		ensure
+			application_status_uninitialized: current_application_status = Void
+			call_stack_uninitialized: current_call_stack = Void
+			current_call_stack_target_objects_uninitialized: current_call_stack_target_objects = Void
+		end
+
+	capture_stack_frames (a_count: INTEGER; an_apply_failure_extraction_conditions_flag: BOOLEAN) is
+			-- Capture max `a_count' routine invocations from `current_call_stack'
+			-- Start where internal cursor of `current_call_stack' is pointing to.
+			-- Stack frames for which extraction is impossible (e.g. not conforming to EIFFEL_CALL_STACK_ELEMENT) are ignored.
+			-- `an_apply_failure_extraction_conditions_flag' determines if call stack elements not meeting the failure extraction conditions
+			-- are ignored.
+			-- If `Current' `is_using_cache' routine invocations are taken from cache if possible, and they are popped for all call stack
+			-- elements regardles if actual extraction takes place.
+		require
+			application_status_initialized: current_application_status /= Void
+			call_stack_initialized: current_call_stack /= Void
+			current_call_stack_id_initialized: current_call_stack_id > 0
+			current_call_stack_target_objects_initialized: current_call_stack_target_objects /= Void
+		local
+			l_cse: EIFFEL_CALL_STACK_ELEMENT
+			i: INTEGER
+		do
+			from
+				i := 1
+			until
+				current_call_stack.after or i > a_count
+			loop
+				l_cse ?= current_call_stack.item
+				if l_cse /= Void then
+					if
+						not an_apply_failure_extraction_conditions_flag or else
+						is_valid_call_stack_element_for_failure_extraction (l_cse, i = 1)
+					then
+						capture_call_stack_element (l_cse, i)
+						i := i + 1
+					else
+							-- Pop corresponding feature from cache anyway if `is_using_cache'
+						if is_using_cache and then cache.has_cached_routine_invocation (l_cse.routine) then
+							cache.pop_cached_routine_invocation (l_cse.routine)
+						end
+					end
+				end
+				current_call_stack.forth
+			end
+		end
+
+	is_valid_call_stack_element_for_failure_extraction (a_cse: EIFFEL_CALL_STACK_ELEMENT; a_candidate_for_first_extraction_flag: BOOLEAN): BOOLEAN is
 			-- Is `a_cse' a valid call stack element for extraction of a routine invocation?
 			-- A valid call stack element needs to fullfill ALL of the following criteria:
 			-- 1. NOT a call stack element for an external feature
@@ -215,45 +292,39 @@ feature {NONE} -- Implementation (Capturing)
 		require
 			a_cse_not_void: a_cse /= Void
 		local
-			l_cse: EIFFEL_CALL_STACK_ELEMENT
 			l_class: EIFFEL_CLASS_C
 			l_feature: E_FEATURE
 		do
-				-- 1. `a_cse' has to be an eiffel call stack element (e.g. not an EXTERNAL_CALL_STACK_ELEMENT)
-			Result := a_cse.is_eiffel_call_stack_element
+				-- 1. There has to be an EIFFEL_CLASS_C associated with 'a_cse'
+			Result := a_cse.dynamic_class /= Void and then a_cse.dynamic_class.is_eiffel_class_c
 			if Result then
-				l_cse ?= a_cse
-				check eiffel_call_stack_element_not_void: l_cse /= Void end
-					-- 1. There has to be an EIFFEL_CLASS_C associated with 'a_cse'
-				Result := l_cse.dynamic_class /= Void and then l_cse.dynamic_class.is_eiffel_class_c
+				l_class := a_cse.dynamic_class.eiffel_class_c
+					-- 3. NOT a call stack element for a feature of a class which is part of read-only library,
+					-- except `a_cse' is a candidate for first extraction.
+				Result := a_candidate_for_first_extraction_flag or else not (l_class.cluster.is_used_in_library and then l_class.cluster.is_readonly)
 				if Result then
-					l_class := l_cse.dynamic_class.eiffel_class_c
-						-- 3. NOT a call stack element for a feature of a class which is part of read-only library,
-						-- except `a_cse' is a candidate for first extraction.
-					Result := a_candidate_for_first_extraction_flag or else not (l_class.cluster.is_used_in_library and then l_class.cluster.is_readonly)
+					l_feature := a_cse.routine
+						-- 1. NOT a call stack element for an external feature
+						-- 2. NOT a call stack element for an inline agent
+					Result := (not l_feature.is_external) and then (not l_feature.is_inline_agent)
 					if Result then
-						l_feature := l_cse.routine
-							-- 1. NOT a call stack element for an external feature
-							-- 2. NOT a call stack element for an inline agent
-						Result := (not l_feature.is_external) and then (not l_feature.is_inline_agent)
-						if Result then
-								-- 4. Exported to {any} OR a creation procedure
-							Result := l_feature.export_status.is_all or else
-										l_class.creation_feature = l_feature.associated_feature_i or else
-										(l_class.creators /= Void and then l_class.creators.has (l_feature.name))
-						end
+							-- 4. Exported to {any} OR a creation procedure
+						Result := l_feature.export_status.is_all or else
+									l_class.creation_feature = l_feature.associated_feature_i or else
+									(l_class.creators /= Void and then l_class.creators.has (l_feature.name))
 					end
 				end
 			end
 		end
 
-	capture_call_stack_element (a_cse: EIFFEL_CALL_STACK_ELEMENT; a_call_stack_id: INTEGER_32; a_cs_level: INTEGER; a_caching_enabled_flag: BOOLEAN) is
+	capture_call_stack_element (a_cse: EIFFEL_CALL_STACK_ELEMENT; a_cs_level: INTEGER) is
 			-- Capture state for `a_cse'. `a_call_stack_id' is the call stack's unique id.
 		require
-			a_cse_not_void: a_cse /= Void
-			valid_cse: is_valid_call_stack_element (a_cse, a_cs_level = 1)
-			a_call_stack_id_positive: a_call_stack_id  > 0
-			a_cs_level_positiv: a_cs_level > 0
+			application_status_initialized: current_application_status /= Void
+			call_stack_initialized: current_call_stack /= Void
+			call_stack_ready_for_extraction: not current_call_stack.after
+			current_call_stack_id_initialized: current_call_stack_id > 0
+			current_call_stack_target_objects_initialized: current_call_stack_target_objects /= Void
 		local
 			l_class: CLASS_C
 			l_feature: E_FEATURE
@@ -273,10 +344,10 @@ feature {NONE} -- Implementation (Capturing)
 			l_class := a_cse.dynamic_class
 			create l_context.make (20)
 
-				-- If `a_caching_enabled_flag' = True, always do extract a new routine invocation (no cache look-up)
+				-- If `is_using_cache' = False, always do extract a new routine invocation (no cache look-up)
 				-- Otherwise extract only a new routine invocation if none is available in cache already
 
-			if not a_caching_enabled_flag  then
+			if is_using_cache then
 
 					-- NOTE: This ugly workaround handles invariant violation exceptions.
 					-- These are sometimes thrown after `on_routine_exit' of CDD_MANAGER is called.
@@ -292,22 +363,22 @@ feature {NONE} -- Implementation (Capturing)
 							-- after the corresponding state was popped already
 				then
 					check
-						last_popped_available: last_popped_routine_invocation /= Void
-						last_popped_valid: last_popped_routine_invocation.represented_feature.is_equal (a_cse.routine)
+						last_popped_available: cache.last_popped_routine_invocation /= Void
+						last_popped_valid: cache.last_popped_routine_invocation.represented_feature.same_as (a_cse.routine)
 					end
-					l_routine_invocation := last_popped_routine_invocation
-					l_routine_invocation.set_call_stack_id (a_call_stack_id)
+					l_routine_invocation := cache.last_popped_routine_invocation
+					l_routine_invocation.set_call_stack_id (current_call_stack_id)
 					l_routine_invocation.set_call_stack_index (a_cs_level)
 					last_extracted_routine_invocations.force_last (l_routine_invocation)
 					l_done := True
 				elseif
-					has_cached_routine_invocation (l_feature)
+					cache.has_cached_routine_invocation (l_feature)
 				then
-					l_routine_invocation := cached_routine_invocation (l_feature)
+					l_routine_invocation := cache.cached_routine_invocation (l_feature)
 						-- Remove the just "consumed" routine invocation
-					pop_cached_routine_invocation (l_feature)
+					cache.pop_cached_routine_invocation (l_feature)
 
-					l_routine_invocation.set_call_stack_id (a_call_stack_id)
+					l_routine_invocation.set_call_stack_id (current_call_stack_id)
 					l_routine_invocation.set_call_stack_index (a_cs_level)
 					last_extracted_routine_invocations.force_last (l_routine_invocation)
 					l_done := True
@@ -371,19 +442,16 @@ feature {NONE} -- Implementation (Capturing)
 					object_queue.remove
 				end
 
-				create l_routine_invocation.make (l_feature, a_cse.current_object_value.dump_value.generating_type_representation (True), l_context, a_call_stack_id, a_cs_level)
-				if a_caching_enabled_flag then
-					cache_routine_invocation (l_routine_invocation)
-				end
-
+				create l_routine_invocation.make (l_feature, a_cse.current_object_value.dump_value.generating_type_representation (True), l_context, current_call_stack_id, a_cs_level)
 				last_extracted_routine_invocations.force_last (l_routine_invocation)
+
+
+				log.report_extraction (l_start_time, create {DATE_TIME}.make_now, l_routine_invocation)
+
+				last_covered_class := l_feature.associated_class.original_class
+
+				cdd_manager.status_update_actions.call ([create {CDD_STATUS_UPDATE}.make_with_code ({CDD_STATUS_UPDATE}.capturer_extracted_code)])
 			end
-
-			log.report_extraction (l_start_time, create {DATE_TIME}.make_now, l_routine_invocation)
-
-			last_covered_class := l_feature.associated_class.original_class
-
-			cdd_manager.status_update_actions.call ([create {CDD_STATUS_UPDATE}.make_with_code ({CDD_STATUS_UPDATE}.capturer_extracted_code)])
 		ensure
 			last_extracted_routine_invocations_not_empty: not last_extracted_routine_invocations.is_empty
 		end
@@ -469,7 +537,7 @@ feature {NONE} -- Implementation (Capturing)
 				l_attrs := fetch_object_attributes (an_object.children, True, a_depth)
 			end
 
-			a_result_container.force_last ([l_id, l_type, not (an_object.address /= Void and then call_stack_target_objects.has (an_object.address)), l_attrs])
+			a_result_container.force_last ([l_id, l_type, not (an_object.address /= Void and then current_call_stack_target_objects.has (an_object.address)), l_attrs])
 		end
 
 	add_referenced_object (an_adv: ABSTRACT_DEBUG_VALUE; a_depth: INTEGER) is
@@ -598,86 +666,23 @@ feature {NONE} -- Implementation (Capturing Data Structures)
 			-- Counter for giving new objects an id.
 			-- NOTE: this will be replaced with id from capture/replay module.
 
-	call_stack_target_objects: DS_HASH_SET [STRING]
+	current_application_status: APPLICATION_STATUS
+			-- Currently handled application status
+
+	current_call_stack: EIFFEL_CALL_STACK
+			-- Currently handled call stack
+
+	current_call_stack_target_objects: DS_HASH_SET [STRING]
 			-- Hash set for all addresses of objects which are target for a routine call represented by a frame of current call stack
 			-- This is used to prevent invariant checks for theses objects
 			-- NOTE: for now we simply check whether a object is part
 			-- of the call stack. Actually for a given stack frame,
 			-- we should only account for the objects in stack frames
 			-- below the given stack frame (assuming we can extract the
-			-- prestate).
+			-- prestate).		
 
-
-feature {CDD_MANAGER} -- Caching
-
-	has_cached_routine_invocation (a_feature: E_FEATURE): BOOLEAN is
-			-- Does a routine invocation covering `a_feature' exist in cache?
-		require
-			a_feature_not_void: a_feature /= Void
-		local
-			l_stack: DS_STACK [CDD_ROUTINE_INVOCATION]
-		do
-			Result := cache.has (a_feature.feature_id)
-			if Result then
-				l_stack := cache.item (a_feature.feature_id)
-				Result := not l_stack.is_empty
-			end
-		end
-
-	cache_routine_invocation (a_routine_invocation: CDD_ROUTINE_INVOCATION) is
-			-- Add `a_routine_invocation' to cache.
-		require
-			a_routine_invocation_not_void: a_routine_invocation /= Void
-		local
-			l_stack: DS_STACK [CDD_ROUTINE_INVOCATION]
-		do
-			if cache.has (a_routine_invocation.represented_feature.feature_id) then
-				cache.item (a_routine_invocation.represented_feature.feature_id).put (a_routine_invocation)
-			else
-				create {DS_ARRAYED_STACK [CDD_ROUTINE_INVOCATION]} l_stack.make (10)
-				l_stack.put (a_routine_invocation)
-				cache.put_new (l_stack, a_routine_invocation.represented_feature.feature_id)
-			end
-		ensure
-			routine_invocation_inserted: has_cached_routine_invocation (a_routine_invocation.represented_feature)
-		end
-
-	cached_routine_invocation (a_feature: E_FEATURE): CDD_ROUTINE_INVOCATION is
-			-- Most recent cached routine invocation covering `a_feature'
-		require
-			cached_routine_invocation_available: has_cached_routine_invocation (a_feature)
-		do
-			Result := cache.item (a_feature.feature_id).item
-		ensure
-			result_not_void: Result /= Void
-		end
-
-	pop_cached_routine_invocation (a_feature: E_FEATURE) is
-			-- Pop cached routine invocation from `cache'.
-		require
-			cached_routine_invocation_available: has_cached_routine_invocation (a_feature)
-		do
-			last_popped_routine_invocation := cache.item (a_feature.feature_id).item
-			cache.item (a_feature.feature_id).remove
-		ensure
-			-- number_of_cached_entries_for_a_feature_decreased: <currently unexpressible>
-		end
-
-	reset_cache is
-			-- Wipe out all cached routine invocations.
-		do
-			cache.wipe_out
-			last_popped_routine_invocation := Void
-		ensure
-			cache_is_empty: cache.is_empty
-		end
-
-	cache: DS_TABLE [DS_STACK [CDD_ROUTINE_INVOCATION], INTEGER_32]
-			-- Cache for extracted test routines
-
-	last_popped_routine_invocation: CDD_ROUTINE_INVOCATION
-			-- Store for the last popped routine invocation
-			-- NOTE: this is a workaround for invariant exceptions, which can be thrown after last detectable point before routine exit
+	current_call_stack_id: INTEGER
+			-- Generated id for currently handled call stack
 
 feature {NONE} -- Implementation
 
@@ -690,14 +695,12 @@ feature {NONE} -- Implementation
 			Result := cdd_manager.log
 		end
 
-	current_application_status: APPLICATION_STATUS
-		-- Currently handled application status.
-		-- NOTE the sole purpose of this attribute is to support the workaround for invariant exception prestates (see `capture_call_stack_element')
+	cache: CDD_ROUTINE_INVOCATION_CACHE
+			-- Cache used for extraction if `is_using_cache' flag is set.
 
 invariant
 	cdd_manager_not_void: cdd_manager /= Void
 	last_extracted_routine_invocations_not_void: last_extracted_routine_invocations /= Void
-	call_stack_target_objects_not_void: call_stack_target_objects /= Void
-	cache_not_void: cache /= Void
+	cache_not_void_if_use_cache_enabled: is_using_cache implies is_cache_available
 
 end
