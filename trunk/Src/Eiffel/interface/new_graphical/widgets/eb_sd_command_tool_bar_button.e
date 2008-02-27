@@ -1,5 +1,5 @@
 indexing
-	description	: "Toolbar button for a toolbarable toolbar_command"
+	description	: "Toolbar button for a toolbarable toolbar command."
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
 	date		: "$Date$"
