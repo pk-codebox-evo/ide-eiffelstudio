@@ -1,0 +1,103 @@
+
+
+
+
+
+
+
+
+ === CDD_TEST_ROOT_CLASS_001_MOG_THE_PERSEVERANT.test_foo
+
+Status after last execution:
+
+Reproduced original failure (at least once)
+
+Last execution:
+Conclusion:
+	FAIL
+
+Setup [normal]
+Test [exception]
+	code: 3
+	name: Precondition
+	tag: false_precondition
+	feature: foo@1
+	class: ROOT_CLASS
+
+
+Teardown [normal]
+
+Original Outcome
+covers: {ROOT_CLASS}.foo
+[exception]
+	code: 3
+	name: Precondition
+	tag: false_precondition
+	feature: foo@2
+	class: ROOT_CLASS
+
+
+
+ === CDD_TEST_ROOT_CLASS_002_MOG_THE_PERSEVERANT.test_bar
+
+Status after last execution:
+
+Reproduced original failure (at least once)
+
+Last execution:
+Conclusion:
+	FAIL
+
+Setup [normal]
+Test [exception]
+	code: 3
+	name: Precondition
+	tag: false_precondition
+	feature: foo@4
+	class: ROOT_CLASS
+
+
+Teardown [normal]
+
+Original Outcome
+covers: {ROOT_CLASS}.bar
+[exception]
+	code: 3
+	name: Precondition
+	tag: false_precondition
+	feature: foo@2
+	class: ROOT_CLASS
+
+
+
+ === CDD_TEST_ROOT_CLASS_003_MOG_THE_PERSEVERANT.test_make
+
+Status after last execution:
+
+Reproduced original failure (at least once)
+
+Last execution:
+Conclusion:
+	FAIL
+
+Setup [normal]
+Test [exception]
+	code: 3
+	name: Precondition
+	tag: false_precondition
+	feature: foo@130
+	class: ROOT_CLASS
+
+
+Teardown [normal]
+
+Original Outcome
+covers: {ROOT_CLASS}.make
+[exception]
+	code: 3
+	name: Precondition
+	tag: false_precondition
+	feature: foo@2
+	class: ROOT_CLASS
+
+

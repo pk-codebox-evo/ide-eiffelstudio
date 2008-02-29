@@ -3,6 +3,7 @@ indexing
 	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
+	cdd_id: "AECD33B6-81C5-410A-9196-D4FB4990B5CA"
 
 class
 	MY_TEST_01

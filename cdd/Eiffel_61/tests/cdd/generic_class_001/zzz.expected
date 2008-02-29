@@ -1,30 +1,103 @@
-CDD_TEST_SOME_GENERIC_CLASS_01.test_foo
-	Setup (normal)
-	Test (exceptional)
-		reason:  Postcondition violated.
-		tag:     false_postcondition
 
-		class:   SOME_GENERIC_CLASS
-		feature: foo
-	Teardown (normal)
 
-CDD_TEST_ROOT_CLASS_01.test_bar
-	Setup (normal)
-	Test (exceptional)
-		reason:  Postcondition violated.
-		tag:     false_postcondition
 
-		class:   SOME_GENERIC_CLASS
-		feature: foo
-	Teardown (normal)
 
-CDD_TEST_ROOT_CLASS_02.test_make
-	Setup (normal)
-	Test (exceptional)
-		reason:  Postcondition violated.
-		tag:     false_postcondition
 
-		class:   SOME_GENERIC_CLASS
-		feature: foo
-	Teardown (normal)
+
+
+
+ === CDD_TEST_ROOT_CLASS_001_MOG_THE_PERSEVERANT.test_bar
+
+Status after last execution:
+
+Reproduced original failure (at least once)
+
+Last execution:
+Conclusion:
+	FAIL
+
+Setup [normal]
+Test [exception]
+	code: 4
+	name: Postcondition
+	tag: false_postcondition
+	feature: foo@1
+	class: SOME_GENERIC_CLASS
+
+
+Teardown [normal]
+
+Original Outcome
+covers: {ROOT_CLASS}.bar
+[exception]
+	code: 4
+	name: Postcondition
+	tag: false_postcondition
+	feature: foo@2
+	class: SOME_GENERIC_CLASS
+
+
+
+ === CDD_TEST_ROOT_CLASS_002_MOG_THE_PERSEVERANT.test_make
+
+Status after last execution:
+
+Reproduced original failure (at least once)
+
+Last execution:
+Conclusion:
+	FAIL
+
+Setup [normal]
+Test [exception]
+	code: 4
+	name: Postcondition
+	tag: false_postcondition
+	feature: foo@3
+	class: SOME_GENERIC_CLASS
+
+
+Teardown [normal]
+
+Original Outcome
+covers: {ROOT_CLASS}.make
+[exception]
+	code: 4
+	name: Postcondition
+	tag: false_postcondition
+	feature: foo@2
+	class: SOME_GENERIC_CLASS
+
+
+
+ === CDD_TEST_SOME_GENERIC_CLASS_001_MOG_THE_PERSEVERANT.test_foo
+
+Status after last execution:
+
+Reproduced original failure (at least once)
+
+Last execution:
+Conclusion:
+	FAIL
+
+Setup [normal]
+Test [exception]
+	code: 4
+	name: Postcondition
+	tag: false_postcondition
+	feature: foo@18
+	class: SOME_GENERIC_CLASS
+
+
+Teardown [normal]
+
+Original Outcome
+covers: {SOME_GENERIC_CLASS}.foo
+[exception]
+	code: 4
+	name: Postcondition
+	tag: false_postcondition
+	feature: foo@2
+	class: SOME_GENERIC_CLASS
+
 
