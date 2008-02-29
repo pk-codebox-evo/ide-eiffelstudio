@@ -2,6 +2,7 @@ indexing
 	description	: "An example test class"
 	date: "$Date$"
 	revision: "$Revision$"
+	cdd_id: "11AE52B8-D03E-4769-B871-2A29225E7B71"
 
 class
 	MY_TEST_02

@@ -1,10 +1,39 @@
-CDD_TEST_ROOT_CLASS_01.test_make
-	Setup (normal)
-	Test (exceptional)
-		reason:  Precondition violated.
-		tag:     false_precondition
 
-		class:   ROOT_CLASS
-		feature: bar
-	Teardown (normal)
+
+
+
+
+
+
+
+ === CDD_TEST_ROOT_CLASS_001_MOG_THE_PERSEVERANT.test_make
+
+Status after last execution:
+
+Reproduced original failure (at least once)
+
+Last execution:
+Conclusion:
+	FAIL
+
+Setup [normal]
+Test [exception]
+	code: 3
+	name: Precondition
+	tag: false_precondition
+	feature: make@4
+	class: ROOT_CLASS
+
+
+Teardown [normal]
+
+Original Outcome
+covers: {ROOT_CLASS}.make
+[exception]
+	code: 3
+	name: Precondition
+	tag: false_precondition
+	feature: make@1
+	class: ROOT_CLASS
+
 

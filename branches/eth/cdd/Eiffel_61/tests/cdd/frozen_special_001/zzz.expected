@@ -1,20 +1,71 @@
-CDD_TEST_ROOT_CLASS_01.test_bar
-	Setup (normal)
-	Test (exceptional)
-		reason:  Postcondition violated.
-		tag:     false_postcondition
 
-		class:   ROOT_CLASS
-		feature: bar
-	Teardown (normal)
 
-CDD_TEST_ROOT_CLASS_02.test_make
-	Setup (normal)
-	Test (exceptional)
-		reason:  Postcondition violated.
-		tag:     false_postcondition
 
-		class:   ROOT_CLASS
-		feature: bar
-	Teardown (normal)
+
+
+
+
+
+ === CDD_TEST_ROOT_CLASS_001_MOG_THE_PERSEVERANT.test_bar
+
+Status after last execution:
+
+Reproduced original failure (at least once)
+
+Last execution:
+Conclusion:
+	FAIL
+
+Setup [normal]
+Test [exception]
+	code: 4
+	name: Postcondition
+	tag: false_postcondition
+	feature: bar@4
+	class: ROOT_CLASS
+
+
+Teardown [normal]
+
+Original Outcome
+covers: {ROOT_CLASS}.bar
+[exception]
+	code: 4
+	name: Postcondition
+	tag: false_postcondition
+	feature: bar@2
+	class: ROOT_CLASS
+
+
+
+ === CDD_TEST_ROOT_CLASS_002_MOG_THE_PERSEVERANT.test_make
+
+Status after last execution:
+
+Reproduced original failure (at least once)
+
+Last execution:
+Conclusion:
+	FAIL
+
+Setup [normal]
+Test [exception]
+	code: 4
+	name: Postcondition
+	tag: false_postcondition
+	feature: bar@0
+	class: ROOT_CLASS
+
+
+Teardown [normal]
+
+Original Outcome
+covers: {ROOT_CLASS}.make
+[exception]
+	code: 4
+	name: Postcondition
+	tag: false_postcondition
+	feature: bar@2
+	class: ROOT_CLASS
+
 

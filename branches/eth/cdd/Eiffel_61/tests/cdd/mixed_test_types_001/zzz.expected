@@ -1,72 +1,206 @@
-MY_TEST_01.test_string_equal_1
-	Setup (normal)
-	Test (exceptional)
-		reason:  Developer exception.
-		tag:     Equal Strings Must BE
+
+
+
+
+
+
+
+
+ === CDD_TEST_ROOT_CLASS_001_MOG_THE_PERSEVERANT.test_bar
+
+Status after last execution:
+
+Reproduced original failure (at least once)
+
+Last execution:
+Conclusion:
+	FAIL
+
+Setup [normal]
+Test [exception]
+	code: 4
+	name: Postcondition
+	tag: false_postcondition
+	feature: bar@4
+	class: ROOT_CLASS
+
+
+Teardown [normal]
+
+Original Outcome
+covers: {ROOT_CLASS}.bar
+[exception]
+	code: 4
+	name: Postcondition
+	tag: false_postcondition
+	feature: bar@2
+	class: ROOT_CLASS
+
+
+
+ === CDD_TEST_ROOT_CLASS_002_MOG_THE_PERSEVERANT.test_make
+
+Status after last execution:
+
+Reproduced original failure (at least once)
+
+Last execution:
+Conclusion:
+	FAIL
+
+Setup [normal]
+Test [exception]
+	code: 4
+	name: Postcondition
+	tag: false_postcondition
+	feature: bar@0
+	class: ROOT_CLASS
+
+
+Teardown [normal]
+
+Original Outcome
+covers: {ROOT_CLASS}.make
+[exception]
+	code: 4
+	name: Postcondition
+	tag: false_postcondition
+	feature: bar@2
+	class: ROOT_CLASS
+
+
+
+ === MY_TEST_01.test_string_equal_1
+
+Status after last execution:
+
+Executed
+
+Last execution:
+Conclusion:
+	FAIL
+
+Setup [normal]
+Test [exception]
+	code: 24
+	name: Developer_exception
+	tag: Equal Strings Must BE
    expected: Hello
    but  got: Hallo
+	feature: eraise@0
+	class: EXCEPTIONS
 
-		class:   EXCEPTIONS
-		feature: eraise
-	Teardown (normal)
 
-MY_TEST_01.test_string_equal_2
-	Setup (normal)
-	Test (normal)
-	Teardown (normal)
+Teardown [normal]
 
-MY_TEST_02.test_linux
-	Setup (normal)
-	Test (exceptional)
-		reason:  Postcondition violated.
-		tag:     is_buggy
 
-		class:   MY_TEST_02
-		feature: test_linux
-	Teardown (normal)
 
-MY_TEST_02.test_linux2
-	Setup (normal)
-	Test (exceptional)
-		reason:  Postcondition violated.
-		tag:     not_buggy
 
-		class:   MY_TEST_02
-		feature: test_linux2
-	Teardown (normal)
+ === MY_TEST_01.test_string_equal_2
 
-MY_TEST_02.test_windows2
-	Setup (normal)
-	Test (exceptional)
-		reason:  Precondition violated.
-		tag:     really_weird
+Status after last execution:
 
-		class:   MY_TEST_02
-		feature: test_windows2
-	Teardown (normal)
+Executed
 
-MY_TEST_02.test_macos
-	Setup (normal)
-	Test (normal)
-	Teardown (normal)
+Last execution:
+Conclusion:
+	PASS
 
-CDD_TEST_ROOT_CLASS_01.test_bar
-	Setup (normal)
-	Test (exceptional)
-		reason:  Postcondition violated.
-		tag:     false_postcondition
+Setup [normal]
+Test [normal]
+Teardown [normal]
 
-		class:   ROOT_CLASS
-		feature: bar
-	Teardown (normal)
 
-CDD_TEST_ROOT_CLASS_02.test_make
-	Setup (normal)
-	Test (exceptional)
-		reason:  Postcondition violated.
-		tag:     false_postcondition
 
-		class:   ROOT_CLASS
-		feature: bar
-	Teardown (normal)
+
+ === MY_TEST_02.test_linux
+
+Status after last execution:
+
+Executed
+
+Last execution:
+Conclusion:
+	FAIL
+
+Setup [normal]
+Test [exception]
+	code: 4
+	name: Postcondition
+	tag: is_buggy
+	feature: test_linux@3
+	class: MY_TEST_02
+
+
+Teardown [normal]
+
+
+
+
+ === MY_TEST_02.test_linux2
+
+Status after last execution:
+
+Executed
+
+Last execution:
+Conclusion:
+	FAIL
+
+Setup [normal]
+Test [exception]
+	code: 4
+	name: Postcondition
+	tag: not_buggy
+	feature: test_linux2@3
+	class: MY_TEST_02
+
+
+Teardown [normal]
+
+
+
+
+ === MY_TEST_02.test_macos
+
+Status after last execution:
+
+Executed
+
+Last execution:
+Conclusion:
+	PASS
+
+Setup [normal]
+Test [normal]
+Teardown [normal]
+
+
+
+
+ === MY_TEST_02.test_windows2
+
+Status after last execution:
+
+Executed
+
+Last execution:
+Conclusion:
+	UNRESOLVED
+
+Setup [normal]
+Test [exception]
+	code: 3
+	name: Precondition
+	tag: really_weird
+	feature: fast_call@2
+	class: PROCEDURE
+
+
+Teardown [normal]
+
+Requires maintenance because of:
+	bad input
+
+
 
