@@ -100,7 +100,27 @@ feature {ANY} -- Output
 				Result.append_string ("%Tname: " + exception.exception_name + "%N")
 				Result.append_string ("%Ttag: " + exception.exception_tag_name)
 				Result.append_string ("%Tfeature: " + exception.exception_recipient_name + "@" + exception.exception_break_point_slot.out + "%N")
-				Result.append_string ("%Tclass: " + exception.exception_class_name)
+				Result.append_string ("%Tclass: " + exception.exception_class_name + "%N")
+				Result.append_string ("%Ttrace:%N%N " + exception.exception_trace)
+				Result.append_string ("%N")
+			elseif is_normal then
+				Result := "[normal]"
+			else
+				Result := "[bad]"
+			end
+		end
+
+	out_short: STRING is
+			-- String representation of `Current'.
+		do
+			if is_exceptional then
+				Result := "[exception]%N"
+				Result.append_string ("%Tcode: " + exception.exception_code.out + "%N")
+				Result.append_string ("%Tname: " + exception.exception_name + "%N")
+				Result.append_string ("%Ttag: " + exception.exception_tag_name)
+				Result.append_string ("%Tfeature: " + exception.exception_recipient_name + "@" + exception.exception_break_point_slot.out + "%N")
+				Result.append_string ("%Tclass: " + exception.exception_class_name + "%N")
+				Result.append_string ("%N")
 			elseif is_normal then
 				Result := "[normal]"
 			else

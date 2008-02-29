@@ -52,6 +52,23 @@ feature -- Logging (System)
 			log_element ("system", l_attributes, Void)
 		end
 
+	report_exception (an_original_outcome: CDD_ORIGINAL_OUTCOME) is
+			-- Log a thrown exception represented by `an_original_outcome'.
+		local
+			l_attributes: STRING_8
+		do
+				-- Logging is robust.. (this should be a precondition... not an if condition)
+			if an_original_outcome.is_failing then
+				l_attributes := ""
+				append_xml_attribute (l_attributes, "code", an_original_outcome.exception_code.out)
+				append_xml_attribute (l_attributes, "name", an_original_outcome.exception_name)
+				append_xml_attribute (l_attributes, "tag", an_original_outcome.exception_tag_name)
+				append_xml_attribute (l_attributes, "recipient", an_original_outcome.exception_recipient_name)
+				append_xml_attribute (l_attributes, "class", an_original_outcome.exception_class_name)
+				log_element ("exception", l_attributes, an_original_outcome.exception_trace)
+			end
+		end
+
 feature -- Logging (Test Suite)
 
 	report_test_suite_status (a_test_suite: CDD_TEST_SUITE; a_message: STRING) is
@@ -81,7 +98,15 @@ feature -- Logging (Test Suite)
 					l_routine_list.start
 					l_routine  := l_routine_list.item_for_iteration
 					l_content.append ("%T%T<test_routine " + test_routine_attribute_string (l_routine) + ">%N")
-					l_routine_status := replace_xml_entities (l_routine.status_string_verbose)
+					l_routine_status := ""
+					if l_routine.has_outcome then
+						l_routine_status := "****last_execution_trace:%N"
+						l_routine_status.append (replace_xml_entities (l_routine.outcomes.last.out_trace))
+					end
+					if l_routine.has_original_outcome then
+						l_routine_status := "****original_trace:%N"
+						l_routine_status.append (replace_xml_entities (l_routine.original_outcome.exception_trace))
+					end
 					l_routine_status.prune_all_leading ('%N')
 					l_routine_status.prune_all_trailing ('%N')
 					l_content.append ("%N" + l_routine_status + "%N")
@@ -93,7 +118,15 @@ feature -- Logging (Test Suite)
 					loop
 						l_routine  := l_routine_list.item_for_iteration
 						l_content.append ("%N%T%T<test_routine " + test_routine_attribute_string (l_routine) + ">%N")
-						l_routine_status := replace_xml_entities (l_routine.status_string_verbose)
+						l_routine_status := ""
+						if l_routine.has_outcome then
+							l_routine_status := "****last_execution_trace:%N"
+							l_routine_status.append (replace_xml_entities (l_routine.outcomes.last.out_trace))
+						end
+						if l_routine.has_original_outcome then
+							l_routine_status := "****original_trace:%N"
+							l_routine_status.append (replace_xml_entities (l_routine.original_outcome.exception_trace))
+						end
 						l_routine_status.prune_all_leading ('%N')
 						l_routine_status.prune_all_trailing ('%N')
 						l_content.append ("%N" + l_routine_status + "%N")
@@ -121,7 +154,15 @@ feature -- Logging (Test Suite)
 						l_routine_list.start
 						l_routine  := l_routine_list.item_for_iteration
 						l_content.append ("%T%T<test_routine " + test_routine_attribute_string (l_routine) + ">%N")
-						l_routine_status := replace_xml_entities (l_routine.status_string_verbose)
+						l_routine_status := ""
+						if l_routine.has_outcome then
+							l_routine_status := "****last_execution_trace:%N"
+							l_routine_status.append (replace_xml_entities (l_routine.outcomes.last.out_trace))
+						end
+						if l_routine.has_original_outcome then
+							l_routine_status := "****original_trace:%N"
+							l_routine_status.append (replace_xml_entities (l_routine.original_outcome.exception_trace))
+						end
 						l_routine_status.prune_all_leading ('%N')
 						l_routine_status.prune_all_trailing ('%N')
 						l_content.append ("%N" + l_routine_status + "%N")
@@ -133,7 +174,15 @@ feature -- Logging (Test Suite)
 						loop
 							l_routine  := l_routine_list.item_for_iteration
 							l_content.append ("%N%T%T<test_routine " + test_routine_attribute_string (l_routine) + ">%N")
-							l_routine_status := replace_xml_entities (l_routine.status_string_verbose)
+							l_routine_status := ""
+							if l_routine.has_outcome then
+								l_routine_status := "****last_execution_trace:%N"
+								l_routine_status.append (replace_xml_entities (l_routine.outcomes.last.out_trace))
+							end
+							if l_routine.has_original_outcome then
+								l_routine_status := "****original_trace:%N"
+								l_routine_status.append (replace_xml_entities (l_routine.original_outcome.exception_trace))
+							end
 							l_routine_status.prune_all_leading ('%N')
 							l_routine_status.prune_all_trailing ('%N')
 							l_content.append ("%N" + l_routine_status + "%N")
@@ -377,7 +426,7 @@ feature -- Logging (Extraction - Printing)
 			current_test_case_printing_start_not_void: current_test_case_printing_start /= Void
 		end
 
-	report_printing (a_start_time: DATE_TIME; an_end_time: DATE_TIME; a_test_class: CDD_TEST_CLASS) is
+	report_printing (a_start_time: DATE_TIME; an_end_time: DATE_TIME; a_test_class: CDD_TEST_CLASS; a_is_replacing_flag: BOOLEAN) is
 			-- Add test class printing element to content of `current_test_case_printing_element'.
 		local
 			l_duration_sec: REAL_64
@@ -394,7 +443,8 @@ feature -- Logging (Extraction - Printing)
 			l_content := ""
 			if a_test_class.test_routines /= Void and then not a_test_class.test_routines.is_empty then
 				l_routine := a_test_class.test_routines.first
-				l_content.append ("%T%T<test_routine " + test_routine_attribute_string (l_routine) + ">%N")
+				l_content.append ("%T%T<test_routine " + test_routine_attribute_string (l_routine))
+				l_content.append (" is_replacing=%"" + a_is_replacing_flag.out + "%">%N")
 				l_routine_status := replace_xml_entities (l_routine.status_string_verbose)
 				l_routine_status.prune_all_leading ('%N')
 				l_routine_status.prune_all_trailing ('%N')
@@ -592,28 +642,52 @@ feature {NONE} -- Implementation
 			-- String containing xml-like attributes for `a_routine'
 		local
 			l_outcome: CDD_TEST_EXECUTION_RESPONSE
+			l_orig: CDD_ORIGINAL_OUTCOME
+			l_values: DS_LIST [STRING]
 		do
 			Result := ""
 			append_xml_attribute (Result, "name", empty_or_out (a_routine.test_class.cdd_id) + "--" + a_routine.test_class.test_class_name + "--" + a_routine.name)
 			append_xml_attribute (Result, "type", test_class_type_string (a_routine.test_class))
-			append_xml_attribute (Result, "has_outcome", a_routine.has_outcome.out)
-			append_xml_attribute (Result, "has_original_outcome", a_routine.has_original_outcome.out)
-			if a_routine.has_outcome and a_routine.has_original_outcome then
-				append_xml_attribute (Result, "is_reproducing", a_routine.is_reproducing.out)
-			else
-				append_xml_attribute (Result, "is_reproducing", "unknown")
+
+			l_values := a_routine.tags_with_prefix ("failure.")
+			if not l_values.is_empty then
+				append_xml_attribute (Result, "failure_id", l_values.first)
 			end
+
+			append_xml_attribute (Result, "outcome", a_routine.has_outcome.out)
+			append_xml_attribute (Result, "original_outcome", a_routine.has_original_outcome.out)
+			append_xml_attribute (Result, "reproducing_outcome", a_routine.has_reproducing_outcome.out)
 
 			if a_routine.has_outcome then
 				l_outcome := a_routine.outcomes.last
-				append_xml_attribute (Result, "is_pass", l_outcome.is_pass.out)
-				append_xml_attribute (Result, "is_fail", l_outcome.is_fail.out)
-				append_xml_attribute (Result, "is_unresolved", l_outcome.is_unresolved.out)
-				append_xml_attribute (Result, "requires_maintenance", l_outcome.requires_maintenance.out)
-				append_xml_attribute (Result, "has_compile_error", l_outcome.has_compile_error.out )
-				append_xml_attribute (Result, "has_bad_context", l_outcome.has_bad_context.out)
-				append_xml_attribute (Result, "has_bad_communication", l_outcome.has_bad_communication.out )
-				append_xml_attribute (Result, "has_timeout", l_outcome.has_timeout.out)
+				append_xml_attribute (Result, "maintenance", l_outcome.requires_maintenance.out)
+				append_xml_attribute (Result, "bad_communication", l_outcome.has_bad_communication.out )
+				append_xml_attribute (Result, "timeout", l_outcome.has_timeout.out)
+				append_xml_attribute (Result, "pass", l_outcome.is_pass.out)
+				append_xml_attribute (Result, "fail", l_outcome.is_fail.out)
+				append_xml_attribute (Result, "unresolved", l_outcome.is_unresolved.out)
+				if l_outcome.is_unresolved then
+					append_xml_attribute (Result, "compile_error", l_outcome.has_compile_error.out )
+					append_xml_attribute (Result, "bad_context", l_outcome.has_bad_context.out)
+				elseif l_outcome.is_fail then
+					append_xml_attribute (Result, "le_code", l_outcome.test_response.exception.exception_code.out)
+					append_xml_attribute (Result, "le_name", l_outcome.test_response.exception.exception_name)
+					append_xml_attribute (Result, "le_tag", l_outcome.test_response.exception.exception_tag_name)
+					append_xml_attribute (Result, "le_recipient", l_outcome.test_response.exception.exception_recipient_name)
+					append_xml_attribute (Result, "le_class", l_outcome.test_response.exception.exception_class_name)
+				end
+			end
+
+			if a_routine.has_original_outcome then
+				l_orig := a_routine.original_outcome
+				append_xml_attribute (Result, "orig_is_fail", l_orig.is_failing.out)
+				if l_orig.is_failing then
+					append_xml_attribute (Result, "oe_code", l_orig.exception_code.out)
+					append_xml_attribute (Result, "oe_name", l_orig.exception_name)
+					append_xml_attribute (Result, "oe_tag", l_orig.exception_tag_name)
+					append_xml_attribute (Result, "oe_recipient", l_orig.exception_recipient_name)
+					append_xml_attribute (Result, "oe_class", l_orig.exception_class_name)
+				end
 			end
 		end
 
@@ -654,7 +728,49 @@ feature {NONE} -- Implementation
 	append_xml_attribute (an_attribute_string, a_new_attribute_name, a_new_attribute_value: STRING_8) is
 			-- Appends to `an_attribute_string' a new XML attribute with name `a_new_attribute_name' and value `a_new_attribute_value'.
 		do
-			an_attribute_string.append (" " + a_new_attribute_name + "=%"" + a_new_attribute_value + "%"")
+			an_attribute_string.append (" " + a_new_attribute_name + "=%"" + replace_xml_entities_for_attribute (a_new_attribute_value) + "%"")
+		end
+
+	replace_xml_entities_for_attribute (a_string: STRING_8): STRING_8
+			-- New string equal to `a_string' except for replacement of characters
+			-- <, >, &, ', " by corresponding XML entity
+		require
+			a_string_not_void: a_string /= Void
+		local
+			i: INTEGER
+			c: CHARACTER
+		do
+			Result := ""
+			from
+				i := 1
+			until
+				i > a_string.count
+			loop
+				c := a_string.item (i)
+				inspect c
+				when '<' then
+					Result.append_string ("&lt;")
+				when '>' then
+					Result.append_string ("&gt;")
+				when '&' then
+					Result.append_string ("&amp;")
+				when '%'' then
+					Result.append_string ("&apos;")
+				when '%"' then
+					Result.append_string ("&quot;")
+				when '%R' then
+					Result.append_string (" ")
+				when '%N' then
+					Result.append_string (" ")
+				when '%T' then
+					Result.append_string (" ")
+				else
+					Result.append_character (c)
+				end
+				i := i + 1
+			end
+		ensure
+			Result_not_void: Result /= Void
 		end
 
 	replace_xml_entities (a_string: STRING_8): STRING_8

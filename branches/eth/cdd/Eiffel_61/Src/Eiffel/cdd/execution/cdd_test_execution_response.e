@@ -197,6 +197,52 @@ feature -- Output
 			end
 		end
 
+	out_short: STRING is
+			-- Short string representation of `Current'.
+		do
+			create Result.make_empty
+			Result.append ("Conclusion:%N%T" + text.as_upper)
+			if setup_response /= Void then
+				Result.append ("%N%NSetup " + setup_response.out_short)
+				if test_response /= Void then
+					Result.append ("%NTest " + test_response.out_short)
+					if teardown_response /= Void then
+						Result.append ("%NTeardown " + teardown_response.out_short)
+					end
+				end
+			end
+			if requires_maintenance then
+				Result.append ("%N%NRequires maintenance because of:%N%T")
+				if has_timeout then
+					Result.append ("time out")
+				elseif has_bad_communication then
+					Result.append ("bad communication")
+				elseif has_bad_context then
+					Result.append ("bad input")
+				else
+					Result.append ("compile error")
+				end
+			end
+		end
+
+	out_trace: STRING is
+			-- Returns all stack traces of outcome if available.
+		do
+			Result := ""
+			if setup_response.is_exceptional then
+				Result.append ("[setup]%N")
+				Result.append (setup_response.exception.exception_trace)
+			end
+			if test_response.is_exceptional then
+				Result.append ("[test]%N")
+				Result.append (test_response.exception.exception_trace)
+			end
+			if teardown_response.is_exceptional then
+				Result.append ("[teardown]%N")
+				Result.append (teardown_response.exception.exception_trace)
+			end
+		end
+
 feature {NONE} -- Assertion helpers
 
 	one_of (a: BOOLEAN; b: BOOLEAN; c: BOOLEAN): BOOLEAN
