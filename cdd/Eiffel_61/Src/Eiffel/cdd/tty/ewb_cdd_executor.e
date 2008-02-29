@@ -95,19 +95,21 @@ feature {NONE} -- Implementation
 		local
 			l_last: CDD_TEST_EXECUTION_RESPONSE
 		do
-			l_last := a_test_routine.outcomes.last
-			io.error.put_string (a_test_routine.test_class.test_class_name + "." + a_test_routine.name + "%N")
-			io.error.put_string ("%TSetup ")
-			print_response (l_last.setup_response)
-			if l_last.setup_response.is_normal then
-				io.error.put_string ("%TTest ")
-				print_response (l_last.test_response)
-				if not l_last.test_response.is_bad then
-					io.error.put_string ("%TTeardown ")
-					print_response (l_last.teardown_response)
-				end
-			end
-			io.error.put_string ("%N")
+--			l_last := a_test_routine.outcomes.last
+			io.error.put_string ("%N === " + a_test_routine.test_class.test_class_name + "." + a_test_routine.name + "%N")
+			io.error.put_string ("%NStatus after last execution:%N%N")
+			io.error.put_string (a_test_routine.status_string)
+--			io.error.put_string ("%TSetup ")
+--			print_response (l_last.setup_response)
+--			if l_last.setup_response.is_normal then
+--				io.error.put_string ("%TTest ")
+--				print_response (l_last.test_response)
+--				if not l_last.test_response.is_bad then
+--					io.error.put_string ("%TTeardown ")
+--					print_response (l_last.teardown_response)
+--				end
+--			end
+			io.error.put_string ("%N%N")
 		end
 
 	print_response (a_response: CDD_ROUTINE_INVOCATION_RESPONSE) is

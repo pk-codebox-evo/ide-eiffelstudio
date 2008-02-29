@@ -28,21 +28,46 @@ feature {NONE} -- Initialization
 			a_covered_feature_not_void: a_covered_feature /= Void
 			a_status_not_void: a_status /= Void
 			a_status_is_exception: a_status.exception_occurred
+		local
+			l_cs: EIFFEL_CALL_STACK
+			l_cse: CALL_STACK_ELEMENT
+			l_2nd_element_available: BOOLEAN
 		do
 			covered_feature := a_covered_feature
 
 			exception_code := a_status.exception_code
-			exception_recipient_name := a_status.current_call_stack_element.routine_name
-			exception_break_point_slot := a_status.break_index
-			exception_class_name := a_status.current_call_stack_element.class_name
-			exception_trace := a_status.current_call_stack.to_string
-
 				-- The exception tag can be void (e.g. exception for untagged pre-/postcondition violations)
 			if a_status.exception_tag = Void then
 				exception_tag_name := ""
 			else
 				exception_tag_name := a_status.exception_tag
 			end
+
+				-- NOTE: Through the runtime patch for invariant violation exception, the new semantics for
+				-- for precondition violation apply:
+				-- The recipient for a precondition violation is the caller of the feature whose precondition has been violated,
+				-- and not the feature whose precondition has been violated itself.
+			if
+				a_status.exception_code = {EXCEP_CONST}.precondition and then
+				a_status.current_call_stack.count > 1
+					-- If for mystierious reasons not two call stack elements are available, we resort to top element anyway
+			then
+				l_cs := a_status.current_call_stack
+				l_cs.start
+				l_cs.forth
+				l_cse := l_cs.item
+				exception_recipient_name := l_cse.routine_name
+				exception_break_point_slot := l_cse.break_index
+				exception_class_name := l_cse.class_name
+			else
+				exception_recipient_name := a_status.current_call_stack_element.routine_name
+				exception_break_point_slot := a_status.break_index
+				exception_class_name := a_status.current_call_stack_element.class_name
+			end
+
+				-- NOTE: The above mentioned semantics for precondition violations currently is ignored for stack trace
+				-- (we do not actively remove the first line thereof)
+			exception_trace := a_status.current_call_stack.to_string
 
 			is_failing := True
 		ensure
@@ -156,7 +181,23 @@ feature -- Access
 				Result.append_string ("%Ttag: " + exception_tag_name + "%N")
 				Result.append_string ("%Tfeature: " + exception_recipient_name + "@" + exception_break_point_slot.out + "%N")
 				Result.append_string ("%Tclass: " + exception_class_name + "%N")
-				Result.append_string ("Original failure stack trace:%N" + exception_trace + "%N")
+				Result.append_string ("Original failure stack trace:%N%N" + exception_trace + "%N")
+			end
+		end
+
+	out_short: STRING_8 is
+			-- String representation of `Current'
+		do
+			Result := "covers: {" + covered_feature.associated_class.name_in_upper + "}." + covered_feature.name + "%N"
+			if is_passing then
+				Result.append_string ("[normal]%N")
+			else
+				Result.append_string ("[exception]%N")
+				Result.append_string ("%Tcode: " + exception_code.out + "%N")
+				Result.append_string ("%Tname: " + exception_name + "%N")
+				Result.append_string ("%Ttag: " + exception_tag_name + "%N")
+				Result.append_string ("%Tfeature: " + exception_recipient_name + "@" + exception_break_point_slot.out + "%N")
+				Result.append_string ("%Tclass: " + exception_class_name + "%N")
 			end
 		end
 

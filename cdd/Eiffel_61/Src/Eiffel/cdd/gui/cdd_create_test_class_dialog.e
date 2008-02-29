@@ -319,6 +319,9 @@ feature {NONE} -- Parsing
 					has_parse_error := True
 					last_parsed_class := Void
 				end
+				if l_file.is_closable then
+					l_file.close
+				end
 			end
 		ensure
 			parsed_or_error: (last_parsed_class /= Void) xor has_parse_error

@@ -101,12 +101,18 @@ feature -- Access
 			project_initialized: cdd_manager.is_project_initialized
 		local
 			l_tester_id_string: STRING
-		do
+			l_time: DATE_TIME
+			l_time_string: STRING
+		once
+			create l_time.make_now
+			l_time_string := l_time.formatted_out ("yyyy-[0]mm-[0]dd [0]hh-[0]mi-[0]ss")
+			l_time_string.put ('_', 11)
+		--	"yyyy-[0]mm-[0]dd hh:[0]mi:[0]ss"
 			l_tester_id_string := execution_environment.get (cdd_tester_id_environment_variable)
 			if l_tester_id_string /= Void and then not l_tester_id_string.is_empty then
-				create Result.make (testing_directory.build_path ("", l_tester_id_string + "_" + log_file_name))
+				create Result.make (testing_directory.build_path ("", l_time_string + "_" + l_tester_id_string + "_" + log_file_name))
 			else
-				create Result.make (testing_directory.build_path ("", log_file_name))
+				create Result.make (testing_directory.build_path ("", l_time_string + "_" + log_file_name))
 			end
 		ensure
 			result_not_void: Result /= Void
@@ -123,6 +129,9 @@ feature -- Access
 
 	last_added_class: CLASS_I
 			-- The last test class added to system.
+
+	last_added_cdd_test_class: CDD_TEST_CLASS
+			-- The last CDD_TEST_CLASS added to system.
 
 	class_name_from_file_path (a_path: STRING): STRING is
 			-- The class name of the eiffel class stored in a file with `a_path' assuming standard conventions are followed
@@ -242,33 +251,28 @@ feature -- Basic operations
 		do
 			ensure_system_contains_testing_cluster
 
-
-				-- NOTE: Check if this part, which was moved into the "if" below, needs the "is_gui" condition
---			if is_gui then
---				l_cluster_name := target.name + "_tests"
---				l_tests_cluster := cdd_manager.project.system.system.eiffel_universe.cluster_of_name (l_cluster_name)
---				cluster_manager.add_class_to_cluster (last_created_class_name.as_lower + ".e", l_tests_cluster, last_relative_class_path)
---				last_added_class := cluster_manager.last_added_class
---			end
-
 			parse_last_created_class_file
 			if not has_parse_error then
 				create l_outcome_list.make (1)
 				l_outcome_list.put (an_outcome, 1)
 				create l_new_test_class.make_with_ast_and_outcomes (last_parsed_class, l_outcome_list)
 				cdd_manager.test_suite.add_test_class (l_new_test_class)
+				last_added_cdd_test_class := l_new_test_class
 
-				l_cluster_name := target.name + "_tests"
-				l_tests_cluster := cdd_manager.project.system.system.eiffel_universe.cluster_of_name (l_cluster_name)
-				cluster_manager.add_class_to_cluster (last_created_class_name.as_lower + ".e", l_tests_cluster, last_relative_class_path)
-				last_added_class := cluster_manager.last_added_class
+				if is_gui then
+					l_cluster_name := target.name + "_tests"
+					l_tests_cluster := cdd_manager.project.system.system.eiffel_universe.cluster_of_name (l_cluster_name)
+					cluster_manager.add_class_to_cluster (last_created_class_name.as_lower + ".e", l_tests_cluster, last_relative_class_path)
+					last_added_class := cluster_manager.last_added_class
+				end
 
 				is_last_test_class_adding_successful := True
 			else
 				is_last_test_class_adding_successful := False
 			end
 		ensure
-			success_implies_last_added_class_available: is_last_test_class_adding_successful implies (last_added_class /= Void)
+			success_implies_last_added_class_available: (is_last_test_class_adding_successful and is_gui) implies (last_added_class /= Void)
+			success_implies_last_added_cdd_test_class_available: is_last_test_class_adding_successful implies (last_added_cdd_test_class /= Void)
 		end
 
 feature {NONE} -- Parsing
@@ -310,6 +314,9 @@ feature {NONE} -- Parsing
 				if eiffel_parser.error_count > 0 then
 					has_parse_error := True
 					last_parsed_class := Void
+				end
+				if l_file.is_closable then
+					l_file.close
 				end
 			end
 		ensure

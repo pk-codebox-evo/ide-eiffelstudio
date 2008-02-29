@@ -40,6 +40,11 @@ inherit
 			{NONE} all
 		end
 
+	SHARED_FLAGS
+		export
+			{NONE} all
+		end
+
 create
 	make
 
@@ -351,11 +356,13 @@ feature {DEBUGGER_MANAGER, STOPPED_HDLR} -- Basic Operations (Debugging/Capturin
 			l_status: APPLICATION_STATUS
 			l_list: DS_LIST [CDD_ROUTINE_INVOCATION]
 			l_test_routines_to_replace: DS_LIST [CDD_TEST_ROUTINE]
+			l_update_list: DS_ARRAYED_LIST [CDD_TEST_ROUTINE_UPDATE]
 
 			l_routine_count: INTEGER_32
 
 			l_original_outcome: CDD_ORIGINAL_OUTCOME
 			l_file: KL_TEXT_OUTPUT_FILE
+			l_print_start_time: DATE_TIME
 		do
 				-- Before we extract any thing, make sure
 				--		* extraction is actually enabled
@@ -363,106 +370,116 @@ feature {DEBUGGER_MANAGER, STOPPED_HDLR} -- Basic Operations (Debugging/Capturin
 				--		  test routine right now
 				--		* an exception has occured which
 				--		  is not a developer exception
-			if is_extracting_enabled and
-				not debug_executor.is_running and
-				a_dbg_manager.application_status.exception_occurred and
-				a_dbg_manager.application_status.exception_code /= {EXCEP_CONST}.developer_exception
-			then
+				--
+				-- logging takes place for all exceptions.
+			if a_dbg_manager.application_status.exception_occurred then
 				l_status := a_dbg_manager.application_status
+				create l_original_outcome.make_failing (l_status.e_feature, l_status)
+				log.report_exception (l_original_outcome)
+				if is_extracting_enabled and
+					not debug_executor.is_running and
+					a_dbg_manager.application_status.exception_code /= {EXCEP_CONST}.developer_exception
+				then
+					log.report_extraction_start
+					capturer.set_use_cache (True)
+					capturer.extract_routine_invocations_for_failure (l_status)
+					log.report_extraction_end
+					l_list := capturer.last_extracted_routine_invocations
 
-				log.report_extraction_start
-				capturer.set_use_cache (True)
-				capturer.extract_routine_invocations_for_failure (l_status)
-				log.report_extraction_end
-				l_list := capturer.last_extracted_routine_invocations
-
-					-- Write the extracted routine invocations to disk
-				log.report_printing_start
-				from
-					l_routine_count := 0
-					l_list.start
-				until
-					l_list.after
-				loop
-					create l_original_outcome.make_failing (l_list.item_for_iteration.represented_feature, l_status)
-
-						-- Look for non-reproducing test routines with a matching original outcome
-						-- If such a test routine exists, the corresponding test class will get replaced
-						-- NOTE: it is possible that more than one matching test routine is found, currently only first one is considered.
+						-- Write the extracted routine invocations to disk
+					log.report_printing_start
 					from
-						create {DS_ARRAYED_LIST [CDD_TEST_ROUTINE]} l_test_routines_to_replace.make (10)
-						test_routines_for_reextraction.start
+						l_routine_count := 0
+						l_list.start
 					until
-						test_routines_for_reextraction.after
+						l_list.after
 					loop
-						if
-							test_routines_for_reextraction.item_for_iteration.original_outcome.is_same (l_original_outcome)
-						then
-							l_test_routines_to_replace.force_last (test_routines_for_reextraction.item_for_iteration)
+						create l_print_start_time.make_now
+						create l_original_outcome.make_failing (l_list.item_for_iteration.represented_feature, l_status)
+
+							-- Look for non-reproducing test routines with a matching original outcome
+							-- If such a test routine exists, the corresponding test class will get replaced
+							-- NOTE: it is possible that more than one matching test routine is found, currently only first one is considered.
+						from
+							create {DS_ARRAYED_LIST [CDD_TEST_ROUTINE]} l_test_routines_to_replace.make (10)
+							test_routines_for_reextraction.start
+						until
+							test_routines_for_reextraction.after
+						loop
+							if
+								test_routines_for_reextraction.item_for_iteration.original_outcome.is_same (l_original_outcome)
+							then
+								l_test_routines_to_replace.force_last (test_routines_for_reextraction.item_for_iteration)
+							end
+
+							test_routines_for_reextraction.forth
 						end
 
-						test_routines_for_reextraction.forth
-					end
-
-					if not l_test_routines_to_replace.is_empty then
-							-- Rewrite test class file of first test routine found
-							-- NOTE/TODO delete test classes associated with other found test routines?
-						create l_file.make (l_test_routines_to_replace.first.class_file_name)
-						l_file.open_write
-						if l_file.is_open_write then
-							test_class_printer.reset
-							test_class_printer.set_output_stream (l_file)
-							test_class_printer.print_routine_invocation (file_manager.class_name_from_file_path (l_test_routines_to_replace.first.class_file_name), l_list.item_for_iteration)
-							if not test_class_printer.has_last_print_failed then
-									-- An existing test class has been replaced. Delete the outcomes of the corresponding
-									-- test routine in order to reset it to the "waiting for initial execution" status
-								l_file.close
-								if l_test_routines_to_replace.first.test_class.compiled_class /= Void then
-									last_replaced_class := l_test_routines_to_replace.first.test_class.compiled_class.original_class
-									last_replaced_class_name := Void
+						if not l_test_routines_to_replace.is_empty then
+								-- Rewrite test class file of first test routine found
+								-- NOTE/TODO delete test classes associated with other found test routines?
+							create l_file.make (l_test_routines_to_replace.first.class_file_name)
+							l_file.open_write
+							if l_file.is_open_write then
+								test_class_printer.reset
+								test_class_printer.set_output_stream (l_file)
+								test_class_printer.print_routine_invocation (file_manager.class_name_from_file_path (l_test_routines_to_replace.first.class_file_name), l_list.item_for_iteration)
+								if not test_class_printer.has_last_print_failed then
+										-- An existing test class has been replaced. Delete the outcomes of the corresponding
+										-- test routine in order to reset it to the "waiting for initial execution" status
+									l_file.close
+									if l_test_routines_to_replace.first.test_class.compiled_class /= Void then
+										last_replaced_class := l_test_routines_to_replace.first.test_class.compiled_class.original_class
+										last_replaced_class_name := Void
+									else
+										last_replaced_class := Void
+										last_replaced_class_name := l_test_routines_to_replace.first.test_class.test_class_name
+									end
+									l_test_routines_to_replace.first.outcomes.wipe_out
+									l_original_outcome.set_original_class_file_name (l_test_routines_to_replace.first.class_file_name)
+									l_test_routines_to_replace.first.set_original_outcome (l_original_outcome)
+									create l_update_list.make (1)
+									l_update_list.put_first (create {CDD_TEST_ROUTINE_UPDATE}.make (l_test_routines_to_replace.first, {CDD_TEST_ROUTINE_UPDATE}.changed_code))
+									test_suite.test_routine_update_actions.call ([l_update_list])
+									status_update_actions.call ([create {CDD_STATUS_UPDATE}.make_with_code ({CDD_STATUS_UPDATE}.printer_existing_step_code)])
+									l_routine_count := l_routine_count + 1
+									log.report_printing (l_print_start_time, create {DATE_TIME}.make_now, l_test_routines_to_replace.first.test_class, True)
 								else
-									last_replaced_class := Void
-									last_replaced_class_name := l_test_routines_to_replace.first.test_class.test_class_name
+									-- TODO Error handling
 								end
-								l_test_routines_to_replace.first.outcomes.wipe_out
-								l_original_outcome.set_original_class_file_name (l_test_routines_to_replace.first.class_file_name)
-								l_test_routines_to_replace.first.set_original_outcome (l_original_outcome)
-								status_update_actions.call ([create {CDD_STATUS_UPDATE}.make_with_code ({CDD_STATUS_UPDATE}.printer_existing_step_code)])
-								l_routine_count := l_routine_count + 1
 							else
 								-- TODO Error handling
 							end
 						else
-							-- TODO Error handling
-						end
-					else
-							-- Get a new class file.
-						file_manager.create_new_test_class_file (l_original_outcome.covered_feature.associated_class)
-						if file_manager.is_last_test_class_file_creation_successful then
-							test_class_printer.reset
-							test_class_printer.set_output_stream (file_manager.last_created_class_file)
-							test_class_printer.print_routine_invocation (file_manager.last_created_class_name, l_list.item_for_iteration)
-							if not test_class_printer.has_last_print_failed then
-								file_manager.last_created_class_file.close
-								l_original_outcome.set_original_class_file_name (file_manager.last_created_class_file.name)
-								file_manager.add_last_created_test_class_to_system (l_original_outcome)
-								l_routine_count := l_routine_count + 1
-								if file_manager.is_last_test_class_adding_successful then
-									status_update_actions.call ([create {CDD_STATUS_UPDATE}.make_with_code ({CDD_STATUS_UPDATE}.printer_new_step_code)])
+								-- Get a new class file.
+							file_manager.create_new_test_class_file (l_original_outcome.covered_feature.associated_class)
+							if file_manager.is_last_test_class_file_creation_successful then
+								test_class_printer.reset
+								test_class_printer.set_output_stream (file_manager.last_created_class_file)
+								test_class_printer.print_routine_invocation (file_manager.last_created_class_name, l_list.item_for_iteration)
+								if not test_class_printer.has_last_print_failed then
+									file_manager.last_created_class_file.close
+									l_original_outcome.set_original_class_file_name (file_manager.last_created_class_file.name)
+									file_manager.add_last_created_test_class_to_system (l_original_outcome)
+									l_routine_count := l_routine_count + 1
+									if file_manager.is_last_test_class_adding_successful then
+										status_update_actions.call ([create {CDD_STATUS_UPDATE}.make_with_code ({CDD_STATUS_UPDATE}.printer_new_step_code)])
+									end
+									log.report_printing (l_print_start_time, create {DATE_TIME}.make_now, file_manager.last_added_cdd_test_class, False)
+								else
+									-- TODO Error handling
 								end
---				log.report_printing (current_test_class_print_start_time, create {DATE_TIME}.make_now, l_new_test_class)
 							else
 								-- TODO Error handling
 							end
-						else
-							-- TODO Error handling
 						end
-					end
 
-					l_list.forth
-				end
-				if l_routine_count > 0 then
-					schedule_testing_restart
+						l_list.forth
+					end
+					if l_routine_count > 0 then
+						schedule_testing_restart
+					end
+					log.report_printing_end
 				end
 			end
 		end
@@ -561,13 +578,15 @@ feature {ANY} -- Basic Operations (Execution)
 		require
 			not_cdd_target: not target.is_cdd_target
 		do
-			if background_executor.has_next_step and then background_executor.is_compiling then
-				background_executor.schedule_restart_after_compilation
-			elseif background_executor.has_next_step then
-				background_executor.cancel
-				background_executor.start
-			else
-				background_executor.start
+			if is_gui then
+				if background_executor.has_next_step and then background_executor.is_compiling then
+					background_executor.schedule_restart_after_compilation
+				elseif background_executor.has_next_step then
+					background_executor.cancel
+					background_executor.start
+				else
+					background_executor.start
+				end
 			end
 		end
 

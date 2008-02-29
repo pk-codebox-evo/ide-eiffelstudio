@@ -83,50 +83,35 @@ feature -- Status report
 		end
 
 
-	is_reproducing: BOOLEAN is
+	has_reproducing_outcome: BOOLEAN is
 			-- Has testing routine attached to `Current' been able to reproduce the `original_outcome'
-			-- with regards to the first test excution result?
-		require
-			outcome_available: has_outcome
-			original_outcome_available: has_original_outcome
+			-- at least once?
 		do
-			Result := outcomes.first.matches_original_outcome (original_outcome)
-		ensure
-			definition: Result = (has_original_outcome and then outcomes.first.matches_original_outcome (original_outcome))
+			Result := has_original_outcome and then has_outcome
+			if Result then
+				from
+					Result := False
+					outcomes.start
+				until
+					outcomes.after or else Result
+				loop
+					Result := outcomes.item_for_iteration.matches_original_outcome (original_outcome)
+					outcomes.forth
+				end
+			end
 		end
 
 	is_automatic_reextraction_required: BOOLEAN is
 			-- Should the test routine attached to `Current' be automatically reextracted?
 		do
-			 	-- If not `has_outcome' or not `has_original_failure', there is no reason to for reextraction.
-			 Result := has_outcome and then has_original_outcome
+				-- If not `has_outcome' or not `has_original_failure', there is no reason to for reextraction.
+				-- Otherwise reextraction is required if no reproducing outcome exists
+			Result := has_outcome and then has_original_outcome and then not has_reproducing_outcome
 
-			 if Result then
-			 		-- Only non-reproducing test routines are candidates for reextraction
-			 	Result := not is_reproducing
-			 end
-
-			 if Result then
-			 		-- If the test routine was executed several times, reextraction is prevented if any of the executions
-			 		-- * did match the original outcome
-			 		-- * was passing
-			 	from
-			 		outcomes.start
-			 		outcomes.forth
-			 	until
-			 		outcomes.after or else not Result
-			 	loop
-			 		Result := not outcomes.item_for_iteration.matches_original_outcome (original_outcome) and then not outcomes.item_for_iteration.is_pass
-			 		outcomes.forth
-			 	end
-			 end
-
-			 if Result then
-			 		-- TODO: Test routines with passing original outcomes are never reextracted, since semantics are unclear
-			 	Result := not original_outcome.is_passing
-			 end
+				-- TODO: Consider lines below: Test routines with passing original outcomes are never reextracted, since semantics are unclear.
+				-- NOTE: Currently no passing original outcomes are ever produced.
+			Result := Result and then not original_outcome.is_passing
 		end
-
 
 feature -- Access
 
@@ -217,10 +202,10 @@ feature -- Access
 
 			if has_original_outcome then
 				if has_outcome then
-					if is_reproducing then
-						Result.append_string ("Reproduces original failure")
+					if has_reproducing_outcome then
+						Result.append_string ("Reproduced original failure (at least once)")
 					else
-						Result.append_string ("Does NOT reproduce original failure")
+						Result.append_string ("Never reproduced original failure")
 					end
 				else
 					Result.append_string ("Waiting for initial execution")
@@ -237,10 +222,7 @@ feature -- Access
 			if has_outcome then
 				Result.append_string ("Last execution:%N")
 				Result.append_string (outcomes.last.out)
-				if outcomes.last.is_fail then
-					Result.append_string ("%N%NStack trace:%N")
-					Result.append_string (outcomes.last.test_response.exception.exception_trace)
-				elseif outcomes.last.has_bad_communication then
+				if outcomes.last.has_bad_communication then
 					Result.append_string ("%N%NOutput:%N%N")
 					if outcomes.last.setup_response.is_bad then
 						Result.append_string (outcomes.last.setup_response.response_text)
@@ -256,6 +238,52 @@ feature -- Access
 			if has_original_outcome then
 				Result.append_string ("Original Outcome%N")
 				Result.append_string (original_outcome.out)
+			end
+		end
+
+	status_string: STRING is
+			-- Verbose status message about `Current'
+		do
+			Result := ""
+
+			if has_original_outcome then
+				if has_outcome then
+					if has_reproducing_outcome then
+						Result.append_string ("Reproduced original failure (at least once)")
+					else
+						Result.append_string ("Never reproduced original failure")
+					end
+				else
+					Result.append_string ("Waiting for initial execution")
+				end
+			else
+				if has_outcome then
+					Result.append_string ("Executed")
+				else
+					Result.append_string ("Has not been executed yet")
+				end
+			end
+			Result.append_string ("%N%N")
+
+			if has_outcome then
+				Result.append_string ("Last execution:%N")
+				Result.append_string (outcomes.last.out_short)
+				if outcomes.last.has_bad_communication then
+					Result.append_string ("%N%NOutput:%N%N")
+					if outcomes.last.setup_response.is_bad then
+						Result.append_string (outcomes.last.setup_response.response_text)
+					elseif outcomes.last.test_response.is_bad then
+						Result.append_string (outcomes.last.test_response.response_text)
+					elseif outcomes.last.teardown_response.is_bad then
+						Result.append_string (outcomes.last.teardown_response.response_text)
+					end
+				end
+				Result.append_string ("%N%N")
+			end
+
+			if has_original_outcome then
+				Result.append_string ("Original Outcome%N")
+				Result.append_string (original_outcome.out_short)
 			end
 		end
 
