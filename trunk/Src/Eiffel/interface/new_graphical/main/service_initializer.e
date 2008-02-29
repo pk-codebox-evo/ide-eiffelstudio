@@ -18,6 +18,7 @@ feature -- Services
 			-- `a_container': The service container to add services to.
 		do
 			a_container.add_service_with_activator ({EVENT_LIST_S}, agent create_event_list_service, False)
+			a_container.add_service_with_activator ({LOGGER_S}, agent create_logger_service, False)
 			a_container.add_service_with_activator ({SESSION_MANAGER_S}, agent create_session_manager_service, False)
 		end
 
@@ -27,6 +28,14 @@ feature {NONE} -- Factory
 			-- Creates the event list service.
 		do
 			create {EVENT_LIST} Result.make
+		ensure
+			result_is_interface_usable: Result /= Void implies Result.is_interface_usable
+		end
+
+	create_logger_service: LOGGER_S
+			-- Creates the logger service.
+		do
+			create {LOGGER} Result.make
 		ensure
 			result_is_interface_usable: Result /= Void implies Result.is_interface_usable
 		end

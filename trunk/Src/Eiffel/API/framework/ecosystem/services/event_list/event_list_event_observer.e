@@ -27,7 +27,7 @@ feature {EVENT_LIST_S} -- Event handlers
 		do
 		end
 
-	on_event_item_removed (a_service: EVENT_LIST_S; a_event_item: EVENT_LIST_ITEM_I) is
+	on_event_item_removed (a_service: EVENT_LIST_S; a_event_item: EVENT_LIST_ITEM_I)
 			-- Called after a event item has been removed from the service `a_service'
 			--
 			-- `a_service': Event service where the event was removed.
