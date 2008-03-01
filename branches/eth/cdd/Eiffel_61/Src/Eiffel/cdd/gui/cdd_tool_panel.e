@@ -139,6 +139,18 @@ feature {NONE} -- Initialization
 			toggle_extraction_button.set_tooltip ("Enable/Disable automatic extraction of new test cases")
 			l_toolbar.extend (toggle_extraction_button)
 
+			create clean_up_button
+			clean_up_button.select_actions.extend (
+				agent prompts.show_warning_prompt_with_cancel (
+				"This will delete all extracted test cases whose current outcome is UNRESOLVED " +
+				"and which are meeting the current %"Filter%" criteria.%N" +
+				"Note: Threre might be test cases which meet the %"Filter%" criteria, but are not currently displayed " +
+				"because of the currently selected %"View%"!", Void, agent clean_up_test_cases, Void)
+				)
+			clean_up_button.set_tooltip ("Clean up extracted test cases")
+			clean_up_button.set_pixmap (pixmaps.icon_pixmaps.cdd_clean_up_icon)
+			l_toolbar.extend (clean_up_button)
+
 			create l_sep
 			l_toolbar.extend (l_sep)
 
@@ -443,6 +455,9 @@ feature {NONE} -- Access (Buttons)
 	new_test_routine_button: EV_TOOL_BAR_BUTTON
 			-- Button for creating new test routine
 
+	clean_up_button: EV_TOOL_BAR_BUTTON
+			-- Button for cleaning up extracted test cases
+
 feature {NONE} -- Implementation (Grids)
 
 	resize_grids (a_split_area: EV_SPLIT_AREA; a_x, a_y, a_width, a_height: INTEGER) is
@@ -566,6 +581,48 @@ feature {NONE} -- Implementation (Buttons)
 		do
 			create l_dialog.make (cdd_manager)
 			l_dialog.show_modal_to_development_window (develop_window)
+		end
+
+	clean_up_test_cases is
+			-- delete all extracted test cases whose outcome is unresolved of current filter.
+			-- NOTE: test cases with unknown type are ignored.
+		local
+			l_test_routine_cursor: DS_LINEAR_CURSOR [CDD_TEST_ROUTINE]
+			l_routine: CDD_TEST_ROUTINE
+			l_file: KL_TEXT_INPUT_FILE
+			l_updates: DS_ARRAYED_LIST [CDD_TEST_ROUTINE_UPDATE]
+		do
+			l_test_routine_cursor := grid.tree_view.filtered_view.test_routines.new_cursor
+			create l_updates.make (10)
+			from
+				l_test_routine_cursor.start
+			until
+				l_test_routine_cursor.after
+			loop
+				l_routine := l_test_routine_cursor.item
+
+				if
+					l_routine.test_class.compiled_class /= Void and then -- makes sure type is known AND class file name is available!
+					l_routine.test_class.is_extracted and then
+					l_routine.has_outcome and then
+					l_routine.outcomes.last.is_unresolved
+				then
+					create l_file.make (l_routine.class_file_name)
+					if l_file.exists then
+						l_file.delete
+						if not l_file.exists then
+								-- The file has been successfully deleted. Generate corresponding test routine update.
+							l_updates.force_last (create {CDD_TEST_ROUTINE_UPDATE}.make (l_routine, {CDD_TEST_ROUTINE_UPDATE}.remove_code))
+						end
+					end
+				end
+
+				l_test_routine_cursor.forth
+			end
+
+			if not l_updates.is_empty then
+				grid.tree_view.filtered_view.test_suite.test_routine_update_actions.call ([l_updates])
+			end
 		end
 
 	show_message (a_msg: STRING) is
