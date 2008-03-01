@@ -4629,6 +4629,11 @@ feature -- CDD pixmaps
 			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (8, 19))
 		end
 
+	frozen cdd_clean_up_icon: EV_PIXEL_BUFFER is
+		once
+			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (8, 8))
+		end
+
 feature {NONE} -- Query
 
 	frozen pixel_rectangle (a_x: INTEGER; a_y: INTEGER): EV_RECTANGLE is

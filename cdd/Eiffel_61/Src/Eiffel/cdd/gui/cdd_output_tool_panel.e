@@ -10,8 +10,6 @@ class
 inherit
 
 	ES_OUTPUT_TOOL_PANEL
-		rename
-			title_for_pre as title
 		redefine
 			build_interface,
 			title,
