@@ -255,7 +255,7 @@ feature -- Basic operations
 			if not has_parse_error then
 				create l_outcome_list.make (1)
 				l_outcome_list.put (an_outcome, 1)
-				create l_new_test_class.make_with_ast_and_outcomes (last_parsed_class, l_outcome_list)
+				create l_new_test_class.make_extracted (last_parsed_class, last_created_class_file.name, l_outcome_list)
 				cdd_manager.test_suite.add_test_class (l_new_test_class)
 				last_added_cdd_test_class := l_new_test_class
 
@@ -389,8 +389,7 @@ invariant
 
 	cdd_manager_not_void: cdd_manager /= Void
 	successful_creation_implies_class_file_exists: is_last_test_class_file_creation_successful implies
-														(last_created_class_file /= Void and then
-														 last_created_class_file.exists)
+														(last_created_class_file /= Void)
 	successful_creation_implies_class_name_valid: is_last_test_class_file_creation_successful implies
 														(last_created_class_name /= Void and then
 														 not last_created_class_name.is_empty)

@@ -136,11 +136,9 @@ feature -- Logging (Test Suite)
 				end
 				l_content.append ("%N%T</test_class>")
 
-				if l_class.compiled_class /= Void then
-					l_number_of_manual_test_classes := l_number_of_manual_test_classes + l_class.is_manual.to_integer
-					l_number_of_extracted_test_classes := l_number_of_extracted_test_classes + l_class.is_extracted.to_integer
-					l_number_of_synthesized_test_classes := l_number_of_synthesized_test_classes + l_class.is_synthesized.to_integer
-				end
+				l_number_of_manual_test_classes := l_number_of_manual_test_classes + l_class.is_manual.to_integer
+				l_number_of_extracted_test_classes := l_number_of_extracted_test_classes + l_class.is_extracted.to_integer
+				l_number_of_synthesized_test_classes := l_number_of_synthesized_test_classes + l_class.is_synthesized.to_integer
 
 				l_class_list.forth
 				from
@@ -192,11 +190,9 @@ feature -- Logging (Test Suite)
 					end
 					l_content.append ("%N%T</test_class>")
 
-					if l_class.compiled_class /= Void then
-						l_number_of_manual_test_classes := l_number_of_manual_test_classes + l_class.is_manual.to_integer
-						l_number_of_extracted_test_classes := l_number_of_extracted_test_classes + l_class.is_extracted.to_integer
-						l_number_of_synthesized_test_classes := l_number_of_synthesized_test_classes + l_class.is_synthesized.to_integer
-					end
+					l_number_of_manual_test_classes := l_number_of_manual_test_classes + l_class.is_manual.to_integer
+					l_number_of_extracted_test_classes := l_number_of_extracted_test_classes + l_class.is_extracted.to_integer
+					l_number_of_synthesized_test_classes := l_number_of_synthesized_test_classes + l_class.is_synthesized.to_integer
 
 					l_class_list.forth
 				end
@@ -629,11 +625,9 @@ feature {NONE} -- Implementation
 			Result := ""
 			append_xml_attribute (Result, "name", empty_or_out (a_class.cdd_id) + "--" + a_class.test_class_name)
 			append_xml_attribute (Result, "number_of_test_routines", a_class.test_routines.count.out)
-			if a_class.compiled_class /= Void then
-				append_xml_attribute (Result, "is_manual", a_class.is_manual.out)
-				append_xml_attribute (Result, "is_synthesized", a_class.is_synthesized.out)
-				append_xml_attribute (Result, "is_extracted", a_class.is_extracted.out)
-			end
+			append_xml_attribute (Result, "is_manual", a_class.is_manual.out)
+			append_xml_attribute (Result, "is_synthesized", a_class.is_synthesized.out)
+			append_xml_attribute (Result, "is_extracted", a_class.is_extracted.out)
 		ensure
 			result_not_void: Result /= Void
 		end
@@ -710,16 +704,12 @@ feature {NONE} -- Implementation
 		require
 			a_test_class_not_void: a_test_class /= Void
 		do
-			if a_test_class.compiled_class /= Void then
-				if a_test_class.is_extracted then
-					Result := "extracted"
-				elseif a_test_class.is_synthesized then
-					Result := "synthesized"
-				else
-					Result := "manual"
-				end
+			if a_test_class.is_extracted then
+				Result := "extracted"
+			elseif a_test_class.is_synthesized then
+				Result := "synthesized"
 			else
-				Result := "unknown"
+				Result := "manual"
 			end
 		ensure
 			Result_not_void: Result /= Void

@@ -303,7 +303,10 @@ feature {NONE} -- Implementation (Capturing)
 					-- except `a_cse' is a candidate for first extraction.
 				Result := a_candidate_for_first_extraction_flag or else not (l_class.cluster.is_used_in_library and then l_class.cluster.is_readonly)
 				if Result then
-					l_feature := a_cse.routine
+					l_feature := l_class.feature_with_name (a_cse.routine.name)
+					check
+						feature_exists_in_descendant: l_feature /= Void
+					end
 						-- 1. NOT a call stack element for an external feature
 						-- 2. NOT a call stack element for an inline agent
 					Result := (not l_feature.is_external) and then (not l_feature.is_inline_agent)

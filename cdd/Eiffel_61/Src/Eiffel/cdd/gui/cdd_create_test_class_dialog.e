@@ -249,7 +249,7 @@ feature {NONE} -- Implementation
 						parse_file (l_output.name)
 
 						if not has_parse_error then
-							create l_new_test_class.make_with_ast (last_parsed_class)
+							create l_new_test_class.make_manual (last_parsed_class, l_output.name)
 							cdd_manager.test_suite.add_test_class (l_new_test_class)
 							cdd_manager.schedule_testing_restart
 						end

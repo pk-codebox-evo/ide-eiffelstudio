@@ -60,6 +60,7 @@ feature {NONE} -- Initialization
 		local
 			l_item: EV_LIST_ITEM
 			l_hbox: EV_HORIZONTAL_BOX
+			l_tool_bar: SD_TOOL_BAR
 			l_label: EV_LABEL
 		do
 			create l_hbox
@@ -90,14 +91,17 @@ feature {NONE} -- Initialization
 			filter_box.drop_actions.extend (agent drop_feature_on_filter)
 			filter_box.drop_actions.extend (agent drop_tag_on_filter)
 
-			create toggle_filter_button.make_with_text ("Restrict")
+			create toggle_filter_button.make
+			toggle_filter_button.set_text ("Restrict")
 			toggle_filter_button.select_actions.extend (agent toggle_filter)
 			toggle_filter_button.set_tooltip ("Only execute filtered test routines")
 			if not cdd_manager.is_project_initialized then
 				toggle_filter_button.disable_sensitive
 			end
-			l_hbox.extend (toggle_filter_button)
-			l_hbox.disable_item_expand (toggle_filter_button)
+			create l_tool_bar.make
+			l_tool_bar.extend (toggle_filter_button)
+			l_hbox.extend (l_tool_bar)
+			l_hbox.disable_item_expand (l_tool_bar)
 
 			widget.extend (l_hbox)
 			widget.disable_item_expand (l_hbox)
@@ -109,55 +113,60 @@ feature {NONE} -- Initialization
 			widget_not_void: widget /= Void
 		local
 			l_hbox: EV_HORIZONTAL_BOX
-			l_toolbar: EV_TOOL_BAR
-			l_sep: EV_TOOL_BAR_SEPARATOR
+			l_toolbar: SD_TOOL_BAR
+			l_sep: SD_TOOL_BAR_SEPARATOR
 			l_label: EV_LABEL
 		do
 			create l_hbox
 			l_hbox.set_padding (6)
-			create l_toolbar
+			create l_toolbar.make
 
-			create debug_button
+			create debug_button.make
 			debug_button.select_actions.extend (agent debug_test_routine)
 			debug_button.set_tooltip ("Debug selected test routine")
 			debug_button.set_pixmap (pixmaps.icon_pixmaps.cdd_debug_icon)
+			debug_button.set_pixel_buffer (pixmaps.icon_pixmaps.cdd_debug_icon_buffer)
 			l_toolbar.extend (debug_button)
 
-			create l_sep
+			create l_sep.make
 			l_toolbar.extend (l_sep)
 
-			create toggle_execution_button
+			create toggle_execution_button.make
 			toggle_execution_button.set_pixmap (pixmaps.icon_pixmaps.cdd_execute_icon)
+			toggle_execution_button.set_pixel_buffer (pixmaps.icon_pixmaps.cdd_execute_icon_buffer)
 			toggle_execution_button.select_actions.extend (agent toggle_execution)
 			toggle_execution_button.set_tooltip ("Enable/Disable automatic background execution of tests")
 			--l_tbutton.set_pixmap (pixmaps.icon_pixmaps.tool_breakpoints_icon)
 			l_toolbar.extend (toggle_execution_button)
 
-			create toggle_extraction_button
+			create toggle_extraction_button.make
 			toggle_extraction_button.set_pixmap (pixmaps.icon_pixmaps.cdd_extract_icon)
+			toggle_extraction_button.set_pixel_buffer (pixmaps.icon_pixmaps.cdd_extract_icon_buffer)
 			toggle_extraction_button.select_actions.extend (agent toggle_extraction)
 			toggle_extraction_button.set_tooltip ("Enable/Disable automatic extraction of new test cases")
 			l_toolbar.extend (toggle_extraction_button)
 
-			create clean_up_button
+			create clean_up_button.make
 			clean_up_button.select_actions.extend (
 				agent prompts.show_warning_prompt_with_cancel (
 				"This will delete all extracted test cases whose current outcome is UNRESOLVED " +
 				"and which are meeting the current %"Filter%" criteria.%N" +
-				"Note: Threre might be test cases which meet the %"Filter%" criteria, but are not currently displayed " +
+				"Note: There might be test cases which meet the %"Filter%" criteria, but are not currently displayed " +
 				"because of the currently selected %"View%"!", Void, agent clean_up_test_cases, Void)
 				)
 			clean_up_button.set_tooltip ("Clean up extracted test cases")
 			clean_up_button.set_pixmap (pixmaps.icon_pixmaps.cdd_clean_up_icon)
+			clean_up_button.set_pixel_buffer (pixmaps.icon_pixmaps.cdd_clean_up_icon_buffer)
 			l_toolbar.extend (clean_up_button)
 
-			create l_sep
+			create l_sep.make
 			l_toolbar.extend (l_sep)
 
-			create new_test_routine_button
+			create new_test_routine_button.make
 			new_test_routine_button.set_tooltip ("Create new manual test class")
 			new_test_routine_button.select_actions.extend (agent create_new_test_routine)
 			new_test_routine_button.set_pixmap (pixmaps.icon_pixmaps.cdd_new_test_icon)
+			new_test_routine_button.set_pixel_buffer (pixmaps.icon_pixmaps.cdd_new_test_icon_buffer)
 			l_toolbar.extend (new_test_routine_button)
 
 			l_hbox.extend (l_toolbar)
@@ -440,22 +449,22 @@ feature {NONE} -- Access (Widgets)
 
 feature {NONE} -- Access (Buttons)
 
-	toggle_filter_button: EV_TOGGLE_BUTTON
+	toggle_filter_button: SD_TOOL_BAR_TOGGLE_BUTTON
 			-- Button for setting current filter as test executors filter
 
-	debug_button: EV_TOOL_BAR_BUTTON
+	debug_button: SD_TOOL_BAR_BUTTON
 			-- Button for running test executor
 
-	toggle_extraction_button: EV_TOOL_BAR_TOGGLE_BUTTON
+	toggle_extraction_button: SD_TOOL_BAR_TOGGLE_BUTTON
 			-- Button for enabling/disabling extraction
 
-	toggle_execution_button: EV_TOOL_BAR_TOGGLE_BUTTON
+	toggle_execution_button: SD_TOOL_BAR_TOGGLE_BUTTON
 			-- Button for enabling/disabling automatic execution
 
-	new_test_routine_button: EV_TOOL_BAR_BUTTON
+	new_test_routine_button: SD_TOOL_BAR_BUTTON
 			-- Button for creating new test routine
 
-	clean_up_button: EV_TOOL_BAR_BUTTON
+	clean_up_button: SD_TOOL_BAR_BUTTON
 			-- Button for cleaning up extracted test cases
 
 feature {NONE} -- Implementation (Grids)
@@ -602,7 +611,6 @@ feature {NONE} -- Implementation (Buttons)
 				l_routine := l_test_routine_cursor.item
 
 				if
-					l_routine.test_class.compiled_class /= Void and then -- makes sure type is known AND class file name is available!
 					l_routine.test_class.is_extracted and then
 					l_routine.has_outcome and then
 					l_routine.outcomes.last.is_unresolved
@@ -613,6 +621,9 @@ feature {NONE} -- Implementation (Buttons)
 						if not l_file.exists then
 								-- The file has been successfully deleted. Generate corresponding test routine update.
 							l_updates.force_last (create {CDD_TEST_ROUTINE_UPDATE}.make (l_routine, {CDD_TEST_ROUTINE_UPDATE}.remove_code))
+							if l_routine.test_class.compiled_class /= Void then
+								cdd_manager.eb_cluster_manager.remove_class (l_routine.test_class.compiled_class.original_class)
+							end
 						end
 					end
 				end
