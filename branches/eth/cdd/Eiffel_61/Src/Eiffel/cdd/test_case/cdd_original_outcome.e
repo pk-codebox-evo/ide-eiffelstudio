@@ -165,9 +165,6 @@ feature -- Access
 			end
 		end
 
-	original_class_file_name: STRING_8
-			-- Original file name of the class containing the test routine associated with `Current'
-
 	out: STRING_8 is
 			-- String representation of `Current'
 		do
@@ -234,12 +231,6 @@ feature -- Status report
 		end
 
 feature -- Basic Operations
-
-	set_original_class_file_name (a_name: STRING_8) is
-			-- set `original_class_file_name' to `a_name'
-		do
-			original_class_file_name := a_name
-		end
 
 	set_covered_feature (a_feature: E_FEATURE)is
 			-- Set `covered_feature' to `a_covered_feature'.

@@ -36,23 +36,11 @@ inherit
 		end
 
 create
-	make_with_ast, make_with_class, make_with_ast_and_outcomes
+	make_with_class,
+	make_manual,
+	make_extracted
 
 feature {NONE} -- Initialization
-
-	make_with_ast (an_ast: CLASS_AS) is
-			-- Initialize test class given only the class name `a_name' and
-			-- a list of routines names `some_rounite_names' which will be
-			-- used to initialize `test_routines'.
-		require
-			an_ast_not_void: an_ast /= Void
-		do
-			internal_parsed_class := an_ast
-			test_class_name := an_ast.class_name.name.as_upper
-			initialize
-		ensure
-			parsed_class_set: parsed_class = an_ast
-		end
 
 	make_with_class (a_class: like compiled_class) is
 			-- Initialize test class given a compiled class.
@@ -67,13 +55,26 @@ feature {NONE} -- Initialization
 			compiled_class_set: compiled_class = a_class
 		end
 
-	make_with_ast_and_outcomes (an_ast: CLASS_AS; an_original_outcome_list: DS_LIST [CDD_ORIGINAL_OUTCOME]) is
-			-- Initialize `Current' with `an_ast' and set for each available test routine an original outcome and covered feature.
+	make_manual (an_ast: like parsed_class; a_class_file_name: like class_file_name) is
+			-- Initialize `Current' as a test class representing a manual test case.
+		require
+			an_ast_not_void: an_ast /= Void
+			a_class_file_name_valid: a_class_file_name /= Void and then not a_class_file_name.is_empty
+		do
+			class_file_name := a_class_file_name
+			is_manual := True
+			initialize_with_ast (an_ast)
+		end
+
+	make_extracted (an_ast: like parsed_class; a_class_file_name: like class_file_name; an_original_outcome_list: DS_LIST [CDD_ORIGINAL_OUTCOME]) is
+			-- Initialize `Current' with `an_ast' and set for each available test routine an original outcome.
 		require
 			an_ast_not_void: an_ast /= Void
 			an_original_outcome_list_not_void: an_original_outcome_list /= Void
 		do
-			make_with_ast (an_ast)
+			class_file_name := a_class_file_name
+			is_extracted := True
+			initialize_with_ast (an_ast)
 			check
 				number_of_test_routines_equals_number_of_outcomes: test_routines.count = an_original_outcome_list.count
 			end
@@ -89,6 +90,20 @@ feature {NONE} -- Initialization
 				test_routines.forth
 				an_original_outcome_list.forth
 			end
+		end
+
+	initialize_with_ast (an_ast: CLASS_AS) is
+			-- Initialize test class given only the class name `a_name' and
+			-- a list of routines names `some_rounite_names' which will be
+			-- used to initialize `test_routines'.
+		require
+			an_ast_not_void: an_ast /= Void
+		do
+			internal_parsed_class := an_ast
+			test_class_name := an_ast.class_name.name.as_upper
+			initialize
+		ensure
+			parsed_class_set: parsed_class = an_ast
 		end
 
 	initialize is
@@ -119,6 +134,9 @@ feature -- Access
 	test_class_name: STRING
 			-- Name of the `compiled_class'
 
+	class_file_name: STRING_8
+			-- File name of file containing associated eiffel class.
+
 	test_routines: DS_ARRAYED_LIST [CDD_TEST_ROUTINE]
 			-- Test routines associated with this class;
 			-- A test routine is a routine from class `compiled_class'
@@ -126,6 +144,7 @@ feature -- Access
 			-- This routine is updated whenever `test_routine_table' is.
 
 	cdd_id: UUID
+			-- ID of test class (currently used for logging only, in order to be more resilient against renaming)
 
 feature -- Element change
 
@@ -137,6 +156,10 @@ feature -- Element change
 		do
 			compiled_class := a_class
 			internal_parsed_class := Void
+			class_file_name := compiled_class.original_class.file_name.string
+			is_extracted := is_extracted_test_class (compiled_class)
+			is_synthesized := is_synthesized_test_class (compiled_class)
+			is_manual := is_manual_test_class (compiled_class)
 		ensure
 			compiled_class_set: compiled_class = a_class
 		end
@@ -187,11 +210,11 @@ feature -- Element change
 				end
 			end
 
-			if cdd_id = Void and then compiled_class /= Void then
+			if cdd_id = Void then
 						-- If `Current' doesn't have a cdd_id yet, try to add one to the indexing clause of the class
-						-- associated with `Current'. This is only possible `Current' knows its `compiled_class'
+						-- associated with `Current'.
 
-				create l_input_file.make (compiled_class.original_class.file_name.string)
+				create l_input_file.make (class_file_name)
 				l_file_char_count := -1
 				if l_input_file.exists and then l_input_file.is_closed then
 					l_file_char_count := l_input_file.count
@@ -227,7 +250,7 @@ feature -- Element change
 						end
 
 								-- TODO: currently the cdd_id is set even if its not possible to write it to the file again... is that ok?
-						create l_output_file.make (compiled_class.original_class.file_name.string)
+						create l_output_file.make (class_file_name)
 						l_output_file.open_write
 						if l_output_file.is_open_write then
 							l_output_file.put_string (l_file_content)
@@ -250,6 +273,14 @@ feature {CDD_TEST_SUITE} -- Status change
 			-- Update information about all test routines `compiled_class'
 			-- and add update notifications to `status_updates'.
 		do
+				-- Internal updates not triggering any status updates
+			if compiled_class /= Void then
+				class_file_name := compiled_class.original_class.file_name.string
+				is_extracted := is_extracted_test_class (compiled_class)
+				is_synthesized := is_synthesized_test_class (compiled_class)
+				is_manual := is_manual_test_class (compiled_class)
+			end
+
 			status_updates.wipe_out
 			update_tags
 			update_test_routines
@@ -260,29 +291,29 @@ feature {CDD_TEST_SUITE} -- Status change
 
 feature -- Status
 
-	is_extracted: BOOLEAN is
+	is_extracted: BOOLEAN --is
 			-- Is the class attached to `Current' an extracted test class?
-		require
-			has_compiled_class: compiled_class /= Void
-		do
-			Result := is_extracted_test_class (compiled_class)
-		end
+--		require
+--			has_compiled_class: compiled_class /= Void
+--		do
+--			Result := is_extracted_test_class (compiled_class)
+--		end
 
-	is_synthesized: BOOLEAN is
+	is_synthesized: BOOLEAN -- is
 			-- Is the class attached to `Current' a synthesized test class?
-		require
-			has_compiled_class: compiled_class /= Void
-		do
-			Result := is_synthesized_test_class (compiled_class)
-		end
+--		require
+--			has_compiled_class: compiled_class /= Void
+--		do
+--			Result := is_synthesized_test_class (compiled_class)
+--		end
 
-	is_manual: BOOLEAN is
+	is_manual: BOOLEAN --is
 			-- Is the class attached to `Current' a manual test class?
-		require
-			has_compiled_class: compiled_class /= Void
-		do
-			Result := is_manual_test_class (compiled_class)
-		end
+--		require
+--			has_compiled_class: compiled_class /= Void
+--		do
+--			Result := is_manual_test_class (compiled_class)
+--		end
 
 
 feature {CDD_TEST_ROUTINE} -- Test routine properties
@@ -537,29 +568,27 @@ feature {NONE} -- Implementation
 		local
 			l_tag: STRING
 		do
-			if compiled_class /= Void then
-				if
-					is_extracted
-				then
-					create l_tag.make (20)
-					l_tag := "type."
-					l_tag.append ("extracted")
-					class_tags.force (l_tag)
-				elseif
-					is_synthesized
-				then
-					create l_tag.make (20)
-					l_tag := "type."
-					l_tag.append ("synthesized")
-					class_tags.force (l_tag)
-				elseif
-					is_manual
-				then
-					create l_tag.make (20)
-					l_tag := "type."
-					l_tag.append ("manual")
-					class_tags.force (l_tag)
-				end
+			if
+				is_extracted
+			then
+				create l_tag.make (20)
+				l_tag := "type."
+				l_tag.append ("extracted")
+				class_tags.force (l_tag)
+			elseif
+				is_synthesized
+			then
+				create l_tag.make (20)
+				l_tag := "type."
+				l_tag.append ("synthesized")
+				class_tags.force (l_tag)
+			elseif
+				is_manual
+			then
+				create l_tag.make (20)
+				l_tag := "type."
+				l_tag.append ("manual")
+				class_tags.force (l_tag)
 			end
 		end
 
@@ -631,7 +660,7 @@ invariant
 	status_updates_valid: not status_updates.has (Void)
 	class_tags_not_void: class_tags /= Void
 	class_tags_has_equality_tester: class_tags.equality_tester = case_insensitive_string_equality_tester
-
-	exactly_one_type: (compiled_class /= Void) implies one_of (is_manual, is_synthesized, is_extracted)
+	class_file_name_valid: class_file_name /= Void and then not class_file_name.is_empty
+	exactly_one_type: one_of (is_manual, is_synthesized, is_extracted)
 
 end

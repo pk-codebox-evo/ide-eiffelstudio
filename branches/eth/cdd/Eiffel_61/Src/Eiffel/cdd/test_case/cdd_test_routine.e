@@ -156,15 +156,9 @@ feature -- Access
 			-- Hash code for using `Current' in a hash table
 
 	class_file_name: STRING_8 is
-			-- File name of the test class associated with `Current'
-		require
-			file_name_available: test_class.compiled_class /= Void or else has_original_outcome
+			-- File name of the eiffel class associated with `Current'
 		do
-			if test_class.compiled_class /= Void then
-				Result := test_class.compiled_class.original_class.file_name.string
-			else
-				Result := original_outcome.original_class_file_name
-			end
+			Result := test_class.class_file_name
 		end
 
 	tags_with_prefix (a_prefix: STRING): DS_ARRAYED_LIST [STRING] is

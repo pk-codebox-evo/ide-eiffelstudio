@@ -229,15 +229,15 @@ feature -- Output
 			-- Returns all stack traces of outcome if available.
 		do
 			Result := ""
-			if setup_response.is_exceptional then
+			if setup_response /= Void and then setup_response.is_exceptional then
 				Result.append ("[setup]%N")
 				Result.append (setup_response.exception.exception_trace)
 			end
-			if test_response.is_exceptional then
+			if test_response /= Void and then test_response.is_exceptional then
 				Result.append ("[test]%N")
 				Result.append (test_response.exception.exception_trace)
 			end
-			if teardown_response.is_exceptional then
+			if teardown_response /= Void and then teardown_response.is_exceptional then
 				Result.append ("[teardown]%N")
 				Result.append (teardown_response.exception.exception_trace)
 			end

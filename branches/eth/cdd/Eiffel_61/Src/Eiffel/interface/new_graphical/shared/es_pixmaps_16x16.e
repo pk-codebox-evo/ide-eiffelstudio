@@ -4589,49 +4589,94 @@ feature -- Access
 
 feature -- CDD pixmaps
 
-	frozen cdd_test_icon: EV_PIXEL_BUFFER is
+	frozen cdd_test_icon: EV_PIXMAP is
+		once
+			Result := raw_buffer.sub_pixmap (pixel_rectangle (1, 19))
+		end
+
+	frozen cdd_test_icon_buffer: EV_PIXEL_BUFFER is
 		once
 			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (1, 19))
 		end
 
-	frozen cdd_test_unresolved_icon: EV_PIXEL_BUFFER is
+	frozen cdd_test_unresolved_icon: EV_PIXMAP is
+		once
+			Result := raw_buffer.sub_pixmap (pixel_rectangle (2, 19))
+		end
+
+	frozen cdd_test_unresolved_icon_buffer: EV_PIXEL_BUFFER is
 		once
 			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (2, 19))
 		end
 
-	frozen cdd_test_fail_icon: EV_PIXEL_BUFFER is
+	frozen cdd_test_fail_icon: EV_PIXMAP is
+		once
+			Result := raw_buffer.sub_pixmap (pixel_rectangle (3, 19))
+		end
+
+	frozen cdd_test_fail_icon_buffer: EV_PIXEL_BUFFER is
 		once
 			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (3, 19))
 		end
 
-	frozen cdd_test_pass_icon: EV_PIXEL_BUFFER is
+	frozen cdd_test_pass_icon: EV_PIXMAP is
+		once
+			Result := raw_buffer.sub_pixmap (pixel_rectangle (4, 19))
+		end
+
+	frozen cdd_test_pass_icon_buffer: EV_PIXEL_BUFFER is
 		once
 			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (4, 19))
 		end
 
-	frozen cdd_execute_icon: EV_PIXEL_BUFFER is
+	frozen cdd_execute_icon: EV_PIXMAP is
+		once
+			Result := raw_buffer.sub_pixmap (pixel_rectangle (5, 19))
+		end
+
+	frozen cdd_execute_icon_buffer: EV_PIXEL_BUFFER is
 		once
 			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (5, 19))
 		end
 
-	frozen cdd_new_test_icon: EV_PIXEL_BUFFER is
+	frozen cdd_new_test_icon: EV_PIXMAP is
+		once
+			Result := raw_buffer.sub_pixmap (pixel_rectangle (6, 19))
+		end
+
+	frozen cdd_new_test_icon_buffer: EV_PIXEL_BUFFER is
 		once
 			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (6, 19))
 		end
 
-	frozen cdd_extract_icon: EV_PIXEL_BUFFER is
+	frozen cdd_extract_icon: EV_PIXMAP is
+		once
+			Result := raw_buffer.sub_pixmap (pixel_rectangle (7, 19))
+		end
+
+	frozen cdd_extract_icon_buffer: EV_PIXEL_BUFFER is
 		once
 			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (7, 19))
 		end
 
-	frozen cdd_debug_icon: EV_PIXEL_BUFFER is
+	frozen cdd_debug_icon: EV_PIXMAP is
+		once
+			Result := raw_buffer.sub_pixmap (pixel_rectangle (8, 19))
+		end
+
+	frozen cdd_debug_icon_buffer: EV_PIXEL_BUFFER is
 		once
 			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (8, 19))
 		end
 
-	frozen cdd_clean_up_icon: EV_PIXEL_BUFFER is
+	frozen cdd_clean_up_icon: EV_PIXMAP is
 		once
-			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (8, 8))
+			Result := raw_buffer.sub_pixmap (pixel_rectangle (9, 19))
+		end
+
+	frozen cdd_clean_up_icon_buffer: EV_PIXEL_BUFFER is
+		once
+			Result := raw_buffer.sub_pixel_buffer (pixel_rectangle (9, 19))
 		end
 
 feature {NONE} -- Query

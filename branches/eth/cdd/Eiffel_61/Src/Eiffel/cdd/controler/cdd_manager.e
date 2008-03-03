@@ -26,6 +26,7 @@ inherit
 			on_class_removed as remove_test_case_for_class
 		export
 			{NONE} all
+			{ANY} eb_cluster_manager
 		redefine
 			remove_test_case_for_class
 		end
@@ -436,7 +437,6 @@ feature {DEBUGGER_MANAGER, STOPPED_HDLR} -- Basic Operations (Debugging/Capturin
 										last_replaced_class_name := l_test_routines_to_replace.first.test_class.test_class_name
 									end
 									l_test_routines_to_replace.first.outcomes.wipe_out
-									l_original_outcome.set_original_class_file_name (l_test_routines_to_replace.first.class_file_name)
 									l_test_routines_to_replace.first.set_original_outcome (l_original_outcome)
 									create l_update_list.make (1)
 									l_update_list.put_first (create {CDD_TEST_ROUTINE_UPDATE}.make (l_test_routines_to_replace.first, {CDD_TEST_ROUTINE_UPDATE}.changed_code))
@@ -459,7 +459,6 @@ feature {DEBUGGER_MANAGER, STOPPED_HDLR} -- Basic Operations (Debugging/Capturin
 								test_class_printer.print_routine_invocation (file_manager.last_created_class_name, l_list.item_for_iteration)
 								if not test_class_printer.has_last_print_failed then
 									file_manager.last_created_class_file.close
-									l_original_outcome.set_original_class_file_name (file_manager.last_created_class_file.name)
 									file_manager.add_last_created_test_class_to_system (l_original_outcome)
 									l_routine_count := l_routine_count + 1
 									if file_manager.is_last_test_class_adding_successful then
@@ -578,7 +577,7 @@ feature {ANY} -- Basic Operations (Execution)
 		require
 			not_cdd_target: not target.is_cdd_target
 		do
-			if is_gui then
+			if is_gui and then is_executing_enabled then
 				if background_executor.has_next_step and then background_executor.is_compiling then
 					background_executor.schedule_restart_after_compilation
 				elseif background_executor.has_next_step then

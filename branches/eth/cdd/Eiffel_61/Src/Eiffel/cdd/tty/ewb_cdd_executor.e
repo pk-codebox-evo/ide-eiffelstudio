@@ -92,8 +92,8 @@ feature {NONE} -- Implementation
 		require
 			a_test_routine_not_void: a_test_routine /= Void
 			has_outcome: not a_test_routine.outcomes.is_empty
-		local
-			l_last: CDD_TEST_EXECUTION_RESPONSE
+--		local
+--			l_last: CDD_TEST_EXECUTION_RESPONSE
 		do
 --			l_last := a_test_routine.outcomes.last
 			io.error.put_string ("%N === " + a_test_routine.test_class.test_class_name + "." + a_test_routine.name + "%N")
