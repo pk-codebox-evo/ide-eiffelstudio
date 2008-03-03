@@ -48,6 +48,14 @@ feature -- Access
 	description: STRING_32
 			-- Event item description
 
+feature -- Status report
+
+	is_warning: BOOLEAN
+			-- Indicates if the error item represents a warning
+		do
+			Result := False
+		end
+
 feature -- Query
 
 	is_valid_data (a_data: like data): BOOLEAN
