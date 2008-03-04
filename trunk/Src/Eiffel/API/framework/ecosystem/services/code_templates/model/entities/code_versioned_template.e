@@ -22,14 +22,13 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_version: like version; a_factory: like code_factory)
+	make (a_version: like version)
 			-- Initialize a code template for a minimum version of the compiler
 			--
 			-- `a_version': The minimum version of the compiler the code template will compile with.
-			-- `a_factory': Factory used for creating nodes/
 		do
 			version := a_version
-			make_template (a_factory)
+			make_template
 		ensure
 			version_set: version = a_version
 		end
