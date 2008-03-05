@@ -347,6 +347,18 @@ feature {NONE} -- Implementation (Basic functionality)
 				toggle_filter_button.disable_sensitive
 				new_test_routine_button.disable_sensitive
 			end
+
+			if
+				cdd_manager.is_project_initialized and then
+				not cdd_manager.target.is_cdd_target and then
+				((cdd_manager.debugger_manager.application = Void) or else not cdd_manager.debugger_manager.application.is_running) and then
+				not cdd_manager.debug_executor.is_running
+			then
+				clean_up_button.enable_sensitive
+			else
+				clean_up_button.disable_sensitive
+			end
+
 			toggle_extraction_button.select_actions.resume
 			toggle_execution_button.select_actions.resume
 			toggle_filter_button.select_actions.resume
@@ -593,20 +605,21 @@ feature {NONE} -- Implementation (Buttons)
 		end
 
 	clean_up_test_cases is
-			-- delete all extracted test cases whose outcome is unresolved of current filter.
-			-- NOTE: test cases with unknown type are ignored.
+			-- delete all extracted test cases of current filter whose outcome is unresolved.
 		local
+			l_test_routine_list: DS_LINEAR [CDD_TEST_ROUTINE]
 			l_test_routine_cursor: DS_LINEAR_CURSOR [CDD_TEST_ROUTINE]
 			l_routine: CDD_TEST_ROUTINE
 			l_file: KL_TEXT_INPUT_FILE
 			l_updates: DS_ARRAYED_LIST [CDD_TEST_ROUTINE_UPDATE]
 		do
-			l_test_routine_cursor := grid.tree_view.filtered_view.test_routines.new_cursor
+			l_test_routine_list := grid.tree_view.filtered_view.test_routines.twin
+			l_test_routine_cursor := l_test_routine_list.new_cursor
 			create l_updates.make (10)
 			from
 				l_test_routine_cursor.start
 			until
-				l_test_routine_cursor.after
+				l_test_routine_cursor.off
 			loop
 				l_routine := l_test_routine_cursor.item
 
@@ -620,9 +633,11 @@ feature {NONE} -- Implementation (Buttons)
 						l_file.delete
 						if not l_file.exists then
 								-- The file has been successfully deleted. Generate corresponding test routine update.
-							l_updates.force_last (create {CDD_TEST_ROUTINE_UPDATE}.make (l_routine, {CDD_TEST_ROUTINE_UPDATE}.remove_code))
 							if l_routine.test_class.compiled_class /= Void then
+									-- This will trigger update of test suite and call to update status action
 								cdd_manager.eb_cluster_manager.remove_class (l_routine.test_class.compiled_class.original_class)
+							else
+								l_updates.force_last (create {CDD_TEST_ROUTINE_UPDATE}.make (l_routine, {CDD_TEST_ROUTINE_UPDATE}.remove_code))
 							end
 						end
 					end

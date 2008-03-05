@@ -16,7 +16,8 @@ inherit
 
 	DEBUGGER_OBSERVER
 		redefine
-			on_application_stopped
+			on_application_stopped,
+			on_application_launched
 		end
 
 	EB_CLUSTER_MANAGER_OBSERVER
@@ -483,12 +484,19 @@ feature {DEBUGGER_MANAGER, STOPPED_HDLR} -- Basic Operations (Debugging/Capturin
 			end
 		end
 
+	on_application_launched (dbg: DEBUGGER_MANAGER) is
+			-- Emit status update affecting GUI.
+		do
+			emit_manager_status_update
+		end
+
 	clean_up_after_debugging is
 			-- Clean up data structures needed during one debugging session.
 		do
 			routine_invocation_cache.wipe_out
 			cdd_breakpoints.wipe_out
 			test_routines_for_reextraction := Void
+			emit_manager_status_update
 		end
 
 	execution_paused_on_breakpoint (a_status: APPLICATION_STATUS_CLASSIC) is
