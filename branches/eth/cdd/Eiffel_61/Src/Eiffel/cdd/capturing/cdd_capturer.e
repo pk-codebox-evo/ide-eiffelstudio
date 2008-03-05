@@ -178,7 +178,7 @@ feature {ANY} -- Basic operations
 			last_extracted_routine_invocations_not_void: last_extracted_routine_invocations /= Void
 			exactly_one_routine_invocation_extracted_if_successful: is_last_extraction_successful implies (last_extracted_routine_invocations.count = 1)
 			extracted_top_of_stack_if_successful: is_last_extraction_successful implies
-														last_extracted_routine_invocations.first.represented_feature.same_as (a_status.e_feature)
+														last_extracted_routine_invocations.first.represented_feature.written_feature.same_as (a_status.e_feature.written_feature)
 		end
 
 
