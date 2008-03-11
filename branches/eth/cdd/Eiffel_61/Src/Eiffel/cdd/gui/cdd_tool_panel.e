@@ -66,6 +66,7 @@ feature {NONE} -- Initialization
 			create l_hbox
 			l_hbox.set_padding (10)
 			l_hbox.set_border_width (5)
+
 			create l_label.make_with_text ("Filter")
 			l_hbox.extend (l_label)
 			l_hbox.disable_item_expand (l_label)
@@ -93,6 +94,8 @@ feature {NONE} -- Initialization
 
 			create toggle_filter_button.make
 			toggle_filter_button.set_text ("Restrict")
+			toggle_filter_button.set_pixmap (pixmaps.icon_pixmaps.diagram_unpinned_icon)
+			toggle_filter_button.set_pixel_buffer (pixmaps.icon_pixmaps.diagram_unpinned_icon_buffer)
 			toggle_filter_button.select_actions.extend (agent toggle_filter)
 			toggle_filter_button.set_tooltip ("Only execute filtered test routines")
 			if not cdd_manager.is_project_initialized then
@@ -100,6 +103,7 @@ feature {NONE} -- Initialization
 			end
 			create l_tool_bar.make
 			l_tool_bar.extend (toggle_filter_button)
+			l_tool_bar.set_minimum_width (toggle_filter_button.width + 4)
 			l_hbox.extend (l_tool_bar)
 			l_hbox.disable_item_expand (l_tool_bar)
 
@@ -136,7 +140,6 @@ feature {NONE} -- Initialization
 			toggle_execution_button.set_pixel_buffer (pixmaps.icon_pixmaps.cdd_execute_icon_buffer)
 			toggle_execution_button.select_actions.extend (agent toggle_execution)
 			toggle_execution_button.set_tooltip ("Enable/Disable automatic background execution of tests")
-			--l_tbutton.set_pixmap (pixmaps.icon_pixmaps.tool_breakpoints_icon)
 			l_toolbar.extend (toggle_execution_button)
 
 			create toggle_extraction_button.make
@@ -146,15 +149,16 @@ feature {NONE} -- Initialization
 			toggle_extraction_button.set_tooltip ("Enable/Disable automatic extraction of new test cases")
 			l_toolbar.extend (toggle_extraction_button)
 
-			create clean_up_button.make
+			clean_up_button := develop_window.commands.delete_class_cluster_cmd.new_sd_toolbar_item (False)
+			clean_up_button.select_actions.wipe_out
 			clean_up_button.select_actions.extend (
 				agent prompts.show_warning_prompt_with_cancel (
-				"This will delete all extracted test cases whose current outcome is UNRESOLVED " +
-				"and which are meeting the current %"Filter%" criteria.%N" +
-				"Note: There might be test cases which meet the %"Filter%" criteria, but are not currently displayed " +
+				"This will delete all extracted test cases whose current outcome is UNRESOLVED (yellow) " +
+				"and which are meeting the current %"Filter%" criteria.%N%N" +
+				"NOTE: There might be test cases which meet the %"Filter%" criteria, but are not displayed " +
 				"because of the currently selected %"View%"!", Void, agent clean_up_test_cases, Void)
 				)
-			clean_up_button.set_tooltip ("Clean up extracted test cases")
+			clean_up_button.set_tooltip ("Press for cleaning up unresolved extracted test cases.%NDrop any test CLASS here to permanently delete it.")
 			clean_up_button.set_pixmap (pixmaps.icon_pixmaps.cdd_clean_up_icon)
 			clean_up_button.set_pixel_buffer (pixmaps.icon_pixmaps.cdd_clean_up_icon_buffer)
 			l_toolbar.extend (clean_up_button)
@@ -380,12 +384,10 @@ feature {NONE} -- Implementation (Basic functionality)
 			when {CDD_STATUS_UPDATE}.executor_step_code then
 				l_exec := cdd_manager.background_executor
 				if not l_exec.has_next_step then
-					--run_button.enable_sensitive
 					show_message ("Finished executing")
 					progress_bar.set_proportion (0.0)
 				else
 					update_testing_label
-					--run_button.disable_sensitive
 					if l_exec.is_compiling then
 						show_message ("Compiling interpreter")
 					else
@@ -476,7 +478,7 @@ feature {NONE} -- Access (Buttons)
 	new_test_routine_button: SD_TOOL_BAR_BUTTON
 			-- Button for creating new test routine
 
-	clean_up_button: SD_TOOL_BAR_BUTTON
+	clean_up_button: EB_SD_COMMAND_TOOL_BAR_BUTTON
 			-- Button for cleaning up extracted test cases
 
 feature {NONE} -- Implementation (Grids)
@@ -567,10 +569,14 @@ feature {NONE} -- Implementation (Buttons)
 			-- (Un)set current filter in test executor.
 		do
 			if toggle_filter_button.is_selected then
+				toggle_filter_button.set_pixmap (pixmaps.icon_pixmaps.diagram_pinned_icon)
+				toggle_filter_button.set_pixel_buffer (pixmaps.icon_pixmaps.diagram_pinned_icon_buffer)
 				if cdd_manager.background_executor.filter /= grid.tree_view.filtered_view then
 					cdd_manager.background_executor.set_filter (grid.tree_view.filtered_view)
 				end
 			elseif cdd_manager.background_executor.filter = grid.tree_view.filtered_view then
+				toggle_filter_button.set_pixmap (pixmaps.icon_pixmaps.diagram_unpinned_icon)
+				toggle_filter_button.set_pixel_buffer (pixmaps.icon_pixmaps.diagram_unpinned_icon_buffer)
 				cdd_manager.background_executor.reset_filter
 			end
 		end
