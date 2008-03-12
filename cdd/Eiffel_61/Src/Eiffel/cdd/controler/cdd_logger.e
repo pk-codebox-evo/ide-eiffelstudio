@@ -100,11 +100,11 @@ feature -- Logging (Test Suite)
 					l_content.append ("%T%T<test_routine " + test_routine_attribute_string (l_routine) + ">%N")
 					l_routine_status := ""
 					if l_routine.has_outcome then
-						l_routine_status := "****last_execution_trace:%N"
+						l_routine_status.append ("****last_execution_trace:%N")
 						l_routine_status.append (replace_xml_entities (l_routine.outcomes.last.out_trace))
 					end
 					if l_routine.has_original_outcome then
-						l_routine_status := "****original_trace:%N"
+						l_routine_status.append ("****original_trace:%N")
 						l_routine_status.append (replace_xml_entities (l_routine.original_outcome.exception_trace))
 					end
 					l_routine_status.prune_all_leading ('%N')
@@ -120,11 +120,11 @@ feature -- Logging (Test Suite)
 						l_content.append ("%N%T%T<test_routine " + test_routine_attribute_string (l_routine) + ">%N")
 						l_routine_status := ""
 						if l_routine.has_outcome then
-							l_routine_status := "****last_execution_trace:%N"
+							l_routine_status.append ("****last_execution_trace:%N")
 							l_routine_status.append (replace_xml_entities (l_routine.outcomes.last.out_trace))
 						end
 						if l_routine.has_original_outcome then
-							l_routine_status := "****original_trace:%N"
+							l_routine_status.append ("****original_trace:%N")
 							l_routine_status.append (replace_xml_entities (l_routine.original_outcome.exception_trace))
 						end
 						l_routine_status.prune_all_leading ('%N')
@@ -154,11 +154,11 @@ feature -- Logging (Test Suite)
 						l_content.append ("%T%T<test_routine " + test_routine_attribute_string (l_routine) + ">%N")
 						l_routine_status := ""
 						if l_routine.has_outcome then
-							l_routine_status := "****last_execution_trace:%N"
+							l_routine_status.append ("****last_execution_trace:%N")
 							l_routine_status.append (replace_xml_entities (l_routine.outcomes.last.out_trace))
 						end
 						if l_routine.has_original_outcome then
-							l_routine_status := "****original_trace:%N"
+							l_routine_status.append ("****original_trace:%N")
 							l_routine_status.append (replace_xml_entities (l_routine.original_outcome.exception_trace))
 						end
 						l_routine_status.prune_all_leading ('%N')
@@ -174,11 +174,11 @@ feature -- Logging (Test Suite)
 							l_content.append ("%N%T%T<test_routine " + test_routine_attribute_string (l_routine) + ">%N")
 							l_routine_status := ""
 							if l_routine.has_outcome then
-								l_routine_status := "****last_execution_trace:%N"
+								l_routine_status.append ("****last_execution_trace:%N")
 								l_routine_status.append (replace_xml_entities (l_routine.outcomes.last.out_trace))
 							end
 							if l_routine.has_original_outcome then
-								l_routine_status := "****original_trace:%N"
+							l_routine_status.append ("****original_trace:%N")
 								l_routine_status.append (replace_xml_entities (l_routine.original_outcome.exception_trace))
 							end
 							l_routine_status.prune_all_leading ('%N')
