@@ -26,6 +26,14 @@ feature -- Byte code generators
 			melted_assignment_generator_not_void: Result /= Void
 		end
 
+	attribute_assignment_detector: ATTRIBUTE_ASSIGNMENT_DETECTOR is
+			-- Visitor to checker whether the byte nodes perform an attachement to an attribute.
+		once
+			create Result
+		ensure
+			attribute_assignment_detector_not_void: Result /= Void
+		end
+
 feature -- IL code generators
 
 	cil_node_generator: IL_NODE_GENERATOR is
