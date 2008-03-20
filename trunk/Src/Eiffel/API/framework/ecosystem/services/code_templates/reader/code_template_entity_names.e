@@ -62,7 +62,13 @@ feature -- Token values
 
 	cursor_token_name: !STRING_8 = "cursor"
 
-	selected_token_name: !STRING_8 = "selected"
+	selection_token_name: !STRING_8 = "selection"
+
+feature -- Delimiters
+
+	template_start_delimiter: !STRING_8 = "~#"
+
+	template_end_delimiter: !STRING_8 = "#~"
 
 ;indexing
 	copyright:	"Copyright (c) 1984-2008, Eiffel Software"

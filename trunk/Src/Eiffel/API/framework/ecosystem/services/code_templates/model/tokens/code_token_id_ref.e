@@ -65,6 +65,14 @@ feature -- Query
 			Result := True
 		end
 
+feature -- Visitor
+
+	process (a_visitor: !CODE_TOKEN_VISITOR_I)
+			-- <Precursor>
+		do
+			a_visitor.process_code_token_id_ref (Current)
+		end
+
 feature -- Output
 
 	out: STRING_8
