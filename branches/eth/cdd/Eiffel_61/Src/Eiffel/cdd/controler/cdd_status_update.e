@@ -47,6 +47,10 @@ feature -- Access
 			-- The printer has written a new class
 	printer_existing_step_code,
 			-- The printer has overwritten an existing class
+	printer_duplicate_step_code,
+			-- A duplicate was printed and removed again if possible
+	printer_existing_duplicate_step_code,
+			-- The printer has overwritten an existing class which was then a duplicate and removed again if possible
 	capturer_error_code,
 			-- There was an error with capturing a new test case
 	execution_error_code: INTEGER is unique
@@ -66,7 +70,9 @@ feature -- Access
 				a_code = capturer_error_code or
 				a_code = execution_error_code or
 				a_code = printer_new_step_code or
-				a_code = printer_existing_step_code
+				a_code = printer_existing_step_code or
+				a_code = printer_duplicate_step_code or
+				a_code = printer_existing_duplicate_step_code
 		end
 
 invariant

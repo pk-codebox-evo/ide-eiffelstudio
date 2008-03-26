@@ -71,9 +71,10 @@ feature -- Logging (System)
 
 feature -- Logging (Test Suite)
 
-	report_test_suite_status (a_test_suite: CDD_TEST_SUITE; a_message: STRING) is
+	report_test_suite_status (a_test_suite: CDD_TEST_SUITE; a_start_time: DATE_TIME; an_end_time: DATE_TIME; a_message: STRING) is
 			-- Write a test suite status message.
 		local
+			l_duration_sec: REAL_64
 			l_attributes: STRING
 			l_content: STRING
 			l_routine_status: STRING
@@ -86,7 +87,9 @@ feature -- Logging (Test Suite)
 			l_number_of_synthesized_test_classes: INTEGER
 		do
 			l_class_list := a_test_suite.test_classes
+			l_duration_sec := an_end_time.definite_duration (a_start_time).fine_seconds_count
 			l_attributes := ""
+			append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
 			append_xml_attribute (l_attributes, "number_of_test_classes", l_class_list.count.out)
 			l_content := ""
 			if not l_class_list.is_empty then
@@ -422,7 +425,7 @@ feature -- Logging (Extraction - Printing)
 			current_test_case_printing_start_not_void: current_test_case_printing_start /= Void
 		end
 
-	report_printing (a_start_time: DATE_TIME; an_end_time: DATE_TIME; a_test_class: CDD_TEST_CLASS; a_is_replacing_flag: BOOLEAN) is
+	report_printing (a_start_time: DATE_TIME; an_end_time: DATE_TIME; a_test_class: CDD_TEST_CLASS; a_is_replacing_flag: BOOLEAN; a_is_duplicate_flag: BOOLEAN) is
 			-- Add test class printing element to content of `current_test_case_printing_element'.
 		local
 			l_duration_sec: REAL_64
@@ -441,6 +444,7 @@ feature -- Logging (Extraction - Printing)
 				l_routine := a_test_class.test_routines.first
 				l_content.append ("%T%T<test_routine " + test_routine_attribute_string (l_routine))
 				l_content.append (" is_replacing=%"" + a_is_replacing_flag.out + "%">%N")
+				l_content.append (" was_duplicate=%"" + a_is_duplicate_flag.out + "%">%N")
 				l_routine_status := replace_xml_entities (l_routine.status_string_verbose)
 				l_routine_status.prune_all_leading ('%N')
 				l_routine_status.prune_all_trailing ('%N')

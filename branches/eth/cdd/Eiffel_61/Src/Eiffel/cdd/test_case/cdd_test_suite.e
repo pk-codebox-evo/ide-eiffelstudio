@@ -21,6 +21,8 @@ feature {NONE} -- Initialization
 			-- Initialize `Current' for `a_cdd_manager'.
 		require
 			a_cdd_manager_not_void: a_cdd_manager /= Void
+		local
+			l_comp: AGENT_BASED_EQUALITY_TESTER [TUPLE [NATURAL_64]]
 		do
 			create test_routine_update_actions
 			cdd_manager := a_cdd_manager
@@ -28,6 +30,12 @@ feature {NONE} -- Initialization
 			create test_class_table.make_default
 			create test_classes.make_default
 			create modified_classes.make_default
+			create check_sum_table.make_default
+			create l_comp.make (agent (a_t1, a_t2: TUPLE [NATURAL_64]): BOOLEAN
+				do
+					Result := a_t1.is_equal (a_t2)
+				end)
+			check_sum_table.set_equality_tester (l_comp)
 		ensure
 			cdd_manager_set: cdd_manager = a_cdd_manager
 		end
@@ -73,6 +81,12 @@ feature -- Access
 			correct_result: Result = (test_class_table.found and then test_class_table.found_item.compiled_class = a_class)
 		end
 
+	has_extracted_test_case_with_check_sum (a_check_sum: TUPLE [NATURAL_64]): BOOLEAN is
+			-- Does `Current' contain a test class with `a_check_sum'?
+		do
+			Result := check_sum_table.has (a_check_sum)
+		end
+
 feature -- Element change
 
 	add_test_class (a_test_class: CDD_TEST_CLASS) is
@@ -88,6 +102,18 @@ feature -- Element change
 		do
 			test_classes.force_last (a_test_class)
 			test_class_table.force (a_test_class, a_test_class.test_class_name)
+				-- Add associated entry in `check_sum_table' if available.
+			if
+				a_test_class.is_extracted and then
+				a_test_class.check_sum /= Void
+					-- and then
+					-- not check_sum_table.has (a_test_class.checksum)
+					-- NOTE: There is a very small chance that the above condition is not true
+					-- For robustnes it probably should be commented in again.
+			then
+				check_sum_table.put (a_test_class.check_sum)
+			end
+
 			test_routine_update_actions.call ([a_test_class.status_updates])
 		ensure
 			added: test_classes.has (a_test_class)
@@ -107,7 +133,22 @@ feature -- Element change
 			check
 				found: test_class_table.found
 			end
+
 			l_tc := test_class_table.found_item
+			test_class_table.remove_found_item
+
+				-- Remove associated entry in `check_sum_table' if available.
+			if
+				l_tc.is_extracted and then
+				l_tc.check_sum /= Void
+					-- and then
+					-- check_sum_table.has (l_tc.checksum)
+					-- NOTE: There is a very small chance that the above condition is not true (because of implementation misstakes/strange user behaviour)
+					-- For robustnes it probably should be commented in again.
+			then
+				check_sum_table.remove (l_tc.check_sum)
+			end
+
 			create l_updates.make (l_tc.test_routines.count)
 			from
 				l_cursor := l_tc.test_routines.new_cursor
@@ -135,11 +176,14 @@ feature {CDD_MANAGER} -- State change
 			-- Refresh information from system under test.
 		require
 			project_initialized: cdd_manager.is_project_initialized
+		local
+			l_start_time: DATE_TIME
 		do
+			create l_start_time.make_now
 			create {DS_ARRAYED_LIST [CDD_TEST_ROUTINE_UPDATE]} status_updates.make_default
 			update_class_table
 			modified_classes.wipe_out
-			log.report_test_suite_status (Current, "Refresh")
+			log.report_test_suite_status (Current, l_start_time, create {DATE_TIME}.make_now, "Refresh")
 		ensure
 			modified_classes_empty: modified_classes.is_empty
 		end
@@ -163,6 +207,10 @@ feature {NONE} -- Implementation
 
 	modified_classes: DS_ARRAYED_LIST [EIFFEL_CLASS_C]
 			-- Test classes which have been modified since last compilation
+
+	check_sum_table: DS_HASH_SET [TUPLE [NATURAL_64]]
+			-- Table containing checksums of extracted test cases
+			-- This is used in order to prevent extraction of duplicate test cases.
 
 	test_class_ancestor: EIFFEL_CLASS_C
 			-- Ancestor all test classes must inherit from
@@ -219,6 +267,7 @@ feature {NONE} -- Implementation
 		do
 			update_test_class_ancestor
 			l_old_table := test_class_table
+
 			create test_class_table.make_default
 			if test_class_ancestor /= Void then
 				l_incremental := True
@@ -245,6 +294,28 @@ feature {NONE} -- Implementation
 
 				-- This should not be necessary once bug is fixed in gobo library
 			create test_classes.make_from_array (test_class_table.to_array)
+
+				-- Non-incremental implementation for updating the extracted test case check sum table
+			from
+				check_sum_table.wipe_out
+				test_classes.start
+			until
+				test_classes.after
+			loop
+				if
+					test_classes.item_for_iteration.is_extracted and then
+					test_classes.item_for_iteration.check_sum /= Void
+					-- and then
+					-- not check_sum_table.has (test_classes.item_for_iteration.checksum)
+					-- NOTE: There is a very small chance that the above condition is not true (because of implementation misstakes/strange user behaviour)
+					-- For robustnes it probably should be commented in again.
+				then
+					check_sum_table.put (test_classes.item_for_iteration.check_sum)
+				end
+
+				test_classes.forth
+			end
+
 
 			if l_incremental then
 				test_routine_update_actions.call ([status_updates])

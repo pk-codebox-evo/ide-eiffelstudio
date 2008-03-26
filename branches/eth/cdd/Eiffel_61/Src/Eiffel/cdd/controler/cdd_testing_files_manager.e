@@ -66,6 +66,9 @@ feature -- Status report
 	is_last_test_class_adding_successful: BOOLEAN
 			-- Was the last adding of test class contained in `last_created_class_file' to system successful?
 
+	is_adding_failed_due_to_duplicate: BOOLEAN
+			-- Did the last test class adding fail because test class to add was a duplicate?
+
 feature -- Access
 
 	cdd_manager: CDD_MANAGER
@@ -241,6 +244,8 @@ feature -- Basic operations
 	add_last_created_test_class_to_system (an_outcome: CDD_ORIGINAL_OUTCOME) is
 			-- Try to add the test class contained in `last_created_class_file' to system with original outcome `an_outcome'.
 			-- This involves parsing of the test class file and is not guaranteed to succeed.
+			-- There is also a check for duplicates involved. If the test class to add is identified as a duplicate of an
+			-- existing class, it is deleted instead of added to the test suite.
 		require
 			class_creation_successful: is_last_test_class_file_creation_successful
 		local
@@ -248,6 +253,7 @@ feature -- Basic operations
 			l_tests_cluster: CONF_CLUSTER
 			l_outcome_list: DS_ARRAYED_LIST [CDD_ORIGINAL_OUTCOME]
 			l_new_test_class: CDD_TEST_CLASS
+--			l_file: KL_TEXT_INPUT_FILE
 		do
 			ensure_system_contains_testing_cluster
 
@@ -256,23 +262,72 @@ feature -- Basic operations
 				create l_outcome_list.make (1)
 				l_outcome_list.put (an_outcome, 1)
 				create l_new_test_class.make_extracted (last_parsed_class, last_created_class_file.name, l_outcome_list)
-				cdd_manager.test_suite.add_test_class (l_new_test_class)
 				last_added_cdd_test_class := l_new_test_class
 
-				if is_gui then
-					l_cluster_name := target.name + "_tests"
-					l_tests_cluster := cdd_manager.project.system.system.eiffel_universe.cluster_of_name (l_cluster_name)
-					cluster_manager.add_class_to_cluster (last_created_class_name.as_lower + ".e", l_tests_cluster, last_relative_class_path)
-					last_added_class := cluster_manager.last_added_class
-				end
+				if
+					l_new_test_class.check_sum /= Void and then
+					cdd_manager.test_suite.has_extracted_test_case_with_check_sum (l_new_test_class.check_sum)
+				then
+					is_last_test_class_adding_successful := False
+					is_adding_failed_due_to_duplicate := True
+--					create l_file.make (last_created_class_file.name)
+					if last_created_class_file.exists then
+						last_created_class_file.delete
+					end
+				else
+					cdd_manager.test_suite.add_test_class (l_new_test_class)
 
-				is_last_test_class_adding_successful := True
+					if is_gui then
+						l_cluster_name := target.name + "_tests"
+						l_tests_cluster := cdd_manager.project.system.system.eiffel_universe.cluster_of_name (l_cluster_name)
+						cluster_manager.add_class_to_cluster (last_created_class_name.as_lower + ".e", l_tests_cluster, last_relative_class_path)
+						last_added_class := cluster_manager.last_added_class
+					end
+
+					is_last_test_class_adding_successful := True
+					is_adding_failed_due_to_duplicate := False
+				end
 			else
 				is_last_test_class_adding_successful := False
+				is_adding_failed_due_to_duplicate := False
 			end
 		ensure
 			success_implies_last_added_class_available: (is_last_test_class_adding_successful and is_gui) implies (last_added_class /= Void)
 			success_implies_last_added_cdd_test_class_available: is_last_test_class_adding_successful implies (last_added_cdd_test_class /= Void)
+		end
+
+	delete_class_from_system (a_class: CLASS_I) is
+			-- Delete `a_class' from system
+		require
+			a_class_not_void: a_class /= Void
+		local
+			file: PLAIN_TEXT_FILE
+			retried: BOOLEAN
+		do
+			if not retried then
+--				if debugger_manager.application_is_executing then
+--					debugger_manager.application.kill
+--				end
+--				debugger_manager.disable_debug
+				create file.make (a_class.file_name)
+				if
+					file.exists and then
+					file.is_writable
+				then
+					file.delete
+					cluster_manager.remove_class (a_class)
+--					could_not_delete := False
+				end
+--				Debugger_manager.resynchronize_breakpoints
+--				Window_manager.synchronize_all
+			end
+--			if could_not_delete then
+--					-- We were not able to delete the file.
+--				(create {ES_SHARED_PROMPT_PROVIDER}).prompts.show_error_prompt (Warning_messages.w_Not_writable (class_i.file_name), window.window, Void)
+--			end
+		rescue
+			retried := True
+			retry
 		end
 
 feature {NONE} -- Parsing

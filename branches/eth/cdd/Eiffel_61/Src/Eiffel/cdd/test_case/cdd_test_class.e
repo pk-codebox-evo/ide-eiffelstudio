@@ -131,6 +131,20 @@ feature -- Access
 	compiled_class: EIFFEL_CLASS_C
 			-- Compiled instance of test class
 
+	parsed_class: CLASS_AS is
+			-- Abstract syntax tree of the corresponding eiffel class
+		do
+			if compiled_class /= Void then
+				Result := compiled_class.ast
+			else
+				Result := internal_parsed_class
+			end
+		ensure
+			not_void: Result /= Void
+			valid: (compiled_class /= Void) implies (Result = compiled_class.ast)
+			valid: (compiled_class = Void) implies (Result = internal_parsed_class)
+		end
+
 	test_class_name: STRING
 			-- Name of the `compiled_class'
 
@@ -145,6 +159,9 @@ feature -- Access
 
 	cdd_id: UUID
 			-- ID of test class (currently used for logging only, in order to be more resilient against renaming)
+
+	check_sum: TUPLE [NATURAL_64]
+			-- Checksum of associated class, calculated from covered class, covered feature and context of associated class as written in the class file.
 
 feature -- Element change
 
@@ -261,6 +278,59 @@ feature -- Element change
 			end
 		end
 
+	update_check_sum is
+			-- Update `check_sum' of associated class (file).
+		local
+			l_file: KL_TEXT_INPUT_FILE
+			l_string: STRING_8
+		do
+				-- NOTE: If `Current' does not correspond to the usual layout of extracted test cases, no checksum is calculated
+
+				-- Try to get "covers" tag
+			if
+				test_routines.count = 1 and then
+				test_routines.first.tags_with_prefix ("covers.").count = 1
+			then
+				l_string := test_routines.first.tags_with_prefix ("covers.").first
+
+					-- Try to find "Extracted Data" part of test class file
+				create l_file.make (class_file_name)
+				l_file.open_read
+				if l_file.is_open_read then
+						-- Read until "Extracted Data" feature line.
+					from
+						l_file.read_line
+					until
+						l_file.end_of_file or else l_file.last_string.is_equal ("feature {NONE} -- Extracted data")
+					loop
+						l_file.read_line
+					end
+					if not l_file.end_of_file then
+							-- Calculate `check_sum' of test case.
+							-- It's the checksum of
+							-- <covers.CLASS.feature><context part of test class file>
+							-- <context part of test class file> is everything between and not including
+							-- the "feature {NONE} -- Extracted data" line and end of file.
+						checksum_calculator.reset
+						checksum_calculator.add_string (l_string)
+						from
+							l_file.read_character
+						until
+							l_file.end_of_file
+						loop
+							checksum_calculator.add_byte (l_file.last_character.code.to_natural_8)
+							l_file.read_character
+						end
+
+						checksum_calculator.finalize_calculation
+
+						check_sum := checksum_calculator.hashable_digest
+					end
+					l_file.close
+				end
+			end
+		end
+
 
 feature -- Status changes
 
@@ -287,33 +357,20 @@ feature {CDD_TEST_SUITE} -- Status change
 
 					-- Make sure `Current' has a valid "cdd_id" indexing clause
 			ensure_cdd_id
+
+					-- Recalculate `check_sum' of associated class (file) if `Current' `is_extracted'.
+			if is_extracted then
+				update_check_sum
+			end
 		end
 
 feature -- Status
 
-	is_extracted: BOOLEAN --is
-			-- Is the class attached to `Current' an extracted test class?
---		require
---			has_compiled_class: compiled_class /= Void
---		do
---			Result := is_extracted_test_class (compiled_class)
---		end
+	is_extracted: BOOLEAN
 
-	is_synthesized: BOOLEAN -- is
-			-- Is the class attached to `Current' a synthesized test class?
---		require
---			has_compiled_class: compiled_class /= Void
---		do
---			Result := is_synthesized_test_class (compiled_class)
---		end
+	is_synthesized: BOOLEAN
 
-	is_manual: BOOLEAN --is
-			-- Is the class attached to `Current' a manual test class?
---		require
---			has_compiled_class: compiled_class /= Void
---		do
---			Result := is_manual_test_class (compiled_class)
---		end
+	is_manual: BOOLEAN
 
 
 feature {CDD_TEST_ROUTINE} -- Test routine properties
@@ -322,20 +379,6 @@ feature {CDD_TEST_ROUTINE} -- Test routine properties
 			-- CDD tags in `compiled_class'
 
 feature {NONE} -- Implementation
-
-	parsed_class: CLASS_AS is
-			-- Abstract syntax tree of the corresponding eiffel class
-		do
-			if compiled_class /= Void then
-				Result := compiled_class.ast
-			else
-				Result := internal_parsed_class
-			end
-		ensure
-			not_void: Result /= Void
-			valid: (compiled_class /= Void) implies (Result = compiled_class.ast)
-			valid: (compiled_class = Void) implies (Result = internal_parsed_class)
-		end
 
 	internal_parsed_class: like parsed_class
 			-- Abstract syntax tree if `compiled_class' is not available
@@ -634,6 +677,12 @@ feature {NONE} -- Implementation
 			Result.compile ("(.*indexing)(.*[ %T%N]class[ %T%N])")
 		end
 
+	checksum_calculator: CDD_HASH_CALCULATOR is
+			-- Calculator for checksums
+		once
+			create {CDD_WHIRLPOOL_HASH_CALCULATOR} Result.make
+		end
+
 feature {NONE} -- Assertion helpers
 
 	one_of (a: BOOLEAN; b: BOOLEAN; c: BOOLEAN): BOOLEAN
@@ -662,5 +711,8 @@ invariant
 	class_tags_has_equality_tester: class_tags.equality_tester = case_insensitive_string_equality_tester
 	class_file_name_valid: class_file_name /= Void and then not class_file_name.is_empty
 	exactly_one_type: one_of (is_manual, is_synthesized, is_extracted)
+			-- Since a user can edit an extracted test case in arbitrary ways (e.g. completely removing context, removing indexing, ...)
+			-- the following invariant is not possible. If calculation of checksum fails, it simply stays void (and clients have to be aware of this)
+	-- checksum_available_if_extracted: is_extracted implies (checksum /= Void)
 
 end
