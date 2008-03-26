@@ -358,7 +358,8 @@ feature {DEBUGGER_MANAGER, STOPPED_HDLR} -- Basic Operations (Debugging/Capturin
 			l_status: APPLICATION_STATUS
 			l_list: DS_LIST [CDD_ROUTINE_INVOCATION]
 			l_test_routines_to_replace: DS_LIST [CDD_TEST_ROUTINE]
-			l_update_list: DS_ARRAYED_LIST [CDD_TEST_ROUTINE_UPDATE]
+--			l_update_list: DS_ARRAYED_LIST [CDD_TEST_ROUTINE_UPDATE]
+			l_class_to_delete_list: LIST [CLASS_I]
 
 			l_routine_count: INTEGER_32
 
@@ -420,6 +421,9 @@ feature {DEBUGGER_MANAGER, STOPPED_HDLR} -- Basic Operations (Debugging/Capturin
 						if not l_test_routines_to_replace.is_empty then
 								-- Rewrite test class file of first test routine found
 								-- NOTE/TODO delete test classes associated with other found test routines?
+
+								-- Remove corresponding test class from test suite.
+							test_suite.remove_test_class (l_test_routines_to_replace.first.test_class.test_class_name)
 							create l_file.make (l_test_routines_to_replace.first.class_file_name)
 							l_file.open_write
 							if l_file.is_open_write then
@@ -439,17 +443,38 @@ feature {DEBUGGER_MANAGER, STOPPED_HDLR} -- Basic Operations (Debugging/Capturin
 									end
 									l_test_routines_to_replace.first.outcomes.wipe_out
 									l_test_routines_to_replace.first.set_original_outcome (l_original_outcome)
-									create l_update_list.make (1)
-									l_update_list.put_first (create {CDD_TEST_ROUTINE_UPDATE}.make (l_test_routines_to_replace.first, {CDD_TEST_ROUTINE_UPDATE}.changed_code))
-									test_suite.test_routine_update_actions.call ([l_update_list])
-									status_update_actions.call ([create {CDD_STATUS_UPDATE}.make_with_code ({CDD_STATUS_UPDATE}.printer_existing_step_code)])
-									l_routine_count := l_routine_count + 1
-									log.report_printing (l_print_start_time, create {DATE_TIME}.make_now, l_test_routines_to_replace.first.test_class, True)
 								else
 									-- TODO Error handling
 								end
 							else
 								-- TODO Error handling
+							end
+
+								-- Update and re-add class to test suite, IF no duplicate
+								-- NOTE: A complete update would be based on obsolete information, since associated parsed/compiled class do not yet
+								-- correspond to the new file content. But information which is gathered directly from the file will be correct,
+								-- especially the check sum used for duplicate detection (relies directly on the file, plus on the covered class/feature,
+								-- which are impossible to have changed due to semantics of second chance reextraction)
+								-- TODO: Remove class completely from system, and parse anew before re-adding to test suite.
+							l_test_routines_to_replace.first.test_class.update_check_sum
+							if
+								l_test_routines_to_replace.first.test_class.check_sum /= Void and then
+								not test_suite.has_extracted_test_case_with_check_sum (l_test_routines_to_replace.first.test_class.check_sum)
+							then
+								test_suite.add_test_class (l_test_routines_to_replace.first.test_class)
+								status_update_actions.call ([create {CDD_STATUS_UPDATE}.make_with_code ({CDD_STATUS_UPDATE}.printer_existing_step_code)])
+								l_routine_count := l_routine_count + 1
+								log.report_printing (l_print_start_time, create {DATE_TIME}.make_now, l_test_routines_to_replace.first.test_class, True, False)
+							else
+									-- The reextracted test class is a duplicate. Delete it from system (including associated file)
+								l_class_to_delete_list := eb_cluster_manager.eiffel_universe.classes_with_name (l_test_routines_to_replace.first.test_class.test_class_name)
+									-- To be sure, only delete anything if exactly one class is found
+								if l_class_to_delete_list.count = 1 then
+									file_manager.delete_class_from_system (l_class_to_delete_list.first)
+								end
+								status_update_actions.call ([create {CDD_STATUS_UPDATE}.make_with_code ({CDD_STATUS_UPDATE}.printer_existing_duplicate_step_code)])
+								l_routine_count := l_routine_count + 1
+								log.report_printing (l_print_start_time, create {DATE_TIME}.make_now, l_test_routines_to_replace.first.test_class, True, True)
 							end
 						else
 								-- Get a new class file.
@@ -464,8 +489,11 @@ feature {DEBUGGER_MANAGER, STOPPED_HDLR} -- Basic Operations (Debugging/Capturin
 									l_routine_count := l_routine_count + 1
 									if file_manager.is_last_test_class_adding_successful then
 										status_update_actions.call ([create {CDD_STATUS_UPDATE}.make_with_code ({CDD_STATUS_UPDATE}.printer_new_step_code)])
+										log.report_printing (l_print_start_time, create {DATE_TIME}.make_now, file_manager.last_added_cdd_test_class, False, False)
+									elseif file_manager.is_adding_failed_due_to_duplicate then
+										status_update_actions.call ([create {CDD_STATUS_UPDATE}.make_with_code ({CDD_STATUS_UPDATE}.printer_duplicate_step_code)])
+										log.report_printing (l_print_start_time, create {DATE_TIME}.make_now, file_manager.last_added_cdd_test_class, False, True)
 									end
-									log.report_printing (l_print_start_time, create {DATE_TIME}.make_now, file_manager.last_added_cdd_test_class, False)
 								else
 									-- TODO Error handling
 								end

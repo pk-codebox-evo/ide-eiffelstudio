@@ -478,13 +478,16 @@ feature {NONE} -- Dynamic grid items
 				l_tooltip := "Tags: "
 				a_node.test_routine.tags.do_all_with_index (agent (a_tooltip, a_tag: STRING; an_index: INTEGER)
 					do
+--						if an_index > 1 then
+--							a_tooltip.append (", ")
+--							if (an_index \\ 5) = 0 then
+--								a_tooltip.append ("%N")
+--							end
+--						end
 						if an_index > 1 then
-							a_tooltip.append (", ")
-							if (an_index \\ 5) = 0 then
-								a_tooltip.append ("%N")
-							end
+							a_tooltip.append (",")
 						end
-						a_tooltip.append (a_tag)
+						a_tooltip.append ("%N" + a_tag)
 					end (l_tooltip, ?, ?))
 				Result.set_tooltip (l_tooltip)
 			end

@@ -119,6 +119,21 @@ feature {NONE} -- Implementation
 					l_formatter.process_basic_text (debugger_manager.cdd_manager.last_replaced_class_name)
 				end
 				l_formatter.add_new_line
+			when {CDD_STATUS_UPDATE}.printer_duplicate_step_code then
+				l_formatter := text_area.text_displayed
+				l_formatter.process_basic_text ("Discarded new test class duplicate: " +
+					debugger_manager.cdd_manager.file_manager.last_added_cdd_test_class.test_class_name)
+				l_formatter.add_new_line
+			when {CDD_STATUS_UPDATE}.printer_existing_duplicate_step_code then
+				l_formatter := text_area.text_displayed
+				l_formatter.process_basic_text ("Rewritten test class discarded as duplicate: ")
+				l_class := debugger_manager.cdd_manager.last_replaced_class
+				if l_class /= Void then
+					l_formatter.process_class_name_text (l_class.name, l_class, False)
+				else
+					l_formatter.process_basic_text (debugger_manager.cdd_manager.last_replaced_class_name)
+				end
+				l_formatter.add_new_line
 			when {CDD_STATUS_UPDATE}.executor_step_code then
 				if debugger_manager.cdd_manager.background_executor.last_executed_test_routine /= Void then
 					append_routine_test_message (debugger_manager.cdd_manager.background_executor.last_executed_test_routine)

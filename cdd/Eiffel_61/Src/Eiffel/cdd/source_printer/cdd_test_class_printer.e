@@ -72,7 +72,7 @@ feature {ANY} -- Basic operations
 			if not has_last_print_failed then
 				put_indexing
 				put_class_header (a_test_class_name)
-				put_set_up (a_routine_invocation.target_class_type, a_routine_invocation.represented_feature, a_routine_invocation.is_creation_feature)
+				put_set_up (a_routine_invocation.target_class_type, a_routine_invocation.represented_feature, a_routine_invocation.is_creation_feature, a_routine_invocation.context)
 				put_test_routine (a_routine_invocation.represented_feature, a_routine_invocation.call_stack_id, a_routine_invocation.call_stack_index)
 				put_context_header
 				from
@@ -142,7 +142,7 @@ feature {NONE} -- Implementation
 			output_stream.put_new_line
 		end
 
-	put_set_up (a_target_object_type: STRING; a_feature: E_FEATURE; an_is_creation_call: BOOLEAN) is
+	put_set_up (a_target_object_type: STRING; a_feature: E_FEATURE; an_is_creation_call: BOOLEAN; a_context: DS_LIST [TUPLE [id: STRING_8; type: STRING_8; inv: BOOLEAN; attr: DS_LIST [STRING_8]]]) is
 			-- Append class header text for 'test_class_name'
 		require
 			a_target_object_type_valid: a_target_object_type /= Void and then not a_target_object_type.is_empty
@@ -151,8 +151,8 @@ feature {NONE} -- Implementation
 			i: INTEGER
 			l_agent, l_class: STRING
 			l_is_fix: BOOLEAN
-			l_ops: DS_LINKED_LIST [STRING]
-			l_cursor: DS_LINKED_LIST_CURSOR [STRING]
+			l_ops_type_string: STRING_8
+			l_ops: LIST [STRING]
 		do
 			output_stream.put_line ("feature {NONE} -- Setup%N")
 			output_stream.indent
@@ -167,32 +167,30 @@ feature {NONE} -- Implementation
 			l_agent := "routine_under_test := agent"
 			l_is_fix := a_feature.is_infix or a_feature.is_prefix
 			if an_is_creation_call or l_is_fix then
-				create l_ops.make
+				create {LINKED_LIST [STRING_8]} l_ops.make
 				if a_feature.argument_count > 0 or l_is_fix then
-					if l_is_fix then
-						l_ops.put_last (l_class)
+						-- We need a list of generating types for each argument.
+						-- This is achieved by parsing the type information of the first entry of `a_context'
+					l_ops_type_string := a_context.first.type
+						-- Get generic types of "TUPLE"
+					operand_types_regex.match (l_ops_type_string)
+					check
+						arguments_available_means_has_matched: operand_types_regex.has_matched
 					end
-					from
-						i := 1
-					until
-						i > a_feature.argument_count
-					loop
-						l_ops.put_last (a_feature.arguments.i_th (i).associated_class.name_in_upper)
-						i := i + 1
-					end
+					l_ops_type_string := operand_types_regex.captured_substring (1)
+					l_ops := l_ops_type_string.split (',')
 
-					create l_cursor.make (l_ops)
 					l_agent.append (" (")
 					from
-						l_cursor.start
+						l_ops.start
 					until
-						l_cursor.after
+						l_ops.after
 					loop
-						l_agent.append ("an_arg" + l_cursor.index.out + ": " + l_cursor.item)
-						if not l_cursor.is_last then
+						l_agent.append ("an_arg" + l_ops.index.out + ": " + l_ops.item)
+						l_ops.forth
+						if not l_ops.after then
 							l_agent.append ("; ")
 						end
-						l_cursor.forth
 					end
 					l_agent.append (")")
 				end
@@ -224,7 +222,7 @@ feature {NONE} -- Implementation
 				elseif a_feature.is_infix then
 					l_agent := "l_result := an_arg1 " + a_feature.infix_symbol + " an_arg2"
 				else
-					l_agent := "l_result := " + a_feature.prefix_symbol + "an_arg1"
+					l_agent := "l_result := " + a_feature.prefix_symbol + " an_arg1"
 				end
 				output_stream.put_line (l_agent)
 				output_stream.dedent
@@ -355,6 +353,9 @@ feature {NONE} -- Implementation
 			-- This is necessary because prefix and infix features provide the whole "infix 'some_op'" string as name
 		require
 			a_feature_not_void: a_feature /= Void
+		local
+			i: INTEGER_32
+			l_custom_symbol: STRING_8
 		do
 			if a_feature.is_prefix then
 				Result := "prefix_"
@@ -363,7 +364,32 @@ feature {NONE} -- Implementation
 				elseif a_feature.prefix_symbol.is_equal ("-") then
 					Result.append ("minus")
 				else
-					Result.append (a_feature.prefix_symbol)
+						-- Replace all non-alpha-numeric characters with valid representations.
+					from
+						create l_custom_symbol.make_empty
+						i := 1
+					until
+						i > a_feature.prefix_symbol.count
+					loop
+						if a_feature.prefix_symbol.item (i).is_alpha_numeric then
+							l_custom_symbol.append_character (a_feature.prefix_symbol.item (i))
+						else
+							inspect a_feature.prefix_symbol.item (i)
+							when '#' then
+								l_custom_symbol.append_string ("_symb_number_")
+							when '|' then
+								l_custom_symbol.append_string ("_symb_vertbar_")
+							when '@' then
+								l_custom_symbol.append_string ("_symb_at_")
+							when '&' then
+								l_custom_symbol.append_string ("_symb_amp_")
+							else
+								l_custom_symbol.append_string ("_symb_" + a_feature.prefix_symbol.item (i).code.out + "_")
+							end
+						end
+						i := i + 1
+					end
+					Result.append (l_custom_symbol)
 				end
 			elseif a_feature.is_infix then
     			Result := "infix_"
@@ -390,7 +416,32 @@ feature {NONE} -- Implementation
 				elseif a_feature.infix_symbol.is_equal ("^") then
 					Result.append ("power")
 				else
-					Result.append (a_feature.infix_symbol)
+						-- Replace all non-alpha-numeric characters with valid representations.
+					from
+						create l_custom_symbol.make_empty
+						i := 1
+					until
+						i > a_feature.infix_symbol.count
+					loop
+						if a_feature.infix_symbol.item (i).is_alpha_numeric then
+							l_custom_symbol.append_character (a_feature.infix_symbol.item (i))
+						else
+							inspect a_feature.infix_symbol.item (i)
+							when '#' then
+								l_custom_symbol.append_string ("_symb_number_")
+							when '|' then
+								l_custom_symbol.append_string ("_symb_vertbar_")
+							when '@' then
+								l_custom_symbol.append_string ("_symb_at_")
+							when '&' then
+								l_custom_symbol.append_string ("_symb_amp_")
+							else
+								l_custom_symbol.append_character ('_')
+							end
+						end
+						i := i + 1
+					end
+					Result.append (l_custom_symbol)
 				end
 			else
 				Result := a_feature.name
@@ -409,6 +460,14 @@ feature {NONE} -- Implementation
 			not_void: Result /= Void
 		end
 
+	operand_types_regex: RX_PCRE_REGULAR_EXPRESSION is
+			-- Regular matching TUPLE type declaration
+		once
+			create Result.make
+			Result.set_multiline (True)
+			Result.set_dotall (True)
+			Result.compile (".*TUPLE[^\[]*\[(.*)\]")
+		end
 
 invariant
 
