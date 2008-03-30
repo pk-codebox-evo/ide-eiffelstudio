@@ -93,6 +93,7 @@ feature {NONE} -- Implementation
 		local
 			l_formatter: CLICKABLE_TEXT
 			l_class: CLASS_I
+			l_feature: E_FEATURE
 		do
 			text_area.handle_before_processing (True)
 			inspect
@@ -101,7 +102,10 @@ feature {NONE} -- Implementation
 				l_formatter := text_area.text_displayed
 				l_formatter.process_basic_text ("Extracted new test class covering ")
 				l_class := debugger_manager.cdd_manager.capturer.last_covered_class
+				l_feature := debugger_manager.cdd_manager.capturer.last_covered_feature
 				l_formatter.process_class_name_text (l_class.name, l_class, False)
+				l_formatter.process_basic_text (".")
+				l_formatter.process_feature_text (l_feature.name, l_feature, False)
 				l_formatter.add_new_line
 			when {CDD_STATUS_UPDATE}.printer_new_step_code then
 				l_formatter := text_area.text_displayed
@@ -121,7 +125,7 @@ feature {NONE} -- Implementation
 				l_formatter.add_new_line
 			when {CDD_STATUS_UPDATE}.printer_duplicate_step_code then
 				l_formatter := text_area.text_displayed
-				l_formatter.process_basic_text ("Discarded new test class duplicate: " +
+				l_formatter.process_basic_text ("New test class discarded as duplicate: " +
 					debugger_manager.cdd_manager.file_manager.last_added_cdd_test_class.test_class_name)
 				l_formatter.add_new_line
 			when {CDD_STATUS_UPDATE}.printer_existing_duplicate_step_code then

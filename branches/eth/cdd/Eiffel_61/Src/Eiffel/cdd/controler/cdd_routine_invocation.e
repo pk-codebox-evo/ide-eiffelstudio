@@ -21,7 +21,7 @@ create
 feature {ANY} -- Initialisation
 
 	make (	a_feature: E_FEATURE;
-			a_target_class_type: STRING;
+			an_operand_type_list: DS_LIST [STRING_8];
 			a_context: DS_LIST [TUPLE [id: STRING; type: STRING; inv: BOOLEAN; attributes: DS_LIST [STRING]]];
 			a_call_stack_id: INTEGER_32;
 			a_call_stack_index: INTEGER_32
@@ -29,13 +29,13 @@ feature {ANY} -- Initialisation
 			-- Initialize `Current'.
 		require
 			a_feature_not_void: a_feature /= Void
-			a_target_class_type_valid: a_target_class_type /= Void and then not a_target_class_type.is_empty
+			an_operand_type_list: an_operand_type_list /= Void and (an_operand_type_list.count = (a_feature.argument_count + 1))
 			a_context_valid: a_context /= Void and then not a_context.is_empty
 			a_call_stack_id_valid: a_call_stack_id > 0
 			a_call_stack_index_valid: a_call_stack_index > 0
 		do
 			represented_feature := a_feature
-			target_class_type := a_target_class_type
+			operand_type_list := an_operand_type_list
 			context := a_context
 			call_stack_id := a_call_stack_id
 			call_stack_index := a_call_stack_index
@@ -47,8 +47,8 @@ feature {ANY} -- Access
 	represented_feature: E_FEATURE
 			-- The feature whose invocation is represented by `Current'
 
-	target_class_type: STRING
-			-- The dynamic type of the target object for the feature call represented by `Current'
+	operand_type_list: DS_LIST [STRING_8]
+			-- List of generating types of arguments for feature call represented by `Current'
 
 	context: DS_LIST [TUPLE [id: STRING; type: STRING; inv: BOOLEAN; attributes: DS_LIST [STRING]]]
 			-- The context for the invocation of `represented_feature'
@@ -97,7 +97,7 @@ feature {NONE} -- Implementation
 
 invariant
 	feature_not_void: represented_feature /= Void
-	target_class_type_valid: target_class_type /= Void and then not target_class_type.is_empty
+	operand_type_list_valid: operand_type_list /= Void and (operand_type_list.count = (represented_feature.argument_count + 1))
 	context_valid: context /= Void and then not context.is_empty
 	call_stack_id_valid: call_stack_id > 0
 	call_stack_index_valid: call_stack_index > 0

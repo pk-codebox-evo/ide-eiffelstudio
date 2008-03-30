@@ -69,6 +69,86 @@ feature -- Logging (System)
 			end
 		end
 
+	report_sut_debugging_start is
+			-- Log start of sut debugging.
+		do
+			create current_sut_debugging_start.make_now
+			log_element ("sut_debugging", "status=%"started%"", Void)
+		end
+
+	report_sut_debugging_end is
+			-- Log stop of sut debugging.
+		local
+			l_time: DATE_TIME
+			l_duration_sec: REAL_64
+			l_attributes: STRING
+		do
+			create l_time.make_now
+
+				-- NOTE: In case `report_sut_debugging_start' has not been called before last call to `report_sut_debugging_end',
+				-- the following handling will lead to a negative duration. This can be used as an error flag.
+			l_attributes := ""
+			append_xml_attribute (l_attributes, "status", "ended")
+			if current_sut_debugging_start = Void then
+				append_xml_attribute (l_attributes, "duration", "-1")
+			else
+				l_duration_sec := l_time.definite_duration (current_sut_debugging_start).fine_seconds_count
+				append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
+			end
+
+			log_element ("sut_debugging", l_attributes, Void)
+
+			current_sut_debugging_start := Void
+		end
+
+	report_test_case_foreground_execution_start (a_test_routine: CDD_TEST_ROUTINE) is
+			-- Log start of foreground execution of `a_test_routine'.
+		local
+			l_attributes: STRING
+		do
+			create current_test_case_foreground_execution_start.make_now
+
+			l_attributes := ""
+			append_xml_attribute (l_attributes, "status", "started")
+			l_attributes.append_string (" " + test_routine_attribute_string (a_test_routine))
+
+			log_element ("test_case_foreground_execution", l_attributes, Void)
+		end
+
+	report_test_case_foreground_execution_end is
+			-- Log end of foreground execution of some test case.
+		local
+			l_time: DATE_TIME
+			l_duration_sec: REAL_64
+			l_attributes: STRING
+		do
+			create l_time.make_now
+
+				-- NOTE: In case `report_test_case_foreground_execution_start' has not been called before last call to
+				-- `report_test_case_foreground_execution_end',
+				-- the following handling will lead to a negative duration. This can be used as an error flag.
+			l_attributes := ""
+			append_xml_attribute (l_attributes, "status", "ended")
+			if current_test_case_foreground_execution_start = Void then
+				append_xml_attribute (l_attributes, "duration", "-1")
+			else
+				l_duration_sec := l_time.definite_duration (current_test_case_foreground_execution_start).fine_seconds_count
+				append_xml_attribute (l_attributes, "duration", l_duration_sec.out)
+			end
+
+			log_element ("test_case_foreground_execution", l_attributes, Void)
+
+			current_test_case_foreground_execution_start := Void
+		end
+
+feature {NONE} -- Implementation (System)
+
+	current_sut_debugging_start: DATE_TIME
+			-- Start time of current sut debugging
+
+	current_test_case_foreground_execution_start: DATE_TIME
+			-- Start time of current foreground test case execution
+
 feature -- Logging (Test Suite)
 
 	report_test_suite_status (a_test_suite: CDD_TEST_SUITE; a_start_time: DATE_TIME; an_end_time: DATE_TIME; a_message: STRING) is
@@ -693,7 +773,7 @@ feature {NONE} -- Implementation
 			-- String containing xml-like attributes for `an_invocation'
 		do
 			Result := ""
-			append_xml_attribute (Result, "covered_class", an_invocation.target_class_type)
+			append_xml_attribute (Result, "covered_class", an_invocation.operand_type_list.first)
 			append_xml_attribute (Result, "covered_feature", an_invocation.represented_feature.name)
 			append_xml_attribute (Result, "is_creation_feature", an_invocation.is_creation_feature.out)
 			append_xml_attribute (Result, "call_stack_id", an_invocation.call_stack_id.out)

@@ -616,7 +616,6 @@ feature {NONE} -- Implementation (Buttons)
 			l_test_routine_list: DS_LINEAR [CDD_TEST_ROUTINE]
 			l_test_routine_cursor: DS_LINEAR_CURSOR [CDD_TEST_ROUTINE]
 			l_routine: CDD_TEST_ROUTINE
-			l_file: KL_TEXT_INPUT_FILE
 			l_updates: DS_ARRAYED_LIST [CDD_TEST_ROUTINE_UPDATE]
 		do
 			l_test_routine_list := grid.tree_view.filtered_view.test_routines.twin
@@ -634,17 +633,15 @@ feature {NONE} -- Implementation (Buttons)
 					l_routine.has_outcome and then
 					l_routine.outcomes.last.is_unresolved
 				then
-					create l_file.make (l_routine.class_file_name)
-					if l_file.exists then
-						l_file.delete
-						if not l_file.exists then
-								-- The file has been successfully deleted. Generate corresponding test routine update.
-							if l_routine.test_class.compiled_class /= Void then
-									-- This will trigger update of test suite and call to update status action
-								cdd_manager.eb_cluster_manager.remove_class (l_routine.test_class.compiled_class.original_class)
-							else
-								l_updates.force_last (create {CDD_TEST_ROUTINE_UPDATE}.make (l_routine, {CDD_TEST_ROUTINE_UPDATE}.remove_code))
-							end
+					if l_routine.test_class.compiled_class /= Void then
+							-- This will trigger update of test suite and call to update status action
+						cdd_manager.file_manager.delete_class_from_system (l_routine.test_class.compiled_class.original_class)
+					else
+							-- Try to get class via universe
+						if cdd_manager.project.system.universe.classes_with_name (l_routine.test_class.test_class_name).count = 1 then
+							cdd_manager.file_manager.delete_class_from_system (cdd_manager.project.system.universe.classes_with_name (l_routine.test_class.test_class_name).first)
+						else
+							-- leave it be TODO: Error handling						
 						end
 					end
 				end

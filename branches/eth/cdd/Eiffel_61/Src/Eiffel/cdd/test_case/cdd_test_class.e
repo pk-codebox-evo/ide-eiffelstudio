@@ -311,6 +311,7 @@ feature -- Element change
 							-- <covers.CLASS.feature><context part of test class file>
 							-- <context part of test class file> is everything between and not including
 							-- the "feature {NONE} -- Extracted data" line and end of file.
+
 						checksum_calculator.reset
 						checksum_calculator.add_string (l_string)
 						from

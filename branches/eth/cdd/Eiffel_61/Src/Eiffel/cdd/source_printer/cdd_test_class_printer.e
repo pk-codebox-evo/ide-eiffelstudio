@@ -72,7 +72,7 @@ feature {ANY} -- Basic operations
 			if not has_last_print_failed then
 				put_indexing
 				put_class_header (a_test_class_name)
-				put_set_up (a_routine_invocation.target_class_type, a_routine_invocation.represented_feature, a_routine_invocation.is_creation_feature, a_routine_invocation.context)
+				put_set_up (a_routine_invocation.operand_type_list, a_routine_invocation.represented_feature, a_routine_invocation.is_creation_feature)
 				put_test_routine (a_routine_invocation.represented_feature, a_routine_invocation.call_stack_id, a_routine_invocation.call_stack_index)
 				put_context_header
 				from
@@ -142,17 +142,15 @@ feature {NONE} -- Implementation
 			output_stream.put_new_line
 		end
 
-	put_set_up (a_target_object_type: STRING; a_feature: E_FEATURE; an_is_creation_call: BOOLEAN; a_context: DS_LIST [TUPLE [id: STRING_8; type: STRING_8; inv: BOOLEAN; attr: DS_LIST [STRING_8]]]) is
+	put_set_up (an_operand_type_list: DS_LIST [STRING_8]; a_feature: E_FEATURE; an_is_creation_call: BOOLEAN) is
 			-- Append class header text for 'test_class_name'
 		require
-			a_target_object_type_valid: a_target_object_type /= Void and then not a_target_object_type.is_empty
+			an_operand_type_list_valid: an_operand_type_list /= Void and then (an_operand_type_list.count = (a_feature.argument_count + 1))
 			a_feature_not_void: a_feature /= Void
 		local
 			i: INTEGER
-			l_agent, l_class: STRING
+			l_agent: STRING
 			l_is_fix: BOOLEAN
-			l_ops_type_string: STRING_8
-			l_ops: LIST [STRING]
 		do
 			output_stream.put_line ("feature {NONE} -- Setup%N")
 			output_stream.indent
@@ -163,32 +161,25 @@ feature {NONE} -- Implementation
 			output_stream.dedent
 			output_stream.put_line ("do")
 			output_stream.indent
-			l_class := a_target_object_type
+
 			l_agent := "routine_under_test := agent"
 			l_is_fix := a_feature.is_infix or a_feature.is_prefix
 			if an_is_creation_call or l_is_fix then
-				create {LINKED_LIST [STRING_8]} l_ops.make
 				if a_feature.argument_count > 0 or l_is_fix then
-						-- We need a list of generating types for each argument.
-						-- This is achieved by parsing the type information of the first entry of `a_context'
-					l_ops_type_string := a_context.first.type
-						-- Get generic types of "TUPLE"
-					operand_types_regex.match (l_ops_type_string)
-					check
-						arguments_available_means_has_matched: operand_types_regex.has_matched
-					end
-					l_ops_type_string := operand_types_regex.captured_substring (1)
-					l_ops := l_ops_type_string.split (',')
-
 					l_agent.append (" (")
 					from
-						l_ops.start
+						an_operand_type_list.start
+						if an_is_creation_call then
+							an_operand_type_list.forth -- For creation calls, we do not need the first element (representing target object type)
+						end
+						i := 1
 					until
-						l_ops.after
+						an_operand_type_list.after
 					loop
-						l_agent.append ("an_arg" + l_ops.index.out + ": " + l_ops.item)
-						l_ops.forth
-						if not l_ops.after then
+						l_agent.append ("an_arg" + i.out + ": " + an_operand_type_list.item_for_iteration)
+						an_operand_type_list.forth
+						i := i + 1
+						if not an_operand_type_list.after then
 							l_agent.append ("; ")
 						end
 					end
@@ -203,7 +194,7 @@ feature {NONE} -- Implementation
 				output_stream.put_line ("do")
 				output_stream.indent
 				if an_is_creation_call then
-					l_agent := "l_result := create {" + l_class + "}." + a_feature.name
+					l_agent := "l_result := create {" + an_operand_type_list.first + "}." + a_feature.name
 					if a_feature.argument_count > 0 then
 						l_agent.append (" (")
 						from
@@ -229,7 +220,7 @@ feature {NONE} -- Implementation
 				output_stream.put_line ("end")
 				output_stream.dedent
 			else
-				output_stream.put_line (l_agent + " {" + l_class + "}." + a_feature.name)
+				output_stream.put_line (l_agent + " {" + an_operand_type_list.first + "}." + a_feature.name)
 			end
 			output_stream.dedent
 			output_stream.put_line ("end%N")
@@ -458,15 +449,6 @@ feature {NONE} -- Implementation
 			create Result
 		ensure
 			not_void: Result /= Void
-		end
-
-	operand_types_regex: RX_PCRE_REGULAR_EXPRESSION is
-			-- Regular matching TUPLE type declaration
-		once
-			create Result.make
-			Result.set_multiline (True)
-			Result.set_dotall (True)
-			Result.compile (".*TUPLE[^\[]*\[(.*)\]")
 		end
 
 invariant

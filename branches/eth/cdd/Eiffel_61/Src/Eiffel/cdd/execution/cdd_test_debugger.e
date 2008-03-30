@@ -38,6 +38,12 @@ feature -- Access
 	cdd_manager: CDD_MANAGER
 			-- CDD manager
 
+	log: CDD_LOGGER is
+			-- Logger for CDD activities
+		do
+			Result := cdd_manager.log
+		end
+
 	debugger_manager: DEBUGGER_MANAGER is
 			-- Debugger manager for executing test case
 		do
@@ -98,6 +104,7 @@ feature -- Basic functionality
 			current_test_routine := a_test_routine
 			root_class_printer.print_root_class (cdd_manager.file_manager.testing_directory, a_test_routine)
 			if root_class_printer.last_print_succeeded then
+				log.report_test_case_foreground_execution_start (a_test_routine)
 				l_root := conf_factory.new_root (Void, "CDD_ROOT_CLASS", "make", False)
 				is_running := True
 				set_root_class (l_root)
@@ -171,9 +178,10 @@ feature {NONE} -- Implementation
 			end
 			set_root_class (old_root)
 			current_test_routine := Void
+			melt_project_cmd.execute
 			is_running := False
 			cdd_manager.status_update_actions.call ([update_step])
-			melt_project_cmd.execute
+			log.report_test_case_foreground_execution_end
 		end
 
 	set_root_class (a_root: like old_root) is

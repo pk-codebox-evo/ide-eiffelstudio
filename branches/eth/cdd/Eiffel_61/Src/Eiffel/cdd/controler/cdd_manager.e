@@ -229,11 +229,13 @@ feature -- Basic Operations (General)
 							-- a project opened message is emmited here (needs investigation...)
 					log.report_system_status (project.system.name, target.name, is_extracting_enabled, is_executing_enabled, "Initialized")
 				end
-				test_suite.refresh
+
 					-- On recompiles the ecf file is loaded a new. It might have changed.
 					-- In order to update we emit a notifcation here.
 				emit_manager_status_update
-				if project.successful and not debug_executor.is_running then
+
+				if project.successful and then not debug_executor.is_running then
+					test_suite.refresh
 					schedule_testing_restart
 				end
 			end
@@ -280,37 +282,38 @@ feature {DEBUGGER_MANAGER, STOPPED_HDLR} -- Basic Operations (Debugging/Capturin
 			l_test_class: CDD_TEST_CLASS
 			l_test_routine: CDD_TEST_ROUTINE
 		do
-				-- Do nothing is extraction is disabled or a test case is beeing debugged (in foreground).
-			if is_extracting_enabled and not debug_executor.is_running then
-
-					-- Generate list of test routines for reextraction and insert CDD breakpoints.
-				create {DS_ARRAYED_LIST [CDD_TEST_ROUTINE]} test_routines_for_reextraction.make (10)
-				from
-					test_suite.test_classes.start
-				until
-					test_suite.test_classes.after
-				loop
-					l_test_class := test_suite.test_classes.item_for_iteration
-
+			if not debug_executor.is_running then
+				log.report_sut_debugging_start
+				if is_extracting_enabled then
+						-- Generate list of test routines for reextraction and insert CDD breakpoints.
+					create {DS_ARRAYED_LIST [CDD_TEST_ROUTINE]} test_routines_for_reextraction.make (10)
 					from
-						l_test_class.test_routines.start
+						test_suite.test_classes.start
 					until
-						l_test_class.test_routines.after
+						test_suite.test_classes.after
 					loop
-						l_test_routine := l_test_class.test_routines.item_for_iteration
-						if l_test_routine.has_original_outcome then
-							l_test_routine.update_original_outcome
-							if l_test_routine.is_automatic_reextraction_required then
-								test_routines_for_reextraction.force_last (l_test_routine)
-								if not cdd_breakpoints.has_cdd_breakpoint (l_test_routine.original_outcome.covered_feature) then
-									cdd_breakpoints.add_cdd_breakpoints (l_test_routine.original_outcome.covered_feature)
+						l_test_class := test_suite.test_classes.item_for_iteration
+
+						from
+							l_test_class.test_routines.start
+						until
+							l_test_class.test_routines.after
+						loop
+							l_test_routine := l_test_class.test_routines.item_for_iteration
+							if l_test_routine.has_original_outcome then
+								l_test_routine.update_original_outcome
+								if l_test_routine.is_automatic_reextraction_required then
+									test_routines_for_reextraction.force_last (l_test_routine)
+									if not cdd_breakpoints.has_cdd_breakpoint (l_test_routine.original_outcome.covered_feature) then
+										cdd_breakpoints.add_cdd_breakpoints (l_test_routine.original_outcome.covered_feature)
+									end
 								end
 							end
+							l_test_class.test_routines.forth
 						end
-						l_test_class.test_routines.forth
-					end
 
-					test_suite.test_classes.forth
+						test_suite.test_classes.forth
+					end
 				end
 			end
 		end
@@ -358,7 +361,6 @@ feature {DEBUGGER_MANAGER, STOPPED_HDLR} -- Basic Operations (Debugging/Capturin
 			l_status: APPLICATION_STATUS
 			l_list: DS_LIST [CDD_ROUTINE_INVOCATION]
 			l_test_routines_to_replace: DS_LIST [CDD_TEST_ROUTINE]
---			l_update_list: DS_ARRAYED_LIST [CDD_TEST_ROUTINE_UPDATE]
 			l_class_to_delete_list: LIST [CLASS_I]
 
 			l_routine_count: INTEGER_32
@@ -525,6 +527,9 @@ feature {DEBUGGER_MANAGER, STOPPED_HDLR} -- Basic Operations (Debugging/Capturin
 			cdd_breakpoints.wipe_out
 			test_routines_for_reextraction := Void
 			emit_manager_status_update
+			if not debug_executor.is_running then
+				log.report_sut_debugging_end
+			end
 		end
 
 	execution_paused_on_breakpoint (a_status: APPLICATION_STATUS_CLASSIC) is
@@ -717,6 +722,7 @@ feature {NONE} -- Implementation (General)
 		end
 
 	degree_5_observer: PROCEDURE [ANY, TUPLE]
+			-- Reference to degree_5_observer for removal
 
 	conf_factory: CONF_FACTORY is
 			-- Factory for creating cdd library
