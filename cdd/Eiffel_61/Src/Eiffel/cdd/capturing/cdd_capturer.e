@@ -59,6 +59,9 @@ feature {ANY} -- Access
 	last_covered_class: CLASS_I
 			-- Target class of last captured stack frame
 
+	last_covered_feature: E_FEATURE
+			-- Target feature of last captured stack frame
+
 feature {ANY} -- Status Report
 
 	is_using_cache: BOOLEAN
@@ -114,7 +117,7 @@ feature {ANY} -- Basic operations
 			-- Make extracted routine invocations available in `last_extracted_routine_invocations'.
 			-- Ignore top of stack upon precondition violation and apply failure extraction conditions for extraction
 			-- of individual call stack elements.
-			-- In case `Current' `is_using_cache' take routine invocations from cache instead of extracting them.
+			-- In case `Current' `is_using_cache' take routine invocations from cache instead of extracting them, if available.
 			-- Additionally, if `Current' `is_using_cache', pop all elements from cache which would have been used without
 			-- special handling because of a failure (-> for each element of the call stack, pop a corresponding routine invocation
 			-- from the stack if available, even if it is not used to replace actual extraction because of special failure extraction
@@ -188,25 +191,9 @@ feature {NONE} -- Implementation (Capturing)
 			-- Initialize all data structures required by any capturing routines.
 		local
 			l_dt: DT_DATE_TIME
-			l_cse: EIFFEL_CALL_STACK_ELEMENT
 		do
 			current_application_status := a_status
 			current_call_stack := a_status.current_call_stack
-
-				-- Remember all objects which are target of some routine call in the current call stack.
-			from
-				create current_call_stack_target_objects.make (20)
-				current_call_stack_target_objects.set_equality_tester (case_insensitive_string_equality_tester)
-				current_call_stack.start
-			until
-				current_call_stack.after
-			loop
-				l_cse ?= current_call_stack.item
-				if l_cse /= Void and then l_cse.current_object_value /= Void and then l_cse.current_object_value.address /= Void then
-					current_call_stack_target_objects.force (l_cse.current_object_value.address)
-				end
-				current_call_stack.forth
-			end
 
 				-- TODO: Caching of debug values over multiple stack frame extractions (simply by extending and keeping "Object Map"?)
 
@@ -226,7 +213,7 @@ feature {NONE} -- Implementation (Capturing)
 			call_stack_ready_for_extraction: current_call_stack.after or else
 												(not current_call_stack.is_empty and then (current_call_stack.item = current_call_stack.i_th (1)))
 			current_call_stack_id_initialized: current_call_stack_id > 0
-			current_call_stack_target_objects_initialized: current_call_stack_target_objects /= Void
+--			current_call_stack_target_objects_initialized: current_call_stack_target_objects /= Void
 		end
 
 	clean_up is
@@ -242,18 +229,17 @@ feature {NONE} -- Implementation (Capturing)
 		end
 
 	capture_stack_frames (a_count: INTEGER; an_apply_failure_extraction_conditions_flag: BOOLEAN) is
-			-- Capture max `a_count' routine invocations from `current_call_stack'
+			-- Capture max `a_count' routine invocations from `current_call_stack'.
 			-- Start where internal cursor of `current_call_stack' is pointing to.
 			-- Stack frames for which extraction is impossible (e.g. not conforming to EIFFEL_CALL_STACK_ELEMENT) are ignored.
 			-- `an_apply_failure_extraction_conditions_flag' determines if call stack elements not meeting the failure extraction conditions
-			-- are ignored.
+			-- are ignored as well.
 			-- If `Current' `is_using_cache' routine invocations are taken from cache if possible, and they are popped for all call stack
 			-- elements regardles if actual extraction takes place.
 		require
 			application_status_initialized: current_application_status /= Void
 			call_stack_initialized: current_call_stack /= Void
 			current_call_stack_id_initialized: current_call_stack_id > 0
-			current_call_stack_target_objects_initialized: current_call_stack_target_objects /= Void
 		local
 			l_cse: EIFFEL_CALL_STACK_ELEMENT
 			i: INTEGER
@@ -327,14 +313,15 @@ feature {NONE} -- Implementation (Capturing)
 			call_stack_initialized: current_call_stack /= Void
 			call_stack_ready_for_extraction: not current_call_stack.after
 			current_call_stack_id_initialized: current_call_stack_id > 0
-			current_call_stack_target_objects_initialized: current_call_stack_target_objects /= Void
 		local
+			l_cse: EIFFEL_CALL_STACK_ELEMENT
 			l_class: CLASS_C
 			l_feature: E_FEATURE
 
 			l_arguments: DS_ARRAYED_LIST [ABSTRACT_DEBUG_VALUE]
 			i, j, l_ops_count: INTEGER
 			l_type: STRING
+			l_argument_generating_type_list: DS_ARRAYED_LIST [STRING_8]
 
 			l_routine_invocation: CDD_ROUTINE_INVOCATION
 			l_context: DS_ARRAYED_LIST [TUPLE [id: STRING; type: STRING; inv: BOOLEAN; attributes: DS_LIST [STRING]]]
@@ -391,6 +378,22 @@ feature {NONE} -- Implementation (Capturing)
 			if not l_done then
 					-- Extract new routine invocation
 
+					-- Remember all call target objects in stack below `a_cse'
+				from
+					create current_call_stack_target_objects.make (20)
+					current_call_stack_target_objects.set_equality_tester (case_insensitive_string_equality_tester)
+					i := a_cse.level_in_stack + 1
+				until
+					i > current_call_stack.count
+				loop
+					l_cse ?= current_call_stack.i_th (i)
+					if l_cse /= Void and then l_cse.current_object_value /= Void and then l_cse.current_object_value.address /= Void then
+						current_call_stack_target_objects.force (l_cse.current_object_value.address)
+					end
+					i := i + 1
+				end
+
+
 					-- Add operands as first object of context
 				current_object_id := 1
 				create object_queue.make
@@ -403,6 +406,10 @@ feature {NONE} -- Implementation (Capturing)
 				end
 
 				create l_arguments.make (l_feature.argument_count + i)
+
+						-- This special list of all argument generating types is required for propper printing of routine invocations.
+				create l_argument_generating_type_list.make (l_feature.argument_count + 1)
+
 				l_type := "TUPLE"
 				l_ops_count := i + l_feature.argument_count
 				if l_ops_count > 1 then
@@ -417,6 +424,8 @@ feature {NONE} -- Implementation (Capturing)
 						l_type.append (", ")
 					end
 				end
+					-- In this list the target object type is always required
+				l_argument_generating_type_list.put (a_cse.current_object_value.dump_value.generating_type_representation (True), 1)
 
 				from
 					j := 1
@@ -425,6 +434,7 @@ feature {NONE} -- Implementation (Capturing)
 				loop
 					l_arguments.put (a_cse.arguments.i_th (j), j + i)
 					l_type.append (a_cse.arguments.i_th (j).dump_value.generating_type_representation (True))
+					l_argument_generating_type_list.put (a_cse.arguments.i_th (j).dump_value.generating_type_representation (True), j + 1)
 					if l_feature.argument_count > j then
 						l_type.append (", ")
 					end
@@ -445,13 +455,14 @@ feature {NONE} -- Implementation (Capturing)
 					object_queue.remove
 				end
 
-				create l_routine_invocation.make (l_feature, a_cse.current_object_value.dump_value.generating_type_representation (True), l_context, current_call_stack_id, a_cs_level)
+				create l_routine_invocation.make (l_feature, l_argument_generating_type_list, l_context, current_call_stack_id, a_cs_level)
 				last_extracted_routine_invocations.force_last (l_routine_invocation)
 
 
 				log.report_extraction (l_start_time, create {DATE_TIME}.make_now, l_routine_invocation)
 
 				last_covered_class := l_feature.associated_class.original_class
+				last_covered_feature := l_feature
 
 				cdd_manager.status_update_actions.call ([create {CDD_STATUS_UPDATE}.make_with_code ({CDD_STATUS_UPDATE}.capturer_extracted_code)])
 			end
@@ -678,11 +689,6 @@ feature {NONE} -- Implementation (Capturing Data Structures)
 	current_call_stack_target_objects: DS_HASH_SET [STRING]
 			-- Hash set for all addresses of objects which are target for a routine call represented by a frame of current call stack
 			-- This is used to prevent invariant checks for theses objects
-			-- NOTE: for now we simply check whether a object is part
-			-- of the call stack. Actually for a given stack frame,
-			-- we should only account for the objects in stack frames
-			-- below the given stack frame (assuming we can extract the
-			-- prestate).		
 
 	current_call_stack_id: INTEGER
 			-- Generated id for currently handled call stack

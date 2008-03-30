@@ -94,11 +94,14 @@ feature -- Element change
 		require
 			a_test_class_not_void: a_test_class /= Void
 			a_test_class_not_added: not test_classes.has (a_test_class)
-			has_valid_status_updates: a_test_class.status_updates.for_all (
-				agent (an_update: CDD_TEST_ROUTINE_UPDATE): BOOLEAN
-					do
-						Result := an_update.is_added
-					end)
+				-- NOTE: This is currently no longer true because of second chance and its interaction with duplicate prevention.
+				-- A cdd test class might be removed from the test suite, considered for deletion, and re-added. For the user this
+				-- has to look like an update, and not an 'adding'
+			-- has_valid_status_updates: a_test_class.status_updates.for_all (
+			--	agent (an_update: CDD_TEST_ROUTINE_UPDATE): BOOLEAN
+			--		do
+			--			Result := an_update.is_added
+			--		end)
 		do
 			test_classes.force_last (a_test_class)
 			test_class_table.force (a_test_class, a_test_class.test_class_name)

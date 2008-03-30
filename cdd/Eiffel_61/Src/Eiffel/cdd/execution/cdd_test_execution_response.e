@@ -186,7 +186,7 @@ feature -- Output
 			if requires_maintenance then
 				Result.append ("%N%NRequires maintenance because of:%N%T")
 				if has_timeout then
-					Result.append ("time out")
+					Result.append ("time out%N(visit%N%T[http://dev.eiffel.com/CDD_Common_Problems]%N for more information)")
 				elseif has_bad_communication then
 					Result.append ("bad communication")
 				elseif has_bad_context then

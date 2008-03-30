@@ -305,6 +305,8 @@ feature -- Basic operations
 			retried: BOOLEAN
 		do
 			if not retried then
+					-- NOTE: this code is copy pasted from remove class/group command
+					-- out-commented parts currently seem not necessary, but that might change after more testing
 --				if debugger_manager.application_is_executing then
 --					debugger_manager.application.kill
 --				end
