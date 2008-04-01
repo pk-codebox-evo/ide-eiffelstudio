@@ -17,20 +17,19 @@ inherit
 		undefine
 			out
 		redefine
-			set_stone
+			set_stone,
+			query_set_stone
 		end
 
 feature -- Access
 
 	stone: STONE assign set_stone
-			-- Last set stone
+			-- <Precursor>
 
 feature -- Element change
 
 	set_stone (a_stone: like stone)
-			-- Sets last stone.
-			--
-			-- `a_stone': Stone to set.
+			-- <Precursor>
 		do
 			stone := a_stone
 			if is_tool_instantiated then
@@ -38,10 +37,22 @@ feature -- Element change
 			end
 		end
 
+feature -- Basic operations
+
+	query_set_stone (a_stone: ?STONE): BOOLEAN
+			-- <Precursor>
+		do
+			if is_tool_instantiated then
+				Result := panel.query_set_stone (a_stone)
+			else
+				Result := Precursor (a_stone)
+			end
+		end
+
 feature -- Synchronization
 
 	synchronize
-			-- Synchronizes any new data (compiled or other wise)
+			-- <Precursor>
 		do
 			if is_tool_instantiated then
 				panel.synchronize
