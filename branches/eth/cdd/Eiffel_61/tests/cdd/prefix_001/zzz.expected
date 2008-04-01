@@ -1,0 +1,71 @@
+
+
+
+
+
+
+
+
+ === CDD_TEST_ROOT_CLASS_001_MOG_THE_PERSEVERANT.test_make
+
+Status after last execution:
+
+Reproduced original failure (at least once)
+
+Last execution:
+Conclusion:
+	FAIL
+
+Setup [normal]
+Test [exception]
+	code: 4
+	name: Postcondition
+	tag: false_postcondition
+	feature: prefix "#pf#&**$"@0
+	class: SOME_CLASS
+
+
+Teardown [normal]
+
+Original Outcome
+covers: {ROOT_CLASS}.make
+[exception]
+	code: 4
+	name: Postcondition
+	tag: false_postcondition
+	feature: prefix "#pf#&**$"@1
+	class: SOME_CLASS
+
+
+
+ === CDD_TEST_SOME_CLASS_001_MOG_THE_PERSEVERANT.test_prefix__symb_number_pf_symb_number__symb_amp__symb_42__symb_42__symb_36_
+
+Status after last execution:
+
+Reproduced original failure (at least once)
+
+Last execution:
+Conclusion:
+	FAIL
+
+Setup [normal]
+Test [exception]
+	code: 4
+	name: Postcondition
+	tag: false_postcondition
+	feature: prefix "#pf#&**$"@4
+	class: SOME_CLASS
+
+
+Teardown [normal]
+
+Original Outcome
+covers: {SOME_CLASS}.prefix "#pf#&**$"
+[exception]
+	code: 4
+	name: Postcondition
+	tag: false_postcondition
+	feature: prefix "#pf#&**$"@1
+	class: SOME_CLASS
+
+

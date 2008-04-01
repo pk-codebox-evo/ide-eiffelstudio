@@ -10,22 +10,23 @@
 
 Status after last execution:
 
-Reproduced original failure (at least once)
+Never reproduced original failure
 
 Last execution:
 Conclusion:
-	FAIL
+	UNRESOLVED
 
-Setup [normal]
-Test [exception]
+Setup [exception]
 	code: 6
 	name: Class_invariant
 	tag: field_non_negative
-	feature: set_field@0
-	class: SOME_CLASS
+	feature: set_up_context@6
+	class: CDD_EXTRACTED_TEST_CASE
 
 
-Teardown [normal]
+
+Requires maintenance because of:
+	bad input
 
 Original Outcome
 covers: {ROOT_CLASS}.foo
@@ -42,22 +43,23 @@ covers: {ROOT_CLASS}.foo
 
 Status after last execution:
 
-Reproduced original failure (at least once)
+Never reproduced original failure
 
 Last execution:
 Conclusion:
-	FAIL
+	UNRESOLVED
 
-Setup [normal]
-Test [exception]
+Setup [exception]
 	code: 6
 	name: Class_invariant
 	tag: field_non_negative
-	feature: set_field@0
-	class: SOME_CLASS
+	feature: set_up_context@6
+	class: CDD_EXTRACTED_TEST_CASE
 
 
-Teardown [normal]
+
+Requires maintenance because of:
+	bad input
 
 Original Outcome
 covers: {ROOT_CLASS}.bar
@@ -113,10 +115,10 @@ Conclusion:
 	UNRESOLVED
 
 Setup [exception]
-	code: 4
-	name: Postcondition
-	tag: is_set_up
-	feature: set_up@0
+	code: 6
+	name: Class_invariant
+	tag: field_non_negative
+	feature: set_up_context@6
 	class: CDD_EXTRACTED_TEST_CASE
 
 
