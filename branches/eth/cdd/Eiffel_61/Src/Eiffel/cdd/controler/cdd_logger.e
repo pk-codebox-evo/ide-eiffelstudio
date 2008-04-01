@@ -73,7 +73,7 @@ feature -- Logging (System)
 			-- Log start of sut debugging.
 		do
 			create current_sut_debugging_start.make_now
-			log_element ("sut_debugging", "status=%"started%"", Void)
+			log_element ("sut_debugging", " status=%"started%"", Void)
 		end
 
 	report_sut_debugging_end is
@@ -87,7 +87,7 @@ feature -- Logging (System)
 
 				-- NOTE: In case `report_sut_debugging_start' has not been called before last call to `report_sut_debugging_end',
 				-- the following handling will lead to a negative duration. This can be used as an error flag.
-			l_attributes := ""
+			l_attributes := " "
 			append_xml_attribute (l_attributes, "status", "ended")
 			if current_sut_debugging_start = Void then
 				append_xml_attribute (l_attributes, "duration", "-1")
