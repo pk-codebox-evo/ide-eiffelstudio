@@ -274,7 +274,7 @@ feature {NONE} -- Implementation (Capturing)
 			-- 1. NOT a call stack element for an external feature
 			-- 2. NOT a call stack element for an inline agent
 			-- 3. NOT a call stack element for a feature of a class which is part of read-only library, EXCEPT `a_cse' is a candidate for first extraction.
-			-- 4. Exported to {any} OR a creation procedure
+			-- 4. Exported to {ANY} OR a creation procedure
 		require
 			a_cse_not_void: a_cse /= Void
 		local
@@ -289,18 +289,22 @@ feature {NONE} -- Implementation (Capturing)
 					-- except `a_cse' is a candidate for first extraction.
 				Result := a_candidate_for_first_extraction_flag or else not (l_class.cluster.is_used_in_library and then l_class.cluster.is_readonly)
 				if Result then
-					l_feature := l_class.feature_with_name (a_cse.routine.name)
-					check
-						feature_exists_in_descendant: l_feature /= Void
-					end
-						-- 1. NOT a call stack element for an external feature
 						-- 2. NOT a call stack element for an inline agent
-					Result := (not l_feature.is_external) and then (not l_feature.is_inline_agent)
+					Result := not a_cse.routine.is_inline_agent
+
 					if Result then
-							-- 4. Exported to {any} OR a creation procedure
-						Result := l_feature.export_status.is_all or else
-									l_class.creation_feature = l_feature.associated_feature_i or else
-									(l_class.creators /= Void and then l_class.creators.has (l_feature.name))
+						l_feature := l_class.feature_with_name (a_cse.routine.name)
+						check
+							feature_exists_in_descendant: l_feature /= Void
+						end
+							-- 1. NOT a call stack element for an external feature
+						Result := (not l_feature.is_external)
+						if Result then
+								-- 4. Exported to {ANY} OR a creation procedure
+							Result := l_feature.export_status.is_all or else
+										l_class.creation_feature = l_feature.associated_feature_i or else
+										(l_class.creators /= Void and then l_class.creators.has (l_feature.name))
+						end
 					end
 				end
 			end

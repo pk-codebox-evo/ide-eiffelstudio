@@ -131,6 +131,13 @@ feature -- Initialization
 							cancel_agent)
 					end
 				end
+					-- NOTE: CDD extension for EIFGEN directory clean-up.
+					-- An existing directory <a_project_location.target_path>_tester is assumed to contain the EIFGENs of
+					-- the cdd tester target belonging to the sut target, and it is removed if `deletion_requested'
+				create d.make (a_project_location.target_path.string + "_tester")
+				if d.exists and then deletion_requested then
+					delete_generation_directory (d.name, deletion_agent, cancel_agent)
+				end
 			end
 			if (cancel_agent = Void) or else (not cancel_agent.item (Void)) then
 				project_directory := a_project_location
