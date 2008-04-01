@@ -8,6 +8,9 @@ indexing
 class
 	WEL_GDIP_IMAGE_FORMAT_CONSTANTS
 
+obsolete
+	"Use WEL_GDIP_IMAGE_ENCODER_CONSTANTS instead"
+	
 feature -- Total
 
 	all_formats: ARRAYED_LIST [WEL_GDIP_IMAGE_FORMAT] is
