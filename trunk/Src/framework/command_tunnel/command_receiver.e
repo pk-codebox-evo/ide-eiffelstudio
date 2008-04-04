@@ -22,8 +22,9 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	external_command_action: PROCEDURE [ANY, TUPLE [STRING]]
-			-- Procedure action to be called when command is received.
+	external_command_action: ?FUNCTION [ANY, TUPLE [STRING], BOOLEAN]
+			-- Function to be called when command is received.
+			-- Return True to claim that the command can be handled.
 
 	key: !STRING
 			-- The key to identify current
