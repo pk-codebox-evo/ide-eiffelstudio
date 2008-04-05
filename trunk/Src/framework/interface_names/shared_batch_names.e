@@ -17,6 +17,12 @@ feature -- Names
 	warnings: WARNING_MESSAGES
 			-- Warning messages.
 		once
+			Result := messages
+		end
+
+	messages: INTERFACE_MESSAGES
+			-- Interface messages.
+		once
 			create Result
 		end
 
