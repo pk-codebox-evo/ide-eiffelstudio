@@ -313,7 +313,7 @@ feature {NONE} -- Implementation
 					-- NOTE: There is a very small chance that the above condition is not true (because of implementation misstakes/strange user behaviour)
 					-- For robustnes it probably should be commented in again.
 				then
-					check_sum_table.put (test_classes.item_for_iteration.check_sum)
+					check_sum_table.force (test_classes.item_for_iteration.check_sum)
 				end
 
 				test_classes.forth
