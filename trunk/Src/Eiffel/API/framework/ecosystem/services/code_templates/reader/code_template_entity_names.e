@@ -32,19 +32,23 @@ feature -- Access
 
 	metadata_tag: !STRING_8 = "metadata"
 
-	title_tag: !STRING_8 = "title"
-
-	shortcut_tag: !STRING_8 = "shortcut"
+	object_tag: !STRING_8 = "object"
 
 	template_tag: !STRING_8 = "template"
 
 	templates_tag: !STRING_8 = "templates"
 
+	title_tag: !STRING_8 = "title"
+
+	shortcut_tag: !STRING_8 = "shortcut"
+
 feature -- Attribute
 
-	format_attribute: !STRING_8 = "format"
+	conforms_to_attribute: !STRING_8 = "conforms_to"
 
 	editable_attribute: !STRING_8 = "editable"
+
+	format_attribute: !STRING_8 = "format"
 
 	id_attribute: !STRING_8 = "id"
 
@@ -52,9 +56,9 @@ feature -- Attribute
 
 feature -- Values
 
-	contract_category: !STRING_8 = "contract"
-
 	code_category: !STRING_8 = "code"
+
+	contract_category: !STRING_8 = "contract"
 
 	class_category: !STRING_8 = "class"
 
