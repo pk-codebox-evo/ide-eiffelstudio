@@ -24,25 +24,6 @@ feature -- Access
 			Result := ast.invariant_part
 		end
 
-feature {NONE} -- Access
-
-	template_identifier: !STRING_32
-			-- <Precursor>
-		once
-			create Result.make_from_string ("invariant")
-		end
-
-feature {NONE} -- Element change
-
-	set_template_values (a_table: !CODE_SYMBOL_TABLE)
-			-- Sets the values use in rendering a template.
-			--
-			-- `a_table': The symbol table used to render a template
-		do
-		end
-
-feature {NONE} -- Query
-
 	contract_insertion_position: INTEGER
 			-- <Precursor>
 		local
@@ -66,6 +47,24 @@ feature {NONE} -- Query
 				end
 			end
 			Result := modified_data.adjusted_position (Result)
+		end
+
+
+feature {NONE} -- Access
+
+	template_identifier: !STRING_32
+			-- <Precursor>
+		once
+			create Result.make_from_string ("invariant")
+		end
+
+feature {NONE} -- Element change
+
+	set_template_values (a_table: !CODE_SYMBOL_TABLE)
+			-- Sets the values use in rendering a template.
+			--
+			-- `a_table': The symbol table used to render a template
+		do
 		end
 
 ;indexing
