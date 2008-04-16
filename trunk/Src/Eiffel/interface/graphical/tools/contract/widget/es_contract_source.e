@@ -1,6 +1,7 @@
 indexing
 	description: "[
-
+		A basic implementation of {ES_CONTRACT_SOURCE_I} for editor source nodes that represents contracts but are not actually
+		a contract themselves.
 	]"
 	legal: "See notice at end of class."
 	status: "See notice at end of class.";
