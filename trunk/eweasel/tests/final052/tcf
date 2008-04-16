@@ -1,5 +1,5 @@
-test_name	wrong-polymorphic-wrapper-2
-test_description When you implement a routine involving either formal generics or references with a routine only involving basic types there are some missing generic wrappers for the polymorphic calls.
+test_name	wrong-call-when-merging	
+test_description When you implement a routine involving either formal generics or references with a routine only involving basic types and there is only one version of the routine to be called, it would use the same code regardless of the actual type of the arguments.
 
 copy_sub 	 Ace $TEST Ace
 copy_raw	 test.e $CLUSTER test.e
