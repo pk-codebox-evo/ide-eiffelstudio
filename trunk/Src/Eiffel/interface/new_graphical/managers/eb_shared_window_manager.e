@@ -13,6 +13,8 @@ feature -- Access
 
 	window_manager: EB_WINDOW_MANAGER is
 			-- Window manager for ebench windows
+		indexing
+			once_status: global
 		once
 			create Result.make
 		end
