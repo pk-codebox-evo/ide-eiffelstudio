@@ -22,6 +22,9 @@ feature -- Access
 	log: NATURAL_8 = 2
 			-- Logger event list item type
 
+	testing: NATURAL_8 = 3
+			-- Testing event list item type
+
 ;indexing
 	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
