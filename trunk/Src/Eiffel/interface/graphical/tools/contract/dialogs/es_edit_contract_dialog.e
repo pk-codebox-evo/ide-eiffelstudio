@@ -55,7 +55,6 @@ feature -- Element change
 		require
 			is_interface_usable: is_interface_usable
 			is_initialized: is_initialized
-			not_a_tag_is_empty: not a_tag.is_empty
 			not_a_contract_is_empty: not a_contract.is_empty
 		do
 			tag_text.set_text (({!STRING_32}) #? a_tag.as_string_32)
