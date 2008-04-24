@@ -194,6 +194,11 @@ feature {NONE} -- Implementation
 			l_tag_name := tag_name
 			l_recipient_name := recipient_name
 			l_class_name := class_name
+			if l_class_name = Void then
+					-- Arno: fix for the case of invariants where we
+					-- currently are not able to retreive a class name
+				l_class_name := "NONE"
+			end
 			l_meaning := meaning (l_exception)
 			l_exception_trace := exception_trace
 
