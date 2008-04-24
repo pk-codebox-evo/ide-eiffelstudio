@@ -22,9 +22,8 @@ feature -- Tests
 			-- TODO: Put header comment here.
 		do
 			-- TODO: Below is a sample test, replace with your own.
-                     check
-                        one_plus_one_is_two: 1 + 1 = 2
-                     end
+                     
+                     assert ("one plus one is two", 1 + 1 = 2)
 		end
 
 end
