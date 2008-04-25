@@ -131,7 +131,6 @@ feature -- Basic functionality
 						old_breakpoint_set := False
 						old_breakpoint_enabled := False
 					end
-
 					run_project_cmd.execute
 				else
 					cancel
@@ -185,7 +184,7 @@ feature {NONE} -- Implementation
 		end
 
 	set_root_class (a_root: like old_root) is
-			-- Set `new_root' as new root class and store configuration.
+			-- Set `new_root' as new root class but do NOT store configuration.
 		require
 			debugging: is_running
 			a_root_not_void: a_root /= Void
@@ -195,7 +194,6 @@ feature {NONE} -- Implementation
 			l_target := cdd_manager.project.system.universe.target
 			old_root := l_target.root
 			l_target.set_root (a_root)
-			l_target.system.store
 		ensure
 			old_root_set: old_root = old cdd_manager.project.system.universe.target.root
 		end
