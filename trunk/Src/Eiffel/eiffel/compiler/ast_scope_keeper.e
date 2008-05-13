@@ -5,22 +5,7 @@ indexing
 	date: "$Date$"
 	revision: "$Revision$"
 
-class AST_SCOPE_KEEPER
-
-create
-	make
-
-feature {NONE} -- Creation
-
-	make (n: like local_count)
-			-- Create storage to keep at least `n' locals.
-		do
-				-- "Result" status is kept at index 0.
-			create scope.make (0, n)
-			create {ARRAYED_STACK [like scope]} outer_scopes.make (1)
-			create {ARRAYED_STACK [like scope]} inner_scopes.make (1)
-			local_count := n
-		end
+deferred class AST_SCOPE_KEEPER
 
 feature -- Access
 
@@ -29,19 +14,22 @@ feature -- Access
 		require
 			position_large_enough: position > 0
 			position_small_emough: position <= local_count
-		do
-			Result := scope [position]
+		deferred
 		end
 
 	is_result_attached: BOOLEAN
-		do
-			Result := scope [0]
+		deferred
 		end
 
 feature -- Status report: variables
 
-	local_count: INTEGER
+	local_count: like max_local_count
 			-- Maximum number of locals that can be registered
+
+	max_local_count: INTEGER
+			-- Maximum value of `local_count'
+		deferred
+		end
 
 feature -- Modification: variables
 
@@ -50,14 +38,12 @@ feature -- Modification: variables
 		require
 			position_large_enough: position > 0
 			position_small_emough: position <= local_count
-		do
-			scope [position] := True
+		deferred
 		end
 
 	start_result_scope
 			-- Mark that "Result" is not void.
-		do
-			scope [0] := True
+		deferred
 		end
 
 	stop_local_scope (position: like local_count)
@@ -65,22 +51,19 @@ feature -- Modification: variables
 		require
 			position_large_enough: position > 0
 			position_small_emough: position <= local_count
-		do
-			scope [position] := False
+		deferred
 		end
 
 	stop_result_scope
 			-- Mark that "Result" can be void.
-		do
-			scope [0] := False
+		deferred
 		end
 
 feature -- Status report: nesting
 
 	nesting_level: INTEGER
 			-- Current nesting level of a compound
-		do
-			Result := outer_scopes.count
+		deferred
 		end
 
 feature -- Modification: nesting
@@ -88,13 +71,7 @@ feature -- Modification: nesting
 	enter_realm
 			-- Enter a new complex instruction
 			-- with inner compound parts.
-		do
-				-- Record current scope information.
-			outer_scopes.extend (scope)
-				-- Start new scope from the state of an outer one.
-			scope := scope.twin
-				-- Reserve stack for sibling information.
-			inner_scopes.extend (Void)
+		deferred
 		ensure
 			is_nesting_level_incremented: nesting_level = old nesting_level + 1
 		end
@@ -102,8 +79,9 @@ feature -- Modification: nesting
 	update_realm
 			-- Update realm scope information
 			-- from the current state.
-		do
-			outer_scopes.replace (scope.twin)
+		deferred
+		ensure
+			is_nesting_level_preserved: nesting_level = old nesting_level
 		end
 
 	save_sibling
@@ -112,16 +90,7 @@ feature -- Modification: nesting
 			-- For example, Then_part of Elseif condition.
 		require
 			is_nested: nesting_level > 0
-		do
-			if has_siblings then
-					-- Merge sibling scope information.
-				merge_siblings
-			else
-					-- Record new sibling scope information.
-				inner_scopes.replace (scope.twin)
-			end
-				-- Start new scope from the state of an outer one.
-			scope := outer_scopes.item.twin
+		deferred
 		ensure
 			is_nesting_level_preserved: nesting_level = old nesting_level
 		end
@@ -131,15 +100,7 @@ feature -- Modification: nesting
 			-- promote scope information to the outer compound.
 		require
 			is_nested: nesting_level > 0
-		do
-			if has_siblings then
-					-- Promote nested scope information to the outer level.
-				scope := inner_scopes.item
-			end
-				-- Remove inner scope information.
-			inner_scopes.remove
-				-- Remove outer scope information and use the latest one.
-			outer_scopes.remove
+		deferred
 		ensure
 			is_nesting_level_decremented: nesting_level = old nesting_level - 1
 		end
@@ -150,67 +111,10 @@ feature -- Modification: nesting
 			-- For example, Debug instruction.
 		require
 			is_nested: nesting_level > 0
-		do
-				-- Remove inner scope information.
-			inner_scopes.remove
-				-- Restore original scope information.
-			scope := outer_scopes.item
-				-- Remove outer scope information.
-			outer_scopes.remove
+		deferred
 		ensure
 			is_nesting_level_decremented: nesting_level = old nesting_level - 1
 		end
-
-feature {NONE} -- Modification: nesting
-
-	merge_siblings
-			-- Merge sibling scope information from `scope'
-			-- into `inner_scopes.item'.
-		local
-			s: like scope
-			i: INTEGER
-		do
-			s := inner_scopes.item
-			if s /= scope then
-				from
-					i := local_count
-				until
-					i < 0
-				loop
-						-- Mark only items that are set in both scopes
-					s [i] := s [i] and scope [i]
-					i := i - 1
-				end
-			end
-		end
-
-feature {NONE} -- Status report
-
-	has_siblings: BOOLEAN
-			-- Are there any siblings in the current instruction?
-		do
-			Result := inner_scopes.item /= Void
-		end
-
-feature {NONE} -- Storage
-
-	scope: ARRAY [BOOLEAN]
-			-- Current void-safe status of a local
-			-- with True indicating non-void value and
-			-- False indicating possibly void value
-
-	outer_scopes: STACK [like scope]
-			-- Outer scopes
-
-	inner_scopes: STACK [like scope]
-			-- Inner scopes
-
-invariant
-
-	scope_attached: scope /= Void
-	outer_scopes_attached: outer_scopes /= Void
-	inner_scopes_attached: inner_scopes /= Void
-	same_level: outer_scopes.count = inner_scopes.count
 
 indexing
 	copyright:	"Copyright (c) 2008, Eiffel Software"
