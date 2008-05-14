@@ -114,7 +114,7 @@ feature -- Element change
 					-- NOTE: There is a very small chance that the above condition is not true
 					-- For robustnes it probably should be commented in again.
 			then
-				check_sum_table.put (a_test_class.check_sum)
+				check_sum_table.force (a_test_class.check_sum)
 			end
 
 			test_routine_update_actions.call ([a_test_class.status_updates])
