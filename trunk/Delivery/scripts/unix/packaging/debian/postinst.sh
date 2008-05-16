@@ -1,24 +1,10 @@
-case $CONFIG in
-'')
-        if test ! -f $PACKAGING_DIR/config.sh; then
-                (echo "Can't find config.sh."; exit 1)
-        fi 2>/dev/null
-        . $PACKAGING_DIR/config.sh
-        ;;
-esac
-case "$O" in
-*/*) cd `expr X$0 : 'X\(.*\)/'` ;;
-esac
-$spitshell > $DEBIAN_DIR/$PRODUCT.postinst <<!GROK!THIS!
+$SPITSHELL > $DEBIAN_DIR/$PRODUCT.postinst <<!GROK!THIS!
 #!/bin/sh
 set -e
 
 echo
 echo Welcome to the EiffelStudio installer
 echo
-
-export ISE_EIFFEL=""
-export ISE_PLATFORM=""
 
 export ISE_EIFFEL=""
 export ISE_PLATFORM=""
@@ -45,7 +31,7 @@ if [ "x\$DISPLAY" = "x" ]; then
 		/usr/bin/ec -precompile -config vision2-mt.ecf -c_compile -clean
 	fi
 else
-	WIZARD=/usr/lib/eiffelstudio-6.2/studio/wizards/others/precompile
+	WIZARD=/usr/lib/$PRODUCT/studio/wizards/others/precompile
 	\$WIZARD/spec/unix/wizard \$WIZARD
 fi
 
