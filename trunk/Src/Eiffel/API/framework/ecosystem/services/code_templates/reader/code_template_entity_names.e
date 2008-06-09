@@ -10,6 +10,9 @@ indexing
 class
 	CODE_TEMPLATE_ENTITY_NAMES
 
+inherit
+	CODE_TOKEN_NAMES
+
 feature -- Access
 
 	author_tag: !STRING_8 = "author"
@@ -67,12 +70,6 @@ feature -- Values
 	invariant_category: !STRING_8 = "invariant"
 
 	class_category: !STRING_8 = "class"
-
-feature -- Token values
-
-	cursor_token_name: !STRING_8 = "cursor"
-
-	selection_token_name: !STRING_8 = "selection"
 
 feature -- Delimiters
 
