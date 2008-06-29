@@ -54,6 +54,11 @@ feature -- Data clearing
 
 feature -- Byte node processing
 
+	process_feature_entry is
+			-- Process when a feature is entered.			
+		deferred
+		end
+
 	process_header_file_initialization is
 			-- Process for possible needed C header files
 		deferred
