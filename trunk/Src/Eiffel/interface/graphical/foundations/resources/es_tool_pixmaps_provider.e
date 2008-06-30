@@ -1,66 +1,21 @@
 indexing
 	description: "[
-		Abstract inferface for tools/UI where stones can set and synchronized.
 		
-		This class is designed to be inherited from {ES_TOOL} or {ES_DOCKABLE_TOOL_PANEL}
+		It is not recommended to use unless you know you are working with a focused window, or need access to shared
+		tool resources that do not rely on the window itself.
 	]"
 	legal: "See notice at end of class."
 	status: "See notice at end of class.";
 	date: "$Date$";
 	revision: "$Revision$"
 
-deferred class
-	ES_TOOL_PIXMAPS_PROVIDER [G -> ES_TOOL_PIXMAPS create make end]
+class
+	ES_TOOL_PIXMAPS_PROVIDER [G -> ES_TOOL_PIXMAPS create make end, T -> ES_TOOL [EB_TOOL]]
 
 inherit
-	USABLE_I
-		undefine
-			copy,
-			is_equal,
-			out
-		end
+	ES_TOOL_PIXMAPS_PROVIDER_I [G, T]
 
-feature -- Access
-
-	tool_pixmaps: !G
-			-- Access to the tool pixmaps
-		require
-			is_interface_usable: is_interface_usable
-		do
-			if {l_pixmaps: G} internal_tool_pixmaps then
-				Result := l_pixmaps
-			else
-				Result ?= new_tool_pixmaps
-				internal_tool_pixmaps := Result
-			end
-		end
-
-feature {NONE} -- Access
-
-	tool: !ES_TOOL [EB_TOOL]
-			-- The associated tool to provide the pixmaps for.
-		require
-			is_interface_usable: is_interface_usable
-		deferred
-		ensure
-			result_is_interface_usable: Result.is_interface_usable
-		end
-
-feature {NONE} -- Factory
-
-	new_tool_pixmaps: !G
-			-- Factory to create a new tool icon object.
-		require
-			is_interface_usable: is_interface_usable
-		do
-			create Result.make (tool, once "icons")
-		end
-
-feature {NONE} -- Implementation: Internal cache
-
-	internal_tool_pixmaps: ?G
-			-- Cached version of `tool_pixmaps'.
-			-- Note: Do not use directly!
+	ES_TOOL_PROVIDER [T]
 
 ;indexing
 	copyright:	"Copyright (c) 1984-2007, Eiffel Software"
