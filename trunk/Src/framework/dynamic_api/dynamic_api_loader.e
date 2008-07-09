@@ -1,6 +1,6 @@
 indexing
 	description: "[
-		An interface of the dynamic API loader for accessing libraries and loaded library API functions and variables.
+		A dynamic API loader for accessing libraries and loaded library API functions and variables.
 		
 		Note: This class is not indented for direct use as {DYNAMIC_API} providers a safer model. However direct access
 		      to loading or querying for an API feature may be necessary, hence the interface is available.
@@ -12,6 +12,12 @@ indexing
 
 deferred class
 	DYNAMIC_API_LOADER
+
+inherit --{NONE}
+	BRIDGE [DYNAMIC_API_LOADER_I]
+		export
+			{NONE} all
+		end
 
 feature -- Query
 
@@ -26,7 +32,8 @@ feature -- Query
 			not_a_hnd_is_null: a_hnd /= default_pointer
 			a_api_name_attached: a_api_name /= Void
 			not_a_api_name_is_empty: not a_api_name.is_empty
-		deferred
+		do
+			Result := bridge.api_pointer (a_hnd, a_api_name)
 		end
 
 	api_pointer_with_raise (a_hnd: POINTER; a_api_name: ?STRING_GENERAL): POINTER
@@ -62,7 +69,8 @@ feature -- Basic operations
 		require
 			a_name_attached: a_name /= Void
 			not_a_name_is_empty: not a_name.is_empty
-		deferred
+		do
+			Result := bridge.load_library (a_name)
 		end
 
 	load_library_from_path (a_path: ?STRING_GENERAL): POINTER
@@ -73,7 +81,8 @@ feature -- Basic operations
 		require
 			a_path_attached: a_path /= Void
 			not_a_path_is_empty: not a_path.is_empty
-		deferred
+		do
+			Result := bridge.load_library_from_path (a_path)
 		end
 
 	unload_library (a_hnd: POINTER)
@@ -82,7 +91,16 @@ feature -- Basic operations
 			-- `a_hnd': The module handle pointer returned from `load_library' or `load_library_from_path'.
 		require
 			not_a_hnd_is_null: a_hnd /= default_pointer
-		deferred
+		do
+			bridge.unload_library (a_hnd)
+		end
+
+feature {NONE} -- Factory
+
+	new_bridge: !DYNAMIC_API_LOADER_I
+			-- <Precursor>
+		do
+			create {DYNAMIC_API_LOADER_IMP} Result
 		end
 
 ;indexing
