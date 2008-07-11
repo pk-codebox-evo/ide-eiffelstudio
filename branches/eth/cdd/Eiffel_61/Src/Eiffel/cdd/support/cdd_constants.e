@@ -42,7 +42,7 @@ feature -- Project constants
 	unknown_name: STRING is "<unknown>"
 			-- Replacement for unknown cluster/class/feature names
 
-	max_reference_depth: INTEGER is 5
+	max_reference_depth: INTEGER is 3000
 			-- Max depth capturer will follow object references when extracting
 
 	max_object_count: INTEGER is 2000
