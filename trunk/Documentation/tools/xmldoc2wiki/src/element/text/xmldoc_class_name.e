@@ -8,6 +8,9 @@ class
 	XMLDOC_CLASS_NAME
 
 inherit
+
+	XMLDOC_CODE_ENTITY_KIND
+
 	XMLDOC_TEXT_CONTAINER
 		redefine
 			process_visitor

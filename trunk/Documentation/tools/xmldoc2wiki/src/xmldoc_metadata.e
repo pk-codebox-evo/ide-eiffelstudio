@@ -20,7 +20,19 @@ feature {NONE} -- Initialization
 
 	make
 		do
+			create meta_list.make (1)
+		end
 
+feature -- Access
+
+	meta_list: ARRAYED_LIST [XMLDOC_META]
+			-- List of META
+
+feature -- Element change
+
+	add_meta (v: XMLDOC_META)
+		do
+			meta_list.extend (v)
 		end
 
 feature {XMLDOC_VISITOR} -- Visitor
