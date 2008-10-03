@@ -16,7 +16,7 @@ inherit
 
 create
 	make
-	
+
 feature {NONE} -- Initialization
 
 	init_accelerator is
@@ -64,4 +64,4 @@ indexing
 			 Customer support http://support.eiffel.com
 		]"
 
-end -- class EB_EDITOR_FONT_ZOOM_IN_NUMPAD_COMMAND
+end -- class ES_EDITOR_FONT_ZOOM_IN_NUMPAD_COMMAND
