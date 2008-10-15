@@ -1,6 +1,7 @@
 indexing
 	description: "[
 		Default implementation for a help context used by ESF tools and dialogs to link help.
+		For a client based customizable implementation, use {ES_HELP_CUSTOM_CONTEXT}.
 	]"
 	legal: "See notice at end of class."
 	status: "See notice at end of class.";
