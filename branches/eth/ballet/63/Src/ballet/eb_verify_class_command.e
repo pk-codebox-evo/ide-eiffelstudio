@@ -64,9 +64,7 @@ feature -- Execution
 	execute is
 			-- Create new tab.
 		do
-			creating_empty_tab := True
 			execute_with_stone_content (Void, Void)
-			creating_empty_tab := False
 		end
 
 	execute_with_stone (a_stone: STONE) is
@@ -90,10 +88,9 @@ feature -- Execution
 			if l_class_stone /= Void then
 				l_eiffel_class ?= l_class_stone.class_i
 				if l_eiffel_class /= Void then
-					--development_window.commands.melt_cmd.execute_and_wait
 
+						-- Compile the project and only verify if it was succesfull
 					eiffel_project.quick_melt
-
 					if workbench.successful then
 						verify_class (l_eiffel_class)
 					end
@@ -129,7 +126,6 @@ feature -- Items
 		do
 			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND}(display_text)
 			Result.drop_actions.extend (agent execute_with_stone)
-			Result.drop_actions.set_veto_pebble_function (agent editors_manager.stone_acceptable)
 		end
 
 	new_mini_sd_toolbar_item: EB_SD_COMMAND_TOOL_BAR_BUTTON is
@@ -137,7 +133,6 @@ feature -- Items
 		do
 			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND}
 			Result.drop_actions.extend (agent execute_with_stone)
-			Result.drop_actions.set_veto_pebble_function (agent editors_manager.stone_acceptable)
 		end
 
 feature {NONE} -- Implementation
@@ -187,17 +182,6 @@ feature {NONE} -- Implementation
 			-- preferences.
 		do
 			Result := "Verify_class"
-		end
-
-feature {NONE} -- Implementation
-
-	creating_empty_tab: BOOLEAN
-			-- Creating empty tab?
-
-	editors_manager: EB_EDITORS_MANAGER is
-			-- Editors manager.
-		do
-			Result := development_window.editors_manager
 		end
 
 end
