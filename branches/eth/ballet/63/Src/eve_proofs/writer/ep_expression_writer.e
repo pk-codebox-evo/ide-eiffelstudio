@@ -509,7 +509,9 @@ feature {BYTE_NODE} -- Visitors
 	process_un_old_b (a_node: UN_OLD_B)
 			-- Process `a_node'.
 		do
-			-- TODO: use old handler
+			check a_node.expr /= Void end
+			old_handler.set_expression_writer (Current)
+			old_handler.process_un_old_b (a_node)
 		end
 
 	process_void_b (a_node: VOID_B)
