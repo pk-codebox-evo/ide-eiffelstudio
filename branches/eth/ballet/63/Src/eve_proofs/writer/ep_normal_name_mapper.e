@@ -25,6 +25,8 @@ feature {NONE} -- Initialization
 		do
 			internal_current_name := "Current"
 			internal_heap_name := "Heap"
+			internal_target_name := "Current"
+			internal_result_name := "Result"
 		end
 
 feature -- Access
@@ -44,10 +46,16 @@ feature -- Access
 			Result := internal_current_name
 		end
 
+	target_name: STRING
+			-- Name of current reference in Boogie code
+		do
+			Result := internal_target_name
+		end
+
 	result_name: STRING
 			-- Name of result reference in Boogie code
 		do
-			Result := "Result"
+			Result := internal_result_name
 		end
 
 	argument_name (a_node: ARGUMENT_B): STRING
@@ -98,12 +106,30 @@ feature -- Element change
 			internal_heap_name := a_name
 		end
 
+	set_target_name (a_name: STRING)
+			-- Set `target_name' to `a_name'.
+		do
+			internal_target_name := a_name
+		end
+
+	set_result_name (a_name: STRING)
+			-- Set `result_name' to `a_name'.
+		do
+			internal_result_name := a_name
+		end
+
 feature {NONE} -- Implementation
 
 	internal_current_name: STRING
 			-- TODO
 
 	internal_heap_name: STRING
+			-- TODO
+
+	internal_target_name: STRING
+			-- TODO
+
+	internal_result_name: STRING
 			-- TODO
 
 end
