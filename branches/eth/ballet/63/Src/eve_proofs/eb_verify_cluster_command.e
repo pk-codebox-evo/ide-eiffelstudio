@@ -10,175 +10,17 @@ class EB_VERIFY_CLUSTER_COMMAND
 
 inherit
 
-	EB_TOOLBARABLE_AND_MENUABLE_COMMAND
-		redefine
-			tooltext,
-			new_sd_toolbar_item,
-			new_mini_sd_toolbar_item
-		end
-
-	EB_DEVELOPMENT_WINDOW_COMMAND
-		rename
-			target as development_window,
-			make as make_old
-		end
-
-	COMPILER_EXPORTER
-		export {NONE} all end
-
-inherit {NONE}
-
-	SHARED_WORKBENCH
-		export {NONE} all end
-
-	SHARED_EP_ENVIRONMENT
-		export {NONE} all end
-
-	SHARED_ERROR_HANDLER
-		export {NONE} all end
-
-	SHARED_EIFFEL_PROJECT
-		export {NONE} all end
-
-	EB_SHARED_PREFERENCES
-		export {NONE} all end
-
-	EB_SHARED_WINDOW_MANAGER
-		export {NONE} all end
+	EB_VERIFY_COMMAND
 
 create
 	make
 
-feature {NONE} -- Initialization
-
-	make (dev_window: EB_DEVELOPMENT_WINDOW)
-			-- Creation method.
-		require
-			dev_window_attached: dev_window /= Void
-		do
-			development_window := dev_window
-			enable_sensitive
-		ensure
-			development_window_attached: development_window = dev_window
-		end
-
 feature -- Execution
 
-	execute
-			-- Create new tab.
+	execute is
+			-- Execute menu command.
 		do
-			execute_with_stone_content (Void, Void)
-		end
-
-	execute_with_stone (a_stone: STONE)
-			-- Execute with `a_stone'.
-		do
-			execute_with_stone_content (a_stone, Void)
-		end
-
-	execute_with_stone_content (a_stone: STONE; a_content: SD_CONTENT) is
-			-- Create a new tab which stone is `a_stone' and create at side of `a_content' if exists.
-		local
-			l_cluster_stone: CLUSTER_STONE
-			l_save_confirm: ES_DISCARDABLE_COMPILE_SAVE_FILES_PROMPT
-			l_classes: DS_ARRAYED_LIST [CLASS_I]
-		do
-				-- Check for a valid stone and start verification
-			l_cluster_stone ?= a_stone
-			if l_cluster_stone /= Void then
-				if not eiffel_project.is_compiling then
-
-					if window_manager.has_modified_windows then
-						create l_classes.make_default
-						window_manager.all_modified_classes.do_all (agent l_classes.force_last)
-						create l_save_confirm.make (l_classes)
-						l_save_confirm.set_button_action (l_save_confirm.dialog_buttons.yes_button, agent save_compile_and_verify (l_cluster_stone.group))
-						l_save_confirm.set_button_action (l_save_confirm.dialog_buttons.no_button, agent compile_and_verify (l_cluster_stone.group))
-						l_save_confirm.show_on_active_window
-					else
-						compile_and_verify (l_cluster_stone.group)
-					end
-				end
-			end
-		end
-
-	save_compile_and_verify (a_group: CONF_GROUP)
-			-- Save modified windows, compile project and start verification.
-		do
-			window_manager.save_all_before_compiling
-			compile_and_verify (a_group)
-		end
-
-	compile_and_verify (a_group: CONF_GROUP)
-			-- Compile project and start verification.
-		do
-				-- Compile the project and only verify if it was succesfull
-			eiffel_project.quick_melt
-			if workbench.successful then
-				verify_cluster (a_group)
-			end
-		end
-
-	verify_cluster (a_group: CONF_GROUP)
-			-- Verify `a_group' with Boogie.
-		require
-			a_group_not_void: a_group /= Void
-		local
-			l_eve_proofs: EVE_PROOFS
-			l_conf_class: CONF_CLASS
-			l_class_i: CLASS_I
-			l_class_c: CLASS_C
-		do
-			create l_eve_proofs.make
-			l_eve_proofs.reset
-
-			if l_eve_proofs.is_ready then
-				from
-					a_group.classes.start
-				until
-					a_group.classes.after
-				loop
-					l_conf_class := a_group.classes.item_for_iteration
-					l_class_i := eiffel_universe.class_named (l_conf_class.name, a_group)
-					if l_class_i.is_compiled then
-						l_class_c := l_class_i.compiled_class
-						check l_class_c /= Void end
-						l_eve_proofs.add_class_to_verify (l_class_c)
-					end
-					a_group.classes.forth
-				end
-
-				l_eve_proofs.execute_verification
-			end
-
-				-- Add warninigs and errors
-			error_handler.warning_list.append (warnings)
-			error_handler.warning_list.finish
-			error_handler.error_list.append (errors)
-			error_handler.error_list.finish
-			error_handler.trace
-
-			if not errors.is_empty then
-				error_handler.error_displayer.force_display
-			else
-				development_window.tools.output_tool.force_display
-			end
-		end
-
-feature -- Items
-
-	new_sd_toolbar_item (display_text: BOOLEAN): EB_SD_COMMAND_TOOL_BAR_BUTTON
-			-- New toolbar item for dockable toolbar.
-		do
-			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND}(display_text)
-			Result.drop_actions.extend (agent execute_with_stone)
-		end
-
-	new_mini_sd_toolbar_item: EB_SD_COMMAND_TOOL_BAR_BUTTON
-			-- New mini toolbar item.
-		do
-			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND}
-			Result.drop_actions.extend (agent execute_with_stone)
+			-- TODO: anything to do?
 		end
 
 feature -- Context menu
@@ -199,18 +41,6 @@ feature {NONE} -- Implementation
 			-- Name as it appears in the menu (with & symbol).
 		do
 			Result := names.verify_cluster_menu_name
-		end
-
-	pixmap: EV_PIXMAP
-			-- Pixmap representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.general_tick_icon
-		end
-
-	pixel_buffer: EV_PIXEL_BUFFER
-			-- Pixel buffer representing the command.
-		do
-			Result := pixmaps.icon_pixmaps.general_tick_icon_buffer
 		end
 
 	tooltip: STRING_GENERAL
@@ -236,6 +66,17 @@ feature {NONE} -- Implementation
 			-- preferences.
 		do
 			Result := "Verify_cluster"
+		end
+
+feature {NONE} -- Implementation
+
+	droppable (a_pebble: ANY): BOOLEAN is
+			-- Can user drop `a_pebble' on `Current'?
+		local
+			l_class_stone: CLUSTER_STONE
+		do
+			l_class_stone ?= a_pebble
+			Result := l_class_stone /= Void
 		end
 
 end
