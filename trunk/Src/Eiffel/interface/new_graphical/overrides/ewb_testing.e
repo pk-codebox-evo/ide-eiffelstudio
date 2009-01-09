@@ -41,11 +41,13 @@ feature {NONE} -- Factory
 	create_menu: like sub_menu
 			-- Create testing menu.
 		do
-			create Result.make (1, 4)
+			create Result.make (1, 6)
 			Result.put (create {EWB_TEST_LIST_VIEW}, 1)
 			Result.put (create {EWB_TEST_TREE_VIEW}, 2)
 			Result.put (create {EWB_TEST_EXECUTION}, 3)
-			Result.put (create {EWB_AUTO_TEST}, 4)
+			Result.put (create {EWB_TEST_FILTER_CMD}, 4)
+			Result.put (create {EWB_TEST_TAG_PREFIX_CMD}, 5)
+			Result.put (create {EWB_AUTO_TEST}, 6)
 		end
 
 feature {NONE} -- Internationalization
@@ -57,7 +59,7 @@ feature {NONE} -- Internationalization
 	menu_abbreviation: CHARACTER = 't'
 
 note
-	copyright: "Copyright (c) 1984-2008, Eiffel Software"
+	copyright: "Copyright (c) 1984-2009, Eiffel Software"
 	license:   "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[
