@@ -122,7 +122,7 @@ YSD = YSD ./ Y .* 100
 std_handles = plot (XSD, YSD);
 
 %Setup legends.
-std_lgd_names = horzcat (classes, {'Median of stdevs'});
+std_lgd_names = horzcat (classes, {'Median of coefficient of variation'});
 legend (std_handles, std_lgd_names, 'Location', 'NortheastOutside');
 set(std_handles(number_of_class + 1), 'LineWidth', 2);
 set(std_handles(number_of_class + 1), 'Color', 'k');
