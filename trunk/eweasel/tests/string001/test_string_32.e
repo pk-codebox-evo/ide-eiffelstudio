@@ -2430,7 +2430,7 @@ feature {NONE} -- Checking
 			end
 		end
 
-	check_boolean (a_name: STRING_32; b: BOOLEAN) is
+	check_boolean (a_name: STRING; b: BOOLEAN) is
 			-- If `a' and `b' are not equal print something on the console.
 		require
 			a_name_not_void: a_name /= Void
