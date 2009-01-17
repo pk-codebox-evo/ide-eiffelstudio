@@ -16,11 +16,6 @@ inherit
 			on_processor_launch_error
 		end
 
-	EB_CLUSTER_MANAGER_OBSERVER
-		redefine
-			on_class_removed
-		end
-
 	ES_SHARED_PROMPT_PROVIDER
 		export
 			{NONE} all
@@ -30,9 +25,15 @@ feature {NONE} -- Access
 
 	test_suite: !SERVICE_CONSUMER [TEST_SUITE_S]
 			-- <Precursor>
+		local
+			l_observer: ES_TEST_CLUSTER_OBSERVER
 		do
 			Result := Precursor
-			manager.add_observer (Current)
+			l_observer := observer_cell.item
+			if l_observer = Void then
+				create l_observer.make
+				observer_cell.put (l_observer)
+			end
 		end
 
 	current_window: !EV_WINDOW
@@ -40,15 +41,15 @@ feature {NONE} -- Access
 		deferred
 		end
 
-feature {NONE} -- Events
-
-	on_class_removed (a_class: CLASS_I)
-			-- <Precursor>
-		do
-			if {l_class: !EIFFEL_CLASS_I} a_class and then test_suite.is_service_available then
-				test_suite.service.synchronize_with_class (l_class)
-			end
+	observer_cell: CELL [?ES_TEST_CLUSTER_OBSERVER]
+			-- Observer which notifies test suite whenever a class is removed
+		once
+			create Result
+		ensure
+			result_attached: Result /= Void
 		end
+
+feature {NONE} -- Events
 
 	on_processor_launch_error (a_error: like error_message; a_type: !TYPE [TEST_PROCESSOR_I]; a_code: NATURAL)
 			-- <Precursor>
@@ -57,7 +58,7 @@ feature {NONE} -- Events
 		end
 
 note
-	copyright: "Copyright (c) 1984-2008, Eiffel Software"
+	copyright: "Copyright (c) 1984-2009, Eiffel Software"
 	license:   "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[
