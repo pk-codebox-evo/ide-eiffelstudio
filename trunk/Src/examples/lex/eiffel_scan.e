@@ -9,42 +9,35 @@ note
 class EIFFEL_SCAN
 
 inherit
-
 	SCANNING
 		rename
 			make as scanning_make
+		redefine
+			analyze
 		end;
 
-	ARGUMENTS
-		undefine
-			copy, is_equal
+create
+	make
+
+feature {NONE} -- Initialization
+
+	make
+			-- Create a lexical analyser for Eiffel,
+		do
+			scanning_make;
+			build ("eiffel_lex", "eiffel_regular");
 		end
 
-create
+feature -- Basic operations
 
-	make
-
-feature 
-
-	make
-			-- Create a lexical analyser for Eiffel if none,
-			-- then use it to analyze the file of name
-			-- `file_name'.
-		local
-			file_name: STRING;
+	analyze (file_name: STRING)
+			-- <Precursor>
 		do
-			if argument_count < 1 then
-				io.error.putstring ("Usage: eiffel_scan eiffel_class_file.e%N")
-			else
-				file_name := argument (1);
-				scanning_make;
-				build ("eiffel_lex", "eiffel_regular");
-				io.putstring ("Scanning file `");
-				io.putstring (file_name);
-				io.putstring ("'.%N");
-				analyze (file_name)
-			end
-		end -- make
+			io.putstring ("Scanning file `");
+			io.putstring (file_name);
+			io.putstring ("'.%N");
+			Precursor (file_name)
+		end
 
 note
 	copyright:	"Copyright (c) 1984-2006, Eiffel Software and others"
