@@ -1,5 +1,5 @@
 note
-	description: "Keeper for non-void entity scopes with a limited range of variable positions."
+	description: "Keeper for non-void entity scopes with a limited range of variable indicies."
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
 	date: "$Date$"
@@ -18,48 +18,30 @@ create
 
 feature -- Access
 
-	is_local_attached (position: like local_count): BOOLEAN
-			-- Is a local with the given `position' is not void?
+	is_attached (index: like count): BOOLEAN
+			-- Is a variable with the given `index' is not void?
 		do
-			Result := scope.bit_test (position)
-		end
-
-	is_result_attached: BOOLEAN
-		do
-			Result := scope.bit_test (0)
+			Result := scope.bit_test (index - 1)
 		end
 
 feature -- Status report: variables
 
-	max_local_count: INTEGER = 62
-			-- Maximum value of `local_count'
-			--| One bit is reserved for result,
-			--| one bit is reserved to indicate a non-empty stack element
+	max_count: INTEGER = 63
+			-- Maximum value of `count'
+			--| One bit is reserved to indicate a non-empty stack element
 
 feature -- Modification: variables
 
-	start_local_scope (position: like local_count)
-			-- Mark that a local with the given `position' is not void.
+	start_scope (index: like count)
+			-- Mark that a local with the given `index' is not void.
 		do
-			scope := scope | (({NATURAL_64} 1) |<< position)
+			scope := scope | (({NATURAL_64} 1) |<< (index - 1))
 		end
 
-	start_result_scope
-			-- Mark that "Result" is not void.
+	stop_scope (index: like count)
+			-- Mark that a local with the given `index' can be void.
 		do
-			scope := scope | {NATURAL_64} 1
-		end
-
-	stop_local_scope (position: like local_count)
-			-- Mark that a local with the given `position' can be void.
-		do
-			scope := scope & (({NATURAL_64} 1) |<< position).bit_not
-		end
-
-	stop_result_scope
-			-- Mark that "Result" can be void.
-		do
-			scope := scope & {NATURAL_64} 0xFFFFFFFFFFFFFFFE
+			scope := scope & (({NATURAL_64} 1) |<< (index - 1)).bit_not
 		end
 
 feature {NONE} -- Modification: nesting
@@ -73,7 +55,7 @@ feature {NONE} -- Modification: nesting
 
 feature {NONE} -- Initialization
 
-	new_scope (n: like local_count): like scope
+	new_scope (n: like count): like scope
 		do
 			Result := {NATURAL_64} 0x8000000000000000
 		end
@@ -86,7 +68,7 @@ feature {NONE} -- Duplication
 		end
 
 note
-	copyright:	"Copyright (c) 2008, Eiffel Software"
+	copyright:	"Copyright (c) 2008-2009, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[
