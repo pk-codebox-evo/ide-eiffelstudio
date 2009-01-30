@@ -13,6 +13,8 @@ inherit
 
 	SHARED_FLAGS
 
+	CONF_DEFAULT_OPTION_SETTING
+
 create
 	make
 
@@ -29,6 +31,10 @@ feature {NONE} -- Initialization
 			--| uncomment the following lines when profiling
 			--create prof_setting.make
 			--prof_setting.stop_profiling
+
+			if index_of_word_option ("compat") > 0 then
+				set_is_63_compatible (True)
+			end
 
 			if
 				argument_count > 0 and then
@@ -71,11 +77,11 @@ note
 			Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 		]"
 	source: "[
-			 Eiffel Software
-			 5949 Hollister Ave., Goleta, CA 93117 USA
-			 Telephone 805-685-1006, Fax 805-685-6869
-			 Website http://www.eiffel.com
-			 Customer support http://support.eiffel.com
+			Eiffel Software
+			5949 Hollister Ave., Goleta, CA 93117 USA
+			Telephone 805-685-1006, Fax 805-685-6869
+			Website http://www.eiffel.com
+			Customer support http://support.eiffel.com
 		]"
 
 end
