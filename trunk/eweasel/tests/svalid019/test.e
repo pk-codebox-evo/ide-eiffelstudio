@@ -14,7 +14,7 @@ feature {NONE} -- Creation
 	make
 			-- Run test.
 		do
-			g (create {A [STRING]}, Current)
+			g (create {A [STRING]}, "")
 		end
 
 feature {NONE} -- Test
