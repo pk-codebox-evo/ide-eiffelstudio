@@ -1,5 +1,5 @@
 test_name	overflow-special-resizing
-test_description If we resize a SPECIAL object to have a size greater than 2^31 then the runtime does an overflow and you end up with an array of a smaller size.
+test_description Made sure that various operations on SPECIALs around the 4GB boundary are properly done.
 
 define	VALUE "true"
 copy_sub 	Ace $TEST Ace
