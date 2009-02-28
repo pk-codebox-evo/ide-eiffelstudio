@@ -7,6 +7,7 @@
 		<file_rule>
 			<exclude>/\.svn$</exclude>
 			<exclude>/tests$</exclude>
+			<exclude>/EIFGENs$</exclude>
 		</file_rule>
 		<library name="argument_parser" location="$ISE_LIBRARY\library\argument_parser\argument_parser.ecf"/>
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
