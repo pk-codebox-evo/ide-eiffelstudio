@@ -5,7 +5,7 @@
 		<file_rule>
 			<exclude>/.svn$</exclude>
 		</file_rule>
-		<option syntax_level="1" namespace="EiffelSoftware.Helpers">
+		<option warning="true" syntax_level="1" namespace="EiffelSoftware.Helpers">
 		</option>
 		<setting name="dotnet_naming_convention" value="true"/>
 		<setting name="msil_generation" value="True"/>
