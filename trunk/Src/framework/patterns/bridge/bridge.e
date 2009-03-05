@@ -8,7 +8,7 @@ note
 	revision: "$Revision$"
 
 deferred class
-	BRIDGE [G -> ANY]
+	BRIDGE [G]
 
 feature {NONE} -- Access
 
