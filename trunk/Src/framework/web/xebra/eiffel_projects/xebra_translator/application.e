@@ -23,7 +23,7 @@ feature {NONE} -- Initialization
 			print ("%N+++++++++++++++++++ START TRANSLATOR+++++++++++++++++++%N")
 
 			translator.set_output_path ("../../websites/testapp/")
-			useless := translator.process_with_file ("../../websites/testapp/testapp.xbr")
+			useless := translator.process_with_file ("../../websites/testapp/testapp.xeb")
 
 			print ("%N+++++++++++++++++++ END TRANSLATOR++++++++++++++++++++++++++++++++++++++%N")
 		end
@@ -32,7 +32,6 @@ feature {NONE} -- Initialization
 feature -- Access
 
 	translator: XB_TRANSLATOR
-
 
 
 ;note
