@@ -7,7 +7,7 @@ class
 	APPLICATION
 
 inherit
-	ARGUMENTS
+	ERROR_SHARED_ERROR_MANAGER
 
 create
 	make
@@ -15,23 +15,42 @@ create
 feature {NONE} -- Initialization
 
 	make
-			-- Run application.
-		local
-			useless: BOOLEAN
+			-- Make the application.
 		do
 			create translator.make ("testapp")
-			print ("%N+++++++++++++++++++ START TRANSLATOR+++++++++++++++++++%N")
-
-			translator.set_output_path ("../../websites/testapp/")
-			useless := translator.process_with_file ("../../websites/testapp/testapp.xeb")
-
-			print ("%N+++++++++++++++++++ END TRANSLATOR++++++++++++++++++++++++++++++++++++++%N")
+			run
 		end
 
+	run
+			-- Runns the application.
+		local
+			l_printer: ERROR_CUI_PRINTER
+		do
+			print ("%N============================%NTranslator started...%N")
+
+
+			translator.set_output_path ("../../websites/testapp/")
+			translator.process_with_file ("../../websites/testapp/testapp.xeb")
+
+
+			create l_printer.default_create
+			if error_manager.has_warnings then
+				error_manager.trace_warnings (l_printer)
+			end
+
+			if not error_manager.is_successful then
+				error_manager.trace_last_error (l_printer)
+			else
+				print ("Output file generated to '")
+				print (translator.output_path)
+				print ("'.")
+			end
+		end
 
 feature -- Access
 
 	translator: XB_TRANSLATOR
+		-- Parses the file
 
 
 ;note
