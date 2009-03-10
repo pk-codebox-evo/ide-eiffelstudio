@@ -16,12 +16,16 @@ feature -- Access
 	file_identifier: STRING
 			-- Identifies the identifier of the requested web application
 
+	session: SESSION
+			-- The session associated with this request
+
 feature -- Initialization
 
-	make (a_file_identifier: STRING)
+	make (a_file_identifier: STRING; a_session: SESSION)
 			--`a_file_identifier': Identifies the identifier of the requested web application
 		do
 			file_identifier := a_file_identifier
+			session := a_session
 		end
 
 note
