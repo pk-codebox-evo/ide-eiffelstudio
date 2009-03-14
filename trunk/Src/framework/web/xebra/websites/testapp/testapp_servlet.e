@@ -11,7 +11,7 @@ class
 	TESTAPP_SERVLET
 
 inherit
-	SERVLET
+	STATELESS_SERVLET
 
 create
 	make
@@ -28,22 +28,20 @@ feature-- Implementation
 		end
 
 	handle_request (request: REQUEST): RESPONSE
-		local
-			response: RESPONSE
 		do
-			create response.make
-			response.append ("[
+			create Result.make
+			Result.append ("[
 				<html>
+<body>
+	hello my dear
+	 
 			]")
-			controller.print_to_console
-			response.append ("[
-				<head><title>Sample Application XEBRA Page</title></head><body bgcolor=white><table border="0">	<tr>		<td align=center></td>		<td>		<h1>Sample Application XEBRA Page</h1>		This is the output of a XEBRA page that is part of the Hello, World		application.</td>	</tr></table> 
+			controller.blublublub
+			Result.append ("[
+				
+</body>
+</html> 
 			]")
-			response.append (controller.give_me_a_hello)
-			response.append ("[
-				</body></html>
-			]")
-			Result := response
 		end
 
 note
