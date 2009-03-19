@@ -9,6 +9,9 @@ class
 
 inherit
 	TAG_SERIALIZER
+		redefine
+			output
+		end
 
 create
 	make
@@ -17,15 +20,17 @@ feature -- Access
 
 	make (params: TABLE [STRING, STRING])
 		do
+			make_base
 			feature_name := params ["feature"]
 		end
 
 	feature_name: STRING
+			-- The name of the feature to call
 
-	output (parent: SERVLET): STRING
+	output (parent: SERVLET; buf: INDENDATION_STREAM)
+			-- <Precursor>
 		do
-			parent.call_on_controller (feature_name)
-			Result := ""
+--				parent.call_on_controller (feature_name) -- UNCOMMENT ASAP
 		end
 
 note
