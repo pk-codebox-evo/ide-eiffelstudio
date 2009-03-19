@@ -1,0 +1,226 @@
+note
+	description: "[
+		Services for manipulating and querying the global code template catalog.
+	]"
+	legal: "See notice at end of class."
+	status: "See notice at end of class.";
+	date: "$Date$";
+	revision: "$Revision$"
+
+deferred class
+	CODE_TEMPLATE_CATALOG_S
+
+inherit
+	SERVICE_I
+
+	EVENT_CONNECTION_POINT_I [CODE_TEMPLATE_CATALOG_OBSERVER, CODE_TEMPLATE_CATALOG_S]
+		rename
+			connection as code_template_catalog_connection
+		end
+
+feature -- Access
+
+	code_templates: attached DS_BILINEAR [attached CODE_TEMPLATE_DEFINITION]
+			--
+		require
+			is_interface_usable: is_interface_usable
+		deferred
+		ensure
+			result_consistent: Result ~ code_templates
+		end
+
+feature -- Status report
+
+	is_cataloged (a_folder: attached READABLE_STRING_GENERAL): BOOLEAN
+			-- Determines if a folder is currently cataloged
+		require
+			is_interface_usable: is_interface_usable
+			not_a_folder_is_empty: not a_folder.is_empty
+		deferred
+		end
+
+feature -- Query
+
+	template_by_file_name (a_file_name: attached READABLE_STRING_GENERAL): detachable CODE_TEMPLATE_DEFINITION
+			-- Retrieves the first code template defintion match by a specified file name.
+			--
+			-- `a_file_name': The full path to a code template definition file.
+			-- `Result': A code template definition or Void if there was an error loading the code template.
+		require
+			is_interface_usable: is_interface_usable
+			not_a_file_name_is_empty: not a_file_name.is_empty
+		deferred
+		end
+
+	template_by_title (a_title: attached READABLE_STRING_GENERAL): detachable CODE_TEMPLATE_DEFINITION
+			-- Retrieves the first code template defintion match by a specified title.
+			--
+			-- `a_title': The title to match a code template definition to in the catalog.
+			-- `Result': A code template definition or Void if no match was made.
+		require
+			is_interface_usable: is_interface_usable
+			not_a_title_is_empty: not a_title.is_empty
+		deferred
+		end
+
+	template_by_shortcut (a_shortcut: attached READABLE_STRING_GENERAL): detachable CODE_TEMPLATE_DEFINITION
+			-- Retrieves the first code template defintion match by a specified shortcut.
+			--
+			-- `a_shortcut': The shortcut to match a code template definition to in the catalog.
+			-- `Result': A code template definition or Void if no match was made.
+		require
+			is_interface_usable: is_interface_usable
+			not_a_shortcut_is_empty: not a_shortcut.is_empty
+		deferred
+		end
+
+	templates_by_category (a_categories: attached DS_BILINEAR [attached READABLE_STRING_GENERAL]; a_conjunctive: BOOLEAN): attached DS_ARRAYED_LIST [attached CODE_TEMPLATE_DEFINITION]
+			-- Retrieves a list of code template defintions by specifying a list of matching categories.
+			--
+			-- `a_categories': The categories to match code templates for in the catalog.
+			-- `a_conjunctive': True to ensure the result list contains code template definitions that contain all the specified categories; False
+			--                  to retrieve a list of code template definitions that match any category.
+			-- `Result': A list of matched code template definitions.
+		require
+			is_interface_usable: is_interface_usable
+			not_a_categories_is_empty: not a_categories.is_empty
+		deferred
+		end
+
+feature -- Events
+
+	catalog_changed_event: attached EVENT_TYPE [TUPLE]
+			-- Events called when the catalog is modified in some way; templates added, templates removed
+			-- or a rescan was performed
+		require
+			is_interface_usable: is_interface_usable
+		deferred
+		end
+
+feature -- Events: Connection point
+
+	code_template_catalog_connection: attached EVENT_CONNECTION_I [CODE_TEMPLATE_CATALOG_OBSERVER, CODE_TEMPLATE_CATALOG_S]
+			-- <Precursor>
+		local
+			l_result: like internal_code_template_catalog_connection
+		do
+			l_result := internal_code_template_catalog_connection
+			if l_result = Void then
+				create {EVENT_CONNECTION [CODE_TEMPLATE_CATALOG_OBSERVER, CODE_TEMPLATE_CATALOG_S]} Result.make (
+					agent (ia_observer: attached CODE_TEMPLATE_CATALOG_OBSERVER): attached ARRAY [TUPLE [event: attached EVENT_TYPE [TUPLE]; action: attached PROCEDURE [ANY, TUPLE]]]
+						do
+							Result := << [catalog_changed_event, agent ia_observer.on_catalog_changed] >>
+						end)
+				automation.auto_dispose (Result)
+				internal_code_template_catalog_connection := Result
+			else
+				Result := l_result
+			end
+		end
+
+feature -- Basic operations
+
+	rescan (a_folder: attached READABLE_STRING_GENERAL)
+			-- Rescans an existing catalog and update the templates associated with the cataloged folder.
+			--
+			-- `a_folder': The cataloged folder to rescan and update the templates
+		require
+			is_interface_usable: is_interface_usable
+			not_a_folder_is_empty: not a_folder.is_empty
+			is_cataloged: is_cataloged (a_folder)
+		deferred
+		ensure
+			is_still_cataloged: is_cataloged (a_folder)
+		end
+
+	rescan_catalog
+			-- Rescans all cataloged folders and update the templates accordingly.
+		require
+			is_interface_usable: is_interface_usable
+		deferred
+		end
+
+feature {NONE} -- Basic operation
+
+	sort_templates_by_title (a_list: attached DS_INDEXABLE [attached CODE_TEMPLATE_DEFINITION])
+			-- Sorts a template list by title.
+			--
+			-- `a_list': A template list to sort by title.
+		require
+			is_interface_usable: is_interface_usable
+		local
+			l_comparer: AGENT_BASED_EQUALITY_TESTER [attached CODE_TEMPLATE_DEFINITION]
+			l_sorter: DS_QUICK_SORTER [attached CODE_TEMPLATE_DEFINITION]
+		do
+			create l_comparer.make (agent (ia_template, ia_other_template: attached CODE_TEMPLATE_DEFINITION): BOOLEAN
+				do
+					Result := ia_template.metadata.title < ia_other_template.metadata.title
+				end)
+			create l_sorter.make (l_comparer)
+			l_sorter.sort (a_list)
+		end
+
+feature -- Extension
+
+	extend_catalog (a_folder: attached READABLE_STRING_GENERAL)
+			-- Extends the code template catalog with a folder full of templates
+		require
+			is_interface_usable: is_interface_usable
+			not_a_folder_is_empty: not a_folder.is_empty
+			not_is_cataloged: not is_cataloged (a_folder)
+		deferred
+		ensure
+			is_cataloged: is_cataloged (a_folder)
+		end
+
+feature -- Removal
+
+	remove_catalog (a_folder: attached READABLE_STRING_GENERAL)
+		require
+			is_interface_usable: is_interface_usable
+			not_a_folder_is_empty: not a_folder.is_empty
+			is_cataloged: is_cataloged (a_folder)
+		deferred
+		ensure
+			not_is_cataloged: not is_cataloged (a_folder)
+		end
+
+feature {NONE} -- Implementation: INternal cached
+
+	internal_code_template_catalog_connection: detachable like code_template_catalog_connection
+			-- Cached version of `code_template_catalog_connection'.
+			-- Note: Do not use directly!
+
+;note
+	copyright:	"Copyright (c) 1984-2008, Eiffel Software"
+	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
+	licensing_options:	"http://www.eiffel.com/licensing"
+	copying: "[
+			This file is part of Eiffel Software's Eiffel Development Environment.
+			
+			Eiffel Software's Eiffel Development Environment is free
+			software; you can redistribute it and/or modify it under
+			the terms of the GNU General Public License as published
+			by the Free Software Foundation, version 2 of the License
+			(available at the URL listed under "license" above).
+			
+			Eiffel Software's Eiffel Development Environment is
+			distributed in the hope that it will be useful,	but
+			WITHOUT ANY WARRANTY; without even the implied warranty
+			of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+			See the	GNU General Public License for more details.
+			
+			You should have received a copy of the GNU General Public
+			License along with Eiffel Software's Eiffel Development
+			Environment; if not, write to the Free Software Foundation,
+			Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
+		]"
+	source: "[
+			 Eiffel Software
+			 356 Storke Road, Goleta, CA 93117 USA
+			 Telephone 805-685-1006, Fax 805-685-6869
+			 Website http://www.eiffel.com
+			 Customer support http://support.eiffel.com
+		]"
+
+end
