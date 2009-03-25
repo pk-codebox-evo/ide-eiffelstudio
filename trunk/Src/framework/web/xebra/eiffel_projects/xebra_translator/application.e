@@ -28,15 +28,10 @@ feature {NONE} -- Initialization
 			else
 				print ("%N============================%NTranslator started...%N")
 
-
-
 				create l_translator.make (Arguments.argument (1))
-
-
 				create dir.make (Arguments.argument (2))
 
-				l_translator.set_output_path (Arguments.argument (3)) 
-
+				l_translator.set_output_path (Arguments.argument (3))
 
 				l_translator.process_with_file (dir.linear_representation, "xeb.taglib")
 
