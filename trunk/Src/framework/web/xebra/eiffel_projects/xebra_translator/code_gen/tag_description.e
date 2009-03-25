@@ -58,6 +58,21 @@ feature -- Access
 				attributes.forth
 			end
 		end
+
+	is_call_with_result_feature (a_name: STRING): BOOLEAN
+		do
+			Result := False
+			from
+				attributes.start
+			until
+				attributes.after
+			loop
+				if attributes.item.id.is_equal (a_name) then
+					Result := attributes.item.call_with_result
+				end
+				attributes.forth
+			end
+		end
 note
 	copyright: "Copyright (c) 1984-2009, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
