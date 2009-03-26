@@ -16,10 +16,7 @@ inherit
 create
 	make
 
-feature -- Access
-
-	text: TAG_ATTRIBUTE
-			-- The XHTML content
+feature {NONE} -- Initialization
 
 	make
 		do
@@ -27,14 +24,22 @@ feature -- Access
 			create {CONSTANT_ATTRIBUTE} text.make ("")
 		end
 
+feature {NONE} -- Access
+
+	text: TAG_ATTRIBUTE
+			-- The XHTML content
+
+feature {NONE}
+
 	output (parent: SERVLET; buf: INDENDATION_STREAM)
 			-- <Precursor>
 		do
-			buf.put_string (text.value (parent))
+			buf.append_string (text.value (parent))
 			output_children (parent, buf)
 		end
 
 	put_attribute (id: STRING; a_attribute: TAG_ATTRIBUTE)
+			-- <Precursor>
 		do
 			if id.is_equal("text") then
 				text := a_attribute
