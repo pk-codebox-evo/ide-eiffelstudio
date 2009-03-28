@@ -16,9 +16,7 @@ create
 feature {NONE} -- Initialization
 
 	make (a_constant: STRING)
-		require
-			a_constant_valid: not a_constant.is_empty
-		do
+	 	do
 			constant := a_constant
 		end
 
