@@ -20,7 +20,7 @@ feature {NONE} -- Initialization
 			-- Make the application.
 		local
 			l_printer: ERROR_CUI_PRINTER
-			l_translator: XB_TRANSLATOR
+			l_translator: XP_TRANSLATOR
 			dir: DIRECTORY
 		do
 			if  Arguments.argument_count /= 3 then
