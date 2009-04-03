@@ -6975,6 +6975,14 @@ feature -- Implementation
 			process_eiffel_list (l_as)
 		end
 
+	process_explicit_processor_specification_as (l_as: EXPLICIT_PROCESSOR_SPECIFICATION_AS) is
+			-- Process `l_as'.
+			-- added for SCOOP by paedde
+		do
+			safe_process (l_as.entity)
+			safe_process (l_as.handler)
+		end
+
 feature {NONE} -- Predefined types
 
 	string_type: CL_TYPE_A is

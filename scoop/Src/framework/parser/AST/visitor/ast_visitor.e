@@ -136,6 +136,14 @@ feature {AST_EIFFEL} -- Skeleton Visitors
 		deferred
 		end
 
+	process_explicit_processor_specification_as (l_as: EXPLICIT_PROCESSOR_SPECIFICATION_AS) is
+			-- Process `l_as'.
+			-- added for SCOOP by paedde
+		require
+			non_void_as: l_as /= Void
+		deferred
+		end
+
 	process_id_as (l_as: ID_AS) is
 			-- Process `l_as'.
 		require

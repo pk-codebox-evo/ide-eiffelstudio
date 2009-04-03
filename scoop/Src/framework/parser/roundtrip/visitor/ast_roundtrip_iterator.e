@@ -1040,6 +1040,7 @@ feature
 			safe_process (l_as.attachment_mark (match_list))
 			safe_process (l_as.expanded_keyword (match_list))
 			safe_process (l_as.separate_keyword (match_list))
+			safe_process (l_as.explicit_processor_specification) -- added for SCOOP by paedde
 			safe_process (l_as.class_name)
 			safe_process (l_as.rcurly_symbol (match_list))
 		end
@@ -1050,6 +1051,7 @@ feature
 			safe_process (l_as.attachment_mark (match_list))
 			safe_process (l_as.expanded_keyword (match_list))
 			safe_process (l_as.separate_keyword (match_list))
+			safe_process (l_as.explicit_processor_specification) -- added for SCOOP by paedde
 			safe_process (l_as.class_name)
 			safe_process (l_as.internal_generics)
 			safe_process (l_as.rcurly_symbol (match_list))
@@ -1060,6 +1062,7 @@ feature
 			safe_process (l_as.lcurly_symbol (match_list))
 			safe_process (l_as.attachment_mark (match_list))
 			safe_process (l_as.separate_keyword (match_list))
+			safe_process (l_as.explicit_processor_specification) -- added for SCOOP by paedde
 			safe_process (l_as.class_name)
 			safe_process (l_as.parameters)
 			safe_process (l_as.rcurly_symbol (match_list))
@@ -1312,6 +1315,14 @@ feature
 			safe_process (l_as.lsqure_symbol (match_list))
 			process_eiffel_list (l_as)
 			safe_process (l_as.rsqure_symbol (match_list))
+		end
+
+	process_explicit_processor_specification_as (l_as: EXPLICIT_PROCESSOR_SPECIFICATION_AS) is
+			-- Process `l_as'.
+			-- added for SCOOP by paedde
+		do
+			safe_process (l_as.entity)
+			safe_process (l_as.handler)
 		end
 
 feature
