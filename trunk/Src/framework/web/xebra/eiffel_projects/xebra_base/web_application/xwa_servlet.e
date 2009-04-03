@@ -18,20 +18,20 @@ feature {XWA_SERVLET} -- Initialization
 
 feature -- Access
 
+
 	current_session: XH_SESSION
 		-- Represents the session that belongs to the user that has send the current request
 
 feature -- Basic Operations	
 
-	pre_handle_request (a_session_manager: XWA_SESSION_MANAGER; a_request: XH_REQUEST): XH_RESPONSE
+	pre_handle_request (a_session_manager: XWA_SESSION_MANAGER; a_request: XH_REQUEST; a_response: XH_RESPONSE)
 			-- Handles a request from a client an generates a response.
 		do
-			create Result.make
-			current_session := a_session_manager.get_current_session (a_request, Result)
+			current_session := a_session_manager.get_current_session (a_request, a_response)
 			internal_controller.set_current_request (a_request)
 			internal_controller.set_current_session (current_session)
 			internal_controller.on_page_load
-			handle_request (a_request, Result)
+			handle_request (a_request, a_response)
 		end
 
 	handle_request (a_request: XH_REQUEST; a_response: XH_RESPONSE)
