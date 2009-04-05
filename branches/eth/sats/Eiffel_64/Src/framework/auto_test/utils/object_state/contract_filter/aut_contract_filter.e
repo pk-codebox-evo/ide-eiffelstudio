@@ -12,39 +12,35 @@ inherit
 
 feature -- Status report
 
-	is_assertion_satisfied (a_tag: TAGGED_AS; a_written_class: CLASS_C; a_context_class: CLASS_C): BOOLEAN is
-			-- Is `a_tag' written in `a_written_class' a valid tag in `a_context_class'?
+	is_assertion_satisfied (a_assertion: AUT_ASSERTION; a_context_class: CLASS_C): BOOLEAN is
+			-- Is `a_assertion' valid from `a_context_class'?
 			-- An assertion is valid if is suitable to generate proof obligation from it.
 		require
-			a_tag_attached: a_tag /= Void
-			a_written_class_attached: a_written_class /= Void
+			a_assertion_attached: a_assertion /= Void
 			a_context_class_attached: a_context_class /= Void
 		deferred
 		end
 
 feature -- Basic operations
 
-	filter (a_contracts: LIST [TUPLE [tag: TAGGED_AS; written_class: CLASS_C]]; a_context_class: CLASS_C) is
-			-- Delete elements in `a_contract_list' which do not satisfy criterion defined in Current.
-			-- `a_context_class' is where assertions in `a_contract_list' viewed, it has impacts
+	drop (a_assertions: LIST [AUT_ASSERTION]; a_context_class: CLASS_C) is
+			-- Delete elements in `a_assertions' which satisfy criterion defined in Current.
+			-- `a_context_class' is where assertions in `a_assertions' viewed, it has impacts
 			-- in case of feature renaming.
 			-- The cursor in `a_contracts' may change after the filtering.
 		require
-			a_contracts_attached: a_contracts /= Void
+			a_assertions_attached: a_assertions /= Void
 			a_context_class_attached: a_context_class /= Void
-		local
-			l_assert: TUPLE [tag: TAGGED_AS; written_class: CLASS_C]
 		do
 			from
-				a_contracts.start
+				a_assertions.start
 			until
-				a_contracts.after
+				a_assertions.after
 			loop
-				l_assert := a_contracts.item
-				if not is_assertion_satisfied (l_assert.tag, l_assert.written_class, a_context_class) then
-					a_contracts.remove
+				if is_assertion_satisfied (a_assertions.item, a_context_class) then
+					a_assertions.remove
 				else
-					a_contracts.forth
+					a_assertions.forth
 				end
 			end
 		end
