@@ -1,6 +1,5 @@
 note
 	description: "Summary description for {XEB_LOOP_TAG}."
-	author: "sandro"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -31,24 +30,25 @@ feature {NONE} -- Access
 
 feature {NONE} -- Implementation
 
-	generate (a_feature: XEL_FEATURE_ELEMENT)
+	internal_generate (a_render_feature, a_prerender_post_feature, a_prerender_get_feature, a_afterrender_feature: XEL_FEATURE_ELEMENT; variable_table: TABLE [STRING, STRING])
 			-- <Precursor>
 		local
 			temp_var_name: STRING
 		do
-			temp_var_name := a_feature.get_temp_variable
-			a_feature.append_local (temp_var_name, "NATURAL")
-			a_feature.append_expression ("from")
-			a_feature.append_expression (temp_var_name + " := 1")
-			a_feature.append_expression ("until")
-			a_feature.append_expression (temp_var_name + " > " + Controller_variable + "." + times)
-			a_feature.append_expression ("loop")
-			generate_children (a_feature)
-			a_feature.append_expression (temp_var_name + " := " + temp_var_name + " + 1")
-			a_feature.append_expression ("end")
+			append_debug_info (a_render_feature)
+			temp_var_name := a_render_feature.get_temp_variable
+			a_render_feature.append_local (temp_var_name, "NATURAL")
+			a_render_feature.append_expression ("from")
+			a_render_feature.append_expression (temp_var_name + " := 1")
+			a_render_feature.append_expression ("until")
+			a_render_feature.append_expression (temp_var_name + " > " + Controller_variable + "." + times)
+			a_render_feature.append_expression ("loop")
+			generate_children (a_render_feature, a_prerender_post_feature, a_prerender_get_feature, a_afterrender_feature, variable_table)
+			a_render_feature.append_expression (temp_var_name + " := " + temp_var_name + " + 1")
+			a_render_feature.append_expression ("end")
 		end
 
-	put_attribute (id: STRING; a_attribute: STRING)
+	internal_put_attribute (id: STRING; a_attribute: STRING)
 			-- <Precursor>
 		do
 			if id.is_equal ("times") then
