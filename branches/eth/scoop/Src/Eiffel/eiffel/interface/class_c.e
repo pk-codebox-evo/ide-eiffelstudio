@@ -2889,6 +2889,10 @@ feature -- Properties
 	is_deferred: BOOLEAN
 			-- Is class deferred ?
 
+	is_separate_client: BOOLEAN
+			-- Is class having a spearate client?
+			-- Added for Scoop by paedde
+
 	is_interface: BOOLEAN
 			-- Is class an interface for IL code generation?
 
@@ -4264,6 +4268,38 @@ feature {DEGREE_5} -- Degree 5
 		ensure
 			parsing_needed_set: parsing_needed = b
 		end
+
+	set_separate_client(b: BOOLEAN) IS
+			-- Set 'is_separate_client' to 'b'.
+			-- Added for Scoop by paedde
+		do
+			is_separate_client := b
+		ensure
+			is_separate_client_set: is_separate_client = b
+		end
+
+feature {DEGREE_5TO4} -- Degree 5TO4 SCOOP
+
+	add_to_degree_5to4 is
+			-- Add current class to Degree 5.
+		do
+			degree_5to4_needed := True
+		ensure
+			added: degree_5to4_needed
+		end
+
+	remove_from_degree_5to4 is
+			-- Remove current class from Degree 5.
+		do
+			degree_5to4_needed := False
+			parsing_needed := False
+		ensure
+			removed: not degree_5to4_needed
+		end
+
+	degree_5to4_needed: BOOLEAN
+			-- Does current class need to be
+			-- processed in Degree 5to4?
 
 feature {DEGREE_4, NAMED_TUPLE_TYPE_A} -- Degree 4
 
