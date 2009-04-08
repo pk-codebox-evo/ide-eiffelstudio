@@ -11,7 +11,7 @@ class
 	XER_CANNOT_DECODE
 
 inherit
-	X_ERROR_RESPONSE
+	XER_SERVER
 
 create
 	make
@@ -23,5 +23,5 @@ feature -- Access
 		do
 			Result :=  "Cannot decode message from http server."
 		end
-		
+
 end
