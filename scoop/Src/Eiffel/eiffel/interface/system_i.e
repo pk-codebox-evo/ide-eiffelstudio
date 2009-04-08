@@ -1763,6 +1763,9 @@ end
 					-- anymore (see eweasel test#incr282).
 				instantiator.clean
 
+					-- SCOOP
+				process_degree_5to4
+
 					-- Inheritance analysis: `Degree_4' is sorted by class
 					-- topological ids so the parent come first the heirs after.
 				process_degree_4
@@ -1987,6 +1990,13 @@ end
 			-- reporting all VTCT errors.
 		do
 			degree_5.post_degree_5_execute
+		end
+
+	process_degree_5to4 is
+			-- Process Degree 5to4.
+			-- added for SCOOP by paedde
+		do
+			Degree_5to4.execute
 		end
 
 	process_degree_4 is

@@ -82,7 +82,7 @@ feature -- Start output features
 			-- Put message indicating the start of a degree
 			-- with `total_nbr' passes to be done.
 		require
-			valid_degree_nbr: degree_nbr >= -5 and then degree_nbr <= 6
+			valid_degree_nbr: degree_nbr >= -5 and then degree_nbr <= 6 or degree_nbr = 54
 			positive_total_nbr: total_nbr >= 0
 		do
 			total_number := total_nbr;
@@ -98,7 +98,7 @@ feature -- Start output features
 	degree_short_description (a_degree: INTEGER): STRING is
 			-- Short description for `a_degree'.
 		require
-			a_degree_valid: a_degree >= -3 and then a_degree <= 6
+			a_degree_valid: a_degree >= -3 and then a_degree <= 6 or a_degree = 54
 		do
 			inspect
 				a_degree
@@ -106,6 +106,8 @@ feature -- Start output features
 				Result := once "Examining System"
 			when 5 then
 				Result := once "Parsing Classes"
+			when 54 then
+				Result := once "SCOOP - Transforming AST"
 			when 4 then
 				Result := once "Analyzing Inheritance"
 			when 3 then
@@ -129,14 +131,17 @@ feature -- Start output features
 	degree_description (a_degree: INTEGER): STRING is
 			-- Description for the currently processed degree.
 		require
-			a_degree_valid: a_degree >= -3 and then a_degree <= 6
+			a_degree_valid: a_degree >= -3 and then a_degree <= 6 or a_degree = 54
 		local
 			l_degree_str: STRING
 		do
 			create Result.make (35)
 			l_degree_str := degree_short_description (a_degree)
-			if a_degree /= 0 then
+			if a_degree /= 0 and a_degree /= 54 then
 				Result.append (Degree_output_string + a_degree.out + ": ")
+			end
+			if a_degree = 54 then
+				Result.append (Degree_output_string + "5to4" + ": ")
 			end
 			Result.append (l_degree_str)
 		ensure
@@ -271,6 +276,20 @@ feature -- Output on per class
 			display_degree (degree_message(5), nbr_to_go, a_class.name)
 			processed := processed + 1
 		end;
+
+	put_degree_5to4 (a_class: CLASS_C; nbr_to_go: INTEGER) is
+			-- Put message to indicate that `a_class' is being
+			-- compiled during degree four with `nbr_to_go'
+			-- classes to go out of `total_nbr'..
+		require
+			class_not_void: a_class /= Void
+			positive_nbr_to_go: nbr_to_go >= 0
+			in_degree_5to4: current_degree = 54
+		do
+			total_number := nbr_to_go + processed
+			display_degree (degree_message(4), nbr_to_go, a_class.name)
+			processed := processed + 1;
+		end
 
 	put_degree_4 (a_class: CLASS_C; nbr_to_go: INTEGER) is
 			-- Put message to indicate that `a_class' is being
