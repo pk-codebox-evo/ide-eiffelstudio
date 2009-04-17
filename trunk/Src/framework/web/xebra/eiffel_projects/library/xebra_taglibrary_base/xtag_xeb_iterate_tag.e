@@ -37,16 +37,20 @@ feature {NONE} -- Implementation
 
 	internal_generate (a_servlet_class: XEL_SERVLET_CLASS_ELEMENT; variable_table: TABLE [STRING, STRING])
 			-- <Precursor>
+		local
+			temp_list: STRING
 		do
+			temp_list := a_servlet_class.render_feature.get_unique_identifier
 			a_servlet_class.render_feature.append_local (variable, type)
+			a_servlet_class.render_feature.append_expression (temp_list " := " Controller_variable + "." + list)
 			a_servlet_class.render_feature.append_expression ("from")
-			add_controller_call (list + ".start", a_servlet_class.render_feature)
+			a_servlet_class.render_feature.append_expression (temp_list + ".start")
 			a_servlet_class.render_feature.append_expression ("until")
-			add_controller_call (list + ".after", a_servlet_class.render_feature)
+			a_servlet_class.render_feature.append_expression (temp_list + ".after")
 			a_servlet_class.render_feature.append_expression ("loop")
-			a_servlet_class.render_feature.append_expression (variable + " := " + Controller_variable + "." + list + ".item")
+			a_servlet_class.render_feature.append_expression (variable + " := " + temp_list + ".item")
 			generate_children (a_servlet_class, variable_table)
-			add_controller_call (list + ".forth", a_servlet_class.render_feature)
+			a_servlet_class.render_feature.append_expression (temp_list + ".forth")
 			a_servlet_class.render_feature.append_expression ("end")
 		end
 
