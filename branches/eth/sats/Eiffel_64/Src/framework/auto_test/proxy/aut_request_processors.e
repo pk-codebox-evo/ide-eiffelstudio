@@ -63,6 +63,13 @@ feature {AUT_REQUEST} -- Processing
 			do_all (agent a_request.process (?))
 		end
 
+	process_precodition_evaluation_request (a_request: AUT_PRECONDITION_EVALUATION_REQUEST)
+			-- Process `a_request'.
+		do
+			do_all (agent a_request.process (?))
+		end
+
+
 note
 	copyright: "Copyright (c) 1984-2009, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
