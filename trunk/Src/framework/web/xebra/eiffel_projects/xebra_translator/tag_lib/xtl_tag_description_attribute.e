@@ -27,7 +27,7 @@ feature -- Access
 	put (child: XTL_TAG_LIB_ITEM)
 			-- <Precursor>
 		do
-			-- Do nothing
+			-- Do nothing (XTL_TAG_DESCRIPTIONS don't have any children)
 		end
 
 	set_attribute (a_id: STRING; value: STRING)
@@ -36,10 +36,14 @@ feature -- Access
 			a_id_is_not_empty: not a_id.is_empty
 			value_is_not_empty: not value.is_empty
 		do
-			if a_id.is_equal ("id") then
+			if a_id.is_equal (id_id) then
 				id := value
 			end
 		end
+
+feature -- Constants
+
+	id_id: STRING = "id"
 
 note
 	copyright: "Copyright (c) 1984-2009, Eiffel Software"
