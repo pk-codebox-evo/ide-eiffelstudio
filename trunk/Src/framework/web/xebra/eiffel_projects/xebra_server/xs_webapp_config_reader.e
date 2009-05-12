@@ -72,8 +72,8 @@ feature -- Status setting
 				end
 			elseif l_name.is_equal (host_name) then
 					a_config.host := l_value
-			else
-				error_manager.add_error (create {XERROR_UNKNOWN_CONFIG_PROPERTY}.make (l_name), false)
+--			else
+--				error_manager.add_error (create {XERROR_UNKNOWN_CONFIG_PROPERTY}.make (l_name), false)
 			end
 		end
 
