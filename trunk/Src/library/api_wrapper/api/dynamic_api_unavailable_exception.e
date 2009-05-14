@@ -26,13 +26,13 @@ feature {NONE} -- Initialization
 			--
 			-- `a_name': An API function or variable name.
 		require
-			a_name_attached: a_name /= Void
+			a_name_attached: attached a_name
 			not_a_name_is_empty: not a_name.is_empty
 		do
 			create api_feature_name.make_from_string (a_name)
 			set_message (once "dynamic feature unavailable")
 		ensure
-			api_feature_name_set: api_feature_name = a_name
+			api_feature_name_set: api_feature_name.same_string (a_name)
 		end
 
 feature -- Access
@@ -50,14 +50,14 @@ feature {NONE} -- Access
 			Result.append_string_general (api_feature_name)
 			Result.append ("' is not available.")
 		ensure then
-			result_attached: Result /= Void
+			result_attached: attached Result
 			not_result_is_empty: not Result.is_empty
 		end
 
 invariant
-	api_feature_name_attached: api_feature_name /= Void
+	api_feature_name_attached: attached api_feature_name
 	not_api_feature_name: not api_feature_name.is_empty
-	message_attached: message /= Void
+	message_attached: attached message /= Void
 	not_message_is_empty: attached message as l_msg and then
 		not l_msg.is_empty
 
