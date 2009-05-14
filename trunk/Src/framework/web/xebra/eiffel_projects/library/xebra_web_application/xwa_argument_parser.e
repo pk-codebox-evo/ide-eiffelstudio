@@ -1,6 +1,6 @@
 note
 	description: "[
-		no comment yet
+		Parses arguments to launch a webapp.
 	]"
 	legal: "See notice at end of class."
 	status: "Prototyping phase"
