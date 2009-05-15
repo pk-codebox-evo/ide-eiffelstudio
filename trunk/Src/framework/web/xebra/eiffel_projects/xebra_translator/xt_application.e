@@ -40,6 +40,8 @@ feature -- Operation
 			l_translator: XP_TRANSLATOR
 			l_dir: DIRECTORY
 		do
+			o.set_name ("XEBTRANS")
+			o.set_debug_level (a_arg_parser.debug_level)
 			create l_translator.make (a_arg_parser.project_name)
 			create l_dir.make (a_arg_parser.input_path)
 
