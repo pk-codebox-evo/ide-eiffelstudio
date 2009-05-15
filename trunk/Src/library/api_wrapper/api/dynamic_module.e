@@ -1,6 +1,7 @@
 note
 	description: "[
-		Represents raw access to a dynamic API module.
+		Provices access to the raw API facilities of a dynamic module loaded using OS dynamic module
+		loading policies.
 	]"
 	legal: "See notice at end of class."
 	status: "See notice at end of class.";
@@ -47,8 +48,8 @@ feature {NONE} -- Initialize
 			a_version_attached: attached a_version
 			not_a_version_is_empty: not a_version.is_empty
 		do
-			create module_name.make_from_string (a_name)
 			create minimum_version.make_from_string (a_version)
+			make (a_name)
 		ensure
 			module_name_set: module_name.same_string (a_name)
 			minimum_version_attached: attached minimum_version
@@ -81,8 +82,11 @@ feature -- Access
 
 feature -- Status report
 
-	is_thread_safe: BOOLEAN = False
+	is_thread_safe: BOOLEAN
 			-- <Precursor>
+		do
+			Result := False
+		end
 
 invariant
 	module_name_attached: attached module_name

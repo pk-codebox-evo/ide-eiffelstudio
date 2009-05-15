@@ -14,6 +14,8 @@ feature -- Access
 
 	frozen api_loader: DYNAMIC_API_LOADER
 			-- Shared access to the API loader.
+		note
+			once_status: global
 		once
 			create Result
 		ensure
