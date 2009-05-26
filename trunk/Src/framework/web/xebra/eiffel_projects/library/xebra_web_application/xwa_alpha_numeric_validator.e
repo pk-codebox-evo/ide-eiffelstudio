@@ -1,6 +1,6 @@
 note
 	description: "[
-		{XWA_ALPHA_NUMERIC_VALIDATOR}.
+		Requires the input to be alpha numeric: ^\w+$
 	]"
 	date: "$Date$"
 	revision: "$Revision$"
@@ -9,31 +9,24 @@ class
 	XWA_ALPHA_NUMERIC_VALIDATOR
 
 inherit
-	XWA_VALIDATOR
+	XWA_REGEXP_VALIDATOR
 
 create
 	make
 
-feature -- Initialization
-
-	make
-			-- Initializes 'Current'
-		do
-
-		end
-
 feature -- Implementation
-
-	validate (a_argument: STRING): BOOLEAN
-			-- <Precursor>
-		do
-				-- TODO FIXME
-			Result := True
-		end
 
 	message: STRING
 			-- <Precursor>
 		do
 			Result := "Value is not alphanumeric!"
 		end
+
+	regular_expression: STRING
+			-- <Precursor>
+		do
+			Result := "^\w+$"
+		end
+
+
 end
