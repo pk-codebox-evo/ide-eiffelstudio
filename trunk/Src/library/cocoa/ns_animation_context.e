@@ -1,6 +1,6 @@
 note
 	description: "Summary description for {NS_ANIMATION_CONTEXT}."
-	author: ""
+	author: "Daniel Furrer"
 	date: "$Date$"
 	revision: "$Revision$"
 
