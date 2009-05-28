@@ -24,7 +24,7 @@ feature -- Initialization
 			Precursor (a_parser_callback)
 		end
 
-feature -- Access
+feature -- Implementation
 
 	on_start_tag (a_namespace, a_prefix, a_local_part : STRING)
 			-- <Precursor>
@@ -46,7 +46,7 @@ feature -- Access
 				parser_callback.tag_stack.item.put_subtag (l_tmp_tag)
 				parser_callback.tag_stack.put (l_tmp_tag)
 				if not l_taglib.contains (a_local_part) then
-						parser_callback.error_manager.add_warning (create {XERROR_UNDEFINED_TAG}.make ([a_local_part]))
+					parser_callback.error_manager.add_warning (create {XERROR_UNDEFINED_TAG}.make ([a_local_part]))
 				end
 			end
 		end
@@ -73,27 +73,23 @@ feature -- Access
 			-- <Precursor>
 		local
 			taglib: XTL_TAG_LIBRARY
-			l_value, l_local_part: STRING
+			l_value: XP_TAG_ARGUMENT
+			l_local_part: STRING
 		do
-			l_value := a_value
+			create l_value.make (a_value)
 			l_local_part := a_local_part
 			taglib := parser_callback.get_tag_lib (parser_callback.tag_stack.item.namespace)
 			if not taglib.contains (parser_callback.tag_stack.item.id) then
-				l_value := "undefined tag: '" + parser_callback.tag_stack.item.id + "'"
+				create l_value.make ("undefined tag: '" + parser_callback.tag_stack.item.id + "'")
 				l_local_part := "text"
 			elseif  taglib.argument_belongs_to_tag (l_local_part, parser_callback.tag_stack.item.id) then
-				if
-				l_value.starts_with ("%%=") and l_value.ends_with ("%%") then
-					process_dynamic_tag_attribute (l_local_part, l_value)
+				if parser_callback.tag_stack.item.has_attribute (l_local_part) then
+					parser_callback.error_manager.add_warning (create {XERROR_UNEXPECTED_ATTRIBUTE}.make (["<"+parser_callback.tag_stack.item.id + " " + l_local_part + "=%"" + l_value.value ("") + "%">"]))
 				else
-					if parser_callback.tag_stack.item.has_attribute (l_local_part) then
-						parser_callback.error_manager.add_warning (create {XERROR_UNEXPECTED_ATTRIBUTE}.make (["<"+parser_callback.tag_stack.item.id + " " + l_local_part + "=%"" + l_value + "%">"]))
-					else
-						parser_callback.tag_stack.item.put_attribute (l_local_part, l_value)
-					end
+					parser_callback.tag_stack.item.put_attribute (l_local_part, l_value)
 				end
 			else
-				parser_callback.error_manager.add_warning (create {XERROR_UNEXPECTED_ATTRIBUTE}.make (["<"+parser_callback.tag_stack.item.id + " " + l_local_part + "=%"" + l_value + "%">"  ]))
+				parser_callback.error_manager.add_warning (create {XERROR_UNEXPECTED_ATTRIBUTE}.make (["<"+parser_callback.tag_stack.item.id + " " + l_local_part + "=%"" + l_value.value ("") + "%">"  ]))
 			end
 		end
 
@@ -107,18 +103,6 @@ feature -- Access
 		do
 			parser_callback.set_state_html
 			parser_callback.state.on_finish
-		end
-
-	process_dynamic_tag_attribute (local_part, value: STRING)
-			-- Adds an attribute
-		require
-			local_part_is_valid: attached local_part and not local_part.is_empty
-			value_attached: attached value
-		local
-			feature_name: STRING
-		do
-			feature_name := strip_off_dynamic_tags (value)
-			parser_callback.tag_stack.item.put_attribute (local_part, "controller." + feature_name)
 		end
 
 end
