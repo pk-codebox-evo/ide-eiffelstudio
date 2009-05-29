@@ -10,9 +10,14 @@ deferred class
 inherit
 	AUT_RESULT_ANALYSIS_UTILITY
 
-feature -- handler
+feature -- Process
 
-	notify (a_witness: AUT_WITNESS) is
+	process_comment_line (a_line: STRING) is
+			-- Process `a_line'.
+		do
+		end
+
+	process_witness (a_witness: AUT_WITNESS) is
 			-- Handle `a_witness'.
 		deferred
 		end
