@@ -1985,7 +1985,7 @@ feature -- Actual class type
 
 feature {TYPE_AS, AST_TYPE_A_GENERATOR, AST_FEATURE_CHECKER_GENERATOR} -- Actual class type
 
-	partial_actual_type (gen: ARRAY [TYPE_A]; is_exp, is_sep: BOOLEAN): CL_TYPE_A is
+	partial_actual_type (gen: ARRAY [TYPE_A]; is_exp, is_sep: BOOLEAN; proc_tag_spec : EXPLICIT_PROCESSOR_SPECIFICATION_AS): CL_TYPE_A is
 			-- Actual type of `current depending on the context in which it is declared
 			-- in CLASS_TYPE_AS. That is to say, it could have generics `gen' but not
 			-- be a generic class. It simplifies creation of `CL_TYPE_A' instances in
@@ -1994,6 +1994,8 @@ feature {TYPE_AS, AST_TYPE_A_GENERATOR, AST_FEATURE_CHECKER_GENERATOR} -- Actual
 		require
 			is_exp_set: is_exp implies (not is_sep)
 			is_sep_set: is_sep implies (not is_exp)
+		local
+			proc_tag : PROCESSOR_TAG
 		do
 			if gen /= Void then
 				create {GEN_TYPE_A} Result.make (class_id, gen)
@@ -2003,8 +2005,20 @@ feature {TYPE_AS, AST_TYPE_A_GENERATOR, AST_FEATURE_CHECKER_GENERATOR} -- Actual
 			if is_exp then
 				Result.set_expanded_mark
 			elseif is_sep then
-				Result.set_separate_mark
+
+				if proc_tag_spec = Void then
+					create proc_tag.make_top
+				else
+					create proc_tag.make (proc_tag_spec.name)
+				end
+
+				Result.set_processor_tag (proc_tag)
 			end
+
+			
+
+			Result.set_processor_tag (proc_tag)
+
 			if is_expanded then
 				Result.set_expanded_class_mark
 			end
