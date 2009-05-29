@@ -518,6 +518,11 @@ feature -- Properties
 			-- Do nothing
 		end
 
+	processor_tag : PROCESSOR_TAG is
+		do
+
+		end
+
 	is_none: BOOLEAN is
 			-- Is the current actual type a none type ?
 		do

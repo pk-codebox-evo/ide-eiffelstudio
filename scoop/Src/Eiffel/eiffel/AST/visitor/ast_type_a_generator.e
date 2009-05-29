@@ -155,15 +155,21 @@ feature {NONE} -- Visitor implementation
 				-- Lookup class in universe, it should be present.
 			l_class_i := universe.class_named (l_as.class_name.name, current_class.group)
 			if l_class_i /= Void and then l_class_i.is_compiled then
+
 				l_class_c := l_class_i.compiled_class
 				l_generics := l_as.generics
+
 				if l_generics /= Void then
 					from
 						i := 1
 						count := l_generics.count
+
 						create l_actual_generic.make (1, count)
-						l_type := l_class_c.partial_actual_type (l_actual_generic, l_as.is_expanded,
-							l_as.is_separate)
+
+						l_type := l_class_c.partial_actual_type (l_actual_generic, 
+						                                         l_as.is_expanded,
+						                                         l_as.is_separate,
+						                                         l_as.explicit_processor_specification)
 					until
 						i > count or l_has_error
 					loop
@@ -179,7 +185,10 @@ feature {NONE} -- Visitor implementation
 						last_type := l_type
 					end
 				else
-					l_type := l_class_c.partial_actual_type (Void, l_as.is_expanded, l_as.is_separate)
+					l_type := l_class_c.partial_actual_type (Void, 
+					                                         l_as.is_expanded, 
+					                                         l_as.is_separate,
+                                                             l_as.explicit_processor_specification)
 					last_type := l_type
 				end
 				if l_type /= Void then

@@ -663,11 +663,45 @@ feature {COMPILER_EXPORTER} -- Conformance
 						end
 						Result := other_class_type.class_id = system.system_object_id
 					end
+
+					if Result and then check_scoop_types then
+						Result := scoop_conform_to (other_class_type)
+					end
 				end
 			elseif other.is_type_set then
 				l_other_type_set ?= other.actual_type
 				Result := to_type_set.conform_to (l_other_type_set.twin)
 			end
+		end
+
+	processor_tag : PROCESSOR_TAG
+
+	set_processor_tag (a_proc_tag : PROCESSOR_TAG) is
+		do
+			processor_tag := a_proc_tag;
+		end
+
+	check_scoop_types : BOOLEAN is True
+
+	scoop_conform_to (other : CL_TYPE_A) : BOOLEAN is
+			-- Conformance as according to the SCOOP type rules.
+			-- This is meant to be called within conform_to feature, after the
+			-- decision of inheritance, so that we implicitly have
+			-- Current < other (where < is the inheritance relation).
+		local
+			eq_attach : BOOLEAN
+			lt_attach : BOOLEAN
+			proc_top   : BOOLEAN
+			proc_bot   : BOOLEAN
+		do
+			eq_attach := other.is_implicitly_attached = is_implicitly_attached
+			lt_attach := other.is_implicitly_attached implies is_implicitly_attached
+			
+			proc_top  := 
+			lt_proc   := true
+			
+			Result := eq_attach and then
+			          True
 		end
 
 	is_conformant_to (other: TYPE_A): BOOLEAN is
