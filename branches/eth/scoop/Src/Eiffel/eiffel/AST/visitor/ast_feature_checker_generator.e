@@ -9302,7 +9302,7 @@ feature {NONE} -- Implementation: catcall check
 					l_type := l_descendants.item.partial_actual_type (a_type.generics,
 					                                                  a_type.is_expanded,
 					                                                  a_type.is_separate,
-					                                                  a_type.processor_tag)
+					                                                  a_type.processor_tag_type)
 				else
 					l_type := l_descendants.item.actual_type
 				end

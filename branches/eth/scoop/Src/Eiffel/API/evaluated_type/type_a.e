@@ -518,7 +518,7 @@ feature -- Properties
 			-- Do nothing
 		end
 
-	processor_tag : PROCESSOR_TAG is
+	processor_tag_type : PROCESSOR_TAG_type is
 		do
 
 		end
