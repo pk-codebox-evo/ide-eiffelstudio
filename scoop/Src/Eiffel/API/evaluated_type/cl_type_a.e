@@ -691,13 +691,13 @@ feature {COMPILER_EXPORTER} -- Conformance
 		local
 			eq_attach : BOOLEAN
 			lt_attach : BOOLEAN
-			proc_top   : BOOLEAN
-			proc_bot   : BOOLEAN
+			proc_t_top   : BOOLEAN
+			proc_t_bot   : BOOLEAN
 		do
 			eq_attach := other.is_implicitly_attached = is_implicitly_attached
 			lt_attach := other.is_implicitly_attached implies is_implicitly_attached
 			
-			proc_top  := 
+			proc_top  := true
 			lt_proc   := true
 			
 			Result := eq_attach and then
