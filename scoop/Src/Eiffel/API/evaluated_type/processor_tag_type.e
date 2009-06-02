@@ -6,32 +6,31 @@ class PROCESSOR_TAG_TYPE
 
 inherit
 	COMPARABLE
-	redefine infix "<" end
+	redefine infix "<", is_equal end
 
 creation
-	make,
-	make_top,
-	make_bottom
+	make
 
 feature
-	make_top is
-		do
-			make_empty
-			top := True
-		end
 
-	make_bottom is
-		do
-			make_empty
-			bottom := True
-		end
 
-	make (proc_as : EXPLICIT_PROCESSOR_SPECIFICATION_AS) is
+	make (is_separate : BOOLEAN; proc_as : EXPLICIT_PROCESSOR_SPECIFICATION_AS) is
 		require
 			proc_as_not_void: proc_as /= Void
 		do
 			make_empty
-			tag_name := proc_as.entity.name
+	
+			if is_separate then
+				if proc_as /= Void then
+					tag_name := proc_as.entity.name
+				else
+					make_top
+				end
+			else
+				make_current
+			end
+
+
 		end
 
 	infix "<" (other : like Current) : BOOLEAN is
@@ -47,14 +46,39 @@ feature
 			Result := other.tag_name.is_equal (tag_name)
 		end
 
-feature {NONE}
+	tag_name : STRING
+
+feature {PROCESSOR_TAG_TYPE}
+	make_top is
+		do
+			make_empty
+			top := True
+		end
+
+	make_current is
+		do
+			make_empty
+			current_proc := true
+		end
+
+	make_bottom is
+		do
+			make_empty
+			bottom := True
+		end
+
 	make_empty is
 		do
+			current_proc := False
 			top := False
 			bottom := False
 		end
 
-	tag_name : STRING
+	bottom       : BOOLEAN
+	top          : BOOLEAN
+	current_proc : BOOLEAN
+
+
 	
 invariant
 	top_bottom_sep: (bottom implies not top) and (top implies not bottom)

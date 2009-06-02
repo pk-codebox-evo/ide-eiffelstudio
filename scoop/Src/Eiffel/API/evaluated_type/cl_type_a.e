@@ -674,11 +674,11 @@ feature {COMPILER_EXPORTER} -- Conformance
 			end
 		end
 
-	processor_tag : PROCESSOR_TAG
+	proc_tag_t : PROCESSOR_TAG_TYPE
 
-	set_processor_tag (a_proc_tag : PROCESSOR_TAG) is
+	set_processor_tag (a_proc_tag_t : PROCESSOR_TAG_TYPE) is
 		do
-			processor_tag := a_proc_tag;
+			proc_tag_t := a_proc_tag_t
 		end
 
 	check_scoop_types : BOOLEAN is True
@@ -696,9 +696,8 @@ feature {COMPILER_EXPORTER} -- Conformance
 		do
 			eq_attach := other.is_implicitly_attached = is_implicitly_attached
 			lt_attach := other.is_implicitly_attached implies is_implicitly_attached
-			
-			proc_top  := true
-			lt_proc   := true
+
+
 			
 			Result := eq_attach and then
 			          True
