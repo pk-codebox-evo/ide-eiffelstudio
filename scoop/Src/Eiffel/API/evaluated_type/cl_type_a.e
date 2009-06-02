@@ -688,19 +688,12 @@ feature {COMPILER_EXPORTER} -- Conformance
 			-- This is meant to be called within conform_to feature, after the
 			-- decision of inheritance, so that we implicitly have
 			-- Current < other (where < is the inheritance relation).
-		local
-			eq_attach : BOOLEAN
-			lt_attach : BOOLEAN
-			proc_t_top   : BOOLEAN
-			proc_t_bot   : BOOLEAN
 		do
-			eq_attach := other.is_implicitly_attached = is_implicitly_attached
-			lt_attach := other.is_implicitly_attached implies is_implicitly_attached
-
-
-			
-			Result := eq_attach and then
-			          True
+			Result := (proc_tag_t <= other.proc_tag_t) and  
+			          (  (not other.is_implicitly_attached) implies 
+			             (not is_implicitly_attached)
+			          )
+			          
 		end
 
 	is_conformant_to (other: TYPE_A): BOOLEAN is
