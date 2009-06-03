@@ -1,6 +1,6 @@
 note
 	description: "[
-
+		Shared helper class for allowing access to an SQLite API {SQLIITE_API} but means of a creation routine parameter.
 	]"
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
@@ -11,10 +11,7 @@ deferred class
 	SQLITE_DYNAMIC_SHARED_API
 
 inherit
-	DYNAMIC_SHARED_API
-
---create
---	make
+	DYNAMIC_SHARED_API [SQLITE_API]
 
 feature {NONE} -- Initialize
 
@@ -29,7 +26,6 @@ feature -- Clean up
 			-- <Precursor>
 		do
 		end
-
 
 ;note
 	copyright: "Copyright (c) 1984-2009, Eiffel Software"
