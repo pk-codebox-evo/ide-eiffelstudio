@@ -25,18 +25,23 @@ feature -- Initialization
 			Precursor
 			create value.make ("")
 			create name.make ("")
+			create text.make ("")
 		ensure then
 			value_attached: attached value
 			name_attached: attached name
+			text_attached: attached text
 		end
 
 feature -- Access
 
 	value: XTAG_TAG_ARGUMENT
-			-- Text of the input field
+			-- Text of the input field (feature of object)
+
+	text: XTAG_TAG_ARGUMENT
+			-- Text in the input field
 
 	name: XTAG_TAG_ARGUMENT
-			-- Identification of the input field for the data object mapping
+			-- Identification of the input field for the data object mapping for validation
 
 feature -- Implementation
 
@@ -48,6 +53,9 @@ feature -- Implementation
 			end
 			if a_id.is_equal ("name") then
 				name := a_attribute
+			end
+			if a_id.is_equal ("text") then
+				text := a_attribute
 			end
 		end
 
@@ -66,7 +74,7 @@ feature -- Implementation
 						l_input_id := l_variable + "_" + a_servlet_class.get_unique_identifier
 
 							-- render feature
-						a_servlet_class.render_feature.append_expression (response_variable_append + "(%"<input type=%%%"" + input_type +"%%%" name=%%%"" + l_input_id + "%%%" value=%%%"%" +" + l_variable + "." + value.value (current_controller_id) + " + %"%%%" />%")")
+						a_servlet_class.render_feature.append_expression (response_variable_append + "(%"<input type=%%%"" + input_type +"%%%" name=%%%"" + l_input_id + "%%%" value=%%%"" + text.value (current_controller_id) + "%%%" />%")")
 
 						create {ARRAYED_LIST [STRING]} l_validator_list.make (0)
 						a_variable_table.put (l_validator_list, {XTAG_F_VALIDATOR_TAG}.Validator_tag_list_key)
@@ -82,6 +90,7 @@ feature -- Implementation
 						l_validator_temp := a_servlet_class.prerender_post_feature.new_local ("XWA_VALIDATOR")
 						l_message_var := get_validation_local (l_validation_table, a_servlet_class, name.value (current_controller_id))
 						if not a_variable_table.is_empty then
+							a_servlet_class.afterrender_feature.append_expression (l_message_var + ".wipe_out")
 							from
 								l_validator_list.start
 							until
