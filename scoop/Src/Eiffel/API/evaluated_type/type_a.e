@@ -309,6 +309,14 @@ feature -- IL code generation
 		do
 		end
 
+feature -- SCOOP Processor access
+	processor_tag : PROCESSOR_TAG_TYPE
+
+	set_processor_tag (a_proc_tag_t : PROCESSOR_TAG_TYPE) is
+		do
+			processor_tag := a_proc_tag_t
+		end
+
 feature -- Properties
 
 	has_renaming: BOOLEAN is

@@ -151,16 +151,38 @@ feature {NONE} -- Visitor implementation
 			i, count: INTEGER
 			l_has_error: BOOLEAN
 			l_type: CL_TYPE_A
+
+			l_proc_spec : EXPLICIT_PROCESSOR_SPECIFICATION_AS
+			l_tag_name : STRING
+			l_handled  : BOOLEAN
 			l_proc_tag : PROCESSOR_TAG_TYPE
 		do
 				-- Lookup class in universe, it should be present.
 			l_class_i := universe.class_named (l_as.class_name.name, current_class.group)
 			if l_class_i /= Void and then l_class_i.is_compiled then
 
+
 				l_class_c := l_class_i.compiled_class
 				l_generics := l_as.generics
 
-				create l_proc_tag.make (l_as.is_separate, l_as.explicit_processor_specification)
+
+					-- Create the processor tag type from the specification
+				l_proc_spec := l_as.explicit_processor_specification
+
+				if l_proc_spec /= Void then
+					if l_proc_spec.handler.name.same_string ("handler") then
+						l_handled := True
+					else
+						l_handled := False
+					end
+
+					l_tag_name := l_proc_spec.entity.name
+				else
+					l_handled  := False
+					l_tag_name := ""
+				end
+
+				create l_proc_tag.make (l_as.is_separate, l_tag_name, l_handled)
 
 				if l_generics /= Void then
 					from
@@ -169,7 +191,7 @@ feature {NONE} -- Visitor implementation
 
 						create l_actual_generic.make (1, count)
 
-						l_type := l_class_c.partial_actual_type (l_actual_generic, 
+						l_type := l_class_c.partial_actual_type (l_actual_generic,
 						                                         l_as.is_expanded,
 						                                         l_as.is_separate,
 						                                         l_proc_tag)
@@ -188,8 +210,8 @@ feature {NONE} -- Visitor implementation
 						last_type := l_type
 					end
 				else
-					l_type := l_class_c.partial_actual_type (Void, 
-					                                         l_as.is_expanded, 
+					l_type := l_class_c.partial_actual_type (Void,
+					                                         l_as.is_expanded,
 					                                         l_as.is_separate,
                                                              l_proc_tag)
 					last_type := l_type
