@@ -10,10 +10,10 @@ class
 	UI_APPLICATION
 
 inherit
-	UI_OBJECT
+	NS_OBJECT
 
 create {SHARED_UI_APPLICATION}
-	make_from_pointer
+	share_from_pointer
 
 note
 	copyright: "Copyright (c) 1984-2009, Eiffel Software and others"
