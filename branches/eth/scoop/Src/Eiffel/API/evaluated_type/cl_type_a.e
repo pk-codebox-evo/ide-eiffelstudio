@@ -674,12 +674,7 @@ feature {COMPILER_EXPORTER} -- Conformance
 			end
 		end
 
-	proc_tag_t : PROCESSOR_TAG_TYPE
 
-	set_processor_tag (a_proc_tag_t : PROCESSOR_TAG_TYPE) is
-		do
-			proc_tag_t := a_proc_tag_t
-		end
 
 	check_scoop_types : BOOLEAN is True
 
@@ -689,11 +684,11 @@ feature {COMPILER_EXPORTER} -- Conformance
 			-- decision of inheritance, so that we implicitly have
 			-- Current < other (where < is the inheritance relation).
 		do
-			Result := (proc_tag_t <= other.proc_tag_t) and  
-			          (  (not other.is_implicitly_attached) implies 
+			Result := (processor_tag <= other.processor_tag) and
+			          (  (not other.is_implicitly_attached) implies
 			             (not is_implicitly_attached)
 			          )
-			          
+
 		end
 
 	is_conformant_to (other: TYPE_A): BOOLEAN is

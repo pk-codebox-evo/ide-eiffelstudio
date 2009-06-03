@@ -986,8 +986,59 @@ feature -- Roundtrip
 			process_creation_expr_as (l_as)
 		end
 
-feature -- Implementation
+feature -- SCOOP Implementation
+	is_controlled (a_name : STRING) : BOOLEAN is
+			-- Determine whether the argument `var' is controlled, as
+			-- defined by the SCOOP specification. This implementation uses
+			-- the `current_feature' state variable to determine the current
+			-- context for this predicate.
+		local
+			arg   : TYPE_A
+			args  : FEAT_ARG
+			i     : INTEGER
+			found : BOOLEAN
+		do
+			Result := False
 
+			found  := False
+			args   := current_feature.arguments
+
+				-- Find the formal argument with the same name as `a_name'
+				-- and see if it is attached.
+			from
+				i := 0
+			until
+				i = args.count or found
+			loop
+				if args.item_name (i).same_string (a_name) then
+					found  := True
+					arg    := args.i_th (i)
+
+					Result := arg.is_implicitly_attached or else arg.processor_tag_type.is_current
+				end
+
+				i := i + 1
+			end
+		end
+
+		transform_scoop_result (result_t, target_t : TYPE_A) : TYPE_A is
+				-- Transforms the result of a feature call depending on the
+				-- target of that call. This transformation is according to the
+				-- definition given in the SCOOP work on typing
+			local
+				tmp_tag : PROCESSOR_TAG_TYPE
+			do
+				Result   := result_t.duplicate
+				tmp_tag  := target_t.processor_tag
+
+				if not target_t.processor_tag_type.is_current then
+					tmp_tag.make_top
+					Result.set_processor_tag (tmp_tag)
+				end
+			end
+
+
+feature -- Implementation
 	process_custom_attribute_as (l_as: CUSTOM_ATTRIBUTE_AS) is
 		local
 			l_creation: CREATION_EXPR_B
