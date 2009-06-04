@@ -19,7 +19,8 @@ inherit
 			il_type_name, generate_gen_type_il, is_generated_as_single_type,
 			generic_derivation, associated_class_type, has_associated_class_type,
 			internal_same_generic_derivation_as, internal_generic_derivation,
-			has_associated_class, is_class_valid, instantiated_in, deep_actual_type
+			has_associated_class, is_class_valid, instantiated_in, deep_actual_type,
+			processor_tag
 		end
 
 	SHARED_IL_CASING
@@ -674,21 +675,46 @@ feature {COMPILER_EXPORTER} -- Conformance
 			end
 		end
 
-
-
 	check_scoop_types : BOOLEAN is True
+
+
+	processor_tag : PROCESSOR_TAG_TYPE is
+			-- constant processor tag for Integers
+		do
+			if proc_tag_t /= Void then
+				Result := proc_tag_t
+			else
+				create Result.make (False, "", False)
+			end
+
+		end
+
 
 	scoop_conform_to (other : CL_TYPE_A) : BOOLEAN is
 			-- Conformance as according to the SCOOP type rules.
 			-- This is meant to be called within conform_to feature, after the
 			-- decision of inheritance, so that we implicitly have
 			-- Current < other (where < is the inheritance relation).
+		require
+			other_not_void:     other               /= Void
+			other_tag_not_void: other.processor_tag /= Void
+		local
+			lte_proc_tag : BOOLEAN
+			lte_attach   : BOOLEAN
 		do
-			Result := (processor_tag <= other.processor_tag) and
-			          (  (not other.is_implicitly_attached) implies
-			             (not is_implicitly_attached)
-			          )
+			lte_proc_tag := processor_tag < other.processor_tag or else processor_tag.is_equal (other.processor_tag)
+			lte_attach   := other.is_implicitly_attached implies
+			                is_implicitly_attached
 
+--			io.put_string ("Tag conforms: ")
+--			io.put_boolean (lte_proc_tag)
+--			io.new_line
+
+--			io.put_string ("Attach conforms: ")
+--			io.put_boolean (lte_attach)
+--			io.new_line
+
+			Result := lte_proc_tag and lte_attach
 		end
 
 	is_conformant_to (other: TYPE_A): BOOLEAN is

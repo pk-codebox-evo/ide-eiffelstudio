@@ -170,7 +170,9 @@ feature {NONE} -- Visitor implementation
 				l_proc_spec := l_as.explicit_processor_specification
 
 				if l_proc_spec /= Void then
-					if l_proc_spec.handler.name.same_string ("handler") then
+
+					if l_proc_spec.handler /= Void and then
+					   l_proc_spec.handler.name.same_string ("handler") then
 						l_handled := True
 					else
 						l_handled := False

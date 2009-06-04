@@ -4,16 +4,15 @@ indexing
 
 class PROCESSOR_TAG_TYPE
 
-inherit
-	COMPARABLE
-	redefine infix "<", is_equal end
+inherit ANY
+redefine
+	is_equal
+	end
 
 create
 	make
 
 feature
-
-		--FIXME: this constructor sucks, require clause is used in the body, ugh.
 	make (is_separate : BOOLEAN; proc_name : STRING ; a_handled : BOOLEAN) is
 		require
 			handled implies not proc_name.is_empty
@@ -26,19 +25,17 @@ feature
 
 			if is_separate then
 
-				if proc_name.is_empty or else
-				   (handled and proc_name.is_equal ("Current")) then
-
+				if (handled and proc_name.is_equal ("Current")) then
 					make_current
-
-
-				else
+				elseif proc_name.is_equal ("") then
 					make_top
 				end
 
 			else
 				make_current
 			end
+
+--			dump_info
 		end
 
 	duplicate : PROCESSOR_TAG_TYPE is
@@ -64,10 +61,29 @@ feature
 
 	is_equal (other : like Current) : BOOLEAN is
 		do
-			Result := other.top = top       or else
-			          other.bottom = bottom or else
-			          other.tag_name.is_equal (tag_name)
+			Result := (other.top and top)   or else
+			          (other.bottom and bottom) or else
+			          (other.is_current and is_current and other.tag_name.is_equal (tag_name))
+			io.put_string ("Equal says...")
+			io.put_boolean (Result)
+			io.put_new_line
+			dump_info
+			other.dump_info
 		end
+
+	dump_info is
+		do
+			io.put_string ("Separate tag with: is_sep: ")
+			io.put_boolean(is_sep)
+			io.put_string (" process name: ")
+			io.put_string (tag_name)
+			io.put_string (" handled: ")
+			io.put_boolean(handled)
+			io.put_string (" current: ")
+			io.put_boolean (current_proc)
+			io.new_line
+		end
+
 
 	tag_name : STRING
 
