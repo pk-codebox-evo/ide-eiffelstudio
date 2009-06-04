@@ -97,6 +97,14 @@ feature -- Access
 		do
 		end
 
+--feature -- SCOOP Processor Tag Constant
+--	processor_tag : PROCESSOR_TAG_TYPE is
+--			-- constant processor tag for Integers
+--		do
+--			create Result.make (False, "", False)
+--		end
+
+
 feature -- IL code generation
 
 	generic_il_type_name (a_context_type: TYPE_A): STRING is

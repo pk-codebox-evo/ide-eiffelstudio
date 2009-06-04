@@ -310,12 +310,21 @@ feature -- IL code generation
 		end
 
 feature -- SCOOP Processor access
-	processor_tag : PROCESSOR_TAG_TYPE
+	processor_tag : PROCESSOR_TAG_TYPE is
+			-- constant processor tag for Integers
+		do
+			create Result.make (False, "", False)
+		end
 
 	set_processor_tag (a_proc_tag_t : PROCESSOR_TAG_TYPE) is
+		require
+			tag_not_void: a_proc_tag_t /= Void
 		do
-			processor_tag := a_proc_tag_t
+			proc_tag_t := a_proc_tag_t
 		end
+
+feature {TYPE_A} -- Internal SCOOP Processor
+	proc_tag_t : PROCESSOR_TAG_TYPE
 
 feature -- Properties
 
