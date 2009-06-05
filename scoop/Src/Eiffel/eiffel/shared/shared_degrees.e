@@ -16,8 +16,8 @@ feature {NONE} -- Access
 			create Result.make
 		end
 
-	Degree_5to4: DEGREE_5TO4 is
-			-- Degree 5to4
+	Degree_SCOOP: DEGREE_SCOOP is
+			-- Degree SCOOP
 		once
 			create Result.make
 		end
