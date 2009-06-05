@@ -2006,6 +2006,10 @@ feature {TYPE_AS, AST_TYPE_A_GENERATOR, AST_FEATURE_CHECKER_GENERATOR} -- Actual
 
 			Result.set_processor_tag (proc_tag)
 
+			if not proc_tag.bottom and not proc_tag.is_current then
+				Result.set_separate_mark
+			end
+
 			if is_expanded then
 				Result.set_expanded_class_mark
 			end

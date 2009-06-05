@@ -304,6 +304,13 @@ feature -- Output
 				st.add_space
 			elseif has_separate_mark then
 				st.process_keyword_text ({SHARED_TEXT_ITEMS}.ti_separate_keyword, Void)
+				if processor_tag.tag_name.count > 0  then
+					st.add_space
+					st.add ("<")
+					st.add (processor_tag.tag_name)
+					st.add (">")
+					st.add_space
+				end
 				st.add_space
 			end
 			associated_class.append_name (st)
@@ -983,7 +990,7 @@ feature {CL_TYPE_A, TUPLE_CLASS_B, CIL_CODE_GENERATOR} --Class type declaration 
 	reference_mark: NATURAL_8 is 2
 			-- Reference declaration mark
 
-	separate_mark: NATURAL_8 is 3
+	separate_mark: NATURAL_8 is 4
 			-- Separate declaration mark
 
 invariant
