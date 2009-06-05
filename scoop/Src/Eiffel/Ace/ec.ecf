@@ -153,7 +153,12 @@
 		<variable name="batch_framework" value="false"/>
 		<library name="auto_test" location="$EIFFEL_SRC\framework\auto_test\auto_test.ecf" readonly="false"/>
 		<library name="command_tunnel" location="$EIFFEL_SRC\framework\command_tunnel\command_tunnel.ecf" readonly="false"/>
-		<library name="compiler_kernel" location="$EIFFEL_SRC\Eiffel\Ace\ec_kernel.ecf" readonly="false" use_application_options="true"/>
+		<library name="compiler_kernel" location="$EIFFEL_SRC\Eiffel\Ace\ec_kernel.ecf" readonly="false" use_application_options="true">
+			<option debug="true">
+				<debug name="activity" enabled="false"/>
+				<debug name="scoop" enabled="true"/>
+			</option>
+		</library>
 		<library name="configuration_gui" location="$EIFFEL_SRC\framework\configuration\configuration_gui.ecf" readonly="false"/>
 		<library name="curl" location="$ISE_LIBRARY\library\cURL\cURL.ecf" readonly="false"/>
 		<library name="debugger" location="$EIFFEL_SRC\Eiffel\debugger\debugger.ecf" readonly="false" use_application_options="true"/>
@@ -176,7 +181,8 @@
 				<platform excluded_value="windows"/>
 			</condition>
 		</library>
-		<library name="scoopli" location="D:\MyProjects\eiffel\scoop\Src\library\scoopli\scoopli.ecf"/>
+		<library name="scoop2scoopli" location="$ISE_LIBRARY\library\scoop2scoopli\scoop2scoopli.ecf" readonly="false" use_application_options="true"/>
+		<library name="scoopli" location="D:\MyProjects\eiffel\scoop\Src\library\scoopli\scoopli.ecf" readonly="false"/>
 		<library name="tagging" location="$EIFFEL_SRC\framework\tagging\tagging.ecf" readonly="false"/>
 		<library name="testing_engine" location="$EIFFEL_SRC\framework\testing\testing.ecf" readonly="false"/>
 		<library name="testing_library" location="$EIFFEL_SRC\library\testing\testing.ecf" readonly="false"/>
