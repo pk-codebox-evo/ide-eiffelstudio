@@ -1028,12 +1028,18 @@ feature -- SCOOP Implementation
 			local
 				tmp_tag : PROCESSOR_TAG_TYPE
 			do
-				Result   := result_t.duplicate
-				tmp_tag  := target_t.processor_tag
+				if target_t.is_separate then
 
-				if not target_t.processor_tag_type.is_current then
-					tmp_tag.make_top
+					Result   := result_t.duplicate
+					tmp_tag  := target_t.processor_tag.duplicate
+
+					if not target_t.processor_tag.is_current then
+						tmp_tag.make_top
+					end
+
 					Result.set_processor_tag (tmp_tag)
+				else
+					Result := result_t
 				end
 			end
 
@@ -1632,6 +1638,11 @@ feature -- Implementation
 
 								-- Get the type of Current feature.
 							l_result_type := l_feature.type
+
+							-- SCOOP transformation of the result type, based on both old result type and target of the feature call
+							-- l_result_type := transform_scoop_result (a_type, l_result_type)
+
+
 								-- Adapted type in case it is a formal generic parameter or a like.
 							l_result_type := adapted_type (l_result_type, l_last_type, l_last_constrained)
 							if l_arg_types /= Void then
@@ -1645,7 +1656,10 @@ feature -- Implementation
 									l_result_type := l_pure_result_type.actual_argument_type (l_feature.arguments)
 								end
 							end
+
 							l_result_type := l_result_type.instantiation_in (l_last_type.as_implicitly_detachable, l_last_id)
+
+
 							if l_arg_types /= Void and then l_pure_result_type.is_like_argument and then is_byte_node_enabled then
 									-- Ensure the expandedness status of the result type matches
 									-- the expandedness status of the argument it is anchored to (if any).
