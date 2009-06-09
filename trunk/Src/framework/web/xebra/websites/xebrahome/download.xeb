@@ -3,7 +3,7 @@
 		Download	
 	</page:define_region>
 
-	<page:define_region id="middle_content">
+	<page:define_region id="middle_content">	
 		here
 	</page:define_region>
 
