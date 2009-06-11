@@ -10,6 +10,7 @@ note
 
 class
 	XERROR_CONFIG_ERROR
+
 inherit
 	ERROR_ERROR_INFO
 		rename
