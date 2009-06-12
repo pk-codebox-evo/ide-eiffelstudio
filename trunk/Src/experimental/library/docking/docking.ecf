@@ -13,7 +13,7 @@
 			<exclude>/release$</exclude>
 			<exclude>/obsolete$</exclude>
 		</file_rule>
-		<option namespace="EiffelSoftware.Library.Vision2">
+		<option namespace="EiffelSoftware.Library.Docking">
 		</option>
 		<setting name="dotnet_naming_convention" value="true"/>
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf" readonly="true"/>
@@ -63,5 +63,8 @@
 				</file_rule>
 			</cluster>
 		</cluster>
+	</target>
+	<target name="docking_dotnet" extends="docking">
+		<setting name="msil_generation" value="true"/>
 	</target>
 </system>
