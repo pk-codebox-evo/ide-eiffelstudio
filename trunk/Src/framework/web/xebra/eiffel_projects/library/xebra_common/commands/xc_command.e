@@ -38,24 +38,11 @@ feature -- Basic operations
 			-- Executes the command.
 		require
 			a_server_attached: a_server /= Void
-			execute_malicious_code
 		deferred
 		ensure
 			result_attached: Result /= Void
 		end
 
-	execute_malicious_code: BOOLEAN
-			--
-		do
-		--	print ("Ubga bunga!")
-			Result := True
-		end
 
-	handle_errors (a_server: XC_SERVER_INTERFACE)
-			--
-		require
-			a_server_attached: a_server /= Void
-		do
-			a_server.handle_errors
-		end
+
 end
