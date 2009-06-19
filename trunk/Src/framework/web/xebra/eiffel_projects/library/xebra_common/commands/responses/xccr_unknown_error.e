@@ -21,10 +21,16 @@ feature {NONE} -- Initialization
 	make
 			-- Initialization for `Current'.
 		do
-			
+
 		end
 
 feature -- Access
+
+	description: STRING
+			-- <Precursor>
+		do
+			Result := "Unknown error."
+		end
 
 feature -- Status report
 
