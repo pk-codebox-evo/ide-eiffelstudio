@@ -4283,28 +4283,40 @@ feature {DEGREE_5} -- Degree 5
 			is_separate_client_set: is_separate_client = b
 		end
 
-feature {DEGREE_5TO4} -- Degree 5TO4 SCOOP
+feature {DEGREE_SCOOP} -- Degree SCOOP
 
-	add_to_degree_5to4 is
+	add_to_degree_scoop is
 			-- Add current class to Degree 5.
 		do
-			degree_5to4_needed := True
+			degree_scoop_needed := True
 		ensure
-			added: degree_5to4_needed
+			added: degree_scoop_needed
 		end
 
-	remove_from_degree_5to4 is
-			-- Remove current class from Degree 5.
+	remove_from_degree_scoop is
+			-- Remove current class from Degree SCOOP.
 		do
-			degree_5to4_needed := False
+			degree_scoop_needed := False
 			parsing_needed := False
 		ensure
-			removed: not degree_5to4_needed
+			removed: not degree_scoop_needed
 		end
 
-	degree_5to4_needed: BOOLEAN
+	remove_from_comilation_list is
+			-- Remove current class from lower degrees.
+		do
+			remove_from_degree_scoop
+			--remove_from_degree_4
+			--remove_from_degree_3
+			--remove_from_degree_2
+			--remove_from_degree_1
+			--remove_from_degree_minus_1
+		end
+
+
+	degree_scoop_needed: BOOLEAN
 			-- Does current class need to be
-			-- processed in Degree 5to4?
+			-- processed in Degree SCOOP?
 
 feature {DEGREE_4, NAMED_TUPLE_TYPE_A} -- Degree 4
 
