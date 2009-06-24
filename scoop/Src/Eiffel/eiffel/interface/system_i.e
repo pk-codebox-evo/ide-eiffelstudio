@@ -1615,7 +1615,9 @@ feature -- Recompilation
 				l_il_env.register_environment_variable
 			end
 
-
+				-- delete classes created by scoop
+				-- added for SCOOP by paedde
+		--	degree_scoop.delete_scoop_cluster
 
 				-- Recompilation initialization
 			init_recompilation
@@ -1659,7 +1661,6 @@ feature -- Recompilation
 
 				recheck_missing_classes
 
-
 					-- Perform parsing of Eiffel code
 				debug ("timing")
 					print_memory_statistics
@@ -1675,11 +1676,19 @@ feature -- Recompilation
 					create d1.make_now
 				end
 
-debug ("ACTIVITY")
-	io.error.put_string ("%Tnew_class = ")
-	io.error.put_boolean (new_class)
-	io.error.put_new_line
-end
+				debug ("ACTIVITY")
+					io.error.put_string ("%Tnew_class = ")
+					io.error.put_boolean (new_class)
+					io.error.put_new_line
+				end
+
+				-- Added for SCOOP by paedde.
+				if degree_scoop.is_degree_scoop_needed then
+					-- create new classes without separate keyword.
+					process_degree_scoop
+					is_degree_scoop_processing := true
+				end
+
 					-- Check generic validity on old classes
 					-- generic parameters cannot be new classes
 				if not first_compilation and then new_class then
@@ -1728,13 +1737,13 @@ end
 				process_removed_classes
 				real_removed_classes.wipe_out
 
-debug ("ACTIVITY")
-	io.error.put_string ("%Tmoved = ")
-	io.error.put_boolean (moved)
-	io.error.put_string ("%N%Tupdate_sort = ")
-	io.error.put_boolean (update_sort)
-	io.error.put_new_line
-end
+				debug ("ACTIVITY")
+					io.error.put_string ("%Tmoved = ")
+					io.error.put_boolean (moved)
+					io.error.put_string ("%N%Tupdate_sort = ")
+					io.error.put_boolean (update_sort)
+					io.error.put_new_line
+				end
 					-- Topological sort and building of the conformance
 					-- table (if new classes have been added by first pass)
 				update_sort := update_sort or else moved
@@ -1762,9 +1771,6 @@ end
 					-- We need to clean `instantiator' of all the types that do not make sense
 					-- anymore (see eweasel test#incr282).
 				instantiator.clean
-
-					-- SCOOP
-				process_degree_5to4
 
 					-- Inheritance analysis: `Degree_4' is sorted by class
 					-- topological ids so the parent come first the heirs after.
@@ -1992,11 +1998,138 @@ end
 			degree_5.post_degree_5_execute
 		end
 
-	process_degree_5to4 is
-			-- Process Degree 5to4.
+	is_degree_scoop_processing: BOOLEAN
+			-- remebers SCOOP processing for compilation steps.
 			-- added for SCOOP by paedde
+
+	process_degree_scoop is
+			-- Process Degree SCOOP.
+			-- added for SCOOP by paedde
+		local
+			l_root_c: CLASS_C
+			d1, d2: DATE_TIME
+			cs: CURSOR
 		do
-			Degree_5to4.execute
+				-- Check generic validity on old classes
+				-- generic parameters cannot be new classes
+			if not first_compilation and then new_class then
+				check_generics
+					-- The association name <==> supplier has been done in pass1
+					-- so even if the compilation fails after this point, the
+					-- check must not be done again if no classes are introduced
+					-- before the recompilation
+			end
+			new_class := False
+
+			if
+				not Compilation_modes.is_precompiling and
+				not Lace.compile_all_classes
+			then
+					-- Check root class is not deferred
+				cs := root_creators.cursor
+				from
+					root_creators.start
+				until
+					root_creators.after
+				loop
+					check
+						root_compiled: root_creators.item_for_iteration.root_class.is_compiled
+					end
+					l_root_c := root_creators.item_for_iteration.root_class.compiled_class
+					l_root_c.check_that_root_class_is_not_deferred
+					root_creators.forth
+				end
+				root_creators.go_to (cs)
+				current_class := Void
+					-- Remove useless classes i.e classes without
+					-- syntactical clients
+				remove_useless_classes
+			end
+
+				-- Filter class 'PROCESSOR' from missing class list
+			-- TODO
+
+
+				-- Let's report VTCT errors for classes not found at degree 5
+				-- It cannot be done at degree 5 (see eweasel test incr233 for why).
+			report_vtct_errors
+			report_vtcm_warnings
+
+				-- Fill parents.
+			process_post_degree_5
+
+				-- Let's get rid of the classes that have been really removed.
+			process_removed_classes
+			real_removed_classes.wipe_out
+
+			debug ("ACTIVITY")
+				io.error.put_string ("%Tmoved = ")
+				io.error.put_boolean (moved)
+				io.error.put_string ("%N%Tupdate_sort = ")
+				io.error.put_boolean (update_sort)
+				io.error.put_new_line
+			end
+				-- Topological sort and building of the conformance
+				-- table (if new classes have been added by first pass)
+			update_sort := update_sort or else moved
+			if update_sort then
+					-- Sort
+				sorter.sort
+					-- Check sum error
+				Error_handler.checksum
+					-- Re-sort the list of classes because the topological
+					-- sort modified the topological ids.
+				classes.sort
+
+				if not first_compilation then
+						-- Conformance table only needs to be reset upon incremental compilation.
+					reset_conformance_table
+				end
+				build_conformance_table
+
+					-- Clear the topo sorter
+				sorter.clear
+
+				reset_melted_conformance_table
+			end
+
+				-- We need to clean `instantiator' of all the types that do not make sense
+				-- anymore (see eweasel test#incr282).
+			instantiator.clean
+
+				-- Inheritance analysis: `Degree_4' is sorted by class
+				-- topological ids so the parent come first the heirs after.
+			process_degree_4
+
+				-- now start scoop class generation
+			degree_scoop.set_degree_5 (Degree_5)
+			Degree_scoop.execute
+
+				-- reset missing classes: PROCESSOR
+			recheck_missing_classes
+
+				-- Perform parsing of Eiffel code
+			debug ("timing")
+				print_memory_statistics
+				create d1.make_now
+			end
+			process_degree_5
+			debug ("timing")
+				create d2.make_now
+				print ("Degree 5 duration: ")
+				print (d2.relative_duration (d1).fine_seconds_count)
+				print ("%N")
+				print_memory_statistics
+				create d1.make_now
+			end
+			debug ("ACTIVITY")
+				io.error.put_string ("%Tnew_class = ")
+				io.error.put_boolean (new_class)
+				io.error.put_new_line
+			end
+
+			io.put_string ("SYSTEM_I: terminate execution of deg_scoop.")
+			io.put_new_line
 		end
 
 	process_degree_4 is
