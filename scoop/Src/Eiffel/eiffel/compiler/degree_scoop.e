@@ -129,10 +129,10 @@ feature -- Processing
 				end
 
 				-- create original classes
-			--	process_separate_client_creation (a_class.ast)
+		--		process_separate_client_creation (a_class)
 
 				-- creation of proxy classes
-				process_separate_proxy_creation (a_class)
+		--		process_separate_proxy_creation (a_class)
 
 				-- Mark the class syntactically changed
 			--	a_class.set_changed (True)
@@ -298,7 +298,7 @@ feature {NONE} -- Processing
 			end
 		end
 
-	process_separate_client_creation (a_class_node: CLASS_AS) is
+	process_separate_client_creation (a_class_c: CLASS_C) is
 			-- Process client class of input class.
 		local
 --			l_match_list: LEAF_AS_LIST
@@ -316,7 +316,7 @@ feature {NONE} -- Processing
 --			l_printer.process (a_class_c)
 
 --			debug ("SCOOP")
---				io.error.put_string (l_printer.get_context)
+--				io.error.put_string (l_printer.text)
 --				io.error.put_new_line
 --			end
 
@@ -327,27 +327,27 @@ feature {NONE} -- Processing
 	process_separate_proxy_creation (a_class_c: CLASS_C) is
 			-- Create proxy class of input class.
 		local
-			l_match_list: LEAF_AS_LIST
-			l_printer: SCOOP_SEPARATE_PROXY_PRINTER
+--			l_match_list: LEAF_AS_LIST
+--			l_printer: SCOOP_SEPARATE_PROXY_PRINTER
 		do
-			debug ("SCOOP")
-				io.error.put_string ("SCOOP: Proxy class of class '" + a_class_c.name_in_upper + "'.")
-				io.error.put_new_line
-			end
+--			debug ("SCOOP")
+--				io.error.put_string ("SCOOP: Proxy class of class '" + a_class_c.name_in_upper + "'.")
+--				io.error.put_new_line
+--			end
 
-				-- create proxy visitor to process.
-			l_match_list := match_list_server.item (a_class_c.class_id)
-			create l_printer.make_with_default_context (system, scoop_classes)
-			l_printer.setup (a_class_c.ast, l_match_list, True, True)
-			l_printer.process (a_class_c)
+--				-- create proxy visitor to process.
+--			l_match_list := match_list_server.item (a_class_c.class_id)
+--			create l_printer.make_with_default_context (system, scoop_classes)
+--			l_printer.setup (a_class_c.ast, l_match_list, True, True)
+--			l_printer.process (a_class_c)
 
-			debug ("SCOOP")
-				io.error.put_string (l_printer.get_context)
-				io.error.put_new_line
-			end
+--			debug ("SCOOP")
+--				io.error.put_string (l_printer.get_context)
+--				io.error.put_new_line
+--			end
 
-				-- print_content to file.
-			print_to_file (l_printer.text, a_class_c, false)
+--				-- print_content to file.
+--			print_to_file (l_printer.text, a_class_c, false)
 		end
 
 	print_to_file (a_context: STRING; a_class_c: CLASS_c; is_client_and_not_proxy: BOOLEAN) is
