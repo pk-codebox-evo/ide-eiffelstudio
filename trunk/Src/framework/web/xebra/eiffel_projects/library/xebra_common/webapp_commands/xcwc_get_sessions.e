@@ -1,6 +1,6 @@
 note
 	description: "[
-		no comment yet
+		Retrieves the number of sessions.
 	]"
 	legal: "See notice at end of class."
 	status: "Prototyping phase"
