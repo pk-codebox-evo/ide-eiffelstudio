@@ -8,7 +8,7 @@ note
 	revision: "$Revision$"
 
 class
-	XER_APP_COMPILING
+	XER_INVALID_COMMAND
 
 inherit
 	X_INFO_RESPONSE
@@ -21,11 +21,8 @@ feature -- Access
 
 	message: STRING
 			-- <Precursor>
-		do
-			if arg.is_empty then
-				arg := " "
-			end
-			Result := "Application '" + arg + "' is compiling..."
+		do			
+			Result := "Invalid command."
 		end
 
 end
