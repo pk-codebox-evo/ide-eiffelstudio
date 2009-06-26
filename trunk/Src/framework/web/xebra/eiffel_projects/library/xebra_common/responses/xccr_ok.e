@@ -1,6 +1,6 @@
 note
 	description: "[
-		no comment yet
+		Is returned if the command was executed successfully.
 	]"
 	legal: "See notice at end of class."
 	status: "Prototyping phase"
@@ -22,17 +22,5 @@ feature {NONE} -- Initialization
 			-- Initialization for `Current'.
 		do
 		end
-feature -- Access
-
-feature -- Status report
-
-feature -- Status setting
-
-feature -- Basic operations
-
-feature {NONE} -- Implementation
-
-invariant
-
 end
 
