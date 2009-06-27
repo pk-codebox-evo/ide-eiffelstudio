@@ -25,7 +25,7 @@ feature -- Access
 	description: STRING
 			-- <Precursor>
 		do
-			Result := "Sends shutdown signal even if the webapp process is not owned by the server."
+			Result := "Sends shutdown signal to webapp."
 		end
 
 	parameter_description: STRING

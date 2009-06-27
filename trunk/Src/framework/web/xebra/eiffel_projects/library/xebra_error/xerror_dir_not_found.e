@@ -9,6 +9,7 @@ note
 
 class
 	XERROR_DIR_NOT_FOUND
+
 inherit
 	ERROR_ERROR_INFO
 		rename
