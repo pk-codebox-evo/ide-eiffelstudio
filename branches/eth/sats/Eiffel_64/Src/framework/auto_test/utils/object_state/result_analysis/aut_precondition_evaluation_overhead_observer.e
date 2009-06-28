@@ -29,8 +29,11 @@ feature{NONE} -- Initialization
 
 feature -- Access
 
-	statistics: DS_LINKED_LIST [TUPLE [evaluated_times: INTEGER; worst_case_times: INTEGER; start_time: INTEGER; end_time: INTEGER; succeeded: BOOLEAN; class_name: STRING; feature_name: STRING]]
+	statistics: DS_LINKED_LIST [like data_anchor_type]
 			-- Precondition evaluation statistics
+
+	data_anchor_type: TUPLE [evaluated_times: INTEGER; worst_case_times: INTEGER; start_time: INTEGER; end_time: INTEGER; succeeded: BOOLEAN; class_name: STRING; feature_name: STRING]
+			-- Anchor type for data describing precondition evaluation overhead
 
 feature -- Process
 
@@ -39,16 +42,13 @@ feature -- Process
 		local
 			l_header: STRING
 			l_count: INTEGER
-
-			l_evaluated_times: INTEGER
-			l_worst_case_times: INTEGER
-			l_start_time: INTEGER
-			l_end_time: INTEGER
-			l_succeeded: BOOLEAN
 			l_class_name: STRING
 			l_feature_name: STRING
 			l_parts: LIST [STRING]
 			l_str: STRING
+			l_data: like data_anchor_type
+			i: INTEGER
+			l_part_str: STRING
 		do
 			l_header := precondition_eval_header
 			l_count := l_header.count
@@ -58,12 +58,22 @@ feature -- Process
 				l_str.right_justify
 				l_parts := l_str.split (';')
 
-				l_evaluated_times := l_parts.i_th (1).to_integer
-				l_worst_case_times := l_parts.i_th (2).to_integer
-				l_start_time := l_parts.i_th (3).to_integer
-				l_end_time := l_parts.i_th (4).to_integer
+				l_data := [0, 0, 0, 0, False, "", ""]
+				from
+					i := 1
+				until
+					i > 4
+				loop
+					l_part_str := l_parts.i_th (i).twin
+					l_part_str.remove_head (l_part_str.index_of (':', 1))
+					l_part_str.left_adjust
+					l_part_str.right_adjust
+					l_data.put_integer (l_part_str.to_integer, i)
+					i := i + 1
+				end
+
 				l_parts.i_th (5).left_adjust
-				l_succeeded := l_parts.i_th (5).to_boolean
+				l_data.put_boolean (l_parts.i_th (5).to_boolean, 5)
 
 				l_parts := l_parts.i_th (6).split ('.')
 				l_class_name := l_parts.i_th (1)
@@ -71,15 +81,9 @@ feature -- Process
 
 				l_feature_name := l_parts.i_th (2)
 				l_feature_name.left_adjust
-				statistics.force_last (
-					[l_evaluated_times,
-					 l_worst_case_times,
-					 l_start_time,
-					 l_end_time,
-					 l_succeeded,
-					 l_class_name,
-					 l_feature_name
-					])
+				l_data.put_reference (l_class_name, 6)
+				l_data.put_reference (l_feature_name, 7)
+				statistics.force_last (l_data)
 			end
 		end
 
@@ -90,7 +94,7 @@ feature -- Process
 
 feature{NONE} -- Implementation
 
-	precondition_eval_header: STRING is "-- Precondition_eval: "
+	precondition_eval_header: STRING is "-- Precondition_evaluation: "
 			-- Header of precondition evaluation comment
 
 	system: SYSTEM_I;
