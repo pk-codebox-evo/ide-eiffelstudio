@@ -10,6 +10,9 @@ note
 deferred class
 	XRPC_VALUE
 
+inherit
+	XRPC_GUESS_I
+
 feature -- Access
 
 	type: XRPC_TYPE
@@ -41,16 +44,6 @@ feature -- Status report
 		ensure
 			not_is_integral: Result implies not is_integral
 			type_is_complex: Result implies type.is_complex
-		end
-
-feature -- Basic operations: Visitor
-
-	visit (a_visitor: XRPC_VISITOR)
-			-- Visits the current node and processes it, via the visitor.
-		require
-			a_vistor_attached: attached a_visitor
-			is_valid: is_valid
-		deferred
 		end
 
 ;note
