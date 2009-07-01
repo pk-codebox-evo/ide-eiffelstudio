@@ -34,6 +34,14 @@ feature -- Basic operations
 			Result := (i + j).as_integer_32
 		end
 
+	string_sum (i, j: READABLE_STRING_8): ARRAY [STRING]
+			-- XML-RPC using Eiffel types.
+		note
+			--options: "xml-rpc"
+		do
+			create Result.make_filled ((i.to_integer_32 + j.to_integer_32).out, 1, 1)
+		end
+
 	sum_x (a_int1: XRPC_INTEGER; a_int2: XRPC_INTEGER): XRPC_INTEGER
 			-- XML-RPC using XRPC types.
 		do
@@ -47,7 +55,7 @@ feature {NONE} -- Factory
 		do
 			create Result.make (2)
 			Result.put (agent sum, "sum")
-			Result.put (agent sum_x, "sum_x")
+			Result.put (agent string_sum, "string_sum")
 		end
 
 ;note
