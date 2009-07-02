@@ -10,6 +10,10 @@ note
 class
 	XRPC_CONSTANTS
 
+feature -- Constants: Version
+
+	library_version_string: STRING = "0.9"
+
 feature -- Constants: Values
 
 	fault_code_value: STRING = "faultCode"
