@@ -12,7 +12,6 @@ inherit
 		redefine
 			make,
 			container
-
 		end
 
 create
@@ -25,7 +24,7 @@ feature{NONE} -- Initialization
 		do
 			Precursor (a_container, a_predicate_access_pattern, a_constraint, a_partical_candidate)
 			create predicate_arguments.make (1, container.arity)
-			set_bounded_arguments
+			set_bound_arguments
 		end
 
 feature -- Status report
@@ -85,8 +84,8 @@ feature{NONE} -- Implementation
 	storage_cursor: detachable DS_HASH_SET_CURSOR [AUT_HASHABLE_ITP_VARIABLE_ARRAY]
 			-- Cursor of `container'.`storage'
 
-	set_bounded_arguments is
-			-- Set bounded arguments from `candidate' into `predicate_arguments'.
+	set_bound_arguments is
+			-- Set bound arguments from `candidate' into `predicate_arguments'.
 		local
 			l_mapping: DS_HASH_TABLE [INTEGER, INTEGER]
 			l_cursor: DS_HASH_TABLE_CURSOR [INTEGER, INTEGER]
@@ -116,13 +115,20 @@ feature{NONE} -- Implementation
 			l_cursor: like storage_cursor
 		do
 			l_cursor := storage_cursor
+			if l_cursor.before then
+				l_cursor.start
+				if not l_cursor.after then
+					l_found := is_predicate_argument_matched (l_cursor.item)
+				end
+			end
+
 			from
 			until
-				after or else l_found
+				l_cursor.after or else l_found
 			loop
-				l_found := is_predicate_argument_matched (l_cursor.item)
-				if not l_found then
-					l_cursor.forth
+				l_cursor.forth
+				if not l_cursor.after then
+					l_found := is_predicate_argument_matched (l_cursor.item)
 				end
 			end
 			after := l_cursor.after
@@ -147,7 +153,7 @@ feature{NONE} -- Implementation
 				i > l_count or else not Result
 			loop
 				l_variable := l_pred_args.item (i)
-				Result :=  l_variable /= Void and then l_variable.index = a_valuation.item (i).index
+				Result :=  l_variable /= Void implies (l_variable.index = a_valuation.item (i).index)
 				i := i + 1
 			end
 		end

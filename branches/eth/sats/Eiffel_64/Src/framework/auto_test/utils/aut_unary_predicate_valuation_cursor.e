@@ -57,7 +57,9 @@ feature -- Basic operations
 	update_candidate_with_item is
 			-- Update `candidate' with objects at the position of current cursor.
 		do
-			candidate.put (variable_from_index (storage_cursor.item), free_variables.item (1))
+			if not free_variables.is_empty then
+				candidate.put (variable_from_index (storage_cursor.item), free_variables.item (1))
+			end
 		end
 
 feature{NONE} -- Implementation
