@@ -9,7 +9,7 @@ deferred class
 
 feature {TAG_SPARSE_TREE} -- Query
 
-	is_node_included (a_sparse_tree: TAG_SPARSE_TREE [G]; a_node: TAG_TREE_NODE [G]): TUPLE [BOOLEAN, BOOLEAN]
+	is_node_included (a_sparse_tree: TAG_SPARSE_TREE [G]; a_node: TAG_TREE_NODE [G]): TUPLE [is_inside: BOOLEAN; check_children: BOOLEAN]
 			-- Should node be included in sparse tree?
 			--
 			-- `a_sparse_tree': Sparse tree connected to tree.
