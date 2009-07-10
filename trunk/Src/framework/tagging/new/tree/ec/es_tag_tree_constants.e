@@ -14,14 +14,14 @@ feature -- Access
 	delimiter_symbol: CHARACTER = ':'
 			-- Character used to separate code from actual token
 
-	class_code: NATURAL = 1
-	feature_code: NATURAL = 2
-	target_code: NATURAL = 3
-	library_code: NATURAL = 4
-	cluster_code: NATURAL = 5
-	override_code: NATURAL = 6
-	directory_code: NATURAL = 7
-			-- Codes used to prefix tokens in order to indicate what the token represents
+	class_prefix: STRING = "class:"
+	feature_prefix: STRING = "feature:"
+	target_prefix: STRING = "target:"
+	library_prefix: STRING = "library:"
+	cluster_prefix: STRING = "cluster:"
+	override_prefix: STRING = "override:"
+	directory_prefix: STRING = "directory:"
+			-- Prefix tokens in order to indicate what the token represents
 
 note
 	copyright: "Copyright (c) 1984-2009, Eiffel Software"
