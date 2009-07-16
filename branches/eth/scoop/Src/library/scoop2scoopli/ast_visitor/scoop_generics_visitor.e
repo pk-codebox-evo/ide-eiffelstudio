@@ -33,22 +33,19 @@ inherit
 			process_none_id_as,
 			process_id_as
 		end
+	SHARED_SCOOP_WORKBENCH
 
 create
-	make_with_system
+	make_with_context
 
 feature -- Initialisation
 
-	make_with_system(a_context: ROUNDTRIP_CONTEXT; a_class_list: SCOOP_SEPARATE_CLASS_LIST; a_system: SYSTEM_I)
+	make_with_context(a_context: ROUNDTRIP_CONTEXT)
 			-- Initialise and reset flags
 		require
-			a_system_not_void: a_system /= Void
-			a_class_list_not_void: a_class_list /= Void
 			a_context_not_void: a_context /= Void
 		do
 			context := a_context
-			scoop_classes := a_class_list
-			system := a_system
 		end
 
 feature -- Access
@@ -91,7 +88,7 @@ feature {NONE} -- Visitor implementation
 		do
 			process_leading_leaves (l_as.index)
 
-			create l_class_name_visitor.make_with_context (context, scoop_classes)
+			create l_class_name_visitor.make_with_context (context)
 			l_class_name_visitor.setup (parsed_class, match_list, true, true)
 			l_class_name_visitor.process_id (l_as, is_set_prefix)
 		end
@@ -135,7 +132,7 @@ feature {NONE} -- Visitor implementation
 				l_process_id_as (l_as.class_name, false)
 			end
 
-			create l_generics_visitor.make_with_system (context, scoop_classes, system)
+			create l_generics_visitor.make_with_context (context)
 			l_generics_visitor.setup (parsed_class, match_list, true, true)
 			l_generics_visitor.process_internal_generics (l_as.internal_generics)
 
@@ -280,8 +277,6 @@ feature {NONE} -- Roundtrip: process leaf
 		end
 
 	process_id_as (l_as: ID_AS) is
-		local
-			a_class: CLASS_AS
 		do
 			Precursor (l_as)
 			put_string (l_as)
@@ -338,12 +333,6 @@ feature {NONE} -- Implementation
 
 	context: ROUNDTRIP_CONTEXT
 		-- reference to actual context.
-
-	scoop_classes: SCOOP_SEPARATE_CLASS_LIST
-			-- contains all classes which have to be processed.
-
-	system: SYSTEM_I
-		-- reference to actual system.
 
 	is_set_prefix: BOOLEAN
 			-- indicates if prefix should be printed or not.

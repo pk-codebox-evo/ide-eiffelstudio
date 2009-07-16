@@ -36,21 +36,19 @@ inherit
 			process_symbol_stub_as,
 			process_none_id_as
 		end
+	SHARED_SCOOP_WORKBENCH
 
 create
-	make_with_system
+	make_with_context
 
 feature -- Initialisation
 
-	make_with_system(a_context: ROUNDTRIP_CONTEXT; a_class_list: SCOOP_SEPARATE_CLASS_LIST; a_system: SYSTEM_I)
+	make_with_context(a_context: ROUNDTRIP_CONTEXT)
 			-- Initialise and reset flags
 		require
-			a_system_not_void: a_system /= Void
 			a_context_not_void: a_context /= Void
 		do
 			context := a_context
-			scoop_classes := a_class_list
-			system := a_system
 
 				-- reset flags
 			is_process_first_select := false
@@ -165,7 +163,7 @@ feature {NONE} -- Visitor implementation
 			safe_process (l_as.expanded_keyword (match_list))
 			safe_process (l_as.class_name)
 
-			create l_generics_visitor.make_with_system (context, scoop_classes, system)
+			create l_generics_visitor.make_with_context (context)
 			l_generics_visitor.setup (parsed_class, match_list, true, true)
 			l_generics_visitor.process_internal_generics (l_as.internal_generics)
 
@@ -405,12 +403,6 @@ feature {NONE} -- Implementation
 
 	context: ROUNDTRIP_CONTEXT
 		-- reference to actual context.
-
-	system: SYSTEM_I
-		-- reference to actual system.
-
-	scoop_classes: SCOOP_SEPARATE_CLASS_LIST
-			-- contains all classes which have to be processed.
 
 	is_process_first_select: BOOLEAN
 		-- indicates internal select of first parent should be processed.

@@ -14,20 +14,19 @@ inherit
 			process_generic_class_type_as,
 			process_named_tuple_type_as
 		end
+	SHARED_SCOOP_WORKBENCH
 
 create
 	make_with_separate_class_list
 
 feature -- Initialisation
 
-	make_with_separate_class_list(a_class_list: SCOOP_SEPARATE_CLASS_LIST; a_system: SYSTEM_I)
+	make_with_separate_class_list(a_class_list: SCOOP_SEPARATE_CLASS_LIST)
 			-- Initialise and reset flags
 		require
 			a_class_list_not_void: a_class_list /= Void
-			a_system_not_void: a_system /= Void
 		do
 			needed_classes := a_class_list
-			l_system := a_system
 		end
 
 feature -- Access
@@ -85,11 +84,11 @@ feature {NONE} -- Implementation
 			found_class: CLASS_C
 		do
 			found_class := void
-			from i := 1 until i > l_system.classes.count loop
-				if l_system.classes.item (i) /= Void and then
-				   l_system.classes.item (i).name_in_upper.is_equal (a_class_name) then
-				   	
-					Result := l_system.classes.item (i)
+			from i := 1 until i > system.classes.count loop
+				if system.classes.item (i) /= Void and then
+				   system.classes.item (i).name_in_upper.is_equal (a_class_name) then
+
+					Result := system.classes.item (i)
 				end
 				i := i + 1
 			end
@@ -99,9 +98,6 @@ feature {NONE} -- Implementation
 
 	needed_classes: SCOOP_SEPARATE_CLASS_LIST
 		-- classes which needs client and proxy classes.
-
-	l_system: SYSTEM_I
-		-- reference to current system.
 
 invariant
 	invariant_clause: True -- Your invariant here

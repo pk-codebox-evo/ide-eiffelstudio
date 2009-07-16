@@ -30,20 +30,19 @@ inherit
 			process_none_id_as,
 			process_id_as
 		end
+	SHARED_SCOOP_WORKBENCH
 
 create
 	make_with_context
 
 feature -- Initialisation
 
-	make_with_context(a_context: ROUNDTRIP_CONTEXT; a_class_list: SCOOP_SEPARATE_CLASS_LIST)
+	make_with_context(a_context: ROUNDTRIP_CONTEXT)
 			-- Initialise and reset flags
 		require
 			a_context_not_void: a_context /= Void
-			a_class_list_not_void: a_class_list /= Void
 		do
 			context := a_context
-			scoop_classes := a_class_list
 		end
 
 feature -- Access
@@ -211,9 +210,6 @@ feature {NONE} -- Implementation
 
 	context: ROUNDTRIP_CONTEXT
 		-- reference to actual context.
-
-	scoop_classes: SCOOP_SEPARATE_CLASS_LIST
-			-- contains all classes which have to be processed.
 
 	is_print_both: BOOLEAN
 			-- indicates if original name and name with prefix should be printed.
