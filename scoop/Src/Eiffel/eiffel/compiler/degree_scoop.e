@@ -9,11 +9,37 @@ class
 
 inherit
 	DEGREE
+		redefine
+			make
+		end
 	SHARED_SERVER
 
 create
 
 	make
+
+feature
+
+	make
+			-- Create new degree SCOOP
+		local
+			tmp_system: SYSTEM_I
+			tmp_worbench: SCOOP_WORKBENCH
+			l_shared_scoop_workbench: SHARED_SCOOP_WORKBENCH
+		do
+			Precursor
+
+			-- create a scoop workbench
+			create l_scoop_workbench
+
+			-- create shared scoop workbench
+			create l_shared_scoop_workbench
+			l_shared_scoop_workbench.setup_shared_scoop_workbench (l_scoop_workbench, system)
+
+			-- call once routines
+			tmp_system := l_shared_scoop_workbench.system
+			tmp_worbench := l_shared_scoop_workbench.shared_scoop_workbench
+		end
 
 feature -- Degree handling
 
@@ -114,13 +140,17 @@ feature -- Processing
 				io.error.put_string ("SCOOP: Processing classes.")
 			end
 
-			from i := 1 until i > scoop_classes.count loop
-				a_class := scoop_classes.item (i)
+			from i := 1 until i > l_scoop_workbench.scoop_classes.count loop
+				a_class := l_scoop_workbench.scoop_classes.item (i)
 
 				debug ("SCOOP")
 					io.error.put_string ("SCOOP: Processing class '" + a_class.name + "'.")
 					io.error.put_new_line
 				end
+
+					-- set current processed class
+				l_scoop_workbench.set_current_class_c (a_class)
+				l_scoop_workbench.set_current_class_as (a_class.ast)
 
 					-- set feature table
 					-- was computed in degree 4.
@@ -129,10 +159,10 @@ feature -- Processing
 				end
 
 				-- create original classes
-		--		process_separate_client_creation (a_class)
+				process_separate_client_creation (a_class)
 
 				-- creation of proxy classes
-		--		process_separate_proxy_creation (a_class)
+				process_separate_proxy_creation (a_class)
 
 				-- Mark the class syntactically changed
 			--	a_class.set_changed (True)
@@ -218,13 +248,13 @@ feature {NONE} -- Processing
 			l_class: CLASS_C
 			l_system: like system
 			l_match_list: LEAF_AS_LIST
-			class_list_1, class_list_2: SCOOP_SEPARATE_CLASS_LIST
+			class_list_1, class_list_2, l_scoop_classes: SCOOP_SEPARATE_CLASS_LIST
 			l_separate_class_visitor: SCOOP_SEPARATE_CLASS_VISITOR
 		do
 			l_system := system
 			l_classes := l_system.classes
 			create class_list_1.make
-			create l_separate_class_visitor.make_with_separate_class_list (class_list_1, system)
+			create l_separate_class_visitor.make_with_separate_class_list (class_list_1)
 
 			from i := 1 until i > l_classes.count loop
 				l_class := l_classes.item (i)
@@ -270,84 +300,86 @@ feature {NONE} -- Processing
 			end
 
 				-- case 4) add all descendants
-			create scoop_classes.make
+			create l_scoop_classes.make
 			from until class_list_2.is_empty loop
 				l_class := class_list_2.first
 				class_list_2.remove_first
 
 					-- insert current class
-				if not scoop_classes.has_class (l_class) then
-					scoop_classes.extend (l_class)
+				if not l_scoop_classes.has_class (l_class) then
+					l_scoop_classes.extend (l_class)
 				end
 
 					-- insert all not already processed descendants in list 2
 				from i := 1 until i > l_class.direct_descendants.count loop
-					if not scoop_classes.has_class (l_class.direct_descendants.i_th (i)) and then
+					if not l_scoop_classes.has_class (l_class.direct_descendants.i_th (i)) and then
 					   not class_list_2.has_class (l_class.direct_descendants.i_th (i)) then
 						class_list_2.extend (l_class.direct_descendants.i_th (i))
 					end
 
 					i := i + 1
 				end
+
+				l_scoop_workbench.set_scoop_classes (l_scoop_classes)
 			end
 
 			debug ("SCOOP")
 				io.error.put_string ("SCOOP: Processing following classes:")
 				io.error.put_new_line
-				scoop_classes.print_all
+				l_scoop_classes.print_all
 			end
 		end
 
 	process_separate_client_creation (a_class_c: CLASS_C) is
 			-- Process client class of input class.
 		local
---			l_match_list: LEAF_AS_LIST
---			l_printer: SCOOP_SEPARATE_CLIENT_PRINTER
+			l_match_list: LEAF_AS_LIST
+			l_printer: SCOOP_SEPARATE_CLIENT_PRINTER
 		do
---			debug ("SCOOP")
---				io.error.put_string ("SCOOP: Client class of class '" + a_class_c.name_in_upper + "'.")
---				io.error.put_new_line
---			end
+			debug ("SCOOP")
+				io.error.put_string ("SCOOP: Client class of class '" + a_class_c.name_in_upper + "'.")
+				io.error.put_new_line
+			end
 
---				-- create proxy visitor to process.
---			l_match_list := match_list_server.item (a_class_c.class_id)
---			create l_printer.make_with_default_context (system, scoop_classes)
---			l_printer.setup (a_class_c.ast, l_match_list, True, True)
---			l_printer.process (a_class_c)
+				-- create proxy visitor to process.
+			l_match_list := match_list_server.item (a_class_c.class_id)
+			create l_printer.make_with_default_context
+			l_printer.setup (a_class_c.ast, l_match_list, True, True)
+			l_printer.process_class
 
---			debug ("SCOOP")
---				io.error.put_string (l_printer.text)
---				io.error.put_new_line
---			end
+			debug ("SCOOP")
+				io.error.put_string (l_printer.text)
+				io.error.put_new_line
+			end
 
---				-- print_content to file.
---			print_to_file (l_printer.text, a_class_c, true)
+				-- print_content to file.
+			print_to_file (l_printer.text, a_class_c, true)
 		end
 
 	process_separate_proxy_creation (a_class_c: CLASS_C) is
 			-- Create proxy class of input class.
 		local
---			l_match_list: LEAF_AS_LIST
---			l_printer: SCOOP_SEPARATE_PROXY_PRINTER
+			l_match_list: LEAF_AS_LIST
+			l_printer: SCOOP_SEPARATE_PROXY_PRINTER
 		do
---			debug ("SCOOP")
---				io.error.put_string ("SCOOP: Proxy class of class '" + a_class_c.name_in_upper + "'.")
---				io.error.put_new_line
---			end
+			debug ("SCOOP")
+				io.error.put_string ("SCOOP: Proxy class of class '" + a_class_c.name_in_upper + "'.")
+				io.error.put_new_line
+			end
 
---				-- create proxy visitor to process.
---			l_match_list := match_list_server.item (a_class_c.class_id)
---			create l_printer.make_with_default_context (system, scoop_classes)
---			l_printer.setup (a_class_c.ast, l_match_list, True, True)
---			l_printer.process (a_class_c)
+				-- create proxy visitor to process.
+			l_match_list := match_list_server.item (a_class_c.class_id)
+			create l_printer.make_with_default_context (system, l_scoop_workbench.scoop_classes)
+			l_printer.setup (a_class_c.ast, l_match_list, True, True)
+			l_printer.process
 
---			debug ("SCOOP")
---				io.error.put_string (l_printer.get_context)
---				io.error.put_new_line
---			end
+			debug ("SCOOP")
+				io.error.put_string (l_printer.get_context)
+				io.error.put_new_line
+			end
 
---				-- print_content to file.
---			print_to_file (l_printer.text, a_class_c, false)
+				-- print_content to file.
+			print_to_file (l_printer.text, a_class_c, false)
 		end
 
 	print_to_file (a_context: STRING; a_class_c: CLASS_c; is_client_and_not_proxy: BOOLEAN) is
@@ -392,7 +424,7 @@ feature {NONE} -- Implementation
 	l_degree_5: DEGREE_5
 			-- reference to degree 5
 
-	scoop_classes: SCOOP_SEPARATE_CLASS_LIST
-			-- contains all classes which have to be processed.
+	l_scoop_workbench: SCOOP_WORKBENCH
+			-- reference to current workbench
 
 end

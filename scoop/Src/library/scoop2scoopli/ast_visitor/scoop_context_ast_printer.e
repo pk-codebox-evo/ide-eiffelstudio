@@ -1,11 +1,11 @@
 indexing
-	description: "Summary description for {SCOOP_CLASS_NAME_VISITOR}."
+	description: "Summary description for {SCOOP_CONTEXT_AST_PRINTER}."
 	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
 class
-	SCOOP_CLASS_NAME_VISITOR
+	SCOOP_CONTEXT_AST_PRINTER
 
 inherit
 	AST_ROUNDTRIP_ITERATOR
@@ -25,64 +25,14 @@ inherit
 			process_current_as,
 			process_integer_as,
 			process_real_as,
+			process_id_as,
 			process_break_as,
 			process_symbol_stub_as,
-			process_none_id_as,
-			process_id_as
+			reset
 		end
 	SHARED_SCOOP_WORKBENCH
 
-create
-	make_with_context
-
-feature -- Initialisation
-
-	make_with_context(a_context: ROUNDTRIP_CONTEXT)
-			-- Initialise and reset flags
-		require
-			a_context_not_void: a_context /= Void
-		do
-			context := a_context
-		end
-
-feature -- Access
-
-	process_class_list_with_prefix (l_as: CLASS_LIST_AS; print_both: BOOLEAN) is
-			-- Process `l_as'.
-		do
-			is_print_both := true
-			is_set_prefix := true
-			last_index := l_as.start_position
-			process_eiffel_list (l_as)
-			last_index := l_as.end_position - 1
-		end
-
-	process_id (l_as: ID_AS; a_set_prefix: BOOLEAN) is
-			-- Process `l_as'.
-		do
-			is_print_both := false
-			is_set_prefix := a_set_prefix
-			last_index := l_as.start_position
-			safe_process (l_as)
-			last_index := l_as.end_position
-		end
-
-feature {NONE} -- Roundtrip: process nodes
-
-	process_id_as (l_as: ID_AS) is
-		do
-			Precursor (l_as)
-			if is_set_prefix and then scoop_classes.has (l_as.name.as_upper) then
-				context.add_string ("SCOOP_SEPARATE__")
-				if is_print_both then
-					put_string (l_as)
-					context.add_string (", ")
-				end
-			end
-			put_string (l_as)
-		end
-
-feature {NONE} -- Roundtrip: process leaf
+feature -- Roundtrip: process leaf
 
 	process_break_as (l_as: BREAK_AS) is
 			-- Process `l_as'.
@@ -94,7 +44,10 @@ feature {NONE} -- Roundtrip: process leaf
 	process_keyword_as (l_as: KEYWORD_AS) is
 			-- Process `l_as'.
 		do
-			if not l_as.is_separate_keyword then
+			if l_as.is_separate_keyword then
+				-- skip
+				Precursor (l_as)
+			else
 				Precursor (l_as)
 				put_string (l_as)
 			end
@@ -193,28 +146,74 @@ feature {NONE} -- Roundtrip: process leaf
 			context.add_string (l_as.number_text (match_list))
 		end
 
-	process_none_id_as (l_as: NONE_ID_AS) is
-			-- Process `l_as'.
+	process_id_as (l_as: ID_AS) is
 		do
 			Precursor (l_as)
-			context.add_string ("NONE")
+			put_string (l_as)
 		end
 
-feature {NONE} -- Implementation
+feature -- Context setting and getting
+
+	text: STRING is
+			-- Generated Eiffel code
+		do
+			Result := context.string_representation
+		end
+
+	reset is
+			-- Reset visitor for a next visit.
+		do
+			Precursor
+			context.clear
+		end
+
+	set_context (a_ctxt: ROUNDTRIP_CONTEXT) is
+			-- Set `context' with `a_ctxt'.
+		require
+			a_ctxt_not_void: a_ctxt /= Void
+		do
+			context := a_ctxt
+		ensure
+			context_set: context = a_ctxt
+		end
+
+feature{NONE} -- Context handling
+
+	context: ROUNDTRIP_CONTEXT
+			-- Context used to store generated code
 
 	put_string (l_as: LEAF_AS) is
 			-- Print text contained in `l_as' into `context'.
+		require
+			l_as_in_list: l_as.index >= start_index and then l_as.index <= end_index
 		do
 			context.add_string (l_as.text (match_list))
 		end
 
-	context: ROUNDTRIP_CONTEXT
-		-- reference to actual context.
+feature -- Debug
 
-	is_print_both: BOOLEAN
-			-- indicates if original name and name with prefix should be printed.
+	safe_process_debug (l_as: AST_EIFFEL): ROUNDTRIP_CONTEXT is
+			-- process the ast in a testing context
+		local
+			original_context: ROUNDTRIP_CONTEXT
+			l_last_index: INTEGER
+		do
+				-- create testing context
+			original_context := context
+			l_last_index := last_index
+			context := create {ROUNDTRIP_STRING_LIST_CONTEXT}.make
 
-	is_set_prefix: BOOLEAN
-			-- indicates if prefix should be printed or not.
+				-- process the node
+			last_index := l_as.start_position - 1
+			safe_process (l_as)
+
+				-- set original context
+			Result := context
+			last_index := l_last_index
+			context := original_context
+		end
+
+invariant
+	context_not_void: context /= Void
 
 end
