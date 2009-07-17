@@ -1186,6 +1186,7 @@ feature {COMPILER_EXPORTER} -- Primitives
 			-- Check generic parameters
 		local
 			i, count: INTEGER
+			our_param, arg_param : TYPE_A
 			gen_type: GEN_TYPE_A
 			gen_type_generics: like generics
 		do
@@ -1200,8 +1201,17 @@ feature {COMPILER_EXPORTER} -- Primitives
 					until
 						i > count or else not Result
 					loop
-						Result := gen_type_generics.item (i).
-							conform_to (generics.item (i))
+						our_param := generics.item (i)
+						arg_param := gen_type_generics.item (i)
+
+						Result := arg_param.conform_to (our_param) and then
+						          (False implies
+						            (not our_param.is_attached and not arg_param.is_attached) or
+						             our_param.conform_to (arg_param))
+						               -- combined with the first formula
+						               -- this should mean the types are
+						               -- exactly equal
+						               -- (basically a <= b and b <= a implies a = b)
 						i := i + 1
 					end
 				end
