@@ -32,7 +32,7 @@
 			<file_rule>
 				<exclude>^/support$</exclude>
 			</file_rule>
-			<cluster name="support" location="D:\MyProjects\eiffel\scoop\Src\library\scoop2scoopli\support\">
+			<cluster name="support" location="$EIFFEL_SRC\library\scoop2scoopli\support\">
 			</cluster>
 		</cluster>
 	</target>

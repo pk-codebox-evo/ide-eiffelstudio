@@ -91,6 +91,10 @@
 	<target name="batch_unix" extends="batch">
 		<description>Compiling UNIX batch compiler on other platforms than Windows</description>
 		<root class="ES" feature="make"/>
+		<option debug="true">
+			<debug name="scoop_typecheck" enabled="true"/>
+		</option>
+		<setting name="line_generation" value="false"/>
 		<setting name="platform" value="unix"/>
 	</target>
 	<target name="eclite" extends="batch">
@@ -192,7 +196,7 @@
 				<debug name="scoop_client_assertions_ext" enabled="true"/>
 			</option>
 		</library>
-		<library name="scoopli" location="D:\MyProjects\eiffel\scoop\Src\library\scoopli\scoopli.ecf" readonly="false"/>
+		<library name="scoopli" location="$ISE_LIBRARY\library\scoopli\scoopli.ecf" readonly="false"/>
 		<library name="tagging" location="$EIFFEL_SRC\framework\tagging\tagging.ecf" readonly="false"/>
 		<library name="testing_engine" location="$EIFFEL_SRC\framework\testing\testing.ecf" readonly="false"/>
 		<library name="testing_library" location="$EIFFEL_SRC\library\testing\testing.ecf" readonly="false"/>

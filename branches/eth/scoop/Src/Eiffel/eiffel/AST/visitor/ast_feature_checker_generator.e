@@ -986,62 +986,77 @@ feature -- Roundtrip
 			process_creation_expr_as (l_as)
 		end
 
-feature -- SCOOP Implementation
-	is_controlled (a_name : STRING) : BOOLEAN is
+feature {NONE} -- SCOOP Implementation
+	last_is_argument : BOOLEAN
+
+	is_controlled (a_type : TYPE_A) : BOOLEAN is
 			-- Determine whether the argument `var' is controlled, as
 			-- defined by the SCOOP specification. This implementation uses
 			-- the `current_feature' state variable to determine the current
 			-- context for this predicate.
-		local
-			arg   : TYPE_A
-			args  : FEAT_ARG
-			i     : INTEGER
-			found : BOOLEAN
 		do
-			Result := False
-
-			found  := False
-			args   := current_feature.arguments
-
-				-- Find the formal argument with the same name as `a_name'
-				-- and see if it is attached.
-			from
-				i := 0
-			until
-				i = args.count or found
-			loop
-				if args.item_name (i).same_string (a_name) then
-					found  := True
-					arg    := args.i_th (i)
-
-					Result := arg.is_implicitly_attached or else arg.processor_tag_type.is_current
-				end
-
-				i := i + 1
+			if a_type.is_separate then
+				Result := last_is_argument and a_type.is_attached
+			else
+				Result := True
 			end
 		end
 
-		transform_scoop_result (result_t, target_t : TYPE_A) : TYPE_A is
-				-- Transforms the result of a feature call depending on the
-				-- target of that call. This transformation is according to the
-				-- definition given in the SCOOP work on typing
-			local
-				tmp_tag : PROCESSOR_TAG_TYPE
-			do
-				if target_t.is_separate then
+	transform_scoop_result (result_t, target_t : TYPE_A) : TYPE_A is
+			-- Transforms the result of a feature call depending on the
+			-- target of that call. This transformation is according to the
+			-- definition given in the SCOOP work on typing
+		local
+			tmp_tag : PROCESSOR_TAG_TYPE
+		do
+			Result  := result_t
 
-					Result   := result_t.duplicate
-					tmp_tag  := target_t.processor_tag.duplicate
+			if target_t.is_separate then
+				if result_t.is_expanded then
 
-					if not target_t.processor_tag.is_current then
+				else
+					Result  := result_t.duplicate
+					tmp_tag := target_t.processor_tag.duplicate
+
+					if not result_t.processor_tag.is_current then
 						tmp_tag.make_top
 					end
 
 					Result.set_processor_tag (tmp_tag)
+				end
+
+			end
+		end
+
+
+	transform_scoop_argument (arg_t, target_t : TYPE_A) : TYPE_A is
+			-- Transforms the argument type based on the existing argument
+			-- type and the target type. This is according to the definition
+			-- given in the SCOOP work on typing.
+		local
+			tmp_tag : PROCESSOR_TAG_TYPE
+		do
+			Result := arg_t
+			if target_t.is_separate then
+
+				if target_t.is_expanded then
+
 				else
-					Result := result_t
+					Result  := arg_t.duplicate
+					tmp_tag := target_t.processor_tag.duplicate
+
+					if not target_t.processor_tag.top and arg_t.processor_tag.is_current then
+
+					elseif arg_t.processor_tag.top then
+						tmp_tag.make_top
+					else
+						tmp_tag.make_bottom
+					end
+
+					Result.set_processor_tag (tmp_tag)
 				end
 			end
+		end
 
 
 feature -- Implementation
@@ -1208,6 +1223,7 @@ feature -- Implementation
 			if a_feature = Void then
 				last_calls_target_type := Void
 			end
+
 			l_needs_byte_node := is_byte_node_enabled
 
 				-- Retrieve if we are type checking a routine that is the creation
@@ -1242,9 +1258,21 @@ feature -- Implementation
 
 			l_context_current_class := context.current_class
 
+
+			if not is_qualified then
+				last_is_argument := True --FIXME deal with unqualified call validity checking
+			end
+
+			if not is_controlled (a_type) then
+				error_handler.insert_error (create {VSTU}.make (context, a_type, l_feature_name))
+			end
+
+			last_is_argument := False
+
 			if not a_type.is_attached and then l_context_current_class.lace_class.is_void_safe then
 				error_handler.insert_error (create {VUTA2}.make (context, a_type, l_feature_name))
 			end
+
 
 			l_last_type := a_type.actual_type
 			if not l_last_type.is_formal then
@@ -1516,6 +1544,10 @@ feature -- Implementation
 											-- Get formal argument type.
 										l_formal_arg_type := l_feature.arguments.i_th (i)
 
+											-- Use the SCOOP argument combinator to transform the
+											-- Resulting type
+										l_formal_arg_type := transform_scoop_argument (l_formal_arg_type, a_type)
+
 											-- Take care of anchoring to argument
 										if l_formal_arg_type.is_like_argument then
 											l_like_arg_type := l_formal_arg_type.actual_argument_type (l_arg_types)
@@ -1639,15 +1671,21 @@ feature -- Implementation
 								-- Get the type of Current feature.
 							l_result_type := l_feature.type
 
-							-- SCOOP transformation of the result type, based on both old result type and target of the feature call
-							-- l_result_type := transform_scoop_result (a_type, l_result_type)
 
+								-- SCOOP transformation of the result type, based on both old result type and target of the feature call
+							l_result_type := transform_scoop_result (l_result_type, a_type)
 
 								-- Adapted type in case it is a formal generic parameter or a like.
 							l_result_type := adapted_type (l_result_type, l_last_type, l_last_constrained)
+
+
+
 							if l_arg_types /= Void then
 								l_pure_result_type := l_result_type
 								l_result_type := l_result_type.actual_argument_type (l_arg_types)
+
+
+
 								l_open_type ?= l_result_type
 								if l_open_type /= Void then
 										-- It means that the result type is a like argument. In that case,
@@ -2561,6 +2599,9 @@ feature -- Implementation
 					-- Found argument
 				l_type := l_feature.arguments.i_th (l_arg_pos)
 				l_type := l_type.actual_type.instantiation_in (last_type.as_implicitly_detachable, l_last_id)
+
+				last_is_argument := True
+
 				l_has_vuar_error := l_as.parameters /= Void
 				if l_needs_byte_node then
 					create l_argument

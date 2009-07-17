@@ -176,6 +176,7 @@ feature -- Comparison
 			Result := declaration_mark = other.declaration_mark and then
 				class_declaration_mark = other.class_declaration_mark and then
 				is_attached = other.is_attached and then
+				(is_separate = other.is_separate implies processor_tag.is_equal (other.processor_tag)) and then
 				class_id = other.class_id
 		end
 
@@ -187,7 +188,7 @@ feature -- Comparison
 			other_class_type ?= other
 			Result := other_class_type /= Void and then class_id = other_class_type.class_id
 						and then is_expanded = other_class_type.is_expanded
-						and then is_separate = other_class_type.is_separate
+						--and then is_separate = other_class_type.is_separate
 						and then has_same_attachment_marks (other_class_type)
 		end
 
@@ -585,8 +586,8 @@ feature {TYPE_A} -- Helpers
 						-- If 'declaration_mark' is not the same for both then we have to make sure
 						-- that both expanded and separate states are identical.
 				(l_cl_type.declaration_mark /= declaration_mark implies
-					(l_cl_type.is_expanded = is_expanded and then
-					l_cl_type.is_separate = is_separate))
+					(l_cl_type.is_expanded = is_expanded)) --and then
+					--l_cl_type.is_separate = is_separate))
 		end
 
 feature {COMPILER_EXPORTER} -- Settings
