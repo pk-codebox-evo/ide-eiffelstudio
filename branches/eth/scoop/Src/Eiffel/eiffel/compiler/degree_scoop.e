@@ -12,7 +12,20 @@ inherit
 		redefine
 			make
 		end
+
 	SHARED_SERVER
+
+	SHARED_ERROR_HANDLER
+		export
+			{NONE} all
+		end
+
+	CONF_ACCESS
+		undefine
+			default_create
+		end
+
+	COMPILER_EXPORTER
 
 create
 
@@ -101,6 +114,8 @@ feature -- Processing
 			l_degree_output: like degree_output
 			l_system: like system
 			l_path, l_orig_path: DIRECTORY_NAME
+			l_conf_parse_factory: CONF_PARSE_FACTORY
+			l_conf_override: CONF_OVERRIDE
 		do
 			l_degree_output := Degree_output
 			l_degree_output.put_start_degree (Degree_number, count)
@@ -136,6 +151,11 @@ feature -- Processing
 				end
 			end
 
+			create l_conf_parse_factory
+			l_conf_override := l_conf_parse_factory.new_override ("cluster", l_conf_parse_factory.new_location_from_path (l_path.string, workbench.lace.target), workbench.lace.target)
+			workbench.lace.target.add_override (l_conf_override)
+			system.lace.target.add_override (l_conf_override)
+
 			debug ("SCOOP")
 				io.error.put_string ("SCOOP: Processing classes.")
 			end
@@ -163,6 +183,9 @@ feature -- Processing
 
 				-- creation of proxy classes
 				process_separate_proxy_creation (a_class)
+
+				-- create error to restart compilation
+				error_handler.insert_error (create {SPECIAL_ERROR}.make("SCOOP internal error to restart compilation", a_class))
 
 				-- Mark the class syntactically changed
 			--	a_class.set_changed (True)
@@ -335,6 +358,7 @@ feature {NONE} -- Processing
 		local
 			l_match_list: LEAF_AS_LIST
 			l_printer: SCOOP_SEPARATE_CLIENT_PRINTER
+			l_vtct: VTCT
 		do
 			debug ("SCOOP")
 				io.error.put_string ("SCOOP: Client class of class '" + a_class_c.name_in_upper + "'.")
@@ -354,6 +378,14 @@ feature {NONE} -- Processing
 
 				-- print_content to file.
 			print_to_file (l_printer.text, a_class_c, true)
+
+				-- add proxy classes to not found list to restart compilation
+--			create l_vtct
+--			l_vtct.set_class (a_class_c)
+--			l_vtct.set_class_name (a_class_c.name_in_upper)
+--			error_handler.insert_error (l_vtct)
+
+			error_handler.insert_error (create {INTERNAL_ERROR}.make("SCOOP internal error to restart compilation"))
 		end
 
 	process_separate_proxy_creation (a_class_c: CLASS_C) is
@@ -396,7 +428,7 @@ feature {NONE} -- Processing
 			l_local_file_name := a_class_c.name.as_lower
 
 			if not is_client_and_not_proxy then
-				l_local_file_name := "SCOOP_SEPARATE__" + l_local_file_name
+				l_local_file_name := "scoop_separate__" + l_local_file_name
 			end
 			l_file_name.set_file_name (l_local_file_name)
 			l_file_name.add_extension ("e")
