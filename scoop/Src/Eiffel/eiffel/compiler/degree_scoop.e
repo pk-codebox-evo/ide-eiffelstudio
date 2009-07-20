@@ -386,20 +386,24 @@ feature {NONE} -- Processing
 			-- Print text of a_class_node.
 		local
 			file: PLAIN_TEXT_FILE
-			l_file_name: STRING
+			l_local_file_name : STRING
+			l_file_name: FILE_NAME
 		do
 				-- prepare path
-			create l_file_name.make_from_string (scoop_directory.name)
-			l_file_name.append ("\")
+			create l_file_name.make
+
+			l_file_name.set_directory (scoop_directory.name)
+			l_local_file_name := a_class_c.name.as_lower
+
 			if not is_client_and_not_proxy then
-				l_file_name.append ("SCOOP_SEPARATE__")
+				l_local_file_name := "SCOOP_SEPARATE__" + l_local_file_name
 			end
-			l_file_name.append (a_class_c.name.as_lower)
-			l_file_name.append (".e")
-			l_file_name.to_lower
+			l_file_name.set_file_name (l_local_file_name)
+			l_file_name.add_extension ("e")
 
 				-- create file
-			create file.make_create_read_write (l_file_name)
+			create file.make_create_read_write (l_file_name.string)
+
 			file.put_string (a_context.string_representation)
 			file.close
 
