@@ -1683,10 +1683,11 @@ feature -- Recompilation
 				end
 
 				-- Added for SCOOP by paedde.
-				if degree_scoop.is_degree_scoop_needed then
+				if degree_scoop.is_degree_scoop_needed and not workbench.is_degree_scoop_processed then
+					workbench.set_is_degree_scoop_processing (true)
 					-- create new classes without separate keyword.
 					process_degree_scoop
-					is_degree_scoop_processing := true
+					workbench.set_is_degree_scoop_processed (true)
 				end
 
 					-- Check generic validity on old classes
@@ -1998,10 +1999,6 @@ end
 			degree_5.post_degree_5_execute
 		end
 
-	is_degree_scoop_processing: BOOLEAN
-			-- remebers SCOOP processing for compilation steps.
-			-- added for SCOOP by paedde
-
 	process_degree_scoop is
 			-- Process Degree SCOOP.
 			-- added for SCOOP by paedde
@@ -2104,29 +2101,6 @@ end
 				-- now start scoop class generation
 			degree_scoop.set_degree_5 (Degree_5)
 			Degree_scoop.execute
-
-				-- reset missing classes: PROCESSOR
-			recheck_missing_classes
-
-				-- Perform parsing of Eiffel code
-			debug ("timing")
-				print_memory_statistics
-				create d1.make_now
-			end
-			process_degree_5
-			debug ("timing")
-				create d2.make_now
-				print ("Degree 5 duration: ")
-				print (d2.relative_duration (d1).fine_seconds_count)
-				print ("%N")
-				print_memory_statistics
-				create d1.make_now
-			end
-			debug ("ACTIVITY")
-				io.error.put_string ("%Tnew_class = ")
-				io.error.put_boolean (new_class)
-				io.error.put_new_line
-			end
 
 			io.put_string ("SYSTEM_I: terminate execution of deg_scoop.")
 			io.put_new_line

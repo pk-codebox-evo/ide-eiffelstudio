@@ -189,6 +189,28 @@ feature -- Additional properties
 			end
 		end
 
+feature {SYSTEM_I} -- Additional properties for SCOOP
+
+	is_degree_scoop_processing: BOOLEAN
+			-- remebers SCOOP processing for compilation steps.
+			-- added for SCOOP by paedde
+
+	is_degree_scoop_processed: BOOLEAN
+			-- indicates that scoop classes are already generated
+			-- added for SCOOP by paedde
+
+	set_is_degree_scoop_processing (a_value: BOOLEAN) is
+			-- setter for 'is_degree_scoop_processing'
+		do
+			is_degree_scoop_processing := a_value
+		end
+
+	set_is_degree_scoop_processed (a_value: BOOLEAN) is
+			-- setter for 'is_degree_scoop_processed'
+		do
+			is_degree_scoop_processed := a_value
+		end
+
 feature -- Conveniences
 
 	set_system (s: like system) is
@@ -343,6 +365,10 @@ feature -- Commands
 		do
 			if retried = 0 then
 				error_handler.clear_display
+					-- reset flag
+					-- added for SCOOP by paedde
+				is_degree_scoop_processing := false
+				is_degree_scoop_processed := false
 			end
 			not_actions_successful := False
 			if retried = 0 and then (system = Void or else system.automatic_backup) then
@@ -360,7 +386,7 @@ feature -- Commands
 				-- To avoid a recursion, we do it at most twice.
 			if
 				not degree_6_done and then
-				(retried = 0 or else (retried = 1 and then missing_class_error))
+				(retried = 0 or else retried = 1 and then (missing_class_error))
 			then
 				if not forbid_degree_6 then
 					Lace.recompile
@@ -450,6 +476,11 @@ feature -- Commands
 						missing_class_error := True
 						lace.reset_date_stamp
 						Error_handler.wipe_out
+					elseif is_degree_scoop_processing and error_handler.error_list.item.code.is_equal ("INTERNAL_ERROR") then
+						missing_class_error := True
+						lace.reset_date_stamp
+						Error_handler.wipe_out
+						degree_6_done := false
 					else
 						Error_handler.trace
 					end
