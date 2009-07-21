@@ -1,6 +1,6 @@
 note
 	description: "[
-		no comment yet
+		The error command response that occurs if the server cannot send a command to the webapp.
 	]"
 	legal: "See notice at end of class."
 	status: "Pre-release"
@@ -13,17 +13,6 @@ class
 inherit
 	XCCR_ERROR
 
-create
-	make
-
-feature {NONE} -- Initialization
-
-	make
-			-- Initialization for `Current'.
-		do
-
-		end
-
 feature -- Access
 
 	description: STRING
@@ -31,16 +20,6 @@ feature -- Access
 		do
 			Result := "There was a problem transmitting the command to the server."
 		end
-
-feature -- Status report
-
-feature -- Status setting
-
-feature -- Basic operations
-
-feature {NONE} -- Implementation
-
-invariant
 
 end
 
