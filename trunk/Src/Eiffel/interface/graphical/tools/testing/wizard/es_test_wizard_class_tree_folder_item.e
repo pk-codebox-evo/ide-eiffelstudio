@@ -35,7 +35,8 @@ feature {NONE} -- Query
 		do
 			if Precursor {EB_CLASSES_TREE_FOLDER_ITEM} (a_class) then
 				if test_suite.is_service_available and attached {EIFFEL_CLASS_I} a_class as l_class then
-					Result := test_suite.service.is_test_class (l_class)
+					check not_implemented: False end
+					--Result := test_suite.service.is_test_class (l_class)
 				end
 			end
 		end
@@ -55,7 +56,7 @@ feature {NONE} -- Factory
 		end
 
 note
-	copyright: "Copyright (c) 1984-2008, Eiffel Software"
+	copyright: "Copyright (c) 1984-2009, Eiffel Software"
 	license:   "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[
@@ -79,10 +80,10 @@ note
 			Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 		]"
 	source: "[
-			 Eiffel Software
-			 5949 Hollister Ave., Goleta, CA 93117 USA
-			 Telephone 805-685-1006, Fax 805-685-6869
-			 Website http://www.eiffel.com
-			 Customer support http://support.eiffel.com
+			Eiffel Software
+			5949 Hollister Ave., Goleta, CA 93117 USA
+			Telephone 805-685-1006, Fax 805-685-6869
+			Website http://www.eiffel.com
+			Customer support http://support.eiffel.com
 		]"
 end
