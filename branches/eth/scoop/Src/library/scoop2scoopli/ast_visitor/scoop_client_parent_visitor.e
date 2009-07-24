@@ -34,6 +34,7 @@ feature -- Access
 			-- Process `l_as'.
 		do
 			if l_as /= Void then
+				context.add_string ("%N%Ninherit%N%T")
 				safe_process (l_as)
 			else
 				if not is_basic_type (parsed_class.class_name.name.as_upper) then
@@ -46,7 +47,12 @@ feature -- Access
 	process_non_conforming_parents(l_as: PARENT_LIST_AS) is
 			-- Process `l_as'.
 		do
-			safe_process (l_as)
+			if l_as /= Void then
+				context.add_string ("%N%Ninherit {NONE}%N%T")
+
+				-- process parent list
+				safe_process (l_as)
+			end
 		end
 
 feature {NONE} -- Visitor implementation
@@ -54,10 +60,8 @@ feature {NONE} -- Visitor implementation
 	process_parent_list_as (l_as: PARENT_LIST_AS) is
 			-- Process `l_as'.
 		do
-			context.add_string ("%N%N")
 			last_index := l_as.start_position - 1
-
-			Precursor (l_as)
+			process_eiffel_list (l_as)
 		end
 
 	process_parent_as (l_as: PARENT_AS) is
