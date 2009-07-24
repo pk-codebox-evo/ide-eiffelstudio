@@ -100,6 +100,29 @@ feature -- Access
 			shared_scoop_workbench.set_current_feature_as (a_feature)
 		end
 
+feature -- System support
+
+	get_class_as_by_name (a_class_name: STRING): CLASS_AS is
+			-- Get a class_as by name
+		local
+			i: INTEGER
+			a_class: CLASS_C
+		do
+			from
+				i := 1
+			until
+				i > system.classes.count
+			loop
+				a_class := system.classes.item (i)
+				if a_class /= Void then
+					if a_class.name_in_upper.is_equal (a_class_name.as_upper) then
+						Result := a_class.ast
+					end
+				end
+				i := i + 1
+			end
+		end
+
 feature {NONE} -- Implementation
 
 	l_scoop_workbench: SCOOP_WORKBENCH

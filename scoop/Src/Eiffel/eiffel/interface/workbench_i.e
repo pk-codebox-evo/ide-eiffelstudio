@@ -211,6 +211,17 @@ feature {SYSTEM_I} -- Additional properties for SCOOP
 			is_degree_scoop_processed := a_value
 		end
 
+feature -- Additional implementation for SCOOP
+
+	reset_scoop_processing is
+			-- resets SCOOP flags
+			-- added for SCOOP by paedde
+		do
+			-- reset flags
+			is_degree_scoop_processing := false
+			is_degree_scoop_processed := false
+		end
+
 feature -- Conveniences
 
 	set_system (s: like system) is
@@ -365,10 +376,10 @@ feature -- Commands
 		do
 			if retried = 0 then
 				error_handler.clear_display
-					-- reset flag
+
+					-- reset scoop processing
 					-- added for SCOOP by paedde
-				is_degree_scoop_processing := false
-				is_degree_scoop_processed := false
+				reset_scoop_processing
 			end
 			not_actions_successful := False
 			if retried = 0 and then (system = Void or else system.automatic_backup) then

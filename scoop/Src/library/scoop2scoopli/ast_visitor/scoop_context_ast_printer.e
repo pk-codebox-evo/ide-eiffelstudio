@@ -28,7 +28,8 @@ inherit
 			process_id_as,
 			process_break_as,
 			process_symbol_stub_as,
-			reset
+			reset,
+			process_none_id_as
 		end
 	SHARED_SCOOP_WORKBENCH
 
@@ -152,18 +153,25 @@ feature -- Roundtrip: process leaf
 			put_string (l_as)
 		end
 
-feature -- Context setting and getting
-
-	text: STRING is
-			-- Generated Eiffel code
+	process_none_id_as (l_as: NONE_ID_AS) is
+			-- Process `l_as'.
 		do
-			Result := context.string_representation
+			Precursor (l_as)
+			context.add_string ("NONE")
 		end
+
+feature -- Context setting and getting
 
 	reset is
 			-- Reset visitor for a next visit.
 		do
 			Precursor
+			context.clear
+		end
+
+	reset_context is
+			-- Reset only context
+		do
 			context.clear
 		end
 
@@ -175,6 +183,12 @@ feature -- Context setting and getting
 			context := a_ctxt
 		ensure
 			context_set: context = a_ctxt
+		end
+
+	get_context: STRING is
+			-- Get `context'.
+		do
+			Result := context.string_representation
 		end
 
 feature{NONE} -- Context handling

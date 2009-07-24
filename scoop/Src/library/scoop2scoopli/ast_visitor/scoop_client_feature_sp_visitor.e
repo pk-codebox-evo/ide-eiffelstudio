@@ -97,7 +97,7 @@ feature {NONE} -- Node implementation
 				context.add_string ("%N%T%T%T%Tagent " + fo.feature_name + "_scoop_separate_" + class_c.name.as_lower + "_spc_" + i.out + " ")
 				process_formal_argument_list_as_actual_argument_list_with_prefix (l_as, "Current")
 
-				context.add_string (")")
+				context.add_string ("))")
 				i := i + 1
 			end
 

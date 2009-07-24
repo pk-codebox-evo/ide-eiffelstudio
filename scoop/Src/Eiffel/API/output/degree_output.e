@@ -263,6 +263,20 @@ feature -- Output on per class
 			display_degree (degree_message(6), 1, a_cluster.name + a_path)
 		end
 
+	put_degree_scoop (a_class: CLASS_C; nbr_to_go: INTEGER) is
+			-- Put message to indicate that `a_class' is being
+			-- compiled during degree scoop with `nbr_to_go'
+			-- classes to go out of `total_nbr'..
+		require
+			class_not_void: a_class /= Void
+			positive_nbr_to_go: nbr_to_go >= 0
+			in_degree_5to4: current_degree = 7
+		do
+			total_number := nbr_to_go + processed
+			display_degree (degree_message(4), nbr_to_go, a_class.name)
+			processed := processed + 1;
+		end
+
 	put_degree_5 (a_class: CLASS_C; nbr_to_go: INTEGER) is
 			-- Put message to indicate that `a_class' is being
 			-- compiled during degree five with `nbr_to_go'
@@ -276,20 +290,6 @@ feature -- Output on per class
 			display_degree (degree_message(5), nbr_to_go, a_class.name)
 			processed := processed + 1
 		end;
-
-	put_degree_scoop (a_class: CLASS_C; nbr_to_go: INTEGER) is
-			-- Put message to indicate that `a_class' is being
-			-- compiled during degree four with `nbr_to_go'
-			-- classes to go out of `total_nbr'..
-		require
-			class_not_void: a_class /= Void
-			positive_nbr_to_go: nbr_to_go >= 0
-			in_degree_5to4: current_degree = 7
-		do
-			total_number := nbr_to_go + processed
-			display_degree (degree_message(4), nbr_to_go, a_class.name)
-			processed := processed + 1;
-		end
 
 	put_degree_4 (a_class: CLASS_C; nbr_to_go: INTEGER) is
 			-- Put message to indicate that `a_class' is being

@@ -8,7 +8,7 @@ class
 	SCOOP_PROXY_PARENT_VISITOR
 
 inherit
-	AST_ROUNDTRIP_ITERATOR
+	SCOOP_CONTEXT_AST_PRINTER
 		redefine
 			process_parent_list_as,
 			process_generic_class_type_as,
@@ -16,27 +16,12 @@ inherit
 			process_parent_as,
 			process_rename_clause_as,
 			process_rename_as,
-			process_keyword_as,
-			process_symbol_as,
-			process_bool_as,
-			process_char_as,
-			process_typed_char_as,
-			process_result_as,
-			process_retry_as,
-			process_unique_as,
-			process_deferred_as,
-			process_void_as,
-			process_string_as,
-			process_verbatim_string_as,
-			process_current_as,
-			process_integer_as,
-			process_real_as,
-			process_id_as,
-			process_break_as,
-			process_symbol_stub_as,
-			process_none_id_as
+			process_id_as
 		end
+
 	SHARED_SCOOP_WORKBENCH
+
+	SCOOP_BASIC_TYPE
 
 create
 	make_with_context
@@ -113,7 +98,7 @@ feature {NONE} -- Visitor implementation
 					context.add_string ("%N%T%T%Timplementation_ as implementation_" + l_as.type.class_name.name.as_lower + "_")
 				end
 
-				-- check
+				-- process internal exports - TODO: only class and scoop class?
 				if l_as.internal_exports /= Void then
 					process_leading_leaves (l_as.internal_exports.clause_keyword_index)
 					context.add_string ("%N%T%Texport {ANY} all")
@@ -122,18 +107,22 @@ feature {NONE} -- Visitor implementation
 					last_index := l_as.internal_exports.end_position
 				end
 
-				safe_process (l_as.internal_undefining)
-
-				safe_process (l_as.internal_redefining)
-				if not parsed_class.is_expanded then
-					if l_as.internal_redefining = Void then
-						context.add_string ("%N%T%Tredefine")
-					end
-					if l_as.internal_redefining /= Void then
-						context.add_string (",")
-					end
-					context.add_string ("%N%T%T%Timplementation_")
+				-- process internal undefining	
+				if l_as.internal_undefining /= Void then
+					last_index := l_as.internal_undefining.start_position
+					context.add_string ("%N%T%T")
+					safe_process (l_as.internal_undefining)
 				end
+
+				-- process internal redefining
+				if l_as.internal_redefining /= Void then
+					last_index := l_as.internal_redefining.start_position
+					safe_process (l_as.internal_redefining)
+					context.add_string (",")
+				else
+					context.add_string ("%N%T%Tredefine")
+				end
+				context.add_string ("%N%T%T%Timplementation_")
 
 				safe_process (l_as.internal_selecting)
 				if parsed_class.is_expanded and then is_process_first_select then
@@ -175,24 +164,23 @@ feature {NONE} -- Visitor implementation
 		local
 			a_class: CLASS_AS
 		do
-			Precursor (l_as)
-
 			if not is_basic_type (l_as.name) then
 					-- add prefix if parent class is not expanded.
-				a_class := get_class_as (l_as.name)
+				a_class := get_class_as_by_name (l_as.name)
 				if (a_class /= Void and then not a_class.is_expanded) then
-					context.add_string ("SCOOP_SEPARATE__")
+					context.add_string (" SCOOP_SEPARATE__")
 				end
 			end
 
 			put_string (l_as)
+			last_index := l_as.end_position
 		end
 
 	process_rename_clause_as (l_as: RENAME_CLAUSE_AS) is
 			-- Process `l_as'.
 		do
+			context.add_string ("%N%T%T")
 			safe_process (l_as.rename_keyword (match_list))
-			context.add_string ("%N%T%T%T")
 			safe_process (l_as.content)
 		end
 
@@ -202,13 +190,13 @@ feature {NONE} -- Visitor implementation
 			l_feature_name_visitor: SCOOP_FEATURE_NAME_VISITOR
 			l_feature_name: STRING
 		do
-			create l_feature_name_visitor
+			create l_feature_name_visitor.make
 			l_feature_name_visitor.setup (parsed_class, match_list, true, true)
 			last_index := l_as.start_position - 1
 
 				-- process old feature name
 			l_feature_name := l_feature_name_visitor.process_feature_name (l_as.old_name)
-			context.add_string (l_feature_name + " ")
+			context.add_string ("%N%T%T%T" + l_feature_name + " ")
 
 				-- skip old name
 			last_index := l_as.as_keyword_index - 1
@@ -224,7 +212,7 @@ feature {NONE} -- Visitor implementation
 			l_feature_name_visitor: SCOOP_FEATURE_NAME_VISITOR
 			l_feature_name: STRING
 		do
-			create l_feature_name_visitor
+			create l_feature_name_visitor.make
 			l_feature_name_visitor.setup (parsed_class, match_list, true, true)
 			last_index := l_as.start_position - 1
 
@@ -233,185 +221,10 @@ feature {NONE} -- Visitor implementation
 			context.add_string (" " + l_feature_name)
 		end
 
-
-feature {NONE} -- Roundtrip: process leaf
-
-	process_break_as (l_as: BREAK_AS) is
-			-- Process `l_as'.
-		do
-			Precursor (l_as)
-			put_string (l_as)
-		end
-
-	process_keyword_as (l_as: KEYWORD_AS) is
-			-- Process `l_as'.
-		do
-			if not (l_as.is_separate_keyword or l_as.is_infix_keyword or l_as.is_prefix_keyword)  then
-				Precursor (l_as)
-				put_string (l_as)
-			end
-		end
-
-	process_symbol_as (l_as: SYMBOL_AS) is
-			-- Process `l_as'.
-		do
-			Precursor (l_as)
-			put_string (l_as)
-		end
-
-	process_symbol_stub_as (l_as: SYMBOL_STUB_AS) is
-			-- Process `l_as'.
-		do
-			Precursor (l_as)
-			put_string (l_as)
-		end
-
-	process_bool_as (l_as: BOOL_AS) is
-		do
-			Precursor (l_as)
-			put_string (l_as)
-		end
-
-	process_char_as (l_as: CHAR_AS) is
-		do
-			Precursor (l_as)
-			put_string (l_as)
-		end
-
-	process_typed_char_as (l_as: TYPED_CHAR_AS) is
-			-- Process `l_as'.
-		do
-			Precursor (l_as)
-			put_string (l_as)
-		end
-
-	process_result_as (l_as: RESULT_AS) is
-		do
-			Precursor (l_as)
-			put_string (l_as)
-		end
-
-	process_retry_as (l_as: RETRY_AS) is
-		do
-			Precursor (l_as)
-			put_string (l_as)
-		end
-
-	process_unique_as (l_as: UNIQUE_AS) is
-		do
-			Precursor (l_as)
-			put_string (l_as)
-		end
-
-	process_deferred_as (l_as: DEFERRED_AS) is
-		do
-			Precursor (l_as)
-			put_string (l_as)
-		end
-
-	process_void_as (l_as: VOID_AS) is
-		do
-			Precursor (l_as)
-			put_string (l_as)
-		end
-
-	process_string_as (l_as: STRING_AS) is
-		do
-			Precursor (l_as)
-			put_string (l_as)
-		end
-
-	process_verbatim_string_as (l_as: VERBATIM_STRING_AS) is
-		do
-			Precursor (l_as)
-			put_string (l_as)
-		end
-
-	process_current_as (l_as: CURRENT_AS) is
-		do
-			Precursor (l_as)
-			put_string (l_as)
-		end
-
-	process_integer_as (l_as: INTEGER_AS) is
-		do
-			Precursor (l_as)
-			context.add_string (l_as.number_text (match_list))
-		end
-
-	process_real_as (l_as: REAL_AS) is
-		do
-			Precursor (l_as)
-			context.add_string (l_as.number_text (match_list))
-		end
-
-	process_none_id_as (l_as: NONE_ID_AS) is
-			-- Process `l_as'.
-		do
-			Precursor (l_as)
-			context.add_string ("NONE")
-		end
-
 feature {NONE} -- Implementation
-
-	get_class_as (a_class_name: STRING): CLASS_AS is
-			-- Get a class_as by name
-		local
-			i: INTEGER
-			a_class: CLASS_C
-		do
-			from
-				i := 1
-			until
-				i > system.classes.count
-			loop
-				a_class := system.classes.item (i)
-				if a_class /= Void then
-					if a_class.name_in_upper.is_equal (a_class_name.as_upper) then
-						Result := a_class.ast
-					end
-				end
-				i := i + 1
-			end
-		end
-
-	is_basic_type (a_name: STRING): BOOLEAN is
-			-- Is `a_class_type' a special type (such as ARRAY, STRING, HASHABLE, that are treated as special by EiffelStudio)?
-			-- Such classes should not inherit from SCOOP_SEPARATE_CLIENT, otherwise EiffelStudio reports a library error.
-		require
-			a_name /= Void
-		do
-			if a_name.is_equal ("ANY")
-				or else a_name.is_equal ("ARRAY")
-				or else a_name.is_equal ("STRING")
-				or else a_name.is_equal ("STRING_HANDLER")
-				or else a_name.is_equal ("TO_SPECIAL")
-				or else a_name.is_equal ("HASHABLE")
-				or else a_name.is_equal ("MISMATCH_CORRECTOR")
-				or else a_name.is_equal ("PART_COMPARABLE")
-				or else a_name.is_equal ("REFACTORING_HELPER")
-				or else a_name.is_equal ("DEBUG_OUTPUT")
-				or else a_name.is_equal ("CONTAINER")
-				or else a_name.is_equal ("INTERNAL")
-				or else a_name.is_equal ("EXCEP_CONST")
-			then
-				Result := True
-			else
-				Result := False
-			end
-		end
-
-	context: ROUNDTRIP_CONTEXT
-		-- reference to actual context.
 
 	is_process_first_select: BOOLEAN
 		-- indicates internal select of first parent should be processed.
-
-	put_string (l_as: LEAF_AS) is
-			-- Print text contained in `l_as' into `context'.
-		do
-			context.add_string (l_as.text (match_list))
-		end
 
 invariant
 	invariant_clause: True -- Your invariant here

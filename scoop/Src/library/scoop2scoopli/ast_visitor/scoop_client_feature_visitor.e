@@ -21,7 +21,7 @@ inherit
 create
 	make_with_context
 
-feature -- Initialisation
+feature {NONE} -- Initialisation
 
 	make_with_context(a_context: ROUNDTRIP_CONTEXT)
 			-- Initialise and reset flags
@@ -69,7 +69,7 @@ feature {NONE} -- Visitor implementation
 				l_feature_object.set_feature_as (l_as)
 
 					-- create feature name visitor
-				create l_feature_name_visitor
+				create l_feature_name_visitor.make
 				l_feature_name_visitor.setup (parsed_class, match_list, true, true)
 
 				-- create for each feature name a new body
