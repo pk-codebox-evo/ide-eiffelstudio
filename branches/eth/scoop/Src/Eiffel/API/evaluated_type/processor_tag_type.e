@@ -86,6 +86,20 @@ feature --Access
 			Result := current_proc
 		end
 
+	is_controlled : BOOLEAN is
+			-- Report whether this type is controlled
+		do
+			Result := controlled
+		end
+
+	set_controlled (contr : BOOLEAN) is
+			-- Set whether this type is controlled
+		do
+			controlled := contr
+		end
+
+
+
 	tag_name : STRING
 	bottom   : BOOLEAN
 	top      : BOOLEAN
@@ -115,11 +129,13 @@ feature {NONE} -- Implementation
 
 	make_empty is
 		do
+			controlled   := False
 			current_proc := False
 			top          := False
 			bottom       := False
 		end
 
+  controlled   : BOOLEAN
 	current_proc : BOOLEAN
 	is_sep       : BOOLEAN
 	handled      : BOOLEAN
