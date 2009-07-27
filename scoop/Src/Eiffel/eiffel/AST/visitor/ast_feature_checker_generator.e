@@ -987,20 +987,30 @@ feature -- Roundtrip
 		end
 
 feature {NONE} -- SCOOP Implementation
-	last_is_argument : BOOLEAN
+	last_is_controlled : BOOLEAN
 
-	is_controlled (a_type : TYPE_A) : BOOLEAN is
+	is_arg_controlled (a_type : TYPE_A) : BOOLEAN is
 			-- Determine whether the argument `var' is controlled, as
 			-- defined by the SCOOP specification. This implementation uses
 			-- the `current_feature' state variable to determine the current
 			-- context for this predicate.
 		do
-			if a_type.is_separate then
-				Result := last_is_argument and a_type.is_attached
-			else
-				Result := True
-			end
+			Result := a_type.is_separate implies a_type.is_attached
 		end
+
+	is_controlled (a_type : TYPE_A) : BOOLEAN is
+			-- Determine whether a given type is controlled. This determination
+			-- is based off of the separate tag for the type.
+		do
+
+			Result := True
+
+			if a_type.is_separate then
+				Result := a_type.processor_tag.is_current or a_type.processor_tag.is_controlled
+			end
+
+		end
+
 
 	transform_scoop_result (result_t, target_t : TYPE_A) : TYPE_A is
 			-- Transforms the result of a feature call depending on the
@@ -1019,10 +1029,10 @@ feature {NONE} -- SCOOP Implementation
 					tmp_tag := target_t.processor_tag.duplicate
 
 					if not result_t.processor_tag.is_current then
-						tmp_tag.make_top
+						Result.processor_tag.make_top
+					else
+						Result.set_processor_tag (tmp_tag)
 					end
-
-					Result.set_processor_tag (tmp_tag)
 				end
 
 			end
@@ -1258,16 +1268,12 @@ feature -- Implementation
 
 			l_context_current_class := context.current_class
 
-
-			if not is_qualified then
-				last_is_argument := True --FIXME deal with unqualified call validity checking
+			-- FIXME deal with unqualified call validity checking
+			if is_qualified then
+				if not is_controlled (a_type) then
+					error_handler.insert_error (create {VSTU}.make (context, a_type, l_feature_name))
+				end
 			end
-
-			if not is_controlled (a_type) then
-				error_handler.insert_error (create {VSTU}.make (context, a_type, l_feature_name))
-			end
-
-			last_is_argument := False
 
 			if not a_type.is_attached and then l_context_current_class.lace_class.is_void_safe then
 				error_handler.insert_error (create {VUTA2}.make (context, a_type, l_feature_name))
@@ -2600,7 +2606,11 @@ feature -- Implementation
 				l_type := l_feature.arguments.i_th (l_arg_pos)
 				l_type := l_type.actual_type.instantiation_in (last_type.as_implicitly_detachable, l_last_id)
 
-				last_is_argument := True
+					-- We need to remember if this argument is controlled so we can pass this on
+					-- to later stages, important for SCOOP separate call validity checking.
+				if l_type.is_separate then
+					l_type.processor_tag.set_controlled (l_type.is_attached)
+				end
 
 				l_has_vuar_error := l_as.parameters /= Void
 				if l_needs_byte_node then
