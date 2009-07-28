@@ -989,7 +989,7 @@ feature -- Roundtrip
 feature {NONE} -- SCOOP Implementation
 	last_is_controlled : BOOLEAN
 
-	is_arg_controlled (a_type : TYPE_A) : BOOLEAN is
+	is_arg_controlled (a_type : TYPE_A) : BOOLEAN
 			-- Determine whether the argument `var' is controlled, as
 			-- defined by the SCOOP specification. This implementation uses
 			-- the `current_feature' state variable to determine the current
@@ -998,7 +998,7 @@ feature {NONE} -- SCOOP Implementation
 			Result := a_type.is_separate implies a_type.is_attached
 		end
 
-	is_controlled (a_type : TYPE_A) : BOOLEAN is
+	is_controlled (a_type : TYPE_A) : BOOLEAN
 			-- Determine whether a given type is controlled. This determination
 			-- is based off of the separate tag for the type.
 		do
@@ -1012,7 +1012,7 @@ feature {NONE} -- SCOOP Implementation
 		end
 
 
-	transform_scoop_result (result_t, target_t : TYPE_A) : TYPE_A is
+	transform_scoop_result (result_t, target_t : TYPE_A) : TYPE_A
 			-- Transforms the result of a feature call depending on the
 			-- target of that call. This transformation is according to the
 			-- definition given in the SCOOP work on typing
@@ -1039,7 +1039,7 @@ feature {NONE} -- SCOOP Implementation
 		end
 
 
-	transform_scoop_argument (arg_t, target_t : TYPE_A) : TYPE_A is
+	transform_scoop_argument (arg_t, target_t : TYPE_A) : TYPE_A
 			-- Transforms the argument type based on the existing argument
 			-- type and the target type. This is according to the definition
 			-- given in the SCOOP work on typing.

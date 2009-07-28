@@ -15,7 +15,7 @@ create
 	make_bottom
 
 feature --Creation
-	make (is_separate : BOOLEAN; proc_name : STRING ; a_handled : BOOLEAN) is
+	make (is_separate : BOOLEAN; proc_name : STRING ; a_handled : BOOLEAN)
 		require
 			a_handled implies not proc_name.is_empty
 		do
@@ -36,63 +36,54 @@ feature --Creation
 			end
 		end
 
-	-- A make_handled, make_explicit_proc, creations may be desired at some point
-
-	make_top is
+	make_top
 		do
 			make_empty
 			top := True
 		end
-	make_bottom is
+	make_bottom
 		do
 			make_empty
 			bottom := True
 		end
 
 feature --Copy
-	duplicate : PROCESSOR_TAG_TYPE is
+	duplicate : PROCESSOR_TAG_TYPE
 			-- Duplicate the current processor tag.
 		do
 			create Result.make (is_sep, tag_name, handled)
+			Result.set_controlled (is_controlled)
 		end
 
 feature --Compare
-	infix "<" (other : like Current) : BOOLEAN is
+	infix "<" (other : like Current) : BOOLEAN
 		do
 			Result := (other.top and not top) or else
 			          (bottom and not other.bottom)
 		end
 
-	is_equal (other : like Current) : BOOLEAN is
+	is_equal (other : like Current) : BOOLEAN
 		do
 			Result := (other.top    and top)    or else
 			          (other.bottom and bottom) or else
 			          (other.is_current and is_current and other.tag_name.is_equal (tag_name))
-
-			debug
-				io.put_string ("Equal says...")
-				io.put_boolean (Result)
-				io.put_new_line
-				dump_info
-				other.dump_info
-			end
 		end
 
 feature --Access
-	is_current : BOOLEAN is
+	is_current : BOOLEAN
 			-- Determines whether this tag represents the same
 			-- processor where the type was declared.
 		do
 			Result := current_proc
 		end
 
-	is_controlled : BOOLEAN is
+	is_controlled : BOOLEAN
 			-- Report whether this type is controlled
 		do
 			Result := controlled
 		end
 
-	set_controlled (contr : BOOLEAN) is
+	set_controlled (contr : BOOLEAN)
 			-- Set whether this type is controlled
 		do
 			controlled := contr
@@ -105,7 +96,7 @@ feature --Access
 	top      : BOOLEAN
 
 feature --Debug
-	dump_info is
+	dump_info
 		do
 			io.put_string ("Separate tag with: is_sep: " + is_sep.out)
 			io.put_string (" process name: " + tag_name)
@@ -115,19 +106,19 @@ feature --Debug
 		end
 
 feature {NONE} -- Implementation
-	set_tag_name (name : STRING) is
+	set_tag_name (name : STRING)
 			-- Sets the name of the tag to `name'
 		do
 			tag_name := name
 		end
 
-	make_current is
+	make_current
 		do
 			make_empty
 			current_proc := True
 		end
 
-	make_empty is
+	make_empty
 		do
 			controlled   := False
 			current_proc := False
@@ -141,7 +132,7 @@ feature {NONE} -- Implementation
 	handled      : BOOLEAN
 
 invariant
-	top_bottom_exclusive: (bottom implies not top) and (top implies not bottom)
+	top_bottom_exclusive: (bottom implies not top)
 	tag_exclusive:        not tag_name.is_empty implies (not top and not bottom)
 
 end
