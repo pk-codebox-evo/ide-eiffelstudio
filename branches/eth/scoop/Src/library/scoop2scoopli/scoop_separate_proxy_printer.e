@@ -16,6 +16,7 @@ inherit
 			process_class_type_as,
 			process_generic_class_type_as,
 			process_named_tuple_type_as,
+			process_type_dec_as,
 			process_class_list_as,
 			process_create_as,
 			process_like_cur_as,
@@ -23,6 +24,7 @@ inherit
 			process_invariant_as
 		end
 	SHARED_SCOOP_WORKBENCH
+	SCOOP_CLASS_NAME
 
 create
 	make,
@@ -36,13 +38,6 @@ feature {NONE} -- Initialization
 			a_ctxt_not_void: a_ctxt /= Void
 		do
 			context := a_ctxt
-
-			-- init
-			is_filter_detachable := false
-			is_set_prefix := false
-			is_attribute_wrapper := false
-			is_processing_locals := false
-			is_processing_signature := false
 		end
 
 	make_with_default_context is
@@ -56,6 +51,14 @@ feature -- Access
 	process is
 			-- Process 'a_class_c'.
 		do
+			-- init
+			create l_type_attribute_wrapper.make_with_context (context)
+			l_type_attribute_wrapper.setup (parsed_class, match_list, true, true)
+			create l_type_locals.make_with_context (context)
+			l_type_locals.setup (parsed_class, match_list, true, true)
+			create l_type_signature.make_with_context (context)
+			l_type_signature.setup (parsed_class, match_list, true, true)
+
 			process_class_as (class_as)
 		end
 
@@ -83,11 +86,16 @@ feature {NONE} -- Roundtrip: process nodes
 
 			safe_process (l_as.external_keyword (match_list))
 			safe_process (l_as.class_keyword (match_list))
-			process_class_name
+			process_leading_leaves (l_as.class_name.index)
+			process_class_name (l_as.class_name, true, context, match_list)
+			if l_as.class_name /= Void then
+				last_index := l_as.class_name.end_position
+			end
 
+				-- process internal generics
 			create l_generics_visitor.make_with_context (context)
 			l_generics_visitor.setup (l_as, match_list, true, true)
-			l_generics_visitor.process_class_internal_generics (l_as.internal_generics)
+			l_generics_visitor.process_class_internal_generics (l_as.internal_generics, true, false)
 
 			safe_process (l_as.alias_keyword (match_list))
 			s ?= l_as.external_class_name
@@ -112,7 +120,7 @@ feature {NONE} -- Roundtrip: process nodes
 				-- add attribute of actual object
 			context.add_string ("%N%N%Timplementation_: " + l_as.class_name.name.as_upper)
 				-- formal paramters
-			safe_process (class_as.internal_generics)
+			l_generics_visitor.process_class_internal_generics (class_as.internal_generics, true, true)
 			context.add_string ("%N%T%T-- reference to actual object")
 
 				-- process invariants (skip it - see 'process invariant_as'
@@ -161,7 +169,8 @@ feature {NONE} -- Roundtrip: process nodes
 					safe_process (l_as.feature_names.i_th (i).frozen_keyword (match_list))
 
 					-- process name
-					l_feature_name := l_feature_name_visitor.process_feature_name (l_as.feature_names.i_th (i))
+					l_feature_name_visitor.process_feature_name (l_as.feature_names.i_th (i))
+					l_feature_name := l_feature_name_visitor.get_feature_name
 					context.add_string (l_feature_name + " ")
 
 					-- body (function and procedure)
@@ -173,189 +182,18 @@ feature {NONE} -- Roundtrip: process nodes
 		end
 
 	process_class_type_as (l_as: CLASS_TYPE_AS) is
-		local
-			l_is_set_prefix: like is_set_prefix
-			l_is_filter_detachable: like is_filter_detachable
-			l_class_name_visitor: SCOOP_CLASS_NAME_VISITOR
 		do
-			safe_process (l_as.lcurly_symbol (match_list))
-
-				-- special handling
-			if is_attribute_wrapper then
-				l_is_set_prefix := is_set_prefix
-				l_is_filter_detachable := is_filter_detachable
-				if l_as.is_expanded then
-					is_set_prefix := false
-					is_filter_detachable := true
-				else
-					is_set_prefix := true
-					is_filter_detachable := true
-				end
-			elseif is_processing_signature then
-				l_is_set_prefix := is_set_prefix
-				l_is_filter_detachable := is_filter_detachable
-				if l_as.is_separate and l_as.is_expanded then
-					is_set_prefix := true
-					is_filter_detachable := true
-				else
-					is_set_prefix := false
-					is_filter_detachable := false
-				end
-			end
-
-				-- attached? detached?
-			if is_filter_detachable then
-				if l_as.has_detachable_mark then
-					-- skip flag
-					last_index := l_as.attachment_mark_index
-				else
-					safe_process (l_as.attachment_mark (match_list))
-				end
-			else
-				safe_process (l_as.attachment_mark (match_list))
-			end
-
-			safe_process (l_as.expanded_keyword (match_list))
-
-			create l_class_name_visitor.make_with_context (context)
-			l_class_name_visitor.setup (class_as, match_list, true, true)
-			l_class_name_visitor.process_id (l_as.class_name, is_set_prefix)
-
-			safe_process (l_as.rcurly_symbol (match_list))
-
-				-- reset local settings
-			if is_attribute_wrapper
-				or is_processing_signature then
-				is_set_prefix := l_is_set_prefix
-				is_filter_detachable := l_is_filter_detachable
-			end
+			context.add_string ("?????????")
 		end
 
 	process_generic_class_type_as (l_as: GENERIC_CLASS_TYPE_AS) is
-		local
-			l_is_set_prefix: like is_set_prefix
-			l_is_filter_detachable: like is_filter_detachable
-			l_class_name_visitor: SCOOP_CLASS_NAME_VISITOR
-			l_generics_visitor: SCOOP_GENERICS_VISITOR
 		do
-			safe_process (l_as.lcurly_symbol (match_list))
-
-				-- special handling
-			if is_attribute_wrapper then
-				l_is_set_prefix := is_set_prefix
-				l_is_filter_detachable := is_filter_detachable
-				if l_as.is_expanded then
-					is_set_prefix := false
-					is_filter_detachable := true
-				else
-					is_set_prefix := true
-					is_filter_detachable := true
-				end
-			elseif is_processing_locals then
-				l_is_set_prefix := is_set_prefix
-				l_is_filter_detachable := is_filter_detachable
-				if (l_as.is_separate and not l_as.is_expanded) then
-					is_set_prefix := true
-				else
-					is_set_prefix := false
-				end
-				is_filter_detachable := true
-			elseif is_processing_signature then
-				l_is_set_prefix := is_set_prefix
-				l_is_filter_detachable := is_filter_detachable
-				if l_as.is_separate and l_as.is_expanded then
-					is_set_prefix := true
-					is_filter_detachable := true
-				else
-					is_set_prefix := false
-					is_filter_detachable := false
-				end
-			end
-
-				-- attached? detached?
-			if is_filter_detachable then
-				if l_as.has_detachable_mark then
-					-- skip flag
-					last_index := l_as.attachment_mark_index
-				else
-					safe_process (l_as.attachment_mark (match_list))
-				end
-			else
-				safe_process (l_as.attachment_mark (match_list))
-			end
-
-			safe_process (l_as.expanded_keyword (match_list))
-
-			create l_class_name_visitor.make_with_context (context)
-			l_class_name_visitor.setup (class_as, match_list, true, true)
-			l_class_name_visitor.process_id (l_as.class_name, is_set_prefix)
-
-				-- reset local settings
-			if is_attribute_wrapper
-				or is_processing_locals or is_processing_signature then
-				is_set_prefix := l_is_set_prefix
-				is_filter_detachable := l_is_filter_detachable
-			end
-
-				-- no `SCOOP_SEPARATE__' prefix, not detachable.
-			create l_generics_visitor.make_with_context (context)
-			l_generics_visitor.setup (class_as, match_list, true, true)
-			l_generics_visitor.process_type_internal_generics (l_as.internal_generics)
-
-			safe_process (l_as.rcurly_symbol (match_list))
+			context.add_string ("?????????")
 		end
 
 	process_named_tuple_type_as (l_as: NAMED_TUPLE_TYPE_AS) is
-		local
-			l_is_set_prefix: like is_set_prefix
-			l_is_filter_detachable: like is_filter_detachable
-			l_class_name_visitor: SCOOP_CLASS_NAME_VISITOR
 		do
-			safe_process (l_as.lcurly_symbol (match_list))
-
-				-- special handling
-			if is_attribute_wrapper then
-				l_is_set_prefix := is_set_prefix
-				l_is_filter_detachable := is_filter_detachable
-				is_set_prefix := false
-				is_filter_detachable := true
-			elseif is_processing_signature then
-				l_is_set_prefix := is_set_prefix
-				l_is_filter_detachable := is_filter_detachable
-				if l_as.is_separate then
-					is_set_prefix := true
-					is_filter_detachable := true
-				else
-					is_set_prefix := false
-					is_filter_detachable := false
-				end
-			end
-
-				-- attached? detached?
-			if is_filter_detachable then
-				if l_as.has_detachable_mark then
-					-- skip flag
-					last_index := l_as.attachment_mark_index
-				else
-					safe_process (l_as.attachment_mark (match_list))
-				end
-			else
-				safe_process (l_as.attachment_mark (match_list))
-			end
-
-			create l_class_name_visitor.make_with_context (context)
-			l_class_name_visitor.setup (class_as, match_list, true, true)
-			l_class_name_visitor.process_id (l_as.class_name, is_set_prefix)
-
-			safe_process (l_as.parameters)
-			safe_process (l_as.rcurly_symbol (match_list))
-
-				-- reset local settings
-			if is_attribute_wrapper
-				or is_processing_signature then
-				is_set_prefix := l_is_set_prefix
-				is_filter_detachable := l_is_filter_detachable
-			end
+			context.add_string ("?????????")
 		end
 
 	process_create_as (l_as: CREATE_AS) is
@@ -365,6 +203,7 @@ feature {NONE} -- Roundtrip: process nodes
 			l_feature_name: STRING
 		do
 			create l_feature_name_visitor.make
+			l_feature_name_visitor.setup (parsed_class, match_list, true, true)
 			nb := l_as.feature_list.count
 
 			from
@@ -372,7 +211,8 @@ feature {NONE} -- Roundtrip: process nodes
 			until
 				i > nb
 			loop
-				l_feature_name := l_feature_name_visitor.process_feature_name (l_as.feature_list.i_th (i))
+				l_feature_name_visitor.process_feature_name (l_as.feature_list.i_th (i))
+				l_feature_name := l_feature_name_visitor.get_feature_name
 
 				if l_feature_name.is_equal ("default_create") then
 					process_default_create_wrappers
@@ -384,45 +224,29 @@ feature {NONE} -- Roundtrip: process nodes
 		end
 
 	process_like_cur_as (l_as: LIKE_CUR_AS) is
+			-- process 'l_as'
 		do
-			safe_process (l_as.lcurly_symbol (match_list))
+			context.add_string ("?????????")
+		end
 
-				-- attached? detached?
-			if is_filter_detachable then
-				if l_as.has_detachable_mark then
-					-- skip flag
-					last_index := l_as.attachment_mark_index
-				else
-					safe_process (l_as.attachment_mark (match_list))
-				end
-			else
-				safe_process (l_as.attachment_mark (match_list))
-			end
-
-			safe_process (l_as.like_keyword (match_list))
-
-			if is_processing_locals then
-				context.add_string ("implementation_")
-			else
-				safe_process (l_as.current_keyword)
-			end
-
-			safe_process (l_as.rcurly_symbol (match_list))
+	process_type_dec_as (l_as: TYPE_DEC_AS) is
+			-- process 'l_as' - internal argument list
+		do
+			process_identifier_list (l_as.id_list)
+			safe_process (l_as.colon_symbol (match_list))
+			-- process type
+			l_type_signature.process_type (l_as.type)
 		end
 
 	process_class_list_as (l_as: CLASS_LIST_AS) is
 			-- Process `l_as'.
 			-- If a class name (other than ANY or NONE) appears in the list, add its separate proxy as well.
-		local
-			l_class_name_visitor: SCOOP_CLASS_NAME_VISITOR
 		do
 			safe_process (l_as.lcurly_symbol (match_list))
 
 			-- add class names with prefix
 			if l_as /= Void then
-				create l_class_name_visitor.make_with_context (context)
-				l_class_name_visitor.setup (class_as, match_list, true, true)
-				l_class_name_visitor.process_class_list_with_prefix (l_as, true)
+				process_class_name_list_with_prefix (l_as, true, context, match_list)
 			end
 			last_index := l_as.rcurly_symbol_index - 1
 			safe_process (l_as.rcurly_symbol (match_list))
@@ -455,16 +279,10 @@ feature {NONE} -- Roundtrip: process nodes
 
 feature -- Roundtrip: implementation
 
-	process_class_name is
-			-- Process class name.
-		do
-			process_leading_leaves (class_as.class_name.index)
-			context.add_string ("SCOOP_SEPARATE__")
-			context.add_string (class_as.class_name.name.as_upper)
-		end
-
 	process_creators_and_conversions is
 			-- Process creators and convertors
+		local
+			l_generics_visitor: SCOOP_GENERICS_VISITOR
 		do
 			-- creator & convertor
 			if not class_as.is_deferred then
@@ -475,7 +293,9 @@ feature -- Roundtrip: implementation
 				context.add_string ("%N%Nconvert%N%Tmake_from_local ({" + class_as.class_name.name.as_upper)
 
 					-- formal paramters
-				safe_process (class_as.internal_generics)
+				create l_generics_visitor.make_with_context (context)
+				l_generics_visitor.setup (parsed_class, match_list, true, true)
+				l_generics_visitor.process_class_internal_generics (class_as.internal_generics, true, true)
 
 					-- convertor end
 				context.add_string ("})")
@@ -561,9 +381,8 @@ feature -- Roundtrip: implementation
 
 					context.add_string ("%N%N%T" + a_feature_name + "_scoop_separate_" + class_as.class_name.name.as_lower + " ")
 					if l_feature_as.body.internal_arguments /= Void then
-						is_set_prefix := true
+						-- print type with prefix
 						safe_process (l_feature_as.body.internal_arguments)
-						is_set_prefix := false
 					else
 						context.add_string ("(a_caller_: SCOOP_SEPARATE_TYPE) ") --CLIENT) ")
 					end
@@ -662,14 +481,11 @@ feature -- Roundtrip: implementation
 			context.add_string ("%N%T%Tlocal")
 			if a_feature.is_function then
 				context.add_string ("%N%T%T%Ta_function_to_evaluate: FUNCTION [ANY, TUPLE, ")
-				is_processing_locals := true
-				process_result_type (a_feature.body.type, false)
-				is_processing_locals := false
+				process_result_type (a_feature.body.type, false, l_type_locals)
 				context.add_string ("]")
 			end
 
 			if l_arguments /= Void then
-				is_processing_locals := true
 				from
 					nb := l_arguments.arguments.count
 					i := 1
@@ -682,12 +498,11 @@ feature -- Roundtrip: implementation
 						and then not l_scoop_type_visitor.is_tuple_type then
 
 						context.add_string ("%N%T%T%Taux_scoop_" + a_feature_name + ": ")
-						safe_process (l_arguments.arguments.i_th (i).type)
+						l_type_locals.process_type (l_arguments.arguments.i_th (i).type)
 					end
 
 					i := i + 1
 				end
-				is_processing_locals := false
 
 				if Result then
 					context.add_string ("%N%T%T%Tscoop_passing_locks: BOOLEAN%N%T%T%Tscoop_locked_processors_stack_size, scoop_synchronous_processors_stack_size: INTEGER_32")
@@ -846,9 +661,7 @@ feature -- Roundtrip: implementation
 					j > a_list.arguments.i_th (i).id_list.count
 				loop
 					context.add_string (a_list.arguments.i_th (i).item_name (j) + ": ")
-					is_processing_signature := true
-					safe_process (a_list.arguments.i_th (i).type)
-					is_processing_signature := false
+					l_type_signature.process_type (a_list.arguments.i_th (i).type)
 
 					if i < nb or (i = nb and j < a_list.arguments.i_th (i).id_list.count) then
 						context.add_string ("; ")
@@ -921,9 +734,7 @@ feature -- Roundtrip: implementation
 					j > a_list.arguments.i_th (i).id_list.count
 				loop
 					context.add_string (a_list.arguments.i_th (i).item_name (j) + ": ")
-					is_processing_signature := true
-					safe_process (a_list.arguments.i_th (i).type)
-					is_processing_signature := false
+					l_type_signature.process_type (a_list.arguments.i_th (i).type)
 
 					if i < nb or (i = nb and j < a_list.arguments.i_th (i).id_list.count) then
 						context.add_string ("; ")
@@ -944,15 +755,16 @@ feature -- Roundtrip: implementation
 		do
 			last_index := l_as.start_position - 1
 
-			is_processing_signature := true
+			-- create internal arguments
 			if l_as.internal_arguments /= Void then
 				process_formal_argument_list_with_a_caller (l_as.internal_arguments)
 			else
 				context.add_string ("(a_caller_: SCOOP_SEPARATE_TYPE)")
 			end
 			safe_process (l_as.colon_symbol (match_list))
-			safe_process (l_as.type)
-			is_processing_signature := false
+
+			-- process type of feature
+			l_type_signature.process_type (l_as.type)
 
 			safe_process (l_as.assign_keyword (match_list))
 			safe_process (l_as.assigner)
@@ -1135,9 +947,10 @@ feature -- Roundtrip: implementation
 			if a_feature.body.internal_arguments /= void then
 				process_flattened_formal_argument_list (a_feature.body.internal_arguments, false)
 			end
-			is_processing_signature := true
-			process_result_type (a_feature.body.type, true)
-			is_processing_signature := false
+
+			-- process type
+			process_result_type (a_feature.body.type, true, l_type_signature)
+
 			context.add_string (" is%N%T%T%T")
 			context.add_string ("-- Wrapper for external feature `" + a_feature_name + "'.")
 			context.add_string ("%N%T%Tdo%N%T%T%TResult := implementation_.")
@@ -1263,9 +1076,7 @@ feature -- Roundtrip: implementation
 			if a_feature.body.internal_arguments /= void then
 				process_flattened_formal_argument_list (a_feature.body.internal_arguments, false)
 			end
-			is_processing_signature := true
-			process_result_type (a_feature.body.type, true)
-			is_processing_signature := false
+			process_result_type (a_feature.body.type, true, l_type_signature)
 			context.add_string (" is%N%T%T%T")
 			context.add_string ("-- Wrapper for once feature `" + a_feature_name + "'.")
 			context.add_string ("%N%T%Tdo%N%T%T%TResult := implementation_.")
@@ -1365,16 +1176,12 @@ feature -- Roundtrip: implementation
 					context.add_string (" (a_caller_: SCOOP_SEPARATE_TYPE): ")
 
 						-- set type
-					is_attribute_wrapper := true
 					last_index := l_as.body.type.start_position
-					safe_process (l_as.body.type)
-					is_attribute_wrapper := false
+					l_type_attribute_wrapper.process_type (l_as.body.type)
 
 						-- keyword is and local declaration
 					context.add_string (" is%N%T%Tlocal%N%T%T%Ta_function_to_evaluate: FUNCTION [ANY, TUPLE, ")
-					is_processing_locals := true
-					safe_process (l_as.body.type)
-					is_processing_locals := false
+					l_type_locals.process_type (l_as.body.type)
 					context.add_string ("]")
 
 						-- body and agent declarateion
@@ -1416,9 +1223,7 @@ feature -- Roundtrip: implementation
 
 						-- result type
 					last_index := l_as.body.type.start_position - 1
-					is_processing_signature := true
-					process_result_type (l_as.body.type, true)
-					is_processing_signature := false
+					process_result_type (l_as.body.type, true, l_type_signature)
 
 						-- body
 					context.add_string ("%N%T%T%T-- Wrapper for attribute `")
@@ -1470,16 +1275,12 @@ feature -- Roundtrip: implementation
 				context.add_string (" (a_caller_: SCOOP_SEPARATE_TYPE): ")
 
 					-- set type
-				is_attribute_wrapper := true
 				last_index := l_as.body.type.start_position
-				safe_process (l_as.body.type)
-				is_attribute_wrapper := false
+				l_type_attribute_wrapper.process_type (l_as.body.type)
 
 					-- keyword is and local declaration
 				context.add_string (" is%N%T%Tlocal%N%T%T%Ta_function_to_evaluate: FUNCTION [ANY, TUPLE, ")
-				is_processing_locals := true
-				safe_process (l_as.body.type)
-				is_processing_locals := false
+				l_type_locals.process_type (l_as.body.type)
 				context.add_string ("]")
 
 					-- body and agent declarateion
@@ -1524,9 +1325,7 @@ feature -- Roundtrip: implementation
 
 						-- result type
 					last_index := l_as.body.type.start_position - 1
-					is_processing_signature := true
-					process_result_type (l_as.body.type, true)
-					is_processing_signature := false
+					process_result_type (l_as.body.type, true, l_type_signature)
 
 						-- body
 					context.add_string ("%N%T%T%T-- Wrapper for attribute `")
@@ -1567,36 +1366,42 @@ feature -- Roundtrip: implementation
 			end
 		end
 
-	process_result_type (a_type: TYPE_AS; is_declared_type: BOOLEAN) is
+	process_result_type (a_type: TYPE_AS; is_declared_type: BOOLEAN; l_proxy_type_visitor: SCOOP_PROXY_TYPE_VISITOR) is
 			-- Process `a_type'. Precede with `:' if `is_declared_type' is true.
 		local
 			a_class_c: CLASS_C
+			is_separate: BOOLEAN
 			l_scoop_type_visitor: SCOOP_TYPE_VISITOR
 			a_like_type: LIKE_ID_AS
 		do
+			-- process colon symbol
 			if is_declared_type then
 				context.add_string (": ")
 			end
 
+			-- get TYPE_C of given TYPE_AS
 			create l_scoop_type_visitor
 			a_class_c := l_scoop_type_visitor.evaluate_class_from_type (a_type, class_c)
 
+			-- check if type is like type
 			a_like_type ?= a_type
 			if a_like_type /= Void and then a_like_type.anchor /= Void then
 				if class_as.feature_table.has (a_like_type.anchor.name) then
+					-- get class type for a like type and process it
 					if class_as.feature_table.item (a_like_type.anchor.name).type.is_attached then
 						context.add_string (" !")
 					else
 						context.add_string (" ")
 					end
-					if class_as.feature_table.item (a_like_type.anchor.name).type.is_separate then
-						context.add_string ("SCOOP_SEPARATE__")
-					end
-					context.add_string (class_as.feature_table.item (a_like_type.anchor.name).type.associated_class.ast.class_name.name)
-					safe_process (class_as.feature_table.item (a_like_type.anchor.name).access_class.ast.internal_generics)
+
+					-- print class name
+					is_separate := class_as.feature_table.item (a_like_type.anchor.name).type.is_separate
+					process_class_name (class_as.feature_table.item (a_like_type.anchor.name).type.associated_class.ast.class_name, is_separate, context, match_list)
+					l_proxy_type_visitor.process_type_ast (class_as.feature_table.item (a_like_type.anchor.name).access_class.ast.internal_generics)
 				end
 			else
-				safe_process (a_type)
+				-- process type
+				l_proxy_type_visitor.process_type (a_type)
 			end
 		end
 
@@ -1625,19 +1430,13 @@ feature {NONE} -- SCOOP Implementation
 
 feature{NONE} -- Implementation
 
-	is_filter_detachable: BOOLEAN
-			-- Flag for filter the detachable flag
+	l_type_attribute_wrapper: SCOOP_PROXY_TYPE_ATTRIBUTE_WRAPPER_PRINTER
+			-- prints 'TYPE_AS' to the context
 
-	is_set_prefix: BOOLEAN
-			-- Flag for setting 'SCOOP_SEPARATE__'
+	l_type_locals: SCOOP_PROXY_TYPE_LOCALS_PRINTER
+			-- prints 'TYPE_AS' to the context
 
-	is_attribute_wrapper: BOOLEAN
-			-- Flag to indicate a attribute wrapping handling
-
-	is_processing_locals: BOOLEAN
-			-- Flag to indicate local processing
-
-	is_processing_signature: BOOLEAN
-			-- Flag to indicate signature processing
+	l_type_signature: SCOOP_PROXY_TYPE_SIGNATURE_PRINTER
+			-- prints 'TYPE_AS' to the context
 
 end

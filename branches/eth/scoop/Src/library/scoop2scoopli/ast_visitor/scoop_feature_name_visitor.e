@@ -9,12 +9,12 @@ class
 
 inherit
 	SCOOP_CONTEXT_AST_PRINTER
+		rename
+			get_context as get_feature_name
 		redefine
 			process_infix_prefix_as,
 			process_keyword_as,
-			process_feat_name_id_as,
-			process_feature_name_alias_as,
-			process_id_as
+			process_feat_name_id_as
 		end
 
 	SCOOP_INFIX_PREFIX
@@ -32,7 +32,7 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	process_feature_name (a_feature_name: FEATURE_NAME): STRING is
+	process_feature_name (a_feature_name: FEATURE_NAME) is
 			-- Given a FEATURE_NAME node, try to evaluate the feature name.
 		require
 			a_feature_name_not_void: a_feature_name /= Void
@@ -40,10 +40,9 @@ feature -- Access
 			reset_context
 			last_index := a_feature_name.start_position
 			safe_process (a_feature_name)
-			Result := get_context
 		end
 
-	process_infix_prefix (l_as: INFIX_PREFIX_AS): STRING is
+	process_infix_prefix (l_as: INFIX_PREFIX_AS) is
 			-- Given a INFIX_PREFIX_AS node, try to evaluate the non infix notation
 		require
 			l_as_not_void: l_as /= Void
@@ -51,7 +50,6 @@ feature -- Access
 			reset_context
 			last_index := l_as.start_position
 			safe_process (l_as)
-			Result := get_context
 		end
 
 feature {NONE} -- Visitor implementation
@@ -61,34 +59,20 @@ feature {NONE} -- Visitor implementation
 		do
 			if l_as.is_prefix_keyword or l_as.is_infix_keyword then
 				Precursor (l_as)
-				put_string (l_as)
-				context.add_string ("_")
+				context.add_string ("_infix")
 			end
 		end
 
 	process_feat_name_id_as (l_as: FEAT_NAME_ID_AS) is
 		do
+			-- only process name without frozen keyword
 			safe_process (l_as.feature_name)
-		end
-
-	process_feature_name_alias_as (l_as: FEATURE_NAME_ALIAS_AS) is
-		do
-			safe_process (l_as.feature_name)
-			if l_as.alias_name /= Void then
-				safe_process (l_as.alias_name)
-				context.add_string (l_as.alias_name.string_value)
-			end
 		end
 
 	process_infix_prefix_as (l_as: INFIX_PREFIX_AS) is
 		do
 			safe_process (l_as.infix_prefix_keyword (match_list))
 			context.add_string (non_infix_text (l_as.alias_name.value))
-		end
-
-	process_id_as (l_as: ID_AS) is
-		do
-			context.add_string (l_as.name)
 		end
 
 end

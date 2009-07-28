@@ -10,9 +10,6 @@ class
 inherit
 	SCOOP_CLIENT_CONTEXT_AST_PRINTER
 		redefine
-			process_class_type_as,
-			process_generic_class_type_as,
-			process_named_tuple_type_as,
 			process_feature_as,
 			process_keyword_as
 		end
@@ -99,7 +96,8 @@ feature {NONE} -- Visitor implementation
 					end
 
 					-- process name
-					l_feature_object.set_feature_name (l_feature_name_visitor.process_feature_name (l_as.feature_names.i_th (i)))
+					l_feature_name_visitor.process_feature_name (l_as.feature_names.i_th (i))
+					l_feature_object.set_feature_name (l_feature_name_visitor.get_feature_name)
 
 					if is_separate then
 
@@ -182,46 +180,6 @@ feature {NONE} -- Visitor implementation
 			else
 				Precursor (l_as)
 			end
-		end
-
-	process_class_type_as (l_as: CLASS_TYPE_AS) is
-		do
-			safe_process (l_as.lcurly_symbol (match_list))
-			safe_process (l_as.attachment_mark (match_list))
-			safe_process (l_as.expanded_keyword (match_list))
-			if l_as.is_separate then
-				context.add_string (" SCOOP_SEPARATE__")
-				last_index := l_as.class_name.start_position - 1
-			end
-			safe_process (l_as.class_name)
-			safe_process (l_as.rcurly_symbol (match_list))
-		end
-
-	process_generic_class_type_as (l_as: GENERIC_CLASS_TYPE_AS) is
-		do
-			safe_process (l_as.lcurly_symbol (match_list))
-			safe_process (l_as.attachment_mark (match_list))
-			safe_process (l_as.expanded_keyword (match_list))
-			if l_as.is_separate then
-				context.add_string (" SCOOP_SEPARATE__")
-				last_index := l_as.class_name.start_position - 1
-			end
-			safe_process (l_as.class_name)
-			safe_process (l_as.internal_generics)
-			safe_process (l_as.rcurly_symbol (match_list))
-		end
-
-	process_named_tuple_type_as (l_as: NAMED_TUPLE_TYPE_AS) is
-		do
-			safe_process (l_as.lcurly_symbol (match_list))
-			safe_process (l_as.attachment_mark (match_list))
-			if l_as.is_separate then
-				context.add_string (" SCOOP_SEPARATE__")
-				last_index := l_as.class_name.start_position - 1
-			end
-			safe_process (l_as.class_name)
-			safe_process (l_as.parameters)
-			safe_process (l_as.rcurly_symbol (match_list))
 		end
 
 feature {NONE} -- Implementation	

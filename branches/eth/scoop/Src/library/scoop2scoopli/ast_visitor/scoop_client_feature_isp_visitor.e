@@ -8,7 +8,7 @@ class
 	SCOOP_CLIENT_FEATURE_ISP_VISITOR
 
 inherit
-	SCOOP_CONTEXT_AST_PRINTER
+	SCOOP_CLIENT_CONTEXT_AST_PRINTER
 		redefine
 			process_formal_argu_dec_list_as,
 			process_tagged_as,
