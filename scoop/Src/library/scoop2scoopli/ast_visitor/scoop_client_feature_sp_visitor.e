@@ -9,7 +9,7 @@ class
 
 
 inherit
-	SCOOP_CONTEXT_AST_PRINTER
+	SCOOP_CLIENT_CONTEXT_AST_PRINTER
 		redefine
 			process_body_as,
 			process_formal_argu_dec_list_as,

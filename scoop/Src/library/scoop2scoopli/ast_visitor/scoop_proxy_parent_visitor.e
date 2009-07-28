@@ -8,13 +8,13 @@ class
 	SCOOP_PROXY_PARENT_VISITOR
 
 inherit
-	SCOOP_CONTEXT_AST_PRINTER
+	SCOOP_PARENT_VISITOR
 		redefine
-			process_parent_list_as,
+			process_internal_conforming_parents,
+			process_internal_non_conforming_parents,
 			process_generic_class_type_as,
 			process_infix_prefix_as,
 			process_parent_as,
-			process_rename_clause_as,
 			process_rename_as,
 			process_id_as
 		end
@@ -26,19 +26,6 @@ inherit
 create
 	make_with_context
 
-feature -- Initialisation
-
-	make_with_context(a_context: ROUNDTRIP_CONTEXT)
-			-- Initialise and reset flags
-		require
-			a_context_not_void: a_context /= Void
-		do
-			context := a_context
-
-				-- reset flags
-			is_process_first_select := false
-		end
-
 feature -- Access
 
 	process_internal_conforming_parents(l_as: PARENT_LIST_AS) is
@@ -46,7 +33,7 @@ feature -- Access
 		do
 			is_process_first_select := true
 			if l_as /= Void then
-				safe_process (l_as)
+				Precursor (l_as)
 			else
 					-- inherit 'SCOOP_SEPARATE__ANY' if (conforming) parent list contains no elemets.
 				context.add_string ("%N%Ninherit%N%TSCOOP_SEPARATE__ANY")
@@ -62,19 +49,10 @@ feature -- Access
 			-- Process `l_as'
 		do
 			is_process_first_select := false
-			safe_process (l_as)
+			Precursor (l_as)
 		end
 
 feature {NONE} -- Visitor implementation
-
-	process_parent_list_as (l_as: PARENT_LIST_AS) is
-			-- Process `l_as'.
-		do
-			context.add_string ("%N%N")
-			last_index := l_as.start_position - 1
-
-			Precursor (l_as)
-		end
 
 	process_parent_as (l_as: PARENT_AS) is
 			-- Process `l_as'.
@@ -88,42 +66,32 @@ feature {NONE} -- Visitor implementation
 				last_index := l_as.type.start_position - 1
 				safe_process (l_as.type)
 
+				-- process internal renaming
 				safe_process (l_as.internal_renaming)
 				if parsed_class.is_expanded then
 					if l_as.internal_renaming = Void then
 						context.add_string ("%N%T%Trename")
 					end
-
 					-- add renaming of 'implementation_'
 					context.add_string ("%N%T%T%Timplementation_ as implementation_" + l_as.type.class_name.name.as_lower + "_")
 				end
 
-				-- process internal exports - TODO: only class and scoop class?
-				if l_as.internal_exports /= Void then
-					process_leading_leaves (l_as.internal_exports.clause_keyword_index)
-					context.add_string ("%N%T%Texport {ANY} all")
-
-					-- skip export tag
-					last_index := l_as.internal_exports.end_position
-				end
+				-- process internal exports
+				safe_process (l_as.internal_exports)
 
 				-- process internal undefining	
-				if l_as.internal_undefining /= Void then
-					last_index := l_as.internal_undefining.start_position
-					context.add_string ("%N%T%T")
-					safe_process (l_as.internal_undefining)
-				end
+				safe_process (l_as.internal_undefining)
 
 				-- process internal redefining
+				safe_process (l_as.internal_redefining)
 				if l_as.internal_redefining /= Void then
-					last_index := l_as.internal_redefining.start_position
-					safe_process (l_as.internal_redefining)
 					context.add_string (",")
 				else
 					context.add_string ("%N%T%Tredefine")
 				end
 				context.add_string ("%N%T%T%Timplementation_")
 
+				-- process internal selection
 				safe_process (l_as.internal_selecting)
 				if parsed_class.is_expanded and then is_process_first_select then
 					if l_as.internal_selecting = Void then
@@ -154,7 +122,7 @@ feature {NONE} -- Visitor implementation
 
 			create l_generics_visitor.make_with_context (context)
 			l_generics_visitor.setup (parsed_class, match_list, true, true)
-			l_generics_visitor.process_internal_generics (l_as.internal_generics)
+			l_generics_visitor.process_internal_generics (l_as.internal_generics, true, false)
 
 			safe_process (l_as.rcurly_symbol (match_list))
 		end
@@ -163,62 +131,64 @@ feature {NONE} -- Visitor implementation
 			-- Process `l_as'.
 		local
 			a_class: CLASS_AS
+			l_scoop_separate_str: STRING
 		do
+			create l_scoop_separate_str.make_from_string (" SCOOP_SEPARATE__")
+			process_leading_leaves (l_as.index)
+
 			if not is_basic_type (l_as.name) then
+				if is_process_export_clause then
+					-- print client and proxy class name when printing export clause
+					context.add_string (l_scoop_separate_str)
+					put_string (l_as)
+					context.add_string (", ")
+				else
 					-- add prefix if parent class is not expanded.
-				a_class := get_class_as_by_name (l_as.name)
-				if (a_class /= Void and then not a_class.is_expanded) then
-					context.add_string (" SCOOP_SEPARATE__")
+					a_class := get_class_as_by_name (l_as.name)
+					if (a_class /= Void and then not a_class.is_expanded) then
+						context.add_string (l_scoop_separate_str)
+					end
 				end
 			end
 
+			-- print id
 			put_string (l_as)
 			last_index := l_as.end_position
-		end
-
-	process_rename_clause_as (l_as: RENAME_CLAUSE_AS) is
-			-- Process `l_as'.
-		do
-			context.add_string ("%N%T%T")
-			safe_process (l_as.rename_keyword (match_list))
-			safe_process (l_as.content)
 		end
 
 	process_rename_as (l_as: RENAME_AS) is
 			-- Process `l_as'.
 		local
 			l_feature_name_visitor: SCOOP_FEATURE_NAME_VISITOR
-			l_feature_name: STRING
 		do
 			create l_feature_name_visitor.make
 			l_feature_name_visitor.setup (parsed_class, match_list, true, true)
 			last_index := l_as.start_position - 1
 
 				-- process old feature name
-			l_feature_name := l_feature_name_visitor.process_feature_name (l_as.old_name)
-			context.add_string ("%N%T%T%T" + l_feature_name + " ")
+			l_feature_name_visitor.process_feature_name (l_as.old_name)
+			context.add_string ("%N%T%T%T" + l_feature_name_visitor.get_feature_name + " ")
 
 				-- skip old name
 			last_index := l_as.as_keyword_index - 1
 			safe_process (l_as.as_keyword (match_list))
 
 				-- process new feature name
-			l_feature_name := l_feature_name_visitor.process_feature_name (l_as.new_name)
-			context.add_string (" " + l_feature_name)
+			l_feature_name_visitor.process_feature_name (l_as.new_name)
+			context.add_string (" " + l_feature_name_visitor.get_feature_name)
 		end
 
 	process_infix_prefix_as (l_as: INFIX_PREFIX_AS) is
 		local
 			l_feature_name_visitor: SCOOP_FEATURE_NAME_VISITOR
-			l_feature_name: STRING
 		do
 			create l_feature_name_visitor.make
 			l_feature_name_visitor.setup (parsed_class, match_list, true, true)
 			last_index := l_as.start_position - 1
 
 			safe_process (l_as.frozen_keyword (match_list))
-			l_feature_name := l_feature_name_visitor.process_infix_prefix (l_as)
-			context.add_string (" " + l_feature_name)
+			l_feature_name_visitor.process_infix_prefix (l_as)
+			context.add_string (" " + l_feature_name_visitor.get_feature_name)
 		end
 
 feature {NONE} -- Implementation

@@ -8,11 +8,8 @@ class
 	SCOOP_CLIENT_FEATURE_LR_VISITOR
 
 inherit
-	SCOOP_CONTEXT_AST_PRINTER
+	SCOOP_CLIENT_CONTEXT_AST_PRINTER
 		redefine
-			process_class_type_as,
-			process_generic_class_type_as,
-			process_named_tuple_type_as,
 			process_body_as,
 			process_routine_as,
 			process_id_as,
@@ -120,46 +117,6 @@ feature {NONE} -- Node implementation
 			end
 		end
 
-	process_class_type_as (l_as: CLASS_TYPE_AS) is
-		do
-			safe_process (l_as.lcurly_symbol (match_list))
-			safe_process (l_as.attachment_mark (match_list))
-			safe_process (l_as.expanded_keyword (match_list))
-			if l_as.is_separate then
-				context.add_string (" SCOOP_SEPARATE__")
-				last_index := l_as.class_name.start_position - 1
-			end
-			safe_process (l_as.class_name)
-			safe_process (l_as.rcurly_symbol (match_list))
-		end
-
-	process_generic_class_type_as (l_as: GENERIC_CLASS_TYPE_AS) is
-		do
-			safe_process (l_as.lcurly_symbol (match_list))
-			safe_process (l_as.attachment_mark (match_list))
-			safe_process (l_as.expanded_keyword (match_list))
-			if l_as.is_separate then
-				context.add_string (" SCOOP_SEPARATE__")
-				last_index := l_as.class_name.start_position - 1
-			end
-			safe_process (l_as.class_name)
-			safe_process (l_as.internal_generics)
-			safe_process (l_as.rcurly_symbol (match_list))
-		end
-
-	process_named_tuple_type_as (l_as: NAMED_TUPLE_TYPE_AS) is
-		do
-			safe_process (l_as.lcurly_symbol (match_list))
-			safe_process (l_as.attachment_mark (match_list))
-			if l_as.is_separate then
-				context.add_string (" SCOOP_SEPARATE__")
-				last_index := l_as.class_name.start_position - 1
-			end
-			safe_process (l_as.class_name)
-			safe_process (l_as.parameters)
-			safe_process (l_as.rcurly_symbol (match_list))
-		end
-
 	process_require_as (l_as: REQUIRE_AS) is
 		local
 			i: INTEGER
@@ -193,6 +150,7 @@ feature {NONE} -- Implementation
 	process_routine_as_function is
 			-- Adds body for routine body: function
 		local
+			is_set_prefix: BOOLEAN
 			l_class_c: CLASS_C
 			l_type_visitor: SCOOP_TYPE_VISITOR
 		do
@@ -200,13 +158,9 @@ feature {NONE} -- Implementation
 			context.add_string ("%N%T%Tlocal%N%T%T%Ta_function_to_evaluate: FUNCTION [SCOOP_SEPARATE_CLIENT, TUPLE, ")
 			create l_type_visitor
 			l_class_c := l_type_visitor.evaluate_class_from_type (fo.feature_as.body.type, class_c)
-			if l_type_visitor.is_separate
-			  and then not l_type_visitor.is_tuple_type or l_type_visitor.is_formal then
-				context.add_string (" " + "SCOOP_SEPARATE__")
-			else
-				context.add_string (" ")
-			end
-			context.add_string (l_class_c.name_in_upper)
+			context.add_string (" ")
+			is_set_prefix := l_type_visitor.is_separate and then not l_type_visitor.is_tuple_type or l_type_visitor.is_formal
+			process_class_name_str (l_class_c.name_in_upper, is_set_prefix, context, match_list)
 			context.add_string ("]")
 
 			-- add do keyword

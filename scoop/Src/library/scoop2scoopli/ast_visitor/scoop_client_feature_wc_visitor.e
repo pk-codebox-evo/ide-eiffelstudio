@@ -8,7 +8,7 @@ class
 	SCOOP_CLIENT_FEATURE_WC_VISITOR
 
 inherit
-	SCOOP_CONTEXT_AST_PRINTER
+	SCOOP_CLIENT_CONTEXT_AST_PRINTER
 		redefine
 			process_body_as,
 			process_tagged_as,

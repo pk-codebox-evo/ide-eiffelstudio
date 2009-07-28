@@ -10,6 +10,9 @@ class
 inherit
 	SCOOP_CONTEXT_AST_PRINTER
 		redefine
+			process_class_type_as,
+			process_generic_class_type_as,
+			process_named_tuple_type_as,
 			process_access_feat_as,
 			process_access_inv_as,
 			process_access_id_as,
@@ -19,6 +22,7 @@ inherit
 			process_nested_as,
 			process_nested_expr_as
 		end
+	SCOOP_CLASS_NAME
 
 feature -- Roundtrip: 'Current' as first argument in paramenter list
 
@@ -32,6 +36,57 @@ feature -- Roundtrip: 'Current' as first argument in paramenter list
 			end
 			safe_process (l_as.parameters)
 			safe_process (l_as.rparan_symbol (match_list))
+		end
+
+feature -- Roundtrip: process type expression
+
+	process_class_type_as (l_as: CLASS_TYPE_AS) is
+		do
+			safe_process (l_as.lcurly_symbol (match_list))
+			safe_process (l_as.attachment_mark (match_list))
+			safe_process (l_as.expanded_keyword (match_list))
+
+			-- skip separate keyword and processor tag
+			last_index := l_as.class_name.index - 1
+			context.add_string (" ")
+			-- process class name
+			process_class_name (l_as.class_name, l_as.is_separate, context, match_list)
+			last_index := l_as.class_name.index
+
+			safe_process (l_as.rcurly_symbol (match_list))
+		end
+
+	process_generic_class_type_as (l_as: GENERIC_CLASS_TYPE_AS) is
+		do
+			safe_process (l_as.lcurly_symbol (match_list))
+			safe_process (l_as.attachment_mark (match_list))
+			safe_process (l_as.expanded_keyword (match_list))
+
+			-- skip separate keyword and processor tag
+			last_index := l_as.class_name.index - 1
+			context.add_string (" ")
+			-- process class name
+			process_class_name (l_as.class_name, l_as.is_separate, context, match_list)
+			last_index := l_as.class_name.index
+
+			safe_process (l_as.internal_generics)
+			safe_process (l_as.rcurly_symbol (match_list))
+		end
+
+	process_named_tuple_type_as (l_as: NAMED_TUPLE_TYPE_AS) is
+		do
+			safe_process (l_as.lcurly_symbol (match_list))
+			safe_process (l_as.attachment_mark (match_list))
+
+			-- skip separate keyword and processor tag
+			last_index := l_as.class_name.index - 1
+			context.add_string (" ")
+			-- process class name
+			process_class_name (l_as.class_name, l_as.is_separate, context, match_list)
+			last_index := l_as.class_name.index
+
+			safe_process (l_as.parameters)
+			safe_process (l_as.rcurly_symbol (match_list))
 		end
 
 feature -- Roundtrip: process nodes, call expressions with internal parameters.

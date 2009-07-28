@@ -12,9 +12,11 @@ inherit
 		redefine
 			process_class_type_as,
 			process_generic_class_type_as,
-			process_named_tuple_type_as
+			process_named_tuple_type_as,
+			process_formal_dec_as
 		end
 	SHARED_SCOOP_WORKBENCH
+	SCOOP_CLASS_NAME
 
 create
 	make_with_context
@@ -31,30 +33,33 @@ feature -- Initialisation
 
 feature -- Access
 
-	process_internal_generics (l_as: TYPE_LIST_AS) is
+	process_internal_generics (l_as: TYPE_LIST_AS; set_prefix, without_generics: BOOLEAN) is
 			-- Process `l_as'.
 		do
-			is_set_prefix := true
+			is_set_prefix := set_prefix
+			is_print_without_constraints := without_generics
 			if l_as /= Void then
 				last_index := l_as.start_position - 1
 				safe_process (l_as)
 			end
 		end
 
-	process_class_internal_generics(l_as: EIFFEL_LIST [FORMAL_DEC_AS]) is
+	process_class_internal_generics(l_as: EIFFEL_LIST [FORMAL_DEC_AS]; set_prefix, without_generics: BOOLEAN) is
 			-- Process `l_as'.
 		do
-			is_set_prefix := true
+			is_set_prefix := set_prefix
+			is_print_without_constraints := without_generics
 			if l_as /= Void then
 				last_index := l_as.start_position - 1
 				safe_process (l_as)
 			end
 		end
 
-	process_type_internal_generics(l_as: TYPE_LIST_AS) is
+	process_type_internal_generics(l_as: TYPE_LIST_AS; set_prefix, without_generics: BOOLEAN) is
 			-- Process `l_as'.
 		do
-			is_set_prefix := false
+			is_set_prefix := set_prefix
+			is_print_without_constraints := without_generics
 			if l_as /= Void then
 				last_index := l_as.start_position - 1
 				safe_process (l_as)
@@ -64,14 +69,12 @@ feature -- Access
 feature {NONE} -- Visitor implementation
 
 	l_process_id_as (l_as: ID_AS; is_separate: BOOLEAN) is
-		local
-			l_class_name_visitor: SCOOP_CLASS_NAME_VISITOR
 		do
 			process_leading_leaves (l_as.index)
-
-			create l_class_name_visitor.make_with_context (context)
-			l_class_name_visitor.setup (parsed_class, match_list, true, true)
-			l_class_name_visitor.process_id (l_as, is_set_prefix)
+			process_class_name (l_as, is_set_prefix, context, match_list)
+			if l_as /= Void then
+				last_index := l_as.end_position
+			end
 		end
 
 	process_class_type_as (l_as: CLASS_TYPE_AS) is
@@ -115,7 +118,7 @@ feature {NONE} -- Visitor implementation
 
 			create l_generics_visitor.make_with_context (context)
 			l_generics_visitor.setup (parsed_class, match_list, true, true)
-			l_generics_visitor.process_internal_generics (l_as.internal_generics)
+			l_generics_visitor.process_internal_generics (l_as.internal_generics, is_set_prefix, is_print_without_constraints)
 
 			safe_process (l_as.rcurly_symbol (match_list))
 		end
@@ -139,10 +142,29 @@ feature {NONE} -- Visitor implementation
 			safe_process (l_as.rcurly_symbol (match_list))
 		end
 
+	process_formal_dec_as (l_as: FORMAL_DEC_AS) is
+		do
+			safe_process (l_as.formal)
+			if not is_print_without_constraints then
+				safe_process (l_as.constrain_symbol (match_list))
+				safe_process (l_as.constraints)
+				safe_process (l_as.create_keyword (match_list))
+				safe_process (l_as.creation_feature_list)
+				safe_process (l_as.end_keyword (match_list))
+			else
+				-- skip the constraints and creation part
+				last_index := l_as.end_position
+			end
+		end
+
 feature {NONE} -- Implementation
 
 	is_set_prefix: BOOLEAN
 			-- indicates if prefix should be printed or not.
+
+	is_print_without_constraints: BOOLEAN
+			-- Prints a 'FORMAL_DEC_AS' without constraints
+			-- necessary to create an attribute of a generic class type.
 
 invariant
 	invariant_clause: True -- Your invariant here

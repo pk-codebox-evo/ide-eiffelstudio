@@ -17,7 +17,7 @@ inherit
 create
 	make_with_context
 
-feature -- Initialisation
+feature {SCOOP_CLASS_NAME} -- Initialisation
 
 	make_with_context(a_context: ROUNDTRIP_CONTEXT)
 			-- Initialise and reset flags
@@ -25,9 +25,12 @@ feature -- Initialisation
 			a_context_not_void: a_context /= Void
 		do
 			context := a_context
+
+			-- create prefix string
+			create scoop_prefix.make_from_string ("SCOOP_SEPARATE__")
 		end
 
-feature -- Access
+feature {SCOOP_CLASS_NAME} -- Access
 
 	process_class_list_with_prefix (l_as: CLASS_LIST_AS; print_both: BOOLEAN) is
 			-- Process `l_as'.
@@ -49,13 +52,24 @@ feature -- Access
 			last_index := l_as.end_position
 		end
 
+	process_id_str (l_class_name: STRING; a_set_prefix: BOOLEAN) is
+			-- Process `l_as'.
+		do
+			if is_set_prefix and then scoop_classes.has (l_class_name.as_upper) then
+				context.add_string (scoop_prefix)
+			end
+			context.add_string (l_class_name)
+		end
+
 feature {NONE} -- Roundtrip: process nodes
 
 	process_id_as (l_as: ID_AS) is
 		do
-			Precursor (l_as)
+			process_leading_leaves (l_as.index)
+			last_index := l_as.index
+
 			if is_set_prefix and then scoop_classes.has (l_as.name.as_upper) then
-				context.add_string ("SCOOP_SEPARATE__")
+				context.add_string (scoop_prefix)
 				if is_print_both then
 					put_string (l_as)
 					context.add_string (", ")
@@ -71,5 +85,8 @@ feature {NONE} -- Implementation
 
 	is_set_prefix: BOOLEAN
 			-- indicates if prefix should be printed or not.
+
+	scoop_prefix: STRING
+			-- string that contains 'SCOOP_SEPARATE__'
 
 end
