@@ -685,7 +685,7 @@ feature {COMPILER_EXPORTER} -- Conformance
 	check_scoop_types : BOOLEAN is True
 
 
-	processor_tag : PROCESSOR_TAG_TYPE is
+	processor_tag : PROCESSOR_TAG_TYPE
 			-- constant processor tag for Integers
 		do
 			if proc_tag_t /= Void then
@@ -697,7 +697,7 @@ feature {COMPILER_EXPORTER} -- Conformance
 		end
 
 
-	scoop_conform_to (other : CL_TYPE_A) : BOOLEAN is
+	scoop_conform_to (other : CL_TYPE_A) : BOOLEAN
 			-- Conformance as according to the SCOOP type rules.
 			-- This is meant to be called within conform_to feature, after the
 			-- decision of inheritance, so that we implicitly have
