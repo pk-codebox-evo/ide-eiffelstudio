@@ -20,13 +20,6 @@ inherit
 			{NONE} all
 		end
 
-	CONF_ACCESS
-		undefine
-			default_create
-		end
-
-	COMPILER_EXPORTER
-
 create
 
 	make
