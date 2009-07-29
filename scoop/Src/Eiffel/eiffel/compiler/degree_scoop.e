@@ -12,13 +12,7 @@ inherit
 		redefine
 			make
 		end
-
 	SHARED_SERVER
-
-	SHARED_ERROR_HANDLER
-		export
-			{NONE} all
-		end
 
 create
 
