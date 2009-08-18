@@ -12,29 +12,20 @@ create
 
 feature -- Initialization
 
-	make (a_conf: like conf; a_proposer: like fix_proposer; an_error_handler: like error_handler)
+	make (a_conf: like conf; a_proposer: like fix_proposer)
 			-- initialize object
 		do
---		    test_suite := a_test_suite
 		    conf := a_conf
 		    fix_proposer := a_proposer
-		    error_handler := an_error_handler
 		end
 
 feature -- Access
-
---	test_suite: TEST_SUITE_S
---			-- associated test suite of this processor session
 
 	fix_proposer: AFX_FIX_PROPOSER
 			-- running fix proposer process
 
 	conf: AFX_FIX_PROPOSER_CONF_I
 			-- configuration of the session
-
-	error_handler: AFX_ERROR_PRINTER
-			-- error reporter
-
 
 ;note
 	copyright: "Copyright (c) 1984-2009, Eiffel Software"
