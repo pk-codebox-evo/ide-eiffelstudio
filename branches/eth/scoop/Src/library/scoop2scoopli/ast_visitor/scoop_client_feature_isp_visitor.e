@@ -61,7 +61,7 @@ feature -- Access
 			i: INTEGER
 		do
 			-- process internal arguments
-			process_formal_argument_list_with_prefix (fo.feature_as.body, "caller_: SCOOP_SEPARATE_TYPE")
+			process_formal_argument_list_with_prefix (feature_as.body, "caller_: SCOOP_SEPARATE_TYPE")
 
 			-- add 'is' keyword
 			context.add_string (" is")

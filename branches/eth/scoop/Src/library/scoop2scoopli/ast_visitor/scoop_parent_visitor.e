@@ -50,6 +50,13 @@ feature -- Access
 			end
 		end
 
+	get_last_index: INTEGER is
+			-- Returns the last processed index
+		do
+			Result := last_index
+		end
+
+
 feature {NONE} -- Visitor implementation
 
 	process_parent_list_as (l_as: PARENT_LIST_AS) is

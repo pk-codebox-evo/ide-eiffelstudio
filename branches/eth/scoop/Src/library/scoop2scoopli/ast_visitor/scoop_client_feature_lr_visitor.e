@@ -96,7 +96,7 @@ feature {NONE} -- Node implementation
 				last_index := l_as.internal_locals.end_position
 			end
 
-			if fo.feature_as.body.type /= Void then
+			if feature_as.body.type /= Void then
 				-- function
 				process_routine_as_function
 			else
@@ -157,7 +157,7 @@ feature {NONE} -- Implementation
 			-- add locals
 			context.add_string ("%N%T%Tlocal%N%T%T%Ta_function_to_evaluate: FUNCTION [SCOOP_SEPARATE_CLIENT, TUPLE, ")
 			create l_type_visitor
-			l_class_c := l_type_visitor.evaluate_class_from_type (fo.feature_as.body.type, class_c)
+			l_class_c := l_type_visitor.evaluate_class_from_type (feature_as.body.type, class_c)
 			context.add_string (" ")
 			is_set_prefix := l_type_visitor.is_separate and then not l_type_visitor.is_tuple_type or l_type_visitor.is_formal
 			process_class_name_str (l_class_c.name_in_upper, is_set_prefix, context, match_list)
@@ -168,9 +168,9 @@ feature {NONE} -- Implementation
 
 			-- create function
 			context.add_string ("%N%T%T%Ta_function_to_evaluate := agent " + fo.feature_name + "_scoop_separate_" + parsed_class.class_name.name.as_lower + "_enclosing_routine ")
-			if fo.feature_as.body.internal_arguments /= Void then
+			if feature_as.body.internal_arguments /= Void then
 				context.add_string ("(")
-				process_internal_arguments_as_actual_argument_list(fo.feature_as.body.internal_arguments)
+				process_internal_arguments_as_actual_argument_list(feature_as.body.internal_arguments)
 				context.add_string (")")
 			end
 
@@ -179,9 +179,9 @@ feature {NONE} -- Implementation
 			process_separate_internal_arguments_as_actual_argument_list(true)
 			context.add_string ("]")
 			context.add_string (", a_function_to_evaluate,%N%T%T%T%Tagent "+ fo.feature_name.as_lower + "_scoop_separate_" + class_c.name.as_lower + "_wait_condition")
-			if fo.feature_as.body.internal_arguments /= Void then
+			if feature_as.body.internal_arguments /= Void then
 				context.add_string (" (")
-				process_internal_arguments_as_actual_argument_list(fo.feature_as.body.internal_arguments)
+				process_internal_arguments_as_actual_argument_list(feature_as.body.internal_arguments)
 				context.add_string (")")
 			end
 
@@ -190,9 +190,9 @@ feature {NONE} -- Implementation
 				-- add agent calling 'agent f_scoop_separate_C_separate_postcondition(<formal argument list>)'
 				context.add_string (",%N%T%T%T%Tagent " + fo.feature_name + "_scoop_separate_")
 				context.add_string (class_c.name.as_lower + "_separate_postcondition")
-				if fo.feature_as.body.internal_arguments /= Void then
+				if feature_as.body.internal_arguments /= Void then
 					context.add_string (" (")
-					process_internal_arguments_as_actual_argument_list(fo.feature_as.body.internal_arguments)
+					process_internal_arguments_as_actual_argument_list(feature_as.body.internal_arguments)
 					context.add_string (")")
 				end
 			else
@@ -205,9 +205,9 @@ feature {NONE} -- Implementation
 				-- add agent calling 'agent f_scoop_separate_C_non_separate_postcondition(<formal argument list>)'
 				context.add_string (",%N%T%T%T%Tagent " + fo.feature_name + "_scoop_separate_")
 				context.add_string (class_c.name.as_lower + "_non_separate_postcondition")
-				if fo.feature_as.body.internal_arguments /= Void then
+				if feature_as.body.internal_arguments /= Void then
 					context.add_string (" (")
-					process_internal_arguments_as_actual_argument_list(fo.feature_as.body.internal_arguments)
+					process_internal_arguments_as_actual_argument_list(feature_as.body.internal_arguments)
 					context.add_string (")")
 				end
 			else
@@ -235,15 +235,15 @@ feature {NONE} -- Implementation
 			context.add_string ("%N%T%T%Tseparate_execute_routine ([")
 			process_separate_internal_arguments_as_actual_argument_list(true)
 			context.add_string ("], agent " + fo.feature_name.as_lower + "_scoop_separate_" + class_c.name.as_lower + "_enclosing_routine ")
-			if fo.feature_as.body.internal_arguments /= Void then
+			if feature_as.body.internal_arguments /= Void then
 				context.add_string ("(")
-				process_internal_arguments_as_actual_argument_list(fo.feature_as.body.internal_arguments)
+				process_internal_arguments_as_actual_argument_list(feature_as.body.internal_arguments)
 				context.add_string (")")
 			end
 			context.add_string (",%N%T%T%T%Tagent " + fo.feature_name.as_lower + "_scoop_separate_" + class_c.name.as_lower + "_wait_condition ")
-						if fo.feature_as.body.internal_arguments /= Void then
+						if feature_as.body.internal_arguments /= Void then
 				context.add_string ("(")
-				process_internal_arguments_as_actual_argument_list(fo.feature_as.body.internal_arguments)
+				process_internal_arguments_as_actual_argument_list(feature_as.body.internal_arguments)
 				context.add_string (")")
 			end
 
@@ -252,9 +252,9 @@ feature {NONE} -- Implementation
 				-- add agent calling 'agent f_scoop_separate_C_separate_postcondition(<formal argument list>)'
 				context.add_string (",%N%T%T%T%Tagent " + fo.feature_name + "_scoop_separate_")
 				context.add_string (class_c.name.as_lower + "_separate_postcondition")
-				if fo.feature_as.body.internal_arguments /= Void then
+				if feature_as.body.internal_arguments /= Void then
 					context.add_string (" (")
-					process_internal_arguments_as_actual_argument_list(fo.feature_as.body.internal_arguments)
+					process_internal_arguments_as_actual_argument_list(feature_as.body.internal_arguments)
 					context.add_string (")")
 				end
 			else
@@ -267,9 +267,9 @@ feature {NONE} -- Implementation
 				-- add agent calling 'agent f_scoop_separate_C_non_separate_postcondition(<formal argument list>)'
 				context.add_string (",%N%T%T%T%Tagent " + fo.feature_name + "_scoop_separate_")
 				context.add_string (class_c.name.as_lower + "_non_separate_postcondition")
-				if fo.feature_as.body.internal_arguments /= Void then
+				if feature_as.body.internal_arguments /= Void then
 					context.add_string (" (")
-					process_internal_arguments_as_actual_argument_list(fo.feature_as.body.internal_arguments)
+					process_internal_arguments_as_actual_argument_list(feature_as.body.internal_arguments)
 					context.add_string (")")
 				end
 			else

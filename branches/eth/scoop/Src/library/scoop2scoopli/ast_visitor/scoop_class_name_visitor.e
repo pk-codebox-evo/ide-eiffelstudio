@@ -9,10 +9,16 @@ class
 
 inherit
 	SCOOP_CONTEXT_AST_PRINTER
+		export
+			{NONE} all
+			{ANY} setup, set_context
 		redefine
 			process_id_as
 		end
-	SHARED_SCOOP_WORKBENCH
+	SCOOP_WORKBENCH
+		export
+			{NONE} all
+		end
 
 create
 	make_with_context
@@ -55,10 +61,17 @@ feature {SCOOP_CLASS_NAME} -- Access
 	process_id_str (l_class_name: STRING; a_set_prefix: BOOLEAN) is
 			-- Process `l_as'.
 		do
-			if is_set_prefix and then scoop_classes.has (l_class_name.as_upper) then
-				context.add_string (scoop_prefix)
-			end
-			context.add_string (l_class_name)
+--			if l_class_name.as_upper.is_equal ("ANY") then
+--				context.add_string ("SCOOP_SEPARATE__ANY")
+--			else
+				if is_set_prefix and then scoop_classes.has (l_class_name.as_upper) then
+					context.add_string (scoop_prefix)
+				end
+				context.add_string (l_class_name)
+				if l_class_name.is_equal ("inherit") then
+					is_set_prefix := true
+				end
+--			end
 		end
 
 feature {NONE} -- Roundtrip: process nodes
@@ -68,14 +81,21 @@ feature {NONE} -- Roundtrip: process nodes
 			process_leading_leaves (l_as.index)
 			last_index := l_as.index
 
-			if is_set_prefix and then scoop_classes.has (l_as.name.as_upper) then
-				context.add_string (scoop_prefix)
-				if is_print_both then
-					put_string (l_as)
-					context.add_string (", ")
+--			if l_as.name.as_upper.is_equal ("ANY") then
+--				context.add_string ("SCOOP_SEPARATE__ANY")
+--			else
+				if is_set_prefix and then scoop_classes.has (l_as.name.as_upper) then
+					context.add_string (scoop_prefix)
+					if is_print_both then
+						put_string (l_as)
+						context.add_string (", ")
+					end
 				end
-			end
-			put_string (l_as)
+				put_string (l_as)
+				if l_as.name.is_equal ("inherit") then
+					is_set_prefix := true
+				end
+--			end
 		end
 
 feature {NONE} -- Implementation

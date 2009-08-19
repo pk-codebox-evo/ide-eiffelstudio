@@ -20,7 +20,7 @@ feature -- Access
 
 	process_arguments (l_as: FORMAL_ARGU_DEC_LIST_AS): SCOOP_CLIENT_ARGUMENT_OBJECT is
 			-- Process internal argument list.
-			-- Save separate types declarateions in a list.
+			-- Save separate types declarations in a list.
 		do
 			create arguments.make
 			safe_process (l_as)

@@ -35,8 +35,8 @@ feature -- Access
 	process_feature_body (l_as: BODY_AS; l_fo: SCOOP_CLIENT_FEATURE_OBJECT) is
 			-- Process `l_as': the locking requester to the original feature.
 		require
+			feature_as_not_void: feature_as /= Void
 			l_fo_arguments_not_void: l_fo.arguments /= Void
-			l_fo_feature_as_not_void: l_fo.feature_as /= Void
 			l_fo_feature_name_not_void: l_fo.feature_name /= Void
 		do
 			fo := l_fo

@@ -21,16 +21,16 @@ feature -- Feature access
 			feature_name_impl := l_feature_name
 		end
 
-	feature_as: FEATURE_AS is
-			-- getter for 'feature_as_impl'
+	feature_declaration_name: STRING is
+			-- getter for 'feature_declaration_name_impl'
 		do
-			Result := feature_as_impl
+			Result := feature_declaration_name_impl
 		end
 
-	set_feature_as (l_feature_as: FEATURE_AS) is
-			-- setter for 'feature_as_impl'
+	set_feature_declaration_name (l_feature_declaration_name: STRING) is
+			-- setter for 'feature_declaration_name_impl'
 		do
-			feature_as_impl := l_feature_as
+			feature_declaration_name_impl := l_feature_declaration_name
 		end
 
 	preconditions: SCOOP_CLIENT_PRECONDITIONS is
@@ -76,6 +76,10 @@ feature {NONE} -- Implementation
 
 	feature_name_impl: STRING
 		-- name of current feature
+
+	feature_declaration_name_impl: STRING
+		-- name of current feature with alias
+		-- or list of infix and noninfix name as string
 
 	feature_as_impl: FEATURE_AS
 		-- reference to current feature_as

@@ -8,7 +8,7 @@ class
 	SCOOP_CLASS_NAME
 
 inherit
-	SHARED_SCOOP_WORKBENCH
+	SCOOP_WORKBENCH
 
 feature -- Access
 

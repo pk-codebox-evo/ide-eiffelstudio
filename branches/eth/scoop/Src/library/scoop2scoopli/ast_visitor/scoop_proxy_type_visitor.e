@@ -15,7 +15,6 @@ inherit
 			process_named_tuple_type_as,
 			process_like_cur_as
 		end
-
 	SCOOP_CLASS_NAME
 
 feature -- Initialisation

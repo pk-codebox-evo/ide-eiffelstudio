@@ -10,6 +10,7 @@ class
 inherit
 	AST_ROUNDTRIP_ITERATOR
 		redefine
+			process_infix_prefix_as,
 			process_keyword_as,
 			process_symbol_as,
 			process_bool_as,
@@ -31,9 +32,30 @@ inherit
 			reset,
 			process_none_id_as
 		end
-	SHARED_SCOOP_WORKBENCH
+	SCOOP_WORKBENCH
 
-feature -- Roundtrip: process leaf
+feature -- Basic SCOOP changes
+
+	process_infix_prefix_as (l_as: INFIX_PREFIX_AS) is
+		local
+			l_feature_name_visitor: SCOOP_FEATURE_NAME_VISITOR
+		do
+			create l_feature_name_visitor.make
+			l_feature_name_visitor.setup (parsed_class, match_list, true, true)
+			last_index := l_as.start_position - 1
+
+			-- process INFIX_PREFIX_AS node
+			if l_as.frozen_keyword_index > 0 then
+				safe_process (l_as.frozen_keyword (match_list))
+			else
+				process_leading_leaves (l_as.infix_prefix_keyword_index)
+			end
+			l_feature_name_visitor.process_infix_prefix (l_as)
+			context.add_string (" " + l_feature_name_visitor.get_feature_name)
+			last_index := l_as.alias_name.index
+		end
+
+feature -- Roundtrip: printing
 
 	process_break_as (l_as: BREAK_AS) is
 			-- Process `l_as'.
