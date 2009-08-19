@@ -14,7 +14,8 @@ inherit
 		redefine
 			process_infix_prefix_as,
 			process_keyword_as,
-			process_feat_name_id_as
+			process_feat_name_id_as,
+			process_feature_name_alias_as
 		end
 
 	SCOOP_INFIX_PREFIX
@@ -32,14 +33,57 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	process_feature_name (a_feature_name: FEATURE_NAME) is
+	process_feature_name (a_feature_name: FEATURE_NAME; l_is_with_alias: BOOLEAN) is
 			-- Given a FEATURE_NAME node, try to evaluate the feature name.
 		require
 			a_feature_name_not_void: a_feature_name /= Void
 		do
-			reset_context
-			last_index := a_feature_name.start_position
+			reset_visitor (a_feature_name.start_position)
+
+			-- set flag
+			is_with_alias := l_is_with_alias
+
+			-- process node
 			safe_process (a_feature_name)
+		end
+
+	process_original_feature_name (a_feature_name: FEATURE_NAME; l_is_with_alias: BOOLEAN) is
+			-- Given a FEATURE_NAME node, try to evaluate the feature name.
+		require
+			a_feature_name_not_void: a_feature_name /= Void
+		do
+			reset_visitor (a_feature_name.start_position)
+
+			-- set flag
+			is_with_alias := l_is_with_alias
+			is_without_infix_replacement := true
+
+			-- process node
+			safe_process (a_feature_name)
+
+			is_without_infix_replacement := false
+		end
+
+	process_feature_declaration_name (a_feature_name: FEATURE_NAME) is
+			-- If `a_feature_name' is containing a INFIX_PREFIX_AS node,
+			-- return a list consisting of the non-infix and the infix version of the name.
+		require
+			a_feature_name_not_void: a_feature_name /= Void
+		do
+			reset_visitor (a_feature_name.start_position)
+
+			-- process it as in the original code
+			is_processing_declaration := true
+			safe_process (a_feature_name)
+			is_processing_declaration := false
+
+			if has_processed_infix_prefix_node then
+				context.add_string (", ")
+				last_index := a_feature_name.start_position
+
+				-- process it now infix notation
+				safe_process (a_feature_name)
+			end
 		end
 
 	process_infix_prefix (l_as: INFIX_PREFIX_AS) is
@@ -47,8 +91,9 @@ feature -- Access
 		require
 			l_as_not_void: l_as /= Void
 		do
-			reset_context
-			last_index := l_as.start_position
+			reset_visitor (l_as.start_position)
+
+			-- process node
 			safe_process (l_as)
 		end
 
@@ -57,22 +102,93 @@ feature {NONE} -- Visitor implementation
 	process_keyword_as (l_as: KEYWORD_AS) is
 			-- Process `l_as'.
 		do
-			if l_as.is_prefix_keyword or l_as.is_infix_keyword then
+			if (l_as.is_prefix_keyword or l_as.is_infix_keyword)
+				and is_without_infix_replacement then
 				Precursor (l_as)
-				context.add_string ("_infix")
+			elseif l_as.is_prefix_keyword and not is_processing_declaration then
+				context.add_string ("prefix__")
+			elseif l_as.is_infix_keyword and not is_processing_declaration then
+				context.add_string ("infix__")
+			else
+				Precursor (l_as)
 			end
 		end
 
 	process_feat_name_id_as (l_as: FEAT_NAME_ID_AS) is
 		do
-			-- only process name without frozen keyword
+			-- skip frozen keyword
+			if l_as.is_frozen then
+				last_index := l_as.frozen_keyword_index
+			end
+
 			safe_process (l_as.feature_name)
 		end
 
 	process_infix_prefix_as (l_as: INFIX_PREFIX_AS) is
 		do
+			-- skip frozen keyword
+			if l_as.is_frozen then
+				last_index := l_as.frozen_keyword_index
+			end
+
 			safe_process (l_as.infix_prefix_keyword (match_list))
-			context.add_string (non_infix_text (l_as.alias_name.value))
+
+			if is_processing_declaration or is_without_infix_replacement then
+				-- original version
+				safe_process (l_as.alias_name)
+				has_processed_infix_prefix_node := true
+			else
+				-- non-infix/prefix notation
+				context.add_string (non_infix_text (l_as.alias_name.value))
+			end
 		end
+
+	process_feature_name_alias_as (l_as: FEATURE_NAME_ALIAS_AS) is
+		do
+			-- skip frozen keyword
+			if l_as.is_frozen then
+				last_index := l_as.frozen_keyword_index
+			end
+
+			safe_process (l_as.feature_name)
+			if is_with_alias and then l_as.alias_name /= Void then
+				safe_process (l_as.alias_keyword (match_list))
+				safe_process (l_as.alias_name)
+				if l_as.has_convert_mark then
+					safe_process (l_as.convert_keyword (match_list))
+				end
+			end
+		end
+
+feature {NONE} -- Implementation
+
+	reset_visitor (a_start_position: INTEGER) is
+			-- resets the processed attributes
+		do
+			-- reset context
+			reset_context
+
+			-- reset some flags
+			is_with_alias := false
+			has_processed_infix_prefix_node := false
+
+			-- set start position index
+			last_index := a_start_position
+		end
+
+feature {NONE} -- Implementation
+
+	is_with_alias: BOOLEAN
+			-- process the actual node with or without alias name
+
+	is_without_infix_replacement: BOOLEAN
+			-- process the acutal node without replaceing infix notations
+
+	is_processing_declaration: BOOLEAN
+			-- processes the actual node as declaration to return
+			-- the infix and the non-infix version of the name.
+
+	has_processed_infix_prefix_node: BOOLEAN
+			-- indicates that on processing declaration a infix or prefix node was processed
 
 end

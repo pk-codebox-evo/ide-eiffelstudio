@@ -33,7 +33,7 @@ feature {NONE} -- Roundtrip: process nodes
 			safe_process (l_as.like_keyword (match_list))
 
 			-- print 'implementation' instead of 'current'
-			context.add_string ("implementation_")
+			context.add_string (" implementation_")
 			last_index := l_as.current_keyword.end_position
 
 			-- process rcurly symbol

@@ -32,8 +32,10 @@
 			<file_rule>
 				<exclude>^/support$</exclude>
 			</file_rule>
-			<cluster name="support" location="$EIFFEL_SRC\library\scoop2scoopli\support\">
-			</cluster>
+			<file_rule>
+				<exclude>^/scoopli_stub$</exclude>
+			</file_rule>
+			<cluster name="support" location="$EIFFEL_SRC\library\scoop2scoopli\support\"/>
 		</cluster>
 	</target>
 </system>

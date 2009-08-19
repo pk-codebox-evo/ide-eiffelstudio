@@ -63,7 +63,7 @@ feature {NONE} -- Visitor implementation
 
 					-- create feature object
 				create l_feature_object
-				l_feature_object.set_feature_as (l_as)
+				set_feature_object (l_feature_object)
 
 					-- create feature name visitor
 				create l_feature_name_visitor.make
@@ -96,8 +96,10 @@ feature {NONE} -- Visitor implementation
 					end
 
 					-- process name
-					l_feature_name_visitor.process_feature_name (l_as.feature_names.i_th (i))
+					l_feature_name_visitor.process_feature_name (l_as.feature_names.i_th (i), false)
 					l_feature_object.set_feature_name (l_feature_name_visitor.get_feature_name)
+					l_feature_name_visitor.process_feature_declaration_name (l_as.feature_names.i_th (i))
+					l_feature_object.set_feature_declaration_name (l_feature_name_visitor.get_feature_name)
 
 					if is_separate then
 
@@ -159,8 +161,9 @@ feature {NONE} -- Visitor implementation
 						if l_feature_object.is_feature_frozen then
 							context.add_string ("frozen ")
 						end
-						context.add_string (l_feature_object.feature_name + " ")
+						context.add_string (l_feature_object.feature_declaration_name + " ")
 						last_index := l_as.body.start_position - 1
+
 						safe_process (l_as.body)
 					end
 
@@ -168,6 +171,9 @@ feature {NONE} -- Visitor implementation
 				end
 
 			end
+
+			-- invalidate workbench access
+			set_current_feature_as_void
 		end
 
 	process_keyword_as (l_as: KEYWORD_AS) is
@@ -226,4 +232,5 @@ feature {NONE} -- Implementation
 				i := i + 1
 			end
 		end
+
 end

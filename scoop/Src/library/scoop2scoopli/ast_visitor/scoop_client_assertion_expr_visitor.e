@@ -31,7 +31,7 @@ inherit
 		export
 			{NONE} all
 		end
-	SHARED_SCOOP_WORKBENCH
+	SCOOP_WORKBENCH
 
 feature -- Initialisation
 

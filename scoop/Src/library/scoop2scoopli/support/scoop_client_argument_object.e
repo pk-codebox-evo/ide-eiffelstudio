@@ -64,10 +64,10 @@ feature -- Access
 			Result := found
 		end
 
-	is_separate_argument (a_feature_name: STRING): BOOLEAN is
+	is_separate_argument (a_name: STRING): BOOLEAN is
 			-- returns true if separate argument list contains the feature name
 		require
-			a_feature_name_is_not_void: a_feature_name /= Void
+			a_name_is_not_void: a_name /= Void
 		local
 			i, j: INTEGER
 			found: BOOLEAN
@@ -83,7 +83,7 @@ feature -- Access
 				until
 					j > separate_arguments.i_th (i).id_list.count
 				loop
-					if separate_arguments.i_th (i).item_name (j).is_equal (a_feature_name) then
+					if separate_arguments.i_th (i).item_name (j).is_equal (a_name) then
 						found := true
 					end
 					j := j + 1
@@ -226,6 +226,27 @@ feature -- Access
 			-- returns 'has_counted_separate arguments
 		do
 			Result := has_counted_separate_arguments
+		end
+
+	has (a_name: STRING): BOOLEAN is
+			-- returns true if an argument list contains `a_name'.
+		require
+			a_name_is_not_void: a_name /= Void
+		do
+			Result := is_non_separate_argument (a_name) or is_separate_argument (a_name)
+		end
+
+	get_type_by_name (a_name: STRING): TYPE_AS is
+			-- returns the type of `a_name'.
+		require
+			a_name_not_void: a_name /= Void
+		local
+			l_type_dec_as: TYPE_DEC_AS
+		do
+			l_type_dec_as := get_argument_by_name (a_name)
+			if l_type_dec_as /= Void then
+				Result := l_type_dec_as.type
+			end
 		end
 
 feature -- Access to lists

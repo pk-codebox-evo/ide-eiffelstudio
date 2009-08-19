@@ -15,7 +15,7 @@ inherit
 			process_formal_argu_dec_list_as,
 			process_type_dec_as
 		end
-	SHARED_SCOOP_WORKBENCH
+	SCOOP_WORKBENCH
 
 create
 	make_with_context

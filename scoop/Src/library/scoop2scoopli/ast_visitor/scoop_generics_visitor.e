@@ -13,9 +13,10 @@ inherit
 			process_class_type_as,
 			process_generic_class_type_as,
 			process_named_tuple_type_as,
-			process_formal_dec_as
+			process_formal_dec_as,
+			process_id_as
 		end
-	SHARED_SCOOP_WORKBENCH
+	SCOOP_WORKBENCH
 	SCOOP_CLASS_NAME
 
 create
@@ -33,11 +34,11 @@ feature -- Initialisation
 
 feature -- Access
 
-	process_internal_generics (l_as: TYPE_LIST_AS; set_prefix, without_generics: BOOLEAN) is
+	process_internal_generics (l_as: TYPE_LIST_AS; set_prefix, without_constraints: BOOLEAN) is
 			-- Process `l_as'.
 		do
 			is_set_prefix := set_prefix
-			is_print_without_constraints := without_generics
+			is_print_without_constraints := without_constraints
 			if l_as /= Void then
 				last_index := l_as.start_position - 1
 				safe_process (l_as)
@@ -66,14 +67,34 @@ feature -- Access
 			end
 		end
 
+	get_last_index: INTEGER is
+			-- Returns the last processed index
+		do
+			Result := last_index
+		ensure
+			valid_index: last_index > 0
+		end
+
+
 feature {NONE} -- Visitor implementation
+
+	process_id_as (l_as: ID_AS) is
+		do
+			process_leading_leaves (l_as.index)
+	--		process_class_name (l_as, is_set_prefix, context, match_list)
+			process_class_name (l_as, false, context, match_list)
+			if l_as /= Void then
+				last_index := l_as.index
+			end
+		end
 
 	l_process_id_as (l_as: ID_AS; is_separate: BOOLEAN) is
 		do
 			process_leading_leaves (l_as.index)
-			process_class_name (l_as, is_set_prefix, context, match_list)
+	--		process_class_name (l_as, is_set_prefix, context, match_list)
+			process_class_name (l_as, false, context, match_list)
 			if l_as /= Void then
-				last_index := l_as.end_position
+				last_index := l_as.index
 			end
 		end
 
@@ -88,11 +109,11 @@ feature {NONE} -- Visitor implementation
 
 			safe_process (l_as.expanded_keyword (match_list))
 
-			if l_as.is_separate then
-				l_process_id_as (l_as.class_name, true)
-			else
+		--	if l_as.is_separate then
+		--		l_process_id_as (l_as.class_name, true)
+		--	else
 				l_process_id_as (l_as.class_name, false)
-			end
+		--	end
 
 			safe_process (l_as.rcurly_symbol (match_list))
 		end
@@ -110,15 +131,19 @@ feature {NONE} -- Visitor implementation
 
 			safe_process (l_as.expanded_keyword (match_list))
 
-			if l_as.is_separate then
-				l_process_id_as (l_as.class_name, true)
-			else
+	--		if l_as.is_separate then
+	--			l_process_id_as (l_as.class_name, true)
+	--		else
 				l_process_id_as (l_as.class_name, false)
-			end
+	--		end
 
-			create l_generics_visitor.make_with_context (context)
-			l_generics_visitor.setup (parsed_class, match_list, true, true)
-			l_generics_visitor.process_internal_generics (l_as.internal_generics, is_set_prefix, is_print_without_constraints)
+			if l_as.internal_generics /= Void then
+				context.add_string (" ")
+				create l_generics_visitor.make_with_context (context)
+				l_generics_visitor.setup (parsed_class, match_list, true, true)
+				l_generics_visitor.process_internal_generics (l_as.internal_generics, is_set_prefix, is_print_without_constraints)
+				last_index := l_generics_visitor.get_last_index
+			end
 
 			safe_process (l_as.rcurly_symbol (match_list))
 		end
@@ -132,11 +157,11 @@ feature {NONE} -- Visitor implementation
 				safe_process (l_as.attachment_mark (match_list))
 			end
 
-			if l_as.is_separate then
-				l_process_id_as (l_as.class_name, true)
-			else
+		--	if l_as.is_separate then
+		--		l_process_id_as (l_as.class_name, true)
+		--	else
 				l_process_id_as (l_as.class_name, false)
-			end
+		--	end
 
 			safe_process (l_as.parameters)
 			safe_process (l_as.rcurly_symbol (match_list))
@@ -153,7 +178,9 @@ feature {NONE} -- Visitor implementation
 				safe_process (l_as.end_keyword (match_list))
 			else
 				-- skip the constraints and creation part
-				last_index := l_as.end_position
+				if l_as.has_constraint then
+					last_index := l_as.end_position
+				end
 			end
 		end
 

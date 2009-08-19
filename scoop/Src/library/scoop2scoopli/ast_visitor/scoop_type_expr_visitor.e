@@ -13,17 +13,19 @@ inherit
 			process_id_as,
 			process_class_type_as,
 			process_generic_class_type_as,
-			process_named_tuple_type_as
+			process_named_tuple_type_as,
+			process_like_id_as,
+			process_formal_as
 		end
-	SHARED_SCOOP_WORKBENCH
+	SCOOP_WORKBENCH
 
 feature -- Access
 
-	evaluate_type_from_expr (an_expr: EXPR_AS; a_feature_as: FEATURE_AS; a_base_class: CLASS_C) is
+	evaluate_type_from_expr (an_expr: EXPR_AS; a_base_class: CLASS_C) is
 			-- Given a EXPR_AS node, get the is_separate information of the evaluated expression
 		require
+			feature_as_not_void: feature_as /= Void
 			an_expression_not_void: an_expr /= Void
-			a_feature_as_not_void: a_feature_as /= Void
 			a_base_class_not_void: a_base_class /= Void
 		local
 			routine_as: ROUTINE_AS
@@ -32,11 +34,11 @@ feature -- Access
 			base_class := a_base_class
 
 			-- get internal arguments and internal locals
-			if a_feature_as.body /= Void then
+			if feature_as.body /= Void then
 
-				internal_arguments := a_feature_as.body.internal_arguments
+				internal_arguments := feature_as.body.internal_arguments
 
-				routine_as ?= a_feature_as.body.content
+				routine_as ?= feature_as.body.content
 				if routine_as /= Void then
 					internal_locals := routine_as.internal_locals
 				end
@@ -50,10 +52,13 @@ feature -- Access
 			Result := new_base_class
 		end
 
-	evaluate_type_from_type_as (a_type: TYPE_AS) is
+	evaluate_type_from_type_as (a_type: TYPE_AS; a_base_class: CLASS_C) is
 			-- Given a TYPE_AS node, get the is_separate information from the declaration
+		require
+			a_base_class_not_void: a_base_class /= Void
 		do
 			is_last_type_separate := false
+			base_class := a_base_class
 			safe_process (a_type)
 		end
 
@@ -66,7 +71,7 @@ feature {NONE} -- id_as type evaluation
 			l_argument_visitor: SCOOP_CLIENT_ARGUMENT_VISITOR
 		do
 			debug ("SCOOP_CLIENT_TYPE_EXT")
-			io.error.put_string ("%NXXX TE_V: id[" + l_as.name + "]%T ")
+				io.error.put_string ("%NXXX TE_V: id[" + l_as.name + "]%T ")
 			end
 
 			if base_class.feature_table.has (l_as.name) and then
@@ -76,13 +81,13 @@ feature {NONE} -- id_as type evaluation
 				new_base_class := base_class.feature_table.item (l_as.name).type.associated_class
 				--new_base_class := get_class_by_name(l_new_type_name)
 				debug ("SCOOP_CLIENT_TYPE_EXT")
-				io.error.put_string ("%TFeat.Tab. ")
+					io.error.put_string ("%TFeat.Tab. ")
 				end
 				is_last_type_separate := base_class.feature_table.item (l_as.name).type.is_separate
 			elseif internal_locals /= Void and then has_internal_local (l_as.name) then
 				-- id is defined in the locals
 				debug ("SCOOP_CLIENT_TYPE_EXT")
-				io.error.put_string ("%Tlocals")
+					io.error.put_string ("%Tlocals")
 				end
 				is_last_type_separate := is_internal_local_separate (l_as.name)
 				l_new_type := get_internal_local_type (l_as.name)
@@ -93,7 +98,7 @@ feature {NONE} -- id_as type evaluation
 				l_argument_object := l_argument_visitor.process_arguments (internal_arguments)
 				if l_argument_object.is_separate_argument (l_as.name) then
 					debug ("SCOOP_CLIENT_TYPE_EXT")
-					io.error.put_string ("%Tint.arg.")
+						io.error.put_string ("%Tint.arg.")
 					end
 					is_last_type_separate := true
 					l_new_type := l_argument_object.get_argument_by_name (l_as.name).type
@@ -129,9 +134,25 @@ feature {NONE} -- Visitor implementation: type_as evaluation
 		end
 
 	process_named_tuple_type_as (l_as: NAMED_TUPLE_TYPE_AS) is
+		-- Process `l_as'. Take only 'is_separate' information.
+		-- We are not interested in the TUPLE parameter types.
 		do
 			if l_as.is_separate then
 				is_last_type_separate := true
+			end
+		end
+
+	process_formal_as (l_as: FORMAL_AS) is
+		do
+			-- we do not need to process `l_as', as it is just a formal generic parameter
+		end
+
+	process_like_id_as (l_as: LIKE_ID_AS) is
+			-- Process `l_as'. Take class the LIKE_ID_AS type.
+		do
+			if base_class.feature_table.has (l_as.anchor.name.as_lower) then
+				new_base_class := base_class.feature_table.item (l_as.anchor.name.as_lower).type.associated_class
+				is_last_type_separate := base_class.feature_table.item (l_as.anchor.name.as_lower).type.is_separate
 			end
 		end
 
@@ -197,7 +218,7 @@ feature {NONE} -- Implementation, internal locals
 						if l_local.item_name (j).is_equal (a_name) then
 							create l_type_visitor
 							l_type_visitor.setup (parsed_class, match_list, true, true)
-							l_type_visitor.evaluate_type_from_type_as (l_local.type)
+							l_type_visitor.evaluate_type_from_type_as (l_local.type, class_c)
 							Result := l_type_visitor.is_last_type_separate
 						end
 						j := j + 1

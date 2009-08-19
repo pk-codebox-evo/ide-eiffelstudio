@@ -12,33 +12,22 @@ inherit
 		redefine
 			make
 		end
+
 	SHARED_SERVER
 
-create
+	SCOOP_BASIC_TYPE
 
+	SCOOP_WORKBENCH
+
+create
 	make
 
 feature {NONE} -- Initialisation
 
 	make
 			-- Create new degree SCOOP
-		local
-			tmp_system: SYSTEM_I
-			tmp_worbench: SCOOP_WORKBENCH
-			l_shared_scoop_workbench: SHARED_SCOOP_WORKBENCH
 		do
 			Precursor
-
-			-- create a scoop workbench
-			create scoop_workbench
-
-			-- create shared scoop workbench
-			create l_shared_scoop_workbench
-			l_shared_scoop_workbench.setup_shared_scoop_workbench (scoop_workbench, system)
-
-			-- call once routines
-			tmp_system := l_shared_scoop_workbench.system
-			tmp_worbench := l_shared_scoop_workbench.shared_scoop_workbench
 
 			-- create directory name
 			create_directory_name
@@ -130,8 +119,8 @@ feature {SYSTEM_I} -- Processing
 			end
 
 			-- iterate over all classes and create the new proxy- and client classes.
-			from i := 1 until i > scoop_workbench.scoop_classes.count loop
-				a_class := scoop_workbench.scoop_classes.item (i)
+			from i := 1 until i > scoop_classes.count loop
+				a_class := scoop_classes.item (i)
 
 				l_degree_output.put_degree_scoop (a_class, count - i + 1)
 
@@ -140,9 +129,12 @@ feature {SYSTEM_I} -- Processing
 					io.error.put_new_line
 				end
 
+					-- reset workbench
+				scoop_workbench_objects.reset
+
 					-- set current processed class in workbench
-				scoop_workbench.set_current_class_c (a_class)
-				scoop_workbench.set_current_class_as (a_class.ast)
+				set_current_class_c (a_class)
+				set_current_class_as (a_class.ast)
 
 					-- set feature table in workbench
 					-- was computed in degree 4.
@@ -320,98 +312,38 @@ feature -- Element Change and Removal
 
 feature {NONE} -- Implementation
 
-	collect_needed_classes() is
-			-- visitor flags corresponding classes with the flag degree_scoop_needed
-			--	A SCOOP client and proxy class for class C should only be generated if
-			--	1) A separate type occures in C
-			--	2) C occures as separate type in an other class
-			--	3) D inherits from C and D occurs as separate type in another class.
-			--	4) D inherits from C and in C occures a separate type
+	collect_needed_classes is
+			-- takes currently all classes from 'system.classes'
+			-- which are not basic classes
 		local
 			i: INTEGER
-			l_str: STRING
 			l_classes: ARRAY [CLASS_C]
 			l_class: CLASS_C
 			l_system: like system
-			l_match_list: LEAF_AS_LIST
-			class_list_1, class_list_2, l_scoop_classes: SCOOP_SEPARATE_CLASS_LIST
-			l_separate_class_visitor: SCOOP_SEPARATE_CLASS_VISITOR
+			l_scoop_classes: SCOOP_SEPARATE_CLASS_LIST
 		do
 			l_system := system
 			l_classes := l_system.classes
-			create class_list_1.make
-			create l_separate_class_visitor.make_with_separate_class_list (class_list_1)
 
+			-- create class list
+			create l_scoop_classes.make
+
+			-- iterate over all classes
 			from i := 1 until i > l_classes.count loop
-				l_class := l_classes.item (i)
+				l_class ?= l_classes.item (i)
 
-				if l_class /= Void and then l_class.is_separate_client then
-					-- class contains separate keyword
-
-						-- case 1)
-					if not class_list_1.has (l_class.name_in_upper) then
-						create l_str.make_from_string (l_class.name_in_upper)
-						class_list_1.extend (l_class)
-					end
-
-						-- case 2)
-					l_match_list := match_list_server.item (l_class.class_id)
-					l_separate_class_visitor.setup (l_class.ast, l_match_list, true, true)
-					l_separate_class_visitor.process_class_as (l_class.ast)
+				if l_class /= Void and then not is_basic_type (l_class.name_in_upper) then
+					l_scoop_classes.extend (l_class)
 				end
 
 				i := i + 1
 			end
 
-				-- case 3) add all parents
-			create class_list_2.make
-			from until class_list_1.is_empty loop
-				l_class := class_list_1.first
-				class_list_1.remove_first
+			-- set count
+			count := l_scoop_classes.count
 
-					-- insert current class
-				if not class_list_2.has_class (l_class) then
-					class_list_2.extend (l_class)
-				end
-
-					-- insert all not already processed parents in list 1
-				from i := 1 until i > l_class.parents_classes.count loop
-					if not class_list_2.has_class (l_class.parents_classes.i_th (i)) and then
-					   not class_list_1.has_class (l_class.parents_classes.i_th (i)) then
-						class_list_1.extend (l_class.parents_classes.i_th (i))
-					end
-
-					i := i + 1
-				end
-			end
-
-				-- case 4) add all descendants
-			create l_scoop_classes.make
-			from until class_list_2.is_empty loop
-				l_class := class_list_2.first
-				class_list_2.remove_first
-
-					-- insert current class
-				if not l_scoop_classes.has_class (l_class) then
-					l_scoop_classes.extend (l_class)
-				end
-
-					-- insert all not already processed descendants in list 2
-				from i := 1 until i > l_class.direct_descendants.count loop
-					if not l_scoop_classes.has_class (l_class.direct_descendants.i_th (i)) and then
-					   not class_list_2.has_class (l_class.direct_descendants.i_th (i)) then
-						class_list_2.extend (l_class.direct_descendants.i_th (i))
-					end
-
-					i := i + 1
-				end
-
-				-- set the classes in the workbench
-				scoop_workbench.set_scoop_classes (l_scoop_classes)
-
-				-- set count
-				count := l_scoop_classes.count
-			end
+			-- set the classes in the workbench
+			set_scoop_classes (l_scoop_classes)
 
 			debug ("SCOOP")
 				io.error.put_string ("SCOOP: Processing following classes:")
@@ -419,6 +351,107 @@ feature {NONE} -- Implementation
 				l_scoop_classes.print_all
 			end
 		end
+
+
+--	collect_needed_classes is
+--			-- visitor flags corresponding classes with the flag degree_scoop_needed
+--			--	A SCOOP client and proxy class for class C should only be generated if
+--			--	1) A separate type occures in C
+--			--	2) C occures as separate type in an other class
+--			--	3) D inherits from C and D occurs as separate type in another class.
+--			--	4) D inherits from C and in C occures a separate type
+--		local
+--			i: INTEGER
+--			l_str: STRING
+--			l_classes: ARRAY [CLASS_C]
+--			l_class: CLASS_C
+--			l_system: like system
+--			l_match_list: LEAF_AS_LIST
+--			class_list_1, class_list_2, l_scoop_classes: SCOOP_SEPARATE_CLASS_LIST
+--			l_separate_class_visitor: SCOOP_SEPARATE_CLASS_VISITOR
+--		do
+--			l_system := system
+--			l_classes := l_system.classes
+--			create class_list_1.make
+--			create l_separate_class_visitor.make_with_separate_class_list (class_list_1)
+
+--			from i := 1 until i > l_classes.count loop
+--				l_class := l_classes.item (i)
+
+--				if l_class /= Void and then l_class.is_separate_client then
+--					-- class contains separate keyword
+
+--						-- case 1)
+--					if not class_list_1.has (l_class.name_in_upper) then
+--						create l_str.make_from_string (l_class.name_in_upper)
+--						class_list_1.extend (l_class)
+--					end
+
+--						-- case 2)
+--					l_match_list := match_list_server.item (l_class.class_id)
+--					l_separate_class_visitor.setup (l_class.ast, l_match_list, true, true)
+--					l_separate_class_visitor.process_class_as (l_class.ast)
+--				end
+
+--				i := i + 1
+--			end
+
+--				-- case 3) add all parents
+--			create class_list_2.make
+--			from until class_list_1.is_empty loop
+--				l_class := class_list_1.first
+--				class_list_1.remove_first
+
+--					-- insert current class
+--				if not class_list_2.has_class (l_class) then
+--					class_list_2.extend (l_class)
+--				end
+
+--					-- insert all not already processed parents in list 1
+--				from i := 1 until i > l_class.parents_classes.count loop
+--					if not class_list_2.has_class (l_class.parents_classes.i_th (i)) and then
+--					   not class_list_1.has_class (l_class.parents_classes.i_th (i)) then
+--						class_list_1.extend (l_class.parents_classes.i_th (i))
+--					end
+
+--					i := i + 1
+--				end
+--			end
+
+--				-- case 4) add all descendants
+--			create l_scoop_classes.make
+--			from until class_list_2.is_empty loop
+--				l_class := class_list_2.first
+--				class_list_2.remove_first
+
+--					-- insert current class
+--				if not l_scoop_classes.has_class (l_class) then
+--					l_scoop_classes.extend (l_class)
+--				end
+
+--					-- insert all not already processed descendants in list 2
+--				from i := 1 until i > l_class.direct_descendants.count loop
+--					if not l_scoop_classes.has_class (l_class.direct_descendants.i_th (i)) and then
+--					   not class_list_2.has_class (l_class.direct_descendants.i_th (i)) then
+--						class_list_2.extend (l_class.direct_descendants.i_th (i))
+--					end
+
+--					i := i + 1
+--				end
+
+--				-- set the classes in the workbench
+--				scoop_workbench.set_scoop_classes (l_scoop_classes)
+
+--				-- set count
+--				count := l_scoop_classes.count
+--			end
+
+--			debug ("SCOOP")
+--				io.error.put_string ("SCOOP: Processing following classes:")
+--				io.error.put_new_line
+--				l_scoop_classes.print_all
+--			end
+--		end
 
 	process_separate_client_creation (a_class_c: CLASS_C) is
 			-- Process client class of input class.
@@ -515,14 +548,10 @@ feature {NONE} -- Implementation
 	degree_5: DEGREE_5
 			-- reference to degree 5
 
-	scoop_workbench: SCOOP_WORKBENCH
-			-- reference to current workbench
-
 	scoop_proxy_prefix: STRING
 			-- name prefix for proxy classes
 
 invariant
 	scoop_directory_not_void: scoop_directory /= Void
-	scoop_workbench_not_void: scoop_workbench /= Void
 
 end

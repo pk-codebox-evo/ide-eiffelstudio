@@ -10,16 +10,16 @@ deferred class
 
 inherit
 	SCOOP_SEPARATE_TYPE
-	
+
 --	THREAD_CONTROL
 --		rename
 --			join as scoop_join, join_all as scoop_join_all, yield as scoop_yield
 --		end
 
-	EXCEPTIONS
-		rename
-			class_name as exceptions_class_name
-		end
+--	EXCEPTIONS
+--		rename
+--			class_name as exceptions_class_name
+--		end
 feature {SCOOP_SEPARATE_CLIENT} -- Implementation
 
 	separate_execute_routine (a_requested_processors: TUPLE [SCOOP_PROCESSOR]; a_routine: ROUTINE [SCOOP_SEPARATE_TYPE, TUPLE];

@@ -39,27 +39,34 @@ feature {NONE} -- Visitor implementation
 
 	process_parent_as (l_as: PARENT_AS) is
 		do
-			if l_as.type.class_name.name.as_upper.is_equal ("ANY") then
-				process_leading_leaves (l_as.start_position)
+			last_index := l_as.type.start_position - 1
+--			if l_as.type.class_name.name.as_upper.is_equal ("ANY") then
 
-					-- Replace `ANY' with `SCOOP_SEPARATE_CLIENT'.
-				context.add_string ("%N%T%TSCOOP_SEPARATE_CLIENT")
-			else
+--					-- Replace `ANY' with `SCOOP_SEPARATE_CLIENT'.
+--				context.add_string ("SCOOP_SEPARATE_CLIENT")
+--				-- skipe the rest of the parent clause
+--				last_index := l_as.end_position
+--			else
 				context.add_string ("%N%T")
-				last_index := l_as.type.start_position - 1
-				safe_process (l_as.type)
-			end
 
-			safe_process (l_as.internal_renaming)
-			safe_process (l_as.internal_exports)
-			safe_process (l_as.internal_undefining)
-			safe_process (l_as.internal_redefining)
-			safe_process (l_as.internal_selecting)
+				if l_as.type.class_name.name.as_upper.is_equal ("ANY") then
+					context.add_string ("SCOOP_SEPARATE_CLIENT")
+					last_index := l_as.type.class_name.index
+				else
+					safe_process (l_as.type)
+				end
 
-			if l_as.end_keyword_index > 0 then
-				context.add_string ("%N%T%T")
-			end
-			safe_process (l_as.end_keyword (match_list))
+				safe_process (l_as.internal_renaming)
+				safe_process (l_as.internal_exports)
+				safe_process (l_as.internal_undefining)
+				safe_process (l_as.internal_redefining)
+				safe_process (l_as.internal_selecting)
+
+				if l_as.end_keyword_index > 0 then
+					context.add_string ("%N%T%T")
+				end
+				safe_process (l_as.end_keyword (match_list))
+--			end
 		end
 
 	process_id_as (l_as: ID_AS) is
@@ -78,7 +85,7 @@ feature {NONE} -- Visitor implementation
 
 			-- print id
 			put_string (l_as)
-			last_index := l_as.end_position
+			last_index := l_as.index
 		end
 
 

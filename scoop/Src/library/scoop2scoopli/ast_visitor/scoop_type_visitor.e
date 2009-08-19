@@ -22,7 +22,11 @@ inherit
 			process_type_dec_as
 		end
 	SCOOP_BASIC_TYPE
-	SHARED_SCOOP_WORKBENCH
+	SCOOP_WORKBENCH
+	SHARED_ERROR_HANDLER
+		export
+			{ANY} Error_handler
+		end
 
 feature -- Access
 
@@ -33,6 +37,7 @@ feature -- Access
 			a_base_class_not_void: a_base_class /= Void
 		local
 			i: INTEGER
+			class_i: CLASS_I
 		do
 			last_class_name := Void
 			last_class_c := Void
@@ -41,46 +46,39 @@ feature -- Access
 			is_separate := false
 			is_a_like_type := false
 			is_class_type := false
-			is_generic_parameter := false
 
 			base_class := a_base_class
 
 			a_type.process (Current)
 
-				-- get associated class
+			-- get associated class
 			if last_class_name /= Void then
-				from
-					i := 1
-				until
-					i > system.classes.count
-				loop
-					if system.classes.item (i) /= Void and then
-					   system.classes.item (i).name_in_upper.is_equal (last_class_name) then
 
-						last_class_c := system.classes.item (i)
+				class_i := system.universe.class_named (last_class_name, a_base_class.group)
+				if class_i /= Void then
+					last_class_c := class_i.compiled_class
+				elseif base_class.generics /= Void then
+					-- test if the current type is a formal generic parameter
+					from i := 1	until i > base_class.generics.count loop
+						if base_class.generics.i_th (i).name.name.as_upper.is_equal (last_class_name) then
+							is_formal := true
+						end
+						i := i + 1
 					end
-					i := i + 1
+				else
+					-- should not be the case
+					error_handler.insert_error (create {INTERNAL_ERROR}.make("SCOOP Unexpected error: {SCOOP_TYPE_VISITOR}.evaluate_class_from_type."))
 				end
 			end
 
-				-- test if the current type is a generic parameter
-			if base_class.generics /= Void then
-				from i := 1	until i > base_class.generics.count loop
-					if base_class.generics.i_th (i).name.name.as_upper.is_equal (last_class_name) then
-						is_generic_parameter := true
-					end
-					i := i + 1
-				end
-			end
-
-				-- check: it cannot be separate be if it is of basic type
+			-- check: it cannot be separate be if it is of basic type
 			if last_class_c /= Void and then is_basic_type (last_class_c.name_in_upper) then
 				is_separate := false
 			end
 
 			Result := last_class_c
 		ensure
-			Result_not_void_when_or_formal: Result /= Void or is_generic_parameter
+			Result_not_void_when_or_formal: Result /= Void or is_formal
 		end
 
 	is_formal: BOOLEAN
@@ -98,16 +96,40 @@ feature -- Access
 	is_class_type: BOOLEAN
 			-- Is last resolved type of class type?
 
-	is_generic_parameter: BOOLEAN
-			-- Is current type a generic parameter type?
-
 feature {NONE} -- Visitor implementation
 
 	process_like_id_as (l_as: LIKE_ID_AS) is
+		local
+			l_type_a: TYPE_A
+			l_type_as: TYPE_AS
+			l_class_c: CLASS_C
+			l_typ_visitor: like Current
 		do
 			if base_class.feature_table.has (l_as.anchor.name.as_lower) then
-				last_class_name := base_class.feature_table.item (l_as.anchor.name.as_lower).type.associated_class.name_in_upper
-				is_separate := base_class.feature_table.item (l_as.anchor.name.as_lower).type.is_separate
+				l_type_a := base_class.feature_table.item (l_as.anchor.name.as_lower).type
+				if l_type_a.is_formal then
+					is_formal := true
+				else
+					if l_type_a.associated_class /= Void then
+						create last_class_name.make_from_string (l_type_a.associated_class.name_in_upper)
+					else
+						-- may be the case when a like type refers to a like type of generic type
+						-- todo: check other implementation
+						is_formal := l_type_a.actual_type.is_formal
+						create last_class_name.make_from_string (l_type_a.actual_type.name.as_upper)
+					end
+
+				end
+				is_separate := l_type_a.is_separate
+			elseif feature_as.body.internal_arguments /= Void then
+				-- check internal arguments
+				if feature_object.arguments.has (l_as.anchor.name) then
+					l_type_as := feature_object.arguments.get_type_by_name (l_as.anchor.name.as_lower)
+					create l_typ_visitor
+					l_typ_visitor.setup (class_as, match_list, true, true)
+					l_class_c := l_typ_visitor.evaluate_class_from_type (l_type_as, class_c)
+					create last_class_name.make_from_string (l_class_c.name_in_upper)
+				end
 			end
 			is_a_like_type := true
 		end
@@ -164,6 +186,44 @@ feature {NONE} -- Visitor implementation
 		do
 			last_class_name := Void
 		end
+
+--	process_parameter_list_as (l_as: PARAMETER_LIST_AS) is
+--			-- Process `l_as'.
+--		do
+--			safe_process (l_as.lparan_symbol (match_list))
+--			-- process parameters with new visitor
+--			process_parameter_list (l_as.parameters)
+--			safe_process (l_as.rparan_symbol (match_list))
+--		end
+
+--feature {NONE} -- Implementation
+
+--	process_parameter_list (l_as: EIFFEL_LIST [AST_EIFFEL]) is
+--			-- Process parameter eiffel list like `process_eiffel_list'
+--			-- but create for each new parameter a new visitor
+--		local
+--			i, l_count: INTEGER
+--		do
+--			if l_as.count > 0 then
+--				from
+--					l_as.start
+--					i := 1
+--					if l_as.separator_list /= Void then
+--						l_count := l_as.separator_list.count
+--					end
+--				until
+--					l_as.after
+--				loop
+--					-- process each internal parameter in a new visitor.
+--					safe_process (l_as.item)
+--					if i <= l_count then
+--						safe_process (l_as.separator_list_i_th (i, match_list))
+--						i := i + 1
+--					end
+--					l_as.forth
+--				end
+--			end
+--		end
 
 feature {NONE} -- Implementation
 
