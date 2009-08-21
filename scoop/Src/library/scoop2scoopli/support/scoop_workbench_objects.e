@@ -16,6 +16,7 @@ feature -- Initialization
 			-- Initialize the SCOOP workbench objects
 		do
 			create proxy_parent_objects.make
+			create parent_redefine_list.make
 		end
 
 feature -- Access
@@ -28,8 +29,12 @@ feature -- Access
 			current_feature_as := Void
 			current_feature_object := Void
 			proxy_parent_objects.wipe_out
+			parent_redefine_list.wipe_out
+			if proxy_infix_prefix_wrappers /= Void then
+				proxy_infix_prefix_wrappers.wipe_out
+			end
 		end
-
+		
 feature -- Current CLASS_C access
 
 	current_class_c: CLASS_C
@@ -85,7 +90,7 @@ feature -- SCOOP_CLIENT_FEATURE_OBJECT access
 			current_feature_object := a_feature_object
 		end
 
-feature -- SCOOP_CLIENT_FEATURE_OBJECT access
+feature -- SCOOP_PROXY_PARENT_OBJECT access
 
 	add_proxy_parent_object (a_proxy_parent_object: SCOOP_PROXY_PARENT_OBJECT) is
 			-- Adds `a_proxy_parent_object' to the `proxy_parent_objects'.
@@ -138,10 +143,70 @@ feature -- SCOOP_CLIENT_FEATURE_OBJECT access
 			end
 		end
 
+	append_parent_redefine_list (a_list: like parent_redefine_list) is
+			-- Setter for `parent_redefine_list'.
+		require
+			a_list_not_void: a_list /= Void
+		do
+			parent_redefine_list.append (a_list)
+		end
+
+	insert_redefine_statement (an_original_feature_name, a_feature_name: STRING; a_string_context: ROUNDTRIP_STRING_LIST_CONTEXT) is
+			-- Insert a redefine statement for the assigner wrapper feature
+			-- if `an_original_feature_name' is in the parent redefine list.
+		require
+			an_original_feature_name_not_void: an_original_feature_name /= Void
+		local
+			i, nb: INTEGER
+			l_str: STRING
+			l_parent_object: SCOOP_PROXY_PARENT_OBJECT
+			l_tuple: TUPLE [orignial_feature_name: STRING; parent_object: SCOOP_PROXY_PARENT_OBJECT ]
+		do
+			from
+				i := 1
+				nb := parent_redefine_list.count
+			until
+				i > nb
+			loop
+				l_tuple := parent_redefine_list.i_th (i)
+				if l_tuple.orignial_feature_name.is_equal (an_original_feature_name) then
+					-- get parent object
+					l_parent_object := l_tuple.parent_object
+
+					-- create redefine string
+					create l_str.make_from_string (a_feature_name + "_scoop_separate_assigner_")
+
+					-- insert a redefine feature for the wrapper feature
+					l_parent_object.add_redefine_clause (l_str, a_string_context)
+				end
+
+				i := i + 1
+			end
+		end
+
+feature -- SCOOP proxy infix prefix wrapper feature
+
+	proxy_infix_prefix_wrappers: LINKED_LIST [STRING]
+			-- List of new created wrapper features
+			-- Remove this item with EiffelStudio 6.4
+
+	extend_proxy_infix_prefix_wrappers (a_wrapper: STRING) is
+			-- Adds the wrapper feature tot he wrapper list
+			-- Remove this item with EiffelStudio 6.4
+		do
+			if proxy_infix_prefix_wrappers = Void then
+				create proxy_infix_prefix_wrappers.make
+			end
+			proxy_infix_prefix_wrappers.extend (a_wrapper)
+		end
+
 feature {NONE} -- SCOOP_CLIENT_FEATURE_OBJECT implementation
 
 	proxy_parent_objects: LINKED_LIST[SCOOP_PROXY_PARENT_OBJECT]
 			-- List of proxy parent objects
+
+	parent_redefine_list: LINKED_LIST [TUPLE [orignial_feature_name: STRING; parent_object: SCOOP_PROXY_PARENT_OBJECT ]]
+			-- List of redefine features with corresponding parent object.
 
 invariant
 	proxy_parent_objects_not_void: proxy_parent_objects /= Void

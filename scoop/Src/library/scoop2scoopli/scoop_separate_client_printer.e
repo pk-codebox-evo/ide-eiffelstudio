@@ -111,6 +111,10 @@ feature {NONE} -- Roundtrip: process nodes
 
 			safe_process (l_as.features)
 
+			-- add infix prefix feature wrappers
+			-- Remove this call with EiffelStudio 6.4
+			insert_infix_prefix_wrappers
+
 --			if l_as.internal_invariant /= Void then
 --				last_index := l_as.internal_invariant.invariant_keyword_index - 1
 --				context.add_string ("%N%N")
@@ -148,6 +152,36 @@ feature {NONE} -- Roundtrip: process nodes
 			l_feature_visitor.process_feature(l_as)
 			last_index := l_as.end_position
 		end
+
+feature {NONE} -- Implementation
+
+	insert_infix_prefix_wrappers is
+			-- Inserts the wrapper feature of `scoop_workbench_objects.proxy_infix_prefix_wrappers'.
+			-- Remove this item with EiffelStudio 6.4
+		local
+			i, nb: INTEGER
+			l_wrapper_list: LINKED_LIST [STRING]
+		do
+			l_wrapper_list := scoop_workbench_objects.proxy_infix_prefix_wrappers
+			if l_wrapper_list /= Void and then l_wrapper_list.count > 0 then
+
+				-- add a feature clause
+				context.add_string ("%N%Nfeature {NONE} -- Wrapper features for infix / prefix features")
+
+				-- add the features				
+				from
+					i := 1
+					nb := l_wrapper_list.count
+				until
+					i > nb
+				loop
+					context.add_string (l_wrapper_list.i_th (i))
+
+					i := i + 1
+				end
+			end
+		end
+
 
 invariant
 	context_not_void: context /= Void

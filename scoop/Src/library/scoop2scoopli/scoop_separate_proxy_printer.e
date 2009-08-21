@@ -106,10 +106,6 @@ feature {NONE} -- Roundtrip: process nodes
 				last_index := l_generics_visitor.get_last_index
 			end
 
-			if class_c.name_in_upper.is_equal ("COMPARABLE") then
-				io.put_string ("juppi")
-			end
-
 			safe_process (l_as.alias_keyword (match_list))
 			s ?= l_as.external_class_name
 			safe_process (s)
@@ -176,7 +172,6 @@ feature {NONE} -- Roundtrip: process nodes
 			l_feature_name_visitor: SCOOP_FEATURE_NAME_VISITOR
 			l_assign_finder: SCOOP_PROXY_ASSIGN_FINDER
 			l_string_context: ROUNDTRIP_STRING_LIST_CONTEXT
---			l_parent_object: SCOOP_PROXY_PARENT_OBJECT
 		do
 			set_current_feature_as (l_as)
 
@@ -226,21 +221,12 @@ feature {NONE} -- Roundtrip: process nodes
 						l_feature_name_visitor.process_original_feature_name (l_as.feature_names.i_th (i), false)
 						l_original_feature_name := l_feature_name_visitor.get_feature_name
 
+
 						-- if there is already a feature f with assigner in an ancestor class
-						-- then create a redefine statement for the wrapper feature
-						l_assign_finder.insert_redefine_for_feature_with_assigner (l_original_feature_name, l_feature_name, class_c, l_string_context)
-
---						
---						if l_assign_finder.has_current_or_parents_feature_with_assigner (l_original_feature_name, class_c) then
---							-- there is already a feature f with assigner in an ancestor class
---							-- create a redefine statement for the wrapper feature
-
---							create l_str.make_from_string (l_feature_name + "_scoop_separate_assigner_")
---							l_parent_object := scoop_workbench_objects.get_proxy_parent_object (class_c.)
-
-
---							--l_parent_object := scoop_workbench_objects.get_proxy_parent_object (l_class_c.name_in_upper)
---						end
+						-- then insert a redefine statement for the wrapper feature	
+						-- simplification: just test the redefine statements of redefined
+						-- reatures which occurres in the parents with assigner
+						scoop_workbench_objects.insert_redefine_statement (l_original_feature_name, l_feature_name, l_string_context)
 					end
 
 					i := i + 1
@@ -912,13 +898,7 @@ feature {NONE} -- Roundtrip: implementation
 
 			context.add_string ("%N%T%T%Ta_function_to_evaluate := agent implementation_.")
 
-			-- infix name?
---			if a_feature.featu then
-				context.add_string (a_feature_name)
---			else
---				context.add_string (an_infix_name.non_infix_name)
---			end
-
+			context.add_string (a_feature_name)
 			if a_feature.body.internal_arguments /= Void then
 				process_formal_argument_list_with_auxiliary_variables (a_feature.body.internal_arguments, false, true)
 			end
@@ -991,12 +971,7 @@ feature {NONE} -- Roundtrip: implementation
 
 			context.add_string ("%N%T%T%Ta_function_to_evaluate := agent ")
 
-			-- infix name?
---			if an_infix_name = void then
-				context.add_string (a_feature_name)
---			else
---				context.add_string (an_infix_name.non_infix_name)
---			end
+			context.add_string (a_feature_name)
 			context.add_string ("_scoop_separate_" + class_as.class_name.name.as_lower)
 
 			if a_feature.body.internal_arguments /= Void then
@@ -1029,12 +1004,8 @@ feature {NONE} -- Roundtrip: implementation
 			process_result_conversion_code (a_feature.body.type)
 			context.add_string ("%N%T%Tend%N")
 
-				-- Create wrapper for external feature. Necessary for agent creation.
---			if an_infix_name = void then
-				context.add_string (a_feature_name)
---			else
---				context.add_string (an_infix_name.non_infix_name)
---			end
+			-- Create wrapper for external feature. Necessary for agent creation.
+			context.add_string (a_feature_name)
 			context.add_string ("_scoop_separate_" + class_as.class_name.name.as_lower + " ")
 			if a_feature.body.internal_arguments /= void then
 				process_flattened_formal_argument_list (a_feature.body.internal_arguments, false)
@@ -1046,11 +1017,7 @@ feature {NONE} -- Roundtrip: implementation
 			context.add_string (" is%N%T%T%T")
 			context.add_string ("-- Wrapper for external feature `" + a_feature_name + "'.")
 			context.add_string ("%N%T%Tdo%N%T%T%TResult := implementation_.")
---			if an_infix_name = void then
-				context.add_string (a_feature_name)
---			else
---				context.add_string (an_infix_name.non_infix_name)
---			end
+			context.add_string (a_feature_name)
 			if a_feature.body.internal_arguments /= void then
 				context.add_string (" ")
 				process_formal_argument_list_as_actual_argument_list (a_feature.body.internal_arguments, false)
@@ -1094,7 +1061,7 @@ feature {NONE} -- Roundtrip: implementation
 
 			context.add_string ("%N%T%Tend")
 
-				-- Create wrapper for external feature. Necessary for agent creation.
+			-- Create wrapper for external feature. Necessary for agent creation.
 			context.add_string (a_feature_name + "_scoop_separate_" + class_as.class_name.name.as_lower + " ")
 			if a_feature.body.internal_arguments /= void then
 				process_flattened_formal_argument_list (a_feature.body.internal_arguments, false)
@@ -1120,12 +1087,7 @@ feature {NONE} -- Roundtrip: implementation
 			lock_passing_possible := process_auxiliary_local_variables (a_feature, a_feature_name)
 
 			context.add_string ("%N%T%T%Ta_function_to_evaluate := agent ")
-			-- infix name?
---			if a_feature.featu then
-				context.add_string (a_feature_name)
---			else
---				context.add_string (an_infix_name.non_infix_name)
---			end
+			context.add_string (a_feature_name)
 			context.add_string ("_scoop_separate_" + class_as.class_name.name.as_lower)
 
 			if a_feature.body.internal_arguments /= Void then
@@ -1159,11 +1121,7 @@ feature {NONE} -- Roundtrip: implementation
 			context.add_string ("%N%T%Tend%N")
 
 			-- Create wrapper for once feature. Necessary for agent creation.
---			if an_infix_name = void then
-				context.add_string (a_feature_name)
---			else
---				context.add_string (an_infix_name.non_infix_name)
---			end
+			context.add_string (a_feature_name)
 			context.add_string ("_scoop_separate_" + class_as.class_name.name.as_lower + " ")
 			if a_feature.body.internal_arguments /= void then
 				process_flattened_formal_argument_list (a_feature.body.internal_arguments, false)
@@ -1172,11 +1130,7 @@ feature {NONE} -- Roundtrip: implementation
 			context.add_string (" is%N%T%T%T")
 			context.add_string ("-- Wrapper for once feature `" + a_feature_name + "'.")
 			context.add_string ("%N%T%Tdo%N%T%T%TResult := implementation_.")
---			if an_infix_name = void then
-				context.add_string (a_feature_name)
---			else
---				context.add_string (an_infix_name.non_infix_name)
---			end
+			context.add_string (a_feature_name)
 			if a_feature.body.internal_arguments /= void then
 				context.add_string (" ")
 				process_formal_argument_list_as_actual_argument_list (a_feature.body.internal_arguments, false)
@@ -1255,37 +1209,37 @@ feature {NONE} -- Roundtrip: implementation
 					last_index := l_as.feature_names.i_th (i).start_position - 1
 					context.add_string ("%N%N%T")
 
-						-- set frozen keyword
+					-- set frozen keyword
 					if l_as.feature_names.i_th (i).is_frozen then
 						context.add_string ("frozen ")
 					end
 
-						-- set feature name
+					-- set feature name
 					last_index := l_as.feature_names.i_th (i).start_position - 1
 					safe_process (l_as.feature_names.i_th (i))
 
-						-- set formal argument
+					-- set formal argument
 					context.add_string (" (a_caller_: SCOOP_SEPARATE_TYPE): ")
 
-						-- set type
+					-- set type
 					last_index := l_as.body.type.start_position
 					l_type_attribute_wrapper.process_type (l_as.body.type)
 
-						-- keyword is and local declaration
+					-- keyword is and local declaration
 					context.add_string (" is%N%T%Tlocal%N%T%T%Ta_function_to_evaluate: FUNCTION [ANY, TUPLE, ")
 					l_type_locals.process_type (l_as.body.type)
 					context.add_string ("]")
 
-						-- body and agent declarateion
+					-- body and agent declarateion
 					context.add_string ("%N%T%Tdo%N%T%T%Ta_function_to_evaluate := agent ")
 					last_index := l_as.feature_names.i_th (i).start_position - 1
 					safe_process (l_as.feature_names.i_th (i))
 					context.add_string ("_scoop_separate_" + class_as.class_name.name.as_lower)
 
-						-- execution
+					-- execution
 					context.add_string ("%N%T%T%Tscoop_synchronous_execute (a_caller_, a_function_to_evaluate)")
 
-						-- feature result
+					-- feature result
 					context.add_string ("%N%T%T%TResult ")
 					create l_scoop_type_visitor
 					a_class_c := l_scoop_type_visitor.evaluate_class_from_type (l_as.body.type, class_c)
@@ -1302,10 +1256,10 @@ feature {NONE} -- Roundtrip: implementation
 					end
 					context.add_string ("a_function_to_evaluate.last_result")
 
-						-- create result conversion code
+					-- create result conversion code
 					process_result_conversion_code (l_as.body.type)
 
-						-- end keyword
+					-- end keyword
 					context.add_string ("%N%T%Tend%N%N%T")
 
 					-- Create wrapper for attribute. Necessary for agent creation.
@@ -1313,11 +1267,11 @@ feature {NONE} -- Roundtrip: implementation
 					safe_process (l_as.feature_names.i_th (i))
 					context.add_string  ("_scoop_separate_" + class_as.class_name.name.as_lower)
 
-						-- result type
+					-- result type
 					last_index := l_as.body.type.start_position - 1
 					process_result_type (l_as.body.type, true, l_type_signature)
 
-						-- body
+					-- body
 					context.add_string ("%N%T%T%T-- Wrapper for attribute `")
 					last_index := l_as.feature_names.i_th (i).start_position - 1
 					safe_process (l_as.feature_names.i_th (i))
@@ -1327,7 +1281,7 @@ feature {NONE} -- Roundtrip: implementation
 					safe_process (l_as.feature_names.i_th (i))
 					context.add_string ("%N%T%Tend")
 
-						-- no is_keyword, no body, skip indexing clause
+					-- no is_keyword, no body, skip indexing clause
 					i := i + 1
 				end
 			end
@@ -1350,37 +1304,37 @@ feature {NONE} -- Roundtrip: implementation
 				last_index := l_as.feature_names.i_th (i).start_position - 1
 				context.add_string ("%N%N%T")
 
-					-- set frozen keyword
+				-- set frozen keyword
 				if l_as.feature_names.i_th (i).is_frozen then
 					context.add_string ("frozen ")
 				end
 
-					-- set feature name
+				-- set feature name
 				last_index := l_as.feature_names.i_th (i).start_position - 1
 				safe_process (l_as.feature_names.i_th (i))
 
-					-- set formal argument
+				-- set formal argument
 				context.add_string (" (a_caller_: SCOOP_SEPARATE_TYPE): ")
 
-					-- set type
+				-- set type
 				last_index := l_as.body.type.start_position
 				l_type_attribute_wrapper.process_type (l_as.body.type)
 
-					-- keyword is and local declaration
+				-- keyword is and local declaration
 				context.add_string (" is%N%T%Tlocal%N%T%T%Ta_function_to_evaluate: FUNCTION [ANY, TUPLE, ")
 				l_type_locals.process_type (l_as.body.type)
 				context.add_string ("]")
 
-					-- body and agent declarateion
+				-- body and agent declarateion
 				context.add_string ("%N%T%Tdo%N%T%T%Ta_function_to_evaluate := agent ")
 				last_index := l_as.feature_names.i_th (i).start_position - 1
 				safe_process (l_as.feature_names.i_th (i))
 				context.add_string ("_scoop_separate_" + class_as.class_name.name.as_lower)
 
-					-- execution
+				-- execution
 				context.add_string ("%N%T%T%Tscoop_synchronous_execute (a_caller_, a_function_to_evaluate)")
 
-					-- feature result
+				-- feature result
 				context.add_string ("%N%T%T%TResult ")
 				create l_scoop_type_visitor
 				a_class_c := l_scoop_type_visitor.evaluate_class_from_type (l_as.body.type, class_c)
@@ -1397,35 +1351,35 @@ feature {NONE} -- Roundtrip: implementation
 					context.add_string ("?= ")
 				end
 
-					context.add_string ("a_function_to_evaluate.last_result")
+				context.add_string ("a_function_to_evaluate.last_result")
 
-						-- create result conversion code
-					process_result_conversion_code (l_as.body.type)
+				-- create result conversion code
+				process_result_conversion_code (l_as.body.type)
 
-						-- end keyword
-					context.add_string ("%N%T%Tend%N%N%T")
+				-- end keyword
+				context.add_string ("%N%T%Tend%N%N%T")
 
-					-- Create wrapper for attribute. Necessary for agent creation.
-					last_index := l_as.feature_names.i_th (i).start_position - 1
-					safe_process (l_as.feature_names.i_th (i))
-					context.add_string  ("_scoop_separate_" + class_as.class_name.name.as_lower)
+				-- Create wrapper for attribute. Necessary for agent creation.
+				last_index := l_as.feature_names.i_th (i).start_position - 1
+				safe_process (l_as.feature_names.i_th (i))
+				context.add_string  ("_scoop_separate_" + class_as.class_name.name.as_lower)
 
-						-- result type
-					last_index := l_as.body.type.start_position - 1
-					process_result_type (l_as.body.type, true, l_type_signature)
+				-- result type
+				last_index := l_as.body.type.start_position - 1
+				process_result_type (l_as.body.type, true, l_type_signature)
 
-						-- body
-					context.add_string ("%N%T%T%T-- Wrapper for attribute `")
-					last_index := l_as.feature_names.i_th (i).start_position - 1
-					safe_process (l_as.feature_names.i_th (i))
-					context.add_string ( "'.")
-					context.add_string ("%N%T%Tis do%N%T%T%TResult := implementation_.")
-					last_index := l_as.feature_names.i_th (i).start_position - 1
-					safe_process (l_as.feature_names.i_th (i))
-					context.add_string ("%N%T%Tend")
+				-- body
+				context.add_string ("%N%T%T%T-- Wrapper for attribute `")
+				last_index := l_as.feature_names.i_th (i).start_position - 1
+				safe_process (l_as.feature_names.i_th (i))
+				context.add_string ( "'.")
+				context.add_string ("%N%T%Tis do%N%T%T%TResult := implementation_.")
+				last_index := l_as.feature_names.i_th (i).start_position - 1
+				safe_process (l_as.feature_names.i_th (i))
+				context.add_string ("%N%T%Tend")
 
-						-- no is_keyword, no body, skip indexing clause
-					i := i + 1
+				-- no is_keyword, no body, skip indexing clause
+				i := i + 1
 			end
 		end
 
@@ -1552,17 +1506,22 @@ feature {NONE} -- Roundtrip: implementation
 			context.add_string (" is")
 			context.add_string ("%N%T%T%T-- Wrapper for assign call")
 
-			-- create do keyword
-			context.add_string ("%N%T%Tdo")
+			if l_as.is_deferred then
+				-- deferred keyword
+				context.add_string ("%N%T%Tdeferred")
+			else
+				-- create do keyword
+				context.add_string ("%N%T%Tdo")
 
-			-- create call to the assigner feature
-			context.add_string ("%N%T%T%T")
-			context.add_string (assign_id_name)
+				-- create call to the assigner feature
+				context.add_string ("%N%T%T%T")
+				context.add_string (assign_id_name)
 
-			-- print argument list
-			context.add_string (" (a_caller_, " + assign_id_name + "_arg_1_, ")
-			process_formal_argument_list_with_auxiliary_variables (l_as.body.internal_arguments, false, false)
-			context.add_string (")")
+				-- print argument list
+				context.add_string (" (a_caller_, " + assign_id_name + "_arg_1_, ")
+				process_formal_argument_list_with_auxiliary_variables (l_as.body.internal_arguments, false, false)
+				context.add_string (")")
+			end
 
 			-- end keyword
 			context.add_string ("%N%T%Tend")
@@ -1592,7 +1551,6 @@ feature {NONE} -- SCOOP Implementation
 --			context.add_string ("%N%T%T%T%Ta_caller_.processor_.decrement_lock_passing_counter")			
 			context.add_string ("%N%T%T%Telse")
 		end
-
 
 feature{NONE} -- Implementation
 

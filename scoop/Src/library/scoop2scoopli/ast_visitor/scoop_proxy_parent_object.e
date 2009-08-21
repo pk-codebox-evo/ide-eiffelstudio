@@ -31,6 +31,17 @@ feature -- Access
 			parent_name := a_parent_name
 		end
 
+	parent_class_c: CLASS_C
+			-- Reference to class C of current parent.
+
+	set_parent_class_c (a_class_c: CLASS_C) is
+			-- Setter for `parent_class_c'.
+		require
+			a_class_c_not_void: a_class_c /= Void
+		do
+			parent_class_c := a_class_c
+		end
+
 	set_parent_cursor (a_cursor: LINKED_LIST_CURSOR[STRING]) is
 			-- Setter for `parent_cursor'.
 		require

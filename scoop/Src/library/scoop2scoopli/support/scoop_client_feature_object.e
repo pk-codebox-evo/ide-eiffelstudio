@@ -21,6 +21,18 @@ feature -- Feature access
 			feature_name_impl := l_feature_name
 		end
 
+	feature_alias_name: STRING is
+			-- getter for 'feature_alias_name_impl'
+		do
+			Result := feature_alias_name_impl
+		end
+
+	set_feature_alias_name (l_feature_alias_name: STRING) is
+			-- setter for 'feature_alias_name_impl'
+		do
+			feature_alias_name_impl := l_feature_alias_name
+		end
+
 	feature_declaration_name: STRING is
 			-- getter for 'feature_declaration_name_impl'
 		do
@@ -76,6 +88,9 @@ feature {NONE} -- Implementation
 
 	feature_name_impl: STRING
 		-- name of current feature
+
+	feature_alias_name_impl: STRING
+		-- alias name of current feature
 
 	feature_declaration_name_impl: STRING
 		-- name of current feature with alias

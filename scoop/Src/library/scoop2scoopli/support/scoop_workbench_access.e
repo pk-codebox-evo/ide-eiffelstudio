@@ -17,4 +17,12 @@ feature -- Access
 			scoop_workbench_objects_not_void: Result /= Void
 		end
 
+	scoop_visitor_factory: SCOOP_VISITOR_FACTORY is
+			-- A factory for visitors
+		once
+			create Result
+		ensure
+			scoop_workbench_objects_not_void: Result /= Void
+		end
+
 end

@@ -124,6 +124,28 @@ feature {NONE} -- Visitor implementation
 
 feature {NONE} -- Implementation
 
+	get_parent_class_c_by_name (a_class_name: STRING): CLASS_C is
+			-- Return CLASS_C with name `a_class_name'
+		require
+			a_class_name_not_void: a_class_name /= Void
+		local
+			i, nb: INTEGER
+			l_class_c: CLASS_C
+		do
+			from
+				i := 1
+				nb := class_c.parents_classes.count
+			until
+				i > nb
+			loop
+				l_class_c := class_c.parents_classes.i_th (i)
+				if l_class_c.name_in_upper.is_equal (a_class_name) then
+					Result := l_class_c
+				end
+				i := i + 1
+			end
+		end
+
 	is_process_export_clause: BOOLEAN
 		-- indicates that the internal exports are processed.
 
