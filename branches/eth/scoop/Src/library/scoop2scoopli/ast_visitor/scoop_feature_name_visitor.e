@@ -67,16 +67,21 @@ feature -- Access
 	process_feature_declaration_name (a_feature_name: FEATURE_NAME) is
 			-- If `a_feature_name' is containing a INFIX_PREFIX_AS node,
 			-- return a list consisting of the non-infix and the infix version of the name.
+			-- Change this to an alias notation in EiffelStudio 6.4
 		require
 			a_feature_name_not_void: a_feature_name /= Void
 		do
 			reset_visitor (a_feature_name.start_position)
+
+			-- set flag
+			is_with_alias := true
 
 			-- process it as in the original code
 			is_processing_declaration := true
 			safe_process (a_feature_name)
 			is_processing_declaration := false
 
+			-- add now the non-infix notation
 			if has_processed_infix_prefix_node then
 				context.add_string (", ")
 				last_index := a_feature_name.start_position
@@ -92,6 +97,25 @@ feature -- Access
 			l_as_not_void: l_as /= Void
 		do
 			reset_visitor (l_as.start_position)
+
+			-- process node
+			safe_process (l_as)
+		end
+
+	process_declaration_infix_prefix (l_as: INFIX_PREFIX_AS) is
+			-- Remove this feature with EiffelStudio 6.4
+			-- It generates for each infix / prefix feature name a list
+			-- containing the infix and non-infix notation
+			-- It is only used for the parent redefine, select, undefine
+			-- and export clause
+		require
+			l_as_not_void: l_as /= Void
+		do
+			reset_visitor (l_as.start_position)
+
+			-- set flag
+			is_with_alias := true
+			is_without_infix_replacement := true
 
 			-- process node
 			safe_process (l_as)
@@ -171,6 +195,7 @@ feature {NONE} -- Implementation
 			-- reset some flags
 			is_with_alias := false
 			has_processed_infix_prefix_node := false
+			is_without_infix_replacement := false
 
 			-- set start position index
 			last_index := a_start_position

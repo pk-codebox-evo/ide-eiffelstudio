@@ -41,6 +41,7 @@ feature {NONE} -- Visitor implementation
 	process_feature_as (l_as: FEATURE_AS) is
 		local
 			i, nb: INTEGER
+			l_infix_prefix: INFIX_PREFIX_AS
 			is_separate: BOOLEAN
 			l_feature_object: SCOOP_CLIENT_FEATURE_OBJECT
 			l_feature_name_visitor: SCOOP_FEATURE_NAME_VISITOR
@@ -98,6 +99,10 @@ feature {NONE} -- Visitor implementation
 					-- process name
 					l_feature_name_visitor.process_feature_name (l_as.feature_names.i_th (i), false)
 					l_feature_object.set_feature_name (l_feature_name_visitor.get_feature_name)
+					l_feature_name_visitor.process_feature_name (l_as.feature_names.i_th (i), true)
+					l_feature_object.set_feature_alias_name (l_feature_name_visitor.get_feature_name)
+					-- declaration name writes the infix and non-infix notation if the feature name
+					-- contains an infix name. Change this to an alias notation in EiffelStudio 6.4
 					l_feature_name_visitor.process_feature_declaration_name (l_as.feature_names.i_th (i))
 					l_feature_object.set_feature_declaration_name (l_feature_name_visitor.get_feature_name)
 
@@ -156,15 +161,25 @@ feature {NONE} -- Visitor implementation
 						end
 
 					else
-						-- print original feature
+							-- print original feature
 						context.add_string ("%N%N%T")
 						if l_feature_object.is_feature_frozen then
 							context.add_string ("frozen ")
 						end
-						context.add_string (l_feature_object.feature_declaration_name + " ")
+						context.add_string (l_feature_object.feature_alias_name + " ")
 						last_index := l_as.body.start_position - 1
 
 						safe_process (l_as.body)
+
+						-- add a wrapper feature from the old infix notation to
+						-- the non-infix notation version
+						-- Remove this call with EiffelStudio 6.4
+						l_infix_prefix ?= l_as.feature_names.i_th (i)
+						if l_infix_prefix /= Void then
+							l_feature_name_visitor.process_declaration_infix_prefix (l_infix_prefix)
+
+							create_infix_feature_wrapper(l_as, l_feature_name_visitor.get_feature_name, l_feature_object.feature_name)
+						end
 					end
 
 					i := i + 1
@@ -188,7 +203,85 @@ feature {NONE} -- Visitor implementation
 			end
 		end
 
-feature {NONE} -- Implementation	
+feature {NONE} -- Implementation
+
+	create_infix_feature_wrapper (l_as: FEATURE_AS; an_original_feature_name, a_feature_name: STRING) is
+			-- Remove this feature with EiffelStudio 6.4
+			-- It creates a wrapper feature so that a call on a infix feature
+			-- is wrapped to the non-infix version
+		local
+			i, nb: INTEGER
+			l_last_index: INTEGER
+			l_type_dec: TYPE_DEC_AS
+			l_argument_list: FORMAL_ARGU_DEC_LIST_AS
+		do
+			-- save index
+			l_last_index := last_index
+
+			context.add_string ("%N%N%T" + an_original_feature_name + " ")
+
+			last_index := l_as.body.start_position - 1
+
+			safe_process (l_as.body.internal_arguments)
+			safe_process (l_as.body.colon_symbol (match_list))
+			safe_process (l_as.body.type)
+			-- skip assigner
+			--safe_process (l_as.assign_keyword (match_list))
+			--safe_process (l_as.assigner)
+			last_index := l_as.body.is_keyword_index - 1
+			context.add_string (" ")
+			safe_process (l_as.body.is_keyword (match_list))
+
+			-- add comment
+			context.add_string ("%N%T%T%T-- Feature wrapper for infix / prefix feature.")
+			context.add_string ("%N%T%T%T-- Hack for EiffelStudio 6.3")
+
+			if l_as.is_deferred then
+				-- add deferred keyword
+				context.add_string ("%N%T%Tdeferred")
+			else
+				-- add do keyword
+				context.add_string ("%N%T%Tdo")
+
+				-- add call to non_infix feature
+				context.add_string ("%N%T%T%T" + a_feature_name + " ")
+
+				-- add internal argument as actual arguments
+				if l_as.body.internal_arguments /= Void then
+					l_argument_list := l_as.body.internal_arguments
+
+					-- add bracket
+					context.add_string ("(")
+
+					from
+						i := 1
+						nb := l_argument_list.arguments.count
+					until
+						i > nb
+					loop
+						l_type_dec := l_argument_list.arguments.i_th (i)
+
+						last_index := l_type_dec.start_position - 1
+						process_identifier_list (l_type_dec.id_list)
+
+						if i < nb then
+							context.add_string (", ")
+						end
+
+						i := i + 1
+					end
+
+					-- add bracket
+					context.add_string (")")
+				end
+			end
+
+			-- add end keyword
+			context.add_string ("%N%T%Tend")
+
+			-- restore current index
+			last_index := l_last_index
+		end
 
 	create_unseparated_postcondition_attribute (a_fo: SCOOP_CLIENT_FEATURE_OBJECT) is
 			-- Generate list of unseparated postconditions.
