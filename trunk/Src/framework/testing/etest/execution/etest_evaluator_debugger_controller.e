@@ -43,7 +43,7 @@ feature {NONE} -- Status setting
 	start_evaluator (a_argument: STRING_8)
 			-- <Precursor>
 		do
-			service.service.eiffel_project_helper.run (Void, a_argument, Void)
+			test_suite.project_helper.run (Void, a_argument, Void)
 			is_evaluator_launched := True
 		end
 
