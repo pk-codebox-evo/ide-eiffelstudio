@@ -29,6 +29,7 @@ feature {NONE} -- Access
 feature {NONE} -- Factory
 
 	create_grid_row (a_record: like record; a_row: EV_GRID_ROW): ES_TEST_SESSION_GRID_ROW [TEST_EXECUTION_I]
+			-- <Precursor>
 		do
 			create {ES_TEST_EXECUTION_GRID_ROW} Result.make (a_record, a_row)
 		end
