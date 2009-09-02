@@ -38,6 +38,7 @@ for v=1:number_of_class
             nbranch_tbl(:, j) = fb_tbl{j}(:, 3)./number_of_branch;      
         end
     end
+    
     mb = median (nbranch_tbl, 2);
     mf = median (nfault_tbl, 2);
     X = horzcat (X, mb);
@@ -77,8 +78,7 @@ for i=1:number_of_class
     if is_normalized_fault == true
         ylim([0, 1]);
     end    
-    text (0.1, 0.8, ['r=', num2str(r(1, 2))]);
-
+    text (0.2, 0.8, ['r=', num2str(r(1, 2))]);
     title (classes{selected_classes(i)});
     xlabel ('Branch');
     ylabel ('Faults');
