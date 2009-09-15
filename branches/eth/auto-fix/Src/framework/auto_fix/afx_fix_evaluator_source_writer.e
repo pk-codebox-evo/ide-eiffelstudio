@@ -9,10 +9,11 @@ class
 
 inherit
 	TEST_EVALUATOR_SOURCE_WRITER
+		rename
+		    write_source as write_test_evaluator
 		redefine
 		    put_class_header,
-		    ancestor_names,
-		    write_source
+		    ancestor_names
 		end
 
 feature -- Status report
@@ -33,14 +34,23 @@ feature -- Access
 
 feature -- Basic operation
 
-	write_source (a_file: attached KI_TEXT_OUTPUT_STREAM; a_list: detachable DS_LINEAR [attached TEST_I])
+	write_fix_evaluator (a_file: attached KI_TEXT_OUTPUT_STREAM; a_list: detachable DS_LINEAR [AFX_TEST])
 			-- <Precursor>
+		local
+		    l_tests: detachable DS_ARRAYED_LIST [TEST_I]
 		do
 		    if a_list /= Void then
 			    test_count := a_list.count.to_natural_32
+			    create l_tests.make_default
+			    a_list.do_all (
+			    	agent (a_test_list: DS_ARRAYED_LIST [TEST_I]; a_test: AFX_TEST)
+			    		do
+			    		    a_test_list.force_last (a_test.test)
+			    		end (l_tests, ?)
+			    	)
 		    end
 
-		    Precursor (a_file, a_list)
+		    write_test_evaluator (a_file, l_tests)
 		end
 
 
