@@ -9,6 +9,8 @@ note
 class
 	DEBUGGER_PROFILES
 
+obsolete "[2009-09-14] Please use DEBUGGER_PROFILE_MANAGER"
+
 inherit
 	DEBUGGER_STORABLE_DATA_I
 
@@ -24,20 +26,38 @@ feature {NONE} -- Initialization
 			create internal_storage.make (n)
 		end
 
+feature -- Conversion
+
+	to_profile_provider: DEBUGGER_PROFILE_MANAGER
+		local
+			l_item: DEBUGGER_EXECUTION_PROFILE
+		do
+			from
+				create Result.make (count)
+				start
+			until
+				after
+			loop
+				l_item := item_for_iteration.to_profile
+				l_item.set_title (key_for_iteration)
+				Result.add (l_item)
+				forth
+			end
+		end
 feature -- Access
 
-	last_profile_name: STRING_32
+	last_profile_name: detachable STRING_32
 			-- Last profile's name
 
 	last_profile: like profile
 			-- Last profile details
 		do
-			if last_profile_name /= Void then
-				Result := profile (last_profile_name)
+			if attached last_profile_name as n then
+				Result := profile (n)
 			end
 		end
 
-	profile (a_name: like last_profile_name): TUPLE [name: like last_profile_name; params: DEBUGGER_EXECUTION_PARAMETERS]
+	profile (a_name: STRING_32): TUPLE [name: STRING_32; params: DEBUGGER_EXECUTION_PARAMETERS]
 			-- Profile indexed by `a_name'
 		require
 			a_name_not_void: a_name /= Void
@@ -53,7 +73,7 @@ feature -- Access
 				lst.after or Result /= Void
 			loop
 				Result := lst.item
-				if Result /= Void and then not Result.name.is_equal (a_name) then
+				if Result /= Void and then not Result.name.same_string (a_name) then
 					Result := Void
 				end
 				lst.forth
@@ -123,7 +143,7 @@ feature -- Cursor movement
 				lst.after or Result
 			loop
 				p := lst.item
-				if p /= Void and then p.name.is_equal (key) then
+				if p /= Void and then p.name.same_string (key) then
 					Result := True
 				else
 					lst.forth
@@ -133,7 +153,7 @@ feature -- Cursor movement
 				lst.go_to (cursor)
 			end
 		ensure
-			found_at_position: Result implies (internal_storage.item /= Void and then internal_storage.item.name.is_equal (key))
+			found_at_position: Result implies (attached internal_storage.item as el_item and then el_item.name.same_string (key))
 		end
 
 	start
@@ -188,7 +208,7 @@ invariant
 	internal_storage_not_void: internal_storage /= Void
 
 note
-	copyright:	"Copyright (c) 1984-2006, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2009, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[
@@ -201,22 +221,22 @@ note
 			(available at the URL listed under "license" above).
 			
 			Eiffel Software's Eiffel Development Environment is
-			distributed in the hope that it will be useful,	but
+			distributed in the hope that it will be useful, but
 			WITHOUT ANY WARRANTY; without even the implied warranty
 			of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-			See the	GNU General Public License for more details.
+			See the GNU General Public License for more details.
 			
 			You should have received a copy of the GNU General Public
 			License along with Eiffel Software's Eiffel Development
 			Environment; if not, write to the Free Software Foundation,
-			Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
+			Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 		]"
 	source: "[
-			 Eiffel Software
-			 356 Storke Road, Goleta, CA 93117 USA
-			 Telephone 805-685-1006, Fax 805-685-6869
-			 Website http://www.eiffel.com
-			 Customer support http://support.eiffel.com
+			Eiffel Software
+			5949 Hollister Ave., Goleta, CA 93117 USA
+			Telephone 805-685-1006, Fax 805-685-6869
+			Website http://www.eiffel.com
+			Customer support http://support.eiffel.com
 		]"
 
 end
