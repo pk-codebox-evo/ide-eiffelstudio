@@ -9,7 +9,7 @@ class
 	EB_KERNEL
 
 inherit
-	ARGUMENTS
+	ES_ARGUMENTS
 
 	SHARED_FLAGS
 
