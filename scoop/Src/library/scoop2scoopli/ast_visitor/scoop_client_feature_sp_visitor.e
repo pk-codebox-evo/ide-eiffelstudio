@@ -18,17 +18,7 @@ inherit
 	SCOOP_WORKBENCH
 
 create
-	make_with_context
-
-feature -- Initialisation
-
-	make_with_context(a_context: ROUNDTRIP_CONTEXT)
-			-- Initialise and reset flags
-		require
-			a_context_not_void: a_context /= Void
-		do
-			context := a_context
-		end
+	make
 
 feature -- Access
 
@@ -91,13 +81,14 @@ feature {NONE} -- Node implementation
 				-- second argument: agent
 				context.add_string (", agent " + fo.feature_name + "_scoop_separate_" + class_c.name.as_lower + "_spc_" + i.out + " ")
 				process_formal_argument_list_as_actual_argument_list_with_prefix (l_as, an_assertion_object.get_i_th_separate_argument_tuple (1).argument_name)
+				context.add_string (")")
 
 				-- postcondition added_to_unseparated_postconditions
 				context.add_string ("%N%T%T%T%Tor else added_to_unseparated_postconditions (" + fo.feature_name + "_scoop_separate_" + class_c.name.as_lower + "_unseparated_postconditions,")
 				context.add_string ("%N%T%T%T%Tagent " + fo.feature_name + "_scoop_separate_" + class_c.name.as_lower + "_spc_" + i.out + " ")
 				process_formal_argument_list_as_actual_argument_list_with_prefix (l_as, "Current")
 
-				context.add_string ("))")
+				context.add_string (")")
 				i := i + 1
 			end
 

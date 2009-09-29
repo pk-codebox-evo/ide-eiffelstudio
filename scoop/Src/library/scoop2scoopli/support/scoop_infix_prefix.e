@@ -66,7 +66,7 @@ feature -- infix and prefix text names
 				-- `a_symbol' might contain special characters -> replace it!
 				-- E.g. "|..|" results in "infix__te_vertical_bar_te_dotdot_te_vertical_bar (other ..)"
 
-				l_str := a_symbol
+				create l_str.make_from_string (a_symbol)
 
 				-- replace substrings of length 2
 				if l_str.has_substring (te_dotdot) then l_str.replace_substring_all (te_dotdot, "te_dotdot_") end

@@ -119,6 +119,16 @@ feature -- Current SCOOP_CLIENT_FEATURE_OBJECT access
 			scoop_workbench_objects.set_current_feature_object (a_feature_object)
 		end
 
+feature -- Current proxy feature name
+
+	proxy_feature_name: STRING is
+			-- Getter for `current_proxy_feature_name'
+		do
+			Result := scoop_workbench_objects.current_proxy_feature_name
+		ensure
+			Result_not_void: Result /= Void
+		end
+
 feature -- System support
 
 	get_class_as_by_name (a_class_name: STRING): CLASS_AS is

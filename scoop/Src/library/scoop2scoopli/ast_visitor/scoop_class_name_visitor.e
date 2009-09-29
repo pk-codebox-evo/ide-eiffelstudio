@@ -11,7 +11,7 @@ inherit
 	SCOOP_CONTEXT_AST_PRINTER
 		export
 			{NONE} all
-			{ANY} setup, set_context
+			{SCOOP_CLASS_NAME} setup, set_context
 		redefine
 			process_id_as
 		end
@@ -25,7 +25,7 @@ create
 
 feature {SCOOP_CLASS_NAME} -- Initialisation
 
-	make_with_context(a_context: ROUNDTRIP_CONTEXT)
+	make_with_context (a_context: ROUNDTRIP_CONTEXT)
 			-- Initialise and reset flags
 		require
 			a_context_not_void: a_context /= Void
@@ -34,6 +34,7 @@ feature {SCOOP_CLASS_NAME} -- Initialisation
 
 			-- create prefix string
 			create scoop_prefix.make_from_string ("SCOOP_SEPARATE__")
+			create scoop_string.make_from_string ("STRING")
 		end
 
 feature {SCOOP_CLASS_NAME} -- Access
@@ -61,41 +62,48 @@ feature {SCOOP_CLASS_NAME} -- Access
 	process_id_str (l_class_name: STRING; a_set_prefix: BOOLEAN) is
 			-- Process `l_as'.
 		do
---			if l_class_name.as_upper.is_equal ("ANY") then
---				context.add_string ("SCOOP_SEPARATE__ANY")
---			else
-				if is_set_prefix and then scoop_classes.has (l_class_name.as_upper) then
-					context.add_string (scoop_prefix)
-				end
-				context.add_string (l_class_name)
-				if l_class_name.is_equal ("inherit") then
-					is_set_prefix := true
-				end
---			end
+			if a_set_prefix and then (scoop_classes.has (l_class_name.as_upper)) then
+				context.add_string (scoop_prefix)
+			end
+			context.add_string (l_class_name)
+			if l_class_name.is_equal ("inherit") then
+				is_set_prefix := true
+			end
 		end
 
 feature {NONE} -- Roundtrip: process nodes
 
 	process_id_as (l_as: ID_AS) is
+		local
+			is_scoop_string: BOOLEAN
 		do
+			if l_as.name.is_equal (scoop_string) then
+				is_scoop_string := true
+			end
+
 			process_leading_leaves (l_as.index)
 			last_index := l_as.index
 
---			if l_as.name.as_upper.is_equal ("ANY") then
---				context.add_string ("SCOOP_SEPARATE__ANY")
---			else
-				if is_set_prefix and then scoop_classes.has (l_as.name.as_upper) then
-					context.add_string (scoop_prefix)
-					if is_print_both then
-						put_string (l_as)
-						context.add_string (", ")
+			if is_set_prefix and then (scoop_classes.has (l_as.name.as_upper)
+				or is_scoop_string) then
+
+				-- add 'SCOOP_SEPARATE__' prefix
+				context.add_string (scoop_prefix)
+				if is_print_both then
+					put_string (l_as)
+					if is_scoop_string then
+						context.add_string ("_8")
 					end
+					context.add_string (", ")
 				end
-				put_string (l_as)
-				if l_as.name.is_equal ("inherit") then
-					is_set_prefix := true
-				end
---			end
+			end
+			put_string (l_as)
+			if is_scoop_string then
+				context.add_string ("_8")
+			end
+			if l_as.name.is_equal ("inherit") then
+				is_set_prefix := true
+			end
 		end
 
 feature {NONE} -- Implementation
@@ -108,5 +116,8 @@ feature {NONE} -- Implementation
 
 	scoop_prefix: STRING
 			-- string that contains 'SCOOP_SEPARATE__'
+
+	scoop_string: STRING
+			-- string that contains 'STRING'
 
 end

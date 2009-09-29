@@ -13,43 +13,54 @@ inherit
 			process_class_type_as,
 			process_generic_class_type_as,
 			process_named_tuple_type_as,
+			process_parameter_list_as,
 			process_access_feat_as,
 			process_access_inv_as,
 			process_access_id_as,
 			process_static_access_as,
-			process_parameter_list_as,
+			process_precursor_as,
 			process_feature_as,
 			process_nested_as,
-			process_nested_expr_as
+			process_nested_expr_as,
+			process_create_creation_as,
+			process_binary_as,
+			process_unary_as
 		end
+
 	SCOOP_CLASS_NAME
 
-feature -- Roundtrip: 'Current' as first argument in paramenter list
-
-	process_parameter_list_as (l_as: PARAMETER_LIST_AS) is
-			-- Process `l_as'.
-		local
-			l_is_nested_call: BOOLEAN
-			l_is_last_expr_separate: BOOLEAN
-		do
-			safe_process (l_as.lparan_symbol (match_list))
-			-- add additional argument 'Current'
-			if is_nested_call and then is_last_expr_separate then
-				context.add_string ("Current, ")
-			end
-
-			-- process parameters as new expression
-			-- save therefore some values for the next nested message.
-			l_is_nested_call := is_nested_call
-			l_is_last_expr_separate := is_last_expr_separate
-			process_parameter_list (l_as.parameters)
-			is_nested_call := l_is_nested_call
-			is_last_expr_separate := l_is_last_expr_separate
-
-			safe_process (l_as.rparan_symbol (match_list))
+	SHARED_ERROR_HANDLER
+		export
+			{NONE} all
 		end
 
-feature -- Roundtrip: process type expression
+create
+	make,
+	make_with_default_context
+
+feature {NONE} -- Initialization
+
+	make (a_ctxt: ROUNDTRIP_CONTEXT)  is
+			-- Initialize and set `context' with `a_ctxt'.
+		require
+			a_ctxt_not_void: a_ctxt /= Void
+		do
+			context := a_ctxt
+
+			-- initialize level handling
+			initialize_level_handling
+		end
+
+	make_with_default_context is
+			-- Initialize and create context of type `ROUNDTRIP_STRING_LIST_CONTEXT'.
+		do
+			make (create {ROUNDTRIP_STRING_LIST_CONTEXT}.make)
+
+			-- initialize level handling
+			initialize_level_handling
+		end
+
+feature {NONE} -- Roundtrip: process type expression
 
 	process_class_type_as (l_as: CLASS_TYPE_AS) is
 		do
@@ -94,8 +105,7 @@ feature -- Roundtrip: process type expression
 			last_index := l_as.class_name.index
 
 			-- process internal generics
-			create l_generics_visitor.make_with_context (context)
-			l_generics_visitor.setup (parsed_class, match_list, true, true)
+			l_generics_visitor := scoop_visitor_factory.new_generics_visitor (context)
 			l_generics_visitor.process_internal_generics (l_as.internal_generics, true, false)
 			if l_as.internal_generics /= Void then
 				last_index := l_generics_visitor.get_last_index
@@ -125,16 +135,44 @@ feature -- Roundtrip: process type expression
 			safe_process (l_as.rcurly_symbol (match_list))
 		end
 
-feature -- Roundtrip: process nodes, call expressions with internal parameters.
+feature {NONE} -- Roundtrip: 'Current' as first argument in paramenter list
+
+	process_parameter_list_as (l_as: PARAMETER_LIST_AS) is
+			-- Process `l_as'.
+		do
+			safe_process (l_as.lparan_symbol (match_list))
+			-- add additional argument 'Current'
+			if is_last_call_separate then
+				context.add_string ("Current, ")
+			end
+
+			-- process parameters as new expression
+			-- save therefore some values for the next nested message.
+			increase_nested_level
+			process_parameter_list (l_as.parameters)
+			decrease_nested_level
+
+			safe_process (l_as.rparan_symbol (match_list))
+		end
+
+feature {NONE} -- Roundtrip: process nodes, call expressions with internal parameters.
 
 	process_access_feat_as (l_as: ACCESS_FEAT_AS) is
 		do
 			safe_process (l_as.feature_name)
 
 			-- process internal parameters and add current if target is of separate type.
+			increase_nested_level
 			process_internal_parameters(l_as.internal_parameters)
+			decrease_nested_level
+
 			-- get 'is_separate' information about current call for next expr
-			is_last_expr_separate := evaluate_id(l_as.feature_name)
+			set_current_level_is_separate (evaluate_id(l_as.feature_name))
+
+			-- get is separate type for binary expressions
+			if is_processing_binary_expr and then current_level.is_separate then
+				is_binary_expr_separate := true
+			end
 		end
 
 	process_access_inv_as (l_as: ACCESS_INV_AS) is
@@ -143,76 +181,292 @@ feature -- Roundtrip: process nodes, call expressions with internal parameters.
 			safe_process (l_as.feature_name)
 
 			-- process internal parameters and add current if target is of separate type.
+			increase_nested_level
 			process_internal_parameters(l_as.internal_parameters)
+			decrease_nested_level
+
 			-- get 'is_separate' information about current call for next expr
-			is_last_expr_separate := evaluate_id(l_as.feature_name)
+			set_current_level_is_separate (evaluate_id(l_as.feature_name))
+
+			-- get is separate type for binary expressions
+			if is_processing_binary_expr and then current_level.is_separate then
+				is_binary_expr_separate := true
+			end
 		end
 
 	process_access_id_as (l_as: ACCESS_ID_AS) is
 		do
 			safe_process (l_as.feature_name)
+
 			-- process internal parameters and add current if target is of separate type.
+			increase_nested_level
 			process_internal_parameters(l_as.internal_parameters)
+			decrease_nested_level
+
 			-- get 'is_separate' information about current call for next expr
-			is_last_expr_separate := evaluate_id(l_as.feature_name)
+			set_current_level_is_separate (evaluate_id(l_as.feature_name))
+
+			-- get is separate type for binary expressions
+			if is_processing_binary_expr and then current_level.is_separate then
+				is_binary_expr_separate := true
+			end
 		end
 
 	process_static_access_as (l_as: STATIC_ACCESS_AS) is
 		local
 			l_type_visitor: SCOOP_TYPE_VISITOR
+			l_class_as: CLASS_TYPE_AS
 		do
 			safe_process (l_as.feature_keyword (match_list))
 			safe_process (l_as.class_type)
 			safe_process (l_as.dot_symbol (match_list))
 
-			-- is nested call
-			is_nested_call := true
-
-			safe_process (l_as.feature_name)
-
 			-- get base class
 			create l_type_visitor
 			l_type_visitor.setup (parsed_class, match_list, true, true)
-			l_last_base_class := l_type_visitor.evaluate_class_from_type (l_as.class_type, class_c)
+			set_current_level_base_class (l_type_visitor.evaluate_class_from_type (l_as.class_type, class_c))
 
-			-- get 'is_separate' information about current call for next expr
-			is_last_expr_separate := evaluate_id(l_as.feature_name)
-			is_nested_call := false
+			l_class_as ?= l_as.class_type
+			if l_class_as /= Void and then l_class_as.is_separate then
+				set_current_level_is_separate (true)
+			end
+
+			-- get is separate type for binary expressions
+			-- separate state is propagated. therefore just take current level status.
+			if is_processing_binary_expr and then current_level.is_separate then
+				is_binary_expr_separate := true
+			end
+
+			-- increase current nested level
+			increase_nested_level
+
+			safe_process (l_as.feature_name)
 
 			-- process internal parameters and add current if target is of separate type.
+			increase_nested_level
 			process_internal_parameters(l_as.internal_parameters)
+			decrease_nested_level
+
+			-- decrease current nested level
+			decrease_nested_level
+		end
+
+	process_precursor_as (l_as: PRECURSOR_AS) is
+		do
+			safe_process (l_as.precursor_keyword)
+			safe_process (l_as.parent_base_class)
+			increase_nested_level
+			safe_process (l_as.internal_parameters)
+			decrease_nested_level
 		end
 
 	process_nested_as (l_as: NESTED_AS)
 			-- Process `l_as'.
 		do
-			is_last_expr_separate := false
+			set_current_level_is_separate (false)
 			safe_process (l_as.target)
 			safe_process (l_as.dot_symbol (match_list))
-			is_nested_call := true
+
+			-- increase current nested level
+			increase_nested_level
+
 			safe_process (l_as.message)
-			is_nested_call := false
+
+			-- decrease current nested level
+			decrease_nested_level
 		end
 
 	process_nested_expr_as (l_as: NESTED_EXPR_AS)
 			-- Process `l_as'.
 		do
-			is_last_expr_separate := false
+			set_current_level_is_separate (false)
 			safe_process (l_as.lparan_symbol (match_list))
 			safe_process (l_as.target)
 			safe_process (l_as.rparan_symbol (match_list))
 			safe_process (l_as.dot_symbol (match_list))
-			is_nested_call := true
+
+			-- increase current nested level
+			increase_nested_level
+
 			safe_process (l_as.message)
-			is_nested_call := false
+
+			-- decrease current nested level
+			decrease_nested_level
 		end
 
-feature -- Visitor implementation
+	process_binary_as (l_as: BINARY_AS)
+		local
+			l_feature_name_visitor: SCOOP_FEATURE_NAME_VISITOR
+		do
+			-- reset is_separate_binary attribute
+			is_processing_binary_expr := true
+			is_binary_expr_separate := false
+
+			-- process left expression
+			safe_process (l_as.left)
+
+			-- unflag binary expression processing
+			is_processing_binary_expr := false
+
+			if is_binary_expr_separate then
+				-- expression is separate. Replace therefore
+				-- the infix call with a non-infix call
+
+				-- process infix operator
+				l_feature_name_visitor := scoop_visitor_factory.new_feature_name_visitor
+				l_feature_name_visitor.process_infix_str (l_as.operator_ast.name)
+				context.add_string ("." + l_feature_name_visitor.get_feature_name)
+				last_index := l_as.operator_index
+
+				-- add brackets for non-infix call
+				context.add_string ("(Current,")
+				last_index := l_as.operator_index
+				increase_nested_level
+				safe_process (l_as.right)
+				decrease_nested_level
+				context.add_string (")")
+			else
+				-- left expression of binary operation is not of separate type
+				-- process it as usual
+				safe_process (l_as.operator (match_list))
+				safe_process (l_as.right)
+			end
+		end
+
+	process_unary_as (l_as: UNARY_AS) is
+		do
+			safe_process (l_as.operator (match_list))
+			safe_process (l_as.expr)
+		end
+
+feature {NONE} -- Visitor implementation
 
 	process_feature_as (l_as: FEATURE_AS) is
 		do
 			set_current_feature_as (l_as)
 			Precursor (l_as)
+		end
+
+feature {NONE} -- Visitor implementation: creation
+
+	process_create_creation_as (l_as: CREATE_CREATION_AS) is
+			-- Process `l_as'.
+		local
+			is_separate: BOOLEAN
+			l_target_name: STRING
+			l_class_c: CLASS_C
+			l_type_visitor: SCOOP_TYPE_VISITOR
+			l_type_expression_visitor: SCOOP_CLIENT_TYPE_EXPR_VISITOR
+			l_processor_visitor: SCOOP_EXPLICIT_PROCESSOR_SPECIFICATION_VISITOR
+			l_processor: TUPLE [has_explicit_processor_specification: BOOLEAN; entity_name: STRING; has_handler: BOOLEAN]
+		do
+			create l_type_visitor
+			l_type_visitor.setup (parsed_class, match_list, true, true)
+
+			-- get separate status of current call
+			if l_as.type /= Void then
+				-- get type by the explicit type
+				l_class_c := l_type_visitor.evaluate_class_from_type (l_as.type, class_c)
+				is_separate := l_type_visitor.is_separate
+				-- get processor specification
+				if is_separate then
+--					l_processor_visitor := scoop_visitor_factory.new_explicit_processor_specification_visitor(class_c)
+--					l_processor := l_processor_visitor.get_explicit_processor_specification (l_as.type)
+				end
+			elseif class_c.feature_table.has (l_as.target.access_name) then
+				-- get type by evaluating l_as.target which is an ACCESS_AS node
+				l_type_expression_visitor := scoop_visitor_factory.new_client_type_expr_visitor
+				is_separate := l_type_expression_visitor.is_access_as_separate (l_as.target)
+				-- get processor specification
+				if is_separate then
+--					l_processor_visitor := scoop_visitor_factory.new_explicit_processor_specification_visitor(class_c)
+--					l_processor := l_processor_visitor.get_explicit_processor_specification (l_as.type)
+				end
+			elseif is_local (l_as.target.access_name) then
+				is_separate := is_last_local_separate
+			else
+				-- should not be the case
+				error_handler.insert_error (create {INTERNAL_ERROR}.make("SCOOP Unexpected error: {SCOOP_CLIENT_CONTEXT_AST_PRINTER}.process_create_creation_as."))
+			end
+
+			if true then
+			--if not is_separate then
+				-- process it as normal
+				Precursor (l_as)
+			else
+
+
+				-- l_feature_i.type.processor_tag = Void
+				if not l_processor.has_explicit_processor_specification then
+					-- current object is separate, but has no explicit processor specification
+
+					-- create SCOOP object with new processor
+					safe_process (l_as.create_keyword (match_list))
+					safe_process (l_as.type)
+					if l_as.target /= Void then
+						process_leading_leaves (l_as.target.start_position)
+					elseif l_as.type /= Void then
+						process_leading_leaves (l_as.call.start_position)
+					end
+					if l_as.target /= Void then
+						context.add_string (l_as.target.access_name)
+					end
+					context.add_string (".set_processor_ (scoop_scheduler.new_processor_)")
+
+					-- process current creation call
+					context.add_string (" separate_execute_routine ([")
+					if l_as.target /= Void then
+						context.add_string (l_as.target.access_name)
+					else
+						last_index := l_as.create_keyword_index
+						safe_process (l_as.type.lcurly_symbol (match_list))
+						safe_process (l_as.type)
+						safe_process (l_as.type.rcurly_symbol (match_list))
+					end
+					context.add_string (".processor_], agent ")
+					safe_process (l_as.target)
+					if l_as.call /= Void then
+						safe_process (l_as.call)
+					else
+						context.add_string (".default_create_scoop_separate_ (Current)")
+					end
+					context.add_string (", Void, Void, Void)")
+
+				elseif not l_processor.has_handler then
+					-- current entity is separate and has an explicit processor specification
+					-- but is not defined by a handler.
+					if l_as.target /= Void then
+						l_target_name := l_as.target.access_name
+					end
+
+					process_leading_leaves (l_as.create_keyword_index)
+
+					-- add processor void test
+					context.add_string ("if " + l_processor.entity_name + " = Void then p = scoop_scheduler.new_processor_ end")
+
+--					context.add_string ("%N%T%T create ")
+--					context.add_string (".set_processor_ (" + l_processor.entity_name + "); ")
+--					context.add_string ("separate_execute_routine ([" + l_target_name + ".processor_], agent " + l_target_name)
+
+					-- create a call like:
+					--  create a.set_processor_ (p); separate_execute_routine ([a.processor_], agent a.default_create_scoop_separate_fork (Current), Void, Void, Void)
+
+				else
+					-- current entity is separate and has an explicit processor specification.
+					-- it is defined also by a handler.
+
+					process_leading_leaves (l_as.create_keyword_index)
+
+					-- add processor void test
+					context.add_string ("if " + l_processor.entity_name + ".processor_ = Void then ")
+					context.add_string (l_processor.entity_name + ".set_processor_(scoop_scheduler.new_processor_) end")
+
+					-- create a call like:
+					-- if k.handler = void then k.set_processor_(scoop_scheduler.new_processor_) end
+					-- create a.set_processor_ (k.handler); separate_execute_routine ([a.processor_], agent a.default_create_scoop_separate_fork (Current), Void, Void, Void)
+
+				end
+			end
 		end
 
 feature {NONE} -- Implementation
@@ -222,9 +476,11 @@ feature {NONE} -- Implementation
 			-- it is a nested call and the target of separate type.
 		do
 			if l_as /= Void then
-				-- add additional argument 'Current'
-				safe_process (l_as)
-			elseif is_nested_call and then is_last_expr_separate then
+				-- add additional argument 'Current' if last target was separate
+				-- add a 'dummy level' so that the next target has no type information as basis
+				process_parameter_list_as (l_as)
+			elseif is_last_call_separate then
+				-- add additional argument 'Current' if last target was separate
 				context.add_string (" (Current)")
 			end
 		end
@@ -246,9 +502,8 @@ feature {NONE} -- Implementation
 					l_as.after
 				loop
 
-					-- reset the flags for each paramter
-					is_nested_call := false
-					is_last_expr_separate := false
+					-- reset current level flags for each paramter
+					reset_current_level
 					-- process the node
 					safe_process (l_as.item)
 
@@ -261,32 +516,237 @@ feature {NONE} -- Implementation
 			end
 		end
 
+feature {NONE} -- Separate status evaluation
+
 	evaluate_id (l_as: ID_AS): BOOLEAN is
 			-- evaluates the separated state of the entity behind id
 		local
 			l_type_expr_visitor: SCOOP_TYPE_EXPR_VISITOR
 		do
 			-- get is_separate information of the current call
-			create l_type_expr_visitor
-			l_type_expr_visitor.setup (parsed_class, match_list, true, true)
-			if is_nested_call and then l_last_base_class /= Void then
-				l_type_expr_visitor.evaluate_type_from_expr (l_as, l_last_base_class)
+			if is_last_level_separate then
+				-- Propagation of 'is_separate' state
+				-- Creates for nested calls for every following call an argument 'Current'
+				Result := true
 			else
-				l_type_expr_visitor.evaluate_type_from_expr (l_as, class_c)
+				create l_type_expr_visitor
+				l_type_expr_visitor.setup (parsed_class, match_list, true, true)
+				if last_base_class /= Void then
+					l_type_expr_visitor.evaluate_type_from_expr (l_as, last_base_class)
+				else
+					l_type_expr_visitor.evaluate_type_from_expr (l_as, class_c)
+				end
+				set_current_level_base_class (l_type_expr_visitor.get_new_base_class)
+				Result := l_type_expr_visitor.is_last_type_separate
 			end
-			l_last_base_class := l_type_expr_visitor.get_new_base_class
-			Result := l_type_expr_visitor.is_last_type_separate
 		end
 
-	is_last_expr_separate: BOOLEAN
-		-- indicates that the processed type is separate
-		-- therefore we add 'Current' as a first internal parameter.
+	is_local (an_access_name: STRING): BOOLEAN is
+			-- Returns true if `an_access_name' is declared locally
+		local
+			i, j, nb, nbj: INTEGER
+			l_routine_as: ROUTINE_AS
+			l_local: TYPE_DEC_AS
+			l_type_visitor: SCOOP_TYPE_EXPR_VISITOR
+			l_processor_visitor: SCOOP_EXPLICIT_PROCESSOR_SPECIFICATION_VISITOR
+			l_processor: TUPLE [has_explicit_processor_specification: BOOLEAN; entity_name: STRING; has_handler: BOOLEAN]
+		do
+			-- reset some flags
+			is_last_local_separate := false
 
-	is_nested_call: BOOLEAN
-		-- indicates that the message of a nested call is processed
-		-- the last base class for type evaluation is taken
+			if feature_as.body /= Void then
+				l_routine_as ?= feature_as.body.content
+				if l_routine_as /= Void and then l_routine_as.internal_locals /= Void then
+					from
+						i := 1
+						nb := l_routine_as.internal_locals.locals.count
+					until
+						i > nb
+					loop
+						l_local := l_routine_as.internal_locals.locals.i_th (i)
+						from
+							j :=1
+							nbj := l_local.id_list.count
+						until
+							j > nbj
+						loop
+							if l_local.item_name (j).is_equal (an_access_name) then
+								Result := true
+								-- get also separate status of current local
+								create l_type_visitor
+								l_type_visitor.setup (parsed_class, match_list, true, true)
+								l_type_visitor.evaluate_type_from_type_as (l_local.type, class_c)
+								is_last_local_separate := l_type_visitor.is_last_type_separate
 
-	l_last_base_class: CLASS_C
-		-- last base class for processing nested calls
+								-- get processor specification
+								if is_last_local_separate then
+									l_processor_visitor := scoop_visitor_factory.new_explicit_processor_specification_visitor(class_c)
+									l_processor := l_processor_visitor.get_explicit_processor_specification (l_local.type)
+								end
+							end
+							j := j + 1
+						end
+						i := i + 1
+					end
+				end
+			end
+		end
+
+feature {NONE} -- Level handling
+
+	initialize_level_handling is
+			-- Initialize level handling attributes
+		local
+			l_tuple: like current_level
+		do
+			-- set current level handling
+			create nested_level
+			nested_level := 0
+			create nested_levels.make
+
+			-- create current level
+			create l_tuple
+			l_tuple.level := nested_level
+			nested_levels.put_front (l_tuple)
+		end
+
+	current_level: TUPLE [level: INTEGER; is_separate: BOOLEAN; base_class: CLASS_C] is
+			-- Returns the current `nested_levels' tuple.
+		do
+			Result := nested_levels.first
+		ensure
+			Result_not_void: Result /= Void
+		end
+
+	is_last_call_separate: BOOLEAN is
+			-- Returns `is_separate' of level -2.
+		local
+			l_result_tuple: like current_level
+		do
+			if nested_level - 2 >= 0 then
+				-- go to third item
+				nested_levels.start
+				nested_levels.forth
+				nested_levels.forth
+
+				l_result_tuple := nested_levels.item
+
+				Result := l_result_tuple.is_separate
+			end
+		end
+
+	is_last_level_separate: BOOLEAN is
+			-- Returns `is_separate' of level -1.
+		local
+			l_result_tuple: like current_level
+		do
+			if nested_level - 1 >= 0 then
+				-- go to second item
+				nested_levels.start
+				nested_levels.forth
+
+				l_result_tuple := nested_levels.item
+
+				Result := l_result_tuple.is_separate
+			end
+		end
+
+	last_base_class: CLASS_C is
+			-- Returns `base_class' of `nested_levels's item(nested_level - 1)
+		local
+			l_result_tuple: like current_level
+		do
+			if nested_level - 1 >= 0 then
+
+				-- go to second item
+				nested_levels.start
+				nested_levels.forth
+
+				-- get item
+				l_result_tuple := nested_levels.item
+
+				Result := l_result_tuple.base_class
+			end
+		end
+
+	set_current_level_is_separate (a_value: BOOLEAN) is
+			-- Marks current level's `is_separate' information with `a_value'
+		local
+			l_tuple: like current_level
+		do
+			l_tuple := current_level
+			l_tuple.is_separate := a_value
+		end
+
+	set_current_level_base_class (a_base_class: CLASS_C) is
+			-- Marks current level's `is_separate' information with `a_value'
+		local
+			l_tuple: like current_level
+		do
+			l_tuple := current_level
+			l_tuple.base_class := a_base_class
+		end
+
+	reset_current_level is
+			-- Resets the current level's tuple
+		local
+			l_tuple: like current_level
+		do
+			l_tuple := current_level
+			l_tuple.is_separate := false
+			l_tuple.base_class := Void
+		end
+
+	increase_nested_level is
+			-- Increases the current level
+		local
+			l_tuple: like current_level
+		do
+			-- increase current nested level
+			nested_level := nested_level + 1
+
+			-- create tuple for current level
+			create l_tuple
+			l_tuple.level := nested_level
+			nested_levels.put_front (l_tuple)
+		end
+
+	decrease_nested_level is
+			-- Decreases the current level
+		do
+			-- remove current level
+			nested_levels.start
+			nested_levels.remove
+
+			-- decrease current nested level
+			nested_level := nested_level - 1
+		end
+
+feature {NONE} -- Implementation
+
+	nested_levels: LINKED_LIST[TUPLE [level: INTEGER; is_separate: BOOLEAN; base_class: CLASS_C]]
+		-- saves `is_separate' information for nested calls in levels
+
+	nested_level: INTEGER
+		-- current nested call level
+
+	is_processing_binary_expr: BOOLEAN
+		-- flags the processing of a binary expression
+
+	is_binary_expr_separate: BOOLEAN
+		-- remembers for `process_binary_as' separate state of left expression
+
+	is_last_local_separate: BOOLEAN
+		-- returns true if current processed acccess_as node is
+		-- a local and separate
+
+	is_last_internal_argument_separate: BOOLEAN
+		-- returns true if current processed access_as node is
+		-- an internal argument and of separate type
+
+invariant
+	valid_nested_level: nested_level >= 0
+	nested_levels_not_void: nested_levels /= Void
+	nested_leve_inv: nested_level = nested_levels.count - 1
 
 end

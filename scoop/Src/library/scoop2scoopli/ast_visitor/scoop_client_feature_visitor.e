@@ -16,17 +16,7 @@ inherit
 	SCOOP_BASIC_TYPE
 
 create
-	make_with_context
-
-feature {NONE} -- Initialisation
-
-	make_with_context(a_context: ROUNDTRIP_CONTEXT)
-			-- Initialise and reset flags
-		require
-			a_context_not_void: a_context /= Void
-		do
-			context := a_context
-		end
+	make
 
 feature -- Access
 
@@ -61,14 +51,27 @@ feature {NONE} -- Visitor implementation
 				safe_process (l_as.feature_names)
 				safe_process (l_as.body)
 			else -- routine
-
-					-- create feature object
+				-- create feature object
 				create l_feature_object
 				set_feature_object (l_feature_object)
 
-					-- create feature name visitor
-				create l_feature_name_visitor.make
-				l_feature_name_visitor.setup (parsed_class, match_list, true, true)
+				-- get feature name visitor
+				l_feature_name_visitor := scoop_visitor_factory.new_feature_name_visitor
+
+				-- create an argument visitor
+				l_argument_visitor := scoop_visitor_factory.new_client_argument_visitor_for_class (parsed_class, match_list)
+				-- create assertion visitor
+				l_feature_assertion_visitor := scoop_visitor_factory.new_client_feature_assertion_visitor (context)
+				-- create locking request body (feature, procedure, deferred routines)
+				l_feature_lr_visitor := scoop_visitor_factory.new_client_feature_lr_visitor (context)
+				-- create enclosing routine body (feature, procedure, deferred routines)
+				l_feature_er_visitor := scoop_visitor_factory.new_client_feature_er_visitor (context)
+				-- create wait condition wrapper (feature, procedure, deferred routines)
+				l_feature_wc_visitor := scoop_visitor_factory.new_client_feature_wc_visitor (context)
+				-- create non separate postcondition clauses wrapper
+				l_feature_nsp_visitor := scoop_visitor_factory.new_client_feature_nsp_visitor (context)
+				-- create separate postcondition clauses wrapper
+				l_feature_sp_visitor := scoop_visitor_factory.new_client_feature_sp_visitor (context)
 
 				-- create for each feature name a new body
 				-- (and also for the other SCOOP routines)
@@ -81,8 +84,6 @@ feature {NONE} -- Visitor implementation
 					is_separate := false
 					-- check if there are separate arguments
 					if l_as.body /= Void and then l_as.body.internal_arguments /= void then
-						create l_argument_visitor
-						l_argument_visitor.setup (parsed_class, match_list, true, true)
 						l_feature_object.set_arguments (l_argument_visitor.process_arguments (l_as.body.internal_arguments))
 
 						if l_feature_object.arguments.has_separate_arguments then
@@ -109,8 +110,6 @@ feature {NONE} -- Visitor implementation
 					if is_separate then
 
 						-- assertion visitor
-						create l_feature_assertion_visitor.make_with_context (context)
-						l_feature_assertion_visitor.setup (parsed_class, match_list, true, true)
 						l_feature_assertion_visitor.process_feature_body (l_as.body, l_feature_object)
 
 						-- get result objects
@@ -118,18 +117,12 @@ feature {NONE} -- Visitor implementation
 						l_feature_object.set_postconditions (l_feature_assertion_visitor.get_postconditions)
 
 						-- locking request body (feature, procedure, deferred routines)
-						create l_feature_lr_visitor.make_with_context (context)
-						l_feature_lr_visitor.setup (parsed_class, match_list, true, true)
 						l_feature_lr_visitor.process_feature_body (l_as.body, l_feature_object)
 
 						-- enclosing routine body (feature, procedure, deferred routines)
-						create l_feature_er_visitor.make_with_context (context)
-						l_feature_er_visitor.setup (parsed_class, match_list, true, true)
 						l_feature_er_visitor.process_feature_body (l_as.body, l_feature_object)
 
 						-- wait condition wrapper (feature, procedure, deferred routines)
-						create l_feature_wc_visitor.make_with_context (context)
-						l_feature_wc_visitor.setup (parsed_class, match_list, true, true)
 						l_feature_wc_visitor.process_feature_body (l_as.body, l_feature_object)
 
 						-- postcondition processing
@@ -141,15 +134,11 @@ feature {NONE} -- Visitor implementation
 
 						if not l_feature_object.postconditions.non_separate_postconditions.is_empty then
 							-- non separate postcondition clauses wrapper
-							create l_feature_nsp_visitor.make_with_context (context)
-							l_feature_nsp_visitor.setup (parsed_class, match_list, true, true)
 							l_feature_nsp_visitor.process_feature_body (l_as.body, l_feature_object)
 						end
 
 						if not l_feature_object.postconditions.separate_postconditions.is_empty then
 							-- separate postcondition clauses wrapper
-							create l_feature_sp_visitor.make_with_context (context)
-							l_feature_sp_visitor.setup (parsed_class, match_list, true, true)
 							l_feature_sp_visitor.process_feature_body (l_as.body, l_feature_object)
 						end
 
@@ -244,7 +233,7 @@ feature {NONE} -- Implementation
 				context.add_string ("%N%T%Tdo")
 
 				-- add call to non_infix feature
-				context.add_string ("%N%T%T%T" + a_feature_name + " ")
+				context.add_string ("%N%T%T%TResult := " + a_feature_name + " ")
 
 				-- add internal argument as actual arguments
 				if l_as.body.internal_arguments /= Void then
@@ -307,8 +296,7 @@ feature {NONE} -- Implementation
 			l_feature_isp_visitor: SCOOP_CLIENT_FEATURE_ISP_VISITOR
 		do
 			-- create visitor for individual separate postcondition clauses.
-			create l_feature_isp_visitor.make_with_context (context)
-			l_feature_isp_visitor.setup (parsed_class, match_list, true, true)
+			l_feature_isp_visitor := scoop_visitor_factory.new_client_feature_isp_visitor (context)
 
 			-- iterate over all separate postconditions
 			from

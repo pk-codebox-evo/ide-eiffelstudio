@@ -11,14 +11,21 @@ inherit
 	SCOOP_CONTEXT_AST_PRINTER
 		rename
 			get_context as get_feature_name
+		export
+			{NONE} all
+			{ANY} setup, get_feature_name
 		redefine
 			process_infix_prefix_as,
 			process_keyword_as,
 			process_feat_name_id_as,
-			process_feature_name_alias_as
+			process_feature_name_alias_as,
+			process_id_as
 		end
 
 	SCOOP_INFIX_PREFIX
+		export
+			{NONE} all
+		end
 
 create
 	make
@@ -102,6 +109,18 @@ feature -- Access
 			safe_process (l_as)
 		end
 
+	process_infix_str (l_operator: STRING) is
+			-- Prints the non-infix version of the operator
+		do
+			context.add_string ("infix__" + non_infix_text (l_operator))
+		end
+
+	process_prefix_str (l_operator: STRING) is
+			-- Prints the non-infix version of the operator
+		do
+			context.add_string ("prefix__" + non_infix_text (l_operator))
+		end
+
 	process_declaration_infix_prefix (l_as: INFIX_PREFIX_AS) is
 			-- Remove this feature with EiffelStudio 6.4
 			-- It generates for each infix / prefix feature name a list
@@ -120,6 +139,23 @@ feature -- Access
 			-- process node
 			safe_process (l_as)
 		end
+
+	process_id_list (l_as: IDENTIFIER_LIST; a_prefix: STRING) is
+			-- Print the id feature name list with a prefix
+		do
+			reset_visitor (l_as.id_list.first)
+
+			-- set some flags
+			if a_prefix /= Void then
+				has_prefix := true
+				id_prefix := a_prefix
+			end
+			is_with_alias := true
+
+			-- process id list
+			process_identifier_list (l_as)
+		end
+
 
 feature {NONE} -- Visitor implementation
 
@@ -142,7 +178,7 @@ feature {NONE} -- Visitor implementation
 		do
 			-- skip frozen keyword
 			if l_as.is_frozen then
-				last_index := l_as.frozen_keyword_index
+				last_index := l_as.feature_name.index - 1
 			end
 
 			safe_process (l_as.feature_name)
@@ -152,7 +188,7 @@ feature {NONE} -- Visitor implementation
 		do
 			-- skip frozen keyword
 			if l_as.is_frozen then
-				last_index := l_as.frozen_keyword_index
+				last_index := l_as.infix_prefix_keyword_index - 1
 			end
 
 			safe_process (l_as.infix_prefix_keyword (match_list))
@@ -171,7 +207,7 @@ feature {NONE} -- Visitor implementation
 		do
 			-- skip frozen keyword
 			if l_as.is_frozen then
-				last_index := l_as.frozen_keyword_index
+				last_index := l_as.feature_name.index
 			end
 
 			safe_process (l_as.feature_name)
@@ -182,6 +218,19 @@ feature {NONE} -- Visitor implementation
 					safe_process (l_as.convert_keyword (match_list))
 				end
 			end
+		end
+
+	process_id_as (l_as: ID_AS) is
+		do
+			process_leading_leaves (l_as.index)
+
+			-- add a prefix
+			if has_prefix then
+				context.add_string (id_prefix)
+			end
+
+			-- process the id
+			Precursor (l_as)
 		end
 
 feature {NONE} -- Implementation
@@ -196,6 +245,8 @@ feature {NONE} -- Implementation
 			is_with_alias := false
 			has_processed_infix_prefix_node := false
 			is_without_infix_replacement := false
+			has_prefix := false
+			id_prefix := Void
 
 			-- set start position index
 			last_index := a_start_position
@@ -208,6 +259,12 @@ feature {NONE} -- Implementation
 
 	is_without_infix_replacement: BOOLEAN
 			-- process the acutal node without replaceing infix notations
+
+	has_prefix: BOOLEAN
+			-- process the feature name with adding a prefix
+
+	id_prefix: STRING
+			-- add `id_prefix' as prefix in front of a feature name
 
 	is_processing_declaration: BOOLEAN
 			-- processes the actual node as declaration to return

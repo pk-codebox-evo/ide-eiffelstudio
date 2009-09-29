@@ -34,7 +34,7 @@ feature -- Access
 				proxy_infix_prefix_wrappers.wipe_out
 			end
 		end
-		
+
 feature -- Current CLASS_C access
 
 	current_class_c: CLASS_C
@@ -88,6 +88,17 @@ feature -- SCOOP_CLIENT_FEATURE_OBJECT access
 			-- Setter for `current_feature_object'.
 		do
 			current_feature_object := a_feature_object
+		end
+
+feature -- SCOOP proxy feature name access
+
+	current_proxy_feature_name: STRING
+			-- Name of current processed feature
+
+	set_current_proxy_feature_name (a_name: STRING)
+			-- Setter for `current_proxy_feature_name'
+		do
+			current_proxy_feature_name := a_name
 		end
 
 feature -- SCOOP_PROXY_PARENT_OBJECT access
@@ -151,7 +162,7 @@ feature -- SCOOP_PROXY_PARENT_OBJECT access
 			parent_redefine_list.append (a_list)
 		end
 
-	insert_redefine_statement (an_original_feature_name, a_feature_name: STRING; a_string_context: ROUNDTRIP_STRING_LIST_CONTEXT) is
+	insert_redefine_statement (an_original_feature_name, an_original_alias_name, a_feature_name: STRING; a_string_context: ROUNDTRIP_STRING_LIST_CONTEXT) is
 			-- Insert a redefine statement for the assigner wrapper feature
 			-- if `an_original_feature_name' is in the parent redefine list.
 		require
@@ -160,7 +171,7 @@ feature -- SCOOP_PROXY_PARENT_OBJECT access
 			i, nb: INTEGER
 			l_str: STRING
 			l_parent_object: SCOOP_PROXY_PARENT_OBJECT
-			l_tuple: TUPLE [orignial_feature_name: STRING; parent_object: SCOOP_PROXY_PARENT_OBJECT ]
+			l_tuple: TUPLE [orignial_feature_name, original_feature_alias_name: STRING; parent_object: SCOOP_PROXY_PARENT_OBJECT ]
 		do
 			from
 				i := 1
@@ -169,7 +180,8 @@ feature -- SCOOP_PROXY_PARENT_OBJECT access
 				i > nb
 			loop
 				l_tuple := parent_redefine_list.i_th (i)
-				if l_tuple.orignial_feature_name.is_equal (an_original_feature_name) then
+				if l_tuple.orignial_feature_name.is_equal (an_original_feature_name)
+					or l_tuple.original_feature_alias_name.is_equal (an_original_alias_name) then
 					-- get parent object
 					l_parent_object := l_tuple.parent_object
 
@@ -205,7 +217,7 @@ feature {NONE} -- SCOOP_CLIENT_FEATURE_OBJECT implementation
 	proxy_parent_objects: LINKED_LIST[SCOOP_PROXY_PARENT_OBJECT]
 			-- List of proxy parent objects
 
-	parent_redefine_list: LINKED_LIST [TUPLE [orignial_feature_name: STRING; parent_object: SCOOP_PROXY_PARENT_OBJECT ]]
+	parent_redefine_list: LINKED_LIST [TUPLE [orignial_feature_name, original_feature_alias_name: STRING; parent_object: SCOOP_PROXY_PARENT_OBJECT ]]
 			-- List of redefine features with corresponding parent object.
 
 invariant

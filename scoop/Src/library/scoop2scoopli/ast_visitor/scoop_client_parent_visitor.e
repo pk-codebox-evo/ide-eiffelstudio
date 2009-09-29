@@ -18,9 +18,15 @@ inherit
 		end
 
 	SCOOP_BASIC_TYPE
+		export
+			{NONE} all
+		end
 
 	SCOOP_WORKBENCH
 		-- Remove `SCOOP_WORKBENCH' with EiffelStudio 6.4
+		export
+			{NONE} all
+		end
 
 create
 	make_with_context
@@ -110,8 +116,7 @@ feature {NONE} -- Visitor implementation
 		do
 			if not is_rename_clause then
 				-- creates comma separated a list of non-infix and infix feature name
-				create l_feature_name_visitor.make
-				l_feature_name_visitor.setup (parsed_class, match_list, true, true)
+				l_feature_name_visitor := scoop_visitor_factory.new_feature_name_visitor
 				last_index := l_as.start_position - 1
 
 				-- process INFIX_PREFIX_AS node
@@ -158,8 +163,7 @@ feature {NONE} -- Visitor implementation
 				-- create first the undefine
 
 				-- create feature name visitor
-				create l_feature_name_visitor.make
-				l_feature_name_visitor.setup (parsed_class, match_list, true, true)
+				l_feature_name_visitor := scoop_visitor_factory.new_feature_name_visitor
 
 				-- create string
 				create l_str.make_from_string ("%N%T%T%T")

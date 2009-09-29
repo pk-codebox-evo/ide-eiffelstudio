@@ -9,6 +9,9 @@ class
 
 inherit
 	AST_ROUNDTRIP_ITERATOR
+		export
+			{NONE} all
+			{ANY} setup
 		redefine
 			process_bits_as,
 			process_bits_symbol_as,
@@ -21,11 +24,20 @@ inherit
 			process_none_type_as,
 			process_type_dec_as
 		end
+
 	SCOOP_BASIC_TYPE
+		export
+			{NONE} all
+		end
+
 	SCOOP_WORKBENCH
+		export
+			{NONE} all
+		end
+
 	SHARED_ERROR_HANDLER
 		export
-			{ANY} Error_handler
+			{NONE} all
 		end
 
 feature -- Access

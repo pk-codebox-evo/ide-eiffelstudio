@@ -10,6 +10,7 @@ class
 inherit
 	SCOOP_CLIENT_CONTEXT_AST_PRINTER
 		redefine
+			make,
 			process_body_as,
 			process_routine_as,
 			process_id_as,
@@ -17,16 +18,14 @@ inherit
 		end
 
 create
-	make_with_context
+	make
 
 feature -- Initialisation
 
-	make_with_context(a_context: ROUNDTRIP_CONTEXT)
+	make(a_ctext: ROUNDTRIP_CONTEXT)
 			-- Initialise and reset flags
-		require
-			a_context_not_void: a_context /= Void
 		do
-			context := a_context
+			Precursor (a_ctext)
 
 			-- Reset some values
 			is_print_with_processor_postfix := false
@@ -113,7 +112,7 @@ feature {NONE} -- Node implementation
 		do
 			Precursor (l_as)
 			if is_print_with_processor_postfix then
-				context.add_string (".processor")
+				context.add_string (".processor_")
 			end
 		end
 
