@@ -11,26 +11,16 @@ inherit
 	SCOOP_CLIENT_CONTEXT_AST_PRINTER
 		redefine
 			process_formal_argu_dec_list_as,
-			process_tagged_as,
-			process_static_access_as,
-			process_access_feat_as,
-			process_access_inv_as,
-			process_access_id_as,
-			process_parameter_list_as
+			process_tagged_as
+--			process_static_access_as,
+--			process_access_feat_as,
+--			process_access_inv_as,
+--			process_access_id_as,
+--			process_parameter_list_as
 		end
 
 create
-	make_with_context
-
-feature -- Initialisation
-
-	make_with_context(a_context: ROUNDTRIP_CONTEXT)
-			-- Initialise and reset flags
-		require
-			a_context_not_void: a_context /= Void
-		do
-			context := a_context
-		end
+	make
 
 feature -- Access
 
@@ -72,6 +62,10 @@ feature -- Access
 			-- add locals
 			context.add_string ("%N%T%Tlocal%N%T%T%Taux: BOOLEAN")
 
+			-- add locals for exception handling
+			context.add_string ("%N%T%T%Tl_exception: POSTCONDITION_VIOLATION")
+			context.add_string ("%N%T%T%Tl_exception_factory: EXCEPTION_MANAGER_FACTORY")
+
 			-- add do keyword
 			context.add_string ("%N%T%Tdo")
 
@@ -101,11 +95,18 @@ feature -- Access
 			end
 
 			-- else part
-			context.add_string ("%N%T%T%Telse%N%T%T%T%Traise (%"Postcondition violation: ")
+			context.add_string ("%N%T%T%Telse")
+
+			-- raise a postcondition exception
+			context.add_string ("%N%T%T%T%Tcreate l_exception")
+			context.add_string ("%N%T%T%T%Tl_exception.set_message (%"Postcondition violation: ")
 			safe_process (assertion.get_tagged_as)
+			context.add_string ("%")")
+			context.add_string ("%N%T%T%T%Tcreate l_exception_factory")
+			context.add_string ("%N%T%T%T%Tl_exception_factory.exception_manager.raise (l_exception)")
 
 			-- end if part
-			context.add_string ("%")%N%T%T%Tend")
+			context.add_string ("%N%T%T%Tend")
 
 			-- end body
 			context.add_string ("%N%T%Tend")
@@ -165,63 +166,63 @@ feature {NONE} -- Visitor implementation
 
 feature {NONE} -- Visitor implementation - parameter list prefix changes
 
-	process_parameter_list_as (l_as: PARAMETER_LIST_AS) is
-			-- Process `l_as'.
-		do
-			safe_process (l_as.lparan_symbol (match_list))
-			if not is_print_parameters_with_prefix then
-				safe_process (l_as.parameters)
-			else
-				context.add_string (parameter_list_prefix + ", ")
-				safe_process (l_as.parameters)
-			end
-			safe_process (l_as.rparan_symbol (match_list))
-		end
+--	process_parameter_list_as (l_as: PARAMETER_LIST_AS) is
+--			-- Process `l_as'.
+--		do
+--			safe_process (l_as.lparan_symbol (match_list))
+--			if not is_print_parameters_with_prefix then
+--				safe_process (l_as.parameters)
+--			else
+--				context.add_string (parameter_list_prefix + ", ")
+--				safe_process (l_as.parameters)
+--			end
+--			safe_process (l_as.rparan_symbol (match_list))
+--		end
 
-	process_static_access_as (l_as: STATIC_ACCESS_AS) is
-		do
-			safe_process (l_as.feature_keyword (match_list))
-			safe_process (l_as.class_type)
-			safe_process (l_as.dot_symbol (match_list))
-			safe_process (l_as.feature_name)
-			if l_as.internal_parameters /= Void then
-				safe_process (l_as.internal_parameters)
-			elseif is_print_parameters_with_prefix then
-				context.add_string (" (" + parameter_list_prefix + ")")
-			end
-		end
+--	process_static_access_as (l_as: STATIC_ACCESS_AS) is
+--		do
+--			safe_process (l_as.feature_keyword (match_list))
+--			safe_process (l_as.class_type)
+--			safe_process (l_as.dot_symbol (match_list))
+--			safe_process (l_as.feature_name)
+--			if l_as.internal_parameters /= Void then
+--				safe_process (l_as.internal_parameters)
+--			elseif is_print_parameters_with_prefix then
+--				context.add_string (" (" + parameter_list_prefix + ")")
+--			end
+--		end
 
-	process_access_feat_as (l_as: ACCESS_FEAT_AS) is
-		do
-			safe_process (l_as.feature_name)
-			if l_as.internal_parameters /= Void then
-				safe_process (l_as.internal_parameters)
-			elseif is_print_parameters_with_prefix then
-				context.add_string ("(" + parameter_list_prefix + ")")
-			end
-		end
+--	process_access_feat_as (l_as: ACCESS_FEAT_AS) is
+--		do
+--			safe_process (l_as.feature_name)
+--			if l_as.internal_parameters /= Void then
+--				safe_process (l_as.internal_parameters)
+--			elseif is_print_parameters_with_prefix then
+--				context.add_string ("(" + parameter_list_prefix + ")")
+--			end
+--		end
 
-	process_access_inv_as (l_as: ACCESS_INV_AS) is
-		do
-			safe_process (l_as.dot_symbol (match_list))
-			safe_process (l_as.feature_name)
-			if l_as.internal_parameters /= Void then
-				safe_process (l_as.internal_parameters)
-			elseif is_print_parameters_with_prefix then
-				context.add_string ("(" + parameter_list_prefix + ")")
-			end
-		end
+--	process_access_inv_as (l_as: ACCESS_INV_AS) is
+--		do
+--			safe_process (l_as.dot_symbol (match_list))
+--			safe_process (l_as.feature_name)
+--			if l_as.internal_parameters /= Void then
+--				safe_process (l_as.internal_parameters)
+--			elseif is_print_parameters_with_prefix then
+--				context.add_string ("(" + parameter_list_prefix + ")")
+--			end
+--		end
 
-	process_access_id_as (l_as: ACCESS_ID_AS) is
-		do
-			safe_process (l_as.feature_name)
-			if l_as.internal_parameters /= Void then
-				safe_process (l_as.internal_parameters)
-			elseif is_print_parameters_with_prefix then
+--	process_access_id_as (l_as: ACCESS_ID_AS) is
+--		do
+--			safe_process (l_as.feature_name)
+--			if l_as.internal_parameters /= Void then
+--				safe_process (l_as.internal_parameters)
+--			elseif is_print_parameters_with_prefix then
 
-				context.add_string ("(" + parameter_list_prefix + ")")
-			end
-		end
+--				context.add_string ("(" + parameter_list_prefix + ")")
+--			end
+--		end
 
 feature {NONE} -- Implementation
 

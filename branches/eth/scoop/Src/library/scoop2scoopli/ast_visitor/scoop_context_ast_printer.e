@@ -40,8 +40,7 @@ feature -- Basic SCOOP changes
 		local
 			l_feature_name_visitor: SCOOP_FEATURE_NAME_VISITOR
 		do
-			create l_feature_name_visitor.make
-			l_feature_name_visitor.setup (parsed_class, match_list, true, true)
+			l_feature_name_visitor := scoop_visitor_factory.new_feature_name_visitor
 			last_index := l_as.start_position - 1
 
 			-- process INFIX_PREFIX_AS node
@@ -54,7 +53,7 @@ feature -- Basic SCOOP changes
 			context.add_string (" " + l_feature_name_visitor.get_feature_name)
 			last_index := l_as.alias_name.index
 		end
-
+		
 feature -- Roundtrip: printing
 
 	process_break_as (l_as: BREAK_AS) is

@@ -14,7 +14,9 @@ inherit
 			process_generic_class_type_as,
 			process_named_tuple_type_as,
 			process_formal_dec_as,
-			process_id_as
+			process_id_as,
+			process_like_cur_as,
+			process_like_id_as
 		end
 	SCOOP_WORKBENCH
 	SCOOP_CLASS_NAME
@@ -65,6 +67,20 @@ feature -- Access
 				last_index := l_as.start_position - 1
 				safe_process (l_as)
 			end
+		end
+
+	process_type_locals(l_as: TYPE_LIST_AS; set_prefix, without_generics: BOOLEAN) is
+			-- Process `l_as' for proxy type visitor.
+			-- replace like_id_as with 'implementation_'.
+		do
+			is_set_prefix := set_prefix
+			is_print_without_constraints := without_generics
+			is_print_proxy_locals := true
+			if l_as /= Void then
+				last_index := l_as.start_position - 1
+				safe_process (l_as)
+			end
+			is_print_proxy_locals := false
 		end
 
 	get_last_index: INTEGER is
@@ -139,8 +155,7 @@ feature {NONE} -- Visitor implementation
 
 			if l_as.internal_generics /= Void then
 				context.add_string (" ")
-				create l_generics_visitor.make_with_context (context)
-				l_generics_visitor.setup (parsed_class, match_list, true, true)
+				l_generics_visitor := scoop_visitor_factory.new_generics_visitor (context)
 				l_generics_visitor.process_internal_generics (l_as.internal_generics, is_set_prefix, is_print_without_constraints)
 				last_index := l_generics_visitor.get_last_index
 			end
@@ -184,6 +199,45 @@ feature {NONE} -- Visitor implementation
 			end
 		end
 
+	process_like_cur_as (l_as: LIKE_CUR_AS) is
+		do
+			if is_print_proxy_locals then
+				safe_process (l_as.lcurly_symbol (match_list))
+				safe_process (l_as.attachment_mark (match_list))
+				safe_process (l_as.like_keyword (match_list))
+
+				-- replace current with implementation
+				context.add_string (" implementation_")
+				last_index := l_as.current_keyword.index
+
+				safe_process (l_as.rcurly_symbol (match_list))
+			else
+				Precursor (l_as)
+			end
+		end
+
+	process_like_id_as (l_as: LIKE_ID_AS) is
+		local
+			l_proxy_type_locals_visitor: SCOOP_PROXY_TYPE_LOCALS_PRINTER
+		do
+			if is_print_proxy_locals then
+				if l_as.lcurly_symbol_index > 0 then
+					process_leading_leaves (l_as.lcurly_symbol_index)
+				else
+					process_leading_leaves (l_as.like_keyword_index)
+				end
+				l_proxy_type_locals_visitor := scoop_visitor_factory.new_proxy_type_local_printer (context)
+				l_proxy_type_locals_visitor.process_type (l_as)
+				if l_as.rcurly_symbol_index > 0 then
+					last_index := l_as.rcurly_symbol_index
+				else
+					last_index := l_as.anchor.index
+				end
+			else
+				Precursor (l_as)
+			end
+		end
+
 feature {NONE} -- Implementation
 
 	is_set_prefix: BOOLEAN
@@ -192,6 +246,9 @@ feature {NONE} -- Implementation
 	is_print_without_constraints: BOOLEAN
 			-- Prints a 'FORMAL_DEC_AS' without constraints
 			-- necessary to create an attribute of a generic class type.
+
+	is_print_proxy_locals: BOOLEAN
+			-- Print generics as locals of proxy printer.
 
 invariant
 	invariant_clause: True -- Your invariant here

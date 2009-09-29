@@ -51,4 +51,15 @@ feature {NONE} -- Feature implementation
 			is_filter_detachable := true
 		end
 
+	evaluate_like_id_type_flags (is_expanded, is_separate: BOOLEAN) is
+			-- the flags are set dependant on the situation
+		do
+			if is_expanded then
+				is_print_with_prefix := false
+			else
+				is_print_with_prefix := true
+			end
+			is_filter_detachable := true
+		end
+
 end

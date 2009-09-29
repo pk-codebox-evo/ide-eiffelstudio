@@ -9,6 +9,9 @@ deferred class
 
 inherit
 	SCOOP_CONTEXT_AST_PRINTER
+		export
+			{NONE} all
+			{SCOOP_VISITOR_FACTORY} setup
 		redefine
 			process_parent_list_as,
 			process_rename_clause_as,

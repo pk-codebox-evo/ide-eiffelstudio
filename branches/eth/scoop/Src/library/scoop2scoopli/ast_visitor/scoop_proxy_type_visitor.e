@@ -9,6 +9,9 @@ deferred class
 
 inherit
 	SCOOP_CONTEXT_AST_PRINTER
+		export
+			{NONE} all
+			{SCOOP_VISITOR_FACTORY} setup
 		redefine
 			process_class_type_as,
 			process_generic_class_type_as,
@@ -107,8 +110,7 @@ feature {NONE} -- Roundtrip: process nodes
 
 			-- process internal generics			
 			-- no `SCOOP_SEPARATE__' prefix, not detachable.
-			create l_generics_visitor.make_with_context (context)
-			l_generics_visitor.setup (class_as, match_list, true, true)
+			l_generics_visitor := scoop_visitor_factory.new_generics_visitor (context)
 			l_generics_visitor.process_type_internal_generics (l_as.internal_generics, false, false)
 			if l_as.internal_generics /= Void then
 				last_index := l_as.internal_generics.end_position
@@ -186,6 +188,11 @@ feature {NONE} -- Deferred feature implementation
 		end
 
 	evaluate_like_current_type_flags is
+			-- the flags are set dependant on the situation
+		deferred
+		end
+
+	evaluate_like_id_type_flags (is_expanded, is_separate: BOOLEAN) is
 			-- the flags are set dependant on the situation
 		deferred
 		end

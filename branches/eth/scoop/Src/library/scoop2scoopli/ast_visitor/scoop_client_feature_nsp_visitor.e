@@ -14,17 +14,7 @@ inherit
 		end
 
 create
-	make_with_context
-
-feature -- Initialisation
-
-	make_with_context(a_context: ROUNDTRIP_CONTEXT)
-			-- Initialise and reset flags
-		require
-			a_context_not_void: a_context /= Void
-		do
-			context := a_context
-		end
+	make
 
 feature -- Access
 

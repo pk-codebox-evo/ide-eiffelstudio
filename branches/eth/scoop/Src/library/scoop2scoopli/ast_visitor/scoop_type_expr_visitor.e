@@ -93,8 +93,7 @@ feature {NONE} -- id_as type evaluation
 				l_new_type := get_internal_local_type (l_as.name)
 				new_base_class := get_class_by_type (l_new_type)
 			else
-				create l_argument_visitor
-				l_argument_visitor.setup (parsed_class, match_list, true, true)
+				l_argument_visitor := scoop_visitor_factory.new_client_argument_visitor_for_class (parsed_class, match_list)
 				l_argument_object := l_argument_visitor.process_arguments (internal_arguments)
 				if l_argument_object.is_separate_argument (l_as.name) then
 					debug ("SCOOP_CLIENT_TYPE_EXT")
@@ -166,20 +165,22 @@ feature {NONE} -- Implementation, internal locals
 	has_internal_local (a_name: STRING): BOOLEAN is
 			-- returns true if the name occurs in the list
 		local
-			i, j: INTEGER
+			i, j, nb, nbj: INTEGER
 			l_local: TYPE_DEC_AS
 		do
 			if internal_locals /= Void then
 				from
 					i := 1
+					nb := internal_locals.locals.count
 				until
-					i > internal_locals.locals.count
+					i > nb
 				loop
 					l_local := internal_locals.locals.i_th (i)
 					from
 						j := 1
+						nbj := l_local.id_list.count
 					until
-						j > l_local.id_list.count
+						j > nbj
 					loop
 						if l_local.item_name (j).is_equal (a_name) then
 							Result := true

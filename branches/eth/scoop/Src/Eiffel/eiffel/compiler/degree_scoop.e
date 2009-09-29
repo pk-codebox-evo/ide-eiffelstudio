@@ -466,8 +466,7 @@ feature {NONE} -- Implementation
 
 				-- create proxy visitor to process.
 			l_match_list := match_list_server.item (a_class_c.class_id)
-			create l_printer.make_with_default_context
-			l_printer.setup (a_class_c.ast, l_match_list, True, True)
+			l_printer := scoop_visitor_factory.new_client_printer
 			l_printer.process_class
 
 			debug ("SCOOP")
@@ -492,8 +491,7 @@ feature {NONE} -- Implementation
 
 				-- create proxy visitor to process.
 			l_match_list := match_list_server.item (a_class_c.class_id)
-			create l_printer.make_with_default_context
-			l_printer.setup (a_class_c.ast, l_match_list, True, True)
+			l_printer := scoop_visitor_factory.new_proxy_printer
 			l_printer.process
 
 			debug ("SCOOP")
@@ -531,9 +529,10 @@ feature {NONE} -- Implementation
 			file.close
 
 			debug ("SCOOP")
-				io.error.put_string ("SCOOP: Proxy class '")
 				if not is_client_and_not_proxy then
-					io.error.put_string ("SCOOP_SEPARATE__")
+					io.error.put_string ("SCOOP: Proxy class 'SCOOP_SEPARATE__")
+				else
+					io.error.put_string ("SCOOP: Client class '")
 				end
 				io.error.put_string (a_class_c.name.as_lower + "' saved in '" + l_file_name + "'.")
 				io.error.put_new_line

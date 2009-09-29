@@ -22,17 +22,7 @@ inherit
 		end
 
 create
-	make_with_context
-
-feature -- Initialisation
-
-	make_with_context(a_context: ROUNDTRIP_CONTEXT)
-			-- Initialise and reset flags
-		require
-			a_context_not_void: a_context /= Void
-		do
-			context := a_context
-		end
+	make
 
 feature -- Access
 
@@ -101,6 +91,8 @@ feature {NONE} -- Node implementation
 		end
 
 	process_access_feat_as (l_as: ACCESS_FEAT_AS) is
+		local
+			is_print_without_caller: BOOLEAN
 		do
 			safe_process (l_as.feature_name)
 
@@ -108,13 +100,23 @@ feature {NONE} -- Node implementation
 			if class_c.feature_table.has (l_as.feature_name.name.as_lower) then
 					if class_c.feature_table.item (l_as.feature_name.name.as_lower).type.is_separate then
 						context.add_string (".implementation_")
+						is_print_without_caller := true
 					end
 			elseif fo.arguments.is_separate_argument(l_as.feature_name.name.as_lower) then
 				-- current argument list contains actual feature name with separate type
 				context.add_string (".implementation_")
+				is_print_without_caller := true
 			end
 
-			safe_process (l_as.internal_parameters)
+			-- process internal parameters and add current if target is of separate type.
+			increase_nested_level
+			process_internal_parameters(l_as.internal_parameters)
+			decrease_nested_level
+
+			-- get 'is_separate' information about current call for next expr
+			if not is_print_without_caller then
+				set_current_level_is_separate (evaluate_id(l_as.feature_name))
+			end
 		end
 
 	process_precursor_as (l_as: PRECURSOR_AS) is
@@ -144,7 +146,9 @@ feature {NONE} -- Node implementation
 				last_index := l_as.internal_parameters.start_position - 1
 			end
 
-			safe_process (l_as.internal_parameters)
+			increase_nested_level
+			process_internal_parameters(l_as.internal_parameters)
+			decrease_nested_level
 			last_index := l_as.end_position
 		end
 

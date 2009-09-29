@@ -9,6 +9,9 @@ class
 
 inherit
 	AST_ROUNDTRIP_ITERATOR
+		export
+			{NONE} all
+			{SCOOP_VISITOR_FACTORY} setup
 		redefine
 			process_type_dec_as,
 			process_class_type_as,

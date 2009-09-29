@@ -18,12 +18,20 @@ inherit
 			process_id_as,
 			process_redefine_clause_as,
 			process_undefine_clause_as,
-			process_select_clause_as
+			process_select_clause_as,
+			process_feat_name_id_as,
+			process_feature_name_alias_as
 		end
 
 	SCOOP_WORKBENCH
+		export
+			{NONE} all
+		end
 
 	SCOOP_BASIC_TYPE
+		export
+			{NONE} all
+		end
 
 create
 	make_with_context
@@ -154,8 +162,7 @@ feature {NONE} -- Visitor implementation
 			safe_process (l_as.expanded_keyword (match_list))
 			safe_process (l_as.class_name)
 
-			create l_generics_visitor.make_with_context (context)
-			l_generics_visitor.setup (parsed_class, match_list, true, true)
+			l_generics_visitor := scoop_visitor_factory.new_generics_visitor (context)
 			l_generics_visitor.process_internal_generics (l_as.internal_generics, true, false)
 
 			safe_process (l_as.rcurly_symbol (match_list))
@@ -193,7 +200,8 @@ feature {NONE} -- Visitor implementation
 	process_rename_as (l_as: RENAME_AS) is
 			-- Process `l_as'.
 		local
-			l_old_name, l_new_name, l_original_old_name, l_str: STRING
+			l_old_name, l_new_name, l_str: STRING
+			l_original_old_name, l_original_old_alias_name: STRING
 			l_class_c: CLASS_C
 			l_feature_name_visitor: SCOOP_FEATURE_NAME_VISITOR
 			l_assign_finder: SCOOP_PROXY_ASSIGN_FINDER
@@ -208,8 +216,7 @@ feature {NONE} -- Visitor implementation
 
 			-- create visitors
 			create l_assign_finder
-			create l_feature_name_visitor.make
-			l_feature_name_visitor.setup (parsed_class, match_list, true, true)
+			l_feature_name_visitor := scoop_visitor_factory.new_feature_name_visitor
 
 			-- get current processed parent
 			l_class_c := parent_object.parent_class_c
@@ -217,9 +224,11 @@ feature {NONE} -- Visitor implementation
 			-- get original old name
 			l_feature_name_visitor.process_original_feature_name (l_as.old_name, false)
 			l_original_old_name := l_feature_name_visitor.get_feature_name
+			l_feature_name_visitor.process_original_feature_name (l_as.old_name, true)
+			l_original_old_alias_name := l_feature_name_visitor.get_feature_name
 
 			-- check if old name is a feature with assigner in current parent or an ancestor
-			if l_assign_finder.has_current_or_parents_feature_with_assigner (l_original_old_name, l_class_c) then
+			if l_assign_finder.has_current_or_parents_feature_with_assigner (l_original_old_name, l_original_old_alias_name, l_class_c) then
 
 				-- get old and new name (with infix replacement)
 				l_feature_name_visitor.process_feature_name (l_as.old_name, false)
@@ -239,18 +248,17 @@ feature {NONE} -- Visitor implementation
 		local
 			i, nb: INTEGER
 			l_class_c: CLASS_C
-			l_redefine_name: STRING
+			l_redefine_name, l_redefine_alias_name: STRING
 			l_assign_finder: SCOOP_PROXY_ASSIGN_FINDER
 			l_feature_name_visitor: SCOOP_FEATURE_NAME_VISITOR
-			l_redefine_tuple: TUPLE [orignial_feature_name: STRING; parent_object: SCOOP_PROXY_PARENT_OBJECT ]
+			l_redefine_tuple: TUPLE [orignial_feature_name, original_feature_alias_name: STRING; parent_object: SCOOP_PROXY_PARENT_OBJECT ]
 		do
 			-- process node
 			Precursor (l_as)
 
 			-- get all redefine statements which are features with assigner in an ancestor.
 			create l_assign_finder
-			create l_feature_name_visitor.make
-			l_feature_name_visitor.setup (parsed_class, match_list, true, true)
+			l_feature_name_visitor := scoop_visitor_factory.new_feature_name_visitor
 
 			if l_as.content /= Void then
 				-- iterate over all redefine statements
@@ -262,7 +270,9 @@ feature {NONE} -- Visitor implementation
 				loop
 					-- get redefine statement / feature name
 					l_feature_name_visitor.process_original_feature_name (l_as.content.i_th (i), false)
-					l_redefine_name :=  l_feature_name_visitor.get_feature_name
+					l_redefine_name := l_feature_name_visitor.get_feature_name
+					l_feature_name_visitor.process_original_feature_name (l_as.content.i_th (i), true)
+					l_redefine_alias_name :=  l_feature_name_visitor.get_feature_name
 
 					-- check if current parent or an ancestor has the actual redefined feature
 					-- defined together with an assigner
@@ -270,13 +280,14 @@ feature {NONE} -- Visitor implementation
 					-- get current class
 					l_class_c := parent_object.parent_class_c
 
-					if l_assign_finder.has_current_or_parents_feature_with_assigner (l_redefine_name, l_class_c) then
+					if l_assign_finder.has_current_or_parents_feature_with_assigner (l_redefine_name, l_redefine_alias_name, l_class_c) then
 						-- current parent class or an ancestor has found a feature with
 						-- feature name `l_redefine_name' and assigner. Save `l_redefine_name' and
 						-- reference to parent_object in list to insert it when creating the
 						-- `f_scoop_separate_assinger_' feature.
 						create l_redefine_tuple
 						l_redefine_tuple.orignial_feature_name := l_redefine_name
+						l_redefine_tuple.original_feature_alias_name := l_redefine_alias_name
 						l_redefine_tuple.parent_object := parent_object
 						parent_redefine_list.extend (l_redefine_tuple)
 					end
@@ -311,6 +322,55 @@ feature {NONE} -- Visitor implementation
 			end
 		end
 
+	process_feat_name_id_as (l_as: FEAT_NAME_ID_AS) is
+			-- Process `l_as'.
+		local
+			l_feature_name: STRING
+			l_feature_name_visitor: SCOOP_FEATURE_NAME_VISITOR
+		do
+			-- get feature name without alias
+			l_feature_name_visitor := scoop_visitor_factory.new_feature_name_visitor
+			l_feature_name_visitor.process_feature_name (l_as, false)
+			l_feature_name := l_feature_name_visitor.get_feature_name
+
+			-- process frozen keyowrd
+			safe_process (l_as.frozen_keyword (match_list))
+
+			-- insert the feature name
+			process_leading_leaves (l_as.feature_name.index)
+			context.add_string (l_feature_name)
+			last_index := l_as.feature_name.index
+		end
+
+	process_feature_name_alias_as (l_as: FEATURE_NAME_ALIAS_AS) is
+			-- Process `l_as'.
+		local
+			l_feature_name: STRING
+			l_feature_name_visitor: SCOOP_FEATURE_NAME_VISITOR
+		do
+			-- get feature name without alias
+			l_feature_name_visitor := scoop_visitor_factory.new_feature_name_visitor
+			l_feature_name_visitor.process_feature_name (l_as, false)
+			l_feature_name := l_feature_name_visitor.get_feature_name
+
+			-- process frozen keyword
+			safe_process (l_as.frozen_keyword (match_list))
+
+			-- insert feature name
+			process_leading_leaves (l_as.feature_name.index)
+			context.add_string (l_feature_name)
+			last_index := l_as.feature_name.index
+
+			-- process alias
+			if l_as.alias_name /= Void then
+				safe_process (l_as.alias_keyword (match_list))
+				safe_process (l_as.alias_name)
+				if l_as.has_convert_mark then
+					safe_process (l_as.convert_keyword (match_list))
+				end
+			end
+		end
+
 feature {NONE} -- Implementation
 
 	check_list_and_add_assigner_wrapper_feature_name (a_list: EIFFEL_LIST [FEATURE_NAME]) is
@@ -322,13 +382,12 @@ feature {NONE} -- Implementation
 			i, nb: INTEGER
 			l_class_c: CLASS_C
 			l_feature_name: FEATURE_NAME
-			l_original_feature_name, l_feature_name_str, l_str: STRING
+			l_original_feature_name, l_original_feature_alias_name, l_feature_name_str, l_str: STRING
 			l_feature_name_visitor: SCOOP_FEATURE_NAME_VISITOR
 			l_assign_finder: SCOOP_PROXY_ASSIGN_FINDER
 		do
 			create l_assign_finder
-			create l_feature_name_visitor.make
-			l_feature_name_visitor.setup (parsed_class, match_list, true, true)
+			l_feature_name_visitor := scoop_visitor_factory.new_feature_name_visitor
 
 			from
 				i := 1
@@ -341,12 +400,14 @@ feature {NONE} -- Implementation
 				-- get original old name (without infix replacement)
 				l_feature_name_visitor.process_original_feature_name (l_feature_name, false)
 				l_original_feature_name := l_feature_name_visitor.get_feature_name
+				l_feature_name_visitor.process_original_feature_name (l_feature_name, true)
+				l_original_feature_alias_name := l_feature_name_visitor.get_feature_name
 
 				-- get current class
 				l_class_c := parent_object.parent_class_c
 
 				-- check if old name is a feature with assigner in current parent or an ancestor
-				if l_assign_finder.has_parents_feature_with_assigner (l_original_feature_name, l_class_c) then
+				if l_assign_finder.has_current_or_parents_feature_with_assigner (l_original_feature_name, l_original_feature_alias_name, l_class_c) then
 					-- get feature name (with infix replacement)
 					l_feature_name_visitor.process_feature_name (l_feature_name, false)
 					l_feature_name_str := l_feature_name_visitor.get_feature_name
@@ -371,7 +432,7 @@ feature {NONE} -- Implementation
 	parent_object: SCOOP_PROXY_PARENT_OBJECT
 			-- Current proxy parent object.
 
-	parent_redefine_list: LINKED_LIST [TUPLE [orignial_feature_name: STRING; parent_object: SCOOP_PROXY_PARENT_OBJECT ]]
+	parent_redefine_list: LINKED_LIST [TUPLE [orignial_feature_name, original_feature_alias_name: STRING; parent_object: SCOOP_PROXY_PARENT_OBJECT ]]
 			-- List of redefine features with corresponding parent object.
 
 end

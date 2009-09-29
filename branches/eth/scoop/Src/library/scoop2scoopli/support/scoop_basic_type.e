@@ -34,8 +34,8 @@ feature -- Basic type declaration
 
 				-- basic class: otherwise we get a cycle in the inheritance structure via `SCOOP_SEPARATE_CLIENT'
 				-- which inherits from `EXCEPTION'.
-				or else a_name.is_equal ("EXCEPTION_MANAGER_FACTORY")
-				or else a_name.is_equal ("EXCEP_CONST")
+--				or else a_name.is_equal ("EXCEPTION_MANAGER_FACTORY")
+--				or else a_name.is_equal ("EXCEP_CONST")
 
 				-- basic classes: we have here the problem that e.g. INTEGER_32_REF has some infix / prefix features
 				-- INTEGER_32 from elk inherits from INTEGER_32_REF and uses the original feature declaration.
