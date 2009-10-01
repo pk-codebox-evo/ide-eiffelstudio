@@ -13,45 +13,17 @@ class
 inherit
 	ARGUMENT_SOURCE
 
-	ARGUMENTS
-
 feature -- Access
-
-	application: STRING
-			-- <Precursor>
-		once
-			create Result.make_from_string (argument (0))
-		end
-
-	application_base: STRING
-			-- <Precursor>
-		local
-			l_result: detachable STRING
-			l_path: STRING
-			i: INTEGER
-		once
-			l_path := argument_array [0]
-			if l_path /= Void and then not l_path.is_empty then
-				i := l_path.last_index_of (operating_environment.directory_separator, l_path.count)
-				if i > 0 then
-					l_result := l_path.substring (1, i - 1)
-				end
-			end
-			if l_result = Void or else l_result.is_empty then
-				l_result := (create {EXECUTION_ENVIRONMENT}).current_working_directory
-			end
-			create {STRING} Result.make_from_string (l_result)
-		end
 
 	arguments: ARRAY [STRING]
 			-- <Precursor>
 		local
-			l_args: like argument_array
+			l_args: ARRAY [STRING]
 			l_arg: detachable STRING
 			l_count: INTEGER
 			i: INTEGER
 		once
-			l_args := argument_array
+			l_args := terminal_arguments.argument_array
 			l_count := l_args.upper
 			create Result.make_filled ("", 1, l_count)
 			from i := 1 until i > l_count
@@ -65,12 +37,20 @@ feature -- Access
 			end
 		end
 
+feature {NONE} -- Access
+
+	terminal_arguments: ARGUMENTS
+			-- Command line arguments from the terminal/console.
+		once
+			create Result
+		end
+
 feature -- Status report
 
 	is_empty: BOOLEAN
 			-- <Precursor>
 		do
-			Result := argument_count = 0
+			Result := terminal_arguments.argument_count = 0
 		end
 
 ;note
