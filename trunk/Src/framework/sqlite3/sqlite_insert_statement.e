@@ -1,6 +1,6 @@
 note
 	description: "[
-		A statment class specific to processing INSERT statements.
+		A statement class specific to processing INSERT statements.
 	]"
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
