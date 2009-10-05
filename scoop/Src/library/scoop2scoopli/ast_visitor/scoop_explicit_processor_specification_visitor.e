@@ -22,7 +22,23 @@ inherit
 			process_like_cur_as,
 			process_like_id_as,
 			process_none_type_as,
-			process_explicit_processor_specification_as
+			process_explicit_processor_specification_as,
+			process_class_as,
+			process_feature_clause_as,
+			process_feature_as,
+			process_feat_name_id_as,
+			process_feature_name_alias_as,
+			process_infix_prefix_as
+		end
+
+	SCOOP_WORKBENCH
+		export
+			{NONE} all
+		end
+
+	SHARED_ERROR_HANDLER
+		export
+			{NONE} all
 		end
 
 feature -- Access
@@ -43,6 +59,32 @@ feature -- Access
 
 			-- process type as
 			safe_process (l_as)
+
+			-- set result
+			create Result
+			Result.entity_name := entity_name
+			Result.has_handler := has_handler
+
+			-- reset leaf list index
+			last_index := l_last_index
+		end
+
+	get_explicit_processor_specification_by_class (a_feature_name: STRING; a_class_as: CLASS_AS): TUPLE [has_explicit_processor_specification: BOOLEAN; entity_name: STRING; has_handler: BOOLEAN] is
+			-- Evaluate `a_type' and return the processor and the handler.
+		local
+			l_last_index: INTEGER
+		do
+			-- reset
+			has_explicit_processor_specification := false
+			has_handler := false
+			entity_name := Void
+			feature_name := a_feature_name
+
+			-- remeber leaf list index
+			l_last_index := last_index
+
+			-- process type as
+			safe_process (a_class_as)
 
 			-- set result
 			create Result
@@ -84,12 +126,33 @@ feature {NONE} -- Visitor implementation: Type nodes
 
 	process_like_cur_as (l_as: LIKE_CUR_AS) is
 		do
-			-- todo
+			-- the current type is the type obtained from the current class
+			-- therefore it cannot be separate or has a expl. processor spec.
 		end
 
 	process_like_id_as (l_as: LIKE_ID_AS) is
+		local
+			l_anchor_name: STRING
+			l_feature_i: FEATURE_I
+			l_class_c: CLASS_C
+			l_processor: like get_explicit_processor_specification_by_class
+			l_processor_visitor: like Current
 		do
-			-- todo
+			l_anchor_name := l_as.anchor.name
+			if parsed_class.feature_table.has (l_anchor_name) then
+				-- get original feature
+				l_feature_i := parsed_class.feature_table.item(l_anchor_name)
+				-- get class in which the feature is written
+				l_class_c := system.class_of_id (l_feature_i.written_in)
+				-- get the explicit processor specification by parsing the new class
+				l_processor_visitor := scoop_visitor_factory.new_explicit_processor_specification_visitor (l_class_c)
+				l_processor := l_processor_visitor.get_explicit_processor_specification_by_class (l_anchor_name, l_class_c.ast)
+				has_explicit_processor_specification := l_processor.has_explicit_processor_specification
+				has_handler := l_processor.has_handler
+				entity_name := l_processor.entity_name
+			else
+				error_handler.insert_error (create {INTERNAL_ERROR}.make("SCOOP Unexpected error: {SCOOP_EXPLICIT_PROCESSOR_SPECIFICATION_VISITOR}.process_like_id_as."))
+			end
 		end
 
 	process_none_type_as (l_as: NONE_TYPE_AS) is
@@ -108,7 +171,69 @@ feature {NONE} -- Visitor implementation: Type nodes
 			end
 		end
 
+feature {NONE} -- Visitor implementation: Accessing a class
+
+	process_class_as (l_as: CLASS_AS) is
+		do
+			if l_as.features /= Void then
+				last_index := l_as.features.index
+			end
+			safe_process (l_as.features)
+		end
+
+	process_feature_clause_as (l_as: FEATURE_CLAUSE_AS) is
+		do
+			if l_as.features /= Void then
+				last_index := l_as.features.index
+			end
+			safe_process (l_as.features)
+		end
+
+	process_feature_as (l_as: FEATURE_AS) is
+		local
+			i, nb: INTEGER
+		do
+			visited_feature_name := Void
+			from
+				i := 1
+				nb := l_as.feature_names.count
+			until
+				i > nb
+			loop
+				safe_process (l_as.feature_names.i_th (i))
+				if visited_feature_name.is_equal (feature_name) then
+					safe_process (l_as.body.type)
+				end
+				i := i + 1
+			end
+			safe_process (l_as.feature_names)
+			safe_process (l_as.body)
+		end
+
+	process_feat_name_id_as (l_as: FEAT_NAME_ID_AS) is
+		do
+			visited_feature_name := l_as.feature_name.name
+		end
+
+	process_feature_name_alias_as (l_as: FEATURE_NAME_ALIAS_AS) is
+		do
+			visited_feature_name := l_as.feature_name.name
+		end
+
+	process_infix_prefix_as (l_as: INFIX_PREFIX_AS) is
+		do
+			-- a like type cannot be an infix / prefix:
+			-- Feature_name: Identifier_as_lower | Infix | Prefix
+			-- Non_class_type: TE_LIKE Identifier_as_lower
+		end
+
 feature {NONE} -- Implementation
+
+	feature_name: STRING
+		-- Name of the feature we try to find
+
+	visited_feature_name: STRING
+		-- Return value when processing the current feature name
 
 	entity_name: STRING
 		-- Return value of current query

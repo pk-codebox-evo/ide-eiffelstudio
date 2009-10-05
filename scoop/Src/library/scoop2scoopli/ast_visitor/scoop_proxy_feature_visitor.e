@@ -727,51 +727,6 @@ feature {NONE} -- Content implementation
 			context.add_string ("%N%T%Tend")
 		end
 
-feature {NONE} -- Support implementation
-
-	process_formal_argument_list_with_a_caller  (a_list: FORMAL_ARGU_DEC_LIST_AS) is
-			-- Process `a_list'.
-			-- Insert `a_caller_: SCOOP_SEPARATE_TYPE' as first argument.
-		local
-			i, j, nb, nbj: INTEGER
-			l_scoop_type_visitor: SCOOP_TYPE_VISITOR
-			a_class_c: CLASS_C
-			l_argument: TYPE_DEC_AS
-		do
-			create l_scoop_type_visitor
-
-			context.add_string ("(")
-			context.add_string ("a_caller_: SCOOP_SEPARATE_TYPE; ")
-
-			from
-				i := 1
-				nb := a_list.arguments.count
-			until
-				i > nb
-			loop
-				l_argument := a_list.arguments.i_th (i)
-				a_class_c := l_scoop_type_visitor.evaluate_class_from_type (l_argument.type, class_c)
-
-				from
-					j := 1
-					nbj := l_argument.id_list.count
-				until
-					j > nbj
-				loop
-					context.add_string (l_argument.item_name (j) + ": ")
-					l_type_signature.process_type (l_argument.type)
-
-					if i < nb or (i = nb and j < l_argument.id_list.count) then
-						context.add_string ("; ")
-					end
-					j := j + 1
-				end
-				i := i + 1
-			end
-			context.add_string (")")
-			last_index := a_list.end_position
-		end
-
 feature -- Test
 
 	process_result_conversion_code (l_as: TYPE_AS) is
