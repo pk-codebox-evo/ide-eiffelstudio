@@ -66,7 +66,7 @@ feature -- Access
 			-- init
 			l_type_signature := scoop_visitor_factory.new_proxy_type_signature_printer (context)
 			l_type_locals := scoop_visitor_factory.new_proxy_type_local_printer (context)
-			
+
 			process_class_as (class_as)
 		end
 
@@ -99,7 +99,7 @@ feature {NONE} -- Roundtrip: process nodes
 			safe_process (l_as.frozen_keyword (match_list))
 			safe_process (l_as.deferred_keyword (match_list))
 
-				-- if class is expanded -> deferred.
+			-- if class is expanded -> deferred.
 			if l_as.is_expanded then
 				process_leading_leaves (l_as.expanded_keyword_index)
 				context.add_string ("deferred ")
@@ -113,7 +113,7 @@ feature {NONE} -- Roundtrip: process nodes
 				last_index := l_as.class_name.end_position
 			end
 
-				-- process internal generics
+			-- process internal generics
 			if l_as.internal_generics /= Void then
 				process_leading_leaves (l_as.internal_generics.index)
 				l_generics_visitor := scoop_visitor_factory.new_generics_visitor (context)
@@ -127,7 +127,7 @@ feature {NONE} -- Roundtrip: process nodes
 			safe_process (l_as.obsolete_keyword (match_list))
 			safe_process (l_as.obsolete_message)
 
-				-- process parents.
+			-- process parents.
 			l_parent_visitor := scoop_visitor_factory.new_proxy_parent_visitor (context)
 			l_parent_visitor.process_internal_conforming_parents (l_as.internal_conforming_parents)
 			l_parent_visitor.process_internal_non_conforming_parents (l_as.internal_non_conforming_parents)
@@ -137,28 +137,36 @@ feature {NONE} -- Roundtrip: process nodes
 
 			process_creators_and_conversions
 
-				-- process features.
+			-- process features.
 			safe_process (l_as.features)
 
-				-- add SCOOP feature.
+			-- add SCOOP feature: reference to client object.
 			context.add_string ("%N%Nfeature -- Separateness")
-
-				-- add attribute of actual object
+			-- add attribute of actual object
 			context.add_string ("%N%N%Timplementation_: " + l_as.class_name.name.as_upper)
-				-- formal paramters
+			-- formal paramters
 			if l_as.internal_generics /= Void then
 				l_generics_visitor.process_class_internal_generics (class_as.internal_generics, true, true)
 			end
 			context.add_string ("%N%T%T-- reference to actual object")
 
-				-- process invariants (skip it - see `process_invariant_as')
+			-- add SCOOP feature: wrappers for creation features.
+			if not l_as.is_deferred or l_as.is_expanded then
+				context.add_string ("%N%Nfeature -- Creation Wrappers%N")
+				if l_as.creators /= Void then
+					last_index := l_as.creators.index - 1
+				end
+				safe_process (l_as.creators)
+			end
+
+			-- process invariants (skip it - see `process_invariant_as')
 --			if l_as.internal_invariant /= Void then
 --				last_index := l_as.internal_invariant.invariant_keyword_index - 1
 --				context.add_string ("%N%N")
 --				safe_process (l_as.internal_invariant)
 --			end
 
-				-- process indexes
+			-- process indexes
 			-- since we produce only override classes we skip the indexing part
 --			if l_as.internal_bottom_indexes /= Void then
 --				last_index := l_as.internal_bottom_indexes.indexing_keyword_index - 1
@@ -211,23 +219,25 @@ feature {NONE} -- Roundtrip: process nodes
 			l_feature_name_visitor: SCOOP_FEATURE_NAME_VISITOR
 			l_feature_name: STRING
 		do
-			l_feature_name_visitor := scoop_visitor_factory.new_feature_name_visitor
+			if l_as.feature_list /= Void then
+				l_feature_name_visitor := scoop_visitor_factory.new_feature_name_visitor
 
-			from
-				i := 1
-				nb := l_as.feature_list.count
-			until
-				i > nb
-			loop
-				l_feature_name_visitor.process_feature_name (l_as.feature_list.i_th (i), false)
-				l_feature_name := l_feature_name_visitor.get_feature_name
+				from
+					i := 1
+					nb := l_as.feature_list.count
+				until
+					i > nb
+				loop
+					l_feature_name_visitor.process_feature_name (l_as.feature_list.i_th (i), false)
+					l_feature_name := l_feature_name_visitor.get_feature_name
 
-				if l_feature_name.is_equal ("default_create") then
-					process_default_create_wrappers
-				else
-					process_creation_procedure_wrappers (l_feature_name)
+					if l_feature_name.is_equal ("default_create") then
+						process_default_create_wrappers
+					else
+						process_creation_procedure_wrappers (l_feature_name)
+					end
+					i := i + 1
 				end
-				i := i + 1
 			end
 		end
 
@@ -391,7 +401,10 @@ feature {NONE} -- Roundtrip: implementation
 					context.add_string ("%N%N%T" + a_feature_name + "_scoop_separate_" + class_as.class_name.name.as_lower + " ")
 					if l_feature_as.body.internal_arguments /= Void then
 						-- print type with prefix
-						safe_process (l_feature_as.body.internal_arguments)
+						last_index := l_feature_as.body.internal_arguments.start_position
+						process_formal_argument_list_with_a_caller (l_feature_as.body.internal_arguments)
+					--	safe_process (l_feature_as.body.internal_arguments)
+					--	last_index := l_feature_as.body.internal_arguments.end_position
 					else
 						context.add_string ("(a_caller_: SCOOP_SEPARATE_TYPE) ") --CLIENT) ")
 					end
@@ -681,12 +694,16 @@ feature {NONE} -- Roundtrip: implementation
 			l_scoop_type_visitor: SCOOP_TYPE_VISITOR
 			l_argument: TYPE_DEC_AS
 			a_class_c: CLASS_C
+			l_proxy_type_visitor: SCOOP_PROXY_TYPE_VISITOR
 		do
 			create l_scoop_type_visitor
 
 			context.add_string ("(")
 			if with_a_caller then
 				context.add_string ("a_caller_: SCOOP_SEPARATE_TYPE; ")
+				l_proxy_type_visitor := l_type_signature
+			else
+				l_proxy_type_visitor := l_type_locals
 			end
 
 			from
@@ -705,7 +722,7 @@ feature {NONE} -- Roundtrip: implementation
 					j > nbj
 				loop
 					context.add_string (l_argument.item_name (j) + ": ")
-					l_type_signature.process_type (l_argument.type)
+					l_proxy_type_visitor.process_type (l_argument.type)
 
 					if i < nb or (i = nb and j < l_argument.id_list.count) then
 						context.add_string ("; ")
@@ -752,6 +769,49 @@ feature {NONE} -- Roundtrip: implementation
 				i := i + 1
 			end
 			context.add_string (")")
+		end
+
+	process_formal_argument_list_with_a_caller  (a_list: FORMAL_ARGU_DEC_LIST_AS) is
+			-- Process `a_list'.
+			-- Insert `a_caller_: SCOOP_SEPARATE_TYPE' as first argument.
+		local
+			i, j, nb, nbj: INTEGER
+			l_scoop_type_visitor: SCOOP_TYPE_VISITOR
+			a_class_c: CLASS_C
+			l_argument: TYPE_DEC_AS
+		do
+			create l_scoop_type_visitor
+
+			context.add_string ("(")
+			context.add_string ("a_caller_: SCOOP_SEPARATE_TYPE; ")
+
+			from
+				i := 1
+				nb := a_list.arguments.count
+			until
+				i > nb
+			loop
+				l_argument := a_list.arguments.i_th (i)
+				a_class_c := l_scoop_type_visitor.evaluate_class_from_type (l_argument.type, class_c)
+
+				from
+					j := 1
+					nbj := l_argument.id_list.count
+				until
+					j > nbj
+				loop
+					context.add_string (l_argument.item_name (j) + ": ")
+					l_type_signature.process_type (l_argument.type)
+
+					if i < nb or (i = nb and j < l_argument.id_list.count) then
+						context.add_string ("; ")
+					end
+					j := j + 1
+				end
+				i := i + 1
+			end
+			context.add_string (")")
+			last_index := a_list.end_position
 		end
 
 feature {NONE} -- SCOOP Implementation

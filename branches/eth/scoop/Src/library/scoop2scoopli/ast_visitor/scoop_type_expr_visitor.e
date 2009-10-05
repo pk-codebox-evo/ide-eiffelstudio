@@ -15,7 +15,8 @@ inherit
 			process_generic_class_type_as,
 			process_named_tuple_type_as,
 			process_like_id_as,
-			process_formal_as
+			process_formal_as,
+			process_result_as
 		end
 	SCOOP_WORKBENCH
 
@@ -153,6 +154,12 @@ feature {NONE} -- Visitor implementation: type_as evaluation
 				new_base_class := base_class.feature_table.item (l_as.anchor.name.as_lower).type.associated_class
 				is_last_type_separate := base_class.feature_table.item (l_as.anchor.name.as_lower).type.is_separate
 			end
+		end
+
+	process_result_as (l_as: RESULT_AS) is
+		do
+			process_leading_leaves (l_as.index)
+			last_index := l_as.index
 		end
 
 feature -- Access
