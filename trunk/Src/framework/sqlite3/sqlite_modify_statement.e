@@ -28,7 +28,7 @@ feature -- Basic operations
 			is_interface_usable: is_interface_usable
 			not_is_executing: not is_executing
 			is_accessible: is_accessible
-			database_is_readable: database.is_readable
+			database_is_writable: database.is_writable
 		do
 			execute_internal (Void, Void)
 		ensure
@@ -44,7 +44,7 @@ feature -- Basic operations
 			is_connected: is_connected
 			not_is_executing: not is_executing
 			is_accessible: is_accessible
-			database_is_readable: database.is_readable
+			database_is_writable: database.is_writable
 			has_arguments: has_arguments
 			a_bindings_attached: attached a_bindings
 			a_bindings_count_big_enough: a_bindings.count.as_natural_32 = arguments_count
