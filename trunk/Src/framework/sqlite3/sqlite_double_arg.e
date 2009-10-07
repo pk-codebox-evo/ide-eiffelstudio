@@ -24,6 +24,11 @@ feature {SQLITE_STATEMENT} -- Basic operations
 			sqlite_raise_on_failure (c_sqlite3_bind_double (sqlite_api.api_pointer (sqlite3_bind_double_api), a_statement.internal_stmt, a_index, value))
 		end
 
+feature {NONE} -- Implemention: Internal cache
+
+	internal_value: REAL_64
+			-- Cached version of `value'.
+
 feature {NONE} -- Externals
 
 	c_sqlite3_bind_double (a_fptr: POINTER; a_stmt: POINTER; a_index: INTEGER; a_value: REAL_64): INTEGER
