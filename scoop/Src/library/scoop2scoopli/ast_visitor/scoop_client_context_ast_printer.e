@@ -418,6 +418,7 @@ feature {NONE} -- Visitor implementation: creation
 			l_target_name, l_class_name: STRING
 			l_class_c: CLASS_C
 			l_result_as: RESULT_AS
+			l_feature_i: FEATURE_I
 			l_type_visitor: SCOOP_TYPE_VISITOR
 			l_type_expression_visitor: SCOOP_CLIENT_TYPE_EXPR_VISITOR
 			l_processor_visitor: SCOOP_EXPLICIT_PROCESSOR_SPECIFICATION_VISITOR
@@ -463,14 +464,17 @@ feature {NONE} -- Visitor implementation: creation
 					l_type_expression_visitor := scoop_visitor_factory.new_client_type_expr_visitor
 					-- get separate status
 					is_separate := l_type_expression_visitor.is_access_as_separate (l_as.target)
-					l_class_c := system.class_of_id (class_c.feature_table.item (l_target_name).written_in)
+					l_feature_i := class_c.feature_table.item (l_target_name)
+					if l_feature_i.type /= Void then
+						l_class_c := class_c.feature_table.item (l_target_name).type.associated_class
+					end
 
 					if is_separate then
 						-- get class name for separate call
 						create l_class_name.make_from_string (l_class_c.name.as_lower)
 						-- get processor specification
 						l_processor_visitor := scoop_visitor_factory.new_explicit_processor_specification_visitor(l_class_c)
-						l_processor := l_processor_visitor.get_explicit_processor_specification_by_class (l_target_name, l_class_c.ast)
+						l_processor := l_processor_visitor.get_explicit_processor_specification_by_class (l_target_name, l_class_c)
 					end
 				elseif is_local (l_target_name) then
 					is_separate := is_last_local_separate
@@ -548,12 +552,14 @@ feature {NONE} -- Visitor implementation: creation
 					context.add_string ("_scoop_separate_" + l_class_name)
 					-- process internal parameter: first: 'Current'	
 					increase_nested_level
+					increase_nested_level
 					add_prefix_current := true
 					if l_as.call.internal_parameters /= Void then
 						last_index := l_as.call.internal_parameters.start_position
 					end
 					process_internal_parameters(l_as.call.internal_parameters)
 					add_prefix_current := false
+					decrease_nested_level
 					decrease_nested_level
 				else
 					context.add_string (".default_create_scoop_separate_" + l_class_name)

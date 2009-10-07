@@ -155,8 +155,10 @@ feature {NONE} -- Roundtrip: process nodes
 				context.add_string ("%N%Nfeature -- Creation Wrappers%N")
 				if l_as.creators /= Void then
 					last_index := l_as.creators.index - 1
+					safe_process (l_as.creators)
+				else
+					process_default_create_wrappers
 				end
-				safe_process (l_as.creators)
 			end
 
 			-- process invariants (skip it - see `process_invariant_as')
@@ -216,6 +218,7 @@ feature {NONE} -- Roundtrip: process nodes
 	process_create_as (l_as: CREATE_AS) is
 		local
 			i, nb: INTEGER
+			l_is_creator_default_create: BOOLEAN
 			l_feature_name_visitor: SCOOP_FEATURE_NAME_VISITOR
 			l_feature_name: STRING
 		do
@@ -232,11 +235,15 @@ feature {NONE} -- Roundtrip: process nodes
 					l_feature_name := l_feature_name_visitor.get_feature_name
 
 					if l_feature_name.is_equal ("default_create") then
-						process_default_create_wrappers
+						l_is_creator_default_create := true
 					else
 						process_creation_procedure_wrappers (l_feature_name)
 					end
 					i := i + 1
+				end
+
+				if l_is_creator_default_create then
+					process_default_create_wrappers
 				end
 			end
 		end
