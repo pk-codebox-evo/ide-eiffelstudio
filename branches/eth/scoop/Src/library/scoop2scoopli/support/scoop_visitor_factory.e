@@ -188,6 +188,8 @@ feature -- Client class generation
 
 	new_explicit_processor_specification_visitor(a_class: CLASS_C): SCOOP_EXPLICIT_PROCESSOR_SPECIFICATION_VISITOR is
 			-- Create a `SCOOP_EXPLICIT_PROCESSOR_SPECIFICATION_VISITOR' object.
+		require
+			a_class_ast_not_void: a_class /= Void and then a_class.ast /= Void
 		local
 			l_visitor: SCOOP_EXPLICIT_PROCESSOR_SPECIFICATION_VISITOR
 		do

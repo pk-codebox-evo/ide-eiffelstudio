@@ -53,6 +53,8 @@ feature -- Access
 			has_handler := false
 			entity_name := Void
 
+			current_class_c := class_c
+
 			-- remeber leaf list index
 			l_last_index := last_index
 			last_index := l_as.start_position
@@ -69,7 +71,7 @@ feature -- Access
 			last_index := l_last_index
 		end
 
-	get_explicit_processor_specification_by_class (a_feature_name: STRING; a_class_as: CLASS_AS): TUPLE [has_explicit_processor_specification: BOOLEAN; entity_name: STRING; has_handler: BOOLEAN] is
+	get_explicit_processor_specification_by_class (a_feature_name: STRING; a_class_c: CLASS_C): TUPLE [has_explicit_processor_specification: BOOLEAN; entity_name: STRING; has_handler: BOOLEAN] is
 			-- Evaluate `a_type' and return the processor and the handler.
 		local
 			l_last_index: INTEGER
@@ -79,12 +81,13 @@ feature -- Access
 			has_handler := false
 			entity_name := Void
 			feature_name := a_feature_name
+			current_class_c := a_class_c
 
 			-- remeber leaf list index
 			l_last_index := last_index
 
 			-- process type as
-			safe_process (a_class_as)
+			safe_process (a_class_C.ast)
 
 			-- set result
 			create Result
@@ -139,14 +142,14 @@ feature {NONE} -- Visitor implementation: Type nodes
 			l_processor_visitor: like Current
 		do
 			l_anchor_name := l_as.anchor.name
-			if parsed_class.feature_table.has (l_anchor_name) then
+			if current_class_c.feature_table.has (l_anchor_name) then
 				-- get original feature
-				l_feature_i := parsed_class.feature_table.item(l_anchor_name)
+				l_feature_i := current_class_c.feature_table.item(l_anchor_name)
 				-- get class in which the feature is written
 				l_class_c := system.class_of_id (l_feature_i.written_in)
 				-- get the explicit processor specification by parsing the new class
 				l_processor_visitor := scoop_visitor_factory.new_explicit_processor_specification_visitor (l_class_c)
-				l_processor := l_processor_visitor.get_explicit_processor_specification_by_class (l_anchor_name, l_class_c.ast)
+				l_processor := l_processor_visitor.get_explicit_processor_specification_by_class (l_anchor_name, l_class_c)
 				has_explicit_processor_specification := l_processor.has_explicit_processor_specification
 				has_handler := l_processor.has_handler
 				entity_name := l_processor.entity_name
@@ -206,8 +209,6 @@ feature {NONE} -- Visitor implementation: Accessing a class
 				end
 				i := i + 1
 			end
-			safe_process (l_as.feature_names)
-			safe_process (l_as.body)
 		end
 
 	process_feat_name_id_as (l_as: FEAT_NAME_ID_AS) is
@@ -225,9 +226,13 @@ feature {NONE} -- Visitor implementation: Accessing a class
 			-- a like type cannot be an infix / prefix:
 			-- Feature_name: Identifier_as_lower | Infix | Prefix
 			-- Non_class_type: TE_LIKE Identifier_as_lower
+			create visited_feature_name.make_empty
 		end
 
 feature {NONE} -- Implementation
+
+	current_class_c: CLASS_C
+		-- Reference to the 'CLASS_C' of the current processed class.
 
 	feature_name: STRING
 		-- Name of the feature we try to find
