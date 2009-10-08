@@ -34,34 +34,15 @@ feature {SQLITE_STATEMENT} -- Basic operations
 	bind_to_statement (a_statement: SQLITE_STATEMENT; a_index: INTEGER)
 			-- <Precursor>
 		local
+			l_cstring: C_STRING
 			l_value: like value
 		do
 			l_value := value
 			check l_value_attached: attached l_value end
-			sqlite_raise_on_failure (
-				c_sqlite3_bind_text (sqlite_api.api_pointer (sqlite3_bind_text_api), a_statement.internal_stmt, a_index, (create {C_STRING}.make (l_value)).item, l_value.count, default_pointer))
+
+			create l_cstring.make (l_value)
+			sqlite_raise_on_failure ({SQLITE_EXTERNALS}.c_sqlite3_bind_text (a_statement.internal_stmt, a_index, l_cstring.item, l_value.count, default_pointer))
 		end
-
-feature {NONE} -- Externals
-
-	c_sqlite3_bind_text (a_fptr: POINTER; a_stmt: POINTER; a_index: INTEGER a_text: POINTER; a_size: INTEGER; a_destructor: POINTER): INTEGER
-		require
-			not_a_fptr_is_null: a_fptr /= default_pointer
-			not_a_stmt_is_null: a_stmt /= default_pointer
-			a_index_positive: a_index > 0
-			not_a_text_is_null: a_text /= default_pointer
-		external
-			"C inline use <sqlite3.h>"
-		alias
-			"[
-				return (EIF_INTEGER)(FUNCTION_CAST(int, (sqlite3_stmt *, int, const char *, int, void(*)(void*))) $a_fptr) (
-					(sqlite3_stmt *)$a_stmt, (int)$a_index, (const char *)$a_text, (int)$a_size, (void(*)(void*))SQLITE_TRANSIENT);
-			]"
-		end
-
-feature {NONE} -- Constants
-
-	sqlite3_bind_text_api: STRING = "sqlite3_bind_text"
 
 ;note
 	copyright: "Copyright (c) 1984-2009, Eiffel Software"
