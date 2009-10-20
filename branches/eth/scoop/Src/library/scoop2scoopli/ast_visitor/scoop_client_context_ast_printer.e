@@ -174,11 +174,6 @@ feature {NONE} -- Roundtrip: process access nodes, call expressions with interna
 
 			-- get 'is_separate' information about current call for next expr
 			set_current_level_is_separate (evaluate_id(l_as.feature_name))
-
-			-- get is separate type for binary expressions
-			if is_processing_binary_expr and then current_level.is_separate then
-				is_binary_expr_separate := true
-			end
 		end
 
 	process_access_inv_as (l_as: ACCESS_INV_AS) is
@@ -193,11 +188,6 @@ feature {NONE} -- Roundtrip: process access nodes, call expressions with interna
 
 			-- get 'is_separate' information about current call for next expr
 			set_current_level_is_separate (evaluate_id(l_as.feature_name))
-
-			-- get is separate type for binary expressions
-			if is_processing_binary_expr and then current_level.is_separate then
-				is_binary_expr_separate := true
-			end
 		end
 
 	process_access_id_as (l_as: ACCESS_ID_AS) is
@@ -211,11 +201,6 @@ feature {NONE} -- Roundtrip: process access nodes, call expressions with interna
 
 			-- get 'is_separate' information about current call for next expr
 			set_current_level_is_separate (evaluate_id(l_as.feature_name))
-
-			-- get is separate type for binary expressions
-			if is_processing_binary_expr and then current_level.is_separate then
-				is_binary_expr_separate := true
-			end
 		end
 
 	process_static_access_as (l_as: STATIC_ACCESS_AS) is
@@ -235,12 +220,6 @@ feature {NONE} -- Roundtrip: process access nodes, call expressions with interna
 			l_class_as ?= l_as.class_type
 			if l_class_as /= Void and then l_class_as.is_separate then
 				set_current_level_is_separate (true)
-			end
-
-			-- get is separate type for binary expressions
-			-- separate state is propagated. therefore just take current level status.
-			if is_processing_binary_expr and then current_level.is_separate then
-				is_binary_expr_separate := true
 			end
 
 			-- increase current nested level
@@ -273,12 +252,6 @@ feature {NONE} -- Roundtrip: process access nodes, call expressions with interna
 				l_type_visitor.setup (parsed_class, match_list, true, true)
 				set_current_level_base_class (l_type_visitor.evaluate_class_from_type (feature_as.body.type, class_c))
 				set_current_level_is_separate (l_type_visitor.is_separate)
-
-				-- get is separate type for binary expressions
-				-- separate state is propagated. therefore just take current level status.
-				if is_processing_binary_expr and then current_level.is_separate then
-					is_binary_expr_separate := true
-				end
 			end
 		end
 
@@ -294,12 +267,6 @@ feature {NONE} -- Roundtrip: process access nodes, call expressions with interna
 			l_type_visitor.setup (parsed_class, match_list, true, true)
 			set_current_level_base_class (l_type_visitor.evaluate_class_from_type (feature_as.body.type, class_c))
 			set_current_level_is_separate (l_type_visitor.is_separate)
-
-			-- get is separate type for binary expressions
-			-- separate state is propagated. therefore just take current level status.
-			if is_processing_binary_expr and then current_level.is_separate then
-				is_binary_expr_separate := true
-			end
 		end
 
 	process_current_as (l_as: CURRENT_AS) is
@@ -349,41 +316,169 @@ feature {NONE} -- Roundtrip: process binary expressions
 	process_binary_as (l_as: BINARY_AS)
 		local
 			l_feature_name_visitor: SCOOP_FEATURE_NAME_VISITOR
+			l_type_expression_visitor: SCOOP_TYPE_EXPR_VISITOR
+			l_is_left_expression_separate, l_is_right_expression_separate: BOOLEAN
 		do
-			-- reset is_separate_binary attribute
-			is_processing_binary_expr := true
-			is_binary_expr_separate := false
+			l_type_expression_visitor := scoop_visitor_factory.new_type_expr_visitor
 
-			-- process left expression
-			safe_process (l_as.left)
+			l_type_expression_visitor.evaluate_type_from_expr (l_as.left, class_c)
+			l_is_left_expression_separate := l_type_expression_visitor.is_last_type_separate
 
-			-- unflag binary expression processing
-			is_processing_binary_expr := false
+			l_type_expression_visitor.evaluate_type_from_expr (l_as.right, class_c)
+			l_is_right_expression_separate := l_type_expression_visitor.is_last_type_separate
 
-			if is_binary_expr_separate then
-				-- expression is separate. Replace therefore
-				-- the infix call with a non-infix call
+			if {l_bin_not_tilde_as: BIN_NOT_TILDE_AS} l_as then
+				if not l_is_left_expression_separate and not l_is_right_expression_separate then
+					safe_process (l_as.left)
+					safe_process (l_as.operator (match_list))
+					safe_process (l_as.right)
+				else
+					context.add_string ("(")
+					safe_process (l_as.left); context.add_string (" = Void")
+					context.add_string (" or else ")
+					last_index := l_as.operator_index; safe_process (l_as.right); context.add_string (" = Void")
+					context.add_string (")")
+					context.add_string (" or else ")
+					context.add_string ("(")
+					safe_process (l_as.left); context.add_string (" /= Void")
+					context.add_string (" and then ")
+					last_index := l_as.operator_index; safe_process (l_as.right); context.add_string (" /= Void")
+					context.add_string (" and then ")
+					if not l_is_left_expression_separate and l_is_right_expression_separate then
+						safe_process (l_as.left)
+						safe_process (l_as.operator (match_list))
+						safe_process (l_as.right); context.add_string (".implementation_")
+					elseif l_is_left_expression_separate and not l_is_right_expression_separate then
+						safe_process (l_as.left); context.add_string (".implementation_")
+						safe_process (l_as.operator (match_list))
+						safe_process (l_as.right)
+					elseif l_is_left_expression_separate and l_is_right_expression_separate then
+						safe_process (l_as.left); context.add_string (".implementation_")
+						safe_process (l_as.operator (match_list))
+						safe_process (l_as.right); context.add_string (".implementation_")
+					end
+					context.add_string (")")
+				end
 
-				-- process infix operator
-				l_feature_name_visitor := scoop_visitor_factory.new_feature_name_visitor
-				l_feature_name_visitor.process_infix_str (l_as.operator_ast.name)
-				context.add_string ("." + l_feature_name_visitor.get_feature_name)
-				last_index := l_as.operator_index
-
-				-- add brackets for non-infix call
-				context.add_string ("(Current,")
-				last_index := l_as.operator_index
-				increase_nested_level
-				increase_nested_level
-				safe_process (l_as.right)
-				decrease_nested_level
-				decrease_nested_level
-				context.add_string (")")
+			elseif {l_bin_ne_as: BIN_NE_AS} l_as then
+				if not l_is_left_expression_separate and not l_is_right_expression_separate then
+					safe_process (l_as.left)
+					safe_process (l_as.operator (match_list))
+					safe_process (l_as.right)
+				else
+					context.add_string ("(")
+					safe_process (l_as.left); context.add_string (" = Void")
+					context.add_string (" and then ")
+					last_index := l_as.operator_index; safe_process (l_as.right); context.add_string (" /= Void")
+					context.add_string (")")
+					context.add_string (" or else ")
+					context.add_string ("(")
+					safe_process (l_as.left); context.add_string (" /= Void")
+					context.add_string (" and then ")
+					last_index := l_as.operator_index; safe_process (l_as.right); context.add_string (" = Void")
+					context.add_string (")")
+					context.add_string (" or else ")
+					context.add_string ("(")
+					safe_process (l_as.left); context.add_string (" /= Void")
+					context.add_string (" and then ")
+					last_index := l_as.operator_index; safe_process (l_as.right); context.add_string (" /= Void")
+					context.add_string (" and then ")
+					if not l_is_left_expression_separate and l_is_right_expression_separate then
+						safe_process (l_as.left)
+						safe_process (l_as.operator (match_list))
+						safe_process (l_as.right); context.add_string (".implementation_")
+					elseif l_is_left_expression_separate and not l_is_right_expression_separate then
+						safe_process (l_as.left); context.add_string (".implementation_")
+						safe_process (l_as.operator (match_list))
+						safe_process (l_as.right)
+					elseif l_is_left_expression_separate and l_is_right_expression_separate then
+						safe_process (l_as.left); context.add_string (".implementation_")
+						safe_process (l_as.operator (match_list))
+						safe_process (l_as.right); context.add_string (".implementation_")
+					end
+					context.add_string (")")
+				end
+			elseif {l_bin_tilde_as: BIN_TILDE_AS} l_as then
+				if not l_is_left_expression_separate and not l_is_right_expression_separate then
+					safe_process (l_as.left)
+					safe_process (l_as.operator (match_list))
+					safe_process (l_as.right)
+				else
+					safe_process (l_as.left); context.add_string (" /= Void")
+					context.add_string (" and then ")
+					last_index := l_as.operator_index; safe_process (l_as.right); context.add_string (" /= Void")
+					context.add_string (" and then ")
+					if not l_is_left_expression_separate and l_is_right_expression_separate then
+						safe_process (l_as.left)
+						safe_process (l_as.operator (match_list))
+						safe_process (l_as.right); context.add_string (".implementation_")
+					elseif l_is_left_expression_separate and not l_is_right_expression_separate then
+						safe_process (l_as.left); context.add_string (".implementation_")
+						safe_process (l_as.operator (match_list))
+						safe_process (l_as.right)
+					elseif l_is_left_expression_separate and l_is_right_expression_separate then
+						safe_process (l_as.left); context.add_string (".implementation_")
+						safe_process (l_as.operator (match_list))
+						safe_process (l_as.right); context.add_string (".implementation_")
+					end
+				end
+			elseif {l_bin_eq_as: BIN_EQ_AS} l_as then
+				if not l_is_left_expression_separate and not l_is_right_expression_separate then
+					safe_process (l_as.left)
+					safe_process (l_as.operator (match_list))
+					safe_process (l_as.right)
+				else
+					context.add_string ("(")
+					safe_process (l_as.left); context.add_string (" = Void")
+					context.add_string (" and then ")
+					last_index := l_as.operator_index; safe_process (l_as.right); context.add_string (" = Void")
+					context.add_string (")")
+					context.add_string (" or else ")
+					context.add_string ("(")
+					safe_process (l_as.left); context.add_string (" /= Void")
+					context.add_string (" and then ")
+					last_index := l_as.operator_index; safe_process (l_as.right); context.add_string (" /= Void")
+					context.add_string (" and then ")
+					if not l_is_left_expression_separate and l_is_right_expression_separate then
+						safe_process (l_as.left)
+						safe_process (l_as.operator (match_list))
+						safe_process (l_as.right); context.add_string (".implementation_")
+					elseif l_is_left_expression_separate and not l_is_right_expression_separate then
+						safe_process (l_as.left); context.add_string (".implementation_")
+						safe_process (l_as.operator (match_list))
+						safe_process (l_as.right)
+					elseif l_is_left_expression_separate and l_is_right_expression_separate then
+						safe_process (l_as.left); context.add_string (".implementation_")
+						safe_process (l_as.operator (match_list))
+						safe_process (l_as.right); context.add_string (".implementation_")
+					end
+					context.add_string (")")
+				end
 			else
-				-- left expression of binary operation is not of separate type
-				-- process it as usual
-				safe_process (l_as.operator (match_list))
-				safe_process (l_as.right)
+				if l_is_left_expression_separate then
+					-- The left expression is separate. Replace the infix call with a non-infix call.
+					safe_process (l_as.left)
+					-- process infix operator
+					l_feature_name_visitor := scoop_visitor_factory.new_feature_name_visitor
+					l_feature_name_visitor.process_infix_str (l_as.operator_ast.name)
+					context.add_string ("." + l_feature_name_visitor.get_feature_name)
+					last_index := l_as.operator_index
+
+					-- add brackets for non-infix call
+					context.add_string ("(Current,")
+					increase_nested_level
+					increase_nested_level
+					safe_process (l_as.right)
+					decrease_nested_level
+					decrease_nested_level
+					context.add_string (")")
+				else
+					-- left expression of binary operation is not of separate type
+					-- process it as usual
+					safe_process (l_as.left)
+					safe_process (l_as.operator (match_list))
+					safe_process (l_as.right)
+				end
 			end
 		end
 
@@ -834,12 +929,6 @@ feature {NONE} -- Implementation
 
 	nested_level: INTEGER
 		-- current nested call level
-
-	is_processing_binary_expr: BOOLEAN
-		-- flags the processing of a binary expression
-
-	is_binary_expr_separate: BOOLEAN
-		-- remembers for `process_binary_as' separate state of left expression
 
 	is_last_local_separate: BOOLEAN
 		-- returns true if current processed acccess_as node is
