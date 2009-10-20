@@ -17,6 +17,7 @@ feature {NONE} -- Initialization
 	make
 		local
 			s: SUM_VISITOR
+			c: CLIENT
 		do
 			--| Add your code here
 		end
