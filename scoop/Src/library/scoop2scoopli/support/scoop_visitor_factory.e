@@ -20,28 +20,6 @@ feature -- Initialisation
 
 --	make
 
-feature -- Proxy and client creation
-
-	new_client_printer: SCOOP_SEPARATE_CLIENT_PRINTER is
-			-- Create a `SCOOP_SEPARATE_CLIENT_PRINTER' object.
-		local
-			l_visitor: SCOOP_SEPARATE_CLIENT_PRINTER
-		do
-			create l_visitor.make_with_default_context
-			l_visitor.setup (class_as, match_list, true, true)
-			Result := l_visitor
-		end
-
-	new_proxy_printer: SCOOP_SEPARATE_PROXY_PRINTER is
-			-- Create a `SCOOP_SEPARATE_PROXY_PRINTER' object.
-		local
-			l_visitor: SCOOP_SEPARATE_PROXY_PRINTER
-		do
-			create l_visitor.make_with_default_context
-			l_visitor.setup (class_as, match_list, true, true)
-			Result := l_visitor
-		end
-
 feature -- Support visitors
 
 	new_feature_name_visitor: SCOOP_FEATURE_NAME_VISITOR is
@@ -74,7 +52,23 @@ feature -- Support visitors
 			Result := l_visitor
 		end
 
+	new_type_expr_visitor: SCOOP_TYPE_EXPR_VISITOR
+		do
+			create Result
+			Result.setup (class_as, match_list, true, true)
+		end
+
 feature -- Client class generation
+
+	new_client_printer: SCOOP_SEPARATE_CLIENT_PRINTER is
+			-- Create a `SCOOP_SEPARATE_CLIENT_PRINTER' object.
+		local
+			l_visitor: SCOOP_SEPARATE_CLIENT_PRINTER
+		do
+			create l_visitor.make_with_default_context
+			l_visitor.setup (class_as, match_list, true, true)
+			Result := l_visitor
+		end
 
 	new_client_parent_visitor (a_context: ROUNDTRIP_CONTEXT): SCOOP_CLIENT_PARENT_VISITOR is
 			-- Create a `SCOOP_CLIENT_PARENT_VISITOR' object.
@@ -199,6 +193,16 @@ feature -- Client class generation
 		end
 
 feature -- Proxy class generation
+
+	new_proxy_printer: SCOOP_SEPARATE_PROXY_PRINTER is
+			-- Create a `SCOOP_SEPARATE_PROXY_PRINTER' object.
+		local
+			l_visitor: SCOOP_SEPARATE_PROXY_PRINTER
+		do
+			create l_visitor.make_with_default_context
+			l_visitor.setup (class_as, match_list, true, true)
+			Result := l_visitor
+		end
 
 	new_proxy_parent_visitor (a_context: ROUNDTRIP_CONTEXT): SCOOP_PROXY_PARENT_VISITOR is
 			-- Create a `SCOOP_PROXY_PARENT_VISITOR' object.
