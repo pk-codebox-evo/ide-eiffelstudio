@@ -723,7 +723,7 @@ feature -- Replay operation
 		local
 			rs: !like replay_stack
 			n: ?RT_DBG_CALL_RECORD
-			l_records: ?LIST [RT_DBG_VALUE_RECORD]
+			l_records: ?LIST [!RT_DBG_VALUE_RECORD]
 			chgs: ?ARRAYED_LIST [TUPLE [record: !RT_DBG_VALUE_RECORD; backup: !RT_DBG_VALUE_RECORD]]
 		do
 			debug ("RT_DBG_REPLAY")

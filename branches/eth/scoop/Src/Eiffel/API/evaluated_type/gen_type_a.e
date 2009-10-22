@@ -1204,10 +1204,11 @@ feature {COMPILER_EXPORTER} -- Primitives
 						our_param := generics.item (i)
 						arg_param := gen_type_generics.item (i)
 
-						Result := arg_param.conform_to (our_param) and then
-						          (False implies
-						            (not our_param.is_attached and not arg_param.is_attached) or
-						             our_param.conform_to (arg_param))
+						Result := arg_param.conform_to (our_param)
+						-- SCOOP restricted generics, disabled for now
+												and then
+						            ((not our_param.is_attached and not arg_param.is_attached) or --condition 1
+						             our_param.conform_to (arg_param))                            --condition 2, from pages 199,200 resp
 						               -- combined with the first formula
 						               -- this should mean the types are
 						               -- exactly equal

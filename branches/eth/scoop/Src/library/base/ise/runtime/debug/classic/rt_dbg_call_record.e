@@ -916,7 +916,7 @@ feature {RT_DBG_EXECUTION_RECORDER} -- Steps
 			end
 		end
 
-	left_step: ?ARRAYED_LIST [RT_DBG_VALUE_RECORD]
+	left_step: ?ARRAYED_LIST [!RT_DBG_VALUE_RECORD]
 			-- Record between current and previous step
 			--| also move replayed cursors
 		require
