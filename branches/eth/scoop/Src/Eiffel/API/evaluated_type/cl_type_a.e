@@ -672,7 +672,7 @@ feature {COMPILER_EXPORTER} -- Conformance
 						Result := other_class_type.class_id = system.system_object_id
 					end
 
-					if Result and then check_scoop_types then
+					if Result and check_scoop_types then
 						Result := scoop_conform_to (other_class_type)
 					end
 				end
