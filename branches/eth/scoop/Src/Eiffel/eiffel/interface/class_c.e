@@ -2004,10 +2004,14 @@ feature {TYPE_AS, AST_TYPE_A_GENERATOR, AST_FEATURE_CHECKER_GENERATOR} -- Actual
 				Result.set_expanded_mark
 			end
 
-			Result.set_processor_tag (proc_tag)
+			if {att_proc_tag : PROCESSOR_TAG_TYPE} proc_tag then
+				Result.set_processor_tag (att_proc_tag)
 
-			if not proc_tag.bottom and not proc_tag.is_current then
-				Result.set_separate_mark
+				if not att_proc_tag.bottom and not att_proc_tag.is_current then
+					Result.set_separate_mark
+				end
+			else
+				Result.set_processor_tag (create {PROCESSOR_TAG_TYPE}.make_current)
 			end
 
 			if is_expanded then

@@ -1017,7 +1017,7 @@ feature {NONE} -- SCOOP Implementation
 			-- target of that call. This transformation is according to the
 			-- definition given in the SCOOP work on typing
 		local
-			tmp_tag : PROCESSOR_TAG_TYPE
+			tmp_tag : ! PROCESSOR_TAG_TYPE
 		do
 			Result  := result_t
 
@@ -1044,7 +1044,7 @@ feature {NONE} -- SCOOP Implementation
 			-- type and the target type. This is according to the definition
 			-- given in the SCOOP work on typing.
 		local
-			tmp_tag : PROCESSOR_TAG_TYPE
+			tmp_tag : ! PROCESSOR_TAG_TYPE
 		do
 			Result := arg_t
 			if target_t.is_separate then
@@ -3863,7 +3863,9 @@ feature -- Implementation
 			else
 				l_as.target.process (Current)
 				l_target_type := last_type
+
 				if l_target_type /= Void then
+
 					l_open ?= l_target_type
 					if l_open /= Void then
 							-- Target is the open operand, but we artificially make its type
@@ -3878,6 +3880,7 @@ feature -- Implementation
 
 				-- If `l_target_type' is Void, it simply means we had an error earlier, so no need to continue.
 			if l_target_type /= Void then
+
 				l_feature_name := l_as.feature_name
 
 				if l_target_type.conformance_type.is_formal or l_target_type.conformance_type.is_basic then
@@ -8184,6 +8187,8 @@ feature {NONE} -- Agents
 			l_operand_node: OPERAND_B
 			l_current_class_void_safe: BOOLEAN
 			l_is_qualified_call: BOOLEAN
+			l_target_proc, l_first_arg_proc: ! PROCESSOR_TAG_TYPE
+			l_target_type: TYPE_A
 		do
 				-- When the agent is a qualified call, we need to remove the anchors because otherwise
 				-- we cannot create the proper agent type, see eweasel test#exec271.
@@ -8214,7 +8219,24 @@ feature {NONE} -- Agents
 				create l_result_type.make (System.procedure_class_id, l_generics)
 			end
 
-			l_generics.put (a_target_type, 1)
+				-- SCOOP: If this agent was on a separate target, then we have to make sure the
+				-- first argument of the generic PROCEDURE is the un-separate version
+				-- of the target's type.
+				--
+				-- We twin the target type to avoid mangling it's processor.
+				-- We also twin the processor it has, because we're going to give
+				-- it to the resulting PROCEDURE type, so we don't want them
+				-- to have the same reference.
+			l_target_proc := a_target_type.processor_tag.duplicate
+			l_target_type := a_target_type.twin
+
+			if a_target_type.is_separate and then
+			   not l_target_proc.is_current then
+        		create l_first_arg_proc.make_current
+        		l_target_type.set_processor_tag (l_first_arg_proc)
+        	end
+
+			l_generics.put (l_target_type, 1)
 
 			if a_has_args then
 				l_feat_args := a_feature.arguments
@@ -8375,6 +8397,10 @@ feature {NONE} -- Agents
 				l_result_type := l_result_type.as_implicitly_attached
 			end
 
+				-- In SCOOP, the generated PROCEDURE must have the same target processor as the
+				-- original target.
+			l_result_type.set_processor_tag (l_target_proc)
+
 			if is_byte_node_enabled then
 				create l_routine_creation
 
@@ -8455,6 +8481,7 @@ feature {NONE} -- Agents
 
 				last_byte_node := l_routine_creation
 			end
+
 			last_type := l_result_type
 		ensure
 			exists: last_type /= Void
@@ -9418,7 +9445,7 @@ feature {NONE} -- Implementation: catcall check
 					l_type := l_descendants.item.partial_actual_type (a_type.generics,
 					                                                  a_type.is_expanded,
 					                                                  a_type.is_separate,
-					                                                  a_type.processor_tag_type)
+					                                                  a_type.processor_tag)
 				else
 					l_type := l_descendants.item.actual_type
 				end

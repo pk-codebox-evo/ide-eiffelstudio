@@ -5,19 +5,35 @@ class PROCESSOR_TAG_TYPE
 
 inherit
 	ANY
-	redefine
-		is_equal
-	end
+		redefine
+			default_create,
+			is_equal
+		end
+
+	PART_COMPARABLE
+		undefine
+			default_create
+		redefine
+			is_equal,
+			infix "<"
+		end
 
 create
 	make,
 	make_top,
-	make_bottom
+	make_bottom,
+	make_current,
+	default_create
 
 feature --Creation
-	make (is_separate : BOOLEAN; proc_name : STRING ; a_handled : BOOLEAN)
+	default_create
+		do
+			make_current
+		end
+
+	make (is_separate : BOOLEAN; proc_name : ! STRING ; a_handled : BOOLEAN)
 		require
-			a_handled implies not proc_name.is_empty
+			handled_has_name: a_handled implies not proc_name.is_empty
 		do
 			make_empty
 
@@ -26,14 +42,20 @@ feature --Creation
 			handled := a_handled
 
 			if is_separate then
-				if (handled and proc_name.is_equal ("Current")) then
+				if handled and proc_name.is_equal ("Current") then
 					make_current
-				elseif proc_name.is_equal ("") then
+				elseif proc_name.is_empty then
 					make_top
 				end
 			else
 				make_current
 			end
+		end
+
+	make_current
+		do
+			make_empty
+			current_proc := True
 		end
 
 	make_top
@@ -48,7 +70,7 @@ feature --Creation
 		end
 
 feature --Copy
-	duplicate : PROCESSOR_TAG_TYPE
+	duplicate : ! PROCESSOR_TAG_TYPE
 			-- Duplicate the current processor tag.
 		do
 			create Result.make (is_sep, tag_name, handled)
@@ -66,7 +88,9 @@ feature --Compare
 		do
 			Result := (other.top    and top)    or else
 			          (other.bottom and bottom) or else
-			          (other.is_current and is_current and other.tag_name.is_equal (tag_name))
+			          (other.is_current and is_current) or else
+			          (not other.is_current and not is_current and
+			               other.tag_name.is_equal (tag_name))
 		end
 
 feature --Access
@@ -91,7 +115,7 @@ feature --Access
 
 
 
-	tag_name : STRING
+	tag_name : ! STRING
 	bottom   : BOOLEAN
 	top      : BOOLEAN
 
@@ -106,27 +130,24 @@ feature --Debug
 		end
 
 feature {NONE} -- Implementation
-	set_tag_name (name : STRING)
+	set_tag_name (name :!STRING)
 			-- Sets the name of the tag to `name'
 		do
-			tag_name := name
+			tag_name := name.twin
 		end
 
-	make_current
-		do
-			make_empty
-			current_proc := True
-		end
+
 
 	make_empty
 		do
+			tag_name     := ""
 			controlled   := False
 			current_proc := False
 			top          := False
 			bottom       := False
 		end
 
-  controlled   : BOOLEAN
+	controlled   : BOOLEAN
 	current_proc : BOOLEAN
 	is_sep       : BOOLEAN
 	handled      : BOOLEAN

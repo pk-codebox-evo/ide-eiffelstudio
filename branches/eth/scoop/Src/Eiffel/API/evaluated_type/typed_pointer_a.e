@@ -28,14 +28,17 @@ inherit
 		redefine
 			is_typed_pointer, c_type, associated_class, process,
 			il_type_name, generic_il_type_name
+		select
+			processor_tag
 		end
 
 	GEN_TYPE_A
+		rename
+			processor_tag as bad_processor_tag
 		undefine
 			meta_type, is_basic,
 			description, instantiated_description,
-			generate_cecil_value, sk_value, element_type, cl_make,
-			processor_tag
+			generate_cecil_value, sk_value, element_type, cl_make
 		redefine
 			is_typed_pointer, c_type, associated_class, process, reference_type,
 			il_type_name, generic_il_type_name

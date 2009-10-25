@@ -303,9 +303,9 @@ feature -- Output
 			elseif has_reference_mark then
 				st.process_keyword_text ({SHARED_TEXT_ITEMS}.ti_reference_keyword, Void)
 				st.add_space
-			elseif has_separate_mark then
+			elseif not processor_tag.is_current then
 				st.process_keyword_text ({SHARED_TEXT_ITEMS}.ti_separate_keyword, Void)
-				if processor_tag.tag_name.count > 0  then
+				if not processor_tag.tag_name.is_empty then
 					st.add_space
 					st.add ("<")
 					st.add (processor_tag.tag_name)
@@ -685,17 +685,14 @@ feature {COMPILER_EXPORTER} -- Conformance
 	check_scoop_types : BOOLEAN is True
 
 
-	processor_tag : PROCESSOR_TAG_TYPE
-			-- constant processor tag for Integers
+	processor_tag : !PROCESSOR_TAG_TYPE
 		do
-			if proc_tag_t /= Void then
-				Result := proc_tag_t
+			if {p : PROCESSOR_TAG_TYPE} attr_processor_tag then
+				Result := p
 			else
-				create Result.make (False, "", False)
+				create Result.make_current
 			end
-
 		end
-
 
 	scoop_conform_to (other : CL_TYPE_A) : BOOLEAN
 			-- Conformance as according to the SCOOP type rules.
@@ -704,7 +701,6 @@ feature {COMPILER_EXPORTER} -- Conformance
 			-- Current < other (where < is the inheritance relation).
 		require
 			other_not_void:     other               /= Void
-			other_tag_not_void: other.processor_tag /= Void
 		local
 			lte_proc_tag : BOOLEAN
 			lte_attach   : BOOLEAN

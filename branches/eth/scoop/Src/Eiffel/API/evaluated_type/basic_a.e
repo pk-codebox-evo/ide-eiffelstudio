@@ -18,7 +18,8 @@ inherit
 			good_generics, internal_is_valid_for_class, error_generics, description,
 			generic_il_type_name, hash_code, internal_generic_derivation, generic_derivation,
 			internal_same_generic_derivation_as, generate_cecil_value,
-			sk_value, element_type, make
+			sk_value, element_type, make,
+			processor_tag
 		end
 
 feature {NONE} -- Initialization
@@ -97,13 +98,11 @@ feature -- Access
 		do
 		end
 
---feature -- SCOOP Processor Tag Constant
---	processor_tag : PROCESSOR_TAG_TYPE is
---			-- constant processor tag for Integers
---		do
---			create Result.make (False, "", False)
---		end
-
+feature -- SCOOP Processor Tag Constant
+	processor_tag : !PROCESSOR_TAG_TYPE
+		do
+			create Result.make_current
+		end
 
 feature -- IL code generation
 
