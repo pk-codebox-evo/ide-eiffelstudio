@@ -310,21 +310,18 @@ feature -- IL code generation
 		end
 
 feature -- SCOOP Processor access
-	processor_tag : PROCESSOR_TAG_TYPE is
-			-- constant processor tag for Integers
+	processor_tag : !PROCESSOR_TAG_TYPE
 		do
-			create Result.make (False, "", False)
+			create Result.make_current
 		end
 
-	set_processor_tag (a_proc_tag_t : PROCESSOR_TAG_TYPE) is
-		require
-			tag_not_void: a_proc_tag_t /= Void
+	set_processor_tag (a_proc_tag_t : !PROCESSOR_TAG_TYPE)
 		do
-			proc_tag_t := a_proc_tag_t
+			attr_processor_tag := a_proc_tag_t.twin
 		end
 
-feature {TYPE_A} -- Internal SCOOP Processor
-	proc_tag_t : PROCESSOR_TAG_TYPE
+feature {TYPE_A}
+	attr_processor_tag : PROCESSOR_TAG_TYPE
 
 feature -- Properties
 
@@ -533,11 +530,6 @@ feature -- Properties
 			-- Is the current actual type a separate one ?
 		do
 			-- Do nothing
-		end
-
-	processor_tag_type : PROCESSOR_TAG_type is
-		do
-
 		end
 
 	is_none: BOOLEAN is

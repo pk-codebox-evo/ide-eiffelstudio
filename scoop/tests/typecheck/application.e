@@ -13,7 +13,7 @@ create
 	make
 
 feature {NONE} -- Initialization
-	a : ! X
+	a : X
 --	y  : Y [X]
 	b  : separate X
 --	c1 : separate <p> X
@@ -96,14 +96,23 @@ feature {NONE} -- Initialization
 --		do
 --		end
 
-	test12 (a12 : ! separate X)
-		do
-			a12.f.f.do_nothing
-		end
+--	test12 (a12 : ! separate X)
+--		do
+--			a12.f.f.do_nothing
+--		end
 
 --	test13 (a13 : ! separate X)
 --		do
 --			a13.e.do_nothing
 --		end
+	test14 (a14 : ! separate <px> X)
+		local
+			ag1 : separate <px> FUNCTION [!X,TUPLE,X]
+ 			ag2 : FUNCTION [!X, TUPLE, X]
+ 		do
+			ag1 := agent a14.f
+ 			ag2 := agent a14.f --fail
+    end
+
 			
 end

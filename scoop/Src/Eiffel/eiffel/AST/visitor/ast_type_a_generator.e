@@ -153,7 +153,7 @@ feature {NONE} -- Visitor implementation
 			l_type: CL_TYPE_A
 
 			l_proc_spec : EXPLICIT_PROCESSOR_SPECIFICATION_AS
-			l_tag_name : STRING
+			l_tag_name : ! STRING
 			l_handled  : BOOLEAN
 			l_proc_tag : PROCESSOR_TAG_TYPE
 		do
@@ -178,7 +178,12 @@ feature {NONE} -- Visitor implementation
 						l_handled := False
 					end
 
-					l_tag_name := l_proc_spec.entity.name
+					if {str : STRING} l_proc_spec.entity.name then
+						l_tag_name := str
+					else
+						l_tag_name := ""
+					end
+
 				else
 					l_handled  := False
 					l_tag_name := ""
