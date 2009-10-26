@@ -18,6 +18,7 @@ feature {NONE} -- Initialization
 	make
 			-- Initializes the application.
 		local
+			results: ARRAY [STRING]
 			l_parser: ARGUMENT_PARSER
 		do
 			create l_parser.make
@@ -49,10 +50,10 @@ feature {NONE} -- Basic operations
 			else
 				l_database.open_read
 			end
+
 			create l_console.make (l_database)
-			if not l_database.has_error then
-				l_database.close
-			end
+			l_console.begin_interaction
+			l_database.close
 		end
 
 ;note
