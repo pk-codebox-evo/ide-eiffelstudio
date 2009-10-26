@@ -1019,22 +1019,19 @@ feature {NONE} -- SCOOP Implementation
 		local
 			tmp_tag : ! PROCESSOR_TAG_TYPE
 		do
-			Result  := result_t
+			Result  := result_t.twin
 
-			if target_t.is_separate then
-				if result_t.is_expanded then
+			if result_t.is_expanded then
 
+			else
+				Result  := result_t.twin
+				tmp_tag := target_t.processor_tag.twin
+
+				if not result_t.processor_tag.is_current then
+					Result.processor_tag.make_top
 				else
-					Result  := result_t.duplicate
-					tmp_tag := target_t.processor_tag.duplicate
-
-					if not result_t.processor_tag.is_current then
-						Result.processor_tag.make_top
-					else
-						Result.set_processor_tag (tmp_tag)
-					end
+					Result.set_processor_tag (tmp_tag)
 				end
-
 			end
 		end
 
@@ -1046,25 +1043,23 @@ feature {NONE} -- SCOOP Implementation
 		local
 			tmp_tag : ! PROCESSOR_TAG_TYPE
 		do
-			Result := arg_t
-			if target_t.is_separate then
+			Result := arg_t.twin
 
-				if target_t.is_expanded then
+			if target_t.is_expanded then
 
+			else
+				Result  := arg_t.twin
+				tmp_tag := target_t.processor_tag.twin
+
+				if not target_t.processor_tag.top and arg_t.processor_tag.is_current then
+
+				elseif arg_t.processor_tag.top then
+					tmp_tag.make_top
 				else
-					Result  := arg_t.duplicate
-					tmp_tag := target_t.processor_tag.duplicate
-
-					if not target_t.processor_tag.top and arg_t.processor_tag.is_current then
-
-					elseif arg_t.processor_tag.top then
-						tmp_tag.make_top
-					else
-						tmp_tag.make_bottom
-					end
-
-					Result.set_processor_tag (tmp_tag)
+					tmp_tag.make_bottom
 				end
+
+				Result.set_processor_tag (tmp_tag)
 			end
 		end
 
