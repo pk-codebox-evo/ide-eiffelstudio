@@ -2141,6 +2141,8 @@ end
 						create vdrd53
 						vdrd53.init (old_feature, Current)
 						Error_handler.insert_error (vdrd53)
+					elseif False then -- new SCOOP redeclaration rules
+
 					end
 
 					i := i + 1

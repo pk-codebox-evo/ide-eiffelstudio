@@ -529,7 +529,7 @@ feature -- Properties
 	is_separate: BOOLEAN is
 			-- Is the current actual type a separate one ?
 		do
-			-- Do nothing
+			Result := not processor_tag.is_current
 		end
 
 	is_none: BOOLEAN is
