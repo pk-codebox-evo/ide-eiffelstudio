@@ -49,10 +49,12 @@ feature {NONE} -- Initialization
 --			a := b.f
 --		end
 
---	test4 (a_b : ! separate X) is
---		do
---			a_b.g (a_b)
---		end
+	test4 (a_b : ! separate <px> X) is
+		local
+ 			r: X
+		do
+			r := a_b.f
+		end
 
 --	test5 (a_b : ! separate X) is
 --		do
@@ -96,15 +98,15 @@ feature {NONE} -- Initialization
 --		do
 --		end
 
---	test12 (a12 : ! separate X)
---		do
---			a12.f.f.do_nothing
---		end
+	test12 (a12 : ! separate X)
+		do
+			a12.f.f.do_nothing
+		end
 
---	test13 (a13 : ! separate X)
---		do
---			a13.e.do_nothing
---		end
+	test13 (a13 : ! separate X)
+		do
+			a13.e.do_nothing
+		end
 	test14 (a14 : ! separate <px> X)
 		local
 			ag1 : separate <px> FUNCTION [!X,TUPLE,X]
@@ -112,7 +114,9 @@ feature {NONE} -- Initialization
  		do
 			ag1 := agent a14.f
  			ag2 := agent a14.f --fail
-    end
+		end
 
-			
+	test15 (a15: separate EXP) -- fail, no expanded separates
+		do
+		end	
 end

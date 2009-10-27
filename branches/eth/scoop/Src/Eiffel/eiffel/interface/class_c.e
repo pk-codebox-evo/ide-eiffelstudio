@@ -1991,17 +1991,11 @@ feature {TYPE_AS, AST_TYPE_A_GENERATOR, AST_FEATURE_CHECKER_GENERATOR} -- Actual
 			-- be a generic class. It simplifies creation of `CL_TYPE_A' instances in
 			-- CLASS_TYPE_AS when trying to resolve types, by using dynamic binding
 			-- rather than if statements.
-		require
-			is_exp_set: is_exp implies (not is_sep)
-			is_sep_set: is_sep implies (not is_exp)
 		do
 			if gen /= Void then
 				create {GEN_TYPE_A} Result.make (class_id, gen)
 			else
 				create Result.make (class_id)
-			end
-			if is_exp then
-				Result.set_expanded_mark
 			end
 
 			if {att_proc_tag : PROCESSOR_TAG_TYPE} proc_tag then
@@ -2012,6 +2006,10 @@ feature {TYPE_AS, AST_TYPE_A_GENERATOR, AST_FEATURE_CHECKER_GENERATOR} -- Actual
 				end
 			else
 				Result.set_processor_tag (create {PROCESSOR_TAG_TYPE}.make_current)
+			end
+
+			if is_exp then
+				Result.set_expanded_mark
 			end
 
 			if is_expanded then

@@ -220,7 +220,7 @@ feature {NONE} -- Visitor implementation
 					l_type := l_class_c.partial_actual_type (Void,
 					                                         l_as.is_expanded,
 					                                         l_as.is_separate,
-                                                             l_proc_tag)
+					                                         l_proc_tag)
 					last_type := l_type
 				end
 				if l_type /= Void then

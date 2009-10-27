@@ -115,7 +115,10 @@ feature -- Properties
 	is_expanded: BOOLEAN is
 			-- Is the type expanded?
 		do
-			Result := has_expanded_mark or else (has_no_mark and then associated_class.is_expanded)
+			Result := has_expanded_mark or else (has_no_mark and then associated_class.is_expanded) or else
+				-- hack version: take the classes expanded mark. It should be done by the above I guess, but... if you have
+				-- a separate type (has_no_mark) will fail. This should be FIXME'd.
+			          class_declaration_mark = expanded_mark
 		end
 
 	is_reference: BOOLEAN is
