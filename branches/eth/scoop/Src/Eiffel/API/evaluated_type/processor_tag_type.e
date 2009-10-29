@@ -39,10 +39,10 @@ feature --Creation
 
 			set_tag_name (proc_name)
 			is_sep  := is_separate
-			handled := a_handled
+			is_handled := a_handled
 
 			if is_separate then
-				if handled and proc_name.is_equal ("Current") then
+				if is_handled and proc_name.is_equal ("Current") then
 					make_current
 				elseif proc_name.is_empty then
 					make_top
@@ -73,7 +73,7 @@ feature --Copy
 	duplicate : ! PROCESSOR_TAG_TYPE
 			-- Duplicate the current processor tag.
 		do
-			create Result.make (is_sep, tag_name, handled)
+			create Result.make (is_sep, tag_name, is_handled)
 			Result.set_controlled (is_controlled)
 		end
 
@@ -113,7 +113,10 @@ feature --Access
 			controlled := contr
 		end
 
-
+  has_explicit_tag : BOOLEAN
+  	do
+  		Result := not tag_name.is_empty or is_handled
+  	end
 
 	tag_name : ! STRING
 	bottom   : BOOLEAN
@@ -124,7 +127,7 @@ feature --Debug
 		do
 			io.put_string ("Separate tag with: is_sep: " + is_sep.out)
 			io.put_string (" process name: " + tag_name)
-			io.put_string (" handled: " + handled.out)
+			io.put_string (" handled: " + is_handled.out)
 			io.put_string (" current: " + current_proc.out)
 			io.new_line
 		end
@@ -150,7 +153,7 @@ feature {NONE} -- Implementation
 	controlled   : BOOLEAN
 	current_proc : BOOLEAN
 	is_sep       : BOOLEAN
-	handled      : BOOLEAN
+	is_handled      : BOOLEAN
 
 invariant
 	top_bottom_exclusive: (bottom implies not top)
