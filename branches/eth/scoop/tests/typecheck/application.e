@@ -116,7 +116,7 @@ feature {NONE} -- Initialization
  			ag2 := agent a14.f --fail
 		end
 
-	test15 (a15: separate EXP) -- fail, no expanded separates
-		do
-		end	
+--	test15 (a15: separate EXP) -- fail, no expanded separates
+--		do
+--		end	
 end
