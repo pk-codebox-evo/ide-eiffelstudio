@@ -8,6 +8,11 @@ indexing
 class CL_TYPE_A
 
 inherit
+	SHARED_WORKBENCH
+		export
+			{NONE} all
+		end
+
 	NAMED_TYPE_A
 		redefine
 			is_expanded, is_reference, is_separate, valid_generic,
@@ -115,10 +120,10 @@ feature -- Properties
 	is_expanded: BOOLEAN is
 			-- Is the type expanded?
 		do
-			Result := has_expanded_mark or else (has_no_mark and then associated_class.is_expanded) or else
+			Result := has_expanded_mark or else (has_no_mark and then associated_class.is_expanded)
 				-- hack version: take the classes expanded mark. It should be done by the above I guess, but... if you have
 				-- a separate type (has_no_mark) will fail. This should be FIXME'd.
-			          class_declaration_mark = expanded_mark
+			          -- class_declaration_mark = expanded_mark
 		end
 
 	is_reference: BOOLEAN is
@@ -675,7 +680,7 @@ feature {COMPILER_EXPORTER} -- Conformance
 						Result := other_class_type.class_id = system.system_object_id
 					end
 
-					if Result and check_scoop_types then
+					if Result and workbench.is_degree_scoop_processing then
 						Result := scoop_conform_to (other_class_type)
 					end
 				end
@@ -684,9 +689,6 @@ feature {COMPILER_EXPORTER} -- Conformance
 				Result := to_type_set.conform_to (l_other_type_set.twin)
 			end
 		end
-
-	check_scoop_types : BOOLEAN is True
-
 
 	processor_tag : !PROCESSOR_TAG_TYPE
 		do

@@ -184,6 +184,10 @@ feature {NONE} -- Visitor implementation
 						l_tag_name := ""
 					end
 
+					if l_handled then
+
+					end
+
 				else
 					l_handled  := False
 					l_tag_name := ""
