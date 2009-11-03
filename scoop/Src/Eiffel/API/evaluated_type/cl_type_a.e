@@ -184,7 +184,7 @@ feature -- Comparison
 			Result := declaration_mark = other.declaration_mark and then
 				class_declaration_mark = other.class_declaration_mark and then
 				is_attached = other.is_attached and then
-				(is_separate = other.is_separate implies processor_tag.is_equal (other.processor_tag)) and then
+				(workbench.is_degree_scoop_processing implies (is_separate = other.is_separate implies processor_tag.is_equal (other.processor_tag))) and then
 				class_id = other.class_id
 		end
 
@@ -991,7 +991,7 @@ feature {CL_TYPE_A, TUPLE_CLASS_B, CIL_CODE_GENERATOR} --Class type declaration 
 	reference_mark: NATURAL_8 is 2
 			-- Reference declaration mark
 
-	separate_mark: NATURAL_8 is 4
+	separate_mark: NATURAL_8 is 3
 			-- Separate declaration mark
 
 invariant
