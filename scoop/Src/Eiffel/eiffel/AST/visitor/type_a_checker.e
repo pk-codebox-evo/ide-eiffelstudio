@@ -182,7 +182,8 @@ feature -- Special checking
 					end
 				end
 
-				if l_vtec = Void and a_type.is_expanded and a_type.is_separate then
+				if workbench.is_degree_scoop_processing and then
+				   l_vtec = Void and a_type.is_expanded and a_type.is_separate then
 					create {VTEC4} l_vtec
 				end
 

@@ -189,7 +189,7 @@ feature -- Additional properties
 			end
 		end
 
-feature {SYSTEM_I} -- Additional properties for SCOOP
+feature {SYSTEM_I, AST_FEATURE_CHECKER_GENERATOR, CL_TYPE_A, FEATURE_I, TYPE_A_CHECKER} -- Additional properties for SCOOP
 
 	is_degree_scoop_processing: BOOLEAN
 			-- remebers SCOOP processing for compilation steps.

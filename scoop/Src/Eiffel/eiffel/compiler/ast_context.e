@@ -199,8 +199,7 @@ feature {AST_FEATURE_CHECKER_GENERATOR, AST_CONTEXT} -- Local scopes: status rep
 			end
 		end
 
-	is_result_attached: BOOLEAN
-			-- Is special entity "Result" in the scope where it is considered attached?
+	is_result_attached: BOOLEAN			-- Is special entity "Result" in the scope where it is considered attached?
 		do
 			Result := scope_keeper.is_result_attached
 			if not Result then

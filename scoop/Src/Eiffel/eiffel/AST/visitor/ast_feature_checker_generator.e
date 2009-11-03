@@ -1264,8 +1264,9 @@ feature -- Implementation
 			l_context_current_class := context.current_class
 
 			-- FIXME deal with unqualified call validity checking
-			if is_qualified then
-				if not is_controlled (a_type) then
+
+			if workbench.is_degree_scoop_processing then
+				if is_qualified and then not is_controlled (a_type) then
 					error_handler.insert_error (create {VSTU}.make (context, a_type, l_feature_name))
 				end
 			end
@@ -1547,7 +1548,9 @@ feature -- Implementation
 
 											-- Use the SCOOP argument combinator to transform the
 											-- Resulting type
-										l_formal_arg_type := transform_scoop_argument (l_formal_arg_type, a_type)
+										if workbench.is_degree_scoop_processing then
+											l_formal_arg_type := transform_scoop_argument (l_formal_arg_type, a_type)
+										end
 
 											-- Take care of anchoring to argument
 										if l_formal_arg_type.is_like_argument then
@@ -1674,7 +1677,9 @@ feature -- Implementation
 
 
 								-- SCOOP transformation of the result type, based on both old result type and target of the feature call
-							l_result_type := transform_scoop_result (l_result_type, a_type)
+							if workbench.is_degree_scoop_processing then
+								l_result_type := transform_scoop_result (l_result_type, a_type)
+							end
 
 								-- Adapted type in case it is a formal generic parameter or a like.
 							l_result_type := adapted_type (l_result_type, l_last_type, l_last_constrained)
@@ -2603,7 +2608,7 @@ feature -- Implementation
 
 					-- We need to remember if this argument is controlled so we can pass this on
 					-- to later stages, important for SCOOP separate call validity checking.
-				if l_type.is_separate then
+				if workbench.is_degree_scoop_processing and then l_type.is_separate then
 					l_type.processor_tag.set_controlled (l_type.is_attached)
 				end
 
