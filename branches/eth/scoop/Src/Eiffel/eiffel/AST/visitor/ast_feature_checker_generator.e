@@ -8227,14 +8227,19 @@ feature {NONE} -- Agents
 				-- We also twin the processor it has, because we're going to give
 				-- it to the resulting PROCEDURE type, so we don't want them
 				-- to have the same reference.
-			l_target_proc := a_target_type.processor_tag.duplicate
-			l_target_type := a_target_type.twin
 
-			if a_target_type.is_separate and then
-			   not l_target_proc.is_current then
-        		create l_first_arg_proc.make_current
-        		l_target_type.set_processor_tag (l_first_arg_proc)
-        	end
+			l_target_type := a_target_type
+
+			if workbench.is_degree_scoop_processing then
+				l_target_proc := a_target_type.processor_tag.duplicate
+				l_target_type := a_target_type.twin
+
+				if a_target_type.is_separate and then
+				   not l_target_proc.is_current then
+					create l_first_arg_proc.make_current
+					l_target_type.set_processor_tag (l_first_arg_proc)
+				end
+			end
 
 			l_generics.put (l_target_type, 1)
 
@@ -8399,7 +8404,10 @@ feature {NONE} -- Agents
 
 				-- In SCOOP, the generated PROCEDURE must have the same target processor as the
 				-- original target.
-			l_result_type.set_processor_tag (l_target_proc)
+			if workbench.is_degree_scoop_processing then
+				l_result_type.set_processor_tag (l_target_proc)
+			end
+
 
 			if is_byte_node_enabled then
 				create l_routine_creation
