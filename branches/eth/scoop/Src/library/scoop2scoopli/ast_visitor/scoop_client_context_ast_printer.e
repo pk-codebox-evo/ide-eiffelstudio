@@ -1,5 +1,5 @@
 indexing
-	description: "Summary description for {SCOOP_CLIENT_CONTEXT_AST_PRINTER}."
+	description: "Summary description for {SCOOP_CLIENT_CONTEXT_AST_PRINTER}. "
 	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
@@ -25,9 +25,10 @@ inherit
 			process_nested_as,
 			process_nested_expr_as,
 			process_create_creation_as,
-			process_create_creation_expr_as,
+--			process_create_creation_expr_as,
 			process_binary_as,
-			process_unary_as
+			process_unary_as,
+			process_assign_as
 		end
 
 	SCOOP_CLASS_NAME
@@ -148,7 +149,8 @@ feature {NONE} -- Roundtrip: 'Current' as first argument in paramenter list
 		do
 			safe_process (l_as.lparan_symbol (match_list))
 			-- add additional argument 'Current'
-			if is_last_call_separate or add_prefix_current then
+			if is_last_call_separate or add_prefix_current_cc then
+				add_prefix_current_cc := false
 				context.add_string ("Current, ")
 			end
 
@@ -498,12 +500,136 @@ feature {NONE} -- Visitor implementation
 
 feature {NONE} -- Visitor implementation: creation
 
-	process_create_creation_expr_as (l_as: CREATE_CREATION_EXPR_AS) is
-			-- Process `l_as'.
+	process_assign_as (l_as: ASSIGN_AS) is
+		local
+			l_expr_call_as: EXPR_CALL_AS
+			l_create_creation_expr_as: CREATE_CREATION_EXPR_AS
+			l_processor_visitor: SCOOP_EXPLICIT_PROCESSOR_SPECIFICATION_VISITOR
+			l_processor: like locals_processor
 		do
-			safe_process (l_as.create_keyword (match_list))
-			safe_process (l_as.type)
-			safe_process (l_as.call)
+			l_expr_call_as ?= l_as.source
+			if l_expr_call_as /= Void then
+				l_create_creation_expr_as ?= l_expr_call_as.call
+			end
+			if l_create_creation_expr_as /= Void then
+				-- get explicit processor specification of type if there is any
+				l_processor_visitor := scoop_visitor_factory.new_explicit_processor_specification_visitor(class_c)
+				l_processor := l_processor_visitor.get_explicit_processor_specification (l_create_creation_expr_as.type)
+
+				-- test if there is an explicit processor specification with handler
+				if l_processor.has_explicit_processor_specification then
+
+					-- indentation
+					context.add_string (match_list.i_th (last_index + 1).text (match_list))
+					if l_processor.has_handler then
+						-- add processor void test
+						context.add_string ("check " + l_processor.entity_name + " /= Void and then " + l_processor.entity_name + ".processor_ /= Void end ")
+					else
+						-- add processor void test
+						context.add_string ("if " + l_processor.entity_name + " = Void then ")
+						context.add_string (l_processor.entity_name + ".set_processor_(scoop_scheduler.new_processor_) end ")
+					end
+				end
+
+				-- process the target and also the assignment symbol
+				safe_process (l_as.target)
+				safe_process (l_as.assignment_symbol (match_list))
+
+				-- process the create creation expression
+				process_create_creation_expr (l_create_creation_expr_as, l_as.target.access_name)
+			else
+				-- process now the assigner call node
+				Precursor (l_as)
+			end
+		end
+
+	process_create_creation_expr (l_as: CREATE_CREATION_EXPR_AS; a_target_name: STRING) is
+			-- Process `l_as'.
+		local
+			is_separate: BOOLEAN
+			l_class_c: CLASS_C
+			l_class_name: STRING
+			l_type_visitor: SCOOP_TYPE_VISITOR
+			l_processor_visitor: SCOOP_EXPLICIT_PROCESSOR_SPECIFICATION_VISITOR
+			l_processor: like locals_processor
+		do
+			create l_type_visitor
+			l_type_visitor.setup (parsed_class, match_list, true, true)
+
+			-- get separate and the information of the explicit processor specification status of the current call
+			if l_as.type /= Void then
+				-- get type by the explicit type
+				l_class_c := l_type_visitor.evaluate_class_from_type (l_as.type, class_c)
+				-- get separate status
+				is_separate := l_type_visitor.is_separate
+
+				if is_separate then
+					-- get class name for separate call
+					create l_class_name.make_from_string (l_class_c.name.as_lower)
+					-- get processor specification
+					l_processor_visitor := scoop_visitor_factory.new_explicit_processor_specification_visitor(class_c)
+					l_processor := l_processor_visitor.get_explicit_processor_specification (l_as.type)
+				end
+			else
+				-- should not be the case
+				error_handler.insert_error (create {INTERNAL_ERROR}.make("SCOOP Unexpected error: {SCOOP_CLIENT_CONTEXT_AST_PRINTER}.process_create_creation_expr_as."))
+			end
+
+			if not is_separate then
+				-- process it as normal
+				safe_process (l_as)
+			else
+
+
+				if not l_processor.has_explicit_processor_specification or not l_processor.has_handler then
+					-- current object is separate, but has no explicit processor specification or
+					-- current type is separate and has an explicit processor specification
+					-- but is not defined by a handler.
+
+					-- create SCOOP object with new processor
+					safe_process (l_as.create_keyword (match_list))
+					safe_process (l_as.type)
+					context.add_string (".set_processor_ (scoop_scheduler.new_processor_); ")
+
+				else
+					-- current entity is separate and has an explicit processor specification.
+					-- it is defined also by a handler.
+
+					-- the processor not void test is already done in `process_assign_as'.
+
+					-- create SCOOP object with new processor
+					safe_process (l_as.create_keyword (match_list))
+					safe_process (l_as.type)
+					context.add_string (".set_processor_ (" + l_processor.entity_name + ".processor_); ")
+				end
+
+				-- process current creation call
+				context.add_string ("separate_execute_routine ([ " + a_target_name)
+				context.add_string (".processor_], agent " + a_target_name)
+				if l_as.call /= Void then
+					context.add_string ("." + l_as.call.feature_name.name)
+					context.add_string ("_scoop_separate_" + l_class_name)
+					-- process internal parameter: first: 'Current'	
+					increase_nested_level
+					increase_nested_level
+					add_prefix_current_cc := true
+					if l_as.call.internal_parameters /= Void then
+						last_index := l_as.call.internal_parameters.start_position
+					end
+					process_internal_parameters(l_as.call.internal_parameters)
+					add_prefix_current_cc := false
+					decrease_nested_level
+					decrease_nested_level
+				else
+					context.add_string (".default_create_scoop_separate_" + l_class_name)
+					-- internal parameter: 'Current'
+					context.add_string (" (Current)")
+				end
+				context.add_string (", Void, Void, Void)")
+				if l_as.call /= Void and then not (l_as.call.internal_parameters /= Void) then
+					last_index := l_as.call.end_position
+				end
+			end
 		end
 
 	process_create_creation_as (l_as: CREATE_CREATION_AS) is
@@ -609,7 +735,7 @@ feature {NONE} -- Visitor implementation: creation
 
 					-- add processor void test
 					context.add_string ("if " + l_processor.entity_name + " = Void then ")
-					context.add_string (l_processor.entity_name + ".set_processor_(scoop_scheduler.new_processor_) end")
+					context.add_string (l_processor.entity_name + ".set_processor_(scoop_scheduler.new_processor_) end; ")
 
 					-- create SCOOP object with new processor
 					safe_process (l_as.create_keyword (match_list))
@@ -623,14 +749,13 @@ feature {NONE} -- Visitor implementation: creation
 					process_leading_leaves (l_as.create_keyword_index)
 
 					-- add processor void test
-					context.add_string ("if " + l_processor.entity_name + ".processor_ = Void then ")
-					context.add_string (l_processor.entity_name + ".set_processor_(scoop_scheduler.new_processor_) end")
+					context.add_string ("check " + l_processor.entity_name + " /= Void and then " + l_processor.entity_name + ".processor_ /= Void end ")
 
 					-- create SCOOP object with new processor
 					safe_process (l_as.create_keyword (match_list))
 					safe_process (l_as.type)
 					safe_process (l_as.target)
-					context.add_string (".set_processor_ (" + l_processor.entity_name + ".handler); ")
+					context.add_string (".set_processor_ (" + l_processor.entity_name + ".processor_); ")
 				end
 
 				-- process current creation call
@@ -648,12 +773,12 @@ feature {NONE} -- Visitor implementation: creation
 					-- process internal parameter: first: 'Current'	
 					increase_nested_level
 					increase_nested_level
-					add_prefix_current := true
+					add_prefix_current_cc := true
 					if l_as.call.internal_parameters /= Void then
 						last_index := l_as.call.internal_parameters.start_position
 					end
 					process_internal_parameters(l_as.call.internal_parameters)
-					add_prefix_current := false
+					add_prefix_current_cc := false
 					decrease_nested_level
 					decrease_nested_level
 				else
@@ -678,7 +803,7 @@ feature {NONE} -- Implementation
 				-- add additional argument 'Current' if last target was separate
 				-- add a 'dummy level' so that the next target has no type information as basis
 				process_parameter_list_as (l_as)
-			elseif is_last_call_separate or add_prefix_current then
+			elseif is_last_call_separate or add_prefix_current_cc then
 				-- add additional argument 'Current' if last target was separate
 				context.add_string (" (Current)")
 			end
@@ -946,8 +1071,9 @@ feature {NONE} -- Implementation
 		-- remembers the name of the class type
 		-- of a separate declared local
 
-	add_prefix_current: BOOLEAN
+	add_prefix_current_cc: BOOLEAN
 		-- adds a prefix 'Current' as first internal parameter
+		-- used for create creation process features.
 
 invariant
 	valid_nested_level: nested_level >= 0

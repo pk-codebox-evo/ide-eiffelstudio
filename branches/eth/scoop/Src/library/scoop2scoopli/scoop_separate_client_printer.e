@@ -15,6 +15,7 @@ inherit
 			{DEGREE_SCOOP} get_context
 		redefine
 			process_class_as,
+			process_create_as,
 			process_feature_clause_as,
 			process_feature_as
 		end
@@ -70,7 +71,6 @@ feature {NONE} -- Roundtrip: process nodes
 				l_generics_visitor := scoop_visitor_factory.new_generics_visitor (context)
 				l_generics_visitor.process_class_internal_generics (l_as.internal_generics, true, false)
 				last_index := l_generics_visitor.get_last_index
---				last_index := l_as.internal_generics.end_position
 			end
 
 			safe_process (l_as.alias_keyword (match_list))
@@ -87,11 +87,6 @@ feature {NONE} -- Roundtrip: process nodes
 			l_parent_visitor := scoop_visitor_factory.new_client_parent_visitor (context)
 			l_parent_visitor.process_internal_conforming_parents(l_as.internal_conforming_parents)
 			l_parent_visitor.process_internal_non_conforming_parents (l_as.internal_non_conforming_parents)
---			if l_as.internal_non_conforming_parents /= Void then
---				last_index := l_as.internal_non_conforming_parents.end_position
---			elseif l_as.internal_conforming_parents /= Void then
---				last_index := l_as.internal_conforming_parents.end_position
---			end
 			if l_as.conforming_parents /= Void or l_as.non_conforming_parents /= Void then
 				last_index := l_parent_visitor.get_last_index
 			end
@@ -123,6 +118,13 @@ feature {NONE} -- Roundtrip: process nodes
 			last_index := l_as.end_keyword.index - 1
 			context.add_string ("%N%N")
 			safe_process (l_as.end_keyword)
+		end
+
+	process_create_as (l_as: CREATE_AS) is
+		do
+			safe_process (l_as.create_creation_keyword (match_list))
+			process_clients (l_as.clients)
+			safe_process (l_as.feature_list)
 		end
 
 	process_feature_clause_as (l_as: FEATURE_CLAUSE_AS) is

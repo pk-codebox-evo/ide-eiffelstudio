@@ -64,6 +64,7 @@ feature -- Access
 
 			-- set result
 			create Result
+			Result.has_explicit_processor_specification := has_explicit_processor_specification
 			Result.entity_name := entity_name
 			Result.has_handler := has_handler
 
@@ -91,6 +92,7 @@ feature -- Access
 
 			-- set result
 			create Result
+			Result.has_explicit_processor_specification := has_explicit_processor_specification
 			Result.entity_name := entity_name
 			Result.has_handler := has_handler
 

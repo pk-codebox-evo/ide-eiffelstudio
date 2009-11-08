@@ -1,5 +1,5 @@
 indexing
-	description: "Summary description for {SCOOP_SEPARATE_PROXY_PRINTER}."
+	description: "Summary description for {SCOOP_SEPARATE_PROXY_PRINTER}. "
 	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
@@ -135,7 +135,7 @@ feature {NONE} -- Roundtrip: process nodes
 				last_index := l_parent_visitor.get_last_index
 			end
 
-			process_creators_and_conversions
+			process_creators_and_conversions (l_as.creators)
 
 			-- process features.
 			safe_process (l_as.features)
@@ -306,28 +306,28 @@ feature {NONE} -- Roundtrip: process nodes
 
 feature {NONE} -- Roundtrip: implementation
 
-	process_creators_and_conversions is
+	process_creators_and_conversions (l_as: EIFFEL_LIST [CREATE_AS]) is
 			-- Process creators and convertors
 		local
 			l_generics_visitor: SCOOP_GENERICS_VISITOR
 		do
 			-- creator & convertor
 			if not class_as.is_deferred then
-					-- creator
+				-- creator
 				context.add_string ("%N%Ncreate%N%Tmake_from_local, set_processor_")
 
-					-- convertor
+				-- convertor
 				context.add_string ("%N%Nconvert%N%Tmake_from_local ({" + class_as.class_name.name.as_upper)
 
-					-- formal paramters
+				-- formal paramters
 				l_generics_visitor := scoop_visitor_factory.new_generics_visitor (context)
 				l_generics_visitor.process_class_internal_generics (class_as.internal_generics, true, true)
 
-					-- convertor end
+				-- convertor end
 				context.add_string ("})")
 			end
 
-				-- skip original creators and convertors
+			-- skip original creators and convertors
 			if class_as.creators /= Void or class_as.convertors /= Void then
 				if class_as.features /= Void then
 					last_index := class_as.features.index - 1
