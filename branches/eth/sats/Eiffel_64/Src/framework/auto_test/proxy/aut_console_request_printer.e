@@ -10,6 +10,45 @@ class
 inherit
 	AUT_REQUEST_PROCESSOR
 
+	AUT_PROXY_LOG_PRINTER
+
+feature -- Setting
+
+	set_start_time (a_time: INTEGER)
+			-- Set `start_time' with `a_time'.
+		do
+		end
+
+	set_end_time (a_time: INTEGER)
+			-- Set `end_time' with `a_time'.
+		do
+		end
+
+feature -- Basic operations
+
+	report_request (a_producer: AUT_PROXY_EVENT_PRODUCER; a_request: AUT_REQUEST)
+			-- Process new request.
+			--
+			-- `a_producer' Producer that triggered `a_request'.
+			-- `a_request': Last request sent to interpreter.
+		do
+			a_request.process (Current)
+		end
+
+	report_response (a_producer: AUT_PROXY_EVENT_PRODUCER; a_response: AUT_RESPONSE)
+			-- Process new response.
+			--
+			-- `a_producer' Producer that triggered `a_response'.
+			-- `a_response': Last response reveiced from interpreter.
+		do
+		end
+
+	report_comment_line (a_producer: AUT_PROXY_EVENT_PRODUCER; a_line: STRING) is
+			-- Report comment line `a_line'.
+		do
+		end
+
+
 feature{AUT_REQUEST} -- Processing
 
 	process_start_request (a_request: AUT_START_REQUEST)
