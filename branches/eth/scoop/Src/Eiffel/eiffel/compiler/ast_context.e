@@ -388,8 +388,8 @@ feature {AST_FEATURE_CHECKER_GENERATOR, AST_CONTEXT} -- Local scopes: removal
 			-- Mark that an attached scope of the special entity "Result" is terminated.
 		do
 			scope_keeper.stop_result_scope
-		ensure
-			result_scope_removed: not is_result_attached
+--		ensure
+--			result_scope_removed: not is_result_attached
 		end
 
 feature -- Local initialization and scopes: nesting
