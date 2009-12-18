@@ -12,20 +12,28 @@ inherit
 			{NONE} all
 		end
 create
-	make_from_node,
-	make_invalid
+	make_from_ast,
+	make_invalid,
+	make_from_ast_list
 
 feature -- Access
 
-	path: AST_PATH
-	context: ETR_CONTEXT
-	target_node: AST_EIFFEL
+	path: detachable AST_PATH is
+			-- path of `Current'
+		do
+			if attached target_node then
+				Result := target_node.path
+			end
+		end
+
+	context: detachable ETR_CONTEXT
+	target_node: detachable AST_EIFFEL
 
 	is_valid: BOOLEAN
 
 feature -- creation
 
-	make_from_node(a_node: like target_node; a_context: like context) is
+	make_from_ast(a_node: like target_node; a_context: like context) is
 			-- make with `a_node' and `a_context'
 		require
 			non_void: a_node /= void and a_context /= void
@@ -34,18 +42,44 @@ feature -- creation
 		do
 			target_node := a_node
 			context := a_context
-			path := a_node.path
 
+			is_valid := true
+		end
+
+	make_from_ast_list(a_list: LIST[like target_node]; a_context: like context) is
+			-- make with `a_list' and `a_context'
+		require
+			non_void: a_list /= void and a_context /= void
+		local
+			l_eiffel_list: EIFFEL_LIST[AST_EIFFEL]
+		do
+			-- duplicate all items
+			-- since we're gonna change their paths!
+			from
+				a_list.start
+				create l_eiffel_list.make (a_list.count)
+			until
+				a_list.after
+			loop
+				duplicate_ast (a_list.item)
+
+				l_eiffel_list.extend (duplicated_ast)
+				a_list.forth
+			end
+
+			-- reindex it
+			index_ast_from_root(l_eiffel_list)
+
+			target_node := l_eiffel_list
+			context := a_context
 			is_valid := true
 		end
 
 	make_invalid is
 			-- make and mark as invalid
 		do
-			path := void
 			context := void
 			target_node := void
-
 			is_valid := false
 		end
 note
