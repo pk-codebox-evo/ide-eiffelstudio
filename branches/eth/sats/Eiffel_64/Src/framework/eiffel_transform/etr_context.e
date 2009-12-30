@@ -14,15 +14,17 @@ inherit
 create
 	make_from_class,
 	make_from_feature,
-	default_create -- debug so we don't break other stuff yet
+	make_empty
 
 feature --Access
-	--fixme: should we use more general types like CLASS_C and FEATURE_I ?
-	written_class: EIFFEL_CLASS_C
+	written_class: detachable CLASS_C
 	written_feature: detachable E_FEATURE
 
 	is_feature: BOOLEAN
 			-- does `Current' represent the context of a feature
+
+	is_empty: BOOLEAN
+			-- is `Current' an empty context
 
 feature {NONE} -- Creation
 
@@ -32,8 +34,6 @@ feature {NONE} -- Creation
 			non_void: a_class /= void
 		do
 			written_class := a_class
-
---			is_feature := false
 		end
 
 	make_from_feature(a_feature: like written_feature)
@@ -41,15 +41,21 @@ feature {NONE} -- Creation
 		require
 			non_void: a_feature /= void
 			good_written_class: a_feature.written_in /= 0
-			eiffel_written_class: a_feature.written_class.is_eiffel_class_c
 		do
 			written_feature := a_feature
-			fixme("Is this what we want?")
-			written_class := a_feature.written_class.eiffel_class_c
+			written_class := a_feature.written_class
 
 			is_feature := true
 		end
 
+	make_empty
+			-- make with `is_empty' set to true
+		do
+			is_empty := true
+		end
+invariant
+	valid_class: not is_empty implies attached written_class
+	valid_feature: is_feature implies attached written_feature
 note
 	copyright: "Copyright (c) 1984-2009, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
