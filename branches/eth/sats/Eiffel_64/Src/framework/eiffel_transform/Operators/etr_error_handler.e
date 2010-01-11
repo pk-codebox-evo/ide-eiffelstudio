@@ -17,14 +17,15 @@ feature -- Error handling
 			has_errors := false
 		end
 
-	set_error(an_error_message: attached like last_error)
+	add_error(an_error_message: attached like last_error)
 			-- set `last_error' to `an_error_message'
 		do
+			-- fixme: use error-chain
 			has_errors := true
 			last_error := an_error_message
 		end
 note
-	copyright: "Copyright (c) 1984-2009, Eiffel Software"
+	copyright: "Copyright (c) 1984-2010, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[
