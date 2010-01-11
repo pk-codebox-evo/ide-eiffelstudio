@@ -57,6 +57,8 @@ feature {NONE} -- Creation
 				written_in_features.extend(create {ETR_FEATURE_CONTEXT}.make(l_written_in.item.associated_feature_i, Current))
 				l_written_in.forth
 			end
+
+			class_context := Current
 		end
 note
 	copyright: "Copyright (c) 1984-2010, Eiffel Software"

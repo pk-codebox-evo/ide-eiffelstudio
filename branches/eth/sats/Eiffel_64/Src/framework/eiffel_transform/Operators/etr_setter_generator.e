@@ -1,0 +1,91 @@
+note
+	description: "Creates a setter for an attribute"
+	author: "$Author$"
+	date: "$Date$"
+	revision: "$Revision$"
+
+class
+	ETR_SETTER_GENERATOR
+inherit
+	ETR_SHARED
+		export
+			{NONE} all
+		end
+	REFACTORING_HELPER
+		export
+			{NONE} all
+		end
+	ETR_ERROR_HANDLER
+
+feature -- Operation
+	transformation_result: ETR_TRANSFORMABLE
+			-- result of last transformation
+
+	generate_setter(an_attribute: ETR_TRANSFORMABLE)
+			-- generates a setter for `an_attribute'
+		require
+			non_void: an_attribute /= void
+			valid_trans: an_attribute.is_valid
+		local
+			l_attr_name: STRING
+			l_setter_string: STRING
+		do
+			reset_errors
+
+			if attached {FEATURE_AS}an_attribute.target_node as l_attribute then
+				if l_attribute.is_attribute then
+					l_attr_name := l_attribute.feature_name.name
+
+					-- as easy as possible:
+					l_setter_string := 	"feature set_"+l_attr_name+"(a_"+l_attr_name+": like "+l_attr_name+")%N"+
+										"%Tdo%N"+
+										"%T%T"+l_attr_name+" := a_"+l_attr_name+"%N"+
+										"%Tend%N"
+
+					etr_feat_parser.parse_from_string (l_setter_string,void)
+
+					if etr_feat_parser.error_count=0 then
+						-- fixme: create a new feature context!
+						create transformation_result.make_from_ast (etr_feat_parser.feature_node, an_attribute.context.class_context, false)
+					else
+						add_error("generate_setter: Feature parsing failed")
+					end
+				else
+					add_error("generate_setter: Feature is not an attribute")
+				end
+			else
+				add_error("generate_setter: Transformable does not contain a routine-node")
+			end
+		end
+note
+	copyright: "Copyright (c) 1984-2010, Eiffel Software"
+	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
+	licensing_options: "http://www.eiffel.com/licensing"
+	copying: "[
+			This file is part of Eiffel Software's Eiffel Development Environment.
+			
+			Eiffel Software's Eiffel Development Environment is free
+			software; you can redistribute it and/or modify it under
+			the terms of the GNU General Public License as published
+			by the Free Software Foundation, version 2 of the License
+			(available at the URL listed under "license" above).
+			
+			Eiffel Software's Eiffel Development Environment is
+			distributed in the hope that it will be useful, but
+			WITHOUT ANY WARRANTY; without even the implied warranty
+			of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+			See the GNU General Public License for more details.
+			
+			You should have received a copy of the GNU General Public
+			License along with Eiffel Software's Eiffel Development
+			Environment; if not, write to the Free Software Foundation,
+			Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+		]"
+	source: "[
+			Eiffel Software
+			5949 Hollister Ave., Goleta, CA 93117 USA
+			Telephone 805-685-1006, Fax 805-685-6869
+			Website http://www.eiffel.com
+			Customer support http://support.eiffel.com
+		]"
+end
