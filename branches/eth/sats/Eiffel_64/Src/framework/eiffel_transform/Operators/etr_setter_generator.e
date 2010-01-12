@@ -54,7 +54,7 @@ feature -- Operation
 					add_error("generate_setter: Feature is not an attribute")
 				end
 			else
-				add_error("generate_setter: Transformable does not contain a routine-node")
+				add_error("generate_setter: Transformable does not contain a feature-node")
 			end
 		end
 note
