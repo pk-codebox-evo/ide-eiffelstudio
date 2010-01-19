@@ -1,6 +1,6 @@
 note
 	description: "[
-		Test record containing results from any type of test execution.	
+		Test record containing results from any type of test execution.
 	]"
 	author: ""
 	date: "$Date$"
@@ -10,7 +10,7 @@ class
 	TEST_RESULT_RECORD
 
 inherit
-	TEST_COMMON_SESSION_RECORD [EQA_RESULT]
+	TEST_COMMON_SESSION_RECORD [TEST_RESULT_I]
 		rename
 			has_item as has_result,
 			has_item_for_test as has_result_for_test,
