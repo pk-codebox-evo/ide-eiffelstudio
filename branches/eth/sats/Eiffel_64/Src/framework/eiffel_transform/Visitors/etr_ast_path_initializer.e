@@ -42,7 +42,7 @@ feature {NONE} -- Implementation
 				i>br.count
 			loop
 				if attached {AST_EIFFEL}br.item (i) as item then
-					item.set_path (create {AST_PATH}.make_from_parent (a_parent, i))
+					item.set_path (create {AST_PATH}.make_from_parent (a_parent.path, i))
 
 					item.process (Current)
 				end
@@ -65,7 +65,7 @@ feature -- Roundtrip
 			until
 				l_as.after
 			loop
-				l_as.item.set_path (create {AST_PATH}.make_from_parent (l_as, i))
+				l_as.item.set_path (create {AST_PATH}.make_from_parent (l_as.path, i))
 				l_as.item.process (Current)
 				l_as.forth
 				i:=i+1
