@@ -8,7 +8,6 @@ class
 	ETR_AST_PATH_INITIALIZER
 inherit
 	ETR_BRANCH_VISITOR
-	ETR_SHARED
 
 feature -- Creation
 
