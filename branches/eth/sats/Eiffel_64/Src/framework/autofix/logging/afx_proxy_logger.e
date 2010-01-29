@@ -121,7 +121,7 @@ feature -- Actions
 		do
 			create l_message.make (128)
 			l_message.append (fix_candidate_validation_start_message)
-			l_message.append (fix_signature (a_candidate, False))
+			l_message.append (fix_signature (a_candidate, False, True))
 			if fix_candidate_count > 0 then
 				l_message.append ("; progression = ")
 				l_message.append (finish_validated_fix_candidate_count.out)
@@ -132,13 +132,14 @@ feature -- Actions
 			finish_validated_fix_candidate_count := finish_validated_fix_candidate_count + 1
 		end
 
-	on_fix_candidate_validation_ends (a_candidate: AFX_FIX; a_valid: BOOLEAN)
+	on_fix_candidate_validation_ends (a_candidate: AFX_FIX; a_valid: BOOLEAN; a_passing_count: INTEGER; a_failing_count: INTEGER)
 			-- Action to be performed when `a_candidate' finishes to be validated.
 			-- `a_valid' indicates whether `a_candidate' is valid.
 		local
 			l_message: STRING
 		do
 			create l_message.make (128)
+			l_message.append (" Succeeded: " + a_passing_count.out + "; Failed: " + a_failing_count.out + "; ")
 			l_message.append ("   Validity: ")
 			l_message.append (a_valid.out)
 			if a_valid then
