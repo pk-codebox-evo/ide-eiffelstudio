@@ -103,7 +103,7 @@ feature -- Execution
 		do
 			window := window_manager.last_focused_development_window
 
-			if attached {CLASSI_STONE}window.stone as cs and then attached {EIFFEL_CLASS_I}cs.class_i as eif_class_i then
+			if attached {CLASSI_STONE}window.stone as cs and then attached {EIFFEL_CLASS_I}cs.class_i as eif_class_i and then eif_class_i.is_compiled then
 				rf := manager.extract_method_refactoring
 				rf.set_class (eif_class_i)
 
@@ -119,7 +119,7 @@ feature -- Execution
 
 				manager.execute_refactoring (rf)
 			else
-				prompts.show_info_prompt (warning_messages.w_Select_class_feature_to_rename, window.window, Void)
+				prompts.show_info_prompt ("Current class is not compiled", window.window, Void)
 			end
 		end
 
