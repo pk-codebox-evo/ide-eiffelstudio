@@ -7,7 +7,7 @@ note
 class
 	ETR_AST_HIERARCHY_OUTPUT
 inherit
-	ETR_AST_STRING_OUTPUT
+	ETR_AST_STRUCTURE_OUTPUT_I
 		redefine
 			enter_block,
 			exit_block,
