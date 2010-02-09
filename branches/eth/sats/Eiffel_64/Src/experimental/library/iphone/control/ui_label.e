@@ -8,9 +8,6 @@ class
 
 inherit
 	UI_VIEW
-		redefine
-			iphone_class_name
-		end
 
 create
 	make,
@@ -21,8 +18,7 @@ feature {NONE} -- Initialization
 	make (a_rect: CG_RECT)
 			-- New instance of label located at `a_rect' coordinates.
 		do
-			allocate_object
-			init_with_frame (a_rect)
+			make_from_pointer (c_new_label (a_rect.item))
 		end
 
 	make_with_text (a_text: STRING_32; a_rect: CG_RECT)
@@ -91,13 +87,6 @@ feature -- Settings
 			exists: exists
 		do
 			c_set_alignment (item, 3)
-		end
-
-feature {NONE} -- Implementation
-
-	iphone_class_name: IMMUTABLE_STRING_8
-		once
-			create Result.make_from_string ("UILabel")
 		end
 
 feature {NONE} -- C externals
