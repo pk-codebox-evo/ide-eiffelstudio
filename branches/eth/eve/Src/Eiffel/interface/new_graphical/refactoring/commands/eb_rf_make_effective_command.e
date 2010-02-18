@@ -69,6 +69,7 @@ feature -- Access
 		do
 			Result := Precursor {EB_TOOLBARABLE_AND_MENUABLE_COMMAND} (display_text)
 			Result.drop_actions.extend (agent drop_class (?))
+			Result.drop_actions.set_veto_pebble_function (agent can_drop)
 		end
 
 	menu_name: STRING_GENERAL
@@ -108,6 +109,14 @@ feature -- Events
 			else
 				window := window_manager.last_focused_development_window
 				prompts.show_info_prompt (warning_messages.w_Select_deferred_class, window.window, Void)
+			end
+		end
+
+	can_drop (a_stone: ANY): BOOLEAN
+			-- Can `a_stone' be dropped onto current?
+		do
+			if attached {CLASSI_STONE}a_stone as cs then
+				Result := attached {EIFFEL_CLASS_I} cs.class_i as eif_class_i and then eif_class_i.is_compiled and then eif_class_i.compiled_class.is_deferred
 			end
 		end
 

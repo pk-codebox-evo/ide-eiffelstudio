@@ -9,32 +9,44 @@ class
 
 feature {NONE} -- Operators
 
+	inspect_replacer: ETR_INSPECT_REPLACER
+			-- Shared instance of ETR_INSPECT_REPLACER
+		once
+			create Result
+		end
+
 	assignment_attempt_reaplacer: ETR_ASSIGNMENT_ATTEMPT_REPLACER
-			-- shared instance of ETR_ASSIGNMENT_ATTEMPT_REPLACER
+			-- Shared instance of ETR_ASSIGNMENT_ATTEMPT_REPLACER
 		once
 			create Result
 		end
 
 	effective_class_generator: ETR_EFFECTIVE_CLASS_GENERATOR
-			-- shared instance of ETR_EFFECTIVE_CLASS_GENERATOR
+			-- Shared instance of ETR_EFFECTIVE_CLASS_GENERATOR
 		once
 			create Result
 		end
 
 	renamer: ETR_RENAMER
-			-- shared instance of ETR_RENAMER
+			-- Shared instance of ETR_RENAMER
 		once
 			create Result
 		end
 
 	setter_generator: ETR_SETTER_GENERATOR
-			-- shared instance of ETR_SETTER_GENERATOR
+			-- Shared instance of ETR_SETTER_GENERATOR
 		once
 			create Result
 		end
 
 	method_extractor: ETR_METHOD_EXTRACTOR
-			-- shared instance of ETR_METHOD_EXTRACTOR
+			-- Shared instance of ETR_METHOD_EXTRACTOR
+		once
+			create Result
+		end
+
+	constant_extractor: ETR_CONSTANT_EXTRACTOR
+			-- Shared instance of ETR_CONSTANT_EXTRACTOR
 		once
 			create Result
 		end

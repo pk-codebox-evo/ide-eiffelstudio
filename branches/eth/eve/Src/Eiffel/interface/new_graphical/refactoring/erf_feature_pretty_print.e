@@ -8,7 +8,7 @@ class
 	ERF_FEATURE_PRETTY_PRINT
 
 inherit
-	ERF_REFACTORING
+	ERF_ETR_REFACTORING
 		redefine
 			refactor,
 			ask_run_settings
@@ -25,6 +25,7 @@ inherit
 		end
 
 	ETR_SHARED_AST_TOOLS
+	SHARED_ERROR_HANDLER
 
 create
 	make
@@ -32,7 +33,7 @@ create
 feature -- Status
 
 	feature_set: BOOLEAN
-			-- Has the the feature to pull been set?
+			-- Has the the feature been set?
 		do
 			Result := feature_i /= Void
 		end
@@ -40,7 +41,7 @@ feature -- Status
 feature -- Element change
 
 	set_feature (a_feature: FEATURE_I)
-			-- The feature that get's pulled.
+			-- The feature to print.
 		require
 			a_feature_not_void: a_feature /= Void
 		do
@@ -52,7 +53,7 @@ feature -- Element change
 feature {NONE} -- Implementation
 
 	feature_i: FEATURE_I
-			-- The feature to pull.
+			-- The feature to print.
 
 	ask_run_settings
             -- Ask for the settings, that are run specific.
@@ -73,54 +74,44 @@ feature {NONE} -- Implementation
 			l_comments: STRING
 			l_replacement_text: STRING
 			l_class_modifier: ERF_CLASS_TEXT_MODIFICATION
-			l_replacement_region: ERT_TOKEN_REGION
-			l_region_start_index, l_region_end_index: INTEGER
-			l_brk_text: STRING
+			l_retry: BOOLEAN
 		do
-			l_feat_ast := feature_i.e_feature.ast
-			l_written_class := feature_i.written_class
-			l_matchlist := system.match_list_server.item (l_written_class.class_id)
+			if not l_retry then
+				success := true
+				l_feat_ast := feature_i.e_feature.ast
+				l_written_class := feature_i.written_class
+				l_matchlist := system.match_list_server.item (l_written_class.class_id)
 
-			l_comments := ast_tools.extract_feature_comments (l_feat_ast, l_matchlist)
+				l_comments := ast_tools.extract_feature_comments (l_feat_ast, l_matchlist)
 
-			-- Get the leading break text
-			create l_brk_text.make_empty
-			if l_feat_ast.has_leading_separator (l_matchlist) then
-				l_region_start_index := l_feat_ast.first_token (l_matchlist).index-1
-				l_brk_text := l_matchlist.i_th (l_region_start_index).text (l_matchlist)
-				l_brk_text := ast_tools.remove_ending_indentation (l_brk_text, '%T')
-			else
-				l_region_start_index := l_feat_ast.first_token (l_matchlist).index
-			end
+				l_replacement_text := "%N"
 
-			l_replacement_text := l_brk_text
+				l_replacement_text.append 	(	ast_tools.commented_feature_to_string (
+													l_feat_ast,
+													l_comments,
+													1)
+											)
 
-			if not l_replacement_text.ends_with ("%N") then
-				l_replacement_text.append ("%N")
-			end
-
-			l_replacement_text.append 	(	ast_tools.commented_feature_to_string (
-												l_feat_ast,
-												l_comments,
-												1)
-										)
-
-			-- Removing trailing newline, otherwise it's duplicate
-			if l_feat_ast.has_trailing_separator(l_matchlist) then
 				l_replacement_text.remove_tail (1)
+
+				l_feat_ast.replace_text (l_replacement_text, l_matchlist)
+
+				create l_class_modifier.make (l_written_class.original_class)
+				l_class_modifier.prepare
+				l_class_modifier.set_changed_text (l_matchlist.all_modified_text)
+				l_class_modifier.commit
+	        	current_actions.extend (l_class_modifier)
+	        end
+	    rescue
+	    	if not etr_error_handler.has_errors then
+				etr_error_handler.add_error (Current, "refactor", "Unhandled exception from EiffelTransform")
 			end
 
-			l_region_end_index := l_feat_ast.last_token (l_matchlist).index
-
-			create l_replacement_region.make (l_region_start_index, l_region_end_index)
-
-			l_matchlist.replace_region (l_replacement_region, l_replacement_text)
-
-			create l_class_modifier.make (l_written_class.original_class)
-			l_class_modifier.prepare
-			l_class_modifier.set_changed_text (l_matchlist.all_modified_text)
-			l_class_modifier.commit
-        	current_actions.extend (l_class_modifier)
+			show_etr_error
+			success := false
+			error_handler.wipe_out
+			l_retry := true
+			retry
 		end
 
 note
