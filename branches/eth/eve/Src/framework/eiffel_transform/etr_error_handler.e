@@ -44,8 +44,10 @@ feature -- Operations
 
 			has_errors := true
 			create l_error_msg.make_empty
-			if attached a_class and attached a_feature then
-				l_error_msg.append ("{"+a_class.generating_type+"}."+a_feature+": ")
+			debug("eiffel_transform")
+				if attached a_class and attached a_feature then
+					l_error_msg.append ("{"+a_class.generating_type+"}."+a_feature+": ")
+				end
 			end
 			l_error_msg.append (an_error_message)
 			logger.log_error(l_error_msg)
