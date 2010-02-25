@@ -47,7 +47,7 @@ feature -- Operations
 					)
 				end
 			else
-				context.add_string (current_indentation.twin+"<VOID>%N")
+				context.add_string (current_indentation.twin+a_child.generating_type+"%N")
 			end
 
 			current_indentation := current_indentation + indentation_string
