@@ -13,7 +13,8 @@ inherit
 			enter_child,
 			exit_child,
 			make_with_indentation_string,
-			append_string
+			append_string,
+			reset
 		end
 create
 	make,
@@ -28,9 +29,18 @@ feature {NONE} -- Creation
 			Precursor(an_indentation_string)
 		end
 
-feature -- Output
+feature {NONE} -- Implementation
 
 	node_stack: LINKED_STACK[STRING]
+
+feature -- Output
+
+	reset
+			-- <precursor>
+		do
+			node_stack.wipe_out
+			Precursor
+		end
 
 	append_string(a_string: STRING)
 			-- <precursor>
