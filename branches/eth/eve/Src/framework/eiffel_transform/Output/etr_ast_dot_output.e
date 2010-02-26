@@ -15,7 +15,7 @@ feature -- Operation
 	start
 			-- Start processing
 		do
-			context.add_string ("digraph {%N")
+			context.add_string ("digraph {%N%Tnode [margin=0.2,0.1]%N%Tedge [fontsize=20.0]%N")
 		end
 
 	finish
@@ -85,13 +85,13 @@ feature -- Output
 			-- <precursor>
 		do
 			-- Create label for the new node
-			context.add_string ("{node [label=%""+a_child.generating_type+"%"] "+node_counter.out+"}%N")
+			context.add_string ("%T{node [label=%""+a_child.generating_type+"%"] "+node_counter.out+"}%N")
 			-- Create edge from the current node
 			if not node_stack.is_empty then
 				if attached {AST_EIFFEL}a_child as ast_child and then attached ast_child.path then
-					context.add_string (node_stack.item.out+"->"+node_counter.out+" [label="+ast_child.path.branch_id.out+"]%N")
+					context.add_string ("%T"+node_stack.item.out+"->"+node_counter.out+" [label="+ast_child.path.branch_id.out+"]%N")
 				else
-					context.add_string (node_stack.item.out+"->"+node_counter.out+"%N")
+					context.add_string ("%T"+node_stack.item.out+"->"+node_counter.out+"%N")
 				end
 			end
 
