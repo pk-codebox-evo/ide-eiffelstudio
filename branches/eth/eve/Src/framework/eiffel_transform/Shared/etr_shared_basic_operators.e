@@ -8,7 +8,7 @@ class
 
 feature {NONE} -- Shared
 
-	basic_operators: ETR_BASIC_OPS
+	basic_operators: ETR_BASIC_OPERATORS
 			-- Shared instance of ETR_BASIC_OPS
 		once
 			create Result
