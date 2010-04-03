@@ -1,6 +1,6 @@
 note
-	description: "Summary description for {EB_PROFILER_WIZARD_DATA_TYPE_STATE}."
-	author: ""
+	description: "State to select profile data type."
+	author: "Martino Trosi, ETH Zürich"
 	date: "$Date$"
 	revision: "$Revision$"
 
