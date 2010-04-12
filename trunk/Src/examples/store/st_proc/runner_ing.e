@@ -138,7 +138,7 @@ feature {NONE}
 feature {NONE}
 
 	Select_text: STRING =
-		"update db_book set author = author, price = :price, year = :pub_date where author = :author"
+		"update DB_BOOK set author = author, price = :price, year = :pub_date where author = :author"
 
 	Table_name: STRING = "DB_BOOK"
 
