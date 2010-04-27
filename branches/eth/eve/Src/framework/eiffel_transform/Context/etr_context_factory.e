@@ -32,11 +32,13 @@ feature -- New
 			non_void: a_classname /= void and a_featurename /= void
 		local
 			l_feat: FEATURE_I
+			l_cc: ETR_CLASS_CONTEXT
 		do
-			l_feat := feature_of_compiled_class(a_classname, a_featurename)
+			l_feat := feature_of_compiled_class (a_classname, a_featurename)
+			l_cc := new_class_context (a_classname)
 
-			if l_feat /= void then
-				create Result.make(l_feat,void)
+			if l_feat /= void and l_cc /= void then
+				Result := l_cc.corresponding_feature (l_feat)
 			end
 		end
 
