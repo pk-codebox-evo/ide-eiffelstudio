@@ -10,7 +10,7 @@ class
 inherit
 	REFACTORING_HELPER
 
-	AFX_UTILITY
+--	AFX_UTILITY
 
 feature -- Access
 
