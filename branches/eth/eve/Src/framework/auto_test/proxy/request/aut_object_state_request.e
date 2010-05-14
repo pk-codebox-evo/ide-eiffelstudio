@@ -4,7 +4,7 @@ note
 	date: "$Date$"
 	revision: "$Revision$"
 
-class
+deferred class
 	AUT_OBJECT_STATE_REQUEST
 
 inherit
@@ -13,57 +13,45 @@ inherit
 			make as make_old
 		end
 
-create
-	make
+	EPA_COMPILATION_UTILITY
 
-feature {NONE} -- Initialization
+	AUT_SHARED_INTERPRETER_INFO
 
-	make (a_system: like system; a_variable: like variable; a_type: like type)
-			-- Create new request.
-		require
-			a_system_not_void: a_system /= Void
-			a_variable_not_void: a_variable /= Void
-		do
-			make_old (a_system)
-			variable := a_variable
-			type := a_type
-			create {LINKED_LIST [STRING]} query_names.make
-		ensure
-			system_set: system = a_system
-			variable_set: variable = a_variable
-			type_set: type = a_type
+	EPA_STRING_UTILITY
+		undefine
+			system
 		end
+
+	AUT_SHARED_OBJECT_STATE_RETRIEVAL_CONTEXT
 
 feature -- Access
 
-	variable: ITP_VARIABLE
-			-- Variable that the type is aksed of
 
-	type: TYPE_A
-			-- Type of `variable'
+	variables: HASH_TABLE [TYPE_A, INTEGER]
+			-- Variables whose states are to be retrieved
+			-- Key is object index (used in object pool), value is type of that variables.
 
-	query_names: LIST [STRING]
-			-- List of names of queries whose values are to be
-			-- retrieved.
-			-- The names are in lower case.
+	byte_code_for_object_state_retrieval: STRING
+			-- String representation of the byte-code needed to retrieve object states
+		deferred
+		end
 
-feature -- Setting
+	config: detachable AUT_OBJECT_STATE_CONFIG
+			-- Configuration for object state retrieval
 
-	set_queries (a_queries: LIST [FEATURE_I]) is
-			-- Register queries in `a_queries' whose values are
-			-- to be retrieved in `query_results'.
-		require
-			a_queries_attached: a_queries /= Void
+feature -- Status report
+
+	is_for_feature: BOOLEAN
+			-- Is the state to be retrieved for operands of a feature?
 		do
-			query_names.wipe_out
-			from
-				a_queries.start
-			until
-				a_queries.after
-			loop
-				query_names.extend (a_queries.item.feature_name.as_lower)
-				a_queries.forth
-			end
+		end
+
+	is_for_objects: BOOLEAN
+			-- Is the state to be retrieved for an arbitrary set of objects?
+		do
+			Result := not is_for_feature
+		ensure
+			good_result: Result = not is_for_feature
 		end
 
 feature -- Processing
@@ -74,17 +62,8 @@ feature -- Processing
 			a_processor.process_object_state_request (Current)
 		end
 
-feature{NONE} -- Implmenetation
-
-	initial_table_capacity: INTEGER
-			-- Initial capacity for `query_results'
-
-invariant
-	variable_not_void: variable /= Void
-	query_names_attached: query_names /= Void
-
 note
-	copyright: "Copyright (c) 1984-2009, Eiffel Software"
+	copyright: "Copyright (c) 1984-2010, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[
