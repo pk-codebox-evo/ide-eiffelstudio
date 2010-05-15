@@ -1,5 +1,5 @@
 note
-	description: "Summary description for {AFX_INTEGER_VALUE}."
+	description: "Class that represents an integer value"
 	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
