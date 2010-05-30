@@ -33,7 +33,8 @@
 			<condition>
 				<platform value="windows"/>
 			</condition>
-		</library>
+		 </library>
+		<library name="program_analysis" location="$EIFFEL_SRC\framework\program_analysis\program_analysis.ecf"/>
 		<cluster name="auto_test_library" location=".\" recursive="true">
 			<file_rule>
 				<exclude>/.svn$</exclude>
