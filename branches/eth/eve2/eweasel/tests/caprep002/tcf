@@ -1,5 +1,5 @@
 
-test_name 	simple-agent
+test_name 	capture-simple-agent
 test_description A program that calls a routine with no arguments through an agent
 
 copy_sub 	Ace $TEST Ace
