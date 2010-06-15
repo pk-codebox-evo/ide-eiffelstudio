@@ -27,10 +27,8 @@ feature -- Status report
 				Result := False
 			else
 				Result :=
-					v.target_variable_name ~ u.target_variable_name and then
-					v.function_name ~ u.function_name and then
-					v.is_pre_state = u.is_pre_state and then
-					v.content |=| u.content
+					v.target_variable_index ~ u.target_variable_index and then
+					v.function_name ~ u.function_name
 			end
 		end
 
