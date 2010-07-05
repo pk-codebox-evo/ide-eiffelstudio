@@ -30,6 +30,7 @@
 				<platform excluded_value="windows"/>
 			</condition>
 		</library>
+		<library name="eve_blackboard" location="$ISE_LIBRARY\framework\eve_blackboard\eve_blackboard.ecf"/>
 		<cluster name="eve_proofs" location=".\" recursive="true">
 			<option namespace="EveProofs">
 			</option>
