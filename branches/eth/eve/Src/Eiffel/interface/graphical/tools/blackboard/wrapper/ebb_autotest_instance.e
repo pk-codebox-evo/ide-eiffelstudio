@@ -68,7 +68,7 @@ feature -- Basic operations
 
 feature {NONE} -- Implementation
 
-	test_generator: TEST_GENERATOR
+	test_generator: EBB_TEST_GENERATOR
 
 invariant
 note
