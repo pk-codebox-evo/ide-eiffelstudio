@@ -48,7 +48,7 @@ feature {NONE} -- Factory
 
 feature {NONE} -- Internationalization
 
-	t_title: STRING = "Blackboard"
+	t_title: STRING = "Verification Assistant"
 
 ;note
 	copyright: "Copyright (c) 1984-2010, Eiffel Software"
