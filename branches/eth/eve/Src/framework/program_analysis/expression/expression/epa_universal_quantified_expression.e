@@ -1,4 +1,4 @@
-note
+﻿note
 	description: "Summary description for {EPA_UNIVERSAL_QUANTIFIED_EXPRESSION}."
 	author: ""
 	date: "$Date$"
@@ -18,23 +18,8 @@ inherit
 		end
 
 create
-	make
-
-feature{NONE} -- Initialization
-
-	make (a_variable: STRING; a_variable_type: TYPE_A; a_predicate: like predicate; a_class: like class_; a_feature: like feature_; a_written_class: like written_class)
-			-- Initialize Current.
-		do
-			create variables.make (1)
-			variables.compare_objects
-			variables.put (a_variable_type, a_variable.twin)
-			set_class (a_class)
-			set_feature (a_feature)
-			set_written_class (a_written_class)
-			predicate := a_predicate
-			text := text_with_predicate (predicate.text)
-			type := boolean_type
-		end
+	make,
+	make_from_ast
 
 feature -- Access
 
@@ -48,11 +33,6 @@ feature -- Access
 			-- Hash code value
 		do
 			Result := text.hash_code
-		end
-
-	ast: EXPR_AS
-			-- AST node for `text'
-		do
 		end
 
 	type: TYPE_A
@@ -72,7 +52,7 @@ feature -- Status report
 			-- Is Current expression universally quantified?
 
 
-	is_ast_available: BOOLEAN = False
+	is_ast_available: BOOLEAN = True
 			-- Is `ast' available?
 
 	is_valid: BOOLEAN
@@ -90,7 +70,18 @@ feature -- Visitor/Process
 
 feature{NONE} -- Implementation
 
-	quantifier_name: STRING = "forall"
+	quantifier_name: STRING
 			-- <Precursor>
+		do
+			Result := ti_for_all_keyword
+		end
+
+feature{NONE} -- Implementation
+
+	build_ast (a_variable_name: STRING; a_expression: EXPR_AS)
+			-- Build `ast' from `a_variable_name' and `a_expression'
+		do
+			build_ast_internal (a_variable_name, a_expression, True)
+		end
 
 end
