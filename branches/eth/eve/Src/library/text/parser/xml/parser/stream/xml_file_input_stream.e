@@ -1,6 +1,5 @@
 note
 	description: "Summary description for {XML_FILE_INPUT_STREAM}."
-	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -11,7 +10,8 @@ inherit
 	XML_INPUT_STREAM
 
 create
-	make
+	make,
+	make_with_filename
 
 feature {NONE} -- Initialization
 
@@ -25,6 +25,14 @@ feature {NONE} -- Initialization
 			chunk_size := default_chunk_size
 			count := a_file.count
 			source := a_file
+		end
+
+	make_with_filename (a_filename: STRING)
+		require
+			a_filename_not_empty: a_filename /= Void and then not a_filename.is_empty
+		do
+			set_inner_source (True)
+			make (create {RAW_FILE}.make (a_filename))
 		end
 
 feature -- Access
@@ -97,6 +105,9 @@ feature -- Basic operation
 
 	start
 		do
+			if is_inner_source and not source.is_open_read then
+				source.open_read
+			end
 			source.start
 			chunk_source_upper := -1
 			chunk_source_lower := -1
@@ -110,6 +121,9 @@ feature -- Basic operation
 			chunk_source_upper := -1
 			chunk_source_lower := -1
 			create current_chunk.make_empty
+			if is_inner_source then
+				source.close
+			end
 		end
 
 	read_character
@@ -139,6 +153,11 @@ feature -- Basic operation
 			last_character := c
 		end
 
+	open_read
+		do
+			source.open_read
+		end
+
 feature {NONE} -- Implementation
 
 	chunk_source_lower: INTEGER
@@ -155,6 +174,16 @@ feature {NONE} -- Implementation
 
 	source: FILE
 			-- Source for the stream
+
+	is_inner_source: BOOLEAN
+			-- Is source created by the stream?
+			-- i.e: not provided by caller
+
+	set_inner_source (b: like is_inner_source)
+			-- Set `inner_source' to `b'
+		do
+			is_inner_source := b
+		end
 
 invariant
 	source_attached: source /= Void
