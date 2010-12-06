@@ -53,8 +53,14 @@ inherit
 
 feature -- Access
 
-	transition_context: CI_TEST_CASE_TRANSITION_INFO
-			-- Context in which expressions are evaluated
+	prestate: EPA_STATE
+			-- Values in pre-state
+
+	poststate: EPA_STATE
+			-- Values in post-state
+
+	context_class: CLASS_C
+			-- Context class for expression evaluation
 
 	missing_expressions: DS_HASH_SET [EPA_EXPRESSION]
 			-- Set of expressions that were needed to by the last
@@ -68,13 +74,13 @@ feature -- Access
 	pre_state_values: EPA_STATE
 			-- Expressions values from pre-execution state
 		do
-			Result := transition_context.transition.preconditions
+			Result := prestate
 		end
 
 	post_state_values: EPA_STATE
 			-- Expressions values from pre-execution state
 		do
-			Result := transition_context.transition.postconditions
+			Result := poststate
 		end
 
 	extra_pre_state_values: detachable EPA_STATE
@@ -158,18 +164,20 @@ feature -- Basic operations
 			l_parser: like etr_expr_parser
 		do
 			l_parser := etr_expr_parser
-			setup_formal_parameters (l_parser, transition_context.test_case_info.class_under_test)
-			l_parser.parse_from_utf8_string (once "check " + a_string, transition_context.test_case_info.class_under_test)
+			setup_formal_parameters (l_parser, context_class)
+			l_parser.parse_from_utf8_string (once "check " + a_string, context_class)
 			check l_parser.expression_node /= Void end
 			evaluate (l_parser.expression_node)
 		end
 
 feature -- Setting
 
-	set_transition_context (a_context: like transition_context)
-			-- Set `transition_context' with `a_context'.
+	set_context (a_prestate: like prestate; a_poststate: like poststate; a_context_class: like context_class)
+			-- Setup context.
 		do
-			transition_context := a_context
+			prestate := a_prestate
+			poststate := a_poststate
+			context_class := a_context_class
 		end
 
 	set_extra_pre_state_values (a_values: like extra_pre_state_values)
