@@ -31,7 +31,7 @@ feature {NONE}-- Initialization
 			extend (l_ev_label_1)
 			extend (l_ev_label_2)
 			extend (l_ev_label_3)
-			extend (name)
+			extend (command_name)
 			extend (l_ev_label_4)
 			extend (label)
 			extend (l_ev_label_5)
@@ -53,7 +53,7 @@ feature {NONE}-- Initialization
 			disable_item_expand (l_ev_label_1)
 			disable_item_expand (l_ev_label_2)
 			disable_item_expand (l_ev_label_3)
-			disable_item_expand (name)
+			disable_item_expand (command_name)
 			disable_item_expand (l_ev_label_4)
 			disable_item_expand (label)
 			disable_item_expand (l_ev_label_5)
@@ -62,7 +62,7 @@ feature {NONE}-- Initialization
 			set_all_attributes_using_constants
 			
 				-- Connect events.
-			name.change_actions.extend (agent on_name_text_change)
+			command_name.change_actions.extend (agent on_command_name_text_change)
 			label.change_actions.extend (agent on_label_text_change)
 
 				-- Call `user_initialization'.
@@ -77,7 +77,7 @@ feature {NONE}-- Initialization
 			create l_ev_label_1
 			create l_ev_label_2
 			create l_ev_label_3
-			create name
+			create command_name
 			create l_ev_label_4
 			create label
 			create l_ev_label_5
@@ -101,8 +101,7 @@ feature {NONE}-- Initialization
 
 feature -- Access
 
-	name: EV_COMBO_BOX
-	label: EV_TEXT_FIELD
+	command_name, label: EV_TEXT_FIELD
 
 feature {NONE} -- Implementation
 
@@ -123,12 +122,12 @@ feature {NONE} -- Implementation
 		deferred
 		end
 	
-	on_name_text_change
-			-- Called by `change_actions' of `name'.
+	on_command_name_text_change is
+			-- Called by `change_actions' of `command_name'.
 		deferred
 		end
 	
-	on_label_text_change
+	on_label_text_change is
 			-- Called by `change_actions' of `label'.
 		deferred
 		end
