@@ -26,8 +26,6 @@ create
 
 feature {NONE}
   make (a_in_dom: BOOLEAN; a_target: STRING; a_params: LIST [STRING])
-    require
-      a_in_dom implies not attached a_target
 		do
       target := a_target
       in_dom := a_in_dom
@@ -37,6 +35,8 @@ feature {NONE}
   
 feature
 	make_for_domain (a_params: LIST [STRING])
+    require
+      non_void_params: attached a_params
 		do
       make (True, "Current", a_params)
 		end
@@ -79,7 +79,7 @@ feature
           targ := var_expr (target)
           create {UN_EXPR} Result.make_un (str, targ)
         else
-          Result := const_expr (target)
+          Result := var_expr (str)
         end
       else
         if not instn.has_key (str) then
