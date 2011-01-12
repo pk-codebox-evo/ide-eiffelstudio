@@ -43,7 +43,7 @@ feature -- Query
 
 $BUTTON_DECLARATION
 
-	buttons: ARRAYED_LIST [EV_RIBBON_BUTTON]
+	buttons: ARRAYED_LIST [EV_RIBBON_ITEM]
 			-- All buttons in current group
 
 feature {NONE}	--Action handling
