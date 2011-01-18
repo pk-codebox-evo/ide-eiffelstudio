@@ -42,7 +42,7 @@ feature {NONE} -- Factory
 
 feature {NONE} -- Internationalization
 
-	t_title: STRING = "Eve Proofs"
+	t_title: STRING = "AutoProof"
 
 ;note
 	copyright: "Copyright (c) 1984-2010, Eiffel Software"
