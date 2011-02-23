@@ -15,7 +15,7 @@ create
 
 feature{NONE} -- Initialization
 
-	make (a_value: like value) is
+	make (a_value: like value)
 			-- Set `value' with `a_value'.
 		do
 			value := a_value
@@ -36,7 +36,7 @@ feature -- Access
 		end
 
 note
-	copyright: "Copyright (c) 1984-2009, Eiffel Software"
+	copyright: "Copyright (c) 1984-2011, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[
