@@ -13,6 +13,12 @@ inherit
 create
 	make
 
+feature {NONE} -- Result parsing
+
+	parse_result (a_svn_parser: SVN_PARSER)
+		do
+		end
+
 feature {NONE} -- Implementation
 
 	command_name: STRING_8

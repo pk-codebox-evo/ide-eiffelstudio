@@ -10,40 +10,26 @@ class
 inherit
 	SVN_CLIENT_COMMAND
 		redefine
-			execute
+			make
 		end
 
 create
 	make
 
-feature -- Execute
+feature {NONE} -- Initialization
 
-	execute
-		require else
-			checkout_url_valid: is_checkout_url_valid
-		local
-			l_args: LINKED_LIST[STRING_8]
+	make(a_svn_client: SVN_CLIENT)
 		do
-			create l_args.make
-			l_args.extend (command_name)
-			l_args.extend (checkout_url)
-			l_args.append (options_to_args)
-
-			launch_process (l_args)
+			Precursor (a_svn_client)
+			put_option ("--non-interactive", "")
+			put_option ("--trust-server-cert", "")
 		end
 
-	is_checkout_url_valid: BOOLEAN
-			-- Return True if checkout_url is a valid repository address. A reg exp could be used
-			-- to verify that the string represents indeed a valid svn URL (TODO)
-		do
-			Result := checkout_url /= Void and then not checkout_url.is_empty
-		end
+feature {NONE} -- Result parsing
 
-feature -- Element change
-
-	set_checkout_url(a_checkout_url: detachable like checkout_url)
+	parse_result (a_svn_parser: SVN_PARSER)
 		do
-			checkout_url := a_checkout_url
+			a_svn_parser.parse_checkout (Current)
 		end
 
 feature {NONE} -- Implementation
@@ -52,7 +38,5 @@ feature {NONE} -- Implementation
 		do
 			Result := "checkout"
 		end
-
-	checkout_url: detachable STRING_8
 
 end
