@@ -20,10 +20,8 @@ feature -- Access
 		deferred
 		end
 
-	test_case_deserialized_event: detachable EVENT_TYPE [TUPLE[AUT_DESERIALIZED_DATA, BOOLEAN]]
+	test_case_deserialized_event: detachable EVENT_TYPE [TUPLE[AUT_DESERIALIZED_TEST_CASE]]
 			-- Test case deserialized event.
-			-- First argument: deserialized data;
-			-- Second argument: is the data unique?
 		deferred
 		end
 
