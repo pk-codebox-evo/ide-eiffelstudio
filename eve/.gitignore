@@ -1,3 +1,6 @@
+*.so
+*.a
+*~
 EIFGENs/
 .git-svn/submodules/
 Src/contrib/library/ejson/
@@ -95,3 +98,7 @@ Src/library/vision2/Clib/vision2.lib
 Src/library/vision2/spec/msc/
 Src/library/wel/Clib/wel.lib
 Src/library/wel/spec/msc/
+*.so
+*.a
+*~
+*.bak
