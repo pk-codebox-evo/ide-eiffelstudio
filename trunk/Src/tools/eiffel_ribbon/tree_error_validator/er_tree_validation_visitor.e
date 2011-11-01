@@ -13,7 +13,12 @@ deferred class
 feature -- Command
 
 	visit_ribbon_tabs (a_tree_node: EV_TREE_NODE)
-			-- Vision `ribbon.tabs' node
+			-- Visit `ribbon.tabs' node
+		do
+		end
+
+	visit_context_popup (a_tree_node: EV_TREE_NODE)
+			-- Visit `contextpopup' node
 		do
 		end
 
