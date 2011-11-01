@@ -137,6 +137,8 @@ feature {NONE} -- Implementation
 			end
 		end
 
+feature -- Helper
+
 	child_count_of_customized_size_definitions: HASH_TABLE [INTEGER, STRING]
 			-- Child button count of custoized size definition
 			-- Result hash table key is Size Definition name, result hash table value is child count
