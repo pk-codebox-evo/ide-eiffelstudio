@@ -1,0 +1,167 @@
+note
+	description: "Keeps all the constants needed by rapidminer and the belonging infrastructure."
+	author: ""
+	date: "$Date: 2010-07-28 15:37:12 +0200 "
+	revision: "$Revision$"
+
+class
+	RM_CONSTANTS
+
+inherit
+	KL_SHARED_STRING_EQUALITY_TESTER
+
+feature -- Translators from codes to strings
+
+	validation_code_to_string (code: INTEGER): STRING
+			-- Returns the string name of the validation with code.
+		do
+			Result := ""
+			if code = x_validation then
+				Result := "x_validation"
+			end
+		end
+
+feature -- Algorithm types
+
+	algorithm_decision_tree: STRING = "decision_tree"
+			-- Name of the default decision tree algorithm.
+
+	algorithm_linear_regression: STRING = "linear_regression"
+			-- Name of the default linear regression algorithm.
+
+	algorithm_decision_tree_decision_stump: STRING = "decision_stump"
+			-- Learns only a root node of a decision tree.
+
+	algorithm_decision_tree_chaid: STRING = "chaid"
+			-- Learns a pruned decision tree based on a chi squared attribute relevance test.
+
+	algorithm_decision_tree_id3: STRING = "id3"
+			-- Learns an unpruned decision tree from nominal attributes only.
+
+feature -- Access
+
+	decision_tree_algorithms: DS_HASH_SET [STRING]
+			-- Returns the names of supported decision tree algorithms
+		once
+			create Result.make (10)
+			Result.set_equality_tester (string_equality_tester)
+
+			Result.force_last (algorithm_decision_tree)
+			Result.force_last (algorithm_decision_tree_decision_stump)
+			Result.force_last (algorithm_decision_tree_chaid)
+			Result.force_last (algorithm_decision_tree_id3)
+		end
+
+	linear_regression_algorithms: DS_HASH_SET [STRING]
+			-- Returns  the names of supported decision tree algorithms
+		once
+			create Result.make (10)
+			Result.set_equality_tester (string_equality_tester)
+
+			Result.force_last (algorithm_linear_regression)
+		end
+
+	numeric_value_algorithms: DS_HASH_SET [STRING]
+			-- Returns the names of algorithms supporting numeric values
+		once
+			create Result.make (10)
+			Result.set_equality_tester (string_equality_tester)
+
+			Result.force_last (algorithm_decision_tree)
+			Result.force_last (algorithm_decision_tree_decision_stump)
+			Result.force_last (algorithm_linear_regression)
+		end
+
+	missing_value_algorithms: DS_HASH_SET [STRING]
+			-- Returns the names of algorithms supporting missing values
+		once
+			create Result.make (10)
+			Result.set_equality_tester (string_equality_tester)
+
+			Result.force_last (algorithm_decision_tree)
+			Result.force_last (algorithm_decision_tree_decision_stump)
+			Result.force_last (algorithm_decision_tree_chaid)
+			Result.force_last (algorithm_linear_regression)
+		end
+
+feature -- Status report
+
+	is_missing_value_supported (a_name: STRING): BOOLEAN
+			-- Does the algorithm with name `a_name' support arff files with missing values.
+		do
+			Result := missing_value_algorithms.has (a_name)
+		end
+
+	is_numeric_value_supported (a_name: STRING): BOOLEAN
+			-- Does the algorithm with name `a_name' support arff files with numeric values.
+		do
+			Result := numeric_value_algorithms.has (a_name)
+		end
+
+	is_valid_algorithm_name (a_name: STRING): BOOLEAN
+			-- Does `a_name' represent a supported rapidminer algorithm?
+		do
+			Result := decision_tree_algorithms.has (a_name) or linear_regression_algorithms.has (a_name)
+		end
+
+	is_valid_validation_code (a_code: INTEGER): BOOLEAN
+			-- Does `a_code' represent a supported rapidminer validation?
+		do
+			Result := (a_code > 0 and a_code < 3)
+		end
+
+feature -- Validation types
+
+	no_validation: INTEGER = 1
+			-- constant representing the no validation option for rapidminer
+
+	x_validation: INTEGER = 2
+			-- constant representing the x_validation option for rapidminer
+
+feature -- Placeholders. They will be put into the seed xml string and will be replaced by the appropriate values afterwards.
+
+	placeholder_data_file: STRING = "${data_file_placeholder}"
+			-- Placeholder for the absolute ARFF file path in the Rapidminer xml file.
+
+	placeholder_label_name: STRING = "${label_name_placeholder}"
+			-- Placeholder for the label(target attribute) in the Rapidminer xml file.
+
+	placeholder_algorithm_name: STRING = "${algorithm_name_placeholder}"
+			-- Placeholder for the algorithm name in the Rapidminer xml file.
+
+	placeholder_algorithm_parameters: STRING = "${algorithm_parameters_placeholder}"
+			-- Placeholder for the algorithm parameters in the Rapidminer xml file.
+
+	placeholder_selected_attributes: STRING = "${selected_attributes_placeholder}"
+			-- Placeholder for the selected attributes in the Rapidminer xml file.
+
+	placeholder_validation_parameters: STRING = "${validation_parameters_placeholder}"
+			-- Placeholder for the validation parameters in the Rapidminer xml file.
+
+	placeholder_validation_name: STRING = "${validation_name_placeholder}"
+			-- Placeholder for the validation name in the Rapidminer xml file.
+
+feature -- Environment
+
+	rm_environment: RM_ENVIRONMENT
+			-- Environment for file manipulations according to
+			-- currently used operating system.
+		once
+			if {PLATFORM}.is_windows then
+				create{RM_ENVIRONMENT_WINDOWS} Result
+			else
+				create{RM_ENVIRONMENT_UNIX} Result
+			end
+		end
+
+feature -- Decision tree related
+
+	decision_tree_other_values_name: STRING = "[[others]]"
+			-- Name for other values
+			-- This attribute represents all the values for the label attributes that other than
+			-- the value given by a decison tree node.
+			-- The reason to introduce current attribute is that in Weka decision trees, not all label values
+			-- are listed.
+
+
+end
