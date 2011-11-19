@@ -4,15 +4,10 @@
 		<description>
 			Decimal arbitrary precision arithmetic library
 		</description>
-		<option cat_call_detection="false">
-			<assertions precondition="true" postcondition="true" check="true" invariant="true" loop="true"/>
-		</option>
-		<library name="base" location="$ISE_LIBRARY/library/base/base-safe.ecf">
-		</library>
-		<cluster name="decimal" location="." recursive="true">
 		<option warning="true" cat_call_detection="false" full_class_checking="true" is_attached_by_default="true" void_safety="all" syntax="standard">
-			<assertions precondition="true" postcondition="false" check="false" invariant="false" loop="false"/>
 		</option>
+		<library name="base" location="$ISE_LIBRARY/library/base/base-safe.ecf"/>
+		<cluster name="decimal" location="." recursive="true">
 			<file_rule>
 				<exclude>/EIFGENs$</exclude>
 				<exclude>/.svn$</exclude>
