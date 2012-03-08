@@ -1,4 +1,0 @@
-class
-	READABLE_DESCRIPTION
-
-end

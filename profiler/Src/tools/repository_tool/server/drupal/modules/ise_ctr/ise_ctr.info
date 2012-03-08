@@ -1,8 +1,0 @@
-; $Id$
-name = ISE Commit Then Review
-description = Provides a CTR service.
-package = EiffelSoftware
-dependencies[] = services
-core = 6.x
-project = "ctr"
-

@@ -1,6 +1,0 @@
-set_c (a_c: like c)
-	do
-		c := a_c
-	ensure
-		c_set: c = a_c
-	end
