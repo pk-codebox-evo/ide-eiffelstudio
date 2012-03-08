@@ -1,4 +1,0 @@
-extracted: INTEGER_32
-	do
-		Result := 1
-	end

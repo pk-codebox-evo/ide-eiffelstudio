@@ -1,8 +1,0 @@
-test2 (arg1: INTEGER): INTEGER
-	local
-		l1: INTEGER
-	do
-		l1 := 5
-		Result := 2 * l1
-		Result := extracted (Result, arg1)
-	end
