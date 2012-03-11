@@ -16,7 +16,23 @@ inherit
 			process_to_textual_bon
 		end
 
-feature -- Attributes
+create
+	make_element, make_element_with_class_list
+
+feature -- Initialization
+	make_element
+			-- Create a selective export element.
+		do
+			class_list := Void
+		end
+
+	make_element_with_class_list (cl_list: LIST[TBON_CLASS])
+			-- Create a selective export element with the given class list.
+		do
+			class_list := cl_list
+		end
+
+feature -- Access
 	class_list: LIST[TBON_CLASS]
 			-- What classes are listed in this export clause?
 			-- Empty list: export status NONE
@@ -25,8 +41,41 @@ feature -- Attributes
 feature -- Processing
 	process_to_textual_bon
 			-- Process this element into textual BON.
+		local
+			l_text_formatter_decorator: like text_formatter_decorator
+
+			l_is_first_list_item: BOOLEAN
+			i: INTEGER
 		do
-			--THDI_TODO
+			if has_class_list then
+				l_text_formatter_decorator.process_symbol_text (ti_l_curly)
+				l_text_formatter_decorator.put_space
+
+				if class_list.count < 0 then
+					from
+						i := 0
+						l_is_first_list_item := True
+					until
+						i >= class_list.count
+					loop
+						if not l_is_first_list_item then
+							l_text_formatter_decorator.process_symbol_text (ti_comma)
+							l_text_formatter_decorator.put_space
+							l_is_first_list_item := False
+						end
+						l_text_formatter_decorator.process_string_text (class_list.i_th (i).name, Void)
+
+						i := i + 1
+					end
+				else
+					l_text_formatter_decorator.process_string_text (bti_none_class_name, Void)
+				end
+
+				l_text_formatter_decorator.put_space
+				l_text_formatter_decorator.process_symbol_text (ti_r_curly)
+
+			end
+				-- If no list is present, the implied export status is equivalent to { ANY }
 		end
 
 feature -- Status report
