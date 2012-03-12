@@ -51,9 +51,9 @@ feature -- Processing
 				l_text_formatter_decorator.process_symbol_text (ti_l_curly)
 				l_text_formatter_decorator.put_space
 
-				if class_list.count < 0 then
+				if class_list.count > 0 then
 					from
-						i := 0
+						i := 1
 						l_is_first_list_item := True
 					until
 						i >= class_list.count
@@ -63,7 +63,7 @@ feature -- Processing
 							l_text_formatter_decorator.put_space
 							l_is_first_list_item := False
 						end
-						l_text_formatter_decorator.process_string_text (class_list.i_th (i).name, Void)
+						class_list.i_th (i).name.process_to_textual_bon
 
 						i := i + 1
 					end
