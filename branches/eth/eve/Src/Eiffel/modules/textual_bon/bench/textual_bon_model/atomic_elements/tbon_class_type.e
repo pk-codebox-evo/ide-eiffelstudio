@@ -38,15 +38,17 @@ feature -- Process
 			-- Process this class type to formal textual BON.
 		local
 			l_text_formatter_decorator: like text_formatter_decorator
-			x: INTEGER
-			not_first: BOOLEAN
 		do
 			l_text_formatter_decorator := text_formatter_decorator
 			l_text_formatter_decorator.process_string_text (name, Void)
-			l_text_formatter_decorator.put_space
-			l_text_formatter_decorator.process_symbol_text (ti_l_bracket)
-			process_formal_textual_bon_list(actual_generics, ", ", False)
-			l_text_formatter_decorator.process_symbol_text (ti_r_bracket)
+			if
+				has_actual_generics
+			then
+				l_text_formatter_decorator.put_space
+				l_text_formatter_decorator.process_symbol_text (ti_l_bracket)
+				process_formal_textual_bon_list(actual_generics, ", ", False)
+				l_text_formatter_decorator.process_symbol_text (ti_r_bracket)
+			end
 		end
 
 feature -- Status report
