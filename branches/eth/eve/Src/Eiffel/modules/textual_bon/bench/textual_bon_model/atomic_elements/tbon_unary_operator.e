@@ -52,7 +52,7 @@ feature -- Processing
 			l_text_formatter_decorator.process_symbol_text (item)
 		end
 
-feature -- Status setting
+feature -- Element change
 -- Operators: delta, old, not, +, -
 
 	set_as_delta
