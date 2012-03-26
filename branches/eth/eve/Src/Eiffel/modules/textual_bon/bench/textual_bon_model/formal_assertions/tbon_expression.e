@@ -1,41 +1,20 @@
 note
-	description: "Summary description for {TBON_EXPRESSION}."
-	author: ""
+	description: "An expression in an assertion clause in a formal BON specification."
+	author: "Sune Alkaersig <sual@itu.dk> and Thomas Didriksen <thdi@itu.dk>"
 	date: "$Date$"
 	revision: "$Revision$"
 
-class
+deferred class
 	TBON_EXPRESSION
 
 inherit
 	TBON_ASSERTION
-		redefine
-			process_to_informal_textual_bon,
-			process_to_formal_textual_bon
-		end
+	
+feature -- Status
+	is_parenthezised: BOOLEAN
+			-- Is this expression parenthezised?
 
-create
-	make_element
-
-feature -- Initialization
-	make_element
-			-- Create an expression element
-		do
-
-		end
-
-feature -- Processing
-	process_to_informal_textual_bon
-		do
-
-		end
-
-	process_to_formal_textual_bon
-		do
-			
-		end
-
-note
+;note
 	copyright: "Copyright (c) 1984-2012, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
