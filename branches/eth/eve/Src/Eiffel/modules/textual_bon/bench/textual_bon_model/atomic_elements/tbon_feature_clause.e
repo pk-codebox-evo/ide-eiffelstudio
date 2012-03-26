@@ -20,12 +20,13 @@ create
 	make_element
 
 feature -- Initialization
-	make_element (comment_strings: like comments; feature_list: attached like features; sel_export: like selective_export)
+	make_element (a_text_formatter: like text_formatter_decorator; a_comment_list: like comments; a_feature_list: attached like features; a_selective_export: like selective_export)
 			-- Create a feature clause element.
 		do
-			comments := comment_strings
-			features := feature_list
-			selective_export := sel_export
+			make (a_text_formatter)
+			comments := a_comment_list
+			features := a_feature_list
+			selective_export := a_selective_export
 		end
 
 feature -- Access
