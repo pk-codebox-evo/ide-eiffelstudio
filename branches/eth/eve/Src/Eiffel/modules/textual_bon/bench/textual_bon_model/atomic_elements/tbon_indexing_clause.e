@@ -25,7 +25,7 @@ feature -- Access
 
 feature -- Initialization
 	make_element (a_text_formatter: like text_formatter_decorator; an_indexing_tag_list: like indexing_tags)
-			-- Make a indexing clause for a class.
+			-- Make an indexing clause for a class.
 		do
 			make (a_text_formatter)
 			indexing_tags := an_indexing_tag_list
