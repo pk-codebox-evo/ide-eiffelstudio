@@ -50,12 +50,13 @@ feature -- Processing
 		do
 			l_text_formatter_decorator := text_formatter_decorator
 
-			l_text_formatter_decorator.process_string_text (bti_arrow, Void)
+			l_text_formatter_decorator.process_basic_text (bti_arrow)
 			l_text_formatter_decorator.put_space
 
 			if has_identifier then
 				identifier.process_to_textual_bon
-				l_text_formatter_decorator.process_string_text (bti_colon_operator, Void)
+				l_text_formatter_decorator.process_symbol_text (bti_colon_operator)
+				l_text_formatter_decorator.put_space
 			end
 
 			type.process_to_formal_textual_bon
