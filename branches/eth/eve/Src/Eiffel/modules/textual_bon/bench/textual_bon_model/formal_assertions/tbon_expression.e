@@ -9,10 +9,17 @@ deferred class
 
 inherit
 	TBON_ASSERTION
-	
+
 feature -- Status
 	is_parenthezised: BOOLEAN
 			-- Is this expression parenthezised?
+
+feature -- Status Setting
+	parenthesize
+			-- Make this expression parenthezised.
+		do
+			is_parenthezised := True
+		end
 
 ;note
 	copyright: "Copyright (c) 1984-2012, Eiffel Software"
