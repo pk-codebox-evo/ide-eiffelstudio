@@ -9,6 +9,7 @@ Test large-date-time-duration (duration004): passed
 Test time-bug-reports (time001): passed
 Test date-duration-with-leap-years (time002): passed
 Test date-time-with-epoch (time003): passed
+Test date-make-by-days (time004): passed
 Test array-is-equal (array001): passed
 Test array-consistency (array002): passed
 Test array-has (array003): passed
@@ -5716,8 +5717,8 @@ Test dotnet-polymorphism (dotnet110): failed
 Test dotnet-special-handling-crash (dotnet112): passed
 Test dotnet-static-access-on-deferred (dotnet115): passed
 
-Passed:  2274 / 2611  (88%)
-Failed:  305 / 2611  (12%)
-Manual:  26 / 2611  (1%)
-Skipped:  6 / 2611  (1%)
+Passed:  2275 / 2612  (88%)
+Failed:  305 / 2612  (12%)
+Manual:  26 / 2612  (1%)
+Skipped:  6 / 2612  (1%)
 
