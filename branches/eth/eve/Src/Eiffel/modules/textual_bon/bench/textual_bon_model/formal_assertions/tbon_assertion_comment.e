@@ -9,21 +9,22 @@ class
 
 inherit
 	TBON_ASSERTION
-		rename
-			process_to_informal_textual_bon as process_to_textual_bon,
-			process_to_formal_textual_bon as process_to_textual_bon
 		redefine
-			process_to_textual_bon
+			process_to_informal_textual_bon,
+			process_to_formal_textual_bon
 		end
 
 create
 	make_element
 
 feature -- Initialization
-	make_element
+	make_element (a_text_formatter_decorator: like text_formatter_decorator; a_comment: like comment)
 			-- Create an expression element
+		require
+			not_void: a_comment /= Void
 		do
-
+			comment := a_comment
+			text_formatter_decorator := a_text_formatter_decorator
 		end
 
 feature -- Access
@@ -31,10 +32,18 @@ feature -- Access
 			-- What is the string representation of this comment?
 
 feature -- Processing
-	process_to_textual_bon
+	process_to_formal_textual_bon
 			-- Process this comment to textual bon.
 		do
+			text_formatter_decorator.put_space
 			process_textual_bon_comment (comment)
+		end
+
+	process_to_informal_textual_bon
+		do
+			text_formatter_decorator.process_symbol_text (ti_double_quote)
+			text_formatter_decorator.process_string_text (comment, Void)
+			text_formatter_decorator.process_symbol_text (ti_double_quote)
 		end
 
 note
