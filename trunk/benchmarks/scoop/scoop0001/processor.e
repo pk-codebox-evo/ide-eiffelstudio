@@ -17,17 +17,8 @@ feature
 
 		end
 
-	query (count: INTEGER)
-		local
-			i: INTEGER
+	query
 		do
-			from
-				i := 1
-			until
-				i > count
-			loop
-				i := i + 1
-			end
 		end
 
 end

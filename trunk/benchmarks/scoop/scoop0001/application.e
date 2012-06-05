@@ -16,7 +16,6 @@ feature {NONE} -- Initialization
 
 	processors: INTEGER
 	queries: INTEGER
-	count: INTEGER
 
 	make
 		local
@@ -30,11 +29,9 @@ feature {NONE} -- Initialization
 			if argument_count >= 2 then
 				processors := argument (1).to_integer_32
 				queries := argument (2).to_integer_32
-				count := argument (3).to_integer_32
 			else
 				processors := 50
 				queries := 100
-				count := 10000
 			end
 
 			from
@@ -74,7 +71,7 @@ feature {NONE} -- Initialization
 
 	call (p1: separate PROCESSOR)
 		do
-			p1.query (count)
+			p1.query
 		end
 
 end
