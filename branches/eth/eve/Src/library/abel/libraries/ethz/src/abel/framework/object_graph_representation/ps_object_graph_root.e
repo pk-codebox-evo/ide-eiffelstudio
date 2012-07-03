@@ -69,7 +69,7 @@ feature {NONE} -- Initialization
 			create represented_object
 		end
 
-feature {PS_EIFFELSTORE_EXPORT} -- Initialization
+feature {PS_OBJECT_GRAPH_PART, PS_OBJECT_DISASSEMBLER} -- Initialization
 
 	initialize (a_level:INTEGER; a_mode:PS_WRITE_OPERATION; disassembler:PS_OBJECT_DISASSEMBLER)
 		-- Initialize `Current' and its whole object graph.
