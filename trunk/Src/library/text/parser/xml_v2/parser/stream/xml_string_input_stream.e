@@ -7,7 +7,7 @@ class
 	XML_STRING_INPUT_STREAM
 
 inherit
-	XML_INPUT_STREAM
+	XML_CHARACTER_8_INPUT_STREAM
 
 create
 	make,
@@ -19,6 +19,7 @@ feature {NONE} -- Initialization
 		do
 			source := a_string
 			count := a_string.count
+			start
 		end
 
 	make_empty

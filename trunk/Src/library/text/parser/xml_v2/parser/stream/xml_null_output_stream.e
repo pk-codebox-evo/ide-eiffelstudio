@@ -44,11 +44,20 @@ feature -- Basic operation
 
 feature -- Output
 
-	put_character (c: CHARACTER)
+	put_character_8 (c: CHARACTER_8)
 		do
 		end
 
-	put_string (a_string: READABLE_STRING_8)
+	put_string_8 (a_string: READABLE_STRING_8)
+			-- Write `a_string' to output stream.
+		do
+		end
+
+	put_character_32 (c: CHARACTER_32)
+		do
+		end
+
+	put_string_32 (a_string: READABLE_STRING_32)
 			-- Write `a_string' to output stream.
 		do
 		end

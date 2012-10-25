@@ -55,16 +55,16 @@ feature -- Access
 		deferred
 		end
 
-	last_character: CHARACTER
+	last_character_code: NATURAL_32
 			-- Last read character
 		deferred
 		end
 
 feature -- Basic operation
 
-	read_character
-			-- Read a character
-			-- and keep it in `last_character'
+	read_character_code
+			-- Read a character's code
+			-- and keep it in `last_character_code'
 		require
 			not_end_of_input: not end_of_input
 		deferred

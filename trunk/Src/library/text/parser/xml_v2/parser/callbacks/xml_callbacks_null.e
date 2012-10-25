@@ -31,26 +31,26 @@ feature -- Document
 		do
 		end
 
-	on_xml_declaration (a_version: READABLE_STRING_GENERAL; an_encoding: detachable READABLE_STRING_GENERAL; a_standalone: BOOLEAN)
+	on_xml_declaration (a_version: READABLE_STRING_8; an_encoding: detachable READABLE_STRING_8; a_standalone: BOOLEAN)
 			-- XML declaration.
 		do
 		end
 
 feature -- Errors
 
-	on_error (a_message: READABLE_STRING_GENERAL)
+	on_error (a_message: READABLE_STRING_32)
 			-- Event producer detected an error.
 		do
 		end
 
 feature -- Meta
 
-	on_processing_instruction (a_name: READABLE_STRING_GENERAL; a_content: READABLE_STRING_GENERAL)
+	on_processing_instruction (a_name: READABLE_STRING_32; a_content: READABLE_STRING_32)
 			-- Processing instruction.
 		do
 		end
 
-	on_comment (a_content: READABLE_STRING_GENERAL)
+	on_comment (a_content: READABLE_STRING_32)
 			-- Processing a comment.
 			-- Atomic: single comment produces single event
 		do
@@ -58,12 +58,12 @@ feature -- Meta
 
 feature -- Tag
 
-	on_start_tag (a_namespace: detachable READABLE_STRING_GENERAL; a_prefix: detachable READABLE_STRING_GENERAL; a_local_part: READABLE_STRING_GENERAL)
+	on_start_tag (a_namespace: detachable READABLE_STRING_32; a_prefix: detachable READABLE_STRING_32; a_local_part: READABLE_STRING_32)
 			-- Start of start tag.
 		do
 		end
 
-	on_attribute (a_namespace: detachable READABLE_STRING_GENERAL; a_prefix: detachable READABLE_STRING_GENERAL; a_local_part: READABLE_STRING_GENERAL; a_value: READABLE_STRING_GENERAL)
+	on_attribute (a_namespace: detachable READABLE_STRING_32; a_prefix: detachable READABLE_STRING_32; a_local_part: READABLE_STRING_32; a_value: READABLE_STRING_32)
 			-- Start of attribute.
 		do
 		end
@@ -73,14 +73,14 @@ feature -- Tag
 		do
 		end
 
-	on_end_tag (a_namespace: detachable READABLE_STRING_GENERAL; a_prefix: detachable READABLE_STRING_GENERAL; a_local_part: READABLE_STRING_GENERAL)
+	on_end_tag (a_namespace: detachable READABLE_STRING_32; a_prefix: detachable READABLE_STRING_32; a_local_part: READABLE_STRING_32)
 			-- End tag.
 		do
 		end
 
 feature -- Content
 
-	on_content (a_content: READABLE_STRING_GENERAL)
+	on_content (a_content: READABLE_STRING_32)
 			-- Text content.
 		do
 		end
