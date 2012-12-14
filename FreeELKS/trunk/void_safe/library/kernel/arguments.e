@@ -13,6 +13,9 @@ note
 class
 	ARGUMENTS
 
+obsolete
+	"Use `ARGUMENTS_32' to manipulate Unicode arguments."
+
 inherit
 	ITERABLE [STRING]
 
@@ -24,8 +27,8 @@ feature -- Access
 		require
 			index_large_enough: i >= 0
 			index_small_enough: i <= argument_count
-		external
-			"built_in"
+		do
+			Result := internal_arguments.argument (i).as_string_8
 		ensure
 			argument_not_void: Result /= Void
 		end
@@ -305,8 +308,8 @@ feature -- Measurement
 	argument_count: INTEGER
 			-- Number of arguments given to command that started
 			-- system execution (command name does not count)
-		external
-			"built_in"
+		do
+			Result := internal_arguments.argument_count
 		ensure
 			argument_count_positive: Result >= 0
 		end
@@ -368,6 +371,12 @@ feature {NONE} -- Implementation
 		ensure
 			internal_argument_array_not_void: Result /= Void
 			internal_argument_array_compare_objects: Result.object_comparison
+		end
+
+	internal_arguments: ARGUMENTS_32
+			-- Access to the Unicode arguments.
+		once
+			create Result
 		end
 
 invariant
