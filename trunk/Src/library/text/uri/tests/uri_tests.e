@@ -21,6 +21,9 @@ feature -- Tests
 			assert ("query", same_string (uri.query, "id=123&abc=def"))
 			assert ("fragment", same_string (uri.fragment, "page-1"))
 
+			uri.add_query_parameters (<<["foo", "bar"], ["one", "more"]>>)
+			assert ("query", same_string (uri.query, "id=123&abc=def&foo=bar&one=more"))
+
 			create uri.make_from_string ("http://www.example.com:8080/foo/bar?id=123&abc=def#page-1")
 			assert ("scheme", uri.scheme.same_string ("http"))
 			assert ("hostname", same_string (uri.hostname, "www.example.com"))
@@ -74,7 +77,8 @@ feature -- Tests
 		do
 			create uri.make_from_string ("file:///etc/hosts")
 			assert ("scheme", uri.scheme.same_string ("file"))
-			assert ("authority", same_string (uri.authority, Void))
+			assert ("hostname", same_string (uri.hostname, ""))
+			assert ("authority", same_string (uri.authority, ""))
 			assert ("path", uri.path.same_string ("/etc/hosts"))
 			assert ("query", same_string (uri.query, Void))
 			assert ("fragment", same_string (uri.fragment, Void))
