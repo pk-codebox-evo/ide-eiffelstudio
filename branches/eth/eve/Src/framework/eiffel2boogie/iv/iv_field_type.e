@@ -40,4 +40,14 @@ feature -- Visitor
 			a_visitor.process_field_type (Current)
 		end
 
+feature -- Equality
+
+	is_same_type (a_other: IV_TYPE): BOOLEAN
+			-- Is `a_other' same type as this?
+		do
+			if attached {IV_FIELD_TYPE} a_other as t then
+				Result := content_type.is_same_type (t.content_type)
+			end
+		end
+
 end
