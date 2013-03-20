@@ -1,1 +1,0 @@
-See: http://docs.eiffel.com/book/solutions/dining-savages
