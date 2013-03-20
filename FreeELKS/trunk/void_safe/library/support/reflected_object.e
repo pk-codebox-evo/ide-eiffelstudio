@@ -14,6 +14,8 @@ class
 	REFLECTED_OBJECT
 
 inherit
+	ABSTRACT_REFLECTED_OBJECT
+
 	REFLECTOR_CONSTANTS
 
 create
@@ -45,7 +47,7 @@ feature {NONE} -- Initialization
 			enclosing_object := a_enclosing_object.enclosing_object
 				-- To compute the type ID of the object at the `i'-th field.
 			physical_offset := a_enclosing_object.physical_offset + a_enclosing_object.field_offset (i)
-			dynamic_type := {ISE_RUNTIME}.dynamic_type_at_offset (enclosing_object, physical_offset)
+			dynamic_type := {ISE_RUNTIME}.dynamic_type_at_offset ($enclosing_object, physical_offset)
 		ensure
 			enclosing_object_set: enclosing_object = a_enclosing_object.enclosing_object
 		end
@@ -57,7 +59,7 @@ feature {NONE} -- Initialization
 		do
 			enclosing_object := a_enclosing_object
 			physical_offset := a_physical_offset
-			dynamic_type := {ISE_RUNTIME}.dynamic_type_at_offset (a_enclosing_object, a_physical_offset)
+			dynamic_type := {ISE_RUNTIME}.dynamic_type_at_offset ($a_enclosing_object, a_physical_offset)
 		ensure
 			enclosing_object_set: enclosing_object = a_enclosing_object
 		end
@@ -65,10 +67,17 @@ feature {NONE} -- Initialization
 feature -- Access
 
 	object: ANY
-			-- Associated object for Current
-			-- It might be a copy if Current is expanded.
+			-- <Precursor>
 		do
-			Result := {ISE_RUNTIME}.reference_field_at_offset (enclosing_object, physical_offset)
+			Result := {ISE_RUNTIME}.reference_field_at_offset ($enclosing_object, physical_offset)
+		end
+
+	object_address: POINTER
+			-- <Precursor>
+		note
+			compiler: no_gc
+		do
+			Result := {ISE_RUNTIME}.raw_reference_field_at_offset ($enclosing_object, physical_offset)
 		end
 
 	enclosing_object: ANY
@@ -91,7 +100,7 @@ feature -- Status report
 	is_special: BOOLEAN
 			-- Is `object' special?
 		do
-			Result := {ISE_RUNTIME}.is_special (enclosing_object)
+			Result := {ISE_RUNTIME}.is_special ($enclosing_object)
 		ensure
 			definition: physical_offset /= 0 implies not Result
 		end
@@ -99,13 +108,13 @@ feature -- Status report
 	is_special_of_reference: BOOLEAN
 			-- Is Current a SPECIAL [XX] where `XX' is a reference type?
 		do
-			Result := {ISE_RUNTIME}.is_special_of_reference (enclosing_object)
+			Result := {ISE_RUNTIME}.is_special_of_reference ($enclosing_object)
 		end
 
 	is_tuple: BOOLEAN
 			-- Is `object' a TUPLE?
 		do
-			Result := {ISE_RUNTIME}.is_tuple (enclosing_object)
+			Result := {ISE_RUNTIME}.is_tuple ($enclosing_object)
 		ensure
 			definition: physical_offset /= 0 implies not Result
 		end
@@ -127,6 +136,16 @@ feature -- Status report
 			index_small_enough: i <= field_count
 		do
 			Result := {ISE_RUNTIME}.is_field_expanded_of_type (i, dynamic_type)
+		end
+
+	is_copy_semantics_field (i: INTEGER): BOOLEAN
+			-- Is `i'-th field of `object' a reference with copy-semantics properties?
+		require
+			index_large_enough: i >= 1
+			index_small_enough: i <= field_count
+			is_reference_field: field_type (i) = reference_type
+		do
+			Result := {ISE_RUNTIME}.is_copy_semantics_field (i, $enclosing_object, physical_offset)
 		end
 
 	is_field_statically_attached (i: INTEGER): BOOLEAN
@@ -238,6 +257,18 @@ feature -- Access
 			reference_field: field_type (i) = reference_type or field_type (i) = expanded_type
 		do
 			Result := {ISE_RUNTIME}.reference_field (i, $enclosing_object, physical_offset)
+		end
+
+	copy_semantics_field (i: INTEGER): REFLECTED_COPY_SEMANTICS_OBJECT
+			-- Object attached to the `i'-th field of `object'
+			-- (directly or through a reference)
+		require
+			index_large_enough: i >= 1
+			index_small_enough: i <= field_count
+			not_special: not is_special
+			reference_field: field_type (i) = reference_type and is_copy_semantics_field (i)
+		do
+			create Result.make (Current, i)
 		end
 
 	expanded_field (i: INTEGER): REFLECTED_OBJECT
@@ -449,7 +480,7 @@ feature -- Element change
 			value_conforms_to_field_static_type:
 				value /= Void implies field_conforms_to (value.generating_type.type_id, field_static_type (i))
 		do
-			{ISE_RUNTIME}.set_reference_field (i, enclosing_object, physical_offset, value)
+			{ISE_RUNTIME}.set_reference_field (i, $enclosing_object, physical_offset, value)
 		end
 
 	set_real_64_field, set_double_field (i: INTEGER; value: REAL_64)
@@ -458,7 +489,7 @@ feature -- Element change
 			index_small_enough: i <= field_count
 			real_64_field: field_type (i) = real_64_type
 		do
-			{ISE_RUNTIME}.set_real_64_field (i, enclosing_object, physical_offset, value)
+			{ISE_RUNTIME}.set_real_64_field (i, $enclosing_object, physical_offset, value)
 		end
 
 	set_character_8_field, set_character_field (i: INTEGER; value: CHARACTER_8)
@@ -468,7 +499,7 @@ feature -- Element change
 			index_small_enough: i <= field_count
 			character_field: field_type (i) = Character_8_type
 		do
-			{ISE_RUNTIME}.set_character_8_field (i, enclosing_object, physical_offset, value)
+			{ISE_RUNTIME}.set_character_8_field (i, $enclosing_object, physical_offset, value)
 		end
 
 	set_character_32_field (i: INTEGER; value: CHARACTER_32)
@@ -478,7 +509,7 @@ feature -- Element change
 			index_small_enough: i <= field_count
 			character_field: field_type (i) = Character_32_type
 		do
-			{ISE_RUNTIME}.set_character_32_field (i, enclosing_object, physical_offset, value)
+			{ISE_RUNTIME}.set_character_32_field (i, $enclosing_object, physical_offset, value)
 		end
 
 	set_boolean_field (i: INTEGER; value: BOOLEAN)
@@ -487,7 +518,7 @@ feature -- Element change
 			index_small_enough: i <= field_count
 			boolean_field: field_type (i) = Boolean_type
 		do
-			{ISE_RUNTIME}.set_boolean_field (i, enclosing_object, physical_offset, value)
+			{ISE_RUNTIME}.set_boolean_field (i, $enclosing_object, physical_offset, value)
 		end
 
 	set_natural_8_field (i: INTEGER; value: NATURAL_8)
@@ -496,7 +527,7 @@ feature -- Element change
 			index_small_enough: i <= field_count
 			natural_8_field: field_type (i) = natural_8_type
 		do
-			{ISE_RUNTIME}.set_natural_8_field (i, enclosing_object, physical_offset, value)
+			{ISE_RUNTIME}.set_natural_8_field (i, $enclosing_object, physical_offset, value)
 		end
 
 	set_natural_16_field (i: INTEGER; value: NATURAL_16)
@@ -505,7 +536,7 @@ feature -- Element change
 			index_small_enough: i <= field_count
 			natural_16_field: field_type (i) = natural_16_type
 		do
-			{ISE_RUNTIME}.set_natural_16_field (i, enclosing_object, physical_offset, value)
+			{ISE_RUNTIME}.set_natural_16_field (i, $enclosing_object, physical_offset, value)
 		end
 
 	set_natural_32_field (i: INTEGER; value: NATURAL_32)
@@ -514,7 +545,7 @@ feature -- Element change
 			index_small_enough: i <= field_count
 			natural_32_field: field_type (i) = natural_32_type
 		do
-			{ISE_RUNTIME}.set_natural_32_field (i, enclosing_object, physical_offset, value)
+			{ISE_RUNTIME}.set_natural_32_field (i, $enclosing_object, physical_offset, value)
 		end
 
 	set_natural_64_field (i: INTEGER; value: NATURAL_64)
@@ -523,7 +554,7 @@ feature -- Element change
 			index_small_enough: i <= field_count
 			natural_64_field: field_type (i) = natural_64_type
 		do
-			{ISE_RUNTIME}.set_natural_64_field (i, enclosing_object, physical_offset, value)
+			{ISE_RUNTIME}.set_natural_64_field (i, $enclosing_object, physical_offset, value)
 		end
 
 	set_integer_8_field (i: INTEGER; value: INTEGER_8)
@@ -532,7 +563,7 @@ feature -- Element change
 			index_small_enough: i <= field_count
 			integer_8_field: field_type (i) = Integer_8_type
 		do
-			{ISE_RUNTIME}.set_integer_8_field (i, enclosing_object, physical_offset, value)
+			{ISE_RUNTIME}.set_integer_8_field (i, $enclosing_object, physical_offset, value)
 		end
 
 	set_integer_16_field (i: INTEGER; value: INTEGER_16)
@@ -541,7 +572,7 @@ feature -- Element change
 			index_small_enough: i <= field_count
 			integer_16_field: field_type (i) = Integer_16_type
 		do
-			{ISE_RUNTIME}.set_integer_16_field (i, enclosing_object, physical_offset, value)
+			{ISE_RUNTIME}.set_integer_16_field (i, $enclosing_object, physical_offset, value)
 		end
 
 	set_integer_field, set_integer_32_field (i: INTEGER; value: INTEGER)
@@ -550,7 +581,7 @@ feature -- Element change
 			index_small_enough: i <= field_count
 			integer_32_field: field_type (i) = Integer_32_type
 		do
-			{ISE_RUNTIME}.set_integer_32_field (i, enclosing_object, physical_offset, value)
+			{ISE_RUNTIME}.set_integer_32_field (i, $enclosing_object, physical_offset, value)
 		end
 
 	set_integer_64_field (i: INTEGER; value: INTEGER_64)
@@ -559,7 +590,7 @@ feature -- Element change
 			index_small_enough: i <= field_count
 			integer_64_field: field_type (i) = Integer_64_type
 		do
-			{ISE_RUNTIME}.set_integer_64_field (i, enclosing_object, physical_offset, value)
+			{ISE_RUNTIME}.set_integer_64_field (i, $enclosing_object, physical_offset, value)
 		end
 
 	set_real_32_field, set_real_field (i: INTEGER; value: REAL)
@@ -568,7 +599,7 @@ feature -- Element change
 			index_small_enough: i <= field_count
 			real_32_field: field_type (i) = real_32_type
 		do
-			{ISE_RUNTIME}.set_real_32_field (i, enclosing_object, physical_offset, value)
+			{ISE_RUNTIME}.set_real_32_field (i, $enclosing_object, physical_offset, value)
 		end
 
 	set_pointer_field (i: INTEGER; value: POINTER)
@@ -577,7 +608,7 @@ feature -- Element change
 			index_small_enough: i <= field_count
 			pointer_field: field_type (i) = Pointer_type
 		do
-			{ISE_RUNTIME}.set_pointer_field (i, enclosing_object, physical_offset, value)
+			{ISE_RUNTIME}.set_pointer_field (i, $enclosing_object, physical_offset, value)
 		end
 
 feature -- Measurement
@@ -619,7 +650,7 @@ feature -- Measurement
 	physical_size_64: NATURAL_64
 			-- Space occupied by `object' in bytes
 		do
-			Result := {ISE_RUNTIME}.object_size (enclosing_object)
+			Result := {ISE_RUNTIME}.object_size ($enclosing_object)
 		end
 
 	deep_physical_size_64: NATURAL_64
@@ -627,6 +658,7 @@ feature -- Measurement
 		local
 			l_traverse: OBJECT_GRAPH_BREADTH_FIRST_TRAVERSABLE
 			l_objects: detachable ARRAYED_LIST [ANY]
+			l_obj: ANY
 		do
 			create l_traverse
 			l_traverse.set_root_object (object)
@@ -639,7 +671,8 @@ feature -- Measurement
 				until
 					l_objects.after
 				loop
-					Result := Result + {ISE_RUNTIME}.object_size (l_objects.item)
+					l_obj := l_objects.item
+					Result := Result + {ISE_RUNTIME}.object_size ($l_obj)
 					l_objects.forth
 				end
 			end
