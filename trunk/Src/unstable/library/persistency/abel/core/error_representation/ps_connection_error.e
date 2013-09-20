@@ -1,5 +1,5 @@
 note
-	description: "Represents an connection error."
+	description: "Represents an error when establishing a connection."
 	author: "Roman Schmocker"
 	date: "$Date$"
 	revision: "$Revision$"
@@ -16,7 +16,7 @@ inherit
 
 feature
 
-	description: STRING = "Connection lost"
+	description: STRING = "Connection failed"
 			-- A human-readable string containing an error description
 
 	accept (a_visitor: PS_ERROR_VISITOR)
