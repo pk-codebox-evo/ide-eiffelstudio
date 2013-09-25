@@ -32,7 +32,7 @@ feature {PS_ERROR} -- Specific visitor functions
 		deferred
 		end
 
-	visit_authorization_error (auth_error: PS_AUTHORIZATION_ERROR)
+	visit_authorization_error (authorization_error: PS_AUTHORIZATION_ERROR)
 			-- Visit an authorization error
 		deferred
 		end
