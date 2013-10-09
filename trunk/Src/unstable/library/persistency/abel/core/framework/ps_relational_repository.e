@@ -203,7 +203,7 @@ feature {NONE} -- Initialization
 			create planner.make
 			create disassembler.make (id_manager.metadata_manager, default_object_graph)
 --			create executor.make (backend, id_manager)
-			create retriever.make (backend, id_manager)
+			create retriever.make (backend, id_manager, Current)
 			create collection_handlers.make
 		end
 
