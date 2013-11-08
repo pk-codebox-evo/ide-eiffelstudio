@@ -2,41 +2,32 @@ class F_DLL_NODE
 
 create
 	make
-  
+
 feature
+
 	left: F_DLL_NODE
-	right: F_DLL_NODE    
-  
+	right: F_DLL_NODE
+
 	make
 		note
 			status: creator
 		require
-			is_open -- default: creator
-
 			modify (Current) -- default: creator
 		do
 			left := Current
 			right := Current
 			set_subjects ([left, right]) -- default: implicit?
 			set_observers ([left, right]) -- default: implicit?
-			wrap -- default: creator
 		ensure
 			singleton: left = Current
-			is_wrapped -- default: creator
 		end
-    
+
 	insert_right (n: F_DLL_NODE)
 		note
 			explicit: wrapping
 		require
 			n /= Void
 			n_singleton: n.left = n
-			is_wrapped -- default: ?
-			across observers as o all o.item.is_wrapped end -- default: ?
-			n.is_wrapped -- default: ?
-			
-			left.is_wrapped
-			right.is_wrapped
 			right.right.is_wrapped
 
 			modify ([Current, left, right, right.right, n])
@@ -64,7 +55,7 @@ feature
 			n.set_right (r)
 			n.set_left (Current)
 			r.set_left (n)
-			set_right (n)      
+			set_right (n)
 
 --			across << Current, r, n >> as o loop
 --				o.item.set_subjects ([o.item.left, o.item.right]) -- default: implicit?
@@ -77,6 +68,7 @@ feature
 			r.set_observers ([r.left, r.right])
 			n.set_subjects ([n.left, n.right])
 			n.set_observers ([n.left, n.right])
+
 
 			Current.wrap
 			if not left.is_wrapped then
@@ -91,33 +83,25 @@ feature
 			if not r.right.is_wrapped then
 				r.right.wrap
 			end
-
 --			wrap_all ([Current, left, r, r.right, n])
 		ensure
 			right = n
 			n.right = old right
 
-			is_wrapped
-			left.is_wrapped
-			right.is_wrapped
 			right.right.is_wrapped
 		end
 
 	remove_right
 		note
-			explicit: wrapping  
+			explicit: wrapping
 		require
 			not_singleton: right /= Current
 			right.right.is_wrapped
-			is_wrapped -- default: ?
-			across observers as o all o.item.is_wrapped end -- default: ?
 
-			modify ([Current, right, right.right])
-
+			modify ([Current, left, right, right.right])
 			modify (right.right.right)
-			modify (left)
 		local
-			r: F_DLL_NODE      
+			r: F_DLL_NODE
 		do
 			r := right
 
@@ -162,11 +146,8 @@ feature
 		ensure
 		  right = old right.right
 		  old_right_singleton: (old right).right = old right
-
-		  is_wrapped
-		  right.is_wrapped
 		end
-    
+
 feature {F_DLL_NODE}
 
 	set_left (n: F_DLL_NODE)
@@ -176,7 +157,7 @@ feature {F_DLL_NODE}
 			is_open
 			left.is_open
 			across observers as sc all sc.item.is_open end
-			
+
 			modify_field ("left", Current)
 		do
 			left := n -- preserves right
@@ -186,7 +167,7 @@ feature {F_DLL_NODE}
 
 	set_right (n: F_DLL_NODE)
 		note
-			explicit: contracts  
+			explicit: contracts
 		require
 			is_open
 			right.is_open
@@ -198,7 +179,7 @@ feature {F_DLL_NODE}
 		ensure
 			right = n
 		end
-      
+
 invariant
 	left /= Void
 	right /= Void

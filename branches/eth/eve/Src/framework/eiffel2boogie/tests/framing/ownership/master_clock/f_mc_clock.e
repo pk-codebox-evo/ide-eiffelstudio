@@ -10,30 +10,20 @@ feature {NONE} -- Initialization
 		note
 			status: creator
 		require
-			is_open -- default
-			m.is_wrapped -- default
 			m /= Void
 
 			modify (Current) -- default: creator
 			modify_field ("observers", m)
 		do
-			set_owns ([]) -- default: creator
-			set_subjects ([]) -- default: creator
-			set_observers ([]) -- default: creator
-
 			master := m
 			local_time := master.time
 
 			m.unwrap
-			m.set_observers (m.observers + [Current]) -- m.observers.add (Current)
+			m.set_observers (m.observers + [Current])
 			m.wrap
 
 			set_subjects ([m]) -- default
-
-			wrap -- default
 		ensure
-			is_wrapped -- default
-			m.is_wrapped -- default
 			master = m
 			local_time = m.time
 			m.observers = old m.observers + [Current]
@@ -50,16 +40,12 @@ feature -- Access
 	sync
 			-- Sync clock to master.
 		require
-			is_wrapped -- default
 			master.is_wrapped
 
 			modify_field ("local_time", Current)
 		do
-			unwrap -- default
 			local_time := master.time
-			wrap -- default
 		ensure
-			is_wrapped -- default
 			local_time = master.time
 		end
 

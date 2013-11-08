@@ -12,16 +12,13 @@ feature {NONE} -- Initialization
 		note
 			status: creator
 		require else
-			is_open -- default: creator
 			modify (Current) -- default: creator
 		do
-			wrap -- default: creator
 		ensure then
 			time = 0 -- default: default_create
-			is_wrapped -- default: creator
 			observers.is_empty -- default: default_create
 		end
-	
+
 feature
 
 	time: INTEGER
@@ -36,9 +33,7 @@ feature
 
 			modify_field ("time", Current)
 		do
-			unwrap -- default
 			time := time + 1
-			wrap -- default
 		ensure
 			time > old time
 			is_wrapped
