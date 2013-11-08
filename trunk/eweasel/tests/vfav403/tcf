@@ -1,4 +1,4 @@
-test_name	 validity-vfav4-argumentless-declaration
+test_name	 validity-vfav4-argumentless-1
 test_description Parenthesis alias should not be specified for a feature without arguments.
 
 copy_sub 	Ace $TEST Ace
