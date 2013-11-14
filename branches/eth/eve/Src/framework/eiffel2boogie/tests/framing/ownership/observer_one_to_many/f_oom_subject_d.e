@@ -26,6 +26,7 @@ feature
 			observers_list.is_empty
 			observers = [] -- todo: should be implied by previous line
 			is_wrapped -- default: creator
+			across observers as o all o.item.is_wrapped end -- default: creator
 		end
 
 	update (new_val: INTEGER)
@@ -37,24 +38,25 @@ feature
 			modify_field ("cache", observers_list.sequence)
 		local
 			i: INTEGER
+			l_old_sequence: MML_SET [F_OOM_OBSERVER_D]
 		do
-			unwrap
+			unwrap -- default: public
 			unwrap_all (observers)
 
 			value := new_val
-
---			from
---				i := 1
---			invariant
+			from
+				i := 1
+			invariant
 --				across 1 |..| (i - 1) as j all observers_list[j.item].cache = new_val end
---			until
---				i > observers_list.count
---			loop
---				observers_list [i].notify
---				i := i + 1
---			end
+			until
+				i > observers_list.count
+			loop
+				observers_list [i].notify
+				i := i + 1
+			end
+
 			wrap_all (observers)
-			wrap
+			wrap -- default: public
 		ensure
 			value = new_val
 			is_wrapped -- default: public
@@ -88,7 +90,8 @@ invariant
 	observers = observers_list.sequence
 	owns = [observers_list]
 	subjects = [] -- default
-	abc: not observers[Current]
+	across subjects as s all s.item.observers.has (Current) end -- default
+	not observers[Current]
 
 note
 	explicit: observers
