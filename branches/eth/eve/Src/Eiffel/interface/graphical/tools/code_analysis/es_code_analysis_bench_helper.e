@@ -35,63 +35,19 @@ feature -- Basic operations
 			end
 		end
 
---	build_context_menu_for_feature_stone (a_menu: EV_MENU; a_stone: FEATURE_STONE)
---			-- Build context menu for feature stone `a_stone' and add it to `a_menu'.
---			--
---			-- Added to {EB_CONTEXT_MENU_FACTORY}.extend_standard_compiler_item_menu
---		require
---			a_menu_not_void: a_menu /= Void
---			a_stone_not_void: a_stone /= Void
---		local
---			l_item: EV_MENU_ITEM
---		do
---			if a_stone.e_feature.is_procedure or a_stone.e_feature.is_function then
---				create l_item.make_with_text_and_action ("Verify with AutoProof", agent verify_feature (a_stone.e_feature.associated_feature_i))
---				if autoproof.is_running then
---					l_item.disable_sensitive
---					l_item.set_text (l_item.text + " (running)")
---				end
---				a_menu.extend (l_item)
---			end
---		end
-
 feature -- Verification
 
 	code_analyzer: CA_CODE_ANALYZER
-			-- Shared autoproof instance.
+			-- Shared Code Analyzer instance.
 		once
 			create Result.make
 		end
 
 	ca_command: ES_CODE_ANALYSIS_COMMAND
-			-- Shared autoproof command.
+			-- Shared Code Analysis command.
 		once
 			create Result.make
 		end
-
---	verify_class (a_class: CLASS_C)
---			-- Verify class `a_class'.
---		require
---			a_class_attached: attached a_class
---			autoproof_not_running: not autoproof.is_running
---		local
---			l_stone: CLASSC_STONE
---		do
---			create l_stone.make (a_class)
---			autoproof_command.execute_with_stone (l_stone)
---		end
-
---	verify_feature (a_feature: FEATURE_I)
---			-- Verify feature `a_feature'.
---		require
---			a_feature_attached: attached a_feature
---			autoproof_not_running: not autoproof.is_running
---		local
---			l_stone: FEATURE_STONE
---		do
---			create l_stone.make (a_feature.e_feature)
---			autoproof_command.execute_with_stone (l_stone)
---		end
 
 note
 	copyright: "Copyright (c) 1984-2013, Eiffel Software"
