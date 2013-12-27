@@ -17,6 +17,7 @@ feature -- Access
 	iron_node: IRON_NODE
 		local
 			db: IRON_NODE_DATABASE
+			obs: IRON_NODE_OBSERVER
 			mailer: NOTIFICATION_MAILER
 			ext_mailer: NOTIFICATION_EXTERNAL_MAILER
 			lay: IRON_NODE_LAYOUT
@@ -27,16 +28,22 @@ feature -- Access
 			else
 				create lay.make_default
 			end
-			create {IRON_NODE_FS_DATABASE} db.make_with_layout (lay)
 			if {PLATFORM}.is_windows then
 				create ext_mailer.make (lay.binaries_path.extended ("sendmail.bat").name, Void)
 				mailer := ext_mailer
 			else
 				create {NOTIFICATION_SENDMAIL_MAILER} mailer
 			end
+			create {IRON_NODE_FS_DATABASE} db.make_with_layout (lay)
 			create Result.make (db, lay)
 				-- FIXME: do not hardcode email address.
-			Result.register_observer (create {IRON_NODE_MAILER_OBSERVER}.make_with_mailer (mailer, "jfiat@eiffel.com"))
+			create {IRON_NODE_MAILER_OBSERVER} obs.make_with_mailer (mailer, "jfiat@eiffel.com")
+			Result.register_observer (obs)
+
+			create {IRON_NODE_LOGGING_OBSERVER} obs.make (agent db.save_log, 1)
+			Result.register_observer (obs)
+
+			db.register_observer (Result)
 		end
 
 note

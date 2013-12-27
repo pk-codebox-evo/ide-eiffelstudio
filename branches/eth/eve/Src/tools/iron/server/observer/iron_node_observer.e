@@ -23,6 +23,10 @@ feature -- Package
 		deferred
 		end
 
+	on_version_package_updated (p: IRON_NODE_VERSION_PACKAGE; flag_is_new: BOOLEAN)
+		deferred
+		end
+
 note
 	copyright: "Copyright (c) 1984-2013, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
