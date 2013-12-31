@@ -1,5 +1,5 @@
 note
-	description: "Subject that keeps a list of subscribers and nofifies then of its state changes."
+	description: "Subject that keeps a list of subscribers and notifies then of its state changes."
 
 class F_OOM_SUBJECT
 
