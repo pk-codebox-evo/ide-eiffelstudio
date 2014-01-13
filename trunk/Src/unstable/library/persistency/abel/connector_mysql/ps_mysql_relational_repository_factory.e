@@ -34,8 +34,11 @@ feature -- Element change
 		local
 			name: IMMUTABLE_STRING_8
 			type_meta: PS_TYPE_METADATA
+			internal: INTERNAL
 		do
-			type_meta := type_factory.create_metadata_from_type (type)
+				-- Make sure we have the detachable type.
+			create internal
+			type_meta := type_factory.create_metadata_from_type_id (internal.detachable_type (type.type_id))
 			managed_types.extend (primary_key_attribute, type_meta)
 		end
 
@@ -89,7 +92,7 @@ feature {NONE} -- Implementation
 			l_db := new_internal_database
 			internal_database := l_db
 			check attached database as db_name then
-				create Result.make (l_db, managed_types, db_name)
+				create Result.make (l_db, managed_types, create {PS_MYSQL_STRINGS})
 			end
 		ensure then
 			db_set: attached internal_database
