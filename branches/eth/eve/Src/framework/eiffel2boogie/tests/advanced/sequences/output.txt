@@ -1,0 +1,15 @@
+======================================
+ANY.default_create (creator, inherited by A_SEQUENCES)
+Successfully verified.
+======================================
+A_SEQUENCES.good
+Successfully verified.
+======================================
+A_SEQUENCES.good1
+Successfully verified.
+======================================
+A_SEQUENCES.seq_to_set
+Successfully verified.
+======================================
+A_SEQUENCES (invariant admissibility)
+Successfully verified.
