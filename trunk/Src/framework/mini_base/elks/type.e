@@ -9,6 +9,21 @@ note
 class
 	TYPE [G]
 
+convert
+		-- Conversion useful for the transition period because of the
+		-- modification in ANY:
+		--    generating_type: STRING
+		-- becomes:
+		--    generating_type: TYPE [like Current]
+	to_string_8: {STRING_8}
+
+feature -- Conversion
+
+	to_string_8: STRING_8
+		do
+			create Result.make (0)
+		end
+
 note
 	copyright: "Copyright (c) 1984-2014, Eiffel Software and others"
 	license: "Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
