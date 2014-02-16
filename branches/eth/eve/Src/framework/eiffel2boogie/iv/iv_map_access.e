@@ -11,14 +11,8 @@ class
 inherit
 
 	IV_EXPRESSION
-		redefine
-			is_equal
-		end
 
 	IV_SHARED_TYPES
-		undefine
-			is_equal
-		end
 
 create
 	make
@@ -48,7 +42,7 @@ feature -- Access
 			-- Indexes.
 
 	type: IV_TYPE
-			-- Type of map.
+			-- Type of map access.
 		do
 			check attached {IV_MAP_TYPE} target.type as map_type then
 				-- ToDo: find most general unifier of domain types with index types and instantiate the range type
@@ -102,35 +96,6 @@ feature -- Visitor
 			-- <Precursor>
 		do
 			a_visitor.process_map_access (Current)
-		end
-
-feature -- Comparison
-
-	is_equal (other: IV_MAP_ACCESS):BOOLEAN
-			-- <Precursor>
-		local
-			i: INTEGER
-		do
-				-- Check if target is the same
-			Result := target.is_deep_equal(other.target)
-				-- Check if indexes are the same.
-				-- If indexes are entities, it just checks the name.
-			from
-				i:= 1
-			until
-				i > indexes.count or (not Result)
-			loop
-				if (attached {IV_ENTITY} indexes [i] as e1) and then (attached {IV_ENTITY} other.indexes [i] as e2)then
-					if not e1.name.is_equal (e2.name) then
-						Result := False
-					end
-				else
-					if not indexes [i].is_deep_equal(other.indexes [i]) then
-						Result := False
-					end
-				end
-				i:= i+1
-			end
 		end
 
 invariant

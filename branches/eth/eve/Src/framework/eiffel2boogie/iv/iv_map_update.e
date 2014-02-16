@@ -1,0 +1,105 @@
+note
+	description: "Map update expression."
+	date: "$Date$"
+	revision: "$Revision$"
+
+class
+	IV_MAP_UPDATE
+
+inherit
+	IV_EXPRESSION
+
+	IV_SHARED_TYPES
+
+create
+	make
+
+feature {NONE} -- Implementation
+
+	make (a_target: IV_EXPRESSION; a_indexes: ARRAY [IV_EXPRESSION]; a_value: IV_EXPRESSION)
+			-- Make map update of `a_target' at index `a_indexes' with `a_value'.
+		require
+			a_target_attached: attached a_target
+			a_target_valid: attached {IV_MAP_TYPE} a_target.type as t and then t.domain_types.count = a_indexes.count
+			a_indexes_attached: attached a_indexes and then across a_indexes as i all attached i.item end
+			a_value_attached: attached a_value
+		do
+			target := a_target
+			indexes := a_indexes
+			value := a_value
+		ensure
+			target_set: target = a_target
+			indexes_set: indexes = a_indexes
+			value_set: value = a_value
+		end
+
+feature -- Access
+
+	target: IV_EXPRESSION
+			-- Target.
+
+	indexes: ARRAY [IV_EXPRESSION]
+			-- Indexes.
+
+	value: IV_EXPRESSION
+			-- New value.
+
+	type: IV_TYPE
+			-- Type of map access.
+		do
+			Result := target.type
+		end
+
+	triggers_for (a_bound_var: IV_ENTITY): ARRAYED_LIST [IV_EXPRESSION]
+			-- List of smallest subexpressions of `Current' with a valid triggers for a bound variable `a_bound_var'.			
+		do
+			create Result.make (3)
+			if across indexes as i some i.item.has_free_var_named (a_bound_var.name) and i.item.triggers_for (a_bound_var).is_empty end
+				or value.has_free_var_named (a_bound_var.name) and value.triggers_for (a_bound_var).is_empty then
+				Result.extend (Current)
+			else
+				across indexes as i loop
+					Result.append (i.item.triggers_for (a_bound_var))
+				end
+				Result.append (value.triggers_for (a_bound_var))
+			end
+		end
+
+feature -- Status report
+
+	has_free_var_named (a_name: STRING): BOOLEAN
+			-- Does this expression contain a free variable with name `a_name'?
+		do
+			Result := target.has_free_var_named (a_name) or
+				across indexes as i some i.item.has_free_var_named (a_name) end or
+				value.has_free_var_named (a_name)
+		end
+
+feature -- Comparison
+
+	same_expression (a_other: IV_EXPRESSION): BOOLEAN
+			-- Does this expression equal `a_other' (if considered in the same context)?
+		do
+			Result := attached {IV_MAP_UPDATE} a_other as m and then
+				(target.same_expression (m.target) and
+				indexes.count = m.indexes.count and
+				across 1 |..| indexes.count as i all indexes [i.item].same_expression (m.indexes [i.item]) end and
+				value.same_expression (m.value))
+		end
+
+feature -- Visitor
+
+	process (a_visitor: IV_EXPRESSION_VISITOR)
+			-- <Precursor>
+		do
+			a_visitor.process_map_update (Current)
+		end
+
+invariant
+	target_attached: attached target
+	indexes_attached: attached indexes
+	target_valid: attached {IV_MAP_TYPE} target.type as t and then t.domain_types.count = indexes.count
+	indexes_nonempty: not indexes.is_empty
+	value_attached: attached value
+
+end
