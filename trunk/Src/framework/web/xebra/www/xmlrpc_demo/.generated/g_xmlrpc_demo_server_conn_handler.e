@@ -24,7 +24,6 @@ feature-- Implementation
 			--<Precursor>
 		do
 			stateless_servlets.put (create {G_INDEX_SERVLET}.make, "/xmlrpc_demo/index.xeb")
-			stateless_servlets.put (create {G_DEMO_SERVLET}.make, "/xmlrpc_demo/demo.xrpc")
 		end
 
 note
