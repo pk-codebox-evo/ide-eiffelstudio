@@ -68,7 +68,7 @@ feature -- Access
 		end
 
 	acquire (n: F_PIP_NODE2_D; ancestors: MML_SET [F_PIP_NODE2_D])
-			-- Connect `n' as a child to the current node, given the ancestors set of the Current node.
+			-- Connect `n' as a child to the current node, given the `ancestors' set of the Current node.
 		require
 			default_wrapped: is_wrapped
 			default_arg_n_wrapped: n.is_wrapped
@@ -76,9 +76,9 @@ feature -- Access
 			n_different: n /= Current
 			n_orphan: n.parent = Void
 			ancestors_wrapped: across ancestors as p all p.item.is_wrapped end
-			ancestors1: ancestors [Current]
-			ancestors2: parent /= Void implies ancestors [parent]
-			ancestors3: across ancestors as p all p.item.parent /= Void implies ancestors [p.item.parent] end
+			ancestors_has_current: ancestors [Current]
+			ancestors_has_parent: parent /= Void implies ancestors [parent]
+			ancestors_closed: across ancestors as p all p.item.parent /= Void implies ancestors [p.item.parent] end
 
 			modify (Current, n)
 			modify_field (["value", "max_child", "closed"], ancestors)
@@ -129,7 +129,7 @@ feature {F_PIP_NODE2_D} -- Implementation
 		end
 
 	update_value (child, d: F_PIP_NODE2_D; visited: MML_SET [F_PIP_NODE2_D]; ancestors: MML_SET [F_PIP_NODE2_D])
-			-- Update `value' of this node and its ancestors taking into account an updated child `child' becuase of its new descendant `d';
+			-- Update `value' of this node and its `ancestors' taking into account an updated child `child' becuase of its new descendant `d';
 			-- for all nodes in `visited' their `value' already has been fixed.
 		require
 			open: is_open
@@ -140,9 +140,9 @@ feature {F_PIP_NODE2_D} -- Implementation
 			c_is_new_max: is_max (child.value, init_value, children.range, child)
 			visited_fixed: across visited as o all o.item.is_wrapped and o.item.value = d.value end
 			direct_ancestors_wrapped: across ancestors as p all p.item /= Current implies p.item.is_wrapped end
-			ancestors1: ancestors [Current]
-			ancestors2: parent /= Void implies ancestors [parent]
-			ancestors3: across ancestors as p all p.item.parent /= Void implies ancestors [p.item.parent] end
+			ancestors_has_current: ancestors [Current]
+			ancestors_has_parent: parent /= Void implies ancestors [parent]
+			ancestors_closed: across ancestors as p all p.item.parent /= Void implies ancestors [p.item.parent] end
 
 			modify_field (["closed"], ancestors)
 			modify_field (["value", "max_child"], (ancestors - visited) / d)
