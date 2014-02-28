@@ -17,7 +17,6 @@
       <div class="row">
         <div class="col-sm-3 col-md-2 sidebar">
           <ul class="nav nav-sidebar">
-            <li class="active"><a href="#">Overview</a></li>
             <li><a href="{$host/}/reports">Reports</a></li>
             {if isset="$user"}
                  <li><a href="{$host/}/user_reports/{$user/}">My Reports</a></li>
