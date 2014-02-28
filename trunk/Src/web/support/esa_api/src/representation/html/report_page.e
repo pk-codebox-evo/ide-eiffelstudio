@@ -16,7 +16,7 @@ create
 
 feature {NONE} --Initialization
 
-	make (a_host: READABLE_STRING_GENERAL; a_reports: LIST[REPORT]; a_index: INTEGER; a_pages: INTEGER)
+	make (a_host: READABLE_STRING_GENERAL; a_reports: LIST[REPORT]; a_index: INTEGER; a_pages: INTEGER; a_user: detachable ANY)
 			-- Initialize `Current'.
 		local
 			p: PATH
@@ -38,6 +38,10 @@ feature {NONE} --Initialization
 				template.add_value (a_index, "next")
 			end
 			template.add_value (a_pages, "last")
+
+		 	if attached a_user as l_user then
+		 		template.add_value (l_user,"user")
+			end
 
 			template_context.enable_verbose
 			template.analyze
