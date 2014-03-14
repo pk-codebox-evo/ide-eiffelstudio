@@ -67,16 +67,16 @@ feature -- HTTP Methods
 		local
 			media_variants: HTTP_ACCEPT_MEDIA_TYPE_VARIANTS
 			l_rhf: ESA_REPRESENTATION_HANDLER_FACTORY
-			l_row: TUPLE[REPORT_STATISTICS,LIST[REPORT]]
+			l_row: TUPLE[ESA_REPORT_STATISTICS,LIST[ESA_REPORT]]
 			l_view: ESA_REPORT_VIEW
 			l_status: INTEGER
 			l_category: INTEGER
-			list_status: LIST[REPORT_STATUS]
-			l_categories: LIST[REPORT_CATEGORY]
+			list_status: LIST[ESA_REPORT_STATUS]
+			l_categories: LIST[ESA_REPORT_CATEGORY]
 
 		do
 			media_variants := media_type_variants (req)
-			if attached {STRING_32} req.execution_variable ("user") as l_user then
+			if attached {STRING_32} current_user_name (req) as l_user then
 					-- Logged in user
 				to_implement ("retrieve number of reports by a given user")
 				if media_variants.is_acceptable then
