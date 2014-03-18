@@ -1,4 +1,4 @@
-test_name 	 deadlock-simple-cycle
+test_name 	 deadlock-simple-symmetric-cycle
 test_description Deadlock with simple cyclic dependency.
 
 copy_sub 	 Ace $TEST Ace
