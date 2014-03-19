@@ -1,11 +1,11 @@
 note
 	description: "Summary description for {USER_REPORT_PAGE}."
-	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
 class
 	ESA_USER_REPORT_PAGE
+
 inherit
 
 	ESA_TEMPLATE_PAGE
@@ -43,13 +43,9 @@ feature {NONE} --Initialization
 			template.add_value (a_view.selected_category, "selected_category")
 			if a_view.index > 1 then
 				template.add_value (a_view.index-1 , "prev")
-			else
-				template.add_value (a_view.index , "prev")
 			end
 			if a_view.index < a_view.pages then
 				template.add_value (a_view.index+1, "next")
-			else
-				template.add_value (a_view.index, "next")
 			end
 			template.add_value (a_view.pages, "last")
 
