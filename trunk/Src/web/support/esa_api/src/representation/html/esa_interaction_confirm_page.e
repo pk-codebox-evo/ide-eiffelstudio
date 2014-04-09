@@ -32,6 +32,16 @@ feature {NONE} --Initialization
 			template.add_value (a_form.status, "status")
 			template.add_value (a_form, "form")
 
+			if attached a_form.report as l_report then
+				if attached l_report.status as l_status and then
+				   l_status.id /= a_form.selected_status then
+					template.add_value (a_form.selected_status, "new_status")
+				end
+				if l_report.confidential /= a_form.private then
+					template.add_value (a_form.private, "private")
+				end
+			end
+
 			if attached a_user as l_user then
 				template.add_value (l_user, "user")
 			end
