@@ -15,23 +15,22 @@ feature -- Process
 
 	has_error: BOOLEAN
 
-	execute_command (a_cmd: READABLE_STRING_8; a_args: detachable LIST [READABLE_STRING_GENERAL]; is_silent: BOOLEAN; a_error_buffer: detachable STRING)
-
-			-- process command `a_cmd' launched in directory `a_dir'.
-		require
-			cmd_attached: a_cmd /= Void
+	reset_db (a_args: detachable LIST [READABLE_STRING_GENERAL]; is_silent: BOOLEAN; a_error_buffer: detachable STRING)
+			-- create a fresh database using `create_db.bat' launched in directory `a_dir'.
 		local
 			pf: PROCESS_FACTORY
 			p: PROCESS
 			retried: BOOLEAN
 			err: BOOLEAN
 			l_result: STRING
+			l_cmd: STRING
 		do
+			l_cmd := "create_db.bat"
 			if not retried then
 				err := False
 				create l_result.make (10)
 				create pf
-				p := pf.process_launcher (a_cmd, a_args, Void)
+				p := pf.process_launcher (l_cmd, a_args, Void)
 				p.set_hidden (True)
 				p.set_separate_console (False)
 				p.redirect_input_to_stream
@@ -43,9 +42,9 @@ feature -- Process
 				p.launch
 				if not p.launched then
 					if a_error_buffer /= Void then
-						a_error_buffer.append ("Error: can not execute %"" + a_cmd + "%"%N")
+						a_error_buffer.append ("Error: can not execute %"" + l_cmd + "%"%N")
 					end
-					io.error.put_string ("Error: can not execute %"" + a_cmd + "%"%N")
+					io.error.put_string ("Error: can not execute %"" + l_cmd + "%"%N")
 					has_error := True
 				else
 					if p.launched and not p.has_exited then
