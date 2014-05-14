@@ -38,7 +38,13 @@
                 "href": "{$host/}/register",
                 "rel": "register",
                 "prompt": "Register"
+            >,
+            <
+                "href": "{$host/}/reminder",
+                "rel": "reminder",
+                "prompt": "Recover Username/Password"
             >
+
             {/unless} 
 
           ],
