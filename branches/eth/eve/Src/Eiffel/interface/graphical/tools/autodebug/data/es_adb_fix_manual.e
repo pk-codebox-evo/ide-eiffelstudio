@@ -28,26 +28,24 @@ feature -- Initialization
 
 feature -- Access
 
+	fix_id_string: STRING = "Manual"
+			-- <Precursor>
+
+	code_before_fix: STRING = "Information unavailable"
+			-- <Precursor>
+
+	code_after_fix: STRING = "Information unavailable"
+			-- <Precursor>
+
 	has_been_applied: BOOLEAN = True
 			-- <Precursor>
+
+feature -- Status report
 
 	is_valid_nature_of_change (a_nature: INTEGER): BOOLEAN
 			-- <Precursor>
 		do
 			Result := a_nature = Nature_manual
-		end
-
-	code_before_fix: STRING = "Not applicable"
-			-- <Precursor>
-
-	code_after_fix: STRING = "Not applicable"
-			-- <Precursor>
-
-feature -- Operation
-
-	apply
-			-- <Precursor>
-		do
 		end
 
 feature -- Constant
@@ -62,7 +60,7 @@ feature -- Constant
 			Result := nature_of_change_strings_internal
 		end
 
-feature{NONE} -- Implementation
+feature -- Constant
 
 	Nature_manual: INTEGER = 8
 

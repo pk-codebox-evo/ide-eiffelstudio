@@ -22,6 +22,8 @@ inherit
 
 	EPA_UTILITY
 
+	SHARED_PLATFORM_CONSTANTS
+
 create
 	make
 
@@ -30,87 +32,45 @@ feature{NONE} -- Initialization
 	make
 			-- Initialization.
 		do
-
+			create progress_logger
+			extend (progress_logger)
+			create output_logger
+			extend (output_logger)
 		end
 
 feature -- Operation
 
-	reset
+	reset_internal_state
 			-- Reset the information center.
 		do
 			reset_test_case_repository
 			reset_fault_repository
 		end
 
-	load_from_working_directory
-			-- Load information from the working directory, as given in `config'.
-		local
-			l_config: ES_ADB_CONFIG
-			l_working_dir: ES_ADB_WORKING_DIRECTORY
-			l_testing_result_dir, l_fixing_result_dir: PATH
-			l_tests: DS_ARRAYED_LIST [PATH]
-			l_fixing_results: DS_ARRAYED_LIST [PATH]
-			l_cursor: DS_ARRAYED_LIST_CURSOR [PATH]
-			l_timestamps_path: PATH
+	reset_external_state
+			-- Reset the working directory.
 		do
-			reset
-
-			l_config := config
-			l_working_dir := l_config.working_directory
-
-				-- Tests
-			l_testing_result_dir := l_working_dir.testing_result_dir
-			l_tests := files_from_path (l_testing_result_dir,
-					agent (a_path: PATH): BOOLEAN do Result := a_path.out.ends_with (".e") end)
-			from
-				l_cursor := l_tests.new_cursor
-				l_cursor.start
-			until
-				l_cursor.after
-			loop
-				register_test_case (create {ES_ADB_TEST}.make (l_cursor.item))
-				l_cursor.forth
-			end
-
-				-- Class timestamps
-			l_timestamps_path := l_working_dir.tested_class_timestamps_path
-			load_timestamps (l_timestamps_path)
-
-				-- Fixing results
-			l_fixing_result_dir := l_working_dir.fixing_result_dir
-			l_fixing_results := files_from_path (l_fixing_result_dir,
-					agent (a_path: PATH): BOOLEAN do Result := a_path.out.ends_with (".afr") end)
-			from
-				l_cursor := l_fixing_results.new_cursor
-				l_cursor.start
-			until
-				l_cursor.after
-			loop
-				load_fixing_result_for_one_fault (l_cursor.item)
-				l_cursor.forth
-			end
+			config.working_directory.clear
 		end
 
-feature -- Status report
+feature -- Access: logging
 
-	is_in_sync_with_project: BOOLEAN assign set_in_sync_with_project
-			-- Is UI in sync with the debugging result.
+	progress_logger: ES_ADB_PROGRESS_LOGGER
+			-- Logger to log the debugging progress.
 
-	set_in_sync_with_project (a_flag: BOOLEAN)
-		do
-			is_in_sync_with_project := a_flag
-		end
+	output_logger: ES_ADB_OUTPUT_LOGGER
+			-- Logger to log the output of debugging.
 
-feature -- Actions
+feature -- ADB Actions
 
 	on_project_loaded
 			-- <Precursor>
 		do
-			config.load (workbench.eiffel_project)
-			load_from_working_directory
-			set_in_sync_with_project (True)
+			reset_internal_state
 
 			project_load_actions.call (Void)
+
+			progress_logger.load_log
 		end
 
 	on_project_unloaded
@@ -118,45 +78,40 @@ feature -- Actions
 		do
 			project_unload_actions.call (Void)
 
-			if config.is_project_loaded then
-				config.save
-				config.unload
-
-				reset
-				set_in_sync_with_project (False)
-			end
+			reset_internal_state
 		end
 
 	on_compile_start
 			-- <Precursor>
 		do
-
+			compile_start_actions.call (Void)
 		end
 
 	on_compile_stop
 			-- <Precursor>
 		do
+			compile_stop_actions.call (Void)
 		end
 
 	on_debugging_start
 			-- <Precursor>
 		do
-			reset
+			reset_internal_state
+			reset_external_state
+
+			debugging_start_actions.call (Void)
 		end
 
 	on_debugging_stop
 			-- <Precursor>
 		do
-			-- Do nothing.
+			debugging_stop_actions.call (Void)
 		end
 
 	on_testing_start
 			-- <Precursor>
-		local
-			l_file: PLAIN_TEXT_FILE
 		do
-			create l_file.make_with_path (config.working_directory.tested_class_timestamps_path)
-			start_logging_class_timestamps (l_file)
+			testing_start_actions.call (Void)
 		end
 
 	on_test_case_generated (a_test: ES_ADB_TEST)
@@ -170,12 +125,15 @@ feature -- Actions
 	on_testing_stop
 			-- <Precursor>
 		do
-			stop_logging_class_timestamps
+			testing_stop_actions.call (Void)
 		end
 
 	on_fixing_start (a_fault: ES_ADB_FAULT)
 			-- <Precursor>
 		do
+			a_fault.discard_all_fixes
+			a_fault.set_status (a_fault.status_candidate_fix_unavailable)
+			fixing_start_actions.call (a_fault)
 		end
 
 	on_valid_fix_found (a_fix: ES_ADB_FIX)
@@ -183,115 +141,38 @@ feature -- Actions
 		local
 			l_fault: ES_ADB_FAULT
 		do
-			l_fault := a_fix.fault
+			valid_fix_found_actions.call (a_fix)
 		end
 
 	on_fix_applied (a_fix: ES_ADB_FIX)
 			-- <Precursor>
 		do
+			fix_applied_actions.call (a_fix)
 		end
 
-	on_fixing_stop (a_fault: ES_ADB_FAULT)
+	on_fixing_stop
 			-- <Precursor>
 		do
+			fixing_stop_actions.call (Void)
+		end
+
+	on_continuation_debugging_start
+			-- <Precursor>
+		do
+			continuation_debugging_start_actions.call (Void)
+		end
+
+	on_continuation_debugging_stop
+			-- <Precursor>
+		do
+			continuation_debugging_stop_actions.call (Void)
 		end
 
 	on_output (a_line: STRING)
-		local
-			l_index: INTEGER
-			l_tc_path: PATH
-			l_test: ES_ADB_TEST
+			-- <Precursor>
+
 		do
 			output_actions.call (a_line)
-
-			if a_line.starts_with ("%T%T[TC generated]") then
-				l_index := a_line.index_of (']', 1)
-				create l_tc_path.make_from_string (a_line.substring (l_index + 2, a_line.count))
-				create l_test.make (l_tc_path)
-				if config.all_classes.has (l_test.test_case_signature.class_under_test_) then
-					on_test_case_generated (l_test)
-				end
-			end
-		end
-
-feature{NONE} -- Implementation
-
-	load_fixes_to_fault (a_fault: ES_ADB_FAULT)
-			-- Load fixing result for `a_fault'.
-		require
-			a_fault /= Void
-		local
-			l_fixing_result_dir: PATH
-			l_file: PLAIN_TEXT_FILE
-		do
-			l_fixing_result_dir := config.working_directory.fixing_result_file_path (a_fault)
-			create l_file.make_with_path (l_fixing_result_dir)
-
-				-- Load fixes.
-
-		end
-
-	load_fixing_result_for_one_fault (a_path: PATH)
-			-- Load fixes to a fault from `a_path'.
-		require
-			a_path /= Void
-		local
-		do
-
-		end
-
-	files_from_path (a_path: PATH; a_filter: PREDICATE[ANY, TUPLE[PATH]]): DS_ARRAYED_LIST [PATH]
-			-- Paths of all files from `a_path' that is accepted by `a_filter'.
-		local
-			l_paths: DS_ARRAYED_LIST [PATH]
-			l_path: PATH
-			l_dir: DIRECTORY
-			l_entry_name: STRING
-			l_entry_path: PATH
-			l_entry: RAW_FILE
-			l_entry_dir: DIRECTORY
-		do
-			create Result.make_equal (10)
-			if a_path /= Void then
-				create l_paths.make_equal (10)
-				from
-					l_paths.force_last (a_path)
-				until
-					l_paths.is_empty
-				loop
-					l_path := l_paths.first
-					l_paths.remove_first
-
-						-- Collect from `l_dir'.
-					create l_dir.make_with_path (l_path)
-					l_dir.open_read
-					if not l_dir.is_closed then
-						from
-							l_dir.start
-							l_dir.readentry
-						until
-							l_dir.lastentry = Void
-						loop
-							l_entry_name := l_dir.lastentry
-							if l_entry_name /~ once "." and then l_entry_name /~ once ".." then
-								l_entry_path := l_path.extended (l_entry_name)
-								create l_entry.make_with_path (l_entry_path)
-								check l_entry.exists then
-									if l_entry.is_directory then
-										l_paths.force_last (l_entry_path)
-									else
-										if a_filter = Void or else a_filter.item ([l_entry_path]) then
-											Result.force_last (l_entry_path)
-										end
-									end
-								end
-							end
-
-							l_dir.readentry
-						end
-					end
-				end
-			end
 		end
 
 ;note
