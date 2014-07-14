@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<Include xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <?ifndef Preprocessors?>
+    <?define Preprocessors = "1"?>
+
+    <?ifdef x64?>
+      <?define IsWin64  = "yes"?>
+    <?else?>
+      <?define IsWin64  = "no"?>
+    <?endif?>
+
+    <?ifdef x64?>   
+      <?define PrgFiles = "ProgramFiles64Folder" ?>
+      <?define MsiVersion = "300" ?>
+      <?define MsiPlatform = "x64" ?>
+    <?else?>
+      <?define PrgFiles = "ProgramFilesFolder" ?>
+      <?define MsiVersion = "200" ?>
+      <?define MsiPlatform = "x86" ?>
+    <?endif?>
+
+    <!-- PRODUCT SPECIFIC -->
+    
+    <?ifdef EiffelStudio?>
+      <?ifdef Enterprise?>
+        <?define Edition = "Enterprise"?>
+        <?define LicenseFile = "enterprise.rtf"?>
+      <?else?>
+        <?define Edition = "GPL"?>
+        <?define LicenseFile = "gpl.rtf"?>
+      <?endif?>
+      <?ifdef x64?>
+        <?define ProductGuid = "E9ED5A5D-5B11-4e00-8D07-4F30912E3277" ?>
+		<?define RegistriesGuid = "3014717E-B073-4a91-83EE-65AF8602EF18" ?>
+		<?define ShortcutsGuid = "DD051FA9-BEC9-4d3c-B41E-38BD96EB2706" ?>
+      <?else?>
+        <?define ProductGuid = "5D4E720E-0B8D-4e14-AB27-9B6E84562C84" ?>
+		<?define RegistriesGuid = "B4A00EF0-D682-4df4-9257-1665C55CEF1A" ?>
+		<?define ShortcutsGuid = "FA24C325-8039-4e7f-9161-9AE8CEBEA6DC" ?>
+      <?endif?>
+      <?define UpgradeGuid = "A5A579B4-A3E3-42c5-8CCF-3EE6A8F5BDD2" ?>
+      <?define Product = "EiffelStudio" ?>
+      <?define ProductVersion = "14.05" ?>
+      <?define ProductDescription = "EiffelStudio 14.05 Integrated Development Environment (IDE) Installer" ?>
+      <?define ProductKey = "Eiffel_14.05" ?>
+    <?else?>
+      <?ifdef EiffelEnvision?>
+        <?ifdef Enterprise?>
+          <?define Edition = "Enterprise Edition"?>
+          <?define LicenseFile = "enterprise.rtf"?>
+        <?else?>
+          <?define Edition = "Lite"?>
+          <?define LicenseFile = "free.rtf"?>
+        <?endif?>
+        <?ifdef x64?>
+          <?define ProductGuid = "A8D26619-266C-49C3-A257-F9F8C4F958A0" ?>
+          <?else?>
+          <?define ProductGuid = "C0FD2907-AC52-42C6-8420-1D37A400C770" ?>
+        <?endif?>
+        <?define UpgradeGuid = "F98A29ED-2E72-45E8-8F45-E936B25774DB" ?>
+        <?define Product = "EiffelEnvision" ?>
+        <?define ProductVersion = "2.8" ?>
+        <?define ProductDescription = "EiffelEnvision 2.8 The Eiffel for .NET Language Package for Visual Studio .NET 2005" ?>
+        <?define ProductKey = "Eiffel_14.05" ?>
+      <?else?>
+        <?define Edition = "Test"?>
+        <?define LicenseFile = "gpl.rtf"?>
+        <?define ProductGuid = "9FF8F00B-86B0-41AD-962C-00517951FB62" ?>
+        <?define UpgradeGuid = "1263FA71-F9CA-4F2E-BFEC-988C77F7DF50" ?>
+        <?define Product = "EiffelStudio" ?>
+        <?define ProductVersion = "2.8" ?>
+        <?define ProductDescription = "Test" ?>
+        <?define ProductKey = "Eiffel_14.05" ?>
+      <?endif?>
+    <?endif?>
+    <?define ProductName = "$(var.Product) $(var.ProductVersion) ($(var.Platform)) $(var.Edition)" ?>
+    <?define InstallName = "$(var.Product) $(var.ProductVersion) $(var.Edition)" ?>
+    
+    <!-- END PRODUCT SPECIFIC -->
+  <?endif?>
+  
+</Include>
