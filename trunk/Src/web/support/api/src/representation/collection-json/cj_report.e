@@ -28,22 +28,11 @@ feature {NONE} --Initialization
                -- Build common template.
 			make_template (a_host, a_view, "cj_guest_reports.tpl")
 
-
+				-- Custom properties
 			template.add_value ((create {ESA_REPORT_INPUT_VALIDATOR}).accetpable_order_by, "columns" )
 			template.add_value (checked_status_query(a_view.status), "checked_status" )
 
 				-- Process the template
 			process
 		end
-
-		checked_status_query (a_status: LIST[ESA_REPORT_STATUS]): LIST[ESA_REPORT_STATUS]
-			do
-				create {ARRAYED_LIST[ESA_REPORT_STATUS]} Result.make (0)
-				across a_status as c loop
-					if c.item.is_selected then
-						Result.force (c.item)
-					end
-				end
-			end
-
 end
