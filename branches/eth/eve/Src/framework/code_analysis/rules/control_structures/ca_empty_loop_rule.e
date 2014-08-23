@@ -23,6 +23,7 @@ feature {NONE} -- Initialization
 			-- Initialization.
 		do
 			make_with_defaults
+			create {CA_SUGGESTION} severity
 		end
 
 feature {NONE} -- Activation
@@ -58,10 +59,15 @@ feature {NONE} -- Rule Checking
 			-- Checks if `a_loop' has an empty compound.
 		local
 			l_violation: CA_RULE_VIOLATION
+			l_fix: CA_EMPTY_LOOP_FIX
 		do
 			if not attached a_loop.compound then
 				create l_violation.make_with_rule (Current)
 				l_violation.set_location (a_loop.start_location)
+
+				create l_fix.make_with_loop (current_context.checking_class, a_loop)
+				l_violation.fixes.extend (l_fix)
+
 				violations.extend (l_violation)
 			end
 		end
