@@ -21,8 +21,7 @@ inherit
 			last,
 			put,
 			prepend,
-			reverse,
-			extend_back
+			reverse
 		end
 
 feature {NONE} -- Initialization
@@ -32,7 +31,6 @@ feature {NONE} -- Initialization
 		note
 			status: creator
 		do
-			lower_ := 1
 		ensure then
 			sequence_effect: sequence.is_empty
 			observers_empty: observers.is_empty
@@ -124,7 +122,6 @@ feature -- Replacement
 		do
 			check inv end
 			put_cell (v, cell_at (i), i)
-			check inv end
 		end
 
 	reverse
@@ -183,7 +180,7 @@ feature -- Extension
 		local
 			cell: V_LINKABLE [G]
 		do
-			create cell.put (v)
+			create cell.make (v)
 			if first_cell = Void then
 				last_cell := cell
 			else
@@ -206,7 +203,7 @@ feature -- Extension
 		local
 			cell: V_LINKABLE [G]
 		do
-			create cell.put (v)
+			create cell.make (v)
 			if first_cell = Void then
 				first_cell := cell
 			else
@@ -233,7 +230,7 @@ feature -- Extension
 			elseif i = count + 1 then
 				extend_back (v)
 			else
-				extend_after (create {V_LINKABLE [G]}.put (v), cell_at (i - 1), i - 1)
+				extend_after (create {V_LINKABLE [G]}.make (v), cell_at (i - 1), i - 1)
 			end
 		end
 
@@ -388,7 +385,6 @@ feature -- Removal
 			create cells
 			create sequence
 			upper_ := 0
-			create map
 		ensure then
 			old_cells_wrapped: across owns.old_ as c all c.item.is_wrapped end
 			cells_exist: (old cells).non_void
@@ -441,7 +437,6 @@ feature {V_CONTAINER, V_ITERATOR} -- Implementation
 		do
 			lemma_cells_distinct
 			unwrap
-			check c.inv_only ("default_observers") end
 			c.put (v)
 			sequence := sequence.replaced_at (index_, v)
 			wrap
@@ -450,7 +445,6 @@ feature {V_CONTAINER, V_ITERATOR} -- Implementation
 			cells ~ old cells
 			wrapped: is_wrapped
 		end
-
 
 	extend_after (new, c: V_LINKABLE [G]; index_: INTEGER)
 			-- Add a new cell with value `v' after `c'.
@@ -526,7 +520,7 @@ feature {V_CONTAINER, V_ITERATOR} -- Implementation
 		do
 			unwrap
 			lemma_cells_distinct
-			check c /= Void c.right = cells [index_ + 1] end
+			check c.right = cells [index_ + 1] end
 			check index_ + 1 < cells.count implies c.right.right = cells [index_ + 2] end
 
 			c.put_right (c.right.right)
@@ -572,7 +566,6 @@ feature {V_CONTAINER, V_ITERATOR} -- Implementation
 				other.wipe_out
 
 				unwrap
-
 				if c = Void then
 					if first_cell = Void then
 						last_cell := other_last
@@ -590,11 +583,9 @@ feature {V_CONTAINER, V_ITERATOR} -- Implementation
 					c.put_right (other_first)
 				end
 				count_ := count_ + other_count
-
 				cells := cells.front (index_) + other.cells.old_ + cells.tail (index_ + 1)
 				sequence := sequence.front (index_) + other.sequence.old_ + sequence.tail (index_ + 1)
 				upper_ := upper_ + other.sequence.count.old_
-
 				wrap
 			end
 		ensure

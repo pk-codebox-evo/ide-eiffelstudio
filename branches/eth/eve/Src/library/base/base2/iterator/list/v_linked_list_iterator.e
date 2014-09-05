@@ -86,8 +86,6 @@ feature -- Access
 	target: V_LINKED_LIST [G]
 			-- Container to iterate over.
 
-feature -- Measurement
-
 	item: G
 			-- Item at current position.
 		do
@@ -95,6 +93,8 @@ feature -- Measurement
 			check target.inv end
 			Result := active.item
 		end
+
+feature -- Measurement
 
 	index: INTEGER
 			-- Current position.
@@ -271,7 +271,7 @@ feature -- Extension
 			-- Insert `v' to the right of current position. Do not move cursor.
 		do
 			check target.inv_only ("cells_domain") end
-			target.extend_after (create {V_LINKABLE [G]}.put (v), active, index_)
+			target.extend_after (create {V_LINKABLE [G]}.make (v), active, index_)
 			check target.inv_only ("bag_definition", "map_definition_list", "cells_domain",  "count_definition", "lower_definition") end
 			set_target_index_sequence
 		ensure then
@@ -413,7 +413,6 @@ feature {V_LINKED_LIST_ITERATOR} -- Implementation
 
 	active_index: INTEGER
 			-- Distance from `target.first_cell' to `active'.
-			-- 0 if `active' is not reachable from `target.first_cell'.
 		require
 			active_exists: active /= Void
 			closed: closed
@@ -441,41 +440,6 @@ feature {V_LINKED_LIST_ITERATOR} -- Implementation
 			target.lemma_cells_distinct
 		ensure
 			definition: Result = index_
-		end
-
-feature {NONE} -- Specification
-
-	set_target_index_sequence
-			-- Set `target_index_sequence' to [1..target.count]
-		note
-			status: ghost
-		require
-			target_wrapped: target.is_wrapped
-			no_observers: observers = []
-			modify_field ("target_index_sequence", Current)
-		local
-			j: INTEGER
-		do
-			check target.inv end
-			from
-				create target_index_sequence
-				j := 1
-			invariant
-				1 <= j and j <= target.sequence.count + 1
-				target_index_sequence.count = j - 1
-				across 1 |..| (j - 1) as i all target_index_sequence [i.item] = i.item end
-				target_index_sequence.range = create {MML_INTERVAL}.from_range (1, j - 1)
-			until
-				j > target.count
-			loop
-				check (target_index_sequence & j).range = target_index_sequence.range & j end
-				target_index_sequence := target_index_sequence & j
-				j := j + 1
-			end
-		ensure
-			domain_set: target_index_sequence.count = target.count_
-			values_set: across 1 |..| target.count_ as i all target_index_sequence [i.item] = i.item end
-			range_set: target_index_sequence.range = create {MML_INTERVAL}.from_range (1, target.sequence.count)
 		end
 
 invariant
