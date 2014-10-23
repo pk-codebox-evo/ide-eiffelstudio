@@ -58,8 +58,7 @@ feature {NONE} -- Initialization
 
 			bucket_index := 0
 			index_ := 0
-			sequence := concat (target.buckets_)
-			lemma_content (target.buckets_, target.set, target.bag, sequence)
+			lemma_content (target.buckets_, target.set, target.bag, concat (target.buckets_))
 			wrap
 		ensure
 			wrapped: is_wrapped
@@ -107,8 +106,6 @@ feature -- Access
 
 	item: G
 			-- Item at current position.
-		local
-			s: like target.buckets_
 		do
 			check inv; target.inv end
 			check list_iterator.inv_only ("sequence_definition", "subjects_definition") end
