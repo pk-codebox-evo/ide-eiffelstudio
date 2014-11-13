@@ -21,8 +21,8 @@ feature -- Generation
 	custom_prepare (page: CMS_HTML_PAGE)
 		do
 			page.register_variable (request.absolute_script_url (request.path_info), "request")
-			page.register_variable ("501", "code")
-			page.set_status_code (501)
+			page.set_status_code ({HTTP_STATUS_CODE}.not_implemented)
+			page.register_variable (page.status_code.out, "code")
 		end
 
 feature -- Execution
@@ -32,6 +32,7 @@ feature -- Execution
 		do
 			set_title ("Not Implemented")
 			set_page_title (Void)
+			set_main_content (request.percent_encoded_path_info + " is not implemented!")
 		end
 end
 
