@@ -47,11 +47,23 @@ feature -- Element change
 			internal_items := Void
 		end
 
+	force (a_value: READABLE_STRING_32; a_key: READABLE_STRING_GENERAL)
+		do
+			items.force (a_value, a_key)
+		end
+
 feature -- Access
 
 	item (a_key: READABLE_STRING_GENERAL): detachable STRING_32
+			-- <Precursor>
 		do
 			Result := items.item (a_key)
+		end
+
+	count: INTEGER
+			-- <Precursor>
+		do
+			Result := items.count
 		end
 
 feature -- Access
@@ -78,9 +90,12 @@ feature {NONE} -- Implementation
 		do
 			l_items := internal_items
 			if l_items = Void then
-				create l_items.make_caseless (0)
+				get_all_items
+				l_items := internal_items
+				if l_items = Void then
+					create l_items.make_caseless (0)
+				end
 				internal_items := l_items
-				parse (l_items, Void)
 			end
 			Result := l_items
 		end
