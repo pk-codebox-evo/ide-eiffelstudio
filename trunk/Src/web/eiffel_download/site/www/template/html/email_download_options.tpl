@@ -2,6 +2,10 @@
 <html lang="en-US">
 	<head>
 		<title>Eiffel Software - Downloading EiffelStudio</title>
+		<script src="https://github.com/johndyer/mediaelement/blob/master/build/jquery.js"></script>
+		<script src="https://github.com/johndyer/mediaelement/blob/master/build/mediaelement.min.js"></script>
+		<link rel="stylesheet" href="https://github.com/johndyer/mediaelement/blob/master/build/mediaelementplayer.css" />
+		
 	</head>
 	<body style="background: #ececf0; font-family: Arial, Tahoma, sans-serif; font-size: 10pt; max-width:640px;">
 		<header>
@@ -29,46 +33,6 @@
 			<p>
 				<a href="https://twitter.com/intent/tweet?button_hashtag=eiffel&hashtags=eiffel,programming,ide,programming,softwaredevelopment,softwareengineering&text=Just%20downloaded%20EiffelStudio.%20You%20should%20too.&url=http%3A%2F%2Fwww.eiffel.com%2Fdownload" target="_blank">Tweet to let your friends know!</a>
 			</p>
-
-			{assign name="win" value="windows"/}
-			{assign name="linux" value="linux"/}
-			{assign name="mac" value="mac"/}
-			{if condition="$selected_platform.os_family ~ $win"}
-				The following videos will help guide you through the installation process and beyond:
-				<ol>
-					<li><a href="https://www.youtube.com/watch?v=18Xo5pMo-A4">Downloading and installing EiffelStudio on Windows</a></li>
-					<li><a href="https://www.youtube.com/watch?v=UL8O6DNkvu0">Activating EiffelStudio on Windows</a></li>
-					<li><a href="https://www.youtube.com/watch?v=jBMOSSnCMCk">Your first Eiffel Program</a></li>
-				</ol>	
-			{/if}
-
-
-			{if condition="$selected_platform.os_family ~ $linux"}
-				The following videos will help guide you through the installation process and beyond:
-				<ol>
-					<li><a href="https://www.youtube.com/watch?v=KQGCy1edArI">Downloading and installing EiffelStudio on Linux</a></li>
-					<li><a href="https://www.youtube.com/watch?v=OG2D3F69pbk">Activating EiffelStudio on Linux</a></li>
-					<li><a href="https://www.youtube.com/watch?v=jBMOSSnCMCk">Your first Eiffel Program</a></li>
-				</ol>	
-			{/if}		
-
-
-			{if condition="$selected_platform.os_family ~ $mac"}
-				Before you start, you will need to already have installed:
-				<ol>
-					<li><a href="https://developer.apple.com/xcode/downloads/">Xcode</a></li>
-					<li><a href="http://xquartz.macosforge.org/landing/">Installed Xquartz</a></li>
-				</ol> 
-				In addition you will need to install <a href="https://www.macports.org/install.php">MacPorts</a> and an existing version of EiffelStudio by
-				<a href="https://dev.eiffel.com/EiffelOnMac#Using_MacPorts">following those instructions</a>.
-				
-				The following videos will help guide you through the installation process and beyond:
-				<ol>
-					<li><a href="https://www.youtube.com/watch?v=fiG74NyPs4s">Downloading and installing EiffelStudio on Mac OS X</a></li>
-					<li><a href="https://www.youtube.com/watch?v=jBMOSSnCMCk">Your first Eiffel Program</a></li>
-				</ol>	
-			{/if}		
-		
 
 
 			<p>
@@ -123,5 +87,6 @@
 				This email is generated automatically, and the address is not monitored for responses. If you try contacting us by using "reply", you will not receive an answer.
 			</p>
 		</footer>
+
 	</body>
 </html>
