@@ -50,7 +50,6 @@ extern "C" {
 
 #ifdef EIF_THREADS
 extern void rt_mark_live_pid(EIF_SCP_PID pid);
-extern void rt_mark_call_data(MARKER mark, call_data* call);
 extern size_t live_index [];    /* Indexes of live threads. */
 extern size_t live_index_count; /* Total number of valid items in `live_index' starting from 0 index. */
 #endif
@@ -60,13 +59,10 @@ extern void rt_update_live_index (void);  /* Update live indexes by taking into 
 extern void rt_complement_live_index (void); /* Add indexes of dead processors at the end of the live index list. */
 extern void rt_report_live_index (void); /* Notify SCOOP manager about live indexes. */
 
-extern void rt_unmark_processor(EIF_SCP_PID pid);
-extern void rt_mark_all_processors (MARKER marking);
-extern void rt_enumerate_live_processors(void);
+extern void rt_mark_all_processors (MARKER marking); /* Mark all call_data structs in all processors. */
 
 #ifdef __cplusplus
 }
-
 #endif
 
 #endif	/* _rt_scoop_gc_h_ */
