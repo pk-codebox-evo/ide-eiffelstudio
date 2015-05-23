@@ -15,6 +15,12 @@ feature {NONE} -- Creation
 			a6: A [separate ANY, ANY, separate ANY]
 			a7: A [ANY, separate ANY, separate ANY]
 			a8: A [separate ANY, separate ANY, separate ANY]
+			
+			b1: B [ANY]
+			b2: B [STRING]
+
+			c1: C [ANY]
+			c2: C [STRING]
 		do
 			create a1
 			create a2
@@ -103,7 +109,7 @@ feature {NONE} -- Creation
 			-- Report whether test `i' is successful according to `b'.
 		do
 			if not b then
-				io.put_string ("Test #")
+				io.put_string ("Test in class TEST #")
 				io.put_integer (counter.item)
 				io.put_string (": ")
 				io.put_string ("FAILED")
