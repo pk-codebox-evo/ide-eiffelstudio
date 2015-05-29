@@ -19,7 +19,8 @@ class
 feature {NONE}
 
 	-- Add all classes with tests here:
-	basic: detachable AAT_BASIC
+	c1: detachable AAT_BASIC
+	c2: detachable AAT_OVER_OPER_A
 
 ;note
 	copyright: "Copyright (c) 1984-2015, Eiffel Software"
