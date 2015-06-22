@@ -1,6 +1,5 @@
 note
-	description: "Summary description for {OAUTH_ENCODER}."
-	author: ""
+	description: "Encoding facilities for OAUTH purpose."
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -9,16 +8,16 @@ class
 
 feature -- Encode
 
-	encoded_string (s: STRING_32): STRING_8
+	encoded_string (s: READABLE_STRING_GENERAL): STRING_8
 		do
-			Result := url_encoder.encoded_string (s)
+			Result := url_encoder.general_encoded_string (s)
 		end
 
 feature -- Decode
 
-	decoded_string (s: STRING_8): STRING_32
+	decoded_string (s: READABLE_STRING_GENERAL): STRING_32
 		do
-			Result := url_encoder.decoded_string (s)
+			Result := url_encoder.general_decoded_string (s)
 		end
 
 feature {NONE} -- Implementation
