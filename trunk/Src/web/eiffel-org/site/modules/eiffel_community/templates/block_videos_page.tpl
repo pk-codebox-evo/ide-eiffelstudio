@@ -3,12 +3,7 @@
 			  		<a href="{$site_url/}resourses/videos">Videos Page</a>
 </div>
 
- {if isset="$user"}
- 	Add <a href="{$site_url/}node/add/page">new video</a>
- {/if}
-
-<h2>Eiffel <small>Videos</small></h2>
-
+<h2>Eiffel <small>Videos:</small></h2> <p>For a complete listing, see <a href="https://www.youtube.com/user/EiffelLanguage/videos" target="_blank">Eiffel Language Youtube channel.</a></p>
 <div>
 	<section class="">
 		<div>	
