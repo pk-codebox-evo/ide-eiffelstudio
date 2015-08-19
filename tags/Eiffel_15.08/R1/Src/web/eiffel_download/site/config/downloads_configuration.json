@@ -1,0 +1,119 @@
+{
+    "mirror": "https://enterprise:udeief5w9mydgg9di5xy@ftp.eiffel.com/enterprise/",
+    
+    "products": [
+        {
+            "id": "eiffelstudio_ent",
+            "name": "EiffelStudio",
+            "version": "15.01 Enterprise Evaluation Edition",
+            "release": "Official Release",
+            "date": "Winter 2015",
+            "sub_directory": "15.01",
+            "number": "15.01",
+            "build" : "Build_96535",
+            "icon": "eiffelstudio_ent.png",
+            "public": "true",
+            "for_evaluation": "true",
+            "mirrors": "private",
+            "license": {
+                "name": "Enterprise",
+                "url": "enterprise.html"
+            },
+            "blerb": "<h2>EiffelStudio: A Contract for Success</h2>\n<p>\nTake full advantage of the power of Object Technology ... and more\n<p>\nEiffelStudio is more than just an IDE. With EiffelStudio you can model your\nsystem as you think - capturing your requirements and your thought processes in\nEiffel. Then, when you are ready to design, you build upon the model you just\ncreated, still with EiffelStudio. And then you implement, in EiffelStudio. You\nnever need to throw anything out and start over. You don't need extra tools to\nbe able to go back and make changes in architecture safely. Roundtrip\nengineering? It's built in by design. Testing, metrics and productivity tools?\nThey're built in. What about debugging? EiffelStudio native Design by Contract™\nmechanism prevents 90% of the bugs from ever occurring - and what bugs remain\nare easily traced and fixed. If you are using other languages and tools chances\nare that EiffelStudio will interface with the code you already have.\n<p>\nWe thank you for downloading EiffelStudio. If you have questions please post\nthem to our <a href=\"http://groups.eiffel.com\">user mailing-list</a>.\n<p>\nEnjoy EiffelStudio and if you do let your friends know!\n<p>",
+            "download": [
+                {
+                    "platform": "freebsd-x86-64",
+                    "filename": "Eiffel_15.01_ent_96535-freebsd-x86-64.tar.bz2",
+                    "size": "90942465",
+                    "hash": "c66c2c399bcfd14597b09c9620a2ac654c57dcb134eb96dc24e53187d05294be",
+                    "cdkey": "15235-14576-15169-76110-19619-91765"
+                },
+                {
+                    "platform": "freebsd-x86",
+                    "filename": "Eiffel_15.01_ent_96535-freebsd-x86.tar.bz2",
+                    "size": "82387430",
+                    "hash": "2b07af62f1c3749fae44e96431abf2a4e1501c5d84fd78f3bce95e4fea97516d",
+                    "cdkey": "15235-14576-15169-76110-19619-91765"
+                },
+                {
+                    "platform": "linux-armv6",
+                    "filename": "Eiffel_15.01_ent_96535-linux-armv6.tar.bz2",
+                    "size": "89873536",
+                    "hash": "9becf1813c341a95e8409adf110231f0d13d27fcf80d589a6ea39e9884718c80",
+                    "cdkey": "15235-14576-15169-76110-19619-91765"
+                },
+
+                {
+                    "platform": "linux-x86-64",
+                    "filename": "Eiffel_15.01_ent_96535-linux-x86-64.tar.bz2",
+                    "size": "97927494",
+                    "hash": "d60244820cba7180a5e9c2c90f78847848fbb65a1459c5dab733d2b185c5ab17",
+                    "cdkey": "15235-14576-15169-76110-19619-91765"
+                },
+                {
+                    "platform": "linux-x86",
+                    "filename": "Eiffel_15.01_ent_96535-linux-x86.tar.bz2",
+                    "size": "85532764",
+                    "hash": "7c9e8f5b46a1b058bf9f9649b178b4cd823c624e09c8fc0c9f905a9b6e50e4c1",
+                    "cdkey": "15235-14576-15169-76110-19619-91765"
+                },
+                {
+                    "platform": "macosx-x86-64",
+                    "filename": "Eiffel_15.01_ent_96535-macosx-x86-64.tar.bz2",
+                    "size": "86972150",
+                    "hash": "50ac885816a5d1c277ef4e7648bdaecf519e5e493b2f61b51b6160afd40e5503",
+                    "cdkey": "15235-14576-15169-76110-19619-91765"
+                },
+                {
+                    "platform": "openbsd-x86-64",
+                    "filename": "Eiffel_15.01_ent_96535-openbsd-x86-64.tar.bz2",
+                    "size": "94980247",
+                    "hash": "c31c45a2958fbac9ffbe7e87f4c6e19da4caa11316616697d37e04a3a8038258",
+                    "cdkey": "15235-14576-15169-76110-19619-91765"
+                },
+                {
+                    "platform": "solaris-sparc-64",
+                    "filename": "Eiffel_15.01_ent_96535-solaris-sparc-64.tar.bz2",
+                    "size": "104462875",
+                    "hash": "a9f574f043b59f40cf5600a01fd8cff0ca7b9955390c3f61bd767f3854c96ad2",
+                    "cdkey": "15235-14576-15169-76110-19619-91765"
+                },
+                {
+                    "platform": "solaris-sparc",
+                    "filename": "Eiffel_15.01_ent_96535-solaris-sparc.tar.bz2",
+                    "size": "104296834",
+                    "hash": "ec516ca23d94ec679228e6f610440ce26767ccf481b33dd68acb3c1c0fe7bdda",
+                    "cdkey": "15235-14576-15169-76110-19619-91765"
+                },
+                {
+                    "platform": "solaris-x86-64",
+                    "filename": "Eiffel_15.01_ent_96535-solaris-x86-64.tar.bz2",
+                    "size": "90465935",
+                    "hash": "ad97e3ee98f852713b7a8951710d726d9d5caca37fd33f683bb14484cf218a8c",
+                    "cdkey": "15235-14576-15169-76110-19619-91765"
+                },
+                {
+                    "platform": "solaris-x86",
+                    "filename": "Eiffel_15.01_ent_96535-solaris-x86.tar.bz2",
+                    "size": "81128717",
+                    "hash": "1e61fff667b42785de2a09947fd1d89eceb9f297b0d0dea280a332ac042313af",
+                    "cdkey": "15235-14576-15169-76110-19619-91765"
+                },
+                {
+                    "platform": "win64",
+                    "filename": "Eiffel_15.01_ent_96535-win64.msi",
+                    "size": "143864596",
+                    "hash": "eac30fef3496ea229335e57b779bb24118d11faa77e4e58703563dec001e7bc1",
+                    "cdkey": "15235-14576-15169-76110-19619-91765"
+                },
+                {
+                    "platform": "windows",
+                    "filename": "Eiffel_15.01_ent_96535-windows.msi",
+                    "size": "131519724",
+                    "hash": "681a98e84fb584b86af256298ba10182c6633b44a3d7de8d20b3c295da4e1fc6",
+                    "cdkey": "15235-14576-15169-76110-19619-91765"
+                }
+            ]
+        }
+    ]
+}
