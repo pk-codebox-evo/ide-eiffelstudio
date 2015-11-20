@@ -23,6 +23,7 @@ feature {NONE}
 	c2: detachable AAT_QUALIFIED
 	c3: detachable AAT_OVER_OPER_A
 	c4: detachable AAT_STRING_ARG
+	c5: detachable AAT_BASIC_CHECKS
 
 ;note
 	copyright: "Copyright (c) 1984-2015, Eiffel Software"
