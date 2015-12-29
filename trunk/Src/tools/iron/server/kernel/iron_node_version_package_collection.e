@@ -44,13 +44,23 @@ feature -- Element change
 
 feature -- Sorting
 
+	sort_with (a_sorter: SORTER [IRON_NODE_VERSION_PACKAGE])
+		do
+			a_sorter.sort (items)
+		end
+
+	reverse_sort_with (a_sorter: SORTER [IRON_NODE_VERSION_PACKAGE])
+		do
+			a_sorter.reverse_sort (items)
+		end
+
 	sort
 			-- Sort alphabetically, older first.
 		local
 			s: QUICK_SORTER [IRON_NODE_VERSION_PACKAGE]
 		do
 			create s.make (create {COMPARABLE_COMPARATOR [IRON_NODE_VERSION_PACKAGE]})
-			s.sort (items)
+			sort_with (s)
 		end
 
 	reverse_sort
@@ -59,7 +69,7 @@ feature -- Sorting
 			s: QUICK_SORTER [IRON_NODE_VERSION_PACKAGE]
 		do
 			create s.make (create {COMPARABLE_COMPARATOR [IRON_NODE_VERSION_PACKAGE]})
-			s.reverse_sort (items)
+			reverse_sort_with (s)
 		end
 
 note
