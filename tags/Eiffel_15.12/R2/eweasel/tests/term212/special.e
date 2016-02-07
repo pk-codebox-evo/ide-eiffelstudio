@@ -1,2 +1,0 @@
-class SPECIAL
-end

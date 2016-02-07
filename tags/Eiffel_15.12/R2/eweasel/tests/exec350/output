@@ -1,9 +1,0 @@
-TUPLE [!X]
-TUPLE [!ANY]
-
-TUPLE [!Y]
-TUPLE [!ARRAYED_LIST [!ANY]]
-
-TUPLE [!Y]
-TUPLE [!ARRAYED_LIST [!ANY]]
-Execution completed

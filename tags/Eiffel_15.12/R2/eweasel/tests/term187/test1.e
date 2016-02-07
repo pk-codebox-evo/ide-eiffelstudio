@@ -1,4 +1,0 @@
-
-class TEST1 [G -> TEST2 [TEST3 [INTEGER], INTEGER]]
-end
-
