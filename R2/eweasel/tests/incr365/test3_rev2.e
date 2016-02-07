@@ -1,7 +1,0 @@
-
-class TEST3
-inherit
-	TEST2 [BOOLEAN, ARRAYED_LIST [BOOLEAN]]
-
-
-end

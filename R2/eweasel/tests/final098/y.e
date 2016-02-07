@@ -1,4 +1,0 @@
-class
-	Y [G]
-
-end

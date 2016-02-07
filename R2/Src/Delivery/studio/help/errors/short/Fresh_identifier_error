@@ -1,3 +1,0 @@
-Error: An entity should use a fresh identifier.
-What to do: make sure the name of the entity does not clash with the name of
-   another entity of the enclosing scope.
