@@ -1,4 +1,4 @@
-class A [reference G]
+class A [G]
 
 feature -- Test
 
@@ -8,15 +8,11 @@ feature -- Test
 		local
 			x: G
 		do
-			x := Void
-			if x = Void and then Result = Void then
+			if x = Void or else Result = Void then
 				x := a
 				Result := x
 			end
-			Result := Void
 			Result := x
-		ensure
-			result_set: attached Result.out
 		end
 
 end
