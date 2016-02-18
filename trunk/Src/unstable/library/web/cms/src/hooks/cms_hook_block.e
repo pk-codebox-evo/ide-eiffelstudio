@@ -1,6 +1,6 @@
 note
 	description: "[
-				Hook providing a way to alter a block.
+				Hook providing a way to provide blocks.
 		]"
 	date: "$Date$"
 	revision: "$Revision$"
@@ -13,11 +13,19 @@ inherit
 
 feature -- Hook
 
-	block_list: ITERABLE [like {CMS_BLOCK}.name]
+	block_list: detachable ITERABLE [like {CMS_BLOCK}.name]
 			-- List of block names, managed by current object.
-			-- If prefixed by "?", condition will be check
+			-- If prefixed by "?", condition will be checked
 			-- to determine if it should be displayed (and computed) or not.
 		deferred
+		end
+
+	block_identifiers (a_response: detachable CMS_RESPONSE): detachable ITERABLE [like {CMS_BLOCK}.name]
+			-- List of block names, managed by current object, in the context of `a_response' if set.
+			-- If prefixed by "?", condition will be checked
+			-- to determine if it should be displayed (and computed) or not.
+		do
+			Result := block_list
 		end
 
 	get_block_view (a_block_id: READABLE_STRING_8; a_response: CMS_RESPONSE)
