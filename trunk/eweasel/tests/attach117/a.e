@@ -8,14 +8,13 @@ feature -- Test
 		local
 			x: G
 		do
-			x := Void
-			if x = Void and then Result = Void then
+			if x = Void or else Result = Void then
 				Result := x
 			end
-			Result := Void
 			Result := x
+				-- Error: VEVI for Result.
 		ensure
-			result_set: attached Result.out
+			result_set: attached Result.out -- Error: VUTA(2) because G might be detachable.
 		end
 
 end
