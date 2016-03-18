@@ -13,11 +13,14 @@ feature -- Factory
 			--| This single factory will allow to optimize the integration of IRON with EiffelStudio
 			--| by using caching or similar.
 		do
+			debug ("iron_api")
+				print ("DEBUG: new Iron Installation API !!%N")
+			end
 			create Result.make_with_layout (a_iron_layout, a_iron_urls_builder)
 		end
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2016, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[
