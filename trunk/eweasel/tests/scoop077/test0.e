@@ -16,11 +16,11 @@ feature {NONE} -- Creation
 				s := t.data
 			end
 			across
-				s as c
-			loop
+				s as c            -- VUTA(3) for `s.new_cursor'
+			loop                      -- VUTA(3) for `c.after'
 				i := i + 1
-				c.item.report (i)
-			end
+				c.item.report (i) -- VUTA(3) for `c.item'; VUTA(3) for `report'
+			end                       -- VUTA(3) for `c.forth'
 			io.put_integer (0)
 			io.put_new_line
 		end
