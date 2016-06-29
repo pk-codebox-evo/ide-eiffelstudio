@@ -1,0 +1,119 @@
+{
+    "mirror": "https://enterprise:udeief5w9mydgg9di5xy@ftp.eiffel.com/enterprise/",
+    
+    "products": [
+        {
+            "id": "eiffelstudio_ent",
+            "name": "EiffelStudio",
+            "version": "15.12 Enterprise Evaluation Edition",
+            "release": "Official Release",
+            "date": "Winter 2015",
+            "sub_directory": "15.12",
+            "number": "15.12",
+            "build" : "Build_98497",
+            "icon": "eiffelstudio_ent.png",
+            "public": "true",
+            "for_evaluation": "true",
+            "mirrors": "private",
+            "license": {
+                "name": "Enterprise",
+                "url": "enterprise.html"
+            },
+            "blerb": "<h2>EiffelStudio: A Contract for Success</h2>\n<p>\nTake full advantage of the power of Object Technology ... and more\n<p>\nEiffelStudio is more than just an IDE. With EiffelStudio you can model your\nsystem as you think - capturing your requirements and your thought processes in\nEiffel. Then, when you are ready to design, you build upon the model you just\ncreated, still with EiffelStudio. And then you implement, in EiffelStudio. You\nnever need to throw anything out and start over. You don't need extra tools to\nbe able to go back and make changes in architecture safely. Roundtrip\nengineering? It's built in by design. Testing, metrics and productivity tools?\nThey're built in. What about debugging? EiffelStudio native Design by Contract™\nmechanism prevents 90% of the bugs from ever occurring - and what bugs remain\nare easily traced and fixed. If you are using other languages and tools chances\nare that EiffelStudio will interface with the code you already have.\n<p>\nWe thank you for downloading EiffelStudio. If you have questions please post\nthem to our <a href=\"http://groups.eiffel.com\">user mailing-list</a>.\n<p>\nEnjoy EiffelStudio and if you do let your friends know!\n<p>",
+            "download": [
+                {
+                    "platform": "freebsd-x86-64",
+                    "filename": "Eiffel_15.12_ent_98497-freebsd-x86-64.tar.bz2",
+					"size": "93436400",
+                    "hash": "af76bce688497dbb5b0584386ff75f53433de2f1fc3b7370c0f89550b3f32de8",
+                    "cdkey": "20127-34313-42484-47101-92036-56490"
+                },
+                {
+                    "platform": "freebsd-x86",
+                    "filename": "Eiffel_15.12_ent_98497-freebsd-x86.tar.bz2",
+					"size": "84920190",
+                    "hash": "065593afa3b6a08db142ffa391c37e2a2d6a45add8b064cf996821b5583b0a4c",
+                    "cdkey": "20127-34313-42484-47101-92036-56490"
+                },
+                {
+                    "platform": "linux-armv6",
+                    "filename": "Eiffel_15.12_ent_98497-linux-armv6.tar.bz2",
+					"size": "93407469",
+                    "hash": "674cb184e4af3843077b505fb805f38ac640524669d6f4a613ac323e38b8784c",
+                    "cdkey": "20127-34313-42484-47101-92036-56490"
+                },
+
+                {
+                    "platform": "linux-x86-64",
+                    "filename": "Eiffel_15.12_ent_98497-linux-x86-64.tar.bz2",
+					"size": "100636841",
+                    "hash": "c8f7a75afd7ad1bf4493d087cc4be1cb857b337656f6b9dd51449b45d855d7a8",
+                    "cdkey": "20127-34313-42484-47101-92036-56490"
+                },
+                {
+                    "platform": "linux-x86",
+                    "filename": "Eiffel_15.12_ent_98497-linux-x86.tar.bz2",
+					"size": "88177314",
+                    "hash": "bd914647535bc1672d8f09bd5c39ebaa3e8854b039afce953077cfbc119a2e68",
+                    "cdkey": "20127-34313-42484-47101-92036-56490"
+                },
+                {
+                    "platform": "macosx-x86-64",
+                    "filename": "Eiffel_15.12_ent_98497-macosx-x86-64.tar.bz2",
+					"size": "89800635",
+                    "hash": "2fd13c1d04e5ee08284e8cfb1cb2bdab5bb4d52cbea022414a1d963b6dcc2fab",
+                    "cdkey": "20127-34313-42484-47101-92036-56490"
+                },
+                {
+                    "platform": "openbsd-x86-64",
+                    "filename": "Eiffel_15.12_ent_98497-openbsd-x86-64.tar.bz2",
+					"size": "97627108",
+                    "hash": "f1d27ecf1d73c8d302c403fd37fa124c41e388f9d77dfa158076592797abd55c",
+                    "cdkey": "20127-34313-42484-47101-92036-56490"
+                },
+                {
+                    "platform": "solaris-sparc-64",
+                    "filename": "Eiffel_15.12_ent_98497-solaris-sparc-64.tar.bz2",
+					"size": "109089391",
+                    "hash": "769467165d64fc93bb4c1e2408e9da41ece0625d8760709d32b3a0fb5d51cae8",
+                    "cdkey": "20127-34313-42484-47101-92036-56490"
+                },
+                {
+                    "platform": "solaris-sparc",
+                    "filename": "Eiffel_15.12_ent_98497-solaris-sparc.tar.bz2",
+					"size": "107200186",
+                    "hash": "3a45d9144801db01afe4035e0301fa02983ca1d66ccfe4bd0f49590778469066",
+                    "cdkey": "20127-34313-42484-47101-92036-56490"
+                },
+                {
+                    "platform": "solaris-x86-64",
+                    "filename": "Eiffel_15.12_ent_98497-solaris-x86-64.tar.bz2",
+					"size": "94487189",
+                    "hash": "ed92f06b75ed207ac4465dc93d544ed01b41a5c2f4927c1a1ef8f53e1e4e687c",
+                    "cdkey": "20127-34313-42484-47101-92036-56490"
+                },
+                {
+                    "platform": "solaris-x86",
+                    "filename": "Eiffel_15.12_ent_98497-solaris-x86.tar.bz2",
+					"size": "85311614",
+                    "hash": "d9cf8ba58d84732d6ce77b47a1d7f3e29e11b77adee513cb42079aba46ad9035",
+                    "cdkey": "20127-34313-42484-47101-92036-56490"
+                },
+                {
+                    "platform": "win64",
+                    "filename": "Eiffel_15.12_ent_98497-win64.msi",
+					"size": "141964240",
+                    "hash": "05da26f15ac0fe5063abed947677f82d201764e6fba11b74af40fb5f1fd99aba",
+                    "cdkey": "20127-34313-42484-47101-92036-56490"
+                },
+                {
+                    "platform": "windows",
+                    "filename": "Eiffel_15.12_ent_98497-windows.msi",
+					"size": "130528696",
+                    "hash": "e72acda13528ed73378c69fb6426362e0c35b08894bc27e88d9d9ff306d0247b",
+                    "cdkey": "20127-34313-42484-47101-92036-56490"
+                }
+            ]
+        }
+    ]
+}
